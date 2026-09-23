@@ -45,12 +45,14 @@ goldens-check:
 	  done; \
 	done; exit $$status
 
-# internal/diag/codes.go equals what diaggen generates from spec/ERRORS.md, and the runtime
-# helper texts use only the pairs of ERRORS.md §1.6. Active as soon as diaggen exists (M0).
+# internal/diag/codes.go and its generated test table equal what diaggen generates from
+# spec/ERRORS.md into a temporary directory, and the runtime helper texts under internal/gen
+# use only the pairs of ERRORS.md §1.6 (IMPLEMENTATION-PLAN.md §12.2 step 5).
 diag-check:
-	@if [ -d internal/diag/cmd/diaggen ]; then \
-	  go run ./internal/diag/cmd/diaggen -check -runtime internal/gen; \
-	else echo "diag-check: internal/diag/cmd/diaggen does not exist yet (M0)"; fi
+	@tmp=$$(mktemp -d) && trap 'rm -rf "$$tmp"' EXIT && \
+	  go run ./internal/diag/cmd/diaggen -out "$$tmp" -runtime internal/gen && \
+	  diff -u internal/diag/codes.go "$$tmp/codes.go" && \
+	  diff -u internal/diag/codes_test.go "$$tmp/codes_test.go"
 
 # The audit tool gates itself first: its own vet, tests and baseline (tools/audit/.sovaudit).
 audit-self:

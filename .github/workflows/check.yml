@@ -1,0 +1,29 @@
+# The gate of every change (IMPLEMENTATION-PLAN.md 12.2): make check, then every test under the
+# race detector (7.5). Tests make no network call; Go 1.25, never a downloaded toolchain.
+name: check
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      GOTOOLCHAIN: local
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # baseline-guard and decision-dropped compare against the base revision
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+          cache-dependency-path: |
+            go.sum
+            tools/audit/go.sum
+            tools/audit/toolchain/go.sum
+      - run: make check
+      - run: go test -race ./...

@@ -287,6 +287,100 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     the model Louis approved and are committed. The working documents of the spec phase
     (AUDIT*.md, MOCKUP-GAPS.md, review/, mockups/) moved to `meta/spec-phase/` to clear the root.
 
+53. **Rule thresholds are the limits, in `tools/audit/thresholds.tsv`, and only rise by a
+    maintainer's commit.** The file holds every number a rule compares a measurement against
+    (20 keys, gocognit's and dupl's limits included, which the stock lane renders into
+    golangci.yml); detection parameters (how many words prove a decision comment kept, what
+    counts as a one-word constant) stay constants, since they define a rule rather than bound it. Rows are `<key><TAB><value>`,
+    every key exactly once, values positive integers; any other row stops the tool. A higher
+    value is always looser, so `baseline-guard` fails a raise against the base revision.
+    Reason: decision 26 wants limits as data, and data nobody guards is an exemption.
+
+54. **`diag-message-inline` flags five things outside `internal/diag`, tests included**: a
+    string literal (or `+` chain of literals) holding a code token; one holding a fixed run of
+    a catalogued template of at least `diag-text-words` (4) words, or a §1.6 text; a `fmt` call
+    in any argument of a diag function or method (types resolve stored builders); a literal
+    with whitespace in such an argument; a hand-built `diag.Finding`/`Related`/`Def`/`Variant`/
+    `Arg` or an assignment to a diag `Message` field. Comments may cite codes. Reason: each is a
+    way to put English or a code beside the registry; 3-word runs ("does not exist", "out of
+    range") would flag ordinary Go error text, and a hit at 4 costs only a rewording.
+
+55. **`diag-code-untested` judges the codes the compiler reports; `diag-code-unreported`
+    (observe) counts the rest.** A code is reported once non-test code names `diag.E3501`
+    (or a runtime helper text holds it), and tested only by a `<CODE>_<n>.txtar` in its owning
+    package's `testdata/findings/` whose `findings.txt` holds it (IMPLEMENTATION-PLAN §7.2); a
+    Go test naming the constructor does not count. Reason: baselining the 298 untested codes
+    needs a hand edit of the baseline (`--init` refuses an existing one, `--tighten` never adds,
+    `baseline-guard` fails an added entry), so the ratchet starts at zero and every newly
+    reachable code must bring its test; at v0.1 `diag-code-unreported` turns enforce, and the two
+    rules at zero mean every code is tested (decision 27).
+
+56. **`ignore-count` counts every suppression a pinned tool honours**: `sovaudit:ignore(-file)`,
+    `//nolint`, `//lint:ignore`, `//lint:file-ignore`, `#nosec`, `//gosec:disable`,
+    `//exhaustive:ignore`, `//revive:disable`, in comments only. `//canon:unordered` is not
+    counted: DOCTRINE §5 requires it on an order-free map range, and counting it would forbid
+    what the doctrine asks for. Reason: an uncounted syntax is a way around the ratchet.
+
+57. **`diag.Variant.Template` keeps the escapes of ERRORS.md §1.2** (`{{`, `}}`, `\\`, `\n`):
+    it is the text between the backticks, not its rendering. Reason: ERRORS.md §2.2 says
+    "unescaped", but an unescaped template cannot tell a literal `{name}` from a placeholder
+    (`W1604`, `E1623`), so neither the renderer nor the round trip could read it back.
+
+58. **`diaggen` lives in `internal/diag/catalog` (reading, validation, generation) behind a thin
+    `internal/diag/cmd/diaggen`, and writes two files**: `codes.go` and `codes_test.go`, the
+    table that calls every constructor once; `make diag-check` regenerates both into a
+    temporary directory and diffs them. Runtime codes get a variable with `Def()` and no `At`.
+    It refuses more than ERRORS.md §2.1 lists: a code outside its section's range, a runtime
+    code not owned by `gen` (or `gen` on another code), an argument named `span`, message rows
+    out of the codes table's order, a malformed separator row; its retired set adds `E3014`
+    and `E3319`. The package list is read from IMPLEMENTATION-PLAN §3, sub-packages its rows
+    name included (`eval/std`, which ERRORS.md uses). Reason: one reader of the §3 table for
+    the generator and the dependency test, every constructor exercised by a generated test,
+    and each extra refusal is a catalogue that could not be what its author meant.
+
+59. **The dependency rule as tested** (`internal/testkit/deps_test.go` over `go list -deps`):
+    a package imports rows above its own or its own row (a package and its sub-packages; a
+    directory belongs to its nearest listed ancestor, so `diag/cmd/diaggen` is `diag`'s);
+    `testkit` imports anything; a module package in no row fails (so `api/vm` needs a row
+    before it lands); `unsafe` and `C` are refused; every import outside the module and the
+    standard library, test imports included, must be a package of the Choice column of §11
+    (the `go.lsp.dev` fallback is not allowed until it is listed). The test stats every Go
+    file so the test cache cannot hide a new import. Reason: the strictest reading of §3,
+    §11 and `.claude/rules/go.md` §7 that a test can hold.
+
+60. **Package names under `internal/gen/` are `jsongen`, `gogen`, `cppgen`, `tsgen` and
+    `viewgen`; `internal/eval/std` is `std`.** Reason: `go` is a keyword, and `json` would
+    shadow `encoding/json` in the very package that writes JSON; one suffix for all five.
+
+61. **Skeleton packages carry an empty running Example** (`func Example()` with an empty
+    `// Output:`) until their milestone gives them an API; no constant or sentinel is written
+    before code uses it. Reason: `pkg-example` requires an Example now, and an exported name
+    made only to be shown would be the premature surface `exported-but-local` forbids.
+
+62. **Until M1, `cmd/canon` answers every invocation with one line on stderr and exit 2** (a
+    usage error, CLI.md §2.5). Reason: a `main` package needs a `main` for `go build ./...`,
+    and an empty `main` exiting 0 would claim success; the cobra tree lands with `internal/cli`.
+
+63. **M0.3 writes only what `codes.go` needs of the M0.4 contracts**: `source.FileID`, `Pos`
+    and `Span` exactly as IMPLEMENTATION-PLAN §4.1 sketches them, and in `diag` `TypeArg`,
+    `ValueArg`, `Builder` (it records its constructor call) and `Message` (it holds its
+    builder, so a nested message is rendered with the outer finding's file set). Rendering,
+    `Report`, `Bag` and `Finding` are M0.4's, with the table test that renders every message.
+    Reason: the generated constructors cannot compile without these, and nothing more is used.
+
+64. **`fixturegen` follows an embedded list, `fixtures.tsv`**, with one method tonight,
+    `defines` (the include guard and the listed `#define` lines, byte for byte, in the real
+    header's order); it fails without `testdata-real/`, writes nothing unless every fixture
+    extracts, and refuses a fixture tree over 300,000 bytes. The JSON and text fixtures stay
+    hand-trimmed until a row-selection method is designed. Reason: DECISIONS 29 and
+    IMPLEMENTATION-PLAN §7.3 (deterministic, fixed list, small), with no method guessed.
+
+65. **CI is `.github/workflows/check.yml`**: `make check`, then `go test -race ./...`, on Go
+    1.25 with `GOTOOLCHAIN=local` and a full clone (the baseline guard needs history). Reason:
+    the module is published at github.com (DECISIONS 23); IMPLEMENTATION-PLAN §13.4 mentions
+    GitLab for the benchmark runner, which stays open. `go.mod` now reads `go 1.25.0` and
+    requires `golang.org/x/tools` for `txtar` (§11).
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.

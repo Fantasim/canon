@@ -1,0 +1,5 @@
+The trivial golden of M0: the harness itself, whose case output is its input file.
+-- in.txt --
+canon
+-- want --
+canon
