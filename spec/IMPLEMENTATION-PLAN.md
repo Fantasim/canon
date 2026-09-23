@@ -134,7 +134,7 @@ one position type; JSON sources get their own syntax tree (`jsonsrc`) because bo
 | `cli` | command implementations, text/JSON output, exit codes | CLI.md, §8 | api, internal packages for fmt, infer, convert, i18n, explain of functions |
 | `cmd/canon` (top level) | `main`: cobra command tree, calls `cli` | CLI.md | cli |
 | `lsp` | language server | §8.4 | workspace, check, format |
-| `testkit` | golden harness, fixture FS, shuffling FS, benchmark generator, analyzers | §7 | api |
+| `testkit` | golden harness, fixture FS, shuffling FS, benchmark generator | §7 | api |
 
 Dependency rule: an arrow may only point up this table (a package imports packages listed above
 it, except `testkit`, which may import anything). `go list -deps` is checked in CI against the
@@ -392,6 +392,8 @@ type Finding struct {
     Layer    string
     Related  []Related
     Stack    []Frame       // innermost first, ≤ 16
+    MoreFrames int         // frames cut from Stack (API.md F13, DECISIONS 82)
+    Reads    []string      // VIEWMODEL.md J15
 }
 type Related struct { Span source.Span; Note string }   // notes: ERRORS.md §1.5
 type Frame struct { Fn string; Span source.Span }       // also used by value.Prov
@@ -402,9 +404,20 @@ type Files interface {
     Position(id source.FileID, p source.Pos) (line, col int)
     Content(id source.FileID) []byte
 }
-type Bag struct { /* collects findings concurrently; Findings() is sorted (API.md F2), deduplicated and truncated (F7) (DECISIONS 83) */ }
+type Bag struct { /* collects findings concurrently; Findings() is sorted (API.md F2), deduplicated and truncated (F7) (DECISIONS 83), whatever the order of the reports (DECISIONS 105) */ }
 func NewBag(files Files, pkg string) *Bag
 func Render(w io.Writer, files Files, findings []Finding, opt RenderOptions) error   // text (DIAG-03) or JSON (API.md F5); the error wraps ErrWrite
+
+// A finding with every span resolved (API.md §1.3): what Write renders, and what the API
+// converts to and from canon.Finding (DECISIONS 106).
+type Located struct {
+    Code Code; Severity Severity; Loc source.Location
+    Pointer, Package, Path, Message, Check, Layer string
+    Related []RelatedLoc; Stack []FrameLoc; MoreFrames int; Reads []string
+}
+func Locate(files Files, findings []Finding) []Located
+func Write(w io.Writer, findings []Located, opt RenderOptions) error   // Render over resolved findings
+func (l *Located) AppendJSON(buf []byte) []byte                       // one F5 object, for canon.Finding.MarshalJSON
 ```
 
 - **One way to report.** A package reports a finding only as
@@ -418,9 +431,16 @@ func Render(w io.Writer, files Files, findings []Finding, opt RenderOptions) err
 - **Gate.** `make check` regenerates `codes.go` into a temporary file and fails if it differs
   from the committed one (target `diag-check`, §12.2); the generator also checks the runtime
   helper texts against ERRORS.md §1.6.
-- A test (`TestEveryCodeIsTested`) fails if a registry code has no test case that expects it (§7.2).
+- The audit rule `diag-code-untested` fails when a code the compiler reports has no test case
+  that expects it (§7.2, DECISIONS 55).
+- **Order.** `Findings()` and `Write` sort in a total order: the F2 key, then every other field
+  (severity, end position, package, path, pointer, check, layer, related, stack, cut frames,
+  reads). Of duplicates (EVALUATION.md §14), the least in that order is kept, so the result
+  never depends on which goroutine reported first (NFR-05, DECISIONS 105).
 
-The public `canon.Finding` (API.md §4.1) is converted from `diag.Finding` at the API boundary.
+The public `canon.Finding` (API.md §4.1) is converted from `diag.Finding` at the API boundary
+through `Locate`, and back to a `Located` when the API writes findings (`canon.WriteFindings`,
+`Finding.MarshalJSON`), so every text and JSON form of a finding has one writer, in `diag`.
 
 ### 4.5 Emit IR — `internal/ir/ir.go`
 
@@ -487,12 +507,23 @@ type ExportFn struct {
     Vectors []Vector         // Translated: from internal/conform
 }
 type PExpr interface{ pexpr() }   // Lit, Param, SelfField, Unary, Binary, Call(builtin), CallExport, If, Let, Template, Coalesce, EnumMember
-type Emit struct { Target string; Out string; Mode string; Values []string; Options map[string]string }
+type Emit struct {
+    Target Target; Out string              // Out as written, for messages only
+    Dir      string                        // output directory (a ts emit's: its file's), project-relative through the declared roots
+    FileName string                        // ts: the file name in Dir
+    GoImport string                        // go: the import path of Dir (CODEGEN.md §2.8)
+    Mode Mode; Values []string; GoPackage, Namespace string   // typed options (DECISIONS 80)
+}
 ```
 
 Each code generator is a pure function `func Generate(p *ir.Package, e *ir.Emit) ([]File, error)`
-with `type File struct { Path string; Content []byte }`. Codegen agents start from hand-built
-`ir.Package` fixtures in `internal/gen/<t>/testdata/`, before the front end exists.
+with `type File struct { Path string; Content []byte }`, `Path` relative to the emit's `Dir`.
+Codegen agents start from hand-built `ir.Package` fixtures in `internal/gen/<t>/testdata/`,
+before the front end exists. **Generators never resolve roots** (DECISIONS 108): stage E fills
+every emit's `Dir`, `FileName` and `GoImport`, those of the imported packages' emits
+(`PackageRef.Emits`) included, from `project.canon`'s declared roots and `go_module`, never from
+a `--root` override, so a Go import (`<GoImport>/rt`, an imported package's `GoImport`) is read
+off the IR and a C++ or TS relative include is the path from one emit's `Dir` to another's.
 
 ### 4.6 Edit paths — `internal/edit/path.go`
 
@@ -500,17 +531,24 @@ with `type File struct { Path string; Content []byte }`. Codegen agents start fr
 package edit
 
 type SegKind uint8  // Field (".f"), Key ("[k]"), Pos ("[#n]")
-type KeyLit struct { Kind KeyLitKind; Text string; Int int64 }  // Word | Int | String (API.md §6.1)
+type KeyLit struct { Kind KeyLitKind; Text string; Int int64; Raw string }  // Word | Int | String (API.md §6.1); Raw as written (DECISIONS 87)
 type Seg struct { Kind SegKind; Name string; Key KeyLit; Pos int }
 type Path struct { Package string; Root string; Segs []Seg }
 
-func Parse(s string) (Path, error)              // API.md §6.1; errors wrap canon.ErrBadPath
+func Parse(s string) (Path, error)              // API.md §6.1; an error is a *SyntaxError
+type SyntaxError struct { Offset int; Reason error }   // wraps edit.ErrBadPath (the API's canon.ErrBadPath) and Reason
 func (p Path) String() string                   // as parsed
 
 type Step struct { Seg Seg; Container types.Type; Value value.Value }
 type Resolved struct { Canonical string; Steps []Step; Target value.Value }
-func Resolve(s Snapshot, p Path) (Resolved, error)   // API.md §6.2-§6.5
+func Resolve(s *Snapshot, p Path) (Resolved, error)  // API.md §6.2-§6.5; with Snapshot, at M4
 ```
+
+`Step` and `Resolved` are declared now. `Snapshot` is `edit`'s own concrete type, not an
+interface: the part of one build's results (the checked program and its evaluated values) that
+`Resolve` reads, which `workspace` assembles from `build`'s results and hands to `edit`. `build`
+sits above `edit` in §3, so no third injection seam exists (DECISIONS 107). Its fields follow
+`build`'s result type, so `Snapshot` and `Resolve` are written with that type, not before.
 
 ### 4.7 The checked program — `internal/check/info.go`
 
@@ -526,13 +564,14 @@ package check
 // concurrent reads.
 func Check(ctx context.Context, proj *project.Project, files []*syntax.File, bags Bags, fold Folder) *Program
 
-type Bags interface{ For(pkg string) *diag.Bag }
+type Bags map[string]*diag.Bag   // one bag per loaded package, by path; a map, not a third seam (DECISIONS 34)
 
 // Folder evaluates a constant expression (TYPES.md §15) once check has typed it: refinement
 // bounds, parameter defaults, codes and member values, `const` initializers. `eval` implements
-// it (eval.NewFolder), so constants are computed by the one evaluator (principle 1).
+// it (eval.NewFolder), so constants are computed by the one evaluator (principle 1). owner is
+// the declaration e belongs to: its package's bag takes the findings, its file locates them.
 type Folder interface {
-    Fold(ctx context.Context, e syntax.Expr, info *Info) (value.Value, bool)
+    Fold(ctx context.Context, owner Object, e syntax.Expr, info *Info) (value.Value, bool)
 }
 
 type Program struct {
@@ -552,32 +591,40 @@ type Info struct {
     Types      map[syntax.Expr]types.Type           // every expression, after narrowing (TYPES.md §6.6), before Conv
     TypeExprs  map[syntax.Type]types.Type           // every written type, resolved; a ref carries its *types.Collection (TYPES.md §10.2)
     Defs       map[*syntax.Ident]Object             // each declaring identifier
-    Uses       map[*syntax.IdentExpr]Object         // each identifier use, contextual names included (TYPES.md §4)
-    Selections map[*syntax.SelectorExpr]*Selection  // each `.name` (TYPES.md §3.5)
+    Uses       map[*syntax.IdentExpr]Object         // each name in value position, contextual names included (TYPES.md §4)
+    NameUses   map[*syntax.Ident]Object             // each other identifier naming an object: type names, qualified-name parts,
+                                                    // patterns, `.name`, literal fields, named arguments, amend segments, imports…
+    Selections map[*syntax.SelectorExpr]*Selection  // each `.name` on a value (TYPES.md §3.5); a qualified form (§4.3) has none
     Conv       map[syntax.Expr]*Conversion          // the implicit conversion at a use (TYPES.md §6.2); absent: none
-    Keys       map[syntax.Expr]*types.Collection    // symbolic keys, checked at evaluation (TYPES.md §1, §4.1)
+    Keys       map[syntax.Expr]*types.Collection    // symbolic keys and key literals, checked at evaluation (TYPES.md §1, §4.1)
+    Symbols    map[*syntax.IdentExpr]bool           // identifiers kept as symbols: a dependent value's (§11.4), a load format (WIRE.md §6.1)
     Calls      map[*syntax.CallExpr]*Callee         // the resolved callee of each call
     Literals   map[*syntax.BraceLit]LitKind         // brace-literal classification (TYPES.md §5.2)
     Matches    map[syntax.Node]*MatchInfo           // each `match` expression or statement (TYPES.md §12.6)
     Broken     map[Object]bool                      // declarations with a static error, or naming one (TYPES.md §1)
 }
 
+func (i *Info) ObjectOf(n syntax.Node) Object   // an *Ident in Defs or NameUses, an *IdentExpr in Uses; else nil
+
 type ObjKind uint8   // Const Let Fn Method Param Local Field Member Case Entry Builtin TypeName Package Layer Check Test Widget
-type Object interface {
+type Object interface {   // implementations are pointers, one per declaration, so == is identity
     Kind() ObjKind
     Name() string
-    Pkg() string          // "" for built-ins and locals
-    Type() types.Type     // declared or inferred; types.ErrorType when broken
+    Pkg() string          // the declaring package; "" for built-ins
+    Type() types.Type     // declared or inferred; types.ErrorType when broken; nil for a package, layer, check or test
     Decl() syntax.Node    // the declaring node; nil for built-ins
+    File() *syntax.File   // the file holding Decl; nil for built-ins
 }
 
 type SelKind uint8   // Field, Entry (a table or keyed-list key), BuiltinMember (id, retired, kind, code…), Method
-type Selection struct { Kind SelKind; Obj Object; Recv types.Type; Deref bool }  // Deref: through a ref
+type Selection struct { Kind SelKind; Obj Object; Recv types.Type; Deref bool }  // Deref: through a ref;
+                     // Obj nil: an entry of a collection with dynamic keys, looked up by name at evaluation
 
 type ConvKind uint8  // Wrap (T to T?), Deref (ref T to T), EntryToRef (T to ref T; E3503 deferred),
-                     // IntLitToFloat, CaseToVariant, Elements (lists, maps, pairs: Inner per element),
+                     // IntLitToFloat, CaseToVariant, ToList (table T or keyed list to [T], identities kept),
+                     // Elements (lists, maps, pairs: Key and Inner per element),
                      // Present (S? to T?: Inner applied to a present value)
-type Conversion struct { Kind ConvKind; From, To types.Type; Inner *Conversion }
+type Conversion struct { Kind ConvKind; From, To types.Type; Inner, Key *Conversion }  // Key: map keys, a pair's first
 
 type CalleeKind uint8   // Fn, Method, Builtin (STDLIB.md), Convert (`Int(f)`, STDLIB.md §2.1), Lambda
 type Callee struct {
@@ -591,19 +638,27 @@ type Callee struct {
 type LitKind uint8   // RecordLit, TableLit, MapLit, MapComp, ErrorLit
 type MatchInfo struct {
     Scrutinee   types.Type
-    Covers      [][]int   // per arm: the member or case indexes it covers (declaration order)
+    Covers      [][]int   // per arm: the member or case indexes it covers (declaration order; Bool: 0 false,
+                          // 1 true), NoneIndex for `none`
     Exhaustive  bool
     Unreachable []int     // arms reported W3601 or E3602
 }
+const NoneIndex = -1
 ```
 
 - Every map is complete for the nodes of every declaration that is not broken: a consumer that
   finds no entry has found a checker bug. Maps are looked up, never iterated for output
-  (`maprange`, §7.5).
+  (`maprange`, §7.5). Every identifier is in `Defs`, `NameUses`, `Uses`, `Keys` or `Symbols`,
+  unless it names no object (an annotation, a project key, an emit target, an option or a
+  built-in's parameter, an `expect` outcome or code).
+- A recovery node (`BadExpr`, `BadType`, `BadStmt`, `BadDecl`, GRAMMAR.md §10) makes the
+  declaration holding it broken; a `BadExpr` or `BadType` is typed `types.ErrorType` (TYPES.md
+  §1) and nothing else is recorded for any of them; a top-level `BadDecl` declares nothing.
 - Constants needed during checking (refinement bounds, `..=FARM_MAX_MODELS`, TYPES.md §1 step 2
   and §15) are folded through `Folder` as soon as their expression is typed; a cycle between
-  constants is `E4301`. `build` passes `eval.NewFolder(opt)`; tests of `check` pass a fixture
-  folder that knows only literals.
+  constants is `E4301`. `build` passes `eval.NewFolder(bags, opt)`; tests of `check` pass a
+  fixture folder that knows only literals.
+- `Check` and `Bags` land with the checker in M1; the rest is written in M0 (DECISIONS 101).
 
 ### 4.8 The evaluator's host — `internal/eval/host.go`
 
@@ -623,23 +678,33 @@ type Host interface {
     Verify(ctx context.Context, root Root, v value.Value) bool
 }
 
-type Root struct { Pkg, Name string }
+type Root struct { Pkg, Name string }   // a top-level value (EVALUATION.md §2.1)
 
-func NewFolder(opt Options) check.Folder                                    // constants only (§4.7)
+type Options struct {
+    Budget int64      // project.budget; 0: the default, 10^8 steps (EVALUATION.md §12.2)
+    Layers []string   // the active layers, in stack order (EVALUATION.md §9.1)
+}
+
+func NewFolder(bags check.Bags, opt Options) check.Folder                   // constants only (§4.7)
 func New(prog *check.Program, host Host, bags check.Bags, opt Options) *Evaluator
 func (e *Evaluator) Force(ctx context.Context, root Root) (value.Value, bool)   // stage A for one root
-func (e *Evaluator) BeginVerification()                                         // from now on, a first Force also calls host.Verify
+func (e *Evaluator) BeginVerification(ctx context.Context)   // stage B: host.Verify on each value forced so far, in the
+                                                             // order its evaluation completed; from now on a first Force verifies too
+func (e *Evaluator) MarkInvalid(v value.Value)               // verify's soft findings (EVALUATION.md §7.3, DECISIONS 79)
+func (e *Evaluator) Invalid(v value.Value) bool              // marked by a conversion or by verify; rules skips checks above it
 func (e *Evaluator) Call(ctx context.Context, fn check.Object, recv value.Value, args []value.Value) (value.Value, bool)
 ```
 
 - `build` wires the seams at run time, never at import time: `prog := check.Check(…,
-  eval.NewFolder(opt))`; then it creates its host, `ev := eval.New(prog, host, bags, opt)`, and
-  `host.verifier = verify.New(ev, loader, …)`; `verify` imports `eval` (it is below it) to force
-  the targets of refs.
+  eval.NewFolder(bags, opt))`; then it creates its host, `ev := eval.New(prog, host, bags,
+  opt)`, and `host.verifier = verify.New(ev, loader, …)`; `verify` imports `eval` (it is below
+  it) to force the targets of refs and to mark invalid values.
 - The evaluator returns no Go error for a language failure: those are findings. `ctx`
   cancellation stops it, and the caller reports the interrupt (§8.5).
 - Tests of `eval` use a fixture host (`internal/eval/testdata/`) that serves values from txtar
   archives, before `load` and `verify` exist (§5.3).
+- `Host` and `Root` are written in M0; `Options`, `NewFolder`, `New` and the `Evaluator` land
+  with the evaluator in M1 (DECISIONS 101).
 
 ---
 
@@ -701,7 +766,7 @@ M5, M6 and M7 run in parallel once M4 is accepted. M6's C++ work may start after
 
 Each milestone lists its scope and acceptance tests. "Golden" means byte-for-byte comparison
 (§7.1). All milestones also require: `make check` green (§12.2: gofmt, vet, tests, goldens, the
-code auditor with its ratchet), the `maprange` analyzer clean, `go test -race ./...` green, the
+code auditor with its ratchet, `maprange` included), `go test -race ./...` green, the
 determinism job green (§7.5), and every new registry code tested (§7.2).
 
 ### M0 — Contracts
@@ -865,8 +930,8 @@ determinism job green (§7.5), and every new registry code tested (§7.2).
   has only the summary line.
 - **Per code.** Every registry code has at least one test case:
   `internal/<pkg>/testdata/findings/<CODE>_<n>.txtar`, a txtar archive holding a minimal project
-  and a `findings.txt` section. `TestEveryCodeIsTested` (package `diag`) fails when a code has
-  none.
+  and a `findings.txt` section. The audit rule `diag-code-untested` fails when a code the
+  compiler reports has none (DECISIONS 55).
 - **Negative cases live in tests, not in fixtures.** The fixtures are clean except on purpose
   (`examples/_fixtures/README.md`): no fixture produces an error, and the few warnings they
   produce mirror findings of the real data (farm's unreachable levels, heistia's duplicate
@@ -905,9 +970,10 @@ in API.md and fails when one has no test.
   `LANG`. All outputs, findings (text and JSON), view models and lock files must be identical.
 - **Across platforms.** Linux, macOS and Windows runners build the examples; outputs must equal the
   Linux goldens byte for byte (NFR-04).
-- **No map order.** The `maprange` analyzer (`internal/testkit/analyzers/maprange`, run through
-  `go vet -vettool`) reports every `range` over a Go map in `api`, `build`, `diag`, `edit`,
-  `format`, `gen/...`, `i18n`, `ir`, `jsonsrc`, `lock`, `views`, `wire`. A loop that is
+- **No map order.** The audit rule `maprange` (`tools/audit`, run by `make check`, DECISIONS
+  110) reports every `range` over a Go map, or over `maps.Keys`, `maps.Values` or `maps.All`,
+  tests included, in the packages `api`, `build`, `diag`, `edit`, `format`, `gen`, `i18n`, `ir`,
+  `jsonsrc`, `lock`, `views`, `wire` and the packages under them. A loop that is
   order-independent is annotated `//canon:unordered` with a reason.
 - **Race.** Every test runs under `-race` in CI.
 

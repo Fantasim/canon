@@ -670,7 +670,9 @@ the value is not reachable from a top-level value (a temporary, a test subject).
 - **Order** (EVL-09): findings without a file first (sorted by code, then message), then by
   file path bytes, line, column, code and message.
 - **Duplicates**: findings with the same severity, code, file, line, column and message are
-  reported once (the first one produced keeps its related locations and stack).
+  reported once. The one kept, with its related locations and stack, is the first in the total
+  order of IMPLEMENTATION-PLAN.md §4.4 (every field compared after the order above), so that
+  scheduling never chooses it (NFR-05, DECISIONS 105).
 - Findings produced inside `expect` subjects are captured by the test, never printed as
   findings.
 - Errors block emission (SPEC §10.3); warnings do not.

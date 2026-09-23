@@ -1,2 +1,2 @@
-// Package jsongen writes the files of emit json (spec/WIRE.md).
+// Package jsongen writes the data files of emit json (spec/WIRE.md §8).
 package jsongen

@@ -234,6 +234,7 @@ type Finding struct {
     Layer    string     // layer whose amendment produced the value, "" if none
     Related  []Related  // other locations, in the order the producer adds them
     Stack    []Frame    // Canon call stack for evaluation findings, innermost first, at most 16
+    MoreFrames int      // frames cut from Stack (F13); 0 when none were
     Reads    []string   // one-line record check without `at`: the fields its condition reads (VIEWMODEL.md J15)
 }
 
@@ -264,12 +265,12 @@ type Frame   struct { Fn string; Span }
 ```
 
 - **F5.** Key order: `severity code file line col endLine endCol pointer package path message
-  check layer related stack reads`. Omitted when empty: `pointer`, `path`, `check`, `layer`,
-  `related`, `stack`, `reads`. `file`, `line`, `col`, `endLine`, `endCol` are omitted together when there is no file.
+  check layer related stack moreFrames reads`. Omitted when empty: `pointer`, `path`, `check`,
+  `layer`, `related`, `stack`, `moreFrames` (when 0), `reads`. `file`, `line`, `col`, `endLine`, `endCol` are omitted together when there is no file.
   (The example above shows every key for completeness.) Each `related` element has
   `file line col endLine endCol note`; each `stack` element has `fn file line col endLine endCol`.
 - **F6.** The CLI prints exactly this object, one per line (CLI.md §2.4); `UnmarshalJSON` reads it
-  back.
+  back, and refuses a key F5 does not list or a severity other than `error` and `warning`.
 
 ### 4.3 Results that hold findings
 
@@ -329,6 +330,24 @@ goldens (`expected/findings.txt`) and every tool agree byte for byte:
   package count: `2 errors, 5 warnings in 3 packages, 1234 not shown (1.4 s)`. `<duration>` is
   `<n> ms` below one second and `<s.d> s` (one decimal, rounded down) from one second on; golden
   files write it `(…)` (IMPLEMENTATION-PLAN.md §7.2).
+
+### 4.5 Writing findings
+
+```go
+func WriteFindings(w io.Writer, findings []Finding, o WriteOptions) error
+type WriteOptions struct {
+    JSON     bool          // the JSON lines of §4.2 and CLI.md §2.4 instead of the text form
+    Summary  Summary
+    Duration time.Duration
+    Golden   bool          // the text form writes the duration `(…)` (F15)
+}
+```
+
+- **F16.** `WriteFindings` writes the findings in F2 order, then the summary line, in the text
+  form of §4.4 or the JSON form of §4.2; it is how the CLI prints findings, and its output is the
+  one the compiler's own renderer gives (IMPLEMENTATION-PLAN.md §4.4). Findings that tie on the F2
+  key are ordered by every other field, so the output never depends on the order of `findings`.
+  A severity other than `error` and `warning` is an error.
 
 ---
 
@@ -1175,6 +1194,11 @@ type VersionInfo struct {
     Commit      string   // VCS revision of the compiler build, "" if unknown
 }
 ```
+
+- **T3.** `Commit` is the compiler's revision, never the embedding program's: the `vcs.revision`
+  the go command stamped when the compiler is the main module and `vcs.modified` is not `true`;
+  the revision a pseudo-version of `github.com/fantasim/canonlang` names when a program depends
+  on it; `""` for a tagged or replaced dependency and for a build without VCS information.
 
 ---
 

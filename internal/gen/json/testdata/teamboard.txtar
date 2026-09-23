@@ -1,0 +1,169 @@
+WIRE.md §8.1 directory mode: the teamboard fixture of teamboard_test.go, one section per
+output file, written by go test -update.
+-- intents.json --
+{
+  "$schema": "teamboard.Intent@f8b4a7c0",
+  "rows": [
+    {"$id": "issue", "tone": "warning", "icon": "alert-triangle", "label": "Something is wrong", "minRole": "gm_junior"},
+    {"$id": "idea", "tone": "accent", "icon": "lightbulb", "label": "Idea or request", "minRole": "gm_junior"}
+  ],
+  "$fns": {
+    "canTransition": {
+      "open": {
+        "open": false,
+        "taken": true,
+        "fixed": false,
+        "verified": false,
+        "wont_do": true,
+        "duplicate": true
+      },
+      "taken": {
+        "open": true,
+        "taken": false,
+        "fixed": true,
+        "verified": false,
+        "wont_do": true,
+        "duplicate": true
+      },
+      "fixed": {
+        "open": true,
+        "taken": false,
+        "fixed": false,
+        "verified": true,
+        "wont_do": false,
+        "duplicate": false
+      },
+      "verified": {
+        "open": true,
+        "taken": false,
+        "fixed": false,
+        "verified": false,
+        "wont_do": false,
+        "duplicate": false
+      },
+      "wont_do": {
+        "open": true,
+        "taken": false,
+        "fixed": false,
+        "verified": false,
+        "wont_do": false,
+        "duplicate": false
+      },
+      "duplicate": {
+        "open": true,
+        "taken": false,
+        "fixed": false,
+        "verified": false,
+        "wont_do": false,
+        "duplicate": false
+      }
+    },
+    "areasVisibleTo": {
+      "member": [],
+      "gm_junior": [
+        "game",
+        "balance",
+        "website",
+        "team_board"
+      ],
+      "gm_senior": [
+        "game",
+        "balance",
+        "website",
+        "team_board"
+      ],
+      "maintainer": [
+        "game",
+        "balance",
+        "website",
+        "resource_studio",
+        "client",
+        "resource",
+        "team_board"
+      ],
+      "owner": [
+        "game",
+        "balance",
+        "website",
+        "resource_studio",
+        "client",
+        "resource",
+        "team_board"
+      ],
+      "admin": [
+        "game",
+        "balance",
+        "website",
+        "resource_studio",
+        "game_server",
+        "client",
+        "resource",
+        "sovcommon",
+        "admin_panel",
+        "analytics",
+        "team_board",
+        "internal"
+      ]
+    }
+  }
+}
+-- statuses.json --
+{
+  "$schema": "teamboard.Status@4aed3fde",
+  "rows": [
+    {"$id": "open", "tone": "warning", "label": "Open", "terminal": false, "next": ["taken", "wont_do", "duplicate"], "requires": [], "optional": [], "by": null},
+    {"$id": "taken", "tone": "info", "label": "Taken", "terminal": false, "next": ["open", "fixed", "wont_do", "duplicate"], "requires": ["assignee"], "optional": [], "by": null},
+    {"$id": "fixed", "tone": "accent", "label": "Fixed", "terminal": false, "next": ["verified", "open"], "requires": [], "optional": ["fixed_in"], "by": null},
+    {"$id": "verified", "tone": "success", "label": "Verified", "terminal": true, "next": ["open"], "requires": [], "optional": [], "by": "reporter_or_triager"},
+    {"$id": "wont_do", "tone": "neutral", "label": "Won't do", "terminal": true, "next": ["open"], "requires": ["reason"], "optional": [], "by": null},
+    {"$id": "duplicate", "tone": "neutral", "label": "Duplicate", "terminal": true, "next": ["open"], "requires": ["duplicate_of"], "optional": [], "by": null}
+  ]
+}
+-- assigneeMinRole.json --
+{
+  "$schema": "sovcommon.roles.Role@dc935485",
+  "value": "maintainer"
+}
+-- deck.json --
+{
+  "$schema": "teamboard.Deck@02af81fb",
+  "value": {
+    "layouts": [
+      "4:1",
+      "2:2"
+    ],
+    "maxHidden": 2
+  }
+}
+-- areaGroups.json --
+{
+  "$schema": "teamboard.AreaGroup@845886c0",
+  "rows": [
+    {"$id": "in_game", "label": "In game"},
+    {"$id": "out_game", "label": "Out of game"},
+    {"$id": "internal", "label": "Internal"}
+  ]
+}
+-- areas.json --
+{
+  "$schema": "teamboard.Area@a5984b53",
+  "rows": [
+    {"$id": "game", "group": "in_game", "tone": "series-1", "icon": "gamepad", "label": "Game", "hint": "Anything you saw while playing.", "minRole": "gm_junior", "routesTo": ["game_server", "client", "resource", "balance"]},
+    {"$id": "balance", "group": "in_game", "tone": "series-1", "icon": "scale", "label": "Balance", "hint": "Nothing is broken, the numbers feel wrong.", "minRole": "gm_junior", "routesTo": []},
+    {"$id": "website", "group": "out_game", "tone": "series-2", "icon": "globe", "label": "Website", "hint": "The site, accounts, rankings, donations and payments.", "minRole": "gm_junior", "routesTo": []},
+    {"$id": "resource_studio", "group": "internal", "tone": "series-3", "icon": "layers", "label": "Resource Studio", "hint": null, "minRole": "maintainer", "routesTo": []},
+    {"$id": "game_server", "group": "in_game", "tone": "series-1", "icon": "server", "label": "Game server", "hint": null, "minRole": "admin", "routesTo": []},
+    {"$id": "client", "group": "in_game", "tone": "series-1", "icon": "monitor", "label": "Game client", "hint": null, "minRole": "maintainer", "routesTo": []},
+    {"$id": "resource", "group": "in_game", "tone": "series-1", "icon": "database", "label": "Game data (Resource)", "hint": null, "minRole": "maintainer", "routesTo": []},
+    {"$id": "sovcommon", "group": "internal", "tone": "series-3", "icon": "package", "label": "sovcommon", "hint": null, "minRole": "admin", "routesTo": []},
+    {"$id": "admin_panel", "group": "internal", "tone": "series-2", "icon": "shield", "label": "Admin panel", "hint": null, "minRole": "admin", "routesTo": []},
+    {"$id": "analytics", "group": "internal", "tone": "series-2", "icon": "bar-chart", "label": "Analytics panel", "hint": null, "minRole": "admin", "routesTo": []},
+    {"$id": "team_board", "group": "internal", "tone": "series-2", "icon": "columns", "label": "Team board", "hint": "This board itself: something broken or missing here.", "minRole": "gm_junior", "routesTo": []},
+    {"$id": "internal", "group": "internal", "tone": "series-4", "icon": "terminal", "label": "Internal (sov, boxes, deploy)", "hint": null, "minRole": "admin", "routesTo": []}
+  ]
+}
+-- initialStatus.json --
+{
+  "$schema": "teamboard.initialStatus@21631b93",
+  "value": "open"
+}

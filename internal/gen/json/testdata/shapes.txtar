@@ -1,0 +1,10 @@
+WIRE.md §5.6, §5.11: the shapes fixture of variant_test.go, written by go test -update.
+-- shapes.json --
+{
+  "$schema": "geo.Shape@e8347326",
+  "rows": [
+    {"kind": "circle", "r": 2, "$area": 12},
+    {"kind": "square", "side": 3, "$fits": {"small": false, "large": true}},
+    {"kind": "pt"}
+  ]
+}

@@ -666,6 +666,290 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     written (meta/plan.md's M0.4 line listed six; it now lists all eight), and the consumer
     approval waits for the M0 review. Reason: a box is ticked only when its acceptance passes.
 
+99. **The M1 lexer and parser start before the M0 gate closes.** They consume only the `source`
+    and `syntax` contracts, which are complete and committed. The review of M0 and the last two
+    contracts (§4.7, §4.8) run in parallel. If the review changes the syntax contract, the parser
+    follows it; no other M1 work starts before M0 is accepted. Reason: the night's time budget.
+
+100. **The checked program (M0.4, `check/info.go`) reaches every identifier.** `Info.Uses` keeps
+    `*syntax.IdentExpr` (names in value position); `NameUses` holds every other `*syntax.Ident`
+    that names an object without declaring it (type names and qualified-name parts, patterns,
+    `is` targets, `.name` like go/types, record-literal fields, named arguments, amend segments,
+    `at`, `keyed by`, import names, view names); `ObjectOf(node)` reads `Defs`, `NameUses` or
+    `Uses`, so rename and find-references have one entry (M0 review MF-1). `Symbols` marks the
+    identifiers kept as symbols (a dependent value's, TYPES §11.4; a load `format:`), so an
+    `IdentExpr` is in `Uses`, `Keys` or `Symbols`. `Object` gains `File()` (a `Tok` means nothing
+    without its file: findings, provenance, go-to-definition) and `Pkg()` is "" only for
+    built-ins. `Folder.Fold` takes the `owner` object of the expression: folding reports
+    `E4101`, `E4102`, `E4301` and needs the package's bag and the file. `Conversion` gains `Key`
+    (map keys, a pair's first) beside `Inner`, since a map converts keys and values; `ToList`
+    covers `table T` and keyed lists to `[T]` (a `value.Table` is not a `value.List`).
+    `MatchInfo.Covers` numbers `none` `NoneIndex` (-1). A `Bad*` recovery node makes the
+    declaration holding it broken; a `BadExpr` or `BadType` is typed `types.ErrorType` (TYPES
+    §1) and nothing else is recorded; a top-level `BadDecl` declares nothing. `Bags` is
+    `map[string]*diag.Bag`, not an interface: it calls nothing below `check`, so DECISIONS 34's
+    two seams stay two. The kinds print the names of §4.7's sketch, which a test reads from the
+    plan. Reason: a contract no consumer must widen in M1, with every conclusion typed.
+
+101. **`check.Check`, `check.Bags`, `eval.Options`, `eval.NewFolder`, `eval.New` and the
+    `Evaluator` land with their logic in M1**; M0.4 writes the data and the seams (`Program`,
+    `Package`, `Info`, `Object`, the kinds, `Folder`, `Host`, `Root`), and §4.7/§4.8 keep the
+    exact signatures. Reason: DECISIONS 77 and 87 — a body written now is a stub that lies (a
+    `Force` returning "poisoned" with no finding) or panics, and an exported name used by no
+    running entry point fails `exported-but-local` and `dead-unreachable`.
+
+102. **The evaluator's surface (§4.8), fixed for M1**: `Host` as sketched; `Options{Budget,
+    Layers}` (`Budget` 0 is the default 10⁸, DECISIONS 90; `Layers` the active ones in stack
+    order); `NewFolder(bags, opt)`, since a fold reports findings; `BeginVerification(ctx)` runs
+    stage B itself (`host.Verify` on each value forced so far, in completion order, EVALUATION §5)
+    before a first `Force` verifies too, so `build` needs no completion list; `MarkInvalid` and
+    `Invalid` hold the invalid marks `verify` finds and `rules` reads (EVALUATION §7.3), which
+    are evaluator state (DECISIONS 79). Reason: `Verify`'s bool cannot say which sub-value is
+    invalid, and the invalid set must live where the taint is decided.
+
+103. **`load` arguments are constant expressions.** The path, `at:`, `prefix:`, `format:`,
+    `partial:` and `header:` of every `load` form must fold to constants during checking (`check.Folder`).
+    Reason: the build manifest, caching and determinism need the set of files read to be known
+    before evaluation, and `Host.Load` receives the syntax node (DECISIONS 34). A non-constant
+    argument is a type error. WIRE §6.1 gains this sentence at the next spec pass.
+
+104. **Constant folding during checking spends the step budget.** It is one counter per invocation
+    (EVALUATION §12). Folding is evaluation, so it is charged the same way; nothing is free.
+
+105. **Findings are sorted in a total order; the duplicate kept is the least (M0 review MF-4).**
+    `Bag.Findings()` and `diag.Write`/`Render` sort by the F2 key, then by every other field
+    (severity, end position, package, path, pointer, check, layer, related and stack element by
+    element, cut frames, reads), then the raw span; of duplicates (EVALUATION §14) the least is
+    kept. This replaces DECISIONS 83's "the first produced is the first added", which made the
+    result depend on which goroutine reported first. `Builder.Stack` and `Builder.MoreFrames` are
+    setters, the finding counting both (a second `Stack` no longer double-counts). EVALUATION §14
+    says so. A test reports duplicates in 64 shuffled orders from 1 to 8 goroutines and asserts
+    identical findings, text and JSON. Reason: NFR-05 (Workers=1 and Workers=8 identical), and a
+    "first" that scheduling decides is no rule.
+
+106. **API findings are written by `diag`, through a resolved form (M0 review MF-5).** `diag`
+    gains `Located` (a finding with every span resolved to a `source.Location`), `Locate(files,
+    findings)`, `Write(w, located, opt)` (what `Render` now calls) and `(*Located).AppendJSON`.
+    `api` converts `canon.Finding` to a `Located` (the only place outside `diag` that builds one:
+    a resolved record, not a new diagnostic, so DECISIONS 54 is kept) and exports
+    `WriteFindings(w, findings, WriteOptions{JSON, Summary, Duration, Golden})`, API.md F16:
+    `cli` prints findings through it, so M1 acceptance 2 (teamboard's `findings.txt`) and every
+    JSON line come from the one writer (DECISIONS 85). `canon.Finding` gains `MoreFrames`, written
+    as the F5 key `moreFrames` after `stack`, omitted when 0: a JSON-hidden count would make
+    `--format json` lose a line the text form prints, and F6's round trip lossy.
+    `Finding.MarshalJSON` and `UnmarshalJSON` are implemented (the latter refuses an unknown key
+    or severity). The `diag`→`canon` conversion lands with `Check`, its first caller. Reason:
+    `cli` may not rebuild `diag.Finding`, and two writers of one format drift.
+
+107. **`edit.Step` and `edit.Resolved` exist; `Snapshot` is `edit`'s own concrete type (M0
+    review MF-2).** `Step` and `Resolved` compile now, as §4.6 sketches them. `Snapshot` is not
+    an interface: it is the part of one build's results `Resolve` reads, which `workspace`
+    assembles from `build`'s results (`build` sits above `edit` in §3, `edit` may import it) and
+    hands to `edit`, so there is no third injection seam (DECISIONS 34 holds).
+    `Resolve(s *Snapshot, p Path)` and `Snapshot`'s fields land with `build`'s result type. A
+    declaration now would be a stub with guessed fields. `edit.SyntaxError{Offset, Reason}` is
+    the typed parse error (review S-EDIT-1): it unwraps to `ErrBadPath` and to the reason, so
+    `api` fills `PathError.Detail` without cutting strings. This narrows DECISIONS 87's deferral.
+
+108. **`ir.Emit` carries its resolved output (M0 review MF-6).** `Dir`, the output directory (a
+    `ts` emit's: its file's), project-relative through the roots `project.canon` declares,
+    `/`-separated and clean; `FileName`, a `ts` emit's file; `GoImport`, a `go` emit's import path
+    (CODEGEN §2.8). Stage E fills them, the imported packages' emits included. A `--root`
+    override is never used for them, so redirected roots (tests, the determinism job) produce the
+    same code. `ir.File.Path` is relative to its emit's `Dir`. Generators never resolve roots:
+    `<GoImport>/rt` and an imported emit's `GoImport` are Go imports, and a C++ or TS relative
+    include is the path from one `Dir` to another. Reason: a generator is a pure function of
+    `(ir.Package, ir.Emit)`, and `Out` as written cannot give an import path or a relative
+    include.
+
+109. **`lock.Add` accepts exactly what `Parse` reads back from `Format` (M0 review MF-9).**
+    `Add(fact) (changed bool, err error)` refuses, with `ErrBadFact` and the set unchanged:
+    - an unknown kind;
+    - a name that is not `<package>.<identifier>` of the lock's package;
+    - a field fact without one identifier field, or another kind with one;
+    - a table fact with any value;
+    - an enum fact with a string;
+    - a value mixing an integer and a string, or a string that is not valid UTF-8;
+    - a holder that is not an identifier;
+    - a retired field fact.
+
+    `Parse` merges without re-checking. The property "Add accepts ⇔ the fact's `Format` line
+    parses back to that fact" is a table test over 20,000 random facts and a fuzz target
+    (`FuzzAdd`, 9M executions clean). Reason: the strict option, refusal over normalization. A
+    build must never write a lock it refuses to read.
+
+110. **`maprange` is an audit rule, not a `go vet` analyzer (M0 review MF-10).** Rule
+    `maprange` (enforce), lane `determinism` in `tools/audit`, run by `make check`
+    (`audit-check`). It flags every `range` over a Go map, and over `maps.Keys`, `maps.Values` or
+    `maps.All`, in `api`, `build`, `diag`, `edit`, `format`, `gen`, `i18n`, `ir`, `jsonsrc`,
+    `lock`, `views`, `wire` and the packages under them, test files included (an Example prints).
+    `//canon:unordered <reason>` on the loop's line or the line above exempts a loop. In any
+    package, a marker with no reason, or with no map range on its line or the next, is a
+    finding. A test holds the package list equal to IMPLEMENTATION-PLAN §7.5, which now says
+    this; §6's milestone gate and §3's `testkit` row ("analyzers") follow. Three existing test
+    loops were sorted or marked. Reason: the audit already type-checks the module and gates
+    `make check` with enforce and ratchet modes. A `-vettool` binary would be a second checker
+    to build and pin, and the `x/tools/go/analysis` dependency it needs is not in §11.
+
+111. **API should-fixes of the M0 review.**
+    - `Version().Commit` is the compiler's revision, never the embedding program's (API.md T3):
+      the stamped `vcs.revision` when the compiler is the main module and `vcs.modified` is not
+      true; the revision of a `github.com/fantasim/canonlang` pseudo-version when a program
+      depends on it; `""` otherwise.
+    - The Examples open `examples/` from an in-memory `canon.FS`, a copy of the repository's
+      tree, with every root of `project.canon` redirected: fixtures for the read roots, memory
+      for the written ones. `FindProject` has its own Example.
+    - `Revision` is implemented in the same change as `Open`, so no Example reaches its panicking
+      stub. This corrects DECISIONS 67's "at M4": `Open` may land before M4.
+    - `EvalResult.Headings` is printed in key order.
+
+    Reason: review S-API-1 and S-API-5, where Examples would read machine paths and print in map
+    order.
+
+112. **`.gitignore`'s `coverage.*` no longer hides Go source.** `!coverage.go` follows it: the
+    pattern had kept `tools/audit/internal/lanes/diagnostics/coverage.go` out of every commit, so
+    a clean clone's `make audit-self` did not compile. The file's pre-existing nesting finding,
+    now visible to the audit, is fixed (a helper `addCodes`). Reason: the gate must pass on what
+    git holds.
+
+113. **Spec texts follow DECISIONS 105-111.**
+    - API.md: §4.1 `MoreFrames`; F5 `moreFrames`; F6's refusals; §4.5 `WriteFindings` (F16);
+      T3.
+    - CLI.md §2.4: a `moreFrames` row.
+    - EVALUATION §14: the kept duplicate.
+    - IMPLEMENTATION-PLAN:
+      - §4.4: `MoreFrames`, `Reads`, `Located`, `Locate`, `Write`, the order; the stale
+        `TestEveryCodeIsTested` now points to `diag-code-untested`, as DECISIONS 55 decided;
+      - §4.5: `Emit`, "generators never resolve roots";
+      - §4.6: `KeyLit.Raw`, `SyntaxError`, `Snapshot`, review S-EDIT-2;
+      - §7.2 (`diag-code-untested`), §7.5, §6, §3's `testkit` row.
+
+    ERRORS.md §2.3 still names `TestEveryCodeIsTested`; left for Louis, since ERRORS.md feeds
+    diaggen.
+
+114. **Wire encoding, the fingerprint and baked Go generation also start early.** They consume
+    only `types`, `value` and `ir`, which are committed and reviewed (M0 must-fix items closed for
+    them). Generators work from hand-built IR fixtures, as IMPLEMENTATION-PLAN §4 intends. The
+    checker, evaluator, verifier and CLI wait for the parser and M0's acceptance. Same reason as 99.
+
+115. **`wire` encodes a whole data file from verified values, and reports no finding.**
+    `wire.Document{Schema, Kind, V, Fns, Methods}.Encode()` writes WIRE §8.2's bytes. The encoder
+    reads everything from the values and their `types` (field wire paths, units, encodings,
+    markers, tags); `$` keys arrive through `Methods func(*value.Record) []Fn` and `$fns` as `[]Fn`
+    (a result, or cells over finite domains), since `wire` may not import `ir` (§3). A value with
+    no encoding (not a whole unit, equal to its none marker, a repeated bits member, two keys with
+    one text, a range, an unresolved `Symbol`) is refused with a sentinel error, never written:
+    E8102 and E3317 are reported by the verification pass `wire` owns, with their txtar tests,
+    once values come from sources. Float text reuses `types.FloatText` (DECISIONS 78), so there is
+    no `wire/float.go` (§12.4). Reason: the IR's values are verified; one encoder, two callers.
+
+116. **A top-level value is written as `rows` when its declared type is a list, keyed list or
+    table, and as `value` otherwise, `[T]?` included** (`null` or the array). WIRE §8.2 says "when
+    the value is a list"; a data-mode loader must know statically which member to read, and a
+    `none` has no rows. `Document.Kind` is the declared type's kind (`ir.TypeRef.Kind`).
+
+117. **A dependent type is not a named type for `unit:`, `int` and `unit=`.** FINGERPRINT §4.3 names
+    records, variants and enums; a Duration in a dependent arm takes the field's unit, in the
+    fingerprint and in the encoder alike.
+
+118. **The fingerprint is `ir.Fingerprint(t, fns)` and `ir.Schema(pkg, name, t, fns)`.** The caller
+    passes the package fns only for the value whose file carries `$fns`; translated fns are
+    skipped. A `DepMap` `TypeRef` holds its key's `ref` type in `Key`; an integer `TypeRef` holds
+    its width (`Bits: 64, Signed: true` for `Int`, as `types.Basic`), and `Bits: 0` is refused
+    rather than read as `Int`. The vector test reads the ten texts from FINGERPRINT.md §7 itself.
+
+119. **A file that carries `$fns` writes them even over an empty domain.** WIRE §8.3's "same table
+    with no entry" shows no `$fns`, while its `$schema` (vector 9's) covers `canTransition`; the
+    encoder follows §5.11 and §8.2 and writes `"$fns": {"canTransition": {}}`. The sample's text
+    needs Louis's confirmation (a one-line spec fix).
+
+120. **Go naming follows CODEGEN §3.2's rule, not its table's `IIWeaAxeAngel`.** GoCap upper-cases
+    a word only when it is in the closed initialism list; `II` is not, so `II_WEA_AXE_ANGEL` is
+    `IiWeaAxeAngel` in Go too (lowerCamel `iiWeaAxeAngel`, which the table agrees with). The row
+    contradicts the rule it illustrates; Louis confirms the one-cell fix. `gen/go` computes every
+    generated name in scopes (package, method set, struct, data, parameters) and refuses a
+    collision or a non-identifier with the sentinels `ErrNameCollision` and `ErrName`: E8005 and
+    E8011 belong to `ir` (ERRORS.md `Package`), whose stage-E validation reports them as findings,
+    and a generator returns an `error`, not findings. Reason: the rule is the normative part, and
+    the audit counts a code as tested only in its owning package.
+
+121. **Baked Go's reference layout (CODEGEN §6.2 is abridged).** One `<last>Data` struct built by
+    `build<P>` through `sync.OnceValue`; the builder first allocates every container's rows,
+    then assigns each entry, so a resolved ref is `d.<value>.At(i)` and any entry can point at any
+    other, itself included; a record value that is an entry of an emitted table is that entry.
+    Record-typed fields and values are stored as `*R` (§6.1). A resolved single ref stores only
+    the entry, and its key getter reads the entry's `id` (or keyed-list key), as `GetInitialStatusID`
+    does; `[ref T]` stores both lists. Storage names the spec does not fix carry an interior `_`
+    (`hint_ok` for the presence flag of an optional, `next_ids`, `status_id`, the lookup local
+    `night_i`), which lowerCamel of a Canon name never produces, so they cannot collide with a
+    field. A variant is `{kind, value any}` and `As<Case>` is a type assertion. Enum `String` and
+    `Wire` of a value that is no member return Go's `Role(9)` form; `Parse<E>` returns `(0, false)`.
+    Baked mode has no schema constant (nothing is read). An empty package doc leaves only T1.
+
+122. **Lookup tables are nested arrays indexed by each parameter** (`[6][6]bool`,
+    `canTransitionTable[from][to]`), not §6.2's flat `[36]bool` read at `int(from)*6+int(to)`: an
+    out-of-range argument then panics instead of reading another row's cell. A `Bool` parameter
+    is indexed through a local, a `@codes` enum through a switch onto its declaration index (-1,
+    so a panic, for a value that is no member). A table whose cells point into the baked data is
+    built from it once through `sync.OnceValue`; any other is a plain variable. A precomputed
+    package fn is the one-cell case (`answerTable`). An optional result that nil cannot mark is a
+    `{v, ok}` cell. Reason: the strict option, and one code path for methods and package fns.
+
+123. **Literals keep their Go type and value exactly.** A Duration is always `N * time.Millisecond`
+    (`0 * time.Millisecond` too, so `const NoWait` is a `time.Duration`, not an untyped 0); a Float
+    is the shortest text that reads back at its width, and -0.0 is `math.Copysign(0, -1)`; a -0.0
+    constant is refused (`ErrUnsupported`), since no Go constant holds it. A list literal longer
+    than 80 bytes puts one item per line (the reference layout). An import is named only when its
+    package name differs from its path's last element; two imports of one name are a collision.
+
+124. **What baked `gen/go` does not emit yet is refused, never skipped** (`ErrUnsupported`):
+    translated fns and their conformance test (M2, CONFORMANCE.md), dependent types (their values
+    need the discriminant read from a sibling field), input fields and `LoadInputs`, a table-typed
+    field (CODEGEN §4.2 names its id type `<id type>` without saying which), a baked value of a
+    record or variant of another package (its fields are unexported there), export fns of a case
+    without fields (it has no type to hold them), and a lookup parameter ref into another
+    package's table. Modes other than `baked` are M2's. The id enum of a table exists for every
+    public table value; its container, accessor and resolved refs only when the emit selects it.
+
+125. **`internal/gen/go/runtime/rt.go.txt` holds CODEGEN §6.3 verbatim, as IMPLEMENTATION-PLAN
+    §12.4 places it, although the audit then reports its eight codes as untested.** The text
+    signals E3201, E3202, E3204, E4101–E4104 and E4108, which `diag-code-untested` counts as
+    reported and wants tested in their owning packages (`check`, `verify`, `eval`, `eval/std`),
+    none of which exists yet. Moving or renaming the text to escape the rule would be an evasion;
+    the findings clear when those packages land their per-code txtar cases (M1). Until then
+    `make check` fails on them alone, so `gen/go` lands with or after those tests.
+
+126. **`gen/json` reports no finding; what the checker, stage E or `build` reports is an error
+    there.** ERRORS.md gives `emit json`'s codes to other packages (E8150 and E8009 `check`, E8151
+    and E8153 `ir`, E8152 `build`), `ir.Generator` returns `([]File, error)`, and `ir.Emit` and
+    `ir.Value` carry no span. `jsongen.Generate` refuses what those packages refuse first, so it
+    never writes a layout the loaders cannot read: file mode with other than one value or a name
+    not ending in `.json` (`ErrFileMode`), `values` naming no public value or one twice
+    (`ErrValues`), a value of a data-mode code emit or an `@reload` value not written here as
+    `<value>.json` (`ErrDataMode`), a type with no wire form (`ir.ErrFingerprint`). One emit writes
+    into one directory, so E8153's "same directory" holds by construction. E8152 is not checked:
+    `build` finds it in phase 8 over every output of the build (CODEGEN §2.1), so `Generate`
+    returns both files of `values: [hp, HP]`. Reason: the audit counts a code as tested only in
+    its owning package (as decision 120 for `gen/go`), and a generator's finding has no location.
+
+127. **A json emit in file mode names its file in `Emit.FileName`, `Dir` being its directory,**
+    as a `ts` emit does; `FileName` is `""` in directory mode, and stage E fills it when `out`
+    ends in `.json`. IMPLEMENTATION-PLAN §4.5 and `ir.Emit`'s comment say "ts" only, and `Out` is
+    for messages, so the generator had no way to know `potions.json` (decision 108); the comment
+    needs the one-word fix. An empty `Emit.Values` is the default (every public value, declaration
+    order), as `gen/go` reads it, so stage E must refuse or expand an explicit `values: []`. The
+    first value in the emit's order carries `$fns`.
+
+128. **`$schema` is computed by `gen/json`; `Value.Schema`, when set, must equal it
+    (`ErrSchema`).** The first value's covers the package's stored fns (decision 118), so stage E
+    fills `Value.Schema` the same way, or the data-mode loaders, which compile it in, refuse the
+    file. A record or case value's `$` keys are its declaration's stored methods (found by
+    `Pkg.Name`, or variant and case, over every type the package, its values and its fns reach),
+    each result the `Instance` whose `Recv` is the encoded record itself (pointer identity). An
+    encoded receiver without an instance, an instance listed twice, a precomputed fn without its
+    value or a lookup without its table is `ErrFn`; the instance of a receiver this emit does not
+    encode is ignored, since instances cover every receiver of the package (EVL-02).
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.

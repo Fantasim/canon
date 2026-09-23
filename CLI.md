@@ -124,6 +124,7 @@ gains `"truncated":[{"package":…,"errors":…,"warnings":…}]` when findings 
 | `layer` | the layer that set the value, if any |
 | `related` | `[{file, line, col, endLine, endCol, note}]`, other locations |
 | `stack` | `[{fn, file, line, col, endLine, endCol}]`, the Canon call stack of an evaluation error, innermost first (at most 16 frames) |
+| `moreFrames` | the number of frames cut from `stack` (API.md F5, F13) |
 | `reads` | the field paths a check read, which the studio highlights (API.md F5) |
 
 Optional fields are omitted when empty. Findings are sorted by file, line, column, code and
