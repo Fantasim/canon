@@ -1,0 +1,39 @@
+GRAMMAR.md §2.4: misplaced _, leading zero, bad suffix, exponent without digits.
+-- a/a.canon --
+package a
+
+let a = 007
+let b = 1__000
+let c = 5min
+let d = 0x1G
+let e = 1e
+let f = 1_
+let g = 0x_1F
+let h = 1h05m
+let ok = [0, 0.5, 0e3, 1_000, 0x1F, 0b1010, 2.5e-6, 1.5]
+-- findings.txt --
+error[E1110]  a/a.canon:3:9
+  invalid number literal "007"
+
+error[E1110]  a/a.canon:4:9
+  invalid number literal "1__000"
+
+error[E1110]  a/a.canon:5:9
+  invalid number literal "5min"
+
+error[E1110]  a/a.canon:6:9
+  invalid number literal "0x1G"
+
+error[E1110]  a/a.canon:7:9
+  invalid number literal "1e"
+
+error[E1110]  a/a.canon:8:9
+  invalid number literal "1_"
+
+error[E1110]  a/a.canon:9:9
+  invalid number literal "0x_1F"
+
+error[E1110]  a/a.canon:10:9
+  invalid number literal "1h05m"
+
+8 errors, 0 warnings in 1 package (…)

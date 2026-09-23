@@ -1,0 +1,12 @@
+GRAMMAR.md §8.1: the same annotation twice at one position.
+-- a/a.canon --
+package a
+
+record R {
+  a: Int @json("x") @json(int)
+}
+-- findings.txt --
+error[E1120]  a/a.canon:4:21
+  @json given twice; combine the arguments
+
+1 error, 0 warnings in 1 package (…)

@@ -5,6 +5,7 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/syntax"
 )
 
@@ -53,6 +54,16 @@ var (
 	_ syntax.ProjectValue = (*syntax.QualifiedName)(nil)
 	_ syntax.ProjectValue = (*syntax.ProjectList)(nil)
 	_ syntax.ProjectValue = (*syntax.ProjectMap)(nil)
+	_ syntax.Expr         = (*syntax.BadExpr)(nil)
+	_ syntax.AnnValue     = (*syntax.BadExpr)(nil)
+	_ syntax.ProjectValue = (*syntax.BadExpr)(nil)
+	_ syntax.Type         = (*syntax.BadType)(nil)
+	_ syntax.Stmt         = (*syntax.BadStmt)(nil)
+	_ syntax.Decl         = (*syntax.BadDecl)(nil)
+	_ syntax.RecordItem   = (*syntax.BadDecl)(nil)
+	_ syntax.VariantItem  = (*syntax.BadDecl)(nil)
+	_ syntax.GroupMember  = (*syntax.BadDecl)(nil)
+	_ syntax.BraceItem    = (*syntax.BadDecl)(nil)
 )
 
 // Every node type has its own kind, named after the type, and every kind has a node type.
@@ -161,5 +172,21 @@ func TestInspect(t *testing.T) {
 	want := []string{"TypedLit", "QualifiedName", "end", "BraceLit", "SpreadItem", "end", "end"}
 	if !slices.Equal(got, want) {
 		t.Errorf("Inspect = %v, want %v", got, want)
+	}
+}
+
+// A typed nil stored in an interface field is skipped like an absent child, and has no span.
+func TestWalkSkipsTypedNil(t *testing.T) {
+	g := &gen{}
+	var missing *syntax.BinaryExpr
+	let := &syntax.LetDecl{Name: g.id(), Type: (*syntax.NamedType)(nil), Value: missing}
+	n := 0
+	syntax.Inspect(let, func(syntax.Node) bool { n++; return true })
+	if n != 4 {
+		t.Errorf("Inspect met %d calls, want 4 (LetDecl, Ident and their ends)", n)
+	}
+	f := &syntax.File{Src: &source.File{ID: 1}}
+	if got := f.Span(missing); got != (source.Span{File: 1}) {
+		t.Errorf("Span(typed nil) = %+v", got)
 	}
 }

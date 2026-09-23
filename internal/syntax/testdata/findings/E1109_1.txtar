@@ -1,0 +1,24 @@
+GRAMMAR.md §2.6: an unknown escape or a bad \u{…}.
+-- a/a.canon --
+package a
+
+let s = "\q"
+let t = "\u{110000} \u{D800} \u{1F600} \u{}"
+let u = "\u{41"
+-- findings.txt --
+error[E1109]  a/a.canon:3:10
+  invalid escape sequence "\q"
+
+error[E1109]  a/a.canon:4:10
+  invalid escape sequence "\u{110000}"
+
+error[E1109]  a/a.canon:4:21
+  invalid escape sequence "\u{D800}"
+
+error[E1109]  a/a.canon:4:40
+  invalid escape sequence "\u{}"
+
+error[E1109]  a/a.canon:5:10
+  invalid escape sequence "\u{41"
+
+5 errors, 0 warnings in 1 package (…)

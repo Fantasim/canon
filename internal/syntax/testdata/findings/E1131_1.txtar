@@ -1,0 +1,17 @@
+GRAMMAR.md §5.4: input without from env, from env without input.
+-- a/a.canon --
+package a
+
+record R {
+  a: input String
+  b: String from env "B"
+  ok: input Int from env "OK" = 1
+}
+-- findings.txt --
+error[E1131]  a/a.canon:4:6
+  an input field needs from env "VAR"
+
+error[E1131]  a/a.canon:5:13
+  "from env" requires "input"
+
+2 errors, 0 warnings in 1 package (…)

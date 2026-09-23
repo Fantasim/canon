@@ -1,0 +1,895 @@
+File: File FileKind=source @1:1-211:1
+  Doc: DocComment "Shared game vocabularies: event types, elements, stages, quest styles, and the items\nother files pick from. Today: Server/Vocab/*.json, the define headers generated from\nthem, the xmacro .inc files, and propItem.json for items.\n\nThe important field is `EventType.param`: which kind of parameter an event's filter\ntakes. Since Resource 4bb68225 (ADR-0005 d.4) it lives in Vocab/eventType.json as an\noptional `param`, and heistia_config.schema.json checks each filterParam against it\nthrough `x-ref-where`; the C++ EventParamHint column (EventTypeDisplay.h) still repeats\nit until Phase B. Here it is one field of one table, and every file that filters on an\nevent (heistia, adventure quests, achievements...) gets the right parameter TYPE from\nit, so a wrong parameter is a type error wherever it is written." @1:1-11:69
+  Package: QualifiedName resource.vocab @12:9-12:23
+  Imports[0]: Import @14:1-14:14
+    Path: QualifiedName studio @14:8-14:14
+  Decls[0]: LetDecl @16:1-16:88
+    Mods: Modifiers Local="local" @16:1-16:6
+    Name: Ident monsters @16:11-16:19
+    Value: LoadExpr @16:22-16:88
+      Method: Ident defines @16:27-16:34
+      Args[0]: Arg @16:35-16:72
+        Value: StringLit @16:35-16:72
+          Parts[0]: text "@resource/Server/Define/defineObj.h"
+      Args[1]: Arg @16:74-16:87
+        Name: Ident prefix @16:74-16:80
+        Value: StringLit @16:82-16:87
+          Parts[0]: text "MI_"
+  Decls[1]: LetDecl @17:1-17:88
+    Mods: Modifiers Local="local" @17:1-17:6
+    Name: Ident worlds @17:11-17:17
+    Value: LoadExpr @17:20-17:88
+      Method: Ident defines @17:25-17:32
+      Args[0]: Arg @17:33-17:72
+        Value: StringLit @17:33-17:72
+          Parts[0]: text "@resource/Server/Define/defineWorld.h"
+      Args[1]: Arg @17:74-17:87
+        Name: Ident prefix @17:74-17:80
+        Value: StringLit @17:82-17:87
+          Parts[0]: text "WI_"
+  Decls[2]: LetDecl @18:1-18:85
+    Mods: Modifiers Local="local" @18:1-18:6
+    Name: Ident upgradeTypes @18:11-18:23
+    Value: LoadExpr @18:26-18:85
+      Method: Ident defines @18:31-18:38
+      Args[0]: Arg @18:39-18:84
+        Value: StringLit @18:39-18:84
+          Parts[0]: text "@resource/Server/Define/defineUpgradeType.h"
+  Decls[3]: LetDecl @19:1-19:85
+    Mods: Modifiers Local="local" @19:1-19:6
+    Name: Ident jobs @19:11-19:15
+    Value: LoadExpr @19:18-19:85
+      Method: Ident defines @19:23-19:30
+      Args[0]: Arg @19:31-19:68
+        Value: StringLit @19:31-19:68
+          Parts[0]: text "@resource/Server/Define/defineJob.h"
+      Args[1]: Arg @19:70-19:84
+        Name: Ident prefix @19:70-19:76
+        Value: StringLit @19:78-19:84
+          Parts[0]: text "JOB_"
+  Decls[4]: LetDecl @21:1-21:98
+    Doc: DocComment "IDS_* key -> English display name (\"IDS_PROPITEM_TXT_003930\" -> \"Angel Axe\")." @20:1-20:82
+    Mods: Modifiers Local="local" @21:1-21:6
+    Name: Ident names @21:11-21:16
+    Type: MapType @21:18-21:34
+      Key: NamedType @21:19-21:25
+        Name: QualifiedName String @21:19-21:25
+      Value: NamedType @21:27-21:33
+        Name: QualifiedName String @21:27-21:33
+    Value: LoadExpr @21:37-21:98
+      Args[0]: Arg @21:42-21:82
+        Value: StringLit @21:42-21:82
+          Parts[0]: text "@resource/Server/Text/serverNames.json"
+      Args[1]: Arg @21:84-21:97
+        Name: Ident at @21:84-21:86
+        Value: StringLit @21:88-21:97
+          Parts[0]: text "strings"
+  Decls[5]: EnumDecl @28:1-28:89
+    Doc: DocComment "The five elements (Vocab/element.json). Codes are what the game stores and sends." @27:1-27:86
+    Name: Ident Element @28:6-28:13
+    Annotations[0]: Annotation @28:14-28:27
+      Name: Ident codes @28:15-28:20
+      Args[0]: AnnotationArg @28:21-28:26
+        Value: QualifiedName UInt8 @28:21-28:26
+    Members[0]: EnumMember @28:30-28:38
+      Name: Ident FIRE @28:30-28:34
+      Value: IntLit Value=1 @28:37-28:38
+    Members[1]: EnumMember @28:40-28:49
+      Name: Ident WATER @28:40-28:45
+      Value: IntLit Value=2 @28:48-28:49
+    Members[2]: EnumMember @28:51-28:66
+      Name: Ident ELECTRICITY @28:51-28:62
+      Value: IntLit Value=3 @28:65-28:66
+    Members[3]: EnumMember @28:68-28:76
+      Name: Ident WIND @28:68-28:72
+      Value: IntLit Value=4 @28:75-28:76
+    Members[4]: EnumMember @28:78-28:87
+      Name: Ident EARTH @28:78-28:83
+      Value: IntLit Value=5 @28:86-28:87
+  Decls[6]: ViewDecl @30:1-36:2
+    Type: Ident Element @30:6-30:13
+    Items[0]: ViewField @31:3-31:44
+      Name: Ident FIRE @31:3-31:7
+      Label: StringLit @31:8-31:14
+        Parts[0]: text "Fire"
+      Props: BraceLit @31:15-31:44
+        Items[0]: FieldItem @31:17-31:28
+          Name: Ident icon @31:17-31:21
+          Value: IdentExpr flame @31:23-31:28
+        Items[1]: FieldItem @31:30-31:42
+          Name: Ident tone @31:30-31:34
+          Value: IdentExpr danger @31:36-31:42
+    Items[1]: ViewField @32:3-32:46
+      Name: Ident WATER @32:3-32:8
+      Label: StringLit @32:9-32:16
+        Parts[0]: text "Water"
+      Props: BraceLit @32:17-32:46
+        Items[0]: FieldItem @32:19-32:32
+          Name: Ident icon @32:19-32:23
+          Value: IdentExpr droplet @32:25-32:32
+        Items[1]: FieldItem @32:34-32:44
+          Name: Ident tone @32:34-32:38
+          Value: IdentExpr info @32:40-32:44
+    Items[2]: ViewField @33:3-33:57
+      Name: Ident ELECTRICITY @33:3-33:14
+      Label: StringLit @33:15-33:28
+        Parts[0]: text "Electricity"
+      Props: BraceLit @33:29-33:57
+        Items[0]: FieldItem @33:31-33:40
+          Name: Ident icon @33:31-33:35
+          Value: IdentExpr zap @33:37-33:40
+        Items[1]: FieldItem @33:42-33:55
+          Name: Ident tone @33:42-33:46
+          Value: IdentExpr warning @33:48-33:55
+    Items[3]: ViewField @34:3-34:45
+      Name: Ident WIND @34:3-34:7
+      Label: StringLit @34:8-34:14
+        Parts[0]: text "Wind"
+      Props: BraceLit @34:15-34:45
+        Items[0]: FieldItem @34:17-34:27
+          Name: Ident icon @34:17-34:21
+          Value: IdentExpr wind @34:23-34:27
+        Items[1]: FieldItem @34:29-34:43
+          Name: Ident tone @34:29-34:33
+          Value: IdentExpr series_2 @34:35-34:43
+    Items[4]: ViewField @35:3-35:51
+      Name: Ident EARTH @35:3-35:8
+      Label: StringLit @35:9-35:16
+        Parts[0]: text "Earth"
+      Props: BraceLit @35:17-35:51
+        Items[0]: FieldItem @35:19-35:33
+          Name: Ident icon @35:19-35:23
+          Value: IdentExpr mountain @35:25-35:33
+        Items[1]: FieldItem @35:35-35:49
+          Name: Ident tone @35:35-35:39
+          Value: IdentExpr series_3 @35:41-35:49
+  Decls[7]: EnumDecl @39:1-39:74
+    Doc: DocComment "Progression stages (Vocab/gameStage.json)." @38:1-38:47
+    Name: Ident Stage @39:6-39:11
+    Annotations[0]: Annotation @39:12-39:26
+      Name: Ident codes @39:13-39:18
+      Args[0]: AnnotationArg @39:19-39:25
+        Value: QualifiedName UInt16 @39:19-39:25
+    Members[0]: EnumMember @39:29-39:42
+      Name: Ident Stage_1 @39:29-39:36
+      Value: IntLit Value=100 @39:39-39:42
+    Members[1]: EnumMember @39:44-39:57
+      Name: Ident Stage_2 @39:44-39:51
+      Value: IntLit Value=101 @39:54-39:57
+    Members[2]: EnumMember @39:59-39:72
+      Name: Ident Stage_3 @39:59-39:66
+      Value: IntLit Value=102 @39:69-39:72
+  Decls[8]: EnumDecl @42:1-49:2
+    Doc: DocComment "Adventure quest styles (Vocab/adventureQuest.json)." @41:1-41:56
+    Name: Ident QuestStyle @42:6-42:16
+    Annotations[0]: Annotation @42:17-42:30
+      Name: Ident codes @42:18-42:23
+      Args[0]: AnnotationArg @42:24-42:29
+        Value: QualifiedName UInt8 @42:24-42:29
+    Members[0]: EnumMember @43:3-43:12
+      Name: Ident daily @43:3-43:8
+      Value: IntLit Value=1 @43:11-43:12
+    Members[1]: EnumMember @44:3-44:13
+      Name: Ident weekly @44:3-44:9
+      Value: IntLit Value=2 @44:12-44:13
+    Members[2]: EnumMember @45:3-45:14
+      Name: Ident forever @45:3-45:10
+      Value: IntLit Value=3 @45:13-45:14
+    Members[3]: EnumMember @46:3-46:18
+      Name: Ident season_pass @46:3-46:14
+      Value: IntLit Value=4 @46:17-46:18
+    Members[4]: EnumMember @47:3-47:10
+      Name: Ident pvp @47:3-47:6
+      Value: IntLit Value=5 @47:9-47:10
+    Members[5]: EnumMember @48:3-48:12
+      Name: Ident azure @48:3-48:8
+      Value: IntLit Value=6 @48:11-48:12
+  Decls[9]: EnumDecl @52:1-52:75
+    Doc: DocComment "What an adventure quest style pays out." @51:1-51:44
+    Name: Ident RewardType @52:6-52:16
+    Annotations[0]: Annotation @52:17-52:30
+      Name: Ident codes @52:18-52:23
+      Args[0]: AnnotationArg @52:24-52:29
+        Value: QualifiedName UInt8 @52:24-52:29
+    Members[0]: EnumMember @52:33-52:52
+      Name: Ident activity_points @52:33-52:48
+      Value: IntLit Value=1 @52:51-52:52
+    Members[1]: EnumMember @52:54-52:73
+      Name: Ident season_pass_exp @52:54-52:69
+      Value: IntLit Value=2 @52:72-52:73
+  Decls[10]: TypeDecl @60:1-60:62
+    Doc: DocComment "An item icon file; the file must exist under Resource/Icon/Item, with this exact\nletter case (DECISIONS 19)." @58:1-59:32
+    Name: Ident ItemIcon @60:6-60:14
+    Type: AssetType @60:17-60:62
+      Dir: StringLit @60:23-60:44
+        Parts[0]: text "@resource/Icon/Item"
+      Exts[0]: Ident dds @60:52-60:55
+      Exts[1]: Ident png @60:57-60:60
+  Decls[11]: EnumDecl @64:1-73:2
+    Doc: DocComment "An item's main kind (dwItemKind1). Declared in defineItemkind.h's order, so `.index`\nequals the IK1_* value." @62:1-63:28
+    Name: Ident ItemKind1 @64:6-64:15
+    Members[0]: EnumMember @65:3-65:11
+      Name: Ident IK1_GOLD @65:3-65:11
+    Members[1]: EnumMember @66:3-66:13
+      Name: Ident IK1_WEAPON @66:3-66:13
+    Members[2]: EnumMember @67:3-67:12
+      Name: Ident IK1_ARMOR @67:3-67:12
+    Members[3]: EnumMember @68:3-68:14
+      Name: Ident IK1_GENERAL @68:3-68:14
+    Members[4]: EnumMember @69:3-69:11
+      Name: Ident IK1_RIDE @69:3-69:11
+    Members[5]: EnumMember @70:3-70:13
+      Name: Ident IK1_SYSTEM @70:3-70:13
+    Members[6]: EnumMember @71:3-71:14
+      Name: Ident IK1_CHARGED @71:3-71:14
+    Members[7]: EnumMember @72:3-72:14
+      Name: Ident IK1_HOUSING @72:3-72:14
+  Decls[12]: RecordDecl @81:1-99:2
+    Doc: DocComment "An item as other files see it: what a picker shows and what `ref items` checks.\n\nOnly the fields pickers, filters and checks read (`partial` load). The full record,\nwith one variant case per kind, is game.items' Item; this one reads the 6,944 items\nthat are still in propItem.json. Defaults copy the file's own `defaults` block, which\nthe loader applies to every row that omits a key." @75:1-80:54
+    Name: Ident Item @81:8-81:12
+    Body: RecordBody @81:13-99:2
+      Items[0]: FieldDecl @83:3-83:49
+        Doc: DocComment "\"II_GEN_MAT_MOONSTONE\": what a `ref items` stores." @82:3-82:57
+        Name: Ident id @83:3-83:5
+        Type: NamedType @83:7-83:35
+          Name: QualifiedName String @83:7-83:13
+          Args: TypeArgs @83:13-83:35
+            Args[0]: RegexLit Pattern="^II_[A-Za-z0-9_]+$" @83:14-83:34
+        Annotations[0]: Annotation @83:36-83:49
+          Name: Ident json @83:37-83:41
+          Args[0]: AnnotationArg @83:42-83:48
+            Value: StringLit @83:42-83:48
+              Parts[0]: text "dwID"
+      Items[1]: FieldDecl @85:3-85:62
+        Doc: DocComment "Text key of the displayed name (\"IDS_PROPITEM_TXT_008066\"); see `name()`." @84:3-84:80
+        Name: Ident nameKey @85:3-85:10
+        Type: NamedType @85:12-85:18
+          Name: QualifiedName String @85:12-85:18
+        Default: StringLit @85:21-85:46
+          Parts[0]: text "IDS_PROPITEM_TXT_030168"
+        Annotations[0]: Annotation @85:47-85:62
+          Name: Ident json @85:48-85:52
+          Args[0]: AnnotationArg @85:53-85:61
+            Value: StringLit @85:53-85:61
+              Parts[0]: text "szName"
+      Items[2]: FieldDecl @87:3-87:51
+        Doc: DocComment "Main kind. A row without one is armour, as the `defaults` block says." @86:3-86:76
+        Name: Ident kind @87:3-87:7
+        Type: NamedType @87:9-87:18
+          Name: QualifiedName ItemKind1 @87:9-87:18
+        Default: IdentExpr IK1_ARMOR @87:21-87:30
+        Annotations[0]: Annotation @87:31-87:51
+          Name: Ident json @87:32-87:36
+          Args[0]: AnnotationArg @87:37-87:50
+            Value: StringLit @87:37-87:50
+              Parts[0]: text "dwItemKind1"
+      Items[3]: FieldDecl @89:3-89:54
+        Doc: DocComment "The only job that may use the item. \"=\" on the wire means any job." @88:3-88:73
+        Name: Ident job @89:3-89:6
+        Type: OptionalType @89:8-89:17
+          Elem: RefType @89:8-89:16
+            Name: QualifiedName jobs @89:12-89:16
+        Default: NoneLit @89:20-89:24
+        Annotations[0]: Annotation @89:25-89:54
+          Name: Ident json @89:26-89:30
+          Args[0]: AnnotationArg @89:31-89:42
+            Value: StringLit @89:31-89:42
+              Parts[0]: text "dwItemJob"
+          Args[1]: AnnotationArg @89:44-89:53
+            Name: Ident none @89:44-89:48
+            Value: StringLit @89:50-89:53
+              Parts[0]: text "="
+      Items[4]: FieldDecl @91:3-91:52
+        Doc: DocComment "Item level. Absent means 1; \"=\" means the item has no level." @90:3-90:67
+        Name: Ident level @91:3-91:8
+        Type: OptionalType @91:10-91:19
+          Elem: NamedType @91:10-91:18
+            Name: QualifiedName Int @91:10-91:13
+            Args: TypeArgs @91:13-91:18
+              Args[0]: RangeExpr Op=.. @91:14-91:17
+                Lo: IntLit Value=0 @91:14-91:15
+        Default: IntLit Value=1 @91:22-91:23
+        Annotations[0]: Annotation @91:24-91:52
+          Name: Ident json @91:25-91:29
+          Args[0]: AnnotationArg @91:30-91:40
+            Value: StringLit @91:30-91:40
+              Parts[0]: text "dwItemLV"
+          Args[1]: AnnotationArg @91:42-91:51
+            Name: Ident none @91:42-91:46
+            Value: StringLit @91:48-91:51
+              Parts[0]: text "="
+      Items[5]: FieldDecl @93:3-93:44
+        Doc: DocComment "How many fit in one inventory slot." @92:3-92:42
+        Name: Ident stackMax @93:3-93:11
+        Type: NamedType @93:13-93:21
+          Name: QualifiedName Int @93:13-93:16
+          Args: TypeArgs @93:16-93:21
+            Args[0]: RangeExpr Op=.. @93:17-93:20
+              Lo: IntLit Value=1 @93:17-93:18
+        Default: IntLit Value=1 @93:24-93:25
+        Annotations[0]: Annotation @93:26-93:44
+          Name: Ident json @93:27-93:31
+          Args[0]: AnnotationArg @93:32-93:43
+            Value: StringLit @93:32-93:43
+              Parts[0]: text "dwPackMax"
+      Items[6]: FieldDecl @95:3-95:33
+        Doc: DocComment "Shown as a thumbnail next to the item in lists and pickers." @94:3-94:66
+        Name: Ident icon @95:3-95:7
+        Type: NamedType @95:9-95:17
+          Name: QualifiedName ItemIcon @95:9-95:17
+        Annotations[0]: Annotation @95:18-95:33
+          Name: Ident json @95:19-95:23
+          Args[0]: AnnotationArg @95:24-95:32
+            Value: StringLit @95:24-95:32
+              Parts[0]: text "szIcon"
+      Items[7]: FnDecl Self="self" @98:3-98:67
+        Doc: DocComment "What people search for and read: \"Moonstone\", not II_GEN_MAT_MOONSTONE." @97:3-97:78
+        Name: Ident name @98:6-98:10
+        Result: NamedType @98:20-98:26
+          Name: QualifiedName String @98:20-98:26
+        Body: Block @98:27-98:67
+          Stmts[0]: ReturnStmt @98:29-98:65
+            Value: BinaryExpr Op=?? @98:36-98:65
+              X: CallExpr @98:36-98:54
+                Fun: SelectorExpr @98:36-98:45
+                  X: IdentExpr names @98:36-98:41
+                  Name: Ident get @98:42-98:45
+                Args[0]: Arg @98:46-98:53
+                  Value: IdentExpr nameKey @98:46-98:53
+              Y: IdentExpr nameKey @98:58-98:65
+  Decls[13]: LetDecl @102:1-103:74
+    Doc: DocComment "Every item, keyed by its define. `ref items` stores the define and checks it exists." @101:1-101:89
+    Name: Ident items @102:5-102:10
+    Type: KeyedType @102:12-102:30
+      List: ListType @102:12-102:18
+        Elem: NamedType @102:13-102:17
+          Name: QualifiedName Item @102:13-102:17
+      Key: Ident id @102:28-102:30
+    Value: LoadExpr @103:3-103:74
+      Args[0]: Arg @103:8-103:45
+        Value: StringLit @103:8-103:45
+          Parts[0]: text "@resource/Server/Item/propItem.json"
+      Args[1]: Arg @103:47-103:58
+        Name: Ident at @103:47-103:49
+        Value: StringLit @103:51-103:58
+          Parts[0]: text "items"
+      Args[2]: Arg @103:60-103:73
+        Name: Ident partial @103:60-103:67
+        Value: BoolLit Value @103:69-103:73
+  Decls[14]: ViewDecl @108:1-116:2
+    Doc: DocComment "Every picker of `ref items` in the studio shows \"Moonstone\" with its icon and\nII_GEN_MAT_MOONSTONE underneath. Typing \"moon\" or \"MOONST\" both find it. The\nfile still stores the define." @105:1-107:34
+    Type: Ident Item @108:6-108:10
+    Items[0]: ViewTitle @109:3-109:19
+      Text: StringLit @109:9-109:19
+        Parts[0]: Interp @109:11-109:17
+          X: CallExpr @109:11-109:17
+            Fun: IdentExpr name @109:11-109:15
+    Items[1]: ViewSubtitle @110:3-110:18
+      Text: StringLit @110:12-110:18
+        Parts[0]: Interp @110:14-110:16
+          X: IdentExpr id @110:14-110:16
+    Items[2]: ViewPreview @111:3-111:15
+      X: IdentExpr icon @111:11-111:15
+    Items[3]: ViewSearch @112:3-112:24
+      Items[0]: CallExpr @112:12-112:18
+        Fun: IdentExpr name @112:12-112:16
+      Items[1]: IdentExpr id @112:20-112:22
+    Items[4]: ViewMenu @113:3-113:22
+      Menu: Ident items @113:8-113:13
+      Icon: Ident gem @113:19-113:22
+    Items[5]: ViewFilters @114:3-114:31
+      Items[0]: ViewFilter @114:13-114:17
+        Name: Ident kind @114:13-114:17
+      Items[1]: ViewFilter @114:19-114:22
+        Name: Ident job @114:19-114:22
+      Items[2]: ViewFilter @114:24-114:29
+        Name: Ident level @114:24-114:29
+    Items[6]: ViewColumns @115:3-115:55
+      Items[0]: ViewColumn @115:13-115:21
+        Name: Ident kind @115:13-115:17
+        Width: IntLit Value=120 @115:18-115:21
+      Items[1]: ViewColumn @115:23-115:30
+        Name: Ident job @115:23-115:26
+        Width: IntLit Value=140 @115:27-115:30
+      Items[2]: ViewColumn @115:32-115:40
+        Name: Ident level @115:32-115:37
+        Width: IntLit Value=70 @115:38-115:40
+      Items[3]: ViewColumn @115:42-115:53
+        Name: Ident stackMax @115:42-115:50
+        Width: IntLit Value=90 @115:51-115:53
+  Decls[15]: EnumDecl @124:1-134:2
+    Doc: DocComment "Which kind of parameter an event's filter takes (eventType.json's `param`; an entry\nwithout one takes none)." @122:1-123:29
+    Name: Ident ParamKind @124:6-124:15
+    Members[0]: EnumMember @125:3-125:8
+      Name: Ident none_ @125:3-125:8
+    Members[1]: EnumMember @126:3-126:10
+      Name: Ident monster @126:3-126:10
+    Members[2]: EnumMember @127:3-127:7
+      Name: Ident item @127:3-127:7
+    Members[3]: EnumMember @128:3-128:10
+      Name: Ident dungeon @128:3-128:10
+    Members[4]: EnumMember @129:3-129:10
+      Name: Ident element @129:3-129:10
+    Members[5]: EnumMember @130:3-130:7
+      Name: Ident stat @130:3-130:7
+    Members[6]: EnumMember @131:3-131:31
+      Name: Ident upgrade_type @131:3-131:15
+      Value: StringLit @131:18-131:31
+        Parts[0]: text "upgradeType"
+    Members[7]: EnumMember @132:3-132:25
+      Name: Ident game_mode @132:3-132:12
+      Value: StringLit @132:15-132:25
+        Parts[0]: text "gameMode"
+    Members[8]: EnumMember @133:3-133:29
+      Name: Ident quest_style @133:3-133:14
+      Value: StringLit @133:17-133:29
+        Parts[0]: text "questStyle"
+  Decls[16]: RecordDecl @138:1-147:2
+    Doc: DocComment "One thing the game counts (a kill, a drop, a craft...). Quests, achievements and\nheistia missions are built on these." @136:1-137:41
+    Name: Ident EventType @138:8-138:17
+    Body: RecordBody @138:18-147:2
+      Items[0]: FieldDecl @140:3-140:23
+        Doc: DocComment "Stored in the database: never renumbered, never reused (`@stable`)." @139:3-139:74
+        Name: Ident code @140:3-140:7
+        Type: NamedType @140:9-140:15
+          Name: QualifiedName UInt16 @140:9-140:15
+        Annotations[0]: Annotation @140:16-140:23
+          Name: Ident stable @140:17-140:23
+      Items[1]: FieldDecl @142:3-142:18
+        Doc: DocComment "Name shown in tools and logs." @141:3-141:36
+        Name: Ident display @142:3-142:10
+        Type: NamedType @142:12-142:18
+          Name: QualifiedName String @142:12-142:18
+      Items[2]: FieldDecl @144:3-144:27
+        Doc: DocComment "What the event's filter parameter is: see `Param`." @143:3-143:57
+        Name: Ident param @144:3-144:8
+        Type: NamedType @144:10-144:19
+          Name: QualifiedName ParamKind @144:10-144:19
+        Default: IdentExpr none_ @144:22-144:27
+      Items[3]: FieldDecl @146:3-146:23
+        Doc: DocComment "Compile flag the event only exists under." @145:3-145:48
+        Name: Ident flag @146:3-146:7
+        Type: OptionalType @146:9-146:16
+          Elem: NamedType @146:9-146:15
+            Name: QualifiedName String @146:9-146:15
+        Default: NoneLit @146:19-146:23
+  Decls[17]: TypeDecl @150:1-159:2
+    Doc: DocComment "What a filter parameter may be for event `e`. The type depends on the value." @149:1-149:81
+    Name: Ident Param @150:6-150:11
+    Params[0]: Param @150:12-150:24
+      Name: Ident e @150:12-150:13
+      Type: NamedType @150:15-150:24
+        Name: QualifiedName EventType @150:15-150:24
+    Type: MatchType @150:28-159:2
+      Scrutinee: SelectorExpr @150:34-150:41
+        X: IdentExpr e @150:34-150:35
+        Name: Ident param @150:36-150:41
+      Arms[0]: TypeArm @151:3-151:26
+        Patterns[0]: Pattern @151:3-151:10
+          Name: QualifiedName monster @151:3-151:10
+        Type: RefType @151:14-151:26
+          Name: QualifiedName monsters @151:18-151:26
+      Arms[1]: TypeArm @152:3-152:20
+        Patterns[0]: Pattern @152:3-152:7
+          Name: QualifiedName item @152:3-152:7
+        Type: RefType @152:11-152:20
+          Name: QualifiedName items @152:15-152:20
+      Arms[2]: TypeArm @153:3-153:24
+        Patterns[0]: Pattern @153:3-153:10
+          Name: QualifiedName dungeon @153:3-153:10
+        Type: RefType @153:14-153:24
+          Name: QualifiedName worlds @153:18-153:24
+      Arms[3]: TypeArm @154:3-154:21
+        Patterns[0]: Pattern @154:3-154:10
+          Name: QualifiedName element @154:3-154:10
+        Type: NamedType @154:14-154:21
+          Name: QualifiedName Element @154:14-154:21
+      Arms[4]: TypeArm @155:3-155:28
+        Patterns[0]: Pattern @155:3-155:14
+          Name: QualifiedName quest_style @155:3-155:14
+        Type: NamedType @155:18-155:28
+          Name: QualifiedName QuestStyle @155:18-155:28
+      Arms[5]: TypeArm @156:3-156:35
+        Patterns[0]: Pattern @156:3-156:15
+          Name: QualifiedName upgrade_type @156:3-156:15
+        Type: RefType @156:19-156:35
+          Name: QualifiedName upgradeTypes @156:23-156:35
+      Arms[6]: TypeArm @157:3-157:22
+        Patterns[0]: Pattern @157:3-157:12
+          Name: QualifiedName game_mode @157:3-157:12
+        Type: NamedType @157:16-157:22
+          Name: QualifiedName String @157:16-157:22
+      Arms[7]: TypeArm @158:3-158:23
+        Patterns[0]: Pattern @158:3-158:8
+          Name: QualifiedName none_ @158:3-158:8
+        Patterns[1]: Pattern @158:10-158:14
+          Name: QualifiedName stat @158:10-158:14
+        Type: NamedType @158:18-158:23
+          Name: QualifiedName Never @158:18-158:23
+  Decls[18]: LetDecl @162:1-191:2
+    Doc: DocComment "Every event type (Vocab/eventType.json)." @161:1-161:45
+    Name: Ident eventTypes @162:5-162:15
+    Type: TableType Stable="stable" @162:17-162:39
+      Name: QualifiedName EventType @162:30-162:39
+    Value: BraceLit @162:42-191:2
+      Items[0]: EntryItem @163:3-163:75
+        Key: Ident COMBAT_KILL_MONSTER @163:3-163:22
+        Value: BraceLit @163:23-163:75
+          Items[0]: FieldItem @163:25-163:32
+            Name: Ident code @163:25-163:29
+            Value: IntLit Value=0 @163:31-163:32
+          Items[1]: FieldItem @163:34-163:57
+            Name: Ident display @163:34-163:41
+            Value: StringLit @163:43-163:57
+              Parts[0]: text "Monster Kill"
+          Items[2]: FieldItem @163:59-163:73
+            Name: Ident param @163:59-163:64
+            Value: IdentExpr monster @163:66-163:73
+      Items[1]: EntryItem @164:3-164:71
+        Key: Ident COMBAT_KILL_GIANT @164:3-164:20
+        Value: BraceLit @164:21-164:71
+          Items[0]: FieldItem @164:23-164:30
+            Name: Ident code @164:23-164:27
+            Value: IntLit Value=1 @164:29-164:30
+          Items[1]: FieldItem @164:32-164:53
+            Name: Ident display @164:32-164:39
+            Value: StringLit @164:41-164:53
+              Parts[0]: text "Giant Kill"
+          Items[2]: FieldItem @164:55-164:69
+            Name: Ident param @164:55-164:60
+            Value: IdentExpr monster @164:62-164:69
+      Items[2]: EntryItem @165:3-165:69
+        Key: Ident COMBAT_KILL_BOSS @165:3-165:19
+        Value: BraceLit @165:20-165:69
+          Items[0]: FieldItem @165:22-165:29
+            Name: Ident code @165:22-165:26
+            Value: IntLit Value=2 @165:28-165:29
+          Items[1]: FieldItem @165:31-165:51
+            Name: Ident display @165:31-165:38
+            Value: StringLit @165:40-165:51
+              Parts[0]: text "Boss Kill"
+          Items[2]: FieldItem @165:53-165:67
+            Name: Ident param @165:53-165:58
+            Value: IdentExpr monster @165:60-165:67
+      Items[3]: EntryItem @166:3-166:81
+        Key: Ident COMBAT_KILL_WORLD_BOSS @166:3-166:25
+        Value: BraceLit @166:26-166:81
+          Items[0]: FieldItem @166:28-166:35
+            Name: Ident code @166:28-166:32
+            Value: IntLit Value=3 @166:34-166:35
+          Items[1]: FieldItem @166:37-166:63
+            Name: Ident display @166:37-166:44
+            Value: StringLit @166:46-166:63
+              Parts[0]: text "World Boss Kill"
+          Items[2]: FieldItem @166:65-166:79
+            Name: Ident param @166:65-166:70
+            Value: IdentExpr monster @166:72-166:79
+      Items[4]: EntryItem @167:3-167:80
+        Key: Ident COMBAT_KILL_BY_ELEMENT @167:3-167:25
+        Value: BraceLit @167:26-167:80
+          Items[0]: FieldItem @167:28-167:35
+            Name: Ident code @167:28-167:32
+            Value: IntLit Value=5 @167:34-167:35
+          Items[1]: FieldItem @167:37-167:62
+            Name: Ident display @167:37-167:44
+            Value: StringLit @167:46-167:62
+              Parts[0]: text "Elemental Kill"
+          Items[2]: FieldItem @167:64-167:78
+            Name: Ident param @167:64-167:69
+            Value: IdentExpr element @167:71-167:78
+      Items[5]: EntryItem @168:3-168:75
+        Key: Ident COMBAT_DAMAGE_PVE @168:3-168:20
+        Value: BraceLit @168:21-168:75
+          Items[0]: FieldItem @168:23-168:31
+            Name: Ident code @168:23-168:27
+            Value: IntLit Value=10 @168:29-168:31
+          Items[1]: FieldItem @168:33-168:57
+            Name: Ident display @168:33-168:40
+            Value: StringLit @168:42-168:57
+              Parts[0]: text "PvE AA Damage"
+          Items[2]: FieldItem @168:59-168:73
+            Name: Ident param @168:59-168:64
+            Value: IdentExpr monster @168:66-168:73
+      Items[6]: EntryItem @169:3-169:68
+        Key: Ident COMBAT_DAMAGE_PVP_EVENT @169:3-169:26
+        Value: BraceLit @169:27-169:68
+          Items[0]: FieldItem @169:29-169:37
+            Name: Ident code @169:29-169:33
+            Value: IntLit Value=12 @169:35-169:37
+          Items[1]: FieldItem @169:39-169:66
+            Name: Ident display @169:39-169:46
+            Value: StringLit @169:48-169:66
+              Parts[0]: text "PvP Event Damage"
+      Items[7]: EntryItem @170:3-170:52
+        Key: Ident COMBAT_KILL_FFA @170:3-170:18
+        Value: BraceLit @170:19-170:52
+          Items[0]: FieldItem @170:21-170:29
+            Name: Ident code @170:21-170:25
+            Value: IntLit Value=30 @170:27-170:29
+          Items[1]: FieldItem @170:31-170:50
+            Name: Ident display @170:31-170:38
+            Value: StringLit @170:40-170:50
+              Parts[0]: text "FFA Kill"
+      Items[8]: EntryItem @171:3-171:68
+        Key: Ident COMBAT_KILL_GUILD_SIEGE @171:3-171:26
+        Value: BraceLit @171:27-171:68
+          Items[0]: FieldItem @171:29-171:37
+            Name: Ident code @171:29-171:33
+            Value: IntLit Value=31 @171:35-171:37
+          Items[1]: FieldItem @171:39-171:66
+            Name: Ident display @171:39-171:46
+            Value: StringLit @171:48-171:66
+              Parts[0]: text "Guild Siege Kill"
+      Items[9]: EntryItem @172:3-172:52
+        Key: Ident COMBAT_KILL_TDM @172:3-172:18
+        Value: BraceLit @172:19-172:52
+          Items[0]: FieldItem @172:21-172:29
+            Name: Ident code @172:21-172:25
+            Value: IntLit Value=32 @172:27-172:29
+          Items[1]: FieldItem @172:31-172:50
+            Name: Ident display @172:31-172:38
+            Value: StringLit @172:40-172:50
+              Parts[0]: text "TDM Kill"
+      Items[10]: EntryItem @173:3-173:84
+        Key: Ident COMBAT_GAME_MODE_START @173:3-173:25
+        Value: BraceLit @173:26-173:84
+          Items[0]: FieldItem @173:28-173:36
+            Name: Ident code @173:28-173:32
+            Value: IntLit Value=50 @173:34-173:36
+          Items[1]: FieldItem @173:38-173:64
+            Name: Ident display @173:38-173:45
+            Value: StringLit @173:47-173:64
+              Parts[0]: text "Game Mode Start"
+          Items[2]: FieldItem @173:66-173:82
+            Name: Ident param @173:66-173:71
+            Value: IdentExpr game_mode @173:73-173:82
+      Items[11]: EntryItem @174:3-174:76
+        Key: Ident ECONOMY_DROP_PENYAS @174:3-174:22
+        Value: BraceLit @174:23-174:76
+          Items[0]: FieldItem @174:25-174:35
+            Name: Ident code @174:25-174:29
+            Value: IntLit Value=1000 @174:31-174:35
+          Items[1]: FieldItem @174:37-174:58
+            Name: Ident display @174:37-174:44
+            Value: StringLit @174:46-174:58
+              Parts[0]: text "Penya Drop"
+          Items[2]: FieldItem @174:60-174:74
+            Name: Ident param @174:60-174:65
+            Value: IdentExpr monster @174:67-174:74
+      Items[12]: EntryItem @175:3-175:70
+        Key: Ident ECONOMY_DROP_ITEM @175:3-175:20
+        Value: BraceLit @175:21-175:70
+          Items[0]: FieldItem @175:23-175:33
+            Name: Ident code @175:23-175:27
+            Value: IntLit Value=1001 @175:29-175:33
+          Items[1]: FieldItem @175:35-175:55
+            Name: Ident display @175:35-175:42
+            Value: StringLit @175:44-175:55
+              Parts[0]: text "Item Drop"
+          Items[2]: FieldItem @175:57-175:68
+            Name: Ident param @175:57-175:62
+            Value: IdentExpr item @175:64-175:68
+      Items[13]: EntryItem @176:3-176:73
+        Key: Ident ECONOMY_SPEND_VOTE_POINTS @176:3-176:28
+        Value: BraceLit @176:29-176:73
+          Items[0]: FieldItem @176:31-176:41
+            Name: Ident code @176:31-176:35
+            Value: IntLit Value=1031 @176:37-176:41
+          Items[1]: FieldItem @176:43-176:71
+            Name: Ident display @176:43-176:50
+            Value: StringLit @176:52-176:71
+              Parts[0]: text "Vote Points Spent"
+      Items[14]: EntryItem @177:3-177:77
+        Key: Ident ECONOMY_CONSUME_ITEM @177:3-177:23
+        Value: BraceLit @177:24-177:77
+          Items[0]: FieldItem @177:26-177:36
+            Name: Ident code @177:26-177:30
+            Value: IntLit Value=1050 @177:32-177:36
+          Items[1]: FieldItem @177:38-177:62
+            Name: Ident display @177:38-177:45
+            Value: StringLit @177:47-177:62
+              Parts[0]: text "Item Consumed"
+          Items[2]: FieldItem @177:64-177:75
+            Name: Ident param @177:64-177:69
+            Value: IdentExpr item @177:71-177:75
+      Items[15]: EntryItem @178:3-178:91
+        Key: Ident PROGRESSION_COLLECT_MONSTER @178:3-178:30
+        Value: BraceLit @178:31-178:91
+          Items[0]: FieldItem @178:33-178:43
+            Name: Ident code @178:33-178:37
+            Value: IntLit Value=2030 @178:39-178:43
+          Items[1]: FieldItem @178:45-178:73
+            Name: Ident display @178:45-178:52
+            Value: StringLit @178:54-178:73
+              Parts[0]: text "Monster Collected"
+          Items[2]: FieldItem @178:75-178:89
+            Name: Ident param @178:75-178:80
+            Value: IdentExpr monster @178:82-178:89
+      Items[16]: EntryItem @179:3-179:82
+        Key: Ident PROGRESSION_COLLECT_ITEM @179:3-179:27
+        Value: BraceLit @179:28-179:82
+          Items[0]: FieldItem @179:30-179:40
+            Name: Ident code @179:30-179:34
+            Value: IntLit Value=2031 @179:36-179:40
+          Items[1]: FieldItem @179:42-179:67
+            Name: Ident display @179:42-179:49
+            Value: StringLit @179:51-179:67
+              Parts[0]: text "Item Collected"
+          Items[2]: FieldItem @179:69-179:80
+            Name: Ident param @179:69-179:74
+            Value: IdentExpr item @179:76-179:80
+      Items[17]: EntryItem @180:3-180:91
+        Key: Ident PROGRESSION_CARD_DRAWN @180:3-180:25
+        Value: BraceLit @180:26-180:91
+          Items[0]: FieldItem @180:28-180:38
+            Name: Ident code @180:28-180:32
+            Value: IntLit Value=2090 @180:34-180:38
+          Items[1]: FieldItem @180:40-180:62
+            Name: Ident display @180:40-180:47
+            Value: StringLit @180:49-180:62
+              Parts[0]: text "Cards Drawn"
+          Items[2]: FieldItem @180:64-180:89
+            Name: Ident flag @180:64-180:68
+            Value: StringLit @180:70-180:89
+              Parts[0]: text "__CARD_COLLECTION"
+      Items[18]: EntryItem @181:3-181:84
+        Key: Ident CONTENT_COMPLETE_DUNGEON @181:3-181:27
+        Value: BraceLit @181:28-181:84
+          Items[0]: FieldItem @181:30-181:40
+            Name: Ident code @181:30-181:34
+            Value: IntLit Value=4000 @181:36-181:40
+          Items[1]: FieldItem @181:42-181:66
+            Name: Ident display @181:42-181:49
+            Value: StringLit @181:51-181:66
+              Parts[0]: text "Dungeon Clear"
+          Items[2]: FieldItem @181:68-181:82
+            Name: Ident param @181:68-181:73
+            Value: IdentExpr dungeon @181:75-181:82
+      Items[19]: EntryItem @182:3-182:98
+        Key: Ident CONTENT_COMPLETE_ADVENTURE_QUEST @182:3-182:35
+        Value: BraceLit @182:36-182:98
+          Items[0]: FieldItem @182:38-182:48
+            Name: Ident code @182:38-182:42
+            Value: IntLit Value=4010 @182:44-182:48
+          Items[1]: FieldItem @182:50-182:76
+            Name: Ident display @182:50-182:57
+            Value: StringLit @182:59-182:76
+              Parts[0]: text "Adventure Quest"
+          Items[2]: FieldItem @182:78-182:96
+            Name: Ident param @182:78-182:83
+            Value: IdentExpr quest_style @182:85-182:96
+      Items[20]: EntryItem @183:3-183:71
+        Key: Ident CONTENT_WHEEL_OF_FORTUNE @183:3-183:27
+        Value: BraceLit @183:28-183:71
+          Items[0]: FieldItem @183:30-183:40
+            Name: Ident code @183:30-183:34
+            Value: IntLit Value=4050 @183:36-183:40
+          Items[1]: FieldItem @183:42-183:69
+            Name: Ident display @183:42-183:49
+            Value: StringLit @183:51-183:69
+              Parts[0]: text "Wheel of Fortune"
+      Items[21]: EntryItem @184:3-184:73
+        Key: Ident CONTENT_LOTTERY_BUY_TICKETS @184:3-184:30
+        Value: BraceLit @184:31-184:73
+          Items[0]: FieldItem @184:33-184:43
+            Name: Ident code @184:33-184:37
+            Value: IntLit Value=4080 @184:39-184:43
+          Items[1]: FieldItem @184:45-184:71
+            Name: Ident display @184:45-184:52
+            Value: StringLit @184:54-184:71
+              Parts[0]: text "Lottery Tickets"
+      Items[22]: EntryItem @185:3-185:69
+        Key: Ident ITEMS_CRAFTED @185:3-185:16
+        Value: BraceLit @185:17-185:69
+          Items[0]: FieldItem @185:19-185:29
+            Name: Ident code @185:19-185:23
+            Value: IntLit Value=5000 @185:25-185:29
+          Items[1]: FieldItem @185:31-185:54
+            Name: Ident display @185:31-185:38
+            Value: StringLit @185:40-185:54
+              Parts[0]: text "Item Crafted"
+          Items[2]: FieldItem @185:56-185:67
+            Name: Ident param @185:56-185:61
+            Value: IdentExpr item @185:63-185:67
+      Items[23]: EntryItem @186:3-186:71
+        Key: Ident ITEMS_RECYCLED @186:3-186:17
+        Value: BraceLit @186:18-186:71
+          Items[0]: FieldItem @186:20-186:30
+            Name: Ident code @186:20-186:24
+            Value: IntLit Value=5001 @186:26-186:30
+          Items[1]: FieldItem @186:32-186:56
+            Name: Ident display @186:32-186:39
+            Value: StringLit @186:41-186:56
+              Parts[0]: text "Item Recycled"
+          Items[2]: FieldItem @186:58-186:69
+            Name: Ident param @186:58-186:63
+            Value: IdentExpr item @186:65-186:69
+      Items[24]: EntryItem @187:3-187:85
+        Key: Ident ITEMS_PERFORM_UPGRADE @187:3-187:24
+        Value: BraceLit @187:25-187:85
+          Items[0]: FieldItem @187:27-187:37
+            Name: Ident code @187:27-187:31
+            Value: IntLit Value=5010 @187:33-187:37
+          Items[1]: FieldItem @187:39-187:62
+            Name: Ident display @187:39-187:46
+            Value: StringLit @187:48-187:62
+              Parts[0]: text "Item Upgrade"
+          Items[2]: FieldItem @187:64-187:83
+            Name: Ident param @187:64-187:69
+            Value: IdentExpr upgrade_type @187:71-187:83
+      Items[25]: EntryItem @188:3-188:66
+        Key: Ident MISC_ACTIVE_PLAYTIME @188:3-188:23
+        Value: BraceLit @188:24-188:66
+          Items[0]: FieldItem @188:26-188:36
+            Name: Ident code @188:26-188:30
+            Value: IntLit Value=8000 @188:32-188:36
+          Items[1]: FieldItem @188:38-188:64
+            Name: Ident display @188:38-188:45
+            Value: StringLit @188:47-188:64
+              Parts[0]: text "Active Playtime"
+      Items[26]: EntryItem @189:3-189:77
+        Key: Ident MISC_STATS_SNAPSHOT @189:3-189:22
+        Value: BraceLit @189:23-189:77
+          Items[0]: FieldItem @189:25-189:35
+            Name: Ident code @189:25-189:29
+            Value: IntLit Value=8100 @189:31-189:35
+          Items[1]: FieldItem @189:37-189:62
+            Name: Ident display @189:37-189:44
+            Value: StringLit @189:46-189:62
+              Parts[0]: text "Stats Snapshot"
+          Items[2]: FieldItem @189:64-189:75
+            Name: Ident param @189:64-189:69
+            Value: IdentExpr stat @189:71-189:75
+  Decls[19]: ViewDecl @193:1-199:2
+    Type: Ident EventType @193:6-193:15
+    Items[0]: ViewTitle @194:3-194:20
+      Text: StringLit @194:9-194:20
+        Parts[0]: Interp @194:11-194:18
+          X: IdentExpr display @194:11-194:18
+    Items[1]: ViewSubtitle @195:3-195:18
+      Text: StringLit @195:12-195:18
+        Parts[0]: Interp @195:14-195:16
+          X: IdentExpr id @195:14-195:16
+    Items[2]: ViewSearch @196:3-196:25
+      Items[0]: IdentExpr display @196:12-196:19
+      Items[1]: IdentExpr id @196:21-196:23
+    Items[3]: ViewMenu @197:3-197:24
+      Menu: Ident system @197:8-197:14
+      Icon: Ident gear @197:20-197:24
+    Items[4]: ViewColumns @198:3-198:43
+      Items[0]: ViewColumn @198:13-198:20
+        Name: Ident code @198:13-198:17
+        Width: IntLit Value=80 @198:18-198:20
+      Items[1]: ViewColumn @198:22-198:31
+        Name: Ident param @198:22-198:27
+        Width: IntLit Value=130 @198:28-198:31
+      Items[2]: ViewColumn @198:33-198:41
+        Name: Ident flag @198:33-198:37
+        Width: IntLit Value=180 @198:38-198:41
+  Decls[20]: EmitDecl @204:1-209:2
+    Target: Ident cpp @204:6-204:9
+    Options: BraceLit @204:10-209:2
+      Items[0]: FieldItem @205:3-205:33
+        Name: Ident out @205:3-205:6
+        Value: StringLit @205:8-205:33
+          Parts[0]: text "@source/Generated/vocab"
+      Items[1]: FieldItem @206:3-206:26
+        Name: Ident namespace @206:3-206:12
+        Value: StringLit @206:14-206:26
+          Parts[0]: text "sov::vocab"
+      Items[2]: FieldItem @207:3-207:14
+        Name: Ident mode @207:3-207:7
+        Value: IdentExpr baked @207:9-207:14
+      Items[3]: FieldItem @208:3-208:23
+        Name: Ident values @208:3-208:9
+        Value: ListLit @208:11-208:23
+          Elems[0]: IdentExpr eventTypes @208:12-208:22
+  Decls[21]: EmitDecl @210:1-210:48
+    Target: Ident view @210:6-210:10
+    Options: BraceLit @210:11-210:48
+      Items[0]: FieldItem @210:13-210:46
+        Name: Ident out @210:13-210:16
+        Value: StringLit @210:18-210:46
+          Parts[0]: text "@generated/vocab.view.json"
+== findings
+0 errors, 0 warnings in 1 package (…)

@@ -1,0 +1,19 @@
+GRAMMAR.md §2.6: a format spec is [+][,][.N] with N at most 20.
+-- a/a.canon --
+package a
+
+let s = "{x:abc}"
+let t = "{x:.21}"
+let u = "{x:}"
+let ok = "{x:+,.2} {y:,}"
+-- findings.txt --
+error[E1101]  a/a.canon:3:12
+  invalid format spec "abc": expected [+][,][.N] with N at most 20
+
+error[E1101]  a/a.canon:4:12
+  invalid format spec ".21": expected [+][,][.N] with N at most 20
+
+error[E1101]  a/a.canon:5:12
+  invalid format spec "": expected [+][,][.N] with N at most 20
+
+3 errors, 0 warnings in 1 package (…)

@@ -1,0 +1,125 @@
+File: File FileKind=source @1:1-34:1
+  Doc: DocComment "`load.csv` (SPEC §13): a spreadsheet export read in place. With `header: true` the\nfirst row names the columns, matched to wire names; each cell is read as the field's\ntype, and an empty cell means the field's default.\n\nThe table is made up (like pipeline's Potion): designers keep experience curves in a\nspreadsheet and export them as CSV." @1:1-6:40
+  Package: QualifiedName features.csv @7:9-7:21
+  Decls[0]: RecordDecl @10:1-17:2
+    Doc: DocComment "One row of the experience curve." @9:1-9:37
+    Name: Ident LevelRow @10:8-10:16
+    Body: RecordBody @10:17-17:2
+      Items[0]: FieldDecl @12:3-12:22
+        Doc: DocComment "Character level." @11:3-11:23
+        Name: Ident level @12:3-12:8
+        Type: NamedType @12:10-12:22
+          Name: QualifiedName Int @12:10-12:13
+          Args: TypeArgs @12:13-12:22
+            Args[0]: RangeExpr Op=..= @12:14-12:21
+              Lo: IntLit Value=1 @12:14-12:15
+              Hi: IntLit Value=150 @12:18-12:21
+      Items[1]: FieldDecl @14:3-14:37
+        Doc: DocComment "Experience needed to go from this level to the next." @13:3-13:59
+        Name: Ident exp @14:3-14:6
+        Type: NamedType @14:8-14:16
+          Name: QualifiedName Int @14:8-14:11
+          Args: TypeArgs @14:11-14:16
+            Args[0]: RangeExpr Op=.. @14:12-14:15
+              Lo: IntLit Value=1 @14:12-14:13
+        Annotations[0]: Annotation @14:17-14:37
+          Name: Ident json @14:18-14:22
+          Args[0]: AnnotationArg @14:23-14:36
+            Value: StringLit @14:23-14:36
+              Parts[0]: text "exp_to_next"
+      Items[2]: FieldDecl @16:3-16:57
+        Doc: DocComment "Share of the level's experience lost on death, in per mille." @15:3-15:67
+        Name: Ident deathPenalty @16:3-16:15
+        Type: NamedType @16:17-16:30
+          Name: QualifiedName Int @16:17-16:20
+          Args: TypeArgs @16:20-16:30
+            Args[0]: RangeExpr Op=..= @16:21-16:29
+              Lo: IntLit Value=0 @16:21-16:22
+              Hi: IntLit Value=1000 @16:25-16:29
+        Default: IntLit Value=0 @16:33-16:34
+        Annotations[0]: Annotation @16:35-16:57
+          Name: Ident json @16:36-16:40
+          Args[0]: AnnotationArg @16:41-16:56
+            Value: StringLit @16:41-16:56
+              Parts[0]: text "death_penalty"
+  Decls[1]: LetDecl @20:1-20:85
+    Doc: DocComment "The experience curve, one row per level." @19:1-19:45
+    Name: Ident levels @20:5-20:11
+    Type: KeyedType @20:13-20:38
+      List: ListType @20:13-20:23
+        Elem: NamedType @20:14-20:22
+          Name: QualifiedName LevelRow @20:14-20:22
+      Key: Ident level @20:33-20:38
+    Value: LoadExpr @20:41-20:85
+      Method: Ident csv @20:46-20:49
+      Args[0]: Arg @20:50-20:70
+        Value: StringLit @20:50-20:70
+          Parts[0]: text "data/exp_curve.csv"
+      Args[1]: Arg @20:72-20:84
+        Name: Ident header @20:72-20:78
+        Value: BoolLit Value @20:80-20:84
+  Decls[2]: CheckDecl Keyword=check @22:1-28:2
+    Body: Block @22:7-28:2
+      Stmts[0]: ForStmt @23:3-27:4
+        Vars[0]: Ident i @23:7-23:8
+        Vars[1]: Ident row @23:10-23:13
+        Iter: CallExpr @23:17-23:35
+          Fun: SelectorExpr @23:17-23:33
+            X: IdentExpr levels @23:17-23:23
+            Name: Ident enumerate @23:24-23:33
+        Body: Block @23:36-27:4
+          Stmts[0]: IfStmt @24:5-26:6
+            Cond: BinaryExpr Op=!= @24:8-24:26
+              X: SelectorExpr @24:8-24:17
+                X: IdentExpr row @24:8-24:11
+                Name: Ident level @24:12-24:17
+              Y: BinaryExpr Op=+ @24:21-24:26
+                X: IdentExpr i @24:21-24:22
+                Y: IntLit Value=1 @24:25-24:26
+            Then: Block @24:27-26:6
+              Stmts[0]: ExprStmt @25:7-25:94
+                X: CallExpr @25:7-25:94
+                  Fun: IdentExpr fail @25:7-25:11
+                  Args[0]: Arg @25:12-25:15
+                    Value: IdentExpr row @25:12-25:15
+                  Args[1]: Arg @25:17-25:93
+                    Value: StringLit @25:17-25:93
+                      Parts[0]: text "level "
+                      Parts[1]: Interp @25:25-25:34
+                        X: SelectorExpr @25:25-25:34
+                          X: IdentExpr row @25:25-25:28
+                          Name: Ident level @25:29-25:34
+                      Parts[2]: text " is at row "
+                      Parts[3]: Interp @25:47-25:52
+                        X: BinaryExpr Op=+ @25:47-25:52
+                          X: IdentExpr i @25:47-25:48
+                          Y: IntLit Value=1 @25:51-25:52
+                      Parts[4]: text ": levels must be 1, 2, 3... with no gap"
+  Decls[3]: CheckDecl Keyword=warn @30:1-31:68
+    Cond: CallExpr @30:6-30:44
+      Fun: SelectorExpr @30:6-30:16
+        X: IdentExpr levels @30:6-30:12
+        Name: Ident all @30:13-30:16
+      Args[0]: Arg @30:17-30:43
+        Value: LambdaExpr @30:17-30:43
+          Params[0]: Ident r @30:17-30:18
+          Body: BinaryExpr Op=<= @30:22-30:43
+            X: SelectorExpr @30:22-30:36
+              X: IdentExpr r @30:22-30:23
+              Name: Ident deathPenalty @30:24-30:36
+            Y: IntLit Value=100 @30:40-30:43
+    Message: StringLit @31:8-31:68
+      Parts[0]: text "a death penalty above 10 % is harsher than any live server"
+  Decls[4]: EmitDecl @33:1-33:58
+    Target: Ident json @33:6-33:10
+    Options: BraceLit @33:11-33:58
+      Items[0]: FieldItem @33:13-33:38
+        Name: Ident out @33:13-33:16
+        Value: StringLit @33:18-33:38
+          Parts[0]: text "out/exp_curve.json"
+      Items[1]: FieldItem @33:40-33:56
+        Name: Ident values @33:40-33:46
+        Value: ListLit @33:48-33:56
+          Elems[0]: IdentExpr levels @33:49-33:55
+== findings
+0 errors, 0 warnings in 1 package (…)

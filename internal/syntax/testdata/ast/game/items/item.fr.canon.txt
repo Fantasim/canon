@@ -1,0 +1,109 @@
+File: File FileKind=translation @1:1-35:1
+  Package: QualifiedName game.items @3:9-3:19
+  Lang: Ident fr @4:13-4:15
+  Entries[0]: TranslationEntry @6:1-6:25
+    Key: QualifiedName Item.singular @6:1-6:14
+    Text: StringLit @6:15-6:25
+      Parts[0]: text "un objet"
+  Entries[1]: TranslationEntry @7:1-7:32
+    Key: QualifiedName Item.group.identity @7:1-7:20
+    Text: StringLit @7:21-7:32
+      Parts[0]: text "Identité"
+  Entries[2]: TranslationEntry @8:1-8:27
+    Key: QualifiedName Item.group.combat @8:1-8:18
+    Text: StringLit @8:19-8:27
+      Parts[0]: text "Combat"
+  Entries[3]: TranslationEntry @9:1-9:27
+    Key: QualifiedName Item.group.shop @9:1-9:16
+    Text: StringLit @9:17-9:27
+      Parts[0]: text "Boutique"
+  Entries[4]: TranslationEntry @10:1-10:37
+    Key: QualifiedName Item.group.legacy @10:1-10:18
+    Text: StringLit @10:19-10:37
+      Parts[0]: text "Champs hérités"
+  Entries[5]: TranslationEntry @11:1-11:27
+    Key: QualifiedName Item.nameKey @11:1-11:13
+    Text: StringLit @11:14-11:27
+      Parts[0]: text "Clé du nom"
+  Entries[6]: TranslationEntry @12:1-12:19
+    Key: QualifiedName Item.icon @12:1-12:10
+    Text: StringLit @12:11-12:19
+      Parts[0]: text "Icône"
+  Entries[7]: TranslationEntry @13:1-13:17
+    Key: QualifiedName Item.cost @13:1-13:10
+    Text: StringLit @13:11-13:17
+      Parts[0]: text "Prix"
+  Entries[8]: TranslationEntry @14:1-14:20
+    Key: QualifiedName Item.level @14:1-14:11
+    Text: StringLit @14:12-14:20
+      Parts[0]: text "Niveau"
+  Entries[9]: TranslationEntry @15:1-15:22
+    Key: QualifiedName Item.rarity @15:1-15:12
+    Text: StringLit @15:13-15:22
+      Parts[0]: text "Rareté"
+  Entries[10]: TranslationEntry @16:1-16:35
+    Key: QualifiedName Item.stackMax @16:1-16:14
+    Text: StringLit @16:15-16:35
+      Parts[0]: text "Quantité par case"
+  Entries[11]: TranslationEntry @17:1-17:17
+    Key: QualifiedName Item.kind @17:1-17:10
+    Text: StringLit @17:11-17:17
+      Parts[0]: text "Type"
+  Entries[12]: TranslationEntry @19:1-19:27
+    Key: QualifiedName ItemKind.IK1_WEAPON @19:1-19:20
+    Text: StringLit @19:21-19:27
+      Parts[0]: text "Arme"
+  Entries[13]: TranslationEntry @20:1-20:39
+    Key: QualifiedName ItemKind.IK1_GENERAL @20:1-20:21
+    Text: StringLit @20:22-20:39
+      Parts[0]: text "Objet général"
+  Entries[14]: TranslationEntry @21:1-21:48
+    Key: QualifiedName ItemKind.IK1_WEAPON.attackMin @21:1-21:30
+    Text: StringLit @21:31-21:48
+      Parts[0]: text "Attaque minimum"
+  Entries[15]: TranslationEntry @22:1-22:48
+    Key: QualifiedName ItemKind.IK1_WEAPON.attackMax @22:1-22:30
+    Text: StringLit @22:31-22:48
+      Parts[0]: text "Attaque maximum"
+  Entries[16]: TranslationEntry @23:1-23:52
+    Key: QualifiedName ItemKind.IK1_WEAPON.attackSpeed @23:1-23:32
+    Text: StringLit @23:33-23:52
+      Parts[0]: text "Vitesse d'attaque"
+  Entries[17]: TranslationEntry @24:1-24:42
+    Key: QualifiedName ItemKind.IK1_WEAPON.attackRange @24:1-24:32
+    Text: StringLit @24:33-24:42
+      Parts[0]: text "Portée"
+  Entries[18]: TranslationEntry @25:1-25:53
+    Key: QualifiedName ItemKind.IK1_WEAPON.weaponType @25:1-25:31
+    Text: StringLit @25:32-25:53
+      Parts[0]: text "Famille de dégâts"
+  Entries[19]: TranslationEntry @26:1-26:43
+    Key: QualifiedName ItemKind.IK1_WEAPON.handed @26:1-26:27
+    Text: StringLit @26:28-26:43
+      Parts[0]: text "Prise en main"
+  Entries[20]: TranslationEntry @27:1-27:43
+    Key: QualifiedName ItemKind.IK1_WEAPON.stats @27:1-27:26
+    Text: StringLit @27:27-27:43
+      Parts[0]: text "Bonus de stats"
+  Entries[21]: TranslationEntry @28:1-28:41
+    Key: QualifiedName ItemKind.IK1_WEAPON.show._0 @28:1-28:28
+    Text: StringLit @28:29-28:41
+      Parts[0]: text "Coup moyen"
+  Entries[22]: TranslationEntry @30:1-30:37
+    Key: QualifiedName GeneralKind.IK2_MATERIAL @30:1-30:25
+    Text: StringLit @30:26-30:37
+      Parts[0]: text "Matériau"
+  Entries[23]: TranslationEntry @31:1-31:34
+    Key: QualifiedName GeneralKind.IK2_FOOD @31:1-31:21
+    Text: StringLit @31:22-31:34
+      Parts[0]: text "Nourriture"
+  Entries[24]: TranslationEntry @33:1-33:25
+    Key: QualifiedName Handed.HD_ONE @33:1-33:14
+    Text: StringLit @33:15-33:25
+      Parts[0]: text "Une main"
+  Entries[25]: TranslationEntry @34:1-34:27
+    Key: QualifiedName Handed.HD_TWO @34:1-34:14
+    Text: StringLit @34:15-34:27
+      Parts[0]: text "Deux mains"
+== findings
+0 errors, 0 warnings in 1 package (…)

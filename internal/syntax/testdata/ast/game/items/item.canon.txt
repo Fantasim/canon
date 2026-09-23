@@ -1,0 +1,780 @@
+File: File FileKind=source @1:1-227:1
+  Doc: DocComment "Items, once converted: the domain as `canon infer` and `canon convert` leave it.\n\nToday the 6,944 items are rows of Server/Item/propItem.json (127 wire keys), read\nin place by resource.vocab for pickers. Converting them takes three steps (CLI §6.4):\n  1. `canon infer --by dwItemKind1,dwItemKind2` writes the first version of the types\n     below: one case per kind, one nested case per sub-kind, each allowing every\n     field its items set (DECISIONS 7);\n  2. the types are tightened in small reviewed steps;\n  3. `canon convert items` writes one entry file per item under entries/ (placed by\n     `@files`) and proves the round trip.\n\nThis sketch keeps two entries and the cases and fields they, the view and the checks\nuse. The inferred types cover all 29 (kind1, kind2) pairs found in propItem.json." @1:1-13:86
+  Package: QualifiedName game.items @14:9-14:19
+  Imports[0]: Import @16:1-16:35
+    Path: QualifiedName resource.vocab @16:8-16:22
+    Names[0]: Ident ItemIcon @16:25-16:33
+  Imports[1]: Import @17:1-17:14
+    Path: QualifiedName studio @17:8-17:14
+  Decls[0]: LetDecl @19:1-19:85
+    Mods: Modifiers Local="local" @19:1-19:6
+    Name: Ident jobs @19:11-19:15
+    Value: LoadExpr @19:18-19:85
+      Method: Ident defines @19:23-19:30
+      Args[0]: Arg @19:31-19:68
+        Value: StringLit @19:31-19:68
+          Parts[0]: text "@resource/Server/Define/defineJob.h"
+      Args[1]: Arg @19:70-19:84
+        Name: Ident prefix @19:70-19:76
+        Value: StringLit @19:78-19:84
+          Parts[0]: text "JOB_"
+  Decls[1]: LetDecl @20:1-20:97
+    Mods: Modifiers Local="local" @20:1-20:6
+    Name: Ident attributes @20:11-20:21
+    Value: LoadExpr @20:24-20:97
+      Method: Ident defines @20:29-20:36
+      Args[0]: Arg @20:37-20:80
+        Value: StringLit @20:37-20:80
+          Parts[0]: text "@resource/Server/Define/defineAttribute.h"
+      Args[1]: Arg @20:82-20:96
+        Name: Ident prefix @20:82-20:88
+        Value: StringLit @20:90-20:96
+          Parts[0]: text "DST_"
+  Decls[2]: LetDecl @21:1-21:89
+    Mods: Modifiers Local="local" @21:1-21:6
+    Name: Ident sounds @21:11-21:17
+    Value: LoadExpr @21:20-21:89
+      Method: Ident defines @21:25-21:32
+      Args[0]: Arg @21:33-21:72
+        Value: StringLit @21:33-21:72
+          Parts[0]: text "@resource/Server/Define/defineSound.h"
+      Args[1]: Arg @21:74-21:88
+        Name: Ident prefix @21:74-21:80
+        Value: StringLit @21:82-21:88
+          Parts[0]: text "SND_"
+  Decls[3]: LetDecl @23:1-23:98
+    Doc: DocComment "IDS_* key -> English display name (\"IDS_PROPITEM_TXT_003930\" -> \"Angel Axe\")." @22:1-22:82
+    Mods: Modifiers Local="local" @23:1-23:6
+    Name: Ident names @23:11-23:16
+    Type: MapType @23:18-23:34
+      Key: NamedType @23:19-23:25
+        Name: QualifiedName String @23:19-23:25
+      Value: NamedType @23:27-23:33
+        Name: QualifiedName String @23:27-23:33
+    Value: LoadExpr @23:37-23:98
+      Args[0]: Arg @23:42-23:82
+        Value: StringLit @23:42-23:82
+          Parts[0]: text "@resource/Server/Text/serverNames.json"
+      Args[1]: Arg @23:84-23:97
+        Name: Ident at @23:84-23:86
+        Value: StringLit @23:88-23:97
+          Parts[0]: text "strings"
+  Decls[4]: EnumDecl @30:1-30:31
+    Doc: DocComment "One hand or two." @29:1-29:21
+    Name: Ident Handed @30:6-30:12
+    Members[0]: EnumMember @30:15-30:21
+      Name: Ident HD_ONE @30:15-30:21
+    Members[1]: EnumMember @30:23-30:29
+      Name: Ident HD_TWO @30:23-30:29
+  Decls[5]: EnumDecl @33:1-33:60
+    Doc: DocComment "How far a weapon reaches." @32:1-32:30
+    Name: Ident AttackRange @33:6-33:17
+    Members[0]: EnumMember @33:20-33:28
+      Name: Ident AR_SHORT @33:20-33:28
+    Members[1]: EnumMember @33:30-33:38
+      Name: Ident AR_RANGE @33:30-33:38
+    Members[2]: EnumMember @33:40-33:49
+      Name: Ident AR_HRANGE @33:40-33:49
+    Members[3]: EnumMember @33:51-33:58
+      Name: Ident AR_WAND @33:51-33:58
+  Decls[6]: EnumDecl @38:1-49:2
+    Doc: DocComment "Damage family the combat formulas use. propItem.json also holds WI_WORLD_MADRIGAL\nhere on a few blink wings (a world define, not a weapon type): an inferred enum\nwould have made it legal, this one refuses it." @35:1-37:51
+    Name: Ident WeaponType @38:6-38:16
+    Members[0]: EnumMember @39:3-39:11
+      Name: Ident WT_MELEE @39:3-39:11
+    Members[1]: EnumMember @40:3-40:15
+      Name: Ident WT_MELEE_SWD @40:3-40:15
+    Members[2]: EnumMember @41:3-41:15
+      Name: Ident WT_MELEE_AXE @41:3-41:15
+    Members[3]: EnumMember @42:3-42:17
+      Name: Ident WT_MELEE_STAFF @42:3-42:17
+    Members[4]: EnumMember @43:3-43:17
+      Name: Ident WT_MELEE_STICK @43:3-43:17
+    Members[5]: EnumMember @44:3-44:19
+      Name: Ident WT_MELEE_KNUCKLE @44:3-44:19
+    Members[6]: EnumMember @45:3-45:16
+      Name: Ident WT_MELEE_YOYO @45:3-45:16
+    Members[7]: EnumMember @46:3-46:16
+      Name: Ident WT_MAGIC_WAND @46:3-46:16
+    Members[8]: EnumMember @47:3-47:11
+      Name: Ident WT_RANGE @47:3-47:11
+    Members[9]: EnumMember @48:3-48:15
+      Name: Ident WT_RANGE_BOW @48:3-48:15
+  Decls[7]: EnumDecl @52:1-52:83
+    Doc: DocComment "A weapon's family (dwItemKind2)." @51:1-51:37
+    Name: Ident WeaponKind2 @52:6-52:17
+    Members[0]: EnumMember @52:20-52:37
+      Name: Ident IK2_WEAPON_DIRECT @52:20-52:37
+    Members[1]: EnumMember @52:39-52:55
+      Name: Ident IK2_WEAPON_MAGIC @52:39-52:55
+    Members[2]: EnumMember @52:57-52:72
+      Name: Ident IK2_WEAPON_HAND @52:57-52:72
+    Members[3]: EnumMember @52:74-52:81
+      Name: Ident IK2_MOB @52:74-52:81
+  Decls[8]: EnumDecl @55:1-66:2
+    Doc: DocComment "A weapon's type (dwItemKind3). IK3_VIRTUAL is the invisible weapon monsters use." @54:1-54:85
+    Name: Ident WeaponKind3 @55:6-55:17
+    Members[0]: EnumMember @56:3-56:10
+      Name: Ident IK3_SWD @56:3-56:10
+    Members[1]: EnumMember @57:3-57:10
+      Name: Ident IK3_AXE @57:3-57:10
+    Members[2]: EnumMember @58:3-58:12
+      Name: Ident IK3_STAFF @58:3-58:12
+    Members[3]: EnumMember @59:3-59:17
+      Name: Ident IK3_CHEERSTICK @59:3-59:17
+    Members[4]: EnumMember @60:3-60:20
+      Name: Ident IK3_KNUCKLEHAMMER @60:3-60:20
+    Members[5]: EnumMember @61:3-61:11
+      Name: Ident IK3_WAND @61:3-61:11
+    Members[6]: EnumMember @62:3-62:10
+      Name: Ident IK3_BOW @62:3-62:10
+    Members[7]: EnumMember @63:3-63:11
+      Name: Ident IK3_YOYO @63:3-63:11
+    Members[8]: EnumMember @64:3-64:11
+      Name: Ident IK3_HAND @64:3-64:11
+    Members[9]: EnumMember @65:3-65:14
+      Name: Ident IK3_VIRTUAL @65:3-65:14
+  Decls[9]: EnumDecl @69:1-78:2
+    Doc: DocComment "What a material is used for (dwItemKind3)." @68:1-68:47
+    Name: Ident MaterialKind @69:6-69:18
+    Members[0]: EnumMember @70:3-70:15
+      Name: Ident IK3_ULTIMATE @70:3-70:15
+    Members[1]: EnumMember @71:3-71:17
+      Name: Ident IK3_SOCKETCARD @71:3-71:17
+    Members[2]: EnumMember @72:3-72:18
+      Name: Ident IK3_SOCKETCARD2 @72:3-72:18
+    Members[3]: EnumMember @73:3-73:15
+      Name: Ident IK3_SUPSTONE @73:3-73:15
+    Members[4]: EnumMember @74:3-74:14
+      Name: Ident IK3_ELECARD @74:3-74:14
+    Members[5]: EnumMember @75:3-75:15
+      Name: Ident IK3_PIERDICE @75:3-75:15
+    Members[6]: EnumMember @76:3-76:14
+      Name: Ident IK3_ENCHANT @76:3-76:14
+    Members[7]: EnumMember @77:3-77:11
+      Name: Ident IK3_DICE @77:3-77:11
+  Decls[10]: EnumDecl @81:1-81:89
+    Doc: DocComment "What kind of food (dwItemKind3)." @80:1-80:37
+    Name: Ident FoodKind @81:6-81:14
+    Members[0]: EnumMember @81:17-81:26
+      Name: Ident IK3_BADGE @81:17-81:26
+    Members[1]: EnumMember @81:28-81:39
+      Name: Ident IK3_COOKING @81:28-81:39
+    Members[2]: EnumMember @81:41-81:53
+      Name: Ident IK3_ICECEARM @81:41-81:53
+    Members[3]: EnumMember @81:55-81:66
+      Name: Ident IK3_INSTANT @81:55-81:66
+    Members[4]: EnumMember @81:68-81:76
+      Name: Ident IK3_PILL @81:68-81:76
+    Members[5]: EnumMember @81:78-81:87
+      Name: Ident IK3_DRINK @81:78-81:87
+  Decls[11]: EnumDecl @85:1-92:2
+    Doc: DocComment "The element of an elemental material. propItem.json spells it with a leading `_`\n(eItemType), which no generated C++ name may start with (CODEGEN.md §3.4)." @83:1-84:80
+    Name: Ident ItemElement @85:6-85:17
+    Members[0]: EnumMember @86:3-86:17
+      Name: Ident NONE @86:3-86:7
+      Value: StringLit @86:10-86:17
+        Parts[0]: text "_NONE"
+    Members[1]: EnumMember @87:3-87:17
+      Name: Ident FIRE @87:3-87:7
+      Value: StringLit @87:10-87:17
+        Parts[0]: text "_FIRE"
+    Members[2]: EnumMember @88:3-88:19
+      Name: Ident WATER @88:3-88:8
+      Value: StringLit @88:11-88:19
+        Parts[0]: text "_WATER"
+    Members[3]: EnumMember @89:3-89:31
+      Name: Ident ELECTRICITY @89:3-89:14
+      Value: StringLit @89:17-89:31
+        Parts[0]: text "_ELECTRICITY"
+    Members[4]: EnumMember @90:3-90:17
+      Name: Ident WIND @90:3-90:7
+      Value: StringLit @90:10-90:17
+        Parts[0]: text "_WIND"
+    Members[5]: EnumMember @91:3-91:19
+      Name: Ident EARTH @91:3-91:8
+      Value: StringLit @91:11-91:19
+        Parts[0]: text "_EARTH"
+  Decls[12]: EnumDecl @97:1-101:2
+    Doc: DocComment "Item property flags (IP_TYPE, ProjectCmn.h). On the wire, dwFlag is the OR of the\ncodes (`@json(bits)`). 48 items also set bit 8, which IP_TYPE does not name: those\nare errors until the bit is named or cleared." @94:1-96:50
+    Name: Ident ItemFlag @97:6-97:14
+    Annotations[0]: Annotation @97:15-97:29
+      Name: Ident codes @97:16-97:21
+      Args[0]: AnnotationArg @97:22-97:28
+        Value: QualifiedName UInt32 @97:22-97:28
+    Members[0]: EnumMember @98:3-98:20
+      Name: Ident IP_FLAG_BINDS @98:3-98:16
+      Value: IntLit Value=1 @98:19-98:20
+    Members[1]: EnumMember @99:3-99:29
+      Name: Ident IP_FLAG_UNDESTRUCTABLE @99:3-99:25
+      Value: IntLit Value=2 @99:28-99:29
+    Members[2]: EnumMember @100:3-100:25
+      Name: Ident IP_FLAG_EQUIP_BIND @100:3-100:21
+      Value: IntLit Value=4 @100:24-100:25
+  Decls[13]: RecordDecl @108:1-113:2
+    Doc: DocComment "A stat an item raises, and by how much." @107:1-107:44
+    Name: Ident StatBonus @108:8-108:17
+    Body: RecordBody @108:18-113:2
+      Items[0]: FieldDecl @110:3-110:28
+        Doc: DocComment "The stat raised (a DST_* define)." @109:3-109:40
+        Name: Ident attribute @110:3-110:12
+        Type: RefType @110:14-110:28
+          Name: QualifiedName attributes @110:18-110:28
+      Items[1]: FieldDecl @112:3-112:13
+        Doc: DocComment "How much it is raised." @111:3-111:29
+        Name: Ident value @112:3-112:8
+        Type: NamedType @112:10-112:13
+          Name: QualifiedName Int @112:10-112:13
+  Decls[14]: RecordDecl @117:1-143:2
+    Doc: DocComment "An item: what every kind has, plus its kind's own fields in `kind`. Defaults copy\npropItem.json's `defaults` block; \"=\" on the wire means \"not set\"." @115:1-116:71
+    Name: Ident Item @117:8-117:12
+    Body: RecordBody @117:13-143:2
+      Items[0]: FieldDecl @119:3-119:34
+        Doc: DocComment "Format version of the row (nVer). The loader ignores it." @118:3-118:63
+        Name: Ident version @119:3-119:10
+        Type: NamedType @119:12-119:20
+          Name: QualifiedName Int @119:12-119:15
+          Args: TypeArgs @119:15-119:20
+            Args[0]: RangeExpr Op=.. @119:16-119:19
+              Lo: IntLit Value=1 @119:16-119:17
+        Annotations[0]: Annotation @119:21-119:34
+          Name: Ident json @119:22-119:26
+          Args[0]: AnnotationArg @119:27-119:33
+            Value: StringLit @119:27-119:33
+              Parts[0]: text "nVer"
+      Items[1]: FieldDecl @121:3-121:71
+        Doc: DocComment "Text key of the displayed name; see `name()`." @120:3-120:52
+        Name: Ident nameKey @121:3-121:10
+        Type: NamedType @121:12-121:27
+          Name: QualifiedName String @121:12-121:18
+          Args: TypeArgs @121:18-121:27
+            Args[0]: RegexLit Pattern="^IDS_" @121:19-121:26
+        Default: StringLit @121:30-121:55
+          Parts[0]: text "IDS_PROPITEM_TXT_030168"
+        Annotations[0]: Annotation @121:56-121:71
+          Name: Ident json @121:57-121:61
+          Args[0]: AnnotationArg @121:62-121:70
+            Value: StringLit @121:62-121:70
+              Parts[0]: text "szName"
+      Items[2]: FieldDecl @123:3-123:62
+        Doc: DocComment "Text key of the description." @122:3-122:35
+        Name: Ident descriptionKey @123:3-123:17
+        Type: OptionalType @123:19-123:26
+          Elem: NamedType @123:19-123:25
+            Name: QualifiedName String @123:19-123:25
+        Default: NoneLit @123:29-123:33
+        Annotations[0]: Annotation @123:34-123:62
+          Name: Ident json @123:35-123:39
+          Args[0]: AnnotationArg @123:40-123:51
+            Value: StringLit @123:40-123:51
+              Parts[0]: text "szCommand"
+          Args[1]: AnnotationArg @123:53-123:61
+            Name: Ident none @123:53-123:57
+            Value: StringLit @123:59-123:61
+      Items[3]: FieldDecl @125:3-125:33
+        Doc: DocComment "Thumbnail in inventories, shops and the studio." @124:3-124:54
+        Name: Ident icon @125:3-125:7
+        Type: NamedType @125:9-125:17
+          Name: QualifiedName ItemIcon @125:9-125:17
+        Annotations[0]: Annotation @125:18-125:33
+          Name: Ident json @125:19-125:23
+          Args[0]: AnnotationArg @125:24-125:32
+            Value: StringLit @125:24-125:32
+              Parts[0]: text "szIcon"
+      Items[4]: FieldDecl @127:3-127:37
+        Doc: DocComment "Price in shops." @126:3-126:22
+        Name: Ident cost @127:3-127:7
+        Type: NamedType @127:9-127:17
+          Name: QualifiedName Int @127:9-127:12
+          Args: TypeArgs @127:12-127:17
+            Args[0]: RangeExpr Op=.. @127:13-127:16
+              Lo: IntLit Value=0 @127:13-127:14
+        Default: IntLit Value=4 @127:20-127:21
+        Annotations[0]: Annotation @127:22-127:37
+          Name: Ident json @127:23-127:27
+          Args[0]: AnnotationArg @127:28-127:36
+            Value: StringLit @127:28-127:36
+              Parts[0]: text "dwCost"
+      Items[5]: FieldDecl @129:3-129:52
+        Doc: DocComment "Item level. Absent means 1; \"=\" means the item has none." @128:3-128:63
+        Name: Ident level @129:3-129:8
+        Type: OptionalType @129:10-129:19
+          Elem: NamedType @129:10-129:18
+            Name: QualifiedName Int @129:10-129:13
+            Args: TypeArgs @129:13-129:18
+              Args[0]: RangeExpr Op=.. @129:14-129:17
+                Lo: IntLit Value=0 @129:14-129:15
+        Default: IntLit Value=1 @129:22-129:23
+        Annotations[0]: Annotation @129:24-129:52
+          Name: Ident json @129:25-129:29
+          Args[0]: AnnotationArg @129:30-129:40
+            Value: StringLit @129:30-129:40
+              Parts[0]: text "dwItemLV"
+          Args[1]: AnnotationArg @129:42-129:51
+            Name: Ident none @129:42-129:46
+            Value: StringLit @129:48-129:51
+              Parts[0]: text "="
+      Items[6]: FieldDecl @131:3-131:58
+        Doc: DocComment "Rarity: the colour of the name." @130:3-130:38
+        Name: Ident rarity @131:3-131:9
+        Type: OptionalType @131:11-131:20
+          Elem: NamedType @131:11-131:19
+            Name: QualifiedName Int @131:11-131:14
+            Args: TypeArgs @131:14-131:19
+              Args[0]: RangeExpr Op=.. @131:15-131:18
+                Lo: IntLit Value=0 @131:15-131:16
+        Default: NoneLit @131:23-131:27
+        Annotations[0]: Annotation @131:28-131:58
+          Name: Ident json @131:29-131:33
+          Args[0]: AnnotationArg @131:34-131:46
+            Value: StringLit @131:34-131:46
+              Parts[0]: text "dwItemRare"
+          Args[1]: AnnotationArg @131:48-131:57
+            Name: Ident none @131:48-131:52
+            Value: StringLit @131:54-131:57
+              Parts[0]: text "="
+      Items[7]: FieldDecl @133:3-133:44
+        Doc: DocComment "How many fit in one inventory slot." @132:3-132:42
+        Name: Ident stackMax @133:3-133:11
+        Type: NamedType @133:13-133:21
+          Name: QualifiedName Int @133:13-133:16
+          Args: TypeArgs @133:16-133:21
+            Args[0]: RangeExpr Op=.. @133:17-133:20
+              Lo: IntLit Value=1 @133:17-133:18
+        Default: IntLit Value=1 @133:24-133:25
+        Annotations[0]: Annotation @133:26-133:44
+          Name: Ident json @133:27-133:31
+          Args[0]: AnnotationArg @133:32-133:43
+            Value: StringLit @133:32-133:43
+              Parts[0]: text "dwPackMax"
+      Items[8]: FieldDecl @135:3-135:50
+        Doc: DocComment "The model is a parts file (worn) rather than a whole object. 0/1 on the wire." @134:3-134:84
+        Name: Ident partsFile @135:3-135:12
+        Type: NamedType @135:14-135:18
+          Name: QualifiedName Bool @135:14-135:18
+        Default: BoolLit Value @135:21-135:25
+        Annotations[0]: Annotation @135:26-135:50
+          Name: Ident json @135:27-135:31
+          Args[0]: AnnotationArg @135:32-135:44
+            Value: StringLit @135:32-135:44
+              Parts[0]: text "bPartsFile"
+          Args[1]: AnnotationArg @135:46-135:49
+            Value: QualifiedName int @135:46-135:49
+      Items[9]: FieldDecl @137:3-137:64
+        Doc: DocComment "Sound played when the item drops." @136:3-136:40
+        Name: Ident dropSound @137:3-137:12
+        Type: OptionalType @137:14-137:25
+          Elem: RefType @137:14-137:24
+            Name: QualifiedName sounds @137:18-137:24
+        Default: NoneLit @137:28-137:32
+        Annotations[0]: Annotation @137:33-137:64
+          Name: Ident json @137:34-137:38
+          Args[0]: AnnotationArg @137:39-137:52
+            Value: StringLit @137:39-137:52
+              Parts[0]: text "dwSubDefine"
+          Args[1]: AnnotationArg @137:54-137:63
+            Name: Ident none @137:54-137:58
+            Value: StringLit @137:60-137:63
+              Parts[0]: text "="
+      Items[10]: FieldDecl @139:3-139:31
+        Doc: DocComment "What the item is. Its tag and fields sit directly in the item's object." @138:3-138:78
+        Name: Ident kind @139:3-139:7
+        Type: NamedType @139:9-139:17
+          Name: QualifiedName ItemKind @139:9-139:17
+        Annotations[0]: Annotation @139:18-139:31
+          Name: Ident json @139:19-139:23
+          Args[0]: AnnotationArg @139:24-139:30
+            Value: QualifiedName inline @139:24-139:30
+      Items[11]: FnDecl Self="self" @142:3-142:67
+        Doc: DocComment "What people search for and read: \"Angel Axe\", not II_WEA_AXE_ANGEL." @141:3-141:74
+        Name: Ident name @142:6-142:10
+        Result: NamedType @142:20-142:26
+          Name: QualifiedName String @142:20-142:26
+        Body: Block @142:27-142:67
+          Stmts[0]: ReturnStmt @142:29-142:65
+            Value: BinaryExpr Op=?? @142:36-142:65
+              X: CallExpr @142:36-142:54
+                Fun: SelectorExpr @142:36-142:45
+                  X: IdentExpr names @142:36-142:41
+                  Name: Ident get @142:42-142:45
+                Args[0]: Arg @142:46-142:53
+                  Value: IdentExpr nameKey @142:46-142:53
+              Y: IdentExpr nameKey @142:58-142:65
+  Decls[15]: VariantDecl @147:1-189:2
+    Doc: DocComment "The item's main kind (dwItemKind1). Each case holds the fields its items use, so a\nmaterial cannot carry an attack speed." @145:1-146:43
+    Name: Ident ItemKind @147:9-147:17
+    Annotations[0]: Annotation @147:18-147:43
+      Name: Ident json @147:19-147:23
+      Args[0]: AnnotationArg @147:24-147:42
+        Name: Ident tag @147:24-147:27
+        Value: StringLit @147:29-147:42
+          Parts[0]: text "dwItemKind1"
+    Items[0]: VariantCase @149:3-181:4
+      Doc: DocComment "Weapons, monsters' weapons included: 998 items." @148:3-148:54
+      Name: Ident IK1_WEAPON @149:3-149:13
+      Body: RecordBody @149:14-181:4
+        Items[0]: FieldDecl @151:5-151:44
+          Doc: DocComment "Weapon family." @150:5-150:23
+          Name: Ident kind2 @151:5-151:10
+          Type: NamedType @151:12-151:23
+            Name: QualifiedName WeaponKind2 @151:12-151:23
+          Annotations[0]: Annotation @151:24-151:44
+            Name: Ident json @151:25-151:29
+            Args[0]: AnnotationArg @151:30-151:43
+              Value: StringLit @151:30-151:43
+                Parts[0]: text "dwItemKind2"
+        Items[1]: FieldDecl @153:5-153:44
+          Doc: DocComment "Weapon type: which skills and animations it takes." @152:5-152:59
+          Name: Ident kind3 @153:5-153:10
+          Type: NamedType @153:12-153:23
+            Name: QualifiedName WeaponKind3 @153:12-153:23
+          Annotations[0]: Annotation @153:24-153:44
+            Name: Ident json @153:25-153:29
+            Args[0]: AnnotationArg @153:30-153:43
+              Value: StringLit @153:30-153:43
+                Parts[0]: text "dwItemKind3"
+        Items[2]: FieldDecl @155:5-155:56
+          Doc: DocComment "The only job that may equip it; `none` means any job." @154:5-154:62
+          Name: Ident job @155:5-155:8
+          Type: OptionalType @155:10-155:19
+            Elem: RefType @155:10-155:18
+              Name: QualifiedName jobs @155:14-155:18
+          Default: NoneLit @155:22-155:26
+          Annotations[0]: Annotation @155:27-155:56
+            Name: Ident json @155:28-155:32
+            Args[0]: AnnotationArg @155:33-155:44
+              Value: StringLit @155:33-155:44
+                Parts[0]: text "dwItemJob"
+            Args[1]: AnnotationArg @155:46-155:55
+              Name: Ident none @155:46-155:50
+              Value: StringLit @155:52-155:55
+                Parts[0]: text "="
+        Items[3]: FieldDecl @157:5-157:55
+          Doc: DocComment "Level required to equip it." @156:5-156:36
+          Name: Ident requiredLevel @157:5-157:18
+          Type: NamedType @157:20-157:28
+            Name: QualifiedName Int @157:20-157:23
+            Args: TypeArgs @157:23-157:28
+              Args[0]: RangeExpr Op=.. @157:24-157:27
+                Lo: IntLit Value=1 @157:24-157:25
+          Default: IntLit Value=1 @157:31-157:32
+          Annotations[0]: Annotation @157:33-157:55
+            Name: Ident json @157:34-157:38
+            Args[0]: AnnotationArg @157:39-157:54
+              Value: StringLit @157:39-157:54
+                Parts[0]: text "dwLimitLevel1"
+        Items[4]: FieldDecl @159:5-159:37
+          Doc: DocComment "One hand or two." @158:5-158:25
+          Name: Ident handed @159:5-159:11
+          Type: NamedType @159:13-159:19
+            Name: QualifiedName Handed @159:13-159:19
+          Annotations[0]: Annotation @159:20-159:37
+            Name: Ident json @159:21-159:25
+            Args[0]: AnnotationArg @159:26-159:36
+              Value: StringLit @159:26-159:36
+                Parts[0]: text "dwHanded"
+        Items[5]: FieldDecl @161:5-161:50
+          Doc: DocComment "Lowest base damage." @160:5-160:28
+          Name: Ident attackMin @161:5-161:14
+          Type: NamedType @161:16-161:24
+            Name: QualifiedName Int @161:16-161:19
+            Args: TypeArgs @161:19-161:24
+              Args[0]: RangeExpr Op=.. @161:20-161:23
+                Lo: IntLit Value=0 @161:20-161:21
+          Default: IntLit Value=1 @161:27-161:28
+          Annotations[0]: Annotation @161:29-161:50
+            Name: Ident json @161:30-161:34
+            Args[0]: AnnotationArg @161:35-161:49
+              Value: StringLit @161:35-161:49
+                Parts[0]: text "dwAbilityMin"
+        Items[6]: FieldDecl @163:5-163:50
+          Doc: DocComment "Highest base damage." @162:5-162:29
+          Name: Ident attackMax @163:5-163:14
+          Type: NamedType @163:16-163:24
+            Name: QualifiedName Int @163:16-163:19
+            Args: TypeArgs @163:19-163:24
+              Args[0]: RangeExpr Op=.. @163:20-163:23
+                Lo: IntLit Value=0 @163:20-163:21
+          Default: IntLit Value=1 @163:27-163:28
+          Annotations[0]: Annotation @163:29-163:50
+            Name: Ident json @163:30-163:34
+            Args[0]: AnnotationArg @163:35-163:49
+              Value: StringLit @163:35-163:49
+                Parts[0]: text "dwAbilityMax"
+        Items[7]: FieldDecl @165:5-165:52
+          Doc: DocComment "Speed factor of the attack animation." @164:5-164:46
+          Name: Ident attackSpeed @165:5-165:16
+          Type: NamedType @165:18-165:30
+            Name: QualifiedName Float @165:18-165:23
+            Args: TypeArgs @165:23-165:30
+              Args[0]: RangeExpr Op=.. @165:24-165:29
+                Lo: FloatLit Coef=0 Exp=-1 @165:24-165:27
+          Annotations[0]: Annotation @165:31-165:52
+            Name: Ident json @165:32-165:36
+            Args[0]: AnnotationArg @165:37-165:51
+              Value: StringLit @165:37-165:51
+                Parts[0]: text "fAttackSpeed"
+        Items[8]: FieldDecl @167:5-167:52
+          Doc: DocComment "How far it reaches." @166:5-166:28
+          Name: Ident attackRange @167:5-167:16
+          Type: NamedType @167:18-167:29
+            Name: QualifiedName AttackRange @167:18-167:29
+          Annotations[0]: Annotation @167:30-167:52
+            Name: Ident json @167:31-167:35
+            Args[0]: AnnotationArg @167:36-167:51
+              Value: StringLit @167:36-167:51
+                Parts[0]: text "dwAttackRange"
+        Items[9]: FieldDecl @169:5-169:49
+          Doc: DocComment "Damage family." @168:5-168:23
+          Name: Ident weaponType @169:5-169:15
+          Type: NamedType @169:17-169:27
+            Name: QualifiedName WeaponType @169:17-169:27
+          Annotations[0]: Annotation @169:28-169:49
+            Name: Ident json @169:29-169:33
+            Args[0]: AnnotationArg @169:34-169:48
+              Value: StringLit @169:34-169:48
+                Parts[0]: text "dwWeaponType"
+        Items[10]: FieldDecl @171:5-171:45
+          Doc: DocComment "Durability." @170:5-170:20
+          Name: Ident endurance @171:5-171:14
+          Type: NamedType @171:16-171:24
+            Name: QualifiedName Int @171:16-171:19
+            Args: TypeArgs @171:19-171:24
+              Args[0]: RangeExpr Op=.. @171:20-171:23
+                Lo: IntLit Value=0 @171:20-171:21
+          Annotations[0]: Annotation @171:25-171:45
+            Name: Ident json @171:26-171:30
+            Args[0]: AnnotationArg @171:31-171:44
+              Value: StringLit @171:31-171:44
+                Parts[0]: text "dwEndurance"
+        Items[11]: FieldDecl @174:5-174:86
+          Doc: DocComment "Up to six stat bonuses, written as the parallel keys dwDestParam0..5 and\nnAdjParamVal0..5." @172:5-173:26
+          Name: Ident stats @174:5-174:10
+          Type: ListType @174:12-174:29
+            Elem: NamedType @174:13-174:22
+              Name: QualifiedName StatBonus @174:13-174:22
+            Args: TypeArgs @174:23-174:29
+              Args[0]: RangeExpr Op=..= @174:24-174:28
+                Hi: IntLit Value=6 @174:27-174:28
+          Default: ListLit @174:32-174:34
+          Annotations[0]: Annotation @174:35-174:86
+            Name: Ident json @174:36-174:40
+            Args[0]: AnnotationArg @174:41-174:85
+              Name: Ident pairs @174:41-174:46
+              Value: AnnotationList @174:48-174:85
+                Items[0]: StringLit @174:49-174:65
+                  Parts[0]: text "dwDestParam"
+                  Parts[1]: Interp @174:62-174:63
+                    X: IdentExpr i @174:62-174:63
+                Items[1]: StringLit @174:67-174:84
+                  Parts[0]: text "nAdjParamVal"
+                  Parts[1]: Interp @174:81-174:82
+                    X: IdentExpr i @174:81-174:82
+        Items[12]: FieldDecl @176:5-176:49
+          Doc: DocComment "Property flags; a bitmask on the wire." @175:5-175:47
+          Name: Ident flags @176:5-176:10
+          Type: ListType @176:12-176:22
+            Elem: NamedType @176:13-176:21
+              Name: QualifiedName ItemFlag @176:13-176:21
+          Default: ListLit @176:25-176:27
+          Annotations[0]: Annotation @176:28-176:49
+            Name: Ident json @176:29-176:33
+            Args[0]: AnnotationArg @176:34-176:42
+              Value: StringLit @176:34-176:42
+                Parts[0]: text "dwFlag"
+            Args[1]: AnnotationArg @176:44-176:48
+              Value: QualifiedName bits @176:44-176:48
+        Items[13]: FieldDecl @178:5-178:69
+          Doc: DocComment "Sound of a hit." @177:5-177:24
+          Name: Ident attackSound @178:5-178:16
+          Type: OptionalType @178:18-178:29
+            Elem: RefType @178:18-178:28
+              Name: QualifiedName sounds @178:22-178:28
+          Default: NoneLit @178:32-178:36
+          Annotations[0]: Annotation @178:37-178:69
+            Name: Ident json @178:38-178:42
+            Args[0]: AnnotationArg @178:43-178:57
+              Value: StringLit @178:43-178:57
+                Parts[0]: text "dwSndAttack1"
+            Args[1]: AnnotationArg @178:59-178:68
+              Name: Ident none @178:59-178:63
+              Value: StringLit @178:65-178:68
+                Parts[0]: text "="
+        Items[14]: CheckDecl Keyword=check @180:5-180:97
+          Cond: BinaryExpr Op=<= @180:11-180:33
+            X: IdentExpr attackMin @180:11-180:20
+            Y: IdentExpr attackMax @180:24-180:33
+          Message: StringLit @180:39-180:97
+            Parts[0]: text "attackMin ("
+            Parts[1]: Interp @180:52-180:61
+              X: IdentExpr attackMin @180:52-180:61
+            Parts[2]: text ") is above attackMax ("
+            Parts[3]: Interp @180:85-180:94
+              X: IdentExpr attackMax @180:85-180:94
+            Parts[4]: text ")"
+    Items[1]: VariantCase @183:3-186:4
+      Doc: DocComment "What a player carries and uses up: materials, food, gems, jewels... 868 items." @182:3-182:85
+      Name: Ident IK1_GENERAL @183:3-183:14
+      Body: RecordBody @183:15-186:4
+        Items[0]: FieldDecl @185:5-185:37
+          Doc: DocComment "The sub-kind, with its own fields." @184:5-184:43
+          Name: Ident kind2 @185:5-185:10
+          Type: NamedType @185:12-185:23
+            Name: QualifiedName GeneralKind @185:12-185:23
+          Annotations[0]: Annotation @185:24-185:37
+            Name: Ident json @185:25-185:29
+            Args[0]: AnnotationArg @185:30-185:36
+              Value: QualifiedName inline @185:30-185:36
+  Decls[16]: VariantDecl @193:1-214:2
+    Doc: DocComment "A general item's sub-kind (dwItemKind2). Usage is recorded per innermost case, so\nthe studio orders a material's fields by what materials set." @191:1-192:65
+    Name: Ident GeneralKind @193:9-193:20
+    Annotations[0]: Annotation @193:21-193:46
+      Name: Ident json @193:22-193:26
+      Args[0]: AnnotationArg @193:27-193:45
+        Name: Ident tag @193:27-193:30
+        Value: StringLit @193:32-193:45
+          Parts[0]: text "dwItemKind2"
+    Items[0]: VariantCase @195:3-202:4
+      Doc: DocComment "Crafting and upgrade materials: 129 items." @194:3-194:49
+      Name: Ident IK2_MATERIAL @195:3-195:15
+      Body: RecordBody @195:16-202:4
+        Items[0]: FieldDecl @197:5-197:45
+          Doc: DocComment "What the material is used for." @196:5-196:39
+          Name: Ident kind3 @197:5-197:10
+          Type: NamedType @197:12-197:24
+            Name: QualifiedName MaterialKind @197:12-197:24
+          Annotations[0]: Annotation @197:25-197:45
+            Name: Ident json @197:26-197:30
+            Args[0]: AnnotationArg @197:31-197:44
+              Value: StringLit @197:31-197:44
+                Parts[0]: text "dwItemKind3"
+        Items[1]: FieldDecl @199:5-199:51
+          Doc: DocComment "Element of an elemental stone; NONE for the others." @198:5-198:60
+          Name: Ident element @199:5-199:12
+          Type: NamedType @199:14-199:25
+            Name: QualifiedName ItemElement @199:14-199:25
+          Default: IdentExpr NONE @199:28-199:32
+          Annotations[0]: Annotation @199:33-199:51
+            Name: Ident json @199:34-199:38
+            Args[0]: AnnotationArg @199:39-199:50
+              Value: StringLit @199:39-199:50
+                Parts[0]: text "eItemType"
+        Items[2]: FieldDecl @201:5-201:71
+          Doc: DocComment "The stat an upgrade card raises." @200:5-200:41
+          Name: Ident referStat @201:5-201:14
+          Type: OptionalType @201:16-201:31
+            Elem: RefType @201:16-201:30
+              Name: QualifiedName attributes @201:20-201:30
+          Default: NoneLit @201:34-201:38
+          Annotations[0]: Annotation @201:39-201:71
+            Name: Ident json @201:40-201:44
+            Args[0]: AnnotationArg @201:45-201:59
+              Value: StringLit @201:45-201:59
+                Parts[0]: text "dwReferStat2"
+            Args[1]: AnnotationArg @201:61-201:70
+              Name: Ident none @201:61-201:65
+              Value: StringLit @201:67-201:70
+                Parts[0]: text "="
+    Items[1]: VariantCase @204:3-211:4
+      Doc: DocComment "Food, eaten from the inventory: 243 items." @203:3-203:49
+      Name: Ident IK2_FOOD @204:3-204:11
+      Body: RecordBody @204:12-211:4
+        Items[0]: FieldDecl @206:5-206:41
+          Doc: DocComment "What kind of food." @205:5-205:27
+          Name: Ident kind3 @206:5-206:10
+          Type: NamedType @206:12-206:20
+            Name: QualifiedName FoodKind @206:12-206:20
+          Annotations[0]: Annotation @206:21-206:41
+            Name: Ident json @206:22-206:26
+            Args[0]: AnnotationArg @206:27-206:40
+              Value: StringLit @206:27-206:40
+                Parts[0]: text "dwItemKind3"
+        Items[1]: FieldDecl @208:5-208:89
+          Doc: DocComment "What eating it restores." @207:5-207:33
+          Name: Ident restores @208:5-208:13
+          Type: ListType @208:15-208:32
+            Elem: NamedType @208:16-208:25
+              Name: QualifiedName StatBonus @208:16-208:25
+            Args: TypeArgs @208:26-208:32
+              Args[0]: RangeExpr Op=..= @208:27-208:31
+                Hi: IntLit Value=6 @208:30-208:31
+          Default: ListLit @208:35-208:37
+          Annotations[0]: Annotation @208:38-208:89
+            Name: Ident json @208:39-208:43
+            Args[0]: AnnotationArg @208:44-208:88
+              Name: Ident pairs @208:44-208:49
+              Value: AnnotationList @208:51-208:88
+                Items[0]: StringLit @208:52-208:68
+                  Parts[0]: text "dwDestParam"
+                  Parts[1]: Interp @208:65-208:66
+                    X: IdentExpr i @208:65-208:66
+                Items[1]: StringLit @208:70-208:87
+                  Parts[0]: text "nAdjParamVal"
+                  Parts[1]: Interp @208:84-208:85
+                    X: IdentExpr i @208:84-208:85
+        Items[2]: FieldDecl @210:5-210:63
+          Doc: DocComment "Wait before the next one can be eaten." @209:5-209:47
+          Name: Ident cooldown @210:5-210:13
+          Type: OptionalType @210:15-210:24
+            Elem: NamedType @210:15-210:23
+              Name: QualifiedName Duration @210:15-210:23
+          Default: NoneLit @210:27-210:31
+          Annotations[0]: Annotation @210:32-210:63
+            Name: Ident json @210:33-210:37
+            Args[0]: AnnotationArg @210:38-210:52
+              Value: StringLit @210:38-210:52
+                Parts[0]: text "dwSkillReady"
+            Args[1]: AnnotationArg @210:54-210:62
+              Name: Ident unit @210:54-210:58
+              Value: QualifiedName ms @210:60-210:62
+  Decls[17]: LetDecl @219:1-220:34
+    Doc: DocComment "Every converted item, keyed by its define. Item ids are stored in inventories, so\nthe table is stable: an item is retired, never removed or renamed. Each entry lives\nin its own file; a new one goes to entries/<kind>/<id>.canon." @216:1-218:66
+    Annotations[0]: Annotation @219:1-219:36
+      Name: Ident files @219:2-219:7
+      Args[0]: AnnotationArg @219:8-219:35
+        Value: StringLit @219:8-219:35
+          Parts[0]: text "entries/"
+          Parts[1]: Interp @219:18-219:22
+            X: IdentExpr kind @219:18-219:22
+          Parts[2]: text "/"
+          Parts[3]: Interp @219:25-219:27
+            X: IdentExpr id @219:25-219:27
+          Parts[4]: text ".canon"
+    Name: Ident items @220:5-220:10
+    Type: TableType Stable="stable" @220:12-220:29
+      Name: QualifiedName Item @220:25-220:29
+    Value: BraceLit @220:32-220:34
+  Decls[18]: EmitDecl @224:1-224:71
+    Target: Ident json @224:6-224:10
+    Options: BraceLit @224:11-224:71
+      Items[0]: FieldItem @224:13-224:52
+        Name: Ident out @224:13-224:16
+        Value: StringLit @224:18-224:52
+          Parts[0]: text "@resource/Server/Item/items.json"
+      Items[1]: FieldItem @224:54-224:69
+        Name: Ident values @224:54-224:60
+        Value: ListLit @224:62-224:69
+          Elems[0]: IdentExpr items @224:63-224:68
+  Decls[19]: EmitDecl @225:1-225:79
+    Target: Ident cpp @225:6-225:9
+    Options: BraceLit @225:10-225:79
+      Items[0]: FieldItem @225:12-225:42
+        Name: Ident out @225:12-225:15
+        Value: StringLit @225:17-225:42
+          Parts[0]: text "@source/Generated/items"
+      Items[1]: FieldItem @225:44-225:65
+        Name: Ident namespace @225:44-225:53
+        Value: StringLit @225:55-225:65
+          Parts[0]: text "sov::gen"
+      Items[2]: FieldItem @225:67-225:77
+        Name: Ident mode @225:67-225:71
+        Value: IdentExpr data @225:73-225:77
+  Decls[20]: EmitDecl @226:1-226:48
+    Target: Ident view @226:6-226:10
+    Options: BraceLit @226:11-226:48
+      Items[0]: FieldItem @226:13-226:46
+        Name: Ident out @226:13-226:16
+        Value: StringLit @226:18-226:46
+          Parts[0]: text "@generated/items.view.json"
+== findings
+0 errors, 0 warnings in 1 package (…)

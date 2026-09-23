@@ -1,0 +1,41 @@
+File: File FileKind=source @1:1-21:1
+  Doc: DocComment "Account roles of the website and every internal tool." @1:1-1:58
+  Package: QualifiedName sovcommon.roles @2:9-2:24
+  Decls[0]: EnumDecl Ordered="ordered" @10:1-17:2
+    Doc: DocComment "The website.website_account.role literals. Declaration order IS the rank:\n`gm_junior < maintainer` is true, and nothing else may hard-code a number.\n\nToday this ladder is written three times (roles.go, roles.ts and the SQL CHECK\nconstraint) and kept in sync by comments. Here it is written once, and Go and TS\nare generated from it." @4:1-9:27
+    Name: Ident Role @10:6-10:10
+    Members[0]: EnumMember @11:3-11:9
+      Name: Ident member @11:3-11:9
+    Members[1]: EnumMember @12:3-12:12
+      Name: Ident gm_junior @12:3-12:12
+    Members[2]: EnumMember @13:3-13:12
+      Name: Ident gm_senior @13:3-13:12
+    Members[3]: EnumMember @14:3-14:13
+      Name: Ident maintainer @14:3-14:13
+    Members[4]: EnumMember @15:3-15:8
+      Name: Ident owner @15:3-15:8
+    Members[5]: EnumMember @16:3-16:8
+      Name: Ident admin @16:3-16:8
+  Decls[1]: EmitDecl @19:1-19:67
+    Target: Ident go @19:6-19:8
+    Options: BraceLit @19:9-19:67
+      Items[0]: FieldItem @19:11-19:34
+        Name: Ident out @19:11-19:14
+        Value: StringLit @19:16-19:34
+          Parts[0]: text "@sovcommon/roles"
+      Items[1]: FieldItem @19:36-19:52
+        Name: Ident package @19:36-19:43
+        Value: StringLit @19:45-19:52
+          Parts[0]: text "roles"
+      Items[2]: FieldItem @19:54-19:65
+        Name: Ident mode @19:54-19:58
+        Value: IdentExpr baked @19:60-19:65
+  Decls[2]: EmitDecl @20:1-20:43
+    Target: Ident ts @20:6-20:8
+    Options: BraceLit @20:9-20:43
+      Items[0]: FieldItem @20:11-20:41
+        Name: Ident out @20:11-20:14
+        Value: StringLit @20:16-20:41
+          Parts[0]: text "@web/roles.generated.ts"
+== findings
+0 errors, 0 warnings in 1 package (…)

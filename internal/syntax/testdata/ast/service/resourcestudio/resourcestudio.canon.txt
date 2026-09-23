@@ -1,0 +1,147 @@
+File: File FileKind=source @1:1-60:1
+  Doc: DocComment "Resource Studio's own settings: an ordinary service config, not game data.\n\nReplaces config.example.toml, its hand-written loader and its precedence rules\n(\"CLI flag > env > config.toml > derived default\"). Per-machine values move into\nlayers (louis.layer.canon); secrets are `input`s and never written in a file." @1:1-5:82
+  Package: QualifiedName service.resourcestudio @6:9-6:31
+  Decls[0]: TypeDecl @10:1-10:24
+    Doc: DocComment "Absolute, or relative to the resourcestudio directory. `~` and `$VAR` are NOT\nexpanded: Canon has no environment. Machine-specific paths belong in a layer." @8:1-9:82
+    Name: Ident Path @10:6-10:10
+    Type: NamedType @10:13-10:24
+      Name: QualifiedName String @10:13-10:19
+      Args: TypeArgs @10:19-10:24
+        Args[0]: RangeExpr Op=.. @10:20-10:23
+          Lo: IntLit Value=1 @10:20-10:21
+  Decls[1]: RecordDecl @13:1-22:2
+    Doc: DocComment "Where the studio reads and caches files." @12:1-12:45
+    Name: Ident Paths @13:8-13:13
+    Body: RecordBody @13:14-22:2
+      Items[0]: FieldDecl @15:3-15:40
+        Doc: DocComment "The Resource checkout. Default: derived from the repository layout." @14:3-14:74
+        Name: Ident resourceRoot @15:3-15:15
+        Type: NamedType @15:17-15:21
+          Name: QualifiedName Path @15:17-15:21
+        Default: StringLit @15:24-15:40
+          Parts[0]: text "../../Resource"
+      Items[1]: FieldDecl @17:3-17:36
+        Doc: DocComment "The Client checkout (icons and themes)." @16:3-16:46
+        Name: Ident clientRoot @17:3-17:13
+        Type: NamedType @17:15-17:19
+          Name: QualifiedName Path @17:15-17:19
+        Default: StringLit @17:22-17:36
+          Parts[0]: text "../../Client"
+      Items[2]: FieldDecl @19:3-19:24
+        Doc: DocComment "The .dds icons; `none` probes <client>/Data/UI/Icon, then <client>/Icon." @18:3-18:79
+        Name: Ident iconDir @19:3-19:10
+        Type: OptionalType @19:12-19:17
+          Elem: NamedType @19:12-19:16
+            Name: QualifiedName Path @19:12-19:16
+        Default: NoneLit @19:20-19:24
+      Items[3]: FieldDecl @21:3-21:28
+        Doc: DocComment "Thumbnails and indexes. Never inside Resource." @20:3-20:53
+        Name: Ident cacheDir @21:3-21:11
+        Type: NamedType @21:13-21:17
+          Name: QualifiedName Path @21:13-21:17
+        Default: StringLit @21:20-21:28
+          Parts[0]: text ".cache"
+  Decls[2]: RecordDecl @25:1-37:2
+    Doc: DocComment "The local HTTP server." @24:1-24:27
+    Name: Ident Server @25:8-25:14
+    Body: RecordBody @25:15-37:2
+      Items[0]: FieldDecl @27:3-27:29
+        Doc: DocComment "The tool is local by design (ADR-0005 d.1)." @26:3-26:50
+        Name: Ident host @27:3-27:7
+        Type: NamedType @27:9-27:15
+          Name: QualifiedName String @27:9-27:15
+        Default: StringLit @27:18-27:29
+          Parts[0]: text "127.0.0.1"
+      Items[1]: FieldDecl @29:3-29:33
+        Doc: DocComment "Listening port." @28:3-28:22
+        Name: Ident port @29:3-29:7
+        Type: NamedType @29:9-29:26
+          Name: QualifiedName Int @29:9-29:12
+          Args: TypeArgs @29:12-29:26
+            Args[0]: RangeExpr Op=..= @29:13-29:25
+              Lo: IntLit Value=1024 @29:13-29:17
+              Hi: IntLit Value=65535 @29:20-29:25
+        Default: IntLit Value=8765 @29:29-29:33
+      Items[2]: FieldDecl @31:3-31:27
+        Doc: DocComment "Opens a browser tab at startup." @30:3-30:38
+        Name: Ident openBrowser @31:3-31:14
+        Type: NamedType @31:16-31:20
+          Name: QualifiedName Bool @31:16-31:20
+        Default: BoolLit Value @31:23-31:27
+      Items[3]: FieldDecl @33:3-33:25
+        Doc: DocComment "Refuses every write: browse only." @32:3-32:40
+        Name: Ident readOnly @33:3-33:11
+        Type: NamedType @33:13-33:17
+          Name: QualifiedName Bool @33:13-33:17
+        Default: BoolLit @33:20-33:25
+      Items[4]: CheckDecl Keyword=check @35:3-36:66
+        Cond: BinaryExpr Op=or @35:9-35:51
+          X: BinaryExpr Op=== @35:9-35:28
+            X: IdentExpr host @35:9-35:13
+            Y: StringLit @35:17-35:28
+              Parts[0]: text "127.0.0.1"
+          Y: BinaryExpr Op=== @35:32-35:51
+            X: IdentExpr host @35:32-35:36
+            Y: StringLit @35:40-35:51
+              Parts[0]: text "localhost"
+        Message: StringLit @36:10-36:66
+          Parts[0]: text "Resource Studio only listens on the loopback interface"
+  Decls[3]: RecordDecl @40:1-43:2
+    Doc: DocComment "Generation features." @39:1-39:25
+    Name: Ident Gen @40:8-40:11
+    Body: RecordBody @40:12-43:2
+      Items[0]: FieldDecl Input="input" @42:3-42:66
+        Doc: DocComment "Entered right before the action and never stored (ADR-0005)." @41:3-41:67
+        Name: Ident apiKey @42:3-42:9
+        Type: OptionalType @42:17-42:29
+          Elem: NamedType @42:17-42:28
+            Name: QualifiedName String @42:17-42:23
+            Args: TypeArgs @42:23-42:28
+              Args[0]: RangeExpr Op=.. @42:24-42:27
+                Lo: IntLit Value=1 @42:24-42:25
+        Env: StringLit @42:39-42:66
+          Parts[0]: text "RESOURCESTUDIO_GEMINI_KEY"
+  Decls[4]: RecordDecl @46:1-53:2
+    Doc: DocComment "Every setting of the studio." @45:1-45:33
+    Name: Ident Config @46:8-46:14
+    Body: RecordBody @46:15-53:2
+      Items[0]: FieldDecl @48:3-48:20
+        Doc: DocComment "Where files are." @47:3-47:23
+        Name: Ident paths @48:3-48:8
+        Type: NamedType @48:10-48:15
+          Name: QualifiedName Paths @48:10-48:15
+        Default: BraceLit @48:18-48:20
+      Items[1]: FieldDecl @50:3-50:22
+        Doc: DocComment "The HTTP server." @49:3-49:23
+        Name: Ident server @50:3-50:9
+        Type: NamedType @50:11-50:17
+          Name: QualifiedName Server @50:11-50:17
+        Default: BraceLit @50:20-50:22
+      Items[2]: FieldDecl @52:3-52:16
+        Doc: DocComment "Generation features. Its only field is an input, so the literal is empty." @51:3-51:80
+        Name: Ident gen @52:3-52:6
+        Type: NamedType @52:8-52:11
+          Name: QualifiedName Gen @52:8-52:11
+        Default: BraceLit @52:14-52:16
+  Decls[5]: LetDecl @56:1-56:24
+    Doc: DocComment "The settings of this build: the defaults, unless a layer amends them." @55:1-55:74
+    Name: Ident config @56:5-56:11
+    Type: NamedType @56:13-56:19
+      Name: QualifiedName Config @56:13-56:19
+    Value: BraceLit @56:22-56:24
+  Decls[6]: EmitDecl @59:1-59:92
+    Target: Ident go @59:6-59:8
+    Options: BraceLit @59:9-59:92
+      Items[0]: FieldItem @59:11-59:58
+        Name: Ident out @59:11-59:14
+        Value: StringLit @59:16-59:58
+          Parts[0]: text "@services/resourcestudio/internal/config"
+      Items[1]: FieldItem @59:60-59:77
+        Name: Ident package @59:60-59:67
+        Value: StringLit @59:69-59:77
+          Parts[0]: text "config"
+      Items[2]: FieldItem @59:79-59:90
+        Name: Ident mode @59:79-59:83
+        Value: IdentExpr baked @59:85-59:90
+== findings
+0 errors, 0 warnings in 1 package (…)

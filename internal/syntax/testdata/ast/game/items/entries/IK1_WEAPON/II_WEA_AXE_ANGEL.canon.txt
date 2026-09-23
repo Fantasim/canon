@@ -1,0 +1,118 @@
+File: File FileKind=source @1:1-38:1
+  Package: QualifiedName game.items @3:9-3:19
+  Decls[0]: EntryDecl @6:1-37:2
+    Doc: DocComment "Angel Axe: the level 90 mercenary axe." @5:1-5:43
+    Table: Ident items @6:7-6:12
+    Key: Ident II_WEA_AXE_ANGEL @6:13-6:29
+    Value: BraceLit @6:30-37:2
+      Items[0]: FieldItem @7:3-7:13
+        Name: Ident version @7:3-7:10
+        Value: IntLit Value=6 @7:12-7:13
+      Items[1]: FieldItem @8:3-8:37
+        Name: Ident nameKey @8:3-8:10
+        Value: StringLit @8:12-8:37
+          Parts[0]: text "IDS_PROPITEM_TXT_003930"
+      Items[2]: FieldItem @9:3-9:44
+        Name: Ident descriptionKey @9:3-9:17
+        Value: StringLit @9:19-9:44
+          Parts[0]: text "IDS_PROPITEM_TXT_003931"
+      Items[3]: FieldItem @10:3-10:30
+        Name: Ident icon @10:3-10:7
+        Value: StringLit @10:9-10:30
+          Parts[0]: text "Itm_WeaAxeAngel.dds"
+      Items[4]: FieldItem @11:3-11:16
+        Name: Ident cost @11:3-11:7
+        Value: IntLit Value=300000 @11:9-11:16
+      Items[5]: FieldItem @12:3-12:12
+        Name: Ident level @12:3-12:8
+        Value: IntLit Value=90 @12:10-12:12
+      Items[6]: FieldItem @13:3-13:14
+        Name: Ident rarity @13:3-13:9
+        Value: IntLit Value=200 @13:11-13:14
+      Items[7]: FieldItem @14:3-14:19
+        Name: Ident partsFile @14:3-14:12
+        Value: BoolLit @14:14-14:19
+      Items[8]: FieldItem @15:3-15:32
+        Name: Ident dropSound @15:3-15:12
+        Value: IdentExpr SND_ITEM_DROPDING1 @15:14-15:32
+      Items[9]: FieldItem @16:3-36:4
+        Name: Ident kind @16:3-16:7
+        Value: TypedLit @16:9-36:4
+          Type: QualifiedName IK1_WEAPON @16:9-16:19
+          Lit: BraceLit @16:20-36:4
+            Items[0]: FieldItem @17:5-17:29
+              Name: Ident kind2 @17:5-17:10
+              Value: IdentExpr IK2_WEAPON_DIRECT @17:12-17:29
+            Items[1]: FieldItem @18:5-18:19
+              Name: Ident kind3 @18:5-18:10
+              Value: IdentExpr IK3_AXE @18:12-18:19
+            Items[2]: FieldItem @19:5-19:23
+              Name: Ident job @19:5-19:8
+              Value: IdentExpr JOB_MERCENARY @19:10-19:23
+            Items[3]: FieldItem @20:5-20:22
+              Name: Ident requiredLevel @20:5-20:18
+              Value: IntLit Value=90 @20:20-20:22
+            Items[4]: FieldItem @21:5-21:19
+              Name: Ident handed @21:5-21:11
+              Value: IdentExpr HD_ONE @21:13-21:19
+            Items[5]: FieldItem @22:5-22:19
+              Name: Ident attackMin @22:5-22:14
+              Value: IntLit Value=310 @22:16-22:19
+            Items[6]: FieldItem @23:5-23:19
+              Name: Ident attackMax @23:5-23:14
+              Value: IntLit Value=312 @23:16-23:19
+            Items[7]: FieldItem @24:5-24:22
+              Name: Ident attackSpeed @24:5-24:16
+              Value: FloatLit Coef=6 Exp=-2 @24:18-24:22
+            Items[8]: FieldItem @25:5-25:26
+              Name: Ident attackRange @25:5-25:16
+              Value: IdentExpr AR_SHORT @25:18-25:26
+            Items[9]: FieldItem @26:5-26:29
+              Name: Ident weaponType @26:5-26:15
+              Value: IdentExpr WT_MELEE_AXE @26:17-26:29
+            Items[10]: FieldItem @27:5-27:25
+              Name: Ident endurance @27:5-27:14
+              Value: IntLit Value=8000000 @27:16-27:25
+            Items[11]: FieldItem @28:5-34:6
+              Name: Ident stats @28:5-28:10
+              Value: ListLit @28:12-34:6
+                Elems[0]: BraceLit @29:7-29:40
+                  Items[0]: FieldItem @29:9-29:27
+                    Name: Ident attribute @29:9-29:18
+                    Value: IdentExpr DST_STR @29:20-29:27
+                  Items[1]: FieldItem @29:29-29:38
+                    Name: Ident value @29:29-29:34
+                    Value: IntLit Value=16 @29:36-29:38
+                Elems[1]: BraceLit @30:7-30:54
+                  Items[0]: FieldItem @30:9-30:42
+                    Name: Ident attribute @30:9-30:18
+                    Value: IdentExpr DST_CHR_CHANCECRITICAL @30:20-30:42
+                  Items[1]: FieldItem @30:44-30:52
+                    Name: Ident value @30:44-30:49
+                    Value: IntLit Value=4 @30:51-30:52
+                Elems[2]: BraceLit @31:7-31:51
+                  Items[0]: FieldItem @31:9-31:38
+                    Name: Ident attribute @31:9-31:18
+                    Value: IdentExpr DST_CRITICAL_BONUS @31:20-31:38
+                  Items[1]: FieldItem @31:40-31:49
+                    Name: Ident value @31:40-31:45
+                    Value: IntLit Value=19 @31:47-31:49
+                Elems[3]: BraceLit @32:7-32:49
+                  Items[0]: FieldItem @32:9-32:35
+                    Name: Ident attribute @32:9-32:18
+                    Value: IdentExpr DST_ATTACKSPEED @32:20-32:35
+                  Items[1]: FieldItem @32:37-32:47
+                    Name: Ident value @32:37-32:42
+                    Value: IntLit Value=140 @32:44-32:47
+                Elems[4]: BraceLit @33:7-33:49
+                  Items[0]: FieldItem @33:9-33:37
+                    Name: Ident attribute @33:9-33:18
+                    Value: IdentExpr DST_ATKPOWER_RATE @33:20-33:37
+                  Items[1]: FieldItem @33:39-33:47
+                    Name: Ident value @33:39-33:44
+                    Value: IntLit Value=7 @33:46-33:47
+            Items[12]: FieldItem @35:5-35:32
+              Name: Ident attackSound @35:5-35:16
+              Value: IdentExpr SND_PC_DMGSWDM @35:18-35:32
+== findings
+0 errors, 0 warnings in 1 package (…)

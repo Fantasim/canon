@@ -1,0 +1,219 @@
+File: File FileKind=source @1:1-49:1
+  Doc: DocComment "Legacy C++ structs (DECISIONS 5, SPEC §15.3). The server's hand-written ItemProp\n(Engine/Core/Project/ProjectCmn.h) is filled by generated code instead of a\ngenerated class: in `access: fields` every existing `pProp->dwItemKind1` read\ncompiles, lookups return `const ItemProp*`, and every write is a compile error.\nMoving to `both`, then `getters`, is one word per struct.\n\nA keyed list is used so that the key is a field with a legacy member (`dwID`)." @1:1-7:83
+  Package: QualifiedName features.legacycpp @8:9-8:27
+  Decls[0]: LetDecl @10:1-10:86
+    Mods: Modifiers Local="local" @10:1-10:6
+    Name: Ident items @10:11-10:16
+    Value: LoadExpr @10:19-10:86
+      Method: Ident defines @10:24-10:31
+      Args[0]: Arg @10:32-10:70
+        Value: StringLit @10:32-10:70
+          Parts[0]: text "@resource/Server/Define/defineitem.h"
+      Args[1]: Arg @10:72-10:85
+        Name: Ident prefix @10:72-10:78
+        Value: StringLit @10:80-10:85
+          Parts[0]: text "II_"
+  Decls[1]: EnumDecl @14:1-23:2
+    Doc: DocComment "The main kind. `@cpp(defines:)` also emits `#define IK1_WEAPON 1`... for legacy\ncode, so the IK1 block of defineItemkind.h can be deleted once this is generated." @12:1-13:86
+    Name: Ident Kind1 @14:6-14:11
+    Annotations[0]: Annotation @14:12-14:25
+      Name: Ident codes @14:13-14:18
+      Args[0]: AnnotationArg @14:19-14:24
+        Value: QualifiedName UInt8 @14:19-14:24
+    Annotations[1]: Annotation @14:26-14:47
+      Name: Ident cpp @14:27-14:30
+      Args[0]: AnnotationArg @14:31-14:46
+        Name: Ident defines @14:31-14:38
+        Value: StringLit @14:40-14:46
+          Parts[0]: text "IK1_"
+    Members[0]: EnumMember @15:3-15:15
+      Name: Ident IK1_GOLD @15:3-15:11
+      Value: IntLit Value=0 @15:14-15:15
+    Members[1]: EnumMember @16:3-16:17
+      Name: Ident IK1_WEAPON @16:3-16:13
+      Value: IntLit Value=1 @16:16-16:17
+    Members[2]: EnumMember @17:3-17:16
+      Name: Ident IK1_ARMOR @17:3-17:12
+      Value: IntLit Value=2 @17:15-17:16
+    Members[3]: EnumMember @18:3-18:18
+      Name: Ident IK1_GENERAL @18:3-18:14
+      Value: IntLit Value=3 @18:17-18:18
+    Members[4]: EnumMember @19:3-19:15
+      Name: Ident IK1_RIDE @19:3-19:11
+      Value: IntLit Value=4 @19:14-19:15
+    Members[5]: EnumMember @20:3-20:17
+      Name: Ident IK1_SYSTEM @20:3-20:13
+      Value: IntLit Value=5 @20:16-20:17
+    Members[6]: EnumMember @21:3-21:18
+      Name: Ident IK1_CHARGED @21:3-21:14
+      Value: IntLit Value=6 @21:17-21:18
+    Members[7]: EnumMember @22:3-22:18
+      Name: Ident IK1_HOUSING @22:3-22:14
+      Value: IntLit Value=7 @22:17-22:18
+  Decls[2]: RecordDecl @28:1-39:2
+    Doc: DocComment "The ItemProp members this sketch maps. Members it does not map are\nvalue-initialised; `static_assert`s check that each mapped member exists with the\nstated type." @25:1-27:17
+    Name: Ident Prop @28:8-28:12
+    Annotations[0]: Annotation @28:13-28:77
+      Name: Ident cpp @28:14-28:17
+      Args[0]: AnnotationArg @28:18-28:36
+        Name: Ident struct @28:18-28:24
+        Value: StringLit @28:26-28:36
+          Parts[0]: text "ItemProp"
+      Args[1]: AnnotationArg @28:38-28:60
+        Name: Ident header @28:38-28:44
+        Value: StringLit @28:46-28:60
+          Parts[0]: text "ProjectCmn.h"
+      Args[2]: AnnotationArg @28:62-28:76
+        Name: Ident access @28:62-28:68
+        Value: QualifiedName fields @28:70-28:76
+    Body: RecordBody @28:78-39:2
+      Items[0]: FieldDecl @30:3-30:73
+        Doc: DocComment "The item define. ItemProp keeps its numeric value." @29:3-29:57
+        Name: Ident id @30:3-30:5
+        Type: RefType @30:7-30:16
+          Name: QualifiedName items @30:11-30:16
+        Annotations[0]: Annotation @30:17-30:30
+          Name: Ident json @30:18-30:22
+          Args[0]: AnnotationArg @30:23-30:29
+            Value: StringLit @30:23-30:29
+              Parts[0]: text "dwID"
+        Annotations[1]: Annotation @30:31-30:73
+          Name: Ident cpp @30:32-30:35
+          Args[0]: AnnotationArg @30:36-30:49
+            Name: Ident field @30:36-30:41
+            Value: StringLit @30:43-30:49
+              Parts[0]: text "dwID"
+          Args[1]: AnnotationArg @30:51-30:72
+            Name: Ident type @30:51-30:55
+            Value: StringLit @30:57-30:72
+              Parts[0]: text "std::uint32_t"
+      Items[1]: FieldDecl @32:3-32:86
+        Doc: DocComment "Main kind." @31:3-31:17
+        Name: Ident kind1 @32:3-32:8
+        Type: NamedType @32:10-32:15
+          Name: QualifiedName Kind1 @32:10-32:15
+        Annotations[0]: Annotation @32:16-32:36
+          Name: Ident json @32:17-32:21
+          Args[0]: AnnotationArg @32:22-32:35
+            Value: StringLit @32:22-32:35
+              Parts[0]: text "dwItemKind1"
+        Annotations[1]: Annotation @32:37-32:86
+          Name: Ident cpp @32:38-32:41
+          Args[0]: AnnotationArg @32:42-32:62
+            Name: Ident field @32:42-32:47
+            Value: StringLit @32:49-32:62
+              Parts[0]: text "dwItemKind1"
+          Args[1]: AnnotationArg @32:64-32:85
+            Name: Ident type @32:64-32:68
+            Value: StringLit @32:70-32:85
+              Parts[0]: text "std::uint32_t"
+      Items[2]: FieldDecl @34:3-34:87
+        Doc: DocComment "Item level." @33:3-33:18
+        Name: Ident level @34:3-34:8
+        Type: NamedType @34:10-34:18
+          Name: QualifiedName Int @34:10-34:13
+          Args: TypeArgs @34:13-34:18
+            Args[0]: RangeExpr Op=.. @34:14-34:17
+              Lo: IntLit Value=0 @34:14-34:15
+        Default: IntLit Value=1 @34:21-34:22
+        Annotations[0]: Annotation @34:23-34:40
+          Name: Ident json @34:24-34:28
+          Args[0]: AnnotationArg @34:29-34:39
+            Value: StringLit @34:29-34:39
+              Parts[0]: text "dwItemLV"
+        Annotations[1]: Annotation @34:41-34:87
+          Name: Ident cpp @34:42-34:45
+          Args[0]: AnnotationArg @34:46-34:63
+            Name: Ident field @34:46-34:51
+            Value: StringLit @34:53-34:63
+              Parts[0]: text "dwItemLV"
+          Args[1]: AnnotationArg @34:65-34:86
+            Name: Ident type @34:65-34:69
+            Value: StringLit @34:71-34:86
+              Parts[0]: text "std::uint32_t"
+      Items[3]: FieldDecl @36:3-36:92
+        Doc: DocComment "How many fit in one inventory slot." @35:3-35:42
+        Name: Ident stackMax @36:3-36:11
+        Type: NamedType @36:13-36:21
+          Name: QualifiedName Int @36:13-36:16
+          Args: TypeArgs @36:16-36:21
+            Args[0]: RangeExpr Op=.. @36:17-36:20
+              Lo: IntLit Value=1 @36:17-36:18
+        Default: IntLit Value=1 @36:24-36:25
+        Annotations[0]: Annotation @36:26-36:44
+          Name: Ident json @36:27-36:31
+          Args[0]: AnnotationArg @36:32-36:43
+            Value: StringLit @36:32-36:43
+              Parts[0]: text "dwPackMax"
+        Annotations[1]: Annotation @36:45-36:92
+          Name: Ident cpp @36:46-36:49
+          Args[0]: AnnotationArg @36:50-36:68
+            Name: Ident field @36:50-36:55
+            Value: StringLit @36:57-36:68
+              Parts[0]: text "dwPackMax"
+          Args[1]: AnnotationArg @36:70-36:91
+            Name: Ident type @36:70-36:74
+            Value: StringLit @36:76-36:91
+              Parts[0]: text "std::uint32_t"
+      Items[4]: FieldDecl @38:3-38:78
+        Doc: DocComment "The item never expires. 0/1 on the wire." @37:3-37:47
+        Name: Ident permanent @38:3-38:12
+        Type: NamedType @38:14-38:18
+          Name: QualifiedName Bool @38:14-38:18
+        Default: BoolLit Value @38:21-38:25
+        Annotations[0]: Annotation @38:26-38:51
+          Name: Ident json @38:27-38:31
+          Args[0]: AnnotationArg @38:32-38:45
+            Value: StringLit @38:32-38:45
+              Parts[0]: text "bPermanence"
+          Args[1]: AnnotationArg @38:47-38:50
+            Value: QualifiedName int @38:47-38:50
+        Annotations[1]: Annotation @38:52-38:78
+          Name: Ident cpp @38:53-38:56
+          Args[0]: AnnotationArg @38:57-38:77
+            Name: Ident field @38:57-38:62
+            Value: StringLit @38:64-38:77
+              Parts[0]: text "bPermanence"
+  Decls[3]: LetDecl @42:1-42:69
+    Doc: DocComment "A few rows of propItem.json." @41:1-41:33
+    Name: Ident props @42:5-42:10
+    Type: KeyedType @42:12-42:30
+      List: ListType @42:12-42:18
+        Elem: NamedType @42:13-42:17
+          Name: QualifiedName Prop @42:13-42:17
+      Key: Ident id @42:28-42:30
+    Value: LoadExpr @42:33-42:69
+      Args[0]: Arg @42:38-42:55
+        Value: StringLit @42:38-42:55
+          Parts[0]: text "data/props.json"
+      Args[1]: Arg @42:57-42:68
+        Name: Ident at @42:57-42:59
+        Value: StringLit @42:61-42:68
+          Parts[0]: text "items"
+  Decls[4]: EmitDecl @47:1-47:60
+    Target: Ident cpp @47:6-47:9
+    Options: BraceLit @47:10-47:60
+      Items[0]: FieldItem @47:12-47:23
+        Name: Ident out @47:12-47:15
+        Value: StringLit @47:17-47:23
+          Parts[0]: text "out/"
+      Items[1]: FieldItem @47:25-47:46
+        Name: Ident namespace @47:25-47:34
+        Value: StringLit @47:36-47:46
+          Parts[0]: text "sov::gen"
+      Items[2]: FieldItem @47:48-47:58
+        Name: Ident mode @47:48-47:52
+        Value: IdentExpr data @47:54-47:58
+  Decls[5]: EmitDecl @48:1-48:53
+    Target: Ident json @48:6-48:10
+    Options: BraceLit @48:11-48:53
+      Items[0]: FieldItem @48:13-48:34
+        Name: Ident out @48:13-48:16
+        Value: StringLit @48:18-48:34
+          Parts[0]: text "out/props.json"
+      Items[1]: FieldItem @48:36-48:51
+        Name: Ident values @48:36-48:42
+        Value: ListLit @48:44-48:51
+          Elems[0]: IdentExpr props @48:45-48:50
+== findings
+0 errors, 0 warnings in 1 package (…)

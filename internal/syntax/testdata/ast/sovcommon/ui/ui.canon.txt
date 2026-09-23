@@ -1,0 +1,110 @@
+File: File FileKind=source @1:1-51:1
+  Doc: DocComment "UI vocabularies shared by every web front end: colour tones and icon names." @1:1-1:80
+  Package: QualifiedName sovcommon.ui @2:9-2:21
+  Decls[0]: EnumDecl @10:1-23:2
+    Doc: DocComment "A semantic or qualitative colour slot. Each one resolves to a --color-* token that\ntokens.css defines for dark and light, with its -soft background. No colour value\nlives in config.\n\nSemantic tones are reserved for meaning (status, severity, flags, intent).\nQualitative series slots tell families apart, always together with icon + label." @4:1-9:85
+    Name: Ident Tone @10:6-10:10
+    Members[0]: EnumMember @11:3-11:10
+      Name: Ident warning @11:3-11:10
+    Members[1]: EnumMember @12:3-12:7
+      Name: Ident info @12:3-12:7
+    Members[2]: EnumMember @13:3-13:9
+      Name: Ident accent @13:3-13:9
+    Members[3]: EnumMember @14:3-14:10
+      Name: Ident success @14:3-14:10
+    Members[4]: EnumMember @15:3-15:10
+      Name: Ident neutral @15:3-15:10
+    Members[5]: EnumMember @16:3-16:9
+      Name: Ident danger @16:3-16:9
+    Members[6]: EnumMember @17:3-17:24
+      Name: Ident series_1 @17:3-17:11
+      Value: StringLit @17:14-17:24
+        Parts[0]: text "series-1"
+    Members[7]: EnumMember @18:3-18:24
+      Name: Ident series_2 @18:3-18:11
+      Value: StringLit @18:14-18:24
+        Parts[0]: text "series-2"
+    Members[8]: EnumMember @19:3-19:24
+      Name: Ident series_3 @19:3-19:11
+      Value: StringLit @19:14-19:24
+        Parts[0]: text "series-3"
+    Members[9]: EnumMember @20:3-20:24
+      Name: Ident series_4 @20:3-20:11
+      Value: StringLit @20:14-20:24
+        Parts[0]: text "series-4"
+    Members[10]: EnumMember @21:3-21:24
+      Name: Ident series_5 @21:3-21:11
+      Value: StringLit @21:14-21:24
+        Parts[0]: text "series-5"
+    Members[11]: EnumMember @22:3-22:24
+      Name: Ident series_6 @22:3-22:11
+      Value: StringLit @22:14-22:24
+        Parts[0]: text "series-6"
+  Decls[1]: EnumDecl @27:1-47:2
+    Doc: DocComment "Icons sovcommon exports (icons.ts). An icon that is not listed here is a type\nerror wherever it is used, so `make check` no longer has to scrape TypeScript." @25:1-26:83
+    Name: Ident Icon @27:6-27:10
+    Members[0]: EnumMember @28:3-28:36
+      Name: Ident alert_triangle @28:3-28:17
+      Value: StringLit @28:20-28:36
+        Parts[0]: text "alert-triangle"
+    Members[1]: EnumMember @29:3-29:10
+      Name: Ident archive @29:3-29:10
+    Members[2]: EnumMember @30:3-30:26
+      Name: Ident bar_chart @30:3-30:12
+      Value: StringLit @30:15-30:26
+        Parts[0]: text "bar-chart"
+    Members[3]: EnumMember @31:3-31:8
+      Name: Ident check @31:3-31:8
+    Members[4]: EnumMember @32:3-32:10
+      Name: Ident columns @32:3-32:10
+    Members[5]: EnumMember @33:3-33:11
+      Name: Ident database @33:3-33:11
+    Members[6]: EnumMember @34:3-34:10
+      Name: Ident gamepad @34:3-34:10
+    Members[7]: EnumMember @35:3-35:8
+      Name: Ident globe @35:3-35:8
+    Members[8]: EnumMember @36:3-36:7
+      Name: Ident hand @36:3-36:7
+    Members[9]: EnumMember @37:3-37:8
+      Name: Ident inbox @37:3-37:8
+    Members[10]: EnumMember @38:3-38:9
+      Name: Ident layers @38:3-38:9
+    Members[11]: EnumMember @39:3-39:12
+      Name: Ident lightbulb @39:3-39:12
+    Members[12]: EnumMember @40:3-40:7
+      Name: Ident lock @40:3-40:7
+    Members[13]: EnumMember @41:3-41:10
+      Name: Ident monitor @41:3-41:10
+    Members[14]: EnumMember @42:3-42:10
+      Name: Ident package @42:3-42:10
+    Members[15]: EnumMember @43:3-43:8
+      Name: Ident scale @43:3-43:8
+    Members[16]: EnumMember @44:3-44:9
+      Name: Ident server @44:3-44:9
+    Members[17]: EnumMember @45:3-45:9
+      Name: Ident shield @45:3-45:9
+    Members[18]: EnumMember @46:3-46:11
+      Name: Ident terminal @46:3-46:11
+  Decls[2]: EmitDecl @49:1-49:61
+    Target: Ident go @49:6-49:8
+    Options: BraceLit @49:9-49:61
+      Items[0]: FieldItem @49:11-49:31
+        Name: Ident out @49:11-49:14
+        Value: StringLit @49:16-49:31
+          Parts[0]: text "@sovcommon/ui"
+      Items[1]: FieldItem @49:33-49:46
+        Name: Ident package @49:33-49:40
+        Value: StringLit @49:42-49:46
+          Parts[0]: text "ui"
+      Items[2]: FieldItem @49:48-49:59
+        Name: Ident mode @49:48-49:52
+        Value: IdentExpr baked @49:54-49:59
+  Decls[3]: EmitDecl @50:1-50:40
+    Target: Ident ts @50:6-50:8
+    Options: BraceLit @50:9-50:40
+      Items[0]: FieldItem @50:11-50:38
+        Name: Ident out @50:11-50:14
+        Value: StringLit @50:16-50:38
+          Parts[0]: text "@web/ui.generated.ts"
+== findings
+0 errors, 0 warnings in 1 package (…)

@@ -1,0 +1,135 @@
+File: File FileKind=source @1:1-47:1
+  Package: QualifiedName game.items @6:9-6:19
+  Imports[0]: Import @8:1-8:14
+    Path: QualifiedName studio @8:8-8:14
+  Decls[0]: ViewDecl @10:1-32:2
+    Type: Ident Item @10:6-10:10
+    Items[0]: ViewTitle @11:3-11:19
+      Text: StringLit @11:9-11:19
+        Parts[0]: Interp @11:11-11:17
+          X: CallExpr @11:11-11:17
+            Fun: IdentExpr name @11:11-11:15
+    Items[1]: ViewSubtitle @12:3-12:18
+      Text: StringLit @12:12-12:18
+        Parts[0]: Interp @12:14-12:16
+          X: IdentExpr id @12:14-12:16
+    Items[2]: ViewPreview @13:3-13:15
+      X: IdentExpr icon @13:11-13:15
+    Items[3]: ViewSearch @14:3-14:24
+      Items[0]: CallExpr @14:12-14:18
+        Fun: IdentExpr name @14:12-14:16
+      Items[1]: IdentExpr id @14:20-14:22
+    Items[4]: ViewSingular @15:3-15:21
+      Text: StringLit @15:12-15:21
+        Parts[0]: text "an item"
+    Items[5]: ViewMenu @16:3-16:22
+      Menu: Ident items @16:8-16:13
+      Icon: Ident gem @16:19-16:22
+    Items[6]: ViewFilters @17:3-17:31
+      Items[0]: ViewFilter @17:13-17:17
+        Name: Ident kind @17:13-17:17
+      Items[1]: ViewFilter @17:19-17:22
+        Name: Ident job @17:19-17:22
+      Items[2]: ViewFilter @17:24-17:29
+        Name: Ident level @17:24-17:29
+    Items[7]: ViewColumns @18:3-18:56
+      Items[0]: ViewColumn @18:13-18:21
+        Name: Ident kind @18:13-18:17
+        Width: IntLit Value=120 @18:18-18:21
+      Items[1]: ViewColumn @18:23-18:31
+        Name: Ident level @18:23-18:28
+        Width: IntLit Value=70 @18:29-18:31
+      Items[2]: ViewColumn @18:33-18:41
+        Name: Ident cost @18:33-18:37
+        Width: IntLit Value=110 @18:38-18:41
+      Items[3]: ViewColumn @18:43-18:54
+        Name: Ident stackMax @18:43-18:51
+        Width: IntLit Value=90 @18:52-18:54
+    Items[8]: ViewGroup @20:3-20:64
+      ID: Ident identity @20:9-20:17
+      Label: StringLit @20:18-20:28
+        Parts[0]: text "Identity"
+      Members[0]: ViewField @20:31-20:35
+        Name: Ident name @20:31-20:35
+      Members[1]: ViewField @20:37-20:41
+        Name: Ident icon @20:37-20:41
+      Members[2]: ViewField @20:43-20:47
+        Name: Ident kind @20:43-20:47
+      Members[3]: ViewField @20:49-20:54
+        Name: Ident level @20:49-20:54
+      Members[4]: ViewField @20:56-20:62
+        Name: Ident rarity @20:56-20:62
+    Items[9]: ViewGroup @21:3-29:4
+      ID: Ident combat @21:9-21:15
+      Label: StringLit @21:16-21:24
+        Parts[0]: text "Combat"
+      Members[0]: ViewField @22:5-22:14
+        Name: Ident attackMin @22:5-22:14
+      Members[1]: ViewField @23:5-23:14
+        Name: Ident attackMax @23:5-23:14
+      Members[2]: ViewField @24:5-24:16
+        Name: Ident attackSpeed @24:5-24:16
+      Members[3]: ViewField @25:5-25:16
+        Name: Ident attackRange @25:5-25:16
+      Members[4]: ViewField @26:5-26:15
+        Name: Ident weaponType @26:5-26:15
+      Members[5]: ViewField @27:5-27:11
+        Name: Ident handed @27:5-27:11
+      Members[6]: ViewField @28:5-28:10
+        Name: Ident stats @28:5-28:10
+    Items[10]: ViewGroup @30:3-30:55
+      ID: Ident shop @30:9-30:13
+      Label: StringLit @30:14-30:20
+        Parts[0]: text "Shop"
+      Members[0]: ViewField @30:23-30:43
+        Name: Ident cost @30:23-30:27
+        Props: BraceLit @30:28-30:43
+          Items[0]: FieldItem @30:30-30:41
+            Name: Ident unit @30:30-30:34
+            Value: IdentExpr penya @30:36-30:41
+      Members[1]: ViewField @30:45-30:53
+        Name: Ident stackMax @30:45-30:53
+    Items[11]: ViewGroup Advanced="advanced" @31:3-31:63
+      ID: Ident legacy @31:9-31:15
+      Label: StringLit @31:16-31:31
+        Parts[0]: text "Legacy fields"
+      Members[0]: ViewField @31:43-31:50
+        Name: Ident version @31:43-31:50
+      Members[1]: ViewField @31:52-31:61
+        Name: Ident partsFile @31:52-31:61
+  Decls[1]: ViewDecl @35:1-37:2
+    Doc: DocComment "Only weapons have an average hit." @34:1-34:38
+    Type: Ident ItemKind @35:6-35:14
+    Case: Ident IK1_WEAPON @35:15-35:25
+    Items[0]: ViewShow @36:3-36:53
+      Label: StringLit @36:8-36:21
+        Parts[0]: text "Average hit"
+      Template: StringLit @36:22-36:53
+        Parts[0]: Interp @36:24-36:51
+          X: BinaryExpr Op=/ @36:24-36:51
+            X: ParenExpr @36:24-36:47
+              X: BinaryExpr Op=+ @36:25-36:46
+                X: IdentExpr attackMin @36:25-36:34
+                Y: IdentExpr attackMax @36:37-36:46
+            Y: IntLit Value=2 @36:50-36:51
+  Decls[2]: ViewDecl @39:1-41:2
+    Type: Ident StatBonus @39:6-39:15
+    Items[0]: ViewTitle @40:3-40:31
+      Text: StringLit @40:9-40:31
+        Parts[0]: Interp @40:11-40:20
+          X: IdentExpr attribute @40:11-40:20
+        Parts[1]: text " +"
+        Parts[2]: Interp @40:24-40:29
+          X: IdentExpr value @40:24-40:29
+  Decls[3]: ViewDecl @43:1-46:2
+    Type: Ident Handed @43:6-43:12
+    Items[0]: ViewField @44:3-44:20
+      Name: Ident HD_ONE @44:3-44:9
+      Label: StringLit @44:10-44:20
+        Parts[0]: text "One hand"
+    Items[1]: ViewField @45:3-45:21
+      Name: Ident HD_TWO @45:3-45:9
+      Label: StringLit @45:10-45:21
+        Parts[0]: text "Two hands"
+== findings
+0 errors, 0 warnings in 1 package (…)

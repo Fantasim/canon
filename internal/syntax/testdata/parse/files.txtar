@@ -1,0 +1,138 @@
+GRAMMAR.md §5.2, §5.7, §7: layer, translation and project files.
+-- a/a.layer.canon --
+package a
+layer l
+
+/// An amendment.
+amend config {
+  paths.resourceRoot: "/root"
+  list[#0].name: "first"
+  table["key"].value: 3
+  server.check: true
+}
+-- a/a.fr.canon --
+package a
+translation fr
+
+/// A doc.
+ModelType.check.unreachable_levels "maxLevel vaut {maxLevel}"
+Item.show._0 "Dégâts moyens"
+-- project.canon --
+/// The project.
+project p {
+  canon: "0.1"
+  roots {
+    /// A root.
+    resource: "../res"
+    "quoted": "q"
+  }
+  languages: [en, pt_BR]
+  studio: studio.pkg
+  budget: 100_000_000
+  nested: { a: { b: [1, [2]] } }
+}
+-- ast --
+== a/a.layer.canon
+File: File FileKind=layer @1:1-11:1
+  Package: QualifiedName a @1:9-1:10
+  Layer: Ident l @2:7-2:8
+  Amends[0]: AmendBlock @5:1-10:2
+    Doc: DocComment "An amendment." @4:1-4:18
+    Target: Ident config @5:7-5:13
+    Items[0]: Amendment @6:3-6:30
+      Path[0]: AmendSegment @6:3-6:8
+        Name: Ident paths @6:3-6:8
+      Path[1]: AmendSegment @6:8-6:21
+        Name: Ident resourceRoot @6:9-6:21
+      Value: StringLit @6:23-6:30
+        Parts[0]: text "/root"
+    Items[1]: Amendment @7:3-7:25
+      Path[0]: AmendSegment @7:3-7:7
+        Name: Ident list @7:3-7:7
+      Path[1]: AmendSegment @7:7-7:11
+        Position: IntLit Value=0 @7:9-7:10
+      Path[2]: AmendSegment @7:11-7:16
+        Name: Ident name @7:12-7:16
+      Value: StringLit @7:18-7:25
+        Parts[0]: text "first"
+    Items[2]: Amendment @8:3-8:24
+      Path[0]: AmendSegment @8:3-8:8
+        Name: Ident table @8:3-8:8
+      Path[1]: AmendSegment @8:8-8:15
+        Key: StringLit @8:9-8:14
+          Parts[0]: text "key"
+      Path[2]: AmendSegment @8:15-8:21
+        Name: Ident value @8:16-8:21
+      Value: IntLit Value=3 @8:23-8:24
+    Items[3]: Amendment @9:3-9:21
+      Path[0]: AmendSegment @9:3-9:9
+        Name: Ident server @9:3-9:9
+      Path[1]: AmendSegment @9:9-9:15
+        Name: Ident check @9:10-9:15
+      Value: BoolLit Value @9:17-9:21
+== findings
+0 errors, 0 warnings in 1 package (…)
+== a/a.fr.canon
+File: File FileKind=translation @1:1-7:1
+  Package: QualifiedName a @1:9-1:10
+  Lang: Ident fr @2:13-2:15
+  Entries[0]: TranslationEntry @5:1-5:62
+    Doc: DocComment "A doc." @4:1-4:11
+    Key: QualifiedName ModelType.check.unreachable_levels @5:1-5:35
+    Text: StringLit @5:36-5:62
+      Parts[0]: text "maxLevel vaut "
+      Parts[1]: Interp @5:52-5:60
+        X: IdentExpr maxLevel @5:52-5:60
+  Entries[1]: TranslationEntry @6:1-6:31
+    Key: QualifiedName Item.show._0 @6:1-6:13
+    Text: StringLit @6:14-6:31
+      Parts[0]: text "Dégâts moyens"
+== findings
+0 errors, 0 warnings in 1 package (…)
+== project.canon
+File: File FileKind=project @1:1-14:1
+  Project: ProjectDecl @2:1-13:2
+    Doc: DocComment "The project." @1:1-1:17
+    Name: Ident p @2:9-2:10
+    Items[0]: ProjectEntry Colon=":" @3:3-3:15
+      Key: Ident canon @3:3-3:8
+      Value: StringLit @3:10-3:15
+        Parts[0]: text "0.1"
+    Items[1]: ProjectEntry @4:3-8:4
+      Key: Ident roots @4:3-4:8
+      Value: ProjectMap @4:9-8:4
+        Entries[0]: ProjectEntry Colon=":" @6:5-6:23
+          Doc: DocComment "A root." @5:5-5:16
+          Key: Ident resource @6:5-6:13
+          Value: StringLit @6:15-6:23
+            Parts[0]: text "../res"
+        Entries[1]: ProjectEntry Colon=":" @7:5-7:18
+          Key: StringLit @7:5-7:13
+            Parts[0]: text "quoted"
+          Value: StringLit @7:15-7:18
+            Parts[0]: text "q"
+    Items[2]: ProjectEntry Colon=":" @9:3-9:25
+      Key: Ident languages @9:3-9:12
+      Value: ProjectList @9:14-9:25
+        Items[0]: QualifiedName en @9:15-9:17
+        Items[1]: QualifiedName pt_BR @9:19-9:24
+    Items[3]: ProjectEntry Colon=":" @10:3-10:21
+      Key: Ident studio @10:3-10:9
+      Value: QualifiedName studio.pkg @10:11-10:21
+    Items[4]: ProjectEntry Colon=":" @11:3-11:22
+      Key: Ident budget @11:3-11:9
+      Value: IntLit Value=100000000 @11:11-11:22
+    Items[5]: ProjectEntry Colon=":" @12:3-12:33
+      Key: Ident nested @12:3-12:9
+      Value: ProjectMap @12:11-12:33
+        Entries[0]: ProjectEntry Colon=":" @12:13-12:31
+          Key: Ident a @12:13-12:14
+          Value: ProjectMap @12:16-12:31
+            Entries[0]: ProjectEntry Colon=":" @12:18-12:29
+              Key: Ident b @12:18-12:19
+              Value: ProjectList @12:21-12:29
+                Items[0]: IntLit Value=1 @12:22-12:23
+                Items[1]: ProjectList @12:25-12:28
+                  Items[0]: IntLit Value=2 @12:26-12:27
+== findings
+0 errors, 0 warnings in 1 package (…)

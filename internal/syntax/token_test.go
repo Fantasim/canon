@@ -33,7 +33,7 @@ var punctuation = []syntax.TokenKind{
 
 // The token classes of GRAMMAR.md §2.1 (DOC is trivia), with the lexer's own kinds.
 var classes = map[syntax.TokenKind]string{
-	syntax.TokInvalid: "INVALID", syntax.TokEOF: "EOF", syntax.TokNL: "NL", syntax.TokIllegal: "ILLEGAL",
+	syntax.TokInvalid: "INVALID", syntax.TokBOF: "BOF", syntax.TokEOF: "EOF", syntax.TokNL: "NL", syntax.TokIllegal: "ILLEGAL",
 	syntax.TokIdent: "IDENT", syntax.TokInt: "INT", syntax.TokFloat: "FLOAT", syntax.TokDuration: "DURATION",
 	syntax.TokString: "STRING", syntax.TokStringHead: "STRING_HEAD", syntax.TokStringMid: "STRING_MID",
 	syntax.TokStringTail: "STRING_TAIL", syntax.TokMLString: "MLSTRING",

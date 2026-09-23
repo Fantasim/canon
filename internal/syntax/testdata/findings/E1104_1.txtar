@@ -1,0 +1,22 @@
+GRAMMAR.md §8.2: an unknown annotation or argument name.
+-- a/a.canon --
+package a
+
+@unknown
+let x = 1
+
+record R {
+  a: Int @json(nope: "x")
+  b: Int @json(weird)
+}
+-- findings.txt --
+error[E1104]  a/a.canon:3:2
+  unknown annotation @unknown
+
+error[E1104]  a/a.canon:7:16
+  @json has no argument "nope"
+
+error[E1104]  a/a.canon:8:16
+  @json has no argument "weird"
+
+3 errors, 0 warnings in 1 package (…)

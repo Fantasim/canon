@@ -1,0 +1,55 @@
+File: File FileKind=source @1:1-20:1
+  Package: QualifiedName game.items @2:9-2:19
+  Decls[0]: EntryDecl @5:1-19:2
+    Doc: DocComment "Moonstone, a piercing material (IK3_PIERDICE)." @4:1-4:51
+    Table: Ident items @5:7-5:12
+    Key: Ident II_GEN_MAT_MOONSTONE @5:13-5:33
+    Value: BraceLit @5:34-19:2
+      Items[0]: FieldItem @6:3-6:13
+        Name: Ident version @6:3-6:10
+        Value: IntLit Value=7 @6:12-6:13
+      Items[1]: FieldItem @7:3-7:37
+        Name: Ident nameKey @7:3-7:10
+        Value: StringLit @7:12-7:37
+          Parts[0]: text "IDS_PROPITEM_TXT_008066"
+      Items[2]: FieldItem @8:3-8:44
+        Name: Ident descriptionKey @8:3-8:17
+        Value: StringLit @8:19-8:44
+          Parts[0]: text "IDS_PROPITEM_TXT_008067"
+      Items[3]: FieldItem @9:3-9:34
+        Name: Ident icon @9:3-9:7
+        Value: StringLit @9:9-9:34
+          Parts[0]: text "Itm_GenMatMoonstone.dds"
+      Items[4]: FieldItem @10:3-10:13
+        Name: Ident cost @10:3-10:7
+        Value: IntLit Value=8000 @10:9-10:13
+      Items[5]: FieldItem @11:3-11:11
+        Name: Ident level @11:3-11:8
+        Value: IntLit Value=4 @11:10-11:11
+      Items[6]: FieldItem @12:3-12:13
+        Name: Ident rarity @12:3-12:9
+        Value: IntLit Value=50 @12:11-12:13
+      Items[7]: FieldItem @13:3-13:17
+        Name: Ident stackMax @13:3-13:11
+        Value: IntLit Value=9999 @13:13-13:17
+      Items[8]: FieldItem @14:3-14:19
+        Name: Ident partsFile @14:3-14:12
+        Value: BoolLit @14:14-14:19
+      Items[9]: FieldItem @15:3-15:32
+        Name: Ident dropSound @15:3-15:12
+        Value: IdentExpr SND_ITEM_DROPDING1 @15:14-15:32
+      Items[10]: FieldItem @16:3-18:4
+        Name: Ident kind @16:3-16:7
+        Value: TypedLit @16:9-18:4
+          Type: QualifiedName IK1_GENERAL @16:9-16:20
+          Lit: BraceLit @16:21-18:4
+            Items[0]: FieldItem @17:5-17:48
+              Name: Ident kind2 @17:5-17:10
+              Value: TypedLit @17:12-17:48
+                Type: QualifiedName IK2_MATERIAL @17:12-17:24
+                Lit: BraceLit @17:25-17:48
+                  Items[0]: FieldItem @17:27-17:46
+                    Name: Ident kind3 @17:27-17:32
+                    Value: IdentExpr IK3_PIERDICE @17:34-17:46
+== findings
+0 errors, 0 warnings in 1 package (…)

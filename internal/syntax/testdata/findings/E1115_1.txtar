@@ -1,0 +1,19 @@
+GRAMMAR.md §2.7: a REGEX only as the only argument of a named type or of matches().
+-- a/a.canon --
+package a
+
+let x = f(/a/)
+let y = name.matches(/a/, 1)
+type L = [String](/a/)
+let ok = name.matches(/^II_/)
+-- findings.txt --
+error[E1115]  a/a.canon:3:11
+  a regular expression is only allowed as a type refinement or the argument of matches()
+
+error[E1115]  a/a.canon:4:22
+  a regular expression is only allowed as a type refinement or the argument of matches()
+
+error[E1115]  a/a.canon:5:19
+  a regular expression is only allowed as a type refinement or the argument of matches()
+
+3 errors, 0 warnings in 1 package (…)

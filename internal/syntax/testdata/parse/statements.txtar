@@ -1,0 +1,219 @@
+GRAMMAR.md §5.10: statements in function, check and test bodies.
+-- a/a.canon --
+package a
+
+record R {
+  xs: [Int]
+
+  fn total(self, from: Int = 0) -> Int {
+    let n: Int = from
+    var acc = 0
+    acc += 1
+    acc -= 1
+    acc *= 2
+    acc /= 2
+    xs[0] = acc
+    for i, x in xs.enumerate() {
+      if x > 10 { break } else if x < 0 { continue } else { acc = acc + x }
+    }
+    while acc > 100 { acc = acc - 1 }
+    match kind {
+      low, mid => { return 0 }
+      high(h) => h
+      none => 1
+      _ => acc
+    }
+    return
+  }
+
+  check {
+    if xs.isEmpty() { fail(xs, "empty") }
+    warn(xs, "look")
+  }
+  warn many: xs.len() <= 10 at xs else "{xs.len()} items"
+}
+
+test "totals" {
+  expect R { xs: [] }.total() == 0
+  expect f() fails "boom"
+  expect f() warns many
+  expect f() passes
+}
+-- ast --
+== a/a.canon
+File: File FileKind=source @1:1-40:1
+  Package: QualifiedName a @1:9-1:10
+  Decls[0]: RecordDecl @3:1-32:2
+    Name: Ident R @3:8-3:9
+    Body: RecordBody @3:10-32:2
+      Items[0]: FieldDecl @4:3-4:12
+        Name: Ident xs @4:3-4:5
+        Type: ListType @4:7-4:12
+          Elem: NamedType @4:8-4:11
+            Name: QualifiedName Int @4:8-4:11
+      Items[1]: FnDecl Self="self" @6:3-25:4
+        Name: Ident total @6:6-6:11
+        Params[0]: Param @6:18-6:31
+          Name: Ident from @6:18-6:22
+          Type: NamedType @6:24-6:27
+            Name: QualifiedName Int @6:24-6:27
+          Default: IntLit Value=0 @6:30-6:31
+        Result: NamedType @6:36-6:39
+          Name: QualifiedName Int @6:36-6:39
+        Body: Block @6:40-25:4
+          Stmts[0]: LetStmt @7:5-7:22
+            Name: Ident n @7:9-7:10
+            Type: NamedType @7:12-7:15
+              Name: QualifiedName Int @7:12-7:15
+            Value: IdentExpr from @7:18-7:22
+          Stmts[1]: VarStmt @8:5-8:16
+            Name: Ident acc @8:9-8:12
+            Value: IntLit Value=0 @8:15-8:16
+          Stmts[2]: AssignStmt Op=+= @9:5-9:13
+            Target: IdentExpr acc @9:5-9:8
+            Value: IntLit Value=1 @9:12-9:13
+          Stmts[3]: AssignStmt Op=-= @10:5-10:13
+            Target: IdentExpr acc @10:5-10:8
+            Value: IntLit Value=1 @10:12-10:13
+          Stmts[4]: AssignStmt Op=*= @11:5-11:13
+            Target: IdentExpr acc @11:5-11:8
+            Value: IntLit Value=2 @11:12-11:13
+          Stmts[5]: AssignStmt Op=/= @12:5-12:13
+            Target: IdentExpr acc @12:5-12:8
+            Value: IntLit Value=2 @12:12-12:13
+          Stmts[6]: AssignStmt Op== @13:5-13:16
+            Target: IndexExpr @13:5-13:10
+              X: IdentExpr xs @13:5-13:7
+              Index: IntLit Value=0 @13:8-13:9
+            Value: IdentExpr acc @13:13-13:16
+          Stmts[7]: ForStmt @14:5-16:6
+            Vars[0]: Ident i @14:9-14:10
+            Vars[1]: Ident x @14:12-14:13
+            Iter: CallExpr @14:17-14:31
+              Fun: SelectorExpr @14:17-14:29
+                X: IdentExpr xs @14:17-14:19
+                Name: Ident enumerate @14:20-14:29
+            Body: Block @14:32-16:6
+              Stmts[0]: IfStmt @15:7-15:76
+                Cond: BinaryExpr Op=> @15:10-15:16
+                  X: IdentExpr x @15:10-15:11
+                  Y: IntLit Value=10 @15:14-15:16
+                Then: Block @15:17-15:26
+                  Stmts[0]: BreakStmt @15:19-15:24
+                ElseIf: IfStmt @15:32-15:76
+                  Cond: BinaryExpr Op=< @15:35-15:40
+                    X: IdentExpr x @15:35-15:36
+                    Y: IntLit Value=0 @15:39-15:40
+                  Then: Block @15:41-15:53
+                    Stmts[0]: ContinueStmt @15:43-15:51
+                  Else: Block @15:59-15:76
+                    Stmts[0]: AssignStmt Op== @15:61-15:74
+                      Target: IdentExpr acc @15:61-15:64
+                      Value: BinaryExpr Op=+ @15:67-15:74
+                        X: IdentExpr acc @15:67-15:70
+                        Y: IdentExpr x @15:73-15:74
+          Stmts[8]: WhileStmt @17:5-17:38
+            Cond: BinaryExpr Op=> @17:11-17:20
+              X: IdentExpr acc @17:11-17:14
+              Y: IntLit Value=100 @17:17-17:20
+            Body: Block @17:21-17:38
+              Stmts[0]: AssignStmt Op== @17:23-17:36
+                Target: IdentExpr acc @17:23-17:26
+                Value: BinaryExpr Op=- @17:29-17:36
+                  X: IdentExpr acc @17:29-17:32
+                  Y: IntLit Value=1 @17:35-17:36
+          Stmts[9]: MatchStmt @18:5-23:6
+            Scrutinee: IdentExpr kind @18:11-18:15
+            Arms[0]: StmtArm @19:7-19:31
+              Patterns[0]: Pattern @19:7-19:10
+                Name: QualifiedName low @19:7-19:10
+              Patterns[1]: Pattern @19:12-19:15
+                Name: QualifiedName mid @19:12-19:15
+              Block: Block @19:19-19:31
+                Stmts[0]: ReturnStmt @19:21-19:29
+                  Value: IntLit Value=0 @19:28-19:29
+            Arms[1]: StmtArm @20:7-20:19
+              Patterns[0]: Pattern @20:7-20:14
+                Name: QualifiedName high @20:7-20:11
+                Binder: Ident h @20:12-20:13
+              X: IdentExpr h @20:18-20:19
+            Arms[2]: StmtArm @21:7-21:16
+              Patterns[0]: Pattern Keyword=none @21:7-21:11
+              X: IntLit Value=1 @21:15-21:16
+            Arms[3]: StmtArm @22:7-22:15
+              Patterns[0]: Pattern Keyword=_ @22:7-22:8
+              X: IdentExpr acc @22:12-22:15
+          Stmts[10]: ReturnStmt @24:5-24:11
+      Items[2]: CheckDecl Keyword=check @27:3-30:4
+        Body: Block @27:9-30:4
+          Stmts[0]: IfStmt @28:5-28:42
+            Cond: CallExpr @28:8-28:20
+              Fun: SelectorExpr @28:8-28:18
+                X: IdentExpr xs @28:8-28:10
+                Name: Ident isEmpty @28:11-28:18
+            Then: Block @28:21-28:42
+              Stmts[0]: ExprStmt @28:23-28:40
+                X: CallExpr @28:23-28:40
+                  Fun: IdentExpr fail @28:23-28:27
+                  Args[0]: Arg @28:28-28:30
+                    Value: IdentExpr xs @28:28-28:30
+                  Args[1]: Arg @28:32-28:39
+                    Value: StringLit @28:32-28:39
+                      Parts[0]: text "empty"
+          Stmts[1]: ExprStmt @29:5-29:21
+            X: CallExpr @29:5-29:21
+              Fun: IdentExpr warn @29:5-29:9
+              Args[0]: Arg @29:10-29:12
+                Value: IdentExpr xs @29:10-29:12
+              Args[1]: Arg @29:14-29:20
+                Value: StringLit @29:14-29:20
+                  Parts[0]: text "look"
+      Items[3]: CheckDecl Keyword=warn @31:3-31:58
+        Name: Ident many @31:8-31:12
+        Cond: BinaryExpr Op=<= @31:14-31:28
+          X: CallExpr @31:14-31:22
+            Fun: SelectorExpr @31:14-31:20
+              X: IdentExpr xs @31:14-31:16
+              Name: Ident len @31:17-31:20
+          Y: IntLit Value=10 @31:26-31:28
+        At: Ident xs @31:32-31:34
+        Message: StringLit @31:40-31:58
+          Parts[0]: Interp @31:42-31:50
+            X: CallExpr @31:42-31:50
+              Fun: SelectorExpr @31:42-31:48
+                X: IdentExpr xs @31:42-31:44
+                Name: Ident len @31:45-31:48
+          Parts[1]: text " items"
+  Decls[1]: TestDecl @34:1-39:2
+    Name: StringLit @34:6-34:14
+      Parts[0]: text "totals"
+    Body: Block @34:15-39:2
+      Stmts[0]: ExpectStmt @35:3-35:35
+        X: BinaryExpr Op=== @35:10-35:35
+          X: CallExpr @35:10-35:30
+            Fun: SelectorExpr @35:10-35:28
+              X: TypedLit @35:10-35:22
+                Type: QualifiedName R @35:10-35:11
+                Lit: BraceLit @35:12-35:22
+                  Items[0]: FieldItem @35:14-35:20
+                    Name: Ident xs @35:14-35:16
+                    Value: ListLit @35:18-35:20
+              Name: Ident total @35:23-35:28
+          Y: IntLit Value=0 @35:34-35:35
+      Stmts[1]: ExpectStmt @36:3-36:26
+        X: CallExpr @36:10-36:13
+          Fun: IdentExpr f @36:10-36:11
+        Outcome: Ident fails @36:14-36:19
+        Message: StringLit @36:20-36:26
+          Parts[0]: text "boom"
+      Stmts[2]: ExpectStmt @37:3-37:24
+        X: CallExpr @37:10-37:13
+          Fun: IdentExpr f @37:10-37:11
+        Outcome: Ident warns @37:14-37:19
+        Message: Ident many @37:20-37:24
+      Stmts[3]: ExpectStmt @38:3-38:20
+        X: CallExpr @38:10-38:13
+          Fun: IdentExpr f @38:10-38:11
+        Outcome: Ident passes @38:14-38:20
+== findings
+0 errors, 0 warnings in 1 package (…)

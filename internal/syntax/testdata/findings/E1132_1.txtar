@@ -1,0 +1,24 @@
+GRAMMAR.md §2.6: a test name, a project string or an input variable name with an interpolation.
+-- a/a.canon --
+package a
+
+test "about {x}" { }
+
+record R {
+  a: input String from env "V{x}"
+}
+-- project.canon --
+project p {
+  canon: "{v}"
+}
+-- findings.txt --
+error[E1132]  a/a.canon:3:6
+  this string must be constant (no interpolation)
+
+error[E1132]  a/a.canon:6:28
+  this string must be constant (no interpolation)
+
+error[E1132]  project.canon:2:10
+  this string must be constant (no interpolation)
+
+3 errors, 0 warnings in 1 package (…)

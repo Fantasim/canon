@@ -1,0 +1,14 @@
+GRAMMAR.md §3.1: two items on one line with no separator.
+-- a/a.canon --
+package a
+
+let t = { open { tone: 1 }  taken { tone: 2 } }
+let x = 1 let y = 2
+-- findings.txt --
+error[E1117]  a/a.canon:3:29
+  missing separator: put "," or a new line between items
+
+error[E1117]  a/a.canon:4:11
+  missing separator: put "," or a new line between items
+
+2 errors, 0 warnings in 1 package (…)

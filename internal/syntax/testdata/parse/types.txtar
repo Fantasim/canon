@@ -1,0 +1,181 @@
+GRAMMAR.md §5.9: every type form.
+-- a/a.canon --
+package a
+
+type A = Param(e) | "default" | Int? where it > 0
+type B = [Event](..=256) keyed by id
+type C = [Int(1..)] where it.len() == 2 and it[0] <= it[1]
+type D = {e in eventTypes: HourlyTarget(e)}
+type E = {String: [Int]}(1..)
+type F = fn(Int, Int) -> Int
+type G = (fn(Int) -> Int)?
+type H = asset("@resource/Icon/Item", ext: [dds, "png"],)
+type I = stable table Status
+type J = ref TalentNode?
+type L(n: Level = Level.low) = match n { low, mid => Int, _ => String }
+type M = _
+type N = Duration(1s..=1d)?
+type O = String(/^IDS_/)
+type P = ref vocab.items
+type K = Int??
+-- ast --
+== a/a.canon
+File: File FileKind=source @1:1-19:1
+  Package: QualifiedName a @1:9-1:10
+  Decls[0]: TypeDecl @3:1-3:50
+    Name: Ident A @3:6-3:7
+    Type: UnionType @3:10-3:50
+      Alts[0]: NamedType @3:10-3:18
+        Name: QualifiedName Param @3:10-3:15
+        Args: TypeArgs @3:15-3:18
+          Args[0]: IdentExpr e @3:16-3:17
+      Alts[1]: LiteralType @3:21-3:30
+        Value: StringLit @3:21-3:30
+          Parts[0]: text "default"
+      Alts[2]: WhereType @3:33-3:50
+        Base: OptionalType @3:33-3:37
+          Elem: NamedType @3:33-3:36
+            Name: QualifiedName Int @3:33-3:36
+        Pred: BinaryExpr Op=> @3:44-3:50
+          X: IdentExpr it @3:44-3:46
+          Y: IntLit Value=0 @3:49-3:50
+  Decls[1]: TypeDecl @4:1-4:37
+    Name: Ident B @4:6-4:7
+    Type: KeyedType @4:10-4:37
+      List: ListType @4:10-4:25
+        Elem: NamedType @4:11-4:16
+          Name: QualifiedName Event @4:11-4:16
+        Args: TypeArgs @4:17-4:25
+          Args[0]: RangeExpr Op=..= @4:18-4:24
+            Hi: IntLit Value=256 @4:21-4:24
+      Key: Ident id @4:35-4:37
+  Decls[2]: TypeDecl @5:1-5:59
+    Name: Ident C @5:6-5:7
+    Type: WhereType @5:10-5:59
+      Base: ListType @5:10-5:20
+        Elem: NamedType @5:11-5:19
+          Name: QualifiedName Int @5:11-5:14
+          Args: TypeArgs @5:14-5:19
+            Args[0]: RangeExpr Op=.. @5:15-5:18
+              Lo: IntLit Value=1 @5:15-5:16
+      Pred: BinaryExpr Op=and @5:27-5:59
+        X: BinaryExpr Op=== @5:27-5:40
+          X: CallExpr @5:27-5:35
+            Fun: SelectorExpr @5:27-5:33
+              X: IdentExpr it @5:27-5:29
+              Name: Ident len @5:30-5:33
+          Y: IntLit Value=2 @5:39-5:40
+        Y: BinaryExpr Op=<= @5:45-5:59
+          X: IndexExpr @5:45-5:50
+            X: IdentExpr it @5:45-5:47
+            Index: IntLit Value=0 @5:48-5:49
+          Y: IndexExpr @5:54-5:59
+            X: IdentExpr it @5:54-5:56
+            Index: IntLit Value=1 @5:57-5:58
+  Decls[3]: TypeDecl @6:1-6:44
+    Name: Ident D @6:6-6:7
+    Type: DepMapType @6:10-6:44
+      Var: Ident e @6:11-6:12
+      Domain: IdentExpr eventTypes @6:16-6:26
+      Value: NamedType @6:28-6:43
+        Name: QualifiedName HourlyTarget @6:28-6:40
+        Args: TypeArgs @6:40-6:43
+          Args[0]: IdentExpr e @6:41-6:42
+  Decls[4]: TypeDecl @7:1-7:30
+    Name: Ident E @7:6-7:7
+    Type: MapType @7:10-7:30
+      Key: NamedType @7:11-7:17
+        Name: QualifiedName String @7:11-7:17
+      Value: ListType @7:19-7:24
+        Elem: NamedType @7:20-7:23
+          Name: QualifiedName Int @7:20-7:23
+      Args: TypeArgs @7:25-7:30
+        Args[0]: RangeExpr Op=.. @7:26-7:29
+          Lo: IntLit Value=1 @7:26-7:27
+  Decls[5]: TypeDecl @8:1-8:29
+    Name: Ident F @8:6-8:7
+    Type: FnType @8:10-8:29
+      Params[0]: NamedType @8:13-8:16
+        Name: QualifiedName Int @8:13-8:16
+      Params[1]: NamedType @8:18-8:21
+        Name: QualifiedName Int @8:18-8:21
+      Result: NamedType @8:26-8:29
+        Name: QualifiedName Int @8:26-8:29
+  Decls[6]: TypeDecl @9:1-9:27
+    Name: Ident G @9:6-9:7
+    Type: OptionalType @9:10-9:27
+      Elem: ParenType @9:10-9:26
+        Type: FnType @9:11-9:25
+          Params[0]: NamedType @9:14-9:17
+            Name: QualifiedName Int @9:14-9:17
+          Result: NamedType @9:22-9:25
+            Name: QualifiedName Int @9:22-9:25
+  Decls[7]: TypeDecl @10:1-10:58
+    Name: Ident H @10:6-10:7
+    Type: AssetType @10:10-10:58
+      Dir: StringLit @10:16-10:37
+        Parts[0]: text "@resource/Icon/Item"
+      Exts[0]: Ident dds @10:45-10:48
+      Exts[1]: StringLit @10:50-10:55
+        Parts[0]: text "png"
+  Decls[8]: TypeDecl @11:1-11:29
+    Name: Ident I @11:6-11:7
+    Type: TableType Stable="stable" @11:10-11:29
+      Name: QualifiedName Status @11:23-11:29
+  Decls[9]: TypeDecl @12:1-12:25
+    Name: Ident J @12:6-12:7
+    Type: OptionalType @12:10-12:25
+      Elem: RefType @12:10-12:24
+        Name: QualifiedName TalentNode @12:14-12:24
+  Decls[10]: TypeDecl @13:1-13:72
+    Name: Ident L @13:6-13:7
+    Params[0]: Param @13:8-13:28
+      Name: Ident n @13:8-13:9
+      Type: NamedType @13:11-13:16
+        Name: QualifiedName Level @13:11-13:16
+      Default: SelectorExpr @13:19-13:28
+        X: IdentExpr Level @13:19-13:24
+        Name: Ident low @13:25-13:28
+    Type: MatchType @13:32-13:72
+      Scrutinee: IdentExpr n @13:38-13:39
+      Arms[0]: TypeArm @13:42-13:57
+        Patterns[0]: Pattern @13:42-13:45
+          Name: QualifiedName low @13:42-13:45
+        Patterns[1]: Pattern @13:47-13:50
+          Name: QualifiedName mid @13:47-13:50
+        Type: NamedType @13:54-13:57
+          Name: QualifiedName Int @13:54-13:57
+      Arms[1]: TypeArm @13:59-13:70
+        Patterns[0]: Pattern Keyword=_ @13:59-13:60
+        Type: NamedType @13:64-13:70
+          Name: QualifiedName String @13:64-13:70
+  Decls[11]: TypeDecl @14:1-14:11
+    Name: Ident M @14:6-14:7
+    Type: AnyType @14:10-14:11
+  Decls[12]: TypeDecl @15:1-15:28
+    Name: Ident N @15:6-15:7
+    Type: OptionalType @15:10-15:28
+      Elem: NamedType @15:10-15:27
+        Name: QualifiedName Duration @15:10-15:18
+        Args: TypeArgs @15:18-15:27
+          Args[0]: RangeExpr Op=..= @15:19-15:26
+            Lo: DurationLit Millis=1000 @15:19-15:21
+            Hi: DurationLit Millis=86400000 @15:24-15:26
+  Decls[13]: TypeDecl @16:1-16:25
+    Name: Ident O @16:6-16:7
+    Type: NamedType @16:10-16:25
+      Name: QualifiedName String @16:10-16:16
+      Args: TypeArgs @16:16-16:25
+        Args[0]: RegexLit Pattern="^IDS_" @16:17-16:24
+  Decls[14]: TypeDecl @17:1-17:25
+    Name: Ident P @17:6-17:7
+    Type: RefType @17:10-17:25
+      Name: QualifiedName vocab.items @17:14-17:25
+  Decls[15]: TypeDecl @18:1-18:15
+    Name: Ident K @18:6-18:7
+    Type: OptionalType @18:10-18:15
+      Elem: OptionalType @18:10-18:15
+        Elem: NamedType @18:10-18:13
+          Name: QualifiedName Int @18:10-18:13
+== findings
+0 errors, 0 warnings in 1 package (…)

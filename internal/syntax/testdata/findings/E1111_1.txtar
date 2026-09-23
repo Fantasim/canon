@@ -1,0 +1,36 @@
+GRAMMAR.md §2.5: unit order, repeated unit, fraction, trailing digits, overflow.
+-- a/a.canon --
+package a
+
+let a = 30m1h
+let b = 1h1h
+let c = 1.5h
+let d = 1h30
+let e = 9223372036854775808ms
+let f = 99999999999999999999d
+let g = -9223372036854775808ms
+let h = 5 - 9223372036854775808ms
+let ok = [1h30m, 90s, 1500ms, 1d12h, 0s]
+-- findings.txt --
+error[E1111]  a/a.canon:3:9
+  invalid duration "30m1h": units must decrease (d, h, m, s, ms)
+
+error[E1111]  a/a.canon:4:9
+  invalid duration "1h1h": unit h is repeated
+
+error[E1111]  a/a.canon:5:9
+  invalid duration "1.5h": a fraction is not allowed; use a smaller unit
+
+error[E1111]  a/a.canon:6:9
+  invalid duration "1h30": digits without a unit
+
+error[E1111]  a/a.canon:7:9
+  invalid duration "9223372036854775808ms": it does not fit a signed 64-bit count of milliseconds
+
+error[E1111]  a/a.canon:8:9
+  invalid duration "99999999999999999999d": it does not fit a signed 64-bit count of milliseconds
+
+error[E1111]  a/a.canon:10:13
+  invalid duration "9223372036854775808ms": it does not fit a signed 64-bit count of milliseconds
+
+7 errors, 0 warnings in 1 package (…)

@@ -1,0 +1,27 @@
+GRAMMAR.md §5.10, CHK-04: fail and warn are called only inside a check block.
+-- a/a.canon --
+package a
+
+let x = fail("no")
+
+record R {
+  a: Int
+
+  fn f(self) -> Int {
+    warn(a, "x")
+    return 1
+  }
+
+  check {
+    warn(a, "fine here")
+    if a > 1 { fail(a, "and here") }
+  }
+}
+-- findings.txt --
+error[E1105]  a/a.canon:3:9
+  fail() may only be called inside a check block
+
+error[E1105]  a/a.canon:9:5
+  warn() may only be called inside a check block
+
+2 errors, 0 warnings in 1 package (…)

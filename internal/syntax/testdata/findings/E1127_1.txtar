@@ -1,0 +1,20 @@
+GRAMMAR.md §5.2: a file without package, an import after a declaration, a second package.
+-- a/a.canon --
+let x = 1
+-- b/b.canon --
+package b
+
+let x = 1
+import c
+package d
+-- findings.txt --
+error[E1127]  a/a.canon:1:1
+  a file must start with "package"
+
+error[E1127]  b/b.canon:4:1
+  imports must precede declarations
+
+error[E1127]  b/b.canon:5:1
+  a file has exactly one package clause
+
+3 errors, 0 warnings in 1 package (…)

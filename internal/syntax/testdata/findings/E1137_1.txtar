@@ -1,0 +1,15 @@
+GRAMMAR.md §5.9: keyed by after a type that is not a list.
+-- a/a.canon --
+package a
+
+let a: Int keyed by id = 1
+let b: [Int]? keyed by id = none
+let ok: [R](..=5) keyed by id = []
+-- findings.txt --
+error[E1137]  a/a.canon:3:12
+  "keyed by" applies to a list type
+
+error[E1137]  a/a.canon:4:15
+  "keyed by" applies to a list type
+
+2 errors, 0 warnings in 1 package (…)

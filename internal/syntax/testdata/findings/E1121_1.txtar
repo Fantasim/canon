@@ -1,0 +1,32 @@
+GRAMMAR.md §6.7: a positional argument after a named one, or a name given twice.
+-- a/a.canon --
+package a
+
+let a = f(x: 1, 2)
+let b = f(x: 1, x: 2)
+let c = load("f.json", at: "a", at: "b")
+
+record R {
+  d: Int @json(path: "p", "x")
+  e: Int @json("a", "b")
+}
+-- findings.txt --
+error[E1121]  a/a.canon:3:17
+  positional argument after a named argument
+
+error[E1121]  a/a.canon:4:17
+  argument "x" given twice
+
+error[E1121]  a/a.canon:5:33
+  argument "at" given twice
+
+error[E1119]  a/a.canon:8:27
+  @json: "wire" and "path" exclude each other
+
+error[E1121]  a/a.canon:8:27
+  positional argument after a named argument
+
+error[E1121]  a/a.canon:9:21
+  argument "wire" given twice
+
+6 errors, 0 warnings in 1 package (…)

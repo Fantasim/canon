@@ -1,0 +1,307 @@
+File: File FileKind=source @1:1-104:1
+  Doc: DocComment "Heistia: timed group missions, their reward pools and buff pool.\nLoader: HeistiaConfig (HeistiaConfig.h).\n\nThe hard part is `filterParam`: what it may contain depends on `eventType` (a\nmonster for COMBAT_KILL_MONSTER, an item for ECONOMY_DROP_ITEM, nothing for\nCOMBAT_KILL_FFA...). Since Resource 4bb68225 the schema pairs each filterParam shape\nwith the event's `param` from eventType.json through `x-ref-where`. Here the pairing\nis the field's type, computed from the event: `Param(eventType)`." @1:1-8:70
+  Package: QualifiedName resource.heistia @9:9-9:25
+  Imports[0]: Import @11:1-11:51
+    Path: QualifiedName resource.vocab @11:8-11:22
+    Names[0]: Ident Param @11:25-11:30
+    Names[1]: Ident eventTypes @11:32-11:42
+    Names[2]: Ident items @11:44-11:49
+  Imports[1]: Import @12:1-12:14
+    Path: QualifiedName studio @12:8-12:14
+  Decls[0]: RecordDecl @15:1-27:2
+    Doc: DocComment "One mission: count an event, optionally filtered, until every player reaches a target." @14:1-14:91
+    Name: Ident Task @15:8-15:12
+    Body: RecordBody @15:13-27:2
+      Items[0]: FieldDecl @17:3-17:28
+        Doc: DocComment "The event the mission counts." @16:3-16:36
+        Name: Ident eventType @17:3-17:12
+        Type: RefType @17:14-17:28
+          Name: QualifiedName eventTypes @17:18-17:28
+      Items[1]: FieldDecl @20:3-20:56
+        Doc: DocComment "Only this monster, item, dungeon... counts. `none` counts everything.\nIts type depends on `eventType`: see resource.vocab's Param." @18:3-19:67
+        Name: Ident filterParam @20:3-20:14
+        Type: OptionalType @20:16-20:33
+          Elem: NamedType @20:16-20:32
+            Name: QualifiedName Param @20:16-20:21
+            Args: TypeArgs @20:21-20:32
+              Args[0]: IdentExpr eventType @20:22-20:31
+        Default: NoneLit @20:36-20:40
+        Annotations[0]: Annotation @20:41-20:56
+          Name: Ident json @20:42-20:46
+          Args[0]: AnnotationArg @20:47-20:55
+            Name: Ident none @20:47-20:51
+            Value: StringLit @20:53-20:55
+      Items[2]: FieldDecl @22:3-22:28
+        Doc: DocComment "How many each player must reach." @21:3-21:39
+        Name: Ident targetPerPlayer @22:3-22:18
+        Type: NamedType @22:20-22:28
+          Name: QualifiedName Int @22:20-22:23
+          Args: TypeArgs @22:23-22:28
+            Args[0]: RangeExpr Op=.. @22:24-22:27
+              Lo: IntLit Value=1 @22:24-22:25
+      Items[3]: FieldDecl @24:3-24:63
+        Doc: DocComment "Time limit of the mission." @23:3-23:33
+        Name: Ident maxDuration @24:3-24:14
+        Type: NamedType @24:16-24:30
+          Name: QualifiedName Duration @24:16-24:24
+          Args: TypeArgs @24:24-24:30
+            Args[0]: RangeExpr Op=.. @24:25-24:29
+              Lo: DurationLit Millis=60000 @24:25-24:27
+        Annotations[0]: Annotation @24:31-24:63
+          Name: Ident json @24:32-24:36
+          Args[0]: AnnotationArg @24:37-24:53
+            Value: StringLit @24:37-24:53
+              Parts[0]: text "maxDurationMin"
+          Args[1]: AnnotationArg @24:55-24:62
+            Name: Ident unit @24:55-24:59
+            Value: QualifiedName m @24:61-24:62
+      Items[4]: FieldDecl @26:3-26:27
+        Doc: DocComment "Text shown to players." @25:3-25:29
+        Name: Ident description @26:3-26:14
+        Type: NamedType @26:16-26:27
+          Name: QualifiedName String @26:16-26:22
+          Args: TypeArgs @26:22-26:27
+            Args[0]: RangeExpr Op=.. @26:23-26:26
+              Lo: IntLit Value=1 @26:23-26:24
+  Decls[1]: RecordDecl @30:1-37:2
+    Doc: DocComment "One possible reward of a pool." @29:1-29:35
+    Name: Ident Reward @30:8-30:14
+    Body: RecordBody @30:15-37:2
+      Items[0]: FieldDecl @32:3-32:34
+        Doc: DocComment "The item given." @31:3-31:22
+        Name: Ident item @32:3-32:7
+        Type: RefType @32:9-32:18
+          Name: QualifiedName items @32:13-32:18
+        Annotations[0]: Annotation @32:19-32:34
+          Name: Ident json @32:20-32:24
+          Args[0]: AnnotationArg @32:25-32:33
+            Value: StringLit @32:25-32:33
+              Parts[0]: text "itemId"
+      Items[1]: FieldDecl @34:3-34:21
+        Doc: DocComment "How many are given." @33:3-33:26
+        Name: Ident quantity @34:3-34:11
+        Type: NamedType @34:13-34:21
+          Name: QualifiedName Int @34:13-34:16
+          Args: TypeArgs @34:16-34:21
+            Args[0]: RangeExpr Op=.. @34:17-34:20
+              Lo: IntLit Value=1 @34:17-34:18
+      Items[2]: FieldDecl @36:3-36:19
+        Doc: DocComment "Chance of this reward, relative to the other rewards of its pool." @35:3-35:72
+        Name: Ident weight @36:3-36:9
+        Type: NamedType @36:11-36:19
+          Name: QualifiedName Int @36:11-36:14
+          Args: TypeArgs @36:14-36:19
+            Args[0]: RangeExpr Op=.. @36:15-36:18
+              Lo: IntLit Value=1 @36:15-36:16
+  Decls[2]: RecordDecl @40:1-47:2
+    Doc: DocComment "One possible buff of the buff pool." @39:1-39:40
+    Name: Ident Buff @40:8-40:12
+    Body: RecordBody @40:13-47:2
+      Items[0]: FieldDecl @42:3-42:22
+        Doc: DocComment "Buff resource id." @41:3-41:24
+        Name: Ident buffResId @42:3-42:12
+        Type: NamedType @42:14-42:22
+          Name: QualifiedName Int @42:14-42:17
+          Args: TypeArgs @42:17-42:22
+            Args[0]: RangeExpr Op=.. @42:18-42:21
+              Lo: IntLit Value=0 @42:18-42:19
+      Items[1]: FieldDecl @44:3-44:57
+        Doc: DocComment "How long the buff lasts." @43:3-43:31
+        Name: Ident duration @44:3-44:11
+        Type: NamedType @44:13-44:27
+          Name: QualifiedName Duration @44:13-44:21
+          Args: TypeArgs @44:21-44:27
+            Args[0]: RangeExpr Op=.. @44:22-44:26
+              Lo: DurationLit Millis=1000 @44:22-44:24
+        Annotations[0]: Annotation @44:28-44:57
+          Name: Ident json @44:29-44:33
+          Args[0]: AnnotationArg @44:34-44:47
+            Value: StringLit @44:34-44:47
+              Parts[0]: text "durationSec"
+          Args[1]: AnnotationArg @44:49-44:56
+            Name: Ident unit @44:49-44:53
+            Value: QualifiedName s @44:55-44:56
+      Items[2]: FieldDecl @46:3-46:19
+        Doc: DocComment "Chance of this buff, relative to the other buffs." @45:3-45:56
+        Name: Ident weight @46:3-46:9
+        Type: NamedType @46:11-46:19
+          Name: QualifiedName Int @46:11-46:14
+          Args: TypeArgs @46:14-46:19
+            Args[0]: RangeExpr Op=.. @46:15-46:18
+              Lo: IntLit Value=1 @46:15-46:16
+  Decls[3]: RecordDecl @50:1-63:2
+    Doc: DocComment "The whole file." @49:1-49:20
+    Name: Ident HeistiaConfig @50:8-50:21
+    Body: RecordBody @50:22-63:2
+      Items[0]: FieldDecl @52:3-52:29
+        Doc: DocComment "Format version of the file." @51:3-51:34
+        Name: Ident version @52:3-52:10
+        Type: WhereType @52:12-52:29
+          Base: NamedType @52:12-52:15
+            Name: QualifiedName Int @52:12-52:15
+          Pred: BinaryExpr Op=== @52:22-52:29
+            X: IdentExpr it @52:22-52:24
+            Y: IntLit Value=2 @52:28-52:29
+      Items[1]: FieldDecl @54:3-54:21
+        Doc: DocComment "The missions a run draws from." @53:3-53:37
+        Name: Ident tasks @54:3-54:8
+        Type: ListType @54:10-54:21
+          Elem: NamedType @54:11-54:15
+            Name: QualifiedName Task @54:11-54:15
+          Args: TypeArgs @54:16-54:21
+            Args[0]: RangeExpr Op=.. @54:17-54:20
+              Lo: IntLit Value=1 @54:17-54:18
+      Items[2]: FieldDecl @56:3-56:36
+        Doc: DocComment "The number of pools is the number of winners (m_nWinnerCount)." @55:3-55:69
+        Name: Ident rewardPools @56:3-56:14
+        Type: ListType @56:16-56:31
+          Elem: ListType @56:17-56:30
+            Elem: NamedType @56:18-56:24
+              Name: QualifiedName Reward @56:18-56:24
+            Args: TypeArgs @56:25-56:30
+              Args[0]: RangeExpr Op=.. @56:26-56:29
+                Lo: IntLit Value=1 @56:26-56:27
+        Default: ListLit @56:34-56:36
+      Items[3]: FieldDecl @58:3-58:24
+        Doc: DocComment "Buffs a run may grant." @57:3-57:29
+        Name: Ident buffPool @58:3-58:11
+        Type: ListType @58:13-58:19
+          Elem: NamedType @58:14-58:18
+            Name: QualifiedName Buff @58:14-58:18
+        Default: ListLit @58:22-58:24
+      Items[4]: CheckDecl Keyword=warn @62:3-62:85
+        Cond: CallExpr @62:8-62:42
+          Fun: SelectorExpr @62:8-62:40
+            X: CallExpr @62:8-62:31
+              Fun: SelectorExpr @62:8-62:17
+                X: IdentExpr tasks @62:8-62:13
+                Name: Ident map @62:14-62:17
+              Args[0]: Arg @62:18-62:30
+                Value: ShorthandLambda @62:18-62:30
+                  Body: SelectorExpr @62:18-62:30
+                    Name: Ident description @62:19-62:30
+            Name: Ident isUnique @62:32-62:40
+        Message: StringLit @62:48-62:85
+          Parts[0]: text "two tasks have the same description"
+  Decls[4]: LetDecl @66:1-66:81
+    Doc: DocComment "Server/System/heistia_config.json, read in place." @65:1-65:54
+    Name: Ident heistia @66:5-66:12
+    Type: NamedType @66:14-66:27
+      Name: QualifiedName HeistiaConfig @66:14-66:27
+    Value: LoadExpr @66:30-66:81
+      Args[0]: Arg @66:35-66:80
+        Value: StringLit @66:35-66:80
+          Parts[0]: text "@resource/Server/System/heistia_config.json"
+  Decls[5]: ViewDecl @75:1-85:2
+    Type: Ident Task @75:6-75:10
+    Items[0]: ViewTitle @76:3-76:24
+      Text: StringLit @76:9-76:24
+        Parts[0]: Interp @76:11-76:22
+          X: IdentExpr description @76:11-76:22
+    Items[1]: ViewColumns @77:3-77:96
+      Items[0]: ViewColumn @77:13-77:26
+        Name: Ident eventType @77:13-77:22
+        Width: IntLit Value=240 @77:23-77:26
+      Items[1]: ViewColumn @77:28-77:43
+        Name: Ident filterParam @77:28-77:39
+        Width: IntLit Value=240 @77:40-77:43
+      Items[2]: ViewColumn @77:45-77:64
+        Name: Ident targetPerPlayer @77:45-77:60
+        Width: IntLit Value=120 @77:61-77:64
+      Items[3]: ViewColumn @77:66-77:81
+        Name: Ident maxDuration @77:66-77:77
+        Width: IntLit Value=110 @77:78-77:81
+      Items[4]: ViewColumn @77:83-77:94
+        Name: Ident description @77:83-77:94
+    Items[2]: ViewGroup @78:3-83:4
+      ID: Ident mission @78:9-78:16
+      Label: StringLit @78:17-78:26
+        Parts[0]: text "Mission"
+      Members[0]: ViewField @79:5-79:22
+        Name: Ident eventType @79:5-79:14
+        Label: StringLit @79:15-79:22
+          Parts[0]: text "Event"
+      Members[1]: ViewField @80:5-80:23
+        Name: Ident filterParam @80:5-80:16
+        Label: StringLit @80:17-80:23
+          Parts[0]: text "Only"
+      Members[2]: ViewField @81:5-81:40
+        Name: Ident targetPerPlayer @81:5-81:20
+        Label: StringLit @81:21-81:40
+          Parts[0]: text "Target per player"
+      Members[3]: ViewField @82:5-82:29
+        Name: Ident maxDuration @82:5-82:16
+        Label: StringLit @82:17-82:29
+          Parts[0]: text "Time limit"
+    Items[3]: ViewGroup @84:3-84:36
+      ID: Ident text @84:9-84:13
+      Label: StringLit @84:14-84:20
+        Parts[0]: text "Text"
+      Members[0]: ViewField @84:23-84:34
+        Name: Ident description @84:23-84:34
+  Decls[6]: ViewDecl @87:1-91:2
+    Type: Ident Reward @87:6-87:12
+    Items[0]: ViewTitle @88:3-88:31
+      Text: StringLit @88:9-88:31
+        Parts[0]: Interp @88:11-88:19
+          X: IdentExpr quantity @88:11-88:19
+        Parts[1]: text " × "
+        Parts[2]: Interp @88:25-88:29
+          X: IdentExpr item @88:25-88:29
+    Items[1]: ViewField @89:3-89:14
+      Name: Ident item @89:3-89:7
+      Label: StringLit @89:8-89:14
+        Parts[0]: text "Item"
+    Items[2]: ViewField @90:3-90:34
+      Name: Ident weight @90:3-90:9
+      Props: BraceLit @90:10-90:34
+        Items[0]: FieldItem @90:12-90:32
+          Name: Ident widget @90:12-90:18
+          Value: IdentExpr weight_share @90:20-90:32
+  Decls[7]: ViewDecl @93:1-101:2
+    Type: Ident HeistiaConfig @93:6-93:19
+    Items[0]: ViewTitle @94:3-94:18
+      Text: StringLit @94:9-94:18
+        Parts[0]: text "Heistia"
+    Items[1]: ViewMenu @95:3-95:28
+      Menu: Ident instances @95:8-95:17
+      Icon: Ident chest @95:23-95:28
+    Items[2]: ViewGroup @96:3-96:35
+      ID: Ident tasks @96:9-96:14
+      Label: StringLit @96:15-96:25
+        Parts[0]: text "Missions"
+      Members[0]: ViewField @96:28-96:33
+        Name: Ident tasks @96:28-96:33
+    Items[3]: ViewGroup @97:3-99:4
+      ID: Ident rewards @97:9-97:16
+      Label: StringLit @97:17-97:26
+        Parts[0]: text "Rewards"
+      Help: StringLit @97:27-97:49
+        Parts[0]: text "One pool per winner."
+      Members[0]: ViewField @98:5-98:66
+        Name: Ident rewardPools @98:5-98:16
+        Props: BraceLit @98:17-98:66
+          Items[0]: FieldItem @98:19-98:40
+            Name: Ident widget @98:19-98:25
+            Value: IdentExpr ordered_steps @98:27-98:40
+          Items[1]: FieldItem @98:42-98:64
+            Name: Ident step @98:42-98:46
+            Value: StringLit @98:48-98:64
+              Parts[0]: text "Winner "
+              Parts[1]: Interp @98:57-98:62
+                X: IdentExpr index @98:57-98:62
+    Items[4]: ViewGroup @100:3-100:35
+      ID: Ident buffs @100:9-100:14
+      Label: StringLit @100:15-100:22
+        Parts[0]: text "Buffs"
+      Members[0]: ViewField @100:25-100:33
+        Name: Ident buffPool @100:25-100:33
+  Decls[8]: EmitDecl @103:1-103:50
+    Target: Ident view @103:6-103:10
+    Options: BraceLit @103:11-103:50
+      Items[0]: FieldItem @103:13-103:48
+        Name: Ident out @103:13-103:16
+        Value: StringLit @103:18-103:48
+          Parts[0]: text "@generated/heistia.view.json"
+== findings
+0 errors, 0 warnings in 1 package (…)

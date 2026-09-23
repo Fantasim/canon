@@ -1,0 +1,641 @@
+File: File FileKind=source @1:1-187:1
+  Doc: DocComment "The four other Lua rules of Resource/Schema/rules/, rewritten.\n\nEach record below is trimmed to the fields its rule reads; the real types would\ncarry every field of their file, be public and documented. Here they are `local`:\nthe point is the rules. In Canon they are ordinary `check`s, next to the data, with\nno keyword vocabulary to argue about (\"a keyword with one user, clause 2 refuses\")\nand no type guards.\n\nSince ADR-0009 (resourcestudio, 2026-09-19) the Lua files are these rules' only\nimplementation: Resource Studio's Go copies (internal/rules/) were deleted, and the\nstudio asks validate.py. Here the rules also run on the files themselves: each record\nis loaded below, so `canon check` reports what the Lua reports." @1:1-12:68
+  Package: QualifiedName resource.rules @13:9-13:23
+  Decls[0]: LetDecl @15:1-15:85
+    Mods: Modifiers Local="local" @15:1-15:6
+    Name: Ident jobs @15:11-15:15
+    Value: LoadExpr @15:18-15:85
+      Method: Ident defines @15:23-15:30
+      Args[0]: Arg @15:31-15:68
+        Value: StringLit @15:31-15:68
+          Parts[0]: text "@resource/Server/Define/defineJob.h"
+      Args[1]: Arg @15:70-15:84
+        Name: Ident prefix @15:70-15:76
+        Value: StringLit @15:78-15:84
+          Parts[0]: text "JOB_"
+  Decls[1]: RecordDecl @24:1-28:2
+    Mods: Modifiers Local="local" @24:1-24:6
+    Name: Ident TalentNode @24:14-24:24
+    Body: RecordBody @24:25-28:2
+      Items[0]: FieldDecl @25:3-25:15
+        Name: Ident id @25:3-25:5
+        Type: NamedType @25:7-25:15
+          Name: QualifiedName Int @25:7-25:10
+          Args: TypeArgs @25:10-25:15
+            Args[0]: RangeExpr Op=.. @25:11-25:14
+              Lo: IntLit Value=0 @25:11-25:12
+      Items[1]: FieldDecl @27:3-27:42
+        Doc: DocComment "-1 in the file means \"root\"." @26:3-26:35
+        Name: Ident parent @27:3-27:9
+        Type: OptionalType @27:11-27:26
+          Elem: RefType @27:11-27:25
+            Name: QualifiedName TalentNode @27:15-27:25
+        Annotations[0]: Annotation @27:27-27:42
+          Name: Ident json @27:28-27:32
+          Args[0]: AnnotationArg @27:33-27:41
+            Name: Ident none @27:33-27:37
+            Value: IntLit Value=-1 @27:39-27:41
+  Decls[2]: RecordDecl @30:1-43:2
+    Mods: Modifiers Local="local" @30:1-30:6
+    Name: Ident GuildTalentTree @30:14-30:29
+    Body: RecordBody @30:30-43:2
+      Items[0]: FieldDecl @31:3-31:34
+        Name: Ident nodes @31:3-31:8
+        Type: KeyedType @31:10-31:34
+          List: ListType @31:10-31:22
+            Elem: NamedType @31:11-31:21
+              Name: QualifiedName TalentNode @31:11-31:21
+          Key: Ident id @31:32-31:34
+      Items[1]: CheckDecl Keyword=check @33:3-33:69
+        Cond: CallExpr @33:9-33:41
+          Fun: SelectorExpr @33:9-33:18
+            X: IdentExpr nodes @33:9-33:14
+            Name: Ident any @33:15-33:18
+          Args[0]: Arg @33:19-33:40
+            Value: LambdaExpr @33:19-33:40
+              Params[0]: Ident n @33:19-33:20
+              Body: BinaryExpr Op=== @33:24-33:40
+                X: SelectorExpr @33:24-33:32
+                  X: IdentExpr n @33:24-33:25
+                  Name: Ident parent @33:26-33:32
+                Y: NoneLit @33:36-33:40
+        Message: StringLit @33:47-33:69
+          Parts[0]: text "the tree has no root"
+      Items[2]: CheckDecl Keyword=check @35:3-42:4
+        Body: Block @35:9-42:4
+          Stmts[0]: ForStmt @36:5-41:6
+            Vars[0]: Ident n @36:9-36:10
+            Iter: CallExpr @36:14-36:42
+              Fun: IdentExpr cycles @36:14-36:20
+              Args[0]: Arg @36:21-36:26
+                Value: IdentExpr nodes @36:21-36:26
+              Args[1]: Arg @36:28-36:41
+                Name: Ident next @36:28-36:32
+                Value: ShorthandLambda @36:34-36:41
+                  Body: SelectorExpr @36:34-36:41
+                    Name: Ident parent @36:35-36:41
+            Body: Block @36:43-41:6
+              Stmts[0]: ExprStmt @37:7-40:8
+                X: CallExpr @37:7-40:8
+                  Fun: IdentExpr fail @37:7-37:11
+                  Args[0]: Arg @38:9-38:17
+                    Value: SelectorExpr @38:9-38:17
+                      X: IdentExpr n @38:9-38:10
+                      Name: Ident parent @38:11-38:17
+                  Args[1]: Arg @39:9-39:96
+                    Value: StringLit @39:9-39:96
+                      Parts[0]: text "node "
+                      Parts[1]: Interp @39:16-39:20
+                        X: SelectorExpr @39:16-39:20
+                          X: IdentExpr n @39:16-39:17
+                          Name: Ident id @39:18-39:20
+                      Parts[2]: text " belongs to a parent cycle: the branch would be permanently locked in game"
+  Decls[3]: LetDecl @47:1-48:70
+    Mods: Modifiers Local="local" @47:1-47:6
+    Name: Ident guildTalentTree @47:11-47:26
+    Type: NamedType @47:28-47:43
+      Name: QualifiedName GuildTalentTree @47:28-47:43
+    Value: LoadExpr @48:3-48:70
+      Args[0]: Arg @48:8-48:54
+        Value: StringLit @48:8-48:54
+          Parts[0]: text "@resource/Server/System/GuildTalentTree.json"
+      Args[1]: Arg @48:56-48:69
+        Name: Ident partial @48:56-48:63
+        Value: BoolLit Value @48:65-48:69
+  Decls[4]: RecordDecl @57:1-57:32
+    Mods: Modifiers Local="local" @57:1-57:6
+    Name: Ident SetRow @57:14-57:20
+    Body: RecordBody @57:21-57:32
+      Items[0]: FieldDecl @57:23-57:30
+        Name: Ident id @57:23-57:25
+        Type: NamedType @57:27-57:30
+          Name: QualifiedName Int @57:27-57:30
+  Decls[5]: RecordDecl @59:1-79:2
+    Mods: Modifiers Local="local" @59:1-59:6
+    Name: Ident JobSets @59:14-59:21
+    Body: RecordBody @59:22-79:2
+      Items[0]: FieldDecl @60:3-60:35
+        Name: Ident weaponSets @60:3-60:13
+        Type: KeyedType @60:15-60:35
+          List: ListType @60:15-60:23
+            Elem: NamedType @60:16-60:22
+              Name: QualifiedName SetRow @60:16-60:22
+          Key: Ident id @60:33-60:35
+      Items[1]: FieldDecl @61:3-61:34
+        Name: Ident armorSets @61:3-61:12
+        Type: KeyedType @61:14-61:34
+          List: ListType @61:14-61:22
+            Elem: NamedType @61:15-61:21
+              Name: QualifiedName SetRow @61:15-61:21
+          Key: Ident id @61:32-61:34
+      Items[2]: FieldDecl @62:3-62:34
+        Name: Ident jewelSets @62:3-62:12
+        Type: KeyedType @62:14-62:34
+          List: ListType @62:14-62:22
+            Elem: NamedType @62:15-62:21
+              Name: QualifiedName SetRow @62:15-62:21
+          Key: Ident id @62:32-62:34
+      Items[3]: FieldDecl @63:3-63:39
+        Name: Ident weaponCardSets @63:3-63:17
+        Type: KeyedType @63:19-63:39
+          List: ListType @63:19-63:27
+            Elem: NamedType @63:20-63:26
+              Name: QualifiedName SetRow @63:20-63:26
+          Key: Ident id @63:37-63:39
+      Items[4]: FieldDecl @64:3-64:38
+        Name: Ident armorCardSets @64:3-64:16
+        Type: KeyedType @64:18-64:38
+          List: ListType @64:18-64:26
+            Elem: NamedType @64:19-64:25
+              Name: QualifiedName SetRow @64:19-64:25
+          Key: Ident id @64:36-64:38
+      Items[5]: FieldDecl @65:3-65:40
+        Name: Ident ultimateGemSets @65:3-65:18
+        Type: KeyedType @65:20-65:40
+          List: ListType @65:20-65:28
+            Elem: NamedType @65:21-65:27
+              Name: QualifiedName SetRow @65:21-65:27
+          Key: Ident id @65:38-65:40
+      Items[6]: FieldDecl @66:3-66:36
+        Name: Ident fashionSets @66:3-66:14
+        Type: KeyedType @66:16-66:36
+          List: ListType @66:16-66:24
+            Elem: NamedType @66:17-66:23
+              Name: QualifiedName SetRow @66:17-66:23
+          Key: Ident id @66:34-66:36
+      Items[7]: FnDecl Self="self" @69:3-78:4
+        Doc: DocComment "The categories the loader compares, in its order (JobChangeV4Config.cpp:530-535)." @68:3-68:88
+        Name: Ident compared @69:6-69:14
+        Result: MapType @69:24-69:42
+          Key: NamedType @69:25-69:31
+            Name: QualifiedName String @69:25-69:31
+          Value: ListType @69:33-69:41
+            Elem: NamedType @69:34-69:40
+              Name: QualifiedName SetRow @69:34-69:40
+        Body: Block @69:43-78:4
+          Stmts[0]: ReturnStmt @70:5-77:6
+            Value: BraceLit @70:12-77:6
+              Items[0]: MapItem @71:7-71:31
+                Key: StringLit @71:7-71:19
+                  Parts[0]: text "weaponSets"
+                Value: IdentExpr weaponSets @71:21-71:31
+              Items[1]: MapItem @72:7-72:29
+                Key: StringLit @72:7-72:18
+                  Parts[0]: text "armorSets"
+                Value: IdentExpr armorSets @72:20-72:29
+              Items[2]: MapItem @73:7-73:29
+                Key: StringLit @73:7-73:18
+                  Parts[0]: text "jewelSets"
+                Value: IdentExpr jewelSets @73:20-73:29
+              Items[3]: MapItem @74:7-74:39
+                Key: StringLit @74:7-74:23
+                  Parts[0]: text "weaponCardSets"
+                Value: IdentExpr weaponCardSets @74:25-74:39
+              Items[4]: MapItem @75:7-75:37
+                Key: StringLit @75:7-75:22
+                  Parts[0]: text "armorCardSets"
+                Value: IdentExpr armorCardSets @75:24-75:37
+              Items[5]: MapItem @76:7-76:41
+                Key: StringLit @76:7-76:24
+                  Parts[0]: text "ultimateGemSets"
+                Value: IdentExpr ultimateGemSets @76:26-76:41
+  Decls[6]: RecordDecl @81:1-103:2
+    Mods: Modifiers Local="local" @81:1-81:6
+    Name: Ident JobChange @81:14-81:23
+    Body: RecordBody @81:24-103:2
+      Items[0]: FieldDecl @82:3-82:26
+        Name: Ident jobs @82:3-82:7
+        Type: MapType @82:9-82:26
+          Key: NamedType @82:10-82:16
+            Name: QualifiedName String @82:10-82:16
+          Value: NamedType @82:18-82:25
+            Name: QualifiedName JobSets @82:18-82:25
+      Items[1]: CheckDecl Keyword=check @84:3-102:4
+        Body: Block @84:9-102:4
+          Stmts[0]: LetStmt @86:5-86:39
+            Name: Ident anyJob @86:9-86:15
+            Value: CallExpr @86:18-86:39
+              Fun: SelectorExpr @86:18-86:37
+                X: CallExpr @86:18-86:31
+                  Fun: SelectorExpr @86:18-86:29
+                    X: IdentExpr jobs @86:18-86:22
+                    Name: Ident values @86:23-86:29
+                Name: Ident first @86:32-86:37
+          Stmts[1]: IfStmt @87:5-101:6
+            Cond: BinaryExpr Op=!= @87:8-87:22
+              X: IdentExpr anyJob @87:8-87:14
+              Y: NoneLit @87:18-87:22
+            Then: Block @87:23-101:6
+              Stmts[0]: ForStmt @88:7-100:8
+                Vars[0]: Ident category @88:11-88:19
+                Iter: CallExpr @88:23-88:47
+                  Fun: SelectorExpr @88:23-88:45
+                    X: CallExpr @88:23-88:40
+                      Fun: SelectorExpr @88:23-88:38
+                        X: IdentExpr anyJob @88:23-88:29
+                        Name: Ident compared @88:30-88:38
+                    Name: Ident keys @88:41-88:45
+                Body: Block @88:48-100:8
+                  Stmts[0]: LetStmt @89:9-89:86
+                    Name: Ident idsOf @89:13-89:18
+                    Value: BraceLit @89:21-89:86
+                      Items[0]: MapItem @89:23-89:62
+                        Key: IdentExpr name @89:23-89:27
+                        Value: CallExpr @89:29-89:62
+                          Fun: SelectorExpr @89:29-89:57
+                            X: IndexExpr @89:29-89:53
+                              X: CallExpr @89:29-89:43
+                                Fun: SelectorExpr @89:29-89:41
+                                  X: IdentExpr job @89:29-89:32
+                                  Name: Ident compared @89:33-89:41
+                              Index: IdentExpr category @89:44-89:52
+                            Name: Ident map @89:54-89:57
+                          Args[0]: Arg @89:58-89:61
+                            Value: ShorthandLambda @89:58-89:61
+                              Body: SelectorExpr @89:58-89:61
+                                Name: Ident id @89:59-89:61
+                      Clauses[0]: CompClause Keyword=for @89:63-89:84
+                        Vars[0]: Ident name @89:67-89:71
+                        Vars[1]: Ident job @89:73-89:76
+                        X: IdentExpr jobs @89:80-89:84
+                  Stmts[1]: ForStmt @90:9-99:10
+                    Vars[0]: Ident id @90:13-90:15
+                    Iter: CallExpr @90:19-90:67
+                      Fun: SelectorExpr @90:19-90:59
+                        X: CallExpr @90:19-90:52
+                          Fun: SelectorExpr @90:19-90:50
+                            X: CallExpr @90:19-90:43
+                              Fun: SelectorExpr @90:19-90:41
+                                X: CallExpr @90:19-90:33
+                                  Fun: SelectorExpr @90:19-90:31
+                                    X: IdentExpr idsOf @90:19-90:24
+                                    Name: Ident values @90:25-90:31
+                                Name: Ident flatten @90:34-90:41
+                            Name: Ident unique @90:44-90:50
+                        Name: Ident sortBy @90:53-90:59
+                      Args[0]: Arg @90:60-90:66
+                        Value: LambdaExpr @90:60-90:66
+                          Params[0]: Ident x @90:60-90:61
+                          Body: IdentExpr x @90:65-90:66
+                    Body: Block @90:68-99:10
+                      Stmts[0]: LetStmt @91:11-91:78
+                        Name: Ident missing @91:15-91:22
+                        Value: ListComp @91:25-91:78
+                          Elem: IdentExpr name @91:26-91:30
+                          Clauses[0]: CompClause Keyword=for @91:31-91:53
+                            Vars[0]: Ident name @91:35-91:39
+                            Vars[1]: Ident ids @91:41-91:44
+                            X: IdentExpr idsOf @91:48-91:53
+                          Clauses[1]: CompClause Keyword=if @91:54-91:77
+                            X: UnaryExpr Op=not @91:57-91:77
+                              X: CallExpr @91:61-91:77
+                                Fun: SelectorExpr @91:61-91:73
+                                  X: IdentExpr ids @91:61-91:64
+                                  Name: Ident contains @91:65-91:73
+                                Args[0]: Arg @91:74-91:76
+                                  Value: IdentExpr id @91:74-91:76
+                      Stmts[1]: IfStmt @92:11-98:12
+                        Cond: UnaryExpr Op=not @92:14-92:35
+                          X: CallExpr @92:18-92:35
+                            Fun: SelectorExpr @92:18-92:33
+                              X: IdentExpr missing @92:18-92:25
+                              Name: Ident isEmpty @92:26-92:33
+                        Then: Block @92:36-98:12
+                          Stmts[0]: ExprStmt @93:13-97:14
+                            X: CallExpr @93:13-97:14
+                              Fun: IdentExpr fail @93:13-93:17
+                              Args[0]: Arg @94:15-94:52
+                                Value: IndexExpr @94:15-94:52
+                                  X: CallExpr @94:15-94:42
+                                    Fun: SelectorExpr @94:15-94:40
+                                      X: IndexExpr @94:15-94:31
+                                        X: IdentExpr jobs @94:15-94:19
+                                        Index: IndexExpr @94:20-94:30
+                                          X: IdentExpr missing @94:20-94:27
+                                          Index: IntLit Value=0 @94:28-94:29
+                                      Name: Ident compared @94:32-94:40
+                                  Index: IdentExpr category @94:43-94:51
+                              Args[1]: Arg @95:15-96:90
+                                Value: BinaryExpr Op=+ @95:15-96:90
+                                  X: StringLit @95:15-95:79
+                                    Parts[0]: Interp @95:17-95:25
+                                      X: IdentExpr category @95:17-95:25
+                                    Parts[1]: text ": set id "
+                                    Parts[2]: Interp @95:36-95:38
+                                      X: IdentExpr id @95:36-95:38
+                                    Parts[3]: text " is missing from "
+                                    Parts[4]: Interp @95:57-95:75
+                                      X: CallExpr @95:57-95:75
+                                        Fun: SelectorExpr @95:57-95:69
+                                          X: IdentExpr missing @95:57-95:64
+                                          Name: Ident join @95:65-95:69
+                                        Args[0]: Arg @95:70-95:74
+                                          Value: StringLit @95:70-95:74
+                                            Parts[0]: text ", "
+                                    Parts[5]: text "; "
+                                  Y: StringLit @96:17-96:90
+                                    Parts[0]: text "the loader refuses the whole file until every job declares the same ids"
+  Decls[7]: LetDecl @105:1-105:97
+    Mods: Modifiers Local="local" @105:1-105:6
+    Name: Ident jobChange @105:11-105:20
+    Type: NamedType @105:22-105:31
+      Name: QualifiedName JobChange @105:22-105:31
+    Value: LoadExpr @105:34-105:97
+      Args[0]: Arg @105:39-105:81
+        Value: StringLit @105:39-105:81
+          Parts[0]: text "@resource/Server/System/JobChangeV4.json"
+      Args[1]: Arg @105:83-105:96
+        Name: Ident partial @105:83-105:90
+        Value: BoolLit Value @105:92-105:96
+  Decls[8]: ConstDecl @118:1-118:27
+    Doc: DocComment "The row width of m_aJobSkill." @117:1-117:34
+    Name: Ident JOB_SKILL_SLOTS @118:7-118:22
+    Value: IntLit Value=40 @118:25-118:27
+  Decls[9]: LetDecl @120:1-120:91
+    Mods: Modifiers Local="local" @120:1-120:6
+    Name: Ident jobTypes @120:11-120:19
+    Value: LoadExpr @120:22-120:91
+      Method: Ident defines @120:27-120:34
+      Args[0]: Arg @120:35-120:72
+        Value: StringLit @120:35-120:72
+          Parts[0]: text "@resource/Server/Define/defineJob.h"
+      Args[1]: Arg @120:74-120:90
+        Name: Ident prefix @120:74-120:80
+        Value: StringLit @120:82-120:90
+          Parts[0]: text "JTYPE_"
+  Decls[10]: RecordDecl @122:1-125:2
+    Mods: Modifiers Local="local" @122:1-122:6
+    Name: Ident Skill @122:14-122:19
+    Body: RecordBody @122:20-125:2
+      Items[0]: FieldDecl @123:3-123:21
+        Name: Ident jobIndex @123:3-123:11
+        Type: RefType @123:13-123:21
+          Name: QualifiedName jobs @123:17-123:21
+      Items[1]: FieldDecl @124:3-124:21
+        Name: Ident tier @124:3-124:7
+        Type: RefType @124:9-124:21
+          Name: QualifiedName jobTypes @124:13-124:21
+  Decls[11]: RecordDecl @127:1-141:2
+    Mods: Modifiers Local="local" @127:1-127:6
+    Name: Ident Skills @127:14-127:20
+    Body: RecordBody @127:21-141:2
+      Items[0]: FieldDecl @128:3-128:18
+        Name: Ident skills @128:3-128:9
+        Type: ListType @128:11-128:18
+          Elem: NamedType @128:12-128:17
+            Name: QualifiedName Skill @128:12-128:17
+      Items[1]: CheckDecl Keyword=check @130:3-140:4
+        Body: Block @130:9-140:4
+          Stmts[0]: ForStmt @131:5-139:6
+            Vars[0]: Ident job @131:9-131:12
+            Vars[1]: Ident rows @131:14-131:18
+            Iter: CallExpr @131:22-131:92
+              Fun: SelectorExpr @131:22-131:81
+                X: CallExpr @131:22-131:73
+                  Fun: SelectorExpr @131:22-131:35
+                    X: IdentExpr skills @131:22-131:28
+                    Name: Ident filter @131:29-131:35
+                  Args[0]: Arg @131:36-131:72
+                    Value: LambdaExpr @131:36-131:72
+                      Params[0]: Ident s @131:36-131:37
+                      Body: BinaryExpr Op=!= @131:41-131:72
+                        X: SelectorExpr @131:41-131:47
+                          X: IdentExpr s @131:41-131:42
+                          Name: Ident tier @131:43-131:47
+                        Y: SelectorExpr @131:51-131:72
+                          X: IdentExpr jobTypes @131:51-131:59
+                          Name: Ident JTYPE_COMMON @131:60-131:72
+                Name: Ident groupBy @131:74-131:81
+              Args[0]: Arg @131:82-131:91
+                Value: ShorthandLambda @131:82-131:91
+                  Body: SelectorExpr @131:82-131:91
+                    Name: Ident jobIndex @131:83-131:91
+            Body: Block @131:93-139:6
+              Stmts[0]: IfStmt @132:7-138:8
+                Cond: BinaryExpr Op=> @132:10-132:38
+                  X: CallExpr @132:10-132:20
+                    Fun: SelectorExpr @132:10-132:18
+                      X: IdentExpr rows @132:10-132:14
+                      Name: Ident len @132:15-132:18
+                  Y: IdentExpr JOB_SKILL_SLOTS @132:23-132:38
+                Then: Block @132:39-138:8
+                  Stmts[0]: ExprStmt @133:9-137:10
+                    X: CallExpr @133:9-137:10
+                      Fun: IdentExpr fail @133:9-133:13
+                      Args[0]: Arg @134:11-134:41
+                        Value: SelectorExpr @134:11-134:41
+                          X: IndexExpr @134:11-134:32
+                            X: IdentExpr rows @134:11-134:15
+                            Index: IdentExpr JOB_SKILL_SLOTS @134:16-134:31
+                          Name: Ident jobIndex @134:33-134:41
+                      Args[1]: Arg @135:11-136:51
+                        Value: BinaryExpr Op=+ @135:11-136:51
+                          X: StringLit @135:11-135:95
+                            Parts[0]: Interp @135:13-135:23
+                              X: CallExpr @135:13-135:23
+                                Fun: SelectorExpr @135:13-135:21
+                                  X: IdentExpr rows @135:13-135:17
+                                  Name: Ident len @135:18-135:21
+                            Parts[1]: text " skills target "
+                            Parts[2]: Interp @135:40-135:46
+                              X: SelectorExpr @135:40-135:46
+                                X: IdentExpr job @135:40-135:43
+                                Name: Ident id @135:44-135:46
+                            Parts[3]: text "; m_aJobSkill holds "
+                            Parts[4]: Interp @135:68-135:83
+                              X: IdentExpr JOB_SKILL_SLOTS @135:68-135:83
+                            Parts[5]: text " per job, "
+                          Y: StringLit @136:13-136:51
+                            Parts[0]: text "so the loader refuses the whole file"
+  Decls[12]: LetDecl @143:1-143:85
+    Mods: Modifiers Local="local" @143:1-143:6
+    Name: Ident skills @143:11-143:17
+    Type: NamedType @143:19-143:25
+      Name: QualifiedName Skills @143:19-143:25
+    Value: LoadExpr @143:28-143:85
+      Args[0]: Arg @143:33-143:69
+        Value: StringLit @143:33-143:69
+          Parts[0]: text "@resource/Server/Skill/skills.json"
+      Args[1]: Arg @143:71-143:84
+        Name: Ident partial @143:71-143:78
+        Value: BoolLit Value @143:80-143:84
+  Decls[13]: RecordDecl @151:1-156:2
+    Mods: Modifiers Local="local" @151:1-151:6
+    Name: Ident Tier @151:14-151:18
+    Body: RecordBody @151:19-156:2
+      Items[0]: FieldDecl @152:3-152:60
+        Name: Ident floors @152:3-152:9
+        Type: WhereType @152:11-152:60
+          Base: ListType @152:11-152:21
+            Elem: NamedType @152:12-152:20
+              Name: QualifiedName Int @152:12-152:15
+              Args: TypeArgs @152:15-152:20
+                Args[0]: RangeExpr Op=.. @152:16-152:19
+                  Lo: IntLit Value=1 @152:16-152:17
+          Pred: BinaryExpr Op=and @152:28-152:60
+            X: BinaryExpr Op=== @152:28-152:41
+              X: CallExpr @152:28-152:36
+                Fun: SelectorExpr @152:28-152:34
+                  X: IdentExpr it @152:28-152:30
+                  Name: Ident len @152:31-152:34
+              Y: IntLit Value=2 @152:40-152:41
+            Y: BinaryExpr Op=<= @152:46-152:60
+              X: IndexExpr @152:46-152:51
+                X: IdentExpr it @152:46-152:48
+                Index: IntLit Value=0 @152:49-152:50
+              Y: IndexExpr @152:55-152:60
+                X: IdentExpr it @152:55-152:57
+                Index: IntLit Value=1 @152:58-152:59
+      Items[1]: FieldDecl @153:3-153:23
+        Name: Ident totems @153:3-153:9
+        Type: NamedType @153:11-153:15
+          Name: QualifiedName Bool @153:11-153:15
+        Default: BoolLit @153:18-153:23
+      Items[2]: FnDecl Self="self" @155:3-155:91
+        Name: Ident covers @155:6-155:12
+        Params[0]: Param @155:19-155:29
+          Name: Ident floor @155:19-155:24
+          Type: NamedType @155:26-155:29
+            Name: QualifiedName Int @155:26-155:29
+        Result: NamedType @155:34-155:38
+          Name: QualifiedName Bool @155:34-155:38
+        Body: Block @155:39-155:91
+          Stmts[0]: ReturnStmt @155:41-155:89
+            Value: BinaryExpr Op=and @155:48-155:89
+              X: BinaryExpr Op=<= @155:48-155:66
+                X: IndexExpr @155:48-155:57
+                  X: IdentExpr floors @155:48-155:54
+                  Index: IntLit Value=0 @155:55-155:56
+                Y: IdentExpr floor @155:61-155:66
+              Y: BinaryExpr Op=<= @155:71-155:89
+                X: IdentExpr floor @155:71-155:76
+                Y: IndexExpr @155:80-155:89
+                  X: IdentExpr floors @155:80-155:86
+                  Index: IntLit Value=1 @155:87-155:88
+  Decls[14]: RecordDecl @158:1-158:44
+    Mods: Modifiers Local="local" @158:1-158:6
+    Name: Ident Wave @158:14-158:18
+    Body: RecordBody @158:19-158:44
+      Items[0]: FieldDecl @158:21-158:42
+        Name: Ident totems @158:21-158:27
+        Type: ListType @158:29-158:37
+          Elem: NamedType @158:30-158:36
+            Name: QualifiedName String @158:30-158:36
+        Default: ListLit @158:40-158:42
+  Decls[15]: RecordDecl @159:1-159:54
+    Mods: Modifiers Local="local" @159:1-159:6
+    Name: Ident Floor @159:14-159:19
+    Body: RecordBody @159:20-159:54
+      Items[0]: FieldDecl @159:22-159:37
+        Name: Ident floor @159:22-159:27
+        Type: NamedType @159:29-159:37
+          Name: QualifiedName Int @159:29-159:32
+          Args: TypeArgs @159:32-159:37
+            Args[0]: RangeExpr Op=.. @159:33-159:36
+              Lo: IntLit Value=1 @159:33-159:34
+      Items[1]: FieldDecl @159:39-159:52
+        Name: Ident waves @159:39-159:44
+        Type: ListType @159:46-159:52
+          Elem: NamedType @159:47-159:51
+            Name: QualifiedName Wave @159:47-159:51
+  Decls[16]: RecordDecl @161:1-184:2
+    Mods: Modifiers Local="local" @161:1-161:6
+    Name: Ident Tower @161:14-161:19
+    Body: RecordBody @161:20-184:2
+      Items[0]: FieldDecl @162:3-162:16
+        Name: Ident tiers @162:3-162:8
+        Type: ListType @162:10-162:16
+          Elem: NamedType @162:11-162:15
+            Name: QualifiedName Tier @162:11-162:15
+      Items[1]: FieldDecl @163:3-163:18
+        Name: Ident floors @163:3-163:9
+        Type: ListType @163:11-163:18
+          Elem: NamedType @163:12-163:17
+            Name: QualifiedName Floor @163:12-163:17
+      Items[2]: FieldDecl @164:3-164:23
+        Name: Ident guildFloors @164:3-164:14
+        Type: ListType @164:16-164:23
+          Elem: NamedType @164:17-164:22
+            Name: QualifiedName Floor @164:17-164:22
+      Items[3]: CheckDecl Keyword=check @166:3-183:4
+        Body: Block @166:9-183:4
+          Stmts[0]: ForStmt @167:5-182:6
+            Vars[0]: Ident row @167:9-167:12
+            Iter: BinaryExpr Op=+ @167:16-167:36
+              X: IdentExpr floors @167:16-167:22
+              Y: IdentExpr guildFloors @167:25-167:36
+            Body: Block @167:37-182:6
+              Stmts[0]: LetStmt @168:7-168:55
+                Name: Ident tier @168:11-168:15
+                Value: CallExpr @168:18-168:55
+                  Fun: SelectorExpr @168:18-168:29
+                    X: IdentExpr tiers @168:18-168:23
+                    Name: Ident first @168:24-168:29
+                  Args[0]: Arg @168:30-168:54
+                    Value: LambdaExpr @168:30-168:54
+                      Params[0]: Ident t @168:30-168:31
+                      Body: CallExpr @168:35-168:54
+                        Fun: SelectorExpr @168:35-168:43
+                          X: IdentExpr t @168:35-168:36
+                          Name: Ident covers @168:37-168:43
+                        Args[0]: Arg @168:44-168:53
+                          Value: SelectorExpr @168:44-168:53
+                            X: IdentExpr row @168:44-168:47
+                            Name: Ident floor @168:48-168:53
+              Stmts[1]: IfStmt @171:7-181:8
+                Cond: BinaryExpr Op=and @171:10-171:42
+                  X: BinaryExpr Op=!= @171:10-171:22
+                    X: IdentExpr tier @171:10-171:14
+                    Y: NoneLit @171:18-171:22
+                  Y: UnaryExpr Op=not @171:27-171:42
+                    X: SelectorExpr @171:31-171:42
+                      X: IdentExpr tier @171:31-171:35
+                      Name: Ident totems @171:36-171:42
+                Then: Block @171:43-181:8
+                  Stmts[0]: ForStmt @172:9-180:10
+                    Vars[0]: Ident w @172:13-172:14
+                    Iter: SelectorExpr @172:18-172:27
+                      X: IdentExpr row @172:18-172:21
+                      Name: Ident waves @172:22-172:27
+                    Body: Block @172:28-180:10
+                      Stmts[0]: IfStmt @173:11-179:12
+                        Cond: UnaryExpr Op=not @173:14-173:36
+                          X: CallExpr @173:18-173:36
+                            Fun: SelectorExpr @173:18-173:34
+                              X: SelectorExpr @173:18-173:26
+                                X: IdentExpr w @173:18-173:19
+                                Name: Ident totems @173:20-173:26
+                              Name: Ident isEmpty @173:27-173:34
+                        Then: Block @173:37-179:12
+                          Stmts[0]: ExprStmt @174:13-178:14
+                            X: CallExpr @174:13-178:14
+                              Fun: IdentExpr fail @174:13-174:17
+                              Args[0]: Arg @175:15-175:23
+                                Value: SelectorExpr @175:15-175:23
+                                  X: IdentExpr w @175:15-175:16
+                                  Name: Ident totems @175:17-175:23
+                              Args[1]: Arg @176:15-177:52
+                                Value: BinaryExpr Op=+ @176:15-177:52
+                                  X: StringLit @176:15-176:98
+                                    Parts[0]: text "floor "
+                                    Parts[1]: Interp @176:23-176:32
+                                      X: SelectorExpr @176:23-176:32
+                                        X: IdentExpr row @176:23-176:26
+                                        Name: Ident floor @176:27-176:32
+                                    Parts[2]: text ": totems are configured but the covering tier has totems=false; "
+                                  Y: StringLit @177:17-177:52
+                                    Parts[0]: text "the loader refuses the whole file"
+  Decls[17]: LetDecl @186:1-186:90
+    Mods: Modifiers Local="local" @186:1-186:6
+    Name: Ident tower @186:11-186:16
+    Type: NamedType @186:18-186:23
+      Name: QualifiedName Tower @186:18-186:23
+    Value: LoadExpr @186:26-186:90
+      Args[0]: Arg @186:31-186:74
+        Value: StringLit @186:31-186:74
+          Parts[0]: text "@resource/Server/System/tower_config.json"
+      Args[1]: Arg @186:76-186:89
+        Name: Ident partial @186:76-186:83
+        Value: BoolLit Value @186:85-186:89
+== findings
+0 errors, 0 warnings in 1 package (…)

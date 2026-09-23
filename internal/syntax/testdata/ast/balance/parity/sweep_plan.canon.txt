@@ -1,0 +1,1225 @@
+File: File FileKind=source @1:1-290:1
+  Doc: DocComment "The job x level x profile capture plan that drives parity_sweep.lua.\n\nReplaces gen_sweep_plan.py (683 lines). This is data computed from other data:\nloops, conditions and helper functions, all at build time. The output is a JSON\ndata file; BotClient reads it and hands it to parity_sweep.lua as a table (see\nthe note at the end of this file).\n\nSketch: the input types are trimmed to the fields the plan reads, and\nlearned_roster's per-tier slot arithmetic is left out (see `roster`)." @1:1-9:74
+  Package: QualifiedName balance.parity @10:9-10:23
+  Decls[0]: LetDecl @16:1-16:69
+    Mods: Modifiers Local="local" @16:1-16:6
+    Name: Ident jobH @16:11-16:15
+    Value: LoadExpr @16:18-16:69
+      Method: Ident defines @16:23-16:30
+      Args[0]: Arg @16:31-16:68
+        Value: StringLit @16:31-16:68
+          Parts[0]: text "@resource/Server/Define/defineJob.h"
+  Decls[1]: LetDecl @17:1-17:88
+    Mods: Modifiers Local="local" @17:1-17:6
+    Name: Ident skillH @17:11-17:17
+    Value: LoadExpr @17:20-17:88
+      Method: Ident defines @17:25-17:32
+      Args[0]: Arg @17:33-17:72
+        Value: StringLit @17:33-17:72
+          Parts[0]: text "@resource/Server/Define/defineSkill.h"
+      Args[1]: Arg @17:74-17:87
+        Name: Ident prefix @17:74-17:80
+        Value: StringLit @17:82-17:87
+          Parts[0]: text "SI_"
+  Decls[2]: LetDecl @18:1-18:86
+    Mods: Modifiers Local="local" @18:1-18:6
+    Name: Ident itemH @18:11-18:16
+    Value: LoadExpr @18:19-18:86
+      Method: Ident defines @18:24-18:31
+      Args[0]: Arg @18:32-18:70
+        Value: StringLit @18:32-18:70
+          Parts[0]: text "@resource/Server/Define/defineitem.h"
+      Args[1]: Arg @18:72-18:85
+        Name: Ident prefix @18:72-18:78
+        Value: StringLit @18:80-18:85
+          Parts[0]: text "II_"
+  Decls[3]: LetDecl @19:1-19:84
+    Mods: Modifiers Local="local" @19:1-19:6
+    Name: Ident objH @19:11-19:15
+    Value: LoadExpr @19:18-19:84
+      Method: Ident defines @19:23-19:30
+      Args[0]: Arg @19:31-19:68
+        Value: StringLit @19:31-19:68
+          Parts[0]: text "@resource/Server/Define/defineObj.h"
+      Args[1]: Arg @19:70-19:83
+        Name: Ident prefix @19:70-19:76
+        Value: StringLit @19:78-19:83
+          Parts[0]: text "MI_"
+  Decls[4]: RecordDecl @22:1-31:2
+    Doc: DocComment "A row of skills.json, as the plan reads it." @21:1-21:48
+    Mods: Modifiers Local="local" @22:1-22:6
+    Name: Ident SkillRow @22:14-22:22
+    Body: RecordBody @22:23-31:2
+      Items[0]: FieldDecl @23:3-23:21
+        Name: Ident define @23:3-23:9
+        Type: RefType @23:11-23:21
+          Name: QualifiedName skillH @23:15-23:21
+      Items[1]: FieldDecl @24:3-24:19
+        Name: Ident jobIndex @24:3-24:11
+        Type: NamedType @24:13-24:19
+          Name: QualifiedName String @24:13-24:19
+      Items[2]: FieldDecl @25:3-25:15
+        Name: Ident tier @25:3-25:7
+        Type: NamedType @25:9-25:15
+          Name: QualifiedName String @25:9-25:15
+      Items[3]: FieldDecl @26:3-26:25
+        Name: Ident weapon @26:3-26:9
+        Type: OptionalType @26:11-26:18
+          Elem: NamedType @26:11-26:17
+            Name: QualifiedName String @26:11-26:17
+        Default: NoneLit @26:21-26:25
+      Items[4]: FieldDecl @27:3-27:25
+        Name: Ident handed @27:3-27:9
+        Type: OptionalType @27:11-27:18
+          Elem: NamedType @27:11-27:17
+            Name: QualifiedName String @27:11-27:17
+        Default: NoneLit @27:21-27:25
+      Items[5]: FieldDecl @28:3-28:17
+        Name: Ident target @28:3-28:9
+        Type: NamedType @28:11-28:17
+          Name: QualifiedName String @28:11-28:17
+      Items[6]: FieldDecl @29:3-29:27
+        Name: Ident unlockLevel @29:3-29:14
+        Type: OptionalType @29:16-29:20
+          Elem: NamedType @29:16-29:19
+            Name: QualifiedName Int @29:16-29:19
+        Default: NoneLit @29:23-29:27
+      Items[7]: FieldDecl @30:3-30:45
+        Name: Ident reqMp @30:3-30:8
+        Type: NamedType @30:10-30:13
+          Name: QualifiedName Int @30:10-30:13
+        Default: IntLit Value=0 @30:16-30:17
+        Annotations[0]: Annotation @30:18-30:45
+          Name: Ident json @30:19-30:23
+          Args[0]: AnnotationArg @30:24-30:44
+            Name: Ident path @30:24-30:28
+            Value: StringLit @30:30-30:44
+              Parts[0]: text "legacy.reqMp"
+  Decls[5]: RecordDecl @35:1-43:2
+    Doc: DocComment "A row of propItem.json, as the plan reads it. Defaults copy the file's `defaults`\nblock, which the loader applies to a row that omits a key; \"=\" means \"not set\"." @33:1-34:84
+    Mods: Modifiers Local="local" @35:1-35:6
+    Name: Ident Weapon @35:14-35:20
+    Body: RecordBody @35:21-43:2
+      Items[0]: FieldDecl @36:3-36:32
+        Name: Ident item @36:3-36:7
+        Type: RefType @36:9-36:18
+          Name: QualifiedName itemH @36:13-36:18
+        Annotations[0]: Annotation @36:19-36:32
+          Name: Ident json @36:20-36:24
+          Args[0]: AnnotationArg @36:25-36:31
+            Value: StringLit @36:25-36:31
+              Parts[0]: text "dwID"
+      Items[1]: FieldDecl @37:3-37:51
+        Name: Ident kind1 @37:3-37:8
+        Type: NamedType @37:10-37:16
+          Name: QualifiedName String @37:10-37:16
+        Default: StringLit @37:19-37:30
+          Parts[0]: text "IK1_ARMOR"
+        Annotations[0]: Annotation @37:31-37:51
+          Name: Ident json @37:32-37:36
+          Args[0]: AnnotationArg @37:37-37:50
+            Value: StringLit @37:37-37:50
+              Parts[0]: text "dwItemKind1"
+      Items[2]: FieldDecl @38:3-38:52
+        Name: Ident kind3 @38:3-38:8
+        Type: NamedType @38:10-38:16
+          Name: QualifiedName String @38:10-38:16
+        Default: StringLit @38:19-38:31
+          Parts[0]: text "IK3_SCROLL"
+        Annotations[0]: Annotation @38:32-38:52
+          Name: Ident json @38:33-38:37
+          Args[0]: AnnotationArg @38:38-38:51
+            Value: StringLit @38:38-38:51
+              Parts[0]: text "dwItemKind3"
+      Items[3]: FieldDecl @39:3-39:41
+        Name: Ident handed @39:3-39:9
+        Type: NamedType @39:11-39:17
+          Name: QualifiedName String @39:11-39:17
+        Default: StringLit @39:20-39:23
+          Parts[0]: text "="
+        Annotations[0]: Annotation @39:24-39:41
+          Name: Ident json @39:25-39:29
+          Args[0]: AnnotationArg @39:30-39:40
+            Value: StringLit @39:30-39:40
+              Parts[0]: text "dwHanded"
+      Items[4]: FieldDecl @40:3-40:39
+        Name: Ident job @40:3-40:6
+        Type: NamedType @40:8-40:14
+          Name: QualifiedName String @40:8-40:14
+        Default: StringLit @40:17-40:20
+          Parts[0]: text "="
+        Annotations[0]: Annotation @40:21-40:39
+          Name: Ident json @40:22-40:26
+          Args[0]: AnnotationArg @40:27-40:38
+            Value: StringLit @40:27-40:38
+              Parts[0]: text "dwItemJob"
+      Items[5]: FieldDecl @41:3-41:39
+        Name: Ident sex @41:3-41:6
+        Type: NamedType @41:8-41:14
+          Name: QualifiedName String @41:8-41:14
+        Default: StringLit @41:17-41:20
+          Parts[0]: text "="
+        Annotations[0]: Annotation @41:21-41:39
+          Name: Ident json @41:22-41:26
+          Args[0]: AnnotationArg @41:27-41:38
+            Value: StringLit @41:27-41:38
+              Parts[0]: text "dwItemSex"
+      Items[6]: FieldDecl @42:3-42:52
+        Name: Ident limit @42:3-42:8
+        Type: OptionalType @42:10-42:14
+          Elem: NamedType @42:10-42:13
+            Name: QualifiedName Int @42:10-42:13
+        Default: IntLit Value=1 @42:17-42:18
+        Annotations[0]: Annotation @42:19-42:52
+          Name: Ident json @42:20-42:24
+          Args[0]: AnnotationArg @42:25-42:40
+            Value: StringLit @42:25-42:40
+              Parts[0]: text "dwLimitLevel1"
+          Args[1]: AnnotationArg @42:42-42:51
+            Name: Ident none @42:42-42:46
+            Value: StringLit @42:48-42:51
+              Parts[0]: text "="
+  Decls[6]: RecordDecl @46:1-46:74
+    Doc: DocComment "A row of etc.json's `jobs`." @45:1-45:32
+    Mods: Modifiers Local="local" @46:1-46:6
+    Name: Ident EtcJob @46:14-46:20
+    Body: RecordBody @46:21-46:74
+      Items[0]: FieldDecl @46:23-46:33
+        Name: Ident id @46:23-46:25
+        Type: NamedType @46:27-46:33
+          Name: QualifiedName String @46:27-46:33
+      Items[1]: FieldDecl @46:35-46:58
+        Name: Ident jobBase @46:35-46:42
+        Type: OptionalType @46:44-46:51
+          Elem: NamedType @46:44-46:50
+            Name: QualifiedName String @46:44-46:50
+        Default: NoneLit @46:54-46:58
+      Items[2]: FieldDecl @46:60-46:72
+        Name: Ident name @46:60-46:64
+        Type: NamedType @46:66-46:72
+          Name: QualifiedName String @46:66-46:72
+  Decls[7]: LetDecl @48:1-49:74
+    Mods: Modifiers Local="local" @48:1-48:6
+    Name: Ident skills @48:11-48:17
+    Type: ListType @48:19-48:29
+      Elem: NamedType @48:20-48:28
+        Name: QualifiedName SkillRow @48:20-48:28
+    Value: LoadExpr @49:3-49:74
+      Args[0]: Arg @49:8-49:44
+        Value: StringLit @49:8-49:44
+          Parts[0]: text "@resource/Server/Skill/skills.json"
+      Args[1]: Arg @49:46-49:58
+        Name: Ident at @49:46-49:48
+        Value: StringLit @49:50-49:58
+          Parts[0]: text "skills"
+      Args[2]: Arg @49:60-49:73
+        Name: Ident partial @49:60-49:67
+        Value: BoolLit Value @49:69-49:73
+  Decls[8]: LetDecl @50:1-51:74
+    Mods: Modifiers Local="local" @50:1-50:6
+    Name: Ident itemRows @50:11-50:19
+    Type: ListType @50:21-50:29
+      Elem: NamedType @50:22-50:28
+        Name: QualifiedName Weapon @50:22-50:28
+    Value: LoadExpr @51:3-51:74
+      Args[0]: Arg @51:8-51:45
+        Value: StringLit @51:8-51:45
+          Parts[0]: text "@resource/Server/Item/propItem.json"
+      Args[1]: Arg @51:47-51:58
+        Name: Ident at @51:47-51:49
+        Value: StringLit @51:51-51:58
+          Parts[0]: text "items"
+      Args[2]: Arg @51:60-51:73
+        Name: Ident partial @51:60-51:67
+        Value: BoolLit Value @51:69-51:73
+  Decls[9]: LetDecl @52:1-52:76
+    Mods: Modifiers Local="local" @52:1-52:6
+    Name: Ident weapons @52:11-52:18
+    Type: ListType @52:20-52:28
+      Elem: NamedType @52:21-52:27
+        Name: QualifiedName Weapon @52:21-52:27
+    Value: CallExpr @52:31-52:76
+      Fun: SelectorExpr @52:31-52:46
+        X: IdentExpr itemRows @52:31-52:39
+        Name: Ident filter @52:40-52:46
+      Args[0]: Arg @52:47-52:75
+        Value: LambdaExpr @52:47-52:75
+          Params[0]: Ident w @52:47-52:48
+          Body: BinaryExpr Op=== @52:52-52:75
+            X: SelectorExpr @52:52-52:59
+              X: IdentExpr w @52:52-52:53
+              Name: Ident kind1 @52:54-52:59
+            Y: StringLit @52:63-52:75
+              Parts[0]: text "IK1_WEAPON"
+  Decls[10]: LetDecl @53:1-53:95
+    Mods: Modifiers Local="local" @53:1-53:6
+    Name: Ident etcJobs @53:11-53:18
+    Type: ListType @53:20-53:28
+      Elem: NamedType @53:21-53:27
+        Name: QualifiedName EtcJob @53:21-53:27
+    Value: LoadExpr @53:31-53:95
+      Args[0]: Arg @53:36-53:67
+        Value: StringLit @53:36-53:67
+          Parts[0]: text "@resource/Server/Npc/etc.json"
+      Args[1]: Arg @53:69-53:79
+        Name: Ident at @53:69-53:71
+        Value: StringLit @53:73-53:79
+          Parts[0]: text "jobs"
+      Args[2]: Arg @53:81-53:94
+        Name: Ident partial @53:81-53:88
+        Value: BoolLit Value @53:90-53:94
+  Decls[11]: LetDecl @54:1-54:88
+    Mods: Modifiers Local="local" @54:1-54:6
+    Name: Ident jobNames @54:11-54:19
+    Type: MapType @54:21-54:37
+      Key: NamedType @54:22-54:28
+        Name: QualifiedName String @54:22-54:28
+      Value: NamedType @54:30-54:36
+        Name: QualifiedName String @54:30-54:36
+    Value: LoadExpr @54:40-54:88
+      Args[0]: Arg @54:45-54:75
+        Value: StringLit @54:45-54:75
+          Parts[0]: text "@client/Client/Text/etc.json"
+      Args[1]: Arg @54:77-54:87
+        Name: Ident at @54:77-54:79
+        Value: StringLit @54:81-54:87
+          Parts[0]: text "*.us"
+  Decls[12]: LetDecl @55:1-56:80
+    Mods: Modifiers Local="local" @55:1-55:6
+    Name: Ident presets @55:11-55:18
+    Type: MapType @55:20-55:36
+      Key: NamedType @55:21-55:27
+        Name: QualifiedName String @55:21-55:27
+      Value: NamedType @55:29-55:35
+        Name: QualifiedName String @55:29-55:35
+    Value: LoadExpr @56:3-56:80
+      Args[0]: Arg @56:8-56:47
+        Value: StringLit @56:8-56:47
+          Parts[0]: text "@resource/Server/Balance/presets.json"
+      Args[1]: Arg @56:49-56:79
+        Name: Ident at @56:49-56:51
+        Value: StringLit @56:53-56:79
+          Parts[0]: text "canonicalBuilds.*.weapon"
+  Decls[13]: LetDecl @57:1-57:96
+    Mods: Modifiers Local="local" @57:1-57:6
+    Name: Ident anchors @57:11-57:18
+    Type: ListType @57:20-57:25
+      Elem: NamedType @57:21-57:24
+        Name: QualifiedName Int @57:21-57:24
+    Value: LoadExpr @57:28-57:96
+      Args[0]: Arg @57:33-57:72
+        Value: StringLit @57:33-57:72
+          Parts[0]: text "@resource/Server/Balance/targets.json"
+      Args[1]: Arg @57:74-57:95
+        Name: Ident at @57:74-57:76
+        Value: StringLit @57:78-57:95
+          Parts[0]: text "solver.kAnchors"
+  Decls[14]: EnumDecl @64:1-64:26
+    Doc: DocComment "Which totem the block hits." @63:1-63:32
+    Name: Ident Profile @64:6-64:13
+    Members[0]: EnumMember @64:16-64:19
+      Name: Ident pve @64:16-64:19
+    Members[1]: EnumMember @64:21-64:24
+      Name: Ident pvp @64:21-64:24
+  Decls[15]: RecordDecl @67:1-82:2
+    Doc: DocComment "The script's command-line flags." @66:1-66:37
+    Name: Ident Settings @67:8-67:16
+    Body: RecordBody @67:17-82:2
+      Items[0]: FieldDecl @69:3-69:39
+        Doc: DocComment "The bot character that runs the sweep." @68:3-68:45
+        Name: Ident charName @69:3-69:11
+        Type: NamedType @69:13-69:24
+          Name: QualifiedName String @69:13-69:19
+          Args: TypeArgs @69:19-69:24
+            Args[0]: RangeExpr Op=.. @69:20-69:23
+              Lo: IntLit Value=1 @69:20-69:21
+        Default: StringLit @69:27-69:39
+          Parts[0]: text "ClaudeBot1"
+      Items[1]: FieldDecl @71:3-71:31
+        Doc: DocComment "Hits per (job, level, profile) block." @70:3-70:44
+        Name: Ident hitsPerBlock @71:3-71:15
+        Type: NamedType @71:17-71:25
+          Name: QualifiedName Int @71:17-71:20
+          Args: TypeArgs @71:20-71:25
+            Args[0]: RangeExpr Op=.. @71:21-71:24
+              Lo: IntLit Value=1 @71:21-71:22
+        Default: IntLit Value=120 @71:28-71:31
+      Items[2]: FieldDecl @73:3-73:32
+        Doc: DocComment "Wait between two bot actions." @72:3-72:36
+        Name: Ident actionDelay @73:3-73:14
+        Type: NamedType @73:16-73:24
+          Name: QualifiedName Duration @73:16-73:24
+        Default: DurationLit Millis=700 @73:27-73:32
+      Items[3]: FieldDecl @75:3-75:35
+        Doc: DocComment "Totems each combo is measured against." @74:3-74:45
+        Name: Ident profiles @75:3-75:11
+        Type: ListType @75:13-75:22
+          Elem: NamedType @75:14-75:21
+            Name: QualifiedName Profile @75:14-75:21
+        Default: ListLit @75:25-75:35
+          Elems[0]: IdentExpr pve @75:26-75:29
+          Elems[1]: IdentExpr pvp @75:31-75:34
+      Items[4]: FieldDecl @77:3-77:26
+        Doc: DocComment "Empty means every job the level bands allow." @76:3-76:51
+        Name: Ident onlyJobs @77:3-77:11
+        Type: ListType @77:13-77:21
+          Elem: NamedType @77:14-77:20
+            Name: QualifiedName String @77:14-77:20
+        Default: ListLit @77:24-77:26
+      Items[5]: FieldDecl @79:3-79:26
+        Doc: DocComment "Empty means solver.kAnchors plus level 1." @78:3-78:48
+        Name: Ident levels @79:3-79:9
+        Type: ListType @79:11-79:21
+          Elem: NamedType @79:12-79:20
+            Name: QualifiedName Int @79:12-79:15
+            Args: TypeArgs @79:15-79:20
+              Args[0]: RangeExpr Op=.. @79:16-79:19
+                Lo: IntLit Value=1 @79:16-79:17
+        Default: ListLit @79:24-79:26
+      Items[6]: FieldDecl @81:3-81:33
+        Doc: DocComment "Adds the puppeteer to the expert band." @80:3-80:45
+        Name: Ident includePuppeteer @81:3-81:19
+        Type: NamedType @81:21-81:25
+          Name: QualifiedName Bool @81:21-81:25
+        Default: BoolLit @81:28-81:33
+  Decls[16]: LetDecl @85:1-85:28
+    Doc: DocComment "The flags of this build: the defaults, unless a layer amends them." @84:1-84:71
+    Name: Ident settings @85:5-85:13
+    Type: NamedType @85:15-85:23
+      Name: QualifiedName Settings @85:15-85:23
+    Value: BraceLit @85:26-85:28
+  Decls[17]: ConstDecl @92:1-92:76
+    Doc: DocComment "Only these reach CalcDamageCore, so only these can damage a totem." @91:1-91:71
+    Name: Ident ATTACK_TARGETS @92:7-92:21
+    Value: ListLit @92:24-92:76
+      Elems[0]: StringLit @92:25-92:39
+        Parts[0]: text "EXT_MELEEATK"
+      Elems[1]: StringLit @92:41-92:55
+        Parts[0]: text "EXT_MAGICATK"
+      Elems[2]: StringLit @92:57-92:75
+        Parts[0]: text "EXT_MAGICATKSHOT"
+  Decls[18]: ConstDecl @95:1-98:2
+    Doc: DocComment "dwLinkKind values that accept a family of weapons (CMover::DoUseSkill, MoverSkill.cpp:676)." @94:1-94:96
+    Name: Ident LINK_FAMILIES @95:7-95:20
+    Value: BraceLit @95:23-98:2
+      Items[0]: MapItem @96:3-96:45
+        Key: StringLit @96:3-96:18
+          Parts[0]: text "IK3_MAGICBOTH"
+        Value: ListLit @96:20-96:45
+          Elems[0]: StringLit @96:21-96:31
+            Parts[0]: text "IK3_WAND"
+          Elems[1]: StringLit @96:33-96:44
+            Parts[0]: text "IK3_STAFF"
+      Items[1]: MapItem @97:3-97:38
+        Key: StringLit @97:3-97:13
+          Parts[0]: text "IK3_YOBO"
+        Value: ListLit @97:15-97:38
+          Elems[0]: StringLit @97:16-97:26
+            Parts[0]: text "IK3_YOYO"
+          Elems[1]: StringLit @97:28-97:37
+            Parts[0]: text "IK3_BOW"
+  Decls[19]: ConstDecl @101:1-101:45
+    Doc: DocComment "Weapon kinds that attack from range." @100:1-100:41
+    Name: Ident RANGED_KINDS @101:7-101:19
+    Value: ListLit @101:22-101:45
+      Elems[0]: StringLit @101:23-101:32
+        Parts[0]: text "IK3_BOW"
+      Elems[1]: StringLit @101:34-101:44
+        Parts[0]: text "IK3_YOYO"
+  Decls[20]: ConstDecl @104:1-104:83
+    Doc: DocComment "Second jobs." @103:1-103:17
+    Name: Ident EXPERT_JOBS @104:7-104:18
+    Value: ListLit @104:21-104:83
+      Elems[0]: StringLit @104:22-104:37
+        Parts[0]: text "JOB_MERCENARY"
+      Elems[1]: StringLit @104:39-104:52
+        Parts[0]: text "JOB_ACROBAT"
+      Elems[2]: StringLit @104:54-104:66
+        Parts[0]: text "JOB_ASSIST"
+      Elems[3]: StringLit @104:68-104:82
+        Parts[0]: text "JOB_MAGICIAN"
+  Decls[21]: ConstDecl @106:1-115:2
+    Doc: DocComment "Third jobs." @105:1-105:16
+    Name: Ident PRO_JOBS @106:7-106:15
+    Value: ListLit @106:18-115:2
+      Elems[0]: StringLit @107:3-107:15
+        Parts[0]: text "JOB_KNIGHT"
+      Elems[1]: StringLit @108:3-108:14
+        Parts[0]: text "JOB_BLADE"
+      Elems[2]: StringLit @109:3-109:15
+        Parts[0]: text "JOB_JESTER"
+      Elems[3]: StringLit @110:3-110:15
+        Parts[0]: text "JOB_RANGER"
+      Elems[4]: StringLit @111:3-111:19
+        Parts[0]: text "JOB_RINGMASTER"
+      Elems[5]: StringLit @112:3-112:19
+        Parts[0]: text "JOB_BILLPOSTER"
+      Elems[6]: StringLit @113:3-113:21
+        Parts[0]: text "JOB_PSYCHIKEEPER"
+      Elems[7]: StringLit @114:3-114:18
+        Parts[0]: text "JOB_ELEMENTOR"
+  Decls[22]: ConstDecl @119:1-126:2
+    Doc: DocComment "Weapon kind for jobs presets.json does not cover: the lower tiers inherit from the\npro job they lead to." @117:1-118:26
+    Name: Ident FALLBACK_KIND @119:7-119:20
+    Value: BraceLit @119:23-126:2
+      Items[0]: MapItem @120:3-120:27
+        Key: StringLit @120:3-120:16
+          Parts[0]: text "JOB_VAGRANT"
+        Value: StringLit @120:18-120:27
+          Parts[0]: text "IK3_SWD"
+      Items[1]: MapItem @121:3-121:29
+        Key: StringLit @121:3-121:18
+          Parts[0]: text "JOB_MERCENARY"
+        Value: StringLit @121:20-121:29
+          Parts[0]: text "IK3_SWD"
+      Items[2]: MapItem @122:3-122:27
+        Key: StringLit @122:3-122:16
+          Parts[0]: text "JOB_ACROBAT"
+        Value: StringLit @122:18-122:27
+          Parts[0]: text "IK3_BOW"
+      Items[3]: MapItem @123:3-123:36
+        Key: StringLit @123:3-123:15
+          Parts[0]: text "JOB_ASSIST"
+        Value: StringLit @123:17-123:36
+          Parts[0]: text "IK3_KNUCKLEHAMMER"
+      Items[4]: MapItem @124:3-124:29
+        Key: StringLit @124:3-124:17
+          Parts[0]: text "JOB_MAGICIAN"
+        Value: StringLit @124:19-124:29
+          Parts[0]: text "IK3_WAND"
+      Items[5]: MapItem @125:3-125:29
+        Key: StringLit @125:3-125:18
+          Parts[0]: text "JOB_PUPPETEER"
+        Value: StringLit @125:20-125:29
+          Parts[0]: text "IK3_SWD"
+  Decls[23]: FnDecl @131:1-140:2
+    Doc: DocComment "Which jobs /setlevel accepts at a level (TextCmd_LevelPlayer, FuncTextCmd.cpp:4874).\nOutside these bands the command silently does nothing. The bounds are read from\ndefineJob.h, so the old \"PRO_LEVELS_MAX below must match\" comment has nothing left to guard." @128:1-130:97
+    Name: Ident jobsAt @131:4-131:10
+    Params[0]: Param @131:11-131:21
+      Name: Ident level @131:11-131:16
+      Type: NamedType @131:18-131:21
+        Name: QualifiedName Int @131:18-131:21
+    Result: ListType @131:26-131:34
+      Elem: NamedType @131:27-131:33
+        Name: QualifiedName String @131:27-131:33
+    Body: Block @131:35-140:2
+      Stmts[0]: LetStmt @132:3-132:44
+        Name: Ident vagrantMax @132:7-132:17
+        Value: SelectorExpr @132:20-132:44
+          X: SelectorExpr @132:20-132:38
+            X: IdentExpr jobH @132:20-132:24
+            Name: Ident MAX_JOB_LEVEL @132:25-132:38
+          Name: Ident value @132:39-132:44
+      Stmts[1]: LetStmt @133:3-133:56
+        Name: Ident expertMax @133:7-133:16
+        Value: BinaryExpr Op=+ @133:19-133:56
+          X: IdentExpr vagrantMax @133:19-133:29
+          Y: SelectorExpr @133:32-133:56
+            X: SelectorExpr @133:32-133:50
+              X: IdentExpr jobH @133:32-133:36
+              Name: Ident MAX_EXP_LEVEL @133:37-133:50
+            Name: Ident value @133:51-133:56
+      Stmts[2]: IfStmt @134:3-134:52
+        Cond: BinaryExpr Op=<= @134:6-134:25
+          X: IdentExpr level @134:6-134:11
+          Y: IdentExpr vagrantMax @134:15-134:25
+        Then: Block @134:26-134:52
+          Stmts[0]: ReturnStmt @134:28-134:50
+            Value: ListLit @134:35-134:50
+              Elems[0]: StringLit @134:36-134:49
+                Parts[0]: text "JOB_VAGRANT"
+      Stmts[3]: IfStmt @135:3-137:4
+        Cond: BinaryExpr Op=<= @135:6-135:24
+          X: IdentExpr level @135:6-135:11
+          Y: IdentExpr expertMax @135:15-135:24
+        Then: Block @135:25-137:4
+          Stmts[0]: ReturnStmt @136:5-136:90
+            Value: BinaryExpr Op=+ @136:12-136:90
+              X: IdentExpr EXPERT_JOBS @136:12-136:23
+              Y: ParenExpr @136:26-136:90
+                X: IfExpr @136:27-136:89
+                  Cond: SelectorExpr @136:30-136:55
+                    X: IdentExpr settings @136:30-136:38
+                    Name: Ident includePuppeteer @136:39-136:55
+                  Then: ExprBody @136:56-136:77
+                    X: ListLit @136:58-136:75
+                      Elems[0]: StringLit @136:59-136:74
+                        Parts[0]: text "JOB_PUPPETEER"
+                  Else: ExprBody @136:83-136:89
+                    X: ListLit @136:85-136:87
+      Stmts[4]: IfStmt @138:3-138:63
+        Cond: BinaryExpr Op=<= @138:6-138:43
+          X: IdentExpr level @138:6-138:11
+          Y: SelectorExpr @138:15-138:43
+            X: SelectorExpr @138:15-138:37
+              X: IdentExpr jobH @138:15-138:19
+              Name: Ident MAX_GENERAL_LEVEL @138:20-138:37
+            Name: Ident value @138:38-138:43
+        Then: Block @138:44-138:63
+          Stmts[0]: ReturnStmt @138:46-138:61
+            Value: IdentExpr PRO_JOBS @138:53-138:61
+      Stmts[5]: ReturnStmt @139:3-139:12
+        Value: ListLit @139:10-139:12
+  Decls[24]: FnDecl @143:1-143:77
+    Doc: DocComment "The etc.json row of a job. Every job `jobsAt` names has one, so `!` cannot fail." @142:1-142:85
+    Name: Ident etcJob @143:4-143:10
+    Params[0]: Param @143:11-143:22
+      Name: Ident job @143:11-143:14
+      Type: NamedType @143:16-143:22
+        Name: QualifiedName String @143:16-143:22
+    Result: NamedType @143:27-143:33
+      Name: QualifiedName EtcJob @143:27-143:33
+    Body: Block @143:34-143:77
+      Stmts[0]: ReturnStmt @143:36-143:75
+        Value: ForceExpr @143:43-143:75
+          X: CallExpr @143:43-143:74
+            Fun: SelectorExpr @143:43-143:56
+              X: IdentExpr etcJobs @143:43-143:50
+              Name: Ident first @143:51-143:56
+            Args[0]: Arg @143:57-143:73
+              Value: LambdaExpr @143:57-143:73
+                Params[0]: Ident j @143:57-143:58
+                Body: BinaryExpr Op=== @143:62-143:73
+                  X: SelectorExpr @143:62-143:66
+                    X: IdentExpr j @143:62-143:63
+                    Name: Ident id @143:64-143:66
+                  Y: IdentExpr job @143:70-143:73
+  Decls[25]: FnDecl @147:1-151:2
+    Doc: DocComment "The job and every job it was promoted from, ending with vagrant. etc.json gives\nJOB_VAGRANT itself as its own base, which ends the walk." @145:1-146:61
+    Name: Ident lineage @147:4-147:11
+    Params[0]: Param @147:12-147:23
+      Name: Ident job @147:12-147:15
+      Type: NamedType @147:17-147:23
+        Name: QualifiedName String @147:17-147:23
+    Result: ListType @147:28-147:36
+      Elem: NamedType @147:29-147:35
+        Name: QualifiedName String @147:29-147:35
+    Body: Block @147:37-151:2
+      Stmts[0]: LetStmt @148:3-148:54
+        Name: Ident base @148:7-148:11
+        Value: SelectorExpr Optional @148:14-148:54
+          X: CallExpr @148:14-148:45
+            Fun: SelectorExpr @148:14-148:27
+              X: IdentExpr etcJobs @148:14-148:21
+              Name: Ident first @148:22-148:27
+            Args[0]: Arg @148:28-148:44
+              Value: LambdaExpr @148:28-148:44
+                Params[0]: Ident j @148:28-148:29
+                Body: BinaryExpr Op=== @148:33-148:44
+                  X: SelectorExpr @148:33-148:37
+                    X: IdentExpr j @148:33-148:34
+                    Name: Ident id @148:35-148:37
+                  Y: IdentExpr job @148:41-148:44
+          Name: Ident jobBase @148:47-148:54
+      Stmts[1]: IfStmt @149:3-149:67
+        Cond: BinaryExpr Op=and @149:6-149:34
+          X: BinaryExpr Op=!= @149:6-149:18
+            X: IdentExpr base @149:6-149:10
+            Y: NoneLit @149:14-149:18
+          Y: BinaryExpr Op=!= @149:23-149:34
+            X: IdentExpr base @149:23-149:27
+            Y: IdentExpr job @149:31-149:34
+        Then: Block @149:35-149:67
+          Stmts[0]: ReturnStmt @149:37-149:65
+            Value: BinaryExpr Op=+ @149:44-149:65
+              X: ListLit @149:44-149:49
+                Elems[0]: IdentExpr job @149:45-149:48
+              Y: CallExpr @149:52-149:65
+                Fun: IdentExpr lineage @149:52-149:59
+                Args[0]: Arg @149:60-149:64
+                  Value: IdentExpr base @149:60-149:64
+      Stmts[2]: ReturnStmt @150:3-150:39
+        Value: CallExpr @150:10-150:39
+          Fun: SelectorExpr @150:10-150:37
+            X: ListLit @150:10-150:30
+              Elems[0]: IdentExpr job @150:11-150:14
+              Elems[1]: StringLit @150:16-150:29
+                Parts[0]: text "JOB_VAGRANT"
+            Name: Ident unique @150:31-150:37
+  Decls[26]: FnDecl @154:1-164:2
+    Doc: DocComment "Best equippable weapon of `kind` at `level`: highest level requirement the level allows." @153:1-153:93
+    Name: Ident pickWeapon @154:4-154:14
+    Params[0]: Param @154:15-154:27
+      Name: Ident kind @154:15-154:19
+      Type: NamedType @154:21-154:27
+        Name: QualifiedName String @154:21-154:27
+    Params[1]: Param @154:29-154:39
+      Name: Ident level @154:29-154:34
+      Type: NamedType @154:36-154:39
+        Name: QualifiedName Int @154:36-154:39
+    Params[2]: Param @154:41-154:55
+      Name: Ident jobs @154:41-154:45
+      Type: ListType @154:47-154:55
+        Elem: NamedType @154:48-154:54
+          Name: QualifiedName String @154:48-154:54
+    Result: OptionalType @154:60-154:67
+      Elem: NamedType @154:60-154:66
+        Name: QualifiedName Weapon @154:60-154:66
+    Body: Block @154:68-164:2
+      Stmts[0]: ReturnStmt @155:3-163:30
+        Value: CallExpr @155:10-163:30
+          Fun: SelectorExpr @155:10-163:11
+            X: CallExpr @155:10-162:6
+              Fun: SelectorExpr @155:10-156:12
+                X: IdentExpr weapons @155:10-155:17
+                Name: Ident filter @156:6-156:12
+              Args[0]: Arg @157:7-161:32
+                Value: LambdaExpr @157:7-161:32
+                  Params[0]: Ident w @157:7-157:8
+                  Body: BinaryExpr Op=and @157:12-161:32
+                    X: BinaryExpr Op=and @157:12-160:38
+                      X: BinaryExpr Op=and @157:12-159:22
+                        X: BinaryExpr Op=and @157:12-158:41
+                          X: BinaryExpr Op=== @157:12-157:27
+                            X: SelectorExpr @157:12-157:19
+                              X: IdentExpr w @157:12-157:13
+                              Name: Ident kind3 @157:14-157:19
+                            Y: IdentExpr kind @157:23-157:27
+                          Y: BinaryExpr Op=in @158:9-158:41
+                            X: SelectorExpr @158:9-158:17
+                              X: IdentExpr w @158:9-158:10
+                              Name: Ident handed @158:11-158:17
+                            Y: ListLit @158:21-158:41
+                              Elems[0]: StringLit @158:22-158:30
+                                Parts[0]: text "HD_ONE"
+                              Elems[1]: StringLit @158:32-158:40
+                                Parts[0]: text "HD_TWO"
+                        Y: BinaryExpr Op=in @159:9-159:22
+                          X: SelectorExpr @159:9-159:14
+                            X: IdentExpr w @159:9-159:10
+                            Name: Ident job @159:11-159:14
+                          Y: IdentExpr jobs @159:18-159:22
+                      Y: BinaryExpr Op=in @160:9-160:38
+                        X: SelectorExpr @160:9-160:14
+                          X: IdentExpr w @160:9-160:10
+                          Name: Ident sex @160:11-160:14
+                        Y: ListLit @160:18-160:38
+                          Elems[0]: StringLit @160:19-160:22
+                            Parts[0]: text "="
+                          Elems[1]: StringLit @160:24-160:33
+                            Parts[0]: text "SEX_ANY"
+                          Elems[2]: StringLit @160:35-160:37
+                    Y: BinaryExpr Op=<= @161:9-161:32
+                      X: ParenExpr @161:9-161:23
+                        X: BinaryExpr Op=?? @161:10-161:22
+                          X: SelectorExpr @161:10-161:17
+                            X: IdentExpr w @161:10-161:11
+                            Name: Ident limit @161:12-161:17
+                          Y: IntLit Value=1 @161:21-161:22
+                      Y: IdentExpr level @161:27-161:32
+            Name: Ident maxBy @163:6-163:11
+          Args[0]: Arg @163:12-163:29
+            Value: LambdaExpr @163:12-163:29
+              Params[0]: Ident w @163:12-163:13
+              Body: BinaryExpr Op=?? @163:17-163:29
+                X: SelectorExpr @163:17-163:24
+                  X: IdentExpr w @163:17-163:18
+                  Name: Ident limit @163:19-163:24
+                Y: IntLit Value=1 @163:28-163:29
+  Decls[27]: FnDecl @168:1-171:2
+    Doc: DocComment "Whether a skill's dwLinkKind accepts a weapon of `kind`: no link kind accepts any\nweapon, a family accepts its members, anything else only itself." @166:1-167:69
+    Name: Ident linkAccepts @168:4-168:15
+    Params[0]: Param @168:16-168:29
+      Name: Ident link @168:16-168:20
+      Type: OptionalType @168:22-168:29
+        Elem: NamedType @168:22-168:28
+          Name: QualifiedName String @168:22-168:28
+    Params[1]: Param @168:31-168:43
+      Name: Ident kind @168:31-168:35
+      Type: NamedType @168:37-168:43
+        Name: QualifiedName String @168:37-168:43
+    Result: NamedType @168:48-168:52
+      Name: QualifiedName Bool @168:48-168:52
+    Body: Block @168:53-171:2
+      Stmts[0]: IfStmt @169:3-169:73
+        Cond: BinaryExpr Op=!= @169:6-169:18
+          X: IdentExpr link @169:6-169:10
+          Y: NoneLit @169:14-169:18
+        Then: Block @169:19-169:73
+          Stmts[0]: ReturnStmt @169:21-169:71
+            Value: BinaryExpr Op=in @169:28-169:71
+              X: IdentExpr kind @169:28-169:32
+              Y: ParenExpr @169:36-169:71
+                X: BinaryExpr Op=?? @169:37-169:70
+                  X: CallExpr @169:37-169:60
+                    Fun: SelectorExpr @169:37-169:54
+                      X: IdentExpr LINK_FAMILIES @169:37-169:50
+                      Name: Ident get @169:51-169:54
+                    Args[0]: Arg @169:55-169:59
+                      Value: IdentExpr link @169:55-169:59
+                  Y: ListLit @169:64-169:70
+                    Elems[0]: IdentExpr link @169:65-169:69
+      Stmts[1]: ReturnStmt @170:3-170:14
+        Value: BoolLit Value @170:10-170:14
+  Decls[28]: FnDecl @176:1-188:2
+    Doc: DocComment "Attack skills the character knows at `level` and can use with `weapon`, in unlock\norder. (learned_roster maps each skill to its wire slot through the MAX_*_SKILL\nbuckets; that arithmetic would be one more function here. This sketch numbers them.)" @173:1-175:89
+    Name: Ident roster @176:4-176:10
+    Params[0]: Param @176:11-176:25
+      Name: Ident jobs @176:11-176:15
+      Type: ListType @176:17-176:25
+        Elem: NamedType @176:18-176:24
+          Name: QualifiedName String @176:18-176:24
+    Params[1]: Param @176:27-176:37
+      Name: Ident level @176:27-176:32
+      Type: NamedType @176:34-176:37
+        Name: QualifiedName Int @176:34-176:37
+    Params[2]: Param @176:39-176:51
+      Name: Ident kind @176:39-176:43
+      Type: NamedType @176:45-176:51
+        Name: QualifiedName String @176:45-176:51
+    Params[3]: Param @176:53-176:68
+      Name: Ident weapon @176:53-176:59
+      Type: OptionalType @176:61-176:68
+        Elem: NamedType @176:61-176:67
+          Name: QualifiedName Weapon @176:61-176:67
+    Result: ListType @176:73-176:87
+      Elem: NamedType @176:74-176:86
+        Name: QualifiedName PlannedSkill @176:74-176:86
+    Body: Block @176:88-188:2
+      Stmts[0]: LetStmt @177:3-186:4
+        Name: Ident known @177:7-177:12
+        Value: ListComp @177:15-186:4
+          Elem: IdentExpr s @178:5-178:6
+          Clauses[0]: CompClause Keyword=for @179:5-179:52
+            Vars[0]: Ident s @179:9-179:10
+            X: CallExpr @179:14-179:52
+              Fun: SelectorExpr @179:14-179:27
+                X: IdentExpr skills @179:14-179:20
+                Name: Ident sortBy @179:21-179:27
+              Args[0]: Arg @179:28-179:51
+                Value: LambdaExpr @179:28-179:51
+                  Params[0]: Ident s @179:28-179:29
+                  Body: BinaryExpr Op=?? @179:33-179:51
+                    X: SelectorExpr @179:33-179:46
+                      X: IdentExpr s @179:33-179:34
+                      Name: Ident unlockLevel @179:35-179:46
+                    Y: IntLit Value=0 @179:50-179:51
+          Clauses[1]: CompClause Keyword=if @180:5-185:55
+            X: BinaryExpr Op=and @180:8-185:55
+              X: BinaryExpr Op=and @180:8-184:34
+                X: BinaryExpr Op=and @180:8-183:33
+                  X: BinaryExpr Op=and @180:8-182:36
+                    X: BinaryExpr Op=and @180:8-181:25
+                      X: BinaryExpr Op=!= @180:8-180:32
+                        X: SelectorExpr @180:8-180:14
+                          X: IdentExpr s @180:8-180:9
+                          Name: Ident tier @180:10-180:14
+                        Y: StringLit @180:18-180:32
+                          Parts[0]: text "JTYPE_COMMON"
+                      Y: BinaryExpr Op=in @181:7-181:25
+                        X: SelectorExpr @181:7-181:17
+                          X: IdentExpr s @181:7-181:8
+                          Name: Ident jobIndex @181:9-181:17
+                        Y: IdentExpr jobs @181:21-181:25
+                    Y: BinaryExpr Op=<= @182:7-182:36
+                      X: ParenExpr @182:7-182:27
+                        X: BinaryExpr Op=?? @182:8-182:26
+                          X: SelectorExpr @182:8-182:21
+                            X: IdentExpr s @182:8-182:9
+                            Name: Ident unlockLevel @182:10-182:21
+                          Y: IntLit Value=0 @182:25-182:26
+                      Y: IdentExpr level @182:31-182:36
+                  Y: BinaryExpr Op=in @183:7-183:33
+                    X: SelectorExpr @183:7-183:15
+                      X: IdentExpr s @183:7-183:8
+                      Name: Ident target @183:9-183:15
+                    Y: IdentExpr ATTACK_TARGETS @183:19-183:33
+                Y: CallExpr @184:7-184:34
+                  Fun: IdentExpr linkAccepts @184:7-184:18
+                  Args[0]: Arg @184:19-184:27
+                    Value: SelectorExpr @184:19-184:27
+                      X: IdentExpr s @184:19-184:20
+                      Name: Ident weapon @184:21-184:27
+                  Args[1]: Arg @184:29-184:33
+                    Value: IdentExpr kind @184:29-184:33
+              Y: ParenExpr @185:7-185:55
+                X: BinaryExpr Op=or @185:8-185:54
+                  X: BinaryExpr Op=== @185:8-185:24
+                    X: SelectorExpr @185:8-185:16
+                      X: IdentExpr s @185:8-185:9
+                      Name: Ident handed @185:10-185:16
+                    Y: NoneLit @185:20-185:24
+                  Y: BinaryExpr Op=== @185:28-185:54
+                    X: SelectorExpr @185:28-185:36
+                      X: IdentExpr s @185:28-185:29
+                      Name: Ident handed @185:30-185:36
+                    Y: SelectorExpr Optional @185:40-185:54
+                      X: IdentExpr weapon @185:40-185:46
+                      Name: Ident handed @185:48-185:54
+      Stmts[1]: ReturnStmt @187:3-187:86
+        Value: ListComp @187:10-187:86
+          Elem: BraceLit @187:11-187:55
+            Items[0]: FieldItem @187:13-187:20
+              Name: Ident slot @187:13-187:17
+              Value: IdentExpr i @187:19-187:20
+            Items[1]: FieldItem @187:22-187:40
+              Name: Ident id @187:22-187:24
+              Value: SelectorExpr @187:26-187:40
+                X: SelectorExpr @187:26-187:34
+                  X: IdentExpr s @187:26-187:27
+                  Name: Ident define @187:28-187:34
+                Name: Ident value @187:35-187:40
+            Items[2]: FieldItem @187:42-187:53
+              Name: Ident mp @187:42-187:44
+              Value: SelectorExpr @187:46-187:53
+                X: IdentExpr s @187:46-187:47
+                Name: Ident reqMp @187:48-187:53
+          Clauses[0]: CompClause Keyword=for @187:56-187:85
+            Vars[0]: Ident i @187:60-187:61
+            Vars[1]: Ident s @187:63-187:64
+            X: CallExpr @187:68-187:85
+              Fun: SelectorExpr @187:68-187:83
+                X: IdentExpr known @187:68-187:73
+                Name: Ident enumerate @187:74-187:83
+  Decls[29]: RecordDecl @195:1-202:2
+    Doc: DocComment "One skill the bot casts during a block." @194:1-194:44
+    Name: Ident PlannedSkill @195:8-195:20
+    Body: RecordBody @195:21-202:2
+      Items[0]: FieldDecl @197:3-197:12
+        Doc: DocComment "Wire slot the bot presses (a sketch: the position in the roster)." @196:3-196:72
+        Name: Ident slot @197:3-197:7
+        Type: NamedType @197:9-197:12
+          Name: QualifiedName Int @197:9-197:12
+      Items[1]: FieldDecl @199:3-199:10
+        Doc: DocComment "Skill id (the SI_* define's value)." @198:3-198:42
+        Name: Ident id @199:3-199:5
+        Type: NamedType @199:7-199:10
+          Name: QualifiedName Int @199:7-199:10
+      Items[2]: FieldDecl @201:3-201:10
+        Doc: DocComment "MP the skill costs." @200:3-200:26
+        Name: Ident mp @201:3-201:5
+        Type: NamedType @201:7-201:10
+          Name: QualifiedName Int @201:7-201:10
+  Decls[30]: RecordDecl @205:1-227:2
+    Doc: DocComment "One (job, level) block of the sweep." @204:1-204:41
+    Name: Ident Combo @205:8-205:13
+    Body: RecordBody @205:14-227:2
+      Items[0]: FieldDecl @207:3-207:14
+        Doc: DocComment "The job's define name." @206:3-206:29
+        Name: Ident job @207:3-207:6
+        Type: NamedType @207:8-207:14
+          Name: QualifiedName String @207:8-207:14
+      Items[1]: FieldDecl @209:3-209:19
+        Doc: DocComment "The RESOLVED job name /setlevel matches (\"Mercenary\"), not the IDS_* token." @208:3-208:82
+        Name: Ident jobToken @209:3-209:11
+        Type: NamedType @209:13-209:19
+          Name: QualifiedName String @209:13-209:19
+      Items[2]: FieldDecl @211:3-211:13
+        Doc: DocComment "The level the character is set to." @210:3-210:41
+        Name: Ident level @211:3-211:8
+        Type: NamedType @211:10-211:13
+          Name: QualifiedName Int @211:10-211:13
+      Items[3]: FieldDecl @213:3-213:17
+        Doc: DocComment "II_* name, for logging only." @212:3-212:35
+        Name: Ident weapon @213:3-213:9
+        Type: NamedType @213:11-213:17
+          Name: QualifiedName String @213:11-213:17
+      Items[4]: FieldDecl @215:3-215:16
+        Doc: DocComment "/ci only accepts the number." @214:3-214:35
+        Name: Ident weaponId @215:3-215:11
+        Type: NamedType @215:13-215:16
+          Name: QualifiedName Int @215:13-215:16
+      Items[5]: FieldDecl @217:3-217:21
+        Doc: DocComment "The weapon's IK3_* kind." @216:3-216:31
+        Name: Ident weaponKind @217:3-217:13
+        Type: NamedType @217:15-217:21
+          Name: QualifiedName String @217:15-217:21
+      Items[6]: FieldDecl @219:3-219:15
+        Doc: DocComment "Whether the kind attacks from range." @218:3-218:43
+        Name: Ident ranged @219:3-219:9
+        Type: NamedType @219:11-219:15
+          Name: QualifiedName Bool @219:11-219:15
+      Items[7]: FieldDecl @221:3-221:22
+        Doc: DocComment "Totems measured." @220:3-220:23
+        Name: Ident profiles @221:3-221:11
+        Type: ListType @221:13-221:22
+          Elem: NamedType @221:14-221:21
+            Name: QualifiedName Profile @221:14-221:21
+      Items[8]: FieldDecl @223:3-223:25
+        Doc: DocComment "Skills cast." @222:3-222:19
+        Name: Ident skills @223:3-223:9
+        Type: ListType @223:11-223:25
+          Elem: NamedType @223:12-223:24
+            Name: QualifiedName PlannedSkill @223:12-223:24
+      Items[9]: CheckDecl Keyword=warn @225:3-226:100
+        Cond: BinaryExpr Op=!= @225:8-225:21
+          X: IdentExpr weaponId @225:8-225:16
+          Y: IntLit Value=0 @225:20-225:21
+        Message: StringLit @226:10-226:100
+          Parts[0]: text "no "
+          Parts[1]: Interp @226:15-226:25
+            X: IdentExpr weaponKind @226:15-226:25
+          Parts[2]: text " weapon equippable at level "
+          Parts[3]: Interp @226:55-226:60
+            X: IdentExpr level @226:55-226:60
+          Parts[4]: text " for "
+          Parts[5]: Interp @226:67-226:70
+            X: IdentExpr job @226:67-226:70
+          Parts[6]: text ": the block runs bare-handed"
+  Decls[31]: RecordDecl @230:1-241:2
+    Doc: DocComment "The whole plan, as parity_sweep.lua reads it." @229:1-229:50
+    Name: Ident Plan @230:8-230:12
+    Body: RecordBody @230:13-241:2
+      Items[0]: FieldDecl @232:3-232:19
+        Doc: DocComment "The bot character that runs the sweep." @231:3-231:45
+        Name: Ident charName @232:3-232:11
+        Type: NamedType @232:13-232:19
+          Name: QualifiedName String @232:13-232:19
+      Items[1]: FieldDecl @234:3-234:20
+        Doc: DocComment "Hits per block." @233:3-233:22
+        Name: Ident hitsPerBlock @234:3-234:15
+        Type: NamedType @234:17-234:20
+          Name: QualifiedName Int @234:17-234:20
+      Items[2]: FieldDecl @236:3-236:57
+        Doc: DocComment "Wait between two bot actions." @235:3-235:36
+        Name: Ident actionDelay @236:3-236:14
+        Type: NamedType @236:16-236:24
+          Name: QualifiedName Duration @236:16-236:24
+        Annotations[0]: Annotation @236:25-236:57
+          Name: Ident json @236:26-236:30
+          Args[0]: AnnotationArg @236:31-236:46
+            Value: StringLit @236:31-236:46
+              Parts[0]: text "actionDelayMs"
+          Args[1]: AnnotationArg @236:48-236:56
+            Name: Ident unit @236:48-236:52
+            Value: QualifiedName ms @236:54-236:56
+      Items[3]: FieldDecl @238:3-238:29
+        Doc: DocComment "Prop index of the mover `/totem spawn <profile>` creates (TextCmd_Totem)." @237:3-237:80
+        Name: Ident totemIndex @238:3-238:13
+        Type: MapType @238:15-238:29
+          Key: NamedType @238:16-238:23
+            Name: QualifiedName Profile @238:16-238:23
+          Value: NamedType @238:25-238:28
+            Name: QualifiedName Int @238:25-238:28
+      Items[4]: FieldDecl @240:3-240:18
+        Doc: DocComment "Every block, in capture order." @239:3-239:37
+        Name: Ident combos @240:3-240:9
+        Type: ListType @240:11-240:18
+          Elem: NamedType @240:12-240:17
+            Name: QualifiedName Combo @240:12-240:17
+  Decls[32]: LetDecl @243:1-247:2
+    Mods: Modifiers Local="local" @243:1-243:6
+    Name: Ident levels @243:11-243:17
+    Value: IfExpr @243:20-247:2
+      Cond: CallExpr @243:23-243:48
+        Fun: SelectorExpr @243:23-243:46
+          X: SelectorExpr @243:23-243:38
+            X: IdentExpr settings @243:23-243:31
+            Name: Ident levels @243:32-243:38
+          Name: Ident isEmpty @243:39-243:46
+      Then: ExprBody @243:49-245:2
+        X: CallExpr @244:3-244:42
+          Fun: SelectorExpr @244:3-244:34
+            X: CallExpr @244:3-244:27
+              Fun: SelectorExpr @244:3-244:25
+                X: ParenExpr @244:3-244:18
+                  X: BinaryExpr Op=+ @244:4-244:17
+                    X: IdentExpr anchors @244:4-244:11
+                    Y: ListLit @244:14-244:17
+                      Elems[0]: IntLit Value=1 @244:15-244:16
+                Name: Ident unique @244:19-244:25
+            Name: Ident sortBy @244:28-244:34
+          Args[0]: Arg @244:35-244:41
+            Value: LambdaExpr @244:35-244:41
+              Params[0]: Ident x @244:35-244:36
+              Body: IdentExpr x @244:40-244:41
+      Else: ExprBody @245:8-247:2
+        X: SelectorExpr @246:3-246:18
+          X: IdentExpr settings @246:3-246:11
+          Name: Ident levels @246:12-246:18
+  Decls[33]: LetDecl @250:1-273:2
+    Doc: DocComment "The plan written to sweep_plan.json." @249:1-249:41
+    Name: Ident plan @250:5-250:9
+    Type: NamedType @250:11-250:15
+      Name: QualifiedName Plan @250:11-250:15
+    Value: BraceLit @250:18-273:2
+      Items[0]: FieldItem @251:3-251:30
+        Name: Ident charName @251:3-251:11
+        Value: SelectorExpr @251:13-251:30
+          X: IdentExpr settings @251:13-251:21
+          Name: Ident charName @251:22-251:30
+      Items[1]: FieldItem @252:3-252:38
+        Name: Ident hitsPerBlock @252:3-252:15
+        Value: SelectorExpr @252:17-252:38
+          X: IdentExpr settings @252:17-252:25
+          Name: Ident hitsPerBlock @252:26-252:38
+      Items[2]: FieldItem @253:3-253:36
+        Name: Ident actionDelay @253:3-253:14
+        Value: SelectorExpr @253:16-253:36
+          X: IdentExpr settings @253:16-253:24
+          Name: Ident actionDelay @253:25-253:36
+      Items[3]: FieldItem @254:3-254:101
+        Name: Ident totemIndex @254:3-254:13
+        Value: BraceLit @254:15-254:101
+          Items[0]: FieldItem @254:17-254:57
+            Name: Ident pve @254:17-254:20
+            Value: SelectorExpr @254:22-254:57
+              X: SelectorExpr @254:22-254:51
+                X: IdentExpr objH @254:22-254:26
+                Name: Ident MI_RUSTIACRASHGATE01_DPS @254:27-254:51
+              Name: Ident value @254:52-254:57
+          Items[1]: FieldItem @254:59-254:99
+            Name: Ident pvp @254:59-254:62
+            Value: SelectorExpr @254:64-254:99
+              X: SelectorExpr @254:64-254:93
+                X: IdentExpr objH @254:64-254:68
+                Name: Ident MI_RUSTIACRASHGATE01_PVP @254:69-254:93
+              Name: Ident value @254:94-254:99
+      Items[4]: FieldItem @255:3-272:4
+        Name: Ident combos @255:3-255:9
+        Value: ListComp @255:11-272:4
+          Elem: BraceLit @256:5-266:6
+            Items[0]: FieldItem @257:7-257:15
+              Name: Ident job @257:7-257:10
+              Value: IdentExpr job @257:12-257:15
+            Items[1]: FieldItem @258:7-258:43
+              Name: Ident jobToken @258:7-258:15
+              Value: IndexExpr @258:17-258:43
+                X: IdentExpr jobNames @258:17-258:25
+                Index: SelectorExpr @258:26-258:42
+                  X: CallExpr @258:26-258:37
+                    Fun: IdentExpr etcJob @258:26-258:32
+                    Args[0]: Arg @258:33-258:36
+                      Value: IdentExpr job @258:33-258:36
+                  Name: Ident name @258:38-258:42
+            Items[2]: FieldItem @259:7-259:19
+              Name: Ident level @259:7-259:12
+              Value: IdentExpr level @259:14-259:19
+            Items[3]: FieldItem @260:7-260:31
+              Name: Ident weapon @260:7-260:13
+              Value: BinaryExpr Op=?? @260:15-260:31
+                X: SelectorExpr @260:15-260:25
+                  X: SelectorExpr Optional @260:15-260:22
+                    X: IdentExpr w @260:15-260:16
+                    Name: Ident item @260:18-260:22
+                  Name: Ident id @260:23-260:25
+                Y: StringLit @260:29-260:31
+            Items[4]: FieldItem @261:7-261:35
+              Name: Ident weaponId @261:7-261:15
+              Value: BinaryExpr Op=?? @261:17-261:35
+                X: SelectorExpr @261:17-261:30
+                  X: SelectorExpr Optional @261:17-261:24
+                    X: IdentExpr w @261:17-261:18
+                    Name: Ident item @261:20-261:24
+                  Name: Ident value @261:25-261:30
+                Y: IntLit Value=0 @261:34-261:35
+            Items[5]: FieldItem @262:7-262:23
+              Name: Ident weaponKind @262:7-262:17
+              Value: IdentExpr kind @262:19-262:23
+            Items[6]: FieldItem @263:7-263:35
+              Name: Ident ranged @263:7-263:13
+              Value: BinaryExpr Op=in @263:15-263:35
+                X: IdentExpr kind @263:15-263:19
+                Y: IdentExpr RANGED_KINDS @263:23-263:35
+            Items[7]: FieldItem @264:7-264:34
+              Name: Ident profiles @264:7-264:15
+              Value: SelectorExpr @264:17-264:34
+                X: IdentExpr settings @264:17-264:25
+                Name: Ident profiles @264:26-264:34
+            Items[8]: FieldItem @265:7-265:51
+              Name: Ident skills @265:7-265:13
+              Value: CallExpr @265:15-265:51
+                Fun: IdentExpr roster @265:15-265:21
+                Args[0]: Arg @265:22-265:34
+                  Value: CallExpr @265:22-265:34
+                    Fun: IdentExpr lineage @265:22-265:29
+                    Args[0]: Arg @265:30-265:33
+                      Value: IdentExpr job @265:30-265:33
+                Args[1]: Arg @265:36-265:41
+                  Value: IdentExpr level @265:36-265:41
+                Args[2]: Arg @265:43-265:47
+                  Value: IdentExpr kind @265:43-265:47
+                Args[3]: Arg @265:49-265:50
+                  Value: IdentExpr w @265:49-265:50
+          Clauses[0]: CompClause Keyword=for @267:5-267:24
+            Vars[0]: Ident level @267:9-267:14
+            X: IdentExpr levels @267:18-267:24
+          Clauses[1]: CompClause Keyword=for @268:5-268:29
+            Vars[0]: Ident job @268:9-268:12
+            X: CallExpr @268:16-268:29
+              Fun: IdentExpr jobsAt @268:16-268:22
+              Args[0]: Arg @268:23-268:28
+                Value: IdentExpr level @268:23-268:28
+          Clauses[2]: CompClause Keyword=if @269:5-269:63
+            X: BinaryExpr Op=or @269:8-269:63
+              X: CallExpr @269:8-269:35
+                Fun: SelectorExpr @269:8-269:33
+                  X: SelectorExpr @269:8-269:25
+                    X: IdentExpr settings @269:8-269:16
+                    Name: Ident onlyJobs @269:17-269:25
+                  Name: Ident isEmpty @269:26-269:33
+              Y: BinaryExpr Op=in @269:39-269:63
+                X: IdentExpr job @269:39-269:42
+                Y: SelectorExpr @269:46-269:63
+                  X: IdentExpr settings @269:46-269:54
+                  Name: Ident onlyJobs @269:55-269:63
+          Clauses[3]: CompClause Keyword=let @270:5-270:71
+            Vars[0]: Ident kind @270:9-270:13
+            X: BinaryExpr Op=?? @270:16-270:71
+              X: CallExpr @270:16-270:32
+                Fun: SelectorExpr @270:16-270:27
+                  X: IdentExpr presets @270:16-270:23
+                  Name: Ident get @270:24-270:27
+                Args[0]: Arg @270:28-270:31
+                  Value: IdentExpr job @270:28-270:31
+              Y: BinaryExpr Op=?? @270:36-270:71
+                X: CallExpr @270:36-270:58
+                  Fun: SelectorExpr @270:36-270:53
+                    X: IdentExpr FALLBACK_KIND @270:36-270:49
+                    Name: Ident get @270:50-270:53
+                  Args[0]: Arg @270:54-270:57
+                    Value: IdentExpr job @270:54-270:57
+                Y: StringLit @270:62-270:71
+                  Parts[0]: text "IK3_SWD"
+          Clauses[4]: CompClause Keyword=let @271:5-271:50
+            Vars[0]: Ident w @271:9-271:10
+            X: CallExpr @271:13-271:50
+              Fun: IdentExpr pickWeapon @271:13-271:23
+              Args[0]: Arg @271:24-271:28
+                Value: IdentExpr kind @271:24-271:28
+              Args[1]: Arg @271:30-271:35
+                Value: IdentExpr level @271:30-271:35
+              Args[2]: Arg @271:37-271:49
+                Value: CallExpr @271:37-271:49
+                  Fun: IdentExpr lineage @271:37-271:44
+                  Args[0]: Arg @271:45-271:48
+                    Value: IdentExpr job @271:45-271:48
+  Decls[34]: CheckDecl Keyword=check @275:1-281:2
+    Body: Block @275:7-281:2
+      Stmts[0]: ForStmt @276:3-280:4
+        Vars[0]: Ident level @276:7-276:12
+        Iter: IdentExpr levels @276:16-276:22
+        Body: Block @276:23-280:4
+          Stmts[0]: IfStmt @277:5-279:6
+            Cond: CallExpr @277:8-277:31
+              Fun: SelectorExpr @277:8-277:29
+                X: CallExpr @277:8-277:21
+                  Fun: IdentExpr jobsAt @277:8-277:14
+                  Args[0]: Arg @277:15-277:20
+                    Value: IdentExpr level @277:15-277:20
+                Name: Ident isEmpty @277:22-277:29
+            Then: Block @277:32-279:6
+              Stmts[0]: ExprStmt @278:7-278:98
+                X: CallExpr @278:7-278:98
+                  Fun: IdentExpr warn @278:7-278:11
+                  Args[0]: Arg @278:12-278:17
+                    Value: IdentExpr level @278:12-278:17
+                  Args[1]: Arg @278:19-278:97
+                    Value: StringLit @278:19-278:97
+                      Parts[0]: text "level "
+                      Parts[1]: Interp @278:27-278:32
+                        X: IdentExpr level @278:27-278:32
+                      Parts[2]: text " is above MAX_GENERAL_LEVEL: unreachable via /setlevel, dropped"
+  Decls[35]: EmitDecl @283:1-283:61
+    Target: Ident json @283:6-283:10
+    Options: BraceLit @283:11-283:61
+      Items[0]: FieldItem @283:13-283:43
+        Name: Ident out @283:13-283:16
+        Value: StringLit @283:18-283:43
+          Parts[0]: text "@parity/sweep_plan.json"
+      Items[1]: FieldItem @283:45-283:59
+        Name: Ident values @283:45-283:51
+        Value: ListLit @283:53-283:59
+          Elems[0]: IdentExpr plan @283:54-283:58
+== findings
+0 errors, 0 warnings in 1 package (…)

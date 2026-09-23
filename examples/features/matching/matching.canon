@@ -1,6 +1,6 @@
 /// Value-level `match` (SPEC §7.8): over a variant, binding each case's value, and over
 /// an enum, with several patterns per arm and `_`. Every case must be covered (E3601).
-package features.match
+package features.matching
 
 /// What a system mail carries.
 variant Attachment @json(tag: "type") {

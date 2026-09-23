@@ -1,0 +1,397 @@
+File: File FileKind=source @1:1-127:1
+  Doc: DocComment "Farm settings and the catalog of plantable models: prices, access conditions,\nproduction per level, and bonuses.\nLoader: FarmSystem::FarmConfig::LoadFromFile (Game/Content/Farm/FarmConfig.cpp:70).\n\nWhat the resourcestudio overlay (farm.json) had to state by hand and is now derived:\n  - every field's type, key, container and field order: from the types below\n  - \"Absent = 50000000.\" in help texts: real defaults, which the loader also uses\n  - the two `warnings`: the two `warn`s, now reported on the exact entry\n  - `messages.unique`: `keyed by typeId` reports duplicates itself\nWhat remains presentation lives in farm.view.canon." @1:1-10:56
+  Package: QualifiedName resource.farm @11:9-11:22
+  Imports[0]: Import @13:1-13:32
+    Path: QualifiedName resource.vocab @13:8-13:22
+    Names[0]: Ident items @13:25-13:30
+  Decls[0]: LetDecl @15:1-15:87
+    Mods: Modifiers Local="local" @15:1-15:6
+    Name: Ident texts @15:11-15:16
+    Value: LoadExpr @15:19-15:87
+      Method: Ident defines @15:24-15:31
+      Args[0]: Arg @15:32-15:70
+        Value: StringLit @15:32-15:70
+          Parts[0]: text "@resource/Server/Define/defineText.h"
+      Args[1]: Arg @15:72-15:86
+        Name: Ident prefix @15:72-15:78
+        Value: StringLit @15:80-15:86
+          Parts[0]: text "TID_"
+  Decls[1]: LetDecl @16:1-16:97
+    Mods: Modifiers Local="local" @16:1-16:6
+    Name: Ident attributes @16:11-16:21
+    Value: LoadExpr @16:24-16:97
+      Method: Ident defines @16:29-16:36
+      Args[0]: Arg @16:37-16:80
+        Value: StringLit @16:37-16:80
+          Parts[0]: text "@resource/Server/Define/defineAttribute.h"
+      Args[1]: Arg @16:82-16:96
+        Name: Ident prefix @16:82-16:88
+        Value: StringLit @16:90-16:96
+          Parts[0]: text "DST_"
+  Decls[2]: ConstDecl @19:1-19:28
+    Doc: DocComment "FARM_MAX_MODELS, a compiled constant (not a setting)." @18:1-18:58
+    Name: Ident FARM_MAX_MODELS @19:7-19:22
+    Value: IntLit Value=100 @19:25-19:28
+  Decls[3]: TypeDecl @22:1-22:22
+    Doc: DocComment "An amount of the game's currency." @21:1-21:38
+    Name: Ident Penya @22:6-22:11
+    Type: NamedType @22:14-22:22
+      Name: QualifiedName Int @22:14-22:17
+      Args: TypeArgs @22:17-22:22
+        Args[0]: RangeExpr Op=.. @22:18-22:21
+          Lo: IntLit Value=0 @22:18-22:19
+  Decls[4]: RecordDecl @25:1-30:2
+    Doc: DocComment "An item and how many of it." @24:1-24:32
+    Name: Ident ItemCost @25:8-25:16
+    Body: RecordBody @25:17-30:2
+      Items[0]: FieldDecl @27:3-27:38
+        Doc: DocComment "An item that does not resolve on the WorldServer prevents the whole farm from loading." @26:3-26:93
+        Name: Ident item @27:3-27:7
+        Type: RefType @27:9-27:18
+          Name: QualifiedName items @27:13-27:18
+        Annotations[0]: Annotation @27:19-27:38
+          Name: Ident json @27:20-27:24
+          Args[0]: AnnotationArg @27:25-27:37
+            Value: StringLit @27:25-27:37
+              Parts[0]: text "itemDefine"
+      Items[1]: FieldDecl @29:3-29:22
+        Doc: DocComment "How many are consumed." @28:3-28:29
+        Name: Ident count @29:3-29:8
+        Type: NamedType @29:10-29:18
+          Name: QualifiedName Int @29:10-29:13
+          Args: TypeArgs @29:13-29:18
+            Args[0]: RangeExpr Op=.. @29:14-29:17
+              Lo: IntLit Value=1 @29:14-29:15
+        Default: IntLit Value=1 @29:21-29:22
+  Decls[5]: RecordDecl @33:1-40:2
+    Doc: DocComment "An attribute bonus granted while a model is planted." @32:1-32:57
+    Name: Ident Bonus @33:8-33:13
+    Body: RecordBody @33:14-40:2
+      Items[0]: FieldDecl @35:3-35:41
+        Doc: DocComment "The attribute raised (a DST_* define)." @34:3-34:45
+        Name: Ident attribute @35:3-35:12
+        Type: RefType @35:14-35:28
+          Name: QualifiedName attributes @35:18-35:28
+        Annotations[0]: Annotation @35:29-35:41
+          Name: Ident json @35:30-35:34
+          Args[0]: AnnotationArg @35:35-35:40
+            Value: StringLit @35:35-35:40
+              Parts[0]: text "dst"
+      Items[1]: FieldDecl @37:3-37:17
+        Doc: DocComment "How much it is raised." @36:3-36:29
+        Name: Ident value @37:3-37:8
+        Type: NamedType @37:10-37:13
+          Name: QualifiedName Int @37:10-37:13
+        Default: IntLit Value=0 @37:16-37:17
+      Items[2]: CheckDecl Keyword=warn @39:3-39:52
+        Cond: BinaryExpr Op=!= @39:8-39:18
+          X: IdentExpr value @39:8-39:13
+          Y: IntLit Value=0 @39:17-39:18
+        Message: StringLit @39:24-39:52
+          Parts[0]: text "a bonus of 0 has no effect"
+  Decls[6]: RecordDecl @43:1-58:2
+    Doc: DocComment "Settings that apply to every farm." @42:1-42:39
+    Name: Ident Global @43:8-43:14
+    Body: RecordBody @43:15-58:2
+      Items[0]: FieldDecl @45:3-45:40
+        Doc: DocComment "Paid once to own a farm." @44:3-44:31
+        Name: Ident farmPurchasePrice @45:3-45:20
+        Type: NamedType @45:22-45:27
+          Name: QualifiedName Penya @45:22-45:27
+        Default: IntLit Value=50000000 @45:30-45:40
+      Items[1]: FieldDecl @47:3-47:29
+        Doc: DocComment "Paid by a player who visits someone else's farm." @46:3-46:55
+        Name: Ident visitCost @47:3-47:12
+        Type: NamedType @47:14-47:19
+          Name: QualifiedName Penya @47:14-47:19
+        Default: IntLit Value=100000 @47:22-47:29
+      Items[2]: FieldDecl @49:3-49:38
+        Doc: DocComment "Minimum faery rank required to own a farm." @48:3-48:49
+        Name: Ident worldLevelMinRequired @49:3-49:24
+        Type: NamedType @49:26-49:34
+          Name: QualifiedName Int @49:26-49:29
+          Args: TypeArgs @49:29-49:34
+            Args[0]: RangeExpr Op=.. @49:30-49:33
+              Lo: IntLit Value=0 @49:30-49:31
+        Default: IntLit Value=5 @49:37-49:38
+      Items[3]: FieldDecl @51:3-51:45
+        Doc: DocComment "Minimum activity points required to own a farm." @50:3-50:54
+        Name: Ident activityPointsMinRequired @51:3-51:28
+        Type: NamedType @51:30-51:38
+          Name: QualifiedName Int @51:30-51:33
+          Args: TypeArgs @51:33-51:38
+            Args[0]: RangeExpr Op=.. @51:34-51:37
+              Lo: IntLit Value=0 @51:34-51:35
+        Default: IntLit Value=1000 @51:41-51:45
+      Items[4]: FieldDecl @53:3-53:82
+        Doc: DocComment "How often every planted model produces." @52:3-52:46
+        Name: Ident productionTick @53:3-53:17
+        Type: NamedType @53:19-53:33
+          Name: QualifiedName Duration @53:19-53:27
+          Args: TypeArgs @53:27-53:33
+            Args[0]: RangeExpr Op=.. @53:28-53:32
+              Lo: DurationLit Millis=1000 @53:28-53:30
+        Default: DurationLit Millis=3600000 @53:36-53:38
+        Annotations[0]: Annotation @53:39-53:82
+          Name: Ident json @53:40-53:44
+          Args[0]: AnnotationArg @53:45-53:72
+            Value: StringLit @53:45-53:72
+              Parts[0]: text "productionTickIntervalSec"
+          Args[1]: AnnotationArg @53:74-53:81
+            Name: Ident unit @53:74-53:78
+            Value: QualifiedName s @53:80-53:81
+      Items[5]: FieldDecl @56:3-57:135
+        Doc: DocComment "A cap on planted models that nothing enforces." @55:3-55:53
+        Name: Ident maxModels @56:3-56:12
+        Type: OptionalType @56:14-56:18
+          Elem: NamedType @56:14-56:17
+            Name: QualifiedName Int @56:14-56:17
+        Default: NoneLit @56:21-56:25
+        Annotations[0]: Annotation @57:5-57:135
+          Name: Ident deprecated @57:6-57:16
+          Args[0]: AnnotationArg @57:17-57:134
+            Value: StringLit @57:17-57:134
+              Parts[0]: text "never read by LoadFromFile: the real cap is FARM_MAX_MODELS = 100. Kept as is; changing it changes nothing in game."
+  Decls[7]: RecordDecl @66:1-87:2
+    Doc: DocComment "One level of a model: what it produces, what it grants, and what the next level costs.\n\nA Premium model (typeId 7 to 14 in farm_config.json) is decorative: its single level\nproduces nothing and only carries bonuses, so its three production fields are left\nout. The loader then falls back to productionPerHour 1 and maxStorage 100, which no\nproduction ever uses since there is no production item." @60:1-65:60
+    Name: Ident Level @66:8-66:13
+    Body: RecordBody @66:14-87:2
+      Items[0]: FieldDecl @69:3-69:18
+        Doc: DocComment "Not used for indexing: GetLevel(n) takes element n-1, so the ORDER of the levels\nis what counts. Kept consistent by the `warn` on ModelType." @67:3-68:66
+        Name: Ident level @69:3-69:8
+        Type: NamedType @69:10-69:18
+          Name: QualifiedName Int @69:10-69:13
+          Args: TypeArgs @69:13-69:18
+            Args[0]: RangeExpr Op=.. @69:14-69:17
+              Lo: IntLit Value=1 @69:14-69:15
+      Items[1]: FieldDecl @72:3-72:25
+        Doc: DocComment "A MODELELEM of OT_OBJ (obj_UC017, KaillunPlants04...). An unknown name is only a\nwarning in C++; it is resolved again at runtime." @70:3-71:55
+        Name: Ident modelName @72:3-72:12
+        Type: NamedType @72:14-72:25
+          Name: QualifiedName String @72:14-72:20
+          Args: TypeArgs @72:20-72:25
+            Args[0]: RangeExpr Op=.. @72:21-72:24
+              Lo: IntLit Value=1 @72:21-72:22
+      Items[2]: FieldDecl @74:3-74:66
+        Doc: DocComment "The item produced; `none` on a decorative level." @73:3-73:55
+        Name: Ident productionItem @74:3-74:17
+        Type: OptionalType @74:19-74:29
+          Elem: RefType @74:19-74:28
+            Name: QualifiedName items @74:23-74:28
+        Default: NoneLit @74:32-74:36
+        Annotations[0]: Annotation @74:37-74:66
+          Name: Ident json @74:38-74:42
+          Args[0]: AnnotationArg @74:43-74:65
+            Value: StringLit @74:43-74:65
+              Parts[0]: text "productionItemDefine"
+      Items[3]: FieldDecl @76:3-76:38
+        Doc: DocComment "Items produced per hour; `none` on a decorative level." @75:3-75:61
+        Name: Ident productionPerHour @76:3-76:20
+        Type: OptionalType @76:22-76:31
+          Elem: NamedType @76:22-76:30
+            Name: QualifiedName Int @76:22-76:25
+            Args: TypeArgs @76:25-76:30
+              Args[0]: RangeExpr Op=.. @76:26-76:29
+                Lo: IntLit Value=0 @76:26-76:27
+        Default: NoneLit @76:34-76:38
+      Items[4]: FieldDecl @78:3-78:31
+        Doc: DocComment "Items the level holds before production stops; `none` on a decorative level." @77:3-77:83
+        Name: Ident maxStorage @78:3-78:13
+        Type: OptionalType @78:15-78:24
+          Elem: NamedType @78:15-78:23
+            Name: QualifiedName Int @78:15-78:18
+            Args: TypeArgs @78:18-78:23
+              Args[0]: RangeExpr Op=.. @78:19-78:22
+                Lo: IntLit Value=0 @78:19-78:20
+        Default: NoneLit @78:27-78:31
+      Items[5]: FieldDecl @80:3-80:24
+        Doc: DocComment "Bonuses granted while a model of this level is planted." @79:3-79:62
+        Name: Ident bonuses @80:3-80:10
+        Type: ListType @80:12-80:19
+          Elem: NamedType @80:13-80:18
+            Name: QualifiedName Bonus @80:13-80:18
+        Default: ListLit @80:22-80:24
+      Items[6]: FieldDecl @82:3-82:39
+        Doc: DocComment "Items consumed to move TO the next level." @81:3-81:48
+        Name: Ident levelUpRequirements @82:3-82:22
+        Type: ListType @82:24-82:34
+          Elem: NamedType @82:25-82:33
+            Name: QualifiedName ItemCost @82:25-82:33
+        Default: ListLit @82:37-82:39
+      Items[7]: CheckDecl Keyword=check @84:3-86:118
+        Name: Ident production_together @84:9-84:28
+        Cond: BinaryExpr Op=and @84:30-85:53
+          X: BinaryExpr Op=== @84:30-84:85
+            X: ParenExpr @84:30-84:54
+              X: BinaryExpr Op=== @84:31-84:53
+                X: IdentExpr productionItem @84:31-84:45
+                Y: NoneLit @84:49-84:53
+            Y: ParenExpr @84:58-84:85
+              X: BinaryExpr Op=== @84:59-84:84
+                X: IdentExpr productionPerHour @84:59-84:76
+                Y: NoneLit @84:80-84:84
+          Y: BinaryExpr Op=== @85:5-85:53
+            X: ParenExpr @85:5-85:29
+              X: BinaryExpr Op=== @85:6-85:28
+                X: IdentExpr productionItem @85:6-85:20
+                Y: NoneLit @85:24-85:28
+            Y: ParenExpr @85:33-85:53
+              X: BinaryExpr Op=== @85:34-85:52
+                X: IdentExpr maxStorage @85:34-85:44
+                Y: NoneLit @85:48-85:52
+        Message: StringLit @86:10-86:118
+          Parts[0]: text "productionItem, productionPerHour and maxStorage go together: set all three, or none on a decorative level"
+  Decls[8]: RecordDecl @90:1-113:2
+    Doc: DocComment "A plantable model and its ladder of levels." @89:1-89:48
+    Name: Ident ModelType @90:8-90:17
+    Body: RecordBody @90:18-113:2
+      Items[0]: FieldDecl @92:3-92:19
+        Doc: DocComment "Stored on players' farms: changing it breaks models already planted." @91:3-91:75
+        Name: Ident typeId @92:3-92:9
+        Type: NamedType @92:11-92:19
+          Name: QualifiedName Int @92:11-92:14
+          Args: TypeArgs @92:14-92:19
+            Args[0]: RangeExpr Op=.. @92:15-92:18
+              Lo: IntLit Value=0 @92:15-92:16
+      Items[1]: FieldDecl @94:3-94:19
+        Doc: DocComment "Logging label. The name shown to players is `nameText`." @93:3-93:62
+        Name: Ident typeName @94:3-94:11
+        Type: NamedType @94:13-94:19
+          Name: QualifiedName String @94:13-94:19
+      Items[2]: FieldDecl @96:3-96:54
+        Doc: DocComment "Text shown to players as the model's name." @95:3-95:49
+        Name: Ident nameText @96:3-96:11
+        Type: OptionalType @96:13-96:23
+          Elem: RefType @96:13-96:22
+            Name: QualifiedName texts @96:17-96:22
+        Default: NoneLit @96:26-96:30
+        Annotations[0]: Annotation @96:31-96:54
+          Name: Ident json @96:32-96:36
+          Args[0]: AnnotationArg @96:37-96:53
+            Value: StringLit @96:37-96:53
+              Parts[0]: text "nameTextDefine"
+      Items[3]: FieldDecl @98:3-98:25
+        Doc: DocComment "Paid to unlock the model." @97:3-97:32
+        Name: Ident unlockPrice @98:3-98:14
+        Type: NamedType @98:16-98:21
+          Name: QualifiedName Penya @98:16-98:21
+        Default: IntLit Value=0 @98:24-98:25
+      Items[4]: FieldDecl @100:3-100:31
+        Doc: DocComment "Paid in addition to the gold. Only read when it is an array." @99:3-99:67
+        Name: Ident unlockItems @100:3-100:14
+        Type: ListType @100:16-100:26
+          Elem: NamedType @100:17-100:25
+            Name: QualifiedName ItemCost @100:17-100:25
+        Default: ListLit @100:29-100:31
+      Items[5]: FieldDecl @102:3-102:28
+        Doc: DocComment "How many of this model one player may buy." @101:3-101:49
+        Name: Ident maxBuyCount @102:3-102:14
+        Type: NamedType @102:16-102:24
+          Name: QualifiedName Int @102:16-102:19
+          Args: TypeArgs @102:19-102:24
+            Args[0]: RangeExpr Op=.. @102:20-102:23
+              Lo: IntLit Value=1 @102:20-102:21
+        Default: IntLit Value=1 @102:27-102:28
+      Items[6]: FieldDecl @104:3-104:25
+        Doc: DocComment "Highest level a model can reach." @103:3-103:39
+        Name: Ident maxLevel @104:3-104:11
+        Type: NamedType @104:13-104:21
+          Name: QualifiedName Int @104:13-104:16
+          Args: TypeArgs @104:16-104:21
+            Args[0]: RangeExpr Op=.. @104:17-104:20
+              Lo: IntLit Value=1 @104:17-104:18
+        Default: IntLit Value=1 @104:24-104:25
+      Items[7]: FieldDecl @106:3-106:18
+        Doc: DocComment "The ORDER is the level: the first element is level 1." @105:3-105:60
+        Name: Ident levels @106:3-106:9
+        Type: ListType @106:11-106:18
+          Elem: NamedType @106:12-106:17
+            Name: QualifiedName Level @106:12-106:17
+      Items[8]: CheckDecl Keyword=warn @109:3-110:150
+        Name: Ident unreachable_levels @109:8-109:26
+        Cond: BinaryExpr Op=<= @109:28-109:52
+          X: IdentExpr maxLevel @109:28-109:36
+          Y: CallExpr @109:40-109:52
+            Fun: SelectorExpr @109:40-109:50
+              X: IdentExpr levels @109:40-109:46
+              Name: Ident len @109:47-109:50
+        At: Ident maxLevel @109:56-109:64
+        Message: StringLit @110:10-110:150
+          Parts[0]: text "maxLevel is "
+          Parts[1]: Interp @110:24-110:32
+            X: IdentExpr maxLevel @110:24-110:32
+          Parts[2]: text " but only "
+          Parts[3]: Interp @110:44-110:56
+            X: CallExpr @110:44-110:56
+              Fun: SelectorExpr @110:44-110:54
+                X: IdentExpr levels @110:44-110:50
+                Name: Ident len @110:51-110:54
+          Parts[4]: text " levels exist: level "
+          Parts[5]: Interp @110:79-110:95
+            X: BinaryExpr Op=+ @110:79-110:95
+              X: CallExpr @110:79-110:91
+                Fun: SelectorExpr @110:79-110:89
+                  X: IdentExpr levels @110:79-110:85
+                  Name: Ident len @110:86-110:89
+              Y: IntLit Value=1 @110:94-110:95
+          Parts[6]: text " and above are unreachable (GetLevel returns nullptr)"
+      Items[9]: CheckDecl Keyword=warn @111:3-112:85
+        Name: Ident level_mismatch @111:8-111:22
+        Cond: CallExpr @111:24-111:74
+          Fun: SelectorExpr @111:24-111:46
+            X: CallExpr @111:24-111:42
+              Fun: SelectorExpr @111:24-111:40
+                X: IdentExpr levels @111:24-111:30
+                Name: Ident enumerate @111:31-111:40
+            Name: Ident all @111:43-111:46
+          Args[0]: Arg @111:47-111:73
+            Value: LambdaExpr @111:47-111:73
+              Params[0]: Ident i @111:48-111:49
+              Params[1]: Ident l @111:51-111:52
+              Body: BinaryExpr Op=== @111:57-111:73
+                X: SelectorExpr @111:57-111:64
+                  X: IdentExpr l @111:57-111:58
+                  Name: Ident level @111:59-111:64
+                Y: BinaryExpr Op=+ @111:68-111:73
+                  X: IdentExpr i @111:68-111:69
+                  Y: IntLit Value=1 @111:72-111:73
+        Message: StringLit @112:10-112:85
+          Parts[0]: text "a `level` value does not match its position; the loader uses the position"
+  Decls[9]: RecordDecl @116:1-121:2
+    Doc: DocComment "The whole file." @115:1-115:20
+    Name: Ident FarmConfig @116:8-116:18
+    Body: RecordBody @116:19-121:2
+      Items[0]: FieldDecl @118:3-118:17
+        Doc: DocComment "Settings that apply to every farm." @117:3-117:41
+        Name: Ident global @118:3-118:9
+        Type: NamedType @118:11-118:17
+          Name: QualifiedName Global @118:11-118:17
+      Items[1]: FieldDecl @120:3-120:62
+        Doc: DocComment "The models players can plant." @119:3-119:36
+        Name: Ident modelTypes @120:3-120:13
+        Type: KeyedType @120:15-120:62
+          List: ListType @120:15-120:46
+            Elem: NamedType @120:16-120:25
+              Name: QualifiedName ModelType @120:16-120:25
+            Args: TypeArgs @120:26-120:46
+              Args[0]: RangeExpr Op=..= @120:27-120:45
+                Hi: IdentExpr FARM_MAX_MODELS @120:30-120:45
+          Key: Ident typeId @120:56-120:62
+  Decls[10]: LetDecl @124:1-124:72
+    Doc: DocComment "Server/System/farm_config.json, read in place." @123:1-123:51
+    Name: Ident farm @124:5-124:9
+    Type: NamedType @124:11-124:21
+      Name: QualifiedName FarmConfig @124:11-124:21
+    Value: LoadExpr @124:24-124:72
+      Args[0]: Arg @124:29-124:71
+        Value: StringLit @124:29-124:71
+          Parts[0]: text "@resource/Server/System/farm_config.json"
+  Decls[11]: EmitDecl @126:1-126:47
+    Target: Ident view @126:6-126:10
+    Options: BraceLit @126:11-126:47
+      Items[0]: FieldItem @126:13-126:45
+        Name: Ident out @126:13-126:16
+        Value: StringLit @126:18-126:45
+          Parts[0]: text "@generated/farm.view.json"
+== findings
+0 errors, 0 warnings in 1 package (…)

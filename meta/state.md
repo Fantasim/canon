@@ -28,6 +28,9 @@ eight contracts and tick M0.4; then M1 (its gate: the consistency pass closed, v
   (logic in `internal/diag/catalog`) from spec/ERRORS.md; round-trip test (ERRORS.md rows
   rebuilt from the registry); `make diag-check` regenerates into a temp dir and diffs.
 - `internal/source`: `FileID`, `Pos`, `Span`, `File`, `FileSet`, `Location` (DECISIONS 72).
+- `internal/syntax` (M1, uncommitted): lexer, separator pass, table-driven parser with recovery
+  nodes and the annotation catalogue, `Parse`; all 33 examples round-trip, AST goldens in
+  `testdata/ast/`, one findings case per E1011/E11xx/W1001 code, fuzzed (DECISIONS 129–136).
 - `internal/testkit`: `deps_test.go` (dependency rule and §11 libraries over `go list -deps`,
   DECISIONS 59); `golden` (txtar harness, `-update`, `Expected` file name, one trivial golden); `cmd/fixturegen`
   (embedded `fixtures.tsv`, `defines` method, fails without `testdata-real/`, DECISIONS 64).
@@ -48,6 +51,7 @@ eight contracts and tick M0.4; then M1 (its gate: the consistency pass closed, v
    DECISIONS 68: rename `api/canon.go` to `project.go` when API.md §1, CLI.md §5 and README.md
    are next edited.
 3. **IMPLEMENTATION-PLAN §12.5 is stale** (it says there is no `meta/`).
+3a. Resolved: examples renamed (DECISIONS 137).
 4. **Absolute-path denies** in `.claude/settings.local.json` (ADR-0001): a new sibling
    service must be added to both lists.
 5. **`make check-real`** (DECISIONS 29) lands with the real-data job (M3).

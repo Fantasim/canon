@@ -1,0 +1,220 @@
+File: File FileKind=translation @1:1-73:1
+  Package: QualifiedName resource.farm @13:9-13:22
+  Lang: Ident fr @14:13-14:15
+  Entries[0]: TranslationEntry @17:1-17:25
+    Key: QualifiedName FarmConfig.title @17:1-17:17
+    Text: StringLit @17:18-17:25
+      Parts[0]: text "Ferme"
+  Entries[1]: TranslationEntry @18:1-18:49
+    Key: QualifiedName FarmConfig.group.settings @18:1-18:26
+    Text: StringLit @18:27-18:49
+      Parts[0]: text "Réglages généraux"
+  Entries[2]: TranslationEntry @19:1-19:46
+    Key: QualifiedName FarmConfig.group.models @19:1-19:24
+    Text: StringLit @19:25-19:46
+      Parts[0]: text "Modèles plantables"
+  Entries[3]: TranslationEntry @20:1-20:131
+    Key: QualifiedName FarmConfig.group.models.intro @20:1-20:30
+    Text: StringLit @20:31-20:131
+      Parts[0]: text "Un modèle = un prix de déblocage, un nombre d'exemplaires achetables et une échelle de paliers."
+  Entries[4]: TranslationEntry @22:1-22:36
+    Key: QualifiedName Global.title @22:1-22:13
+    Text: StringLit @22:14-22:36
+      Parts[0]: text "Réglages généraux"
+  Entries[5]: TranslationEntry @23:1-23:27
+    Key: QualifiedName Global.group.prices @23:1-23:20
+    Text: StringLit @23:21-23:27
+      Parts[0]: text "Prix"
+  Entries[6]: TranslationEntry @24:1-24:42
+    Key: QualifiedName Global.group.access @24:1-24:20
+    Text: StringLit @24:21-24:42
+      Parts[0]: text "Conditions d'accès"
+  Entries[7]: TranslationEntry @25:1-25:37
+    Key: QualifiedName Global.group.production @25:1-25:24
+    Text: StringLit @25:25-25:37
+      Parts[0]: text "Production"
+  Entries[8]: TranslationEntry @26:1-26:52
+    Key: QualifiedName Global.farmPurchasePrice @26:1-26:25
+    Text: StringLit @26:26-26:52
+      Parts[0]: text "Prix d'achat de la ferme"
+  Entries[9]: TranslationEntry @27:1-27:38
+    Key: QualifiedName Global.visitCost @27:1-27:17
+    Text: StringLit @27:18-27:38
+      Parts[0]: text "Coût d'une visite"
+  Entries[10]: TranslationEntry @28:1-28:55
+    Key: QualifiedName Global.worldLevelMinRequired @28:1-28:29
+    Text: StringLit @28:30-28:55
+      Parts[0]: text "Rang de féerie minimum"
+  Entries[11]: TranslationEntry @29:1-29:62
+    Key: QualifiedName Global.activityPointsMinRequired @29:1-29:33
+    Text: StringLit @29:34-29:62
+      Parts[0]: text "Points d'activité minimum"
+  Entries[12]: TranslationEntry @30:1-30:46
+    Key: QualifiedName Global.productionTick @30:1-30:22
+    Text: StringLit @30:23-30:46
+      Parts[0]: text "Cadence de production"
+  Entries[13]: TranslationEntry @32:1-32:32
+    Key: QualifiedName ModelType.singular @32:1-32:19
+    Text: StringLit @32:20-32:32
+      Parts[0]: text "un modèle"
+  Entries[14]: TranslationEntry @33:1-33:37
+    Key: QualifiedName ModelType.group.identity @33:1-33:25
+    Text: StringLit @33:26-33:37
+      Parts[0]: text "Identité"
+  Entries[15]: TranslationEntry @34:1-34:36
+    Key: QualifiedName ModelType.group.unlock @34:1-34:23
+    Text: StringLit @34:24-34:36
+      Parts[0]: text "Déblocage"
+  Entries[16]: TranslationEntry @35:1-35:81
+    Key: QualifiedName ModelType.group.unlock.intro @35:1-35:29
+    Text: StringLit @35:30-35:81
+      Parts[0]: text "Ce que le joueur paie pour débloquer ce modèle."
+  Entries[17]: TranslationEntry @36:1-36:33
+    Key: QualifiedName ModelType.group.levels @36:1-36:23
+    Text: StringLit @36:24-36:33
+      Parts[0]: text "Paliers"
+  Entries[18]: TranslationEntry @37:1-37:117
+    Key: QualifiedName ModelType.group.levels.intro @37:1-37:29
+    Text: StringLit @37:30-37:117
+      Parts[0]: text "Un palier par niveau, dans l'ordre : production, stockage, bonus et coût de montée."
+  Entries[19]: TranslationEntry @38:1-38:31
+    Key: QualifiedName ModelType.typeId @38:1-38:17
+    Text: StringLit @38:18-38:31
+      Parts[0]: text "Identifiant"
+  Entries[20]: TranslationEntry @39:1-39:33
+    Key: QualifiedName ModelType.typeName @39:1-39:19
+    Text: StringLit @39:20-39:33
+      Parts[0]: text "Nom interne"
+  Entries[21]: TranslationEntry @40:1-40:34
+    Key: QualifiedName ModelType.nameText @40:1-40:19
+    Text: StringLit @40:20-40:34
+      Parts[0]: text "Nom affiché"
+  Entries[22]: TranslationEntry @41:1-41:43
+    Key: QualifiedName ModelType.unlockPrice @41:1-41:22
+    Text: StringLit @41:23-41:43
+      Parts[0]: text "Prix de déblocage"
+  Entries[23]: TranslationEntry @42:1-42:45
+    Key: QualifiedName ModelType.unlockItems @42:1-42:22
+    Text: StringLit @42:23-42:45
+      Parts[0]: text "Objets de déblocage"
+  Entries[24]: TranslationEntry @43:1-43:47
+    Key: QualifiedName ModelType.maxBuyCount @43:1-43:22
+    Text: StringLit @43:23-43:47
+      Parts[0]: text "Exemplaires achetables"
+  Entries[25]: TranslationEntry @44:1-44:36
+    Key: QualifiedName ModelType.maxLevel @44:1-44:19
+    Text: StringLit @44:20-44:36
+      Parts[0]: text "Niveau maximum"
+  Entries[26]: TranslationEntry @45:1-45:27
+    Key: QualifiedName ModelType.levels @45:1-45:17
+    Text: StringLit @45:18-45:27
+      Parts[0]: text "Paliers"
+  Entries[27]: TranslationEntry @47:1-47:29
+    Key: QualifiedName Level.title @47:1-47:12
+    Text: StringLit @47:13-47:29
+      Parts[0]: text "Palier "
+      Parts[1]: Interp @47:22-47:27
+        X: IdentExpr level @47:22-47:27
+  Entries[28]: TranslationEntry @48:1-48:27
+    Key: QualifiedName Level.singular @48:1-48:15
+    Text: StringLit @48:16-48:27
+      Parts[0]: text "un palier"
+  Entries[29]: TranslationEntry @49:1-49:36
+    Key: QualifiedName Level.group.production @49:1-49:23
+    Text: StringLit @49:24-49:36
+      Parts[0]: text "Production"
+  Entries[30]: TranslationEntry @50:1-50:28
+    Key: QualifiedName Level.group.bonuses @50:1-50:20
+    Text: StringLit @50:21-50:28
+      Parts[0]: text "Bonus"
+  Entries[31]: TranslationEntry @51:1-51:36
+    Key: QualifiedName Level.group.cost @51:1-51:17
+    Text: StringLit @51:18-51:36
+      Parts[0]: text "Coût de montée"
+  Entries[32]: TranslationEntry @52:1-52:29
+    Key: QualifiedName Level.modelName @52:1-52:16
+    Text: StringLit @52:17-52:29
+      Parts[0]: text "Modèle 3D"
+  Entries[33]: TranslationEntry @53:1-53:37
+    Key: QualifiedName Level.productionItem @53:1-53:21
+    Text: StringLit @53:22-53:37
+      Parts[0]: text "Objet produit"
+  Entries[34]: TranslationEntry @54:1-54:64
+    Key: QualifiedName Level.productionItem.placeholder @54:1-54:33
+    Text: StringLit @54:34-54:64
+      Parts[0]: text "Décoratif : ne produit rien"
+  Entries[35]: TranslationEntry @55:1-55:45
+    Key: QualifiedName Level.productionPerHour @55:1-55:24
+    Text: StringLit @55:25-55:45
+      Parts[0]: text "Production / heure"
+  Entries[36]: TranslationEntry @56:1-56:36
+    Key: QualifiedName Level.maxStorage @56:1-56:17
+    Text: StringLit @56:18-56:36
+      Parts[0]: text "Stockage maximum"
+  Entries[37]: TranslationEntry @58:1-58:29
+    Key: QualifiedName ItemCost.singular @58:1-58:18
+    Text: StringLit @58:19-58:29
+      Parts[0]: text "un objet"
+  Entries[38]: TranslationEntry @59:1-59:22
+    Key: QualifiedName ItemCost.item @59:1-59:14
+    Text: StringLit @59:15-59:22
+      Parts[0]: text "Objet"
+  Entries[39]: TranslationEntry @60:1-60:27
+    Key: QualifiedName ItemCost.count @60:1-60:15
+    Text: StringLit @60:16-60:27
+      Parts[0]: text "Quantité"
+  Entries[40]: TranslationEntry @62:1-62:26
+    Key: QualifiedName Bonus.singular @62:1-62:15
+    Text: StringLit @62:16-62:26
+      Parts[0]: text "un bonus"
+  Entries[41]: TranslationEntry @63:1-63:27
+    Key: QualifiedName Bonus.attribute @63:1-63:16
+    Text: StringLit @63:17-63:27
+      Parts[0]: text "Attribut"
+  Entries[42]: TranslationEntry @64:1-64:21
+    Key: QualifiedName Bonus.value @64:1-64:12
+    Text: StringLit @64:13-64:21
+      Parts[0]: text "Valeur"
+  Entries[43]: TranslationEntry @67:1-67:108
+    Key: QualifiedName ModelType.typeId.help @67:1-67:22
+    Text: StringLit @67:23-67:108
+      Parts[0]: text "Stocké sur les fermes des joueurs : le changer casse les modèles déjà plantés."
+  Entries[44]: TranslationEntry @68:1-68:87
+    Key: QualifiedName ModelType.levels.help @68:1-68:22
+    Text: StringLit @68:23-68:87
+      Parts[0]: text "L'ORDRE fait le niveau : le premier élément est le niveau 1."
+  Entries[45]: TranslationEntry @69:1-69:195
+    Key: QualifiedName ModelType.check.unreachable_levels @69:1-69:35
+    Text: StringLit @69:36-69:195
+      Parts[0]: text "maxLevel vaut "
+      Parts[1]: Interp @69:52-69:60
+        X: IdentExpr maxLevel @69:52-69:60
+      Parts[2]: text " mais seuls "
+      Parts[3]: Interp @69:74-69:86
+        X: CallExpr @69:74-69:86
+          Fun: SelectorExpr @69:74-69:84
+            X: IdentExpr levels @69:74-69:80
+            Name: Ident len @69:81-69:84
+      Parts[4]: text " paliers existent : le niveau "
+      Parts[5]: Interp @69:118-69:134
+        X: BinaryExpr Op=+ @69:118-69:134
+          X: CallExpr @69:118-69:130
+            Fun: SelectorExpr @69:118-69:128
+              X: IdentExpr levels @69:118-69:124
+              Name: Ident len @69:125-69:128
+          Y: IntLit Value=1 @69:133-69:134
+      Parts[6]: text " et au-delà sont inatteignables (GetLevel renvoie nullptr)"
+  Entries[46]: TranslationEntry @70:1-70:119
+    Key: QualifiedName ModelType.check.level_mismatch @70:1-70:31
+    Text: StringLit @70:32-70:119
+      Parts[0]: text "une valeur `level` ne correspond pas à sa position ; le chargeur utilise la position"
+  Entries[47]: TranslationEntry @71:1-71:143
+    Key: QualifiedName Level.check.production_together @71:1-71:32
+    Text: StringLit @71:33-71:143
+      Parts[0]: text "productionItem, productionPerHour et maxStorage vont ensemble : les trois, ou aucun sur un palier décoratif"
+  Entries[48]: TranslationEntry @72:1-72:158
+    Key: QualifiedName Global.maxModels.deprecated @72:1-72:28
+    Text: StringLit @72:29-72:158
+      Parts[0]: text "Jamais lu par LoadFromFile : la vraie limite est FARM_MAX_MODELS = 100. Conservé tel quel ; le modifier ne change rien en jeu."
+== findings
+0 errors, 0 warnings in 1 package (…)

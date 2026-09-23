@@ -1,0 +1,28 @@
+GRAMMAR.md §4.3: none, true, false or self as an enum member, a case or a table key.
+-- a/a.canon --
+package a
+
+enum E { none, true, ok }
+variant V { self, false }
+let t = { none { } }
+entry t.true { }
+-- findings.txt --
+error[E1126]  a/a.canon:3:10
+  "none" cannot name an enum member, variant case or table key
+
+error[E1126]  a/a.canon:3:16
+  "true" cannot name an enum member, variant case or table key
+
+error[E1126]  a/a.canon:4:13
+  "self" cannot name an enum member, variant case or table key
+
+error[E1126]  a/a.canon:4:19
+  "false" cannot name an enum member, variant case or table key
+
+error[E1126]  a/a.canon:5:11
+  "none" cannot name an enum member, variant case or table key
+
+error[E1126]  a/a.canon:6:9
+  "true" cannot name an enum member, variant case or table key
+
+6 errors, 0 warnings in 1 package (…)

@@ -2,7 +2,7 @@
 /// entry or member stays in the lock, in generated id enums and in data files (flagged),
 /// so stored data still decodes; it is left out of `.active()`; a live entry that
 /// refers to it is an error (E3502); its id can never be reused (E6002).
-package features.retired
+package features.retirement
 
 /// Kinds of lottery ticket. Tickets are stored with their kind's code. The event
 /// ticket went away with its event: its code 3 is retired, never reused.

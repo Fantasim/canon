@@ -1,0 +1,18 @@
+GRAMMAR.md §1: invalid UTF-8, a control character in a literal or a comment, a stray carriage return.
+-- a/a.canon --
+package a
+
+// bad byte � here
+let s = "ab"
+let t = 1 + 2
+-- findings.txt --
+error[E1124]  a/a.canon:3:13
+  invalid UTF-8
+
+error[E1124]  a/a.canon:4:11
+  control character U+0001
+
+error[E1124]  a/a.canon:5:11
+  stray carriage return
+
+3 errors, 0 warnings in 1 package (…)

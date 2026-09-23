@@ -1,0 +1,721 @@
+File: File FileKind=source @1:1-224:1
+  Doc: DocComment "Adventure Quest V2: per-style timers, weights and rewards, target multipliers,\nhourly production rates, task filters and rate amplifiers.\nLoader: AdventureQuestTaskConfig::LoadFromJsonString (Game/Progression/Quest/AdventureQuestConfig.cpp).\n\nWhat makes this file hard: five maps are keyed by event type, and inside\nhourly_targets the keys of `rates_by_specific` are items for ECONOMY_DROP_ITEM,\nmonsters for COMBAT_KILL_MONSTER, and so on. `HourlyTarget(e)` is a record that\ntakes the event as a parameter, so each entry is checked against its own event.\n\nThe loader is tolerant (most mistakes are skipped with a LOG_WARN). The schema is\nnow the only owner of most checks (L-0094), so they are errors here." @1:1-11:73
+  Package: QualifiedName resource.adventurequest @12:9-12:32
+  Imports[0]: Import @14:1-14:86
+    Path: QualifiedName resource.vocab @14:8-14:22
+    Names[0]: Ident EventType @14:25-14:34
+    Names[1]: Ident Param @14:36-14:41
+    Names[2]: Ident QuestStyle @14:43-14:53
+    Names[3]: Ident RewardType @14:55-14:65
+    Names[4]: Ident Stage @14:67-14:72
+    Names[5]: Ident eventTypes @14:74-14:84
+  Imports[1]: Import @15:1-15:14
+    Path: QualifiedName studio @15:8-15:14
+  Decls[0]: ConstDecl @18:1-18:29
+    Doc: DocComment "MAX_TASK_PER_QUEST: a quest has 1 to 3 tasks." @17:1-17:50
+    Name: Ident MAX_TASK_PER_QUEST @18:7-18:25
+    Value: IntLit Value=3 @18:28-18:29
+  Decls[1]: RecordDecl @26:1-35:2
+    Doc: DocComment "Level gaps between a player and the monsters a task may target. camelCase on the\nwire, unlike the rest of the file." @24:1-25:39
+    Name: Ident LevelDiff @26:8-26:17
+    Body: RecordBody @26:18-35:2
+      Items[0]: FieldDecl @28:3-28:19
+        Doc: DocComment "Lowest level gap to a normal monster." @27:3-27:44
+        Name: Ident minMob @28:3-28:9
+        Type: NamedType @28:11-28:19
+          Name: QualifiedName Int @28:11-28:14
+          Args: TypeArgs @28:14-28:19
+            Args[0]: RangeExpr Op=.. @28:15-28:18
+              Lo: IntLit Value=0 @28:15-28:16
+      Items[1]: FieldDecl @30:3-30:19
+        Doc: DocComment "Highest level gap to a normal monster." @29:3-29:45
+        Name: Ident maxMob @30:3-30:9
+        Type: NamedType @30:11-30:19
+          Name: QualifiedName Int @30:11-30:14
+          Args: TypeArgs @30:14-30:19
+            Args[0]: RangeExpr Op=.. @30:15-30:18
+              Lo: IntLit Value=0 @30:15-30:16
+      Items[2]: FieldDecl @32:3-32:21
+        Doc: DocComment "Lowest level gap to a giant." @31:3-31:35
+        Name: Ident minGiant @32:3-32:11
+        Type: NamedType @32:13-32:21
+          Name: QualifiedName Int @32:13-32:16
+          Args: TypeArgs @32:16-32:21
+            Args[0]: RangeExpr Op=.. @32:17-32:20
+              Lo: IntLit Value=0 @32:17-32:18
+      Items[3]: FieldDecl @34:3-34:21
+        Doc: DocComment "Highest level gap to a giant." @33:3-33:36
+        Name: Ident maxGiant @34:3-34:11
+        Type: NamedType @34:13-34:21
+          Name: QualifiedName Int @34:13-34:16
+          Args: TypeArgs @34:16-34:21
+            Args[0]: RangeExpr Op=.. @34:17-34:20
+              Lo: IntLit Value=0 @34:17-34:18
+  Decls[2]: RecordDecl @38:1-47:2
+    Doc: DocComment "Settings shared by every style." @37:1-37:36
+    Name: Ident Global @38:8-38:14
+    Annotations[0]: Annotation @38:15-38:33
+      Name: Ident json @38:16-38:20
+      Args[0]: AnnotationArg @38:21-38:32
+        Name: Ident case @38:21-38:25
+        Value: QualifiedName snake @38:27-38:32
+    Body: RecordBody @38:34-47:2
+      Items[0]: FieldDecl @40:3-40:24
+        Doc: DocComment "The loader clamps it to >= 0." @39:3-39:36
+        Name: Ident minLevel @40:3-40:11
+        Type: OptionalType @40:13-40:17
+          Elem: NamedType @40:13-40:16
+            Name: QualifiedName Int @40:13-40:16
+        Default: NoneLit @40:20-40:24
+      Items[1]: FieldDecl @42:3-42:33
+        Doc: DocComment "The loader clamps it to [1, 100]." @41:3-41:40
+        Name: Ident maxQuestsPerStyle @42:3-42:20
+        Type: OptionalType @42:22-42:26
+          Elem: NamedType @42:22-42:25
+            Name: QualifiedName Int @42:22-42:25
+        Default: NoneLit @42:29-42:33
+      Items[2]: FieldDecl @44:3-44:86
+        Doc: DocComment "Wait before a completed quest can be rerolled." @43:3-43:53
+        Name: Ident completionRerollCooldown @44:3-44:27
+        Type: NamedType @44:29-44:37
+          Name: QualifiedName Duration @44:29-44:37
+        Annotations[0]: Annotation @44:38-44:86
+          Name: Ident json @44:39-44:43
+          Args[0]: AnnotationArg @44:44-44:76
+            Value: StringLit @44:44-44:76
+              Parts[0]: text "completion_reroll_cooldown_sec"
+          Args[1]: AnnotationArg @44:78-44:85
+            Name: Ident unit @44:78-44:82
+            Value: QualifiedName s @44:84-44:85
+      Items[3]: FieldDecl @46:3-46:42
+        Doc: DocComment "Level gaps between players and targeted monsters." @45:3-45:56
+        Name: Ident levelDiff @46:3-46:12
+        Type: NamedType @46:14-46:23
+          Name: QualifiedName LevelDiff @46:14-46:23
+        Annotations[0]: Annotation @46:24-46:42
+          Name: Ident json @46:25-46:29
+          Args[0]: AnnotationArg @46:30-46:41
+            Value: StringLit @46:30-46:41
+              Parts[0]: text "levelDiff"
+  Decls[3]: RecordDecl @54:1-59:2
+    Doc: DocComment "What completing a quest of a style pays." @53:1-53:45
+    Name: Ident Rewards @54:8-54:15
+    Body: RecordBody @54:16-59:2
+      Items[0]: FieldDecl @56:3-56:33
+        Doc: DocComment "What is paid." @55:3-55:20
+        Name: Ident kind @56:3-56:7
+        Type: NamedType @56:9-56:19
+          Name: QualifiedName RewardType @56:9-56:19
+        Annotations[0]: Annotation @56:20-56:33
+          Name: Ident json @56:21-56:25
+          Args[0]: AnnotationArg @56:26-56:32
+            Value: StringLit @56:26-56:32
+              Parts[0]: text "type"
+      Items[1]: FieldDecl @58:3-58:29
+        Doc: DocComment "A stage amount <= 0 made the loader drop the WHOLE map: silent non-payment." @57:3-57:82
+        Name: Ident amounts @58:3-58:10
+        Type: MapType @58:12-58:29
+          Key: NamedType @58:13-58:18
+            Name: QualifiedName Stage @58:13-58:18
+          Value: NamedType @58:20-58:28
+            Name: QualifiedName Int @58:20-58:23
+            Args: TypeArgs @58:23-58:28
+              Args[0]: RangeExpr Op=.. @58:24-58:27
+                Lo: IntLit Value=1 @58:24-58:25
+  Decls[4]: RecordDecl @62:1-80:2
+    Doc: DocComment "Timers, draw weights and rewards of one quest style." @61:1-61:57
+    Name: Ident Style @62:8-62:13
+    Annotations[0]: Annotation @62:14-62:32
+      Name: Ident json @62:15-62:19
+      Args[0]: AnnotationArg @62:20-62:31
+        Name: Ident case @62:20-62:24
+        Value: QualifiedName snake @62:26-62:31
+    Body: RecordBody @62:33-80:2
+      Items[0]: FieldDecl @64:3-64:65
+        Doc: DocComment "Absent for azure." @63:3-63:24
+        Name: Ident rerollTime @64:3-64:13
+        Type: OptionalType @64:15-64:24
+          Elem: NamedType @64:15-64:23
+            Name: QualifiedName Duration @64:15-64:23
+        Default: NoneLit @64:27-64:31
+        Annotations[0]: Annotation @64:32-64:65
+          Name: Ident json @64:33-64:37
+          Args[0]: AnnotationArg @64:38-64:55
+            Value: StringLit @64:38-64:55
+              Parts[0]: text "reroll_time_sec"
+          Args[1]: AnnotationArg @64:57-64:64
+            Name: Ident unit @64:57-64:61
+            Value: QualifiedName s @64:63-64:64
+      Items[1]: FieldDecl @66:3-66:57
+        Doc: DocComment "Time a quest of this style is sized for." @65:3-65:47
+        Name: Ident targetTime @66:3-66:13
+        Type: NamedType @66:15-66:23
+          Name: QualifiedName Duration @66:15-66:23
+        Annotations[0]: Annotation @66:24-66:57
+          Name: Ident json @66:25-66:29
+          Args[0]: AnnotationArg @66:30-66:47
+            Value: StringLit @66:30-66:47
+              Parts[0]: text "target_time_sec"
+          Args[1]: AnnotationArg @66:49-66:56
+            Name: Ident unit @66:49-66:53
+            Value: QualifiedName s @66:55-66:56
+      Items[2]: FieldDecl @68:3-68:26
+        Doc: DocComment "Days a quest of this style stays open." @67:3-67:45
+        Name: Ident maxTargetDays @68:3-68:16
+        Type: NamedType @68:18-68:26
+          Name: QualifiedName Int @68:18-68:21
+          Args: TypeArgs @68:21-68:26
+            Args[0]: RangeExpr Op=.. @68:22-68:25
+              Lo: IntLit Value=1 @68:22-68:23
+      Items[3]: FieldDecl @70:3-70:54
+        Doc: DocComment "Chance, in percent, that a quest has 1, 2 or 3 tasks." @69:3-69:60
+        Name: Ident taskSlotWeights @70:3-70:18
+        Type: ListType @70:20-70:54
+          Elem: NamedType @70:21-70:29
+            Name: QualifiedName Int @70:21-70:24
+            Args: TypeArgs @70:24-70:29
+              Args[0]: RangeExpr Op=.. @70:25-70:28
+                Lo: IntLit Value=0 @70:25-70:26
+          Args: TypeArgs @70:30-70:54
+            Args[0]: RangeExpr Op=..= @70:31-70:53
+              Lo: IntLit Value=1 @70:31-70:32
+              Hi: IdentExpr MAX_TASK_PER_QUEST @70:35-70:53
+      Items[4]: FieldDecl @72:3-72:42
+        Doc: DocComment "Chance, in percent, that a task is about each event." @71:3-71:59
+        Name: Ident taskWeights @72:3-72:14
+        Type: MapType @72:16-72:42
+          Key: RefType @72:17-72:31
+            Name: QualifiedName eventTypes @72:21-72:31
+          Value: NamedType @72:33-72:41
+            Name: QualifiedName Int @72:33-72:36
+            Args: TypeArgs @72:36-72:41
+              Args[0]: RangeExpr Op=.. @72:37-72:40
+                Lo: IntLit Value=0 @72:37-72:38
+      Items[5]: FieldDecl @74:3-74:43
+        Doc: DocComment "What completing a quest pays; `{}` on the wire means nothing." @73:3-73:68
+        Name: Ident rewards @74:3-74:10
+        Type: OptionalType @74:12-74:20
+          Elem: NamedType @74:12-74:19
+            Name: QualifiedName Rewards @74:12-74:19
+        Default: NoneLit @74:23-74:27
+        Annotations[0]: Annotation @74:28-74:43
+          Name: Ident json @74:29-74:33
+          Args[0]: AnnotationArg @74:34-74:42
+            Name: Ident none @74:34-74:38
+            Value: BraceLit @74:40-74:42
+      Items[6]: CheckDecl Keyword=check @76:3-77:72
+        Cond: BinaryExpr Op=== @76:9-76:37
+          X: CallExpr @76:9-76:30
+            Fun: SelectorExpr @76:9-76:28
+              X: IdentExpr taskSlotWeights @76:9-76:24
+              Name: Ident sum @76:25-76:28
+          Y: IntLit Value=100 @76:34-76:37
+        Message: StringLit @77:10-77:72
+          Parts[0]: text "task_slot_weights add up to "
+          Parts[1]: Interp @77:40-77:61
+            X: CallExpr @77:40-77:61
+              Fun: SelectorExpr @77:40-77:59
+                X: IdentExpr taskSlotWeights @77:40-77:55
+                Name: Ident sum @77:56-77:59
+          Parts[2]: text ", not 100"
+      Items[7]: CheckDecl Keyword=check @78:3-79:72
+        Cond: BinaryExpr Op=== @78:9-78:42
+          X: CallExpr @78:9-78:35
+            Fun: SelectorExpr @78:9-78:33
+              X: CallExpr @78:9-78:29
+                Fun: SelectorExpr @78:9-78:27
+                  X: IdentExpr taskWeights @78:9-78:20
+                  Name: Ident values @78:21-78:27
+              Name: Ident sum @78:30-78:33
+          Y: IntLit Value=100 @78:39-78:42
+        Message: StringLit @79:10-79:72
+          Parts[0]: text "task_weights add up to "
+          Parts[1]: Interp @79:35-79:61
+            X: CallExpr @79:35-79:61
+              Fun: SelectorExpr @79:35-79:59
+                X: CallExpr @79:35-79:55
+                  Fun: SelectorExpr @79:35-79:53
+                    X: IdentExpr taskWeights @79:35-79:46
+                    Name: Ident values @79:47-79:53
+                Name: Ident sum @79:56-79:59
+          Parts[2]: text ", not 100"
+  Decls[5]: EnumDecl @87:1-87:54
+    Doc: DocComment "\"How many tasks the quest has\" -> how much each task's target shrinks." @86:1-86:75
+    Name: Ident TaskCount @87:6-87:15
+    Members[0]: EnumMember @87:18-87:33
+      Name: Ident two @87:18-87:21
+      Value: StringLit @87:24-87:33
+        Parts[0]: text "2_tasks"
+    Members[1]: EnumMember @87:35-87:52
+      Name: Ident three @87:35-87:40
+      Value: StringLit @87:43-87:52
+        Parts[0]: text "3_tasks"
+  Decls[6]: RecordDecl @90:1-97:2
+    Doc: DocComment "How much each task's target shrinks when a quest has several tasks." @89:1-89:72
+    Name: Ident Multiplier @90:8-90:18
+    Body: RecordBody @90:19-97:2
+      Items[0]: FieldDecl @92:3-92:17
+        Doc: DocComment "For every event without an override." @91:3-91:43
+        Name: Ident default @92:3-92:10
+        Type: NamedType @92:12-92:17
+          Name: QualifiedName Float @92:12-92:17
+      Items[1]: FieldDecl @94:3-94:42
+        Doc: DocComment "Per event." @93:3-93:17
+        Name: Ident overrides @94:3-94:12
+        Type: MapType @94:14-94:37
+          Key: RefType @94:15-94:29
+            Name: QualifiedName eventTypes @94:19-94:29
+          Value: NamedType @94:31-94:36
+            Name: QualifiedName Float @94:31-94:36
+        Default: BraceLit @94:40-94:42
+      Items[2]: CheckDecl Keyword=warn @96:3-96:87
+        Cond: BinaryExpr Op=> @96:8-96:21
+          X: IdentExpr default @96:8-96:15
+          Y: FloatLit Coef=0 Exp=-1 @96:18-96:21
+        Message: StringLit @96:27-96:87
+          Parts[0]: text "a default <= 0 is logged and clamped to 0.01 by the loader"
+  Decls[7]: TypeDecl @100:1-100:54
+    Doc: DocComment "A key of rates_by_specific: one of the event's parameters, or \"default\" for the rest." @99:1-99:90
+    Name: Ident SpecificKey @100:6-100:17
+    Params[0]: Param @100:18-100:30
+      Name: Ident e @100:18-100:19
+      Type: NamedType @100:21-100:30
+        Name: QualifiedName EventType @100:21-100:30
+    Type: UnionType @100:34-100:54
+      Alts[0]: NamedType @100:34-100:42
+        Name: QualifiedName Param @100:34-100:39
+        Args: TypeArgs @100:39-100:42
+          Args[0]: IdentExpr e @100:40-100:41
+      Alts[1]: LiteralType @100:45-100:54
+        Value: StringLit @100:45-100:54
+          Parts[0]: text "default"
+  Decls[8]: RecordDecl @103:1-112:2
+    Doc: DocComment "Hourly production of event `e`, per stage." @102:1-102:47
+    Name: Ident HourlyTarget @103:8-103:20
+    Params[0]: Param @103:21-103:33
+      Name: Ident e @103:21-103:22
+      Type: NamedType @103:24-103:33
+        Name: QualifiedName EventType @103:24-103:33
+    Annotations[0]: Annotation @103:35-103:53
+      Name: Ident json @103:36-103:40
+      Args[0]: AnnotationArg @103:41-103:52
+        Name: Ident case @103:41-103:45
+        Value: QualifiedName snake @103:47-103:52
+    Body: RecordBody @103:54-112:2
+      Items[0]: FieldDecl @105:3-105:35
+        Doc: DocComment "One rate for the whole event..." @104:3-104:38
+        Name: Ident rates @105:3-105:8
+        Type: OptionalType @105:10-105:28
+          Elem: MapType @105:10-105:27
+            Key: NamedType @105:11-105:16
+              Name: QualifiedName Stage @105:11-105:16
+            Value: NamedType @105:18-105:26
+              Name: QualifiedName Int @105:18-105:21
+              Args: TypeArgs @105:21-105:26
+                Args[0]: RangeExpr Op=.. @105:22-105:25
+                  Lo: IntLit Value=0 @105:22-105:23
+        Default: NoneLit @105:31-105:35
+      Items[1]: FieldDecl @107:3-107:63
+        Doc: DocComment "...or one per item / monster / dungeon, depending on `e`." @106:3-106:64
+        Name: Ident ratesBySpecific @107:3-107:18
+        Type: OptionalType @107:20-107:56
+          Elem: MapType @107:20-107:55
+            Key: NamedType @107:21-107:35
+              Name: QualifiedName SpecificKey @107:21-107:32
+              Args: TypeArgs @107:32-107:35
+                Args[0]: IdentExpr e @107:33-107:34
+            Value: MapType @107:37-107:54
+              Key: NamedType @107:38-107:43
+                Name: QualifiedName Stage @107:38-107:43
+              Value: NamedType @107:45-107:53
+                Name: QualifiedName Int @107:45-107:48
+                Args: TypeArgs @107:48-107:53
+                  Args[0]: RangeExpr Op=.. @107:49-107:52
+                    Lo: IntLit Value=0 @107:49-107:50
+        Default: NoneLit @107:59-107:63
+      Items[2]: FieldDecl @109:3-109:57
+        Doc: DocComment "A daily cap per item / monster / dungeon." @108:3-108:48
+        Name: Ident dailyMaxBySpecific @109:3-109:21
+        Type: OptionalType @109:23-109:50
+          Elem: MapType @109:23-109:49
+            Key: NamedType @109:24-109:38
+              Name: QualifiedName SpecificKey @109:24-109:35
+              Args: TypeArgs @109:35-109:38
+                Args[0]: IdentExpr e @109:36-109:37
+            Value: NamedType @109:40-109:48
+              Name: QualifiedName Int @109:40-109:43
+              Args: TypeArgs @109:43-109:48
+                Args[0]: RangeExpr Op=.. @109:44-109:47
+                  Lo: IntLit Value=0 @109:44-109:45
+        Default: NoneLit @109:53-109:57
+      Items[3]: FieldDecl @111:3-111:28
+        Doc: DocComment "The rate is a daily count, not an hourly rate." @110:3-110:53
+        Name: Ident isDailyFlat @111:3-111:14
+        Type: NamedType @111:16-111:20
+          Name: QualifiedName Bool @111:16-111:20
+        Default: BoolLit @111:23-111:28
+  Decls[9]: RecordDecl @119:1-126:2
+    Doc: DocComment "An inclusive range of player levels." @118:1-118:41
+    Name: Ident LevelRange @119:8-119:18
+    Body: RecordBody @119:19-126:2
+      Items[0]: FieldDecl @121:3-121:20
+        Doc: DocComment "Lowest level." @120:3-120:20
+        Name: Ident min @121:3-121:6
+        Type: NamedType @121:8-121:20
+          Name: QualifiedName Int @121:8-121:11
+          Args: TypeArgs @121:11-121:20
+            Args[0]: RangeExpr Op=..= @121:12-121:19
+              Lo: IntLit Value=0 @121:12-121:13
+              Hi: IntLit Value=500 @121:16-121:19
+      Items[1]: FieldDecl @123:3-123:20
+        Doc: DocComment "Highest level." @122:3-122:21
+        Name: Ident max @123:3-123:6
+        Type: NamedType @123:8-123:20
+          Name: QualifiedName Int @123:8-123:11
+          Args: TypeArgs @123:11-123:20
+            Args[0]: RangeExpr Op=..= @123:12-123:19
+              Lo: IntLit Value=0 @123:12-123:13
+              Hi: IntLit Value=500 @123:16-123:19
+      Items[2]: CheckDecl Keyword=check @125:3-125:59
+        Cond: BinaryExpr Op=<= @125:9-125:19
+          X: IdentExpr min @125:9-125:12
+          Y: IdentExpr max @125:16-125:19
+        Message: StringLit @125:25-125:59
+          Parts[0]: text "min ("
+          Parts[1]: Interp @125:32-125:35
+            X: IdentExpr min @125:32-125:35
+          Parts[2]: text ") is above max ("
+          Parts[3]: Interp @125:53-125:56
+            X: IdentExpr max @125:53-125:56
+          Parts[4]: text ")"
+  Decls[10]: RecordDecl @129:1-132:2
+    Doc: DocComment "Who may be given a task about an event." @128:1-128:44
+    Name: Ident TaskFilter @129:8-129:18
+    Body: RecordBody @129:19-132:2
+      Items[0]: FieldDecl @131:3-131:20
+        Doc: DocComment "Player levels the task is offered to." @130:3-130:44
+        Name: Ident level @131:3-131:8
+        Type: NamedType @131:10-131:20
+          Name: QualifiedName LevelRange @131:10-131:20
+  Decls[11]: EnumDecl @135:1-135:36
+    Doc: DocComment "What an amplifier measures on the player." @134:1-134:46
+    Name: Ident Condition @135:6-135:15
+    Members[0]: EnumMember @135:18-135:27
+      Name: Ident net_worth @135:18-135:27
+    Members[1]: EnumMember @135:29-135:34
+      Name: Ident level @135:29-135:34
+  Decls[12]: RecordDecl @138:1-156:2
+    Doc: DocComment "A rate bonus for players whose measure falls in a range." @137:1-137:61
+    Name: Ident Amplifier @138:8-138:17
+    Annotations[0]: Annotation @138:18-138:36
+      Name: Ident json @138:19-138:23
+      Args[0]: AnnotationArg @138:24-138:35
+        Name: Ident case @138:24-138:28
+        Value: QualifiedName snake @138:30-138:35
+    Body: RecordBody @138:37-156:2
+      Items[0]: FieldDecl @140:3-140:23
+        Doc: DocComment "What is measured." @139:3-139:24
+        Name: Ident condition @140:3-140:12
+        Type: NamedType @140:14-140:23
+          Name: QualifiedName Condition @140:14-140:23
+      Items[1]: FieldDecl @142:3-142:24
+        Doc: DocComment "Order among the amplifiers of one event; unique when set." @141:3-141:64
+        Name: Ident priority @142:3-142:11
+        Type: OptionalType @142:13-142:17
+          Elem: NamedType @142:13-142:16
+            Name: QualifiedName Int @142:13-142:16
+        Default: NoneLit @142:20-142:24
+      Items[2]: FieldDecl @144:3-144:21
+        Doc: DocComment "Lowest measure that gets the bonus." @143:3-143:42
+        Name: Ident minValue @144:3-144:11
+        Type: NamedType @144:13-144:21
+          Name: QualifiedName Int @144:13-144:16
+          Args: TypeArgs @144:16-144:21
+            Args[0]: RangeExpr Op=.. @144:17-144:20
+              Lo: IntLit Value=0 @144:17-144:18
+      Items[3]: FieldDecl @146:3-146:21
+        Doc: DocComment "Highest measure that gets the bonus." @145:3-145:43
+        Name: Ident maxValue @146:3-146:11
+        Type: NamedType @146:13-146:21
+          Name: QualifiedName Int @146:13-146:16
+          Args: TypeArgs @146:16-146:21
+            Args[0]: RangeExpr Op=.. @146:17-146:20
+              Lo: IntLit Value=0 @146:17-146:18
+      Items[4]: FieldDecl @148:3-148:33
+        Doc: DocComment "Bonus at `minValue`." @147:3-147:27
+        Name: Ident bonusMin @148:3-148:11
+        Type: WhereType @148:13-148:33
+          Base: NamedType @148:13-148:18
+            Name: QualifiedName Float @148:13-148:18
+          Pred: BinaryExpr Op=> @148:25-148:33
+            X: IdentExpr it @148:25-148:27
+            Y: FloatLit Coef=0 Exp=-1 @148:30-148:33
+      Items[5]: FieldDecl @150:3-150:33
+        Doc: DocComment "Bonus at `maxValue`." @149:3-149:27
+        Name: Ident bonusMax @150:3-150:11
+        Type: WhereType @150:13-150:33
+          Base: NamedType @150:13-150:18
+            Name: QualifiedName Float @150:13-150:18
+          Pred: BinaryExpr Op=> @150:25-150:33
+            X: IdentExpr it @150:25-150:27
+            Y: FloatLit Coef=0 Exp=-1 @150:30-150:33
+      Items[6]: CheckDecl Keyword=check @154:3-154:65
+        Doc: DocComment "Kept by the loader as a crash guard: ComputeAmplifierBonus casts\n(bonus_max - bonus_min) / 0.1f to int." @152:3-153:45
+        Cond: BinaryExpr Op=<= @154:9-154:29
+          X: IdentExpr bonusMin @154:9-154:17
+          Y: IdentExpr bonusMax @154:21-154:29
+        Message: StringLit @154:35-154:65
+          Parts[0]: text "bonus_min is above bonus_max"
+      Items[7]: CheckDecl Keyword=check @155:3-155:65
+        Cond: BinaryExpr Op=<= @155:9-155:29
+          X: IdentExpr minValue @155:9-155:17
+          Y: IdentExpr maxValue @155:21-155:29
+        Message: StringLit @155:35-155:65
+          Parts[0]: text "min_value is above max_value"
+  Decls[13]: RecordDecl @163:1-194:2
+    Doc: DocComment "The whole file." @162:1-162:20
+    Name: Ident AdventureQuestConfig @163:8-163:28
+    Annotations[0]: Annotation @163:29-163:47
+      Name: Ident json @163:30-163:34
+      Args[0]: AnnotationArg @163:35-163:46
+        Name: Ident case @163:35-163:39
+        Value: QualifiedName snake @163:41-163:46
+    Body: RecordBody @163:48-194:2
+      Items[0]: FieldDecl @165:3-165:19
+        Doc: DocComment "Never read by the loader; kept as a convention." @164:3-164:54
+        Name: Ident version @165:3-165:10
+        Type: NamedType @165:12-165:15
+          Name: QualifiedName Int @165:12-165:15
+        Default: IntLit Value=1 @165:18-165:19
+      Items[1]: FieldDecl @167:3-167:17
+        Doc: DocComment "Settings shared by every style." @166:3-166:38
+        Name: Ident global @167:3-167:9
+        Type: NamedType @167:11-167:17
+          Name: QualifiedName Global @167:11-167:17
+      Items[2]: FieldDecl @169:3-169:40
+        Doc: DocComment "Events a batch may contain only once." @168:3-168:44
+        Name: Ident uniquePerBatch @169:3-169:17
+        Type: ListType @169:19-169:35
+          Elem: RefType @169:20-169:34
+            Name: QualifiedName eventTypes @169:24-169:34
+        Default: ListLit @169:38-169:40
+      Items[3]: FieldDecl @171:3-171:30
+        Doc: DocComment "azure is only read under __AZURE_UPGRADE." @170:3-170:48
+        Name: Ident styles @171:3-171:9
+        Type: MapType @171:11-171:30
+          Key: NamedType @171:12-171:22
+            Name: QualifiedName QuestStyle @171:12-171:22
+          Value: NamedType @171:24-171:29
+            Name: QualifiedName Style @171:24-171:29
+      Items[4]: FieldDecl @173:3-173:50
+        Doc: DocComment "Target shrink per number of tasks." @172:3-172:41
+        Name: Ident targetMultipliers @173:3-173:20
+        Type: MapType @173:22-173:45
+          Key: NamedType @173:23-173:32
+            Name: QualifiedName TaskCount @173:23-173:32
+          Value: NamedType @173:34-173:44
+            Name: QualifiedName Multiplier @173:34-173:44
+        Default: BraceLit @173:48-173:50
+      Items[5]: FieldDecl @175:3-175:57
+        Doc: DocComment "Each value's type depends on its key: see HourlyTarget(e)." @174:3-174:65
+        Name: Ident hourlyTargets @175:3-175:16
+        Type: DepMapType @175:18-175:52
+          Var: Ident e @175:19-175:20
+          Domain: IdentExpr eventTypes @175:24-175:34
+          Value: NamedType @175:36-175:51
+            Name: QualifiedName HourlyTarget @175:36-175:48
+            Args: TypeArgs @175:48-175:51
+              Args[0]: IdentExpr e @175:49-175:50
+        Default: BraceLit @175:55-175:57
+      Items[6]: FieldDecl @177:3-177:53
+        Doc: DocComment "Rate bonuses per event." @176:3-176:30
+        Name: Ident rateAmplifiers @177:3-177:17
+        Type: MapType @177:19-177:48
+          Key: RefType @177:20-177:34
+            Name: QualifiedName eventTypes @177:24-177:34
+          Value: ListType @177:36-177:47
+            Elem: NamedType @177:37-177:46
+              Name: QualifiedName Amplifier @177:37-177:46
+        Default: BraceLit @177:51-177:53
+      Items[7]: FieldDecl @179:3-179:49
+        Doc: DocComment "Who may be given a task, per event." @178:3-178:42
+        Name: Ident taskFilters @179:3-179:14
+        Type: MapType @179:16-179:44
+          Key: RefType @179:17-179:31
+            Name: QualifiedName eventTypes @179:21-179:31
+          Value: NamedType @179:33-179:43
+            Name: QualifiedName TaskFilter @179:33-179:43
+        Default: BraceLit @179:47-179:49
+      Items[8]: CheckDecl Keyword=check @181:3-193:4
+        Body: Block @181:9-193:4
+          Stmts[0]: ForStmt @182:5-187:6
+            Vars[0]: Ident e @182:9-182:10
+            Vars[1]: Ident amps @182:12-182:16
+            Iter: IdentExpr rateAmplifiers @182:20-182:34
+            Body: Block @182:35-187:6
+              Stmts[0]: LetStmt @183:7-183:72
+                Name: Ident priorities @183:11-183:21
+                Value: ListComp @183:24-183:72
+                  Elem: SelectorExpr @183:25-183:35
+                    X: IdentExpr a @183:25-183:26
+                    Name: Ident priority @183:27-183:35
+                  Clauses[0]: CompClause Keyword=for @183:36-183:49
+                    Vars[0]: Ident a @183:40-183:41
+                    X: IdentExpr amps @183:45-183:49
+                  Clauses[1]: CompClause Keyword=if @183:50-183:71
+                    X: BinaryExpr Op=!= @183:53-183:71
+                      X: SelectorExpr @183:53-183:63
+                        X: IdentExpr a @183:53-183:54
+                        Name: Ident priority @183:55-183:63
+                      Y: NoneLit @183:67-183:71
+              Stmts[1]: IfStmt @184:7-186:8
+                Cond: UnaryExpr Op=not @184:10-184:35
+                  X: CallExpr @184:14-184:35
+                    Fun: SelectorExpr @184:14-184:33
+                      X: IdentExpr priorities @184:14-184:24
+                      Name: Ident isUnique @184:25-184:33
+                Then: Block @184:36-186:8
+                  Stmts[0]: ExprStmt @185:9-185:97
+                    X: CallExpr @185:9-185:97
+                      Fun: IdentExpr fail @185:9-185:13
+                      Args[0]: Arg @185:14-185:18
+                        Value: IdentExpr amps @185:14-185:18
+                      Args[1]: Arg @185:20-185:96
+                        Value: StringLit @185:20-185:96
+                          Parts[0]: text "two amplifiers of "
+                          Parts[1]: Interp @185:40-185:44
+                            X: SelectorExpr @185:40-185:44
+                              X: IdentExpr e @185:40-185:41
+                              Name: Ident id @185:42-185:44
+                          Parts[2]: text " share a priority: the loader discards all of them"
+          Stmts[1]: ForStmt @188:5-192:6
+            Vars[0]: Ident e @188:9-188:10
+            Iter: IdentExpr uniquePerBatch @188:14-188:28
+            Body: Block @188:29-192:6
+              Stmts[0]: IfStmt @189:7-191:8
+                Cond: UnaryExpr Op=not @189:10-189:65
+                  X: CallExpr @189:14-189:65
+                    Fun: SelectorExpr @189:14-189:33
+                      X: CallExpr @189:14-189:29
+                        Fun: SelectorExpr @189:14-189:27
+                          X: IdentExpr styles @189:14-189:20
+                          Name: Ident values @189:21-189:27
+                      Name: Ident any @189:30-189:33
+                    Args[0]: Arg @189:34-189:64
+                      Value: LambdaExpr @189:34-189:64
+                        Params[0]: Ident s @189:34-189:35
+                        Body: CallExpr @189:39-189:64
+                          Fun: SelectorExpr @189:39-189:61
+                            X: SelectorExpr @189:39-189:52
+                              X: IdentExpr s @189:39-189:40
+                              Name: Ident taskWeights @189:41-189:52
+                            Name: Ident contains @189:53-189:61
+                          Args[0]: Arg @189:62-189:63
+                            Value: IdentExpr e @189:62-189:63
+                Then: Block @189:66-191:8
+                  Stmts[0]: ExprStmt @190:9-190:90
+                    X: CallExpr @190:9-190:90
+                      Fun: IdentExpr warn @190:9-190:13
+                      Args[0]: Arg @190:14-190:15
+                        Value: IdentExpr e @190:14-190:15
+                      Args[1]: Arg @190:17-190:89
+                        Value: StringLit @190:17-190:89
+                          Parts[0]: Interp @190:19-190:23
+                            X: SelectorExpr @190:19-190:23
+                              X: IdentExpr e @190:19-190:20
+                              Name: Ident id @190:21-190:23
+                          Parts[1]: text " is in no style's task_weights, so listing it here has no effect"
+  Decls[14]: LetDecl @197:1-198:61
+    Doc: DocComment "Server/Quest/adventure_quest_config.json, read in place." @196:1-196:61
+    Name: Ident adventureQuests @197:5-197:20
+    Type: NamedType @197:22-197:42
+      Name: QualifiedName AdventureQuestConfig @197:22-197:42
+    Value: LoadExpr @198:3-198:61
+      Args[0]: Arg @198:8-198:60
+        Value: StringLit @198:8-198:60
+          Parts[0]: text "@resource/Server/Quest/adventure_quest_config.json"
+  Decls[15]: ViewDecl @207:1-214:2
+    Type: Ident AdventureQuestConfig @207:6-207:26
+    Items[0]: ViewTitle @208:3-208:27
+      Text: StringLit @208:9-208:27
+        Parts[0]: text "Adventure quests"
+    Items[1]: ViewMenu @209:3-209:28
+      Menu: Ident progression @209:8-209:19
+      Icon: Ident map @209:25-209:28
+    Items[2]: ViewGroup @210:3-210:53
+      ID: Ident general @210:9-210:16
+      Label: StringLit @210:17-210:26
+        Parts[0]: text "General"
+      Members[0]: ViewField @210:29-210:35
+        Name: Ident global @210:29-210:35
+      Members[1]: ViewField @210:37-210:51
+        Name: Ident uniquePerBatch @210:37-210:51
+    Items[3]: ViewGroup @211:3-211:35
+      ID: Ident styles @211:9-211:15
+      Label: StringLit @211:16-211:24
+        Parts[0]: text "Styles"
+      Members[0]: ViewField @211:27-211:33
+        Name: Ident styles @211:27-211:33
+    Items[4]: ViewGroup @212:3-212:63
+      ID: Ident targets @212:9-212:16
+      Label: StringLit @212:17-212:26
+        Parts[0]: text "Targets"
+      Members[0]: ViewField @212:29-212:46
+        Name: Ident targetMultipliers @212:29-212:46
+      Members[1]: ViewField @212:48-212:61
+        Name: Ident hourlyTargets @212:48-212:61
+    Items[5]: ViewGroup Advanced="advanced" @213:3-213:65
+      ID: Ident tuning @213:9-213:15
+      Label: StringLit @213:16-213:24
+        Parts[0]: text "Tuning"
+      Members[0]: ViewField @213:36-213:47
+        Name: Ident taskFilters @213:36-213:47
+      Members[1]: ViewField @213:49-213:63
+        Name: Ident rateAmplifiers @213:49-213:63
+  Decls[16]: ViewDecl @216:1-221:2
+    Type: Ident Style @216:6-216:11
+    Items[0]: ViewTitle @217:3-217:16
+      Text: StringLit @217:9-217:16
+        Parts[0]: Interp @217:11-217:14
+          X: IdentExpr key @217:11-217:14
+    Items[1]: ViewGroup @218:3-218:66
+      ID: Ident timing @218:9-218:15
+      Label: StringLit @218:16-218:24
+        Parts[0]: text "Timing"
+      Members[0]: ViewField @218:27-218:37
+        Name: Ident rerollTime @218:27-218:37
+      Members[1]: ViewField @218:39-218:49
+        Name: Ident targetTime @218:39-218:49
+      Members[2]: ViewField @218:51-218:64
+        Name: Ident maxTargetDays @218:51-218:64
+    Items[2]: ViewGroup @219:3-219:81
+      ID: Ident draw @219:9-219:13
+      Label: StringLit @219:14-219:20
+        Parts[0]: text "Draw"
+      Members[0]: ViewField @219:23-219:52
+        Name: Ident taskSlotWeights @219:23-219:38
+        Props: BraceLit @219:39-219:52
+          Items[0]: FieldItem @219:41-219:50
+            Name: Ident unit @219:41-219:45
+            Value: IdentExpr pct @219:47-219:50
+      Members[1]: ViewField @219:54-219:79
+        Name: Ident taskWeights @219:54-219:65
+        Props: BraceLit @219:66-219:79
+          Items[0]: FieldItem @219:68-219:77
+            Name: Ident unit @219:68-219:72
+            Value: IdentExpr pct @219:74-219:77
+    Items[3]: ViewGroup @220:3-220:38
+      ID: Ident rewards @220:9-220:16
+      Label: StringLit @220:17-220:26
+        Parts[0]: text "Rewards"
+      Members[0]: ViewField @220:29-220:36
+        Name: Ident rewards @220:29-220:36
+  Decls[17]: EmitDecl @223:1-223:57
+    Target: Ident view @223:6-223:10
+    Options: BraceLit @223:11-223:57
+      Items[0]: FieldItem @223:13-223:55
+        Name: Ident out @223:13-223:16
+        Value: StringLit @223:18-223:55
+          Parts[0]: text "@generated/adventurequest.view.json"
+== findings
+0 errors, 0 warnings in 1 package (…)

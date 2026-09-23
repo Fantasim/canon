@@ -1,0 +1,21 @@
+GRAMMAR.md §5.11: a comprehension brace literal has exactly one named or keyed item.
+-- a/a.canon --
+package a
+
+let a = { x: 1, y: 2 for x in z }
+let b = { ...s for x in z }
+let c = { k: v for k in z, w: 1 }
+let ok = { name: v
+  for name, v in jobs
+  if v > 0 }
+-- findings.txt --
+error[E1136]  a/a.canon:3:17
+  a comprehension literal has exactly one item
+
+error[E1136]  a/a.canon:4:11
+  a comprehension literal has exactly one item
+
+error[E1136]  a/a.canon:5:28
+  a comprehension literal has exactly one item
+
+3 errors, 0 warnings in 1 package (…)

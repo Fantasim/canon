@@ -1,7 +1,9 @@
 package syntax
 
-// NoTok is the Tok of an absent token.
-const NoTok Tok = -1
+import "unicode/utf8"
+
+// NoTok is the Tok of an absent token: File.Tokens[0] is the BOF sentinel, never a node's.
+const NoTok Tok = 0
 
 // NoDecimals is FormatSpec.Decimals when the spec has no ".N" part.
 const NoDecimals = -1
@@ -12,6 +14,7 @@ const Blank = "_"
 // Token kinds: GRAMMAR.md §2.1 classes, the §2.8 punctuation and the §4.1 reserved words.
 const (
 	TokInvalid TokenKind = iota
+	TokBOF
 	TokEOF
 	TokNL
 	TokIllegal
@@ -124,7 +127,7 @@ const (
 
 // tokenNames spells each token kind: the class name, or the exact text of a fixed token.
 var tokenNames = [TokenKindCount]string{
-	TokInvalid: "INVALID", TokEOF: "EOF", TokNL: "NL", TokIllegal: "ILLEGAL", TokIdent: "IDENT",
+	TokInvalid: "INVALID", TokBOF: "BOF", TokEOF: "EOF", TokNL: "NL", TokIllegal: "ILLEGAL", TokIdent: "IDENT",
 	TokInt: "INT", TokFloat: "FLOAT", TokDuration: "DURATION", TokString: "STRING",
 	TokStringHead: "STRING_HEAD", TokStringMid: "STRING_MID", TokStringTail: "STRING_TAIL",
 	TokMLString: "MLSTRING", TokMLStringHead: "MLSTRING_HEAD", TokMLStringMid: "MLSTRING_MID",
@@ -292,6 +295,10 @@ const (
 	KindMatchStmt
 	KindStmtArm
 	KindExprStmt
+	KindBadExpr
+	KindBadType
+	KindBadStmt
+	KindBadDecl
 	NodeKindCount
 )
 
@@ -335,5 +342,107 @@ var kindNames = [NodeKindCount]string{
 	KindAssignStmt: "AssignStmt", KindIfStmt: "IfStmt", KindForStmt: "ForStmt",
 	KindWhileStmt: "WhileStmt", KindBreakStmt: "BreakStmt", KindContinueStmt: "ContinueStmt",
 	KindReturnStmt: "ReturnStmt", KindExpectStmt: "ExpectStmt", KindMatchStmt: "MatchStmt",
-	KindStmtArm: "StmtArm", KindExprStmt: "ExprStmt",
+	KindStmtArm: "StmtArm", KindExprStmt: "ExprStmt", KindBadExpr: "BadExpr", KindBadType: "BadType",
+	KindBadStmt: "BadStmt", KindBadDecl: "BadDecl",
 }
+
+// Lexer texts and widths (GRAMMAR.md §2).
+const (
+	utf8Self, asciiLowerBit, pairWidth, maxHexDigits, runeBits, boolCount, nlShare = utf8.RuneSelf, 0x20, 2, 6, 32, 2, 4
+	bomText, tripleQuote, quoteText, rawPrefix, blankChars, spaceText, lf          = "\xEF\xBB\xBF", `"""`, `"`, "r", " \t", " ", "\n"
+	docPrefix, ordinaryDoc, lineCommentText, blockOpen, blockClose                 = "///", "////", "//", "/*", "*/"
+	slashText, escapedSlash, openBraceText, closeBraceText                         = "/", `\/`, "{", "}"
+	unicodeOpen                                                                    = 3
+)
+
+// Classes of a byte of string text, the index of stringByte.
+const strPlain, strQuote, strNewline, strEscape, strOpen, strClose, strClassCount = 0, 1, 2, 3, 4, 5, 6
+
+// Numbers and durations (GRAMMAR.md §2.4, §2.5): problems, bases, texts and limits.
+const (
+	numOK, numBad, durOrder, durRepeated, durFraction, durTrailing, durOverflow numProblem = 0, 1, 2, 3, 4, 5, 6
+
+	decimalBase, hexBase, binBase, minExpLen, maxMillisBits, maxSpecDigits, maxDecimals = 10, 16, 2, 2, 63, 2, 20
+	hexPrefix, binPrefix, digitSep, doubleSep, fractionDot, expLetters, unitLetters     = "0x", "0b", "_", "__", ".", "eE", "mshd"
+	specPlus, specComma                                                                 = "+", ","
+)
+
+// unitsLongestFirst are the duration units as matched, with their rank (d h m s ms) in
+// unitRank; unitMillis is each rank's length in milliseconds.
+var (
+	unitsLongestFirst = [...]string{"ms", "m", "s", "h", "d"}
+	unitRank          = [...]int{4, 2, 3, 1, 0}
+	unitMillis        = [...]int64{86_400_000, 3_600_000, 60_000, 1_000, 1}
+	simpleEscapes     = map[byte]byte{'n': '\n', 't': '\t', 'r': '\r', '\\': '\\', '"': '"', '{': '{', '}': '}'}
+)
+
+// Names E1116 prints for what it expected: GRAMMAR.md symbols (§5.1) where no token is meant.
+const (
+	identName, wordName, exprName, typeName, stringName, numberName = "IDENT", "WORD", "expr", "type", "stringLit", "number"
+	itemName, declName, annValueName, projectValueName, nestingName = "item", "topDecl", "annValue", "pValue", "nesting"
+)
+
+// Contextual keywords (GRAMMAR.md §4.2), predeclared names and the parser's limits.
+const (
+	wordAt, wordFrom, wordEnv, wordKeyed, wordBy, wordOrdered, wordExt = "at", "from", "env", "keyed", "by", "ordered", "ext"
+	wordPasses, wordFails, wordWarns, wordDefault                      = "passes", "fails", "warns", "default"
+	wordValue, wordSiblings, wordMulti, wordAdvanced, wordWhen         = "value", "siblings", "multi", "advanced", "when"
+	wordTitle, wordSubtitle, wordSingular, wordPlural, wordMenu        = "title", "subtitle", "singular", "plural", "menu"
+	wordIcon, wordPreview, wordSearch, wordFilters, wordColumns        = "icon", "preview", "search", "filters", "columns"
+	wordGroup, wordShow, wordField, matchesName, failName, pairIndex   = "group", "show", "field", "matches", "fail", "i"
+	maxNesting                                                         = 1000
+)
+
+// Modifier bits, in the order of Modifiers' fields (GRAMMAR.md §5.3, E1133).
+const modLocal, modExport, modRetired uint8 = 1, 2, 4
+
+// Precedence levels of GRAMMAR.md §5.11, lowest first; binaryLevel is each operator's.
+const (
+	levelNone, levelCoalesce, levelOr, levelAnd, levelNot, levelCompare      uint8 = 0, 1, 2, 3, 4, 5
+	levelRange, levelAdditive, levelMultiplicative, levelUnary, levelPostfix uint8 = 6, 7, 8, 9, 10
+	levelCount                                                                     = 11
+)
+
+var binaryLevel = [TokenKindCount]uint8{
+	TokCoalesce: levelCoalesce, KwOr: levelOr, KwAnd: levelAnd, TokEq: levelCompare,
+	TokNe: levelCompare, TokLt: levelCompare, TokLe: levelCompare, TokGt: levelCompare,
+	TokGe: levelCompare, KwIn: levelCompare, TokRange: levelRange, TokRangeIncl: levelRange,
+	TokPlus: levelAdditive, TokMinus: levelAdditive, TokStar: levelMultiplicative,
+	TokSlash: levelMultiplicative, TokPercent: levelMultiplicative,
+}
+
+// Annotation sites (GRAMMAR.md §8.1): TL per declaration, TH per type, FD, EM, VC, TE, MB.
+const (
+	siteLet, siteConst, siteType, siteFn, siteEntry, siteOther                 annSite = 1 << 0, 1 << 1, 1 << 2, 1 << 3, 1 << 4, 1 << 5
+	siteRecordHeader, siteEnumHeader, siteVariantHeader, siteField, siteMember annSite = 1 << 6, 1 << 7, 1 << 8, 1 << 9, 1 << 10
+	siteCodedMember, siteCase, siteTableEntry, siteMethod                      annSite = 1 << 11, 1 << 12, 1 << 13, 1 << 14
+
+	siteAll         = siteMethod<<1 - 1
+	siteTop         = siteLet | siteConst | siteType | siteFn | siteEntry | siteOther
+	siteHeader      = siteRecordHeader | siteEnumHeader | siteVariantHeader
+	deprecatedSites = siteField | siteMember | siteCodedMember | siteCase | siteTableEntry | siteEntry
+	nameSites       = siteHeader | siteField | siteMember | siteCodedMember | siteCase | siteMethod | siteLet | siteConst | siteType | siteFn
+)
+
+// Kinds of annotation argument values (GRAMMAR.md §8.2), and the exclusion groups of @json.
+const (
+	valString, valTemplate, valInteger, valSince, valLiteral, valPairs, valSymbol, valStudio, valFlag argKind = 0, 1, 2, 3, 4, 5, 6, 7, 8
+	valKindCount                                                                                              = 9
+	groupWire, groupShape                                                                             uint8   = 1, 2
+)
+
+// The annotation catalogue's names (GRAMMAR.md §8.3).
+const (
+	annJSON, annStable, annCodes, annDeprecated, annSince, annReload = "json", "stable", "codes", "deprecated", "since", "reload"
+	annFiles, annMenu, annCpp, annGo, annTS                          = "files", "menu", "cpp", "go", "ts"
+	argWire, argPath, argCase, argTag, argInline, argUnit, argInt    = "wire", "path", "case", "tag", "inline", "unit", "int"
+	argBits, argPairs, argT, argWhy, argN, argTpl, argLabel          = "bits", "pairs", "T", "why", "n", "tpl", "label"
+	argDefines, argStruct, argHeader, argAccess, argName, argBigint  = "defines", "struct", "header", "access", "name", "bigint"
+)
+
+// Closed sets of annotation symbols (GRAMMAR.md §8.3).
+var (
+	caseStyles  = []string{"snake", "camel", "kebab", "upper_snake"}
+	codeTypes   = []string{"Int8", "Int16", "Int32", "Int", "UInt8", "UInt16", "UInt32", "UInt64"}
+	accessModes = []string{"fields", "both", "getters"}
+)

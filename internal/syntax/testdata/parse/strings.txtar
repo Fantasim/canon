@@ -1,0 +1,93 @@
+GRAMMAR.md §2.6: plain, raw and multiline strings, escapes, interpolations and format specs.
+-- a/a.canon --
+package a
+
+let plain = "tab\tnew\nquote\" brace\{ \} {{lit}} smile\u{1F600}"
+let interp = "{heal:,} HP, {ratio:.2}, {delta:+}, {x:+,.20} {"in{x}"}"
+let nested = "outer {f("inner {y}", n: 1)} end"
+let braces = "{ {a: 1}.a }"
+let raw = r"C:\path\{x}"
+let help = """
+  First line.
+    Indented line.
+
+  Last {x} line with "quotes" and \"""
+  """
+let rawml = r"""
+    keep \n {x}
+  back
+  """
+let empty = """
+  """
+-- ast --
+== a/a.canon
+File: File FileKind=source @1:1-20:1
+  Package: QualifiedName a @1:9-1:10
+  Decls[0]: LetDecl @3:1-3:66
+    Name: Ident plain @3:5-3:10
+    Value: StringLit @3:13-3:66
+      Parts[0]: text "tab\tnew\nquote\" brace{ } {lit} smile😀"
+  Decls[1]: LetDecl @4:1-4:71
+    Name: Ident interp @4:5-4:11
+    Value: StringLit @4:14-4:71
+      Parts[0]: Interp Spec=":," @4:16-4:22
+        X: IdentExpr heal @4:16-4:20
+      Parts[1]: text " HP, "
+      Parts[2]: Interp Spec=":.2" @4:29-4:37
+        X: IdentExpr ratio @4:29-4:34
+      Parts[3]: text ", "
+      Parts[4]: Interp Spec=":+" @4:41-4:48
+        X: IdentExpr delta @4:41-4:46
+      Parts[5]: text ", "
+      Parts[6]: Interp Spec=":+,.20" @4:52-4:59
+        X: IdentExpr x @4:52-4:53
+      Parts[7]: text " "
+      Parts[8]: Interp @4:62-4:69
+        X: StringLit @4:62-4:69
+          Parts[0]: text "in"
+          Parts[1]: Interp @4:66-4:67
+            X: IdentExpr x @4:66-4:67
+  Decls[2]: LetDecl @5:1-5:48
+    Name: Ident nested @5:5-5:11
+    Value: StringLit @5:14-5:48
+      Parts[0]: text "outer "
+      Parts[1]: Interp @5:22-5:42
+        X: CallExpr @5:22-5:42
+          Fun: IdentExpr f @5:22-5:23
+          Args[0]: Arg @5:24-5:35
+            Value: StringLit @5:24-5:35
+              Parts[0]: text "inner "
+              Parts[1]: Interp @5:32-5:33
+                X: IdentExpr y @5:32-5:33
+          Args[1]: Arg @5:37-5:41
+            Name: Ident n @5:37-5:38
+            Value: IntLit Value=1 @5:40-5:41
+      Parts[2]: text " end"
+  Decls[3]: LetDecl @6:1-6:28
+    Name: Ident braces @6:5-6:11
+    Value: StringLit @6:14-6:28
+      Parts[0]: Interp @6:17-6:25
+        X: SelectorExpr @6:17-6:25
+          X: BraceLit @6:17-6:23
+            Items[0]: FieldItem @6:18-6:22
+              Name: Ident a @6:18-6:19
+              Value: IntLit Value=1 @6:21-6:22
+          Name: Ident a @6:24-6:25
+  Decls[4]: LetDecl @7:1-7:25
+    Name: Ident raw @7:5-7:8
+    Value: RawStringLit Value="C:\\path\\{x}" @7:11-7:25
+  Decls[5]: LetDecl @8:1-13:6
+    Name: Ident help @8:5-8:9
+    Value: StringLit Multiline @8:12-13:6
+      Parts[0]: text "First line.\n  Indented line.\n\nLast "
+      Parts[1]: Interp @12:9-12:10
+        X: IdentExpr x @12:9-12:10
+      Parts[2]: text " line with \"quotes\" and \"\"\""
+  Decls[6]: LetDecl @14:1-17:6
+    Name: Ident rawml @14:5-14:10
+    Value: RawStringLit Multiline Value="  keep \\n {x}\nback" @14:13-17:6
+  Decls[7]: LetDecl @18:1-19:6
+    Name: Ident empty @18:5-18:10
+    Value: StringLit Multiline @18:13-19:6
+== findings
+0 errors, 0 warnings in 1 package (…)

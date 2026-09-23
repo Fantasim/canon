@@ -1,0 +1,19 @@
+GRAMMAR.md §2.6: a string, a raw string or a multiline string that does not end.
+-- a/a.canon --
+package a
+
+let s = "abc
+let r = r"x
+let m = """
+  never
+-- findings.txt --
+error[E1107]  a/a.canon:3:9
+  unterminated string
+
+error[E1107]  a/a.canon:4:9
+  unterminated string
+
+error[E1107]  a/a.canon:5:9
+  unterminated string
+
+3 errors, 0 warnings in 1 package (…)

@@ -1,0 +1,85 @@
+File: File FileKind=project @1:1-42:1
+  Project: ProjectDecl @6:1-41:2
+    Doc: DocComment "The law repository of Sovereign. In the real setup this directory is its own\nrepository; here it is `services/configlang/examples/`.\n\nTests do not read the real repositories: the harness opens this project with every\nroot redirected (see _fixtures/README.md)." @1:1-5:47
+    Name: Ident sovereign @6:9-6:18
+    Items[0]: ProjectEntry Colon=":" @7:3-7:15
+      Key: Ident canon @7:3-7:8
+      Value: StringLit @7:10-7:15
+        Parts[0]: text "0.1"
+    Items[1]: ProjectEntry @11:3-25:4
+      Doc: DocComment "Named roots used by `load` and `emit` paths: \"@resource/Server/...\". A path never\nleaves its root (E7001), so every output location has a root of its own." @9:3-10:79
+      Key: Ident roots @11:3-11:8
+      Value: ProjectMap @11:9-25:4
+        Entries[0]: ProjectEntry Colon=":" @13:5-13:34
+          Key: Ident resource @13:5-13:13
+          Value: StringLit @13:15-13:34
+            Parts[0]: text "../../../Resource"
+        Entries[1]: ProjectEntry Colon=":" @14:5-14:30
+          Key: Ident client @14:5-14:11
+          Value: StringLit @14:13-14:30
+            Parts[0]: text "../../../Client"
+        Entries[2]: ProjectEntry Colon=":" @16:5-16:30
+          Key: Ident source @16:5-16:11
+          Value: StringLit @16:13-16:30
+            Parts[0]: text "../../../Source"
+        Entries[3]: ProjectEntry Colon=":" @17:5-17:22
+          Key: Ident services @17:5-17:13
+          Value: StringLit @17:15-17:22
+            Parts[0]: text "../.."
+        Entries[4]: ProjectEntry Colon=":" @18:5-18:33
+          Key: Ident sovcommon @18:5-18:14
+          Value: StringLit @18:16-18:33
+            Parts[0]: text "../../sovcommon"
+        Entries[5]: ProjectEntry Colon=":" @19:5-19:39
+          Key: Ident web @19:5-19:8
+          Value: StringLit @19:10-19:39
+            Parts[0]: text "../../sovcommon/web/src/lib"
+        Entries[6]: ProjectEntry Colon=":" @20:5-20:35
+          Key: Ident parity @20:5-20:11
+          Value: StringLit @20:13-20:35
+            Parts[0]: text "../../balance/parity"
+        Entries[7]: ProjectEntry Colon=":" @21:5-21:48
+          Key: Ident generated @21:5-21:14
+          Value: StringLit @21:16-21:48
+            Parts[0]: text "../../resourcestudio/generated"
+        Entries[8]: ProjectEntry Colon=":" @23:5-23:35
+          Key: Ident pipeline_go @23:5-23:16
+          Value: StringLit @23:18-23:35
+            Parts[0]: text "pipeline/out/go"
+        Entries[9]: ProjectEntry Colon=":" @24:5-24:25
+          Key: Ident features @24:5-24:13
+          Value: StringLit @24:15-24:25
+            Parts[0]: text "features"
+    Items[2]: ProjectEntry Colon=":" @27:3-27:22
+      Key: Ident languages @27:3-27:12
+      Value: ProjectList @27:14-27:22
+        Items[0]: QualifiedName en @27:15-27:17
+        Items[1]: QualifiedName fr @27:19-27:21
+    Items[3]: ProjectEntry Colon=":" @28:3-28:17
+      Key: Ident studio @28:3-28:9
+      Value: QualifiedName studio @28:11-28:17
+    Items[4]: ProjectEntry Colon=":" @29:3-29:22
+      Key: Ident budget @29:3-29:9
+      Value: IntLit Value=100000000 @29:11-29:22
+    Items[5]: ProjectEntry @35:3-40:4
+      Doc: DocComment "Go module path of each root that receives Go code (CODEGEN §2.8). A Go output's import\npath is the module path of its closest mapped root plus the directories below it, so\n`@services/resourcestudio/internal/config` is\ngitlab.com/sovereign15/resourcestudio/internal/config, as in resourcestudio's go.mod." @31:3-34:92
+      Key: Ident go_module @35:3-35:12
+      Value: ProjectMap @35:13-40:4
+        Entries[0]: ProjectEntry Colon=":" @36:5-36:39
+          Key: Ident services @36:5-36:13
+          Value: StringLit @36:15-36:39
+            Parts[0]: text "gitlab.com/sovereign15"
+        Entries[1]: ProjectEntry Colon=":" @37:5-37:50
+          Key: Ident sovcommon @37:5-37:14
+          Value: StringLit @37:16-37:50
+            Parts[0]: text "gitlab.com/sovereign15/sovcommon"
+        Entries[2]: ProjectEntry Colon=":" @38:5-38:39
+          Key: Ident pipeline_go @38:5-38:16
+          Value: StringLit @38:18-38:39
+            Parts[0]: text "example.com/potions"
+        Entries[3]: ProjectEntry Colon=":" @39:5-39:37
+          Key: Ident features @39:5-39:13
+          Value: StringLit @39:15-39:37
+            Parts[0]: text "example.com/features"
+== findings
+0 errors, 0 warnings in 1 package (…)

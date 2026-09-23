@@ -1,0 +1,231 @@
+File: File FileKind=source @1:1-73:1
+  Doc: DocComment "Value-level `match` (SPEC §7.8): over a variant, binding each case's value, and over\nan enum, with several patterns per arm and `_`. Every case must be covered (E3601)." @1:1-2:88
+  Package: QualifiedName features.matching @3:9-3:26
+  Decls[0]: VariantDecl @6:1-21:2
+    Doc: DocComment "What a system mail carries." @5:1-5:32
+    Name: Ident Attachment @6:9-6:19
+    Annotations[0]: Annotation @6:20-6:38
+      Name: Ident json @6:21-6:25
+      Args[0]: AnnotationArg @6:26-6:37
+        Name: Ident tag @6:26-6:29
+        Value: StringLit @6:31-6:37
+          Parts[0]: text "type"
+    Items[0]: VariantCase @8:3-13:4
+      Doc: DocComment "Items." @7:3-7:13
+      Name: Ident item @8:3-8:7
+      Body: RecordBody @8:8-13:4
+        Items[0]: FieldDecl @10:5-10:27
+          Doc: DocComment "The item define." @9:5-9:25
+          Name: Ident define @10:5-10:11
+          Type: NamedType @10:13-10:27
+            Name: QualifiedName String @10:13-10:19
+            Args: TypeArgs @10:19-10:27
+              Args[0]: RegexLit Pattern="^II_" @10:20-10:26
+        Items[1]: FieldDecl @12:5-12:24
+          Doc: DocComment "How many." @11:5-11:18
+          Name: Ident count @12:5-12:10
+          Type: NamedType @12:12-12:20
+            Name: QualifiedName Int @12:12-12:15
+            Args: TypeArgs @12:15-12:20
+              Args[0]: RangeExpr Op=.. @12:16-12:19
+                Lo: IntLit Value=1 @12:16-12:17
+          Default: IntLit Value=1 @12:23-12:24
+    Items[1]: VariantCase @15:3-18:4
+      Doc: DocComment "Penya." @14:3-14:13
+      Name: Ident gold @15:3-15:7
+      Body: RecordBody @15:8-18:4
+        Items[0]: FieldDecl @17:5-17:21
+          Doc: DocComment "How much." @16:5-16:18
+          Name: Ident amount @17:5-17:11
+          Type: NamedType @17:13-17:21
+            Name: QualifiedName Int @17:13-17:16
+            Args: TypeArgs @17:16-17:21
+              Args[0]: RangeExpr Op=.. @17:17-17:20
+                Lo: IntLit Value=1 @17:17-17:18
+    Items[2]: VariantCase @20:3-20:10
+      Doc: DocComment "A letter with nothing attached." @19:3-19:38
+      Name: Ident nothing @20:3-20:10
+  Decls[1]: EnumDecl @24:1-24:47
+    Doc: DocComment "When a mail is sent." @23:1-23:25
+    Name: Ident Season @24:6-24:12
+    Members[0]: EnumMember @24:15-24:21
+      Name: Ident spring @24:15-24:21
+    Members[1]: EnumMember @24:23-24:29
+      Name: Ident summer @24:23-24:29
+    Members[2]: EnumMember @24:31-24:37
+      Name: Ident autumn @24:31-24:37
+    Members[3]: EnumMember @24:39-24:45
+      Name: Ident winter @24:39-24:45
+  Decls[2]: RecordDecl @27:1-53:2
+    Doc: DocComment "A mail the server sends to every player once." @26:1-26:50
+    Name: Ident Mail @27:8-27:12
+    Body: RecordBody @27:13-53:2
+      Items[0]: FieldDecl @29:3-29:23
+        Doc: DocComment "Title in the mailbox." @28:3-28:28
+        Name: Ident subject @29:3-29:10
+        Type: NamedType @29:12-29:23
+          Name: QualifiedName String @29:12-29:18
+          Args: TypeArgs @29:18-29:23
+            Args[0]: RangeExpr Op=.. @29:19-29:22
+              Lo: IntLit Value=1 @29:19-29:20
+      Items[1]: FieldDecl @31:3-31:17
+        Doc: DocComment "When it is sent." @30:3-30:23
+        Name: Ident season @31:3-31:9
+        Type: NamedType @31:11-31:17
+          Name: QualifiedName Season @31:11-31:17
+      Items[2]: FieldDecl @33:3-33:35
+        Doc: DocComment "What it carries." @32:3-32:23
+        Name: Ident attachment @33:3-33:13
+        Type: NamedType @33:15-33:25
+          Name: QualifiedName Attachment @33:15-33:25
+        Default: IdentExpr nothing @33:28-33:35
+      Items[3]: FnDecl Self="self" @37:3-43:4
+        Doc: DocComment "The number shown next to the mail: a count for items, an amount for penya.\nNo runtime input, so `canon build` computes it and ships the value." @35:3-36:74
+        Mods: Modifiers Export="export" @37:3-37:9
+        Name: Ident quantity @37:13-37:21
+        Result: NamedType @37:31-37:34
+          Name: QualifiedName Int @37:31-37:34
+        Body: Block @37:35-43:4
+          Stmts[0]: ReturnStmt @38:5-42:6
+            Value: MatchExpr @38:12-42:6
+              Scrutinee: IdentExpr attachment @38:18-38:28
+              Arms[0]: MatchArm @39:7-39:25
+                Patterns[0]: Pattern @39:7-39:14
+                  Name: QualifiedName item @39:7-39:11
+                  Binder: Ident i @39:12-39:13
+                Body: SelectorExpr @39:18-39:25
+                  X: IdentExpr i @39:18-39:19
+                  Name: Ident count @39:20-39:25
+              Arms[1]: MatchArm @40:7-40:26
+                Patterns[0]: Pattern @40:7-40:14
+                  Name: QualifiedName gold @40:7-40:11
+                  Binder: Ident g @40:12-40:13
+                Body: SelectorExpr @40:18-40:26
+                  X: IdentExpr g @40:18-40:19
+                  Name: Ident amount @40:20-40:26
+              Arms[2]: MatchArm @41:7-41:19
+                Patterns[0]: Pattern @41:7-41:14
+                  Name: QualifiedName nothing @41:7-41:14
+                Body: IntLit Value=0 @41:18-41:19
+      Items[4]: FnDecl Self="self" @45:3-50:4
+        Name: Ident isHoliday @45:6-45:15
+        Result: NamedType @45:25-45:29
+          Name: QualifiedName Bool @45:25-45:29
+        Body: Block @45:30-50:4
+          Stmts[0]: ReturnStmt @46:5-49:6
+            Value: MatchExpr @46:12-49:6
+              Scrutinee: IdentExpr season @46:18-46:24
+              Arms[0]: MatchArm @47:7-47:29
+                Patterns[0]: Pattern @47:7-47:13
+                  Name: QualifiedName summer @47:7-47:13
+                Patterns[1]: Pattern @47:15-47:21
+                  Name: QualifiedName winter @47:15-47:21
+                Body: BoolLit Value @47:25-47:29
+              Arms[1]: MatchArm @48:7-48:17
+                Patterns[0]: Pattern Keyword=_ @48:7-48:8
+                Body: BoolLit @48:12-48:17
+      Items[5]: CheckDecl Keyword=warn @52:3-52:89
+        Cond: BinaryExpr Op=or @52:8-52:45
+          X: UnaryExpr Op=not @52:8-52:23
+            X: CallExpr @52:12-52:23
+              Fun: IdentExpr isHoliday @52:12-52:21
+          Y: IsExpr @52:27-52:45
+            X: IdentExpr attachment @52:27-52:37
+            Target: QualifiedName gold @52:41-52:45
+        Message: StringLit @52:51-52:89
+          Parts[0]: text "a holiday mail usually carries penya"
+  Decls[3]: LetDecl @56:1-64:2
+    Doc: DocComment "The seasonal mails." @55:1-55:24
+    Name: Ident mails @56:5-56:10
+    Type: ListType @56:12-56:18
+      Elem: NamedType @56:13-56:17
+        Name: QualifiedName Mail @56:13-56:17
+    Value: ListLit @56:21-64:2
+      Elems[0]: BraceLit @57:3-61:4
+        Items[0]: FieldItem @58:5-58:31
+          Name: Ident subject @58:5-58:12
+          Value: StringLit @58:14-58:31
+            Parts[0]: text "Spring cleaning"
+        Items[1]: FieldItem @59:5-59:19
+          Name: Ident season @59:5-59:11
+          Value: IdentExpr spring @59:13-59:19
+        Items[2]: FieldItem @60:5-60:67
+          Name: Ident attachment @60:5-60:15
+          Value: TypedLit @60:17-60:67
+            Type: QualifiedName item @60:17-60:21
+            Lit: BraceLit @60:22-60:67
+              Items[0]: FieldItem @60:24-60:55
+                Name: Ident define @60:24-60:30
+                Value: StringLit @60:32-60:55
+                  Parts[0]: text "II_GEN_FOO_INS_HOTDOG"
+              Items[1]: FieldItem @60:57-60:65
+                Name: Ident count @60:57-60:62
+                Value: IntLit Value=5 @60:64-60:65
+      Elems[1]: BraceLit @62:3-62:87
+        Items[0]: FieldItem @62:5-62:31
+          Name: Ident subject @62:5-62:12
+          Value: StringLit @62:14-62:31
+            Parts[0]: text "Summer festival"
+        Items[1]: FieldItem @62:33-62:47
+          Name: Ident season @62:33-62:39
+          Value: IdentExpr summer @62:41-62:47
+        Items[2]: FieldItem @62:49-62:85
+          Name: Ident attachment @62:49-62:59
+          Value: TypedLit @62:61-62:85
+            Type: QualifiedName gold @62:61-62:65
+            Lit: BraceLit @62:66-62:85
+              Items[0]: FieldItem @62:68-62:83
+                Name: Ident amount @62:68-62:74
+                Value: IntLit Value=100000 @62:76-62:83
+      Elems[2]: BraceLit @63:3-63:45
+        Items[0]: FieldItem @63:5-63:27
+          Name: Ident subject @63:5-63:12
+          Value: StringLit @63:14-63:27
+            Parts[0]: text "Autumn news"
+        Items[1]: FieldItem @63:29-63:43
+          Name: Ident season @63:29-63:35
+          Value: IdentExpr autumn @63:37-63:43
+  Decls[4]: TestDecl @66:1-70:2
+    Name: StringLit @66:6-66:39
+      Parts[0]: text "quantity follows the attachment"
+    Body: Block @66:40-70:2
+      Stmts[0]: ExpectStmt @67:3-67:34
+        X: BinaryExpr Op=== @67:10-67:34
+          X: CallExpr @67:10-67:29
+            Fun: SelectorExpr @67:10-67:27
+              X: IndexExpr @67:10-67:18
+                X: IdentExpr mails @67:10-67:15
+                Index: IntLit Value=0 @67:16-67:17
+              Name: Ident quantity @67:19-67:27
+          Y: IntLit Value=5 @67:33-67:34
+      Stmts[1]: ExpectStmt @68:3-68:40
+        X: BinaryExpr Op=== @68:10-68:40
+          X: CallExpr @68:10-68:29
+            Fun: SelectorExpr @68:10-68:27
+              X: IndexExpr @68:10-68:18
+                X: IdentExpr mails @68:10-68:15
+                Index: IntLit Value=1 @68:16-68:17
+              Name: Ident quantity @68:19-68:27
+          Y: IntLit Value=100000 @68:33-68:40
+      Stmts[2]: ExpectStmt @69:3-69:34
+        X: BinaryExpr Op=== @69:10-69:34
+          X: CallExpr @69:10-69:29
+            Fun: SelectorExpr @69:10-69:27
+              X: IndexExpr @69:10-69:18
+                X: IdentExpr mails @69:10-69:15
+                Index: IntLit Value=2 @69:16-69:17
+              Name: Ident quantity @69:19-69:27
+          Y: IntLit Value=0 @69:33-69:34
+  Decls[5]: EmitDecl @72:1-72:53
+    Target: Ident json @72:6-72:10
+    Options: BraceLit @72:11-72:53
+      Items[0]: FieldItem @72:13-72:34
+        Name: Ident out @72:13-72:16
+        Value: StringLit @72:18-72:34
+          Parts[0]: text "out/mails.json"
+      Items[1]: FieldItem @72:36-72:51
+        Name: Ident values @72:36-72:42
+        Value: ListLit @72:44-72:51
+          Elems[0]: IdentExpr mails @72:45-72:50
+== findings
+0 errors, 0 warnings in 1 package (…)

@@ -1,0 +1,13 @@
+GRAMMAR.md §2.7: a line break or the end of the file before the closing /.
+-- a/a.canon --
+package a
+
+type T = String(/abc
+-- findings.txt --
+error[E1113]  a/a.canon:3:17
+  unterminated regular expression
+
+error[E1116]  a/a.canon:4:1
+  expected ",", ")"; found the end of the file
+
+2 errors, 0 warnings in 1 package (…)

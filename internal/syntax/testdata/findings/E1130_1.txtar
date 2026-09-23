@@ -1,0 +1,20 @@
+GRAMMAR.md §5.10: expect is only allowed in a test block.
+-- a/a.canon --
+package a
+
+fn f() -> Int {
+  expect 1 == 1
+  return 1
+}
+
+test "fine" {
+  expect 1 == 1
+  expect f() passes
+  expect f() fails "boom"
+  expect f() warns name
+}
+-- findings.txt --
+error[E1130]  a/a.canon:4:3
+  expect is only allowed in a test block
+
+1 error, 0 warnings in 1 package (…)

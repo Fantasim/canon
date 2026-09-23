@@ -1,0 +1,19 @@
+GRAMMAR.md §5.10: return in a check or a test block.
+-- a/a.canon --
+package a
+
+check {
+  return
+}
+
+test "t" {
+  return 1
+}
+-- findings.txt --
+error[E1135]  a/a.canon:4:3
+  return outside a function
+
+error[E1135]  a/a.canon:8:3
+  return outside a function
+
+2 errors, 0 warnings in 1 package (…)

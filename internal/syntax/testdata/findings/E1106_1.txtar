@@ -1,0 +1,18 @@
+GRAMMAR.md §1: a character no token starts with, and # outside an amend path.
+-- a/a.canon --
+package a
+
+let x = 1 $ 2
+let y = # 1
+let é = 3
+-- findings.txt --
+error[E1106]  a/a.canon:3:11
+  unexpected character $
+
+error[E1106]  a/a.canon:4:9
+  unexpected character #
+
+error[E1106]  a/a.canon:5:5
+  unexpected character é
+
+3 errors, 0 warnings in 1 package (…)

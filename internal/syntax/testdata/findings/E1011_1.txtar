@@ -1,0 +1,10 @@
+GRAMMAR.md §5.2: a project declaration outside project.canon.
+-- a/a.canon --
+project x {
+  canon: "0.1"
+}
+-- findings.txt --
+error[E1011]  a/a.canon:1:1
+  a project declaration is only allowed in project.canon
+
+1 error, 0 warnings in 1 package (…)

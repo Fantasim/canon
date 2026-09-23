@@ -1,0 +1,33 @@
+File: File FileKind=layer @1:1-14:1
+  Package: QualifiedName service.resourcestudio @5:9-5:31
+  Layer: Ident louis @6:7-6:12
+  Amends[0]: AmendBlock @8:1-13:2
+    Target: Ident config @8:7-8:13
+    Items[0]: Amendment @9:3-9:63
+      Path[0]: AmendSegment @9:3-9:8
+        Name: Ident paths @9:3-9:8
+      Path[1]: AmendSegment @9:8-9:21
+        Name: Ident resourceRoot @9:9-9:21
+      Value: StringLit @9:23-9:63
+        Parts[0]: text "/home/louis/Desktop/Sovereign/Resource"
+    Items[1]: Amendment @10:3-10:69
+      Path[0]: AmendSegment @10:3-10:8
+        Name: Ident paths @10:3-10:8
+      Path[1]: AmendSegment @10:8-10:16
+        Name: Ident iconDir @10:9-10:16
+      Value: StringLit @10:18-10:69
+        Parts[0]: text "/home/louis/Desktop/Sovereign/Client/Data/UI/Icon"
+    Items[2]: Amendment @11:3-11:20
+      Path[0]: AmendSegment @11:3-11:9
+        Name: Ident server @11:3-11:9
+      Path[1]: AmendSegment @11:9-11:14
+        Name: Ident port @11:10-11:14
+      Value: IntLit Value=9000 @11:16-11:20
+    Items[3]: Amendment @12:3-12:28
+      Path[0]: AmendSegment @12:3-12:9
+        Name: Ident server @12:3-12:9
+      Path[1]: AmendSegment @12:9-12:21
+        Name: Ident openBrowser @12:10-12:21
+      Value: BoolLit @12:23-12:28
+== findings
+0 errors, 0 warnings in 1 package (…)

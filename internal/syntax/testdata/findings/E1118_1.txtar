@@ -1,0 +1,55 @@
+GRAMMAR.md §8.1: an annotation in a position it does not allow.
+-- a/a.canon --
+package a
+
+@json("x")
+let y = 1
+
+@since(1)
+record P {
+  @json("x") a: Int
+
+  @reload
+  fn f(self) -> Int { return 1 }
+}
+
+enum E { A @json("a") }
+
+variant V {
+  @json("x") c
+}
+
+record Q @json(tag: "t") {
+  b: Int @json(case: snake)
+}
+
+let t = { k @stable { } }
+-- findings.txt --
+error[E1118]  a/a.canon:3:1
+  @json is not allowed on this top-level declaration
+
+error[E1118]  a/a.canon:6:1
+  @since is not allowed on this top-level declaration
+
+error[E1118]  a/a.canon:8:3
+  @json is not allowed on this field
+
+error[E1118]  a/a.canon:10:3
+  @reload is not allowed on this method or check
+
+error[E1118]  a/a.canon:14:12
+  @json is not allowed on this enum member
+
+error[E1118]  a/a.canon:17:3
+  @json is not allowed on this variant case
+
+error[E1118]  a/a.canon:20:10
+  @json is not allowed on this type header
+
+error[E1118]  a/a.canon:21:10
+  @json is not allowed on this field
+
+error[E1118]  a/a.canon:24:13
+  @stable is not allowed on this table entry
+
+9 errors, 0 warnings in 1 package (…)

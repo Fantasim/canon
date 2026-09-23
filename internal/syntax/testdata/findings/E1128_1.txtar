@@ -1,0 +1,23 @@
+GRAMMAR.md §5.11: comparisons and ranges do not chain.
+-- a/a.canon --
+package a
+
+let x = a < b < c
+let y = a == b == c
+let z = 1..2..3
+let w = a in b in c
+let ok = not a in b and c < d
+-- findings.txt --
+error[E1128]  a/a.canon:3:15
+  comparisons do not chain: write "a < b and b < c"
+
+error[E1128]  a/a.canon:4:16
+  comparisons do not chain: write "a < b and b < c"
+
+error[E1128]  a/a.canon:5:13
+  comparisons do not chain: write "a < b and b < c"
+
+error[E1128]  a/a.canon:6:16
+  comparisons do not chain: write "a < b and b < c"
+
+4 errors, 0 warnings in 1 package (…)

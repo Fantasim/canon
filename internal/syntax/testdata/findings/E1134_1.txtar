@@ -1,0 +1,19 @@
+GRAMMAR.md §5.10: break and continue outside a for or while body.
+-- a/a.canon --
+package a
+
+fn f() -> Int {
+  break
+  for x in [1] { continue }
+  while true { if x { break } }
+  continue
+  return 1
+}
+-- findings.txt --
+error[E1134]  a/a.canon:4:3
+  break outside a loop
+
+error[E1134]  a/a.canon:7:3
+  continue outside a loop
+
+2 errors, 0 warnings in 1 package (…)

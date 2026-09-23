@@ -1,0 +1,10 @@
+GRAMMAR.md §1: a byte order mark at the start of a file.
+-- a/a.canon --
+﻿package a
+
+let x = 1
+-- findings.txt --
+error[E1123]  a/a.canon:1:1
+  file starts with a byte order mark
+
+1 error, 0 warnings in 1 package (…)

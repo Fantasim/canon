@@ -1,0 +1,259 @@
+File: File FileKind=source @1:1-99:1
+  Package: QualifiedName resource.farm @10:9-10:22
+  Imports[0]: Import @12:1-12:14
+    Path: QualifiedName studio @12:8-12:14
+  Decls[0]: ViewDecl @14:1-21:2
+    Type: Ident FarmConfig @14:6-14:16
+    Items[0]: ViewTitle @15:3-15:15
+      Text: StringLit @15:9-15:15
+        Parts[0]: text "Farm"
+    Items[1]: ViewMenu @16:3-16:25
+      Menu: Ident economy @16:8-16:15
+      Icon: Ident farm @16:21-16:25
+    Items[2]: ViewGroup @17:3-17:47
+      ID: Ident settings @17:9-17:17
+      Label: StringLit @17:18-17:36
+        Parts[0]: text "General settings"
+      Members[0]: ViewField @17:39-17:45
+        Name: Ident global @17:39-17:45
+    Items[3]: ViewGroup @18:3-20:4
+      ID: Ident models @18:9-18:15
+      Label: StringLit @18:16-18:34
+        Parts[0]: text "Plantable models"
+      Help: StringLit @18:35-18:123
+        Parts[0]: text "A model = an unlock price, a number of copies players can buy, and a ladder of levels."
+      Members[0]: ViewField @19:5-19:15
+        Name: Ident modelTypes @19:5-19:15
+  Decls[1]: ViewDecl @23:1-38:2
+    Type: Ident Global @23:6-23:12
+    Items[0]: ViewTitle @24:3-24:27
+      Text: StringLit @24:9-24:27
+        Parts[0]: text "General settings"
+    Items[1]: ViewGroup @25:3-28:4
+      ID: Ident prices @25:9-25:15
+      Label: StringLit @25:16-25:24
+        Parts[0]: text "Prices"
+      Members[0]: ViewField @26:5-26:60
+        Name: Ident farmPurchasePrice @26:5-26:22
+        Label: StringLit @26:23-26:44
+          Parts[0]: text "Farm purchase price"
+        Props: BraceLit @26:45-26:60
+          Items[0]: FieldItem @26:47-26:58
+            Name: Ident unit @26:47-26:51
+            Value: IdentExpr penya @26:53-26:58
+      Members[1]: ViewField @27:5-27:48
+        Name: Ident visitCost @27:5-27:14
+        Label: StringLit @27:15-27:32
+          Parts[0]: text "Cost of a visit"
+        Props: BraceLit @27:33-27:48
+          Items[0]: FieldItem @27:35-27:46
+            Name: Ident unit @27:35-27:39
+            Value: IdentExpr penya @27:41-27:46
+    Items[2]: ViewGroup @29:3-32:4
+      ID: Ident access @29:9-29:15
+      Label: StringLit @29:16-29:35
+        Parts[0]: text "Access conditions"
+      Members[0]: ViewField @30:5-30:47
+        Name: Ident worldLevelMinRequired @30:5-30:26
+        Label: StringLit @30:27-30:47
+          Parts[0]: text "Minimum faery rank"
+      Members[1]: ViewField @31:5-31:56
+        Name: Ident activityPointsMinRequired @31:5-31:30
+        Label: StringLit @31:31-31:56
+          Parts[0]: text "Minimum activity points"
+    Items[3]: ViewGroup @33:3-35:4
+      ID: Ident production @33:9-33:19
+      Label: StringLit @33:20-33:32
+        Parts[0]: text "Production"
+      Members[0]: ViewField @34:5-34:37
+        Name: Ident productionTick @34:5-34:19
+        Label: StringLit @34:20-34:37
+          Parts[0]: text "Production tick"
+  Decls[2]: ViewDecl @40:1-67:2
+    Type: Ident ModelType @40:6-40:15
+    Items[0]: ViewTitle @41:3-41:21
+      Text: StringLit @41:9-41:21
+        Parts[0]: Interp @41:11-41:19
+          X: IdentExpr typeName @41:11-41:19
+    Items[1]: ViewSingular @42:3-42:21
+      Text: StringLit @42:12-42:21
+        Parts[0]: text "a model"
+    Items[2]: ViewColumns @43:3-51:4
+      Items[0]: ViewColumn @44:5-44:14
+        Name: Ident typeId @44:5-44:11
+        Width: IntLit Value=70 @44:12-44:14
+      Items[1]: ViewColumn @45:5-45:17
+        Name: Ident typeName @45:5-45:13
+        Width: IntLit Value=150 @45:14-45:17
+      Items[2]: ViewColumn @46:5-46:13
+        Name: Ident nameText @46:5-46:13
+      Items[3]: ViewColumn @47:5-47:20
+        Name: Ident unlockPrice @47:5-47:16
+        Width: IntLit Value=130 @47:17-47:20
+      Items[4]: ViewColumn @48:5-48:20
+        Name: Ident maxBuyCount @48:5-48:16
+        Width: IntLit Value=110 @48:17-48:20
+      Items[5]: ViewColumn @49:5-49:17
+        Name: Ident maxLevel @49:5-49:13
+        Width: IntLit Value=100 @49:14-49:17
+      Items[6]: ViewColumn @50:5-50:15
+        Name: Ident levels @50:5-50:11
+        Width: IntLit Value=110 @50:12-50:15
+    Items[3]: ViewGroup @53:3-57:4
+      ID: Ident identity @53:9-53:17
+      Label: StringLit @53:18-53:28
+        Parts[0]: text "Identity"
+      Members[0]: ViewField @54:5-54:16
+        Name: Ident typeId @54:5-54:11
+        Label: StringLit @54:12-54:16
+          Parts[0]: text "Id"
+      Members[1]: ViewField @55:5-55:29
+        Name: Ident typeName @55:5-55:13
+        Label: StringLit @55:14-55:29
+          Parts[0]: text "Internal name"
+      Members[2]: ViewField @56:5-56:30
+        Name: Ident nameText @56:5-56:13
+        Label: StringLit @56:14-56:30
+          Parts[0]: text "Displayed name"
+    Items[4]: ViewGroup @58:3-62:4
+      ID: Ident unlock @58:9-58:15
+      Label: StringLit @58:16-58:24
+        Parts[0]: text "Unlock"
+      Help: StringLit @58:25-58:69
+        Parts[0]: text "What the player pays to unlock this model."
+      Members[0]: ViewField @59:5-59:47
+        Name: Ident unlockPrice @59:5-59:16
+        Label: StringLit @59:17-59:31
+          Parts[0]: text "Unlock price"
+        Props: BraceLit @59:32-59:47
+          Items[0]: FieldItem @59:34-59:45
+            Name: Ident unit @59:34-59:38
+            Value: IdentExpr penya @59:40-59:45
+      Members[1]: ViewField @60:5-60:31
+        Name: Ident unlockItems @60:5-60:16
+        Label: StringLit @60:17-60:31
+          Parts[0]: text "Unlock items"
+      Members[2]: ViewField @61:5-61:41
+        Name: Ident maxBuyCount @61:5-61:16
+        Label: StringLit @61:17-61:41
+          Parts[0]: text "Copies players can buy"
+    Items[5]: ViewGroup @63:3-66:4
+      ID: Ident levels @63:9-63:15
+      Label: StringLit @63:16-63:24
+        Parts[0]: text "Levels"
+      Help: StringLit @63:25-63:111
+        Parts[0]: text "One level per step, in order: production, storage, bonuses and the cost to level up."
+      Members[0]: ViewField @64:5-64:29
+        Name: Ident maxLevel @64:5-64:13
+        Label: StringLit @64:14-64:29
+          Parts[0]: text "Maximum level"
+      Members[1]: ViewField @65:5-65:46
+        Name: Ident levels @65:5-65:11
+        Label: StringLit @65:12-65:20
+          Parts[0]: text "Levels"
+        Props: BraceLit @65:21-65:46
+          Items[0]: FieldItem @65:23-65:44
+            Name: Ident widget @65:23-65:29
+            Value: IdentExpr ordered_steps @65:31-65:44
+  Decls[3]: ViewDecl @69:1-84:2
+    Type: Ident Level @69:6-69:11
+    Items[0]: ViewTitle @70:3-70:24
+      Text: StringLit @70:9-70:24
+        Parts[0]: text "Level "
+        Parts[1]: Interp @70:17-70:22
+          X: IdentExpr level @70:17-70:22
+    Items[1]: ViewSingular @71:3-71:21
+      Text: StringLit @71:12-71:21
+        Parts[0]: text "a level"
+    Items[2]: ViewColumns @72:3-72:78
+      Items[0]: ViewColumn @72:13-72:21
+        Name: Ident level @72:13-72:18
+        Width: IntLit Value=70 @72:19-72:21
+      Items[1]: ViewColumn @72:23-72:37
+        Name: Ident productionItem @72:23-72:37
+      Items[2]: ViewColumn @72:39-72:60
+        Name: Ident productionPerHour @72:39-72:56
+        Width: IntLit Value=120 @72:57-72:60
+      Items[3]: ViewColumn @72:62-72:76
+        Name: Ident maxStorage @72:62-72:72
+        Width: IntLit Value=120 @72:73-72:76
+    Items[3]: ViewGroup @76:3-81:4
+      ID: Ident production @76:9-76:19
+      Label: StringLit @76:20-76:32
+        Parts[0]: text "Production"
+      Members[0]: ViewField @77:5-77:25
+        Name: Ident modelName @77:5-77:14
+        Label: StringLit @77:15-77:25
+          Parts[0]: text "3D model"
+      Members[1]: ViewField @78:5-78:83
+        Name: Ident productionItem @78:5-78:19
+        Label: StringLit @78:20-78:35
+          Parts[0]: text "Produced item"
+        Props: BraceLit @78:36-78:83
+          Items[0]: FieldItem @78:38-78:81
+            Name: Ident placeholder @78:38-78:49
+            Value: StringLit @78:51-78:81
+              Parts[0]: text "Decorative: produces nothing"
+      Members[2]: ViewField @79:5-79:44
+        Name: Ident productionPerHour @79:5-79:22
+        Label: StringLit @79:23-79:44
+          Parts[0]: text "Production per hour"
+      Members[3]: ViewField @80:5-80:33
+        Name: Ident maxStorage @80:5-80:15
+        Label: StringLit @80:16-80:33
+          Parts[0]: text "Maximum storage"
+    Items[4]: ViewGroup @82:3-82:38
+      ID: Ident bonuses @82:9-82:16
+      Label: StringLit @82:17-82:26
+        Parts[0]: text "Bonuses"
+      Members[0]: ViewField @82:29-82:36
+        Name: Ident bonuses @82:29-82:36
+    Items[5]: ViewGroup @83:3-83:56
+      ID: Ident cost @83:9-83:13
+      Label: StringLit @83:14-83:32
+        Parts[0]: text "Cost to level up"
+      Members[0]: ViewField @83:35-83:54
+        Name: Ident levelUpRequirements @83:35-83:54
+  Decls[4]: ViewDecl @86:1-91:2
+    Type: Ident ItemCost @86:6-86:14
+    Items[0]: ViewTitle @87:3-87:28
+      Text: StringLit @87:9-87:28
+        Parts[0]: Interp @87:11-87:16
+          X: IdentExpr count @87:11-87:16
+        Parts[1]: text " × "
+        Parts[2]: Interp @87:22-87:26
+          X: IdentExpr item @87:22-87:26
+    Items[1]: ViewSingular @88:3-88:21
+      Text: StringLit @88:12-88:21
+        Parts[0]: text "an item"
+    Items[2]: ViewField @89:3-89:14
+      Name: Ident item @89:3-89:7
+      Label: StringLit @89:8-89:14
+        Parts[0]: text "Item"
+    Items[3]: ViewField @90:3-90:19
+      Name: Ident count @90:3-90:8
+      Label: StringLit @90:9-90:19
+        Parts[0]: text "Quantity"
+  Decls[5]: ViewDecl @93:1-98:2
+    Type: Ident Bonus @93:6-93:11
+    Items[0]: ViewTitle @94:3-94:32
+      Text: StringLit @94:9-94:32
+        Parts[0]: Interp @94:11-94:20
+          X: IdentExpr attribute @94:11-94:20
+        Parts[1]: text " ("
+        Parts[2]: Interp @94:24-94:29
+          X: IdentExpr value @94:24-94:29
+        Parts[3]: text ")"
+    Items[1]: ViewSingular @95:3-95:21
+      Text: StringLit @95:12-95:21
+        Parts[0]: text "a bonus"
+    Items[2]: ViewField @96:3-96:24
+      Name: Ident attribute @96:3-96:12
+      Label: StringLit @96:13-96:24
+        Parts[0]: text "Attribute"
+    Items[3]: ViewField @97:3-97:16
+      Name: Ident value @97:3-97:8
+      Label: StringLit @97:9-97:16
+        Parts[0]: text "Value"
+== findings
+0 errors, 0 warnings in 1 package (…)

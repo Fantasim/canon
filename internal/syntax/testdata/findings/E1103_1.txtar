@@ -1,0 +1,14 @@
+GRAMMAR.md §5.9: a second typeArgs is E1103; use where.
+-- a/a.canon --
+package a
+
+type T = Int(0..)(..=5)
+type L = [Int](1..)(..=3)
+-- findings.txt --
+error[E1103]  a/a.canon:3:18
+  a type takes one refinement; use "where" for more
+
+error[E1103]  a/a.canon:4:20
+  a type takes one refinement; use "where" for more
+
+2 errors, 0 warnings in 1 package (…)

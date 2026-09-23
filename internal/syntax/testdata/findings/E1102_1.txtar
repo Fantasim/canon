@@ -1,0 +1,12 @@
+GRAMMAR.md §2.6: the indentation prefix of a multiline string mixes tabs and spaces.
+-- a/a.canon --
+package a
+
+let s = """
+ 	line
+ 	"""
+-- findings.txt --
+error[E1102]  a/a.canon:5:1
+  multiline string indentation mixes tabs and spaces
+
+1 error, 0 warnings in 1 package (…)

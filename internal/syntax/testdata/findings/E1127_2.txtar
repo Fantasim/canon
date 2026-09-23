@@ -1,0 +1,21 @@
+GRAMMAR.md §5.2: a declaration in a layer or a translation file.
+-- a/a.layer.canon --
+package a
+layer l
+
+amend x { a: 1 }
+let y = 2
+-- a/a.fr.canon --
+package a
+translation fr
+
+Item.name "Nom"
+let y = 2
+-- findings.txt --
+error[E1127]  a/a.fr.canon:5:1
+  translation files contain only translation entries
+
+error[E1127]  a/a.layer.canon:5:1
+  layer files contain only amend declarations
+
+2 errors, 0 warnings in 1 package (…)

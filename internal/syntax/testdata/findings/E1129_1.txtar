@@ -1,0 +1,22 @@
+GRAMMAR.md §6.1: an if or match expression or a brace literal at depth 0 of a header.
+-- a/a.canon --
+package a
+
+fn f(x: Int) -> Int {
+  if x == {a: 1} { return 1 }
+  for y in if x > 0 { [1] } else { [] } { return y }
+  while match x { _ => true } { return 2 }
+  if x == (P { a: 1 }) { return 3 }
+  return 0
+}
+-- findings.txt --
+error[E1129]  a/a.canon:4:11
+  parenthesize this expression: "{" here would start the block
+
+error[E1129]  a/a.canon:5:12
+  parenthesize this expression: "{" here would start the block
+
+error[E1129]  a/a.canon:6:9
+  parenthesize this expression: "{" here would start the block
+
+3 errors, 0 warnings in 1 package (…)

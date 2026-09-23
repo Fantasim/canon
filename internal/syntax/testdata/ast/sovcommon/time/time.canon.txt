@@ -1,0 +1,397 @@
+File: File FileKind=source @1:1-85:1
+  Doc: DocComment "Weekly schedule windows, shared by every file that schedules something (events,\ninvasions, PvP events...) and by the studio's weekly_timeline widget.\n\nCanonical shape (Resource Schema README 13.8): a time of day is always\n{hour, minute}, never an \"HH:MM\" string nor a minute count." @1:1-5:64
+  Package: QualifiedName sovcommon.time @6:9-6:23
+  Decls[0]: ConstDecl @9:1-9:17
+    Doc: DocComment "Minutes in a day." @8:1-8:22
+    Name: Ident DAY @9:7-9:10
+    Value: IntLit Value=1440 @9:13-9:17
+  Decls[1]: ConstDecl @11:1-11:21
+    Doc: DocComment "Minutes in a week." @10:1-10:23
+    Name: Ident WEEK @11:7-11:11
+    Value: BinaryExpr Op=* @11:14-11:21
+      X: IdentExpr DAY @11:14-11:17
+      Y: IntLit Value=7 @11:20-11:21
+  Decls[2]: EnumDecl @14:1-14:51
+    Doc: DocComment "Declared Sunday first so that `.index` equals C's tm_wday." @13:1-13:63
+    Name: Ident Weekday @14:6-14:13
+    Members[0]: EnumMember @14:16-14:19
+      Name: Ident Sun @14:16-14:19
+    Members[1]: EnumMember @14:21-14:24
+      Name: Ident Mon @14:21-14:24
+    Members[2]: EnumMember @14:26-14:29
+      Name: Ident Tue @14:26-14:29
+    Members[3]: EnumMember @14:31-14:34
+      Name: Ident Wed @14:31-14:34
+    Members[4]: EnumMember @14:36-14:39
+      Name: Ident Thu @14:36-14:39
+    Members[5]: EnumMember @14:41-14:44
+      Name: Ident Fri @14:41-14:44
+    Members[6]: EnumMember @14:46-14:49
+      Name: Ident Sat @14:46-14:49
+  Decls[3]: RecordDecl @17:1-24:2
+    Doc: DocComment "A time of day, in UTC wherever it is used." @16:1-16:47
+    Name: Ident TimeOfDay @17:8-17:17
+    Body: RecordBody @17:18-24:2
+      Items[0]: FieldDecl @19:3-19:20
+        Doc: DocComment "0 to 23." @18:3-18:15
+        Name: Ident hour @19:3-19:7
+        Type: NamedType @19:9-19:20
+          Name: QualifiedName Int @19:9-19:12
+          Args: TypeArgs @19:12-19:20
+            Args[0]: RangeExpr Op=..= @19:13-19:19
+              Lo: IntLit Value=0 @19:13-19:14
+              Hi: IntLit Value=23 @19:17-19:19
+      Items[1]: FieldDecl @21:3-21:22
+        Doc: DocComment "0 to 59." @20:3-20:15
+        Name: Ident minute @21:3-21:9
+        Type: NamedType @21:11-21:22
+          Name: QualifiedName Int @21:11-21:14
+          Args: TypeArgs @21:14-21:22
+            Args[0]: RangeExpr Op=..= @21:15-21:21
+              Lo: IntLit Value=0 @21:15-21:16
+              Hi: IntLit Value=59 @21:19-21:21
+      Items[2]: FnDecl Self="self" @23:3-23:56
+        Name: Ident minutes @23:6-23:13
+        Result: NamedType @23:23-23:26
+          Name: QualifiedName Int @23:23-23:26
+        Body: Block @23:27-23:56
+          Stmts[0]: ReturnStmt @23:29-23:54
+            Value: BinaryExpr Op=+ @23:36-23:54
+              X: BinaryExpr Op=* @23:36-23:45
+                X: IdentExpr hour @23:36-23:40
+                Y: IntLit Value=60 @23:43-23:45
+              Y: IdentExpr minute @23:48-23:54
+  Decls[4]: RecordDecl @28:1-39:2
+    Doc: DocComment "A half-open [start, end) span in UTC. `end` before `start` is a valid window\nthat crosses midnight into the next day." @26:1-27:45
+    Name: Ident Window @28:8-28:14
+    Body: RecordBody @28:15-39:2
+      Items[0]: FieldDecl @30:3-30:15
+        Doc: DocComment "Day the window opens." @29:3-29:28
+        Name: Ident day @30:3-30:6
+        Type: NamedType @30:8-30:15
+          Name: QualifiedName Weekday @30:8-30:15
+      Items[1]: FieldDecl @32:3-32:22
+        Doc: DocComment "When it opens." @31:3-31:21
+        Name: Ident startUtc @32:3-32:11
+        Type: NamedType @32:13-32:22
+          Name: QualifiedName TimeOfDay @32:13-32:22
+      Items[2]: FieldDecl @34:3-34:20
+        Doc: DocComment "When it closes; before `startUtc` means the next day." @33:3-33:60
+        Name: Ident endUtc @34:3-34:9
+        Type: NamedType @34:11-34:20
+          Name: QualifiedName TimeOfDay @34:11-34:20
+      Items[3]: CheckDecl Keyword=check @37:3-38:90
+        Doc: DocComment "ScheduleWindow::IsValid() refuses it. 00:00 -> 00:00 is NOT a full-day shorthand." @36:3-36:88
+        Cond: BinaryExpr Op=!= @37:9-37:27
+          X: IdentExpr startUtc @37:9-37:17
+          Y: IdentExpr endUtc @37:21-37:27
+        Message: StringLit @38:10-38:90
+          Parts[0]: text "zero-length window: the loader refuses it and nothing would fire for this slot"
+  Decls[5]: FnDecl @43:1-50:2
+    Doc: DocComment "The minutes of the week a window occupies: one range, or two when it wraps past\nthe end of the week." @41:1-42:25
+    Name: Ident occupancy @43:4-43:13
+    Params[0]: Param @43:14-43:23
+      Name: Ident w @43:14-43:15
+      Type: NamedType @43:17-43:23
+        Name: QualifiedName Window @43:17-43:23
+    Result: ListType @43:28-43:35
+      Elem: NamedType @43:29-43:34
+        Name: QualifiedName Range @43:29-43:34
+    Body: Block @43:36-50:2
+      Stmts[0]: LetStmt @44:3-44:55
+        Name: Ident start @44:7-44:12
+        Value: BinaryExpr Op=+ @44:15-44:55
+          X: BinaryExpr Op=* @44:15-44:32
+            X: SelectorExpr @44:15-44:26
+              X: SelectorExpr @44:15-44:20
+                X: IdentExpr w @44:15-44:16
+                Name: Ident day @44:17-44:20
+              Name: Ident index @44:21-44:26
+            Y: IdentExpr DAY @44:29-44:32
+          Y: CallExpr @44:35-44:55
+            Fun: SelectorExpr @44:35-44:53
+              X: SelectorExpr @44:35-44:45
+                X: IdentExpr w @44:35-44:36
+                Name: Ident startUtc @44:37-44:45
+              Name: Ident minutes @44:46-44:53
+      Stmts[1]: VarStmt @45:3-45:57
+        Name: Ident length @45:7-45:13
+        Value: BinaryExpr Op=- @45:16-45:57
+          X: CallExpr @45:16-45:34
+            Fun: SelectorExpr @45:16-45:32
+              X: SelectorExpr @45:16-45:24
+                X: IdentExpr w @45:16-45:17
+                Name: Ident endUtc @45:18-45:24
+              Name: Ident minutes @45:25-45:32
+          Y: CallExpr @45:37-45:57
+            Fun: SelectorExpr @45:37-45:55
+              X: SelectorExpr @45:37-45:47
+                X: IdentExpr w @45:37-45:38
+                Name: Ident startUtc @45:39-45:47
+              Name: Ident minutes @45:48-45:55
+      Stmts[2]: IfStmt @46:3-46:34
+        Cond: BinaryExpr Op=< @46:6-46:16
+          X: IdentExpr length @46:6-46:12
+          Y: IntLit Value=0 @46:15-46:16
+        Then: Block @46:17-46:34
+          Stmts[0]: AssignStmt Op=+= @46:19-46:32
+            Target: IdentExpr length @46:19-46:25
+            Value: IdentExpr DAY @46:29-46:32
+      Stmts[3]: LetStmt @47:3-47:27
+        Name: Ident end @47:7-47:10
+        Value: BinaryExpr Op=+ @47:13-47:27
+          X: IdentExpr start @47:13-47:18
+          Y: IdentExpr length @47:21-47:27
+      Stmts[4]: IfStmt @48:3-48:41
+        Cond: BinaryExpr Op=<= @48:6-48:17
+          X: IdentExpr end @48:6-48:9
+          Y: IdentExpr WEEK @48:13-48:17
+        Then: Block @48:18-48:41
+          Stmts[0]: ReturnStmt @48:20-48:39
+            Value: ListLit @48:27-48:39
+              Elems[0]: RangeExpr Op=.. @48:28-48:38
+                Lo: IdentExpr start @48:28-48:33
+                Hi: IdentExpr end @48:35-48:38
+      Stmts[5]: ReturnStmt @49:3-49:38
+        Value: ListLit @49:10-49:38
+          Elems[0]: RangeExpr Op=.. @49:11-49:22
+            Lo: IdentExpr start @49:11-49:16
+            Hi: IdentExpr WEEK @49:18-49:22
+          Elems[1]: RangeExpr Op=.. @49:24-49:37
+            Lo: IntLit Value=0 @49:24-49:25
+            Hi: BinaryExpr Op=- @49:27-49:37
+              X: IdentExpr end @49:27-49:30
+              Y: IdentExpr WEEK @49:33-49:37
+  Decls[6]: FnDecl @52:1-54:2
+    Name: Ident overlaps @52:4-52:12
+    Params[0]: Param @52:13-52:22
+      Name: Ident a @52:13-52:14
+      Type: NamedType @52:16-52:22
+        Name: QualifiedName Window @52:16-52:22
+    Params[1]: Param @52:24-52:33
+      Name: Ident b @52:24-52:25
+      Type: NamedType @52:27-52:33
+        Name: QualifiedName Window @52:27-52:33
+    Result: NamedType @52:38-52:42
+      Name: QualifiedName Bool @52:38-52:42
+    Body: Block @52:43-54:2
+      Stmts[0]: ReturnStmt @53:3-53:91
+        Value: CallExpr @53:10-53:91
+          Fun: SelectorExpr @53:10-53:26
+            X: CallExpr @53:10-53:22
+              Fun: IdentExpr occupancy @53:10-53:19
+              Args[0]: Arg @53:20-53:21
+                Value: IdentExpr a @53:20-53:21
+            Name: Ident any @53:23-53:26
+          Args[0]: Arg @53:27-53:90
+            Value: LambdaExpr @53:27-53:90
+              Params[0]: Ident x @53:27-53:28
+              Body: CallExpr @53:32-53:90
+                Fun: SelectorExpr @53:32-53:48
+                  X: CallExpr @53:32-53:44
+                    Fun: IdentExpr occupancy @53:32-53:41
+                    Args[0]: Arg @53:42-53:43
+                      Value: IdentExpr b @53:42-53:43
+                  Name: Ident any @53:45-53:48
+                Args[0]: Arg @53:49-53:89
+                  Value: LambdaExpr @53:49-53:89
+                    Params[0]: Ident y @53:49-53:50
+                    Body: BinaryExpr Op=and @53:54-53:89
+                      X: BinaryExpr Op=< @53:54-53:69
+                        X: SelectorExpr @53:54-53:61
+                          X: IdentExpr x @53:54-53:55
+                          Name: Ident start @53:56-53:61
+                        Y: SelectorExpr @53:64-53:69
+                          X: IdentExpr y @53:64-53:65
+                          Name: Ident end @53:66-53:69
+                      Y: BinaryExpr Op=< @53:74-53:89
+                        X: SelectorExpr @53:74-53:81
+                          X: IdentExpr y @53:74-53:75
+                          Name: Ident start @53:76-53:81
+                        Y: SelectorExpr @53:84-53:89
+                          X: IdentExpr x @53:84-53:85
+                          Name: Ident end @53:86-53:89
+  Decls[7]: EmitDecl @58:1-58:80
+    Target: Ident cpp @58:6-58:9
+    Options: BraceLit @58:10-58:80
+      Items[0]: FieldItem @58:12-58:41
+        Name: Ident out @58:12-58:15
+        Value: StringLit @58:17-58:41
+          Parts[0]: text "@source/Generated/time"
+      Items[1]: FieldItem @58:43-58:65
+        Name: Ident namespace @58:43-58:52
+        Value: StringLit @58:54-58:65
+          Parts[0]: text "sov::time"
+      Items[2]: FieldItem @58:67-58:78
+        Name: Ident mode @58:67-58:71
+        Value: IdentExpr types @58:73-58:78
+  Decls[8]: EmitDecl @59:1-59:47
+    Target: Ident view @59:6-59:10
+    Options: BraceLit @59:11-59:47
+      Items[0]: FieldItem @59:13-59:45
+        Name: Ident out @59:13-59:16
+        Value: StringLit @59:18-59:45
+          Parts[0]: text "@generated/time.view.json"
+  Decls[9]: FnDecl @65:1-67:2
+    Mods: Modifiers Local="local" @65:1-65:6
+    Name: Ident at @65:10-65:12
+    Params[0]: Param @65:13-65:25
+      Name: Ident day @65:13-65:16
+      Type: NamedType @65:18-65:25
+        Name: QualifiedName Weekday @65:18-65:25
+    Params[1]: Param @65:27-65:36
+      Name: Ident from @65:27-65:31
+      Type: NamedType @65:33-65:36
+        Name: QualifiedName Int @65:33-65:36
+    Params[2]: Param @65:38-65:45
+      Name: Ident to @65:38-65:40
+      Type: NamedType @65:42-65:45
+        Name: QualifiedName Int @65:42-65:45
+    Result: NamedType @65:50-65:56
+      Name: QualifiedName Window @65:50-65:56
+    Body: Block @65:57-67:2
+      Stmts[0]: ReturnStmt @66:3-66:92
+        Value: BraceLit @66:10-66:92
+          Items[0]: FieldItem @66:12-66:20
+            Name: Ident day @66:12-66:15
+            Value: IdentExpr day @66:17-66:20
+          Items[1]: FieldItem @66:22-66:57
+            Name: Ident startUtc @66:22-66:30
+            Value: BraceLit @66:32-66:57
+              Items[0]: FieldItem @66:34-66:44
+                Name: Ident hour @66:34-66:38
+                Value: IdentExpr from @66:40-66:44
+              Items[1]: FieldItem @66:46-66:55
+                Name: Ident minute @66:46-66:52
+                Value: IntLit Value=0 @66:54-66:55
+          Items[2]: FieldItem @66:59-66:90
+            Name: Ident endUtc @66:59-66:65
+            Value: BraceLit @66:67-66:90
+              Items[0]: FieldItem @66:69-66:77
+                Name: Ident hour @66:69-66:73
+                Value: IdentExpr to @66:75-66:77
+              Items[1]: FieldItem @66:79-66:88
+                Name: Ident minute @66:79-66:85
+                Value: IntLit Value=0 @66:87-66:88
+  Decls[10]: TestDecl @69:1-72:2
+    Name: StringLit @69:6-69:35
+      Parts[0]: text "a window may cross midnight"
+    Body: Block @69:36-72:2
+      Stmts[0]: ExpectStmt @70:3-70:58
+        X: BinaryExpr Op=== @70:10-70:58
+          X: CallExpr @70:10-70:49
+            Fun: IdentExpr overlaps @70:10-70:18
+            Args[0]: Arg @70:19-70:33
+              Value: CallExpr @70:19-70:33
+                Fun: IdentExpr at @70:19-70:21
+                Args[0]: Arg @70:22-70:25
+                  Value: IdentExpr Mon @70:22-70:25
+                Args[1]: Arg @70:27-70:29
+                  Value: IntLit Value=22 @70:27-70:29
+                Args[2]: Arg @70:31-70:32
+                  Value: IntLit Value=2 @70:31-70:32
+            Args[1]: Arg @70:35-70:48
+              Value: CallExpr @70:35-70:48
+                Fun: IdentExpr at @70:35-70:37
+                Args[0]: Arg @70:38-70:41
+                  Value: IdentExpr Tue @70:38-70:41
+                Args[1]: Arg @70:43-70:44
+                  Value: IntLit Value=3 @70:43-70:44
+                Args[2]: Arg @70:46-70:47
+                  Value: IntLit Value=5 @70:46-70:47
+          Y: BoolLit @70:53-70:58
+      Stmts[1]: ExpectStmt @71:3-71:57
+        X: BinaryExpr Op=== @71:10-71:57
+          X: CallExpr @71:10-71:49
+            Fun: IdentExpr overlaps @71:10-71:18
+            Args[0]: Arg @71:19-71:33
+              Value: CallExpr @71:19-71:33
+                Fun: IdentExpr at @71:19-71:21
+                Args[0]: Arg @71:22-71:25
+                  Value: IdentExpr Mon @71:22-71:25
+                Args[1]: Arg @71:27-71:29
+                  Value: IntLit Value=22 @71:27-71:29
+                Args[2]: Arg @71:31-71:32
+                  Value: IntLit Value=2 @71:31-71:32
+            Args[1]: Arg @71:35-71:48
+              Value: CallExpr @71:35-71:48
+                Fun: IdentExpr at @71:35-71:37
+                Args[0]: Arg @71:38-71:41
+                  Value: IdentExpr Tue @71:38-71:41
+                Args[1]: Arg @71:43-71:44
+                  Value: IntLit Value=1 @71:43-71:44
+                Args[2]: Arg @71:46-71:47
+                  Value: IntLit Value=5 @71:46-71:47
+          Y: BoolLit Value @71:53-71:57
+  Decls[11]: TestDecl @74:1-76:2
+    Name: StringLit @74:6-74:46
+      Parts[0]: text "a window may cross the end of the week"
+    Body: Block @74:47-76:2
+      Stmts[0]: ExpectStmt @75:3-75:57
+        X: BinaryExpr Op=== @75:10-75:57
+          X: CallExpr @75:10-75:49
+            Fun: IdentExpr overlaps @75:10-75:18
+            Args[0]: Arg @75:19-75:33
+              Value: CallExpr @75:19-75:33
+                Fun: IdentExpr at @75:19-75:21
+                Args[0]: Arg @75:22-75:25
+                  Value: IdentExpr Sat @75:22-75:25
+                Args[1]: Arg @75:27-75:29
+                  Value: IntLit Value=23 @75:27-75:29
+                Args[2]: Arg @75:31-75:32
+                  Value: IntLit Value=1 @75:31-75:32
+            Args[1]: Arg @75:35-75:48
+              Value: CallExpr @75:35-75:48
+                Fun: IdentExpr at @75:35-75:37
+                Args[0]: Arg @75:38-75:41
+                  Value: IdentExpr Sun @75:38-75:41
+                Args[1]: Arg @75:43-75:44
+                  Value: IntLit Value=0 @75:43-75:44
+                Args[2]: Arg @75:46-75:47
+                  Value: IntLit Value=2 @75:46-75:47
+          Y: BoolLit Value @75:53-75:57
+  Decls[12]: TestDecl @78:1-80:2
+    Name: StringLit @78:6-78:39
+      Parts[0]: text "touching windows do not overlap"
+    Body: Block @78:40-80:2
+      Stmts[0]: ExpectStmt @79:3-79:61
+        X: BinaryExpr Op=== @79:10-79:61
+          X: CallExpr @79:10-79:52
+            Fun: IdentExpr overlaps @79:10-79:18
+            Args[0]: Arg @79:19-79:34
+              Value: CallExpr @79:19-79:34
+                Fun: IdentExpr at @79:19-79:21
+                Args[0]: Arg @79:22-79:25
+                  Value: IdentExpr Mon @79:22-79:25
+                Args[1]: Arg @79:27-79:29
+                  Value: IntLit Value=20 @79:27-79:29
+                Args[2]: Arg @79:31-79:33
+                  Value: IntLit Value=22 @79:31-79:33
+            Args[1]: Arg @79:36-79:51
+              Value: CallExpr @79:36-79:51
+                Fun: IdentExpr at @79:36-79:38
+                Args[0]: Arg @79:39-79:42
+                  Value: IdentExpr Mon @79:39-79:42
+                Args[1]: Arg @79:44-79:46
+                  Value: IntLit Value=22 @79:44-79:46
+                Args[2]: Arg @79:48-79:50
+                  Value: IntLit Value=23 @79:48-79:50
+          Y: BoolLit @79:56-79:61
+  Decls[13]: TestDecl @82:1-84:2
+    Name: StringLit @82:6-82:39
+      Parts[0]: text "zero-length windows are refused"
+    Body: Block @82:40-84:2
+      Stmts[0]: ExpectStmt @83:3-83:52
+        X: CallExpr @83:10-83:25
+          Fun: IdentExpr at @83:10-83:12
+          Args[0]: Arg @83:13-83:16
+            Value: IdentExpr Wed @83:13-83:16
+          Args[1]: Arg @83:18-83:20
+            Value: IntLit Value=12 @83:18-83:20
+          Args[2]: Arg @83:22-83:24
+            Value: IntLit Value=12 @83:22-83:24
+        Outcome: Ident fails @83:26-83:31
+        Message: StringLit @83:32-83:52
+          Parts[0]: text "zero-length window"
+== findings
+0 errors, 0 warnings in 1 package (…)

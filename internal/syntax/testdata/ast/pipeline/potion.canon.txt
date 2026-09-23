@@ -1,0 +1,279 @@
+File: File FileKind=source @1:1-66:1
+  Doc: DocComment "A deliberately small object to show the whole pipeline, end to end.\n\"Potion\" is made up; the real item record has ~50 fields, but the pipeline is the same.\n\n  data/*.json      one file per potion, edited by hand or by the studio (like Items/**)\n  potion.canon     this file: the type, the rules, the view, what to emit\n  canon build      checks everything, then writes out/ (compare with expected/)" @1:1-6:84
+  Package: QualifiedName pipeline @7:9-7:17
+  Imports[0]: Import @9:1-9:14
+    Path: QualifiedName studio @9:8-9:14
+  Decls[0]: RecordDecl @12:1-37:2
+    Doc: DocComment "A healing potion. Each one is a file under data/." @11:1-11:54
+    Name: Ident Potion @12:8-12:14
+    Body: RecordBody @12:15-37:2
+      Items[0]: FieldDecl @14:3-14:46
+        Doc: DocComment "The item define. Stored in inventories: never renamed." @13:3-13:61
+        Name: Ident id @14:3-14:5
+        Type: NamedType @14:7-14:32
+          Name: QualifiedName String @14:7-14:13
+          Args: TypeArgs @14:13-14:32
+            Args[0]: RegexLit Pattern="^II_[A-Z0-9_]+$" @14:14-14:31
+        Annotations[0]: Annotation @14:33-14:46
+          Name: Ident json @14:34-14:38
+          Args[0]: AnnotationArg @14:39-14:45
+            Value: StringLit @14:39-14:45
+              Parts[0]: text "dwID"
+      Items[1]: FieldDecl @16:3-16:40
+        Doc: DocComment "Text key of the displayed name." @15:3-15:38
+        Name: Ident name @16:3-16:7
+        Type: NamedType @16:9-16:24
+          Name: QualifiedName String @16:9-16:15
+          Args: TypeArgs @16:15-16:24
+            Args[0]: RegexLit Pattern="^IDS_" @16:16-16:23
+        Annotations[0]: Annotation @16:25-16:40
+          Name: Ident json @16:26-16:30
+          Args[0]: AnnotationArg @16:31-16:39
+            Value: StringLit @16:31-16:39
+              Parts[0]: text "szName"
+      Items[2]: FieldDecl @18:3-18:40
+        Doc: DocComment "Hit points restored." @17:3-17:27
+        Name: Ident heal @18:3-18:7
+        Type: NamedType @18:9-18:25
+          Name: QualifiedName Int @18:9-18:12
+          Args: TypeArgs @18:12-18:25
+            Args[0]: RangeExpr Op=..= @18:13-18:24
+              Lo: IntLit Value=1 @18:13-18:14
+              Hi: IntLit Value=100000 @18:17-18:24
+        Annotations[0]: Annotation @18:26-18:40
+          Name: Ident json @18:27-18:31
+          Args[0]: AnnotationArg @18:32-18:39
+            Value: StringLit @18:32-18:39
+              Parts[0]: text "nHeal"
+      Items[3]: FieldDecl @20:3-20:63
+        Doc: DocComment "Time before the same potion can be drunk again." @19:3-19:54
+        Name: Ident cooldown @20:3-20:11
+        Type: NamedType @20:13-20:31
+          Name: QualifiedName Duration @20:13-20:21
+          Args: TypeArgs @20:21-20:31
+            Args[0]: RangeExpr Op=..= @20:22-20:30
+              Lo: DurationLit Millis=0 @20:22-20:24
+              Hi: DurationLit Millis=600000 @20:27-20:30
+        Annotations[0]: Annotation @20:32-20:63
+          Name: Ident json @20:33-20:37
+          Args[0]: AnnotationArg @20:38-20:52
+            Value: StringLit @20:38-20:52
+              Parts[0]: text "dwCooldownMs"
+          Args[1]: AnnotationArg @20:54-20:62
+            Name: Ident unit @20:54-20:58
+            Value: QualifiedName ms @20:60-20:62
+      Items[4]: FieldDecl @22:3-22:45
+        Doc: DocComment "How many potions fit in one inventory slot." @21:3-21:50
+        Name: Ident stack @22:3-22:8
+        Type: NamedType @22:10-22:24
+          Name: QualifiedName Int @22:10-22:13
+          Args: TypeArgs @22:13-22:24
+            Args[0]: RangeExpr Op=..= @22:14-22:23
+              Lo: IntLit Value=1 @22:14-22:15
+              Hi: IntLit Value=9999 @22:18-22:23
+        Default: IntLit Value=99 @22:27-22:29
+        Annotations[0]: Annotation @22:30-22:45
+          Name: Ident json @22:31-22:35
+          Args[0]: AnnotationArg @22:36-22:44
+            Value: StringLit @22:36-22:44
+              Parts[0]: text "nStack"
+      Items[5]: CheckDecl Keyword=warn @24:3-25:68
+        Name: Ident fast_big_heal @24:8-24:21
+        Cond: UnaryExpr Op=not @24:23-24:59
+          X: ParenExpr @24:27-24:59
+            X: BinaryExpr Op=and @24:28-24:58
+              X: BinaryExpr Op=> @24:28-24:40
+                X: IdentExpr heal @24:28-24:32
+                Y: IntLit Value=5000 @24:35-24:40
+              Y: BinaryExpr Op=< @24:45-24:58
+                X: IdentExpr cooldown @24:45-24:53
+                Y: DurationLit Millis=2000 @24:56-24:58
+        Message: StringLit @25:10-25:68
+          Parts[0]: text "heals "
+          Parts[1]: Interp @25:18-25:22
+            X: IdentExpr heal @25:18-25:22
+          Parts[2]: text " every "
+          Parts[3]: Interp @25:31-25:39
+            X: IdentExpr cooldown @25:31-25:39
+          Parts[4]: text ": that outheals most bosses"
+      Items[6]: FnDecl Self="self" @31:3-31:60
+        Doc: DocComment "No runtime input: computed by `canon build` for every potion and shipped as a value.\nThe generated getter just returns it, in every language." @29:3-30:63
+        Mods: Modifiers Export="export" @31:3-31:9
+        Name: Ident isStrong @31:13-31:21
+        Result: NamedType @31:31-31:35
+          Name: QualifiedName Bool @31:31-31:35
+        Body: Block @31:36-31:60
+          Stmts[0]: ReturnStmt @31:38-31:58
+            Value: BinaryExpr Op=>= @31:45-31:58
+              X: IdentExpr heal @31:45-31:49
+              Y: IntLit Value=2000 @31:53-31:58
+      Items[7]: FnDecl Self="self" @36:3-36:89
+        Doc: DocComment "Needs a runtime input (the player's missing HP), so the body is translated into\neach target. Only the portable subset is allowed, and `canon build` emits a\nconformance test per target so the translations cannot drift." @33:3-35:68
+        Mods: Modifiers Export="export" @36:3-36:9
+        Name: Ident healFor @36:13-36:20
+        Params[0]: Param @36:27-36:41
+          Name: Ident missingHp @36:27-36:36
+          Type: NamedType @36:38-36:41
+            Name: QualifiedName Int @36:38-36:41
+        Result: NamedType @36:46-36:49
+          Name: QualifiedName Int @36:46-36:49
+        Body: Block @36:50-36:89
+          Stmts[0]: ReturnStmt @36:52-36:87
+            Value: CallExpr @36:59-36:87
+              Fun: IdentExpr min @36:59-36:62
+              Args[0]: Arg @36:63-36:67
+                Value: IdentExpr heal @36:63-36:67
+              Args[1]: Arg @36:69-36:86
+                Value: CallExpr @36:69-36:86
+                  Fun: IdentExpr max @36:69-36:72
+                  Args[0]: Arg @36:73-36:82
+                    Value: IdentExpr missingHp @36:73-36:82
+                  Args[1]: Arg @36:84-36:85
+                    Value: IntLit Value=0 @36:84-36:85
+  Decls[1]: TestDecl @39:1-44:2
+    Name: StringLit @39:6-39:55
+      Parts[0]: text "healFor never overheals and never goes negative"
+    Body: Block @39:56-44:2
+      Stmts[0]: LetStmt @40:3-40:77
+        Name: Ident p @40:7-40:8
+        Type: NamedType @40:10-40:16
+          Name: QualifiedName Potion @40:10-40:16
+        Value: BraceLit @40:19-40:77
+          Items[0]: FieldItem @40:21-40:35
+            Name: Ident id @40:21-40:23
+            Value: StringLit @40:25-40:35
+              Parts[0]: text "II_POT_T"
+          Items[1]: FieldItem @40:37-40:50
+            Name: Ident name @40:37-40:41
+            Value: StringLit @40:43-40:50
+              Parts[0]: text "IDS_T"
+          Items[2]: FieldItem @40:52-40:61
+            Name: Ident heal @40:52-40:56
+            Value: IntLit Value=500 @40:58-40:61
+          Items[3]: FieldItem @40:63-40:75
+            Name: Ident cooldown @40:63-40:71
+            Value: DurationLit Millis=1000 @40:73-40:75
+      Stmts[1]: ExpectStmt @41:3-41:31
+        X: BinaryExpr Op=== @41:10-41:31
+          X: CallExpr @41:10-41:24
+            Fun: SelectorExpr @41:10-41:19
+              X: IdentExpr p @41:10-41:11
+              Name: Ident healFor @41:12-41:19
+            Args[0]: Arg @41:20-41:23
+              Value: IntLit Value=200 @41:20-41:23
+          Y: IntLit Value=200 @41:28-41:31
+      Stmts[2]: ExpectStmt @42:3-42:32
+        X: BinaryExpr Op=== @42:10-42:32
+          X: CallExpr @42:10-42:25
+            Fun: SelectorExpr @42:10-42:19
+              X: IdentExpr p @42:10-42:11
+              Name: Ident healFor @42:12-42:19
+            Args[0]: Arg @42:20-42:24
+              Value: IntLit Value=9000 @42:20-42:24
+          Y: IntLit Value=500 @42:29-42:32
+      Stmts[3]: ExpectStmt @43:3-43:28
+        X: BinaryExpr Op=== @43:10-43:28
+          X: CallExpr @43:10-43:23
+            Fun: SelectorExpr @43:10-43:19
+              X: IdentExpr p @43:10-43:11
+              Name: Ident healFor @43:12-43:19
+            Args[0]: Arg @43:20-43:22
+              Value: IntLit Value=-5 @43:20-43:22
+          Y: IntLit Value=0 @43:27-43:28
+  Decls[2]: LetDecl @49:1-50:60
+    Doc: DocComment "One JSON file per potion, as today. Each file is one entry; findings point into it.\nReloadable: tuned live during balance sessions, and runtimes keep potion ids, never\nPotion pointers, across ticks." @46:1-48:35
+    Annotations[0]: Annotation @49:1-49:8
+      Name: Ident reload @49:2-49:8
+    Name: Ident potions @50:5-50:12
+    Type: KeyedType @50:14-50:34
+      List: ListType @50:14-50:22
+        Elem: NamedType @50:15-50:21
+          Name: QualifiedName Potion @50:15-50:21
+      Key: Ident id @50:32-50:34
+    Value: LoadExpr @50:37-50:60
+      Method: Ident dir @50:42-50:45
+      Args[0]: Arg @50:46-50:59
+        Value: StringLit @50:46-50:59
+          Parts[0]: text "data/*.json"
+  Decls[3]: ViewDecl @52:1-58:2
+    Type: Ident Potion @52:6-52:12
+    Items[0]: ViewTitle @53:3-53:15
+      Text: StringLit @53:9-53:15
+        Parts[0]: Interp @53:11-53:13
+          X: IdentExpr id @53:11-53:13
+    Items[1]: ViewMenu @54:3-54:22
+      Menu: Ident items @54:8-54:13
+      Icon: Ident gem @54:19-54:22
+    Items[2]: ViewColumns @55:3-55:53
+      Items[0]: ViewColumn @55:13-55:19
+        Name: Ident id @55:13-55:15
+        Width: IntLit Value=200 @55:16-55:19
+      Items[1]: ViewColumn @55:21-55:28
+        Name: Ident heal @55:21-55:25
+        Width: IntLit Value=90 @55:26-55:28
+      Items[2]: ViewColumn @55:30-55:41
+        Name: Ident cooldown @55:30-55:38
+        Width: IntLit Value=90 @55:39-55:41
+      Items[3]: ViewColumn @55:43-55:51
+        Name: Ident stack @55:43-55:48
+        Width: IntLit Value=70 @55:49-55:51
+    Items[3]: ViewField @56:3-56:27
+      Name: Ident heal @56:3-56:7
+      Label: StringLit @56:8-56:14
+        Parts[0]: text "Heal"
+      Props: BraceLit @56:15-56:27
+        Items[0]: FieldItem @56:17-56:25
+          Name: Ident unit @56:17-56:21
+          Value: IdentExpr hp @56:23-56:25
+    Items[4]: ViewField @57:3-57:22
+      Name: Ident cooldown @57:3-57:11
+      Label: StringLit @57:12-57:22
+        Parts[0]: text "Cooldown"
+  Decls[4]: EmitDecl @62:1-62:57
+    Target: Ident json @62:6-62:10
+    Options: BraceLit @62:11-62:57
+      Items[0]: FieldItem @62:13-62:36
+        Name: Ident out @62:13-62:16
+        Value: StringLit @62:18-62:36
+          Parts[0]: text "out/potions.json"
+      Items[1]: FieldItem @62:38-62:55
+        Name: Ident values @62:38-62:44
+        Value: ListLit @62:46-62:55
+          Elems[0]: IdentExpr potions @62:47-62:54
+  Decls[5]: EmitDecl @63:1-63:60
+    Target: Ident cpp @63:6-63:9
+    Options: BraceLit @63:10-63:60
+      Items[0]: FieldItem @63:12-63:23
+        Name: Ident out @63:12-63:15
+        Value: StringLit @63:17-63:23
+          Parts[0]: text "out/"
+      Items[1]: FieldItem @63:25-63:46
+        Name: Ident namespace @63:25-63:34
+        Value: StringLit @63:36-63:46
+          Parts[0]: text "sov::gen"
+      Items[2]: FieldItem @63:48-63:58
+        Name: Ident mode @63:48-63:52
+        Value: IdentExpr data @63:54-63:58
+  Decls[6]: EmitDecl @64:1-64:59
+    Target: Ident go @64:6-64:8
+    Options: BraceLit @64:9-64:59
+      Items[0]: FieldItem @64:11-64:25
+        Name: Ident out @64:11-64:14
+        Value: StringLit @64:16-64:25
+          Parts[0]: text "out/go/"
+      Items[1]: FieldItem @64:27-64:45
+        Name: Ident package @64:27-64:34
+        Value: StringLit @64:36-64:45
+          Parts[0]: text "potions"
+      Items[2]: FieldItem @64:47-64:57
+        Name: Ident mode @64:47-64:51
+        Value: IdentExpr data @64:53-64:57
+  Decls[7]: EmitDecl @65:1-65:42
+    Target: Ident view @65:6-65:10
+    Options: BraceLit @65:11-65:42
+      Items[0]: FieldItem @65:13-65:40
+        Name: Ident out @65:13-65:16
+        Value: StringLit @65:18-65:40
+          Parts[0]: text "out/potion.view.json"
+== findings
+0 errors, 0 warnings in 1 package (…)

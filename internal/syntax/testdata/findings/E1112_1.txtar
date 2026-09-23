@@ -1,0 +1,36 @@
+GRAMMAR.md §2.6: an empty interpolation, a line break or a comment inside one, a lone }.
+-- a/a.canon --
+package a
+
+let a = "x{}y"
+let b = "x{y
+let c = "x{y /* c */}"
+let d = "a}b"
+let ok = "{{literal}} {x}"
+-- b/b.canon --
+package b
+
+let e = "never {x /* open
+-- findings.txt --
+error[E1112]  a/a.canon:3:11
+  invalid interpolation: {} is empty
+
+error[E1112]  a/a.canon:4:13
+  invalid interpolation: a line break inside it
+
+error[E1112]  a/a.canon:5:14
+  invalid interpolation: a comment inside it
+
+error[E1112]  a/a.canon:6:11
+  invalid interpolation: a lone } in text; write }} for a brace
+
+error[E1112]  b/b.canon:3:16
+  invalid interpolation: no closing }
+
+error[E1108]  b/b.canon:3:19
+  unterminated block comment
+
+error[E1112]  b/b.canon:3:19
+  invalid interpolation: a comment inside it
+
+7 errors, 0 warnings in 1 package (…)

@@ -1,0 +1,193 @@
+File: File FileKind=source @1:1-43:1
+  Doc: DocComment "`retired` (SPEC §12): an id that was used once stays reserved forever. A retired\nentry or member stays in the lock, in generated id enums and in data files (flagged),\nso stored data still decodes; it is left out of `.active()`; a live entry that\nrefers to it is an error (E3502); its id can never be reused (E6002)." @1:1-4:74
+  Package: QualifiedName features.retirement @5:9-5:28
+  Decls[0]: EnumDecl @9:1-9:79
+    Doc: DocComment "Kinds of lottery ticket. Tickets are stored with their kind's code. The event\nticket went away with its event: its code 3 is retired, never reused." @7:1-8:74
+    Name: Ident TicketKind @9:6-9:16
+    Annotations[0]: Annotation @9:17-9:30
+      Name: Ident codes @9:18-9:23
+      Args[0]: AnnotationArg @9:24-9:29
+        Value: QualifiedName UInt8 @9:24-9:29
+    Members[0]: EnumMember @9:33-9:45
+      Name: Ident standard @9:33-9:41
+      Value: IntLit Value=1 @9:44-9:45
+    Members[1]: EnumMember @9:47-9:58
+      Name: Ident premium @9:47-9:54
+      Value: IntLit Value=2 @9:57-9:58
+    Members[2]: EnumMember @9:60-9:77
+      Mods: Modifiers Retired="retired" @9:60-9:67
+      Name: Ident event @9:68-9:73
+      Value: IntLit Value=3 @9:76-9:77
+  Decls[1]: RecordDecl @12:1-19:2
+    Doc: DocComment "A prize tier of the lottery. Tickets store the tier they won, so ids are stable." @11:1-11:85
+    Name: Ident Tier @12:8-12:12
+    Body: RecordBody @12:13-19:2
+      Items[0]: FieldDecl @14:3-14:21
+        Doc: DocComment "Shown on the ticket." @13:3-13:27
+        Name: Ident label @14:3-14:8
+        Type: NamedType @14:10-14:21
+          Name: QualifiedName String @14:10-14:16
+          Args: TypeArgs @14:16-14:21
+            Args[0]: RangeExpr Op=.. @14:17-14:20
+              Lo: IntLit Value=1 @14:17-14:18
+      Items[1]: FieldDecl @16:3-16:29
+        Doc: DocComment "Chance out of 1 000 000." @15:3-15:31
+        Name: Ident chance @16:3-16:9
+        Type: NamedType @16:11-16:29
+          Name: QualifiedName Int @16:11-16:14
+          Args: TypeArgs @16:14-16:29
+            Args[0]: RangeExpr Op=..= @16:15-16:28
+              Lo: IntLit Value=1 @16:15-16:16
+              Hi: IntLit Value=1000000 @16:19-16:28
+      Items[2]: FieldDecl @18:3-18:31
+        Doc: DocComment "The tier a re-roll moves the ticket to, if any." @17:3-17:54
+        Name: Ident upgradesTo @18:3-18:13
+        Type: OptionalType @18:15-18:24
+          Elem: RefType @18:15-18:23
+            Name: QualifiedName Tier @18:19-18:23
+        Default: NoneLit @18:27-18:31
+  Decls[2]: LetDecl @22:1-29:2
+    Doc: DocComment "Every tier, in display order." @21:1-21:34
+    Name: Ident tiers @22:5-22:10
+    Type: TableType Stable="stable" @22:12-22:29
+      Name: QualifiedName Tier @22:25-22:29
+    Value: BraceLit @22:32-29:2
+      Items[0]: EntryItem @23:3-23:64
+        Key: Ident common @23:3-23:9
+        Value: BraceLit @23:10-23:64
+          Items[0]: FieldItem @23:12-23:27
+            Name: Ident label @23:12-23:17
+            Value: StringLit @23:19-23:27
+              Parts[0]: text "Common"
+          Items[1]: FieldItem @23:29-23:44
+            Name: Ident chance @23:29-23:35
+            Value: IntLit Value=800000 @23:37-23:44
+          Items[2]: FieldItem @23:46-23:62
+            Name: Ident upgradesTo @23:46-23:56
+            Value: IdentExpr rare @23:58-23:62
+      Items[1]: EntryItem @24:3-24:65
+        Key: Ident rare @24:3-24:7
+        Value: BraceLit @24:8-24:65
+          Items[0]: FieldItem @24:10-24:23
+            Name: Ident label @24:10-24:15
+            Value: StringLit @24:17-24:23
+              Parts[0]: text "Rare"
+          Items[1]: FieldItem @24:25-24:40
+            Name: Ident chance @24:25-24:31
+            Value: IntLit Value=190000 @24:33-24:40
+          Items[2]: FieldItem @24:42-24:63
+            Name: Ident upgradesTo @24:42-24:52
+            Value: IdentExpr legendary @24:54-24:63
+      Items[2]: EntryItem @27:3-27:48
+        Doc: DocComment "Merged into `rare` in September. Tickets that won it still decode; nothing new\nmay point to it (`upgradesTo: epic` would be E3502)." @25:3-26:59
+        Mods: Modifiers Retired="retired" @27:3-27:10
+        Key: Ident epic @27:11-27:15
+        Value: BraceLit @27:16-27:48
+          Items[0]: FieldItem @27:18-27:31
+            Name: Ident label @27:18-27:23
+            Value: StringLit @27:25-27:31
+              Parts[0]: text "Epic"
+          Items[1]: FieldItem @27:33-27:46
+            Name: Ident chance @27:33-27:39
+            Value: IntLit Value=5000 @27:41-27:46
+      Items[3]: EntryItem @28:3-28:51
+        Key: Ident legendary @28:3-28:12
+        Value: BraceLit @28:13-28:51
+          Items[0]: FieldItem @28:15-28:33
+            Name: Ident label @28:15-28:20
+            Value: StringLit @28:22-28:33
+              Parts[0]: text "Legendary"
+          Items[1]: FieldItem @28:35-28:49
+            Name: Ident chance @28:35-28:41
+            Value: IntLit Value=10000 @28:43-28:49
+  Decls[3]: CheckDecl Keyword=check @31:1-32:102
+    Cond: BinaryExpr Op=== @31:7-31:53
+      X: CallExpr @31:7-31:40
+        Fun: SelectorExpr @31:7-31:38
+          X: CallExpr @31:7-31:34
+            Fun: SelectorExpr @31:7-31:25
+              X: CallExpr @31:7-31:21
+                Fun: SelectorExpr @31:7-31:19
+                  X: IdentExpr tiers @31:7-31:12
+                  Name: Ident active @31:13-31:19
+              Name: Ident map @31:22-31:25
+            Args[0]: Arg @31:26-31:33
+              Value: ShorthandLambda @31:26-31:33
+                Body: SelectorExpr @31:26-31:33
+                  Name: Ident chance @31:27-31:33
+          Name: Ident sum @31:35-31:38
+      Y: IntLit Value=1000000 @31:44-31:53
+    Message: StringLit @32:8-32:102
+      Parts[0]: text "the chances of the active tiers add up to "
+      Parts[1]: Interp @32:52-32:85
+        X: CallExpr @32:52-32:85
+          Fun: SelectorExpr @32:52-32:83
+            X: CallExpr @32:52-32:79
+              Fun: SelectorExpr @32:52-32:70
+                X: CallExpr @32:52-32:66
+                  Fun: SelectorExpr @32:52-32:64
+                    X: IdentExpr tiers @32:52-32:57
+                    Name: Ident active @32:58-32:64
+                Name: Ident map @32:67-32:70
+              Args[0]: Arg @32:71-32:78
+                Value: ShorthandLambda @32:71-32:78
+                  Body: SelectorExpr @32:71-32:78
+                    Name: Ident chance @32:72-32:78
+            Name: Ident sum @32:80-32:83
+      Parts[2]: text ", not 1 000 000"
+  Decls[4]: TestDecl @34:1-39:2
+    Name: StringLit @34:6-34:43
+      Parts[0]: text "a retired tier is kept but inactive"
+    Body: Block @34:44-39:2
+      Stmts[0]: ExpectStmt @35:3-35:36
+        X: BinaryExpr Op=== @35:10-35:36
+          X: SelectorExpr @35:10-35:28
+            X: SelectorExpr @35:10-35:20
+              X: IdentExpr tiers @35:10-35:15
+              Name: Ident epic @35:16-35:20
+            Name: Ident retired @35:21-35:28
+          Y: BoolLit Value @35:32-35:36
+      Stmts[1]: ExpectStmt @36:3-36:35
+        X: BinaryExpr Op=== @36:10-36:35
+          X: CallExpr @36:10-36:30
+            Fun: SelectorExpr @36:10-36:28
+              X: CallExpr @36:10-36:24
+                Fun: SelectorExpr @36:10-36:22
+                  X: IdentExpr tiers @36:10-36:15
+                  Name: Ident active @36:16-36:22
+              Name: Ident len @36:25-36:28
+          Y: IntLit Value=3 @36:34-36:35
+      Stmts[2]: ExpectStmt @37:3-37:26
+        X: BinaryExpr Op=== @37:10-37:26
+          X: CallExpr @37:10-37:21
+            Fun: SelectorExpr @37:10-37:19
+              X: IdentExpr tiers @37:10-37:15
+              Name: Ident len @37:16-37:19
+          Y: IntLit Value=4 @37:25-37:26
+      Stmts[3]: ExpectStmt @38:3-38:54
+        X: BinaryExpr Op=== @38:10-38:54
+          X: CallExpr @38:10-38:45
+            Fun: SelectorExpr @38:10-38:33
+              X: CallExpr @38:10-38:24
+                Fun: SelectorExpr @38:10-38:22
+                  X: IdentExpr tiers @38:10-38:15
+                  Name: Ident active @38:16-38:22
+              Name: Ident contains @38:25-38:33
+            Args[0]: Arg @38:34-38:44
+              Value: SelectorExpr @38:34-38:44
+                X: IdentExpr tiers @38:34-38:39
+                Name: Ident epic @38:40-38:44
+          Y: BoolLit @38:49-38:54
+  Decls[5]: EmitDecl @42:1-42:53
+    Target: Ident json @42:6-42:10
+    Options: BraceLit @42:11-42:53
+      Items[0]: FieldItem @42:13-42:34
+        Name: Ident out @42:13-42:16
+        Value: StringLit @42:18-42:34
+          Parts[0]: text "out/tiers.json"
+      Items[1]: FieldItem @42:36-42:51
+        Name: Ident values @42:36-42:42
+        Value: ListLit @42:44-42:51
+          Elems[0]: IdentExpr tiers @42:45-42:50
+== findings
+0 errors, 0 warnings in 1 package (…)

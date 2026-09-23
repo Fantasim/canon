@@ -1,0 +1,326 @@
+GRAMMAR.md §5.3, §5.4, §5.6: declarations, modifiers, annotations and doc attachment.
+-- a/a.canon --
+/// Package doc.
+package a.b
+
+import c.d as e { F, G }
+import h
+
+/// A constant.
+local const LIMIT = 7
+
+@reload
+@files("items/{kind}/{id}.canon")
+let potions: [Potion] keyed by id = load.dir("data/*.json")
+
+@deprecated("gone") retired entry items.OLD { cost: 1 }
+entry levels.3 { exp: 10 }
+
+/// A record.
+record Pair(t: Type) @json(case: snake) @cpp(struct: "Pair", header: "pair.h", access: fields) {
+  /// Left side.
+  left: t
+  right: t = none @json("r")
+    @deprecated("use left")
+  env: input String from env "HOME"
+
+  /// Sum.
+  @go(name: "Sum")
+  export fn sum(self) -> Int { return 1 }
+
+  check left != right else "same"
+}
+
+enum Level ordered @codes(UInt8) { LOW = 1 @json("low"), retired MID = -2, HIGH = "high" }
+
+variant Reward @json(tag: "type") {
+  gold
+  item @json("Item") { id: Int }
+  retired old
+  fn value(self) -> Int { return 0 }
+}
+
+widget time_of_day(value: TimeOfDay) default
+widget share(value: Int, siblings: [Int],)
+
+view Item.IK1_WEAPON {
+  title "{name}"
+  plural "items"
+  menu items icon gem
+  field title "Title"
+  field
+  check "Check" { icon: flame }
+  group g "G" "help" advanced when kind is IK1_WEAPON { show "A" "{a}", show id "B" "{b}", x }
+}
+
+emit go { package: "teamboard", out: "out/" }
+-- ast --
+== a/a.canon
+File: File FileKind=source @1:1-55:1
+  Doc: DocComment "Package doc." @1:1-1:17
+  Package: QualifiedName a.b @2:9-2:12
+  Imports[0]: Import @4:1-4:25
+    Path: QualifiedName c.d @4:8-4:11
+    Alias: Ident e @4:15-4:16
+    Names[0]: Ident F @4:19-4:20
+    Names[1]: Ident G @4:22-4:23
+  Imports[1]: Import @5:1-5:9
+    Path: QualifiedName h @5:8-5:9
+  Decls[0]: ConstDecl @8:1-8:22
+    Doc: DocComment "A constant." @7:1-7:16
+    Mods: Modifiers Local="local" @8:1-8:6
+    Name: Ident LIMIT @8:13-8:18
+    Value: IntLit Value=7 @8:21-8:22
+  Decls[1]: LetDecl @10:1-12:60
+    Annotations[0]: Annotation @10:1-10:8
+      Name: Ident reload @10:2-10:8
+    Annotations[1]: Annotation @11:1-11:34
+      Name: Ident files @11:2-11:7
+      Args[0]: AnnotationArg @11:8-11:33
+        Value: StringLit @11:8-11:33
+          Parts[0]: text "items/"
+          Parts[1]: Interp @11:16-11:20
+            X: IdentExpr kind @11:16-11:20
+          Parts[2]: text "/"
+          Parts[3]: Interp @11:23-11:25
+            X: IdentExpr id @11:23-11:25
+          Parts[4]: text ".canon"
+    Name: Ident potions @12:5-12:12
+    Type: KeyedType @12:14-12:34
+      List: ListType @12:14-12:22
+        Elem: NamedType @12:15-12:21
+          Name: QualifiedName Potion @12:15-12:21
+      Key: Ident id @12:32-12:34
+    Value: LoadExpr @12:37-12:60
+      Method: Ident dir @12:42-12:45
+      Args[0]: Arg @12:46-12:59
+        Value: StringLit @12:46-12:59
+          Parts[0]: text "data/*.json"
+  Decls[2]: EntryDecl @14:1-14:56
+    Annotations[0]: Annotation @14:1-14:20
+      Name: Ident deprecated @14:2-14:12
+      Args[0]: AnnotationArg @14:13-14:19
+        Value: StringLit @14:13-14:19
+          Parts[0]: text "gone"
+    Mods: Modifiers Retired="retired" @14:21-14:28
+    Table: Ident items @14:35-14:40
+    Key: Ident OLD @14:41-14:44
+    Value: BraceLit @14:45-14:56
+      Items[0]: FieldItem @14:47-14:54
+        Name: Ident cost @14:47-14:51
+        Value: IntLit Value=1 @14:53-14:54
+  Decls[3]: EntryDecl @15:1-15:27
+    Table: Ident levels @15:7-15:13
+    Key: IntLit Value=3 @15:14-15:15
+    Value: BraceLit @15:16-15:27
+      Items[0]: FieldItem @15:18-15:25
+        Name: Ident exp @15:18-15:21
+        Value: IntLit Value=10 @15:23-15:25
+  Decls[4]: RecordDecl @18:1-30:2
+    Doc: DocComment "A record." @17:1-17:14
+    Name: Ident Pair @18:8-18:12
+    Params[0]: Param @18:13-18:20
+      Name: Ident t @18:13-18:14
+      Type: NamedType @18:16-18:20
+        Name: QualifiedName Type @18:16-18:20
+    Annotations[0]: Annotation @18:22-18:40
+      Name: Ident json @18:23-18:27
+      Args[0]: AnnotationArg @18:28-18:39
+        Name: Ident case @18:28-18:32
+        Value: QualifiedName snake @18:34-18:39
+    Annotations[1]: Annotation @18:41-18:95
+      Name: Ident cpp @18:42-18:45
+      Args[0]: AnnotationArg @18:46-18:60
+        Name: Ident struct @18:46-18:52
+        Value: StringLit @18:54-18:60
+          Parts[0]: text "Pair"
+      Args[1]: AnnotationArg @18:62-18:78
+        Name: Ident header @18:62-18:68
+        Value: StringLit @18:70-18:78
+          Parts[0]: text "pair.h"
+      Args[2]: AnnotationArg @18:80-18:94
+        Name: Ident access @18:80-18:86
+        Value: QualifiedName fields @18:88-18:94
+    Body: RecordBody @18:96-30:2
+      Items[0]: FieldDecl @20:3-20:10
+        Doc: DocComment "Left side." @19:3-19:17
+        Name: Ident left @20:3-20:7
+        Type: NamedType @20:9-20:10
+          Name: QualifiedName t @20:9-20:10
+      Items[1]: FieldDecl @21:3-22:28
+        Name: Ident right @21:3-21:8
+        Type: NamedType @21:10-21:11
+          Name: QualifiedName t @21:10-21:11
+        Default: NoneLit @21:14-21:18
+        Annotations[0]: Annotation @21:19-21:29
+          Name: Ident json @21:20-21:24
+          Args[0]: AnnotationArg @21:25-21:28
+            Value: StringLit @21:25-21:28
+              Parts[0]: text "r"
+        Annotations[1]: Annotation @22:5-22:28
+          Name: Ident deprecated @22:6-22:16
+          Args[0]: AnnotationArg @22:17-22:27
+            Value: StringLit @22:17-22:27
+              Parts[0]: text "use left"
+      Items[2]: FieldDecl Input="input" @23:3-23:36
+        Name: Ident env @23:3-23:6
+        Type: NamedType @23:14-23:20
+          Name: QualifiedName String @23:14-23:20
+        Env: StringLit @23:30-23:36
+          Parts[0]: text "HOME"
+      Items[3]: FnDecl Self="self" @26:3-27:42
+        Doc: DocComment "Sum." @25:3-25:11
+        Annotations[0]: Annotation @26:3-26:19
+          Name: Ident go @26:4-26:6
+          Args[0]: AnnotationArg @26:7-26:18
+            Name: Ident name @26:7-26:11
+            Value: StringLit @26:13-26:18
+              Parts[0]: text "Sum"
+        Mods: Modifiers Export="export" @27:3-27:9
+        Name: Ident sum @27:13-27:16
+        Result: NamedType @27:26-27:29
+          Name: QualifiedName Int @27:26-27:29
+        Body: Block @27:30-27:42
+          Stmts[0]: ReturnStmt @27:32-27:40
+            Value: IntLit Value=1 @27:39-27:40
+      Items[4]: CheckDecl Keyword=check @29:3-29:34
+        Cond: BinaryExpr Op=!= @29:9-29:22
+          X: IdentExpr left @29:9-29:13
+          Y: IdentExpr right @29:17-29:22
+        Message: StringLit @29:28-29:34
+          Parts[0]: text "same"
+  Decls[5]: EnumDecl Ordered="ordered" @32:1-32:91
+    Name: Ident Level @32:6-32:11
+    Annotations[0]: Annotation @32:20-32:33
+      Name: Ident codes @32:21-32:26
+      Args[0]: AnnotationArg @32:27-32:32
+        Value: QualifiedName UInt8 @32:27-32:32
+    Members[0]: EnumMember @32:36-32:56
+      Name: Ident LOW @32:36-32:39
+      Value: IntLit Value=1 @32:42-32:43
+      Annotations[0]: Annotation @32:44-32:56
+        Name: Ident json @32:45-32:49
+        Args[0]: AnnotationArg @32:50-32:55
+          Value: StringLit @32:50-32:55
+            Parts[0]: text "low"
+    Members[1]: EnumMember @32:58-32:74
+      Mods: Modifiers Retired="retired" @32:58-32:65
+      Name: Ident MID @32:66-32:69
+      Value: IntLit Value=-2 @32:72-32:74
+    Members[2]: EnumMember @32:76-32:89
+      Name: Ident HIGH @32:76-32:80
+      Value: StringLit @32:83-32:89
+        Parts[0]: text "high"
+  Decls[6]: VariantDecl @34:1-39:2
+    Name: Ident Reward @34:9-34:15
+    Annotations[0]: Annotation @34:16-34:34
+      Name: Ident json @34:17-34:21
+      Args[0]: AnnotationArg @34:22-34:33
+        Name: Ident tag @34:22-34:25
+        Value: StringLit @34:27-34:33
+          Parts[0]: text "type"
+    Items[0]: VariantCase @35:3-35:7
+      Name: Ident gold @35:3-35:7
+    Items[1]: VariantCase @36:3-36:33
+      Name: Ident item @36:3-36:7
+      Annotations[0]: Annotation @36:8-36:21
+        Name: Ident json @36:9-36:13
+        Args[0]: AnnotationArg @36:14-36:20
+          Value: StringLit @36:14-36:20
+            Parts[0]: text "Item"
+      Body: RecordBody @36:22-36:33
+        Items[0]: FieldDecl @36:24-36:31
+          Name: Ident id @36:24-36:26
+          Type: NamedType @36:28-36:31
+            Name: QualifiedName Int @36:28-36:31
+    Items[2]: VariantCase @37:3-37:14
+      Mods: Modifiers Retired="retired" @37:3-37:10
+      Name: Ident old @37:11-37:14
+    Items[3]: FnDecl Self="self" @38:3-38:37
+      Name: Ident value @38:6-38:11
+      Result: NamedType @38:21-38:24
+        Name: QualifiedName Int @38:21-38:24
+      Body: Block @38:25-38:37
+        Stmts[0]: ReturnStmt @38:27-38:35
+          Value: IntLit Value=0 @38:34-38:35
+  Decls[7]: WidgetDecl Default="default" @41:1-41:45
+    Name: Ident time_of_day @41:8-41:19
+    Params[0]: Param @41:20-41:36
+      Name: Ident value @41:20-41:25
+      Type: NamedType @41:27-41:36
+        Name: QualifiedName TimeOfDay @41:27-41:36
+  Decls[8]: WidgetDecl @42:1-42:43
+    Name: Ident share @42:8-42:13
+    Params[0]: Param @42:14-42:24
+      Name: Ident value @42:14-42:19
+      Type: NamedType @42:21-42:24
+        Name: QualifiedName Int @42:21-42:24
+    Params[1]: Param @42:26-42:41
+      Name: Ident siblings @42:26-42:34
+      Type: ListType @42:36-42:41
+        Elem: NamedType @42:37-42:40
+          Name: QualifiedName Int @42:37-42:40
+  Decls[9]: ViewDecl @44:1-52:2
+    Type: Ident Item @44:6-44:10
+    Case: Ident IK1_WEAPON @44:11-44:21
+    Items[0]: ViewTitle @45:3-45:17
+      Text: StringLit @45:9-45:17
+        Parts[0]: Interp @45:11-45:15
+          X: IdentExpr name @45:11-45:15
+    Items[1]: ViewPlural @46:3-46:17
+      Text: StringLit @46:10-46:17
+        Parts[0]: text "items"
+    Items[2]: ViewMenu @47:3-47:22
+      Menu: Ident items @47:8-47:13
+      Icon: Ident gem @47:19-47:22
+    Items[3]: ViewField Field="field" @48:3-48:22
+      Name: Ident title @48:9-48:14
+      Label: StringLit @48:15-48:22
+        Parts[0]: text "Title"
+    Items[4]: ViewField @49:3-49:8
+      Name: Ident field @49:3-49:8
+    Items[5]: ViewField @50:3-50:32
+      Name: Ident check @50:3-50:8
+      Label: StringLit @50:9-50:16
+        Parts[0]: text "Check"
+      Props: BraceLit @50:17-50:32
+        Items[0]: FieldItem @50:19-50:30
+          Name: Ident icon @50:19-50:23
+          Value: IdentExpr flame @50:25-50:30
+    Items[6]: ViewGroup Advanced="advanced" @51:3-51:95
+      ID: Ident g @51:9-51:10
+      Label: StringLit @51:11-51:14
+        Parts[0]: text "G"
+      Help: StringLit @51:15-51:21
+        Parts[0]: text "help"
+      When: IsExpr @51:36-51:54
+        X: IdentExpr kind @51:36-51:40
+        Target: QualifiedName IK1_WEAPON @51:44-51:54
+      Members[0]: ViewShow @51:57-51:71
+        Label: StringLit @51:62-51:65
+          Parts[0]: text "A"
+        Template: StringLit @51:66-51:71
+          Parts[0]: Interp @51:68-51:69
+            X: IdentExpr a @51:68-51:69
+      Members[1]: ViewShow @51:73-51:90
+        ID: Ident id @51:78-51:80
+        Label: StringLit @51:81-51:84
+          Parts[0]: text "B"
+        Template: StringLit @51:85-51:90
+          Parts[0]: Interp @51:87-51:88
+            X: IdentExpr b @51:87-51:88
+      Members[2]: ViewField @51:92-51:93
+        Name: Ident x @51:92-51:93
+  Decls[10]: EmitDecl @54:1-54:46
+    Target: Ident go @54:6-54:8
+    Options: BraceLit @54:9-54:46
+      Items[0]: FieldItem @54:11-54:31
+        Name: Ident package @54:11-54:18
+        Value: StringLit @54:20-54:31
+          Parts[0]: text "teamboard"
+      Items[1]: FieldItem @54:33-54:44
+        Name: Ident out @54:33-54:36
+        Value: StringLit @54:38-54:44
+          Parts[0]: text "out/"
+== findings
+0 errors, 0 warnings in 1 package (…)

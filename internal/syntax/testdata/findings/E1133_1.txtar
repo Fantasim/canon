@@ -1,0 +1,80 @@
+GRAMMAR.md §5.3: local, export or retired on a declaration that does not take it.
+-- a/a.canon --
+package a
+
+local import b
+
+export let x = 1
+export type T = Int
+export enum En { A }
+retired variant Va { c }
+retired const X = 1
+local check x > 0 else "m"
+local entry t.K { }
+export record R {
+  retired a: Int
+  local fn f(self) -> Int { return 1 }
+}
+enum E { local A }
+variant V { local c }
+let t = { local k { } }
+local view R { }
+export test "t" { }
+local emit json { }
+retired widget w(value: Int)
+-- findings.txt --
+error[E1133]  a/a.canon:3:1
+  "local" is not allowed on this import
+
+error[E1133]  a/a.canon:5:1
+  "export" is not allowed on this let
+
+error[E1133]  a/a.canon:6:1
+  "export" is not allowed on this type alias
+
+error[E1133]  a/a.canon:7:1
+  "export" is not allowed on this enum
+
+error[E1133]  a/a.canon:8:1
+  "retired" is not allowed on this variant
+
+error[E1133]  a/a.canon:9:1
+  "retired" is not allowed on this const
+
+error[E1133]  a/a.canon:10:1
+  "local" is not allowed on this check
+
+error[E1133]  a/a.canon:11:1
+  "local" is not allowed on this entry
+
+error[E1133]  a/a.canon:12:1
+  "export" is not allowed on this record
+
+error[E1133]  a/a.canon:13:3
+  "retired" is not allowed on this field
+
+error[E1133]  a/a.canon:14:3
+  "local" is not allowed on this function
+
+error[E1133]  a/a.canon:16:10
+  "local" is not allowed on this member
+
+error[E1133]  a/a.canon:17:13
+  "local" is not allowed on this case
+
+error[E1133]  a/a.canon:18:11
+  "local" is not allowed on this entry
+
+error[E1133]  a/a.canon:19:1
+  "local" is not allowed on this view
+
+error[E1133]  a/a.canon:20:1
+  "export" is not allowed on this test
+
+error[E1133]  a/a.canon:21:1
+  "local" is not allowed on this emit
+
+error[E1133]  a/a.canon:22:1
+  "retired" is not allowed on this widget
+
+18 errors, 0 warnings in 1 package (…)

@@ -1,0 +1,30 @@
+GRAMMAR.md §2.6: text after the opening quotes, a closing line with text, an under-indented line.
+-- a/a.canon --
+package a
+
+let a = """ text
+  x
+  """
+let b = """
+  x
+  y"""
+let c = """
+    four
+  two
+    """
+let ok = """
+  first
+
+    indented
+  """
+-- findings.txt --
+error[E1122]  a/a.canon:3:13
+  multiline string: text after the opening """
+
+error[E1122]  a/a.canon:8:4
+  multiline string: the closing """ must be the first text of its line
+
+error[E1122]  a/a.canon:11:1
+  multiline string: this line does not start with the indentation of the closing """
+
+3 errors, 0 warnings in 1 package (…)

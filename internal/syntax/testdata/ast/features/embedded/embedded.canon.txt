@@ -1,0 +1,75 @@
+File: File FileKind=source @1:1-23:1
+  Doc: DocComment "`embedded` mode (SPEC §14.2): the data file is compiled into the binary (`go:embed`,\nor the TS bundle) with a generated decoder. For medium data a service needs without\nshipping a file next to it, and that changes without code changes." @1:1-3:71
+  Package: QualifiedName features.embedded @4:9-4:26
+  Decls[0]: RecordDecl @7:1-16:2
+    Doc: DocComment "A country the shop sells in." @6:1-6:33
+    Name: Ident Country @7:8-7:15
+    Body: RecordBody @7:16-16:2
+      Items[0]: FieldDecl @9:3-9:29
+        Doc: DocComment "ISO 3166-1 alpha-2 code." @8:3-8:31
+        Name: Ident code @9:3-9:7
+        Type: NamedType @9:9-9:29
+          Name: QualifiedName String @9:9-9:15
+          Args: TypeArgs @9:15-9:29
+            Args[0]: RegexLit Pattern="^[A-Z]{2}$" @9:16-9:28
+      Items[1]: FieldDecl @11:3-11:20
+        Doc: DocComment "English name." @10:3-10:20
+        Name: Ident name @11:3-11:7
+        Type: NamedType @11:9-11:20
+          Name: QualifiedName String @11:9-11:15
+          Args: TypeArgs @11:15-11:20
+            Args[0]: RangeExpr Op=.. @11:16-11:19
+              Lo: IntLit Value=1 @11:16-11:17
+      Items[2]: FieldDecl @13:3-13:25
+        Doc: DocComment "VAT rate applied to donations, in percent." @12:3-12:49
+        Name: Ident vat @13:3-13:6
+        Type: NamedType @13:8-13:25
+          Name: QualifiedName Float @13:8-13:13
+          Args: TypeArgs @13:13-13:25
+            Args[0]: RangeExpr Op=..= @13:14-13:24
+              Lo: FloatLit Coef=0 Exp=-1 @13:14-13:17
+              Hi: FloatLit Coef=300 Exp=-1 @13:20-13:24
+      Items[3]: FieldDecl @15:3-15:21
+        Doc: DocComment "Whether card payments are offered." @14:3-14:41
+        Name: Ident cards @15:3-15:8
+        Type: NamedType @15:10-15:14
+          Name: QualifiedName Bool @15:10-15:14
+        Default: BoolLit Value @15:17-15:21
+  Decls[1]: LetDecl @19:1-19:69
+    Doc: DocComment "Every country, keyed by code." @18:1-18:34
+    Name: Ident countries @19:5-19:14
+    Type: KeyedType @19:16-19:39
+      List: ListType @19:16-19:25
+        Elem: NamedType @19:17-19:24
+          Name: QualifiedName Country @19:17-19:24
+      Key: Ident code @19:35-19:39
+    Value: LoadExpr @19:42-19:69
+      Args[0]: Arg @19:47-19:68
+        Value: StringLit @19:47-19:68
+          Parts[0]: text "data/countries.json"
+  Decls[2]: EmitDecl @21:1-21:65
+    Target: Ident go @21:6-21:8
+    Options: BraceLit @21:9-21:65
+      Items[0]: FieldItem @21:11-21:25
+        Name: Ident out @21:11-21:14
+        Value: StringLit @21:16-21:25
+          Parts[0]: text "out/go/"
+      Items[1]: FieldItem @21:27-21:47
+        Name: Ident package @21:27-21:34
+        Value: StringLit @21:36-21:47
+          Parts[0]: text "countries"
+      Items[2]: FieldItem @21:49-21:63
+        Name: Ident mode @21:49-21:53
+        Value: IdentExpr embedded @21:55-21:63
+  Decls[3]: EmitDecl @22:1-22:62
+    Target: Ident ts @22:6-22:8
+    Options: BraceLit @22:9-22:62
+      Items[0]: FieldItem @22:11-22:44
+        Name: Ident out @22:11-22:14
+        Value: StringLit @22:16-22:44
+          Parts[0]: text "out/countries.generated.ts"
+      Items[1]: FieldItem @22:46-22:60
+        Name: Ident mode @22:46-22:50
+        Value: IdentExpr embedded @22:52-22:60
+== findings
+0 errors, 0 warnings in 1 package (…)

@@ -1,0 +1,64 @@
+GRAMMAR.md §8.2: a missing, wrong, out-of-set, exclusive or needing argument.
+-- a/a.canon --
+package a
+
+enum E @codes { A }
+enum F @json(codes) { B }
+enum G @codes(Float) { C }
+
+@since(0)
+@menu(icon: gem)
+let x = 1
+
+@files("{name.len()}")
+let y = 2
+
+record R @cpp(header: "h") {
+  a: Int @json(path: 5)
+  b: Duration @json(unit: weeks)
+  c: Int @json("c", path: "x.y")
+  d: Int @json(int, bits)
+  e: Int? @json(none: nothing)
+  g: [P] @json(pairs: ["a{i}", "b{j}"])
+}
+-- findings.txt --
+error[E1119]  a/a.canon:3:8
+  @codes: argument "T" is missing
+
+error[E1119]  a/a.canon:4:8
+  @json(codes) needs @codes on the same enum
+
+error[E1119]  a/a.canon:5:15
+  @codes(T): expected one of Int8, Int16, Int32, Int, UInt8, UInt16, UInt32, UInt64
+
+error[E1119]  a/a.canon:7:8
+  @since(n): expected an integer
+
+error[E1119]  a/a.canon:8:1
+  @menu: argument "menu" is missing
+
+error[E1119]  a/a.canon:11:8
+  @files(tpl): expected a template string
+
+error[E1119]  a/a.canon:14:10
+  @cpp: "header" needs "struct"
+
+error[E1119]  a/a.canon:15:16
+  @json(path): expected a constant string
+
+error[E1119]  a/a.canon:16:21
+  @json(unit): expected one of ms, m, s, h, d
+
+error[E1119]  a/a.canon:17:21
+  @json: "path" and "wire" exclude each other
+
+error[E1119]  a/a.canon:18:21
+  @json: "bits" and "int" exclude each other
+
+error[E1119]  a/a.canon:19:17
+  @json(none): expected a literal value
+
+error[E1119]  a/a.canon:20:16
+  @json(pairs): expected a template string
+
+13 errors, 0 warnings in 1 package (…)

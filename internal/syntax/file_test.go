@@ -29,23 +29,31 @@ func TestTokensAreLossless(t *testing.T) {
 // FORMATTER.md §8.1: comments lead a node's first token or trail its last one.
 func TestFileComments(t *testing.T) {
 	f := sampleFile()
+	pkg := f.Tokens[f.Package.First()-1]
+	lead := pkg.Leading
+	if len(lead) == 0 || lead[0].Kind != syntax.TriviaDocComment || f.Span(f.Doc) != (source.Span{File: 1, Start: 0, End: 8}) {
+		t.Errorf("doc block not leading the package clause: %+v", lead)
+	}
 	decl := f.Decls[0].(*syntax.ConstDecl)
-	lead := f.Leading(decl)
-	if len(lead) == 0 || lead[0].Kind != syntax.TriviaDocComment || f.Span(decl.Doc) != (source.Span{File: 1, Start: 0, End: 8}) {
-		t.Errorf("doc block not leading the declaration: %+v", lead)
+	if lead := f.Leading(decl); len(lead) != 2 || lead[1].Kind != syntax.TriviaNewline {
+		t.Errorf("the blank line before the declaration leads it: %+v", lead)
 	}
 	trail := f.Trailing(decl)
 	if len(trail) != len(f.Trailing(decl.Value)) || trail[len(trail)-1].Kind != syntax.TriviaLineComment {
 		t.Errorf("trailing comment not on the last token: %+v", trail)
 	}
-	if got := f.Span(decl); got != (source.Span{File: 1, Start: 9, End: 20}) {
+	if got := f.Span(decl); got != (source.Span{File: 1, Start: 20, End: 32}) {
 		t.Errorf("Span(decl) = %+v", got)
 	}
 }
 
 func TestTok(t *testing.T) {
-	if syntax.NoTok.Valid() || !syntax.Tok(0).Valid() {
-		t.Error("Valid: NoTok must be the only invalid Tok")
+	if syntax.NoTok.Valid() || syntax.Tok(-1).Valid() || !syntax.Tok(1).Valid() {
+		t.Error("Valid: NoTok (the BOF sentinel, 0) and below are the invalid Toks")
+	}
+	var unset syntax.Delims
+	if unset.Open.Valid() || unset.Close.Valid() {
+		t.Error("a zero Tok field must read as absent")
 	}
 	blank := &syntax.Ident{Bounds: syntax.Bounds{From: 2, To: 2}, Name: syntax.Blank}
 	if blank.First() != blank.Last() || blank.Name != syntax.TokUnderscore.String() {

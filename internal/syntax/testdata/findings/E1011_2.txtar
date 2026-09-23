@@ -1,0 +1,16 @@
+GRAMMAR.md §5.2: project.canon holds the project declaration only.
+-- project.canon --
+project x {
+  canon: "0.1"
+}
+let y = 1
+-- sub/project.canon --
+package p
+-- findings.txt --
+error[E1011]  project.canon:4:1
+  project.canon may only contain the project declaration
+
+error[E1011]  sub/project.canon:1:1
+  project.canon may only contain the project declaration
+
+2 errors, 0 warnings in 1 package (…)

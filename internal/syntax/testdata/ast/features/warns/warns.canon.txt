@@ -1,0 +1,106 @@
+File: File FileKind=source @1:1-25:1
+  Doc: DocComment "`expect … warns` (SPEC §18): a test that a warning fires, matched by message text\nor by the check's name. A warning never blocks a build, so without such a test\nnothing notices when one stops firing." @1:1-3:43
+  Package: QualifiedName features.warns @4:9-4:23
+  Decls[0]: RecordDecl @7:1-18:2
+    Doc: DocComment "An NPC shop listing." @6:1-6:25
+    Name: Ident Listing @7:8-7:15
+    Body: RecordBody @7:16-18:2
+      Items[0]: FieldDecl @9:3-9:23
+        Doc: DocComment "Item define sold." @8:3-8:24
+        Name: Ident item @9:3-9:7
+        Type: NamedType @9:9-9:23
+          Name: QualifiedName String @9:9-9:15
+          Args: TypeArgs @9:15-9:23
+            Args[0]: RegexLit Pattern="^II_" @9:16-9:22
+      Items[1]: FieldDecl @11:3-11:18
+        Doc: DocComment "Price in penya." @10:3-10:22
+        Name: Ident price @11:3-11:8
+        Type: NamedType @11:10-11:18
+          Name: QualifiedName Int @11:10-11:13
+          Args: TypeArgs @11:13-11:18
+            Args[0]: RangeExpr Op=.. @11:14-11:17
+              Lo: IntLit Value=0 @11:14-11:15
+      Items[2]: FieldDecl @13:3-13:24
+        Doc: DocComment "Price the NPC pays to buy it back." @12:3-12:41
+        Name: Ident buyback @13:3-13:10
+        Type: NamedType @13:12-13:20
+          Name: QualifiedName Int @13:12-13:15
+          Args: TypeArgs @13:15-13:20
+            Args[0]: RangeExpr Op=.. @13:16-13:19
+              Lo: IntLit Value=0 @13:16-13:17
+        Default: IntLit Value=0 @13:23-13:24
+      Items[3]: CheckDecl Keyword=warn @15:3-15:62
+        Name: Ident free_item @15:8-15:17
+        Cond: BinaryExpr Op=> @15:19-15:28
+          X: IdentExpr price @15:19-15:24
+          Y: IntLit Value=0 @15:27-15:28
+        Message: StringLit @15:34-15:62
+          Parts[0]: Interp @15:36-15:40
+            X: IdentExpr item @15:36-15:40
+          Parts[1]: text " is sold for 0 penya"
+      Items[4]: CheckDecl Keyword=warn @16:3-17:85
+        Name: Ident buyback_profit @16:8-16:22
+        Cond: BinaryExpr Op=<= @16:24-16:40
+          X: IdentExpr buyback @16:24-16:31
+          Y: IdentExpr price @16:35-16:40
+        Message: StringLit @17:10-17:85
+          Parts[0]: text "buying "
+          Parts[1]: Interp @17:19-17:23
+            X: IdentExpr item @17:19-17:23
+          Parts[2]: text " and selling it back earns "
+          Parts[3]: Interp @17:52-17:67
+            X: BinaryExpr Op=- @17:52-17:67
+              X: IdentExpr buyback @17:52-17:59
+              Y: IdentExpr price @17:62-17:67
+          Parts[4]: text " penya each time"
+  Decls[1]: TestDecl @20:1-24:2
+    Name: StringLit @20:6-20:41
+      Parts[0]: text "free and profitable listings warn"
+    Body: Block @20:42-24:2
+      Stmts[0]: ExpectStmt @21:3-21:77
+        X: TypedLit @21:10-21:61
+          Type: QualifiedName Listing @21:10-21:17
+          Lit: BraceLit @21:18-21:61
+            Items[0]: FieldItem @21:20-21:49
+              Name: Ident item @21:20-21:24
+              Value: StringLit @21:26-21:49
+                Parts[0]: text "II_GEN_FOO_INS_HOTDOG"
+            Items[1]: FieldItem @21:51-21:59
+              Name: Ident price @21:51-21:56
+              Value: IntLit Value=0 @21:58-21:59
+        Outcome: Ident warns @21:62-21:67
+        Message: Ident free_item @21:68-21:77
+      Stmts[1]: ExpectStmt @22:3-22:100
+        X: TypedLit @22:10-22:77
+          Type: QualifiedName Listing @22:10-22:17
+          Lit: BraceLit @22:18-22:77
+            Items[0]: FieldItem @22:20-22:49
+              Name: Ident item @22:20-22:24
+              Value: StringLit @22:26-22:49
+                Parts[0]: text "II_GEN_FOO_INS_HOTDOG"
+            Items[1]: FieldItem @22:51-22:61
+              Name: Ident price @22:51-22:56
+              Value: IntLit Value=110 @22:58-22:61
+            Items[2]: FieldItem @22:63-22:75
+              Name: Ident buyback @22:63-22:70
+              Value: IntLit Value=200 @22:72-22:75
+        Outcome: Ident warns @22:78-22:83
+        Message: StringLit @22:84-22:100
+          Parts[0]: text "earns 90 penya"
+      Stmts[2]: ExpectStmt @23:3-23:83
+        X: TypedLit @23:10-23:76
+          Type: QualifiedName Listing @23:10-23:17
+          Lit: BraceLit @23:18-23:76
+            Items[0]: FieldItem @23:20-23:49
+              Name: Ident item @23:20-23:24
+              Value: StringLit @23:26-23:49
+                Parts[0]: text "II_GEN_FOO_INS_HOTDOG"
+            Items[1]: FieldItem @23:51-23:61
+              Name: Ident price @23:51-23:56
+              Value: IntLit Value=110 @23:58-23:61
+            Items[2]: FieldItem @23:63-23:74
+              Name: Ident buyback @23:63-23:70
+              Value: IntLit Value=50 @23:72-23:74
+        Outcome: Ident passes @23:77-23:83
+== findings
+0 errors, 0 warnings in 1 package (…)

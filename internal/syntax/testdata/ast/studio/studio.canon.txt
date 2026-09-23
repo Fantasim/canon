@@ -1,0 +1,218 @@
+File: File FileKind=source @1:1-86:1
+  Doc: DocComment "The studio's presentation vocabulary (SPEC §16.11).\n\nResource Studio is a generic renderer. This package is its contract with every view:\nnavigation sections, UI icons and tones, units, and the custom widgets it implements.\nA view can only use what is declared here, and the compiler checks each use.\n\nBuilt-in controls (switch, segmented, select, search, checkboxes, slider...) are not\ndeclared: they are part of the language (SPEC §16.2, §16.3). Adding a widget is a\ntwo-part change: declare it here, and register a Svelte component under the same name." @1:1-9:91
+  Package: QualifiedName studio @10:9-10:15
+  Imports[0]: Import @12:1-12:44
+    Path: QualifiedName sovcommon.time @12:8-12:22
+    Names[0]: Ident TimeOfDay @12:25-12:34
+    Names[1]: Ident Window @12:36-12:42
+  Decls[0]: EnumDecl @16:1-16:99
+    Doc: DocComment "Top-level sections of the studio navigation, in display order. A value whose view\nnames no menu is listed under \"No menu\"." @14:1-15:45
+    Name: Ident Menu @16:6-16:10
+    Members[0]: EnumMember @16:13-16:19
+      Name: Ident events @16:13-16:19
+    Members[1]: EnumMember @16:21-16:30
+      Name: Ident instances @16:21-16:30
+    Members[2]: EnumMember @16:32-16:43
+      Name: Ident progression @16:32-16:43
+    Members[3]: EnumMember @16:45-16:52
+      Name: Ident economy @16:45-16:52
+    Members[4]: EnumMember @16:54-16:59
+      Name: Ident items @16:54-16:59
+    Members[5]: EnumMember @16:61-16:65
+      Name: Ident gear @16:61-16:65
+    Members[6]: EnumMember @16:67-16:75
+      Name: Ident monsters @16:67-16:75
+    Members[7]: EnumMember @16:77-16:82
+      Name: Ident guild @16:77-16:82
+    Members[8]: EnumMember @16:84-16:89
+      Name: Ident world @16:84-16:89
+    Members[9]: EnumMember @16:91-16:97
+      Name: Ident system @16:91-16:97
+  Decls[1]: EnumDecl @19:1-34:2
+    Doc: DocComment "UI symbols, not game data: navigation, enum members, menus." @18:1-18:64
+    Name: Ident Icon @19:6-19:10
+    Members[0]: EnumMember @20:3-20:8
+      Name: Ident flame @20:3-20:8
+    Members[1]: EnumMember @21:3-21:10
+      Name: Ident droplet @21:3-21:10
+    Members[2]: EnumMember @22:3-22:6
+      Name: Ident zap @22:3-22:6
+    Members[3]: EnumMember @23:3-23:7
+      Name: Ident wind @23:3-23:7
+    Members[4]: EnumMember @24:3-24:11
+      Name: Ident mountain @24:3-24:11
+    Members[5]: EnumMember @25:3-25:7
+      Name: Ident farm @25:3-25:7
+    Members[6]: EnumMember @26:3-26:8
+      Name: Ident event @26:3-26:8
+    Members[7]: EnumMember @27:3-27:8
+      Name: Ident tower @27:3-27:8
+    Members[8]: EnumMember @28:3-28:8
+      Name: Ident chest @28:3-28:8
+    Members[9]: EnumMember @29:3-29:6
+      Name: Ident map @29:3-29:6
+    Members[10]: EnumMember @30:3-30:8
+      Name: Ident sword @30:3-30:8
+    Members[11]: EnumMember @31:3-31:9
+      Name: Ident shield @31:3-31:9
+    Members[12]: EnumMember @32:3-32:6
+      Name: Ident gem @32:3-32:6
+    Members[13]: EnumMember @33:3-33:7
+      Name: Ident gear @33:3-33:7
+  Decls[2]: EnumDecl @37:1-37:84
+    Doc: DocComment "UI tones, mapped to the design system's colour tokens." @36:1-36:59
+    Name: Ident Tone @37:6-37:10
+    Members[0]: EnumMember @37:13-37:20
+      Name: Ident neutral @37:13-37:20
+    Members[1]: EnumMember @37:22-37:26
+      Name: Ident info @37:22-37:26
+    Members[2]: EnumMember @37:28-37:35
+      Name: Ident success @37:28-37:35
+    Members[3]: EnumMember @37:37-37:44
+      Name: Ident warning @37:37-37:44
+    Members[4]: EnumMember @37:46-37:52
+      Name: Ident danger @37:46-37:52
+    Members[5]: EnumMember @37:54-37:62
+      Name: Ident series_1 @37:54-37:62
+    Members[6]: EnumMember @37:64-37:72
+      Name: Ident series_2 @37:64-37:72
+    Members[7]: EnumMember @37:74-37:82
+      Name: Ident series_3 @37:74-37:82
+  Decls[3]: RecordDecl @40:1-49:2
+    Doc: DocComment "How numbers are shown. `scale` converts the stored value into the shown one." @39:1-39:81
+    Name: Ident UnitSpec @40:8-40:16
+    Body: RecordBody @40:17-49:2
+      Items[0]: FieldDecl @42:3-42:22
+        Doc: DocComment "Appended to the number. Translatable, like every other studio text." @41:3-41:74
+        Name: Ident suffix @42:3-42:9
+        Type: NamedType @42:11-42:17
+          Name: QualifiedName String @42:11-42:17
+        Default: StringLit @42:20-42:22
+      Items[1]: FieldDecl @44:3-44:21
+        Doc: DocComment "Shown value = stored value × scale." @43:3-43:43
+        Name: Ident scale @44:3-44:8
+        Type: NamedType @44:10-44:15
+          Name: QualifiedName Float @44:10-44:15
+        Default: FloatLit Coef=10 Exp=-1 @44:18-44:21
+      Items[2]: FieldDecl @46:3-46:25
+        Doc: DocComment "Group digits by thousands." @45:3-45:33
+        Name: Ident thousands @46:3-46:12
+        Type: NamedType @46:14-46:18
+          Name: QualifiedName Bool @46:14-46:18
+        Default: BoolLit Value @46:21-46:25
+      Items[3]: FieldDecl @48:3-48:27
+        Doc: DocComment "Digits after the decimal separator." @47:3-47:42
+        Name: Ident decimals @48:3-48:11
+        Type: NamedType @48:13-48:23
+          Name: QualifiedName Int @48:13-48:16
+          Args: TypeArgs @48:16-48:23
+            Args[0]: RangeExpr Op=..= @48:17-48:22
+              Lo: IntLit Value=0 @48:17-48:18
+              Hi: IntLit Value=6 @48:21-48:22
+        Default: IntLit Value=0 @48:26-48:27
+  Decls[4]: LetDecl @52:1-61:2
+    Doc: DocComment "The units a view may name with `unit:`." @51:1-51:44
+    Name: Ident units @52:5-52:10
+    Type: TableType @52:12-52:26
+      Name: QualifiedName UnitSpec @52:18-52:26
+    Value: BraceLit @52:29-61:2
+      Items[0]: EntryItem @53:3-53:29
+        Key: Ident penya @53:3-53:8
+        Value: BraceLit @53:9-53:29
+          Items[0]: FieldItem @53:11-53:27
+            Name: Ident suffix @53:11-53:17
+            Value: StringLit @53:19-53:27
+              Parts[0]: text " penya"
+      Items[1]: EntryItem @54:3-54:23
+        Key: Ident hp @54:3-54:5
+        Value: BraceLit @54:6-54:23
+          Items[0]: FieldItem @54:8-54:21
+            Name: Ident suffix @54:8-54:14
+            Value: StringLit @54:16-54:21
+              Parts[0]: text " HP"
+      Items[2]: EntryItem @55:3-55:23
+        Key: Ident pct @55:3-55:6
+        Value: BraceLit @55:7-55:23
+          Items[0]: FieldItem @55:9-55:21
+            Name: Ident suffix @55:9-55:15
+            Value: StringLit @55:17-55:21
+              Parts[0]: text " %"
+      Items[3]: EntryItem @57:3-57:54
+        Doc: DocComment "Probabilities stored out of 1 000 000 000 (random options, drop rates)." @56:3-56:78
+        Key: Ident ppb @57:3-57:6
+        Value: BraceLit @57:7-57:54
+          Items[0]: FieldItem @57:9-57:21
+            Name: Ident suffix @57:9-57:15
+            Value: StringLit @57:17-57:21
+              Parts[0]: text " %"
+          Items[1]: FieldItem @57:23-57:39
+            Name: Ident scale @57:23-57:28
+            Value: FloatLit Coef=1 Exp=-7 @57:30-57:39
+          Items[2]: FieldItem @57:41-57:52
+            Name: Ident decimals @57:41-57:49
+            Value: IntLit Value=4 @57:51-57:52
+      Items[4]: EntryItem @58:3-58:12
+        Key: Ident weight @58:3-58:9
+        Value: BraceLit @58:10-58:12
+      Items[5]: EntryItem @59:3-59:11
+        Key: Ident count @59:3-59:8
+        Value: BraceLit @59:9-59:11
+      Items[6]: EntryItem @60:3-60:27
+        Key: Ident seconds @60:3-60:10
+        Value: BraceLit @60:11-60:27
+          Items[0]: FieldItem @60:13-60:25
+            Name: Ident suffix @60:13-60:19
+            Value: StringLit @60:21-60:25
+              Parts[0]: text " s"
+  Decls[5]: WidgetDecl @65:1-65:40
+    Doc: DocComment "A week-long timeline; windows are bars, dragged to move or resize. Wrapping windows\nare drawn across midnight and across the week boundary." @63:1-64:60
+    Name: Ident weekly_timeline @65:8-65:23
+    Params[0]: Param @65:24-65:39
+      Name: Ident value @65:24-65:29
+      Type: ListType @65:31-65:39
+        Elem: NamedType @65:32-65:38
+          Name: QualifiedName Window @65:32-65:38
+  Decls[6]: WidgetDecl @69:1-69:33
+    Doc: DocComment "An ordered list where position has meaning (level 1, 2, 3...): numbered steps,\ndrag to reorder, with the position shown as the step's name (`step:` renames it)." @67:1-68:86
+    Name: Ident ordered_steps @69:8-69:21
+    Params[0]: Param @69:22-69:32
+      Name: Ident value @69:22-69:27
+      Type: ListType @69:29-69:32
+        Elem: AnyType @69:30-69:31
+  Decls[7]: WidgetDecl @73:1-73:49
+    Doc: DocComment "A weight shown with its share of the list it belongs to (\"225 000 = 22.5 %\"). The\nstudio passes the same field of every element of the enclosing list as `siblings`." @71:1-72:87
+    Name: Ident weight_share @73:8-73:20
+    Params[0]: Param @73:21-73:31
+      Name: Ident value @73:21-73:26
+      Type: NamedType @73:28-73:31
+        Name: QualifiedName Int @73:28-73:31
+    Params[1]: Param @73:33-73:48
+      Name: Ident siblings @73:33-73:41
+      Type: ListType @73:43-73:48
+        Elem: NamedType @73:44-73:47
+          Name: QualifiedName Int @73:44-73:47
+  Decls[8]: WidgetDecl @77:1-77:42
+    Doc: DocComment "Grid editor for [magnitude, cumulative probability] pairs, showing the implied\nper-step probability and the remainder to 1 000 000 000." @75:1-76:61
+    Name: Ident probability_ladder @77:8-77:26
+    Params[0]: Param @77:27-77:41
+      Name: Ident value @77:27-77:32
+      Type: ListType @77:34-77:41
+        Elem: ListType @77:35-77:40
+          Elem: NamedType @77:36-77:39
+            Name: QualifiedName Int @77:36-77:39
+  Decls[9]: WidgetDecl Default="default" @81:1-81:45
+    Doc: DocComment "One \"HH:MM\" input for a time of day, instead of two bare numbers. The default editor\nof every TimeOfDay field, in every package; a view can still choose another control." @79:1-80:89
+    Name: Ident time_of_day @81:8-81:19
+    Params[0]: Param @81:20-81:36
+      Name: Ident value @81:20-81:25
+      Type: NamedType @81:27-81:36
+        Name: QualifiedName TimeOfDay @81:27-81:36
+  Decls[10]: EmitDecl @85:1-85:49
+    Target: Ident view @85:6-85:10
+    Options: BraceLit @85:11-85:49
+      Items[0]: FieldItem @85:13-85:47
+        Name: Ident out @85:13-85:16
+        Value: StringLit @85:18-85:47
+          Parts[0]: text "@generated/studio.view.json"
+== findings
+0 errors, 0 warnings in 1 package (…)

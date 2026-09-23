@@ -1,0 +1,137 @@
+File: File FileKind=source @1:1-39:1
+  Doc: DocComment "Finite-input `export fn` (SPEC §9.4): every input is an enum, a Bool or a ref, so\n`canon build` computes every answer and generated code only looks it up. No logic\nreaches the runtime. (teamboard/taxonomy.canon has the same with refs.)" @1:1-3:76
+  Package: QualifiedName features.lookup @4:9-4:24
+  Decls[0]: EnumDecl Ordered="ordered" @7:1-7:48
+    Doc: DocComment "Upgrade grades of a weapon, lowest first." @6:1-6:46
+    Name: Ident Grade @7:6-7:11
+    Members[0]: EnumMember @7:22-7:28
+      Name: Ident normal @7:22-7:28
+    Members[1]: EnumMember @7:30-7:36
+      Name: Ident unique @7:30-7:36
+    Members[2]: EnumMember @7:38-7:46
+      Name: Ident ultimate @7:38-7:46
+  Decls[1]: EnumDecl Ordered="ordered" @10:1-10:57
+    Doc: DocComment "Job tiers, lowest first." @9:1-9:29
+    Name: Ident Tier @10:6-10:10
+    Members[0]: EnumMember @10:21-10:28
+      Name: Ident vagrant @10:21-10:28
+    Members[1]: EnumMember @10:30-10:36
+      Name: Ident expert @10:30-10:36
+    Members[2]: EnumMember @10:38-10:41
+      Name: Ident pro @10:38-10:41
+    Members[3]: EnumMember @10:43-10:49
+      Name: Ident master @10:43-10:49
+    Members[4]: EnumMember @10:51-10:55
+      Name: Ident hero @10:51-10:55
+  Decls[2]: FnDecl @14:1-20:2
+    Doc: DocComment "Whether a character of `tier` may upgrade a weapon of `grade`: a 3 x 5 table in\ngenerated code." @12:1-13:20
+    Mods: Modifiers Export="export" @14:1-14:7
+    Name: Ident canUpgrade @14:11-14:21
+    Params[0]: Param @14:22-14:34
+      Name: Ident grade @14:22-14:27
+      Type: NamedType @14:29-14:34
+        Name: QualifiedName Grade @14:29-14:34
+    Params[1]: Param @14:36-14:46
+      Name: Ident tier @14:36-14:40
+      Type: NamedType @14:42-14:46
+        Name: QualifiedName Tier @14:42-14:46
+    Result: NamedType @14:51-14:55
+      Name: QualifiedName Bool @14:51-14:55
+    Body: Block @14:56-20:2
+      Stmts[0]: ReturnStmt @15:3-19:4
+        Value: MatchExpr @15:10-19:4
+          Scrutinee: IdentExpr grade @15:16-15:21
+          Arms[0]: MatchArm @16:5-16:19
+            Patterns[0]: Pattern @16:5-16:11
+              Name: QualifiedName normal @16:5-16:11
+            Body: BoolLit Value @16:15-16:19
+          Arms[1]: MatchArm @17:5-17:26
+            Patterns[0]: Pattern @17:5-17:11
+              Name: QualifiedName unique @17:5-17:11
+            Body: BinaryExpr Op=>= @17:15-17:26
+              X: IdentExpr tier @17:15-17:19
+              Y: IdentExpr pro @17:23-17:26
+          Arms[2]: MatchArm @18:5-18:31
+            Patterns[0]: Pattern @18:5-18:13
+              Name: QualifiedName ultimate @18:5-18:13
+            Body: BinaryExpr Op=>= @18:17-18:31
+              X: IdentExpr tier @18:17-18:21
+              Y: IdentExpr master @18:25-18:31
+  Decls[3]: FnDecl @23:1-29:2
+    Doc: DocComment "Penya an upgrade costs: a 3-entry table." @22:1-22:45
+    Mods: Modifiers Export="export" @23:1-23:7
+    Name: Ident upgradeCost @23:11-23:22
+    Params[0]: Param @23:23-23:35
+      Name: Ident grade @23:23-23:28
+      Type: NamedType @23:30-23:35
+        Name: QualifiedName Grade @23:30-23:35
+    Result: NamedType @23:40-23:43
+      Name: QualifiedName Int @23:40-23:43
+    Body: Block @23:44-29:2
+      Stmts[0]: ReturnStmt @24:3-28:4
+        Value: MatchExpr @24:10-28:4
+          Scrutinee: IdentExpr grade @24:16-24:21
+          Arms[0]: MatchArm @25:5-25:21
+            Patterns[0]: Pattern @25:5-25:11
+              Name: QualifiedName normal @25:5-25:11
+            Body: IntLit Value=10000 @25:15-25:21
+          Arms[1]: MatchArm @26:5-26:22
+            Patterns[0]: Pattern @26:5-26:11
+              Name: QualifiedName unique @26:5-26:11
+            Body: IntLit Value=500000 @26:15-26:22
+          Arms[2]: MatchArm @27:5-27:27
+            Patterns[0]: Pattern @27:5-27:13
+              Name: QualifiedName ultimate @27:5-27:13
+            Body: IntLit Value=20000000 @27:17-27:27
+  Decls[4]: TestDecl @31:1-35:2
+    Name: StringLit @31:6-31:34
+      Parts[0]: text "masters upgrade everything"
+    Body: Block @31:35-35:2
+      Stmts[0]: ExpectStmt @32:3-32:46
+        X: BinaryExpr Op=== @32:10-32:46
+          X: CallExpr @32:10-32:38
+            Fun: IdentExpr canUpgrade @32:10-32:20
+            Args[0]: Arg @32:21-32:29
+              Value: IdentExpr ultimate @32:21-32:29
+            Args[1]: Arg @32:31-32:37
+              Value: IdentExpr master @32:31-32:37
+          Y: BoolLit Value @32:42-32:46
+      Stmts[1]: ExpectStmt @33:3-33:45
+        X: BinaryExpr Op=== @33:10-33:45
+          X: CallExpr @33:10-33:36
+            Fun: IdentExpr canUpgrade @33:10-33:20
+            Args[0]: Arg @33:21-33:27
+              Value: IdentExpr unique @33:21-33:27
+            Args[1]: Arg @33:29-33:35
+              Value: IdentExpr expert @33:29-33:35
+          Y: BoolLit @33:40-33:45
+      Stmts[2]: ExpectStmt @34:3-34:40
+        X: BinaryExpr Op=== @34:10-34:40
+          X: CallExpr @34:10-34:29
+            Fun: IdentExpr upgradeCost @34:10-34:21
+            Args[0]: Arg @34:22-34:28
+              Value: IdentExpr unique @34:22-34:28
+          Y: IntLit Value=500000 @34:33-34:40
+  Decls[5]: EmitDecl @37:1-37:59
+    Target: Ident go @37:6-37:8
+    Options: BraceLit @37:9-37:59
+      Items[0]: FieldItem @37:11-37:25
+        Name: Ident out @37:11-37:14
+        Value: StringLit @37:16-37:25
+          Parts[0]: text "out/go/"
+      Items[1]: FieldItem @37:27-37:44
+        Name: Ident package @37:27-37:34
+        Value: StringLit @37:36-37:44
+          Parts[0]: text "lookup"
+      Items[2]: FieldItem @37:46-37:57
+        Name: Ident mode @37:46-37:50
+        Value: IdentExpr baked @37:52-37:57
+  Decls[6]: EmitDecl @38:1-38:43
+    Target: Ident ts @38:6-38:8
+    Options: BraceLit @38:9-38:43
+      Items[0]: FieldItem @38:11-38:41
+        Name: Ident out @38:11-38:14
+        Value: StringLit @38:16-38:41
+          Parts[0]: text "out/lookup.generated.ts"
+== findings
+0 errors, 0 warnings in 1 package (…)

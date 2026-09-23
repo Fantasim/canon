@@ -1,0 +1,33 @@
+GRAMMAR.md §12: any other syntax error; one per item, the parser resumes at the next item.
+-- a/a.canon --
+package a
+
+let = 5
+let x = )
+record R {
+  a: Int = f(1 2)
+  b: Int
+  c Int
+}
+let y = 1
+-- b/b.canon --
+package b
+
+let x = (
+-- findings.txt --
+error[E1116]  a/a.canon:3:5
+  expected IDENT; found =
+
+error[E1116]  a/a.canon:4:9
+  expected expr; found )
+
+error[E1116]  a/a.canon:6:16
+  expected ",", ")"; found 2
+
+error[E1116]  a/a.canon:8:5
+  expected ":"; found Int
+
+error[E1116]  b/b.canon:4:1
+  expected expr; found the end of the file
+
+5 errors, 0 warnings in 1 package (…)

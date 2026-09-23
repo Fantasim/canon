@@ -1,0 +1,332 @@
+GRAMMAR.md §5.11, §6.3: operators, precedence, lambdas, shorthand, postfix steps and folding.
+-- a/a.canon --
+package a
+
+let ops = a + b * c - d / e % f
+let logic = not a in b and c < d or e ?? f ?? g
+let ranges = [0.., ..=256, 1..=9, xs[i + 1..], xs[a..b]]
+let lambdas = [x => x + 1, (a, b) => a * b, _ => 0, () => 1, x => y => x]
+let short = items.map(.name.len()).filter(.default)
+let chain = w?.item.id!.x[0](1)
+let folded = [-5, -0.0, -9223372036854775808, -1.5.abs(), -(5), -x.f, - 90s, 2.5e-6, 0x1F, 1_000]
+let typed = [Point { x: 1, y: 2 }, Reward.item { id: 1 }, nothing {}]
+let loads = [load("a.json"), load.dir("d/*.json", at: "items", partial: true)]
+let choose = if a { 1 } else if b { 2 } else { 3 }
+let matched = match e.param {
+  monster(m) => m.id
+  item, quest => 0
+  none => 1
+  _ => { x: 2 }
+}
+let isCase = v is Reward.item and w is item
+let comp = [x * 2 for x in xs if x > 0 let y = x]
+let mapComp = { k: v for k, v in pairs }
+let keyed = { "Cap": [a, b], (name): v, ...base, retired old @deprecated("gone") { }, open { tone: warning } }
+let selfish = self.items
+let multiline = items
+  .filter(w => w.kind1 == "IK1_WEAPON")
+  ?? []
+-- ast --
+== a/a.canon
+File: File FileKind=source @1:1-27:1
+  Package: QualifiedName a @1:9-1:10
+  Decls[0]: LetDecl @3:1-3:32
+    Name: Ident ops @3:5-3:8
+    Value: BinaryExpr Op=- @3:11-3:32
+      X: BinaryExpr Op=+ @3:11-3:20
+        X: IdentExpr a @3:11-3:12
+        Y: BinaryExpr Op=* @3:15-3:20
+          X: IdentExpr b @3:15-3:16
+          Y: IdentExpr c @3:19-3:20
+      Y: BinaryExpr Op=% @3:23-3:32
+        X: BinaryExpr Op=/ @3:23-3:28
+          X: IdentExpr d @3:23-3:24
+          Y: IdentExpr e @3:27-3:28
+        Y: IdentExpr f @3:31-3:32
+  Decls[1]: LetDecl @4:1-4:48
+    Name: Ident logic @4:5-4:10
+    Value: BinaryExpr Op=?? @4:13-4:48
+      X: BinaryExpr Op=or @4:13-4:38
+        X: BinaryExpr Op=and @4:13-4:33
+          X: UnaryExpr Op=not @4:13-4:23
+            X: BinaryExpr Op=in @4:17-4:23
+              X: IdentExpr a @4:17-4:18
+              Y: IdentExpr b @4:22-4:23
+          Y: BinaryExpr Op=< @4:28-4:33
+            X: IdentExpr c @4:28-4:29
+            Y: IdentExpr d @4:32-4:33
+        Y: IdentExpr e @4:37-4:38
+      Y: BinaryExpr Op=?? @4:42-4:48
+        X: IdentExpr f @4:42-4:43
+        Y: IdentExpr g @4:47-4:48
+  Decls[2]: LetDecl @5:1-5:57
+    Name: Ident ranges @5:5-5:11
+    Value: ListLit @5:14-5:57
+      Elems[0]: RangeExpr Op=.. @5:15-5:18
+        Lo: IntLit Value=0 @5:15-5:16
+      Elems[1]: RangeExpr Op=..= @5:20-5:26
+        Hi: IntLit Value=256 @5:23-5:26
+      Elems[2]: RangeExpr Op=..= @5:28-5:33
+        Lo: IntLit Value=1 @5:28-5:29
+        Hi: IntLit Value=9 @5:32-5:33
+      Elems[3]: IndexExpr @5:35-5:46
+        X: IdentExpr xs @5:35-5:37
+        Index: RangeExpr Op=.. @5:38-5:45
+          Lo: BinaryExpr Op=+ @5:38-5:43
+            X: IdentExpr i @5:38-5:39
+            Y: IntLit Value=1 @5:42-5:43
+      Elems[4]: IndexExpr @5:48-5:56
+        X: IdentExpr xs @5:48-5:50
+        Index: RangeExpr Op=.. @5:51-5:55
+          Lo: IdentExpr a @5:51-5:52
+          Hi: IdentExpr b @5:54-5:55
+  Decls[3]: LetDecl @6:1-6:74
+    Name: Ident lambdas @6:5-6:12
+    Value: ListLit @6:15-6:74
+      Elems[0]: LambdaExpr @6:16-6:26
+        Params[0]: Ident x @6:16-6:17
+        Body: BinaryExpr Op=+ @6:21-6:26
+          X: IdentExpr x @6:21-6:22
+          Y: IntLit Value=1 @6:25-6:26
+      Elems[1]: LambdaExpr @6:28-6:43
+        Params[0]: Ident a @6:29-6:30
+        Params[1]: Ident b @6:32-6:33
+        Body: BinaryExpr Op=* @6:38-6:43
+          X: IdentExpr a @6:38-6:39
+          Y: IdentExpr b @6:42-6:43
+      Elems[2]: LambdaExpr @6:45-6:51
+        Params[0]: Ident _ @6:45-6:46
+        Body: IntLit Value=0 @6:50-6:51
+      Elems[3]: LambdaExpr @6:53-6:60
+        Body: IntLit Value=1 @6:59-6:60
+      Elems[4]: LambdaExpr @6:62-6:73
+        Params[0]: Ident x @6:62-6:63
+        Body: LambdaExpr @6:67-6:73
+          Params[0]: Ident y @6:67-6:68
+          Body: IdentExpr x @6:72-6:73
+  Decls[4]: LetDecl @7:1-7:52
+    Name: Ident short @7:5-7:10
+    Value: CallExpr @7:13-7:52
+      Fun: SelectorExpr @7:13-7:42
+        X: CallExpr @7:13-7:35
+          Fun: SelectorExpr @7:13-7:22
+            X: IdentExpr items @7:13-7:18
+            Name: Ident map @7:19-7:22
+          Args[0]: Arg @7:23-7:34
+            Value: ShorthandLambda @7:23-7:34
+              Body: CallExpr @7:23-7:34
+                Fun: SelectorExpr @7:23-7:32
+                  X: SelectorExpr @7:23-7:28
+                    Name: Ident name @7:24-7:28
+                  Name: Ident len @7:29-7:32
+        Name: Ident filter @7:36-7:42
+      Args[0]: Arg @7:43-7:51
+        Value: ShorthandLambda @7:43-7:51
+          Body: SelectorExpr @7:43-7:51
+            Name: Ident default @7:44-7:51
+  Decls[5]: LetDecl @8:1-8:32
+    Name: Ident chain @8:5-8:10
+    Value: CallExpr @8:13-8:32
+      Fun: IndexExpr @8:13-8:29
+        X: SelectorExpr @8:13-8:26
+          X: ForceExpr @8:13-8:24
+            X: SelectorExpr @8:13-8:23
+              X: SelectorExpr Optional @8:13-8:20
+                X: IdentExpr w @8:13-8:14
+                Name: Ident item @8:16-8:20
+              Name: Ident id @8:21-8:23
+          Name: Ident x @8:25-8:26
+        Index: IntLit Value=0 @8:27-8:28
+      Args[0]: Arg @8:30-8:31
+        Value: IntLit Value=1 @8:30-8:31
+  Decls[6]: LetDecl @9:1-9:98
+    Name: Ident folded @9:5-9:11
+    Value: ListLit @9:14-9:98
+      Elems[0]: IntLit Value=-5 @9:15-9:17
+      Elems[1]: FloatLit Neg Coef=0 Exp=-1 @9:19-9:23
+      Elems[2]: IntLit Value=-9223372036854775808 @9:25-9:45
+      Elems[3]: UnaryExpr Op=- @9:47-9:57
+        X: CallExpr @9:48-9:57
+          Fun: SelectorExpr @9:48-9:55
+            X: FloatLit Coef=15 Exp=-1 @9:48-9:51
+            Name: Ident abs @9:52-9:55
+      Elems[4]: UnaryExpr Op=- @9:59-9:63
+        X: ParenExpr @9:60-9:63
+          X: IntLit Value=5 @9:61-9:62
+      Elems[5]: UnaryExpr Op=- @9:65-9:69
+        X: SelectorExpr @9:66-9:69
+          X: IdentExpr x @9:66-9:67
+          Name: Ident f @9:68-9:69
+      Elems[6]: DurationLit Millis=-90000 @9:71-9:76
+      Elems[7]: FloatLit Coef=25 Exp=-7 @9:78-9:84
+      Elems[8]: IntLit Value=31 @9:86-9:90
+      Elems[9]: IntLit Value=1000 @9:92-9:97
+  Decls[7]: LetDecl @10:1-10:70
+    Name: Ident typed @10:5-10:10
+    Value: ListLit @10:13-10:70
+      Elems[0]: TypedLit @10:14-10:34
+        Type: QualifiedName Point @10:14-10:19
+        Lit: BraceLit @10:20-10:34
+          Items[0]: FieldItem @10:22-10:26
+            Name: Ident x @10:22-10:23
+            Value: IntLit Value=1 @10:25-10:26
+          Items[1]: FieldItem @10:28-10:32
+            Name: Ident y @10:28-10:29
+            Value: IntLit Value=2 @10:31-10:32
+      Elems[1]: TypedLit @10:36-10:57
+        Type: QualifiedName Reward.item @10:36-10:47
+        Lit: BraceLit @10:48-10:57
+          Items[0]: FieldItem @10:50-10:55
+            Name: Ident id @10:50-10:52
+            Value: IntLit Value=1 @10:54-10:55
+      Elems[2]: TypedLit @10:59-10:69
+        Type: QualifiedName nothing @10:59-10:66
+        Lit: BraceLit @10:67-10:69
+  Decls[8]: LetDecl @11:1-11:79
+    Name: Ident loads @11:5-11:10
+    Value: ListLit @11:13-11:79
+      Elems[0]: LoadExpr @11:14-11:28
+        Args[0]: Arg @11:19-11:27
+          Value: StringLit @11:19-11:27
+            Parts[0]: text "a.json"
+      Elems[1]: LoadExpr @11:30-11:78
+        Method: Ident dir @11:35-11:38
+        Args[0]: Arg @11:39-11:49
+          Value: StringLit @11:39-11:49
+            Parts[0]: text "d/*.json"
+        Args[1]: Arg @11:51-11:62
+          Name: Ident at @11:51-11:53
+          Value: StringLit @11:55-11:62
+            Parts[0]: text "items"
+        Args[2]: Arg @11:64-11:77
+          Name: Ident partial @11:64-11:71
+          Value: BoolLit Value @11:73-11:77
+  Decls[9]: LetDecl @12:1-12:51
+    Name: Ident choose @12:5-12:11
+    Value: IfExpr @12:14-12:51
+      Cond: IdentExpr a @12:17-12:18
+      Then: ExprBody @12:19-12:24
+        X: IntLit Value=1 @12:21-12:22
+      ElseIf: IfExpr @12:30-12:51
+        Cond: IdentExpr b @12:33-12:34
+        Then: ExprBody @12:35-12:40
+          X: IntLit Value=2 @12:37-12:38
+        Else: ExprBody @12:46-12:51
+          X: IntLit Value=3 @12:48-12:49
+  Decls[10]: LetDecl @13:1-18:2
+    Name: Ident matched @13:5-13:12
+    Value: MatchExpr @13:15-18:2
+      Scrutinee: SelectorExpr @13:21-13:28
+        X: IdentExpr e @13:21-13:22
+        Name: Ident param @13:23-13:28
+      Arms[0]: MatchArm @14:3-14:21
+        Patterns[0]: Pattern @14:3-14:13
+          Name: QualifiedName monster @14:3-14:10
+          Binder: Ident m @14:11-14:12
+        Body: SelectorExpr @14:17-14:21
+          X: IdentExpr m @14:17-14:18
+          Name: Ident id @14:19-14:21
+      Arms[1]: MatchArm @15:3-15:19
+        Patterns[0]: Pattern @15:3-15:7
+          Name: QualifiedName item @15:3-15:7
+        Patterns[1]: Pattern @15:9-15:14
+          Name: QualifiedName quest @15:9-15:14
+        Body: IntLit Value=0 @15:18-15:19
+      Arms[2]: MatchArm @16:3-16:12
+        Patterns[0]: Pattern Keyword=none @16:3-16:7
+        Body: IntLit Value=1 @16:11-16:12
+      Arms[3]: MatchArm @17:3-17:16
+        Patterns[0]: Pattern Keyword=_ @17:3-17:4
+        Body: BraceLit @17:8-17:16
+          Items[0]: FieldItem @17:10-17:14
+            Name: Ident x @17:10-17:11
+            Value: IntLit Value=2 @17:13-17:14
+  Decls[11]: LetDecl @19:1-19:44
+    Name: Ident isCase @19:5-19:11
+    Value: BinaryExpr Op=and @19:14-19:44
+      X: IsExpr @19:14-19:30
+        X: IdentExpr v @19:14-19:15
+        Target: QualifiedName Reward.item @19:19-19:30
+      Y: IsExpr @19:35-19:44
+        X: IdentExpr w @19:35-19:36
+        Target: QualifiedName item @19:40-19:44
+  Decls[12]: LetDecl @20:1-20:50
+    Name: Ident comp @20:5-20:9
+    Value: ListComp @20:12-20:50
+      Elem: BinaryExpr Op=* @20:13-20:18
+        X: IdentExpr x @20:13-20:14
+        Y: IntLit Value=2 @20:17-20:18
+      Clauses[0]: CompClause Keyword=for @20:19-20:30
+        Vars[0]: Ident x @20:23-20:24
+        X: IdentExpr xs @20:28-20:30
+      Clauses[1]: CompClause Keyword=if @20:31-20:39
+        X: BinaryExpr Op=> @20:34-20:39
+          X: IdentExpr x @20:34-20:35
+          Y: IntLit Value=0 @20:38-20:39
+      Clauses[2]: CompClause Keyword=let @20:40-20:49
+        Vars[0]: Ident y @20:44-20:45
+        X: IdentExpr x @20:48-20:49
+  Decls[13]: LetDecl @21:1-21:41
+    Name: Ident mapComp @21:5-21:12
+    Value: BraceLit @21:15-21:41
+      Items[0]: MapItem @21:17-21:21
+        Key: IdentExpr k @21:17-21:18
+        Value: IdentExpr v @21:20-21:21
+      Clauses[0]: CompClause Keyword=for @21:22-21:39
+        Vars[0]: Ident k @21:26-21:27
+        Vars[1]: Ident v @21:29-21:30
+        X: IdentExpr pairs @21:34-21:39
+  Decls[14]: LetDecl @22:1-22:111
+    Name: Ident keyed @22:5-22:10
+    Value: BraceLit @22:13-22:111
+      Items[0]: MapItem @22:15-22:28
+        Key: StringLit @22:15-22:20
+          Parts[0]: text "Cap"
+        Value: ListLit @22:22-22:28
+          Elems[0]: IdentExpr a @22:23-22:24
+          Elems[1]: IdentExpr b @22:26-22:27
+      Items[1]: MapItem @22:30-22:39
+        Key: ParenExpr @22:30-22:36
+          X: IdentExpr name @22:31-22:35
+        Value: IdentExpr v @22:38-22:39
+      Items[2]: SpreadItem @22:41-22:48
+        X: IdentExpr base @22:44-22:48
+      Items[3]: EntryItem @22:50-22:85
+        Mods: Modifiers Retired="retired" @22:50-22:57
+        Key: Ident old @22:58-22:61
+        Annotations[0]: Annotation @22:62-22:81
+          Name: Ident deprecated @22:63-22:73
+          Args[0]: AnnotationArg @22:74-22:80
+            Value: StringLit @22:74-22:80
+              Parts[0]: text "gone"
+        Value: BraceLit @22:82-22:85
+      Items[4]: EntryItem @22:87-22:109
+        Key: Ident open @22:87-22:91
+        Value: BraceLit @22:92-22:109
+          Items[0]: FieldItem @22:94-22:107
+            Name: Ident tone @22:94-22:98
+            Value: IdentExpr warning @22:100-22:107
+  Decls[15]: LetDecl @23:1-23:25
+    Name: Ident selfish @23:5-23:12
+    Value: SelectorExpr @23:15-23:25
+      X: SelfExpr @23:15-23:19
+      Name: Ident items @23:20-23:25
+  Decls[16]: LetDecl @24:1-26:8
+    Name: Ident multiline @24:5-24:14
+    Value: BinaryExpr Op=?? @24:17-26:8
+      X: CallExpr @24:17-25:40
+        Fun: SelectorExpr @24:17-25:10
+          X: IdentExpr items @24:17-24:22
+          Name: Ident filter @25:4-25:10
+        Args[0]: Arg @25:11-25:39
+          Value: LambdaExpr @25:11-25:39
+            Params[0]: Ident w @25:11-25:12
+            Body: BinaryExpr Op=== @25:16-25:39
+              X: SelectorExpr @25:16-25:23
+                X: IdentExpr w @25:16-25:17
+                Name: Ident kind1 @25:18-25:23
+              Y: StringLit @25:27-25:39
+                Parts[0]: text "IK1_WEAPON"
+      Y: ListLit @26:6-26:8
+== findings
+0 errors, 0 warnings in 1 package (…)

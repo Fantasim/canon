@@ -60,7 +60,7 @@ func samples() []sample {
 	var all []sample
 	for _, part := range []func(*gen) []sample{
 		sharedSamples, declSamples, recordSamples, fileSamples, typeSamples,
-		exprSamples, exprLitSamples, stmtSamples, viewSamples,
+		exprSamples, exprLitSamples, stmtSamples, viewSamples, badSamples,
 	} {
 		all = append(all, part(g)...)
 	}
@@ -245,5 +245,14 @@ func viewSamples(g *gen) []sample {
 			Members: []syntax.GroupMember{g.show(), &syntax.ViewField{Bounds: g.b()}},
 		}, 7},
 		{&syntax.ViewField{Doc: g.doc(), Field: g.tok, Name: g.id(), Label: g.str(), Props: g.brace()}, 4},
+	}
+}
+
+func badSamples(g *gen) []sample {
+	return []sample{
+		{&syntax.BadExpr{Bounds: g.b()}, 0},
+		{&syntax.BadType{Bounds: g.b()}, 0},
+		{&syntax.BadStmt{Bounds: g.b()}, 0},
+		{&syntax.BadDecl{Bounds: g.b()}, 0},
 	}
 }

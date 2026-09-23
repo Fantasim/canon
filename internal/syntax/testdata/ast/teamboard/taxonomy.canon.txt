@@ -1,0 +1,1493 @@
+File: File FileKind=source @1:1-430:1
+  Doc: DocComment "Taxonomy of the team board (internal.ragyra.com).\n\nRewrite of sovcommon/teamboard/taxonomy.json v7. The ~30 load-time checks in\nload.go and refs.go become three things here:\n  - types: unknown refs, roles, tones, icons, setBy, fields, duplicate or\n    badly formed ids, required fields. There is no code for any of them.\n  - stable tables: \"never renamed, never reused, retire instead of delete\".\n  - the eight `check`s at the bottom: the rules that are truly about this data.\n\nThe reporter makes ONE classification: WHERE did you see it (area). Everything\nfiner is said in the text; routing to a technical area is the triager's move." @1:1-11:82
+  Package: QualifiedName teamboard @12:9-12:18
+  Imports[0]: Import @14:1-14:32
+    Path: QualifiedName sovcommon.roles @14:8-14:23
+    Names[0]: Ident Role @14:26-14:30
+  Imports[1]: Import @15:1-15:35
+    Path: QualifiedName sovcommon.ui @15:8-15:20
+    Names[0]: Ident Icon @15:23-15:27
+    Names[1]: Ident Tone @15:29-15:33
+  Decls[0]: ConstDecl @18:1-18:18
+    Doc: DocComment "Format version of the taxonomy (taxonomy.json's `version`)." @17:1-17:64
+    Name: Ident VERSION @18:7-18:14
+    Value: IntLit Value=7 @18:17-18:18
+  Decls[1]: EnumDecl @25:1-25:54
+    Doc: DocComment "Who may set a flag or make a transition." @24:1-24:45
+    Name: Ident Actor @25:6-25:11
+    Members[0]: EnumMember @25:14-25:22
+      Name: Ident reporter @25:14-25:22
+    Members[1]: EnumMember @25:24-25:31
+      Name: Ident triager @25:24-25:31
+    Members[2]: EnumMember @25:33-25:52
+      Name: Ident reporter_or_triager @25:33-25:52
+  Decls[2]: EnumDecl @28:1-28:60
+    Doc: DocComment "Inputs a status transition may collect." @27:1-27:44
+    Name: Ident PostField @28:6-28:15
+    Members[0]: EnumMember @28:18-28:26
+      Name: Ident assignee @28:18-28:26
+    Members[1]: EnumMember @28:28-28:36
+      Name: Ident fixed_in @28:28-28:36
+    Members[2]: EnumMember @28:38-28:44
+      Name: Ident reason @28:38-28:44
+    Members[3]: EnumMember @28:46-28:58
+      Name: Ident duplicate_of @28:46-28:58
+  Decls[3]: TypeDecl @31:1-31:38
+    Doc: DocComment "A deck arrangement, \"<columns per row>:<rows>\"." @30:1-30:52
+    Name: Ident Layout @31:6-31:12
+    Type: NamedType @31:15-31:38
+      Name: QualifiedName String @31:15-31:21
+      Args: TypeArgs @31:21-31:38
+        Args[0]: RegexLit Pattern="^[1-9]:[1-9]$" @31:22-31:37
+  Decls[4]: RecordDecl @34:1-43:2
+    Doc: DocComment "What kind of post this is; `minRole` gates who may post it." @33:1-33:64
+    Name: Ident Intent @34:8-34:14
+    Body: RecordBody @34:15-43:2
+      Items[0]: FieldDecl @36:3-36:13
+        Doc: DocComment "Colour of the intent's badge." @35:3-35:36
+        Name: Ident tone @36:3-36:7
+        Type: NamedType @36:9-36:13
+          Name: QualifiedName Tone @36:9-36:13
+      Items[1]: FieldDecl @38:3-38:13
+        Doc: DocComment "Icon of the intent's badge." @37:3-37:34
+        Name: Ident icon @38:3-38:7
+        Type: NamedType @38:9-38:13
+          Name: QualifiedName Icon @38:9-38:13
+      Items[2]: FieldDecl @40:3-40:21
+        Doc: DocComment "What the reporter picks, as a sentence." @39:3-39:46
+        Name: Ident label @40:3-40:8
+        Type: NamedType @40:10-40:21
+          Name: QualifiedName String @40:10-40:16
+          Args: TypeArgs @40:16-40:21
+            Args[0]: RangeExpr Op=.. @40:17-40:20
+              Lo: IntLit Value=1 @40:17-40:18
+      Items[3]: FieldDecl @42:3-42:16
+        Doc: DocComment "The lowest role that may post with this intent." @41:3-41:54
+        Name: Ident minRole @42:3-42:10
+        Type: NamedType @42:12-42:16
+          Name: QualifiedName Role @42:12-42:16
+  Decls[5]: RecordDecl @46:1-59:2
+    Doc: DocComment "One of the reporter's booleans." @45:1-45:36
+    Name: Ident Flag @46:8-46:12
+    Body: RecordBody @46:13-59:2
+      Items[0]: FieldDecl @48:3-48:13
+        Doc: DocComment "Colour of the flag's badge." @47:3-47:34
+        Name: Ident tone @48:3-48:7
+        Type: NamedType @48:9-48:13
+          Name: QualifiedName Tone @48:9-48:13
+      Items[1]: FieldDecl @50:3-50:13
+        Doc: DocComment "Icon of the flag's badge." @49:3-49:32
+        Name: Ident icon @50:3-50:7
+        Type: NamedType @50:9-50:13
+          Name: QualifiedName Icon @50:9-50:13
+      Items[2]: FieldDecl @52:3-52:21
+        Doc: DocComment "What the reporter ticks, as a sentence." @51:3-51:46
+        Name: Ident label @52:3-52:8
+        Type: NamedType @52:10-52:21
+          Name: QualifiedName String @52:10-52:16
+          Args: TypeArgs @52:16-52:21
+            Args[0]: RangeExpr Op=.. @52:17-52:20
+              Lo: IntLit Value=1 @52:17-52:18
+      Items[3]: FieldDecl @54:3-54:23
+        Doc: DocComment "Shown under the label." @53:3-53:29
+        Name: Ident hint @54:3-54:7
+        Type: OptionalType @54:9-54:16
+          Elem: NamedType @54:9-54:15
+            Name: QualifiedName String @54:9-54:15
+        Default: NoneLit @54:19-54:23
+      Items[4]: FieldDecl @56:3-56:15
+        Doc: DocComment "Who may set the flag." @55:3-55:28
+        Name: Ident setBy @56:3-56:8
+        Type: NamedType @56:10-56:15
+          Name: QualifiedName Actor @56:10-56:15
+      Items[5]: FieldDecl @58:3-58:28
+        Doc: DocComment "Who may see that the flag was set; `none` means whoever can see the post." @57:3-57:80
+        Name: Ident viewMinRole @58:3-58:14
+        Type: OptionalType @58:16-58:21
+          Elem: NamedType @58:16-58:20
+            Name: QualifiedName Role @58:16-58:20
+        Default: NoneLit @58:24-58:28
+  Decls[6]: RecordDecl @62:1-81:2
+    Doc: DocComment "One point of the post lifecycle." @61:1-61:37
+    Name: Ident Status @62:8-62:14
+    Body: RecordBody @62:15-81:2
+      Items[0]: FieldDecl @64:3-64:13
+        Doc: DocComment "Colour of the status badge." @63:3-63:34
+        Name: Ident tone @64:3-64:7
+        Type: NamedType @64:9-64:13
+          Name: QualifiedName Tone @64:9-64:13
+      Items[1]: FieldDecl @66:3-66:21
+        Doc: DocComment "Name of the status." @65:3-65:26
+        Name: Ident label @66:3-66:8
+        Type: NamedType @66:10-66:21
+          Name: QualifiedName String @66:10-66:16
+          Args: TypeArgs @66:16-66:21
+            Args[0]: RangeExpr Op=.. @66:17-66:20
+              Lo: IntLit Value=1 @66:17-66:18
+      Items[2]: FieldDecl @68:3-68:17
+        Doc: DocComment "A terminal status closes the post. It can still be reopened through `next`." @67:3-67:82
+        Name: Ident terminal @68:3-68:11
+        Type: NamedType @68:13-68:17
+          Name: QualifiedName Bool @68:13-68:17
+      Items[3]: FieldDecl @70:3-70:21
+        Doc: DocComment "The closed set of statuses a post may move to from here." @69:3-69:63
+        Name: Ident next @70:3-70:7
+        Type: ListType @70:9-70:21
+          Elem: RefType @70:10-70:20
+            Name: QualifiedName Status @70:14-70:20
+      Items[4]: FieldDecl @72:3-72:29
+        Doc: DocComment "Inputs a transition INTO this status must collect." @71:3-71:57
+        Name: Ident requires @72:3-72:11
+        Type: ListType @72:13-72:24
+          Elem: NamedType @72:14-72:23
+            Name: QualifiedName PostField @72:14-72:23
+        Default: ListLit @72:27-72:29
+      Items[5]: FieldDecl @74:3-74:29
+        Doc: DocComment "Inputs a transition INTO this status may collect." @73:3-73:56
+        Name: Ident optional @74:3-74:11
+        Type: ListType @74:13-74:24
+          Elem: NamedType @74:14-74:23
+            Name: QualifiedName PostField @74:14-74:23
+        Default: ListLit @74:27-74:29
+      Items[6]: FieldDecl @76:3-76:20
+        Doc: DocComment "Who, besides a triager, may make the transition into this status." @75:3-75:72
+        Name: Ident by @76:3-76:5
+        Type: OptionalType @76:7-76:13
+          Elem: NamedType @76:7-76:12
+            Name: QualifiedName Actor @76:7-76:12
+        Default: NoneLit @76:16-76:20
+      Items[7]: CheckDecl Keyword=check @78:3-78:60
+        Cond: CallExpr @78:9-78:24
+          Fun: SelectorExpr @78:9-78:22
+            X: IdentExpr next @78:9-78:13
+            Name: Ident isUnique @78:14-78:22
+        Message: StringLit @78:30-78:60
+          Parts[0]: text "a transition is listed twice"
+      Items[8]: CheckDecl Keyword=check @79:3-79:76
+        Cond: UnaryExpr Op=not @79:9-79:32
+          X: CallExpr @79:13-79:32
+            Fun: SelectorExpr @79:13-79:26
+              X: IdentExpr next @79:13-79:17
+              Name: Ident contains @79:18-79:26
+            Args[0]: Arg @79:27-79:31
+              Value: SelfExpr @79:27-79:31
+        Message: StringLit @79:38-79:76
+          Parts[0]: text "a status cannot transition to itself"
+      Items[9]: CheckDecl Keyword=check @80:3-80:92
+        Cond: CallExpr @80:9-80:47
+          Fun: SelectorExpr @80:9-80:45
+            X: CallExpr @80:9-80:37
+              Fun: SelectorExpr @80:9-80:27
+                X: IdentExpr requires @80:9-80:17
+                Name: Ident intersect @80:18-80:27
+              Args[0]: Arg @80:28-80:36
+                Value: IdentExpr optional @80:28-80:36
+            Name: Ident isEmpty @80:38-80:45
+        Message: StringLit @80:53-80:92
+          Parts[0]: text "a field is both required and optional"
+  Decls[7]: RecordDecl @84:1-91:2
+    Doc: DocComment "Set by a triager only. The reporter's single signal is the `blocking` flag." @83:1-83:80
+    Name: Ident Severity @84:8-84:16
+    Body: RecordBody @84:17-91:2
+      Items[0]: FieldDecl @86:3-86:13
+        Doc: DocComment "Colour of the severity badge." @85:3-85:36
+        Name: Ident tone @86:3-86:7
+        Type: NamedType @86:9-86:13
+          Name: QualifiedName Tone @86:9-86:13
+      Items[1]: FieldDecl @88:3-88:21
+        Doc: DocComment "Name of the severity." @87:3-87:28
+        Name: Ident label @88:3-88:8
+        Type: NamedType @88:10-88:21
+          Name: QualifiedName String @88:10-88:16
+          Args: TypeArgs @88:16-88:21
+            Args[0]: RangeExpr Op=.. @88:17-88:20
+              Lo: IntLit Value=1 @88:17-88:18
+      Items[2]: FieldDecl @90:3-90:24
+        Doc: DocComment "The severity a triaged post gets unless the triager picks another." @89:3-89:73
+        Name: Ident default @90:3-90:10
+        Type: NamedType @90:12-90:16
+          Name: QualifiedName Bool @90:12-90:16
+        Default: BoolLit @90:19-90:24
+  Decls[8]: RecordDecl @94:1-97:2
+    Doc: DocComment "A header the area picker and the move-to-area menu group areas under." @93:1-93:74
+    Name: Ident AreaGroup @94:8-94:17
+    Body: RecordBody @94:18-97:2
+      Items[0]: FieldDecl @96:3-96:21
+        Doc: DocComment "Header text." @95:3-95:19
+        Name: Ident label @96:3-96:8
+        Type: NamedType @96:10-96:21
+          Name: QualifiedName String @96:10-96:16
+          Args: TypeArgs @96:16-96:21
+            Args[0]: RangeExpr Op=.. @96:17-96:20
+              Lo: IntLit Value=1 @96:17-96:18
+  Decls[9]: RecordDecl @100:1-118:2
+    Doc: DocComment "Where the reporter stood, never which component is at fault." @99:1-99:65
+    Name: Ident Area @100:8-100:12
+    Body: RecordBody @100:13-118:2
+      Items[0]: FieldDecl @102:3-102:23
+        Doc: DocComment "The header the area is listed under." @101:3-101:43
+        Name: Ident group @102:3-102:8
+        Type: RefType @102:10-102:23
+          Name: QualifiedName AreaGroup @102:14-102:23
+      Items[1]: FieldDecl @104:3-104:13
+        Doc: DocComment "Family: series_1 game, series_2 web, series_3 tooling, series_4 internal." @103:3-103:80
+        Name: Ident tone @104:3-104:7
+        Type: NamedType @104:9-104:13
+          Name: QualifiedName Tone @104:9-104:13
+      Items[2]: FieldDecl @106:3-106:13
+        Doc: DocComment "Icon next to the area's name." @105:3-105:36
+        Name: Ident icon @106:3-106:7
+        Type: NamedType @106:9-106:13
+          Name: QualifiedName Icon @106:9-106:13
+      Items[3]: FieldDecl @108:3-108:21
+        Doc: DocComment "Name of the area." @107:3-107:24
+        Name: Ident label @108:3-108:8
+        Type: NamedType @108:10-108:21
+          Name: QualifiedName String @108:10-108:16
+          Args: TypeArgs @108:16-108:21
+            Args[0]: RangeExpr Op=.. @108:17-108:20
+              Lo: IntLit Value=1 @108:17-108:18
+      Items[4]: FieldDecl @110:3-110:23
+        Doc: DocComment "Shown under the label." @109:3-109:29
+        Name: Ident hint @110:3-110:7
+        Type: OptionalType @110:9-110:16
+          Elem: NamedType @110:9-110:15
+            Name: QualifiedName String @110:9-110:15
+        Default: NoneLit @110:19-110:23
+      Items[5]: FieldDecl @112:3-112:16
+        Doc: DocComment "Gates posting AND viewing." @111:3-111:33
+        Name: Ident minRole @112:3-112:10
+        Type: NamedType @112:12-112:16
+          Name: QualifiedName Role @112:12-112:16
+      Items[6]: FieldDecl @114:3-114:28
+        Doc: DocComment "Technical areas a triager typically moves a post into. Orders the move menu only." @113:3-113:88
+        Name: Ident routesTo @114:3-114:11
+        Type: ListType @114:13-114:23
+          Elem: RefType @114:14-114:22
+            Name: QualifiedName Area @114:18-114:22
+        Default: ListLit @114:26-114:28
+      Items[7]: CheckDecl Keyword=check @116:3-116:71
+        Cond: CallExpr @116:9-116:28
+          Fun: SelectorExpr @116:9-116:26
+            X: IdentExpr routesTo @116:9-116:17
+            Name: Ident isUnique @116:18-116:26
+        Message: StringLit @116:34-116:71
+          Parts[0]: text "an area is listed twice in routesTo"
+      Items[8]: CheckDecl Keyword=check @117:3-117:74
+        Cond: UnaryExpr Op=not @117:9-117:36
+          X: CallExpr @117:13-117:36
+            Fun: SelectorExpr @117:13-117:30
+              X: IdentExpr routesTo @117:13-117:21
+              Name: Ident contains @117:22-117:30
+            Args[0]: Arg @117:31-117:35
+              Value: SelfExpr @117:31-117:35
+        Message: StringLit @117:42-117:74
+          Parts[0]: text "an area cannot route to itself"
+  Decls[10]: RecordDecl @121:1-134:2
+    Doc: DocComment "One fixed column of the deck: a named set of statuses." @120:1-120:59
+    Name: Ident Column @121:8-121:14
+    Body: RecordBody @121:15-134:2
+      Items[0]: FieldDecl @123:3-123:21
+        Doc: DocComment "Column header." @122:3-122:21
+        Name: Ident label @123:3-123:8
+        Type: NamedType @123:10-123:21
+          Name: QualifiedName String @123:10-123:16
+          Args: TypeArgs @123:16-123:21
+            Args[0]: RangeExpr Op=.. @123:17-123:20
+              Lo: IntLit Value=1 @123:17-123:18
+      Items[1]: FieldDecl @125:3-125:13
+        Doc: DocComment "Icon in the column header." @124:3-124:33
+        Name: Ident icon @125:3-125:7
+        Type: NamedType @125:9-125:13
+          Name: QualifiedName Icon @125:9-125:13
+      Items[2]: FieldDecl @127:3-127:25
+        Doc: DocComment "The statuses whose posts the column shows." @126:3-126:49
+        Name: Ident statuses @127:3-127:11
+        Type: ListType @127:13-127:25
+          Elem: RefType @127:14-127:24
+            Name: QualifiedName Status @127:18-127:24
+      Items[3]: FieldDecl @129:3-129:31
+        Doc: DocComment "Adds a multi-select of eligible members inside the column." @128:3-128:65
+        Name: Ident assigneeFilter @129:3-129:17
+        Type: NamedType @129:19-129:23
+          Name: QualifiedName Bool @129:19-129:23
+        Default: BoolLit @129:26-129:31
+      Items[4]: FieldDecl @131:3-131:24
+        Doc: DocComment "Lets a viewer collapse the column to the rail (capped by `deck.maxHidden`)." @130:3-130:82
+        Name: Ident hideable @131:3-131:11
+        Type: NamedType @131:13-131:17
+          Name: QualifiedName Bool @131:13-131:17
+        Default: BoolLit Value @131:20-131:24
+      Items[5]: CheckDecl Keyword=check @133:3-133:73
+        Cond: UnaryExpr Op=not @133:9-133:31
+          X: CallExpr @133:13-133:31
+            Fun: SelectorExpr @133:13-133:29
+              X: IdentExpr statuses @133:13-133:21
+              Name: Ident isEmpty @133:22-133:29
+        Message: StringLit @133:37-133:73
+          Parts[0]: text "a column holds at least one status"
+  Decls[11]: RecordDecl @137:1-145:2
+    Doc: DocComment "The deck: fixed columns, in order. Nobody adds, removes or edits a column." @136:1-136:79
+    Name: Ident Deck @137:8-137:12
+    Body: RecordBody @137:13-145:2
+      Items[0]: FieldDecl @139:3-139:20
+        Doc: DocComment "The only arrangements: all in one row, or a 2x2 grid." @138:3-138:60
+        Name: Ident layouts @139:3-139:10
+        Type: ListType @139:12-139:20
+          Elem: NamedType @139:13-139:19
+            Name: QualifiedName Layout @139:13-139:19
+      Items[1]: FieldDecl @141:3-141:22
+        Doc: DocComment "How many columns may be collapsed at once, so the deck never goes fully empty." @140:3-140:85
+        Name: Ident maxHidden @141:3-141:12
+        Type: NamedType @141:14-141:22
+          Name: QualifiedName Int @141:14-141:17
+          Args: TypeArgs @141:17-141:22
+            Args[0]: RangeExpr Op=.. @141:18-141:21
+              Lo: IntLit Value=1 @141:18-141:19
+      Items[2]: CheckDecl Keyword=check @143:3-143:57
+        Cond: UnaryExpr Op=not @143:9-143:30
+          X: CallExpr @143:13-143:30
+            Fun: SelectorExpr @143:13-143:28
+              X: IdentExpr layouts @143:13-143:20
+              Name: Ident isEmpty @143:21-143:28
+        Message: StringLit @143:36-143:57
+          Parts[0]: text "at least one layout"
+      Items[3]: CheckDecl Keyword=check @144:3-144:61
+        Cond: CallExpr @144:9-144:27
+          Fun: SelectorExpr @144:9-144:25
+            X: IdentExpr layouts @144:9-144:16
+            Name: Ident isUnique @144:17-144:25
+        Message: StringLit @144:33-144:61
+          Parts[0]: text "a layout is declared twice"
+  Decls[12]: LetDecl @152:1-155:2
+    Doc: DocComment "What a post can be." @151:1-151:24
+    Name: Ident intents @152:5-152:12
+    Type: TableType Stable="stable" @152:14-152:33
+      Name: QualifiedName Intent @152:27-152:33
+    Value: BraceLit @152:36-155:2
+      Items[0]: EntryItem @153:3-153:97
+        Key: Ident issue @153:3-153:8
+        Value: BraceLit @153:9-153:97
+          Items[0]: FieldItem @153:11-153:24
+            Name: Ident tone @153:11-153:15
+            Value: IdentExpr warning @153:17-153:24
+          Items[1]: FieldItem @153:26-153:46
+            Name: Ident icon @153:26-153:30
+            Value: IdentExpr alert_triangle @153:32-153:46
+          Items[2]: FieldItem @153:48-153:75
+            Name: Ident label @153:48-153:53
+            Value: StringLit @153:55-153:75
+              Parts[0]: text "Something is wrong"
+          Items[3]: FieldItem @153:77-153:95
+            Name: Ident minRole @153:77-153:84
+            Value: IdentExpr gm_junior @153:86-153:95
+      Items[1]: EntryItem @154:3-154:87
+        Key: Ident idea @154:3-154:7
+        Value: BraceLit @154:8-154:87
+          Items[0]: FieldItem @154:10-154:22
+            Name: Ident tone @154:10-154:14
+            Value: IdentExpr accent @154:16-154:22
+          Items[1]: FieldItem @154:24-154:39
+            Name: Ident icon @154:24-154:28
+            Value: IdentExpr lightbulb @154:30-154:39
+          Items[2]: FieldItem @154:41-154:65
+            Name: Ident label @154:41-154:46
+            Value: StringLit @154:48-154:65
+              Parts[0]: text "Idea or request"
+          Items[3]: FieldItem @154:67-154:85
+            Name: Ident minRole @154:67-154:74
+            Value: IdentExpr gm_junior @154:76-154:85
+  Decls[13]: LetDecl @158:1-168:2
+    Doc: DocComment "The reporter's booleans." @157:1-157:29
+    Name: Ident flags @158:5-158:10
+    Type: TableType Stable="stable" @158:12-158:29
+      Name: QualifiedName Flag @158:25-158:29
+    Value: BraceLit @158:32-168:2
+      Items[0]: EntryItem @159:3-159:87
+        Key: Ident blocking @159:3-159:11
+        Value: BraceLit @159:12-159:87
+          Items[0]: FieldItem @159:14-159:26
+            Name: Ident tone @159:14-159:18
+            Value: IdentExpr danger @159:20-159:26
+          Items[1]: FieldItem @159:28-159:38
+            Name: Ident icon @159:28-159:32
+            Value: IdentExpr hand @159:34-159:38
+          Items[2]: FieldItem @159:40-159:68
+            Name: Ident label @159:40-159:45
+            Value: StringLit @159:47-159:68
+              Parts[0]: text "This blocks my work"
+          Items[3]: FieldItem @159:70-159:85
+            Name: Ident setBy @159:70-159:75
+            Value: IdentExpr reporter @159:77-159:85
+      Items[1]: EntryItem @160:3-167:4
+        Key: Ident sensitive @160:3-160:12
+        Value: BraceLit @160:13-167:4
+          Items[0]: FieldItem @161:5-161:18
+            Name: Ident tone @161:5-161:9
+            Value: IdentExpr warning @161:11-161:18
+          Items[1]: FieldItem @162:5-162:15
+            Name: Ident icon @162:5-162:9
+            Value: IdentExpr lock @162:11-162:15
+          Items[2]: FieldItem @163:5-163:42
+            Name: Ident label @163:5-163:10
+            Value: StringLit @163:12-163:42
+              Parts[0]: text "Only the dev team should see"
+          Items[3]: FieldItem @164:5-164:20
+            Name: Ident setBy @164:5-164:10
+            Value: IdentExpr reporter @164:12-164:20
+          Items[4]: FieldItem @165:5-165:28
+            Name: Ident viewMinRole @165:5-165:16
+            Value: IdentExpr maintainer @165:18-165:28
+          Items[5]: FieldItem @166:5-166:48
+            Name: Ident hint @166:5-166:9
+            Value: StringLit @166:11-166:48
+              Parts[0]: text "Exploits, dupes, security problems."
+  Decls[14]: LetDecl @171:1-202:2
+    Doc: DocComment "The post lifecycle." @170:1-170:24
+    Name: Ident statuses @171:5-171:13
+    Type: TableType Stable="stable" @171:15-171:34
+      Name: QualifiedName Status @171:28-171:34
+    Value: BraceLit @171:37-202:2
+      Items[0]: EntryItem @172:3-172:92
+        Key: Ident open @172:3-172:7
+        Value: BraceLit @172:8-172:92
+          Items[0]: FieldItem @172:10-172:23
+            Name: Ident tone @172:10-172:14
+            Value: IdentExpr warning @172:16-172:23
+          Items[1]: FieldItem @172:25-172:38
+            Name: Ident label @172:25-172:30
+            Value: StringLit @172:32-172:38
+              Parts[0]: text "Open"
+          Items[2]: FieldItem @172:40-172:55
+            Name: Ident terminal @172:40-172:48
+            Value: BoolLit @172:50-172:55
+          Items[3]: FieldItem @172:57-172:90
+            Name: Ident next @172:57-172:61
+            Value: ListLit @172:63-172:90
+              Elems[0]: IdentExpr taken @172:64-172:69
+              Elems[1]: IdentExpr wont_do @172:71-172:78
+              Elems[2]: IdentExpr duplicate @172:80-172:89
+      Items[1]: EntryItem @173:3-179:4
+        Key: Ident taken @173:3-173:8
+        Value: BraceLit @173:9-179:4
+          Items[0]: FieldItem @174:5-174:15
+            Name: Ident tone @174:5-174:9
+            Value: IdentExpr info @174:11-174:15
+          Items[1]: FieldItem @175:5-175:19
+            Name: Ident label @175:5-175:10
+            Value: StringLit @175:12-175:19
+              Parts[0]: text "Taken"
+          Items[2]: FieldItem @176:5-176:20
+            Name: Ident terminal @176:5-176:13
+            Value: BoolLit @176:15-176:20
+          Items[3]: FieldItem @177:5-177:44
+            Name: Ident next @177:5-177:9
+            Value: ListLit @177:11-177:44
+              Elems[0]: IdentExpr open @177:12-177:16
+              Elems[1]: IdentExpr fixed @177:18-177:23
+              Elems[2]: IdentExpr wont_do @177:25-177:32
+              Elems[3]: IdentExpr duplicate @177:34-177:43
+          Items[4]: FieldItem @178:5-178:25
+            Name: Ident requires @178:5-178:13
+            Value: ListLit @178:15-178:25
+              Elems[0]: IdentExpr assignee @178:16-178:24
+      Items[2]: EntryItem @180:3-186:4
+        Key: Ident fixed @180:3-180:8
+        Value: BraceLit @180:9-186:4
+          Items[0]: FieldItem @181:5-181:17
+            Name: Ident tone @181:5-181:9
+            Value: IdentExpr accent @181:11-181:17
+          Items[1]: FieldItem @182:5-182:19
+            Name: Ident label @182:5-182:10
+            Value: StringLit @182:12-182:19
+              Parts[0]: text "Fixed"
+          Items[2]: FieldItem @183:5-183:20
+            Name: Ident terminal @183:5-183:13
+            Value: BoolLit @183:15-183:20
+          Items[3]: FieldItem @184:5-184:27
+            Name: Ident next @184:5-184:9
+            Value: ListLit @184:11-184:27
+              Elems[0]: IdentExpr verified @184:12-184:20
+              Elems[1]: IdentExpr open @184:22-184:26
+          Items[4]: FieldItem @185:5-185:25
+            Name: Ident optional @185:5-185:13
+            Value: ListLit @185:15-185:25
+              Elems[0]: IdentExpr fixed_in @185:16-185:24
+      Items[3]: EntryItem @187:3-193:4
+        Key: Ident verified @187:3-187:11
+        Value: BraceLit @187:12-193:4
+          Items[0]: FieldItem @188:5-188:18
+            Name: Ident tone @188:5-188:9
+            Value: IdentExpr success @188:11-188:18
+          Items[1]: FieldItem @189:5-189:22
+            Name: Ident label @189:5-189:10
+            Value: StringLit @189:12-189:22
+              Parts[0]: text "Verified"
+          Items[2]: FieldItem @190:5-190:19
+            Name: Ident terminal @190:5-190:13
+            Value: BoolLit Value @190:15-190:19
+          Items[3]: FieldItem @191:5-191:17
+            Name: Ident next @191:5-191:9
+            Value: ListLit @191:11-191:17
+              Elems[0]: IdentExpr open @191:12-191:16
+          Items[4]: FieldItem @192:5-192:28
+            Name: Ident by @192:5-192:7
+            Value: IdentExpr reporter_or_triager @192:9-192:28
+      Items[4]: EntryItem @194:3-194:97
+        Key: Ident wont_do @194:3-194:10
+        Value: BraceLit @194:11-194:97
+          Items[0]: FieldItem @194:13-194:26
+            Name: Ident tone @194:13-194:17
+            Value: IdentExpr neutral @194:19-194:26
+          Items[1]: FieldItem @194:28-194:45
+            Name: Ident label @194:28-194:33
+            Value: StringLit @194:35-194:45
+              Parts[0]: text "Won't do"
+          Items[2]: FieldItem @194:47-194:61
+            Name: Ident terminal @194:47-194:55
+            Value: BoolLit Value @194:57-194:61
+          Items[3]: FieldItem @194:63-194:75
+            Name: Ident next @194:63-194:67
+            Value: ListLit @194:69-194:75
+              Elems[0]: IdentExpr open @194:70-194:74
+          Items[4]: FieldItem @194:77-194:95
+            Name: Ident requires @194:77-194:85
+            Value: ListLit @194:87-194:95
+              Elems[0]: IdentExpr reason @194:88-194:94
+      Items[5]: EntryItem @195:3-201:4
+        Key: Ident duplicate @195:3-195:12
+        Value: BraceLit @195:13-201:4
+          Items[0]: FieldItem @196:5-196:18
+            Name: Ident tone @196:5-196:9
+            Value: IdentExpr neutral @196:11-196:18
+          Items[1]: FieldItem @197:5-197:23
+            Name: Ident label @197:5-197:10
+            Value: StringLit @197:12-197:23
+              Parts[0]: text "Duplicate"
+          Items[2]: FieldItem @198:5-198:19
+            Name: Ident terminal @198:5-198:13
+            Value: BoolLit Value @198:15-198:19
+          Items[3]: FieldItem @199:5-199:17
+            Name: Ident next @199:5-199:9
+            Value: ListLit @199:11-199:17
+              Elems[0]: IdentExpr open @199:12-199:16
+          Items[4]: FieldItem @200:5-200:29
+            Name: Ident requires @200:5-200:13
+            Value: ListLit @200:15-200:29
+              Elems[0]: IdentExpr duplicate_of @200:16-200:28
+  Decls[15]: LetDecl @206:1-206:39
+    Doc: DocComment "A post is owned by exactly one person, and never by a GM. Take = assign to yourself;\na triager may assign to any eligible member." @204:1-205:49
+    Name: Ident assigneeMinRole @206:5-206:20
+    Type: NamedType @206:22-206:26
+      Name: QualifiedName Role @206:22-206:26
+    Value: IdentExpr maintainer @206:29-206:39
+  Decls[16]: LetDecl @208:1-208:37
+    Doc: DocComment "The lowest role that may triage." @207:1-207:37
+    Name: Ident triageMinRole @208:5-208:18
+    Type: NamedType @208:20-208:24
+      Name: QualifiedName Role @208:20-208:24
+    Value: IdentExpr maintainer @208:27-208:37
+  Decls[17]: LetDecl @211:1-211:59
+    Doc: DocComment "The deck's arrangements." @210:1-210:29
+    Name: Ident deck @211:5-211:9
+    Type: NamedType @211:11-211:15
+      Name: QualifiedName Deck @211:11-211:15
+    Value: BraceLit @211:18-211:59
+      Items[0]: FieldItem @211:20-211:43
+        Name: Ident layouts @211:20-211:27
+        Value: ListLit @211:29-211:43
+          Elems[0]: StringLit @211:30-211:35
+            Parts[0]: text "4:1"
+          Elems[1]: StringLit @211:37-211:42
+            Parts[0]: text "2:2"
+      Items[1]: FieldItem @211:45-211:57
+        Name: Ident maxHidden @211:45-211:54
+        Value: IntLit Value=2 @211:56-211:57
+  Decls[18]: LetDecl @214:1-219:2
+    Doc: DocComment "The deck's columns, left to right." @213:1-213:39
+    Name: Ident columns @214:5-214:12
+    Type: TableType Stable="stable" @214:14-214:33
+      Name: QualifiedName Column @214:27-214:33
+    Value: BraceLit @214:36-219:2
+      Items[0]: EntryItem @215:3-215:66
+        Key: Ident unclaimed @215:3-215:12
+        Value: BraceLit @215:13-215:66
+          Items[0]: FieldItem @215:15-215:33
+            Name: Ident label @215:15-215:20
+            Value: StringLit @215:22-215:33
+              Parts[0]: text "Unclaimed"
+          Items[1]: FieldItem @215:35-215:46
+            Name: Ident icon @215:35-215:39
+            Value: IdentExpr inbox @215:41-215:46
+          Items[2]: FieldItem @215:48-215:64
+            Name: Ident statuses @215:48-215:56
+            Value: ListLit @215:58-215:64
+              Elems[0]: IdentExpr open @215:59-215:63
+      Items[1]: EntryItem @216:3-216:80
+        Key: Ident taken @216:3-216:8
+        Value: BraceLit @216:9-216:80
+          Items[0]: FieldItem @216:11-216:25
+            Name: Ident label @216:11-216:16
+            Value: StringLit @216:18-216:25
+              Parts[0]: text "Taken"
+          Items[1]: FieldItem @216:27-216:37
+            Name: Ident icon @216:27-216:31
+            Value: IdentExpr hand @216:33-216:37
+          Items[2]: FieldItem @216:39-216:56
+            Name: Ident statuses @216:39-216:47
+            Value: ListLit @216:49-216:56
+              Elems[0]: IdentExpr taken @216:50-216:55
+          Items[3]: FieldItem @216:58-216:78
+            Name: Ident assigneeFilter @216:58-216:72
+            Value: BoolLit Value @216:74-216:78
+      Items[2]: EntryItem @217:3-217:70
+        Key: Ident fixed @217:3-217:8
+        Value: BraceLit @217:9-217:70
+          Items[0]: FieldItem @217:11-217:36
+            Name: Ident label @217:11-217:16
+            Value: StringLit @217:18-217:36
+              Parts[0]: text "Fixed, to verify"
+          Items[1]: FieldItem @217:38-217:49
+            Name: Ident icon @217:38-217:42
+            Value: IdentExpr check @217:44-217:49
+          Items[2]: FieldItem @217:51-217:68
+            Name: Ident statuses @217:51-217:59
+            Value: ListLit @217:61-217:68
+              Elems[0]: IdentExpr fixed @217:62-217:67
+      Items[3]: EntryItem @218:3-218:82
+        Key: Ident done @218:3-218:7
+        Value: BraceLit @218:8-218:82
+          Items[0]: FieldItem @218:10-218:23
+            Name: Ident label @218:10-218:15
+            Value: StringLit @218:17-218:23
+              Parts[0]: text "Done"
+          Items[1]: FieldItem @218:25-218:38
+            Name: Ident icon @218:25-218:29
+            Value: IdentExpr archive @218:31-218:38
+          Items[2]: FieldItem @218:40-218:80
+            Name: Ident statuses @218:40-218:48
+            Value: ListLit @218:50-218:80
+              Elems[0]: IdentExpr verified @218:51-218:59
+              Elems[1]: IdentExpr wont_do @218:61-218:68
+              Elems[2]: IdentExpr duplicate @218:70-218:79
+  Decls[19]: LetDecl @222:1-226:2
+    Doc: DocComment "How bad a triaged post is." @221:1-221:31
+    Name: Ident severities @222:5-222:15
+    Type: TableType Stable="stable" @222:17-222:38
+      Name: QualifiedName Severity @222:30-222:38
+    Value: BraceLit @222:41-226:2
+      Items[0]: EntryItem @223:3-223:38
+        Key: Ident low @223:3-223:6
+        Value: BraceLit @223:7-223:38
+          Items[0]: FieldItem @223:9-223:22
+            Name: Ident tone @223:9-223:13
+            Value: IdentExpr neutral @223:15-223:22
+          Items[1]: FieldItem @223:24-223:36
+            Name: Ident label @223:24-223:29
+            Value: StringLit @223:31-223:36
+              Parts[0]: text "Low"
+      Items[1]: EntryItem @224:3-224:56
+        Key: Ident normal @224:3-224:9
+        Value: BraceLit @224:10-224:56
+          Items[0]: FieldItem @224:12-224:22
+            Name: Ident tone @224:12-224:16
+            Value: IdentExpr info @224:18-224:22
+          Items[1]: FieldItem @224:24-224:39
+            Name: Ident label @224:24-224:29
+            Value: StringLit @224:31-224:39
+              Parts[0]: text "Normal"
+          Items[2]: FieldItem @224:41-224:54
+            Name: Ident default @224:41-224:48
+            Value: BoolLit Value @224:50-224:54
+      Items[2]: EntryItem @225:3-225:47
+        Key: Ident critical @225:3-225:11
+        Value: BraceLit @225:12-225:47
+          Items[0]: FieldItem @225:14-225:26
+            Name: Ident tone @225:14-225:18
+            Value: IdentExpr danger @225:20-225:26
+          Items[1]: FieldItem @225:28-225:45
+            Name: Ident label @225:28-225:33
+            Value: StringLit @225:35-225:45
+              Parts[0]: text "Critical"
+  Decls[20]: LetDecl @229:1-233:2
+    Doc: DocComment "The headers of the area picker." @228:1-228:36
+    Name: Ident areaGroups @229:5-229:15
+    Type: TableType Stable="stable" @229:17-229:39
+      Name: QualifiedName AreaGroup @229:30-229:39
+    Value: BraceLit @229:42-233:2
+      Items[0]: EntryItem @230:3-230:31
+        Key: Ident in_game @230:3-230:10
+        Value: BraceLit @230:11-230:31
+          Items[0]: FieldItem @230:13-230:29
+            Name: Ident label @230:13-230:18
+            Value: StringLit @230:20-230:29
+              Parts[0]: text "In game"
+      Items[1]: EntryItem @231:3-231:36
+        Key: Ident out_game @231:3-231:11
+        Value: BraceLit @231:12-231:36
+          Items[0]: FieldItem @231:14-231:34
+            Name: Ident label @231:14-231:19
+            Value: StringLit @231:21-231:34
+              Parts[0]: text "Out of game"
+      Items[2]: EntryItem @232:3-232:33
+        Key: Ident internal @232:3-232:11
+        Value: BraceLit @232:12-232:33
+          Items[0]: FieldItem @232:14-232:31
+            Name: Ident label @232:14-232:19
+            Value: StringLit @232:21-232:31
+              Parts[0]: text "Internal"
+  Decls[21]: LetDecl @236:1-318:2
+    Doc: DocComment "Where a post was seen." @235:1-235:27
+    Name: Ident areas @236:5-236:10
+    Type: TableType Stable="stable" @236:12-236:29
+      Name: QualifiedName Area @236:25-236:29
+    Value: BraceLit @236:32-318:2
+      Items[0]: EntryItem @237:3-245:4
+        Key: Ident game @237:3-237:7
+        Value: BraceLit @237:8-245:4
+          Items[0]: FieldItem @238:5-238:19
+            Name: Ident group @238:5-238:10
+            Value: IdentExpr in_game @238:12-238:19
+          Items[1]: FieldItem @239:5-239:19
+            Name: Ident tone @239:5-239:9
+            Value: IdentExpr series_1 @239:11-239:19
+          Items[2]: FieldItem @240:5-240:18
+            Name: Ident icon @240:5-240:9
+            Value: IdentExpr gamepad @240:11-240:18
+          Items[3]: FieldItem @241:5-241:18
+            Name: Ident label @241:5-241:10
+            Value: StringLit @241:12-241:18
+              Parts[0]: text "Game"
+          Items[4]: FieldItem @242:5-242:23
+            Name: Ident minRole @242:5-242:12
+            Value: IdentExpr gm_junior @242:14-242:23
+          Items[5]: FieldItem @243:5-243:44
+            Name: Ident hint @243:5-243:9
+            Value: StringLit @243:11-243:44
+              Parts[0]: text "Anything you saw while playing."
+          Items[6]: FieldItem @244:5-244:55
+            Name: Ident routesTo @244:5-244:13
+            Value: ListLit @244:15-244:55
+              Elems[0]: IdentExpr game_server @244:16-244:27
+              Elems[1]: IdentExpr client @244:29-244:35
+              Elems[2]: IdentExpr resource @244:37-244:45
+              Elems[3]: IdentExpr balance @244:47-244:54
+      Items[1]: EntryItem @246:3-253:4
+        Key: Ident balance @246:3-246:10
+        Value: BraceLit @246:11-253:4
+          Items[0]: FieldItem @247:5-247:19
+            Name: Ident group @247:5-247:10
+            Value: IdentExpr in_game @247:12-247:19
+          Items[1]: FieldItem @248:5-248:19
+            Name: Ident tone @248:5-248:9
+            Value: IdentExpr series_1 @248:11-248:19
+          Items[2]: FieldItem @249:5-249:16
+            Name: Ident icon @249:5-249:9
+            Value: IdentExpr scale @249:11-249:16
+          Items[3]: FieldItem @250:5-250:21
+            Name: Ident label @250:5-250:10
+            Value: StringLit @250:12-250:21
+              Parts[0]: text "Balance"
+          Items[4]: FieldItem @251:5-251:23
+            Name: Ident minRole @251:5-251:12
+            Value: IdentExpr gm_junior @251:14-251:23
+          Items[5]: FieldItem @252:5-252:55
+            Name: Ident hint @252:5-252:9
+            Value: StringLit @252:11-252:55
+              Parts[0]: text "Nothing is broken, the numbers feel wrong."
+      Items[2]: EntryItem @254:3-261:4
+        Key: Ident website @254:3-254:10
+        Value: BraceLit @254:11-261:4
+          Items[0]: FieldItem @255:5-255:20
+            Name: Ident group @255:5-255:10
+            Value: IdentExpr out_game @255:12-255:20
+          Items[1]: FieldItem @256:5-256:19
+            Name: Ident tone @256:5-256:9
+            Value: IdentExpr series_2 @256:11-256:19
+          Items[2]: FieldItem @257:5-257:16
+            Name: Ident icon @257:5-257:9
+            Value: IdentExpr globe @257:11-257:16
+          Items[3]: FieldItem @258:5-258:21
+            Name: Ident label @258:5-258:10
+            Value: StringLit @258:12-258:21
+              Parts[0]: text "Website"
+          Items[4]: FieldItem @259:5-259:23
+            Name: Ident minRole @259:5-259:12
+            Value: IdentExpr gm_junior @259:14-259:23
+          Items[5]: FieldItem @260:5-260:66
+            Name: Ident hint @260:5-260:9
+            Value: StringLit @260:11-260:66
+              Parts[0]: text "The site, accounts, rankings, donations and payments."
+      Items[3]: EntryItem @262:3-268:4
+        Key: Ident resource_studio @262:3-262:18
+        Value: BraceLit @262:19-268:4
+          Items[0]: FieldItem @263:5-263:20
+            Name: Ident group @263:5-263:10
+            Value: IdentExpr internal @263:12-263:20
+          Items[1]: FieldItem @264:5-264:19
+            Name: Ident tone @264:5-264:9
+            Value: IdentExpr series_3 @264:11-264:19
+          Items[2]: FieldItem @265:5-265:17
+            Name: Ident icon @265:5-265:9
+            Value: IdentExpr layers @265:11-265:17
+          Items[3]: FieldItem @266:5-266:29
+            Name: Ident label @266:5-266:10
+            Value: StringLit @266:12-266:29
+              Parts[0]: text "Resource Studio"
+          Items[4]: FieldItem @267:5-267:24
+            Name: Ident minRole @267:5-267:12
+            Value: IdentExpr maintainer @267:14-267:24
+      Items[4]: EntryItem @270:3-270:101
+        Key: Ident game_server @270:3-270:14
+        Value: BraceLit @270:15-270:101
+          Items[0]: FieldItem @270:17-270:31
+            Name: Ident group @270:17-270:22
+            Value: IdentExpr in_game @270:24-270:31
+          Items[1]: FieldItem @270:33-270:47
+            Name: Ident tone @270:33-270:37
+            Value: IdentExpr series_1 @270:39-270:47
+          Items[2]: FieldItem @270:49-270:61
+            Name: Ident icon @270:49-270:53
+            Value: IdentExpr server @270:55-270:61
+          Items[3]: FieldItem @270:63-270:83
+            Name: Ident label @270:63-270:68
+            Value: StringLit @270:70-270:83
+              Parts[0]: text "Game server"
+          Items[4]: FieldItem @270:85-270:99
+            Name: Ident minRole @270:85-270:92
+            Value: IdentExpr admin @270:94-270:99
+      Items[5]: EntryItem @271:3-277:4
+        Key: Ident client @271:3-271:9
+        Value: BraceLit @271:10-277:4
+          Items[0]: FieldItem @272:5-272:19
+            Name: Ident group @272:5-272:10
+            Value: IdentExpr in_game @272:12-272:19
+          Items[1]: FieldItem @273:5-273:19
+            Name: Ident tone @273:5-273:9
+            Value: IdentExpr series_1 @273:11-273:19
+          Items[2]: FieldItem @274:5-274:18
+            Name: Ident icon @274:5-274:9
+            Value: IdentExpr monitor @274:11-274:18
+          Items[3]: FieldItem @275:5-275:25
+            Name: Ident label @275:5-275:10
+            Value: StringLit @275:12-275:25
+              Parts[0]: text "Game client"
+          Items[4]: FieldItem @276:5-276:24
+            Name: Ident minRole @276:5-276:12
+            Value: IdentExpr maintainer @276:14-276:24
+      Items[6]: EntryItem @278:3-284:4
+        Key: Ident resource @278:3-278:11
+        Value: BraceLit @278:12-284:4
+          Items[0]: FieldItem @279:5-279:19
+            Name: Ident group @279:5-279:10
+            Value: IdentExpr in_game @279:12-279:19
+          Items[1]: FieldItem @280:5-280:19
+            Name: Ident tone @280:5-280:9
+            Value: IdentExpr series_1 @280:11-280:19
+          Items[2]: FieldItem @281:5-281:19
+            Name: Ident icon @281:5-281:9
+            Value: IdentExpr database @281:11-281:19
+          Items[3]: FieldItem @282:5-282:34
+            Name: Ident label @282:5-282:10
+            Value: StringLit @282:12-282:34
+              Parts[0]: text "Game data (Resource)"
+          Items[4]: FieldItem @283:5-283:24
+            Name: Ident minRole @283:5-283:12
+            Value: IdentExpr maintainer @283:14-283:24
+      Items[7]: EntryItem @285:3-285:99
+        Key: Ident sovcommon @285:3-285:12
+        Value: BraceLit @285:13-285:99
+          Items[0]: FieldItem @285:15-285:30
+            Name: Ident group @285:15-285:20
+            Value: IdentExpr internal @285:22-285:30
+          Items[1]: FieldItem @285:32-285:46
+            Name: Ident tone @285:32-285:36
+            Value: IdentExpr series_3 @285:38-285:46
+          Items[2]: FieldItem @285:48-285:61
+            Name: Ident icon @285:48-285:52
+            Value: IdentExpr package @285:54-285:61
+          Items[3]: FieldItem @285:63-285:81
+            Name: Ident label @285:63-285:68
+            Value: StringLit @285:70-285:81
+              Parts[0]: text "sovcommon"
+          Items[4]: FieldItem @285:83-285:97
+            Name: Ident minRole @285:83-285:90
+            Value: IdentExpr admin @285:92-285:97
+      Items[8]: EntryItem @288:3-294:4
+        Doc: DocComment "Tracks the panel's own gate (RequireAdmin)." @287:3-287:50
+        Key: Ident admin_panel @288:3-288:14
+        Value: BraceLit @288:15-294:4
+          Items[0]: FieldItem @289:5-289:20
+            Name: Ident group @289:5-289:10
+            Value: IdentExpr internal @289:12-289:20
+          Items[1]: FieldItem @290:5-290:19
+            Name: Ident tone @290:5-290:9
+            Value: IdentExpr series_2 @290:11-290:19
+          Items[2]: FieldItem @291:5-291:17
+            Name: Ident icon @291:5-291:9
+            Value: IdentExpr shield @291:11-291:17
+          Items[3]: FieldItem @292:5-292:25
+            Name: Ident label @292:5-292:10
+            Value: StringLit @292:12-292:25
+              Parts[0]: text "Admin panel"
+          Items[4]: FieldItem @293:5-293:19
+            Name: Ident minRole @293:5-293:12
+            Value: IdentExpr admin @293:14-293:19
+      Items[9]: EntryItem @296:3-302:4
+        Doc: DocComment "Tracks monitoring's AdminMinRole." @295:3-295:40
+        Key: Ident analytics @296:3-296:12
+        Value: BraceLit @296:13-302:4
+          Items[0]: FieldItem @297:5-297:20
+            Name: Ident group @297:5-297:10
+            Value: IdentExpr internal @297:12-297:20
+          Items[1]: FieldItem @298:5-298:19
+            Name: Ident tone @298:5-298:9
+            Value: IdentExpr series_2 @298:11-298:19
+          Items[2]: FieldItem @299:5-299:20
+            Name: Ident icon @299:5-299:9
+            Value: IdentExpr bar_chart @299:11-299:20
+          Items[3]: FieldItem @300:5-300:29
+            Name: Ident label @300:5-300:10
+            Value: StringLit @300:12-300:29
+              Parts[0]: text "Analytics panel"
+          Items[4]: FieldItem @301:5-301:19
+            Name: Ident minRole @301:5-301:12
+            Value: IdentExpr admin @301:14-301:19
+      Items[10]: EntryItem @303:3-310:4
+        Key: Ident team_board @303:3-303:13
+        Value: BraceLit @303:14-310:4
+          Items[0]: FieldItem @304:5-304:20
+            Name: Ident group @304:5-304:10
+            Value: IdentExpr internal @304:12-304:20
+          Items[1]: FieldItem @305:5-305:19
+            Name: Ident tone @305:5-305:9
+            Value: IdentExpr series_2 @305:11-305:19
+          Items[2]: FieldItem @306:5-306:18
+            Name: Ident icon @306:5-306:9
+            Value: IdentExpr columns @306:11-306:18
+          Items[3]: FieldItem @307:5-307:24
+            Name: Ident label @307:5-307:10
+            Value: StringLit @307:12-307:24
+              Parts[0]: text "Team board"
+          Items[4]: FieldItem @308:5-308:23
+            Name: Ident minRole @308:5-308:12
+            Value: IdentExpr gm_junior @308:14-308:23
+          Items[5]: FieldItem @309:5-309:65
+            Name: Ident hint @309:5-309:9
+            Value: StringLit @309:11-309:65
+              Parts[0]: text "This board itself: something broken or missing here."
+      Items[11]: EntryItem @311:3-317:4
+        Key: Ident internal @311:3-311:11
+        Value: BraceLit @311:12-317:4
+          Items[0]: FieldItem @312:5-312:20
+            Name: Ident group @312:5-312:10
+            Value: IdentExpr internal @312:12-312:20
+          Items[1]: FieldItem @313:5-313:19
+            Name: Ident tone @313:5-313:9
+            Value: IdentExpr series_4 @313:11-313:19
+          Items[2]: FieldItem @314:5-314:19
+            Name: Ident icon @314:5-314:9
+            Value: IdentExpr terminal @314:11-314:19
+          Items[3]: FieldItem @315:5-315:43
+            Name: Ident label @315:5-315:10
+            Value: StringLit @315:12-315:43
+              Parts[0]: text "Internal (sov, boxes, deploy)"
+          Items[4]: FieldItem @316:5-316:19
+            Name: Ident minRole @316:5-316:12
+            Value: IdentExpr admin @316:14-316:19
+  Decls[22]: LetDecl @325:1-325:70
+    Doc: DocComment "A new post starts here: the single status of the first column. The deck has at least\ntwo columns (`maxHidden` >= 1 is below their count), so `first()!` cannot fail." @323:1-324:84
+    Name: Ident initialStatus @325:5-325:18
+    Type: RefType @325:20-325:30
+      Name: QualifiedName Status @325:24-325:30
+    Value: IndexExpr @325:33-325:70
+      X: SelectorExpr @325:33-325:67
+        X: ForceExpr @325:33-325:58
+          X: CallExpr @325:33-325:57
+            Fun: SelectorExpr @325:33-325:55
+              X: CallExpr @325:33-325:49
+                Fun: SelectorExpr @325:33-325:47
+                  X: IdentExpr columns @325:33-325:40
+                  Name: Ident active @325:41-325:47
+              Name: Ident first @325:50-325:55
+        Name: Ident statuses @325:59-325:67
+      Index: IntLit Value=0 @325:68-325:69
+  Decls[23]: LetDecl @329:1-329:73
+    Doc: DocComment "The severity a triaged post gets unless the triager picks another. Exactly one\nexists: see the `default` check below." @327:1-328:43
+    Name: Ident defaultSeverity @329:5-329:20
+    Type: RefType @329:22-329:34
+      Name: QualifiedName Severity @329:26-329:34
+    Value: ForceExpr @329:37-329:73
+      X: CallExpr @329:37-329:72
+        Fun: SelectorExpr @329:37-329:62
+          X: CallExpr @329:37-329:56
+            Fun: SelectorExpr @329:37-329:54
+              X: IdentExpr severities @329:37-329:47
+              Name: Ident active @329:48-329:54
+          Name: Ident first @329:57-329:62
+        Args[0]: Arg @329:63-329:71
+          Value: ShorthandLambda @329:63-329:71
+            Body: SelectorExpr @329:63-329:71
+              Name: Ident default @329:64-329:71
+  Decls[24]: CheckDecl Keyword=check @335:1-344:2
+    Body: Block @335:7-344:2
+      Stmts[0]: ForStmt @336:3-343:4
+        Vars[0]: Ident s @336:7-336:8
+        Iter: CallExpr @336:12-336:29
+          Fun: SelectorExpr @336:12-336:27
+            X: IdentExpr statuses @336:12-336:20
+            Name: Ident active @336:21-336:27
+        Body: Block @336:30-343:4
+          Stmts[0]: LetStmt @337:5-337:70
+            Name: Ident owners @337:9-337:15
+            Value: CallExpr @337:18-337:70
+              Fun: SelectorExpr @337:18-337:41
+                X: CallExpr @337:18-337:34
+                  Fun: SelectorExpr @337:18-337:32
+                    X: IdentExpr columns @337:18-337:25
+                    Name: Ident active @337:26-337:32
+                Name: Ident filter @337:35-337:41
+              Args[0]: Arg @337:42-337:69
+                Value: LambdaExpr @337:42-337:69
+                  Params[0]: Ident c @337:42-337:43
+                  Body: CallExpr @337:47-337:69
+                    Fun: SelectorExpr @337:47-337:66
+                      X: SelectorExpr @337:47-337:57
+                        X: IdentExpr c @337:47-337:48
+                        Name: Ident statuses @337:49-337:57
+                      Name: Ident contains @337:58-337:66
+                    Args[0]: Arg @337:67-337:68
+                      Value: IdentExpr s @337:67-337:68
+          Stmts[1]: IfStmt @338:5-342:6
+            Cond: CallExpr @338:8-338:24
+              Fun: SelectorExpr @338:8-338:22
+                X: IdentExpr owners @338:8-338:14
+                Name: Ident isEmpty @338:15-338:22
+            Then: Block @338:25-340:6
+              Stmts[0]: ExprStmt @339:7-339:60
+                X: CallExpr @339:7-339:60
+                  Fun: IdentExpr fail @339:7-339:11
+                  Args[0]: Arg @339:12-339:13
+                    Value: IdentExpr s @339:12-339:13
+                  Args[1]: Arg @339:15-339:59
+                    Value: StringLit @339:15-339:59
+                      Parts[0]: text "status "
+                      Parts[1]: Interp @339:24-339:28
+                        X: SelectorExpr @339:24-339:28
+                          X: IdentExpr s @339:24-339:25
+                          Name: Ident id @339:26-339:28
+                      Parts[2]: text " is not claimed by any column"
+            ElseIf: IfStmt @340:12-342:6
+              Cond: BinaryExpr Op=> @340:15-340:31
+                X: CallExpr @340:15-340:27
+                  Fun: SelectorExpr @340:15-340:25
+                    X: IdentExpr owners @340:15-340:21
+                    Name: Ident len @340:22-340:25
+                Y: IntLit Value=1 @340:30-340:31
+              Then: Block @340:32-342:6
+                Stmts[0]: ExprStmt @341:7-341:91
+                  X: CallExpr @341:7-341:91
+                    Fun: IdentExpr fail @341:7-341:11
+                    Args[0]: Arg @341:12-341:13
+                      Value: IdentExpr s @341:12-341:13
+                    Args[1]: Arg @341:15-341:90
+                      Value: StringLit @341:15-341:90
+                        Parts[0]: text "status "
+                        Parts[1]: Interp @341:24-341:28
+                          X: SelectorExpr @341:24-341:28
+                            X: IdentExpr s @341:24-341:25
+                            Name: Ident id @341:26-341:28
+                        Parts[2]: text " is claimed by several columns: "
+                        Parts[3]: Interp @341:62-341:88
+                          X: CallExpr @341:62-341:88
+                            Fun: SelectorExpr @341:62-341:82
+                              X: CallExpr @341:62-341:77
+                                Fun: SelectorExpr @341:62-341:72
+                                  X: IdentExpr owners @341:62-341:68
+                                  Name: Ident map @341:69-341:72
+                                Args[0]: Arg @341:73-341:76
+                                  Value: ShorthandLambda @341:73-341:76
+                                    Body: SelectorExpr @341:73-341:76
+                                      Name: Ident id @341:74-341:76
+                              Name: Ident join @341:78-341:82
+                            Args[0]: Arg @341:83-341:87
+                              Value: StringLit @341:83-341:87
+                                Parts[0]: text ", "
+  Decls[25]: CheckDecl Keyword=check @346:1-347:81
+    Cond: BinaryExpr Op=== @346:7-346:52
+      X: CallExpr @346:7-346:47
+        Fun: SelectorExpr @346:7-346:45
+          X: SelectorExpr @346:7-346:41
+            X: ForceExpr @346:7-346:32
+              X: CallExpr @346:7-346:31
+                Fun: SelectorExpr @346:7-346:29
+                  X: CallExpr @346:7-346:23
+                    Fun: SelectorExpr @346:7-346:21
+                      X: IdentExpr columns @346:7-346:14
+                      Name: Ident active @346:15-346:21
+                  Name: Ident first @346:24-346:29
+            Name: Ident statuses @346:33-346:41
+          Name: Ident len @346:42-346:45
+      Y: IntLit Value=1 @346:51-346:52
+    Message: StringLit @347:8-347:81
+      Parts[0]: text "the first column must hold exactly one status: it is the initial status"
+  Decls[26]: CheckDecl Keyword=check @349:1-349:95
+    Cond: BinaryExpr Op=== @349:7-349:47
+      X: CallExpr @349:7-349:42
+        Fun: SelectorExpr @349:7-349:32
+          X: CallExpr @349:7-349:26
+            Fun: SelectorExpr @349:7-349:24
+              X: IdentExpr severities @349:7-349:17
+              Name: Ident active @349:18-349:24
+          Name: Ident count @349:27-349:32
+        Args[0]: Arg @349:33-349:41
+          Value: ShorthandLambda @349:33-349:41
+            Body: SelectorExpr @349:33-349:41
+              Name: Ident default @349:34-349:41
+      Y: IntLit Value=1 @349:46-349:47
+    Message: StringLit @349:53-349:95
+      Parts[0]: text "severities must have exactly one default"
+  Decls[27]: CheckDecl Keyword=check @351:1-352:78
+    Cond: BinaryExpr Op=< @351:7-351:46
+      X: SelectorExpr @351:7-351:21
+        X: IdentExpr deck @351:7-351:11
+        Name: Ident maxHidden @351:12-351:21
+      Y: CallExpr @351:24-351:46
+        Fun: SelectorExpr @351:24-351:44
+          X: CallExpr @351:24-351:40
+            Fun: SelectorExpr @351:24-351:38
+              X: IdentExpr columns @351:24-351:31
+              Name: Ident active @351:32-351:38
+          Name: Ident len @351:41-351:44
+    Message: StringLit @352:8-352:78
+      Parts[0]: text "maxHidden ("
+      Parts[1]: Interp @352:21-352:35
+        X: SelectorExpr @352:21-352:35
+          X: IdentExpr deck @352:21-352:25
+          Name: Ident maxHidden @352:26-352:35
+      Parts[2]: text ") must be less than the number of columns"
+  Decls[28]: CheckDecl Keyword=check @354:1-360:2
+    Body: Block @354:7-360:2
+      Stmts[0]: ForStmt @355:3-359:4
+        Vars[0]: Ident g @355:7-355:8
+        Iter: CallExpr @355:12-355:31
+          Fun: SelectorExpr @355:12-355:29
+            X: IdentExpr areaGroups @355:12-355:22
+            Name: Ident active @355:23-355:29
+        Body: Block @355:32-359:4
+          Stmts[0]: IfStmt @356:5-358:6
+            Cond: UnaryExpr Op=not @356:8-356:49
+              X: CallExpr @356:12-356:49
+                Fun: SelectorExpr @356:12-356:30
+                  X: CallExpr @356:12-356:26
+                    Fun: SelectorExpr @356:12-356:24
+                      X: IdentExpr areas @356:12-356:17
+                      Name: Ident active @356:18-356:24
+                  Name: Ident any @356:27-356:30
+                Args[0]: Arg @356:31-356:48
+                  Value: LambdaExpr @356:31-356:48
+                    Params[0]: Ident a @356:31-356:32
+                    Body: BinaryExpr Op=== @356:36-356:48
+                      X: SelectorExpr @356:36-356:43
+                        X: IdentExpr a @356:36-356:37
+                        Name: Ident group @356:38-356:43
+                      Y: IdentExpr g @356:47-356:48
+            Then: Block @356:50-358:6
+              Stmts[0]: ExprStmt @357:7-357:55
+                X: CallExpr @357:7-357:55
+                  Fun: IdentExpr fail @357:7-357:11
+                  Args[0]: Arg @357:12-357:13
+                    Value: IdentExpr g @357:12-357:13
+                  Args[1]: Arg @357:15-357:54
+                    Value: StringLit @357:15-357:54
+                      Parts[0]: text "area group "
+                      Parts[1]: Interp @357:28-357:32
+                        X: SelectorExpr @357:28-357:32
+                          X: IdentExpr g @357:28-357:29
+                          Name: Ident id @357:30-357:32
+                      Parts[2]: text " is named by no area"
+  Decls[29]: CheckDecl Keyword=check @363:1-364:88
+    Doc: DocComment "The service code branches on these two flags by id." @362:1-362:56
+    Cond: BinaryExpr Op=and @363:7-363:65
+      X: UnaryExpr Op=not @363:7-363:33
+        X: SelectorExpr @363:11-363:33
+          X: SelectorExpr @363:11-363:25
+            X: IdentExpr flags @363:11-363:16
+            Name: Ident blocking @363:17-363:25
+          Name: Ident retired @363:26-363:33
+      Y: UnaryExpr Op=not @363:38-363:65
+        X: SelectorExpr @363:42-363:65
+          X: SelectorExpr @363:42-363:57
+            X: IdentExpr flags @363:42-363:47
+            Name: Ident sensitive @363:48-363:57
+          Name: Ident retired @363:58-363:65
+    Message: StringLit @364:8-364:88
+      Parts[0]: text "flags `blocking` and `sensitive` are used by the service and cannot be retired"
+  Decls[30]: CheckDecl Keyword=check @367:1-374:2
+    Doc: DocComment "New: the Go loader does not check this today." @366:1-366:50
+    Body: Block @367:7-374:2
+      Stmts[0]: LetStmt @368:3-368:57
+        Name: Ident seen @368:7-368:11
+        Value: CallExpr @368:14-368:57
+          Fun: IdentExpr reachable @368:14-368:23
+          Args[0]: Arg @368:24-368:43
+            Name: Ident from @368:24-368:28
+            Value: IdentExpr initialStatus @368:30-368:43
+          Args[1]: Arg @368:45-368:56
+            Name: Ident next @368:45-368:49
+            Value: ShorthandLambda @368:51-368:56
+              Body: SelectorExpr @368:51-368:56
+                Name: Ident next @368:52-368:56
+      Stmts[1]: ForStmt @369:3-373:4
+        Vars[0]: Ident s @369:7-369:8
+        Iter: CallExpr @369:12-369:29
+          Fun: SelectorExpr @369:12-369:27
+            X: IdentExpr statuses @369:12-369:20
+            Name: Ident active @369:21-369:27
+        Body: Block @369:30-373:4
+          Stmts[0]: IfStmt @370:5-372:6
+            Cond: UnaryExpr Op=not @370:8-370:28
+              X: CallExpr @370:12-370:28
+                Fun: SelectorExpr @370:12-370:25
+                  X: IdentExpr seen @370:12-370:16
+                  Name: Ident contains @370:17-370:25
+                Args[0]: Arg @370:26-370:27
+                  Value: IdentExpr s @370:26-370:27
+            Then: Block @370:29-372:6
+              Stmts[0]: ExprStmt @371:7-371:76
+                X: CallExpr @371:7-371:76
+                  Fun: IdentExpr fail @371:7-371:11
+                  Args[0]: Arg @371:12-371:13
+                    Value: IdentExpr s @371:12-371:13
+                  Args[1]: Arg @371:15-371:75
+                    Value: StringLit @371:15-371:75
+                      Parts[0]: text "status "
+                      Parts[1]: Interp @371:24-371:28
+                        X: SelectorExpr @371:24-371:28
+                          X: IdentExpr s @371:24-371:25
+                          Name: Ident id @371:26-371:28
+                      Parts[2]: text " can never be reached from "
+                      Parts[3]: Interp @371:57-371:73
+                        X: SelectorExpr @371:57-371:73
+                          X: IdentExpr initialStatus @371:57-371:70
+                          Name: Ident id @371:71-371:73
+  Decls[31]: CheckDecl Keyword=check @377:1-383:2
+    Doc: DocComment "New: a status without a way out, other than a terminal one, would trap posts." @376:1-376:82
+    Body: Block @377:7-383:2
+      Stmts[0]: ForStmt @378:3-382:4
+        Vars[0]: Ident s @378:7-378:8
+        Iter: CallExpr @378:12-378:29
+          Fun: SelectorExpr @378:12-378:27
+            X: IdentExpr statuses @378:12-378:20
+            Name: Ident active @378:21-378:27
+        Body: Block @378:30-382:4
+          Stmts[0]: IfStmt @379:5-381:6
+            Cond: BinaryExpr Op=and @379:8-379:43
+              X: UnaryExpr Op=not @379:8-379:22
+                X: SelectorExpr @379:12-379:22
+                  X: IdentExpr s @379:12-379:13
+                  Name: Ident terminal @379:14-379:22
+              Y: CallExpr @379:27-379:43
+                Fun: SelectorExpr @379:27-379:41
+                  X: SelectorExpr @379:27-379:33
+                    X: IdentExpr s @379:27-379:28
+                    Name: Ident next @379:29-379:33
+                  Name: Ident isEmpty @379:34-379:41
+            Then: Block @379:44-381:6
+              Stmts[0]: ExprStmt @380:7-380:70
+                X: CallExpr @380:7-380:70
+                  Fun: IdentExpr fail @380:7-380:11
+                  Args[0]: Arg @380:12-380:13
+                    Value: IdentExpr s @380:12-380:13
+                  Args[1]: Arg @380:15-380:69
+                    Value: StringLit @380:15-380:69
+                      Parts[0]: text "status "
+                      Parts[1]: Interp @380:24-380:28
+                        X: SelectorExpr @380:24-380:28
+                          X: IdentExpr s @380:24-380:25
+                          Name: Ident id @380:26-380:28
+                      Parts[2]: text " is not terminal but has no next status"
+  Decls[32]: FnDecl @392:1-392:100
+    Doc: DocComment "sovcommon's CanTransition." @391:1-391:31
+    Mods: Modifiers Export="export" @392:1-392:7
+    Name: Ident canTransition @392:11-392:24
+    Params[0]: Param @392:25-392:41
+      Name: Ident from @392:25-392:29
+      Type: RefType @392:31-392:41
+        Name: QualifiedName Status @392:35-392:41
+    Params[1]: Param @392:43-392:57
+      Name: Ident to @392:43-392:45
+      Type: RefType @392:47-392:57
+        Name: QualifiedName Status @392:51-392:57
+    Result: NamedType @392:62-392:66
+      Name: QualifiedName Bool @392:62-392:66
+    Body: Block @392:67-392:100
+      Stmts[0]: ReturnStmt @392:69-392:98
+        Value: CallExpr @392:76-392:98
+          Fun: SelectorExpr @392:76-392:94
+            X: SelectorExpr @392:76-392:85
+              X: IdentExpr from @392:76-392:80
+              Name: Ident next @392:81-392:85
+            Name: Ident contains @392:86-392:94
+          Args[0]: Arg @392:95-392:97
+            Value: IdentExpr to @392:95-392:97
+  Decls[33]: FnDecl @396:1-398:2
+    Doc: DocComment "sovcommon's ColumnOf. `none` for a status no active column claims (only a retired\nstatus can be in that case), like the `(Column, bool)` it replaces." @394:1-395:72
+    Mods: Modifiers Export="export" @396:1-396:7
+    Name: Ident columnOf @396:11-396:19
+    Params[0]: Param @396:20-396:33
+      Name: Ident s @396:20-396:21
+      Type: RefType @396:23-396:33
+        Name: QualifiedName Status @396:27-396:33
+    Result: OptionalType @396:38-396:49
+      Elem: RefType @396:38-396:48
+        Name: QualifiedName Column @396:42-396:48
+    Body: Block @396:50-398:2
+      Stmts[0]: ReturnStmt @397:3-397:61
+        Value: CallExpr @397:10-397:61
+          Fun: SelectorExpr @397:10-397:32
+            X: CallExpr @397:10-397:26
+              Fun: SelectorExpr @397:10-397:24
+                X: IdentExpr columns @397:10-397:17
+                Name: Ident active @397:18-397:24
+            Name: Ident first @397:27-397:32
+          Args[0]: Arg @397:33-397:60
+            Value: LambdaExpr @397:33-397:60
+              Params[0]: Ident c @397:33-397:34
+              Body: CallExpr @397:38-397:60
+                Fun: SelectorExpr @397:38-397:57
+                  X: SelectorExpr @397:38-397:48
+                    X: IdentExpr c @397:38-397:39
+                    Name: Ident statuses @397:40-397:48
+                  Name: Ident contains @397:49-397:57
+                Args[0]: Arg @397:58-397:59
+                  Value: IdentExpr s @397:58-397:59
+  Decls[34]: FnDecl @401:1-403:2
+    Doc: DocComment "sovcommon's AreasVisibleTo: minRole gates viewing and posting." @400:1-400:67
+    Mods: Modifiers Export="export" @401:1-401:7
+    Name: Ident areasVisibleTo @401:11-401:25
+    Params[0]: Param @401:26-401:36
+      Name: Ident role @401:26-401:30
+      Type: NamedType @401:32-401:36
+        Name: QualifiedName Role @401:32-401:36
+    Result: ListType @401:41-401:51
+      Elem: RefType @401:42-401:50
+        Name: QualifiedName Area @401:46-401:50
+    Body: Block @401:52-403:2
+      Stmts[0]: ReturnStmt @402:3-402:58
+        Value: ListComp @402:10-402:58
+          Elem: IdentExpr a @402:11-402:12
+          Clauses[0]: CompClause Keyword=for @402:13-402:36
+            Vars[0]: Ident a @402:17-402:18
+            X: CallExpr @402:22-402:36
+              Fun: SelectorExpr @402:22-402:34
+                X: IdentExpr areas @402:22-402:27
+                Name: Ident active @402:28-402:34
+          Clauses[1]: CompClause Keyword=if @402:37-402:57
+            X: BinaryExpr Op=>= @402:40-402:57
+              X: IdentExpr role @402:40-402:44
+              Y: SelectorExpr @402:48-402:57
+                X: IdentExpr a @402:48-402:49
+                Name: Ident minRole @402:50-402:57
+  Decls[35]: RecordDecl @406:1-411:2
+    Doc: DocComment "One group header with the areas shown under it." @405:1-405:52
+    Name: Ident AreaSection @406:8-406:19
+    Body: RecordBody @406:20-411:2
+      Items[0]: FieldDecl @408:3-408:23
+        Doc: DocComment "The header." @407:3-407:18
+        Name: Ident group @408:3-408:8
+        Type: RefType @408:10-408:23
+          Name: QualifiedName AreaGroup @408:14-408:23
+      Items[1]: FieldDecl @410:3-410:20
+        Doc: DocComment "The areas under it, in declaration order." @409:3-409:48
+        Name: Ident areas @410:3-410:8
+        Type: ListType @410:10-410:20
+          Elem: RefType @410:11-410:19
+            Name: QualifiedName Area @410:15-410:19
+  Decls[36]: FnDecl @414:1-420:2
+    Doc: DocComment "sovcommon's GroupedAreasVisibleTo: headers only for groups with a visible area." @413:1-413:84
+    Mods: Modifiers Export="export" @414:1-414:7
+    Name: Ident groupedAreasVisibleTo @414:11-414:32
+    Params[0]: Param @414:33-414:43
+      Name: Ident role @414:33-414:37
+      Type: NamedType @414:39-414:43
+        Name: QualifiedName Role @414:39-414:43
+    Result: ListType @414:48-414:61
+      Elem: NamedType @414:49-414:60
+        Name: QualifiedName AreaSection @414:49-414:60
+    Body: Block @414:62-420:2
+      Stmts[0]: ReturnStmt @415:3-419:4
+        Value: ListComp @415:10-419:4
+          Elem: BraceLit @416:5-416:72
+            Items[0]: FieldItem @416:7-416:15
+              Name: Ident group @416:7-416:12
+              Value: IdentExpr g @416:14-416:15
+            Items[1]: FieldItem @416:17-416:70
+              Name: Ident areas @416:17-416:22
+              Value: CallExpr @416:24-416:70
+                Fun: SelectorExpr @416:24-416:51
+                  X: CallExpr @416:24-416:44
+                    Fun: IdentExpr areasVisibleTo @416:24-416:38
+                    Args[0]: Arg @416:39-416:43
+                      Value: IdentExpr role @416:39-416:43
+                  Name: Ident filter @416:45-416:51
+                Args[0]: Arg @416:52-416:69
+                  Value: LambdaExpr @416:52-416:69
+                    Params[0]: Ident a @416:52-416:53
+                    Body: BinaryExpr Op=== @416:57-416:69
+                      X: SelectorExpr @416:57-416:64
+                        X: IdentExpr a @416:57-416:58
+                        Name: Ident group @416:59-416:64
+                      Y: IdentExpr g @416:68-416:69
+          Clauses[0]: CompClause Keyword=for @417:5-417:33
+            Vars[0]: Ident g @417:9-417:10
+            X: CallExpr @417:14-417:33
+              Fun: SelectorExpr @417:14-417:31
+                X: IdentExpr areaGroups @417:14-417:24
+                Name: Ident active @417:25-417:31
+          Clauses[1]: CompClause Keyword=if @418:5-418:51
+            X: CallExpr @418:8-418:51
+              Fun: SelectorExpr @418:8-418:32
+                X: CallExpr @418:8-418:28
+                  Fun: IdentExpr areasVisibleTo @418:8-418:22
+                  Args[0]: Arg @418:23-418:27
+                    Value: IdentExpr role @418:23-418:27
+                Name: Ident any @418:29-418:32
+              Args[0]: Arg @418:33-418:50
+                Value: LambdaExpr @418:33-418:50
+                  Params[0]: Ident a @418:33-418:34
+                  Body: BinaryExpr Op=== @418:38-418:50
+                    X: SelectorExpr @418:38-418:45
+                      X: IdentExpr a @418:38-418:39
+                      Name: Ident group @418:40-418:45
+                    Y: IdentExpr g @418:49-418:50
+  Decls[37]: EmitDecl @426:1-426:75
+    Target: Ident go @426:6-426:8
+    Options: BraceLit @426:9-426:75
+      Items[0]: FieldItem @426:11-426:38
+        Name: Ident out @426:11-426:14
+        Value: StringLit @426:16-426:38
+          Parts[0]: text "@sovcommon/teamboard"
+      Items[1]: FieldItem @426:40-426:60
+        Name: Ident package @426:40-426:47
+        Value: StringLit @426:49-426:60
+          Parts[0]: text "teamboard"
+      Items[2]: FieldItem @426:62-426:73
+        Name: Ident mode @426:62-426:66
+        Value: IdentExpr baked @426:68-426:73
+  Decls[38]: EmitDecl @427:1-427:47
+    Target: Ident ts @427:6-427:8
+    Options: BraceLit @427:9-427:47
+      Items[0]: FieldItem @427:11-427:45
+        Name: Ident out @427:11-427:14
+        Value: StringLit @427:16-427:45
+          Parts[0]: text "@web/teamboard/generated.ts"
+  Decls[39]: EmitDecl @429:1-429:48
+    Target: Ident json @429:6-429:10
+    Options: BraceLit @429:11-429:48
+      Items[0]: FieldItem @429:13-429:46
+        Name: Ident out @429:13-429:16
+        Value: StringLit @429:18-429:46
+          Parts[0]: text "@sovcommon/teamboard/data/"
+== findings
+0 errors, 0 warnings in 1 package (…)

@@ -1,0 +1,11 @@
+GRAMMAR.md §2.7: the body must compile as an RE2 pattern.
+-- a/a.canon --
+package a
+
+type T = String(/a(b/)
+type U = String(/^a\/b[/]c$/)
+-- findings.txt --
+error[E1114]  a/a.canon:3:17
+  invalid regular expression: error parsing regexp: missing closing ): `a(b`
+
+1 error, 0 warnings in 1 package (…)

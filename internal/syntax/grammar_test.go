@@ -143,10 +143,12 @@ var productions = map[string][]syntax.NodeKind{
 	}),
 }
 
-// lexical maps the token-level constructs that become nodes of their own (GRAMMAR.md §2).
+// lexical maps the token-level constructs that become nodes of their own, and the recovery
+// nodes that stand for what did not parse.
 var lexical = map[string][]syntax.NodeKind{
 	"DOC":           {syntax.KindDocComment},
 	"interpolation": {syntax.KindInterp},
+	"recovery":      {syntax.KindBadExpr, syntax.KindBadType, syntax.KindBadStmt, syntax.KindBadDecl},
 }
 
 // GRAMMAR.md §10: every production of the ebnf blocks maps to node kinds, and every kind to one.

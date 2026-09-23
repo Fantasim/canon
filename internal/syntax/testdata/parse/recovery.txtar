@@ -1,0 +1,83 @@
+GRAMMAR.md §10: after an error the parser resumes at the next item; what did not parse is a Bad node.
+-- a/a.canon --
+package a
+
+record R {
+  a: Int = f(1 2)
+  b: Int
+  c Int
+  d: = 1
+}
+
+fn f() -> Int {
+  let x = (1 +
+  return 1
+}
+
+view V {
+  search { a, ), b }
+}
+
+let t = [1, 2
+let u = 3
+-- ast --
+== a/a.canon
+File: File FileKind=source @1:1-21:1
+  Package: QualifiedName a @1:9-1:10
+  Decls[0]: RecordDecl @3:1-8:2
+    Name: Ident R @3:8-3:9
+    Body: RecordBody @3:10-8:2
+      Items[0]: FieldDecl @4:3-4:15
+        Name: Ident a @4:3-4:4
+        Type: NamedType @4:6-4:9
+          Name: QualifiedName Int @4:6-4:9
+        Default: BadExpr @4:12-4:15
+      Items[1]: FieldDecl @5:3-5:9
+        Name: Ident b @5:3-5:4
+        Type: NamedType @5:6-5:9
+          Name: QualifiedName Int @5:6-5:9
+      Items[2]: BadDecl @6:3-6:8
+      Items[3]: FieldDecl @7:3-7:9
+        Name: Ident d @7:3-7:4
+        Type: BadType @7:6-7:6
+        Default: IntLit Value=1 @7:8-7:9
+  Decls[1]: FnDecl @10:1-13:2
+    Name: Ident f @10:4-10:5
+    Result: NamedType @10:11-10:14
+      Name: QualifiedName Int @10:11-10:14
+    Body: Block @10:15-13:2
+      Stmts[0]: LetStmt @11:3-12:9
+        Name: Ident x @11:7-11:8
+        Value: BadExpr @11:11-12:9
+  Decls[2]: ViewDecl @15:1-17:2
+    Type: Ident V @15:6-15:7
+    Items[0]: ViewSearch @16:3-16:21
+      Items[0]: IdentExpr a @16:12-16:13
+      Items[1]: BadExpr @16:15-16:16
+      Items[2]: IdentExpr b @16:18-16:19
+  Decls[3]: LetDecl @19:1-19:14
+    Name: Ident t @19:5-19:6
+    Value: BadExpr @19:9-19:14
+  Decls[4]: LetDecl @20:1-20:10
+    Name: Ident u @20:5-20:6
+    Value: IntLit Value=3 @20:9-20:10
+== findings
+error[E1116]  a/a.canon:4:16
+  expected ",", ")"; found 2
+
+error[E1116]  a/a.canon:6:5
+  expected ":"; found Int
+
+error[E1116]  a/a.canon:7:6
+  expected type; found =
+
+error[E1116]  a/a.canon:12:3
+  expected expr; found return
+
+error[E1116]  a/a.canon:16:15
+  expected expr; found )
+
+error[E1116]  a/a.canon:20:1
+  expected ",", "]"; found let
+
+6 errors, 0 warnings in 1 package (…)

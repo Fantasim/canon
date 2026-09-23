@@ -25,11 +25,13 @@ func (*IntLit) projectValueNode()             {}
 func (*IntLit) entryKeyNode()                 {}
 func (*IntLit) children(func(Node) bool) bool { return true }
 
-// FloatLit is a float literal with its exact decimal value, Coef × 10^Exp.
+// FloatLit is a float literal with its exact decimal value, ±Coef × 10^Exp (Coef ≥ 0, Neg
+// the folded unary "-", so "-0.0" is negative zero).
 type FloatLit struct {
 	Bounds
+	Neg  bool
 	Coef *big.Int
-	Exp  int
+	Exp  int64
 }
 
 func (*FloatLit) Kind() NodeKind                { return KindFloatLit }

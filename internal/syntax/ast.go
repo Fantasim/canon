@@ -1,6 +1,10 @@
 package syntax
 
-import "github.com/fantasim/canonlang/internal/source"
+import (
+	"slices"
+
+	"github.com/fantasim/canonlang/internal/source"
+)
 
 // NodeKind is the kind of a node; every node type has its own.
 type NodeKind uint8
@@ -118,7 +122,8 @@ type ProjectValue interface {
 type FileKind uint8
 
 // File is a parsed file, the root node: its token stream and its tree; the fields its FileKind
-// does not use are empty.
+// does not use are empty. After a syntax error no required field is nil: what did not parse is
+// a Bad node, or is left out of a list whose elements are one concrete node type.
 type File struct {
 	Bounds
 	Src      *source.File
@@ -143,20 +148,45 @@ func (f *File) children(yield func(Node) bool) bool {
 		visit(yield, f.Lang) && visit(yield, f.Entries...) && visit(yield, f.Project)
 }
 
-// Span is the byte range of n: its first token to its last, a DocComment's own lines, or all
-// of the File (its last token is EOF).
+// Span is the byte range of n: its first token to its last, a DocComment's own lines, all of
+// the File (its last token is EOF); empty at its first token's start for an empty node (a
+// node whose Last is First-1, left by a syntax error) and at the file's start for a nil one.
 func (f *File) Span(n Node) source.Span {
+	if isNil(n) {
+		return source.Span{File: f.Src.ID}
+	}
 	switch n := n.(type) {
 	case *DocComment:
 		return source.Span{File: f.Src.ID, Start: n.Start, End: n.End}
 	case *File:
 		return source.Span{File: f.Src.ID, Start: 0, End: f.Tokens[f.Last()].End}
 	}
-	return source.Span{File: f.Src.ID, Start: f.Tokens[n.First()].Start, End: f.Tokens[n.Last()].End}
+	start := f.Tokens[n.First()].Start
+	if n.Last() < n.First() {
+		return source.Span{File: f.Src.ID, Start: start, End: start}
+	}
+	return source.Span{File: f.Src.ID, Start: start, End: f.Tokens[n.Last()].End}
 }
 
-// Leading is the trivia before n's first token: its own-line comments and doc block (FORMATTER.md §8.1).
-func (f *File) Leading(n Node) []Trivia { return f.Tokens[n.First()].Leading }
+// Leading is the trivia before n's first token: its own-line comments and doc block; none for an
+// empty node.
+func (f *File) Leading(n Node) []Trivia {
+	if n.Last() < n.First() {
+		return nil
+	}
+	return f.Tokens[n.First()].Leading
+}
 
-// Trailing is the trivia after n's last token on its line: its trailing comment.
-func (f *File) Trailing(n Node) []Trivia { return f.Tokens[n.Last()].Trailing }
+// Trailing is the trivia after n's last token on its line, then after the separator comma that
+// directly follows it: its trailing comment either way; none for an empty node.
+func (f *File) Trailing(n Node) []Trivia {
+	last := n.Last()
+	if last < n.First() {
+		return nil
+	}
+	own := f.Tokens[last].Trailing
+	if int(last)+1 >= len(f.Tokens) || f.Tokens[last+1].Kind != TokComma {
+		return own
+	}
+	return append(slices.Clip(own), f.Tokens[last+1].Trailing...)
+}

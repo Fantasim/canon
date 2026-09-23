@@ -1,0 +1,123 @@
+File: File FileKind=source @1:1-32:1
+  Doc: DocComment "`load.text` (SPEC §13): a plain text file read as one String (strict UTF-8, `\\r\\n`\nread as `\\n`), then taken apart with ordinary string functions.\n\nServer/resource.txt lists the files packed into Data.res. A file listed twice is\npacked twice, and a JSON file the law reads but the list forgets never reaches the\nclient." @1:1-6:12
+  Package: QualifiedName features.text @7:9-7:22
+  Decls[0]: LetDecl @10:1-10:75
+    Doc: DocComment "Server/resource.txt, as written." @9:1-9:37
+    Mods: Modifiers Local="local" @10:1-10:6
+    Name: Ident packingList @10:11-10:22
+    Type: NamedType @10:24-10:30
+      Name: QualifiedName String @10:24-10:30
+    Value: LoadExpr @10:33-10:75
+      Method: Ident text @10:38-10:42
+      Args[0]: Arg @10:43-10:74
+        Value: StringLit @10:43-10:74
+          Parts[0]: text "@resource/Server/resource.txt"
+  Decls[1]: LetDecl @13:1-17:2
+    Doc: DocComment "Every `file \"…\"` line of the packing list, in order, without the quotes." @12:1-12:79
+    Name: Ident packedFiles @13:5-13:16
+    Type: ListType @13:18-13:26
+      Elem: NamedType @13:19-13:25
+        Name: QualifiedName String @13:19-13:25
+    Value: ListComp @13:29-17:2
+      Elem: CallExpr @14:3-14:53
+        Fun: SelectorExpr @14:3-14:43
+          X: CallExpr @14:3-14:35
+            Fun: SelectorExpr @14:3-14:22
+              X: CallExpr @14:3-14:14
+                Fun: SelectorExpr @14:3-14:12
+                  X: IdentExpr line @14:3-14:7
+                  Name: Ident trim @14:8-14:12
+              Name: Ident replace @14:15-14:22
+            Args[0]: Arg @14:23-14:30
+              Value: StringLit @14:23-14:30
+                Parts[0]: text "file "
+            Args[1]: Arg @14:32-14:34
+              Value: StringLit @14:32-14:34
+          Name: Ident replace @14:36-14:43
+        Args[0]: Arg @14:44-14:48
+          Value: StringLit @14:44-14:48
+            Parts[0]: text "\""
+        Args[1]: Arg @14:50-14:52
+          Value: StringLit @14:50-14:52
+      Clauses[0]: CompClause Keyword=for @15:3-15:38
+        Vars[0]: Ident line @15:7-15:11
+        X: CallExpr @15:15-15:38
+          Fun: SelectorExpr @15:15-15:32
+            X: IdentExpr packingList @15:15-15:26
+            Name: Ident split @15:27-15:32
+          Args[0]: Arg @15:33-15:37
+            Value: StringLit @15:33-15:37
+              Parts[0]: text "\n"
+      Clauses[1]: CompClause Keyword=if @16:3-16:39
+        X: CallExpr @16:6-16:39
+          Fun: SelectorExpr @16:6-16:28
+            X: CallExpr @16:6-16:17
+              Fun: SelectorExpr @16:6-16:15
+                X: IdentExpr line @16:6-16:10
+                Name: Ident trim @16:11-16:15
+            Name: Ident startsWith @16:18-16:28
+          Args[0]: Arg @16:29-16:38
+            Value: StringLit @16:29-16:38
+              Parts[0]: text "file \""
+  Decls[2]: ConstDecl @20:1-20:97
+    Doc: DocComment "Files other examples of this project read, which the client needs too." @19:1-19:75
+    Name: Ident MUST_BE_PACKED @20:7-20:21
+    Value: ListLit @20:24-20:97
+      Elems[0]: RawStringLit Value="Server\\System\\heistia_config.json" @20:25-20:61
+      Elems[1]: RawStringLit Value="Server\\System\\farm_config.json" @20:63-20:96
+  Decls[3]: CheckDecl Keyword=check @22:1-31:2
+    Body: Block @22:7-31:2
+      Stmts[0]: ForStmt @23:3-25:4
+        Vars[0]: Ident i @23:7-23:8
+        Vars[1]: Ident f @23:10-23:11
+        Iter: CallExpr @23:15-23:38
+          Fun: SelectorExpr @23:15-23:36
+            X: IdentExpr packedFiles @23:15-23:26
+            Name: Ident enumerate @23:27-23:36
+        Body: Block @23:39-25:4
+          Stmts[0]: IfStmt @24:5-24:71
+            Cond: CallExpr @24:8-24:36
+              Fun: SelectorExpr @24:8-24:33
+                X: IndexExpr @24:8-24:24
+                  X: IdentExpr packedFiles @24:8-24:19
+                  Index: RangeExpr Op=.. @24:20-24:23
+                    Hi: IdentExpr i @24:22-24:23
+                Name: Ident contains @24:25-24:33
+              Args[0]: Arg @24:34-24:35
+                Value: IdentExpr f @24:34-24:35
+            Then: Block @24:37-24:71
+              Stmts[0]: ExprStmt @24:39-24:69
+                X: CallExpr @24:39-24:69
+                  Fun: IdentExpr warn @24:39-24:43
+                  Args[0]: Arg @24:44-24:45
+                    Value: IdentExpr f @24:44-24:45
+                  Args[1]: Arg @24:47-24:68
+                    Value: StringLit @24:47-24:68
+                      Parts[0]: Interp @24:49-24:50
+                        X: IdentExpr f @24:49-24:50
+                      Parts[1]: text " is packed twice"
+      Stmts[1]: ForStmt @26:3-30:4
+        Vars[0]: Ident f @26:7-26:8
+        Iter: IdentExpr MUST_BE_PACKED @26:12-26:26
+        Body: Block @26:27-30:4
+          Stmts[0]: IfStmt @27:5-29:6
+            Cond: UnaryExpr Op=not @27:8-27:35
+              X: CallExpr @27:12-27:35
+                Fun: SelectorExpr @27:12-27:32
+                  X: IdentExpr packedFiles @27:12-27:23
+                  Name: Ident contains @27:24-27:32
+                Args[0]: Arg @27:33-27:34
+                  Value: IdentExpr f @27:33-27:34
+            Then: Block @27:36-29:6
+              Stmts[0]: ExprStmt @28:7-28:90
+                X: CallExpr @28:7-28:90
+                  Fun: IdentExpr fail @28:7-28:11
+                  Args[0]: Arg @28:12-28:23
+                    Value: IdentExpr packedFiles @28:12-28:23
+                  Args[1]: Arg @28:25-28:89
+                    Value: StringLit @28:25-28:89
+                      Parts[0]: Interp @28:27-28:28
+                        X: IdentExpr f @28:27-28:28
+                      Parts[1]: text " is missing from resource.txt: the client never receives it"
+== findings
+0 errors, 0 warnings in 1 package (…)

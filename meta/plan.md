@@ -21,7 +21,7 @@ block in [state.md](state.md).
   dependency rule. Accept: `go list -deps` matches the allowed graph.
 - [x] **M0.3 Registry** (QA, `internal/diag`): `codes.go` generated from `spec/ERRORS.md`,
   diff-checked by `make check`. Accept: ERRORS.md regenerated from the registry is unchanged.
-- [ ] **M0.4 The eight frozen contracts** (§4), as compiling Go, each approved by its consumers:
+- [x] **M0.4 The eight frozen contracts** (§4), as compiling Go, each approved by its consumers:
   `source.go` + `ast.go` (SYN), `types.go` and `check/info.go` (TYP), `value.go` and
   `eval/host.go` (EVL), `diag.go` (QA), `ir.go` (IR), `edit/path.go` (API); lock format types
   (VER), `project` schema types (LOD).
@@ -31,7 +31,7 @@ block in [state.md](state.md).
 
 ## M1 — v0: `taxonomy.canon` to baked Go and JSON
 
-- [ ] Parser for every example, AST goldens (SYN, `syntax`). Accept: no `E11xx`, dumps equal
+- [x] Parser for every example, AST goldens (SYN, `syntax`). Accept: no `E11xx`, dumps equal
   `internal/syntax/testdata/ast/`.
 - [ ] Resolver + checker (TYP, `check`); evaluator + stdlib subset (EVL, `eval`); verify, lock,
   rules (VER); `project`, `wire` encode (LOD); `ir`, `gen/json`, `build` (IR); `gen/go` baked

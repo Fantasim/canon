@@ -950,6 +950,106 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     value or a lookup without its table is `ErrFn`; the instance of a receiver this emit does not
     encode is ignored, since instances cover every receiver of the package (EVL-02).
 
+129. **The syntax contract after the M0 review (MF-7, S-SYN-1 to S-SYN-6).** `FloatLit` is
+    `±Coef × 10^Exp` with `Neg` (the folded unary `-`: `-0.0` is negative zero), `Coef ≥ 0` and
+    `Exp int64`; a float whose exponent, counted from its last written digit, does not fit an
+    `int64` is `E1110` (GRAMMAR sets no bound: a gap for Louis). `Tok` is 1-based:
+    `File.Tokens[0]` is a `BOF` sentinel (new kind `TokBOF`, no trivia), `NoTok` is 0, so an unset
+    `Tok` field reads as absent. The walker skips a typed nil held by an interface field, and
+    `File.Span` of a nil node is empty at the file's start. `File.Trailing(n)` adds the trailing
+    trivia of a separator comma directly after `n` (`a: 1, // c`). New exports: `Parse(src, kind,
+    bag)`, `kind` being `FileProject` for the project's `project.canon` and anything else for
+    other files (source, layer and translation files are told apart by their first tokens), and
+    `LookupWord` / `IsNameable` for printers. A comprehension `BraceLit` holds one `MapItem`, a
+    `name:` key becoming an `IdentExpr` (TYPES §5.2); in `project.canon` the doc block is
+    `ProjectDecl.Doc` and `File.Doc` stays nil. Reason: the review's findings, closed the strictest
+    way that keeps the tree lossless.
+
+130. **The tree after a syntax error (M0 review MF-8): recovery nodes.** `BadExpr` (also an
+    annotation value and a project value), `BadType`, `BadStmt`, and `BadDecl` (also a record,
+    variant, view, group and brace-literal item). Invariants: no required field is nil; an
+    expression or type that does not parse is a Bad node of its category; a node whose own
+    structure (a name, a bracket, a keyword) is missing becomes a Bad node where its list's element
+    type allows one, and is left out of a list of one concrete node type (`[]*EnumMember`,
+    `[]*Param`, `[]*Arg`…); a Bad node covers the tokens skipped or, when none was, is empty at
+    the unexpected token (`Last == First-1`), and a node that consumed no token is empty too
+    (`File.Span`, `Leading` and `Trailing` of an empty node are empty); every node lies within
+    its parent and after its previous sibling; Bad and empty nodes appear only in a file with an
+    error; an import after a declaration, a second package clause, a project declaration in a
+    source file and an item after a comprehension's clauses are reported and left out of the tree.
+    The parser resumes at the next separator of the innermost `{ }` list, or at a top-level
+    declaration keyword or `@` in column 1 whatever brackets are open, and reports one `E1116` per
+    item (none on an `ILLEGAL` token or an interpolation the lexer reported). Reason: the review's
+    stricter and more useful option; an empty node never overlaps a neighbour.
+
+131. **Token boundaries and trivia (M0 review S-SYN-4, completing DECISIONS 73).** A string piece
+    spans its delimiters: `STRING_HEAD` from the quote (a multiline head with the rest of its
+    opening line) through the `{`, `STRING_MID` from the `}` through the next `{`, `STRING_TAIL`
+    from the `}` through the closing quote; `FORMAT_SPEC` is the `:` and the spec, not the `}`; an
+    `Interp` spans its expression and its spec. A token's `Trailing` is the trivia after it up to
+    the first line break (a block comment that starts on its line trails it even across lines);
+    the rest up to the next token is that token's `Leading`; the file's first token leads with
+    everything before it, a BOM included. `NL` is empty, at the border of the previous token's
+    trailing and the next one's leading. A line break between two tokens is any `\n` between them,
+    comments included.
+
+132. **Lexical choices GRAMMAR leaves open.** `#` is a token only directly after `[`, with no
+    trivia between. `///` that is not the first text of its line is an ordinary comment and
+    `W1001`. The leading-zero rule applies to an integer part and to each duration segment
+    (`1h05m` is `E1110`), not to fraction or exponent digits. Outside literals and comments a
+    control character is `E1106`; a `\r` is `E1124` anywhere. A regex body is a literal:
+    non-ASCII allowed, control characters `E1124`. A line break or a comment inside an
+    interpolation is `E1112`: a plain string ends there, a multiline one goes on with its text.
+    The separator pass pops a closer's opener wherever it stands in the stack and closes every
+    interpolation at a line break. Nesting past 1,000 levels is `E1116` (expected `nesting`), so
+    no input exhausts the stack. Reason: the strictest reading that keeps recovery sound.
+
+133. **`E1116` wording.** Expected names are GRAMMAR symbols bare (`expr`, `type`, `IDENT`, `WORD`,
+    `stringLit`, `topDecl`, `pValue`…) and fixed tokens quoted (`","`, `")"`, `"else"`); the found
+    text is the token's first line, `NL` for a separator. After an item, a token that can start
+    another item on the same line is `E1117` and read as the next item; anything else is `E1116`.
+    The hints GRAMMAR §5.3 and §5.6 attach to `E1116` ("a widget takes value and siblings",
+    "write field <name>") have no ERRORS.md variant, so plain `E1116` is reported (a gap for
+    Louis).
+
+134. **Annotation checks in the parser (GRAMMAR §8).** The catalogue is data
+    (`internal/syntax/annot_catalog.go`) checked per site, each argument with its own sites: an
+    argument not allowed at the site is `E1118` for its annotation; an unknown flag or positional
+    value is `E1104` naming the value as written; positional arguments are named in messages by the
+    catalogue's placeholders (`wire`, `T`, `why`, `n`, `tpl`, `menu`); `@since(0)` is `E1119`
+    kind integer; a studio argument must be one word (`E1119` value, naming its studio enum); a
+    bare `@json` is accepted; `@cpp(header:)` needs `struct:`; a duplicated or out-of-order argument
+    is `E1121`, a duplicated annotation `E1120`. Type-dependent rules stay with TYPES and WIRE.
+
+135. **Reserved words as package segments stay `E1125`; two examples break it.** GRAMMAR §4.3 lists
+    packages among the names a reserved word may not take (ERRORS.md has the `PackageSegment` kind
+    for it), but §11 says every example parses, and `examples/features/match` and
+    `features/retired` declare `package features.match` / `features.retired`. The parser follows
+    §4.3, their AST goldens record the `E1125`, and M1 item 1 is therefore not met for those two
+    files. Louis: rename the two packages (QA owns `examples/features`) or allow reserved words as
+    package segments.
+
+136. **The parser's goldens and tables.** `internal/syntax/testdata/ast/<example path>.txt` holds each
+    example's tree, `== findings`, then its findings' text form; `testdata/parse/*.txtar` the same
+    for focused cases (section `ast`); `testdata/findings/<CODE>_<n>.txtar` a case per code. A tree
+    prints one node per line, two spaces per level: `<Field>: <Kind> [name] [attr=value …]
+    @<line>:<col>-<line>:<col>`, `Field[i]` in a list; an `Ident`, `IdentExpr` or `QualifiedName`
+    prints its name; literal values, operators, keywords (not `TokInvalid`), present `Tok` fields
+    (their text, not `OpTok`) and true flags are attributes; a string's text parts are `text "…"`
+    lines between its interpolations; `Delims` are left out (the span holds them). The plain-text
+    AST goldens are rewritten under the golden harness's `-update` flag, read through
+    `flag.Lookup`, since `golden.Run` rewrites txtar sections only. Token sets are built by
+    `tokenSet(…)` in `tables.go`, the precedence table and the names staying in `constants.go`,
+    which must stay under 500 lines (DECISIONS 26).
+
+137. **Reserved words stay reserved in package names; the examples are renamed.** `features.match`
+    and `features.retired` become `features.matching` and `features.retirement`, so GRAMMAR §4.3
+    (E1125) keeps its strict form. Closes Louis-call 3a.
+
+138. **M0 is accepted.** All ten must-fix items of `meta/reviews/M0-review.md` are closed: MF-1 and
+    MF-3 by the check/eval contracts and the close-out, MF-7 and MF-8 by the parser, and the rest by the
+    must-fix commit. The eight contracts exist. M0.4 is ticked.
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.

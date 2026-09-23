@@ -1,0 +1,21 @@
+File: File FileKind=layer @1:1-13:1
+  Package: QualifiedName balance.parity @6:9-6:23
+  Layer: Ident knights @7:7-7:14
+  Amends[0]: AmendBlock @9:1-12:2
+    Target: Ident settings @9:7-9:15
+    Items[0]: Amendment @10:3-10:40
+      Path[0]: AmendSegment @10:3-10:11
+        Name: Ident onlyJobs @10:3-10:11
+      Value: ListLit @10:13-10:40
+        Elems[0]: StringLit @10:14-10:26
+          Parts[0]: text "JOB_KNIGHT"
+        Elems[1]: StringLit @10:28-10:39
+          Parts[0]: text "JOB_BLADE"
+    Items[1]: Amendment @11:3-11:20
+      Path[0]: AmendSegment @11:3-11:9
+        Name: Ident levels @11:3-11:9
+      Value: ListLit @11:11-11:20
+        Elems[0]: IntLit Value=75 @11:12-11:14
+        Elems[1]: IntLit Value=120 @11:16-11:19
+== findings
+0 errors, 0 warnings in 1 package (…)

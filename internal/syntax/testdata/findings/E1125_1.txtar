@@ -1,0 +1,84 @@
+GRAMMAR.md §4.3: a reserved word names a declaration.
+-- a/a.canon --
+package a.match
+
+import b as let
+
+const if = 1
+let for = 2
+type while = Int
+record in { type: Int }
+enum not { A }
+variant or { c }
+widget as(value: Int)
+
+fn is(match: Int) -> Int {
+  let var = 1
+  for none_, else in [] { }
+  return 1
+}
+
+record S(return: Int) {
+  fn true(self) -> Int { return 1 }
+}
+
+let f = [1].map(break => 1)
+-- b/b.layer.canon --
+package b
+layer let
+-- findings.txt --
+error[E1125]  a/a.canon:1:11
+  "match" is a reserved word and cannot name this package segment
+
+error[E1125]  a/a.canon:3:13
+  "let" is a reserved word and cannot name this import alias
+
+error[E1125]  a/a.canon:5:7
+  "if" is a reserved word and cannot name this const
+
+error[E1125]  a/a.canon:6:5
+  "for" is a reserved word and cannot name this let
+
+error[E1125]  a/a.canon:7:6
+  "while" is a reserved word and cannot name this type alias
+
+error[E1125]  a/a.canon:8:8
+  "in" is a reserved word and cannot name this record
+
+error[E1125]  a/a.canon:8:13
+  "type" is a reserved word and cannot name this field
+
+error[E1125]  a/a.canon:9:6
+  "not" is a reserved word and cannot name this enum
+
+error[E1125]  a/a.canon:10:9
+  "or" is a reserved word and cannot name this variant
+
+error[E1125]  a/a.canon:11:8
+  "as" is a reserved word and cannot name this widget
+
+error[E1125]  a/a.canon:13:4
+  "is" is a reserved word and cannot name this function
+
+error[E1125]  a/a.canon:13:7
+  "match" is a reserved word and cannot name this parameter
+
+error[E1125]  a/a.canon:14:7
+  "var" is a reserved word and cannot name this local
+
+error[E1125]  a/a.canon:15:14
+  "else" is a reserved word and cannot name this variable
+
+error[E1125]  a/a.canon:19:10
+  "return" is a reserved word and cannot name this type parameter
+
+error[E1125]  a/a.canon:20:6
+  "true" is a reserved word and cannot name this method
+
+error[E1125]  a/a.canon:23:17
+  "break" is a reserved word and cannot name this variable
+
+error[E1125]  b/b.layer.canon:2:7
+  "let" is a reserved word and cannot name this layer
+
+18 errors, 0 warnings in 1 package (…)

@@ -1,6 +1,9 @@
 package syntax
 
-import "iter"
+import (
+	"iter"
+	"reflect"
+)
 
 // Visitor is called for each node Walk meets; the visitor it returns walks the node's children.
 type Visitor interface {
@@ -42,17 +45,22 @@ func (f inspector) Visit(n Node) Visitor {
 	return nil
 }
 
-// visit yields each non-nil node of ns and reports whether the walk goes on.
-func visit[N interface {
-	Node
-	comparable
-}](yield func(Node) bool, ns ...N,
-) bool {
-	var none N
+// visit yields each non-nil node of ns, a typed nil in an interface field included, and
+// reports whether the walk goes on.
+func visit[N Node](yield func(Node) bool, ns ...N) bool {
 	for _, n := range ns {
-		if n != none && !yield(n) {
+		if !isNil(n) && !yield(n) {
 			return false
 		}
 	}
 	return true
+}
+
+// isNil reports a nil node: a nil interface, or a nil pointer held by one.
+func isNil(n Node) bool {
+	if n == nil {
+		return true
+	}
+	v := reflect.ValueOf(n)
+	return v.Kind() == reflect.Pointer && v.IsNil()
 }

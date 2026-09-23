@@ -1,0 +1,42 @@
+GRAMMAR.md §9.1: a doc block that attaches to nothing.
+-- a/a.canon --
+/// Package doc, attached.
+package a
+
+/// Before an import: not attachable.
+import b
+
+/// Followed by a blank line.
+
+let x = 1 /// after code
+
+fn f() -> Int {
+  /// Before a statement.
+  return 1
+}
+
+/// At the end of the file.
+-- c/c.layer.canon --
+/// A layer file has no package doc.
+package c
+layer l
+-- findings.txt --
+warning[W1001]  a/a.canon:4:1
+  doc comment is not attached to anything
+
+warning[W1001]  a/a.canon:7:1
+  doc comment is not attached to anything
+
+warning[W1001]  a/a.canon:9:11
+  doc comment is not attached to anything
+
+warning[W1001]  a/a.canon:12:3
+  doc comment is not attached to anything
+
+warning[W1001]  a/a.canon:16:1
+  doc comment is not attached to anything
+
+warning[W1001]  c/c.layer.canon:1:1
+  doc comment is not attached to anything
+
+0 errors, 6 warnings in 1 package (…)
