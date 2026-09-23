@@ -15,3 +15,6 @@ var (
 	errHolder       = errors.New("holder is not an identifier")
 	errFieldRetired = errors.New("a field fact is not retired: its table fact is")
 )
+
+// ErrNotLocked is a collection given to Sources that LOCK.md §1 does not lock.
+var ErrNotLocked = errors.New("not a locked collection")

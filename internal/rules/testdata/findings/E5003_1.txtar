@@ -1,0 +1,35 @@
+EVALUATION.md §8.3: check names are unique within a record, within a case, and among the
+package checks of a package; the second use is reported at its name.
+-- teamboard/names.canon --
+package teamboard
+
+record Column {
+  label: String
+
+  check short: label.len() < 12 else "too long"
+  check short: label != "" else "empty"
+}
+
+variant Reward {
+  item {
+    count: Int
+
+    check positive: count > 0 else "no items"
+    check positive: count < 100 else "too many"
+  }
+}
+
+check deck: 1 == 1 else "a"
+check deck: 2 == 2 else "b"
+check other: 3 == 3 else "c"
+-- findings.txt --
+error[E5003]  teamboard/names.canon:7:9
+  check name short is used twice in Column
+
+error[E5003]  teamboard/names.canon:15:11
+  check name positive is used twice in Reward.item
+
+error[E5003]  teamboard/names.canon:20:7
+  check name deck is used twice in teamboard
+
+3 errors, 0 warnings in 1 package (…)

@@ -1,0 +1,24 @@
+EVALUATION.md §8.3: a false one-line warn is W5001: in a record at the instance (a literal:
+its `{`), at package level at the warn keyword.
+-- teamboard/deck.canon --
+package teamboard
+
+record Deck {
+  maxHidden: Int
+
+  warn few: maxHidden < 3 else "maxHidden is high"
+}
+
+let deck: Deck = { maxHidden: 5 }
+
+warn deck.maxHidden < 4 else "maxHidden above 3"
+-- findings.txt --
+warning[W5001]  teamboard/deck.canon:9:18
+  deck: maxHidden is high
+  expected by teamboard/deck.canon:6 (check few)
+
+warning[W5001]  teamboard/deck.canon:11:1
+  maxHidden above 3
+  expected by teamboard/deck.canon:11 (check)
+
+0 errors, 2 warnings in 1 package (…)

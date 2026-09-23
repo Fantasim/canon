@@ -1,0 +1,15 @@
+TYPES.md §7.4: a computed value whose where predicate is false.
+-- teamboard/reward.canon --
+package teamboard
+
+record Reward {
+  count: Int where it % 5 == 0
+}
+
+let reward: Reward = { count: 3 + 4 }
+-- findings.txt --
+error[E3206]  teamboard/reward.canon:7:31
+  reward.count: 7 fails where it % 5 == 0
+  expected by teamboard/reward.canon:4 (count: Int where it % 5 == 0)
+
+1 error, 0 warnings in 1 package (…)

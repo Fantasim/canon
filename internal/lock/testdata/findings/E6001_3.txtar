@@ -1,0 +1,47 @@
+LOCK.md §4.1, §9.6: a renamed member whose code a new member holds is named in the message
+(held); a member gone without a successor is removed; an enum that lost @codes and a field that
+lost @stable are gone, one finding each at their first lock line.
+-- resource/vocab/canon.lock --
+# canon.lock v1
+enum   resource.vocab.Element  1  FIRE
+enum   resource.vocab.Element  2  WATER
+enum   resource.vocab.Element  3  ELECTRICITY
+enum   resource.vocab.Stage  100  Stage_1
+enum   resource.vocab.Stage  101  Stage_2
+field  resource.vocab.eventTypes.code  0  COMBAT_KILL_MONSTER
+field  resource.vocab.eventTypes.code  1  COMBAT_KILL_GIANT
+table  resource.vocab.eventTypes  COMBAT_KILL_GIANT
+table  resource.vocab.eventTypes  COMBAT_KILL_MONSTER
+-- resource/vocab/vocab.canon --
+package resource.vocab
+
+/// Elements of attacks and defenses.
+enum Element @codes(UInt8) { BLAZE = 1, WATER = 2 }
+
+/// Stages of a season.
+enum Stage { Stage_1, Stage_2 }
+
+/// A kind of event the game records.
+record EventType {
+  /// Its code on the wire.
+  code: UInt16
+}
+
+let eventTypes: stable table EventType = {
+  COMBAT_KILL_MONSTER { code: 0 }
+  COMBAT_KILL_GIANT { code: 1 }
+}
+-- findings.txt --
+error[E6001]  resource/vocab/canon.lock:2:1
+  resource.vocab.Element.FIRE was removed; its code 1 is now held by BLAZE: renaming is not allowed
+
+error[E6001]  resource/vocab/canon.lock:4:1
+  resource.vocab.Element.ELECTRICITY was removed; retire it instead
+
+error[E6001]  resource/vocab/canon.lock:5:1
+  stable enum resource.vocab.Stage is gone (renamed or no longer stable); update canon.lock in the same commit if this is a rename
+
+error[E6001]  resource/vocab/canon.lock:7:1
+  stable field resource.vocab.eventTypes.code is gone (renamed or no longer stable); update canon.lock in the same commit if this is a rename
+
+4 errors, 0 warnings in 1 package (…)

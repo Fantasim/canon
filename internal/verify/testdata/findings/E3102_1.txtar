@@ -1,0 +1,21 @@
+TYPES.md §9.1: the keys of a keyed list are unique, checked at evaluation: a computed key that
+repeats an earlier one is reported at the second, naming the first.
+-- teamboard/farm.canon --
+package teamboard
+
+record Level {
+  level: Int
+  cost: Int
+}
+
+record Farm {
+  levels: [Level] keyed by level
+}
+
+let farm: Farm = { levels: [{ level: 1, cost: 10 }, { level: 2, cost: 20 }, { level: 0 + 1, cost: 30 }] }
+-- findings.txt --
+error[E3102]  teamboard/farm.canon:12:86
+  farm.levels[1].level: key 1 is used twice (first at teamboard/farm.canon:12)
+  expected by teamboard/farm.canon:9 (levels: [Level] keyed by level)
+
+1 error, 0 warnings in 1 package (…)

@@ -1,0 +1,27 @@
+LOCK.md §4.1: an entry is removed and its locked @stable value is now held by a key the lock does
+not know: the message names the new holder (held), even beside another new key.
+-- resource/vocab/canon.lock --
+# canon.lock v1
+field  resource.vocab.eventTypes.code  0  COMBAT_KILL_MONSTER
+field  resource.vocab.eventTypes.code  1  COMBAT_KILL_GIANT
+table  resource.vocab.eventTypes  COMBAT_KILL_GIANT
+table  resource.vocab.eventTypes  COMBAT_KILL_MONSTER
+-- resource/vocab/vocab.canon --
+package resource.vocab
+
+/// A kind of event the game records.
+record EventType {
+  /// Its code on the wire.
+  code: UInt16 @stable
+}
+
+let eventTypes: stable table EventType = {
+  COMBAT_KILL_MONSTER { code: 0 }
+  COMBAT_KILL_TITAN { code: 1 }
+  COMBAT_KILL_RAID { code: 2 }
+}
+-- findings.txt --
+error[E6001]  resource/vocab/canon.lock:4:1
+  resource.vocab.eventTypes.COMBAT_KILL_GIANT was removed; its stable value 1 is now held by COMBAT_KILL_TITAN: renaming is not allowed
+
+1 error, 0 warnings in 1 package (…)

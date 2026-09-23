@@ -1,0 +1,18 @@
+TYPES.md §7.3, EVALUATION.md §6.2: a finite binary64 result stored into a Float32 that overflows
+binary32 is E3202 (the product is finite, so no E4104); the largest Float32 fits.
+-- teamboard/tuning.canon --
+package teamboard
+
+const big = 1e38
+
+record Tuning {
+  scale: Float32
+  base: Float32
+}
+
+let tuning: Tuning = { scale: big * 10.0, base: 3.4028234e38 }
+-- findings.txt --
+error[E3202]  teamboard/tuning.canon:10:31
+  tuning.scale: 1e+39 overflows Float32
+
+1 error, 0 warnings in 1 package (…)

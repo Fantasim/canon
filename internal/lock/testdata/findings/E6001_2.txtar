@@ -1,0 +1,106 @@
+LOCK.md §4.1, §9.5: a deleted entry, retired or not, is removed; a table that is gone (renamed
+from flags to markers) is one finding at its first lock line.
+-- teamboard/canon.lock --
+# canon.lock v1
+table  teamboard.areaGroups  in_game
+table  teamboard.areaGroups  internal
+table  teamboard.areaGroups  out_game
+table  teamboard.areas  admin_panel
+table  teamboard.areas  analytics
+table  teamboard.areas  balance
+table  teamboard.areas  client
+table  teamboard.areas  game
+table  teamboard.areas  game_server
+table  teamboard.areas  internal
+table  teamboard.areas  resource
+table  teamboard.areas  resource_studio
+table  teamboard.areas  sovcommon
+table  teamboard.areas  team_board
+table  teamboard.areas  website
+table  teamboard.columns  done
+table  teamboard.columns  fixed
+table  teamboard.columns  taken
+table  teamboard.columns  unclaimed
+table  teamboard.flags  blocking
+table  teamboard.flags  sensitive
+table  teamboard.intents  idea
+table  teamboard.intents  issue
+table  teamboard.severities  critical
+table  teamboard.severities  low
+table  teamboard.severities  normal
+table  teamboard.statuses  duplicate  retired
+table  teamboard.statuses  fixed
+table  teamboard.statuses  open
+table  teamboard.statuses  taken
+table  teamboard.statuses  verified
+table  teamboard.statuses  wont_do
+-- teamboard/taxonomy.canon --
+package teamboard
+
+/// Every entry of the board's taxonomy, trimmed to its key.
+record Row {
+  /// Shown to people.
+  label: String = ""
+}
+
+let intents: stable table Row = {
+  issue {}
+  idea {}
+}
+
+let markers: stable table Row = {
+  blocking {}
+  sensitive {}
+}
+
+let statuses: stable table Row = {
+  open {}
+  taken {}
+  fixed {}
+  verified {}
+}
+
+let columns: stable table Row = {
+  unclaimed {}
+  taken {}
+  fixed {}
+  done {}
+}
+
+let severities: stable table Row = {
+  low {}
+  normal {}
+  critical {}
+}
+
+let areaGroups: stable table Row = {
+  in_game {}
+  out_game {}
+  internal {}
+}
+
+let areas: stable table Row = {
+  game {}
+  balance {}
+  website {}
+  resource_studio {}
+  game_server {}
+  client {}
+  resource {}
+  sovcommon {}
+  admin_panel {}
+  analytics {}
+  team_board {}
+  internal {}
+}
+-- findings.txt --
+error[E6001]  teamboard/canon.lock:21:1
+  stable table teamboard.flags is gone (renamed or no longer stable); update canon.lock in the same commit if this is a rename
+
+error[E6001]  teamboard/canon.lock:28:1
+  teamboard.statuses.duplicate was removed; retire it instead
+
+error[E6001]  teamboard/canon.lock:33:1
+  teamboard.statuses.wont_do was removed; retire it instead
+
+3 errors, 0 warnings in 1 package (…)

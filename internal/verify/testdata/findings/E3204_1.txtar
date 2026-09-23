@@ -1,0 +1,40 @@
+TYPES.md §7.4, EVALUATION.md §4.3: computed values outside their range refinements, which no
+static check sees: a string's length in bytes, a list's number of elements (a function's result)
+and an integer's value; each is reported at its own location, related to the refinement.
+-- teamboard/taxonomy.canon --
+package teamboard
+
+record AreaGroup {
+  label: String(1..=8)
+}
+
+record Deck {
+  layouts: [String](1..)
+  maxHidden: Int(1..4)
+}
+
+fn noLayouts() -> [String] {
+  return []
+}
+
+let areaGroups: stable table AreaGroup = {
+  in_game { label: "In game" }
+  out_game { label: "Out of " + "game" }
+}
+
+let deck: Deck = { layouts: noLayouts(), maxHidden: 2 + 2 }
+-- findings.txt --
+error[E3204]  teamboard/taxonomy.canon:13:10
+  deck.layouts: [] is outside 1..
+  expected by teamboard/taxonomy.canon:8 (layouts: [String](1..))
+  in noLayouts (teamboard/taxonomy.canon:21)
+
+error[E3204]  teamboard/taxonomy.canon:18:21
+  areaGroups.out_game.label: Out of game is outside 1..=8
+  expected by teamboard/taxonomy.canon:4 (label: String(1..=8))
+
+error[E3204]  teamboard/taxonomy.canon:21:53
+  deck.maxHidden: 4 is outside 1..4
+  expected by teamboard/taxonomy.canon:9 (maxHidden: Int(1..4))
+
+3 errors, 0 warnings in 1 package (…)

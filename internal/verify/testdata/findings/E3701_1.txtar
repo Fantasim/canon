@@ -1,0 +1,18 @@
+TYPES.md §13.4: an asset file must exist under its root, letter case included.
+-- teamboard/items.canon --
+package teamboard
+
+record Item {
+  icon: asset("@resource/Icon/Item", ext: [png, dds])
+}
+
+let items: stable table Item = {
+  sword { icon: "sword.png" }
+  shield { icon: "Shield.png" }
+}
+-- findings.txt --
+error[E3701]  teamboard/items.canon:9:18
+  items.shield.icon: asset Shield.png not found under @resource/Icon/Item
+  expected by teamboard/items.canon:4 (icon: asset("@resource/Icon/Item", ext: [png, dds]))
+
+1 error, 0 warnings in 1 package (…)

@@ -1,0 +1,45 @@
+LOCK.md §4.2, §9.6: a code is renumbered, a retired member's code is taken by a new one, a stable
+value changes, and a new entry takes a locked stable value.
+-- resource/vocab/canon.lock --
+# canon.lock v1
+enum   resource.vocab.Element  1  FIRE
+enum   resource.vocab.Element  2  WATER
+enum   resource.vocab.Element  4  WIND  retired
+field  resource.vocab.eventTypes.code  0  COMBAT_KILL_MONSTER
+field  resource.vocab.eventTypes.code  1  COMBAT_KILL_GIANT
+field  resource.vocab.eventTypes.code  3  COMBAT_KILL_WORLD_BOSS
+table  resource.vocab.eventTypes  COMBAT_KILL_GIANT
+table  resource.vocab.eventTypes  COMBAT_KILL_MONSTER
+table  resource.vocab.eventTypes  COMBAT_KILL_WORLD_BOSS
+-- resource/vocab/vocab.canon --
+package resource.vocab
+
+/// Elements of attacks and defenses.
+enum Element @codes(UInt8) { FIRE = 1, WATER = 7, retired WIND = 4, STORM = 4 }
+
+/// A kind of event the game records.
+record EventType {
+  /// Its code on the wire.
+  code: UInt16 @stable
+}
+
+let eventTypes: stable table EventType = {
+  COMBAT_KILL_MONSTER { code: 0 }
+  COMBAT_KILL_GIANT { code: 4 }
+  COMBAT_KILL_WORLD_BOSS { code: 3 }
+  COMBAT_KILL_RAID { code: 3 }
+}
+-- findings.txt --
+error[E6002]  resource/vocab/vocab.canon:4:40
+  WATER renumbered: code 2 is locked
+
+error[E6002]  resource/vocab/vocab.canon:4:69
+  code 4 belongs to WIND
+
+error[E6002]  resource/vocab/vocab.canon:14:29
+  stable value code of COMBAT_KILL_GIANT changed from 1 to 4
+
+error[E6002]  resource/vocab/vocab.canon:16:28
+  value 3 of code belongs to COMBAT_KILL_WORLD_BOSS
+
+4 errors, 0 warnings in 1 package (…)

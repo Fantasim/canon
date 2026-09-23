@@ -1,0 +1,20 @@
+LOCK.md §1: a @stable value is unique among all entries of its table, retired entries included.
+-- teamboard/vocab.canon --
+package teamboard
+
+record EventType {
+  code: UInt16 @stable
+  label: String
+}
+
+let eventTypes: stable table EventType = {
+  KILL_MONSTER { code: 0, label: "Kill a monster" }
+  retired KILL_GIANT { code: 1, label: "Kill a giant" }
+  KILL_RAID { code: 1, label: "Kill a raid boss" }
+}
+-- findings.txt --
+error[E3102]  teamboard/vocab.canon:11:21
+  eventTypes.KILL_RAID.code: @stable value 1 is used twice (first at teamboard/vocab.canon:10)
+  expected by teamboard/vocab.canon:8 (eventTypes: stable table EventType)
+
+1 error, 0 warnings in 1 package (…)

@@ -1,0 +1,47 @@
+EVALUATION.md §8.3: a false one-line check of a record is reported at the instance (a table
+entry: its key), or with `at f` at the field's value; at package level, at the check keyword.
+Each relates its declaration and carries its name. §7.3: the instance whose label verification
+found too short (E3204) is not checked; §7.1: the run the division by zero aborts (E4102, the
+evaluator's finding) reports nothing.
+-- teamboard/taxonomy.canon --
+package teamboard
+
+record Column {
+  label: String(1..)
+  statuses: [String]
+
+  check not statuses.isEmpty() else "a column holds at least one status"
+  check short: label.len() < 12 at label else "the label is too long"
+  check statuses.len() / (label.len() - 5) >= 0 else "a ratio is negative"
+}
+
+let columns: stable table Column = {
+  unclaimed { label: "Unclaimed", statuses: [] }
+  archive { label: "Everything archived", statuses: ["done"] }
+  broken { label: "" + "", statuses: [] }
+  flaky { label: "Flaky", statuses: ["x"] }
+}
+
+check columns.len() == 1
+  else "the deck has exactly one column"
+-- findings.txt --
+error[E4102]  teamboard/taxonomy.canon:9:9
+  division by zero
+
+error[E5001]  teamboard/taxonomy.canon:13:3
+  columns.unclaimed: a column holds at least one status
+  expected by teamboard/taxonomy.canon:7 (check)
+
+error[E5001]  teamboard/taxonomy.canon:14:20
+  columns.archive.label: the label is too long
+  expected by teamboard/taxonomy.canon:8 (check short)
+
+error[E3204]  teamboard/taxonomy.canon:15:19
+  columns.broken.label:  is outside 1..
+  expected by teamboard/taxonomy.canon:4 (label: String(1..))
+
+error[E5001]  teamboard/taxonomy.canon:19:1
+  the deck has exactly one column
+  expected by teamboard/taxonomy.canon:19 (check)
+
+5 errors, 0 warnings in 1 package (…)

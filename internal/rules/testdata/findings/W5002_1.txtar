@@ -1,0 +1,25 @@
+EVALUATION.md §8.3: warn(at, message) in a record's block check is W5002 at the provenance of
+at, the field value of the instance being checked.
+-- teamboard/taxonomy.canon --
+package teamboard
+
+record Status {
+  label: String
+
+  check {
+    if label.len() > 8 {
+      warn(label, "label {label} is long")
+    }
+  }
+}
+
+let statuses: stable table Status = {
+  open { label: "Open" }
+  verified { label: "Verified and closed" }
+}
+-- findings.txt --
+warning[W5002]  teamboard/taxonomy.canon:15:21
+  statuses.verified.label: label Verified and closed is long
+  expected by teamboard/taxonomy.canon:6 (check)
+
+0 errors, 1 warning in 1 package (…)

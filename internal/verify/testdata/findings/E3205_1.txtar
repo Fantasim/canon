@@ -1,0 +1,19 @@
+TYPES.md §7.4: a regex refinement is an RE2 search, through an alias too, checked on computed
+strings: /[a-z]/ matches ABc anywhere, /^[1-9]:[1-9]$/ refuses 2x2.
+-- teamboard/taxonomy.canon --
+package teamboard
+
+type Layout = String(/^[1-9]:[1-9]$/)
+
+record Deck {
+  layouts: [Layout]
+  nick: String(/[a-z]/)
+}
+
+let deck: Deck = { layouts: ["4:1", "2" + "x2"], nick: "AB" + "c" }
+-- findings.txt --
+error[E3205]  teamboard/taxonomy.canon:10:37
+  deck.layouts[1]: 2x2 does not match /^[1-9]:[1-9]$/
+  expected by teamboard/taxonomy.canon:3 (String(/^[1-9]:[1-9]$/))
+
+1 error, 0 warnings in 1 package (…)

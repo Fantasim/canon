@@ -1,0 +1,18 @@
+TYPES.md §13.4: an asset has one of the extensions its type allows.
+-- teamboard/items.canon --
+package teamboard
+
+record Item {
+  icon: asset("@resource/Icon/Item", ext: [png, dds])
+}
+
+let items: stable table Item = {
+  sword { icon: "sword.png" }
+  shield { icon: "shield.jpg" }
+}
+-- findings.txt --
+error[E3702]  teamboard/items.canon:9:18
+  items.shield.icon: asset shield.jpg: extension must be one of png, dds
+  expected by teamboard/items.canon:4 (icon: asset("@resource/Icon/Item", ext: [png, dds]))
+
+1 error, 0 warnings in 1 package (…)

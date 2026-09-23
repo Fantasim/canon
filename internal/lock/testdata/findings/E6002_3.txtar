@@ -1,0 +1,38 @@
+LOCK.md §4.2, §6.3: after a union merge the lock holds two facts for one value, or two values
+for one holder: E6002 at the second lock line.
+-- resource/vocab/canon.lock --
+# canon.lock v1
+enum   resource.vocab.Element  1  FIRE
+enum   resource.vocab.Element  7  WIND
+enum   resource.vocab.Element  8  WIND
+field  resource.vocab.eventTypes.code  9000  A
+field  resource.vocab.eventTypes.code  9000  B
+table  resource.vocab.eventTypes  A
+table  resource.vocab.eventTypes  B
+-- resource/vocab/vocab.canon --
+package resource.vocab
+
+/// Elements of attacks and defenses.
+enum Element @codes(UInt8) { FIRE = 1, WIND = 7 }
+
+/// A kind of event the game records.
+record EventType {
+  /// Its code on the wire.
+  code: UInt16 @stable
+}
+
+let eventTypes: stable table EventType = {
+  A { code: 9000 }
+  B { code: 9001 }
+}
+-- findings.txt --
+error[E6002]  resource/vocab/canon.lock:4:1
+  canon.lock holds two facts for resource.vocab.Element.WIND: enum   resource.vocab.Element  7  WIND and enum   resource.vocab.Element  8  WIND
+
+error[E6002]  resource/vocab/canon.lock:6:1
+  canon.lock holds two facts for resource.vocab.eventTypes.code: field  resource.vocab.eventTypes.code  9000  A and field  resource.vocab.eventTypes.code  9000  B
+
+error[E6002]  resource/vocab/vocab.canon:14:13
+  stable value code of B changed from 9000 to 9001
+
+3 errors, 0 warnings in 1 package (…)

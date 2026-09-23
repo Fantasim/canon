@@ -1,0 +1,31 @@
+TYPES.md §8.1: a retired enum member or variant case is not used in a value, except inside a
+retired table entry.
+-- teamboard/spells.canon --
+package teamboard
+
+enum Element { FIRE, retired WIND }
+
+variant Reward {
+  item {}
+  retired gold { amount: Int }
+}
+
+record Spell {
+  element: Element
+  reward: Reward
+}
+
+let spells: stable table Spell = {
+  gust { element: WIND, reward: gold { amount: 3 } }
+  retired storm { element: WIND, reward: gold { amount: 3 } }
+}
+-- findings.txt --
+error[E3506]  teamboard/spells.canon:16:19
+  spells.gust.element: Element.WIND is retired
+  expected by teamboard/spells.canon:3 (retired WIND)
+
+error[E3506]  teamboard/spells.canon:16:33
+  spells.gust.reward: Reward.gold is retired
+  expected by teamboard/spells.canon:7 (retired gold { amount: Int })
+
+2 errors, 0 warnings in 1 package (…)

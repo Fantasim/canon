@@ -1147,8 +1147,9 @@ Choices made while Louis was away are listed here, each with its reason, so he c
 
 147. **Verification choices EVALUATION §5 leaves open.** A ref into a poisoned collection gets no
     finding and is marked invalid (§7.2). An unbound level-1 ref is marked invalid and returned in
-    `Result.Unbound` (walk order, with its path) for `eval`'s `Host.Verify` to report `E3505`, which
-    ERRORS.md gives to `eval` though §3.4/§5 meet it in stage B. `E3502` fires only inside a live
+    `Result.Unbound` (walk order, with its path) for `build`'s `eval.Host` adapter to report
+    `E3505`, which ERRORS.md gives to `eval` though §3.4/§5 meet it in stage B; §4.8's `bool`
+    cannot carry it yet (Louis-call 7). `E3502` fires only inside a live
     table entry; any enclosing retired entry allows anything (LOCK §4.3). Assets are checked clean
     path, then extension, then existence, only the first failure reported; nil `verify.Assets`
     finds no file. A hard error in a stage-B `where` re-run stops the walk and sets

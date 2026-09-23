@@ -1,0 +1,18 @@
+TYPES.md §8.1: the codes of a @codes enum are unique, retired members included; an enum without
+@codes has no codes to compare.
+-- teamboard/vocab.canon --
+package teamboard
+
+enum Element @codes(UInt8) { FIRE = 1, retired WIND = 4, WATER = 2, STORM = 4, BLAZE = 1 }
+
+enum Tone { warm, cold }
+-- findings.txt --
+error[E3102]  teamboard/vocab.canon:3:77
+  code 4 is used twice (first at teamboard/vocab.canon:3)
+  expected by teamboard/vocab.canon:3 (@codes(UInt8))
+
+error[E3102]  teamboard/vocab.canon:3:88
+  code 1 is used twice (first at teamboard/vocab.canon:3)
+  expected by teamboard/vocab.canon:3 (@codes(UInt8))
+
+2 errors, 0 warnings in 1 package (…)

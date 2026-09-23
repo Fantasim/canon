@@ -1,0 +1,104 @@
+LOCK.md §8, §9.2: canon lock check reports the one value the lock does not hold yet.
+-- command --
+canon lock check
+-- teamboard/canon.lock --
+# canon.lock v1
+table  teamboard.areaGroups  in_game
+table  teamboard.areaGroups  internal
+table  teamboard.areaGroups  out_game
+table  teamboard.areas  admin_panel
+table  teamboard.areas  analytics
+table  teamboard.areas  balance
+table  teamboard.areas  client
+table  teamboard.areas  game
+table  teamboard.areas  game_server
+table  teamboard.areas  internal
+table  teamboard.areas  resource
+table  teamboard.areas  resource_studio
+table  teamboard.areas  sovcommon
+table  teamboard.areas  team_board
+table  teamboard.areas  website
+table  teamboard.columns  done
+table  teamboard.columns  fixed
+table  teamboard.columns  taken
+table  teamboard.columns  unclaimed
+table  teamboard.flags  blocking
+table  teamboard.flags  sensitive
+table  teamboard.intents  idea
+table  teamboard.intents  issue
+table  teamboard.severities  critical
+table  teamboard.severities  low
+table  teamboard.severities  normal
+table  teamboard.statuses  duplicate
+table  teamboard.statuses  fixed
+table  teamboard.statuses  open
+table  teamboard.statuses  taken
+table  teamboard.statuses  verified
+table  teamboard.statuses  wont_do
+-- teamboard/taxonomy.canon --
+package teamboard
+
+/// Every entry of the board's taxonomy, trimmed to its key.
+record Row {
+  /// Shown to people.
+  label: String = ""
+}
+
+let intents: stable table Row = {
+  issue {}
+  idea {}
+}
+
+let flags: stable table Row = {
+  blocking {}
+  sensitive {}
+}
+
+let statuses: stable table Row = {
+  open {}
+  blocked {}
+  taken {}
+  fixed {}
+  verified {}
+  wont_do {}
+  duplicate {}
+}
+
+let columns: stable table Row = {
+  unclaimed {}
+  taken {}
+  fixed {}
+  done {}
+}
+
+let severities: stable table Row = {
+  low {}
+  normal {}
+  critical {}
+}
+
+let areaGroups: stable table Row = {
+  in_game {}
+  out_game {}
+  internal {}
+}
+
+let areas: stable table Row = {
+  game {}
+  balance {}
+  website {}
+  resource_studio {}
+  game_server {}
+  client {}
+  resource {}
+  sovcommon {}
+  admin_panel {}
+  analytics {}
+  team_board {}
+  internal {}
+}
+-- findings.txt --
+warning[W6006]  teamboard/canon.lock:1:1
+  1 stable value is not in canon.lock yet: run canon build
+
+0 errors, 1 warning in 1 package (…)

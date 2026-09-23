@@ -1,0 +1,22 @@
+TYPES.md §13.4: an asset path is clean and relative: no empty, . or .. segment.
+-- teamboard/items.canon --
+package teamboard
+
+record Item {
+  icon: asset("@resource/Icon/Item", ext: [png, dds])
+}
+
+let items: stable table Item = {
+  sword { icon: "../sword.png" }
+  shield { icon: "Icon//shield.png" }
+}
+-- findings.txt --
+error[E3703]  teamboard/items.canon:8:17
+  items.sword.icon: asset path ../sword.png is not a clean relative path
+  expected by teamboard/items.canon:4 (icon: asset("@resource/Icon/Item", ext: [png, dds]))
+
+error[E3703]  teamboard/items.canon:9:18
+  items.shield.icon: asset path Icon//shield.png is not a clean relative path
+  expected by teamboard/items.canon:4 (icon: asset("@resource/Icon/Item", ext: [png, dds]))
+
+2 errors, 0 warnings in 1 package (…)

@@ -1,5 +1,7 @@
 package lock
 
+import "github.com/fantasim/canonlang/internal/diag"
+
 // The kinds of LOCK.md §1, in canonical order (§2.3: enum < field < table).
 const (
 	KindEnum Kind = iota
@@ -55,3 +57,16 @@ const (
 	fmtBadFact     = "%w: %w"
 	fmtBadFactLine = "%w: %w: %q"
 )
+
+// fmtNotStable names the table AddTable refused.
+const fmtNotStable = "%w: %s is not a stable table"
+
+// collRules applies LOCK.md §4.1 and §4.2 to one collection, by kind.
+var collRules = [...]func(c *comparison){
+	KindEnum:  enumRules,
+	KindField: fieldRules,
+	KindTable: tableRules,
+}
+
+// goneKinds are the words E6001 names a gone collection with.
+var goneKinds = [...]diag.Kind{KindEnum: diag.KindEnum, KindField: diag.KindField, KindTable: diag.KindTable}

@@ -1,0 +1,26 @@
+TYPES.md §10.3, EVALUATION.md §5: a ref to a key its target does not have, in a table entry and
+in a top-level value.
+-- teamboard/taxonomy.canon --
+package teamboard
+
+record Status {
+  label: String
+  next: [ref Status]
+}
+
+let statuses: stable table Status = {
+  open { label: "Open", next: [taken, closed] }
+  taken { label: "Taken", next: [open] }
+}
+
+let initialStatus: ref Status = draft
+-- findings.txt --
+error[E3501]  teamboard/taxonomy.canon:9:39
+  statuses.open.next[1]: unknown key closed in statuses
+  expected by teamboard/taxonomy.canon:5 (ref Status)
+
+error[E3501]  teamboard/taxonomy.canon:13:33
+  initialStatus: unknown key draft in statuses
+  expected by teamboard/taxonomy.canon:13 (initialStatus: ref Status)
+
+2 errors, 0 warnings in 1 package (…)

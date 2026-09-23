@@ -1,0 +1,46 @@
+EVALUATION.md §8.3, §7.1: fail(at, message) in a block check is reported at the provenance of
+at (an entry, or a field value), with its path; a run aborted by a hard error (E4102, the
+evaluator's finding) reports none of the fail calls it made before.
+-- teamboard/taxonomy.canon --
+package teamboard
+
+record Status {
+  label: String
+}
+
+let statuses: stable table Status = {
+  open { label: "Open" }
+  taken { label: "Taken" }
+  fixed { label: "Fixed" }
+}
+
+check {
+  for s in statuses.active() {
+    if s.label == "Taken" {
+      fail(s, "status {s.id} is not claimed by any column")
+    }
+    if s.label == "Fixed" {
+      fail(s.label, "label {s.label} is never shown")
+    }
+  }
+}
+
+check {
+  for s in statuses.active() {
+    fail(s, "{s.label} is never shown")
+  }
+  let ratio = statuses.len() / 0
+}
+-- findings.txt --
+error[E5002]  teamboard/taxonomy.canon:9:3
+  statuses.taken: status taken is not claimed by any column
+  expected by teamboard/taxonomy.canon:13 (check)
+
+error[E5002]  teamboard/taxonomy.canon:10:18
+  statuses.fixed.label: label Fixed is never shown
+  expected by teamboard/taxonomy.canon:13 (check)
+
+error[E4102]  teamboard/taxonomy.canon:28:15
+  division by zero
+
+3 errors, 0 warnings in 1 package (…)
