@@ -1,0 +1,17 @@
+CLI.md §3.1: a .gitignore that has the line already is left alone.
+-- args --
+init
+--name
+acme
+-- .gitignore --
+.canon/
+-- want --
+[exit 0]
+[stdout]
+[stderr]
+[file project.canon]
+project acme {
+  canon: "0.1"
+  roots {}
+  languages: [en]
+}

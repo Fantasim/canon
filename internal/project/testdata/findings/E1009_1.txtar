@@ -1,0 +1,25 @@
+GRAMMAR.md §7.1: a go_module key that is not a declared root; an empty and a spaced module path.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    a: "../a"
+    b: "../b"
+  }
+  go_module {
+    c: "example.com/c"
+    a: ""
+    b: "example.com/ b"
+  }
+}
+-- findings.txt --
+error[E1009]  project.canon:8:5
+  go_module: "c" is not a declared root
+
+error[E1009]  project.canon:9:8
+  go_module: the module path of root "a" is empty or contains a space
+
+error[E1009]  project.canon:10:8
+  go_module: the module path of root "b" is empty or contains a space
+
+3 errors, 0 warnings in 1 package (…)

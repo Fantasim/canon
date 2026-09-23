@@ -1,0 +1,22 @@
+SPEC §3.2, GRAMMAR.md §5.2: a file without a package line reports to its directory package.
+-- args --
+check
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+const X = 1
+-- top.canon --
+const Y = 2
+-- want --
+[exit 1]
+[stdout]
+error[E1127]  a/a.canon:1:1
+  a file must start with "package"
+
+error[E1127]  top.canon:1:1
+  a file must start with "package"
+
+2 errors, 0 warnings in 0 packages (…)
+[stderr]

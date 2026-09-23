@@ -163,8 +163,25 @@ func (r *CheckResult) HasErrors() bool {
 }
 
 // Check runs build phases 1-7 on the selected packages and returns their findings (rules R1-R3).
-func (p *Project) Check(ctx context.Context, packages ...string) (*CheckResult, error) {
-	return nil, errUnimplemented()
+func (p *Project) Check(ctx context.Context, packages ...string) (res *CheckResult, err error) {
+	defer recoverInternal(&err)
+	b, err := p.open()
+	if err != nil {
+		return nil, err
+	}
+	start := time.Now()
+	r, err := b.Check(ctx, packages)
+	if err != nil {
+		return nil, apiError(err)
+	}
+	p.setRevision(r.Revision)
+	return &CheckResult{
+		Revision: Revision(r.Revision),
+		Packages: r.Packages,
+		Findings: fromDiag(r.Files, r.List),
+		Summary:  summaryOf(r.Summary),
+		Duration: time.Since(start),
+	}, nil
 }
 
 // LockCheck verifies canon.lock of the selected packages (rule B4).

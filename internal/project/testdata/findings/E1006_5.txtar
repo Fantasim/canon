@@ -1,0 +1,15 @@
+GRAMMAR.md §7.1: an empty languages list; a budget past the step counter.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  languages: []
+  budget: 99_999_999_999_999_999_999
+}
+-- findings.txt --
+error[E1006]  project.canon:3:14
+  "languages" must be a non-empty list of language codes
+
+error[E1006]  project.canon:4:11
+  "budget" must be an integer of at least 1
+
+2 errors, 0 warnings in 1 package (…)

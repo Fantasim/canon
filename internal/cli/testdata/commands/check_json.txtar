@@ -1,0 +1,20 @@
+CLI.md §2.4: one JSON line per finding, then the summary.
+-- args --
+check
+--format
+json
+a
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+const = 1
+-- want --
+[exit 1]
+[stdout]
+{"severity":"error","code":"E1116","file":"a/a.canon","line":3,"col":7,"endLine":3,"endCol":8,"package":"a","message":"expected IDENT; found ="}
+{"summary":{"errors":1,"warnings":0,"packages":1,"ms":0}}
+[stderr]

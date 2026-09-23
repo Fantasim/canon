@@ -1,3 +1,3 @@
-// Command canon is the Canon compiler (CLI.md). Its commands arrive with internal/cli, from
-// milestone M1 (meta/plan.md); until then every invocation is a usage error.
+// Command canon is the Canon compiler (CLI.md): it runs internal/cli in the current directory
+// and exits with its code; SIGINT and SIGTERM cancel the running command.
 package main

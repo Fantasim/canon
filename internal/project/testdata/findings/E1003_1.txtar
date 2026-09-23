@@ -1,0 +1,10 @@
+GRAMMAR.md §7.1, CLI.md §2.1: no project.canon in the directory or any parent.
+-- find --
+a/b
+-- a/b/b.canon --
+package a.b
+-- findings.txt --
+error[E1003]
+  no project.canon found in /p/a/b or its parents
+
+1 error, 0 warnings in 1 package (…)

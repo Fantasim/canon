@@ -1,0 +1,11 @@
+GRAMMAR.md §7.1: a key outside the built-in schema.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  name: "acme"
+}
+-- findings.txt --
+error[E1002]  project.canon:3:3
+  unknown project key "name"
+
+1 error, 0 warnings in 1 package (…)

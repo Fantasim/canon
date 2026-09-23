@@ -90,7 +90,9 @@ func ExampleUnretire() {
 	}
 	defer p.Close()
 	_, err = p.Edit(context.Background(), canon.Edit{Ops: []canon.Op{canon.Unretire("items.II_OLD_SWORD")}})
-	fmt.Println(errors.Is(err, canon.ErrStableKey))
+	if errors.Is(err, canon.ErrStableKey) {
+		fmt.Println("refused: a stable id is never un-retired")
+	}
 	// Output:
 }
 

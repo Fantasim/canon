@@ -1,0 +1,21 @@
+CLI.md §2.3: more warnings than --max-warnings is exit 4; -q prints errors only.
+-- args --
+check
+-q
+--max-warnings
+0
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+/// Dangling.
+
+const X = 1
+-- want --
+[exit 4]
+[stdout]
+0 errors, 1 warning in 1 package (…)
+[stderr]

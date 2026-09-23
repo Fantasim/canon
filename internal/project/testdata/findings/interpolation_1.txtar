@@ -1,0 +1,26 @@
+GRAMMAR.md §7, DECISIONS 141: an interpolated project string is the parser's E1132 alone.
+-- project.canon --
+project acme {
+  canon: "0.{x}"
+  roots {
+    web: "../{web}"
+    "{k}": "../k"
+  }
+  go_module {
+    web: "example.com/{x}"
+  }
+}
+-- findings.txt --
+error[E1132]  project.canon:2:10
+  this string must be constant (no interpolation)
+
+error[E1132]  project.canon:4:10
+  this string must be constant (no interpolation)
+
+error[E1132]  project.canon:5:5
+  this string must be constant (no interpolation)
+
+error[E1132]  project.canon:8:10
+  this string must be constant (no interpolation)
+
+4 errors, 0 warnings in 1 package (…)

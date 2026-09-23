@@ -20,3 +20,4 @@ the narration.
 | ADR | Subject |
 |---|---|
 | [0001](0001-bootstrap.md) | The agent layer: CLAUDE.md, DOCTRINE.md, meta/, .claude/ |
+| [0002](0002-api-session.md) | `api/session.go`: the API's glue to `internal/build` |

@@ -1,0 +1,10 @@
+CLI.md §3.14: three lines; a build without VCS information has no commit.
+-- args --
+version
+-- want --
+[exit 0]
+[stdout]
+canon 0.1.0 (unknown)
+language 0.1
+formats canon-fp v1, canon-vm/1, canon.lock v1
+[stderr]

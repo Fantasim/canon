@@ -1,0 +1,10 @@
+GRAMMAR.md §7.1, NFR-03: another minor of the major is not read.
+-- project.canon --
+project acme {
+  canon: "0.2"
+}
+-- findings.txt --
+error[E1001]  project.canon:2:10
+  project requires Canon 0.2; this compiler supports 0.1
+
+1 error, 0 warnings in 1 package (…)

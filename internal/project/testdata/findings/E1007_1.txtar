@@ -1,0 +1,17 @@
+GRAMMAR.md §7.1: a root name that is a reserved word or a string.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    type: "../a"
+    "web root": "../b"
+  }
+}
+-- findings.txt --
+error[E1007]  project.canon:4:5
+  invalid root name "type": a root name is an identifier
+
+error[E1007]  project.canon:5:5
+  invalid root name "web root": a root name is an identifier
+
+2 errors, 0 warnings in 1 package (…)

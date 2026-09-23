@@ -1,0 +1,47 @@
+WIRE.md §2.1, §2.2: absolute, backslashed, empty-segment and escaping paths.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    services: "../.."
+  }
+}
+-- paths --
+pipeline /abs/x.json
+pipeline C:/x.json
+pipeline out\potions.json
+pipeline a//b
+pipeline @services//x
+pipeline @services/..//teamboard
+pipeline @services/../teamboard
+pipeline ../../outside.json
+. 
+-- findings.txt --
+error[E7001]  paths:1:10
+  path /abs/x.json: absolute path
+
+error[E7001]  paths:2:10
+  path C:/x.json: absolute path
+
+error[E7001]  paths:3:10
+  path out\potions.json: "\" is not a separator
+
+error[E7001]  paths:4:10
+  path a//b: empty segment
+
+error[E7001]  paths:5:10
+  path @services//x: empty segment
+
+error[E7001]  paths:6:10
+  path @services/..//teamboard: empty segment
+
+error[E7001]  paths:7:10
+  path @services/../teamboard: leaves root @services
+
+error[E7001]  paths:8:10
+  path ../../outside.json: leaves the project
+
+error[E7001]  paths:9:3
+  path : empty segment
+
+9 errors, 0 warnings in 1 package (…)

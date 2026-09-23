@@ -1,0 +1,12 @@
+CLI.md §2.1, GRAMMAR.md §7.1: no project.canon above the directory is E1003 (exit 2).
+-- args --
+new
+game
+-- want --
+[exit 2]
+[stdout]
+error[E1003]
+  no project.canon found in $TMP or its parents
+
+1 error, 0 warnings in 0 packages (…)
+[stderr]

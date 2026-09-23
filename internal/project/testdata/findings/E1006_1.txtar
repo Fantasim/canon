@@ -1,0 +1,18 @@
+GRAMMAR.md §7.1: canon, studio and budget of the wrong kind.
+-- project.canon --
+project acme {
+  canon: 1
+  studio: "studio"
+  budget: "100"
+}
+-- findings.txt --
+error[E1006]  project.canon:2:10
+  "canon" must be a string
+
+error[E1006]  project.canon:3:11
+  "studio" must be a package name
+
+error[E1006]  project.canon:4:11
+  "budget" must be an integer of at least 1
+
+3 errors, 0 warnings in 1 package (…)

@@ -1,0 +1,15 @@
+GRAMMAR.md §7.1: a languages item written as a string; a budget below 1.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  languages: ["en"]
+  budget: 0
+}
+-- findings.txt --
+error[E1006]  project.canon:3:15
+  "languages" must be a non-empty list of language codes
+
+error[E1006]  project.canon:4:11
+  "budget" must be an integer of at least 1
+
+2 errors, 0 warnings in 1 package (…)

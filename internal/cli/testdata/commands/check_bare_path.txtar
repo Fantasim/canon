@@ -1,0 +1,18 @@
+CLI.md §2.2, DECISIONS 143: a/b without ./ is a package name; an unknown one is named as typed.
+-- dir --
+game
+-- args --
+check
+./items
+items/sub
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- game/items/items.canon --
+package game.items
+-- want --
+[exit 2]
+[stdout]
+[stderr]
+canon: unknown package: items/sub

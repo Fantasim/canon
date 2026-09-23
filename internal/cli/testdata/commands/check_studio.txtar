@@ -1,0 +1,19 @@
+GRAMMAR.md §7.1: studio names no package; E1012 is reported with every check.
+-- args --
+check
+a
+-- project.canon --
+project acme {
+  canon: "0.1"
+  studio: studio
+}
+-- a/a.canon --
+package a
+-- want --
+[exit 1]
+[stdout]
+error[E1012]  project.canon:3:11
+  studio package "studio" does not exist
+
+1 error, 0 warnings in 1 package (…)
+[stderr]

@@ -1,0 +1,17 @@
+GRAMMAR.md §7.1: a go_module key given twice.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    web: "../web"
+  }
+  go_module {
+    web: "example.com/a"
+    web: "example.com/b"
+  }
+}
+-- findings.txt --
+error[E1005]  project.canon:8:5
+  duplicate key "web" in project.canon
+
+1 error, 0 warnings in 1 package (…)

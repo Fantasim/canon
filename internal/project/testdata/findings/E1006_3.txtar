@@ -1,0 +1,20 @@
+GRAMMAR.md §7.1: a root path and a module path that are not strings.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    web: 1
+    lib: "../lib"
+  }
+  go_module {
+    lib: lib
+  }
+}
+-- findings.txt --
+error[E1006]  project.canon:4:10
+  "roots" must be a map of root names to path strings
+
+error[E1006]  project.canon:8:10
+  "go_module" must be a map of root names to module path strings
+
+2 errors, 0 warnings in 1 package (…)

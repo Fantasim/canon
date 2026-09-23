@@ -188,4 +188,7 @@ const (
 	fmtDecodeFinding = "finding: %w"
 	fmtSeverity      = "%w %q"
 	msgUnimplemented = "unimplemented"
+	fmtWrap          = "%w: %w"
+	fmtUnknown       = "%w: %s"
+	fmtMixed         = "%w: %s: %w"
 )

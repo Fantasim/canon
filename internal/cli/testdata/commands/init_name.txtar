@@ -1,0 +1,17 @@
+CLI.md §3.1: project.canon for the current language version, and .canon/ ignored.
+-- args --
+init
+--name
+acme
+-- want --
+[exit 0]
+[stdout]
+[stderr]
+[file .gitignore]
+.canon/
+[file project.canon]
+project acme {
+  canon: "0.1"
+  roots {}
+  languages: [en]
+}

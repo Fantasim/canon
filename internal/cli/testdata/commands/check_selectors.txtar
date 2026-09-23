@@ -1,0 +1,31 @@
+CLI.md §2.2: a directory and a file, relative to the current directory; the findings of the selected packages only.
+-- dir --
+game
+-- args --
+check
+./items
+../shared/ui.canon
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- game/items/items.canon --
+package game.items
+-- game/items/sub/axe.canon --
+package game.items
+
+const = 1
+-- shared/ui.canon --
+package shared
+-- other/other.canon --
+package other
+
+const = 2
+-- want --
+[exit 1]
+[stdout]
+error[E1116]  game/items/sub/axe.canon:3:7
+  expected IDENT; found =
+
+1 error, 0 warnings in 2 packages (…)
+[stderr]

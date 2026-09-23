@@ -1,0 +1,25 @@
+CLI.md §2.4, §3.3: parse findings in text, then the summary; exit 1.
+-- args --
+check
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+const = 1
+const Y 2
+-- b/b.canon --
+package b
+-- want --
+[exit 1]
+[stdout]
+error[E1116]  a/a.canon:3:7
+  expected IDENT; found =
+
+error[E1116]  a/a.canon:4:9
+  expected "="; found 2
+
+2 errors, 0 warnings in 2 packages (…)
+[stderr]

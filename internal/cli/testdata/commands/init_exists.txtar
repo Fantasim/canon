@@ -1,0 +1,14 @@
+CLI.md §3.1: init refuses to run where a project.canon exists.
+-- args --
+init
+--name
+acme
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- want --
+[exit 2]
+[stdout]
+[stderr]
+canon: project.canon: already exists

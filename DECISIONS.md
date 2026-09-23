@@ -1050,6 +1050,140 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     MF-3 by the check/eval contracts and the close-out, MF-7 and MF-8 by the parser, and the rest by the
     must-fix commit. The eight contracts exist. M0.4 is ticked.
 
+139. **The M1 command line uses the standard `flag` package, not cobra** (departs from
+    IMPLEMENTATION-PLAN §3 and §11, Louis-call 6). Adding cobra changes `go.mod`, which CLAUDE.md
+    reserves to Louis; `flag` covers `version`, `init`, `new` and `check`. The tree lives in
+    `internal/cli` (`cli.Main(ctx, args, Env)`); `cmd/canon` only reads the working directory,
+    wires SIGINT/SIGTERM to the context and exits. Flags go before or after the command and among
+    the arguments (`--` ends them); every CLI.md §2.3 flag is global; a flag error, `-h` and
+    `help` included (CLI.md lists no help), is `canon: <error>` and the usage, exit 2. `--layer`,
+    `--color`, `--lang` and `--watch` are not defined yet (exit 2): layers are applied from M3,
+    and `E1901` lands with `--layer`. Reason: a new dependency is Louis's call.
+
+140. **Where findings belong before checking.** A file's parse findings go to the bag of the package
+    its `package` line names. A file without a package line joins no package (it is in no unit,
+    `Packages`, selector or Checker input): its findings go to the bag of its directory's package
+    (`a/b` → `a.b`) when that package exists, else to the project's own bag, package `""`, with
+    `project.canon`'s, `E1012` and an `E7003` override. The own bag counts as no package in
+    `Summary.Packages` and is not truncated by `MaxFindings`. `project.Reader` parses each file
+    with a bag of its own and again into its package's bag only when it has findings. Reason:
+    bags are per package (F7), a package is known only once its files are parsed, and no finding
+    is ever moved between bags.
+
+141. **Project-file details GRAMMAR §7.1 leaves open.** A root name and a `go_module` key must be
+    written as an `IDENT` (a string or a reserved word is `E1007` name, resp. `E1009` root); a
+    `go_module` key given twice is `E1005` key; a module path holding any Unicode space is `E1009`
+    path; a `languages` item written as a string is `E1006`, a dotted one `E1008`; a version whose
+    numbers overflow is `E1001`. A value or key the parser already refused (a Bad node, or a
+    string with an interpolation, `E1132`) gets no second finding, and a root whose path was
+    refused still counts as declared for `go_module`. An `X:` prefix and a leading `\` are
+    absolute on every platform (`E1007`, `E7001`). A `--root` naming an undeclared root is
+    `E7003` with no location, and `Open` fails with `ErrProject` (API.md §2.1); with no root
+    declared its message ends `roots:` (the renderer trims the space; the JSON form keeps
+    `roots: `), a gap in ERRORS.md recorded in Louis-call 6. Reason: the strictest reading, and
+    every refusal carries a catalogued finding.
+
+142. **A missing project.canon is a `*ProjectError` wrapping `ErrNoProject` with its `E1003`
+    finding** (departs from API.md §15, which gives `ErrNoProject` no error type; Louis-call 6).
+    `FindProject` finds none upward; `Open`, `--project` included, finds no file named exactly
+    `project.canon` in its directory (listing, case-sensitive, IMPLEMENTATION-PLAN §10). The
+    typed error keeps `errors.Is` and lets the CLI print `E1003` through `canon.WriteFindings`
+    (DECISIONS 106), exit 2. For `--project` the message's "or its parents" overstates the
+    search, since ERRORS.md has one variant (Louis-call 6). `Find` lists each ancestor directory
+    (IMPLEMENTATION-PLAN §10); an ancestor it cannot list gives a wrapped I/O error.
+
+143. **M1 snapshots, selectors and exit codes.** `Open` reads and checks `project.canon`, places the
+    roots and scans the file set (API.md O2: `.` directories skipped, byte order), parsing no
+    other file. Every call (API.md S1) reads `project.canon` again (new errors fail the call as
+    they fail `Open`, a `*ProjectError`, which `Check` and `Packages` may thus return although
+    API.md R3 does not list it: a departure, Louis-call 6), rescans, reads and parses every
+    `.canon` file, and reports only the selected packages (R2). `Revision()` refreshes from the
+    raw bytes on disk whether `project.canon` checks or not; a file, or the listing, it cannot
+    read enters S3's listing as `<path> NUL unreadable` (`.` for the listing), so a broken or
+    missing file still changes the revision (S3's read set is the files read; `canon.lock` and
+    loaded files join with their readers). `Options.Layers` is checked against
+    the loaded packages by `Check` and `Packages` (O4) but not applied before M3. Selectors:
+    `./x`, `../x`, `.`, `..`, absolute paths and `*.canon` are paths, made project-relative by the
+    CLI, anything else a name; a directory selects the one package the files directly in it
+    declare (an ancestor included); a directory without files of its own selects the package
+    named after it, and none when no package has that name, even if its subdirectories hold files
+    (`./game/items/entries` with files only in `IK1/` is unknown); files of several packages are
+    a usage error (exit 2, no code); an unknown selector is named as typed, found against one
+    `Packages` listing (`project.Match`). `-q` hides warnings, the summary
+    still counts them; `--max-warnings` gives 4 only without errors. An I/O error is returned
+    wrapped and exits 2, although API.md R3 does not list it and CLI.md §2.5 has no I/O exit code
+    (departs from both, Louis-call 6); `ErrInternal` exits 3 with the report line, an interrupt
+    130. Reason: correct before incremental (NFR-01 memoization is M4's workspace).
+
+144. **`init`, `new` and `version` outputs.** `canon init` names the project after its directory
+    unless `--name` (an `IDENT`, else exit 2), writes `project acme {` / `canon: "0.1"` / `roots {}`
+    / `languages: [en]` / `}` (the canonical layout), adds `.canon/` to `.gitignore` unless a line
+    holds it, and prints nothing; `--project` names an existing target directory. `canon new`
+    takes lowerCamel `IDENT` segments (W1003's convention, E1125's reserved words refused), opens
+    the project first (so `--project` must hold a valid `project.canon`), creates the directories
+    under the project root and `<last>.canon` holding `/// Describe package <p> here.` then
+    `package <p>`, refuses an existing file and prints nothing. Paths in their messages are
+    project-relative (CLI.md §2.1). Both write through `os.Root` with modes 0600/0750 (gosec).
+    `canon version` writes `(unknown)` for an unknown commit in text, `"commit":""` in JSON.
+    Reason: CLI.md §3.1, §3.2, §3.14 leave these open.
+
+145. **The phase-2 seam is `build.Checker`**: `func(ctx, *project.Project, []*syntax.File,
+    map[string]*diag.Bag) *check.Program`, i.e. `check.Check` with its `Folder` bound. Nil skips
+    phase 2, as in M1 until `check.Check` and `eval.NewFolder` exist; then `build.Open` defaults it
+    to `check.Check(ctx, p, files, bags, eval.NewFolder(bags, eval.Options{Budget: p.Budget}))`.
+    `api` stays a thin adapter over `build` until `workspace` exists (M4). Reason: DECISIONS 34's
+    two seams, with no import of an unfinished package.
+
+146. **Stage B re-walks each top-level value against its declared types, as a safety net.**
+    `verify.Verifier.Check` starts from the let's declared type (from `check.Program`, since a `Dur`
+    or `Member` carries none) and follows field, element, key and entry types, never refs, checking
+    refinements, Float32 overflow and finiteness, retired members and cases, refs, keyed-list keys,
+    `@stable` values and assets. It does not replace the conversion checks of EVALUATION §4.3: a
+    value converted earlier gets the same finding again, and §14 keeps one. Each finding marks
+    exactly the value it is located at (`MarkInvalid`); `Result.Valid` is false then. The evaluation
+    forms of `E3201` (sized integers, stored Durations) and `E3101` (loaded tables) are not
+    `verify`'s: `E3201` is met at conversion (EVALUATION §4.3, §6.3), with `eval`/`check`.
+    Reason: stage B holds for every value whatever conversions ran, reporting only verify's codes.
+
+147. **Verification choices EVALUATION §5 leaves open.** A ref into a poisoned collection gets no
+    finding and is marked invalid (§7.2). An unbound level-1 ref is marked invalid and returned in
+    `Result.Unbound` (walk order, with its path) for `eval`'s `Host.Verify` to report `E3505`, which
+    ERRORS.md gives to `eval` though §3.4/§5 meet it in stage B. `E3502` fires only inside a live
+    table entry; any enclosing retired entry allows anything (LOCK §4.3). Assets are checked clean
+    path, then extension, then existence, only the first failure reported; nil `verify.Assets`
+    finds no file. A hard error in a stage-B `where` re-run stops the walk and sets
+    `Result.Poisoned` (§7.1: the root is aborted; the surface has no `Poison`, so the caller
+    poisons). Related locations come from `Info.TypeExprs` inverted for the types built where they
+    are written (refinements, refs, lists, maps, tables, optionals, unions: the checker must record
+    those pointers), from the enum or case declaration for `E3506`, and from `@codes(…)` for
+    `E3102` codes; the bound of `E3204`/`E3206` is the first non-regex argument. Dependent types
+    (`E3801`, `E3802`) wait for M3: `value.Record` holds no bound parameter values. Reason: the
+    strictest reading that reports nothing twice.
+
+148. **The evaluator surfaces `verify` and `rules` consume.** `verify.Evaluator` is `Force`,
+    `MarkInvalid` and `Where(ctx, *types.Predicate, it) (holds, ok)`, a re-run at no step cost
+    (the conversion paid it); `rules.Evaluator` is `Invalid` and `Run(ctx, *syntax.CheckDecl, self)
+    rules.Run{Aborted, Failed, Message, Reports}`, one run of one check, `self` nil at package
+    level, aborted for a broken record's check. Both are consumer-side interfaces EVL implements;
+    §4.8 has neither. `rules` places findings: an instance at its provenance span, `at f` at the
+    field's value (path `.f`), a package check at its keyword, fail/warn at their `at` value with
+    its path (no location for none), related to the whole check declaration; `Reads` from
+    `Info.Uses`/`Selections`. Broken checks and records (`Info.Broken`) never run. A missing bag is
+    `ErrNoBag` in `verify` and `rules`; a `Runner` serves one goroutine. Reason: §4.8 names only
+    what `build` wires; the placement rules are `rules`'.
+
+149. **Comparing `canon.lock` with the sources (LOCK §4).** `lock.Sources` holds the current facts,
+    each located at its entry, member or `@stable` value; `Skip(kind, name)` marks a collection
+    that exists but is poisoned or broken, never compared (nor its fields). `File.Verify` reports
+    per collection in canonical order. A gone key is `held` when a key the lock does not know now
+    holds one of its `@stable` values (`KindStableValue`, first in canonical order), else `renamed`
+    when exactly one key went and one came, else `removed`; a gone member is `held` (`KindCode`)
+    or `removed`. A value or holder the lock itself records is never reported again (no finding
+    beyond the conflict). A conflict names the collection (two holders of one value) or
+    `collection.holder` (two values of one holder) and quotes both lines. `W6006` counts only new
+    values (unknown holder and unknown value); retirements do not count. `Update` only adds.
+    `E6004` needs `eval`'s layer application. Reason: every violation reported once.
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.

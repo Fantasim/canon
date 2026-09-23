@@ -1,0 +1,13 @@
+GRAMMAR.md §7.1: studio names a package no file declares.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  studio: studio.vocab
+}
+-- studio/studio.canon --
+package studio
+-- findings.txt --
+error[E1012]  project.canon:3:11
+  studio package "studio.vocab" does not exist
+
+1 error, 0 warnings in 1 package (…)

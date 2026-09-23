@@ -1,0 +1,20 @@
+CLI.md §3.1: .canon/ is added to an existing .gitignore.
+-- args --
+init
+--name
+acme
+-- .gitignore --
+bin/
+-- want --
+[exit 0]
+[stdout]
+[stderr]
+[file .gitignore]
+bin/
+.canon/
+[file project.canon]
+project acme {
+  canon: "0.1"
+  roots {}
+  languages: [en]
+}

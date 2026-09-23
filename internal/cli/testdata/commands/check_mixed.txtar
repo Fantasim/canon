@@ -1,0 +1,20 @@
+CLI.md §2.2, DECISIONS 143: a directory whose files declare several packages is a usage error, named as typed.
+-- args --
+check
+a
+./mixed/
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+-- mixed/one.canon --
+package mixed
+-- mixed/two.canon --
+package a
+-- want --
+[exit 2]
+[stdout]
+[stderr]
+canon: unknown package: ./mixed/: its files declare several packages

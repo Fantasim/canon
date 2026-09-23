@@ -1,0 +1,17 @@
+CLI.md §3.1: the project is named after its directory by default.
+-- dir --
+law
+-- args --
+init
+-- want --
+[exit 0]
+[stdout]
+[stderr]
+[file law/.gitignore]
+.canon/
+[file law/project.canon]
+project law {
+  canon: "0.1"
+  roots {}
+  languages: [en]
+}

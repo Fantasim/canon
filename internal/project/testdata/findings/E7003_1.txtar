@@ -1,0 +1,22 @@
+WIRE.md §2.1, API.md §2.1: an override and a path naming an undeclared root.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    resource: "../Resource"
+    web: "../web"
+  }
+}
+-- roots --
+resource=_fixtures/resource
+resourc=_fixtures/resource
+-- paths --
+pipeline @sources/x.h
+-- findings.txt --
+error[E7003]
+  unknown root @resourc; roots: resource, web
+
+error[E7003]  paths:1:10
+  unknown root @sources; roots: resource, web
+
+2 errors, 0 warnings in 1 package (…)

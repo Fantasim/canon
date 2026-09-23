@@ -1,0 +1,13 @@
+GRAMMAR.md §9.2, DECISIONS 137: package segments are lowerCamel identifiers, not reserved words.
+-- args --
+new
+game.match
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- want --
+[exit 2]
+[stdout]
+[stderr]
+canon: "game.match": each segment must be a lowerCamel identifier

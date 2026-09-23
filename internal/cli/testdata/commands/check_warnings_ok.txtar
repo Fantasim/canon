@@ -1,0 +1,22 @@
+CLI.md §2.3: warnings within --max-warnings exit 0.
+-- args --
+check
+--max-warnings=1
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+/// Dangling.
+
+const X = 1
+-- want --
+[exit 0]
+[stdout]
+warning[W1001]  a/a.canon:3:1
+  doc comment is not attached to anything
+
+0 errors, 1 warning in 1 package (…)
+[stderr]

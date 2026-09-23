@@ -1,0 +1,21 @@
+CLI.md §2.2: a.b... selects a package and every package below it.
+-- args --
+check
+game...
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- game/game.canon --
+package game
+-- game/items/items.canon --
+package game.items
+-- gamer/gamer.canon --
+package gamer
+
+const = 1
+-- want --
+[exit 0]
+[stdout]
+0 errors, 0 warnings in 2 packages (…)
+[stderr]

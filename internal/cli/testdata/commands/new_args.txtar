@@ -1,0 +1,8 @@
+CLI.md §3.2: new takes one package.
+-- args --
+new
+-- want --
+[exit 2]
+[stdout]
+[stderr]
+canon: new: takes exactly one argument

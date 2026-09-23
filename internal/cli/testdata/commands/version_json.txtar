@@ -1,0 +1,10 @@
+IMPLEMENTATION-PLAN.md §8.1: the version object.
+-- args --
+--format
+json
+version
+-- want --
+[exit 0]
+[stdout]
+{"version":{"compiler":"0.1.0","languages":["0.1"],"fingerprint":"canon-fp v1","viewModel":"canon-vm/1","lock":"canon.lock v1","commit":""}}
+[stderr]

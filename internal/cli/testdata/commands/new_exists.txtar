@@ -1,0 +1,15 @@
+CLI.md §3.2: an existing file is never replaced.
+-- args --
+new
+game
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- game/game.canon --
+package game
+-- want --
+[exit 2]
+[stdout]
+[stderr]
+canon: game/game.canon: already exists

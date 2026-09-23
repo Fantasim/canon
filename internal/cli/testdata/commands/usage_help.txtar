@@ -1,0 +1,28 @@
+CLI.md §1, §2.5: CLI.md lists no help command; `help` is a usage error.
+-- args --
+help
+-- want --
+[exit 2]
+[stdout]
+[stderr]
+canon: "help": unknown command
+usage: canon <command> [arguments] [flags]
+
+commands:
+  check [packages...]   parse and check packages, print findings
+  init                  create project.canon in the current directory
+  new <package>         create a package directory with a first file
+  version               print the compiler, language and format versions
+
+flags:
+  -format format
+    	output format: text or json (default "text")
+  -max-warnings n
+    	exit with code 4 when there are more than n warnings
+  -project string
+    	project root (default: search upward from the current directory)
+  -q	print errors only
+  -quiet
+    	print errors only
+  -root name=dir
+    	use name=dir for a declared root; repeatable

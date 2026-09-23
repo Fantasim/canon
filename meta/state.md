@@ -55,6 +55,22 @@ eight contracts and tick M0.4; then M1 (its gate: the consistency pass closed, v
 4. **Absolute-path denies** in `.claude/settings.local.json` (ADR-0001): a new sibling
    service must be added to both lists.
 5. **`make check-real`** (DECISIONS 29) lands with the real-data job (M3).
+6. **M1 LOD/API (DECISIONS 139–144):** cobra or `flag` (`go.mod`); O3's missing root has no code
+   (unchecked); §15 types no `ErrNoProject` (we: `*ProjectError`+`E1003`, whose "or its parents"
+   misfits `--project`); I/O errors, and `*ProjectError` from Check/Packages, are outside API.md
+   R3 and CLI.md §2.5 (we: wrapped, exit 2); `E7003` with no roots ends `roots:` (JSON: `roots: `).
+7. **M1 VER (DECISIONS 146–149), spec gaps.** Conversion-time `E32xx` owned by `verify` but met
+   in `eval`; `E3201`'s eval form lands with EVL/check; `E3505` owned by `eval`, met in stage B
+   (`Result.Unbound`); `Where` cost (none) and hard error (poison: no `Poison` in §4.8);
+   `types.Predicate{Expr,Text}` has no package/scope (add `Pkg string`, or `Where(ctx, owner
+   check.Object, p, it)`); `Where`/`Run` missing from §4.8; "live table entry" (EVAL §5) vs "live
+   entry" (TYPES §10.3); rename pairing count (LOCK §4.1); `E6002` conflict `value:Name`; no
+   related location for Basic types; `E3701`–`E3703` order; `W6006` location (lock line 1).
+
+## M1 LOD/API step (2026-09-24 night, uncommitted)
+
+`project`, `build` (`build.Checker` nil until `check.Check`+`eval.NewFolder`), `api` open/check,
+`cli`+`cmd/canon` (`version`, `init`, `new`, `check`); gated on an isolated copy.
 
 ## Verify queue
 

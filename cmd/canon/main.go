@@ -1,16 +1,29 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"io"
 	"os"
+	"os/signal"
+	"syscall"
+
+	"github.com/fantasim/canonlang/internal/cli"
 )
 
 func main() {
-	os.Exit(run(os.Stderr))
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	code := run(ctx, os.Args[1:], os.Stdout, os.Stderr)
+	stop()
+	os.Exit(code)
 }
 
-// run reports that no command exists yet and returns the usage-error exit code.
-func run(stderr io.Writer) int {
-	_, _ = io.WriteString(stderr, noCommand)
-	return exitUsage
+// run is the command line in the current directory; an interrupt cancels ctx (CLI.md §2.5).
+func run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
+	dir, err := os.Getwd()
+	if err != nil {
+		_, _ = fmt.Fprintln(stderr, err)
+		return exitInternal
+	}
+	return cli.Main(ctx, args, cli.Env{Stdout: stdout, Stderr: stderr, Dir: dir})
 }

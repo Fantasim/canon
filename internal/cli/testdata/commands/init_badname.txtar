@@ -1,0 +1,10 @@
+GRAMMAR.md §2.3: a project name is an identifier.
+-- dir --
+my-law
+-- args --
+init
+-- want --
+[exit 2]
+[stdout]
+[stderr]
+canon: "my-law": not an identifier; give the project name with --name

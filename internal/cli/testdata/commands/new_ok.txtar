@@ -1,0 +1,17 @@
+CLI.md §3.2: the package directory and its first file, from any directory of the project.
+-- dir --
+docs
+-- args --
+new
+game.items
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- want --
+[exit 0]
+[stdout]
+[stderr]
+[file game/items/items.canon]
+/// Describe package game.items here.
+package game.items

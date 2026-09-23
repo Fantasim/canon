@@ -13,8 +13,7 @@ import (
 )
 
 // openExamples opens the repository's examples/ project in memory, every root redirected
-// (exampleOptions); it fails while the API is a stub, and every example then returns before
-// printing anything.
+// (exampleOptions); an Example of a method that is still a stub returns before printing.
 func openExamples() (*canon.Project, error) {
 	opts := exampleOptions()
 	opts.Lang = "fr"
@@ -31,7 +30,7 @@ func ExampleFindProject() {
 		return
 	}
 	fmt.Println(filepath.Base(root))
-	// Output:
+	// Output: examples
 }
 
 func ExampleOpen() {
@@ -52,7 +51,7 @@ func ExampleOpen() {
 	}
 	defer p.Close()
 	fmt.Println(p.Root())
-	// Output:
+	// Output: /examples
 }
 
 func ExampleProject_Packages() {
@@ -66,9 +65,13 @@ func ExampleProject_Packages() {
 		return
 	}
 	for _, pkg := range pkgs {
-		fmt.Println(pkg.Name, pkg.Dir, pkg.Imports, pkg.Layers, len(pkg.Files))
+		if pkg.Name == "teamboard" || pkg.Name == "balance.parity" {
+			fmt.Println(pkg.Name, pkg.Dir, pkg.Imports, pkg.Layers, pkg.Files)
+		}
 	}
 	// Output:
+	// balance.parity balance/parity [] [knights] [balance/parity/knights.layer.canon balance/parity/sweep_plan.canon]
+	// teamboard teamboard [sovcommon.roles sovcommon.ui] [] [teamboard/taxonomy.canon]
 }
 
 func ExampleProject_Check() {
@@ -94,7 +97,7 @@ func ExampleProject_Check() {
 		fmt.Println(t.Package, t.Errors, t.Warnings)
 	}
 	fmt.Println(res.HasErrors(), res.Summary.Errors, res.Summary.Warnings, res.Summary.Packages)
-	// Output:
+	// Output: false 0 0 7
 }
 
 func ExampleProject_LockCheck() {
@@ -245,5 +248,5 @@ func ExampleWriteFindings() {
 	if err := canon.WriteFindings(os.Stdout, res.Findings, opts); err != nil {
 		fmt.Println(err)
 	}
-	// Output:
+	// Output: 0 errors, 0 warnings in 1 package (…)
 }

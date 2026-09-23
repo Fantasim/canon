@@ -1,0 +1,25 @@
+GRAMMAR.md §7.1: an empty, an absolute and a backslashed root path.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    a: ""
+    b: "/srv/b"
+    c: "C:/c"
+    d: "..\\d"
+  }
+}
+-- findings.txt --
+error[E1007]  project.canon:4:8
+  invalid root "a": the path is empty
+
+error[E1007]  project.canon:5:8
+  invalid root "b": the path is absolute
+
+error[E1007]  project.canon:6:8
+  invalid root "c": the path is absolute
+
+error[E1007]  project.canon:7:8
+  invalid root "d": "\" is not a path separator; write "/"
+
+4 errors, 0 warnings in 1 package (…)

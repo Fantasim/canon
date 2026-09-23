@@ -13,26 +13,6 @@ import (
 	"github.com/fantasim/canonlang/internal/source"
 )
 
-// publicOf is the canon.Finding of a resolved finding, as Check will build it.
-func publicOf(l *diag.Located) Finding {
-	f := Finding{
-		Severity: Severity(l.Severity.String()), Code: string(l.Code), Span: spanOf(l.Loc),
-		Pointer: l.Pointer, Package: l.Package, Path: l.Path, Message: l.Message,
-		Check: l.Check, Layer: l.Layer, MoreFrames: l.MoreFrames, Reads: l.Reads,
-	}
-	for _, r := range l.Related {
-		f.Related = append(f.Related, Related{Span: spanOf(r.Loc), Note: r.Note})
-	}
-	for _, fr := range l.Stack {
-		f.Stack = append(f.Stack, Frame{Fn: fr.Fn, Span: spanOf(fr.Loc)})
-	}
-	return f
-}
-
-func spanOf(l source.Location) Span {
-	return Span{File: l.Path, Line: l.Line, Col: l.Col, EndLine: l.EndLine, EndCol: l.EndCol}
-}
-
 // reported is a bag of findings using every field of API.md §4.1, over a real file set.
 func reported(t *testing.T) (*source.FileSet, *diag.Bag) {
 	t.Helper()
@@ -67,7 +47,7 @@ func TestWriteFindingsIsRender(t *testing.T) {
 	located := diag.Locate(files, bag.Findings())
 	var public []Finding
 	for i := range located {
-		public = append(public, publicOf(&located[i]))
+		public = append(public, fromLocated(located[i]))
 	}
 	slices.Reverse(public)
 	sum := Summary{Errors: 3, Warnings: 1, Packages: 1, Truncated: []Truncation{{Package: "teamboard", Errors: 1}}}
@@ -91,7 +71,7 @@ func TestWriteFindingsIsRender(t *testing.T) {
 func TestFindingJSONRoundTrip(t *testing.T) {
 	files, bag := reported(t)
 	for _, l := range diag.Locate(files, bag.Findings()) {
-		f := publicOf(&l)
+		f := fromLocated(l)
 		data, err := json.Marshal(f)
 		if err != nil {
 			t.Fatal(err)

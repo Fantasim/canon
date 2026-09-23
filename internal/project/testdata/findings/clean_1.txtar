@@ -1,0 +1,28 @@
+GRAMMAR.md §7.1: every key, in any order, with doc comments on keys; no finding.
+-- project.canon --
+/// The law.
+project acme {
+  go_module {
+    web: "example.com/acme/web"
+  }
+  /// Roots.
+  roots {
+    resource: "../Resource"
+    web: "../web"
+  }
+  languages: [en, fr, pt_BR, zh_Hant_TW]
+  studio: studio
+  budget: 100_000_000
+  canon: "0.1"
+}
+-- studio/studio.canon --
+package studio
+-- paths --
+. @resource/Server/../Server/Define/x.h
+pipeline data/*.json
+pipeline out/
+pipeline ../teamboard
+. @web
+. @web/
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

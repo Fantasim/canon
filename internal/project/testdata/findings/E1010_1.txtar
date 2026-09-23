@@ -1,0 +1,10 @@
+GRAMMAR.md §7.1: canon is not MAJOR.MINOR.
+-- project.canon --
+project acme {
+  canon: "0.1.0"
+}
+-- findings.txt --
+error[E1010]  project.canon:2:10
+  "canon" must be "MAJOR.MINOR", found "0.1.0"
+
+1 error, 0 warnings in 1 package (…)

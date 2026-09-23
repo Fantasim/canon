@@ -1,0 +1,20 @@
+GRAMMAR.md §7.1: an invalid and a duplicate language code.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  languages: [en, EN, pt_br, en, fr.ca]
+}
+-- findings.txt --
+error[E1008]  project.canon:3:19
+  invalid language code "EN"
+
+error[E1008]  project.canon:3:23
+  invalid language code "pt_br"
+
+error[E1008]  project.canon:3:30
+  language "en" listed twice
+
+error[E1008]  project.canon:3:34
+  invalid language code "fr.ca"
+
+4 errors, 0 warnings in 1 package (…)

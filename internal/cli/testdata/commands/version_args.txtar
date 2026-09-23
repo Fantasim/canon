@@ -1,0 +1,9 @@
+CLI.md §3.14: version takes no argument.
+-- args --
+version
+x
+-- want --
+[exit 2]
+[stdout]
+[stderr]
+canon: version: takes no arguments

@@ -1,0 +1,21 @@
+CLI.md §2.3, §3.1: --project names the directory to create it in.
+-- args --
+init
+--project
+law/
+--name
+acme
+-- law/README --
+The law.
+-- want --
+[exit 0]
+[stdout]
+[stderr]
+[file law/.gitignore]
+.canon/
+[file law/project.canon]
+project acme {
+  canon: "0.1"
+  roots {}
+  languages: [en]
+}

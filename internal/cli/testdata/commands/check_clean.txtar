@@ -1,0 +1,16 @@
+CLI.md §3.3: a clean project prints the summary alone and exits 0.
+-- args --
+check
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+const X = 1
+-- want --
+[exit 0]
+[stdout]
+0 errors, 0 warnings in 1 package (…)
+[stderr]
