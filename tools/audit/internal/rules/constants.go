@@ -18,17 +18,18 @@ const (
 )
 
 const (
-	famSize      = "size"
-	famMagic     = "magic"
-	famErrors    = "errors"
-	famDiag      = "diag"
-	famAPI       = "api"
-	famDead      = "dead"
-	famDup       = "dup"
-	famComments  = "comments"
-	famIdiom     = "idiom"
-	famProject   = "project"
-	famIntegrity = "integrity"
+	famSize        = "size"
+	famMagic       = "magic"
+	famErrors      = "errors"
+	famDiag        = "diag"
+	famDeterminism = "determinism"
+	famAPI         = "api"
+	famDead        = "dead"
+	famDup         = "dup"
+	famComments    = "comments"
+	famIdiom       = "idiom"
+	famProject     = "project"
+	famIntegrity   = "integrity"
 )
 
 // Mechanism marks a rule that is a property of the audit itself and emits no finding.
@@ -72,6 +73,7 @@ const (
 	IDDiagMessageInline   = "diag-message-inline"
 	IDDiagCodeUntested    = "diag-code-untested"
 	IDDiagCodeUnreported  = "diag-code-unreported"
+	IDMapRange            = "maprange"
 )
 
 // Tool labels this table repeats across rules.

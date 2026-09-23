@@ -30,6 +30,8 @@ var (
 	ErrSyntax             = errors.New("syntax error")
 	ErrClosed             = errors.New("project is closed")
 	ErrInternal           = errors.New("internal compiler error")
+
+	errSeverity = errors.New("unknown severity")
 )
 
 // errUnimplemented is what a stub with an error result returns until M4 (rule X2).

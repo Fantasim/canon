@@ -54,8 +54,17 @@ func (f *File) Facts() []Fact {
 	return slices.Clone(f.facts)
 }
 
-// Add merges a fact into the set and reports whether it changed (LOCK.md §2.4).
-func (f *File) Add(fact Fact) bool {
+// Add merges a fact into the set and reports whether it changed. A fact whose line Parse
+// would refuse or read as another fact is refused (ErrBadFact), the set unchanged.
+func (f *File) Add(fact Fact) (bool, error) {
+	if err := f.valid(fact); err != nil {
+		return false, err
+	}
+	return f.merge(fact), nil
+}
+
+// merge adds a fact Parse read or Add checked; identical facts merge, retired wins.
+func (f *File) merge(fact Fact) bool {
 	i, found := slices.BinarySearchFunc(f.facts, fact, compareFacts)
 	if !found {
 		f.facts = slices.Insert(f.facts, i, fact)

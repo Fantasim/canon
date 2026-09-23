@@ -115,6 +115,11 @@ var All = []Rule{
 		Fix:     "implement the trigger its owning document defines",
 	},
 	{
+		ID: IDMapRange, Family: famDeterminism, Mode: Enforce, Tool: toolCustom,
+		Summary: "range over a Go map, or over maps.Keys, maps.Values or maps.All, in an output package without //canon:unordered and a reason; a marker without a reason or without a map range",
+		Fix:     "range over slices.Sorted(maps.Keys(m)), or mark an order-free loop //canon:unordered <reason>",
+	},
+	{
 		ID: "exported-but-local", Family: famAPI, Mode: Ratchet, Tool: toolCustom,
 		Summary: "exported identifier used only inside its own package", Fix: "unexport it",
 	},

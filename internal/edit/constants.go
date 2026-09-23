@@ -28,3 +28,6 @@ const (
 	decimalBase  = 10
 	int64Bits    = 64
 )
+
+// fmtSyntaxError is a SyntaxError's text: the sentinel, the reason, the offset.
+const fmtSyntaxError = "%v: %v at byte %d"

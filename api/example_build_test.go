@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
+	"slices"
 	"time"
 
 	canon "github.com/fantasim/canonlang/api"
@@ -32,7 +34,8 @@ func ExampleProject_Evaluate() {
 	for _, line := range res.Show {
 		fmt.Println(line.Owner, line.Key, line.Label, line.Text.Value)
 	}
-	for key, h := range res.Headings {
+	for _, key := range slices.Sorted(maps.Keys(res.Headings)) {
+		h := res.Headings[key]
 		fmt.Println(key, h.Title.Value, h.Subtitle.Value, h.Preview, h.Retired, len(h.Cells))
 	}
 	fmt.Println(res.Revision, len(res.When), len(res.Types), len(res.Findings), res.Summary.Errors, len(res.Dropped))

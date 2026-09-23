@@ -3,8 +3,10 @@ package main
 import (
 	"bytes"
 	"io"
+	"maps"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -59,7 +61,8 @@ func TestRefusalWritesNothing(t *testing.T) {
 		"runtime text": {"-errors", specErrors, "-plan", specPlan, "-runtime", filepath.Dir(filepath.Dir(runtime))},
 		"runtime file": {"-errors", specErrors, "-plan", specPlan, "-runtime", specPlan},
 	}
-	for name, a := range cases {
+	for _, name := range slices.Sorted(maps.Keys(cases)) {
+		a := cases[name]
 		t.Run(name, func(t *testing.T) {
 			out := t.TempDir()
 			var stderr bytes.Buffer

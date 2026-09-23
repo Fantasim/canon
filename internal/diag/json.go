@@ -8,15 +8,14 @@ import (
 
 // jsonWriter builds one line of JSON with the key order the caller writes (API.md F5).
 type jsonWriter struct {
-	buf   []byte
-	files Files
+	buf []byte
 }
 
 // jsonForm is one object per finding, one per line, then the summary object (CLI.md §2.4).
-func jsonForm(files Files, keyed []keyedFinding, opt RenderOptions) string {
-	w := jsonWriter{files: files}
-	for _, k := range keyed {
-		w.finding(k.f)
+func jsonForm(findings []Located, opt RenderOptions) string {
+	var w jsonWriter
+	for i := range findings {
+		w.finding(&findings[i])
 		w.buf = append(w.buf, lineBreak...)
 	}
 	w.summary(opt)
@@ -24,12 +23,20 @@ func jsonForm(files Files, keyed []keyedFinding, opt RenderOptions) string {
 	return string(w.buf)
 }
 
+// AppendJSON appends the finding's one-line JSON object (API.md F5), without a line break:
+// the one writer of the form, which canon.Finding.MarshalJSON uses too.
+func (l *Located) AppendJSON(buf []byte) []byte {
+	w := jsonWriter{buf: buf}
+	w.finding(l)
+	return w.buf
+}
+
 // finding writes the keys of F5 in order, omitting the empty optional ones.
-func (w *jsonWriter) finding(f Finding) {
+func (w *jsonWriter) finding(f *Located) {
 	w.open(objOpen)
 	w.str(keySeverity, f.Severity.String())
 	w.str(keyCode, string(f.Code))
-	w.span(f.Span)
+	w.loc(f.Loc)
 	w.optStr(keyPointer, f.Pointer)
 	w.str(keyPackage, f.Package)
 	w.optStr(keyPath, f.Path)
@@ -41,7 +48,7 @@ func (w *jsonWriter) finding(f Finding) {
 		w.open(arrOpen)
 		for _, r := range f.Related {
 			w.open(objOpen)
-			w.span(r.Span)
+			w.loc(r.Loc)
 			w.str(keyNote, r.Note)
 			w.close(objClose)
 		}
@@ -53,10 +60,13 @@ func (w *jsonWriter) finding(f Finding) {
 		for _, fr := range f.Stack {
 			w.open(objOpen)
 			w.str(keyFn, fr.Fn)
-			w.span(fr.Span)
+			w.loc(fr.Loc)
 			w.close(objClose)
 		}
 		w.close(arrClose)
+	}
+	if f.MoreFrames > 0 {
+		w.num(keyMoreFrames, f.MoreFrames)
 	}
 	if len(f.Reads) > 0 {
 		w.key(keyReads)
@@ -70,19 +80,16 @@ func (w *jsonWriter) finding(f Finding) {
 	w.close(objClose)
 }
 
-// span writes file, line, col, endLine and endCol, or nothing without a file (API.md F5).
-func (w *jsonWriter) span(s source.Span) {
-	path := w.files.Path(s.File)
-	if path == "" {
+// loc writes file, line, col, endLine and endCol, or nothing without a file (API.md F5).
+func (w *jsonWriter) loc(l source.Location) {
+	if l.Path == "" {
 		return
 	}
-	line, col := w.files.Position(s.File, s.Start)
-	endLine, endCol := w.files.Position(s.File, s.End)
-	w.str(keyFile, path)
-	w.num(keyLine, line)
-	w.num(keyCol, col)
-	w.num(keyEndLine, endLine)
-	w.num(keyEndCol, endCol)
+	w.str(keyFile, l.Path)
+	w.num(keyLine, l.Line)
+	w.num(keyCol, l.Col)
+	w.num(keyEndLine, l.EndLine)
+	w.num(keyEndCol, l.EndCol)
 }
 
 // summary writes {"summary":{…}}, with truncated only when findings were dropped.

@@ -47,7 +47,7 @@ func TestBagSortsFindings(t *testing.T) {
 	}
 }
 
-// EVALUATION.md §14: a duplicate is reported once, the first produced kept.
+// EVALUATION.md §14: a duplicate is reported once, the least in the total order kept.
 func TestBagDropsDuplicates(t *testing.T) {
 	bag := diag.NewBag(bagFiles, "p")
 	at := source.Span{File: 1, Start: 2, End: 3}

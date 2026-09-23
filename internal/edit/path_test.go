@@ -90,6 +90,26 @@ func TestParseRefuses(t *testing.T) {
 	}
 }
 
+// API.md §15: a refusal is a *SyntaxError with its byte and reason, both in its text.
+func TestSyntaxError(t *testing.T) {
+	cases := []struct {
+		in     string
+		offset int
+		text   string
+	}{
+		{"a[01]", 2, "invalid path: invalid digits at byte 2"},
+		{"a.b[x", 5, "invalid path: expected ] at byte 5"},
+		{`m["\x"]`, 2, "invalid path: invalid JSON string: byte 1: invalid escape at byte 2"},
+	}
+	for _, c := range cases {
+		_, err := edit.Parse(c.in)
+		var se *edit.SyntaxError
+		if !errors.As(err, &se) || se.Offset != c.offset || se.Reason == nil || err.Error() != c.text {
+			t.Errorf("Parse(%q) = %v (%+v), want offset %d and %q", c.in, err, se, c.offset, c.text)
+		}
+	}
+}
+
 // A path built in code prints each key in the form its kind names.
 func TestStringOfBuiltPath(t *testing.T) {
 	p := edit.Path{Package: "p.q", Root: "r", Segs: []edit.Seg{

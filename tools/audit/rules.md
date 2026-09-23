@@ -157,6 +157,22 @@ observe · custom: catalogued code no compiler code reports yet (target zero at 
 The census of the catalogue still to implement: at v0.1 every code is reported, and with
 `diag-code-untested` at zero, every code is tested (decision 27). It turns enforce then.
 
+## Determinism
+
+No output of the compiler depends on map order (DOCTRINE §5, IMPLEMENTATION-PLAN.md §7.5).
+
+### `maprange`
+enforce · custom: range over a Go map, or over maps.Keys, maps.Values or maps.All, in an output package without //canon:unordered and a reason; a marker without a reason or without a map range.
+Go randomizes map order on purpose, so a loop over a map that writes output writes it
+differently on each run. Judged, from the type-checked load, in every hand-written Go file of
+the output packages `api`, `internal/build`, `internal/diag`, `internal/edit`,
+`internal/format`, `internal/gen`, `internal/i18n`, `internal/ir`, `internal/jsonsrc`,
+`internal/lock`, `internal/views`, `internal/wire` and the packages under them, tests
+included (an Example prints). A loop whose order cannot reach the output carries
+`//canon:unordered <reason>` on its line or the line above; in any package, the marker needs a
+reason and a range over a map (or a `maps` iterator) on its line or the next. When the module
+does not type-check the rule is reported as not measured.
+
 ## API surface
 
 ### `exported-but-local`
@@ -345,7 +361,7 @@ in a string is not one): `sovaudit:ignore` and `sovaudit:ignore-file` (Go and Ma
 `//nolint`, `//lint:ignore`, `//lint:file-ignore`, `#nosec`, `//gosec:disable`,
 `//exhaustive:ignore`, `//revive:disable`. A higher total than the baseline's fails; a repository
 whose baseline has no entry may hold none. `//canon:unordered` is not counted: it states that a
-map range is order-free (DOCTRINE §5), which the maprange analyzer checks.
+map range is order-free (DOCTRINE §5), which the `maprange` rule checks.
 
 ### `rule-state`
 enforce · custom: unknown rule id or mode in .sovaudit/state.tsv.

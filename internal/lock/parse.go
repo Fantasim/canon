@@ -123,7 +123,7 @@ func (r *reader) fact(span source.Span, text string) {
 		r.report(diag.E6005.AtPackage(span, fields[1].text, r.file.Package))
 	case problemNone:
 		fact.Span = span
-		r.file.Add(fact)
+		r.file.merge(fact)
 	}
 }
 

@@ -6,22 +6,22 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"os"
 	"path/filepath"
 
 	canon "github.com/fantasim/canonlang/api"
 )
 
-// openExamples opens the project of the repository's examples/; it fails while the API is a
-// stub, and every example then returns before printing anything.
+// openExamples opens the repository's examples/ project in memory, every root redirected
+// (exampleOptions); it fails while the API is a stub, and every example then returns before
+// printing anything.
 func openExamples() (*canon.Project, error) {
-	root, err := canon.FindProject("../examples/teamboard")
-	if err != nil {
-		return nil, err
-	}
-	return canon.Open(root, canon.Options{Lang: "fr", Cache: "off"})
+	opts := exampleOptions()
+	opts.Lang = "fr"
+	return canon.Open(exampleRoot, opts)
 }
 
-func ExampleOpen() {
+func ExampleFindProject() {
 	root, err := canon.FindProject("../examples/teamboard")
 	if errors.Is(err, canon.ErrNoProject) {
 		fmt.Println("not inside a Canon project")
@@ -30,14 +30,18 @@ func ExampleOpen() {
 	if err != nil {
 		return
 	}
-	p, err := canon.Open(root, canon.Options{
-		Layers:      []string{"staging"},
-		Lang:        "fr",
-		Roots:       map[string]string{"resource": "_fixtures/resource"},
-		Workers:     1,
-		MaxFindings: 100,
-		Logger:      slog.New(slog.DiscardHandler),
-	})
+	fmt.Println(filepath.Base(root))
+	// Output:
+}
+
+func ExampleOpen() {
+	opts := exampleOptions()
+	opts.Layers = []string{"staging"}
+	opts.Lang = "fr"
+	opts.Workers = 1
+	opts.MaxFindings = 100
+	opts.Logger = slog.New(slog.DiscardHandler)
+	p, err := canon.Open(exampleRoot, opts)
 	var perr *canon.ProjectError
 	if errors.As(err, &perr) {
 		fmt.Println(errors.Is(err, canon.ErrUnsupportedVersion), len(perr.Findings))
@@ -47,7 +51,7 @@ func ExampleOpen() {
 		return
 	}
 	defer p.Close()
-	fmt.Println(filepath.Base(p.Root()))
+	fmt.Println(p.Root())
 	// Output:
 }
 
@@ -224,5 +228,22 @@ func ExampleProject_SetOverlay() {
 	}
 	defer func() { _ = p.ClearOverlay("teamboard/taxonomy.canon") }()
 	fmt.Println(before != p.Revision())
+	// Output:
+}
+
+func ExampleWriteFindings() {
+	p, err := openExamples()
+	if err != nil {
+		return
+	}
+	defer p.Close()
+	res, err := p.Check(context.Background(), "teamboard")
+	if err != nil {
+		return
+	}
+	opts := canon.WriteOptions{Summary: res.Summary, Duration: res.Duration, Golden: true}
+	if err := canon.WriteFindings(os.Stdout, res.Findings, opts); err != nil {
+		fmt.Println(err)
+	}
 	// Output:
 }

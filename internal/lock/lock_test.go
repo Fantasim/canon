@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"os"
 	"regexp"
 	"slices"
@@ -144,23 +145,30 @@ func TestAddKeepsCanonicalOrder(t *testing.T) {
 	status := func(key string, retired bool) lock.Fact {
 		return lock.Fact{Kind: lock.KindTable, Name: "teamboard.statuses", Holder: key, Retired: retired}
 	}
-	changes := []bool{
-		f.Add(status("open", false)),
-		f.Add(status("duplicate", false)),
-		f.Add(lock.Fact{Kind: lock.KindTable, Name: "teamboard.severities", Holder: "normal"}),
-		f.Add(status("blocked", false)),
-		f.Add(status("duplicate", true)),
-		f.Add(status("duplicate", false)),
-		f.Add(lock.Fact{Kind: lock.KindField, Name: "teamboard.statuses", Field: "rank", Value: lock.Value{Int: 2}, Holder: "open"}),
-		f.Add(lock.Fact{Kind: lock.KindEnum, Name: "teamboard.Tone", Value: lock.Value{IsString: true, Str: "x"}, Holder: "S"}),
-		f.Add(lock.Fact{Kind: lock.KindEnum, Name: "teamboard.Tone", Value: lock.Value{Int: 9}, Holder: "N"}),
+	var changes []bool
+	for _, fact := range []lock.Fact{
+		status("open", false),
+		status("duplicate", false),
+		{Kind: lock.KindTable, Name: "teamboard.severities", Holder: "normal"},
+		status("blocked", false),
+		status("duplicate", true),
+		status("duplicate", false),
+		{Kind: lock.KindField, Name: "teamboard.statuses", Field: "rank", Value: lock.Value{Int: 2}, Holder: "open"},
+		{Kind: lock.KindField, Name: "teamboard.statuses", Field: "code", Value: lock.Value{IsString: true, Str: "x"}, Holder: "open"},
+		{Kind: lock.KindEnum, Name: "teamboard.Tone", Value: lock.Value{Int: 9}, Holder: "N"},
+	} {
+		changed, err := f.Add(fact)
+		if err != nil {
+			t.Fatalf("Add(%+v): %v", fact, err)
+		}
+		changes = append(changes, changed)
 	}
 	if want := []bool{true, true, true, true, true, false, true, true, true}; !slices.Equal(changes, want) {
 		t.Errorf("Add reported %v, want %v", changes, want)
 	}
 	want := "# canon.lock v1\n" +
 		"enum   teamboard.Tone  9  N\n" +
-		"enum   teamboard.Tone  \"x\"  S\n" +
+		"field  teamboard.statuses.code  \"x\"  open\n" +
 		"field  teamboard.statuses.rank  2  open\n" +
 		"table  teamboard.severities  normal\n" +
 		"table  teamboard.statuses  blocked\n" +
@@ -171,6 +179,49 @@ func TestAddKeepsCanonicalOrder(t *testing.T) {
 	}
 	if lock.KindEnum.String() != "enum" || lock.Kind(3).String() != "" {
 		t.Error("kind names")
+	}
+}
+
+// LOCK.md §2.2: Add refuses a fact Parse could not read back, and keeps the set unchanged.
+func TestAddRefuses(t *testing.T) {
+	table := lock.Fact{Kind: lock.KindTable, Name: "a.b.t", Holder: "k"}
+	with := func(edit func(*lock.Fact)) lock.Fact {
+		f := table
+		edit(&f)
+		return f
+	}
+	refused := []lock.Fact{
+		with(func(f *lock.Fact) { f.Kind = 3 }),
+		with(func(f *lock.Fact) { f.Name = "a.t" }),
+		with(func(f *lock.Fact) { f.Name = "a.b.t.u" }),
+		with(func(f *lock.Fact) { f.Name = "x.b.t" }),
+		with(func(f *lock.Fact) { f.Name = "a.b.1t" }),
+		with(func(f *lock.Fact) { f.Name = "a.b._" }),
+		with(func(f *lock.Fact) { f.Field = "f" }),
+		with(func(f *lock.Fact) { f.Value.Int = 3 }),
+		with(func(f *lock.Fact) { f.Value = lock.Value{IsString: true} }),
+		with(func(f *lock.Fact) { f.Holder = "" }),
+		with(func(f *lock.Fact) { f.Holder = "a b" }),
+		with(func(f *lock.Fact) { f.Holder = `"k"` }),
+		{Kind: lock.KindEnum, Name: "a.b.E", Value: lock.Value{IsString: true, Str: "x"}, Holder: "M"},
+		{Kind: lock.KindEnum, Name: "a.b.E", Value: lock.Value{Int: 1, Str: "x"}, Holder: "M"},
+		{Kind: lock.KindField, Name: "a.b.t", Value: lock.Value{Int: 1}, Holder: "k"},
+		{Kind: lock.KindField, Name: "a.b.t", Field: "f.g", Value: lock.Value{Int: 1}, Holder: "k"},
+		{Kind: lock.KindField, Name: "a.b.t", Field: "f", Value: lock.Value{Int: 1}, Holder: "k", Retired: true},
+		{Kind: lock.KindField, Name: "a.b.t", Field: "f", Value: lock.Value{IsString: true, Str: "\xff"}, Holder: "k"},
+		{Kind: lock.KindField, Name: "a.b.t", Field: "f", Value: lock.Value{IsString: true, Int: 2, Str: "x"}, Holder: "k"},
+	}
+	f := lock.New("a.b")
+	for _, fact := range refused {
+		if changed, err := f.Add(fact); changed || !errors.Is(err, lock.ErrBadFact) {
+			t.Errorf("Add(%+v) = %v, %v; want ErrBadFact", fact, changed, err)
+		}
+	}
+	if n := len(f.Facts()); n != 0 {
+		t.Errorf("a refused fact was kept: %d facts", n)
+	}
+	if _, err := lock.New("").Add(lock.Fact{Kind: lock.KindTable, Name: ".t", Holder: "k"}); !errors.Is(err, lock.ErrBadFact) {
+		t.Errorf("a lock of no package accepted %v", err)
 	}
 }
 

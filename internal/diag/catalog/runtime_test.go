@@ -2,7 +2,9 @@ package catalog
 
 import (
 	"errors"
+	"maps"
 	"os"
+	"slices"
 	"testing"
 	"testing/fstest"
 )
@@ -11,6 +13,7 @@ import (
 func TestCheckRuntimeAcceptsTheGoldenHelpers(t *testing.T) {
 	c := parseSpec(t)
 	fsys := fstest.MapFS{}
+	//canon:unordered each file fills its own key of a map
 	for name, golden := range map[string]string{
 		"go/runtime/rt.go.txt":            "../../../examples/pipeline/expected/go/rt/rt.go",
 		"cpp/runtime/canon_runtime.h.txt": "../../../examples/pipeline/expected/canon_runtime.h",
@@ -35,7 +38,8 @@ func TestCheckRuntimeRefuses(t *testing.T) {
 		"not a literal":    `OnEvalError("E4102", msg);`,
 		"split over lines": "OnEvalError(\"E4102\",\n\"integer division by zero\");",
 	}
-	for name, text := range tests {
+	for _, name := range slices.Sorted(maps.Keys(tests)) {
+		text := tests[name]
 		t.Run(name, func(t *testing.T) {
 			fsys := fstest.MapFS{"ts/runtime/canon_runtime.ts.txt": &fstest.MapFile{Data: []byte(text)}}
 			if err := c.CheckRuntime(fsys); !errors.Is(err, errRuntime) {

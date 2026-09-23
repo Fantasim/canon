@@ -157,17 +157,22 @@ type Value struct {
 	Go, Cpp, TS NameOptions
 }
 
-// Emit is one `emit` declaration with its typed options (decision 37).
+// Emit is one `emit` declaration with its typed options and its output resolved in stage E:
+// a generator never reads the project or its roots, and computes the relative includes and
+// imports between two emits from their Dirs.
 type Emit struct {
 	Target    Target
-	Out       string
+	Out       string // as written ("@sovcommon/teamboard"), for messages only
+	Dir       string // output directory (ts: its file's), project-relative by the declared roots
+	FileName  string // a ts emit's file name in Dir; "" for the other targets
+	GoImport  string // a go emit's import path of Dir; "" for the other targets
 	Mode      Mode
 	Values    []string
 	GoPackage string
 	Namespace string
 }
 
-// File is one output file of a generator.
+// File is one output file of a generator; Path is relative to its emit's Dir.
 type File struct {
 	Path    string
 	Content []byte

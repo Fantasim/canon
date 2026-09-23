@@ -1,5 +1,7 @@
 package canon
 
+import "github.com/fantasim/canonlang/internal/diag"
+
 // Severity of a finding (API.md §4.1).
 type Severity string
 
@@ -141,6 +143,12 @@ const (
 	OutputAdopted   OutputStatus = "adopted" // taken over through BuildOptions.Adopt (rule B2)
 )
 
+// severities maps each Severity to the one diag writes (API.md §4.1).
+var severities = map[Severity]diag.Severity{
+	SeverityError:   diag.Error,
+	SeverityWarning: diag.Warning,
+}
+
 // The versions Version reports (API.md §14, IMPLEMENTATION-PLAN.md §9).
 const (
 	compilerVersion   = "0.1.0"
@@ -149,6 +157,20 @@ const (
 	viewModelFormat   = "canon-vm/1"
 	lockFormat        = "canon.lock v1"
 	vcsRevisionKey    = "vcs.revision"
+	vcsModifiedKey    = "vcs.modified"
+	trueText          = "true"
+	modulePath        = "github.com/fantasim/canonlang"
+)
+
+// A Go pseudo-version: its time stamp and the revision prefix after it (go help modules).
+const (
+	pseudoSep       = "-"
+	pseudoStampSeps = "-."
+	pseudoTimeLen   = 14
+	pseudoRevLen    = 12
+	pseudoBits      = 64
+	hexBase         = 16
+	decimalBase     = 10
 )
 
 // Pieces of the error texts of rule X1.
@@ -163,5 +185,7 @@ const (
 	textExpected     = "expected "
 	textGot          = ", got "
 	fmtDecode        = "view model %s: %w"
+	fmtDecodeFinding = "finding: %w"
+	fmtSeverity      = "%w %q"
 	msgUnimplemented = "unimplemented"
 )

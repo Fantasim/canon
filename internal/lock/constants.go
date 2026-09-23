@@ -49,3 +49,9 @@ const (
 	problemSyntax
 	problemPackage
 )
+
+// Texts of Add's refusals: the sentinel, the reason, then the line Format would write.
+const (
+	fmtBadFact     = "%w: %w"
+	fmtBadFactLine = "%w: %w: %q"
+)

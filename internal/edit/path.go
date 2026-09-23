@@ -1,7 +1,6 @@
 package edit
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -49,7 +48,7 @@ type parser struct {
 	i int
 }
 
-// Parse reads a value path (API.md §6.1); a syntax error wraps ErrBadPath.
+// Parse reads a value path (API.md §6.1); a syntax error is a *SyntaxError.
 func Parse(s string) (Path, error) {
 	p := parser{s: s}
 	var path Path
@@ -112,7 +111,7 @@ func isLetter(c byte) bool { return 'a' <= c && c <= 'z' || 'A' <= c && c <= 'Z'
 func isDigit(c byte) bool { return '0' <= c && c <= '9' }
 
 func (p *parser) fail(reason error) error {
-	return fmt.Errorf("%w: %w at byte %d", ErrBadPath, reason, p.i)
+	return &SyntaxError{Offset: p.i, Reason: reason}
 }
 
 func (p *parser) word() (string, error) {

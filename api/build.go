@@ -3,6 +3,8 @@ package canon
 import (
 	"context"
 	"runtime/debug"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -99,7 +101,7 @@ type VersionInfo struct {
 	Commit      string
 }
 
-// Version returns the compiler's version information.
+// Version returns the compiler's version information; Commit follows rule T3.
 func Version() VersionInfo {
 	return VersionInfo{
 		Compiler:    compilerVersion,
@@ -111,16 +113,56 @@ func Version() VersionInfo {
 	}
 }
 
-// buildCommit is the vcs.revision the go command stamped into the binary, if any.
+// buildCommit is the revision of the compiler inside the running binary (API.md §14).
 func buildCommit() string {
 	info, ok := debug.ReadBuildInfo()
 	if !ok {
 		return ""
 	}
-	for _, s := range info.Settings {
-		if s.Key == vcsRevisionKey {
-			return s.Value
+	return commitOf(info)
+}
+
+// commitOf is the compiler's VCS revision in info, "" when unknown (rule T3).
+func commitOf(info *debug.BuildInfo) string {
+	if info.Main.Path == modulePath {
+		settings := map[string]string{}
+		for _, s := range info.Settings {
+			settings[s.Key] = s.Value
+		}
+		if settings[vcsModifiedKey] == trueText {
+			return ""
+		}
+		return settings[vcsRevisionKey]
+	}
+	for _, dep := range info.Deps {
+		if dep.Path == modulePath && dep.Replace == nil {
+			return pseudoRevision(dep.Version)
 		}
 	}
 	return ""
+}
+
+// pseudoRevision is the revision prefix a Go pseudo-version ends with
+// (vX.Y.Z-yyyymmddhhmmss-abcdefabcdef, or with -0. or -pre.0. before the time), "" for any
+// other version.
+func pseudoRevision(version string) string {
+	i := strings.LastIndex(version, pseudoSep)
+	if i < 0 {
+		return ""
+	}
+	rev, rest := version[i+len(pseudoSep):], version[:i]
+	if len(rev) != pseudoRevLen || len(rest) < pseudoTimeLen || !isDigits(rev, hexBase) || strings.ToLower(rev) != rev {
+		return ""
+	}
+	stamp, before := rest[len(rest)-pseudoTimeLen:], rest[:len(rest)-pseudoTimeLen]
+	if !isDigits(stamp, decimalBase) || !strings.ContainsAny(before, pseudoStampSeps) {
+		return ""
+	}
+	return rev
+}
+
+// isDigits reports s made only of digits of base: no sign, no prefix, no separator.
+func isDigits(s string, base int) bool {
+	_, err := strconv.ParseUint(s, base, pseudoBits)
+	return err == nil
 }

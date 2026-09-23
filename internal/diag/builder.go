@@ -18,7 +18,8 @@ type Builder struct {
 	layer      string
 	related    []relatedNote
 	stack      []Frame
-	moreFrames int
+	stackCut   int // the frames Stack cut, past MaxStackFrames
+	moreFrames int // the frames a provenance had already cut
 	reads      []string
 }
 
@@ -72,17 +73,19 @@ func (b *Builder) Layer(name string) *Builder {
 	return b
 }
 
-// Stack sets the call stack, innermost first, cut to MaxStackFrames (EVALUATION.md §13).
+// Stack sets the call stack, innermost first, cut to MaxStackFrames; a second call replaces
+// the first, its cut frames included.
 func (b *Builder) Stack(frames []Frame) *Builder {
 	kept := min(len(frames), MaxStackFrames)
 	b.stack = slices.Clone(frames[:kept])
-	b.moreFrames += len(frames) - kept
+	b.stackCut = len(frames) - kept
 	return b
 }
 
-// MoreFrames adds n frames a provenance already cut from its stack (EVALUATION.md §13).
+// MoreFrames sets the frames a provenance already cut from its stack; the finding counts them
+// with the frames Stack cuts.
 func (b *Builder) MoreFrames(n int) *Builder {
-	b.moreFrames += max(n, 0)
+	b.moreFrames = max(n, 0)
 	return b
 }
 
@@ -111,7 +114,7 @@ func (b *Builder) finding(files Files, pkg string) Finding {
 		Check:      b.check,
 		Layer:      b.layer,
 		Stack:      b.stack,
-		MoreFrames: b.moreFrames,
+		MoreFrames: b.stackCut + b.moreFrames,
 		Reads:      b.reads,
 	}
 	for _, rel := range b.related {

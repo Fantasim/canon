@@ -53,22 +53,24 @@ func (b *Bag) add(f Finding) {
 	b.findings = append(b.findings, f)
 }
 
-// view sorts and deduplicates a copy of the findings, then splits it at the bag's limit.
+// view sorts a copy of the findings in a total order, keeps the least of each run of
+// duplicates, then splits the result at the bag's limit: the same set of reports gives the
+// same view whatever order, or goroutines, they came from.
 func (b *Bag) view() ([]Finding, Truncation) {
 	b.mu.Lock()
 	all := slices.Clone(b.findings)
 	limit := b.max
 	b.mu.Unlock()
-	keyed := sortFindings(b.files, all)
-	unique := keyed[:0]
-	for i, k := range keyed {
-		if i == 0 || !sameFinding(keyed[i-1], k) {
-			unique = append(unique, k)
-		}
+	keyed := make([]keyedFinding, len(all))
+	for i, f := range all {
+		keyed[i] = keyedFinding{f: f, l: locate(b.files, f)}
 	}
-	out := make([]Finding, len(unique))
-	for i, k := range unique {
-		out[i] = k.f
+	slices.SortFunc(keyed, compareKeyed)
+	var out []Finding
+	for i := range keyed {
+		if i == 0 || !duplicate(&keyed[i-1].l, &keyed[i].l) {
+			out = append(out, keyed[i].f)
+		}
 	}
 	cut := min(limit, len(out))
 	dropped := Truncation{Package: b.pkg}
@@ -89,39 +91,21 @@ func count(fs []Finding) (errs, warnings int) {
 	return errs, warnings
 }
 
-// keyedFinding is a finding with the position its order reads (API.md F2).
+// keyedFinding is a finding with its resolved form, which its order reads.
 type keyedFinding struct {
-	f         Finding
-	path      string
-	line, col int
+	f Finding
+	l Located
 }
 
-// sortFindings orders findings stably by file, line, column, code and message (API.md F2).
-func sortFindings(files Files, fs []Finding) []keyedFinding {
-	keyed := make([]keyedFinding, len(fs))
-	for i, f := range fs {
-		k := keyedFinding{f: f, path: files.Path(f.Span.File)}
-		if k.path != "" {
-			k.line, k.col = files.Position(f.Span.File, f.Span.Start)
-		}
-		keyed[i] = k
-	}
-	slices.SortStableFunc(keyed, func(a, b keyedFinding) int {
-		return cmp.Or(
-			cmp.Compare(a.path, b.path),
-			cmp.Compare(a.line, b.line),
-			cmp.Compare(a.col, b.col),
-			cmp.Compare(a.f.Code, b.f.Code),
-			cmp.Compare(a.f.Message, b.f.Message),
-		)
-	})
-	return keyed
-}
-
-// sameFinding tells a duplicate, of which the first produced is kept (EVALUATION.md §14).
-func sameFinding(a, b keyedFinding) bool {
-	return a.f.Severity == b.f.Severity && a.f.Code == b.f.Code && a.path == b.path &&
-		a.line == b.line && a.col == b.col && a.f.Message == b.f.Message
+// compareKeyed is compareLocated, then the finding's own span: two findings that resolve
+// alike but differ in their offsets still sort one way.
+func compareKeyed(a, b keyedFinding) int {
+	return cmp.Or(
+		compareLocated(&a.l, &b.l),
+		cmp.Compare(a.f.Span.File, b.f.Span.File),
+		cmp.Compare(a.f.Span.Start, b.f.Span.Start),
+		cmp.Compare(a.f.Span.End, b.f.Span.End),
+	)
 }
 
 // Summary counts findings, dropped ones included (API.md §4.3).

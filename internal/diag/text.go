@@ -23,12 +23,18 @@ type RenderOptions struct {
 
 // Render writes findings in F2 order, then the summary line (API.md §4.4, CLI.md §2.4).
 func Render(w io.Writer, files Files, findings []Finding, opt RenderOptions) error {
-	keyed := sortFindings(files, findings)
+	return Write(w, Locate(files, findings), opt)
+}
+
+// Write is Render over resolved findings, which it sorts in F2 order with a total tiebreak
+// (every field), so the output never depends on the order it is given.
+func Write(w io.Writer, findings []Located, opt RenderOptions) error {
+	sorted := sortLocated(findings)
 	var out string
 	if opt.Format == FormatJSON {
-		out = jsonForm(files, keyed, opt)
+		out = jsonForm(sorted, opt)
 	} else {
-		out = textForm(files, keyed, opt)
+		out = textForm(sorted, opt)
 	}
 	if _, err := io.WriteString(w, out); err != nil {
 		return fmt.Errorf("%w: %w", ErrWrite, err)
@@ -37,10 +43,10 @@ func Render(w io.Writer, files Files, findings []Finding, opt RenderOptions) err
 }
 
 // textForm is every finding's block, a blank line after each, then the summary (F14).
-func textForm(files Files, keyed []keyedFinding, opt RenderOptions) string {
+func textForm(findings []Located, opt RenderOptions) string {
 	var lines []string
-	for _, k := range keyed {
-		lines = append(lines, textFinding(files, k)...)
+	for i := range findings {
+		lines = append(lines, textFinding(&findings[i])...)
 		lines = append(lines, "")
 	}
 	lines = append(lines, summaryText(opt))
@@ -53,11 +59,10 @@ func textForm(files Files, keyed []keyedFinding, opt RenderOptions) string {
 }
 
 // textFinding is the lines of one finding (API.md F9-F13).
-func textFinding(files Files, k keyedFinding) []string {
-	f := k.f
+func textFinding(f *Located) []string {
 	header := f.Severity.String() + codeOpen + string(f.Code) + codeClose
-	if k.path != "" {
-		header += gap + k.path + locSep + strconv.Itoa(k.line) + locSep + strconv.Itoa(k.col)
+	if f.Loc.Path != "" {
+		header += gap + f.Loc.Path + locSep + strconv.Itoa(f.Loc.Line) + locSep + strconv.Itoa(f.Loc.Col)
 	}
 	lines := []string{header}
 	prefix := ""
@@ -74,14 +79,14 @@ func textFinding(files Files, k keyedFinding) []string {
 		lines = append(lines, gap+layerPrefix+f.Layer)
 	}
 	for _, r := range f.Related {
-		loc := shortLoc(files, r.Span)
+		loc := shortLoc(r.Loc)
 		if loc != "" {
 			loc = space + loc
 		}
 		lines = append(lines, gap+relatedWords+loc+noted(r.Note))
 	}
 	for _, fr := range f.Stack {
-		lines = append(lines, gap+framePrefix+fr.Fn+noted(shortLoc(files, fr.Span)))
+		lines = append(lines, gap+framePrefix+fr.Fn+noted(shortLoc(fr.Loc)))
 	}
 	if f.MoreFrames > 0 {
 		lines = append(lines, gap+parenOpen+strconv.Itoa(f.MoreFrames)+moreFramesClose)
@@ -89,13 +94,12 @@ func textFinding(files Files, k keyedFinding) []string {
 	return lines
 }
 
-// shortLoc is `<file>:<line>`, or "" for a span without a file.
-func shortLoc(files Files, s source.Span) string {
-	path := files.Path(s.File)
-	if path == "" {
+// shortLoc is `<file>:<line>`, or "" for no location (API.md F12, F13).
+func shortLoc(l source.Location) string {
+	if l.Path == "" {
 		return ""
 	}
-	return renderer{files: files}.loc(s)
+	return l.Path + locSep + strconv.Itoa(l.Line)
 }
 
 // noted is ` (<text>)`, or nothing for an empty text (API.md F12, F13).

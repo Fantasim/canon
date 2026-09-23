@@ -15,6 +15,8 @@
 *.out
 *.prof
 coverage.*
+# ... but never Go source named coverage (tools/audit's diagnostics lane has one).
+!coverage.go
 
 # What `canon build` writes for an example with `emit … { out: "out/" }`; the reviewed copies
 # live in examples/**/expected/.
