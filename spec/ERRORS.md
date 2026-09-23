@@ -259,7 +259,7 @@ type Def struct {
 type Variant struct {
     Name     string                  // "" for a single-message code
     Args     []Arg                   // in constructor order
-    Template string                  // §1.2, unescaped
+    Template string                  // §1.2, as written between the backticks: escapes kept (DECISIONS 57)
 }
 type Arg struct { Name string; Type ArgType }
 type ArgType uint8                   // one constant per type of §1.3

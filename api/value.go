@@ -97,7 +97,7 @@ func (v *Value) IsNone() bool {
 	return v.Kind == KindNone
 }
 
-// Len returns the number of elements, of fields of a record or case, or 0.
+// Len returns the number of elements, of fields of a record or a variant's current case, or 0.
 func (v *Value) Len() int {
 	panic(msgUnimplemented)
 }

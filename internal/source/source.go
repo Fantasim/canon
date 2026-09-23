@@ -92,6 +92,30 @@ func (s *FileSet) File(id FileID) *File {
 	return s.files[id-1]
 }
 
+// Path is the display path of the file with the given id, "" for no known file.
+func (s *FileSet) Path(id FileID) string {
+	if f := s.File(id); f != nil {
+		return f.Path
+	}
+	return ""
+}
+
+// Position is File.Position of the file with the given id, 0:0 for no known file.
+func (s *FileSet) Position(id FileID, p Pos) (line, col int) {
+	if f := s.File(id); f != nil {
+		return f.Position(p)
+	}
+	return 0, 0
+}
+
+// Content is the normalized content of the file with the given id, nil for no known file.
+func (s *FileSet) Content(id FileID) []byte {
+	if f := s.File(id); f != nil {
+		return f.Content
+	}
+	return nil
+}
+
 // Locate resolves sp for display; a span of no known file is the zero Location.
 func (s *FileSet) Locate(sp Span) Location {
 	f := s.File(sp.File)

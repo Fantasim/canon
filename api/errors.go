@@ -3,6 +3,7 @@ package canon
 import (
 	"errors"
 	"fmt"
+	"strings"
 )
 
 // Sentinel errors (API.md §15). Every error type below wraps exactly one of them; use errors.Is.
@@ -41,7 +42,7 @@ func opPrefix(op int) string {
 	return fmt.Sprintf(fmtOpPrefix, op)
 }
 
-// errText is the text of rule X1: "<op N: >path: <sentinel text>: <detail>".
+// errText is the one text of rule X1: "<op N: ><path: ><sentinel text><: detail>".
 func errText(op int, path string, sentinel error, detail string) string {
 	s := opPrefix(op)
 	if path != "" {
@@ -61,12 +62,22 @@ type ProjectError struct {
 	Findings []Finding
 }
 
-func (e *ProjectError) Error() string {
-	if len(e.Findings) > 0 {
-		return e.Err.Error() + textSep + e.Findings[0].Message
+func (e *ProjectError) Error() string { return errText(-1, "", e.Err, firstFinding(e.Findings)) }
+
+// firstFinding is the detail of rule X1 for findings: the first one, located when it has a file.
+func firstFinding(fs []Finding) string {
+	if len(fs) == 0 {
+		return ""
 	}
-	return e.Err.Error()
+	f := fs[0]
+	if f.File == "" {
+		return f.Message
+	}
+	return fmt.Sprintf(fmtFindingAt, f.File, f.Line, f.Col, f.Message)
 }
+
+// fileList is the detail of rule X1 for a list of files.
+func fileList(files []string) string { return strings.Join(files, textListSep) }
 
 func (e *ProjectError) Unwrap() error { return e.Err }
 
@@ -128,7 +139,7 @@ type StaleError struct {
 	Files []string
 }
 
-func (e *StaleError) Error() string { return errText(-1, "", ErrStale, fmt.Sprint(e.Files)) }
+func (e *StaleError) Error() string { return errText(-1, "", ErrStale, fileList(e.Files)) }
 
 func (e *StaleError) Unwrap() error { return ErrStale }
 
@@ -138,7 +149,11 @@ type RejectedError struct {
 }
 
 func (e *RejectedError) Error() string {
-	return errText(-1, "", ErrRejected, fmt.Sprintf(fmtErrorCount, len(e.Findings)))
+	noun := textErrors
+	if len(e.Findings) == 1 {
+		noun = textError
+	}
+	return errText(-1, "", ErrRejected, fmt.Sprintf(fmtCount, len(e.Findings), noun))
 }
 
 func (e *RejectedError) Unwrap() error { return ErrRejected }
@@ -149,7 +164,7 @@ type NotCanonicalError struct {
 }
 
 func (e *NotCanonicalError) Error() string {
-	return errText(-1, "", ErrNotCanonical, fmt.Sprint(e.Files))
+	return errText(-1, "", ErrNotCanonical, fileList(e.Files))
 }
 
 func (e *NotCanonicalError) Unwrap() error { return ErrNotCanonical }
@@ -159,13 +174,7 @@ type SyntaxError struct {
 	Findings []Finding
 }
 
-func (e *SyntaxError) Error() string {
-	if len(e.Findings) > 0 {
-		f := e.Findings[0]
-		return fmt.Sprintf(fmtSyntaxAt, f.File, f.Line, f.Col, f.Message)
-	}
-	return ErrSyntax.Error()
-}
+func (e *SyntaxError) Error() string { return errText(-1, "", ErrSyntax, firstFinding(e.Findings)) }
 
 func (e *SyntaxError) Unwrap() error { return ErrSyntax }
 
@@ -175,6 +184,6 @@ type InternalError struct {
 	Stack string // Go stack trace
 }
 
-func (e *InternalError) Error() string { return ErrInternal.Error() + textSep + e.Msg }
+func (e *InternalError) Error() string { return errText(-1, "", ErrInternal, e.Msg) }
 
 func (e *InternalError) Unwrap() error { return ErrInternal }

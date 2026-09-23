@@ -12,20 +12,21 @@ block in [state.md](state.md).
 
 ## M0 — Contracts
 
-- [ ] **M0.1 Audit rules first** (QA, `tools/audit`; addendum, DECISIONS 26–27):
+- [x] **M0.1 Audit rules first** (QA, `tools/audit`; addendum, DECISIONS 26–27):
   `diag-message-inline` (enforce), `diag-code-untested` (ratchet), `ignore-count` ratcheted,
   thresholds moved to `tools/audit/thresholds.tsv`. Accept: rules.md in sync, the tool gates
   itself, `make check` green.
-- [ ] **M0.2 Module skeleton** (QA): every package of §3 with `doc.go`, an Example test,
+- [x] **M0.2 Module skeleton** (QA): every package of §3 with `doc.go`, an Example test,
   `constants.go`/`errors.go` where needed; `internal/testkit/deps_test.go` enforcing §3's
   dependency rule. Accept: `go list -deps` matches the allowed graph.
-- [ ] **M0.3 Registry** (QA, `internal/diag`): `codes.go` generated from `spec/ERRORS.md`,
+- [x] **M0.3 Registry** (QA, `internal/diag`): `codes.go` generated from `spec/ERRORS.md`,
   diff-checked by `make check`. Accept: ERRORS.md regenerated from the registry is unchanged.
-- [ ] **M0.4 The six frozen contracts** (§4), as compiling Go, each approved by its consumers:
-  `source.go` + `ast.go` (SYN), `types.go` (TYP), `value.go` (EVL), `diag.go` (QA), `ir.go` (IR),
-  `edit/path.go` (API); lock format types (VER), `project` schema types (LOD).
-- [ ] **M0.5 API split** (API, `api/`): `api/canon.go` split by concern per §12.4, no API change.
-- [ ] **M0.6 Harness** (QA, `internal/testkit`): golden harness skeleton running one trivial
+- [ ] **M0.4 The eight frozen contracts** (§4), as compiling Go, each approved by its consumers:
+  `source.go` + `ast.go` (SYN), `types.go` and `check/info.go` (TYP), `value.go` and
+  `eval/host.go` (EVL), `diag.go` (QA), `ir.go` (IR), `edit/path.go` (API); lock format types
+  (VER), `project` schema types (LOD).
+- [x] **M0.5 API split** (API, `api/`): `api/canon.go` split by concern per §12.4, no API change.
+- [x] **M0.6 Harness** (QA, `internal/testkit`): golden harness skeleton running one trivial
   golden; fixture extractor `fixturegen`; CI skeleton running `make check`.
 
 ## M1 — v0: `taxonomy.canon` to baked Go and JSON

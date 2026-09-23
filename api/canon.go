@@ -11,7 +11,7 @@ type Options struct {
 	Layers      []string
 	Lang        string
 	EditLayer   string
-	Roots       map[string]string // a relative directory is relative to the project root
+	Roots       map[string]string
 	FS          FS
 	Cache       string
 	Workers     int

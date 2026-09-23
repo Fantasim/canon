@@ -59,6 +59,25 @@ func TestFileUnknown(t *testing.T) {
 	}
 }
 
+// DECISIONS 81: the file set answers by id what diag renders; an unknown id is no location.
+func TestFileSetByID(t *testing.T) {
+	var fs source.FileSet
+	f, err := fs.Add("a.canon", "/a.canon", []byte("ab\r\ncd"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	line, col := fs.Position(f.ID, 4)
+	if fs.Path(f.ID) != "a.canon" || string(fs.Content(f.ID)) != "ab\ncd" || line != 2 || col != 2 {
+		t.Errorf("by id: %q %q %d:%d", fs.Path(f.ID), fs.Content(f.ID), line, col)
+	}
+	for _, id := range []source.FileID{source.NoFile, f.ID + 1} {
+		line, col := fs.Position(id, 1)
+		if fs.Path(id) != "" || fs.Content(id) != nil || line != 0 || col != 0 {
+			t.Errorf("id %d: %q %q %d:%d, want no file", id, fs.Path(id), fs.Content(id), line, col)
+		}
+	}
+}
+
 func TestAddTooLarge(t *testing.T) {
 	var fs source.FileSet
 	_, err := fs.Add("big.canon", "/big.canon", make([]byte, math.MaxInt32+1))

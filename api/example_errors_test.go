@@ -34,19 +34,19 @@ func ExampleNotEditableError() {
 func ExampleStaleError() {
 	err := error(&canon.StaleError{Files: []string{"teamboard/taxonomy.canon"}})
 	fmt.Println(err, errors.Is(err, canon.ErrStale))
-	// Output: sources changed since the base revision: [teamboard/taxonomy.canon] true
+	// Output: sources changed since the base revision: teamboard/taxonomy.canon true
 }
 
 func ExampleRejectedError() {
 	err := error(&canon.RejectedError{Findings: make([]canon.Finding, 2)})
 	fmt.Println(err, errors.Is(err, canon.ErrRejected))
-	// Output: edit rejected: it produces errors: 2 error(s) true
+	// Output: edit rejected: it produces errors: 2 errors true
 }
 
 func ExampleNotCanonicalError() {
 	err := error(&canon.NotCanonicalError{Files: []string{"@resource/Server/farm.json"}})
 	fmt.Println(err, errors.Is(err, canon.ErrNotCanonical))
-	// Output: file is not in canonical layout: [@resource/Server/farm.json] true
+	// Output: file is not in canonical layout: @resource/Server/farm.json true
 }
 
 func ExampleProjectError() {
@@ -60,7 +60,7 @@ func ExampleSyntaxError() {
 	at := canon.Span{File: "teamboard/taxonomy.canon", Line: 3, Col: 9}
 	err := error(&canon.SyntaxError{Findings: []canon.Finding{{Span: at, Message: "expected }"}}})
 	fmt.Println(err, errors.Is(err, canon.ErrSyntax))
-	// Output: teamboard/taxonomy.canon:3:9: expected } true
+	// Output: syntax error: teamboard/taxonomy.canon:3:9: expected } true
 }
 
 func ExampleInternalError() {

@@ -59,12 +59,14 @@ import canon "github.com/fantasim/canonlang/api"   // module path: DECISIONS 23,
 ```
 
 Everything else in the module is under `internal/`. An embedder uses only package `canon`. The
-contract is the package, not a file: today's single `api/canon.go` is split by concern in M0 to
-meet the code doctrine's size limits, with no change to the API (IMPLEMENTATION-PLAN §12.4).
+contract is the package, not a file: M0 split the single `api/canon.go` by concern into the
+files of `api/` to meet the code doctrine's size limits, with no change to the API
+(IMPLEMENTATION-PLAN §12.4 lists the files; `api/canon.go` keeps the options and the project,
+DECISIONS 68).
 
 ### 1.2 Stability
 
-Until compiler 1.0 the API may change in any minor release. Every change to `api/canon.go` is
+Until compiler 1.0 the API may change in any minor release. Every change to the API (`api/`) is
 reviewed by the owners of `cmd/canon`, `internal/lsp` and the studio (IMPLEMENTATION-PLAN §5).
 
 ### 1.3 Positions and spans
@@ -117,7 +119,7 @@ func (p *Project) Close() error
 | `Layers []string` | none | layers to apply, in order (SPEC §19, CLI `--layer`) |
 | `Lang string` | source language | language of translated texts: check messages, titles, `show` labels (CLI `--lang`) |
 | `EditLayer string` | `""` | when set, `Set`/`Reset`/`AddEntry` edits write amendments into this layer (§7.5) |
-| `Roots map[string]string` | none | replaces the directory of a declared root (CLI `--root name=dir`); a name that is not declared is `ErrProject` |
+| `Roots map[string]string` | none | replaces the directory of a declared root (CLI `--root name=dir`); a relative directory is relative to the project root; a name that is not declared is `ErrProject` |
 | `FS FS` | the OS | file system used for every read and write (tests use an in-memory one) |
 | `Cache string` | `<root>/.canon/cache` | cache directory; `"off"` disables the cache |
 | `Workers int` | `runtime.GOMAXPROCS(0)` | parallelism; results are byte-identical for every value (NFR-05) |
@@ -388,7 +390,7 @@ Methods, all cheap, never re-evaluating:
 | `Case() (string, bool)` | current case of a variant |
 | `Key() (string, bool)` | key of a ref, entry or keyed element, in its canonical text |
 | `IsNone() bool` | the value is `none` |
-| `Len() int` | elements of a list, table or map; fields of a record; 0 otherwise |
+| `Len() int` | elements of a list, keyed list, table or map; fields of a record, or of a variant's current case; 0 otherwise |
 | `Children() []*Value` | fields in declaration order (absent optional fields included, as `none`), elements in order, map entries in insertion order |
 | `Child(seg string) (*Value, error)` | one child by a path segment (`.f`, `[k]`, `[#n]`) |
 | `JSON() []byte` | the wire form (WIRE.md), exactly as `emit json` would write it inside `value` |
@@ -834,8 +836,9 @@ inside the same edit and reports it, so every client behaves the same.
 
 ### 8.8 JSON form of an edit
 
-The studio's web client sends edits as JSON; `Edit` implements `json.Unmarshaler` and
-`json.Marshaler`:
+The studio's web client sends edits as JSON. `Edit` has this form through its struct tags
+(`base`, `ops`, then `allowErrors`, `dryRun`, `normalize` and `evaluate`, each omitted when
+false or empty), and `Op` implements `json.Marshaler` and `json.Unmarshaler` (E24–E26):
 
 ```json
 {
@@ -1012,7 +1015,8 @@ type Heading   struct { Title, Subtitle Text; Preview string; Retired bool; Cell
 ```
 
 - **V4a. JSON form.** `EvalRequest`, `EvalResult` and every type they hold have a JSON form, the
-  one the studio's web client exchanges (VIEWMODEL.md §13): the struct tags of `api/canon.go`,
+  one the studio's web client exchanges (VIEWMODEL.md §13): the struct tags of `api/evaluate.go`
+  (`Dropped` in `api/edit.go`, `Finding` and `Summary` in `api/findings.go`),
   lowerCamel keys (`revision`, `path`, `title`, `subtitle`, `preview`, `when`, `show`,
   `headings`, `types`, `findings`, `summary`, `dropped`; `value`, `ok`, `fallback` in a `Text`;
   `owner`, `key`, `label`, `text` in a `ShowLine`; `title`, `subtitle`, `preview`, `retired`,
@@ -1200,13 +1204,22 @@ Errors are Go errors, distinct from findings. Every error type wraps one sentine
 | `ErrNotCanonical` | `*NotCanonicalError` | M9 | 1 |
 | `ErrPathCollision` | `*PathError` | N3 | 1 |
 | `ErrOverlay` | `*PathError` | S12 | 1 |
-| `ErrSyntax` | `*SyntaxError` | `Format` or `FormatJSONSource` on input that does not parse (§14); added to `api/canon.go`'s split in M0 (IMPLEMENTATION-PLAN.md §12.4) | 1 |
+| `ErrSyntax` | `*SyntaxError` | `Format` or `FormatJSONSource` on input that does not parse (§14); added to `api/errors.go` by the M0 split (IMPLEMENTATION-PLAN.md §12.4) | 1 |
 | `ErrClosed` | | O6 | 3 |
 | `ErrInternal` | `*InternalError` | a compiler bug; carries a Go stack | 3 |
 
 - **X1.** Error types carry `Op int` (index in `Edit.Ops`, `-1` when not an op), `Path` (as given)
-  and, where relevant, `Detail` (a sentence for humans). Their `Error()` text is
-  `"<op N: >path: <sentinel text>: <detail>"`.
+  and, where relevant, `Detail` (a sentence for humans). Every error type's `Error()` text has
+  one form, `"<op N: ><path: ><sentinel text><: detail>"`: `op N: ` only when `Op` is 0 or more,
+  the path and its `: ` only when the path is not empty, `: ` and the detail only when the detail
+  is not empty. A type without an `Op` or a `Path` field starts with its sentinel's text, so every
+  text holds the text of the sentinel `errors.Is` matches. The detail is: `Detail` for a
+  `*PathError`; `expected <Expected>, got <Got>`, then `: <Detail>` if any, for a `*ValueError`;
+  the `Reason`, then `: <Detail>` if any, for a `*NotEditableError`; the files joined by `, `
+  for a `*StaleError` and a `*NotCanonicalError`; the number of error findings (`1 error`,
+  `2 errors`) for a `*RejectedError`; the first finding, as `<file>:<line>:<col>: <message>`
+  (its message alone when it has no file), for a `*ProjectError` and a `*SyntaxError`; `Msg`
+  for an `*InternalError`.
 - **X2.** A panic inside the compiler is recovered at the API boundary and returned as
   `*InternalError`; the project stays usable for reads, and an edit in progress is rolled back.
 

@@ -155,8 +155,11 @@ const (
 const (
 	textSep          = ": "
 	fmtOpPrefix      = "op %d: "
-	fmtErrorCount    = "%d error(s)"
-	fmtSyntaxAt      = "%s:%d:%d: %s"
+	fmtCount         = "%d %s"
+	textError        = "error"
+	textErrors       = "errors"
+	fmtFindingAt     = "%s:%d:%d: %s"
+	textListSep      = ", "
 	textExpected     = "expected "
 	textGot          = ", got "
 	fmtDecode        = "view model %s: %w"

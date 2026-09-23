@@ -65,7 +65,7 @@ is assignable to and from every type and produces no further diagnostics.
 
 Every type is one of the kinds below. Implementations represent them as a tagged union
 (`types.Type`). "Static identity" is what the checker compares. Refinements never take part
-in it (§6.1).
+in it (§6.1): they are a layer over a type, not a kind (see below the table).
 
 | Kind | Written | Carries | Notes |
 |---|---|---|---|
@@ -74,15 +74,13 @@ in it (§6.1).
 | `Float` | `Float`, `Float32` | `width` (64 or 32) | `Float32` is `Float` statically, rounded when stored (§7.3) |
 | `String` | `String` | | |
 | `Duration` | `Duration` | | millisecond precision; limited to ±9,223,372,036,854 ms (§7.2) |
-| `Refined` | `B(lo..hi)`, `B(/re/)`, `B where p` | base type, list of refinements | never changes static identity (§6.1) |
 | `Enum` | declared name | declaration | nominal |
 | `Record` | declared name, `R(args)` | declaration, type arguments | nominal; arguments are erased statically (§11.3) |
 | `Variant` | declared name | declaration | nominal |
 | `Case` | `V.c`, or a narrowed variant | variant, case | the type of a case literal, a match binding or a narrowed path |
 | `Kind` | not writable | variant | the type of `v.kind`: an enum whose members are the cases (§8.3) |
 | `Optional` | `T?` | inner type, never `Optional` | `T??` is `E3401` |
-| `List` | `[T]` | element type | |
-| `KeyedList` | `[T] keyed by f` | element record type, key field | a list with unique keys and key lookup (§9.1) |
+| `List` | `[T]`, `[T] keyed by f` | element type; for a keyed list, the key field of the element record type | `[T] keyed by f` is a keyed list: a list with unique keys and key lookup (§9.1) |
 | `Map` | `{K: V}` | key type, value type | keys restricted (§9.2) |
 | `DepMap` | `{k in c: T(k)}` | binder, collection, type function application | §11.5 |
 | `Table` | `table T`, `stable table T` | element record type, `stable` | §9.3 |
@@ -99,8 +97,11 @@ in it (§6.1).
 | `None` | not writable | | the type of the literal `none` before context gives it a type |
 | `Error` | not writable | | the result of a static error; silences cascades |
 
-Aliases (`type Penya = Int(0..)`) are expanded wherever a type is used. They are not a kind
-(§13.1). `asset(root, ext: […])` is `String` with an asset refinement (§13.4).
+A **refinement** (`B(lo..hi)`, `B(/re/)`, `B where p`) is not a kind: a refined type has the
+kind of its base type `B` and carries the base type and its list of refinements. It never
+changes static identity (§6.1). Aliases (`type Penya = Int(0..)`) are expanded wherever a type is
+used. They are not a kind (§13.1). `asset(root, ext: […])` is `String` with an asset refinement
+(§13.4).
 
 ---
 

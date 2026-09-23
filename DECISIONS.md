@@ -610,6 +610,62 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     parser and no validation before M1. Reason: §7.1's schema as data, with no default guessed
     twice.
 
+91. **`*source.FileSet` is a `diag.Files`** (closing DECISIONS 81): `Path(id)`, `Position(id,
+    pos)` and `Content(id)` over `File(id)`; an unknown id is no file (`""`, `0:0`, `nil`). The
+    interface check and a test that a file set renders text and JSON byte for byte like the
+    renderer tests' in-memory files are in `diag`'s external test, which may import both.
+    IMPLEMENTATION-PLAN §4.4's sketch now shows `Files`, `NewBag(files Files, pkg)` and
+    `Render(…) error`. Reason: one position source for `build` with no adapter, and a renderer
+    whose tests need no file set.
+
+92. **The golden harness names the expected file by option**: `golden.Expected(name)` on `Load`
+    and `Run` (default `want`), recorded in `Case.Expected`; an empty name is refused. `lock`'s
+    per-code cases run through `golden.Run(…, golden.Expected("findings.txt"))`, so the
+    `flag.Lookup("update")` copy of the harness (DECISIONS 89) is gone. Reason:
+    IMPLEMENTATION-PLAN §7.2 names the section `findings.txt`, and a second compare-and-rewrite
+    loop per package would drift from the harness.
+
+93. **Spec sketches and TYPES §2 follow the code, meaning unchanged**: IMPLEMENTATION-PLAN §4.2's
+    `LitUnionType` has `Of` (DECISIONS 77) and §4.5's `Record`, `Enum`, `Variant`, `Dependent`
+    have `Pkg, Name` with the `QName()` method (DECISIONS 80), since a field and a method of one
+    name do not compile. TYPES §2 no longer lists `Refined` and `KeyedList` as kinds: a
+    refinement is a layer with its base type's kind (paragraph under the table), and
+    `[T] keyed by f` is written in the `List` row, as DECISIONS 46 already decided.
+
+94. **API error texts have one form (API.md X1)**: `"<op N: ><path: ><sentinel text><: detail>"`,
+    each part only when present, so every text holds its sentinel's text. `*SyntaxError` now
+    starts with `syntax error: ` (it printed the location alone); `*ProjectError` and
+    `*SyntaxError` write their first finding as `<file>:<line>:<col>: <message>` (the message
+    alone without a file); `*StaleError` and `*NotCanonicalError` join their files with `, `
+    (they printed Go's `[a b]`, ambiguous for a path with a space); `*RejectedError` writes
+    `1 error` / `n errors` (it wrote `n error(s)`). `*InternalError` keeps its field `Msg`:
+    renaming it `Detail` would change the frozen contract. X1 now states each type's detail;
+    `api/errors_test.go` pins every type's text. Reason: the spec's intent (one format, the
+    sentinel visible) read strictly, with no text left to a type's habit.
+
+95. **API.md and IMPLEMENTATION-PLAN §12.4 match the split API**: §8.8 says `Edit` has its JSON
+    form through struct tags and `Op` implements the JSON interfaces (as coded); V4a points at
+    `api/evaluate.go`, `api/edit.go` and `api/findings.go`; §2.1 states that a relative `Roots`
+    directory is relative to the project root (the field comment is dropped, DECISIONS 70);
+    `Value.Len` counts a keyed list's elements and a variant's current-case fields (the kinds of
+    `ValueKind`); §1.1, §1.2 and §15 speak of `api/` rather than the pre-split file. §12.4's
+    `api` row lists `constants.go`, says `build.go` holds `Format`, `FormatJSONSource` and
+    `Version`, and that `canon.go` is its `project.go` until DECISIONS 68's rename.
+
+96. **`api/vm` has a row in IMPLEMENTATION-PLAN §3, between `i18n` and `views`, consuming
+    nothing**, and a skeleton package now (`doc.go`, empty running Example, DECISIONS 61).
+    Reason: the lowest row that still lets `views`, `gen/view`, `api` and `cli` import it; with
+    the row, M0.2's "every package of §3" holds only if the package exists, and
+    `TestViewModelRow` keeps its directory out of `api`'s row.
+
+97. **ERRORS.md §2.2's `Template` comment reads "as written between the backticks: escapes kept
+    (DECISIONS 57)"** instead of "unescaped". Reason: DECISIONS 57 wins; the Louis-call is closed.
+
+98. **M0.1, M0.2, M0.3, M0.5 and M0.6 are ticked; M0.4 is not.** IMPLEMENTATION-PLAN §6 M0 asks
+    for the eight contracts of §4, and §4.7 (`check/info.go`) and §4.8 (`eval/host.go`) are not
+    written (meta/plan.md's M0.4 line listed six; it now lists all eight), and the consumer
+    approval waits for the M0 review. Reason: a box is ticked only when its acceptance passes.
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.

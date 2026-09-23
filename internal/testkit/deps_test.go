@@ -48,6 +48,27 @@ func TestDependencyRule(t *testing.T) {
 	}
 }
 
+// IMPLEMENTATION-PLAN.md §3: `api/vm` has its own row, above the view packages and `api`.
+func TestViewModelRow(t *testing.T) {
+	plan, err := os.ReadFile(planPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rows, err := catalog.Packages(plan)
+	if err != nil {
+		t.Fatal(err)
+	}
+	vm := rankOf(rows, "api/vm")
+	if vm < 0 || rows[vm].Dir != "api/vm" {
+		t.Fatalf("api/vm is in row %d, want its own row", vm)
+	}
+	for _, dir := range []string{"internal/views", "internal/gen/view", "api"} {
+		if r := rankOf(rows, dir); r <= vm {
+			t.Errorf("%s (row %d) is not below api/vm (row %d)", dir, r, vm)
+		}
+	}
+}
+
 // The rule itself: each kind of violation of a small synthetic graph is reported.
 func TestDependencyRuleReportsViolations(t *testing.T) {
 	rows := []catalog.Package{

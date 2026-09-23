@@ -1,31 +1,25 @@
 # State — Canon compiler
 
-Updated: 2026-09-23 (night, autonomous session: M0.1 audit rules; M0.2, M0.3, M0.6 by QA)
+Updated: 2026-09-23 (night, autonomous session: M0 loose ends reconciled, DECISIONS 91–98)
 
 ## Current focus
 
-**M0 — Contracts** ([plan.md](plan.md) § M0). M0.1 (audit rules) is done. M0.2 (module
-skeleton), M0.3 (diag registry) and M0.6 (harness) are written and meet their acceptance.
-M0.5 (API split) is written: `api/` has zero audit findings, runnable Examples reach every
-function (DECISIONS 66–71), and the baseline is tightened to empty (271 entries, all `api`).
-None is ticked yet: `make check` was red at hand-off only on `internal/diag`, which the M0.4
-work was editing (`go vet`: undefined `Bag`, `renderer`, `checkWord`).
-M0.4 SYN part written: `internal/source` (`File`, `FileSet`, `Locate`) and `internal/syntax`
-(tokens, trivia, 119 node kinds, walker; every GRAMMAR production mapped by a test), zero
-audit findings, DECISIONS 72–76; awaiting consumer review (TYP, EVL, IR, API, SYN format).
-M0.4 TYP/EVL/IR part written: `internal/types`, `value`, `ir` (DECISIONS 77–80), zero audit
-findings in them; `Identical`/`Assignable`/`Join` wait for the checker (M1); awaiting review.
-M0.4 QA/API/VER/LOD part written: `diag` builder, Bag, text/JSON renderer (438/438 messages
-render; heistia/farm `findings.txt` byte-exact), `edit/path.go` (fuzzed), `lock` model/parser/
-printer (LOCK.md samples byte-exact, `E6005` txtar), `project` types; DECISIONS 81–90; needs
-`*source.FileSet` to implement `diag.Files` (DECISIONS 81); awaiting review.
+**M0 — Contracts** ([plan.md](plan.md) § M0). M0.1, M0.2, M0.3, M0.5 and M0.6 are ticked
+(`make check` and `go test -race ./...` green). M0.4 is not: §4.7 `check/info.go` and §4.8
+`eval/host.go` are unwritten, and the written contracts (`source`, `syntax`, `types`, `value`,
+`ir`, `diag`, `edit/path.go`, `lock`, `project`; DECISIONS 72–90) await consumer approval.
+The reconciliation (DECISIONS 91–98): `*source.FileSet` is a `diag.Files`; the golden harness
+takes the expected file's name (`golden.Expected`); spec sketches, TYPES §2, API.md (X1 error
+texts, now one form in code and spec; §2.1, §8.8, V4a, `Len`) and ERRORS.md §2.2 match the code;
+`api/vm` has a §3 row and a skeleton package.
 
-**NEXT:** `make check` green once `internal/diag` compiles; tick M0.2, M0.3, M0.5, M0.6; then
-the rest of M0.4 (the frozen contracts).
+**NEXT:** read the M0 review (`meta/reviews/M0-review.md`) and act on its findings; then
+write §4.7 `check/info.go` (TYP) and §4.8 `eval/host.go` (EVL), get consumer approval of the
+eight contracts and tick M0.4; then M1 (its gate: the consistency pass closed, v0.1 locked).
 
 ## What exists
 
-- The spec: SPEC.md, CLI.md, DECISIONS.md (1–65), `spec/` (companion documents, ERRORS.md,
+- The spec: SPEC.md, CLI.md, DECISIONS.md (1–98), `spec/` (companion documents, ERRORS.md,
   IMPLEMENTATION-PLAN.md), `meta/spec-phase/` (audits, review, mockups).
 - `go.mod` (`go 1.25.0`, requires `golang.org/x/tools` for `txtar`). Every package of
   IMPLEMENTATION-PLAN §3 under `internal/` and `cmd/canon`, each with `doc.go` and a running
@@ -35,11 +29,12 @@ the rest of M0.4 (the frozen contracts).
   rebuilt from the registry); `make diag-check` regenerates into a temp dir and diffs.
 - `internal/source`: `FileID`, `Pos`, `Span`, `File`, `FileSet`, `Location` (DECISIONS 72).
 - `internal/testkit`: `deps_test.go` (dependency rule and §11 libraries over `go list -deps`,
-  DECISIONS 59); `golden` (txtar harness, `-update`, one trivial golden); `cmd/fixturegen`
+  DECISIONS 59); `golden` (txtar harness, `-update`, `Expected` file name, one trivial golden); `cmd/fixturegen`
   (embedded `fixtures.tsv`, `defines` method, fails without `testdata-real/`, DECISIONS 64).
 - `cmd/canon`: exit 2 on every invocation until M1 (DECISIONS 62).
 - `api/`: split by concern (`canon.go` is §12.4's `project.go`, DECISIONS 68), `ErrSyntax`
-  added; stubs with an error result return `*InternalError`; `Version` implemented.
+  added; stubs with an error result return `*InternalError`; `Version` implemented; `api/vm`
+  a skeleton until M3 (DECISIONS 96).
 - CI skeleton: `.github/workflows/check.yml` (`make check`, `go test -race`).
 - `examples/` (own module), `tools/audit/` (own module), `.sovaudit/`, the agent layer
   (ADR-0001). Git: local repository, first commit 96a21a9.
@@ -49,22 +44,16 @@ the rest of M0.4 (the frozen contracts).
 1. **Enable the hooks.** `.claude/hooks/` holds four scripts that are deliberately NOT wired in
    `.claude/settings.json`. The `hooks` block to paste is in
    [../.claude/README.md](../.claude/README.md) § Hooks.
-2. **ERRORS.md §2.2 says `Variant.Template` is "unescaped"**; it keeps the §1.2 escapes
-   (DECISIONS 57), since an unescaped template cannot tell `{name}` text from a placeholder.
-   The sentence needs fixing, or the decision overruling.
-3. **Review DECISIONS 53–71** (autonomous, tonight). With DECISIONS 68: rename
-   `api/canon.go` to `project.go` when API.md §1, CLI.md §5 and README.md are next edited.
-4. **`api/vm` has no row in IMPLEMENTATION-PLAN §3**: the dependency test fails any module
-   package in no row, so VM needs a row (and a place in the order: `gen/view` uses it) first.
-5. **IMPLEMENTATION-PLAN §12.5 is stale** (it says there is no `meta/`).
-6. **Absolute-path denies** in `.claude/settings.local.json` (ADR-0001): a new sibling
+2. **Review DECISIONS 53–98** (autonomous, tonight), with the spec edits of 93–97. With
+   DECISIONS 68: rename `api/canon.go` to `project.go` when API.md §1, CLI.md §5 and README.md
+   are next edited.
+3. **IMPLEMENTATION-PLAN §12.5 is stale** (it says there is no `meta/`).
+4. **Absolute-path denies** in `.claude/settings.local.json` (ADR-0001): a new sibling
    service must be added to both lists.
-7. **`make check-real`** (DECISIONS 29) lands with the real-data job (M3).
+5. **`make check-real`** (DECISIONS 29) lands with the real-data job (M3).
 
 ## Verify queue
 
-- Once `internal/diag` compiles: `GOTOOLCHAIN=local make check` green (it was checked
-  green for everything but `internal/` on a copy); tick M0.2, M0.3, M0.5, M0.6 in plan.md.
 - `go test -race ./...` in CI (green locally).
 - The hooks, once enabled: a session start prints the orientation block; a Write under
   `../../Resource` is refused by `guard-outside.py`.

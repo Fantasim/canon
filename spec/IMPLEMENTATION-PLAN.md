@@ -116,6 +116,7 @@ one position type; JSON sources get their own syntax tree (`jsonsrc`) because bo
 | `lock` | `canon.lock` parse, print, append, rules `E6xxx` | LOCK.md | value, project |
 | `rules` | record and package checks, `fail`/`warn`, test blocks and `expect` | EVALUATION.md (checks, tests), SPEC §10, §18 | eval, verify |
 | `i18n` | key catalogue, translation files, fallback, `i18n stub`/`status` | I18N.md | check |
+| `api/vm` (package `vm`) | view-model Go structs, generated from `spec/viewmodel.schema.json`; `ViewModel.Decode` targets them (API.md §5.4) | VIEWMODEL.md, viewmodel.schema.json | — |
 | `views` | view resolution (groups, controls, labels, `when`/`show`, usage, search index) shared by `gen/view` and `Evaluate` | VIEWMODEL.md, MOCKUP-GAPS | check, eval, i18n |
 | `ir` | target-neutral emit IR (§4.5 of this plan), fingerprint, emit validation (stage E), portable-subset check (`E9xxx`) | §4.5, FINGERPRINT.md, CODEGEN.md (what the IR must carry) | check, verify, value, types |
 | `conform` | conformance vector selection and expected results | CONFORMANCE.md | ir, eval |
@@ -250,7 +251,7 @@ type Type interface {
 }
 
 type Basic struct { K Kind; Bits int; Signed bool }   // Int8..UInt64 are Int + bits (TYP-03); Float32 is Float + 32
-type Refined struct {                                   // not a kind: Kind() is Of's (TYPES.md §2 `Refined`)
+type Refined struct {                                   // not a kind: Kind() is Of's (TYPES.md §2, refinements)
     Of Type; Ranges []Bound; Pattern *regexp.Regexp; Where *Predicate
     Asset *AssetSpec                                    // asset(root, ext: […]): a String refinement (TYPES.md §13.4)
 }                                                       // checked at storage points (EVALUATION.md §4.3)
@@ -269,13 +270,13 @@ type Field struct {
 type VariantType struct { Pkg, Name, Tag string; Cases []*CaseType; Decl *syntax.VariantDecl }
 type CaseType struct { Variant *VariantType; Name, Wire string; Index int; Fields []*Field; Retired bool }
 
-type ListType struct { Elem Type; KeyedBy *Field }   // TYPES.md `KeyedList` is a List with KeyedBy != nil
+type ListType struct { Elem Type; KeyedBy *Field }   // TYPES.md §2: a keyed list is a List with KeyedBy != nil
 type MapType struct { Key, Value Type }
 type DepMapType struct { Coll *Collection; Param string; Value *TypeFunc }
 type TableType struct { Elem Type; Stable bool }
 type RefType struct { Target *Collection }
 type OptionalType struct { Elem Type }
-type LitUnionType struct { Base Type; Literals []string }     // TYP-09
+type LitUnionType struct { Of Type; Literals []string }       // TYP-09; `Base` would clash with the method (DECISIONS 77)
 type AssetSpec struct { Root string; Exts []string }
 type FuncType struct { Params []Type; Result Type }             // GRM-15
 type PairType struct { A, B Type }                              // TYPES.md §12.5
@@ -395,9 +396,15 @@ type Finding struct {
 type Related struct { Span source.Span; Note string }   // notes: ERRORS.md §1.5
 type Frame struct { Fn string; Span source.Span }       // also used by value.Prov
 
-type Bag struct { /* collects findings concurrently; Sort() applies API.md F2; Truncate(n) applies F7 */ }
-func NewBag(files *source.FileSet, pkg string) *Bag
-func Render(w io.Writer, files *source.FileSet, findings []Finding, opt RenderOptions)   // text (DIAG-03) or JSON (API.md F5)
+// Resolves spans for sorting and rendering; *source.FileSet implements it (DECISIONS 81).
+type Files interface {
+    Path(id source.FileID) string                            // "" is no location
+    Position(id source.FileID, p source.Pos) (line, col int)
+    Content(id source.FileID) []byte
+}
+type Bag struct { /* collects findings concurrently; Findings() is sorted (API.md F2), deduplicated and truncated (F7) (DECISIONS 83) */ }
+func NewBag(files Files, pkg string) *Bag
+func Render(w io.Writer, files Files, findings []Finding, opt RenderOptions) error   // text (DIAG-03) or JSON (API.md F5); the error wraps ErrWrite
 ```
 
 - **One way to report.** A package reports a finding only as
@@ -432,9 +439,9 @@ type Package struct {
     Emits    []*Emit
 }
 
-type Type interface{ QName() string }   // *Record, *Enum, *Variant, *Dependent
+type Type interface{ QName() string }   // *Record, *Enum, *Variant, *Dependent; QName() is Pkg + "." + Name (DECISIONS 80)
 type Record struct {
-    QName, Name, Doc string
+    Pkg, Name, Doc string
     Fields  []*Field
     Methods []*ExportFn
     Cpp     CppOptions       // struct, header, access, field/type/name per field (CODEGEN.md §7.8, CPP-01)
@@ -458,11 +465,11 @@ type TypeRef struct {
     Ref     *RefTarget       // collection, same-value or by-key (CG-03), define value
 }
 type Pairs struct { Keys [2]string; Slots int }
-type Enum struct { QName, Name, Doc string; Members []EnumMember; Codes int; CppDefines string; JSONCodes bool }
+type Enum struct { Pkg, Name, Doc string; Members []EnumMember; Codes int; CppDefines string; JSONCodes bool }
 type EnumMember struct { Name, Wire, Doc string; Index int; Code int64; Retired bool }
-type Variant struct { QName, Name, Doc, Tag string; Cases []*Case }
+type Variant struct { Pkg, Name, Doc, Tag string; Cases []*Case }
 type Case struct { Name, Wire, Doc string; Fields []*Field; Retired bool }
-type Dependent struct { QName, Name string; BranchEnum string; BranchNames []string; Branches []Branch } // "<Alias>Branch" (CODEGEN.md §5.6)
+type Dependent struct { Pkg, Name string; BranchEnum string; BranchNames []string; Branches []Branch } // "<Alias>Branch" (CODEGEN.md §5.6)
 
 type Value struct {
     Name, Doc string
@@ -1275,7 +1282,7 @@ The module layout keeps packages inside the limits; each owner plans files per c
 | `eval`, `eval/std` | the interpreter by construct; the stdlib by receiver (`seq.go`, `keyed.go`, `map.go`, `string.go`, `math.go`, `graph.go`, `sort.go`) and `format.go` (canonical text, format specs) |
 | `wire` | decoding by kind (`decode_scalar.go`, `decode_record.go`, `decode_variant.go`, `decode_pairs.go`), `encode.go`, `float.go` (ECMAScript number text) |
 | `gen/go`, `gen/cpp`, `gen/ts` | one file per construct of CODEGEN.md §5. The runtime helper texts are **data, not Go**: `runtime/rt.go.txt`, `runtime/canon_runtime.h.txt`, `runtime/canon_runtime_json.h.txt`, `runtime/canon_runtime.ts.txt`, embedded with `//go:embed` and written out under their real names (`rt/rt.go`, …). No `.go` file of the compiler module holds them, so `go vet`, `go build` and the auditor never see them and no exemption exists (DECISIONS 26); the goldens pin their bytes, and `diag-check` their (code, text) pairs (ERRORS.md §1.6) |
-| `api` | `doc.go` (the package comment), `project.go`, `findings.go`, `value.go`, `ops.go`, `edit.go`, `evaluate.go`, `watch.go`, `build.go`, `errors.go`, `example_test.go`: the frozen contract `api/canon.go` (a single file of over a thousand lines; its package comment is already in `api/doc.go`) is split this way in M0, with no API change but one: the sentinel `ErrSyntax` that `*SyntaxError` wraps (API.md §15) is added to `api/errors.go`. The split lands with the example test and the first `cmd/canon` path that reaches the API, which use `ErrSyntax` and the stubs: added earlier, the sentinel alone would be an exported name no other package uses, and a test alone would make the auditor's `deadcode -test` report every stub unreachable |
+| `api` | `doc.go` (the package comment), `project.go` (kept as `canon.go` until the documents linking it are next edited, DECISIONS 68: options, FS, project, open and close, packages, revisions, overlays), `findings.go`, `value.go`, `ops.go`, `edit.go`, `evaluate.go`, `watch.go`, `build.go` (build and test, and the helpers `Format`, `FormatJSONSource` and `Version` of API.md §14), `errors.go`, `constants.go` (the enum types with their values, DECISIONS 69, and the unexported texts), `example_test.go` and the `example_<concern>_test.go` files beside it: the frozen contract `api/canon.go` (a single file of over a thousand lines; its package comment is already in `api/doc.go`) is split this way in M0, with no API change but one: the sentinel `ErrSyntax` that `*SyntaxError` wraps (API.md §15) is added to `api/errors.go`. The split lands with the example test and the first `cmd/canon` path that reaches the API, which use `ErrSyntax` and the stubs: added earlier, the sentinel alone would be an exported name no other package uses, and a test alone would make the auditor's `deadcode -test` report every stub unreachable |
 
 ### 12.5 Agent docs
 
