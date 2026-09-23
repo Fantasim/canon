@@ -60,3 +60,16 @@ func Example() {
 	// pipeline/out/go/potions.gen.go <nil>
 	// pipeline mode 3: import example.com/potions/rt import gitlab.com/sovereign15/sovcommon/time type pipeline.Potion const MAX_HEAL = 9000 value potions pipeline.Potion@f750790e
 }
+
+// A value's `$schema`: its type's name and the hash of its canon-fp v1 text.
+func ExampleSchema() {
+	deck := &ir.Record{Pkg: "teamboard", Name: "Deck", Fields: []*ir.Field{
+		{Name: "layouts", WirePath: []string{"layouts"}, Type: ir.TypeRef{Kind: types.List, Elem: &ir.TypeRef{Kind: types.String}}},
+		{Name: "maxHidden", WirePath: []string{"maxHidden"}, Type: ir.TypeRef{Kind: types.Int, Bits: 64, Signed: true}},
+	}}
+	root := ir.TypeRef{Kind: types.Record, Named: deck}
+	text, _ := ir.Fingerprint(&root, nil)
+	id, err := ir.Schema("teamboard", "deck", &root, nil)
+	fmt.Println(len(text), id, err)
+	// Output: 155 teamboard.Deck@02af81fb <nil>
+}

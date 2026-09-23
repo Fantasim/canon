@@ -1,5 +1,7 @@
 package ir
 
+import "github.com/fantasim/canonlang/internal/types"
+
 // The emit targets of CODEGEN.md §2.1.
 const (
 	TargetGo Target = iota
@@ -69,3 +71,61 @@ const (
 const NoBranch = -1
 
 const qnameSep = "."
+
+// The tokens of canon-fp v1 (FINGERPRINT.md §4.2).
+const (
+	fpHeader      = "canon-fp v1\n"
+	fpRoot        = "root "
+	fpFn          = "fn "
+	fpType        = "type @"
+	fpRecord      = " record params="
+	fpVariant     = " variant tag="
+	fpEnum        = " enum wire="
+	fpWireString  = "string"
+	fpWireCode    = "code"
+	fpCodes       = " codes="
+	fpCase        = "case "
+	fpMember      = "member "
+	fpCode        = " code="
+	fpField       = "field "
+	fpInline      = "inline"
+	fpPairs       = "pairs("
+	fpOpt         = " opt="
+	fpOptNo       = "0"
+	fpOptYes      = "1"
+	fpNoneKey     = " none="
+	fpUnit        = " unit="
+	fpEnc         = " enc="
+	fpNone        = "-"
+	fpNull        = "null"
+	fpNever       = "never"
+	fpKeyed       = "keyed("
+	fpDep         = "dep("
+	fpMap         = "map("
+	fpSourceField = "field"
+	fpSourceParam = "param"
+	fpSourceKey   = "key"
+	fpArgsOpen    = "<"
+	fpArgsClose   = ">"
+	fpPathOpen    = "["
+	fpPathClose   = "]"
+	fpComma       = ","
+	fpEquals      = "="
+	fpClose       = ")"
+	fpSpace       = " "
+	fpIndent      = "  "
+	fpNewline     = "\n"
+	fpAt          = "@"
+	fpDollar      = "$"
+	fpHashChars   = 8 // FINGERPRINT.md §2.1: the first 8 hex digits of the SHA-256
+	decimalBase   = 10
+)
+
+// fpComposites opens each composite type of §4.4 but the keyed list.
+var fpComposites = map[types.Kind]string{
+	types.List: "list(", types.Table: "table(", types.Optional: "opt(", types.Map: fpMap,
+	types.DepMap: fpMap, types.Ref: "ref(", types.LitUnion: "union(",
+}
+
+// fpEncNames is `enc=` of a field (§4.5).
+var fpEncNames = [...]string{types.EncPlain: fpNone, types.EncInt: "int", types.EncBits: "bits"}
