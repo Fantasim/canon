@@ -381,6 +381,235 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     GitLab for the benchmark runner, which stays open. `go.mod` now reads `go 1.25.0` and
     requires `golang.org/x/tools` for `txtar` (§11).
 
+66. **An API stub with an error result returns an `*InternalError` (`ErrInternal`, message
+    "unimplemented") instead of panicking; one without an error result still panics.** Reason:
+    API.md X2 lets no panic cross the API boundary where an error can carry it, and the
+    Examples must run through the entry points (decision 67).
+
+67. **The API's Examples all run** (each has an `// Output:`): the ones for implemented helpers
+    (constructors, error texts, `Version`) print real output; the others open `examples/` through
+    `FindProject`, get the stub error and print nothing, so they need their real `Output` at M4.
+    Their edits are `DryRun` and their builds `Check`, so running them never writes. Reason:
+    `go test` lists only Examples with an output comment in the test main, so a compile-only
+    Example is no root for `deadcode -test` and leaves every stub `dead-unreachable`.
+
+68. **`api/canon.go` keeps its name and holds what IMPLEMENTATION-PLAN §12.4 calls
+    `project.go`** (options, FS, Project, open and close, packages, revisions, overlays). Reason:
+    API.md §1, CLI.md §5 and README.md link `api/canon.go`, and agents may not edit the first
+    two; a rename would be three `dead-link` findings. It becomes `project.go`, the links
+    pointing at `api/`, when Louis next edits those documents.
+
+69. **API enum types are declared in `api/constants.go`, each above its constants**
+    (`Severity`, `ValueKind`, `OriginKind`, `EditMode`, `Reason`, `RefKind`, `OpKind`,
+    `ChangeKind`, `EventCause`, `Target`, `OutputStatus`), with `None`. Reason: `const-placement`
+    puts the values there, and Go declares an enum type with its values.
+
+70. **API doc comments are one line per exported declaration, citing the API.md rule; a field
+    comment stays only for a fact API.md does not state; stub bodies are written as blocks.**
+    Reason: `comment-ratio` (20%) and `comment-adr-narration` (a `§` only on a one-line
+    comment); API.md is the documentation, and a one-line doc over a one-line body is 50%.
+
+71. **`Version()` is implemented** (compiler `0.1.0`, language `0.1`, the three format
+    strings, the commit from the binary's `vcs.revision`), and `ViewModel.Decode` wraps the
+    JSON error with the package name. Reason: API.md §14 and CLI.md §3.14 fix every value of
+    `Version`, whose Example must run; `wrapcheck` refuses an unwrapped error.
+
+72. **`source` (M0.4) numbers files from 1 and normalizes on entry.** `NoFile` (0) is no file;
+    `FileSet.Add` turns `\r\n` into `\n` (a lone `\r` and a BOM stay for the lexer's `E1124` and
+    `E1123`), makes both paths `/`-separated, refuses content past `MaxInt32` bytes with
+    `ErrFileTooLarge`, and is safe for concurrent `Add` and `File`. `Locate` resolves a `Span` to
+    a `Location` (display path, line, column, end line, end column: API.md §1.3's shape) for
+    `diag` and `api`; `Span` gains `Len`, `Contains`, `Cover`. `File.Path` is given by the caller:
+    the `@root/...` display-path helper lands with `project` (M1), which knows the roots. Reason:
+    §4.1's sketch, with the one error a byte offset of `int32` forces and no guessed root logic.
+
+73. **Tokens and trivia (M0.4).** An interpolated string is several tokens: `STRING_HEAD`, the
+    expression's own tokens, an optional `FORMAT_SPEC`, then `STRING_MID`… `STRING_TAIL` (the same
+    four for multiline strings), so every node of an interpolation names tokens of `File.Tokens`.
+    `DOC` lines are trivia (`TriviaDocComment`), not tokens; a BOM is `TriviaBOM`; a character no
+    token starts with is an `ILLEGAL` token; the separator pass's `NL` is a zero-width token with
+    no trivia. A token's `Trailing` is its spaces and comments up to the line break; the break and
+    everything up to the next token are that token's `Leading`. Line-break counts are not stored:
+    they are the line numbers of the two tokens. Reason: a flat, lossless stream (§4.1, GRAMMAR §10)
+    in which FORMATTER §8.1's attachment is read off the tokens.
+
+74. **The node contract (M0.4).** `Node` is `First`, `Last`, `Kind` and an unexported `children`
+    method (the closed set, and the walker's per-type dispatch: `Walk`, `Inspect`, `Children`);
+    `NodeKind` has one value per node type, printed as the type's name. `File` is the root node,
+    so §4.1's field `Kind FileKind` is named `FileKind`. Nodes embed `Bounds{From, To}`; a node
+    whose list brackets are not its own bounds records them as `Delims`; a `DocComment`'s bounds
+    are its host token and `File.Span` gives its own lines. Reason: every node walkable and
+    spanned, with no size-limit exemption for a type switch over 119 kinds.
+
+75. **The node set differs from §4.1's list, each time as GRAMMAR.md requires.** Fourteen added:
+    `AnnotationList`, `RecordBody` (records and cases share it), `AmendSegment`, `ProjectEntry`,
+    `ProjectList`, `ProjectMap` (GRAMMAR §7: project values are not expressions), `ViewPlural`
+    (`plural`, MOCKUP-GAPS 25), `ViewColumn`, `ViewFilter`, `TypeArgs`, `TypeArm` and `StmtArm`
+    (arms typed by position, beside `MatchArm`), `ParenType` (FORMATTER §11 keeps parentheses),
+    `ExprBody`; `Interp` and `File` are nodes too. Two removed: `ItExpr` (`it` is an ordinary
+    identifier, GRAMMAR §4.2 over the list; `check` resolves it, `E2109`) and `MapComp` (GRAMMAR
+    §5.12: a comprehension is a `BraceLit` with `Clauses`, as `check.Info.Literals` already
+    assumes). Contextual keywords stay `IDENT` tokens; a node keeps them as a `Tok` or an `Ident`,
+    and records a keyword alternative as a `TokenKind` (`CheckDecl`, `Pattern`, `CompClause`,
+    operators) rather than a new enum. `Modifiers` holds `local`, `export`, `retired` wherever one
+    may appear, for `E1133`. Reason: GRAMMAR §10 (one node per production, lossless) wins on
+    behaviour; the production table test holds every GRAMMAR production mapped to node kinds and
+    every kind to a production.
+
+76. **Literal nodes carry exact values.** `IntLit` a signed `*big.Int` (unary `-` folded),
+    `FloatLit` the decimal `Coef × 10^Exp` (a `big.Rat` of `1e999999999` would exhaust memory),
+    `DurationLit` signed milliseconds, `StringLit` decoded parts, `RegexLit` the body with `\/`
+    replaced. A shorthand lambda's body is its postfix chain, rooted at a `SelectorExpr` whose `X`
+    is nil; `else if` chains are an `ElseIf` field. Reason: GRAMMAR §2.4–§2.7 (the lexer holds
+    exact values, nothing rounded) with a bounded representation.
+
+77. **`types` (M0.4) is a representation with its text form, no judgment.** `R(args)` is
+    `*types.AppliedRecord` of kind `Record` (TYPES §2 lists `R(args)` under `Record`) and
+    `F(args)` a `*types.TypeAppType` of kind `TypeApp`, where §4.2 folded both into one struct.
+    Type arguments are resolved stable paths (`types.Arg`: parameter, earlier field or map binder,
+    then fields), and a type function holds its resolved `Scrutinee` and `Arms`, not the syntax of
+    its `match`: verify, the IR and the fingerprint read them without resolving again. `Underlying`
+    and `Base` strip the top layer only; a `Refined` holds one written refinement (range, pattern,
+    `where`, asset) and a refined named type nests them; an `Alias` has no parameters (that is a
+    `TypeFunc`); `LitUnionType`'s alternative is `Of` (a field `Base` clashes with the method).
+    Collections are interned by the checker: two refs have the same target exactly when their
+    `*Collection` pointers are equal. A field carries its wire mapping resolved (`Wire`,
+    `WirePath`, `Inline`, `NoneWire`, `Unit`, `Enc`, `Pairs`), so `JSONCase` and `HasDefault` are
+    gone; target annotations stay raw (`Annotations`) for `ir`. `Identical`, `Assignable` and
+    `Join` (§4.2) land with the checker in M1, as sketched: written now they would be stubs.
+    Reason: the strictest typing of §4.2 that compiles, with nothing dead.
+
+78. **Canonical type text.** Names are package-qualified; a ref prints its collection
+    (`ref teamboard.statuses`), or its element type when it is resolved in an enclosing record
+    (`ref resource.rules.TalentNode`), so two refs into different collections never print alike
+    (`E3309`); a `where` prints its source text; the unwritable kinds print `Kind(V)`, `Pair(A, B)`,
+    `F(*)`, `none`, `_`, and the error type `invalid`. `FloatText`, `DurationText` and
+    `QuoteString` (STD-06) live in `types`, the lowest package that prints them (refinement
+    bounds), and `value` uses them. Reason: TYPES.md prints types in Canon syntax without fixing
+    these cases, and one text form avoids a second formatter.
+
+79. **`value` (M0.4): pointer values, the pointer is the instance.** Copies share the instance
+    (EVALUATION §4.2), so once-per-instance checks and invalid marks key on the pointer; poison,
+    invalidity and taint are evaluator state, never value fields. Every typed value holds
+    `T types.Type` (a declared type may be an alias or refined). Added to §4.3: `CaseKind` (the
+    value of `v.kind`), `Pair`, `Symbol` (a bare identifier given to a dependent field, kept
+    until verification resolves it, TYPES §11.4), `Identity.Owner` and `Ref.Owner` (a collection
+    held by a field is one per enclosing instance), `Prov.MoreFrames` (EVALUATION §13's count of
+    omitted frames), `Key.Text`, `Map.Get`; a record's input-field slot is nil. `Equal` expects
+    converted operands: a ref against a value without identity is unequal (the evaluator
+    dereferences first), and a value type of another package (the evaluator's function values)
+    equals only itself. `value.Text` is dropped: `CanonText` is the one way. Reason: identity
+    and immutability as EVALUATION §4 states them, with no field the evaluator could mutate.
+
+80. **`ir` (M0.4): pointers, typed options, per-instance results.** A `TypeRef` points at the IR
+    type (`Named`, of this package or an imported one) instead of naming it, so the fingerprint
+    walks the type graph across packages; `Type.QName()` is computed from `Pkg` and `Name` (a
+    `QName` field clashes with the method). `$schema` is per emitted value (`Value.Schema`,
+    FINGERPRINT §2), not per record. Emit options are typed (`GoPackage`, `Namespace`, `Target`,
+    `Mode`), no map. A field keeps `WirePath` only, and its constant `Default`, with `Computed`
+    for a default that reads other fields (`E8014`). Methods keep one `Instance` per receiver
+    (result, or lookup table); package fns a `Value` or a `LookupTable` (domains in domain
+    order, dense cells); translated fns a typed `PExpr` body (statements folded into `Let` and
+    `If`, enum members as `Lit`), their `Reads` of self, parameter and result ranges, and
+    `Vector`s with the Go and C++ expectation beside TypeScript's. A dependent type keeps its
+    discriminant (parameter, wire path, type), its branches in arm order and each member's
+    branch (`NoBranch` for Never), which is what CODEGEN §5.6 and FINGERPRINT §4.4 read. An
+    input field keeps its own range and pattern (CODEGEN §5.12), and the package lists the
+    define tables its refs target, sorted by name (CODEGEN §5.8). `ir.File` and `ir.Generator`
+    fix §4.5's generator signature. Reason: every fingerprint input and every construct of
+    CODEGEN §5 is carried, typed, without map order reaching an output.
+
+81. **`diag` (M0.4) resolves spans through a `diag.Files` interface, not `*source.FileSet`**:
+    `Path(id)`, `Position(id, pos)` and `Content(id)`; a file whose `Path` is `""` is no location
+    (how a `NoFile` span renders). `NewBag(files, pkg)` and `Render(w, files, findings, opt)`
+    take it, and `Render` returns an `error` wrapping `ErrWrite` (§4.4's sketch has none, but a
+    writer can fail). `*source.FileSet` satisfies it with three one-line methods over `File(id)`,
+    or `build` adapts it. Reason: M0.4 let `diag` import only `FileID`, `Pos` and `Span`, and an
+    interface keeps every renderer test free of a file set.
+
+82. **`diag.Finding` gains `MoreFrames` and `Reads`; the builder gains `MoreFrames(n)` and
+    `Reads(fields)`.** `Stack(frames)` keeps the 16 innermost and counts the rest; `MoreFrames`
+    adds the frames a provenance already cut (EVALUATION.md §13 keeps "a count of omitted
+    frames"). Reason: F13 prints `(<n> more frames)` and F5 writes `reads` (API.md §4.1,
+    VIEWMODEL.md J15), neither expressible with §4.4's field list.
+
+83. **The `Bag` is a view, not a state machine**: it keeps `DefaultMaxFindings` (1000) until
+    `Truncate(n)` (a negative `n` keeps none); `Findings()` and `Summary()` always return the
+    sorted (F2), deduplicated (EVALUATION.md §14; "the first produced" is the first added) and
+    truncated (F7) view, whatever the call order; `Summary()` counts the dropped findings and
+    names them in `Truncated`; `Summary.Merge` adds counts and sorts `Truncated` by package.
+    There is no exported `Sort`: `Render` sorts a copy of what it is given (F2 across packages).
+    Reason: no result depends on when `Truncate` or a late `Report` happened.
+
+84. **Text-form details API.md §4.4 leaves open**: every line is trimmed of trailing spaces (F9's
+    "No line ends with a space" read as a rule of the whole form, so an empty line of a
+    multi-line message is empty); a related location or frame without a file writes no location
+    (`expected by (check)`, `in f`); `(<n> more frames)` has no singular (F13 writes one form);
+    a negative duration renders as 0; `RenderOptions.Golden` writes `(…)` in the text form only,
+    the JSON summary always writes `ms`; the JSON summary line is
+    `{"summary":{"errors","warnings","packages","ms"[,"truncated"]}}`, `truncated` last (CLI.md
+    §2.4 "gains"). Reason: the strictest reading of each rule, and one byte-exact output.
+
+85. **One JSON string codec, in `diag`**: `AppendJSONString` writes WIRE.md §7.3's form (invalid
+    UTF-8 as U+FFFD) for findings (F5), `canon.lock` values and built paths; `UnquoteJSON` reads
+    an RFC 8259 string strictly (a control character, invalid UTF-8 and an unpaired surrogate
+    escape are refused, as WIRE.md §3.2), for `edit` and `lock`. `diag` is the lowest package all
+    of them import; `jsonsrc` and `wire` should reuse it. Reason: `encoding/json` escapes `<`,
+    `>`, `&`, U+2028 and U+2029, which WIRE.md §7.3 forbids, and three encoders would drift.
+
+86. **Argument renderings ERRORS.md §1.3 leaves open**: a `Pointer` argument is a plain RFC 6901
+    pointer (like `Finding.Pointer`), rendered `#` plus the pointer percent-encoded as an RFC 3986
+    fragment (RFC 6901 §6), so the sample of `builder_test.go` is now `/modelTypes/3`; `Expr`
+    replaces each run of space, tab, LF or CR by one space without trimming; a nil `Type` or
+    `Value` renders empty. The note templates of §1.5 are constants of `diag`, held equal to
+    ERRORS.md by `TestNotesFollowErrorsMD` (the generator does not read §1.5). Every one of the
+    438 messages renders (435 through their constructors, the 3 runtime codes from typed
+    samples), pinned by `internal/diag/testdata/messages.txtar`. Reason: "`#` then the pointer"
+    is a rendering, so the argument is the pointer itself.
+
+87. **Edit paths (M0.4, API.md §6.1)**: `KeyLit` gains `Raw`, the key as written, so `String()`
+    prints exactly what `Parse` read (`Parse(s).String() == s`, fuzzed); `Text` is the word or
+    the decoded string, `Int` the integer; a key built without `Raw` prints in its kind's form.
+    `[-0]` is accepted (the grammar allows `-` then `0`) and reads 0; a key or position past
+    `int64`/`int` is `ErrBadPath`; words are ASCII with `_` a letter and `_` alone refused (SPEC
+    §2.4). `edit.ErrBadPath` is `edit`'s own sentinel, which the API maps to `canon.ErrBadPath`
+    (`edit` cannot import `api`). `Step`, `Resolved` and `Resolve` wait for M4: they need
+    `types.Type`, `value.Value` and a snapshot. Reason: an exact round trip is the strictest
+    reading of "as parsed" and what §7.7's fuzz target checks.
+
+88. **Reading `canon.lock` (LOCK.md §2.4) tolerates exactly what it lists**: `Parse(id, data,
+    pkg, bag)` reports `E6005` per bad line and returns `(file, ok)`. A blank line is empty or
+    spaces only; separators are runs of spaces (a tab is not one), and a leading or trailing
+    space fails the line; a JSON string is one field, spaces included; a missing final LF is
+    read. A line starting with a conflict marker is `merge`, even before the header. The first
+    other non-blank line must be the header: `# canon.lock v<n>` with `n` a canonical numeral
+    other than 0 and 1 is `version` and stops the reading (a newer format is not judged);
+    anything else is `header`, that line is not read as a fact, the next ones are; no non-blank
+    line is `header` at offset 0. A first field other than `table`, `enum`, `field` is `kind`
+    (a repeated header is kind `#`); a name whose segments are not identifiers is `syntax`, a
+    well-formed name of another package or with a segment too many or too few is `package`;
+    enum codes are integers; `-0` reads 0; an integer past `int64` is `syntax` (TYPES.md §7.2
+    caps `UInt64` at `int64`). Reason: every tolerance of §2.4, nothing more.
+
+89. **The `canon.lock` model**: a `File` is a set in canonical order (LOCK.md §2.3: kind bytes,
+    written name bytes, value, holder; integers before strings should one name hold both); a
+    table fact's value is its key, so it sorts by holder; identical facts merge, `retired`
+    wins, and a merged fact keeps its first `Span` (E6002 names "the second lock line"). `Format`
+    is byte-exact on LOCK.md §9.1 and §9.6 (their stated sizes and SHA-256 checked by the test
+    that reads them from LOCK.md) and on `examples/teamboard/expected/canon.lock`. The per-code
+    cases `internal/lock/testdata/findings/E6005_<n>.txtar` hold a `findings.txt` section, which
+    lock's test compares and rewrites under the golden harness's `-update` (`golden.Run` writes
+    a `want` file, while IMPLEMENTATION-PLAN §7.2 names the section `findings.txt`). Reason: the
+    set semantics of §2.4 and goldens written by the tool.
+
+90. **`project` schema types (M0.4)**: `Project{Name, Canon, Roots, Languages, Studio, Budget,
+    GoModules}`, `Roots` and `GoModules` in name order, `Root`, `GoModule` and `Studio` with the
+    span that names them (for `E1009`, `E1012`); `New(name, canon)` fills the defaults; `Budget`
+    0 means not declared and the evaluator's default applies (IMPLEMENTATION-PLAN §12.4 names the
+    default budget in `eval`); `DefaultLanguage` is `en`; the supported versions are `0.1`. No
+    parser and no validation before M1. Reason: §7.1's schema as data, with no default guessed
+    twice.
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.
