@@ -1,0 +1,11 @@
+LOCK.md §2.4, §10: a newer version is refused and nothing else of the file is read.
+-- teamboard/canon.lock --
+
+# canon.lock v2
+table  teamboard.statuses  open
+not a fact
+-- findings.txt --
+error[E6005]  teamboard/canon.lock:2:1
+  canon.lock: version 2 is newer than this canon
+
+1 error, 0 warnings in 1 package (…)

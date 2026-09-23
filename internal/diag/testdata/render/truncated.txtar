@@ -1,0 +1,16 @@
+Two findings kept of five (API.md F7), with a second package's summary merged (text_test.go).
+-- teamboard/canon.lock --
+line 1 of the file
+line 2 of the file
+line 3 of the file
+line 4 of the file
+line 5 of the file
+line 6 of the file
+-- want --
+error[E1004]  teamboard/canon.lock:1:1
+  project.canon must declare "canon"
+
+error[E1004]  teamboard/canon.lock:2:1
+  project.canon must declare "canon"
+
+5 errors, 1 warning in 2 packages, 3 not shown (12 ms)

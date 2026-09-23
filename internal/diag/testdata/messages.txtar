@@ -1,0 +1,443 @@
+Every message of spec/ERRORS.md rendered from the samples of builder_test.go
+(render_test.go); written by -update, reviewed like code.
+-- want --
+E1001 -: project requires Canon 0.9; this compiler supports go, cpp
+E1002 -: unknown project key "resource.vocab.items"
+E1003 -: no project.canon found in @resource/Server/Item/propItem.json or its parents
+E1004 -: project.canon must declare "canon"
+E1005 key: duplicate key "resource.vocab.items" in project.canon
+E1005 root: duplicate root "resource.vocab.items" in project.canon
+E1006 canon: "canon" must be a string
+E1006 roots: "roots" must be a map of root names to path strings
+E1006 languages: "languages" must be a non-empty list of language codes
+E1006 studio: "studio" must be a package name
+E1006 budget: "budget" must be an integer of at least 1
+E1006 goModule: "go_module" must be a map of root names to module path strings
+E1007 name: invalid root name "resource.vocab.items": a root name is an identifier
+E1007 empty: invalid root "resource.vocab.items": the path is empty
+E1007 absolute: invalid root "resource.vocab.items": the path is absolute
+E1007 backslash: invalid root "resource.vocab.items": "\" is not a path separator; write "/"
+E1008 invalid: invalid language code "resource.vocab.items"
+E1008 duplicate: language "resource.vocab.items" listed twice
+E1009 root: go_module: "resource.vocab.items" is not a declared root
+E1009 path: go_module: the module path of root "resource.vocab.items" is empty or contains a space
+E1010 -: "canon" must be "MAJOR.MINOR", found "0.9"
+E1011 outside: a project declaration is only allowed in project.canon
+E1011 inside: project.canon may only contain the project declaration
+E1012 -: studio package "resource.vocab.items" does not exist
+E1101 -: invalid format spec "0.9": expected [+][,][.N] with N at most 20
+E1102 -: multiline string indentation mixes tabs and spaces
+E1103 -: a type takes one refinement; use "where" for more
+E1104 annotation: unknown annotation @resource.vocab.items
+E1104 argument: @resource.vocab.items has no argument "resource.vocab.items"
+E1105 -: resource.vocab.items() may only be called inside a check block
+E1106 -: unexpected character 0.9
+E1107 -: unterminated string
+E1108 -: unterminated block comment
+E1109 -: invalid escape sequence "0.9"
+E1110 -: invalid number literal "0.9"
+E1111 order: invalid duration "0.9": units must decrease (d, h, m, s, ms)
+E1111 repeated: invalid duration "0.9": unit resource.vocab.items is repeated
+E1111 fraction: invalid duration "0.9": a fraction is not allowed; use a smaller unit
+E1111 trailing: invalid duration "0.9": digits without a unit
+E1111 overflow: invalid duration "0.9": it does not fit a signed 64-bit count of milliseconds
+E1112 empty: invalid interpolation: {} is empty
+E1112 newline: invalid interpolation: a line break inside it
+E1112 comment: invalid interpolation: a comment inside it
+E1112 unterminated: invalid interpolation: no closing }
+E1112 brace: invalid interpolation: a lone } in text; write }} for a brace
+E1113 -: unterminated regular expression
+E1114 -: invalid regular expression: 0.9
+E1115 -: a regular expression is only allowed as a type refinement or the argument of matches()
+E1116 token: expected go, cpp; found 0.9
+E1116 eof: expected go, cpp; found the end of the file
+E1117 -: missing separator: put "," or a new line between items
+E1118 -: @resource.vocab.items is not allowed on this enum member
+E1119 missing: @resource.vocab.items: argument "resource.vocab.items" is missing
+E1119 kind: @resource.vocab.items(resource.vocab.items): expected a constant string
+E1119 value: @resource.vocab.items(resource.vocab.items): expected one of go, cpp
+E1119 exclusive: @resource.vocab.items: "resource.vocab.items" and "resource.vocab.items" exclude each other
+E1119 needs: @resource.vocab.items: "resource.vocab.items" needs "resource.vocab.items"
+E1119 codes: @json(codes) needs @codes on the same enum
+E1120 -: @resource.vocab.items given twice; combine the arguments
+E1121 order: positional argument after a named argument
+E1121 twice: argument "resource.vocab.items" given twice
+E1122 open: multiline string: text after the opening """
+E1122 close: multiline string: the closing """ must be the first text of its line
+E1122 indent: multiline string: this line does not start with the indentation of the closing """
+E1123 -: file starts with a byte order mark
+E1124 utf8: invalid UTF-8
+E1124 control: control character U+001F
+E1124 cr: stray carriage return
+E1125 -: "resource.vocab.items" is a reserved word and cannot name this const
+E1126 -: "resource.vocab.items" cannot name an enum member, variant case or table key
+E1127 package: a file must start with "package"
+E1127 imports: imports must precede declarations
+E1127 layer: layer files contain only amend declarations
+E1127 translation: translation files contain only translation entries
+E1127 secondPackage: a file has exactly one package clause
+E1128 -: comparisons do not chain: write "a < b and b < c"
+E1129 -: parenthesize this expression: "{" here would start the block
+E1130 -: expect is only allowed in a test block
+E1131 missing: an input field needs from env "VAR"
+E1131 noInput: "from env" requires "input"
+E1132 -: this string must be constant (no interpolation)
+E1133 -: "resource.vocab.items" is not allowed on this case
+E1134 -: resource.vocab.items outside a loop
+E1135 -: return outside a function
+E1136 -: a comprehension literal has exactly one item
+E1137 -: "keyed by" applies to a list type
+E1601 -: control resource.vocab.items does not accept Int (field resource.vocab.items)
+E1602 -: resource.vocab.items has no field, method, case or member named resource.vocab.items
+E1603 -: a view of resource.vocab.items must be declared in package resource.vocab.items
+E1605 -: resource.vocab.items is placed twice in view resource.vocab.items (first at @resource/Server/System/farm_config.json:1)
+E1606 columns: resource.vocab.items is not a field of resource.vocab.items: columns name fields only
+E1606 filters: resource.vocab.items is not a field of resource.vocab.items: filters name fields only
+E1607 -: resource.vocab.items already has a view at @resource/Server/System/farm_config.json:1
+E1608 -: widget resource.vocab.items takes Int, not Int (field resource.vocab.items)
+E1609 -: resource.vocab.items is not a built-in control (VIEWMODEL.md §4.5 lists them)
+E1610 -: unknown icon resource.vocab.items: not declared in studio package resource.vocab.items
+E1611 -: unit applies to numbers and to lists and maps of numbers, not Int
+E1612 -: preview must be an asset, not Int
+E1613 property: resource.vocab.items is not a property of this case
+E1613 width: column width -42 is out of range: widths go from 16 to 2000
+E1614 -: the label of resource.vocab.items is declared twice (first at @resource/Server/System/farm_config.json:1)
+E1615 -: { in plain text: labels, help, intros, placeholders and none texts are not templates (write {{)
+E1616 -: method resource.vocab.items takes parameters: a view may name only methods without parameters
+E1617 group: duplicate group id resource.vocab.items in view resource.vocab.items (first at @resource/Server/System/farm_config.json:1)
+E1617 show: duplicate show id resource.vocab.items in view resource.vocab.items (first at @resource/Server/System/farm_config.json:1)
+E1618 -: resource.vocab.items is reserved: ids starting with _ belong to the compiler
+E1619 lower: slider needs both bounds, and Int has no lower bound
+E1619 upper: slider needs both bounds, and Int has no upper bound
+E1620 -: cannot filter on Int (field resource.vocab.items)
+E1621 -: multi applies to enum, ref, case and list filters, not Int
+E1622 -: a search term must be text, a number, an enum, a ref or an asset, not Int
+E1623 -: a step text may only use {index}, not {resource.vocab.items}
+E1626 -: resource.vocab.items is a value that does not come from load.defines: only define tables take a view
+E1627 -: resource.vocab.items is not allowed in the view of this case
+E1628 -: resource.vocab.items names case fields of different types (go, cpp): name them in the case views
+E1629 -: resource.vocab.items has two default widgets: resource.vocab.items and resource.vocab.items
+E1630 -: a default widget needs a named record, variant or enum type, not Int
+E1631 -: siblings must be a list of the value type: expected [Int], got Int
+E1632 -: @menu applies to public top-level values only
+E1633 -: at resource.vocab.items: resource.vocab.items has no field resource.vocab.items
+E1634 -: field resource.vocab.items has both control and widget
+E1702 plain: translation key resource.vocab.items matches no text of package resource.vocab.items
+E1702 noLetter: translation key resource.vocab.items matches no text of package resource.vocab.items: its source text has no letter, so it is not translatable
+E1702 form: translation key resource.vocab.items matches no text of package resource.vocab.items; write resource.vocab.items
+E1703 -: translation of resource.vocab.items: project.canon must declare "canon"
+E1704 -: language resource.vocab.items is not in project.languages (go, cpp)
+E1705 -: translation key resource.vocab.items is given twice (first at @resource/Server/System/farm_config.json:1)
+E1706 -: resource.vocab.items is the source language: its texts are the sources, not a translation file
+E1707 -: resource.vocab.items is plain text: its translation cannot interpolate (write {{ for a brace)
+E1901 -: no loaded package declares layer resource.vocab.items
+E1902 -: amend resource.vocab.items: only a let can be amended
+E1903 -: resource.vocab.items has input fields, so it must be reached from exactly one public value through record fields
+E1904 -: pattern /0.9/ is not in the portable subset: 0.9
+E1905 field: amend path resource.vocab.items: no such field
+E1905 key: amend path resource.vocab.items: key "II_SYS_SYS_SCR_FARM3" does not exist
+E1905 index: amend path resource.vocab.items: index -42 out of range
+E1905 none: amend path resource.vocab.items: passes through none
+E1905 caseField: amend path resource.vocab.items: case resource.vocab.items has no field resource.vocab.items
+E1906 -: package resource.vocab.items declares layer resource.vocab.items twice (first at @resource/Server/System/farm_config.json:1)
+E1907 -: input resource.vocab.items cannot have a default
+E1908 twice: amend path resource.vocab.items is set twice in layer resource.vocab.items
+E1908 overlap: amend path resource.vocab.items overlaps resource.vocab.items in layer resource.vocab.items
+E1909 -: amend resource.vocab.items: layers amend values of their own package only
+E1910 -: input resource.vocab.items: type Int cannot be read or checked at run time
+E1911 -: 0.9 is not a valid environment variable name
+E2001 -: directory @resource/Server/Item/propItem.json holds files of packages resource.vocab.items and resource.vocab.items
+E2002 -: import cycle: a -> b -> a
+E2003 -: unknown package resource.vocab.items
+E2004 -: resource.vocab.items has no public resource.vocab.items
+E2005 -: resource.vocab.items is bound twice in this file (first at @resource/Server/System/farm_config.json:1)
+E2006 -: a file in @resource/Server/Item/propItem.json declares package resource.vocab.items, which is neither that directory's package nor an ancestor of it
+E2101 -: resource.vocab.items is ambiguous: resource.vocab.items or the field resource.vocab.items; write it qualified
+E2102 plain: unknown name resource.vocab.items
+E2102 hint: unknown name resource.vocab.items (did you mean resource.vocab.items?)
+E2103 none: ref resource.vocab.items: there is no collection of resource.vocab.items; write ref <collection name>
+E2103 several: ref resource.vocab.items: several collections of resource.vocab.items (go, cpp); write ref <collection name>
+E2104 -: resource.vocab.items has a field and a method named resource.vocab.items
+E2105 entry: resource.vocab.items is reserved on table entries
+E2105 case: resource.vocab.items is reserved on variant cases
+E2106 -: resource.vocab.items is declared twice (first at @resource/Server/System/farm_config.json:1)
+E2107 -: resource.vocab.items is already declared in this block
+E2108 -: self is only valid in a record or case body
+E2109 -: it is only valid in a refinement predicate
+E2110 type: resource.vocab.items is a type, not a value
+E2110 value: resource.vocab.items is a value, not a type
+E3001 -: public value resource.vocab.items needs a type annotation
+E3002 -: expected Int, found Int
+E3003 -: Int has no case resource.vocab.items
+E3004 many: too many arguments in call to resource.vocab.items
+E3004 missing: missing argument resource.vocab.items in call to resource.vocab.items
+E3004 unknown: unknown argument resource.vocab.items in call to resource.vocab.items
+E3005 -: Int is not callable
+E3006 -: resource.vocab.items can finish without returning a Int
+E3007 binary: operator resource.vocab.items is not defined for Int and Int
+E3007 unary: operator resource.vocab.items is not defined for Int
+E3008 -: cannot infer the type of this expression; add a type
+E3010 -: a default may use only constants, earlier fields, parameters and built-ins
+E3011 -: Int cannot be a map key
+E3012 field: keyed by resource.vocab.items: no such field
+E3012 type: keyed by resource.vocab.items: type Int cannot be a key
+E3013 -: a table holds records; Int is not a record
+E3015 -: this code must be a constant expression
+E3016 -: built-in resource.vocab.items cannot be used as a value; write a lambda
+E3017 -: cannot assign to resource.vocab.items: it is not a var
+E3018 -: for resource.vocab.items, resource.vocab.items in needs a map or pairs, found Int
+E3019 -: return in resource.vocab.items needs a value of type Int
+E3020 -: this expression has no effect
+E3021 -: type alias resource.vocab.items refers to itself
+E3022 -: resource.vocab.items contains itself and can never be built
+E3023 invalid: refinement a b is not valid on Int
+E3023 empty: range a b is empty
+E3025 -: a Range value must have Int bounds and a start
+E3101 -: duplicate key resource.vocab.items in resource.vocab.items (first at @resource/Server/System/farm_config.json:1)
+E3102 key: key "II_SYS_SYS_SCR_FARM3" is used twice (first at @resource/Server/System/farm_config.json:1)
+E3102 code: code -42 is used twice (first at @resource/Server/System/farm_config.json:1)
+E3102 stable: @stable value "II_SYS_SYS_SCR_FARM3" is used twice (first at @resource/Server/System/farm_config.json:1)
+E3103 target: entry resource.vocab.items.resource.vocab.items: resource.vocab.items is not a table or keyed list of this package
+E3103 literal: entry resource.vocab.items.resource.vocab.items: resource.vocab.items must be initialized with a table or list literal
+E3103 retired: retired entry needs a table
+E3201 -: "II_SYS_SYS_SCR_FARM3" does not fit Int
+E3202 nonFinite: "II_SYS_SYS_SCR_FARM3" is not a finite number
+E3202 float32: "II_SYS_SYS_SCR_FARM3" overflows Float32
+E3203 -: 0.9 is not a whole number of milliseconds (resource.vocab.items on the wire)
+E3204 -: "II_SYS_SYS_SCR_FARM3" is outside a b
+E3205 -: "II_SYS_SYS_SCR_FARM3" does not match /0.9/
+E3206 -: "II_SYS_SYS_SCR_FARM3" fails where a b
+E3301 -: Int has no field resource.vocab.items
+E3302 -: Int needs field resource.vocab.items
+E3303 -: cannot spread a Int into a Int
+E3304 -: map key resource.vocab.items would be a variable; write "resource.vocab.items": or (resource.vocab.items):
+E3305 -: cannot tell what this { … } is; give it a type
+E3306 -: a function type is not allowed here
+E3307 -: fields cannot be assigned; rebuild the value with { ...x, resource.vocab.items: … }
+E3308 -: branches have incompatible types Int and Int
+E3309 -: Int and Int reference different collections
+E3310 -: resource.vocab.items needs an orderable type, found Int
+E3311 -: a b is an Int; write Float(a b)
+E3312 -: resource.vocab.items is an input: it cannot be given a value
+E3313 -: resource.vocab.items is an input: it has no value at build time
+E3314 -: cannot sum a list whose element type is unknown
+E3315 field: null for resource.vocab.items, which is not optional
+E3315 type: null where Int is required
+E3316 collision: wire key resource.vocab.items of resource.vocab.items collides with resource.vocab.items
+E3316 prefix: the key path of resource.vocab.items is a prefix of the key path of resource.vocab.items
+E3316 dollar: wire key resource.vocab.items of resource.vocab.items starts with $, which only export functions use
+E3316 form: @json(resource.vocab.items) does not apply to Int
+E3316 path: @json(path: "0.9") needs two or more non-empty segments, none starting with $
+E3316 bits: @json(bits) needs every code of resource.vocab.items to be a power of two from 1 to 2^62
+E3316 pairsBound: @json(pairs:) on resource.vocab.items needs a list type with a finite upper length bound
+E3316 pairsTemplate: @json(pairs:) template "0.9" must contain {i} exactly once, differ from the other one and expand to keys that start with no $ and collide with no other key
+E3316 pairsDefault: @json(pairs:) on resource.vocab.items allows no default but []
+E3317 -: map keys "II_SYS_SYS_SCR_FARM3" and "II_SYS_SYS_SCR_FARM3" both encode to "0.9"
+E3318 inline: resource.vocab.items of inline variant resource.vocab.items collides with resource.vocab.items
+E3318 twoInline: a record may have only one @json(inline) field
+E3318 tag: case field resource.vocab.items uses the tag key "resource.vocab.items"
+E3320 -: field items are not allowed in field literals
+E3321 -: field resource.vocab.items is given twice
+E3322 -: key "II_SYS_SYS_SCR_FARM3" is given twice
+E3323 -: a spread must come first and appear once
+E3401 -: Int? is not a type: Int is already optional
+E3402 -: a b may be none: use ?., !, ?? or test != none first
+E3403 -: expected Int, found Int?: prove it is present (!= none, !, ??)
+E3501 -: unknown key "II_SYS_SYS_SCR_FARM3" in resource.vocab.items
+E3502 -: "II_SYS_SYS_SCR_FARM3" is retired; live resource.vocab.items cannot reference it
+E3503 -: this Int is not an entry of resource.vocab.items
+E3504 -: ref resource.vocab.items: resource.vocab.items is not a collection or a record type
+E3505 -: ref resource.vocab.items has no enclosing resource.vocab.items to resolve against
+E3506 -: resource.vocab.items.resource.vocab.items is retired
+E3601 -: match does not cover go, cpp; add them or _
+E3602 -: pattern a b is already covered
+E3603 -: a b is not a case of Int
+E3604 -: cannot match on Int
+E3605 case: resource.vocab.items is not a case of Int
+E3605 notVariant: is needs a variant, found Int
+E3701 -: asset 0.9 not found under @resource/Server/Item/propItem.json
+E3702 -: asset 0.9: extension must be one of go, cpp
+E3703 -: asset path 0.9 is not a clean relative path
+E3704 root: invalid asset(…): "0.9" is not a load path
+E3704 ext: invalid asset(…): "0.9" is not a bare extension
+E3704 missing: invalid asset(…): it needs a root and ext
+E3801 -: resource.vocab.items has type a b = Never: this value cannot be built
+E3802 -: value does not match a b = Int
+E3803 argument: a type-function argument must be a path rooted at a parameter
+E3803 scrutinee: a type function must match on a path rooted at a parameter, of an enum or Bool type
+E3804 -: resource.vocab.items is not available on a dependent value (resource.vocab.items(*))
+E3805 -: field type may only use earlier fields: resource.vocab.items
+E3806 -: resource.vocab.items takes -42 arguments of types Int, String
+E4001 -: a b is none
+E4002 index: index -42 out of range for length -42
+E4002 key: no key "II_SYS_SYS_SCR_FARM3" in resource.vocab.items
+E4002 open: open range has no end
+E4002 slice: slice -42..-42 out of range
+E4101 integer: integer overflow in a b
+E4101 duration: duration overflow in a b
+E4102 -: division by zero
+E4103 -: "II_SYS_SYS_SCR_FARM3" does not fit an Int
+E4104 -: a b is not a finite number
+E4105 -: zip: lengths differ (-42 and -42)
+E4106 separator: resource.vocab.items: the separator is empty
+E4106 pattern: resource.vocab.items: the pattern is empty
+E4107 -: slice bound -42 is inside a UTF-8 character
+E4108 -: clamp: lower bound "II_SYS_SYS_SCR_FARM3" is above upper bound "II_SYS_SYS_SCR_FARM3"
+E4201 -: internal: write to a frozen value
+E4301 -: cycle between values: a -> b -> a
+E4401 -: evaluation budget of -42 steps exhausted
+	heaviest: resource.vocab.items (-42 steps)
+E4402 -: call depth exceeds 10000
+E4501 -: topoSort: cycle a -> b -> a
+E4502 -: toMap: key "II_SYS_SYS_SCR_FARM3" produced twice
+E4503 plain: cannot format Int
+E4503 spec: cannot format Int with :0.9
+E5001 -: 0.9
+E5002 -: 0.9
+E5003 -: check name resource.vocab.items is used twice in resource.vocab.items
+E5004 -: no check named resource.vocab.items applies to Int
+E5005 -: test "0.9" is declared twice in resource.vocab.items
+E6001 removed: resource.vocab.items was removed; retire it instead
+E6001 renamed: resource.vocab.items was removed; resource.vocab.items is new: renaming a stable id is not allowed.
+	Keep resource.vocab.items and retire it: retired resource.vocab.items { … }
+E6001 held: resource.vocab.items was removed; its code "II_SYS_SYS_SCR_FARM3" is now held by resource.vocab.items: renaming is not allowed
+E6001 gone: stable code resource.vocab.items is gone (renamed or no longer stable); update canon.lock in the same commit if this is a rename
+E6001 remove: stable entry resource.vocab.items cannot be removed, only retired
+E6002 unretire: retired case resource.vocab.items cannot come back
+E6002 renumber: resource.vocab.items renumbered: code -42 is locked
+E6002 codeTaken: code -42 belongs to resource.vocab.items
+E6002 changed: stable value resource.vocab.items of resource.vocab.items changed from "II_SYS_SYS_SCR_FARM3" to "II_SYS_SYS_SCR_FARM3"
+E6002 valueTaken: value "II_SYS_SYS_SCR_FARM3" of resource.vocab.items belongs to resource.vocab.items
+E6002 conflict: canon.lock holds two facts for resource.vocab.items: 0.9 and 0.9
+E6003 table: stable table must be the whole type of a top-level let
+E6003 field: @stable needs a field of the element of a stable table
+E6003 type: @stable field must be an integer type or String, not Int
+E6004 entry: layer resource.vocab.items cannot add an entry to stable table resource.vocab.items
+E6004 field: layer resource.vocab.items cannot change stable field resource.vocab.items
+E6005 header: canon.lock: missing header
+E6005 version: canon.lock: version 0.9 is newer than this canon
+E6005 syntax: canon.lock: cannot parse line
+E6005 kind: canon.lock: unknown kind 0.9
+E6005 package: canon.lock: 0.9 is not in package resource.vocab.items
+E6005 merge: canon.lock: merge conflict marker
+E7001 root: path 0.9: leaves root @resource.vocab.items
+E7001 project: path 0.9: leaves the project
+E7001 empty: path 0.9: empty segment
+E7001 absolute: path 0.9: absolute path
+E7001 backslash: path 0.9: "\" is not a separator
+E7002 -: load needs an expected type here: annotate the let or the field
+E7003 -: unknown root @resource.vocab.items; roots: go, cpp
+E7004 -: cannot read @resource/Server/Item/propItem.json: 0.9
+E7005 -: invalid glob 0.9: 0.9
+E7006 -: option resource.vocab.items is not valid for resource.vocab.items (resource.vocab.items)
+E7007 -: cannot tell the format of @resource/Server/Item/propItem.json; add format: json, csv or text
+E7102 -: resource.vocab.items redefined with a different value (-42, first -42 at @resource/Server/System/farm_config.json:1)
+E7103 number: 0.9 is not an integer
+E7103 mapKey: map key "0.9" is not a canonical integer
+E7104 json: duplicate key "0.9" (first at @resource/Server/System/farm_config.json:1)
+E7104 csv: duplicate CSV column "0.9"
+E7105 file: @resource/Server/Item/propItem.json is not valid UTF-8 at byte -42
+E7105 surrogate: unpaired surrogate U+001F
+E7106 member: at: "0.9": no member "0.9" at #/modelTypes/3
+E7106 index: at: "0.9": index -42 out of range at #/modelTypes/3
+E7106 notObject: at: "0.9": not an object at #/modelTypes/3
+E7106 notArray: at: "0.9": not an array at #/modelTypes/3
+E7106 scalar: at: "0.9": * applied to a scalar at #/modelTypes/3
+E7106 syntax: at: "0.9": malformed path
+E7108 -: CSV cell "0.9" is not a valid Int
+E7109 -: JSON syntax error: 0.9
+E7110 kind: expected an array for Int, found an array
+E7110 int: expected 0 or 1 for @json(int), found 0.9
+E7110 bits: expected a non-negative bitmask for @json(bits), found 0.9
+E7110 retired: expected true for $retired, found 0.9
+E7111 member: "0.9" is not a member of resource.vocab.items
+E7111 hint: "0.9" is not a member of resource.vocab.items (did you mean resource.vocab.items?)
+E7111 bits: bits -42 are not members of resource.vocab.items
+E7112 tag: missing tag "0.9" for variant resource.vocab.items
+E7112 case: unknown case "0.9" of resource.vocab.items; cases: go, cpp
+E7113 -: CSV: 0.9 at record -42
+E7114 -: "0.9" is not a valid table key (an identifier)
+E7116 -: resource.vocab.items cannot produce Int
+E7117 key: @json(pairs:) slot -42 of resource.vocab.items: resource.vocab.items without resource.vocab.items
+E7117 null: @json(pairs:) slot -42 of resource.vocab.items: null value
+E7117 gap: @json(pairs:) slot -42 of resource.vocab.items: filled after empty slot -42
+E8001 -: @resource/Server/Item/propItem.json was not generated by canon; refusing to overwrite it
+E8002 -: package resource.vocab.items has two emits for target resource.vocab.items
+E8003 target: unknown emit target resource.vocab.items: expected go, cpp, ts, json or view
+E8003 option: unknown option resource.vocab.items for emit resource.vocab.items
+E8004 -: resource.vocab.items of package resource.vocab.items is used by this resource.vocab.items emit, but resource.vocab.items has no resource.vocab.items emit
+E8005 -: resource.vocab.items: resource.vocab.items is generated for both resource.vocab.items and resource.vocab.items
+E8007 -: Go output @resource/Server/Item/propItem.json is under no root listed in go_module
+E8008 -: Go directory @resource/Server/Item/propItem.json is written by two emits (resource.vocab.items, resource.vocab.items)
+E8009 mode: invalid mode resource.vocab.items for emit resource.vocab.items: expected one of go, cpp
+E8009 package: invalid package "0.9" for emit go: not a Go identifier, or a Go keyword
+E8009 namespace: invalid namespace "0.9" for emit cpp: expected ident{::ident} with no C++ keyword
+E8009 tsOut: invalid out "0.9" for emit ts: it must end in .ts
+E8009 values: values of emit resource.vocab.items: resource.vocab.items is not a public let of this package
+E8009 valuesTwice: values of emit resource.vocab.items: resource.vocab.items is listed twice
+E8009 kind: option resource.vocab.items of emit resource.vocab.items must be a constant string
+E8010 -: ordered enum resource.vocab.items has codes that do not increase in declaration order
+E8011 -: 0.9 is not a valid resource.vocab.items identifier for @resource.vocab.items(name:)
+E8012 -: resource.vocab.items cannot be emitted: Int has no representation in generated code
+E8013 package: resource.vocab.items needs baked or embedded mode: data files cannot hold package functions
+E8013 refParam: resource.vocab.items needs baked or embedded mode: data files cannot hold a method with a ref parameter
+E8014 -: types mode cannot emit the computed default of resource.vocab.items: there is no data to read it from
+E8015 -: resource.vocab.items is a Int: data and embedded modes emit tables, keyed lists and records
+E8017 -: branch resource.vocab.items of resource.vocab.items is a Int: dependent types may only have scalar, String, enum or ref branches
+E8018 -: resource.vocab.items is decoded from JSON by resource.vocab.items, but package resource.vocab.items is emitted in baked mode
+E8101 -: "II_SYS_SYS_SCR_FARM3" does not fit a TypeScript number; add @ts(bigint) to resource.vocab.items
+E8102 unit: "II_SYS_SYS_SCR_FARM3" has no wire form for resource.vocab.items: not a whole number of resource.vocab.items
+E8102 none: "II_SYS_SYS_SCR_FARM3" has no wire form for resource.vocab.items: it equals the none marker 0.9
+E8102 bits: "II_SYS_SYS_SCR_FARM3" has no wire form for resource.vocab.items: resource.vocab.items appears twice in a bits set
+E8103 -: resource.vocab.items (0.9) holds at most -42; this value needs -42
+E8104 -: input field resource.vocab.items cannot be emitted to TypeScript
+E8106 -: "II_SYS_SYS_SCR_FARM3" does not fit resource.vocab.items (0.9)
+E8107 -: unknown or incompatible @cpp(type: 0.9) for resource.vocab.items of type Int
+E8108 -: case resource.vocab.items of resource.vocab.items needs @cpp(value:) to fill resource.vocab.items
+E8109 header: @cpp(struct:) on resource.vocab.items: access resource.vocab.items needs header
+E8109 access: @cpp(struct:) on resource.vocab.items: access must be fields, both or getters, not 0.9
+E8109 field: @cpp(struct:) on resource.vocab.items: field resource.vocab.items cannot map onto a legacy struct (a map, a non-inline variant, a nested record or a list of records)
+E8150 -: emit json out "0.9" is a file but values has -42 elements
+E8151 -: value resource.vocab.items of type Int has no wire form
+E8152 -: outputs collide: @resource/Server/Item/propItem.json and @resource/Server/Item/propItem.json
+E8153 notWritten: resource.vocab.items is emitted in data mode but not written by emit json
+E8153 fileName: resource.vocab.items is emitted in data mode but its file must be resource.vocab.items.json
+E8153 directory: resource.vocab.items is emitted in data mode but @reload files must share a directory
+E8201 -: @reload on resource.vocab.items: resource.vocab.items maps onto legacy struct resource.vocab.items in resource.vocab.items mode, whose pointers legacy code keeps
+E8202 -: @reload on resource.vocab.items: the resource.vocab.items emit is in resource.vocab.items mode, which has no file to reload
+E8301 -: embedded data of resource.vocab.items failed to decode: 0.9
+E8302 -: resource.vocab.items is a runtime input and LoadInputs has not been called
+E8303 -: integer outside the TypeScript safe range
+E9001 -: a b is not allowed in translated function resource.vocab.items: it is outside the portable subset
+E9002 -: lookup table of resource.vocab.items would have -42 cells (limit 65536)
+E9003 -: parameter resource.vocab.items of export fn resource.vocab.items is optional
+E9004 -: translated function resource.vocab.items returns Int: only scalars, strings, enums and refs are allowed
+E9005 -: a b is a Int: translated templates may only interpolate String, integer and enum values
+E9006 -: parameter resource.vocab.items of resource.vocab.items is a Int: translated functions take Bool, integers, Float, String, Duration and enums
+E9007 param: refinement a b of parameter resource.vocab.items of resource.vocab.items cannot be checked at run time
+E9007 result: refinement a b of the result of resource.vocab.items cannot be checked at run time
+E9008 -: translated method resource.vocab.items.resource.vocab.items is called by no test of package resource.vocab.items: add one, it gives the conformance test its receiver
+E9009 steps: conformance vector -42 of resource.vocab.items exceeds -42 steps
+E9009 depth: conformance vector -42 of resource.vocab.items exceeds the call-depth limit
+W1001 -: doc comment is not attached to anything
+W1002 -: enum resource.vocab.items has no doc comment
+W1003 -: const name "resource.vocab.items" should be const
+W1604 -: field resource.vocab.items of resource.vocab.items hides the view name resource.vocab.items: {resource.vocab.items} reads the field
+W1640 -: value resource.vocab.items has no menu: the studio lists it under "No menu"
+W1641 -: required field resource.vocab.items is hidden: new values cannot be completed in the studio
+W1642 -: deprecated field resource.vocab.items is named in group resource.vocab.items; it is shown under "Unused fields"
+W1701 one: 1 text of package resource.vocab.items has no resource.vocab.items translation (canon i18n status resource.vocab.items --lang resource.vocab.items --list)
+W1701 many: -42 texts of package resource.vocab.items have no resource.vocab.items translation (canon i18n status resource.vocab.items --lang resource.vocab.items --list)
+W3301 plain: resource.vocab.items is deprecated
+W3301 reason: resource.vocab.items is deprecated: 0.9
+W3401 -: a b is never none: resource.vocab.items has no effect
+W3601 -: _ is unreachable: every case is covered
+W5001 -: 0.9
+W5002 -: 0.9
+W6006 one: 1 stable value is not in canon.lock yet: run canon build
+W6006 many: -42 stable values are not in canon.lock yet: run canon build
+W7101 one: 1 define skipped in @resource/Server/Item/propItem.json (resource.vocab.items): not a supported integer expression
+W7101 many: -42 defines skipped in @resource/Server/Item/propItem.json (first: resource.vocab.items): not a supported integer expression
+W7107 -: glob 0.9 matches no file
+W7115 -: symbolic link @resource/Server/Item/propItem.json points outside the roots; skipped
+W8006 -: C++ name resource.vocab.items (from resource.vocab.items) is a macro in common platform headers

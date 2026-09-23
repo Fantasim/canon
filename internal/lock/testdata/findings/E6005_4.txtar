@@ -1,0 +1,54 @@
+LOCK.md §2.2, §2.4: every line that does not parse is one finding; good lines around them are read.
+-- teamboard/canon.lock --
+# canon.lock v1
+table  teamboard.statuses
+table  teamboard.statuses  open  retired  again
+enum   teamboard.Tone  01  A
+enum   teamboard.Tone  "1"  A
+field  teamboard.eventTypes.code  "x"  k  retired
+field  teamboard.eventTypes.code  "x"k
+field  teamboard.eventTypes.code  "x  k
+table  teamboard.statuses  open 
+ table  teamboard.statuses  open
+table  teamboard.statuses  9open
+table  teamboard..statuses  open
+enum   teamboard.Tone  9223372036854775808  A
+table  teamboard.statuses  open
+-- findings.txt --
+error[E6005]  teamboard/canon.lock:2:1
+  canon.lock: cannot parse line
+
+error[E6005]  teamboard/canon.lock:3:1
+  canon.lock: cannot parse line
+
+error[E6005]  teamboard/canon.lock:4:1
+  canon.lock: cannot parse line
+
+error[E6005]  teamboard/canon.lock:5:1
+  canon.lock: cannot parse line
+
+error[E6005]  teamboard/canon.lock:6:1
+  canon.lock: cannot parse line
+
+error[E6005]  teamboard/canon.lock:7:1
+  canon.lock: cannot parse line
+
+error[E6005]  teamboard/canon.lock:8:1
+  canon.lock: cannot parse line
+
+error[E6005]  teamboard/canon.lock:9:1
+  canon.lock: cannot parse line
+
+error[E6005]  teamboard/canon.lock:10:1
+  canon.lock: cannot parse line
+
+error[E6005]  teamboard/canon.lock:11:1
+  canon.lock: cannot parse line
+
+error[E6005]  teamboard/canon.lock:12:1
+  canon.lock: cannot parse line
+
+error[E6005]  teamboard/canon.lock:13:1
+  canon.lock: cannot parse line
+
+12 errors, 0 warnings in 1 package (…)

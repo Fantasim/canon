@@ -1,0 +1,22 @@
+LOCK.md §2.2, §2.4: a name outside the lock's package is one finding per line.
+-- teamboard/canon.lock --
+# canon.lock v1
+table  other.statuses  open
+table  teamboard.sub.statuses  open
+field  teamboard.statuses  1  open
+enum   resource.vocab.Element  1  FIRE
+table  teamboard.statuses  open
+-- findings.txt --
+error[E6005]  teamboard/canon.lock:2:1
+  canon.lock: other.statuses is not in package teamboard
+
+error[E6005]  teamboard/canon.lock:3:1
+  canon.lock: teamboard.sub.statuses is not in package teamboard
+
+error[E6005]  teamboard/canon.lock:4:1
+  canon.lock: teamboard.statuses is not in package teamboard
+
+error[E6005]  teamboard/canon.lock:5:1
+  canon.lock: resource.vocab.Element is not in package teamboard
+
+4 errors, 0 warnings in 1 package (…)

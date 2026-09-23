@@ -1,0 +1,19 @@
+LOCK.md §2.4, §6.3: each git conflict marker line is one finding, CR LF read as LF.
+-- teamboard/canon.lock --
+# canon.lock v1
+<<<<<<< HEAD
+table  teamboard.statuses  blocked
+=======
+table  teamboard.statuses  paused
+>>>>>>> feature
+-- findings.txt --
+error[E6005]  teamboard/canon.lock:2:1
+  canon.lock: merge conflict marker
+
+error[E6005]  teamboard/canon.lock:4:1
+  canon.lock: merge conflict marker
+
+error[E6005]  teamboard/canon.lock:6:1
+  canon.lock: merge conflict marker
+
+3 errors, 0 warnings in 1 package (…)

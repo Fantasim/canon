@@ -1,0 +1,9 @@
+LOCK.md §2.4: a lock with no non-blank line has no header.
+-- teamboard/canon.lock --
+
+  
+-- findings.txt --
+error[E6005]  teamboard/canon.lock:1:1
+  canon.lock: missing header
+
+1 error, 0 warnings in 1 package (…)

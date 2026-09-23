@@ -1,0 +1,13 @@
+LOCK.md §2.4: the first non-blank line must be the header; the lines after it are still read.
+-- teamboard/canon.lock --
+table  teamboard.statuses  open
+table  teamboard.statuses  taken
+table  teamboard.statuses
+-- findings.txt --
+error[E6005]  teamboard/canon.lock:1:1
+  canon.lock: missing header
+
+error[E6005]  teamboard/canon.lock:3:1
+  canon.lock: cannot parse line
+
+2 errors, 0 warnings in 1 package (…)

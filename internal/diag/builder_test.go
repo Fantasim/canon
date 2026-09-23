@@ -29,7 +29,7 @@ var (
 	sampleRune             = '\x1f'
 	samplePath             = "@resource/Server/Item/propItem.json"
 	sampleLoc              = source.Span{File: 2, Start: 0, End: 1}
-	samplePointer          = "#/modelTypes/3"
+	samplePointer          = "/modelTypes/3"
 	sampleText             = "0.9"
 	sampleMessage          = E1004.At(sampleSpan).Message()
 )

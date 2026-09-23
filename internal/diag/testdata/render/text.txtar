@@ -1,0 +1,147 @@
+One finding of each shape of API.md §4.4 (text_test.go, scenario mixed).
+-- teamboard/canon.lock --
+line 1 of the file
+line 2 of the file
+line 3 of the file
+line 4 of the file
+line 5 of the file
+line 6 of the file
+line 7 of the file
+line 8 of the file
+line 9 of the file
+line 10 of the file
+line 11 of the file
+line 12 of the file
+line 13 of the file
+line 14 of the file
+line 15 of the file
+line 16 of the file
+line 17 of the file
+line 18 of the file
+line 19 of the file
+line 20 of the file
+line 21 of the file
+line 22 of the file
+line 23 of the file
+line 24 of the file
+line 25 of the file
+line 26 of the file
+line 27 of the file
+line 28 of the file
+line 29 of the file
+line 30 of the file
+line 31 of the file
+line 32 of the file
+line 33 of the file
+line 34 of the file
+line 35 of the file
+line 36 of the file
+line 37 of the file
+line 38 of the file
+line 39 of the file
+line 40 of the file
+-- teamboard/taxonomy.canon --
+line 1 of the file
+line 2 of the file
+line 3 of the file
+line 4 of the file
+line 5 of the file
+line 6 of the file
+line 7 of the file
+line 8 of the file
+line 9 of the file
+line 10 of the file
+line 11 of the file
+line 12 of the file
+line 13 of the file
+line 14 of the file
+line 15 of the file
+line 16 of the file
+line 17 of the file
+line 18 of the file
+line 19 of the file
+line 20 of the file
+line 21 of the file
+line 22 of the file
+line 23 of the file
+line 24 of the file
+line 25 of the file
+line 26 of the file
+line 27 of the file
+line 28 of the file
+line 29 of the file
+line 30 of the file
+line 31 of the file
+line 32 of the file
+line 33 of the file
+line 34 of the file
+line 35 of the file
+line 36 of the file
+line 37 of the file
+line 38 of the file
+line 39 of the file
+line 40 of the file
+line 41 of the file
+line 42 of the file
+line 43 of the file
+line 44 of the file
+line 45 of the file
+line 46 of the file
+line 47 of the file
+line 48 of the file
+line 49 of the file
+line 50 of the file
+-- @resource/Server/System/farm_config.json --
+line 1 of the file
+line 2 of the file
+line 3 of the file
+line 4 of the file
+line 5 of the file
+line 6 of the file
+line 7 of the file
+line 8 of the file
+line 9 of the file
+line 10 of the file
+line 11 of the file
+line 12 of the file
+line 13 of the file
+line 14 of the file
+line 15 of the file
+-- want --
+error[E1003]
+  no project.canon found in /home/someone/project or its parents
+
+warning[W5001]  @resource/Server/System/farm_config.json:2:1
+  farm: a <b> & "c"	U+2028: 
+  expected by teamboard/taxonomy.canon:44 (check unreachable_levels)
+
+error[E3501]  @resource/Server/System/farm_config.json:12:6
+  farm.modelTypes[3].levels[2].productionItem: unknown key "II_SYS_SYS_SCR_FARM3" in resource.vocab.items
+  set by layer gm_test
+  expected by teamboard/taxonomy.canon:41 (line 41 of the file)
+
+error[E6001]  teamboard/canon.lock:33:1
+  teamboard.statuses.wont_do was removed; rejected is new: renaming a stable id is not allowed.
+  Keep wont_do and retire it: retired wont_do { … }
+
+error[E4001]  teamboard/taxonomy.canon:40:6
+  40 is none
+  in teamboard.step0 (teamboard/taxonomy.canon:1)
+  in teamboard.step1 (teamboard/taxonomy.canon:2)
+  in teamboard.step2 (teamboard/taxonomy.canon:3)
+  in teamboard.step3 (teamboard/taxonomy.canon:4)
+  in teamboard.step4 (teamboard/taxonomy.canon:5)
+  in teamboard.step5 (teamboard/taxonomy.canon:6)
+  in teamboard.step6 (teamboard/taxonomy.canon:7)
+  in teamboard.step7 (teamboard/taxonomy.canon:8)
+  in teamboard.step8 (teamboard/taxonomy.canon:9)
+  in teamboard.step9 (teamboard/taxonomy.canon:10)
+  in teamboard.step10 (teamboard/taxonomy.canon:11)
+  in teamboard.step11 (teamboard/taxonomy.canon:12)
+  in teamboard.step12 (teamboard/taxonomy.canon:13)
+  in teamboard.step13 (teamboard/taxonomy.canon:14)
+  in teamboard.step14 (teamboard/taxonomy.canon:15)
+  in teamboard.step15 (teamboard/taxonomy.canon:16)
+  (5 more frames)
+
+4 errors, 1 warning in 1 package (1.4 s)

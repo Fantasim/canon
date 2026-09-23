@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/fantasim/canonlang/internal/diag"
+	"github.com/fantasim/canonlang/internal/source"
 )
 
 const errorsMD = "../../spec/ERRORS.md"
@@ -17,6 +18,7 @@ const (
 	codesHeader    = "| Code | Severity | Package | Owner | Meaning |"
 	messagesHeader = "| Code | Variant | Args | Template |"
 	kindsHeader    = "| Kind | Word | Used by |"
+	notesHeader    = "| Note | Args | Template |"
 )
 
 // M0 acceptance: ERRORS.md regenerated from the registry is unchanged. Message rows are rebuilt
@@ -67,6 +69,31 @@ func registryRows() (messages, codes []string) {
 		}
 	}
 	return messages, codes
+}
+
+// ERRORS.md §1.5: each note renders its template; checkUnnamed is NoteCheck("").
+func TestNotesFollowErrorsMD(t *testing.T) {
+	doc, err := os.ReadFile(errorsMD)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rows := tableRows(string(doc))[notesHeader]
+	files := diag.MemFiles{{Path: "a.canon", Content: "record A {\n  productionItem:\tref items\n}\n"}}
+	decl := source.Span{File: 1, Start: 13, End: 38}
+	notes := map[string]diag.Note{"source": diag.NoteSource(decl), "check": diag.NoteCheck("unreachable_levels"), "checkUnnamed": diag.NoteCheck("")}
+	rendered := strings.NewReplacer("{decl}", "productionItem: ref items", "{name}", "unreachable_levels")
+	if len(rows) != len(notes) {
+		t.Fatalf("ERRORS.md §1.5 has %d notes, diag %d", len(rows), len(notes))
+	}
+	for _, row := range rows {
+		cells := strings.Split(row, "|")
+		name, tpl := strings.Trim(cells[1], " `"), strings.Split(cells[3], "`")[1]
+		bag := diag.NewBag(files, "p")
+		diag.E1004.At(decl).Related(decl, notes[name]).Report(bag)
+		if got := bag.Findings()[0].Related[0].Note; got != rendered.Replace(tpl) {
+			t.Errorf("note %s: got %q, want %q", name, got, rendered.Replace(tpl))
+		}
+	}
 }
 
 func kindRows() []string {

@@ -1,0 +1,14 @@
+LOCK.md §2.4: a kind that is not table, enum or field is one finding per line.
+-- teamboard/canon.lock --
+# canon.lock v1
+tabel  teamboard.statuses  open
+# canon.lock v1
+table  teamboard.statuses  open
+-- findings.txt --
+error[E6005]  teamboard/canon.lock:2:1
+  canon.lock: unknown kind tabel
+
+error[E6005]  teamboard/canon.lock:3:1
+  canon.lock: unknown kind #
+
+2 errors, 0 warnings in 1 package (…)

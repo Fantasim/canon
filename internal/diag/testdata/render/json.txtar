@@ -1,0 +1,116 @@
+The JSON form (API.md F5) of the findings of text.txtar (text_test.go, scenario mixed).
+-- teamboard/canon.lock --
+line 1 of the file
+line 2 of the file
+line 3 of the file
+line 4 of the file
+line 5 of the file
+line 6 of the file
+line 7 of the file
+line 8 of the file
+line 9 of the file
+line 10 of the file
+line 11 of the file
+line 12 of the file
+line 13 of the file
+line 14 of the file
+line 15 of the file
+line 16 of the file
+line 17 of the file
+line 18 of the file
+line 19 of the file
+line 20 of the file
+line 21 of the file
+line 22 of the file
+line 23 of the file
+line 24 of the file
+line 25 of the file
+line 26 of the file
+line 27 of the file
+line 28 of the file
+line 29 of the file
+line 30 of the file
+line 31 of the file
+line 32 of the file
+line 33 of the file
+line 34 of the file
+line 35 of the file
+line 36 of the file
+line 37 of the file
+line 38 of the file
+line 39 of the file
+line 40 of the file
+-- teamboard/taxonomy.canon --
+line 1 of the file
+line 2 of the file
+line 3 of the file
+line 4 of the file
+line 5 of the file
+line 6 of the file
+line 7 of the file
+line 8 of the file
+line 9 of the file
+line 10 of the file
+line 11 of the file
+line 12 of the file
+line 13 of the file
+line 14 of the file
+line 15 of the file
+line 16 of the file
+line 17 of the file
+line 18 of the file
+line 19 of the file
+line 20 of the file
+line 21 of the file
+line 22 of the file
+line 23 of the file
+line 24 of the file
+line 25 of the file
+line 26 of the file
+line 27 of the file
+line 28 of the file
+line 29 of the file
+line 30 of the file
+line 31 of the file
+line 32 of the file
+line 33 of the file
+line 34 of the file
+line 35 of the file
+line 36 of the file
+line 37 of the file
+line 38 of the file
+line 39 of the file
+line 40 of the file
+line 41 of the file
+line 42 of the file
+line 43 of the file
+line 44 of the file
+line 45 of the file
+line 46 of the file
+line 47 of the file
+line 48 of the file
+line 49 of the file
+line 50 of the file
+-- @resource/Server/System/farm_config.json --
+line 1 of the file
+line 2 of the file
+line 3 of the file
+line 4 of the file
+line 5 of the file
+line 6 of the file
+line 7 of the file
+line 8 of the file
+line 9 of the file
+line 10 of the file
+line 11 of the file
+line 12 of the file
+line 13 of the file
+line 14 of the file
+line 15 of the file
+-- want --
+{"severity":"error","code":"E1003","package":"teamboard","message":"no project.canon found in /home/someone/project or its parents"}
+{"severity":"warning","code":"W5001","file":"@resource/Server/System/farm_config.json","line":2,"col":1,"endLine":2,"endCol":2,"package":"teamboard","path":"farm","message":"a <b> & \"c\"\tU+2028: ","check":"unreachable_levels","related":[{"file":"teamboard/taxonomy.canon","line":44,"col":3,"endLine":44,"endCol":4,"note":"check unreachable_levels"}],"reads":["maxLevel","levels"]}
+{"severity":"error","code":"E3501","file":"@resource/Server/System/farm_config.json","line":12,"col":6,"endLine":12,"endCol":13,"pointer":"/modelTypes/3/levels/2/productionItemDefine","package":"teamboard","path":"farm.modelTypes[3].levels[2].productionItem","message":"unknown key \"II_SYS_SYS_SCR_FARM3\" in resource.vocab.items","layer":"gm_test","related":[{"file":"teamboard/taxonomy.canon","line":41,"col":1,"endLine":41,"endCol":20,"note":"line 41 of the file"}]}
+{"severity":"error","code":"E6001","file":"teamboard/canon.lock","line":33,"col":1,"endLine":33,"endCol":20,"package":"teamboard","message":"teamboard.statuses.wont_do was removed; rejected is new: renaming a stable id is not allowed.\nKeep wont_do and retire it: retired wont_do { … }"}
+{"severity":"error","code":"E4001","file":"teamboard/taxonomy.canon","line":40,"col":6,"endLine":40,"endCol":8,"package":"teamboard","message":"40 is none","stack":[{"fn":"teamboard.step0","file":"teamboard/taxonomy.canon","line":1,"col":3,"endLine":1,"endCol":7},{"fn":"teamboard.step1","file":"teamboard/taxonomy.canon","line":2,"col":3,"endLine":2,"endCol":7},{"fn":"teamboard.step2","file":"teamboard/taxonomy.canon","line":3,"col":3,"endLine":3,"endCol":7},{"fn":"teamboard.step3","file":"teamboard/taxonomy.canon","line":4,"col":3,"endLine":4,"endCol":7},{"fn":"teamboard.step4","file":"teamboard/taxonomy.canon","line":5,"col":3,"endLine":5,"endCol":7},{"fn":"teamboard.step5","file":"teamboard/taxonomy.canon","line":6,"col":3,"endLine":6,"endCol":7},{"fn":"teamboard.step6","file":"teamboard/taxonomy.canon","line":7,"col":3,"endLine":7,"endCol":7},{"fn":"teamboard.step7","file":"teamboard/taxonomy.canon","line":8,"col":3,"endLine":8,"endCol":7},{"fn":"teamboard.step8","file":"teamboard/taxonomy.canon","line":9,"col":3,"endLine":9,"endCol":7},{"fn":"teamboard.step9","file":"teamboard/taxonomy.canon","line":10,"col":3,"endLine":10,"endCol":7},{"fn":"teamboard.step10","file":"teamboard/taxonomy.canon","line":11,"col":3,"endLine":11,"endCol":7},{"fn":"teamboard.step11","file":"teamboard/taxonomy.canon","line":12,"col":3,"endLine":12,"endCol":7},{"fn":"teamboard.step12","file":"teamboard/taxonomy.canon","line":13,"col":3,"endLine":13,"endCol":7},{"fn":"teamboard.step13","file":"teamboard/taxonomy.canon","line":14,"col":3,"endLine":14,"endCol":7},{"fn":"teamboard.step14","file":"teamboard/taxonomy.canon","line":15,"col":3,"endLine":15,"endCol":7},{"fn":"teamboard.step15","file":"teamboard/taxonomy.canon","line":16,"col":3,"endLine":16,"endCol":7}]}
+{"summary":{"errors":4,"warnings":1,"packages":1,"ms":1400}}
