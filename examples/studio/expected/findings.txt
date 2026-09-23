@@ -1,0 +1,4 @@
+warning[W1701]  studio/studio.canon:10:1
+  13 texts of package studio have no fr translation (canon i18n status studio --lang fr --list)
+
+0 errors, 1 warning in 1 package (…)

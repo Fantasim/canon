@@ -1,0 +1,22 @@
+/// `embedded` mode (SPEC §14.2): the data file is compiled into the binary (`go:embed`,
+/// or the TS bundle) with a generated decoder. For medium data a service needs without
+/// shipping a file next to it, and that changes without code changes.
+package features.embedded
+
+/// A country the shop sells in.
+record Country {
+  /// ISO 3166-1 alpha-2 code.
+  code: String(/^[A-Z]{2}$/)
+  /// English name.
+  name: String(1..)
+  /// VAT rate applied to donations, in percent.
+  vat: Float(0.0..=30.0)
+  /// Whether card payments are offered.
+  cards: Bool = true
+}
+
+/// Every country, keyed by code.
+let countries: [Country] keyed by code = load("data/countries.json")
+
+emit go { out: "out/go/", package: "countries", mode: embedded }
+emit ts { out: "out/countries.generated.ts", mode: embedded }

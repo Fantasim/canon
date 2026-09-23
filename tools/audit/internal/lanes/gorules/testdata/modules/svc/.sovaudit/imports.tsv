@@ -1,0 +1,4 @@
+# handlers never reach the database
+internal/api/...	internal/db/...
+internal/api	os/exec
+not a row

@@ -1,0 +1,91 @@
+{
+  "schema": 1,
+  "global": {},
+  "malusPool": [],
+  "guild": {},
+  "tiers": [
+    {
+      "floors": [
+        1,
+        10
+      ],
+      "world": "WI_WORLD_TOWER00",
+      "totems": false
+    },
+    {
+      "floors": [
+        11,
+        20
+      ],
+      "world": "WI_WORLD_TOWER01",
+      "totems": true
+    }
+  ],
+  "floors": [
+    {
+      "floor": 1,
+      "waves": [
+        {
+          "monsters": [
+            {
+              "id": "MI_AIBATT1",
+              "count": 12
+            }
+          ],
+          "bosses": []
+        }
+      ],
+      "rewards": {
+        "penya": 0,
+        "items": []
+      },
+      "hpMul": 1.0,
+      "atkMul": 1.0
+    },
+    {
+      "floor": 11,
+      "waves": [
+        {
+          "monsters": [
+            {
+              "id": "MI_AIBATT1",
+              "count": 12
+            }
+          ],
+          "bosses": [],
+          "totems": [
+            "MI_BANG1"
+          ]
+        }
+      ],
+      "rewards": {
+        "penya": 0,
+        "items": []
+      },
+      "hpMul": 1.0,
+      "atkMul": 1.0
+    }
+  ],
+  "guildFloors": [
+    {
+      "floor": 1,
+      "waves": [
+        {
+          "monsters": [
+            {
+              "id": "MI_AIBATT1",
+              "count": 12
+            }
+          ],
+          "bosses": []
+        }
+      ],
+      "rewards": {
+        "penya": 0,
+        "items": []
+      },
+      "hpMul": 1.0,
+      "atkMul": 1.0
+    }
+  ]
+}

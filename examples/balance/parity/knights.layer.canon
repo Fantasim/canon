@@ -1,0 +1,12 @@
+// What used to be `python gen_sweep_plan.py --jobs JOB_KNIGHT,JOB_BLADE --levels 75,120`.
+//
+//   canon build --layer knights
+//
+// The layer changes the settings; `plan` is derived from them, so it follows.
+package balance.parity
+layer knights
+
+amend settings {
+  onlyJobs: ["JOB_KNIGHT", "JOB_BLADE"]
+  levels: [75, 120]
+}

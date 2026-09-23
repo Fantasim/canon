@@ -1,0 +1,12 @@
+#ifndef __DEFINE_WORLD
+#define __DEFINE_WORLD
+
+#define WI_WORLD_NONE		0
+#define WI_WORLD_MADRIGAL	1
+#define	WI_WORLD_KEBARAS	2
+#define	WI_WORLD_RARTESIA	4
+
+#define WI_DUNGEON_VOLCANE		200
+#define WI_DUNGEON_SECRET_0		202
+
+#endif

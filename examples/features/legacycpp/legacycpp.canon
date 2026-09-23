@@ -1,0 +1,48 @@
+/// Legacy C++ structs (DECISIONS 5, SPEC §15.3). The server's hand-written ItemProp
+/// (Engine/Core/Project/ProjectCmn.h) is filled by generated code instead of a
+/// generated class: in `access: fields` every existing `pProp->dwItemKind1` read
+/// compiles, lookups return `const ItemProp*`, and every write is a compile error.
+/// Moving to `both`, then `getters`, is one word per struct.
+///
+/// A keyed list is used so that the key is a field with a legacy member (`dwID`).
+package features.legacycpp
+
+local let items = load.defines("@resource/Server/Define/defineitem.h", prefix: "II_")
+
+/// The main kind. `@cpp(defines:)` also emits `#define IK1_WEAPON 1`... for legacy
+/// code, so the IK1 block of defineItemkind.h can be deleted once this is generated.
+enum Kind1 @codes(UInt8) @cpp(defines: "IK1_") {
+  IK1_GOLD = 0
+  IK1_WEAPON = 1
+  IK1_ARMOR = 2
+  IK1_GENERAL = 3
+  IK1_RIDE = 4
+  IK1_SYSTEM = 5
+  IK1_CHARGED = 6
+  IK1_HOUSING = 7
+}
+
+/// The ItemProp members this sketch maps. Members it does not map are
+/// value-initialised; `static_assert`s check that each mapped member exists with the
+/// stated type.
+record Prop @cpp(struct: "ItemProp", header: "ProjectCmn.h", access: fields) {
+  /// The item define. ItemProp keeps its numeric value.
+  id: ref items @json("dwID") @cpp(field: "dwID", type: "std::uint32_t")
+  /// Main kind.
+  kind1: Kind1 @json("dwItemKind1") @cpp(field: "dwItemKind1", type: "std::uint32_t")
+  /// Item level.
+  level: Int(0..) = 1 @json("dwItemLV") @cpp(field: "dwItemLV", type: "std::uint32_t")
+  /// How many fit in one inventory slot.
+  stackMax: Int(1..) = 1 @json("dwPackMax") @cpp(field: "dwPackMax", type: "std::uint32_t")
+  /// The item never expires. 0/1 on the wire.
+  permanent: Bool = true @json("bPermanence", int) @cpp(field: "bPermanence")
+}
+
+/// A few rows of propItem.json.
+let props: [Prop] keyed by id = load("data/props.json", at: "items")
+
+// The generated ItemPropTable owns a std::vector<ItemProp>; Find("II_WEA_AXE_ANGEL")
+// returns const ItemProp*. No @reload here: legacy code keeps raw ItemProp pointers
+// (E8201 until the struct reaches `getters`).
+emit cpp { out: "out/", namespace: "sov::gen", mode: data }
+emit json { out: "out/props.json", values: [props] }

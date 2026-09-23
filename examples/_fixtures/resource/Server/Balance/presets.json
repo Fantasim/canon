@@ -1,0 +1,113 @@
+{
+  "version": 1,
+  "canonicalBuilds": {
+    "JOB_MERCENARY": {
+      "statRatio": {
+        "str": 1,
+        "sta": 0,
+        "dex": 0,
+        "int": 0
+      },
+      "weapon": "IK3_SWD"
+    },
+    "JOB_ACROBAT": {
+      "statRatio": {
+        "str": 1,
+        "sta": 0,
+        "dex": 0,
+        "int": 0
+      },
+      "weapon": "IK3_BOW"
+    },
+    "JOB_ASSIST": {
+      "statRatio": {
+        "str": 1,
+        "sta": 0,
+        "dex": 0,
+        "int": 0
+      },
+      "weapon": "IK3_KNUCKLEHAMMER"
+    },
+    "JOB_MAGICIAN": {
+      "statRatio": {
+        "str": 1,
+        "sta": 0,
+        "dex": 0,
+        "int": 0
+      },
+      "weapon": "IK3_WAND"
+    },
+    "JOB_BLADE": {
+      "statRatio": {
+        "str": 1,
+        "sta": 0,
+        "dex": 0,
+        "int": 0
+      },
+      "weapon": "IK3_SWD"
+    },
+    "JOB_KNIGHT": {
+      "statRatio": {
+        "str": 1,
+        "sta": 0,
+        "dex": 0,
+        "int": 0
+      },
+      "weapon": "IK3_SWD"
+    },
+    "JOB_RANGER": {
+      "statRatio": {
+        "str": 1,
+        "sta": 0,
+        "dex": 0,
+        "int": 0
+      },
+      "weapon": "IK3_BOW"
+    },
+    "JOB_JESTER": {
+      "statRatio": {
+        "str": 1,
+        "sta": 0,
+        "dex": 0,
+        "int": 0
+      },
+      "weapon": "IK3_YOYO"
+    },
+    "JOB_ELEMENTOR": {
+      "statRatio": {
+        "str": 1,
+        "sta": 0,
+        "dex": 0,
+        "int": 0
+      },
+      "weapon": "IK3_STAFF"
+    },
+    "JOB_PSYCHIKEEPER": {
+      "statRatio": {
+        "str": 1,
+        "sta": 0,
+        "dex": 0,
+        "int": 0
+      },
+      "weapon": "IK3_WAND"
+    },
+    "JOB_BILLPOSTER": {
+      "statRatio": {
+        "str": 1,
+        "sta": 0,
+        "dex": 0,
+        "int": 0
+      },
+      "weapon": "IK3_KNUCKLEHAMMER"
+    },
+    "JOB_RINGMASTER": {
+      "statRatio": {
+        "str": 1,
+        "sta": 0,
+        "dex": 0,
+        "int": 0
+      },
+      "weapon": "IK3_CHEERSTICK"
+    }
+  }
+}

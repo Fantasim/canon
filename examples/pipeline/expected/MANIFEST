@@ -1,0 +1,10 @@
+pipeline/out/canon_runtime.h canon_runtime.h
+pipeline/out/canon_runtime_json.h canon_runtime_json.h
+pipeline/out/go/potions.gen.go go/potions.gen.go
+pipeline/out/go/potions_conformance_test.go go/potions_conformance_test.go
+pipeline/out/go/rt/rt.go go/rt/rt.go
+pipeline/out/pipeline.gen.cpp pipeline.gen.cpp
+pipeline/out/pipeline.gen.h pipeline.gen.h
+pipeline/out/pipeline_conformance.gen.cpp pipeline_conformance.gen.cpp
+pipeline/out/potion.view.json potion.view.json
+pipeline/out/potions.json potions.json

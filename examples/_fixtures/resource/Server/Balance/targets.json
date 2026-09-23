@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "solver": {
+    "referenceJob": "JOB_BLADE",
+    "excludeJobs": [
+      "JOB_VAGRANT",
+      "JOB_PUPPETEER"
+    ],
+    "kAnchors": [
+      60
+    ]
+  }
+}

@@ -1,0 +1,37 @@
+// Written by `canon convert items` from propItem.json's row, placed by `@files`.
+// The file may move anywhere under game/items/: the entry does not change.
+package game.items
+
+/// Angel Axe: the level 90 mercenary axe.
+entry items.II_WEA_AXE_ANGEL {
+  version: 6
+  nameKey: "IDS_PROPITEM_TXT_003930"
+  descriptionKey: "IDS_PROPITEM_TXT_003931"
+  icon: "Itm_WeaAxeAngel.dds"
+  cost: 300_000
+  level: 90
+  rarity: 200
+  partsFile: false
+  dropSound: SND_ITEM_DROPDING1
+  kind: IK1_WEAPON {
+    kind2: IK2_WEAPON_DIRECT
+    kind3: IK3_AXE
+    job: JOB_MERCENARY
+    requiredLevel: 90
+    handed: HD_ONE
+    attackMin: 310
+    attackMax: 312
+    attackSpeed: 0.06
+    attackRange: AR_SHORT
+    weaponType: WT_MELEE_AXE
+    endurance: 8_000_000
+    stats: [
+      { attribute: DST_STR, value: 16 },
+      { attribute: DST_CHR_CHANCECRITICAL, value: 4 },
+      { attribute: DST_CRITICAL_BONUS, value: 19 },
+      { attribute: DST_ATTACKSPEED, value: 140 },
+      { attribute: DST_ATKPOWER_RATE, value: 7 },
+    ]
+    attackSound: SND_PC_DMGSWDM
+  }
+}

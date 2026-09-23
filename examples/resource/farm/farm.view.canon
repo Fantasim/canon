@@ -1,0 +1,98 @@
+// Presentation of the farm in Resource Studio. Source language: English.
+// French lives in farm.fr.canon, keyed by the same paths (SPEC §17).
+//
+// Compare with resourcestudio/internal/overlay/modules/farm.json (348 lines). Only the
+// things a type cannot know are written here: labels, grouping, units, column widths,
+// previews. Everything else (types, defaults, choices, keys, order, help from doc
+// comments, findings) comes from farm.canon.
+//
+// A label or field that does not exist is a compile error here, not a studio boot error.
+package resource.farm
+
+import studio
+
+view FarmConfig {
+  title "Farm"
+  menu economy icon farm
+  group settings "General settings" { global }
+  group models "Plantable models" "A model = an unlock price, a number of copies players can buy, and a ladder of levels." {
+    modelTypes
+  }
+}
+
+view Global {
+  title "General settings"
+  group prices "Prices" {
+    farmPurchasePrice "Farm purchase price" { unit: penya }
+    visitCost "Cost of a visit" { unit: penya }
+  }
+  group access "Access conditions" {
+    worldLevelMinRequired "Minimum faery rank"
+    activityPointsMinRequired "Minimum activity points"
+  }
+  group production "Production" {
+    productionTick "Production tick"
+  }
+  // maxModels is @deprecated: the studio shows it read-only in a collapsed
+  // "Unused fields" group, with the deprecation text as help. Nothing to write.
+}
+
+view ModelType {
+  title "{typeName}"
+  singular "a model"
+  columns {
+    typeId 70
+    typeName 150
+    nameText
+    unlockPrice 130
+    maxBuyCount 110
+    maxLevel 100
+    levels 110
+  }
+
+  group identity "Identity" {
+    typeId "Id"
+    typeName "Internal name"
+    nameText "Displayed name"
+  }
+  group unlock "Unlock" "What the player pays to unlock this model." {
+    unlockPrice "Unlock price" { unit: penya }
+    unlockItems "Unlock items"
+    maxBuyCount "Copies players can buy"
+  }
+  group levels "Levels" "One level per step, in order: production, storage, bonuses and the cost to level up." {
+    maxLevel "Maximum level"
+    levels "Levels" { widget: ordered_steps }
+  }
+}
+
+view Level {
+  title "Level {level}"
+  singular "a level"
+  columns { level 70, productionItem, productionPerHour 120, maxStorage 120 }
+
+  // A decorative (Premium) level leaves the three production fields empty; the
+  // placeholder says so instead of showing a blank input.
+  group production "Production" {
+    modelName "3D model"
+    productionItem "Produced item" { placeholder: "Decorative: produces nothing" }
+    productionPerHour "Production per hour"
+    maxStorage "Maximum storage"
+  }
+  group bonuses "Bonuses" { bonuses }
+  group cost "Cost to level up" { levelUpRequirements }
+}
+
+view ItemCost {
+  title "{count} × {item}"
+  singular "an item"
+  item "Item"
+  count "Quantity"
+}
+
+view Bonus {
+  title "{attribute} ({value})"
+  singular "a bonus"
+  attribute "Attribute"
+  value "Value"
+}

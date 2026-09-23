@@ -1,0 +1,66 @@
+{
+  "version": 2,
+  "tasks": [
+    {
+      "eventType": "COMBAT_KILL_MONSTER",
+      "filterParam": "",
+      "targetPerPlayer": 200,
+      "maxDurationMin": 30,
+      "description": "Kill monsters"
+    },
+    {
+      "eventType": "ECONOMY_DROP_ITEM",
+      "filterParam": "II_GEN_MAT_MOONSTONE",
+      "targetPerPlayer": 10,
+      "maxDurationMin": 30,
+      "description": "Drop moonstone"
+    },
+    {
+      "eventType": "ECONOMY_DROP_ITEM",
+      "filterParam": "II_GEN_MAT_ORICHALCUM01",
+      "targetPerPlayer": 10,
+      "maxDurationMin": 30,
+      "description": "Drop moonstone"
+    },
+    {
+      "eventType": "COMBAT_KILL_GIANT",
+      "filterParam": "",
+      "targetPerPlayer": 1,
+      "maxDurationMin": 120,
+      "description": "Kill giants"
+    }
+  ],
+  "rewardPools": [
+    [
+      {
+        "itemId": "II_SYS_SYS_SCR_FAERY_EXP_5000",
+        "quantity": 3,
+        "weight": 225000
+      },
+      {
+        "itemId": "II_SYS_SYS_SCR_AP_50",
+        "quantity": 2,
+        "weight": 225000
+      }
+    ],
+    [
+      {
+        "itemId": "II_SYS_SYS_SCR_FAERY_EXP_5000",
+        "quantity": 2,
+        "weight": 250000
+      }
+    ]
+  ],
+  "buffPool": [
+    {
+      "buffResId": 62,
+      "durationSec": 3600,
+      "weight": 111111
+    },
+    {
+      "buffResId": 63,
+      "durationSec": 3600,
+      "weight": 111111
+    }
+  ]
+}

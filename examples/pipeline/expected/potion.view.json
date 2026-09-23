@@ -1,0 +1,337 @@
+{
+  "$schema": "canon-vm/1",
+  "package": "pipeline",
+  "language": "0.1",
+  "requires": [
+    "studio"
+  ],
+  "types": {
+    "pipeline.Potion": {
+      "kind": "record",
+      "name": "Potion",
+      "help": "pipeline:Potion.help",
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "string",
+            "pattern": "^II_[A-Z0-9_]+$"
+          },
+          "required": true,
+          "help": "pipeline:Potion.id.help",
+          "wire": {
+            "name": "dwID"
+          }
+        },
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "pattern": "^IDS_"
+          },
+          "required": true,
+          "help": "pipeline:Potion.name.help",
+          "wire": {
+            "name": "szName"
+          }
+        },
+        {
+          "name": "heal",
+          "type": {
+            "kind": "int",
+            "bits": 64,
+            "signed": true,
+            "min": 1,
+            "max": 100000
+          },
+          "required": true,
+          "help": "pipeline:Potion.heal.help",
+          "wire": {
+            "name": "nHeal"
+          }
+        },
+        {
+          "name": "cooldown",
+          "type": {
+            "kind": "duration",
+            "min": 0,
+            "max": 600000
+          },
+          "required": true,
+          "help": "pipeline:Potion.cooldown.help",
+          "wire": {
+            "name": "dwCooldownMs",
+            "unit": "ms"
+          }
+        },
+        {
+          "name": "stack",
+          "type": {
+            "kind": "int",
+            "bits": 64,
+            "signed": true,
+            "min": 1,
+            "max": 9999
+          },
+          "default": 99,
+          "help": "pipeline:Potion.stack.help",
+          "wire": {
+            "name": "nStack"
+          }
+        }
+      ]
+    }
+  },
+  "views": {
+    "pipeline.Potion": {
+      "kind": "record",
+      "declared": true,
+      "title": {
+        "template": "{id}"
+      },
+      "menu": {
+        "menu": "items",
+        "icon": "gem"
+      },
+      "sections": [
+        {
+          "kind": "other",
+          "fields": [
+            "id",
+            "name",
+            "heal",
+            "cooldown",
+            "stack"
+          ]
+        },
+        {
+          "kind": "more"
+        },
+        {
+          "kind": "unused"
+        }
+      ],
+      "fields": {
+        "cooldown": {
+          "label": "pipeline:Potion.cooldown",
+          "help": "pipeline:Potion.cooldown.help",
+          "control": {
+            "kind": "duration",
+            "min": 0,
+            "max": 600000,
+            "units": [
+              "ms",
+              "s",
+              "m"
+            ]
+          }
+        },
+        "heal": {
+          "label": "pipeline:Potion.heal",
+          "help": "pipeline:Potion.heal.help",
+          "control": {
+            "kind": "number",
+            "min": 1,
+            "max": 100000,
+            "unit": "hp"
+          }
+        },
+        "id": {
+          "label": "pipeline:Potion.id",
+          "help": "pipeline:Potion.id.help",
+          "control": {
+            "kind": "input",
+            "pattern": "^II_[A-Z0-9_]+$"
+          }
+        },
+        "name": {
+          "label": "pipeline:Potion.name",
+          "help": "pipeline:Potion.name.help",
+          "control": {
+            "kind": "input",
+            "pattern": "^IDS_"
+          }
+        },
+        "stack": {
+          "label": "pipeline:Potion.stack",
+          "help": "pipeline:Potion.stack.help",
+          "control": {
+            "kind": "number",
+            "min": 1,
+            "max": 9999
+          }
+        }
+      }
+    }
+  },
+  "values": {
+    "pipeline:potions": {
+      "name": "potions",
+      "order": 0,
+      "type": {
+        "kind": "list",
+        "of": {
+          "kind": "record",
+          "ref": "pipeline.Potion"
+        },
+        "keyedBy": "id"
+      },
+      "label": "pipeline:potions",
+      "help": "pipeline:potions.help",
+      "menu": {
+        "menu": "items",
+        "icon": "gem"
+      },
+      "control": {
+        "kind": "table",
+        "of": "pipeline.Potion",
+        "key": "id",
+        "columns": [
+          {
+            "field": "$entry",
+            "width": 200,
+            "mode": "entry"
+          },
+          {
+            "field": "heal",
+            "width": 90,
+            "mode": "edit",
+            "cell": {
+              "kind": "number",
+              "min": 1,
+              "max": 100000,
+              "unit": "hp"
+            }
+          },
+          {
+            "field": "cooldown",
+            "width": 90,
+            "mode": "edit",
+            "cell": {
+              "kind": "duration",
+              "min": 0,
+              "max": 600000,
+              "units": [
+                "ms",
+                "s",
+                "m"
+              ]
+            }
+          },
+          {
+            "field": "stack",
+            "width": 70,
+            "mode": "edit",
+            "cell": {
+              "kind": "number",
+              "min": 1,
+              "max": 9999
+            }
+          }
+        ],
+        "search": "pipeline:potions"
+      },
+      "editable": "json",
+      "reload": true,
+      "sources": {
+        "files": [
+          "pipeline/potion.canon"
+        ],
+        "glob": "pipeline/data/*.json",
+        "count": 2
+      }
+    }
+  },
+  "usage": {
+    "pipeline.Potion": {
+      "shapes": {
+        "": {
+          "count": 2,
+          "fields": {
+            "cooldown": 2,
+            "heal": 2,
+            "id": 2,
+            "name": 2,
+            "stack": 1
+          },
+          "main": [
+            "id",
+            "name",
+            "heal",
+            "cooldown",
+            "stack"
+          ]
+        }
+      }
+    }
+  },
+  "search": {
+    "pipeline:potions": {
+      "type": "pipeline.Potion",
+      "keyType": "string",
+      "count": 2,
+      "active": 2,
+      "rows": [
+        {
+          "key": "II_POT_HEAL_L",
+          "title": "II_POT_HEAL_L"
+        },
+        {
+          "key": "II_POT_HEAL_S",
+          "title": "II_POT_HEAL_S"
+        }
+      ]
+    }
+  },
+  "assets": {},
+  "units": {
+    "hp": {
+      "suffix": "studio:units.hp.suffix",
+      "scale": 1,
+      "thousands": true,
+      "decimals": 0
+    }
+  },
+  "widgets": {},
+  "i18n": {
+    "source": "en",
+    "languages": {
+      "en": {
+        "texts": {
+          "Potion.check.fast_big_heal": "heals {heal} every {cooldown}: that outheals most bosses",
+          "Potion.cooldown": "Cooldown",
+          "Potion.cooldown.help": "Time before the same potion can be drunk again.",
+          "Potion.heal": "Heal",
+          "Potion.heal.help": "Hit points restored.",
+          "Potion.help": "A healing potion. Each one is a file under data/.",
+          "Potion.id": "Id",
+          "Potion.id.help": "The item define. Stored in inventories: never renamed.",
+          "Potion.name": "Name",
+          "Potion.name.help": "Text key of the displayed name.",
+          "Potion.stack": "Stack",
+          "Potion.stack.help": "How many potions fit in one inventory slot.",
+          "potions": "Potions",
+          "potions.help": "One JSON file per potion, as today. Each file is one entry; findings point into it.\nReloadable: tuned live during balance sessions, and runtimes keep potion ids, never\nPotion pointers, across ticks."
+        }
+      },
+      "fr": {
+        "files": [],
+        "missing": 14,
+        "texts": {}
+      }
+    }
+  },
+  "findings": [
+    {
+      "severity": "warning",
+      "code": "W1701",
+      "file": "pipeline/potion.canon",
+      "line": 7,
+      "col": 1,
+      "endLine": 7,
+      "endCol": 17,
+      "package": "pipeline",
+      "message": "14 texts of package pipeline have no fr translation (canon i18n status pipeline --lang fr --list)"
+    }
+  ]
+}

@@ -1,0 +1,103 @@
+/// Heistia: timed group missions, their reward pools and buff pool.
+/// Loader: HeistiaConfig (HeistiaConfig.h).
+///
+/// The hard part is `filterParam`: what it may contain depends on `eventType` (a
+/// monster for COMBAT_KILL_MONSTER, an item for ECONOMY_DROP_ITEM, nothing for
+/// COMBAT_KILL_FFA...). Since Resource 4bb68225 the schema pairs each filterParam shape
+/// with the event's `param` from eventType.json through `x-ref-where`. Here the pairing
+/// is the field's type, computed from the event: `Param(eventType)`.
+package resource.heistia
+
+import resource.vocab { Param, eventTypes, items }
+import studio
+
+/// One mission: count an event, optionally filtered, until every player reaches a target.
+record Task {
+  /// The event the mission counts.
+  eventType: ref eventTypes
+  /// Only this monster, item, dungeon... counts. `none` counts everything.
+  /// Its type depends on `eventType`: see resource.vocab's Param.
+  filterParam: Param(eventType)? = none @json(none: "")
+  /// How many each player must reach.
+  targetPerPlayer: Int(1..)
+  /// Time limit of the mission.
+  maxDuration: Duration(1m..) @json("maxDurationMin", unit: m)
+  /// Text shown to players.
+  description: String(1..)
+}
+
+/// One possible reward of a pool.
+record Reward {
+  /// The item given.
+  item: ref items @json("itemId")
+  /// How many are given.
+  quantity: Int(1..)
+  /// Chance of this reward, relative to the other rewards of its pool.
+  weight: Int(1..)
+}
+
+/// One possible buff of the buff pool.
+record Buff {
+  /// Buff resource id.
+  buffResId: Int(0..)
+  /// How long the buff lasts.
+  duration: Duration(1s..) @json("durationSec", unit: s)
+  /// Chance of this buff, relative to the other buffs.
+  weight: Int(1..)
+}
+
+/// The whole file.
+record HeistiaConfig {
+  /// Format version of the file.
+  version: Int where it == 2
+  /// The missions a run draws from.
+  tasks: [Task](1..)
+  /// The number of pools is the number of winners (m_nWinnerCount).
+  rewardPools: [[Reward](1..)] = []
+  /// Buffs a run may grant.
+  buffPool: [Buff] = []
+
+  // Found while writing this example: two tasks share the description "Drop moonstone",
+  // but the second one filters on II_GEN_MAT_ORICHALCUM01.
+  warn tasks.map(.description).isUnique() else "two tasks have the same description"
+}
+
+/// Server/System/heistia_config.json, read in place.
+let heistia: HeistiaConfig = load("@resource/Server/System/heistia_config.json")
+
+// ---------------------------------------------------------------------------
+// Studio
+// ---------------------------------------------------------------------------
+// `filterParam` needs nothing here: the studio reads its type from the chosen event.
+// Pick ECONOMY_DROP_ITEM and the field becomes an item picker (search "moonstone");
+// pick COMBAT_KILL_FFA and the field disappears, because its type is Never.
+
+view Task {
+  title "{description}"
+  columns { eventType 240, filterParam 240, targetPerPlayer 120, maxDuration 110, description }
+  group mission "Mission" {
+    eventType "Event"
+    filterParam "Only"
+    targetPerPlayer "Target per player"
+    maxDuration "Time limit"
+  }
+  group text "Text" { description }
+}
+
+view Reward {
+  title "{quantity} × {item}"
+  item "Item" // picker shows the item's name and icon (its view)
+  weight { widget: weight_share } // shows each weight as a % of its pool
+}
+
+view HeistiaConfig {
+  title "Heistia"
+  menu instances icon chest
+  group tasks "Missions" { tasks }
+  group rewards "Rewards" "One pool per winner." {
+    rewardPools { widget: ordered_steps, step: "Winner {index}" }
+  }
+  group buffs "Buffs" { buffPool }
+}
+
+emit view { out: "@generated/heistia.view.json" }

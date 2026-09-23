@@ -1,0 +1,40 @@
+{
+  "nodes": [
+    {
+      "id": 0,
+      "buffId": 12,
+      "parent": -1,
+      "price": 15000,
+      "minGuildLevel": 6,
+      "x": 567,
+      "y": 370
+    },
+    {
+      "id": 1,
+      "buffId": 13,
+      "parent": 0,
+      "price": 30000,
+      "minGuildLevel": 10,
+      "x": 644,
+      "y": 405
+    },
+    {
+      "id": 2,
+      "buffId": 14,
+      "parent": 1,
+      "price": 60000,
+      "minGuildLevel": 14,
+      "x": 721,
+      "y": 440
+    },
+    {
+      "id": 3,
+      "buffId": 15,
+      "parent": 0,
+      "price": 30000,
+      "minGuildLevel": 10,
+      "x": 490,
+      "y": 405
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+// Louis's workstation.
+//
+//   canon build --layer louis
+//   canon explain config.server.port --layer louis   (its output: CLI.md §3.7)
+package service.resourcestudio
+layer louis
+
+amend config {
+  paths.resourceRoot: "/home/louis/Desktop/Sovereign/Resource"
+  paths.iconDir: "/home/louis/Desktop/Sovereign/Client/Data/UI/Icon"
+  server.port: 9000
+  server.openBrowser: false
+}

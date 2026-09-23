@@ -1,0 +1,8 @@
+warning[W5001]  @resource/Server/System/farm_config.json:17:19
+  farm.modelTypes[1].maxLevel: maxLevel is 3 but only 2 levels exist: level 3 and above are unreachable (GetLevel returns nullptr)
+  expected by resource/farm/farm.canon:109 (check unreachable_levels)
+
+warning[W1701]  resource/farm/farm.fr.canon:14:1
+  39 texts of package resource.farm have no fr translation (canon i18n status resource.farm --lang fr --list)
+
+0 errors, 2 warnings in 1 package (…)

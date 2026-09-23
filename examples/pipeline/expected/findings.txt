@@ -1,0 +1,4 @@
+warning[W1701]  pipeline/potion.canon:7:1
+  14 texts of package pipeline have no fr translation (canon i18n status pipeline --lang fr --list)
+
+0 errors, 1 warning in 1 package (…)

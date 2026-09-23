@@ -1,0 +1,126 @@
+/// Farm settings and the catalog of plantable models: prices, access conditions,
+/// production per level, and bonuses.
+/// Loader: FarmSystem::FarmConfig::LoadFromFile (Game/Content/Farm/FarmConfig.cpp:70).
+///
+/// What the resourcestudio overlay (farm.json) had to state by hand and is now derived:
+///   - every field's type, key, container and field order: from the types below
+///   - "Absent = 50000000." in help texts: real defaults, which the loader also uses
+///   - the two `warnings`: the two `warn`s, now reported on the exact entry
+///   - `messages.unique`: `keyed by typeId` reports duplicates itself
+/// What remains presentation lives in farm.view.canon.
+package resource.farm
+
+import resource.vocab { items }
+
+local let texts = load.defines("@resource/Server/Define/defineText.h", prefix: "TID_")
+local let attributes = load.defines("@resource/Server/Define/defineAttribute.h", prefix: "DST_")
+
+/// FARM_MAX_MODELS, a compiled constant (not a setting).
+const FARM_MAX_MODELS = 100
+
+/// An amount of the game's currency.
+type Penya = Int(0..)
+
+/// An item and how many of it.
+record ItemCost {
+  /// An item that does not resolve on the WorldServer prevents the whole farm from loading.
+  item: ref items @json("itemDefine")
+  /// How many are consumed.
+  count: Int(1..) = 1
+}
+
+/// An attribute bonus granted while a model is planted.
+record Bonus {
+  /// The attribute raised (a DST_* define).
+  attribute: ref attributes @json("dst")
+  /// How much it is raised.
+  value: Int = 0
+
+  warn value != 0 else "a bonus of 0 has no effect"
+}
+
+/// Settings that apply to every farm.
+record Global {
+  /// Paid once to own a farm.
+  farmPurchasePrice: Penya = 50_000_000
+  /// Paid by a player who visits someone else's farm.
+  visitCost: Penya = 100_000
+  /// Minimum faery rank required to own a farm.
+  worldLevelMinRequired: Int(0..) = 5
+  /// Minimum activity points required to own a farm.
+  activityPointsMinRequired: Int(0..) = 1000
+  /// How often every planted model produces.
+  productionTick: Duration(1s..) = 1h @json("productionTickIntervalSec", unit: s)
+
+  /// A cap on planted models that nothing enforces.
+  maxModels: Int? = none
+    @deprecated("never read by LoadFromFile: the real cap is FARM_MAX_MODELS = 100. Kept as is; changing it changes nothing in game.")
+}
+
+/// One level of a model: what it produces, what it grants, and what the next level costs.
+///
+/// A Premium model (typeId 7 to 14 in farm_config.json) is decorative: its single level
+/// produces nothing and only carries bonuses, so its three production fields are left
+/// out. The loader then falls back to productionPerHour 1 and maxStorage 100, which no
+/// production ever uses since there is no production item.
+record Level {
+  /// Not used for indexing: GetLevel(n) takes element n-1, so the ORDER of the levels
+  /// is what counts. Kept consistent by the `warn` on ModelType.
+  level: Int(1..)
+  /// A MODELELEM of OT_OBJ (obj_UC017, KaillunPlants04...). An unknown name is only a
+  /// warning in C++; it is resolved again at runtime.
+  modelName: String(1..)
+  /// The item produced; `none` on a decorative level.
+  productionItem: ref items? = none @json("productionItemDefine")
+  /// Items produced per hour; `none` on a decorative level.
+  productionPerHour: Int(0..)? = none
+  /// Items the level holds before production stops; `none` on a decorative level.
+  maxStorage: Int(0..)? = none
+  /// Bonuses granted while a model of this level is planted.
+  bonuses: [Bonus] = []
+  /// Items consumed to move TO the next level.
+  levelUpRequirements: [ItemCost] = []
+
+  check production_together: (productionItem == none) == (productionPerHour == none) and
+    (productionItem == none) == (maxStorage == none)
+    else "productionItem, productionPerHour and maxStorage go together: set all three, or none on a decorative level"
+}
+
+/// A plantable model and its ladder of levels.
+record ModelType {
+  /// Stored on players' farms: changing it breaks models already planted.
+  typeId: Int(0..)
+  /// Logging label. The name shown to players is `nameText`.
+  typeName: String
+  /// Text shown to players as the model's name.
+  nameText: ref texts? = none @json("nameTextDefine")
+  /// Paid to unlock the model.
+  unlockPrice: Penya = 0
+  /// Paid in addition to the gold. Only read when it is an array.
+  unlockItems: [ItemCost] = []
+  /// How many of this model one player may buy.
+  maxBuyCount: Int(1..) = 1
+  /// Highest level a model can reach.
+  maxLevel: Int(1..) = 1
+  /// The ORDER is the level: the first element is level 1.
+  levels: [Level]
+
+  // The loader does not check these; the six models shipped first trip the first one.
+  warn unreachable_levels: maxLevel <= levels.len() at maxLevel
+    else "maxLevel is {maxLevel} but only {levels.len()} levels exist: level {levels.len() + 1} and above are unreachable (GetLevel returns nullptr)"
+  warn level_mismatch: levels.enumerate().all((i, l) => l.level == i + 1)
+    else "a `level` value does not match its position; the loader uses the position"
+}
+
+/// The whole file.
+record FarmConfig {
+  /// Settings that apply to every farm.
+  global: Global
+  /// The models players can plant.
+  modelTypes: [ModelType](..=FARM_MAX_MODELS) keyed by typeId
+}
+
+/// Server/System/farm_config.json, read in place.
+let farm: FarmConfig = load("@resource/Server/System/farm_config.json")
+
+emit view { out: "@generated/farm.view.json" }

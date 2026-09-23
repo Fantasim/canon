@@ -1,0 +1,77 @@
+# Plan — compiler v0.1 (M0–M7)
+
+The order of work, condensed from [spec/IMPLEMENTATION-PLAN.md](../spec/IMPLEMENTATION-PLAN.md)
+§5–§7, which stays the authority (owners §5.1, phases §5.2, acceptance §6). Owners are the
+plan's agent roles; each step names the package(s) it owns. Tick a box only when its acceptance
+passes and `make check` is green. **Every milestone also requires** `make check` green, the
+`maprange` analyzer clean, `go test -race ./...` green, the determinism job green (§7.5), and
+every new diagnostic code tested (§7.2). Never start a step whose gate is not met: record the
+block in [state.md](state.md).
+
+**Gate for M0:** the consistency pass (`meta/spec-phase/review/CONSISTENCY-TODO.md`) is closed and v0.1 locked.
+
+## M0 — Contracts
+
+- [ ] **M0.1 Audit rules first** (QA, `tools/audit`; addendum, DECISIONS 26–27):
+  `diag-message-inline` (enforce), `diag-code-untested` (ratchet), `ignore-count` ratcheted,
+  thresholds moved to `tools/audit/thresholds.tsv`. Accept: rules.md in sync, the tool gates
+  itself, `make check` green.
+- [ ] **M0.2 Module skeleton** (QA): every package of §3 with `doc.go`, an Example test,
+  `constants.go`/`errors.go` where needed; `internal/testkit/deps_test.go` enforcing §3's
+  dependency rule. Accept: `go list -deps` matches the allowed graph.
+- [ ] **M0.3 Registry** (QA, `internal/diag`): `codes.go` generated from `spec/ERRORS.md`,
+  diff-checked by `make check`. Accept: ERRORS.md regenerated from the registry is unchanged.
+- [ ] **M0.4 The six frozen contracts** (§4), as compiling Go, each approved by its consumers:
+  `source.go` + `ast.go` (SYN), `types.go` (TYP), `value.go` (EVL), `diag.go` (QA), `ir.go` (IR),
+  `edit/path.go` (API); lock format types (VER), `project` schema types (LOD).
+- [ ] **M0.5 API split** (API, `api/`): `api/canon.go` split by concern per §12.4, no API change.
+- [ ] **M0.6 Harness** (QA, `internal/testkit`): golden harness skeleton running one trivial
+  golden; fixture extractor `fixturegen`; CI skeleton running `make check`.
+
+## M1 — v0: `taxonomy.canon` to baked Go and JSON
+
+- [ ] Parser for every example, AST goldens (SYN, `syntax`). Accept: no `E11xx`, dumps equal
+  `internal/syntax/testdata/ast/`.
+- [ ] Resolver + checker (TYP, `check`); evaluator + stdlib subset (EVL, `eval`); verify, lock,
+  rules (VER); `project`, `wire` encode (LOD); `ir`, `gen/json`, `build` (IR); `gen/go` baked
+  (GO); `cli` check/build/version/init/new (API); `goldens-check` wired in the Makefile (QA).
+- [ ] Accept (§6 M1): `canon check teamboard` prints its `findings.txt`; `canon build teamboard
+  sovcommon...` equals the goldens and a new `expected/MANIFEST`; generated Go builds on Go 1.23
+  and current; `canon.lock` equals its golden, `E6001` on delete/rename, retire passes;
+  integration branch of sovcommon `teamboard` green (GO, reviewed by Louis — a handoff).
+
+## M2 — Pipeline: data mode for Go and C++
+
+- [ ] First step: regenerate `examples/pipeline/expected/` (GEN-01); Louis reviews the diff.
+- [ ] `jsonsrc` (SYN), `wire` decode + `load.dir` (LOD), `conform` (EVL), fingerprint + reload IR
+  (IR), data mode + stores + conformance (GO, CPP), `cli test` (API).
+- [ ] Accept (§6 M2): pipeline byte-exact; C++ builds on the §7.8 matrix with `-Werror`;
+  conformance green with `-race`; `canon test` output format; fingerprint refusal; FINGERPRINT.md
+  vectors; finding positions in JSON sources.
+
+## M3 — Load and the view model
+
+- [ ] Every `load` form (LOD); dependent types, views, i18n, layers (TYP, VM: `views`,
+  `gen/view`, `i18n`, `api/vm`); C++ `types` mode (CPP); `Check`/`Value`/`ViewModel` (API);
+  `infer` starts (MIG); real-data job + `make check-real` over `testdata-real/` (QA).
+- [ ] Accept (§6 M3): every example prints its `findings.txt`; view models validate against the
+  schema and equal goldens; `balance.parity` golden; `canon explain` golden; C++ `types` decode.
+
+## M4 — Formatter and the edit API
+
+- [ ] `format` (SYN), incremental memo (EVL, API), `edit`, `workspace`, full `api` (API).
+- [ ] Accept (§6 M4): examples are `fmt` fixed points, 10-minute fuzz clean; every API.md rule
+  tested; minimal-write invariant under fuzzing; NFR-01 targets (§7.6); crash and race stress
+  tests; studio integration spike (a handoff to resourcestudio).
+
+## M5, M6, M7 — in parallel once M4 is accepted
+
+- [ ] **M5 LSP** (LSP, `lsp`, `editors/vscode`): txtar transcripts, UTF-16, 500 ms diagnostics.
+- [ ] **M6 Legacy C++ and TypeScript** (CPP, TS; may start after M3): `legacycpp` in three modes;
+  TS goldens pass `tsc --strict` and `node --test`; `E8101` tested.
+- [ ] **M7 Migration** (MIG, `infer`, `convert`; VM for `i18n stub|status`): infer golden and
+  "first build passes"; convert proof; `i18n stub fr` golden.
+
+## Feature examples owed (§7.9, QA)
+
+`entries` (before M1), `pairs` (before M2), `edits` (before M4), `ts` (before M6).

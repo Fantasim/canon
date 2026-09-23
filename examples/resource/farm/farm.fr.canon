@@ -1,0 +1,72 @@
+// French for the farm's studio texts.
+//
+// Keys are paths into farm.canon and farm.view.canon, never the English text:
+// rewording the English does not orphan the translation, and renaming a field makes
+// its key an error here instead of a silent gap.
+//
+//   canon i18n stub fr     adds every missing key, with the English as a comment
+//   canon check            a missing key is a warning (the studio falls back to English);
+//                          a key that no longer exists is an error
+//
+// Same model as Resource/Schema/i18n/fr today (English in source, fr overlay, fallback
+// to English), with paths checked by the compiler instead of JSON pointers.
+package resource.farm
+translation fr
+
+// --- views ---
+FarmConfig.title "Ferme"
+FarmConfig.group.settings "Réglages généraux"
+FarmConfig.group.models "Modèles plantables"
+FarmConfig.group.models.intro "Un modèle = un prix de déblocage, un nombre d'exemplaires achetables et une échelle de paliers."
+
+Global.title "Réglages généraux"
+Global.group.prices "Prix"
+Global.group.access "Conditions d'accès"
+Global.group.production "Production"
+Global.farmPurchasePrice "Prix d'achat de la ferme"
+Global.visitCost "Coût d'une visite"
+Global.worldLevelMinRequired "Rang de féerie minimum"
+Global.activityPointsMinRequired "Points d'activité minimum"
+Global.productionTick "Cadence de production"
+
+ModelType.singular "un modèle"
+ModelType.group.identity "Identité"
+ModelType.group.unlock "Déblocage"
+ModelType.group.unlock.intro "Ce que le joueur paie pour débloquer ce modèle."
+ModelType.group.levels "Paliers"
+ModelType.group.levels.intro "Un palier par niveau, dans l'ordre : production, stockage, bonus et coût de montée."
+ModelType.typeId "Identifiant"
+ModelType.typeName "Nom interne"
+ModelType.nameText "Nom affiché"
+ModelType.unlockPrice "Prix de déblocage"
+ModelType.unlockItems "Objets de déblocage"
+ModelType.maxBuyCount "Exemplaires achetables"
+ModelType.maxLevel "Niveau maximum"
+ModelType.levels "Paliers"
+
+Level.title "Palier {level}"
+Level.singular "un palier"
+Level.group.production "Production"
+Level.group.bonuses "Bonus"
+Level.group.cost "Coût de montée"
+Level.modelName "Modèle 3D"
+Level.productionItem "Objet produit"
+Level.productionItem.placeholder "Décoratif : ne produit rien"
+Level.productionPerHour "Production / heure"
+Level.maxStorage "Stockage maximum"
+
+ItemCost.singular "un objet"
+ItemCost.item "Objet"
+ItemCost.count "Quantité"
+
+Bonus.singular "un bonus"
+Bonus.attribute "Attribut"
+Bonus.value "Valeur"
+
+// --- doc comments (help texts) and findings ---
+ModelType.typeId.help "Stocké sur les fermes des joueurs : le changer casse les modèles déjà plantés."
+ModelType.levels.help "L'ORDRE fait le niveau : le premier élément est le niveau 1."
+ModelType.check.unreachable_levels "maxLevel vaut {maxLevel} mais seuls {levels.len()} paliers existent : le niveau {levels.len() + 1} et au-delà sont inatteignables (GetLevel renvoie nullptr)"
+ModelType.check.level_mismatch "une valeur `level` ne correspond pas à sa position ; le chargeur utilise la position"
+Level.check.production_together "productionItem, productionPerHour et maxStorage vont ensemble : les trois, ou aucun sur un palier décoratif"
+Global.maxModels.deprecated "Jamais lu par LoadFromFile : la vraie limite est FARM_MAX_MODELS = 100. Conservé tel quel ; le modifier ne change rien en jeu."

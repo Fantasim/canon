@@ -1,0 +1,4 @@
+# intentional root entries of the canon audit module
+rules.md
+DOCTRINE-code.md
+toolchain

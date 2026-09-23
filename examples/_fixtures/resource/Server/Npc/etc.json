@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "jobs": [
+    {"id": "JOB_VAGRANT", "name": "IDS_ETC_INC_000000", "jobBase": "JOB_VAGRANT", "jobType": "JTYPE_BASE"},
+    {"id": "JOB_MERCENARY", "name": "IDS_ETC_INC_000001", "jobBase": "JOB_VAGRANT", "jobType": "JTYPE_EXPERT"},
+    {"id": "JOB_ACROBAT", "name": "IDS_ETC_INC_000002", "jobBase": "JOB_VAGRANT", "jobType": "JTYPE_EXPERT"},
+    {"id": "JOB_ASSIST", "name": "IDS_ETC_INC_000003", "jobBase": "JOB_VAGRANT", "jobType": "JTYPE_EXPERT"},
+    {"id": "JOB_MAGICIAN", "name": "IDS_ETC_INC_000004", "jobBase": "JOB_VAGRANT", "jobType": "JTYPE_EXPERT"},
+    {"id": "JOB_PUPPETEER", "name": "IDS_ETC_INC_000005", "jobBase": "JOB_VAGRANT", "jobType": "JTYPE_EXPERT"},
+    {"id": "JOB_KNIGHT", "name": "IDS_ETC_INC_000006", "jobBase": "JOB_MERCENARY", "jobType": "JTYPE_PRO"},
+    {"id": "JOB_BLADE", "name": "IDS_ETC_INC_000007", "jobBase": "JOB_MERCENARY", "jobType": "JTYPE_PRO"},
+    {"id": "JOB_JESTER", "name": "IDS_ETC_INC_000008", "jobBase": "JOB_ACROBAT", "jobType": "JTYPE_PRO"},
+    {"id": "JOB_RANGER", "name": "IDS_ETC_INC_000009", "jobBase": "JOB_ACROBAT", "jobType": "JTYPE_PRO"},
+    {"id": "JOB_RINGMASTER", "name": "IDS_ETC_INC_000010", "jobBase": "JOB_ASSIST", "jobType": "JTYPE_PRO"},
+    {"id": "JOB_BILLPOSTER", "name": "IDS_ETC_INC_000011", "jobBase": "JOB_ASSIST", "jobType": "JTYPE_PRO"},
+    {"id": "JOB_PSYCHIKEEPER", "name": "IDS_ETC_INC_000012", "jobBase": "JOB_MAGICIAN", "jobType": "JTYPE_PRO"},
+    {"id": "JOB_ELEMENTOR", "name": "IDS_ETC_INC_000013", "jobBase": "JOB_MAGICIAN", "jobType": "JTYPE_PRO"},
+    {"id": "JOB_GATEKEEPER", "name": "IDS_ETC_INC_000014", "jobBase": "JOB_PUPPETEER", "jobType": "JTYPE_PRO"},
+    {"id": "JOB_DOPPLER", "name": "IDS_ETC_INC_000015", "jobBase": "JOB_PUPPETEER", "jobType": "JTYPE_PRO"}
+  ],
+  "structures": []
+}

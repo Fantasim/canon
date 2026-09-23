@@ -1,0 +1,33 @@
+/// `load.csv` (SPEC §13): a spreadsheet export read in place. With `header: true` the
+/// first row names the columns, matched to wire names; each cell is read as the field's
+/// type, and an empty cell means the field's default.
+///
+/// The table is made up (like pipeline's Potion): designers keep experience curves in a
+/// spreadsheet and export them as CSV.
+package features.csv
+
+/// One row of the experience curve.
+record LevelRow {
+  /// Character level.
+  level: Int(1..=150)
+  /// Experience needed to go from this level to the next.
+  exp: Int(1..) @json("exp_to_next")
+  /// Share of the level's experience lost on death, in per mille.
+  deathPenalty: Int(0..=1000) = 0 @json("death_penalty")
+}
+
+/// The experience curve, one row per level.
+let levels: [LevelRow] keyed by level = load.csv("data/exp_curve.csv", header: true)
+
+check {
+  for i, row in levels.enumerate() {
+    if row.level != i + 1 {
+      fail(row, "level {row.level} is at row {i + 1}: levels must be 1, 2, 3... with no gap")
+    }
+  }
+}
+
+warn levels.all(r => r.deathPenalty <= 100)
+  else "a death penalty above 10 % is harsher than any live server"
+
+emit json { out: "out/exp_curve.json", values: [levels] }

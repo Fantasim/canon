@@ -1,0 +1,20 @@
+/// Account roles of the website and every internal tool.
+package sovcommon.roles
+
+/// The website.website_account.role literals. Declaration order IS the rank:
+/// `gm_junior < maintainer` is true, and nothing else may hard-code a number.
+///
+/// Today this ladder is written three times (roles.go, roles.ts and the SQL CHECK
+/// constraint) and kept in sync by comments. Here it is written once, and Go and TS
+/// are generated from it.
+enum Role ordered {
+  member
+  gm_junior
+  gm_senior
+  maintainer
+  owner
+  admin
+}
+
+emit go { out: "@sovcommon/roles", package: "roles", mode: baked }
+emit ts { out: "@web/roles.generated.ts" }

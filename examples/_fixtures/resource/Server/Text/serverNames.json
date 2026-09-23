@@ -1,0 +1,22 @@
+{
+  "strings": {
+    "IDS_PROPITEM_TXT_000016": "Wooden Sword",
+    "IDS_PROPITEM_TXT_000504": "Vagrant Helmet",
+    "IDS_PROPITEM_TXT_003806": "Tritium Sword",
+    "IDS_PROPITEM_TXT_003814": "Tritium Wand",
+    "IDS_PROPITEM_TXT_003894": "Guardian Knuckle",
+    "IDS_PROPITEM_TXT_003902": "Guardian Bow",
+    "IDS_PROPITEM_TXT_003930": "Angel Axe",
+    "IDS_PROPITEM_TXT_004208": "Hot Dog",
+    "IDS_PROPITEM_TXT_008064": "Sunstone",
+    "IDS_PROPITEM_TXT_008066": "Moonstone",
+    "IDS_PROPITEM_TXT_008912": "Perin",
+    "IDS_PROPITEM_TXT_009528": "Volcano Card (3%)",
+    "IDS_PROPITEM_TXT_027493": "Wheat",
+    "IDS_PROPITEM_TXT_030168": "Giant Hunter",
+    "IDS_PROPITEM_TXT_SOV_002471": "Relics of the Four Elements",
+    "IDS_PROPITEM_SANSIVOL_001": "Faery boost",
+    "IDS_PROPITEM_SANSIVOL_007": "Activity Book 50"
+  },
+  "version": 1
+}

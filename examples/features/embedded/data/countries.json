@@ -1,0 +1,6 @@
+[
+  {"code": "FR", "name": "France", "vat": 20.0},
+  {"code": "DE", "name": "Germany", "vat": 19.0},
+  {"code": "BE", "name": "Belgium", "vat": 21.0},
+  {"code": "CH", "name": "Switzerland", "vat": 8.1, "cards": false}
+]

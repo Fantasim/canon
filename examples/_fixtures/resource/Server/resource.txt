@@ -1,0 +1,10 @@
+version "V0.01"
+encryptionKey 0x57
+
+resource 1 "..\Client\Data.res"
+{
+	file "Server\System\heistia_config.json"
+	file "Server\Event\WheelOfFortune.json"
+	file "Server\System\farm_config.json"
+	file "Server\Quest\adventure_quest_config.json"
+}

@@ -1,0 +1,97 @@
+# canon audit stock lane: pinned golangci-lint v2 config, mapped onto the rulebook ids.
+version: "2"
+
+run:
+  tests: false
+  relative-path-mode: gomod
+
+linters:
+  default: none
+  enable:
+    - gocognit
+    - gosec
+    - errorlint
+    - errcheck
+    - wrapcheck
+    - nilerr
+    - staticcheck
+    - unparam
+    - unused
+    - gocritic
+    - ineffassign
+    - wastedassign
+    - modernize
+    - dupl
+    - revive
+    - contextcheck
+    - noctx
+    - sqlclosecheck
+    - rowserrcheck
+    - bodyclose
+    - exhaustive
+    - nolintlint
+  settings:
+    gosec:
+      excludes:
+        - G101 # names like tokenSecret in a lexer, never a real credential
+        - G304 # a compiler reads the paths it is given
+    errcheck:
+      exclude-functions: # cleanup errors nothing can act on; (*os.File).Close stays flagged
+        - (*database/sql.Rows).Close
+        - (*database/sql.Tx).Rollback
+        - (io.ReadCloser).Close
+    wrapcheck:
+      ignore-sigs: # wrapcheck's defaults, plus ctx.Err(): returned as is by convention
+        - .Errorf(
+        - errors.New(
+        - errors.Unwrap(
+        - errors.Join(
+        - .Wrap(
+        - .Wrapf(
+        - .WithMessage(
+        - .WithMessagef(
+        - .WithStack(
+        - (context.Context).Err()
+      ignore-package-globs:
+        - github.com/fantasim/canonlang/*
+    gocognit:
+      min-complexity: 15
+    dupl:
+      threshold: 150
+    staticcheck:
+      checks:
+        - all
+        - -ST1000
+        - -ST1020
+        - -ST1021
+        - -ST1022
+      # staticcheck's default list minus TS (TsNs is fine); golangci panics on "inherit"
+      initialisms: [ACL, API, ASCII, CPU, CSS, DNS, EOF, GUID, HTML, HTTP, HTTPS, ID, IP, JSON, QPS, RAM,
+        RPC, SLA, SMTP, SQL, SSH, TCP, TLS, TTL, UDP, UI, GID, UID, UUID, URI, URL, UTF8, VM, XML, XMPP,
+        XSRF, XSS, SIP, RTP, AMQP, DB]
+    gocritic:
+      disable-all: true
+      enabled-checks:
+        - commentedOutCode
+    revive:
+      rules:
+        - name: context-as-argument
+        - name: var-naming
+        - name: receiver-naming
+    exhaustive:
+      default-signifies-exhaustive: true
+    nolintlint:
+      require-explanation: true
+      require-specific: true
+  exclusions:
+    generated: lax
+    presets: []
+
+formatters:
+  enable:
+    - gofumpt
+    - goimports
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0

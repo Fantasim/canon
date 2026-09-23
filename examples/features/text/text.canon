@@ -1,0 +1,31 @@
+/// `load.text` (SPEC §13): a plain text file read as one String (strict UTF-8, `\r\n`
+/// read as `\n`), then taken apart with ordinary string functions.
+///
+/// Server/resource.txt lists the files packed into Data.res. A file listed twice is
+/// packed twice, and a JSON file the law reads but the list forgets never reaches the
+/// client.
+package features.text
+
+/// Server/resource.txt, as written.
+local let packingList: String = load.text("@resource/Server/resource.txt")
+
+/// Every `file "…"` line of the packing list, in order, without the quotes.
+let packedFiles: [String] = [
+  line.trim().replace("file ", "").replace("\"", "")
+  for line in packingList.split("\n")
+  if line.trim().startsWith("file \"")
+]
+
+/// Files other examples of this project read, which the client needs too.
+const MUST_BE_PACKED = [r"Server\System\heistia_config.json", r"Server\System\farm_config.json"]
+
+check {
+  for i, f in packedFiles.enumerate() {
+    if packedFiles[..i].contains(f) { warn(f, "{f} is packed twice") }
+  }
+  for f in MUST_BE_PACKED {
+    if not packedFiles.contains(f) {
+      fail(packedFiles, "{f} is missing from resource.txt: the client never receives it")
+    }
+  }
+}

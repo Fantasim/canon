@@ -1,0 +1,223 @@
+/// Adventure Quest V2: per-style timers, weights and rewards, target multipliers,
+/// hourly production rates, task filters and rate amplifiers.
+/// Loader: AdventureQuestTaskConfig::LoadFromJsonString (Game/Progression/Quest/AdventureQuestConfig.cpp).
+///
+/// What makes this file hard: five maps are keyed by event type, and inside
+/// hourly_targets the keys of `rates_by_specific` are items for ECONOMY_DROP_ITEM,
+/// monsters for COMBAT_KILL_MONSTER, and so on. `HourlyTarget(e)` is a record that
+/// takes the event as a parameter, so each entry is checked against its own event.
+///
+/// The loader is tolerant (most mistakes are skipped with a LOG_WARN). The schema is
+/// now the only owner of most checks (L-0094), so they are errors here.
+package resource.adventurequest
+
+import resource.vocab { EventType, Param, QuestStyle, RewardType, Stage, eventTypes }
+import studio
+
+/// MAX_TASK_PER_QUEST: a quest has 1 to 3 tasks.
+const MAX_TASK_PER_QUEST = 3
+
+// ---------------------------------------------------------------------------
+// Global
+// ---------------------------------------------------------------------------
+
+/// Level gaps between a player and the monsters a task may target. camelCase on the
+/// wire, unlike the rest of the file.
+record LevelDiff {
+  /// Lowest level gap to a normal monster.
+  minMob: Int(0..)
+  /// Highest level gap to a normal monster.
+  maxMob: Int(0..)
+  /// Lowest level gap to a giant.
+  minGiant: Int(0..)
+  /// Highest level gap to a giant.
+  maxGiant: Int(0..)
+}
+
+/// Settings shared by every style.
+record Global @json(case: snake) {
+  /// The loader clamps it to >= 0.
+  minLevel: Int? = none
+  /// The loader clamps it to [1, 100].
+  maxQuestsPerStyle: Int? = none
+  /// Wait before a completed quest can be rerolled.
+  completionRerollCooldown: Duration @json("completion_reroll_cooldown_sec", unit: s)
+  /// Level gaps between players and targeted monsters.
+  levelDiff: LevelDiff @json("levelDiff")
+}
+
+// ---------------------------------------------------------------------------
+// Styles
+// ---------------------------------------------------------------------------
+
+/// What completing a quest of a style pays.
+record Rewards {
+  /// What is paid.
+  kind: RewardType @json("type")
+  /// A stage amount <= 0 made the loader drop the WHOLE map: silent non-payment.
+  amounts: {Stage: Int(1..)}
+}
+
+/// Timers, draw weights and rewards of one quest style.
+record Style @json(case: snake) {
+  /// Absent for azure.
+  rerollTime: Duration? = none @json("reroll_time_sec", unit: s)
+  /// Time a quest of this style is sized for.
+  targetTime: Duration @json("target_time_sec", unit: s)
+  /// Days a quest of this style stays open.
+  maxTargetDays: Int(1..)
+  /// Chance, in percent, that a quest has 1, 2 or 3 tasks.
+  taskSlotWeights: [Int(0..)](1..=MAX_TASK_PER_QUEST)
+  /// Chance, in percent, that a task is about each event.
+  taskWeights: {ref eventTypes: Int(0..)}
+  /// What completing a quest pays; `{}` on the wire means nothing.
+  rewards: Rewards? = none @json(none: {})
+
+  check taskSlotWeights.sum() == 100
+    else "task_slot_weights add up to {taskSlotWeights.sum()}, not 100"
+  check taskWeights.values().sum() == 100
+    else "task_weights add up to {taskWeights.values().sum()}, not 100"
+}
+
+// ---------------------------------------------------------------------------
+// Targets
+// ---------------------------------------------------------------------------
+
+/// "How many tasks the quest has" -> how much each task's target shrinks.
+enum TaskCount { two = "2_tasks", three = "3_tasks" }
+
+/// How much each task's target shrinks when a quest has several tasks.
+record Multiplier {
+  /// For every event without an override.
+  default: Float
+  /// Per event.
+  overrides: {ref eventTypes: Float} = {}
+
+  warn default > 0.0 else "a default <= 0 is logged and clamped to 0.01 by the loader"
+}
+
+/// A key of rates_by_specific: one of the event's parameters, or "default" for the rest.
+type SpecificKey(e: EventType) = Param(e) | "default"
+
+/// Hourly production of event `e`, per stage.
+record HourlyTarget(e: EventType) @json(case: snake) {
+  /// One rate for the whole event...
+  rates: {Stage: Int(0..)}? = none
+  /// ...or one per item / monster / dungeon, depending on `e`.
+  ratesBySpecific: {SpecificKey(e): {Stage: Int(0..)}}? = none
+  /// A daily cap per item / monster / dungeon.
+  dailyMaxBySpecific: {SpecificKey(e): Int(0..)}? = none
+  /// The rate is a daily count, not an hourly rate.
+  isDailyFlat: Bool = false
+}
+
+// ---------------------------------------------------------------------------
+// Filters and amplifiers
+// ---------------------------------------------------------------------------
+
+/// An inclusive range of player levels.
+record LevelRange {
+  /// Lowest level.
+  min: Int(0..=500)
+  /// Highest level.
+  max: Int(0..=500)
+
+  check min <= max else "min ({min}) is above max ({max})"
+}
+
+/// Who may be given a task about an event.
+record TaskFilter {
+  /// Player levels the task is offered to.
+  level: LevelRange
+}
+
+/// What an amplifier measures on the player.
+enum Condition { net_worth, level }
+
+/// A rate bonus for players whose measure falls in a range.
+record Amplifier @json(case: snake) {
+  /// What is measured.
+  condition: Condition
+  /// Order among the amplifiers of one event; unique when set.
+  priority: Int? = none
+  /// Lowest measure that gets the bonus.
+  minValue: Int(0..)
+  /// Highest measure that gets the bonus.
+  maxValue: Int(0..)
+  /// Bonus at `minValue`.
+  bonusMin: Float where it > 0.0
+  /// Bonus at `maxValue`.
+  bonusMax: Float where it > 0.0
+
+  /// Kept by the loader as a crash guard: ComputeAmplifierBonus casts
+  /// (bonus_max - bonus_min) / 0.1f to int.
+  check bonusMin <= bonusMax else "bonus_min is above bonus_max"
+  check minValue <= maxValue else "min_value is above max_value"
+}
+
+// ---------------------------------------------------------------------------
+// The file
+// ---------------------------------------------------------------------------
+
+/// The whole file.
+record AdventureQuestConfig @json(case: snake) {
+  /// Never read by the loader; kept as a convention.
+  version: Int = 1
+  /// Settings shared by every style.
+  global: Global
+  /// Events a batch may contain only once.
+  uniquePerBatch: [ref eventTypes] = []
+  /// azure is only read under __AZURE_UPGRADE.
+  styles: {QuestStyle: Style}
+  /// Target shrink per number of tasks.
+  targetMultipliers: {TaskCount: Multiplier} = {}
+  /// Each value's type depends on its key: see HourlyTarget(e).
+  hourlyTargets: {e in eventTypes: HourlyTarget(e)} = {}
+  /// Rate bonuses per event.
+  rateAmplifiers: {ref eventTypes: [Amplifier]} = {}
+  /// Who may be given a task, per event.
+  taskFilters: {ref eventTypes: TaskFilter} = {}
+
+  check {
+    for e, amps in rateAmplifiers {
+      let priorities = [a.priority for a in amps if a.priority != none]
+      if not priorities.isUnique() {
+        fail(amps, "two amplifiers of {e.id} share a priority: the loader discards all of them")
+      }
+    }
+    for e in uniquePerBatch {
+      if not styles.values().any(s => s.taskWeights.contains(e)) {
+        warn(e, "{e.id} is in no style's task_weights, so listing it here has no effect")
+      }
+    }
+  }
+}
+
+/// Server/Quest/adventure_quest_config.json, read in place.
+let adventureQuests: AdventureQuestConfig =
+  load("@resource/Server/Quest/adventure_quest_config.json")
+
+// ---------------------------------------------------------------------------
+// Studio
+// ---------------------------------------------------------------------------
+// In hourlyTargets, pick ECONOMY_DROP_ITEM as the key and the rates_by_specific key
+// picker becomes an item search; pick COMBAT_KILL_MONSTER and it becomes a monster
+// search. Nothing to declare: the studio reads HourlyTarget(e)'s field types.
+
+view AdventureQuestConfig {
+  title "Adventure quests"
+  menu progression icon map
+  group general "General" { global, uniquePerBatch }
+  group styles "Styles" { styles }
+  group targets "Targets" { targetMultipliers, hourlyTargets }
+  group tuning "Tuning" advanced { taskFilters, rateAmplifiers }
+}
+
+view Style {
+  title "{key}"
+  group timing "Timing" { rerollTime, targetTime, maxTargetDays }
+  group draw "Draw" { taskSlotWeights { unit: pct }, taskWeights { unit: pct } }
+  group rewards "Rewards" { rewards }
+}
+
+emit view { out: "@generated/adventurequest.view.json" }

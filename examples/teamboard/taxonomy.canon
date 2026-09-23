@@ -1,0 +1,429 @@
+/// Taxonomy of the team board (internal.ragyra.com).
+///
+/// Rewrite of sovcommon/teamboard/taxonomy.json v7. The ~30 load-time checks in
+/// load.go and refs.go become three things here:
+///   - types: unknown refs, roles, tones, icons, setBy, fields, duplicate or
+///     badly formed ids, required fields. There is no code for any of them.
+///   - stable tables: "never renamed, never reused, retire instead of delete".
+///   - the eight `check`s at the bottom: the rules that are truly about this data.
+///
+/// The reporter makes ONE classification: WHERE did you see it (area). Everything
+/// finer is said in the text; routing to a technical area is the triager's move.
+package teamboard
+
+import sovcommon.roles { Role }
+import sovcommon.ui { Icon, Tone }
+
+/// Format version of the taxonomy (taxonomy.json's `version`).
+const VERSION = 7
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+/// Who may set a flag or make a transition.
+enum Actor { reporter, triager, reporter_or_triager }
+
+/// Inputs a status transition may collect.
+enum PostField { assignee, fixed_in, reason, duplicate_of }
+
+/// A deck arrangement, "<columns per row>:<rows>".
+type Layout = String(/^[1-9]:[1-9]$/)
+
+/// What kind of post this is; `minRole` gates who may post it.
+record Intent {
+  /// Colour of the intent's badge.
+  tone: Tone
+  /// Icon of the intent's badge.
+  icon: Icon
+  /// What the reporter picks, as a sentence.
+  label: String(1..)
+  /// The lowest role that may post with this intent.
+  minRole: Role
+}
+
+/// One of the reporter's booleans.
+record Flag {
+  /// Colour of the flag's badge.
+  tone: Tone
+  /// Icon of the flag's badge.
+  icon: Icon
+  /// What the reporter ticks, as a sentence.
+  label: String(1..)
+  /// Shown under the label.
+  hint: String? = none
+  /// Who may set the flag.
+  setBy: Actor
+  /// Who may see that the flag was set; `none` means whoever can see the post.
+  viewMinRole: Role? = none
+}
+
+/// One point of the post lifecycle.
+record Status {
+  /// Colour of the status badge.
+  tone: Tone
+  /// Name of the status.
+  label: String(1..)
+  /// A terminal status closes the post. It can still be reopened through `next`.
+  terminal: Bool
+  /// The closed set of statuses a post may move to from here.
+  next: [ref Status]
+  /// Inputs a transition INTO this status must collect.
+  requires: [PostField] = []
+  /// Inputs a transition INTO this status may collect.
+  optional: [PostField] = []
+  /// Who, besides a triager, may make the transition into this status.
+  by: Actor? = none
+
+  check next.isUnique() else "a transition is listed twice"
+  check not next.contains(self) else "a status cannot transition to itself"
+  check requires.intersect(optional).isEmpty() else "a field is both required and optional"
+}
+
+/// Set by a triager only. The reporter's single signal is the `blocking` flag.
+record Severity {
+  /// Colour of the severity badge.
+  tone: Tone
+  /// Name of the severity.
+  label: String(1..)
+  /// The severity a triaged post gets unless the triager picks another.
+  default: Bool = false
+}
+
+/// A header the area picker and the move-to-area menu group areas under.
+record AreaGroup {
+  /// Header text.
+  label: String(1..)
+}
+
+/// Where the reporter stood, never which component is at fault.
+record Area {
+  /// The header the area is listed under.
+  group: ref AreaGroup
+  /// Family: series_1 game, series_2 web, series_3 tooling, series_4 internal.
+  tone: Tone
+  /// Icon next to the area's name.
+  icon: Icon
+  /// Name of the area.
+  label: String(1..)
+  /// Shown under the label.
+  hint: String? = none
+  /// Gates posting AND viewing.
+  minRole: Role
+  /// Technical areas a triager typically moves a post into. Orders the move menu only.
+  routesTo: [ref Area] = []
+
+  check routesTo.isUnique() else "an area is listed twice in routesTo"
+  check not routesTo.contains(self) else "an area cannot route to itself"
+}
+
+/// One fixed column of the deck: a named set of statuses.
+record Column {
+  /// Column header.
+  label: String(1..)
+  /// Icon in the column header.
+  icon: Icon
+  /// The statuses whose posts the column shows.
+  statuses: [ref Status]
+  /// Adds a multi-select of eligible members inside the column.
+  assigneeFilter: Bool = false
+  /// Lets a viewer collapse the column to the rail (capped by `deck.maxHidden`).
+  hideable: Bool = true
+
+  check not statuses.isEmpty() else "a column holds at least one status"
+}
+
+/// The deck: fixed columns, in order. Nobody adds, removes or edits a column.
+record Deck {
+  /// The only arrangements: all in one row, or a 2x2 grid.
+  layouts: [Layout]
+  /// How many columns may be collapsed at once, so the deck never goes fully empty.
+  maxHidden: Int(1..)
+
+  check not layouts.isEmpty() else "at least one layout"
+  check layouts.isUnique() else "a layout is declared twice"
+}
+
+// ---------------------------------------------------------------------------
+// Values
+// ---------------------------------------------------------------------------
+
+/// What a post can be.
+let intents: stable table Intent = {
+  issue { tone: warning, icon: alert_triangle, label: "Something is wrong", minRole: gm_junior }
+  idea { tone: accent, icon: lightbulb, label: "Idea or request", minRole: gm_junior }
+}
+
+/// The reporter's booleans.
+let flags: stable table Flag = {
+  blocking { tone: danger, icon: hand, label: "This blocks my work", setBy: reporter }
+  sensitive {
+    tone: warning
+    icon: lock
+    label: "Only the dev team should see"
+    setBy: reporter
+    viewMinRole: maintainer
+    hint: "Exploits, dupes, security problems."
+  }
+}
+
+/// The post lifecycle.
+let statuses: stable table Status = {
+  open { tone: warning, label: "Open", terminal: false, next: [taken, wont_do, duplicate] }
+  taken {
+    tone: info
+    label: "Taken"
+    terminal: false
+    next: [open, fixed, wont_do, duplicate]
+    requires: [assignee]
+  }
+  fixed {
+    tone: accent
+    label: "Fixed"
+    terminal: false
+    next: [verified, open]
+    optional: [fixed_in]
+  }
+  verified {
+    tone: success
+    label: "Verified"
+    terminal: true
+    next: [open]
+    by: reporter_or_triager
+  }
+  wont_do { tone: neutral, label: "Won't do", terminal: true, next: [open], requires: [reason] }
+  duplicate {
+    tone: neutral
+    label: "Duplicate"
+    terminal: true
+    next: [open]
+    requires: [duplicate_of]
+  }
+}
+
+/// A post is owned by exactly one person, and never by a GM. Take = assign to yourself;
+/// a triager may assign to any eligible member.
+let assigneeMinRole: Role = maintainer
+/// The lowest role that may triage.
+let triageMinRole: Role = maintainer
+
+/// The deck's arrangements.
+let deck: Deck = { layouts: ["4:1", "2:2"], maxHidden: 2 }
+
+/// The deck's columns, left to right.
+let columns: stable table Column = {
+  unclaimed { label: "Unclaimed", icon: inbox, statuses: [open] }
+  taken { label: "Taken", icon: hand, statuses: [taken], assigneeFilter: true }
+  fixed { label: "Fixed, to verify", icon: check, statuses: [fixed] }
+  done { label: "Done", icon: archive, statuses: [verified, wont_do, duplicate] }
+}
+
+/// How bad a triaged post is.
+let severities: stable table Severity = {
+  low { tone: neutral, label: "Low" }
+  normal { tone: info, label: "Normal", default: true }
+  critical { tone: danger, label: "Critical" }
+}
+
+/// The headers of the area picker.
+let areaGroups: stable table AreaGroup = {
+  in_game { label: "In game" }
+  out_game { label: "Out of game" }
+  internal { label: "Internal" }
+}
+
+/// Where a post was seen.
+let areas: stable table Area = {
+  game {
+    group: in_game
+    tone: series_1
+    icon: gamepad
+    label: "Game"
+    minRole: gm_junior
+    hint: "Anything you saw while playing."
+    routesTo: [game_server, client, resource, balance]
+  }
+  balance {
+    group: in_game
+    tone: series_1
+    icon: scale
+    label: "Balance"
+    minRole: gm_junior
+    hint: "Nothing is broken, the numbers feel wrong."
+  }
+  website {
+    group: out_game
+    tone: series_2
+    icon: globe
+    label: "Website"
+    minRole: gm_junior
+    hint: "The site, accounts, rankings, donations and payments."
+  }
+  resource_studio {
+    group: internal
+    tone: series_3
+    icon: layers
+    label: "Resource Studio"
+    minRole: maintainer
+  }
+
+  game_server { group: in_game, tone: series_1, icon: server, label: "Game server", minRole: admin }
+  client {
+    group: in_game
+    tone: series_1
+    icon: monitor
+    label: "Game client"
+    minRole: maintainer
+  }
+  resource {
+    group: in_game
+    tone: series_1
+    icon: database
+    label: "Game data (Resource)"
+    minRole: maintainer
+  }
+  sovcommon { group: internal, tone: series_3, icon: package, label: "sovcommon", minRole: admin }
+
+  /// Tracks the panel's own gate (RequireAdmin).
+  admin_panel {
+    group: internal
+    tone: series_2
+    icon: shield
+    label: "Admin panel"
+    minRole: admin
+  }
+  /// Tracks monitoring's AdminMinRole.
+  analytics {
+    group: internal
+    tone: series_2
+    icon: bar_chart
+    label: "Analytics panel"
+    minRole: admin
+  }
+  team_board {
+    group: internal
+    tone: series_2
+    icon: columns
+    label: "Team board"
+    minRole: gm_junior
+    hint: "This board itself: something broken or missing here."
+  }
+  internal {
+    group: internal
+    tone: series_4
+    icon: terminal
+    label: "Internal (sov, boxes, deploy)"
+    minRole: admin
+  }
+}
+
+// Derived values are emitted like any other: runtimes read `InitialStatus`, they never
+// recompute it.
+
+/// A new post starts here: the single status of the first column. The deck has at least
+/// two columns (`maxHidden` >= 1 is below their count), so `first()!` cannot fail.
+let initialStatus: ref Status = columns.active().first()!.statuses[0]
+
+/// The severity a triaged post gets unless the triager picks another. Exactly one
+/// exists: see the `default` check below.
+let defaultSeverity: ref Severity = severities.active().first(.default)!
+
+// ---------------------------------------------------------------------------
+// Rules about this data
+// ---------------------------------------------------------------------------
+
+check {
+  for s in statuses.active() {
+    let owners = columns.active().filter(c => c.statuses.contains(s))
+    if owners.isEmpty() {
+      fail(s, "status {s.id} is not claimed by any column")
+    } else if owners.len() > 1 {
+      fail(s, "status {s.id} is claimed by several columns: {owners.map(.id).join(", ")}")
+    }
+  }
+}
+
+check columns.active().first()!.statuses.len() == 1
+  else "the first column must hold exactly one status: it is the initial status"
+
+check severities.active().count(.default) == 1 else "severities must have exactly one default"
+
+check deck.maxHidden < columns.active().len()
+  else "maxHidden ({deck.maxHidden}) must be less than the number of columns"
+
+check {
+  for g in areaGroups.active() {
+    if not areas.active().any(a => a.group == g) {
+      fail(g, "area group {g.id} is named by no area")
+    }
+  }
+}
+
+/// The service code branches on these two flags by id.
+check not flags.blocking.retired and not flags.sensitive.retired
+  else "flags `blocking` and `sensitive` are used by the service and cannot be retired"
+
+/// New: the Go loader does not check this today.
+check {
+  let seen = reachable(from: initialStatus, next: .next)
+  for s in statuses.active() {
+    if not seen.contains(s) {
+      fail(s, "status {s.id} can never be reached from {initialStatus.id}")
+    }
+  }
+}
+
+/// New: a status without a way out, other than a terminal one, would trap posts.
+check {
+  for s in statuses.active() {
+    if not s.terminal and s.next.isEmpty() {
+      fail(s, "status {s.id} is not terminal but has no next status")
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Methods for the services (today: accessors.go and areas.go, written by hand)
+// ---------------------------------------------------------------------------
+// Every input below is finite (a status, a role, an area), so `canon build` computes
+// every answer and the generated Go/TS just look them up: no logic in the runtime.
+
+/// sovcommon's CanTransition.
+export fn canTransition(from: ref Status, to: ref Status) -> Bool { return from.next.contains(to) }
+
+/// sovcommon's ColumnOf. `none` for a status no active column claims (only a retired
+/// status can be in that case), like the `(Column, bool)` it replaces.
+export fn columnOf(s: ref Status) -> ref Column? {
+  return columns.active().first(c => c.statuses.contains(s))
+}
+
+/// sovcommon's AreasVisibleTo: minRole gates viewing and posting.
+export fn areasVisibleTo(role: Role) -> [ref Area] {
+  return [a for a in areas.active() if role >= a.minRole]
+}
+
+/// One group header with the areas shown under it.
+record AreaSection {
+  /// The header.
+  group: ref AreaGroup
+  /// The areas under it, in declaration order.
+  areas: [ref Area]
+}
+
+/// sovcommon's GroupedAreasVisibleTo: headers only for groups with a visible area.
+export fn groupedAreasVisibleTo(role: Role) -> [AreaSection] {
+  return [
+    { group: g, areas: areasVisibleTo(role).filter(a => a.group == g) }
+    for g in areaGroups.active()
+    if areasVisibleTo(role).any(a => a.group == g)
+  ]
+}
+
+// ---------------------------------------------------------------------------
+// Output
+// ---------------------------------------------------------------------------
+
+emit go { out: "@sovcommon/teamboard", package: "teamboard", mode: baked }
+emit ts { out: "@web/teamboard/generated.ts" }
+// Every public value as a data file (<value>.json), for readers that are neither Go nor TS.
+emit json { out: "@sovcommon/teamboard/data/" }

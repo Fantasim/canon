@@ -1,0 +1,186 @@
+/// The four other Lua rules of Resource/Schema/rules/, rewritten.
+///
+/// Each record below is trimmed to the fields its rule reads; the real types would
+/// carry every field of their file, be public and documented. Here they are `local`:
+/// the point is the rules. In Canon they are ordinary `check`s, next to the data, with
+/// no keyword vocabulary to argue about ("a keyword with one user, clause 2 refuses")
+/// and no type guards.
+///
+/// Since ADR-0009 (resourcestudio, 2026-09-19) the Lua files are these rules' only
+/// implementation: Resource Studio's Go copies (internal/rules/) were deleted, and the
+/// studio asks validate.py. Here the rules also run on the files themselves: each record
+/// is loaded below, so `canon check` reports what the Lua reports.
+package resource.rules
+
+local let jobs = load.defines("@resource/Server/Define/defineJob.h", prefix: "JOB_")
+
+// ---------------------------------------------------------------------------
+// guildtalenttree.cycle  (Lua: 54 lines)
+// ---------------------------------------------------------------------------
+// The Lua walks the parent chain and first filters "broken" nodes (no id, self-parent,
+// dangling parent) so they are not ALSO reported as cycles. Here a dangling parent is a
+// type error before any check runs, and a self-parent is a cycle of length 1.
+
+local record TalentNode {
+  id: Int(0..)
+  /// -1 in the file means "root".
+  parent: ref TalentNode? @json(none: -1)
+}
+
+local record GuildTalentTree {
+  nodes: [TalentNode] keyed by id
+
+  check nodes.any(n => n.parent == none) else "the tree has no root"
+
+  check {
+    for n in cycles(nodes, next: .parent) {
+      fail(
+        n.parent,
+        "node {n.id} belongs to a parent cycle: the branch would be permanently locked in game",
+      )
+    }
+  }
+}
+
+// `partial`: the rule reads only `id` and `parent`; the nodes' other keys (buffId, price,
+// minGuildLevel, x, y) belong to the talent-tree domain, not to this rule.
+local let guildTalentTree: GuildTalentTree =
+  load("@resource/Server/System/GuildTalentTree.json", partial: true)
+
+// ---------------------------------------------------------------------------
+// jobchange.set-parity  (Lua: 75 lines)
+// ---------------------------------------------------------------------------
+// For the six categories JobChangeV4::ValidateSetIdParityGeneric compares, every set id
+// declared by ANY job must be declared by EVERY job. fashionSets is never read by the
+// loader and is not compared.
+
+local record SetRow { id: Int }
+
+local record JobSets {
+  weaponSets: [SetRow] keyed by id
+  armorSets: [SetRow] keyed by id
+  jewelSets: [SetRow] keyed by id
+  weaponCardSets: [SetRow] keyed by id
+  armorCardSets: [SetRow] keyed by id
+  ultimateGemSets: [SetRow] keyed by id
+  fashionSets: [SetRow] keyed by id
+
+  /// The categories the loader compares, in its order (JobChangeV4Config.cpp:530-535).
+  fn compared(self) -> {String: [SetRow]} {
+    return {
+      "weaponSets": weaponSets
+      "armorSets": armorSets
+      "jewelSets": jewelSets
+      "weaponCardSets": weaponCardSets
+      "armorCardSets": armorCardSets
+      "ultimateGemSets": ultimateGemSets
+    }
+  }
+}
+
+local record JobChange {
+  jobs: {String: JobSets}
+
+  check {
+    // Every job lists the same categories, so the first one names them all.
+    let anyJob = jobs.values().first()
+    if anyJob != none {
+      for category in anyJob.compared().keys() {
+        let idsOf = { name: job.compared()[category].map(.id) for name, job in jobs }
+        for id in idsOf.values().flatten().unique().sortBy(x => x) {
+          let missing = [name for name, ids in idsOf if not ids.contains(id)]
+          if not missing.isEmpty() {
+            fail(
+              jobs[missing[0]].compared()[category],
+              "{category}: set id {id} is missing from {missing.join(", ")}; " +
+                "the loader refuses the whole file until every job declares the same ids",
+            )
+          }
+        }
+      }
+    }
+  }
+}
+
+local let jobChange: JobChange = load("@resource/Server/System/JobChangeV4.json", partial: true)
+
+// ---------------------------------------------------------------------------
+// skills.per-job-bucket-width  (Lua: 46 lines)
+// ---------------------------------------------------------------------------
+// At most 40 non-common skills per job: the row width of
+// `ItemProp* m_aJobSkill[MAX_JOB][40]` (Engine/Core/Project/Project.h).
+//
+// The Lua had to group by the jobIndex *as written*, so "JOB_MERCENARY" and 1 were
+// counted apart (a known gap, covered by an assert in C++). Here jobIndex is a ref to
+// the define, so both spellings are the same value and the gap is gone.
+
+/// The row width of m_aJobSkill.
+const JOB_SKILL_SLOTS = 40
+
+local let jobTypes = load.defines("@resource/Server/Define/defineJob.h", prefix: "JTYPE_")
+
+local record Skill {
+  jobIndex: ref jobs
+  tier: ref jobTypes
+}
+
+local record Skills {
+  skills: [Skill]
+
+  check {
+    for job, rows in skills.filter(s => s.tier != jobTypes.JTYPE_COMMON).groupBy(.jobIndex) {
+      if rows.len() > JOB_SKILL_SLOTS {
+        fail(
+          rows[JOB_SKILL_SLOTS].jobIndex,
+          "{rows.len()} skills target {job.id}; m_aJobSkill holds {JOB_SKILL_SLOTS} per job, " +
+            "so the loader refuses the whole file",
+        )
+      }
+    }
+  }
+}
+
+local let skills: Skills = load("@resource/Server/Skill/skills.json", partial: true)
+
+// ---------------------------------------------------------------------------
+// tower.totem-tier  (Lua: 55 lines)
+// ---------------------------------------------------------------------------
+// A wave may carry totems only if the tier whose [lo, hi] floor range contains the
+// floor has `totems: true` (TowerConfig.cpp:265, Tower::ParseWave).
+
+local record Tier {
+  floors: [Int(1..)] where it.len() == 2 and it[0] <= it[1]
+  totems: Bool = false
+
+  fn covers(self, floor: Int) -> Bool { return floors[0] <= floor and floor <= floors[1] }
+}
+
+local record Wave { totems: [String] = [] }
+local record Floor { floor: Int(1..), waves: [Wave] }
+
+local record Tower {
+  tiers: [Tier]
+  floors: [Floor]
+  guildFloors: [Floor]
+
+  check {
+    for row in floors + guildFloors {
+      let tier = tiers.first(t => t.covers(row.floor))
+      // No covering tier at all is the coverage check's finding, not this one.
+      // `tier != none` narrows `tier` for the rest of the condition.
+      if tier != none and not tier.totems {
+        for w in row.waves {
+          if not w.totems.isEmpty() {
+            fail(
+              w.totems,
+              "floor {row.floor}: totems are configured but the covering tier has totems=false; " +
+                "the loader refuses the whole file",
+            )
+          }
+        }
+      }
+    }
+  }
+}
+
+local let tower: Tower = load("@resource/Server/System/tower_config.json", partial: true)

@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "skills": [
+    {"define": "SI_VAG_ONE_CLEANHIT", "name": "IDS_PROPSKILL_TXT_000000", "tier": "JTYPE_BASE", "jobIndex": "JOB_VAGRANT", "job": "JOB_VAGRANT", "unlockLevel": 3, "class": "KT_SKILL", "handed": "HD_ONE", "target": "EXT_MELEEATK", "legacy": {"abilityMin": 0, "abilityMax": 0}},
+    {"define": "SI_VAG_ONE_BRANDISH", "name": "IDS_PROPSKILL_TXT_000002", "tier": "JTYPE_BASE", "jobIndex": "JOB_VAGRANT", "job": "JOB_VAGRANT", "unlockLevel": 5, "class": "KT_SKILL", "handed": "HD_ONE", "target": "EXT_MELEEATK", "legacy": {"abilityMin": 0, "abilityMax": 0}},
+    {"define": "SI_MER_ONE_SPLMASH", "name": "IDS_PROPSKILL_TXT_000006", "tier": "JTYPE_EXPERT", "jobIndex": "JOB_MERCENARY", "job": "JOB_MERCENARY", "unlockLevel": 15, "class": "KT_SKILL", "target": "EXT_MELEEATK", "legacy": {"reqMp": 7}},
+    {"define": "SI_MAG_FIRE_BOOMERANG", "name": "IDS_PROPSKILL_TXT_000134", "tier": "JTYPE_EXPERT", "jobIndex": "JOB_MAGICIAN", "job": "JOB_MAGICIAN", "unlockLevel": 18, "class": "KT_MAGIC", "weapon": "IK3_MAGICBOTH", "target": "EXT_MAGICATKSHOT", "legacy": {"reqMp": 0}},
+    {"define": "SI_ASS_KNU_TAMPINGHOLE", "name": "IDS_PROPSKILL_TXT_000070", "tier": "JTYPE_EXPERT", "jobIndex": "JOB_ASSIST", "job": "JOB_ASSIST", "unlockLevel": 20, "class": "KT_SKILL", "weapon": "IK3_KNUCKLEHAMMER", "target": "EXT_MELEEATK", "legacy": {"reqMp": 0}},
+    {"define": "SI_MAG_MAG_MENTALSTRIKE", "name": "IDS_PROPSKILL_TXT_000150", "tier": "JTYPE_EXPERT", "jobIndex": "JOB_MAGICIAN", "job": "JOB_MAGICIAN", "unlockLevel": 1, "class": "KT_MAGIC", "weapon": "IK3_MAGICBOTH", "target": "EXT_MAGICATK", "legacy": {}},
+    {"define": "SI_GEN_FLASH", "name": "IDS_PROPSKILL_TXT_000286", "tier": "JTYPE_COMMON", "jobIndex": "JOB_VAGRANT", "job": "JOB_VAGRANT", "class": "KT_MAGIC", "target": "EXT_MAGIC", "legacy": {}},
+    {"define": "SI_ACR_BOW_JUNKBOW", "name": "IDS_PROPSKILL_TXT_000228", "tier": "JTYPE_EXPERT", "jobIndex": "JOB_ACROBAT", "job": "JOB_ACROBAT", "unlockLevel": 15, "class": "KT_SKILL", "weapon": "IK3_BOW", "target": "EXT_MAGICATKSHOT", "legacy": {}},
+    {"define": "SI_ACR_YOYO_PULLING", "name": "IDS_PROPSKILL_TXT_000252", "tier": "JTYPE_EXPERT", "jobIndex": "JOB_ACROBAT", "job": "JOB_ACROBAT", "unlockLevel": 15, "class": "KT_SKILL", "weapon": "IK3_YOYO", "target": "EXT_MAGIC", "legacy": {}}
+  ]
+}

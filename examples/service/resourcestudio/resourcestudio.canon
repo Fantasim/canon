@@ -1,0 +1,59 @@
+/// Resource Studio's own settings: an ordinary service config, not game data.
+///
+/// Replaces config.example.toml, its hand-written loader and its precedence rules
+/// ("CLI flag > env > config.toml > derived default"). Per-machine values move into
+/// layers (louis.layer.canon); secrets are `input`s and never written in a file.
+package service.resourcestudio
+
+/// Absolute, or relative to the resourcestudio directory. `~` and `$VAR` are NOT
+/// expanded: Canon has no environment. Machine-specific paths belong in a layer.
+type Path = String(1..)
+
+/// Where the studio reads and caches files.
+record Paths {
+  /// The Resource checkout. Default: derived from the repository layout.
+  resourceRoot: Path = "../../Resource"
+  /// The Client checkout (icons and themes).
+  clientRoot: Path = "../../Client"
+  /// The .dds icons; `none` probes <client>/Data/UI/Icon, then <client>/Icon.
+  iconDir: Path? = none
+  /// Thumbnails and indexes. Never inside Resource.
+  cacheDir: Path = ".cache"
+}
+
+/// The local HTTP server.
+record Server {
+  /// The tool is local by design (ADR-0005 d.1).
+  host: String = "127.0.0.1"
+  /// Listening port.
+  port: Int(1024..=65535) = 8765
+  /// Opens a browser tab at startup.
+  openBrowser: Bool = true
+  /// Refuses every write: browse only.
+  readOnly: Bool = false
+
+  check host == "127.0.0.1" or host == "localhost"
+    else "Resource Studio only listens on the loopback interface"
+}
+
+/// Generation features.
+record Gen {
+  /// Entered right before the action and never stored (ADR-0005).
+  apiKey: input String(1..)? from env "RESOURCESTUDIO_GEMINI_KEY"
+}
+
+/// Every setting of the studio.
+record Config {
+  /// Where files are.
+  paths: Paths = {}
+  /// The HTTP server.
+  server: Server = {}
+  /// Generation features. Its only field is an input, so the literal is empty.
+  gen: Gen = {}
+}
+
+/// The settings of this build: the defaults, unless a layer amends them.
+let config: Config = {}
+
+// The Go binary embeds the defaults. A layer build replaces them.
+emit go { out: "@services/resourcestudio/internal/config", package: "config", mode: baked }

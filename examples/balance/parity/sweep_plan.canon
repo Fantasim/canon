@@ -1,0 +1,289 @@
+/// The job x level x profile capture plan that drives parity_sweep.lua.
+///
+/// Replaces gen_sweep_plan.py (683 lines). This is data computed from other data:
+/// loops, conditions and helper functions, all at build time. The output is a JSON
+/// data file; BotClient reads it and hands it to parity_sweep.lua as a table (see
+/// the note at the end of this file).
+///
+/// Sketch: the input types are trimmed to the fields the plan reads, and
+/// learned_roster's per-tier slot arithmetic is left out (see `roster`).
+package balance.parity
+
+// ---------------------------------------------------------------------------
+// Inputs: the same files the Python script reads
+// ---------------------------------------------------------------------------
+
+local let jobH = load.defines("@resource/Server/Define/defineJob.h")
+local let skillH = load.defines("@resource/Server/Define/defineSkill.h", prefix: "SI_")
+local let itemH = load.defines("@resource/Server/Define/defineitem.h", prefix: "II_")
+local let objH = load.defines("@resource/Server/Define/defineObj.h", prefix: "MI_")
+
+/// A row of skills.json, as the plan reads it.
+local record SkillRow {
+  define: ref skillH
+  jobIndex: String
+  tier: String
+  weapon: String? = none // dwLinkKind, an IK3_* kind or family
+  handed: String? = none
+  target: String
+  unlockLevel: Int? = none // absent on common skills
+  reqMp: Int = 0 @json(path: "legacy.reqMp")
+}
+
+/// A row of propItem.json, as the plan reads it. Defaults copy the file's `defaults`
+/// block, which the loader applies to a row that omits a key; "=" means "not set".
+local record Weapon {
+  item: ref itemH @json("dwID")
+  kind1: String = "IK1_ARMOR" @json("dwItemKind1")
+  kind3: String = "IK3_SCROLL" @json("dwItemKind3")
+  handed: String = "=" @json("dwHanded")
+  job: String = "=" @json("dwItemJob")
+  sex: String = "=" @json("dwItemSex")
+  limit: Int? = 1 @json("dwLimitLevel1", none: "=")
+}
+
+/// A row of etc.json's `jobs`.
+local record EtcJob { id: String, jobBase: String? = none, name: String }
+
+local let skills: [SkillRow] =
+  load("@resource/Server/Skill/skills.json", at: "skills", partial: true)
+local let itemRows: [Weapon] =
+  load("@resource/Server/Item/propItem.json", at: "items", partial: true)
+local let weapons: [Weapon] = itemRows.filter(w => w.kind1 == "IK1_WEAPON")
+local let etcJobs: [EtcJob] = load("@resource/Server/Npc/etc.json", at: "jobs", partial: true)
+local let jobNames: {String: String} = load("@client/Client/Text/etc.json", at: "*.us")
+local let presets: {String: String} =
+  load("@resource/Server/Balance/presets.json", at: "canonicalBuilds.*.weapon")
+local let anchors: [Int] = load("@resource/Server/Balance/targets.json", at: "solver.kAnchors")
+
+// ---------------------------------------------------------------------------
+// Settings: the script's command-line flags. A layer overrides them (knights.layer.canon).
+// ---------------------------------------------------------------------------
+
+/// Which totem the block hits.
+enum Profile { pve, pvp }
+
+/// The script's command-line flags.
+record Settings {
+  /// The bot character that runs the sweep.
+  charName: String(1..) = "ClaudeBot1"
+  /// Hits per (job, level, profile) block.
+  hitsPerBlock: Int(1..) = 120
+  /// Wait between two bot actions.
+  actionDelay: Duration = 700ms
+  /// Totems each combo is measured against.
+  profiles: [Profile] = [pve, pvp]
+  /// Empty means every job the level bands allow.
+  onlyJobs: [String] = []
+  /// Empty means solver.kAnchors plus level 1.
+  levels: [Int(1..)] = []
+  /// Adds the puppeteer to the expert band.
+  includePuppeteer: Bool = false
+}
+
+/// The flags of this build: the defaults, unless a layer amends them.
+let settings: Settings = {}
+
+// ---------------------------------------------------------------------------
+// Server rules the plan must reproduce
+// ---------------------------------------------------------------------------
+
+/// Only these reach CalcDamageCore, so only these can damage a totem.
+const ATTACK_TARGETS = ["EXT_MELEEATK", "EXT_MAGICATK", "EXT_MAGICATKSHOT"]
+
+/// dwLinkKind values that accept a family of weapons (CMover::DoUseSkill, MoverSkill.cpp:676).
+const LINK_FAMILIES = {
+  "IK3_MAGICBOTH": ["IK3_WAND", "IK3_STAFF"]
+  "IK3_YOBO": ["IK3_YOYO", "IK3_BOW"]
+}
+
+/// Weapon kinds that attack from range.
+const RANGED_KINDS = ["IK3_BOW", "IK3_YOYO"]
+
+/// Second jobs.
+const EXPERT_JOBS = ["JOB_MERCENARY", "JOB_ACROBAT", "JOB_ASSIST", "JOB_MAGICIAN"]
+/// Third jobs.
+const PRO_JOBS = [
+  "JOB_KNIGHT",
+  "JOB_BLADE",
+  "JOB_JESTER",
+  "JOB_RANGER",
+  "JOB_RINGMASTER",
+  "JOB_BILLPOSTER",
+  "JOB_PSYCHIKEEPER",
+  "JOB_ELEMENTOR",
+]
+
+/// Weapon kind for jobs presets.json does not cover: the lower tiers inherit from the
+/// pro job they lead to.
+const FALLBACK_KIND = {
+  "JOB_VAGRANT": "IK3_SWD"
+  "JOB_MERCENARY": "IK3_SWD"
+  "JOB_ACROBAT": "IK3_BOW"
+  "JOB_ASSIST": "IK3_KNUCKLEHAMMER"
+  "JOB_MAGICIAN": "IK3_WAND"
+  "JOB_PUPPETEER": "IK3_SWD"
+}
+
+/// Which jobs /setlevel accepts at a level (TextCmd_LevelPlayer, FuncTextCmd.cpp:4874).
+/// Outside these bands the command silently does nothing. The bounds are read from
+/// defineJob.h, so the old "PRO_LEVELS_MAX below must match" comment has nothing left to guard.
+fn jobsAt(level: Int) -> [String] {
+  let vagrantMax = jobH.MAX_JOB_LEVEL.value
+  let expertMax = vagrantMax + jobH.MAX_EXP_LEVEL.value
+  if level <= vagrantMax { return ["JOB_VAGRANT"] }
+  if level <= expertMax {
+    return EXPERT_JOBS + (if settings.includePuppeteer { ["JOB_PUPPETEER"] } else { [] })
+  }
+  if level <= jobH.MAX_GENERAL_LEVEL.value { return PRO_JOBS }
+  return []
+}
+
+/// The etc.json row of a job. Every job `jobsAt` names has one, so `!` cannot fail.
+fn etcJob(job: String) -> EtcJob { return etcJobs.first(j => j.id == job)! }
+
+/// The job and every job it was promoted from, ending with vagrant. etc.json gives
+/// JOB_VAGRANT itself as its own base, which ends the walk.
+fn lineage(job: String) -> [String] {
+  let base = etcJobs.first(j => j.id == job)?.jobBase
+  if base != none and base != job { return [job] + lineage(base) }
+  return [job, "JOB_VAGRANT"].unique()
+}
+
+/// Best equippable weapon of `kind` at `level`: highest level requirement the level allows.
+fn pickWeapon(kind: String, level: Int, jobs: [String]) -> Weapon? {
+  return weapons
+    .filter(
+      w => w.kind3 == kind and
+        w.handed in ["HD_ONE", "HD_TWO"] and
+        w.job in jobs and
+        w.sex in ["=", "SEX_ANY", ""] and
+        (w.limit ?? 1) <= level,
+    )
+    .maxBy(w => w.limit ?? 1)
+}
+
+/// Whether a skill's dwLinkKind accepts a weapon of `kind`: no link kind accepts any
+/// weapon, a family accepts its members, anything else only itself.
+fn linkAccepts(link: String?, kind: String) -> Bool {
+  if link != none { return kind in (LINK_FAMILIES.get(link) ?? [link]) }
+  return true
+}
+
+/// Attack skills the character knows at `level` and can use with `weapon`, in unlock
+/// order. (learned_roster maps each skill to its wire slot through the MAX_*_SKILL
+/// buckets; that arithmetic would be one more function here. This sketch numbers them.)
+fn roster(jobs: [String], level: Int, kind: String, weapon: Weapon?) -> [PlannedSkill] {
+  let known = [
+    s
+    for s in skills.sortBy(s => s.unlockLevel ?? 0)
+    if s.tier != "JTYPE_COMMON" and
+      s.jobIndex in jobs and
+      (s.unlockLevel ?? 0) <= level and
+      s.target in ATTACK_TARGETS and
+      linkAccepts(s.weapon, kind) and
+      (s.handed == none or s.handed == weapon?.handed)
+  ]
+  return [{ slot: i, id: s.define.value, mp: s.reqMp } for i, s in known.enumerate()]
+}
+
+// ---------------------------------------------------------------------------
+// The plan
+// ---------------------------------------------------------------------------
+
+/// One skill the bot casts during a block.
+record PlannedSkill {
+  /// Wire slot the bot presses (a sketch: the position in the roster).
+  slot: Int
+  /// Skill id (the SI_* define's value).
+  id: Int
+  /// MP the skill costs.
+  mp: Int
+}
+
+/// One (job, level) block of the sweep.
+record Combo {
+  /// The job's define name.
+  job: String
+  /// The RESOLVED job name /setlevel matches ("Mercenary"), not the IDS_* token.
+  jobToken: String
+  /// The level the character is set to.
+  level: Int
+  /// II_* name, for logging only.
+  weapon: String
+  /// /ci only accepts the number.
+  weaponId: Int
+  /// The weapon's IK3_* kind.
+  weaponKind: String
+  /// Whether the kind attacks from range.
+  ranged: Bool
+  /// Totems measured.
+  profiles: [Profile]
+  /// Skills cast.
+  skills: [PlannedSkill]
+
+  warn weaponId != 0
+    else "no {weaponKind} weapon equippable at level {level} for {job}: the block runs bare-handed"
+}
+
+/// The whole plan, as parity_sweep.lua reads it.
+record Plan {
+  /// The bot character that runs the sweep.
+  charName: String
+  /// Hits per block.
+  hitsPerBlock: Int
+  /// Wait between two bot actions.
+  actionDelay: Duration @json("actionDelayMs", unit: ms)
+  /// Prop index of the mover `/totem spawn <profile>` creates (TextCmd_Totem).
+  totemIndex: {Profile: Int}
+  /// Every block, in capture order.
+  combos: [Combo]
+}
+
+local let levels = if settings.levels.isEmpty() {
+  (anchors + [1]).unique().sortBy(x => x)
+} else {
+  settings.levels
+}
+
+/// The plan written to sweep_plan.json.
+let plan: Plan = {
+  charName: settings.charName
+  hitsPerBlock: settings.hitsPerBlock
+  actionDelay: settings.actionDelay
+  totemIndex: { pve: objH.MI_RUSTIACRASHGATE01_DPS.value, pvp: objH.MI_RUSTIACRASHGATE01_PVP.value }
+  combos: [
+    {
+      job: job
+      jobToken: jobNames[etcJob(job).name]
+      level: level
+      weapon: w?.item.id ?? ""
+      weaponId: w?.item.value ?? 0
+      weaponKind: kind
+      ranged: kind in RANGED_KINDS
+      profiles: settings.profiles
+      skills: roster(lineage(job), level, kind, w)
+    }
+    for level in levels
+    for job in jobsAt(level)
+    if settings.onlyJobs.isEmpty() or job in settings.onlyJobs
+    let kind = presets.get(job) ?? FALLBACK_KIND.get(job) ?? "IK3_SWD"
+    let w = pickWeapon(kind, level, lineage(job))
+  ]
+}
+
+check {
+  for level in levels {
+    if jobsAt(level).isEmpty() {
+      warn(level, "level {level} is above MAX_GENERAL_LEVEL: unreachable via /setlevel, dropped")
+    }
+  }
+}
+
+emit json { out: "@parity/sweep_plan.json", values: [plan] }
+
+// Canon generates Go, C++ and TypeScript, never Lua. The bot scripts are Lua, so the
+// plan reaches them through BotClient: a small binding (one function, e.g.
+// bot:loadData(path)) reads the JSON with nlohmann and pushes its `value` object (the
+// record, SPEC §14.3) as a Lua table. Lua stays a consumer, never a target, and the
+// script's `plan.combos[...]` code does not change.

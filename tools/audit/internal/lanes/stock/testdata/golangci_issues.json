@@ -1,0 +1,19 @@
+[
+  {"FromLinter":"gocognit","Text":"cognitive complexity 20 of func `run` is high (> 15)","Pos":{"Filename":"cmd/server/main.go","Line":37}},
+  {"FromLinter":"gosec","Text":"G101: Potential hardcoded credentials","Pos":{"Filename":"internal/config/constants.go","Line":357}},
+  {"FromLinter":"gosec","Text":"G204: Subprocess launched with variable","Pos":{"Filename":"internal/tool/run.go","Line":10}},
+  {"FromLinter":"staticcheck","Text":"ST1005: error strings should not be capitalized","Pos":{"Filename":"internal/x/errors.go","Line":12}},
+  {"FromLinter":"staticcheck","Text":"ST1003: should not use underscores in Go names","Pos":{"Filename":"internal/x/names.go","Line":5}},
+  {"FromLinter":"staticcheck","Text":"SA1000: invalid regular expression","Pos":{"Filename":"internal/x/re.go","Line":9}},
+  {"FromLinter":"revive","Text":"context-as-argument: context.Context should be the first parameter","Pos":{"Filename":"internal/y/handler.go","Line":22}},
+  {"FromLinter":"revive","Text":"var-naming: don't use ALL_CAPS in Go names; use CamelCase","Pos":{"Filename":"internal/y/names.go","Line":4}},
+  {"FromLinter":"revive","Text":"receiver-naming: receiver name should be a reflection of its identity","Pos":{"Filename":"internal/y/recv.go","Line":8}},
+  {"FromLinter":"revive","Text":"unhandled-rule: something else entirely","Pos":{"Filename":"internal/y/other.go","Line":1}},
+  {"FromLinter":"dupl","Text":"1-65 lines are duplicate of `b.go:1-65`","Pos":{"Filename":"a.go","Line":1},"LineRange":{"From":1,"To":65}},
+  {"FromLinter":"gofumpt","Text":"File is not properly formatted","Pos":{"Filename":"internal/z/one.go","Line":1}},
+  {"FromLinter":"goimports","Text":"File is not properly formatted","Pos":{"Filename":"internal/z/one.go","Line":3}},
+  {"FromLinter":"goimports","Text":"File is not properly formatted","Pos":{"Filename":"internal/z/two.go","Line":1}},
+  {"FromLinter":"errorlint","Text":"comparing with == will fail on wrapped errors. Use errors.Is to check for a specific error","Pos":{"Filename":"internal/w/cmp.go","Line":9}},
+  {"FromLinter":"errorlint","Text":"non-wrapping format verb for fmt.Errorf. Use `%w` to format errors","Pos":{"Filename":"internal/w/err.go","Line":6}},
+  {"FromLinter":"unconvert","Text":"unnecessary conversion","Pos":{"Filename":"internal/n/noise.go","Line":2}}
+]

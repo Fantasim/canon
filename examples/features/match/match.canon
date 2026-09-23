@@ -1,0 +1,72 @@
+/// Value-level `match` (SPEC §7.8): over a variant, binding each case's value, and over
+/// an enum, with several patterns per arm and `_`. Every case must be covered (E3601).
+package features.match
+
+/// What a system mail carries.
+variant Attachment @json(tag: "type") {
+  /// Items.
+  item {
+    /// The item define.
+    define: String(/^II_/)
+    /// How many.
+    count: Int(1..) = 1
+  }
+  /// Penya.
+  gold {
+    /// How much.
+    amount: Int(1..)
+  }
+  /// A letter with nothing attached.
+  nothing
+}
+
+/// When a mail is sent.
+enum Season { spring, summer, autumn, winter }
+
+/// A mail the server sends to every player once.
+record Mail {
+  /// Title in the mailbox.
+  subject: String(1..)
+  /// When it is sent.
+  season: Season
+  /// What it carries.
+  attachment: Attachment = nothing
+
+  /// The number shown next to the mail: a count for items, an amount for penya.
+  /// No runtime input, so `canon build` computes it and ships the value.
+  export fn quantity(self) -> Int {
+    return match attachment {
+      item(i) => i.count
+      gold(g) => g.amount
+      nothing => 0
+    }
+  }
+
+  fn isHoliday(self) -> Bool {
+    return match season {
+      summer, winter => true
+      _ => false
+    }
+  }
+
+  warn not isHoliday() or attachment is gold else "a holiday mail usually carries penya"
+}
+
+/// The seasonal mails.
+let mails: [Mail] = [
+  {
+    subject: "Spring cleaning"
+    season: spring
+    attachment: item { define: "II_GEN_FOO_INS_HOTDOG", count: 5 }
+  },
+  { subject: "Summer festival", season: summer, attachment: gold { amount: 100_000 } },
+  { subject: "Autumn news", season: autumn },
+]
+
+test "quantity follows the attachment" {
+  expect mails[0].quantity() == 5
+  expect mails[1].quantity() == 100_000
+  expect mails[2].quantity() == 0
+}
+
+emit json { out: "out/mails.json", values: [mails] }

@@ -1,0 +1,85 @@
+/// The studio's presentation vocabulary (SPEC §16.11).
+///
+/// Resource Studio is a generic renderer. This package is its contract with every view:
+/// navigation sections, UI icons and tones, units, and the custom widgets it implements.
+/// A view can only use what is declared here, and the compiler checks each use.
+///
+/// Built-in controls (switch, segmented, select, search, checkboxes, slider...) are not
+/// declared: they are part of the language (SPEC §16.2, §16.3). Adding a widget is a
+/// two-part change: declare it here, and register a Svelte component under the same name.
+package studio
+
+import sovcommon.time { TimeOfDay, Window }
+
+/// Top-level sections of the studio navigation, in display order. A value whose view
+/// names no menu is listed under "No menu".
+enum Menu { events, instances, progression, economy, items, gear, monsters, guild, world, system }
+
+/// UI symbols, not game data: navigation, enum members, menus.
+enum Icon {
+  flame
+  droplet
+  zap
+  wind
+  mountain
+  farm
+  event
+  tower
+  chest
+  map
+  sword
+  shield
+  gem
+  gear
+}
+
+/// UI tones, mapped to the design system's colour tokens.
+enum Tone { neutral, info, success, warning, danger, series_1, series_2, series_3 }
+
+/// How numbers are shown. `scale` converts the stored value into the shown one.
+record UnitSpec {
+  /// Appended to the number. Translatable, like every other studio text.
+  suffix: String = ""
+  /// Shown value = stored value × scale.
+  scale: Float = 1.0
+  /// Group digits by thousands.
+  thousands: Bool = true
+  /// Digits after the decimal separator.
+  decimals: Int(0..=6) = 0
+}
+
+/// The units a view may name with `unit:`.
+let units: table UnitSpec = {
+  penya { suffix: " penya" }
+  hp { suffix: " HP" }
+  pct { suffix: " %" }
+  /// Probabilities stored out of 1 000 000 000 (random options, drop rates).
+  ppb { suffix: " %", scale: 0.0000001, decimals: 4 }
+  weight {}
+  count {}
+  seconds { suffix: " s" }
+}
+
+/// A week-long timeline; windows are bars, dragged to move or resize. Wrapping windows
+/// are drawn across midnight and across the week boundary.
+widget weekly_timeline(value: [Window])
+
+/// An ordered list where position has meaning (level 1, 2, 3...): numbered steps,
+/// drag to reorder, with the position shown as the step's name (`step:` renames it).
+widget ordered_steps(value: [_])
+
+/// A weight shown with its share of the list it belongs to ("225 000 = 22.5 %"). The
+/// studio passes the same field of every element of the enclosing list as `siblings`.
+widget weight_share(value: Int, siblings: [Int])
+
+/// Grid editor for [magnitude, cumulative probability] pairs, showing the implied
+/// per-step probability and the remainder to 1 000 000 000.
+widget probability_ladder(value: [[Int]])
+
+/// One "HH:MM" input for a time of day, instead of two bare numbers. The default editor
+/// of every TimeOfDay field, in every package; a view can still choose another control.
+widget time_of_day(value: TimeOfDay) default
+
+// Every package's view model refers to this vocabulary (menus, icons, tones, units,
+// widgets); the studio reads it once from here.
+emit view { out: "@generated/studio.view.json" }

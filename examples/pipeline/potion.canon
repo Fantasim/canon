@@ -1,0 +1,65 @@
+/// A deliberately small object to show the whole pipeline, end to end.
+/// "Potion" is made up; the real item record has ~50 fields, but the pipeline is the same.
+///
+///   data/*.json      one file per potion, edited by hand or by the studio (like Items/**)
+///   potion.canon     this file: the type, the rules, the view, what to emit
+///   canon build      checks everything, then writes out/ (compare with expected/)
+package pipeline
+
+import studio
+
+/// A healing potion. Each one is a file under data/.
+record Potion {
+  /// The item define. Stored in inventories: never renamed.
+  id: String(/^II_[A-Z0-9_]+$/) @json("dwID")
+  /// Text key of the displayed name.
+  name: String(/^IDS_/) @json("szName")
+  /// Hit points restored.
+  heal: Int(1..=100_000) @json("nHeal")
+  /// Time before the same potion can be drunk again.
+  cooldown: Duration(0s..=10m) @json("dwCooldownMs", unit: ms)
+  /// How many potions fit in one inventory slot.
+  stack: Int(1..=9_999) = 99 @json("nStack")
+
+  warn fast_big_heal: not (heal > 5_000 and cooldown < 2s)
+    else "heals {heal} every {cooldown}: that outheals most bosses"
+
+  // --- Methods the runtime can call (SPEC §9.4) ---
+
+  /// No runtime input: computed by `canon build` for every potion and shipped as a value.
+  /// The generated getter just returns it, in every language.
+  export fn isStrong(self) -> Bool { return heal >= 2_000 }
+
+  /// Needs a runtime input (the player's missing HP), so the body is translated into
+  /// each target. Only the portable subset is allowed, and `canon build` emits a
+  /// conformance test per target so the translations cannot drift.
+  export fn healFor(self, missingHp: Int) -> Int { return min(heal, max(missingHp, 0)) }
+}
+
+test "healFor never overheals and never goes negative" {
+  let p: Potion = { id: "II_POT_T", name: "IDS_T", heal: 500, cooldown: 1s }
+  expect p.healFor(200) == 200
+  expect p.healFor(9000) == 500
+  expect p.healFor(-5) == 0
+}
+
+/// One JSON file per potion, as today. Each file is one entry; findings point into it.
+/// Reloadable: tuned live during balance sessions, and runtimes keep potion ids, never
+/// Potion pointers, across ticks.
+@reload
+let potions: [Potion] keyed by id = load.dir("data/*.json")
+
+view Potion {
+  title "{id}"
+  menu items icon gem
+  columns { id 200, heal 90, cooldown 90, stack 70 }
+  heal "Heal" { unit: hp }
+  cooldown "Cooldown"
+}
+
+// Data mode: the values go to a data file the server reads at startup. Changing a
+// value rebuilds the data file only; the executable is not recompiled.
+emit json { out: "out/potions.json", values: [potions] }
+emit cpp { out: "out/", namespace: "sov::gen", mode: data }
+emit go { out: "out/go/", package: "potions", mode: data }
+emit view { out: "out/potion.view.json" }

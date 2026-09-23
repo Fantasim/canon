@@ -1,0 +1,7 @@
+[
+  {"rank": 1, "invitesPerDay": 50, "bank": true},
+  {"rank": 2, "invitesPerDay": 30, "bank": true},
+  {"rank": 3, "invitesPerDay": 10},
+  {"rank": 4, "invitesPerDay": 5},
+  {"rank": 5, "invitesPerDay": 0}
+]

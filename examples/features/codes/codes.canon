@@ -1,0 +1,31 @@
+/// `@codes` enums on the wire (AUDIT WIR-04). By default a data file holds a member's
+/// name, and the code lives in generated code and the lock. With `@json(codes)` the
+/// data file holds the number, which is what legacy readers of this file expect.
+package features.codes
+
+/// Guild ranks. The database, the packets and the guild config all store the number.
+enum GuildRank @codes(UInt8) @json(codes) {
+  master = 1
+  kingpin = 2
+  captain = 3
+  supporter = 4
+  rookie = 5
+}
+
+/// What one rank may do.
+record RankRights {
+  /// The rank. Written `"rank": 3` in the file.
+  rank: GuildRank
+  /// Members it may invite per day.
+  invitesPerDay: Int(0..)
+  /// Whether it may take from the guild bank.
+  bank: Bool = false
+}
+
+/// Rights per rank, read from a file that holds codes.
+let rights: [RankRights] keyed by rank = load("data/guild_rights.json")
+
+check rights.len() == 5 else "every rank needs its rights"
+
+// Written back with codes too: {"rank": 1, "invitesPerDay": 50, "bank": true}.
+emit json { out: "out/guild_rights.json", values: [rights] }

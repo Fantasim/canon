@@ -1,0 +1,43 @@
+# Real game data copied for opt-in tests never enters git (DECISIONS 29).
+/testdata-real/
+
+# The compiler's per-project cache and edit journal (.canon/cache, .canon/journal), wherever a
+# project lives, examples included.
+.canon/
+
+# Build outputs: the canon binary, release archives, the generated benchmark project
+# (IMPLEMENTATION-PLAN §7.6), coverage and profiles.
+/bin/
+/dist/
+/bench/
+/canon
+*.test
+*.out
+*.prof
+coverage.*
+
+# What `canon build` writes for an example with `emit … { out: "out/" }`; the reviewed copies
+# live in examples/**/expected/.
+/examples/**/out/
+
+# Local-only agent settings (absolute paths of this machine) and agent worktrees.
+/.claude/settings.local.json
+/.claude/worktrees/
+
+# Python bytecode from .claude/hooks/.
+__pycache__/
+*.pyc
+
+# Front-end tooling a contributor may run (TypeScript goldens, the VS Code extension).
+node_modules/
+
+# Editors and operating systems.
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+
+# Real game data (DECISIONS 29): the studio mockup embeds the full item index and real icons.
+/meta/spec-phase/mockups/studio.html

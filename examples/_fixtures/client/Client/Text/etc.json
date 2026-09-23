@@ -1,0 +1,82 @@
+{
+  "IDS_ETC_INC_000000": {
+    "us": "Vagrant",
+    "fr": "Vagabond",
+    "gr": "Vagrant"
+  },
+  "IDS_ETC_INC_000001": {
+    "us": "Mercenary",
+    "fr": "Mercenaire",
+    "gr": "Mercenary"
+  },
+  "IDS_ETC_INC_000002": {
+    "us": "Acrobat",
+    "fr": "Acrobate",
+    "gr": "Acrobat"
+  },
+  "IDS_ETC_INC_000003": {
+    "us": "Assist",
+    "fr": "Assistant",
+    "gr": "Assist"
+  },
+  "IDS_ETC_INC_000004": {
+    "us": "Magician",
+    "fr": "Magicien",
+    "gr": "Magician"
+  },
+  "IDS_ETC_INC_000005": {
+    "us": "Puppeteer",
+    "fr": "Marionnettiste",
+    "gr": "Puppeteer"
+  },
+  "IDS_ETC_INC_000006": {
+    "us": "Knight",
+    "fr": "Chevalier",
+    "gr": "Knight"
+  },
+  "IDS_ETC_INC_000007": {
+    "us": "Blade",
+    "fr": "Lame",
+    "gr": "Blade"
+  },
+  "IDS_ETC_INC_000008": {
+    "us": "Jester",
+    "fr": "Bouffon",
+    "gr": "Jester"
+  },
+  "IDS_ETC_INC_000009": {
+    "us": "Ranger",
+    "fr": "Ranger",
+    "gr": "Ranger"
+  },
+  "IDS_ETC_INC_000010": {
+    "us": "Ringmaster",
+    "fr": "Maître de cérémonie",
+    "gr": "Ringmaster"
+  },
+  "IDS_ETC_INC_000011": {
+    "us": "Billposter",
+    "fr": "Billposter",
+    "gr": "Billposter"
+  },
+  "IDS_ETC_INC_000012": {
+    "us": "Psychikeeper",
+    "fr": "Psykeeper",
+    "gr": "Psychikeeper"
+  },
+  "IDS_ETC_INC_000013": {
+    "us": "Elementor",
+    "fr": "Élémentaliste",
+    "gr": "Elementor"
+  },
+  "IDS_ETC_INC_000014": {
+    "us": "Gatekeeper",
+    "fr": "Gardien",
+    "gr": "Gatekeeper"
+  },
+  "IDS_ETC_INC_000015": {
+    "us": "Doppler",
+    "fr": "Doppler",
+    "gr": "Doppler"
+  }
+}

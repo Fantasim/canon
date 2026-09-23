@@ -1,0 +1,7 @@
+{
+  "items": [
+    {"dwID": "II_WEA_AXE_ANGEL", "dwItemKind1": "IK1_WEAPON", "dwItemLV": 90, "bPermanence": 1},
+    {"dwID": "II_GEN_MAT_MOONSTONE", "dwItemKind1": "IK1_GENERAL", "dwItemLV": 4, "dwPackMax": 9999},
+    {"dwID": "II_GEN_FOO_INS_HOTDOG", "dwItemKind1": "IK1_GENERAL", "dwItemLV": 52, "dwPackMax": 9999, "bPermanence": 0}
+  ]
+}

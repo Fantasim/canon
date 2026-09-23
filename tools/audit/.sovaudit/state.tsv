@@ -1,0 +1,2 @@
+# canon audit rule states for this repo: <rule>\t<enforce|ratchet|observe|off>.
+# Absent = the rulebook default. Loosening a row is a maintainer's call (baseline-guard).

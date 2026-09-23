@@ -1,0 +1,17 @@
+# canon audit baseline: the findings this repo already had when the ratchet started.
+# <rule>\t<file>\t<symbol>\t<detail>\t<count>\t<value>. Written only by
+# 'baseline --init' (once) and '--tighten' (only ever shrinks it).
+ignore-count	.			1	4
+pkg-example	internal/finding			1	0
+pkg-example	internal/gosrc			1	0
+pkg-example	internal/lane			1	0
+pkg-example	internal/lanes			1	0
+pkg-example	internal/lanes/gorules			1	0
+pkg-example	internal/lanes/gostyle			1	0
+pkg-example	internal/lanes/integrity			1	0
+pkg-example	internal/lanes/project			1	0
+pkg-example	internal/lanes/stock			1	0
+pkg-example	internal/ratchet			1	0
+pkg-example	internal/repo			1	0
+pkg-example	internal/report			1	0
+pkg-example	internal/rules			1	0

@@ -1,0 +1,8 @@
+warning[W5001]  @resource/Server/System/heistia_config.json:1:1
+  heistia: two tasks have the same description
+  expected by resource/heistia/heistia.canon:62 (check)
+
+warning[W1701]  resource/heistia/heistia.canon:9:1
+  44 texts of package resource.heistia have no fr translation (canon i18n status resource.heistia --lang fr --list)
+
+0 errors, 2 warnings in 1 package (…)

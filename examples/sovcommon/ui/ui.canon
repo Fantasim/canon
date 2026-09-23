@@ -1,0 +1,50 @@
+/// UI vocabularies shared by every web front end: colour tones and icon names.
+package sovcommon.ui
+
+/// A semantic or qualitative colour slot. Each one resolves to a --color-* token that
+/// tokens.css defines for dark and light, with its -soft background. No colour value
+/// lives in config.
+///
+/// Semantic tones are reserved for meaning (status, severity, flags, intent).
+/// Qualitative series slots tell families apart, always together with icon + label.
+enum Tone {
+  warning
+  info
+  accent
+  success
+  neutral
+  danger
+  series_1 = "series-1"
+  series_2 = "series-2"
+  series_3 = "series-3"
+  series_4 = "series-4"
+  series_5 = "series-5"
+  series_6 = "series-6"
+}
+
+/// Icons sovcommon exports (icons.ts). An icon that is not listed here is a type
+/// error wherever it is used, so `make check` no longer has to scrape TypeScript.
+enum Icon {
+  alert_triangle = "alert-triangle"
+  archive
+  bar_chart = "bar-chart"
+  check
+  columns
+  database
+  gamepad
+  globe
+  hand
+  inbox
+  layers
+  lightbulb
+  lock
+  monitor
+  package
+  scale
+  server
+  shield
+  terminal
+}
+
+emit go { out: "@sovcommon/ui", package: "ui", mode: baked }
+emit ts { out: "@web/ui.generated.ts" }

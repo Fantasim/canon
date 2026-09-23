@@ -1,0 +1,4 @@
+warning[W1701]  game/items/item.fr.canon:4:1
+  126 texts of package game.items have no fr translation (canon i18n status game.items --lang fr --list)
+
+0 errors, 1 warning in 1 package (…)

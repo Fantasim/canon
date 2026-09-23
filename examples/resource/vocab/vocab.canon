@@ -1,0 +1,210 @@
+/// Shared game vocabularies: event types, elements, stages, quest styles, and the items
+/// other files pick from. Today: Server/Vocab/*.json, the define headers generated from
+/// them, the xmacro .inc files, and propItem.json for items.
+///
+/// The important field is `EventType.param`: which kind of parameter an event's filter
+/// takes. Since Resource 4bb68225 (ADR-0005 d.4) it lives in Vocab/eventType.json as an
+/// optional `param`, and heistia_config.schema.json checks each filterParam against it
+/// through `x-ref-where`; the C++ EventParamHint column (EventTypeDisplay.h) still repeats
+/// it until Phase B. Here it is one field of one table, and every file that filters on an
+/// event (heistia, adventure quests, achievements...) gets the right parameter TYPE from
+/// it, so a wrong parameter is a type error wherever it is written.
+package resource.vocab
+
+import studio
+
+local let monsters = load.defines("@resource/Server/Define/defineObj.h", prefix: "MI_")
+local let worlds = load.defines("@resource/Server/Define/defineWorld.h", prefix: "WI_")
+local let upgradeTypes = load.defines("@resource/Server/Define/defineUpgradeType.h")
+local let jobs = load.defines("@resource/Server/Define/defineJob.h", prefix: "JOB_")
+/// IDS_* key -> English display name ("IDS_PROPITEM_TXT_003930" -> "Angel Axe").
+local let names: {String: String} = load("@resource/Server/Text/serverNames.json", at: "strings")
+
+// ---------------------------------------------------------------------------
+// Small closed vocabularies
+// ---------------------------------------------------------------------------
+
+/// The five elements (Vocab/element.json). Codes are what the game stores and sends.
+enum Element @codes(UInt8) { FIRE = 1, WATER = 2, ELECTRICITY = 3, WIND = 4, EARTH = 5 }
+
+view Element {
+  FIRE "Fire" { icon: flame, tone: danger }
+  WATER "Water" { icon: droplet, tone: info }
+  ELECTRICITY "Electricity" { icon: zap, tone: warning }
+  WIND "Wind" { icon: wind, tone: series_2 }
+  EARTH "Earth" { icon: mountain, tone: series_3 }
+}
+
+/// Progression stages (Vocab/gameStage.json).
+enum Stage @codes(UInt16) { Stage_1 = 100, Stage_2 = 101, Stage_3 = 102 }
+
+/// Adventure quest styles (Vocab/adventureQuest.json).
+enum QuestStyle @codes(UInt8) {
+  daily = 1
+  weekly = 2
+  forever = 3
+  season_pass = 4
+  pvp = 5
+  azure = 6
+}
+
+/// What an adventure quest style pays out.
+enum RewardType @codes(UInt8) { activity_points = 1, season_pass_exp = 2 }
+
+// ---------------------------------------------------------------------------
+// Items, as pickers need them
+// ---------------------------------------------------------------------------
+
+/// An item icon file; the file must exist under Resource/Icon/Item, with this exact
+/// letter case (DECISIONS 19).
+type ItemIcon = asset("@resource/Icon/Item", ext: [dds, png])
+
+/// An item's main kind (dwItemKind1). Declared in defineItemkind.h's order, so `.index`
+/// equals the IK1_* value.
+enum ItemKind1 {
+  IK1_GOLD
+  IK1_WEAPON
+  IK1_ARMOR
+  IK1_GENERAL
+  IK1_RIDE
+  IK1_SYSTEM
+  IK1_CHARGED
+  IK1_HOUSING
+}
+
+/// An item as other files see it: what a picker shows and what `ref items` checks.
+///
+/// Only the fields pickers, filters and checks read (`partial` load). The full record,
+/// with one variant case per kind, is game.items' Item; this one reads the 6,944 items
+/// that are still in propItem.json. Defaults copy the file's own `defaults` block, which
+/// the loader applies to every row that omits a key.
+record Item {
+  /// "II_GEN_MAT_MOONSTONE": what a `ref items` stores.
+  id: String(/^II_[A-Za-z0-9_]+$/) @json("dwID")
+  /// Text key of the displayed name ("IDS_PROPITEM_TXT_008066"); see `name()`.
+  nameKey: String = "IDS_PROPITEM_TXT_030168" @json("szName")
+  /// Main kind. A row without one is armour, as the `defaults` block says.
+  kind: ItemKind1 = IK1_ARMOR @json("dwItemKind1")
+  /// The only job that may use the item. "=" on the wire means any job.
+  job: ref jobs? = none @json("dwItemJob", none: "=")
+  /// Item level. Absent means 1; "=" means the item has no level.
+  level: Int(0..)? = 1 @json("dwItemLV", none: "=")
+  /// How many fit in one inventory slot.
+  stackMax: Int(1..) = 1 @json("dwPackMax")
+  /// Shown as a thumbnail next to the item in lists and pickers.
+  icon: ItemIcon @json("szIcon")
+
+  /// What people search for and read: "Moonstone", not II_GEN_MAT_MOONSTONE.
+  fn name(self) -> String { return names.get(nameKey) ?? nameKey }
+}
+
+/// Every item, keyed by its define. `ref items` stores the define and checks it exists.
+let items: [Item] keyed by id =
+  load("@resource/Server/Item/propItem.json", at: "items", partial: true)
+
+/// Every picker of `ref items` in the studio shows "Moonstone" with its icon and
+/// II_GEN_MAT_MOONSTONE underneath. Typing "moon" or "MOONST" both find it. The
+/// file still stores the define.
+view Item {
+  title "{name()}"
+  subtitle "{id}"
+  preview icon
+  search { name(), id }
+  menu items icon gem
+  filters { kind, job, level }
+  columns { kind 120, job 140, level 70, stackMax 90 }
+}
+
+// ---------------------------------------------------------------------------
+// Event types
+// ---------------------------------------------------------------------------
+
+/// Which kind of parameter an event's filter takes (eventType.json's `param`; an entry
+/// without one takes none).
+enum ParamKind {
+  none_
+  monster
+  item
+  dungeon
+  element
+  stat
+  upgrade_type = "upgradeType"
+  game_mode = "gameMode"
+  quest_style = "questStyle"
+}
+
+/// One thing the game counts (a kill, a drop, a craft...). Quests, achievements and
+/// heistia missions are built on these.
+record EventType {
+  /// Stored in the database: never renumbered, never reused (`@stable`).
+  code: UInt16 @stable
+  /// Name shown in tools and logs.
+  display: String
+  /// What the event's filter parameter is: see `Param`.
+  param: ParamKind = none_
+  /// Compile flag the event only exists under.
+  flag: String? = none
+}
+
+/// What a filter parameter may be for event `e`. The type depends on the value.
+type Param(e: EventType) = match e.param {
+  monster => ref monsters
+  item => ref items
+  dungeon => ref worlds
+  element => Element
+  quest_style => QuestStyle
+  upgrade_type => ref upgradeTypes
+  game_mode => String // KeyToGameMode's keys are still C++ (EventParamTypes.h)
+  none_, stat => Never // no parameter: only "no filter" is valid
+}
+
+/// Every event type (Vocab/eventType.json).
+let eventTypes: stable table EventType = {
+  COMBAT_KILL_MONSTER { code: 0, display: "Monster Kill", param: monster }
+  COMBAT_KILL_GIANT { code: 1, display: "Giant Kill", param: monster }
+  COMBAT_KILL_BOSS { code: 2, display: "Boss Kill", param: monster }
+  COMBAT_KILL_WORLD_BOSS { code: 3, display: "World Boss Kill", param: monster }
+  COMBAT_KILL_BY_ELEMENT { code: 5, display: "Elemental Kill", param: element }
+  COMBAT_DAMAGE_PVE { code: 10, display: "PvE AA Damage", param: monster }
+  COMBAT_DAMAGE_PVP_EVENT { code: 12, display: "PvP Event Damage" }
+  COMBAT_KILL_FFA { code: 30, display: "FFA Kill" }
+  COMBAT_KILL_GUILD_SIEGE { code: 31, display: "Guild Siege Kill" }
+  COMBAT_KILL_TDM { code: 32, display: "TDM Kill" }
+  COMBAT_GAME_MODE_START { code: 50, display: "Game Mode Start", param: game_mode }
+  ECONOMY_DROP_PENYAS { code: 1000, display: "Penya Drop", param: monster }
+  ECONOMY_DROP_ITEM { code: 1001, display: "Item Drop", param: item }
+  ECONOMY_SPEND_VOTE_POINTS { code: 1031, display: "Vote Points Spent" }
+  ECONOMY_CONSUME_ITEM { code: 1050, display: "Item Consumed", param: item }
+  PROGRESSION_COLLECT_MONSTER { code: 2030, display: "Monster Collected", param: monster }
+  PROGRESSION_COLLECT_ITEM { code: 2031, display: "Item Collected", param: item }
+  PROGRESSION_CARD_DRAWN { code: 2090, display: "Cards Drawn", flag: "__CARD_COLLECTION" }
+  CONTENT_COMPLETE_DUNGEON { code: 4000, display: "Dungeon Clear", param: dungeon }
+  CONTENT_COMPLETE_ADVENTURE_QUEST { code: 4010, display: "Adventure Quest", param: quest_style }
+  CONTENT_WHEEL_OF_FORTUNE { code: 4050, display: "Wheel of Fortune" }
+  CONTENT_LOTTERY_BUY_TICKETS { code: 4080, display: "Lottery Tickets" }
+  ITEMS_CRAFTED { code: 5000, display: "Item Crafted", param: item }
+  ITEMS_RECYCLED { code: 5001, display: "Item Recycled", param: item }
+  ITEMS_PERFORM_UPGRADE { code: 5010, display: "Item Upgrade", param: upgrade_type }
+  MISC_ACTIVE_PLAYTIME { code: 8000, display: "Active Playtime" }
+  MISC_STATS_SNAPSHOT { code: 8100, display: "Stats Snapshot", param: stat }
+  // ... the other 130 entries of Vocab/eventType.json
+}
+
+view EventType {
+  title "{display}"
+  subtitle "{id}"
+  search { display, id }
+  menu system icon gear
+  columns { code 80, param 130, flag 180 }
+}
+
+// The C++ side keeps its EVENT_LIST x-macro and EventParamHint table, now generated
+// from this one table, so the drift check between them has nothing left to compare.
+// Items stay out of it: the server still loads propItem.json itself.
+emit cpp {
+  out: "@source/Generated/vocab"
+  namespace: "sov::vocab"
+  mode: baked
+  values: [eventTypes]
+}
+emit view { out: "@generated/vocab.view.json" }

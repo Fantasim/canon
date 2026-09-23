@@ -1,0 +1,4 @@
+warning[W1701]  sovcommon/time/time.canon:6:1
+  20 texts of package sovcommon.time have no fr translation (canon i18n status sovcommon.time --lang fr --list)
+
+0 errors, 1 warning in 1 package (…)

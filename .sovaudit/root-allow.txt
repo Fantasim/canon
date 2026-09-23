@@ -1,0 +1,9 @@
+# intentional root entries of the Canon repository, beyond a Go project's usual layout
+SPEC.md
+CLI.md
+DECISIONS.md
+spec
+# DOCTRINE.md: the project law agents cite by section (ADR-0001)
+DOCTRINE.md
+# meta: the agents' external memory: state, plan, ADRs, handoffs (ADR-0001)
+meta

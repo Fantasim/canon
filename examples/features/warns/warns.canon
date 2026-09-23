@@ -1,0 +1,24 @@
+/// `expect … warns` (SPEC §18): a test that a warning fires, matched by message text
+/// or by the check's name. A warning never blocks a build, so without such a test
+/// nothing notices when one stops firing.
+package features.warns
+
+/// An NPC shop listing.
+record Listing {
+  /// Item define sold.
+  item: String(/^II_/)
+  /// Price in penya.
+  price: Int(0..)
+  /// Price the NPC pays to buy it back.
+  buyback: Int(0..) = 0
+
+  warn free_item: price > 0 else "{item} is sold for 0 penya"
+  warn buyback_profit: buyback <= price
+    else "buying {item} and selling it back earns {buyback - price} penya each time"
+}
+
+test "free and profitable listings warn" {
+  expect Listing { item: "II_GEN_FOO_INS_HOTDOG", price: 0 } warns free_item
+  expect Listing { item: "II_GEN_FOO_INS_HOTDOG", price: 110, buyback: 200 } warns "earns 90 penya"
+  expect Listing { item: "II_GEN_FOO_INS_HOTDOG", price: 110, buyback: 50 } passes
+}

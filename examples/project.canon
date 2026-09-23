@@ -1,0 +1,41 @@
+/// The law repository of Sovereign. In the real setup this directory is its own
+/// repository; here it is `services/configlang/examples/`.
+///
+/// Tests do not read the real repositories: the harness opens this project with every
+/// root redirected (see _fixtures/README.md).
+project sovereign {
+  canon: "0.1"
+
+  /// Named roots used by `load` and `emit` paths: "@resource/Server/...". A path never
+  /// leaves its root (E7001), so every output location has a root of its own.
+  roots {
+    // Read by `load` (game.items also writes its items.json under @resource).
+    resource: "../../../Resource"
+    client: "../../../Client"
+    // Written by `emit` only.
+    source: "../../../Source"
+    services: "../.."
+    sovcommon: "../../sovcommon"
+    web: "../../sovcommon/web/src/lib"
+    parity: "../../balance/parity"
+    generated: "../../resourcestudio/generated"
+    // Go code written inside this project, by the pipeline and by two features.
+    pipeline_go: "pipeline/out/go"
+    features: "features"
+  }
+
+  languages: [en, fr]
+  studio: studio
+  budget: 100_000_000
+
+  /// Go module path of each root that receives Go code (CODEGEN §2.8). A Go output's import
+  /// path is the module path of its closest mapped root plus the directories below it, so
+  /// `@services/resourcestudio/internal/config` is
+  /// gitlab.com/sovereign15/resourcestudio/internal/config, as in resourcestudio's go.mod.
+  go_module {
+    services: "gitlab.com/sovereign15"
+    sovcommon: "gitlab.com/sovereign15/sovcommon"
+    pipeline_go: "example.com/potions"
+    features: "example.com/features"
+  }
+}

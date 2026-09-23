@@ -1,0 +1,141 @@
+{
+  "version": 1,
+  "global": {
+    "min_level": 100,
+    "max_quests_per_style": 5,
+    "completion_reroll_cooldown_sec": 180,
+    "levelDiff": {
+      "minMob": 5,
+      "maxMob": 10,
+      "minGiant": 5,
+      "maxGiant": 10
+    }
+  },
+  "unique_per_batch": [
+    "ECONOMY_SPEND_VOTE_POINTS",
+    "MISC_ACTIVE_PLAYTIME"
+  ],
+  "styles": {
+    "daily": {
+      "reroll_time_sec": 86400,
+      "target_time_sec": 1800,
+      "max_target_days": 1,
+      "task_slot_weights": [
+        40,
+        40,
+        20
+      ],
+      "task_weights": {
+        "COMBAT_KILL_MONSTER": 40,
+        "ECONOMY_DROP_ITEM": 30,
+        "ECONOMY_SPEND_VOTE_POINTS": 10,
+        "MISC_ACTIVE_PLAYTIME": 20
+      },
+      "rewards": {
+        "type": "activity_points",
+        "amounts": {
+          "Stage_1": 20,
+          "Stage_2": 20,
+          "Stage_3": 20
+        }
+      }
+    },
+    "azure": {
+      "target_time_sec": 9000,
+      "max_target_days": 5,
+      "task_slot_weights": [
+        50,
+        35,
+        15
+      ],
+      "task_weights": {
+        "COMBAT_KILL_MONSTER": 60,
+        "ECONOMY_DROP_ITEM": 40
+      },
+      "rewards": {}
+    }
+  },
+  "target_multipliers": {
+    "2_tasks": {
+      "default": 0.5,
+      "overrides": {
+        "COMBAT_KILL_MONSTER": 0.6,
+        "MISC_ACTIVE_PLAYTIME": 1.0
+      }
+    },
+    "3_tasks": {
+      "default": 0.34,
+      "overrides": {
+        "COMBAT_KILL_MONSTER": 0.45
+      }
+    }
+  },
+  "hourly_targets": {
+    "MISC_ACTIVE_PLAYTIME": {
+      "rates": {
+        "Stage_1": 60,
+        "Stage_2": 60,
+        "Stage_3": 60
+      }
+    },
+    "COMBAT_KILL_MONSTER": {
+      "rates": {
+        "Stage_1": 2000,
+        "Stage_2": 2800,
+        "Stage_3": 3500
+      }
+    },
+    "ECONOMY_DROP_ITEM": {
+      "rates_by_specific": {
+        "II_GEN_MAT_ELE_VOLCANO3": {
+          "Stage_1": 12,
+          "Stage_2": 15,
+          "Stage_3": 0
+        },
+        "II_GEN_MAT_MOONSTONE": {
+          "Stage_1": 25,
+          "Stage_2": 30,
+          "Stage_3": 0
+        },
+        "default": {
+          "Stage_1": 10,
+          "Stage_2": 10,
+          "Stage_3": 0
+        }
+      }
+    },
+    "ECONOMY_SPEND_VOTE_POINTS": {
+      "rates": {
+        "Stage_1": 1,
+        "Stage_2": 1,
+        "Stage_3": 1
+      },
+      "is_daily_flat": true
+    }
+  },
+  "rate_amplifiers": {
+    "CONTENT_LOTTERY_BUY_TICKETS": [
+      {
+        "condition": "net_worth",
+        "min_value": 2500000000,
+        "max_value": 999999999999999,
+        "bonus_min": 1.2,
+        "bonus_max": 1.6
+      }
+    ]
+  },
+  "task_filters": {
+    "COMBAT_DAMAGE_PVE": {
+      "level": {
+        "min": 110,
+        "max": 500
+      }
+    },
+    "CONTENT_COMPLETE_DUNGEON": {
+      "level": {
+        "min": 120,
+        "max": 500
+      }
+    }
+  }
+}

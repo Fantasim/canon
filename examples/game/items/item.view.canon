@@ -1,0 +1,46 @@
+// Presentation of items in Resource Studio (SPEC §16.6 to §16.9). French lives in
+// item.fr.canon.
+//
+// No `when kind is IK1_WEAPON` anywhere: the kinds are variant cases, so a group that
+// names weapon fields simply disappears on a material (MOCKUP-GAPS 14).
+package game.items
+
+import studio
+
+view Item {
+  title "{name()}"
+  subtitle "{id}"
+  preview icon
+  search { name(), id }
+  singular "an item"
+  menu items icon gem
+  filters { kind, job, level }
+  columns { kind 120, level 70, cost 110, stackMax 90 }
+
+  group identity "Identity" { name, icon, kind, level, rarity }
+  group combat "Combat" {
+    attackMin
+    attackMax
+    attackSpeed
+    attackRange
+    weaponType
+    handed
+    stats
+  }
+  group shop "Shop" { cost { unit: penya }, stackMax }
+  group legacy "Legacy fields" advanced { version, partsFile }
+}
+
+/// Only weapons have an average hit.
+view ItemKind.IK1_WEAPON {
+  show "Average hit" "{(attackMin + attackMax) / 2}"
+}
+
+view StatBonus {
+  title "{attribute} +{value}"
+}
+
+view Handed {
+  HD_ONE "One hand"
+  HD_TWO "Two hands"
+}

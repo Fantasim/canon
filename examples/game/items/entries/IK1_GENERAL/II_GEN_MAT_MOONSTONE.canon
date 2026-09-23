@@ -1,0 +1,19 @@
+// Written by `canon convert items` from propItem.json's row, placed by `@files`.
+package game.items
+
+/// Moonstone, a piercing material (IK3_PIERDICE).
+entry items.II_GEN_MAT_MOONSTONE {
+  version: 7
+  nameKey: "IDS_PROPITEM_TXT_008066"
+  descriptionKey: "IDS_PROPITEM_TXT_008067"
+  icon: "Itm_GenMatMoonstone.dds"
+  cost: 8000
+  level: 4
+  rarity: 50
+  stackMax: 9999
+  partsFile: false
+  dropSound: SND_ITEM_DROPDING1
+  kind: IK1_GENERAL {
+    kind2: IK2_MATERIAL { kind3: IK3_PIERDICE }
+  }
+}

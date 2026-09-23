@@ -1,0 +1,38 @@
+/// Finite-input `export fn` (SPEC §9.4): every input is an enum, a Bool or a ref, so
+/// `canon build` computes every answer and generated code only looks it up. No logic
+/// reaches the runtime. (teamboard/taxonomy.canon has the same with refs.)
+package features.lookup
+
+/// Upgrade grades of a weapon, lowest first.
+enum Grade ordered { normal, unique, ultimate }
+
+/// Job tiers, lowest first.
+enum Tier ordered { vagrant, expert, pro, master, hero }
+
+/// Whether a character of `tier` may upgrade a weapon of `grade`: a 3 x 5 table in
+/// generated code.
+export fn canUpgrade(grade: Grade, tier: Tier) -> Bool {
+  return match grade {
+    normal => true
+    unique => tier >= pro
+    ultimate => tier >= master
+  }
+}
+
+/// Penya an upgrade costs: a 3-entry table.
+export fn upgradeCost(grade: Grade) -> Int {
+  return match grade {
+    normal => 10_000
+    unique => 500_000
+    ultimate => 20_000_000
+  }
+}
+
+test "masters upgrade everything" {
+  expect canUpgrade(ultimate, master) == true
+  expect canUpgrade(unique, expert) == false
+  expect upgradeCost(unique) == 500_000
+}
+
+emit go { out: "out/go/", package: "lookup", mode: baked }
+emit ts { out: "out/lookup.generated.ts" }

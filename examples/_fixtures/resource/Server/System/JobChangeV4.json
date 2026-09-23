@@ -1,0 +1,139 @@
+{
+  "schema": 4,
+  "jobs": {
+    "JOB_BLADE": {
+      "weaponSets": [
+        {
+          "id": 1,
+          "PARTS_RWEAPON": "II_WEA_SWO_TRITIUM"
+        },
+        {
+          "id": 2,
+          "PARTS_RWEAPON": "II_WEA_SWO_TRITIUM"
+        },
+        {
+          "id": 3,
+          "PARTS_RWEAPON": "II_WEA_SWO_TRITIUM"
+        }
+      ],
+      "armorSets": [
+        {
+          "id": 1,
+          "PARTS_CAP": "II_WEA_SWO_TRITIUM"
+        },
+        {
+          "id": 2,
+          "PARTS_CAP": "II_WEA_SWO_TRITIUM"
+        }
+      ],
+      "jewelSets": [
+        {
+          "id": 1,
+          "PARTS_RING1": "II_WEA_SWO_TRITIUM"
+        }
+      ],
+      "fashionSets": [
+        {
+          "id": 1,
+          "PARTS_HAT": "II_WEA_SWO_TRITIUM"
+        }
+      ],
+      "weaponCardSets": [
+        {
+          "id": 1,
+          "PARTS_RWEAPON": "II_WEA_SWO_TRITIUM"
+        },
+        {
+          "id": 2,
+          "PARTS_RWEAPON": "II_WEA_SWO_TRITIUM"
+        }
+      ],
+      "armorCardSets": [
+        {
+          "id": 1,
+          "PARTS_RWEAPON": "II_WEA_SWO_TRITIUM"
+        }
+      ],
+      "ultimateGemSets": [
+        {
+          "id": 1,
+          "PARTS_RWEAPON": "II_WEA_SWO_TRITIUM"
+        },
+        {
+          "id": 2,
+          "PARTS_RWEAPON": "II_WEA_SWO_TRITIUM"
+        }
+      ],
+      "preferredAwakeDst": [
+        "DST_STR"
+      ]
+    },
+    "JOB_KNIGHT": {
+      "weaponSets": [
+        {
+          "id": 1,
+          "PARTS_RWEAPON": "II_WEA_SWO_TRITIUM"
+        },
+        {
+          "id": 2,
+          "PARTS_RWEAPON": "II_WEA_SWO_TRITIUM"
+        },
+        {
+          "id": 3,
+          "PARTS_RWEAPON": "II_WEA_SWO_TRITIUM"
+        }
+      ],
+      "armorSets": [
+        {
+          "id": 1,
+          "PARTS_CAP": "II_WEA_SWO_TRITIUM"
+        },
+        {
+          "id": 2,
+          "PARTS_CAP": "II_WEA_SWO_TRITIUM"
+        }
+      ],
+      "jewelSets": [
+        {
+          "id": 1,
+          "PARTS_RING1": "II_WEA_SWO_TRITIUM"
+        }
+      ],
+      "fashionSets": [
+        {
+          "id": 1,
+          "PARTS_HAT": "II_WEA_SWO_TRITIUM"
+        }
+      ],
+      "weaponCardSets": [
+        {
+          "id": 1,
+          "PARTS_RWEAPON": "II_WEA_SWO_TRITIUM"
+        },
+        {
+          "id": 2,
+          "PARTS_RWEAPON": "II_WEA_SWO_TRITIUM"
+        }
+      ],
+      "armorCardSets": [
+        {
+          "id": 1,
+          "PARTS_RWEAPON": "II_WEA_SWO_TRITIUM"
+        }
+      ],
+      "ultimateGemSets": [
+        {
+          "id": 1,
+          "PARTS_RWEAPON": "II_WEA_SWO_TRITIUM"
+        },
+        {
+          "id": 2,
+          "PARTS_RWEAPON": "II_WEA_SWO_TRITIUM"
+        }
+      ],
+      "preferredAwakeDst": [
+        "DST_STA"
+      ]
+    }
+  }
+}

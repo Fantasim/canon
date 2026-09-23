@@ -1,0 +1,226 @@
+/// Items, once converted: the domain as `canon infer` and `canon convert` leave it.
+///
+/// Today the 6,944 items are rows of Server/Item/propItem.json (127 wire keys), read
+/// in place by resource.vocab for pickers. Converting them takes three steps (CLI §6.4):
+///   1. `canon infer --by dwItemKind1,dwItemKind2` writes the first version of the types
+///      below: one case per kind, one nested case per sub-kind, each allowing every
+///      field its items set (DECISIONS 7);
+///   2. the types are tightened in small reviewed steps;
+///   3. `canon convert items` writes one entry file per item under entries/ (placed by
+///      `@files`) and proves the round trip.
+///
+/// This sketch keeps two entries and the cases and fields they, the view and the checks
+/// use. The inferred types cover all 29 (kind1, kind2) pairs found in propItem.json.
+package game.items
+
+import resource.vocab { ItemIcon }
+import studio
+
+local let jobs = load.defines("@resource/Server/Define/defineJob.h", prefix: "JOB_")
+local let attributes = load.defines("@resource/Server/Define/defineAttribute.h", prefix: "DST_")
+local let sounds = load.defines("@resource/Server/Define/defineSound.h", prefix: "SND_")
+/// IDS_* key -> English display name ("IDS_PROPITEM_TXT_003930" -> "Angel Axe").
+local let names: {String: String} = load("@resource/Server/Text/serverNames.json", at: "strings")
+
+// ---------------------------------------------------------------------------
+// Closed vocabularies (IK2_*, IK3_*, HD_*, AR_*, WT_* in defineItemkind.h)
+// ---------------------------------------------------------------------------
+
+/// One hand or two.
+enum Handed { HD_ONE, HD_TWO }
+
+/// How far a weapon reaches.
+enum AttackRange { AR_SHORT, AR_RANGE, AR_HRANGE, AR_WAND }
+
+/// Damage family the combat formulas use. propItem.json also holds WI_WORLD_MADRIGAL
+/// here on a few blink wings (a world define, not a weapon type): an inferred enum
+/// would have made it legal, this one refuses it.
+enum WeaponType {
+  WT_MELEE
+  WT_MELEE_SWD
+  WT_MELEE_AXE
+  WT_MELEE_STAFF
+  WT_MELEE_STICK
+  WT_MELEE_KNUCKLE
+  WT_MELEE_YOYO
+  WT_MAGIC_WAND
+  WT_RANGE
+  WT_RANGE_BOW
+}
+
+/// A weapon's family (dwItemKind2).
+enum WeaponKind2 { IK2_WEAPON_DIRECT, IK2_WEAPON_MAGIC, IK2_WEAPON_HAND, IK2_MOB }
+
+/// A weapon's type (dwItemKind3). IK3_VIRTUAL is the invisible weapon monsters use.
+enum WeaponKind3 {
+  IK3_SWD
+  IK3_AXE
+  IK3_STAFF
+  IK3_CHEERSTICK
+  IK3_KNUCKLEHAMMER
+  IK3_WAND
+  IK3_BOW
+  IK3_YOYO
+  IK3_HAND
+  IK3_VIRTUAL
+}
+
+/// What a material is used for (dwItemKind3).
+enum MaterialKind {
+  IK3_ULTIMATE
+  IK3_SOCKETCARD
+  IK3_SOCKETCARD2
+  IK3_SUPSTONE
+  IK3_ELECARD
+  IK3_PIERDICE
+  IK3_ENCHANT
+  IK3_DICE
+}
+
+/// What kind of food (dwItemKind3).
+enum FoodKind { IK3_BADGE, IK3_COOKING, IK3_ICECEARM, IK3_INSTANT, IK3_PILL, IK3_DRINK }
+
+/// The element of an elemental material. propItem.json spells it with a leading `_`
+/// (eItemType), which no generated C++ name may start with (CODEGEN.md §3.4).
+enum ItemElement {
+  NONE = "_NONE"
+  FIRE = "_FIRE"
+  WATER = "_WATER"
+  ELECTRICITY = "_ELECTRICITY"
+  WIND = "_WIND"
+  EARTH = "_EARTH"
+}
+
+/// Item property flags (IP_TYPE, ProjectCmn.h). On the wire, dwFlag is the OR of the
+/// codes (`@json(bits)`). 48 items also set bit 8, which IP_TYPE does not name: those
+/// are errors until the bit is named or cleared.
+enum ItemFlag @codes(UInt32) {
+  IP_FLAG_BINDS = 1
+  IP_FLAG_UNDESTRUCTABLE = 2
+  IP_FLAG_EQUIP_BIND = 4
+}
+
+// ---------------------------------------------------------------------------
+// The item
+// ---------------------------------------------------------------------------
+
+/// A stat an item raises, and by how much.
+record StatBonus {
+  /// The stat raised (a DST_* define).
+  attribute: ref attributes
+  /// How much it is raised.
+  value: Int
+}
+
+/// An item: what every kind has, plus its kind's own fields in `kind`. Defaults copy
+/// propItem.json's `defaults` block; "=" on the wire means "not set".
+record Item {
+  /// Format version of the row (nVer). The loader ignores it.
+  version: Int(1..) @json("nVer")
+  /// Text key of the displayed name; see `name()`.
+  nameKey: String(/^IDS_/) = "IDS_PROPITEM_TXT_030168" @json("szName")
+  /// Text key of the description.
+  descriptionKey: String? = none @json("szCommand", none: "")
+  /// Thumbnail in inventories, shops and the studio.
+  icon: ItemIcon @json("szIcon")
+  /// Price in shops.
+  cost: Int(0..) = 4 @json("dwCost")
+  /// Item level. Absent means 1; "=" means the item has none.
+  level: Int(0..)? = 1 @json("dwItemLV", none: "=")
+  /// Rarity: the colour of the name.
+  rarity: Int(0..)? = none @json("dwItemRare", none: "=")
+  /// How many fit in one inventory slot.
+  stackMax: Int(1..) = 1 @json("dwPackMax")
+  /// The model is a parts file (worn) rather than a whole object. 0/1 on the wire.
+  partsFile: Bool = true @json("bPartsFile", int)
+  /// Sound played when the item drops.
+  dropSound: ref sounds? = none @json("dwSubDefine", none: "=")
+  /// What the item is. Its tag and fields sit directly in the item's object.
+  kind: ItemKind @json(inline)
+
+  /// What people search for and read: "Angel Axe", not II_WEA_AXE_ANGEL.
+  fn name(self) -> String { return names.get(nameKey) ?? nameKey }
+}
+
+/// The item's main kind (dwItemKind1). Each case holds the fields its items use, so a
+/// material cannot carry an attack speed.
+variant ItemKind @json(tag: "dwItemKind1") {
+  /// Weapons, monsters' weapons included: 998 items.
+  IK1_WEAPON {
+    /// Weapon family.
+    kind2: WeaponKind2 @json("dwItemKind2")
+    /// Weapon type: which skills and animations it takes.
+    kind3: WeaponKind3 @json("dwItemKind3")
+    /// The only job that may equip it; `none` means any job.
+    job: ref jobs? = none @json("dwItemJob", none: "=")
+    /// Level required to equip it.
+    requiredLevel: Int(1..) = 1 @json("dwLimitLevel1")
+    /// One hand or two.
+    handed: Handed @json("dwHanded")
+    /// Lowest base damage.
+    attackMin: Int(0..) = 1 @json("dwAbilityMin")
+    /// Highest base damage.
+    attackMax: Int(0..) = 1 @json("dwAbilityMax")
+    /// Speed factor of the attack animation.
+    attackSpeed: Float(0.0..) @json("fAttackSpeed")
+    /// How far it reaches.
+    attackRange: AttackRange @json("dwAttackRange")
+    /// Damage family.
+    weaponType: WeaponType @json("dwWeaponType")
+    /// Durability.
+    endurance: Int(0..) @json("dwEndurance")
+    /// Up to six stat bonuses, written as the parallel keys dwDestParam0..5 and
+    /// nAdjParamVal0..5.
+    stats: [StatBonus](..=6) = [] @json(pairs: ["dwDestParam{i}", "nAdjParamVal{i}"])
+    /// Property flags; a bitmask on the wire.
+    flags: [ItemFlag] = [] @json("dwFlag", bits)
+    /// Sound of a hit.
+    attackSound: ref sounds? = none @json("dwSndAttack1", none: "=")
+
+    check attackMin <= attackMax else "attackMin ({attackMin}) is above attackMax ({attackMax})"
+  }
+  /// What a player carries and uses up: materials, food, gems, jewels... 868 items.
+  IK1_GENERAL {
+    /// The sub-kind, with its own fields.
+    kind2: GeneralKind @json(inline)
+  }
+  // Trimmed: IK1_ARMOR (3,698 items), IK1_SYSTEM, IK1_RIDE, IK1_CHARGED, IK1_GOLD and
+  // IK1_HOUSING, each with its nested sub-kinds.
+}
+
+/// A general item's sub-kind (dwItemKind2). Usage is recorded per innermost case, so
+/// the studio orders a material's fields by what materials set.
+variant GeneralKind @json(tag: "dwItemKind2") {
+  /// Crafting and upgrade materials: 129 items.
+  IK2_MATERIAL {
+    /// What the material is used for.
+    kind3: MaterialKind @json("dwItemKind3")
+    /// Element of an elemental stone; NONE for the others.
+    element: ItemElement = NONE @json("eItemType")
+    /// The stat an upgrade card raises.
+    referStat: ref attributes? = none @json("dwReferStat2", none: "=")
+  }
+  /// Food, eaten from the inventory: 243 items.
+  IK2_FOOD {
+    /// What kind of food.
+    kind3: FoodKind @json("dwItemKind3")
+    /// What eating it restores.
+    restores: [StatBonus](..=6) = [] @json(pairs: ["dwDestParam{i}", "nAdjParamVal{i}"])
+    /// Wait before the next one can be eaten.
+    cooldown: Duration? = none @json("dwSkillReady", unit: ms)
+  }
+  // Trimmed: IK2_GEM, IK2_JEWELRY, IK2_GENERAL, IK2_POTION, IK2_REFRESHER, IK2_TOOLS,
+  // and IK2_WEAPON_DIRECT (a single general item: worth a look before tightening).
+}
+
+/// Every converted item, keyed by its define. Item ids are stored in inventories, so
+/// the table is stable: an item is retired, never removed or renamed. Each entry lives
+/// in its own file; a new one goes to entries/<kind>/<id>.canon.
+@files("entries/{kind}/{id}.canon")
+let items: stable table Item = {}
+
+// Data mode: the server loads items.json at startup. The legacy ItemProp struct is
+// not targeted here: see examples/features/legacycpp for `@cpp(struct:)`.
+emit json { out: "@resource/Server/Item/items.json", values: [items] }
+emit cpp { out: "@source/Generated/items", namespace: "sov::gen", mode: data }
+emit view { out: "@generated/items.view.json" }

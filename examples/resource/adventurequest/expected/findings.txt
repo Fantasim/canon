@@ -1,0 +1,4 @@
+warning[W1701]  resource/adventurequest/adventurequest.canon:12:1
+  104 texts of package resource.adventurequest have no fr translation (canon i18n status resource.adventurequest --lang fr --list)
+
+0 errors, 1 warning in 1 package (…)

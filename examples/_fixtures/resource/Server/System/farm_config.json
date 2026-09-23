@@ -1,0 +1,81 @@
+{
+  "global": {
+    "farmPurchasePrice": 500000000,
+    "visitCost": 100000,
+    "maxModels": 10,
+    "worldLevelMinRequired": 2,
+    "activityPointsMinRequired": 1000,
+    "productionTickIntervalSec": 3600
+  },
+  "modelTypes": [
+    {
+      "typeId": 1,
+      "typeName": "Wheat",
+      "nameTextDefine": "TID_FARM_PRODUCTION_BLE",
+      "unlockPrice": 25000000,
+      "maxBuyCount": 10,
+      "maxLevel": 3,
+      "levels": [
+        {
+          "level": 1,
+          "productionItemDefine": "II_FARM_PRODUCTION_BLE",
+          "productionPerHour": 10,
+          "modelName": "KaillunPlants04",
+          "maxStorage": 100,
+          "levelUpRequirements": [
+            {
+              "itemDefine": "II_FARM_PRODUCTION_BLE",
+              "count": 150
+            },
+            {
+              "itemDefine": "II_SYS_SYS_SCR_PERIN",
+              "count": 2
+            }
+          ]
+        },
+        {
+          "level": 2,
+          "productionItemDefine": "II_FARM_PRODUCTION_BLE",
+          "productionPerHour": 20,
+          "modelName": "KaillunPlants04",
+          "maxStorage": 200,
+          "levelUpRequirements": [
+            {
+              "itemDefine": "II_FARM_PRODUCTION_BLE",
+              "count": 350
+            },
+            {
+              "itemDefine": "II_SYS_SYS_SCR_PERIN",
+              "count": 5
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "typeId": 7,
+      "typeName": "Premium",
+      "nameTextDefine": "TID_FARM_PRODUCTION_WINDMILL",
+      "unlockItems": [
+        {
+          "itemDefine": "II_FOURELEMENT05",
+          "count": 75
+        }
+      ],
+      "maxBuyCount": 5,
+      "maxLevel": 1,
+      "levels": [
+        {
+          "level": 1,
+          "modelName": "UC017",
+          "bonuses": [
+            {
+              "dst": "DST_FARM_PRODUCTION_RATE",
+              "value": 5
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

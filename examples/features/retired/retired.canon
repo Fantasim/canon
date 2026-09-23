@@ -1,0 +1,42 @@
+/// `retired` (SPEC §12): an id that was used once stays reserved forever. A retired
+/// entry or member stays in the lock, in generated id enums and in data files (flagged),
+/// so stored data still decodes; it is left out of `.active()`; a live entry that
+/// refers to it is an error (E3502); its id can never be reused (E6002).
+package features.retired
+
+/// Kinds of lottery ticket. Tickets are stored with their kind's code. The event
+/// ticket went away with its event: its code 3 is retired, never reused.
+enum TicketKind @codes(UInt8) { standard = 1, premium = 2, retired event = 3 }
+
+/// A prize tier of the lottery. Tickets store the tier they won, so ids are stable.
+record Tier {
+  /// Shown on the ticket.
+  label: String(1..)
+  /// Chance out of 1 000 000.
+  chance: Int(1..=1_000_000)
+  /// The tier a re-roll moves the ticket to, if any.
+  upgradesTo: ref Tier? = none
+}
+
+/// Every tier, in display order.
+let tiers: stable table Tier = {
+  common { label: "Common", chance: 800_000, upgradesTo: rare }
+  rare { label: "Rare", chance: 190_000, upgradesTo: legendary }
+  /// Merged into `rare` in September. Tickets that won it still decode; nothing new
+  /// may point to it (`upgradesTo: epic` would be E3502).
+  retired epic { label: "Epic", chance: 5_000 }
+  legendary { label: "Legendary", chance: 10_000 }
+}
+
+check tiers.active().map(.chance).sum() == 1_000_000
+  else "the chances of the active tiers add up to {tiers.active().map(.chance).sum()}, not 1 000 000"
+
+test "a retired tier is kept but inactive" {
+  expect tiers.epic.retired == true
+  expect tiers.active().len() == 3
+  expect tiers.len() == 4
+  expect tiers.active().contains(tiers.epic) == false
+}
+
+// The data file keeps the retired row, flagged: {"$id": "epic", "$retired": true, …}.
+emit json { out: "out/tiers.json", values: [tiers] }

@@ -1,0 +1,4 @@
+warning[W1701]  resource/vocab/vocab.canon:12:1
+  67 texts of package resource.vocab have no fr translation (canon i18n status resource.vocab --lang fr --list)
+
+0 errors, 1 warning in 1 package (…)

@@ -1,0 +1,84 @@
+/// Weekly schedule windows, shared by every file that schedules something (events,
+/// invasions, PvP events...) and by the studio's weekly_timeline widget.
+///
+/// Canonical shape (Resource Schema README 13.8): a time of day is always
+/// {hour, minute}, never an "HH:MM" string nor a minute count.
+package sovcommon.time
+
+/// Minutes in a day.
+const DAY = 1440
+/// Minutes in a week.
+const WEEK = DAY * 7
+
+/// Declared Sunday first so that `.index` equals C's tm_wday.
+enum Weekday { Sun, Mon, Tue, Wed, Thu, Fri, Sat }
+
+/// A time of day, in UTC wherever it is used.
+record TimeOfDay {
+  /// 0 to 23.
+  hour: Int(0..=23)
+  /// 0 to 59.
+  minute: Int(0..=59)
+
+  fn minutes(self) -> Int { return hour * 60 + minute }
+}
+
+/// A half-open [start, end) span in UTC. `end` before `start` is a valid window
+/// that crosses midnight into the next day.
+record Window {
+  /// Day the window opens.
+  day: Weekday
+  /// When it opens.
+  startUtc: TimeOfDay
+  /// When it closes; before `startUtc` means the next day.
+  endUtc: TimeOfDay
+
+  /// ScheduleWindow::IsValid() refuses it. 00:00 -> 00:00 is NOT a full-day shorthand.
+  check startUtc != endUtc
+    else "zero-length window: the loader refuses it and nothing would fire for this slot"
+}
+
+/// The minutes of the week a window occupies: one range, or two when it wraps past
+/// the end of the week.
+fn occupancy(w: Window) -> [Range] {
+  let start = w.day.index * DAY + w.startUtc.minutes()
+  var length = w.endUtc.minutes() - w.startUtc.minutes()
+  if length < 0 { length += DAY }
+  let end = start + length
+  if end <= WEEK { return [start..end] }
+  return [start..WEEK, 0..end - WEEK]
+}
+
+fn overlaps(a: Window, b: Window) -> Bool {
+  return occupancy(a).any(x => occupancy(b).any(y => x.start < y.end and y.start < x.end))
+}
+
+// Packages that use Window in their own C++ or view model need these types emitted once,
+// here (AUDIT EMT-06, VM-03): they refer to them, never copy them.
+emit cpp { out: "@source/Generated/time", namespace: "sov::time", mode: types }
+emit view { out: "@generated/time.view.json" }
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+local fn at(day: Weekday, from: Int, to: Int) -> Window {
+  return { day: day, startUtc: { hour: from, minute: 0 }, endUtc: { hour: to, minute: 0 } }
+}
+
+test "a window may cross midnight" {
+  expect overlaps(at(Mon, 22, 2), at(Tue, 3, 5)) == false
+  expect overlaps(at(Mon, 22, 2), at(Tue, 1, 5)) == true
+}
+
+test "a window may cross the end of the week" {
+  expect overlaps(at(Sat, 23, 1), at(Sun, 0, 2)) == true
+}
+
+test "touching windows do not overlap" {
+  expect overlaps(at(Mon, 20, 22), at(Mon, 22, 23)) == false
+}
+
+test "zero-length windows are refused" {
+  expect at(Wed, 12, 12) fails "zero-length window"
+}

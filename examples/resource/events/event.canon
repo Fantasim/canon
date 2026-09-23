@@ -1,0 +1,195 @@
+/// NM Event Scheduler config: scripted world events and their weekly windows.
+/// Loaded by WorldServer and CoreServer (NMEvent::ConfigLoader, EventConfigLoader.cpp).
+///
+/// Replaces: eventConfig.schema.json (types, 8 x-invariants, x-define, x-ref, x-notes)
+/// and Schema/rules/event.schedule-overlap.lua (96 lines). The window arithmetic is
+/// shared with other schedules, in sovcommon.time.
+///
+/// Any invalid event makes the loader clear EVERY event of the file, so every
+/// finding here is an error.
+package resource.events
+
+import resource.vocab { items }
+import sovcommon.time { Weekday, Window, overlaps }
+import studio
+
+/// Monster names the loader resolves through defineObj.h. Items come from
+/// resource.vocab, so item pickers show names and icons.
+local let monsters = load.defines("@resource/Server/Define/defineObj.h", prefix: "MI_")
+
+// ---------------------------------------------------------------------------
+// Events
+// ---------------------------------------------------------------------------
+
+/// A rectangle of world coordinates (Rect2D).
+record Rect {
+  /// West edge.
+  left: Float
+  /// North edge.
+  top: Float
+  /// East edge.
+  right: Float
+  /// South edge.
+  bottom: Float
+
+  check left < right and top < bottom else "empty spawn region (Rect2D::IsValid)"
+}
+
+/// [min, max] number of items per spawn or drop.
+type ItemCount = [Int(1..=100_000)] where it.len() == 2 and it[0] <= it[1]
+
+/// What the event does. The type decides which fields exist, so the schema's
+/// "require monsterId when type == spawn_monster" rules are simply the shape.
+///
+/// Stricter than the loader on purpose: a field that means nothing for this type
+/// (a monsterId on a spawn_item) is refused instead of silently ignored.
+variant EventKind @json(tag: "type") {
+  /// Spawns monsters in a region until enough are killed.
+  spawn_monster {
+    /// The monster spawned.
+    monsterId: ref monsters
+    /// Where the monsters appear.
+    spawnRegion: Rect
+    /// How long a spawned monster lives; `none` means until killed.
+    monsterLifetime: Duration(1s..=1d)? = none @json("monsterLifetimeSec", unit: s)
+  }
+  /// Drops items on the ground in a region until enough are picked up.
+  spawn_item {
+    /// The item dropped.
+    itemId: ref items
+    /// How many per drop.
+    itemCount: ItemCount = [1, 1]
+    /// Where the items appear.
+    spawnRegion: Rect
+    /// How long a dropped item stays; `none` means the game's default.
+    groundLifetime: Duration(1m..=1d)? = none @json("groundLifetimeSec", unit: s)
+
+    check itemcount_le_packmax: itemCount[1] <= itemId.stackMax
+      else "{itemCount[1]} {itemId.id} per drop, but a slot holds {itemId.stackMax}"
+  }
+  /// Adds an item to the loot of monsters in a level band.
+  monster_drop_inject {
+    /// The item added to the loot.
+    itemId: ref items
+    /// How many per drop.
+    itemCount: ItemCount = [1, 1]
+    /// Lowest monster level that drops it; 0 means "no bound".
+    levelMin: Int(0..=1000) = 0
+    /// Highest monster level that drops it; 0 means "no bound".
+    levelMax: Int(0..=1000) = 0
+
+    check levelMin == 0 or levelMax == 0 or levelMin <= levelMax
+      else "levelMin ({levelMin}) is above levelMax ({levelMax})"
+    check itemcount_le_packmax: itemCount[1] <= itemId.stackMax
+      else "{itemCount[1]} {itemId.id} per drop, but a slot holds {itemId.stackMax}"
+  }
+}
+
+/// Only these two are meaningful. The loader silently falls back to local_budget on
+/// any other string; here a typo is an error instead.
+enum RollMode { authoritative, local_budget }
+
+/// One scripted event and its weekly windows.
+record Event {
+  /// Used by the GM /eventinfo2 scanner, which splits on '-' and '.'.
+  id: String(/^[A-Za-z0-9_]{1,64}$/)
+  /// The world the event runs in.
+  worldId: UInt32(1..)
+  /// How many kills or pickups complete the event.
+  targetCount: Int(1..=1_000_000)
+  /// What the event does; its fields sit directly in the event's object.
+  kind: EventKind @json(inline)
+  /// When the event runs, each week.
+  schedule: [Window](1..=64)
+  /// Who rolls a drop: each world server against its granted budget (local_budget), or
+  /// the core server, asked per kill (authoritative).
+  rollMode: RollMode = local_budget
+
+  check {
+    for i, a in schedule.enumerate() {
+      for b in schedule[i + 1..] {
+        if overlaps(a, b) {
+          fail(
+            b,
+            "overlaps an earlier window of this event; the loader then rejects EVERY event of the file",
+          )
+        }
+      }
+    }
+  }
+}
+
+/// The whole file.
+record EventConfig {
+  /// Must equal Config::kConfigSchemaVersion.
+  version: Int where it == 1
+  /// Every event; ids are unique.
+  events: [Event](..=256) keyed by id
+}
+
+/// Server/Event/EventConfig.json, read in place.
+let eventConfig: EventConfig = load("@resource/Server/Event/EventConfig.json")
+
+// ---------------------------------------------------------------------------
+// Studio
+// ---------------------------------------------------------------------------
+
+view EventConfig {
+  title "Scheduled events"
+  menu events icon event
+  group events "Events" { events }
+}
+
+view Event {
+  title "{id}"
+  singular "an event"
+  columns { id 200, kind 170, worldId 90, targetCount 110, schedule }
+
+  group event "Event" {
+    id "Id"
+    kind "Type"
+    worldId "World"
+    targetCount "Amount" { unit: count }
+  }
+  group schedule "Schedule" "Weekly windows in UTC. A window that ends before it starts crosses midnight." {
+    schedule { widget: weekly_timeline }
+  }
+  group advanced "Advanced" advanced { rollMode "Roll mode" }
+}
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+local fn at(day: Weekday, from: Int, to: Int) -> Window {
+  return { day: day, startUtc: { hour: from, minute: 0 }, endUtc: { hour: to, minute: 0 } }
+}
+
+local let sample: Event = {
+  id: "sample"
+  worldId: 1
+  targetCount: 10
+  kind: monster_drop_inject { itemId: II_GEN_MAT_MOONSTONE }
+  schedule: [at(Mon, 20, 22)]
+}
+
+test "overlapping windows are refused" {
+  expect {
+    ...sample
+    schedule: [at(Mon, 20, 22), at(Mon, 21, 23)]
+  } fails "overlaps an earlier window"
+  expect { ...sample, schedule: [at(Mon, 20, 22), at(Mon, 22, 23)] } passes
+}
+
+test "a drop cannot exceed what one slot holds" {
+  let tooMany: EventKind = monster_drop_inject {
+    itemId: II_GEN_MAT_MOONSTONE
+    itemCount: [1, 20_000]
+  }
+  expect { ...sample, kind: tooMany } fails itemcount_le_packmax
+}
+
+// While EventConfig.json stays the source, Canon validates it and generates the
+// C++ structs. The loader keeps reading the file. The C++ checks can be deleted.
+emit cpp { out: "@source/Generated/events", namespace: "NMEvent::gen", mode: types }
+emit view { out: "@generated/events.view.json" }

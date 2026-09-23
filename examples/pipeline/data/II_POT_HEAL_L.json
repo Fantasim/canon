@@ -1,0 +1,7 @@
+{
+  "dwID": "II_POT_HEAL_L",
+  "szName": "IDS_PROPITEM_TXT_POT_L",
+  "nHeal": 2500,
+  "dwCooldownMs": 8000,
+  "nStack": 20
+}

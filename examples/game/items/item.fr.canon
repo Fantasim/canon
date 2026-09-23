@@ -1,0 +1,34 @@
+// French for the items' studio texts. Keys are paths into item.canon and
+// item.view.canon (SPEC §17).
+package game.items
+translation fr
+
+Item.singular "un objet"
+Item.group.identity "Identité"
+Item.group.combat "Combat"
+Item.group.shop "Boutique"
+Item.group.legacy "Champs hérités"
+Item.nameKey "Clé du nom"
+Item.icon "Icône"
+Item.cost "Prix"
+Item.level "Niveau"
+Item.rarity "Rareté"
+Item.stackMax "Quantité par case"
+Item.kind "Type"
+
+ItemKind.IK1_WEAPON "Arme"
+ItemKind.IK1_GENERAL "Objet général"
+ItemKind.IK1_WEAPON.attackMin "Attaque minimum"
+ItemKind.IK1_WEAPON.attackMax "Attaque maximum"
+ItemKind.IK1_WEAPON.attackSpeed "Vitesse d'attaque"
+ItemKind.IK1_WEAPON.attackRange "Portée"
+ItemKind.IK1_WEAPON.weaponType "Famille de dégâts"
+ItemKind.IK1_WEAPON.handed "Prise en main"
+ItemKind.IK1_WEAPON.stats "Bonus de stats"
+ItemKind.IK1_WEAPON.show._0 "Coup moyen"
+
+GeneralKind.IK2_MATERIAL "Matériau"
+GeneralKind.IK2_FOOD "Nourriture"
+
+Handed.HD_ONE "Une main"
+Handed.HD_TWO "Deux mains"

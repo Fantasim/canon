@@ -1,0 +1,70 @@
+{
+  "version": 1,
+  "events": [
+    {
+      "id": "madrigal_bang_hunt",
+      "type": "spawn_monster",
+      "worldId": 1,
+      "targetCount": 200,
+      "monsterId": "MI_BANG1",
+      "spawnRegion": {
+        "left": 6800.0,
+        "top": 3200.0,
+        "right": 7100.0,
+        "bottom": 3500.0
+      },
+      "monsterLifetimeSec": 1800,
+      "schedule": [
+        {
+          "day": "Sat",
+          "startUtc": {
+            "hour": 20,
+            "minute": 0
+          },
+          "endUtc": {
+            "hour": 22,
+            "minute": 0
+          }
+        },
+        {
+          "day": "Sun",
+          "startUtc": {
+            "hour": 20,
+            "minute": 0
+          },
+          "endUtc": {
+            "hour": 22,
+            "minute": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "moonstone_rain",
+      "type": "monster_drop_inject",
+      "worldId": 1,
+      "targetCount": 50,
+      "itemId": "II_GEN_MAT_MOONSTONE",
+      "itemCount": [
+        1,
+        2
+      ],
+      "levelMin": 20,
+      "levelMax": 60,
+      "schedule": [
+        {
+          "day": "Wed",
+          "startUtc": {
+            "hour": 18,
+            "minute": 0
+          },
+          "endUtc": {
+            "hour": 20,
+            "minute": 0
+          }
+        }
+      ],
+      "rollMode": "authoritative"
+    }
+  ]
+}
