@@ -16,8 +16,8 @@ func ignores(ctx *lane.Context) []finding {
 	var out []finding
 	total := 0
 	for _, rel := range ctx.Repo.FilesWithExt(sourceExts...) {
-		directives := lane.Directives(ctx, rel)
-		total += len(directives) + toolIgnores(ctx, rel)
+		directives, n := fileIgnores(ctx, rel)
+		total += n
 		if ctx.On(ruleReason) {
 			out = append(out, badDirectives(rel, directives)...)
 		}
@@ -29,6 +29,12 @@ func ignores(ctx *lane.Context) []finding {
 		})
 	}
 	return out
+}
+
+// fileIgnores is rel's own directives and its count of every ignore, the Go tools' included.
+func fileIgnores(ctx *lane.Context, rel string) ([]lane.Directive, int) {
+	directives := lane.Directives(ctx, rel)
+	return directives, len(directives) + toolIgnores(ctx, rel)
 }
 
 // toolIgnores counts the other Go tools' suppressions in rel's comments; Markdown has none.

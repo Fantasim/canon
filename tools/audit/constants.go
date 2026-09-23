@@ -27,6 +27,6 @@ const usage = `canon audit: the project's strict code audit (tools/audit)
   rules    [--family f]                                         the rulebook
 
 Run from tools/audit: go run . <command> --repo ../..
-Common: --repo DIR (default .), --toolchain DIR, --quiet.
+Common: --repo DIR (default .), --toolchain DIR, --thresholds FILE, --quiet.
 Ignore one finding: // sovaudit:ignore <rule> -- <reason>   (a directive without a reason ignores nothing)
 `

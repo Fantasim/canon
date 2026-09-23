@@ -41,7 +41,7 @@ func auditReal(t *testing.T, root string) {
 			on[id] = true
 		}
 	}
-	ctx := &lane.Context{Repo: r, Go: tree, Enabled: on, Log: os.Stderr}
+	ctx := &lane.Context{Repo: r, Go: tree, Enabled: on, Log: os.Stderr, Limits: shippedLimits(t)}
 	if on[ruleExportedLocal] {
 		t0 := time.Now()
 		pkgs, err := tree.Typed()

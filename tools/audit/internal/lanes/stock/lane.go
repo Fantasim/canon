@@ -1,8 +1,6 @@
 package stock
 
 import (
-	"path/filepath"
-
 	"github.com/fantasim/canonlang/tools/audit/internal/finding"
 	"github.com/fantasim/canonlang/tools/audit/internal/lane"
 )
@@ -21,13 +19,11 @@ func (*Lane) Run(ctx *lane.Context) (lane.Result, error) {
 	if ctx.Go == nil {
 		return lane.Result{}, nil
 	}
-	cfgPath := filepath.Join(ctx.Toolchain, golangciConfig)
-
 	var (
 		findings []finding.Finding
 		skips    []lane.Skip
 	)
-	fs, skip := runGolangci(ctx, cfgPath)
+	fs, skip := runGolangci(ctx)
 	collect(&findings, &skips, fs, skip)
 	fs, skip = runDeadcode(ctx)
 	collect(&findings, &skips, fs, skip)

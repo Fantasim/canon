@@ -2,3 +2,5 @@
 rules.md
 DOCTRINE-code.md
 toolchain
+# the rule thresholds the tool reads at startup (IMPLEMENTATION-PLAN addendum, decision 26)
+thresholds.tsv

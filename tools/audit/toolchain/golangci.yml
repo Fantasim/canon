@@ -1,4 +1,6 @@
 # canon audit stock lane: pinned golangci-lint v2 config, mapped onto the rulebook ids.
+# Each placeholder in braces names a key of ../thresholds.tsv: the stock lane renders this
+# template into a temporary config before every run; golangci-lint never reads it directly.
 version: "2"
 
 run:
@@ -55,9 +57,9 @@ linters:
       ignore-package-globs:
         - github.com/fantasim/canonlang/*
     gocognit:
-      min-complexity: 15
+      min-complexity: {fn-complexity}
     dupl:
-      threshold: 150
+      threshold: {dup-tokens}
     staticcheck:
       checks:
         - all

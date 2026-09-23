@@ -60,7 +60,7 @@ const (
 const (
 	pkgOS      = "os"
 	pkgLog     = "log"
-	pkgFmt     = "fmt"
+	pkgFmt     = gosrc.PkgFmt
 	pkgErrors  = "errors"
 	pkgHTTP    = gosrc.PkgNetHTTP
 	pkgRegexp  = "regexp"

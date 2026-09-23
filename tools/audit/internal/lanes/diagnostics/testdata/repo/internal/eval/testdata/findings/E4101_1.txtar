@@ -1,0 +1,3 @@
+-- a.canon --
+-- findings.txt --
+a.canon:1:1: error E4101: integer overflow in +

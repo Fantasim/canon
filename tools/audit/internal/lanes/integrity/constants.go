@@ -22,12 +22,16 @@ const (
 	gitNoFormat   = "--format="
 	gitRange      = ".."
 	gitPathSep    = "--"
+	// gitRevPathHere joins a revision to a path relative to git -C's directory.
+	gitRevPathHere = ":./"
 
 	auditSegment = repo.AuditDir + "/"
 
 	msgBaselineUp  = "baseline entry added or raised against the base revision: "
 	msgDecision    = "a removed comment recorded a decision and " + repo.DecisionsFile + " did not change: "
 	msgStateLoose  = "state loosened against the base revision: "
+	msgThreshold   = "threshold raised against the base revision: %s %d -> %d"
+	fixThreshold   = "restore the base value; raising a limit is a maintainer's own commit"
 	msgUnknownRule = "unknown rule id: "
 	msgBadMode     = "invalid mode: "
 	msgNoReason    = "ignore without a rule id and a reason"
@@ -44,9 +48,12 @@ const docLineMark = "*"
 
 var commentOpeners = []string{"//", "/*", "<!--"}
 
-// ignoreMarkers are every other suppression syntax the Go tools honour; ignore-count sums
-// them with this audit's own directives.
-var ignoreMarkers = []string{"//nolint", "//lint:ignore", "#nosec"}
+// ignoreMarkers are every other suppression syntax the pinned Go tools honour (golangci-lint,
+// staticcheck, gosec, exhaustive, revive); ignore-count sums them with this audit's own.
+var ignoreMarkers = []string{
+	"//nolint", "//lint:ignore", "//lint:file-ignore", "#nosec", "//gosec:disable",
+	"//exhaustive:ignore", "//revive:disable",
+}
 
 const (
 	gitDiff          = "diff"

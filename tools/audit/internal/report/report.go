@@ -11,6 +11,7 @@ import (
 	"github.com/fantasim/canonlang/tools/audit/internal/ratchet"
 	"github.com/fantasim/canonlang/tools/audit/internal/repo"
 	"github.com/fantasim/canonlang/tools/audit/internal/rules"
+	"github.com/fantasim/canonlang/tools/audit/internal/threshold"
 )
 
 type Census struct {
@@ -23,6 +24,7 @@ type Census struct {
 	Verdict  ratchet.Verdict
 	PerRule  int
 	Only     string
+	Limits   threshold.Set
 }
 
 // printer writes through w and keeps the first error, so every Print* call site checks one
@@ -95,7 +97,7 @@ func censusFindings(p *printer, c Census, byRule map[string][]finding.Finding) {
 		if len(fs) == 0 {
 			continue
 		}
-		p.f("\n%s (%d): %s\n", rl.ID, len(fs), rl.Summary)
+		p.f("\n%s (%d): %s\n", rl.ID, len(fs), rl.Describe(c.Limits))
 		limit := c.PerRule
 		if c.Only != "" {
 			limit = len(fs)
@@ -153,14 +155,14 @@ func PrintRaw(w io.Writer, fs []finding.Finding) error {
 	return p.err
 }
 
-// PrintRules prints the rulebook.
-func PrintRules(w io.Writer, family string) error {
+// PrintRules prints the rulebook, each summary with its thresholds.
+func PrintRules(w io.Writer, family string, limits threshold.Set) error {
 	p := &printer{w: w}
 	for _, rl := range rules.All {
 		if family != "" && rl.Family != family {
 			continue
 		}
-		p.f("%-10s %-24s %-8s %s [%s]\n", rl.Family, rl.ID, rl.Mode, rl.Summary, rl.Tool)
+		p.f("%-10s %-24s %-8s %s [%s]\n", rl.Family, rl.ID, rl.Mode, rl.Describe(limits), rl.Tool)
 	}
 	return p.err
 }

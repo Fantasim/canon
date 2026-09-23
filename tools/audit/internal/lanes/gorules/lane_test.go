@@ -15,6 +15,7 @@ import (
 	"github.com/fantasim/canonlang/tools/audit/internal/lane"
 	"github.com/fantasim/canonlang/tools/audit/internal/repo"
 	"github.com/fantasim/canonlang/tools/audit/internal/rules"
+	"github.com/fantasim/canonlang/tools/audit/internal/threshold"
 )
 
 type fixture struct{ name, module string }
@@ -56,7 +57,7 @@ func runFixture(t *testing.T, fx fixture) ([]finding.Finding, []lane.Skip) {
 			on[id] = true
 		}
 	}
-	res, err := New().Run(&lane.Context{Repo: r, Go: tree, Enabled: on})
+	res, err := New().Run(&lane.Context{Repo: r, Go: tree, Enabled: on, Limits: shippedLimits(t)})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -281,4 +282,14 @@ func TestSQLStatement(t *testing.T) {
 			t.Errorf("sqlStatement(%q) = %v, want %v", v, got, want)
 		}
 	}
+}
+
+// shippedLimits is thresholds.tsv as the tool ships it.
+func shippedLimits(t *testing.T) threshold.Set {
+	t.Helper()
+	s, err := threshold.Load(filepath.Join("..", "..", "..", threshold.FileName))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return s
 }

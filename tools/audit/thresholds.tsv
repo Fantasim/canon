@@ -1,0 +1,24 @@
+# canon audit thresholds (DECISIONS 26): the limit each rule measures against, read at startup.
+# One row per key, every key exactly once: <key><TAB><positive decimal integer>. A higher value
+# is always looser: raising one is a maintainer's call, and baseline-guard fails a raise against
+# the base revision. rules.md prints these values; a test holds the two equal.
+fn-lines	60
+fn-statements	40
+test-fn-lines	100
+fn-params	5
+fn-results	3
+fn-complexity	15
+fn-nesting	3
+naked-return-lines	5
+file-lines	500
+pkg-files	15
+pkg-lines	4000
+magic-string-uses	2
+comment-decl-lines	3
+comment-pkg-lines	10
+comment-block-lines	3
+comment-ratio-percent	20
+comment-ratio-min-lines	20
+comment-field-lines	1
+dup-tokens	150
+diag-text-words	4

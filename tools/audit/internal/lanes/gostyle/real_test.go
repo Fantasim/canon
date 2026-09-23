@@ -38,7 +38,7 @@ func TestReal(t *testing.T) {
 	for _, e := range perrs {
 		t.Logf("parse error: %v", e)
 	}
-	ctx := &lane.Context{Repo: r, Go: tree, Enabled: enabledAll()}
+	ctx := &lane.Context{Repo: r, Go: tree, Enabled: enabledAll(), Limits: shippedLimits(t)}
 	fs, skips := lane.Run(ctx, []lane.Lane{New()})
 	for _, s := range skips {
 		t.Logf("skip: %+v", s)

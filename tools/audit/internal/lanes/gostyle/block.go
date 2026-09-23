@@ -6,7 +6,6 @@ import (
 	"github.com/fantasim/canonlang/tools/audit/internal/finding"
 	"github.com/fantasim/canonlang/tools/audit/internal/gosrc"
 	"github.com/fantasim/canonlang/tools/audit/internal/lane"
-	"github.com/fantasim/canonlang/tools/audit/internal/rules"
 )
 
 // blockFindings is comment-block: a comment group inside a function body spanning over
@@ -22,9 +21,9 @@ func blockFindings(ctx *lane.Context, f *gosrc.File) []finding.Finding {
 		if !insideAny(bodies, g) {
 			continue
 		}
-		if n := contentLines(g); n > rules.CommentBlock {
+		if n := contentLines(g); n > ctx.Limits.CommentBlockLines {
 			line := ctx.Go.Line(g.Pos())
-			out = append(out, sizeFinding(ruleCommentBlock, f.Path, line, n, measured(n, unitLines, rules.CommentBlock)))
+			out = append(out, sizeFinding(ruleCommentBlock, f.Path, line, n, measured(n, unitLines, ctx.Limits.CommentBlockLines)))
 		}
 	}
 	return out

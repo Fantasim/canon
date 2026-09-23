@@ -1,0 +1,4 @@
+-- project.canon --
+canon = "9.9"
+-- findings.txt --
+project.canon:1:9: error E1001: project requires Canon 9.9; this compiler supports 0.1

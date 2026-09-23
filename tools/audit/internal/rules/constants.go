@@ -2,31 +2,6 @@ package rules
 
 import "regexp"
 
-// Thresholds are house style, not environment.
-const (
-	FnLines          = 60
-	FnStatements     = 40
-	TestFnLines      = 100
-	FnParams         = 5
-	FnResults        = 3
-	cognitive        = 15
-	Nesting          = 3
-	NakedReturnLines = 5
-	FileLines        = 500
-	PkgFiles         = 15
-	PkgLines         = 4000
-
-	MagicStringMin = 2
-
-	DocLines          = 3
-	PkgDocLines       = 10
-	CommentBlock      = 3
-	CommentRatio      = 20
-	FieldCommentLines = 1
-
-	dupLines = 15
-)
-
 const (
 	Enforce Mode = "enforce"
 	Ratchet Mode = "ratchet"
@@ -46,6 +21,7 @@ const (
 	famSize      = "size"
 	famMagic     = "magic"
 	famErrors    = "errors"
+	famDiag      = "diag"
 	famAPI       = "api"
 	famDead      = "dead"
 	famDup       = "dup"
@@ -93,6 +69,9 @@ const (
 	IDCommentADRNarration = "comment-adr-narration"
 	IDCommentHistory      = "comment-history"
 	IDTodoInCode          = "todo-in-code"
+	IDDiagMessageInline   = "diag-message-inline"
+	IDDiagCodeUntested    = "diag-code-untested"
+	IDDiagCodeUnreported  = "diag-code-unreported"
 )
 
 // Tool labels this table repeats across rules.

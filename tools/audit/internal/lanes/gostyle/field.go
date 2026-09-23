@@ -6,7 +6,6 @@ import (
 	"github.com/fantasim/canonlang/tools/audit/internal/finding"
 	"github.com/fantasim/canonlang/tools/audit/internal/gosrc"
 	"github.com/fantasim/canonlang/tools/audit/internal/lane"
-	"github.com/fantasim/canonlang/tools/audit/internal/rules"
 )
 
 // fieldFindings is comment-field: a doc or trailing comment over FieldCommentLines on a
@@ -34,7 +33,7 @@ func groupedSpecFindings(ctx *lane.Context, f *gosrc.File, gd *ast.GenDecl) []fi
 	var out []finding.Finding
 	for _, sp := range gd.Specs {
 		for _, g := range specComments(sp) {
-			if n := contentLines(g); n > rules.FieldCommentLines {
+			if n := contentLines(g); n > ctx.Limits.CommentFieldLines {
 				out = append(out, fieldFinding(ctx, f, g, specName(sp)))
 			}
 		}
@@ -65,7 +64,7 @@ func structFieldFindings(ctx *lane.Context, f *gosrc.File, gd *ast.GenDecl) []fi
 			continue
 		}
 		for _, fg := range structFields(st) {
-			if n := contentLines(fg.group); n > rules.FieldCommentLines {
+			if n := contentLines(fg.group); n > ctx.Limits.CommentFieldLines {
 				out = append(out, fieldFinding(ctx, f, fg.group, fieldName(fg.field)))
 			}
 		}
@@ -98,7 +97,7 @@ func structFields(st *ast.StructType) []fieldGroup {
 func fieldFinding(ctx *lane.Context, f *gosrc.File, g *ast.CommentGroup, name string) finding.Finding {
 	n := contentLines(g)
 	line := ctx.Go.Line(g.Pos())
-	fx := sizeFinding(ruleCommentField, f.Path, line, n, measured(n, unitLines, rules.FieldCommentLines))
+	fx := sizeFinding(ruleCommentField, f.Path, line, n, measured(n, unitLines, ctx.Limits.CommentFieldLines))
 	fx.Detail = name
 	return fx
 }

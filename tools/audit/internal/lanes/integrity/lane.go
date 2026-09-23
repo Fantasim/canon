@@ -24,6 +24,7 @@ func (*Lane) Run(ctx *lane.Context) (lane.Result, error) {
 	if ctx.On(ruleBaselineGuard) {
 		res.Findings = append(res.Findings, baselineLoosened(ctx)...)
 		res.Findings = append(res.Findings, statesLoosened(ctx)...)
+		res.Findings = append(res.Findings, thresholdsRaised(ctx)...)
 	}
 	if ctx.On(ruleDecision) {
 		res.Findings = append(res.Findings, decisionsDropped(ctx)...)
@@ -38,8 +39,9 @@ func (*Lane) Run(ctx *lane.Context) (lane.Result, error) {
 }
 
 // headText is a file's content at the guarded revision; ok is false when it lacks the file.
+// The path is read relative to the repo root given, which may sit below git's top level.
 func headText(ctx *lane.Context, rel string) (string, bool) {
-	out, err := ctx.Repo.Git(gitShow, guardRev(ctx.Repo.Git, ctx.Repo.Base())+":"+rel)
+	out, err := ctx.Repo.Git(gitShow, guardRev(ctx.Repo.Git, ctx.Repo.Base())+gitRevPathHere+rel)
 	return out, err == nil
 }
 

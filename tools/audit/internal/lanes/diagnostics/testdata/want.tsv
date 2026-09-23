@@ -1,0 +1,13 @@
+diag-message-inline	internal/project/project.go	11	var errLoose	catalogued text
+diag-message-inline	internal/project/project.go	15	Check	formatted argument
+diag-message-inline	internal/project/project.go	16	Check	English argument
+diag-message-inline	internal/project/project.go	18	Check	formatted argument
+diag-message-inline	internal/project/project.go	19	Check	code literal
+diag-message-inline	internal/project/project.go	20	Check	code literal
+diag-message-inline	internal/project/project.go	22	Check	hand-built Finding
+diag-message-inline	internal/project/project.go	23	Check	Message assignment
+diag-message-inline	internal/project/project_test.go	11	TestCheck	catalogued text
+diag-code-untested	internal/project/project.go	15	E1002	
+diag-code-untested	internal/syntax/lex.go	6	W1001	
+diag-code-unreported	spec/ERRORS.md	10	E1003	
+diag-code-unreported	spec/ERRORS.md	24	E8303	

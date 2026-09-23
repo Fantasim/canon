@@ -67,9 +67,6 @@ const (
 	fmtHeaderLines     = "%d header comment line(s) outside doc.go"
 )
 
-// commentRatioMinLines is the smallest file, by non-blank lines, the ratio rule judges.
-const commentRatioMinLines = 20
-
 const ratioPercentScale = 100
 
 const newline = "\n"

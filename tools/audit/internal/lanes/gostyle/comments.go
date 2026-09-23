@@ -9,7 +9,6 @@ import (
 	"github.com/fantasim/canonlang/tools/audit/internal/finding"
 	"github.com/fantasim/canonlang/tools/audit/internal/gosrc"
 	"github.com/fantasim/canonlang/tools/audit/internal/lane"
-	"github.com/fantasim/canonlang/tools/audit/internal/rules"
 )
 
 // commentFindings runs every comment rule over the parsed tree, file by file.
@@ -43,7 +42,7 @@ func flaggedGroups(ctx *lane.Context, f *gosrc.File, placement []finding.Finding
 	for _, fx := range placement {
 		lines[fx.Line] = true
 		if fx.Rule == ruleCommentHeader {
-			groups, _ := headerGroups(f.AST)
+			groups, _ := headerGroups(f.AST, ctx.Limits.CommentDeclLines)
 			for _, g := range groups {
 				lines[ctx.Go.Line(g.Pos())] = true
 			}
@@ -66,7 +65,7 @@ func headerFinding(ctx *lane.Context, f *gosrc.File) []finding.Finding {
 	if !ctx.On(ruleCommentHeader) || isDocGo(f) {
 		return nil
 	}
-	groups, total := headerGroups(f.AST)
+	groups, total := headerGroups(f.AST, ctx.Limits.CommentDeclLines)
 	if total == 0 {
 		return nil
 	}
@@ -74,12 +73,12 @@ func headerFinding(ctx *lane.Context, f *gosrc.File) []finding.Finding {
 	return []finding.Finding{sizeFinding(ruleCommentHeader, f.Path, line, total, fmt.Sprintf(fmtHeaderLines, total))}
 }
 
-func headerGroups(file *ast.File) ([]*ast.CommentGroup, int) {
+func headerGroups(file *ast.File, docLines int) ([]*ast.CommentGroup, int) {
 	boundary := headerBoundary(file)
 	var groups []*ast.CommentGroup
 	total := 0
 	for _, g := range file.Comments {
-		if g == file.Doc && contentLines(g) <= rules.DocLines {
+		if g == file.Doc && contentLines(g) <= docLines {
 			continue
 		}
 		if g.End() < boundary {
@@ -111,30 +110,30 @@ func pkgDocFinding(ctx *lane.Context, f *gosrc.File) []finding.Finding {
 		return nil
 	}
 	n := contentLines(f.AST.Doc)
-	if n <= rules.PkgDocLines {
+	if n <= ctx.Limits.CommentPkgLines {
 		return nil
 	}
 	line := ctx.Go.Line(f.AST.Doc.Pos())
-	msg := measured(n, unitLines, rules.PkgDocLines)
+	msg := measured(n, unitLines, ctx.Limits.CommentPkgLines)
 	return []finding.Finding{sizeFinding(ruleCommentPkg, f.Path, line, n, msg)}
 }
 
-// ratioFinding is comment-ratio: a file's comment lines no placement rule flagged, over
-// CommentRatio percent of its non-blank lines, judged once the file has at least
-// commentRatioMinLines of them. doc.go is all comment by design: comment-pkg judges it.
+// ratioFinding is comment-ratio: a file's comment lines no placement rule flagged, over the
+// limit's share of its non-blank lines, judged from the limit's file size up. doc.go is all
+// comment by design: comment-pkg judges it.
 func ratioFinding(ctx *lane.Context, f *gosrc.File, flagged map[*ast.CommentGroup]bool) []finding.Finding {
 	if !ctx.On(ruleCommentRatio) || isDocGo(f) {
 		return nil
 	}
 	nonBlank := countNonBlank(f.Src)
-	if nonBlank < commentRatioMinLines {
+	if nonBlank < ctx.Limits.CommentRatioMinLines {
 		return nil
 	}
 	pct := unflaggedCommentLines(f.AST, flagged) * ratioPercentScale / nonBlank
-	if pct <= rules.CommentRatio {
+	if pct <= ctx.Limits.CommentRatioPercent {
 		return nil
 	}
-	msg := fmt.Sprintf(fmtMeasuredPercent, pct, rules.CommentRatio)
+	msg := fmt.Sprintf(fmtMeasuredPercent, pct, ctx.Limits.CommentRatioPercent)
 	return []finding.Finding{sizeFinding(ruleCommentRatio, f.Path, 0, pct, msg)}
 }
 

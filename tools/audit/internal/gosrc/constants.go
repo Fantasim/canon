@@ -6,6 +6,7 @@ import "golang.org/x/tools/go/packages"
 const (
 	TestPkgSuffix = "_test"
 	PkgNetHTTP    = "net/http"
+	PkgFmt        = "fmt"
 	MainPkg       = "main"
 )
 

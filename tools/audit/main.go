@@ -19,14 +19,15 @@ import (
 	"github.com/fantasim/canonlang/tools/audit/internal/repo"
 	"github.com/fantasim/canonlang/tools/audit/internal/report"
 	"github.com/fantasim/canonlang/tools/audit/internal/rules"
+	"github.com/fantasim/canonlang/tools/audit/internal/threshold"
 )
 
 func main() { os.Exit(run(os.Args[1:], os.Stdout, os.Stderr)) }
 
 type opts struct {
-	repo, toolchain, rule, family, laneName, base string
-	raw, quiet, changed, init, tighten            bool
-	perRule                                       int
+	repo, toolchain, thresholds, rule, family, laneName, base string
+	raw, quiet, changed, init, tighten                        bool
+	perRule                                                   int
 }
 
 // printer writes through w and keeps the first error, mirroring package report's own: a
@@ -58,10 +59,15 @@ func run(args []string, out, errw io.Writer) int {
 		warnln(errw, errPrefix, err)
 		return exitUsage
 	}
-	if cmd == cmdRules {
-		return exitFor(report.PrintRules(out, o.family))
+	limits, err := threshold.Load(o.thresholds)
+	if err != nil {
+		warnln(errw, errPrefix, err)
+		return exitUsage
 	}
-	s, err := setup(o, errw)
+	if cmd == cmdRules {
+		return exitFor(report.PrintRules(out, o.family, limits))
+	}
+	s, err := setup(o, limits, errw)
 	if err != nil {
 		warnln(errw, errPrefix, err)
 		return exitUsage
@@ -95,6 +101,7 @@ func parse(args []string, errw io.Writer) (string, opts, error) {
 	fs.SetOutput(errw)
 	fs.StringVar(&o.repo, "repo", ".", "repository to audit (any directory inside it)")
 	fs.StringVar(&o.toolchain, "toolchain", "", "tools/audit/toolchain (default: next to this source)")
+	fs.StringVar(&o.thresholds, "thresholds", besideSource(threshold.FileName), "the rule thresholds file")
 	fs.StringVar(&o.rule, "rule", "", "only this rule, every finding")
 	fs.StringVar(&o.family, "family", "", "only this family")
 	fs.StringVar(&o.laneName, "lane", "", "only the rules of this lane")
@@ -122,7 +129,7 @@ type session struct {
 	all []lane.Lane
 }
 
-func setup(o opts, errw io.Writer) (*session, error) {
+func setup(o opts, limits threshold.Set, errw io.Writer) (*session, error) {
 	debug.SetMemoryLimit(lane.SelfMemLimit)
 	if err := lane.Exclusive(func(f string, a ...any) { warnln(errw, fmt.Sprintf(lane.LogPrefix+f, a...)) }); err != nil {
 		return nil, err
@@ -132,7 +139,7 @@ func setup(o opts, errw io.Writer) (*session, error) {
 		return nil, err
 	}
 	s := &session{o: o, all: lanes.All()}
-	s.ctx = &lane.Context{Repo: r, Toolchain: toolchainDir(o.toolchain)}
+	s.ctx = &lane.Context{Repo: r, Toolchain: toolchainDir(o.toolchain), Limits: limits, LimitsFile: absPath(o.thresholds)}
 	if !o.quiet {
 		s.ctx.Log = errw
 	}
@@ -194,7 +201,7 @@ func (s *session) audit(out io.Writer) int {
 	}
 	c := report.Census{
 		Repo: s.ctx.Repo, Findings: fs, Skipped: skips, Enabled: s.ctx.Enabled,
-		Baseline: base, HasBase: has, PerRule: s.o.perRule, Only: s.o.rule,
+		Baseline: base, HasBase: has, PerRule: s.o.perRule, Only: s.o.rule, Limits: s.ctx.Limits,
 	}
 	if has {
 		c.Verdict = ratchet.Compare(fs, base, s.mode, s.ctx.Repo.InScope)
@@ -305,14 +312,28 @@ func (s *session) demoteAndKeep(fs []finding.Finding, states map[string]rules.Mo
 // under `go run`).
 func toolchainDir(flagVal string) string {
 	if flagVal != "" {
-		abs, _ := filepath.Abs(flagVal)
-		return abs
+		return absPath(flagVal)
 	}
-	if _, file, _, ok := runtime.Caller(0); ok {
-		d := filepath.Join(filepath.Dir(file), toolchainName)
-		if _, err := os.Stat(d); err == nil {
-			return d
-		}
+	d := besideSource(toolchainName)
+	if _, err := os.Stat(d); err != nil {
+		return ""
 	}
-	return ""
+	return d
+}
+
+// besideSource is name in this source file's directory, where `go run` keeps it.
+func besideSource(name string) string {
+	_, file, _, ok := runtime.Caller(0)
+	if !ok {
+		return name
+	}
+	return filepath.Join(filepath.Dir(file), name)
+}
+
+func absPath(p string) string {
+	abs, err := filepath.Abs(p)
+	if err != nil {
+		return p
+	}
+	return abs
 }

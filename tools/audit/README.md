@@ -16,6 +16,7 @@ root, `make audit` and `make check` do it for you.
     go run . check    --repo ../.. [--changed [--base REV]]   # the gate, exit 1 on failure
     go run . baseline --repo ../.. --init | --tighten
     go run . rules                                     # the rulebook
+    go run . check    --repo ../.. --thresholds FILE   # another thresholds file (default: ./thresholds.tsv)
 
 ## Modes and the ratchet
 
@@ -36,6 +37,25 @@ does not make it new. `baseline --tighten` lowers the baseline after a cleanup a
 it; `baseline-guard` fails a baseline or state that was loosened against the base revision
 (git only: outside a git checkout the guard and `decision-dropped` have nothing to compare).
 
+## Thresholds
+
+Every limit a rule measures against is a row of [thresholds.tsv](thresholds.tsv), read at
+startup; none is a Go constant (decision 26). The format is strict, and any error stops the tool
+(exit 2) before it audits anything:
+
+- a line is blank, a comment opening on `#` in its first column, or a row
+  `<key><TAB><value>`: exactly one tab, no other whitespace;
+- the key is one of the known keys (`fn-lines`, `fn-params`, ... `diag-text-words`), and every
+  key appears exactly once: an unknown, missing or repeated key is an error;
+- the value is a positive decimal integer without sign or leading zero (`comment-ratio-percent`
+  at most 100).
+
+A higher value is always looser. `baseline-guard` fails a value raised against the base
+revision, so raising a limit is a maintainer's commit, never a side effect. The rule summaries
+(`rules`, the census, [rules.md](rules.md)) print the values, and the stock lane renders
+`{key}` placeholders of [toolchain/golangci.yml](toolchain/golangci.yml) (gocognit's
+`min-complexity`, dupl's `threshold`) into a temporary configuration before each run.
+
 ## What is audited
 
 Every tracked Go and Markdown file of the repository, minus `vendor/`, `testdata/`,
@@ -50,6 +70,7 @@ EDIT.` or a `.gen.go` name).
 | gostyle | size, Go comments, TODOs, doc.go and Example per package | go/ast |
 | gorules | magic values, constants, errors, exported-but-local, idioms, stdlib helpers | go/ast + go/types |
 | stock | complexity, errors, dead code, dup, fmt, naming, security | golangci-lint v2, deadcode |
+| diagnostics | diagnostic codes and texts outside `internal/diag`, per-code test coverage of `spec/ERRORS.md` | go/ast + go/types, own |
 | project | dead Markdown links, root clutter | own |
 | integrity | baseline/state loosening, dropped decisions, ignore hygiene | own |
 
@@ -67,9 +88,9 @@ A change to the tool meets the same rules it enforces.
 
 ## Adding a rule
 
-Add it to `internal/rules/rules.go` (and a limit to `internal/rules/constants.go`), to
-`rules.md` (a test holds the two equal, order included), and to exactly the lane that produces
-it.
+Add it to `internal/rules/rules.go` (a limit as a new key of `thresholds.tsv` and
+`internal/threshold`, named `{key}` in the summary), to `rules.md` (tests hold the two equal,
+order and summaries included), and to exactly the lane that produces it.
 
 ## Naming
 

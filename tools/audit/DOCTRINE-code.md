@@ -5,7 +5,8 @@ and fails on anything new or grown. The full rulebook, with the reason for each 
 [rules.md](rules.md).
 
 1. **Size.** Functions <= 60 lines, <= 5 parameters, <= 3 results, nesting <= 3. Files <= 500
-   lines. Past a limit, split by concern; never raise the limit.
+   lines. Past a limit, split by concern; never raise the limit. Every limit of this page is a
+   value of [thresholds.tsv](thresholds.tsv), the one place the tool reads it from.
 2. **Constants.** No literal twice, no bare number but 0 and 1. Constants live in
    `<pkg>/constants.go`; one shared by two packages lives in the lowest package both import.
    The environment is read in `cmd/` (or one config package) only, and passed down.
@@ -24,7 +25,12 @@ and fails on anything new or grown. The full rulebook, with the reason for each 
    goroutine whose panic it does not recover: the caller cannot.
 8. **The ratchet.** Existing findings are in `.sovaudit/baseline.tsv`; new or grown ones fail.
    Only `baseline --tighten` writes the baseline, and it only shrinks. `// sovaudit:ignore
-   <rule> -- <reason>` is the only way to silence a finding, and every ignore is counted.
+   <rule> -- <reason>` is the only way to silence a finding, and every ignore is counted, the
+   linters' own (`//nolint`, `#nosec`...) included: the count never grows.
+9. **Diagnostics.** A finding of the language is reported only as `diag.E3501.At(span,
+   args...)`: no code string, message text, `fmt` call or English argument outside
+   `internal/diag`, and every code the compiler reports has a `<CODE>_<n>.txtar` test in its
+   owning package.
 
 Generated code is not judged: the goldens under `examples/*/expected/`, `testdata/`, and any Go
 file marked `// Code generated ... DO NOT EDIT.` or named `*.gen.go`.

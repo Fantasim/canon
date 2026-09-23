@@ -2,8 +2,10 @@ package stock
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"maps"
+	"os"
 	"path"
 	"path/filepath"
 	"slices"
@@ -12,6 +14,7 @@ import (
 	"github.com/fantasim/canonlang/tools/audit/internal/finding"
 	"github.com/fantasim/canonlang/tools/audit/internal/lane"
 	"github.com/fantasim/canonlang/tools/audit/internal/repo"
+	"github.com/fantasim/canonlang/tools/audit/internal/threshold"
 )
 
 type golangciPos struct {
@@ -32,9 +35,10 @@ type golangciOutput struct {
 	Issues []golangciIssue
 }
 
-// runGolangci runs golangci-lint once for every stock rule that is on, and maps its issues
-// to findings. A nil, nil result means there was nothing to do, not a failure.
-func runGolangci(ctx *lane.Context, cfgPath string) ([]finding.Finding, *lane.Skip) {
+// runGolangci runs golangci-lint once for every stock rule that is on, on golangci.yml with
+// the thresholds rendered in, and maps its issues to findings. A nil, nil result means there
+// was nothing to do, not a failure.
+func runGolangci(ctx *lane.Context) ([]finding.Finding, *lane.Skip) {
 	wanted := wantedLinters(ctx)
 	wantFmt := ctx.On(ruleFmt)
 	if len(wanted) == 0 && !wantFmt {
@@ -48,6 +52,11 @@ func runGolangci(ctx *lane.Context, cfgPath string) ([]finding.Finding, *lane.Sk
 	if err != nil {
 		return nil, &lane.Skip{What: skipGolangci, Reason: err.Error()}
 	}
+	cfgPath, err := renderConfig(ctx.Toolchain, ctx.Limits)
+	if err != nil {
+		return nil, &lane.Skip{What: skipGolangci, Reason: err.Error()}
+	}
+	defer func() { _ = os.Remove(cfgPath) }()
 	out, err := runTool(bin, ctx.Repo.Root, golangciArgs(cfgPath, wanted, targets)...)
 	if err != nil {
 		return nil, &lane.Skip{What: skipGolangci, Reason: err.Error()}
@@ -57,6 +66,29 @@ func runGolangci(ctx *lane.Context, cfgPath string) ([]finding.Finding, *lane.Sk
 		return nil, &lane.Skip{What: skipGolangci, Reason: fmt.Errorf("parse json: %w", err).Error()}
 	}
 	return golangciFindings(ctx, res.Issues), nil
+}
+
+// renderConfig writes the toolchain's golangci.yml, every `{key}` replaced by its threshold,
+// to a temporary file the caller removes.
+func renderConfig(toolchain string, limits threshold.Set) (string, error) {
+	tmpl, err := os.ReadFile(filepath.Join(toolchain, golangciConfig))
+	if err != nil {
+		return "", fmt.Errorf("%w: %w", errConfig, err)
+	}
+	text, err := limits.Expand(string(tmpl))
+	if err != nil {
+		return "", fmt.Errorf("%w: %w", errConfig, err)
+	}
+	f, err := os.CreateTemp("", renderedConfigPattern)
+	if err != nil {
+		return "", fmt.Errorf("%w: %w", errConfig, err)
+	}
+	_, werr := f.WriteString(text)
+	if err := errors.Join(werr, f.Close()); err != nil {
+		_ = os.Remove(f.Name())
+		return "", fmt.Errorf("%w: %w", errConfig, err)
+	}
+	return f.Name(), nil
 }
 
 // wantedLinters is the union of linters behind every stock rule (but fmt) that is on.

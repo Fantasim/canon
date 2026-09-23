@@ -23,10 +23,7 @@ type surface struct {
 // exportedLocal reports exported package-level objects and exported methods that no other
 // package references; a failed or erroneous load skips the rule rather than guess.
 func (s *scan) exportedLocal() *lane.Skip {
-	pkgs, err := s.ctx.Go.Typed()
-	if err == nil {
-		err = loadErrors(pkgs)
-	}
+	pkgs, err := s.ctx.Go.TypedClean()
 	if err != nil {
 		return &lane.Skip{What: ruleExportedLocal, Reason: fmt.Sprintf(skipTyped, err)}
 	}
@@ -42,23 +39,6 @@ func (s *scan) exportedLocal() *lane.Skip {
 // plain is the package itself, not a test variant, external test or test main.
 func plain(p *packages.Package) bool {
 	return p.ID == p.PkgPath && !strings.HasSuffix(p.PkgPath, testPkgSuffix) && !strings.HasSuffix(p.PkgPath, testMainSuffix)
-}
-
-func loadErrors(pkgs []*packages.Package) error {
-	var first error
-	n := 0
-	packages.Visit(pkgs, nil, func(p *packages.Package) {
-		for _, e := range p.Errors {
-			if first == nil {
-				first = e
-			}
-			n++
-		}
-	})
-	if first != nil {
-		return fmt.Errorf("%w: %d, first: %w", errTyped, n, first)
-	}
-	return nil
 }
 
 // externalUses keys every package-level object and method some package other than its own

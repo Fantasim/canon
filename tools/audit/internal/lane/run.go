@@ -62,7 +62,7 @@ func post(ctx *Context, in []finding.Finding) []finding.Finding {
 				f.Fix = rl.Fix
 			}
 			if f.Message == "" {
-				f.Message = rl.Summary
+				f.Message = rl.Describe(ctx.Limits)
 			}
 		}
 		f.Detail = finding.Clean(f.Detail)

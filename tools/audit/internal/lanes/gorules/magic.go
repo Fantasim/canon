@@ -11,7 +11,6 @@ import (
 	"unicode/utf8"
 
 	"github.com/fantasim/canonlang/tools/audit/internal/finding"
-	"github.com/fantasim/canonlang/tools/audit/internal/rules"
 )
 
 // occurrence is one judged string literal.
@@ -28,7 +27,7 @@ func (s *scan) magicStrings() {
 		for _, occ := range dirs {
 			total += len(occ)
 		}
-		if total >= rules.MagicStringMin {
+		if total >= s.ctx.Limits.MagicStringUses {
 			s.magicValue(v, dirs, total)
 		}
 	}

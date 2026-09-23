@@ -1,8 +1,9 @@
 package rules
 
 import (
-	"fmt"
 	"sort"
+
+	"github.com/fantasim/canonlang/tools/audit/internal/threshold"
 )
 
 type Mode string
@@ -16,45 +17,43 @@ type Rule struct {
 	Tool    string
 }
 
-var sf = fmt.Sprintf
-
 // All is the rulebook, in print order. An id never changes: baselines are keyed by it.
 var All = []Rule{
 	{
 		ID: "fn-length", Family: famSize, Mode: Ratchet, Tool: toolCustom,
-		Summary: sf("function body over %d lines or %d statements (tests: %d lines)", FnLines, FnStatements, TestFnLines), Fix: "split it into named steps",
+		Summary: "function body over {fn-lines} lines or {fn-statements} statements (tests: {test-fn-lines} lines)", Fix: "split it into named steps",
 	},
 	{
 		ID: "fn-params", Family: famSize, Mode: Ratchet, Tool: toolCustom,
-		Summary: sf("more than %d parameters", FnParams), Fix: "group them into an options struct",
+		Summary: "more than {fn-params} parameters", Fix: "group them into an options struct",
 	},
 	{
 		ID: "fn-results", Family: famSize, Mode: Ratchet, Tool: toolCustom,
-		Summary: sf("more than %d return values", FnResults), Fix: "return a struct",
+		Summary: "more than {fn-results} return values", Fix: "return a struct",
 	},
 	{
 		ID: "fn-complexity", Family: famSize, Mode: Ratchet, Tool: "gocognit",
-		Summary: sf("cognitive complexity over %d", cognitive), Fix: "extract branches into functions, return early",
+		Summary: "cognitive complexity over {fn-complexity}", Fix: "extract branches into functions, return early",
 	},
 	{
 		ID: "fn-nesting", Family: famSize, Mode: Ratchet, Tool: toolCustom,
-		Summary: sf("control flow nested deeper than %d levels", Nesting), Fix: "invert conditions and return early",
+		Summary: "control flow nested deeper than {fn-nesting} levels", Fix: "invert conditions and return early",
 	},
 	{
 		ID: "naked-return", Family: famSize, Mode: Ratchet, Tool: toolCustom,
-		Summary: sf("bare return in a function longer than %d lines", NakedReturnLines), Fix: "return the values explicitly",
+		Summary: "bare return in a function longer than {naked-return-lines} lines", Fix: "return the values explicitly",
 	},
 	{
 		ID: "file-length", Family: famSize, Mode: Ratchet, Tool: toolCustom,
-		Summary: sf("file over %d lines", FileLines), Fix: "split the file by concern",
+		Summary: "file over {file-lines} lines", Fix: "split the file by concern",
 	},
 	{
 		ID: "pkg-size", Family: famSize, Mode: Observe, Tool: toolCustom,
-		Summary: sf("package over %d files or %d lines", PkgFiles, PkgLines), Fix: "split the package",
+		Summary: "package over {pkg-files} files or {pkg-lines} lines", Fix: "split the package",
 	},
 	{
 		ID: "magic-string", Family: famMagic, Mode: Ratchet, Tool: toolCustom,
-		Summary: sf("string literal used %d+ times", MagicStringMin), Fix: "name it in <pkg>/constants.go (in the lowest package both import when shared)",
+		Summary: "string literal used {magic-string-uses}+ times", Fix: "name it in <pkg>/constants.go (in the lowest package both import when shared)",
 	},
 	{
 		ID: "magic-number", Family: famMagic, Mode: Ratchet, Tool: toolCustom,
@@ -99,6 +98,21 @@ var All = []Rule{
 	{
 		ID: "err-style", Family: famErrors, Mode: Enforce, Tool: "staticcheck ST1005",
 		Summary: "error string capitalised or ending in punctuation", Fix: "lower-case it, drop the punctuation",
+	},
+	{
+		ID: IDDiagMessageInline, Family: famDiag, Mode: Enforce, Tool: toolCustom,
+		Summary: "diagnostic code or message text outside internal/diag: a code or catalogued text in a string, English or fmt in a diag call, a hand-built Finding",
+		Fix:     "report through the registry: diag.<CODE>.At...(span, args...).Report(bag)",
+	},
+	{
+		ID: IDDiagCodeUntested, Family: famDiag, Mode: Ratchet, Tool: toolCustom,
+		Summary: "catalogued code the compiler reports with no internal/<pkg>/testdata/findings/<CODE>_<n>.txtar producing it",
+		Fix:     "add the per-code txtar case to the owning package",
+	},
+	{
+		ID: IDDiagCodeUnreported, Family: famDiag, Mode: Observe, Tool: toolCustom,
+		Summary: "catalogued code no compiler code reports yet (target zero at v0.1)",
+		Fix:     "implement the trigger its owning document defines",
 	},
 	{
 		ID: "exported-but-local", Family: famAPI, Mode: Ratchet, Tool: toolCustom,
@@ -146,11 +160,11 @@ var All = []Rule{
 	},
 	{
 		ID: "dup-in-repo", Family: famDup, Mode: Ratchet, Tool: "dupl",
-		Summary: sf("duplicated block of ~%d+ lines in one repo", dupLines), Fix: "extract one function",
+		Summary: "duplicated block of {dup-tokens}+ tokens in one repo", Fix: "extract one function",
 	},
 	{
 		ID: IDCommentDecl, Family: famComments, Mode: Ratchet, Tool: toolCustom,
-		Summary: sf("doc comment over %d lines on a declaration", DocLines), Fix: "keep the one line a reader needs; a decision moves to DECISIONS.md first, history is in git",
+		Summary: "doc comment over {comment-decl-lines} lines on a declaration", Fix: "keep the one line a reader needs; a decision moves to DECISIONS.md first, history is in git",
 	},
 	{
 		ID: IDCommentFileHeader, Family: famComments, Mode: Ratchet, Tool: toolCustom,
@@ -158,19 +172,19 @@ var All = []Rule{
 	},
 	{
 		ID: "comment-pkg", Family: famComments, Mode: Ratchet, Tool: toolCustom,
-		Summary: sf("package doc over %d lines", PkgDocLines), Fix: "cut it to what the package is",
+		Summary: "package doc over {comment-pkg-lines} lines", Fix: "cut it to what the package is",
 	},
 	{
 		ID: IDCommentBlock, Family: famComments, Mode: Ratchet, Tool: toolCustom,
-		Summary: sf("more than %d consecutive comment lines inside a body", CommentBlock), Fix: "make the code say it, or one line; a decision moves to DECISIONS.md first",
+		Summary: "more than {comment-block-lines} consecutive comment lines inside a body", Fix: "make the code say it, or one line; a decision moves to DECISIONS.md first",
 	},
 	{
 		ID: IDCommentRatio, Family: famComments, Mode: Ratchet, Tool: toolCustom,
-		Summary: sf("comments over %d%% of a file's non-blank lines", CommentRatio), Fix: "cut comments",
+		Summary: "comments over {comment-ratio-percent}% of a file's non-blank lines (files of {comment-ratio-min-lines}+ non-blank lines)", Fix: "cut comments",
 	},
 	{
 		ID: "comment-field", Family: famComments, Mode: Ratchet, Tool: toolCustom,
-		Summary: sf("comment over %d line on a field or constant", FieldCommentLines), Fix: "a better name, or one line",
+		Summary: "comment over {comment-field-lines} line on a field or constant", Fix: "a better name, or one line",
 	},
 	{
 		ID: IDCommentADRNarration, Family: famComments, Mode: Ratchet, Tool: toolCustom,
@@ -238,7 +252,7 @@ var All = []Rule{
 	},
 	{
 		ID: "baseline-guard", Family: famIntegrity, Mode: Enforce, Tool: toolCustom,
-		Summary: "baseline or state loosened against HEAD", Fix: "revert it; only `baseline --tighten` writes it",
+		Summary: "baseline, state or thresholds loosened against HEAD", Fix: "revert it; only `baseline --tighten` writes the baseline",
 	},
 	{
 		ID: "decision-dropped", Family: famIntegrity, Mode: Enforce, Tool: toolCustom,
@@ -251,7 +265,7 @@ var All = []Rule{
 	},
 	{
 		ID: "ignore-count", Family: famIntegrity, Mode: Ratchet, Tool: toolCustom,
-		Summary: "ignore directives in the repo", Fix: "fix the code instead of ignoring it",
+		Summary: "ignore directives in the repo: sovaudit, nolint, lint, nosec, gosec, exhaustive, revive", Fix: "fix the code instead of ignoring it",
 	},
 	{
 		ID: "rule-state", Family: famIntegrity, Mode: Enforce, Tool: toolCustom,
@@ -270,6 +284,16 @@ var byID = func() map[string]*Rule {
 	}
 	return m
 }()
+
+// Describe is the rule's summary with every `{key}` replaced by its threshold; a summary
+// naming an unknown key (TestEverySummaryExpands) stays as written.
+func (rl Rule) Describe(limits threshold.Set) string {
+	text, err := limits.Expand(rl.Summary)
+	if err != nil {
+		return rl.Summary
+	}
+	return text
+}
 
 func Lookup(id string) (*Rule, bool) {
 	rl, ok := byID[id]

@@ -6,6 +6,7 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"go/types"
 	"os"
 	"path"
 	"path/filepath"
@@ -157,6 +158,44 @@ func (t *Tree) Typed() ([]*packages.Package, error) {
 		t.typed, t.typedErr = t.dropSkipped(pkgs), err
 	})
 	return t.typed, t.typedErr
+}
+
+// TypedClean is Typed, failing when the load or any loaded package has an error: a rule
+// that must not guess on a module that does not type-check skips instead.
+func (t *Tree) TypedClean() ([]*packages.Package, error) {
+	pkgs, err := t.Typed()
+	if err != nil {
+		return nil, err
+	}
+	var first error
+	n := 0
+	packages.Visit(pkgs, nil, func(p *packages.Package) {
+		for _, e := range p.Errors {
+			if first == nil {
+				first = e
+			}
+			n++
+		}
+	})
+	if first != nil {
+		return nil, fmt.Errorf("%w: %d, first: %w", errTyped, n, first)
+	}
+	return pkgs, nil
+}
+
+// CalledFunc is the function or method a call statically names, nil for a func value.
+func CalledFunc(info *types.Info, c *ast.CallExpr) *types.Func {
+	var id *ast.Ident
+	switch fun := ast.Unparen(c.Fun).(type) {
+	case *ast.SelectorExpr:
+		id = fun.Sel
+	case *ast.Ident:
+		id = fun
+	default:
+		return nil
+	}
+	fn, _ := info.Uses[id].(*types.Func)
+	return fn
 }
 
 // dropSkipped removes every loaded package whose source files sit under a repo.Skipped path.

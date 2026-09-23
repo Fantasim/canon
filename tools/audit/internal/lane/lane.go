@@ -7,6 +7,7 @@ import (
 	"github.com/fantasim/canonlang/tools/audit/internal/finding"
 	"github.com/fantasim/canonlang/tools/audit/internal/gosrc"
 	"github.com/fantasim/canonlang/tools/audit/internal/repo"
+	"github.com/fantasim/canonlang/tools/audit/internal/threshold"
 )
 
 // Lane is one engine: it produces findings for the rule ids it declares, and nothing else.
@@ -23,7 +24,10 @@ type Context struct {
 	Enabled map[string]bool
 	// Toolchain is the absolute path of tools/audit/toolchain (the pinned Go tools).
 	Toolchain string
-	Log       io.Writer
+	// Limits are the rule thresholds read from LimitsFile at startup.
+	Limits     threshold.Set
+	LimitsFile string
+	Log        io.Writer
 }
 
 func (c *Context) On(rule string) bool { return c.Enabled[rule] }

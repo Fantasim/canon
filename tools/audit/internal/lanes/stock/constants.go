@@ -177,8 +177,10 @@ const (
 	toolGolangci   = "golangci-lint"
 	toolDeadcode   = rules.ToolDeadcode
 	golangciConfig = "golangci.yml"
-	targetAll      = "./..."
-	detailSep      = ": "
+	// renderedConfigPattern names the temporary config golangci-lint actually reads.
+	renderedConfigPattern = "canon-audit-golangci-*.yml"
+	targetAll             = "./..."
+	detailSep             = ": "
 
 	skipGolangci = "stock: golangci-lint"
 	skipDeadcode = "stock: deadcode"

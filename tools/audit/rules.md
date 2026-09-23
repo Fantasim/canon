@@ -1,7 +1,11 @@
 # canon audit rules
 
 The rulebook `internal/rules/rules.go` holds; `TestRulesDocInSync` keeps this file equal to it,
-order included. Limits live in `internal/rules/constants.go`. Modes:
+order included, and `TestRulesDocSummaries` holds each rule's first line equal to its summary.
+Every limit a summary prints lives in [thresholds.tsv](thresholds.tsv), not in code (decision 26):
+the tool reads it at startup, refuses an unknown, missing, repeated or invalid row, and renders
+the stock linters' limits (gocognit, dupl) into their configuration from it. A higher value is
+always looser; `baseline-guard` fails a raise against the base revision. Modes:
 
 - **enforce**: any finding fails `check`.
 - **ratchet**: findings recorded in `.sovaudit/baseline.tsv` pass; a new one, or one whose measured
@@ -116,6 +120,43 @@ Returning nil on the error branch reports success for a failure.
 enforce · staticcheck ST1005: error string capitalised or ending in punctuation.
 Error strings are composed with others; capitals and periods break the sentence.
 
+## Diagnostics
+
+Canon's diagnostics are catalogue data (decision 27): `spec/ERRORS.md` is the single source,
+`internal/diag` the only package that names a code or holds a message. A repository without
+`spec/ERRORS.md` has no catalogue: only the code-literal, call and record checks of
+`diag-message-inline` apply to it.
+
+### `diag-message-inline`
+enforce · custom: diagnostic code or message text outside internal/diag: a code or catalogued text in a string, English or fmt in a diag call, a hand-built Finding.
+A message typed outside the catalogue drifts from it and escapes review. Judged in every
+hand-written Go file outside `internal/diag` and its subpackages, tests included; comments may
+cite codes. Five findings: (1) a string literal, or a `+` chain of literals, holding a code token
+(`E` or `W` and four digits, not inside a longer word); (2) a string literal holding a fixed run
+of a catalogued template (the text between its placeholders and line breaks, trimmed of spaces,
+quotes and `.,:;`) of at least `diag-text-words` (thresholds.tsv) words, or a text of ERRORS.md
+§1.6; (3) a `fmt` call anywhere in an argument of a call to a function or method of package diag
+(a stored builder included); (4) a string literal holding whitespace in such an argument: names,
+values and spans have none, English is a variant or a Kind; (5) a `diag.Finding`, `Related`,
+`Def`, `Variant` or `Arg` composite literal, or an assignment to a diag `Message` field. (3) to
+(5) need the type-checked load; when the module does not type-check they are reported as not
+measured, and `go vet` in `make check` has already failed.
+
+### `diag-code-untested`
+ratchet · custom: catalogued code the compiler reports with no internal/<pkg>/testdata/findings/<CODE>_<n>.txtar producing it.
+A code no test produces is a message nobody has seen. A code is reported when non-test Go code
+outside `internal/diag` names it through the registry (`diag.E3501`, under any import name or a
+dot import) or a runtime helper text (`internal/gen/*/runtime/*.txt`) holds it. It is tested when
+a `<CODE>_<n>.txtar` in its owning package's `testdata/findings/` (ERRORS.md `Package` column;
+any `internal/gen/*` for `gen`) holds the code in its `findings.txt` section; a Go test that only
+builds the constructor, or an example's `findings.txt`, does not count. One finding per code, at
+its first mention. Codes nobody reports yet are `diag-code-unreported`'s.
+
+### `diag-code-unreported`
+observe · custom: catalogued code no compiler code reports yet (target zero at v0.1).
+The census of the catalogue still to implement: at v0.1 every code is reported, and with
+`diag-code-untested` at zero, every code is tested (decision 27). It turns enforce then.
+
 ## API surface
 
 ### `exported-but-local`
@@ -170,7 +211,7 @@ The standard library comes first: its version is tested, known, and shorter. Tes
 judged.
 
 ### `dup-in-repo`
-ratchet · dupl: duplicated block of ~15+ lines in one repo.
+ratchet · dupl: duplicated block of 150+ tokens in one repo.
 Duplicated blocks get fixed in one place and not the other.
 
 ## Comments
@@ -192,7 +233,7 @@ ratchet · custom: more than 3 consecutive comment lines inside a body.
 A paragraph inside a function means the code should say it itself.
 
 ### `comment-ratio`
-ratchet · custom: comments over 20% of a file's non-blank lines.
+ratchet · custom: comments over 20% of a file's non-blank lines (files of 20+ non-blank lines).
 Readers imitate the density they read; bloated files breed bloated changes. Counts only comments
 no placement rule (decl/field/block/file-header/pkg) already flagged, and skips doc.go: it catches
 a file full of many small comments, not the same long comment a second time.
@@ -278,8 +319,10 @@ enforce · mechanism: check fails on a finding that is new or grew against .sova
 Existing debt is recorded once; the gate only fails on new or grown debt.
 
 ### `baseline-guard`
-enforce · custom: baseline or state loosened against HEAD.
-Nobody silences the gate by editing its baseline.
+enforce · custom: baseline, state or thresholds loosened against HEAD.
+Nobody silences the gate by editing its baseline, a rule's mode or a limit. A threshold is
+loosened when its value in thresholds.tsv is above the base revision's; the file is guarded
+when it belongs to the audited repository.
 
 ### `decision-dropped`
 enforce · custom: a removed comment recorded a decision and DECISIONS.md did not change.
@@ -295,8 +338,14 @@ enforce · custom, nolintlint: ignore directive without a rule and a reason, or 
 An ignore without a reason is a finding hidden, not a decision made; a stale one hides the next.
 
 ### `ignore-count`
-ratchet · custom: ignore directives in the repo.
-Ignores are debt too; their number only goes down.
+ratchet · custom: ignore directives in the repo: sovaudit, nolint, lint, nosec, gosec, exhaustive, revive.
+Ignores are debt too; their number only goes down. One finding for the repository, its value the
+total of every suppression the audit or a pinned tool honours, counted in comments only (a marker
+in a string is not one): `sovaudit:ignore` and `sovaudit:ignore-file` (Go and Markdown),
+`//nolint`, `//lint:ignore`, `//lint:file-ignore`, `#nosec`, `//gosec:disable`,
+`//exhaustive:ignore`, `//revive:disable`. A higher total than the baseline's fails; a repository
+whose baseline has no entry may hold none. `//canon:unordered` is not counted: it states that a
+map range is order-free (DOCTRINE §5), which the maprange analyzer checks.
 
 ### `rule-state`
 enforce · custom: unknown rule id or mode in .sovaudit/state.tsv.

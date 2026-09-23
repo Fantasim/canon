@@ -7,7 +7,6 @@ import (
 	"github.com/fantasim/canonlang/tools/audit/internal/finding"
 	"github.com/fantasim/canonlang/tools/audit/internal/gosrc"
 	"github.com/fantasim/canonlang/tools/audit/internal/lane"
-	"github.com/fantasim/canonlang/tools/audit/internal/rules"
 )
 
 // declFindings is comment-decl: a doc comment over DocLines on a top-level FuncDecl, or
@@ -22,9 +21,9 @@ func declFindings(ctx *lane.Context, f *gosrc.File) []finding.Finding {
 		if doc == nil {
 			continue
 		}
-		if n := contentLines(doc); n > rules.DocLines {
+		if n := contentLines(doc); n > ctx.Limits.CommentDeclLines {
 			line := ctx.Go.Line(doc.Pos())
-			out = append(out, sizeFinding(ruleCommentDecl, f.Path, line, n, measured(n, unitLines, rules.DocLines)))
+			out = append(out, sizeFinding(ruleCommentDecl, f.Path, line, n, measured(n, unitLines, ctx.Limits.CommentDeclLines)))
 		}
 	}
 	return out

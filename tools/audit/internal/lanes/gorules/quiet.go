@@ -52,7 +52,7 @@ func newQuietIndex(tree *gosrc.Tree) *quietIndex {
 func (q *quietIndex) typedNode(p *packages.Package, n ast.Node) {
 	switch n := n.(type) {
 	case *ast.CallExpr:
-		fn := calledFunc(p.TypesInfo, n)
+		fn := gosrc.CalledFunc(p.TypesInfo, n)
 		if fn == nil {
 			return
 		}
@@ -87,21 +87,6 @@ func (q *quietIndex) has(n ast.Node) bool {
 func spanOf(fset *token.FileSet, n ast.Node) nodeSpan {
 	from, to := fset.Position(n.Pos()), fset.Position(n.End())
 	return nodeSpan{file: filepath.Clean(from.Filename), from: from.Offset, to: to.Offset}
-}
-
-// calledFunc is the function or method a call statically names, nil for a func value.
-func calledFunc(info *types.Info, c *ast.CallExpr) *types.Func {
-	var id *ast.Ident
-	switch fun := ast.Unparen(c.Fun).(type) {
-	case *ast.SelectorExpr:
-		id = fun.Sel
-	case *ast.Ident:
-		id = fun
-	default:
-		return nil
-	}
-	fn, _ := info.Uses[id].(*types.Func)
-	return fn
 }
 
 // loggerFunc is a function of log or log/slog, or a method of their loggers.
