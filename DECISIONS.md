@@ -1185,6 +1185,156 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     values (unknown holder and unknown value); retirements do not count. `Update` only adds.
     `E6004` needs `eval`'s layer application. Reason: every violation reported once.
 
+150. **The M1 checker folds through `check.LiteralFolder` until `eval.NewFolder` exists.**
+    `check.Check` keeps §4.7's signature; a nil `fold` is `check.LiteralFolder`, which folds a
+    literal, a parenthesized one, and the name of a `const` whose initializer folds, and returns
+    false with no finding for anything else (the declaration is then broken). `build.Checker`
+    (DECISIONS 145) may bind it until the evaluator lands. Reason: refinement bounds must fold in
+    phase 2, and teamboard's are all literals; the evaluator stays the one evaluator.
+
+151. **What imports bind.** `import p` binds the last segment of `p` (SPEC §3's `import shared.ui
+    // use qualified: ui.Tone`), `import p as q` binds `q`, `import p { A }` binds only `A`. Every
+    import has an `ObjPackage` object: `Defs` of its alias, `NameUses` of its path's last part;
+    the earlier parts name no object. An import binding a name the package declares is `E2005` at
+    the import, `first` the declaration. Reason: TYPES §3.1 says "binds p" for a dotted `p`.
+
+152. **What `check.Info` records where §4.7 leaves it open.** A qualifier of a qualified form is in
+    `Uses` (type or package), a type qualifier's `Types` is the named type, a package qualifier
+    has none. Built-in methods and members have one `ObjBuiltin` object per name (`Selections`,
+    `NameUses`); `Define.value` has a field object. An entry selection of a collection whose keys
+    are dynamic puts the `SelectorExpr` in `Keys`; its key names no object, like a built-in's
+    parameter names, a load's form and options and an `expect` outcome. `Callee.TypeArgs` are the
+    STDLIB type parameters in binding order (the receiver's `T`, or `K` and `V`, first);
+    `Overload` is the row's index among the rows of its name in the receiver's STDLIB table; a
+    recorded signature prints `Seq(T)` as `[T]`. An inner link of a `?.` chain has its type with
+    the `?.` unwrapped; only the chain's end is optional (TYPES §6.5). `fail(…)`/`warn(…)` have
+    type `none`; an entry's object has its element type, a type function's `DepUnion(F)`, a
+    widget's its value parameter's type. Reason: every node answered once, nothing invented.
+
+153. **Resolution details TYPES leaves open.** Level 1 of `ref T` (§10.2) counts the record whose
+    field holds the ref as containing itself, and containment follows tables too. `.id` and
+    `.retired` are members of a record exactly when some table of the program has it as its
+    element (the condition of `E2105`). `E2102`'s hint is the name in scope at edit distance ≤ 2
+    and shorter than the typed one, ties by byte order. `E2101` names the member qualified by its
+    type's declared name (`Tone.warning`), as the user writes it. Reason: the strictest reading
+    that keeps every example well typed.
+
+154. **Typing details TYPES leaves open.** An optional field without default is not required in a
+    literal (absent is `none`, as WIRE §5.4 decodes it); a spread anywhere suppresses `E3302`.
+    `table T` and `stable table T` are statically identical. The literal rows of §6.4 (`[]`, `{}`,
+    `none`, an integer literal with `Float`) are the checker's, `types.Join` does the rest. In a
+    comparison the context-dependent operand is read from the other's type (a name contextually,
+    a numeric literal as `Float` when the other is one); a right operand that is not is
+    synthesized, but a name or a list, brace or lambda literal is read against the left's type; a
+    ref compared with its entry type is dereferenced (`Conv` `Deref`); a literal union compares
+    with its literals and with its alternative. `for k in m` is `E3018` with an empty second name;
+    iterating a non-iterable is `E3002` against `[_]`; indexing a type with no index is `E3007`
+    with operator `[]`; `x op= e` with `e` optional is `E3402`; calling an optional function
+    value is `E3402`. Reason: one reading per construct, the strictest code that fits.
+
+155. **Literals are checked against refinements statically, with verify's codes.** A scalar literal,
+    a constant string and a list literal's length checked against a refined type report `E3201`,
+    `E3204` or `E3205` in phase 2 (TYPES §5.3, §7.4), although ERRORS.md gives `E3204`/`E3205` to
+    `verify`; the declaration is then broken, so verification never repeats them. `E3204`'s bound
+    is the refinement's source text. Reason: TYPES requires the static report.
+
+156. **`E3804` covers every operator and conversion of a dependent value** (§11.4 "anything
+    else"): its `{op}` is the operator, or the expected type of a conversion (`Int is not
+    available on a dependent value (P(*))`). Reason: §11.4 names passing one as `ref items`.
+
+157. **Constant expressions (TYPES §15, DECISIONS 103).** They may name their own binders (lambda
+    parameters, comprehension variables); `if`, `match`, `load` and `self` are `E3015`. A `load`
+    argument that is not constant is `E3015` with the kind `ConstValue`: ERRORS §1.4 has no kind
+    for load arguments (gap for Louis).
+
+158. **`values` is an option of every emit but `view`.** CODEGEN §2.1's bullet "`values` (default:
+    every public value) selects the values emitted" and `resource/vocab`'s `emit cpp { values: …
+    }` win over the table's column, which lists it for `json` only. Reason: the example is law.
+
+159. **`W1002` is reported for every loaded package; `W1003` waits.** GRAMMAR §9.1 does not limit
+    `W1002` to the selected packages (every example is documented). `W1003` is "on declarations of
+    the selected packages only" (§9.2), and `check.Check` does not know the selection: it is not
+    reported in M1 (gap for Louis: a selection for `Check`, or `W1003` in `build`).
+
+160. **Layers without imports.** `E1909` is reported when another loaded package declares the
+    amended name (a layer file has no imports), a built-in name is `E1902`; `E1908`'s path starts
+    with the let's first field (`paths.port`, `[k]` as written, `[#n]`). Reason: TYPES §3.1's
+    per-file imports make "a name of another package" otherwise unreachable.
+
+161. **Gaps the checker leaves strict.** `_` outside a widget parameter and a lone literal type are
+    `E3002` although no expected/found pair fits the message (it prints `_`). A map literal key
+    written `name:` that is a symbolic key of a collection with dynamic keys, or of a dependent
+    key, has no `Info` entry: `Keys` and `Symbols` are keyed by expression and the key is an
+    `Ident` (contract gap). A record parameter whose type is neither a record nor a ref has no
+    code (TYPES §11.1), nor has an `@codes` member without a value; a type-function result whose
+    refinement depends on a parameter is not yet `E3803`.
+
+162. **`E7109` locates the offending character and quotes it.** The span is the first character
+    at which the text stops being JSON (zero width at the end of the source), the `detail` is
+    that character written as a JSON string (WIRE.md §7.3, `""` at the end), and the pointer is
+    the innermost open array or object. Reason: ERRORS.md gives `E7109` one `Text` argument, and an
+    English detail would be message text outside `internal/diag` (DECISIONS 27); gap for Louis:
+    variants such as `eof` and `depth` would read better (`JSON syntax error: ""` at the end).
+    Spans are in the content `source.FileSet` normalized (`\r\n` read as `\n`), so a raw
+    `\r\n` inside a string is reported as `"\n"` at the LF.
+
+163. **`jsonsrc` returns `E7105`'s cases; `load` reports them.** ERRORS.md gives `E7105` to `load`,
+    so `jsonsrc.Parse` returns an `*EncodingError` (span, and the unpaired surrogate or 0) and
+    reports nothing: a UTF-16 or UTF-32 byte order mark (its bytes), the first byte that is not
+    UTF-8 (the whole file is checked before its syntax), a `\u` escape of a low surrogate, or of
+    a high one not followed by exactly the `\u` escape of a low one. The span is in the
+    normalized `source.File.Content` (`\r\n` read as `\n`); `load` computes E7105's `{offset}`,
+    a byte of the file, from the raw bytes. Reason: one reader, the owner reports.
+
+164. **A JSON source with a repeated key has no tree.** Every key equal after decoding to an earlier
+    key of its object is one `E7104` (at the repeat, `first` the first key, the pointer the
+    repeat's value) and `Parse` returns `ErrDuplicateKey` without a tree; repeats before a syntax
+    error are not reported, so a file that is not JSON has exactly one `E7109`. Reason: which
+    value wins is undefined, and FORMATTER.md §14.1 leaves such a file unchanged.
+
+165. **`jsonsrc.Format` writes a number's text as read.** FMT-02 canonicalizes the numbers read into
+    Canon fields (WIRE.md §7.2) and keeps the others; `jsonsrc` does not know the types, so the
+    caller sets `Node.Text` of each typed number first. `Format` writes no BOM. The layout equals
+    WIRE.md §7.4 `pretty`, which `wire` implements again (`node.pretty`): a later cleanup can make
+    `wire` build a `jsonsrc` tree. A node's pointer is built on demand from its container links
+    (`Node.Pointer()`), never stored, so a tree's memory stays linear in its source. Reason:
+    `jsonsrc` depends on `source` and `diag` only.
+
+166. **The formatter's entry points.** `format.Source(src, kind, bag)` parses with the file
+    kind the caller gives and returns `ErrSyntax` when `bag` holds an error of that file other than
+    `E1123` (a lone BOM is removed, FORMATTER §1); `format.File` prints a tree that parsed without
+    error. Reason: the caller (`api.Format`, `canon fmt`) builds its `*SyntaxError` from the bag,
+    and only it knows whether a `project.canon` is the project root's.
+
+167. **Comments sit outside their node's groups.** A node's own-line and trailing comments are
+    printed around the node's groups, so a trailing comment breaks the lists enclosing its item but
+    never the item itself (FORMATTER §8.2 keeps `id: String @json("dwID") // …` on one line); it
+    still counts toward its line's width, as §7.1's `text(" // …")` says. In a `( )`/`[ ]` list
+    the comma precedes an item's trailing comment. Reason: §7.1 does not say which group owns a
+    comment's hard break; inside the item it would move every commented field's annotations.
+
+168. **Comment placement FORMATTER §8.2 leaves open.** An own-line comment inside a construct
+    (before `else`, a `.` step, an operator, a value) starts a continuation line one level deeper,
+    and the token after an own-line comment takes that comment's indentation; after a trailing line
+    comment where the layout has no break point, the next token continues one level deeper. A block
+    comment spanning lines after a token, with what follows it on its line, leads the next token;
+    comments that shared a line keep sharing it; a one-line block comment on its own line stays
+    there. Every line of a block comment loses its trailing blanks (§2; "byte for byte" is read as
+    "not re-indented"). A dropped token's comments (a comma, the colon of project map sugar) go to
+    its neighbours: trailing ones to the token before, own-line ones to the token after. Reason:
+    the strictest reading that keeps the tree, every comment and idempotence (fuzzed, and tested by
+    injecting a comment at every position of every example).
+
+169. **Layout details FORMATTER §6–§7 leave open.** Hugging applies to a lone positional argument
+    whose parentheses hold no comment. A postfix chain is its primary expression then its steps;
+    with two calls or more a break point stands before every `.`/`?.` step, field steps included.
+    An empty statement block is `{}` and does not break its if chain. Type aliases and match-type
+    arms use rule A; expressions inside a type (refinements, `where`, dependent-map domains) are
+    flat, like annotation arguments. A range whose upper bound starts with `.` keeps a space after
+    the operator (`a...x` would lex as `...`). The names in an import's braces keep no blank line
+    (§4's import block). Reason: the literal readings; the range space is the one spot where "no
+    spaces" would change the tokens.
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.

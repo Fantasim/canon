@@ -1,0 +1,12 @@
+WIRE.md §3.1, §9: a trailing comma is one E7109 at the offending byte, and a repeated key
+before it is not reported.
+-- data/a.json --
+{
+  "a": 1,
+  "a": 2,
+}
+-- findings.txt --
+error[E7109]  data/a.json:4:1
+  JSON syntax error: "}"
+
+1 error, 0 warnings in 1 package (…)

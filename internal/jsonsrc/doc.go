@@ -1,3 +1,4 @@
-// Package jsonsrc reads JSON sources with byte spans and RFC 6901 pointers, and prints source
-// JSON in its canonical layout (spec/WIRE.md, spec/FORMATTER.md).
+// Package jsonsrc reads JSON sources into trees located by byte spans and RFC 6901 pointers
+// (LOD-02), and prints them in the canonical layout of JSON sources (FMT-02). It reports the
+// syntax and repeated-key findings; an encoding error is returned for load to report.
 package jsonsrc

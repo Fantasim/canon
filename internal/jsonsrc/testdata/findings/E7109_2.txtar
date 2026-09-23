@@ -1,0 +1,20 @@
+WIRE.md §3.1: a comment, a single-quoted string and a string left open at the end of its line
+are each one E7109 in their file; the last is at the line break, a control character.
+-- data/comment.json --
+// levels
+{"a": 1}
+-- data/quote.json --
+{"a": 'b'}
+-- data/cut.json --
+{"a": "b
+-- findings.txt --
+error[E7109]  data/comment.json:1:1
+  JSON syntax error: "/"
+
+error[E7109]  data/cut.json:1:9
+  JSON syntax error: "\n"
+
+error[E7109]  data/quote.json:1:7
+  JSON syntax error: "'"
+
+3 errors, 0 warnings in 1 package (…)

@@ -1,0 +1,21 @@
+WIRE.md §3.2: keys equal after decoding repeat ("a" and "\u0061"); each repeat is one E7104
+with its RFC 6901 pointer, and equal keys of different objects are not repeats.
+-- data/rows.json --
+{
+  "a": {"a": 1},
+  "\u0061": 2,
+  "rows/all": [
+    {"x": 1, "x": 2, "x": 3}
+  ]
+}
+-- findings.txt --
+error[E7104]  data/rows.json:3:3
+  duplicate key "a" (first at data/rows.json:2)
+
+error[E7104]  data/rows.json:5:14
+  duplicate key "x" (first at data/rows.json:5)
+
+error[E7104]  data/rows.json:5:22
+  duplicate key "x" (first at data/rows.json:5)
+
+3 errors, 0 warnings in 1 package (…)

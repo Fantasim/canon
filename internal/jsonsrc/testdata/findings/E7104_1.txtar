@@ -1,0 +1,13 @@
+WIRE.md §3.2, §9: a key repeated in one object is E7104 at the repeat, naming the first.
+-- pipeline/data/II_POT_HEAL_S.json --
+{
+  "dwID": "X",
+  "dwID": "Y",
+  "szName": "IDS_PROPITEM_TXT_POT_S",
+  "nHeal": 500
+}
+-- findings.txt --
+error[E7104]  pipeline/data/II_POT_HEAL_S.json:3:3
+  duplicate key "dwID" (first at pipeline/data/II_POT_HEAL_S.json:2)
+
+1 error, 0 warnings in 1 package (…)
