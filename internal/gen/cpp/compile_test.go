@@ -191,7 +191,7 @@ func TestConstructsCompileAndRun(t *testing.T) {
 		if !strings.Contains(out, "failures: 0\n") {
 			t.Errorf("driver output:\n%s", out)
 		}
-		want := "bad: " + filepath.Join(dir, "bad", "shelves.json") + ": rows[1].slots: expected an integer\n"
+		want := "bad: " + filepath.Join(dir, "bad", "shelves.json") + ": rows[1].slots: expected an integer from -128 to 127\n"
 		if !strings.Contains(out, want) {
 			t.Errorf("decode error:\n%s\nwant the line\n%s", out, want)
 		}

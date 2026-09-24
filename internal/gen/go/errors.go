@@ -46,6 +46,7 @@ const (
 	foreignClassFormat   = "a record or variant of another package, %s, read by a loader at %s (its decoder is unexported there)"
 	unionFormat          = "%s: a literal union whose other arm is not written as a string, in data mode"
 	inlineFormat         = "%s: an optional or non-variant @json(inline) field, in data mode"
-	foldFormat           = "the keys %q and %q, equal but for letter case, in one object at %s (encoding/json matches keys case-insensitively)"
+	foldFormat           = "%s: an inline variant key equal to another key of its parent but for letter case, in data mode"
+	noneMarkerFormat     = "%s: the none marker %s, a non-empty object or array, in data mode"
 	dataCollisionFormat  = "%s declares %s twice in data mode"
 )

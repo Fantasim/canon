@@ -370,28 +370,50 @@ func ReadDataFile(path, schema string) (*DataFile, error) {
 // ParseDataFile parses a data file (name is used in messages) and checks its $schema. Keys
 // match exactly, and no object of the file may hold a key twice.
 func ParseDataFile(name string, raw []byte, schema string) (*DataFile, error) {
+	raw = bytes.TrimPrefix(raw, []byte("\xef\xbb\xbf"))
 	if err := checkObjects(name, raw); err != nil {
 		return nil, err
 	}
 	var top map[string]json.RawMessage
-	if err := json.Unmarshal(raw, &top); err != nil {
-		return nil, fmt.Errorf("%s: not a canon data file: %w", name, err)
+	if json.Unmarshal(raw, &top) != nil {
+		return nil, notData(name)
 	}
 	if err := checkEnvelope(name, top); err != nil {
 		return nil, err
 	}
 	f := DataFile{Rows: top["rows"], Value: top["value"]}
-	if s, ok := top["$schema"]; ok && json.Unmarshal(s, &f.Schema) != nil {
-		f.Schema = ""
+	got := "<none>"
+	if json.Unmarshal(top["$schema"], &f.Schema) == nil && bytes.HasPrefix(top["$schema"], []byte(`"`)) {
+		got = f.Schema
 	}
-	if f.Schema != schema {
-		got := f.Schema
-		if got == "" {
-			got = "<none>"
-		}
+	if got != schema {
 		return nil, fmt.Errorf("%s: built from schema %s, this binary expects %s. Rebuild the data or deploy the matching binary", name, got, schema)
 	}
 	return &f, nil
+}
+
+// notData is the error of a file that is not one valid JSON object.
+func notData(name string) error { return fmt.Errorf("%s: not a canon data file (invalid JSON)", name) }
+
+// EqualFold reports whether a and b are equal ignoring the case of ASCII letters, and only of
+// them. A generated loader refuses a key that matches an expected one only this way.
+func EqualFold(a, b string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := 0; i < len(a); i++ {
+		if lowerASCII(a[i]) != lowerASCII(b[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+func lowerASCII(c byte) byte {
+	if 'A' <= c && c <= 'Z' {
+		return c + 'a' - 'A'
+	}
+	return c
 }
 
 // envelopeKeys are the keys of a data file's top-level object.
@@ -403,13 +425,13 @@ func checkEnvelope(name string, top map[string]json.RawMessage) error {
 	bad, want := "", ""
 	for key := range top {
 		for _, k := range envelopeKeys {
-			if key != k && strings.EqualFold(key, k) && (bad == "" || key < bad) {
+			if key != k && EqualFold(key, k) && (want == "" || key < bad) {
 				bad, want = key, k
 			}
 		}
 	}
-	if bad != "" {
-		return fmt.Errorf("%s: %s: differs from %q only in letter case", name, bad, want)
+	if want != "" {
+		return fmt.Errorf("%s: %s: differs from \"%s\" only in letter case", name, bad, want)
 	}
 	return nil
 }
@@ -417,8 +439,9 @@ func checkEnvelope(name string, top map[string]json.RawMessage) error {
 // maxNesting is the deepest nesting of arrays and objects a data file may hold (WIRE.md §3.1).
 const maxNesting = 512
 
-// checkObjects reads the file once: it must be one JSON object, no object in it may hold a
-// key twice, and nothing may nest deeper than maxNesting. The error names the path.
+// checkObjects reads the file once, in order: it must be one JSON object of valid UTF-8, with
+// no escaped unpaired surrogate and no number beyond float64; no object in it may hold a key
+// twice, and nothing may nest deeper than maxNesting. The first finding is the error.
 func checkObjects(name string, raw []byte) error {
 	type frame struct {
 		keys map[string]bool // the keys seen so far; nil in an array
@@ -427,14 +450,27 @@ func checkObjects(name string, raw []byte) error {
 	}
 	dec := json.NewDecoder(bytes.NewReader(raw))
 	dec.UseNumber()
-	if tok, err := dec.Token(); err != nil || tok != json.Delim('{') {
-		return fmt.Errorf("%s: not a canon data file: not a JSON object", name)
+	next := func() (json.Token, bool) {
+		start := dec.InputOffset()
+		tok, err := dec.Token()
+		if err != nil || !validSpan(raw[start:dec.InputOffset()]) {
+			return nil, false
+		}
+		if n, isNumber := tok.(json.Number); isNumber {
+			if _, err := strconv.ParseFloat(string(n), 64); err != nil {
+				return nil, false
+			}
+		}
+		return tok, true
+	}
+	if tok, ok := next(); !ok || tok != json.Delim('{') {
+		return notData(name)
 	}
 	stack := []*frame{{keys: map[string]bool{}}}
 	for len(stack) > 0 {
-		tok, err := dec.Token()
-		if err != nil {
-			return fmt.Errorf("%s: not a canon data file: %w", name, err)
+		tok, ok := next()
+		if !ok {
+			return notData(name)
 		}
 		top := stack[len(stack)-1]
 		if tok == json.Delim('}') || tok == json.Delim(']') {
@@ -452,8 +488,8 @@ func checkObjects(name string, raw []byte) error {
 				return fmt.Errorf("%s: %s: duplicate key", name, at)
 			}
 			top.keys[key] = true
-			if tok, err = dec.Token(); err != nil {
-				return fmt.Errorf("%s: not a canon data file: %w", name, err)
+			if tok, ok = next(); !ok {
+				return notData(name)
 			}
 		} else {
 			at = top.path + "[" + strconv.Itoa(top.next) + "]"
@@ -470,9 +506,43 @@ func checkObjects(name string, raw []byte) error {
 		}
 	}
 	if _, err := dec.Token(); !errors.Is(err, io.EOF) {
-		return fmt.Errorf("%s: not a canon data file: data after the object", name)
+		return notData(name)
 	}
 	return nil
+}
+
+// validSpan reports bytes of the file that are UTF-8 and escape no unpaired UTF-16 surrogate,
+// which encoding/json would read as U+FFFD.
+func validSpan(b []byte) bool {
+	if !utf8.Valid(b) {
+		return false
+	}
+	for i := 0; i+1 < len(b); i++ {
+		if b[i] != '\\' {
+			continue
+		}
+		i++
+		if b[i] != 'u' || i+4 >= len(b) {
+			continue
+		}
+		r, _ := strconv.ParseUint(string(b[i+1:i+5]), 16, 32)
+		switch {
+		case r >= 0xdc00 && r <= 0xdfff:
+			return false
+		case r >= 0xd800 && r <= 0xdbff:
+			low := uint64(0)
+			if i+10 < len(b) && b[i+5] == '\\' && b[i+6] == 'u' {
+				low, _ = strconv.ParseUint(string(b[i+7:i+11]), 16, 32)
+			}
+			if low < 0xdc00 || low > 0xdfff {
+				return false
+			}
+			i += 10
+		default:
+			i += 4
+		}
+	}
+	return true
 }
 
 // Missing is the error of a required key absent from a data file.

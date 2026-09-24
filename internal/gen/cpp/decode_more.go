@@ -93,6 +93,9 @@ func (g *gen) decodeVariant(v *ir.Variant) {
 // decodeTable reads a finite-parameter method's nested `$<fn>` object into its table (WIRE.md §5.11).
 func (g *gen) decodeTable(fn *ir.ExportFn, l leaf) {
 	doms := g.domains(fn)
+	if len(doms) < len(fn.Params) || len(doms) == 0 {
+		return
+	}
 	obj := fmt.Sprintf(tableVarFormat, 0)
 	g.c.linef(1, objectOpenFormat, obj, sourceVar, quote(dollar+fn.Name))
 	g.c.linef(depthTwo, pushFormat, quote(dollar+fn.Name))
@@ -103,8 +106,7 @@ func (g *gen) decodeTable(fn *ir.ExportFn, l leaf) {
 		}
 		g.c.linef(depthTwo, keysArrayFormat, fmt.Sprintf(wireKeysFormat, i), strings.Join(quoted, listSep))
 	}
-	g.use(&jsonKeysText)
-	g.c.linef(depthTwo, keysStmtFormat, fmt.Sprintf(derefFormat, obj), fmt.Sprintf(wireKeysFormat, 0))
+	g.checkKeys(depthTwo, fmt.Sprintf(derefFormat, obj), doms[0].keys, false)
 	index, depth := "", depthTwo
 	for i, d := range doms {
 		a := fmt.Sprintf(argVarFormat, i)
@@ -115,7 +117,7 @@ func (g *gen) decodeTable(fn *ir.ExportFn, l leaf) {
 			next := fmt.Sprintf(tableVarFormat, i+1)
 			g.c.linef(depth+1, objectOpenFormat, next, fmt.Sprintf(derefFormat, obj), key)
 			g.c.linef(depth+depthTwo, pushFormat, key)
-			g.c.linef(depth+depthTwo, keysStmtFormat, fmt.Sprintf(derefFormat, next), fmt.Sprintf(wireKeysFormat, i+1))
+			g.checkKeys(depth+depthTwo, fmt.Sprintf(derefFormat, next), doms[i+1].keys, false)
 			obj, depth = next, depth+depthTwo
 			continue
 		}

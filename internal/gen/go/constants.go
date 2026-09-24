@@ -148,19 +148,17 @@ const (
 
 // Standard library packages data mode also imports: path and the name code uses.
 const (
-	jsonPath     = "encoding/json"
-	jsonPkg      = "json"
-	fmtPkg       = "fmt"
-	filepathPath = "path/filepath"
-	filepathName = "filepath"
-	atomicPath   = "sync/atomic"
-	atomicName   = "atomic"
+	jsonPath   = "encoding/json"
+	jsonPkg    = "json"
+	fmtPkg     = "fmt"
+	atomicPath = "sync/atomic"
+	atomicName = "atomic"
 )
 
 // goStdImports classifies a generated import by its origin, not by whether its path has a dot.
 var goStdImports = map[string]bool{
 	timePkg: true, iterPkg: true, syncPkg: true, strconvPkg: true, mathPkg: true, testingPkg: true,
-	jsonPath: true, fmtPkg: true, filepathPath: true, atomicPath: true, errorsPkg: true, stringsPkg: true,
+	jsonPath: true, fmtPkg: true, atomicPath: true, stringsPkg: true, slicesPkg: true,
 }
 
 // Generated names (CODEGEN.md §3.3) and the reference layout's private names (§6.2).
@@ -212,7 +210,6 @@ const (
 	loadPrefix         = "Load"
 	loadLocalPrefix    = "load"
 	decodePrefix       = "decode"
-	wirePrefix         = "wire"
 	resolvePrefix      = "resolve"
 	dollar             = "$"
 	underscore         = "_"
@@ -226,9 +223,8 @@ const (
 	constDeclFormat    = "const %s = %s\n\n"
 	schemaDocFormat    = "// %s is the fingerprint of the schema of %s (types, wire names,\n" +
 		"// units), not of its values. The loader refuses a file built from another schema.\n"
-	tagPunctuation = "!#$%&()*+-./:;<=>?@[]^_{|}~ " // encoding/json's isValidTag
-	slotLetter     = "i"
-	pairFields     = 2
+	slotLetter = "i"
+	pairFields = 2
 )
 
 // The locals of data mode's functions (§3.4 escapes them) and the bases of numbered ones.
@@ -237,7 +233,6 @@ const (
 	localPath   = "path"
 	localRaw    = "raw"
 	localOut    = "out"
-	localWire   = "w"
 	localObj    = "obj"
 	localErr    = "err"
 	localFile   = "f"
@@ -255,7 +250,6 @@ const (
 	tempElem    = "x"
 	tempKey     = "k"
 	tempMember  = "m"
-	tempPointer = "p"
 	tempRaw     = "r"
 	tempObject  = "o"
 	tempEntry   = "e"
@@ -263,64 +257,50 @@ const (
 
 // Generated Go of data mode's decoders and resolvers: shapes with the locals as arguments.
 const (
-	rawMessage         = ".RawMessage"
-	objectType         = "map[string]"
-	durationFromMs     = ".DurationFromMs("
-	isOne              = " == 1"
-	notNil             = " != nil"
-	plus               = "+"
-	closeBrace         = "}\n"
-	closeBlock         = "}\n\n"
-	returnNil          = "return nil\n}\n\n"
-	funcOpenFormat     = "func %[1]s(%[2]s, %[3]s string, %[4]s %[5]s, %[6]s *%[7]s) error {\n"
-	unmarshalFormat    = "var %[1]s %[2]s\nif %[3]s := %[4]s.Unmarshal(%[5]s, &%[1]s); %[3]s != nil {\nreturn %[6]s\n}\n"
-	markedFormat       = "var %[1]s %[2]s\nif %[3]s := %[4]s.Unmarshal(*%[5]s, &%[1]s); %[3]s != nil {\nreturn %[6]s\n}\n"
-	readIntoFormat     = "if %[1]s := %[2]s.Unmarshal(%[3]s, &%[4]s); %[1]s != nil {\nreturn %[5]s\n}\n"
-	wireFieldFormat    = "%s *%s `json:%q`\n"
-	missingCaseFormat  = "case %s.%s == nil:\nreturn %s\n"
-	missingFormat      = "%s.Missing(%s, %s, %s)"
-	ifNilReturnFormat  = "if %s == nil {\nreturn %s\n}\n"
-	ifOpenFormat       = "if %s {\n"
-	notMarkerFormat    = " && string(*%s) != %s"
-	assignFormat       = "%s.%s = %s\n"
-	assignOKFormat     = "%[1]s.%[2]s, %[1]s.%[3]s = %[4]s, true\n"
-	cellFormat         = "%s = %s\n"
-	cellPairFormat     = "%[1]s%[2]s, %[1]s%[3]s = %[4]s, true\n"
-	errorfFormat       = "%s.Errorf(%s, %s)"
-	sprintfFormat      = "%s.Sprintf(%s, %s)"
-	verbString         = "%s"
-	indexVerb          = "[%d]"
-	percent            = "%"
-	percentPercent     = "%%"
-	unknownValueText   = "unknown value %v"
-	unknownCaseText    = "unknown case %q"
-	noEntryText        = "no entry %v"
-	incompleteSlotText = "incomplete pairs slot"
-	afterEmptyText     = "pairs slot after an empty one"
-	nullText           = "null"
-	notBitText         = "expected 0 or 1, not %v"
-	unknownBitsText    = "unknown bits %#x"
-	parsedFormat       = "%[1]s, %[2]s := %[3]s(%[4]s)\nif !%[2]s {\nreturn %[5]s\n}\n"
-	decodeIntoFormat   = "%[1]s := &%[2]s{}\nif %[3]s := %[4]s(%[5]s, %[6]s, %[7]s, %[1]s); %[3]s != nil {\nreturn %[3]s\n}\n"
-	listOpenFormat     = "%[1]s := make([]%[2]s, len(%[3]s))\nfor %[4]s, %[5]s := range %[3]s {\n"
-	listCloseFormat    = "%[1]s[%[2]s] = %[3]s\n}\n"
-	keyedFromFormat    = "%[1]s := make([]%[2]s, len(%[3]s))\n%[4]s := make([]%[5]s, len(%[3]s))\n" +
+	rawMessage       = ".RawMessage"
+	objectType       = "map[string]"
+	durationFromMs   = ".DurationFromMs("
+	isOne            = " == 1"
+	notNil           = " != nil"
+	plus             = "+"
+	closeBrace       = "}\n"
+	closeBlock       = "}\n\n"
+	returnNil        = "return nil\n}\n\n"
+	funcOpenFormat   = "func %[1]s(%[2]s, %[3]s string, %[4]s %[5]s, %[6]s *%[7]s) error {\n"
+	missingFormat    = "%s.Missing(%s, %s, %s)"
+	ifOpenFormat     = "if %s {\n"
+	assignFormat     = "%s.%s = %s\n"
+	assignOKFormat   = "%[1]s.%[2]s, %[1]s.%[3]s = %[4]s, true\n"
+	cellStoreFormat  = "%s = %s\n"
+	cellPairFormat   = "%[1]s%[2]s, %[1]s%[3]s = %[4]s, true\n"
+	errorfFormat     = "%s.Errorf(%s, %s)"
+	sprintfFormat    = "%s.Sprintf(%s, %s)"
+	verbString       = "%s"
+	indexVerb        = "[%d]"
+	percent          = "%"
+	percentPercent   = "%%"
+	unknownValueText = "unknown value %s"
+	unknownCodeText  = "unknown value %d"
+	unknownCaseText  = "unknown case %s"
+	noEntryText      = "no entry %v"
+	unknownBitsText  = "unknown bits %#x"
+	parsedFormat     = "%[1]s, %[2]s := %[3]s\nif !%[2]s {\nreturn %[4]s\n}\n"
+	decodeIntoFormat = "%[1]s := &%[2]s{}\nif %[3]s := %[4]s(%[5]s, %[6]s, %[7]s, %[1]s); %[3]s != nil {\nreturn %[3]s\n}\n"
+	listOpenFormat   = "%[1]s := make([]%[2]s, len(%[3]s))\nfor %[4]s, %[5]s := range %[3]s {\n"
+	listCloseFormat  = "%[1]s[%[2]s] = %[3]s\n}\n"
+	keyedFromFormat  = "%[1]s := make([]%[2]s, len(%[3]s))\n%[4]s := make([]%[5]s, len(%[3]s))\n" +
 		"for %[6]s, %[7]s := range %[3]s {\nif %[8]s := %[9]s(%[10]s, %[11]s, %[7]s, &%[1]s[%[6]s]); %[8]s != nil {\n" +
 		"return %[8]s\n}\n%[4]s[%[6]s] = %[1]s[%[6]s].%[12]s\n}\n"
 	bitsFormat = "var %[1]s []%[2]s\nfor _, %[3]s := range [...]%[2]s{%[4]s} {\nif %[5]s&uint64(%[3]s) != 0 {\n" +
 		"%[1]s = append(%[1]s, %[3]s)\n}\n}\n"
 	switchTagFormat   = "switch %s {\n"
-	tagReadFormat     = "%[1]s, %[9]s := %[2]s[%[3]s]\nif !%[9]s {\nreturn %[4]s\n}\nvar %[5]s string\nif %[6]s := %[7]s.Unmarshal(%[1]s, &%[5]s); %[6]s != nil {\nreturn %[8]s\n}\n"
 	caseFormat        = "case %s:\n"
 	kindOnlyFormat    = "*%[1]s = %[2]s{%[3]s: %[4]s}\n"
 	kindCaseFormat    = "*%[1]s = %[2]s{%[3]s: %[4]s, %[5]s: %[6]s}\n"
 	unknownCaseFormat = "default:\nreturn %s\n}\n"
 	lookupKeyFormat   = "if %[1]s, %[2]s := %[3]s[%[4]s]; %[5]s {\n"
 	pairsOpenFormat   = "var %[1]s []*%[2]s\n%[3]s := false\nfor %[4]s, %[5]s := range [...]string{%[6]s} {\n%[7]s := [...]string{%[8]s}[%[4]s]\n"
-	pairsRawFormat    = "%[1]s, %[2]s := %[3]s[%[4]s]\n"
-	pairsSlotFormat   = "switch {\ncase !%[1]s && !%[2]s:\n%[3]s = true\ncontinue\ncase !%[1]s || !%[2]s:\nreturn %[4]s\ncase %[3]s:\nreturn %[5]s\n}\n%[6]s := &%[7]s{}\n"
 	pairsCloseFormat  = "%[1]s = append(%[1]s, %[2]s)\n}\n"
-	tableLevelFormat  = "for %[1]s, %[2]s := range [...]string{%[3]s} {\n%[4]s, %[5]s := %[6]s[%[2]s]\nif !%[5]s {\nreturn %[7]s\n}\n"
 	switchCaseFormat  = "switch %[1]s := %[2]s.%[3]s.(type) {\n"
 	resolveCaseFormat = "case *%[1]s:\nreturn %[2]s(%[3]s, %[4]s, %[5]s, %[6]s)\n"
 	resolveOneFormat  = "%[1]s, %[2]s := %[3]s(%[4]s)\nif !%[2]s {\nreturn %[5]s\n}\n%[6]s = %[1]s\n"
@@ -331,29 +311,58 @@ const (
 	walkOneFormat  = "if %[1]s != nil {\nif %[2]s := %[3]s(%[4]s, %[5]s, %[6]s, %[1]s); %[2]s != nil {\nreturn %[2]s\n}\n}\n"
 )
 
-// Data mode's strict reads (log-2026-09-24, gen/go review calls): shared helpers and checks.
+// Data mode's strict reads, CODEGEN.md §7.5's checks and messages: helper names and calls.
 const (
-	errorsPkg        = "errors"
 	stringsPkg       = "strings"
-	helpersTemplate  = "helpers"
+	slicesPkg        = "slices"
 	helperObject     = "jsonObject"
-	helperError      = "jsonError"
-	helperCase       = "jsonCase"
-	helperFolds      = "jsonFolds"
-	tempBad          = "bad"
+	helperKeys       = "jsonKeys"
+	helperNeed       = "jsonNeed"
+	helperMay        = "jsonMay"
+	helperCell       = "jsonCell"
+	helperRead       = "jsonRead"
+	helperInt        = "jsonInt"
+	helperSlot       = "jsonSlot"
+	helperSame       = "jsonSame"
+	helperRowID      = "jsonRowID"
 	funcScopeSuffix  = "()"
-	localKind        = "kind"
-	tagSkip          = "-" // a struct tag json:"-" skips its field
 	tempEmpty        = "empty"
+	tempInt          = "n"
+	tempPrefix       = "p"
+	localBad         = "bad"
+	localWant        = "want"
+	localDst         = "dst"
+	localLo          = "lo"
+	localHi          = "hi"
+	localKr          = "kr"
+	localVr          = "vr"
+	localHasK        = "hasK"
+	localHasV        = "hasV"
+	localFirst       = "first"
+	localMarker      = "marker"
+	localA           = "a"
+	localAf          = "af"
+	localMf          = "mf"
 	hexFormat        = "%#x"
-	wrapFormat       = "%s(%s, %s, %s)"
+	durationMaxMs    = 9223372036854 // TYPES.md §7.2
+	notMarkerPrefix  = " && !"
 	openObjectFormat = "%[1]s, %[2]s := %[3]s(%[4]s, %[5]s, %[6]s)\nif %[2]s != nil {\nreturn %[2]s\n}\n"
-	foldLoopFormat   = "%[8]s := \"\"\nfor %[1]s := range %[2]s {\nswitch %[1]s {\ncase %[3]s:\ndefault:\n" +
-		"if %[9]s(%[1]s, %[3]s) && (%[8]s == \"\" || %[1]s < %[8]s) {\n%[8]s = %[1]s\n}\n}\n}\n" +
-		"if %[4]s := %[5]s(%[6]s, %[7]s, %[8]s, %[3]s); %[4]s != nil {\nreturn %[4]s\n}\n"
-	bitCheckFormat  = "if %[1]s != 0 && %[1]s != 1 {\nreturn %[2]s\n}\n"
-	bitsCheckFormat = "if %[1]s := %[2]s &^ %[3]s; %[1]s != 0 {\nreturn %[4]s\n}\n"
+	objectOnlyFormat = "if _, %[1]s := %[2]s(%[3]s, %[4]s, %[5]s); %[1]s != nil {\nreturn %[1]s\n}\n"
+	keysFormat       = "if %[1]s := %[2]s(%[3]s, %[4]s, %[5]s, %[6]s); %[1]s != nil {\nreturn %[1]s\n}\n"
+	needFormat       = "%[1]s, %[2]s := %[3]s(%[4]s, %[5]s, %[6]s, %[7]s)\nif %[2]s != nil {\nreturn %[2]s\n}\n"
+	cellFormat       = "%[1]s, %[2]s := %[3]s(%[4]s, %[5]s, %[6]s, %[7]s)\nif %[2]s != nil {\nreturn %[2]s\n}\nif %[8]s != nil {\n"
+	mayFormat        = "if %[1]s := %[2]s(%[3]s, %[4]s); %[1]s != nil%[5]s {\n"
+	readFormat       = "var %[1]s %[2]s\nif %[3]s := %[4]s(%[5]s, %[6]s, %[7]s, %[8]s, &%[1]s); %[3]s != nil {\nreturn %[3]s\n}\n"
+	intFormat        = "%[1]s, %[2]s := %[3]s(%[4]s, %[5]s, %[6]s, %[7]s, %[8]d, %[9]d)\nif %[2]s != nil {\nreturn %[2]s\n}\n"
+	slotFormat       = "%[1]s, %[2]s, %[3]s := %[4]s(%[5]s, %[6]s, %[7]s, %[8]s, %[9]s, &%[10]s)\nif %[3]s != nil {\nreturn %[3]s\n}\n" +
+		"if %[1]s == nil {\ncontinue\n}\n%[11]s := &%[12]s{}\n"
+	prefixFormat     = "%s := %s\n"
+	elseReturnFormat = "} else {\nreturn %s\n"
+	bitsCheckFormat  = "if %[1]s := %[2]s &^ %[3]s; %[1]s != 0 {\nreturn %[4]s\n}\n"
 )
+
+// helperOrder is the order a file with decoders writes its helpers in, jsonRowID after them.
+var helperOrder = []string{helperObject, helperKeys, helperNeed, helperMay, helperCell, helperRead, helperInt, helperSlot, helperSame}
 
 // A finite method's functions (CODEGEN.md §5.10) and the keys of a baked list result.
 const (
@@ -422,8 +431,8 @@ var (
 	scalarKinds  = map[types.Kind]bool{types.Bool: true, types.Int: true, types.Float: true, types.String: true, types.Duration: true, types.Enum: true}
 	// goImportNames are the packages a generated file may import, which a local never takes (CODEGEN.md §3.4).
 	goImportNames = map[string]bool{
-		rtName: true, jsonPkg: true, fmtPkg: true, iterPkg: true, "os": true, filepathName: true, atomicName: true, syncPkg: true,
-		timePkg: true, errorsPkg: true, strconvPkg: true, stringsPkg: true, mathPkg: true, "regexp": true, "embed": true,
+		rtName: true, jsonPkg: true, fmtPkg: true, iterPkg: true, "os": true, atomicName: true, syncPkg: true,
+		timePkg: true, strconvPkg: true, stringsPkg: true, slicesPkg: true, mathPkg: true, "regexp": true, "embed": true,
 	}
 )
 

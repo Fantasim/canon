@@ -5,10 +5,9 @@ package shop
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"iter"
-	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -751,18 +750,18 @@ func (self *ShopSnapshot) Config() *Config { return &self.config }
 // build` already did, and filled every default.
 func LoadShopSnapshot(dir string) (*ShopSnapshot, error) {
 	s := &ShopSnapshot{}
-	if err := loadItems(filepath.Join(dir, "items.json"), &s.items); err != nil {
+	if err := loadItems(dir+"/items.json", &s.items); err != nil {
 		return nil, err
 	}
-	if err := loadConfig(filepath.Join(dir, "config.json"), &s.config); err != nil {
+	if err := loadConfig(dir+"/config.json", &s.config); err != nil {
 		return nil, err
 	}
 	for i := range s.items.rows.Len() {
-		if err := resolveItem(filepath.Join(dir, "items.json"), fmt.Sprintf("rows[%d].", i), s, s.items.rows.At(i)); err != nil {
+		if err := resolveItem(dir+"/items.json", fmt.Sprintf("rows[%d].", i), s, s.items.rows.At(i)); err != nil {
 			return nil, err
 		}
 	}
-	if err := resolveConfig(filepath.Join(dir, "config.json"), "value.", s, &s.config); err != nil {
+	if err := resolveConfig(dir+"/config.json", "value.", s, &s.config); err != nil {
 		return nil, err
 	}
 	return s, nil
@@ -795,76 +794,169 @@ var Store ShopStore
 
 // jsonObject reads the object at path: null or another kind fails the load.
 func jsonObject(name, path string, raw json.RawMessage) (map[string]json.RawMessage, error) {
-	var obj map[string]json.RawMessage
-	if err := json.Unmarshal(raw, &obj); err != nil {
-		return nil, jsonError(name, path, err)
-	}
-	if obj == nil {
+	if string(raw) == "null" {
 		return nil, fmt.Errorf("%s: %s: null", name, strings.TrimSuffix(path, "."))
+	}
+	var obj map[string]json.RawMessage
+	if json.Unmarshal(raw, &obj) != nil {
+		return nil, fmt.Errorf("%s: %s: expected an object", name, strings.TrimSuffix(path, "."))
 	}
 	return obj, nil
 }
 
-// jsonError names where a value of the wrong kind sits in the file, and what it is.
-func jsonError(name, path string, err error) error {
-	var kind *json.UnmarshalTypeError
-	if errors.As(err, &kind) {
-		return fmt.Errorf("%s: %s: unexpected %s", name, strings.TrimSuffix(path+kind.Field, "."), kind.Value)
-	}
-	return fmt.Errorf("%s: %s: %w", name, strings.TrimSuffix(path, "."), err)
-}
-
-// jsonFolds reports a key equal to one of keys but for letter case.
-func jsonFolds(key string, keys ...string) bool {
-	for _, k := range keys {
-		if strings.EqualFold(key, k) {
-			return true
+// jsonKeys fails the load on a key of obj that is none of keys, sorted, but differs from one
+// only in ASCII letter case: the smallest such key in byte order.
+func jsonKeys(name, path string, obj map[string]json.RawMessage, keys ...string) error {
+	bad, want := "", ""
+	for k := range obj {
+		if _, ok := slices.BinarySearch(keys, k); ok {
+			continue
+		}
+		for _, key := range keys {
+			if rt.EqualFold(k, key) && (want == "" || k < bad) {
+				bad, want = k, key
+			}
 		}
 	}
-	return false
+	if want == "" {
+		return nil
+	}
+	return fmt.Errorf("%s: %s%s: differs from \"%s\" only in letter case", name, path, bad, want)
 }
 
-// jsonCase is the error of key, the smallest folding key of an object in byte order so the
-// message never depends on map order; nil for "".
-func jsonCase(name, path, key string, keys ...string) error {
-	for _, k := range keys {
-		if key != "" && strings.EqualFold(key, k) {
-			return fmt.Errorf("%s: %s%s: differs from %q only in letter case", name, path, key, k)
-		}
+// jsonNeed is obj[key], which must be present and not null.
+func jsonNeed(name, path string, obj map[string]json.RawMessage, key string) (json.RawMessage, error) {
+	r, ok := obj[key]
+	if !ok {
+		return nil, rt.Missing(name, path, key)
+	}
+	if string(r) == "null" {
+		return nil, fmt.Errorf("%s: %s%s: null", name, path, key)
+	}
+	return r, nil
+}
+
+// jsonMay is obj[key], nil when it is absent or null.
+func jsonMay(obj map[string]json.RawMessage, key string) json.RawMessage {
+	if r := obj[key]; string(r) != "null" {
+		return r
 	}
 	return nil
 }
 
-// jsonRowID reads a table row's $id and $retired.
+// jsonCell is a lookup cell of obj: absent fails the load, null is none (nil).
+func jsonCell(name, path string, obj map[string]json.RawMessage, key string) (json.RawMessage, error) {
+	if _, ok := obj[key]; !ok {
+		return nil, rt.Missing(name, path, key)
+	}
+	return jsonMay(obj, key), nil
+}
+
+// jsonRead reads raw into dst, a string, bool, float or array: null, or a value of another
+// kind, fails the load at path+key, naming what was expected.
+func jsonRead(name, path, key string, raw json.RawMessage, dst any) error {
+	if string(raw) == "null" {
+		return fmt.Errorf("%s: %s%s: null", name, path, key)
+	}
+	if json.Unmarshal(raw, dst) == nil {
+		return nil
+	}
+	want := "expected a string"
+	switch dst.(type) {
+	case *bool:
+		want = "expected true or false"
+	case *float64:
+		want = "expected a number"
+	case *float32:
+		want = "expected a number that fits Float32"
+	case *[]json.RawMessage:
+		want = "expected an array"
+	}
+	return fmt.Errorf("%s: %s%s: %s", name, path, key, want)
+}
+
+// jsonInt reads an integer token from lo to hi: null, or anything else, fails the load at
+// path+key.
+func jsonInt(name, path, key string, raw json.RawMessage, lo, hi int64) (int64, error) {
+	if string(raw) == "null" {
+		return 0, fmt.Errorf("%s: %s%s: null", name, path, key)
+	}
+	var n int64
+	if json.Unmarshal(raw, &n) == nil && n >= lo && n <= hi {
+		return n, nil
+	}
+	if lo == -1<<63 && hi == 1<<63-1 {
+		return 0, fmt.Errorf("%s: %s%s: expected an integer", name, path, key)
+	}
+	return 0, fmt.Errorf("%s: %s%s: expected an integer from %d to %d", name, path, key, lo, hi)
+}
+
+// jsonSlot reads pairs slot k, v of obj: nil, nil for an empty slot, which sets *empty; an
+// incomplete, null or late slot fails the load at its first key present.
+func jsonSlot(name, path string, obj map[string]json.RawMessage, k, v string, empty *bool) (json.RawMessage, json.RawMessage, error) {
+	kr, hasK := obj[k]
+	vr, hasV := obj[v]
+	first := k
+	if !hasK {
+		first = v
+	}
+	switch {
+	case !hasK && !hasV:
+		*empty = true
+		return nil, nil, nil
+	case hasK != hasV:
+		return nil, nil, fmt.Errorf("%s: %s%s: incomplete pairs slot", name, path, first)
+	case string(kr) == "null" || string(vr) == "null":
+		return nil, nil, fmt.Errorf("%s: %s%s: null in a pairs slot", name, path, first)
+	case *empty:
+		return nil, nil, fmt.Errorf("%s: %s%s: pairs slot after an empty one", name, path, first)
+	}
+	return kr, vr, nil
+}
+
+// jsonSame reports raw JSON-equal to the none marker: a string after decoding, an integer
+// only to an integer token, another number by value, [] and {} when empty.
+func jsonSame(raw json.RawMessage, marker string) bool {
+	switch marker[0] {
+	case '"':
+		var a, m string
+		return json.Unmarshal(raw, &a) == nil && json.Unmarshal([]byte(marker), &m) == nil && a == m
+	case '[':
+		var a []json.RawMessage
+		return json.Unmarshal(raw, &a) == nil && a != nil && len(a) == 0
+	case '{':
+		var a map[string]json.RawMessage
+		return json.Unmarshal(raw, &a) == nil && a != nil && len(a) == 0
+	case 't', 'f':
+		return string(raw) == marker
+	}
+	var a, m int64
+	if json.Unmarshal([]byte(marker), &m) == nil {
+		return json.Unmarshal(raw, &a) == nil && a == m
+	}
+	var af, mf float64
+	return json.Unmarshal(raw, &af) == nil && json.Unmarshal([]byte(marker), &mf) == nil && af == mf
+}
+
+// jsonRowID reads a table row's $id, and its $retired, which must be true when present.
 func jsonRowID(name, path string, raw json.RawMessage) (string, bool, error) {
 	obj, err := jsonObject(name, path, raw)
 	if err != nil {
 		return "", false, err
 	}
-	r, ok := obj["$id"]
-	if !ok {
-		return "", false, rt.Missing(name, path, "$id")
+	r, err := jsonNeed(name, path, obj, "$id")
+	if err != nil {
+		return "", false, err
 	}
-	var id *string
-	if err := json.Unmarshal(r, &id); err != nil {
-		return "", false, jsonError(name, path+"$id", err)
+	var id string
+	if err := jsonRead(name, path, "$id", r, &id); err != nil {
+		return "", false, err
 	}
-	if id == nil {
-		return "", false, fmt.Errorf("%s: %s$id: null", name, path)
+	r, ok := obj["$retired"]
+	if ok && string(r) != "true" {
+		return "", false, fmt.Errorf("%s: %s$retired: expected true", name, path)
 	}
-	if r, ok = obj["$retired"]; !ok {
-		return *id, false, nil
-	}
-	var retired bool
-	if err := json.Unmarshal(r, &retired); err != nil || !retired {
-		return "", false, fmt.Errorf("%s: %s$retired: not true", name, path)
-	}
-	return *id, true, nil
-}
-
-type wirePoint struct {
-	X *int16 `json:"x"`
-	Y *int16 `json:"y"`
+	return id, ok, nil
 }
 
 func decodePoint(name, path string, raw json.RawMessage, out *Point) error {
@@ -872,33 +964,27 @@ func decodePoint(name, path string, raw json.RawMessage, out *Point) error {
 	if err != nil {
 		return err
 	}
-	bad2 := ""
-	for k1 := range obj {
-		switch k1 {
-		case "x", "y":
-		default:
-			if jsonFolds(k1, "x", "y") && (bad2 == "" || k1 < bad2) {
-				bad2 = k1
-			}
-		}
-	}
-	if err := jsonCase(name, path, bad2, "x", "y"); err != nil {
+	if err := jsonKeys(name, path, obj, "x", "y"); err != nil {
 		return err
 	}
-	var w wirePoint
-	if err := json.Unmarshal(raw, &w); err != nil {
-		return jsonError(name, path, err)
+	r1, err := jsonNeed(name, path, obj, "x")
+	if err != nil {
+		return err
 	}
-	switch {
-	case w.X == nil:
-		return rt.Missing(name, path, "x")
-	case w.Y == nil:
-		return rt.Missing(name, path, "y")
+	n2, err := jsonInt(name, path, "x", r1, -32768, 32767)
+	if err != nil {
+		return err
 	}
-	*out = Point{
-		x: *w.X,
-		y: *w.Y,
+	out.x = int16(n2)
+	r3, err := jsonNeed(name, path, obj, "y")
+	if err != nil {
+		return err
 	}
+	n4, err := jsonInt(name, path, "y", r3, -32768, 32767)
+	if err != nil {
+		return err
+	}
+	out.y = int16(n4)
 	return nil
 }
 
@@ -907,26 +993,16 @@ func decodeReward(name, path string, raw json.RawMessage, out *Reward) error {
 	if err != nil {
 		return err
 	}
-	bad4 := ""
-	for k3 := range obj {
-		switch k3 {
-		case "type":
-		default:
-			if jsonFolds(k3, "type") && (bad4 == "" || k3 < bad4) {
-				bad4 = k3
-			}
-		}
-	}
-	if err := jsonCase(name, path, bad4, "type"); err != nil {
+	if err := jsonKeys(name, path, obj, "type"); err != nil {
 		return err
 	}
-	r5, ok6 := obj["type"]
-	if !ok6 {
-		return rt.Missing(name, path, "type")
+	r1, err := jsonNeed(name, path, obj, "type")
+	if err != nil {
+		return err
 	}
 	var tag string
-	if err := json.Unmarshal(r5, &tag); err != nil {
-		return jsonError(name, path+"type", err)
+	if err := jsonRead(name, path, "type", r1, &tag); err != nil {
+		return err
 	}
 	switch tag {
 	case "item":
@@ -944,14 +1020,9 @@ func decodeReward(name, path string, raw json.RawMessage, out *Reward) error {
 	case "none":
 		*out = Reward{kind: RewardKindNothing}
 	default:
-		return fmt.Errorf("%s: %stype: unknown case %q", name, path, tag)
+		return fmt.Errorf("%s: %stype: unknown case %s", name, path, tag)
 	}
 	return nil
-}
-
-type wireRewardItem struct {
-	ItemID *string `json:"itemId"`
-	Count  *int32  `json:"count"`
 }
 
 func decodeRewardItem(name, path string, raw json.RawMessage, out *RewardItem) error {
@@ -959,38 +1030,28 @@ func decodeRewardItem(name, path string, raw json.RawMessage, out *RewardItem) e
 	if err != nil {
 		return err
 	}
-	bad2 := ""
-	for k1 := range obj {
-		switch k1 {
-		case "count", "itemId", "type":
-		default:
-			if jsonFolds(k1, "count", "itemId", "type") && (bad2 == "" || k1 < bad2) {
-				bad2 = k1
-			}
-		}
-	}
-	if err := jsonCase(name, path, bad2, "count", "itemId", "type"); err != nil {
+	if err := jsonKeys(name, path, obj, "count", "itemId", "type"); err != nil {
 		return err
 	}
-	var w wireRewardItem
-	if err := json.Unmarshal(raw, &w); err != nil {
-		return jsonError(name, path, err)
+	r1, err := jsonNeed(name, path, obj, "itemId")
+	if err != nil {
+		return err
 	}
-	switch {
-	case w.ItemID == nil:
-		return rt.Missing(name, path, "itemId")
-	case w.Count == nil:
-		return rt.Missing(name, path, "count")
+	var v2 string
+	if err := jsonRead(name, path, "itemId", r1, &v2); err != nil {
+		return err
 	}
-	*out = RewardItem{
-		itemID: *w.ItemID,
-		count:  *w.Count,
+	out.itemID = v2
+	r3, err := jsonNeed(name, path, obj, "count")
+	if err != nil {
+		return err
 	}
+	n4, err := jsonInt(name, path, "count", r3, -2147483648, 2147483647)
+	if err != nil {
+		return err
+	}
+	out.count = int32(n4)
 	return nil
-}
-
-type wireRewardGold struct {
-	Amount *uint64 `json:"amount"`
 }
 
 func decodeRewardGold(name, path string, raw json.RawMessage, out *RewardGold) error {
@@ -998,60 +1059,19 @@ func decodeRewardGold(name, path string, raw json.RawMessage, out *RewardGold) e
 	if err != nil {
 		return err
 	}
-	bad2 := ""
-	for k1 := range obj {
-		switch k1 {
-		case "amount", "type":
-		default:
-			if jsonFolds(k1, "amount", "type") && (bad2 == "" || k1 < bad2) {
-				bad2 = k1
-			}
-		}
-	}
-	if err := jsonCase(name, path, bad2, "amount", "type"); err != nil {
+	if err := jsonKeys(name, path, obj, "amount", "type"); err != nil {
 		return err
 	}
-	var w wireRewardGold
-	if err := json.Unmarshal(raw, &w); err != nil {
-		return jsonError(name, path, err)
+	r1, err := jsonNeed(name, path, obj, "amount")
+	if err != nil {
+		return err
 	}
-	switch {
-	case w.Amount == nil:
-		return rt.Missing(name, path, "amount")
+	n2, err := jsonInt(name, path, "amount", r1, 0, 9223372036854775807)
+	if err != nil {
+		return err
 	}
-	*out = RewardGold{
-		amount: *w.Amount,
-	}
+	out.amount = uint64(n2)
 	return nil
-}
-
-type wireItem struct {
-	Code       *uint16                       `json:"code"`
-	Label      *string                       `json:"label"`
-	Price      *float64                      `json:"price"`
-	Weight     *float32                      `json:"weight"`
-	Tradable   *int64                        `json:"isTradable"`
-	Tone       *string                       `json:"tone"`
-	Element    *uint16                       `json:"element"`
-	Delay      *int64                        `json:"delaySec"`
-	Note       *json.RawMessage              `json:"note"`
-	Bonus      *int64                        `json:"bonus"`
-	Origin     *json.RawMessage              `json:"origin"`
-	Tags       *[]*string                    `json:"tags"`
-	Path       *[]json.RawMessage            `json:"path"`
-	Reward     *json.RawMessage              `json:"reward"`
-	ShelfID    *string                       `json:"shelf"`
-	Role       *string                       `json:"role"`
-	RankID     *string                       `json:"rank"`
-	Heavy      *bool                         `json:"$heavy"`
-	Nick       *string                       `json:"$nick"`
-	BestID     *string                       `json:"$best"`
-	RelatedIDs *[]*string                    `json:"$related"`
-	Score      *map[string]map[string]*int64 `json:"$score"`
-	LabelIn    *map[string]*string           `json:"$labelIn"`
-	ShelfFor   *map[string]*string           `json:"$shelfFor"`
-	PairFor    *map[string]*string           `json:"$pairFor"`
-	Kin        *map[string]*[]*string        `json:"$kin"`
 }
 
 func decodeItem(name, path string, raw json.RawMessage, out *Item) error {
@@ -1059,343 +1079,399 @@ func decodeItem(name, path string, raw json.RawMessage, out *Item) error {
 	if err != nil {
 		return err
 	}
-	bad2 := ""
-	for k1 := range obj {
-		switch k1 {
-		case "$best", "$heavy", "$id", "$kin", "$labelIn", "$nick", "$pairFor", "$related", "$retired", "$score", "$shelfFor", "bonus", "code", "delaySec", "element", "isTradable", "label", "legacy", "note", "odd,key", "origin", "path", "price", "rank", "reward", "role", "shelf", "tags", "tone", "weight":
-		default:
-			if jsonFolds(k1, "$best", "$heavy", "$id", "$kin", "$labelIn", "$nick", "$pairFor", "$related", "$retired", "$score", "$shelfFor", "bonus", "code", "delaySec", "element", "isTradable", "label", "legacy", "note", "odd,key", "origin", "path", "price", "rank", "reward", "role", "shelf", "tags", "tone", "weight") && (bad2 == "" || k1 < bad2) {
-				bad2 = k1
-			}
-		}
-	}
-	if err := jsonCase(name, path, bad2, "$best", "$heavy", "$id", "$kin", "$labelIn", "$nick", "$pairFor", "$related", "$retired", "$score", "$shelfFor", "bonus", "code", "delaySec", "element", "isTradable", "label", "legacy", "note", "odd,key", "origin", "path", "price", "rank", "reward", "role", "shelf", "tags", "tone", "weight"); err != nil {
+	if err := jsonKeys(name, path, obj, "$best", "$heavy", "$id", "$kin", "$labelIn", "$nick", "$pairFor", "$related", "$retired", "$score", "$shelfFor", "bonus", "code", "delaySec", "element", "isTradable", "label", "legacy", "note", "odd,key", "origin", "path", "price", "rank", "reward", "role", "shelf", "tags", "tone", "weight"); err != nil {
 		return err
 	}
-	var w wireItem
-	if err := json.Unmarshal(raw, &w); err != nil {
-		return jsonError(name, path, err)
-	}
-	switch {
-	case w.Code == nil:
-		return rt.Missing(name, path, "code")
-	case w.Label == nil:
-		return rt.Missing(name, path, "label")
-	case w.Price == nil:
-		return rt.Missing(name, path, "price")
-	case w.Weight == nil:
-		return rt.Missing(name, path, "weight")
-	case w.Tradable == nil:
-		return rt.Missing(name, path, "isTradable")
-	case w.Tone == nil:
-		return rt.Missing(name, path, "tone")
-	case w.Element == nil:
-		return rt.Missing(name, path, "element")
-	case w.Delay == nil:
-		return rt.Missing(name, path, "delaySec")
-	case w.Tags == nil:
-		return rt.Missing(name, path, "tags")
-	case w.Path == nil:
-		return rt.Missing(name, path, "path")
-	case w.Reward == nil:
-		return rt.Missing(name, path, "reward")
-	case w.Role == nil:
-		return rt.Missing(name, path, "role")
-	case w.RankID == nil:
-		return rt.Missing(name, path, "rank")
-	case w.Heavy == nil:
-		return rt.Missing(name, path, "$heavy")
-	case w.BestID == nil:
-		return rt.Missing(name, path, "$best")
-	case w.Score == nil:
-		return rt.Missing(name, path, "$score")
-	case w.LabelIn == nil:
-		return rt.Missing(name, path, "$labelIn")
-	case w.ShelfFor == nil:
-		return rt.Missing(name, path, "$shelfFor")
-	case w.PairFor == nil:
-		return rt.Missing(name, path, "$pairFor")
-	case w.Kin == nil:
-		return rt.Missing(name, path, "$kin")
-	}
-	*out = Item{
-		code:    *w.Code,
-		label:   *w.Label,
-		price:   *w.Price,
-		weight:  *w.Weight,
-		delay:   rt.DurationFromMs(*w.Delay * 1000),
-		heavy:   *w.Heavy,
-		best_id: ItemID(*w.BestID),
-	}
-	if *w.Tradable != 0 && *w.Tradable != 1 {
-		return fmt.Errorf("%s: %sisTradable: expected 0 or 1, not %v", name, path, *w.Tradable)
-	}
-	out.tradable = *w.Tradable == 1
-	v3, ok4 := ParseTone(*w.Tone)
-	if !ok4 {
-		return fmt.Errorf("%s: %stone: unknown value %v", name, path, *w.Tone)
-	}
-	out.tone = v3
-	v5, ok6 := ElementFromCode(*w.Element)
-	if !ok6 {
-		return fmt.Errorf("%s: %selement: unknown value %v", name, path, *w.Element)
-	}
-	out.element = v5
-	if w.Note != nil && string(*w.Note) != "\"\"" {
-		var v7 string
-		if err := json.Unmarshal(*w.Note, &v7); err != nil {
-			return jsonError(name, path+"note", err)
-		}
-		out.note, out.note_ok = v7, true
-	}
-	if w.Bonus != nil {
-		out.bonus, out.bonus_ok = *w.Bonus, true
-	}
-	if w.Origin != nil {
-		v8 := &Point{}
-		if err := decodePoint(name, path+"origin.", *w.Origin, v8); err != nil {
-			return err
-		}
-		out.origin = v8
-	}
-	v9 := make([]string, len(*w.Tags))
-	for j10, x11 := range *w.Tags {
-		if x11 == nil {
-			return fmt.Errorf("%s: %stags[%d]: null", name, path, j10)
-		}
-		v9[j10] = *x11
-	}
-	out.tags = rt.MakeList(v9)
-	v12 := make([]*Point, len(*w.Path))
-	for j13, x14 := range *w.Path {
-		v15 := &Point{}
-		if err := decodePoint(name, fmt.Sprintf("%spath[%d].", path, j13), x14, v15); err != nil {
-			return err
-		}
-		v12[j13] = v15
-	}
-	out.path = rt.MakeList(v12)
-	v16 := &Reward{}
-	if err := decodeReward(name, path+"reward.", *w.Reward, v16); err != nil {
+	r1, err := jsonNeed(name, path, obj, "code")
+	if err != nil {
 		return err
 	}
-	out.reward = v16
-	if w.ShelfID != nil {
-		out.shelf_id, out.shelf_ok = *w.ShelfID, true
+	n2, err := jsonInt(name, path, "code", r1, 0, 65535)
+	if err != nil {
+		return err
 	}
-	v17, ok18 := base.ParseRole(*w.Role)
+	out.code = uint16(n2)
+	r3, err := jsonNeed(name, path, obj, "label")
+	if err != nil {
+		return err
+	}
+	var v4 string
+	if err := jsonRead(name, path, "label", r3, &v4); err != nil {
+		return err
+	}
+	out.label = v4
+	r5, err := jsonNeed(name, path, obj, "price")
+	if err != nil {
+		return err
+	}
+	var v6 float64
+	if err := jsonRead(name, path, "price", r5, &v6); err != nil {
+		return err
+	}
+	out.price = v6
+	r7, err := jsonNeed(name, path, obj, "weight")
+	if err != nil {
+		return err
+	}
+	var v8 float32
+	if err := jsonRead(name, path, "weight", r7, &v8); err != nil {
+		return err
+	}
+	out.weight = v8
+	r9, err := jsonNeed(name, path, obj, "isTradable")
+	if err != nil {
+		return err
+	}
+	n10, err := jsonInt(name, path, "isTradable", r9, 0, 1)
+	if err != nil {
+		return err
+	}
+	out.tradable = n10 == 1
+	r11, err := jsonNeed(name, path, obj, "tone")
+	if err != nil {
+		return err
+	}
+	var v12 string
+	if err := jsonRead(name, path, "tone", r11, &v12); err != nil {
+		return err
+	}
+	v13, ok14 := ParseTone(v12)
+	if !ok14 {
+		return fmt.Errorf("%s: %stone: unknown value %s", name, path, v12)
+	}
+	out.tone = v13
+	r15, err := jsonNeed(name, path, obj, "element")
+	if err != nil {
+		return err
+	}
+	n16, err := jsonInt(name, path, "element", r15, 0, 65535)
+	if err != nil {
+		return err
+	}
+	v17, ok18 := ElementFromCode(uint16(n16))
 	if !ok18 {
-		return fmt.Errorf("%s: %srole: unknown value %v", name, path, *w.Role)
+		return fmt.Errorf("%s: %selement: unknown value %d", name, path, n16)
 	}
-	out.role = v17
-	v19, ok20 := base.ParseRankID(*w.RankID)
-	if !ok20 {
-		return fmt.Errorf("%s: %srank: unknown value %v", name, path, *w.RankID)
-	}
-	out.rank_id = v19
-	if w.Nick != nil {
-		out.nick, out.nick_ok = *w.Nick, true
-	}
-	if w.RelatedIDs != nil {
-		v21 := make([]ItemID, len(*w.RelatedIDs))
-		for j22, x23 := range *w.RelatedIDs {
-			if x23 == nil {
-				return fmt.Errorf("%s: %s$related[%d]: null", name, path, j22)
-			}
-			v21[j22] = ItemID(*x23)
-		}
-		out.related_ids, out.related_ok = rt.MakeList(v21), true
-	}
-	bad25 := ""
-	for k24 := range *w.Score {
-		switch k24 {
-		case "info", "legacy", "series-1", "warning":
-		default:
-			if jsonFolds(k24, "info", "legacy", "series-1", "warning") && (bad25 == "" || k24 < bad25) {
-				bad25 = k24
-			}
-		}
-	}
-	if err := jsonCase(name, path+"$score.", bad25, "info", "legacy", "series-1", "warning"); err != nil {
+	out.element = v17
+	r19, err := jsonNeed(name, path, obj, "delaySec")
+	if err != nil {
 		return err
 	}
-	for j26, k27 := range [...]string{"warning", "info", "series-1", "legacy"} {
-		m28, ok29 := (*w.Score)[k27]
-		if !ok29 {
-			return rt.Missing(name, path+"$score.", k27)
-		}
-		bad31 := ""
-		for k30 := range m28 {
-			switch k30 {
-			case "false", "true":
-			default:
-				if jsonFolds(k30, "false", "true") && (bad31 == "" || k30 < bad31) {
-					bad31 = k30
-				}
-			}
-		}
-		if err := jsonCase(name, fmt.Sprintf("%s$score.%s.", path, k27), bad31, "false", "true"); err != nil {
+	n20, err := jsonInt(name, path, "delaySec", r19, -9223372036, 9223372036)
+	if err != nil {
+		return err
+	}
+	out.delay = rt.DurationFromMs(n20 * 1000)
+	if r21 := jsonMay(obj, "note"); r21 != nil && !jsonSame(r21, "\"\"") {
+		var v22 string
+		if err := jsonRead(name, path, "note", r21, &v22); err != nil {
 			return err
 		}
-		for j32, k33 := range [...]string{"false", "true"} {
-			m34, ok35 := m28[k33]
-			if !ok35 {
-				return rt.Missing(name, fmt.Sprintf("%s$score.%s.", path, k27), k33)
-			}
-			if m34 == nil {
-				return fmt.Errorf("%s: %s$score.%s.%s: null", name, path, k27, k33)
-			}
-			out.score[j26][j32] = *m34
-		}
+		out.note, out.note_ok = v22, true
 	}
-	bad37 := ""
-	for k36 := range *w.LabelIn {
-		switch k36 {
-		case "1", "300":
-		default:
-			if jsonFolds(k36, "1", "300") && (bad37 == "" || k36 < bad37) {
-				bad37 = k36
-			}
-		}
-	}
-	if err := jsonCase(name, path+"$labelIn.", bad37, "1", "300"); err != nil {
-		return err
-	}
-	for j38, k39 := range [...]string{"1", "300"} {
-		m40, ok41 := (*w.LabelIn)[k39]
-		if !ok41 {
-			return rt.Missing(name, path+"$labelIn.", k39)
-		}
-		if m40 != nil {
-			out.labelIn[j38].v, out.labelIn[j38].ok = *m40, true
-		}
-	}
-	bad43 := ""
-	for k42 := range *w.ShelfFor {
-		switch k42 {
-		case "info", "legacy", "series-1", "warning":
-		default:
-			if jsonFolds(k42, "info", "legacy", "series-1", "warning") && (bad43 == "" || k42 < bad43) {
-				bad43 = k42
-			}
-		}
-	}
-	if err := jsonCase(name, path+"$shelfFor.", bad43, "info", "legacy", "series-1", "warning"); err != nil {
-		return err
-	}
-	for j44, k45 := range [...]string{"warning", "info", "series-1", "legacy"} {
-		m46, ok47 := (*w.ShelfFor)[k45]
-		if !ok47 {
-			return rt.Missing(name, path+"$shelfFor.", k45)
-		}
-		if m46 != nil {
-			out.shelfFor[j44].v, out.shelfFor[j44].ok = *m46, true
-		}
-	}
-	bad49 := ""
-	for k48 := range *w.PairFor {
-		switch k48 {
-		case "info", "legacy", "series-1", "warning":
-		default:
-			if jsonFolds(k48, "info", "legacy", "series-1", "warning") && (bad49 == "" || k48 < bad49) {
-				bad49 = k48
-			}
-		}
-	}
-	if err := jsonCase(name, path+"$pairFor.", bad49, "info", "legacy", "series-1", "warning"); err != nil {
-		return err
-	}
-	for j50, k51 := range [...]string{"warning", "info", "series-1", "legacy"} {
-		m52, ok53 := (*w.PairFor)[k51]
-		if !ok53 {
-			return rt.Missing(name, path+"$pairFor.", k51)
-		}
-		if m52 != nil {
-			out.pairFor_id[j50].v, out.pairFor_id[j50].ok = ItemID(*m52), true
-		}
-	}
-	bad55 := ""
-	for k54 := range *w.Kin {
-		switch k54 {
-		case "false", "true":
-		default:
-			if jsonFolds(k54, "false", "true") && (bad55 == "" || k54 < bad55) {
-				bad55 = k54
-			}
-		}
-	}
-	if err := jsonCase(name, path+"$kin.", bad55, "false", "true"); err != nil {
-		return err
-	}
-	for j56, k57 := range [...]string{"false", "true"} {
-		m58, ok59 := (*w.Kin)[k57]
-		if !ok59 {
-			return rt.Missing(name, path+"$kin.", k57)
-		}
-		if m58 == nil {
-			return fmt.Errorf("%s: %s$kin.%s: null", name, path, k57)
-		}
-		v60 := make([]ItemID, len(*m58))
-		for j61, x62 := range *m58 {
-			if x62 == nil {
-				return fmt.Errorf("%s: %s$kin.%s[%d]: null", name, path, k57, j61)
-			}
-			v60[j61] = ItemID(*x62)
-		}
-		out.kin_ids[j56] = rt.MakeList(v60)
-	}
-	var p63 *int64
-	if r64, ok65 := obj["legacy"]; ok65 {
-		o66, err := jsonObject(name, path+"legacy.", r64)
+	if r23 := jsonMay(obj, "bonus"); r23 != nil {
+		n24, err := jsonInt(name, path, "bonus", r23, -9223372036854775808, 9223372036854775807)
 		if err != nil {
 			return err
 		}
-		bad68 := ""
-		for k67 := range o66 {
-			switch k67 {
-			case "max":
-			default:
-				if jsonFolds(k67, "max") && (bad68 == "" || k67 < bad68) {
-					bad68 = k67
-				}
-			}
-		}
-		if err := jsonCase(name, path+"legacy.", bad68, "max"); err != nil {
+		out.bonus, out.bonus_ok = n24, true
+	}
+	if r25 := jsonMay(obj, "origin"); r25 != nil {
+		v26 := &Point{}
+		if err := decodePoint(name, path+"origin.", r25, v26); err != nil {
 			return err
 		}
-		if r69, ok70 := o66["max"]; ok70 {
-			if err := json.Unmarshal(r69, &p63); err != nil {
-				return jsonError(name, path+"legacy.max", err)
-			}
-		}
+		out.origin = v26
 	}
-	if p63 == nil {
+	r27, err := jsonNeed(name, path, obj, "tags")
+	if err != nil {
+		return err
+	}
+	var v28 []json.RawMessage
+	if err := jsonRead(name, path, "tags", r27, &v28); err != nil {
+		return err
+	}
+	v29 := make([]string, len(v28))
+	for j30, x31 := range v28 {
+		var v32 string
+		if err := jsonRead(name, path, fmt.Sprintf("tags[%d]", j30), x31, &v32); err != nil {
+			return err
+		}
+		v29[j30] = v32
+	}
+	out.tags = rt.MakeList(v29)
+	r33, err := jsonNeed(name, path, obj, "path")
+	if err != nil {
+		return err
+	}
+	var v34 []json.RawMessage
+	if err := jsonRead(name, path, "path", r33, &v34); err != nil {
+		return err
+	}
+	v35 := make([]*Point, len(v34))
+	for j36, x37 := range v34 {
+		v38 := &Point{}
+		if err := decodePoint(name, fmt.Sprintf("%spath[%d].", path, j36), x37, v38); err != nil {
+			return err
+		}
+		v35[j36] = v38
+	}
+	out.path = rt.MakeList(v35)
+	r39, err := jsonNeed(name, path, obj, "reward")
+	if err != nil {
+		return err
+	}
+	v40 := &Reward{}
+	if err := decodeReward(name, path+"reward.", r39, v40); err != nil {
+		return err
+	}
+	out.reward = v40
+	if r41 := jsonMay(obj, "shelf"); r41 != nil {
+		var v42 string
+		if err := jsonRead(name, path, "shelf", r41, &v42); err != nil {
+			return err
+		}
+		out.shelf_id, out.shelf_ok = v42, true
+	}
+	if r43, ok44 := obj["legacy"]; ok44 {
+		o45, err := jsonObject(name, path+"legacy.", r43)
+		if err != nil {
+			return err
+		}
+		if err := jsonKeys(name, path+"legacy.", o45, "max"); err != nil {
+			return err
+		}
+		r46, err := jsonNeed(name, path+"legacy.", o45, "max")
+		if err != nil {
+			return err
+		}
+		n47, err := jsonInt(name, path, "legacy.max", r46, -9223372036854775808, 9223372036854775807)
+		if err != nil {
+			return err
+		}
+		out.legacyMax = n47
+	} else {
 		return rt.Missing(name, path, "legacy.max")
 	}
-	out.legacyMax = *p63
-	var p71 *string
-	if r72, ok73 := obj["odd,key"]; ok73 {
-		if err := json.Unmarshal(r72, &p71); err != nil {
-			return jsonError(name, path+"odd,key", err)
+	r48, err := jsonNeed(name, path, obj, "role")
+	if err != nil {
+		return err
+	}
+	var v49 string
+	if err := jsonRead(name, path, "role", r48, &v49); err != nil {
+		return err
+	}
+	v50, ok51 := base.ParseRole(v49)
+	if !ok51 {
+		return fmt.Errorf("%s: %srole: unknown value %s", name, path, v49)
+	}
+	out.role = v50
+	r52, err := jsonNeed(name, path, obj, "rank")
+	if err != nil {
+		return err
+	}
+	var v53 string
+	if err := jsonRead(name, path, "rank", r52, &v53); err != nil {
+		return err
+	}
+	v54, ok55 := base.ParseRankID(v53)
+	if !ok55 {
+		return fmt.Errorf("%s: %srank: unknown value %s", name, path, v53)
+	}
+	out.rank_id = v54
+	r56, err := jsonNeed(name, path, obj, "odd,key")
+	if err != nil {
+		return err
+	}
+	var v57 string
+	if err := jsonRead(name, path, "odd,key", r56, &v57); err != nil {
+		return err
+	}
+	out.odd = v57
+	r58, err := jsonNeed(name, path, obj, "$heavy")
+	if err != nil {
+		return err
+	}
+	var v59 bool
+	if err := jsonRead(name, path, "$heavy", r58, &v59); err != nil {
+		return err
+	}
+	out.heavy = v59
+	if r60 := jsonMay(obj, "$nick"); r60 != nil {
+		var v61 string
+		if err := jsonRead(name, path, "$nick", r60, &v61); err != nil {
+			return err
+		}
+		out.nick, out.nick_ok = v61, true
+	}
+	r62, err := jsonNeed(name, path, obj, "$best")
+	if err != nil {
+		return err
+	}
+	var v63 ItemID
+	if err := jsonRead(name, path, "$best", r62, &v63); err != nil {
+		return err
+	}
+	out.best_id = v63
+	if r64 := jsonMay(obj, "$related"); r64 != nil {
+		var v65 []json.RawMessage
+		if err := jsonRead(name, path, "$related", r64, &v65); err != nil {
+			return err
+		}
+		v66 := make([]ItemID, len(v65))
+		for j67, x68 := range v65 {
+			var v69 ItemID
+			if err := jsonRead(name, path, fmt.Sprintf("$related[%d]", j67), x68, &v69); err != nil {
+				return err
+			}
+			v66[j67] = v69
+		}
+		out.related_ids, out.related_ok = rt.MakeList(v66), true
+	}
+	r70, err := jsonNeed(name, path, obj, "$score")
+	if err != nil {
+		return err
+	}
+	p72 := path + "$score."
+	o71, err := jsonObject(name, p72, r70)
+	if err != nil {
+		return err
+	}
+	if err := jsonKeys(name, p72, o71, "info", "legacy", "series-1", "warning"); err != nil {
+		return err
+	}
+	for j73, k74 := range [...]string{"warning", "info", "series-1", "legacy"} {
+		r75, err := jsonNeed(name, p72, o71, k74)
+		if err != nil {
+			return err
+		}
+		p76 := fmt.Sprintf("%s%s.", p72, k74)
+		o77, err := jsonObject(name, p76, r75)
+		if err != nil {
+			return err
+		}
+		if err := jsonKeys(name, p76, o77, "false", "true"); err != nil {
+			return err
+		}
+		for j78, k79 := range [...]string{"false", "true"} {
+			r80, err := jsonNeed(name, p76, o77, k79)
+			if err != nil {
+				return err
+			}
+			n81, err := jsonInt(name, p76, k79, r80, -9223372036854775808, 9223372036854775807)
+			if err != nil {
+				return err
+			}
+			out.score[j73][j78] = n81
 		}
 	}
-	if p71 == nil {
-		return rt.Missing(name, path, "odd,key")
+	r82, err := jsonNeed(name, path, obj, "$labelIn")
+	if err != nil {
+		return err
 	}
-	out.odd = *p71
+	p84 := path + "$labelIn."
+	o83, err := jsonObject(name, p84, r82)
+	if err != nil {
+		return err
+	}
+	if err := jsonKeys(name, p84, o83, "1", "300"); err != nil {
+		return err
+	}
+	for j85, k86 := range [...]string{"1", "300"} {
+		r87, err := jsonCell(name, p84, o83, k86)
+		if err != nil {
+			return err
+		}
+		if r87 != nil {
+			var v88 string
+			if err := jsonRead(name, p84, k86, r87, &v88); err != nil {
+				return err
+			}
+			out.labelIn[j85].v, out.labelIn[j85].ok = v88, true
+		}
+	}
+	r89, err := jsonNeed(name, path, obj, "$shelfFor")
+	if err != nil {
+		return err
+	}
+	p91 := path + "$shelfFor."
+	o90, err := jsonObject(name, p91, r89)
+	if err != nil {
+		return err
+	}
+	if err := jsonKeys(name, p91, o90, "info", "legacy", "series-1", "warning"); err != nil {
+		return err
+	}
+	for j92, k93 := range [...]string{"warning", "info", "series-1", "legacy"} {
+		r94, err := jsonCell(name, p91, o90, k93)
+		if err != nil {
+			return err
+		}
+		if r94 != nil {
+			var v95 string
+			if err := jsonRead(name, p91, k93, r94, &v95); err != nil {
+				return err
+			}
+			out.shelfFor[j92].v, out.shelfFor[j92].ok = v95, true
+		}
+	}
+	r96, err := jsonNeed(name, path, obj, "$pairFor")
+	if err != nil {
+		return err
+	}
+	p98 := path + "$pairFor."
+	o97, err := jsonObject(name, p98, r96)
+	if err != nil {
+		return err
+	}
+	if err := jsonKeys(name, p98, o97, "info", "legacy", "series-1", "warning"); err != nil {
+		return err
+	}
+	for j99, k100 := range [...]string{"warning", "info", "series-1", "legacy"} {
+		r101, err := jsonCell(name, p98, o97, k100)
+		if err != nil {
+			return err
+		}
+		if r101 != nil {
+			var v102 ItemID
+			if err := jsonRead(name, p98, k100, r101, &v102); err != nil {
+				return err
+			}
+			out.pairFor_id[j99].v, out.pairFor_id[j99].ok = v102, true
+		}
+	}
+	r103, err := jsonNeed(name, path, obj, "$kin")
+	if err != nil {
+		return err
+	}
+	p105 := path + "$kin."
+	o104, err := jsonObject(name, p105, r103)
+	if err != nil {
+		return err
+	}
+	if err := jsonKeys(name, p105, o104, "false", "true"); err != nil {
+		return err
+	}
+	for j106, k107 := range [...]string{"false", "true"} {
+		r108, err := jsonNeed(name, p105, o104, k107)
+		if err != nil {
+			return err
+		}
+		var v109 []json.RawMessage
+		if err := jsonRead(name, p105, k107, r108, &v109); err != nil {
+			return err
+		}
+		v110 := make([]ItemID, len(v109))
+		for j111, x112 := range v109 {
+			var v113 ItemID
+			if err := jsonRead(name, p105, fmt.Sprintf("%s[%d]", k107, j111), x112, &v113); err != nil {
+				return err
+			}
+			v110[j111] = v113
+		}
+		out.kin_ids[j106] = rt.MakeList(v110)
+	}
 	return nil
-}
-
-type wireShelf struct {
-	ID       *string    `json:"id"`
-	Slots    *int8      `json:"slots"`
-	ItemsIDs *[]*string `json:"items"`
-	NextID   *string    `json:"next"`
-	Delete   *int64     `json:"delete"`
-	I        *int64     `json:"i"`
-	Flags    *uint64    `json:"flags"`
-	Waits    *[]*int64  `json:"waits"`
-	Lit      *int64     `json:"lit"`
 }
 
 func decodeShelf(name, path string, raw json.RawMessage, out *Shelf) error {
@@ -1403,195 +1479,188 @@ func decodeShelf(name, path string, raw json.RawMessage, out *Shelf) error {
 	if err != nil {
 		return err
 	}
-	bad2 := ""
-	for k1 := range obj {
-		switch k1 {
-		case "b0", "b1", "b2", "delete", "flags", "i", "id", "items", "l0", "l1", "lit", "n0", "n1", "next", "size", "slots", "v0", "v1", "v2", "waits":
-		default:
-			if jsonFolds(k1, "b0", "b1", "b2", "delete", "flags", "i", "id", "items", "l0", "l1", "lit", "n0", "n1", "next", "size", "slots", "v0", "v1", "v2", "waits") && (bad2 == "" || k1 < bad2) {
-				bad2 = k1
-			}
-		}
-	}
-	if err := jsonCase(name, path, bad2, "b0", "b1", "b2", "delete", "flags", "i", "id", "items", "l0", "l1", "lit", "n0", "n1", "next", "size", "slots", "v0", "v1", "v2", "waits"); err != nil {
+	if err := jsonKeys(name, path, obj, "b0", "b1", "b2", "delete", "flags", "i", "id", "items", "l0", "l1", "lit", "n0", "n1", "next", "size", "slots", "v0", "v1", "v2", "waits"); err != nil {
 		return err
 	}
-	var w wireShelf
-	if err := json.Unmarshal(raw, &w); err != nil {
-		return jsonError(name, path, err)
+	r1, err := jsonNeed(name, path, obj, "id")
+	if err != nil {
+		return err
 	}
-	switch {
-	case w.ID == nil:
-		return rt.Missing(name, path, "id")
-	case w.Slots == nil:
-		return rt.Missing(name, path, "slots")
-	case w.ItemsIDs == nil:
-		return rt.Missing(name, path, "items")
-	case w.Delete == nil:
-		return rt.Missing(name, path, "delete")
-	case w.I == nil:
-		return rt.Missing(name, path, "i")
-	case w.Flags == nil:
-		return rt.Missing(name, path, "flags")
-	case w.Waits == nil:
-		return rt.Missing(name, path, "waits")
-	case w.Lit == nil:
-		return rt.Missing(name, path, "lit")
+	var v2 string
+	if err := jsonRead(name, path, "id", r1, &v2); err != nil {
+		return err
 	}
-	*out = Shelf{
-		id:      *w.ID,
-		slots:   *w.Slots,
-		delete_: *w.Delete,
-		i:       *w.I,
+	out.id = v2
+	r3, err := jsonNeed(name, path, obj, "slots")
+	if err != nil {
+		return err
 	}
-	v3 := make([]ItemID, len(*w.ItemsIDs))
-	for j4, x5 := range *w.ItemsIDs {
-		if x5 == nil {
-			return fmt.Errorf("%s: %sitems[%d]: null", name, path, j4)
+	n4, err := jsonInt(name, path, "slots", r3, -128, 127)
+	if err != nil {
+		return err
+	}
+	out.slots = int8(n4)
+	r5, err := jsonNeed(name, path, obj, "items")
+	if err != nil {
+		return err
+	}
+	var v6 []json.RawMessage
+	if err := jsonRead(name, path, "items", r5, &v6); err != nil {
+		return err
+	}
+	v7 := make([]ItemID, len(v6))
+	for j8, x9 := range v6 {
+		var v10 ItemID
+		if err := jsonRead(name, path, fmt.Sprintf("items[%d]", j8), x9, &v10); err != nil {
+			return err
 		}
-		v3[j4] = ItemID(*x5)
+		v7[j8] = v10
 	}
-	out.items_ids = rt.MakeList(v3)
-	if w.NextID != nil {
-		out.next_id, out.next_ok = *w.NextID, true
+	out.items_ids = rt.MakeList(v7)
+	if r11 := jsonMay(obj, "next"); r11 != nil {
+		var v12 string
+		if err := jsonRead(name, path, "next", r11, &v12); err != nil {
+			return err
+		}
+		out.next_id, out.next_ok = v12, true
 	}
-	if v6 := *w.Flags &^ 0x7; v6 != 0 {
-		return fmt.Errorf("%s: %sflags: unknown bits %#x", name, path, v6)
+	r13, err := jsonNeed(name, path, obj, "delete")
+	if err != nil {
+		return err
 	}
-	var v7 []Flag
-	for _, m8 := range [...]Flag{FlagA, FlagB, FlagC} {
-		if *w.Flags&uint64(m8) != 0 {
-			v7 = append(v7, m8)
-		}
+	n14, err := jsonInt(name, path, "delete", r13, -9223372036854775808, 9223372036854775807)
+	if err != nil {
+		return err
 	}
-	out.flags = rt.MakeList(v7)
-	v9 := make([]time.Duration, len(*w.Waits))
-	for j10, x11 := range *w.Waits {
-		if x11 == nil {
-			return fmt.Errorf("%s: %swaits[%d]: null", name, path, j10)
-		}
-		v9[j10] = rt.DurationFromMs(*x11 * 1000)
+	out.delete_ = n14
+	r15, err := jsonNeed(name, path, obj, "i")
+	if err != nil {
+		return err
 	}
-	out.waits = rt.MakeList(v9)
-	if *w.Lit != 0 && *w.Lit != 1 {
-		return fmt.Errorf("%s: %slit: expected 0 or 1, not %v", name, path, *w.Lit)
+	n16, err := jsonInt(name, path, "i", r15, -9223372036854775808, 9223372036854775807)
+	if err != nil {
+		return err
 	}
-	out.lit = *w.Lit == 1
-	var v12 []*Bonus
-	empty13 := false
-	for j14, k15 := range [...]string{"b0", "b1", "b2"} {
-		k16 := [...]string{"v0", "v1", "v2"}[j14]
-		r17, ok19 := obj[k15]
-		r18, ok20 := obj[k16]
-		switch {
-		case !ok19 && !ok20:
-			empty13 = true
-			continue
-		case !ok19 || !ok20:
-			return fmt.Errorf("%s: %s%s: incomplete pairs slot", name, path, k15)
-		case empty13:
-			return fmt.Errorf("%s: %s%s: pairs slot after an empty one", name, path, k15)
-		}
-		x21 := &Bonus{}
-		var p22 *string
-		if err := json.Unmarshal(r17, &p22); err != nil {
-			return jsonError(name, fmt.Sprintf("%s%s", path, k15), err)
-		}
-		if p22 == nil {
-			return rt.Missing(name, path, k15)
-		}
-		v23, ok24 := ParseTone(*p22)
-		if !ok24 {
-			return fmt.Errorf("%s: %s%s: unknown value %v", name, path, k15, *p22)
-		}
-		x21.stat = v23
-		var p25 *int64
-		if err := json.Unmarshal(r18, &p25); err != nil {
-			return jsonError(name, fmt.Sprintf("%s%s", path, k16), err)
-		}
-		if p25 == nil {
-			return rt.Missing(name, path, k16)
-		}
-		x21.amount = *p25
-		v12 = append(v12, x21)
-	}
-	out.bonuses = rt.MakeList(v12)
-	var p26 *int64
-	if r27, ok28 := obj["size"]; ok28 {
-		o29, err := jsonObject(name, path+"size.", r27)
+	out.i = n16
+	var v17 []*Bonus
+	empty18 := false
+	for j19, k20 := range [...]string{"b0", "b1", "b2"} {
+		k21 := [...]string{"v0", "v1", "v2"}[j19]
+		r22, r23, err := jsonSlot(name, path, obj, k20, k21, &empty18)
 		if err != nil {
 			return err
 		}
-		bad31 := ""
-		for k30 := range o29 {
-			switch k30 {
-			case "depth":
-			default:
-				if jsonFolds(k30, "depth") && (bad31 == "" || k30 < bad31) {
-					bad31 = k30
-				}
-			}
+		if r22 == nil {
+			continue
 		}
-		if err := jsonCase(name, path+"size.", bad31, "depth"); err != nil {
+		x24 := &Bonus{}
+		var v25 string
+		if err := jsonRead(name, path, k20, r22, &v25); err != nil {
 			return err
 		}
-		if r32, ok33 := o29["depth"]; ok33 {
-			if err := json.Unmarshal(r32, &p26); err != nil {
-				return jsonError(name, path+"size.depth", err)
-			}
+		v26, ok27 := ParseTone(v25)
+		if !ok27 {
+			return fmt.Errorf("%s: %s%s: unknown value %s", name, path, k20, v25)
+		}
+		x24.stat = v26
+		n28, err := jsonInt(name, path, k21, r23, -9223372036854775808, 9223372036854775807)
+		if err != nil {
+			return err
+		}
+		x24.amount = n28
+		v17 = append(v17, x24)
+	}
+	out.bonuses = rt.MakeList(v17)
+	r29, err := jsonNeed(name, path, obj, "flags")
+	if err != nil {
+		return err
+	}
+	n30, err := jsonInt(name, path, "flags", r29, 0, 9223372036854775807)
+	if err != nil {
+		return err
+	}
+	if v31 := uint64(n30) &^ 0x7; v31 != 0 {
+		return fmt.Errorf("%s: %sflags: unknown bits %#x", name, path, v31)
+	}
+	var v32 []Flag
+	for _, m33 := range [...]Flag{FlagA, FlagB, FlagC} {
+		if uint64(n30)&uint64(m33) != 0 {
+			v32 = append(v32, m33)
 		}
 	}
-	if p26 == nil {
+	out.flags = rt.MakeList(v32)
+	r34, err := jsonNeed(name, path, obj, "waits")
+	if err != nil {
+		return err
+	}
+	var v35 []json.RawMessage
+	if err := jsonRead(name, path, "waits", r34, &v35); err != nil {
+		return err
+	}
+	v36 := make([]time.Duration, len(v35))
+	for j37, x38 := range v35 {
+		n39, err := jsonInt(name, path, fmt.Sprintf("waits[%d]", j37), x38, -9223372036, 9223372036)
+		if err != nil {
+			return err
+		}
+		v36[j37] = rt.DurationFromMs(n39 * 1000)
+	}
+	out.waits = rt.MakeList(v36)
+	r40, err := jsonNeed(name, path, obj, "lit")
+	if err != nil {
+		return err
+	}
+	n41, err := jsonInt(name, path, "lit", r40, 0, 1)
+	if err != nil {
+		return err
+	}
+	out.lit = n41 == 1
+	if r42, ok43 := obj["size"]; ok43 {
+		o44, err := jsonObject(name, path+"size.", r42)
+		if err != nil {
+			return err
+		}
+		if err := jsonKeys(name, path+"size.", o44, "depth"); err != nil {
+			return err
+		}
+		r45, err := jsonNeed(name, path+"size.", o44, "depth")
+		if err != nil {
+			return err
+		}
+		n46, err := jsonInt(name, path, "size.depth", r45, -9223372036854775808, 9223372036854775807)
+		if err != nil {
+			return err
+		}
+		out.depth = n46
+	} else {
 		return rt.Missing(name, path, "size.depth")
 	}
-	out.depth = *p26
-	var v34 []*Link
-	empty35 := false
-	for j36, k37 := range [...]string{"l0", "l1"} {
-		k38 := [...]string{"n0", "n1"}[j36]
-		r39, ok41 := obj[k37]
-		r40, ok42 := obj[k38]
-		switch {
-		case !ok41 && !ok42:
-			empty35 = true
+	var v47 []*Link
+	empty48 := false
+	for j49, k50 := range [...]string{"l0", "l1"} {
+		k51 := [...]string{"n0", "n1"}[j49]
+		r52, r53, err := jsonSlot(name, path, obj, k50, k51, &empty48)
+		if err != nil {
+			return err
+		}
+		if r52 == nil {
 			continue
-		case !ok41 || !ok42:
-			return fmt.Errorf("%s: %s%s: incomplete pairs slot", name, path, k37)
-		case empty35:
-			return fmt.Errorf("%s: %s%s: pairs slot after an empty one", name, path, k37)
 		}
-		x43 := &Link{}
-		var p44 *string
-		if err := json.Unmarshal(r39, &p44); err != nil {
-			return jsonError(name, fmt.Sprintf("%s%s", path, k37), err)
+		x54 := &Link{}
+		var v55 string
+		if err := jsonRead(name, path, k50, r52, &v55); err != nil {
+			return err
 		}
-		if p44 == nil {
-			return rt.Missing(name, path, k37)
+		x54.to_id = v55
+		n56, err := jsonInt(name, path, k51, r53, -9223372036854775808, 9223372036854775807)
+		if err != nil {
+			return err
 		}
-		x43.to_id = *p44
-		var p45 *int64
-		if err := json.Unmarshal(r40, &p45); err != nil {
-			return jsonError(name, fmt.Sprintf("%s%s", path, k38), err)
-		}
-		if p45 == nil {
-			return rt.Missing(name, path, k38)
-		}
-		x43.note = *p45
-		v34 = append(v34, x43)
+		x54.note = n56
+		v47 = append(v47, x54)
 	}
-	out.links = rt.MakeList(v34)
+	out.links = rt.MakeList(v47)
 	return nil
-}
-
-type wireConfig struct {
-	Motd       *string          `json:"motd"`
-	Spawn      *json.RawMessage `json:"spawn"`
-	Flags      *[]*string       `json:"flags"`
-	Scale      *float64         `json:"scale"`
-	Tree       *json.RawMessage `json:"tree"`
-	FeaturedID *string          `json:"featured"`
-	PicksIDs   *[]*string       `json:"picks"`
-	AltsIDs    *[]*string       `json:"alts"`
 }
 
 func decodeConfig(name, path string, raw json.RawMessage, out *Config) error {
@@ -1599,98 +1668,111 @@ func decodeConfig(name, path string, raw json.RawMessage, out *Config) error {
 	if err != nil {
 		return err
 	}
-	bad2 := ""
-	for k1 := range obj {
-		switch k1 {
-		case "alts", "amount", "count", "featured", "flags", "itemId", "motd", "picks", "scale", "spawn", "tree", "type":
-		default:
-			if jsonFolds(k1, "alts", "amount", "count", "featured", "flags", "itemId", "motd", "picks", "scale", "spawn", "tree", "type") && (bad2 == "" || k1 < bad2) {
-				bad2 = k1
+	if err := jsonKeys(name, path, obj, "alts", "amount", "count", "featured", "flags", "itemId", "motd", "picks", "scale", "spawn", "tree", "type"); err != nil {
+		return err
+	}
+	r1, err := jsonNeed(name, path, obj, "motd")
+	if err != nil {
+		return err
+	}
+	var v2 string
+	if err := jsonRead(name, path, "motd", r1, &v2); err != nil {
+		return err
+	}
+	out.motd = v2
+	r3, err := jsonNeed(name, path, obj, "spawn")
+	if err != nil {
+		return err
+	}
+	v4 := &Point{}
+	if err := decodePoint(name, path+"spawn.", r3, v4); err != nil {
+		return err
+	}
+	out.spawn = v4
+	v5 := &Reward{}
+	if err := decodeReward(name, path, raw, v5); err != nil {
+		return err
+	}
+	out.event = v5
+	r6, err := jsonNeed(name, path, obj, "flags")
+	if err != nil {
+		return err
+	}
+	var v7 []json.RawMessage
+	if err := jsonRead(name, path, "flags", r6, &v7); err != nil {
+		return err
+	}
+	v8 := make([]Tone, len(v7))
+	for j9, x10 := range v7 {
+		var v11 string
+		if err := jsonRead(name, path, fmt.Sprintf("flags[%d]", j9), x10, &v11); err != nil {
+			return err
+		}
+		v12, ok13 := ParseTone(v11)
+		if !ok13 {
+			return fmt.Errorf("%s: %sflags[%d]: unknown value %s", name, path, j9, v11)
+		}
+		v8[j9] = v12
+	}
+	out.flags = rt.MakeList(v8)
+	if r14 := jsonMay(obj, "scale"); r14 != nil {
+		var v15 float64
+		if err := jsonRead(name, path, "scale", r14, &v15); err != nil {
+			return err
+		}
+		out.scale, out.scale_ok = v15, true
+	}
+	r16, err := jsonNeed(name, path, obj, "tree")
+	if err != nil {
+		return err
+	}
+	v17 := &Node{}
+	if err := decodeNode(name, path+"tree.", r16, v17); err != nil {
+		return err
+	}
+	out.tree = v17
+	r18, err := jsonNeed(name, path, obj, "featured")
+	if err != nil {
+		return err
+	}
+	var v19 ItemID
+	if err := jsonRead(name, path, "featured", r18, &v19); err != nil {
+		return err
+	}
+	out.featured_id = v19
+	r20, err := jsonNeed(name, path, obj, "picks")
+	if err != nil {
+		return err
+	}
+	var v21 []json.RawMessage
+	if err := jsonRead(name, path, "picks", r20, &v21); err != nil {
+		return err
+	}
+	v22 := make([]ItemID, len(v21))
+	for j23, x24 := range v21 {
+		var v25 ItemID
+		if err := jsonRead(name, path, fmt.Sprintf("picks[%d]", j23), x24, &v25); err != nil {
+			return err
+		}
+		v22[j23] = v25
+	}
+	out.picks_ids = rt.MakeList(v22)
+	if r26 := jsonMay(obj, "alts"); r26 != nil {
+		var v27 []json.RawMessage
+		if err := jsonRead(name, path, "alts", r26, &v27); err != nil {
+			return err
+		}
+		v28 := make([]ItemID, len(v27))
+		for j29, x30 := range v27 {
+			var v31 ItemID
+			if err := jsonRead(name, path, fmt.Sprintf("alts[%d]", j29), x30, &v31); err != nil {
+				return err
 			}
+			v28[j29] = v31
 		}
+		out.alts_ids, out.alts_ok = rt.MakeList(v28), true
 	}
-	if err := jsonCase(name, path, bad2, "alts", "amount", "count", "featured", "flags", "itemId", "motd", "picks", "scale", "spawn", "tree", "type"); err != nil {
-		return err
-	}
-	var w wireConfig
-	if err := json.Unmarshal(raw, &w); err != nil {
-		return jsonError(name, path, err)
-	}
-	switch {
-	case w.Motd == nil:
-		return rt.Missing(name, path, "motd")
-	case w.Spawn == nil:
-		return rt.Missing(name, path, "spawn")
-	case w.Flags == nil:
-		return rt.Missing(name, path, "flags")
-	case w.Tree == nil:
-		return rt.Missing(name, path, "tree")
-	case w.FeaturedID == nil:
-		return rt.Missing(name, path, "featured")
-	case w.PicksIDs == nil:
-		return rt.Missing(name, path, "picks")
-	}
-	*out = Config{
-		motd:        *w.Motd,
-		featured_id: ItemID(*w.FeaturedID),
-	}
-	v3 := &Point{}
-	if err := decodePoint(name, path+"spawn.", *w.Spawn, v3); err != nil {
-		return err
-	}
-	out.spawn = v3
-	v4 := make([]Tone, len(*w.Flags))
-	for j5, x6 := range *w.Flags {
-		if x6 == nil {
-			return fmt.Errorf("%s: %sflags[%d]: null", name, path, j5)
-		}
-		v7, ok8 := ParseTone(*x6)
-		if !ok8 {
-			return fmt.Errorf("%s: %sflags[%d]: unknown value %v", name, path, j5, *x6)
-		}
-		v4[j5] = v7
-	}
-	out.flags = rt.MakeList(v4)
-	if w.Scale != nil {
-		out.scale, out.scale_ok = *w.Scale, true
-	}
-	v9 := &Node{}
-	if err := decodeNode(name, path+"tree.", *w.Tree, v9); err != nil {
-		return err
-	}
-	out.tree = v9
-	v10 := make([]ItemID, len(*w.PicksIDs))
-	for j11, x12 := range *w.PicksIDs {
-		if x12 == nil {
-			return fmt.Errorf("%s: %spicks[%d]: null", name, path, j11)
-		}
-		v10[j11] = ItemID(*x12)
-	}
-	out.picks_ids = rt.MakeList(v10)
-	if w.AltsIDs != nil {
-		v13 := make([]ItemID, len(*w.AltsIDs))
-		for j14, x15 := range *w.AltsIDs {
-			if x15 == nil {
-				return fmt.Errorf("%s: %salts[%d]: null", name, path, j14)
-			}
-			v13[j14] = ItemID(*x15)
-		}
-		out.alts_ids, out.alts_ok = rt.MakeList(v13), true
-	}
-	v16 := &Reward{}
-	if err := decodeReward(name, path, raw, v16); err != nil {
-		return err
-	}
-	out.event = v16
 	return nil
-}
-
-type wireNode struct {
-	Label *string            `json:"label"`
-	Next  *json.RawMessage   `json:"next"`
-	Kids  *[]json.RawMessage `json:"kids"`
-	HotID *string            `json:"hot"`
-	Badge *json.RawMessage   `json:"badge"`
 }
 
 func decodeNode(name, path string, raw json.RawMessage, out *Node) error {
@@ -1698,57 +1780,55 @@ func decodeNode(name, path string, raw json.RawMessage, out *Node) error {
 	if err != nil {
 		return err
 	}
-	bad2 := ""
-	for k1 := range obj {
-		switch k1 {
-		case "badge", "hot", "kids", "label", "next":
-		default:
-			if jsonFolds(k1, "badge", "hot", "kids", "label", "next") && (bad2 == "" || k1 < bad2) {
-				bad2 = k1
-			}
-		}
-	}
-	if err := jsonCase(name, path, bad2, "badge", "hot", "kids", "label", "next"); err != nil {
+	if err := jsonKeys(name, path, obj, "badge", "hot", "kids", "label", "next"); err != nil {
 		return err
 	}
-	var w wireNode
-	if err := json.Unmarshal(raw, &w); err != nil {
-		return jsonError(name, path, err)
+	r1, err := jsonNeed(name, path, obj, "label")
+	if err != nil {
+		return err
 	}
-	switch {
-	case w.Label == nil:
-		return rt.Missing(name, path, "label")
-	case w.Kids == nil:
-		return rt.Missing(name, path, "kids")
+	var v2 string
+	if err := jsonRead(name, path, "label", r1, &v2); err != nil {
+		return err
 	}
-	*out = Node{
-		label: *w.Label,
-	}
-	if w.Next != nil {
-		v3 := &Node{}
-		if err := decodeNode(name, path+"next.", *w.Next, v3); err != nil {
+	out.label = v2
+	if r3 := jsonMay(obj, "next"); r3 != nil {
+		v4 := &Node{}
+		if err := decodeNode(name, path+"next.", r3, v4); err != nil {
 			return err
 		}
-		out.next = v3
+		out.next = v4
 	}
-	v4 := make([]*Node, len(*w.Kids))
-	for j5, x6 := range *w.Kids {
-		v7 := &Node{}
-		if err := decodeNode(name, fmt.Sprintf("%skids[%d].", path, j5), x6, v7); err != nil {
+	r5, err := jsonNeed(name, path, obj, "kids")
+	if err != nil {
+		return err
+	}
+	var v6 []json.RawMessage
+	if err := jsonRead(name, path, "kids", r5, &v6); err != nil {
+		return err
+	}
+	v7 := make([]*Node, len(v6))
+	for j8, x9 := range v6 {
+		v10 := &Node{}
+		if err := decodeNode(name, fmt.Sprintf("%skids[%d].", path, j8), x9, v10); err != nil {
 			return err
 		}
-		v4[j5] = v7
+		v7[j8] = v10
 	}
-	out.kids = rt.MakeList(v4)
-	if w.HotID != nil {
-		out.hot_id, out.hot_ok = ItemID(*w.HotID), true
-	}
-	if w.Badge != nil {
-		v8 := &Badge{}
-		if err := decodeBadge(name, path+"badge.", *w.Badge, v8); err != nil {
+	out.kids = rt.MakeList(v7)
+	if r11 := jsonMay(obj, "hot"); r11 != nil {
+		var v12 ItemID
+		if err := jsonRead(name, path, "hot", r11, &v12); err != nil {
 			return err
 		}
-		out.badge = v8
+		out.hot_id, out.hot_ok = v12, true
+	}
+	if r13 := jsonMay(obj, "badge"); r13 != nil {
+		v14 := &Badge{}
+		if err := decodeBadge(name, path+"badge.", r13, v14); err != nil {
+			return err
+		}
+		out.badge = v14
 	}
 	return nil
 }
@@ -1758,26 +1838,16 @@ func decodeBadge(name, path string, raw json.RawMessage, out *Badge) error {
 	if err != nil {
 		return err
 	}
-	bad10 := ""
-	for k9 := range obj {
-		switch k9 {
-		case "kind":
-		default:
-			if jsonFolds(k9, "kind") && (bad10 == "" || k9 < bad10) {
-				bad10 = k9
-			}
-		}
-	}
-	if err := jsonCase(name, path, bad10, "kind"); err != nil {
+	if err := jsonKeys(name, path, obj, "kind"); err != nil {
 		return err
 	}
-	r11, ok12 := obj["kind"]
-	if !ok12 {
-		return rt.Missing(name, path, "kind")
+	r1, err := jsonNeed(name, path, obj, "kind")
+	if err != nil {
+		return err
 	}
 	var tag string
-	if err := json.Unmarshal(r11, &tag); err != nil {
-		return jsonError(name, path+"kind", err)
+	if err := jsonRead(name, path, "kind", r1, &tag); err != nil {
+		return err
 	}
 	switch tag {
 	case "star":
@@ -1789,13 +1859,9 @@ func decodeBadge(name, path string, raw json.RawMessage, out *Badge) error {
 	case "plain":
 		*out = Badge{kind: BadgeKindPlain}
 	default:
-		return fmt.Errorf("%s: %skind: unknown case %q", name, path, tag)
+		return fmt.Errorf("%s: %skind: unknown case %s", name, path, tag)
 	}
 	return nil
-}
-
-type wireBadgeStar struct {
-	OfID *string `json:"of"`
 }
 
 func decodeBadgeStar(name, path string, raw json.RawMessage, out *BadgeStar) error {
@@ -1803,30 +1869,18 @@ func decodeBadgeStar(name, path string, raw json.RawMessage, out *BadgeStar) err
 	if err != nil {
 		return err
 	}
-	bad2 := ""
-	for k1 := range obj {
-		switch k1 {
-		case "kind", "of":
-		default:
-			if jsonFolds(k1, "kind", "of") && (bad2 == "" || k1 < bad2) {
-				bad2 = k1
-			}
-		}
-	}
-	if err := jsonCase(name, path, bad2, "kind", "of"); err != nil {
+	if err := jsonKeys(name, path, obj, "kind", "of"); err != nil {
 		return err
 	}
-	var w wireBadgeStar
-	if err := json.Unmarshal(raw, &w); err != nil {
-		return jsonError(name, path, err)
+	r1, err := jsonNeed(name, path, obj, "of")
+	if err != nil {
+		return err
 	}
-	switch {
-	case w.OfID == nil:
-		return rt.Missing(name, path, "of")
+	var v2 ItemID
+	if err := jsonRead(name, path, "of", r1, &v2); err != nil {
+		return err
 	}
-	*out = BadgeStar{
-		of_id: ItemID(*w.OfID),
-	}
+	out.of_id = v2
 	return nil
 }
 
@@ -1978,11 +2032,8 @@ func loadItems(path string, out *Items) error {
 		return rt.Missing(path, "", "rows")
 	}
 	var rows []json.RawMessage
-	if err := json.Unmarshal(f.Rows, &rows); err != nil {
-		return jsonError(path, "rows.", err)
-	}
-	if rows == nil {
-		return fmt.Errorf("%s: rows: null", path)
+	if err := jsonRead(path, "", "rows", f.Rows, &rows); err != nil {
+		return err
 	}
 	values := make([]Item, len(rows))
 	keys := make([]ItemID, len(rows))
@@ -2014,11 +2065,8 @@ func loadShelves(path string, out *Shelves) error {
 		return rt.Missing(path, "", "rows")
 	}
 	var rows []json.RawMessage
-	if err := json.Unmarshal(f.Rows, &rows); err != nil {
-		return jsonError(path, "rows.", err)
-	}
-	if rows == nil {
-		return fmt.Errorf("%s: rows: null", path)
+	if err := jsonRead(path, "", "rows", f.Rows, &rows); err != nil {
+		return err
 	}
 	values := make([]Shelf, len(rows))
 	keys := make([]string, len(rows))

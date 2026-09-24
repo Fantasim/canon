@@ -15,6 +15,18 @@ func intType(t ir.TypeRef) string {
 	return fmt.Sprintf(unsignedIntFormat, t.Bits)
 }
 
+// intRange is a narrow integer type's bounds as C++ literals; UInt64 stops at canon::kIntMax (TYPES.md §7.2).
+func intRange(t ir.TypeRef) (lo, hi string) {
+	if !t.Signed && t.Bits >= bits64 {
+		return zeroInt, intMaxConst
+	}
+	if t.Signed {
+		half := int64(1) << (t.Bits - 1)
+		return intLit(-half), intLit(half - 1)
+	}
+	return zeroInt, intLit(int64(1)<<t.Bits - 1)
+}
+
 func floatType(t ir.TypeRef) string {
 	if t.Bits == float32Bits {
 		return cppFloat

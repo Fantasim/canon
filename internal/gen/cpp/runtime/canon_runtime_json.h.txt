@@ -2,14 +2,19 @@
 #ifndef CANON_RUNTIME_JSON_RT_V1
 #define CANON_RUNTIME_JSON_RT_V1
 
+#include <algorithm>
 #include <chrono>
+#include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <fstream>
 #include <iterator>
+#include <limits>
 #include <optional>
 #include <set>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -41,28 +46,34 @@ inline bool ReadFile(const std::string& path, std::string& out, std::string& err
 /// The deepest nesting of arrays and objects a data file may hold (WIRE.md §3.1).
 inline constexpr size_t kMaxNesting = 512;
 
+/// The largest Duration in milliseconds, either sign (TYPES.md §7.2).
+inline constexpr int64_t kDurationMaxMs = 9223372036854;
+
+/// The smallest magnitude a Float32 rounds to infinity from: a number that large is refused.
+inline constexpr double kFloat32Overflow = 3.4028235677973366e+38;
+
+/// True when `a` and `b` are equal ignoring the case of ASCII letters, and only of them. A
+/// generated loader refuses a key that matches an expected one only this way.
+inline bool EqualFold(std::string_view a, std::string_view b) {
+    if (a.size() != b.size()) return false;
+    for (size_t i = 0; i < a.size(); ++i) {
+        const char x = a[i] >= 'A' && a[i] <= 'Z' ? static_cast<char>(a[i] - 'A' + 'a') : a[i];
+        const char y = b[i] >= 'A' && b[i] <= 'Z' ? static_cast<char>(b[i] - 'A' + 'a') : b[i];
+        if (x != y) return false;
+    }
+    return true;
+}
+
 namespace detail {
 
-/// The byte of `s` at `i`, an ASCII letter lower-cased, and `i` moved past it; the Kelvin sign
-/// (U+212A) reads as k and the long s (U+017F) as s, as in Unicode simple case folding.
-inline char FoldAt(std::string_view s, size_t& i) {
-    if (s.compare(i, 3, "\xE2\x84\xAA") == 0) return i += 3, 'k';
-    if (s.compare(i, 2, "\xC5\xBF") == 0) return i += 2, 's';
-    const char c = s[i++];
-    return c >= 'A' && c <= 'Z' ? static_cast<char>(c - 'A' + 'a') : c;
+/// What an integer outside [lo, hi] is told: "expected an integer", with the range unless it
+/// is Int's.
+inline std::string IntExpected(int64_t lo, int64_t hi) {
+    if (lo == kIntMin && hi == kIntMax) return "expected an integer";
+    return "expected an integer from " + std::to_string(lo) + " to " + std::to_string(hi);
 }
 
 }  // namespace detail
-
-/// True when `a` and `b` are equal ignoring the case of ASCII letters (and detail::FoldAt's two
-/// signs). A generated loader refuses a key that matches an expected one only this way.
-inline bool EqualFold(std::string_view a, std::string_view b) {
-    size_t i = 0, j = 0;
-    while (i < a.size() && j < b.size()) {
-        if (detail::FoldAt(a, i) != detail::FoldAt(b, j)) return false;
-    }
-    return i == a.size() && j == b.size();
-}
 
 /// A SAX pass over a data file before it is parsed: the file is one object, no object holds a
 /// key twice (nlohmann would keep the last), and nothing nests deeper than kMaxNesting. It stops
@@ -210,11 +221,13 @@ public:
         return &*it;
     }
 
-    /// The value of `key`; an error when it is absent or null.
+    /// The value of `key`; an error when it is absent ("missing") or null ("null").
     const Json* Required(const Json& obj, const char* key) {
-        const Json* v = Optional(obj, key);
-        if (v == nullptr) Fail(key, "missing");
-        return v;
+        if (!obj.is_object()) return Fail(key, "expected an object"), nullptr;
+        auto it = obj.find(key);
+        if (it == obj.end()) return Fail(key, "missing"), nullptr;
+        if (it->is_null()) return Fail(key, "null"), nullptr;
+        return &*it;
     }
 
     bool AsString(const Json& v, std::string_view key, std::string& out) {
@@ -223,12 +236,21 @@ public:
         return true;
     }
 
-    bool AsInt(const Json& v, std::string_view key, int64_t& out) {
-        if (v.is_number_integer() && !(v.is_number_unsigned() && v.get<uint64_t>() > uint64_t(kIntMax))) {
-            out = v.get<int64_t>();
-            return true;
+    bool AsInt(const Json& v, std::string_view key, int64_t& out) { return AsIntIn(v, key, kIntMin, kIntMax, out); }
+
+    /// An integer token from `lo` to `hi`; anything else fails with detail::IntExpected.
+    bool AsIntIn(const Json& v, std::string_view key, int64_t lo, int64_t hi, int64_t& out) {
+        bool ok = v.is_number_integer();
+        int64_t n = 0;
+        if (v.is_number_unsigned()) {
+            ok = v.get<uint64_t>() <= static_cast<uint64_t>(kIntMax);
+            if (ok) n = static_cast<int64_t>(v.get<uint64_t>());
+        } else if (ok) {
+            n = v.get<int64_t>();
         }
-        return Fail(key, "expected an integer"), false;
+        if (!ok || n < lo || n > hi) return Fail(key, detail::IntExpected(lo, hi)), false;
+        out = n;
+        return true;
     }
 
     /// A Float may be written as an integer token ("1" for 1.0).
@@ -238,35 +260,50 @@ public:
         return true;
     }
 
+    /// A Float32: any number whose magnitude does not round to infinity.
+    bool AsFloat32(const Json& v, std::string_view key, float& out) {
+        if (!v.is_number() || std::fabs(v.get<double>()) >= kFloat32Overflow) {
+            return Fail(key, "expected a number that fits Float32"), false;
+        }
+        out = static_cast<float>(v.get<double>());
+        return true;
+    }
+
     bool AsBool(const Json& v, std::string_view key, bool& out) {
         if (!v.is_boolean()) return Fail(key, "expected true or false"), false;
         out = v.get<bool>();
         return true;
     }
 
-    /// `unitMs` is the length of one wire unit: 1 for ms, 1000 for s, 60000 for m...
+    /// `unitMs` is the length of one wire unit: 1 for ms, 1000 for s, 60000 for m... The count
+    /// must keep the Duration within kDurationMaxMs.
     bool AsDuration(const Json& v, std::string_view key, int64_t unitMs, std::chrono::milliseconds& out) {
+        const int64_t limit = kDurationMaxMs / unitMs;
         int64_t n = 0;
-        if (!AsInt(v, key, n)) return false;
+        if (!AsIntIn(v, key, -limit, limit, n)) return false;
         out = std::chrono::milliseconds(n * unitMs);
         return true;
     }
 
-    /// `parse` is a generated <Enum>FromWire or <Enum>FromCode function.
+    /// `parse` is a generated <Enum>FromWire (a string) or <Enum>FromCode (an integer within the
+    /// code type, UInt64's capped at Int's maximum) function.
     template <class E, class W>
     bool AsEnum(const Json& v, std::string_view key, std::optional<E> (*parse)(W), E& out) {
         std::optional<E> e;
+        std::string wire;
         if constexpr (std::is_same_v<W, std::string_view>) {
-            if (v.is_string()) e = parse(std::string_view(v.get_ref<const std::string&>()));
+            if (!AsString(v, key, wire)) return false;
+            e = parse(std::string_view(wire));
         } else {
+            constexpr int64_t lo = std::is_signed_v<W> ? static_cast<int64_t>(std::numeric_limits<W>::min()) : 0;
+            constexpr bool wide = static_cast<uint64_t>(std::numeric_limits<W>::max()) > static_cast<uint64_t>(kIntMax);
+            constexpr int64_t hi = wide ? kIntMax : static_cast<int64_t>(std::numeric_limits<W>::max());
             int64_t n = 0;
-            if (v.is_number_integer()) {
-                n = v.get<int64_t>();
-                if (n >= int64_t(std::numeric_limits<W>::min()) && n <= int64_t(std::numeric_limits<W>::max()))
-                    e = parse(static_cast<W>(n));
-            }
+            if (!AsIntIn(v, key, lo, hi, n)) return false;
+            e = parse(static_cast<W>(n));
+            wire = std::to_string(n);
         }
-        if (!e) return Fail(key, "unknown enum value"), false;
+        if (!e) return Fail(key, "unknown value " + wire), false;
         out = *e;
         return true;
     }
@@ -317,6 +354,103 @@ private:
     std::vector<std::string> path_;
     std::string error_;
 };
+
+namespace detail {
+
+/// True when `v` is an object; else "null" or "expected an object" at the decoder's path.
+inline bool Object(const Json& v, Decoder& dec) {
+    if (v.is_object()) return true;
+    dec.Fail(std::string_view(), v.is_null() ? "null" : "expected an object");
+    return false;
+}
+
+/// Object, then refuses a key of `v` that is none of `keys` (sorted in byte order) and differs
+/// from one only in letter case: the first in the object's order, the smallest in byte order.
+template <size_t N>
+bool Keys(const Json& v, Decoder& dec, const char* const (&keys)[N]) {
+    if (!Object(v, dec)) return false;
+    const auto less = [](const char* k, std::string_view s) { return std::string_view(k) < s; };
+    for (const auto& item : v.items()) {
+        const std::string& key = item.key();
+        const auto it = std::lower_bound(std::begin(keys), std::end(keys), std::string_view(key), less);
+        if (it != std::end(keys) && key == *it) continue;
+        for (const char* k : keys) {
+            if (EqualFold(key, k)) {
+                dec.Fail(key, "differs from \"" + std::string(k) + "\" only in letter case");
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+/// A lookup cell (WIRE.md §5.11): absent fails; null is none (nullptr) when `optional`, else fails.
+inline const Json* Cell(const Json& obj, Decoder& dec, const char* key, bool optional) {
+    const auto it = obj.find(key);
+    if (it == obj.end()) return dec.Fail(key, "missing"), nullptr;
+    if (!it->is_null()) return &*it;
+    if (!optional) dec.Fail(key, "null");
+    return nullptr;
+}
+
+/// A table row's `$id`, and its `$retired`, which must be true when present (WIRE.md §5.7).
+inline void Row(const Json& row, Decoder& dec, std::string& id, bool& retired) {
+    if (!Object(row, dec)) return;
+    const char* const idKey = "$id";
+    const char* const retiredKey = "$retired";
+    if (const Json* x = dec.Required(row, idKey)) dec.AsString(*x, idKey, id);
+    const auto it = row.find(retiredKey);
+    if (it == row.end()) return;
+    if (it->is_boolean() && it->get<bool>()) {
+        retired = true;
+    } else {
+        dec.Fail(retiredKey, "expected true");
+    }
+}
+
+/// The object at a path's intermediate key (WIRE.md §5.5.3): nullptr when absent; null or
+/// another kind fails.
+inline const Json* Step(const Json& obj, Decoder& dec, const char* key) {
+    const auto it = obj.find(key);
+    if (it == obj.end()) return nullptr;
+    if (it->is_object()) return &*it;
+    dec.Fail(key, it->is_null() ? "null" : "expected an object");
+    return nullptr;
+}
+
+/// Pairs slot `k`, `val` of `v` (WIRE.md §5.14): false for an empty slot, which sets `empty`, and
+/// for a bad one, reported at the slot's first key present.
+inline bool Slot(const Json& v, Decoder& dec, const char* k, const char* val, bool& empty) {
+    const auto kt = v.find(k), vt = v.find(val);
+    const bool hasK = kt != v.end(), hasV = vt != v.end();
+    if (!hasK && !hasV) {
+        empty = true;
+        return false;
+    }
+    const char* first = hasK ? k : val;
+    if (hasK != hasV) {
+        dec.Fail(first, "incomplete pairs slot");
+    } else if (kt->is_null() || vt->is_null()) {
+        dec.Fail(first, "null in a pairs slot");
+    } else if (empty) {
+        dec.Fail(first, "pairs slot after an empty one");
+    }
+    return dec.Ok();
+}
+
+/// A `bits` value (WIRE.md §5.3): a non-negative integer with no bit outside `mask`.
+inline bool Bits(const Json& x, Decoder& dec, std::string_view key, uint64_t mask, uint64_t& out) {
+    int64_t n = 0;
+    if (!dec.AsIntIn(x, key, 0, kIntMax, n)) return false;
+    out = static_cast<uint64_t>(n);
+    std::string hex;
+    for (uint64_t rest = out & ~mask; rest != 0; rest >>= 4) hex.insert(hex.begin(), "0123456789abcdef"[rest & 15]);
+    if (hex.empty()) return true;
+    dec.Fail(key, "unknown bits 0x" + hex);
+    return false;
+}
+
+}  // namespace detail
 
 }  // namespace json
 }  // namespace rt_v1

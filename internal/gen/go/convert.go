@@ -3,6 +3,7 @@ package gogen
 import (
 	"cmp"
 	"fmt"
+	"math"
 	"slices"
 	"strconv"
 	"strings"
@@ -18,112 +19,94 @@ type leaf struct {
 	enc  types.Enc
 }
 
-// wireType is the Go type encoding/json reads a leaf into; what has no reader yet is refused (CODEGEN.md §6.1, WIRE.md §5).
-func (g *gen) wireType(l leaf) string {
-	switch l.t.Kind {
-	case types.Bool:
-		if l.enc == types.EncInt {
-			return goInt64
-		}
-		return goBool
-	case types.Int, types.Float:
-		return g.goType(l.t)
-	case types.String, types.LitUnion:
-		g.stringWire(l.t)
-		return goString
-	case types.Duration:
-		return goInt64
-	case types.Enum:
-		return g.enumWire(l.t)
-	case types.Ref:
-		return g.refWire(l.t)
-	case types.Record, types.Variant:
-		g.ownClass(l.t)
-		return g.rawType()
-	case types.List:
-		return g.listWire(l)
-	default:
-		g.failKind(l.t.Kind)
-		return goString
-	}
-}
-
 func (g *gen) rawType() string { return g.use(jsonPath, jsonPkg) + rawMessage }
 
-// stringWire refuses a literal union whose other arm is not written as a string (WIRE.md §5.9).
-func (g *gen) stringWire(t ir.TypeRef) {
-	if t.Kind != types.LitUnion || t.Elem == nil || t.Elem.Kind == types.String {
-		return
-	}
-	if e, ok := t.Elem.Named.(*ir.Enum); ok && !e.JSONCodes {
-		return
-	}
-	g.fail(newDetail(ErrUnsupported, g.at, unionFormat, g.at))
-}
-
-// enumWire is a member's wire string, or its code with @json(codes) (WIRE.md §5.3).
-func (g *gen) enumWire(t ir.TypeRef) string {
-	e, ok := t.Named.(*ir.Enum)
-	if ok && e.JSONCodes && e.Codes != nil {
-		return g.goType(*e.Codes)
-	}
-	return goString
-}
-
-// refWire is a ref's key as the file writes it: a table key is a string (WIRE.md §5.9).
-func (g *gen) refWire(t ir.TypeRef) string {
-	g.keyType(t)
-	if isTableRef(t.Ref) || t.Key == nil {
-		return goString
-	}
-	return g.wireType(leaf{t: *t.Key})
-}
-
-// ownClass refuses a record or variant of another package: its decoder is unexported there.
-func (g *gen) ownClass(t ir.TypeRef) {
-	if pkg := typePkg(t.Named); pkg != g.p.Name {
-		g.fail(newDetail(ErrUnsupported, g.at, foreignClassFormat, qname(t.Named), g.at))
-	}
-}
-
-// listWire reads elements through pointers, so a null element is seen: records and variants stay raw.
-func (g *gen) listWire(l leaf) string {
-	if l.enc == types.EncBits {
-		return goUint64
-	}
-	elem := g.sub(l.t.Elem)
-	w := g.wireType(leaf{t: elem, unit: l.unit, enc: l.enc})
-	if isRaw(elem) {
-		return sliceOf + w
-	}
-	return sliceOf + pointer + w
-}
-
-// isRaw reports a type read as raw JSON: a record or variant, whose decoder refuses null.
-func isRaw(t ir.TypeRef) bool { return t.Kind == types.Record || t.Kind == types.Variant }
-
-// conv is the storage value of src, an expression of the leaf's wire type. Pure conversions
-// write nothing to b; the others declare temporaries whose checks return an error at loc.
-func (g *gen) conv(b *strings.Builder, l leaf, src string, loc location) string {
+// readValue reads raw, a present JSON value at loc, as the C++ loader does (WIRE.md §5, CODEGEN.md §7.5).
+func (g *gen) readValue(b *strings.Builder, l leaf, raw string, loc location) string {
 	switch l.t.Kind {
 	case types.Bool:
 		if l.enc == types.EncInt {
-			fmt.Fprintf(b, bitCheckFormat, src, g.errAt(loc, notBitText, src))
-			return src + isOne
+			return g.readInt(b, raw, loc, 0, 1) + isOne
 		}
+		return g.readPlain(b, goBool, raw, loc)
+	case types.Int:
+		return g.readSized(b, l.t, raw, loc)
+	case types.Float:
+		return g.readPlain(b, g.goType(l.t), raw, loc)
+	case types.String, types.LitUnion:
+		g.stringWire(l.t)
+		return g.readPlain(b, goString, raw, loc)
 	case types.Duration:
-		return g.durationFrom(src, l.unit)
+		limit := durationMaxMs / l.unit.Millis()
+		return g.durationFrom(g.readInt(b, raw, loc, -limit, limit), l.unit)
 	case types.Enum:
-		return g.parsed(b, g.enumParser(l.t), src, loc)
+		return g.readEnum(b, l.t, raw, loc)
 	case types.Ref:
-		return g.refKey(b, l.t, src, loc)
+		return g.readRef(b, l.t, raw, loc)
 	case types.Record, types.Variant:
-		return g.decodeInto(b, l.t, src, loc)
+		g.ownClass(l.t)
+		return g.decodeInto(b, l.t, raw, loc)
 	case types.List:
-		return g.listFrom(b, l, src, loc)
+		return g.readList(b, l, raw, loc)
 	default:
+		g.failKind(l.t.Kind)
+		return raw
 	}
-	return src
+}
+
+// readPlain reads raw into a new local of type typ: a string, a bool, a float or an array.
+func (g *gen) readPlain(b *strings.Builder, typ, raw string, loc location) string {
+	v := g.temp(tempValue)
+	prefix, key := g.splitLoc(loc)
+	fmt.Fprintf(b, readFormat, v, typ, g.lc.Err, g.helper(helperRead), g.lc.Name, prefix, key, raw)
+	return v
+}
+
+// readPlainInto is readPlain into the local v.
+func (g *gen) readPlainInto(v, typ, raw string, loc location) {
+	prefix, key := g.splitLoc(loc)
+	g.printf(readFormat, v, typ, g.lc.Err, g.helper(helperRead), g.lc.Name, prefix, key, raw)
+}
+
+// readInt reads an integer from lo to hi into a new int64 local.
+func (g *gen) readInt(b *strings.Builder, raw string, loc location, lo, hi int64) string {
+	n := g.temp(tempInt)
+	prefix, key := g.splitLoc(loc)
+	fmt.Fprintf(b, intFormat, n, g.lc.Err, g.helper(helperInt), g.lc.Name, prefix, key, raw, lo, hi)
+	return n
+}
+
+// intBounds is an integer type's range: its width's, UInt64's stopping at Int's maximum (TYPES.md §7.2).
+func intBounds(t ir.TypeRef) (lo, hi int64) {
+	switch {
+	case t.Bits >= int64Bits || t.Bits <= 0:
+		if t.Signed {
+			return math.MinInt64, math.MaxInt64
+		}
+		return 0, math.MaxInt64
+	case t.Signed:
+		return -1 << (t.Bits - 1), 1<<(t.Bits-1) - 1
+	}
+	return 0, 1<<t.Bits - 1
+}
+
+// readSized reads an integer within its type's range, converted to its Go type.
+func (g *gen) readSized(b *strings.Builder, t ir.TypeRef, raw string, loc location) string {
+	return g.intOf(t, g.readCount(b, t, raw, loc))
+}
+
+// readCount reads an integer within t's range into an int64 local.
+func (g *gen) readCount(b *strings.Builder, t ir.TypeRef, raw string, loc location) string {
+	lo, hi := intBounds(t)
+	return g.readInt(b, raw, loc, lo, hi)
+}
+
+// intOf converts the int64 local n to t's Go type.
+func (g *gen) intOf(t ir.TypeRef, n string) string {
+	if typ := g.goType(t); typ != goInt64 {
+		return typ + lparen + n + rparen
+	}
+	return n
 }
 
 // durationFrom converts a count of the field's unit (WIRE.md §5.1).
@@ -134,40 +117,44 @@ func (g *gen) durationFrom(src string, unit types.Unit) string {
 	return g.rt() + durationFromMs + src + rparen
 }
 
-// enumParser is the enum's <E>FromCode with @json(codes), else Parse<E> (WIRE.md §5.3).
-func (g *gen) enumParser(t ir.TypeRef) string {
+// readEnum reads a member's wire string, or its code with @json(codes), and parses it (WIRE.md §5.3).
+func (g *gen) readEnum(b *strings.Builder, t ir.TypeRef, raw string, loc location) string {
 	e, ok := t.Named.(*ir.Enum)
 	if !ok {
 		g.failf(ErrMalformed, "an enum type without its enum at %s", g.at)
-		return nilLit
+		return raw
 	}
 	name := g.goName(e)
-	if e.JSONCodes && e.Codes != nil {
-		return g.qualify(e.Pkg, g.names.FromCodeName(name))
+	if !e.JSONCodes || e.Codes == nil {
+		s := g.readPlain(b, goString, raw, loc)
+		return g.parsed(b, g.qualify(e.Pkg, g.names.ParseName(name))+lparen+s+rparen, loc, unknownValueText, s)
 	}
-	return g.qualify(e.Pkg, g.names.ParseName(name))
+	n := g.readCount(b, *e.Codes, raw, loc)
+	parse := g.qualify(e.Pkg, g.names.FromCodeName(name)) + lparen + g.intOf(*e.Codes, n) + rparen
+	return g.parsed(b, parse, loc, unknownCodeText, n)
 }
 
-// parsed calls a (T, bool) parser; false fails the load at loc.
-func (g *gen) parsed(b *strings.Builder, parse, src string, loc location) string {
+// parsed calls a (T, bool) parser; false fails the load at loc, naming value.
+func (g *gen) parsed(b *strings.Builder, call string, loc location, what, value string) string {
 	v, ok := g.temp(tempValue), g.temp(tempOK)
-	fmt.Fprintf(b, parsedFormat, v, ok, parse, src, g.errAt(loc, unknownValueText, src))
+	fmt.Fprintf(b, parsedFormat, v, ok, call, g.errAt(loc, what, value))
 	return v
 }
 
-// refKey converts a ref's key to its id type, or a keyed list's key field type (CODEGEN.md §5.3, §5.8).
-func (g *gen) refKey(b *strings.Builder, t ir.TypeRef, src string, loc location) string {
+// readRef reads a ref's key: a table id, a baked package's id enum, a keyed list's key (CODEGEN.md §5.3, §5.8).
+func (g *gen) readRef(b *strings.Builder, t ir.TypeRef, raw string, loc location) string {
+	key := g.keyType(t)
 	if !isTableRef(t.Ref) {
 		if t.Key == nil {
-			return src
+			return raw
 		}
-		return g.conv(b, leaf{t: *t.Key}, src, loc)
+		return g.readValue(b, leaf{t: *t.Key}, raw, loc)
 	}
-	id := g.idType(t.Ref.Elem)
 	if g.enumIDs(t.Ref.Pkg) {
-		return g.parsed(b, g.qualify(t.Ref.Pkg, g.names.ParseName(id)), src, loc)
+		s := g.readPlain(b, goString, raw, loc)
+		return g.parsed(b, g.qualify(t.Ref.Pkg, g.names.ParseName(g.idType(t.Ref.Elem)))+lparen+s+rparen, loc, unknownValueText, s)
 	}
-	return g.qualify(t.Ref.Pkg, id) + lparen + src + rparen
+	return g.readPlain(b, key, raw, loc)
 }
 
 // enumIDs reports a package whose go emit gives table ids an enum: baked or embedded (§5.3).
@@ -185,36 +172,50 @@ func (g *gen) enumIDs(pkg string) bool {
 	return false
 }
 
+// stringWire refuses a literal union whose other arm is not written as a string (WIRE.md §5.9).
+func (g *gen) stringWire(t ir.TypeRef) {
+	if t.Kind != types.LitUnion || t.Elem == nil || t.Elem.Kind == types.String {
+		return
+	}
+	if e, ok := t.Elem.Named.(*ir.Enum); ok && !e.JSONCodes {
+		return
+	}
+	g.fail(newDetail(ErrUnsupported, g.at, unionFormat, g.at))
+}
+
+// ownClass refuses a record or variant of another package: its decoder is unexported there.
+func (g *gen) ownClass(t ir.TypeRef) {
+	if pkg := typePkg(t.Named); pkg != g.p.Name {
+		g.fail(newDetail(ErrUnsupported, g.at, foreignClassFormat, qname(t.Named), g.at))
+	}
+}
+
 // decodeInto decodes a record or variant of this package into a new value.
-func (g *gen) decodeInto(b *strings.Builder, t ir.TypeRef, src string, loc location) string {
+func (g *gen) decodeInto(b *strings.Builder, t ir.TypeRef, raw string, loc location) string {
 	v := g.temp(tempValue)
-	fmt.Fprintf(b, decodeIntoFormat, v, g.goName(t.Named), g.lc.Err, g.decodeFunc(t.Named), g.lc.Name, g.locExpr(loc.dot()), src)
+	fmt.Fprintf(b, decodeIntoFormat, v, g.goName(t.Named), g.lc.Err, g.decodeFunc(t.Named), g.lc.Name, g.locExpr(loc.dot()), raw)
 	return v
 }
 
-// listFrom converts each element: an rt.List, an rt.KeyedList, or the members of a bits mask.
-func (g *gen) listFrom(b *strings.Builder, l leaf, src string, loc location) string {
-	switch {
-	case l.enc == types.EncBits:
-		return g.bitsFrom(b, l.t, src, loc)
-	case l.t.KeyedBy != nil:
-		return g.keyedFrom(b, l.t, src, loc)
+// readList reads an array element by element: an rt.List, an rt.KeyedList, or the members of a bits mask.
+func (g *gen) readList(b *strings.Builder, l leaf, raw string, loc location) string {
+	if l.enc == types.EncBits {
+		return g.readBits(b, l.t, raw, loc)
+	}
+	array := g.readPlain(b, sliceOf+g.rawType(), raw, loc)
+	if l.t.KeyedBy != nil {
+		return g.readKeyed(b, l.t, array, loc)
 	}
 	elem := g.sub(l.t.Elem)
 	v, i, x := g.temp(tempValue), g.temp(tempIndex), g.temp(tempElem)
-	fmt.Fprintf(b, listOpenFormat, v, g.goType(elem), src, i, x)
-	item := x
-	if !isRaw(elem) {
-		fmt.Fprintf(b, ifNilReturnFormat, x, g.nullAt(loc.index(i)))
-		item = pointer + x
-	}
-	e := g.conv(b, leaf{t: elem, unit: l.unit, enc: l.enc}, item, loc.index(i))
+	fmt.Fprintf(b, listOpenFormat, v, g.goType(elem), array, i, x)
+	e := g.readValue(b, leaf{t: elem, unit: l.unit, enc: l.enc}, x, loc.index(i))
 	fmt.Fprintf(b, listCloseFormat, v, i, e)
 	return g.rt() + makeList + v + rparen
 }
 
-// keyedFrom decodes a keyed list's rows and collects their keys (CODEGEN.md §4.2).
-func (g *gen) keyedFrom(b *strings.Builder, t ir.TypeRef, src string, loc location) string {
+// readKeyed decodes a keyed list's rows and collects their keys (CODEGEN.md §4.2).
+func (g *gen) readKeyed(b *strings.Builder, t ir.TypeRef, array string, loc location) string {
 	rec, ok := g.sub(t.Elem).Named.(*ir.Record)
 	if !ok {
 		g.failf(ErrMalformed, "a keyed list of no record at %s", g.at)
@@ -222,19 +223,21 @@ func (g *gen) keyedFrom(b *strings.Builder, t ir.TypeRef, src string, loc locati
 	}
 	kf := g.keyField(t)
 	v, k, i, x := g.temp(tempValue), g.temp(tempKey), g.temp(tempIndex), g.temp(tempElem)
-	fmt.Fprintf(b, keyedFromFormat, v, g.goName(rec), src, k, g.goType(kf.Type), i, x,
+	fmt.Fprintf(b, keyedFromFormat, v, g.goName(rec), array, k, g.goType(kf.Type), i, x,
 		g.lc.Err, g.decodeFunc(rec), g.lc.Name, g.locExpr(loc.index(i).dot()), g.keyMember(rec, kf))
 	return g.rt() + makeKeyedList + v + listSep + k + rparen
 }
 
-// bitsFrom lists the members whose code is set in the mask, in ascending code order (WIRE.md §5.3).
-func (g *gen) bitsFrom(b *strings.Builder, t ir.TypeRef, src string, loc location) string {
+// readBits lists the members a mask sets, in code order; a bit no code holds fails (WIRE.md §5.3).
+func (g *gen) readBits(b *strings.Builder, t ir.TypeRef, raw string, loc location) string {
 	e, ok := g.sub(t.Elem).Named.(*ir.Enum)
 	if !ok || e.Codes == nil {
 		g.failf(ErrMalformed, "bits on a list of no @codes enum at %s", g.at)
 		return nilLit
 	}
-	g.checkBits(b, e, src, loc)
+	mask := g.uint64Of(g.readInt(b, raw, loc, 0, math.MaxInt64))
+	rest := g.temp(tempValue)
+	fmt.Fprintf(b, bitsCheckFormat, rest, mask, g.bitsMask(e), g.errAt(loc, unknownBitsText, rest))
 	members := slices.Clone(e.Members)
 	slices.SortStableFunc(members, func(a, b *ir.EnumMember) int { return cmp.Compare(a.Code, b.Code) })
 	names := make([]string, len(members))
@@ -242,9 +245,11 @@ func (g *gen) bitsFrom(b *strings.Builder, t ir.TypeRef, src string, loc locatio
 		names[i] = g.qualify(e.Pkg, g.names.MemberName(e, m))
 	}
 	v, m := g.temp(tempValue), g.temp(tempMember)
-	fmt.Fprintf(b, bitsFormat, v, g.typeName(e), m, strings.Join(names, listSep), src)
+	fmt.Fprintf(b, bitsFormat, v, g.typeName(e), m, strings.Join(names, listSep), mask)
 	return g.rt() + makeList + v + rparen
 }
+
+func (g *gen) uint64Of(x string) string { return goUint64 + lparen + x + rparen }
 
 // keyMember is the storage of a keyed list's key on its row: a ref key's key member.
 func (g *gen) keyMember(rec *ir.Record, kf *ir.Field) string {

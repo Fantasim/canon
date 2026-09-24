@@ -222,9 +222,6 @@ func (g *gen) declareNames() {
 		g.declare(g.upper+snapshotSuffix, snapshotOrigin)
 		g.declare(g.upper+storeSuffix, snapshotOrigin)
 	}
-	for _, n := range jsonHelperNames {
-		g.declare(n, helpersOrigin)
-	}
 }
 
 // declareEnum declares an enum and its helpers that are not overloads.

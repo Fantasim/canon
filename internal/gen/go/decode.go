@@ -1,6 +1,8 @@
 package gogen
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -9,9 +11,13 @@ import (
 	"github.com/fantasim/canonlang/internal/types"
 )
 
-// decoders writes, in declaration order, a decoder per class a value holds (CODEGEN.md §6.1).
+// decoders writes the loaders' helpers, then a decoder per class a value holds (CODEGEN.md §6.1).
 func (g *gen) decoders() {
-	g.helpers()
+	if len(g.decoded) == 0 {
+		return
+	}
+	outer := g.body
+	g.body = bytes.Buffer{}
 	for _, t := range g.p.Types {
 		switch x := t.(type) {
 		case *ir.Record:
@@ -25,6 +31,10 @@ func (g *gen) decoders() {
 			}
 		}
 	}
+	decoders := g.body
+	g.body = outer
+	g.helpers()
+	g.body.Write(decoders.Bytes())
 }
 
 // eachCase calls do on the body of each case with fields that keep accepts.
@@ -53,77 +63,55 @@ func (g *gen) classGoName(key any) string {
 func (g *gen) decodeFunc(key any) string  { return decodePrefix + g.classGoName(key) }
 func (g *gen) resolveFunc(key any) string { return resolvePrefix + g.classGoName(key) }
 
-// wireEntry is one key of a wire struct: a field of one key, or a stored fn's `$` key.
-type wireEntry struct {
-	name, key, typ string
-	s              *slot
-	fin            *finiteMethod
-	l              leaf
-	marker         []byte
-}
-
-// wireEntries are the one-key fields, then the `$` keys, each named like its getter (WIRE.md §5.5, §5.11).
-func (g *gen) wireEntries(b *body) []wireEntry {
-	var out []wireEntry
-	for _, s := range b.slots {
-		e := wireEntry{name: s.Getter, s: s, l: leaf{t: s.T}}
-		if s.Ref != nil {
-			e.name = s.KeyGetter
-		}
-		switch f := s.src; {
-		case s.fn != nil:
-			e.key = dollar + s.fn.Name
-		case f == nil || f.Inline || viaObject(f):
-			continue
-		default:
-			e.key, e.l.unit, e.l.enc = f.WirePath[0], f.Unit, f.Enc
-			if f.Optional && f.NoneWire != nil {
-				e.marker = f.NoneWire
-			}
-		}
-		e.typ = g.entryType(e)
-		out = append(out, e)
-	}
-	for _, f := range b.finite {
-		out = append(out, wireEntry{name: f.name, key: dollar + f.fn.Name, fin: f, typ: g.tableWire(f)})
-	}
-	return out
-}
-
-func (g *gen) entryType(e wireEntry) string {
-	if e.marker != nil {
-		return g.rawType()
-	}
-	return g.wireType(e.l)
-}
-
-// decodeBody writes a record's or case's wire struct and decode function (CODEGEN.md §6.1).
+// decodeBody writes a record's or case's decoder: its object and key case, each field in
+// declaration order, then each stored fn's `$` key in method order, as the C++ loader reads them.
 func (g *gen) decodeBody(b *body) {
 	defer g.enter(b.owner)()
 	g.temps = 0
-	entries := g.wireEntries(b)
-	g.foldCheck(b, g.objectExtras(b)...)
-	wire := wirePrefix + b.goName
-	g.printf(structOpen, wire)
-	for _, e := range entries {
-		g.printf(wireFieldFormat, e.name, e.typ, e.key)
-	}
-	g.printf(closeBlock)
+	g.inlineFolds(b)
 	lc := g.lc
 	g.printf(funcOpenFormat, decodePrefix+b.goName, lc.Name, lc.Path, lc.Raw, g.rawType(), lc.Out, b.goName)
 	g.openObject(g.expectedKeys(b))
-	g.unmarshal(lc.W, wire, lc.Raw)
-	g.requiredKeys(entries)
-	var pairs []pair
-	var stmts strings.Builder
-	for _, e := range entries {
-		pairs = g.readEntry(&stmts, pairs, e)
-	}
-	g.printf("*%s = %s\n%s", lc.Out, compositeLit(b.goName, pairs), stmts.String())
 	for _, s := range b.slots {
-		g.readOther(b, s)
+		if s.fn == nil {
+			g.readField(b, s)
+		}
+	}
+	for _, fn := range b.methods {
+		g.readMethod(b, fn)
 	}
 	g.printf(returnNil)
+}
+
+// readField reads one field where its wire form puts it (WIRE.md §5.5, §5.6, §5.14).
+func (g *gen) readField(owner *body, s *slot) {
+	f := s.src
+	switch {
+	case f.Inline:
+		g.readInline(s)
+	case f.Pairs != nil:
+		g.readPairs(s)
+	case len(f.WirePath) > 1:
+		g.readPath(owner, s)
+	case len(f.WirePath) == 1:
+		g.readKey(s, g.lc.Obj, g.root(), f.WirePath[0])
+	default:
+		g.failf(ErrMalformed, "field %s without a wire path", s.origin)
+	}
+}
+
+// readMethod reads a stored fn's `$` key: a precomputed result, or a lookup's table (WIRE.md §5.11).
+func (g *gen) readMethod(b *body, fn *ir.ExportFn) {
+	for _, s := range b.slots {
+		if s.fn == fn {
+			g.readKey(s, g.lc.Obj, g.root(), dollar+fn.Name)
+		}
+	}
+	for _, f := range b.finite {
+		if f.fn == fn {
+			g.readTable(f)
+		}
+	}
 }
 
 // objectExtras are an object's keys beside its fields: a row's `$id`, a case's tag (WIRE.md §5.6, §5.7).
@@ -137,48 +125,63 @@ func (g *gen) objectExtras(b *body) []string {
 	return nil
 }
 
-// unmarshal declares v of type typ and reads raw into it; a failure names the path.
-func (g *gen) unmarshal(v, typ, raw string) {
-	g.printf(unmarshalFormat, v, typ, g.lc.Err, g.use(jsonPath, jsonPkg), raw, g.wrapAt(g.root()))
-}
-
-// requiredKeys fails on the first required key absent or null (CODEGEN.md §6.1, rt.Missing).
-func (g *gen) requiredKeys(entries []wireEntry) {
-	var cases strings.Builder
-	for _, e := range entries {
-		if e.fin != nil || !e.s.Optional {
-			fmt.Fprintf(&cases, missingCaseFormat, g.lc.W, e.name, g.missing(g.root(), strconv.Quote(e.key)))
+// slotLeaf is what a slot reads: its type after the optional, its field's unit, encoding and none marker.
+func slotLeaf(s *slot) (leaf, []byte) {
+	l := leaf{t: s.T}
+	if f := s.src; s.fn == nil && f != nil {
+		l.unit, l.enc = f.Unit, f.Enc
+		if f.Optional {
+			return l, f.NoneWire
 		}
 	}
-	if cases.Len() > 0 {
-		g.printf("switch {\n%s}\n", cases.String())
-	}
+	return l, nil
 }
 
-// missing is rt.Missing of the key expression key under the path prefix.
-func (g *gen) missing(prefix location, key string) string {
-	return fmt.Sprintf(missingFormat, g.rt(), g.lc.Name, g.locExpr(prefix), key)
+// readKey reads key of obj, the object at at, into the slot; optional: absent, null or the marker is none (WIRE.md §5.4).
+func (g *gen) readKey(s *slot, obj string, at location, key string) {
+	lc := g.lc
+	l, marker := slotLeaf(s)
+	r, loc, quoted := g.temp(tempRaw), at.key(key), strconv.Quote(key)
+	if !s.Optional {
+		g.printf(needFormat, r, lc.Err, g.helper(helperNeed), lc.Name, g.locExpr(at), obj, quoted)
+		g.storeRead(s, l, r, loc)
+		return
+	}
+	cond := ""
+	if marker != nil {
+		cond = g.markerTest(r, marker)
+	}
+	g.printf(mayFormat, r, g.helper(helperMay), obj, quoted, cond)
+	g.storeRead(s, l, r, loc)
+	g.printf(closeBrace)
 }
 
-// readEntry reads one wire-struct key: a pure required value joins the composite literal.
-func (g *gen) readEntry(stmts *strings.Builder, pairs []pair, e wireEntry) []pair {
-	ptr := g.lc.W + dot + e.name
-	if e.fin != nil {
-		g.readTable(stmts, e.fin, ptr)
-		return pairs
+// storeRead reads raw into the slot's members on out.
+func (g *gen) storeRead(s *slot, l leaf, raw string, loc location) {
+	var b strings.Builder
+	g.store(&b, s, g.lc.Out, g.readValue(&b, l, raw, loc))
+	g.body.WriteString(b.String())
+}
+
+// markerTest is the condition that raw is not the field's none marker, JSON-equal as the C++
+// loader compares them; a non-empty object or array marker is refused, as C++ refuses it.
+func (g *gen) markerTest(raw string, marker []byte) string {
+	var v any
+	if json.Unmarshal(marker, &v) == nil && nonEmpty(v) {
+		g.fail(newDetail(ErrUnsupported, g.at, noneMarkerFormat, g.at, marker))
 	}
-	if e.s.Optional {
-		g.readPtr(stmts, ptrRead{s: e.s, l: e.l, marker: e.marker, ptr: ptr, recv: g.lc.Out, key: strconv.Quote(e.key), loc: g.keyLoc(e.key)})
-		return pairs
+	return notMarkerPrefix + g.helper(helperSame) + lparen + raw + listSep + strconv.Quote(string(bytes.TrimSpace(marker))) + rparen
+}
+
+// nonEmpty reports a decoded JSON object or array that holds something.
+func nonEmpty(v any) bool {
+	switch x := v.(type) {
+	case map[string]any:
+		return len(x) > 0
+	case []any:
+		return len(x) > 0
 	}
-	var pre strings.Builder
-	x := g.conv(&pre, e.l, pointer+ptr, g.keyLoc(e.key))
-	if pre.Len() == 0 {
-		return append(pairs, pair{target(e.s), x})
-	}
-	stmts.WriteString(pre.String())
-	g.store(stmts, e.s, g.lc.Out, x)
-	return pairs
+	return false
 }
 
 // target is the member a decoded value goes to: a ref's key, else the value's storage.
@@ -198,50 +201,20 @@ func (g *gen) store(b *strings.Builder, s *slot, recv, x string) {
 	fmt.Fprintf(b, assignFormat, recv, target(s), x)
 }
 
-// ptrRead is a wire pointer to decode into a slot: *W, or a raw value with a none marker;
-// key is the Go expression of its key, loc its location.
-type ptrRead struct {
-	s              *slot
-	l              leaf
-	marker         []byte
-	ptr, recv, key string
-	loc            location
-}
-
-// readPtr reads an optional pointer, nil or the marker being none, or a required one (WIRE.md §5.4).
-func (g *gen) readPtr(b *strings.Builder, r ptrRead) {
-	loc := r.loc
-	if !r.s.Optional {
-		fmt.Fprintf(b, ifNilReturnFormat, r.ptr, g.missing(g.root(), r.key))
-		g.store(b, r.s, r.recv, g.conv(b, r.l, pointer+r.ptr, loc))
-		return
-	}
-	cond := r.ptr + notNil
-	if r.marker != nil {
-		cond += fmt.Sprintf(notMarkerFormat, r.ptr, strconv.Quote(string(r.marker)))
-	}
-	fmt.Fprintf(b, ifOpenFormat, cond)
-	src := pointer + r.ptr
-	if r.marker != nil {
-		src = g.temp(tempValue)
-		fmt.Fprintf(b, markedFormat, src, g.wireType(r.l), g.lc.Err, g.use(jsonPath, jsonPkg), r.ptr, g.wrapAt(loc))
-	}
-	g.store(b, r.s, r.recv, g.conv(b, r.l, src, loc))
-	b.WriteString(closeBrace)
-}
-
 // decodeVariant reads the tag, then the case's fields from the same object (WIRE.md §5.6).
 func (g *gen) decodeVariant(v *ir.Variant) {
 	defer g.enter(v.QName())()
 	if v.Tag == "" {
 		g.failf(ErrMalformed, "variant %s without a tag", v.QName())
 	}
+	g.temps = 0
 	lc, name := g.lc, g.goName(v)
 	g.printf(funcOpenFormat, g.decodeFunc(v), lc.Name, lc.Path, lc.Raw, g.rawType(), lc.Out, name)
 	g.openObject([]string{v.Tag})
-	raw, ok := g.temp(tempRaw), g.temp(tempOK)
-	g.printf(tagReadFormat, raw, lc.Obj, strconv.Quote(v.Tag), g.missing(g.root(), strconv.Quote(v.Tag)),
-		lc.Tag, lc.Err, g.use(jsonPath, jsonPkg), g.wrapAt(g.keyLoc(v.Tag)), ok)
+	loc := g.keyLoc(v.Tag)
+	r := g.temp(tempRaw)
+	g.printf(needFormat, r, lc.Err, g.helper(helperNeed), lc.Name, lc.Path, lc.Obj, strconv.Quote(v.Tag))
+	g.readPlainInto(lc.Tag, goString, r, loc)
 	g.printf(switchTagFormat, lc.Tag)
 	for i, c := range v.Cases {
 		g.printf(caseFormat, strconv.Quote(c.Wire))
@@ -253,22 +226,8 @@ func (g *gen) decodeVariant(v *ir.Variant) {
 		g.printf(decodeIntoFormat, lc.C, g.names.CaseName(v, c), lc.Err, g.decodeFunc(c), lc.Name, lc.Path, lc.Raw)
 		g.printf(kindCaseFormat, lc.Out, name, ir.GoKindStore, kind, ir.GoCaseStore, lc.C)
 	}
-	g.printf(unknownCaseFormat, g.errAt(g.keyLoc(v.Tag), unknownCaseText, lc.Tag))
+	g.printf(unknownCaseFormat, g.errAt(loc, unknownCaseText, lc.Tag))
 	g.printf(returnNil)
-}
-
-// readOther reads an inline variant, a key path or pairs slots, outside the wire struct (WIRE.md §5.5.3, §5.6, §5.14).
-func (g *gen) readOther(b *body, s *slot) {
-	f := s.src
-	switch {
-	case f == nil || s.fn != nil:
-	case f.Inline:
-		g.readInline(s)
-	case f.Pairs != nil:
-		g.readPairs(s)
-	case viaObject(f):
-		g.readPath(b, s)
-	}
 }
 
 // readInline decodes a variant written in the parent object: the tag and the case's fields.

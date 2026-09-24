@@ -1,7 +1,6 @@
 package cppgen
 
 import (
-	_ "embed"
 	"fmt"
 	"slices"
 	"strings"
@@ -10,57 +9,9 @@ import (
 	"github.com/fantasim/canonlang/internal/types"
 )
 
-// The fixed helpers of .gen.cpp that make a loader as strict as Go's (log-2026-09-24, gen/go strict loaders).
-var (
-	//go:embed text/json_keys.txt
-	jsonKeysText string
-	//go:embed text/json_cell.txt
-	jsonCellText string
-	//go:embed text/json_row.txt
-	jsonRowText string
-	//go:embed text/json_step.txt
-	jsonStepText string
-	//go:embed text/json_slot.txt
-	jsonSlotText string
-	//go:embed text/json_int_bool.txt
-	jsonIntBoolText string
-	//go:embed text/json_bits.txt
-	jsonBitsText string
-)
-
-// helperTexts are the helpers in the order .gen.cpp writes them: a helper after those it calls.
-var helperTexts = []*string{
-	&jsonKeysText, &jsonCellText, &jsonRowText, &jsonStepText, &jsonSlotText, &jsonIntBoolText, &jsonBitsText,
-}
-
-// use marks a helper (one of helperTexts), and the helpers it calls, as written.
-func (g *gen) use(text *string) {
-	g.helpers[text] = true
-	if text == &jsonRowText {
-		g.helpers[&jsonKeysText], g.helpers[&jsonCellText] = true, true
-	}
-}
-
-// jsonHelpers writes the helpers the decoders and loaders call, in an anonymous namespace.
-func (g *gen) jsonHelpers() {
-	if len(g.helpers) == 0 {
-		return
-	}
-	g.c.line(anonOpen)
-	g.c.blank()
-	for _, text := range helperTexts {
-		if g.helpers[text] {
-			g.c.write(*text)
-		}
-	}
-	g.c.line(anonClose)
-	g.c.blank()
-}
-
 // checkKeys refuses obj unless it is an object none of whose keys equals one of keys only
 // ignoring letter case; orReturn makes a failure leave the decoder.
 func (g *gen) checkKeys(depth int, obj string, keys []string, orReturn bool) {
-	g.use(&jsonKeysText)
 	keys = slices.Compact(slices.Sorted(slices.Values(keys)))
 	quoted := make([]string, len(keys))
 	for i, k := range keys {
@@ -138,8 +89,8 @@ func nextSegments(fields []*ir.Field, prefix []string) []string {
 }
 
 // inlineFolds refuses an inline variant a key of which equals one of its parent's other keys but
-// for letter case: its case decoder reads the parent's object, and would take that key for a
-// misspelling of its own.
+// for ASCII letter case: its case decoder reads the parent's object, and would take that key for
+// a misspelling of its own.
 func (g *gen) inlineFolds(c class) {
 	fields, _ := c.shape()
 	all := g.objectKeys(c)
@@ -149,7 +100,7 @@ func (g *gen) inlineFolds(c class) {
 		}
 		own := g.fieldKeys(f)
 		for _, k := range own {
-			if slices.ContainsFunc(all, func(p string) bool { return !slices.Contains(own, p) && strings.EqualFold(k, p) }) {
+			if slices.ContainsFunc(all, func(p string) bool { return !slices.Contains(own, p) && asciiFold(k, p) }) {
 				g.unsupported(inlineFoldKeys, c.canonName()+qnameSep+f.Name)
 				return
 			}
@@ -182,4 +133,25 @@ func (g *gen) bitsMask(e *ir.Enum) string {
 		mask |= m.Code
 	}
 	return fmt.Sprintf(maskFormat, mask)
+}
+
+// asciiFold reports a and b equal but for the case of ASCII letters, the loaders' case rule
+// (canon::json::EqualFold).
+func asciiFold(a, b string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range len(a) {
+		if lowerASCII(a[i]) != lowerASCII(b[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+func lowerASCII(c byte) byte {
+	if c >= 'A' && c <= 'Z' {
+		return c + 'a' - 'A'
+	}
+	return c
 }

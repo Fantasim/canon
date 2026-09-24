@@ -163,7 +163,7 @@ func (g *gen) snapshot() {
 		getter := g.names.ContainerName(v)
 		sv := snapshotValue{
 			Doc: docFor(getter, v.Doc), Store: g.names.ValueStore(v), Type: g.valueType(v), Getter: getter,
-			Load: g.loadFunc(v), File: strconv.Quote(dataFile(v)), Record: !isContainer(v),
+			Load: g.loadFunc(v), File: strconv.Quote(pathSep + dataFile(v)), Record: !isContainer(v),
 		}
 		if key := rootKey(v); key != nil && g.needsWalk(key) {
 			sv.Resolve = g.resolveFunc(key)
@@ -176,12 +176,12 @@ func (g *gen) snapshot() {
 	}
 	snap := g.snapshotName()
 	g.exec(snapshotTemplate, struct {
-		Snap, StoreType, Pkg, GoPkg, Files, FilePath, FMT, Atomic string
-		Values                                                    []snapshotValue
-		L                                                         locals
-		M                                                         members
+		Snap, StoreType, Pkg, GoPkg, Files, FMT, Atomic string
+		Values                                          []snapshotValue
+		L                                               locals
+		M                                               members
 	}{
 		snap, strings.TrimSuffix(snap, snapshotTypeSuffix) + storeTypeSuffix, g.p.Name, g.e.GoPackage, strings.Join(files, listSep),
-		g.use(filepathPath, filepathName), g.use(fmtPkg, fmtPkg), g.use(atomicPath, atomicName), vals, g.lc, containerMembers,
+		g.use(fmtPkg, fmtPkg), g.use(atomicPath, atomicName), vals, g.lc, containerMembers,
 	})
 }

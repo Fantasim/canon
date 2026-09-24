@@ -5,10 +5,9 @@ package potions
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"iter"
-	"path/filepath"
+	"slices"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -95,7 +94,7 @@ func (self *PipelineSnapshot) Potions() *Potions { return &self.potions }
 // build` already did, and filled every default.
 func LoadPipelineSnapshot(dir string) (*PipelineSnapshot, error) {
 	s := &PipelineSnapshot{}
-	if err := loadPotions(filepath.Join(dir, "potions.json"), &s.potions); err != nil {
+	if err := loadPotions(dir+"/potions.json", &s.potions); err != nil {
 		return nil, err
 	}
 	return s, nil
@@ -128,53 +127,148 @@ var Store PipelineStore
 
 // jsonObject reads the object at path: null or another kind fails the load.
 func jsonObject(name, path string, raw json.RawMessage) (map[string]json.RawMessage, error) {
-	var obj map[string]json.RawMessage
-	if err := json.Unmarshal(raw, &obj); err != nil {
-		return nil, jsonError(name, path, err)
-	}
-	if obj == nil {
+	if string(raw) == "null" {
 		return nil, fmt.Errorf("%s: %s: null", name, strings.TrimSuffix(path, "."))
+	}
+	var obj map[string]json.RawMessage
+	if json.Unmarshal(raw, &obj) != nil {
+		return nil, fmt.Errorf("%s: %s: expected an object", name, strings.TrimSuffix(path, "."))
 	}
 	return obj, nil
 }
 
-// jsonError names where a value of the wrong kind sits in the file, and what it is.
-func jsonError(name, path string, err error) error {
-	var kind *json.UnmarshalTypeError
-	if errors.As(err, &kind) {
-		return fmt.Errorf("%s: %s: unexpected %s", name, strings.TrimSuffix(path+kind.Field, "."), kind.Value)
-	}
-	return fmt.Errorf("%s: %s: %w", name, strings.TrimSuffix(path, "."), err)
-}
-
-// jsonFolds reports a key equal to one of keys but for letter case.
-func jsonFolds(key string, keys ...string) bool {
-	for _, k := range keys {
-		if strings.EqualFold(key, k) {
-			return true
+// jsonKeys fails the load on a key of obj that is none of keys, sorted, but differs from one
+// only in ASCII letter case: the smallest such key in byte order.
+func jsonKeys(name, path string, obj map[string]json.RawMessage, keys ...string) error {
+	bad, want := "", ""
+	for k := range obj {
+		if _, ok := slices.BinarySearch(keys, k); ok {
+			continue
+		}
+		for _, key := range keys {
+			if rt.EqualFold(k, key) && (want == "" || k < bad) {
+				bad, want = k, key
+			}
 		}
 	}
-	return false
+	if want == "" {
+		return nil
+	}
+	return fmt.Errorf("%s: %s%s: differs from \"%s\" only in letter case", name, path, bad, want)
 }
 
-// jsonCase is the error of key, the smallest folding key of an object in byte order so the
-// message never depends on map order; nil for "".
-func jsonCase(name, path, key string, keys ...string) error {
-	for _, k := range keys {
-		if key != "" && strings.EqualFold(key, k) {
-			return fmt.Errorf("%s: %s%s: differs from %q only in letter case", name, path, key, k)
-		}
+// jsonNeed is obj[key], which must be present and not null.
+func jsonNeed(name, path string, obj map[string]json.RawMessage, key string) (json.RawMessage, error) {
+	r, ok := obj[key]
+	if !ok {
+		return nil, rt.Missing(name, path, key)
+	}
+	if string(r) == "null" {
+		return nil, fmt.Errorf("%s: %s%s: null", name, path, key)
+	}
+	return r, nil
+}
+
+// jsonMay is obj[key], nil when it is absent or null.
+func jsonMay(obj map[string]json.RawMessage, key string) json.RawMessage {
+	if r := obj[key]; string(r) != "null" {
+		return r
 	}
 	return nil
 }
 
-type wirePotion struct {
-	ID       *string `json:"dwID"`
-	Name     *string `json:"szName"`
-	Heal     *int64  `json:"nHeal"`
-	Cooldown *int64  `json:"dwCooldownMs"`
-	Stack    *int64  `json:"nStack"`
-	IsStrong *bool   `json:"$isStrong"`
+// jsonCell is a lookup cell of obj: absent fails the load, null is none (nil).
+func jsonCell(name, path string, obj map[string]json.RawMessage, key string) (json.RawMessage, error) {
+	if _, ok := obj[key]; !ok {
+		return nil, rt.Missing(name, path, key)
+	}
+	return jsonMay(obj, key), nil
+}
+
+// jsonRead reads raw into dst, a string, bool, float or array: null, or a value of another
+// kind, fails the load at path+key, naming what was expected.
+func jsonRead(name, path, key string, raw json.RawMessage, dst any) error {
+	if string(raw) == "null" {
+		return fmt.Errorf("%s: %s%s: null", name, path, key)
+	}
+	if json.Unmarshal(raw, dst) == nil {
+		return nil
+	}
+	want := "expected a string"
+	switch dst.(type) {
+	case *bool:
+		want = "expected true or false"
+	case *float64:
+		want = "expected a number"
+	case *float32:
+		want = "expected a number that fits Float32"
+	case *[]json.RawMessage:
+		want = "expected an array"
+	}
+	return fmt.Errorf("%s: %s%s: %s", name, path, key, want)
+}
+
+// jsonInt reads an integer token from lo to hi: null, or anything else, fails the load at
+// path+key.
+func jsonInt(name, path, key string, raw json.RawMessage, lo, hi int64) (int64, error) {
+	if string(raw) == "null" {
+		return 0, fmt.Errorf("%s: %s%s: null", name, path, key)
+	}
+	var n int64
+	if json.Unmarshal(raw, &n) == nil && n >= lo && n <= hi {
+		return n, nil
+	}
+	if lo == -1<<63 && hi == 1<<63-1 {
+		return 0, fmt.Errorf("%s: %s%s: expected an integer", name, path, key)
+	}
+	return 0, fmt.Errorf("%s: %s%s: expected an integer from %d to %d", name, path, key, lo, hi)
+}
+
+// jsonSlot reads pairs slot k, v of obj: nil, nil for an empty slot, which sets *empty; an
+// incomplete, null or late slot fails the load at its first key present.
+func jsonSlot(name, path string, obj map[string]json.RawMessage, k, v string, empty *bool) (json.RawMessage, json.RawMessage, error) {
+	kr, hasK := obj[k]
+	vr, hasV := obj[v]
+	first := k
+	if !hasK {
+		first = v
+	}
+	switch {
+	case !hasK && !hasV:
+		*empty = true
+		return nil, nil, nil
+	case hasK != hasV:
+		return nil, nil, fmt.Errorf("%s: %s%s: incomplete pairs slot", name, path, first)
+	case string(kr) == "null" || string(vr) == "null":
+		return nil, nil, fmt.Errorf("%s: %s%s: null in a pairs slot", name, path, first)
+	case *empty:
+		return nil, nil, fmt.Errorf("%s: %s%s: pairs slot after an empty one", name, path, first)
+	}
+	return kr, vr, nil
+}
+
+// jsonSame reports raw JSON-equal to the none marker: a string after decoding, an integer
+// only to an integer token, another number by value, [] and {} when empty.
+func jsonSame(raw json.RawMessage, marker string) bool {
+	switch marker[0] {
+	case '"':
+		var a, m string
+		return json.Unmarshal(raw, &a) == nil && json.Unmarshal([]byte(marker), &m) == nil && a == m
+	case '[':
+		var a []json.RawMessage
+		return json.Unmarshal(raw, &a) == nil && a != nil && len(a) == 0
+	case '{':
+		var a map[string]json.RawMessage
+		return json.Unmarshal(raw, &a) == nil && a != nil && len(a) == 0
+	case 't', 'f':
+		return string(raw) == marker
+	}
+	var a, m int64
+	if json.Unmarshal([]byte(marker), &m) == nil {
+		return json.Unmarshal(raw, &a) == nil && a == m
+	}
+	var af, mf float64
+	return json.Unmarshal(raw, &af) == nil && json.Unmarshal([]byte(marker), &mf) == nil && af == mf
 }
 
 func decodePotion(name, path string, raw json.RawMessage, out *Potion) error {
@@ -182,45 +276,63 @@ func decodePotion(name, path string, raw json.RawMessage, out *Potion) error {
 	if err != nil {
 		return err
 	}
-	bad2 := ""
-	for k1 := range obj {
-		switch k1 {
-		case "$isStrong", "dwCooldownMs", "dwID", "nHeal", "nStack", "szName":
-		default:
-			if jsonFolds(k1, "$isStrong", "dwCooldownMs", "dwID", "nHeal", "nStack", "szName") && (bad2 == "" || k1 < bad2) {
-				bad2 = k1
-			}
-		}
-	}
-	if err := jsonCase(name, path, bad2, "$isStrong", "dwCooldownMs", "dwID", "nHeal", "nStack", "szName"); err != nil {
+	if err := jsonKeys(name, path, obj, "$isStrong", "dwCooldownMs", "dwID", "nHeal", "nStack", "szName"); err != nil {
 		return err
 	}
-	var w wirePotion
-	if err := json.Unmarshal(raw, &w); err != nil {
-		return jsonError(name, path, err)
+	r1, err := jsonNeed(name, path, obj, "dwID")
+	if err != nil {
+		return err
 	}
-	switch {
-	case w.ID == nil:
-		return rt.Missing(name, path, "dwID")
-	case w.Name == nil:
-		return rt.Missing(name, path, "szName")
-	case w.Heal == nil:
-		return rt.Missing(name, path, "nHeal")
-	case w.Cooldown == nil:
-		return rt.Missing(name, path, "dwCooldownMs")
-	case w.Stack == nil:
-		return rt.Missing(name, path, "nStack")
-	case w.IsStrong == nil:
-		return rt.Missing(name, path, "$isStrong")
+	var v2 string
+	if err := jsonRead(name, path, "dwID", r1, &v2); err != nil {
+		return err
 	}
-	*out = Potion{
-		id:       *w.ID,
-		name:     *w.Name,
-		heal:     *w.Heal,
-		cooldown: rt.DurationFromMs(*w.Cooldown),
-		stack:    *w.Stack,
-		isStrong: *w.IsStrong,
+	out.id = v2
+	r3, err := jsonNeed(name, path, obj, "szName")
+	if err != nil {
+		return err
 	}
+	var v4 string
+	if err := jsonRead(name, path, "szName", r3, &v4); err != nil {
+		return err
+	}
+	out.name = v4
+	r5, err := jsonNeed(name, path, obj, "nHeal")
+	if err != nil {
+		return err
+	}
+	n6, err := jsonInt(name, path, "nHeal", r5, -9223372036854775808, 9223372036854775807)
+	if err != nil {
+		return err
+	}
+	out.heal = n6
+	r7, err := jsonNeed(name, path, obj, "dwCooldownMs")
+	if err != nil {
+		return err
+	}
+	n8, err := jsonInt(name, path, "dwCooldownMs", r7, -9223372036854, 9223372036854)
+	if err != nil {
+		return err
+	}
+	out.cooldown = rt.DurationFromMs(n8)
+	r9, err := jsonNeed(name, path, obj, "nStack")
+	if err != nil {
+		return err
+	}
+	n10, err := jsonInt(name, path, "nStack", r9, -9223372036854775808, 9223372036854775807)
+	if err != nil {
+		return err
+	}
+	out.stack = n10
+	r11, err := jsonNeed(name, path, obj, "$isStrong")
+	if err != nil {
+		return err
+	}
+	var v12 bool
+	if err := jsonRead(name, path, "$isStrong", r11, &v12); err != nil {
+		return err
+	}
+	out.isStrong = v12
 	return nil
 }
 
@@ -233,11 +345,8 @@ func loadPotions(path string, out *Potions) error {
 		return rt.Missing(path, "", "rows")
 	}
 	var rows []json.RawMessage
-	if err := json.Unmarshal(f.Rows, &rows); err != nil {
-		return jsonError(path, "rows.", err)
-	}
-	if rows == nil {
-		return fmt.Errorf("%s: rows: null", path)
+	if err := jsonRead(path, "", "rows", f.Rows, &rows); err != nil {
+		return err
 	}
 	values := make([]Potion, len(rows))
 	keys := make([]string, len(rows))

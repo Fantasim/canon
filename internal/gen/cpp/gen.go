@@ -36,9 +36,8 @@ type gen struct {
 	slots        map[any][]resolved       // per class, the refs resolved at load
 	classes      []class                  // records, cases and variants, topologically sorted (§2.7)
 	top          *scope
-	pkgFns       []*ir.ExportFn   // package-level translated fns
-	helpers      map[*string]bool // the helpers of .gen.cpp its code calls (strict.go)
-	methods      []*method        // translated methods, declaration order
+	pkgFns       []*ir.ExportFn // package-level translated fns
+	methods      []*method      // translated methods, declaration order
 	h, c         writer
 }
 
@@ -79,7 +78,7 @@ func newGen(p *ir.Package, e *ir.Emit) *gen {
 		p: p, emit: e, at: p.Name, last: last, upper: upperCamel(last),
 		entries: map[*ir.Record]bool{}, loaders: map[*ir.Record]*ir.Value{}, imported: map[string]bool{},
 		pairsFriends: map[*ir.Record][]string{}, holders: map[any][]*ir.Value{}, slots: map[any][]resolved{},
-		helpers: map[*string]bool{}, top: newScope(e.Namespace),
+		top: newScope(e.Namespace),
 	}
 }
 
@@ -182,7 +181,6 @@ func (g *gen) source() []byte {
 	g.c = writer{}
 	g.c.line(detailOpen)
 	g.c.blank()
-	g.jsonHelpers()
 	g.c.write(body)
 	g.c.line(detailClose)
 	g.c.blank()

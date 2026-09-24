@@ -47,7 +47,6 @@ const (
 	foreignPairs     = "a pairs field of a record from another package"
 	inlineFoldKeys   = "an inline variant key equal to another key of its parent but for letter case"
 	snapshotOrigin   = "the snapshot"
-	helpersOrigin    = "the JSON loader helpers"
 	noneMarkerFormat = "none marker %s"
 	typeFormat       = "type %T"
 	valueFormat      = "value %T"

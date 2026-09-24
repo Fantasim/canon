@@ -50,7 +50,6 @@ func (g *gen) decodePairs(f *ir.Field, dst string) {
 		}
 		g.c.linef(depthTwo, keysArrayFormat, fmt.Sprintf(wireKeysFormat, k), strings.Join(keys, listSep))
 	}
-	g.use(&jsonSlotText)
 	g.c.linef(depthTwo, emptyFlagLine)
 	g.c.linef(depthTwo, slotLoopFormat, f.Pairs.Slots)
 	g.c.linef(depthThree, slotCheckFormat, sourceVar, fmt.Sprintf(wireKeysFormat, 0), fmt.Sprintf(wireKeysFormat, 1))
@@ -91,7 +90,6 @@ func (g *gen) decodeBits(depth int, src, key string, l leaf) {
 		names[i] = g.typeName(e) + scopeSep + enumerator(m)
 	}
 	enum := g.typeName(e)
-	g.use(&jsonBitsText)
 	g.c.linef(depth, bitsTempLine)
 	g.c.linef(depth, bitsOpenFormat, src, key, g.bitsMask(e))
 	g.c.linef(depth+1, bitsArrayFormat, enum, strings.Join(names, listSep))

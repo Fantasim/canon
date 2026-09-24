@@ -13,18 +13,22 @@ import (
 
 // locals are the escaped locals of data mode's loaders, decoders and resolvers (CODEGEN.md §3.4, decision 182).
 type locals struct {
-	Name, Path, Raw, Out, W, Obj, Err, F, Rows, Values, Keys, I, ID, Retired, Dir, S, Ctx, Tag, C string
-	Kind, Key, K, R, OK                                                                           string
+	Name, Path, Raw, Out, Obj, Err, F, Rows, Values, Keys, I, ID, Retired, Dir, S, Ctx, Tag, C          string
+	Key, K, R, OK, Bad, Want, Dst, N, Lo, Hi, V, Kr, Vr, HasK, HasV, First, Empty, Marker, A, M, Af, Mf string
 }
 
 func (g *gen) newLocals() locals {
 	return locals{
 		Name: g.local(localName), Path: g.local(localPath), Raw: g.local(localRaw), Out: g.local(localOut),
-		W: g.local(localWire), Obj: g.local(localObj), Err: g.local(localErr), F: g.local(localFile),
+		Obj: g.local(localObj), Err: g.local(localErr), F: g.local(localFile),
 		Rows: g.local(ir.GoRows), Values: g.local(localValues), Keys: g.local(localKeys), I: g.local(localIndex),
 		ID: g.local(ir.GoIDStore), Retired: g.local(ir.GoRetiredStore), Dir: g.local(localDir), S: g.local(localSnap), Ctx: g.local(localCtx),
 		Tag: g.local(localTag), C: g.local(localCase),
-		Kind: g.local(localKind), Key: g.local(keyArg), K: g.local(tempKey), R: g.local(tempRaw), OK: g.local(tempOK),
+		Key: g.local(keyArg), K: g.local(tempKey), R: g.local(tempRaw), OK: g.local(tempOK),
+		Bad: g.local(localBad), Want: g.local(localWant), Dst: g.local(localDst), N: g.local(tempInt), Lo: g.local(localLo),
+		Hi: g.local(localHi), V: g.local(tempValue), Kr: g.local(localKr), Vr: g.local(localVr), HasK: g.local(localHasK),
+		HasV: g.local(localHasV), First: g.local(localFirst), Empty: g.local(tempEmpty), Marker: g.local(localMarker),
+		A: g.local(localA), M: g.local(tempMember), Af: g.local(localAf), Mf: g.local(localMf),
 	}
 }
 

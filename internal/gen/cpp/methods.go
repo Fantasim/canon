@@ -38,7 +38,7 @@ func (g *gen) domains(fn *ir.ExportFn) []domain {
 // enumKey is a member's wire key: its wire value, or its code with @json(codes) (WIRE.md §5.8).
 func enumKey(e *ir.Enum, m *ir.EnumMember) string {
 	if e.JSONCodes {
-		return intLit(m.Code)
+		return strconv.FormatInt(m.Code, decimalBase)
 	}
 	return m.Wire
 }

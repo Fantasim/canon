@@ -224,9 +224,8 @@ const (
 	asDuration          = "AsDuration"
 	asEnum              = "AsEnum"
 	intTempLine         = "int64_t n = 0;"
-	floatTempLine       = "double d = 0.0;"
-	narrowIntFormat     = "if (dec.AsInt(%s, %s, n)) %s = static_cast<%s>(n);"
-	narrowFloatFormat   = "if (dec.AsFloat(%s, %s, d)) %s = static_cast<float>(d);"
+	narrowIntFormat     = "if (dec.AsIntIn(%s, %s, %s, %s, n)) %s = static_cast<%s>(n);"
+	asFloat32Format     = "dec.AsFloat32(%s, %s, %s);"
 	notArrayFormat      = "if (!%s.is_array()) {"
 	forFormat           = "for (size_t %s = 0; %s < %s.size(); ++%s) {"
 	localFormat         = "%s %s%s;"
@@ -387,7 +386,7 @@ const (
 	slotVar            = "s"
 	slotElem           = "e"
 	slotLoopFormat     = "for (size_t s = 0; s < %d; ++s) {"
-	bitsOpenFormat     = "if (jsonBits(%s, dec, %s, %s, n)) {"
+	bitsOpenFormat     = "if (" + jsonDetail + "Bits(%s, dec, %s, %s, n)) {"
 	bitsArrayFormat    = "constexpr %s bits[] = {%s};"
 	bitsLoopFormat     = "for (%s m : bits) {"
 	bitsTestFormat     = "if ((n & static_cast<uint64_t>(m)) != 0) %s.push_back(m);"
@@ -473,24 +472,20 @@ var containerNames = []string{"Len", "At", "All", "Find", "rows_"}
 // escapes are the bytes a C++ string literal writes with a backslash; other controls are octal.
 var escapes = map[byte]string{'"': `\"`, '\\': `\\`, '\n': `\n`, '\t': `\t`}
 
-// Strict loaders: the helpers of .gen.cpp and their calls (log-2026-09-24, gen/go strict loaders).
+// Strict loaders: calls of canon_runtime_json.h's detail helpers (CODEGEN.md §7.5).
 const (
-	anonOpen           = "namespace {"
-	anonClose          = "}  // namespace"
+	jsonDetail         = "canon::json::detail::"
 	bracedFormat       = "{%s}"
-	keysReturnFormat   = "if (!jsonKeys(%s, dec, %s)) return false;"
-	keysStmtFormat     = "jsonKeys(%s, dec, %s);"
-	objectReturnFormat = "if (!jsonObject(%s, dec)) return false;"
-	stepOpenFormat     = "if (const nlohmann::json* %s = jsonStep(%s, dec, %s)) {"
-	cellOpenFormat     = "if (const nlohmann::json* %s = jsonCell(%s, dec, %s, %t)) {"
-	intBoolFormat      = "jsonIntBool(%s, dec, %s, %s);"
+	keysReturnFormat   = "if (!" + jsonDetail + "Keys(%s, dec, %s)) return false;"
+	keysStmtFormat     = jsonDetail + "Keys(%s, dec, %s);"
+	objectReturnFormat = "if (!" + jsonDetail + "Object(%s, dec)) return false;"
+	stepOpenFormat     = "if (const nlohmann::json* %s = " + jsonDetail + "Step(%s, dec, %s)) {"
+	cellOpenFormat     = "if (const nlohmann::json* %s = " + jsonDetail + "Cell(%s, dec, %s, %t)) {"
+	intBoolFormat      = "if (dec.AsIntIn(%s, %s, 0, 1, n)) %s = n == 1;"
 	bitsTempLine       = "uint64_t n = 0;"
 	maskFormat         = "0x%x"
 	emptyFlagLine      = "bool empty = false;"
-	slotCheckFormat    = "if (!jsonSlot(%s, dec, %s[s], %s[s], empty)) continue;"
+	slotCheckFormat    = "if (!" + jsonDetail + "Slot(%s, dec, %s[s], %s[s], empty)) continue;"
 	cellsArrayFormat   = "constexpr const char* cells[] = {%s};"
 	cellsKey           = "cells[c]"
 )
-
-// jsonHelperNames are the helpers' names, declared in the namespace so no generated name hides them.
-var jsonHelperNames = []string{"jsonObject", "jsonKeys", "jsonCell", "jsonRow", "jsonStep", "jsonSlot", "jsonIntBool", "jsonBits"}

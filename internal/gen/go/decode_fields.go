@@ -5,61 +5,31 @@ import (
 	"slices"
 	"strconv"
 	"strings"
-	"unicode"
 
 	"github.com/fantasim/canonlang/internal/ir"
 	"github.com/fantasim/canonlang/internal/types"
 )
 
-// viaObject reports a field read through the object rather than the wire struct: a path of
-// several keys, pairs slots, or a key encoding/json cannot name in a struct tag.
-func viaObject(f *ir.Field) bool {
-	return !f.Inline && (f.Pairs != nil || len(f.WirePath) != 1 || !tagSafe(f.WirePath[0]))
-}
-
-// tagSafe reports a key encoding/json reads from a struct tag unchanged (its isValidTag).
-func tagSafe(key string) bool {
-	if key == "" || key == tagSkip {
-		return false
-	}
-	for _, c := range key {
-		if !strings.ContainsRune(tagPunctuation, c) && !unicode.IsLetter(c) && !unicode.IsDigit(c) {
-			return false
-		}
-	}
-	return true
-}
-
-// readPath reads a field down its key path in the object; a missing or null object is its absence (WIRE.md §5.5.3).
+// readPath reads a field down its key path; an absent object leaves the field missing (WIRE.md §5.5.3).
 func (g *gen) readPath(owner *body, s *slot) {
 	f, lc := s.src, g.lc
-	l := leaf{t: s.T, unit: f.Unit, enc: f.Enc}
-	var marker []byte
-	typ := g.wireType(l)
-	if f.Optional && f.NoneWire != nil {
-		marker, typ = f.NoneWire, g.rawType()
-	}
-	var b strings.Builder
-	p := g.temp(tempPointer)
-	fmt.Fprintf(&b, "var %s *%s\n", p, typ)
 	obj, last := lc.Obj, len(f.WirePath)-1
-	for i, seg := range f.WirePath {
-		r, ok := g.temp(tempRaw), g.temp(tempOK)
-		loc := g.keyLoc(strings.Join(f.WirePath[:i+1], dot))
-		fmt.Fprintf(&b, lookupKeyFormat, r, ok, obj, strconv.Quote(seg), ok)
-		if i < last {
-			o := g.temp(tempObject)
-			fmt.Fprintf(&b, openObjectFormat, o, lc.Err, helperObject, lc.Name, g.locExpr(loc.dot()), r)
-			g.caseLoop(&b, o, g.locExpr(loc.dot()), nextSegments(owner, f.WirePath[:i+1]))
-			obj = o
-			continue
-		}
-		fmt.Fprintf(&b, readIntoFormat, lc.Err, g.use(jsonPath, jsonPkg), r, p, g.wrapAt(loc))
+	levels := []location{g.root()}
+	for i, seg := range f.WirePath[:last] {
+		r, ok, o := g.temp(tempRaw), g.temp(tempOK), g.temp(tempObject)
+		next := levels[i].key(seg).dot()
+		g.printf(lookupKeyFormat, r, ok, obj, strconv.Quote(seg), ok)
+		g.printf(openObjectFormat, o, lc.Err, g.helper(helperObject), lc.Name, g.locExpr(next), r)
+		g.keysCheck(o, next, nextSegments(owner, f.WirePath[:i+1]))
+		obj, levels = o, append(levels, next)
 	}
-	b.WriteString(strings.Repeat(closeBrace, len(f.WirePath)))
-	key := strings.Join(f.WirePath, dot)
-	g.readPtr(&b, ptrRead{s: s, l: l, marker: marker, ptr: p, recv: lc.Out, key: strconv.Quote(key), loc: g.keyLoc(key)})
-	g.body.WriteString(b.String())
+	g.readKey(s, obj, levels[last], f.WirePath[last])
+	for i := last - 1; i >= 0; i-- {
+		if !s.Optional {
+			g.printf(elseReturnFormat, g.missing(levels[i], strconv.Quote(strings.Join(f.WirePath[i:], dot))))
+		}
+		g.printf(closeBrace)
+	}
 }
 
 // nextSegments are the keys the field paths under prefix read next, the object's keys at prefix (WIRE.md §5.5.3).
@@ -73,42 +43,37 @@ func nextSegments(b *body, prefix []string) []string {
 	return keys
 }
 
-// readPairs reads slots up to the first empty one, the record's fields at k(i) and v(i) (WIRE.md §5.14).
+// readPairs reads the filled slots, the record's fields at k(i) and v(i) (WIRE.md §5.14).
 func (g *gen) readPairs(s *slot) {
 	f, lc := s.src, g.lc
 	rec, ok := g.sub(s.T.Elem).Named.(*ir.Record)
-	if !ok || len(rec.Fields) != pairFields || f.Pairs.Slots <= 0 {
+	if !ok || len(rec.Fields) != pairFields || f.Pairs.Slots <= 0 || len(g.bodyOf(rec).slots) < pairFields {
 		g.failf(ErrMalformed, "pairs field %s without a two-field record or slots", s.origin)
 		return
 	}
-	var keys [pairFields][]string
+	var keys [pairFields]string
 	for k, tmpl := range f.Pairs.Keys {
-		keys[k] = g.slotKeys(tmpl, f.Pairs.Slots)
+		keys[k] = strings.Join(g.slotKeys(tmpl, f.Pairs.Slots), listSep)
 	}
-	var b strings.Builder
 	list, empty, i := g.temp(tempValue), g.temp(tempEmpty), g.temp(tempIndex)
 	slotKeys := [pairFields]string{g.temp(tempKey), g.temp(tempKey)}
 	raws := [pairFields]string{g.temp(tempRaw), g.temp(tempRaw)}
-	oks := [pairFields]string{g.temp(tempOK), g.temp(tempOK)}
 	elem := g.temp(tempElem)
-	fmt.Fprintf(&b, pairsOpenFormat, list, g.goName(rec), empty, i, slotKeys[0], strings.Join(keys[0], listSep), slotKeys[1], strings.Join(keys[1], listSep))
-	for k := range pairFields {
-		fmt.Fprintf(&b, pairsRawFormat, raws[k], oks[k], lc.Obj, slotKeys[k])
+	g.printf(pairsOpenFormat, list, g.goName(rec), empty, i, slotKeys[0], keys[0], slotKeys[1], keys[1])
+	g.printf(slotFormat, raws[0], raws[1], lc.Err, g.helper(helperSlot), lc.Name, lc.Path, lc.Obj, slotKeys[0], slotKeys[1], empty, elem, g.goName(rec))
+	for k, es := range g.bodyOf(rec).slots[:pairFields] {
+		g.storeInto(es, elem, leaf{t: es.T, unit: es.src.Unit, enc: es.src.Enc}, raws[k], g.root().arg(slotKeys[k]))
 	}
-	at := g.root().arg(slotKeys[0])
-	fmt.Fprintf(&b, pairsSlotFormat, oks[0], oks[1], empty, g.errAt(at, incompleteSlotText, ""), g.errAt(at, afterEmptyText, ""), elem, g.goName(rec))
-	body := g.bodyOf(rec)
-	if len(body.slots) < pairFields {
-		g.failf(ErrMalformed, "pairs field %s of a record with a Never field", s.origin)
-		return
-	}
-	for k, es := range body.slots[:pairFields] {
-		p, l, loc := g.temp(tempPointer), leaf{t: es.T, unit: es.src.Unit, enc: es.src.Enc}, g.root().arg(slotKeys[k])
-		fmt.Fprintf(&b, unmarshalFormat, p, pointer+g.wireType(l), lc.Err, g.use(jsonPath, jsonPkg), raws[k], g.wrapAt(loc))
-		g.readPtr(&b, ptrRead{s: es, l: l, ptr: p, recv: elem, key: slotKeys[k], loc: loc})
-	}
-	fmt.Fprintf(&b, pairsCloseFormat, list, elem)
+	g.printf(pairsCloseFormat, list, elem)
+	var b strings.Builder
 	g.store(&b, s, lc.Out, g.rt()+makeList+list+rparen)
+	g.body.WriteString(b.String())
+}
+
+// storeInto reads raw into the slot's members on recv.
+func (g *gen) storeInto(s *slot, recv string, l leaf, raw string, loc location) {
+	var b strings.Builder
+	g.store(&b, s, recv, g.readValue(&b, l, raw, loc))
 	g.body.WriteString(b.String())
 }
 
@@ -142,40 +107,61 @@ func (g *gen) slotKey(tmpl string, i int) string {
 	return before + strconv.Itoa(i) + rest
 }
 
-// tableWire is a lookup's `$<fn>` object, a level per parameter keyed by wire keys, cells read through pointers so null is seen (WIRE.md §5.11).
-func (g *gen) tableWire(f *finiteMethod) string {
-	return strings.Repeat(objectType, len(f.fn.Params)) + pointer + g.wireType(leaf{t: f.res.T})
-}
-
-// readTable fills a lookup's dense table from its nested object, in domain order (§5.10).
-func (g *gen) readTable(b *strings.Builder, f *finiteMethod, ptr string) {
+// readTable fills a lookup's table from its `$<fn>` object, a level per parameter (WIRE.md §5.11).
+func (g *gen) readTable(f *finiteMethod) {
+	lc := g.lc
 	store, pair := f.store, f.pair
 	if f.res.Resolved {
 		store, pair = f.res.KeyStore, f.res.Optional
 	}
-	src, loc, cell := lparen+pointer+ptr+rparen, g.keyLoc(dollar+f.fn.Name), g.lc.Out+dot+store
-	for _, p := range f.fn.Params {
-		g.caseLoop(b, src, g.locExpr(loc.dot()), g.domainWires(p.Type))
-		i, k, m, ok := g.temp(tempIndex), g.temp(tempKey), g.temp(tempMember), g.temp(tempOK)
-		fmt.Fprintf(b, tableLevelFormat, i, k, strings.Join(g.domainKeys(p.Type), listSep), m, ok, src, g.missing(loc.dot(), k))
-		src, loc, cell = m, loc.dot().arg(k), cell+lbracket+i+rbracket
+	key := dollar + f.fn.Name
+	r, obj, prefix := g.temp(tempRaw), g.temp(tempObject), g.temp(tempPrefix)
+	g.printf(needFormat, r, lc.Err, g.helper(helperNeed), lc.Name, lc.Path, lc.Obj, strconv.Quote(key))
+	g.printf(prefixFormat, prefix, g.locExpr(g.root().key(key).dot()))
+	g.printf(openObjectFormat, obj, lc.Err, g.helper(helperObject), lc.Name, prefix, r)
+	cell, last := lc.Out+dot+store, len(f.fn.Params)-1
+	for n, p := range f.fn.Params {
+		g.keysCheck(obj, prefixLoc(prefix), g.domainWires(p.Type))
+		i, k := g.temp(tempIndex), g.temp(tempKey)
+		g.printf(domainLoopFormat, i, k, strings.Join(g.domainKeys(p.Type), listSep))
+		cell += lbracket + i + rbracket
+		if n == last {
+			g.readCell(f, obj, prefixLoc(prefix).arg(k), cell, pair)
+			break
+		}
+		r, next, o := g.temp(tempRaw), g.temp(tempPrefix), g.temp(tempObject)
+		g.printf(needFormat, r, lc.Err, g.helper(helperNeed), lc.Name, prefix, obj, k)
+		g.printf(prefixFormat, next, g.locExpr(prefixLoc(prefix).arg(k).dot()))
+		g.printf(openObjectFormat, o, lc.Err, g.helper(helperObject), lc.Name, next, r)
+		obj, prefix = o, next
 	}
-	res := leaf{t: f.res.T}
+	g.body.WriteString(strings.Repeat(closeBrace, len(f.fn.Params)))
+}
+
+// prefixLoc is the location of what the local prefix, a path with its dot, holds.
+func prefixLoc(prefix string) location { return location{format: verbString, args: []string{prefix}} }
+
+// readCell reads one cell of the level obj; null is none for an optional result (WIRE.md §5.11).
+func (g *gen) readCell(f *finiteMethod, obj string, loc location, cell string, pair bool) {
+	lc := g.lc
+	prefix, key := g.splitLoc(loc)
+	r := g.temp(tempRaw)
+	var b strings.Builder
 	if f.res.Optional {
-		fmt.Fprintf(b, ifOpenFormat, src+notNil)
+		g.printf(cellFormat, r, lc.Err, g.helper(helperCell), lc.Name, prefix, obj, key, r)
 	} else {
-		fmt.Fprintf(b, ifNilReturnFormat, src, g.nullAt(loc))
+		g.printf(needFormat, r, lc.Err, g.helper(helperNeed), lc.Name, prefix, obj, key)
 	}
-	x := g.conv(b, res, pointer+src, loc)
+	x := g.readValue(&b, leaf{t: f.res.T}, r, loc)
 	if pair {
-		fmt.Fprintf(b, cellPairFormat, cell, pairValue, pairOK, x)
+		fmt.Fprintf(&b, cellPairFormat, cell, pairValue, pairOK, x)
 	} else {
-		fmt.Fprintf(b, cellFormat, cell, x)
+		fmt.Fprintf(&b, cellStoreFormat, cell, x)
 	}
 	if f.res.Optional {
 		b.WriteString(closeBrace)
 	}
-	b.WriteString(strings.Repeat(closeBrace, len(f.fn.Params)))
+	g.body.WriteString(b.String())
 }
 
 // domainKeys are a finite parameter's wire keys in domain order (CODEGEN.md §5.10, WIRE.md §5.8).
@@ -231,35 +217,23 @@ func (g *gen) objectKeys(b *body) []string {
 	return keys
 }
 
-// foldCheck refuses two keys of one object equal but for case, which encoding/json confuses; extra
-// are the object's other keys (a row's `$id`, a case's tag); an inline variant adds one case at a
-// time.
-func (g *gen) foldCheck(b *body, extra ...string) {
-	keys := append(g.objectKeys(b), extra...)
-	sets := [][]string{keys}
+// inlineFolds refuses an inline variant a key of which equals another key of its parent but
+// for ASCII letter case: its case decoder reads the parent's object, as gen/cpp refuses it.
+func (g *gen) inlineFolds(b *body) {
+	all := append(g.objectKeys(b), g.objectExtras(b)...)
 	for _, s := range b.slots {
 		v, ok := s.T.Named.(*ir.Variant)
 		if s.src == nil || !s.src.Inline || !ok {
 			continue
 		}
-		for _, c := range v.Cases {
-			if len(c.Fields) > 0 {
-				sets = append(sets, append(slices.Clone(keys), g.objectKeys(g.caseBody(v, c))...))
-			}
+		own := []string{v.Tag}
+		g.eachCase(v, func(*ir.Case) bool { return true }, func(c *body) { own = append(own, g.objectKeys(c)...) })
+		folds := func(k string) bool {
+			return slices.ContainsFunc(all, func(p string) bool { return !slices.Contains(own, p) && asciiFold(k, p) })
 		}
-	}
-	for _, set := range sets {
-		g.foldSet(set)
-	}
-}
-
-func (g *gen) foldSet(keys []string) {
-	for i, a := range keys {
-		for _, b := range keys[i+1:] {
-			if a != b && strings.EqualFold(a, b) {
-				g.fail(newDetail(ErrUnsupported, g.at, foldFormat, a, b, g.at))
-				return
-			}
+		if slices.ContainsFunc(own, folds) {
+			g.fail(newDetail(ErrUnsupported, s.origin, foldFormat, s.origin))
+			return
 		}
 	}
 }

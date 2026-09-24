@@ -101,7 +101,6 @@ func (g *gen) decodeField(f *ir.Field, fields []*ir.Field) {
 	last := len(f.WirePath) - 1
 	for i, seg := range f.WirePath[:last] {
 		v := fmt.Sprintf(pathVarFormat, i)
-		g.use(&jsonStepText)
 		g.c.linef(depth, stepOpenFormat, v, obj, quote(seg))
 		g.c.linef(depth+1, pushFormat, quote(seg))
 		obj, depth = fmt.Sprintf(derefFormat, v), depth+1
@@ -138,7 +137,6 @@ func (g *gen) decodeKey(depth int, obj, key string, l leaf) {
 	x := fmt.Sprintf(jsonVarFormat, depth)
 	switch {
 	case l.cell:
-		g.use(&jsonCellText)
 		g.c.linef(depth, cellOpenFormat, x, obj, key, l.optional)
 	case !l.optional:
 		g.c.linef(depth, requiredOpenFormat, x, obj, key)
@@ -251,18 +249,18 @@ func (g *gen) decodeValue(depth int, src, key string, l leaf) {
 func (g *gen) decodeNumber(depth int, src, key string, l leaf) {
 	switch {
 	case l.t.Kind == types.Bool && l.enc == types.EncInt:
-		g.use(&jsonIntBoolText)
+		g.c.linef(depth, intTempLine)
 		g.c.linef(depth, intBoolFormat, src, key, l.dst)
 	case l.t.Kind == types.Bool:
 		g.c.linef(depth, decCallFormat, asBool, src, key, "", l.dst)
 	case l.t.Kind == types.Int && l.t.Bits == bits64 && l.t.Signed:
 		g.c.linef(depth, decCallFormat, asInt, src, key, "", l.dst)
 	case l.t.Kind == types.Int:
+		lo, hi := intRange(l.t)
 		g.c.linef(depth, intTempLine)
-		g.c.linef(depth, narrowIntFormat, src, key, l.dst, intType(l.t))
+		g.c.linef(depth, narrowIntFormat, src, key, lo, hi, l.dst, intType(l.t))
 	case l.t.Bits == float32Bits:
-		g.c.linef(depth, floatTempLine)
-		g.c.linef(depth, narrowFloatFormat, src, key, l.dst)
+		g.c.linef(depth, asFloat32Format, src, key, l.dst)
 	default:
 		g.c.linef(depth, decCallFormat, asFloat, src, key, "", l.dst)
 	}

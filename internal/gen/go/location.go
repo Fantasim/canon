@@ -14,9 +14,10 @@ type location struct {
 }
 
 // keyLoc is the location of a literal key under the current path.
-func (g *gen) keyLoc(key string) location {
-	return location{format: verbString + escapeVerbs(key), args: []string{g.lc.Path}}
-}
+func (g *gen) keyLoc(key string) location { return g.root().key(key) }
+
+// key appends a literal key.
+func (l location) key(k string) location { return location{l.format + escapeVerbs(k), l.args} }
 
 // root is the current path itself.
 func (g *gen) root() location { return location{format: verbString, args: []string{g.lc.Path}} }
@@ -46,6 +47,19 @@ func (g *gen) locExpr(l location) string {
 	return fmt.Sprintf(sprintfFormat, g.use(fmtPkg, fmtPkg), strconv.Quote(l.format), strings.Join(l.args, listSep))
 }
 
+// splitLoc is the location as a reading helper's path and key arguments: its first argument,
+// then the Go string of the rest.
+func (g *gen) splitLoc(l location) (prefix, key string) {
+	rest, args := strings.TrimPrefix(l.format, verbString), l.args[1:]
+	switch {
+	case len(args) == 0:
+		return l.args[0], strconv.Quote(strings.ReplaceAll(rest, percentPercent, percent))
+	case rest == verbString && len(args) == 1:
+		return l.args[0], args[0]
+	}
+	return l.args[0], fmt.Sprintf(sprintfFormat, g.use(fmtPkg, fmtPkg), strconv.Quote(rest), strings.Join(args, listSep))
+}
+
 // errAt is the error of a failed read at l, naming value unless "".
 func (g *gen) errAt(l location, what, value string) string {
 	args := append([]string{g.lc.Name}, l.args...)
@@ -54,11 +68,6 @@ func (g *gen) errAt(l location, what, value string) string {
 	}
 	format := strconv.Quote(verbString + keyValueSep + l.format + keyValueSep + what)
 	return fmt.Sprintf(errorfFormat, g.use(fmtPkg, fmtPkg), format, strings.Join(args, listSep))
-}
-
-// wrapAt is jsonError of err at l: the key path and the JSON kind found, never Go's types.
-func (g *gen) wrapAt(l location) string {
-	return fmt.Sprintf(wrapFormat, helperError, g.lc.Name, g.locExpr(l), g.lc.Err)
 }
 
 func escapeVerbs(s string) string { return strings.ReplaceAll(s, percent, percentPercent) }

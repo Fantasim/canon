@@ -13,34 +13,8 @@ namespace sov::gen {
 
 namespace detail {
 
-namespace {
-
-bool jsonObject(const nlohmann::json& v, canon::json::Decoder& dec) {
-    if (v.is_object()) return true;
-    dec.Fail("", v.is_null() ? "null" : "expected an object");
-    return false;
-}
-
-template <size_t N>
-bool jsonKeys(const nlohmann::json& v, canon::json::Decoder& dec, const char* const (&keys)[N]) {
-    if (!jsonObject(v, dec)) return false;
-    for (const auto& item : v.items()) {
-        bool known = false;
-        for (const char* key : keys) known = known || item.key() == key;
-        for (size_t k = 0; !known && k < N; ++k) {
-            if (canon::json::EqualFold(item.key(), keys[k])) {
-                dec.Fail(item.key(), "differs from \"" + std::string(keys[k]) + "\" only in letter case");
-                return false;
-            }
-        }
-    }
-    return true;
-}
-
-}  // namespace
-
 bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Potion& out) {
-    if (!jsonKeys(v, dec, {"$isStrong", "dwCooldownMs", "dwID", "nHeal", "nStack", "szName"})) return false;
+    if (!canon::json::detail::Keys(v, dec, {"$isStrong", "dwCooldownMs", "dwID", "nHeal", "nStack", "szName"})) return false;
     dec.String(v, "dwID", out.id_);
     dec.String(v, "szName", out.name_);
     dec.Int(v, "nHeal", out.heal_);

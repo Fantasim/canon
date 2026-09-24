@@ -53,11 +53,8 @@ func (self *{{$.Name}}) {{.Method}}(key {{.Type}}) (*{{$.Elem}}, bool) {
 		return {{.RT}}.Missing({{.L.Path}}, "", "rows")
 	}
 	var {{.L.Rows}} []{{.JSON}}.RawMessage
-	if {{.L.Err}} := {{.JSON}}.Unmarshal({{.L.F}}.Rows, &{{.L.Rows}}); {{.L.Err}} != nil {
-		return jsonError({{.L.Path}}, "rows.", {{.L.Err}})
-	}
-	if {{.L.Rows}} == nil {
-		return {{.FMT}}.Errorf("%s: rows: null", {{.L.Path}})
+	if {{.L.Err}} := jsonRead({{.L.Path}}, "", "rows", {{.L.F}}.Rows, &{{.L.Rows}}); {{.L.Err}} != nil {
+		return {{.L.Err}}
 	}
 	{{.L.Values}} := make([]{{.Elem}}, len({{.L.Rows}}))
 	{{.L.Keys}} := make([]{{.Key}}, len({{.L.Rows}}))
@@ -111,17 +108,17 @@ type {{.Snap}} struct {
 func Load{{.Snap}}({{.L.Dir}} string) (*{{.Snap}}, error) {
 	{{.L.S}} := &{{.Snap}}{}
 {{- range .Values}}
-	if {{$.L.Err}} := {{.Load}}({{$.FilePath}}.Join({{$.L.Dir}}, {{.File}}), &{{$.L.S}}.{{.Store}}); {{$.L.Err}} != nil {
+	if {{$.L.Err}} := {{.Load}}({{$.L.Dir}}+{{.File}}, &{{$.L.S}}.{{.Store}}); {{$.L.Err}} != nil {
 		return nil, {{$.L.Err}}
 	}
 {{- end}}
 {{- range .Values}}{{if and .Resolve .Record}}
-	if {{$.L.Err}} := {{.Resolve}}({{$.FilePath}}.Join({{$.L.Dir}}, {{.File}}), "value.", {{$.L.S}}, &{{$.L.S}}.{{.Store}}); {{$.L.Err}} != nil {
+	if {{$.L.Err}} := {{.Resolve}}({{$.L.Dir}}+{{.File}}, "value.", {{$.L.S}}, &{{$.L.S}}.{{.Store}}); {{$.L.Err}} != nil {
 		return nil, {{$.L.Err}}
 	}
 {{- else if .Resolve}}
 	for {{$.L.I}} := range {{$.L.S}}.{{.Store}}.{{$.M.Rows}}.Len() {
-		if {{$.L.Err}} := {{.Resolve}}({{$.FilePath}}.Join({{$.L.Dir}}, {{.File}}), {{$.FMT}}.Sprintf("rows[%d].", {{$.L.I}}), {{$.L.S}}, {{$.L.S}}.{{.Store}}.{{$.M.Rows}}.At({{$.L.I}})); {{$.L.Err}} != nil {
+		if {{$.L.Err}} := {{.Resolve}}({{$.L.Dir}}+{{.File}}, {{$.FMT}}.Sprintf("rows[%d].", {{$.L.I}}), {{$.L.S}}, {{$.L.S}}.{{.Store}}.{{$.M.Rows}}.At({{$.L.I}})); {{$.L.Err}} != nil {
 			return nil, {{$.L.Err}}
 		}
 	}
@@ -155,73 +152,180 @@ func (self *{{.StoreType}}) Reload({{.L.Dir}} string) error {
 var Store {{.StoreType}}
 
 {{end}}
-{{define "helpers"}}// jsonObject reads the object at path: null or another kind fails the load.
+{{define "jsonObject"}}// jsonObject reads the object at path: null or another kind fails the load.
 func jsonObject({{.L.Name}}, {{.L.Path}} string, {{.L.Raw}} {{.JSON}}.RawMessage) (map[string]{{.JSON}}.RawMessage, error) {
-	var {{.L.Obj}} map[string]{{.JSON}}.RawMessage
-	if {{.L.Err}} := {{.JSON}}.Unmarshal({{.L.Raw}}, &{{.L.Obj}}); {{.L.Err}} != nil {
-		return nil, jsonError({{.L.Name}}, {{.L.Path}}, {{.L.Err}})
-	}
-	if {{.L.Obj}} == nil {
+	if string({{.L.Raw}}) == "null" {
 		return nil, {{.FMT}}.Errorf("%s: %s: null", {{.L.Name}}, {{.Strings}}.TrimSuffix({{.L.Path}}, "."))
+	}
+	var {{.L.Obj}} map[string]{{.JSON}}.RawMessage
+	if {{.JSON}}.Unmarshal({{.L.Raw}}, &{{.L.Obj}}) != nil {
+		return nil, {{.FMT}}.Errorf("%s: %s: expected an object", {{.L.Name}}, {{.Strings}}.TrimSuffix({{.L.Path}}, "."))
 	}
 	return {{.L.Obj}}, nil
 }
 
-// jsonError names where a value of the wrong kind sits in the file, and what it is.
-func jsonError({{.L.Name}}, {{.L.Path}} string, {{.L.Err}} error) error {
-	var {{.L.Kind}} *{{.JSON}}.UnmarshalTypeError
-	if {{.Errors}}.As({{.L.Err}}, &{{.L.Kind}}) {
-		return {{.FMT}}.Errorf("%s: %s: unexpected %s", {{.L.Name}}, {{.Strings}}.TrimSuffix({{.L.Path}}+{{.L.Kind}}.Field, "."), {{.L.Kind}}.Value)
-	}
-	return {{.FMT}}.Errorf("%s: %s: %w", {{.L.Name}}, {{.Strings}}.TrimSuffix({{.L.Path}}, "."), {{.L.Err}})
-}
-
-// jsonFolds reports a key equal to one of keys but for letter case.
-func jsonFolds({{.L.Key}} string, {{.L.Keys}} ...string) bool {
-	for _, {{.L.K}} := range {{.L.Keys}} {
-		if {{.Strings}}.EqualFold({{.L.Key}}, {{.L.K}}) {
-			return true
+{{end}}
+{{define "jsonKeys"}}// jsonKeys fails the load on a key of obj that is none of keys, sorted, but differs from one
+// only in ASCII letter case: the smallest such key in byte order.
+func jsonKeys({{.L.Name}}, {{.L.Path}} string, {{.L.Obj}} map[string]{{.JSON}}.RawMessage, {{.L.Keys}} ...string) error {
+	{{.L.Bad}}, {{.L.Want}} := "", ""
+	for {{.L.K}} := range {{.L.Obj}} {
+		if _, {{.L.OK}} := {{.Slices}}.BinarySearch({{.L.Keys}}, {{.L.K}}); {{.L.OK}} {
+			continue
+		}
+		for _, {{.L.Key}} := range {{.L.Keys}} {
+			if {{.RT}}.EqualFold({{.L.K}}, {{.L.Key}}) && ({{.L.Want}} == "" || {{.L.K}} < {{.L.Bad}}) {
+				{{.L.Bad}}, {{.L.Want}} = {{.L.K}}, {{.L.Key}}
+			}
 		}
 	}
-	return false
+	if {{.L.Want}} == "" {
+		return nil
+	}
+	return {{.FMT}}.Errorf("%s: %s%s: differs from \"%s\" only in letter case", {{.L.Name}}, {{.L.Path}}, {{.L.Bad}}, {{.L.Want}})
 }
 
-// jsonCase is the error of key, the smallest folding key of an object in byte order so the
-// message never depends on map order; nil for "".
-func jsonCase({{.L.Name}}, {{.L.Path}}, {{.L.Key}} string, {{.L.Keys}} ...string) error {
-	for _, {{.L.K}} := range {{.L.Keys}} {
-		if {{.L.Key}} != "" && {{.Strings}}.EqualFold({{.L.Key}}, {{.L.K}}) {
-			return {{.FMT}}.Errorf("%s: %s%s: differs from %q only in letter case", {{.L.Name}}, {{.L.Path}}, {{.L.Key}}, {{.L.K}})
-		}
+{{end}}
+{{define "jsonNeed"}}// jsonNeed is obj[key], which must be present and not null.
+func jsonNeed({{.L.Name}}, {{.L.Path}} string, {{.L.Obj}} map[string]{{.JSON}}.RawMessage, {{.L.Key}} string) ({{.JSON}}.RawMessage, error) {
+	{{.L.R}}, {{.L.OK}} := {{.L.Obj}}[{{.L.Key}}]
+	if !{{.L.OK}} {
+		return nil, {{.RT}}.Missing({{.L.Name}}, {{.L.Path}}, {{.L.Key}})
+	}
+	if string({{.L.R}}) == "null" {
+		return nil, {{.FMT}}.Errorf("%s: %s%s: null", {{.L.Name}}, {{.L.Path}}, {{.L.Key}})
+	}
+	return {{.L.R}}, nil
+}
+
+{{end}}
+{{define "jsonMay"}}// jsonMay is obj[key], nil when it is absent or null.
+func jsonMay({{.L.Obj}} map[string]{{.JSON}}.RawMessage, {{.L.Key}} string) {{.JSON}}.RawMessage {
+	if {{.L.R}} := {{.L.Obj}}[{{.L.Key}}]; string({{.L.R}}) != "null" {
+		return {{.L.R}}
 	}
 	return nil
 }
-{{if .Rows}}
-// jsonRowID reads a table row's $id and $retired.
+
+{{end}}
+{{define "jsonCell"}}// jsonCell is a lookup cell of obj: absent fails the load, null is none (nil).
+func jsonCell({{.L.Name}}, {{.L.Path}} string, {{.L.Obj}} map[string]{{.JSON}}.RawMessage, {{.L.Key}} string) ({{.JSON}}.RawMessage, error) {
+	if _, {{.L.OK}} := {{.L.Obj}}[{{.L.Key}}]; !{{.L.OK}} {
+		return nil, {{.RT}}.Missing({{.L.Name}}, {{.L.Path}}, {{.L.Key}})
+	}
+	return jsonMay({{.L.Obj}}, {{.L.Key}}), nil
+}
+
+{{end}}
+{{define "jsonRead"}}// jsonRead reads raw into dst, a string, bool, float or array: null, or a value of another
+// kind, fails the load at path+key, naming what was expected.
+func jsonRead({{.L.Name}}, {{.L.Path}}, {{.L.Key}} string, {{.L.Raw}} {{.JSON}}.RawMessage, {{.L.Dst}} any) error {
+	if string({{.L.Raw}}) == "null" {
+		return {{.FMT}}.Errorf("%s: %s%s: null", {{.L.Name}}, {{.L.Path}}, {{.L.Key}})
+	}
+	if {{.JSON}}.Unmarshal({{.L.Raw}}, {{.L.Dst}}) == nil {
+		return nil
+	}
+	{{.L.Want}} := "expected a string"
+	switch {{.L.Dst}}.(type) {
+	case *bool:
+		{{.L.Want}} = "expected true or false"
+	case *float64:
+		{{.L.Want}} = "expected a number"
+	case *float32:
+		{{.L.Want}} = "expected a number that fits Float32"
+	case *[]{{.JSON}}.RawMessage:
+		{{.L.Want}} = "expected an array"
+	}
+	return {{.FMT}}.Errorf("%s: %s%s: %s", {{.L.Name}}, {{.L.Path}}, {{.L.Key}}, {{.L.Want}})
+}
+
+{{end}}
+{{define "jsonInt"}}// jsonInt reads an integer token from lo to hi: null, or anything else, fails the load at
+// path+key.
+func jsonInt({{.L.Name}}, {{.L.Path}}, {{.L.Key}} string, {{.L.Raw}} {{.JSON}}.RawMessage, {{.L.Lo}}, {{.L.Hi}} int64) (int64, error) {
+	if string({{.L.Raw}}) == "null" {
+		return 0, {{.FMT}}.Errorf("%s: %s%s: null", {{.L.Name}}, {{.L.Path}}, {{.L.Key}})
+	}
+	var {{.L.N}} int64
+	if {{.JSON}}.Unmarshal({{.L.Raw}}, &{{.L.N}}) == nil && {{.L.N}} >= {{.L.Lo}} && {{.L.N}} <= {{.L.Hi}} {
+		return {{.L.N}}, nil
+	}
+	if {{.L.Lo}} == -1<<63 && {{.L.Hi}} == 1<<63-1 {
+		return 0, {{.FMT}}.Errorf("%s: %s%s: expected an integer", {{.L.Name}}, {{.L.Path}}, {{.L.Key}})
+	}
+	return 0, {{.FMT}}.Errorf("%s: %s%s: expected an integer from %d to %d", {{.L.Name}}, {{.L.Path}}, {{.L.Key}}, {{.L.Lo}}, {{.L.Hi}})
+}
+
+{{end}}
+{{define "jsonSlot"}}// jsonSlot reads pairs slot k, v of obj: nil, nil for an empty slot, which sets *empty; an
+// incomplete, null or late slot fails the load at its first key present.
+func jsonSlot({{.L.Name}}, {{.L.Path}} string, {{.L.Obj}} map[string]{{.JSON}}.RawMessage, {{.L.K}}, {{.L.V}} string, {{.L.Empty}} *bool) ({{.JSON}}.RawMessage, {{.JSON}}.RawMessage, error) {
+	{{.L.Kr}}, {{.L.HasK}} := {{.L.Obj}}[{{.L.K}}]
+	{{.L.Vr}}, {{.L.HasV}} := {{.L.Obj}}[{{.L.V}}]
+	{{.L.First}} := {{.L.K}}
+	if !{{.L.HasK}} {
+		{{.L.First}} = {{.L.V}}
+	}
+	switch {
+	case !{{.L.HasK}} && !{{.L.HasV}}:
+		*{{.L.Empty}} = true
+		return nil, nil, nil
+	case {{.L.HasK}} != {{.L.HasV}}:
+		return nil, nil, {{.FMT}}.Errorf("%s: %s%s: incomplete pairs slot", {{.L.Name}}, {{.L.Path}}, {{.L.First}})
+	case string({{.L.Kr}}) == "null" || string({{.L.Vr}}) == "null":
+		return nil, nil, {{.FMT}}.Errorf("%s: %s%s: null in a pairs slot", {{.L.Name}}, {{.L.Path}}, {{.L.First}})
+	case *{{.L.Empty}}:
+		return nil, nil, {{.FMT}}.Errorf("%s: %s%s: pairs slot after an empty one", {{.L.Name}}, {{.L.Path}}, {{.L.First}})
+	}
+	return {{.L.Kr}}, {{.L.Vr}}, nil
+}
+
+{{end}}
+{{define "jsonSame"}}// jsonSame reports raw JSON-equal to the none marker: a string after decoding, an integer
+// only to an integer token, another number by value, [] and {} when empty.
+func jsonSame({{.L.Raw}} {{.JSON}}.RawMessage, {{.L.Marker}} string) bool {
+	switch {{.L.Marker}}[0] {
+	case '"':
+		var {{.L.A}}, {{.L.M}} string
+		return {{.JSON}}.Unmarshal({{.L.Raw}}, &{{.L.A}}) == nil && {{.JSON}}.Unmarshal([]byte({{.L.Marker}}), &{{.L.M}}) == nil && {{.L.A}} == {{.L.M}}
+	case '[':
+		var {{.L.A}} []{{.JSON}}.RawMessage
+		return {{.JSON}}.Unmarshal({{.L.Raw}}, &{{.L.A}}) == nil && {{.L.A}} != nil && len({{.L.A}}) == 0
+	case '{':
+		var {{.L.A}} map[string]{{.JSON}}.RawMessage
+		return {{.JSON}}.Unmarshal({{.L.Raw}}, &{{.L.A}}) == nil && {{.L.A}} != nil && len({{.L.A}}) == 0
+	case 't', 'f':
+		return string({{.L.Raw}}) == {{.L.Marker}}
+	}
+	var {{.L.A}}, {{.L.M}} int64
+	if {{.JSON}}.Unmarshal([]byte({{.L.Marker}}), &{{.L.M}}) == nil {
+		return {{.JSON}}.Unmarshal({{.L.Raw}}, &{{.L.A}}) == nil && {{.L.A}} == {{.L.M}}
+	}
+	var {{.L.Af}}, {{.L.Mf}} float64
+	return {{.JSON}}.Unmarshal({{.L.Raw}}, &{{.L.Af}}) == nil && {{.JSON}}.Unmarshal([]byte({{.L.Marker}}), &{{.L.Mf}}) == nil && {{.L.Af}} == {{.L.Mf}}
+}
+
+{{end}}
+{{define "jsonRowID"}}// jsonRowID reads a table row's $id, and its $retired, which must be true when present.
 func jsonRowID({{.L.Name}}, {{.L.Path}} string, {{.L.Raw}} {{.JSON}}.RawMessage) (string, bool, error) {
 	{{.L.Obj}}, {{.L.Err}} := jsonObject({{.L.Name}}, {{.L.Path}}, {{.L.Raw}})
 	if {{.L.Err}} != nil {
 		return "", false, {{.L.Err}}
 	}
-	{{.L.R}}, {{.L.OK}} := {{.L.Obj}}["$id"]
-	if !{{.L.OK}} {
-		return "", false, {{.RT}}.Missing({{.L.Name}}, {{.L.Path}}, "$id")
+	{{.L.R}}, {{.L.Err}} := jsonNeed({{.L.Name}}, {{.L.Path}}, {{.L.Obj}}, "$id")
+	if {{.L.Err}} != nil {
+		return "", false, {{.L.Err}}
 	}
-	var {{.L.ID}} *string
-	if {{.L.Err}} := {{.JSON}}.Unmarshal({{.L.R}}, &{{.L.ID}}); {{.L.Err}} != nil {
-		return "", false, jsonError({{.L.Name}}, {{.L.Path}}+"$id", {{.L.Err}})
+	var {{.L.ID}} string
+	if {{.L.Err}} := jsonRead({{.L.Name}}, {{.L.Path}}, "$id", {{.L.R}}, &{{.L.ID}}); {{.L.Err}} != nil {
+		return "", false, {{.L.Err}}
 	}
-	if {{.L.ID}} == nil {
-		return "", false, {{.FMT}}.Errorf("%s: %s$id: null", {{.L.Name}}, {{.L.Path}})
+	{{.L.R}}, {{.L.OK}} := {{.L.Obj}}["$retired"]
+	if {{.L.OK}} && string({{.L.R}}) != "true" {
+		return "", false, {{.FMT}}.Errorf("%s: %s$retired: expected true", {{.L.Name}}, {{.L.Path}})
 	}
-	if {{.L.R}}, {{.L.OK}} = {{.L.Obj}}["$retired"]; !{{.L.OK}} {
-		return *{{.L.ID}}, false, nil
-	}
-	var {{.L.Retired}} bool
-	if {{.L.Err}} := {{.JSON}}.Unmarshal({{.L.R}}, &{{.L.Retired}}); {{.L.Err}} != nil || !{{.L.Retired}} {
-		return "", false, {{.FMT}}.Errorf("%s: %s$retired: not true", {{.L.Name}}, {{.L.Path}})
-	}
-	return *{{.L.ID}}, true, nil
+	return {{.L.ID}}, {{.L.OK}}, nil
 }
-{{end}}
+
 {{end}}

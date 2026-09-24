@@ -81,8 +81,12 @@ func dataRefusals() map[string]func(*ir.Package) {
 			p.Types = append(p.Types, v)
 			addField(p, &ir.Field{Name: "v", Type: typed(v, types.Variant), Inline: true, Optional: true})
 		},
-		"keys equal but for letter case": func(p *ir.Package) { addField(p, wired("b", "A", "", intT)) },
-		"a table-typed field":            func(p *ir.Package) { addField(p, wired("t", "t", "", ir.TypeRef{Kind: types.Table, Elem: &intT})) },
+		"an inline variant key equal to a parent key but for letter case": func(p *ir.Package) {
+			v := &ir.Variant{Pkg: "demo", Name: "V", Tag: "k", Cases: []*ir.Case{{Name: "c", Wire: "c", Fields: []*ir.Field{wired("b", "A", "", intT)}}}}
+			p.Types = append(p.Types, v)
+			addField(p, &ir.Field{Name: "v", Type: typed(v, types.Variant), Inline: true})
+		},
+		"a table-typed field": func(p *ir.Package) { addField(p, wired("t", "t", "", ir.TypeRef{Kind: types.Table, Elem: &intT})) },
 	}
 }
 
@@ -122,7 +126,7 @@ func TestDataLocalsEscaped(t *testing.T) {
 		t.Fatal(err)
 	}
 	src := string(files[len(files)-1].Content)
-	for _, want := range []string{"func decodeThing(name_, path string", "name.ParseRole(*w.Role)"} {
+	for _, want := range []string{"func decodeThing(name_, path string", ":= name.ParseRole(v"} {
 		if !strings.Contains(src, want) {
 			t.Errorf("no %q in\n%s", want, src)
 		}

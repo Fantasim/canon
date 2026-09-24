@@ -99,9 +99,6 @@ func refusals() []struct {
 		{"a field ending in _ (§3.4, §7.2)", withField(field("a_", "b", "", tInt)), cppgen.ErrName},
 		{"FindBy names that collide (§3.5)", func(p *ir.Package, _ *ir.Emit) { stableCollision(p) }, cppgen.ErrNameCollision},
 		{"fields named alike (§3.5)", withField(field("A", "c", "", tInt)), cppgen.ErrNameCollision},
-		{"a constant named like a loader helper (§3.5)", func(p *ir.Package, _ *ir.Emit) {
-			p.Consts = []*ir.Const{{Name: "jsonKeys", Type: tInt, V: num(1)}}
-		}, cppgen.ErrNameCollision},
 	}
 }
 

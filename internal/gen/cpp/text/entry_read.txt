@@ -1,1 +1,1 @@
-            jsonRow((*rows)[i], dec, values[i].id_, values[i].retired_);
+            canon::json::detail::Row((*rows)[i], dec, values[i].id_, values[i].retired_);
