@@ -110,6 +110,9 @@ wave; every funded run ends on a wave boundary with a report in `meta/handoff/`.
   TS goldens pass `tsc --strict` and `node --test`; `E8101` tested.
 - [ ] **M7 Migration** (MIG, `convert`; VM for `i18n stub|status`; `infer` dropped, DECISIONS
   188): convert proof; `i18n stub fr` golden.
+- [ ] **Resource migration plan** (owed before or with M7; Louis, log-2026-09-24): how dirty
+  `Resource/` data is brought to the Canon types (types win over data), built from the
+  real-data findings lists of M3 onward.
 
 ## Feature examples owed (§7.9, QA)
 
