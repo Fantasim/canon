@@ -62,14 +62,14 @@ nothing is implemented yet. [README.md](README.md) maps every document.
 
 - A new third-party dependency (it also needs a row in IMPLEMENTATION-PLAN §11); a change to a
   frozen contract (IMPLEMENTATION-PLAN §4, `api/canon.go`) outside §4's review rule.
-- Any edit to DECISIONS.md, SPEC.md, CLI.md or `spec/`; loosening `.sovaudit/`.
+- Loosening `.sovaudit/`. (The spec text follows DECISIONS: synced by the orchestrator, 207.)
 
 ## Core tasks
 
 1. **Implement a milestone step** → [meta/plan.md](meta/plan.md) names the step, its owner
    module and acceptance; one `go-dev` per package, then `spec-reviewer`.
 2. **Fix a bug** → reproduce with a failing test first; commit body: symptom → cause → fix.
-3. **Spec gap found** → stop, record it in `meta/state.md` "Open Louis-calls"; never invent.
+3. **Spec gap found** → the unit stops; the orchestrator decides and logs it (DECISIONS 207).
 4. **Update meta/** → `docs-updater`; ADRs are orchestrator work.
 
 ## Definition of Done

@@ -63,9 +63,9 @@ reviewer to verify the fixes only.
 
 ## Spec gaps and scope
 
-A contradiction or a missing rule found by any agent stops that unit: it is recorded in
-`meta/state.md` "Open Louis-calls" with the two passages, and the work moves to a unit that does
-not depend on it. Nobody edits DECISIONS.md, SPEC.md, CLI.md or `spec/` during implementation.
+A contradiction or missing rule stops the unit; the orchestrator decides it (technical calls never
+go to Louis) and logs both passages and the choice in `meta/decisions/log-<date>.md`; a lasting
+rule becomes a DECISIONS item, the spec follows (207). Builders never edit the spec or DECISIONS.
 
 ## Worktrees
 

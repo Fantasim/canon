@@ -1764,6 +1764,12 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      typed programs agreeing between evaluator and generated code, metamorphic variants) and
      conformance is green. M1.5 is therefore pulled forward: it starts now, beside M2.
 
+207. **The spec follows the decisions, and technical calls are the orchestrator's.** When a
+     DECISIONS item overrides spec text, the orchestrator rewrites that text (spec/, SPEC.md,
+     CLI.md, IMPLEMENTATION-PLAN) in a reviewed commit, without asking; builders still never edit
+     the spec. A technical gap is decided by the orchestrator (strictest consistent reading) and
+     logged in `meta/decisions/log-<date>.md`; only direction questions go to Louis.
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.

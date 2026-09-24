@@ -25,10 +25,8 @@ Committed: spec + DECISIONS 1–200; `syntax`, `format`, `jsonsrc`, `wire`, `che
 
 ## Open Louis-calls
 
-Non-technical only (Louis, 2026-09-24): [handoff/2026-09-24-louis-calls.md](handoff/2026-09-24-louis-calls.md)
-— only the spec sync (DECISIONS 205/206 settled the rest). Technical gaps and the calls
-made on them: [decisions/log-2026-09-24.md](decisions/log-2026-09-24.md); the orchestrator
-decides them, never asks.
+None. Technical gaps and the calls made on them: [decisions/log-2026-09-24.md](decisions/log-2026-09-24.md)
+(the orchestrator decides, never asks, DECISIONS 207). Spec sync to DECISIONS 192–207: pending.
 
 ## Operating notes (today)
 
