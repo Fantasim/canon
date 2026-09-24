@@ -1836,6 +1836,16 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      §10, SPEC §10.3: every error is reported; 209). An invalid format spec is not attached to its
      interpolation (no E4503 cascade). Reason: A3 syntax review (overnight run).
 
+215. **The default Go package is read from `out` as declared, never from a checkout path
+     (amends 213).** "The last element of `out`" (CODEGEN §2.1) is taken after resolving `out`
+     against the roots as written in `project.canon`: `--root` overrides and the absolute checkout
+     path never change a package name (DOCTRINE §5). When that last element would be the project
+     directory itself (`out` resolving to `.`), there is none: `package` must be written, else
+     E8009 `package` with an empty value. check validates it through `project`'s own resolver (no
+     second copy), and ir derives the same name the same way. A literal holding a lexer error
+     (E1109, E1110, E1111 …) has the error type (TYPES §1): no fold, no static check on a made-up
+     value. Reason: check C1 review (overnight run).
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.
