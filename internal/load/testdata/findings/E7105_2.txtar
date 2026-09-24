@@ -1,0 +1,13 @@
+DECISIONS 163: E7105's {offset} for the raw-byte variant is a byte of the file as
+written, not of the normalized (\r\n folded) content the finding's span is in.
+-- pattern --
+data/*.json
+-- data/a.json --
+{}
+
+ÿ
+-- findings.txt --
+error[E7105]  data/a.json:3:1
+  data/a.json is not valid UTF-8 at byte 6
+
+1 error, 0 warnings in 1 package (â€¦)

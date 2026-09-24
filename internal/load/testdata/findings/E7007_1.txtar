@@ -1,0 +1,13 @@
+WIRE.md §6.2: an extension none of json, csv or text names is E7007; load.dir has no `format:`
+option this milestone, so it is always reported, never ErrUnsupported.
+-- pattern --
+data/*
+-- data/a.json --
+{"label": "a"}
+-- data/b.xml --
+<b/>
+-- findings.txt --
+error[E7007]  pattern:1:1
+  cannot tell the format of data/b.xml; add format: json, csv or text
+
+1 error, 0 warnings in 1 package (…)

@@ -1,0 +1,10 @@
+DECISIONS 163: jsonsrc's EncodingError for an unpaired \u surrogate escape is load's E7105.
+-- pattern --
+data/*.json
+-- data/a.json --
+{"label": "\uD800"}
+-- findings.txt --
+error[E7105]  data/a.json:1:12
+  unpaired surrogate U+D800
+
+1 error, 0 warnings in 1 package (…)

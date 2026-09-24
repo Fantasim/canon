@@ -1,0 +1,11 @@
+WIRE.md §6.1: a glob's base must be readable as a directory; here it is a plain file, so the
+walk itself fails and is reported at the load.dir, not silently as zero matches.
+-- pattern --
+data.json/*.json
+-- data.json --
+{}
+-- findings.txt --
+error[E7004]  pattern:1:1
+  cannot read data.json/: not a directory
+
+1 error, 0 warnings in 1 package (…)

@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"maps"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strings"
 	"testing"
@@ -18,8 +20,7 @@ import (
 
 const examplesDir = "../../examples"
 
-// loadExamples force a `load`, which fails the whole check with build.ErrLoad until M3
-// (DECISIONS 196), so they are checked separately, not by TestExamplesParse.
+// loadExamples force a load form M2 does not read yet, so the whole check fails with build.ErrLoad.
 var loadExamples = map[string]bool{
 	"balance.parity":          true,
 	"features.codes":          true,
@@ -28,7 +29,6 @@ var loadExamples = map[string]bool{
 	"features.legacycpp":      true,
 	"features.text":           true,
 	"game.items":              true,
-	"pipeline":                true,
 	"resource.adventurequest": true,
 	"resource.events":         true,
 	"resource.farm":           true,
@@ -109,7 +109,8 @@ func TestExamplesParse(t *testing.T) {
 }
 
 // DECISIONS 196: `canon check` of a loadExamples package fails as a whole with build.ErrLoad
-// (exit 2), not with per-package findings, until the load package exists (M3).
+// (exit 2), not with per-package findings, until its load form or option's milestone (M3,
+// meta/decisions/log-2026-09-24.md "load.dir review (M2)": M2 reads only a plain load.dir).
 func TestExamplesLoadUntilM3(t *testing.T) {
 	dir, _ := filepath.Abs(examplesDir)
 	names := slices.Sorted(maps.Keys(loadExamples))
@@ -133,4 +134,55 @@ func TestTeamboardFindings(t *testing.T) {
 	if got := durations.ReplaceAllString(out, "(…)"); code != 0 || got != string(want) {
 		t.Errorf("exit %d\n--- want\n%s--- got\n%s", code, want, got)
 	}
+}
+
+// `canon check pipeline` exits 0 and prints exactly its expected findings, W1701 aside (i18n
+// status waits for M3), so a load or wire finding it now reaches fails here, not TestExamplesParse.
+func TestPipelineFindings(t *testing.T) {
+	want, err := os.ReadFile(filepath.Join(examplesDir, "pipeline", "expected", "findings.txt"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	code, out := checkExample(t, "pipeline")
+	got := durations.ReplaceAllString(out, "(…)")
+	if wantClean := withoutW1701(string(want)); code != 0 || got != wantClean {
+		t.Errorf("exit %d\n--- want\n%s--- got\n%s", code, wantClean, got)
+	}
+}
+
+// summaryCountsRe matches a rendered summary's leading counts (API.md F15).
+var summaryCountsRe = regexp.MustCompile(`^\d+ errors?, \d+ warnings? in`)
+
+// i18nStatusPrefix is the rendered header of a W1701 finding (the registry names the code).
+var i18nStatusPrefix = "warning[" + string(diag.W1701.Def().Code) + "]"
+
+// withoutW1701 removes want's W1701 block (i18n status) and recomputes the summary's counts,
+// so any other finding still fails the comparison it is used in.
+func withoutW1701(want string) string {
+	parts := strings.Split(strings.TrimSuffix(want, "\n"), "\n\n")
+	summary, blocks := parts[len(parts)-1], parts[:len(parts)-1]
+	var kept []string
+	errs, warns := 0, 0
+	for _, b := range blocks {
+		if strings.HasPrefix(b, i18nStatusPrefix) {
+			continue
+		}
+		kept = append(kept, b)
+		switch {
+		case strings.HasPrefix(b, "error["):
+			errs++
+		case strings.HasPrefix(b, "warning["):
+			warns++
+		}
+	}
+	summary = summaryCountsRe.ReplaceAllString(summary, plural(errs, "error")+", "+plural(warns, "warning")+" in")
+	return strings.Join(append(kept, summary), "\n\n") + "\n"
+}
+
+// plural is "<n> <noun>", singular when n is 1 (API.md F15).
+func plural(n int, noun string) string {
+	if n == 1 {
+		return "1 " + noun
+	}
+	return fmt.Sprintf("%d %ss", n, noun)
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/eval"
+	"github.com/fantasim/canonlang/internal/load"
 	"github.com/fantasim/canonlang/internal/project"
 	"github.com/fantasim/canonlang/internal/rules"
 	"github.com/fantasim/canonlang/internal/source"
@@ -20,18 +21,53 @@ import (
 	"github.com/fantasim/canonlang/internal/verify"
 )
 
-// evalHost is the eval.Host of a build (DECISIONS 186); it loads nothing yet.
+// evalHost is the eval.Host of a build, load.dir of JSON included (DECISIONS 186, 196).
 type evalHost struct {
-	ev       *eval.Evaluator
-	verifier *verify.Verifier
-	loads    []*syntax.LoadExpr
-	errs     []error
+	ev        *eval.Evaluator
+	verifier  *verify.Verifier
+	prog      *check.Program
+	bags      check.Bags
+	loader    *load.Loader
+	loads     []*syntax.LoadExpr
+	loadCause string
+	errs      []error
 }
 
-// Load refuses every load expression; the build then fails with ErrLoad.
-func (h *evalHost) Load(_ context.Context, e *syntax.LoadExpr, _ types.Type) (value.Value, bool) {
-	h.loads = append(h.loads, e)
-	return nil, false
+// Load runs e's form against expected; an unsupported form, option or default is ErrLoad,
+// naming the cause load reported (DECISIONS 196).
+func (h *evalHost) Load(ctx context.Context, e *syntax.LoadExpr, expected types.Type) (value.Value, bool) {
+	site, ok := findLoad(h.prog, e)
+	if !ok {
+		h.loads = append(h.loads, e)
+		return nil, false
+	}
+	req := load.Request{Pkg: site.pkg, From: path.Dir(site.file.Src.Path), Span: site.span, Bag: h.bags[site.pkg]}
+	v, ok, err := h.loader.Load(ctx, req, e, expected)
+	switch {
+	case errors.Is(err, load.ErrUnsupported):
+		if len(h.loads) == 0 {
+			h.loadCause = unsupportedCause(err)
+		}
+		h.loads = append(h.loads, e)
+		return nil, false
+	case err != nil:
+		h.errs = append(h.errs, fmt.Errorf(fmtWrapInternal, ErrInternal, err))
+		return nil, false
+	default:
+		return v, ok
+	}
+}
+
+// EvalSymlinks lets load.dir follow links through the OS file system a build reads (WIRE.md §6.5).
+func (f osFS) EvalSymlinks(name string) (string, error) { return project.EvalSymlinks(f.FS, name) }
+
+// unsupportedCause is a load.UnsupportedError's own cause, "" for a bare ErrUnsupported.
+func unsupportedCause(err error) string {
+	var ue *load.UnsupportedError
+	if errors.As(err, &ue) {
+		return ue.Cause
+	}
+	return ""
 }
 
 // Verify runs stage B on one top-level value, then poisons it or reports E3505 (EVALUATION.md §5).
@@ -58,7 +94,7 @@ func (h *evalHost) failure(set *source.FileSet, prog *check.Program) error {
 		if !ok {
 			return fmt.Errorf(fmtNoLoadSite, ErrInternal)
 		}
-		return &LoadError{Span: span, Site: set.Locate(span)}
+		return &LoadError{Span: span, Site: set.Locate(span), Cause: h.loadCause}
 	}
 	errs := slices.Clone(h.errs)
 	if err := h.ev.Err(); err != nil {
@@ -69,6 +105,19 @@ func (h *evalHost) failure(set *source.FileSet, prog *check.Program) error {
 
 // loadSpan is the span of a load expression, found in the program's files.
 func loadSpan(prog *check.Program, e *syntax.LoadExpr) (source.Span, bool) {
+	site, ok := findLoad(prog, e)
+	return site.span, ok
+}
+
+// loadSite is where a load expression was written: its package, file and span.
+type loadSite struct {
+	pkg  string
+	file *syntax.File
+	span source.Span
+}
+
+// findLoad is e's site, found by walking the program's files.
+func findLoad(prog *check.Program, e *syntax.LoadExpr) (loadSite, bool) {
 	for _, cp := range prog.Packages {
 		for _, f := range cp.Files {
 			found := false
@@ -77,21 +126,26 @@ func loadSpan(prog *check.Program, e *syntax.LoadExpr) (source.Span, bool) {
 				return !found
 			})
 			if found {
-				return f.Span(e), true
+				return loadSite{pkg: cp.Path, file: f, span: f.Span(e)}, true
 			}
 		}
 	}
-	return source.Span{}, false
+	return loadSite{}, false
 }
 
-// LoadError is a load expression a build forced before the load package exists (ErrLoad).
+// LoadError is a load form or option the load package does not read yet (ErrLoad), the cause
+// it named (DECISIONS 196: every refusal names its cause; "" before any load reports one).
 type LoadError struct {
-	Span source.Span
-	Site source.Location // the span resolved: display path, line and column
+	Span  source.Span
+	Site  source.Location // the span resolved: display path, line and column
+	Cause string
 }
 
 func (e *LoadError) Error() string {
-	return fmt.Sprintf(fmtLoad, ErrLoad, e.Site.Path, e.Site.Line, e.Site.Col)
+	if e.Cause == "" {
+		return fmt.Sprintf(fmtLoad, ErrLoad, e.Site.Path, e.Site.Line, e.Site.Col)
+	}
+	return fmt.Sprintf(fmtLoadCause, ErrLoad, e.Cause, e.Site.Path, e.Site.Line, e.Site.Col)
 }
 
 func (e *LoadError) Unwrap() error { return ErrLoad }
@@ -147,7 +201,7 @@ func (a *assets) files(dir string) []string {
 	}
 	entries, err := a.fs.ReadDir(dir)
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
-		a.host.errs = append(a.host.errs, fmt.Errorf(fmtWrap, err))
+		a.host.errs = append(a.host.errs, displayErrorIn(a.layout.Dir, err))
 	}
 	names := []string{}
 	for _, e := range entries {

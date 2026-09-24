@@ -1,0 +1,12 @@
+WIRE.md §6.5: zero matches is W7107 at the load.dir; the result is empty, not an error. Only
+what the glob itself finds absent is silent; the base directory below must exist (E7004,
+meta/decisions/log-2026-09-24.md "load.dir review (M2)").
+-- pattern --
+data/*.json
+-- data/other.txt --
+kept
+-- findings.txt --
+warning[W7107]  pattern:1:1
+  glob data/*.json matches no file
+
+0 errors, 1 warning in 1 package (…)

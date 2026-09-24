@@ -1,0 +1,11 @@
+meta/decisions/log-2026-09-24.md "load.dir review (M2)": a missing base directory is E7004,
+not a silent W7107 (WIRE.md §6.1's "missing file, directory, permission" cause vocabulary).
+-- pattern --
+gone/*.json
+-- other/keep.json --
+{}
+-- findings.txt --
+error[E7004]  pattern:1:1
+  cannot read gone/: no such file or directory
+
+1 error, 0 warnings in 1 package (…)

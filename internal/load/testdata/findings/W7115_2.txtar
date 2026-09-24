@@ -1,0 +1,18 @@
+WIRE.md §6.5: a link whose target resolves outside every declared root and the project is
+skipped with W7115; the link inside the project is followed (b.json, no finding).
+-- pattern --
+data/*.json
+-- data/a.json --
+{"label": "a"}
+-- /outside/escape.json --
+{"label": "e"}
+-- data/real/b.json --
+{"label": "b"}
+-- symlinks --
+data/escape.json /outside/escape.json
+data/b.json real/b.json
+-- findings.txt --
+warning[W7115]  pattern:1:1
+  symbolic link data/escape.json points outside the roots; skipped
+
+0 errors, 1 warning in 1 package (…)

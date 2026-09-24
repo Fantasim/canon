@@ -4,6 +4,7 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/project"
 )
 
@@ -40,5 +41,19 @@ func TestLookups(t *testing.T) {
 	p.Languages = nil
 	if p.SourceLanguage() != project.DefaultLanguage || p.Studio.Path != "studio" || p.Name != "acme" {
 		t.Errorf("project %+v", p)
+	}
+}
+
+// meta/decisions/log-2026-09-24.md "load.dir round 2": RootDirs is every declared root's
+// resolved directory, sorted, --root overrides applied.
+func TestLayoutRootDirs(t *testing.T) {
+	p := project.New("acme", project.Version{Minor: 1})
+	p.Roots = []project.Root{{Name: "b", Path: "y"}, {Name: "a", Path: "x"}}
+	layout, ok := project.NewLayout(p, "/proj", map[string]string{"a": "/elsewhere/x"}, diag.NewBag(nil, ""))
+	if !ok {
+		t.Fatal("layout")
+	}
+	if got := layout.RootDirs(); !slices.Equal(got, []string{"/elsewhere/x", "/proj/y"}) {
+		t.Errorf("RootDirs() = %v", got)
 	}
 }

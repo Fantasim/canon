@@ -1,0 +1,8 @@
+WIRE.md §6.5: `**` matches zero or more directories only as a whole segment.
+-- pattern --
+data/**foo/*.json
+-- findings.txt --
+error[E7005]  pattern:1:1
+  invalid glob data/**foo/*.json: ** must be a whole segment
+
+1 error, 0 warnings in 1 package (…)

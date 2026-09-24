@@ -11,6 +11,9 @@ var (
 	ErrMixedDirectory     = errors.New("its files declare several packages")
 )
 
+// errNoLinks is EvalSymlinks on an FS that resolves no symbolic link (WIRE.md §6.5).
+var errNoLinks = errors.New("the file system resolves no symbolic link")
+
 // UnknownError names what a call selected that the project does not have: a package selector
 // (ErrUnknownPackage, or ErrMixedDirectory for a directory, API.md R1), or a layer (API.md O4).
 type UnknownError struct {

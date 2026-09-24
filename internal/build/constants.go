@@ -57,6 +57,7 @@ const (
 	fmtWrapInternal = "%w: %w"
 	fmtNoProgram    = "%w: the checker returned no program"
 	fmtLoad         = "%s: %s:%d:%d"
+	fmtLoadCause    = "%s (%s): %s:%d:%d"
 	fmtPackage      = "package %s: %w"
 	fmtEmit         = "package %s, emit %q: %w"
 	fmtNoGenerator  = "package %s, emit %s: %w"

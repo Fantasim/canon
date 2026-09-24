@@ -90,10 +90,34 @@ func (failingDir) ReadDir(string) ([]fs.DirEntry, error) { return nil, errListin
 // TYPES.md §13.4: an unlistable directory is an error of the run, listed once.
 func TestAssetListing(t *testing.T) {
 	h := &evalHost{}
-	a := &assets{fs: failingDir{}, host: h, dirs: map[string][]string{}}
+	layout, _ := project.NewLayout(&project.Project{}, "/p", nil, diag.NewBag(nil, ""))
+	a := &assets{fs: failingDir{}, layout: layout, host: h, dirs: map[string][]string{}}
 	a.files("/o")
 	a.files("/o")
 	if len(h.errs) != 1 || !errors.Is(h.errs[0], errListing) {
 		t.Errorf("errors %v", h.errs)
+	}
+}
+
+// failingDirAbs fails every listing with a *fs.PathError carrying an absolute path.
+type failingDirAbs struct{ project.FS }
+
+func (failingDirAbs) ReadDir(name string) ([]fs.DirEntry, error) {
+	return nil, &fs.PathError{Op: "readdir", Path: name, Err: fs.ErrPermission}
+}
+
+// DECISIONS 201: an asset directory listing that fails names its display path, project-relative
+// and `/`-separated, never the absolute one project.FS carries (meta/decisions/log-2026-09-24.md
+// "load.dir review (M2)").
+func TestAssetListingErrorNamesDisplayPath(t *testing.T) {
+	h := &evalHost{}
+	layout, _ := project.NewLayout(&project.Project{}, "/p", nil, diag.NewBag(nil, ""))
+	a := &assets{fs: failingDirAbs{}, layout: layout, host: h, dirs: map[string][]string{}}
+	a.files("/p/assets/icons")
+	if len(h.errs) != 1 {
+		t.Fatalf("errors %v", h.errs)
+	}
+	if msg := h.errs[0].Error(); !strings.Contains(msg, "assets/icons") || strings.Contains(msg, "/p/assets/icons") {
+		t.Errorf("listing error = %q", msg)
 	}
 }

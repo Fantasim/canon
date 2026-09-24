@@ -37,6 +37,12 @@ func NewLayout(p *Project, dir string, overrides map[string]string, bag *diag.Ba
 	return l, ok
 }
 
+// RootDirs is every declared root's resolved directory, sorted (meta/decisions/log-2026-09-24.md
+// "load.dir round 2": where a followed symbolic link may point and still count as inside a root).
+func (l *Layout) RootDirs() []string {
+	return slices.Sorted(maps.Values(l.dirs))
+}
+
 // abs is dir itself when absolute, else dir under the project directory.
 func (l *Layout) abs(dir string) string {
 	if isAbsolute(dir) {

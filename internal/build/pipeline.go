@@ -9,6 +9,7 @@ import (
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/eval"
 	"github.com/fantasim/canonlang/internal/ir"
+	"github.com/fantasim/canonlang/internal/load"
 	"github.com/fantasim/canonlang/internal/lock"
 	"github.com/fantasim/canonlang/internal/project"
 	"github.com/fantasim/canonlang/internal/rules"
@@ -90,7 +91,8 @@ func (r *run) analyze(ctx context.Context) error {
 
 // stageA forces every const and let of the selected packages in order (EVALUATION.md §2.1).
 func (r *run) stageA(ctx context.Context, opt eval.Options) {
-	r.host = &evalHost{}
+	r.host = &evalHost{prog: r.prog, bags: r.bags}
+	r.host.loader = &load.Loader{FS: r.p.fs, Layout: r.s.layout, Set: r.s.set}
 	r.ev = eval.New(r.prog, r.host, r.bags, opt)
 	r.host.ev = r.ev
 	a := &assets{fs: r.p.fs, layout: r.s.layout, host: r.host, dirs: map[string][]string{}}
