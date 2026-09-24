@@ -22,7 +22,7 @@ cases for the spec: each one rewrites a real file from this repository.
 | [review/](meta/spec-phase/review) | the consistency pass that locks v0.1: [ACCEPTED-CHOICES.md](meta/spec-phase/review/ACCEPTED-CHOICES.md), the choices DECISIONS 24 accepts and which answer won where documents disagreed (it wins over every document but DECISIONS), and [CONSISTENCY-TODO.md](meta/spec-phase/review/CONSISTENCY-TODO.md), the work list |
 | [AUDIT.md](meta/spec-phase/AUDIT.md) | the pre-implementation review: 202 findings, each with a proposed answer (accepted unless DECISIONS overrides it) |
 | [MOCKUP-GAPS.md](meta/spec-phase/MOCKUP-GAPS.md) | the view behaviours found while mocking the studio, and the examples that contradicted the spec |
-| [mockups/](meta/spec-phase/mockups) | `studio.html`, a clickable mockup of the studio rendering the examples' views |
+| `meta/spec-phase/mockups/` | `studio.html`, a clickable mockup of the studio rendering the examples' views (git-ignored, local only) |
 | [go.mod](go.mod) | the compiler's Go module, `github.com/fantasim/canonlang` (DECISIONS 23); for now it holds only the API stub [api/canon.go](api/canon.go) |
 | [Makefile](Makefile), [tools/audit/](tools/audit) | the gate every change passes, and the code audit it runs (see Development below) |
 | [examples/](examples) | the test cases (next section), with their own module [examples/go.mod](examples/go.mod) so that generated goldens never break `go build ./...` at the root |
