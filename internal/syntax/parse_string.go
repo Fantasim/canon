@@ -105,7 +105,8 @@ func (p *parser) brokenPiece() {
 }
 
 // interp is an interpolation's expression and format spec; an empty one (E1112, reported by
-// the lexer) holds an empty BadExpr.
+// the lexer) holds an empty BadExpr. An invalid spec (E1101, reported by the lexer) is left
+// off Interp.Spec so the checker does not also judge it against the expression's type.
 func (p *parser) interp() *Interp {
 	start := p.pos
 	it := &Interp{}
@@ -116,9 +117,10 @@ func (p *parser) interp() *Interp {
 	}
 	if p.at(TokFormatSpec) {
 		t := p.next()
-		fs, _ := parseSpec(p.src.Content[p.toks[t].Start+1 : p.toks[t].End])
-		fs.Tok = t
-		it.Spec = &fs
+		if fs, ok := parseSpec(p.src.Content[p.toks[t].Start+1 : p.toks[t].End]); ok {
+			fs.Tok = t
+			it.Spec = &fs
+		}
 	}
 	it.Bounds = p.from(start)
 	return it
