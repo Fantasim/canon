@@ -18,7 +18,10 @@ const (
 )
 
 // skipPrefixes are path segments never audited: vendored, generated or agent-local trees.
-var skipPrefixes = []string{"vendor/", "node_modules/", "testdata/", ".claude/worktrees/", "dist/", "build/"}
+var skipPrefixes = []string{"vendor/", "node_modules/", "testdata/", ".claude/worktrees/", "dist/"}
+
+// rootSkipPrefixes are skipped only at the repository root: a Go package may be named build.
+var rootSkipPrefixes = []string{"build/"}
 
 // Example trees never audited: fixtures, and every expected/ tree of generated goldens.
 const (

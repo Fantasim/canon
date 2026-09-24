@@ -190,6 +190,11 @@ func Skipped(rel string) bool {
 			return true
 		}
 	}
+	for _, s := range rootSkipPrefixes {
+		if strings.HasPrefix(rel, s) {
+			return true
+		}
+	}
 	return strings.HasPrefix(rel, examplesPrefix) &&
 		(strings.HasPrefix(rel, fixturesPrefix) || strings.Contains(rel, expectedSegment))
 }

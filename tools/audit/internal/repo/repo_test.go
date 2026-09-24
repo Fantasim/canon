@@ -16,6 +16,7 @@ func TestSkipped(t *testing.T) {
 		"internal/expected/x.go":                         false,
 		"cmd/dist/x.go":                                  true,
 		"build/x.go":                                     true,
+		"internal/build/x.go":                            false,
 		"internal/repo/repo.go":                          false,
 		"web/src/lib/x.ts":                               false,
 		"internal/notvendorat/x.go":                      false,
