@@ -11,13 +11,12 @@ Part A (close open work) then Part B (M3 waves W0–W4). Ticked = committed on `
 - [x] A2 demo bugs: (1) E2102, a broken check breaks its record (428fbad, DECISIONS 209);
   (2) E7109 variants (6534f56, DECISIONS 208); (3) stays (poisoning, logged); (4) "is a Int" →
   ERRORS pass, E4402 frames stay (logged); (5) E8007 hint → ERRORS pass.
-- [ ] A3 M1.5 bug-fix wave (open archives on main: check 35, format 20, eval 4, syntax 3,
-  build 2, ir 1). Landed: eval 5bbd911, syntax af5a768, ir 5e42c65 (DECISIONS 209–214). In
-  flight: format (opus, round 4), build, check C1 (DECISIONS 214 + queued items); then the QA
-  judge redesign (log "Progen archives after a fix"), then check C2 (archive triage).
-  Audit gate holes closed (see git log, fix(audit)).
+- [ ] A3 M1.5 bug-fix wave. Landed: eval 5bbd911, syntax af5a768, ir 5e42c65, check C1 +
+  ir df73915, format e91da17 (DECISIONS 208–217). Open archives on main: check 29, eval 4,
+  syntax 2, build 2 (landing), ir 1, progen 3. Next: build lands → QA judge redesign (log
+  "Progen archives after a fix") → check C2 triage of what still fails → `make progen-nightly`.
 - [x] A4 M2 close: position test on `examples/pipeline/data/II_POT_HEAL_L.json`; M2 ticked.
-- [ ] A5 consumer unit (name plans) · cleanups · ERRORS.md pass + spec sync #2.
+- [ ] A5 consumer units gen/go ∥ gen/cpp in flight · cleanups · ERRORS.md pass + spec sync #2.
 - [ ] A6 M1.5 second wave (type-directed, metamorphic).
 - [x] W0 gap map → `meta/m3-gaps.md` (1b0a332).
 - [ ] W1 · [ ] W2 · [ ] W3 · [ ] W4 (see [plan.md](plan.md) "M3 execution").
