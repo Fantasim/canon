@@ -1,0 +1,46 @@
+EVALUATION.md §3.4, §9.3 step 3 (review call a): a re-derived default that dereferences a ref of
+the instance still being built is E3505, as when the same record is written.
+-- layers --
+dev
+-- a/a.canon --
+/// A.
+package a
+
+/// Tier.
+record Tier {
+  /// Weight.
+  weight: Int = 1
+}
+
+/// Plan.
+record Plan {
+  /// Tiers.
+  tiers: table Tier = { low {} }
+  /// Pick.
+  pick: ref Tier = low
+  /// X.
+  x: Int = 0
+  /// W.
+  w: Int = if x > 0 { pick.weight } else { 0 }
+}
+
+/// Plan.
+let plan: Plan = {}
+/// Same as the layered plan, written.
+let written: Plan = { tiers: { low { weight: 9 } }, x: 1 }
+-- a/dev.canon --
+package a
+layer dev
+
+amend plan {
+  tiers.low.weight: 9
+  x: 1
+}
+-- dump.txt --
+a.plan poisoned
+a.written poisoned
+
+error[E3505]  a/a.canon:19:23
+  ref Tier has no enclosing Plan to resolve against
+
+1 error, 0 warnings in 1 package (…)

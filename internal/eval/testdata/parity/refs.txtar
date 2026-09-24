@@ -1,0 +1,166 @@
+EVALUATION.md §3.4, §9.3 step 4, TYPES.md §7.5, §10.2: refs of amended instances resolve and
+compare as in the same values written in source: refs written by the layer, keys the layer
+removed (E3501), added entries named, derived refs, nested owners, ref-keyed maps.
+-- layers --
+dev
+-- a/a.canon --
+/// A.
+package a
+
+/// Node.
+record Node {
+  /// Name.
+  name: String
+}
+
+/// Link.
+record Link {
+  /// To.
+  to: ref Node
+}
+
+/// Tree.
+record Tree {
+  /// Nodes.
+  nodes: [Node] keyed by name
+  /// Links.
+  links: [Link]
+}
+
+/// Tier.
+record Tier {
+  /// Weight.
+  weight: Int = 1
+}
+
+/// Plan.
+record Plan {
+  /// Tiers.
+  tiers: table Tier = { low {} }
+  /// Pick.
+  pick: ref Tier = low
+  /// Fallback, derived.
+  fallback: ref Tier = pick
+  /// X.
+  x: Int = 0
+  /// First, derived from an entry.
+  first: ref Tier = tiers.low
+  /// Same.
+  same: Bool = first == tiers.low
+  /// By tier.
+  m: {ref Tier: Int} = { low: 1 }
+}
+
+/// M.
+record M {
+  /// N.
+  n: Int = 0
+}
+
+/// Group.
+record Group {
+  /// Members.
+  members: table M = { a {} }
+  /// X.
+  x: Int = 0
+  /// Lead.
+  lead: ref M = a
+}
+
+/// Groups.
+record Groups {
+  /// Groups.
+  groups: table Group = { g1 {}, g2 {} }
+}
+
+/// Rewritten.
+let tree: Tree = { nodes: [{ name: "a" }], links: [{ to: "a" }] }
+
+/// Rewritten.
+let treeWritten: Tree = { nodes: [{ name: "b" }], links: [{ to: "b" }] }
+
+/// Its node gone.
+let other: Tree = { nodes: [{ name: "a" }], links: [{ to: "a" }] }
+
+/// Its node gone.
+let otherWritten: Tree = { nodes: [{ name: "c" }], links: [{ to: "a" }] }
+
+/// A plan.
+let plan: Plan = {}
+
+/// A plan.
+let planWritten: Plan = { tiers: { low { weight: 9 }, high { weight: 5 } }, pick: high, x: 1, m: { low: 2 } }
+
+/// Reads.
+let reads: [Int] = [plan.fallback.weight, plan.first.weight, plan.m.len()]
+
+/// Reads.
+let readsWritten: [Int] = [planWritten.fallback.weight, planWritten.first.weight, planWritten.m.len()]
+
+/// Equal.
+let eq: [Bool] = [plan.first == plan.tiers.low, plan.pick == plan.tiers.high, plan.same]
+
+/// Equal.
+let eqWritten: [Bool] = [planWritten.first == planWritten.tiers.low, planWritten.pick == planWritten.tiers.high, planWritten.same]
+
+/// Groups.
+let groups: Groups = {}
+
+/// Groups.
+let groupsWritten: Groups = { groups: { g1 {}, g2 { members: { a { n: 4 } }, x: 1 } } }
+
+/// Group reads.
+let gr: [Bool] = [groups.groups.g2.lead == groups.groups.g2.members.a, [groups.groups.g2.lead].contains(groups.groups.g2.members.a), groups.groups.g1.lead == groups.groups.g1.members.a]
+
+/// Group reads.
+let grWritten: [Bool] = [groupsWritten.groups.g2.lead == groupsWritten.groups.g2.members.a, [groupsWritten.groups.g2.lead].contains(groupsWritten.groups.g2.members.a), groupsWritten.groups.g1.lead == groupsWritten.groups.g1.members.a]
+-- a/dev.canon --
+package a
+layer dev
+
+amend tree {
+  nodes: [{ name: "b" }]
+  links[0].to: "b"
+}
+
+amend other {
+  nodes: [{ name: "c" }]
+}
+
+amend plan {
+  tiers.low.weight: 9
+  tiers.high: { weight: 5 }
+  pick: high
+  x: 1
+  m[low]: 2
+}
+
+amend groups {
+  groups.g2.x: 1
+  groups.g2.members.a.n: 4
+}
+-- dump.txt --
+a.tree = Tree{nodes: [Node{name: "b"}], links: [Link{to: b}]}
+a.treeWritten = Tree{nodes: [Node{name: "b"}], links: [Link{to: b}]}
+a.other = Tree{nodes: [Node{name: "c"}], links: [Link{to: a}]}
+a.otherWritten = Tree{nodes: [Node{name: "c"}], links: [Link{to: a}]}
+a.plan = Plan{tiers: {low: Tier{weight: 9}, high: Tier{weight: 5}}, pick: high, fallback: high, x: 1, first: low, same: true, m: {low: 2}}
+a.planWritten = Plan{tiers: {low: Tier{weight: 9}, high: Tier{weight: 5}}, pick: high, fallback: high, x: 1, first: low, same: true, m: {low: 2}}
+a.reads = [5, 9, 1]
+a.readsWritten = [5, 9, 1]
+a.eq = [true, true, true]
+a.eqWritten = [true, true, true]
+a.groups = Groups{groups: {g1: Group{members: {a: M{n: 0}}, x: 0, lead: a}, g2: Group{members: {a: M{n: 4}}, x: 1, lead: a}}}
+a.groupsWritten = Groups{groups: {g1: Group{members: {a: M{n: 0}}, x: 0, lead: a}, g2: Group{members: {a: M{n: 4}}, x: 1, lead: a}}}
+a.gr = [true, true, true]
+a.grWritten = [true, true, true]
+
+error[E3501]  a/a.canon:77:59
+  other.links[0].to: unknown key a in Tree.nodes
+  expected by a/a.canon:13 (to: ref Node)
+
+error[E3501]  a/a.canon:80:66
+  otherWritten.links[0].to: unknown key a in Tree.nodes
+  expected by a/a.canon:13 (to: ref Node)
+
+2 errors, 0 warnings in 1 package (…)

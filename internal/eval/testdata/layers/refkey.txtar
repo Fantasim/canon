@@ -1,0 +1,38 @@
+EVALUATION.md §9.2 (review call b): a ref key in an amend path is bound to the amended instance
+before it is matched, so an existing key is replaced, never duplicated.
+-- layers --
+dev
+-- a/a.canon --
+/// A.
+package a
+
+/// Tier.
+record Tier {
+  /// Weight.
+  weight: Int = 1
+}
+
+/// Plan.
+record Plan {
+  /// Tiers.
+  tiers: table Tier = { low {}, high {} }
+  /// M.
+  m: {ref Tier: Int} = { low: 1 }
+}
+
+/// Plan.
+let plan: Plan = {}
+/// N.
+let n: Int = plan.m.len()
+-- a/dev.canon --
+package a
+layer dev
+
+amend plan {
+  m[low]: 2
+}
+-- dump.txt --
+a.plan = Plan{tiers: {low: Tier{weight: 1}, high: Tier{weight: 1}}, m: {low: 2}}
+a.n = 1
+
+0 errors, 0 warnings in 1 package (…)

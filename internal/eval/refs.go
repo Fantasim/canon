@@ -1,6 +1,7 @@
 package eval
 
 import (
+	"maps"
 	"slices"
 	"strings"
 
@@ -45,7 +46,7 @@ func (r *run) collValue(ref *value.Ref, c *types.Collection, at syntax.Node) val
 			r.fail(diag.E3505.At(r.span(at), elemName(c), ownerName(c)))
 			return nil
 		}
-		base = ref.Owner
+		base = latest(r.lineage, ref.Owner) // an amended instance's refs read its latest copy
 	} else {
 		st := r.ev.rootState(Root{Pkg: c.Pkg, Name: c.Name})
 		if st == nil {
@@ -143,11 +144,33 @@ func (h *stdHost) Entry(coll value.Value, k value.Key) (*value.Record, bool) {
 
 // bindRefs binds a completed instance's level-1 refs, one binder for all fields (EVALUATION.md §3.4).
 func (e *Evaluator) bindRefs(rec *value.Record) {
+	e.bindTo(rec, nil)
+}
+
+// bindTo binds rec's unbound level-1 refs, and those bound to an instance lineage leads to rec.
+func (e *Evaluator) bindTo(rec *value.Record, lineage map[*value.Record]*value.Record) {
 	owned := e.owned(rec.T)
 	if len(owned) == 0 {
 		return
 	}
-	b := &binder{e: e, owned: owned, rt: recordOf(rec.T), owner: rec, done: map[value.Value]value.Value{}}
+	e.rebindFields(rec, &binder{e: e, owned: owned, rt: recordOf(rec.T), owner: rec, lineage: lineage})
+}
+
+// unbindFrom unbinds rec's refs to itself or its enclosing instances, as when first built (EVALUATION.md §3.4).
+func (e *Evaluator) unbindFrom(rec *value.Record, lineage map[*value.Record]*value.Record, enclosing []*value.Record) {
+	b := &binder{e: e, owned: map[*types.Collection]bool{}, owner: rec, lineage: lineage, owners: map[*value.Record]bool{rec: true}}
+	for _, in := range append([]*value.Record{rec}, enclosing...) {
+		maps.Copy(b.owned, e.owned(in.T))
+		b.owners[latest(lineage, in)] = true
+	}
+	if len(b.owned) > 0 {
+		e.rebindFields(rec, b)
+	}
+}
+
+// rebindFields rebinds rec's fields in place through b.
+func (e *Evaluator) rebindFields(rec *value.Record, b *binder) {
+	b.done = map[value.Value]value.Value{}
 	for i, f := range rec.Fields {
 		rec.Fields[i] = b.bind(f)
 	}
@@ -160,13 +183,16 @@ type cleanKey struct {
 	rt   *types.RecordType
 }
 
-// binder binds refs into owned to owner, copying what changes (EVALUATION.md §4.1, DECISIONS 199).
+// binder binds refs into owned to owner, and those an amendment moved, copying what changes
+// (DECISIONS 199); with owners, it unbinds instead the refs bound to one of them.
 type binder struct {
-	e     *Evaluator
-	owned map[*types.Collection]bool
-	rt    *types.RecordType
-	owner *value.Record
-	done  map[value.Value]value.Value
+	e       *Evaluator
+	owned   map[*types.Collection]bool
+	rt      *types.RecordType
+	owner   *value.Record
+	lineage map[*value.Record]*value.Record
+	owners  map[*value.Record]bool
+	done    map[value.Value]value.Value
 }
 
 // binding is a composite being rebound: its components, and the next one to take.
@@ -198,19 +224,21 @@ func (b *binder) bind(v value.Value) value.Value {
 		}
 		nv := b.rebuild(top.v)
 		b.done[top.v] = nv
-		b.e.clean[cleanKey{node: nv, rt: b.rt}] = true
+		if b.owners == nil { // an unbinding leaves unbound refs: nothing it builds is clean
+			b.e.clean[cleanKey{node: nv, rt: b.rt}] = true
+		}
 		stack = stack[:len(stack)-1]
 	}
 	return b.done[v]
 }
 
 // pending reports a composite still to walk: neither rebound in this call nor known clean,
-// which counts as rebound to itself.
+// which counts as rebound to itself; a clean node may still hold refs to a moved instance.
 func (b *binder) pending(v value.Value) bool {
 	if _, seen := b.done[v]; seen {
 		return false
 	}
-	if b.e.clean[cleanKey{node: v, rt: b.rt}] {
+	if b.owners == nil && b.lineage == nil && b.e.clean[cleanKey{node: v, rt: b.rt}] || !b.e.mayHoldRef(v.Type()) {
 		b.done[v] = v
 		return false
 	}
@@ -225,17 +253,26 @@ func (b *binder) get(v value.Value) value.Value {
 	return b.leaf(v)
 }
 
-// leaf is a ref into owned bound to owner; any other value is itself.
+// leaf is a ref into owned bound to owner, or unbound from it; any other value is itself.
 func (b *binder) leaf(v value.Value) value.Value {
 	x, ok := v.(*value.Ref)
 	if !ok {
 		return v
 	}
 	rt, ok := x.T.Base().(*types.RefType)
-	if !ok || x.Owner != nil || !b.owned[rt.Target] {
+	if !ok || !b.owned[rt.Target] {
 		return v
 	}
-	return b.e.carry(v, &value.Ref{T: x.T, Key: x.Key, Owner: b.owner, P: x.P})
+	if b.owners != nil {
+		if x.Owner == nil || !b.owners[latest(b.lineage, x.Owner)] {
+			return v
+		}
+		return b.e.carry(v, &value.Ref{T: x.T, Key: x.Key, P: x.P})
+	}
+	if x.Owner == nil || x.Owner != b.owner && latest(b.lineage, x.Owner) == b.owner {
+		return b.e.carry(v, &value.Ref{T: x.T, Key: x.Key, Owner: b.owner, P: x.P})
+	}
+	return v
 }
 
 // rebuild is a composite whose components are all rebound: itself when none changed, else a copy.

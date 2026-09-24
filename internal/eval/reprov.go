@@ -2,9 +2,9 @@ package eval
 
 import "github.com/fantasim/canonlang/internal/value"
 
-// reprov is v with provenance p, a composite copied only when composites (EVALUATION.md §4.2).
+// reprov is v with a new origin p, without v's history; a composite copied only when composites (EVALUATION.md §4.2).
 func (e *Evaluator) reprov(v value.Value, p *value.Prov, composites bool) value.Value {
-	return e.carry(v, reprovValue(v, p, composites))
+	return e.mark(v, reprovValue(v, p, composites))
 }
 
 func reprovValue(v value.Value, p *value.Prov, composites bool) value.Value {
@@ -50,8 +50,16 @@ func reprovComposite(v value.Value, p *value.Prov) value.Value {
 	return v
 }
 
-// carry gives a value rebuilt from another the invalid mark the other has (EVALUATION.md §7.3).
+// carry gives a value rebuilt from another, the same value passed along, its invalid mark and history (EVALUATION.md §13).
 func (e *Evaluator) carry(from, to value.Value) value.Value {
+	if old := e.before(from); old != nil && from != to && to != nil {
+		e.history[to] = old
+	}
+	return e.mark(from, to)
+}
+
+// mark gives a value built from another the invalid mark the other has (EVALUATION.md §7.3).
+func (e *Evaluator) mark(from, to value.Value) value.Value {
 	if from != to && from != nil && to != nil && e.Invalid(from) {
 		e.invalid[to] = true
 	}

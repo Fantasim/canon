@@ -1,0 +1,52 @@
+EVALUATION.md §9.3 step 3 (orchestrator log 2026-09-24): derived defaults follow any amendment
+at or below field f, since a deeper amendment replaces f's value: `server.inner.x` re-derives
+`label` from `inner`, a map key added inside `limits` re-derives `count`, and the outer
+instance's later defaults follow too; a field written in the source never re-derives.
+-- layers --
+dev
+-- a/a.canon --
+/// A.
+package a
+
+/// Inner.
+record Inner {
+  /// X.
+  x: Int = 1
+}
+
+/// Server.
+record Server {
+  /// Inner.
+  inner: Inner = {}
+  /// Label, derived from inner.
+  label: String = "x={inner.x}"
+  /// Limits.
+  limits: {String: Int} = { "a": 1 }
+  /// Count, derived from limits.
+  count: Int = limits.len()
+  /// Written below: never derived.
+  fixed: Int = limits.len()
+}
+
+/// Config.
+record Config {
+  /// Server.
+  server: Server = {}
+  /// Derived from the server.
+  summary: String = "{server.label}/{server.count}"
+}
+
+/// Config.
+let config: Config = { server: { fixed: 0 } }
+-- a/dev.canon --
+package a
+layer dev
+
+amend config {
+  server.inner.x: 5
+  server.limits["b"]: 2
+}
+-- dump.txt --
+a.config = Config{server: Server{inner: Inner{x: 5}, label: "x=5", limits: {"a": 1, "b": 2}, count: 2, fixed: 0}, summary: "x=5/2"}
+
+0 errors, 0 warnings in 1 package (…)

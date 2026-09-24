@@ -1,0 +1,172 @@
+EVALUATION.md §9.3 steps 2–4, §3.4: an amended value is poisoned, converted and checked as the
+same value written in source: an out-of-range port (E3204), a failed check (E5001), a re-derived
+default reading its own or its enclosing instance's ref (E3505), a derived copy with other tiers
+(E3501).
+-- layers --
+dev
+-- a/a.canon --
+/// A.
+package a
+
+/// Tier.
+record Tier {
+  /// Weight.
+  weight: Int = 1
+}
+
+/// Server.
+record Server {
+  /// Host.
+  host: String = "127.0.0.1"
+  /// Port.
+  port: Int(1024..=65535) = 8765
+
+  check host == "127.0.0.1" or host == "localhost"
+    else "loopback only"
+}
+
+/// Plan.
+record Plan {
+  /// Tiers.
+  tiers: table Tier = { low {} }
+  /// Pick.
+  pick: ref Tier = low
+  /// X.
+  x: Int = 0
+  /// W.
+  w: Int = if x > 0 { pick.weight } else { 0 }
+}
+
+/// Served.
+record Served {
+  /// Pick.
+  pick: ref Tier = low
+  /// X.
+  x: Int = 0
+  /// W.
+  w: Int = if x > 0 { pick.weight } else { 0 }
+}
+
+/// Holder.
+record Holder {
+  /// Tiers.
+  tiers: table Tier = { low { weight: 3 } }
+  /// Served.
+  served: Served = {}
+}
+
+/// Link.
+record Link {
+  /// To.
+  to: ref Tier
+}
+
+/// Copying.
+record Copying {
+  /// Tiers.
+  tiers: table Tier = { low {} }
+  /// Links.
+  links: [Link] = [{ to: "low" }]
+  /// X.
+  x: Int = 0
+  /// A copy with other tiers.
+  copy: Copying? = if x > 0 { { tiers: { other {} }, links: links, x: 0 } } else { none }
+}
+
+/// Port.
+let port: Server = {}
+
+/// Port.
+let portWritten: Server = { port: base + 1 }
+
+/// Below the range, known only when evaluated (a literal would break the layer statically).
+let base: Int = 79
+
+/// Host.
+let open: Server = {}
+
+/// Host.
+let openWritten: Server = { host: "0.0.0.0" }
+
+/// Own ref.
+let plan: Plan = {}
+
+/// Own ref.
+let planWritten: Plan = { tiers: { low { weight: 9 } }, x: 1 }
+
+/// Enclosing ref.
+let holder: Holder = {}
+
+/// Enclosing ref.
+let holderWritten: Holder = { served: { x: 1 } }
+
+/// Copy.
+let copying: Copying = {}
+
+/// Copy.
+let copyingWritten: Copying = { x: 1 }
+-- a/dev.canon --
+package a
+layer dev
+
+amend port {
+  port: base + 1
+}
+
+amend open {
+  host: "0.0.0.0"
+}
+
+amend plan {
+  tiers.low.weight: 9
+  x: 1
+}
+
+amend holder {
+  served.x: 1
+}
+
+amend copying {
+  x: 1
+}
+-- dump.txt --
+a.port = Server{host: "127.0.0.1", port: 80}
+a.portWritten = Server{host: "127.0.0.1", port: 80}
+a.base = 79
+a.open = Server{host: "0.0.0.0", port: 8765}
+a.openWritten = Server{host: "0.0.0.0", port: 8765}
+a.plan poisoned
+a.planWritten poisoned
+a.holder poisoned
+a.holderWritten poisoned
+a.copying = Copying{tiers: {low: Tier{weight: 1}}, links: [Link{to: low}], x: 1, copy: Copying{tiers: {other: Tier{weight: 1}}, links: [Link{to: low}], x: 0, copy: none}}
+a.copyingWritten = Copying{tiers: {low: Tier{weight: 1}}, links: [Link{to: low}], x: 1, copy: Copying{tiers: {other: Tier{weight: 1}}, links: [Link{to: low}], x: 0, copy: none}}
+
+error[E3505]  a/a.canon:30:23
+  ref Tier has no enclosing Plan to resolve against
+
+error[E3505]  a/a.canon:40:23
+  ref Tier has no enclosing Holder to resolve against
+
+error[E3501]  a/a.canon:62:26
+  copying.copy.links[0].to: unknown key low in Copying.tiers
+  expected by a/a.canon:54 (to: ref Tier)
+
+error[E3204]  a/a.canon:73:35
+  portWritten.port: 80 is outside 1024..=65535
+  expected by a/a.canon:15 (port: Int(1024..=65535))
+
+error[E5001]  a/a.canon:79:20
+  open: loopback only
+  expected by a/a.canon:17 (check)
+
+error[E5001]  a/a.canon:82:27
+  openWritten: loopback only
+  expected by a/a.canon:17 (check)
+
+error[E3204]  a/dev.canon:5:9
+  80 is outside 1024..=65535
+  set by layer dev
+  expected by a/a.canon:15 (port: Int(1024..=65535))
+
+7 errors, 0 warnings in 1 package (…)

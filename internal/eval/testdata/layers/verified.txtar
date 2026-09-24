@@ -1,0 +1,90 @@
+EVALUATION.md §9.3 steps 2 and 4: an amended value is converted at the storage point of its
+path (E3204, set by its layer), then verified and checked like any value (E5001); a keyed list
+never grows, so a new key at the last segment is E1905; a poisoned base stops (step 1).
+-- layers --
+louis
+-- a/a.canon --
+/// A.
+package a
+
+/// Server.
+record Server {
+  /// Host.
+  host: String = "127.0.0.1"
+  /// Port.
+  port: Int(1024..=65535) = 8765
+
+  check host == "127.0.0.1" or host == "localhost"
+    else "loopback only"
+}
+
+/// Item.
+record Item {
+  /// Id.
+  id: Int
+  /// N.
+  n: Int = 0
+}
+
+/// Server, its port amended.
+let server: Server = {}
+
+/// Server, its host amended.
+let open: Server = {}
+
+/// A port below the range, only known when evaluated.
+let base: Int = 79
+
+/// Its base fails: no amendment is evaluated.
+let lost: Server = { port: [8000][3] }
+
+/// Stock.
+record Stock {
+  /// Items.
+  items: [Item] keyed by id = [{ id: 1 }]
+}
+
+/// Stock.
+let stock: Stock = {}
+-- a/louis.canon --
+package a
+layer louis
+
+amend server {
+  port: base + 1
+}
+
+amend open {
+  host: "0.0.0.0"
+}
+
+amend lost {
+  host: ["x"][5]
+}
+
+amend stock {
+  items[2]: { id: 2 }
+}
+-- dump.txt --
+a.server = Server{host: "127.0.0.1", port: 80}
+a.open = Server{host: "0.0.0.0", port: 8765}
+a.base = 79
+a.lost poisoned
+a.stock poisoned
+
+error[E5001]  a/a.canon:27:20
+  open: loopback only
+  expected by a/a.canon:11 (check)
+
+error[E4002]  a/a.canon:33:28
+  index 3 out of range for length 1
+
+error[E3204]  a/louis.canon:5:9
+  80 is outside 1024..=65535
+  set by layer louis
+  expected by a/a.canon:9 (port: Int(1024..=65535))
+
+error[E1905]  a/louis.canon:17:8
+  amend path items[2]: key 2 does not exist
+
+4 errors, 0 warnings in 1 package (…)

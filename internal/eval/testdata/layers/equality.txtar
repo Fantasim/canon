@@ -1,0 +1,76 @@
+EVALUATION.md §9.3, §3.4, TYPES.md §7.5: a derived ref equals its entry after two amendments of one
+let, in either order, and after one.
+-- layers --
+dev
+-- a/a.canon --
+/// A.
+package a
+
+/// Tier.
+record Tier {
+  /// Weight.
+  weight: Int = 1
+}
+
+/// Plan.
+record Plan {
+  /// Tiers.
+  tiers: table Tier = { low {} }
+  /// X.
+  x: Int = 0
+  /// First.
+  first: ref Tier = tiers.low
+  /// Same.
+  same: Bool = first == tiers.low
+}
+
+/// Plan.
+let plan: Plan = {}
+
+/// Swapped.
+let swapped: Plan = {}
+
+/// Single.
+let single: Plan = {}
+
+/// Eq.
+let eq: Bool = plan.first == plan.tiers.low
+/// W.
+let w: Int = plan.first.weight
+/// W2.
+let w2: Int = swapped.first.weight
+/// Eq2.
+let eq2: Bool = swapped.first == swapped.tiers.low
+/// W3.
+let w3: Int = single.first.weight
+/// Eq3.
+let eq3: Bool = single.first == single.tiers.low
+-- a/dev.canon --
+package a
+layer dev
+
+amend plan {
+  tiers.low.weight: 9
+  x: 1
+}
+
+amend swapped {
+  x: 1
+  tiers.low.weight: 9
+}
+
+amend single {
+  tiers.low.weight: 9
+}
+-- dump.txt --
+a.plan = Plan{tiers: {low: Tier{weight: 9}}, x: 1, first: low, same: true}
+a.swapped = Plan{tiers: {low: Tier{weight: 9}}, x: 1, first: low, same: true}
+a.single = Plan{tiers: {low: Tier{weight: 9}}, x: 0, first: low, same: true}
+a.eq = true
+a.w = 9
+a.w2 = 9
+a.eq2 = true
+a.w3 = 9
+a.eq3 = true
+
+0 errors, 0 warnings in 1 package (…)

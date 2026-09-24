@@ -1,0 +1,233 @@
+EVALUATION.md §9.3, CLI.md §3.7 (review call d): 24 layers alternately replace a value, its
+parent and its grandparent; History walks every one back to the default once, in stack order.
+-- layers --
+l0 l1 l2 l3 l4 l5 l6 l7 l8 l9 l10 l11 l12 l13 l14 l15 l16 l17 l18 l19 l20 l21 l22 l23
+-- paths --
+a:r.a.b.c.v
+-- a/a.canon --
+/// A.
+package a
+
+/// C.
+record C {
+  /// V.
+  v: Int = 0
+}
+
+/// B.
+record B {
+  /// C.
+  c: C = {}
+}
+
+/// A.
+record A {
+  /// B.
+  b: B = {}
+}
+
+/// R.
+record R {
+  /// A.
+  a: A = {}
+}
+
+/// R.
+let r: R = {}
+-- a/l0.canon --
+package a
+layer l0
+
+amend r {
+  a: { b: { c: { v: 0 } } }
+}
+-- a/l1.canon --
+package a
+layer l1
+
+amend r {
+  a.b: { c: { v: 1 } }
+}
+-- a/l2.canon --
+package a
+layer l2
+
+amend r {
+  a.b.c: { v: 2 }
+}
+-- a/l3.canon --
+package a
+layer l3
+
+amend r {
+  a: { b: { c: { v: 3 } } }
+}
+-- a/l4.canon --
+package a
+layer l4
+
+amend r {
+  a.b: { c: { v: 4 } }
+}
+-- a/l5.canon --
+package a
+layer l5
+
+amend r {
+  a.b.c: { v: 5 }
+}
+-- a/l6.canon --
+package a
+layer l6
+
+amend r {
+  a: { b: { c: { v: 6 } } }
+}
+-- a/l7.canon --
+package a
+layer l7
+
+amend r {
+  a.b: { c: { v: 7 } }
+}
+-- a/l8.canon --
+package a
+layer l8
+
+amend r {
+  a.b.c: { v: 8 }
+}
+-- a/l9.canon --
+package a
+layer l9
+
+amend r {
+  a: { b: { c: { v: 9 } } }
+}
+-- a/l10.canon --
+package a
+layer l10
+
+amend r {
+  a.b: { c: { v: 10 } }
+}
+-- a/l11.canon --
+package a
+layer l11
+
+amend r {
+  a.b.c: { v: 11 }
+}
+-- a/l12.canon --
+package a
+layer l12
+
+amend r {
+  a: { b: { c: { v: 12 } } }
+}
+-- a/l13.canon --
+package a
+layer l13
+
+amend r {
+  a.b: { c: { v: 13 } }
+}
+-- a/l14.canon --
+package a
+layer l14
+
+amend r {
+  a.b.c: { v: 14 }
+}
+-- a/l15.canon --
+package a
+layer l15
+
+amend r {
+  a: { b: { c: { v: 15 } } }
+}
+-- a/l16.canon --
+package a
+layer l16
+
+amend r {
+  a.b: { c: { v: 16 } }
+}
+-- a/l17.canon --
+package a
+layer l17
+
+amend r {
+  a.b.c: { v: 17 }
+}
+-- a/l18.canon --
+package a
+layer l18
+
+amend r {
+  a: { b: { c: { v: 18 } } }
+}
+-- a/l19.canon --
+package a
+layer l19
+
+amend r {
+  a.b: { c: { v: 19 } }
+}
+-- a/l20.canon --
+package a
+layer l20
+
+amend r {
+  a.b.c: { v: 20 }
+}
+-- a/l21.canon --
+package a
+layer l21
+
+amend r {
+  a: { b: { c: { v: 21 } } }
+}
+-- a/l22.canon --
+package a
+layer l22
+
+amend r {
+  a.b: { c: { v: 22 } }
+}
+-- a/l23.canon --
+package a
+layer l23
+
+amend r {
+  a.b.c: { v: 23 }
+}
+-- provenance.txt --
+a:r.a.b.c.v = 23
+  literal a/l23.canon:5:15-5:17
+  literal a/l22.canon:5:18-5:20
+  literal a/l21.canon:5:21-5:23
+  literal a/l20.canon:5:15-5:17
+  literal a/l19.canon:5:18-5:20
+  literal a/l18.canon:5:21-5:23
+  literal a/l17.canon:5:15-5:17
+  literal a/l16.canon:5:18-5:20
+  literal a/l15.canon:5:21-5:23
+  literal a/l14.canon:5:15-5:17
+  literal a/l13.canon:5:18-5:20
+  literal a/l12.canon:5:21-5:23
+  literal a/l11.canon:5:15-5:17
+  literal a/l10.canon:5:18-5:20
+  literal a/l9.canon:5:21-5:22
+  literal a/l8.canon:5:15-5:16
+  literal a/l7.canon:5:18-5:19
+  literal a/l6.canon:5:21-5:22
+  literal a/l5.canon:5:15-5:16
+  literal a/l4.canon:5:18-5:19
+  literal a/l3.canon:5:21-5:22
+  literal a/l2.canon:5:15-5:16
+  literal a/l1.canon:5:18-5:19
+  literal a/l0.canon:5:21-5:22
+  default a/a.canon:7:12-7:13 via (literal a/a.canon:13:10-13:12)
+
+0 errors, 0 warnings in 1 package (…)

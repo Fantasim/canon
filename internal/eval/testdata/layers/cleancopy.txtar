@@ -1,0 +1,54 @@
+EVALUATION.md §3.4, §9.3 step 3: refs unbound for a re-derivation are not taken for bound later:
+a derived default that builds a new Plan from `links` binds them to that Plan, whose tiers lack
+`low` (E3501), as the written value does.
+-- layers --
+dev
+-- a/a.canon --
+/// A.
+package a
+
+/// Tier.
+record Tier {
+  /// Weight.
+  weight: Int = 1
+}
+
+/// Link.
+record Link {
+  /// To.
+  to: ref Tier
+}
+
+/// Plan.
+record Plan {
+  /// Tiers.
+  tiers: table Tier = { low {} }
+  /// Links.
+  links: [Link] = [{ to: "low" }]
+  /// X.
+  x: Int = 0
+  /// A copy with other tiers.
+  copy: Plan? = if x > 0 { { tiers: { other {} }, links: links, x: 0 } } else { none }
+}
+
+/// Amended.
+let plan: Plan = {}
+
+/// Written.
+let written: Plan = { x: 1 }
+-- a/dev.canon --
+package a
+layer dev
+
+amend plan {
+  x: 1
+}
+-- dump.txt --
+a.plan = Plan{tiers: {low: Tier{weight: 1}}, links: [Link{to: low}], x: 1, copy: Plan{tiers: {other: Tier{weight: 1}}, links: [Link{to: low}], x: 0, copy: none}}
+a.written = Plan{tiers: {low: Tier{weight: 1}}, links: [Link{to: low}], x: 1, copy: Plan{tiers: {other: Tier{weight: 1}}, links: [Link{to: low}], x: 0, copy: none}}
+
+error[E3501]  a/a.canon:21:26
+  plan.copy.links[0].to: unknown key low in Plan.tiers
+  expected by a/a.canon:13 (to: ref Tier)
+
+1 error, 0 warnings in 1 package (…)

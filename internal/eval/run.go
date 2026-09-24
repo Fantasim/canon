@@ -33,6 +33,8 @@ type run struct {
 	h          *stdHost
 	test       *testState
 	freeSteps  int64
+	fresh      map[value.Value]bool            // the values the amendments of this root built, until settled (settle.go)
+	lineage    map[*value.Record]*value.Record // an instance an amendment copied, to its copy (settle.go)
 }
 
 // frame is one call frame, or a root's own frame (fn empty).
@@ -52,6 +54,7 @@ type frame struct {
 	stack  []diag.Frame
 	more   int
 	cached bool
+	decl   bool                     // an implicit frame: a field default or a where run (DECISIONS 210)
 	ts     bool                     // a translated fn's frame in a TS-mode vector (CONFORMANCE.md §4)
 	reads  map[syntax.Expr]selfRead // its paths of self, read on entry in TS mode
 }
@@ -260,10 +263,10 @@ func (r *run) withStack(b *diag.Builder) *diag.Builder {
 	return b.Stack(stack).MoreFrames(more)
 }
 
-// prov is the provenance of a value node n builds (EVALUATION.md §13).
+// prov is the provenance of a value node n builds; a literal in a default stays one (EVALUATION.md §13).
 func (r *run) prov(n syntax.Node, kind value.ProvKind) *value.Prov {
 	p := &value.Prov{Kind: kind, Span: r.span(n)}
-	if f := r.fr; f.fn != "" || f.caller != nil {
+	if f := r.fr; (f.fn != "" || f.caller != nil) && (!f.decl || kind != value.ProvLiteral) {
 		if !f.cached {
 			f.stack, f.more = r.frames()
 			f.cached = true

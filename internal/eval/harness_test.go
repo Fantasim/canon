@@ -119,10 +119,17 @@ type build struct {
 type host struct {
 	verifier *verify.Verifier
 	ev       *eval.Evaluator
+	load     loader
 }
 
-func (h *host) Load(context.Context, *syntax.LoadExpr, types.Type) (value.Value, bool) {
-	return nil, false
+// loader serves a load expression, nil when the build loads nothing.
+type loader func(e *syntax.LoadExpr, t types.Type) (value.Value, bool)
+
+func (h *host) Load(_ context.Context, e *syntax.LoadExpr, t types.Type) (value.Value, bool) {
+	if h.load == nil {
+		return nil, false
+	}
+	return h.load(e, t)
 }
 
 func (h *host) Verify(ctx context.Context, root eval.Root, v value.Value) bool {
@@ -157,11 +164,17 @@ func (c checks) Run(ctx context.Context, d *syntax.CheckDecl, self value.Value) 
 // stage A in forced-set order, B, C, then D.
 func runBuild(t testing.TB, p *program, opt eval.Options, selected ...string) *build {
 	t.Helper()
+	return runBuildWith(t, p, opt, nil, selected...)
+}
+
+// runBuildWith is runBuild with a host that serves loads through load.
+func runBuildWith(t testing.TB, p *program, opt eval.Options, load loader, selected ...string) *build {
+	t.Helper()
 	ctx := context.Background()
 	b := &build{prog: p, bags: check.Bags{}, values: map[eval.Root]value.Value{}}
 	fold := eval.NewFolder(b.bags, opt)
 	b.checked = check.Check(ctx, exampleProject(), p.files, b.bags, fold)
-	h := &host{}
+	h := &host{load: load}
 	b.ev = eval.New(b.checked, h, b.bags, opt)
 	h.ev = b.ev
 	h.verifier = verify.New(b.ev, b.checked, b.bags, nil)

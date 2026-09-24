@@ -1,0 +1,67 @@
+EVALUATION.md §9.3, TYPES.md §10.2: nested owners: an amended entry that owns a collection, beside an
+unamended sibling, owns its entries and its ref equals them.
+-- layers --
+dev
+-- a/a.canon --
+/// A.
+package a
+
+/// M.
+record M {
+  /// N.
+  n: Int = 0
+}
+
+/// Group.
+record Group {
+  /// Members.
+  members: table M = { a {} }
+  /// X.
+  x: Int = 0
+  /// Lead.
+  lead: ref M = a
+}
+
+/// Config.
+record Config {
+  /// Groups.
+  groups: table Group = { g1 {}, g2 {} }
+}
+
+/// Config.
+let config: Config = {}
+/// One group only.
+let solo: Config = { groups: { g2 {} } }
+
+/// Eq.
+let eq: Bool = config.groups.g2.lead == config.groups.g2.members.a
+/// Eq1.
+let eq1: Bool = config.groups.g1.lead == config.groups.g1.members.a
+/// EqSolo.
+let eqSolo: Bool = solo.groups.g2.lead == solo.groups.g2.members.a
+/// C.
+let c: Bool = [config.groups.g2.lead].contains(config.groups.g2.members.a)
+/// N.
+let n: Int = config.groups.g2.lead.n
+-- a/dev.canon --
+package a
+layer dev
+
+amend config {
+  groups.g2.x: 1
+  groups.g2.members.a.n: 4
+}
+
+amend solo {
+  groups.g2.x: 1
+}
+-- dump.txt --
+a.config = Config{groups: {g1: Group{members: {a: M{n: 0}}, x: 0, lead: a}, g2: Group{members: {a: M{n: 4}}, x: 1, lead: a}}}
+a.solo = Config{groups: {g2: Group{members: {a: M{n: 0}}, x: 1, lead: a}}}
+a.eq = true
+a.eq1 = true
+a.eqSolo = true
+a.c = true
+a.n = 4
+
+0 errors, 0 warnings in 1 package (…)

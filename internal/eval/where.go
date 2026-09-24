@@ -29,7 +29,7 @@ func (e *Evaluator) Where(ctx context.Context, p *types.Predicate, it value.Valu
 func (r *run) where(p *types.Predicate, v value.Value) (bool, bool) {
 	file := r.ev.index.file[p.Expr]
 	saved := r.fr
-	r.fr = (&frame{vars: map[check.Object]value.Value{}, it: v, file: file, pkg: r.ev.index.pkg[file]}).under(saved)
+	r.fr = (&frame{vars: map[check.Object]value.Value{}, it: v, file: file, pkg: r.ev.index.pkg[file], decl: true}).under(saved)
 	defer func() { r.fr = saved }()
 	if !r.nest(r.span(p.Expr)) {
 		return false, false

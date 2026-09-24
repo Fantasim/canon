@@ -46,12 +46,14 @@ type Evaluator struct {
 	queue     []*rootState
 
 	invalid    map[value.Value]bool
+	history    map[value.Value]value.Value // what a layer amendment replaced with a value (history.go)
 	keyed      map[value.Value]map[value.Key]*value.Record
 	regexps    map[string]*regexp.Regexp
 	frees      map[syntax.Node][]check.Object
 	colls      map[collKey]*types.Collection
 	fieldColls map[*types.Field]*types.Collection
 	ownedBy    map[*types.RecordType]map[*types.Collection]bool
+	refTypes   map[types.Type]bool // types whose values may hold a ref (prune.go)
 	clean      map[cleanKey]bool
 	sites      map[*types.Field]site
 	pkgs       map[string]*check.Package
@@ -118,12 +120,14 @@ func newEvaluator(bags check.Bags, opt Options) *Evaluator {
 		states:  map[check.Object]*rootState{},
 		roots:   map[Root]*rootState{},
 		invalid: map[value.Value]bool{},
+		history: map[value.Value]value.Value{},
 		keyed:   map[value.Value]map[value.Key]*value.Record{},
 		regexps: map[string]*regexp.Regexp{},
 		frees:   map[syntax.Node][]check.Object{},
 
 		fieldColls: map[*types.Field]*types.Collection{},
 		ownedBy:    map[*types.RecordType]map[*types.Collection]bool{},
+		refTypes:   map[types.Type]bool{},
 		clean:      map[cleanKey]bool{},
 		sites:      map[*types.Field]site{},
 		selfReads:  map[*syntax.FnDecl][]syntax.Expr{},

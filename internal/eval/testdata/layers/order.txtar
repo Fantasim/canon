@@ -1,0 +1,88 @@
+EVALUATION.md §9.1 and §9.2: layers stack in the order given (dev, given last, wins), a local
+let is amended, and each segment kind reaches its element: a list index from the end, a
+position in a list, a keyed list and a map, a keyed list by an integer key and by a String key
+written `.k`, an enum-keyed map by member, a field of the variant's current case.
+-- layers --
+louis dev
+-- a/a.canon --
+/// A.
+package a
+
+/// Item.
+record Item {
+  /// Id.
+  id: Int
+  /// N.
+  n: Int = 0
+}
+
+/// Named.
+record Named {
+  /// Name.
+  name: String
+  /// N.
+  n: Int = 0
+}
+
+/// Color.
+enum Color { red, green }
+
+/// Shape.
+variant Shape {
+  /// A circle.
+  circle {
+    /// Radius.
+    r: Int = 1
+  }
+  /// A square.
+  square {
+    /// Side.
+    w: Int = 1
+  }
+}
+
+/// Box.
+record Box {
+  /// Port.
+  port: Int = 0
+  /// Xs.
+  xs: [Int] = [1, 2, 3]
+  /// Items.
+  items: [Item] keyed by id = [{ id: 3 }, { id: 7 }]
+  /// Named.
+  named: [Named] keyed by name = [{ name: "a" }, { name: "b" }]
+  /// M.
+  m: {String: Int} = { "a": 1, "b": 2 }
+  /// Colors.
+  colors: {Color: Int} = { red: 1 }
+  /// Shape.
+  shape: Shape = circle
+}
+
+local let box: Box = {}
+-- a/louis.canon --
+package a
+layer louis
+
+amend box {
+  port: 2
+}
+-- a/dev.canon --
+package a
+layer dev
+
+amend box {
+  port: 1
+  xs[-1]: 30
+  xs[#0]: 10
+  items[7].n: 5
+  named.b.n: 6
+  m[#1]: 20
+  colors[green]: 2
+  named[#0].n: 9
+  shape.r: 4
+}
+-- dump.txt --
+a.box = Box{port: 1, xs: [10, 2, 30], items: [Item{id: 3, n: 0}, Item{id: 7, n: 5}], named: [Named{name: "a", n: 9}, Named{name: "b", n: 6}], m: {"a": 1, "b": 20}, colors: {red: 1, green: 2}, shape: circle{r: 4}}
+
+0 errors, 0 warnings in 1 package (…)

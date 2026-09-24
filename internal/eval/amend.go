@@ -23,7 +23,7 @@ func (r *run) setElement(cur value.Value, t types.Type, segs []*syntax.AmendSegm
 	if nv == nil {
 		return nil
 	}
-	return r.ev.replaced(cur, i, nil, r.ev.withIdent(nv, elems[i]))
+	return r.copied(cur, r.ev.replaced(cur, i, nil, r.ev.withIdent(nv, elems[i])))
 }
 
 // slotOf is the element a segment names: its index, -1 for a key the collection lacks.
@@ -88,7 +88,7 @@ func (r *run) addEntry(cur value.Value, t types.Type, segs []*syntax.AmendSegmen
 	k, _ := std.KeyOf(key)
 	added := r.ev.withIdentity(rec, &value.Identity{Coll: tableColl(tbl, r.ev.letColl(m.root)), Key: k})
 	entries := append(append([]*value.Record(nil), tbl.Entries...), added)
-	return &value.Table{T: tbl.T, Entries: entries, P: tbl.P}
+	return r.copied(tbl, &value.Table{T: tbl.T, Entries: entries, P: tbl.P})
 }
 
 // tableColl is the collection a table's entries belong to.
@@ -117,12 +117,14 @@ func (r *run) setMapKey(mp *value.Map, t types.Type, segs []*syntax.AmendSegment
 	var cur value.Value
 	if i >= 0 {
 		cur = mp.Vals[i]
+	} else if p := key.Prov(); p != nil {
+		key = r.ev.reprov(key, &value.Prov{Kind: value.ProvLayer, Span: p.Span, Layer: m.layer}, true)
 	}
 	nv := r.next(cur, vt, segs, m, site{})
 	if nv == nil {
 		return nil
 	}
-	return r.ev.replaced(mp, i, key, nv)
+	return r.copied(mp, r.ev.replaced(mp, i, key, nv))
 }
 
 // mapSlot is the entry a segment names: a position, or a key (-1 when absent).
@@ -135,7 +137,7 @@ func (r *run) mapSlot(mp *value.Map, seg *syntax.AmendSegment, m *amending) (int
 		}
 		return int(i), mp.Keys[i], true
 	}
-	key := r.segmentKey(seg)
+	key := r.boundKey(r.segmentKey(seg), m)
 	if key == nil {
 		return 0, nil, false
 	}

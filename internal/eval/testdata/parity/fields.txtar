@@ -1,0 +1,130 @@
+EVALUATION.md §9.2, §9.3: every path segment kind and derived defaults, amended by a layer, give
+what the same value written in source gives (amend, order and derive shapes).
+-- layers --
+dev
+-- a/a.canon --
+/// A.
+package a
+
+/// Server.
+record Server {
+  /// Host.
+  host: String = "localhost"
+  /// Port.
+  port: Int(1024..) = 8080
+  /// URL, derived.
+  url: String = "http://{host}:{port}"
+}
+
+/// Tier.
+record Tier {
+  /// Weight.
+  weight: Int = 1
+}
+
+/// Inner.
+record Inner {
+  /// X.
+  x: Int = 1
+}
+
+/// Item.
+record Item {
+  /// Id.
+  id: Int
+  /// N.
+  n: Int = 0
+}
+
+/// Named.
+record Named {
+  /// Name.
+  name: String
+  /// N.
+  n: Int = 0
+}
+
+/// Color.
+enum Color { red, green }
+
+/// Shape.
+variant Shape {
+  /// A circle.
+  circle {
+    /// Radius.
+    r: Int = 1
+  }
+  /// A square.
+  square {
+    /// Side.
+    w: Int = 1
+  }
+}
+
+/// Config.
+record Config {
+  /// Server.
+  server: Server = {}
+  /// Inner.
+  inner: Inner = {}
+  /// Derived from inner.
+  label: String = "x={inner.x}"
+  /// Limits.
+  limits: {String: Int} = { "a": 1 }
+  /// Derived from limits.
+  count: Int = limits.len()
+  /// Tiers.
+  tiers: table Tier = { low {} }
+  /// Xs.
+  xs: [Int] = [1, 2, 3]
+  /// Items.
+  items: [Item] keyed by id = [{ id: 3 }, { id: 7 }]
+  /// Named.
+  named: [Named] keyed by name = [{ name: "a" }, { name: "b" }]
+  /// Colors.
+  colors: {Color: Int} = { red: 1 }
+  /// Shape.
+  shape: Shape = circle
+  /// Derived from everything above.
+  summary: String = "{server.url} {label} {count} {xs.len()} {shape.kind}"
+}
+
+/// Amended.
+let config: Config = {}
+
+/// Written.
+let configWritten: Config = {
+  server: { host: "box", port: 9000 }
+  inner: { x: 5 }
+  limits: { "a": 1, "b": 2 }
+  tiers: { low { weight: 3 }, high { weight: 5 } }
+  xs: [10, 2, 30]
+  items: [{ id: 3 }, { id: 7, n: 5 }]
+  named: [{ name: "a", n: 9 }, { name: "b", n: 6 }]
+  colors: { red: 1, green: 2 }
+  shape: circle { r: 4 }
+}
+-- a/dev.canon --
+package a
+layer dev
+
+amend config {
+  server.port: 9000
+  server.host: "box"
+  inner.x: 5
+  limits["b"]: 2
+  tiers[#0].weight: 3
+  tiers.high: { weight: 5 }
+  xs[-1]: 30
+  xs[#0]: 10
+  items[7].n: 5
+  named.b.n: 6
+  named[#0].n: 9
+  colors[green]: 2
+  shape.r: 4
+}
+-- dump.txt --
+a.config = Config{server: Server{host: "box", port: 9000, url: "http://box:9000"}, inner: Inner{x: 5}, label: "x=5", limits: {"a": 1, "b": 2}, count: 2, tiers: {low: Tier{weight: 3}, high: Tier{weight: 5}}, xs: [10, 2, 30], items: [Item{id: 3, n: 0}, Item{id: 7, n: 5}], named: [Named{name: "a", n: 9}, Named{name: "b", n: 6}], colors: {red: 1, green: 2}, shape: circle{r: 4}, summary: "http://box:9000 x=5 2 3 circle"}
+a.configWritten = Config{server: Server{host: "box", port: 9000, url: "http://box:9000"}, inner: Inner{x: 5}, label: "x=5", limits: {"a": 1, "b": 2}, count: 2, tiers: {low: Tier{weight: 3}, high: Tier{weight: 5}}, xs: [10, 2, 30], items: [Item{id: 3, n: 0}, Item{id: 7, n: 5}], named: [Named{name: "a", n: 9}, Named{name: "b", n: 6}], colors: {red: 1, green: 2}, shape: circle{r: 4}, summary: "http://box:9000 x=5 2 3 circle"}
+
+0 errors, 0 warnings in 1 package (…)

@@ -1,0 +1,125 @@
+EVALUATION.md §9.3, §13; CLI.md §3.7: an amended value's provenance is its right-hand side
+with its layer, and History goes back through each layer that set it to the base: a default
+amended by two layers, a JSON value, a record amended then amended inside, a derived default
+re-evaluated, an added entry and an added map key, which replaced nothing but carry their layer
+(review call c); the chain goes on through an ancestor a later layer replaced whole (call d).
+-- layers --
+dev louis
+-- paths --
+a:config.server.port
+a:config.server.url
+a:config.server.host
+a:config.extra
+a:config.extra.weight
+a:config.tiers.high
+a:config.backup.port
+a:config.limits["b"]
+a:config.limits["b"]@key
+a:srv.port
+a:srv.host
+-- a/a.canon --
+/// A.
+package a
+
+/// Server.
+record Server {
+  /// Host.
+  host: String = "127.0.0.1"
+  /// Port.
+  port: Int(1024..=65535) = 8765
+  /// URL, derived.
+  url: String = "http://{host}:{port}"
+}
+
+/// Tier.
+record Tier {
+  /// Weight.
+  weight: Int = 1
+}
+
+/// Config.
+record Config {
+  /// Server.
+  server: Server = {}
+  /// Extra.
+  extra: Tier = {}
+  /// Backup.
+  backup: Server = {}
+  /// Tiers.
+  tiers: table Tier = { low {} }
+  /// Limits.
+  limits: {String: Int} = { "a": 1 }
+}
+
+/// Loaded.
+record Endpoint {
+  /// Port.
+  port: Int
+  /// Host.
+  host: String
+}
+
+/// Config.
+let config: Config = {}
+
+/// Loaded.
+let srv: Endpoint = load("@resource/srv.json")
+-- a/dev.canon --
+package a
+layer dev
+
+amend config {
+  server.port: 9000
+  extra: { weight: 4 }
+  backup.port: 9001
+}
+
+amend srv {
+  port: 81
+}
+-- a/louis.canon --
+package a
+layer louis
+
+amend config {
+  server.port: 9100
+  extra.weight: 6
+  tiers.high: { weight: 5 }
+  limits["b"]: 2
+  backup: { host: "localhost" }
+}
+-- resource/srv.json --
+{"port": 80, "host": "h"}
+-- provenance.txt --
+a:config.server.port = 9100
+  layer a/louis.canon:5:16-5:20 layer louis
+  layer a/dev.canon:5:16-5:20 layer dev
+  default a/a.canon:9:29-9:33 via (literal a/a.canon:23:20-23:22)
+a:config.server.url = http://127.0.0.1:9100
+  default a/a.canon:11:17-11:39 via (default a/a.canon:23:20-23:22 via (literal a/a.canon:43:22-43:24))
+a:config.server.host = 127.0.0.1
+  default a/a.canon:7:18-7:29 via (literal a/a.canon:23:20-23:22)
+a:config.extra = Tier{weight: 6}
+  layer a/dev.canon:6:10-6:23 layer dev
+  default a/a.canon:25:17-25:19 via (literal a/a.canon:43:22-43:24)
+a:config.extra.weight = 6
+  layer a/louis.canon:6:17-6:18 layer louis
+  literal a/dev.canon:6:20-6:21
+  default a/a.canon:17:17-17:18 via (literal a/a.canon:25:17-25:19)
+a:config.tiers.high = Tier{weight: 5}
+  layer a/louis.canon:7:15-7:28 layer louis
+a:config.backup.port = 8765
+  default a/a.canon:9:29-9:33 via (literal a/louis.canon:9:11-9:32)
+  layer a/dev.canon:7:16-7:20 layer dev
+  default a/a.canon:9:29-9:33 via (literal a/a.canon:27:20-27:22)
+a:config.limits["b"] = 2
+  layer a/louis.canon:8:16-8:17 layer louis
+a:config.limits["b"]@key = b
+  layer a/louis.canon:8:10-8:13 layer louis
+a:srv.port = 81
+  layer a/dev.canon:11:9-11:11 layer dev
+  json @resource/srv.json:1:10-1:12 pointer /port
+a:srv.host = h
+  json @resource/srv.json:1:22-1:25 pointer /host
+
+0 errors, 0 warnings in 1 package (…)

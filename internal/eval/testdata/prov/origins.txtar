@@ -1,0 +1,171 @@
+EVALUATION.md §13 (EVL-07): a literal; a value passed along keeps its origin; a default with
+via the literal that omitted it, a literal inside a default staying a literal; a table entry
+from its key to its body; a map key at its key; a spread with via the copied value; values
+computed at the top and inside functions, with their stacks; a JSON value with its pointer; an
+absent optional without default, loaded and written; an input has no value (§11.2); a literal
+inside a lambda within a default is computed (review call e). `a:srv.note` has wire's zero span
+until the load unit gives wire's side the field declaration (orchestrator log, M3 W1 eval calls):
+this line of the golden changes then.
+-- paths --
+a:lit
+a:alias
+a:sum
+a:cfg
+a:cfg.name
+a:cfg.port
+a:cfg.tags[1]
+a:cfg.tiers.low
+a:cfg.tiers.low.weight
+a:cfg.limits["x"]
+a:cfg.limits["x"]@key
+a:gen.key
+a:cfg.doubled[0]
+a:copy
+a:copy.name
+a:copy.port
+a:made
+a:made.port
+a:made.tags
+a:srv
+a:srv.port
+a:srv.host
+a:srv.note
+a:here.note
+-- a/a.canon --
+/// A.
+package a
+
+/// Tier.
+record Tier {
+  /// Weight.
+  weight: Int = 1
+}
+
+/// Config.
+record Config {
+  /// Name.
+  name: String
+  /// Port.
+  port: Int = 8080
+  /// Tags.
+  tags: [String] = ["x", "y"]
+  /// Tiers.
+  tiers: table Tier = {}
+  /// Limits.
+  limits: {String: Int} = {}
+  /// Doubled, through a lambda.
+  doubled: [Int] = [1, 2].map(x => 7)
+}
+
+/// Secrets.
+record Gen {
+  /// Key.
+  key: input String? from env "A_KEY"
+}
+
+/// Server, read from JSON.
+record Server {
+  /// Port.
+  port: Int
+  /// Host.
+  host: String
+  /// Note.
+  note: String?
+}
+
+/// A literal.
+let lit: Int = 7
+
+/// Passed along.
+let alias: Int = lit
+
+/// Computed at the top.
+let sum: Int = lit + 1
+
+/// A config.
+let cfg: Config = {
+  name: "main"
+  tiers: {
+    /// Low.
+    low { weight: 2 }
+  }
+  limits: { "x": 3 }
+}
+
+/// A spread copy.
+let copy: Config = { ...cfg, port: 9 }
+
+/// Twice.
+fn twice(n: Int) -> Int {
+  return n * 2
+}
+
+/// Builds.
+fn build(n: Int) -> Config {
+  return { name: "built", port: twice(n) }
+}
+
+/// Built by functions.
+let made: Config = build(4)
+
+/// Its only field is an input.
+let gen: Gen = {}
+
+/// Written, its note absent.
+let here: Server = { port: 1, host: "x" }
+
+/// Loaded.
+let srv: Server = load("@resource/srv.json")
+-- resource/srv.json --
+{"port": 80,
+ "host": "h"}
+-- provenance.txt --
+a:lit = 7
+  literal a/a.canon:43:16-43:17
+a:alias = 7
+  literal a/a.canon:43:16-43:17
+a:sum = 8
+  computed a/a.canon:49:16-49:23
+a:cfg = Config{name: "main", port: 8080, tags: ["x", "y"], tiers: {low: Tier{weight: 2}}, limits: {"x": 3}, doubled: [7, 7]}
+  literal a/a.canon:52:19-59:2
+a:cfg.name = main
+  literal a/a.canon:53:9-53:15
+a:cfg.port = 8080
+  default a/a.canon:15:15-15:19 via (literal a/a.canon:52:19-59:2)
+a:cfg.tags[1] = y
+  literal a/a.canon:17:26-17:29
+a:cfg.tiers.low = Tier{weight: 2}
+  literal a/a.canon:56:5-56:22
+a:cfg.tiers.low.weight = 2
+  literal a/a.canon:56:19-56:20
+a:cfg.limits["x"] = 3
+  literal a/a.canon:58:18-58:19
+a:cfg.limits["x"]@key = x
+  literal a/a.canon:58:13-58:16
+a:gen.key = input from env A_KEY
+a:cfg.doubled[0] = 7
+  computed a/a.canon:23:36-23:37
+a:copy = Config{name: "main", port: 9, tags: ["x", "y"], tiers: {low: Tier{weight: 2}}, limits: {"x": 3}, doubled: [7, 7]}
+  literal a/a.canon:62:20-62:39
+a:copy.name = main
+  spread a/a.canon:62:22-62:28 via (literal a/a.canon:53:9-53:15)
+a:copy.port = 9
+  literal a/a.canon:62:36-62:37
+a:made = Config{name: "built", port: 8, tags: ["x", "y"], tiers: {}, limits: {}, doubled: [7, 7]}
+  computed a/a.canon:71:10-71:43 in build (a/a.canon:75)
+a:made.port = 8
+  computed a/a.canon:66:10-66:15 in twice (a/a.canon:71) in build (a/a.canon:75)
+a:made.tags = ["x", "y"]
+  default a/a.canon:17:20-17:30 via (computed a/a.canon:71:10-71:43 in build (a/a.canon:75))
+a:srv = Server{port: 80, host: "h", note: none}
+  json @resource/srv.json:1:1-2:14
+a:srv.port = 80
+  json @resource/srv.json:1:10-1:12 pointer /port
+a:srv.host = h
+  json @resource/srv.json:2:10-2:13 pointer /host
+a:srv.note = none
+  default :0:0-0:0 via (json @resource/srv.json:1:1-2:14)
+a:here.note = none
+  default a/a.canon:39:3-39:16 via (literal a/a.canon:81:20-81:42)
+
+0 errors, 0 warnings in 1 package (…)

@@ -1,0 +1,53 @@
+EVALUATION.md §3.4, §9.3 step 3 (review call a): while an amended record re-derives its defaults,
+the refs it holds into an enclosing instance's collection are unbound, as when it is first
+built: `config` is poisoned by the same E3505 as `written` (no enclosing Config).
+-- layers --
+dev
+-- a/a.canon --
+/// A.
+package a
+
+/// Tier.
+record Tier {
+  /// Weight.
+  weight: Int = 1
+}
+
+/// Server.
+record Server {
+  /// Pick.
+  pick: ref Tier = low
+  /// X.
+  x: Int = 0
+  /// W.
+  w: Int = if x > 0 { pick.weight } else { 0 }
+}
+
+/// Config.
+record Config {
+  /// Tiers.
+  tiers: table Tier = { low { weight: 3 } }
+  /// Server.
+  server: Server = {}
+}
+
+/// Amended.
+let config: Config = {}
+
+/// Written.
+let written: Config = { server: { x: 1 } }
+-- a/dev.canon --
+package a
+layer dev
+
+amend config {
+  server.x: 1
+}
+-- dump.txt --
+a.config poisoned
+a.written poisoned
+
+error[E3505]  a/a.canon:17:23
+  ref Tier has no enclosing Config to resolve against
+
+1 error, 0 warnings in 1 package (…)

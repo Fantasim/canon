@@ -53,6 +53,57 @@ let squares: [Int] = [n * n for n in 1..=4]
 	// Output: FARM_MAX_MODELS = 100; maxModels = 99; squares = [1, 4, 9, 16]; 0 findings
 }
 
+// The origins `canon explain config.server.port --layer louis` prints (CLI.md §3.7).
+func ExampleEvaluator_History() {
+	ctx := context.Background()
+	fs := &source.FileSet{}
+	srcs := map[string]string{"studio/studio.canon": `/// Studio.
+package studio
+
+/// The server.
+record Server {
+  /// Listening port.
+  port: Int(1024..=65535) = 8765
+}
+
+/// Settings.
+record Config {
+  /// The server.
+  server: Server = {}
+}
+
+/// The settings.
+let config: Config = {}
+`, "studio/louis.layer.canon": `package studio
+layer louis
+
+amend config {
+  server.port: 9000
+}
+`}
+	var files []*syntax.File
+	for _, name := range []string{"studio/studio.canon", "studio/louis.layer.canon"} {
+		src, _ := fs.Add(name, "/"+name, []byte(srcs[name]))
+		files = append(files, syntax.Parse(src, syntax.FileSource, diag.NewBag(fs, "")))
+	}
+	bags, opt := check.Bags{}, eval.Options{Layers: []string{"louis"}}
+	prog := check.Check(ctx, project.New("demo", project.Version{Minor: 1}), files, bags, eval.NewFolder(bags, opt))
+	ev := eval.New(prog, served{}, bags, opt)
+	config, _ := ev.Force(ctx, eval.Root{Pkg: "studio", Name: "config"})
+	port := config.(*value.Record).Fields[0].(*value.Record).Fields[0]
+	for _, v := range ev.History(port) {
+		loc := fs.Locate(v.Prov().Span)
+		line := fmt.Sprintf("%s %s:%d", v.CanonText(), loc.Path, loc.Line)
+		if layer := v.Prov().Layer; layer != "" {
+			line += " layer " + layer
+		}
+		fmt.Println(line)
+	}
+	// Output:
+	// 9000 studio/louis.layer.canon:5 layer louis
+	// 8765 studio/studio.canon:7
+}
+
 // A conformance vector runs alone on its own step cap; in TS mode an integer outside
 // TypeScript's safe range is E8303 where Go computes the value.
 func ExampleEvaluator_Vector() {

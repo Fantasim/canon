@@ -234,7 +234,7 @@ func (e *Evaluator) replaced(v value.Value, i int, k, nv value.Value) value.Valu
 func (e *Evaluator) withIdent(nv, old value.Value) value.Value {
 	rec, ok := nv.(*value.Record)
 	prev, wasEntry := old.(*value.Record)
-	if !ok || !wasEntry || prev.Ident == nil {
+	if !ok || !wasEntry || prev.Ident == nil || rec.Ident == prev.Ident {
 		return nv
 	}
 	return e.withIdentity(rec, prev.Ident)

@@ -11,16 +11,11 @@ import (
 
 const layersFile = "layers"
 
-// EVALUATION.md §9.3: layers amend in order, derived defaults follow, E1905, E4301, stable adds.
+// EVALUATION.md §9.1–§9.3 (LAY-01, LAY-02), §3.4: the archive's first line names its rules.
 func TestLayers(t *testing.T) {
 	golden.Run(t, "testdata/layers/*.txtar", func(t *testing.T, c golden.Case) []byte {
 		t.Helper()
-		var opt eval.Options
-		for _, f := range c.Archive.Files {
-			if f.Name == layersFile {
-				opt.Layers = strings.Fields(string(f.Data))
-			}
-		}
+		opt := eval.Options{Layers: strings.Fields(string(archiveFile(c.Archive, layersFile)))}
 		b := runBuild(t, fromArchive(t, c.Archive), opt)
 		var sb strings.Builder
 		for _, s := range b.ev.StableAmendments() {

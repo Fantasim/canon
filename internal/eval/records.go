@@ -96,7 +96,7 @@ func (r *run) defaults(rec *value.Record, given []bool, at *vpath) bool {
 		case given[i] || f.Input != nil:
 			continue
 		case f.Default == nil:
-			rec.Fields[i] = &value.None{T: f.Type, P: rec.P}
+			rec.Fields[i] = &value.None{T: f.Type, P: r.ev.leftOut(f, rec)}
 			continue
 		}
 		v := r.defaultValue(rec, f, at.field(f.Name))
@@ -108,10 +108,15 @@ func (r *run) defaults(rec *value.Record, given []bool, at *vpath) bool {
 	return true
 }
 
+// leftOut is an omitted optional without default: `default` at its declaration, via rec (EVALUATION.md §13).
+func (e *Evaluator) leftOut(f *types.Field, rec *value.Record) *value.Prov {
+	return &value.Prov{Kind: value.ProvDefault, Span: e.fieldSite(f, rec.T).decl, Via: rec.P}
+}
+
 // defaultValue evaluates a field default for rec in its implicit frame (EVALUATION.md §13, DECISIONS 210).
 func (r *run) defaultValue(rec *value.Record, f *types.Field, at *vpath) value.Value {
 	saved := r.fr
-	r.fr = (&frame{vars: map[check.Object]value.Value{}, self: rec, file: r.ev.declFile(rec.T)}).under(saved)
+	r.fr = (&frame{vars: map[check.Object]value.Value{}, self: rec, file: r.ev.declFile(rec.T), decl: true}).under(saved)
 	r.fr.pkg = r.ev.index.pkg[r.fr.file]
 	if !r.nest(r.span(f.Default)) {
 		r.fr = saved

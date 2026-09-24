@@ -23,13 +23,14 @@ func (e *Evaluator) StableAmendments() []StableAmendment {
 	return e.stable
 }
 
-// amending is one amendment being applied.
+// amending is one amendment being applied; at holds the instances on its path, outermost first.
 type amending struct {
 	layer string
 	a     *syntax.Amendment
 	rhs   value.Value
 	path  string
 	root  check.Object
+	at    []*value.Record
 }
 
 // applyLayers applies a let's amendments, layer order then source order (EVALUATION.md §9.3).
@@ -45,6 +46,7 @@ func (r *run) applyLayers(obj check.Object, v value.Value) value.Value {
 			}
 		}
 	}
+	r.settle(v)
 	return v
 }
 
@@ -127,6 +129,8 @@ func (r *run) setField(rec *value.Record, segs []*syntax.AmendSegment, m *amendi
 		return nil
 	}
 	f := fieldsOf(rec.T)[i]
+	m.at = append(m.at, rec)
+	defer func() { m.at = m.at[:len(m.at)-1] }()
 	nv := r.next(rec.Fields[i], f.Type, segs, m, r.ev.fieldSite(f, rec.T))
 	if nv == nil {
 		return nil
@@ -137,10 +141,13 @@ func (r *run) setField(rec *value.Record, segs []*syntax.AmendSegment, m *amendi
 	cp := *rec
 	cp.Fields, cp.Set = append([]value.Value(nil), rec.Fields...), append([]bool(nil), rec.Set...)
 	cp.Fields[i], cp.Set[i] = nv, true
-	if len(segs) == 1 && !r.derive(&cp, i) {
+	r.moved(rec, &cp)
+	r.ev.unbindFrom(&cp, r.lineage, m.at[:len(m.at)-1])
+	if !r.derive(&cp, i) {
 		return nil
 	}
-	return &cp
+	r.ev.bindTo(&cp, r.lineage) // EVALUATION.md §3.4: the copy is the instance its refs resolve against
+	return r.copied(rec, &cp)
 }
 
 // noField is E1905 for a field the value lacks: a case without it, or none at all.
@@ -159,6 +166,7 @@ func (r *run) next(cur value.Value, t types.Type, segs []*syntax.AmendSegment, m
 		if field, table, found := stableChange(cur, nv, t); found {
 			return r.forbid(m, tableName(table, m), field)
 		}
+		r.ev.remember(nv, cur)
 		return nv
 	}
 	if cur == nil || isNone(cur) {

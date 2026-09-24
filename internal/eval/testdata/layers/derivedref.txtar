@@ -1,0 +1,42 @@
+EVALUATION.md §9.3 step 3, §3.4: a ref a re-derived default makes, after an earlier amendment of the
+same let copied the instance, is bound to the final instance: it reads the amended entry.
+-- layers --
+dev
+-- a/a.canon --
+/// A.
+package a
+
+/// Tier.
+record Tier {
+  /// Weight.
+  weight: Int = 1
+}
+
+/// Plan.
+record Plan {
+  /// Tiers.
+  tiers: table Tier = { low {} }
+  /// X.
+  x: Int = 0
+  /// First.
+  first: ref Tier = tiers.low
+}
+
+/// Plan.
+let plan: Plan = {}
+
+/// W.
+let w: Int = plan.first.weight
+-- a/dev.canon --
+package a
+layer dev
+
+amend plan {
+  tiers.low.weight: 9
+  x: 1
+}
+-- dump.txt --
+a.plan = Plan{tiers: {low: Tier{weight: 9}}, x: 1, first: low}
+a.w = 9
+
+0 errors, 0 warnings in 1 package (…)

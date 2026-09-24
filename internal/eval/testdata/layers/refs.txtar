@@ -1,0 +1,89 @@
+EVALUATION.md §9.3 step 4 and §3.4: an amended instance is a new instance, so the level-1
+refs of its fields bind to it, those the amendment writes and those its base bound alike: a ref
+written by the layer resolves, a ref whose key the layer removed is E3501, an added entry can be
+named, and a derived default holding a ref follows it.
+-- layers --
+dev
+-- a/a.canon --
+/// A.
+package a
+
+/// Node.
+record Node {
+  /// Name.
+  name: String
+}
+
+/// Link.
+record Link {
+  /// To.
+  to: ref Node
+}
+
+/// Tree.
+record Tree {
+  /// Nodes.
+  nodes: [Node] keyed by name
+  /// Links.
+  links: [Link]
+}
+
+/// Tier.
+record Tier {
+  /// Weight.
+  weight: Int = 1
+}
+
+/// Plan.
+record Plan {
+  /// Tiers.
+  tiers: table Tier = { low {} }
+  /// Pick.
+  pick: ref Tier = low
+  /// Fallback, derived.
+  fallback: ref Tier = pick
+}
+
+/// Rewritten by the layer.
+let tree: Tree = { nodes: [{ name: "a" }], links: [{ to: "a" }] }
+
+/// Its node replaced under its link.
+let other: Tree = { nodes: [{ name: "a" }], links: [{ to: "a" }] }
+
+/// Reads the rewritten tree.
+let first: String = tree.links[0].to.name
+
+/// A plan.
+let plan: Plan = {}
+
+/// Reads the derived pick.
+let weight: Int = plan.fallback.weight
+-- a/dev.canon --
+package a
+layer dev
+
+amend tree {
+  nodes: [{ name: "b" }]
+  links[0].to: "b"
+}
+
+amend other {
+  nodes: [{ name: "c" }]
+}
+
+amend plan {
+  tiers.high: { weight: 5 }
+  pick: high
+}
+-- dump.txt --
+a.tree = Tree{nodes: [Node{name: "b"}], links: [Link{to: b}]}
+a.other = Tree{nodes: [Node{name: "c"}], links: [Link{to: a}]}
+a.first = b
+a.plan = Plan{tiers: {low: Tier{weight: 1}, high: Tier{weight: 5}}, pick: high, fallback: high}
+a.weight = 5
+
+error[E3501]  a/a.canon:44:59
+  other.links[0].to: unknown key a in Tree.nodes
+  expected by a/a.canon:13 (to: ref Node)
+
+1 error, 0 warnings in 1 package (…)

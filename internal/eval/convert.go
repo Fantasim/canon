@@ -52,7 +52,7 @@ func (r *run) entryToRef(v value.Value, to types.Type, at *vpath) value.Value {
 		r.soft(b, rec, at)
 		return rec
 	}
-	return r.ev.carry(rec, &value.Ref{T: to, Key: rec.Ident.Key, Owner: rec.Ident.Owner, P: rec.P})
+	return r.ev.mark(rec, &value.Ref{T: to, Key: rec.Ident.Key, Owner: rec.Ident.Owner, P: rec.P})
 }
 
 // convertElements converts each element of a list, each key and value of a map, or the two
