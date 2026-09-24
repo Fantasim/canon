@@ -1,0 +1,168 @@
+{
+  "comment": "Hand-built emit IR mirroring examples/sovcommon/roles, examples/sovcommon/ui and examples/teamboard/taxonomy.canon; the lookup cells are computed by the test (fixture_test.go) from the bodies of taxonomy.canon.",
+  "module": "gitlab.com/sovereign15/sovcommon",
+  "packages": [
+    {
+      "name": "sovcommon.roles",
+      "dir": "sovcommon/roles",
+      "doc": "Account roles of the website and every internal tool.",
+      "emit": {"out": "@sovcommon/roles", "dir": "../../sovcommon/roles", "import": "gitlab.com/sovereign15/sovcommon/roles", "package": "roles"},
+      "enums": [
+        {
+          "name": "Role",
+          "doc": "The website.website_account.role literals. Declaration order IS the rank:\n`gm_junior < maintainer` is true, and nothing else may hard-code a number.\n\nToday this ladder is written three times (roles.go, roles.ts and the SQL CHECK\nconstraint) and kept in sync by comments. Here it is written once, and Go and TS\nare generated from it.",
+          "ordered": true,
+          "members": ["member", "gm_junior", "gm_senior", "maintainer", "owner", "admin"]
+        }
+      ]
+    },
+    {
+      "name": "sovcommon.ui",
+      "dir": "sovcommon/ui",
+      "doc": "UI vocabularies shared by every web front end: colour tones and icon names.",
+      "emit": {"out": "@sovcommon/ui", "dir": "../../sovcommon/ui", "import": "gitlab.com/sovereign15/sovcommon/ui", "package": "ui"},
+      "enums": [
+        {
+          "name": "Tone",
+          "doc": "A semantic or qualitative colour slot. Each one resolves to a --color-* token that\ntokens.css defines for dark and light, with its -soft background. No colour value\nlives in config.\n\nSemantic tones are reserved for meaning (status, severity, flags, intent).\nQualitative series slots tell families apart, always together with icon + label.",
+          "members": ["warning", "info", "accent", "success", "neutral", "danger", "series_1=series-1", "series_2=series-2", "series_3=series-3", "series_4=series-4", "series_5=series-5", "series_6=series-6"]
+        },
+        {
+          "name": "Icon",
+          "doc": "Icons sovcommon exports (icons.ts). An icon that is not listed here is a type\nerror wherever it is used, so `make check` no longer has to scrape TypeScript.",
+          "members": ["alert_triangle=alert-triangle", "archive", "bar_chart=bar-chart", "check", "columns", "database", "gamepad", "globe", "hand", "inbox", "layers", "lightbulb", "lock", "monitor", "package", "scale", "server", "shield", "terminal"]
+        }
+      ]
+    },
+    {
+      "name": "teamboard",
+      "dir": "teamboard",
+      "doc": "Taxonomy of the team board (internal.ragyra.com).\n\nRewrite of sovcommon/teamboard/taxonomy.json v7. The ~30 load-time checks in\nload.go and refs.go become three things here:\n  - types: unknown refs, roles, tones, icons, setBy, fields, duplicate or\n    badly formed ids, required fields. There is no code for any of them.\n  - stable tables: \"never renamed, never reused, retire instead of delete\".\n  - the eight `check`s at the bottom: the rules that are truly about this data.\n\nThe reporter makes ONE classification: WHERE did you see it (area). Everything\nfiner is said in the text; routing to a technical area is the triager's move.",
+      "emit": {"out": "@sovcommon/teamboard", "dir": "../../sovcommon/teamboard", "import": "gitlab.com/sovereign15/sovcommon/teamboard", "package": "teamboard"},
+      "imports": ["sovcommon.roles", "sovcommon.ui"],
+      "consts": [
+        {"name": "VERSION", "doc": "Format version of the taxonomy (taxonomy.json's `version`).", "type": "Int", "value": 7}
+      ],
+      "enums": [
+        {"name": "Actor", "doc": "Who may set a flag or make a transition.", "members": ["reporter", "triager", "reporter_or_triager"]},
+        {"name": "PostField", "doc": "Inputs a status transition may collect.", "members": ["assignee", "fixed_in", "reason", "duplicate_of"]}
+      ],
+      "records": [
+        {"name": "Intent", "doc": "What kind of post this is; `minRole` gates who may post it.", "fields": [
+          {"name": "tone", "doc": "Colour of the intent's badge.", "type": "Tone"},
+          {"name": "icon", "doc": "Icon of the intent's badge.", "type": "Icon"},
+          {"name": "label", "doc": "What the reporter picks, as a sentence.", "type": "String"},
+          {"name": "minRole", "doc": "The lowest role that may post with this intent.", "type": "Role"}
+        ]},
+        {"name": "Flag", "doc": "One of the reporter's booleans.", "fields": [
+          {"name": "tone", "doc": "Colour of the flag's badge.", "type": "Tone"},
+          {"name": "icon", "doc": "Icon of the flag's badge.", "type": "Icon"},
+          {"name": "label", "doc": "What the reporter ticks, as a sentence.", "type": "String"},
+          {"name": "hint", "doc": "Shown under the label.", "type": "String?"},
+          {"name": "setBy", "doc": "Who may set the flag.", "type": "Actor"},
+          {"name": "viewMinRole", "doc": "Who may see that the flag was set; `none` means whoever can see the post.", "type": "Role?"}
+        ]},
+        {"name": "Status", "doc": "One point of the post lifecycle.", "fields": [
+          {"name": "tone", "doc": "Colour of the status badge.", "type": "Tone"},
+          {"name": "label", "doc": "Name of the status.", "type": "String"},
+          {"name": "terminal", "doc": "A terminal status closes the post. It can still be reopened through `next`.", "type": "Bool"},
+          {"name": "next", "doc": "The closed set of statuses a post may move to from here.", "type": "[ref statuses]"},
+          {"name": "requires", "doc": "Inputs a transition INTO this status must collect.", "type": "[PostField]", "default": []},
+          {"name": "optional", "doc": "Inputs a transition INTO this status may collect.", "type": "[PostField]", "default": []},
+          {"name": "by", "doc": "Who, besides a triager, may make the transition into this status.", "type": "Actor?"}
+        ]},
+        {"name": "Severity", "doc": "Set by a triager only. The reporter's single signal is the `blocking` flag.", "fields": [
+          {"name": "tone", "doc": "Colour of the severity badge.", "type": "Tone"},
+          {"name": "label", "doc": "Name of the severity.", "type": "String"},
+          {"name": "default", "doc": "The severity a triaged post gets unless the triager picks another.", "type": "Bool", "default": false}
+        ]},
+        {"name": "AreaGroup", "doc": "A header the area picker and the move-to-area menu group areas under.", "fields": [
+          {"name": "label", "doc": "Header text.", "type": "String"}
+        ]},
+        {"name": "Area", "doc": "Where the reporter stood, never which component is at fault.", "fields": [
+          {"name": "group", "doc": "The header the area is listed under.", "type": "ref areaGroups"},
+          {"name": "tone", "doc": "Family: series_1 game, series_2 web, series_3 tooling, series_4 internal.", "type": "Tone"},
+          {"name": "icon", "doc": "Icon next to the area's name.", "type": "Icon"},
+          {"name": "label", "doc": "Name of the area.", "type": "String"},
+          {"name": "hint", "doc": "Shown under the label.", "type": "String?"},
+          {"name": "minRole", "doc": "Gates posting AND viewing.", "type": "Role"},
+          {"name": "routesTo", "doc": "Technical areas a triager typically moves a post into. Orders the move menu only.", "type": "[ref areas]", "default": []}
+        ]},
+        {"name": "Column", "doc": "One fixed column of the deck: a named set of statuses.", "fields": [
+          {"name": "label", "doc": "Column header.", "type": "String"},
+          {"name": "icon", "doc": "Icon in the column header.", "type": "Icon"},
+          {"name": "statuses", "doc": "The statuses whose posts the column shows.", "type": "[ref statuses]"},
+          {"name": "assigneeFilter", "doc": "Adds a multi-select of eligible members inside the column.", "type": "Bool", "default": false},
+          {"name": "hideable", "doc": "Lets a viewer collapse the column to the rail (capped by `deck.maxHidden`).", "type": "Bool", "default": true}
+        ]},
+        {"name": "Deck", "doc": "The deck: fixed columns, in order. Nobody adds, removes or edits a column.", "fields": [
+          {"name": "layouts", "doc": "The only arrangements: all in one row, or a 2x2 grid.", "type": "[String]"},
+          {"name": "maxHidden", "doc": "How many columns may be collapsed at once, so the deck never goes fully empty.", "type": "Int"}
+        ]},
+        {"name": "AreaSection", "doc": "One group header with the areas shown under it.", "fields": [
+          {"name": "group", "doc": "The header.", "type": "ref areaGroups"},
+          {"name": "areas", "doc": "The areas under it, in declaration order.", "type": "[ref areas]"}
+        ]}
+      ],
+      "values": [
+        {"name": "intents", "doc": "What a post can be.", "type": "table Intent", "entries": [
+          {"id": "issue", "fields": {"tone": "warning", "icon": "alert_triangle", "label": "Something is wrong", "minRole": "gm_junior"}},
+          {"id": "idea", "fields": {"tone": "accent", "icon": "lightbulb", "label": "Idea or request", "minRole": "gm_junior"}}
+        ]},
+        {"name": "flags", "doc": "The reporter's booleans.", "type": "table Flag", "entries": [
+          {"id": "blocking", "fields": {"tone": "danger", "icon": "hand", "label": "This blocks my work", "setBy": "reporter"}},
+          {"id": "sensitive", "fields": {"tone": "warning", "icon": "lock", "label": "Only the dev team should see", "setBy": "reporter", "viewMinRole": "maintainer", "hint": "Exploits, dupes, security problems."}}
+        ]},
+        {"name": "statuses", "doc": "The post lifecycle.", "type": "table Status", "entries": [
+          {"id": "open", "fields": {"tone": "warning", "label": "Open", "terminal": false, "next": ["taken", "wont_do", "duplicate"]}},
+          {"id": "taken", "fields": {"tone": "info", "label": "Taken", "terminal": false, "next": ["open", "fixed", "wont_do", "duplicate"], "requires": ["assignee"]}},
+          {"id": "fixed", "fields": {"tone": "accent", "label": "Fixed", "terminal": false, "next": ["verified", "open"], "optional": ["fixed_in"]}},
+          {"id": "verified", "fields": {"tone": "success", "label": "Verified", "terminal": true, "next": ["open"], "by": "reporter_or_triager"}},
+          {"id": "wont_do", "fields": {"tone": "neutral", "label": "Won't do", "terminal": true, "next": ["open"], "requires": ["reason"]}},
+          {"id": "duplicate", "fields": {"tone": "neutral", "label": "Duplicate", "terminal": true, "next": ["open"], "requires": ["duplicate_of"]}}
+        ]},
+        {"name": "assigneeMinRole", "doc": "A post is owned by exactly one person, and never by a GM. Take = assign to yourself;\na triager may assign to any eligible member.", "type": "Role", "value": "maintainer"},
+        {"name": "triageMinRole", "doc": "The lowest role that may triage.", "type": "Role", "value": "maintainer"},
+        {"name": "deck", "doc": "The deck's arrangements.", "type": "Deck", "value": {"layouts": ["4:1", "2:2"], "maxHidden": 2}},
+        {"name": "columns", "doc": "The deck's columns, left to right.", "type": "table Column", "entries": [
+          {"id": "unclaimed", "fields": {"label": "Unclaimed", "icon": "inbox", "statuses": ["open"]}},
+          {"id": "taken", "fields": {"label": "Taken", "icon": "hand", "statuses": ["taken"], "assigneeFilter": true}},
+          {"id": "fixed", "fields": {"label": "Fixed, to verify", "icon": "check", "statuses": ["fixed"]}},
+          {"id": "done", "fields": {"label": "Done", "icon": "archive", "statuses": ["verified", "wont_do", "duplicate"]}}
+        ]},
+        {"name": "severities", "doc": "How bad a triaged post is.", "type": "table Severity", "entries": [
+          {"id": "low", "fields": {"tone": "neutral", "label": "Low"}},
+          {"id": "normal", "fields": {"tone": "info", "label": "Normal", "default": true}},
+          {"id": "critical", "fields": {"tone": "danger", "label": "Critical"}}
+        ]},
+        {"name": "areaGroups", "doc": "The headers of the area picker.", "type": "table AreaGroup", "entries": [
+          {"id": "in_game", "fields": {"label": "In game"}},
+          {"id": "out_game", "fields": {"label": "Out of game"}},
+          {"id": "internal", "fields": {"label": "Internal"}}
+        ]},
+        {"name": "areas", "doc": "Where a post was seen.", "type": "table Area", "entries": [
+          {"id": "game", "fields": {"group": "in_game", "tone": "series_1", "icon": "gamepad", "label": "Game", "minRole": "gm_junior", "hint": "Anything you saw while playing.", "routesTo": ["game_server", "client", "resource", "balance"]}},
+          {"id": "balance", "fields": {"group": "in_game", "tone": "series_1", "icon": "scale", "label": "Balance", "minRole": "gm_junior", "hint": "Nothing is broken, the numbers feel wrong."}},
+          {"id": "website", "fields": {"group": "out_game", "tone": "series_2", "icon": "globe", "label": "Website", "minRole": "gm_junior", "hint": "The site, accounts, rankings, donations and payments."}},
+          {"id": "resource_studio", "fields": {"group": "internal", "tone": "series_3", "icon": "layers", "label": "Resource Studio", "minRole": "maintainer"}},
+          {"id": "game_server", "fields": {"group": "in_game", "tone": "series_1", "icon": "server", "label": "Game server", "minRole": "admin"}},
+          {"id": "client", "fields": {"group": "in_game", "tone": "series_1", "icon": "monitor", "label": "Game client", "minRole": "maintainer"}},
+          {"id": "resource", "fields": {"group": "in_game", "tone": "series_1", "icon": "database", "label": "Game data (Resource)", "minRole": "maintainer"}},
+          {"id": "sovcommon", "fields": {"group": "internal", "tone": "series_3", "icon": "package", "label": "sovcommon", "minRole": "admin"}},
+          {"id": "admin_panel", "fields": {"group": "internal", "tone": "series_2", "icon": "shield", "label": "Admin panel", "minRole": "admin"}},
+          {"id": "analytics", "fields": {"group": "internal", "tone": "series_2", "icon": "bar_chart", "label": "Analytics panel", "minRole": "admin"}},
+          {"id": "team_board", "fields": {"group": "internal", "tone": "series_2", "icon": "columns", "label": "Team board", "minRole": "gm_junior", "hint": "This board itself: something broken or missing here."}},
+          {"id": "internal", "fields": {"group": "internal", "tone": "series_4", "icon": "terminal", "label": "Internal (sov, boxes, deploy)", "minRole": "admin"}}
+        ]},
+        {"name": "initialStatus", "doc": "A new post starts here: the single status of the first column. The deck has at least\ntwo columns (`maxHidden` >= 1 is below their count), so `first()!` cannot fail.", "type": "ref statuses", "value": "open"},
+        {"name": "defaultSeverity", "doc": "The severity a triaged post gets unless the triager picks another. Exactly one\nexists: see the `default` check below.", "type": "ref severities", "value": "normal"}
+      ],
+      "fns": [
+        {"name": "canTransition", "doc": "sovcommon's CanTransition.", "params": [{"name": "from", "type": "ref statuses"}, {"name": "to", "type": "ref statuses"}], "result": "Bool"},
+        {"name": "columnOf", "doc": "sovcommon's ColumnOf. `none` for a status no active column claims (only a retired\nstatus can be in that case), like the `(Column, bool)` it replaces.", "params": [{"name": "s", "type": "ref statuses"}], "result": "ref columns?"},
+        {"name": "areasVisibleTo", "doc": "sovcommon's AreasVisibleTo: minRole gates viewing and posting.", "params": [{"name": "role", "type": "Role"}], "result": "[ref areas]"},
+        {"name": "groupedAreasVisibleTo", "doc": "sovcommon's GroupedAreasVisibleTo: headers only for groups with a visible area.", "params": [{"name": "role", "type": "Role"}], "result": "[AreaSection]"}
+      ]
+    }
+  ]
+}

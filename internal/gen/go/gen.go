@@ -1,0 +1,193 @@
+package gogen
+
+import (
+	"bytes"
+	"fmt"
+	"go/format"
+	"path"
+	"slices"
+	"strings"
+
+	"github.com/fantasim/canonlang/internal/ir"
+	"github.com/fantasim/canonlang/internal/value"
+)
+
+// gen is one run of the generator over a package and one of its go emits.
+type gen struct {
+	p         *ir.Package
+	e         *ir.Emit
+	body      bytes.Buffer
+	imports   map[string]string // import path → the name code uses
+	err       error
+	top       *scope
+	last      string // lowerCamel of the package's last segment: teamboardData
+	emitted   []*ir.Value
+	byValue   map[string]*valueInfo
+	tableOf   map[*ir.Record]*ir.Value
+	instances map[*ir.ExportFn]map[*value.Record]*ir.Instance
+	usedData  bool            // an expression read the baked data (d.…) since the flag was cleared
+	data      string          // the local that holds the baked data: d, escaped (§3.4)
+	canonGo   map[string]bool // Go names of the imported Canon packages
+}
+
+// Generate is the Go generator (ir.Generator): <gopkg>.gen.go, and rt/rt.go verbatim (§2.3, §6.3).
+func Generate(p *ir.Package, e *ir.Emit) ([]ir.File, error) {
+	if e.Target != ir.TargetGo {
+		return nil, fmt.Errorf("%w: %s", ErrTarget, e.Out)
+	}
+	if e.Mode != ir.ModeBaked {
+		return nil, fmt.Errorf("%w: mode %s of %s", ErrUnsupported, modeNames[e.Mode], e.Out)
+	}
+	if !validIdent(e.GoPackage) || e.GoImport == "" {
+		return nil, fmt.Errorf("%w: go emit %s without a package or an import path", ErrMalformed, e.Out)
+	}
+	if len(p.Defines) > 0 {
+		return nil, fmt.Errorf("%w: "+defineRefFormat, ErrUnsupported, p.Defines[0].Pkg+dot+p.Defines[0].Value)
+	}
+	g := newGen(p, e)
+	src := g.source()
+	if g.err != nil {
+		return nil, g.err
+	}
+	return []ir.File{
+		{Path: rtPath, Content: []byte(rtText)},
+		{Path: e.GoPackage + genSuffix, Content: src},
+	}, nil
+}
+
+func newGen(p *ir.Package, e *ir.Emit) *gen {
+	segs := strings.Split(p.Name, dot)
+	g := &gen{
+		p: p, e: e, imports: map[string]string{}, top: newScope(scopePackage),
+		last:    lowerCamel(segs[len(segs)-1]),
+		byValue: map[string]*valueInfo{}, tableOf: map[*ir.Record]*ir.Value{},
+	}
+	g.canonGo = map[string]bool{}
+	for _, ref := range p.Imports {
+		for _, imp := range ref.Emits {
+			if imp.Target == ir.TargetGo {
+				g.canonGo[imp.GoPackage] = true
+			}
+		}
+	}
+	g.data = g.local(dataVar, p.Name)
+	g.checkOverrides()
+	g.indexValues()
+	g.indexInstances()
+	return g
+}
+
+// fail keeps the first error: generation goes on, so every function stays linear.
+func (g *gen) fail(err error) {
+	if g.err == nil && err != nil {
+		g.err = err
+	}
+}
+
+func (g *gen) failf(sentinel error, format string, args ...any) {
+	g.fail(fmt.Errorf("%w: "+format, append([]any{sentinel}, args...)...))
+}
+
+// declare adds a package-level name.
+func (g *gen) declare(name, origin string) {
+	g.fail(g.top.add(name, origin))
+}
+
+// printf writes generated text; go/format lays it out afterwards.
+func (g *gen) printf(format string, args ...any) {
+	fmt.Fprintf(&g.body, format, args...)
+}
+
+// source is the formatted main file: every section in CODEGEN.md §2.7's order.
+func (g *gen) source() []byte {
+	sections := []func(){g.constants, g.enums, g.kindEnums, g.idEnums, g.types, g.containers, g.values, g.fns}
+	for _, section := range sections {
+		section()
+	}
+	var out bytes.Buffer
+	g.header(&out)
+	out.Write(g.body.Bytes())
+	src, err := format.Source(out.Bytes())
+	if err != nil {
+		g.fail(fmt.Errorf("%w: %w", errFormat, err))
+	}
+	return src
+}
+
+// header is the marker, the package doc (CODEGEN.md §2.4, §2.5), the clause and the imports.
+func (g *gen) header(out *bytes.Buffer) {
+	fmt.Fprintf(out, markerFormat, g.p.Dir)
+	fmt.Fprintf(out, packageDocFormat, g.e.GoPackage, g.p.Name)
+	if g.p.Doc != "" {
+		out.WriteString(commentEmpty + newline)
+		out.WriteString(commentLines(g.p.Doc))
+	}
+	out.WriteString(commentEmpty + newline + readOnlyText)
+	fmt.Fprintf(out, "package %s\n\n", g.e.GoPackage)
+	g.writeImports(out)
+}
+
+// use records an import and returns the name code refers to it by.
+func (g *gen) use(importPath, name string) string {
+	if _, ok := g.imports[importPath]; !ok {
+		g.imports[importPath] = name
+		g.declare(name, importPath)
+	}
+	return name
+}
+
+func (g *gen) rt() string {
+	return g.use(g.e.GoImport+rtDir, rtName)
+}
+
+// writeImports groups the standard library, then the others, each sorted (CODEGEN.md §2.8).
+func (g *gen) writeImports(out *bytes.Buffer) {
+	var std, other []string
+	for _, p := range sortedKeys(g.imports) {
+		line := g.importLine(p)
+		if strings.Contains(strings.Split(p, slash)[0], dot) {
+			other = append(other, line)
+		} else {
+			std = append(std, line)
+		}
+	}
+	if len(std)+len(other) == 0 {
+		return
+	}
+	groups := slices.DeleteFunc([]string{strings.Join(std, ""), strings.Join(other, "")}, isEmpty)
+	fmt.Fprintf(out, "import (\n%s)\n\n", strings.Join(groups, newline))
+}
+
+// importLine names the import when its name is not the last element of its path.
+func (g *gen) importLine(p string) string {
+	if name := g.imports[p]; name != path.Base(p) {
+		return fmt.Sprintf("%s %q\n", name, p)
+	}
+	return fmt.Sprintf("%q\n", p)
+}
+
+func isEmpty(s string) bool { return s == "" }
+
+// commentLines is doc text as Go comment lines (CODEGEN.md §2.6).
+func commentLines(doc string) string {
+	var b strings.Builder
+	for line := range strings.SplitSeq(doc, newline) {
+		if line == "" {
+			b.WriteString(commentEmpty + newline)
+			continue
+		}
+		b.WriteString(commentPrefix + line + newline)
+	}
+	return b.String()
+}
+
+// docFor is the doc comment of a generated item: its first line starts with its Go name.
+func docFor(goName, doc string) string {
+	if doc == "" {
+		return ""
+	}
+	if !strings.HasPrefix(doc, goName+space) {
+		doc = goName + keyValueSep + doc
+	}
+	return commentLines(doc)
+}

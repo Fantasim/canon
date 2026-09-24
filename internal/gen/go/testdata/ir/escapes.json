@@ -1,0 +1,38 @@
+{
+  "comment": "Hand-built emit IR of a package importing two Canon packages whose Go names are q and d: its lookup parameters q and d, and the baked data's local d, are escaped (CODEGEN.md §3.4 extended to imported Canon packages).",
+  "module": "example.com/features",
+  "packages": [
+    {
+      "name": "features.q",
+      "dir": "features/q",
+      "emit": {"out": "out/go/", "dir": "features/q/out/go", "import": "example.com/features/q/out/go", "package": "q"},
+      "enums": [{"name": "Q", "doc": "Stored as codes.", "codes": "UInt8", "members": ["LOW", "HIGH"], "codeValues": [3, 7]}]
+    },
+    {
+      "name": "features.d",
+      "dir": "features/d",
+      "emit": {"out": "out/go/", "dir": "features/d/out/go", "import": "example.com/features/d/out/go", "package": "d"},
+      "enums": [{"name": "D", "members": ["north", "south"]}]
+    },
+    {
+      "name": "features.escapes",
+      "dir": "features/escapes",
+      "doc": "Names of imported packages as parameters.",
+      "emit": {"out": "out/go/", "dir": "features/escapes/out/go", "import": "example.com/features/escapes/out/go", "package": "escapes"},
+      "imports": ["features.q", "features.d"],
+      "records": [
+        {"name": "Gate", "fields": [{"name": "q", "type": "Q"}, {"name": "d", "type": "D"}]}
+      ],
+      "values": [
+        {"name": "gates", "type": "table Gate", "entries": [
+          {"id": "east", "fields": {"q": "HIGH", "d": "north"}},
+          {"id": "west", "fields": {"q": "LOW", "d": "south"}}
+        ]}
+      ],
+      "fns": [
+        {"name": "f", "params": [{"name": "q", "type": "Q"}], "result": "Bool", "cells": [true, false]},
+        {"name": "gateOf", "params": [{"name": "d", "type": "D"}, {"name": "q", "type": "Q"}], "result": "ref gates?", "cells": [null, "east", "west", null]}
+      ]
+    }
+  ]
+}

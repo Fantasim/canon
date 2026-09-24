@@ -1,0 +1,38 @@
+{
+  "comment": "Hand-built emit IR whose go emit selects some values (`values: [posts, first]`): refs into the tables it leaves out are keys only (CODEGEN.md §5.8), optional ones included.",
+  "module": "example.com/features",
+  "packages": [
+    {
+      "name": "features.keys",
+      "dir": "features/keys",
+      "doc": "Refs into values another emit holds.",
+      "emit": {"out": "out/go/", "dir": "features/keys/out/go", "import": "example.com/features/keys/out/go", "package": "keys", "values": ["posts", "first"]},
+      "records": [
+        {"name": "Status", "doc": "A status.", "fields": [{"name": "label", "type": "String"}]},
+        {"name": "Post", "doc": "A post.", "fields": [
+          {"name": "status", "doc": "Where the post is.", "type": "ref statuses"},
+          {"name": "previous", "type": "ref statuses?"},
+          {"name": "seen", "type": "[ref statuses]"},
+          {"name": "planned", "type": "[ref statuses]?"},
+          {"name": "reply", "type": "ref posts?"}
+        ]}
+      ],
+      "values": [
+        {"name": "statuses", "doc": "Every status.", "type": "table Status", "entries": [
+          {"id": "open", "fields": {"label": "Open"}},
+          {"id": "closed", "fields": {"label": "Closed"}}
+        ]},
+        {"name": "posts", "doc": "Every post.", "type": "table Post", "entries": [
+          {"id": "hello", "fields": {"status": "open", "seen": ["open", "closed"], "planned": ["closed"]}},
+          {"id": "bye", "fields": {"status": "closed", "previous": "open", "seen": [], "reply": "hello"}}
+        ]},
+        {"name": "first", "type": "ref statuses", "value": "open"},
+        {"name": "last", "type": "ref statuses", "value": "closed"}
+      ],
+      "fns": [
+        {"name": "statusOf", "doc": "The status of a post.", "params": [{"name": "p", "type": "ref posts"}], "result": "ref statuses?", "cells": ["open", null]},
+        {"name": "isOpen", "params": [{"name": "s", "type": "ref statuses"}], "result": "Bool", "cells": [true, false]}
+      ]
+    }
+  ]
+}

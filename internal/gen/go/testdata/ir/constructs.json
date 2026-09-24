@@ -1,0 +1,98 @@
+{
+  "comment": "Hand-built emit IR of a synthetic package using every construct the baked Go generator emits besides teamboard's: @codes and retired enum members, variants, keyed lists, maps, optionals, precomputed and finite methods, Bool and @codes lookup parameters, every kind of constant, @stable fields, @go(name:) overrides, escaped names, Float32 -0.0 and a Never? field.",
+  "module": "example.com/features",
+  "packages": [
+    {
+      "name": "features.constructs",
+      "dir": "features/constructs",
+      "doc": "Every construct of baked Go.",
+      "emit": {"out": "out/go/", "dir": "features/constructs/out/go", "import": "example.com/features/constructs/out/go", "package": "constructs"},
+      "consts": [
+        {"name": "MAX_HEAL", "doc": "The largest heal.", "type": "Int", "value": 9000},
+        {"name": "RATE", "doc": "A rate.", "type": "Float", "value": 0.25},
+        {"name": "SMALL_RATE", "type": "Float32", "value": 0.1},
+        {"name": "GREETING", "doc": "A greeting \"quoted\".", "type": "String", "value": "héllo\n\"world\""},
+        {"name": "ENABLED", "type": "Bool", "value": true},
+        {"name": "TICK", "doc": "A tick.", "type": "Duration", "value": 90000},
+        {"name": "NO_WAIT", "type": "Duration", "value": 0},
+        {"name": "DEFAULT_GRADE", "type": "Grade", "value": "unique"},
+        {"name": "PRIMES", "doc": "Small primes.", "type": "[Int]", "value": [2, 3, 5, 7]},
+        {"name": "WEIGHTS", "type": "{String: Float}", "value": [["a", 1.5], ["b", -2]]}
+      ],
+      "enums": [
+        {"name": "Element", "doc": "Elements, stored as their codes.", "codes": "UInt8", "members": ["FIRE", "WATER", "EARTH"], "codeValues": [1, 2, 4], "retired": ["EARTH"]},
+        {"name": "Grade", "doc": "Upgrade grades.", "ordered": true, "members": ["normal", "unique", "ultimate_1=ultimate-1"]},
+        {"name": "Mood", "goName": "Feeling", "members": ["calm", "api_url"]}
+      ],
+      "variants": [
+        {"name": "Shape", "doc": "A shape.", "cases": [
+          {"name": "circle", "doc": "A round one.", "fields": [{"name": "radius", "doc": "Its radius.", "type": "Float"}]},
+          {"name": "square", "fields": [{"name": "side", "type": "Int"}, {"name": "label", "type": "String?"}]},
+          {"name": "none_"}
+        ]}
+      ],
+      "records": [
+        {"name": "Potion", "doc": "A potion.", "fields": [
+          {"name": "id", "doc": "Its key.", "type": "String"},
+          {"name": "heal", "doc": "Hit points restored.", "type": "Int"},
+          {"name": "cooldown", "type": "Duration"},
+          {"name": "ratio", "type": "Float"},
+          {"name": "weight", "type": "Float32"},
+          {"name": "element", "type": "Element"},
+          {"name": "tags", "type": "[String]", "default": []},
+          {"name": "bonus", "type": "{String: Int}", "default": []},
+          {"name": "note", "type": "String?"},
+          {"name": "level", "type": "Int16?"},
+          {"name": "parent", "doc": "The potion this one upgrades.", "type": "ref potions?"},
+          {"name": "shape", "type": "Shape"},
+          {"name": "extra", "type": "Shape?"},
+          {"name": "default", "type": "Bool", "default": false},
+          {"name": "apiKey", "type": "String", "default": ""},
+          {"name": "hp", "goName": "HitPoints", "type": "UInt64", "default": 1},
+          {"name": "runes", "type": "[ref runes]", "default": []},
+          {"name": "grades", "type": "[[Grade]]", "default": []},
+          {"name": "unused", "doc": "A Never? field is not emitted.", "type": "Never?"}
+        ], "fns": [
+          {"name": "isStrong", "doc": "Heals a lot.", "result": "Bool"},
+          {"name": "canUse", "params": [{"name": "grade", "type": "Grade"}, {"name": "night", "type": "Bool"}], "result": "Bool"},
+          {"name": "costIn", "params": [{"name": "e", "type": "Element"}], "result": "Int?"}
+        ]},
+        {"name": "Rune", "doc": "A rune.", "fields": [
+          {"name": "code", "doc": "Its stored code.", "type": "UInt16", "stable": true},
+          {"name": "label", "type": "String"},
+          {"name": "mood", "type": "Mood"}
+        ]}
+      ],
+      "values": [
+        {"name": "runes", "doc": "Every rune.", "type": "table Rune", "entries": [
+          {"id": "alpha", "fields": {"code": 10, "label": "Alpha", "mood": "calm"}},
+          {"id": "beta_2", "retired": true, "fields": {"code": 20, "label": "Beta", "mood": "api_url"}}
+        ]},
+        {"name": "potions", "doc": "Every potion.", "type": "[Potion keyed by id]", "value": [
+          {"id": "small", "heal": 50, "cooldown": 1500, "ratio": 0.5, "weight": 1.25, "element": "FIRE", "tags": ["a", "b"], "bonus": [["x", 1]], "shape": {"case": "circle", "fields": {"radius": 2.5}}, "runes": ["alpha"], "grades": [["normal"], ["unique", "normal"]],
+           "$fns": {"isStrong": false, "canUse": [true, false, true, true, false, false], "costIn": [3, null, 5]}},
+          {"id": "large", "heal": 500, "cooldown": 3000, "ratio": -0.0, "weight": 2, "element": "WATER", "note": "big", "level": -3, "parent": "small", "shape": {"case": "square", "fields": {"side": 4}}, "extra": {"case": "none_"}, "default": true, "apiKey": "k", "hp": 18446744073709551, "runes": ["beta_2", "alpha"],
+           "$fns": {"isStrong": true, "canUse": [true, true, true, true, true, true], "costIn": [null, null, null]}}
+        ]},
+        {"name": "favorite", "doc": "The favourite potion.", "type": "ref potions", "value": "large"},
+        {"name": "maybeRune", "type": "ref runes?"},
+        {"name": "limits", "type": "{String: Int}", "value": [["hp", 100], ["mp", 50]]},
+        {"name": "names", "type": "[String]", "value": ["x"]},
+        {"name": "origin", "type": "Shape", "value": {"case": "square", "fields": {"side": 1, "label": "o"}}},
+        {"name": "zero", "type": "Float", "value": -0.0},
+        {"name": "zero32", "type": "Float32", "value": -0.0},
+        {"name": "delay", "type": "Duration?", "value": 1500},
+        {"name": "moods", "type": "[Mood]", "value": ["api_url"]}
+      ],
+      "fns": [
+        {"name": "upgradeCost", "doc": "Penya an upgrade costs.", "params": [{"name": "grade", "type": "Grade"}], "result": "Int", "cells": [10000, 500000, 20000000]},
+        {"name": "canUpgrade", "params": [{"name": "grade", "type": "Grade"}, {"name": "len", "type": "Bool"}], "result": "Bool", "cells": [true, true, false, true, false, false]},
+        {"name": "runeFor", "params": [{"name": "e", "type": "Element"}], "result": "ref runes?", "cells": ["alpha", null, "beta_2"]},
+        {"name": "bonusOf", "params": [{"name": "r", "type": "ref runes"}], "result": "Int?", "cells": [7, null]},
+        {"name": "answer", "doc": "The answer.", "result": "Int", "value": 42},
+        {"name": "bestPotion", "result": "ref potions", "value": "small"},
+        {"name": "shapeOf", "params": [{"name": "grade", "type": "Grade"}], "result": "Shape?", "cells": [{"case": "circle", "fields": {"radius": 1}}, null, {"case": "none_"}]}
+      ]
+    }
+  ]
+}
