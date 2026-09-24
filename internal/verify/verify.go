@@ -40,14 +40,30 @@ type Verifier struct {
 	indexes map[value.Value]map[value.Key]*value.Record
 }
 
+// Index is what verification reads of a checked program, built once; the verifiers of one run share it.
+type Index struct {
+	src      *sources
+	declared map[eval.Root]types.Type
+}
+
+// NewIndex indexes a checked program for its verifiers.
+func NewIndex(prog *check.Program) *Index {
+	return &Index{src: indexSources(prog), declared: declaredTypes(prog)}
+}
+
 // New is the verifier of a checked program, with a bag per package; nil assets finds no file.
 func New(ev Evaluator, prog *check.Program, bags map[string]*diag.Bag, assets Assets) *Verifier {
+	return NewShared(NewIndex(prog), ev, bags, assets)
+}
+
+// NewShared is New over an index built once, for a verifier made per call with bags of its own.
+func NewShared(ix *Index, ev Evaluator, bags map[string]*diag.Bag, assets Assets) *Verifier {
 	return &Verifier{
 		ev:       ev,
 		bags:     bags,
 		assets:   assets,
-		src:      indexSources(prog),
-		declared: declaredTypes(prog),
+		src:      ix.src,
+		declared: ix.declared,
 		indexes:  map[value.Value]map[value.Key]*value.Record{},
 	}
 }

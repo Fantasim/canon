@@ -45,6 +45,7 @@ type Limit uint8
 // Fill fills the Vectors of each translated fn of pkgs with a code emit, reports E9008 and E9009
 // to bags; build calls it in stage E, once the IR is built, before any generator.
 func Fill(ctx context.Context, prog *check.Program, pkgs []*ir.Package, ev Evaluator, bags check.Bags) error {
+	base := filler{ev: ev, errored: hasError(bags)}
 	for _, p := range pkgs {
 		if err := ctx.Err(); err != nil {
 			return fmt.Errorf(fmtCanceled, err)
@@ -52,31 +53,44 @@ func Fill(ctx context.Context, prog *check.Program, pkgs []*ir.Package, ev Evalu
 		if !hasTarget(p, isCode) { // CONFORMANCE.md §7.1: only a code emit translates (meta/decisions/log-2026-09-24.md)
 			continue
 		}
-		if err := fillPackage(ctx, prog, p, ev, bags[p.Name]); err != nil {
+		base.bag = bags[p.Name]
+		if err := fillPackage(ctx, prog, p, base); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-// fillPackage fills the translated fns of one package, whose tests run once for all of them.
-func fillPackage(ctx context.Context, prog *check.Program, p *ir.Package, ev Evaluator, bag *diag.Bag) error {
+// fillPackage fills the translated fns of one package, whose tests run once for all of them;
+// base holds the evaluator, the package's bag and whether the bags held an error.
+func fillPackage(ctx context.Context, prog *check.Program, p *ir.Package, base filler) error {
 	sites, err := translated(prog, p)
 	if err != nil || len(sites) == 0 {
 		return err
 	}
-	if bag == nil {
+	if base.bag == nil {
 		return fmt.Errorf(fmtNamed, ErrNoBag, p.Name)
 	}
 	// CONFORMANCE.md §4: only the TS conformance file reads TS expectations, so only a ts emit asks for them.
-	f := &filler{ev: ev, bag: bag, ts: hasTarget(p, isTS)}
-	f.calls = ev.TestCalls(ctx, p.Name, objects(sites))
+	f := &base
+	f.ts, f.unknown = hasTarget(p, isTS), brokenTests(prog, p.Name)
+	f.calls = f.ev.TestCalls(ctx, p.Name, objects(sites))
 	for _, s := range sites {
 		if err := f.fill(ctx, s); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+// hasError reports an error finding in any bag: an evaluation may then meet a poisoned value.
+func hasError(bags check.Bags) bool {
+	for _, b := range bags { //canon:unordered a predicate over every bag
+		if b != nil && b.Summary().Errors > 0 {
+			return true
+		}
+	}
+	return false
 }
 
 // isCode reports a target that translates export fns: go, cpp or ts.

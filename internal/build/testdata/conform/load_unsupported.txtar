@@ -1,0 +1,32 @@
+DECISIONS 196 (meta/decisions/log-2026-09-24.md, build wiring): a load form M2 does not read, forced
+only by b's test while its calls are collected, fails check and build alike with build.ErrLoad.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Raw numbers.
+let raw: [Int] = load("x.json")
+-- b/b.canon --
+/// B.
+package b
+
+import a
+
+/// Doubles n.
+export fn double(n: Int) -> Int { return n * 2 }
+
+test "reads raw" {
+  let k = a.raw.len()
+  expect double(k) == 2
+}
+
+emit cpp { out: "out/", namespace: "acme::gen", mode: data }
+-- select --
+b
+-- build.txt --
+check error (load error true, internal false): load is not supported by this compiler yet (a load form other than load.dir): a/a.canon:5:18
+build error (load error true, internal false): load is not supported by this compiler yet (a load form other than load.dir): a/a.canon:5:18

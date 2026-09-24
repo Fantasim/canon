@@ -1,0 +1,56 @@
+ADR-0003, DECISIONS 204: a supported load first forced inside a vector (settled() reads a's items)
+reports its finding into the vector's throwaway bags; its error fails the precomputed read, so
+the call gives no vector, and nothing is reported. Check only: gen/cpp refuses a translated body
+that reads a precomputed method of self until ir plans it in stage E.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// An item.
+record Item {
+  /// Its count.
+  n: Int
+}
+
+/// The items, one file each: x.json does not decode.
+let items: [Item] = load.dir("data/*.json")
+-- a/data/x.json --
+{"n": "many"}
+-- b/b.canon --
+/// B.
+package b
+
+import a
+
+/// A gate.
+record Gate {
+  /// Its weight.
+  weight: Int
+
+  /// Whether any item is loaded.
+  export fn settled(self) -> Bool { return a.items.len() > 0 }
+
+  /// The weight plus x, once settled.
+  export fn plus(self, x: Int) -> Int {
+    if settled() {
+      return weight + x
+    }
+    return 0
+  }
+}
+
+test "plus" {
+  let g: Gate = { weight: 1 }
+  expect g.plus(2) == 3
+}
+
+emit cpp { out: "out/", namespace: "acme::gen", mode: data }
+-- select --
+b
+-- check-only --
+-- build.txt --
+0 errors, 0 warnings in 1 package (…)

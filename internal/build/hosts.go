@@ -28,6 +28,8 @@ type evalHost struct {
 	prog      *check.Program
 	bags      check.Bags
 	loader    *load.Loader
+	assets    *assets
+	index     *verify.Index
 	loads     []*syntax.LoadExpr
 	loadCause string
 	errs      []error
@@ -36,12 +38,17 @@ type evalHost struct {
 // Load runs e's form against expected; an unsupported form, option or default is ErrLoad,
 // naming the cause load reported (DECISIONS 196).
 func (h *evalHost) Load(ctx context.Context, e *syntax.LoadExpr, expected types.Type) (value.Value, bool) {
+	return h.LoadInto(ctx, e, expected, h.bags)
+}
+
+// LoadInto is Load reporting into bags: a vector's throwaway bags (ADR-0003, DECISIONS 204).
+func (h *evalHost) LoadInto(ctx context.Context, e *syntax.LoadExpr, expected types.Type, bags check.Bags) (value.Value, bool) {
 	site, ok := findLoad(h.prog, e)
 	if !ok {
 		h.loads = append(h.loads, e)
 		return nil, false
 	}
-	req := load.Request{Pkg: site.pkg, From: path.Dir(site.file.Src.Path), Span: site.span, Bag: h.bags[site.pkg]}
+	req := load.Request{Pkg: site.pkg, From: path.Dir(site.file.Src.Path), Span: site.span, Bag: bags[site.pkg]}
 	v, ok, err := h.loader.Load(ctx, req, e, expected)
 	switch {
 	case errors.Is(err, load.ErrUnsupported):
@@ -51,7 +58,7 @@ func (h *evalHost) Load(ctx context.Context, e *syntax.LoadExpr, expected types.
 		h.loads = append(h.loads, e)
 		return nil, false
 	case err != nil:
-		h.errs = append(h.errs, fmt.Errorf(fmtWrapInternal, ErrInternal, err))
+		h.errs = append(h.errs, internal(err))
 		return nil, false
 	default:
 		return v, ok
@@ -73,15 +80,27 @@ func unsupportedCause(err error) string {
 // Verify runs stage B on one top-level value, then poisons it or reports E3505 (EVALUATION.md §5).
 func (h *evalHost) Verify(ctx context.Context, root eval.Root, v value.Value) bool {
 	res, err := h.verifier.Check(ctx, root, v)
+	return h.settle(h.ev, root, res, err)
+}
+
+// VerifyInto verifies a value first forced in a vector through ev, the vector's evaluator, into its throwaway bags (ADR-0003, EVALUATION.md §1).
+func (h *evalHost) VerifyInto(ctx context.Context, ev *eval.Evaluator, root eval.Root, v value.Value, bags check.Bags) bool {
+	res, err := verify.NewShared(h.index, ev, bags, h.assets).Check(ctx, root, v)
+	return h.settle(ev, root, res, err)
+}
+
+// settle applies a verification's result through ev: an error is internal; a poisoned value is
+// poisoned, an unbound ref reported (E3505); true when the value is valid.
+func (h *evalHost) settle(ev *eval.Evaluator, root eval.Root, res verify.Result, err error) bool {
 	if err != nil {
-		h.errs = append(h.errs, fmt.Errorf(fmtWrapInternal, ErrInternal, err))
+		h.errs = append(h.errs, internal(err))
 		return false
 	}
 	if res.Poisoned {
-		h.ev.Poison(root)
+		ev.Poison(root)
 	}
 	for _, u := range res.Unbound {
-		h.ev.ReportUnbound(root, u.Ref, u.Path)
+		ev.ReportUnbound(root, u.Ref, u.Path)
 	}
 	return res.Valid
 }
@@ -92,13 +111,13 @@ func (h *evalHost) failure(set *source.FileSet, prog *check.Program) error {
 	if len(h.loads) > 0 {
 		span, ok := loadSpan(prog, h.loads[0])
 		if !ok {
-			return fmt.Errorf(fmtNoLoadSite, ErrInternal)
+			return internal(errNoLoadSite)
 		}
 		return &LoadError{Span: span, Site: set.Locate(span), Cause: h.loadCause}
 	}
 	errs := slices.Clone(h.errs)
 	if err := h.ev.Err(); err != nil {
-		errs = append(errs, fmt.Errorf(fmtWrapInternal, ErrInternal, err))
+		errs = append(errs, internal(err))
 	}
 	return errors.Join(errs...)
 }
@@ -211,4 +230,18 @@ func (a *assets) files(dir string) []string {
 	}
 	a.dirs[dir] = names
 	return names
+}
+
+// internalError is a compiler bug a build met: ErrInternal, its text the cause's alone, the API writing the sentinel's (API.md §15 X1).
+type internalError struct {
+	cause error
+}
+
+func (e *internalError) Error() string { return e.cause.Error() }
+
+func (e *internalError) Unwrap() []error { return []error{ErrInternal, e.cause} }
+
+// internal is cause as a build's internal error.
+func internal(cause error) error {
+	return &internalError{cause: cause}
 }

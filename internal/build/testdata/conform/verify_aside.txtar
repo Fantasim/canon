@@ -1,0 +1,60 @@
+ADR-0003, EVALUATION.md §1, CONFORMANCE.md §6.1: a value first forced inside a vector is verified
+into bags the vector throws away; its error (E3501) is the vector's outcome, never a finding. The
+gate's precomputed settled() fails on a receiver built only in a test, so that call gives no
+vector yet still counts: no E9008. Check only: gen/cpp refuses a translated body that reads a
+precomputed method of self until ir plans it in stage E (meta/decisions/log-2026-09-24.md).
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A status.
+record Status {
+  /// Its label.
+  label: String
+}
+
+/// The statuses.
+let statuses: table Status = {
+  open { label: "Open" }
+}
+
+/// A status no table holds: only b's tests and vectors read it.
+let initial: ref Status = "draft"
+-- b/b.canon --
+/// B.
+package b
+
+import a
+
+/// A gate.
+record Gate {
+  /// Its weight.
+  weight: Int
+
+  /// Whether the initial status is itself.
+  export fn settled(self) -> Bool { return a.initial == a.initial }
+
+  /// The weight plus x, once settled.
+  export fn plus(self, x: Int) -> Int {
+    if settled() {
+      return weight + x
+    }
+    return 0
+  }
+}
+
+test "reads the dangling status" {
+  let g: Gate = { weight: 1 }
+  expect g.plus(2) == 3
+}
+
+emit cpp { out: "out/", namespace: "acme::gen", mode: data }
+-- select --
+b
+-- check-only --
+-- build.txt --
+0 errors, 0 warnings in 1 package (…)

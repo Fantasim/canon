@@ -1,0 +1,32 @@
+meta/decisions/log-2026-09-24.md, build wiring (M2): the only test that calls the translated
+method has an error (return in a test, E1135), so its calls cannot be known: only that error is
+reported, no E9008 cascade, in check and build alike.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A healing potion.
+record Potion {
+  /// Hit points restored.
+  heal: Int
+
+  /// What a player missing missingHp gets back.
+  export fn healFor(self, missingHp: Int) -> Int { return min(heal, max(missingHp, 0)) }
+}
+
+test "healFor never overheals" {
+  let p: Potion = { heal: 500 }
+  expect p.healFor(200) == 200
+  return
+}
+
+emit cpp { out: "out/", namespace: "acme::gen", mode: data }
+-- build.txt --
+error[E1135]  a/a.canon:16:3
+  return outside a function
+
+1 error, 0 warnings in 1 package (…)

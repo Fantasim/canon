@@ -13,10 +13,12 @@ import (
 
 // filler fills the translated fns of one package from its test calls; ts asks for TS expectations (CONFORMANCE.md §4).
 type filler struct {
-	ev    Evaluator
-	bag   *diag.Bag
-	ts    bool
-	calls []Call
+	ev      Evaluator
+	bag     *diag.Bag
+	ts      bool
+	calls   []Call
+	unknown bool // a test of the package has an error: its calls cannot be known, so no E9008
+	errored bool // the bags held an error before Fill: an evaluation with no outcome read a poisoned value
 }
 
 // input is one vector before evaluation: the receiver evaluated, its projection, the arguments.
@@ -43,7 +45,9 @@ func (f *filler) fill(ctx context.Context, s *site) error {
 		return err
 	}
 	if s.method && len(calls) == 0 {
-		diag.E9008.At(s.span(), s.owner, s.fn.Name, s.pkg).Report(f.bag)
+		if !f.unknown { // no cascade: a broken test's error is reported already (meta/decisions/log-2026-09-24.md, build wiring)
+			diag.E9008.At(s.span(), s.owner, s.fn.Name, s.pkg).Report(f.bag)
+		}
 		return nil
 	}
 	if s.method && len(recvs) == 0 {

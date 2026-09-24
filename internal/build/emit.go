@@ -180,12 +180,12 @@ func (r *run) emitOne(p *ir.Package, e *ir.Emit) ([]*output, error) {
 func complete(p *ir.Package) error {
 	for _, v := range p.Values {
 		if v.V == nil {
-			return fmt.Errorf(fmtNoValue, ErrInternal, p.Name, v.Name)
+			return internal(fmt.Errorf(fmtNoValue, p.Name, v.Name))
 		}
 	}
 	for _, c := range p.Consts {
 		if c.V == nil {
-			return fmt.Errorf(fmtNoValue, ErrInternal, p.Name, c.Name)
+			return internal(fmt.Errorf(fmtNoValue, p.Name, c.Name))
 		}
 	}
 	return nil
@@ -206,7 +206,7 @@ func generate(p *ir.Package, e *ir.Emit) ([]ir.File, error) {
 func (r *run) outputs(p *ir.Package, e *ir.Emit, files []ir.File) ([]*output, error) {
 	at, ok := r.s.layout.Resolve(e.Out, p.Dir, source.Span{}, diag.NewBag(nil, p.Name))
 	if !ok {
-		return nil, fmt.Errorf(fmtEmit, p.Name, e.Out, ErrInternal)
+		return nil, internal(fmt.Errorf(fmtUnplaced, p.Name, e.Out))
 	}
 	display, abs := strings.TrimSuffix(at.Display, pathSep), at.Abs
 	if e.FileName != "" {

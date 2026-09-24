@@ -2,10 +2,11 @@ package build
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"slices"
 
 	"github.com/fantasim/canonlang/internal/check"
+	"github.com/fantasim/canonlang/internal/conform"
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/eval"
 	"github.com/fantasim/canonlang/internal/ir"
@@ -26,9 +27,13 @@ type run struct {
 	bags     check.Bags
 	fold     check.Folder
 	prog     *check.Program
+	opt      eval.Options // the evaluator's: the project budget, the active layers
 	ev       *eval.Evaluator
 	host     *evalHost
-	order    []eval.Root // the forced set, in order (EVALUATION.md §2.1)
+	assets   *assets
+	vix      *verify.Index // built once, shared by every verifier of the run
+	rix      *rules.Index  // idem, for the check runners
+	order    []eval.Root   // the forced set, in order (EVALUATION.md §2.1)
 	locks    []*lockState
 	ir       []*ir.Package
 }
@@ -72,16 +77,19 @@ func (r *run) analyze(ctx context.Context) error {
 		r.prog = check.Check(ctx, r.s.proj, filesOf(r.loaded), r.bags, r.fold)
 	}
 	if r.prog == nil {
-		return fmt.Errorf(fmtNoProgram, ErrInternal)
+		return internal(errNoProgram)
 	}
-	r.stageA(ctx, opt)
+	r.opt = opt
+	r.stageA(ctx)
 	if err := r.stageB(ctx); err != nil {
 		return err
 	}
 	if err := r.stagesCD(ctx); err != nil {
 		return err
 	}
-	r.stageE(ctx)
+	if err := r.stageE(ctx); err != nil {
+		return err
+	}
 	r.reportStableAmendments()
 	if err := ctx.Err(); err != nil {
 		return err
@@ -90,13 +98,15 @@ func (r *run) analyze(ctx context.Context) error {
 }
 
 // stageA forces every const and let of the selected packages in order (EVALUATION.md §2.1).
-func (r *run) stageA(ctx context.Context, opt eval.Options) {
-	r.host = &evalHost{prog: r.prog, bags: r.bags}
+func (r *run) stageA(ctx context.Context) {
+	r.vix, r.rix = verify.NewIndex(r.prog), rules.NewIndex(r.prog)
+	r.host = &evalHost{prog: r.prog, bags: r.bags, index: r.vix}
 	r.host.loader = &load.Loader{FS: r.p.fs, Layout: r.s.layout, Set: r.s.set}
-	r.ev = eval.New(r.prog, r.host, r.bags, opt)
+	r.ev = eval.New(r.prog, r.host, r.bags, r.opt)
 	r.host.ev = r.ev
-	a := &assets{fs: r.p.fs, layout: r.s.layout, host: r.host, dirs: map[string][]string{}}
-	r.host.verifier = verify.New(r.ev, r.prog, r.bags, a)
+	r.assets = &assets{fs: r.p.fs, layout: r.s.layout, host: r.host, dirs: map[string][]string{}}
+	r.host.assets = r.assets
+	r.host.verifier = verify.NewShared(r.vix, r.ev, r.bags, r.assets)
 	for _, cp := range r.prog.Packages {
 		if !slices.ContainsFunc(r.selected, func(u *project.Unit) bool { return u.Name == cp.Path }) {
 			continue
@@ -120,27 +130,27 @@ func (r *run) stageB(ctx context.Context) error {
 
 // stagesCD runs the instance checks, then the package checks (EVALUATION.md §8).
 func (r *run) stagesCD(ctx context.Context) error {
-	runner := rules.New(checks{r.ev}, r.prog, r.bags)
+	runner := rules.NewShared(r.rix, checks{r.ev}, r.bags)
 	for _, root := range r.order {
 		if v, ok := r.ev.Force(ctx, root); ok {
 			if err := runner.Instances(ctx, root, v); err != nil {
-				return fmt.Errorf(fmtWrapInternal, ErrInternal, err)
+				return internal(err)
 			}
 		}
 	}
 	for _, cp := range r.cps {
 		if err := runner.Names(cp); err != nil {
-			return fmt.Errorf(fmtWrapInternal, ErrInternal, err)
+			return internal(err)
 		}
 		if err := runner.Package(ctx, cp); err != nil {
-			return fmt.Errorf(fmtWrapInternal, ErrInternal, err)
+			return internal(err)
 		}
 	}
 	return nil
 }
 
-// stageE precomputes the export fns and validates the emits (EVALUATION.md §2.3).
-func (r *run) stageE(ctx context.Context) {
+// stageE precomputes the export fns, validates the emits, then computes the vectors, in check and build alike (EVALUATION.md §1, §2.3, DECISIONS 37).
+func (r *run) stageE(ctx context.Context) error {
 	names := make([]string, len(r.selected))
 	for i, u := range r.selected {
 		names[i] = u.Name
@@ -148,6 +158,20 @@ func (r *run) stageE(ctx context.Context) {
 	r.ir = ir.Build(ctx, ir.Input{
 		Program: r.prog, Project: r.s.proj, Selected: names, Bags: r.bags, Host: irHost{r.ev}, Fold: r.fold,
 	})
+	if err := untranslated(r.ir); err != nil {
+		return err
+	}
+	err := conform.Fill(ctx, r.prog, r.ir, conformer{r}, r.bags)
+	if err == nil {
+		return nil
+	}
+	if cerr := ctx.Err(); cerr != nil {
+		return cerr
+	}
+	if len(r.host.loads) > 0 { // an unsupported load explains an evaluation without an outcome (DECISIONS 196)
+		return r.host.failure(r.s.set, r.prog)
+	}
+	return errors.Join(internal(err), r.host.failure(r.s.set, r.prog))
 }
 
 // reportStableAmendments has lock report the amendments the evaluator refused (LOCK.md §6.1).

@@ -157,6 +157,21 @@ func declared(prog *check.Program, pkg string) map[fnKey]*syntax.FnDecl {
 	return out
 }
 
+// brokenTests reports a test of pkg the checker left broken: an error of its own or of what it names.
+func brokenTests(prog *check.Program, pkg string) bool {
+	for _, cp := range prog.Packages {
+		if cp.Path != pkg {
+			continue
+		}
+		for _, obj := range cp.Decls {
+			if obj.Kind() == check.ObjTest && prog.Info.Broken[obj] {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func declaredIn(out map[fnKey]*syntax.FnDecl, d syntax.Decl) {
 	switch x := d.(type) {
 	case *syntax.FnDecl:

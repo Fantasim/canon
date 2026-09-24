@@ -2,6 +2,7 @@ package conform
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/fantasim/canonlang/internal/diag"
@@ -18,6 +19,9 @@ func (f *filler) expect(ctx context.Context, s *site, inputs []input) ([]*ir.Vec
 			return nil, fmt.Errorf(fmtCanceled, err)
 		}
 		v, ok, err := f.vector(ctx, s, in, n+1)
+		if errors.Is(err, errPoisonedRead) {
+			continue
+		}
 		if err != nil {
 			return nil, err
 		}
@@ -41,14 +45,14 @@ func (f *filler) vector(ctx context.Context, s *site, in input, n int) (*ir.Vect
 	if err != nil || f.cut(s, native, n) {
 		return nil, false, err
 	}
-	if v.Want, v.Code, err = settle(native, s); err != nil || !f.ts {
+	if v.Want, v.Code, err = f.settle(native, s); err != nil || !f.ts {
 		return v, true, err
 	}
 	ts, err := f.evaluate(ctx, c, Mode{Steps: stepCap, TS: true})
 	if err != nil || f.cut(s, ts, n) {
 		return nil, false, err
 	}
-	v.TSWant, v.TSCode, err = settle(ts, s)
+	v.TSWant, v.TSCode, err = f.settle(ts, s)
 	return v, true, err
 }
 
@@ -76,14 +80,22 @@ func (f *filler) cut(s *site, o Outcome, n int) bool {
 }
 
 // settle is an outcome as a vector holds it: the code of its first error, else its value.
-func settle(o Outcome, s *site) (value.Value, diag.Code, error) {
+func (f *filler) settle(o Outcome, s *site) (value.Value, diag.Code, error) {
 	switch {
 	case o.Code != "":
 		return nil, o.Code, nil
 	case o.Value == nil:
-		return nil, "", fmt.Errorf(fmtNamed, ErrNoOutcome, s.label)
+		return nil, "", f.noOutcome(s.label)
 	}
 	return o.Value, "", nil
+}
+
+// noOutcome is an evaluation of what label names with no outcome: a poisoned read once an error is reported, else internal (meta/decisions/log-2026-09-24.md, build wiring review).
+func (f *filler) noOutcome(label string) error {
+	if f.errored {
+		return errPoisonedRead
+	}
+	return fmt.Errorf(fmtNamed, ErrNoOutcome, label)
 }
 
 // selfFn reads a precomputed method of s's owner on its own cap: a code or a limit skips the call (meta/decisions/log-2026-09-24.md, conform N1), no outcome is internal (DECISIONS 204).
@@ -100,8 +112,10 @@ func (f *filler) selfFn(ctx context.Context, s *site) selfFn {
 		switch {
 		case o.Code != "" || o.Exceeded != NoLimit:
 			return nil, errFailedRead
+		case o.Value == nil && f.errored:
+			return nil, errFailedRead // skipped as a failed read: no vector, still a call (build wiring review)
 		case o.Value == nil:
-			return nil, fmt.Errorf(fmtNamed, ErrNoOutcome, s.label+ownerSep+name)
+			return nil, f.noOutcome(s.label + ownerSep + name)
 		}
 		return o.Value, nil
 	}

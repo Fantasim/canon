@@ -11,6 +11,7 @@ import (
 	"github.com/fantasim/canonlang/internal/conform"
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/ir"
+	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/value"
 )
 
@@ -325,5 +326,81 @@ func TestDeterministic(t *testing.T) {
 	}
 	if runs[0] != runs[1] {
 		t.Errorf("two runs differ:%s\n---%s", runs[0], runs[1])
+	}
+}
+
+// brokenSrc is a potion whose translated healFor only the test named calls, with its body.
+const brokenSrc = `/// P.
+package pipeline
+
+/// A healing potion.
+record Potion {
+  /// Hit points restored.
+  heal: Int
+
+  /// What a player missing missingHp gets back.
+  export fn healFor(self, missingHp: Int) -> Int { return min(heal, max(missingHp, 0)) }
+}
+
+/// A level that does not check.
+let level: Int = "high"
+
+test "calls healFor" {
+  let p: Potion = { heal: 500 }
+  BODY
+}
+
+emit cpp { out: "@features/pipeline" }
+`
+
+// meta/decisions/log-2026-09-24.md, build wiring (M2): a package whose tests have an error reports no E9008; a test stopped while running still does.
+func TestBrokenTestNoE9008(t *testing.T) {
+	e9008 := "[" + string(diag.E9008.Def().Code) + "]"
+	for _, c := range []struct {
+		name, body string
+		want       bool // E9008 reported
+	}{
+		{"its own error", "expect p.healFor(nowhere) == 0", false},
+		{"names a broken let", "expect p.healFor(level) == 0", false},
+		{"stops at run time", "let z = 1 / (p.heal - 500)\n  expect p.healFor(z) == 0", true},
+	} {
+		w := newWorld(t, "pipeline/potion.canon", strings.Replace(brokenSrc, "BODY", c.body, 1))
+		if err := conform.Fill(context.Background(), w.prog, w.pkgs, &reference{w: w}, w.bags); err != nil {
+			t.Fatal(err)
+		}
+		if out := w.findings(t); strings.Contains(out, e9008) != c.want {
+			t.Errorf("%s: %s reported %t, want %t:\n%s", c.name, e9008, !c.want, c.want, out)
+		}
+	}
+}
+
+// meta/decisions/log-2026-09-24.md, build wiring review: a vector with no outcome is skipped once an error is reported, else ErrNoOutcome.
+func TestPoisonedVector(t *testing.T) {
+	w, ref := pipeline(t)
+	if err := conform.Fill(context.Background(), w.prog, w.pkgs, ref, w.bags); err != nil {
+		t.Fatal(err)
+	}
+	heal, _ := w.fn(t, "pipeline", "Potion", "healFor")
+	all := len(heal.Vectors)
+	for _, reported := range []bool{false, true} {
+		w, ref := pipeline(t)
+		_, healObj := w.fn(t, "pipeline", "Potion", "healFor")
+		if reported {
+			diag.E9008.At(source.Span{}, "Potion", "other", "pipeline").Report(w.bags["pipeline"])
+		}
+		e := &wrapped{reference: ref, edit: func(c conform.Call, o conform.Outcome) conform.Outcome {
+			if c.Fn == healObj && argIs(c, 1) {
+				return conform.Outcome{} // it read a poisoned value
+			}
+			return o
+		}}
+		err := conform.Fill(context.Background(), w.prog, w.pkgs, e, w.bags)
+		heal, _ := w.fn(t, "pipeline", "Potion", "healFor")
+		switch {
+		case !reported && !errors.Is(err, conform.ErrNoOutcome):
+			t.Errorf("no error reported: %v, want ErrNoOutcome", err)
+		case reported && (err != nil || len(heal.Vectors) != all-1):
+			t.Errorf("an error reported: %v, %d vectors, want %d", err, len(heal.Vectors), all-1)
+		}
 	}
 }

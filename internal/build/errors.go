@@ -13,4 +13,7 @@ var (
 	ErrInternal = errors.New("internal compiler error")
 	// ErrReadOnly is a build that must write through a file system without WriteFS's methods.
 	ErrReadOnly = errors.New("the project's file system cannot be written")
+
+	errNoProgram  = errors.New("the checker returned no program")
+	errNoLoadSite = errors.New("a forced load expression is in no file of the program")
 )

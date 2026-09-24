@@ -1,0 +1,45 @@
+meta/decisions/log-2026-09-24.md, build wiring review: settled() reads a value stage A poisoned
+(E4002). Evaluated for the test call's receiver, it has no outcome, and an error is already
+reported, so that call gives no vector and no E9008: only the stage-A E4002, in check and build.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// No levels.
+local let xs: [Int] = []
+
+/// The first level, which does not exist.
+local let initial: Int = xs[0]
+
+/// A gate.
+record Gate {
+  /// Its weight.
+  weight: Int
+
+  /// Whether the initial level is set.
+  export fn settled(self) -> Bool { return initial > 0 }
+
+  /// The weight plus x, once settled.
+  export fn plus(self, x: Int) -> Int {
+    if settled() {
+      return weight + x
+    }
+    return 0
+  }
+}
+
+test "plus" {
+  let g: Gate = { weight: 1 }
+  expect g.plus(2) == 3
+}
+
+emit cpp { out: "out/", namespace: "acme::gen", mode: data }
+-- build.txt --
+error[E4002]  a/a.canon:8:26
+  index 0 out of range for length 0
+
+1 error, 0 warnings in 1 package (…)

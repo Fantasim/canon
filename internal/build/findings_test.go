@@ -14,9 +14,10 @@ import (
 const (
 	findingsFile = "findings.txt"
 	buildFile    = "build.txt"
-	layersFile   = "layers" // the active layers, in order (EVALUATION.md §9.1)
-	adoptFile    = "adopt"  // display paths the build may take over (API.md B2)
-	selectFile   = "select" // the selectors (API.md R1); none selects every package
+	layersFile   = "layers"     // the active layers, in order (EVALUATION.md §9.1)
+	adoptFile    = "adopt"      // display paths the build may take over (API.md B2)
+	selectFile   = "select"     // the selectors (API.md R1); none selects every package
+	checkOnly    = "check-only" // present: the case is analysed, never built
 )
 
 // archiveFS is a case's files as a project under /p, its expected output and options left out.
@@ -24,7 +25,7 @@ func archiveFS(a *txtar.Archive) mapFS {
 	fsys := mapFS{}
 	for _, f := range a.Files {
 		switch f.Name {
-		case findingsFile, buildFile, layersFile, adoptFile, selectFile:
+		case findingsFile, buildFile, layersFile, adoptFile, selectFile, checkOnly:
 		default:
 			fsys["p/"+f.Name] = file(string(f.Data))
 		}

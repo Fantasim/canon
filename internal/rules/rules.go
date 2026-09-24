@@ -50,39 +50,54 @@ type Runner struct {
 	paths  map[value.Value]*verify.Path
 }
 
-// New is the check runner of a checked program; bags holds a bag per selected package.
-func New(ev Evaluator, prog *check.Program, bags map[string]*diag.Bag) *Runner {
-	r := &Runner{
-		ev: ev, bags: bags,
-		files:  map[*syntax.CheckDecl]*syntax.File{},
-		broken: map[types.Type]bool{},
-		seen:   map[*value.Record]bool{},
-		below:  map[value.Value]bool{},
-		paths:  map[value.Value]*verify.Path{},
-	}
+// Index is what the checks read of a checked program, built once; the runners of one run share it.
+type Index struct {
+	info   *check.Info
+	files  map[*syntax.CheckDecl]*syntax.File
+	broken map[types.Type]bool
+}
+
+// NewIndex indexes a checked program for its check runners: each check's file, the broken types.
+func NewIndex(prog *check.Program) *Index {
+	ix := &Index{files: map[*syntax.CheckDecl]*syntax.File{}, broken: map[types.Type]bool{}}
 	if prog == nil {
-		return r
+		return ix
 	}
-	r.info = prog.Info
+	ix.info = prog.Info
 	for _, pkg := range prog.Packages {
-		r.indexBroken(pkg)
+		ix.indexBroken(pkg)
 		for _, f := range pkg.Files {
 			syntax.Inspect(f, func(n syntax.Node) bool {
 				if c, ok := n.(*syntax.CheckDecl); ok {
-					r.files[c] = f
+					ix.files[c] = f
 				}
 				return true
 			})
 		}
 	}
-	return r
+	return ix
+}
+
+// New is the check runner of a checked program; bags holds a bag per selected package.
+func New(ev Evaluator, prog *check.Program, bags map[string]*diag.Bag) *Runner {
+	return NewShared(NewIndex(prog), ev, bags)
+}
+
+// NewShared is New over an index built once, for a runner made per call with bags of its own.
+func NewShared(ix *Index, ev Evaluator, bags map[string]*diag.Bag) *Runner {
+	return &Runner{
+		ev: ev, bags: bags, info: ix.info, files: ix.files, broken: ix.broken,
+		seen:  map[*value.Record]bool{},
+		below: map[value.Value]bool{},
+		paths: map[value.Value]*verify.Path{},
+	}
 }
 
 // indexBroken records the broken records and variants, whose checks never run (TYPES.md §1).
-func (r *Runner) indexBroken(pkg *check.Package) {
+func (ix *Index) indexBroken(pkg *check.Package) {
 	for _, obj := range pkg.Decls {
-		if obj.Kind() == check.ObjTypeName && r.isBroken(obj) && obj.Type() != nil {
-			r.broken[obj.Type().Base()] = true
+		if obj.Kind() == check.ObjTypeName && ix.info != nil && ix.info.Broken[obj] && obj.Type() != nil {
+			ix.broken[obj.Type().Base()] = true
 		}
 	}
 }

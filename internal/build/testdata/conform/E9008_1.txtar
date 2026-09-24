@@ -1,0 +1,25 @@
+CONFORMANCE.md §6.1, EVALUATION.md §1: a translated method no test calls has no receiver:
+E9008, reported by check and build alike; the error blocks the C++ outputs.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A healing potion.
+record Potion {
+  /// Hit points restored.
+  heal: Int
+
+  /// What a player missing missingHp gets back.
+  export fn healFor(self, missingHp: Int) -> Int { return min(heal, max(missingHp, 0)) }
+}
+
+emit cpp { out: "out/", namespace: "acme::gen", mode: data }
+-- build.txt --
+error[E9008]  a/a.canon:10:13
+  translated method Potion.healFor is called by no test of package a: add one, it gives the conformance test its receiver
+
+1 error, 0 warnings in 1 package (…)

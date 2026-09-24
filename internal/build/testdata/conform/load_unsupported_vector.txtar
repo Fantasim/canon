@@ -1,0 +1,49 @@
+DECISIONS 196 (meta/decisions/log-2026-09-24.md, build wiring review): a load form M2 does not
+read, first forced inside a vector (settled() reads a's raw), leaves the vector without an outcome;
+the recorded load explains it, so check fails with build.ErrLoad, never an internal error. Check
+only: gen/cpp refuses a translated body that reads a precomputed method of self until ir plans it.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Raw numbers.
+let raw: [Int] = load("x.json")
+-- b/b.canon --
+/// B.
+package b
+
+import a
+
+/// A gate.
+record Gate {
+  /// Its weight.
+  weight: Int
+
+  /// Whether any number is loaded.
+  export fn settled(self) -> Bool { return a.raw.len() > 0 }
+
+  /// The weight plus x, once settled.
+  export fn plus(self, x: Int) -> Int {
+    if settled() {
+      return weight + x
+    }
+    return 0
+  }
+}
+
+test "plus" {
+  let g: Gate = { weight: 1 }
+  expect g.plus(2) == 3
+}
+
+emit cpp { out: "out/", namespace: "acme::gen", mode: data }
+-- select --
+b
+-- check-only --
+-- build.txt --
+check error (load error true, internal false): load is not supported by this compiler yet (a load form other than load.dir): a/a.canon:5:18
+build error (load error true, internal false): load is not supported by this compiler yet (a load form other than load.dir): a/a.canon:5:18
