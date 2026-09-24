@@ -1702,8 +1702,11 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     n elements cost n (amends DECISIONS 185's "`in` costs its node only" and 197's composite
     pairs). A map finds a key through a hash index, never a scan, so `m[k]` stays O(1) and a
     map equality is linear. The set hash walks at most a named number of nodes per element (equal
-    values share that prefix; the charged equality decides). Binding level-1 refs is iterative
-    with a per-call memo of shared nodes. `@stable` comparisons while applying an amendment are
+    values share that prefix; the charged equality decides). Binding level-1 refs is iterative,
+    and the evaluator remembers, per node and owned-collection set, subtrees holding no unbound
+    ref, so repeated literals over one shared value do not walk it again. A set operation over n
+    elements costs O(n) plus the equality charges of genuine hash matches: a map hashes by its
+    size and an order-free sum of its entry hashes, computed once per map. `@stable` comparisons while applying an amendment are
     free, as layer path resolution is (§12.1), and iterative. Equality charges add to a built-in's
     listed cost (`contains` over n costs its visits plus n pairs), as 197's per-byte charges do. Reason: every step of the budget
     buys a bounded amount of time and memory, so `E4401` is the only way evaluation runs long.
