@@ -1630,8 +1630,11 @@ Choices made while Louis was away are listed here, each with its reason, so he c
 
 194. **Stage E details the IR review settled (CODEGEN §4.4, §5.6, §12; EVALUATION §2.3).** An
     explicit `values: []` is expanded to every public value, as the backends read it (127). A
-    define table or record is `E8012`/`E8151` only for an emit whose target cannot represent it
-    (baked Go, 180), so `check` fails wherever `build` would (37). A wildcard `_ =>` arm's branch
+    define table or record is `E8012`/`E8151` for an emit whose target cannot represent it
+    (baked Go, 180) or that needs its fingerprint (`emit json`, `data`/`embedded` modes: canon-fp
+    has no Define form, 126), and a ref into a define table is `E8012` for baked Go (180), so
+    `check` fails wherever `build` would (37). `E8005` covers every name gen/go declares, read
+    from one name plan in `ir` that gen/go uses; `E8011` refuses an unexported Go override (182). A wildcard `_ =>` arm's branch
     is named after the first member it covers, in declaration order (§5.6 names only patterns).
     Every receiver and cell of an `export fn` is evaluated and each failure reported; nothing
     stops at the first. A foreign type's methods are precomputed on the importer's receivers,
@@ -1701,7 +1704,8 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     map equality is linear. The set hash walks at most a named number of nodes per element (equal
     values share that prefix; the charged equality decides). Binding level-1 refs is iterative
     with a per-call memo of shared nodes. `@stable` comparisons while applying an amendment are
-    free, as layer path resolution is (§12.1), and iterative. Reason: every step of the budget
+    free, as layer path resolution is (§12.1), and iterative. Equality charges add to a built-in's
+    listed cost (`contains` over n costs its visits plus n pairs), as 197's per-byte charges do. Reason: every step of the budget
     buys a bounded amount of time and memory, so `E4401` is the only way evaluation runs long.
 
 ## Still open
