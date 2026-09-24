@@ -2053,9 +2053,9 @@ A record with many fields is rarely edited as a whole: in the example project, a
    it or carries a finding; the rest go under "More", in usage order. Explicit `group`s override
    this order.
 
-For legacy data, `canon infer` writes a first version of such a variant from existing files
-([CLI.md](CLI.md)): each kind allows every field any entry of that kind already sets, so the first
-build passes by construction. Tightening is then a series of small reviewed changes.
+For legacy data, the first version of such a variant is written from the domain's schema, loader
+and data ([CLI.md](CLI.md) §6.4): each kind allows the fields its entries set. Tightening is then a
+series of small reviewed changes.
 
 ### 16.8 Pickers and search
 
@@ -2247,7 +2247,7 @@ DECISIONS 21, default widgets DECISIONS 22). Their normative text is in
   `time_of_day` widget; stepper buttons; the legacy wire forms `@json(int)` and `@json(bits)`
   (§5.12).
 - **Relevance and grouping:** where "More" starts (25 %); order of sections (named groups, `_other`,
-  "More", "Unused fields"); nested kinds from `canon infer --by a,b`; optional fields with a
+  "More", "Unused fields"); nested kinds (a variant inside a case); optional fields with a
   non-`none` default (default, set, explicit `none`); the label of `none`.
 - **Variants and dependent fields:** changing a case (fields of the same name and type kept, the
   rest listed and dropped, with Undo); views naming case-only fields and `view Variant.case`; the

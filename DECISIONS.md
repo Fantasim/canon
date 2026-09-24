@@ -1564,6 +1564,28 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     in `internal/lock`, which EVL may not edit: gap until lock or build reports it). Reason: no
     lenient amendment, and one owner per code.
 
+## 2026-09-24 — Louis
+
+188. **`canon infer` is dropped from v0.1.** It sees only observed JSON values: it reads neither
+    the JSON Schemas' constraints nor the loaders' clamps and defaults, so its draft is rewritten
+    by hand anyway, and it is a one-off tool. Each domain's first type is written by an agent that
+    reads the schema, the loader and the data together, then proven by `canon check` over every
+    file. `canon convert` stays. This supersedes CLI.md §3.9 and step 1 of §6.4, and the `infer`
+    rows and §8.2 of IMPLEMENTATION-PLAN; the `internal/infer` package is not built.
+
+189. **The sovcommon `teamboard` integration leaves M1's acceptance.** IMPLEMENTATION-PLAN §6 M1
+    item 6 (replace teamboard's hand-written loader in a sovcommon branch) is postponed until
+    Louis schedules it; M1 is accepted on items 1–5. It stays a handoff in `meta/handoff/`.
+
+190. **The GEN-01 review is the orchestrator's, not Louis's.** At the start of M2 the compiler
+    regenerates `examples/pipeline/expected/`; the orchestrator reviews the diff against the
+    conventions of the existing Go and C++ code (sovcommon, Source), decides, and M2 continues.
+    The diff and the choices made are listed in `meta/handoff/` for Louis to read when he likes.
+
+191. **The M4 studio integration spike is postponed.** IMPLEMENTATION-PLAN §6 M4 item 7 is dropped
+    from M4's acceptance: the current resourcestudio will not be adapted, a new studio will be
+    built from scratch on the Canon API. M4 is accepted on its other items.
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.

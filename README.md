@@ -92,7 +92,7 @@ compiler regenerates them.
 | [service/resourcestudio/](examples/service/resourcestudio) | an ordinary service config, per-machine layer, secret input | config.example.toml + its loader and precedence rules |
 | [sovcommon/](examples/sovcommon) | shared enums, written once | roles.go's ladder and the tone/icon lists checked by scraping TS |
 | [studio/studio.canon](examples/studio/studio.canon) | the studio's vocabulary: menus, icons, tones, units, widgets, and the default editor of `TimeOfDay` | nothing (it is new) |
-| [game/items/](examples/game/items) | a domain after `canon infer` and `canon convert`: one `entry` file per item, nested kinds, `@json(pairs:)`, `@json(bits)`, a view and a translation | propItem.json's 6,944 rows and their loader, schema and overlay |
+| [game/items/](examples/game/items) | a domain after migration and `canon convert`: one `entry` file per item, nested kinds, `@json(pairs:)`, `@json(bits)`, a view and a translation | propItem.json's 6,944 rows and their loader, schema and overlay |
 | [features/](examples/features) | one small example per feature no other example covers: `@codes` on the wire (`codes`), `load.csv` (`csv`), `embedded` mode (`embedded`), legacy C++ structs (`legacycpp`), finite-input `export fn` (`lookup`), value `match` (`match`), `retired` ids (`retired`), `load.text` (`text`), `expect … warns` (`warns`) | |
 
 Line counts are indicative. The bigger gain is that each subject is written in **one** place:

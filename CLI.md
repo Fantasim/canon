@@ -38,7 +38,6 @@ the network.
 | `canon fmt` | rewrite sources in the canonical layout |
 | `canon explain <path>` | show a value, its type, and where each part of it comes from |
 | `canon refs <path>` | list everything that references an entry |
-| `canon infer <files>` | write a first type (record or variant) from existing JSON |
 | `canon convert <value>` | turn a `load`ed JSON source into `.canon` source, proven lossless |
 | `canon i18n stub \| status` | manage translation files |
 | `canon lock check` | verify `canon.lock` against the sources without building |
@@ -394,46 +393,10 @@ JSON line per reference: `{"ref":{"kind", "package", "path", "file", "line", "co
 `kind` one of `value`, `key`, `code`, `view`, `check`, `layer` (API.md §5.3), then
 `{"summary":{"target", "count"}}`.
 
-### 3.9 `canon infer`
+### 3.9 `canon infer` (dropped)
 
-```
-canon infer <files…> [--at <path>] [--by <wire-field>[,<wire-field>…]] [--defaults <path>]
-            [--schema <file.schema.json>] [--name <Type>] [--out <file>]
-```
-
-Reads existing JSON and writes a first Canon type for it. It is a one-off helper for migration;
-its output is meant to be reviewed and edited.
-
-| Flag | Meaning |
-|---|---|
-| `--at` | where the rows are in each file (`items`), in the `at:` syntax of SPEC §13.1 |
-| `--by` | a wire field that separates kinds (`dwItemKind1`): output is a variant with one case per value. Several fields (`--by dwItemKind1,dwItemKind2`) give nested variants |
-| `--defaults` | where the file declares defaults (`defaults`), applied before analysis |
-| `--schema` | an existing JSON Schema: its `description`s become `///` doc comments (DECISIONS 8) |
-| `--name` | name of the generated type |
-| `--out` | output file (default: stdout) |
-
-What it writes, deterministically (the full algorithm is
-[spec/IMPLEMENTATION-PLAN.md](spec/IMPLEMENTATION-PLAN.md) §8.2):
-
-- one field per wire key, in order of first appearance across the files taken in path order.
-  The clean name drops a leading `m_`, then one legacy prefix (`str sz dw by ar n b f w l u i`,
-  longest first) when an upper-case letter or a digit follows it, then is lowerCamel
-  (`dwItemKind3` becomes `itemKind3 @json("dwItemKind3")`); names that collide get a numeric
-  suffix;
-- the narrowest type that accepts every observed value, in the order `Bool` < `Int` < `Float` <
-  `String` (a JSON `1.0` counts as a `Float`), or a `ref` when every value is a key of exactly
-  one `load.defines` table visible from the output package. No enum is inferred: a field with few
-  distinct identifier values gets a `// candidate enum: …` comment instead;
-- with `--by f`: a record holding the fields every kind sets, and a variant `@json(tag: "f")`
-  inlined in it, with one case per observed value (its wire value is the case's wire name),
-  containing every field any row of that kind sets (so the first build passes by construction).
-  `--by f,g` nests a variant on `g` inside each case of `f`. Usage is recorded per innermost case;
-- a comment per field with its usage (`// set on 842 of 998 weapons rows; e.g. …`) and up to three
-  example values, so the reviewer can decide what to tighten;
-- with `--schema`, the schema's `description`s as `///` doc comments on the type and its fields;
-- defaults copied from `--defaults`; a field absent from some rows without a known default is
-  made optional and marked with a comment, since only a person can state what the loader does.
+Not part of v0.1 (DECISIONS 188). A domain's first type is written from its JSON Schema, its
+loader and its data, then proven by `canon check` over every file (§6.4).
 
 ### 3.10 `canon convert`
 
@@ -743,9 +706,8 @@ collections and their dependencies (§3.12).
 One domain at a time, each with its round-trip proof (DECISIONS 11):
 
 ```
-# 1. Write the first type from the existing files, then review and tighten it.
-canon infer @resource/Server/Item/Items/**/*.json --by dwItemKind1,dwItemKind2 \
-  --defaults defaults --name Item --out game/items/item.canon
+# 1. Write the first type (game/items/item.canon) from the domain's JSON Schema, its loader
+#    and its data: constraints, clamps and defaults included (DECISIONS 188).
 
 # 2. Read the JSON through `load`: every file is now validated.
 canon check game.items

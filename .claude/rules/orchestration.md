@@ -45,11 +45,14 @@ REPORT BACK     files touched; spec gaps found; any choice not in the prompt; wh
 
 ## Model selection
 
-Ascending tiers: `haiku` < `sonnet` < `opus` < `fable`; `inherit` is not a tier, so every named
-agent pins one. `haiku`: read-only recon, mechanical sweeps. `sonnet`: `go-dev`, `docs-updater`.
-`opus`: `spec-reviewer`, and any delegation on a frozen contract, the evaluator, determinism or
-the edit API's minimal writes. `fable`: the orchestrator and the hardest design calls. The
-Agent tool's `model` overrides a pin per delegation; state the tier and why.
+Tiers `haiku` < `sonnet` < `opus` < `fable`; every named agent pins one (`inherit` is none).
+Use the cheapest tier the gates (goldens, rule tests, `-race`, fuzz, audit, review) fully check.
+`haiku`: read-only recon, never code. `sonnet`: `docs-updater`, and `go-dev` on golden-checked or
+mechanical work: backends from the IR (`gen/*`), `cli`, `project`, `load` I/O, `lsp` plumbing,
+`views`/`i18n` wiring, cleanups, tests. `opus`: `spec-reviewer`, and `go-dev` on semantics tests
+can miss: `check`/`types`, `eval`, dependent types, frozen contracts, determinism, the memo, `edit`
+minimal writes, generated-C++ performance. Sonnet failing review twice moves to opus. `fable`:
+the orchestrator only. State the tier and why in each delegation.
 
 ## Auditor discipline
 

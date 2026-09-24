@@ -39,11 +39,12 @@ block in [state.md](state.md).
 - [ ] Accept (§6 M1): `canon check teamboard` prints its `findings.txt`; `canon build teamboard
   sovcommon...` equals the goldens and a new `expected/MANIFEST`; generated Go builds on Go 1.23
   and current; `canon.lock` equals its golden, `E6001` on delete/rename, retire passes;
-  integration branch of sovcommon `teamboard` green (GO, reviewed by Louis — a handoff).
+  the sovcommon `teamboard` integration is postponed out of M1 (DECISIONS 189).
 
 ## M2 — Pipeline: data mode for Go and C++
 
-- [ ] First step: regenerate `examples/pipeline/expected/` (GEN-01); Louis reviews the diff.
+- [ ] First step: regenerate `examples/pipeline/expected/` (GEN-01); the orchestrator reviews the
+  diff and continues, the diff is listed in `meta/handoff/` for Louis (DECISIONS 190).
 - [ ] `jsonsrc` (SYN), `wire` decode + `load.dir` (LOD), `conform` (EVL), fingerprint + reload IR
   (IR), data mode + stores + conformance (GO, CPP), `cli test` (API).
 - [ ] Accept (§6 M2): pipeline byte-exact; C++ builds on the §7.8 matrix with `-Werror`;
@@ -54,7 +55,7 @@ block in [state.md](state.md).
 
 - [ ] Every `load` form (LOD); dependent types, views, i18n, layers (TYP, VM: `views`,
   `gen/view`, `i18n`, `api/vm`); C++ `types` mode (CPP); `Check`/`Value`/`ViewModel` (API);
-  `infer` starts (MIG); real-data job + `make check-real` over `testdata-real/` (QA).
+  real-data job + `make check-real` over `testdata-real/` (QA).
 - [ ] Accept (§6 M3): every example prints its `findings.txt`; view models validate against the
   schema and equal goldens; `balance.parity` golden; `canon explain` golden; C++ `types` decode.
 
@@ -63,15 +64,15 @@ block in [state.md](state.md).
 - [ ] `format` (SYN), incremental memo (EVL, API), `edit`, `workspace`, full `api` (API).
 - [ ] Accept (§6 M4): examples are `fmt` fixed points, 10-minute fuzz clean; every API.md rule
   tested; minimal-write invariant under fuzzing; NFR-01 targets (§7.6); crash and race stress
-  tests; studio integration spike (a handoff to resourcestudio).
+  tests; studio integration spike postponed (DECISIONS 191: a new studio will be built).
 
 ## M5, M6, M7 — in parallel once M4 is accepted
 
 - [ ] **M5 LSP** (LSP, `lsp`, `editors/vscode`): txtar transcripts, UTF-16, 500 ms diagnostics.
 - [ ] **M6 Legacy C++ and TypeScript** (CPP, TS; may start after M3): `legacycpp` in three modes;
   TS goldens pass `tsc --strict` and `node --test`; `E8101` tested.
-- [ ] **M7 Migration** (MIG, `infer`, `convert`; VM for `i18n stub|status`): infer golden and
-  "first build passes"; convert proof; `i18n stub fr` golden.
+- [ ] **M7 Migration** (MIG, `convert`; VM for `i18n stub|status`; `infer` dropped, DECISIONS
+  188): convert proof; `i18n stub fr` golden.
 
 ## Feature examples owed (§7.9, QA)
 

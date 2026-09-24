@@ -96,7 +96,7 @@ services/configlang/
 ORG-01's table, adjusted: `source` (file set and positions) is split out so every module shares
 one position type; JSON sources get their own syntax tree (`jsonsrc`) because both `load` and
 `edit` need positions and lossless re-printing; `wire`, `lock`, `i18n`, `views`, `build`,
-`workspace`, `infer`, `convert`, `cli` and `testkit` are added.
+`workspace`, `convert`, `cli` and `testkit` are added (`infer` dropped, DECISIONS 188).
 
 | Package (under `internal/` unless noted) | Owns | Implements | Consumes |
 |---|---|---|---|
@@ -129,10 +129,9 @@ one position type; JSON sources get their own syntax tree (`jsonsrc`) because bo
 | `edit` | paths, ops, editability, cascades, minimal writes, file placement, journal | API.md §6-§10 | format, jsonsrc, value, wire, lock, build (re-check) |
 | `workspace` | snapshots, revisions, refresh, overlays, watching, incremental invalidation | API.md §3, §12 | build, edit |
 | `api/` (package `canon`) | public API; thin adapter over `workspace` | API.md | workspace |
-| `infer` | `canon infer` | §8.2 | load, jsonsrc, format |
 | `convert` | `canon convert` | §8.3 | edit, build, format |
-| `cli` | command implementations, text/JSON output, exit codes | CLI.md, §8 | api, internal packages for fmt, infer, convert, i18n, explain of functions |
-| `cmd/canon` (top level) | `main`: cobra command tree, calls `cli` | CLI.md | cli |
+| `cli` | command implementations, text/JSON output, exit codes | CLI.md, §8 | api, internal packages for fmt, convert, i18n, explain of functions |
+| `cmd/canon` (top level) | `main`: reads the working directory, wires signals, calls `cli` (standard `flag`, DECISIONS 139) | CLI.md | cli |
 | `lsp` | language server | §8.4 | workspace, check, format |
 | `testkit` | golden harness, fixture FS, shuffling FS, benchmark generator | §7 | api |
 
@@ -729,7 +728,7 @@ every change to its frozen contract.
 | **VM** | `views`, `gen/view`, `i18n`, `api/vm` | VIEWMODEL.md, viewmodel.schema.json, I18N.md |
 | **API** | `edit`, `workspace`, `api`, `cli`, `cmd/canon` | API.md, CLI.md, §8.1 of this plan |
 | **LSP** | `lsp`, `editors/vscode` | §8.4 |
-| **MIG** | `infer`, `convert` | §8.2, §8.3, §8.5 |
+| **MIG** | `convert` | §8.3, §8.5 |
 | **QA** | `diag`, `testkit`, `examples/_fixtures`, `examples/features`, CI, benchmarks, `make check`, `tools/audit` baseline | §7, §12, DIAG-01 |
 
 ### 5.2 Order of work
@@ -742,14 +741,13 @@ acceptance tests pass.
 | **M0** contracts | `source`, `ast.go` | `types.go`, `check/info.go` | `value.go`, `eval/host.go` | lock format types | `project` schema types | `ir.go` | review `ir.go`; IR fixtures | review | `api/canon.go` (done), `edit/path.go` | — | `diag`, `diaggen` and `codes.go` generated from ERRORS.md, harness skeleton, CI skeleton, fixture extractor |
 | **M1** taxonomy | parser (all examples), AST goldens | checker | eval + std subset | verify, lock, rules | `project`, `wire` encode | `ir`, `gen/json`, `build` | GO: baked; CPP/TS: baked from IR fixtures | — | `cli` check/build/version/init/new | — | fixtures, findings files, determinism job |
 | **M2** pipeline | `jsonsrc` | export fns | `conform` | `rules` tests | `wire` decode, `load.dir` | fingerprint, reload IR, portable subset check | GO/CPP: data mode, stores, conformance | — | `cli` test | — | toolchain CI jobs |
-| **M3** load + view | `format` (start) | dependent types, views, i18n, layers | layers | dependent verification, assets | `load` (all forms) | `types` mode | CPP: `types` mode; TS: data | `views`, `gen/view`, `i18n`, `api/vm` | `Check`/`Value`/`ViewModel` in `api` | MIG: `infer` | real-data job, benchmark generator |
+| **M3** load + view | `format` (start) | dependent types, views, i18n, layers | layers | dependent verification, assets | `load` (all forms) | `types` mode | CPP: `types` mode; TS: data | `views`, `gen/view`, `i18n`, `api/vm` | `Check`/`Value`/`ViewModel` in `api` | — | real-data job, benchmark generator |
 | **M4** fmt + edit | `format` done, JSON source printer | — | incremental memo | — | — | — | — | `Evaluate` support | `edit`, `workspace`, full `api`, fmt/explain/refs/watch | — | edit goldens, fuzzing, perf gates |
 | **M5** LSP | recovery hardening | completion queries | — | — | — | — | — | — | support | LSP: server, grammar, extension | LSP transcripts |
 | **M6** legacy C++ + TS | — | — | — | — | — | legacy IR | CPP: `fields`/`both`/`getters`; TS: complete | — | — | — | feature examples |
-| **M7** migration | — | — | — | — | — | — | — | `i18n stub`/`status` | `cli` wiring | MIG: `infer` done, `convert` | real-data runs |
+| **M7** migration | — | — | — | — | — | — | — | `i18n stub`/`status` | `cli` wiring | MIG: `convert` | real-data runs |
 
-M5, M6 and M7 run in parallel once M4 is accepted. M6's C++ work may start after M3, and `infer`
-(which needs only `load`) starts in M3.
+M5, M6 and M7 run in parallel once M4 is accepted. M6's C++ work may start after M3.
 
 ### 5.3 Rules for parallel agents
 
@@ -886,10 +884,8 @@ determinism job green (§7.5), and every new registry code tested (§7.2).
 
 ### M7 — Migration tools
 
-- Scope: `canon infer` (with `--schema`), `canon convert`, `canon i18n stub|status`.
-- Accepted when: `infer` on the fixture item files reproduces its golden `item.canon`, and
-  `canon check` of the inferred type against the same files has no error (the "first build passes by
-  construction" property, tested on the real tree in the real-data job); `convert potions` on a copy
+- Scope: `canon convert`, `canon i18n stub|status` (`canon infer` dropped, DECISIONS 188).
+- Accepted when: `convert potions` on a copy
   of `pipeline` passes its proof and writes its golden files; a convert whose proof fails writes
   nothing and prints the differences; `i18n stub fr` on `farm` equals its golden.
 
@@ -1075,51 +1071,9 @@ order shown, and ends with one `summary` object:
   disappeared, and the summary. Findings are matched between cycles by (code, file, path, message).
 - `ms` and durations are the only non-deterministic fields; golden tests replace them.
 
-### 8.2 `canon infer` (CLI-01)
+### 8.2 `canon infer` (dropped)
 
-`canon infer <files…> [--at p] [--by f[,g]] [--defaults p] [--name T] [--schema file] [--out file]`
-runs inside the project (so it can see `load.defines` tables) and writes a complete, formatted
-`.canon` file.
-
-1. **Rows.** Files are read in byte order of their root-relative paths; `--at` selects the rows in
-   each file (LOD-03 path syntax); an object at `--at` is one row, an array is one row per element.
-   `--defaults p` names an object (in each file, at path `p`) whose keys fill missing row keys before
-   analysis.
-2. **Field names.** For each wire key: remove a leading `m_`; then remove one legacy prefix from
-   `str sz dw by ar n b f w l u i` (longest first) **only if** the next character is an upper-case
-   letter or a digit; then lower the leading run of upper-case letters (all of it if it is followed by
-   a non-letter or the end, all but the last one otherwise): `dwID` → `id`, `dwItemKind3` →
-   `itemKind3`, `szIcon` → `icon`, `nHeal` → `heal`, `name` → `name`, `URLPath` → `urlPath`. A
-   result that is a reserved word gets a `_` suffix; a collision gets `2`, `3`, … in order of first
-   appearance. The wire name is kept with `@json("…")` whenever it differs.
-3. **Types.** Per field, the narrowest type accepting every observed value, in the order
-   `Bool < Int < Float < String`: JSON `true`/`false` is Bool, an integer token is Int, a number with
-   `.` or exponent is Float (`1.0` is Float), a string is String. Mixed kinds join upward: Bool
-   and Int give Int, Int and Float give Float, anything and String give String; a join that
-   crosses kinds adds the comment `// mixed <kinds> values`. `null` makes the field optional.
-   Objects become nested records named `<Type><Field>` (UpperCamel), arrays become lists of the join
-   of their elements. A String field whose every value is a key of exactly one `load.defines` table
-   visible from the output package (a `let` of that package, or a public `let` of another) becomes
-   `ref <table>`, with the needed import. No enum is inferred (MOCKUP-GAPS C10); a field with 16 or
-   fewer distinct identifier values gets the comment `// candidate enum: A, B, C…`. A field whose
-   values are only 0 and 1 gets `// only 0/1 observed: consider Bool @json(int)`.
-4. **Kinds.** With `--by f`, the output is a record with the shared fields and a field `kind:
-   <Type>Kind @json(inline)`, and a variant `<Type>Kind @json(tag: "<f>")` with one case per observed
-   value of `f` (its wire value as the case name, sanitized to an identifier with `@json("…")` when
-   needed), in order of first appearance. A case holds every field that any row of that case sets. A
-   field set by at least one row of **every** case is hoisted into the record. `--by f,g` nests: each
-   case of `f` holds a variant on `g` (MOCKUP-GAPS 10).
-5. **Optionality and defaults.** A field present in every row (of its case) is required. A field
-   absent from some rows takes its default from `--defaults` when known (`= <literal>`); otherwise
-   it is `T?` with the comment `// TODO default: only a person can state what the loader does`.
-6. **Comments.** Each field gets `// set on <n> of <m> <case or type> rows; e.g. <v1>, <v2>, <v3>`
-   (the first three distinct values in row order).
-7. **Order.** Fields in order of first appearance across rows in path order; cases likewise. The
-   same input always gives the same output.
-8. **Schema descriptions (CLI-05).** `--schema file.schema.json` copies the `description` of each
-   property into the field's `///` doc comment, and the schema's top-level `description` into the
-   type's. Properties are matched by wire name, following `properties`, `items`, `allOf` and local
-   `$ref`s; `x-` keywords are ignored. The usage comment follows the doc comment.
+Not part of v0.1 (DECISIONS 188).
 
 ### 8.3 `canon convert` (CLI-02)
 
@@ -1243,7 +1197,7 @@ Every third-party dependency is listed here. Adding one needs an update of this 
 | Need | Choice | Why |
 |---|---|---|
 | parser | **hand-written** recursive descent, with a Pratt parser for expressions | The grammar is context-sensitive in ways generator libraries handle badly: regex vs division by the previous token (LEX-01), interpolation lexer modes (LEX-02), newlines decided by the innermost bracket and the previous token (GRM-02, GRM-03), no typed literal in `if`/`match`/`when` headers (GRM-01), keywords usable as names in some positions (LEX-08). The formatter and the edit API need a lossless tree with trivia (§4.1) and the language server needs error recovery. participle builds an AST from struct tags, drops trivia, and recovers poorly; tree-sitter needs cgo. A tree-sitter grammar may still be written from GRAMMAR.md for editors, as a separate artifact. |
-| CLI | `github.com/spf13/cobra` | subcommands, generated help and shell completion; widely used. |
+| CLI | standard `flag` (DECISIONS 139) | no third-party dependency; Louis ruled out cobra (2026-09-24). |
 | LSP | `github.com/tliron/glsp` | LSP types and server loop for 3.16/3.17. Fallback if its maintenance or 3.17 coverage is insufficient: `go.lsp.dev/protocol` + `go.lsp.dev/jsonrpc2`. |
 | JSON with positions | `github.com/go-json-experiment/json` (`jsontext`) | Token-level decoder with `InputOffset()` for spans and `StackPointer()` for RFC 6901 pointers, rejects duplicate names by default (LOD-02 `E7104`), raw number tokens for exact parsing. It is the upstream of Go's experimental `encoding/json/v2`; switch to the standard library when it is no longer behind `GOEXPERIMENT`. |
 | JSON number and float text | standard library (`strconv`, `math/big`) | Floats are formatted as ECMAScript `Number::toString` (WIR-01, STD-06) on top of `strconv.FormatFloat(f, 'e', -1, bits)`; exact decimal parsing uses `math/big`. |
@@ -1371,8 +1325,8 @@ they are checked for dead links (the `dead-link` rule).
 2. **Real-data fixtures.** The fixture extractor needs read access to the real `Resource/` tree;
    the extracted subset should be reviewed for anything that must not be committed.
 3. **Overlay imports.** DECISIONS 8 also mentions importing help texts from the studio overlays
-   (`resourcestudio/internal/overlay/modules/*.json`); only `--schema` is specified (§8.2). An
-   `--overlay` option can be added once the overlay format is documented.
+   (`resourcestudio/internal/overlay/modules/*.json`); with `infer` dropped (DECISIONS 188), the
+   agent writing a domain's first type reads them directly.
 4. **Reference machine.** The NFR-01 targets need a named CI runner. The project uses GitLab; the
    runner class should be fixed before M4's gates are enforced.
 5. **Legacy data that `@json(pairs:)` refuses.** In the real `propItem.json` (6,944 items), 6 items
