@@ -1770,6 +1770,22 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      the spec. A technical gap is decided by the orchestrator (strictest consistent reading) and
      logged in `meta/decisions/log-<date>.md`; only direction questions go to Louis.
 
+208. **`E7109` names what went wrong, by variant (amends 162).** The span and pointer stay as 162
+     says. The detail becomes three variants: `eof` (the source ends inside a value: `JSON syntax
+     error: unexpected end of input`), `depth` (the opener past the nesting limit of WIRE.md §3.1:
+     `nested deeper than {limit} levels`), and `char` (every other case: `unexpected character
+     {char}`, `char` the offending character written as a JSON string, WIRE.md §7.3, a source
+     excerpt and so `Text`). Reason: Louis's 2026-09-24 demo read `JSON syntax error: ""` as a bug
+     (the gap 162 left for him); variants keep English inside `internal/diag` (DECISIONS 27).
+
+209. **A broken check or field default breaks its record or variant (TYPES.md §1).** The members
+     that run implicitly on every value of a record or case — its checks (named or not, `check`
+     and `warn`, blocks included) and its field defaults — are part of its body: when one is
+     broken, the record or variant is broken, and so is everything naming it (no data typed by it
+     is decoded or verified; its static findings are all reported). A broken method breaks only
+     the declarations that call it. Reason: a broken check reached the evaluator as an internal
+     error (demo of 2026-09-24); skipping only that check would widen the frozen `check.Info`.
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.
