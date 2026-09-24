@@ -11,12 +11,12 @@ Part A (close open work) then Part B (M3 waves W0–W4). Ticked = committed on `
 - [x] A2 demo bugs: (1) E2102, a broken check breaks its record (428fbad, DECISIONS 209);
   (2) E7109 variants (6534f56, DECISIONS 208); (3) stays (poisoning, logged); (4) "is a Int" →
   ERRORS pass, E4402 frames stay (logged); (5) E8007 hint → ERRORS pass.
-- [ ] A3 M1.5 bug-fix wave. Landed: eval, syntax, ir, check C1, format, build, QA progen
-  judge (born/left/guard lines; 53 archives guard fixes). Open: check 20 (C2 in flight), ir 1
-  (E8011_725 interim). Nightly run once (N=5000): 1 new archive.
+- [x] A3 M1.5 bug-fix wave: all owner archives fixed or re-owned (check C2 cf70701); open: 7
+  `progen` (mutator/shrinker artifacts, A6), 1 `ir` (E8011_725 interim), 2 new (E3013 check,
+  E1107 syntax — landing with W1 load).
 - [x] A4 M2 close: position test on `examples/pipeline/data/II_POT_HEAL_L.json`; M2 ticked.
-- [ ] A5 consumer units gen/go ∥ gen/cpp finishing; ir plan-gap unit next; ERRORS.md pass
-  (inventory in flight) + spec sync #2; cleanups (fixture FS, ASCII fold, fn classification ×3).
+- [ ] A5 consumer units gen/go ∥ gen/cpp in verification; ir plan-gap unit next; ERRORS.md pass:
+  ir group in fixes (E8019 partial), check and load groups queued; spec sync #2; cleanups.
 - [ ] A6 M1.5 second wave (type-directed, metamorphic).
 - [x] W0 gap map → `meta/m3-gaps.md` (1b0a332).
 - [ ] W1: eval layers/provenance landed (bc99b99; identity follow-up in flight); load forms in

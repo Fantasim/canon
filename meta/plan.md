@@ -94,6 +94,13 @@ wave; every funded run ends on a wave boundary with a report in `meta/handoff/`.
   example equals its `findings.txt`. Real-data findings in `Resource/` go to Louis as a **list
   only** (`meta/handoff/<date>-realdata-findings.md`), no fixes proposed, not gating.
 
+**Owed generator modes (found in the overnight run, 2026-09-25).** CODEGEN §2.1 gives go, cpp and
+ts four modes each; gen/go builds `baked` and `data`, gen/cpp only `data`, gen/ts none. M3 builds
+cpp `types` and ts `data` (W3); still owed after M3: go `embedded` and `types`, cpp `baked` and
+`embedded`, ts `baked`/`embedded`/`types` (the examples declare go/ts `embedded`, ts `baked` and
+cpp `baked`; `canon check` accepts them, `canon build` refuses the mode loudly). M1's "CPP/TS: baked
+from IR fixtures" and M2's `embedded` example were accepted without these generators.
+
 ## M4 — Formatter and the edit API
 
 - [ ] `format` (SYN), incremental memo (EVL, API), `edit`, `workspace`, full `api` (API).
