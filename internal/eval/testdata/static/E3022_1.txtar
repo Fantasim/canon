@@ -1,0 +1,27 @@
+TYPES.md §13.1 (E3022), §1, DECISIONS 209: a record check that builds a record containing itself
+names a broken declaration, so it and its record are broken and never run (progen
+mutation_E3022-TYPES-md--13-1--record-contains-itself--with-a-default-_4294967393, the class).
+-- service/app/app.canon --
+/// The app.
+package service.app
+
+/// Settings.
+record Config {
+  /// Itself.
+  zzSelf: Config = {}
+}
+
+/// A server.
+record Server {
+  /// Its port.
+  port: Int = 8765
+  warn Config {} == Config {} else "unreachable"
+}
+
+/// The server.
+let server: Server = {}
+-- findings.txt --
+error[E3022]  service/app/app.canon:5:8
+  Config contains itself and can never be built
+
+1 error, 0 warnings in 1 package (…)

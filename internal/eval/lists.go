@@ -160,11 +160,11 @@ func (r *run) identKey(n *syntax.Ident, kt types.Type) value.Value {
 		if d, isDep := unwrapOptional(kt).Base().(*types.DepUnionType); isDep {
 			return &value.Symbol{Name: n.Name, T: d, P: p}
 		}
-		return &value.Ref{T: unwrapOptional(kt), Key: value.Key{S: n.Name}, P: p}
+		return r.refKey(n, unwrapOptional(kt), value.Key{S: n.Name}, p)
 	}
 	switch obj.Kind() {
 	case check.ObjEntry:
-		return &value.Ref{T: unwrapOptional(kt), Key: value.Key{S: obj.Name()}, P: p}
+		return r.refKey(n, unwrapOptional(kt), value.Key{S: obj.Name()}, p)
 	case check.ObjCase:
 		if k, isKind := kt.Base().(*types.VariantKindType); isKind {
 			return &value.CaseKind{T: k, Index: obj.Type().(*types.CaseType).Index, P: p}
@@ -172,6 +172,21 @@ func (r *run) identKey(n *syntax.Ident, kt types.Type) value.Value {
 	default:
 	}
 	return r.objectValue(obj, &syntax.IdentExpr{Bounds: n.Bounds, Name: n.Name})
+}
+
+// refKey is a key written as an identifier, a ref of t or of the ref a literal union of t is over; a String or integer key is a static E3304, never evaluated (TYPES.md §5.2, §13.2).
+func (r *run) refKey(n *syntax.Ident, t types.Type, k value.Key, p *value.Prov) value.Value {
+	for {
+		switch x := t.Base().(type) {
+		case *types.RefType:
+			return &value.Ref{T: t, Key: k, P: p}
+		case *types.LitUnionType:
+			t = x.Of
+			continue
+		}
+		r.bug(n)
+		return nil
+	}
 }
 
 // mapKeyType is the key type of a map or dependent map type.

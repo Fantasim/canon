@@ -3,10 +3,10 @@ name E3015 TYPES.md §15 (refinement bound reads a let)
 case 88
 seed 4294967385
 open eval
-sig panic panic: runtime error: invalid memory address or nil pointer dereference in eval.collectionOf < eval.(*Evaluator).letColl
+sig extra W1002
 packages pipeline
 want E3015 pipeline/potion.canon 48 55 check
-failure panic panic: runtime error: invalid memory address or nil pointer dereference
+failure extra [W1002 pipeline/potion.canon:2:8 "record Potion has no doc comment"; W1002 pipeline/potion.canon:3:3 "field heal has no doc comment"] besides [E3015 pipeline/potion.canon:3:16 "this refinement bound must be a constant expression"]
 -- pipeline/potion.canon --
 package pipeline
 record Potion {

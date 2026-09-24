@@ -108,12 +108,17 @@ func (r *run) defaults(rec *value.Record, given []bool, at *vpath) bool {
 	return true
 }
 
-// defaultValue evaluates a field default for rec (EVALUATION.md §13).
+// defaultValue evaluates a field default for rec in its implicit frame (EVALUATION.md §13, DECISIONS 210).
 func (r *run) defaultValue(rec *value.Record, f *types.Field, at *vpath) value.Value {
 	saved := r.fr
 	r.fr = (&frame{vars: map[check.Object]value.Value{}, self: rec, file: r.ev.declFile(rec.T)}).under(saved)
 	r.fr.pkg = r.ev.index.pkg[r.fr.file]
+	if !r.nest(r.span(f.Default)) {
+		r.fr = saved
+		return nil
+	}
 	v := r.eval(f.Default)
+	r.unnest()
 	var p *value.Prov
 	if v != nil {
 		p = &value.Prov{Kind: value.ProvDefault, Span: r.span(f.Default), Via: rec.P}

@@ -1,0 +1,88 @@
+EVALUATION.md §9.3, TYPES.md §1, DECISIONS 185: an active layer with a static error (E2102) is
+broken; the let it amends is poisoned without a finding. Layers apply in order: `one` takes the
+sound layer, then is poisoned; `three`'s earlier layer fails first (E1905, reported), so the
+broken layer never runs; `four` is poisoned by the broken layer, so the later layer's failing
+amendment never runs (no E1905); `two` only sound layers amend, and is amended normally.
+-- layers --
+first good bad last
+-- a/a.canon --
+/// A.
+package a
+
+/// Rarity.
+enum Rarity { common, rare }
+
+/// An item.
+record Item {
+  /// Its rarity.
+  rarity: Rarity = common
+  /// Its weight.
+  weight: Int = 1
+  /// Its limits.
+  limits: {String: [Int]} = { "a": [1] }
+}
+
+/// One.
+let one: Item = {}
+
+/// Two.
+let two: Item = {}
+
+/// Three.
+let three: Item = {}
+
+/// Four.
+let four: Item = {}
+-- a/first.canon --
+package a
+layer first
+
+amend three {
+  limits["zz"][0]: 2
+}
+-- a/good.canon --
+package a
+layer good
+
+amend one {
+  weight: 2
+}
+
+amend two {
+  weight: 3
+}
+-- a/bad.canon --
+package a
+layer bad
+
+amend one {
+  rarity: legendary
+}
+
+amend three {
+  weight: 4
+}
+
+amend four {
+  weight: 5
+}
+-- a/last.canon --
+package a
+layer last
+
+amend four {
+  limits["zz"][0]: 3
+}
+-- dump.txt --
+a.one poisoned
+a.two = Item{rarity: common, weight: 3, limits: {"a": [1]}}
+a.three poisoned
+a.four poisoned
+
+error[E2102]  a/bad.canon:5:11
+  unknown name legendary
+
+error[E1905]  a/first.canon:5:9
+  amend path limits["zz"][0]: key zz does not exist
+
+2 errors, 0 warnings in 1 package (…)

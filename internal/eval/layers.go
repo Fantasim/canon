@@ -48,10 +48,19 @@ func (r *run) applyLayers(obj check.Object, v value.Value) value.Value {
 	return v
 }
 
-// amendBlock applies the amendments of one block when it amends obj.
+// amendBlock applies the amendments of one block when it amends obj; one of a broken layer file poisons obj silently (TYPES.md §1, DECISIONS 185).
 func (r *run) amendBlock(obj check.Object, blk *syntax.AmendBlock, layer string, v value.Value) value.Value {
 	if r.ev.info.NameUses[blk.Target] != obj {
 		return v
+	}
+	file := r.ev.index.file[blk]
+	if file == nil {
+		r.bug(blk)
+		return nil
+	}
+	if r.ev.broken(r.ev.info.Defs[file.Layer]) {
+		r.stop()
+		return nil
 	}
 	for _, a := range blk.Items {
 		if v = r.amend(obj, blk, a, layer, v); v == nil {

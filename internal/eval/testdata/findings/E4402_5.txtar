@@ -1,0 +1,20 @@
+DECISIONS 195, EVALUATION.md §3.3: a where run is one frame toward the 10000 limit; a predicate
+that stores its value into its own record runs itself without end, so it is E4402, never a host
+stack overflow.
+-- a/a.canon --
+/// A.
+package a
+
+/// A value.
+record R {
+  /// V.
+  v: Int where R { v: it }.v >= 0
+}
+
+/// The value.
+let r: R = { v: 1 }
+-- findings.txt --
+error[E4402]  a/a.canon:7:16
+  call depth exceeds 10000
+
+1 error, 0 warnings in 1 package (…)

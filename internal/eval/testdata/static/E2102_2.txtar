@@ -1,0 +1,25 @@
+TYPES.md §5.2, §13.2 (E2102): an identifier key of a map keyed by a string-literal union over a
+ref that names no entry is the checker's finding only; the let is broken, never evaluated.
+-- a/a.canon --
+/// A.
+package a
+
+/// An item.
+record Item {
+  /// Its power.
+  power: Int = 1
+}
+
+/// The items.
+let items: table Item = { sword {} }
+
+/// A weight target.
+type Target = ref Item | "all"
+
+/// The weights.
+let weights: {Target: Int} = { shield: 1, "all": 2 }
+-- findings.txt --
+error[E2102]  a/a.canon:17:32
+  unknown name shield
+
+1 error, 0 warnings in 1 package (…)

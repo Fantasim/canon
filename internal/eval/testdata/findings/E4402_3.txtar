@@ -1,0 +1,20 @@
+DECISIONS 195, EVALUATION.md §3.3: a field default is one frame toward the 10000 limit; an
+optional field whose default builds its own record never ends, so it is E4402, with no listed
+frame, never a host stack overflow.
+-- a/a.canon --
+/// A.
+package a
+
+/// Settings.
+record Config {
+  /// Itself, by default.
+  zzSelf: Config? = {}
+}
+
+/// The settings.
+let config: Config = {}
+-- findings.txt --
+error[E4402]  a/a.canon:7:21
+  call depth exceeds 10000
+
+1 error, 0 warnings in 1 package (…)

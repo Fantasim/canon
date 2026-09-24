@@ -36,6 +36,9 @@ func (r *run) deref(v value.Value, at syntax.Node) value.Value {
 
 // collValue is the collection a ref's target names (EVALUATION.md §3.4).
 func (r *run) collValue(ref *value.Ref, c *types.Collection, at syntax.Node) value.Value {
+	if c.Kind != types.CollField && r.nonConstant() { // a key dereference in a fold reads a let (DECISIONS 210)
+		return nil
+	}
 	var base value.Value
 	if c.Kind == types.CollField {
 		if ref.Owner == nil {

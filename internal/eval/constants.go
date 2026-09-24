@@ -3,7 +3,7 @@ package eval
 // DefaultBudget is the step budget when project.budget is not set (EVALUATION.md §12.2).
 const DefaultBudget int64 = 100_000_000
 
-// maxDepth is the deepest call stack a user function, method or lambda call may make (EVALUATION.md §3.3).
+// maxDepth is the most live frames: calls, lambdas, field defaults and where runs (EVALUATION.md §3.3, DECISIONS 195).
 const maxDepth = 10_000
 
 // cancelEvery is how many steps pass between two looks at the context.

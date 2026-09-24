@@ -33,7 +33,9 @@ type Evaluator struct {
 	spent     map[charge]int64
 	order     []charge
 	exhausted bool
-	depth     int // the live user frames of every root (EVALUATION.md §3.3, DECISIONS 195)
+	depth     int  // the live frames of every root, implicit ones included (EVALUATION.md §3.3, DECISIONS 195, 210)
+	implicit  int  // the live implicit frames among depth: field defaults and where runs (DECISIONS 210)
+	constant  bool // a folder's: it evaluates constant expressions only (TYPES.md §15)
 
 	states    map[check.Object]*rootState
 	roots     map[Root]*rootState

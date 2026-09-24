@@ -1,0 +1,24 @@
+DECISIONS 195, EVALUATION.md §3.3: a finite chain of field defaults 3000000 deep, well within the
+step budget, is still E4402 at 10000 frames; the same chain 100 deep evaluates.
+-- a/a.canon --
+/// A.
+package a
+
+/// A node.
+record Node {
+  /// Its depth.
+  depth: Int = 3000000
+  /// Its child, one shallower.
+  child: Node? = if depth > 0 { { depth: depth - 1 } } else { none }
+}
+
+/// The deep chain.
+let deep: Node = {}
+
+/// The shallow chain.
+let shallow: Node = { depth: 100 }
+-- findings.txt --
+error[E4402]  a/a.canon:9:18
+  call depth exceeds 10000
+
+1 error, 0 warnings in 1 package (…)

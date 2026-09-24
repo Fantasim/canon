@@ -1,0 +1,26 @@
+TYPES.md §15 (E3015), DECISIONS 210: a refinement bound that calls a method is reported by the
+checker; the fold reaching the call stops without a finding and never runs the method.
+-- a/a.canon --
+/// A.
+package a
+
+/// A box.
+record Box {
+  /// Its size.
+  n: Int = 2
+  /// Twice its size.
+  fn twice() -> Int {
+    return n * 2
+  }
+}
+
+/// A potion.
+record Potion {
+  /// Hit points restored.
+  heal: Int(..=Box {}.twice())
+}
+-- findings.txt --
+error[E3015]  a/a.canon:17:16
+  this refinement bound must be a constant expression
+
+1 error, 0 warnings in 1 package (…)

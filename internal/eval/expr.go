@@ -152,6 +152,9 @@ func evalSelf(r *run, e syntax.Expr, _ *vpath) value.Value {
 
 // evalLoad forces a load through the host; false poisons silently (EVALUATION.md §7.1).
 func evalLoad(r *run, e syntax.Expr, _ *vpath) value.Value {
+	if r.nonConstant() {
+		return nil
+	}
 	if r.ev.host == nil {
 		r.bug(e)
 		return nil

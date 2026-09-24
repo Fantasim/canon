@@ -3,10 +3,10 @@ name E3022 TYPES.md §13.1 (record contains itself, with a default)
 case 559
 seed 4294967856
 open eval
-sig crash fatal error: stack overflow in eval.(*run).defaultValue ~ eval.(*run).defaults ~ eval.(*run).eval ~ eval.(*run).node ~ eval.(*run).recordLit ~ eval.(*run).walk ~ eval.evalBrace
+sig extra W1002
 packages service.resourcestudio
 want E3022 service/resourcestudio/resourcestudio.canon 119 125 check
-failure crash fatal error: stack overflow | | runtime stack:
+failure extra [W1002 service/resourcestudio/resourcestudio.canon:2:6 "type alias Path has no doc comment"; W1002 service/resourcestudio/resourcestudio.canon:3:8 "record Paths has no doc comment"; W1002 service/resourcestudio/resourcestudio.canon:4:3 "field resourceRoot has no doc comment"; W1002 service/resourcestudio/resourcestudio.canon:6:8 "record Config has no doc comment"; W1002 service/resourcestudio/resourcestudio.canon:7:3 "field paths has no doc comment"] besides [E3022 service/resourcestudio/resourcestudio.canon:6:8 "Config contains itself and can never be built"]
 -- project.canon --
 project sovereign {
   canon: "0.1"

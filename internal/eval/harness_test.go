@@ -3,6 +3,7 @@ package eval_test
 import (
 	"bytes"
 	"context"
+	"errors"
 	"io/fs"
 	"os"
 	"path"
@@ -158,7 +159,8 @@ func runBuild(t testing.TB, p *program, opt eval.Options, selected ...string) *b
 	t.Helper()
 	ctx := context.Background()
 	b := &build{prog: p, bags: check.Bags{}, values: map[eval.Root]value.Value{}}
-	b.checked = check.Check(ctx, exampleProject(), p.files, b.bags, eval.NewFolder(b.bags, opt))
+	fold := eval.NewFolder(b.bags, opt)
+	b.checked = check.Check(ctx, exampleProject(), p.files, b.bags, fold)
 	h := &host{}
 	b.ev = eval.New(b.checked, h, b.bags, opt)
 	h.ev = b.ev
@@ -175,7 +177,7 @@ func runBuild(t testing.TB, p *program, opt eval.Options, selected ...string) *b
 	}
 	b.ev.BeginVerification(ctx)
 	b.stagesCD(ctx, pkgs)
-	if err := b.ev.Err(); err != nil {
+	if err := errors.Join(b.ev.Err(), eval.FoldErr(fold)); err != nil {
 		t.Errorf("internal error: %v", err)
 	}
 	return b

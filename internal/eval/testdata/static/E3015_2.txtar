@@ -1,0 +1,23 @@
+TYPES.md §15 (E3015): a refinement bound that calls a user function is reported by the checker
+only; the folder never runs user code, so the let the function reads is never forced.
+-- pipeline/potion.canon --
+/// Potions.
+package pipeline
+
+/// A potion.
+record Potion {
+  /// Hit points restored.
+  heal: Int(..=limit())
+}
+
+/// The largest heal.
+fn limit() -> Int {
+  return zzLimit
+}
+
+local let zzLimit: Int = 3
+-- findings.txt --
+error[E3015]  pipeline/potion.canon:7:16
+  this refinement bound must be a constant expression
+
+1 error, 0 warnings in 1 package (…)

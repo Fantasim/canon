@@ -1,0 +1,18 @@
+TYPES.md §15 (E3015): a refinement bound that reads a let is reported by the checker only; the
+folder never forces the let (progen mutation_E3015-TYPES-md--15--refinement-bound-reads-a-let-_4294967385).
+-- pipeline/potion.canon --
+/// Potions.
+package pipeline
+
+/// A potion.
+record Potion {
+  /// Hit points restored.
+  heal: Int(..=zzLimit)
+}
+
+local let zzLimit: Int = 3
+-- findings.txt --
+error[E3015]  pipeline/potion.canon:7:16
+  this refinement bound must be a constant expression
+
+1 error, 0 warnings in 1 package (…)

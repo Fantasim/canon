@@ -13,6 +13,9 @@ import (
 // call is `f(args)` on the callee the checker resolved (TYPES.md §12.2, EVALUATION.md §2.2).
 func (r *run) call(x *syntax.CallExpr) value.Value {
 	callee := r.ev.info.Calls[x]
+	if callee == nil && r.nonConstant() { // a call the checker left unresolved in a constant (DECISIONS 150, 210)
+		return nil
+	}
 	if callee == nil {
 		r.bug(x)
 		return nil
@@ -61,6 +64,9 @@ func (r *run) callMethod(x *syntax.CallExpr, obj check.Object) value.Value {
 // callUser evaluates the arguments of a user function or method, then invokes it.
 func (r *run) callUser(x *syntax.CallExpr, obj check.Object, self value.Value) value.Value {
 	d, ok := obj.Decl().(*syntax.FnDecl)
+	if r.nonConstant() {
+		return nil
+	}
 	if !ok {
 		r.bug(x)
 		return nil
@@ -112,6 +118,9 @@ type fnCall struct {
 
 // invokeFn runs a user function or method (EVALUATION.md §3.3, §12.1, TYPES.md §6.2).
 func (r *run) invokeFn(c fnCall) value.Value {
+	if r.nonConstant() {
+		return nil
+	}
 	d, isFn := c.obj.Decl().(*syntax.FnDecl)
 	ft, isFt := c.obj.Type().(*types.FuncType)
 	if !isFn || !isFt || len(ft.Params) != len(d.Params) || len(c.args) != len(d.Params) {
@@ -161,18 +170,38 @@ func (r *run) calleeFrame(c fnCall) *frame {
 	return fr.under(r.fr)
 }
 
-// enter checks the call depth of the invocation, every root's live frames counted, in its
-// limit and its "more frames" alike (E4402, DECISIONS 195, 197); then spends the invocation's step.
+// enter checks the call depth (within), then spends the invocation's step (EVALUATION.md §3.3, §12.1).
 func (r *run) enter(site source.Span) bool {
-	if r.ev.depth >= maxDepth {
-		if r.ev.vec != nil {
-			r.ev.cut(DepthLimit)
-		}
-		stack, _ := r.frames()
-		r.abort(diag.E4402.At(site).Stack(stack).MoreFrames(r.ev.depth - len(stack)))
+	return r.within(site) && r.spend(1, func() source.Span { return site })
+}
+
+// within is E4402 at site once the live frames reach the limit; more frames omit implicit ones (DECISIONS 195, 197, 210).
+func (r *run) within(site source.Span) bool {
+	if r.ev.depth < maxDepth {
+		return true
+	}
+	if r.ev.vec != nil {
+		r.ev.cut(DepthLimit)
+	}
+	stack, _ := r.frames()
+	r.abort(diag.E4402.At(site).Stack(stack).MoreFrames(r.ev.depth - r.ev.implicit - len(stack)))
+	return false
+}
+
+// nest opens an implicit frame, a field default or a where run: counted, never listed, no step (DECISIONS 210).
+func (r *run) nest(site source.Span) bool {
+	if !r.within(site) {
 		return false
 	}
-	return r.spend(1, func() source.Span { return site })
+	r.ev.depth++
+	r.ev.implicit++
+	return true
+}
+
+// unnest closes the implicit frame nest opened.
+func (r *run) unnest() {
+	r.ev.depth--
+	r.ev.implicit--
 }
 
 // params binds the parameters in the callee's frame, a missing one to its default.

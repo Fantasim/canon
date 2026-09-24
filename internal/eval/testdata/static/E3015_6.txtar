@@ -1,0 +1,16 @@
+TYPES.md §15 (E3015), DECISIONS 157, 210: a refinement bound that is a `load` is reported by the
+checker; the fold reaching the load stops without a finding and never runs it.
+-- a/a.canon --
+/// A.
+package a
+
+/// A potion.
+record Potion {
+  /// Hit points restored.
+  heal: Int(..=load("@resource/cap.json"))
+}
+-- findings.txt --
+error[E3015]  a/a.canon:7:16
+  this refinement bound must be a constant expression
+
+1 error, 0 warnings in 1 package (…)

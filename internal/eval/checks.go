@@ -52,9 +52,9 @@ func (e *Evaluator) Run(ctx context.Context, c *syntax.CheckDecl, self value.Val
 	return CheckRun{Failed: true, Message: templateText(file, c.Message)}
 }
 
-// brokenCheck reports a check whose record or variant, or which itself, is broken (TYPES.md §1).
+// brokenCheck reports a check which is broken (one naming a broken fn included), or whose record or variant is (TYPES.md §1).
 func (e *Evaluator) brokenCheck(c *syntax.CheckDecl) bool {
-	if e.info == nil {
+	if e.info == nil || e.index.broken[c] {
 		return true
 	}
 	owner := e.index.owner[c]

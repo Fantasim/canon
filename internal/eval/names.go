@@ -106,12 +106,23 @@ func (r *run) selfField(name string) value.Value {
 
 // global forces a const or let; a poisoned one aborts the reader silently (EVALUATION.md §7.2).
 func (r *run) global(obj check.Object, at syntax.Expr) value.Value {
+	if obj.Kind() == check.ObjLet && r.nonConstant() {
+		return nil
+	}
 	v, ok := r.ev.force(r.ctx, r.ev.state(obj), r, at)
 	if !ok {
 		r.readPoisoned(obj.Pkg(), obj.Name(), at)
 		return nil
 	}
 	return r.read(v)
+}
+
+// nonConstant aborts a fold, silently, at what is not a constant expression; false outside a fold (TYPES.md §15, DECISIONS 150).
+func (r *run) nonConstant() bool {
+	if r.ev.constant {
+		r.stop()
+	}
+	return r.ev.constant
 }
 
 // readPoisoned aborts the run at a read of poisoned pkg.name, which a test names (EVALUATION.md §7.2).

@@ -7,13 +7,14 @@ import (
 
 // index locates what the checked program leaves implicit: the package of each file, the file
 // of each record, variant, function, check, test and where predicate, the record or variant
-// declaring each check, and the entry declarations of each let.
+// declaring each check, the entry declarations of each let, and the broken declarations.
 type index struct {
 	pkg     map[*syntax.File]string
 	file    map[syntax.Node]*syntax.File
 	owner   map[*syntax.CheckDecl]syntax.Node
 	entries map[check.Object][]check.Object
 	decls   map[syntax.Node]check.Object
+	broken  map[syntax.Node]bool
 	written *writtenIndex
 }
 
@@ -24,6 +25,7 @@ func emptyIndex() *index {
 		owner:   map[*syntax.CheckDecl]syntax.Node{},
 		entries: map[check.Object][]check.Object{},
 		decls:   map[syntax.Node]check.Object{},
+		broken:  map[syntax.Node]bool{},
 	}
 }
 
@@ -36,8 +38,21 @@ func buildIndex(prog *check.Program) *index {
 		}
 		x.addDecls(pkg, prog.Info)
 	}
+	x.addBroken(prog.Info)
 	x.written = &writtenIndex{prog: prog}
 	return x
+}
+
+// addBroken records the declaration of each broken object, with the checks of records and variants no Decls lists (TYPES.md §1).
+func (x *index) addBroken(info *check.Info) {
+	if info == nil {
+		return
+	}
+	for obj, broken := range info.Broken { //canon:unordered a set of declarations, read by lookup only
+		if broken && obj != nil {
+			x.broken[obj.Decl()] = true
+		}
+	}
 }
 
 // addDecls records a package's declarations by node, and each `entry` under its let.

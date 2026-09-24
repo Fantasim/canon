@@ -1,0 +1,20 @@
+TYPES.md §15, §12.1 (E3015): a parameter default that reads a let is reported by the checker
+only; the folder never forces the let.
+-- pipeline/potion.canon --
+/// Potions.
+package pipeline
+
+/// The heal of a potion, capped.
+fn heal(cap: Int = zzLimit) -> Int {
+  return cap
+}
+
+local let zzLimit: Int = 3
+
+/// The heal.
+let healed: Int = heal()
+-- findings.txt --
+error[E3015]  pipeline/potion.canon:5:20
+  this parameter default must be a constant expression
+
+1 error, 0 warnings in 1 package (…)
