@@ -39,7 +39,7 @@ block in [state.md](state.md).
 - [x] Accept (§6 M1): `canon check teamboard` prints its `findings.txt`; `canon build teamboard
   sovcommon...` equals the goldens and a new `expected/MANIFEST`; generated Go builds on the current
   Go (DECISIONS 205); `canon.lock` equals its golden, `E6001` on delete/rename, retire passes;
-  the sovcommon `teamboard` integration waits on the advanced-test gate (DECISIONS 189, 206).
+  the sovcommon `teamboard` integration is deferred by Louis until a full release after M7 (log-2026-09-24).
 
 ## M1.5 — Generated-program testing (QA, DECISIONS 200)
 

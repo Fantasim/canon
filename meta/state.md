@@ -4,7 +4,7 @@ Updated: 2026-09-24, end of day (Louis asked for a clean stop to check the proje
 
 ## Current focus
 
-**M1 accepted** (items 1–5; item 6 — sovcommon teamboard — waits on the 206 integration gate).
+**M1 accepted** (items 1–5; item 6 — sovcommon teamboard — deferred by Louis until a full release after M7).
 **M2 substantially landed, acceptance mixed** (§6 M2, `spec/IMPLEMENTATION-PLAN.md`):
 1. pipeline byte-exact — done, `examples/pipeline/expected/` regenerated and reviewed (GEN-01,
    [handoff/2026-09-24-GEN-01-pipeline-diff.md](handoff/2026-09-24-GEN-01-pipeline-diff.md),
