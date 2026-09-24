@@ -153,40 +153,6 @@ emit ts { out: "out/t.ts", mode: zzmode }
 	})
 }
 
-// TestRefusedImportIsMatchedByPath is DECISIONS 213: the importer drops the E8011 of a dependency's written package that check refused (b, E8009), matched by import path, so a second dependency whose default package from out has the same text (c) keeps its E8011 at the importer.
-func TestRefusedImportIsMatchedByPath(t *testing.T) {
-	requireFindings(t, []string{"b/b.canon", `package b
-
-/// A colour.
-enum Tone { red, blue }
-
-emit go { out: "@features/b", package: "1b" }
-`, "c/c.canon", `package c
-
-/// A size.
-enum Size { small, large }
-
-emit go { out: "@features/c/1b" }
-`, "a/a.canon", `package a
-
-import b { Tone }
-import c { Size }
-
-/// A badge.
-record Badge {
-  /// Its colour.
-  tone: Tone
-  /// Its size.
-  size: Size
-}
-
-emit go { out: "@features/a", package: "a" }
-`}, []wantAt{
-		{string(diag.E8009.Def().Code), "b/b.canon"},
-		{string(diag.E8011.Def().Code), "a/a.canon"},
-	})
-}
-
 // wantAt is a finding a program must report: its code, in a file.
 type wantAt struct{ code, file string }
 

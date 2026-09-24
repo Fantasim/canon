@@ -58,12 +58,16 @@ func (k *entryKeys) add(o *object) (*object, bool) {
 	return nil, true
 }
 
-// newObject records a declaration of pkg in file; its id orders facts and hints.
+// newObject records a declaration of pkg in file; its id orders facts and hints. A declaration
+// holding a syntax error is broken from the start (syntaxErrors).
 func (c *checker) newObject(kind ObjKind, name string, pkg *pkgState, decl syntax.Node, file *syntax.File) *object {
 	c.nextID++
 	o := &object{kind: kind, name: name, decl: decl, file: file, id: c.nextID}
 	if pkg != nil {
 		o.pkg = pkg.path
+	}
+	if c.syntaxHeld[decl] {
+		c.breakObj(o) // DECISIONS 214: it holds a syntax error
 	}
 	return o
 }

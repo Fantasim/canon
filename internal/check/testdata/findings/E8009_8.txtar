@@ -1,0 +1,10 @@
+CODEGEN.md §2.1, DECISIONS 213: the default Go package, the last element of out, that is a Go keyword.
+-- a/a.canon --
+package a
+
+emit go { out: "@features/gen/func/", mode: data }
+-- findings.txt --
+error[E8009]  a/a.canon:3:6
+  invalid package "func" for emit go: not a Go identifier, or a Go keyword
+
+1 error, 0 warnings in 1 package (…)

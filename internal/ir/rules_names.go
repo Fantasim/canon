@@ -1,7 +1,6 @@
 package ir
 
 import (
-	"go/token"
 	"slices"
 	"strings"
 
@@ -36,12 +35,12 @@ func (s *stage) checkGoNames(u *unit) {
 	reportNames(u, s.itemSpans(es), problems, check.TargetGo, map[any]bool{})
 }
 
-// refusedImport reports the import name of a dependency whose go emit writes a package check refused (E8009 at that emit, decision 213), matched by its import path, never by the name's text; a package defaulted from out is not validated by check yet, so its E8011 stays at the importer.
+// refusedImport reports the import name of a dependency whose go package check refused at that emit (E8009), written or defaulted from out (decisions 213, 215), matched by its import path, never by the name's text: the importer adds nothing to it.
 func (s *stage) refusedImport(u *unit) func(GoNameProblem) bool {
 	refused := map[string]bool{}
 	for _, imp := range u.p.Imports {
 		if dep := s.units[imp.Name]; dep != nil {
-			if es := emitFor(dep, TargetGo); es != nil && es.written && !token.IsIdentifier(es.e.GoPackage) {
+			if es := emitFor(dep, TargetGo); es != nil && es.refused {
 				refused[es.e.GoImport] = true
 			}
 		}

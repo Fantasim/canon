@@ -168,7 +168,9 @@ const (
 	hyphen       = "-"
 	dollar       = "$"
 	rootSigil    = "@"
-	rootDir      = dot // the project directory as a display path (API.md §1.3)
+	rootDir      = dot      // the project directory as a display path (API.md §1.3)
+	syntaxOwner  = "syntax" // the registry owner of the lexer's and parser's codes (DECISIONS 214)
+	layoutAnchor = dot      // a stand-in project directory: a name is read from out as declared
 	cppScope     = "::"
 	optDotText   = "?."
 	forceText    = "!"
@@ -482,3 +484,8 @@ const (
 
 	elidedLiteral sourceText = "{ … }"
 )
+
+// literalCodes are the lexer's findings inside a literal token (DECISIONS 215).
+var literalCodes = []interface{ Def() *diag.Def }{
+	diag.E1101, diag.E1102, diag.E1107, diag.E1109, diag.E1110, diag.E1111, diag.E1112, diag.E1113, diag.E1114, diag.E1122, diag.E1124,
+}

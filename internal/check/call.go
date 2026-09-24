@@ -74,18 +74,18 @@ func isLambda(e syntax.Expr) bool {
 	}
 }
 
-// callUser calls a top-level function or a method (TYPES.md §12.2).
+// callUser calls a function or method, never from a constant or a default (TYPES.md §12.2, §15).
 func (c *checker) callUser(env *env, x *syntax.CallExpr, o *object) types.Type {
-	ft, ok := o.typ.(*types.FuncType)
-	if !ok {
-		c.argsAlone(env, x)
-		return types.ErrorType
-	}
 	switch {
 	case env.what != noConstant:
 		c.report(env, diag.E3015.At(env.span(x), env.what))
 	case env.fields >= 0:
 		c.report(env, diag.E3010.At(env.span(x)))
+	}
+	ft, ok := o.typ.(*types.FuncType)
+	if !ok {
+		c.argsAlone(env, x)
+		return types.ErrorType
 	}
 	kind := CalleeFn
 	if o.kind == ObjMethod {
@@ -258,6 +258,7 @@ func (c *checker) methodOn(env *env, x *syntax.CallExpr, s *syntax.SelectorExpr,
 		c.info.Selections[s] = &Selection{Kind: SelMethod, Obj: m, Recv: t, Deref: deref}
 		c.info.NameUses[s.Name] = m
 		c.info.Types[s] = m.typ
+		c.dependsOn(env, m) // DECISIONS 209: a broken method breaks its callers
 		return c.callUser(env, x, m)
 	}
 	sel := &Selection{Kind: SelMethod, Recv: t, Deref: deref}

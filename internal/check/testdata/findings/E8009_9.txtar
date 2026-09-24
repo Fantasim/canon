@@ -1,0 +1,10 @@
+CODEGEN.md §2.1, DECISIONS 215: out resolves to the project directory itself and no package is written.
+-- a/a.canon --
+package a
+
+emit go { out: "../" }
+-- findings.txt --
+error[E8009]  a/a.canon:3:6
+  invalid package "" for emit go: not a Go identifier, or a Go keyword
+
+1 error, 0 warnings in 1 package (…)

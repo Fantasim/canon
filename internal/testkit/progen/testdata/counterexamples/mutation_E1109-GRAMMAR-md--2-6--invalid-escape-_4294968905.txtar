@@ -2,7 +2,6 @@ suite mutation
 name E1109 GRAMMAR.md §2.6 (invalid escape)
 case 1608
 seed 4294968905
-open check
 sig extra E5001
 packages service.resourcestudio
 want E1109 service/resourcestudio/resourcestudio.canon 330 332 check

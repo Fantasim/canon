@@ -22,6 +22,7 @@ func Check(ctx context.Context, proj *project.Project, files []*syntax.File, bag
 	}
 	c := newChecker(ctx, proj, bags, fold)
 	c.loadPackages(files)
+	c.syntaxErrors()
 	for _, p := range c.sorted {
 		c.collect(p)
 	}
@@ -82,6 +83,10 @@ type checker struct {
 	initDone     map[*object]bool
 	boundSpans   map[*types.Bound]source.Span
 	wheres       []whereJob
+	syntaxHeld   map[syntax.Node]bool            // declarations holding a syntax error (DECISIONS 214)
+	reported     int                             // the errors report added so far
+	literalErrs  map[source.FileID][]source.Span // lexer errors inside literals (DECISIONS 215)
+	layout       *project.Layout                 // the roots as written, no --root override (DECISIONS 215)
 }
 
 func newChecker(ctx context.Context, proj *project.Project, bags Bags, fold Folder) *checker {
@@ -110,6 +115,8 @@ func newChecker(ctx context.Context, proj *project.Project, bags Bags, fold Fold
 		fieldJobs:    map[*types.Field]func(){},
 		initDone:     map[*object]bool{},
 		boundSpans:   map[*types.Bound]source.Span{},
+		syntaxHeld:   map[syntax.Node]bool{},
+		literalErrs:  map[source.FileID][]source.Span{},
 	}
 	c.universe = c.newUniverse()
 	return c
@@ -135,6 +142,7 @@ func newInfo() *Info {
 
 // report adds an error found in env's declaration, which becomes broken (TYPES.md §1).
 func (c *checker) report(env *env, b *diag.Builder) {
+	c.reported++
 	b.Report(env.pkg.bag)
 	c.breakObj(env.owner)
 }

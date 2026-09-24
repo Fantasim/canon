@@ -2,11 +2,11 @@ suite mutation
 name E1134 GRAMMAR.md §5.10 (break outside a loop)
 case 44
 seed 4294967341
-open check
-sig internal evaluation met a state the checker excludes: FnDecl
+open progen
+sig extra E1116/token, E1117, E8004, W1002
 packages teamboard
 want E1134 teamboard/taxonomy.canon 708 713 check
-failure internal evaluation met a state the checker excludes: FnDecl at teamboard/taxonomy.canon:41:1 evaluation met a state the checker excludes: FnDecl at teamboard/taxonomy.canon:41:1 evaluation met a state the checker excludes: FnDecl at teamboard/taxonomy.canon:41:1
+failure extra [E1117 teamboard/taxonomy.canon:3:28 "missing separator: put \",\" or a new line between items"; W1002 teamboard/taxonomy.canon:4:8 "record AreaGroup has no doc comment"; W1002 teamboard/taxonomy.canon:5:3 "field label has no doc comment"; W1002 teamboard/taxonomy.canon:7:8 "record Area has no doc comment"; W1002 teamboard/taxonomy.canon:8:3 "field group has no doc comment"; W1002 teamboard/taxonomy.canon:9:3 "field tone has no doc comment"; W1002 teamboard/taxonomy.canon:10:3 "field icon has no doc comment"; W1002 teamboard/taxonomy.canon:11:3 "field label has no doc comment"; W1002 teamboard/taxonomy.canon:12:3 "field minRole has no doc comment"; E1116 teamboard/taxonomy.canon:24:5 "expected NL, \",\", \"}\"; found {"; E1117 teamboard/taxonomy.canon:34:3 "missing separator: put \",\" or a new line between items"; E1116 teamboard/taxonomy.canon:35:19 "expected \"in\"; found areas"; W1002 teamboard/taxonomy.canon:37:8 "record AreaSection has no doc comment"; W1002 teamboard/taxonomy.canon:38:3 "field group has no doc comment"; W1002 teamboard/taxonomy.canon:39:3 "field areas has no doc comment"; W1002 teamboard/taxonomy.canon:41:11 "function groupedAreasVisibleTo has no doc comment"; E1117 teamboard/taxonomy.canon:44:16 "missing separator: put \",\" or a new line between items"; E1116 teamboard/taxonomy.canon:45:11 "expected \"in\"; found areaGroups"; E8004 teamboard/taxonomy.canon:48:6 "sovcommon.roles.Role of package sovcommon.roles is used by this ts emit, but sovcommon.roles has no ts emit"; E8004 teamboard/taxonomy.canon:48:6 "sovcommon.ui.Tone of package sovcommon.ui is used by this ts emit, but sovcommon.ui has no ts emit"] besides [E1134 teamboard/taxonomy.canon:42:3 "break outside a loop"]
 -- project.canon --
 project sovereign {
   canon: "0.1"

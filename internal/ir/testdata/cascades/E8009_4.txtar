@@ -1,4 +1,4 @@
-DECISIONS 213, CODEGEN.md §2.1, §3.5: a go package defaulted from out is not validated by check yet, so a dependency's default that is no Go identifier stays E8011 at its importer.
+DECISIONS 213, 215, CODEGEN.md §2.1, §3.5: a go package defaulted from out that check refused at its own emit (E8009) is not refused again as the import name of the package's importer (no E8011 there).
 -- b/b.canon --
 package b
 
@@ -19,7 +19,7 @@ record Badge {
 
 emit go { out: "@features/a", package: "a" }
 -- findings.txt --
-error[E8011]  a/a.canon:11:6
-  1b is not a valid go identifier for @go(name:)
+error[E8009]  b/b.canon:6:6
+  invalid package "1b" for emit go: not a Go identifier, or a Go keyword
 
 1 error, 0 warnings in 2 packages (…)

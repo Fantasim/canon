@@ -63,3 +63,35 @@ func (c *checker) notConstant(env *env, e syntax.Expr) bool {
 	}
 	return false
 }
+
+// readsBroken reports e naming a declaration broken now, before propagateBroken (TYPES.md §1).
+func (c *checker) readsBroken(e syntax.Expr) bool {
+	seen := map[*object]bool{}
+	found := false
+	syntax.Inspect(e, func(n syntax.Node) bool {
+		var o Object
+		switch x := n.(type) {
+		case *syntax.IdentExpr:
+			o = c.info.Uses[x]
+		case *syntax.Ident:
+			o = c.info.NameUses[x]
+		}
+		if obj, isObj := o.(*object); isObj && c.brokenNow(obj, seen) {
+			found = true
+		}
+		return !found
+	})
+	return found
+}
+
+// brokenNow reports o broken, or naming a broken declaration through its dependencies.
+func (c *checker) brokenNow(o *object, seen map[*object]bool) bool {
+	if c.info.Broken[o] {
+		return true
+	}
+	if seen[o] {
+		return false
+	}
+	seen[o] = true
+	return slices.ContainsFunc(c.deps[o], func(d *object) bool { return c.brokenNow(d, seen) })
+}

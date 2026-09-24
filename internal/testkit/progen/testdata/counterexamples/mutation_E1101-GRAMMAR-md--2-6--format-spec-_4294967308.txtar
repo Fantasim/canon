@@ -2,7 +2,6 @@ suite mutation
 name E1101 GRAMMAR.md §2.6 (format spec)
 case 11
 seed 4294967308
-open syntax
 sig extra E5002
 packages teamboard
 want E1101 teamboard/taxonomy.canon 5502 5504 check

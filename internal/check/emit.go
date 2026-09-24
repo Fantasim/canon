@@ -41,13 +41,14 @@ func (c *checker) checkEmit(env *env, e *syntax.EmitDecl, seen map[string]bool) 
 	}
 	seen[target] = true
 	values := -1
-	out := ""
+	out, named := "", false
 	for _, it := range e.Options.Items {
 		fi, isField := it.(*syntax.FieldItem)
 		if !isField || !slices.Contains(spec.options, fi.Name.Name) {
 			c.report(env, diag.E8003.AtOption(env.span(it), itemName(it), target))
 			continue
 		}
+		named = named || fi.Name.Name == OptPackage
 		switch fi.Name.Name {
 		case OptMode:
 			c.emitMode(env, fi, target, spec.modes)
@@ -61,6 +62,17 @@ func (c *checker) checkEmit(env *env, e *syntax.EmitDecl, seen map[string]bool) 
 		}
 	}
 	c.emitFileMode(env, e, target, out, values)
+	if target == TargetGo && !named {
+		c.defaultGoPackage(env, e, out)
+	}
+}
+
+// defaultGoPackage validates the last element of out as the package (CODEGEN.md §2.1, DECISIONS 213).
+func (c *checker) defaultGoPackage(env *env, e *syntax.EmitDecl, out string) {
+	name, known := c.lastElement(env, out)
+	if known && (!identRe.MatchString(name) || goKeywords[name]) {
+		c.report(env, diag.E8009.AtPackage(env.span(e.Target), name))
+	}
 }
 
 // itemName is the name of an emit option item as written.

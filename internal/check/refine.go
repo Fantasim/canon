@@ -85,7 +85,7 @@ func boundType(base types.Type) (types.Type, bool) {
 	}
 }
 
-// checkBounds types each bound as a constant of t and folds it; false when one did not fold.
+// checkBounds types and folds each bound; one in error or naming a broken one is not folded (TYPES.md §1).
 func (c *checker) checkBounds(env *env, r *syntax.RangeExpr, t types.Type) (lo, hi value.Value, ok bool) {
 	ce := env.constant(diag.KindRefinementBound)
 	ok = true
@@ -93,8 +93,13 @@ func (c *checker) checkBounds(env *env, r *syntax.RangeExpr, t types.Type) (lo, 
 		if e == nil {
 			return nil
 		}
-		c.expr(ce, e, t)
+		before := c.reported // counting here is sound: a const typed lazily during the bound is a dependency of the bound's owner
+		got := c.expr(ce, e, t)
 		if t.Kind() == types.Error {
+			return nil
+		}
+		if c.reported != before || got.Kind() == types.Error || c.readsBroken(e) {
+			ok = false
 			return nil
 		}
 		v, folded := c.foldConst(ce, e)

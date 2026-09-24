@@ -90,6 +90,12 @@ func (c *checker) exprNode(env *env, e syntax.Expr, want types.Type) types.Type 
 
 // literalNode types literals, collection literals and the other primaries.
 func (c *checker) literalNode(env *env, e syntax.Expr, want types.Type) types.Type {
+	if leafLiteral(e) && c.lexError(env, e) {
+		if s, ok := e.(*syntax.StringLit); ok {
+			c.interpolations(env, s)
+		}
+		return types.ErrorType
+	}
 	switch e := e.(type) {
 	case *syntax.IntLit:
 		return c.intLit(e, want)
@@ -161,17 +167,17 @@ func (c *checker) rawString(_ *env, e *syntax.RawStringLit, want types.Type) typ
 	return c.stringValue(e, want)
 }
 
-// stringValue is the type of a string literal against want: a table key or a string-keyed
-// entry for a ref, the union itself for a literal of a string-literal union (TYP-09).
+// stringValue types a string literal against want: a union's literal first (TYPES.md §13.2), then a key.
 func (c *checker) stringValue(e syntax.Expr, want types.Type) types.Type {
-	if coll := c.keyTarget(want); coll != nil && !keyedByInt(coll) && interpolationFree(e) {
+	if !interpolationFree(e) {
+		return types.StringType
+	}
+	if u, ok := unwrap(want).(*types.LitUnionType); ok && slices.Contains(u.Literals, constText(e.(syntax.StrLit))) {
+		return want
+	}
+	if coll := c.keyTarget(want); coll != nil && !keyedByInt(coll) {
 		c.info.Keys[e] = coll
 		return refTo(want)
-	}
-	if u, ok := unwrap(want).(*types.LitUnionType); ok && interpolationFree(e) {
-		if slices.Contains(u.Literals, constText(e.(syntax.StrLit))) {
-			return want
-		}
 	}
 	return types.StringType
 }
