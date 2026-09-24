@@ -1740,6 +1740,18 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     `data`/`embedded`/`types` go emit is checked only for its overrides (`E8011`) until M2 gives
     those modes their plan.
 
+204. **Conformance vectors where CONFORMANCE.md is silent (the conform unit).** For a Float bound
+    the neighbours are the adjacent representable values (`math.Nextafter`), and an exclusive
+    upper bound `..b` contributes b's predecessor, b and its successor (§6.2's `b − 1` is for
+    integers). To collect §6.1's calls, `build` runs the package's tests with a budget of their
+    own, discards their findings and keeps the calls made before any stop (EVALUATION §1's "build
+    does not run tests" means reports nothing). A value first forced inside a vector evaluation
+    is charged to that vector's cap. A vector stopped by a poisoned read cannot happen in a build
+    that emits (errors block, 196); `conform` returns `ErrNoOutcome` as an internal error. A
+    translated fn reading a path with no candidate rule (an input field, a ref, a method of self)
+    is refused at stage E with the E900x code whose meaning fits, never at build time as a Go
+    error; if none fits, it stays a Louis-call.
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.
