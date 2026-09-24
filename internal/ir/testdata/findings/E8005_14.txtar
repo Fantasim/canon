@@ -1,0 +1,30 @@
+CODEGEN.md §5.3, §3.5: two public tables of one record both give it the id type ThingID, one package-level name (gen/go's "id type of both").
+-- a/a.canon --
+package a
+
+/// A thing.
+record Thing {
+  /// Its size.
+  n: Int
+}
+
+/// Some things.
+let small: table Thing = {
+  x { n: 1 }
+}
+
+/// Other things.
+let large: table Thing = {
+  y { n: 2 }
+}
+
+emit go { out: "@features/a", package: "a" }
+-- a.small.json --
+{ "x": { "n": 1 } }
+-- a.large.json --
+{ "y": { "n": 2 } }
+-- findings.txt --
+error[E8005]  a/a.canon:15:5
+  go: ThingID is generated for both small and large
+
+1 error, 0 warnings in 1 package (…)

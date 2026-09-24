@@ -1,0 +1,21 @@
+CODEGEN.md §3.3, §3.5 (translated names in the Go name plan): a field healFor and a translated method heal_for are both the Go method HealFor of Potion.
+-- a/a.canon --
+package a
+
+/// A potion.
+record Potion {
+  /// Its heal.
+  heal: Int
+  /// A cached value.
+  healFor: Int
+
+  /// What n gets back.
+  export fn heal_for(self, n: Int) -> Int { return min(heal, n) }
+}
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+error[E8005]  a/a.canon:11:13
+  go: HealFor is generated for both a.Potion.healFor and a.Potion.heal_for
+
+1 error, 0 warnings in 1 package (…)

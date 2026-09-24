@@ -1,0 +1,33 @@
+CONFORMANCE.md §2.1 (log-2026-09-24 "gen/go translated fns"): gen/go writes a translated fn returning an entry named through its table (`tiers.high`), in baked and data mode, with the plan's names.
+-- a/a.canon --
+/// Tiers.
+package a
+
+/// A tier.
+record Tier {
+  /// Its rank.
+  rank: Int
+}
+
+/// The tiers.
+let tiers: table Tier = {
+  low { rank: 1 }
+  high { rank: 2 }
+}
+
+/// The tier for n.
+export fn tierFor(n: Int) -> ref Tier { return if n > 1 { tiers.high } else { tiers.low } }
+
+emit go { out: "@features/a", package: "a" }
+-- a.tiers.json --
+{ "low": { "rank": 1 }, "high": { "rank": 2 } }
+-- plan.txt --
+TestTierForConformance vectors: code n want
+Tier: ID Rank Retired id rank retired
+TierID: String
+Tiers: All At Find Get Len rows
+aData: tiers
+conformance imports: math rt testing
+package: GetTiers ParseTierID TestTierForConformance Tier TierFor TierID TierIDHigh TierIDLow Tiers aData aValues buildA canonCatch iter strconv sync
+tierFor(): n
+0 errors, 0 warnings in 1 package (…)

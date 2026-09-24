@@ -33,6 +33,7 @@ func (s *stage) validate(u *unit) {
 		s.checkBranches(u)
 		s.checkOverrideNames(u)
 		s.checkGoNames(u)
+		s.checkCppNames(u)
 		s.translateFns(u)
 	}
 	for _, es := range u.emits {
@@ -203,8 +204,9 @@ func (s *stage) checkFingerprinted(u *unit, es *emitSite) {
 	}
 }
 
-// crossPackage is E8008: two Go emits of the build write into one directory (CODEGEN.md §2.3).
+// crossPackage is E8008, two Go emits of the build writing into one directory (CODEGEN.md §2.3), and E8005 for two packages declaring one name in a C++ namespace they share (§3.5).
 func (s *stage) crossPackage() {
+	s.sharedCppNames()
 	byDir := map[string]*unit{}
 	for _, u := range s.order {
 		if !u.selected {

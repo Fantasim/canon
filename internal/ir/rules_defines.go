@@ -1,16 +1,16 @@
 package ir
 
 import (
+	"slices"
+
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/types"
 )
 
-// checkDefineRefs is E8012 for a baked go emit: a ref into a load.defines table, which gen/go does not generate
-// yet (decisions 180, 194), in a field, value, constant, export fn or dependent branch, through another package's
-// types too, as the IR's Defines are gathered.
+// checkDefineRefs is E8012 for an emit whose generator does not write a ref into a load.defines table yet (decisions 180, 194; definesRefused), in a field, value, constant, export fn or dependent branch, through another package's types too, as the IR's Defines are gathered.
 func (s *stage) checkDefineRefs(u *unit) {
-	if !bakedFor(u, TargetGo) {
+	if !slices.ContainsFunc(u.emits, func(es *emitSite) bool { return definesRefused[es.e.Target][es.e.Mode] }) {
 		return
 	}
 	own := u.p.Name

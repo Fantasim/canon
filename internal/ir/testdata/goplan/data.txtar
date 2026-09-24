@@ -1,0 +1,109 @@
+CODEGEN.md §3.3–§3.5, §5.8–§5.11, §6.1; decisions 194, 203: a data-mode go emit's name plan holds exactly the names gen/go writes: schema constants, string id types, containers with their FindBy indexes, loaders, the snapshot and store, decoders, resolvers, translated fns and the conformance test.
+-- shop/shop.canon --
+/// Shops.
+package shop
+
+/// A tone.
+enum Tone { soft, loud }
+
+/// A reward.
+variant Reward @json(tag: "kind") {
+  /// Gold.
+  gold {
+    /// How much.
+    amount: Int
+  }
+  /// Nothing.
+  nothing
+}
+
+/// An item.
+record Item {
+  /// Its price.
+  price: Int
+  /// Its tone.
+  tone: Tone
+  /// Its next item.
+  next: ref items?
+  /// Related items.
+  related: [ref items]
+  /// Its reward.
+  reward: Reward
+  /// Waiting time.
+  cooldown: Duration
+
+  /// Whether it is dear.
+  export fn dear(self) -> Bool { return price > 100 }
+
+  /// The price by tone.
+  export fn priceFor(self, t: Tone) -> Int { return if t == Tone.soft { price } else { price * 2 } }
+
+  /// The item after it by tone.
+  export fn after(self, t: Tone) -> ref items? { return next }
+
+  /// Its price times n.
+  export fn times(self, n: Int) -> Int { return price * n }
+}
+
+/// A shop.
+record Shop {
+  /// Its name.
+  name: String
+  /// Its best item.
+  best: ref items
+}
+
+/// The items.
+let items: table Item = {
+  cheap { price: 10, tone: soft, related: [], reward: nothing, cooldown: 1s }
+  dear { price: 200, tone: loud, next: cheap, related: [cheap], reward: gold { amount: 3 }, cooldown: 2s }
+}
+
+/// The shops.
+@reload
+let shops: [Shop] keyed by name = [{ name: "a", best: cheap }]
+
+/// Doubles x.
+export fn twice(x: Int) -> Int { return x * 2 }
+
+/// The top price.
+const MAX_PRICE = 1_000
+
+emit go { out: "@features/shop", package: "shop", mode: data }
+emit json { out: "out/" }
+-- shop.items.json --
+{
+  "cheap": { "price": 10, "tone": "soft", "related": [], "reward": { "kind": "nothing" }, "cooldown": 1000 },
+  "dear": { "price": 200, "tone": "loud", "next": "cheap", "related": ["cheap"], "reward": { "kind": "gold", "amount": 3 }, "cooldown": 2000 }
+}
+-- shop.shops.json --
+[{ "name": "a", "best": "cheap" }]
+-- shop.dear.calls.json --
+{ "": true }
+-- shop.priceFor.calls.json --
+{ "soft": 10, "loud": 20 }
+-- shop.after.calls.json --
+{ "soft": "cheap", "loud": null }
+-- shop.MAX_PRICE.json --
+1000
+-- plan.txt --
+Item: After AfterID Cooldown Dear ID Next NextID Price PriceFor Related RelatedIDs Retired Reward Times Tone after after_id cooldown dear id next next_id next_ok price priceFor related related_ids retired reward tone
+Items: All At Find Len rows
+Reward: AsGold Kind kind value
+RewardGold: Amount amount
+RewardKind: String Wire
+Shop: BestID Name best_id name
+ShopSnapshot: Shops shops
+ShopStore: Current Reload current
+Shops: All At Find Len rows
+TestItemTimesConformance vectors: code n price want
+TestTwiceConformance vectors: code want x
+Tone: String Wire
+conformance imports: math rt testing
+locals: a af bad c ctx dir dst empty err f first hasK hasV hi i id k key keys kr lo m marker mf n name obj ok out path r raw retired rows s tag v values vr want
+package: Item ItemID Items ItemsSchema LoadItems LoadShopSnapshot MaxPrice ParseRewardKind ParseTone Reward RewardGold RewardKind RewardKindGold RewardKindNothing Shop ShopSnapshot ShopStore Shops ShopsSchema Store TestItemTimesConformance TestTwiceConformance Tone ToneLoud ToneMembers ToneSoft Twice atomic canonCatch decodeItem decodeReward decodeRewardGold decodeShop fmt itemTimes iter json jsonCell jsonInt jsonKeys jsonMay jsonNeed jsonObject jsonRead jsonRowID jsonSame jsonSlot loadItems loadShops resolveItem rt slices strconv strings time
+shop.Item.after(): self t
+shop.Item.priceFor(): self t
+shop.Item.times(): n price
+twice(): x
+0 errors, 0 warnings in 1 package (…)

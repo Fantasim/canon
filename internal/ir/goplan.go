@@ -1,26 +1,30 @@
 package ir
 
 import (
+	"go/token"
 	"slices"
 	"strings"
 
 	"github.com/fantasim/canonlang/internal/types"
 )
 
-// GoNamePlan is every Go name baked Go declares for a package and its go emit, per scope (CODEGEN.md §3.3–§3.5): stage E reports E8005 and E8011 from its problems and gen/go writes every name from its lookups (decision 194); a lookup also names another package's type, member or id.
+// GoNamePlan is every Go name gen/go declares for a package and its go emit, per scope (CODEGEN.md §3.3–§3.5), in baked and data mode, translated fns and their conformance test included: stage E reports E8005 and E8011 from its problems and gen/go writes every name from its lookups (decision 194); a lookup also names another package's type, member or id.
 type GoNamePlan struct {
-	p        *Package
-	e        *Emit
-	emitted  []*Value
-	byValue  map[string]*Value
-	pkgFns   map[*ExportFn]bool
-	imports  map[string]string // the Go package name of each imported Canon package's go emit → its import path
-	scopes   []*goScope
-	problems []GoNameProblem
-	reported map[originPair]bool // the pairs of origins already reported colliding: one E8005 per cause (decision 203)
+	p       *Package
+	e       *Emit
+	emitted []*Value
+	byValue map[string]*Value
+	pkgFns  map[*ExportFn]bool
+	imports map[string]string // the Go package name of each imported Canon package's go emit → its import path
+	namer
+	classOf  map[any]any    // each own field and export method → its *Record or *Case
+	goNameOf map[any]string // each own record, variant and case with fields → its Go type
+	data     *goData        // data mode's layout (CODEGEN.md §5.8, §5.11); nil in baked mode
+	pures    map[*ExportFn]*GoPure
+	pkgNames map[string]bool // the package-level names a translated body may name unqualified
 }
 
-// GoNameProblem is a name gen/go cannot declare (CODEGEN.md §3.5, decision 182). Item is the IR node Origin names (a Type, *EnumMember, *Case, *Field, *ExportFn, *Param, *Const or *Value), nil for the package or an import.
+// GoNameProblem is a name gen/go or gen/cpp cannot declare (CODEGEN.md §3.5, decision 182); both plans report it. Item is the IR node Origin names (a Type, *EnumMember, *Case, *Field, *ExportFn, *Param, *Const or *Value), nil for the package or an import.
 type GoNameProblem struct {
 	Kind          GoProblemKind
 	Scope, Name   string
@@ -60,7 +64,10 @@ type GoData struct {
 
 // PlanGoNames is the name plan of p's go emit e, with every problem found.
 func PlanGoNames(p *Package, e *Emit) *GoNamePlan {
-	pl := &GoNamePlan{p: p, e: e, byValue: map[string]*Value{}, pkgFns: map[*ExportFn]bool{}, imports: map[string]string{}, reported: map[originPair]bool{}}
+	pl := &GoNamePlan{
+		p: p, e: e, byValue: map[string]*Value{}, pkgFns: map[*ExportFn]bool{}, imports: map[string]string{},
+		namer: newNamer(token.IsIdentifier), pures: map[*ExportFn]*GoPure{},
+	}
 	for _, fn := range p.Fns {
 		pl.pkgFns[fn] = true
 	}
@@ -76,6 +83,10 @@ func PlanGoNames(p *Package, e *Emit) *GoNamePlan {
 			pl.emitted = append(pl.emitted, v)
 			pl.byValue[v.Name] = v
 		}
+	}
+	pl.indexClasses()
+	if e.Mode == ModeData {
+		pl.data = newGoData(pl)
 	}
 	pl.problems = goOverrideProblems(p)
 	pl.declareAll()
@@ -183,7 +194,9 @@ func (pl *GoNamePlan) Data() GoData {
 
 // Slot is a record's or case's field as a slot: its getter is the field's exported name.
 func (pl *GoNamePlan) Slot(f *Field) GoSlot {
-	return pl.slot(f.Type, f.Optional, goExported(f.Go, f.Name), goEffectiveStore(f.Go, f.Name))
+	s := pl.slot(f.Type, f.Optional, goExported(f.Go, f.Name), goEffectiveStore(f.Go, f.Name))
+	pl.data.layout(&s, pl.classOf[f])
+	return s
 }
 
 // ValueSlot is a value that is not a container, read like a field of its type (§5.9).
@@ -195,7 +208,9 @@ func (pl *GoNamePlan) ValueSlot(v *Value) GoSlot {
 // MethodSlot is a precomputed export method, a getter named after the fn (CODEGEN.md §5.4).
 func (pl *GoNamePlan) MethodSlot(fn *ExportFn) GoSlot {
 	t, opt := goUnwrap(fn.Result)
-	return pl.slot(t, opt, goExported(fn.Go, fn.Name), goEffectiveStore(fn.Go, fn.Name))
+	s := pl.slot(t, opt, goExported(fn.Go, fn.Name), goEffectiveStore(fn.Go, fn.Name))
+	pl.data.layout(&s, pl.classOf[fn])
+	return s
 }
 
 // Finite is a stored fn read from a table: a method's is a member of its struct, a package fn's the variable <fn>Table (CODEGEN.md §5.10, decision 183).
@@ -211,6 +226,7 @@ func (pl *GoNamePlan) Finite(fn *ExportFn) GoFinite {
 	}
 	t, opt := goUnwrap(fn.Result)
 	f.Result = pl.slot(t, opt, f.Name, f.Store)
+	pl.data.layout(&f.Result, pl.classOf[fn])
 	return f
 }
 

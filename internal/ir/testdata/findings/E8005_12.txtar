@@ -1,0 +1,26 @@
+CODEGEN.md §5.9, §3.5 (the C++ name plan, decision 37): @stable fields fooBar and foo_bar, their getters overridden apart, still both give the container's FindByFooBar and its sorted indexes.
+-- a/a.canon --
+package a
+
+/// A thing.
+record Thing {
+  /// One code.
+  fooBar: Int @stable @cpp(name: "GetOne")
+  /// Another code.
+  foo_bar: Int @stable @cpp(name: "GetTwo")
+}
+
+/// The things.
+let things: stable table Thing = {
+  x { fooBar: 1, foo_bar: 2 }
+}
+
+emit cpp { out: "@features/a", namespace: "a", mode: data }
+emit json { out: "out/" }
+-- a.things.json --
+{ "x": { "fooBar": 1, "foo_bar": 2 } }
+-- findings.txt --
+error[E8005]  a/a.canon:8:3
+  cpp: FindByFooBar is generated for both a.Thing.fooBar and a.Thing.foo_bar
+
+1 error, 0 warnings in 1 package (…)

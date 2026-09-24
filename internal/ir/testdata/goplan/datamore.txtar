@@ -1,0 +1,112 @@
+CODEGEN.md §3.4, §5.8–§5.11; decisions 182, 203: data mode with @reload records and keyed lists resolving each other through the snapshot, an overridden loader, a FindBy index, pairs and inline fields, a translated case method, and loader locals escaped from an imported package named `name`.
+-- names/names.canon --
+/// Names.
+package names
+
+/// A role.
+enum Role { user, admin }
+
+emit go { out: "@features/names", package: "name", mode: baked }
+-- club/club.canon --
+/// Clubs.
+package club
+
+import names { Role }
+
+/// A stat bonus.
+record Bonus {
+  /// The stat.
+  stat: Int
+  /// Its value.
+  value: Int
+}
+
+/// A shape.
+variant Shape @json(tag: "shape") {
+  /// A circle.
+  circle {
+    /// Its radius.
+    radius: Int
+
+    /// Its area times n.
+    export fn scaled(self, n: Int) -> Int { return radius * n }
+  }
+  /// A dot.
+  dot
+}
+
+/// A member.
+record Member {
+  /// Its code.
+  code: Int @stable
+  /// Its role.
+  role: Role
+  /// Its friend.
+  friend: ref members?
+  /// Its bonuses.
+  bonuses: [Bonus](..=2) @json(pairs: ["stat{i}", "value{i}"])
+  /// Its shape.
+  shape: Shape @json(inline)
+  /// A nested key.
+  deep: Int @json(path: "a.b")
+}
+
+/// A club.
+record Club {
+  /// Its name.
+  title: String
+  /// Its captain.
+  captain: ref members
+}
+
+/// The members.
+@reload
+let members: stable table Member = {
+  ann { code: 1, role: admin, bonuses: [], shape: dot, deep: 1 }
+  bob { code: 2, role: user, friend: ann, bonuses: [{ stat: 1, value: 2 }], shape: circle { radius: 2 }, deep: 2 }
+}
+
+/// The club.
+@reload
+let club: Club = { title: "c", captain: ann }
+
+/// Settings.
+record Settings {
+  /// Its title.
+  title: String
+}
+
+/// The settings.
+@go(name: "ReadSettings")
+let settings: Settings = { title: "s" }
+
+emit go { out: "@features/club", package: "club", mode: data }
+emit json { out: "out/" }
+-- club.members.json --
+{
+  "ann": { "code": 1, "role": "admin", "shape": "dot", "a": { "b": 1 } },
+  "bob": { "code": 2, "role": "user", "friend": "ann", "stat0": 1, "value0": 2, "shape": "circle", "radius": 2, "a": { "b": 2 } }
+}
+-- club.club.json --
+{ "title": "c", "captain": "ann" }
+-- club.settings.json --
+{ "title": "s" }
+-- plan.txt --
+Role: String Wire
+package: ParseRole Role RoleAdmin RoleMembers RoleUser iter strconv
+Bonus: Stat Value stat value
+Club: Captain CaptainID Title captain captain_id title
+ClubSnapshot: Club Members club members
+ClubStore: Current Reload current
+Member: Bonuses Code Deep Friend FriendID ID Retired Role Shape bonuses code deep friend friend_id friend_ok id retired role shape
+Members: All At Find FindByCode Len membersCodeIndex rows
+Settings: Title title
+Shape: AsCircle Kind kind value
+ShapeCircle: Radius Scaled radius
+ShapeKind: String Wire
+TestShapeCircleScaledConformance vectors: code n radius want
+club.Shape.circle.scaled(): n radius
+conformance imports: math rt testing
+locals: a af bad c ctx dir dst empty err f first hasK hasV hi i id k key keys kr lo m marker mf n name_ obj ok out path r raw retired rows s tag v values vr want
+package: Bonus Club ClubSchema ClubSnapshot ClubStore LoadClubSnapshot Member MemberID Members MembersSchema ParseShapeKind ReadSettings Settings SettingsSchema Shape ShapeCircle ShapeKind ShapeKindCircle ShapeKindDot Store TestShapeCircleScaledConformance atomic canonCatch decodeClub decodeMember decodeSettings decodeShape decodeShapeCircle fmt iter json jsonCell jsonInt jsonKeys jsonMay jsonNeed jsonObject jsonRead jsonRowID jsonSame jsonSlot loadClub loadMembers loadSettings name resolveClub resolveMember rt shapeCircleScaled slices strconv strings
+0 errors, 0 warnings in 2 packages (…)

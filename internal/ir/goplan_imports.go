@@ -14,7 +14,7 @@ type goImportUse struct {
 	pkgs map[string]bool
 }
 
-// importUse walks what gen/go writes (CODEGEN.md §2.8): enums need strconv, enums and containers iter, the baked data sync, a -0.0 literal math (decision 202), each type its kind's package.
+// importUse walks what gen/go writes (CODEGEN.md §2.8): enums need strconv, enums and containers iter, the baked data sync, a -0.0 literal math (decision 202), each type its kind's package, translated bodies their helpers; data mode's loaders rt, encoding/json, fmt, strings and slices, its snapshot sync/atomic.
 func (pl *GoNamePlan) importUse() *goImportUse {
 	u := &goImportUse{own: pl.p.Name, std: map[string]bool{}, pkgs: map[string]bool{}}
 	u.std[goMath] = pl.writesNegZero()
@@ -25,17 +25,28 @@ func (pl *GoNamePlan) importUse() *goImportUse {
 		u.named(t)
 	}
 	for _, v := range pl.p.Values {
-		u.std[goStrconv] = u.std[goStrconv] || tableRecord(v) != nil
+		u.std[goStrconv] = u.std[goStrconv] || pl.data == nil && tableRecord(v) != nil
 	}
 	for _, v := range pl.emitted {
 		u.ref(&v.Type)
 		u.std[goIter] = u.std[goIter] || isGoContainer(v)
-		u.std[goSync] = true
+		u.std[goSync] = pl.data == nil
+		if pl.data != nil && goRootClass(v) != nil {
+			u.mark(goDataImports...)
+			u.std[goAtomic] = u.std[goAtomic] || v.Reload
+		}
 	}
 	for _, fn := range pl.p.Fns {
-		u.fn(fn)
+		u.fn(fn, false)
 	}
 	return u
+}
+
+// mark marks standard packages used.
+func (u *goImportUse) mark(std ...string) {
+	for _, s := range std {
+		u.std[s] = true
+	}
 }
 
 // named walks a type of the package: an enum's codes, a record's or case's fields and fns.
@@ -61,13 +72,14 @@ func (u *goImportUse) body(fields []*Field, fns []*ExportFn) {
 		}
 	}
 	for _, fn := range fns {
-		u.fn(fn)
+		u.fn(fn, true)
 	}
 }
 
-// fn walks a stored fn's signature; a translated one is refused by gen/go, which writes nothing of it.
-func (u *goImportUse) fn(fn *ExportFn) {
+// fn walks an export fn's signature, and a translated one's checks and body (translatedUse); method tells a public method, whose Go types convert to the pure ones.
+func (u *goImportUse) fn(fn *ExportFn, method bool) {
 	if fn.Kind == FnTranslated {
+		u.translated(fn, method)
 		return
 	}
 	for _, p := range fn.Params {
@@ -84,14 +96,19 @@ func (u *goImportUse) ref(t *TypeRef) {
 	if std := goStdOfKind[t.Kind]; std != "" {
 		u.std[std] = true
 	}
+	u.markPkg(t)
+	u.ref(t.Elem)
+	u.ref(t.Key)
+}
+
+// markPkg marks the package of t itself when it is another package's named type, or a table ref of another package, whose key is that table's id type (§5.3, §5.8).
+func (u *goImportUse) markPkg(t *TypeRef) {
 	if t.Named != nil && pkgOf(t.Named) != u.own {
 		u.pkgs[pkgOf(t.Named)] = true
 	}
 	if r := t.Ref; r != nil && r.Coll == types.CollLet && !r.Local && !r.Keyed && r.Pkg != u.own {
 		u.pkgs[r.Pkg] = true
 	}
-	u.ref(t.Elem)
-	u.ref(t.Key)
 }
 
 // writesNegZero reports a -0.0 that baked Go writes as math.Copysign (decision 181): in a list or map constant, a package fn's result or cells, or an emitted value with its records' stored results; refs are keys, not walked.

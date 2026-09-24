@@ -1,0 +1,124 @@
+CODEGEN.md §3.3, §3.4, §5.10; CONFORMANCE.md §2.3, §7; log-2026-09-24 "gen/go translated fns": a baked go emit's plan names each translated method and fn, its pure function, its locals (a read named like a parameter, lets, optional reads' ok) and its conformance test.
+-- pipeline/potion.canon --
+/// Potions.
+package pipeline
+
+/// A tone.
+enum Tone { soft, loud }
+
+/// An ordered grade.
+enum Grade ordered { low, mid, high }
+
+/// A bonus.
+record Bonus {
+  /// Its value.
+  value: Int
+  /// Its grade.
+  grade: Grade
+}
+
+/// A healing potion.
+record Potion {
+  /// Its name.
+  name: String
+  /// Hit points restored.
+  heal: Int(1..=100_000)
+  /// Its tone.
+  tone: Tone
+  /// An optional bonus.
+  bonus: Bonus?
+  /// Its cooldown.
+  cooldown: Duration
+
+  /// Whether it heals a lot.
+  export fn isStrong(self) -> Bool { return heal >= 2_000 }
+
+  /// What a player missing missingHp gets back.
+  export fn healFor(self, missingHp: Int) -> Int { return min(heal, max(missingHp, 0)) }
+
+  /// The damage a thrown potion does at level.
+  export fn damageAt(self, level: Int(1..=150)) -> Int { return heal * level / 100 }
+
+  /// Early returns, lets, a method of self and optional paths.
+  export fn score(self, n: Int, heal: Int) -> Int {
+    let base = self.bonus?.value ?? 0
+    if self.isStrong() {
+      return base + n
+    } else if self.tone == Tone.loud {
+      return -n
+    }
+    if (self.bonus?.grade ?? Grade.low) > Grade.mid {
+      if n > 0 { return heal }
+    }
+    return self.heal * 2
+  }
+
+  /// A template.
+  export fn label(self, n: Int) -> String { return "{name} x{n} ({tone})" }
+
+  /// Floats.
+  export fn ratio(self, f: Float, n: Int) -> Float { return Float(n) / f + abs(-f) + 1 }
+
+  /// Durations.
+  export fn wait(self, k: Int) -> Duration { return if not isStrong() and k != 0 { cooldown * k } else { 0s } }
+}
+
+/// The sign of n; the `return` after an `if` whose branches all return is dropped.
+export fn sign(n: Int) -> Int {
+  if n > 0 { return 1 } else { return -1 }
+  return 0
+}
+
+/// Doubles x.
+export fn twice(x: Int) -> Int { return x * 2 }
+
+/// Calls twice.
+export fn quad(x: Int) -> Int { return twice(twice(x)) }
+
+/// A lookup the translated fn calls.
+export fn loud(t: Tone) -> Bool { return t == Tone.loud }
+
+/// Calls a lookup.
+export fn volume(t: Tone, n: Int) -> Int { return if loud(t) { n } else { n / 2 } }
+
+/// The potions.
+let potions: [Potion] keyed by name = [{ name: "a", heal: 3_000, tone: loud, cooldown: 1s }]
+
+emit go { out: "@features/pipeline", package: "pipeline" }
+-- pipeline.potions.json --
+[{ "name": "a", "heal": 3000, "tone": "loud", "cooldown": 1000 }]
+-- pipeline.isStrong.calls.json --
+{ "": true }
+-- pipeline.loud.calls.json --
+{ "soft": false, "loud": true }
+-- plan.txt --
+Bonus: Grade Value grade value
+Grade: String Wire
+Potion: Bonus Cooldown DamageAt Heal HealFor IsStrong Label Name Ratio Score Tone Wait bonus cooldown heal isStrong name tone
+Potions: All At Find Len rows
+TestPotionDamageAtConformance vectors: code heal level want
+TestPotionHealForConformance vectors: code heal missingHp want
+TestPotionLabelConformance vectors: code n name tone want
+TestPotionRatioConformance vectors: code f n want
+TestPotionScoreConformance vectors: bonus_grade bonus_gradeOk bonus_value bonus_valueOk code heal isStrong n self_heal tone want
+TestPotionWaitConformance vectors: code cooldown isStrong k want
+TestQuadConformance vectors: code want x
+TestSignConformance vectors: code n want
+TestTwiceConformance vectors: code want x
+TestVolumeConformance vectors: code n t want
+Tone: String Wire
+conformance imports: fmt math rt testing
+loud(): loudTable t
+package: Bonus GetPotions Grade GradeHigh GradeLow GradeMembers GradeMid Loud ParseGrade ParseTone Potion Potions Quad Sign TestPotionDamageAtConformance TestPotionHealForConformance TestPotionLabelConformance TestPotionRatioConformance TestPotionScoreConformance TestPotionWaitConformance TestQuadConformance TestSignConformance TestTwiceConformance TestVolumeConformance Tone ToneLoud ToneMembers ToneSoft Twice Volume buildPipeline canonCatch canonShow iter loudTable pipelineData pipelineValues potionDamageAt potionHealFor potionLabel potionRatio potionScore potionWait rt strconv sync time
+pipeline.Potion.damageAt(): heal level
+pipeline.Potion.healFor(): heal missingHp
+pipeline.Potion.label(): n name tone
+pipeline.Potion.ratio(): f n
+pipeline.Potion.score(): base bonus_grade bonus_gradeOk bonus_value bonus_valueOk heal isStrong n self_heal tone
+pipeline.Potion.wait(): cooldown isStrong k
+pipelineData: potions
+quad(): x
+sign(): n
+twice(): x
+volume(): n t
+0 errors, 0 warnings in 1 package (…)

@@ -1,0 +1,114 @@
+CODEGEN.md §3.3–§3.5, §5, §7.2; decision 37: the C++ name plan of a data-mode cpp emit has no problem where gen/cpp generates, and every class, enum, getter and member it plans is in the header gen/cpp writes.
+-- names/names.canon --
+/// Names.
+package names
+
+/// A role.
+enum Role { user, admin }
+
+emit cpp { out: "@features/names", namespace: "names", mode: data }
+-- club/club.canon --
+/// Clubs.
+package club
+
+import names { Role }
+
+/// A stat bonus.
+record Bonus {
+  /// The stat.
+  stat: Int
+  /// Its value.
+  value: Int
+}
+
+/// A shape.
+variant Shape @json(tag: "shape") {
+  /// A circle.
+  circle {
+    /// Its radius.
+    radius: Int
+
+    /// Its area times n.
+    export fn scaled(self, n: Int) -> Int { return radius * n }
+  }
+  /// A dot.
+  dot
+}
+
+/// A member.
+record Member {
+  /// Its code.
+  code: Int @stable
+  /// Its role.
+  role: Role
+  /// Its friend.
+  friend: ref members?
+  /// Its bonuses.
+  bonuses: [Bonus](..=2) @json(pairs: ["stat{i}", "value{i}"])
+  /// Its shape.
+  shape: Shape @json(inline)
+  /// A nested key.
+  deep: Int @json(path: "a.b")
+}
+
+/// A club.
+record Club {
+  /// Its name.
+  title: String
+  /// Its captain.
+  captain: ref members
+}
+
+/// The members.
+@reload
+let members: stable table Member = {
+  ann { code: 1, role: admin, bonuses: [], shape: dot, deep: 1 }
+  bob { code: 2, role: user, friend: ann, bonuses: [{ stat: 1, value: 2 }], shape: circle { radius: 2 }, deep: 2 }
+}
+
+/// The club.
+@reload
+let club: Club = { title: "c", captain: ann }
+
+/// Settings.
+record Settings {
+  /// Its title.
+  title: String
+}
+
+/// The settings.
+@go(name: "ReadSettings")
+let settings: Settings = { title: "s" }
+
+emit cpp { out: "@features/club", namespace: "club", mode: data }
+emit json { out: "out/" }
+-- club.members.json --
+{
+  "ann": { "code": 1, "role": "admin", "shape": "dot", "a": { "b": 1 } },
+  "bob": { "code": 2, "role": "user", "friend": "ann", "stat0": 1, "value0": 2, "shape": "circle", "radius": 2, "a": { "b": 2 } }
+}
+-- club.club.json --
+{ "title": "c", "captain": "ann" }
+-- club.settings.json --
+{ "title": "s" }
+-- plan.txt --
+NamesAccess: 
+Role: admin user
+detail: NamesAccess
+names: Role RoleFromWire ToName ToWire kRoleMembers
+Bonus: GetStat GetValue stat_ value_
+Club: GetCaptain GetCaptainKey GetTitle captain_ captain_ref_ title_
+ClubAccess: LoadClub LoadMembers LoadSettings LoadSnapshot Resolve
+ClubSnapshot: GetClub GetMembers Load club_ members_
+ClubStore: Current Reload current_
+Member: GetBonuses GetCode GetDeep GetFriend GetFriendKey GetId GetRetired GetRole GetShape bonuses_ code_ deep_ friend_ friend_ref_ id_ retired_ role_ shape_
+Members: All At Find FindByCode Len byCodeKeys_ byCode_ rows_
+Settings: GetTitle Load title_
+Shape: AsCircle GetKind value_
+ShapeCircle: GetRadius Scaled radius_
+ShapeCircleScaledVector: code n radius want
+ShapeKind: circle dot
+club: Bonus Club ClubSnapshot ClubStore Member Members Settings Shape ShapeCircle ShapeKind ShapeKindFromWire ToName ToWire kClubSchema kMembersSchema kSettingsSchema kShapeKindMembers
+conformance: Capture RunClubConformance ShapeCircleScaledVector g_code kShapeCircleScaled
+detail: ClubAccess Decode ShapeCircle_scaled
+0 errors, 0 warnings in 2 packages (…)

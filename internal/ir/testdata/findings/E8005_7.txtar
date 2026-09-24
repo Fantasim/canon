@@ -1,0 +1,43 @@
+CODEGEN.md §3.4, decision 182: data mode's loader local `name` is `name_` next to an imported package named name, and an imported package named name_ too is E8005, at the emit.
+-- p/p.canon --
+package p
+
+/// A role.
+enum Role { user, admin }
+
+emit go { out: "@features/p", package: "name", mode: baked }
+-- q/q.canon --
+package q
+
+/// A rank.
+enum Rank { low, high }
+
+emit go { out: "@features/q", package: "name_", mode: baked }
+-- a/a.canon --
+package a
+
+import p { Role }
+import q { Rank }
+
+/// A thing.
+record Thing {
+  /// Its id.
+  a: Int
+  /// Its role.
+  role: Role
+  /// Its rank.
+  rank: Rank
+}
+
+/// The things.
+let things: [Thing] keyed by a = [{ a: 1, role: user, rank: low }]
+
+emit go { out: "@features/a", package: "a", mode: data }
+emit json { out: "out/" }
+-- a.things.json --
+[{ "a": 1, "role": "user", "rank": "low" }]
+-- findings.txt --
+error[E8005]  a/a.canon:19:6
+  go: name_ is generated for both example.com/features/q and a
+
+1 error, 0 warnings in 3 packages (…)

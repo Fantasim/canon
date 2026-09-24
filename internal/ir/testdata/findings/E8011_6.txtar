@@ -1,4 +1,4 @@
-DECISIONS 203, 182: a go emit in data mode has no name plan yet, but its @go(name:) overrides are still checked.
+DECISIONS 203, 182: a go emit in data mode checks its @go(name:) overrides as every mode does (it also has its name plan since M2, E8005_6).
 -- a/a.canon --
 package a
 

@@ -43,10 +43,11 @@ func (t *translator) call(e syntax.Expr) PExpr {
 	return nil
 }
 
-// callFn calls a translated or lookup export fn of the package, arguments in parameter order; CONFORMANCE.md §2.2 lists no precomputed package fn.
+// callFn calls a translated or lookup export fn of the package, arguments in parameter order; CONFORMANCE.md §2.2 lists no precomputed package fn, and a lookup whose result is optional or composite holds no value of the subset (meta/decisions/log-2026-09-24.md "gen/go translated fns").
 func (t *translator) callFn(x *syntax.CallExpr, obj check.Object) PExpr {
 	site := t.s.fnByObj[obj]
-	if site == nil || site.pkg != t.site.pkg || site.recv != nil || site.fn.Kind == FnPrecomputed || !inOrder(x, site.decl) {
+	if site == nil || site.pkg != t.site.pkg || site.recv != nil || site.fn.Kind == FnPrecomputed || !inOrder(x, site.decl) ||
+		site.fn.Kind == FnLookup && !resultKinds[site.fn.Result.Kind] {
 		t.refuseScan(x, argValues(x)...)
 		return nil
 	}

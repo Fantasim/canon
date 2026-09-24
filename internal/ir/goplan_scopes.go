@@ -1,34 +1,44 @@
 package ir
 
 import (
-	"go/token"
-
 	"github.com/fantasim/canonlang/internal/types"
 )
 
-// goScope is one namespace of generated Go and what declared each of its names (§3.5).
-type goScope struct {
+// nameScope is one namespace of generated code and what declared each of its names (§3.5).
+type nameScope struct {
 	what  string
 	names map[string]string
 }
 
+// namer is a name plan's scopes and problems; ident tells an identifier of the target.
+type namer struct {
+	scopes   []*nameScope
+	problems []GoNameProblem
+	reported map[originPair]bool // the pairs of origins already reported colliding: one E8005 per cause (decision 203)
+	ident    func(string) bool
+}
+
+func newNamer(ident func(string) bool) namer {
+	return namer{reported: map[originPair]bool{}, ident: ident}
+}
+
 // scope opens a new scope of the plan.
-func (pl *GoNamePlan) scope(what string) *goScope {
-	sc := &goScope{what: what, names: map[string]string{}}
-	pl.scopes = append(pl.scopes, sc)
+func (n *namer) scope(what string) *nameScope {
+	sc := &nameScope{what: what, names: map[string]string{}}
+	n.scopes = append(n.scopes, sc)
 	return sc
 }
 
-// declare adds name to sc for origin; a name that is no Go identifier (decision 202), or that sc already holds, is a problem. Two origins collide once in the whole plan, however many of their names meet, in any scope (decision 203).
-func (pl *GoNamePlan) declare(sc *goScope, name, origin string, item any) {
-	if !token.IsIdentifier(name) {
-		pl.problems = append(pl.problems, GoNameProblem{Kind: GoNotIdentifier, Scope: sc.what, Name: name, Origin: origin, Item: item})
+// declare adds name to sc for origin; a name that is no identifier of the target (decision 202), or that sc already holds, is a problem. Two origins collide once in the whole plan, however many of their names meet, in any scope (decision 203).
+func (n *namer) declare(sc *nameScope, name, origin string, item any) {
+	if !n.ident(name) {
+		n.problems = append(n.problems, GoNameProblem{Kind: GoNotIdentifier, Scope: sc.what, Name: name, Origin: origin, Item: item})
 		return
 	}
 	if first, ok := sc.names[name]; ok {
-		if pair := (originPair{first, origin}); !pl.reported[pair] {
-			pl.reported[pair] = true
-			pl.problems = append(pl.problems, GoNameProblem{Kind: GoCollision, Scope: sc.what, Name: name, First: first, Origin: origin, Item: item})
+		if pair := (originPair{first, origin}); !n.reported[pair] {
+			n.reported[pair] = true
+			n.problems = append(n.problems, GoNameProblem{Kind: GoCollision, Scope: sc.what, Name: name, First: first, Origin: origin, Item: item})
 		}
 		return
 	}
@@ -41,20 +51,36 @@ func (pl *GoNamePlan) declareAll() {
 	for _, c := range pl.p.Consts {
 		pl.declare(top, pl.ConstName(c), c.Name, c)
 	}
+	if pl.data != nil {
+		pl.declareSchemas(top)
+	}
 	pl.declareEnums(top)
 	pl.declareKindEnums(top)
 	pl.declareIDEnums(top)
 	for _, t := range pl.p.Types {
 		pl.declareType(top, t)
 	}
-	pl.declareContainers(top)
-	pl.declareValues(top)
+	if pl.data != nil {
+		pl.declareDataContainers(top)
+		pl.declareLoaders(top)
+		pl.declareSnapshot(top)
+	} else {
+		pl.declareContainers(top)
+		pl.declareValues(top)
+	}
 	pl.declareFns(top)
+	if pl.data != nil {
+		pl.declareDecoders(top)
+		pl.declareResolvers(top)
+		pl.declareLoads(top)
+		pl.declareDataLocals()
+	}
+	pl.declareConformance(top)
 	pl.declareImports(top)
 }
 
 // declareEnums declares each enum, its member constants, Parse<E>, <E>Members and <E>FromCode (CODEGEN.md §5.2).
-func (pl *GoNamePlan) declareEnums(top *goScope) {
+func (pl *GoNamePlan) declareEnums(top *nameScope) {
 	for _, t := range pl.p.Types {
 		e, ok := t.(*Enum)
 		if !ok {
@@ -77,7 +103,7 @@ func (pl *GoNamePlan) declareEnums(top *goScope) {
 }
 
 // declareKindEnums declares each variant's kind enum, its members and its Parse (CODEGEN.md §5.5).
-func (pl *GoNamePlan) declareKindEnums(top *goScope) {
+func (pl *GoNamePlan) declareKindEnums(top *nameScope) {
 	for _, t := range pl.p.Types {
 		v, ok := t.(*Variant)
 		if !ok {
@@ -101,8 +127,8 @@ func (pl *GoNamePlan) declareMethods(goType, origin string, item any, methods []
 	}
 }
 
-// declareIDEnums declares the id enum of every public table value, emitted or not, its members and its Parse (CODEGEN.md §5.3, decision 124).
-func (pl *GoNamePlan) declareIDEnums(top *goScope) {
+// declareIDEnums declares the id type of every public table value, emitted or not (decision 124): in baked mode an enum with its members, Parse and String, in data mode a string (CODEGEN.md §5.3).
+func (pl *GoNamePlan) declareIDEnums(top *nameScope) {
 	for _, v := range pl.p.Values {
 		rec := tableRecord(v)
 		if rec == nil {
@@ -110,6 +136,9 @@ func (pl *GoNamePlan) declareIDEnums(top *goScope) {
 		}
 		name := pl.IDTypeName(rec)
 		pl.declare(top, name, v.Name, v)
+		if pl.data != nil {
+			continue
+		}
 		for _, id := range v.IDs {
 			pl.declare(top, pl.IDMemberName(rec, id), v.Name+qnameSep+id, v)
 		}
@@ -128,7 +157,7 @@ func tableRecord(v *Value) *Record {
 }
 
 // declareType declares a record, or a variant and its case types, with their own member scopes (CODEGEN.md §5.4, §5.5); a dependent type, which baked gen/go refuses (decision 124), declares nothing yet.
-func (pl *GoNamePlan) declareType(top *goScope, t Type) {
+func (pl *GoNamePlan) declareType(top *nameScope, t Type) {
 	switch x := t.(type) {
 	case *Record:
 		pl.declare(top, pl.TypeName(x), x.QName(), x)
@@ -139,7 +168,7 @@ func (pl *GoNamePlan) declareType(top *goScope, t Type) {
 }
 
 // declareVariant declares a variant, its selectors (kind, value, Kind, As<Case>) and each case with fields as a type of its own (CODEGEN.md §5.5).
-func (pl *GoNamePlan) declareVariant(top *goScope, v *Variant) {
+func (pl *GoNamePlan) declareVariant(top *nameScope, v *Variant) {
 	origin := v.QName()
 	pl.declare(top, pl.TypeName(v), origin, v)
 	sc := pl.scope(pl.TypeName(v))
@@ -165,7 +194,7 @@ type bodyMember struct {
 	item         any
 }
 
-// bodyNames are a struct's names in gen/go's order: the slots' members, the tables' members, then the slots' getters and the table-read methods (CODEGEN.md §5.4, §5.10).
+// bodyNames are a struct's names in gen/go's order: the slots' members, the tables' members, then the slots' getters, the table-read methods and the translated ones (CODEGEN.md §5.4, §5.10).
 type bodyNames struct {
 	stores, tables, getters, finite []bodyMember
 }
@@ -189,11 +218,10 @@ func (pl *GoNamePlan) declareBody(goName, owner string, rec *Record, fields []*F
 		case FnPrecomputed:
 			b.addSlot(origin, fn, pl.MethodSlot(fn))
 		case FnLookup:
-			f := pl.Finite(fn)
-			b.tables = append(b.tables, bodyMember{f.Store, origin, fn})
-			b.finite = append(b.finite, bodyMember{f.Name, origin, fn})
-			pl.declareParams(goSelf, origin, fn)
+			pl.addFinite(&b, origin, fn)
 		case FnTranslated:
+			b.finite = append(b.finite, bodyMember{goExported(fn.Go, fn.Name), origin, fn})
+			pl.declarePure(pl.scopes[0], goName, origin, fn)
 		}
 	}
 	sc := pl.scope(goName)
@@ -202,6 +230,22 @@ func (pl *GoNamePlan) declareBody(goName, owner string, rec *Record, fields []*F
 			pl.declare(sc, m.name, m.origin, m.item)
 		}
 	}
+}
+
+// addFinite adds a lookup method's table, and in data mode the table of a resolved result's keys, then its entry getter when it has one and a ref result's key getter <Name>ID(s) (CODEGEN.md §5.8, §5.10; log-2026-09-24 "gen/go review calls").
+func (pl *GoNamePlan) addFinite(b *bodyNames, origin string, fn *ExportFn) {
+	f := pl.Finite(fn)
+	b.tables = append(b.tables, bodyMember{f.Store, origin, fn})
+	if pl.data != nil && f.Result.Resolved {
+		b.tables = append(b.tables, bodyMember{f.Result.KeyStore, origin, fn})
+	}
+	if f.Result.Main {
+		b.finite = append(b.finite, bodyMember{f.Name, origin, fn})
+	}
+	if f.Result.Ref != nil {
+		b.finite = append(b.finite, bodyMember{f.Result.KeyGetter, origin, fn})
+	}
+	pl.declareParams(goSelf, origin, fn)
 }
 
 // addSlot adds a slot's members and getters, those it has.

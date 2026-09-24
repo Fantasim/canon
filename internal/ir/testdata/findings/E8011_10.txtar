@@ -1,0 +1,16 @@
+CODEGEN.md §3.4, §7.2; log-2026-09-24 "ir name plans + support plan": a field `x_` stores in the C++ member `x__`, a name reserved to the implementation, refused once at the field as E8011.
+-- a/a.canon --
+package a
+
+/// A thing.
+record Thing {
+  /// Its size.
+  x_: Int
+}
+
+emit cpp { out: "@features/a", namespace: "a", mode: data }
+-- findings.txt --
+error[E8011]  a/a.canon:6:3
+  x__ is not a valid cpp identifier for @cpp(name:)
+
+1 error, 0 warnings in 1 package (…)

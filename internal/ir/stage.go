@@ -89,6 +89,7 @@ type unit struct {
 	fns      []*fnSite
 	consts   []*constSite
 	firstUse map[string]string
+	cppNames []cppShared // the names its data-mode cpp header declares in namespaces other packages share
 }
 
 // constSite is a public const with its IR and declaration.

@@ -1,0 +1,25 @@
+CONFORMANCE.md §2.2 (log-2026-09-24 "gen/go translated fns"): a lookup function whose result is a record is composite, outside the portable subset, so a translated body's call of it is refused.
+-- a/a.canon --
+package a
+
+/// A tier.
+record Tier {
+  /// Its rank.
+  rank: Int
+}
+
+/// The tier for big.
+export fn rankOf(big: Bool) -> Tier { return if big { { rank: 2 } } else { { rank: 1 } } }
+
+/// A score.
+export fn score(n: Int) -> Int {
+  let t = rankOf(n > 1)
+  return n
+}
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+error[E9001]  a/a.canon:14:11
+  rankOf(n > 1) is not allowed in translated function score: it is outside the portable subset
+
+1 error, 0 warnings in 1 package (…)

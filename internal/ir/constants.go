@@ -221,6 +221,11 @@ var branchKinds = map[types.Kind]bool{
 	types.Enum: true, types.Ref: true,
 }
 
+// definesRefused are the emits whose generator refuses a ref into a load.defines table, having no define value getter nor table yet (decisions 180, 194): baked and data go; a mode gen/go does not have reports nothing.
+var definesRefused = [TargetView + 1][ModeTypes + 1]bool{
+	TargetGo: {ModeBaked: true, ModeData: true},
+}
+
 // maxSafeInt is Number.MAX_SAFE_INTEGER, 2^53 - 1 (CODEGEN.md §4.1, E8101).
 const maxSafeInt = 1<<53 - 1
 
@@ -252,13 +257,52 @@ var goPredeclared = map[string]bool{
 
 // goImportNames are the package names generated Go files import (CODEGEN.md §3.4); baked Go writes goStdImports of them.
 var goImportNames = map[string]bool{
-	goRT: true, "json": true, "fmt": true, goIter: true, "os": true, "filepath": true,
-	"atomic": true, goSync: true, goTime: true, "errors": true, goStrconv: true, "strings": true,
-	goMath: true, "regexp": true, "embed": true,
+	goRT: true, goJSON: true, goFmt: true, goIter: true, "os": true, goFilepath: true,
+	goAtomic: true, goSync: true, goTime: true, goErrors: true, goStrconv: true, goStrings: true,
+	goMath: true, "regexp": true, "embed": true, goSlices: true,
 }
 
 // cppOwnNames are the namespaces generated C++ declares itself, beside check's (CODEGEN.md §3.4).
-var cppOwnNames = map[string]bool{"detail": true, "conformance": true}
+var cppOwnNames = map[string]bool{cppDetail: true, cppConformance: true}
+
+// A C++ name reserved to the implementation: one holding `__`, or starting with `_` and an upper-case letter (CODEGEN.md §3.4).
+const cppReservedRun = "__"
+
+var cppReservedStart = regexp.MustCompile(`^_[A-Z]`)
+
+// Generated C++ names gen/cpp declares (CODEGEN.md §3.3, §5, §7.2, CONFORMANCE.md §7.2).
+const (
+	cppDetail        = "detail"
+	cppConformance   = "conformance"
+	cppAsPrefix      = "As"
+	cppConstPrefix   = "k"
+	cppFromWire      = "FromWire"
+	cppKey           = "Key"
+	cppKeys          = "Keys"
+	cppLoad          = "Load"
+	cppRefSuffix     = "ref_"
+	cppByPrefix      = "by"
+	cppAccessSuffix  = "Access"
+	cppRunPrefix     = "Run"
+	cppVectorSuffix  = "Vector"
+	cppShow          = "Show"   // the conformance file's printer of an optional input
+	cppDecode        = "Decode" // detail's decoders, one overload per class (CODEGEN.md §7.2)
+	cppResolve       = "Resolve"
+	cppVariantMember = "value_" // a variant's std::variant (CODEGEN.md §5.5)
+)
+
+var (
+	// cppEntryMembers are a table entry's id and retired getters and members (CODEGEN.md §5.3).
+	cppEntryMembers = []string{"GetId", "id_", "GetRetired", "retired_"}
+	// cppContainerMembers are every container's methods and rows (CODEGEN.md §5.9).
+	cppContainerMembers = []string{GoLen, GoAt, GoAll, GoFind, "rows_"}
+	// cppConformanceOwn are the conformance namespace's own names (CONFORMANCE.md §7.2).
+	cppConformanceOwn = []string{"g_code", "Capture"}
+	// cppStoreMembers are the store's methods and its atomic pointer (CODEGEN.md §5.11, T9).
+	cppStoreMembers = []string{"Current", "Reload", "current_"}
+	// cppEnumOverloads are the namespace's ToName and ToWire, one overload per enum (CODEGEN.md §5.2).
+	cppEnumOverloads = []string{"ToName", "ToWire"}
+)
 
 // The fixed Go names of generated code, which the name plan declares and gen/go's templates write (CODEGEN.md §5.2–§5.9, §6.2).
 const (
@@ -303,14 +347,50 @@ const (
 	goParamsSuffix     = "()"
 )
 
-// The standard packages baked Go imports, in the order the plan declares them (CODEGEN.md §2.8).
+// The standard packages generated Go imports, by the name code uses, in the order the plan declares them (CODEGEN.md §2.8): baked Go's, data mode's, the conformance file's.
 const (
-	goRT      = "rt"
-	goTime    = "time"
-	goIter    = "iter"
-	goSync    = "sync"
-	goStrconv = "strconv"
-	goMath    = "math"
+	goRT       = "rt"
+	goTime     = "time"
+	goIter     = "iter"
+	goSync     = "sync"
+	goStrconv  = "strconv"
+	goMath     = "math"
+	goJSON     = "json"
+	goFmt      = "fmt"
+	goErrors   = "errors"
+	goStrings  = "strings"
+	goFilepath = "filepath"
+	goAtomic   = "atomic"
+	goTesting  = "testing"
+	goSlices   = "slices"
+)
+
+// Data mode's generated names (CODEGEN.md §3.3, §5.9, §5.11, §6.1) and its loaders' fixed locals.
+const (
+	goSchemaSuffix     = "Schema"
+	goLoadPrefix       = "Load"
+	goLoadLocalPrefix  = "load"
+	goDecodePrefix     = "decode"
+	goResolvePrefix    = "resolve"
+	goSnapshotSuffix   = "Snapshot"
+	goStoreSuffix      = "Store" // also the store variable
+	goJSONRowID        = "jsonRowID"
+	goScopeLocals      = "locals"
+	goScopeConformance = "conformance imports"
+	goInt64Bits        = 64
+	goFloat32Bits      = 32
+)
+
+// Translated fns and the conformance file (CODEGEN.md §3.3, §5.10; CONFORMANCE.md §7).
+const (
+	goTestPrefix        = "Test"
+	goConformanceSuffix = "Conformance"
+	goOKSuffix          = "Ok"
+	goVectorsScope      = " vectors"
+	goTestingLocal      = "t"
+	goCanonCatch        = "canonCatch"
+	goCanonShow         = "canonShow"
+	goWant              = "want" // a vector's expected value, and a loader's local
 )
 
 // The kinds of GoNameProblem.
@@ -324,7 +404,22 @@ const (
 )
 
 var (
-	goStdImports       = []string{goRT, goTime, goIter, goSync, goStrconv, goMath}
+	goStdImports = []string{goRT, goTime, goIter, goSync, goStrconv, goMath, goJSON, goFmt, goStrings, goSlices, goAtomic, goTesting}
+	// goDataImports are the packages data mode's loaders and JSON helpers write.
+	goDataImports = []string{goRT, goJSON, goFmt, goStrings, goSlices}
+	// goStoreMembers are the store's atomic pointer and methods (CODEGEN.md §5.11, T9).
+	goStoreMembers = []string{"current", "Current", "Reload"}
+	// goJSONHelpers are the JSON reads every data-mode file with decoders writes, in its order (log-2026-09-24 "Loader parity").
+	goJSONHelpers = []string{"jsonObject", "jsonKeys", "jsonNeed", "jsonMay", "jsonCell", "jsonRead", "jsonInt", "jsonSlot", "jsonSame"}
+	// goDataLocals are the fixed locals of data mode's loaders, decoders and resolvers.
+	goDataLocals = []string{
+		"name", "path", "raw", "out", "obj", "err", "f", GoRows, "values", "keys", "i", GoIDStore, GoRetiredStore, "dir", "s", "ctx", "tag", "c",
+		"key", "k", "r", "ok", "bad", goWant, "dst", "n", "lo", "hi", "v", "kr", "vr", "hasK", "hasV", "first", "empty", "marker", "a", "m", "af", "mf",
+	}
+	// goVectorOwn are the fields a conformance vector has besides its inputs (CONFORMANCE.md §7.2).
+	goVectorOwn = []string{goWant, "code"}
+	// goCheckedOps are the operators gen/go writes as checked rt helpers (CONFORMANCE.md §3).
+	goCheckedOps       = map[Op]bool{OpAdd: true, OpSub: true, OpMul: true, OpDiv: true, OpMod: true}
 	goVariantMembers   = []string{GoKindStore, GoCaseStore, GoKind}
 	goIDEnumMethods    = []string{GoString}
 	goEnumMethods      = append(slices.Clone(goIDEnumMethods), GoWire)

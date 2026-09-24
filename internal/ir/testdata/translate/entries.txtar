@@ -1,0 +1,28 @@
+CONFORMANCE.md §2.1 (log-2026-09-24 "gen/go translated fns"): a table entry named through its table (`tiers.high`) is a statically named entry, returned as its key like a bare `high`.
+-- a/a.canon --
+/// Tiers.
+package a
+
+/// A tier.
+record Tier {
+  /// Its rank.
+  rank: Int
+}
+
+/// The tiers.
+let tiers: table Tier = {
+  low { rank: 1 }
+  high { rank: 2 }
+}
+
+/// The tier for n.
+export fn tierFor(n: Int) -> ref Tier { return if n > 1 { tiers.high } else { tiers.low } }
+
+emit go { out: "@features/a", package: "a" }
+-- bodies.txt --
+package a dir=a
+fn tierFor file=a.canon order=0 kind=translated
+  body (if:ref(String coll=0 a.tiers[] keyed=false local=false) (>:Bool param0:Int 1:Int)
+    then high:ref(String coll=0 a.tiers[] keyed=false local=false)
+    else low:ref(String coll=0 a.tiers[] keyed=false local=false))
+0 errors, 0 warnings in 1 package (…)

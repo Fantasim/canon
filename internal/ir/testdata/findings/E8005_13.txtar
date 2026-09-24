@@ -1,0 +1,20 @@
+CODEGEN.md §3.5: a C++ namespace is one scope for all packages emitted into it, so two packages declaring an enum Tone in namespace `sov::gen` collide, reported at the later package's emit.
+-- a/a.canon --
+package a
+
+/// A tone.
+enum Tone { soft, loud }
+
+emit cpp { out: "@features/a", namespace: "sov::gen", mode: data }
+-- b/b.canon --
+package b
+
+/// A tone.
+enum Tone { high, low }
+
+emit cpp { out: "@features/b", namespace: "sov::gen", mode: data }
+-- findings.txt --
+error[E8005]  b/b.canon:6:6
+  cpp: Tone is generated for both a.Tone and b.Tone
+
+1 error, 0 warnings in 2 packages (…)

@@ -52,6 +52,9 @@ func (t *translator) convert(e syntax.Expr, n PExpr) PExpr {
 		return n
 	}
 	lit, isLit := n.(*Lit)
+	if isLit && conv.Kind == check.ConvEntryToRef && isRefLit(lit) {
+		return n // a statically named entry (selector) already holds its key as a ref
+	}
 	if conv.Kind != check.ConvIntLitToFloat || !isLit {
 		if l := t.letOf[e]; l != nil {
 			t.refuse(l)
@@ -64,6 +67,12 @@ func (t *translator) convert(e syntax.Expr, n PExpr) PExpr {
 		return &Lit{T: t.s.ref(conv.To), V: &value.Float{V: float64(i.V), T: types.FloatType}}
 	}
 	return &Lit{T: t.s.ref(conv.To), V: lit.V}
+}
+
+// isRefLit reports a literal holding a ref's key, what entry builds.
+func isRefLit(l *Lit) bool {
+	_, ok := l.V.(*value.Ref)
+	return ok
 }
 
 func (t *translator) bad(syntax.Expr) PExpr {
@@ -204,12 +213,14 @@ func (t *translator) entry(e syntax.Expr, o check.Object) PExpr {
 	return &Lit{T: t.s.ref(ty), V: &value.Ref{T: ty, Key: value.Key{S: o.Name()}}}
 }
 
-// selector is an enum member `E.m` or a path of self; anything else (a package member, a ref
-// dereference, a built-in member) is outside the subset.
+// selector is an enum member `E.m`, a table entry named statically (`tiers.high`, its key as a ref, meta/decisions/log-2026-09-24.md "gen/go translated fns") or a path of self; anything else (a package member, a ref dereference, a built-in member) is outside the subset.
 func (t *translator) selector(e syntax.Expr) PExpr {
 	x := e.(*syntax.SelectorExpr)
-	if o := t.s.info.NameUses[x.Name]; o != nil && o.Kind() == check.ObjMember {
+	switch o := t.s.info.NameUses[x.Name]; {
+	case o != nil && o.Kind() == check.ObjMember:
 		return t.member(o)
+	case o != nil && o.Kind() == check.ObjEntry:
+		return t.entry(x, o)
 	}
 	if n, isRead := t.selfRead(x, ctxValue); isRead {
 		return n

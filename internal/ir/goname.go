@@ -85,8 +85,10 @@ func goTypeName(n NameOptions, canon string) string {
 // goValidOverride reports a @go(name:) override Go can declare as public API: an exported identifier (CODEGEN.md §1.3, §3.5, decision 182; E8011).
 func goValidOverride(name string) bool { return token.IsIdentifier(name) && token.IsExported(name) }
 
-// cppValidIdent reports whether name can be declared in C++: a plain identifier that is not a keyword, an alternative token or a name generated code reserves (CODEGEN.md §3.5, E8011).
-func cppValidIdent(name string) bool { return identPattern.MatchString(name) && !CppReserved(name) }
+// cppValidIdent reports whether name can be declared in C++: a plain identifier that is not a keyword, an alternative token or a name generated code reserves, and not reserved to the implementation, holding `__` or starting with `_` and an upper-case letter (CODEGEN.md §3.4, §3.5; log-2026-09-24 "ir name plans + support plan": E8011).
+func cppValidIdent(name string) bool {
+	return identPattern.MatchString(name) && !CppReserved(name) && !strings.Contains(name, cppReservedRun) && !cppReservedStart.MatchString(name)
+}
 
 // goReserved reports what a Go lower-case position escapes: a Go keyword, a predeclared identifier, a package a generated file imports, or `self` (CODEGEN.md §3.4).
 func goReserved(name string) bool {

@@ -1,0 +1,25 @@
+CODEGEN.md §5.2, §3.5; log-2026-09-24 "ir plans review": gen/cpp writes the enum helpers ToName and ToWire in the namespace, so a record ToWire next to an enum collides there (g++ refuses the header).
+-- a/a.canon --
+package a
+
+/// A tone.
+enum Tone { soft, loud }
+
+/// A wire.
+record ToWire {
+  /// Its tone.
+  tone: Tone
+}
+
+/// The wire.
+let wire: ToWire = { tone: soft }
+
+emit cpp { out: "@features/a", namespace: "a", mode: data }
+emit json { out: "out/" }
+-- a.wire.json --
+{ "tone": "soft" }
+-- findings.txt --
+error[E8005]  a/a.canon:7:8
+  cpp: ToWire is generated for both a and a.ToWire
+
+1 error, 0 warnings in 1 package (…)

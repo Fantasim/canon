@@ -58,19 +58,19 @@ func TestGoImportCollidesOnlyWhenWritten(t *testing.T) {
 	}
 }
 
-// TestGoDataModeHasNoPlan is DECISIONS 203: a go emit in data mode is checked only for its overrides until M2 gives it a name plan, so two enum members meeting in baked Go's ToneSeries1 are not E8005 there.
-func TestGoDataModeHasNoPlan(t *testing.T) {
+// TestGoTypesModeHasNoPlan is DECISIONS 203: a go emit in a mode gen/go has no generator for (types, embedded) is checked only for its overrides, so two enum members meeting in ToneSeries1 are not E8005 there; data mode has its plan since M2 (testdata/findings/E8005_6.txtar).
+func TestGoTypesModeHasNoPlan(t *testing.T) {
 	w := newWorld(t)
 	w.add(t, "a/a.canon", []byte(`package a
 
 /// A tone.
 enum Tone { series_1, series1 }
 
-emit go { out: "@features/a", package: "a", mode: data }
+emit go { out: "@features/a", package: "a", mode: types }
 `))
 	w.calls = w.fixtureCalls
 	w.build(t)
 	if out := w.findings(t); strings.Contains(out, "["+string(diag.E8005.Def().Code)+"]") {
-		t.Errorf("a data-mode go emit has no name plan yet:\n%s", out)
+		t.Errorf("a types-mode go emit has no name plan yet:\n%s", out)
 	}
 }

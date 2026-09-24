@@ -10,7 +10,7 @@ func isGoContainer(v *Value) bool {
 }
 
 // declareContainers declares the class of every emitted table and keyed list, its methods, and a table's FindBy<F> and their indexes (CODEGEN.md §5.9, decision 193); a value the emit leaves out has no container.
-func (pl *GoNamePlan) declareContainers(top *goScope) {
+func (pl *GoNamePlan) declareContainers(top *nameScope) {
 	for _, v := range pl.emitted {
 		if !isGoContainer(v) {
 			continue
@@ -39,7 +39,7 @@ func (pl *GoNamePlan) declareContainers(top *goScope) {
 }
 
 // declareValues declares the baked data, each emitted value's accessors (CODEGEN.md §5.9, §6.2): Get<V>, or a slot's getters for a value that is no container, then the data's members, so a cause is reported at its getter (decision 203).
-func (pl *GoNamePlan) declareValues(top *goScope) {
+func (pl *GoNamePlan) declareValues(top *nameScope) {
 	if len(pl.emitted) == 0 {
 		return
 	}
@@ -73,25 +73,31 @@ func (pl *GoNamePlan) declareValues(top *goScope) {
 	}
 }
 
-// declareFns declares each stored package-level export fn and the variable of its table (CODEGEN.md §5.10, decision 183); a translated one, which baked gen/go refuses (decision 124), declares nothing yet.
-func (pl *GoNamePlan) declareFns(top *goScope) {
+// declareFns declares each package-level export fn in declaration order: a translated one's function, public and pure at once, and its names (CODEGEN.md §5.10); a stored one's function and the variable of its table (decision 183), which data mode has none of (E8013).
+func (pl *GoNamePlan) declareFns(top *nameScope) {
 	for _, fn := range pl.p.Fns {
-		if fn.Kind == FnTranslated {
-			continue
+		switch {
+		case fn.Kind == FnTranslated:
+			pl.declarePure(top, "", fn.Name, fn)
+		case pl.data == nil:
+			f := pl.Finite(fn)
+			pl.declare(top, f.Name, fn.Name, fn)
+			pl.declare(top, f.Store, fn.Name, fn)
+			pl.declareParams(f.Store, fn.Name, fn)
 		}
-		f := pl.Finite(fn)
-		pl.declare(top, f.Name, fn.Name, fn)
-		pl.declare(top, f.Store, fn.Name, fn)
-		pl.declareParams(f.Store, fn.Name, fn)
 	}
 }
 
-// declareImports declares the package names the generated file imports (CODEGEN.md §2.8): the standard ones gen/go writes when it needs them, then the imported Canon packages whose names it qualifies, each once per import path.
-func (pl *GoNamePlan) declareImports(top *goScope) {
-	u := pl.importUse()
+// declareImports declares the package names the generated file imports (CODEGEN.md §2.8): the standard ones gen/go writes when it needs them, then the imported Canon packages whose names it qualifies.
+func (pl *GoNamePlan) declareImports(top *nameScope) {
+	pl.declareUsed(top, pl.importUse())
+}
+
+// declareUsed declares, in sc, the standard packages u marks, then the imported Canon packages it marks, each once per import path.
+func (pl *GoNamePlan) declareUsed(sc *nameScope, u *goImportUse) {
 	for _, std := range goStdImports {
 		if u.std[std] {
-			pl.declare(top, std, std, nil)
+			pl.declare(sc, std, std, nil)
 		}
 	}
 	seen := map[string]bool{}
@@ -101,7 +107,7 @@ func (pl *GoNamePlan) declareImports(top *goScope) {
 				continue
 			}
 			seen[e.GoImport] = true
-			pl.declare(top, e.GoPackage, e.GoImport, nil)
+			pl.declare(sc, e.GoPackage, e.GoImport, nil)
 		}
 	}
 }

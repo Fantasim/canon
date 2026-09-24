@@ -1,0 +1,28 @@
+CONFORMANCE.md §7.1, CODEGEN.md §3.5: the conformance tests of A.bC and AB.c are both TestABCConformance, one package-level name.
+-- a/a.canon --
+package a
+
+/// A.
+record A {
+  /// Its n.
+  n: Int
+
+  /// Plus x.
+  export fn bC(self, x: Int) -> Int { return n + x }
+}
+
+/// AB.
+record AB {
+  /// Its m.
+  m: Int
+
+  /// Minus x.
+  export fn c(self, x: Int) -> Int { return m - x }
+}
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+error[E8005]  a/a.canon:18:13
+  go: TestABCConformance is generated for both a.A.bC and a.AB.c
+
+1 error, 0 warnings in 1 package (…)

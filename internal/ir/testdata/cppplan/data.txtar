@@ -1,0 +1,106 @@
+CODEGEN.md §3.3–§3.5, §5, §7.2; decision 37: the C++ name plan of a data-mode cpp emit has no problem where gen/cpp generates, and every class, enum, getter and member it plans is in the header gen/cpp writes.
+-- shop/shop.canon --
+/// Shops.
+package shop
+
+/// A tone.
+enum Tone { soft, loud }
+
+/// A reward.
+variant Reward @json(tag: "kind") {
+  /// Gold.
+  gold {
+    /// How much.
+    amount: Int
+  }
+  /// Nothing.
+  nothing
+}
+
+/// An item.
+record Item {
+  /// Its price.
+  price: Int
+  /// Its tone.
+  tone: Tone
+  /// Its next item.
+  next: ref items?
+  /// Related items.
+  related: [ref items]
+  /// Its reward.
+  reward: Reward
+  /// Waiting time.
+  cooldown: Duration
+
+  /// Whether it is dear.
+  export fn dear(self) -> Bool { return price > 100 }
+
+  /// The price by tone.
+  export fn priceFor(self, t: Tone) -> Int { return if t == Tone.soft { price } else { price * 2 } }
+
+  /// The item after it by tone.
+  export fn after(self, t: Tone) -> ref items? { return next }
+
+  /// Its price times n.
+  export fn times(self, n: Int) -> Int { return price * n }
+}
+
+/// A shop.
+record Shop {
+  /// Its name.
+  name: String
+  /// Its best item.
+  best: ref items
+}
+
+/// The items.
+let items: table Item = {
+  cheap { price: 10, tone: soft, related: [], reward: nothing, cooldown: 1s }
+  dear { price: 200, tone: loud, next: cheap, related: [cheap], reward: gold { amount: 3 }, cooldown: 2s }
+}
+
+/// The shops.
+@reload
+let shops: [Shop] keyed by name = [{ name: "a", best: cheap }]
+
+/// Doubles x.
+export fn twice(x: Int) -> Int { return x * 2 }
+
+/// The top price.
+const MAX_PRICE = 1_000
+
+emit cpp { out: "@features/shop", namespace: "shop", mode: data }
+emit json { out: "out/" }
+-- shop.items.json --
+{
+  "cheap": { "price": 10, "tone": "soft", "related": [], "reward": { "kind": "nothing" }, "cooldown": 1000 },
+  "dear": { "price": 200, "tone": "loud", "next": "cheap", "related": ["cheap"], "reward": { "kind": "gold", "amount": 3 }, "cooldown": 2000 }
+}
+-- shop.shops.json --
+[{ "name": "a", "best": "cheap" }]
+-- shop.dear.calls.json --
+{ "": true }
+-- shop.priceFor.calls.json --
+{ "soft": 10, "loud": 20 }
+-- shop.after.calls.json --
+{ "soft": "cheap", "loud": null }
+-- shop.MAX_PRICE.json --
+1000
+-- plan.txt --
+Item: After AfterKey Dear GetCooldown GetId GetNext GetNextKey GetPrice GetRelated GetRelatedKeys GetRetired GetReward GetTone PriceFor Times after_ after_ref_ cooldown_ dear_ id_ next_ next_ref_ priceFor_ price_ related_ related_ref_ retired_ reward_ tone_
+ItemTimesVector: code n price want
+Items: All At Find Len Load rows_
+Reward: AsGold GetKind value_
+RewardGold: GetAmount amount_
+RewardKind: gold nothing
+Shop: GetBestKey GetName best_ name_
+ShopAccess: LoadItems LoadShops LoadSnapshot Resolve
+ShopSnapshot: GetShops Load shops_
+ShopStore: Current Reload current_
+Shops: All At Find Len rows_
+Tone: loud soft
+TwiceVector: code want x
+conformance: Capture ItemTimesVector RunShopConformance TwiceVector g_code kItemTimes kTwice
+detail: Decode Item_times ShopAccess
+shop: Item Items MAX_PRICE Reward RewardGold RewardKind RewardKindFromWire Shop ShopSnapshot ShopStore Shops ToName ToWire Tone ToneFromWire Twice kItemsSchema kRewardKindMembers kShopsSchema kToneMembers
+0 errors, 0 warnings in 1 package (…)

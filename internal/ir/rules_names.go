@@ -21,28 +21,51 @@ func (s *stage) checkOverrideNames(u *unit) {
 	}
 }
 
-// checkGoNames reports the go emit's names (CODEGEN.md §3.5): E8011 for a @go(name:) that is not an exported identifier (decision 182), in every mode; in baked mode, from the name plan gen/go writes from (decision 194), E8011 for a derived name that is no Go identifier (decision 202) and E8005 for two names of one scope, at the item named second, or at the emit for an import or the package's own names. The other modes have no plan until M2 (decision 203); cpp and ts have no backend yet to plan their names.
+// checkGoNames reports the go emit's names (CODEGEN.md §3.5): E8011 for a @go(name:) that is not an exported identifier (decision 182), in every mode; in baked and data mode, from the name plan gen/go writes from (decisions 194, 203), E8011 for a derived name that is no Go identifier (decision 202) and E8005 for two names of one scope, at the item named second, or at the emit for an import or the package's own names. Embedded and types mode have no generator, hence no plan yet.
 func (s *stage) checkGoNames(u *unit) {
 	es := emitFor(u, TargetGo)
 	if es == nil {
 		return
 	}
 	problems := goOverrideProblems(u.p)
-	if es.e.Mode == ModeBaked {
+	if es.e.Mode == ModeBaked || es.e.Mode == ModeData {
 		problems = PlanGoNames(u.p, es.e).Problems()
 	}
+	reportNames(u, s.itemSpans(es), problems, check.TargetGo, map[any]bool{})
+}
+
+// checkCppNames reports a data-mode cpp emit's names from the name plan gen/cpp writes from (CODEGEN.md §3.5, decision 37): E8011 for a derived name C++ cannot declare, a keyword or a reserved namespace included (decision 202), E8005 for two names of one scope; the names its header shares with the other packages of its namespace wait for crossPackage. Other modes have no generator yet; overrides are checkOverrideNames'.
+func (s *stage) checkCppNames(u *unit) {
+	es := emitFor(u, TargetCpp)
+	if es == nil || es.e.Mode != ModeData {
+		return
+	}
+	pl := PlanCppNames(u.p, es.e)
+	u.cppNames = pl.shared
 	refused := map[any]bool{}
+	for _, site := range overrideSites(u.p).sites {
+		refused[site.item] = site.cpp != "" && !cppValidIdent(site.cpp) // checkOverrideNames reported it
+	}
+	reportNames(u, s.itemSpans(es), pl.Problems(), check.TargetCpp, refused)
+}
+
+// itemSpans locates a plan's item, at the emit for an import or the package's own names.
+func (s *stage) itemSpans(es *emitSite) func(any) source.Span {
+	return func(item any) source.Span { return s.itemSpan(item, es.span()) }
+}
+
+// reportNames reports a plan's problems for target: E8005 for a collision, at the item named second; E8011 once per declaration not refused yet, for its override when that is invalid, else its first invalid derived name.
+func reportNames(u *unit, span func(any) source.Span, problems []GoNameProblem, target string, refused map[any]bool) {
 	for _, pr := range problems {
-		span := s.itemSpan(pr.Item, es.span())
 		if pr.Kind == GoCollision {
-			u.report(diag.E8005.At(span, check.TargetGo, pr.Name, pr.First, pr.Origin))
+			u.report(diag.E8005.At(span(pr.Item), target, pr.Name, pr.First, pr.Origin))
 			continue
 		}
 		if pr.Item != nil && refused[pr.Item] {
-			continue // one E8011 per declaration: its override, else its first derived name
+			continue
 		}
 		refused[pr.Item] = true
-		u.report(diag.E8011.At(span, shownName(pr), check.TargetGo))
+		u.report(diag.E8011.At(span(pr.Item), shownName(pr), target))
 	}
 }
 

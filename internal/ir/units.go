@@ -126,9 +126,7 @@ func isLocalDecl(n syntax.Node) bool {
 
 // constant is a public const and its value.
 func (s *stage) constant(obj check.Object, d *syntax.ConstDecl) *Const {
-	c := &Const{Name: obj.Name(), Doc: docOf(d.Doc), Type: s.ref(obj.Type())}
-	n := nameOverrides(d.Annotations)
-	c.Go, c.Cpp, c.TS = n.goName, n.cpp, n.ts
+	c := s.constDecl(obj, d)
 	if v, ok := s.in.Host.Value(s.ctx, obj.Pkg(), obj.Name()); ok {
 		c.V = v
 	}
@@ -137,14 +135,28 @@ func (s *stage) constant(obj check.Object, d *syntax.ConstDecl) *Const {
 
 // letValue is a public let: its declared type, value, @reload and table ids (EMT-04).
 func (s *stage) letValue(obj check.Object, d *syntax.LetDecl) *valueSite {
-	v := &Value{Name: obj.Name(), Doc: docOf(d.Doc), Type: s.ref(obj.Type()), Reload: annotation(d.Annotations, syntax.AnnReload) != nil}
-	n := nameOverrides(d.Annotations)
-	v.Go, v.Cpp, v.TS = n.goName, n.cpp, n.ts
+	v := s.letDecl(obj, d)
 	if val, ok := s.in.Host.Value(s.ctx, obj.Pkg(), obj.Name()); ok {
 		v.V = val
 		v.IDs = tableIDs(val)
 	}
 	return &valueSite{v: v, obj: obj, decl: d, t: obj.Type()}
+}
+
+// constDecl is a public const as declared, without its value.
+func (s *stage) constDecl(obj check.Object, d *syntax.ConstDecl) *Const {
+	c := &Const{Name: obj.Name(), Doc: docOf(d.Doc), Type: s.ref(obj.Type())}
+	n := nameOverrides(d.Annotations)
+	c.Go, c.Cpp, c.TS = n.goName, n.cpp, n.ts
+	return c
+}
+
+// letDecl is a public let as declared: its type, @reload and name overrides, without its value.
+func (s *stage) letDecl(obj check.Object, d *syntax.LetDecl) *Value {
+	v := &Value{Name: obj.Name(), Doc: docOf(d.Doc), Type: s.ref(obj.Type()), Reload: annotation(d.Annotations, syntax.AnnReload) != nil}
+	n := nameOverrides(d.Annotations)
+	v.Go, v.Cpp, v.TS = n.goName, n.cpp, n.ts
+	return v
 }
 
 func docOf(d *syntax.DocComment) string {

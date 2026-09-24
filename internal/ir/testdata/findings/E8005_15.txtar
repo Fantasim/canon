@@ -1,0 +1,27 @@
+CODEGEN.md §3.4, §3.5, decision 203 (data mode's name plan): a lookup method's parameters a_b and aB are both the Go local aB.
+-- a/a.canon --
+package a
+
+/// A thing.
+record Thing {
+  /// Its id.
+  a: Int
+
+  /// A flag pair.
+  export fn both(self, a_b: Bool, aB: Bool) -> Bool { return a_b and aB }
+}
+
+/// The things.
+let things: [Thing] keyed by a = [{ a: 1 }]
+
+emit go { out: "@features/a", package: "a", mode: data }
+emit json { out: "out/" }
+-- a.things.json --
+[{ "a": 1 }]
+-- a.both.calls.json --
+{ "false false": false, "false true": false, "true false": false, "true true": true }
+-- findings.txt --
+error[E8005]  a/a.canon:9:35
+  go: aB is generated for both a.Thing.both.a_b and a.Thing.both.aB
+
+1 error, 0 warnings in 1 package (…)
