@@ -1,0 +1,30 @@
+WIRE.md §4.1, §4.2: a clashing template still meets later fields (c meets b's x3); two templates of one field that expand to a common key, and a template whose keys start with `$`, are the template's fault (pairsTemplate).
+-- a/a.canon --
+package a
+
+local record Pair {
+  k: Int
+  v: Int
+}
+
+local record R {
+  a: Int @json("x5")
+  b: [Pair](..=9) @json(pairs: ["x{i}", "y{i}"])
+  c: Int @json("x3")
+  d: [Pair](..=20) @json(pairs: ["z{i}", "z1{i}"])
+  e: [Pair](..=9) @json(pairs: ["$p{i}", "q{i}"])
+}
+-- findings.txt --
+error[E3316]  a/a.canon:10:3
+  wire key x5 of b collides with a
+
+error[E3316]  a/a.canon:11:3
+  wire key x3 of c collides with b
+
+error[E3316]  a/a.canon:12:3
+  @json(pairs:) template "z1{i}" must contain {i} exactly once, differ from the other one and expand to keys that start with no $ and collide with no other key
+
+error[E3316]  a/a.canon:13:3
+  @json(pairs:) template "$p{i}" must contain {i} exactly once, differ from the other one and expand to keys that start with no $ and collide with no other key
+
+4 errors, 0 warnings in 1 package (…)

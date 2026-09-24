@@ -1305,9 +1305,12 @@ Choices made while Louis was away are listed here, each with its reason, so he c
 166. **The formatter's entry points.** `format.Source(src, kind, bag)` parses with the file
     kind the caller gives and returns `ErrSyntax` when `bag` holds an error of that file other than
     `E1123` (a lone BOM is removed, FORMATTER §1); `format.File(tree) ([]byte, error)` prints a
-    tree and returns `ErrSyntax`, never panics, for a tree holding a `Bad` node or an empty node
-    (an error the lexer alone reports leaves a whole tree, which only `Source` refuses). Reason: the caller (`api.Format`, `canon fmt`) builds its `*SyntaxError` from the bag, and
-    only it knows whether a `project.canon` is the project root's.
+    tree and returns `ErrSyntax`, never panics, for a tree holding a `Bad` node or an empty node.
+    The tree does not record findings, so an error reported without leaving such a node (a lexer
+    error, `E1117` between two items on one line, `E1133` on a misplaced modifier, …) is refused
+    only by `Source`, which reads them; `File` must be given a tree whose parse reported none.
+    Reason: the caller (`api.Format`, `canon fmt`) builds its `*SyntaxError` from the bag, and only
+    it knows whether a `project.canon` is the project root's.
 
 167. **Comments sit outside their node's groups.** A node's own-line and trailing comments are
     printed around the node's groups, so a trailing comment breaks the lists enclosing its item but
@@ -1319,7 +1322,8 @@ Choices made while Louis was away are listed here, each with its reason, so he c
 168. **Comment placement FORMATTER §8 leaves open.** A comment ending a line inside a
     construct, or an own-line comment there, puts the break before the next token: an operator
     starts the continuation line with its operand (`a // c` / `  + b`), an `else` goes one level
-    deeper with its block, whose `}` aligns with it; other own-line comments start a continuation
+    deeper with its block, whose `}` aligns with it, and one ending the line of an `else` does the
+    same for the `{` or `if` after it (§3); other own-line comments start a continuation
     line one level deeper and the token after one takes its indentation. A one-line block comment
     followed on its line by code stays inline before it (§8.2 over §8.1), with one space on each
     side of every inline block comment; a block comment spanning lines after a token leads the next
@@ -1479,7 +1483,8 @@ Choices made while Louis was away are listed here, each with its reason, so he c
 179. **A brace-list item starting with `.` keeps a comma before it.** In a broken list (FORMATTER
     §6.1: no commas, one item per line) a line starting with `.`, such as a shorthand lambda key in
     `{ 0: 0, .a: [] }` or a `search` item, continues the line before (GRAMMAR §3.1 rule 3), and §10
-    forbids adding parentheses; the item before it ends with `,`, a separator run. Found by fuzzing.
+    forbids adding parentheses; the item before it ends with `,`, a separator run, written right
+    after that item and before its trailing comments (as in `( )` lists). Found by fuzzing.
     Gap for Louis: §6.1 could state this exception.
 
 180. **Baked `gen/go` also refuses refs into `load.defines` tables, and fields of a case without
@@ -1512,6 +1517,11 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     (`GroupedAreasVisibleTo`: 3.9 to 2.0 ns/op); a one-cell precomputed fn keeps its value. An
     element of a slice or array literal omits its type (`{…}` for `&T{…}` or `T{…}`), as
     `gofmt -s` writes it; the compile tests check that `gofmt -s -l` lists nothing.
+
+184. **`pairs:` keys are checked by template, never slot by slot (WIRE §4.1–§4.2, SPEC §1).** A
+    template whose keys start with `$`, or whose keys meet the other template of the same field,
+    is `E3316` `pairsTemplate` (the rule of §4.1's `pairs:` row); a key of another field is
+    `collision` or `prefix`. A clashing template stays compared, so later fields still meet it.
 
 ## Still open
 

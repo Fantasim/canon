@@ -231,6 +231,12 @@ var unportableForms = []string{`(?i`, `(?m`, `(?s`, `(?U`, `(?P<`, `(?<`, `\p`, 
 // backslash starts an escape in a regex.
 const backslash = '\\'
 
+// The digits a pairs slot starts with: the least, and the least without a leading zero.
+const (
+	zeroDigit = '0'
+	oneDigit  = '1'
+)
+
 // pairSlot is the position variable of a `@json(pairs:)` template (WIRE.md §5.14).
 var pairSlot = openBrace + paramI + closeBrace
 

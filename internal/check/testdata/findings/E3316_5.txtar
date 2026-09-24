@@ -1,0 +1,28 @@
+WIRE.md §4.2, §5.14, SPEC §1: pairs keys are compared through their templates, whatever the bound: a plain key, a key path and another pairs field meeting an expanded key (`dst0{i}` never does: no leading zero).
+-- a/a.canon --
+package a
+
+local record Pair {
+  k: Int
+  v: Int
+}
+
+local record R {
+  params: [Pair](..=1_000_000_000) @json(pairs: ["dst{i}", "val{i}"])
+  dst7: Int
+  more: [Pair](..=1_000_000_000) @json(pairs: ["ds{i}", "x{i}"])
+  deep: Int @json(path: "val999999999.x")
+  fine: [Pair](..=1_000_000_000) @json(pairs: ["dst0{i}", "q{i}"])
+  twin: [Pair](..=1_000_000_000) @json(pairs: ["dst1{i}", "y{i}"])
+}
+-- findings.txt --
+error[E3316]  a/a.canon:10:3
+  wire key dst7 of dst7 collides with params
+
+error[E3316]  a/a.canon:12:3
+  the key path of params is a prefix of the key path of deep
+
+error[E3316]  a/a.canon:14:3
+  wire key dst10 of twin collides with params
+
+3 errors, 0 warnings in 1 package (…)

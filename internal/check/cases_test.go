@@ -281,3 +281,26 @@ func TestEmitInterpolationOnce(t *testing.T) {
 func hasOnly(out string, d *diag.Def) bool {
 	return strings.Count(out, "error[") == 1 && strings.Contains(out, "["+string(d.Code)+"]")
 }
+
+// SPEC §1, WIRE.md §5.14: checking `pairs:` keys does not depend on the length bound's magnitude.
+func TestPairsBoundIsFree(t *testing.T) {
+	start := time.Now()
+	_, _, out := checkFile(t, `package a
+
+local record Pair {
+  k: Int
+  v: Int
+}
+
+local record R {
+  params: [Pair](..=1_000_000_000) @json(pairs: ["a{i}", "b{i}"])
+  other: [Pair](..=1_000_000_000) @json(pairs: ["c{i}", "d{i}"])
+}
+`)
+	if !strings.HasPrefix(out, noFindings) {
+		t.Errorf("findings:\n%s", out)
+	}
+	if d := time.Since(start); d > time.Second {
+		t.Errorf("took %v", d)
+	}
+}
