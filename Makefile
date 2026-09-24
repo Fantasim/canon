@@ -15,7 +15,7 @@ GO_FILES     = $(shell find . -name '*.go' -not -path './examples/*/expected/*' 
                  -not -path './examples/_fixtures/*' -not -path '*/testdata/*' \
                  -not -path './.claude/*' -not -name '*.gen.go')
 
-.PHONY: check fmt-check vet test goldens-vet goldens-check diag-check audit-self audit-check audit audit-tighten
+.PHONY: check fmt-check vet test goldens-vet goldens-check diag-check audit-self audit-check audit audit-tighten scope
 
 check: fmt-check vet test goldens-vet goldens-check diag-check audit-self audit-check
 
@@ -100,3 +100,7 @@ progen-nightly:
 	systemd-run --user --scope -q -p MemoryMax=3G env GOTOOLCHAIN=local go test -count=1 -timeout 0 \
 	  -run 'TestMutations|TestGrammar|TestCorruption' ./internal/testkit/progen \
 	  -progen.n $(PROGEN_N) -progen.seed $(PROGEN_SEED) -progen.keep
+
+# Project-size report: git-tracked code lines, blanks and comments excluded (tools/scope.sh).
+scope:
+	@bash tools/scope.sh
