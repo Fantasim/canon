@@ -1,0 +1,28 @@
+FORMATTER.md §3: a multiline string's content and closing quotes are re-indented to its opening
+line's indentation plus 2; its value does not change.
+-- in.canon --
+package p
+
+record R {
+      help: String = """
+            First line.
+              Indented line.
+
+            """
+}
+let r = r"""
+x
+"""
+-- want --
+package p
+
+record R {
+  help: String = """
+    First line.
+      Indented line.
+
+    """
+}
+let r = r"""
+  x
+  """

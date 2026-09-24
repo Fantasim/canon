@@ -1,0 +1,14 @@
+FORMATTER.md §1 and DECISIONS 170: a block written on one line that does not fit breaks, and the
+parameters before it stay flat, so the second run changes nothing.
+-- in.canon --
+package p
+
+fn pick(first: Int, second: Int) -> Int { return someFunctionWithALongName(first, second) + anotherFunctionName(second, first) + third(first) }
+-- want --
+package p
+
+fn pick(first: Int, second: Int) -> Int {
+  return someFunctionWithALongName(first, second) +
+    anotherFunctionName(second, first) +
+    third(first)
+}

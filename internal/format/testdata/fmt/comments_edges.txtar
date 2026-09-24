@@ -1,0 +1,76 @@
+FORMATTER.md §8: comments on brackets, in empty lists, before `else` and before a chain step,
+block comments, and comments at the end of lists and of the file.
+-- in.canon --
+/* file */ // header
+package p
+
+let a = { // after the brace
+  x: 1 /* inline */, y: 2
+  // closing the list
+}
+let b = f( // after the paren
+  1)
+let e = {
+  // only a comment
+}
+let g = f(
+  // only a comment
+)
+check x > 0
+  // before else
+  else "m"
+let h = x
+  // before the step
+  .f()
+let i = [1, /* two */ 2]
+fn k() -> Int {
+  /* a block
+     spanning lines */ return 1
+}
+record R {
+  a: Int /* spanning
+  lines */ // then a line comment
+  b: Int
+}
+
+// the end
+
+
+-- want --
+/* file */ // header
+package p
+
+let a = { // after the brace
+  x: 1 /* inline */
+  y: 2
+  // closing the list
+}
+let b = f( // after the paren
+  1,
+)
+let e = {
+  // only a comment
+}
+let g = f(
+  // only a comment
+)
+check x > 0
+  // before else
+  else "m"
+let h = x
+  // before the step
+  .f()
+let i = [1, /* two */ 2]
+fn k() -> Int {
+  /* a block
+     spanning lines */
+  return 1
+}
+record R {
+  a: Int
+  /* spanning
+  lines */ // then a line comment
+  b: Int
+}
+
+// the end

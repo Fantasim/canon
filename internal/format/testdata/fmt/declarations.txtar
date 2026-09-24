@@ -1,0 +1,70 @@
+FORMATTER.md §5 and §9.3: every declaration form with its modifiers.
+-- in.canon --
+package p
+local   const   X = 1
+local let   y = 2
+local type T = Int
+export fn   f(self) -> Int { return 1 }
+retired entry  items.II_OLD { name: "old" }
+entry items.3 { name: "three" }
+widget   ordered_steps(value: [_], siblings: _,) default
+emit go { out: "@x", package: "p" }
+test "a test" { expect f(1) warns "careful" }
+enum E ordered @codes(Int8) { retired A = -1, B @deprecated("no") }
+variant V @json(tag: "type") {
+  retired a
+  b { x: Int }
+  c @json("C")
+  fn m(self) -> Int { return 0 }
+  check true else "never"
+}
+record Env {
+  port: input Int from env "PORT"
+  @since(2)
+  export fn g(self) -> Int { return port }
+}
+let t: stable table Item = {
+  retired old @deprecated("gone") { name: "o" }
+}
+type D = {e in eventTypes: HourlyTarget(e)}(1..)
+type M = {String: Int}
+type A = asset("@resource/Icon", ext: [dds, "png",],)
+type F = (fn(Int, Int) -> Int)?
+type U = Param(e) | "default"
+let o: Int?? = none
+view Reward.item { title "x" }
+-- want --
+package p
+
+local const X = 1
+local let y = 2
+local type T = Int
+export fn f(self) -> Int { return 1 }
+retired entry items.II_OLD { name: "old" }
+entry items.3 { name: "three" }
+widget ordered_steps(value: [_], siblings: _) default
+emit go { out: "@x", package: "p" }
+test "a test" { expect f(1) warns "careful" }
+enum E ordered @codes(Int8) { retired A = -1, B @deprecated("no") }
+variant V @json(tag: "type") {
+  retired a
+  b { x: Int }
+  c @json("C")
+  fn m(self) -> Int { return 0 }
+  check true else "never"
+}
+record Env {
+  port: input Int from env "PORT"
+  @since(2)
+  export fn g(self) -> Int { return port }
+}
+let t: stable table Item = {
+  retired old @deprecated("gone") { name: "o" }
+}
+type D = {e in eventTypes: HourlyTarget(e)}(1..)
+type M = {String: Int}
+type A = asset("@resource/Icon", ext: [dds, "png"])
+type F = (fn(Int, Int) -> Int)?
+type U = Param(e) | "default"
+let o: Int?? = none
+view Reward.item { title "x" }

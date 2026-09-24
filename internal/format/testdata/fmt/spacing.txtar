@@ -1,0 +1,27 @@
+FORMATTER.md §5: one space, no more, where the table says so; none elsewhere.
+-- in.canon --
+package   p
+
+const   A=1+2*3
+const B =  - 5
+const C = not   true
+let d: Int(0 ..= 100)=  x ?? 0
+let e = xs [ i ] . f ( a , b ) !
+let f = (a , b)  =>  a+b
+let g = 0 .. 10
+record   Rect  {
+  left :Float  @json( "l" ,unit : s )
+}
+-- want --
+package p
+
+const A = 1 + 2 * 3
+const B = -5
+const C = not true
+let d: Int(0..=100) = x ?? 0
+let e = xs[i].f(a, b)!
+let f = (a, b) => a + b
+let g = 0..10
+record Rect {
+  left: Float @json("l", unit: s)
+}

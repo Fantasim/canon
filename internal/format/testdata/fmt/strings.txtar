@@ -1,0 +1,39 @@
+FORMATTER.md §3 and §10: multiline strings in calls, lists and checks keep their value; the
+content of a string is never touched.
+-- in.canon --
+package p
+
+check x
+  else """
+         message {x} with an interpolation
+           and an indented line
+         """
+let a = f("""
+    one
+    """, 2)
+let b = [
+  r"""
+  raw {not} interpolated
+  """,
+]
+let c = "  spaces  inside  "
+-- want --
+package p
+
+check x
+  else """
+    message {x} with an interpolation
+      and an indented line
+    """
+let a = f(
+  """
+    one
+    """,
+  2,
+)
+let b = [
+  r"""
+    raw {not} interpolated
+    """,
+]
+let c = "  spaces  inside  "

@@ -1,0 +1,33 @@
+FORMATTER.md §5 and §9.2: view items lose their padding.
+-- in.canon --
+package p
+
+view Farm {
+  title   "{id}"
+  menu events   icon chest
+  columns { id 200, kind 170, }
+  filters { kind multi, level }
+  search { name(), id }
+  group g "Global"   advanced when x > 1 {
+    farmPurchasePrice "Farm purchase price" { unit: penya }
+    visitCost         "Cost of a visit"     { unit: penya }
+    show s "Label"   "{x}"
+  }
+  field title "Title"
+}
+-- want --
+package p
+
+view Farm {
+  title "{id}"
+  menu events icon chest
+  columns { id 200, kind 170 }
+  filters { kind multi, level }
+  search { name(), id }
+  group g "Global" advanced when x > 1 {
+    farmPurchasePrice "Farm purchase price" { unit: penya }
+    visitCost "Cost of a visit" { unit: penya }
+    show s "Label" "{x}"
+  }
+  field title "Title"
+}

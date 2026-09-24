@@ -1,0 +1,20 @@
+FORMATTER.md §9.3: prefix annotations go on their own lines above the declaration, in the
+written order; header annotations stay on the header line.
+-- in.canon --
+package p
+
+@reload @since(3) let potions: [Potion] keyed by id = load.dir("data/*.json")
+record Global @json(case: snake) {
+  a: Int
+}
+enum Element @codes(UInt8) { FIRE = 1, WATER = 2 }
+-- want --
+package p
+
+@reload
+@since(3)
+let potions: [Potion] keyed by id = load.dir("data/*.json")
+record Global @json(case: snake) {
+  a: Int
+}
+enum Element @codes(UInt8) { FIRE = 1, WATER = 2 }

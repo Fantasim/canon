@@ -1,0 +1,56 @@
+FORMATTER.md §6.1 and §9.2: a brace list written on one line stays single-line while it fits
+and loses its trailing comma; one written on several lines stays broken, one item per line and
+no commas; one that no longer fits breaks.
+-- in.canon --
+package p
+
+let statuses: stable table Status = {
+  open      { tone: warning, label: "Open",      terminal: false, next: [taken, wont_do, duplicate], }
+  taken     { tone: info,    label: "Taken",     terminal: false, next: [open, fixed, wont_do, duplicate],
+              requires: [assignee] }
+  verified  { tone: success, label: "Verified",  terminal: true,  next: [open], by: reporter_or_triager }
+}
+
+record Rect {
+  left: Float, top: Float, right: Float, bottom: Float
+
+  check left < right and top < bottom else "empty spawn region (Rect2D::IsValid)"
+}
+
+enum E { A, B, }
+enum F {
+}
+let empty = {}
+-- want --
+package p
+
+let statuses: stable table Status = {
+  open { tone: warning, label: "Open", terminal: false, next: [taken, wont_do, duplicate] }
+  taken {
+    tone: info
+    label: "Taken"
+    terminal: false
+    next: [open, fixed, wont_do, duplicate]
+    requires: [assignee]
+  }
+  verified {
+    tone: success
+    label: "Verified"
+    terminal: true
+    next: [open]
+    by: reporter_or_triager
+  }
+}
+
+record Rect {
+  left: Float
+  top: Float
+  right: Float
+  bottom: Float
+
+  check left < right and top < bottom else "empty spawn region (Rect2D::IsValid)"
+}
+
+enum E { A, B }
+enum F {}
+let empty = {}

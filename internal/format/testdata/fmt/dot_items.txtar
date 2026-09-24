@@ -1,0 +1,19 @@
+FORMATTER.md §6.1, §8.2 and DECISIONS 179: the comma before an item starting with "." is written
+right after the item before it, ahead of that item's trailing comments.
+-- in.canon --
+package p
+
+let a = { x: 1, // c
+  .a: 2 }
+let b = { x: 1 /* c */, .a: 2 }
+-- want --
+package p
+
+let a = {
+  x: 1, // c
+  .a: 2
+}
+let b = {
+  x: 1, /* c */
+  .a: 2
+}

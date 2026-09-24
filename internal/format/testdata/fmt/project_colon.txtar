@@ -1,0 +1,14 @@
+FORMATTER.md §9.3, §8 and DECISIONS 168: a project map key keeps its colon when a comment
+follows it, so the comment keeps its place.
+-- project.canon --
+project p {
+  roots: // c
+    { a: "x" }
+  go_module: { a: "y" }
+}
+-- want --
+project p {
+  roots: // c
+    { a: "x" }
+  go_module { a: "y" }
+}

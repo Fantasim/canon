@@ -1,0 +1,55 @@
+FORMATTER.md §8: every comment stays next to the token it was attached to; trailing comments
+lose their padding, own-line comments take the indentation of what follows, doc lines get one
+space after `///`.
+-- in.canon --
+package p // the package
+
+record Item {
+  id:      String   @json("dwID")          // "II_GEN_MAT_MOONSTONE": what gets stored
+  nameKey: String   @json("szName")        // "IDS_PROPITEM_TXT_003930"
+      // an own-line comment
+
+  ///Doc without a space.
+  kind: Int /* inline */ = 1
+    // at the end of the list
+}
+
+type Param(e: EventType) = match e.param {
+  monster      => ref monsters
+  game_mode    => String         // KeyToGameMode's keys are still C++ (EventParamTypes.h)
+  none_, stat  => Never          // no parameter: only "no filter" is valid
+}
+
+let x = f(a, // first
+  b)
+/* a block
+   comment */
+const Y = 1
+// the end
+-- want --
+package p // the package
+
+record Item {
+  id: String @json("dwID") // "II_GEN_MAT_MOONSTONE": what gets stored
+  nameKey: String @json("szName") // "IDS_PROPITEM_TXT_003930"
+  // an own-line comment
+
+  /// Doc without a space.
+  kind: Int /* inline */ = 1
+  // at the end of the list
+}
+
+type Param(e: EventType) = match e.param {
+  monster => ref monsters
+  game_mode => String // KeyToGameMode's keys are still C++ (EventParamTypes.h)
+  none_, stat => Never // no parameter: only "no filter" is valid
+}
+
+let x = f(
+  a, // first
+  b,
+)
+/* a block
+   comment */
+const Y = 1
+// the end

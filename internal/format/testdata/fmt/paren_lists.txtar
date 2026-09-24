@@ -1,0 +1,25 @@
+FORMATTER.md §6.2: parenthesis and bracket lists are laid out by width only: flat when they fit,
+else one element per line each followed by a comma; a lone literal argument hugs.
+-- in.canon --
+package p
+
+let a = f(1,
+  2,)
+let b = someFunction(firstArgumentThatIsLong, secondArgumentThatIsLonger, third: "a string value")
+let c = [1, 2, 3,]
+let d = call({ a: 1, b: 2 })
+let e = call({
+  a: 1
+})
+let f = [aaaaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbbbbbb, cccccccccccccccccccccccc, ddddddddddddddd]
+-- want --
+package p
+
+let a = f(1, 2)
+let b = someFunction(firstArgumentThatIsLong, secondArgumentThatIsLonger, third: "a string value")
+let c = [1, 2, 3]
+let d = call({ a: 1, b: 2 })
+let e = call({
+  a: 1
+})
+let f = [aaaaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbbbbbb, cccccccccccccccccccccccc, ddddddddddddddd]

@@ -1,0 +1,63 @@
+FORMATTER.md §6.1, §6.2, §8.2 and DECISIONS 167-169: a comment inside a brace list breaks it; an
+inline block comment has one space on each side; a one-line block comment before code on its
+line stays inline; a commented argument does not hug; in a list that never breaks, own-line
+comments are indented and the comma precedes a trailing comment.
+-- in.canon --
+package p
+
+let a = { x: 1 /* c */, y: 2 }
+let e = { /* in empty */ }
+let b = f( /* c */a)
+let c = - /* c */5
+let d = a /* c */.b
+/* a */ let x = 1
+let g =
+  /* c */ 5
+let h = f(
+  // lead
+  { a: 1 })
+let i = f({ a: 1 } // t
+)
+type T = Map(
+  // c
+  Int)
+record R {
+  c: [Int](
+    // c
+    1..)
+  d: Int @json("b", // after
+    unit: s)
+}
+-- want --
+package p
+
+let a = {
+  x: 1 /* c */
+  y: 2
+}
+let e = { /* in empty */
+}
+let b = f( /* c */ a)
+let c = - /* c */ 5
+let d = a /* c */ .b
+/* a */ let x = 1
+let g =
+  /* c */ 5
+let h = f(
+  // lead
+  { a: 1 },
+)
+let i = f(
+  { a: 1 }, // t
+)
+type T = Map(
+  // c
+  Int)
+record R {
+  c: [Int](
+    // c
+    1..)
+  d: Int
+    @json("b", // after
+      unit: s)
+}

@@ -1,0 +1,12 @@
+FORMATTER.md §9.2 and §9.3: translation entries lose their padding and keep their order.
+-- in.canon --
+package resource.farm
+translation fr
+Global.farmPurchasePrice              "Prix d'achat de la ferme"
+Global.visitCost    "Coût d'une visite"
+-- want --
+package resource.farm
+translation fr
+
+Global.farmPurchasePrice "Prix d'achat de la ferme"
+Global.visitCost "Coût d'une visite"

@@ -1,0 +1,69 @@
+FORMATTER.md §7.2 and §7.4: a binary chain breaks after each operator; a postfix chain with two
+calls or more breaks before each step; a call breaks per argument.
+-- in.canon --
+package p
+
+fn pickWeapon(kind: String, level: Int, jobs: [String]) -> Weapon? {
+  return weapons
+    .filter(w => w.kind3 == kind and w.handed in ["HD_ONE", "HD_TWO"] and w.job in jobs
+                 and w.sex in ["=", "SEX_ANY", ""] and (w.limit ?? 1) <= level)
+    .maxBy(w => w.limit ?? 1)
+}
+
+check {
+  for category in categories {
+    if missing.len() > 0 {
+      if missing.len() > 0 {
+        if missing.len() > 0 {
+          fail(jobs[missing[0]].compared()[category],
+               "{category}: set id {id} is missing from {missing.join(", ")}; " +
+               "the loader refuses the whole file until every job declares the same ids")
+        }
+      }
+    }
+  }
+}
+
+export fn areas(role: Role) -> [AreaSection] {
+  return [{ group: g, areas: areasVisibleTo(role).filter(a => a.group == g) }
+          for g in areaGroups.active()
+          if areasVisibleTo(role).any(a => a.group == g)]
+}
+-- want --
+package p
+
+fn pickWeapon(kind: String, level: Int, jobs: [String]) -> Weapon? {
+  return weapons
+    .filter(
+      w => w.kind3 == kind and
+        w.handed in ["HD_ONE", "HD_TWO"] and
+        w.job in jobs and
+        w.sex in ["=", "SEX_ANY", ""] and
+        (w.limit ?? 1) <= level,
+    )
+    .maxBy(w => w.limit ?? 1)
+}
+
+check {
+  for category in categories {
+    if missing.len() > 0 {
+      if missing.len() > 0 {
+        if missing.len() > 0 {
+          fail(
+            jobs[missing[0]].compared()[category],
+            "{category}: set id {id} is missing from {missing.join(", ")}; " +
+              "the loader refuses the whole file until every job declares the same ids",
+          )
+        }
+      }
+    }
+  }
+}
+
+export fn areas(role: Role) -> [AreaSection] {
+  return [
+    { group: g, areas: areasVisibleTo(role).filter(a => a.group == g) }
+    for g in areaGroups.active()
+    if areasVisibleTo(role).any(a => a.group == g)
+  ]
+}

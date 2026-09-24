@@ -1,3 +1,4 @@
-// Package format prints Canon sources in their canonical layout from the syntax tree and its
-// trivia, keeping comments (spec/FORMATTER.md).
+// Package format prints Canon sources in their one canonical layout (spec/FORMATTER.md): a
+// Wadler printer over a document built from the syntax tree, every comment kept next to the
+// token it was attached to.
 package format

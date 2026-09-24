@@ -1,0 +1,32 @@
+FORMATTER.md §3, §8.2 and DECISIONS 168: a comment ending the line of an "else" puts what
+follows it on a continuation line, whose block is one level deeper than the line holding "{".
+-- in.canon --
+package p
+
+let v = if a { 1 } else // c
+  { 2 }
+fn f() -> Int {
+  if a { b() } else // d
+  if c { d() } else { e() }
+  return 1
+}
+-- want --
+package p
+
+let v = if a {
+  1
+} else // c
+  {
+    2
+  }
+fn f() -> Int {
+  if a {
+    b()
+  } else // d
+    if c {
+      d()
+    } else {
+      e()
+    }
+  return 1
+}

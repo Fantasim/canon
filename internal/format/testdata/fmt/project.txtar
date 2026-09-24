@@ -1,0 +1,23 @@
+FORMATTER.md §9.3 and §10: a map-valued project key is printed in block form.
+-- project.canon --
+/// The project.
+project demo {
+  canon:   "0.1"
+  roots: { resource: "../Resource", services: "../.." }
+
+  languages: [en,fr]
+  go_module {
+    services: "example.com/services"
+  }
+}
+-- want --
+/// The project.
+project demo {
+  canon: "0.1"
+  roots { resource: "../Resource", services: "../.." }
+
+  languages: [en, fr]
+  go_module {
+    services: "example.com/services"
+  }
+}

@@ -1,0 +1,21 @@
+FORMATTER.md §3, GRAMMAR.md §2.6 and DECISIONS 178: a multiline string keeps its value: a
+content line of blanks longer than the old prefix keeps what follows the prefix, and trailing
+blanks of content lines stay (§2 yields to the value).
+-- in.canon --
+package p
+
+let s = """
+    a   
+      
+
+    b
+    """
+-- want --
+package p
+
+let s = """
+  a   
+    
+
+  b
+  """

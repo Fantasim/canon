@@ -1,0 +1,53 @@
+FORMATTER.md §6.2, §7.2 and §7.3: long parameter lists, headers, lambdas, match arms, comprehensions
+and strings; a string, an annotation or a type longer than the width is never broken (§2).
+-- in.canon --
+package p
+
+fn aVeryLongFunctionName(firstParameter: SomeLongType, secondParameter: [AnotherLongType], third: Int = 5) -> Result? {
+  for element in collectionWithALongName.filter(e => e.enabled and e.visibleToEveryone and e.kind == wanted) {
+    if element.firstCondition(argumentNumberOne) and element.secondCondition(argumentNumberTwo) or fallback {
+      return element
+    }
+  }
+  let s = "a string that is longer than the width of one hundred columns and cannot be broken at all anywhere"
+  return match kind { weapon => pickTheWeaponWith(kind, level, jobs, preferredHand, allowedSexes, limit), _ => none }
+}
+
+type Pair = [Int(1..)] where it.len() == 2 and it[0] <= it[1] and it[1] <= 1_000_000_000 and it[0] >= 0
+let m = { k: v for k, v in someVeryLongMapNameThatIsQuiteLong if v.isInteresting() and k.startsWith("x") }
+let c = [x.name for x in someCollectionWithAVeryLongName if x.isInteresting() and x.isVisible(context)]
+-- want --
+package p
+
+fn aVeryLongFunctionName(
+  firstParameter: SomeLongType,
+  secondParameter: [AnotherLongType],
+  third: Int = 5,
+) -> Result? {
+  for element in collectionWithALongName.filter(
+    e => e.enabled and e.visibleToEveryone and e.kind == wanted,
+  ) {
+    if element.firstCondition(argumentNumberOne) and element.secondCondition(argumentNumberTwo) or
+      fallback {
+      return element
+    }
+  }
+  let s = "a string that is longer than the width of one hundred columns and cannot be broken at all anywhere"
+  return match kind {
+    weapon => pickTheWeaponWith(kind, level, jobs, preferredHand, allowedSexes, limit)
+    _ => none
+  }
+}
+
+type Pair =
+  [Int(1..)] where it.len() == 2 and it[0] <= it[1] and it[1] <= 1_000_000_000 and it[0] >= 0
+let m = {
+  k: v
+  for k, v in someVeryLongMapNameThatIsQuiteLong
+  if v.isInteresting() and k.startsWith("x")
+}
+let c = [
+  x.name
+  for x in someCollectionWithAVeryLongName
+  if x.isInteresting() and x.isVisible(context)
+]

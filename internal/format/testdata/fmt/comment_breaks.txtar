@@ -1,0 +1,53 @@
+FORMATTER.md §8.2 and DECISIONS 168: after a comment that ends a line inside a construct, the
+operator starts the continuation line with its operand, and an "else" goes one level deeper with
+its block.
+-- in.canon --
+package p
+
+let y = aaaa // c
+  + b
+let w = a
+  // own
+  + b
+record S {
+  f: Int // c
+    = 5
+}
+fn g() -> Int {
+  if a { b() } // c
+  else { d() }
+  if a { b() }
+  // before else
+  else {
+    c()
+  }
+  return 1
+}
+-- want --
+package p
+
+let y = aaaa // c
+  + b
+let w = a
+  // own
+  + b
+record S {
+  f: Int // c
+    = 5
+}
+fn g() -> Int {
+  if a {
+    b()
+  } // c
+    else {
+      d()
+    }
+  if a {
+    b()
+  }
+    // before else
+    else {
+      c()
+    }
+  return 1
+}

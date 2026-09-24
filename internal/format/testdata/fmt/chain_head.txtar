@@ -1,0 +1,17 @@
+FORMATTER.md §3, §7.2 and DECISIONS 169: the steps before a chain's first "." belong to its head
+and are not indented as a continuation.
+-- in.canon --
+package p
+
+let q = someFunctionNameaaaaaaaaaaaaaaa(aaaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbbbbbbbbb)(cccccccccccccccccccc, dddddddddddddddd)
+let r = xs[someIndexFunction(aaaaaaaaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb)].f(1).g(2222222222222222)
+-- want --
+package p
+
+let q = someFunctionNameaaaaaaaaaaaaaaa(
+  aaaaaaaaaaaaaaaaaaa,
+  bbbbbbbbbbbbbbbbbbbbbbbbbbbb,
+)(cccccccccccccccccccc, dddddddddddddddd)
+let r = xs[someIndexFunction(aaaaaaaaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb)]
+  .f(1)
+  .g(2222222222222222)

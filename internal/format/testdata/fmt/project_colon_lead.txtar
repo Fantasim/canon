@@ -1,0 +1,20 @@
+FORMATTER.md §9.3, §8 and DECISIONS 168: a project map key keeps its colon when an own-line
+comment precedes its "{".
+-- project.canon --
+project A {
+  A:
+  //
+  {}
+  roots:
+    // c
+    { a: "x" }
+}
+-- want --
+project A {
+  A:
+    //
+    {}
+  roots:
+    // c
+    { a: "x" }
+}

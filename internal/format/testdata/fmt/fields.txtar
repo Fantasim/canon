@@ -1,0 +1,24 @@
+FORMATTER.md §7.2 and DECISIONS 41: a field's annotations break onto continuation lines when the
+field does not fit, but never when a method or check follows it.
+-- in.canon --
+package p
+
+record Farm {
+  maxModels: Int? = none @deprecated("never read by LoadFromFile: the real cap is FARM_MAX_MODELS = 100. Kept as is; changing it changes nothing in game.")
+  other: Int = 1 @json("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa") @since(33333333333333333333333333333333333333333)
+  last: Int = 1 @json("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa") @since(33333333333333333333333333333333333333333)
+  fn twice(self) -> Int { return last * 2 }
+}
+-- want --
+package p
+
+record Farm {
+  maxModels: Int? = none
+    @deprecated("never read by LoadFromFile: the real cap is FARM_MAX_MODELS = 100. Kept as is; changing it changes nothing in game.")
+  other: Int = 1
+    @json("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+    @since(33333333333333333333333333333333333333333)
+  last: Int =
+    1 @json("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa") @since(33333333333333333333333333333333333333333)
+  fn twice(self) -> Int { return last * 2 }
+}

@@ -1,0 +1,27 @@
+FORMATTER.md §7.3 and §7.4: rule A. A value that fits after the operator stays there; a brace
+or list literal breaks its own brackets (step 2); a value that fits on the next line goes there
+(step 3); otherwise the value's own groups break (step 4).
+-- in.canon --
+package p
+
+let adventureQuests: AdventureQuestConfig = load("@resource/Server/Quest/adventure_quest_config.json")
+let small: Config = { a: 1 }
+let listed: [Name] = [aaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbbbbbb, ccccccccccccccccccccccc, dddddd]
+let long = aaaaaaaaaaaaaaaaaaaaaa + bbbbbbbbbbbbbbbbbbbbbbbbbbbbb + cccccccccccccccccccccccccc + dddddddddddddddddd + eeeeeeeeeeeee
+-- want --
+package p
+
+let adventureQuests: AdventureQuestConfig =
+  load("@resource/Server/Quest/adventure_quest_config.json")
+let small: Config = { a: 1 }
+let listed: [Name] = [
+  aaaaaaaaaaaaaaaaaa,
+  bbbbbbbbbbbbbbbbbbbbbbbbb,
+  ccccccccccccccccccccccc,
+  dddddd,
+]
+let long = aaaaaaaaaaaaaaaaaaaaaa +
+  bbbbbbbbbbbbbbbbbbbbbbbbbbbbb +
+  cccccccccccccccccccccccccc +
+  dddddddddddddddddd +
+  eeeeeeeeeeeee

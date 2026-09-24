@@ -8,17 +8,16 @@ Updated: 2026-09-24 (night, autonomous session: M1 in flight)
 `syntax`, `wire` encode+decode, fingerprint, `gen/json`, `project`/`build`/`cli` (`version`,
 `init`, `new`, `check`), `verify`/`lock`/`rules` (hand-built values), `check` + `types` judge
 (every example checks clean), `jsonsrc`. DECISIONS 139–177 (autonomous).
-**In flight:** EVL (`eval`, stdlib, E41xx, E4301 for const cycles, `NewFolder`, Where/Run);
-`gen/go` review fixes (blocked on E41xx txtars, DECISIONS 125); `format` last review round.
+**EVL done, uncommitted, to review** (DECISIONS 185–187): `eval` + `eval/std`, every example
+without `load` evaluates, M1 goldens and E41xx/E45xx txtars in; unblocks `gen/go` (DECISIONS 125).
 **NEXT:** wire `build.Checker` + a `Host` adapter (Louis-call 7), `canon build`, IR stage E,
-goldens + MANIFEST (M1 accept). Cleanup: duplicate helpers (`editDistance`, `isWord`, `posOf`),
-`wire` `node.pretty` vs `jsonsrc.Format`; `value.Str.CanonText` unquoted in messages (value owner).
+goldens + MANIFEST (M1 accept). Cleanup: duplicate helpers (`editDistance`, `isWord`/`word`,
+`posOf`, value paths in verify and eval), `wire` `node.pretty` vs `jsonsrc.Format`; `Str` unquoted in messages.
 
 ## What exists
 
-- Spec: SPEC.md, CLI.md, DECISIONS.md, `spec/`, `meta/spec-phase/` (audits, git-ignored mockups).
-- Contracts (IMPLEMENTATION-PLAN §4) + `api/`; `internal/testkit`; `tools/audit`, `.sovaudit/`;
-  `examples/` (own module); CI skeleton `.github/workflows/check.yml`.
+- Spec, DECISIONS.md, `spec/`, `meta/spec-phase/`; contracts (IMPLEMENTATION-PLAN §4) + `api/`;
+  `internal/testkit`; `tools/audit`, `.sovaudit/`; `examples/` (own module); CI skeleton.
 
 ## Open Louis-calls
 
@@ -39,9 +38,8 @@ goldens + MANIFEST (M1 accept). Cleanup: duplicate helpers (`editDistance`, `isW
    `E3201`'s eval form lands with EVL/check; `E3505` owned by `eval`, met in stage B
    (`Result.Unbound`); `Where` cost (none) and hard error (poison). §4.8's
    `Host.Verify(…) bool` cannot carry `Result` (Poisoned, Unbound, ErrNoBag): its return must
-   change (verify's `Result`, or eval gains `Poison(root)` + an E3505 path) under §4's review
-   rule before `build` wires `verify`. `types.Predicate{Expr,Text}` has no package/scope (add
-   `Pkg string`, or `Where(ctx, owner, p, it)`); `Where`/`Run` missing from §4.8. Also: "live
+   change, or `build` adapts it with `ev.Poison` + `ev.ReportUnbound` (DECISIONS 186, done so);
+   `types.Predicate` has no package (eval finds its file); `Where`/`Run` not in §4.8. Also: "live
    table entry" (EVAL §5) vs "live entry" (TYPES §10.3); rename pairing count (LOCK §4.1);
    `E6002` conflict `value:Name`; no related location for Basic types; `E3701`–`E3703` order;
    `W6006` location (lock line 1).
@@ -58,19 +56,25 @@ goldens + MANIFEST (M1 accept). Cleanup: duplicate helpers (`editDistance`, `isW
 11. **SYN jsonsrc (DECISIONS 162–165):** E7104 "first at line:col" (WIRE §3.2) vs `Loc` = path:line
     (ERRORS §1.3); E7105 `{offset}` raw vs normalized; E7109 byte vs character, detail `""` at EOF;
     `\ud800\udcGG` E7105 over E7109; BOM counted in line-1 columns; E7104 key rendered verbatim.
-
 12. **LOD wire decode (DECISIONS 173–176):** codes met in decode but owned elsewhere (E7104 csv →
     jsonsrc; E3102/E3202 → verify); E7111 bits hex vs `bits:Int`; E3301 case hint; Never-branch
     non-optional field (E3315/E3302 vs E3801); empty CSV cell vs `""` none marker; no code for a
     missing/repeated `$id`; no value path on decode findings (EVAL §13); `$schema` in a root map;
     §9 E3802 row waits for verify DEP-02; huge tokens quoted whole in messages (ERRORS §1.3).
+13. **SYN format (DECISIONS 166–170, 178, 179):** §7.1 "counts as FLAT" breaks §1 idempotence
+    (170: only single-line-bit groups keep the holder's mode; §7.1 wording proposed); §8.1 vs §8.2
+    inline block comments; §2 vs multiline strings (178); a `.`-item forces a comma in broken
+    brace lists (179 vs §6.1/§10); §7.3 step 3 and chain head vs §3 (169); `canon fmt` CLI unspecified.
+
+14. **M1 EVL (DECISIONS 185–187):** EVAL §2.3 "while computing" has no code/variant; E6004 (layers)
+    is lock's: eval lists it (`StableAmendments`) for lock to report; `R(p)` params unbound (M3).
 
 ## Verify queue
 
-- `go test -race ./...` in CI (green locally). The hooks, once enabled.
+- `go test -race ./...` in CI (green locally); the hooks, once enabled.
 
 ## What could not be verified
 
 `fixturegen` on real data (tested on synthetic trees and the committed fixtures). The CI
 workflow never ran on a runner (actionlint only). Whether the relative `..` permission
-patterns match. `verify`/`rules` ran only on hand-built values and a scripted evaluator.
+patterns match. `verify`/`rules` ran with `eval` only through its test harness (no `build` yet).

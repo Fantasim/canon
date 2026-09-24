@@ -1360,9 +1360,10 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     other group follows §7.1 literally, so a later width-only group still counts flat (`(a, b) =>
     value` breaks its parameters when the flat value does not fit). `fits` meets a broken rule-A
     group as the printer does (step 3 ends the line after the operator). All examples stay fixed
-    points and 10 minutes of fuzzing find no non-idempotent input. Gap for Louis: §7.1's parenthesis
-    could read "a group met in rest that holds a brace list counts in the mode of the command
-    holding it; any other counts as FLAT unless it contains a hardline".
+    points, and a 10-minute `FuzzFormat` run on the final code (13 552 013 executions) finds no
+    non-idempotent input. Gap for Louis: §7.1's parenthesis could read "a group met in rest that
+    holds a brace list counts in the mode of the command holding it; any other counts as FLAT
+    unless it contains a hardline".
 
 171. **Expression details the part-B review settled (TYPES §5–§12).** Parentheses are
     transparent: checked once, a parenthesis's `Types` is its content's, `Conv` sits on the
@@ -1522,6 +1523,46 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     template whose keys start with `$`, or whose keys meet the other template of the same field,
     is `E3316` `pairsTemplate` (the rule of §4.1's `pairs:` row); a key of another field is
     `collision` or `prefix`. A clashing template stays compared, so later fields still meet it.
+
+185. **The evaluator's cost model and recovery choices (EVALUATION §7, §12, §13).** Every AST value
+    node evaluated costs one step, a callee's name and a method's `.m` included, so `xs.len()`
+    is name + `.len` + call + the built-in's 1 (GRAMMAR's postfix ops, §12.1's shorthand `1 + 2`);
+    a string template is one node plus its interpolations; `in` costs its node only; `sortBy`
+    charges comparisons only, and every other built-in charges per element as it takes it,
+    before invoking its function; `contains` by key costs the entries scanned. The budget's last
+    step is the one that makes the count reach it (`steps >= budget`: E4401 there). A value
+    completed while others are being forced is verified once none is (a ref may point into one
+    still being built); stack frames name the fn (`Record.m` for a method) at its call site,
+    lambdas counting toward the depth but not listed. Steps are charged to a check's name, else
+    its record's or variant's, else `check`. Conversion findings carry the value path along a
+    let's own literal nesting only; `E3503` keeps the unconverted record (marked invalid); a map
+    key given twice at evaluation (`E3322`) keeps the first entry and marks the map invalid; a
+    broken `entry` declaration poisons its let without a finding; retired members (`E3506`) and
+    assets are left to stage B, which knows the retired-entry scope. Reason: one deterministic
+    count, and no finding that another one already implies.
+186. **The evaluator's surfaces beyond IMPLEMENTATION-PLAN §4.8 (DECISIONS 148, Louis-call 7).**
+    `eval` may not import `rules` or `verify` (§3), so `Evaluator.Run` returns `eval.CheckRun`
+    (rules.Run's fields) and `Evaluator.Test(ctx, test, Builder)` takes a `Builder` (verify + the
+    instance checks of a subject, findings returned) that `build`/`rules` implements: one
+    adapter each, a field copy. `Where` finds a predicate's file by its expression (types.Predicate
+    has no package). `host.Verify(…) bool` stays frozen: the build adapter calls
+    `verify.Check`, then `ev.Poison(root)` on `Result.Poisoned` and `ev.ReportUnbound(root, ref,
+    path)` (E3505, eval's) for each `Result.Unbound`, and returns `Result.Valid`. `Call` names
+    its outermost frame `canTransition(open, taken)`: EVALUATION §2.3's "while computing" is
+    English no code or variant carries (gap). A broken test does not run (`TestRun.Broken`); a
+    hard error outside an expect subject stops it and is reported. Reason: the frozen contract
+    kept, every new surface one adapter away from its consumer.
+187. **Const cycles and layers (DECISIONS 172, EVALUATION §3.2, §9.3).** A broken const, when
+    forced or met by a fold, has its initializer uses followed to a cycle through itself, which
+    is reported from its first const in (file path, position) order at the use closing it, so
+    every const of it and the folder report the same `E4301` once (§14). Layers: an amendment
+    replaces copy on write; the amended field becomes `Set`, and only the later defaulted fields
+    of the instance whose field it replaced are re-evaluated; a path through a missing key,
+    index or `none` is `E1905`, hard. An amendment adding an entry to a stable table, or changing
+    a `@stable` field, is not applied: its let is poisoned and the amendment listed in
+    `Evaluator.StableAmendments()` for `lock` to report `E6004` (lock's code; its txtar belongs
+    in `internal/lock`, which EVL may not edit: gap until lock or build reports it). Reason: no
+    lenient amendment, and one owner per code.
 
 ## Still open
 

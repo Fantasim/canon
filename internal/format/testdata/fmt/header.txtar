@@ -1,0 +1,25 @@
+FORMATTER.md §4 and §9.1: comments before package keep their blank lines, package is followed
+by one blank line, the import block is sorted, has no blank lines and is followed by one.
+-- in.canon --
+// A header comment.
+
+/// The package doc.
+package p
+import sovcommon.ui { Tone, Icon }
+
+import sovcommon.roles { Role }
+import a.b as z
+import a.b
+const A = 1
+-- want --
+// A header comment.
+
+/// The package doc.
+package p
+
+import a.b
+import a.b as z
+import sovcommon.roles { Role }
+import sovcommon.ui { Icon, Tone }
+
+const A = 1

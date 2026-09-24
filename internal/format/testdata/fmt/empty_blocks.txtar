@@ -1,0 +1,19 @@
+FORMATTER.md §6.1 and DECISIONS 169: an empty block is "{}" and does not break its if chain.
+-- in.canon --
+package p
+
+fn f() -> Int {
+  if a {
+  } else { b() }
+  while x {
+  }
+  return 1
+}
+-- want --
+package p
+
+fn f() -> Int {
+  if a {} else { b() }
+  while x {}
+  return 1
+}

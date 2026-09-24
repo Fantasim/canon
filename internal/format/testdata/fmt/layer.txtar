@@ -1,0 +1,20 @@
+FORMATTER.md §9.3: a layer file has `layer name` on the line after `package`, then one blank
+line; amend items are rule A items.
+-- in.canon --
+package service.resourcestudio
+
+layer louis
+amend config {
+  paths.resourceRoot:   "/data"
+  server.port:9000
+  items[#0].name  : "x"
+}
+-- want --
+package service.resourcestudio
+layer louis
+
+amend config {
+  paths.resourceRoot: "/data"
+  server.port: 9000
+  items[#0].name: "x"
+}

@@ -1,0 +1,25 @@
+FORMATTER.md §7.2 and §7.4: a one-line check breaks before `else` when it does not fit; a check
+block is a statement block.
+-- in.canon --
+package p
+
+check columns.active().first()!.statuses.len() == 1 else "the first column must hold exactly one status: it is the initial status"
+check a<b   else "short"
+warn named: x at y else "z"
+check { fail(x, "y") }
+check {
+  let a = 1
+  if a > 0 { fail(a, "b") } else { fail(a, "c") }
+}
+-- want --
+package p
+
+check columns.active().first()!.statuses.len() == 1
+  else "the first column must hold exactly one status: it is the initial status"
+check a < b else "short"
+warn named: x at y else "z"
+check { fail(x, "y") }
+check {
+  let a = 1
+  if a > 0 { fail(a, "b") } else { fail(a, "c") }
+}

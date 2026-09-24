@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("package A//\nrecord A{A:A@json(\"\")//\nA:A@json(\"\")//\n,//0000000000000\n} \ntype A(A:A)=match 0%0{A=>re.A0,A=>A//\n} \nlet A=0(0%0%A0)/*\n*/const A=0")

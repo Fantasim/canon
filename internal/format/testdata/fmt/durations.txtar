@@ -1,0 +1,30 @@
+FORMATTER.md §10 and GRAMMAR.md §2.5: durations are rewritten in canonical text; numbers,
+strings and regexes are kept byte for byte.
+-- in.canon --
+package p
+
+const A = 60s
+const B = 90s
+const C = 1_000ms
+const D = 36h
+const E = 0ms
+const F = -90m
+const G = 1_000_000
+const H = 0x1F
+const I = 1e-3
+let s: String(/^II_[A-Z]+$/) = "a {b} \u{41} {{"
+let r = r"C:\path"
+-- want --
+package p
+
+const A = 1m
+const B = 1m30s
+const C = 1s
+const D = 1d12h
+const E = 0s
+const F = -1h30m
+const G = 1_000_000
+const H = 0x1F
+const I = 1e-3
+let s: String(/^II_[A-Z]+$/) = "a {b} \u{41} {{"
+let r = r"C:\path"

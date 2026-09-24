@@ -1,0 +1,61 @@
+FORMATTER.md §8.1 and DECISIONS 168: the comments of a dropped comma stay next to their tokens,
+after the separator the layout writes again, or on a line of their own when the comma started one.
+An item starting with "." keeps a comma before it (DECISIONS 179): a line starting with "." continues the
+line before (GRAMMAR.md §3.1 rule 3).
+-- in.canon --
+package p
+
+fn f() -> Int {
+  for a, // c
+    b in xs { g() }
+  match x {
+    a, // c
+      b => 1
+  }
+  return 1
+}
+let m = { k: v for k, // c
+  v in xs }
+record R {
+  a: Int // x
+  , // y
+  b: Int
+}
+let z = f(a // x
+, // y
+b)
+let d = {A{0:0,.
+A:[]}}
+-- want --
+package p
+
+fn f() -> Int {
+  for a, // c
+    b in xs { g() }
+  match x {
+    a, // c
+      b => 1
+  }
+  return 1
+}
+let m = {
+  k: v
+  for k, // c
+    v in xs
+}
+record R {
+  a: Int // x
+  // y
+  b: Int
+}
+let z = f(
+  a, // x
+  // y
+  b,
+)
+let d = {
+  A {
+    0: 0,
+    .A: []
+  }
+}

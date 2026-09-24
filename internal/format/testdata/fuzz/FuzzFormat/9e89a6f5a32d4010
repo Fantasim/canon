@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("package A\nfn A(A:A)->A{retur%A0(0)%0(A000(0)%0(A=>0%0%0x0 and 0%0%0x0))}//0000000000000000000000000000000")
