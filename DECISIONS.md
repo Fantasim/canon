@@ -1771,7 +1771,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      logged in `meta/decisions/log-<date>.md`; only direction questions go to Louis.
 
 208. **`E7109` names what went wrong, by variant (amends 162).** The span and pointer stay as 162
-     says. The detail becomes three variants: `eof` (the source ends inside a value: `JSON syntax
+     says. The detail becomes three variants: `eof` (the source ends before or inside a value: `JSON syntax
      error: unexpected end of input`), `depth` (the opener past the nesting limit of WIRE.md §3.1:
      `nested deeper than {limit} levels`), and `char` (every other case: `unexpected character
      {char}`, `char` the offending character written as a JSON string, WIRE.md §7.3, a source
