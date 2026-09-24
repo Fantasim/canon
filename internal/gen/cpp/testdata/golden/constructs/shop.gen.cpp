@@ -415,9 +415,10 @@ struct ShopAccess {
     static bool LoadItems(const std::string& path, Items& out, std::string& error) {
         std::string text;
         nlohmann::json doc;
+        canon::json::Float32Tokens tokens;
         if (!canon::json::ReadFile(path, text, error)) return false;
-        if (!canon::json::ParseDataFile(path, text, kItemsSchema, doc, error)) return false;
-        canon::json::Decoder dec(path);
+        if (!canon::json::ParseDataFile(path, text, kItemsSchema, doc, error, tokens)) return false;
+        canon::json::Decoder dec(path, tokens);
         const nlohmann::json* rows = dec.Array(doc, "rows");
         if (rows == nullptr) return error = dec.Error(), false;
         std::vector<Item> values(rows->size());
@@ -431,6 +432,7 @@ struct ShopAccess {
             keys[i] = values[i].id_;
             out.byCodeKeys_.push_back(values[i].code_);
         }
+        if (!canon::json::detail::CheckUnique(keys, dec, "$id", "rows", [](const auto& k) { return canon::json::detail::KeyToken(k); })) return error = dec.Error(), false;
         out.rows_ = canon::KeyedList<std::string, Item>::FromRows(std::move(values), std::move(keys));
         out.byCode_ = canon::detail::SortedIndex(out.byCodeKeys_);
         return true;
@@ -439,9 +441,10 @@ struct ShopAccess {
     static bool LoadShelves(const std::string& path, Shelves& out, std::string& error) {
         std::string text;
         nlohmann::json doc;
+        canon::json::Float32Tokens tokens;
         if (!canon::json::ReadFile(path, text, error)) return false;
-        if (!canon::json::ParseDataFile(path, text, kShelvesSchema, doc, error)) return false;
-        canon::json::Decoder dec(path);
+        if (!canon::json::ParseDataFile(path, text, kShelvesSchema, doc, error, tokens)) return false;
+        canon::json::Decoder dec(path, tokens);
         const nlohmann::json* rows = dec.Array(doc, "rows");
         if (rows == nullptr) return error = dec.Error(), false;
         std::vector<Shelf> values(rows->size());
@@ -455,6 +458,7 @@ struct ShopAccess {
             out.byDeleteKeys_.push_back(values[i].delete_);
             out.byIKeys_.push_back(values[i].i_);
         }
+        if (!canon::json::detail::CheckUnique(keys, dec, "id", "rows", [](const auto& k) { return canon::json::detail::KeyToken(k); })) return error = dec.Error(), false;
         out.rows_ = canon::KeyedList<std::string, Shelf>::FromRows(std::move(values), std::move(keys));
         out.byDelete_ = canon::detail::SortedIndex(out.byDeleteKeys_);
         out.byI_ = canon::detail::SortedIndex(out.byIKeys_);
@@ -469,9 +473,10 @@ struct ShopAccess {
     static bool LoadConfig(const std::string& path, Config& out, std::string& error) {
         std::string text;
         nlohmann::json doc;
+        canon::json::Float32Tokens tokens;
         if (!canon::json::ReadFile(path, text, error)) return false;
-        if (!canon::json::ParseDataFile(path, text, kConfigSchema, doc, error)) return false;
-        canon::json::Decoder dec(path);
+        if (!canon::json::ParseDataFile(path, text, kConfigSchema, doc, error, tokens)) return false;
+        canon::json::Decoder dec(path, tokens);
         const nlohmann::json* value = dec.Required(doc, "value");
         if (value == nullptr) return error = dec.Error(), false;
         dec.Push("value");
@@ -484,9 +489,10 @@ struct ShopAccess {
     static bool LoadHome(const std::string& path, Point& out, std::string& error) {
         std::string text;
         nlohmann::json doc;
+        canon::json::Float32Tokens tokens;
         if (!canon::json::ReadFile(path, text, error)) return false;
-        if (!canon::json::ParseDataFile(path, text, kHomeSchema, doc, error)) return false;
-        canon::json::Decoder dec(path);
+        if (!canon::json::ParseDataFile(path, text, kHomeSchema, doc, error, tokens)) return false;
+        canon::json::Decoder dec(path, tokens);
         const nlohmann::json* value = dec.Required(doc, "value");
         if (value == nullptr) return error = dec.Error(), false;
         dec.Push("value");

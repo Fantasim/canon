@@ -75,6 +75,11 @@ func (g *gen) loader(v *ir.Value, resolve bool) {
 		g.c.linef(depthThree, stableKeyFormat, byPrefix+upperCamel(f.Name)+keysSuffix+underscore, m)
 	}
 	g.c.linef(depthTwo, closeBrace)
+	if s.wireKey == "" {
+		g.c.lineAt(depthTwo, checkUniqueIDLine)
+	} else {
+		g.c.linef(depthTwo, checkUniqueFormat, quote(s.wireKey), s.render)
+	}
 	g.c.linef(depthTwo, fromRowsOutFormat, s.key, s.elem)
 	for _, f := range s.stable {
 		idx := byPrefix + upperCamel(f.Name)

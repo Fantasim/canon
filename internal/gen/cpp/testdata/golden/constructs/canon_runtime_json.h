@@ -4,12 +4,15 @@
 
 #include <algorithm>
 #include <chrono>
+#include <clocale>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <fstream>
 #include <iterator>
 #include <limits>
+#include <map>
 #include <optional>
 #include <set>
 #include <string>
@@ -49,8 +52,23 @@ inline constexpr size_t kMaxNesting = 512;
 /// The largest Duration in milliseconds, either sign (TYPES.md §7.2).
 inline constexpr int64_t kDurationMaxMs = 9223372036854;
 
-/// The smallest magnitude a Float32 rounds to infinity from: a number that large is refused.
+/// The smallest magnitude a Float32 rounds to infinity from, 2^128 - 2^103: halfway between
+/// FLT_MAX and 2^128, a double. A number that large is refused (WIRE.md §5.1).
 inline constexpr double kFloat32Overflow = 3.4028235677973366e+38;
+
+/// The significant bits of a Float32 rounding midpoint: 24 of a float32, and the half ulp.
+inline constexpr int kMidpointBits = 25;
+
+/// A cap on a token's exponent while it is read: far beyond any token a file can hold, and
+/// small enough that no sum over it overflows.
+inline constexpr int64_t kExponentCap = 1000000000000000;
+
+/// What a Float32 read that is not a number, or rounds to infinity, is told.
+inline constexpr const char* kFloat32Refused = "expected a number that fits Float32";
+
+/// What a Float32 read is told when nlohmann's double is a rounding midpoint and the token that
+/// decides it is not on record: a bug of the loader, never a guess.
+inline constexpr const char* kFloat32NoToken = "internal error: no token on record for a Float32 rounding midpoint";
 
 /// True when `a` and `b` are equal ignoring the case of ASCII letters, and only of them. A
 /// generated loader refuses a key that matches an expected one only this way.
@@ -73,7 +91,160 @@ inline std::string IntExpected(int64_t lo, int64_t hi) {
     return "expected an integer from " + std::to_string(lo) + " to " + std::to_string(hi);
 }
 
+/// The float32 bits of `f`.
+inline uint32_t Float32Bits(float f) {
+    uint32_t bits = 0;
+    std::memcpy(&bits, &f, sizeof bits);
+    return bits;
+}
+
+/// The float32 values around `a` (not below zero, not a float32 itself, at most
+/// kFloat32Overflow): `lo` < a < `hi`, `hi` infinity above FLT_MAX.
+inline void Float32Around(double a, float& lo, float& hi) {
+    lo = a >= kFloat32Overflow ? std::numeric_limits<float>::max() : static_cast<float>(a);
+    uint32_t bits = Float32Bits(lo);
+    if (static_cast<double>(lo) > a) {
+        --bits;
+        std::memcpy(&lo, &bits, sizeof lo);
+    }
+    ++bits;
+    std::memcpy(&hi, &bits, sizeof hi);
+}
+
+/// True when `d` lies exactly halfway between two adjacent float32 values, FLT_MAX and infinity
+/// counting as adjacent (kFloat32Overflow). Only there can nlohmann's double of a token round to
+/// another float32 than the token's exact decimal does (WIRE.md §3.3, §5.1): elsewhere the two
+/// roundings agree, the midpoints being doubles themselves.
+inline bool Float32Midpoint(double d) {
+    const double a = std::fabs(d);
+    if (a >= kFloat32Overflow) return a == kFloat32Overflow;
+    if (static_cast<double>(static_cast<float>(a)) == a) return false;
+    float lo = 0.0f, hi = 0.0f;
+    Float32Around(a, lo, hi);
+    return (static_cast<double>(lo) + static_cast<double>(hi)) / 2 == a;
+}
+
+/// A decimal magnitude, 0.<digits> × 10^point, `digits` with no leading or trailing zero (empty
+/// for zero).
+struct Decimal {
+    std::string digits;
+    int64_t point = 0;
+};
+
+/// Drops the zeros that end `d.digits`: the value is unchanged.
+inline void TrimZeros(Decimal& d) {
+    const size_t last = d.digits.find_last_not_of('0');
+    d.digits.erase(last == std::string::npos ? 0 : last + 1);
+}
+
+/// The exact decimal of `m`, a positive double of at most kMidpointBits significant bits (a
+/// float32 midpoint): s × 2^e written out with integer arithmetic, s × 5^-e / 10^-e when e < 0.
+inline Decimal ExactDecimal(double m) {
+    int exp = 0;
+    const double mant = std::frexp(m, &exp);
+    uint64_t s = static_cast<uint64_t>(std::ldexp(mant, kMidpointBits));
+    std::vector<unsigned> little;
+    for (; s != 0; s /= 10) little.push_back(static_cast<unsigned>(s % 10));
+    const auto times = [&little](unsigned k) {
+        unsigned carry = 0;
+        for (unsigned& digit : little) {
+            const unsigned x = digit * k + carry;
+            digit = x % 10;
+            carry = x / 10;
+        }
+        for (; carry != 0; carry /= 10) little.push_back(carry % 10);
+    };
+    int64_t scale = 0;
+    for (int e = exp - kMidpointBits; e != 0; e += e > 0 ? -1 : 1) {
+        times(e > 0 ? 2 : 5);
+        if (e < 0) ++scale;
+    }
+    Decimal out;
+    for (auto it = little.rbegin(); it != little.rend(); ++it) out.digits += static_cast<char>('0' + *it);
+    out.point = static_cast<int64_t>(little.size()) - scale;
+    TrimZeros(out);
+    return out;
+}
+
+/// Appends the digits of `t` from `i` to `digits`, advancing `i`; their count.
+inline size_t Digits(std::string_view t, size_t& i, std::string& digits) {
+    const size_t from = i;
+    for (; i < t.size() && t[i] >= '0' && t[i] <= '9'; ++i) digits += t[i];
+    return i - from;
+}
+
+/// The exponent part of `t` at `i`, if any ("e-5"): false when it has no digit.
+inline bool Exponent(std::string_view t, size_t& i, int64_t& exp) {
+    if (i == t.size() || (t[i] != 'e' && t[i] != 'E')) return true;
+    const bool negative = ++i < t.size() && t[i] == '-';
+    if (i < t.size() && (t[i] == '-' || t[i] == '+')) ++i;
+    const size_t from = i;
+    for (; i < t.size() && t[i] >= '0' && t[i] <= '9'; ++i) exp = std::min(exp * 10 + (t[i] - '0'), kExponentCap);
+    if (negative) exp = -exp;
+    return i != from;
+}
+
+/// The exact decimal magnitude of `t`, a JSON number token; false unless all of `t` is one.
+inline bool ParseDecimal(std::string_view t, Decimal& out) {
+    size_t i = !t.empty() && t[0] == '-' ? 1 : 0;
+    std::string digits;
+    const size_t whole = Digits(t, i, digits);
+    if (whole == 0) return false;
+    if (i < t.size() && t[i] == '.' && Digits(t, ++i, digits) == 0) return false;
+    int64_t exp = 0;
+    if (!Exponent(t, i, exp) || i != t.size()) return false;
+    out = Decimal();
+    const size_t lead = digits.find_first_not_of('0');
+    if (lead == std::string::npos) return true;
+    out.digits = digits.substr(lead);
+    out.point = static_cast<int64_t>(whole) - static_cast<int64_t>(lead) + exp;
+    TrimZeros(out);
+    return true;
+}
+
+/// -1, 0 or 1 as `a` is below, equal to or above `b`.
+inline int Compare(const Decimal& a, const Decimal& b) {
+    if (a.digits.empty() || b.digits.empty()) return static_cast<int>(!a.digits.empty()) - static_cast<int>(!b.digits.empty());
+    if (a.point != b.point) return a.point < b.point ? -1 : 1;
+    const int c = a.digits.compare(b.digits);
+    return (c > 0) - (c < 0);
+}
+
+/// `d`, nlohmann's double of a number token, to Float32 as rounded once from the token's exact
+/// decimal (WIRE.md §3.3, §5.1; ties to even; overflow judged on the exact decimal). `token` is
+/// needed only when `d` is a Float32Midpoint. nullptr on success, else what the read is told.
+inline const char* RoundFloat32(double d, const std::string* token, float& out) {
+    const double a = std::fabs(d);
+    if (a > kFloat32Overflow) return kFloat32Refused;
+    if (!Float32Midpoint(a)) {
+        out = static_cast<float>(d);
+        return nullptr;
+    }
+    Decimal exact;
+    if (token == nullptr || !ParseDecimal(*token, exact)) return kFloat32NoToken;
+    float lo = 0.0f, hi = 0.0f;
+    Float32Around(a, lo, hi);
+    const int c = Compare(exact, ExactDecimal(a));
+    const float f = c < 0 || (c == 0 && Float32Bits(lo) % 2 == 0) ? lo : hi;
+    if (std::isinf(f)) return kFloat32Refused;
+    out = std::signbit(d) ? -f : f;
+    return nullptr;
+}
+
+/// `s`, a number token nlohmann wrote with the current locale's decimal point in place of '.'
+/// (its lexer does, for strtod), with '.' back.
+inline std::string DotToken(std::string s) {
+    const std::lconv* loc = std::localeconv();
+    const char point = loc == nullptr || loc->decimal_point == nullptr ? '.' : *loc->decimal_point;
+    std::replace(s.begin(), s.end(), point, '.');
+    return s;
+}
+
 }  // namespace detail
+
+/// The exact token of every number whose double is a Float32 rounding midpoint (almost none), by
+/// the parsed node it became: what `Decoder::AsFloat32` rounds such a number from.
+using Float32Tokens = std::map<const Json*, std::string>;
 
 /// A SAX pass over a data file before it is parsed: the file is one object, no object holds a
 /// key twice (nlohmann would keep the last), and nothing nests deeper than kMaxNesting. It stops
@@ -84,7 +255,13 @@ public:
     bool boolean(bool) { return Value(); }
     bool number_integer(Json::number_integer_t) { return Value(); }
     bool number_unsigned(Json::number_unsigned_t) { return Value(); }
-    bool number_float(Json::number_float_t, const Json::string_t&) { return Value(); }
+    /// `s` is the number's token; it is kept, by the value's RFC 6901 pointer, only when `d` is a
+    /// Float32 rounding midpoint, where it alone decides the Float32 (WIRE.md §3.3, §5.1).
+    bool number_float(Json::number_float_t d, const Json::string_t& s) {
+        if (!Value()) return false;
+        if (detail::Float32Midpoint(d)) midpoints_.emplace_back(Pointer(), detail::DotToken(s));
+        return true;
+    }
     bool string(Json::string_t&) { return Value(); }
     bool binary(Json::binary_t&) { return Value(); }
     bool start_object(size_t) { return Open(true); }
@@ -101,6 +278,10 @@ public:
 
     /// Empty unless the pass found a duplicate key or a nesting too deep.
     const std::string& Error() const noexcept { return error_; }
+
+    /// The (RFC 6901 pointer, token) of every number whose double is a Float32 rounding
+    /// midpoint, in file order. Complete only when the pass succeeded; taken once.
+    std::vector<std::pair<std::string, std::string>> TakeMidpoints() { return std::move(midpoints_); }
 
 private:
     struct Frame {
@@ -127,6 +308,28 @@ private:
         return true;
     }
 
+    /// The RFC 6901 pointer of the value at the current position ("/rows/0/a~1b").
+    std::string Pointer() const {
+        std::string p;
+        for (const Frame& f : frames_) {
+            p += '/';
+            if (!f.object) {
+                p += std::to_string(f.next - 1);
+                continue;
+            }
+            for (const char c : f.key) {
+                if (c == '~') {
+                    p += "~0";
+                } else if (c == '/') {
+                    p += "~1";
+                } else {
+                    p += c;
+                }
+            }
+        }
+        return p;
+    }
+
     /// The path of the value being read, then what is wrong with it.
     bool Refuse(const std::string& what) {
         for (const Frame& f : frames_) {
@@ -143,14 +346,16 @@ private:
 
     std::vector<Frame> frames_;
     std::string error_;
+    std::vector<std::pair<std::string, std::string>> midpoints_;
 };
 
 /// Parses a data file written by `canon build` and checks its "$schema" against the
 /// fingerprint compiled into this binary. `name` is used in messages (a path, or
 /// "embedded potions.json"). The envelope's keys ("$schema", "rows", "value", "$fns") match
 /// exactly: one differing only in letter case is refused, as StrictCheck's findings are.
+/// `tokens` receives the Float32Tokens of `doc`, for a `Decoder` reading Float32 values.
 inline bool ParseDataFile(const std::string& name, const std::string& text, std::string_view schema,
-                          Json& doc, std::string& error) {
+                          Json& doc, std::string& error, Float32Tokens& tokens) {
     StrictCheck check;
     const bool strict = Json::sax_parse(text, &check);
     if (!check.Error().empty()) {
@@ -178,7 +383,21 @@ inline bool ParseDataFile(const std::string& name, const std::string& text, std:
                 ". Rebuild the data or deploy the matching binary";
         return false;
     }
+    tokens.clear();
+    const Json& parsed = doc;
+    for (auto& m : check.TakeMidpoints()) {
+        const Json::json_pointer at(m.first);
+        if (parsed.contains(at)) tokens.emplace(&parsed[at], std::move(m.second));
+    }
     return true;
+}
+
+/// ParseDataFile without the Float32Tokens (CODEGEN.md §7.5): a `Decoder` reading its `doc`
+/// refuses a Float32 that is a rounding midpoint, as having no token on record.
+inline bool ParseDataFile(const std::string& name, const std::string& text, std::string_view schema,
+                          Json& doc, std::string& error) {
+    Float32Tokens tokens;
+    return ParseDataFile(name, text, schema, doc, error, tokens);
 }
 
 /// Reads JSON values into generated classes. It records the first error with the
@@ -186,6 +405,10 @@ inline bool ParseDataFile(const std::string& name, const std::string& text, std:
 class Decoder {
 public:
     explicit Decoder(std::string name) : name_(std::move(name)) {}
+    /// `tokens`, ParseDataFile's for the document read, must outlive the decoder: AsFloat32
+    /// rounds a midpoint from them.
+    Decoder(std::string name, const Float32Tokens& tokens) : name_(std::move(name)), tokens_(&tokens) {}
+    Decoder(std::string name, const Float32Tokens&& tokens) = delete;
 
     bool Ok() const noexcept { return error_.empty(); }
     const std::string& Error() const noexcept { return error_; }
@@ -194,19 +417,25 @@ public:
     void Push(std::string segment) { path_.push_back(std::move(segment)); }
     void Pop() { path_.pop_back(); }
 
+    /// The path `key` would have at the current position, joined like Fail's message
+    /// ("rows[0].weight"), without pushing it.
+    std::string PathOf(std::string_view key) const {
+        std::string p;
+        for (size_t i = 0; i < path_.size(); ++i) {
+            if (i > 0) p += '.';
+            p += path_[i];
+        }
+        if (!key.empty()) {
+            if (!p.empty()) p += '.';
+            p += key;
+        }
+        return p;
+    }
+
     /// Records an error at the current path (only the first one is kept).
     void Fail(std::string_view key, std::string_view what) {
         if (!error_.empty()) return;
-        error_ = name_ + ": ";
-        for (size_t i = 0; i < path_.size(); ++i) {
-            if (i > 0) error_ += '.';
-            error_ += path_[i];
-        }
-        if (!key.empty()) {
-            if (!path_.empty()) error_ += '.';
-            error_ += key;
-        }
-        error_ += ": ";
+        error_ = name_ + ": " + PathOf(key) + ": ";
         error_ += what;
     }
 
@@ -253,19 +482,29 @@ public:
         return true;
     }
 
-    /// A Float may be written as an integer token ("1" for 1.0).
+    /// A Float may be written as an integer token ("1" for 1.0). `-0`, `-0.0` and an underflow
+    /// to zero all read as `+0` (WIRE.md §5.1).
     bool AsFloat(const Json& v, std::string_view key, double& out) {
         if (!v.is_number()) return Fail(key, "expected a number"), false;
         out = v.get<double>();
+        if (out == 0.0) out = 0.0;
         return true;
     }
 
-    /// A Float32: any number whose magnitude does not round to infinity.
+    /// A Float32: any number whose magnitude does not round to infinity, rounded once from the
+    /// exact decimal (WIRE.md §3.3, §5.1): an integer token directly, a float token through
+    /// detail::RoundFloat32. `-0` and an underflow to zero read as `+0`.
     bool AsFloat32(const Json& v, std::string_view key, float& out) {
-        if (!v.is_number() || std::fabs(v.get<double>()) >= kFloat32Overflow) {
-            return Fail(key, "expected a number that fits Float32"), false;
+        if (!v.is_number()) return Fail(key, kFloat32Refused), false;
+        float f = 0.0f;
+        if (v.is_number_unsigned()) {
+            f = static_cast<float>(v.get<uint64_t>());
+        } else if (v.is_number_integer()) {
+            f = static_cast<float>(v.get<int64_t>());
+        } else if (const char* what = detail::RoundFloat32(v.get<double>(), Token(v), f)) {
+            return Fail(key, what), false;
         }
-        out = static_cast<float>(v.get<double>());
+        out = f == 0.0f ? 0.0f : f;
         return true;
     }
 
@@ -350,9 +589,17 @@ public:
     }
 
 private:
+    /// `v`'s token when it is on record (a Float32 rounding midpoint), else nullptr.
+    const std::string* Token(const Json& v) const {
+        if (tokens_ == nullptr) return nullptr;
+        const auto it = tokens_->find(&v);
+        return it == tokens_->end() ? nullptr : &it->second;
+    }
+
     std::string name_;
     std::vector<std::string> path_;
     std::string error_;
+    const Float32Tokens* tokens_ = nullptr;
 };
 
 namespace detail {
@@ -447,6 +694,72 @@ inline bool Bits(const Json& x, Decoder& dec, std::string_view key, uint64_t mas
     for (uint64_t rest = out & ~mask; rest != 0; rest >>= 4) hex.insert(hex.begin(), "0123456789abcdef"[rest & 15]);
     if (hex.empty()) return true;
     dec.Fail(key, "unknown bits 0x" + hex);
+    return false;
+}
+
+/// The token WIRE.md §7.3 writes for a string key: quoted and escaped.
+inline std::string KeyToken(const std::string& k) {
+    std::string out = "\"";
+    for (unsigned char c : k) {
+        switch (c) {
+            case '"': out += "\\\""; break;
+            case '\\': out += "\\\\"; break;
+            case '\b': out += "\\b"; break;
+            case '\t': out += "\\t"; break;
+            case '\n': out += "\\n"; break;
+            case '\f': out += "\\f"; break;
+            case '\r': out += "\\r"; break;
+            default:
+                if (c < 0x20) {
+                    out += "\\u00";
+                    out += "0123456789abcdef"[(c >> 4) & 0xf];
+                    out += "0123456789abcdef"[c & 0xf];
+                } else {
+                    out += static_cast<char>(c);
+                }
+        }
+    }
+    out += '"';
+    return out;
+}
+
+/// The token for an integer key: canonical decimal (WIRE.md §7.2).
+template <class K, std::enable_if_t<std::is_integral_v<K>, int> = 0>
+std::string KeyToken(K k) {
+    return std::to_string(k);
+}
+
+/// Row order's first duplicate key: (that row's index, the first row with the same key); empty
+/// when every key is unique. Sorts row indices, never copies a key.
+template <class K>
+std::optional<std::pair<size_t, size_t>> FirstDuplicate(const std::vector<K>& keys) {
+    std::vector<size_t> order(keys.size());
+    for (size_t i = 0; i < order.size(); ++i) order[i] = i;
+    std::stable_sort(order.begin(), order.end(), [&keys](size_t a, size_t b) { return keys[a] < keys[b]; });
+    std::optional<std::pair<size_t, size_t>> dup;
+    size_t run = 0;  // where the current run of equal keys starts in `order`
+    for (size_t k = 1; k < order.size(); ++k) {
+        if (keys[order[k - 1]] < keys[order[k]]) {
+            run = k;
+        } else if (k == run + 1 && (!dup || order[k] < dup->first)) {
+            dup = std::make_pair(order[k], order[run]);
+        }
+    }
+    return dup;
+}
+
+/// False when `keys` (row order) repeats: records "duplicate id <key> (first at <prefix>[i])"
+/// at "<prefix>[j].<idWire>" (WIRE.md §5.7, log-2026-09-24 A1). `prefix` is "rows" for a file's
+/// rows, else the keyed list's own key; `idWire` is "$id" for a table, else the keyed-by field's
+/// full wire path. `render` writes a key's token (WIRE.md §7.2, §7.3; an enum's by §5.3).
+template <class K, class Render>
+bool CheckUnique(const std::vector<K>& keys, Decoder& dec, const char* idWire, std::string_view prefix, Render render) {
+    const auto dup = FirstDuplicate(keys);
+    if (!dup) return true;
+    const std::string first = dec.PathOf(std::string(prefix) + "[" + std::to_string(dup->second) + "]");
+    dec.Push(std::string(prefix) + "[" + std::to_string(dup->first) + "]");
+    dec.Fail(idWire, "duplicate id " + render(keys[dup->first]) + " (first at " + first + ")");
+    dec.Pop();
     return false;
 }
 

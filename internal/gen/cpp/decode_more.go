@@ -43,6 +43,7 @@ func (g *gen) decodeList(depth int, src, key string, l leaf) {
 	}
 	g.c.linef(inner, closeBrace)
 	if kf != nil {
+		g.c.linef(inner, checkUniqueNestedFormat, keys, quote(strings.Join(kf.WirePath, qnameSep)), key, g.keyRenderer(kf.Type))
 		g.c.linef(inner, fromRowsFormat, l.dst, g.storage(kf.Type), elem, rows, keys)
 	}
 	g.c.linef(depth, closeBrace)

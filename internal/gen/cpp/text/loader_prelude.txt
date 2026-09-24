@@ -1,5 +1,6 @@
         std::string text;
         nlohmann::json doc;
+        canon::json::Float32Tokens tokens;
         if (!canon::json::ReadFile(path, text, error)) return false;
-        if (!canon::json::ParseDataFile(path, text, %s, doc, error)) return false;
-        canon::json::Decoder dec(path);
+        if (!canon::json::ParseDataFile(path, text, %s, doc, error, tokens)) return false;
+        canon::json::Decoder dec(path, tokens);

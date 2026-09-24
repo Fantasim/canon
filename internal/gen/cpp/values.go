@@ -76,10 +76,10 @@ func (g *gen) containers() {
 	}
 }
 
-// containerSpec is what a container's text needs: its element, key and @stable fields.
+// containerSpec is what a container's text needs: element, key, @stable fields, wireKey (empty for a table's fixed row id, else the keyed-by field's full wire path) and render, the duplicate-id token renderer (WIRE.md §5.7, §7.2, §7.3).
 type containerSpec struct {
-	name, elem, key, keyName string
-	stable                   []*ir.Field
+	name, elem, key, keyName, wireKey, render string
+	stable                                    []*ir.Field
 }
 
 func (g *gen) containerSpec(v *ir.Value) containerSpec {
@@ -95,6 +95,7 @@ func (g *gen) containerSpec(v *ir.Value) containerSpec {
 			return s
 		}
 		s.key, s.keyName = g.storage(kf.Type), kf.Name
+		s.wireKey, s.render = strings.Join(kf.WirePath, qnameSep), g.keyRenderer(kf.Type)
 	}
 	for _, f := range rec.Fields {
 		if f.Stable && f.Optional {
@@ -104,6 +105,21 @@ func (g *gen) containerSpec(v *ir.Value) containerSpec {
 		}
 	}
 	return s
+}
+
+// keyRenderer is the C++ lambda CheckUnique renders a duplicate key's token with: generic KeyToken for String, an integer or a ref, else an enum's wire string or, under @json(codes), its code (WIRE.md §5.3, §7.2, §7.3).
+func (g *gen) keyRenderer(t ir.TypeRef) string {
+	for t.Kind == types.Ref && t.Key != nil {
+		t = *t.Key
+	}
+	e, ok := t.Named.(*ir.Enum)
+	if t.Kind != types.Enum || !ok {
+		return genericKeyRender
+	}
+	if e.JSONCodes {
+		return fmt.Sprintf(codeKeyRenderFormat, g.typeName(t.Named), g.storage(*e.Codes))
+	}
+	return fmt.Sprintf(wireKeyRenderFormat, g.typeName(t.Named))
 }
 
 func (g *gen) container(v *ir.Value) {

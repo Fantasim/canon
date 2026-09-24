@@ -26,15 +26,37 @@ func parityPackage() (*ir.Package, *ir.Emit) {
 	return p, e
 }
 
-// log-2026-09-24 "Loader parity": the Go and C++ loaders of one schema turn the same files,
-// canon-written or edited by hand, into byte-identical lines, and those are the vocabulary's.
+// nestParityPackage is nestPackage with a Go data emit beside its C++ one (log-2026-09-24 A1: duplicate ids of every keyable() type, TYPES.md §9.1).
+func nestParityPackage() (*ir.Package, *ir.Emit) {
+	p := nestPackage()
+	e := &ir.Emit{Target: ir.TargetGo, Out: "out/go/", Dir: "demo/nest/out/go", GoImport: parityModule + "/nest", Mode: ir.ModeData, GoPackage: "nest"}
+	p.Emits = append(p.Emits, e)
+	return p, e
+}
+
+// parityUnit is one package's C++ sources and Go build input for TestLoaderParity.
+type parityUnit struct {
+	pkg     *ir.Package
+	goEmit  *ir.Emit
+	cppFile string
+}
+
+// log-2026-09-24 "Loader parity", A1 and A1 C++ Float32: the Go and C++ loaders of demo.shop and demo.nest turn the same files, canon-written or edited by hand (some loaded by the C++ driver under a ',' locale), into byte-identical lines, and those are the vocabulary's.
 func TestLoaderParity(t *testing.T) {
 	if testing.Short() {
 		t.Skip("compiles generated Go and C++")
 	}
-	p, goEmit := parityPackage()
+	shopP, shopGo := parityPackage()
+	nestP, nestGo := nestParityPackage()
+	units := []parityUnit{{shopP, shopGo, "shop.gen.cpp"}, {nestP, nestGo, "nest.gen.cpp"}}
 	dir := t.TempDir()
-	cases := strictCases()
+	cases := append(append(append([]strictCase{}, strictCases()...), nestCases()...), float32Cases()...)
+	if loc, err := buildCommaLocale(t); err != nil {
+		t.Logf("no ',' locale can be built here, its cases are left out: %v", err)
+		cases = withoutMode(cases, commaLocale)
+	} else {
+		t.Setenv("LOCPATH", loc)
+	}
 	args, wants := make([]string, len(cases)), make([]string, len(cases))
 	for i, c := range cases {
 		args[i], wants[i] = c.write(t, dir)
@@ -50,21 +72,22 @@ func TestLoaderParity(t *testing.T) {
 			}
 		}
 	}
-	check("go", runGo(t, p, goEmit, args))
-	writeTree(t, dir, generate(t, p), "strict_main.cpp")
-	for _, out := range buildAndRun(t, dir, []string{"shop.gen.cpp", "main.cpp"}, args...) {
+	check("go", runGo(t, units, args))
+	sources := []string{"main.cpp"}
+	for _, u := range units {
+		writeFiles(t, dir, generate(t, u.pkg))
+		sources = append(sources, u.cppFile)
+	}
+	copyFile(t, filepath.Join("testdata", "main", "strict_main.cpp"), filepath.Join(dir, "main.cpp"), same)
+	for _, out := range buildAndRun(t, dir, sources, args...) {
 		check("c++", out)
 	}
 }
 
-// runGo builds the Go loaders of p and testdata/main/strict_main.go into one module and runs
-// the driver with args.
-func runGo(t *testing.T, p *ir.Package, e *ir.Emit, args []string) string {
+// runGo builds every unit's Go loaders and testdata/main/strict_main.go into one module and
+// runs the driver with args.
+func runGo(t *testing.T, units []parityUnit, args []string) string {
 	t.Helper()
-	files, err := gogen.Generate(p, e)
-	if err != nil {
-		t.Fatal(err)
-	}
 	dir := t.TempDir()
 	write := func(path string, content []byte) {
 		full := filepath.Join(dir, filepath.FromSlash(path))
@@ -76,8 +99,14 @@ func runGo(t *testing.T, p *ir.Package, e *ir.Emit, args []string) string {
 		}
 	}
 	write("go.mod", []byte("module "+parityModule+"\n\ngo "+strings.TrimPrefix(version.Lang(runtime.Version()), "go")+"\n"))
-	for _, f := range files {
-		write(e.GoPackage+"/"+f.Path, f.Content)
+	for _, u := range units {
+		files, err := gogen.Generate(u.pkg, u.goEmit)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, f := range files {
+			write(u.goEmit.GoPackage+"/"+f.Path, f.Content)
+		}
 	}
 	copyFile(t, filepath.Join("testdata", "main", "strict_main.go"), filepath.Join(dir, "main.go"), same)
 	bin := filepath.Join(dir, "driver")

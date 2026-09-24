@@ -60,9 +60,10 @@ struct AppAccess {
     static bool LoadOrders(const std::string& path, Orders& out, std::string& error) {
         std::string text;
         nlohmann::json doc;
+        canon::json::Float32Tokens tokens;
         if (!canon::json::ReadFile(path, text, error)) return false;
-        if (!canon::json::ParseDataFile(path, text, kOrdersSchema, doc, error)) return false;
-        canon::json::Decoder dec(path);
+        if (!canon::json::ParseDataFile(path, text, kOrdersSchema, doc, error, tokens)) return false;
+        canon::json::Decoder dec(path, tokens);
         const nlohmann::json* rows = dec.Array(doc, "rows");
         if (rows == nullptr) return error = dec.Error(), false;
         std::vector<Order> values(rows->size());
@@ -74,6 +75,7 @@ struct AppAccess {
             if (!dec.Ok()) return error = dec.Error(), false;
             keys[i] = values[i].id_;
         }
+        if (!canon::json::detail::CheckUnique(keys, dec, "id", "rows", [](const auto& k) { return canon::json::detail::KeyToken(k); })) return error = dec.Error(), false;
         out.rows_ = canon::KeyedList<std::string, Order>::FromRows(std::move(values), std::move(keys));
         return true;
     }
