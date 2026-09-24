@@ -26,7 +26,10 @@ Each rule is `enforce`, `ratchet`, `observe` or `off` (rulebook default, per-rep
 that repo, so a first init is never red). `check` then fails on:
 
 - any finding of an `enforce` rule;
-- a `ratchet` finding the baseline does not hold, or one whose measured value grew.
+- a `ratchet` finding the baseline does not hold, or one whose measured value grew;
+- any lane the census could not measure (a tool that refused, timed out or errored): strictest
+  option, an unmeasured rule is never a silent pass. `baseline --init`/`--tighten` refuse the
+  same way, so a baseline never records a run that skipped part of the rulebook.
 
 `.sovaudit/root-allow.txt` lists the repository's intentional root entries (one per line) that
 the `root-clutter` allowlist does not know. `.sovaudit/imports.tsv` declares import boundaries
@@ -36,6 +39,7 @@ A finding's identity is `rule | file | symbol | detail`, never a line number, so
 does not make it new. `baseline --tighten` lowers the baseline after a cleanup and never raises
 it; `baseline-guard` fails a baseline or state that was loosened against the base revision
 (git only: outside a git checkout the guard and `decision-dropped` have nothing to compare).
+An unborn HEAD leaves both unmeasured, so `check` fails until the checkout's first commit.
 
 ## Thresholds
 

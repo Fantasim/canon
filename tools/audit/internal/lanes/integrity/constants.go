@@ -24,6 +24,19 @@ const (
 	gitPathSep    = "--"
 	// gitRevPathHere joins a revision to a path relative to git -C's directory.
 	gitRevPathHere = ":./"
+	gitLsTree      = "ls-tree"
+	gitRevParse    = "rev-parse"
+	// gitInsideWorkTree prints gitTrue in a work tree; outside one git fails (or prints false).
+	gitInsideWorkTree = "--is-inside-work-tree"
+	gitTrue           = "true"
+	// fmtGitErr names the git subcommand and revision a failure came from.
+	fmtGitErr = "git %s %s: %w"
+
+	skipPrefix   = laneName + ": "
+	skipGuard    = skipPrefix + ruleBaselineGuard
+	skipDecision = skipPrefix + ruleDecision
+	skipState    = skipPrefix + ruleState
+	skipIgnores  = skipPrefix + ruleReason
 
 	auditSegment = repo.AuditDir + "/"
 

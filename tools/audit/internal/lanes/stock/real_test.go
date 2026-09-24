@@ -17,7 +17,8 @@ import (
 )
 
 // TestReal runs the lane on a real repo: CANON_AUDIT_REAL=1, CANON_AUDIT_REPO (default this
-// project's root), CANON_AUDIT_DUMP (dir for one TSV of findings).
+// project's root), CANON_AUDIT_DUMP (TSV dir). Any skip fails it. Opt-in: the gate's
+// audit-check already runs this lane here; this would add a cold golangci-lint pass.
 func TestReal(t *testing.T) {
 	if os.Getenv("CANON_AUDIT_REAL") != "1" {
 		t.Skip("set CANON_AUDIT_REAL=1 to audit a real repo")
@@ -39,31 +40,22 @@ func toolchainDir(t *testing.T) string {
 }
 
 func auditReal(t *testing.T, root, toolchain string) {
-	r, err := repo.Open(root)
-	if err != nil {
-		t.Fatal(err)
-	}
-	tree, _ := gosrc.Parse(r.Root, r.FilesWithExt(repo.GoExt))
-	on := map[string]bool{}
+	ctx := realContext(t, root, toolchain)
+	r := ctx.Repo
+	ctx.Go, _ = gosrc.Parse(r.Root, r.FilesWithExt(repo.GoExt))
+	ctx.Enabled, ctx.Log = map[string]bool{}, os.Stderr
 	for _, id := range ruleIDs {
 		if rl, ok := rules.Lookup(id); ok && r.Mode(*rl) != rules.Off {
-			on[id] = true
+			ctx.Enabled[id] = true
 		}
 	}
-	ctx := &lane.Context{Repo: r, Go: tree, Enabled: on, Toolchain: toolchain, Log: os.Stderr}
 
 	cold := time.Now()
-	res, err := New().Run(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Logf("%s: cold %d findings in %s, skipped %v", r.Name, len(res.Findings), time.Since(cold).Round(time.Millisecond), res.Skipped)
+	res := measuredRun(t, ctx)
+	t.Logf("%s: cold %d findings in %s", r.Name, len(res.Findings), time.Since(cold).Round(time.Millisecond))
 
 	warm := time.Now()
-	res2, err := New().Run(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
+	res2 := measuredRun(t, ctx)
 	t.Logf("%s: warm %d findings in %s", r.Name, len(res2.Findings), time.Since(warm).Round(time.Millisecond))
 
 	counts := map[string]int{}
@@ -76,6 +68,19 @@ func auditReal(t *testing.T, root, toolchain string) {
 	if dir := os.Getenv("CANON_AUDIT_DUMP"); dir != "" {
 		dump(t, filepath.Join(dir, r.Name+".tsv"), res.Findings, ctx)
 	}
+}
+
+// measuredRun runs the lane and fails on any skip: an unmeasured lane is a failure (DECISIONS 25).
+func measuredRun(t *testing.T, ctx *lane.Context) lane.Result {
+	t.Helper()
+	res, err := New().Run(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(res.Skipped) > 0 {
+		t.Fatalf("%s: unmeasured: %+v", ctx.Repo.Name, res.Skipped)
+	}
+	return res
 }
 
 func dump(t *testing.T, path string, fs []finding.Finding, ctx *lane.Context) {

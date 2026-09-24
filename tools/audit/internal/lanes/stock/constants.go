@@ -2,6 +2,7 @@ package stock
 
 import (
 	"regexp"
+	"time"
 
 	"github.com/fantasim/canonlang/tools/audit/internal/gosrc"
 	"github.com/fantasim/canonlang/tools/audit/internal/rules"
@@ -196,7 +197,35 @@ const (
 	argDeadcodeTest     = "-test"
 	unreachableFuncPfx  = "unreachable func: "
 	deadFileDetail      = "deadcode: file contains only unreachable functions"
+
+	// argAllowSerialRunners: wait for a concurrent golangci-lint's lock instead of refusing.
+	argAllowSerialRunners = "--allow-serial-runners"
+	// argTimeout is golangci-lint's own flag name for its --timeout duration value.
+	argTimeout = "--timeout"
+
+	// cacheDirName groups every repo's cache dir under the user cache dir.
+	cacheDirName = "canon-audit-golangci-lint"
+	// cacheHashBytes of root's sha256 name the per-repo cache dir.
+	cacheHashBytes = 8
+	cacheDirPerm   = 0o700
+
+	// dirPrefix opens the "./dir" pattern golangci-lint targets are given in.
+	dirPrefix = "./"
+
+	// golangciCacheEnv is the variable golangci-lint reads for its result cache directory.
+	golangciCacheEnv = "GOLANGCI_LINT_CACHE"
+	// msgKilled follows ctx.Err() on a kill: the lock wait and the run share one deadline.
+	msgKilled = "(lock wait or run)"
 )
+
+// lintDeadline bounds the whole golangci-lint child, lock wait included: its own
+// --allow-serial-runners waits on an unbounded context internally, so this is enforced by
+// killing the process (runTool's ctx), not trusted to the --timeout flag alone.
+const lintDeadline = 10 * time.Minute
+
+// toolWaitDelay bounds how long runTool waits for a killed tool's grandchildren (go list,
+// compilers) to release its output pipes before Wait gives up on them.
+const toolWaitDelay = 5 * time.Second
 
 var (
 	reCognitive       = regexp.MustCompile(`cognitive complexity (\d+)`)

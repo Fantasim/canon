@@ -10,6 +10,7 @@ import (
 	"runtime"
 	"runtime/debug"
 	"slices"
+	"strings"
 
 	"github.com/fantasim/canonlang/tools/audit/internal/finding"
 	"github.com/fantasim/canonlang/tools/audit/internal/gosrc"
@@ -139,7 +140,10 @@ func setup(o opts, limits threshold.Set, errw io.Writer) (*session, error) {
 		return nil, err
 	}
 	s := &session{o: o, all: lanes.All()}
-	s.ctx = &lane.Context{Repo: r, Toolchain: toolchainDir(o.toolchain), Limits: limits, LimitsFile: absPath(o.thresholds)}
+	s.ctx = &lane.Context{
+		Repo: r, Toolchain: toolchainDir(o.toolchain), Limits: limits, LimitsFile: absPath(o.thresholds),
+		CacheBase: cacheBase(),
+	}
 	if !o.quiet {
 		s.ctx.Log = errw
 	}
@@ -220,10 +224,11 @@ func (s *session) check(out, errw io.Writer) int {
 	}
 	fs, skips := s.findings()
 	v := ratchet.Compare(fs, base, s.mode, s.ctx.Repo.InScope)
-	if err := report.PrintCheck(out, s.ctx.Repo, v, skips); err != nil {
+	failed, err := report.PrintCheck(out, s.ctx.Repo, v, skips)
+	if err != nil {
 		return exitFail
 	}
-	if v.Failed() {
+	if failed {
 		return exitFail
 	}
 	return exitOK
@@ -253,7 +258,11 @@ func (s *session) baseline(out, errw io.Writer) int {
 }
 
 func (s *session) tightenBaseline(out, errw io.Writer, path string, base ratchet.Baseline) int {
-	fs, _ := s.findings()
+	fs, skips := s.findings()
+	if msg, bad := unmeasured(skips); bad {
+		warnln(errw, errPrefix, "--tighten needs the whole census measured: "+msg)
+		return exitUsage
+	}
 	nb, n := ratchet.Tighten(base, fs, s.ctx.Repo.InScope)
 	if err := nb.Save(path); err != nil {
 		warnln(errw, errPrefix, err)
@@ -272,6 +281,10 @@ func (s *session) initBaseline(out, errw io.Writer, path string) int {
 		return exitUsage
 	}
 	fs, skips := s.findings()
+	if msg, bad := unmeasured(skips); bad {
+		warnln(errw, errPrefix, "--init needs the whole census measured: "+msg)
+		return exitUsage
+	}
 	states := s.ctx.Repo.States()
 	p := &printer{w: out}
 	keep := s.demoteAndKeep(fs, states, p)
@@ -281,10 +294,20 @@ func (s *session) initBaseline(out, errw io.Writer, path string) int {
 		return exitUsage
 	}
 	p.f("%s baseline: %d findings in %d entries -> %s\n", rules.ToolName, len(keep), len(b), repo.BaselineFile)
-	for _, k := range skips {
-		p.f("  not measured, so not baselined: %s: %s\n", k.What, k.Reason)
-	}
 	return exitFor(p.err)
+}
+
+// unmeasured names the lanes a skip left unmeasured, joined for one error line; ok is false
+// when the census is complete.
+func unmeasured(skips []lane.Skip) (string, bool) {
+	if len(skips) == 0 {
+		return "", false
+	}
+	names := make([]string, len(skips))
+	for i, k := range skips {
+		names[i] = k.What
+	}
+	return strings.Join(names, ", "), true
 }
 
 // demoteAndKeep keeps every ratchet finding, demotes (and reports) an enforce rule that
@@ -336,4 +359,14 @@ func absPath(p string) string {
 		return p
 	}
 	return abs
+}
+
+// cacheBase is where a lane may cache a child tool's own output, resolved once here (the only
+// place this tool reads the environment for it) and passed down via lane.Context.CacheBase.
+func cacheBase() string {
+	dir, err := os.UserCacheDir()
+	if err != nil {
+		return os.TempDir()
+	}
+	return dir
 }

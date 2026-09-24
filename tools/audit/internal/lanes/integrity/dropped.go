@@ -17,13 +17,17 @@ type droppedBlock struct {
 }
 
 // decisionsDropped is decision-dropped: a comment recording a decision removed since the base,
-// its wording re-added nowhere, while no decision record changed.
-func decisionsDropped(ctx *lane.Context) []finding {
+// its wording re-added nowhere, while no decision record changed. An error means the diff
+// itself could not be read; the caller decides whether that is a real failure worth a Skip.
+func decisionsDropped(ctx *lane.Context) ([]finding, error) {
 	git := ctx.Repo.Git
 	base := ctx.Repo.Base()
 	diff, err := git(gitDiff, gitNoColor, gitRelative, gitUnifiedZero, base)
-	if err != nil || recordsChanged(git, diff) || declaredObsolete(git, base) {
-		return nil
+	if err != nil {
+		return nil, err
+	}
+	if recordsChanged(git, diff) || declaredObsolete(git, base) {
+		return nil, nil
 	}
 	removed, added := parseDiff(diff)
 	var out []finding
@@ -36,7 +40,7 @@ func decisionsDropped(ctx *lane.Context) []finding {
 			})
 		}
 	}
-	return out
+	return out, nil
 }
 
 // droppedDecision is the removed line carrying b's decision wording when the file's added

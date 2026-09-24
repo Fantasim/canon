@@ -112,8 +112,14 @@ func censusFindings(p *printer, c Census, byRule map[string][]finding.Finding) {
 	}
 }
 
+// checkFailed is the gate's verdict (DECISIONS 25): a ratchet failure, or any unmeasured lane.
+func checkFailed(v ratchet.Verdict, skipped []lane.Skip) bool {
+	return v.Failed() || len(skipped) > 0
+}
+
 // PrintCheck prints the ratchet's verdict: only what fails the gate, then one summary line.
-func PrintCheck(w io.Writer, r *repo.Repo, v ratchet.Verdict, skipped []lane.Skip) error {
+// It returns whether the gate failed, so the caller's exit code and the printed status agree.
+func PrintCheck(w io.Writer, r *repo.Repo, v ratchet.Verdict, skipped []lane.Skip) (bool, error) {
 	p := &printer{w: w}
 	for _, f := range v.Enforced {
 		p.f("%-5s %s\n", tagEnforce, line(f))
@@ -129,20 +135,21 @@ func PrintCheck(w io.Writer, r *repo.Repo, v ratchet.Verdict, skipped []lane.Ski
 	if p.err == nil {
 		p.err = printSkips(w, skipped)
 	}
+	failed := checkFailed(v, skipped)
 	status := statusPass
-	if v.Failed() {
+	if failed {
 		status = statusFail
 	}
 	scope := "whole repo"
 	if r.ChangedMode() {
 		scope = strconv.Itoa(len(r.Changed())) + " changed files"
 	}
-	p.f("%s check: %s: %s (%s): %d new, %d grew, %d enforced, %d fixed\n",
-		rules.ToolName, r.Name, status, scope, len(v.New), len(v.Grew), len(v.Enforced), v.Fixed)
+	p.f("%s check: %s: %s (%s): %d new, %d grew, %d enforced, %d fixed, %d unmeasured\n",
+		rules.ToolName, r.Name, status, scope, len(v.New), len(v.Grew), len(v.Enforced), v.Fixed, len(skipped))
 	if v.Fixed > 0 {
 		p.ln("  fixed findings: run `baseline --tighten` and commit " + repo.BaselineFile)
 	}
-	return p.err
+	return failed, p.err
 }
 
 // PrintRaw prints one tab-separated line per finding.

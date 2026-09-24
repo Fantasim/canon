@@ -1,6 +1,7 @@
 package stock
 
 import (
+	"context"
 	"go/ast"
 	"go/token"
 	"path/filepath"
@@ -33,7 +34,7 @@ func runDeadcode(ctx *lane.Context) ([]finding.Finding, *lane.Skip) {
 	if err != nil {
 		return nil, &lane.Skip{What: skipDeadcode, Reason: err.Error()}
 	}
-	out, err := runTool(bin, ctx.Repo.Root, append([]string{argDeadcodeTest}, targets...)...)
+	out, err := runTool(context.Background(), bin, ctx.Repo.Root, nil, append([]string{argDeadcodeTest}, targets...)...)
 	if err != nil {
 		return nil, &lane.Skip{What: skipDeadcode, Reason: err.Error()}
 	}

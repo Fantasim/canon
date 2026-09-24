@@ -45,9 +45,9 @@ func TestThresholdsRaisedInSubdirRepo(t *testing.T) {
 		Limits:     threshold.Set{FnLines: 70, FnParams: 4},
 		LimitsFile: filepath.Join(root, threshold.FileName),
 	}
-	got := thresholdsRaised(ctx)
-	if len(got) != 1 || got[0].Detail != "fn-lines" || got[0].File != threshold.FileName {
-		t.Fatalf("thresholdsRaised = %+v, want only fn-lines raised in %s", got, threshold.FileName)
+	got, err := thresholdsRaised(ctx)
+	if err != nil || len(got) != 1 || got[0].Detail != "fn-lines" || got[0].File != threshold.FileName {
+		t.Fatalf("thresholdsRaised = %+v, %v, want only fn-lines raised in %s", got, err, threshold.FileName)
 	}
 }
 
@@ -58,7 +58,7 @@ func TestThresholdsOutsideRepoNotGuarded(t *testing.T) {
 		Limits:     threshold.Set{FnLines: 70},
 		LimitsFile: filepath.Join(t.TempDir(), threshold.FileName),
 	}
-	if got := thresholdsRaised(ctx); len(got) != 0 {
-		t.Fatalf("thresholdsRaised = %+v, want none for a file outside the repo", got)
+	if got, err := thresholdsRaised(ctx); err != nil || len(got) != 0 {
+		t.Fatalf("thresholdsRaised = %+v, %v, want none for a file outside the repo", got, err)
 	}
 }

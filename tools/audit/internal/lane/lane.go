@@ -28,6 +28,8 @@ type Context struct {
 	Limits     threshold.Set
 	LimitsFile string
 	Log        io.Writer
+	// CacheBase is os.UserCacheDir() (or os.TempDir()), read once by main and passed down.
+	CacheBase string
 }
 
 func (c *Context) On(rule string) bool { return c.Enabled[rule] }

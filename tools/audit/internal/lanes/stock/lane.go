@@ -23,7 +23,7 @@ func (*Lane) Run(ctx *lane.Context) (lane.Result, error) {
 		findings []finding.Finding
 		skips    []lane.Skip
 	)
-	fs, skip := runGolangci(ctx)
+	fs, skip := runGolangci(ctx, lintDeadline)
 	collect(&findings, &skips, fs, skip)
 	fs, skip = runDeadcode(ctx)
 	collect(&findings, &skips, fs, skip)

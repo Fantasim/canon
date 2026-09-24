@@ -1,6 +1,9 @@
 package integrity
 
 import (
+	"errors"
+	"fmt"
+	"io/fs"
 	"os"
 	"strconv"
 
@@ -9,10 +12,15 @@ import (
 	"github.com/fantasim/canonlang/tools/audit/internal/rules"
 )
 
-func badStates(ctx *lane.Context) []finding {
+// badStates flags an unknown rule id or an invalid mode in state.tsv; no file is no finding,
+// an unreadable one leaves the rule unmeasured.
+func badStates(ctx *lane.Context) ([]finding, error) {
 	data, err := os.ReadFile(ctx.Repo.Abs(repo.StateFile))
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil, nil
+	}
 	if err != nil {
-		return nil
+		return nil, fmt.Errorf("read %s: %w", repo.StateFile, err)
 	}
 	var out []finding
 	for _, row := range repo.ReadStateRows(string(data)) {
@@ -27,14 +35,14 @@ func badStates(ctx *lane.Context) []finding {
 		}
 		out = append(out, f)
 	}
-	return out
+	return out, nil
 }
 
 // statesLoosened flags a rule whose effective mode is looser than it was at HEAD.
-func statesLoosened(ctx *lane.Context) []finding {
-	old, ok := headText(ctx, repo.StateFile)
-	if !ok {
-		return nil
+func statesLoosened(ctx *lane.Context) ([]finding, error) {
+	old, ok, err := headText(ctx, repo.StateFile)
+	if err != nil || !ok {
+		return nil, err
 	}
 	prev := map[string]rules.Mode{}
 	for _, row := range repo.ReadStateRows(old) {
@@ -57,5 +65,5 @@ func statesLoosened(ctx *lane.Context) []finding {
 			})
 		}
 	}
-	return out
+	return out, nil
 }

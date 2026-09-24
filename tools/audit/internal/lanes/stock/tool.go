@@ -30,15 +30,21 @@ func resolveTool(toolchain, name string) (string, error) {
 	return path, nil
 }
 
-// runTool runs bin in dir and returns stdout; stderr is folded into the error.
-func runTool(bin, dir string, args ...string) ([]byte, error) {
+// runTool runs bin in dir under ctx (a caller deadline included: a stuck lock wait is bounded
+// only by killing the process) and returns stdout, folding stderr into the error. extraEnv
+// wins over the caller's environment: exec keeps the last value of a duplicated key.
+func runTool(ctx context.Context, bin, dir string, extraEnv []string, args ...string) ([]byte, error) {
 	//nolint:gosec // bin is resolveTool's own resolved path, never external input
-	cmd := exec.CommandContext(context.Background(), bin, args...)
+	cmd := exec.CommandContext(ctx, bin, args...)
 	cmd.Dir = dir
-	cmd.Env = lane.ToolEnv()
+	cmd.Env = append(lane.ToolEnv(), extraEnv...)
+	cmd.WaitDelay = toolWaitDelay
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &stdout, &stderr
 	if err := cmd.Run(); err != nil {
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return nil, fmt.Errorf("%s: %w %s", filepath.Base(bin), ctxErr, msgKilled)
+		}
 		return stdout.Bytes(), fmt.Errorf("%s: %w: %s", filepath.Base(bin), err, strings.TrimSpace(stderr.String()))
 	}
 	return stdout.Bytes(), nil
