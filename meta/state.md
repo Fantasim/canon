@@ -15,7 +15,7 @@ Part A (close open work) then Part B (M3 waves W0–W4). Ticked = committed on `
   build 2, ir 1). Landed: eval 5bbd911, syntax af5a768, ir 5e42c65 (DECISIONS 209–214). In
   flight: format (opus, round 4), build, check C1 (DECISIONS 214 + queued items); then the QA
   judge redesign (log "Progen archives after a fix"), then check C2 (archive triage).
-  Also: audit gate-hole cleanup (opus, round 3); gen/cpp loader parity in review.
+  Audit gate holes closed (see git log, fix(audit)). gen/cpp Float32 (opus) in flight.
 - [x] A4 M2 close: position test on `examples/pipeline/data/II_POT_HEAL_L.json`; M2 ticked.
 - [ ] A5 consumer unit (name plans) · cleanups · ERRORS.md pass + spec sync #2.
 - [ ] A6 M1.5 second wave (type-directed, metamorphic).
@@ -47,8 +47,8 @@ None. Direction questions of the run, if any: `handoff/2026-09-24-questions.md`.
 - **Cleanups:** translated-fn classification ×3 (check/ir/eval); `internalError` →
   `internal/build/errors.go`; ASCII-fold/inline-fold rule as one ir helper; `osFS.EvalSymlinks`
   → `write.go`; the compile-and-run loop duplicated between two `_test.go` files; the `"$id"`
-  wire key has no shared constant (wire vs gen/cpp const-dup); tools/audit: an unmeasured lane
-  fails, the lint lane waits for the lock; one fixture FS in testkit (4 copies).
+  wire key has no shared constant (wire vs gen/cpp const-dup); one fixture FS in testkit (4 copies);
+  tools/audit: a malformed baseline row is skipped silently by ratchet.Parse (should fail).
 
 ## Operating notes
 
