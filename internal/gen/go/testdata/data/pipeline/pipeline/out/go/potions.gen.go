@@ -49,6 +49,17 @@ func (self *Potion) Stack() int64 { return self.stack }
 // The generated getter just returns it, in every language.
 func (self *Potion) IsStrong() bool { return self.isStrong }
 
+// HealFor: Needs a runtime input (the player's missing HP), so the body is translated into
+// each target. Only the portable subset is allowed, and `canon build` emits a
+// conformance test per target so the translations cannot drift.
+func (self *Potion) HealFor(missingHp int64) int64 { return potionHealFor(self.heal, missingHp) }
+
+// potionHealFor is translated from pipeline/potion.canon (Potion.healFor). The method
+// and the conformance test both call it, so the test checks the code that runs.
+func potionHealFor(heal int64, missingHp int64) int64 {
+	return min(heal, max(missingHp, 0))
+}
+
 // Potions: One JSON file per potion, as today. Each file is one entry; findings point into it.
 // Reloadable: tuned live during balance sessions, and runtimes keep potion ids, never
 // Potion pointers, across ticks.

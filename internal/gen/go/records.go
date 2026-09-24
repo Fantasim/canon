@@ -8,19 +8,23 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// body is what a record or case type holds: slots, finite methods, a table's id type (§5.3).
+// body is what a record or case type holds: slots, finite and translated methods, a table's id type (§5.3).
 type body struct {
-	key    any    // the *ir.Record or *ir.Case, which data mode's holders index
-	owner  string // Canon name, for messages
-	goName string
-	slots  []*slot
-	finite []*finiteMethod
-	idType string // "" unless a table holds the record
+	key        any    // the *ir.Record or *ir.Case, which data mode's holders index
+	owner      string // Canon name, for messages
+	canon      string // Potion, or Reward.item for a case: how conformance failures name it
+	goName     string
+	fields     []*ir.Field
+	methods    []*ir.ExportFn
+	slots      []*slot
+	finite     []*finiteMethod
+	translated []*ir.ExportFn
+	idType     string // "" unless a table holds the record
 }
 
 // recordBody gathers the fields and export fns of a record or case (CODEGEN.md §5.4).
 func (g *gen) recordBody(key any, owner, goName string, fields []*ir.Field, fns []*ir.ExportFn) *body {
-	b := &body{key: key, owner: owner, goName: goName}
+	b := &body{key: key, owner: owner, goName: goName, fields: fields, methods: fns}
 	for _, f := range fields {
 		if f.Input != nil {
 			g.failf(ErrUnsupported, "input field %s.%s", owner, f.Name)
@@ -53,7 +57,7 @@ func (g *gen) addMethod(b *body, owner string, fn *ir.ExportFn) {
 		g.dataFinite(f, b.key)
 		b.finite = append(b.finite, f)
 	default:
-		g.failf(ErrUnsupported, translatedFormat, origin)
+		b.translated = append(b.translated, fn)
 	}
 }
 
@@ -91,6 +95,9 @@ func (g *gen) typeDecl(b *body, doc string) {
 	for _, f := range b.finite {
 		g.writeFinite(recv, f)
 	}
+	for _, fn := range b.translated {
+		g.translatedMethod(b, fn)
+	}
 }
 
 func methodRecv(goName string) string { return "func (self *" + goName + ") " }
@@ -116,6 +123,7 @@ func (g *gen) bodyOf(r *ir.Record) *body {
 		return b
 	}
 	b := g.recordBody(r, r.QName(), g.goName(r), r.Fields, r.Methods)
+	b.canon = r.Name
 	if tv := g.tableOf[r]; tv != nil {
 		b.idType = g.idType(r)
 	}
@@ -129,6 +137,7 @@ func (g *gen) caseBody(v *ir.Variant, c *ir.Case) *body {
 		return b
 	}
 	b := g.recordBody(c, v.QName()+dot+c.Name, g.names.CaseName(v, c), c.Fields, c.Methods)
+	b.canon = v.Name + dot + c.Name
 	g.bodies[c] = b
 	return b
 }

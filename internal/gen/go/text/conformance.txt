@@ -1,0 +1,41 @@
+{{define "conformance"}}// canonCatch runs f and returns its result, or the code of the *rt.EvalError it
+// panicked with. Any other panic is re-raised.
+func canonCatch[T any](f func() T) (got T, code string) {
+	defer func() {
+		if r := recover(); r != nil {
+			e, ok := r.(*{{.RT}}.EvalError)
+			if !ok {
+				panic(r)
+			}
+			code = e.Code
+		}
+	}()
+	return f(), ""
+}
+{{if .Fmt}}
+func canonShow[T any](v T, ok bool) string {
+	if !ok {
+		return "none"
+	}
+	return {{.Fmt}}.Sprint(v)
+}
+{{end}}{{end}}
+
+{{define "conformanceTest"}}
+func {{.Name}}({{.T}} *{{.Testing}}.T) {
+	vectors := []struct {
+{{range .Fields}}		{{.}}
+{{end}}		want {{.Result}}
+		code string // expected error code; empty when want is expected
+	}{
+{{range .Rows}}		{{.}},
+{{end}}	}
+	for _, v := range vectors {
+		got, code := canonCatch(func() {{.Result}} { return {{.Call}} })
+		if code != v.code || (v.code == "" && {{if .Math}}{{.Math}}.Float64bits(got) != {{.Math}}.Float64bits(v.want){{else}}got != v.want{{end}}) {
+			{{.T}}.Errorf({{.Format}},
+				{{.Shown}}, got, code, v.want, v.code)
+		}
+	}
+}
+{{end}}

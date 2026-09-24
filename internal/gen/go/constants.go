@@ -27,79 +27,6 @@ const (
 	retiredDoc       = "Retired."
 )
 
-// The fixed comments of container methods (T8) and the container templates (§5.9), whose member and method names are ir's.
-const (
-	tableContainerFormat = `type %[1]s struct {
-%[5]s []%[2]s
-}
-
-// Len returns the number of entries.
-func (self *%[1]s) %[6]s() int { return len(self.%[5]s) }
-
-// At returns entry i, in source order.
-func (self *%[1]s) %[7]s(i int) *%[2]s { return &self.%[5]s[i] }
-
-// All yields every entry in source order.
-func (self *%[1]s) %[8]s() %[3]s.Seq[*%[2]s] {
-return func(yield func(*%[2]s) bool) {
-for i := range self.%[5]s {
-if !yield(&self.%[5]s[i]) {
-return
-}
-}
-}
-}
-
-// Find returns the entry whose id is key.
-func (self *%[1]s) %[9]s(key string) (*%[2]s, bool) {
-id, ok := Parse%[4]s(key)
-if !ok {
-return nil, false
-}
-return &self.%[5]s[id], true
-}
-
-func (self *%[1]s) %[10]s(id %[4]s) *%[2]s { return &self.%[5]s[id] }
-
-`
-	keyedContainerFormat = `type %[1]s struct {
-%[7]s %[2]s
-}
-
-// Len returns the number of entries.
-func (self *%[1]s) %[8]s() int { return self.%[7]s.Len() }
-
-// At returns entry i, in source order.
-func (self *%[1]s) %[9]s(i int) *%[3]s { return self.%[7]s.At(i) }
-
-// All yields every entry in source order.
-func (self *%[1]s) %[10]s() %[4]s.Seq[*%[3]s] { return self.%[7]s.All() }
-
-// Find returns the entry whose %[5]s is key.
-func (self *%[1]s) %[11]s(key %[6]s) (*%[3]s, bool) { return self.%[7]s.Find(key) }
-
-`
-	findByIndexFormat = `var %[1]s = %[2]s.OnceValue(func() map[%[3]s]int {
-rows := %[4]s().%[6]s
-idx := make(map[%[3]s]int, len(rows))
-for i, r := range rows {
-idx[r.%[5]s] = i
-}
-return idx
-})
-
-`
-	findByFormat = `func (self *%[1]s) %[2]s(key %[3]s) (*%[4]s, bool) {
-i, ok := %[5]s()[key]
-if !ok {
-return nil, false
-}
-return &self.%[6]s[i], true
-}
-
-`
-)
-
 // Enum templates (CODEGEN.md §5.2): the String/Wire fallback, Members and the @codes pair.
 const (
 	fallbackFormat = "}\nreturn \"%[1]s(\" + %[2]s.FormatInt(int64(self), 10) + \")\"\n}\n\n"
@@ -142,13 +69,12 @@ return c, ok
 
 // Messages of the generator's errors, and texts written twice.
 const (
-	kindFormat       = "%s: a value of kind %s"
-	unknownKind      = "an unknown kind"
-	unknownMode      = "an unknown mode"
-	defineRefFormat  = "a ref into the load.defines table %s, whose define value getter and table are not generated yet"
-	noKeyType        = "a ref without a key type"
-	translatedFormat = "translated export fn %s"
-	structOpen       = "type %s struct {\n"
+	kindFormat      = "%s: a value of kind %s"
+	unknownKind     = "an unknown kind"
+	unknownMode     = "an unknown mode"
+	defineRefFormat = "a ref into the load.defines table %s, whose define value getter and table are not generated yet"
+	noKeyType       = "a ref without a key type"
+	structOpen      = "type %s struct {\n"
 )
 
 // Lookup bodies (CODEGEN.md §5.10): a Bool or @codes parameter is indexed through a local.
@@ -233,7 +159,7 @@ const (
 
 // goStdImports classifies a generated import by its origin, not by whether its path has a dot.
 var goStdImports = map[string]bool{
-	timePkg: true, iterPkg: true, syncPkg: true, strconvPkg: true, mathPkg: true,
+	timePkg: true, iterPkg: true, syncPkg: true, strconvPkg: true, mathPkg: true, testingPkg: true,
 	jsonPath: true, fmtPkg: true, filepathPath: true, atomicPath: true, errorsPkg: true, stringsPkg: true,
 }
 
@@ -441,4 +367,82 @@ const (
 	domainLoopFormat = "for %s, %s := range [...]string{%s} {\n"
 	pairsWalkFormat  = "for %[1]s := range %[2]s.Len() {\n%[3]s := %[2]s.At(%[1]s)\n"
 	slotKeyFormat    = "%s := [...]string{%s}[%s]\n"
+)
+
+// Translated fns (CODEGEN.md §5.10, T3; CONFORMANCE.md §2–§3): templates, lines, rt helpers.
+const (
+	methodTemplate   = "method"
+	pureTemplate     = "pure"
+	pureDocFormat    = "// %s is translated from %s (%s). The method\n// and the conformance test both call it, so the test checks the code that runs.\n"
+	testPrefix       = "Test"
+	conformanceWord  = "Conformance"
+	okSuffix         = "Ok"
+	pathSep          = "/"
+	tempLocal        = "t"
+	goFloat64        = "float64"
+	int64Bits        = 64
+	defineFormat     = "%s := %s\n"
+	varFormat        = "var %s %s\n"
+	varInitFormat    = "var %s %s = %s\n"
+	assignLineFormat = "%s = %s\n"
+	assignPairFormat = "%s, %s = %s, %s\n"
+	ifBindFormat     = "if %s := %s; %s != nil {\n"
+	returnLineFormat = "return %s\n"
+	discardFormat    = "_ = %s\n"
+	elseLine         = "} else {\n"
+	elseIfFormat     = "} else if %s {\n"
+	formatIntFormat  = "%s.FormatInt(%s, 10)"
+	not              = "!"
+	minus            = "-"
+	concat           = " + "
+	inertMarks       = "_."
+	divDuration      = "DivDuration"
+	checkFloatArg    = "CheckFloatArg"
+	checkIntWidth    = "CheckIntWidth"
+	checkIntRange    = "CheckIntRange"
+	checkFloatRange  = "CheckFloatRange"
+	toFloat32        = "ToFloat32"
+	durationToMs     = "DurationToMs"
+)
+
+// The rt helpers of the portable subset by operand kind, Int then Float, and Go's native operators (CONFORMANCE.md §3).
+var (
+	opHelper      = map[ir.Op]helperPair{ir.OpAdd: {"AddInt", "AddFloat"}, ir.OpSub: {"SubInt", "SubFloat"}, ir.OpMul: {"MulInt", "MulFloat"}, ir.OpDiv: {"DivInt", "DivFloat"}, ir.OpMod: {"ModInt", "ModFloat"}}
+	negHelper     = helperPair{"NegInt", "NegFloat"}
+	opText        = map[ir.Op]string{ir.OpEq: "==", ir.OpNe: "!=", ir.OpLt: "<", ir.OpLe: "<=", ir.OpGt: ">", ir.OpGe: ">=", ir.OpAnd: "&&", ir.OpOr: "||"}
+	builtinHelper = map[ir.Builtin]helperPair{
+		ir.BuiltinFloat: {"IntToFloat", "IntToFloat"}, ir.BuiltinInt: {"FloatToInt", "FloatToInt"}, ir.BuiltinMin: {"min", "MinFloat"},
+		ir.BuiltinMax: {"max", "MaxFloat"}, ir.BuiltinAbs: {"AbsInt", "AbsFloat"}, ir.BuiltinClamp: {"ClampInt", "ClampFloat"},
+		ir.BuiltinFloor: {"FloorFloat", "FloorFloat"}, ir.BuiltinCeil: {"CeilFloat", "CeilFloat"}, ir.BuiltinRound: {"RoundFloat", "RoundFloat"},
+	}
+	// vectorFields are the fields text/conformance.txt gives every vector besides its inputs (CONFORMANCE.md §7.2).
+	vectorFields = map[string]bool{"want": true, "code": true}
+	// opPrecedence is Go's binding of the native operators, tightest last (the Go spec, Operator precedence).
+	opPrecedence = map[ir.Op]int{ir.OpOr: 1, ir.OpAnd: 2, ir.OpEq: 3, ir.OpNe: 3, ir.OpLt: 3, ir.OpLe: 3, ir.OpGt: 3, ir.OpGe: 3, ir.OpNot: 4}
+	scalarKinds  = map[types.Kind]bool{types.Bool: true, types.Int: true, types.Float: true, types.String: true, types.Duration: true, types.Enum: true}
+	// goImportNames are the packages a generated file may import, which a local never takes (CODEGEN.md §3.4).
+	goImportNames = map[string]bool{
+		rtName: true, jsonPkg: true, fmtPkg: true, iterPkg: true, "os": true, filepathName: true, atomicName: true, syncPkg: true,
+		timePkg: true, errorsPkg: true, strconvPkg: true, stringsPkg: true, mathPkg: true, "regexp": true, "embed": true,
+	}
+)
+
+// The conformance file (CONFORMANCE.md §7, T7, T11): its name, header, locals and failure message.
+const (
+	conformanceSuffix    = "_conformance_test.go"
+	conformanceDocFormat = "\n// Conformance vectors of package %s, computed by the Canon evaluator.\n\npackage %s\n\n"
+	conformanceTemplate  = "conformance"
+	testTemplate         = "conformanceTest"
+	testingPkg           = "testing"
+	testingLocal         = "t"
+	vectorLocal          = "v"
+	equals               = "="
+	verbDecimal          = "%d"
+	verbQuoted           = "%q"
+	verbValue            = "%v"
+	showFormat           = "canonShow(%s, %s)"
+	failureFormat        = "%s(%s) = %s [%%s], canon says %s [%%s]"
+	minInt64             = ".MinInt64"
+	fixedFormat          = 'f'
+	maxInt64             = ".MaxInt64"
 )

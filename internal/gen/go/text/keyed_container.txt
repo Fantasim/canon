@@ -1,0 +1,16 @@
+type %[1]s struct {
+%[7]s %[2]s
+}
+
+// Len returns the number of entries.
+func (self *%[1]s) %[8]s() int { return self.%[7]s.Len() }
+
+// At returns entry i, in source order.
+func (self *%[1]s) %[9]s(i int) *%[3]s { return self.%[7]s.At(i) }
+
+// All yields every entry in source order.
+func (self *%[1]s) %[10]s() %[4]s.Seq[*%[3]s] { return self.%[7]s.All() }
+
+// Find returns the entry whose %[5]s is key.
+func (self *%[1]s) %[11]s(key %[6]s) (*%[3]s, bool) { return self.%[7]s.Find(key) }
+

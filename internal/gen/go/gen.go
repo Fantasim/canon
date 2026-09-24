@@ -36,9 +36,11 @@ type gen struct {
 	lc        locals          // data mode: the escaped locals of loaders, decoders and resolvers
 	taken     map[string]bool // the Go names of the imported Canon packages, which locals avoid
 	temps     int             // the last numbered local of the function being written
+	pures     []*pure         // the translated fns written, which the conformance file tests
+	pkgNames  map[string]bool // package-level names a translated fn's locals avoid, built once
 }
 
-// Generate is the Go generator (ir.Generator): <gopkg>.gen.go, and rt/rt.go verbatim (§2.3, §6.3).
+// Generate is the Go generator (ir.Generator): <gopkg>.gen.go, rt/rt.go verbatim, and <gopkg>_conformance_test.go when the package has a translated fn (§2.3, §6.3).
 func Generate(p *ir.Package, e *ir.Emit) ([]ir.File, error) {
 	if e.Target != ir.TargetGo {
 		return nil, fmt.Errorf("%w: %s", ErrTarget, e.Out)
@@ -55,13 +57,18 @@ func Generate(p *ir.Package, e *ir.Emit) ([]ir.File, error) {
 	}
 	g := newGen(p, e)
 	src := g.source()
+	test := g.conformance()
 	if g.err != nil {
 		return nil, g.err
 	}
-	return []ir.File{
+	files := []ir.File{
 		{Path: rtPath, Content: []byte(rtText)},
 		{Path: e.GoPackage + genSuffix, Content: src},
-	}, nil
+	}
+	if test != nil {
+		files = append(files, ir.File{Path: e.GoPackage + conformanceSuffix, Content: test})
+	}
+	return files, nil
 }
 
 func newGen(p *ir.Package, e *ir.Emit) *gen {
@@ -70,6 +77,7 @@ func newGen(p *ir.Package, e *ir.Emit) *gen {
 		byValue: map[string]*valueInfo{}, tableOf: map[*ir.Record]*ir.Value{}, bodies: map[any]*body{},
 	}
 	g.data = g.names.Data().Local
+	g.taken = importedNames(p)
 	for _, pr := range g.names.Problems() {
 		if !g.isData() || pr.Kind != ir.GoCollision {
 			g.fail(nameError(pr))

@@ -1,10 +1,23 @@
 package gogen
 
 import (
+	_ "embed"
 	"strconv"
 
 	"github.com/fantasim/canonlang/internal/ir"
 	"github.com/fantasim/canonlang/internal/types"
+)
+
+// The container templates (§5.9) with their fixed comments (T8), fmt formats whose member and method names are ir's.
+var (
+	//go:embed text/table_container.txt
+	tableContainerFormat string
+	//go:embed text/keyed_container.txt
+	keyedContainerFormat string
+	//go:embed text/find_by_index.txt
+	findByIndexFormat string
+	//go:embed text/find_by.txt
+	findByFormat string
 )
 
 // containers writes the class of every emitted table and keyed list (CODEGEN.md §5.9).

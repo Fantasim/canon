@@ -1,0 +1,8 @@
+func (self *%[1]s) %[2]s(key %[3]s) (*%[4]s, bool) {
+i, ok := %[5]s()[key]
+if !ok {
+return nil, false
+}
+return &self.%[6]s[i], true
+}
+

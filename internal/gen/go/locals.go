@@ -18,14 +18,6 @@ type locals struct {
 }
 
 func (g *gen) newLocals() locals {
-	g.taken = map[string]bool{}
-	for _, ref := range g.p.Imports {
-		for _, e := range ref.Emits {
-			if e.Target == ir.TargetGo {
-				g.taken[e.GoPackage] = true
-			}
-		}
-	}
 	return locals{
 		Name: g.local(localName), Path: g.local(localPath), Raw: g.local(localRaw), Out: g.local(localOut),
 		W: g.local(localWire), Obj: g.local(localObj), Err: g.local(localErr), F: g.local(localFile),
@@ -34,6 +26,19 @@ func (g *gen) newLocals() locals {
 		Tag: g.local(localTag), C: g.local(localCase),
 		Kind: g.local(localKind), Key: g.local(keyArg), K: g.local(tempKey), R: g.local(tempRaw), OK: g.local(tempOK),
 	}
+}
+
+// importedNames are the Go package names of the imported Canon packages' go emits.
+func importedNames(p *ir.Package) map[string]bool {
+	out := map[string]bool{}
+	for _, ref := range p.Imports {
+		for _, e := range ref.Emits {
+			if e.Target == ir.TargetGo {
+				out[e.GoPackage] = true
+			}
+		}
+	}
+	return out
 }
 
 // local is name, with `_` added until no imported Canon package is called so.

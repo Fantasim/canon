@@ -1,0 +1,9 @@
+var %[1]s = %[2]s.OnceValue(func() map[%[3]s]int {
+rows := %[4]s().%[6]s
+idx := make(map[%[3]s]int, len(rows))
+for i, r := range rows {
+idx[r.%[5]s] = i
+}
+return idx
+})
+

@@ -1,0 +1,32 @@
+type %[1]s struct {
+%[5]s []%[2]s
+}
+
+// Len returns the number of entries.
+func (self *%[1]s) %[6]s() int { return len(self.%[5]s) }
+
+// At returns entry i, in source order.
+func (self *%[1]s) %[7]s(i int) *%[2]s { return &self.%[5]s[i] }
+
+// All yields every entry in source order.
+func (self *%[1]s) %[8]s() %[3]s.Seq[*%[2]s] {
+return func(yield func(*%[2]s) bool) {
+for i := range self.%[5]s {
+if !yield(&self.%[5]s[i]) {
+return
+}
+}
+}
+}
+
+// Find returns the entry whose id is key.
+func (self *%[1]s) %[9]s(key string) (*%[2]s, bool) {
+id, ok := Parse%[4]s(key)
+if !ok {
+return nil, false
+}
+return &self.%[5]s[id], true
+}
+
+func (self *%[1]s) %[10]s(id %[4]s) *%[2]s { return &self.%[5]s[id] }
+

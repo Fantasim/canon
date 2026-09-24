@@ -126,19 +126,16 @@ func TestRefusedEmits(t *testing.T) {
 
 // Constructs baked Go does not emit yet are refused, never skipped.
 func TestUnsupportedConstructs(t *testing.T) {
-	translated := pkg()
-	translated.Fns = []*ir.ExportFn{{Name: "f", Kind: ir.FnTranslated, Result: intT}}
 	input := record("Gen", "apiKey")
 	input.Fields[0].Input = &types.Input{Env: "KEY"}
 	negZero := pkg()
 	negZero.Consts = []*ir.Const{{Name: "Z", Type: ir.TypeRef{Kind: types.Float, Bits: 64}, V: &value.Float{V: negativeZero()}}}
 	cases := map[string]*ir.Package{
-		"translated fn":  translated,
 		"dependent type": pkg(&ir.Dependent{Pkg: "p", Name: "Param"}),
 		"input field":    pkg(input),
 		"-0.0 constant":  negZero,
 	}
-	for _, name := range []string{"translated fn", "dependent type", "input field", "-0.0 constant"} {
+	for _, name := range []string{"dependent type", "input field", "-0.0 constant"} {
 		if err := generateErr(cases[name], nil); !errors.Is(err, gogen.ErrUnsupported) {
 			t.Errorf("%s: got %v, want ErrUnsupported", name, err)
 		}

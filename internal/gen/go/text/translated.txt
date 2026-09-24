@@ -1,0 +1,10 @@
+{{define "method"}}{{.Doc}}func (self *{{.Type}}) {{.Name}}({{.Params}}) {{.Result}} {{if .Pre}}{
+{{.Pre}}return {{.Call}}
+}{{else}}{ return {{.Call}} }{{end}}
+
+{{end}}
+
+{{define "pure"}}{{.Doc}}func {{.Name}}({{.Params}}) {{.Result}} {
+{{.Body}}}
+
+{{end}}

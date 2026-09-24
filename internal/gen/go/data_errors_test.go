@@ -54,7 +54,6 @@ func dataRefusals() map[string]func(*ir.Package) {
 			addField(p, wired("peer", "peer", "", thingRef(p, "things")))
 			addMethod(p, &ir.ExportFn{Name: "f", Kind: ir.FnLookup, Result: typed(thing(p), types.Record), Params: []*ir.Param{{Name: "b", Type: boolT}}})
 		},
-		"a translated method": func(p *ir.Package) { addMethod(p, &ir.ExportFn{Name: "f", Kind: ir.FnTranslated, Result: intT}) },
 		"a resolvable ref in a record two values hold": func(p *ir.Package) {
 			p.Values = nil
 			thingValues(p, true, "left", "right")

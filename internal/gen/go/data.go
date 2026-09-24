@@ -3,6 +3,7 @@ package gogen
 import (
 	_ "embed"
 	"fmt"
+	"io"
 	"strconv"
 	"strings"
 	"text/template"
@@ -11,11 +12,27 @@ import (
 	"github.com/fantasim/canonlang/internal/types"
 )
 
-//go:embed text/data.txt
-var dataText string
+var (
+	//go:embed text/data.txt
+	dataText string
+	//go:embed text/translated.txt
+	translatedText string
+	//go:embed text/conformance.txt
+	conformanceText string
+)
 
-// dataTemplates are data mode's fixed code shapes: table container, loaders, snapshot and store.
-var dataTemplates = template.Must(template.New(dataTemplateSet).Parse(dataText))
+// dataTemplates are the fixed code shapes: data mode's table container, loaders, snapshot and
+// store; a translated fn's method and pure function; the conformance file's helpers and tests.
+var dataTemplates = parseTemplates(dataText, translatedText, conformanceText)
+
+// parseTemplates parses texts of `define`s into one set.
+func parseTemplates(texts ...string) *template.Template {
+	set := template.New(dataTemplateSet)
+	for _, text := range texts {
+		set = template.Must(set.Parse(text))
+	}
+	return set
+}
 
 // members are the fixed member and method names of a container, ir's (CODEGEN.md §5.9).
 type members struct{ Rows, Len, At, All, Find string }
@@ -33,9 +50,11 @@ func (g *gen) dataSections() []func() {
 	}
 }
 
-// exec writes one template of dataTemplates.
-func (g *gen) exec(name string, data any) {
-	if err := dataTemplates.ExecuteTemplate(&g.body, name, data); err != nil {
+// exec writes one template of dataTemplates to the main file.
+func (g *gen) exec(name string, data any) { g.execTo(&g.body, name, data) }
+
+func (g *gen) execTo(w io.Writer, name string, data any) {
+	if err := dataTemplates.ExecuteTemplate(w, name, data); err != nil {
 		g.fail(fmt.Errorf("%w: %w", errFormat, err))
 	}
 }

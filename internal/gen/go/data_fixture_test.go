@@ -1,6 +1,9 @@
 package gogen_test
 
 import (
+	"math"
+
+	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/ir"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
@@ -52,7 +55,7 @@ func goData(dir, pkg string) *ir.Emit {
 	return &ir.Emit{Target: ir.TargetGo, Out: "out/go/", Dir: dir + "/out/go", GoImport: dataModule + "/" + dir + "/out/go", Mode: ir.ModeData, GoPackage: pkg}
 }
 
-// potionPipeline is examples/pipeline in data mode, without its translated healFor (not this unit's).
+// potionPipeline is examples/pipeline in data mode, healFor with CONFORMANCE.md §6.6's vectors.
 func potionPipeline() *ir.Package {
 	potion := &ir.Record{Pkg: "pipeline", Name: "Potion", Doc: "A healing potion. Each one is a file under data/."}
 	potion.Fields = []*ir.Field{
@@ -63,10 +66,10 @@ func potionPipeline() *ir.Package {
 		wired("stack", "nStack", "How many potions fit in one inventory slot.", intT),
 	}
 	potion.Methods = []*ir.ExportFn{{
-		Name: "isStrong", Kind: ir.FnPrecomputed, Result: boolT,
+		Name: "isStrong", Kind: ir.FnPrecomputed, Result: boolT, File: "potion.canon",
 		Doc: "No runtime input: computed by `canon build` for every potion and shipped as a value.\n" +
 			"The generated getter just returns it, in every language.",
-	}}
+	}, healFor()}
 	elem := typed(potion, types.Record)
 	potions := &ir.Value{
 		Name: "potions", Reload: true, Schema: potionSchema,
@@ -79,6 +82,33 @@ func potionPipeline() *ir.Package {
 		Name: "pipeline", Dir: "pipeline", Types: []ir.Type{potion}, Values: []*ir.Value{potions},
 		Emits: []*ir.Emit{goData("pipeline", "potions")},
 	}
+}
+
+// healFor is `min(heal, max(missingHp, 0))` and its eleven vectors (CONFORMANCE.md §6.6).
+func healFor() *ir.ExportFn {
+	fn := &ir.ExportFn{
+		Name: "healFor", Kind: ir.FnTranslated, File: "potion.canon", Order: 1, Result: intT,
+		Doc: "Needs a runtime input (the player's missing HP), so the body is translated into\n" +
+			"each target. Only the portable subset is allowed, and `canon build` emits a\n" +
+			"conformance test per target so the translations cannot drift.",
+		Params: []*ir.Param{{Name: "missingHp", Type: intT}},
+		Reads:  []*ir.Read{{Name: "heal", Path: []string{"heal"}, Type: intT}},
+		Body: &ir.Call{T: intT, Fn: ir.BuiltinMin, Args: []ir.PExpr{
+			&ir.ReadRef{T: intT, Index: 0},
+			&ir.Call{T: intT, Fn: ir.BuiltinMax, Args: []ir.PExpr{&ir.ParamRef{T: intT, Index: 0}, &ir.Lit{T: intT, V: &value.Int{}}}},
+		}},
+	}
+	rows := [][2]int64{
+		{200, 200}, {9000, 500}, {-5, 0}, {math.MinInt64, 0}, {-1, 0}, {0, 0}, {1, 1}, {499, 499}, {500, 500}, {501, 500}, {math.MaxInt64, 500},
+	}
+	for _, r := range rows {
+		v := &ir.Vector{Recv: []value.Value{&value.Int{V: 500}}, Args: []value.Value{&value.Int{V: r[0]}}, Want: &value.Int{V: r[1]}, TSWant: &value.Int{V: r[1]}}
+		if r[0] == math.MinInt64 || r[0] == math.MaxInt64 {
+			v.TSWant, v.TSCode = nil, diag.E8303.Def().Code
+		}
+		fn.Vectors = append(fn.Vectors, v)
+	}
+	return fn
 }
 
 // base is a baked package the shop imports: an enum and a table whose ids are an enum.

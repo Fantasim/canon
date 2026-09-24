@@ -218,7 +218,7 @@ func (g *gen) codesIndex(local, name string, t ir.TypeRef) string {
 	return b.String() + rbrace + newline
 }
 
-// fns writes the package-level export fns in declaration order; data mode has none (CODEGEN.md §5.10).
+// fns writes the package-level export fns in declaration order; data mode has translated ones only (CODEGEN.md §5.10).
 func (g *gen) fns() {
 	for _, fn := range g.p.Fns {
 		if g.isData() && fn.Kind != ir.FnTranslated {
@@ -231,7 +231,7 @@ func (g *gen) fns() {
 		case ir.FnPrecomputed:
 			g.packageTable(g.newFinite(fn.Name, fn), &ir.LookupTable{Cells: []value.Value{fn.Value}})
 		default:
-			g.failf(ErrUnsupported, translatedFormat, fn.Name)
+			g.translatedFn(fn)
 		}
 	}
 }
