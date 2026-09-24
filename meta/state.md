@@ -7,14 +7,14 @@ Updated: 2026-09-24, overnight run in progress (brief:
 ## Current focus — overnight run tracker
 
 Part A (close open work) then Part B (M3 waves W0–W4). Ticked = committed on `main`.
-- [ ] A1 loader parity (gen/go ∥ gen/cpp): dup row ids, `-0`→+0, Float32 single rounding,
-  `cannot open <path>`. In flight.
+- [ ] A1 loader parity: gen/go landed (2eb3294); gen/cpp merging main for full parity.
 - [x] A2 demo bugs: (1) E2102, a broken check breaks its record (428fbad, DECISIONS 209);
   (2) E7109 variants (6534f56, DECISIONS 208); (3) stays (poisoning, logged); (4) "is a Int" →
   ERRORS pass, E4402 frames stay (logged); (5) E8007 hint → ERRORS pass.
 - [ ] A3 M1.5 bug-fix wave, 73 archives: check 35, eval 4, format 20, ir 9, syntax 3, build 2.
-  eval (in review), format, ir, syntax in flight; then QA judge redesign (log "Progen archives
-  after a fix"), then check and build. Also c3eb74d: C++ tests skipped in worktrees (fixed).
+  eval landed (5bbd911); format, ir, syntax in fix rounds; then the check wave (35 archives +
+  DECISIONS 209/213/214 + queued check items), build, then QA judge redesign (log "Progen
+  archives after a fix"). Also c3eb74d: C++ tests skipped in worktrees (fixed).
 - [x] A4 M2 close: position test on `examples/pipeline/data/II_POT_HEAL_L.json`; M2 ticked.
 - [ ] A5 consumer unit (name plans) · cleanups · ERRORS.md pass + spec sync #2.
 - [ ] A6 M1.5 second wave (type-directed, metamorphic).
