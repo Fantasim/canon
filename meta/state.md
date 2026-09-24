@@ -10,9 +10,9 @@ equals findings.txt, `canon build --target go,json teamboard sovcommon...` equal
 module vets. Item 6 postponed (DECISIONS 189). Open before ticking M1: the api/cli review, IR
 round 2.
 **Wind-down (Louis, 2026-09-24 evening): finish in-flight units, start nothing new, update docs,
-stop.** In flight: ir name plans + support plan and GEN-01 pipeline goldens (aligning to loader parity)
-→ M1.5 foundation (archives re-derived against the final tree). Landed in wind-down: canon test
-7c00520, loader parity 78b3d7d. **Landed today:** conform ddb6fd6, IR round 2 5ac1d47, spec sync 15c01ce, build API/report
+stop.** In flight: GEN-01 pipeline goldens (review fixes) → M1.5 foundation (archives re-derived against
+the final tree). Landed in wind-down: canon test 7c00520, loader parity 78b3d7d, ir name plans
+b7507ff. **Landed today:** conform ddb6fd6, IR round 2 5ac1d47, spec sync 15c01ce, build API/report
 191cdf1, gen/cpp 04fae01, load.dir 6c32c0f, eval test calls/vectors 972e1df, ir export fns fce2eda, gen/go data mode 08966cb, build wiring (conformance in check/build, cppgen) 221738e, gen/cpp strict loaders 95d4bbd, gen/go translated fns a0d6373; M1 ticked 205f005. **Then:** build wiring (conform adapter in stage E,
 cppgen registered), GEN-01 pipeline regeneration, ERRORS.md pass, ir C++ stage-E plan, cleanups
 listed in decisions/log-2026-09-24.md. **Next:** gen/go data mode + stores + translated fns (after IR round 2),
