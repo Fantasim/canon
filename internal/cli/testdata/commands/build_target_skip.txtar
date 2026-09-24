@@ -1,0 +1,34 @@
+IMPLEMENTATION-PLAN.md M1 item 3: --target selects only some emits, so an unimplemented one
+(here ts) is never reached.
+-- args --
+build
+--target
+json
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    out: "out"
+    web: "web"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+let x: Int = 1
+
+emit json { out: "@out/" }
+emit ts { out: "@web/a.generated.ts" }
+-- want --
+[exit 0]
+[stdout]
+0 errors, 0 warnings in 1 package (…)
+json:
+  @out/x.json
+[stderr]
+[file out/x.json]
+{
+  "$schema": "a.x@f51a4c21",
+  "value": 1
+}

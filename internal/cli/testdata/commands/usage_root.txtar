@@ -13,6 +13,7 @@ canon: invalid value "a=y" for flag -root: a root is given twice
 usage: canon <command> [arguments] [flags]
 
 commands:
+  build [packages...]   check, then write the outputs of packages
   check [packages...]   parse and check packages, print findings
   init                  create project.canon in the current directory
   new <package>         create a package directory with a first file

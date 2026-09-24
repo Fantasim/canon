@@ -1,11 +1,13 @@
 package build
 
 import (
+	"cmp"
 	"context"
 	"crypto/sha256"
 	"errors"
 	"fmt"
 	"path"
+	"slices"
 
 	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/diag"
@@ -22,8 +24,8 @@ type Options struct {
 	Checker     Checker
 }
 
-// Checker is phase 2: check.Check with its folder bound, over the files of the loaded packages,
-// reporting to their bags; nil skips the phase.
+// Checker replaces phase 2, check.Check with eval's folder, over the files of the loaded
+// packages and their bags; a test's seam. A nil program it returns is an internal error.
 type Checker func(ctx context.Context, proj *project.Project, files []*syntax.File, bags map[string]*diag.Bag) *check.Program
 
 // Project is an opened project: its directory, file system and options (API.md O2). Every call
@@ -130,4 +132,25 @@ func collect(files diag.Files, own *diag.Bag, pkgs ...*diag.Bag) Findings {
 		out.Summary = out.Summary.Merge(b.Summary())
 	}
 	return out
+}
+
+// addErrors adds the error findings of an imported package, and their counts, the package
+// itself not counted as checked (DECISIONS 196).
+func (f *Findings) addErrors(b *diag.Bag) {
+	sum := b.Summary()
+	if sum.Errors == 0 {
+		return
+	}
+	for _, x := range b.Findings() {
+		if x.Severity == diag.Error {
+			f.List = append(f.List, x)
+		}
+	}
+	f.Summary.Errors += sum.Errors
+	for _, t := range sum.Truncated {
+		if t.Errors > 0 {
+			f.Summary.Truncated = append(f.Summary.Truncated, diag.Truncation{Package: t.Package, Errors: t.Errors})
+		}
+	}
+	slices.SortFunc(f.Summary.Truncated, func(a, b diag.Truncation) int { return cmp.Compare(a.Package, b.Package) })
 }

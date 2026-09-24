@@ -1,0 +1,10 @@
+{
+  "$schema": "teamboard.Deck@02af81fb",
+  "value": {
+    "layouts": [
+      "4:1",
+      "2:2"
+    ],
+    "maxHidden": 2
+  }
+}

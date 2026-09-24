@@ -35,7 +35,7 @@ func (d *Document) Encode() ([]byte, error) {
 		return nil, fmt.Errorf("%w: %q", ErrSchema, d.Schema)
 	}
 	e := &encoder{methods: d.Methods}
-	b := append([]byte(openObject+newline+indentSpaces), diag.AppendJSONString(nil, keySchema)...)
+	b := append([]byte(openObject+newline+indentSpaces), diag.AppendJSONString(nil, KeySchema)...)
 	b = diag.AppendJSONString(append(b, sepKey...), d.Schema)
 	b, err := e.main(b, d.Kind, d.V)
 	if err == nil && len(d.Fns) > 0 {

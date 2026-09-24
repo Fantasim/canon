@@ -1,0 +1,11 @@
+{
+  "$schema": "teamboard.Status@4aed3fde",
+  "rows": [
+    {"$id": "open", "tone": "warning", "label": "Open", "terminal": false, "next": ["taken", "wont_do", "duplicate"], "requires": [], "optional": [], "by": null},
+    {"$id": "taken", "tone": "info", "label": "Taken", "terminal": false, "next": ["open", "fixed", "wont_do", "duplicate"], "requires": ["assignee"], "optional": [], "by": null},
+    {"$id": "fixed", "tone": "accent", "label": "Fixed", "terminal": false, "next": ["verified", "open"], "requires": [], "optional": ["fixed_in"], "by": null},
+    {"$id": "verified", "tone": "success", "label": "Verified", "terminal": true, "next": ["open"], "requires": [], "optional": [], "by": "reporter_or_triager"},
+    {"$id": "wont_do", "tone": "neutral", "label": "Won't do", "terminal": true, "next": ["open"], "requires": ["reason"], "optional": [], "by": null},
+    {"$id": "duplicate", "tone": "neutral", "label": "Duplicate", "terminal": true, "next": ["open"], "requires": ["duplicate_of"], "optional": [], "by": null}
+  ]
+}

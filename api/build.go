@@ -6,6 +6,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/fantasim/canonlang/internal/build"
+	"github.com/fantasim/canonlang/internal/ir"
 )
 
 // BuildOptions selects what Build does (API.md §13.1).
@@ -40,8 +43,77 @@ type BuildResult struct {
 }
 
 // Build checks the selected packages and, without errors, writes their outputs (rules B1, B2).
-func (p *Project) Build(ctx context.Context, o BuildOptions) (*BuildResult, error) {
-	return nil, errUnimplemented()
+func (p *Project) Build(ctx context.Context, o BuildOptions) (res *BuildResult, err error) {
+	defer recoverInternal(&err)
+	b, err := p.open()
+	if err != nil {
+		return nil, err
+	}
+	start := time.Now()
+	r, err := b.Build(ctx, build.BuildOptions{
+		Packages: o.Packages, Targets: irTargets(o.Targets), Adopt: o.Adopt, Check: o.Check,
+	})
+	if err != nil {
+		return nil, apiError(err)
+	}
+	p.setRevision(r.Revision)
+	return buildResultOf(r, time.Since(start)), nil
+}
+
+// buildResultOf converts a build's result into the API's form (rule B1).
+func buildResultOf(r *build.BuildResult, d time.Duration) *BuildResult {
+	out := &BuildResult{Check: checkResultOf(r.Result, d), Stale: r.Stale}
+	for _, o := range r.Outputs {
+		out.Outputs = append(out.Outputs, Output{Path: o.Path, Target: apiTarget(o.Target), Package: o.Package, Status: apiStatus(o.Status)})
+	}
+	for _, l := range r.Locks {
+		out.Lock = append(out.Lock, LockChange{Package: l.Package, File: l.Path, Lines: l.Lines})
+	}
+	return out
+}
+
+// targetNames maps every ir.Target to the API's Target, table-driven both ways (SPEC §14).
+var targetNames = [...]Target{
+	ir.TargetGo: TargetGo, ir.TargetCpp: TargetCpp, ir.TargetTS: TargetTS, ir.TargetJSON: TargetJSON, ir.TargetView: TargetView,
+}
+
+// irTargets is ts translated to ir.Target, an unknown value dropped (SPEC §14).
+func irTargets(ts []Target) []ir.Target {
+	if len(ts) == 0 {
+		return nil
+	}
+	out := make([]ir.Target, 0, len(ts))
+	for _, t := range ts {
+		for i, name := range targetNames {
+			if name == t {
+				out = append(out, ir.Target(i))
+				break
+			}
+		}
+	}
+	return out
+}
+
+// apiTarget is t as the API names it.
+func apiTarget(t ir.Target) Target {
+	if int(t) < len(targetNames) {
+		return targetNames[t]
+	}
+	return ""
+}
+
+// statusNames maps every build.Status to the API's OutputStatus (API.md §13.1).
+var statusNames = [...]OutputStatus{
+	build.StatusWritten: OutputWritten, build.StatusUnchanged: OutputUnchanged,
+	build.StatusAdopted: OutputAdopted, build.StatusStale: OutputStale,
+}
+
+// apiStatus is s as the API names it.
+func apiStatus(s build.Status) OutputStatus {
+	if int(s) < len(statusNames) {
+		return statusNames[s]
+	}
+	return ""
 }
 
 // TestOptions selects tests.

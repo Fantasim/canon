@@ -24,6 +24,7 @@ type command struct {
 // commands are the commands this compiler implements, by name.
 func commands() map[string]command {
 	return map[string]command{
+		cmdBuild:   {flags: buildFlags, run: runBuild},
 		cmdCheck:   {run: runCheck},
 		cmdInit:    {flags: initFlags, run: runInit},
 		cmdNew:     {run: runNew},

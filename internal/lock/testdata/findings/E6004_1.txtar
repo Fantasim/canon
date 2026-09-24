@@ -1,0 +1,37 @@
+LOCK.md §6.1: a layer adding an entry to a stable table, or changing a @stable field, is E6004
+at the amendment.
+-- a/canon.lock --
+# canon.lock v1
+field  a.tiers.code  1  low
+table  a.tiers  low
+-- a/a.canon --
+/// A.
+package a
+
+/// Tier.
+record Tier {
+  /// Code.
+  code: Int @stable
+}
+
+/// Tiers.
+let tiers: stable table Tier = { low { code: 1 } }
+-- a/knights.layer --
+package a
+layer knights
+
+amend tiers {
+  high: { code: 2 }
+  low.code: 3
+}
+-- layers --
+knights table tiers a/knights.layer high: { code: 2 }
+knights field code a/knights.layer low.code: 3
+-- findings.txt --
+error[E6004]  a/knights.layer:5:3
+  layer knights cannot add an entry to stable table tiers
+
+error[E6004]  a/knights.layer:6:3
+  layer knights cannot change stable field code
+
+2 errors, 0 warnings in 1 package (…)

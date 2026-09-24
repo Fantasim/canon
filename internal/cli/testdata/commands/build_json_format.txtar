@@ -1,0 +1,44 @@
+IMPLEMENTATION-PLAN.md §8.1: --format json prints findings, output and lock lines, then a
+summary with written and stale counts.
+-- args --
+build
+--format
+json
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    out: "out"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Tier.
+record Tier {
+  /// Weight.
+  weight: Int = 1
+}
+
+/// Tiers.
+let tiers: stable table Tier = { low {} }
+
+emit json { out: "@out/" }
+-- want --
+[exit 0]
+[stdout]
+{"output":{"path":"@out/tiers.json","target":"json","package":"a","status":"written"}}
+{"lock":{"package":"a","file":"a/canon.lock","line":"table  a.tiers  low"}}
+{"summary":{"errors":0,"warnings":0,"packages":1,"ms":0,"written":1,"stale":0}}
+[stderr]
+[file a/canon.lock]
+# canon.lock v1
+table  a.tiers  low
+[file out/tiers.json]
+{
+  "$schema": "a.Tier@86740929",
+  "rows": [
+    {"$id": "low", "weight": 1}
+  ]
+}

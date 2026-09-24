@@ -5,8 +5,11 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
+
+	canon "github.com/fantasim/canonlang/api"
 )
 
 // options are the flags of CLI.md §2.3 and of the command.
@@ -17,6 +20,9 @@ type options struct {
 	quiet       bool
 	maxWarnings int
 	name        string
+	targets     []canon.Target
+	checkFlag   bool
+	adopt       []string
 }
 
 func newOptions() *options {
@@ -42,6 +48,29 @@ func newFlagSet(o *options, own func(*flag.FlagSet, *options)) *flag.FlagSet {
 
 func initFlags(fs *flag.FlagSet, o *options) {
 	fs.StringVar(&o.name, flagName, o.name, usageName)
+}
+
+// buildFlags are canon build's own flags (CLI.md §3.4), on top of the global ones.
+func buildFlags(fs *flag.FlagSet, o *options) {
+	fs.Func(flagTarget, usageTarget, o.addTarget)
+	fs.BoolVar(&o.checkFlag, flagCheck, o.checkFlag, usageCheck)
+	fs.Func(flagAdopt, usageAdopt, o.addAdopt)
+}
+
+// addTarget records one --target, refusing a word CLI.md §3.4 does not list.
+func (o *options) addTarget(v string) error {
+	t := canon.Target(v)
+	if !slices.Contains(buildTargets[:], t) {
+		return fmt.Errorf(fmtQuoted, v, errBadTarget)
+	}
+	o.targets = append(o.targets, t)
+	return nil
+}
+
+// addAdopt records one --adopt path, taken as given (CLI.md §3.4).
+func (o *options) addAdopt(v string) error {
+	o.adopt = append(o.adopt, v)
+	return nil
 }
 
 // addRoot records one --root name=dir; a name given twice is refused.

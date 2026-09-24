@@ -19,6 +19,7 @@ const (
 	lockName     = "canon.lock"
 	commandFile  = "command"
 	lockCheck    = "canon lock check"
+	layersFile   = "layers" // `<layer> table|field <name> <file> <text>`: forbidden amendments at text
 )
 
 // lockCase is one findings case: its lock, the .canon sources of its package, and whether it
@@ -28,11 +29,14 @@ type lockCase struct {
 	lock      *source.File
 	sources   []*syntax.File
 	lockCheck bool
+	ids       map[string]source.FileID
+	layers    []lock.LayerAmendment
 }
 
 func readCase(t *testing.T, a *txtar.Archive) lockCase {
 	t.Helper()
-	c := lockCase{fs: &source.FileSet{}}
+	c := lockCase{fs: &source.FileSet{}, ids: map[string]source.FileID{}}
+	var layers []byte
 	for _, f := range a.Files {
 		if f.Name == findingsFile {
 			continue
@@ -41,10 +45,15 @@ func readCase(t *testing.T, a *txtar.Archive) lockCase {
 			c.lockCheck = strings.TrimSpace(string(f.Data)) == lockCheck
 			continue
 		}
+		if f.Name == layersFile {
+			layers = f.Data
+			continue
+		}
 		src, err := c.fs.Add(f.Name, "/"+f.Name, f.Data)
 		if err != nil {
 			t.Fatal(err)
 		}
+		c.ids[f.Name] = src.ID
 		switch {
 		case path.Base(f.Name) == lockName:
 			c.lock = src
@@ -58,6 +67,9 @@ func readCase(t *testing.T, a *txtar.Archive) lockCase {
 	}
 	if c.lock == nil {
 		t.Fatal("no canon.lock in the case")
+	}
+	if layers != nil {
+		c.layers = c.layerAmendments(t, layers)
 	}
 	return c
 }
@@ -77,6 +89,9 @@ func TestFindings(t *testing.T) {
 				l.Pending(s, source.Span{File: c.lock.ID}, bag)
 			}
 		}
+		for _, a := range c.layers {
+			lock.ReportLayer(a, bag)
+		}
 		var buf bytes.Buffer
 		opt := diag.RenderOptions{Summary: bag.Summary(), Golden: true}
 		if err := diag.Render(&buf, c.fs, bag.Findings(), opt); err != nil {
@@ -84,4 +99,29 @@ func TestFindings(t *testing.T) {
 		}
 		return buf.Bytes()
 	}, golden.Expected(findingsFile))
+}
+
+// layerAmendments reads the layers file: a layer, a kind, a name, a file, the amendment's text.
+func (c lockCase) layerAmendments(t *testing.T, data []byte) []lock.LayerAmendment {
+	t.Helper()
+	var out []lock.LayerAmendment
+	for _, line := range strings.Split(strings.TrimSpace(string(data)), "\n") {
+		f := strings.SplitN(line, " ", 5)
+		if len(f) != 5 {
+			t.Fatalf("layers line %q", line)
+		}
+		id, ok := c.ids[f[3]]
+		at := strings.Index(string(c.fs.Content(id)), f[4])
+		if !ok || at < 0 {
+			t.Fatalf("layers line %q: no %q in %s", line, f[4], f[3])
+		}
+		am := lock.LayerAmendment{Layer: f[0], Span: source.Span{File: id, Start: source.Pos(at), End: source.Pos(at + len(f[4]))}}
+		if f[1] == "table" {
+			am.Table = f[2]
+		} else {
+			am.Field = f[2]
+		}
+		out = append(out, am)
+	}
+	return out
 }

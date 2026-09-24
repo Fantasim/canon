@@ -39,8 +39,9 @@ func (p *Project) setRevision(rev string) {
 	p.rev = Revision(rev)
 }
 
-// apiError is an error of build as the API reports it (rules O1-O4, R1, R3): project.canon's
-// errors as a *ProjectError with their findings, whether Open or a later call met them.
+// apiError is an error of build as the API reports it (rules O1-O4, R1, R3, X2): project.canon's
+// errors as a *ProjectError with their findings, whether Open or a later call met them, and a
+// compiler bug as an *InternalError.
 func apiError(err error) error {
 	var oe *build.OpenError
 	var ue *project.UnknownError
@@ -53,6 +54,8 @@ func apiError(err error) error {
 		return fmt.Errorf(fmtMixed, ErrUnknownPackage, ue.Name, project.ErrMixedDirectory)
 	case errors.As(err, &ue):
 		return fmt.Errorf(fmtUnknown, ErrUnknownPackage, ue.Name)
+	case errors.Is(err, build.ErrInternal):
+		return &InternalError{Msg: err.Error(), Stack: string(debug.Stack())}
 	}
 	return err
 }

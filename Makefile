@@ -31,9 +31,19 @@ test:
 goldens-vet:
 	@for m in $(GOLDEN_MODS); do echo "golden module $$m"; (cd $$m && go vet ./... && go test ./...) || exit 1; done
 
-# Every expected/MANIFEST line names a golden that exists, and every file of that expected/
-# is listed (findings.txt, MANIFEST and go.mod excepted). The rebuild-and-diff of every example
-# joins this target when the compiler can build (M1, IMPLEMENTATION-PLAN.md §7.1).
+# Examples whose compiler build cannot run yet: pipeline is illustrative until GEN-01 regenerates
+# it (M2, DOCTRINE.md §4); an example that forces `load` fails with build.ErrLoad until M3
+# (DECISIONS 196). Add to this list, never delete a MANIFEST, when a new example cannot build.
+GOLDEN_BUILD_SKIP := pipeline
+# Roots examples/project.canon declares that only a build writes to (examples/_fixtures/README.md);
+# resource and client are redirected to the fixtures instead, read-only.
+GOLDEN_WRITE_ROOTS := source services sovcommon web parity generated
+
+# Every expected/MANIFEST line names a golden that exists, and every file of that expected/ is
+# listed (findings.txt, MANIFEST and go.mod excepted). Then, for every buildable example
+# (GOLDEN_BUILD_SKIP aside), rebuild it into a temporary copy of examples/ with every root
+# outside the project redirected (examples/_fixtures/README.md) and diff each listed file
+# against its golden (IMPLEMENTATION-PLAN.md §7.1).
 goldens-check:
 	@status=0; for m in $$(find examples -path '*/expected/MANIFEST' | sort); do \
 	  d=$$(dirname $$m); \
@@ -43,6 +53,34 @@ goldens-check:
 	  for f in $$(cd $$d && find . -type f ! -name findings.txt ! -name MANIFEST ! -name go.mod | sed 's|^\./||' | sort); do \
 	    if ! awk '{ print $$2 }' $$m | grep -qx "$$f"; then echo "goldens-check: $$d/$$f is not listed in $$m"; status=1; fi; \
 	  done; \
+	  ex=$$(basename $$(dirname $$d)); \
+	  case " $(GOLDEN_BUILD_SKIP) " in *" $$ex "*) continue ;; esac; \
+	  sel="$$ex"; \
+	  case "$$ex" in teamboard) sel="teamboard sovcommon..." ;; esac; \
+	  tmp=$$(mktemp -d); \
+	  cp -r examples/. "$$tmp/proj"; \
+	  for r in $(GOLDEN_WRITE_ROOTS); do mkdir -p "$$tmp/out/$$r"; done; \
+	  rootargs="--root resource=$$tmp/proj/_fixtures/resource --root client=$$tmp/proj/_fixtures/client"; \
+	  for r in $(GOLDEN_WRITE_ROOTS); do rootargs="$$rootargs --root $$r=$$tmp/out/$$r"; done; \
+	  if ! go run ./cmd/canon build --project "$$tmp/proj" $$rootargs --target go --target json $$sel > "$$tmp/build.log" 2>&1; then \
+	    echo "goldens-check: canon build $$sel failed:"; cat "$$tmp/build.log"; status=1; rm -rf "$$tmp"; continue; \
+	  fi; \
+	  while read -r display golden; do \
+	    case "$$display" in \
+	      @*) rest=$${display#@}; root=$${rest%%/*}; sub=$${rest#*/} ;; \
+	      *) rest="" ;; \
+	    esac; \
+	    if [ -n "$$rest" ]; then \
+	      case " $(GOLDEN_WRITE_ROOTS) " in \
+	        *" $$root "*) src="$$tmp/out/$$root/$$sub" ;; \
+	        *) src="$$tmp/proj/$$root/$$sub" ;; \
+	      esac; \
+	    else \
+	      src="$$tmp/proj/$$display"; \
+	    fi; \
+	    if ! diff -u "$$src" "$$d/$$golden"; then status=1; fi; \
+	  done < "$$m"; \
+	  rm -rf "$$tmp"; \
 	done; exit $$status
 
 # internal/diag/codes.go and its generated test table equal what diaggen generates from

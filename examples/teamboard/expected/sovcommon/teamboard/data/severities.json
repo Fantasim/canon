@@ -1,0 +1,8 @@
+{
+  "$schema": "teamboard.Severity@25e4faea",
+  "rows": [
+    {"$id": "low", "tone": "neutral", "label": "Low", "default": false},
+    {"$id": "normal", "tone": "info", "label": "Normal", "default": true},
+    {"$id": "critical", "tone": "danger", "label": "Critical", "default": false}
+  ]
+}

@@ -1,0 +1,47 @@
+DECISIONS 196, EVALUATION.md §7.1: an evaluation error in an imported package blocks the
+selection's code, data and lock, and is reported with the selection's findings.
+-- select --
+a
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    out: "out"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+import b
+
+/// Tier.
+record Tier {
+  /// Weight.
+  weight: Int = 1
+}
+
+/// Tiers.
+let tiers: stable table Tier = { low {} }
+
+/// V: reads b.x, whose error poisons it silently.
+let v: Int = b.x
+
+emit json { out: "@out/", values: [tiers] }
+-- b/b.canon --
+/// B.
+package b
+
+/// Zero.
+const ZERO = 0
+
+/// X.
+let x: Int = 1 / ZERO
+
+/// W: a warning of b is not reported with a's findings.
+let w: Int = 2
+-- build.txt --
+error[E4102]  b/b.canon:8:14
+  division by zero
+
+1 error, 0 warnings in 1 package (…)

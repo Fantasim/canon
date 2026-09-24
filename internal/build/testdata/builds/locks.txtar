@@ -1,0 +1,36 @@
+LOCK.md §5: a package whose lock would be empty gets no lock file (b); an existing lock is kept
+even when it holds nothing (c); a new stable table creates its lock (a).
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Tier.
+record Tier {
+  /// Weight.
+  weight: Int = 1
+}
+
+/// Tiers.
+let tiers: stable table Tier = { low {} }
+-- b/b.canon --
+/// B.
+package b
+
+/// V.
+let v: Int = 1
+-- c/c.canon --
+/// C.
+package c
+
+/// V.
+let v: Int = 1
+-- c/canon.lock --
+# canon.lock v1
+-- build.txt --
+0 errors, 0 warnings in 3 packages (…)
+lock a/canon.lock 0 ["table  a.tiers  low"]
+lock c/canon.lock 1 []

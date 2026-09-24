@@ -1,0 +1,29 @@
+WIRE.md §8.1: two emits of two packages writing one file collide.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    out: "out"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// V.
+let v: Int = 1
+
+emit json { out: "@out/" }
+-- b/b.canon --
+/// B.
+package b
+
+/// V.
+let v: Int = 2
+
+emit json { out: "@out/" }
+-- findings.txt --
+error[E8152]  b/b.canon:7:18
+  outputs collide: @out/v.json and @out/v.json
+
+1 error, 0 warnings in 2 packages (…)

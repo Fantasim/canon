@@ -59,3 +59,23 @@ func (f mapFS) Stat(name string) (fs.FileInfo, error) { return f.m.Stat(strings.
 func (f mapFS) ReadDir(name string) ([]fs.DirEntry, error) {
 	return f.m.ReadDir(strings.TrimPrefix(name, "/"))
 }
+
+// Rules R3, X2: a compiler bug a build reports as build.ErrInternal is an *InternalError.
+func TestBuildInternalError(t *testing.T) {
+	fsys := newMapFS(map[string][]byte{
+		"/law/project.canon": []byte("project a {\n  canon: \"0.1\"\n}\n"),
+		"/law/x/x.canon":     []byte("package x\n"),
+	})
+	none := func(context.Context, *project.Project, []*syntax.File, map[string]*diag.Bag) *check.Program {
+		return nil
+	}
+	b, err := build.Open(fsys, "/law", build.Options{Checker: none})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = (&Project{root: "/law", b: b}).Check(context.Background())
+	var ierr *InternalError
+	if !errors.Is(err, ErrInternal) || !errors.As(err, &ierr) || !strings.Contains(ierr.Msg, build.ErrInternal.Error()) {
+		t.Errorf("Check: %v", err)
+	}
+}

@@ -1,5 +1,7 @@
 package cli
 
+import canon "github.com/fantasim/canonlang/api"
+
 // Exit codes (CLI.md §2.5).
 const (
 	exitOK          = 0
@@ -13,12 +15,13 @@ const (
 // Command names (CLI.md §1).
 const (
 	cmdCheck   = "check"
+	cmdBuild   = "build"
 	cmdInit    = "init"
 	cmdNew     = "new"
 	cmdVersion = "version"
 )
 
-// Flags (CLI.md §2.3, §3.1).
+// Flags (CLI.md §2.3, §3.1, §3.4).
 const (
 	flagProject     = "project"
 	flagRoot        = "root"
@@ -27,6 +30,9 @@ const (
 	flagQuietShort  = "q"
 	flagMaxWarnings = "max-warnings"
 	flagName        = "name"
+	flagTarget      = "target"
+	flagCheck       = "check"
+	flagAdopt       = "adopt"
 	formatText      = "text"
 	formatJSON      = "json"
 	rootAssign      = "="
@@ -41,12 +47,16 @@ const (
 	usageQuiet       = "print errors only"
 	usageMaxWarnings = "exit with code 4 when there are more than `n` warnings"
 	usageName        = "project `name` (default: the directory's name)"
+	usageTarget      = "emit only this `target` (go, cpp, ts, json, view); repeatable"
+	usageCheck       = "write nothing; exit 1 if any output or lock would change"
+	usageAdopt       = "take over the hand-written file at `path` (repeatable)"
 )
 
 // usageText lists the commands; the flags follow it (CLI.md §1).
 const usageText = `usage: canon <command> [arguments] [flags]
 
 commands:
+  build [packages...]   check, then write the outputs of packages
   check [packages...]   parse and check packages, print findings
   init                  create project.canon in the current directory
   new <package>         create a package directory with a first file
@@ -54,6 +64,9 @@ commands:
 
 flags:
 `
+
+// buildTargets are the target words --target accepts, in SPEC §14's canonical order.
+var buildTargets = [...]canon.Target{canon.TargetGo, canon.TargetCpp, canon.TargetTS, canon.TargetJSON, canon.TargetView}
 
 // Output of version (CLI.md §3.14, IMPLEMENTATION-PLAN.md §8.5).
 const (
@@ -74,6 +87,14 @@ const (
 	pathSep       = "/"
 	dotSep        = "."
 	parentDir     = ".."
+)
+
+// canon build's own text report, not a CLI.md sample (CLI.md §3.4).
+const (
+	fmtAdopting        = "adopting %s"
+	targetHeaderSuffix = ":"
+	outputIndent       = "  "
+	lockHeader         = "lock:"
 )
 
 // Messages of the CLI itself: usage errors and failures that are not findings.

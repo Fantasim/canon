@@ -1,0 +1,44 @@
+LOCK.md §6.1, DECISIONS 196: a layer adding an entry to a stable table, or changing a @stable
+field, is E6004 (lock's), and a layered build writes no lock.
+-- layers --
+knights
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Tier.
+record Tier {
+  /// Code.
+  code: Int @stable
+  /// Weight.
+  weight: Int = 1
+}
+
+/// Tiers.
+let tiers: stable table Tier = { low { code: 1 } }
+
+/// Ranks.
+let ranks: stable table Tier = { top { code: 1 } }
+-- a/knights.canon --
+package a
+layer knights
+
+amend tiers {
+  high: { code: 2 }
+}
+
+amend ranks {
+  top.code: 3
+}
+-- build.txt --
+error[E6004]  a/knights.canon:5:3
+  layer knights cannot add an entry to stable table tiers
+
+error[E6004]  a/knights.canon:9:3
+  layer knights cannot change stable field code
+
+2 errors, 0 warnings in 1 package (…)

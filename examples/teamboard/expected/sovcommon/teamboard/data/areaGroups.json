@@ -1,0 +1,8 @@
+{
+  "$schema": "teamboard.AreaGroup@845886c0",
+  "rows": [
+    {"$id": "in_game", "label": "In game"},
+    {"$id": "out_game", "label": "Out of game"},
+    {"$id": "internal", "label": "Internal"}
+  ]
+}

@@ -73,7 +73,8 @@ func Open(root string, opts Options) (p *Project, err error) {
 	if err != nil {
 		return nil, err
 	}
-	fsys := project.OS()
+	// The default file system is writable (API.md §2.1 "the OS").
+	var fsys project.FS = build.OS()
 	if opts.FS != nil {
 		fsys = opts.FS
 	}

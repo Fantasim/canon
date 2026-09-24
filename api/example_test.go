@@ -80,7 +80,9 @@ func ExampleProject_Check() {
 		return
 	}
 	defer p.Close()
-	res, err := p.Check(context.Background(), "teamboard", "resource...")
+	// teamboard and sovcommon... force no `load` (DECISIONS 196: a package that does, such as
+	// resource..., fails the whole call with build.ErrLoad until M3).
+	res, err := p.Check(context.Background(), "teamboard", "sovcommon...")
 	switch {
 	case errors.Is(err, canon.ErrUnknownPackage), errors.Is(err, canon.ErrUnknownLayer):
 		fmt.Println("usage:", err)
@@ -97,7 +99,7 @@ func ExampleProject_Check() {
 		fmt.Println(t.Package, t.Errors, t.Warnings)
 	}
 	fmt.Println(res.HasErrors(), res.Summary.Errors, res.Summary.Warnings, res.Summary.Packages)
-	// Output: false 0 0 7
+	// Output: false 0 0 4
 }
 
 func ExampleProject_LockCheck() {

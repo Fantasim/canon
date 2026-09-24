@@ -5,6 +5,9 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
+	"fmt"
+	"io/fs"
 	"path"
 	"slices"
 	"strings"
@@ -39,6 +42,7 @@ type snapshot struct {
 	names  []string
 	units  []*project.Unit
 	sums   []project.FileSum
+	locks  map[string][]byte // every package directory's canon.lock read, by project-relative path
 }
 
 // Packages scans and parses the project and lists its packages (API.md §5.5, O4).
@@ -54,7 +58,8 @@ func (p *Project) Packages(ctx context.Context) (*Units, error) {
 }
 
 // Revision is the revision of what is on disk now (API.md S1, S3), whether project.canon
-// checks or not; a file, or the listing of the file set, that cannot be read is marked so.
+// checks or not; a file, or the listing of the file set, that cannot be read is marked so. The
+// canon.lock of every package directory counts, whatever a call selects.
 func (p *Project) Revision(ctx context.Context) (string, error) {
 	lines := []digest{p.digestOf(project.FileName)}
 	names, err := project.Scan(p.fs, p.dir)
@@ -67,7 +72,42 @@ func (p *Project) Revision(ctx context.Context) (string, error) {
 		}
 		lines = append(lines, p.digestOf(name))
 	}
+	for _, name := range lockPaths(names) {
+		data, err := p.fs.ReadFile(path.Join(p.dir, name))
+		if !errors.Is(err, fs.ErrNotExist) {
+			lines = append(lines, digestData(name, data, err))
+		}
+	}
 	return revisionOf(lines), nil
+}
+
+// lockPaths is the canon.lock path of every directory holding a source file or above one (LOCK.md §2.1).
+func lockPaths(names []string) []string {
+	var out []string
+	for _, name := range names {
+		for dir := path.Dir(name); dir != listingMark; dir = path.Dir(dir) {
+			out = append(out, path.Join(dir, lockName))
+		}
+	}
+	slices.Sort(out)
+	return slices.Compact(out)
+}
+
+// readLocks reads the canon.lock of every package directory into the snapshot and its read set.
+func (s *snapshot) readLocks(fsys project.FS, dir string) error {
+	s.locks = map[string][]byte{}
+	for _, name := range lockPaths(s.names) {
+		data, err := fsys.ReadFile(path.Join(dir, name))
+		switch {
+		case errors.Is(err, fs.ErrNotExist):
+			continue
+		case err != nil:
+			return fmt.Errorf(fmtWrap, err)
+		}
+		s.locks[name] = data
+		s.sums = append(s.sums, project.FileSum{Path: name, Sum: sha256.Sum256(data)})
+	}
+	return nil
 }
 
 // digest is one line of a read-set listing: a file's SHA-256 in hex, or unreadMark.
@@ -77,6 +117,11 @@ type digest struct {
 
 func (p *Project) digestOf(name string) digest {
 	data, err := p.fs.ReadFile(path.Join(p.dir, name))
+	return digestData(name, data, err)
+}
+
+// digestData is the listing line of a file read, unreadMark when reading it failed.
+func digestData(name string, data []byte, err error) digest {
 	if err != nil {
 		return digest{path: name, text: unreadMark}
 	}
@@ -84,35 +129,9 @@ func (p *Project) digestOf(name string) digest {
 	return digest{path: name, text: hex.EncodeToString(sum[:])}
 }
 
-// Check parses the selected packages and their imports, then checks them with the Checker; an
-// unknown selector or layer is a *project.UnknownError (API.md R1, O4).
+// Check runs phases 1 to 7 on the selected packages and their imports (CLI.md §3.3, API.md R2).
 func (p *Project) Check(ctx context.Context, selectors []string) (*Result, error) {
-	s, err := p.load(ctx)
-	if err != nil {
-		return nil, err
-	}
-	selected, err := project.Select(s.units, selectors)
-	if err != nil {
-		return nil, err
-	}
-	loaded := imported(s.units, selected)
-	if err := p.checkLayers(loaded); err != nil {
-		return nil, err
-	}
-	if p.opt.Checker != nil {
-		p.opt.Checker(ctx, s.proj, filesOf(loaded), s.bagsOf(loaded))
-	}
-	if err := ctx.Err(); err != nil {
-		return nil, err
-	}
-	res := &Result{Revision: s.revision()}
-	var bags []*diag.Bag
-	for _, u := range selected {
-		res.Packages = append(res.Packages, u.Name)
-		bags = append(bags, s.bag(u.Name))
-	}
-	res.Findings = collect(s.set, s.own, bags...)
-	return res, nil
+	return p.Analyze(ctx, selectors)
 }
 
 // load reads a new snapshot: project.canon, then every source file, parsed.
@@ -126,6 +145,9 @@ func (p *Project) load(ctx context.Context) (*snapshot, error) {
 		return nil, err
 	}
 	s.sums = append(s.sums, r.Sums...)
+	if err := s.readLocks(p.fs, p.dir); err != nil {
+		return nil, err
+	}
 	project.CheckStudio(s.proj, s.units, s.own)
 	return s, nil
 }

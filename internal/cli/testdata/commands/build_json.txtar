@@ -1,0 +1,46 @@
+CLI.md §3.4: canon build writes emit json's output and lists it grouped by target; a stable
+table also appends canon.lock (LOCK.md §5).
+-- args --
+build
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    out: "out"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Tier.
+record Tier {
+  /// Weight.
+  weight: Int = 1
+}
+
+/// Tiers.
+let tiers: stable table Tier = { low {}, high { weight: 2 } }
+
+emit json { out: "@out/" }
+-- want --
+[exit 0]
+[stdout]
+0 errors, 0 warnings in 1 package (…)
+json:
+  @out/tiers.json
+lock:
+  a/canon.lock
+[stderr]
+[file a/canon.lock]
+# canon.lock v1
+table  a.tiers  high
+table  a.tiers  low
+[file out/tiers.json]
+{
+  "$schema": "a.Tier@86740929",
+  "rows": [
+    {"$id": "low", "weight": 1},
+    {"$id": "high", "weight": 2}
+  ]
+}

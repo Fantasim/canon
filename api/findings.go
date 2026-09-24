@@ -8,6 +8,7 @@ import (
 	"io"
 	"time"
 
+	"github.com/fantasim/canonlang/internal/build"
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/source"
 )
@@ -175,13 +176,18 @@ func (p *Project) Check(ctx context.Context, packages ...string) (res *CheckResu
 		return nil, apiError(err)
 	}
 	p.setRevision(r.Revision)
+	return checkResultOf(*r, time.Since(start)), nil
+}
+
+// checkResultOf converts one phases-1-7 result into the API's form (rules R1-R3).
+func checkResultOf(r build.Result, d time.Duration) *CheckResult {
 	return &CheckResult{
 		Revision: Revision(r.Revision),
 		Packages: r.Packages,
 		Findings: fromDiag(r.Files, r.List),
 		Summary:  summaryOf(r.Summary),
-		Duration: time.Since(start),
-	}, nil
+		Duration: d,
+	}
 }
 
 // LockCheck verifies canon.lock of the selected packages (rule B4).

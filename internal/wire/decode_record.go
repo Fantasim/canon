@@ -231,7 +231,7 @@ func (r *run) unknown(o *object, n *jsonsrc.Node, t types.Type) bool {
 		switch {
 		case o.claims[n][i] && o.claims[m.Value] != nil:
 			ok = r.unknown(o, m.Value, t) && ok
-		case o.claims[n][i], r.d.Partial, m.Key == keySchema && n.Pointer() == "":
+		case o.claims[n][i], r.d.Partial, m.Key == KeySchema && n.Pointer() == "":
 		default:
 			r.report(diag.E3301.At(m.KeySpan, t, m.Key), m.Value)
 			ok = false

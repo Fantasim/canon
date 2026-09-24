@@ -1,0 +1,9 @@
+{
+  "$schema": "teamboard.Column@b3a0dc32",
+  "rows": [
+    {"$id": "unclaimed", "label": "Unclaimed", "icon": "inbox", "statuses": ["open"], "assigneeFilter": false, "hideable": true},
+    {"$id": "taken", "label": "Taken", "icon": "hand", "statuses": ["taken"], "assigneeFilter": true, "hideable": true},
+    {"$id": "fixed", "label": "Fixed, to verify", "icon": "check", "statuses": ["fixed"], "assigneeFilter": false, "hideable": true},
+    {"$id": "done", "label": "Done", "icon": "archive", "statuses": ["verified", "wont_do", "duplicate"], "assigneeFilter": false, "hideable": true}
+  ]
+}

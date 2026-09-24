@@ -1,0 +1,17 @@
+{
+  "$schema": "teamboard.Area@a5984b53",
+  "rows": [
+    {"$id": "game", "group": "in_game", "tone": "series-1", "icon": "gamepad", "label": "Game", "hint": "Anything you saw while playing.", "minRole": "gm_junior", "routesTo": ["game_server", "client", "resource", "balance"]},
+    {"$id": "balance", "group": "in_game", "tone": "series-1", "icon": "scale", "label": "Balance", "hint": "Nothing is broken, the numbers feel wrong.", "minRole": "gm_junior", "routesTo": []},
+    {"$id": "website", "group": "out_game", "tone": "series-2", "icon": "globe", "label": "Website", "hint": "The site, accounts, rankings, donations and payments.", "minRole": "gm_junior", "routesTo": []},
+    {"$id": "resource_studio", "group": "internal", "tone": "series-3", "icon": "layers", "label": "Resource Studio", "hint": null, "minRole": "maintainer", "routesTo": []},
+    {"$id": "game_server", "group": "in_game", "tone": "series-1", "icon": "server", "label": "Game server", "hint": null, "minRole": "admin", "routesTo": []},
+    {"$id": "client", "group": "in_game", "tone": "series-1", "icon": "monitor", "label": "Game client", "hint": null, "minRole": "maintainer", "routesTo": []},
+    {"$id": "resource", "group": "in_game", "tone": "series-1", "icon": "database", "label": "Game data (Resource)", "hint": null, "minRole": "maintainer", "routesTo": []},
+    {"$id": "sovcommon", "group": "internal", "tone": "series-3", "icon": "package", "label": "sovcommon", "hint": null, "minRole": "admin", "routesTo": []},
+    {"$id": "admin_panel", "group": "internal", "tone": "series-2", "icon": "shield", "label": "Admin panel", "hint": null, "minRole": "admin", "routesTo": []},
+    {"$id": "analytics", "group": "internal", "tone": "series-2", "icon": "bar-chart", "label": "Analytics panel", "hint": null, "minRole": "admin", "routesTo": []},
+    {"$id": "team_board", "group": "internal", "tone": "series-2", "icon": "columns", "label": "Team board", "hint": "This board itself: something broken or missing here.", "minRole": "gm_junior", "routesTo": []},
+    {"$id": "internal", "group": "internal", "tone": "series-4", "icon": "terminal", "label": "Internal (sov, boxes, deploy)", "hint": null, "minRole": "admin", "routesTo": []}
+  ]
+}

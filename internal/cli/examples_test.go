@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"maps"
 	"os"
 	"path/filepath"
 	"slices"
@@ -16,6 +17,25 @@ import (
 )
 
 const examplesDir = "../../examples"
+
+// loadExamples force a `load`, which fails the whole check with build.ErrLoad until M3
+// (DECISIONS 196), so they are checked separately, not by TestExamplesParse.
+var loadExamples = map[string]bool{
+	"balance.parity":          true,
+	"features.codes":          true,
+	"features.csv":            true,
+	"features.embedded":       true,
+	"features.legacycpp":      true,
+	"features.text":           true,
+	"game.items":              true,
+	"pipeline":                true,
+	"resource.adventurequest": true,
+	"resource.events":         true,
+	"resource.farm":           true,
+	"resource.heistia":        true,
+	"resource.rules":          true,
+	"resource.vocab":          true,
+}
 
 // exampleRoots redirects every root of examples/project.canon (examples/_fixtures/README.md):
 // the read roots to their fixtures, the written ones to a new directory.
@@ -53,8 +73,9 @@ func owners() map[diag.Code]string {
 	return out
 }
 
-// M1 acceptance 1, examples/_fixtures/README.md: `canon check` of every example package, every
-// root redirected, prints no finding of the parser or of project.canon.
+// M1 acceptance 1, examples/_fixtures/README.md: `canon check` of every example package that
+// does not force a `load` (loadExamples, DECISIONS 196), every root redirected, prints no
+// finding of the parser or of project.canon.
 func TestExamplesParse(t *testing.T) {
 	dir, _ := filepath.Abs(examplesDir)
 	p, err := canon.Open(dir, canon.Options{})
@@ -67,6 +88,9 @@ func TestExamplesParse(t *testing.T) {
 	}
 	owner := owners()
 	for _, pkg := range pkgs {
+		if loadExamples[pkg.Name] {
+			continue
+		}
 		_, out := checkExample(t, "--format", "json", pkg.Name)
 		lines := strings.Split(strings.TrimSuffix(out, "\n"), "\n")
 		if !strings.HasPrefix(lines[len(lines)-1], `{"summary":`) {
@@ -80,6 +104,21 @@ func TestExamplesParse(t *testing.T) {
 			if o := owner[diag.Code(f.Code)]; slices.Contains([]string{"syntax", "project"}, o) {
 				t.Errorf("%s: %s[%s] %s:%d:%d %s", pkg.Name, f.Severity, f.Code, f.File, f.Line, f.Col, f.Message)
 			}
+		}
+	}
+}
+
+// DECISIONS 196: `canon check` of a loadExamples package fails as a whole with build.ErrLoad
+// (exit 2), not with per-package findings, until the load package exists (M3).
+func TestExamplesLoadUntilM3(t *testing.T) {
+	dir, _ := filepath.Abs(examplesDir)
+	names := slices.Sorted(maps.Keys(loadExamples))
+	for _, name := range names {
+		args := append(append([]string{"check", "--project", dir}, exampleRoots(t)...), name)
+		var stdout, stderr bytes.Buffer
+		code := cli.Main(context.Background(), args, cli.Env{Stdout: &stdout, Stderr: &stderr, Dir: dir})
+		if code != 2 || stdout.Len() != 0 || !strings.Contains(stderr.String(), "load is not supported") {
+			t.Errorf("%s: exit %d, stdout %q, stderr %q", name, code, stdout.String(), stderr.String())
 		}
 	}
 }

@@ -130,7 +130,7 @@ func (r *run) table(sel Selection, t types.Type, sc wscope) value.Value {
 	root := n.Pointer() == ""
 	for i := range n.Members {
 		m := &n.Members[i]
-		if root && m.Key == keySchema {
+		if root && m.Key == KeySchema {
 			continue
 		}
 		if !isWord(m.Key) {

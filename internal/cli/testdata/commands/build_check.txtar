@@ -1,0 +1,25 @@
+CLI.md §3.4, §2.5: --check writes nothing and exits 1 when an output would change.
+-- args --
+build
+--check
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    out: "out"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+let x: Int = 1
+
+emit json { out: "@out/" }
+-- want --
+[exit 1]
+[stdout]
+0 errors, 0 warnings in 1 package (…)
+json:
+  @out/x.json
+[stderr]

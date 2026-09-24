@@ -1,0 +1,236 @@
+{
+  "$schema": "teamboard.Intent@b1dcfafc",
+  "rows": [
+    {"$id": "issue", "tone": "warning", "icon": "alert-triangle", "label": "Something is wrong", "minRole": "gm_junior"},
+    {"$id": "idea", "tone": "accent", "icon": "lightbulb", "label": "Idea or request", "minRole": "gm_junior"}
+  ],
+  "$fns": {
+    "canTransition": {
+      "open": {
+        "open": false,
+        "taken": true,
+        "fixed": false,
+        "verified": false,
+        "wont_do": true,
+        "duplicate": true
+      },
+      "taken": {
+        "open": true,
+        "taken": false,
+        "fixed": true,
+        "verified": false,
+        "wont_do": true,
+        "duplicate": true
+      },
+      "fixed": {
+        "open": true,
+        "taken": false,
+        "fixed": false,
+        "verified": true,
+        "wont_do": false,
+        "duplicate": false
+      },
+      "verified": {
+        "open": true,
+        "taken": false,
+        "fixed": false,
+        "verified": false,
+        "wont_do": false,
+        "duplicate": false
+      },
+      "wont_do": {
+        "open": true,
+        "taken": false,
+        "fixed": false,
+        "verified": false,
+        "wont_do": false,
+        "duplicate": false
+      },
+      "duplicate": {
+        "open": true,
+        "taken": false,
+        "fixed": false,
+        "verified": false,
+        "wont_do": false,
+        "duplicate": false
+      }
+    },
+    "columnOf": {
+      "open": "unclaimed",
+      "taken": "taken",
+      "fixed": "fixed",
+      "verified": "done",
+      "wont_do": "done",
+      "duplicate": "done"
+    },
+    "areasVisibleTo": {
+      "member": [],
+      "gm_junior": [
+        "game",
+        "balance",
+        "website",
+        "team_board"
+      ],
+      "gm_senior": [
+        "game",
+        "balance",
+        "website",
+        "team_board"
+      ],
+      "maintainer": [
+        "game",
+        "balance",
+        "website",
+        "resource_studio",
+        "client",
+        "resource",
+        "team_board"
+      ],
+      "owner": [
+        "game",
+        "balance",
+        "website",
+        "resource_studio",
+        "client",
+        "resource",
+        "team_board"
+      ],
+      "admin": [
+        "game",
+        "balance",
+        "website",
+        "resource_studio",
+        "game_server",
+        "client",
+        "resource",
+        "sovcommon",
+        "admin_panel",
+        "analytics",
+        "team_board",
+        "internal"
+      ]
+    },
+    "groupedAreasVisibleTo": {
+      "member": [],
+      "gm_junior": [
+        {
+          "group": "in_game",
+          "areas": [
+            "game",
+            "balance"
+          ]
+        },
+        {
+          "group": "out_game",
+          "areas": [
+            "website"
+          ]
+        },
+        {
+          "group": "internal",
+          "areas": [
+            "team_board"
+          ]
+        }
+      ],
+      "gm_senior": [
+        {
+          "group": "in_game",
+          "areas": [
+            "game",
+            "balance"
+          ]
+        },
+        {
+          "group": "out_game",
+          "areas": [
+            "website"
+          ]
+        },
+        {
+          "group": "internal",
+          "areas": [
+            "team_board"
+          ]
+        }
+      ],
+      "maintainer": [
+        {
+          "group": "in_game",
+          "areas": [
+            "game",
+            "balance",
+            "client",
+            "resource"
+          ]
+        },
+        {
+          "group": "out_game",
+          "areas": [
+            "website"
+          ]
+        },
+        {
+          "group": "internal",
+          "areas": [
+            "resource_studio",
+            "team_board"
+          ]
+        }
+      ],
+      "owner": [
+        {
+          "group": "in_game",
+          "areas": [
+            "game",
+            "balance",
+            "client",
+            "resource"
+          ]
+        },
+        {
+          "group": "out_game",
+          "areas": [
+            "website"
+          ]
+        },
+        {
+          "group": "internal",
+          "areas": [
+            "resource_studio",
+            "team_board"
+          ]
+        }
+      ],
+      "admin": [
+        {
+          "group": "in_game",
+          "areas": [
+            "game",
+            "balance",
+            "game_server",
+            "client",
+            "resource"
+          ]
+        },
+        {
+          "group": "out_game",
+          "areas": [
+            "website"
+          ]
+        },
+        {
+          "group": "internal",
+          "areas": [
+            "resource_studio",
+            "sovcommon",
+            "admin_panel",
+            "analytics",
+            "team_board",
+            "internal"
+          ]
+        }
+      ]
+    }
+  }
+}

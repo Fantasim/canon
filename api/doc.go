@@ -5,5 +5,6 @@
 // stub until the milestone that implements it: a stub with an error result returns an
 // *InternalError, one without panics. Opening a project, its packages, its revision and Check
 // are implemented, as are the helpers the spec fixes entirely (value and op constructors,
-// error texts, Version, the JSON and text forms of findings).
+// error texts, Version, the JSON and text forms of findings). Build now writes the outputs and
+// locks of a checked project (rules B1, B2).
 package canon

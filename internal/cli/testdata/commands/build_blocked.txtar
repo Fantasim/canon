@@ -1,0 +1,25 @@
+CLI.md §3.4, API.md N11: an output directory the build cannot create fails the whole build,
+nothing written, exit 2.
+-- args --
+build
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    out: "out"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+let x: Int = 1
+
+emit json { out: "@out/" }
+-- out --
+a file where the output directory goes
+-- want --
+[exit 2]
+[stdout]
+[stderr]
+canon: open $TMP/out/x.json: not a directory

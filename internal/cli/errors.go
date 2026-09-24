@@ -12,6 +12,7 @@ var (
 	errRootTwice      = errors.New("a root is given twice")
 	errBadFormat      = errors.New("want --format text or json")
 	errBadMax         = errors.New("want a count of 0 or more")
+	errBadTarget      = errors.New("want go, cpp, ts, json or view")
 	errBadName        = errors.New("not an identifier; give the project name with --name")
 	errBadPackage     = errors.New("each segment must be a lowerCamel identifier")
 	errExists         = errors.New("already exists")

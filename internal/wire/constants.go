@@ -8,9 +8,11 @@ import (
 	"github.com/fantasim/canonlang/internal/types"
 )
 
+// KeySchema is the key of a data file's marker (WIRE.md §8.4).
+const KeySchema = "$schema"
+
 // The `$` keys of the data wire (WIRE.md §5.12) and the members of a document (§8.2).
 const (
-	keySchema  = "$schema"
 	keyRows    = "rows"
 	keyValue   = "value"
 	keyFns     = "$fns"

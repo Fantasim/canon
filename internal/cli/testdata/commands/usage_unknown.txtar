@@ -1,14 +1,15 @@
 CLI.md §2.5: a command canon does not implement is a usage error.
 -- args --
-build
+frobnicate
 -- want --
 [exit 2]
 [stdout]
 [stderr]
-canon: "build": unknown command
+canon: "frobnicate": unknown command
 usage: canon <command> [arguments] [flags]
 
 commands:
+  build [packages...]   check, then write the outputs of packages
   check [packages...]   parse and check packages, print findings
   init                  create project.canon in the current directory
   new <package>         create a package directory with a first file
