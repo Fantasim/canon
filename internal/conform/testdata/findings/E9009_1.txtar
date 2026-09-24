@@ -1,0 +1,27 @@
+CONFORMANCE.md §6.5: a translated function that recurses without end exceeds the call-depth
+limit on every vector (0, 1, -1 and the two int64 limits), each one reported.
+-- a/a.canon --
+/// A.
+package a
+
+/// Never returns.
+export fn spin(n: Int) -> Int { return spin(n) }
+
+emit cpp { out: "@features/a" }
+-- findings.txt --
+error[E9009]  a/a.canon:5:11
+  conformance vector 1 of spin exceeds the call-depth limit
+
+error[E9009]  a/a.canon:5:11
+  conformance vector 2 of spin exceeds the call-depth limit
+
+error[E9009]  a/a.canon:5:11
+  conformance vector 3 of spin exceeds the call-depth limit
+
+error[E9009]  a/a.canon:5:11
+  conformance vector 4 of spin exceeds the call-depth limit
+
+error[E9009]  a/a.canon:5:11
+  conformance vector 5 of spin exceeds the call-depth limit
+
+5 errors, 0 warnings in 1 package (…)

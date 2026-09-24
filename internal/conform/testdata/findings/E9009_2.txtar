@@ -1,0 +1,19 @@
+CONFORMANCE.md §6.5: a translated function that recurses without end, spending over a hundred
+steps per call, exceeds its vector's 1 000 000 steps before the call-depth limit. A String
+parameter has one candidate, "", so one vector.
+-- a/a.canon --
+/// A.
+package a
+
+/// Never returns.
+export fn spin(s: String) -> Int {
+  let z: Int = 0
+  return z * z + z * z + z * z + z * z + z * z + z * z + z * z + z * z + z * z + z * z + z * z + z * z + z * z + z * z + z * z + z * z + z * z + z * z + z * z + z * z + z * z + z * z + z * z + z * z + z * z + z * z + z * z + z * z + z * z + z * z + spin(s)
+}
+
+emit cpp { out: "@features/a" }
+-- findings.txt --
+error[E9009]  a/a.canon:5:11
+  conformance vector 1 of spin exceeds 1000000 steps
+
+1 error, 0 warnings in 1 package (…)
