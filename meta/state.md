@@ -9,10 +9,10 @@ equals findings.txt, `canon build --target go,json teamboard sovcommon...` equal
 (MANIFEST, rebuilt and diffed by `make goldens-check`), canon.lock equals its golden, the generated
 module vets. Item 6 postponed (DECISIONS 189). Open before ticking M1: the api/cli review, IR
 round 2.
-**In flight (uncommitted, one agent each):** M2 `load.dir` review fixes; build API/report (201)
-display-path fixes (moved to opus); M2 `gen/cpp`; M1.5 generator foundation (206). **Landed
-today:** `conform` (ddb6fd6; not wired), IR round 2 (5ac1d47; `ir.GoWords` export rides with
-gen/cpp), spec sync to DECISIONS 188–207 (15c01ce; ERRORS.md pass queued in the decision log). **Next:** gen/go data mode + stores + translated fns (after IR round 2),
+**In flight (uncommitted, one agent each):** M2 `load.dir` review fixes (load + build hosts.go/
+pipeline.go + cli examples_test.go); M2 `gen/cpp` in review (with the `ir.GoWords` export); M1.5
+generator foundation (206; its run hit a stack overflow in eval, to triage). **Landed today:**
+`conform` (ddb6fd6), IR round 2 (5ac1d47), spec sync (15c01ce), build API/report (191cdf1). **Next:** gen/go data mode + stores + translated fns (after IR round 2),
 `conform`, `canon test`, GEN-01 review (handoff), M1.5 program generator (DECISIONS 200).
 
 ## What exists
