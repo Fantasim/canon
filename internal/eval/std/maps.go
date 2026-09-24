@@ -51,19 +51,10 @@ func mapContains(h Host, c *Call) (value.Value, bool) {
 	return c.boolv(i >= 0), ok && h.Charge(1)
 }
 
-// MapIndex is the position of key k in m, -1 when it is not a key, each equality charged
-// (DECISIONS 197); false once the root aborted.
+// MapIndex is the position of key k in m, -1 when it is not a key: found through m's hash
+// index, each key compared charged (DECISIONS 199); false once the root aborted.
 func MapIndex(h Host, m *value.Map, k value.Value) (int, bool) {
-	for i, key := range m.Keys {
-		eq, ok := h.Equal(key, k)
-		if !ok {
-			return -1, false
-		}
-		if eq {
-			return i, true
-		}
-	}
-	return -1, true
+	return m.Lookup(k, h.Equal)
 }
 
 // mapMap keeps the keys and maps each value.

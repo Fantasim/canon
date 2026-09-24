@@ -1,6 +1,7 @@
 package eval
 
 import (
+	"slices"
 	"strings"
 
 	"github.com/fantasim/canonlang/internal/diag"
@@ -134,90 +135,197 @@ func (h *stdHost) Entry(coll value.Value, k value.Key) (*value.Record, bool) {
 	return h.r.ev.entry(coll, k)
 }
 
-// bindRefs binds the level-1 refs of a completed instance (EVALUATION.md §3.4).
+// bindRefs binds a completed instance's level-1 refs, one binder for all fields (EVALUATION.md §3.4).
 func (e *Evaluator) bindRefs(rec *value.Record) {
 	owned := e.owned(rec.T)
 	if len(owned) == 0 {
 		return
 	}
+	b := &binder{e: e, owned: owned, rt: recordOf(rec.T), owner: rec, done: map[value.Value]value.Value{}}
 	for i, f := range rec.Fields {
-		rec.Fields[i] = e.bound(f, owned, rec)
+		rec.Fields[i] = b.bind(f)
 	}
 }
 
-// bound is v with its unbound refs into owned bound to owner, copied where changed (EVALUATION.md §4.1).
-func (e *Evaluator) bound(v value.Value, owned map[*types.Collection]bool, owner *value.Record) value.Value {
-	switch x := v.(type) {
-	case *value.Ref:
-		rt, ok := x.T.Base().(*types.RefType)
-		if !ok || x.Owner != nil || !owned[rt.Target] {
-			return v
+// cleanKey is a node and the record type whose owned collections it holds no unbound ref
+// into; values are immutable, so a node found clean stays clean (DECISIONS 199).
+type cleanKey struct {
+	node value.Value
+	rt   *types.RecordType
+}
+
+// binder binds refs into owned to owner, copying what changes (EVALUATION.md §4.1, DECISIONS 199).
+type binder struct {
+	e     *Evaluator
+	owned map[*types.Collection]bool
+	rt    *types.RecordType
+	owner *value.Record
+	done  map[value.Value]value.Value
+}
+
+// binding is a composite being rebound: its components, and the next one to take.
+type binding struct {
+	v    value.Value
+	kids []value.Value
+	next int
+}
+
+// bind is v rebound, walked post-order on an explicit stack; a subtree the evaluator already
+// found clean for this record type is not walked again.
+func (b *binder) bind(v value.Value) value.Value {
+	if !isComposite(v) {
+		return b.leaf(v)
+	}
+	if !b.pending(v) {
+		return b.done[v]
+	}
+	stack := []binding{{v: v, kids: components(v)}}
+	for len(stack) > 0 {
+		top := &stack[len(stack)-1]
+		if top.next < len(top.kids) {
+			k := top.kids[top.next]
+			top.next++
+			if isComposite(k) && b.pending(k) {
+				stack = append(stack, binding{v: k, kids: components(k)})
+			}
+			continue
 		}
-		return e.carry(v, &value.Ref{T: x.T, Key: x.Key, Owner: owner, P: x.P})
+		nv := b.rebuild(top.v)
+		b.done[top.v] = nv
+		b.e.clean[cleanKey{node: nv, rt: b.rt}] = true
+		stack = stack[:len(stack)-1]
+	}
+	return b.done[v]
+}
+
+// pending reports a composite still to walk: neither rebound in this call nor known clean,
+// which counts as rebound to itself.
+func (b *binder) pending(v value.Value) bool {
+	if _, seen := b.done[v]; seen {
+		return false
+	}
+	if b.e.clean[cleanKey{node: v, rt: b.rt}] {
+		b.done[v] = v
+		return false
+	}
+	return true
+}
+
+// get is a component rebound: from done for a composite, else at once.
+func (b *binder) get(v value.Value) value.Value {
+	if isComposite(v) {
+		return b.done[v]
+	}
+	return b.leaf(v)
+}
+
+// leaf is a ref into owned bound to owner; any other value is itself.
+func (b *binder) leaf(v value.Value) value.Value {
+	x, ok := v.(*value.Ref)
+	if !ok {
+		return v
+	}
+	rt, ok := x.T.Base().(*types.RefType)
+	if !ok || x.Owner != nil || !b.owned[rt.Target] {
+		return v
+	}
+	return b.e.carry(v, &value.Ref{T: x.T, Key: x.Key, Owner: b.owner, P: x.P})
+}
+
+// rebuild is a composite whose components are all rebound: itself when none changed, else a copy.
+func (b *binder) rebuild(v value.Value) value.Value {
+	switch x := v.(type) {
 	case *value.Record:
-		if fields, changed := e.boundAll(x.Fields, owned, owner); changed {
+		if fields, changed := b.all(x.Fields); changed {
 			cp := *x
 			cp.Fields = fields
-			return e.carry(v, &cp)
+			return b.e.carry(v, &cp)
 		}
 	case *value.List:
-		if elems, changed := e.boundAll(x.Elems, owned, owner); changed {
-			return e.carry(v, &value.List{T: x.T, Elems: elems, P: x.P})
+		if elems, changed := b.all(x.Elems); changed {
+			return b.e.carry(v, &value.List{T: x.T, Elems: elems, P: x.P})
 		}
 	case *value.Map:
-		return e.boundMap(x, owned, owner)
+		keys, kc := b.all(x.Keys)
+		vals, vc := b.all(x.Vals)
+		if kc || vc {
+			return b.e.carry(v, &value.Map{T: x.T, Keys: keys, Vals: vals, P: x.P})
+		}
 	case *value.Pair:
-		if ab, changed := e.boundAll([]value.Value{x.A, x.B}, owned, owner); changed {
-			return e.carry(v, &value.Pair{T: x.T, A: ab[0], B: ab[1], P: x.P})
+		if ab, changed := b.all([]value.Value{x.A, x.B}); changed {
+			return b.e.carry(v, &value.Pair{T: x.T, A: ab[0], B: ab[1], P: x.P})
 		}
 	case *value.Table:
-		return e.boundTable(x, owned, owner)
+		return b.table(x)
 	}
 	return v
 }
 
-// boundAll binds each value; the slice is a copy when one changed.
-func (e *Evaluator) boundAll(vs []value.Value, owned map[*types.Collection]bool, owner *value.Record) ([]value.Value, bool) {
+// all is vs rebound, copied only when one changed, and whether one did.
+func (b *binder) all(vs []value.Value) ([]value.Value, bool) {
 	var out []value.Value
 	for i, v := range vs {
-		b := e.bound(v, owned, owner)
-		if b != v && out == nil {
-			out = append([]value.Value(nil), vs...)
+		nv := v
+		if v != nil {
+			nv = b.get(v)
+		}
+		if nv != v && out == nil {
+			out = slices.Clone(vs)
 		}
 		if out != nil {
-			out[i] = b
+			out[i] = nv
 		}
 	}
-	return out, out != nil
+	if out == nil {
+		return vs, false
+	}
+	return out, true
 }
 
-func (e *Evaluator) boundMap(m *value.Map, owned map[*types.Collection]bool, owner *value.Record) value.Value {
-	keys, kc := e.boundAll(m.Keys, owned, owner)
-	vals, vc := e.boundAll(m.Vals, owned, owner)
-	if !kc && !vc {
-		return m
-	}
-	if !kc {
-		keys = m.Keys
-	}
-	if !vc {
-		vals = m.Vals
-	}
-	return e.carry(m, &value.Map{T: m.T, Keys: keys, Vals: vals, P: m.P})
-}
-
-func (e *Evaluator) boundTable(t *value.Table, owned map[*types.Collection]bool, owner *value.Record) value.Value {
+// table is a table whose entries are rebound.
+func (b *binder) table(t *value.Table) value.Value {
 	entries := make([]*value.Record, len(t.Entries))
 	changed := false
 	for i, en := range t.Entries {
-		b, ok := e.bound(en, owned, owner).(*value.Record)
+		rb, ok := b.get(en).(*value.Record)
 		if !ok {
-			b = en
+			rb = en
 		}
-		entries[i], changed = b, changed || b != en
+		entries[i], changed = rb, changed || rb != en
 	}
 	if !changed {
 		return t
 	}
-	return e.carry(t, &value.Table{T: t.T, Entries: entries, P: t.P})
+	return b.e.carry(t, &value.Table{T: t.T, Entries: entries, P: t.P})
+}
+
+// isComposite reports a value that holds others.
+func isComposite(v value.Value) bool {
+	switch v.(type) {
+	case *value.Record, *value.List, *value.Map, *value.Pair, *value.Table:
+		return true
+	}
+	return false
+}
+
+// components are the values a composite holds, nil ones (input fields) left out.
+func components(v value.Value) []value.Value {
+	var all []value.Value
+	switch x := v.(type) {
+	case *value.Record:
+		all = x.Fields
+	case *value.Map:
+		all = append(append([]value.Value(nil), x.Keys...), x.Vals...)
+	case *value.Pair:
+		all = []value.Value{x.A, x.B}
+	default:
+		all = std.Elems(v)
+	}
+	out := make([]value.Value, 0, len(all))
+	for _, c := range all {
+		if c != nil {
+			out = append(out, c)
+		}
+	}
+	return out
 }

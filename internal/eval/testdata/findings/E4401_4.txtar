@@ -1,5 +1,7 @@
-TYPES.md §7.5, DECISIONS 197: `==` charges a step per composite pair it visits, so comparing
-two trees built apart, each shared 2^30 ways, runs out of budget at the comparison.
+TYPES.md §7.5, DECISIONS 199: `==` charges a step per pair it compares. Building two trees of
+60 levels, each shared 2^60 ways, spends about 1350 of the 1400 steps; comparing them needs
+more than the 50 left even when every pair is remembered (at least 2 per level), so the budget
+runs out at the `==` whatever the pair memo's threshold.
 -- a/a.canon --
 /// A.
 package a
@@ -20,12 +22,12 @@ local fn grow(n: Int) -> Node {
   return x
 }
 
-local let same: Bool = grow(30) == grow(30)
+local let same: Bool = grow(60) == grow(60)
 -- budget --
-1500
+1400
 -- findings.txt --
 error[E4401]  a/a.canon:20:24
-  evaluation budget of 1500 steps exhausted
-  heaviest: same (1500 steps)
+  evaluation budget of 1400 steps exhausted
+  heaviest: same (1400 steps)
 
 1 error, 0 warnings in 1 package (…)

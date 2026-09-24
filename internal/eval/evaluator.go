@@ -49,6 +49,7 @@ type Evaluator struct {
 	colls      map[collKey]*types.Collection
 	fieldColls map[*types.Field]*types.Collection
 	ownedBy    map[*types.RecordType]map[*types.Collection]bool
+	clean      map[cleanKey]bool
 	sites      map[*types.Field]site
 	pkgs       map[string]*check.Package
 	stable     []StableAmendment
@@ -110,6 +111,7 @@ func newEvaluator(bags check.Bags, opt Options) *Evaluator {
 
 		fieldColls: map[*types.Field]*types.Collection{},
 		ownedBy:    map[*types.RecordType]map[*types.Collection]bool{},
+		clean:      map[cleanKey]bool{},
 		sites:      map[*types.Field]site{},
 	}
 }

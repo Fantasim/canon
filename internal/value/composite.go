@@ -38,17 +38,17 @@ func (v *Record) layout() []piece {
 }
 
 // match compares the declaration, the case and which fields are set; identities are ignored.
-func (v *Record) match(o Value, push func(a, b Value, plain bool)) bool {
-	w, ok := o.(*Record)
-	if !ok || decl(v.T) != decl(w.T) || len(v.Fields) != len(w.Fields) {
+func (v *Record) match(o Value, w *eqWalk) bool {
+	x, ok := o.(*Record)
+	if !ok || decl(v.T) != decl(x.T) || len(v.Fields) != len(x.Fields) {
 		return false
 	}
 	for i, f := range v.Fields {
-		if (f == nil) != (w.Fields[i] == nil) {
+		if (f == nil) != (x.Fields[i] == nil) {
 			return false
 		}
 		if f != nil {
-			push(f, w.Fields[i], false)
+			w.push(f, x.Fields[i], false)
 		}
 	}
 	return true
@@ -90,17 +90,20 @@ func (v *List) layout() []piece {
 	return enclosed(textOpenList, textCloseList, v.Elems)
 }
 
-func (v *List) match(o Value, push func(a, b Value, plain bool)) bool {
-	w, ok := o.(*List)
-	return ok && pushSlices(v.Elems, w.Elems, push)
+func (v *List) match(o Value, w *eqWalk) bool {
+	x, ok := o.(*List)
+	return ok && pushSlices(v.Elems, x.Elems, w)
 }
 
-// Map is a map value; Keys and Vals are parallel, in insertion order (TYPES.md §9.2).
+// Map is a map value; Keys and Vals are parallel, in insertion order. Once a map has been read
+// (Get, Lookup, equality, Hash), Keys and Vals are only appended to, never replaced or
+// reordered: its key index and entry sum follow them (DECISIONS 199).
 type Map struct {
 	T    types.Type
 	Keys []Value
 	Vals []Value
 	P    *Prov
+	idx  *keyIndex
 }
 
 func (v *Map) Type() types.Type { return v.T }
@@ -122,26 +125,25 @@ func (v *Map) layout() []piece {
 
 // Get is the value at key k, by value equality, and whether k is a key.
 func (v *Map) Get(k Value) (Value, bool) {
-	for i, key := range v.Keys {
-		if Equal(key, k) {
-			return v.Vals[i], true
-		}
+	i, _ := v.Lookup(k, func(a, b Value) (bool, bool) { return Equal(a, b), true })
+	if i < 0 {
+		return nil, false
 	}
-	return nil, false
+	return v.Vals[i], true
 }
 
-// match is the same key set, order ignored (TYPES.md §7.5); the values are pushed.
-func (v *Map) match(o Value, push func(a, b Value, plain bool)) bool {
-	w, ok := o.(*Map)
-	if !ok || len(v.Keys) != len(w.Keys) {
+// match is the same key set, each found through the index (TYPES.md §7.5); values are pushed.
+func (v *Map) match(o Value, w *eqWalk) bool {
+	x, ok := o.(*Map)
+	if !ok || len(v.Keys) != len(x.Keys) {
 		return false
 	}
 	for i, k := range v.Keys {
-		x, found := w.Get(k)
-		if !found {
-			return false
+		j := w.key(x, k)
+		if j < 0 {
+			return w.over
 		}
-		push(v.Vals[i], x, false)
+		w.push(v.Vals[i], x.Vals[j], false)
 	}
 	return true
 }
@@ -170,16 +172,16 @@ func (v *Table) layout() []piece {
 }
 
 // match is the same keys in the same order; the entries are pushed, compared field-wise.
-func (v *Table) match(o Value, push func(a, b Value, plain bool)) bool {
-	w, ok := o.(*Table)
-	if !ok || len(v.Entries) != len(w.Entries) {
+func (v *Table) match(o Value, w *eqWalk) bool {
+	x, ok := o.(*Table)
+	if !ok || len(v.Entries) != len(x.Entries) {
 		return false
 	}
 	for i, e := range v.Entries {
-		if e.Ident.Key != w.Entries[i].Ident.Key {
+		if e.Ident.Key != x.Entries[i].Ident.Key {
 			return false
 		}
-		push(e, w.Entries[i], true)
+		w.push(e, x.Entries[i], true)
 	}
 	return true
 }
@@ -222,12 +224,12 @@ func (v *Pair) layout() []piece {
 	return []piece{{lit: textOpen}, {v: v.A}, {lit: textSep}, {v: v.B}, {lit: textClose}}
 }
 
-func (v *Pair) match(o Value, push func(a, b Value, plain bool)) bool {
-	w, ok := o.(*Pair)
+func (v *Pair) match(o Value, w *eqWalk) bool {
+	x, ok := o.(*Pair)
 	if !ok {
 		return false
 	}
-	push(v.A, w.A, false)
-	push(v.B, w.B, false)
+	w.push(v.A, x.A, false)
+	w.push(v.B, x.B, false)
 	return true
 }

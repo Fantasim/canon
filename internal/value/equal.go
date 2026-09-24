@@ -9,29 +9,37 @@ func Equal(a, b Value) bool {
 	return eq
 }
 
-// EqualUpTo is Equal walked on an explicit stack, counting the composite pairs it visits and
-// stopping past limit (ok false); the count is what the evaluator charges (DECISIONS 197).
-func EqualUpTo(a, b Value, limit int) (equal, ok bool, visited int) {
-	if eq, settled := settle(a, b, false); settled {
-		return eq, true, 0
+// EqualUpTo is Equal on an explicit stack, counting the pairs it compares, scalar pairs
+// included, and stopping at limit (ok false); the count is what the evaluator charges
+// (DECISIONS 199).
+func EqualUpTo(a, b Value, limit int) (equal, ok bool, compared int) {
+	if limit < 1 {
+		return false, false, limit
 	}
-	if _, isComposite := a.(composite); !isComposite {
-		return scalarEqual(a, b), true, 0
+	eq, settled := settle(a, b, false)
+	if _, isComposite := a.(composite); !settled && !isComposite {
+		eq, settled = scalarEqual(a, b), true
 	}
-	w := eqWalk{stack: []eqPair{{a: a, b: b}}}
-	for len(w.stack) > 0 {
-		if visited >= limit {
-			return false, false, limit
-		}
+	if settled {
+		return eq, true, 1
+	}
+	w := eqWalk{limit: limit}
+	w.push(a, b, false)
+	for len(w.stack) > 0 && !w.unequal && !w.over {
 		p := w.stack[len(w.stack)-1]
 		w.stack = w.stack[:len(w.stack)-1]
-		visited++
-		w.popped = visited
-		if !p.a.(composite).match(p.b, w.push) || w.unequal {
-			return false, true, visited
+		w.popped++
+		if !w.count() {
+			break
+		}
+		if !p.a.(composite).match(p.b, &w) {
+			w.unequal = true
 		}
 	}
-	return true, true, visited
+	if w.over {
+		return false, false, limit
+	}
+	return !w.unequal, true, w.compared
 }
 
 // settle decides a pair without walking it: the same instance, or two identities (unless
@@ -64,23 +72,39 @@ type eqPair struct {
 }
 
 // eqWalk is one equality walk: the pairs left, the pairs already taken once the walk is past
-// memoFrom, and whether a pair already settled unequal.
+// memoFrom, the pairs compared against the limit, and how it ended.
 type eqWalk struct {
-	stack   []eqPair
-	seen    map[eqPair]bool
-	popped  int
-	unequal bool
+	stack    []eqPair
+	seen     map[eqPair]bool
+	popped   int
+	compared int
+	limit    int
+	unequal  bool
+	over     bool
 }
 
-// push settles a pair at once when it can, else keeps it for the walk; past memoFrom popped
-// pairs, a pair already taken is not taken again.
+// count counts one pair compared; false once that passes the limit.
+func (w *eqWalk) count() bool {
+	if w.compared >= w.limit {
+		w.over = true
+		return false
+	}
+	w.compared++
+	return true
+}
+
+// push compares a pair at once when it can (the same instance, identities, scalars), else
+// keeps it for the walk; past memoFrom popped pairs, a pair already taken is not taken again.
 func (w *eqWalk) push(a, b Value, plain bool) {
-	if eq, settled := settle(a, b, plain); settled {
-		w.unequal = w.unequal || !eq
+	if w.unequal || w.over {
 		return
 	}
-	if _, isComposite := a.(composite); !isComposite {
-		w.unequal = w.unequal || !scalarEqual(a, b)
+	eq, settled := settle(a, b, plain)
+	if _, isComposite := a.(composite); !settled && !isComposite {
+		eq, settled = scalarEqual(a, b), true
+	}
+	if settled {
+		w.unequal = w.count() && !eq
 		return
 	}
 	p := eqPair{a: a, b: b, plain: plain}
@@ -96,15 +120,26 @@ func (w *eqWalk) push(a, b Value, plain bool) {
 	w.stack = append(w.stack, p)
 }
 
+// key is the position of k among m's keys, each key compared counted as a pair.
+func (w *eqWalk) key(m *Map, k Value) int {
+	i, _ := m.Lookup(k, func(a, b Value) (bool, bool) {
+		if !w.count() {
+			return false, false
+		}
+		return Equal(a, b), true
+	})
+	return i
+}
+
 // equaler is the equality of each scalar value type of this package.
 type equaler interface {
 	equal(o Value) bool
 }
 
 // composite is a value holding others: match compares what it holds itself against o and
-// pushes the pairs of components left to compare.
+// pushes the pairs of components left to compare onto w.
 type composite interface {
-	match(o Value, push func(a, b Value, plain bool)) bool
+	match(o Value, w *eqWalk) bool
 }
 
 // identity is the identity a value carries: a ref's target entry, or an entry's own.
@@ -119,12 +154,12 @@ func identity(v Value) *Identity {
 }
 
 // pushSlices pushes the pairs of two slices of the same length.
-func pushSlices(a, b []Value, push func(a, b Value, plain bool)) bool {
+func pushSlices(a, b []Value, w *eqWalk) bool {
 	if len(a) != len(b) {
 		return false
 	}
 	for i := range a {
-		push(a[i], b[i], false)
+		w.push(a[i], b[i], false)
 	}
 	return true
 }

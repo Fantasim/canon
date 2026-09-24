@@ -2,7 +2,6 @@ package std
 
 import (
 	"github.com/fantasim/canonlang/internal/diag"
-	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
 )
 
@@ -13,13 +12,6 @@ type graph struct {
 	next  value.Value
 	nodes *valueSet
 	succ  map[int][]int
-}
-
-// identKey is a node's identity (TYPES.md §7.5): refs and entries compare by it.
-type identKey struct {
-	coll  *types.Collection
-	owner *value.Record
-	key   value.Key
 }
 
 func newGraph(h Host, c *Call, next value.Value) *graph {
