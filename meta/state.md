@@ -11,10 +11,11 @@ Part A (close open work) then Part B (M3 waves W0–W4). Ticked = committed on `
 - [x] A2 demo bugs: (1) E2102, a broken check breaks its record (428fbad, DECISIONS 209);
   (2) E7109 variants (6534f56, DECISIONS 208); (3) stays (poisoning, logged); (4) "is a Int" →
   ERRORS pass, E4402 frames stay (logged); (5) E8007 hint → ERRORS pass.
-- [ ] A3 M1.5 bug-fix wave, 73 archives: check 35, eval 4, format 20, ir 9, syntax 3, build 2.
-  eval landed (5bbd911); format, ir, syntax in fix rounds; then the check wave (35 archives +
-  DECISIONS 209/213/214 + queued check items), build, then QA judge redesign (log "Progen
-  archives after a fix"). Also c3eb74d: C++ tests skipped in worktrees (fixed).
+- [ ] A3 M1.5 bug-fix wave (open archives on main: check 35, format 20, eval 4, syntax 3,
+  build 2, ir 1). Landed: eval 5bbd911, syntax af5a768, ir 5e42c65 (DECISIONS 209–214). In
+  flight: format (opus, round 4), build, check C1 (DECISIONS 214 + queued items); then the QA
+  judge redesign (log "Progen archives after a fix"), then check C2 (archive triage).
+  Also: audit gate-hole cleanup (opus, round 3); gen/cpp loader parity in review.
 - [x] A4 M2 close: position test on `examples/pipeline/data/II_POT_HEAL_L.json`; M2 ticked.
 - [ ] A5 consumer unit (name plans) · cleanups · ERRORS.md pass + spec sync #2.
 - [ ] A6 M1.5 second wave (type-directed, metamorphic).
