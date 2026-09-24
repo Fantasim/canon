@@ -49,10 +49,10 @@ block in [state.md](state.md).
   Accept: every rule has a mutation operator; one nightly run clean under a 3 GB cap; each
   counterexample kept as a txtar. Budget ~3k lines. Pulled forward, runs beside M2 (206).
   Its suites clean + conformance green = the gate before any consumer integration.
-  **Foundation landing now** (2026-09-24): the generator and the four suites are complete on
-  disk (`internal/testkit/progen/`) with 73 open counterexample txtars, but not yet committed —
-  see [state.md](state.md). Not yet ticked: 73 counterexamples are still `open <owner>`, each
-  fixed by owner before this box ticks.
+  **Foundation committed** (f498713, 2026-09-24): generator, shrinker, the rule-mutation and
+  grammar/corruption suites; 73 open counterexamples (see [state.md](state.md)). Not ticked:
+  the counterexamples must be fixed by their owners and the second wave (type-directed,
+  metamorphic) built before this box ticks.
 
 ## M2 — Pipeline: data mode for Go and C++
 

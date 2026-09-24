@@ -23,12 +23,10 @@ Updated: 2026-09-24, end of day (Louis asked for a clean stop to check the proje
    asserts a position against that file; `internal/wire/testdata/findings/E7110_*.txtar` use
    synthetic fixtures only. Open for next session.
 
-**M1.5 foundation: built, not yet committed.** `internal/testkit/progen/` (generator + the four
-nightly suites, `progen-nightly` Makefile target) is complete on disk but wholly untracked
-(`git status`) — the archives still need re-derivation against tonight's final tree before the
-orchestrator commits (decisions log, "M1.5's archives are derived against the tree they ran on").
-73 counterexamples on disk, each `open <owner>`: check 35, format 20, ir 11, syntax 3, build 2,
-eval 2 — the next bug-fix wave, one delegation per owner.
+**M1.5 foundation: committed (f498713).** `internal/testkit/progen/`: rule-mutation and
+grammar/corruption suites (type-directed + metamorphic are the second wave), `make progen-nightly`.
+73 counterexamples, each `open <owner>`: check 35, format 20, ir 9, syntax 3, build 2, eval 4 —
+the next bug-fix wave, one delegation per owner. Final `make check` green on the main tree.
 
 ## What exists (committed)
 
