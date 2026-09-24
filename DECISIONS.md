@@ -1867,6 +1867,11 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      unloaded package is ever resolved or checked (EVALUATION.md §1). ERRORS.md moves E2001's
      owner to `build`. Reason: A3 build review (overnight run).
 
+218. **`E7113` names its CSV defect by variant (like 208).** `bareQuote`, `unclosed`, `afterQuote`
+     (each `n:Int`, the record) and `fieldCount` (`n`, `got`, `want`), replacing the English
+     `reason:Text` (ERRORS.md §1.3: English is never an argument). Reason: the load-forms unit
+     (overnight run) had to invent the reason words.
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.
