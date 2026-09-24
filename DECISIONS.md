@@ -1850,7 +1850,9 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      §1, §11 over 168).** In a broken list, a comma whose removal would attach a `///` comment to
      another item, merge two doc blocks, or turn a `///` written after code into a doc comment is
      not dropped: it stays on its own line, where it was, with its comments (`a` / `/// d1` / `,` /
-     `b`; `a` / `, /// x` / `b`). Every other comma follows 168 and 211. Reason: FuzzFormat found
+     `b`; `a` / `, /// x` / `b`). Every other comma follows 168 and 211. When import names are sorted
+     (FORMATTER §9.1), a kept comma and its comments move with the name before it, like that
+     name's trailing comments; the formatter's same-comments invariant pairs them with that name. Reason: FuzzFormat found
      `record A{A:A\n///\n,A:A}` changing W1001 (overnight run).
 
 ## Still open
