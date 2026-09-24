@@ -1813,6 +1813,16 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      genuine hard line break still forces the holder itself (§8.2). Reason: `fits` stopped early on a
      group the printer later printed flat, and a parameter list overflowed (overnight run).
 
+213. **Stage E and broken or refused input.** A broken declaration (TYPES.md §1) never enters the
+     emit IR: no stage-E rule judges it, its names or a pair it is part of (an E8005 between a broken
+     and a sound declaration is a cascade). An emit whose mode is refused (E8009) keeps its `out`,
+     directory and package in every rule that does not depend on the mode (E8004, E8007, E8008,
+     E8011 of its package name, E8104); only mode-dependent validation is skipped. A name derived
+     from a refused `@go`/`@cpp` type name (its members, id type, case types) is that type's E8011,
+     not its own; provenance decides, never a text prefix. The default Go `package` (the last
+     element of `out`) is validated like a written one: not a Go identifier, or a keyword, is E8009
+     `package` at the emit. Reason: A3 ir review (overnight run).
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.
