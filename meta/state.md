@@ -9,11 +9,11 @@ equals findings.txt, `canon build --target go,json teamboard sovcommon...` equal
 (MANIFEST, rebuilt and diffed by `make goldens-check`), canon.lock equals its golden, the generated
 module vets. Item 6 postponed (DECISIONS 189). Open before ticking M1: the api/cli review, IR
 round 2.
-**In flight:** gen/go translated fns + Go conformance; gen/cpp strict loaders + T3;
+**In flight:** gen/go translated fns + Go conformance (review); ir name plans + C++ stage-E support plan;
 M1.5 foundation (in review; 40 counterexamples kept, each
 `open <owner>`: check 24, ir 7, format 3, build 2, eval 2, syntax 2 — the next bug-fix wave).
 **Landed today:** conform ddb6fd6, IR round 2 5ac1d47, spec sync 15c01ce, build API/report
-191cdf1, gen/cpp 04fae01, load.dir 6c32c0f, eval test calls/vectors 972e1df, ir export fns fce2eda, gen/go data mode 08966cb, build wiring (conformance in check/build, cppgen) 221738e; M1 ticked 205f005. **Then:** build wiring (conform adapter in stage E,
+191cdf1, gen/cpp 04fae01, load.dir 6c32c0f, eval test calls/vectors 972e1df, ir export fns fce2eda, gen/go data mode 08966cb, build wiring (conformance in check/build, cppgen) 221738e, gen/cpp strict loaders 95d4bbd; M1 ticked 205f005. **Then:** build wiring (conform adapter in stage E,
 cppgen registered), GEN-01 pipeline regeneration, ERRORS.md pass, ir C++ stage-E plan, cleanups
 listed in decisions/log-2026-09-24.md. **Next:** gen/go data mode + stores + translated fns (after IR round 2),
 `conform`, `canon test`, GEN-01 review (handoff), M1.5 program generator (DECISIONS 200).
