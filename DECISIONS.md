@@ -1823,6 +1823,16 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      element of `out`) is validated like a written one: not a Go identifier, or a keyword, is E8009
      `package` at the emit. Reason: A3 ir review (overnight run).
 
+214. **Every syntax error breaks the declaration holding it; misplaced constructs are still
+     checked.** TYPES.md §1 (a declaration with a static error is broken) holds for lexer and parser
+     findings too, not only through a recovery node (IMPLEMENTATION-PLAN §4.7): the checker breaks
+     every declaration whose span contains a syntax finding (E1101, E1109, E1129, E1130, E1134,
+     E1135 …), and a broken declaration is never evaluated. A misplaced but well-formed construct
+     (`return`/`expect`/`break` out of place, a brace literal, `if` or `match` as a header operand)
+     keeps its normal node, so its operands are checked and their own findings reported (GRAMMAR
+     §10, SPEC §10.3: every error is reported; 209). An invalid format spec is not attached to its
+     interpolation (no E4503 cascade). Reason: A3 syntax review (overnight run).
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.
