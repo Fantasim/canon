@@ -1,0 +1,16 @@
+WIRE.md §5: a JSON value of the wrong kind.
+-- type --
+pipeline.Potion
+-- pipeline/data/II_POT_X.json --
+{"dwID": 5, "szName": "IDS_X", "nHeal": "much", "dwCooldownMs": [1000]}
+-- findings.txt --
+error[E7110]  pipeline/data/II_POT_X.json:1:10
+  expected a string for String, found a number
+
+error[E7110]  pipeline/data/II_POT_X.json:1:41
+  expected a number for Int, found a string
+
+error[E7110]  pipeline/data/II_POT_X.json:1:65
+  expected a number for Duration, found an array
+
+3 errors, 0 warnings in 1 package (…)

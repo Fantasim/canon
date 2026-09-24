@@ -1406,8 +1406,10 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     type with no wire form met while decoding (`Range`, a function, `Kind(V)`, a case type), a `*`
     level whose type is no map or list (`ErrStar`), a default or dereference without a host.
     `wire.Host` is `Default(ctx, f, Instance, via)` (defaults are expressions, which only the
-    evaluator runs; an optional field without default or `= none` needs no host) and `Deref(ctx,
-    ref)` (a discriminant read through a ref); the host reports its own false results. Files,
+    evaluator runs, `= none` included, so `wire` imports no `syntax`; only an optional field
+    without default needs no host; no default is evaluated once the decode has failed) and
+    `Deref(ctx, ref)` (a discriminant read through a ref); the host reports its own false
+    results. Files,
     globs, `at:` (`E7106`), CSV syntax (`E7113`), encodings (`E7105`) and `W7107` stay in `load`.
     Reason: one mapping, the file forms around it in the package that owns them (§3).
 
@@ -1415,15 +1417,19 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     key's finding: its member value's) and no value path, which a keyed-list element's key,
     decoded after the failing field, would need. Besides WIRE's codes it reports the TYPES codes
     the mapping meets: `E3201` (integer, code key or Duration out of range, a token past `Int`
-    quoted as written), `E3202` (a float overflowing its width), `E3301`, `E3302` (at the object,
-    or the header row for CSV), `E3312`, `E3102` (two load.dir files with one stem, at `File.At`),
+    quoted as written), `E3202` (a float overflowing its width), `E3301`, `E3302` (at the object;
+    for CSV at the header row for a missing column, at the cell for an empty one), `E3312`,
+    `E3102` (two load.dir files with one stem at `File.At`, two `$id` cells at the second),
     `E7104` (a repeated CSV column), `E7116` (a CSV column naming a field no cell can hold,
     `load.csv`). Keyed-list keys (`E3102`), refs (`E3501`), retired members and cases (`E3506`)
     and assets stay stage B's (DECISIONS 146). `E7110`'s `int`, `bits` and `retired` variants
     quote a scalar's JSON; a container there, and a `null` path intermediate, get the `kind`
     variant, whose type for an intermediate is its record's. `E7111`'s hint is the wire value of
-    the member whose Canon name the text is, else the nearest wire value within 2 edits and
-    shorter than the text, ties by byte order (as `E2102`, DECISIONS 153). Two object keys
+    the member whose Canon name the text is, else the wire value chosen by `E2102`'s edit
+    distance rule (DECISIONS 153). A bitmask past `Int` has bits no code has (codes are at most
+    2^62): `E7111`'s `member` variant quoting the token. When an inline variant's tag fails, the
+    keys of every case (fields, pairs slots, `$` keys) are claimed: no `E3301` follows from the
+    one mistake (EVALUATION §7.2). Two object keys
     decoding to one key (`0` and `-0`, the only case) are `E3317` quoting both as written. A table
     key or stem is a `WORD` (`^[A-Za-z_][A-Za-z0-9_]*$`, not `_`), as table literals accept
     (TYPES §9.3); a root table, like a root record, ignores `$schema` (§5.12), a root map does
@@ -1447,10 +1453,11 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     cell either, exact, in the field's unit; a code cell or integer ref key `-?(0|[1-9][0-9]*)`.
     An unknown wire value is `E7111` and a range `E3201`/`E3202`/`E3203` as in JSON; only a cell
     that is no literal of its type is `E7108`. A cell equal to a string `none:` marker's text, or
-    to another marker's JSON, is `none`. A column names a field by its one-key wire name (path,
-    inline and pairs fields have none). A `table R` without a `$id` column is `E3302` naming
-    `$id` at the header (gap: no code says it). Reason: the strictest reading of each row of the
-    cell table.
+    to another marker's JSON, is `none`. A column names a field by its one-key wire name; path,
+    inline and pairs fields have none (a column naming one is `E3301`). A `table R` without a
+    `$id` column is `E3302` naming `$id` at the header, and a `$id` value used twice `E3102` at
+    the second cell naming the first, as two load.dir stems (gaps: §6.6 names neither). Reason:
+    the strictest reading of each row of the cell table.
 
 177. **Checker details the re-reviews settled.** The extensions of `asset(…, ext: [dds, png])`
     written as identifiers name no object, like an import path's leading parts (DECISIONS 151,
@@ -1474,6 +1481,37 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     `{ 0: 0, .a: [] }` or a `search` item, continues the line before (GRAMMAR §3.1 rule 3), and §10
     forbids adding parentheses; the item before it ends with `,`, a separator run. Found by fuzzing.
     Gap for Louis: §6.1 could state this exception.
+
+180. **Baked `gen/go` also refuses refs into `load.defines` tables, and fields of a case without
+    fields (extends 124).** CODEGEN §5.8 gives such a ref a key getter plus `XxxValue() int64`
+    and a baked sorted `(name, value)` table of the defines the emit's refs use; neither exists
+    yet, and a key getter alone would ship half the API. So any ref whose target is a define table
+    (a field, a list element, a map key, a lookup parameter) and any package whose IR carries
+    `Defines` is `ErrUnsupported` naming the table; the define value getter and table land with
+    `load` (M2/M3). A field, element or result typed as a case without fields is refused too: §5.5
+    gives that case no Go type. An optional `Never?` field is omitted (§4.4); a plain `Never`
+    reaches the generator only if stage E missed its `E8012`, and is refused. Messages name kinds
+    (`Never`, `ref`), never their numbers.
+
+181. **A Float32 -0.0 is `float32(math.Copysign(0, -1))` (amends 123).** `math.Copysign` is a
+    `float64`, which a `float32` field, element or value does not accept; the conversion keeps
+    the sign. A -0.0 constant stays refused.
+
+182. **Go names: imported packages are escaped like the standard ones; overrides are
+    exported.** CODEGEN §3.4 escapes, in lowercase positions, the package names generated files
+    import; the Go package names of imported Canon packages are imports too, so a lookup
+    parameter `q` next to `import q` is `q_` (`fn f(q: q.Q)` is `func F(q_ q.Q)`), and the
+    builder's baked-data local `d` is `d_` when a package named `d` is imported. An escaped name
+    that is itself an import (`q` and `q_` both imported) is `ErrNameCollision`. A `@go(name:)`
+    override names public API (§1.3: exported identifiers), so a non-exported one is `ErrName`.
+    A struct's storage and its methods are one Go selector namespace, checked as one scope.
+
+183. **Reference layout: lookup tables built from the baked data return `*[N]T`, and
+    generated Go is `gofmt -s` clean (amends 122).** `sync.OnceValue(func() *[6]*Column {…})`
+    is indexed through the pointer (`columnOfTable()[s]`), so no call copies the table
+    (`GroupedAreasVisibleTo`: 3.9 to 2.0 ns/op); a one-cell precomputed fn keeps its value. An
+    element of a slice or array literal omits its type (`{…}` for `&T{…}` or `T{…}`), as
+    `gofmt -s` writes it; the compile tests check that `gofmt -s -l` lists nothing.
 
 ## Still open
 

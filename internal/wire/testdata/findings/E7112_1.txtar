@@ -1,0 +1,10 @@
+WIRE.md §5.6, §9: an inline variant's tag is missing.
+-- type --
+resource.events.Event
+-- events.json --
+{"id": "e", "worldId": 1, "targetCount": 2, "schedule": []}
+-- findings.txt --
+error[E7112]  events.json:1:1
+  missing tag "type" for variant resource.events.EventKind
+
+1 error, 0 warnings in 1 package (…)

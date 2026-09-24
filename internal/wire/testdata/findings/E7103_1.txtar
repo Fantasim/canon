@@ -1,0 +1,10 @@
+WIRE.md §5.1, §9: an integer field reads only integer tokens (1e3 has an exponent).
+-- type --
+pipeline.Potion
+-- pipeline/data/II_POT_T.json --
+{"dwID": "II_POT_T", "szName": "IDS_T", "nHeal": 1e3, "dwCooldownMs": 1000}
+-- findings.txt --
+error[E7103]  pipeline/data/II_POT_T.json:1:50
+  1e3 is not an integer
+
+1 error, 0 warnings in 1 package (…)

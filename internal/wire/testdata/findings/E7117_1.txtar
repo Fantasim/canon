@@ -1,0 +1,16 @@
+WIRE.md §5.14: a slot with one key, a null value, and a filled slot after an empty one.
+-- type --
+game.items.Item
+-- items/II_X.json --
+{"dwID": "II_X", "dwDestParam0": "DST_STR", "nAdjParamVal0": null, "dwDestParam1": "DST_DEX", "dwDestParam3": "DST_INT", "nAdjParamVal3": 2}
+-- findings.txt --
+error[E7117]  items/II_X.json:1:18
+  @json(pairs:) slot 0 of stats: null value
+
+error[E7117]  items/II_X.json:1:68
+  @json(pairs:) slot 1 of stats: dwDestParam1 without nAdjParamVal1
+
+error[E7117]  items/II_X.json:1:95
+  @json(pairs:) slot 3 of stats: filled after empty slot 2
+
+3 errors, 0 warnings in 1 package (…)

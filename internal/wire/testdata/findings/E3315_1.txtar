@@ -1,0 +1,10 @@
+WIRE.md §5.4, §9: null for a field that is not optional.
+-- type --
+pipeline.Potion
+-- pipeline/data/II_POT_HEAL_S.json --
+{"dwID": "II_POT_HEAL_S", "szName": "IDS_S", "nHeal": 500, "dwCooldownMs": 3000, "nStack": null}
+-- findings.txt --
+error[E3315]  pipeline/data/II_POT_HEAL_S.json:1:92
+  null for stack, which is not optional
+
+1 error, 0 warnings in 1 package (…)

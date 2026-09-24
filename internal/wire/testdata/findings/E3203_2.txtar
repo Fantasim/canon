@@ -1,0 +1,10 @@
+WIRE.md §5.1: durationSec 0.0005 is half a millisecond.
+-- type --
+resource.heistia.HeistiaConfig
+-- heistia_config.json --
+{"version": 2, "tasks": [], "buffPool": [{"buffResId": 1, "durationSec": 0.0005, "weight": 1}]}
+-- findings.txt --
+error[E3203]  heistia_config.json:1:74
+  0.0005 is not a whole number of milliseconds (s on the wire)
+
+1 error, 0 warnings in 1 package (…)

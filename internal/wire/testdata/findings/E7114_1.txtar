@@ -1,0 +1,10 @@
+WIRE.md §5.7: a table key that is not a Canon identifier.
+-- type --
+table flow.Status
+-- statuses.json --
+{"open": {"label": "Open"}, "in progress": {"label": "Busy"}}
+-- findings.txt --
+error[E7114]  statuses.json:1:29
+  "in progress" is not a valid table key (an identifier)
+
+1 error, 0 warnings in 1 package (…)

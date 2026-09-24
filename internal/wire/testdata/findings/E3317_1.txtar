@@ -1,0 +1,10 @@
+WIRE.md §5.8: two map keys, "0" and "-0", that are one key.
+-- type --
+{Int: Int}
+-- weights.json --
+{"0": 1, "-0": 2}
+-- findings.txt --
+error[E3317]  weights.json:1:10
+  map keys 0 and -0 both encode to "0"
+
+1 error, 0 warnings in 1 package (…)

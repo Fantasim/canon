@@ -1,0 +1,13 @@
+WIRE.md §6.6: a CSV cell that is not a Canon literal of its field's type.
+-- type --
+[features.csv.LevelRow] keyed by level
+-- exp_curve.csv --
+level,exp_to_next,death_penalty
+1,14,
+2,twenty,
+3,36,1_0
+-- findings.txt --
+error[E7108]  exp_curve.csv:3:3
+  CSV cell "twenty" is not a valid Int
+
+1 error, 0 warnings in 1 package (…)

@@ -1,0 +1,10 @@
+WIRE.md §5.3, §9: "series_1" is the Canon name; the wire value is "series-1".
+-- type --
+teamboard.Intent
+-- intents.json --
+{"tone": "series_1"}
+-- findings.txt --
+error[E7111]  intents.json:1:10
+  "series_1" is not a member of teamboard.Tone (did you mean series-1?)
+
+1 error, 0 warnings in 1 package (…)

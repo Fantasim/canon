@@ -1,0 +1,10 @@
+WIRE.md §5.8: an integer map key is in canonical decimal.
+-- type --
+{Int: Int}
+-- weights.json --
+{"05": 1, "7": 2}
+-- findings.txt --
+error[E7103]  weights.json:1:2
+  map key "05" is not a canonical integer
+
+1 error, 0 warnings in 1 package (…)

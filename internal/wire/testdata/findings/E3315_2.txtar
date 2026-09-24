@@ -1,0 +1,10 @@
+WIRE.md §5.4: null where a list element, which is not optional, is expected.
+-- type --
+[Int]
+-- anchors.json --
+[15, null, 60]
+-- findings.txt --
+error[E3315]  anchors.json:1:6
+  null where Int is required
+
+1 error, 0 warnings in 1 package (…)

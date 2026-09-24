@@ -1,0 +1,10 @@
+WIRE.md §5.7: $retired in a table row must be true.
+-- type --
+table flow.Status
+-- statuses.json --
+{"open": {"label": "Open"}, "stale": {"$retired": false, "label": "Stale"}}
+-- findings.txt --
+error[E7110]  statuses.json:1:51
+  expected true for $retired, found false
+
+1 error, 0 warnings in 1 package (…)

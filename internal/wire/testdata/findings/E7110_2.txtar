@@ -1,0 +1,13 @@
+WIRE.md §5.2, §5.3: @json(int) reads only 0 and 1, @json(bits) no negative mask.
+-- type --
+fpdemo.Skill
+-- skills/SI_FIREBALL.json --
+{"dwID": "SI_FIREBALL", "legacy": {"reqMp": 0, "reqFp": 0}, "flags": -1, "bTwoHanded": 2, "side": "both", "cast_time": null, "weights": {}}
+-- findings.txt --
+error[E7110]  skills/SI_FIREBALL.json:1:70
+  expected a non-negative bitmask for @json(bits), found -1
+
+error[E7110]  skills/SI_FIREBALL.json:1:88
+  expected 0 or 1 for @json(int), found 2
+
+2 errors, 0 warnings in 1 package (…)

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/fantasim/canonlang/internal/diag"
+	"github.com/fantasim/canonlang/internal/jsonsrc"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
 )
@@ -100,4 +102,84 @@ func keyEnum(r *value.Ref) *types.EnumType {
 	}
 	enum, _ := rt.Target.KeyedBy.Type.Base().(*types.EnumType)
 	return enum
+}
+
+// mapKey decodes an object key as a key of kt (WIRE.md §5.8), by the rules of a value of kt.
+func (r *run) mapKey(m *jsonsrc.Member, kt types.Type, fr *frame) value.Value {
+	s := keyAt(m)
+	switch kt.Kind() {
+	case types.String:
+		return &value.Str{V: m.Key, T: kt, P: s.prov()}
+	case types.Int:
+		if i, ok := r.intKey(s, m.Key, kt); ok {
+			return &value.Int{V: i, T: kt, P: s.prov()}
+		}
+	case types.Enum:
+		return r.enumKey(s, m.Key, kt.Base().(*types.EnumType))
+	case types.Ref:
+		return r.refMapKey(m, kt, fr)
+	case types.LitUnion:
+		u := kt.Base().(*types.LitUnionType)
+		if isLiteral(u, m.Key) {
+			return &value.Str{V: m.Key, T: kt, P: s.prov()}
+		}
+		return r.mapKey(m, u.Of, fr)
+	case types.TypeApp:
+		return r.dependentKey(m, kt, fr)
+	default:
+		r.misuse(ErrNoWireType, kt)
+	}
+	return nil
+}
+
+// intKey is a canonical decimal integer key, E7103 otherwise, in kt's range (E3201).
+func (r *run) intKey(s site, key string, kt types.Type) (int64, bool) {
+	if !intKeyPattern.MatchString(key) {
+		r.report(diag.E7103.AtMapKey(s.span, key), s.node)
+		return 0, false
+	}
+	i, err := strconv.ParseInt(key, decimalBase, float64Bits)
+	if err != nil || !fits(i, kt) {
+		r.report(diag.E3201.At(s.span, literal(key), kt), s.node)
+		return 0, false
+	}
+	return i, true
+}
+
+// enumKey is a member by its wire value, or by its code in decimal with @json(codes).
+func (r *run) enumKey(s site, key string, e *types.EnumType) value.Value {
+	if !e.WireCodes {
+		return r.memberByWire(s, key, e)
+	}
+	if !intKeyPattern.MatchString(key) {
+		r.report(diag.E7103.AtMapKey(s.span, key), s.node)
+		return nil
+	}
+	return r.memberByCode(s, key, e)
+}
+
+// refMapKey is a ref key: a table's entry key, or a keyed list's key field as text.
+func (r *run) refMapKey(m *jsonsrc.Member, kt types.Type, fr *frame) value.Value {
+	rt := kt.Base().(*types.RefType)
+	key := value.Key{S: m.Key}
+	if rt.Target != nil && rt.Target.KeyedBy != nil {
+		k, ok := keyOfValue(r.mapKey(m, rt.Target.KeyedBy.Type, fr))
+		if !ok {
+			return nil
+		}
+		key = k
+	}
+	return &value.Ref{T: kt, Key: key, Owner: r.owner(rt.Target), P: keyAt(m).prov()}
+}
+
+// dependentKey is a key of its application's branch; on Never, a symbol (DECISIONS 175).
+func (r *run) dependentKey(m *jsonsrc.Member, kt types.Type, fr *frame) value.Value {
+	branch, inner, ok := r.branch(kt.Base().(*types.TypeAppType), fr)
+	switch {
+	case !ok:
+		return nil
+	case branch.Base().Kind() == types.Never:
+		return &value.Symbol{Name: m.Key, T: kt, P: keyAt(m).prov()}
+	}
+	return r.mapKey(m, branch, inner)
 }

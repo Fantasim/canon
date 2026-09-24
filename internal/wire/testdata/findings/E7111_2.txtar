@@ -1,0 +1,13 @@
+WIRE.md §5.3: a code that is no member, and a bitmask with bits of no member.
+-- type --
+fpdemo.Skill
+-- skills/SI_X.json --
+{"dwID": "SI_X", "element": 9, "legacy": {"reqMp": 0, "reqFp": 0}, "flags": 10, "bTwoHanded": 0, "side": "both", "cast_time": null, "weights": {}}
+-- findings.txt --
+error[E7111]  skills/SI_X.json:1:29
+  "9" is not a member of fpdemo.Element
+
+error[E7111]  skills/SI_X.json:1:77
+  bits 8 are not members of fpdemo.Flag
+
+2 errors, 0 warnings in 1 package (…)

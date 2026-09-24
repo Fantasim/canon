@@ -1,0 +1,15 @@
+WIRE.md §5.3: an unknown wire value names the nearest member within two edits, or none.
+-- type --
+teamboard.Intent
+-- a.json --
+{"tone": "infp"}
+-- b.json --
+{"tone": "x"}
+-- findings.txt --
+error[E7111]  a.json:1:10
+  "infp" is not a member of teamboard.Tone (did you mean info?)
+
+error[E7111]  b.json:1:10
+  "x" is not a member of teamboard.Tone
+
+2 errors, 0 warnings in 1 package (…)
