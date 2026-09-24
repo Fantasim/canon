@@ -1,5 +1,5 @@
-WIRE.md §3.1: NaN, a leading zero, a control character in a string and trailing content are
-each one E7109.
+WIRE.md §3.1: NaN, a leading zero, a control character in a string, trailing content and a
+file truncated before a value are each one E7109 (eof or char, DECISIONS 208).
 -- data/nan.json --
 {"hp": NaN}
 -- data/zero.json --
@@ -8,17 +8,22 @@ each one E7109.
 ["a	b"]
 -- data/trailing.json --
 {} {}
+-- data/truncated.json --
+{"id": "IT_X", "price":
 -- findings.txt --
 error[E7109]  data/nan.json:1:8
-  JSON syntax error: "N"
+  JSON syntax error: unexpected character "N"
 
 error[E7109]  data/tab.json:1:4
-  JSON syntax error: "\t"
+  JSON syntax error: unexpected character "\t"
 
 error[E7109]  data/trailing.json:1:4
-  JSON syntax error: "{"
+  JSON syntax error: unexpected character "{"
+
+error[E7109]  data/truncated.json:2:1
+  JSON syntax error: unexpected end of input
 
 error[E7109]  data/zero.json:1:3
-  JSON syntax error: "1"
+  JSON syntax error: unexpected character "1"
 
-4 errors, 0 warnings in 1 package (…)
+5 errors, 0 warnings in 1 package (…)

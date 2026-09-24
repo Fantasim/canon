@@ -1811,7 +1811,9 @@ var Registry = []Def{
 	{
 		Code: "E7109", Severity: Error, Package: "jsonsrc",
 		Variants: []Variant{
-			{Args: []Arg{{Name: "detail", Type: ArgTypeText}}, Template: "JSON syntax error: {detail}"},
+			{Name: "eof", Template: "JSON syntax error: unexpected end of input"},
+			{Name: "depth", Args: []Arg{{Name: "limit", Type: ArgTypeInt}}, Template: "JSON syntax error: nested deeper than {limit} levels"},
+			{Name: "char", Args: []Arg{{Name: "char", Type: ArgTypeText}}, Template: "JSON syntax error: unexpected character {char}"},
 		},
 	},
 	{
@@ -5804,9 +5806,19 @@ type codeE7109 struct{}
 // Def is the registry entry of E7109.
 func (codeE7109) Def() *Def { return &Registry[230] }
 
-// At reports: JSON syntax error: {detail}
-func (codeE7109) At(span source.Span, detail string) *Builder {
-	return newBuilder(&Registry[230], 0, span, detail)
+// AtEof reports: JSON syntax error: unexpected end of input
+func (codeE7109) AtEof(span source.Span) *Builder {
+	return newBuilder(&Registry[230], 0, span)
+}
+
+// AtDepth reports: JSON syntax error: nested deeper than {limit} levels
+func (codeE7109) AtDepth(span source.Span, limit int64) *Builder {
+	return newBuilder(&Registry[230], 1, span, limit)
+}
+
+// AtChar reports: JSON syntax error: unexpected character {char}
+func (codeE7109) AtChar(span source.Span, char string) *Builder {
+	return newBuilder(&Registry[230], 2, span, char)
 }
 
 // E7110: a JSON value of the wrong kind (WIRE.md §5).

@@ -114,15 +114,27 @@ func posOf(i int) source.Pos {
 	return source.Pos(i)
 }
 
-// fail reports the source's one E7109 at the character at pos (WIRE.md §3.1, DECISIONS 162).
+// charAt is the char variant's argument at pos, and its byte width (WIRE.md §7.3, DECISIONS 208).
+func (p *parser) charAt(pos int) (string, int) {
+	_, width := utf8.DecodeRune(p.src[pos:])
+	return string(diag.AppendJSONString(nil, string(p.src[pos:pos+width]))), width
+}
+
+// fail reports one E7109 at pos: eof or char, by whether pos is the source's end (DECISIONS 208).
 func (p *parser) fail(pos int) {
-	end := pos
-	if pos < len(p.src) {
-		_, width := utf8.DecodeRune(p.src[pos:])
-		end += width
+	if pos >= len(p.src) {
+		diag.E7109.AtEof(p.span(pos, pos)).Pointer(p.where.Pointer()).Report(p.bag)
+	} else {
+		char, width := p.charAt(pos)
+		diag.E7109.AtChar(p.span(pos, pos+width), char).Pointer(p.where.Pointer()).Report(p.bag)
 	}
-	detail := string(diag.AppendJSONString(nil, string(p.src[pos:end])))
-	diag.E7109.At(p.span(pos, end), detail).Pointer(p.where.Pointer()).Report(p.bag)
+	p.err = ErrSyntax
+}
+
+// failDepth reports the E7109 depth variant at the opener past maxDepth (DECISIONS 208).
+func (p *parser) failDepth(pos int) {
+	_, width := p.charAt(pos)
+	diag.E7109.AtDepth(p.span(pos, pos+width), maxDepth).Pointer(p.where.Pointer()).Report(p.bag)
 	p.err = ErrSyntax
 }
 
@@ -171,7 +183,7 @@ func (p *parser) unexpected(link) *Node {
 // open starts an array or object at the current byte, within the nesting limit.
 func (p *parser) open(k Kind, at link) *Node {
 	if p.depth == maxDepth {
-		p.fail(p.pos)
+		p.failDepth(p.pos)
 		return nil
 	}
 	p.depth++

@@ -7,6 +7,6 @@ before it is not reported.
 }
 -- findings.txt --
 error[E7109]  data/a.json:4:1
-  JSON syntax error: "}"
+  JSON syntax error: unexpected character "}"
 
 1 error, 0 warnings in 1 package (…)

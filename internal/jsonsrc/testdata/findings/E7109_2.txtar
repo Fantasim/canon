@@ -9,12 +9,12 @@ are each one E7109 in their file; the last is at the line break, a control chara
 {"a": "b
 -- findings.txt --
 error[E7109]  data/comment.json:1:1
-  JSON syntax error: "/"
+  JSON syntax error: unexpected character "/"
 
 error[E7109]  data/cut.json:1:9
-  JSON syntax error: "\n"
+  JSON syntax error: unexpected character "\n"
 
 error[E7109]  data/quote.json:1:7
-  JSON syntax error: "'"
+  JSON syntax error: unexpected character "'"
 
 3 errors, 0 warnings in 1 package (…)

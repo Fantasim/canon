@@ -67,6 +67,10 @@ func FuzzParse(f *testing.F) {
 			wantCodes(t, p, "")
 		case errors.Is(p.err, jsonsrc.ErrSyntax):
 			wantCodes(t, p, diag.E7109.Def().Code)
+			// WIRE.md §3.1, DECISIONS 208: an E7109 always names eof, depth or a char.
+			if strings.HasSuffix(p.findings[0].Message, ": ") {
+				t.Fatalf("%q: empty detail in %q", data, p.findings[0].Message)
+			}
 		case errors.Is(p.err, jsonsrc.ErrDuplicateKey):
 			wantCodes(t, p, diag.E7104.Def().Code)
 		default:

@@ -144,8 +144,8 @@ func TestLocationsAfterCRLF(t *testing.T) {
 		message   string
 	}{
 		{"{\r\n  \"a\": 1,\r\n  \"a\": 2\r\n}\r\n", 3, 3, "a.json:2)"},
-		{"[\r\n  1,\r\n]\r\n", 3, 1, `"]"`},
-		{"[\"a\r\nb\"]", 1, 4, `"\n"`},
+		{"[\r\n  1,\r\n]\r\n", 3, 1, `unexpected character "]"`},
+		{"[\"a\r\nb\"]", 1, 4, `unexpected character "\n"`},
 	}
 	for _, tt := range tests {
 		p := parse(t, tt.in)

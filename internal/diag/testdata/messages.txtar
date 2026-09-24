@@ -345,7 +345,9 @@ E7106 notArray: at: "0.9": not an array at #/modelTypes/3
 E7106 scalar: at: "0.9": * applied to a scalar at #/modelTypes/3
 E7106 syntax: at: "0.9": malformed path
 E7108 -: CSV cell "0.9" is not a valid Int
-E7109 -: JSON syntax error: 0.9
+E7109 eof: JSON syntax error: unexpected end of input
+E7109 depth: JSON syntax error: nested deeper than -42 levels
+E7109 char: JSON syntax error: unexpected character 0.9
 E7110 kind: expected an array for Int, found an array
 E7110 int: expected 0 or 1 for @json(int), found 0.9
 E7110 bits: expected a non-negative bitmask for @json(bits), found 0.9

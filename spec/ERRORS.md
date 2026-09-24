@@ -322,7 +322,7 @@ func (codeE2103) AtSeveral(span source.Span, typ string, colls []string) *Builde
 
 ---
 
-The catalogue holds 298 codes: 277 errors, 18 warnings and 3 run-time codes, with 438 messages.
+The catalogue holds 298 codes: 277 errors, 18 warnings and 3 run-time codes, with 440 messages.
 
 ## E10xx, W10xx: Project file, doc comments and naming
 
@@ -1050,7 +1050,9 @@ Owner: WIRE.md.
 | E7106 | syntax | at:Text | `at: "{at}": malformed path` |
 | W7107 | - | pattern:Text | `glob {pattern} matches no file` |
 | E7108 | - | text:Text, typ:Type | `CSV cell "{text}" is not a valid {typ}` |
-| E7109 | - | detail:Text | `JSON syntax error: {detail}` |
+| E7109 | eof | - | `JSON syntax error: unexpected end of input` |
+| E7109 | depth | limit:Int | `JSON syntax error: nested deeper than {limit} levels` |
+| E7109 | char | char:Text | `JSON syntax error: unexpected character {char}` |
 | E7110 | kind | expected:Kind, typ:Type, found:Kind | `expected {expected} for {typ}, found {found}` |
 | E7110 | int | found:Text | `expected 0 or 1 for @json(int), found {found}` |
 | E7110 | bits | found:Text | `expected a non-negative bitmask for @json(bits), found {found}` |
