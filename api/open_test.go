@@ -72,7 +72,10 @@ func TestCheckErrors(t *testing.T) {
 	if _, err := p.Check(ctx, "y"); !errors.Is(err, canon.ErrUnknownPackage) || err.Error() != "unknown package: y" {
 		t.Errorf("unknown package: %v", err)
 	}
-	if _, err := p.Check(ctx); !errors.Is(err, canon.ErrUnknownLayer) || err.Error() != "unknown layer: louis" {
+	var perr *canon.ProjectError // E1901 (EVALUATION.md §9.1), its finding carried (log-2026-09-24 "canon test review calls")
+	_, err = p.Check(ctx)
+	if !errors.Is(err, canon.ErrUnknownLayer) || !errors.As(err, &perr) || len(perr.Findings) != 1 ||
+		perr.Findings[0].Code != string(diag.E1901.Def().Code) || err.Error() != canon.ErrUnknownLayer.Error()+": "+perr.Findings[0].Message {
 		t.Errorf("unknown layer: %v", err)
 	}
 	if _, err := p.Packages(ctx); !errors.Is(err, canon.ErrUnknownLayer) {

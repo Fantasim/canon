@@ -1,0 +1,81 @@
+EVALUATION.md §7.2, CLI.md §3.5 (log-2026-09-24 "canon test review calls"): under a read of a
+poisoned value, the error that poisoned it: its evaluation's hard error, through a value that read
+it, or its verification's; a top-level E3204 is soft and poisons nothing (§7.1).
+-- args --
+test
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A box.
+record Box {
+  /// Its count.
+  n: Int where it / zero == 0
+}
+
+local let zero: Int = 0
+local let broken: Int = 1 / zero
+local let reader: Int = broken + 1
+local fn make() -> Box { return { n: 1 } }
+local let boxed: Box = make()
+local let direct: Box = { n: 1 }
+local fn seven() -> Int { return 7 }
+local let small: Int(0..3) = seven()
+local let loaded: [Box] = load.dir("data/*.json")
+
+test "a statement reads a value its evaluation poisoned" {
+  let y: Int = broken + 1
+}
+
+test "a subject reads a value poisoned through another" {
+  expect reader == 2
+}
+
+test "a value a where at a function's return poisoned" {
+  let n: Int = boxed.n
+}
+
+test "a value its verification poisoned" {
+  let n: Int = direct.n
+}
+
+test "a loaded value its verification poisoned" {
+  expect loaded.len() == 1
+}
+
+test "a top-level E3204 poisons nothing" {
+  expect small == 7
+}
+-- a/data/b.json --
+{"n": 1}
+-- want --
+[exit 1]
+[stdout]
+FAIL  a/a.canon:20  a statement reads a value its evaluation poisoned
+  a/a.canon:21  reads poisoned broken
+  a/a.canon:11  error[E4102]  division by zero
+
+FAIL  a/a.canon:24  a subject reads a value poisoned through another
+  a/a.canon:25  expect reader == 2
+  got: reads poisoned reader
+  a/a.canon:11  error[E4102]  division by zero
+
+FAIL  a/a.canon:28  a value a where at a function's return poisoned
+  a/a.canon:29  reads poisoned boxed
+  a/a.canon:7  error[E4102]  division by zero
+
+FAIL  a/a.canon:32  a value its verification poisoned
+  a/a.canon:33  reads poisoned direct
+  a/a.canon:7  error[E4102]  division by zero
+
+FAIL  a/a.canon:36  a loaded value its verification poisoned
+  a/a.canon:37  expect loaded.len() == 1
+  got: reads poisoned loaded
+  a/a.canon:7  error[E4102]  division by zero
+
+1 passed, 5 failed (…)
+[stderr]

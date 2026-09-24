@@ -5,6 +5,7 @@ import (
 	"regexp"
 
 	"github.com/fantasim/canonlang/internal/check"
+	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
@@ -56,10 +57,14 @@ type Evaluator struct {
 	bugs       []error
 	selfReads  map[*syntax.FnDecl][]syntax.Expr
 
-	parent    *Evaluator   // a vector's evaluator reads its parent's settled values (vector.go)
-	vec       *vectorState // set on a vector's evaluator only
-	aside     check.Bags   // a vector's throwaway bags while its host verifies
-	recording *recorder    // set while TestCalls runs
+	parent    *Evaluator                // a vector's evaluator reads its parent's settled values (vector.go)
+	vec       *vectorState              // set on a vector's evaluator only
+	aside     check.Bags                // a vector's throwaway bags while its host verifies
+	recording *recorder                 // set while TestCalls runs
+	testStops map[string]*diag.Bag      // the running test's stopping errors, by frame package, while Test runs
+	testFiles diag.Files                // the files their bags resolve against
+	causes    map[*rootState]*diag.Bag  // the hard error that poisoned a value forced while tests run
+	via       map[*rootState]*rootState // a value poisoned by reading another poisoned one
 }
 
 // status is where a top-level value is in its evaluation.

@@ -51,14 +51,20 @@ func (c conformer) Evaluate(ctx context.Context, x conform.Call, m conform.Mode)
 // throwawayHost is a fresh evaluator's host for test calls: its loads and verifications report
 // into bags nothing reads, one per package of the program; its evaluator has the run's options.
 func (r *run) throwawayHost() *evalHost {
-	bags := check.Bags{}
-	for _, cp := range r.prog.Packages {
-		bags[cp.Path] = diag.NewBag(r.s.set, cp.Path)
-	}
+	bags := r.throwawayBags()
 	h := &evalHost{prog: r.prog, bags: bags, loader: r.host.loader, assets: r.assets, index: r.vix}
 	h.ev = eval.New(r.prog, h, bags, r.opt)
 	h.verifier = verify.NewShared(r.vix, h.ev, bags, r.assets)
 	return h
+}
+
+// throwawayBags is one bag per package of the program, which nothing reads.
+func (r *run) throwawayBags() check.Bags {
+	bags := check.Bags{}
+	for _, cp := range r.prog.Packages {
+		bags[cp.Path] = diag.NewBag(r.s.set, cp.Path)
+	}
+	return bags
 }
 
 // absorb keeps what a throwaway host met that fails the run: its forced loads and its errors.
@@ -70,7 +76,7 @@ func (h *evalHost) absorb(o *evalHost) {
 	h.errs = append(h.errs, o.errs...)
 }
 
-// subjects builds an expect subject as `canon test` does, verified then instance-checked into its capture, E3505 aside: eval reports it only into its own bags, empty while it collects calls (EVALUATION.md §10.2).
+// subjects builds an expect subject as `canon test` does, verified then instance-checked into its capture, its unbound refs' E3505 included (EVALUATION.md §10.2).
 type subjects struct {
 	pkg  string
 	ev   *eval.Evaluator
@@ -88,6 +94,9 @@ func (s subjects) Build(ctx context.Context, v value.Value, capture *diag.Bag) {
 	if err != nil {
 		s.host.errs = append(s.host.errs, internal(err))
 		return
+	}
+	for _, u := range res.Unbound {
+		s.ev.ReportUnboundInto(root, u.Ref, u.Path, capture)
 	}
 	if res.Poisoned { // a poisoned value is not instance-checked, as in stage C (EVALUATION.md §7.2)
 		return

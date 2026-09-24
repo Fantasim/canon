@@ -10,6 +10,7 @@ import (
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/eval"
 	"github.com/fantasim/canonlang/internal/rules"
+	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/testkit/golden"
 	"github.com/fantasim/canonlang/internal/value"
@@ -44,7 +45,10 @@ func runTests(t *testing.T, b *build, pkgs ...string) string {
 			res := b.ev.Test(context.Background(), d, subjects{b: b, pkg: pkg.Path})
 			fmt.Fprintf(&sb, "%s %s: failed %t, stopped %t, broken %t", pkg.Path, testTitle(obj.File(), d), res.Failed, res.Stopped, res.Broken)
 			if res.Poisoned != "" {
-				fmt.Fprintf(&sb, ", reads poisoned %s", res.Poisoned)
+				fmt.Fprintf(&sb, ", reads poisoned %s at line %d", res.Poisoned, spanLine(obj.File(), res.PoisonSpan))
+			}
+			for _, f := range res.Errors {
+				fmt.Fprintf(&sb, ", stopped by %s at line %d", f.Code, spanLine(obj.File(), f.Span))
 			}
 			sb.WriteString("\n")
 			printExpects(&sb, obj.File(), res.Expects)
@@ -62,8 +66,11 @@ func printExpects(sb *strings.Builder, f *syntax.File, xs []eval.Expect) {
 		if x.Poisoned != "" {
 			fmt.Fprintf(sb, " (reads poisoned %s)", x.Poisoned)
 		}
-		if x.Left != "" || x.Right != "" {
-			fmt.Fprintf(sb, " (left %s, right %s)", x.Left, x.Right)
+		if x.Compared {
+			fmt.Fprintf(sb, " (left %q %s right %q)", x.Left, x.Op, x.Right)
+		}
+		if x.Value != "" {
+			fmt.Fprintf(sb, " (value %s)", x.Value)
 		}
 		sb.WriteString("\n")
 	}
@@ -72,6 +79,12 @@ func printExpects(sb *strings.Builder, f *syntax.File, xs []eval.Expect) {
 func testTitle(f *syntax.File, d *syntax.TestDecl) string {
 	sp := f.Span(d.Name)
 	return string(f.Src.Content[sp.Start:sp.End])
+}
+
+// spanLine is the line a span of f starts on.
+func spanLine(f *syntax.File, sp source.Span) int {
+	l, _ := f.Src.Position(sp.Start)
+	return l
 }
 
 func line(f *syntax.File, n syntax.Node) int {
@@ -95,7 +108,7 @@ func TestExampleTests(t *testing.T) {
 func TestTests(t *testing.T) {
 	golden.Run(t, "testdata/tests/*.txtar", func(t *testing.T, c golden.Case) []byte {
 		t.Helper()
-		b := runBuild(t, fromArchive(t, c.Archive), eval.Options{})
+		b := runBuild(t, fromArchive(t, c.Archive), caseOptions(t, c))
 		return []byte(runTests(t, b) + "\n" + b.findings(t))
 	}, golden.Expected(outcomesFile))
 }

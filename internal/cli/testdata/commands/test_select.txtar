@@ -1,0 +1,60 @@
+CLI.md §2.2, §3.5, EVALUATION.md §10.1: only the selected packages' tests run, in package order
+(dependencies first), then file path order, then source order; an import's tests do not run.
+-- args --
+test
+b
+c
+-v
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// One.
+let one: Int = 1
+
+test "a's own" {
+  expect false
+}
+-- b/y.canon --
+/// B.
+package b
+
+import a
+
+test "b in y" {
+  expect a.one == 1
+}
+-- b/x.canon --
+/// B.
+package b
+
+test "b in x, second" {
+  expect true
+}
+
+test "b in x, first" {
+  expect true
+}
+-- c/c.canon --
+/// C.
+package c
+
+import b
+
+test "c" {
+  expect true
+}
+-- want --
+[exit 0]
+[stdout]
+ok  b/x.canon:4  b in x, second
+ok  b/x.canon:8  b in x, first
+ok  b/y.canon:6  b in y
+ok  c/c.canon:6  c
+
+4 passed, 0 failed (…)
+[stderr]

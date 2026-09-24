@@ -51,7 +51,7 @@ func (r *run) collValue(ref *value.Ref, c *types.Collection, at syntax.Node) val
 		}
 		v, ok := r.ev.force(r.ctx, st, r, at)
 		if !ok {
-			r.readPoisoned(c.Pkg, c.Name)
+			r.readPoisoned(c.Pkg, c.Name, at)
 			return nil
 		}
 		base = v

@@ -1,0 +1,15 @@
+CLI.md §3.5: a selection without tests prints the summary alone; exit 0.
+-- args --
+test
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+-- want --
+[exit 0]
+[stdout]
+0 passed, 0 failed (…)
+[stderr]

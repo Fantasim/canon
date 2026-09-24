@@ -51,5 +51,5 @@ func (inv *invocation) openProject() (*canon.Project, error) {
 		}
 		root = found
 	}
-	return canon.Open(root, canon.Options{Roots: inv.opt.roots})
+	return canon.Open(root, canon.Options{Roots: inv.opt.roots, Layers: inv.opt.layers})
 }

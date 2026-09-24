@@ -23,6 +23,9 @@ type options struct {
 	targets     []canon.Target
 	checkFlag   bool
 	adopt       []string
+	layers      []string
+	run         string
+	verbose     bool
 }
 
 func newOptions() *options {
@@ -40,6 +43,7 @@ func newFlagSet(o *options, own func(*flag.FlagSet, *options)) *flag.FlagSet {
 	fs.BoolVar(&o.quiet, flagQuiet, o.quiet, usageQuiet)
 	fs.BoolVar(&o.quiet, flagQuietShort, o.quiet, usageQuiet)
 	fs.Func(flagMaxWarnings, usageMaxWarnings, o.setMaxWarnings)
+	fs.Func(flagLayer, usageLayer, o.addLayer)
 	if own != nil {
 		own(fs, o)
 	}
@@ -55,6 +59,18 @@ func buildFlags(fs *flag.FlagSet, o *options) {
 	fs.Func(flagTarget, usageTarget, o.addTarget)
 	fs.BoolVar(&o.checkFlag, flagCheck, o.checkFlag, usageCheck)
 	fs.Func(flagAdopt, usageAdopt, o.addAdopt)
+}
+
+// testFlags are canon test's own flags (CLI.md §3.5), on top of the global ones.
+func testFlags(fs *flag.FlagSet, o *options) {
+	fs.StringVar(&o.run, flagRun, o.run, usageRun)
+	fs.BoolVar(&o.verbose, flagVerbose, o.verbose, usageVerbose)
+}
+
+// addLayer records one --layer, in the order given (CLI.md §2.3).
+func (o *options) addLayer(v string) error {
+	o.layers = append(o.layers, v)
+	return nil
 }
 
 // addTarget records one --target, refusing a word CLI.md §3.4 does not list.

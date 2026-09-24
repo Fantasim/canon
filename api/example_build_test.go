@@ -108,7 +108,7 @@ func ExampleProject_Test() {
 		return
 	}
 	defer p.Close()
-	res, err := p.Test(context.Background(), canon.TestOptions{Packages: []string{"teamboard"}, Run: "^status"})
+	res, err := p.Test(context.Background(), canon.TestOptions{Packages: []string{"pipeline"}, Run: "overheals"})
 	if err != nil {
 		return
 	}
@@ -120,6 +120,8 @@ func ExampleProject_Test() {
 	}
 	fmt.Println(res.Passed, res.Failed)
 	// Output:
+	// pipeline healFor never overheals and never goes negative true
+	// 1 0
 }
 
 func ExampleFormat() {

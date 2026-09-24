@@ -1,0 +1,29 @@
+CLI.md §2.4, API.md F5: JSON lines keep `<`, `>` and `&` raw in a finding's message.
+-- args --
+build
+--format
+json
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A box.
+record Box {
+  /// Its size.
+  size: Int
+
+  check size < 0 else "size < 0 & size > -1"
+}
+
+/// One box.
+let box: Box = { size: 1 }
+-- want --
+[exit 1]
+[stdout]
+{"severity":"error","code":"E5001","file":"a/a.canon","line":13,"col":16,"endLine":13,"endCol":27,"package":"a","path":"box","message":"size < 0 & size > -1","related":[{"file":"a/a.canon","line":9,"col":3,"endLine":9,"endCol":45,"note":"check"}],"reads":["size"]}
+{"summary":{"errors":1,"warnings":0,"packages":1,"ms":0,"written":0,"stale":0}}
+[stderr]

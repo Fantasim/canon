@@ -1,0 +1,37 @@
+EVALUATION.md §10.1, §10.4, §12.2: the budget is shared by the tests; E4401 stops the test that
+spends the last step, from a subject too, and is kept as its stopping error; later tests do not run.
+-- budget --
+200
+-- a/a.canon --
+/// A.
+package a
+
+local fn loop(n: Int) -> Int {
+  var i = 0
+  while i < n { i += 1 }
+  return i
+}
+
+test "cheap" {
+  expect loop(3) == 3
+}
+
+test "the budget runs out in a subject" {
+  expect loop(1000) == 1000
+}
+
+test "after the budget" {
+  expect true
+}
+-- outcomes.txt --
+a "cheap": failed false, stopped false, broken false
+  expect line 11: passed true
+a "the budget runs out in a subject": failed true, stopped true, broken false, stopped by E4401 at line 6
+a "after the budget": failed true, stopped true, broken false
+
+error[E4401]  a/a.canon:6:9
+  evaluation budget of 200 steps exhausted
+  heaviest: the budget runs out in a subject (166 steps)
+  in loop (a/a.canon:15)
+
+1 error, 0 warnings in 1 package (…)

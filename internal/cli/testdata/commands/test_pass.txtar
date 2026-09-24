@@ -1,0 +1,26 @@
+CLI.md §3.5, EVALUATION.md §10.1: passing tests print nothing; the summary counts them; exit 0.
+-- args --
+test
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+local fn half(n: Int) -> Int { return n / 2 }
+
+test "halves" {
+  expect half(4) == 2
+  expect half(5) < 3
+}
+
+test "halves again" {
+  expect half(0) == 0
+}
+-- want --
+[exit 0]
+[stdout]
+2 passed, 0 failed (…)
+[stderr]

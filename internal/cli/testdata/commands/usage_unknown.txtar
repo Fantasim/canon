@@ -13,11 +13,14 @@ commands:
   check [packages...]   parse and check packages, print findings
   init                  create project.canon in the current directory
   new <package>         create a package directory with a first file
+  test [packages...]    run the test blocks of packages
   version               print the compiler, language and format versions
 
 flags:
   -format format
     	output format: text or json (default "text")
+  -layer name
+    	apply the layer name; repeatable, applied in order
   -max-warnings n
     	exit with code 4 when there are more than n warnings
   -project string

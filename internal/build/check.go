@@ -50,7 +50,7 @@ func (p *Project) Packages(ctx context.Context) (*Units, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := p.checkLayers(s.units); err != nil {
+	if err := p.checkLayers(s, s.units); err != nil {
 		return nil, err
 	}
 	return &Units{Units: s.units, Revision: s.revision()}, nil
@@ -213,12 +213,16 @@ func filesOf(units []*project.Unit) []*syntax.File {
 	return out
 }
 
-// checkLayers refuses a layer that no loaded package has a file for (API.md O4, LAY-01).
-func (p *Project) checkLayers(loaded []*project.Unit) error {
+// checkLayers refuses each layer no loaded package has a file for, E1901, as an *OpenError (EVALUATION.md §9.1).
+func (p *Project) checkLayers(s *snapshot, loaded []*project.Unit) error {
+	bag := diag.NewBag(s.set, "")
 	for _, name := range p.opt.Layers {
 		if !slices.ContainsFunc(loaded, func(u *project.Unit) bool { return slices.Contains(u.Layers, name) }) {
-			return &project.UnknownError{Err: ErrUnknownLayer, Name: name}
+			diag.E1901.At(source.Span{}, name).Report(bag)
 		}
 	}
-	return nil
+	if bag.Summary().Errors == 0 {
+		return nil
+	}
+	return &OpenError{Err: ErrUnknownLayer, Findings: collect(s.set, bag)}
 }

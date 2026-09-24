@@ -43,8 +43,8 @@ type Findings struct {
 	Summary diag.Summary
 }
 
-// OpenError is a call stopped by project.canon or a root override (API.md O3); Err is
-// project.ErrNoProject, project.ErrInvalid or project.ErrUnsupportedVersion.
+// OpenError is a call stopped by project.canon, a root override (API.md O3) or a layer no loaded
+// package declares; Err is project.ErrNoProject, ErrInvalid, ErrUnsupportedVersion or ErrUnknownLayer.
 type OpenError struct {
 	Err      error
 	Findings Findings
@@ -141,11 +141,7 @@ func (f *Findings) addErrors(b *diag.Bag) {
 	if sum.Errors == 0 {
 		return
 	}
-	for _, x := range b.Findings() {
-		if x.Severity == diag.Error {
-			f.List = append(f.List, x)
-		}
-	}
+	f.List = append(f.List, errorsOf(b)...)
 	f.Summary.Errors += sum.Errors
 	for _, t := range sum.Truncated {
 		if t.Errors > 0 {

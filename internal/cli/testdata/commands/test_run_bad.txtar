@@ -1,0 +1,21 @@
+CLI.md §2.5, API.md V1: a --run that is no RE2 expression is refused (exit 2).
+-- args --
+test
+--run
+(
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+test "t" {
+  expect true
+}
+-- want --
+[exit 2]
+[stdout]
+[stderr]
+canon: value does not fit the type: expected an RE2 regular expression, got "(": error parsing regexp: missing closing ): `(`

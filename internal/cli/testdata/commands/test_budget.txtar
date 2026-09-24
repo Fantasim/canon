@@ -1,0 +1,43 @@
+CLI.md §3.5, EVALUATION.md §10.1, §12.2: the budget is shared by the tests of the invocation;
+E4401 stops the test that spends the last step, printed as its stopping error; no later test runs,
+each counted as failed.
+-- args --
+test
+-- project.canon --
+project acme {
+  canon: "0.1"
+  budget: 200
+}
+-- a/a.canon --
+/// A.
+package a
+
+local fn loop(n: Int) -> Int {
+  var i = 0
+  while i < n { i += 1 }
+  return i
+}
+
+test "cheap" {
+  expect loop(3) == 3
+}
+
+test "expensive" {
+  let n = loop(1000)
+  expect n == 1000
+}
+
+test "after the budget" {
+  expect true
+}
+-- want --
+[exit 1]
+[stdout]
+FAIL  a/a.canon:14  expensive
+  a/a.canon:6  error[E4401]  evaluation budget of 200 steps exhausted
+  heaviest: expensive (166 steps)
+
+FAIL  a/a.canon:19  after the budget
+
+1 passed, 2 failed (…)
+[stderr]

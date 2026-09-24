@@ -1,0 +1,45 @@
+EVALUATION.md §10.2, §3.4: an expect subject's unbound level-1 ref (E3505) is captured by the
+expect, so `fails E3505` passes and `passes` fails listing it.
+-- args --
+test
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Node.
+record Node {
+  /// Name.
+  name: String
+}
+
+/// Link.
+record Link {
+  /// To.
+  to: ref Node
+}
+
+/// Tree.
+record Tree {
+  /// Nodes.
+  nodes: [Node] keyed by name
+  /// Links.
+  links: [Link]
+}
+
+test "an orphan link" {
+  expect Link { to: "x" } fails E3505
+  expect Link { to: "x" } passes
+}
+-- want --
+[exit 1]
+[stdout]
+FAIL  a/a.canon:24  an orphan link
+  a/a.canon:26  expect Link { to: "x" } passes
+  got: error[E3505]  ref Node has no enclosing Tree to resolve against
+
+0 passed, 1 failed (…)
+[stderr]

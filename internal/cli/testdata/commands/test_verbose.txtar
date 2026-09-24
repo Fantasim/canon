@@ -1,0 +1,39 @@
+CLI.md §3.5: -v prints `ok  <file>:<line>  <name>` per passing test, in test order among the
+failing blocks; a blank line after the last `ok` line.
+-- args --
+test
+-v
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+local let two: Int = 2
+
+test "first passes" {
+  expect two == 2
+}
+
+test "second fails" {
+  expect two == 3
+}
+
+test "third passes" {
+  expect true
+}
+-- want --
+[exit 1]
+[stdout]
+ok  a/a.canon:6  first passes
+FAIL  a/a.canon:10  second fails
+  a/a.canon:11  expect two == 3
+  expected: 3
+  got: 2
+
+ok  a/a.canon:14  third passes
+
+2 passed, 1 failed (…)
+[stderr]

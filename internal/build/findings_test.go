@@ -2,6 +2,7 @@ package build_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"testing"
@@ -50,6 +51,10 @@ func buildCase(t *testing.T, a *txtar.Archive) *build.BuildResult {
 	}
 	opt := build.BuildOptions{Packages: fields(a, selectFile), Adopt: fields(a, adoptFile)}
 	res, err := p.Build(context.Background(), opt)
+	var oe *build.OpenError
+	if errors.As(err, &oe) { // a refusal with findings: E1901 (EVALUATION.md §9.1)
+		return &build.BuildResult{Result: build.Result{Findings: oe.Findings}}
+	}
 	if err != nil {
 		t.Fatal(err)
 	}

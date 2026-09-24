@@ -1,0 +1,24 @@
+CLI.md §2.3, §2.4, §2.5, EVALUATION.md §9.1: E1901 in JSON, one finding line then the summary;
+every unknown layer named; exit 2.
+-- args --
+check
+--layer
+nosuch
+--layer
+other
+--format
+json
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+-- want --
+[exit 2]
+[stdout]
+{"severity":"error","code":"E1901","package":"","message":"no loaded package declares layer nosuch"}
+{"severity":"error","code":"E1901","package":"","message":"no loaded package declares layer other"}
+{"summary":{"errors":2,"warnings":0,"packages":0,"ms":0}}
+[stderr]

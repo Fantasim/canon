@@ -1,0 +1,30 @@
+CLI.md §3.5, API.md F9 (log-2026-09-24 "canon test review calls"): a comparison is known by its
+operator: an empty String operand still prints `expected:` and `got:`, with no trailing space.
+-- args --
+test
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+test "empty operands" {
+  let e = ""
+  expect e == "x"
+  expect e != ""
+}
+-- want --
+[exit 1]
+[stdout]
+FAIL  a/a.canon:4  empty operands
+  a/a.canon:6  expect e == "x"
+  expected: x
+  got:
+  a/a.canon:7  expect e != ""
+  expected: !=
+  got:
+
+0 passed, 1 failed (…)
+[stderr]

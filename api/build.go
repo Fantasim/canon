@@ -3,6 +3,7 @@ package canon
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"runtime/debug"
 	"strconv"
 	"strings"
@@ -191,13 +192,17 @@ type TestOptions struct {
 	Run      string // RE2 matched against test names; empty runs all
 }
 
-// ExpectFailure is one failing expect statement (rule B3).
+// ExpectFailure is a failing expect, or with Expect "" what stopped the test (rule B3; log-2026-09-24 "canon test review calls").
 type ExpectFailure struct {
 	Span
 	Expect   string
+	Outcome  string // passes, fails or warns; "" for `expect c` and a stop
+	Op       string // a comparison's operator when both operands were evaluated; Expected and Got are then its operands
 	Expected string
-	Got      string
+	Got      string // a comparison's left operand, or the value of any other Boolean
+	Poisoned string // the poisoned top-level value read
 	Findings []Finding
+	Cause    []Finding // the errors that poisoned it
 }
 
 // TestCase is the result of one test block.
@@ -211,15 +216,64 @@ type TestCase struct {
 
 // TestResult is the result of Test.
 type TestResult struct {
+	Check    *CheckResult // phases 1-2's error findings of the loaded packages (ADR-0004)
 	Tests    []TestCase
 	Passed   int
 	Failed   int
 	Duration time.Duration
 }
 
-// Test runs the test blocks of the selected packages (rule B3).
-func (p *Project) Test(ctx context.Context, o TestOptions) (*TestResult, error) {
-	return nil, errUnimplemented()
+// Test runs the selected packages' tests o.Run matches, in (package, file, line) order; a bad Run is *ValueError (rule B3, EVALUATION.md §10).
+func (p *Project) Test(ctx context.Context, o TestOptions) (res *TestResult, err error) {
+	defer recoverInternal(&err)
+	b, err := p.open()
+	if err != nil {
+		return nil, err
+	}
+	match, err := runPattern(o.Run)
+	if err != nil {
+		return nil, err
+	}
+	start := time.Now()
+	r, err := b.Test(ctx, o.Packages, match)
+	if err != nil {
+		return nil, apiError(err)
+	}
+	p.setRevision(r.Revision)
+	return testResultOf(r, time.Since(start)), nil
+}
+
+// runPattern is Run compiled, nil when empty; an invalid one is *ValueError (log-2026-09-24 "canon test review calls").
+func runPattern(run string) (*regexp.Regexp, error) {
+	if run == "" {
+		return nil, nil
+	}
+	re, err := regexp.Compile(run)
+	if err != nil {
+		return nil, &ValueError{Op: -1, Expected: expectedPattern, Got: fmt.Sprintf(fmtQuoted, run), Detail: err.Error()}
+	}
+	return re, nil
+}
+
+// testResultOf converts canon test's run into the API's form, counting its outcomes (rule B3).
+func testResultOf(r *build.TestResult, d time.Duration) *TestResult {
+	out := &TestResult{Check: checkResultOf(r.Static, d), Duration: d}
+	for _, t := range r.Tests {
+		tc := TestCase{Package: t.Package, Name: t.Name, Span: spanOf(t.Loc), Passed: t.Passed}
+		for _, f := range t.Failures {
+			tc.Failures = append(tc.Failures, ExpectFailure{
+				Span: spanOf(f.Loc), Expect: f.Expect, Outcome: f.Outcome, Op: f.Op, Expected: f.Expected, Got: f.Got,
+				Poisoned: f.Poisoned, Findings: fromDiag(r.Files, f.Findings), Cause: fromDiag(r.Files, f.Cause),
+			})
+		}
+		if t.Passed {
+			out.Passed++
+		} else {
+			out.Failed++
+		}
+		out.Tests = append(out.Tests, tc)
+	}
+	return out
 }
 
 // Format returns the canonical layout of one .canon file (rule T1).

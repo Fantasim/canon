@@ -1,0 +1,43 @@
+CLI.md §2.3, EVALUATION.md §9.3, §10.1: --layer applies its amendments to the values the tests
+read.
+-- args --
+test
+--layer
+dev
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A config.
+record Config {
+  /// Its port.
+  port: Int
+}
+
+/// The config.
+let config: Config = { port: 80 }
+
+test "the port is the base one" {
+  expect config.port == 80
+}
+-- a/dev.layer.canon --
+package a
+layer dev
+
+amend config {
+  port: 9000
+}
+-- want --
+[exit 1]
+[stdout]
+FAIL  a/a.canon:13  the port is the base one
+  a/a.canon:14  expect config.port == 80
+  expected: 80
+  got: 9000
+
+0 passed, 1 failed (…)
+[stderr]

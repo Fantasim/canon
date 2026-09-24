@@ -1,0 +1,22 @@
+EVALUATION.md §9.1, CLI.md §2.5: a layer no loaded package declares is E1901, one per name; the
+build stops before analysis (exit 2 in the CLI).
+-- layers --
+nosuch other
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+-- a/dev.layer.canon --
+package a
+layer dev
+-- findings.txt --
+error[E1901]
+  no loaded package declares layer nosuch
+
+error[E1901]
+  no loaded package declares layer other
+
+2 errors, 0 warnings in 0 packages (…)

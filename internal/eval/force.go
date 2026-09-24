@@ -58,6 +58,7 @@ func (e *Evaluator) evalRoot(ctx context.Context, st *rootState) (value.Value, b
 		e.index.pkg[st.obj.File()] = st.obj.Pkg()
 	}
 	r := e.newRun(ctx, charge{pkg: st.root.Pkg, name: st.root.Name}, st.obj.File())
+	r.root = st
 	var v value.Value
 	switch d := st.obj.Decl().(type) {
 	case *syntax.ConstDecl:

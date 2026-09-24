@@ -19,11 +19,14 @@ type Builder interface {
 
 // TestRun is the outcome of one test (EVALUATION.md §10.4).
 type TestRun struct {
-	Failed   bool     // an expect failed, or the test stopped
-	Stopped  bool     // a hard error outside a subject, or a poisoned read, stopped it
-	Broken   bool     // a static error: the test did not run (TYPES.md §1)
-	Poisoned string   // the poisoned top-level value whose read stopped it, if any (§7.2)
-	Expects  []Expect // the expects run, in order
+	Failed     bool           // an expect failed, or the test stopped
+	Stopped    bool           // a hard error outside a subject, or a poisoned read, stopped it
+	Broken     bool           // a static error: the test did not run (TYPES.md §1)
+	Poisoned   string         // the poisoned top-level value whose read stopped it, if any (§7.2)
+	PoisonRoot Root           // that value
+	PoisonSpan source.Span    // where the test read it
+	Errors     []diag.Finding // the hard error that stopped it outside a subject, E4401 included, each in its frame's package (CLI.md §3.5)
+	Expects    []Expect       // the expects run, in order
 }
 
 // Expect is one expect run: whether it passed, the findings its subject captured, and the
@@ -33,12 +36,17 @@ type Expect struct {
 	Passed      bool
 	Captured    []diag.Finding
 	Poisoned    string
-	Left, Right string // a failed comparison's operands as text, up to operandText bytes (EVALUATION.md §10.3)
+	PoisonRoot  Root
+	Compared    bool             // a failed comparison whose two operands were evaluated
+	Left, Right string           // its operands as text, up to operandText bytes, possibly empty (EVALUATION.md §10.3)
+	Op          syntax.TokenKind // its operator
+	Value       string           // a failed `expect c` that is no comparison: c's value as text, when it has one
 }
 
 // comparison is the operands of the comparison an `expect c` evaluates.
 type comparison struct {
 	at          syntax.Expr
+	op          syntax.TokenKind
 	left, right value.Value
 }
 
@@ -60,15 +68,20 @@ func (e *Evaluator) Test(ctx context.Context, t *syntax.TestDecl, b Builder) Tes
 		return TestRun{Failed: true, Stopped: true}
 	}
 	var out TestRun
-	r := e.newRun(ctx, charge{pkg: e.index.pkg[file], name: testName(t)}, file)
+	e.beginTestLog()
+	defer func() { e.testStops = nil }()
+	r := e.newRun(ctx, charge{pkg: e.index.pkg[file], name: TestName(t)}, file)
 	r.test = &testState{builder: b, out: &out}
 	if r.block(t.Body) == flowAbort || r.failed {
-		out.Failed, out.Stopped, out.Poisoned = true, true, r.poisonAt
+		out.Failed, out.Stopped = true, true
+		out.Poisoned, out.PoisonRoot, out.PoisonSpan = r.poisonAt, r.poisonRoot, r.poisonSpan
 	}
+	out.Errors = e.stopFindings()
 	return out
 }
 
-func testName(t *syntax.TestDecl) string {
+// TestName is the name a test block declares (EVALUATION.md §10.1).
+func TestName(t *syntax.TestDecl) string {
 	switch n := t.Name.(type) {
 	case *syntax.StringLit:
 		return testNameParts(n)
@@ -94,12 +107,21 @@ func execExpect(r *run, s syntax.Stmt) flow {
 	ex.Passed = ex.Poisoned == "" && judge(x, b.v, b.aborted, ex.Captured)
 	if !ex.Passed {
 		r.test.out.Failed = true
-		if b.cmp != nil && b.cmp.left != nil && b.cmp.right != nil {
-			ex.Left, ex.Right = value.TextUpTo(b.cmp.left, operandText), value.TextUpTo(b.cmp.right, operandText)
-		}
+		describe(&ex, b)
 	}
 	r.test.out.Expects = append(r.test.out.Expects, ex)
 	return flowNext
+}
+
+// describe adds a failed expect's comparison operands, or its Boolean's value (CLI.md §3.5).
+func describe(ex *Expect, b built) {
+	switch {
+	case b.cmp != nil && b.cmp.left != nil && b.cmp.right != nil:
+		ex.Left, ex.Right = value.TextUpTo(b.cmp.left, operandText), value.TextUpTo(b.cmp.right, operandText)
+		ex.Op, ex.Compared = b.cmp.op, true
+	case b.cmp == nil && ex.Stmt.Outcome == nil && !b.aborted && b.v != nil:
+		ex.Value = value.TextUpTo(b.v, operandText)
+	}
 }
 
 // built is an expect's subject once built: the expect so far, its value, whether evaluating
@@ -121,8 +143,8 @@ func (r *run) subject(x *syntax.ExpectStmt) built {
 	b.v = r.eval(x.X)
 	b.aborted = r.failed
 	r.failed, r.sink, r.cmp = false, saved, nil
-	b.ex = Expect{Stmt: x, Poisoned: r.poisonAt}
-	r.poisonAt = ""
+	b.ex = Expect{Stmt: x, Poisoned: r.poisonAt, PoisonRoot: r.poisonRoot}
+	r.poisonAt, r.poisonRoot, r.poisonSpan = "", Root{}, source.Span{}
 	if !b.aborted && x.Outcome != nil && r.test.builder != nil {
 		r.test.builder.Build(r.ctx, b.v, capture)
 	}
@@ -136,7 +158,7 @@ func comparisonOf(x *syntax.ExpectStmt) *comparison {
 		return nil
 	}
 	if c, ok := unparen(x.X).(*syntax.BinaryExpr); ok && comparisons[c.Op] {
-		return &comparison{at: c}
+		return &comparison{at: c, op: c.Op}
 	}
 	return nil
 }

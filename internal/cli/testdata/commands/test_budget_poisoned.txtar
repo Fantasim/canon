@@ -1,0 +1,34 @@
+CLI.md §3.5, EVALUATION.md §12.2 (log-2026-09-24 "canon test review calls"): a value the budget
+stops is poisoned; the test reading it prints E4401 alone, no `reads poisoned` line.
+-- args --
+test
+-- project.canon --
+project acme {
+  canon: "0.1"
+  budget: 200
+}
+-- a/a.canon --
+/// A.
+package a
+
+local fn loop(n: Int) -> Int {
+  var i = 0
+  while i < n { i += 1 }
+  return i
+}
+
+local let big: Int = loop(1000)
+
+test "reads a value the budget stopped" {
+  let n: Int = big
+  expect n == 1000
+}
+-- want --
+[exit 1]
+[stdout]
+FAIL  a/a.canon:12  reads a value the budget stopped
+  a/a.canon:6  error[E4401]  evaluation budget of 200 steps exhausted
+  heaviest: big (198 steps)
+
+0 passed, 1 failed (…)
+[stderr]

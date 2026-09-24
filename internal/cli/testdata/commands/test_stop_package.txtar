@@ -1,0 +1,35 @@
+CLI.md §3.5, API.md F1 (log-2026-09-24 "canon test review calls"): a test's stop carries the
+package of the frame it happened in, here a function of an imported package.
+-- args --
+test
+b
+--format
+json
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Divides by n.
+fn per(n: Int) -> Int { return 10 / n }
+-- b/b.canon --
+/// B.
+package b
+
+import a
+
+local let zero: Int = 0
+
+test "stops in a" {
+  let x: Int = a.per(zero)
+  expect x == 0
+}
+-- want --
+[exit 1]
+[stdout]
+{"test":{"package":"b","name":"stops in a","file":"b/b.canon","line":8,"status":"fail","failures":[{"file":"a/a.canon","line":5,"col":32,"expect":"","expected":"","got":"","findings":[{"severity":"error","code":"E4102","file":"a/a.canon","line":5,"col":32,"endLine":5,"endCol":38,"package":"a","message":"division by zero","stack":[{"fn":"per","file":"b/b.canon","line":9,"col":16,"endLine":9,"endCol":27}]}]}]}}
+{"summary":{"passed":0,"failed":1,"ms":0}}
+[stderr]

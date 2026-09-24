@@ -12,24 +12,27 @@ import (
 
 // run is one root being evaluated (EVALUATION.md §7.1).
 type run struct {
-	ev        *Evaluator
-	ctx       context.Context
-	charge    charge
-	fr        *frame
-	failed    bool
-	tainted   bool
-	free      bool      // stage B's where re-runs cost nothing (DECISIONS 148)
-	sink      *diag.Bag // captures the findings of an expect subject
-	site      source.Span
-	chainNone bool
-	at        *vpath
-	coll      *collHint
-	reports   *[]CheckReport
-	poisonAt  string
-	cmp       *comparison // the comparison of the expect being evaluated, if any
-	h         *stdHost
-	test      *testState
-	freeSteps int64
+	ev         *Evaluator
+	ctx        context.Context
+	charge     charge
+	fr         *frame
+	failed     bool
+	tainted    bool
+	free       bool      // stage B's where re-runs cost nothing (DECISIONS 148)
+	sink       *diag.Bag // captures the findings of an expect subject
+	site       source.Span
+	chainNone  bool
+	at         *vpath
+	coll       *collHint
+	reports    *[]CheckReport
+	poisonAt   string
+	poisonRoot Root        // the value poisonAt names
+	poisonSpan source.Span // where the run read it
+	root       *rootState  // the top-level value this run evaluates, if it is one
+	cmp        *comparison // the comparison of the expect being evaluated, if any
+	h          *stdHost
+	test       *testState
+	freeSteps  int64
 }
 
 // frame is one call frame, or a root's own frame (fn empty).
@@ -157,8 +160,11 @@ func (r *run) budgetOut(at source.Span) {
 		e.cut(StepLimit)
 		return
 	}
-	b := diag.E4401.At(at, e.budget, r.qualified(heavy.pkg, heavy.name), e.spent[heavy])
-	e.report(r.fr.pkg, r.withStack(b))
+	b := r.withStack(diag.E4401.At(at, e.budget, r.qualified(heavy.pkg, heavy.name), e.spent[heavy]))
+	if e.testStops != nil { // it stops the running test, from whichever root spent the step
+		b.Report(e.stopBag(r.fr.pkg))
+	}
+	e.report(r.fr.pkg, b)
 }
 
 // fail reports a hard error with the root's call stack and aborts the root.
@@ -173,6 +179,7 @@ func (r *run) abort(b *diag.Builder) {
 	}
 	r.failed = true
 	if !r.tainted || r.sink != nil || r.ev.vec != nil {
+		r.noteStop(b)
 		r.emit(b)
 	}
 }

@@ -1,0 +1,26 @@
+ADR-0004, CLI.md §3.5, IMPLEMENTATION-PLAN.md §8.1: with --format json the static errors are
+finding lines before the test lines, and the test summary stays the one final summary.
+-- args --
+test
+--format
+json
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+local let unused = nothing
+
+test "passes" {
+  expect true
+}
+-- want --
+[exit 1]
+[stdout]
+{"severity":"error","code":"E2102","file":"a/a.canon","line":4,"col":20,"endLine":4,"endCol":27,"package":"a","message":"unknown name nothing"}
+{"test":{"package":"a","name":"passes","file":"a/a.canon","line":6,"status":"pass","failures":[]}}
+{"summary":{"passed":1,"failed":0,"ms":0}}
+[stderr]

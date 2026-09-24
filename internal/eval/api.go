@@ -38,16 +38,34 @@ func padded(args []value.Value, params int) []value.Value {
 
 // ReportUnbound is E3505 for a ref stage B found unbound (EVALUATION.md §3.4, DECISIONS 186).
 func (e *Evaluator) ReportUnbound(root Root, ref *value.Ref, path string) {
-	rt, ok := ref.T.Base().(*types.RefType)
-	if !ok || e.vec == nil && e.bags[root.Pkg] == nil {
+	if e.vec == nil && e.bags[root.Pkg] == nil {
 		return
+	}
+	if b := e.unbound(root, ref, path); b != nil {
+		e.report(root.Pkg, b)
+		e.MarkInvalid(ref)
+	}
+}
+
+// ReportUnboundInto is ReportUnbound for an expect subject, into its capture (EVALUATION.md §10.2).
+func (e *Evaluator) ReportUnboundInto(root Root, ref *value.Ref, path string, capture *diag.Bag) {
+	if b := e.unbound(root, ref, path); b != nil && capture != nil {
+		b.Report(capture)
+		e.MarkInvalid(ref)
+	}
+}
+
+// unbound is the E3505 finding of an unbound ref, located at its origin; nil for a non-ref.
+func (e *Evaluator) unbound(root Root, ref *value.Ref, path string) *diag.Builder {
+	rt, ok := ref.T.Base().(*types.RefType)
+	if !ok {
+		return nil
 	}
 	b := diag.E3505.At(located(ref, e.declSpan(root)), elemName(rt.Target), ownerName(rt.Target)).Path(path)
 	if p := origin(ref.Prov()); p != nil {
 		b.Pointer(p.Pointer).Layer(p.Layer).Stack(p.Stack).MoreFrames(p.MoreFrames)
 	}
-	e.report(root.Pkg, b)
-	e.MarkInvalid(ref)
+	return b
 }
 
 // declSpan is the declaration of a top-level value, where a finding without a value location goes.

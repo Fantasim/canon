@@ -16,6 +16,8 @@ local let broken: Int = 1 / (boxes.len() - 1)
 
 fn half(n: Int) -> Int { return n / 2 }
 
+fn label() -> String { return "" }
+
 test "expect forms" {
   expect half(4) == 2
   expect half(4) == 3
@@ -27,6 +29,8 @@ test "expect forms" {
   expect Box { size: half(22) } fails E3204
   expect half(boxes.len() / 0) == 0
   expect broken == 0
+  expect half(4) == 2 and half(4) == 3
+  expect label() == "x"
 }
 
 test "a hard error stops the test" {
@@ -59,20 +63,22 @@ test "a broken test does not run" {
 }
 -- outcomes.txt --
 a "expect forms": failed true, stopped false, broken false
-  expect line 17: passed true
-  expect line 18: passed false (left 2, right 3)
-  expect line 19: passed true [E5001 box box is too big]
-  expect line 20: passed true [E5001 box box is too big]
+  expect line 19: passed true
+  expect line 20: passed false (left "2" == right "3")
   expect line 21: passed true [E5001 box box is too big]
-  expect line 22: passed true [W5001 empty box]
-  expect line 23: passed true
-  expect line 24: passed true [E3204 11 is outside 0..10]
-  expect line 25: passed false [E4102 division by zero]
-  expect line 26: passed false (reads poisoned broken)
-a "a hard error stops the test": failed true, stopped true, broken false
-a "a poisoned read stops the test and names the value": failed true, stopped true, broken false, reads poisoned broken
+  expect line 22: passed true [E5001 box box is too big]
+  expect line 23: passed true [E5001 box box is too big]
+  expect line 24: passed true [W5001 empty box]
+  expect line 25: passed true
+  expect line 26: passed true [E3204 11 is outside 0..10]
+  expect line 27: passed false [E4102 division by zero]
+  expect line 28: passed false (reads poisoned broken)
+  expect line 29: passed false (value false)
+  expect line 30: passed false (left "" == right "x")
+a "a hard error stops the test": failed true, stopped true, broken false, stopped by E4102 at line 34
+a "a poisoned read stops the test and names the value": failed true, stopped true, broken false, reads poisoned broken at line 39
 a "a tainted test still captures its findings": failed false, stopped false, broken false
-  expect line 51: passed true [E4002 index 5 out of range for length 1]
+  expect line 55: passed true [E4002 index 5 out of range for length 1]
 a "a broken test does not run": failed true, stopped false, broken true
 
 warning[W1002]  a/a.canon:3:8
@@ -87,14 +93,14 @@ warning[W1002]  a/a.canon:5:3
 error[E4102]  a/a.canon:12:25
   division by zero
 
-error[E4102]  a/a.canon:30:11
+error[E4102]  a/a.canon:34:11
   division by zero
 
-error[E3204]  a/a.canon:39:26
+error[E3204]  a/a.canon:43:26
   invalid.s: abcdef is outside ..3
-  expected by a/a.canon:44 (s: String(..3))
+  expected by a/a.canon:48 (s: String(..3))
 
-error[E3008]  a/a.canon:55:10
+error[E3008]  a/a.canon:59:10
   cannot infer the type of this expression; add a type
 
 4 errors, 3 warnings in 1 package (…)

@@ -1,0 +1,27 @@
+CLI.md §2.3, §3.5: with -q, --format json prints the failing tests and the summary only.
+-- args --
+test
+--format
+json
+-q
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+test "passes" {
+  expect true
+}
+
+test "fails" {
+  expect false
+}
+-- want --
+[exit 1]
+[stdout]
+{"test":{"package":"a","name":"fails","file":"a/a.canon","line":8,"status":"fail","failures":[{"file":"a/a.canon","line":9,"col":3,"expect":"expect false","expected":"","got":"false","findings":[]}]}}
+{"summary":{"passed":1,"failed":1,"ms":0}}
+[stderr]

@@ -1,0 +1,32 @@
+CLI.md §2.3, §3.5: -q prints errors only, so it drops the `ok` lines of -v.
+-- args --
+test
+-v
+-q
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+local let two: Int = 2
+
+test "passes" {
+  expect two == 2
+}
+
+test "fails" {
+  expect two != 2
+}
+-- want --
+[exit 1]
+[stdout]
+FAIL  a/a.canon:10  fails
+  a/a.canon:11  expect two != 2
+  expected: != 2
+  got: 2
+
+1 passed, 1 failed (…)
+[stderr]

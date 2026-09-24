@@ -61,7 +61,7 @@ func (p *Project) prepare(ctx context.Context, selectors []string) (*run, error)
 		return nil, err
 	}
 	loaded := imported(s.units, selected)
-	if err := p.checkLayers(loaded); err != nil {
+	if err := p.checkLayers(s, loaded); err != nil {
 		return nil, err
 	}
 	return &run{p: p, s: s, selected: selected, loaded: loaded, bags: s.bagsOf(loaded)}, nil
@@ -69,17 +69,9 @@ func (p *Project) prepare(ctx context.Context, selectors []string) (*run, error)
 
 // analyze runs phases 2 to 7: check, then stages A to E (EVALUATION.md §1).
 func (r *run) analyze(ctx context.Context) error {
-	opt := eval.Options{Budget: r.s.proj.Budget, Layers: r.p.opt.Layers}
-	r.fold = eval.NewFolder(r.bags, opt)
-	if r.p.opt.Checker != nil {
-		r.prog = r.p.opt.Checker(ctx, r.s.proj, filesOf(r.loaded), r.bags)
-	} else {
-		r.prog = check.Check(ctx, r.s.proj, filesOf(r.loaded), r.bags, r.fold)
+	if err := r.check(ctx); err != nil {
+		return err
 	}
-	if r.prog == nil {
-		return internal(errNoProgram)
-	}
-	r.opt = opt
 	r.stageA(ctx)
 	if err := r.stageB(ctx); err != nil {
 		return err
@@ -97,18 +89,39 @@ func (r *run) analyze(ctx context.Context) error {
 	return r.host.failure(r.s.set, r.prog)
 }
 
-// stageA forces every const and let of the selected packages in order (EVALUATION.md §2.1).
-func (r *run) stageA(ctx context.Context) {
+// check is phase 2: resolve and type-check the loaded packages (EVALUATION.md §1).
+func (r *run) check(ctx context.Context) error {
+	opt := eval.Options{Budget: r.s.proj.Budget, Layers: r.p.opt.Layers}
+	r.fold = eval.NewFolder(r.bags, opt)
+	if r.p.opt.Checker != nil {
+		r.prog = r.p.opt.Checker(ctx, r.s.proj, filesOf(r.loaded), r.bags)
+	} else {
+		r.prog = check.Check(ctx, r.s.proj, filesOf(r.loaded), r.bags, r.fold)
+	}
+	if r.prog == nil {
+		return internal(errNoProgram)
+	}
+	r.opt = opt
+	return nil
+}
+
+// newHost is the run's host and evaluator, reporting into bags: stage A's, or canon test's.
+func (r *run) newHost(bags check.Bags) {
 	r.vix, r.rix = verify.NewIndex(r.prog), rules.NewIndex(r.prog)
-	r.host = &evalHost{prog: r.prog, bags: r.bags, index: r.vix}
+	r.host = &evalHost{prog: r.prog, bags: bags, index: r.vix}
 	r.host.loader = &load.Loader{FS: r.p.fs, Layout: r.s.layout, Set: r.s.set}
-	r.ev = eval.New(r.prog, r.host, r.bags, r.opt)
+	r.ev = eval.New(r.prog, r.host, bags, r.opt)
 	r.host.ev = r.ev
 	r.assets = &assets{fs: r.p.fs, layout: r.s.layout, host: r.host, dirs: map[string][]string{}}
 	r.host.assets = r.assets
-	r.host.verifier = verify.NewShared(r.vix, r.ev, r.bags, r.assets)
+	r.host.verifier = verify.NewShared(r.vix, r.ev, bags, r.assets)
+}
+
+// stageA forces every const and let of the selected packages in order (EVALUATION.md §2.1).
+func (r *run) stageA(ctx context.Context) {
+	r.newHost(r.bags)
 	for _, cp := range r.prog.Packages {
-		if !slices.ContainsFunc(r.selected, func(u *project.Unit) bool { return u.Name == cp.Path }) {
+		if !r.selects(cp.Path) {
 			continue
 		}
 		r.cps = append(r.cps, cp)
@@ -120,6 +133,11 @@ func (r *run) stageA(ctx context.Context) {
 			}
 		}
 	}
+}
+
+// selects reports a selected package.
+func (r *run) selects(pkg string) bool {
+	return slices.ContainsFunc(r.selected, func(u *project.Unit) bool { return u.Name == pkg })
 }
 
 // stageB verifies what stage A evaluated, then compares the locks (LOCK.md §4.5).

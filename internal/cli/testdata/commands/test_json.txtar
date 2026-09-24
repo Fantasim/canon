@@ -1,0 +1,40 @@
+CLI.md §3.5, IMPLEMENTATION-PLAN.md §8.1: --format json prints one line per test, passing ones
+included, failures with their captured findings (API.md F5), then the summary; `<` stays raw.
+-- args --
+test
+--format
+json
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A box.
+record Box {
+  /// Its size.
+  size: Int(0..10)
+
+  check big: size < 8 else "box is too big"
+}
+
+local let one: Int = 1
+
+test "passes" {
+  expect one < 2
+}
+
+test "fails" {
+  expect one > 2
+  expect Box { size: 9 } passes
+  expect Box { size: 1 } fails big
+}
+-- want --
+[exit 1]
+[stdout]
+{"test":{"package":"a","name":"passes","file":"a/a.canon","line":14,"status":"pass","failures":[]}}
+{"test":{"package":"a","name":"fails","file":"a/a.canon","line":18,"status":"fail","failures":[{"file":"a/a.canon","line":19,"col":3,"expect":"expect one > 2","expected":"> 2","got":"1","findings":[]},{"file":"a/a.canon","line":20,"col":3,"expect":"expect Box { size: 9 } passes","expected":"","got":"","findings":[{"severity":"error","code":"E5001","file":"a/a.canon","line":20,"col":10,"endLine":20,"endCol":25,"package":"a","message":"box is too big","check":"big","related":[{"file":"a/a.canon","line":9,"col":3,"endLine":9,"endCol":44,"note":"check big"}],"reads":["size"]}]},{"file":"a/a.canon","line":21,"col":3,"expect":"expect Box { size: 1 } fails big","expected":"","got":"no finding","findings":[]}]}}
+{"summary":{"passed":1,"failed":1,"ms":0}}
+[stderr]

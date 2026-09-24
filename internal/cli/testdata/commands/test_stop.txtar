@@ -1,0 +1,60 @@
+CLI.md §3.5, EVALUATION.md §7.2, §10.2, §10.4: a hard error outside a subject stops the test,
+printed after its failures at the error's location; a subject reading a poisoned value fails
+naming it; a statement reading one stops the test, naming it.
+-- args --
+test
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+local let zero: Int = 0
+
+local let broken: Int = 1 / zero
+
+test "a hard error stops the test" {
+  expect zero == 2
+  let x: Int = 1 / zero
+  expect x == 1
+}
+
+test "a subject reads a poisoned value" {
+  expect broken == 0
+  expect true
+}
+
+test "a statement reads a poisoned value" {
+  let y: Int = broken + 1
+  expect y == 2
+}
+
+test "a hard error in a subject is captured" {
+  expect 1 / zero == 0
+}
+-- want --
+[exit 1]
+[stdout]
+FAIL  a/a.canon:8  a hard error stops the test
+  a/a.canon:9  expect zero == 2
+  expected: 2
+  got: 0
+  a/a.canon:10  error[E4102]  division by zero
+
+FAIL  a/a.canon:14  a subject reads a poisoned value
+  a/a.canon:15  expect broken == 0
+  got: reads poisoned broken
+  a/a.canon:6  error[E4102]  division by zero
+
+FAIL  a/a.canon:19  a statement reads a poisoned value
+  a/a.canon:20  reads poisoned broken
+  a/a.canon:6  error[E4102]  division by zero
+
+FAIL  a/a.canon:24  a hard error in a subject is captured
+  a/a.canon:25  expect 1 / zero == 0
+  got: error[E4102]  division by zero
+
+0 passed, 4 failed (…)
+[stderr]

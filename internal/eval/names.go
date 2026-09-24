@@ -108,16 +108,17 @@ func (r *run) selfField(name string) value.Value {
 func (r *run) global(obj check.Object, at syntax.Expr) value.Value {
 	v, ok := r.ev.force(r.ctx, r.ev.state(obj), r, at)
 	if !ok {
-		r.readPoisoned(obj.Pkg(), obj.Name())
+		r.readPoisoned(obj.Pkg(), obj.Name(), at)
 		return nil
 	}
 	return r.read(v)
 }
 
 // readPoisoned aborts the run at a read of poisoned pkg.name, which a test names (EVALUATION.md §7.2).
-func (r *run) readPoisoned(pkg, name string) {
+func (r *run) readPoisoned(pkg, name string, at syntax.Node) {
 	if !r.failed {
-		r.poisonAt = r.qualified(pkg, name)
+		r.poisonAt, r.poisonRoot, r.poisonSpan = r.qualified(pkg, name), Root{Pkg: pkg, Name: name}, r.span(at)
+		r.ev.notePoisonedRead(r, r.poisonRoot)
 	}
 	r.stop()
 }

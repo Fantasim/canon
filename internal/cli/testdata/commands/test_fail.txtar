@@ -1,0 +1,62 @@
+CLI.md §3.5, EVALUATION.md §10.3, §10.4: each failing expect in source order with its detail
+lines (== then another comparison, any other Boolean, fails with no finding, fails and passes
+listing what was captured, warns); a failing expect does not stop the test; exit 1.
+-- args --
+test
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A box.
+record Box {
+  /// Its size.
+  size: Int(0..10)
+
+  check big: size < 8 else "box is too big"
+  warn size > 0 else "empty box"
+}
+
+local fn half(n: Int) -> Int { return n / 2 }
+
+test "every form" {
+  expect half(4) == 3
+  expect half(4) >= 3
+  expect   half(4)
+    == 5
+  expect half(4) == 2 and half(2) == 2
+  expect Box { size: 1 } fails big
+  expect Box { size: 9 } fails "not this text"
+  expect Box { size: 9 } passes
+  expect Box { size: 1 } warns "empty"
+  expect Box { size: 0 } warns "empty"
+}
+-- want --
+[exit 1]
+[stdout]
+FAIL  a/a.canon:15  every form
+  a/a.canon:16  expect half(4) == 3
+  expected: 3
+  got: 2
+  a/a.canon:17  expect half(4) >= 3
+  expected: >= 3
+  got: 2
+  a/a.canon:18  expect half(4) == 5
+  expected: 5
+  got: 2
+  a/a.canon:20  expect half(4) == 2 and half(2) == 2
+  got: false
+  a/a.canon:21  expect Box { size: 1 } fails big
+  got: no finding
+  a/a.canon:22  expect Box { size: 9 } fails "not this text"
+  got: error[E5001]  box is too big
+  a/a.canon:23  expect Box { size: 9 } passes
+  got: error[E5001]  box is too big
+  a/a.canon:24  expect Box { size: 1 } warns "empty"
+  got: no finding
+
+0 passed, 1 failed (…)
+[stderr]

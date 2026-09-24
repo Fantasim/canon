@@ -31,7 +31,7 @@ test "a statement reading through the ref" {
 -- outcomes.txt --
 a "an expect reading through the ref": failed true, stopped false, broken false
   expect line 21: passed false (reads poisoned items)
-a "a statement reading through the ref": failed true, stopped true, broken false, reads poisoned items
+a "a statement reading through the ref": failed true, stopped true, broken false, reads poisoned items at line 25
 
 error[E4102]  a/a.canon:14:10
   division by zero

@@ -33,6 +33,8 @@ type evalHost struct {
 	loads     []*syntax.LoadExpr
 	loadCause string
 	errs      []error
+	logBags   func() check.Bags            // set by canon test: each verification gets fresh bags...
+	causes    map[eval.Root][]diag.Finding // ...and a value it poisons keeps their errors
 }
 
 // Load runs e's form against expected; an unsupported form, option or default is ErrLoad,
@@ -79,8 +81,44 @@ func unsupportedCause(err error) string {
 
 // Verify runs stage B on one top-level value, then poisons it or reports E3505 (EVALUATION.md §5).
 func (h *evalHost) Verify(ctx context.Context, root eval.Root, v value.Value) bool {
+	if h.logBags != nil {
+		return h.verifyLogged(ctx, root, v)
+	}
 	res, err := h.verifier.Check(ctx, root, v)
 	return h.settle(h.ev, root, res, err)
+}
+
+// verifyLogged verifies into fresh bags and keeps the errors of one that poisons the value, which
+// canon test prints under a read of it (meta/decisions/log-2026-09-24.md "canon test review calls").
+func (h *evalHost) verifyLogged(ctx context.Context, root eval.Root, v value.Value) bool {
+	bags := h.logBags()
+	restore := h.ev.ReportAside(bags) // a where predicate's hard error is the evaluator's (EVALUATION.md §7.1)
+	res, err := verify.NewShared(h.index, h.ev, bags, h.assets).Check(ctx, root, v)
+	restore()
+	if err == nil && res.Poisoned {
+		h.causes[root] = h.errorsIn(bags)
+	}
+	return h.settle(h.ev, root, res, err)
+}
+
+// errorsIn is the error findings of bags, in package order.
+func (h *evalHost) errorsIn(bags check.Bags) []diag.Finding {
+	var out []diag.Finding
+	for _, cp := range h.prog.Packages {
+		out = append(out, errorsOf(bags[cp.Path])...)
+	}
+	return out
+}
+
+// errorsOf is the error findings of b.
+func errorsOf(b *diag.Bag) []diag.Finding {
+	var out []diag.Finding
+	for _, f := range b.Findings() {
+		if f.Severity == diag.Error {
+			out = append(out, f)
+		}
+	}
+	return out
 }
 
 // VerifyInto verifies a value first forced in a vector through ev, the vector's evaluator, into its throwaway bags (ADR-0003, EVALUATION.md §1).

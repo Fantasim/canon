@@ -193,4 +193,5 @@ const (
 	fmtMixed         = "%w: %s: %w"
 	fmtQuoted        = "%q"
 	expectedTargets  = "go, cpp, ts, json or view"
+	expectedPattern  = "an RE2 regular expression"
 )

@@ -48,8 +48,6 @@ func apiError(err error) error {
 	switch {
 	case errors.As(err, &oe):
 		return &ProjectError{Err: projectSentinel(err), Findings: fromDiag(oe.Findings.Files, oe.Findings.List)}
-	case errors.As(err, &ue) && errors.Is(err, build.ErrUnknownLayer):
-		return fmt.Errorf(fmtUnknown, ErrUnknownLayer, ue.Name)
 	case errors.As(err, &ue) && errors.Is(err, project.ErrMixedDirectory):
 		return fmt.Errorf(fmtMixed, ErrUnknownPackage, ue.Name, project.ErrMixedDirectory)
 	case errors.As(err, &ue):
@@ -66,6 +64,8 @@ func projectSentinel(err error) error {
 		return ErrNoProject
 	case errors.Is(err, project.ErrUnsupportedVersion):
 		return ErrUnsupportedVersion
+	case errors.Is(err, build.ErrUnknownLayer): // E1901, with its findings (log "canon test review calls")
+		return ErrUnknownLayer
 	}
 	return ErrProject
 }

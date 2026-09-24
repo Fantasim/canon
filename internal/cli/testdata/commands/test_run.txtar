@@ -1,0 +1,34 @@
+CLI.md §3.5, EVALUATION.md §10.1: --run selects the tests whose name the RE2 expression finds
+(search semantics); the others do not run and are not counted.
+-- args --
+test
+--run
+overlap
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+test "windows overlap" {
+  expect false
+}
+
+test "no overlapping windows" {
+  expect true
+}
+
+test "something else" {
+  expect false
+}
+-- want --
+[exit 1]
+[stdout]
+FAIL  a/a.canon:4  windows overlap
+  a/a.canon:5  expect false
+  got: false
+
+1 passed, 1 failed (…)
+[stderr]

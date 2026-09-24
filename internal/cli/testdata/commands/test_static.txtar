@@ -1,0 +1,27 @@
+ADR-0004, CLI.md §3.5, EVALUATION.md §1: a static error that no test depends on is printed first
+in canon check's format, and makes the run exit 1 though every test passes.
+-- args --
+test
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+local let unused = nothing
+
+test "passes" {
+  expect true
+}
+-- want --
+[exit 1]
+[stdout]
+error[E2102]  a/a.canon:4:20
+  unknown name nothing
+
+1 error, 0 warnings in 1 package (…)
+
+1 passed, 0 failed (…)
+[stderr]

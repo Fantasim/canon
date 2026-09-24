@@ -171,11 +171,12 @@ func (inv *invocation) writeBuildJSONLines(res *canon.BuildResult) error {
 	return nil
 }
 
+// writeJSONLine writes v as one JSON line, `<`, `>` and `&` unescaped as the finding writer leaves them (API.md F5).
 func (inv *invocation) writeJSONLine(v any) error {
-	data, err := json.Marshal(v)
-	if err != nil {
+	enc := json.NewEncoder(inv.env.Stdout)
+	enc.SetEscapeHTML(false)
+	if err := enc.Encode(v); err != nil {
 		return fmt.Errorf(fmtWrap, err)
 	}
-	writeLine(inv.env.Stdout, string(data))
 	return nil
 }

@@ -28,6 +28,7 @@ func commands() map[string]command {
 		cmdCheck:   {run: runCheck},
 		cmdInit:    {flags: initFlags, run: runInit},
 		cmdNew:     {run: runNew},
+		cmdTest:    {flags: testFlags, run: runTest},
 		cmdVersion: {run: runVersion},
 	}
 }

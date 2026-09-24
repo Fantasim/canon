@@ -1,6 +1,10 @@
 package cli
 
-import canon "github.com/fantasim/canonlang/api"
+import (
+	"time"
+
+	canon "github.com/fantasim/canonlang/api"
+)
 
 // Exit codes (CLI.md §2.5).
 const (
@@ -19,6 +23,7 @@ const (
 	cmdInit    = "init"
 	cmdNew     = "new"
 	cmdVersion = "version"
+	cmdTest    = "test"
 )
 
 // Flags (CLI.md §2.3, §3.1, §3.4).
@@ -33,6 +38,9 @@ const (
 	flagTarget      = "target"
 	flagCheck       = "check"
 	flagAdopt       = "adopt"
+	flagLayer       = "layer"
+	flagRun         = "run"
+	flagVerbose     = "v"
 	formatText      = "text"
 	formatJSON      = "json"
 	rootAssign      = "="
@@ -50,6 +58,9 @@ const (
 	usageTarget      = "emit only this `target` (go, cpp, ts, json, view); repeatable"
 	usageCheck       = "write nothing; exit 1 if any output or lock would change"
 	usageAdopt       = "take over the hand-written file at `path` (repeatable)"
+	usageLayer       = "apply the layer `name`; repeatable, applied in order"
+	usageRun         = "run only the tests whose name matches the RE2 `regex`"
+	usageVerbose     = "also print each passing test"
 )
 
 // usageText lists the commands; the flags follow it (CLI.md §1).
@@ -60,6 +71,7 @@ commands:
   check [packages...]   parse and check packages, print findings
   init                  create project.canon in the current directory
   new <package>         create a package directory with a first file
+  test [packages...]    run the test blocks of packages
   version               print the compiler, language and format versions
 
 flags:
@@ -96,6 +108,27 @@ const (
 	outputIndent       = "  "
 	lockHeader         = "lock:"
 	stalePathPrefix    = "stale "
+)
+
+// canon test's text report (CLI.md §3.5, API.md F15).
+const (
+	fmtTestHead    = "%s  %s:%d  %s"
+	fmtAt          = "%s:%d  %s"
+	fmtFindingText = "%s[%s]  %s"
+	fmtTestSummary = "%d passed, %d failed (%s)"
+	fmtMillis      = "%d ms"
+	fmtSeconds     = "%.1f s"
+	tenthSecond    = 100 * time.Millisecond
+	testFail       = "FAIL"
+	testOK         = "ok"
+	labelExpected  = "expected:"
+	labelGot       = "got:"
+	gotNoFinding   = "no finding"
+	fmtPoisoned    = "reads poisoned %s"
+	opEqual        = "=="
+	wordSep        = " "
+	statusPass     = "pass"
+	statusFail     = "fail"
 )
 
 // Messages of the CLI itself: usage errors and failures that are not findings.
