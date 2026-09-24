@@ -19,6 +19,7 @@ type emitSite struct {
 	outSpan  source.Span
 	display  string // the output as a display path (WIRE.md §2.3)
 	unmapped bool   // a go emit whose resolved directory is under no go_module root (E8007)
+	written  bool   // a go emit whose package is written, so check validated it (E8009); a default from out is not yet
 }
 
 func (es *emitSite) span() source.Span { return es.file.Span(es.decl.Target) }
@@ -32,25 +33,33 @@ func (s *stage) emits(u *unit) {
 	seen := map[Target]bool{}
 	for _, f := range sourceFiles(u.cp) {
 		for _, d := range f.Decls {
-			ed, ok := d.(*syntax.EmitDecl)
-			if !ok || ed.Target == nil || ed.Options == nil {
-				continue
+			if ed, ok := d.(*syntax.EmitDecl); ok && ed.Target != nil && ed.Options != nil {
+				s.emit(u, f, ed, seen, bag)
 			}
-			t, known := wordIndex[Target](targetWords[:], ed.Target.Name)
-			if !known || seen[t] {
-				continue
-			}
-			seen[t] = true
-			es := &emitSite{e: &Emit{Target: t}, decl: ed, file: f}
-			s.readOptions(u, es)
-			s.resolveOut(u, es, s.layout, bag)
-			u.emits = append(u.emits, es)
-			u.p.Emits = append(u.p.Emits, es.e)
 		}
 	}
 }
 
-// readOptions types the options check validated (E8003, E8009): out, mode, values, package, namespace; an absent `values` and an explicit `values: []` both read as nil, so selectedNames expands either to every public value (decision 127).
+// emit reads one emit of u, unless its target is unknown (E8003) or already seen (E8002).
+func (s *stage) emit(u *unit, f *syntax.File, ed *syntax.EmitDecl, seen map[Target]bool, bag *diag.Bag) {
+	t, known := wordIndex[Target](targetWords[:], ed.Target.Name)
+	if !known || seen[t] {
+		return
+	}
+	seen[t] = true
+	es := &emitSite{e: &Emit{Target: t}, decl: ed, file: f}
+	s.readOptions(u, es)
+	s.resolveOut(u, es, s.layout, bag)
+	u.emits = append(u.emits, es)
+	u.p.Emits = append(u.p.Emits, es.e)
+}
+
+// modeRefused reports a code emit whose mode check refused (E8009): its out, directory and package still count in every rule that does not depend on the mode, and no mode-dependent rule judges it (decision 213).
+func modeRefused(e *Emit) bool {
+	return isCode(e.Target) && e.Mode == ModeNone
+}
+
+// readOptions types the options check validated (E8003, E8009): out, mode (ModeNone when check refused it), values, package, namespace; an absent `values` and an explicit `values: []` both read as nil, so selectedNames expands either to every public value (decision 127).
 func (s *stage) readOptions(u *unit, es *emitSite) {
 	e := es.e
 	if e.Target == TargetGo || e.Target == TargetCpp || e.Target == TargetTS {
@@ -66,6 +75,7 @@ func (s *stage) readOptions(u *unit, es *emitSite) {
 			e.Out = constString(fi.Value)
 			es.outSpan = es.file.Span(fi.Value)
 		case check.OptMode:
+			e.Mode = ModeNone
 			if id, isWord := fi.Value.(*syntax.IdentExpr); isWord {
 				e.Mode, _ = wordIndex[Mode](modeWords[:], id.Name)
 			}
@@ -73,6 +83,7 @@ func (s *stage) readOptions(u *unit, es *emitSite) {
 			e.Values = valueNames(fi.Value)
 		case check.OptPackage:
 			e.GoPackage = constString(fi.Value)
+			es.written = e.GoPackage != ""
 		case check.OptNamespace:
 			e.Namespace = constString(fi.Value)
 		}

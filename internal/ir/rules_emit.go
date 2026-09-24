@@ -103,12 +103,15 @@ func (s *stage) checkMode(u *unit, es *emitSite) {
 // checkContainers is E8015: a data or embedded emit's values are tables, keyed lists or records (CODEGEN.md §2.2).
 func (s *stage) checkContainers(u *unit, es *emitSite) {
 	for _, v := range selectedValues(u, es.e) {
-		t := v.v.Type
-		if t.Kind == types.Table || t.Kind == types.Record || t.Kind == types.List && t.KeyedBy != nil {
-			continue
+		if !dataContainer(v.v.Type) {
+			u.report(diag.E8015.At(v.span().span(), v.v.Name, v.t))
 		}
-		u.report(diag.E8015.At(v.span().span(), v.v.Name, v.t))
 	}
+}
+
+// dataContainer reports a type data and embedded modes emit: a table, a keyed list or a record (CODEGEN.md §2.2).
+func dataContainer(t TypeRef) bool {
+	return t.Kind == types.Table || t.Kind == types.Record || t.Kind == types.List && t.KeyedBy != nil
 }
 
 // checkDataFns is E8013: data files hold no package fn, and no method table keyed by a ref (CODEGEN.md §5.10).

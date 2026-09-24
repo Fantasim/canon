@@ -1,0 +1,23 @@
+DECISIONS 213, TYPES.md §3.6: a table element declaring `id` is broken, so its field getter and the table id meet nothing (no E8005).
+-- a/a.canon --
+package a
+
+/// A column.
+record Column {
+  /// Reserved.
+  id: Int = 0
+  /// Whether it hides.
+  hideable: Bool
+}
+
+/// Every column.
+let columns: table Column = {
+  todo { hideable: false }
+}
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+error[E2105]  a/a.canon:6:3
+  id is reserved on table entries
+
+1 error, 0 warnings in 1 package (…)

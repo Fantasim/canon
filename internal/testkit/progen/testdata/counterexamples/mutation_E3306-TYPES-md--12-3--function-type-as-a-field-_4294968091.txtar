@@ -2,7 +2,6 @@ suite mutation
 name E3306 TYPES.md §12.3 (function type as a field)
 case 794
 seed 4294968091
-open ir
 sig extra E8151
 packages features.matching
 want E3306 features/matching/matching.canon 887 904 check

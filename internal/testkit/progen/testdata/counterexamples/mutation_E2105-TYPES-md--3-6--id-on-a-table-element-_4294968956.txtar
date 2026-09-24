@@ -2,11 +2,11 @@ suite mutation
 name E2105 TYPES.md §3.6 (id on a table element)
 case 1659
 seed 4294968956
-open ir
-sig extra E3002, E8005
+open check
+sig extra E3002
 packages teamboard
 want E2105 teamboard/taxonomy.canon 1747 1749 check
-failure extra [E8005 teamboard/taxonomy.canon:56:3 "go: ID is generated for both teamboard.Column and teamboard.Column.id"; E3002 teamboard/taxonomy.canon:159:62 "expected [String], found [Int]"; E3002 teamboard/taxonomy.canon:163:7 "expected Bool, found Int"] besides [E2105 teamboard/taxonomy.canon:56:3 "id is reserved on table entries"]
+failure extra [E3002 teamboard/taxonomy.canon:159:62 "expected [String], found [Int]"; E3002 teamboard/taxonomy.canon:163:7 "expected Bool, found Int"] besides [E2105 teamboard/taxonomy.canon:56:3 "id is reserved on table entries"]
 -- project.canon --
 project sovereign {
   canon: "0.1"

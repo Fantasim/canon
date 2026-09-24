@@ -1,0 +1,15 @@
+DECISIONS 213, TYPES.md §3.2: the second of two constants of one name is broken, so its go name meets nothing (no E8005).
+-- a/a.canon --
+package a
+
+/// The version.
+const VERSION = 7
+/// The version again.
+const VERSION = 7
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+error[E2106]  a/a.canon:6:7
+  VERSION is declared twice (first at a/a.canon:4)
+
+1 error, 0 warnings in 1 package (…)

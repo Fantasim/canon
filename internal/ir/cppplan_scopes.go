@@ -48,7 +48,7 @@ func (pl *CppNamePlan) declareNamespaceTypes() {
 		}
 	}
 	for _, c := range pl.classes() {
-		pl.shareNS(pl.className(c), pl.classOrigin(c), c)
+		pl.shareNSFrom(pl.className(c), pl.classOrigin(c), c, pl.classFrom(c))
 		if v, ok := c.(*Variant); ok {
 			pl.declareEnum(pl.KindName(v), v.QName(), v, false)
 		}
@@ -57,10 +57,15 @@ func (pl *CppNamePlan) declareNamespaceTypes() {
 
 // shareNS declares a namespace name that the header writes, which other packages emitted into the namespace share (§3.5).
 func (pl *CppNamePlan) shareNS(name, origin string, item any) {
+	pl.shareNSFrom(name, origin, item, nil)
+}
+
+// shareNSFrom is shareNS for a name built on the name of type from (declareFrom).
+func (pl *CppNamePlan) shareNSFrom(name, origin string, item, from any) {
 	if _, seen := pl.nsItems[name]; !seen {
 		pl.nsItems[name] = item
 	}
-	pl.declare(pl.ns, name, origin, item)
+	pl.declareFrom(pl.ns, name, origin, item, from)
 	pl.share(pl.e.Namespace, name, origin, item)
 }
 
@@ -135,6 +140,14 @@ func (pl *CppNamePlan) variantOf(c *Case) *Variant {
 		}
 	}
 	return &Variant{}
+}
+
+// classFrom is the variant a case's class name is built on, nil for a record or variant, or a case whose @cpp(name:) replaces it (CODEGEN.md §3.3).
+func (pl *CppNamePlan) classFrom(c any) any {
+	if cs, ok := c.(*Case); ok {
+		return unlessOverridden(NameOptions{Name: cs.Cpp.Name}, pl.variantOf(cs))
+	}
+	return nil
 }
 
 // classOrigin is a class as messages name it: its qualified name, a case's under its variant's.

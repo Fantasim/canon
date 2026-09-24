@@ -66,7 +66,7 @@ func fieldDecl(items []syntax.RecordItem, name string) *syntax.FieldDecl {
 	return nil
 }
 
-// fieldDefault is a constant default, folded, or Computed for one reading earlier fields or the record's parameters (TYPES.md §15, decision 80).
+// fieldDefault is a constant default, folded, or Computed for one reading earlier fields or the record's parameters (TYPES.md §15, decision 80); a broken owner's default is never folded (decisions 209, 213).
 func (s *stage) fieldDefault(fd *Field, f *types.Field, owner check.Object, params map[check.Object]bool) {
 	if f.Default == nil {
 		return
@@ -75,7 +75,7 @@ func (s *stage) fieldDefault(fd *Field, f *types.Field, owner check.Object, para
 		fd.Computed = true
 		return
 	}
-	if s.in.Fold == nil || owner == nil {
+	if s.in.Fold == nil || owner == nil || s.info.Broken[owner] {
 		return
 	}
 	if v, ok := s.in.Fold.Fold(s.ctx, owner, f.Default, s.info); ok {

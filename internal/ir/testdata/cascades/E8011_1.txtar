@@ -1,0 +1,27 @@
+DECISIONS 213, CODEGEN.md §3.5: a type's invalid @go(name:) is one E8011 at the type; the names built on it (its member constants, its table id type and members) are not refused again at the members and the table.
+-- a/a.canon --
+package a
+
+/// A tone.
+enum Tone @go(name: "1Tone") { red, blue }
+
+/// A severity.
+record Severity @go(name: "1Bad") {
+  /// Its tone.
+  tone: Tone
+}
+
+/// Every severity.
+let severities: table Severity = {
+  low { tone: red }
+}
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+error[E8011]  a/a.canon:4:6
+  1Tone is not a valid go identifier for @go(name:)
+
+error[E8011]  a/a.canon:7:8
+  1Bad is not a valid go identifier for @go(name:)
+
+2 errors, 0 warnings in 1 package (…)

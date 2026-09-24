@@ -10,7 +10,10 @@ import (
 	"github.com/fantasim/canonlang/internal/testkit/golden"
 )
 
-const findingsFile = "findings.txt"
+const (
+	findingsFile = "findings.txt"
+	selectedFile = "selected.txt" // the packages a case builds, space-separated; all when absent
+)
 
 // reFindingCode is a rendered finding's code (diag.Render's `error[Exxxx]`/`warning[Wxxxx]`),
 // not a code merely mentioned in a message's text.
@@ -18,16 +21,32 @@ var reFindingCode = regexp.MustCompile(`(?:error|warning)\[([EW][0-9]{4})\]`)
 
 // IMPLEMENTATION-PLAN.md §7.2: each emit rule's txtar case checks cleanly and fails only its stage-E rule; values come from its `<pkg>.<name>.json` files.
 func TestFindings(t *testing.T) {
-	golden.Run(t, "testdata/findings/*.txtar", func(t *testing.T, c golden.Case) []byte {
+	onlyItsCode(t, "testdata/findings/*.txtar")
+}
+
+// TestCascades is DECISIONS 213 (no stage-E finding on a broken declaration or a refused emit's mode, one E8011 per refused type name; 209: a broken check breaks its record) and one finding per refusal in stage E: each case's program has one error, the finding its file names, and stage E adds nothing to it.
+func TestCascades(t *testing.T) {
+	onlyItsCode(t, "testdata/cascades/*.txtar")
+}
+
+// onlyItsCode builds every case of glob (the packages of its selected.txt, else all) and requires the findings to be the code its file name starts with, and nothing else.
+func onlyItsCode(t *testing.T, glob string) {
+	t.Helper()
+	golden.Run(t, glob, func(t *testing.T, c golden.Case) []byte {
 		t.Helper()
 		w := newWorld(t)
+		var selected []string
 		for _, f := range c.Archive.Files {
-			if f.Name != findingsFile {
+			switch f.Name {
+			case findingsFile:
+			case selectedFile:
+				selected = strings.Fields(string(f.Data))
+			default:
 				w.add(t, f.Name, f.Data)
 			}
 		}
 		w.calls = w.fixtureCalls
-		w.build(t)
+		w.build(t, selected...)
 		out := w.findings(t)
 		code := strings.SplitN(filepath.Base(c.Path), "_", 2)[0]
 		if !strings.Contains(out, "["+code+"]") {

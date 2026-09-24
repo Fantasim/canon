@@ -60,10 +60,13 @@ func (s *stage) cppNamesOf(u *unit) []cppShared {
 	return PlanCppNames(s.declaredOnly(u), es.e).shared
 }
 
-// declaredOnly is an unselected package's public IR as declared, with no value evaluated: what its C++ names need.
+// declaredOnly is an unselected package's public IR as declared, broken declarations left out (decision 213), with no value evaluated: what its C++ names need.
 func (s *stage) declaredOnly(u *unit) *Package {
 	p := &Package{Name: u.p.Name, Dir: u.p.Dir, Emits: u.p.Emits}
 	for _, obj := range u.cp.Decls {
+		if s.info.Broken[obj] {
+			continue
+		}
 		switch d := obj.Decl().(type) {
 		case *syntax.RecordDecl, *syntax.EnumDecl, *syntax.VariantDecl, *syntax.TypeDecl:
 			if t := s.publicType(obj); t != nil {

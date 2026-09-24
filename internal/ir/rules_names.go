@@ -1,6 +1,8 @@
 package ir
 
 import (
+	"go/token"
+	"slices"
 	"strings"
 
 	"github.com/fantasim/canonlang/internal/check"
@@ -29,9 +31,22 @@ func (s *stage) checkGoNames(u *unit) {
 	}
 	problems := goOverrideProblems(u.p)
 	if es.e.Mode == ModeBaked || es.e.Mode == ModeData {
-		problems = PlanGoNames(u.p, es.e).Problems()
+		problems = slices.DeleteFunc(PlanGoNames(u.p, es.e).Problems(), s.refusedImport(u))
 	}
 	reportNames(u, s.itemSpans(es), problems, check.TargetGo, map[any]bool{})
+}
+
+// refusedImport reports the import name of a dependency whose go emit writes a package check refused (E8009 at that emit, decision 213), matched by its import path, never by the name's text; a package defaulted from out is not validated by check yet, so its E8011 stays at the importer.
+func (s *stage) refusedImport(u *unit) func(GoNameProblem) bool {
+	refused := map[string]bool{}
+	for _, imp := range u.p.Imports {
+		if dep := s.units[imp.Name]; dep != nil {
+			if es := emitFor(dep, TargetGo); es != nil && es.written && !token.IsIdentifier(es.e.GoPackage) {
+				refused[es.e.GoImport] = true
+			}
+		}
+	}
+	return func(pr GoNameProblem) bool { return pr.Kind == GoNotIdentifier && pr.Item == nil && refused[pr.Origin] }
 }
 
 // checkCppNames reports a data-mode cpp emit's names from the name plan gen/cpp writes from (CODEGEN.md §3.5, decision 37): E8011 for a derived name C++ cannot declare, a keyword or a reserved namespace included (decision 202), E8005 for two names of one scope; the names its header shares with the other packages of its namespace wait for crossPackage. Other modes have no generator yet; overrides are checkOverrideNames'.

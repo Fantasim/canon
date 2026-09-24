@@ -1,0 +1,20 @@
+DECISIONS 213, CODEGEN.md §2.1: a mode written as a string is refused by check, not read as the default baked mode (no E8202).
+-- a/a.canon --
+package a
+
+/// A place.
+record Place {
+  /// Its key.
+  id: String
+}
+
+/// Every place.
+@reload let places: [Place] keyed by id = [{ id: "home" }]
+
+emit go { out: "@features/a", package: "a", mode: "data" }
+emit json { out: "out/" }
+-- findings.txt --
+error[E8009]  a/a.canon:12:51
+  option mode of emit go must be a mode name
+
+1 error, 0 warnings in 1 package (…)

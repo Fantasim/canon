@@ -45,8 +45,11 @@ func (s *stage) assemble(u *unit) {
 	}
 }
 
-// assembleDecl adds one top-level declaration of u, if it is public (CODEGEN.md §2.7).
+// assembleDecl adds one top-level declaration of u, if it is public (CODEGEN.md §2.7) and not broken: a broken declaration never enters the emit IR (decision 213), and everything naming it is broken too (TYPES.md §1, decision 209).
 func (s *stage) assembleDecl(u *unit, obj check.Object) {
+	if s.info.Broken[obj] {
+		return
+	}
 	switch d := obj.Decl().(type) {
 	case *syntax.RecordDecl, *syntax.EnumDecl, *syntax.VariantDecl, *syntax.TypeDecl:
 		if t := s.publicType(obj); t != nil {

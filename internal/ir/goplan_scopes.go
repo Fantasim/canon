@@ -1,6 +1,8 @@
 package ir
 
 import (
+	"slices"
+
 	"github.com/fantasim/canonlang/internal/types"
 )
 
@@ -31,8 +33,15 @@ func (n *namer) scope(what string) *nameScope {
 
 // declare adds name to sc for origin; a name that is no identifier of the target (decision 202), or that sc already holds, is a problem. Two origins collide once in the whole plan, however many of their names meet, in any scope (decision 203).
 func (n *namer) declare(sc *nameScope, name, origin string, item any) {
+	n.declareFrom(sc, name, origin, item, nil)
+}
+
+// declareFrom is declare for a name built on the name of type from (a member constant, a case type, a table id): when from is refused already, a name that is no identifier is from's E8011, not item's (decision 213).
+func (n *namer) declareFrom(sc *nameScope, name, origin string, item, from any) {
 	if !n.ident(name) {
-		n.problems = append(n.problems, GoNameProblem{Kind: GoNotIdentifier, Scope: sc.what, Name: name, Origin: origin, Item: item})
+		if from == nil || !n.refused(from) {
+			n.problems = append(n.problems, GoNameProblem{Kind: GoNotIdentifier, Scope: sc.what, Name: name, Origin: origin, Item: item})
+		}
 		return
 	}
 	if first, ok := sc.names[name]; ok {
@@ -43,6 +52,19 @@ func (n *namer) declare(sc *nameScope, name, origin string, item any) {
 		return
 	}
 	sc.names[name] = origin
+}
+
+// refused reports an item whose own name is already a problem other than a collision: an invalid override, or a name that is no identifier.
+func (n *namer) refused(item any) bool {
+	return slices.ContainsFunc(n.problems, func(pr GoNameProblem) bool { return pr.Kind != GoCollision && pr.Item == item })
+}
+
+// unlessOverridden is the type a derived name is built on, or nil when the item's own override replaces the whole name (CODEGEN.md §3.5).
+func unlessOverridden(own NameOptions, from Type) any {
+	if own.Name != "" {
+		return nil
+	}
+	return from
 }
 
 // declareAll declares every name of the package scope in gen/go's section order (CODEGEN.md §2.7), and each struct's, container's, data's and parameter list's own scope.
@@ -89,7 +111,7 @@ func (pl *GoNamePlan) declareEnums(top *nameScope) {
 		name, origin := pl.TypeName(e), e.QName()
 		pl.declare(top, name, origin, e)
 		for _, m := range e.Members {
-			pl.declare(top, pl.MemberName(e, m), origin+qnameSep+m.Name, m)
+			pl.declareFrom(top, pl.MemberName(e, m), origin+qnameSep+m.Name, m, unlessOverridden(m.Go, e))
 		}
 		pl.declare(top, pl.ParseName(name), origin, e)
 		pl.declare(top, pl.MembersName(name), origin, e)
@@ -112,7 +134,7 @@ func (pl *GoNamePlan) declareKindEnums(top *nameScope) {
 		kind, origin := pl.KindName(v), v.QName()
 		pl.declare(top, kind, origin, v)
 		for _, c := range v.Cases {
-			pl.declare(top, pl.KindMemberName(v, c), origin+qnameSep+c.Name, c)
+			pl.declareFrom(top, pl.KindMemberName(v, c), origin+qnameSep+c.Name, c, v)
 		}
 		pl.declare(top, pl.ParseName(kind), origin, v)
 		pl.declareMethods(kind, origin, v, goEnumMethods)
@@ -135,14 +157,14 @@ func (pl *GoNamePlan) declareIDEnums(top *nameScope) {
 			continue
 		}
 		name := pl.IDTypeName(rec)
-		pl.declare(top, name, v.Name, v)
+		pl.declareFrom(top, name, v.Name, v, rec)
 		if pl.data != nil {
 			continue
 		}
 		for _, id := range v.IDs {
-			pl.declare(top, pl.IDMemberName(rec, id), v.Name+qnameSep+id, v)
+			pl.declareFrom(top, pl.IDMemberName(rec, id), v.Name+qnameSep+id, v, rec)
 		}
-		pl.declare(top, pl.ParseName(name), v.Name, v)
+		pl.declareFrom(top, pl.ParseName(name), v.Name, v, rec)
 		pl.declareMethods(name, v.Name, v, goIDEnumMethods)
 	}
 }
@@ -182,7 +204,7 @@ func (pl *GoNamePlan) declareVariant(top *nameScope, v *Variant) {
 	}
 	for _, c := range v.Cases {
 		if len(c.Fields) > 0 {
-			pl.declare(top, pl.CaseName(v, c), origin+qnameSep+c.Name, c)
+			pl.declareFrom(top, pl.CaseName(v, c), origin+qnameSep+c.Name, c, unlessOverridden(c.Go, v))
 			pl.declareBody(pl.CaseName(v, c), origin+qnameSep+c.Name, nil, c.Fields, c.Methods)
 		}
 	}

@@ -8,9 +8,9 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// checkSafeInts is E8101: an integer a TypeScript emit writes fits a number, unless its field has @ts(bigint) (CODEGEN.md §4.1); not a value's own data in `types` mode, which emits none (decision 194).
+// checkSafeInts is E8101: an integer a TypeScript emit writes fits a number, unless its field has @ts(bigint) (CODEGEN.md §4.1); not a value's own data in `types` mode, which emits none (decision 194), nor in a refused mode (decision 213).
 func (s *stage) checkSafeInts(u *unit, es *emitSite) {
-	if es.e.Mode != ModeTypes {
+	if es.e.Mode != ModeTypes && !modeRefused(es.e) {
 		for _, v := range selectedValues(u, es.e) {
 			span := v.span().span()
 			s.unsafeInts(v.v.V, v.v.Name, false, func(n *value.Int, field string) {
@@ -112,13 +112,16 @@ func writtenFiles(u *unit) map[string]string {
 	return written
 }
 
-// dataModeNames are the value names a data-mode code emit of u selects.
+// dataModeNames are the value names a data-mode code emit of u selects and emits: a value data mode refuses (E8015, CODEGEN.md §2.2) is not emitted in data mode, so its refusal is reported once.
 func dataModeNames(u *unit) map[string]bool {
 	need := map[string]bool{}
 	for _, es := range u.emits {
-		if isCode(es.e.Target) && es.e.Mode == ModeData {
-			for _, name := range selectedNames(u, es.e) {
-				need[name] = true
+		if !isCode(es.e.Target) || es.e.Mode != ModeData {
+			continue
+		}
+		for _, v := range selectedValues(u, es.e) {
+			if dataContainer(v.v.Type) {
+				need[v.v.Name] = true
 			}
 		}
 	}
@@ -133,7 +136,7 @@ func (s *stage) checkReload(u *unit) {
 			continue
 		}
 		for _, es := range u.emits {
-			if es.e.Target != TargetGo && es.e.Target != TargetCpp || es.e.Mode == ModeData || !selects(u, es.e, v.v.Name) {
+			if es.e.Target != TargetGo && es.e.Target != TargetCpp || es.e.Mode == ModeData || modeRefused(es.e) || !selects(u, es.e, v.v.Name) {
 				continue
 			}
 			u.report(diag.E8202.At(v.span().span(), v.v.Name, targetWords[es.e.Target], modeWords[es.e.Mode]))

@@ -1,0 +1,25 @@
+DECISIONS 213, CODEGEN.md §2.1, §3.5: a go package defaulted from out is not validated by check yet, so a dependency's default that is no Go identifier stays E8011 at its importer.
+-- b/b.canon --
+package b
+
+/// A colour.
+enum Tone { red, blue }
+
+emit go { out: "@features/1b" }
+-- a/a.canon --
+package a
+
+import b { Tone }
+
+/// A badge.
+record Badge {
+  /// Its colour.
+  tone: Tone
+}
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+error[E8011]  a/a.canon:11:6
+  1b is not a valid go identifier for @go(name:)
+
+1 error, 0 warnings in 2 packages (…)

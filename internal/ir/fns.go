@@ -19,8 +19,7 @@ type fnSite struct {
 	recv  types.Type // the record or case of a method; nil for a package fn
 }
 
-// methods are the export methods of a record or case body, in declaration order; owner is
-// the record or case as messages name it (`Potion`, `Reward.item`).
+// methods are the export methods of a record or case body but the broken ones (decisions 209, 213), in declaration order; owner is the record or case as messages name it (`Potion`, `Reward.item`).
 func (s *stage) methods(ms []*types.Method, items []syntax.RecordItem, owner string, recv types.Type) []*ExportFn {
 	var out []*ExportFn
 	for _, m := range ms {
@@ -32,7 +31,7 @@ func (s *stage) methods(ms []*types.Method, items []syntax.RecordItem, owner str
 			continue
 		}
 		obj := s.info.Defs[d.Name]
-		if obj == nil {
+		if obj == nil || s.info.Broken[obj] {
 			continue
 		}
 		site := s.exportFn(obj, d, m.Type)

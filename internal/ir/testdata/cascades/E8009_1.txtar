@@ -1,0 +1,20 @@
+DECISIONS 213, CODEGEN.md §2.1: a go emit whose mode check refused has no mode, so its @reload value is not refused for it (no E8202).
+-- a/a.canon --
+package a
+
+/// A place.
+record Place {
+  /// Its key.
+  id: String
+}
+
+/// Every place.
+@reload let places: [Place] keyed by id = [{ id: "home" }]
+
+emit go { out: "@features/a", package: "a", mode: zzmode }
+emit json { out: "out/" }
+-- findings.txt --
+error[E8009]  a/a.canon:12:51
+  invalid mode zzmode for emit go: expected one of baked, embedded, data, types
+
+1 error, 0 warnings in 1 package (…)

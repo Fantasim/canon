@@ -1,0 +1,36 @@
+DECISIONS 213, CODEGEN.md §3.5: provenance, not a text prefix, silences a derived name: the table id built on Aa's refused override is Aa's E8011, while a field and a constant whose own names merely start alike keep theirs.
+-- a/a.canon --
+package a
+
+/// An a.
+record Aa @go(name: "1") {
+  /// Its level.
+  level: Int
+}
+
+/// Every a.
+let aas: table Aa = {
+  x { level: 1 }
+}
+
+/// A b.
+record Bb {
+  /// A field.
+  _1: Int
+}
+
+/// A constant.
+const _1z = 3
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+error[E8011]  a/a.canon:4:8
+  1 is not a valid go identifier for @go(name:)
+
+error[E8011]  a/a.canon:17:3
+  1 is not a valid go identifier for @go(name:)
+
+error[E8011]  a/a.canon:21:7
+  1Z is not a valid go identifier for @go(name:)
+
+3 errors, 0 warnings in 1 package (…)

@@ -1,0 +1,31 @@
+DECISIONS 213, CODEGEN.md §3.5: a variant's invalid @cpp(name:) is one E8011 at the variant; its case types, built on it, are not refused again at the cases.
+-- a/a.canon --
+package a
+
+/// An event.
+variant Event @cpp(name: "3Bad") {
+  /// A spawn.
+  spawn {
+    /// When.
+    at: Int
+  }
+  /// A despawn.
+  despawn
+}
+
+/// A log.
+record Log {
+  /// Its events.
+  events: [Event]
+}
+
+/// The log.
+let log: Log = { events: [] }
+
+emit cpp { out: "@features/a", mode: data }
+emit json { out: "out/" }
+-- findings.txt --
+error[E8011]  a/a.canon:4:9
+  3Bad is not a valid cpp identifier for @cpp(name:)
+
+1 error, 0 warnings in 1 package (…)

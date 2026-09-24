@@ -2,7 +2,6 @@ suite mutation
 name E3306 TYPES.md §12.3 (function type as a field)
 case 567
 seed 4294967864
-open ir
 sig extra E8012
 packages sovcommon.time
 want E3306 sovcommon/time/time.canon 332 349 check
