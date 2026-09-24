@@ -85,7 +85,7 @@ func TestTeamboardGolden(t *testing.T) {
 	checkGoldens(t, files, sortedPaths(files), teamboardGolden)
 }
 
-// CODEGEN.md §9, IMPLEMENTATION-PLAN M1 item 4: go 1.23 builds it; getters read every value.
+// CODEGEN.md §9, decision 205: the installed Go builds it; getters read every value.
 func TestTeamboardCompiles(t *testing.T) {
 	w := loadWorld(t, teamboardIR, teamboardCells)
 	files := generate(t, w)

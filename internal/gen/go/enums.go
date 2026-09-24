@@ -106,7 +106,11 @@ func (g *gen) idEnums() {
 			continue
 		}
 		rec, ok := g.sub(v.Type.Elem).Named.(*ir.Record)
-		if !ok {
+		switch {
+		case !ok:
+			continue
+		case g.isData():
+			g.printf(stringTypeFormat, g.names.IDTypeName(rec)) // CODEGEN.md §5.3: data mode keys are strings
 			continue
 		}
 		s := &enumSpec{name: g.names.IDTypeName(rec), under: smallestUint(len(v.IDs)), parseArg: keyArg}

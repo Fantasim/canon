@@ -10,6 +10,7 @@ import (
 
 // body is what a record or case type holds: slots, finite methods, a table's id type (§5.3).
 type body struct {
+	key    any    // the *ir.Record or *ir.Case, which data mode's holders index
 	owner  string // Canon name, for messages
 	goName string
 	slots  []*slot
@@ -18,8 +19,8 @@ type body struct {
 }
 
 // recordBody gathers the fields and export fns of a record or case (CODEGEN.md §5.4).
-func (g *gen) recordBody(owner, goName string, fields []*ir.Field, fns []*ir.ExportFn) *body {
-	b := &body{owner: owner, goName: goName}
+func (g *gen) recordBody(key any, owner, goName string, fields []*ir.Field, fns []*ir.ExportFn) *body {
+	b := &body{key: key, owner: owner, goName: goName}
 	for _, f := range fields {
 		if f.Input != nil {
 			g.failf(ErrUnsupported, "input field %s.%s", owner, f.Name)
@@ -28,7 +29,8 @@ func (g *gen) recordBody(owner, goName string, fields []*ir.Field, fns []*ir.Exp
 			continue // CODEGEN.md §4.4: a Never? field is not emitted at all
 		}
 		s := g.newSlot(owner+dot+f.Name, g.names.Slot(f))
-		s.doc, s.field = f.Doc, f.Name
+		s.doc, s.field, s.src = f.Doc, f.Name, f
+		g.dataSlot(s, key)
 		b.slots = append(b.slots, s)
 	}
 	for _, fn := range fns {
@@ -43,9 +45,13 @@ func (g *gen) addMethod(b *body, owner string, fn *ir.ExportFn) {
 	case ir.FnPrecomputed:
 		s := g.newSlot(origin, g.names.MethodSlot(fn))
 		s.doc, s.fn = fn.Doc, fn
+		g.dataSlot(s, b.key)
 		b.slots = append(b.slots, s)
 	case ir.FnLookup:
-		b.finite = append(b.finite, g.newFinite(origin, fn))
+		f := g.newFinite(origin, fn)
+		f.method = true
+		g.dataFinite(f, b.key)
+		b.finite = append(b.finite, f)
 	default:
 		g.failf(ErrUnsupported, translatedFormat, origin)
 	}
@@ -62,6 +68,9 @@ func (g *gen) typeDecl(b *body, doc string) {
 	}
 	for _, f := range b.finite {
 		members = append(members, member{f.store, g.storageType(f)})
+		if g.isData() && f.res.Resolved {
+			members = append(members, member{f.res.KeyStore, g.keyStorageType(f)})
+		}
 	}
 	g.body.WriteString(docFor(b.goName, doc))
 	g.printf(structOpen, b.goName)
@@ -98,11 +107,30 @@ func (g *gen) writeGetter(prefix string, gt getter) {
 
 // record emits a record type (CODEGEN.md §5.4).
 func (g *gen) record(r *ir.Record) {
-	b := g.recordBody(r.QName(), g.goName(r), r.Fields, r.Methods)
+	g.typeDecl(g.bodyOf(r), r.Doc)
+}
+
+// bodyOf is the body of a record, built once (data mode reads it again).
+func (g *gen) bodyOf(r *ir.Record) *body {
+	if b := g.bodies[r]; b != nil {
+		return b
+	}
+	b := g.recordBody(r, r.QName(), g.goName(r), r.Fields, r.Methods)
 	if tv := g.tableOf[r]; tv != nil {
 		b.idType = g.idType(r)
 	}
-	g.typeDecl(b, r.Doc)
+	g.bodies[r] = b
+	return b
+}
+
+// caseBody is the body of a variant's case with fields, built once.
+func (g *gen) caseBody(v *ir.Variant, c *ir.Case) *body {
+	if b := g.bodies[c]; b != nil {
+		return b
+	}
+	b := g.recordBody(c, v.QName()+dot+c.Name, g.names.CaseName(v, c), c.Fields, c.Methods)
+	g.bodies[c] = b
+	return b
 }
 
 // recordExpr is a record value as its getters return it: *R, pointing at the table entry
@@ -131,8 +159,7 @@ func (g *gen) recordLit(rec *ir.Record, r *value.Record) string {
 			parts = append(parts, pair{ir.GoRetiredStore, trueLit})
 		}
 	}
-	b := g.recordBody(rec.QName(), g.goName(rec), rec.Fields, rec.Methods)
-	parts = append(parts, g.bodyLit(b, r)...)
+	parts = append(parts, g.bodyLit(g.bodyOf(rec), r)...)
 	return compositeLit(g.typeName(rec), parts)
 }
 

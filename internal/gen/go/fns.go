@@ -22,6 +22,7 @@ type finiteMethod struct {
 	res     *slot    // how a cell is read, like a getter of the result type
 	pair    bool     // cells are {v, ok}: an optional result nil cannot mark
 	dims    []int
+	method  bool // a record's or case's method, whose ref result also gets its key getter
 }
 
 func (g *gen) newFinite(origin string, fn *ir.ExportFn) *finiteMethod {
@@ -30,11 +31,16 @@ func (g *gen) newFinite(origin string, fn *ir.ExportFn) *finiteMethod {
 		fn: fn, origin: origin, name: names.Name, store: names.Store, read: selfDot + names.Store,
 		params: names.Params, indexes: names.Indexes, res: g.newSlot(origin, names.Result),
 	}
-	f.pair = f.res.Optional && !strings.HasPrefix(g.cellType(f), pointer)
+	g.setPair(f)
 	for _, p := range fn.Params {
 		f.dims = append(f.dims, g.domainSize(origin, p.Type))
 	}
 	return f
+}
+
+// setPair makes the cells {v, ok} pairs when the result is optional and nil cannot mark none.
+func (g *gen) setPair(f *finiteMethod) {
+	f.pair = f.res.Optional && !strings.HasPrefix(g.cellType(f), pointer)
 }
 
 // domainSize is how many values a finite parameter has (CODEGEN.md §5.10, domain order).
@@ -65,15 +71,28 @@ func (g *gen) cellType(f *finiteMethod) string {
 	return g.slotKeyType(f.res)
 }
 
-func (g *gen) storageType(f *finiteMethod) string {
+// keyStorageType is the table of a resolved result's keys, read from the file (CODEGEN.md §5.8).
+func (g *gen) keyStorageType(f *finiteMethod) string {
+	cell := g.slotKeyType(f.res)
+	if f.res.Optional {
+		cell = fmtPairCell(cell)
+	}
+	return g.dims(f) + cell
+}
+
+func (g *gen) dims(f *finiteMethod) string {
 	var b strings.Builder
 	for _, n := range f.dims {
 		b.WriteString(lbracket + strconv.Itoa(n) + rbracket)
 	}
+	return b.String()
+}
+
+func (g *gen) storageType(f *finiteMethod) string {
 	if f.pair {
-		return b.String() + fmtPairCell(g.cellType(f))
+		return g.dims(f) + fmtPairCell(g.cellType(f))
 	}
-	return b.String() + g.cellType(f)
+	return g.dims(f) + g.cellType(f)
 }
 
 // cellArray is the table of a lookup as a Go expression: nested arrays, one level per
@@ -147,14 +166,13 @@ func (g *gen) writeFinite(prefix string, f *finiteMethod) {
 		sig[i] = name + space + g.paramType(p.Type)
 		index.WriteString(lbracket + g.paramIndex(&prelude, name, f.indexes[i], p.Type) + rbracket)
 	}
+	h := finiteHead{prefix: prefix, params: strings.Join(sig, listSep), prelude: prelude.String()}
 	cell := f.read + index.String()
-	body := returnKw + cell
-	if f.pair {
-		body = returnKw + cell + pairValue + listSep + cell + pairOK
+	if f.method && f.res.Ref != nil {
+		g.writeRefFinite(h, f, cell, index.String())
+		return
 	}
-	g.body.WriteString(docFor(f.name, f.fn.Doc))
-	result := results(g.cellType(f), f.pair)
-	g.printf("%s%s(%s) %s {\n%s%s\n}\n\n", prefix, f.name, strings.Join(sig, listSep), result, prelude.String(), body)
+	g.writeFiniteFunc(h, f.name, f.fn.Doc, results(g.cellType(f), f.pair), pairBody(cell, f.pair))
 }
 
 func (g *gen) paramType(t ir.TypeRef) string {
@@ -200,9 +218,13 @@ func (g *gen) codesIndex(local, name string, t ir.TypeRef) string {
 	return b.String() + rbrace + newline
 }
 
-// fns writes the package-level export fns in declaration order (CODEGEN.md §5.10).
+// fns writes the package-level export fns in declaration order; data mode has none (CODEGEN.md §5.10).
 func (g *gen) fns() {
 	for _, fn := range g.p.Fns {
+		if g.isData() && fn.Kind != ir.FnTranslated {
+			g.fail(newDetail(ErrUnsupported, fn.Name, packageFnFormat, fn.Name))
+			continue
+		}
 		switch fn.Kind {
 		case ir.FnLookup:
 			g.packageTable(g.newFinite(fn.Name, fn), fn.Table)

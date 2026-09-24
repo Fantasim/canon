@@ -1,0 +1,6 @@
+{
+  "$schema": "demo.shop.Shelf@0000000b",
+  "rows": [
+    {"id": "front", "slots": 1, "items": [], "next": null, "delete": 7, "i": 30, "flags": 13, "waits": [], "lit": 1, "size": {"depth": 3}}
+  ]
+}

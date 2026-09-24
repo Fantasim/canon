@@ -146,7 +146,7 @@ func headerLines(path string, content []byte) int {
 	return n
 }
 
-// compile runs gofmt -s -l, go vet and go test -bench in a go 1.23 module (CODEGEN.md §9).
+// compile runs gofmt -s -l, go vet and go test -bench in a module of the installed Go (CODEGEN.md §9).
 func compile(t *testing.T, w *world, files map[string][]byte, paths []string, smoke [][2]string) {
 	t.Helper()
 	if testing.Short() {
@@ -162,7 +162,7 @@ func compile(t *testing.T, w *world, files map[string][]byte, paths []string, sm
 			t.Fatal(err)
 		}
 	}
-	write("go.mod", []byte("module "+w.fx.Module+"\n\ngo 1.23\n"))
+	write("go.mod", []byte("module "+w.fx.Module+"\n\ngo "+goVersion(t)+"\n"))
 	for _, p := range paths {
 		write(p, files[p])
 	}

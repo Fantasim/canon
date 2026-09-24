@@ -4,8 +4,11 @@
 package rt
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"iter"
 	"math"
 	"os"
@@ -364,11 +367,22 @@ func ReadDataFile(path, schema string) (*DataFile, error) {
 	return ParseDataFile(path, raw, schema)
 }
 
-// ParseDataFile parses a data file (name is used in messages) and checks its $schema.
+// ParseDataFile parses a data file (name is used in messages) and checks its $schema. Keys
+// match exactly, and no object of the file may hold a key twice.
 func ParseDataFile(name string, raw []byte, schema string) (*DataFile, error) {
-	var f DataFile
-	if err := json.Unmarshal(raw, &f); err != nil {
+	if err := checkObjects(name, raw); err != nil {
+		return nil, err
+	}
+	var top map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &top); err != nil {
 		return nil, fmt.Errorf("%s: not a canon data file: %w", name, err)
+	}
+	if err := checkEnvelope(name, top); err != nil {
+		return nil, err
+	}
+	f := DataFile{Rows: top["rows"], Value: top["value"]}
+	if s, ok := top["$schema"]; ok && json.Unmarshal(s, &f.Schema) != nil {
+		f.Schema = ""
 	}
 	if f.Schema != schema {
 		got := f.Schema
@@ -378,6 +392,87 @@ func ParseDataFile(name string, raw []byte, schema string) (*DataFile, error) {
 		return nil, fmt.Errorf("%s: built from schema %s, this binary expects %s. Rebuild the data or deploy the matching binary", name, got, schema)
 	}
 	return &f, nil
+}
+
+// envelopeKeys are the keys of a data file's top-level object.
+var envelopeKeys = []string{"$fns", "$schema", "rows", "value"}
+
+// checkEnvelope refuses a top-level key equal to an envelope key only ignoring letter case,
+// naming the smallest such key in byte order.
+func checkEnvelope(name string, top map[string]json.RawMessage) error {
+	bad, want := "", ""
+	for key := range top {
+		for _, k := range envelopeKeys {
+			if key != k && strings.EqualFold(key, k) && (bad == "" || key < bad) {
+				bad, want = key, k
+			}
+		}
+	}
+	if bad != "" {
+		return fmt.Errorf("%s: %s: differs from %q only in letter case", name, bad, want)
+	}
+	return nil
+}
+
+// maxNesting is the deepest nesting of arrays and objects a data file may hold (WIRE.md §3.1).
+const maxNesting = 512
+
+// checkObjects reads the file once: it must be one JSON object, no object in it may hold a
+// key twice, and nothing may nest deeper than maxNesting. The error names the path.
+func checkObjects(name string, raw []byte) error {
+	type frame struct {
+		keys map[string]bool // the keys seen so far; nil in an array
+		path string          // the container's path
+		next int             // an array's next index
+	}
+	dec := json.NewDecoder(bytes.NewReader(raw))
+	dec.UseNumber()
+	if tok, err := dec.Token(); err != nil || tok != json.Delim('{') {
+		return fmt.Errorf("%s: not a canon data file: not a JSON object", name)
+	}
+	stack := []*frame{{keys: map[string]bool{}}}
+	for len(stack) > 0 {
+		tok, err := dec.Token()
+		if err != nil {
+			return fmt.Errorf("%s: not a canon data file: %w", name, err)
+		}
+		top := stack[len(stack)-1]
+		if tok == json.Delim('}') || tok == json.Delim(']') {
+			stack = stack[:len(stack)-1]
+			continue
+		}
+		var at string
+		if top.keys != nil {
+			key, _ := tok.(string)
+			at = key
+			if top.path != "" {
+				at = top.path + "." + key
+			}
+			if top.keys[key] {
+				return fmt.Errorf("%s: %s: duplicate key", name, at)
+			}
+			top.keys[key] = true
+			if tok, err = dec.Token(); err != nil {
+				return fmt.Errorf("%s: not a canon data file: %w", name, err)
+			}
+		} else {
+			at = top.path + "[" + strconv.Itoa(top.next) + "]"
+			top.next++
+		}
+		if (tok == json.Delim('{') || tok == json.Delim('[')) && len(stack) >= maxNesting {
+			return fmt.Errorf("%s: %s: nested deeper than %d levels", name, at, maxNesting)
+		}
+		switch tok {
+		case json.Delim('{'):
+			stack = append(stack, &frame{keys: map[string]bool{}, path: at})
+		case json.Delim('['):
+			stack = append(stack, &frame{path: at})
+		}
+	}
+	if _, err := dec.Token(); !errors.Is(err, io.EOF) {
+		return fmt.Errorf("%s: not a canon data file: data after the object", name)
+	}
+	return nil
 }
 
 // Missing is the error of a required key absent from a data file.

@@ -11,8 +11,9 @@ import (
 // slot is how a field, value or precomputed result is stored and read (CODEGEN.md §4.3, §5.8): the plan's layout and names, and what writing it needs.
 type slot struct {
 	ir.GoSlot
-	origin string // Canon name, for messages
-	field  string // the Canon field a field's slot reads; "" for any other slot
+	origin string    // Canon name, for messages
+	field  string    // the Canon field a field's slot reads; "" for any other slot
+	src    *ir.Field // that field, whose wire form data mode reads
 	doc    string
 	fn     *ir.ExportFn // the export fn of a precomputed result
 }
@@ -50,6 +51,9 @@ func (s *slot) hasKey() bool { return s.Key }
 
 // needsOK reports an optional slot that nil cannot mark: a pointer main alone can.
 func (s *slot) needsOK() bool { return s.OK }
+
+// mainOK reports a main getter that also returns ok: a resolved single ref is a pointer, nil for none (CODEGEN.md §5.8).
+func (s *slot) mainOK() bool { return s.OK && (s.Ref == nil || s.List) }
 
 // mainType is what the main getter returns: resolved refs are entries, never keys.
 func (g *gen) mainType(s *slot) string {
@@ -93,8 +97,8 @@ func (g *gen) getters(s *slot, recv string) []getter {
 	ok := s.needsOK()
 	if s.hasMain() {
 		out = append(out, getter{
-			name: s.Getter, result: results(g.mainType(s), ok),
-			body: returns(recv+dot+s.Store, ok, recv+dot+s.OKStore), doc: s.doc,
+			name: s.Getter, result: results(g.mainType(s), s.mainOK()),
+			body: returns(recv+dot+s.Store, s.mainOK(), recv+dot+s.OKStore), doc: s.doc,
 		})
 	}
 	if s.Ref == nil {

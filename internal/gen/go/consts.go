@@ -25,7 +25,7 @@ func (g *gen) constant(c *ir.Const) {
 	case types.Int, types.Float:
 		g.printf("const %s %s = %s\n\n", name, g.goType(c.Type), g.constExpr(c))
 	case types.Bool, types.String, types.LitUnion, types.Duration, types.Enum:
-		g.printf("const %s = %s\n\n", name, g.constExpr(c))
+		g.printf(constDeclFormat, name, g.constExpr(c))
 	default:
 		g.failKind(c.Type.Kind)
 	}

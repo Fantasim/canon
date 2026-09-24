@@ -35,3 +35,17 @@ func newDetail(err error, subject, format string, args ...any) *DetailError {
 func (e *DetailError) Error() string { return e.err.Error() + ": " + e.message }
 
 func (e *DetailError) Unwrap() error { return e.err }
+
+// What data mode refuses (ErrUnsupported, decision 124) and the collision its name check finds.
+const (
+	packageFnFormat      = "package-level export fn %s in data mode (CODEGEN.md §5.10)"
+	lookupParamFormat    = "%s: a finite parameter that is not an enum or a Bool, in data mode (CODEGEN.md §5.10)"
+	lookupRefFormat      = "%s: a finite-parameter method whose result holds a ref resolved at load, in data mode"
+	severalHoldersFormat = "%s: a ref that could resolve, in a record several emitted values hold"
+	dataValueFormat      = "data value %s that is not a table, a keyed list or a record (CODEGEN.md §2.2)"
+	foreignClassFormat   = "a record or variant of another package, %s, read by a loader at %s (its decoder is unexported there)"
+	unionFormat          = "%s: a literal union whose other arm is not written as a string, in data mode"
+	inlineFormat         = "%s: an optional or non-variant @json(inline) field, in data mode"
+	foldFormat           = "the keys %q and %q, equal but for letter case, in one object at %s (encoding/json matches keys case-insensitively)"
+	dataCollisionFormat  = "%s declares %s twice in data mode"
+)

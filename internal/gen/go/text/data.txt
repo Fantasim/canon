@@ -1,0 +1,227 @@
+{{define "table"}}{{.Doc}}type {{.Name}} struct {
+	{{.M.Rows}} {{.RT}}.KeyedList[{{.ID}}, {{.Elem}}]
+{{- range .Indexes}}
+	{{.Member}} map[{{.Type}}]int
+{{- end}}
+}
+
+// Len returns the number of entries.
+func (self *{{.Name}}) {{.M.Len}}() int { return self.{{.M.Rows}}.Len() }
+
+// At returns entry i, in source order.
+func (self *{{.Name}}) {{.M.At}}(i int) *{{.Elem}} { return self.{{.M.Rows}}.At(i) }
+
+// All yields every entry in source order.
+func (self *{{.Name}}) {{.M.All}}() {{.Iter}}.Seq[*{{.Elem}}] { return self.{{.M.Rows}}.All() }
+
+// Find returns the entry whose id is key.
+func (self *{{.Name}}) {{.M.Find}}(key string) (*{{.Elem}}, bool) { return self.{{.M.Rows}}.Find({{.ID}}(key)) }
+{{range .Indexes}}
+func (self *{{$.Name}}) {{.Method}}(key {{.Type}}) (*{{$.Elem}}, bool) {
+	i, ok := self.{{.Member}}[key]
+	if !ok {
+		return nil, false
+	}
+	return self.{{$.M.Rows}}.At(i), true
+}
+{{end}}
+{{end}}
+
+{{define "loader"}}{{.Doc}}func {{.Name}}({{.L.Path}} string) (*{{.Type}}, error) {
+	{{.L.Out}} := &{{.Type}}{}
+	if {{.L.Err}} := {{.Func}}({{.L.Path}}, {{.L.Out}}); {{.L.Err}} != nil {
+		return nil, {{.L.Err}}
+	}
+	return {{.L.Out}}, nil
+}
+
+{{end}}
+
+{{define "load"}}func {{.Func}}({{.L.Path}} string, {{.L.Out}} *{{.Type}}) error {
+	{{.L.F}}, {{.L.Err}} := {{.RT}}.ReadDataFile({{.L.Path}}, {{.Schema}})
+	if {{.L.Err}} != nil {
+		return {{.L.Err}}
+	}
+{{- if .Record}}
+	if {{.L.F}}.Value == nil {
+		return {{.RT}}.Missing({{.L.Path}}, "", "value")
+	}
+	return {{.Decode}}({{.L.Path}}, "value.", {{.L.F}}.Value, {{.L.Out}})
+}
+{{else}}
+	if {{.L.F}}.Rows == nil {
+		return {{.RT}}.Missing({{.L.Path}}, "", "rows")
+	}
+	var {{.L.Rows}} []{{.JSON}}.RawMessage
+	if {{.L.Err}} := {{.JSON}}.Unmarshal({{.L.F}}.Rows, &{{.L.Rows}}); {{.L.Err}} != nil {
+		return jsonError({{.L.Path}}, "rows.", {{.L.Err}})
+	}
+	if {{.L.Rows}} == nil {
+		return {{.FMT}}.Errorf("%s: rows: null", {{.L.Path}})
+	}
+	{{.L.Values}} := make([]{{.Elem}}, len({{.L.Rows}}))
+	{{.L.Keys}} := make([]{{.Key}}, len({{.L.Rows}}))
+	for {{.L.I}}, {{.L.Raw}} := range {{.L.Rows}} {
+{{- if .Table}}
+		{{.L.ID}}, {{.L.Retired}}, {{.L.Err}} := jsonRowID({{.L.Path}}, {{.FMT}}.Sprintf("rows[%d].", {{.L.I}}), {{.L.Raw}})
+		if {{.L.Err}} != nil {
+			return {{.L.Err}}
+		}
+{{- end}}
+		if {{.L.Err}} := {{.Decode}}({{.L.Path}}, {{.FMT}}.Sprintf("rows[%d].", {{.L.I}}), {{.L.Raw}}, &{{.L.Values}}[{{.L.I}}]); {{.L.Err}} != nil {
+			return {{.L.Err}}
+		}
+{{- if .Table}}
+		{{.L.Values}}[{{.L.I}}].{{.IDStore}}, {{.L.Values}}[{{.L.I}}].{{.RetiredStore}} = {{.Key}}({{.L.ID}}), {{.L.Retired}}
+{{- end}}
+		{{.L.Keys}}[{{.L.I}}] = {{.L.Values}}[{{.L.I}}].{{.KeyStore}}
+	}
+	{{.L.Out}}.{{.M.Rows}} = {{.RT}}.MakeKeyedList({{.L.Values}}, {{.L.Keys}})
+{{- range .Indexes}}
+	{{$.L.Out}}.{{.Member}} = make(map[{{.Type}}]int, len({{$.L.Values}}))
+	for {{$.L.I}} := range {{$.L.Values}} {
+		{{$.L.Out}}.{{.Member}}[{{$.L.Values}}[{{$.L.I}}].{{.Store}}] = {{$.L.I}}
+	}
+{{- end}}
+{{- if .Resolve}}
+	for {{.L.I}} := range {{.L.Out}}.{{.M.Rows}}.Len() {
+		if {{.L.Err}} := {{.Resolve}}({{.L.Path}}, {{.FMT}}.Sprintf("rows[%d].", {{.L.I}}), {{.L.Out}}, {{.L.Out}}.{{.M.Rows}}.At({{.L.I}})); {{.L.Err}} != nil {
+			return {{.L.Err}}
+		}
+	}
+{{- end}}
+	return nil
+}
+{{end}}
+{{end}}
+
+{{define "snapshot"}}// {{.Snap}} holds every @reload value of package {{.Pkg}}, loaded together and
+// never modified. A reload builds a new snapshot; readers keep the one they hold.
+type {{.Snap}} struct {
+{{- range .Values}}
+	{{.Store}} {{.Type}}
+{{- end}}
+}
+{{range .Values}}
+{{.Doc}}func (self *{{$.Snap}}) {{.Getter}}() *{{.Type}} { return &self.{{.Store}} }
+{{end}}
+// Load{{.Snap}} reads {{.Files}} from dir. It fails if a file is missing, is
+// not JSON, or was built from another schema. Values are not validated here: `canon
+// build` already did, and filled every default.
+func Load{{.Snap}}({{.L.Dir}} string) (*{{.Snap}}, error) {
+	{{.L.S}} := &{{.Snap}}{}
+{{- range .Values}}
+	if {{$.L.Err}} := {{.Load}}({{$.FilePath}}.Join({{$.L.Dir}}, {{.File}}), &{{$.L.S}}.{{.Store}}); {{$.L.Err}} != nil {
+		return nil, {{$.L.Err}}
+	}
+{{- end}}
+{{- range .Values}}{{if and .Resolve .Record}}
+	if {{$.L.Err}} := {{.Resolve}}({{$.FilePath}}.Join({{$.L.Dir}}, {{.File}}), "value.", {{$.L.S}}, &{{$.L.S}}.{{.Store}}); {{$.L.Err}} != nil {
+		return nil, {{$.L.Err}}
+	}
+{{- else if .Resolve}}
+	for {{$.L.I}} := range {{$.L.S}}.{{.Store}}.{{$.M.Rows}}.Len() {
+		if {{$.L.Err}} := {{.Resolve}}({{$.FilePath}}.Join({{$.L.Dir}}, {{.File}}), {{$.FMT}}.Sprintf("rows[%d].", {{$.L.I}}), {{$.L.S}}, {{$.L.S}}.{{.Store}}.{{$.M.Rows}}.At({{$.L.I}})); {{$.L.Err}} != nil {
+			return nil, {{$.L.Err}}
+		}
+	}
+{{- end}}{{end}}
+	return {{.L.S}}, nil
+}
+
+// {{.StoreType}} holds the current snapshot of package {{.Pkg}}.
+//
+//	snap := {{.GoPkg}}.Store.Current()   // keep it for one tick or request
+//	err := {{.GoPkg}}.Store.Reload(dir)  // the old snapshot lives while someone holds it
+type {{.StoreType}} struct {
+	current {{.Atomic}}.Pointer[{{.Snap}}]
+}
+
+// Current returns the current snapshot, or nil before the first successful Reload.
+func (self *{{.StoreType}}) Current() *{{.Snap}} { return self.current.Load() }
+
+// Reload loads a new snapshot from dir and swaps it in. On failure the current
+// snapshot stays and the error is returned.
+func (self *{{.StoreType}}) Reload({{.L.Dir}} string) error {
+	{{.L.S}}, {{.L.Err}} := Load{{.Snap}}({{.L.Dir}})
+	if {{.L.Err}} != nil {
+		return {{.L.Err}}
+	}
+	self.current.Store({{.L.S}})
+	return nil
+}
+
+// Store is the store of package {{.Pkg}}.
+var Store {{.StoreType}}
+
+{{end}}
+{{define "helpers"}}// jsonObject reads the object at path: null or another kind fails the load.
+func jsonObject({{.L.Name}}, {{.L.Path}} string, {{.L.Raw}} {{.JSON}}.RawMessage) (map[string]{{.JSON}}.RawMessage, error) {
+	var {{.L.Obj}} map[string]{{.JSON}}.RawMessage
+	if {{.L.Err}} := {{.JSON}}.Unmarshal({{.L.Raw}}, &{{.L.Obj}}); {{.L.Err}} != nil {
+		return nil, jsonError({{.L.Name}}, {{.L.Path}}, {{.L.Err}})
+	}
+	if {{.L.Obj}} == nil {
+		return nil, {{.FMT}}.Errorf("%s: %s: null", {{.L.Name}}, {{.Strings}}.TrimSuffix({{.L.Path}}, "."))
+	}
+	return {{.L.Obj}}, nil
+}
+
+// jsonError names where a value of the wrong kind sits in the file, and what it is.
+func jsonError({{.L.Name}}, {{.L.Path}} string, {{.L.Err}} error) error {
+	var {{.L.Kind}} *{{.JSON}}.UnmarshalTypeError
+	if {{.Errors}}.As({{.L.Err}}, &{{.L.Kind}}) {
+		return {{.FMT}}.Errorf("%s: %s: unexpected %s", {{.L.Name}}, {{.Strings}}.TrimSuffix({{.L.Path}}+{{.L.Kind}}.Field, "."), {{.L.Kind}}.Value)
+	}
+	return {{.FMT}}.Errorf("%s: %s: %w", {{.L.Name}}, {{.Strings}}.TrimSuffix({{.L.Path}}, "."), {{.L.Err}})
+}
+
+// jsonFolds reports a key equal to one of keys but for letter case.
+func jsonFolds({{.L.Key}} string, {{.L.Keys}} ...string) bool {
+	for _, {{.L.K}} := range {{.L.Keys}} {
+		if {{.Strings}}.EqualFold({{.L.Key}}, {{.L.K}}) {
+			return true
+		}
+	}
+	return false
+}
+
+// jsonCase is the error of key, the smallest folding key of an object in byte order so the
+// message never depends on map order; nil for "".
+func jsonCase({{.L.Name}}, {{.L.Path}}, {{.L.Key}} string, {{.L.Keys}} ...string) error {
+	for _, {{.L.K}} := range {{.L.Keys}} {
+		if {{.L.Key}} != "" && {{.Strings}}.EqualFold({{.L.Key}}, {{.L.K}}) {
+			return {{.FMT}}.Errorf("%s: %s%s: differs from %q only in letter case", {{.L.Name}}, {{.L.Path}}, {{.L.Key}}, {{.L.K}})
+		}
+	}
+	return nil
+}
+{{if .Rows}}
+// jsonRowID reads a table row's $id and $retired.
+func jsonRowID({{.L.Name}}, {{.L.Path}} string, {{.L.Raw}} {{.JSON}}.RawMessage) (string, bool, error) {
+	{{.L.Obj}}, {{.L.Err}} := jsonObject({{.L.Name}}, {{.L.Path}}, {{.L.Raw}})
+	if {{.L.Err}} != nil {
+		return "", false, {{.L.Err}}
+	}
+	{{.L.R}}, {{.L.OK}} := {{.L.Obj}}["$id"]
+	if !{{.L.OK}} {
+		return "", false, {{.RT}}.Missing({{.L.Name}}, {{.L.Path}}, "$id")
+	}
+	var {{.L.ID}} *string
+	if {{.L.Err}} := {{.JSON}}.Unmarshal({{.L.R}}, &{{.L.ID}}); {{.L.Err}} != nil {
+		return "", false, jsonError({{.L.Name}}, {{.L.Path}}+"$id", {{.L.Err}})
+	}
+	if {{.L.ID}} == nil {
+		return "", false, {{.FMT}}.Errorf("%s: %s$id: null", {{.L.Name}}, {{.L.Path}})
+	}
+	if {{.L.R}}, {{.L.OK}} = {{.L.Obj}}["$retired"]; !{{.L.OK}} {
+		return *{{.L.ID}}, false, nil
+	}
+	var {{.L.Retired}} bool
+	if {{.L.Err}} := {{.JSON}}.Unmarshal({{.L.R}}, &{{.L.Retired}}); {{.L.Err}} != nil || !{{.L.Retired}} {
+		return "", false, {{.FMT}}.Errorf("%s: %s$retired: not true", {{.L.Name}}, {{.L.Path}})
+	}
+	return *{{.L.ID}}, true, nil
+}
+{{end}}
+{{end}}

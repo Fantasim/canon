@@ -29,6 +29,13 @@ type gen struct {
 	usedData  bool   // an expression read the baked data (d.…) since the flag was cleared
 	data      string // the local that holds the baked data: d, escaped (§3.4)
 	at        string // the Canon item being written: the Subject of a kind refusal
+	bodies    map[any]*body
+	holders   map[any][]*ir.Value // data mode: per record, variant or case, the emitted values holding it
+	variantOf map[*ir.Case]*ir.Variant
+	decoded   map[any]bool    // data mode: the classes a loader decodes whole
+	lc        locals          // data mode: the escaped locals of loaders, decoders and resolvers
+	taken     map[string]bool // the Go names of the imported Canon packages, which locals avoid
+	temps     int             // the last numbered local of the function being written
 }
 
 // Generate is the Go generator (ir.Generator): <gopkg>.gen.go, and rt/rt.go verbatim (§2.3, §6.3).
@@ -36,7 +43,7 @@ func Generate(p *ir.Package, e *ir.Emit) ([]ir.File, error) {
 	if e.Target != ir.TargetGo {
 		return nil, fmt.Errorf("%w: %s", ErrTarget, e.Out)
 	}
-	if e.Mode != ir.ModeBaked {
+	if e.Mode != ir.ModeBaked && e.Mode != ir.ModeData {
 		return nil, fmt.Errorf("%w: mode %s of %s", ErrUnsupported, modeText(e.Mode), e.Out)
 	}
 	if !token.IsIdentifier(e.GoPackage) || e.GoImport == "" {
@@ -60,14 +67,21 @@ func Generate(p *ir.Package, e *ir.Emit) ([]ir.File, error) {
 func newGen(p *ir.Package, e *ir.Emit) *gen {
 	g := &gen{
 		p: p, e: e, names: ir.PlanGoNames(p, e), imports: map[string]string{}, importOf: map[string]string{}, at: p.Name,
-		byValue: map[string]*valueInfo{}, tableOf: map[*ir.Record]*ir.Value{},
+		byValue: map[string]*valueInfo{}, tableOf: map[*ir.Record]*ir.Value{}, bodies: map[any]*body{},
 	}
 	g.data = g.names.Data().Local
-	if problems := g.names.Problems(); len(problems) > 0 {
-		g.fail(nameError(problems[0]))
+	for _, pr := range g.names.Problems() {
+		if !g.isData() || pr.Kind != ir.GoCollision {
+			g.fail(nameError(pr))
+			break
+		}
 	}
 	g.indexValues()
 	g.indexInstances()
+	if g.isData() {
+		g.indexHolders()
+		g.lc = g.newLocals()
+	}
 	return g
 }
 
@@ -97,6 +111,9 @@ func (g *gen) printf(format string, args ...any) {
 // source is the formatted main file: every section in CODEGEN.md §2.7's order.
 func (g *gen) source() []byte {
 	sections := []func(){g.constants, g.enums, g.kindEnums, g.idEnums, g.types, g.containers, g.values, g.fns}
+	if g.isData() {
+		sections = g.dataSections()
+	}
 	for _, section := range sections {
 		section()
 	}
@@ -106,7 +123,9 @@ func (g *gen) source() []byte {
 	src, err := format.Source(out.Bytes())
 	if err != nil {
 		g.fail(fmt.Errorf("%w: %w", errFormat, err))
+		return src
 	}
+	g.fail(checkNames(src, g.isData()))
 	return src
 }
 

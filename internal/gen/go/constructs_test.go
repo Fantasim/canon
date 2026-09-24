@@ -26,7 +26,7 @@ func TestConstructsGolden(t *testing.T) {
 	checkGoldens(t, files, sortedPaths(files), constructsGolden)
 }
 
-// CODEGEN.md §9: the constructs compile with go 1.23 in go.mod and read back their values.
+// CODEGEN.md §9, decision 205: the constructs compile with the installed Go and read back their values.
 func TestConstructsCompile(t *testing.T) {
 	w := loadWorld(t, constructsIR, listedCells)
 	files := generate(t, w)

@@ -34,7 +34,11 @@ func (g *gen) indexValues() {
 	}
 	g.emitted = g.names.Emitted()
 	for _, v := range g.emitted {
-		g.byValue[v.Name] = &valueInfo{v: v, store: g.names.ValueStore(v), index: g.entryIndex(v)}
+		info := &valueInfo{v: v, store: g.names.ValueStore(v)}
+		if !g.isData() {
+			info.index = g.entryIndex(v) // data mode reads its entries at run time: v.V is not needed
+		}
+		g.byValue[v.Name] = info
 	}
 }
 

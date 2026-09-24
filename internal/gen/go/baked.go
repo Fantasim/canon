@@ -21,7 +21,11 @@ func (g *gen) containers() {
 
 func (g *gen) tableContainer(v *ir.Value) {
 	rec, ok := g.sub(v.Type.Elem).Named.(*ir.Record)
-	if !ok {
+	switch {
+	case !ok:
+		return
+	case g.isData():
+		g.dataTable(v, rec)
 		return
 	}
 	name, elem := g.names.ContainerName(v), g.goName(rec)

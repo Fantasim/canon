@@ -1,0 +1,16 @@
+{
+  "$schema": "demo.shop.Config@0000000c",
+  "value": {
+    "motd": "Welcome",
+    "spawn": {"x": 10, "y": -20},
+    "type": "item",
+    "itemId": "II_KEY",
+    "count": 1,
+    "flags": ["warning", "info"],
+    "scale": 1.5,
+    "tree": {"label": "root", "next": {"label": "second", "next": null, "kids": [], "hot": null, "badge": null}, "kids": [{"label": "leaf", "next": null, "kids": [], "hot": "sword", "badge": {"kind": "plain"}}], "hot": "air", "badge": {"kind": "star", "of": "anvil"}},
+    "featured": "sword",
+    "picks": ["air", "sword"],
+    "alts": ["anvil"]
+  }
+}

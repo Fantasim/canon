@@ -42,9 +42,7 @@ func (g *gen) variant(v *ir.Variant) {
 }
 
 func (g *gen) caseType(v *ir.Variant, c *ir.Case) {
-	origin := v.QName() + dot + c.Name
-	name := g.names.CaseName(v, c)
-	g.typeDecl(g.recordBody(origin, name, c.Fields, c.Methods), c.Doc)
+	g.typeDecl(g.caseBody(v, c), c.Doc)
 }
 
 // variantExpr is a variant value, *V holding its kind and its case, or a case value *VC.
@@ -66,7 +64,7 @@ func (g *gen) variantExpr(t ir.TypeRef, r *value.Record) string {
 	name := g.goName(v)
 	var lit string
 	if len(c.Fields) > 0 {
-		b := g.recordBody(v.QName()+dot+c.Name, g.names.CaseName(v, c), c.Fields, c.Methods)
+		b := g.caseBody(v, c)
 		lit = ampersand + compositeLit(b.goName, g.bodyLit(b, r))
 	}
 	if t.Kind == types.Case {
