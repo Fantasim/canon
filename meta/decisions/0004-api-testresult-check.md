@@ -13,9 +13,11 @@ runs phases 1–7, which is not what `canon test` runs.
 
 ## Decision
 
-`api.TestResult` gains one field, `Check *CheckResult` (as `BuildResult.Check`): the error
-findings of phases 1–2 for the loaded packages and project.canon, with their summary. Nothing
-else in the exported surface changes. API.md §13.2 gains the matching rule at the next spec sync.
+`api.TestResult` gains `Check *CheckResult` (as `BuildResult.Check`): the error findings of
+phases 1–2 for the loaded packages and project.canon, with their summary. `api.ExpectFailure`
+gains `Outcome`, `Op`, `Poisoned` and `Cause`, so the CLI renders its report words from
+structured fields (decisions log, "canon test review calls"). An unknown layer is a
+`*ProjectError{Err: ErrUnknownLayer}` carrying its `E1901` findings. Nothing else changes. API.md §13.2 gains the matching rule at the next spec sync.
 
 ## Consequences
 
