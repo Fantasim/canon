@@ -1,0 +1,23 @@
+FINGERPRINT.md vector 6: package fpdemo of WIRE.md §8.3, every legacy encoding.
+-- fpdemo/fpdemo.canon --
+package fpdemo
+
+enum Element @codes(UInt8) @json(codes) { FIRE = 1, WATER = 2, retired WIND = 3 }
+enum Flag @codes(UInt32) { tradable = 1, droppable = 2, soulbound = 4 }
+enum Side { left, right = "RIGHT" }
+
+record Skill @json(case: snake) {
+  id: String @json("dwID")
+  reqMp: Int = 0 @json(path: "legacy.reqMp")
+  reqFp: Int = 0 @json(path: "legacy.reqFp")
+  element: Element? = none @json(none: 0)
+  flags: [Flag] where it.isUnique() = [] @json(bits)
+  twoHanded: Bool = false @json("bTwoHanded", int)
+  side: Side | "both" = "both"
+  castTime: Duration? = none @json(unit: s)
+  weights: {Element: Float} = {}
+  export fn isFree(self) -> Bool { return reqMp == 0 and reqFp == 0 }
+}
+
+let skills: [Skill] keyed by id = load.dir("skills/*.json")
+emit json { out: "out/skills.json", values: [skills] }

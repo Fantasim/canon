@@ -1,0 +1,13 @@
+CODEGEN.md §5.2: an ordered enum whose codes decrease.
+-- a/a.canon --
+package a
+
+/// A rank.
+enum Rank ordered @codes(UInt8) { low = 2, high = 1 }
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+error[E8010]  a/a.canon:4:6
+  ordered enum Rank has codes that do not increase in declaration order
+
+1 error, 0 warnings in 1 package (…)

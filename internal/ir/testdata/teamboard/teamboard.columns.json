@@ -1,0 +1,40 @@
+{
+  "unclaimed": {
+    "label": "Unclaimed",
+    "icon": "inbox",
+    "statuses": [
+      "open"
+    ],
+    "assigneeFilter": false,
+    "hideable": true
+  },
+  "taken": {
+    "label": "Taken",
+    "icon": "hand",
+    "statuses": [
+      "taken"
+    ],
+    "assigneeFilter": true,
+    "hideable": true
+  },
+  "fixed": {
+    "label": "Fixed, to verify",
+    "icon": "check",
+    "statuses": [
+      "fixed"
+    ],
+    "assigneeFilter": false,
+    "hideable": true
+  },
+  "done": {
+    "label": "Done",
+    "icon": "archive",
+    "statuses": [
+      "verified",
+      "wont_do",
+      "duplicate"
+    ],
+    "assigneeFilter": false,
+    "hideable": true
+  }
+}

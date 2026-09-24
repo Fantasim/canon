@@ -1,0 +1,19 @@
+WIRE.md §8.1: an @reload value written in file mode under another name.
+-- a/a.canon --
+package a
+
+/// A place.
+record Place {
+  /// Its key.
+  id: String
+}
+
+/// Every place.
+@reload let places: [Place] keyed by id = [{ id: "home" }]
+
+emit json { out: "out/all.json", values: [places] }
+-- findings.txt --
+error[E8153]  a/a.canon:10:13
+  places is emitted in data mode but its file must be places.json
+
+1 error, 0 warnings in 1 package (…)

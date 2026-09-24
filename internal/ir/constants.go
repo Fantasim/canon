@@ -102,7 +102,7 @@ const (
 	fpKeyed       = "keyed("
 	fpDep         = "dep("
 	fpMap         = "map("
-	fpSourceField = "field"
+	fpSourceField = cgWordField
 	fpSourceParam = "param"
 	fpSourceKey   = "key"
 	fpArgsOpen    = "<"
@@ -129,3 +129,64 @@ var fpComposites = map[types.Kind]string{
 
 // fpEncNames is `enc=` of a field (§4.5).
 var fpEncNames = [...]string{types.EncPlain: fpNone, types.EncInt: "int", types.EncBits: "bits"}
+
+// The annotations, arguments and flags stage E reads (GRAMMAR.md §8.3, CODEGEN.md §3.5, §7.8).
+const (
+	cgAnnGo      = "go"
+	cgAnnCpp     = "cpp"
+	cgAnnTS      = "ts"
+	cgAnnReload  = "reload"
+	cgArgName    = "name"
+	cgArgStruct  = "struct"
+	cgArgHeader  = "header"
+	cgArgAccess  = "access"
+	cgWordField  = "field"
+	argField     = cgWordField
+	argType      = "type"
+	cgArgUnit    = "unit"
+	argValue     = "value"
+	cgArgDefines = "defines"
+	flagBigInt   = "bigint"
+)
+
+// The emit options of CODEGEN.md §2.1 and WIRE.md §8.1.
+const (
+	optOut       = "out"
+	optMode      = "mode"
+	optValues    = "values"
+	optPackage   = "package"
+	optNamespace = "namespace"
+)
+
+// Paths, separators and names stage E composes.
+const (
+	curDir    = "."
+	parentDir = ".."
+	pathSep   = "/"
+	cppScope  = "::"
+	docSep    = "\n\n" // GRAMMAR.md §9.1: package docs of several files
+	boolFalse = "false"
+	boolTrue  = "true"
+)
+
+// maxCells is the largest lookup table (CODEGEN.md §5.10, E9002).
+const maxCells = 65_536
+
+// The words of targets, modes and @cpp(access:) (CODEGEN.md §2.1, CPP-01), by value.
+var (
+	targetWords = [...]string{TargetGo: cgAnnGo, TargetCpp: cgAnnCpp, TargetTS: cgAnnTS, TargetJSON: "json", TargetView: "view"}
+	modeWords   = [...]string{ModeNone: "", ModeBaked: "baked", ModeEmbedded: "embedded", ModeData: "data", ModeTypes: "types"}
+	accessWords = [...]string{AccessNone: "", AccessFields: "fields", AccessBoth: "both", AccessGetters: "getters"}
+)
+
+// branchKinds are the kinds a dependent type's branch may have (CODEGEN.md §5.6, E8017).
+var branchKinds = map[types.Kind]bool{
+	types.Bool: true, types.Int: true, types.Float: true, types.String: true, types.Duration: true,
+	types.Enum: true, types.Ref: true,
+}
+
+// maxSafeInt is Number.MAX_SAFE_INTEGER, 2^53 - 1 (CODEGEN.md §4.1, E8101).
+const maxSafeInt = 1<<53 - 1
+
+// JSONExt ends a file-mode JSON `out` and every directory-mode file name (WIRE.md §8.1).
+const JSONExt = ".json"

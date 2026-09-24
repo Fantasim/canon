@@ -1,0 +1,152 @@
+IMPLEMENTATION-PLAN §6 M1: the IR stage E builds for teamboard, sovcommon.roles and
+sovcommon.ui from testdata/teamboard; written by go test -update.
+-- ir.txt --
+package sovcommon.roles dir="sovcommon/roles" doc="Account roles of the website and every internal tool."
+emit go out="@sovcommon/roles" dir="../../sovcommon/roles" file="" import="gitlab.com/sovereign15/sovcommon/roles" mode=baked values=- package="roles" namespace=""
+emit ts out="@web/roles.generated.ts" dir="../../sovcommon/web/src/lib" file="roles.generated.ts" import="" mode=baked values=- package="" namespace=""
+enum sovcommon.roles.Role codes=- jsonCodes=false ordered=true defines="" doc="The website.website_account.role literals. Declaration order IS the rank:\n`gm_junior < maintainer` is true, and nothing else may hard-code a number.\n\nToday this ladder is written three times (roles.go, roles.ts and the SQL CHECK\nconstraint) and kept in sync by comments. Here it is written once, and Go and TS\nare generated from it."
+  member member wire="member" index=0 code=0 retired=false deprecated=false doc=""
+  member gm_junior wire="gm_junior" index=1 code=0 retired=false deprecated=false doc=""
+  member gm_senior wire="gm_senior" index=2 code=0 retired=false deprecated=false doc=""
+  member maintainer wire="maintainer" index=3 code=0 retired=false deprecated=false doc=""
+  member owner wire="owner" index=4 code=0 retired=false deprecated=false doc=""
+  member admin wire="admin" index=5 code=0 retired=false deprecated=false doc=""
+package sovcommon.ui dir="sovcommon/ui" doc="UI vocabularies shared by every web front end: colour tones and icon names."
+emit go out="@sovcommon/ui" dir="../../sovcommon/ui" file="" import="gitlab.com/sovereign15/sovcommon/ui" mode=baked values=- package="ui" namespace=""
+emit ts out="@web/ui.generated.ts" dir="../../sovcommon/web/src/lib" file="ui.generated.ts" import="" mode=baked values=- package="" namespace=""
+enum sovcommon.ui.Tone codes=- jsonCodes=false ordered=false defines="" doc="A semantic or qualitative colour slot. Each one resolves to a --color-* token that\ntokens.css defines for dark and light, with its -soft background. No colour value\nlives in config.\n\nSemantic tones are reserved for meaning (status, severity, flags, intent).\nQualitative series slots tell families apart, always together with icon + label."
+  member warning wire="warning" index=0 code=0 retired=false deprecated=false doc=""
+  member info wire="info" index=1 code=0 retired=false deprecated=false doc=""
+  member accent wire="accent" index=2 code=0 retired=false deprecated=false doc=""
+  member success wire="success" index=3 code=0 retired=false deprecated=false doc=""
+  member neutral wire="neutral" index=4 code=0 retired=false deprecated=false doc=""
+  member danger wire="danger" index=5 code=0 retired=false deprecated=false doc=""
+  member series_1 wire="series-1" index=6 code=0 retired=false deprecated=false doc=""
+  member series_2 wire="series-2" index=7 code=0 retired=false deprecated=false doc=""
+  member series_3 wire="series-3" index=8 code=0 retired=false deprecated=false doc=""
+  member series_4 wire="series-4" index=9 code=0 retired=false deprecated=false doc=""
+  member series_5 wire="series-5" index=10 code=0 retired=false deprecated=false doc=""
+  member series_6 wire="series-6" index=11 code=0 retired=false deprecated=false doc=""
+enum sovcommon.ui.Icon codes=- jsonCodes=false ordered=false defines="" doc="Icons sovcommon exports (icons.ts). An icon that is not listed here is a type\nerror wherever it is used, so `make check` no longer has to scrape TypeScript."
+  member alert_triangle wire="alert-triangle" index=0 code=0 retired=false deprecated=false doc=""
+  member archive wire="archive" index=1 code=0 retired=false deprecated=false doc=""
+  member bar_chart wire="bar-chart" index=2 code=0 retired=false deprecated=false doc=""
+  member check wire="check" index=3 code=0 retired=false deprecated=false doc=""
+  member columns wire="columns" index=4 code=0 retired=false deprecated=false doc=""
+  member database wire="database" index=5 code=0 retired=false deprecated=false doc=""
+  member gamepad wire="gamepad" index=6 code=0 retired=false deprecated=false doc=""
+  member globe wire="globe" index=7 code=0 retired=false deprecated=false doc=""
+  member hand wire="hand" index=8 code=0 retired=false deprecated=false doc=""
+  member inbox wire="inbox" index=9 code=0 retired=false deprecated=false doc=""
+  member layers wire="layers" index=10 code=0 retired=false deprecated=false doc=""
+  member lightbulb wire="lightbulb" index=11 code=0 retired=false deprecated=false doc=""
+  member lock wire="lock" index=12 code=0 retired=false deprecated=false doc=""
+  member monitor wire="monitor" index=13 code=0 retired=false deprecated=false doc=""
+  member package wire="package" index=14 code=0 retired=false deprecated=false doc=""
+  member scale wire="scale" index=15 code=0 retired=false deprecated=false doc=""
+  member server wire="server" index=16 code=0 retired=false deprecated=false doc=""
+  member shield wire="shield" index=17 code=0 retired=false deprecated=false doc=""
+  member terminal wire="terminal" index=18 code=0 retired=false deprecated=false doc=""
+package teamboard dir="teamboard" doc="Taxonomy of the team board (internal.ragyra.com).\n\nRewrite of sovcommon/teamboard/taxonomy.json v7. The ~30 load-time checks in\nload.go and refs.go become three things here:\n  - types: unknown refs, roles, tones, icons, setBy, fields, duplicate or\n    badly formed ids, required fields. There is no code for any of them.\n  - stable tables: \"never renamed, never reused, retire instead of delete\".\n  - the eight `check`s at the bottom: the rules that are truly about this data.\n\nThe reporter makes ONE classification: WHERE did you see it (area). Everything\nfiner is said in the text; routing to a technical area is the triager's move."
+import sovcommon.roles dir="sovcommon/roles"
+  go out="@sovcommon/roles" dir="../../sovcommon/roles" file="" import="gitlab.com/sovereign15/sovcommon/roles" mode=baked values=- package="roles" namespace=""
+  ts out="@web/roles.generated.ts" dir="../../sovcommon/web/src/lib" file="roles.generated.ts" import="" mode=baked values=- package="" namespace=""
+import sovcommon.ui dir="sovcommon/ui"
+  go out="@sovcommon/ui" dir="../../sovcommon/ui" file="" import="gitlab.com/sovereign15/sovcommon/ui" mode=baked values=- package="ui" namespace=""
+  ts out="@web/ui.generated.ts" dir="../../sovcommon/web/src/lib" file="ui.generated.ts" import="" mode=baked values=- package="" namespace=""
+emit go out="@sovcommon/teamboard" dir="../../sovcommon/teamboard" file="" import="gitlab.com/sovereign15/sovcommon/teamboard" mode=baked values=- package="teamboard" namespace=""
+emit ts out="@web/teamboard/generated.ts" dir="../../sovcommon/web/src/lib/teamboard" file="generated.ts" import="" mode=baked values=- package="" namespace=""
+emit json out="@sovcommon/teamboard/data/" dir="../../sovcommon/teamboard/data" file="" import="" mode=- values=- package="" namespace=""
+enum teamboard.Actor codes=- jsonCodes=false ordered=false defines="" doc="Who may set a flag or make a transition."
+  member reporter wire="reporter" index=0 code=0 retired=false deprecated=false doc=""
+  member triager wire="triager" index=1 code=0 retired=false deprecated=false doc=""
+  member reporter_or_triager wire="reporter_or_triager" index=2 code=0 retired=false deprecated=false doc=""
+enum teamboard.PostField codes=- jsonCodes=false ordered=false defines="" doc="Inputs a status transition may collect."
+  member assignee wire="assignee" index=0 code=0 retired=false deprecated=false doc=""
+  member fixed_in wire="fixed_in" index=1 code=0 retired=false deprecated=false doc=""
+  member reason wire="reason" index=2 code=0 retired=false deprecated=false doc=""
+  member duplicate_of wire="duplicate_of" index=3 code=0 retired=false deprecated=false doc=""
+record teamboard.Intent params=0 doc="What kind of post this is; `minRole` gates who may post it." cpp={Name: Struct: Header: Access:0}
+  field tone wire=[tone] sovcommon.ui.Tone opt=false none="" unit=ms enc=0 inline=false pairs=<nil> default=- computed=false deprecated=false stable=false input=<nil> cpp={Name: Member: Type: Unit:ms HasUnit:false} bigint=false doc="Colour of the intent's badge."
+  field icon wire=[icon] sovcommon.ui.Icon opt=false none="" unit=ms enc=0 inline=false pairs=<nil> default=- computed=false deprecated=false stable=false input=<nil> cpp={Name: Member: Type: Unit:ms HasUnit:false} bigint=false doc="Icon of the intent's badge."
+  field label wire=[label] String opt=false none="" unit=ms enc=0 inline=false pairs=<nil> default=- computed=false deprecated=false stable=false input=<nil> cpp={Name: Member: Type: Unit:ms HasUnit:false} bigint=false doc="What the reporter picks, as a sentence."
+  field minRole wire=[minRole] sovcommon.roles.Role opt=false none="" unit=ms enc=0 inline=false pairs=<nil> default=- computed=false deprecated=false stable=false input=<nil> cpp={Name: Member: Type: Unit:ms HasUnit:false} bigint=false doc="The lowest role that may post with this intent."
+record teamboard.Flag params=0 doc="One of the reporter's booleans." cpp={Name: Struct: Header: Access:0}
+  field tone wire=[tone] sovcommon.ui.Tone opt=false none="" unit=ms enc=0 inline=false pairs=<nil> default=- computed=false deprecated=false stable=false input=<nil> cpp={Name: Member: Type: Unit:ms HasUnit:false} bigint=false doc="Colour of the flag's badge."
+  field icon wire=[icon] sovcommon.ui.Icon opt=false none="" unit=ms enc=0 inline=false pairs=<nil> default=- computed=false deprecated=false stable=false input=<nil> cpp={Name: Member: Type: Unit:ms HasUnit:false} bigint=false doc="Icon of the flag's badge."
+  field label wire=[label] String opt=false none="" unit=ms enc=0 inline=false pairs=<nil> default=- computed=false deprecated=false stable=false input=<nil> cpp={Name: Member: Type: Unit:ms HasUnit:false} bigint=false doc="What the reporter ticks, as a sentence."
+  field hint wire=[hint] String opt=true none="" unit=ms enc=0 inline=false pairs=<nil> default=none computed=false deprecated=false stable=false input=<nil> cpp={Name: Member: Type: Unit:ms HasUnit:false} bigint=false doc="Shown under the label."
+  field setBy wire=[setBy] teamboard.Actor opt=false none="" unit=ms enc=0 inline=false pairs=<nil> default=- computed=false deprecated=false stable=false input=<nil> cpp={Name: Member: Type: Unit:ms HasUnit:false} bigint=false doc="Who may set the flag."
+  field viewMinRole wire=[viewMinRole] sovcommon.roles.Role opt=true none="" unit=ms enc=0 inline=false pairs=<nil> default=none computed=false deprecated=false stable=false input=<nil> cpp={Name: Member: Type: Unit:ms HasUnit:false} bigint=false doc="Who may see that the flag was set; `none` means whoever can see the post."
+record teamboard.Status params=0 doc="One point of the post lifecycle." cpp={Name: Struct: Header: Access:0}
+  field tone wire=[tone] sovcommon.ui.Tone opt=false none="" unit=ms enc=0 inline=false pairs=<nil> default=- computed=false deprecated=false stable=false input=<nil> cpp={Name: Member: Type: Unit:ms HasUnit:false} bigint=false doc="Colour of the status badge."
+  field label wire=[label] String opt=false none="" unit=ms enc=0 inline=false pairs=<nil> default=- computed=false deprecated=false stable=false input=<nil> cpp={Name: Member: Type: Unit:ms HasUnit:false} bigint=false doc="Name of the status."
+  field terminal wire=[terminal] Bool opt=false none="" unit=ms enc=0 inline=false pairs=<nil> default=- computed=false deprecated=false stable=false input=<nil> cpp={Name: Member: Type: Unit:ms HasUnit:false} bigint=false doc="A terminal status closes the post. It can still be reopened through `next`."
+  field next wire=[next] list(ref(String coll=0 teamboard.statuses[] keyed=false local=false)) opt=false none="" unit=ms enc=0 inline=false pairs=<nil> default=- computed=false deprecated=false stable=false input=<nil> cpp={Name: Member: Type: Unit:ms HasUnit:false} bigint=false doc="The closed set of statuses a post may move to from here."
+  field requires wire=[requires] list(teamboard.PostField) opt=false none="" unit=ms enc=0 inline=false pairs=<nil> default=[] computed=false deprecated=false stable=false input=<nil> cpp={Name: Member: Type: Unit:ms HasUnit:false} bigint=false doc="Inputs a transition INTO this status must collect."
+  field optional wire=[optional] list(teamboard.PostField) opt=false none="" unit=ms enc=0 inline=false pairs=<nil> default=[] computed=false deprecated=false stable=false input=<nil> cpp={Name: Member: Type: Unit:ms HasUnit:false} bigint=false doc="Inputs a transition INTO this status may collect."
+  field by wire=[by] teamboard.Actor opt=true none="" unit=ms enc=0 inline=false pairs=<nil> default=none computed=false deprecated=false stable=false input=<nil> cpp={Name: Member: Type: Unit:ms HasUnit:false} bigint=false doc="Who, besides a triager, may make the transition into this status."
+record teamboard.Severity params=0 doc="Set by a triager only. The reporter's single signal is the `blocking` flag." cpp={Name: Struct: Header: Access:0}
+  field tone wire=[tone] sovcommon.ui.Tone opt=false none="" unit=ms enc=0 inline=false pairs=<nil> default=- computed=false deprecated=false stable=false input=<nil> cpp={Name: Member: Type: Unit:ms HasUnit:false} bigint=false doc="Colour of the severity badge."
+  field label wire=[label] String opt=false none="" unit=ms enc=0 inline=false pairs=<nil> default=- computed=false deprecated=false stable=false input=<nil> cpp={Name: Member: Type: Unit:ms HasUnit:false} bigint=false doc="Name of the severity."
+  field default wire=[default] Bool opt=false none="" unit=ms enc=0 inline=false pairs=<nil> default=false computed=false deprecated=false stable=false input=<nil> cpp={Name: Member: Type: Unit:ms HasUnit:false} bigint=false doc="The severity a triaged post gets unless the triager picks another."
+record teamboard.AreaGroup params=0 doc="A header the area picker and the move-to-area menu group areas under." cpp={Name: Struct: Header: Access:0}
+  field label wire=[label] String opt=false none="" unit=ms enc=0 inline=false pairs=<nil> default=- computed=false deprecated=false stable=false input=<nil> cpp={Name: Member: Type: Unit:ms HasUnit:false} bigint=false doc="Header text."
+record teamboard.Area params=0 doc="Where the reporter stood, never which component is at fault." cpp={Name: Struct: Header: Access:0}
+  field group wire=[group] ref(String coll=0 teamboard.areaGroups[] keyed=false local=false) opt=false none="" unit=ms enc=0 inline=false pairs=<nil> default=- computed=false deprecated=false stable=false input=<nil> cpp={Name: Member: Type: Unit:ms HasUnit:false} bigint=false doc="The header the area is listed under."
+  field tone wire=[tone] sovcommon.ui.Tone opt=false none="" unit=ms enc=0 inline=false pairs=<nil> default=- computed=false deprecated=false stable=false input=<nil> cpp={Name: Member: Type: Unit:ms HasUnit:false} bigint=false doc="Family: series_1 game, series_2 web, series_3 tooling, series_4 internal."
+  field icon wire=[icon] sovcommon.ui.Icon opt=false none="" unit=ms enc=0 inline=false pairs=<nil> default=- computed=false deprecated=false stable=false input=<nil> cpp={Name: Member: Type: Unit:ms HasUnit:false} bigint=false doc="Icon next to the area's name."
+  field label wire=[label] String opt=false none="" unit=ms enc=0 inline=false pairs=<nil> default=- computed=false deprecated=false stable=false input=<nil> cpp={Name: Member: Type: Unit:ms HasUnit:false} bigint=false doc="Name of the area."
+  field hint wire=[hint] String opt=true none="" unit=ms enc=0 inline=false pairs=<nil> default=none computed=false deprecated=false stable=false input=<nil> cpp={Name: Member: Type: Unit:ms HasUnit:false} bigint=false doc="Shown under the label."
+  field minRole wire=[minRole] sovcommon.roles.Role opt=false none="" unit=ms enc=0 inline=false pairs=<nil> default=- computed=false deprecated=false stable=false input=<nil> cpp={Name: Member: Type: Unit:ms HasUnit:false} bigint=false doc="Gates posting AND viewing."
+  field routesTo wire=[routesTo] list(ref(String coll=0 teamboard.areas[] keyed=false local=false)) opt=false none="" unit=ms enc=0 inline=false pairs=<nil> default=[] computed=false deprecated=false stable=false input=<nil> cpp={Name: Member: Type: Unit:ms HasUnit:false} bigint=false doc="Technical areas a triager typically moves a post into. Orders the move menu only."
+record teamboard.Column params=0 doc="One fixed column of the deck: a named set of statuses." cpp={Name: Struct: Header: Access:0}
+  field label wire=[label] String opt=false none="" unit=ms enc=0 inline=false pairs=<nil> default=- computed=false deprecated=false stable=false input=<nil> cpp={Name: Member: Type: Unit:ms HasUnit:false} bigint=false doc="Column header."
+  field icon wire=[icon] sovcommon.ui.Icon opt=false none="" unit=ms enc=0 inline=false pairs=<nil> default=- computed=false deprecated=false stable=false input=<nil> cpp={Name: Member: Type: Unit:ms HasUnit:false} bigint=false doc="Icon in the column header."
+  field statuses wire=[statuses] list(ref(String coll=0 teamboard.statuses[] keyed=false local=false)) opt=false none="" unit=ms enc=0 inline=false pairs=<nil> default=- computed=false deprecated=false stable=false input=<nil> cpp={Name: Member: Type: Unit:ms HasUnit:false} bigint=false doc="The statuses whose posts the column shows."
+  field assigneeFilter wire=[assigneeFilter] Bool opt=false none="" unit=ms enc=0 inline=false pairs=<nil> default=false computed=false deprecated=false stable=false input=<nil> cpp={Name: Member: Type: Unit:ms HasUnit:false} bigint=false doc="Adds a multi-select of eligible members inside the column."
+  field hideable wire=[hideable] Bool opt=false none="" unit=ms enc=0 inline=false pairs=<nil> default=true computed=false deprecated=false stable=false input=<nil> cpp={Name: Member: Type: Unit:ms HasUnit:false} bigint=false doc="Lets a viewer collapse the column to the rail (capped by `deck.maxHidden`)."
+record teamboard.Deck params=0 doc="The deck: fixed columns, in order. Nobody adds, removes or edits a column." cpp={Name: Struct: Header: Access:0}
+  field layouts wire=[layouts] list(String) opt=false none="" unit=ms enc=0 inline=false pairs=<nil> default=- computed=false deprecated=false stable=false input=<nil> cpp={Name: Member: Type: Unit:ms HasUnit:false} bigint=false doc="The only arrangements: all in one row, or a 2x2 grid."
+  field maxHidden wire=[maxHidden] Int opt=false none="" unit=ms enc=0 inline=false pairs=<nil> default=- computed=false deprecated=false stable=false input=<nil> cpp={Name: Member: Type: Unit:ms HasUnit:false} bigint=false doc="How many columns may be collapsed at once, so the deck never goes fully empty."
+record teamboard.AreaSection params=0 doc="One group header with the areas shown under it." cpp={Name: Struct: Header: Access:0}
+  field group wire=[group] ref(String coll=0 teamboard.areaGroups[] keyed=false local=false) opt=false none="" unit=ms enc=0 inline=false pairs=<nil> default=- computed=false deprecated=false stable=false input=<nil> cpp={Name: Member: Type: Unit:ms HasUnit:false} bigint=false doc="The header."
+  field areas wire=[areas] list(ref(String coll=0 teamboard.areas[] keyed=false local=false)) opt=false none="" unit=ms enc=0 inline=false pairs=<nil> default=- computed=false deprecated=false stable=false input=<nil> cpp={Name: Member: Type: Unit:ms HasUnit:false} bigint=false doc="The areas under it, in declaration order."
+const VERSION Int = 7
+value intents table(teamboard.Intent) schema=teamboard.Intent@b1dcfafc reload=false ids=[issue idea]
+  = {issue: Intent{tone: warning, icon: alert_triangle, label: "Something is wrong", minRole: gm_junior}, idea: Intent{tone: accent, icon: lightbulb, label: "Idea or request", minRole: gm_junior}}
+value flags table(teamboard.Flag) schema=teamboard.Flag@2b89460f reload=false ids=[blocking sensitive]
+  = {blocking: Flag{tone: danger, icon: hand, label: "This blocks my work", hint: none, setBy: reporter, viewMinRole: none}, sensitive: Flag{tone: warning, icon: lock, label: "Only the dev team should see", hint: "Exploits, dupes, security problems.", setBy: reporter, viewMinRole: maintainer}}
+value statuses table(teamboard.Status) schema=teamboard.Status@4aed3fde reload=false ids=[open taken fixed verified wont_do duplicate]
+  = {open: Status{tone: warning, label: "Open", terminal: false, next: [taken, wont_do, duplicate], requires: [], optional: [], by: none}, taken: Status{tone: info, label: "Taken", terminal: false, next: [open, fixed, wont_do, duplicate], requires: [assignee], optional: [], by: none}, fixed: Status{tone: accent, label: "Fixed", terminal: false, next: [verified, open], requires: [], optional: [fixed_in], by: none}, verified: Status{tone: success, label: "Verified", terminal: true, next: [open], requires: [], optional: [], by: reporter_or_triager}, wont_do: Status{tone: neutral, label: "Won't do", terminal: true, next: [open], requires: [reason], optional: [], by: none}, duplicate: Status{tone: neutral, label: "Duplicate", terminal: true, next: [open], requires: [duplicate_of], optional: [], by: none}}
+value assigneeMinRole sovcommon.roles.Role schema=sovcommon.roles.Role@dc935485 reload=false ids=[]
+  = maintainer
+value triageMinRole sovcommon.roles.Role schema=sovcommon.roles.Role@dc935485 reload=false ids=[]
+  = maintainer
+value deck teamboard.Deck schema=teamboard.Deck@02af81fb reload=false ids=[]
+  = Deck{layouts: ["4:1", "2:2"], maxHidden: 2}
+value columns table(teamboard.Column) schema=teamboard.Column@b3a0dc32 reload=false ids=[unclaimed taken fixed done]
+  = {unclaimed: Column{label: "Unclaimed", icon: inbox, statuses: [open], assigneeFilter: false, hideable: true}, taken: Column{label: "Taken", icon: hand, statuses: [taken], assigneeFilter: true, hideable: true}, fixed: Column{label: "Fixed, to verify", icon: check, statuses: [fixed], assigneeFilter: false, hideable: true}, done: Column{label: "Done", icon: archive, statuses: [verified, wont_do, duplicate], assigneeFilter: false, hideable: true}}
+value severities table(teamboard.Severity) schema=teamboard.Severity@25e4faea reload=false ids=[low normal critical]
+  = {low: Severity{tone: neutral, label: "Low", default: false}, normal: Severity{tone: info, label: "Normal", default: true}, critical: Severity{tone: danger, label: "Critical", default: false}}
+value areaGroups table(teamboard.AreaGroup) schema=teamboard.AreaGroup@845886c0 reload=false ids=[in_game out_game internal]
+  = {in_game: AreaGroup{label: "In game"}, out_game: AreaGroup{label: "Out of game"}, internal: AreaGroup{label: "Internal"}}
+value areas table(teamboard.Area) schema=teamboard.Area@a5984b53 reload=false ids=[game balance website resource_studio game_server client resource sovcommon admin_panel analytics team_board internal]
+  = {game: Area{group: in_game, tone: series_1, icon: gamepad, label: "Game", hint: "Anything you saw while playing.", minRole: gm_junior, routesTo: [game_server, client, resource, balance]}, balance: Area{group: in_game, tone: series_1, icon: scale, label: "Balance", hint: "Nothing is broken, the numbers feel wrong.", minRole: gm_junior, routesTo: []}, website: Area{group: out_game, tone: series_2, icon: globe, label: "Website", hint: "The site, accounts, rankings, donations and payments.", minRole: gm_junior, routesTo: []}, resource_studio: Area{group: internal, tone: series_3, icon: layers, label: "Resource Studio", hint: none, minRole: maintainer, routesTo: []}, game_server: Area{group: in_game, tone: series_1, icon: server, label: "Game server", hint: none, minRole: admin, routesTo: []}, client: Area{group: in_game, tone: series_1, icon: monitor, label: "Game client", hint: none, minRole: maintainer, routesTo: []}, resource: Area{group: in_game, tone: series_1, icon: database, label: "Game data (Resource)", hint: none, minRole: maintainer, routesTo: []}, sovcommon: Area{group: internal, tone: series_3, icon: package, label: "sovcommon", hint: none, minRole: admin, routesTo: []}, admin_panel: Area{group: internal, tone: series_2, icon: shield, label: "Admin panel", hint: none, minRole: admin, routesTo: []}, analytics: Area{group: internal, tone: series_2, icon: bar_chart, label: "Analytics panel", hint: none, minRole: admin, routesTo: []}, team_board: Area{group: internal, tone: series_2, icon: columns, label: "Team board", hint: "This board itself: something broken or missing here.", minRole: gm_junior, routesTo: []}, internal: Area{group: internal, tone: series_4, icon: terminal, label: "Internal (sov, boxes, deploy)", hint: none, minRole: admin, routesTo: []}}
+value initialStatus ref(String coll=0 teamboard.statuses[] keyed=false local=false) schema=teamboard.initialStatus@21631b93 reload=false ids=[]
+  = open
+value defaultSeverity ref(String coll=0 teamboard.severities[] keyed=false local=false) schema=teamboard.defaultSeverity@21631b93 reload=false ids=[]
+  = normal
+fn canTransition(from: ref(String coll=0 teamboard.statuses[] keyed=false local=false), to: ref(String coll=0 teamboard.statuses[] keyed=false local=false)) -> Bool kind=lookup doc="sovcommon's CanTransition."
+  domain 0: [open, taken, fixed, verified, wont_do, duplicate]
+  domain 1: [open, taken, fixed, verified, wont_do, duplicate]
+  cells: [false, true, false, false, true, true, true, false, true, false, true, true, true, false, false, true, false, false, true, false, false, false, false, false, true, false, false, false, false, false, true, false, false, false, false, false]
+fn columnOf(s: ref(String coll=0 teamboard.statuses[] keyed=false local=false)) -> opt(ref(String coll=0 teamboard.columns[] keyed=false local=false)) kind=lookup doc="sovcommon's ColumnOf. `none` for a status no active column claims (only a retired\nstatus can be in that case), like the `(Column, bool)` it replaces."
+  domain 0: [open, taken, fixed, verified, wont_do, duplicate]
+  cells: [unclaimed, taken, fixed, done, done, done]
+fn areasVisibleTo(role: sovcommon.roles.Role) -> list(ref(String coll=0 teamboard.areas[] keyed=false local=false)) kind=lookup doc="sovcommon's AreasVisibleTo: minRole gates viewing and posting."
+  domain 0: [member, gm_junior, gm_senior, maintainer, owner, admin]
+  cells: [[], [game, balance, website, team_board], [game, balance, website, team_board], [game, balance, website, resource_studio, client, resource, team_board], [game, balance, website, resource_studio, client, resource, team_board], [game, balance, website, resource_studio, game_server, client, resource, sovcommon, admin_panel, analytics, team_board, internal]]
+fn groupedAreasVisibleTo(role: sovcommon.roles.Role) -> list(teamboard.AreaSection) kind=lookup doc="sovcommon's GroupedAreasVisibleTo: headers only for groups with a visible area."
+  domain 0: [member, gm_junior, gm_senior, maintainer, owner, admin]
+  cells: [[], [AreaSection{group: in_game, areas: [game, balance]}, AreaSection{group: out_game, areas: [website]}, AreaSection{group: internal, areas: [team_board]}], [AreaSection{group: in_game, areas: [game, balance]}, AreaSection{group: out_game, areas: [website]}, AreaSection{group: internal, areas: [team_board]}], [AreaSection{group: in_game, areas: [game, balance, client, resource]}, AreaSection{group: out_game, areas: [website]}, AreaSection{group: internal, areas: [resource_studio, team_board]}], [AreaSection{group: in_game, areas: [game, balance, client, resource]}, AreaSection{group: out_game, areas: [website]}, AreaSection{group: internal, areas: [resource_studio, team_board]}], [AreaSection{group: in_game, areas: [game, balance, game_server, client, resource]}, AreaSection{group: out_game, areas: [website]}, AreaSection{group: internal, areas: [resource_studio, sovcommon, admin_panel, analytics, team_board, internal]}]]

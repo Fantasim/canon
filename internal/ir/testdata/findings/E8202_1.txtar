@@ -1,0 +1,20 @@
+CODEGEN.md §5.11: @reload on a value a baked go emit holds.
+-- a/a.canon --
+package a
+
+/// A place.
+record Place {
+  /// Its key.
+  id: String
+}
+
+/// Every place.
+@reload let places: [Place] keyed by id = [{ id: "home" }]
+
+emit go { out: "@features/a", package: "a" }
+emit json { out: "out/" }
+-- findings.txt --
+error[E8202]  a/a.canon:10:13
+  @reload on places: the go emit is in baked mode, which has no file to reload
+
+1 error, 0 warnings in 1 package (…)

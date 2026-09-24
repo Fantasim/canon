@@ -1,0 +1,19 @@
+FINGERPRINT.md vector 9: package flow of WIRE.md §8.3, its statuses carry $fns.
+-- flow/flow.canon --
+package flow
+
+record Status {
+  label: String
+  next:  [ref Status] = []
+  export fn isTerminal(self) -> Bool { return next.isEmpty() }
+}
+
+let statuses: stable table Status = {
+  open   { label: "Open", next: [closed] }
+  closed { label: "Closed" }
+  retired stale { label: "Stale" }
+}
+
+export fn canTransition(from: ref Status, to: ref Status) -> Bool { return from.next.contains(to) }
+
+emit json { out: "out/statuses.json", values: [statuses] }

@@ -1,0 +1,8 @@
+{
+  "open": "unclaimed",
+  "taken": "taken",
+  "fixed": "fixed",
+  "verified": "done",
+  "wont_do": "done",
+  "duplicate": "done"
+}

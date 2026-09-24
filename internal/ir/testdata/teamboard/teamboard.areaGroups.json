@@ -1,0 +1,11 @@
+{
+  "in_game": {
+    "label": "In game"
+  },
+  "out_game": {
+    "label": "Out of game"
+  },
+  "internal": {
+    "label": "Internal"
+  }
+}

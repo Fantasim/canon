@@ -1,0 +1,115 @@
+{
+  "game": {
+    "group": "in_game",
+    "tone": "series-1",
+    "icon": "gamepad",
+    "label": "Game",
+    "hint": "Anything you saw while playing.",
+    "minRole": "gm_junior",
+    "routesTo": [
+      "game_server",
+      "client",
+      "resource",
+      "balance"
+    ]
+  },
+  "balance": {
+    "group": "in_game",
+    "tone": "series-1",
+    "icon": "scale",
+    "label": "Balance",
+    "hint": "Nothing is broken, the numbers feel wrong.",
+    "minRole": "gm_junior",
+    "routesTo": []
+  },
+  "website": {
+    "group": "out_game",
+    "tone": "series-2",
+    "icon": "globe",
+    "label": "Website",
+    "hint": "The site, accounts, rankings, donations and payments.",
+    "minRole": "gm_junior",
+    "routesTo": []
+  },
+  "resource_studio": {
+    "group": "internal",
+    "tone": "series-3",
+    "icon": "layers",
+    "label": "Resource Studio",
+    "hint": null,
+    "minRole": "maintainer",
+    "routesTo": []
+  },
+  "game_server": {
+    "group": "in_game",
+    "tone": "series-1",
+    "icon": "server",
+    "label": "Game server",
+    "hint": null,
+    "minRole": "admin",
+    "routesTo": []
+  },
+  "client": {
+    "group": "in_game",
+    "tone": "series-1",
+    "icon": "monitor",
+    "label": "Game client",
+    "hint": null,
+    "minRole": "maintainer",
+    "routesTo": []
+  },
+  "resource": {
+    "group": "in_game",
+    "tone": "series-1",
+    "icon": "database",
+    "label": "Game data (Resource)",
+    "hint": null,
+    "minRole": "maintainer",
+    "routesTo": []
+  },
+  "sovcommon": {
+    "group": "internal",
+    "tone": "series-3",
+    "icon": "package",
+    "label": "sovcommon",
+    "hint": null,
+    "minRole": "admin",
+    "routesTo": []
+  },
+  "admin_panel": {
+    "group": "internal",
+    "tone": "series-2",
+    "icon": "shield",
+    "label": "Admin panel",
+    "hint": null,
+    "minRole": "admin",
+    "routesTo": []
+  },
+  "analytics": {
+    "group": "internal",
+    "tone": "series-2",
+    "icon": "bar-chart",
+    "label": "Analytics panel",
+    "hint": null,
+    "minRole": "admin",
+    "routesTo": []
+  },
+  "team_board": {
+    "group": "internal",
+    "tone": "series-2",
+    "icon": "columns",
+    "label": "Team board",
+    "hint": "This board itself: something broken or missing here.",
+    "minRole": "gm_junior",
+    "routesTo": []
+  },
+  "internal": {
+    "group": "internal",
+    "tone": "series-4",
+    "icon": "terminal",
+    "label": "Internal (sov, boxes, deploy)",
+    "hint": null,
+    "minRole": "admin",
+    "routesTo": []
+  }
+}

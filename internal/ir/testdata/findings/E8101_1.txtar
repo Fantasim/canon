@@ -1,0 +1,21 @@
+CODEGEN.md §4.1: an emitted integer past Number.MAX_SAFE_INTEGER without @ts(bigint).
+-- a/a.canon --
+package a
+
+/// A counter.
+record Counter {
+  /// Its total.
+  total: Int
+}
+
+/// The counter.
+let counter: Counter = { total: 9_007_199_254_740_993 }
+
+emit ts { out: "out/a.ts" }
+-- a.counter.json --
+{"total": 9007199254740993}
+-- findings.txt --
+error[E8101]  a/a.canon:10:5
+  9007199254740993 does not fit a TypeScript number; add @ts(bigint) to total
+
+1 error, 0 warnings in 1 package (…)

@@ -37,11 +37,11 @@ func layout(e *ir.Emit, values []*ir.Value) ([]string, error) {
 	if e.FileName == "" {
 		paths := make([]string, len(values))
 		for i, v := range values {
-			paths[i] = v.Name + jsonExt
+			paths[i] = v.Name + ir.JSONExt
 		}
 		return paths, nil
 	}
-	if !strings.HasSuffix(e.FileName, jsonExt) || path.Base(e.FileName) != e.FileName || len(values) != 1 {
+	if !strings.HasSuffix(e.FileName, ir.JSONExt) || path.Base(e.FileName) != e.FileName || len(values) != 1 {
 		return nil, fmt.Errorf(fmtCount, ErrFileMode, e.FileName, len(values))
 	}
 	return []string{e.FileName}, nil
@@ -77,7 +77,7 @@ func linked(written map[string]string, names []string) error {
 		if !ok {
 			return fmt.Errorf(fmtNamed, ErrDataMode, name)
 		}
-		if got != name+jsonExt {
+		if got != name+ir.JSONExt {
 			return fmt.Errorf(fmtFile, ErrDataMode, name, got)
 		}
 	}

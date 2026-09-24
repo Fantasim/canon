@@ -1,0 +1,14 @@
+{
+  "issue": {
+    "tone": "warning",
+    "icon": "alert-triangle",
+    "label": "Something is wrong",
+    "minRole": "gm_junior"
+  },
+  "idea": {
+    "tone": "accent",
+    "icon": "lightbulb",
+    "label": "Idea or request",
+    "minRole": "gm_junior"
+  }
+}

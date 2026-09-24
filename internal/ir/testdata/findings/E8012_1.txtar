@@ -1,0 +1,19 @@
+CODEGEN.md §4.4: a field of a function type has no representation in generated code.
+-- a/a.canon --
+package a
+
+/// A rule.
+record Rule {
+  /// How it scores.
+  score: fn(Int) -> Int
+}
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+error[E8012]  a/a.canon:6:3
+  Rule.score cannot be emitted: fn(Int) -> Int has no representation in generated code
+
+error[E3306]  a/a.canon:6:10
+  a function type is not allowed here
+
+2 errors, 0 warnings in 1 package (…)

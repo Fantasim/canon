@@ -1,0 +1,17 @@
+{
+  "low": {
+    "tone": "neutral",
+    "label": "Low",
+    "default": false
+  },
+  "normal": {
+    "tone": "info",
+    "label": "Normal",
+    "default": true
+  },
+  "critical": {
+    "tone": "danger",
+    "label": "Critical",
+    "default": false
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "member": [],
+  "gm_junior": [
+    "game",
+    "balance",
+    "website",
+    "team_board"
+  ],
+  "gm_senior": [
+    "game",
+    "balance",
+    "website",
+    "team_board"
+  ],
+  "maintainer": [
+    "game",
+    "balance",
+    "website",
+    "resource_studio",
+    "client",
+    "resource",
+    "team_board"
+  ],
+  "owner": [
+    "game",
+    "balance",
+    "website",
+    "resource_studio",
+    "client",
+    "resource",
+    "team_board"
+  ],
+  "admin": [
+    "game",
+    "balance",
+    "website",
+    "resource_studio",
+    "game_server",
+    "client",
+    "resource",
+    "sovcommon",
+    "admin_panel",
+    "analytics",
+    "team_board",
+    "internal"
+  ]
+}

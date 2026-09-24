@@ -1,0 +1,10 @@
+CODEGEN.md §2.8: a Go output under no root that go_module maps.
+-- a/a.canon --
+package a
+
+emit go { out: "out/go/", package: "a" }
+-- findings.txt --
+error[E8007]  a/a.canon:3:16
+  Go output a/out/go/ is under no root listed in go_module
+
+1 error, 0 warnings in 1 package (…)

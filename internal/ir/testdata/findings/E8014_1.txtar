@@ -1,0 +1,24 @@
+CODEGEN.md §5.13: types mode has no data for a precomputed fn or a computed default.
+-- a/a.canon --
+package a
+
+/// An answer.
+export fn answer() -> Int { return 42 }
+
+/// A range of levels.
+record Span {
+  /// The first level.
+  low: Int
+  /// The last level.
+  high: Int = low + 10
+}
+
+emit go { out: "@features/a", package: "a", mode: types }
+-- findings.txt --
+error[E8014]  a/a.canon:4:11
+  types mode cannot emit the precomputed function of answer: there is no data to read it from
+
+error[E8014]  a/a.canon:11:3
+  types mode cannot emit the computed default of Span.high: there is no data to read it from
+
+2 errors, 0 warnings in 1 package (…)

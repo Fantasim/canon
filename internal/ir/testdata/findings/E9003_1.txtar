@@ -1,0 +1,13 @@
+CONFORMANCE.md §2.1: an export fn with an optional parameter.
+-- a/a.canon --
+package a
+
+/// A bonus.
+export fn bonus(level: Int?) -> Int { return level ?? 0 }
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+error[E9003]  a/a.canon:4:17
+  parameter level of export fn bonus is optional
+
+1 error, 0 warnings in 1 package (…)

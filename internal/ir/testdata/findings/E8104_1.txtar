@@ -1,0 +1,19 @@
+CODEGEN.md §5.12: a TypeScript emit of a package with an input field.
+-- a/a.canon --
+package a
+
+/// The service settings.
+record Settings {
+  /// The key of the API.
+  apiKey: input String? from env "API_KEY"
+}
+
+/// The settings.
+let settings: Settings = {}
+
+emit ts { out: "out/a.ts" }
+-- findings.txt --
+error[E8104]  a/a.canon:6:3
+  input field apiKey cannot be emitted to TypeScript
+
+1 error, 0 warnings in 1 package (…)

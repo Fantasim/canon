@@ -1,0 +1,122 @@
+{
+  "member": [],
+  "gm_junior": [
+    {
+      "group": "in_game",
+      "areas": [
+        "game",
+        "balance"
+      ]
+    },
+    {
+      "group": "out_game",
+      "areas": [
+        "website"
+      ]
+    },
+    {
+      "group": "internal",
+      "areas": [
+        "team_board"
+      ]
+    }
+  ],
+  "gm_senior": [
+    {
+      "group": "in_game",
+      "areas": [
+        "game",
+        "balance"
+      ]
+    },
+    {
+      "group": "out_game",
+      "areas": [
+        "website"
+      ]
+    },
+    {
+      "group": "internal",
+      "areas": [
+        "team_board"
+      ]
+    }
+  ],
+  "maintainer": [
+    {
+      "group": "in_game",
+      "areas": [
+        "game",
+        "balance",
+        "client",
+        "resource"
+      ]
+    },
+    {
+      "group": "out_game",
+      "areas": [
+        "website"
+      ]
+    },
+    {
+      "group": "internal",
+      "areas": [
+        "resource_studio",
+        "team_board"
+      ]
+    }
+  ],
+  "owner": [
+    {
+      "group": "in_game",
+      "areas": [
+        "game",
+        "balance",
+        "client",
+        "resource"
+      ]
+    },
+    {
+      "group": "out_game",
+      "areas": [
+        "website"
+      ]
+    },
+    {
+      "group": "internal",
+      "areas": [
+        "resource_studio",
+        "team_board"
+      ]
+    }
+  ],
+  "admin": [
+    {
+      "group": "in_game",
+      "areas": [
+        "game",
+        "balance",
+        "game_server",
+        "client",
+        "resource"
+      ]
+    },
+    {
+      "group": "out_game",
+      "areas": [
+        "website"
+      ]
+    },
+    {
+      "group": "internal",
+      "areas": [
+        "resource_studio",
+        "sovcommon",
+        "admin_panel",
+        "analytics",
+        "team_board",
+        "internal"
+      ]
+    }
+  ]
+}

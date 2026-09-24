@@ -1,0 +1,18 @@
+{
+  "blocking": {
+    "tone": "danger",
+    "icon": "hand",
+    "label": "This blocks my work",
+    "hint": null,
+    "setBy": "reporter",
+    "viewMinRole": null
+  },
+  "sensitive": {
+    "tone": "warning",
+    "icon": "lock",
+    "label": "Only the dev team should see",
+    "hint": "Exploits, dupes, security problems.",
+    "setBy": "reporter",
+    "viewMinRole": "maintainer"
+  }
+}
