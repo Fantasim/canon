@@ -94,8 +94,9 @@ func (r *run) invoke(fn value.Value, args []value.Value, site source.Span) value
 	}
 	fr := &frame{
 		vars: make(map[check.Object]value.Value, len(c.vars)+len(args)), self: c.self, it: c.it,
-		short: c.short, file: c.file, pkg: c.pkg, call: site, caller: r.fr,
+		short: c.short, file: c.file, pkg: c.pkg, call: site,
 	}
+	fr.under(r.fr)
 	maps.Copy(fr.vars, c.vars)
 	body := r.bindLambda(c, fr, args)
 	if body == nil {
@@ -104,10 +105,10 @@ func (r *run) invoke(fn value.Value, args []value.Value, site source.Span) value
 	}
 	saved := r.fr
 	r.fr = fr
-	r.depth++
+	r.ev.depth++
 	v := r.eval(body)
 	r.fr = saved
-	r.depth--
+	r.ev.depth--
 	return v
 }
 

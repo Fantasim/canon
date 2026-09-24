@@ -2,6 +2,7 @@ package eval
 
 import (
 	"context"
+	"math"
 	"regexp"
 	"strings"
 
@@ -11,9 +12,9 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// Builder verifies an expect subject and runs its instance checks (EVALUATION.md §10.2).
+// Builder verifies an expect subject and runs its checks into the capture (DECISIONS 197).
 type Builder interface {
-	Build(ctx context.Context, v value.Value) []diag.Finding
+	Build(ctx context.Context, v value.Value, capture *diag.Bag)
 }
 
 // TestRun is the outcome of one test (EVALUATION.md §10.4).
@@ -28,10 +29,17 @@ type TestRun struct {
 // Expect is one expect run: whether it passed, the findings its subject captured, and the
 // poisoned top-level value it read, if any.
 type Expect struct {
-	Stmt     *syntax.ExpectStmt
-	Passed   bool
-	Captured []diag.Finding
-	Poisoned string
+	Stmt        *syntax.ExpectStmt
+	Passed      bool
+	Captured    []diag.Finding
+	Poisoned    string
+	Left, Right string // a failed comparison's operands as text, up to operandText bytes (EVALUATION.md §10.3)
+}
+
+// comparison is the operands of the comparison an `expect c` evaluates.
+type comparison struct {
+	at          syntax.Expr
+	left, right value.Value
 }
 
 // testState is the test a run executes.
@@ -77,62 +85,75 @@ func execExpect(r *run, s syntax.Stmt) flow {
 		r.bug(s)
 		return flowAbort
 	}
-	capture := diag.NewBag(r.ev.files(), r.fr.pkg)
-	saved := r.sink
-	r.sink, r.poisonAt = capture, ""
-	v := r.eval(x.X)
-	aborted := r.failed
-	r.failed, r.sink = false, saved
-	ex := Expect{Stmt: x, Poisoned: r.poisonAt}
-	if !aborted && x.Outcome != nil && r.test.builder != nil {
-		ex.Captured = r.test.builder.Build(r.ctx, v)
-	}
-	ex.Captured = unique(append(capture.Findings(), ex.Captured...))
-	r.poisonAt = ""
+	b := r.subject(x)
 	if r.ev.exhausted {
 		r.failed = true
 		return flowAbort
 	}
-	ex.Passed = ex.Poisoned == "" && judge(x, v, aborted, ex.Captured)
-	r.test.out.Expects = append(r.test.out.Expects, ex)
+	ex := b.ex
+	ex.Passed = ex.Poisoned == "" && judge(x, b.v, b.aborted, ex.Captured)
 	if !ex.Passed {
 		r.test.out.Failed = true
+		if b.cmp != nil && b.cmp.left != nil && b.cmp.right != nil {
+			ex.Left, ex.Right = value.TextUpTo(b.cmp.left, operandText), value.TextUpTo(b.cmp.right, operandText)
+		}
 	}
+	r.test.out.Expects = append(r.test.out.Expects, ex)
 	return flowNext
 }
 
-// unique drops the findings a conversion and verification both reported (EVALUATION.md §14).
-func unique(fs []diag.Finding) []diag.Finding {
-	type key struct {
-		code    diag.Code
-		span    source.Span
-		message string
+// built is an expect's subject once built: the expect so far, its value, whether evaluating
+// it aborted, and the comparison it evaluated, if any.
+type built struct {
+	ex      Expect
+	v       value.Value
+	aborted bool
+	cmp     *comparison
+}
+
+// subject builds an expect's subject into one capture, unlimited and deduplicated (DECISIONS 197).
+func (r *run) subject(x *syntax.ExpectStmt) built {
+	capture := diag.NewBag(r.ev.files(), r.fr.pkg)
+	capture.Truncate(math.MaxInt)
+	saved := r.sink
+	b := built{cmp: comparisonOf(x)}
+	r.sink, r.poisonAt, r.cmp = capture, "", b.cmp
+	b.v = r.eval(x.X)
+	b.aborted = r.failed
+	r.failed, r.sink, r.cmp = false, saved, nil
+	b.ex = Expect{Stmt: x, Poisoned: r.poisonAt}
+	r.poisonAt = ""
+	if !b.aborted && x.Outcome != nil && r.test.builder != nil {
+		r.test.builder.Build(r.ctx, b.v, capture)
 	}
-	seen := map[key]bool{}
-	var out []diag.Finding
-	for _, f := range fs {
-		k := key{code: f.Code, span: f.Span, message: f.Message}
-		if !seen[k] {
-			seen[k] = true
-			out = append(out, f)
-		}
+	b.ex.Captured = capture.Findings()
+	return b
+}
+
+// comparisonOf is the comparison `expect c` evaluates, nil when c is not one.
+func comparisonOf(x *syntax.ExpectStmt) *comparison {
+	if x.Outcome != nil {
+		return nil
 	}
-	return out
+	if c, ok := unparen(x.X).(*syntax.BinaryExpr); ok && comparisons[c.Op] {
+		return &comparison{at: c}
+	}
+	return nil
 }
 
 // judge is whether an expect passes (EVALUATION.md §10.3).
 func judge(x *syntax.ExpectStmt, v value.Value, aborted bool, captured []diag.Finding) bool {
 	if x.Outcome == nil {
 		b, ok := v.(*value.Bool)
-		return !aborted && ok && b.V && !any(captured, diag.Error, nil)
+		return !aborted && ok && b.V && !anyFinding(captured, diag.Error, nil)
 	}
 	switch x.Outcome.Name {
 	case outcomePasses:
-		return !any(captured, diag.Error, nil)
+		return !anyFinding(captured, diag.Error, nil)
 	case outcomeFails:
-		return any(captured, diag.Error, matcher(x.Message))
+		return anyFinding(captured, diag.Error, matcher(x.Message))
 	case outcomeWarns:
-		return any(captured, diag.Warning, matcher(x.Message))
+		return anyFinding(captured, diag.Warning, matcher(x.Message))
 	}
 	return false
 }
@@ -162,8 +183,8 @@ func testNameParts(n *syntax.StringLit) string {
 	return b.String()
 }
 
-// any reports a captured finding of severity sev that match accepts (every one when nil).
-func any(fs []diag.Finding, sev diag.Severity, match func(diag.Finding) bool) bool {
+// anyFinding reports a captured finding of severity sev that match accepts (every one when nil).
+func anyFinding(fs []diag.Finding, sev diag.Severity, match func(diag.Finding) bool) bool {
 	for _, f := range fs {
 		if f.Severity == sev && (match == nil || match(f)) {
 			return true

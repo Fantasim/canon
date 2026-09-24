@@ -14,7 +14,7 @@ func stringMethods() map[string]builtin {
 	return map[string]builtin{
 		bLen: strLen, bIsEmpty: strIsEmpty, bContains: strPred(strings.Contains),
 		bStartsWith: strPred(strings.HasPrefix), bEndsWith: strPred(strings.HasSuffix),
-		bFind: strFind, bSplit: strSplit, bTrim: strMap(trimASCII), bLower: strMap(lowerASCII),
+		bFind: strFind, bSplit: strSplit, bTrim: strTrim, bLower: strMap(lowerASCII),
 		bUpper: strMap(upperASCII), bReplace: strReplace, bMatches: strMatches,
 	}
 }
@@ -41,10 +41,24 @@ func strPred(f func(s, t string) bool) builtin {
 	}
 }
 
+// strMap is a case mapping: 1, then a step per byte of its result before it is made (DECISIONS 197).
 func strMap(f func(s string) string) builtin {
 	return func(h Host, c *Call) (value.Value, bool) {
-		return c.strv(f(strOf(c.Recv))), h.Charge(1)
+		s := strOf(c.Recv)
+		if !h.Charge(1 + len(s)) {
+			return nil, false
+		}
+		return c.strv(f(s)), true
 	}
+}
+
+// strTrim is 1, then a step per byte of the trimmed string (DECISIONS 197).
+func strTrim(h Host, c *Call) (value.Value, bool) {
+	t := trimASCII(strOf(c.Recv))
+	if !h.Charge(1 + len(t)) {
+		return nil, false
+	}
+	return c.strv(t), true
 }
 
 // strFind is the byte index of the first occurrence; "x".find("") is 0.
@@ -53,29 +67,40 @@ func strFind(h Host, c *Call) (value.Value, bool) {
 	return c.orNone(c.intv(int64(i)), i >= 0), h.Charge(1)
 }
 
-// strSplit: "a,,b" gives three parts, "" gives [""]; E4106 on an empty separator.
+// strSplit: "a,,b" gives three parts, "" gives [""]; E4106 on an empty separator. It costs 1,
+// then a step per part and per byte of the parts, before they are made (DECISIONS 197).
 func strSplit(h Host, c *Call) (value.Value, bool) {
 	sep := strOf(c.arg(0))
 	if sep == "" {
 		h.Fail(diag.E4106.AtSeparator(h.Site(), bSplit))
 		return nil, false
 	}
-	parts := strings.Split(strOf(c.Recv), sep)
+	s := strOf(c.Recv)
+	n := strings.Count(s, sep) + 1
+	if !h.Charge(1 + n + len(s) - (n-1)*len(sep)) {
+		return nil, false
+	}
+	parts := strings.Split(s, sep)
 	out := make([]value.Value, len(parts))
 	for i, p := range parts {
 		out[i] = c.strv(p)
 	}
-	return c.list(out), h.Charge(1)
+	return c.list(out), true
 }
 
-// strReplace replaces every non-overlapping occurrence, left to right; E4106 on an empty pattern.
+// strReplace replaces every non-overlapping occurrence, left to right; E4106 on an empty
+// pattern. It costs 1, then a step per byte of its result before it is made (DECISIONS 197).
 func strReplace(h Host, c *Call) (value.Value, bool) {
 	a := strOf(c.arg(0))
 	if a == "" {
 		h.Fail(diag.E4106.AtPattern(h.Site(), bReplace))
 		return nil, false
 	}
-	return c.strv(strings.ReplaceAll(strOf(c.Recv), a, strOf(c.arg(1)))), h.Charge(1)
+	s, b := strOf(c.Recv), strOf(c.arg(1))
+	if !h.Charge(1 + len(s) + strings.Count(s, a)*(len(b)-len(a))) {
+		return nil, false
+	}
+	return c.strv(strings.ReplaceAll(s, a, b)), true
 }
 
 // strMatches is an RE2 search (STDLIB.md §8).

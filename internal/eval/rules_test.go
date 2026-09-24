@@ -43,6 +43,9 @@ let pets: table Pet = {
   tom { name: "Tom" }
   retired old { name: "Old", age: 9 }
 }
+
+local let r: ref pets = rex
+local let refs: [ref pets] = [rex, tom]
 `
 
 // evalCase is one rule: an expression of a type, and the text of its value or the codes of
@@ -312,6 +315,12 @@ func TestControl(t *testing.T) {
 // xs3 is a list of three, four steps.
 const xs3 = "local let xs: [Int] = [3, 1, 2]\n"
 
+// ls2 is a list of two lists of one, five steps.
+const ls2 = "local let ls: [[Int]] = [[1], [2]]\n"
+
+// s4 is a string of four bytes, one step.
+const s4 = "local let s: String = \" Ab \"\n"
+
 // EVALUATION.md §12.1, §12.2: exact costs, seen at the budget whose last step they spend.
 func TestStepCosts(t *testing.T) {
 	for _, c := range []struct {
@@ -325,13 +334,27 @@ func TestStepCosts(t *testing.T) {
 		{"a user call: name, call, invocation, statement, body", "local fn f(n: Int) -> Int { return n }\nlocal let x: Int = f(3)", 6},
 		{"STDLIB.md §4.5 sortBy: 3 comparisons", xs3 + "local let x: [Int] = xs.sortBy(x => x)", 4 + 13},
 		{"STDLIB.md §4.1 first(pred): the elements visited", xs3 + "local let x: Int? = xs.first(x => x > 5)", 4 + 19},
-		{"STDLIB.md §9.1 String(x): the values visited", xs3 + "local let x: String = String(xs)", 4 + 7},
-		{"STDLIB.md §9.1 interpolation: the values visited", xs3 + "local let x: String = \"{xs}\"", 4 + 6},
+		{"STDLIB.md §9.1, DECISIONS 197 String(x): values visited, then bytes", xs3 + "local let x: String = String(xs)", 4 + 7 + 9},
+		{"STDLIB.md §9.1, DECISIONS 197 interpolation: values visited, then bytes", xs3 + "local let x: String = \"{xs}\"", 4 + 6 + 9},
+		{"DECISIONS 197 lower: 1 and a byte each", s4 + "local let x: String = s.lower()", 1 + 3 + 1 + 4},
+		{"DECISIONS 197 upper: 1 and a byte each", s4 + "local let x: String = s.upper()", 1 + 3 + 1 + 4},
+		{"DECISIONS 197 trim: 1 and a byte of the result each", s4 + "local let x: String = s.trim()", 1 + 3 + 1 + 2},
+		{"DECISIONS 197 replace: 1 and a byte of the result each", s4 + "local let x: String = s.replace(\"b\", \"cd\")", 1 + 5 + 1 + 5},
+		{"DECISIONS 197 join: n and a byte of the result each", "local let ws: [String] = [\"a\", \"bc\"]\nlocal let x: String = ws.join(\"-\")", 3 + 4 + 2 + 4},
+		{"DECISIONS 197 split: 1, a part and a byte of the parts each", s4 + "local let x: [String] = s.split(\"b\")", 1 + 4 + 1 + 2 + 3},
+		{"DECISIONS 197 == on scalars: no pair", "local let two: Int = 2\nlocal let x: Bool = two == two", 1 + 3},
+		{"DECISIONS 197 == on lists: a composite pair", xs3 + "local let ys: [Int] = [3, 1, 2]\nlocal let x: Bool = xs == ys", 4 + 4 + 3 + 1},
+		{"DECISIONS 197 in: the pairs compared", ls2 + "local let x: Bool = [2] in ls", 5 + 4 + 2},
+		{"DECISIONS 197 contains: visited and the pairs compared", ls2 + "local let x: Bool = ls.contains([2])", 5 + 5 + 2 + 2},
+		{"DECISIONS 197 a template's literal text and format spec: a byte each", "local let n: Int = 5\nlocal let x: String = \"n={n:.2}\"", 1 + 2 + 2 + 1 + 4},
 		{"STDLIB.md §4.1 a slice: its elements", xs3 + "local let x: [Int] = xs[0..2]", 4 + 7},
 		{"STDLIB.md §4.2 pairs: one per pair", xs3 + "local let x: Int = xs.pairs().len()", 4 + 9},
 		{"STDLIB.md §4.2 flatMap: n and the result", xs3 + "local let x: [Int] = xs.flatMap(x => [x])", 4 + 19},
 		{"STDLIB.md §2.3 reachable: nodes and successors", "local let x: [Int] = reachable(from: 1, next: n => if n < 3 { [n + 1] } else { [] })", 33},
 		{"STDLIB.md §2.3 topoSort: nodes and successors", xs3 + "local let x: [Int] = topoSort(xs, next: n => xs[0..0])", 4 + 25},
+		{"STDLIB.md §10 range len: 1", "local let x: Int = (1..3).len()", 6},
+		{"DECISIONS 195 list +: one per element of the result", xs3 + "local let x: [Int] = xs + xs", 4 + 9},
+		{"DECISIONS 195 string +: one per byte of the result", "local let s: String = \"ab\"\nlocal let x: String = s + s", 1 + 7},
 	} {
 		t.Run(c.rule, func(t *testing.T) {
 			src := []byte("/// A.\npackage a\n\n" + c.src + "\n")
@@ -355,4 +378,17 @@ func TestChargeBeforeError(t *testing.T) {
 			t.Errorf("budget %d: want %s\n%s", budget, want, out)
 		}
 	}
+}
+
+// TYPES.md §7.5, DECISIONS 195: a set meets a ref and the entry it names as one element.
+func TestSetsOfRefs(t *testing.T) {
+	runCases(t, []evalCase{
+		{"STDLIB.md §4.2 unique", "Int", "[r, pets[rex]].unique().len()", "1"},
+		{"STDLIB.md §4.2 union", "Int", "refs.union([pets[rex]]).len()", "2"},
+		{"STDLIB.md §4.2 diff", "Int", "refs.diff([pets[rex]]).len()", "1"},
+		{"STDLIB.md §4.2 toMap with ref keys", "Int", "[pets[rex], pets[tom]].toMap(p => if p.age > 2 { r } else { refs[1] }, p => 1).len()", "2"},
+		{"STDLIB.md §4.2 toMap: refs to one entry are one key", "{ref pets: Int}", "[pets[rex], pets[tom]].toMap(p => r, p => 1)", codeOf(diag.E4502)},
+		{"STDLIB.md §2.3 reachable from a ref to its own entry", "Int", "reachable(from: r, next: p => [pets[rex]]).len()", "1"},
+		{"STDLIB.md §2.3 cycles: a ref whose successor is its entry loops", "Int", "cycles(refs, next: p => [pets[p.name.lower()]]).len()", "2"},
+	})
 }

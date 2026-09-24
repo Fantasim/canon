@@ -89,7 +89,13 @@ func position(h Host, recv, x value.Value) (int, bool) {
 			if ek, _ := KeyOf(e); ek == k {
 				return i, true
 			}
-		} else if value.Equal(e, x) {
+			continue
+		}
+		eq, ok := h.Equal(e, x)
+		if !ok {
+			return 0, false
+		}
+		if eq {
 			return i, true
 		}
 	}
@@ -181,11 +187,18 @@ func seqFlatten(h Host, c *Call) (value.Value, bool) {
 // each charges one step per element as it is taken, in order (DECISIONS 185), and calls fn
 // on it; false once the root is aborted.
 func each(h Host, xs []value.Value, fn func(i int, x value.Value)) bool {
+	return eachWhile(h, xs, func(i int, x value.Value) bool {
+		fn(i, x)
+		return true
+	})
+}
+
+// eachWhile is each with an fn that may abort the root: its false stops the walk and is returned.
+func eachWhile(h Host, xs []value.Value, fn func(i int, x value.Value) bool) bool {
 	for i, x := range xs {
-		if !h.Charge(1) {
+		if !h.Charge(1) || !fn(i, x) {
 			return false
 		}
-		fn(i, x)
 	}
 	return true
 }
@@ -198,24 +211,26 @@ func seqReverse(h Host, c *Call) (value.Value, bool) {
 }
 
 func seqUnique(h Host, c *Call) (value.Value, bool) {
-	seen := newSet()
+	seen := newSet(h, elemType(c.Result))
 	var out []value.Value
-	ok := each(h, Elems(c.Recv), func(_ int, x value.Value) {
-		if _, added := seen.add(x); added {
+	ok := eachWhile(h, Elems(c.Recv), func(_ int, x value.Value) bool {
+		_, added, ok := seen.add(x)
+		if added {
 			out = append(out, x)
 		}
+		return ok
 	})
 	return c.list(out), ok
 }
 
 // seqIsUnique costs n, whatever it finds.
 func seqIsUnique(h Host, c *Call) (value.Value, bool) {
-	seen := newSet()
+	seen := newSet(h, elemType(c.Recv.Type()))
 	unique := true
-	ok := each(h, Elems(c.Recv), func(_ int, x value.Value) {
-		if _, added := seen.add(x); !added {
-			unique = false
-		}
+	ok := eachWhile(h, Elems(c.Recv), func(_ int, x value.Value) bool {
+		_, added, ok := seen.add(x)
+		unique = unique && added
+		return ok
 	})
 	return c.boolv(unique), ok
 }

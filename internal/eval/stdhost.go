@@ -47,6 +47,14 @@ func (h *stdHost) Charge(n int) bool {
 	return h.r.spend(n, func() source.Span { return h.r.site })
 }
 
+func (h *stdHost) Equal(a, b value.Value) (bool, bool) {
+	return h.r.equal(a, b, func() source.Span { return h.r.site })
+}
+
+func (h *stdHost) Remaining() int {
+	return h.r.remaining()
+}
+
 func (h *stdHost) Fail(b *diag.Builder) {
 	h.r.fail(b)
 }

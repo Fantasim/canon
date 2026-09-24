@@ -47,20 +47,22 @@ func execAssign(r *run, s syntax.Stmt) flow {
 	return flowNext
 }
 
-// assigned is the value an assignment stores: e, or `old op e` for a compound one.
+// assigned is e, or `old op e` with old read before e is evaluated (EVALUATION.md §2.2).
 func (r *run) assigned(x *syntax.AssignStmt, cur value.Value, keys []value.Value, t types.Type) value.Value {
+	op, isCompound := compound[x.Op]
+	var old value.Value
+	if isCompound {
+		if old = r.getAt(cur, keys, x); old == nil {
+			return nil
+		}
+	}
 	rhs := r.eval(x.Value)
 	if rhs == nil {
 		return nil
 	}
-	op, isCompound := compound[x.Op]
 	s := r.varSite(r.ev.info.Uses[rootOf(x.Target)])
 	if !isCompound {
 		return r.store(rhs, t, s, nil)
-	}
-	old := r.getAt(cur, keys, x)
-	if old == nil {
-		return nil
 	}
 	return r.store(r.binop(op, old, rhs, x, t), t, s, nil)
 }
@@ -148,10 +150,9 @@ func (r *run) setAt(v value.Value, keys []value.Value, nv value.Value, at syntax
 func (r *run) slot(v, k value.Value, at syntax.Node, adding bool) (int, bool) {
 	switch x := v.(type) {
 	case *value.Map:
-		for i, key := range x.Keys {
-			if value.Equal(key, k) {
-				return i, true
-			}
+		r.site = r.span(at)
+		if i, ok := std.MapIndex(r.host(), x, k); !ok || i >= 0 {
+			return i, ok
 		}
 		if adding {
 			return -1, true

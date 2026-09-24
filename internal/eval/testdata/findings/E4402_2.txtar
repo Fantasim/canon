@@ -1,0 +1,48 @@
+EVALUATION.md §3.3, DECISIONS 195: the 10000 frames count every live frame across the roots
+forced from one another; three lets each 4000 deep, chained, run out in the third.
+-- a/a.canon --
+/// A.
+package a
+
+local fn fa(n: Int) -> Int {
+  if n == 0 { return b }
+  return fa(n - 1)
+}
+
+local fn fb(n: Int) -> Int {
+  if n == 0 { return c }
+  return fb(n - 1)
+}
+
+local fn fc(n: Int) -> Int {
+  if n == 0 { return 0 }
+  return fc(n - 1)
+}
+
+local let a: Int = fa(4000)
+
+local let b: Int = fb(4000)
+
+local let c: Int = fc(4000)
+-- findings.txt --
+error[E4402]  a/a.canon:16:10
+  call depth exceeds 10000
+  in fc (a/a.canon:16)
+  in fc (a/a.canon:16)
+  in fc (a/a.canon:16)
+  in fc (a/a.canon:16)
+  in fc (a/a.canon:16)
+  in fc (a/a.canon:16)
+  in fc (a/a.canon:16)
+  in fc (a/a.canon:16)
+  in fc (a/a.canon:16)
+  in fc (a/a.canon:16)
+  in fc (a/a.canon:16)
+  in fc (a/a.canon:16)
+  in fc (a/a.canon:16)
+  in fc (a/a.canon:16)
+  in fc (a/a.canon:16)
+  in fc (a/a.canon:16)
+  (9984 more frames)
+
+1 error, 0 warnings in 1 package (…)

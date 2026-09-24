@@ -1,0 +1,31 @@
+STDLIB.md §9.1, DECISIONS 195: String(x) counts the values it visits up to the budget and
+charges them before making any text, so a value shared 2^60 ways runs out at the call.
+-- a/a.canon --
+/// A.
+package a
+
+/// A node.
+record Node {
+  /// Its children.
+  kids: [Node]
+}
+
+local fn grow(n: Int) -> Node {
+  var x = Node { kids: [] }
+  var i = 0
+  while i < n {
+    x = Node { kids: [x, x] }
+    i += 1
+  }
+  return x
+}
+
+local let s: String = String(grow(60))
+-- budget --
+1000
+-- findings.txt --
+error[E4401]  a/a.canon:20:23
+  evaluation budget of 1000 steps exhausted
+  heaviest: s (1000 steps)
+
+1 error, 0 warnings in 1 package (…)

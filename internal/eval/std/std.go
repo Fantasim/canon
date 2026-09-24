@@ -14,6 +14,8 @@ import (
 type Host interface {
 	Invoke(fn value.Value, args ...value.Value) (value.Value, bool)
 	Charge(n int) bool
+	// Remaining is the steps the invocation may still spend before its budget runs out.
+	Remaining() int
 	// Fail reports a hard error (EVALUATION.md §7.1) and aborts the root.
 	Fail(b *diag.Builder)
 	// Site is the call expression, where STDLIB.md §1.4 locates every error of a built-in.
@@ -21,6 +23,8 @@ type Host interface {
 	// Entry is the entry of key k of a table or keyed list.
 	Entry(coll value.Value, k value.Key) (*value.Record, bool)
 	Regexp(pattern string) *regexp.Regexp
+	// Equal is value equality, a step per composite pair visited (DECISIONS 197).
+	Equal(a, b value.Value) (equal, ok bool)
 	// Coerce converts a value to type t as a storage point does (TYPES.md §6.2).
 	Coerce(v value.Value, t types.Type) (value.Value, bool)
 }

@@ -32,6 +32,7 @@ type Evaluator struct {
 	spent     map[charge]int64
 	order     []charge
 	exhausted bool
+	depth     int // the live user frames of every root (EVALUATION.md §3.3, DECISIONS 195)
 
 	states    map[check.Object]*rootState
 	roots     map[Root]*rootState

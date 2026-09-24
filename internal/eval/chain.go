@@ -180,8 +180,13 @@ func (r *run) forceLink(x *syntax.ForceExpr) value.Value {
 // E4002 when it is missing.
 func (r *run) lookupKey(coll, key value.Value, x syntax.Expr) value.Value {
 	if m, ok := coll.(*value.Map); ok {
-		if v, found := m.Get(key); found {
-			return r.read(v)
+		r.site = r.span(x)
+		i, ok := std.MapIndex(r.host(), m, key)
+		if !ok {
+			return nil
+		}
+		if i >= 0 {
+			return r.read(m.Vals[i])
 		}
 	} else if k, ok := std.KeyOf(key); ok {
 		if e, found := r.ev.entry(coll, k); found {

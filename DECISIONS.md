@@ -1648,13 +1648,14 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     package, selected or imported, blocks code, data and lock; the imported package's error
     findings are then reported with the selection's (API R2 extended), so nothing is refused
     without its reason. A build with layers never writes `canon.lock` (EVALUATION §9.3, LOCK
-    §6.1 over §5). `Revision()` hashes `<dir>/canon.lock` of every package directory, whatever
-    the selection (API S3). Two outputs at one path are `E8152` unless both are a runtime helper
+    §6.1 over §5). `Revision()` hashes `<dir>/canon.lock` of every directory holding a source
+    file, and of its ancestors, whatever the selection (API S3: it cannot know packages unparsed). Two outputs at one path are `E8152` unless both are a runtime helper
     file (WIRE §8.1's letter). `--adopt` takes only a C++ header (CODEGEN §2.4); a JSON output is
     `E8001` even when listed. A target without a generator yet (M1: cpp, ts, view) is refused
     before analysis, naming the emit (`build.ErrNoGenerator`); a `load` before M3 is
     `build.ErrLoad`: both are Go errors, exit 2, until their milestone. `build` writes its outputs
-    and locks itself, all or nothing (IMPLEMENTATION-PLAN §3). Layers reach the evaluator in
+    and locks itself, all or nothing on a write error (IMPLEMENTATION-PLAN §3; a crash between
+    renames can leave a mix). Layers reach the evaluator in
     M1 (187 implements them; supersedes 143's "not applied before M3"). Reason: nothing written
     that `check` would reject, and every refusal names its cause.
 
@@ -1668,6 +1669,12 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     its limit does. `Evaluator.Test`'s `Builder.Build(ctx, v, capture *diag.Bag)` reports into
     the expect's capture bag (amends 186's "findings returned"), whose limit is lifted so that
     `fails "text"` sees every finding; an expect's operand text is capped like `VisitedUpTo`.
+    The per-byte charge adds to each built-in's listed cost (1, n, values visited), never replaces
+    it; `value` gains `TextLenUpTo` and `TextUpTo` (additions beside the frozen value.go).
+    `split` charges one step per part and per byte of its parts. `==` and every equality the
+    evaluator runs (`in`, `contains`, `indexOf`, map and set lookups) charge one step per
+    composite pair visited through `value.EqualUpTo` (amends TYPES §7.5 and §12.1's one node), so
+    comparing wide shared values runs into `E4401`; the pair memo starts past a named threshold.
 
 198. **A fieldless case's doc goes on its kind member (CODEGEN §2.6, §5.2; the gen/go review).**
     A case's doc sits on its Go type; a case with no fields has no type, so its doc goes on the

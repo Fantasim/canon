@@ -21,25 +21,30 @@ func seqZip(h Host, c *Call) (value.Value, bool) {
 	return c.list(out), ok
 }
 
-// setOf takes b's elements into a set, one step each.
-func setOf(h Host, b []value.Value) (*valueSet, bool) {
-	s := newSet()
-	ok := each(h, b, func(_ int, y value.Value) { s.add(y) })
+// setOf takes b's elements into a set of elem, one step each.
+func setOf(h Host, b []value.Value, elem types.Type) (*valueSet, bool) {
+	s := newSet(h, elem)
+	ok := eachWhile(h, b, func(_ int, y value.Value) bool {
+		_, _, ok := s.add(y)
+		return ok
+	})
 	return s, ok
 }
 
 // filterBy keeps the receiver's elements that are (or are not) in b, in receiver order; it
 // costs n + len(b).
 func filterBy(h Host, c *Call, in bool) (value.Value, bool) {
-	s, ok := setOf(h, Elems(c.arg(0)))
+	s, ok := setOf(h, Elems(c.arg(0)), elemType(c.Result))
 	if !ok {
 		return nil, false
 	}
 	var out []value.Value
-	ok = each(h, Elems(c.Recv), func(_ int, x value.Value) {
-		if (s.index(x) >= 0) == in {
+	ok = eachWhile(h, Elems(c.Recv), func(_ int, x value.Value) bool {
+		i, ok := s.index(x)
+		if (i >= 0) == in {
 			out = append(out, x)
 		}
+		return ok
 	})
 	return c.list(out), ok
 }
@@ -52,18 +57,18 @@ func seqDiff(h Host, c *Call) (value.Value, bool) {
 	return filterBy(h, c, false)
 }
 
+// seqUnion is the receiver, then the elements of b it lacks, each as the result's element type.
 func seqUnion(h Host, c *Call) (value.Value, bool) {
-	s := newSet()
-	var out []value.Value
-	take := func(_ int, x value.Value) {
-		if _, added := s.add(x); added {
-			out = append(out, x)
-		}
-	}
 	xs := Elems(c.Recv)
-	ok := each(h, xs, func(_ int, x value.Value) { s.add(x) })
-	out = append(out, xs...)
-	ok = ok && each(h, Elems(c.arg(0)), take)
+	s, ok := setOf(h, xs, elemType(c.Result))
+	out := append([]value.Value(nil), xs...)
+	ok = ok && eachWhile(h, Elems(c.arg(0)), func(_ int, x value.Value) bool {
+		i, added, ok := s.add(x)
+		if added {
+			out = append(out, s.vals[i])
+		}
+		return ok
+	})
 	return c.list(out), ok
 }
 
@@ -71,7 +76,7 @@ func seqUnion(h Host, c *Call) (value.Value, bool) {
 func seqGroupBy(h Host, c *Call) (value.Value, bool) {
 	m := &value.Map{T: c.Result, P: c.Prov}
 	lt := mapValueType(c.Result)
-	keys := newSet()
+	keys := newSet(h, mapKeyType(c.Result))
 	for _, x := range Elems(c.Recv) {
 		if !h.Charge(1) {
 			return nil, false
@@ -80,41 +85,55 @@ func seqGroupBy(h Host, c *Call) (value.Value, bool) {
 		if !ok {
 			return nil, false
 		}
-		i, added := keys.add(k)
+		i, added, ok := keys.add(k)
+		if !ok {
+			return nil, false
+		}
 		if !added {
 			l, _ := m.Vals[i].(*value.List)
 			l.Elems = append(l.Elems, x)
 			continue
 		}
-		m.Keys = append(m.Keys, k)
+		m.Keys = append(m.Keys, keys.vals[i])
 		m.Vals = append(m.Vals, &value.List{T: lt, Elems: []value.Value{x}, P: c.Prov})
 	}
 	return m, true
 }
 
-// seqToMap is E4502 on a key produced twice.
+// seqToMap evaluates keyF, finds a key produced twice (E4502), then evaluates valF (DECISIONS 195).
 func seqToMap(h Host, c *Call) (value.Value, bool) {
 	m := &value.Map{T: c.Result, P: c.Prov}
-	keys := newSet()
+	keys := newSet(h, mapKeyType(c.Result))
 	for _, x := range Elems(c.Recv) {
 		if !h.Charge(1) {
 			return nil, false
 		}
 		k, ok := h.Invoke(c.arg(0), x)
 		if !ok {
+			return nil, false
+		}
+		i, added, ok := keys.add(k)
+		if !ok {
+			return nil, false
+		}
+		if !added {
+			h.Fail(diag.E4502.At(h.Site(), k))
 			return nil, false
 		}
 		v, ok := h.Invoke(c.arg(1), x)
 		if !ok {
 			return nil, false
 		}
-		if _, added := keys.add(k); !added {
-			h.Fail(diag.E4502.At(h.Site(), k))
-			return nil, false
-		}
-		m.Keys, m.Vals = append(m.Keys, k), append(m.Vals, v)
+		m.Keys, m.Vals = append(m.Keys, keys.vals[i]), append(m.Vals, v)
 	}
 	return m, true
+}
+
+func mapKeyType(t types.Type) types.Type {
+	if m, ok := t.Base().(*types.MapType); ok {
+		return m.Key
+	}
+	return types.AnyType
 }
 
 func mapValueType(t types.Type) types.Type {
@@ -124,11 +143,20 @@ func mapValueType(t types.Type) types.Type {
 	return types.AnyType
 }
 
+// seqJoin costs n, then a step per byte of its result before it is made (DECISIONS 197).
 func seqJoin(h Host, c *Call) (value.Value, bool) {
 	xs := Elems(c.Recv)
+	sep := strOf(c.arg(0))
 	parts := make([]string, len(xs))
-	ok := each(h, xs, func(i int, x value.Value) { parts[i] = strOf(x) })
-	return c.strv(strings.Join(parts, strOf(c.arg(0)))), ok
+	size := len(sep) * max(len(xs)-1, 0)
+	ok := each(h, xs, func(i int, x value.Value) {
+		parts[i] = strOf(x)
+		size += len(parts[i])
+	})
+	if !ok || !h.Charge(size) {
+		return nil, false
+	}
+	return c.strv(strings.Join(parts, sep)), true
 }
 
 // seqAny stops at the first true, seqAll at the first false: both cost the elements visited.

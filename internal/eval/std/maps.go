@@ -34,13 +34,36 @@ func mapValues(h Host, c *Call) (value.Value, bool) {
 }
 
 func mapGet(h Host, c *Call) (value.Value, bool) {
-	v, ok := c.Recv.(*value.Map).Get(c.arg(0))
-	return c.orNone(v, ok), h.Charge(1)
+	m := c.Recv.(*value.Map)
+	i, ok := MapIndex(h, m, c.arg(0))
+	if !ok {
+		return nil, false
+	}
+	var v value.Value
+	if i >= 0 {
+		v = m.Vals[i]
+	}
+	return c.orNone(v, i >= 0), h.Charge(1)
 }
 
 func mapContains(h Host, c *Call) (value.Value, bool) {
-	_, ok := c.Recv.(*value.Map).Get(c.arg(0))
-	return c.boolv(ok), h.Charge(1)
+	i, ok := MapIndex(h, c.Recv.(*value.Map), c.arg(0))
+	return c.boolv(i >= 0), ok && h.Charge(1)
+}
+
+// MapIndex is the position of key k in m, -1 when it is not a key, each equality charged
+// (DECISIONS 197); false once the root aborted.
+func MapIndex(h Host, m *value.Map, k value.Value) (int, bool) {
+	for i, key := range m.Keys {
+		eq, ok := h.Equal(key, k)
+		if !ok {
+			return -1, false
+		}
+		if eq {
+			return i, true
+		}
+	}
+	return -1, true
 }
 
 // mapMap keeps the keys and maps each value.

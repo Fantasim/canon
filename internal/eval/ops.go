@@ -5,6 +5,7 @@ import (
 
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/eval/std"
+	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
@@ -52,6 +53,9 @@ func evalBinary(r *run, e syntax.Expr, _ *vpath) value.Value {
 	if b == nil {
 		return nil
 	}
+	if r.cmp != nil && r.cmp.at == e {
+		r.cmp.left, r.cmp.right = a, b
+	}
 	return r.binop(x.Op, a, b, e, r.typeOf(e))
 }
 
@@ -73,16 +77,24 @@ func (r *run) logic(x *syntax.BinaryExpr) value.Value {
 // binop applies a binary operator; t types a list concatenation (TYPES.md §7.1, §7.5).
 func (r *run) binop(op syntax.TokenKind, a, b value.Value, n syntax.Node, t types.Type) value.Value {
 	p := r.prov(n, value.ProvComputed)
-	if res, ok := compare(op, a, b); ok {
+	at := func() source.Span { return r.span(n) }
+	if op == syntax.TokEq || op == syntax.TokNe {
+		eq, ok := r.equal(a, b, at)
+		return r.boolOr(eq == (op == syntax.TokEq), ok, p)
+	}
+	if res, ok := order(op, a, b); ok {
 		return &value.Bool{V: res, P: p}
 	}
 	if op == syntax.KwIn {
-		return &value.Bool{V: r.memberOf(a, b), P: p}
+		r.site = r.span(n)
+		in, ok := r.memberOf(a, b)
+		return r.boolOr(in, ok, p)
 	}
-	if op == syntax.TokPlus {
-		if v := concat(a, b, t, p); v != nil {
-			return v
+	if size, ok := concatLen(op, a, b); ok {
+		if !r.spend(size, func() source.Span { return r.span(n) }) {
+			return nil
 		}
+		return concat(a, b, t, p)
 	}
 	aop, ok := arithOps[op]
 	if !ok {
@@ -93,13 +105,33 @@ func (r *run) binop(op syntax.TokenKind, a, b value.Value, n syntax.Node, t type
 	return r.std(std.Arith(r.host(), aop, a, b, p))
 }
 
-// compare is ==, != and the orderings, when op is one.
-func compare(op syntax.TokenKind, a, b value.Value) (bool, bool) {
+// comparisons are the operators compare applies.
+var comparisons = map[syntax.TokenKind]bool{
+	syntax.TokEq: true, syntax.TokNe: true, syntax.TokLt: true, syntax.TokLe: true,
+	syntax.TokGt: true, syntax.TokGe: true,
+}
+
+// equal is value equality charged a step per composite pair visited; past the budget it is
+// E4401 at at (DECISIONS 197).
+func (r *run) equal(a, b value.Value, at func() source.Span) (bool, bool) {
+	eq, done, n := value.EqualUpTo(a, b, r.remaining())
+	if !r.spend(n, at) {
+		return false, false
+	}
+	return eq, done
+}
+
+// boolOr is a Bool of b, or nil once the root aborted.
+func (r *run) boolOr(b, ok bool, p *value.Prov) value.Value {
+	if !ok {
+		return nil
+	}
+	return &value.Bool{V: b, P: p}
+}
+
+// order is an ordering comparison, when op is one.
+func order(op syntax.TokenKind, a, b value.Value) (bool, bool) {
 	switch op {
-	case syntax.TokEq:
-		return value.Equal(a, b), true
-	case syntax.TokNe:
-		return !value.Equal(a, b), true
 	case syntax.TokLt:
 		return std.Less(a, b), true
 	case syntax.TokLe:
@@ -111,6 +143,23 @@ func compare(op syntax.TokenKind, a, b value.Value) (bool, bool) {
 	default:
 	}
 	return false, false
+}
+
+// concatLen is the length of `a + b` on strings (bytes) or lists (elements), one step each
+// (DECISIONS 195); false for another operator or other operands.
+func concatLen(op syntax.TokenKind, a, b value.Value) (int, bool) {
+	if op != syntax.TokPlus {
+		return 0, false
+	}
+	switch x := a.(type) {
+	case *value.Str:
+		if y, ok := b.(*value.Str); ok {
+			return len(x.V) + len(y.V), true
+		}
+	case *value.List:
+		return len(x.Elems) + len(std.Elems(b)), true
+	}
+	return 0, false
 }
 
 // concat is `+` on strings and lists (a plain list of the join, identities kept).
@@ -127,32 +176,37 @@ func concat(a, b value.Value, t types.Type, p *value.Prov) value.Value {
 	return nil
 }
 
-// memberOf is `x in xs` (TYPES.md §6.5, STDLIB.md §5).
-func (r *run) memberOf(x, coll value.Value) bool {
+// memberOf is `x in xs`, each equality charged at r.site (TYPES.md §6.5, DECISIONS 197).
+func (r *run) memberOf(x, coll value.Value) (bool, bool) {
 	if isNone(x) {
-		return false
+		return false, true
 	}
 	switch c := coll.(type) {
 	case *value.Range:
 		i, ok := x.(*value.Int)
-		return ok && std.InRange(c, i.V)
+		return ok && std.InRange(c, i.V), true
 	case *value.Map:
-		_, ok := c.Get(x)
-		return ok
+		i, ok := std.MapIndex(r.host(), c, x)
+		return i >= 0, ok
 	}
-	if keyedColl(coll) {
-		if _, isRec := x.(*value.Record); !isRec {
-			if _, isRef := x.(*value.Ref); !isRef {
-				k, _ := std.KeyOf(x)
-				_, found := r.ev.entry(coll, k)
-				return found
-			}
-		}
+	if keyedColl(coll) && !isEntryOrRef(x) {
+		k, _ := std.KeyOf(x)
+		_, found := r.ev.entry(coll, k)
+		return found, true
 	}
 	for _, e := range std.Elems(coll) {
-		if value.Equal(e, x) {
-			return true
+		if eq, ok := r.host().Equal(e, x); !ok || eq {
+			return eq, ok
 		}
+	}
+	return false, true
+}
+
+// isEntryOrRef reports a record or a ref, which `in` finds by equality, not by key.
+func isEntryOrRef(x value.Value) bool {
+	switch x.(type) {
+	case *value.Record, *value.Ref:
+		return true
 	}
 	return false
 }

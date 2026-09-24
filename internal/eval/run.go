@@ -16,7 +16,6 @@ type run struct {
 	ctx       context.Context
 	charge    charge
 	fr        *frame
-	depth     int
 	failed    bool
 	tainted   bool
 	free      bool      // stage B's where re-runs cost nothing (DECISIONS 148)
@@ -27,6 +26,7 @@ type run struct {
 	coll      *collHint
 	reports   *[]CheckReport
 	poisonAt  string
+	cmp       *comparison // the comparison of the expect being evaluated, if any
 	h         *stdHost
 	test      *testState
 	freeSteps int64
@@ -43,10 +43,32 @@ type frame struct {
 	fn     string
 	call   source.Span
 	caller *frame
+	named  *frame // the innermost frame at or above this one that has a fn
+	count  int    // the frames with a fn at or above this one
 	ret    value.Value
 	stack  []diag.Frame
 	more   int
 	cached bool
+}
+
+// under links f below caller, counting its user frames; it returns f.
+func (f *frame) under(caller *frame) *frame {
+	f.caller = caller
+	if caller != nil {
+		f.named, f.count = caller.named, caller.count
+	}
+	if f.fn != "" {
+		f.named, f.count = f, f.count+1
+	}
+	return f
+}
+
+// above is the next frame with a fn above a named frame f.
+func (f *frame) above() *frame {
+	if f.caller == nil {
+		return nil
+	}
+	return f.caller.named
 }
 
 func (e *Evaluator) newRun(ctx context.Context, c charge, file *syntax.File) *run {
@@ -72,7 +94,7 @@ func (r *run) spend(n int, at func() source.Span) bool {
 		r.failed = true
 		return false
 	case r.free:
-		return r.spendFree(n, at)
+		return r.spendFree(n)
 	case n == 0:
 		return true
 	}
@@ -94,12 +116,13 @@ func (r *run) spend(n int, at func() source.Span) bool {
 }
 
 // spendFree counts the steps of a run that costs nothing (DECISIONS 148): it still stops on
-// cancellation, and at a count the size of the budget, so it always ends (DECISIONS 188).
-func (r *run) spendFree(n int, at func() source.Span) bool {
+// cancellation, and past a count the size of the budget it aborts that run alone, poisoned,
+// without E4401 (DECISIONS 195).
+func (r *run) spendFree(n int) bool {
 	before := r.freeSteps
 	r.freeSteps += int64(n)
 	if r.freeSteps >= r.ev.budget {
-		r.budgetOut(at())
+		r.failed = true
 		return false
 	}
 	if before/cancelEvery != r.freeSteps/cancelEvery && r.ctx.Err() != nil {
@@ -107,6 +130,15 @@ func (r *run) spendFree(n int, at func() source.Span) bool {
 		return false
 	}
 	return true
+}
+
+// remaining is the steps the run may spend before its budget, or a free run's cap, runs out.
+func (r *run) remaining() int {
+	spent := r.ev.steps
+	if r.free {
+		spent = r.freeSteps
+	}
+	return int(max(r.ev.budget-spent, 0))
 }
 
 // budgetOut is E4401 with the heaviest charge; evaluation stops (EVALUATION.md §12.2).
@@ -121,18 +153,23 @@ func (r *run) budgetOut(at source.Span) {
 	}
 	b := diag.E4401.At(at, e.budget, r.qualified(heavy.pkg, heavy.name), e.spent[heavy])
 	if bag := e.bagOf(r.fr.pkg); bag != nil {
-		b.Stack(r.frames()).Report(bag)
+		r.withStack(b).Report(bag)
 	}
 }
 
-// fail reports a hard error and aborts the root; a tainted root aborts silently (§7.3).
+// fail reports a hard error with the root's call stack and aborts the root.
 func (r *run) fail(b *diag.Builder) {
+	r.abort(r.withStack(b))
+}
+
+// abort reports a hard error and aborts the root; a tainted root aborts silently (§7.3).
+func (r *run) abort(b *diag.Builder) {
 	if r.failed {
 		return
 	}
 	r.failed = true
 	if !r.tainted || r.sink != nil {
-		r.emit(b.Stack(r.frames()))
+		r.emit(b)
 	}
 }
 
@@ -196,21 +233,22 @@ func (r *run) span(n syntax.Node) source.Span {
 
 // qualified names a declaration of pkg as the current package sees it (ERRORS.md §1.3 Name).
 func (r *run) qualified(pkg, name string) string {
-	if pkg == "" || pkg == r.fr.pkg {
-		return name
-	}
-	return pkg + dot + name
+	return qualify(r.fr.pkg, pkg, name)
 }
 
-// frames is the Canon call stack, innermost first (EVALUATION.md §13).
-func (r *run) frames() []diag.Frame {
-	var out []diag.Frame
-	for f := r.fr; f != nil; f = f.caller {
-		if f.fn != "" {
-			out = append(out, diag.Frame{Fn: f.fn, Span: f.call})
-		}
+// frames is the call stack, innermost first, cut to diag.MaxStackFrames, and the count cut (EVALUATION.md §13).
+func (r *run) frames() ([]diag.Frame, int) {
+	out := make([]diag.Frame, 0, min(r.fr.count, diag.MaxStackFrames))
+	for f := r.fr.named; f != nil && len(out) < diag.MaxStackFrames; f = f.above() {
+		out = append(out, diag.Frame{Fn: f.fn, Span: f.call})
 	}
-	return out
+	return out, r.fr.count - len(out)
+}
+
+// withStack is b with the current call stack.
+func (r *run) withStack(b *diag.Builder) *diag.Builder {
+	stack, more := r.frames()
+	return b.Stack(stack).MoreFrames(more)
 }
 
 // prov is the provenance of a value node n builds (EVALUATION.md §13).
@@ -218,9 +256,8 @@ func (r *run) prov(n syntax.Node, kind value.ProvKind) *value.Prov {
 	p := &value.Prov{Kind: kind, Span: r.span(n)}
 	if f := r.fr; f.fn != "" || f.caller != nil {
 		if !f.cached {
-			all := r.frames()
-			f.stack = all[:min(len(all), diag.MaxStackFrames)]
-			f.more, f.cached = len(all)-len(f.stack), true
+			f.stack, f.more = r.frames()
+			f.cached = true
 		}
 		p.Stack, p.MoreFrames = f.stack, f.more
 		if kind == value.ProvLiteral {

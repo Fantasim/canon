@@ -1,0 +1,109 @@
+package value_test
+
+import (
+	"strings"
+	"testing"
+
+	"github.com/fantasim/canonlang/internal/types"
+	"github.com/fantasim/canonlang/internal/value"
+)
+
+// deepDepth is how deep the nested list goes: far past what a recursive walk would stand.
+const deepDepth = 1_000_000
+
+// towerLevels is how many times a tower doubles its sharing: 2^60 paths, 61 distinct nodes.
+const towerLevels = 60
+
+// deepList is [[…[leaf]…]], depth lists around leaf.
+func deepList(depth int, leaf int64) value.Value {
+	var v value.Value = num(leaf)
+	for range depth {
+		v = &value.List{T: &types.ListType{Elem: types.AnyType}, Elems: []value.Value{v}}
+	}
+	return v
+}
+
+// tower is levels lists each holding the one below twice, over [leaf].
+func tower(levels int, leaf int64) value.Value {
+	var v value.Value = list(num(leaf))
+	for range levels {
+		v = &value.List{T: &types.ListType{Elem: types.AnyType}, Elems: []value.Value{v, v}}
+	}
+	return v
+}
+
+// DECISIONS 197: equality and the text form walk a value a million lists deep without
+// recursing on the host stack.
+func TestDeepValues(t *testing.T) {
+	a, b := deepList(deepDepth, 1), deepList(deepDepth, 1)
+	if !value.Equal(a, b) || value.Equal(a, deepList(deepDepth, 2)) {
+		t.Error("equality over a deep list")
+	}
+	want := strings.Repeat("[", deepDepth) + "1" + strings.Repeat("]", deepDepth)
+	if a.CanonText() != want {
+		t.Error("text of a deep list")
+	}
+}
+
+// DECISIONS 197: two towers built apart, each shared 2^60 ways, compare once per pair of
+// distinct nodes; the same instance compares at once.
+func TestSharedTowers(t *testing.T) {
+	l, m := tower(towerLevels, 1), tower(towerLevels, 1)
+	if !value.Equal(l, m) || !value.Equal(l, l) {
+		t.Error("equal towers compare unequal")
+	}
+	if value.Equal(l, tower(towerLevels, 2)) {
+		t.Error("towers that differ at the bottom compare equal")
+	}
+	small := tower(3, 1).CanonText()
+	if small != "[[[[1], [1]], [[1], [1]]], [[[1], [1]], [[1], [1]]]]" {
+		t.Errorf("text of a small tower: %s", small)
+	}
+}
+
+// DECISIONS 197: the text length is counted without the text, and stops at its limit even
+// over a tower whose text would be 2^60 times longer.
+func TestTextLenUpTo(t *testing.T) {
+	small := tower(3, 1)
+	if got := value.TextLenUpTo(small, 1000); got != len(small.CanonText()) {
+		t.Errorf("TextLenUpTo = %d, want %d", got, len(small.CanonText()))
+	}
+	if got := value.TextLenUpTo(str("a\"b"), 1000); got != len("a\"b") {
+		t.Errorf("a top-level string counts raw: %d", got)
+	}
+	if got := value.TextLenUpTo(tower(towerLevels, 1), 1000); got != 1000 {
+		t.Errorf("TextLenUpTo over a tower = %d, want the limit", got)
+	}
+}
+
+// DECISIONS 197: a text cut at its limit stops the walk there, at a character boundary.
+func TestTextUpTo(t *testing.T) {
+	if got := value.TextUpTo(tower(towerLevels, 1), 10); got != "[[[[[[[[[[" {
+		t.Errorf("TextUpTo over a tower = %q", got)
+	}
+	if got := value.TextUpTo(list(str("é")), 3); got != `["` {
+		t.Errorf("TextUpTo splits a character: %q", got)
+	}
+	if got := value.TextUpTo(num(42), 10); got != "42" {
+		t.Errorf("TextUpTo of a scalar = %q", got)
+	}
+}
+
+// DECISIONS 197: EqualUpTo counts the composite pairs it visits and stops at its limit; an
+// entry against an entry is settled by identity, visiting and allocating nothing.
+func TestEqualUpTo(t *testing.T) {
+	nested := func(n int64) value.Value { return list(list(num(n)), list(num(n))) }
+	if eq, ok, n := value.EqualUpTo(nested(1), nested(1), 10); !eq || !ok || n != 3 {
+		t.Errorf("EqualUpTo = %t %t %d, want true true 3", eq, ok, n)
+	}
+	if eq, ok, n := value.EqualUpTo(nested(1), nested(1), 2); eq || ok || n != 2 {
+		t.Errorf("EqualUpTo past its limit = %t %t %d, want false false 2", eq, ok, n)
+	}
+	if eq, ok, n := value.EqualUpTo(num(1), num(1), 0); !eq || !ok || n != 0 {
+		t.Errorf("scalars visit no pair: %t %t %d", eq, ok, n)
+	}
+	a, b := entry("open", "Open"), entry("open", "Other")
+	if allocs := testing.AllocsPerRun(100, func() { value.Equal(a, b) }); allocs != 0 {
+		t.Errorf("an entry against an entry allocates %v times", allocs)
+	}
+}

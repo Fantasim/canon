@@ -25,7 +25,7 @@ func (e *Evaluator) Where(ctx context.Context, p *types.Predicate, it value.Valu
 func (r *run) where(p *types.Predicate, v value.Value) (bool, bool) {
 	file := r.ev.index.file[p.Expr]
 	saved := r.fr
-	r.fr = &frame{vars: map[check.Object]value.Value{}, it: v, file: file, pkg: r.ev.index.pkg[file], caller: saved}
+	r.fr = (&frame{vars: map[check.Object]value.Value{}, it: v, file: file, pkg: r.ev.index.pkg[file]}).under(saved)
 	holds, ok := r.truth(p.Expr)
 	r.fr = saved
 	return holds, ok

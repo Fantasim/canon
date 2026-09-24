@@ -1,0 +1,39 @@
+EVALUATION.md §7.2, §10.2: dereferencing a ref into a poisoned table stops the reader and
+names the table, in an expect subject and in a test's own statement alike.
+-- a/a.canon --
+/// A.
+package a
+
+/// An item.
+record Item {
+  /// Its count.
+  n: Int
+}
+
+local let zero: Int = 0
+
+/// Items; poisoned by the division.
+let items: table Item = {
+  a { n: 1 / zero }
+}
+
+/// A ref into items.
+let pick: ref items = a
+
+test "an expect reading through the ref" {
+  expect pick.n == 1
+}
+
+test "a statement reading through the ref" {
+  let n = pick.n
+  expect n == 1
+}
+-- outcomes.txt --
+a "an expect reading through the ref": failed true, stopped false, broken false
+  expect line 21: passed false (reads poisoned items)
+a "a statement reading through the ref": failed true, stopped true, broken false, reads poisoned items
+
+error[E4102]  a/a.canon:14:10
+  division by zero
+
+1 error, 0 warnings in 1 package (…)

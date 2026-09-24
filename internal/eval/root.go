@@ -53,8 +53,7 @@ func (r *run) addEntries(st *rootState, v value.Value, coll *types.Collection, a
 func (r *run) entryDecl(d *syntax.EntryDecl, file *syntax.File, t types.Type, coll *types.Collection, at *vpath) *value.Record {
 	elem, keyed, _ := collectionOf(t)
 	saved := r.fr
-	r.fr = r.ev.rootFrame(file)
-	r.fr.caller = saved.caller
+	r.fr = r.ev.rootFrame(file).under(saved.caller)
 	defer func() { r.fr = saved }()
 	if !r.step(d.Value) {
 		return nil

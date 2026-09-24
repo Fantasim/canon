@@ -218,7 +218,7 @@ func (e *Evaluator) adoptEntry(en *value.Record, c *types.Collection, owner *val
 }
 
 // withIdentity is rec as an element of a collection: the instance itself when it has no
-// identity yet, so it stays one instance (DECISIONS 79, 188), else a copy carrying its marks.
+// identity yet, so it stays one instance (DECISIONS 79, 195), else a copy carrying its marks.
 func (e *Evaluator) withIdentity(rec *value.Record, id *value.Identity) *value.Record {
 	if rec.Ident == nil {
 		rec.Ident = id

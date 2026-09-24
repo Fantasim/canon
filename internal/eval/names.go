@@ -108,13 +108,18 @@ func (r *run) selfField(name string) value.Value {
 func (r *run) global(obj check.Object, at syntax.Expr) value.Value {
 	v, ok := r.ev.force(r.ctx, r.ev.state(obj), r, at)
 	if !ok {
-		if !r.failed {
-			r.poisonAt = r.qualified(obj.Pkg(), obj.Name())
-		}
-		r.stop()
+		r.readPoisoned(obj.Pkg(), obj.Name())
 		return nil
 	}
 	return r.read(v)
+}
+
+// readPoisoned aborts the run at a read of poisoned pkg.name, which a test names (EVALUATION.md §7.2).
+func (r *run) readPoisoned(pkg, name string) {
+	if !r.failed {
+		r.poisonAt = r.qualified(pkg, name)
+	}
+	r.stop()
 }
 
 // member is an enum member, found by name in its enum.

@@ -60,7 +60,7 @@ test "a broken test does not run" {
 -- outcomes.txt --
 a "expect forms": failed true, stopped false, broken false
   expect line 17: passed true
-  expect line 18: passed false
+  expect line 18: passed false (left 2, right 3)
   expect line 19: passed true [E5001 box box is too big]
   expect line 20: passed true [E5001 box box is too big]
   expect line 21: passed true [E5001 box box is too big]

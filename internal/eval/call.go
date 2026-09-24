@@ -131,15 +131,15 @@ func (r *run) invokeFn(c fnCall) value.Value {
 	if name == "" {
 		name = fnName(c.obj, c.self)
 	}
-	fr := &frame{vars: map[check.Object]value.Value{}, self: c.self, file: file, pkg: c.obj.Pkg(), fn: name, call: c.site, caller: r.fr}
+	fr := (&frame{vars: map[check.Object]value.Value{}, self: c.self, file: file, pkg: c.obj.Pkg(), fn: name, call: c.site}).under(r.fr)
 	saved := r.fr
 	r.fr = fr
-	r.depth++
+	r.ev.depth++
 	if r.params(d, ft, c.args) {
 		r.block(d.Body)
 	}
 	r.fr = saved
-	r.depth--
+	r.ev.depth--
 	if fr.ret == nil {
 		r.bug(c.obj.Decl())
 		return nil
@@ -147,10 +147,12 @@ func (r *run) invokeFn(c fnCall) value.Value {
 	return r.store(fr.ret, ft.Result, declSite(file, nil, d.Result), nil)
 }
 
-// enter checks the call depth (E4402) and spends the invocation's step.
+// enter checks the call depth of the invocation, every root's live frames counted, in its
+// limit and its "more frames" alike (E4402, DECISIONS 195, 197); then spends the invocation's step.
 func (r *run) enter(site source.Span) bool {
-	if r.depth >= maxDepth {
-		r.fail(diag.E4402.At(site))
+	if r.ev.depth >= maxDepth {
+		stack, _ := r.frames()
+		r.abort(diag.E4402.At(site).Stack(stack).MoreFrames(r.ev.depth - len(stack)))
 		return false
 	}
 	return r.spend(1, func() source.Span { return site })

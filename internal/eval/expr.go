@@ -32,13 +32,7 @@ func init() {
 
 // eval evaluates e, then its conversion (EVALUATION.md §4.3, §12.1); nil: the root aborted.
 func (r *run) eval(e syntax.Expr) value.Value {
-	for {
-		p, ok := e.(*syntax.ParenExpr)
-		if !ok {
-			break
-		}
-		e = p.X
-	}
+	e = unparen(e)
 	at := r.at
 	r.at = nil
 	if r.failed || e == nil {
@@ -56,6 +50,17 @@ func (r *run) eval(e syntax.Expr) value.Value {
 		return r.convert(v, conv, e, at)
 	}
 	return v
+}
+
+// unparen is e without its parentheses, which are not nodes (EVALUATION.md §12.1).
+func unparen(e syntax.Expr) syntax.Expr {
+	for {
+		p, ok := e.(*syntax.ParenExpr)
+		if !ok {
+			return e
+		}
+		e = p.X
+	}
 }
 
 // evalAt evaluates e as the value at path at, for the literal that builds it.

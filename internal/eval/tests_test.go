@@ -22,17 +22,13 @@ type subjects struct {
 	pkg string
 }
 
-func (s subjects) Build(ctx context.Context, v value.Value) []diag.Finding {
-	capture := diag.NewBag(s.b.prog.fs, s.pkg)
+func (s subjects) Build(ctx context.Context, v value.Value, capture *diag.Bag) {
 	bags := map[string]*diag.Bag{s.pkg: capture}
 	root := eval.Root{Pkg: s.pkg}
 	if _, err := verify.New(s.b.ev, s.b.checked, bags, nil).Check(ctx, root, v); err != nil {
-		return nil
+		return
 	}
-	if err := rules.New(checks{s.b.ev}, s.b.checked, bags).Instances(ctx, root, v); err != nil {
-		return nil
-	}
-	return capture.Findings()
+	_ = rules.New(checks{s.b.ev}, s.b.checked, bags).Instances(ctx, root, v)
 }
 
 // runTests runs the tests of the selected packages in order (EVALUATION.md §10.1).
@@ -65,6 +61,9 @@ func printExpects(sb *strings.Builder, f *syntax.File, xs []eval.Expect) {
 		}
 		if x.Poisoned != "" {
 			fmt.Fprintf(sb, " (reads poisoned %s)", x.Poisoned)
+		}
+		if x.Left != "" || x.Right != "" {
+			fmt.Fprintf(sb, " (left %s, right %s)", x.Left, x.Right)
 		}
 		sb.WriteString("\n")
 	}

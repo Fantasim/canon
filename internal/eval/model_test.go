@@ -136,8 +136,7 @@ func TestFindingsPackages(t *testing.T) {
 	}
 }
 
-// DECISIONS 148, 188: a where re-run costs nothing but always ends: at a count the size of
-// the budget it is E4401.
+// DECISIONS 148, 195: a free where re-run past the budget's count aborts alone, no E4401.
 func TestWhereEnds(t *testing.T) {
 	b := buildFiles(t, eval.Options{Budget: 1000}, "a/a.canon", pkgA+`local fn spin(n: Int) -> Bool {
   var i = n
@@ -149,6 +148,8 @@ func TestWhereEnds(t *testing.T) {
 record R {
   /// X.
   x: Int where spin(it)
+  /// Y.
+  y: Int where it > 0
 }
 `)
 	var rt *types.RecordType
@@ -157,11 +158,14 @@ record R {
 			rt = r
 		}
 	}
-	pred := rt.Fields[0].Type.(*types.Refined).Where
-	if _, ok := b.ev.Where(context.Background(), pred, &value.Int{V: 1, T: types.IntType}); ok {
+	ctx, one := context.Background(), &value.Int{V: 1, T: types.IntType}
+	if _, ok := b.ev.Where(ctx, rt.Fields[0].Type.(*types.Refined).Where, one); ok {
 		t.Error("an endless predicate held")
 	}
-	if out := b.findings(t); !strings.Contains(out, "["+codeOf(diag.E4401)+"]") {
+	if holds, ok := b.ev.Where(ctx, rt.Fields[1].Type.(*types.Refined).Where, one); !holds || !ok {
+		t.Errorf("evaluation stopped after the aborted re-run: %t %t", holds, ok)
+	}
+	if out := b.findings(t); strings.Contains(out, "["+codeOf(diag.E4401)+"]") {
 		t.Errorf("findings:\n%s", out)
 	}
 }
@@ -191,7 +195,7 @@ let b: R = copy(a)
 	}
 }
 
-// DECISIONS 79, 188: a record a keyed list takes is the same instance, identity added.
+// DECISIONS 79, 195: a record a keyed list takes is the same instance, identity added.
 func TestKeyedListKeepsInstance(t *testing.T) {
 	b := buildFiles(t, eval.Options{}, "a/a.canon", pkgA+`/// R.
 record R {
@@ -212,7 +216,7 @@ let xs: [R] keyed by k = [a]
 	}
 }
 
-// STDLIB.md §10, EVALUATION.md §6.1, DECISIONS 188: range lengths and slice bounds at the edges.
+// STDLIB.md §10, EVALUATION.md §6.1, DECISIONS 197: range lengths and slice bounds at the edges.
 func TestRangeEdges(t *testing.T) {
 	runCases(t, []evalCase{
 		{"STDLIB.md §10 len overflow", "Int", "(-big - 1..big).len()", codeOf(diag.E4101)},

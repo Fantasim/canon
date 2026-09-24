@@ -32,18 +32,24 @@ func convFloat(_ Host, c *Call) (value.Value, bool) {
 	return &value.Float{V: floatOf(c.arg(0)), T: types.FloatType, P: c.Prov}, true
 }
 
-// convString is String(x), the canonical text form; one step per value visited (STDLIB.md §9.1).
+// convString is String(x): values visited, then bytes, charged before the text (STDLIB.md §9.1).
 func convString(h Host, c *Call) (value.Value, bool) {
 	x := c.arg(0)
-	return c.strv(x.CanonText()), h.Charge(Visited(x))
+	if !h.Charge(VisitedUpTo(x, h.Remaining())) || !h.Charge(value.TextLenUpTo(x, h.Remaining())) {
+		return nil, false
+	}
+	return c.strv(x.CanonText()), true
 }
 
-// Visited is the number of values the text form of v visits: 1 for a scalar, 1 plus its
-// components for a composite.
-func Visited(v value.Value) int {
-	n := 1
-	for _, p := range parts(v) {
-		n += Visited(p)
+// VisitedUpTo is the number of values the text form of v visits (1 for a scalar, 1 plus its
+// components for a composite), counted on an explicit stack and stopping at limit (DECISIONS 195).
+func VisitedUpTo(v value.Value, limit int) int {
+	n := 0
+	stack := []value.Value{v}
+	for len(stack) > 0 && n < limit {
+		x := stack[len(stack)-1]
+		stack = append(stack[:len(stack)-1], parts(x)...)
+		n++
 	}
 	return n
 }

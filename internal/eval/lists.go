@@ -209,7 +209,12 @@ func (r *run) mapComp(lit *syntax.BraceLit) value.Value {
 
 // put adds a map entry; a key given twice is E3322 (TYPES.md §5.2, DECISIONS 185).
 func (r *run) put(m *value.Map, k, v value.Value, keyNode syntax.Node, at *vpath) {
-	if _, dup := m.Get(k); dup {
+	r.site = r.span(keyNode)
+	i, ok := std.MapIndex(r.host(), m, k)
+	if !ok {
+		return
+	}
+	if i >= 0 {
 		r.emit(diag.E3322.At(r.span(keyNode), k).Path(at.String()))
 		r.ev.MarkInvalid(m)
 		return

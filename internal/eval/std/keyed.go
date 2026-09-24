@@ -109,14 +109,18 @@ func rangeMethods() map[string]builtin {
 	return map[string]builtin{bLen: rangeLen, bIsEmpty: rangeIsEmpty, bContains: rangeContains}
 }
 
+// rangeLen is max(end − start, 0), E4002 on an open range (DECISIONS 197).
 func rangeLen(h Host, c *Call) (value.Value, bool) {
 	r := c.Recv.(*value.Range)
 	if !r.HasEnd {
 		h.Fail(diag.E4002.AtOpen(h.Site()))
 		return nil, false
 	}
+	if !h.Charge(1) {
+		return nil, false
+	}
 	if r.End <= r.Start {
-		return c.intv(0), h.Charge(1)
+		return c.intv(0), true
 	}
 	return intArith(h, OpSub, r.End, r.Start, c.Prov)
 }

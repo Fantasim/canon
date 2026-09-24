@@ -36,9 +36,14 @@ const (
 	argSep       = ", "
 	underscore   = "_"
 	quote        = `"`
+	tripleQuote  = `"""`
+	rawPrefix    = "r"
 	itWord       = "it"
 	checkKeyword = "check"
 )
+
+// operandText is the most bytes of operand text a failed expect comparison shows (EVALUATION.md §10.3).
+const operandText = 4 << 10
 
 // The shape of a code in `expect v fails E3204` (EVALUATION.md §10.3).
 const codePattern = `^[EW][0-9]{4}$`

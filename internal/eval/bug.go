@@ -8,7 +8,7 @@ import (
 )
 
 // bug aborts the root on a state the checker excludes: every abort has a cause, a finding or,
-// here, an internal error the caller turns into ErrInternal (DECISIONS 188).
+// here, an internal error the caller turns into ErrInternal (DECISIONS 195).
 func (r *run) bug(n syntax.Node) {
 	if r.failed {
 		return

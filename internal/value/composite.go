@@ -1,10 +1,6 @@
 package value
 
-import (
-	"strings"
-
-	"github.com/fantasim/canonlang/internal/types"
-)
+import "github.com/fantasim/canonlang/internal/types"
 
 // Record is a record or case value. T is a *types.RecordType, *types.CaseType or
 // *types.AppliedRecord, possibly behind an alias or refinement.
@@ -20,32 +16,39 @@ func (v *Record) Type() types.Type { return v.T }
 
 func (v *Record) Prov() *Prov { return v.P }
 
-// CanonText is Name{field: value, …}, inputs omitted; a case without fields is its name.
-func (v *Record) CanonText() string {
+func (v *Record) CanonText() string { return render(v) }
+
+// layout is Name{field: value, …}, inputs omitted; a case without fields is its name.
+func (v *Record) layout() []piece {
 	name, fields := shape(v.T)
 	if len(fields) == 0 {
 		if _, isCase := v.T.Base().(*types.CaseType); isCase {
-			return name
+			return []piece{{lit: name}}
 		}
 	}
-	parts := make([]string, 0, len(fields))
+	out := []piece{{lit: name + textOpenMap}}
+	sep := ""
 	for i, f := range fields {
 		if f.Input == nil {
-			parts = append(parts, f.Name+textColon+nested(v.Fields[i]))
+			out = append(out, piece{lit: sep + f.Name + textColon}, piece{v: v.Fields[i]})
+			sep = textSep
 		}
 	}
-	return name + textOpenMap + strings.Join(parts, textSep) + textCloseMap
+	return append(out, piece{lit: textCloseMap})
 }
 
-// equal compares the declaration, the case and every field; identities are ignored.
-func (v *Record) equal(o Value) bool {
+// match compares the declaration, the case and which fields are set; identities are ignored.
+func (v *Record) match(o Value, push func(a, b Value, plain bool)) bool {
 	w, ok := o.(*Record)
 	if !ok || decl(v.T) != decl(w.T) || len(v.Fields) != len(w.Fields) {
 		return false
 	}
 	for i, f := range v.Fields {
-		if (f == nil) != (w.Fields[i] == nil) || f != nil && !Equal(f, w.Fields[i]) {
+		if (f == nil) != (w.Fields[i] == nil) {
 			return false
+		}
+		if f != nil {
+			push(f, w.Fields[i], false)
 		}
 	}
 	return true
@@ -81,13 +84,15 @@ func (v *List) Type() types.Type { return v.T }
 
 func (v *List) Prov() *Prov { return v.P }
 
-func (v *List) CanonText() string {
-	return textOpenList + nestedList(v.Elems) + textCloseList
+func (v *List) CanonText() string { return render(v) }
+
+func (v *List) layout() []piece {
+	return enclosed(textOpenList, textCloseList, v.Elems)
 }
 
-func (v *List) equal(o Value) bool {
+func (v *List) match(o Value, push func(a, b Value, plain bool)) bool {
 	w, ok := o.(*List)
-	return ok && equalSlices(v.Elems, w.Elems)
+	return ok && pushSlices(v.Elems, w.Elems, push)
 }
 
 // Map is a map value; Keys and Vals are parallel, in insertion order (TYPES.md §9.2).
@@ -102,12 +107,17 @@ func (v *Map) Type() types.Type { return v.T }
 
 func (v *Map) Prov() *Prov { return v.P }
 
-func (v *Map) CanonText() string {
-	parts := make([]string, len(v.Keys))
+func (v *Map) CanonText() string { return render(v) }
+
+func (v *Map) layout() []piece {
+	out := []piece{{lit: textOpenMap}}
 	for i, k := range v.Keys {
-		parts[i] = nested(k) + textColon + nested(v.Vals[i])
+		if i > 0 {
+			out = append(out, piece{lit: textSep})
+		}
+		out = append(out, piece{v: k}, piece{lit: textColon}, piece{v: v.Vals[i]})
 	}
-	return textOpenMap + strings.Join(parts, textSep) + textCloseMap
+	return append(out, piece{lit: textCloseMap})
 }
 
 // Get is the value at key k, by value equality, and whether k is a key.
@@ -120,16 +130,18 @@ func (v *Map) Get(k Value) (Value, bool) {
 	return nil, false
 }
 
-// equal is the same key set with equal values, order ignored (TYPES.md §7.5).
-func (v *Map) equal(o Value) bool {
+// match is the same key set, order ignored (TYPES.md §7.5); the values are pushed.
+func (v *Map) match(o Value, push func(a, b Value, plain bool)) bool {
 	w, ok := o.(*Map)
 	if !ok || len(v.Keys) != len(w.Keys) {
 		return false
 	}
 	for i, k := range v.Keys {
-		if x, found := w.Get(k); !found || !Equal(v.Vals[i], x) {
+		x, found := w.Get(k)
+		if !found {
 			return false
 		}
+		push(v.Vals[i], x, false)
 	}
 	return true
 }
@@ -145,24 +157,29 @@ func (v *Table) Type() types.Type { return v.T }
 
 func (v *Table) Prov() *Prov { return v.P }
 
-func (v *Table) CanonText() string {
-	parts := make([]string, len(v.Entries))
-	for i, e := range v.Entries {
-		parts[i] = e.Ident.Key.Text() + textColon + e.CanonText()
+func (v *Table) CanonText() string { return render(v) }
+
+func (v *Table) layout() []piece {
+	out := []piece{{lit: textOpenMap}}
+	sep := ""
+	for _, e := range v.Entries {
+		out = append(out, piece{lit: sep + e.Ident.Key.Text() + textColon}, piece{v: e})
+		sep = textSep
 	}
-	return textOpenMap + strings.Join(parts, textSep) + textCloseMap
+	return append(out, piece{lit: textCloseMap})
 }
 
-// equal is the same keys in the same order and equal entries.
-func (v *Table) equal(o Value) bool {
+// match is the same keys in the same order; the entries are pushed, compared field-wise.
+func (v *Table) match(o Value, push func(a, b Value, plain bool)) bool {
 	w, ok := o.(*Table)
 	if !ok || len(v.Entries) != len(w.Entries) {
 		return false
 	}
 	for i, e := range v.Entries {
-		if e.Ident.Key != w.Entries[i].Ident.Key || !e.equal(w.Entries[i]) {
+		if e.Ident.Key != w.Entries[i].Ident.Key {
 			return false
 		}
+		push(e, w.Entries[i], true)
 	}
 	return true
 }
@@ -199,11 +216,18 @@ func (v *Pair) Type() types.Type { return v.T }
 
 func (v *Pair) Prov() *Prov { return v.P }
 
-func (v *Pair) CanonText() string {
-	return textOpen + nested(v.A) + textSep + nested(v.B) + textClose
+func (v *Pair) CanonText() string { return render(v) }
+
+func (v *Pair) layout() []piece {
+	return []piece{{lit: textOpen}, {v: v.A}, {lit: textSep}, {v: v.B}, {lit: textClose}}
 }
 
-func (v *Pair) equal(o Value) bool {
+func (v *Pair) match(o Value, push func(a, b Value, plain bool)) bool {
 	w, ok := o.(*Pair)
-	return ok && Equal(v.A, w.A) && Equal(v.B, w.B)
+	if !ok {
+		return false
+	}
+	push(v.A, w.A, false)
+	push(v.B, w.B, false)
+	return true
 }

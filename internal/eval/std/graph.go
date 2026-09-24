@@ -23,13 +23,13 @@ type identKey struct {
 }
 
 func newGraph(h Host, c *Call, next value.Value) *graph {
-	return &graph{h: h, c: c, next: next, nodes: newSet(), succ: map[int][]int{}}
+	return &graph{h: h, c: c, next: next, nodes: newSet(h, elemType(c.Result)), succ: map[int][]int{}}
 }
 
-// id numbers a node, the same number for equal nodes (TYPES.md §7.5).
-func (g *graph) id(v value.Value) int {
-	i, _ := g.nodes.add(v)
-	return i
+// id numbers a node, the same number for equal nodes (TYPES.md §7.5); false: the root aborted.
+func (g *graph) id(v value.Value) (int, bool) {
+	i, _, ok := g.nodes.add(v)
+	return i, ok
 }
 
 // node is the value of node i.
@@ -57,14 +57,11 @@ func (g *graph) successors(i int) ([]int, bool) {
 	if !g.h.Charge(len(out)) {
 		return nil, false
 	}
-	node := elemType(g.c.Result)
 	ids := make([]int, len(out))
 	for j, s := range out {
-		n, ok := g.h.Coerce(s, node)
-		if !ok {
+		if ids[j], ok = g.id(s); !ok {
 			return nil, false
 		}
-		ids[j] = g.id(n)
 	}
 	g.succ[i] = ids
 	return ids, true
@@ -75,44 +72,70 @@ func isNone(v value.Value) bool {
 	return ok
 }
 
+// visit is a node being explored on an explicit stack: its successors and the next one to take.
+type visit struct {
+	node, next int
+	succ       []int
+}
+
+// preorder is a depth-first walk from one node, on an explicit stack (DECISIONS 195).
+type preorder struct {
+	*graph
+	listed map[int]bool
+	out    []value.Value
+	stack  []visit
+}
+
 // graphReachable lists every node reachable from `from`, depth-first preorder; one step per
 // node listed and per successor examined.
 func graphReachable(h Host, c *Call) (value.Value, bool) {
-	g := newGraph(h, c, c.arg(1))
-	listed := map[int]bool{}
-	var out []value.Value
-	var visit func(i int) bool
-	visit = func(i int) bool {
-		listed[i] = true
-		out = append(out, g.node(i))
-		if !h.Charge(1) {
-			return false
-		}
-		succ, ok := g.successors(i)
-		for _, s := range succ {
-			if ok && !listed[s] {
-				ok = visit(s)
-			}
-		}
-		return ok
-	}
-	if !visit(g.id(c.arg(0))) {
+	w := &preorder{graph: newGraph(h, c, c.arg(1)), listed: map[int]bool{}}
+	from, ok := w.id(c.arg(0))
+	if !ok || !w.open(from) {
 		return nil, false
 	}
-	return c.list(out), true
+	for len(w.stack) > 0 {
+		top := &w.stack[len(w.stack)-1]
+		if top.next == len(top.succ) {
+			w.stack = w.stack[:len(w.stack)-1]
+			continue
+		}
+		s := top.succ[top.next]
+		top.next++
+		if !w.listed[s] && !w.open(s) {
+			return nil, false
+		}
+	}
+	return c.list(w.out), true
 }
 
-// seqNodes numbers the distinct elements of xs, in order.
-func (g *graph) seqNodes(xs value.Value) []int {
+// open lists node i, charges it, then takes its successors onto the stack.
+func (w *preorder) open(i int) bool {
+	w.listed[i] = true
+	w.out = append(w.out, w.node(i))
+	if !w.h.Charge(1) {
+		return false
+	}
+	succ, ok := w.successors(i)
+	w.stack = append(w.stack, visit{node: i, succ: succ})
+	return ok
+}
+
+// seqNodes numbers the distinct elements of xs, in order; false: the root aborted.
+func (g *graph) seqNodes(xs value.Value) ([]int, bool) {
 	var order []int
 	seen := map[int]bool{}
 	for _, x := range Elems(xs) {
-		if i := g.id(x); !seen[i] {
+		i, ok := g.id(x)
+		if !ok {
+			return nil, false
+		}
+		if !seen[i] {
 			seen[i] = true
 			order = append(order, i)
 		}
 	}
-	return order
+	return order, true
 }
 
 // nodeValues are the values of numbered nodes.
