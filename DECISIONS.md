@@ -1797,12 +1797,21 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      fn or method and runs no `load`; one that does stops without a finding (150's E3015).
      Reason: three valid programs overflowed the host stack (overnight run, A3 eval).
 
-211. **Every brace-list item that would continue the line before keeps a comma (extends 179).** In
-     a broken brace list (FORMATTER §6.1), the item before any item whose first token is in
-     GRAMMAR §3.1 rule 3's continuation set that can start an item (`.`, `?.`, `??`, and the
-     keywords `and or in is else where` used as data-symbol names, LEX-08(a)) ends with `,`, as 179
-     says for `.`; FORMATTER §6.1 states the exception. Reason: an enum member named `in` in a
-     broken list reparsed as a continuation (E1116), found by progen (overnight run).
+211. **A broken brace list keeps a comma wherever GRAMMAR §3.1 would join the lines (extends
+     179).** In a broken brace list (FORMATTER §6.1: no commas), the item before a line break ends
+     with `,` when that item's last token is in rule 2's cannot-end set, or when the next item's
+     first token is in rule 3's continuation set that can start an item (`.`, `?.`, `??`, and the
+     keywords `and or in is else where not as` used as data-symbol names, LEX-08(a)); FORMATTER
+     §6.1 states the exception. The line rules stay lexical: a keyword used as a data word joins
+     like the keyword (this supersedes the M1.5 log call "keywords used as names … no join").
+     Reason: an enum member named `in` in a broken list reparsed as a continuation (E1116), or
+     could not end a line (E1117), found by progen and fuzzing (overnight run).
+
+212. **`fits` measures a group as the printer prints it (amends 170).** A group met while measuring
+     is broken if it holds a hard line break, or its own written-broken bit is set, **and its holder
+     is in BREAK mode**; under a FLAT holder it is flat (FORMATTER §7.1's print pseudo-code); a
+     genuine hard line break still forces the holder itself (§8.2). Reason: `fits` stopped early on a
+     group the printer later printed flat, and a parameter list overflowed (overnight run).
 
 ## Still open
 
