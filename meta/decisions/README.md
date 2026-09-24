@@ -21,3 +21,4 @@ the narration.
 |---|---|
 | [0001](0001-bootstrap.md) | The agent layer: CLAUDE.md, DOCTRINE.md, meta/, .claude/ |
 | [0002](0002-api-session.md) | `api/session.go`: the API's glue to `internal/build` |
+| [0003](0003-eval-conformance-api.md) | The evaluator's conformance API: test calls, vectors, TS mode |
