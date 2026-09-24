@@ -98,11 +98,16 @@ func (c *checker) memberOf(env *env, s *syntax.SelectorExpr, t types.Type) types
 	}
 	name := s.Name.Name
 	sel, typ := c.selectOn(recv, name)
-	if sel == nil {
+	if sel == nil && recv.Kind() != types.Error {
 		c.unknownMember(env, s, recv)
+	}
+	if sel == nil {
 		return nil
 	}
 	sel.Recv, sel.Deref = t, deref
+	if c.reservedRead(sel, t, s.X, name) {
+		typ = types.ErrorType
+	}
 	if sel.Kind == SelEntry && s.X != nil {
 		sel.Obj = c.staticEntry(s.X, name)
 		if coll := c.receiverColl(s.X); sel.Obj == nil && coll != nil {
@@ -115,6 +120,30 @@ func (c *checker) memberOf(env *env, s *syntax.SelectorExpr, t types.Type) types
 		c.memberUse(env, s, o)
 	}
 	return typ
+}
+
+// reservedRead reports a table element's field named id or retired (E2105) read where it may be
+// the entry's pseudo-field: on a table entry, or on any value when no keyed list holds the record.
+func (c *checker) reservedRead(sel *Selection, t types.Type, x syntax.Expr, name string) bool {
+	rec := requiredRecord(c.deref(t))
+	if sel.Kind != SelField || rec == nil || !c.tableOf[rec] || !reservedOnEntries(name) {
+		return false
+	}
+	return !c.keyedOf[rec] || c.tableEntry(t, x)
+}
+
+// tableEntry reports a receiver known to be a table's entry: a ref into a table, or an entry
+// selected from one.
+func (c *checker) tableEntry(t types.Type, x syntax.Expr) bool {
+	if r, ok := t.Base().(*types.RefType); ok {
+		return c.coll(r).KeyedBy == nil
+	}
+	s, ok := inner(x).(*syntax.SelectorExpr)
+	if !ok {
+		return false
+	}
+	sel := c.info.Selections[s]
+	return sel != nil && sel.Kind == SelEntry && c.deref(sel.Recv).Base().Kind() == types.Table
 }
 
 // memberUse reports what reading a member may: an input field (E3313), a deprecated field or

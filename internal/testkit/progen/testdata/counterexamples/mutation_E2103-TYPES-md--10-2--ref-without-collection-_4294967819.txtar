@@ -2,7 +2,6 @@ suite mutation
 name E2103 TYPES.md §10.2 (ref without collection)
 case 522
 seed 4294967819
-open check
 born mismatch extra E3002
 sig extra E3002
 packages teamboard

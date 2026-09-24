@@ -12,7 +12,7 @@ import (
 
 // fieldAnnotations resolves a field's annotations into its wire mapping (WIRE.md §4, §5.5.2).
 func (c *checker) fieldAnnotations(env *env, f *types.Field, fd *syntax.FieldDecl, wireCase string) {
-	if why, ok := deprecation(fd.Annotations); ok {
+	if why, ok := c.deprecation(fd.Annotations); ok {
 		f.Deprecated = &types.Deprecation{Why: why}
 	}
 	f.Stable = annotation(fd.Annotations, annotStable) != nil
@@ -22,7 +22,7 @@ func (c *checker) fieldAnnotations(env *env, f *types.Field, fd *syntax.FieldDec
 	if j == nil {
 		return
 	}
-	if w, ok := annString(positional(j)); ok {
+	if w, ok := c.annString(positional(j)); ok {
 		f.Wire, f.WirePath = w, []string{w}
 	}
 	c.jsonPath(env, f, j)
@@ -32,7 +32,7 @@ func (c *checker) fieldAnnotations(env *env, f *types.Field, fd *syntax.FieldDec
 // jsonPath is `@json(path: "a.b")`: two or more non-empty segments, none starting with $.
 func (c *checker) jsonPath(env *env, f *types.Field, j *syntax.Annotation) {
 	v := named(j, jsonPath)
-	p, ok := annString(v)
+	p, ok := c.annString(v)
 	if !ok {
 		return
 	}
@@ -79,12 +79,21 @@ func (c *checker) jsonForms(env *env, f *types.Field, j *syntax.Annotation) {
 		}
 	}
 	if v := named(j, jsonNone); v != nil {
-		f.NoneWire = noneWire(v)
-		if f.Type.Base().Kind() != types.Optional || f.NoneWire == nil {
-			c.report(env, diag.E3316.AtForm(env.span(v), jsonNone, f.Type))
-		}
+		c.jsonNone(env, f, v)
 	}
 	c.jsonPairs(env, f, j)
+}
+
+// jsonNone is `@json(none: x)`: only on an optional, x a marker (E3316); a marker holding a
+// lexer error is unknown, and only its field's type is judged (DECISIONS 215).
+func (c *checker) jsonNone(env *env, f *types.Field, v syntax.AnnValue) {
+	known := !c.holdsLexError(v)
+	if known {
+		f.NoneWire = noneWire(v)
+	}
+	if f.Type.Base().Kind() != types.Optional || known && f.NoneWire == nil {
+		c.report(env, diag.E3316.AtForm(env.span(v), jsonNone, f.Type))
+	}
 }
 
 // holds reports that t contains the kind k outside any named type: directly, in T?, [T] or a map value (WIRE.md §4.1).
@@ -164,21 +173,8 @@ func (c *checker) jsonPairs(env *env, f *types.Field, j *syntax.Annotation) {
 	if !ok {
 		return
 	}
-	var keys [pairCount]string
-	if len(list.Items) != pairCount {
-		c.report(env, diag.E3316.AtPairsTemplate(env.span(v), ""))
-		return
-	}
-	for i := range keys {
-		s, isStr := templateText(list.Items[i])
-		if !isStr || strings.Count(s, pairSlot) != 1 {
-			c.report(env, diag.E3316.AtPairsTemplate(env.span(list.Items[i]), s))
-			return
-		}
-		keys[i] = s
-	}
-	if keys[0] == keys[1] {
-		c.report(env, diag.E3316.AtPairsTemplate(env.span(v), keys[1]))
+	keys, known, ok := c.pairKeys(env, list)
+	if !ok {
 		return
 	}
 	slots, ok := pairSlots(f.Type)
@@ -190,7 +186,34 @@ func (c *checker) jsonPairs(env *env, f *types.Field, j *syntax.Annotation) {
 		c.report(env, diag.E3316.AtForm(env.span(j), jsonPairsName, f.Type))
 		return
 	}
-	f.Pairs = &types.Pairs{Keys: keys, Slots: slots}
+	if known {
+		f.Pairs = &types.Pairs{Keys: keys, Slots: slots}
+	}
+}
+
+// pairKeys are the two templates of `pairs:`, each with one slot and distinct (E3316, then ok is
+// false); not known when one holds a lexer error, whose text is made up (DECISIONS 215).
+func (c *checker) pairKeys(env *env, list *syntax.AnnotationList) (keys [pairCount]string, known, ok bool) {
+	if len(list.Items) != pairCount {
+		c.report(env, diag.E3316.AtPairsTemplate(env.span(list), ""))
+		return keys, false, false
+	}
+	if c.holdsLexError(list) {
+		return keys, false, true
+	}
+	for i := range keys {
+		s, isStr := c.templateText(list.Items[i])
+		if !isStr || strings.Count(s, pairSlot) != 1 {
+			c.report(env, diag.E3316.AtPairsTemplate(env.span(list.Items[i]), s))
+			return keys, false, false
+		}
+		keys[i] = s
+	}
+	if keys[0] == keys[1] {
+		c.report(env, diag.E3316.AtPairsTemplate(env.span(list), keys[1]))
+		return keys, false, false
+	}
+	return keys, true, true
 }
 
 // pairsElem reports an element record of two present scalar fields, no input, no `$` key (WIRE.md §4.1).
@@ -348,11 +371,15 @@ func (c *checker) enumAnnotations(e *types.EnumType, anns []*syntax.Annotation) 
 func (c *checker) enumMember(env *env, e *types.EnumType, i int, m *syntax.EnumMember) *types.Member {
 	mem := &types.Member{Name: m.Name.Name, Wire: m.Name.Name, Index: i, Doc: docText(m.Doc)}
 	mem.Retired = m.Mods != nil && m.Mods.Retired.Valid()
-	if why, ok := deprecation(m.Annotations); ok {
+	if why, ok := c.deprecation(m.Annotations); ok {
 		mem.Deprecated = &types.Deprecation{Why: why}
 	}
-	if w, ok := annString(positional(annotation(m.Annotations, annotJSON))); ok {
+	if w, ok := c.annString(positional(annotation(m.Annotations, annotJSON))); ok {
 		mem.Wire = w
+	}
+	if m.Value != nil && c.lexError(m.Value) {
+		c.info.Types[m.Value] = types.ErrorType
+		return mem
 	}
 	switch v := m.Value.(type) {
 	case syntax.StrLit:
@@ -388,7 +415,7 @@ func (c *checker) memberCode(env *env, e *types.EnumType, mem *types.Member, v *
 // variantAnnotations is `@json(tag:)` and `@json(case:)` on a variant header.
 func (c *checker) variantAnnotations(v *types.VariantType, anns []*syntax.Annotation) {
 	j := annotation(anns, annotJSON)
-	if tag, ok := annString(named(j, jsonTag)); ok {
+	if tag, ok := c.annString(named(j, jsonTag)); ok {
 		v.Tag = tag
 	}
 	c.variantCases[v] = symbol(named(j, jsonCase))
@@ -397,10 +424,10 @@ func (c *checker) variantAnnotations(v *types.VariantType, anns []*syntax.Annota
 // caseAnnotations is a case's `@json("w")` and `@deprecated`.
 func (c *checker) caseAnnotations(ct *types.CaseType, vc *syntax.VariantCase) {
 	c.caseDecls[ct] = vc
-	if w, ok := annString(positional(annotation(vc.Annotations, annotJSON))); ok {
+	if w, ok := c.annString(positional(annotation(vc.Annotations, annotJSON))); ok {
 		ct.Wire = w
 	}
-	if why, ok := deprecation(vc.Annotations); ok {
+	if why, ok := c.deprecation(vc.Annotations); ok {
 		ct.Deprecated = &types.Deprecation{Why: why}
 	}
 }

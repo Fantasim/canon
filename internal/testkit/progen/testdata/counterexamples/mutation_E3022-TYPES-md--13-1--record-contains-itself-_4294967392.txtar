@@ -2,7 +2,6 @@ suite mutation
 name E3022 TYPES.md §13.1 (record contains itself)
 case 95
 seed 4294967392
-open check
 born mismatch extra E3302
 sig extra E3302
 packages pipeline

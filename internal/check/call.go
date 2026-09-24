@@ -59,9 +59,7 @@ func nameType(o *object) types.Type {
 // argsAlone types the arguments of a call that failed, so they are still checked.
 func (c *checker) argsAlone(env *env, x *syntax.CallExpr) {
 	for _, a := range x.Args {
-		if !isLambda(a.Value) {
-			c.synth(env, a.Value)
-		}
+		c.argAlone(env, a.Value)
 	}
 }
 
@@ -101,36 +99,86 @@ func (c *checker) paramObjects(o *object) []*object {
 	return c.fnParams[o]
 }
 
-// userArgs matches and checks the arguments of a call against named parameters.
+// userArgs checks a call's arguments against its parameters; what E1121 refused adds no E3004 (TYPES.md §12.2).
 func (c *checker) userArgs(env *env, x *syntax.CallExpr, fn string, params []*object, ts []types.Type) {
 	given := make([]bool, len(ts))
+	refused, misplaced := refusedArgs(x.Args)
 	for i, a := range x.Args {
-		j := i
-		if a.Name != nil {
-			j = paramIndex(params, a.Name.Name)
-			if j < 0 {
-				c.report(env, diag.E3004.AtUnknown(env.span(a.Name), a.Name.Name, fn))
-				c.synth(env, a.Value)
-				continue
-			}
-			c.info.NameUses[a.Name] = params[j]
-		}
-		if j >= len(ts) {
-			c.report(env, diag.E3004.AtMany(env.span(a), fn))
-			c.synth(env, a.Value)
+		if refused[i] && a.Name == nil {
+			c.argAlone(env, a.Value)
 			continue
 		}
-		if given[j] {
+		j := c.argIndex(env, a, i, fn, params)
+		switch {
+		case j < 0:
+			c.synth(env, a.Value)
+		case j >= len(ts):
 			c.report(env, diag.E3004.AtMany(env.span(a), fn))
+			c.synth(env, a.Value)
+		default:
+			if given[j] && !refused[i] {
+				c.report(env, diag.E3004.AtMany(env.span(a), fn))
+			}
+			given[j] = true
+			c.expr(env, a.Value, ts[j])
 		}
-		given[j] = true
-		c.expr(env, a.Value, ts[j])
 	}
 	for j, ok := range given {
-		if !ok && !c.hasDefault(params, j) {
+		if !ok && !misplaced && !c.hasDefault(params, j) {
 			c.report(env, diag.E3004.AtMissing(env.span(x), paramName(params, j), fn))
 		}
 	}
+}
+
+// argIndex is the parameter an argument names, else its position; -1 after E3004 for an
+// unknown name.
+func (c *checker) argIndex(env *env, a *syntax.Arg, i int, fn string, params []*object) int {
+	if a.Name == nil {
+		return i
+	}
+	j := paramIndex(params, a.Name.Name)
+	if j < 0 {
+		c.report(env, diag.E3004.AtUnknown(env.span(a.Name), a.Name.Name, fn))
+		return j
+	}
+	c.info.NameUses[a.Name] = params[j]
+	return j
+}
+
+// misplacedArgs checks alone the arguments of a built-in call holding a positional argument
+// after a named one (E1121): which parameter each fills is unknown, so no row is judged.
+func (c *checker) misplacedArgs(env *env, x *syntax.CallExpr) bool {
+	_, misplaced := refusedArgs(x.Args)
+	if misplaced {
+		c.argsAlone(env, x)
+	}
+	return misplaced
+}
+
+// argAlone checks an argument no parameter types: synthesized, a lambda alone (lambdaAlone).
+func (c *checker) argAlone(env *env, e syntax.Expr) {
+	if isLambda(e) {
+		c.info.Types[e] = c.lambdaAlone(env, e)
+		return
+	}
+	c.synth(env, e)
+}
+
+// refusedArgs marks the arguments E1121 refuses; misplaced: one is positional after a named one (GRAMMAR.md §6.7).
+func refusedArgs(args []*syntax.Arg) (refused []bool, misplaced bool) {
+	refused = make([]bool, len(args))
+	names := map[string]bool{}
+	named := false
+	for i, a := range args {
+		if a.Name == nil {
+			refused[i], misplaced = named, misplaced || named
+			continue
+		}
+		named = true
+		refused[i] = names[a.Name.Name]
+		names[a.Name.Name] = true
+	}
+	return refused, misplaced
 }
 
 func paramIndex(params []*object, name string) int {

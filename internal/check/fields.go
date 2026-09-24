@@ -136,9 +136,12 @@ func (c *checker) fieldInput(env *env, f *types.Field, fd *syntax.FieldDecl) {
 var envName = regexp.MustCompile(envNamePattern)
 
 // inputType reports a type an input may have: a scalar or an enum, optional or not, refined
-// by ranges, lengths and patterns only.
+// by ranges, lengths and patterns only; a type in error anywhere is not judged again.
 func inputType(t types.Type) bool {
 	for {
+		if t.Kind() == types.Error {
+			return true
+		}
 		switch x := t.(type) {
 		case *types.Alias:
 			t = x.Def

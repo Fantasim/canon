@@ -76,46 +76,30 @@ func (c *checker) amendment(env *env, let *object, a *syntax.Amendment, seen ame
 		} else {
 			w.text = append(w.text, segmentText(env, seg))
 		}
+		container := unwrapOptional(w.t)
 		if !c.amendSegment(env, w, seg) {
 			c.expr(env, a.Value, types.ErrorType)
 			return
 		}
+		w.canon = append(w.canon, c.canonSegment(env, container, seg))
 	}
-	c.overlap(env, a, let, strings.Join(w.text, ""), seen)
+	c.overlap(env, a, let, amendPath{text: w.path(), canon: w.canon}, seen)
 	c.expr(env, a.Value, w.t)
 }
 
-// amendWalk is a path being resolved: the type reached, the path's text so far, and the field
-// names from the let while every segment is a record field (the collection a key belongs to).
+// amendWalk is a path being resolved: the type reached, the path's text so far and its
+// canonical segments, and the field names from the let while every segment is a record field
+// (the collection a key belongs to).
 type amendWalk struct {
 	let    *object
 	t      types.Type
 	text   []string
+	canon  []string
 	fields []string
 	plain  bool
 }
 
 func (w *amendWalk) path() string { return strings.Join(w.text, "") }
-
-// amendPaths are the paths a layer sets on each let, in source order (E1908 keys on both).
-type amendPaths map[*object][]string
-
-// overlap is E1908: a path of a let set twice in one layer, or a prefix of an earlier one.
-func (c *checker) overlap(env *env, a *syntax.Amendment, let *object, path string, seen amendPaths) {
-	layer := env.owner.name
-	for _, other := range seen[let] {
-		switch {
-		case other == path:
-			c.report(env, diag.E1908.AtTwice(env.span(a), path, layer))
-			return
-		case strings.HasPrefix(other, path+dot), strings.HasPrefix(other, path+openBracket),
-			strings.HasPrefix(path, other+dot), strings.HasPrefix(path, other+openBracket):
-			c.report(env, diag.E1908.AtOverlap(env.span(a), path, other, layer))
-			return
-		}
-	}
-	seen[let] = append(seen[let], path)
-}
 
 // segmentText is a path segment as a path prints it: `.f` (the first bare), `[k]`, `[#n]`.
 func segmentText(env *env, seg *syntax.AmendSegment) string {
@@ -125,8 +109,7 @@ func segmentText(env *env, seg *syntax.AmendSegment) string {
 	case seg.Position != nil:
 		return openBracket + hash + seg.Position.Value.String() + closeBracket
 	}
-	sp := env.span(seg.Key)
-	return openBracket + string(env.file.Src.Content[sp.Start:sp.End]) + closeBracket
+	return openBracket + env.written(seg.Key) + closeBracket
 }
 
 // amendSegment steps w over one segment, through an optional but never a ref (EVALUATION.md §9.2).

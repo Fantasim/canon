@@ -22,6 +22,12 @@ func (c *checker) listLit(env *env, e *syntax.ListLit, want types.Type) types.Ty
 		}
 		return l
 	}
+	if unknownContext(want) {
+		for _, x := range e.Elems {
+			c.expr(env, x, types.ErrorType)
+		}
+		return types.ErrorType
+	}
 	if len(e.Elems) == 0 {
 		if env.joining() {
 			return emptyList
@@ -48,7 +54,7 @@ func (c *checker) joinAll(env *env, at syntax.Node, branches []syntax.Expr) (typ
 
 // joinTypes joins already typed branches; an erroneous branch makes it the error type, silently.
 func (c *checker) joinTypes(env *env, at syntax.Node, branches []syntax.Expr, ts []types.Type) (types.Type, bool) {
-	if slices.ContainsFunc(ts, func(t types.Type) bool { return t.Kind() == types.Error }) {
+	if slices.ContainsFunc(ts, c.erroneous) {
 		return types.ErrorType, false
 	}
 	j := ts[0]

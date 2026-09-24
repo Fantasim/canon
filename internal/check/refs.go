@@ -94,6 +94,17 @@ func (c *checker) coll(r *types.RefType) *types.Collection {
 	return r.Target
 }
 
+// brokenRef reports a ref whose target resolved to nothing: it stands for the error type (TYPES.md §1).
+func (c *checker) brokenRef(t types.Type) bool {
+	r, ok := t.Base().(*types.RefType)
+	return ok && r.Target == errorColl // a pending ref is resolved where its package says, never here
+}
+
+// erroneous reports the error type, or a ref standing for it.
+func (c *checker) erroneous(t types.Type) bool {
+	return t.Kind() == types.Error || c.brokenRef(t)
+}
+
 // resolveRefName finds what `ref X` names: a let or a path through its record fields, or a
 // record type searched level by level.
 func (c *checker) resolveRefName(tc *typeCtx, t *syntax.RefType) *types.Collection {
@@ -131,11 +142,18 @@ func (c *checker) resolveRefName(tc *typeCtx, t *syntax.RefType) *types.Collecti
 	return nil
 }
 
-// letCollection is a let, or a path through record fields of it, that is a collection (TYPES.md §9.4), else E3504.
+// letCollection is a let, or a path through its record fields, that is a collection, else E3504 (TYPES.md §9.4).
 func (c *checker) letCollection(env *env, let *object, path []*syntax.Ident, q *syntax.QualifiedName) *types.Collection {
+	if annotating(let) { // named in its own annotation: not a collection (log 2026-09-24, check C2 review)
+		c.report(env, diag.E3504.At(env.span(q), qualified(q)))
+		return nil
+	}
 	t := c.letType(let)
 	var names []string
 	for _, part := range path {
+		if t.Kind() == types.Error { // names nothing, reports nothing (TYPES.md §1)
+			return nil
+		}
 		rec, ok := t.Base().(*types.RecordType)
 		if !ok {
 			c.report(env, diag.E3504.At(env.span(q), qualified(q)))
@@ -152,6 +170,9 @@ func (c *checker) letCollection(env *env, let *object, path []*syntax.Ident, q *
 		names = append(names, part.Name)
 	}
 	elem, keyed, ok := collectionElem(t)
+	if !ok && t.Kind() == types.Error {
+		return nil
+	}
 	if !ok {
 		c.report(env, diag.E3504.At(env.span(q), qualified(q)))
 		return nil

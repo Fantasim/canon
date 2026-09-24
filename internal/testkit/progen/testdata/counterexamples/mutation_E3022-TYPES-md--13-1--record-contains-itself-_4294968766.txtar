@@ -2,12 +2,12 @@ suite mutation
 name E3022 TYPES.md §13.1 (record contains itself)
 case 1469
 seed 4294968766
-open check
+open progen
 born mismatch extra E1903, E3302
-sig extra E1903, E3302
+sig extra E1903
 packages service.resourcestudio
 want E3022 service/resourcestudio/resourcestudio.canon 453 456 check
-failure extra [E1903 service/resourcestudio/resourcestudio.canon:15:8 "Gen has input fields, so it must be reached from exactly one public value through record fields"; E3302 service/resourcestudio/resourcestudio.canon:24:14 "service.resourcestudio.Gen needs field zzSelf"] besides [E3022 service/resourcestudio/resourcestudio.canon:15:8 "Gen contains itself and can never be built"]
+failure extra [E1903 service/resourcestudio/resourcestudio.canon:15:8 "Gen has input fields, so it must be reached from exactly one public value through record fields"] besides [E3022 service/resourcestudio/resourcestudio.canon:15:8 "Gen contains itself and can never be built"]
 -- project.canon --
 project sovereign {
   canon: "0.1"

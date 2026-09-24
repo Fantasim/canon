@@ -2,7 +2,6 @@ suite mutation
 name E3401 TYPES.md §2 (optional of an optional)
 case 128
 seed 4294967425
-open check
 born mismatch extra E1910
 sig extra E1910
 packages service.resourcestudio

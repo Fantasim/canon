@@ -20,6 +20,9 @@ func (c *checker) builtinMethod(env *env, x *syntax.CallExpr, s *syntax.Selector
 		c.argsAlone(env, x)
 		return types.ErrorType
 	}
+	if c.misplacedArgs(env, x) {
+		return types.ErrorType
+	}
 	if s.X != nil {
 		b.from(0, s.X)
 	}

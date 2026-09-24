@@ -196,7 +196,7 @@ func (cov *coverage) finish(node syntax.Node) {
 		missing = append(missing, noneWord)
 	}
 	for i, n := range cov.names {
-		if !cov.covered[i] {
+		if !cov.covered[i] && !cov.unmatchable(i) {
 			missing = append(missing, n)
 		}
 	}
@@ -204,4 +204,9 @@ func (cov *coverage) finish(node syntax.Node) {
 	if len(missing) > 0 {
 		cov.c.report(cov.env, diag.E3601.At(cov.env.tokSpan(node.First()), missing))
 	}
+}
+
+// unmatchable reports the i-th member or case named by an E1126 word: no pattern can cover it.
+func (cov *coverage) unmatchable(i int) bool {
+	return i < len(cov.objs) && cov.c.unmatchable[cov.objs[i].decl]
 }

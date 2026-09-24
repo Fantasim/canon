@@ -144,8 +144,7 @@ func (c *checker) resolveWhere(tc *typeCtx, t *syntax.WhereType) types.Type {
 	if o, ok := base.Base().(*types.OptionalType); ok {
 		it = o.Elem
 	}
-	sp := tc.env.span(t.Pred)
-	text := string(tc.env.file.Src.Content[sp.Start:sp.End])
+	text := tc.env.written(t.Pred)
 	c.wheres = append(c.wheres, whereJob{env: tc.env, pred: t.Pred, it: it})
 	return &types.Refined{Of: base, Where: &types.Predicate{Expr: t.Pred, Text: text}}
 }

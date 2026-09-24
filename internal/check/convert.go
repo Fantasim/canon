@@ -84,6 +84,8 @@ func (c *checker) convert(s, want types.Type) (*Conversion, bool) {
 	switch {
 	case sb.Kind() == types.Error || wb.Kind() == types.Error || sb.Kind() == types.Never:
 		return nil, true
+	case c.brokenRef(sb) || c.brokenRef(wb):
+		return nil, true
 	case sb.Kind() == types.DepUnion || sb.Kind() == types.TypeApp:
 		return nil, types.Assignable(sb, wb)
 	case wb.Kind() == types.Any || wb.Kind() == types.DepUnion || wb.Kind() == types.TypeApp:

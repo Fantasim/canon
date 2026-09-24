@@ -2,7 +2,6 @@ suite corrupt
 name corruption
 case 3220
 seed 12884905109
-open check
 born crash crash fatal error: stack overflow in check.(*checker).domain ~ check.(*checker).letCollection ~ check.(*checker).letType ~ check.(*checker).resolveDepMap ~ check.(*checker).resolveLetAnnotation ~ check.(*checker).resolveOptional ~ check.(*checker).resolveType ~ check.(*checker).resolveTypeNode
 sig crash fatal error: stack overflow in check.(*checker).domain ~ check.(*checker).letCollection ~ check.(*checker).letType ~ check.(*checker).resolveDepMap ~ check.(*checker).resolveLetAnnotation ~ check.(*checker).resolveOptional ~ check.(*checker).resolveType ~ check.(*checker).resolveTypeNode
 want corruption

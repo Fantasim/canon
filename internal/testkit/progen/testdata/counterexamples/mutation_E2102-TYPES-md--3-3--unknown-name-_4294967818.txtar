@@ -2,7 +2,7 @@ suite mutation
 name E2102 TYPES.md §3.3 (unknown name)
 case 521
 seed 4294967818
-open check
+open progen
 born mismatch missing E3008
 sig missing E3008
 packages features.lookup

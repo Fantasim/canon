@@ -59,10 +59,10 @@ func firstArg(a *syntax.Annotation) syntax.AnnValue {
 }
 
 // templateText is a template argument as written: its text, `{name}` for each interpolation.
-func templateText(v syntax.AnnValue) (string, bool) {
+func (c *checker) templateText(v syntax.AnnValue) (string, bool) {
 	s, ok := v.(*syntax.StringLit)
 	if !ok {
-		return annString(v)
+		return c.annString(v)
 	}
 	var b strings.Builder
 	for _, p := range s.Parts {
@@ -105,21 +105,33 @@ func symbol(v syntax.AnnValue) string {
 	return ""
 }
 
-// annString is a string argument's text, and whether it is one.
-func annString(v syntax.AnnValue) (string, bool) {
+// annString is a string argument's text, and whether it is one; not one when it holds a
+// lexer error, whose text is made up (DECISIONS 215).
+func (c *checker) annString(v syntax.AnnValue) (string, bool) {
 	s, ok := v.(syntax.StrLit)
-	if !ok {
+	if !ok || c.lexError(v) {
 		return "", false
 	}
 	return constText(s), true
 }
 
+// holdsLexError reports an annotation argument, or a list of them, holding a lexer error: what it
+// says is unknown (DECISIONS 215).
+func (c *checker) holdsLexError(v syntax.AnnValue) bool {
+	bad := false
+	syntax.Inspect(v, func(n syntax.Node) bool {
+		bad = bad || c.lexError(n)
+		return !bad
+	})
+	return bad
+}
+
 // deprecation is the reason of a `@deprecated` annotation, and whether there is one.
-func deprecation(anns []*syntax.Annotation) (string, bool) {
+func (c *checker) deprecation(anns []*syntax.Annotation) (string, bool) {
 	a := annotation(anns, annotDeprecated)
 	if a == nil {
 		return "", false
 	}
-	why, _ := annString(positional(a))
+	why, _ := c.annString(positional(a))
 	return why, true
 }

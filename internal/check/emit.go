@@ -90,6 +90,9 @@ func (c *checker) emitString(env *env, fi *syntax.FieldItem, target string) (str
 		c.report(env, diag.E8009.AtKind(env.span(fi.Value), fi.Name.Name, target, diag.KindConstantString))
 		return "", false
 	}
+	if c.lexError(fi.Value) {
+		return "", false // its text is made up (DECISIONS 215)
+	}
 	if !interpolationFree(fi.Value) {
 		c.report(env, diag.E1132.At(env.span(fi.Value)))
 		return "", false

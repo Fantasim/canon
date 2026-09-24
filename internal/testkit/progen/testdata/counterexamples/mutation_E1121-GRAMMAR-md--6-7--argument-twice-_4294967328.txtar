@@ -2,7 +2,6 @@ suite mutation
 name E1121 GRAMMAR.md §6.7 (argument twice)
 case 31
 seed 4294967328
-open check
 born mismatch extra E3004/many
 sig extra E3004/many
 packages teamboard

@@ -37,12 +37,17 @@ func (s sourceText) String() string { return string(s) }
 
 // literalText is the source of a literal for a message: its text on one short line, else `{ … }`.
 func (env *env) literalText(n syntax.Node) sourceText {
-	sp := env.span(n)
-	text := string(env.file.Src.Content[sp.Start:sp.End])
+	text := env.written(n)
 	if len(text) > maxLiteralText || strings.Contains(text, newline) {
 		return elidedLiteral
 	}
 	return sourceText(text)
+}
+
+// written is a node's source text, whole.
+func (env *env) written(n syntax.Node) string {
+	sp := env.span(n)
+	return string(env.file.Src.Content[sp.Start:sp.End])
 }
 
 // joinable is a branch a join types: `none`, `[]`, `{}`, an if or a match (TYPES.md §6.4).
@@ -56,6 +61,11 @@ func joinable(e syntax.Expr) bool {
 		return len(x.Items) == 0 && len(x.Clauses) == 0
 	}
 	return false
+}
+
+// unknownContext reports an expected type that is the error type: no E3008 against it (TYPES.md §1).
+func unknownContext(want types.Type) bool {
+	return want != nil && want.Kind() == types.Error
 }
 
 // synth synthesizes e: expr without an expected type.
@@ -90,7 +100,7 @@ func (c *checker) exprNode(env *env, e syntax.Expr, want types.Type) types.Type 
 
 // literalNode types literals, collection literals and the other primaries.
 func (c *checker) literalNode(env *env, e syntax.Expr, want types.Type) types.Type {
-	if leafLiteral(e) && c.lexError(env, e) {
+	if c.lexError(e) {
 		if s, ok := e.(*syntax.StringLit); ok {
 			c.interpolations(env, s)
 		}

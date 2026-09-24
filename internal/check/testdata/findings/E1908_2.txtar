@@ -1,0 +1,57 @@
+EVALUATION.md §9.2 with API.md §6.5 P8, P9: paths are compared by canonical segment, so an
+entry written `.low`, `[low]` or `["low"]`, a member bare or qualified, and a list element as
+`[0]` or `[#0]` are one path.
+-- a/a.canon --
+package a
+
+local enum Grade { low, high }
+
+local record Tier {
+  rate: Int
+}
+
+local record Cfg {
+  tiers: table Tier
+  grades: {Grade: Int}
+  names: {String: Int}
+  xs: [Int]
+}
+
+local let cfg: Cfg = {
+  tiers: { low { rate: 1 } }
+  grades: { low: 1 }
+  names: { "a b": 1 }
+  xs: [1, 2]
+}
+-- a/dev.layer.canon --
+package a
+layer dev
+
+amend cfg {
+  tiers.low.rate: 2
+  tiers[low].rate: 3
+  tiers["low"]: { rate: 4 }
+  grades[low]: 2
+  grades[Grade.low]: 3
+  names["a b"]: 2
+  names["a b"]: 3
+  xs[0]: 5
+  xs[#0]: 6
+}
+-- findings.txt --
+error[E1908]  a/dev.layer.canon:6:3
+  amend path tiers[low].rate is set twice in layer dev
+
+error[E1908]  a/dev.layer.canon:7:3
+  amend path tiers["low"] overlaps tiers.low.rate in layer dev
+
+error[E1908]  a/dev.layer.canon:9:3
+  amend path grades[Grade.low] is set twice in layer dev
+
+error[E1908]  a/dev.layer.canon:11:3
+  amend path names["a b"] is set twice in layer dev
+
+error[E1908]  a/dev.layer.canon:13:3
+  amend path xs[#0] is set twice in layer dev
+
+5 errors, 0 warnings in 1 package (…)

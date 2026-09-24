@@ -122,7 +122,9 @@ func (pc *pathCounter) paths(t types.Type) int {
 	pc.onPath[rec] = true
 	n := 0
 	for _, f := range rec.Fields {
-		n = min(n+pc.paths(f.Type), manyPaths)
+		if !selfContaining(rec, f) {
+			n = min(n+pc.paths(f.Type), manyPaths)
+		}
 	}
 	delete(pc.onPath, rec)
 	pc.count[rec] = n
@@ -136,11 +138,12 @@ func boolCount(b bool) int {
 	return 0
 }
 
-// reachesFrom reports r reached from rec's fields through record fields and optionals.
+// reachesFrom reports r reached from rec's fields through record fields and optionals; E3022's
+// cycle is not a way (it adds no path).
 func (pc *pathCounter) reachesFrom(rec *types.RecordType, seen map[*types.RecordType]bool) bool {
 	for _, f := range rec.Fields {
 		next := requiredRecord(unwrapOptional(f.Type))
-		if next == nil || seen[next] {
+		if next == nil || seen[next] || selfContaining(rec, f) {
 			continue
 		}
 		seen[next] = true

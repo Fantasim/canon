@@ -49,16 +49,24 @@ func (c *checker) resolveLetAnnotation(o *object) {
 		}
 		return
 	}
-	if o.typ != nil {
+	if o.typ != nil || o.state == stateResolving { // an annotation naming its own let ends (log 2026-09-24, check C2 review)
 		return
 	}
-	o.typ = c.resolveType(&typeCtx{env: c.declEnv(o), pos: posStable}, d.Type)
+	o.state = stateResolving
+	t := c.resolveType(&typeCtx{env: c.declEnv(o), pos: posStable}, d.Type)
+	o.typ, o.state = t, stateDone
 	if _, isTable := o.typ.Base().(*types.TableType); !isTable {
 		o.keys = nil
 	}
 }
 
-// letType is a top-level let's type: its annotation, or its initializer synthesized when first needed (TYPES.md §15).
+// annotating reports a let whose annotation is being resolved: its type is not known yet.
+func annotating(o *object) bool {
+	d, ok := o.decl.(*syntax.LetDecl)
+	return ok && d.Type != nil && o.state == stateResolving
+}
+
+// letType is a let's annotation, else its initializer synthesized when first needed (TYPES.md §15).
 func (c *checker) letType(o *object) types.Type {
 	if o.typ != nil {
 		return o.typ
@@ -66,6 +74,9 @@ func (c *checker) letType(o *object) types.Type {
 	d := o.decl.(*syntax.LetDecl)
 	if d.Type != nil {
 		c.resolveLetAnnotation(o)
+		if o.typ == nil { // its annotation is being resolved
+			return types.ErrorType
+		}
 		return o.typ
 	}
 	env := c.declEnv(o)
@@ -112,7 +123,7 @@ func (c *checker) checkSelfContaining(p *pkgState) {
 		if o.kind != ObjTypeName || !ok {
 			continue
 		}
-		if c.reaches(rec, rec, map[*types.RecordType]bool{}) {
+		if reaches(rec, rec, map[*types.RecordType]bool{}) {
 			env := c.declEnv(o)
 			c.report(env, diag.E3022.At(env.span(rec.Decl.Name), o.name))
 		}
@@ -120,7 +131,7 @@ func (c *checker) checkSelfContaining(p *pkgState) {
 }
 
 // reaches reports that a value of from needs a value of to through required record fields.
-func (c *checker) reaches(from, to *types.RecordType, seen map[*types.RecordType]bool) bool {
+func reaches(from, to *types.RecordType, seen map[*types.RecordType]bool) bool {
 	if seen[from] {
 		return false
 	}
@@ -130,11 +141,20 @@ func (c *checker) reaches(from, to *types.RecordType, seen map[*types.RecordType
 		if next == nil || f.Input != nil {
 			continue
 		}
-		if next == to || c.reaches(next, to, seen) {
+		if next == to || reaches(next, to, seen) {
 			return true
 		}
 	}
 	return false
+}
+
+// selfContaining reports a field its record contains itself through: E3022's alone (TYPES.md §1, §13.1).
+func selfContaining(owner *types.RecordType, f *types.Field) bool {
+	next := requiredRecord(f.Type)
+	if next == nil || f.Input != nil || owner == nil {
+		return false
+	}
+	return next == owner || reaches(next, owner, map[*types.RecordType]bool{})
 }
 
 // requiredRecord is the record a field type needs directly: not optional, not in a list, map,

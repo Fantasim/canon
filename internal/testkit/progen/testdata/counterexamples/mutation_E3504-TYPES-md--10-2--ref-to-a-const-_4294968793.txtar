@@ -2,7 +2,6 @@ suite mutation
 name E3504 TYPES.md §10.2 (ref to a const)
 case 1496
 seed 4294968793
-open check
 born mismatch extra E3002, E3003
 sig extra E3002, E3003
 packages teamboard

@@ -2,7 +2,7 @@ suite mutation
 name E1126 GRAMMAR.md §4.3 (none as enum member)
 case 265
 seed 4294967562
-open check
+open progen
 born mismatch extra E3201
 sig extra E3201
 packages features.retirement

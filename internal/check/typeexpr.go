@@ -201,6 +201,7 @@ func (c *checker) resolveKeyed(tc *typeCtx, t *syntax.KeyedType) types.Type {
 		return inner
 	}
 	l.KeyedBy = f
+	c.keyedOf[rec] = true
 	return inner
 }
 

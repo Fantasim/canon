@@ -34,8 +34,8 @@ func (c *checker) markBodyTables() {
 		for _, f := range p.files {
 			env := c.fileEnv(p, f, nil)
 			syntax.Inspect(f, func(n syntax.Node) bool {
-				if t, ok := n.(*syntax.TableType); ok && c.info.TypeExprs[t] == nil {
-					c.markTable(env, t)
+				if t, ok := n.(syntax.Type); ok && c.info.TypeExprs[t] == nil {
+					c.markElement(env, t)
 				}
 				return true
 			})
@@ -43,26 +43,52 @@ func (c *checker) markBodyTables() {
 	}
 }
 
-// markTable records the record a table type names, reporting nothing: the body reports.
-func (c *checker) markTable(env *env, t *syntax.TableType) {
-	o := c.lookupType(env, t.Name.Parts[0].Name)
-	for _, part := range t.Name.Parts[1:] {
+// markElement records the record a table or keyed list type names, reporting nothing: the body reports.
+func (c *checker) markElement(env *env, t syntax.Type) {
+	switch x := t.(type) {
+	case *syntax.TableType:
+		if rec := c.namedRecord(env, x.Name); rec != nil {
+			c.tableOf[rec] = true
+			c.stableOf[rec] = c.stableOf[rec] || x.Stable.Valid()
+		}
+	case *syntax.KeyedType:
+		if rec := c.keyedElement(env, x); rec != nil {
+			c.keyedOf[rec] = true
+		}
+	}
+}
+
+// keyedElement is the record a keyed list type names as its element, nil for anything else.
+func (c *checker) keyedElement(env *env, t *syntax.KeyedType) *types.RecordType {
+	l, ok := t.List.(*syntax.ListType)
+	if !ok {
+		return nil
+	}
+	n, ok := l.Elem.(*syntax.NamedType)
+	if !ok {
+		return nil
+	}
+	return c.namedRecord(env, n.Name)
+}
+
+// namedRecord is the record a qualified type name names in env, nil for anything else.
+func (c *checker) namedRecord(env *env, q *syntax.QualifiedName) *types.RecordType {
+	o := c.lookupType(env, q.Parts[0].Name)
+	for _, part := range q.Parts[1:] {
 		if o == nil || o.kind != ObjPackage {
-			return
+			return nil
 		}
 		m, ok := o.target.names[part.Name]
 		if !ok || m.local {
-			return
+			return nil
 		}
 		o = m
 	}
 	if o == nil || o.kind != ObjTypeName || c.resolveTypeName(o) == nil {
-		return
+		return nil
 	}
-	if rec, ok := c.resolveTypeName(o).Base().(*types.RecordType); ok {
-		c.tableOf[rec] = true
-		c.stableOf[rec] = c.stableOf[rec] || t.Stable.Valid()
-	}
+	rec, _ := c.resolveTypeName(o).Base().(*types.RecordType)
+	return rec
 }
 
 // checkDecl checks the body of one declaration.
@@ -247,11 +273,14 @@ func (c *checker) reservedEntryNames(o *object, r *types.RecordType) {
 		case *syntax.FnDecl:
 			n = it.Name
 		}
-		if n != nil && (n.Name == idMember || n.Name == retiredMember) {
+		if n != nil && reservedOnEntries(n.Name) {
 			c.report(env, diag.E2105.AtEntry(env.span(n), n.Name))
 		}
 	}
 }
+
+// reservedOnEntries reports the pseudo-fields of a table entry, which its record may not declare.
+func reservedOnEntries(name string) bool { return name == idMember || name == retiredMember }
 
 // checkBody checks a check or warn: a block, or a condition and its message under F (TYPES.md §6.6).
 func (c *checker) checkBody(o *object) {

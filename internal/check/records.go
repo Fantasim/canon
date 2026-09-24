@@ -84,10 +84,14 @@ func (c *checker) fieldItem(env *env, it *syntax.FieldItem, t types.Type, fields
 }
 
 // requiredFields is E3302 for each field with no default, not optional and not an input,
-// that the literal leaves out.
+// that the literal leaves out; a field its record contains itself through is E3022's.
 func (c *checker) requiredFields(env *env, e *syntax.BraceLit, t types.Type, fields []*types.Field, given map[string]bool) {
+	owner := requiredRecord(t)
 	for _, f := range fields {
 		if given[f.Name] || f.Default != nil || f.Input != nil || f.Type.Base().Kind() == types.Optional {
+			continue
+		}
+		if selfContaining(owner, f) {
 			continue
 		}
 		c.report(env, diag.E3302.At(env.tokSpan(e.First()), t, f.Name))

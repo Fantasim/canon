@@ -10,21 +10,33 @@ import (
 )
 
 // syntaxErrors breaks each declaration holding a lexer or parser error from its creation
-// (newObject), before anything is folded or evaluated.
+// (newObject), before anything is folded or evaluated, and marks each literal token holding a
+// lexer error.
 func (c *checker) syntaxErrors() {
-	spans := c.syntaxSpans()
+	found := c.syntaxSpans()
 	for _, p := range c.sorted {
 		for _, f := range p.files {
-			if errs := spans[f.Src.ID]; len(errs) > 0 {
+			if errs := found.all[f.Src.ID]; len(errs) > 0 {
 				c.holdErrors(f, errs)
+			}
+			if errs := found.inLiterals[f.Src.ID]; len(errs) > 0 {
+				c.markBadLiterals(f, errs)
+			}
+			if errs := found.dataWords[f.Src.ID]; len(errs) > 0 {
+				c.markUnmatchable(f, errs)
 			}
 		}
 	}
 }
 
-// syntaxSpans are the spans of the syntax errors of the packages' parse findings, by file; the
-// lexer's errors inside a literal also go to c.literalErrs.
-func (c *checker) syntaxSpans() map[source.FileID][]source.Span {
+// syntaxFound are the spans of the packages' parse findings, by file: every syntax error, the
+// lexer's errors inside a literal, and E1126's data words.
+type syntaxFound struct {
+	all, inLiterals, dataWords map[source.FileID][]source.Span
+}
+
+// syntaxSpans sorts the packages' parse findings into a syntaxFound.
+func (c *checker) syntaxSpans() syntaxFound {
 	codes := map[diag.Code]bool{}
 	for _, d := range diag.Registry {
 		codes[d.Code] = d.Package == syntaxOwner && d.Severity == diag.Error
@@ -33,25 +45,63 @@ func (c *checker) syntaxSpans() map[source.FileID][]source.Span {
 	for _, d := range literalCodes {
 		inLiteral[d.Def().Code] = true
 	}
-	spans := map[source.FileID][]source.Span{}
+	found := syntaxFound{all: map[source.FileID][]source.Span{}, inLiterals: map[source.FileID][]source.Span{}, dataWords: map[source.FileID][]source.Span{}}
 	for _, p := range c.sorted {
 		for _, f := range parseFindings(p) {
 			if codes[f.Code] {
-				spans[f.Span.File] = append(spans[f.Span.File], f.Span)
+				found.all[f.Span.File] = append(found.all[f.Span.File], f.Span)
 			}
 			if inLiteral[f.Code] {
-				c.literalErrs[f.Span.File] = append(c.literalErrs[f.Span.File], f.Span)
+				found.inLiterals[f.Span.File] = append(found.inLiterals[f.Span.File], f.Span)
+			}
+			if f.Code == diag.E1126.Def().Code {
+				found.dataWords[f.Span.File] = append(found.dataWords[f.Span.File], f.Span)
 			}
 		}
 	}
-	return spans
+	return found
 }
 
-// lexError reports a literal holding a lexer error: it has the error type, and its declaration
-// is broken already (DECISIONS 215).
-func (c *checker) lexError(env *env, e syntax.Expr) bool {
-	at := env.span(e)
-	return slices.ContainsFunc(c.literalErrs[at.File], func(s source.Span) bool { return encloses(at, s) })
+// markUnmatchable marks each enum member and variant case whose own name is one of errs (E1126):
+// it exists, but no pattern can name it, so no match is asked to cover it.
+func (c *checker) markUnmatchable(f *syntax.File, errs []source.Span) {
+	syntax.Inspect(f, func(n syntax.Node) bool {
+		var name *syntax.Ident
+		switch x := n.(type) {
+		case *syntax.EnumMember:
+			name = x.Name
+		case *syntax.VariantCase:
+			name = x.Name
+		default:
+			return true
+		}
+		at := f.Span(name)
+		if slices.ContainsFunc(errs, func(s source.Span) bool { return encloses(at, s) }) {
+			c.unmatchable[n] = true
+		}
+		return true
+	})
+}
+
+// markBadLiterals marks each literal token of f that holds one of errs, wherever it stands: an
+// expression, an enum member's value, an annotation argument (DECISIONS 215).
+func (c *checker) markBadLiterals(f *syntax.File, errs []source.Span) {
+	syntax.Inspect(f, func(n syntax.Node) bool {
+		if !leafLiteral(n) {
+			return true
+		}
+		at := f.Span(n)
+		if slices.ContainsFunc(errs, func(s source.Span) bool { return encloses(at, s) }) {
+			c.badLits[n] = true
+		}
+		return true
+	})
+}
+
+// lexError reports a literal holding a lexer error: it has the error type, no fold and no static
+// check on the value the lexer made up, and its declaration is broken already (DECISIONS 215).
+func (c *checker) lexError(n syntax.Node) bool {
+	return c.badLits[n]
 }
 
 // parseFindings are the parse findings a build put in p's bag, or p's files parsed again when
@@ -106,8 +156,8 @@ func encloses(d, e source.Span) bool {
 }
 
 // leafLiteral reports a literal token, the only node a lexer error gives the error type (DECISIONS 215).
-func leafLiteral(e syntax.Expr) bool {
-	switch e.(type) {
+func leafLiteral(n syntax.Node) bool {
+	switch n.(type) {
 	case *syntax.IntLit, *syntax.FloatLit, *syntax.DurationLit, *syntax.StringLit, *syntax.RawStringLit, *syntax.RegexLit:
 		return true
 	}

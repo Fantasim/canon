@@ -163,7 +163,9 @@ const (
 	hash         = "#"
 	openBracket  = "["
 	closeBracket = "]"
+	openParen    = "("
 	closeParen   = ")"
+	unionMark    = "|" // marks a literal of a literal union among canonical keys (TYPES.md §13.2)
 	underscore   = "_"
 	hyphen       = "-"
 	dollar       = "$"

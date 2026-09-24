@@ -21,17 +21,29 @@ type wireLocation struct {
 func (c *checker) checkWireKeys(env *env, body *recordCtx) {
 	var seen []wireLocation
 	for _, fo := range body.order {
-		f := fo.field
-		if f.Input != nil || f.Inline {
+		f, fd := fo.field, fo.decl.(*syntax.FieldDecl)
+		if f.Input != nil || f.Inline || c.wireUnknown(fd) {
 			continue
 		}
-		at := env.span(fo.decl.(*syntax.FieldDecl).Name)
+		at := env.span(fd.Name)
 		for _, loc := range fieldLocations(f) {
 			if c.place(env, at, loc, seen) {
 				seen = append(seen, loc)
 			}
 		}
 	}
+}
+
+// wireUnknown reports a field whose keys come from a `@json` argument holding a lexer error (its
+// wire name, path or pairs templates): they are not known, so they clash with nothing (DECISIONS 215).
+func (c *checker) wireUnknown(fd *syntax.FieldDecl) bool {
+	j := annotation(fd.Annotations, annotJSON)
+	if j == nil {
+		return false
+	}
+	return slices.ContainsFunc([]syntax.AnnValue{positional(j), named(j, jsonPath), named(j, jsonPairsName)}, func(v syntax.AnnValue) bool {
+		return v != nil && c.holdsLexError(v)
+	})
 }
 
 // place reports what is wrong with loc against the earlier locations, and whether later ones

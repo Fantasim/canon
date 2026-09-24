@@ -2,7 +2,7 @@ suite mutation
 name E3020 TYPES.md §12.7 (expression without effect)
 case 93
 seed 4294967390
-open check
+open progen
 born mismatch missing E3008
 sig missing E3008
 packages sovcommon.time

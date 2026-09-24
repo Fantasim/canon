@@ -62,6 +62,9 @@ func (c *checker) binary(env *env, e *syntax.BinaryExpr, want types.Type) types.
 		return c.inExpr(env, e)
 	default:
 	}
+	if unknownContext(want) && c.contextDependent(env, e.X) && c.contextDependent(env, e.Y) {
+		return types.ErrorType
+	}
 	tx, ty, ok := c.operands(env, e)
 	if !ok {
 		return types.ErrorType
@@ -197,6 +200,7 @@ func (c *checker) equality(env *env, e *syntax.BinaryExpr, tx, ty types.Type) ty
 		return types.BoolType
 	}
 	switch {
+	case c.brokenRef(a) || c.brokenRef(b):
 	case a.Base().Kind() == types.Func || b.Base().Kind() == types.Func:
 		c.report(env, diag.E3007.AtBinary(env.span(e), e.Op.String(), tx, ty))
 	case a.Base().Kind() == types.Ref && b.Base().Kind() == types.Ref && !types.Identical(a, b):

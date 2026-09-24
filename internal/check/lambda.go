@@ -8,6 +8,9 @@ import (
 
 // lambda is `x => e` or `(a, b) => e` (TYPES.md §12.4).
 func (c *checker) lambda(env *env, e *syntax.LambdaExpr, want types.Type) types.Type {
+	if unknownContext(want) {
+		return c.lambdaAlone(env, e)
+	}
 	ft, ok := unwrap(want).(*types.FuncType)
 	if !ok {
 		c.report(env, diag.E3008.At(env.span(e)))
@@ -18,12 +21,33 @@ func (c *checker) lambda(env *env, e *syntax.LambdaExpr, want types.Type) types.
 
 // shorthand is `.f` or `.m(args)`, meaning `x => x.f`: one parameter, the chain's receiver.
 func (c *checker) shorthand(env *env, e *syntax.ShorthandLambda, want types.Type) types.Type {
+	if unknownContext(want) {
+		return c.lambdaAlone(env, e)
+	}
 	ft, ok := unwrap(want).(*types.FuncType)
 	if !ok {
 		c.report(env, diag.E3008.At(env.span(e)))
 		return types.ErrorType
 	}
 	return c.shorthandBody(env, e, ft, nil)
+}
+
+// lambdaAlone checks a lambda or a shorthand whose function type is unknown: its parameters of
+// the error type, its body checked against the error type, so only the body's own findings show.
+func (c *checker) lambdaAlone(env *env, e syntax.Expr) types.Type {
+	switch x := e.(type) {
+	case *syntax.LambdaExpr:
+		inner := env.push()
+		for _, id := range x.Params {
+			c.declare(inner, id, c.newLocal(inner, ObjParam, id, id, types.ErrorType))
+		}
+		c.expr(inner, x.Body, types.ErrorType)
+	case *syntax.ShorthandLambda:
+		inner := env.with()
+		inner.shorthand = types.ErrorType
+		c.expr(inner, x.Body, types.ErrorType)
+	}
+	return types.ErrorType
 }
 
 // lambdaWith checks a lambda or a shorthand given to a built-in against fp, whose result may

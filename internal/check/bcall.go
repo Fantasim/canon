@@ -43,6 +43,9 @@ func (c *checker) callBuiltin(env *env, x *syntax.CallExpr, id *syntax.IdentExpr
 		c.argsAlone(env, x)
 		return types.ErrorType
 	}
+	if c.misplacedArgs(env, x) {
+		return types.ErrorType
+	}
 	bc := &builtinCall{x: x, fun: id, name: id.Name, kind: CalleeBuiltin, b: newBinding(), want: want}
 	if _, isType := builtinTypes[id.Name]; isType {
 		bc.kind = CalleeConvert
@@ -111,10 +114,11 @@ func (c *checker) applyRows(env *env, bc *builtinCall, rows []row) types.Type {
 }
 
 // argMap maps each argument to its parameter, by position then by name; false when an
-// argument has no parameter, one is given twice or one is missing.
+// argument has no parameter, one is given twice (unless E1121 refused it) or one is missing.
 func argMap(x *syntax.CallExpr, s bsig) ([]int, bool) {
 	m := make([]int, len(x.Args))
 	given := make([]bool, len(s.params))
+	refused, _ := refusedArgs(x.Args)
 	for i, a := range x.Args {
 		j := i
 		if a.Name != nil {
@@ -122,7 +126,7 @@ func argMap(x *syntax.CallExpr, s bsig) ([]int, bool) {
 		} else if s.variadic && j >= len(s.params) {
 			j = len(s.params) - 1
 		}
-		if j < 0 || j >= len(s.params) || (given[j] && !s.variadic) {
+		if j < 0 || j >= len(s.params) || (given[j] && !s.variadic && !refused[i]) {
 			return nil, false
 		}
 		given[j] = true

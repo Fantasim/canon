@@ -269,7 +269,7 @@ func (c *checker) entryDeprecation(o *object) *types.Deprecation {
 	case *syntax.EntryDecl:
 		anns = d.Annotations
 	}
-	if why, ok := deprecation(anns); ok {
+	if why, ok := c.deprecation(anns); ok {
 		return &types.Deprecation{Why: why}
 	}
 	return nil

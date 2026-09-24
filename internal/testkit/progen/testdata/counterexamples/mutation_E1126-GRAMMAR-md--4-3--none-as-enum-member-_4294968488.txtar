@@ -2,7 +2,6 @@ suite mutation
 name E1126 GRAMMAR.md §4.3 (none as enum member)
 case 1191
 seed 4294968488
-open check
 born mismatch extra E3601
 sig extra E3601
 packages features.lookup
