@@ -3,7 +3,11 @@
 What this project needs from someone or somewhere it may not change itself. A handoff is a file
 here, `<PREFIX>-<n>-slug.md`, written so it can be pasted into a session of the receiver as is:
 what is needed, why, the exact acceptance, and the paths involved. It is deleted once applied
-(git keeps it). None open.
+(git keeps it). None open needing action.
+
+`2026-09-24-GEN-01-pipeline-diff.md` is on record here as **informational** (DECISIONS 190: the
+M2 pipeline-regeneration diff Louis may want to read); the orchestrator already reviewed it and
+continued M2. No action is needed from Louis; it is not deleted so the diff stays easy to find.
 
 ## To Louis (`L-*`)
 

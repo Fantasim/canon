@@ -1,50 +1,80 @@
 # State — Canon compiler
 
-Updated: 2026-09-24 (day, autonomous session with Louis intermittently present)
+Updated: 2026-09-24, end of day (Louis asked for a clean stop to check the project himself).
 
 ## Current focus
 
-**M1 accepted (items 1–5; item 6 waits on the 206 gate), M2 in progress, M1.5 started** ([plan.md](plan.md)). M1 items 1–5 met: `canon check teamboard`
-equals findings.txt, `canon build --target go,json teamboard sovcommon...` equals the new goldens
-(MANIFEST, rebuilt and diffed by `make goldens-check`), canon.lock equals its golden, the generated
-module vets. Item 6 postponed (DECISIONS 189). Open before ticking M1: the api/cli review, IR
-round 2.
-**Wind-down (Louis, 2026-09-24 evening): finish in-flight units, start nothing new, update docs,
-stop.** In flight: GEN-01 pipeline goldens (review fixes) → M1.5 foundation (archives re-derived against
-the final tree). Landed in wind-down: canon test 7c00520, loader parity 78b3d7d, ir name plans
-b7507ff. **Landed today:** conform ddb6fd6, IR round 2 5ac1d47, spec sync 15c01ce, build API/report
-191cdf1, gen/cpp 04fae01, load.dir 6c32c0f, eval test calls/vectors 972e1df, ir export fns fce2eda, gen/go data mode 08966cb, build wiring (conformance in check/build, cppgen) 221738e, gen/cpp strict loaders 95d4bbd, gen/go translated fns a0d6373; M1 ticked 205f005. **Then:** build wiring (conform adapter in stage E,
-cppgen registered), GEN-01 pipeline regeneration, ERRORS.md pass, ir C++ stage-E plan, cleanups
-listed in decisions/log-2026-09-24.md. **Next:** gen/go data mode + stores + translated fns (after IR round 2),
-`conform`, `canon test`, GEN-01 review (handoff), M1.5 program generator (DECISIONS 200).
+**M1 accepted** (items 1–5; item 6 — sovcommon teamboard — waits on the 206 integration gate).
+**M2 substantially landed, acceptance mixed** (§6 M2, `spec/IMPLEMENTATION-PLAN.md`):
+1. pipeline byte-exact — done, `examples/pipeline/expected/` regenerated and reviewed (GEN-01,
+   [handoff/2026-09-24-GEN-01-pipeline-diff.md](handoff/2026-09-24-GEN-01-pipeline-diff.md),
+   5cb14f2).
+2. C++ builds `-Werror` — only verified on the g++/clang++ installed here; GCC 9, Clang 10,
+   MSVC 19.2x and nlohmann/json 3.9 (the §7.8 matrix) stay unverified in this environment.
+3. generated Go conformance under `-race` — done (gen/go translated fns a0d6373, data mode
+   08966cb; `go test -race` green per the GEN-01 handoff's verify log).
+4. `canon test` — done (7c00520, ADR-0004 `api.TestResult.Check`).
+5. `$schema` refusal + `Reload` keeps the old snapshot — done for both targets (Go and C++
+   smoke/compile tests; the GEN-01 handoff's W2 adds `TestStale`).
+6. FINGERPRINT.md test vectors — done: `internal/ir/fingerprint_test.go` reads and checks all 10
+   vectors of FINGERPRINT.md §7 (serialization, SHA-256, `$schema`).
+7. a finding in `data/II_POT_HEAL_L.json` points at the right line/col/pointer — **not pinned by
+   a committed test**: no test under `internal/wire`, `internal/jsonsrc` or `internal/testkit`
+   asserts a position against that file; `internal/wire/testdata/findings/E7110_*.txtar` use
+   synthetic fixtures only. Open for next session.
 
-## What exists
+**M1.5 foundation: built, not yet committed.** `internal/testkit/progen/` (generator + the four
+nightly suites, `progen-nightly` Makefile target) is complete on disk but wholly untracked
+(`git status`) — the archives still need re-derivation against tonight's final tree before the
+orchestrator commits (decisions log, "M1.5's archives are derived against the tree they ran on").
+73 counterexamples on disk, each `open <owner>`: check 35, format 20, ir 11, syntax 3, build 2,
+eval 2 — the next bug-fix wave, one delegation per owner.
 
-Committed: spec + DECISIONS 1–200; `syntax`, `format`, `jsonsrc`, `wire`, `check`/`types`,
-`eval`/`eval/std` + `value` (bounded memory and time, DECISIONS 195/197/199), `verify`, `lock`,
-`rules`, `ir` stage E, `gen/json`, `gen/go` baked, `build` (whole pipeline, atomic writes),
-`project`, `api` Check/Build, `cli` version/init/new/check/build; `internal/testkit`; `tools/audit`.
+## What exists (committed)
+
+spec + DECISIONS 1–207; `syntax`, `format`, `jsonsrc`, `wire` (decode + `load.dir`), `check`/
+`types`, `eval`/`eval/std` + `value` (bounded memory/time), `verify`, `lock`, `rules`, `ir` (stage
+E export fns, fingerprint, Go and C++ name plans), `gen/json`, `gen/go` (baked, data mode, stores,
+translated fns, conformance), `gen/cpp` (data mode, stores, runtime, conformance, strict loaders),
+`conform`, `load` (`load.dir` of JSON), `build` (whole pipeline, conformance wiring, `cppgen`
+registered), `project`, `api` (Check/Build/Test), `cli` (version/init/new/check/build/test),
+`internal/testkit` (+ `cxx` toolchain helper); `tools/audit`.
 
 ## Open Louis-calls
 
 None. Technical gaps and the calls made on them: [decisions/log-2026-09-24.md](decisions/log-2026-09-24.md)
-(the orchestrator decides, never asks, DECISIONS 207). Spec synced (15c01ce); ERRORS.md pass pending.
+(the orchestrator decides, never asks, DECISIONS 207). Spec synced (15c01ce); ERRORS.md pass
+pending (see "Next session" (d)).
 
-## Operating notes (today)
+## Next session, in order
+
+a. **Owed correctness (loader parity):** Float32 double rounding (C++ decimal→double→float vs
+   Go direct), a `-0` Float token (C++ +0.0 vs Go -0.0, one rule), duplicate row ids (neither
+   target refuses; must fail the load), the missing-file message (targets still differ).
+b. **M1.5 bug-fix wave**, by owner, from the 73 open counterexamples above (check first, largest).
+c. **Consumer unit:** switch `gen/go` and `gen/cpp` to take names from the ir name plans (the
+   switch-lists in decisions/log-2026-09-24.md, "ir name plans + support plan").
+d. **ERRORS.md pass** (after the tree is quiet): a new general "cannot generate this construct"
+   code; E8011 variants (override, unexported, derived, reserved-namespace); E7004/E7005 cause
+   vocabularies; W7115 wording (dangling/looping link); a code for a scalar `-0.0` constant;
+   E8012/E8151 for `Define`. Then spec sync #2 (everything the log marks "at the sync").
+e. **Cleanups owed** (briefly; full list in the log): translated-fn classification exists three
+   times (check/ir/eval); `internalError` moves to `internal/build/errors.go`; the ASCII-fold/
+   inline-fold rule shared as one ir helper; `osFS.EvalSymlinks` moves from `hosts.go` to
+   `write.go`; the compile-and-run loop still duplicated between two `_test.go` files (flagged).
+f. **M1.5 second wave:** type-directed + metamorphic suites, once the foundation is committed.
+
+## Operating notes
 
 - Every agent test runs under `systemd-run --user --scope -p MemoryMax=3G` (an uncapped eval
   probe took 24 GB twice and froze the laptop); a watchdog kills any test process over 5 GB.
-- Worktree checks: use a private `GOLANGCI_LINT_CACHE`; the `dead-link` to
-  `meta/spec-phase/mockups` is an artifact of untracked files.
+- Agents share one working tree — **never `git stash`**; gate each unit in a clean worktree
+  (HEAD + its own packages) before commit.
+- The golangci-lint cache must be private per worktree (`GOLANGCI_LINT_CACHE`); a stale entry
+  shared by content hash across `tools/audit` copies broke `audit-self` once (remedy: `cd
+  tools/audit/toolchain && go tool golangci-lint cache clean`).
 - Sonnet units that failed review twice moved to opus (gen/go, ir).
-
-## Size and time (hand-written Go, no testdata/generated/tools)
-
-| Milestone | Budget | Real | Time |
-|---|---|---|---|
-| M1 remainder | ~5k | +4.6k by 10:29 (69,976 → 74,596), within budget | 08:33 → ~11:00 |
 
 ## What could not be verified
 
-GCC 9 / Clang 10 / MSVC; `fixturegen` on real data; CI
-on a runner; whether relative `..` permission patterns match.
+Windows and macOS real runs; MSVC 19.2x; GCC 9; Clang 10; nlohmann/json 3.9; CI on a runner.

@@ -49,16 +49,25 @@ block in [state.md](state.md).
   Accept: every rule has a mutation operator; one nightly run clean under a 3 GB cap; each
   counterexample kept as a txtar. Budget ~3k lines. Pulled forward, runs beside M2 (206).
   Its suites clean + conformance green = the gate before any consumer integration.
+  **Foundation landing now** (2026-09-24): the generator and the four suites are complete on
+  disk (`internal/testkit/progen/`) with 73 open counterexample txtars, but not yet committed —
+  see [state.md](state.md). Not yet ticked: 73 counterexamples are still `open <owner>`, each
+  fixed by owner before this box ticks.
 
 ## M2 — Pipeline: data mode for Go and C++
 
-- [ ] First step: regenerate `examples/pipeline/expected/` (GEN-01); the orchestrator reviews the
-  diff and continues, the diff is listed in `meta/handoff/` for Louis (DECISIONS 190).
-- [ ] `jsonsrc` (SYN), `wire` decode + `load.dir` (LOD), `conform` (EVL), fingerprint + reload IR
-  (IR), data mode + stores + conformance (GO, CPP), `cli test` (API).
-- [ ] Accept (§6 M2): pipeline byte-exact; C++ builds on the §7.8 matrix with `-Werror`;
-  conformance green with `-race`; `canon test` output format; fingerprint refusal; FINGERPRINT.md
-  vectors; finding positions in JSON sources.
+- [x] First step: regenerate `examples/pipeline/expected/` (GEN-01); the orchestrator reviews the
+  diff and continues, the diff is listed in `meta/handoff/` for Louis (DECISIONS 190). Done
+  5cb14f2 ([handoff/2026-09-24-GEN-01-pipeline-diff.md](handoff/2026-09-24-GEN-01-pipeline-diff.md)).
+- [x] `jsonsrc` (SYN), `wire` decode + `load.dir` (LOD), `conform` (EVL), fingerprint + reload IR
+  (IR), data mode + stores + conformance (GO, CPP), `cli test` (API). All landed 2026-09-24
+  (see [state.md](state.md) "What exists").
+- [ ] Accept (§6 M2): pipeline byte-exact (done); C++ builds on the §7.8 matrix with `-Werror`
+  (open — current g++/clang++ only, GCC 9/Clang 10/MSVC/nlohmann 3.9 unverified); conformance
+  green with `-race` (done); `canon test` output format (done); fingerprint refusal (done);
+  FINGERPRINT.md vectors (done, `internal/ir/fingerprint_test.go`); finding positions in JSON
+  sources (open — no committed test pins `data/II_POT_HEAL_L.json`'s position). Box ticks once
+  every sub-item does.
 
 ## M3 — Load and the view model
 
