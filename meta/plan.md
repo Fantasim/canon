@@ -62,8 +62,8 @@ block in [state.md](state.md).
 - [x] `jsonsrc` (SYN), `wire` decode + `load.dir` (LOD), `conform` (EVL), fingerprint + reload IR
   (IR), data mode + stores + conformance (GO, CPP), `cli test` (API). All landed 2026-09-24
   (see [state.md](state.md) "What exists").
-- [ ] Accept (§6 M2): pipeline byte-exact (done); C++ builds on the §7.8 matrix with `-Werror`
-  (open — current g++/clang++ only, GCC 9/Clang 10/MSVC/nlohmann 3.9 unverified); conformance
+- [ ] Accept (§6 M2): pipeline byte-exact (done); C++ builds with `-Werror`
+  (done on the local g++/clang++; the §7.8 matrix is deferred by Louis, 2026-09-24); conformance
   green with `-race` (done); `canon test` output format (done); fingerprint refusal (done);
   FINGERPRINT.md vectors (done, `internal/ir/fingerprint_test.go`); finding positions in JSON
   sources (open — no committed test pins `data/II_POT_HEAL_L.json`'s position). Box ticks once

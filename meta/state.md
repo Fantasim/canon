@@ -9,8 +9,8 @@ Updated: 2026-09-24, end of day (Louis asked for a clean stop to check the proje
 1. pipeline byte-exact — done, `examples/pipeline/expected/` regenerated and reviewed (GEN-01,
    [handoff/2026-09-24-GEN-01-pipeline-diff.md](handoff/2026-09-24-GEN-01-pipeline-diff.md),
    5cb14f2).
-2. C++ builds `-Werror` — only verified on the g++/clang++ installed here; GCC 9, Clang 10,
-   MSVC 19.2x and nlohmann/json 3.9 (the §7.8 matrix) stay unverified in this environment.
+2. C++ builds `-Werror` — done on the local g++/clang++. Louis (2026-09-24): the §7.8 matrix
+   (GCC 9, Clang 10, MSVC, nlohmann 3.9) is deferred, not planned; the local toolchain is the gate.
 3. generated Go conformance under `-race` — done (gen/go translated fns a0d6373, data mode
    08966cb; `go test -race` green per the GEN-01 handoff's verify log).
 4. `canon test` — done (7c00520, ADR-0004 `api.TestResult.Check`).
