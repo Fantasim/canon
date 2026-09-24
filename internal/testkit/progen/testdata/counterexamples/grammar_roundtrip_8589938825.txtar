@@ -2,7 +2,6 @@ suite grammar
 name roundtrip
 case 4232
 seed 8589938825
-open format
 sig idempotence in RecordBody/FieldDecl
 want roundtrip
 failure idempotence: formatting the formatted file changes it: package gen record Reward(case: snake) { count: (Deck) where if ({})() { [] } else if r""" """ or xs { item } else if -next { label } else { 9223372036854775807 }[.if]?._0[b] - { IK1_WEAPON: "" }[() => total]("é{count}}}" - _tmp)() xs: "!" where -match [] {} @json(pairs: ["k{i}", "v{i}"]) xs: (bits) item: fn(Reward where -42) -> Point @json(path: "a.b") fn count(a: match total {}) -> _ {} }

@@ -5,27 +5,30 @@ import (
 )
 
 // entry is an item of a brace list and apart its trailing comments, whether a blank line
-// precedes it in the input, and whether it starts with a "." that would continue the line
-// before it.
+// precedes it in the input, whether its first token is in joinsLine, and whether its last token
+// is in cannotEndItem (DECISIONS 211).
 type entry struct {
-	d, trail *doc
-	gap, dot bool
+	d, trail                  *doc
+	gap, joins, endJoin, kept bool
 }
 
 // entries are the nodes of a brace list as its items (§4, §8).
 func entries[N syntax.Node](b *builder, ns []N) []entry {
 	out := make([]entry, len(ns))
 	for i, n := range ns {
-		dot := b.f.Tokens[n.First()].Kind == syntax.TokDot
+		joins := joinsLine[b.f.Tokens[n.First()].Kind]
+		endJoin := cannotEndItem[b.f.Tokens[n.Last()].Kind]
 		body, trail := b.parts(n, true)
-		out[i] = entry{d: body, trail: trail, gap: b.gap(n.First()), dot: dot}
+		out[i] = entry{d: body, trail: trail, gap: b.gap(n.First()), joins: joins, endJoin: endJoin, kept: b.keeps(n.Last())}
 	}
 	return out
 }
 
-// braceList is BL(items) of FORMATTER.md §7.2, forced broken unless written on one line (§6.1).
+// braceList is BL(items) of FORMATTER.md §7.2: single-line by §6.1, an empty one always so.
 func (b *builder) braceList(open, close syntax.Tok, items []entry) *doc {
-	return listGroup(b.oneLine(open, close) && !b.inner(open, close), b.braceParts(open, close, items))
+	inner := b.inner(open, close)
+	single := !inner && (len(items) == 0 || b.oneLine(open, close))
+	return listGroup(single, b.braceParts(open, close, items))
 }
 
 // braceParts is a brace list without its group, for an if chain whose blocks share one (§7.2).
@@ -48,9 +51,9 @@ func (b *builder) listBody(close syntax.Tok, items []entry) *doc {
 			ds = append(ds, blankDoc)
 		}
 		switch {
-		case i == len(items)-1:
+		case i == len(items)-1 || e.kept:
 			ds = append(ds, e.d, e.trail)
-		case items[i+1].dot:
+		case e.endJoin || items[i+1].joins:
 			ds = append(ds, e.d, comma, e.trail)
 		default:
 			ds = append(ds, e.d, e.trail, ifBreak(emptyDoc, comma))
@@ -81,10 +84,11 @@ func (b *builder) closing(close syntax.Tok, items bool) *doc {
 	return cat(ds...)
 }
 
-// part is an item of a parenthesized list: its text with its leading comments, and apart its
-// trailing comments, which follow the comma after it.
+// part is an item of a parenthesized list: its text with its leading comments, apart its
+// trailing comments, which follow the comma after it, and whether that comma is kept.
 type part struct {
 	body, trail *doc
+	kept        bool
 }
 
 // partsOf are the nodes of a parenthesized list as its items.
@@ -92,17 +96,26 @@ func partsOf[N syntax.Node](b *builder, ns []N) []part {
 	out := make([]part, len(ns))
 	for i, n := range ns {
 		out[i].body, out[i].trail = b.parts(n, false)
+		out[i].kept = b.keeps(n.Last())
 	}
 	return out
+}
+
+// separator is the comma written after an item, none when the item's own comma is kept.
+func separator(kept bool) *doc {
+	if kept {
+		return nil
+	}
+	return text(syntax.TokComma.String())
 }
 
 // parenList is PL(open, items, close) of FORMATTER.md §7.2; trailing comments follow the comma.
 func (b *builder) parenList(open, close syntax.Tok, items []part) *doc {
 	var ds []*doc
 	for i, it := range items {
-		sep, trail := text(syntax.TokComma.String()), it.trail
+		sep, trail := separator(it.kept), it.trail
 		if i == len(items)-1 {
-			sep = ifBreak(sep, emptyDoc)
+			sep = ifBreak(cat(sep), emptyDoc)
 		} else {
 			trail = cat(trail, lineDoc)
 		}
@@ -121,7 +134,7 @@ func (b *builder) flatList(open, close syntax.Tok, items []part) *doc {
 	var ds []*doc
 	for i, it := range items {
 		if i < len(items)-1 {
-			ds = append(ds, it.body, text(syntax.TokComma.String()), it.trail, lineDoc)
+			ds = append(ds, it.body, separator(it.kept), it.trail, lineDoc)
 		} else {
 			ds = append(ds, it.body, it.trail)
 		}
@@ -146,7 +159,7 @@ func (b *builder) commaList(ns []syntax.Node) *doc {
 	for i, n := range ns {
 		body, trail := b.parts(n, false)
 		if i < len(ns)-1 {
-			ds = append(ds, body, text(syntax.TokComma.String()), trail, spaceDoc)
+			ds = append(ds, body, separator(b.keeps(n.Last())), trail, spaceDoc)
 		} else {
 			ds = append(ds, body, trail)
 		}

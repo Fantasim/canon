@@ -1,0 +1,79 @@
+DECISIONS 211: a blank line between two own-line comments follows FORMATTER §4 (removed inside
+expressions and ( )/[ ] lists), except between two doc-comment blocks, which stay apart
+everywhere (§8.1: formatting never merges a doc comment into another). Doc blocks are GRAMMAR
+§2.2's: the blank line may stand before or after an ordinary comment between them, and "////" is
+an ordinary comment, whose blank line goes.
+-- in.canon --
+package p
+
+let x = f(
+  // a
+
+  // b
+  1,
+)
+local let A =
+  ///
+
+  ///
+  {}
+let y =
+  /// a
+
+  // c
+  /// b
+  {}
+let z =
+  /// a
+  // c
+
+  /// b
+  {}
+let w =
+  /// a
+
+  /* c */
+  /// b
+  {}
+let v = f(
+  //// a
+
+  //// b
+  1,
+)
+-- want --
+package p
+
+let x = f(
+  // a
+  // b
+  1,
+)
+local let A =
+  ///
+
+  ///
+  {}
+let y =
+  /// a
+
+  // c
+  /// b
+  {}
+let z =
+  /// a
+  // c
+
+  /// b
+  {}
+let w =
+  /// a
+
+  /* c */
+  /// b
+  {}
+let v = f(
+  //// a
+  //// b
+  1,
+)

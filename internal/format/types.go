@@ -84,7 +84,7 @@ func (b *builder) assetType(n *syntax.AssetType) *doc {
 	ds := []*doc{dir}
 	if n.Brackets.Open != syntax.NoTok {
 		colon := b.before(n.Brackets.Open)
-		ds = append(ds, text(syntax.TokComma.String()), trail, spaceDoc, b.tok(b.before(colon)), b.tok(colon), spaceDoc,
+		ds = append(ds, separator(b.keeps(n.Dir.Last())), trail, spaceDoc, b.tok(b.before(colon)), b.tok(colon), spaceDoc,
 			b.flatList(n.Brackets.Open, n.Brackets.Close, partsOf(b, n.Exts)))
 	} else {
 		ds = append(ds, trail)

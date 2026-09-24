@@ -15,7 +15,7 @@ const (
 const (
 	space, newlineText, docLead, tripleQuote = " ", "\n", "///", `"""`
 	listSep, blockOpen, trailingBlanks       = ", ", "/*", " \t"
-	zeroDuration                             = "0s"
+	zeroDuration, docField, ordinaryLead     = "0s", "Doc", "////"
 )
 
 // durationUnits are the units of GRAMMAR.md §2.5, largest first, in milliseconds.
@@ -47,6 +47,20 @@ var binaryLevel = [syntax.TokenKindCount]uint8{
 	syntax.KwIn: levelCompare, syntax.TokPlus: levelAdditive, syntax.TokMinus: levelAdditive,
 	syntax.TokStar: levelMultiplicative, syntax.TokSlash: levelMultiplicative,
 	syntax.TokPercent: levelMultiplicative,
+}
+
+// cannotEndItem is DECISIONS 211's rule-2 keyword set: a list item ending on one of these keeps
+// the comma after it, whatever the next item starts with.
+var cannotEndItem = [syntax.TokenKindCount]bool{
+	syntax.KwAnd: true, syntax.KwOr: true, syntax.KwNot: true, syntax.KwIn: true, syntax.KwIs: true,
+	syntax.KwElse: true, syntax.KwWhere: true, syntax.KwAs: true,
+}
+
+// joinsLine is DECISIONS 211's rule-3 startable set, the tokens that can start a list item
+// needing a comma before it.
+var joinsLine = [syntax.TokenKindCount]bool{
+	syntax.TokDot: true, syntax.KwAnd: true, syntax.KwOr: true, syntax.KwIn: true,
+	syntax.KwIs: true, syntax.KwElse: true, syntax.KwWhere: true,
 }
 
 // Document kinds (FORMATTER.md §7.1), the index of the printer's tables.

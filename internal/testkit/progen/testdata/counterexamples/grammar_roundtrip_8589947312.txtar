@@ -2,7 +2,6 @@ suite grammar
 name roundtrip
 case 12719
 seed 8589947312
-open format
 sig idempotence in ParenType/MatchType
 want roundtrip
 failure idempotence: formatting the formatted file changes it: package a local fn item( v2: {[Item(("data.json")()() % if -b { "" } else if "{item}" - 7 { 9223372036854775807 } else { 9223372036854775807 }?.open)]() keyed by item | [r""]: fn() -> _} | b(), xs: {(match not r"" { series_1 => _ }) where match (match 0 {}) {} - Reward {}[label](0): (Deck?)}, ) -> (_) | Tone {}

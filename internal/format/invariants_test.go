@@ -148,17 +148,17 @@ func samePointer(a, b reflect.Value, at string) error {
 	return sameTree(a.Elem(), b.Elem(), at)
 }
 
-// comments are a file's comments in order, each with the token after it (commas, colons and
-// separators aside, which the layout drops or adds): the ones in the import block sorted, as
-// imports are, and the others in file order with the position of that token.
+// comments are a file's comments with the token after it (commas, colons, separators aside): in
+// file order with that token's position, and the import block's sorted with the name they move with.
 func comments(f *syntax.File) (ordered, imports []string) {
 	lo, hi := importRange(f)
+	kept := format.KeptCommas(f)
 	for i, tok := range f.Tokens {
 		for _, tr := range tok.Leading {
-			ordered, imports = sort2(place(f, tr, i), lo, hi, ordered, imports)
+			ordered, imports = sort2(place(f, tr, i, kept[i]), lo, hi, ordered, imports)
 		}
 		for _, tr := range tok.Trailing {
-			ordered, imports = sort2(place(f, tr, i+1), lo, hi, ordered, imports)
+			ordered, imports = sort2(place(f, tr, i+1, kept[i]), lo, hi, ordered, imports)
 		}
 	}
 	slices.Sort(imports)
@@ -166,11 +166,11 @@ func comments(f *syntax.File) (ordered, imports []string) {
 }
 
 // placed is a comment with the kind of the token after it (a duration's text may change), that
-// token's index and its ordinal.
+// token's index and its ordinal; in the import block, with the text of the name it moves with.
 type placed struct {
-	text   string
-	at, n  int
-	absent bool
+	text, imp string
+	at, n     int
+	absent    bool
 }
 
 // sort2 files a placed comment as an import comment or an ordered one.
@@ -179,20 +179,38 @@ func sort2(c placed, lo, hi int, ordered, imports []string) ([]string, []string)
 	case c.absent:
 		return ordered, imports
 	case c.at >= lo && c.at <= hi:
-		return ordered, append(imports, c.text)
+		return ordered, append(imports, c.imp)
 	default:
 		return append(ordered, fmt.Sprintf("%d %s", c.n, c.text)), imports
 	}
 }
 
-func place(f *syntax.File, tr syntax.Trivia, from int) placed {
+// place places a comment of the token before from, or of the token from; the comments of a kept
+// comma move with the name before it when imports are sorted (DECISIONS 216).
+func place(f *syntax.File, tr syntax.Trivia, from int, keptComma bool) placed {
 	s, ok := commentOf(f, tr)
 	if !ok {
 		return placed{absent: true}
 	}
 	at, n := anchor(f, from)
-	text := fmt.Sprintf("%s %s %v", f.Tokens[at].Kind, s, ownLine(f, tr, from))
-	return placed{text: text, at: at, n: n}
+	own := ownLine(f, tr, from)
+	owner := at
+	if keptComma {
+		owner = lastAnchored(f, from-1)
+	}
+	tk := f.Tokens[owner]
+	return placed{
+		text: fmt.Sprintf("%s %s %v", f.Tokens[at].Kind, s, own),
+		imp:  fmt.Sprintf("%s %s %v", f.Src.Content[tk.Start:tk.End], s, own),
+		at:   at, n: n,
+	}
+}
+
+// lastAnchored is the last token at or before i that the layout never drops nor adds.
+func lastAnchored(f *syntax.File, i int) int {
+	for ; i > 0 && !anchored(f.Tokens[i].Kind); i-- {
+	}
+	return i
 }
 
 // ownLine reports a one-line comment that starts its line: a line break separates it from the

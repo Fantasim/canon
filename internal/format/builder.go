@@ -22,9 +22,9 @@ type builder struct {
 }
 
 func newBuilder(f *syntax.File) *builder {
-	drop := make([]bool, len(f.Tokens))
+	drop, kept := make([]bool, len(f.Tokens)), keptCommas(f)
 	for i, t := range f.Tokens {
-		drop[i] = t.Kind == syntax.TokComma
+		drop[i] = t.Kind == syntax.TokComma && !kept[i]
 	}
 	if f.Project != nil {
 		for _, e := range f.Project.Items {
@@ -80,16 +80,18 @@ func (b *builder) leads(t syntax.Tok) bool { return !b.heldLead[t] && len(b.note
 // closer is a closing bracket without its own-line comments, which its list prints inside.
 func (b *builder) closer(t syntax.Tok) *doc { return cat(text(b.raw(t)), b.trail(t)) }
 
-// lead is the own-line comments of t; blanks keeps the blank lines between them and before
-// the token, as between the items of a brace list.
+// lead is the own-line comments of t; blanks keeps the blank lines between them and before the
+// token, as between the items of a brace list. A blank line between two doc blocks is always
+// kept (DECISIONS 211).
 func (b *builder) lead(t syntax.Tok, blanks bool) *doc {
 	a := b.notes[t]
 	if b.heldLead[t] || len(a.lead) == 0 {
 		return nil
 	}
+	keep := apart(a.lead)
 	ds := make([]*doc, 0, len(a.lead)+1)
 	for i, n := range a.lead {
-		ds = append(ds, comment(n, blanks && i > 0 && n.blank))
+		ds = append(ds, comment(n, i > 0 && n.blank && (blanks || keep[i])))
 	}
 	if blanks && a.blank && len(a.lead) > 0 {
 		ds = append(ds, blankDoc)
@@ -98,8 +100,11 @@ func (b *builder) lead(t syntax.Tok, blanks bool) *doc {
 }
 
 // trail is the trailing comments of t: block comments inline, a line comment at the end of
-// the line.
-func (b *builder) trail(t syntax.Tok) *doc {
+// the line; then a kept comma after t (DECISIONS 216).
+func (b *builder) trail(t syntax.Tok) *doc { return b.trailOf(t, false) }
+
+// trailOf is trail, blanks keeping the kept comma's blank lines as in a brace list.
+func (b *builder) trailOf(t syntax.Tok, blanks bool) *doc {
 	if b.heldTrail[t] {
 		return nil
 	}
@@ -115,7 +120,7 @@ func (b *builder) trail(t syntax.Tok) *doc {
 			ds = append(ds, text(space+n.text))
 		}
 	}
-	return cat(ds...)
+	return cat(append(ds, b.kept(t, blanks))...)
 }
 
 // gap reports a blank line in the input before the item starting at t.
@@ -140,10 +145,10 @@ func (b *builder) item(n syntax.Node) *doc {
 	return cat(body, trail)
 }
 
-// parts is n with its leading comments, and apart its trailing ones.
+// parts is n with its leading comments, and apart its trailing ones and a kept comma after it.
 func (b *builder) parts(n syntax.Node, blanks bool) (body, trail *doc) {
 	first, last := n.First(), n.Last()
-	lead, trail := b.lead(first, blanks), b.trail(last)
+	lead, trail := b.lead(first, blanks), b.trailOf(last, blanks)
 	wasLead, wasTrail := b.heldLead[first], b.heldTrail[last]
 	b.heldLead[first], b.heldTrail[last] = true, true
 	body = buildTable[n.Kind()](b, n)

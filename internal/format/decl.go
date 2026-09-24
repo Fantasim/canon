@@ -115,7 +115,7 @@ func (b *builder) tokParts(t syntax.Tok) part {
 	b.heldTrail[t] = true
 	body := b.tok(t)
 	b.heldTrail[t] = wasTrail
-	return part{body: body, trail: b.trail(t)}
+	return part{body: body, trail: b.trail(t), kept: b.keeps(t)}
 }
 
 func (b *builder) entryDecl(n *syntax.EntryDecl) *doc {

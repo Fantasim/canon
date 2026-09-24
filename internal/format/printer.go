@@ -103,12 +103,12 @@ func (p *printer) ifBreak(c cmd) {
 	p.push(cmd{c.ind, c.mode, d})
 }
 
-// group prints its document flat when it fits in what is left of the line.
+// group prints its document flat when it fits, unless hard, forced or an ambient flat mode wins.
 func (p *printer) group(c cmd) {
 	inner := cmd{c.ind, c.mode, c.d.kids[0]}
 	switch {
 	case c.mode == flatMode:
-	case c.d.hard:
+	case c.d.hard || c.d.forced:
 		inner.mode = breakMode
 	case p.fits(cmd{c.ind, flatMode, inner.d}, Width-p.nextCol(c.ind)):
 		inner.mode = flatMode
@@ -259,7 +259,7 @@ func (p *printer) rhs(c cmd) {
 	switch {
 	case c.mode == flatMode:
 		p.push(cmd{c.ind, flatMode, cat(lead, op, spaceDoc, value)})
-	case !c.d.alt && !value.hard && p.fits(cmd{next, flatMode, value}, Width-next):
+	case !c.d.alt && !value.hard && !value.forced && p.fits(cmd{next, flatMode, value}, Width-next):
 		p.push(cmd{c.ind, breakMode, cat(lead, op)}, cmd{next, breakMode, hardlineDoc}, cmd{next, flatMode, value})
 	default:
 		p.push(cmd{c.ind, breakMode, cat(lead, op, spaceDoc)}, cmd{c.ind, breakMode, value})

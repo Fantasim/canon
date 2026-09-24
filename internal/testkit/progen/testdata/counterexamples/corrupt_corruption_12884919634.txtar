@@ -2,7 +2,6 @@ suite corrupt
 name corruption
 case 17745
 seed 12884919634
-open format
 sig idempotence in ExprStmt/BinaryExpr
 want corruption
 failure idempotence: formatting the formatted file changes it: package lib fn label(v2: _) -> {Point: Item} { if ..=0b1010 { if "" and label { label in {} } } for item in count == 9223372036854775807 or count {} // c1 } test r"xaé}" { if none { // c5 } }

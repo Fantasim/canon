@@ -1,0 +1,184 @@
+DECISIONS 216: a comma on its own line is kept, on its line with its comments, when dropping it
+would attach a doc comment to the next item (Attach), merge two doc blocks (Merge, and in f(…)),
+or turn a "///" written after code into a doc comment (After, and in g(…)). Every other comma
+follows DECISIONS 168: in h(…) the next argument cannot carry a doc, so the comma is dropped.
+A kept comma after a `self` parameter (record R) or inside an asset type (Icon*) is printed with its
+comments too. Inside import braces (sorted names) such a comma is kept whatever follows it and
+moves with the name before it (DECISIONS 216): import q merges, import r and import s would not.
+-- in.canon --
+package p
+
+import q {
+  b
+  /// d
+  ,
+  /// e
+  a
+}
+import r {
+  b
+  /// d
+  ,
+  a
+}
+import s {
+  b
+  , /// x
+  a
+}
+
+enum Attach {
+  a
+  /// d1
+  ,
+  b
+}
+enum Merge {
+  a
+  /// d1
+  ,
+  /// d2
+  b
+}
+let x = f(
+  1
+  /// d1
+  ,
+  /// d2
+  2,
+)
+enum After {
+  a
+  , /// x
+  b
+}
+let y = g(
+  1
+  , /// x
+  2,
+)
+let z = h(
+  1
+  /// d1
+  ,
+  2,
+)
+record R {
+  hp: Int
+  fn merge(self
+  /// d
+  ,
+  /// e
+  missingHp: Int) -> Int { return 1 }
+  fn after(self
+  , /// x
+  missingHp: Int) -> Int { return 1 }
+}
+type IconDir = asset("@resource/Icon"
+  /// d
+  ,
+  /// e
+  ext: [dds, "png"])
+type IconAfter = asset("@resource/Icon"
+  , /// x
+  ext: [dds, "png"])
+type IconExts = asset("@resource/Icon", ext: [dds
+  /// d
+  ,
+  /// e
+  "png"])
+type IconEnd = asset("@resource/Icon", ext: [dds, "png"]
+  /// d
+  ,
+  /// e
+  )
+-- want --
+package p
+
+import q {
+  /// e
+  a
+  b
+  /// d
+  ,
+}
+import r {
+  a
+  b
+  /// d
+  ,
+}
+import s {
+  a
+  b
+  , /// x
+}
+
+enum Attach {
+  a
+  /// d1
+  ,
+  b
+}
+enum Merge {
+  a
+  /// d1
+  ,
+  /// d2
+  b
+}
+let x = f(
+  1
+  /// d1
+  ,
+  /// d2
+  2,
+)
+enum After {
+  a
+  , /// x
+  b
+}
+let y = g(
+  1
+  , /// x
+  2,
+)
+let z = h(
+  1,
+  /// d1
+  2,
+)
+record R {
+  hp: Int
+  fn merge(
+    self
+    /// d
+    ,
+    /// e
+    missingHp: Int,
+  ) -> Int { return 1 }
+  fn after(
+    self
+    , /// x
+    missingHp: Int,
+  ) -> Int { return 1 }
+}
+type IconDir = asset("@resource/Icon"
+  /// d
+  ,
+    /// e
+    ext: [dds, "png"])
+type IconAfter = asset("@resource/Icon"
+  , /// x
+    ext: [dds, "png"])
+type IconExts = asset("@resource/Icon", ext: [dds
+    /// d
+    ,
+    /// e
+    "png"])
+type IconEnd = asset("@resource/Icon", ext: [dds, "png"]
+  /// d
+  ,
+  /// e
+  )

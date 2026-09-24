@@ -21,6 +21,10 @@ enum E { A, B, }
 enum F {
 }
 let empty = {}
+fn g() -> Bool {
+  return x in {
+  }
+}
 -- want --
 package p
 
@@ -54,3 +58,6 @@ record Rect {
 enum E { A, B }
 enum F {}
 let empty = {}
+fn g() -> Bool {
+  return x in {}
+}

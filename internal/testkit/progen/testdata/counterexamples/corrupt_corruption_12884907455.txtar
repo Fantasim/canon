@@ -2,7 +2,6 @@ suite corrupt
 name corruption
 case 5566
 seed 12884907455
-open format
 sig idempotence in File/WidgetDecl
 want corruption
 failure idempotence: formatting the formatted file changes it: package gen widget label(value: a({}() - " '?!\n"))

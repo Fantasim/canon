@@ -172,7 +172,7 @@ func (b *builder) hugs(parens syntax.Delims, args []*syntax.Arg) bool {
 		return false
 	}
 	a := args[0]
-	if len(b.notes[parens.Open].trail)+len(b.notes[a.First()].lead)+len(b.notes[a.Last()].trail)+len(b.notes[parens.Close].lead) > 0 {
+	if b.keeps(a.Last()) || len(b.notes[parens.Open].trail)+len(b.notes[a.First()].lead)+len(b.notes[a.Last()].trail)+len(b.notes[parens.Close].lead) > 0 {
 		return false
 	}
 	switch args[0].Value.(type) {

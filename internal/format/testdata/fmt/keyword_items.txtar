@@ -1,0 +1,46 @@
+DECISIONS 211: a broken brace list keeps the comma when the item before the break ends on a
+reserved word of GRAMMAR.md §3.1 rule 2's cannot-end set, or the next item starts on one of rule
+3's continuation set (used as data-symbol names, LEX-08(a)); a plain word next to a plain word
+loses it, as usual for a broken list (§6.1).
+-- in.canon --
+package p
+
+enum Keywords {
+  plain,
+  first,
+  and,
+  or,
+  not,
+  in,
+  is,
+  else,
+  where,
+  as,
+  last
+}
+variant Cases {
+  a,
+  where,
+  b
+}
+-- want --
+package p
+
+enum Keywords {
+  plain
+  first,
+  and,
+  or,
+  not,
+  in,
+  is,
+  else,
+  where,
+  as,
+  last
+}
+variant Cases {
+  a,
+  where,
+  b
+}

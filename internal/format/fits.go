@@ -88,13 +88,10 @@ func (m *measure) ifBreak(c cmd) bool {
 	return false
 }
 
-// group keeps its holder's mode, broken when hard: later single-line bits are moot (decision 170).
+// group is broken under a BREAK holder when it is hard, forced or single-line (DECISIONS 212).
 func (m *measure) group(c cmd) bool {
 	md := flatMode
-	if c.d.bit {
-		md = c.mode
-	}
-	if c.d.hard {
+	if c.mode == breakMode && (c.d.bit || c.d.hard || c.d.forced) {
 		md = breakMode
 	}
 	return m.inner(cmd{c.ind, md, c.d})
@@ -108,7 +105,7 @@ func (m *measure) rhs(c cmd) bool {
 		m.take(space)
 	}
 	next := c.ind + indentUnit
-	if c.mode == breakMode && !c.d.alt && !value.hard {
+	if c.mode == breakMode && !c.d.alt && !value.hard && !value.forced {
 		sub := &measure{sim: append(slices.Clone(m.sim), cmd{next, flatMode, value}), w: Width - next, stack: m.stack, rest: m.rest}
 		if sub.run() {
 			m.sim = append(m.sim, cmd{next, breakMode, hardlineDoc}, cmd{c.ind, c.mode, op})

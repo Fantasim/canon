@@ -2,7 +2,6 @@ suite grammar
 name roundtrip
 case 17222
 seed 8589951815
-open format
 sig idempotence in WhereType/MatchType
 want roundtrip
 failure idempotence: formatting the formatted file changes it: package gen record Tone { @since(1) fn v2(self, v2: Row) -> fn() -> total | Item { match (if total { 42 } else if 0 { 0 } else { a })( if ". 0{a}{""}" { ".é_ -" } else if stepSize { it } else if v2 { stepSize } else if "\{Z -_" { r"x" } else if label { it } else { 0x1F }, ) != item % v2 { taken, fire(_tmp), none => { if xs ?? 12 {} // c5 } _ => count + b / """ """ } } @since(1) fn b( self, stepSize: match b { _ => _ } where match "" { _, type => v2 }() - if "{""}" { 0b1010 } else { _tmp }[label]._0, label: Status() where xs < match "" {}(a: a), ) -> b { for count in xs is IK1_WEAPON {} } }

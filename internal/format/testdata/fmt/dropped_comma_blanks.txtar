@@ -1,0 +1,35 @@
+FORMATTER §4 and DECISIONS 168: a comma on its own line in a broken brace list is dropped and
+leaves its comments to the next item; a blank line before it stays before what follows it, so
+two items keep their blank line and two doc blocks stay apart (DECISIONS 211).
+-- in.canon --
+package p
+
+enum Gap {
+  a
+
+  ,
+  b
+}
+enum Docs {
+  a
+  /// d1
+
+  ,
+  /// d2
+  b
+}
+-- want --
+package p
+
+enum Gap {
+  a
+
+  b
+}
+enum Docs {
+  a
+  /// d1
+
+  /// d2
+  b
+}

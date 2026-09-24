@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/fantasim/canonlang/internal/format"
+	"github.com/fantasim/canonlang/internal/testkit/golden"
 )
 
 // FORMATTER.md §2 and §10: no BOM, "\n" line ends, a final "\n", spaces, no trailing blank.
@@ -70,4 +71,25 @@ func TestAtMostOneBlankLine(t *testing.T) {
 	if err != nil || strings.Contains(string(got), "\n\n\n") {
 		t.Errorf("got %q, %v", got, err)
 	}
+}
+
+// FORMATTER.md §4, §8.1, DECISIONS 211: a doc block (GRAMMAR.md §2.2) stays apart from another.
+func TestBlankLineBetweenLeadingCommentsIsKept(t *testing.T) {
+	cases, err := golden.Load("testdata/fmt/doc_block_blanks.txtar")
+	if err != nil {
+		t.Fatal(err)
+	}
+	in := cases[0].Archive.Files[0]
+	got, err := formatText(t, in.Name, in.Data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want, err := cases[0].Want()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(got) != string(want) {
+		t.Errorf("got:\n%s\nwant:\n%s", got, want)
+	}
+	checkFormatted(t, in.Name, parse(t, in.Name, in.Data), got)
 }

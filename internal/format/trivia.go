@@ -13,6 +13,7 @@ type note struct {
 	blank    bool // a blank line precedes it in the input
 	sameLine bool // it follows another comment on that comment's line
 	joined   bool // the token it leads follows it on its line
+	doc      bool // a doc comment line as the lexer read it (GRAMMAR.md §2.2)
 }
 
 // attached is what the printer keeps of a token's trivia: its own-line comments, its trailing
@@ -27,7 +28,7 @@ type attached struct {
 func attach(f *syntax.File, drop []bool) []attached {
 	out := make([]attached, len(f.Tokens))
 	var pending []note
-	prev := 0
+	prev, carry := 0, false // carry: a blank line before a dropped token, kept for what follows it
 	for i, t := range f.Tokens {
 		if t.Kind == syntax.TokNL || t.Kind == syntax.TokBOF {
 			continue
@@ -35,17 +36,29 @@ func attach(f *syntax.File, drop []bool) []attached {
 		lead, blank := leading(f, t.Leading)
 		trail, moved := trailing(f, t.Trailing)
 		if drop[i] {
-			pending = append(pending, dropped(lead, trail, startsLine(t))...)
+			left := append(dropped(lead, trail, startsLine(t)), moved...)
+			carry = gapAt(left, 0, carry)
+			carry = gapAt(left, len(lead), blank) || carry
 			if !startsLine(t) {
 				out[prev].trail = append(out[prev].trail, trail...)
 			}
-			pending = append(pending, moved...)
+			pending = append(pending, left...)
 			continue
 		}
-		out[i] = attached{lead: append(pending, lead...), trail: trail, blank: blank}
-		pending, prev = moved, i
+		carry = gapAt(lead, 0, carry)
+		out[i] = attached{lead: append(pending, lead...), trail: trail, blank: blank || carry}
+		pending, prev, carry = moved, i, false
 	}
 	return out
+}
+
+// gapAt puts a blank line before notes[at], or reports it left for what follows the notes.
+func gapAt(notes []note, at int, blank bool) bool {
+	if !blank || at >= len(notes) {
+		return blank
+	}
+	notes[at].blank = true
+	return false
 }
 
 // dropped are the own-line comments a dropped token leaves to the next token: its leading
@@ -81,7 +94,7 @@ func leading(f *syntax.File, tr []syntax.Trivia) ([]note, bool) {
 		case syntax.TriviaNewline:
 			breaks++
 		case syntax.TriviaLineComment, syntax.TriviaDocComment, syntax.TriviaBlockComment:
-			n := note{text: commentText(f, t), blank: breaks >= blankRun}
+			n := note{text: commentText(f, t), blank: breaks >= blankRun, doc: t.Kind == syntax.TriviaDocComment}
 			n.sameLine = breaks == 0 && len(notes) > 0
 			notes = append(notes, n)
 			breaks = 0
@@ -138,3 +151,19 @@ func commentText(f *syntax.File, t syntax.Trivia) string {
 
 // isLine reports a line comment, which ends its line.
 func isLine(n note) bool { return !strings.HasPrefix(n.text, blockOpen) }
+
+// apart reports each note whose blank line before it separates two doc blocks (GRAMMAR.md §2.2).
+func apart(notes []note) []bool {
+	out := make([]bool, len(notes))
+	open := false
+	for i, n := range notes {
+		if n.blank {
+			out[i], open = open && slices.ContainsFunc(notes[i:], isDoc), false
+		}
+		open = open || n.doc
+	}
+	return out
+}
+
+// isDoc reports a doc comment line.
+func isDoc(n note) bool { return n.doc }

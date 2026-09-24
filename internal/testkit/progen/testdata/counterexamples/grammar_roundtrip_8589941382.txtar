@@ -2,7 +2,6 @@ suite grammar
 name roundtrip
 case 6789
 seed 8589941382
-open format
 sig idempotence in VariantDecl/FnDecl
 want roundtrip
 failure idempotence: formatting the formatted file changes it: package a view Item { subtitle "_\}{{" search {} search {} series_1 {} group _0 "0!" {} } variant Row @since(1) { export fn it( self, ) -> fn([match loadnext { _ => Kind }](1_000_000 is open), Reward) -> Kind(..=0) { while ({ package: r""" """ })?.a {} if (match0x1F {}) { for item in package { for item in count { {} } if "" {} } } else if (record)()[b]({}) { if ({})()() { {} var item: _ = r""" """ } for a in ..=xs in "{"0}}"}" { while "" {} // c5 } for xs in -r"\{" {} } } } record Kind { check xs else r""" """ }
