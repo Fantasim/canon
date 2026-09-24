@@ -1682,6 +1682,16 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     `Retired.`. An optional `@stable` field is refused for every table, emitted or not (LOCK
     `E6003`). Reason: no prose lost, none duplicated.
 
+199. **No evaluator work is unbounded per step (the fourth eval review).** Equality charges one
+    step per pair compared, scalar pairs included, so `x in xs`, `xs == ys` and `contains` over
+    n elements cost n (amends DECISIONS 185's "`in` costs its node only" and 197's composite
+    pairs). A map finds a key through a hash index, never a scan, so `m[k]` stays O(1) and a
+    map equality is linear. The set hash walks at most a named number of nodes per element (equal
+    values share that prefix; the charged equality decides). Binding level-1 refs is iterative
+    with a per-call memo of shared nodes. `@stable` comparisons while applying an amendment are
+    free, as layer path resolution is (§12.1), and iterative. Reason: every step of the budget
+    buys a bounded amount of time and memory, so `E4401` is the only way evaluation runs long.
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.
