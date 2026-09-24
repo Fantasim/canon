@@ -82,6 +82,7 @@ func (s *slot) okStore() string { return s.store + okStoreSuffix }
 
 // mainType is what the main getter returns: resolved refs are entries, never keys.
 func (g *gen) mainType(s *slot) string {
+	defer g.enter(s.origin)()
 	switch {
 	case s.ref == nil:
 		return g.goType(s.t)
@@ -92,6 +93,7 @@ func (g *gen) mainType(s *slot) string {
 }
 
 func (g *gen) slotKeyType(s *slot) string {
+	defer g.enter(s.origin)()
 	key := g.goType(s.refType())
 	if s.list {
 		return g.rt() + listType + lbracket + key + rbracket
@@ -185,6 +187,7 @@ func (g *gen) zeroKey(t ir.TypeRef) string {
 
 // assign is the storage of v, member by member; none leaves every member zero.
 func (g *gen) assign(s *slot, v value.Value) []pair {
+	defer g.enter(s.origin)()
 	if _, none := v.(*value.None); none || v == nil {
 		if !s.opt {
 			g.failf(ErrMalformed, "%s has no value", s.origin)

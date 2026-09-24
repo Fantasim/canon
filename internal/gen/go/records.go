@@ -157,7 +157,8 @@ func (g *gen) bodyLit(b *body, r *value.Record) []pair {
 	}
 	for _, f := range b.finite {
 		inst := g.instanceOf(f.fn, f.origin, r)
-		parts = append(parts, pair{f.store, g.cellArray(f, inst.Table)})
+		lit, _ := g.cellArray(f, inst.Table)
+		parts = append(parts, pair{f.store, lit})
 	}
 	return parts
 }

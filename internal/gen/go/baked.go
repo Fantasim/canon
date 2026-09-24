@@ -32,20 +32,26 @@ func (g *gen) tableContainer(v *ir.Value) {
 	g.printf(tableContainerFormat, name, elem, g.use(iterPkg, iterPkg), idTypeName(elem))
 	methods := newScope(name)
 	for _, f := range rec.Fields {
-		if f.Stable && !f.Optional {
-			g.findBy(methods, name, elem, f)
+		if f.Stable {
+			g.findBy(methods, v, elem, f)
 		}
 	}
 }
 
-// findBy is FindBy<F> for a @stable field of a table's element (CODEGEN.md §5.9).
-func (g *gen) findBy(methods *scope, container, elem string, f *ir.Field) {
+// findBy is FindBy<F> for a @stable field: a map index built once by the builder replaces a scan.
+func (g *gen) findBy(methods *scope, v *ir.Value, elem string, f *ir.Field) {
+	defer g.enter(v.Name + dot + f.Name)()
+	container, ft := containerName(v), g.goType(f.Type)
+	index := storageName(v.Name) + upperCamel(f.Name) + indexSuffix
+	g.declare(index, container+dot+f.Name)
+	g.printf(findByIndexFormat, index, g.use(syncPkg, syncPkg), ft, accessorName(v), storageName(f.Name))
 	name := findByPrefix + exportedName(f.Go.Name, f.Name)
 	g.fail(methods.add(name, container))
-	g.printf(findByFormat, container, name, g.goType(f.Type), elem, storageName(f.Name))
+	g.printf(findByFormat, container, name, ft, elem, index)
 }
 
 func (g *gen) keyedContainer(v *ir.Value) {
+	defer g.enter(v.Name)()
 	name := containerName(v)
 	g.declare(name, v.Name)
 	key := g.keyField(v.Type)
@@ -98,11 +104,7 @@ func isContainer(v *ir.Value) bool {
 // valueSlot reads a value that is not a container like a field of its type.
 func (g *gen) valueSlot(v *ir.Value) *slot {
 	t, opt := unwrapOptional(v.Type)
-	name := v.Go.Name
-	if name == "" {
-		name = getPrefix + upperCamel(v.Name)
-	}
-	s := g.newSlot(v.Name, name, g.byValue[v.Name].store, t, opt)
+	s := g.newSlot(v.Name, accessorName(v), g.byValue[v.Name].store, t, opt)
 	s.doc = v.Doc
 	return s
 }
@@ -116,6 +118,7 @@ func (g *gen) valueStorage(v *ir.Value) []member {
 
 // allocate gives every container its rows first, so any entry can point at any other.
 func (g *gen) allocate(v *ir.Value) {
+	defer g.enter(v.Name)()
 	store := g.data + dot + g.byValue[v.Name].store + dot + rowsField
 	n := strconv.Itoa(len(g.entries(v)))
 	switch {
@@ -164,10 +167,7 @@ func (g *gen) accessors(v *ir.Value, values string) {
 		}
 		return
 	}
-	name := v.Go.Name
-	if name == "" {
-		name = getPrefix + upperCamel(v.Name)
-	}
+	name := accessorName(v)
 	g.declare(name, v.Name)
 	g.writeFunc(getter{
 		name: name, result: pointer + containerName(v), doc: v.Doc, origin: v.Name,

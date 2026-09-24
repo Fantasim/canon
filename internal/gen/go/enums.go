@@ -37,6 +37,7 @@ func (g *gen) enums() {
 }
 
 func (g *gen) enumSpec(e *ir.Enum) *enumSpec {
+	defer g.enter(e.QName())()
 	s := &enumSpec{origin: e.QName(), name: g.goName(e), doc: e.Doc, parseArg: wireArg, members: true}
 	s.under = smallestUint(len(e.Members))
 	if e.Codes != nil {
@@ -48,11 +49,7 @@ func (g *gen) enumSpec(e *ir.Enum) *enumSpec {
 		if e.Codes != nil {
 			v = strconv.FormatInt(m.Code, decimal)
 		}
-		doc := m.Doc
-		if m.Retired {
-			doc = strings.TrimPrefix(doc+newline+retiredDoc, newline)
-		}
-		s.consts = append(s.consts, enumConst{memberName(s.name, m), v, doc})
+		s.consts = append(s.consts, enumConst{memberName(s.name, m), v, withRetired(m.Doc, m.Retired)})
 		s.names = append(s.names, m.Name)
 		s.wires = append(s.wires, m.Wire)
 	}
@@ -80,12 +77,28 @@ func (g *gen) kindEnums() {
 		kind := kindName(g.goName(v))
 		s := &enumSpec{origin: v.QName(), name: kind, under: smallestUint(len(v.Cases)), parseArg: wireArg}
 		for i, c := range v.Cases {
-			s.consts = append(s.consts, enumConst{name: kind + upperCamel(c.Name), value: strconv.Itoa(i)})
+			s.consts = append(s.consts, enumConst{name: kind + exportedName(c.Go.Name, c.Name), value: strconv.Itoa(i), doc: kindMemberDoc(c)})
 			s.names = append(s.names, c.Name)
 			s.wires = append(s.wires, c.Wire)
 		}
 		g.writeEnum(s)
 	}
+}
+
+// kindMemberDoc is `Retired.` or nothing; a case without fields has no type for its doc (§2.6).
+func kindMemberDoc(c *ir.Case) string {
+	if len(c.Fields) > 0 {
+		return withRetired("", c.Retired)
+	}
+	return withRetired(c.Doc, c.Retired)
+}
+
+// withRetired appends the line `Retired.` to the doc of a retired member (CODEGEN.md §5.2).
+func withRetired(doc string, retired bool) string {
+	if !retired {
+		return doc
+	}
+	return strings.TrimPrefix(doc+newline+retiredDoc, newline)
 }
 
 // idEnums writes the id enum of every public table value (CODEGEN.md §5.3).

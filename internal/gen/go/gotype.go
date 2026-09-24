@@ -36,7 +36,7 @@ func (g *gen) goType(t ir.TypeRef) string {
 	case types.Ref:
 		return g.keyType(t)
 	default:
-		g.failf(ErrUnsupported, kindFormat, kindText(t.Kind))
+		g.failKind(t.Kind)
 		return ""
 	}
 }
@@ -47,6 +47,19 @@ func kindText(k types.Kind) string {
 		return kindNames[k]
 	}
 	return unknownKind
+}
+
+// failKind refuses an untranslatable kind of the item being written, the Subject (go.md §3).
+func (g *gen) failKind(k types.Kind) {
+	g.fail(newDetail(ErrUnsupported, g.at, kindFormat, g.at, kindText(k)))
+}
+
+// modeText names an emit mode in a message: an out-of-range mode never indexes modeNames (CODEGEN.md §2.1).
+func modeText(m ir.Mode) string {
+	if int(m) < len(modeNames) && modeNames[m] != "" {
+		return modeNames[m]
+	}
+	return unknownMode
 }
 
 func (g *gen) intType(t ir.TypeRef) string {
@@ -99,7 +112,8 @@ func (g *gen) sub(t *ir.TypeRef) ir.TypeRef {
 // keyType is a ref's key: a table's id type, else the IR's key type (§5.8, decision 180).
 func (g *gen) keyType(t ir.TypeRef) string {
 	if t.Ref != nil && t.Ref.Coll == types.CollDefines {
-		g.failf(ErrUnsupported, defineRefFormat, t.Ref.Pkg+dot+t.Ref.Value)
+		table := t.Ref.Pkg + dot + t.Ref.Value
+		g.fail(newDetail(ErrUnsupported, table, defineRefFormat, table))
 		return goString
 	}
 	if isTableRef(t.Ref) {
@@ -152,12 +166,13 @@ func (g *gen) caseTypeName(t ir.TypeRef) string {
 		return ""
 	}
 	if len(t.Case.Fields) == 0 {
-		g.failf(ErrUnsupported, "the type %s.%s, a case without fields, which has no Go type", v.QName(), t.Case.Name)
+		g.fail(newDetail(ErrUnsupported, v.QName()+dot+t.Case.Name,
+			"the type %s.%s, a case without fields, which has no Go type", v.QName(), t.Case.Name))
 	}
 	return g.qualify(v.Pkg, caseName(g.goName(v), t.Case))
 }
 
-// caseName is T + UpperCamel(c), or the whole @go(name:) override (CODEGEN.md §3.5).
+// caseName is T + UpperCamel(c), or the whole @go(name:) override, verbatim (CODEGEN.md §3.5).
 func caseName(variant string, c *ir.Case) string {
 	if c.Go.Name != "" {
 		return c.Go.Name
@@ -167,7 +182,7 @@ func caseName(variant string, c *ir.Case) string {
 
 func kindName(variant string) string { return variant + kindSuffix }
 
-func idTypeName(elem string) string { return elem + idSuffix }
+func idTypeName(elem string) string { return elem + idSuffixUpper }
 
 // qualify prefixes name with the import name of pkg, a Canon package other than this one.
 func (g *gen) qualify(pkg, name string) string {

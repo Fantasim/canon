@@ -75,15 +75,16 @@ func (g *gen) storageType(f *finiteMethod) string {
 }
 
 // cellArray is the table of a lookup as a Go expression: nested arrays, one level per
-// parameter; a precomputed fn's single result is the cell itself.
-func (g *gen) cellArray(f *finiteMethod, t *ir.LookupTable) string {
+// parameter; a precomputed fn's single result is the cell itself. typed reports whether the
+// expression already carries its own type (so a caller need not repeat it).
+func (g *gen) cellArray(f *finiteMethod, t *ir.LookupTable) (lit string, typed bool) {
 	want := 1
 	for _, n := range f.dims {
 		want *= n
 	}
 	if t == nil || len(t.Cells) != want || len(t.Domains) != len(f.dims) {
 		g.failf(ErrMalformed, "the lookup table of %s does not have %d cells", f.origin, want)
-		return nilLit
+		return nilLit, false
 	}
 	for i, d := range t.Domains {
 		if len(d) != f.dims[i] {
@@ -91,9 +92,9 @@ func (g *gen) cellArray(f *finiteMethod, t *ir.LookupTable) string {
 		}
 	}
 	if len(f.dims) == 0 && !f.pair {
-		return g.nest(f, t.Cells, 0)
+		return g.nest(f, t.Cells, 0), false
 	}
-	return g.storageType(f) + g.nest(f, t.Cells, 0)
+	return g.storageType(f) + g.nest(f, t.Cells, 0), true
 }
 
 func (g *gen) nest(f *finiteMethod, cells []value.Value, dim int) string {
@@ -136,6 +137,7 @@ func (g *gen) cell(f *finiteMethod, v value.Value) string {
 
 // writeFinite writes the function or method that reads a finite table (CODEGEN.md §5.10).
 func (g *gen) writeFinite(sc *scope, prefix string, f *finiteMethod) {
+	defer g.enter(f.origin)()
 	g.fail(sc.add(f.name, f.origin))
 	params := newScope(f.origin)
 	g.fail(params.add(strings.TrimSuffix(strings.Split(f.read, dot)[0], callSuffix), f.origin))
@@ -222,7 +224,7 @@ func (g *gen) fns() {
 func (g *gen) packageTable(f *finiteMethod, t *ir.LookupTable) {
 	g.declare(f.store, f.origin)
 	g.usedData = false
-	lit := g.cellArray(f, t)
+	lit, typed := g.cellArray(f, t)
 	typ := g.storageType(f)
 	f.read = f.store
 	switch {
@@ -233,7 +235,7 @@ func (g *gen) packageTable(f *finiteMethod, t *ir.LookupTable) {
 		g.printf("var %s = %s.OnceValue(func() %s {\n%s := %s()\nreturn %s\n})\n\n",
 			f.store, g.use(syncPkg, syncPkg), typ, g.data, g.last+valuesSuffix, lit)
 		f.read += callSuffix
-	case strings.HasPrefix(lit, typ):
+	case typed:
 		g.printf("var %s = %s\n\n", f.store, lit)
 	default:
 		g.printf("var %s %s = %s\n\n", f.store, typ, lit)

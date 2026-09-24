@@ -28,6 +28,7 @@ type gen struct {
 	usedData  bool            // an expression read the baked data (d.…) since the flag was cleared
 	data      string          // the local that holds the baked data: d, escaped (§3.4)
 	canonGo   map[string]bool // Go names of the imported Canon packages
+	at        string          // the Canon item being written: the Subject of a kind refusal
 }
 
 // Generate is the Go generator (ir.Generator): <gopkg>.gen.go, and rt/rt.go verbatim (§2.3, §6.3).
@@ -36,13 +37,14 @@ func Generate(p *ir.Package, e *ir.Emit) ([]ir.File, error) {
 		return nil, fmt.Errorf("%w: %s", ErrTarget, e.Out)
 	}
 	if e.Mode != ir.ModeBaked {
-		return nil, fmt.Errorf("%w: mode %s of %s", ErrUnsupported, modeNames[e.Mode], e.Out)
+		return nil, fmt.Errorf("%w: mode %s of %s", ErrUnsupported, modeText(e.Mode), e.Out)
 	}
 	if !validIdent(e.GoPackage) || e.GoImport == "" {
 		return nil, fmt.Errorf("%w: go emit %s without a package or an import path", ErrMalformed, e.Out)
 	}
 	if len(p.Defines) > 0 {
-		return nil, fmt.Errorf("%w: "+defineRefFormat, ErrUnsupported, p.Defines[0].Pkg+dot+p.Defines[0].Value)
+		table := p.Defines[0].Pkg + dot + p.Defines[0].Value
+		return nil, newDetail(ErrUnsupported, table, defineRefFormat, table)
 	}
 	g := newGen(p, e)
 	src := g.source()
@@ -59,7 +61,7 @@ func newGen(p *ir.Package, e *ir.Emit) *gen {
 	segs := strings.Split(p.Name, dot)
 	g := &gen{
 		p: p, e: e, imports: map[string]string{}, top: newScope(scopePackage),
-		last:    lowerCamel(segs[len(segs)-1]),
+		last: lowerCamel(segs[len(segs)-1]), at: p.Name,
 		byValue: map[string]*valueInfo{}, tableOf: map[*ir.Record]*ir.Value{},
 	}
 	g.canonGo = map[string]bool{}
@@ -88,6 +90,13 @@ func (g *gen) failf(sentinel error, format string, args ...any) {
 	g.fail(fmt.Errorf("%w: "+format, append([]any{sentinel}, args...)...))
 }
 
+// enter makes origin the item being written until the returned func restores the previous one.
+func (g *gen) enter(origin string) (leave func()) {
+	prev := g.at
+	g.at = origin
+	return func() { g.at = prev }
+}
+
 // declare adds a package-level name.
 func (g *gen) declare(name, origin string) {
 	g.fail(g.top.add(name, origin))
@@ -114,15 +123,10 @@ func (g *gen) source() []byte {
 	return src
 }
 
-// header is the marker, the package doc (CODEGEN.md §2.4, §2.5), the clause and the imports.
+// header is the marker, the one-line package doc, the clause and the imports (decision 192).
 func (g *gen) header(out *bytes.Buffer) {
 	fmt.Fprintf(out, markerFormat, g.p.Dir)
 	fmt.Fprintf(out, packageDocFormat, g.e.GoPackage, g.p.Name)
-	if g.p.Doc != "" {
-		out.WriteString(commentEmpty + newline)
-		out.WriteString(commentLines(g.p.Doc))
-	}
-	out.WriteString(commentEmpty + newline + readOnlyText)
 	fmt.Fprintf(out, "package %s\n\n", g.e.GoPackage)
 	g.writeImports(out)
 }
@@ -145,10 +149,10 @@ func (g *gen) writeImports(out *bytes.Buffer) {
 	var std, other []string
 	for _, p := range sortedKeys(g.imports) {
 		line := g.importLine(p)
-		if strings.Contains(strings.Split(p, slash)[0], dot) {
-			other = append(other, line)
-		} else {
+		if goStdImports[p] {
 			std = append(std, line)
+		} else {
+			other = append(other, line)
 		}
 	}
 	if len(std)+len(other) == 0 {

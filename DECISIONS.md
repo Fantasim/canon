@@ -1616,6 +1616,65 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     interior-`_` storage names (decision 121). Reason: sovcommon's form wherever it is safe, the
     spec's wherever sovcommon's could collide. Queued for Louis in `meta/handoff/`.
 
+194. **Stage E details the IR review settled (CODEGEN §4.4, §5.6, §12; EVALUATION §2.3).** An
+    explicit `values: []` is expanded to every public value, as the backends read it (127). A
+    define table or record is `E8012`/`E8151` only for an emit whose target cannot represent it
+    (baked Go, 180), so `check` fails wherever `build` would (37). A wildcard `_ =>` arm's branch
+    is named after the first member it covers, in declaration order (§5.6 names only patterns).
+    Every receiver and cell of an `export fn` is evaluated and each failure reported; nothing
+    stops at the first. A foreign type's methods are precomputed on the importer's receivers,
+    because its encoded `$` keys need them (WIRE §5.11, 128), beyond §2.3's own-package wording.
+    `E8101` skips TS `types` mode (it emits no values); its other cases land with M6. Reason: no
+    finding that `build` could meet and `check` could not, and no error hidden behind another.
+
+195. **The evaluator's resource bounds and details the eval review settled (EVALUATION §3.3,
+    §12; STDLIB §4.2).** `E4402`'s 10 000 frames count every live user frame of the invocation,
+    across nested roots (forced lets, check runs, `where` re-runs, precomputations), so chained
+    forcing is bounded. `+` on lists and strings charges one step per element or byte of its
+    result (amends §4.2's "0 extra"), so doubling a value runs into `E4401`, never out of memory.
+    Every walk over a value (equality, text form, set hashing) is iterative or charged per node
+    visited, and graph built-ins run on an explicit stack; no input reaches the host stack limit.
+    A set coerces its elements to the call's static element type before hashing (TYPES §7.5).
+    A free `where` re-run past its cap (the budget) aborts that re-run only: poisoned, no
+    `E4401`, evaluation continues. `toMap` evaluates `keyF`, detects `E4502`, then `valF`. The
+    heaviest root of §12.2 is the first charged on a tie. A stage-A dereference and stage B's
+    verification of the same ref both report `E3501` (different locations, §14 keeps both).
+    Internal errors surface as `ErrInternal`; `withIdentity` keeps the same instance. Values
+    nested deeper than the host stack allows, and shared values whose tree is exponential
+    (`l = [l, l]`) under the free verification walk, are bounded only by these walks being
+    iterative and charged: a code or value-size limit needs ERRORS.md and value.go (Louis-call).
+
+196. **What `build` does where the spec is silent (the build review).** An error in any loaded
+    package, selected or imported, blocks code, data and lock; the imported package's error
+    findings are then reported with the selection's (API R2 extended), so nothing is refused
+    without its reason. A build with layers never writes `canon.lock` (EVALUATION §9.3, LOCK
+    §6.1 over §5). `Revision()` hashes `<dir>/canon.lock` of every package directory, whatever
+    the selection (API S3). Two outputs at one path are `E8152` unless both are a runtime helper
+    file (WIRE §8.1's letter). `--adopt` takes only a C++ header (CODEGEN §2.4); a JSON output is
+    `E8001` even when listed. A target without a generator yet (M1: cpp, ts, view) is refused
+    before analysis, naming the emit (`build.ErrNoGenerator`); a `load` before M3 is
+    `build.ErrLoad`: both are Go errors, exit 2, until their milestone. `build` writes its outputs
+    and locks itself, all or nothing (IMPLEMENTATION-PLAN §3). Layers reach the evaluator in
+    M1 (187 implements them; supersedes 143's "not applied before M3"). Reason: nothing written
+    that `check` would reject, and every refusal names its cause.
+
+197. **Completing 195 (the eval re-review).** `r.len()` is `max(end − start, 0)`, `E4002` if
+    open (STDLIB §10 amended: a range's elements are `start, start + 1, …` below `end`, §1.2, so
+    `len() == 0` iff `isEmpty()`). Every built-in that produces a string charges one step per
+    byte of its result, before building it: interpolation, `join`, `replace`, `lower`, `upper`,
+    `trim*`, `String`, format specs (amends STDLIB §7, §9.1). `value.Equal` and `CanonText` are
+    iterative with a same-instance shortcut (no signature change to value.go). `E4402`'s
+    "(n more frames)" counts every live frame of the invocation, the forcing roots' included, as
+    its limit does. `Evaluator.Test`'s `Builder.Build(ctx, v, capture *diag.Bag)` reports into
+    the expect's capture bag (amends 186's "findings returned"), whose limit is lifted so that
+    `fails "text"` sees every finding; an expect's operand text is capped like `VisitedUpTo`.
+
+198. **A fieldless case's doc goes on its kind member (CODEGEN §2.6, §5.2; the gen/go review).**
+    A case's doc sits on its Go type; a case with no fields has no type, so its doc goes on the
+    kind-enum member, followed by `Retired.` when retired. Other kind members carry only
+    `Retired.`. An optional `@stable` field is refused for every table, emitted or not (LOCK
+    `E6003`). Reason: no prose lost, none duplicated.
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.

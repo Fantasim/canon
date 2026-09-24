@@ -38,7 +38,7 @@ func (g *gen) expr(t ir.TypeRef, v value.Value) string {
 	case types.Ref:
 		return g.keyLit(t, as[value.Ref](g, v).Key)
 	default:
-		g.failf(ErrUnsupported, kindFormat, kindText(t.Kind))
+		g.failKind(t.Kind)
 		return ""
 	}
 }
@@ -93,7 +93,8 @@ func (g *gen) kindLit(named ir.Type, index int) string {
 		return zeroLit
 	}
 	kind := kindName(g.goName(v))
-	return g.qualify(v.Pkg, kind+upperCamel(v.Cases[index].Name))
+	c := v.Cases[index]
+	return g.qualify(v.Pkg, kind+exportedName(c.Go.Name, c.Name))
 }
 
 // keyLit is a ref's key: a table id constant, or a literal of the key's type (§5.8).

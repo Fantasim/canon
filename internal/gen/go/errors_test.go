@@ -194,7 +194,8 @@ func TestDefineRefsRefused(t *testing.T) {
 	table.Defines = []*ir.DefineTable{{Pkg: "p", Value: "itemKinds", Names: []string{"IK1_WEAPON"}, Values: []int64{1}}}
 	for _, p := range []*ir.Package{pkg(field), table} {
 		err := generateErr(p, nil)
-		if !errors.Is(err, gogen.ErrUnsupported) || !strings.Contains(err.Error(), "load.defines table p.itemKinds") {
+		var d *gogen.DetailError
+		if !errors.Is(err, gogen.ErrUnsupported) || !errors.As(err, &d) || d.Subject != "p.itemKinds" {
 			t.Errorf("got %v, want ErrUnsupported naming the define table p.itemKinds", err)
 		}
 	}
@@ -209,7 +210,9 @@ func TestUnexportedOverride(t *testing.T) {
 	fn := pkg()
 	fn.Fns = []*ir.ExportFn{{Name: "f", Kind: ir.FnPrecomputed, Result: boolT, Value: &value.Bool{}, Go: ir.NameOptions{Name: "f"}}}
 	for _, p := range []*ir.Package{pkg(field), pkg(member), fn} {
-		if err := generateErr(p, nil); !errors.Is(err, gogen.ErrName) || !strings.Contains(err.Error(), "not exported") {
+		err := generateErr(p, nil)
+		var d *gogen.DetailError
+		if !errors.Is(err, gogen.ErrName) || !errors.As(err, &d) {
 			t.Errorf("got %v, want ErrName for an unexported override", err)
 		}
 	}
@@ -227,6 +230,25 @@ func TestOverrideCollidesWithMethod(t *testing.T) {
 	}
 }
 
+// LOCK.md E6003, CODEGEN.md §5.9: an optional @stable field is refused in every table, emitted or not.
+func TestStableOptionalFieldRefused(t *testing.T) {
+	for _, values := range [][]string{nil, {"on"}} {
+		status := record("Status", "code")
+		status.Fields[0].Stable = true
+		status.Fields[0].Optional = true
+		table := ir.TypeRef{Kind: types.Table, Elem: &ir.TypeRef{Kind: types.Record, Named: status}}
+		p := pkg(status)
+		p.Values = []*ir.Value{{Name: "statuses", Type: table, IDs: []string{"a"},
+			V: &value.Table{Entries: []*value.Record{{Ident: &value.Identity{Key: value.Key{S: "a"}}}}}},
+			{Name: "on", Type: boolT, V: &value.Bool{}}}
+		err := generateErr(p, func(e *ir.Emit) { e.Values = values })
+		var d *gogen.DetailError
+		if !errors.Is(err, gogen.ErrMalformed) || !errors.As(err, &d) || d.Subject != "statuses.code" {
+			t.Errorf("values %v: got %v, want ErrMalformed naming statuses.code", values, err)
+		}
+	}
+}
+
 // CODEGEN.md §5.3, §5.9: a table's rows are indexed by its id enum, numbered in IDs order.
 func TestTableIDsOutOfOrder(t *testing.T) {
 	status := record("Status")
@@ -236,29 +258,35 @@ func TestTableIDsOutOfOrder(t *testing.T) {
 	}
 	p := pkg(status)
 	p.Values = []*ir.Value{{Name: "statuses", Type: table, IDs: []string{"b", "a"}, V: &value.Table{Entries: []*value.Record{entry("a"), entry("b")}}}}
-	if err := generateErr(p, nil); !errors.Is(err, gogen.ErrMalformed) || !strings.Contains(err.Error(), "entry 0 of table statuses is a") {
-		t.Errorf("got %v, want ErrMalformed for entry 0", err)
+	err := generateErr(p, nil)
+	var d *gogen.DetailError
+	if !errors.Is(err, gogen.ErrMalformed) || !errors.As(err, &d) || d.Subject != "statuses" || d.Index != 0 {
+		t.Errorf("got %v, want ErrMalformed for entry 0 of statuses", err)
 	}
 }
 
-// CODEGEN.md §4.4, §5.5, decision 180: a fieldless case and a Never have no Go type.
+// CODEGEN.md §4.4, §5.1, §5.5, decision 180: no Go form; the refusal names the refused item.
 func TestTypesWithoutGo(t *testing.T) {
 	shape := &ir.Variant{Pkg: "p", Name: "Shape", Cases: []*ir.Case{{Name: "none", Wire: "none"}}}
 	caseField := record("R")
 	caseField.Fields = []*ir.Field{{Name: "s", Type: ir.TypeRef{Kind: types.Case, Named: shape, Case: shape.Cases[0]}}}
 	never := record("N")
 	never.Fields = []*ir.Field{{Name: "n", Type: ir.TypeRef{Kind: types.Never}}}
+	constant := pkg(never)
+	constant.Consts = []*ir.Const{{Name: "origin", Type: ir.TypeRef{Kind: types.Record, Named: never}}}
 	cases := []struct {
 		name string
 		p    *ir.Package
 		want string
 	}{
-		{"a field of a case without fields", pkg(shape, caseField), "p.Shape.none, a case without fields"},
-		{"a Never field", pkg(never), "a value of kind Never"},
+		{"a field of a case without fields", pkg(shape, caseField), "p.Shape.none"},
+		{"a Never field", pkg(never), "p.N.n"},
+		{"a record constant", constant, "origin"},
 	}
 	for _, c := range cases {
 		err := generateErr(c.p, nil)
-		if !errors.Is(err, gogen.ErrUnsupported) || !strings.Contains(err.Error(), c.want) {
+		var d *gogen.DetailError
+		if !errors.Is(err, gogen.ErrUnsupported) || !errors.As(err, &d) || d.Subject != c.want {
 			t.Errorf("%s: got %v, want ErrUnsupported naming %s", c.name, err, c.want)
 		}
 	}

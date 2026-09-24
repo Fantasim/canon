@@ -1,6 +1,9 @@
 package gogen
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 var (
 	// ErrTarget is an emit whose target is not go.
@@ -13,6 +16,22 @@ var (
 	ErrName = errors.New("gogen: not a Go identifier")
 	// ErrNameCollision is two generated names equal in one Go scope (CODEGEN.md §3.5).
 	ErrNameCollision = errors.New("gogen: generated name collision")
-	// errFormat is generated source that go/format refuses: a compiler bug (CODEGEN.md §2.7).
-	errFormat = errors.New("gogen: generated Go does not format")
+	errFormat        = errors.New("gogen: generated Go does not format")
 )
+
+// DetailError names, in Subject and Index, what a sentinel refused: a caller compares fields, never the message (go.md §3).
+type DetailError struct {
+	Subject string
+	Index   int
+
+	err     error
+	message string
+}
+
+func newDetail(err error, subject, format string, args ...any) *DetailError {
+	return &DetailError{Subject: subject, Index: -1, err: err, message: fmt.Sprintf(format, args...)}
+}
+
+func (e *DetailError) Error() string { return e.err.Error() + ": " + e.message }
+
+func (e *DetailError) Unwrap() error { return e.err }

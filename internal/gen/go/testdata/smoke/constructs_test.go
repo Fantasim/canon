@@ -42,8 +42,8 @@ func Example() {
 	fmt.Println(hp, delay, sq.Side(), label)
 	fmt.Println(constructs.UpgradeCost(constructs.GradeUltimate1), constructs.CanUpgrade(constructs.GradeUnique, true), constructs.Answer())
 	fmt.Println(constructs.RuneFor(constructs.ElementWater) == nil, constructs.RuneFor(constructs.ElementEarth).Label(), constructs.BestPotion().ID())
-	b, okB := constructs.BonusOf(constructs.RuneIdAlpha)
-	_, okC := constructs.BonusOf(constructs.RuneIdBeta2)
+	b, okB := constructs.BonusOf(constructs.RuneIDAlpha)
+	_, okC := constructs.BonusOf(constructs.RuneIDBeta2)
 	fmt.Println(b, okB, okC, constructs.ShapeOf(constructs.GradeNormal).Kind(), constructs.ShapeOf(constructs.GradeUnique) == nil)
 	// Output:
 	// 9000 0.25 0.1 héllo

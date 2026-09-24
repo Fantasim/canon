@@ -27,15 +27,15 @@ func Example() {
 	hint, _ := sensitive.Hint()
 	view, _ := sensitive.ViewMinRole()
 	fmt.Println(sensitive.ID(), hint, view, sensitive.SetBy())
-	fmt.Println(teamboard.CanTransition(teamboard.StatusIdOpen, teamboard.StatusIdTaken),
-		teamboard.CanTransition(teamboard.StatusIdVerified, teamboard.StatusIdFixed))
-	fmt.Println(teamboard.ColumnOf(teamboard.StatusIdWontDo).Label())
+	fmt.Println(teamboard.CanTransition(teamboard.StatusIDOpen, teamboard.StatusIDTaken),
+		teamboard.CanTransition(teamboard.StatusIDVerified, teamboard.StatusIDFixed))
+	fmt.Println(teamboard.ColumnOf(teamboard.StatusIDWontDo).Label())
 	for sec := range teamboard.GroupedAreasVisibleTo(roles.RoleMaintainer).All() {
 		fmt.Println(sec.GroupID(), sec.Group().Label(), sec.AreasIDs().Clone())
 	}
-	game := teamboard.GetAreas().Get(teamboard.AreaIdGame)
+	game := teamboard.GetAreas().Get(teamboard.AreaIDGame)
 	fmt.Println(game.GroupID(), game.RoutesToIDs().Clone(), game.RoutesTo().At(0).Label())
-	id, ok := teamboard.ParseStatusId("wont_do")
+	id, ok := teamboard.ParseStatusID("wont_do")
 	fmt.Println(id, ok, teamboard.GetStatuses().Get(id) == teamboard.ColumnOf(id).Statuses().At(1))
 	// Output:
 	// 7 Open open
@@ -72,7 +72,7 @@ func BenchmarkGroupedAreasVisibleTo(b *testing.B) {
 func BenchmarkColumnOf(b *testing.B) {
 	b.ReportAllocs()
 	for range b.N {
-		_ = teamboard.ColumnOf(teamboard.StatusIdWontDo)
+		_ = teamboard.ColumnOf(teamboard.StatusIDWontDo)
 	}
 }
 

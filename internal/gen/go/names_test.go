@@ -76,7 +76,8 @@ func TestStorageName(t *testing.T) {
 	}
 }
 
-// CODEGEN.md §3.3, §3.5: a first capital on type names; an override is the whole name.
+// A first capital on type names; an override is the whole name; the id type and member are
+// <Element>ID, <Element>ID<Key> (GoCap on the suffix).
 func TestExportedNames(t *testing.T) {
 	if got := typeGoName("", "potion"); got != "Potion" {
 		t.Errorf("typeGoName = %q", got)
@@ -84,7 +85,10 @@ func TestExportedNames(t *testing.T) {
 	if got := exportedName("GetID", "id"); got != "GetID" {
 		t.Errorf("exportedName = %q", got)
 	}
-	if got := idMemberName(idTypeName("Status"), "wont_do"); got != "StatusIdWontDo" {
+	if got := idTypeName("Status"); got != "StatusID" {
+		t.Errorf("id type = %q", got)
+	}
+	if got := idMemberName(idTypeName("Status"), "wont_do"); got != "StatusIDWontDo" {
 		t.Errorf("id member = %q", got)
 	}
 }

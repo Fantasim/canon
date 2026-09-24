@@ -11,19 +11,24 @@ import (
 // constants writes the public constants: Int and Float typed, lists and maps as functions (§5.1).
 func (g *gen) constants() {
 	for _, c := range g.p.Consts {
-		name := exportedName(c.Go.Name, c.Name)
-		g.declare(name, c.Name)
-		g.body.WriteString(docFor(name, c.Doc))
-		switch c.Type.Kind {
-		case types.List, types.Map:
-			g.printf("func %s() %s { return %s }\n\n", name, g.goType(c.Type), g.expr(c.Type, c.V))
-		case types.Int, types.Float:
-			g.printf("const %s %s = %s\n\n", name, g.goType(c.Type), g.constExpr(c))
-		case types.Bool, types.String, types.LitUnion, types.Duration, types.Enum:
-			g.printf("const %s = %s\n\n", name, g.constExpr(c))
-		default:
-			g.failf(ErrUnsupported, "constant %s of kind %s", c.Name, kindText(c.Type.Kind))
-		}
+		g.constant(c)
+	}
+}
+
+func (g *gen) constant(c *ir.Const) {
+	defer g.enter(c.Name)()
+	name := exportedName(c.Go.Name, c.Name)
+	g.declare(name, c.Name)
+	g.body.WriteString(docFor(name, c.Doc))
+	switch c.Type.Kind {
+	case types.List, types.Map:
+		g.printf("func %s() %s { return %s }\n\n", name, g.goType(c.Type), g.expr(c.Type, c.V))
+	case types.Int, types.Float:
+		g.printf("const %s %s = %s\n\n", name, g.goType(c.Type), g.constExpr(c))
+	case types.Bool, types.String, types.LitUnion, types.Duration, types.Enum:
+		g.printf("const %s = %s\n\n", name, g.constExpr(c))
+	default:
+		g.failKind(c.Type.Kind)
 	}
 }
 

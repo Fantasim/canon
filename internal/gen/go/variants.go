@@ -38,7 +38,7 @@ func (g *gen) variant(v *ir.Variant) {
 			}
 			continue
 		}
-		as := asPrefix + upperCamel(c.Name)
+		as := asPrefix + exportedName(c.Go.Name, c.Name)
 		g.fail(methods.add(as, v.QName()))
 		g.printf(asCaseFormat, name, as, caseName(name, c))
 	}
@@ -64,7 +64,7 @@ func (g *gen) variantExpr(t ir.TypeRef, r *value.Record) string {
 	if r.T != nil {
 		ct, isCase = r.T.Base().(*types.CaseType)
 	}
-	if !ok || !isCase || ct.Index >= len(v.Cases) {
+	if !ok || !isCase || ct.Index < 0 || ct.Index >= len(v.Cases) {
 		g.failf(ErrMalformed, "a variant value of %s", qname(t.Named))
 		return nilLit
 	}

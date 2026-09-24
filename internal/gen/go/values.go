@@ -30,6 +30,7 @@ func (g *gen) indexValues() {
 			g.failf(ErrNameCollision, "%s is the id type of both %s and %s", idTypeName(g.goName(rec)), g.tableOf[rec].Name, v.Name)
 		default:
 			g.tableOf[rec] = v
+			g.checkStable(v, rec)
 		}
 	}
 	for _, v := range g.p.Values {
@@ -38,6 +39,15 @@ func (g *gen) indexValues() {
 		}
 		g.emitted = append(g.emitted, v)
 		g.byValue[v.Name] = &valueInfo{v: v, store: storageName(v.Name), index: g.entryIndex(v)}
+	}
+}
+
+// checkStable refuses an optional @stable field of any table, emitted or not: FindBy needs a key.
+func (g *gen) checkStable(v *ir.Value, rec *ir.Record) {
+	for _, f := range rec.Fields {
+		if f.Stable && f.Optional {
+			g.fail(newDetail(ErrMalformed, v.Name+dot+f.Name, "@stable field %s.%s is optional", v.Name, f.Name))
+		}
 	}
 }
 
@@ -52,7 +62,9 @@ func (g *gen) entryIndex(v *ir.Value) map[value.Key]int {
 			g.failf(ErrMalformed, "entry %d of %s has no key", i, v.Name)
 			continue
 		case isTable && (i >= len(v.IDs) || v.IDs[i] != r.Ident.Key.S):
-			g.failf(ErrMalformed, "entry %d of table %s is %s, not its id %d", i, v.Name, r.Ident.Key.Text(), i)
+			d := newDetail(ErrMalformed, v.Name, "entry %d of table %s is %s, not its id %d", i, v.Name, r.Ident.Key.Text(), i)
+			d.Index = i
+			g.fail(d)
 		}
 		index[r.Ident.Key] = i
 	}

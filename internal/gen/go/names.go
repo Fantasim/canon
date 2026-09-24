@@ -107,6 +107,14 @@ func exportedName(override, canon string) string {
 	return upperCamel(canon)
 }
 
+// accessorName is Get<V>, or the whole @go(name:) override: valueSlot, accessors and findBy share it.
+func accessorName(v *ir.Value) string {
+	if v.Go.Name != "" {
+		return v.Go.Name
+	}
+	return getPrefix + upperCamel(v.Name)
+}
+
 // firstUpper upper-cases the first letter of a Canon type name (CODEGEN.md §3.3).
 func firstUpper(name string) string {
 	if name == "" {
@@ -189,6 +197,6 @@ func (g *gen) bodyOverrides(owner string, fields []*ir.Field, fns []*ir.ExportFn
 
 func (g *gen) override(o ir.NameOptions, origin string) {
 	if o.Name != "" && !token.IsExported(o.Name) {
-		g.failf(ErrName, "@go(name: %q) of %s is not exported", o.Name, origin)
+		g.fail(newDetail(ErrName, origin, "@go(name: %q) of %s is not exported", o.Name, origin))
 	}
 }
