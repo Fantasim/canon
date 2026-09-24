@@ -44,7 +44,7 @@ func (r *run) collValue(ref *value.Ref, c *types.Collection, at syntax.Node) val
 		}
 		base = ref.Owner
 	} else {
-		st := r.ev.roots[Root{Pkg: c.Pkg, Name: c.Name}]
+		st := r.ev.rootState(Root{Pkg: c.Pkg, Name: c.Name})
 		if st == nil {
 			r.bug(at)
 			return nil
@@ -107,6 +107,9 @@ func (e *Evaluator) entry(coll value.Value, k value.Key) (*value.Record, bool) {
 		return nil, false
 	}
 	idx := e.keyed[coll]
+	if idx == nil && e.parent != nil {
+		idx = e.parent.keyed[coll] // a parent's value is indexed there once
+	}
 	if idx == nil {
 		idx = keyIndex(elems)
 		e.keyed[coll] = idx

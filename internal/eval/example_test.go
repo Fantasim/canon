@@ -52,3 +52,43 @@ let squares: [Int] = [n * n for n in 1..=4]
 	fmt.Println(len(bags["farm"].Findings()), "findings")
 	// Output: FARM_MAX_MODELS = 100; maxModels = 99; squares = [1, 4, 9, 16]; 0 findings
 }
+
+// A conformance vector runs alone on its own step cap; in TS mode an integer outside
+// TypeScript's safe range is E8303 where Go computes the value.
+func ExampleEvaluator_Vector() {
+	ctx := context.Background()
+	fs := &source.FileSet{}
+	src, _ := fs.Add("shop/shop.canon", "/shop/shop.canon", []byte(`/// Shops.
+package shop
+
+/// A price list.
+record Price {
+  /// The unit price.
+  unit: Int
+
+  /// The price of n units.
+  export fn times(self, n: Int) -> Int { return unit * n }
+}
+
+/// The price of the example.
+let price: Price = { unit: 3 }
+`))
+	files := []*syntax.File{syntax.Parse(src, syntax.FileSource, diag.NewBag(fs, ""))}
+	bags := check.Bags{}
+	prog := check.Check(ctx, project.New("demo", project.Version{Minor: 1}), files, bags, eval.NewFolder(bags, eval.Options{}))
+	ev := eval.New(prog, served{}, bags, eval.Options{})
+	recv, _ := ev.Force(ctx, eval.Root{Pkg: "shop", Name: "price"})
+	times := prog.Info.Defs[files[0].Decls[0].(*syntax.RecordDecl).Body.Items[1].(*syntax.FnDecl).Name]
+	c := eval.Call{Fn: times, Recv: recv, Args: []value.Value{&value.Int{V: 1 << 52, T: types.IntType}}}
+	for _, ts := range []bool{false, true} {
+		o := ev.Vector(ctx, c, eval.VectorMode{Steps: 1_000_000, TS: ts})
+		if o.Code != "" {
+			fmt.Println("TS", ts, o.Code)
+			continue
+		}
+		fmt.Println("TS", ts, o.Value.CanonText())
+	}
+	// Output:
+	// TS false 13510798882111488
+	// TS true E8303
+}

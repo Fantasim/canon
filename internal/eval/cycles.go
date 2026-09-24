@@ -37,8 +37,8 @@ func (e *Evaluator) constCycle(obj check.Object) {
 	for _, h := range append(hops, hops[0]) {
 		names = append(names, qualify(pkg, h.obj.Pkg(), h.obj.Name()))
 	}
-	if bag := e.bagOf(pkg); bag != nil && last.obj.File() != nil {
-		diag.E4301.At(last.obj.File().Span(last.use), names).Report(bag)
+	if last.obj.File() != nil {
+		e.report(pkg, diag.E4301.At(last.obj.File().Span(last.use), names))
 	}
 }
 
@@ -119,7 +119,19 @@ func qualify(from, pkg, name string) string {
 	return pkg + dot + name
 }
 
-// bagOf is the bag findings of pkg go to: always its own, a fold's included.
-func (e *Evaluator) bagOf(pkg string) *diag.Bag {
-	return e.bags[pkg]
+// report files a finding of pkg in its own bag; a vector keeps only its first error (CONFORMANCE.md §6.5).
+func (e *Evaluator) report(pkg string, b *diag.Builder) {
+	if e.aside != nil {
+		if bag := e.aside[pkg]; bag != nil {
+			b.Report(bag)
+		}
+		return
+	}
+	if e.vec != nil {
+		e.vec.note(e, pkg, b)
+		return
+	}
+	if bag := e.bags[pkg]; bag != nil {
+		b.Report(bag)
+	}
 }

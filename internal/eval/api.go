@@ -26,30 +26,33 @@ func (e *Evaluator) Call(ctx context.Context, fn check.Object, recv value.Value,
 	for i, a := range args {
 		texts[i] = a.CanonText()
 	}
-	full := append(append([]value.Value(nil), args...), make([]value.Value, max(len(d.Params)-len(args), 0))...)
 	name := fnName(fn, recv) + callOpen + strings.Join(texts, argSep) + callClose
-	v := r.invokeFn(fnCall{obj: fn, self: recv, args: full, site: fn.File().Span(d.Name), name: name})
+	v := r.invokeFn(fnCall{obj: fn, self: recv, args: padded(args, len(d.Params)), site: fn.File().Span(d.Name), name: name})
 	return v, v != nil && !r.failed
+}
+
+// padded is a copy of args with a nil for each parameter left to its default.
+func padded(args []value.Value, params int) []value.Value {
+	return append(append([]value.Value(nil), args...), make([]value.Value, max(params-len(args), 0))...)
 }
 
 // ReportUnbound is E3505 for a ref stage B found unbound (EVALUATION.md §3.4, DECISIONS 186).
 func (e *Evaluator) ReportUnbound(root Root, ref *value.Ref, path string) {
 	rt, ok := ref.T.Base().(*types.RefType)
-	bag := e.bags[root.Pkg]
-	if !ok || bag == nil {
+	if !ok || e.vec == nil && e.bags[root.Pkg] == nil {
 		return
 	}
 	b := diag.E3505.At(located(ref, e.declSpan(root)), elemName(rt.Target), ownerName(rt.Target)).Path(path)
 	if p := origin(ref.Prov()); p != nil {
 		b.Pointer(p.Pointer).Layer(p.Layer).Stack(p.Stack).MoreFrames(p.MoreFrames)
 	}
-	b.Report(bag)
+	e.report(root.Pkg, b)
 	e.MarkInvalid(ref)
 }
 
 // declSpan is the declaration of a top-level value, where a finding without a value location goes.
 func (e *Evaluator) declSpan(root Root) source.Span {
-	if st := e.roots[root]; st != nil && st.obj.File() != nil {
+	if st := e.rootState(root); st != nil && st.obj.File() != nil {
 		return st.obj.File().Span(st.obj.Decl())
 	}
 	return source.Span{}

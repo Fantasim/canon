@@ -114,7 +114,6 @@ type fnCall struct {
 func (r *run) invokeFn(c fnCall) value.Value {
 	d, isFn := c.obj.Decl().(*syntax.FnDecl)
 	ft, isFt := c.obj.Type().(*types.FuncType)
-	file := c.obj.File()
 	if !isFn || !isFt || len(ft.Params) != len(d.Params) || len(c.args) != len(d.Params) {
 		r.bug(nil)
 		return nil
@@ -122,16 +121,16 @@ func (r *run) invokeFn(c fnCall) value.Value {
 	if !r.enter(c.site) {
 		return nil
 	}
+	fr := r.calleeFrame(c)
+	if fr.ts && !r.tsEntry(fr, d, c.args) {
+		return nil
+	}
 	for i, p := range d.Params {
 		if c.args[i] != nil {
-			c.args[i] = r.store(c.args[i], ft.Params[i], declSite(file, p.Name, p.Type), nil)
+			c.args[i] = r.store(c.args[i], ft.Params[i], declSite(fr.file, p.Name, p.Type), nil)
 		}
 	}
-	name := c.name
-	if name == "" {
-		name = fnName(c.obj, c.self)
-	}
-	fr := (&frame{vars: map[check.Object]value.Value{}, self: c.self, file: file, pkg: c.obj.Pkg(), fn: name, call: c.site}).under(r.fr)
+	r.ev.record(c)
 	saved := r.fr
 	r.fr = fr
 	r.ev.depth++
@@ -144,13 +143,31 @@ func (r *run) invokeFn(c fnCall) value.Value {
 		r.bug(c.obj.Decl())
 		return nil
 	}
-	return r.store(fr.ret, ft.Result, declSite(file, nil, d.Result), nil)
+	v := r.store(fr.ret, ft.Result, declSite(fr.file, nil, d.Result), nil)
+	if r.fr.ts && !fr.ts {
+		return r.tsRead(v) // CONFORMANCE.md §2.2: a precomputed or lookup result is read like a field
+	}
+	return v
+}
+
+// calleeFrame is a call's frame, TS-mode code when the caller's is and fn is translated (CONFORMANCE.md §4).
+func (r *run) calleeFrame(c fnCall) *frame {
+	name := c.name
+	if name == "" {
+		name = fnName(c.obj, c.self)
+	}
+	fr := &frame{vars: map[check.Object]value.Value{}, self: c.self, file: c.obj.File(), pkg: c.obj.Pkg(), fn: name, call: c.site}
+	fr.ts = r.fr.ts && runtimeInput(c.obj)
+	return fr.under(r.fr)
 }
 
 // enter checks the call depth of the invocation, every root's live frames counted, in its
 // limit and its "more frames" alike (E4402, DECISIONS 195, 197); then spends the invocation's step.
 func (r *run) enter(site source.Span) bool {
 	if r.ev.depth >= maxDepth {
+		if r.ev.vec != nil {
+			r.ev.cut(DepthLimit)
+		}
 		stack, _ := r.frames()
 		r.abort(diag.E4402.At(site).Stack(stack).MoreFrames(r.ev.depth - len(stack)))
 		return false

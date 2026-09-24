@@ -71,6 +71,10 @@ func (r *run) evalAt(e syntax.Expr, at *vpath) value.Value {
 
 // node spends the node's step and dispatches it.
 func (r *run) node(e syntax.Expr, at *vpath) value.Value {
+	if read, ok := r.fr.reads[e]; ok {
+		r.chainNone = read.none // a TS entry read, reused for free
+		return read.v
+	}
 	fn := exprTable[e.Kind()]
 	if fn == nil {
 		r.bug(e)

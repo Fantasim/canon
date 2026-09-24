@@ -21,11 +21,14 @@ func (r *run) host() *stdHost {
 	return r.h
 }
 
-// std is a built-in's result: nil once it aborted the root.
+// std is a built-in's result, nil once it aborted the root; TS-mode code checks it (CONFORMANCE.md §4).
 func (r *run) std(v value.Value, ok bool) value.Value {
 	if !ok || r.failed {
 		r.bug(nil)
 		return nil
+	}
+	if r.fr.ts {
+		return r.tsRead(v)
 	}
 	return v
 }

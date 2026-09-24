@@ -89,8 +89,21 @@ const (
 	indexFrom   = 16
 )
 
-// The text of an internal error: the node kind and its position.
+// The text of an internal error, the node kind and its position, and of a named Go error.
 const (
-	fmtBug   = "%w: %s"
+	fmtWrap  = "%w: %s"
 	fmtWhere = "%s at %s:%d:%d"
 )
+
+// The limits that can cut a vector's evaluation short (CONFORMANCE.md §6.5).
+const (
+	NoLimit Limit = iota
+	StepLimit
+	DepthLimit
+)
+
+// vectorCap is a conformance vector's own step cap when VectorMode.Steps is 0 (CONFORMANCE.md §6.5).
+const vectorCap int64 = 1_000_000
+
+// maxSafeInt is the largest integer TypeScript holds exactly, ±(2^53 − 1) (CONFORMANCE.md §4).
+const maxSafeInt = 1<<53 - 1

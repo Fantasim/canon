@@ -20,7 +20,7 @@ func (r *run) bug(n syntax.Node) {
 		line, col := r.fr.file.Src.Position(sp.Start)
 		where = fmt.Sprintf(fmtWhere, n.Kind(), r.fr.file.Src.Path, line, col)
 	}
-	r.ev.bugs = append(r.ev.bugs, fmt.Errorf(fmtBug, errInconsistent, where))
+	r.ev.bugs = append(r.ev.bugs, fmt.Errorf(fmtWrap, errInconsistent, where))
 }
 
 // Err is every internal error met so far, in the order met; nil when there is none.

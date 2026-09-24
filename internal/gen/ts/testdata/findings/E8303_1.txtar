@@ -1,0 +1,17 @@
+CONFORMANCE.md §4: in TS mode an integer input outside ±(2^53 − 1) expects E8303, where Go and
+C++ compute a value (vectors 1 and 5: the int64 limits).
+-- a/a.canon --
+/// A.
+package a
+
+/// n, at most 100.
+export fn capped(n: Int) -> Int { return min(n, 100) }
+
+emit ts { out: "@features/a/a.ts" }
+-- findings.txt --
+capped vector 1 (-9223372036854775808): go -9223372036854775808, ts E8303
+capped vector 2 (-1): go -1, ts -1
+capped vector 3 (0): go 0, ts 0
+capped vector 4 (1): go 1, ts 1
+capped vector 5 (9223372036854775807): go 100, ts E8303
+0 errors, 0 warnings in 1 package (…)

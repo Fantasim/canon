@@ -54,6 +54,12 @@ type Evaluator struct {
 	pkgs       map[string]*check.Package
 	stable     []StableAmendment
 	bugs       []error
+	selfReads  map[*syntax.FnDecl][]syntax.Expr
+
+	parent    *Evaluator   // a vector's evaluator reads its parent's settled values (vector.go)
+	vec       *vectorState // set on a vector's evaluator only
+	aside     check.Bags   // a vector's throwaway bags while its host verifies
+	recording *recorder    // set while TestCalls runs
 }
 
 // status is where a top-level value is in its evaluation.
@@ -113,22 +119,43 @@ func newEvaluator(bags check.Bags, opt Options) *Evaluator {
 		ownedBy:    map[*types.RecordType]map[*types.Collection]bool{},
 		clean:      map[cleanKey]bool{},
 		sites:      map[*types.Field]site{},
+		selfReads:  map[*syntax.FnDecl][]syntax.Expr{},
 	}
 }
 
-// state is the state of a const or let, made on first use.
+// state is the state of a const or let, made on first use; a vector's evaluator shares its
+// parent's settled ones and forces the others afresh (DECISIONS 204).
 func (e *Evaluator) state(obj check.Object) *rootState {
 	st := e.states[obj]
-	if st == nil {
-		st = &rootState{root: Root{Pkg: obj.Pkg(), Name: obj.Name()}, obj: obj}
-		e.states[obj] = st
+	if st != nil {
+		return st
 	}
+	if e.parent != nil {
+		if ps := e.parent.states[obj]; ps != nil && (ps.status == done || ps.status == poisoned) {
+			return ps
+		}
+	}
+	st = &rootState{root: Root{Pkg: obj.Pkg(), Name: obj.Name()}, obj: obj}
+	e.states[obj] = st
 	return st
+}
+
+// rootState is the state of a top-level value by name, nil when there is none.
+func (e *Evaluator) rootState(root Root) *rootState {
+	if st := e.roots[root]; st != nil {
+		return st
+	}
+	if e.parent != nil {
+		if ps := e.parent.roots[root]; ps != nil {
+			return e.state(ps.obj)
+		}
+	}
+	return nil
 }
 
 // Force evaluates a top-level value; false: poisoned, broken or out of budget (EVALUATION.md §3.1).
 func (e *Evaluator) Force(ctx context.Context, root Root) (value.Value, bool) {
-	st := e.roots[root]
+	st := e.rootState(root)
 	if st == nil {
 		return nil, false
 	}
@@ -168,13 +195,15 @@ func (e *Evaluator) MarkInvalid(v value.Value) {
 
 // Invalid reports a value marked by a conversion or by verification.
 func (e *Evaluator) Invalid(v value.Value) bool {
-	return e.invalid[v]
+	return e.invalid[v] || e.parent != nil && e.parent.invalid[v]
 }
 
 // Poison poisons a top-level value after the fact: stage B met a hard error in it (DECISIONS
 // 147); it is no longer read, amended or traversed.
 func (e *Evaluator) Poison(root Root) {
-	if st := e.roots[root]; st != nil {
-		st.status, st.v = poisoned, nil
+	st := e.rootState(root)
+	if st == nil || e.parent != nil && e.parent.roots[root] == st {
+		return // a vector poisons only what it forced
 	}
+	st.status, st.v = poisoned, nil
 }

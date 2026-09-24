@@ -52,7 +52,7 @@ func reprovComposite(v value.Value, p *value.Prov) value.Value {
 
 // carry gives a value rebuilt from another the invalid mark the other has (EVALUATION.md §7.3).
 func (e *Evaluator) carry(from, to value.Value) value.Value {
-	if from != to && from != nil && to != nil && e.invalid[from] {
+	if from != to && from != nil && to != nil && e.Invalid(from) {
 		e.invalid[to] = true
 	}
 	return to

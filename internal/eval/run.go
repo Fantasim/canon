@@ -49,6 +49,8 @@ type frame struct {
 	stack  []diag.Frame
 	more   int
 	cached bool
+	ts     bool                     // a translated fn's frame in a TS-mode vector (CONFORMANCE.md §4)
+	reads  map[syntax.Expr]selfRead // its paths of self, read on entry in TS mode
 }
 
 // under links f below caller, counting its user frames; it returns f.
@@ -151,10 +153,12 @@ func (r *run) budgetOut(at source.Span) {
 			heavy = c
 		}
 	}
-	b := diag.E4401.At(at, e.budget, r.qualified(heavy.pkg, heavy.name), e.spent[heavy])
-	if bag := e.bagOf(r.fr.pkg); bag != nil {
-		r.withStack(b).Report(bag)
+	if e.vec != nil {
+		e.cut(StepLimit)
+		return
 	}
+	b := diag.E4401.At(at, e.budget, r.qualified(heavy.pkg, heavy.name), e.spent[heavy])
+	e.report(r.fr.pkg, r.withStack(b))
 }
 
 // fail reports a hard error with the root's call stack and aborts the root.
@@ -168,7 +172,7 @@ func (r *run) abort(b *diag.Builder) {
 		return
 	}
 	r.failed = true
-	if !r.tainted || r.sink != nil {
+	if !r.tainted || r.sink != nil || r.ev.vec != nil {
 		r.emit(b)
 	}
 }
@@ -185,9 +189,7 @@ func (r *run) emit(b *diag.Builder) {
 		b.Report(r.sink)
 		return
 	}
-	if bag := r.ev.bagOf(r.fr.pkg); bag != nil {
-		b.Report(bag)
-	}
+	r.ev.report(r.fr.pkg, b)
 }
 
 // soft reports a soft finding about v and marks it invalid (EVALUATION.md §4.3, §7.1).
@@ -217,7 +219,7 @@ func located(v value.Value, fallback source.Span) source.Span {
 
 // read notes a value read; an invalid one taints the root (EVALUATION.md §7.3).
 func (r *run) read(v value.Value) value.Value {
-	if v != nil && r.ev.invalid[v] {
+	if v != nil && r.ev.Invalid(v) {
 		r.tainted = true
 	}
 	return v

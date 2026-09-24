@@ -102,6 +102,10 @@ func (r *run) binop(op syntax.TokenKind, a, b value.Value, n syntax.Node, t type
 		return nil
 	}
 	r.site = r.span(n)
+	if r.fr.ts && overflows(aop, a, b) {
+		r.tsFail()
+		return nil
+	}
 	return r.std(std.Arith(r.host(), aop, a, b, p))
 }
 
