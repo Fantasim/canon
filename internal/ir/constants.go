@@ -201,8 +201,8 @@ var goImportNames = map[string]bool{
 	goMath: true, "regexp": true, "embed": true,
 }
 
-// cppOwnNames are the names generated C++ reserves for itself (CODEGEN.md §3.4).
-var cppOwnNames = map[string]bool{"detail": true, "conformance": true, "canon": true, "std": true, "nlohmann": true}
+// cppOwnNames are the namespaces generated C++ declares itself, beside check's (CODEGEN.md §3.4).
+var cppOwnNames = map[string]bool{"detail": true, "conformance": true}
 
 // The fixed Go names of generated code, which the name plan declares and gen/go's templates write (CODEGEN.md §5.2–§5.9, §6.2).
 const (

@@ -1,0 +1,196 @@
+package cppgen
+
+import (
+	"fmt"
+
+	"github.com/fantasim/canonlang/internal/ir"
+	"github.com/fantasim/canonlang/internal/types"
+)
+
+// intType is a sized integer's fixed-width C++ type (CODEGEN.md §4.1).
+func intType(t ir.TypeRef) string {
+	if t.Signed {
+		return fmt.Sprintf(signedIntFormat, t.Bits)
+	}
+	return fmt.Sprintf(unsignedIntFormat, t.Bits)
+}
+
+func floatType(t ir.TypeRef) string {
+	if t.Bits == float32Bits {
+		return cppFloat
+	}
+	return cppDouble
+}
+
+// storage is the C++ type a member holds for t; a ref holds its key (CODEGEN.md §4, §5.8, §7.2).
+func (g *gen) storage(t ir.TypeRef) string {
+	switch t.Kind {
+	case types.Bool:
+		return cppBool
+	case types.Int:
+		return intType(t)
+	case types.Float:
+		return floatType(t)
+	case types.String:
+		return cppString
+	case types.Duration:
+		return cppMillis
+	case types.Enum, types.Record, types.Variant:
+		return g.typeName(t.Named)
+	case types.LitUnion:
+		return g.unionStorage(t)
+	case types.List:
+		return g.listStorage(t)
+	case types.Ref:
+		return g.refStorage(t)
+	case types.Map:
+		return g.mapStorage(t)
+	default:
+		g.unsupported(kindText(t.Kind), g.at)
+		return cppInvalid
+	}
+}
+
+// mapStorage is canon::FlatMap of the key's and the value's storage (CODEGEN.md §4.2).
+func (g *gen) mapStorage(t ir.TypeRef) string {
+	if t.Key == nil || t.Elem == nil {
+		g.fail(fmt.Errorf("%w: map without its key or value type at %s", ErrMalformed, g.at))
+		return cppInvalid
+	}
+	return fmt.Sprintf(flatMapFormat, g.storage(*t.Key), g.storage(*t.Elem))
+}
+
+func (g *gen) unionStorage(t ir.TypeRef) string {
+	if t.Elem == nil || t.Elem.Kind != types.String && t.Elem.Kind != types.Enum {
+		g.unsupported(unionNonString, g.at)
+	}
+	return cppString
+}
+
+// listStorage is std::vector, or canon::KeyedList for a keyed list (CODEGEN.md §4.2).
+func (g *gen) listStorage(t ir.TypeRef) string {
+	if t.Elem == nil {
+		g.fail(fmt.Errorf("%w: list without an element type at %s", ErrMalformed, g.at))
+		return cppInvalid
+	}
+	if t.Elem.Kind == types.Optional {
+		g.unsupported(optionalElems, g.at)
+	}
+	elem := g.storage(*t.Elem)
+	if t.KeyedBy == nil {
+		return fmt.Sprintf(vectorFormat, elem)
+	}
+	key := g.keyField(t)
+	if key == nil {
+		return cppInvalid
+	}
+	return fmt.Sprintf(keyedListFormat, g.storage(key.Type), elem)
+}
+
+// refStorage is a ref's key (CODEGEN.md §5.8); a define table's value getter is not emitted yet.
+func (g *gen) refStorage(t ir.TypeRef) string {
+	if t.Ref != nil && t.Ref.Coll == types.CollDefines {
+		g.unsupported(defineRefs, g.at)
+	}
+	if t.Key == nil {
+		g.fail(fmt.Errorf("%w: ref without a key type at %s", ErrMalformed, g.at))
+		return cppInvalid
+	}
+	return g.storage(*t.Key)
+}
+
+// byValue reports a type whose getter returns a copy: scalars, enums, a ref to one (§5.4, §5.8).
+func byValue(t ir.TypeRef) bool {
+	switch t.Kind {
+	case types.Bool, types.Int, types.Float, types.Duration, types.Enum:
+		return true
+	case types.Ref:
+		return t.Key != nil && byValue(*t.Key)
+	default:
+		return false
+	}
+}
+
+// getterType is what a getter of t returns (CODEGEN.md §4.1–§4.3).
+func (g *gen) getterType(t ir.TypeRef, optional bool) string {
+	s := g.storage(t)
+	switch {
+	case byValue(t) && optional:
+		return fmt.Sprintf(optionalFormat, s)
+	case byValue(t):
+		return s
+	case optional:
+		return fmt.Sprintf(constPtrFormat, s)
+	}
+	return fmt.Sprintf(constRefFormat, s)
+}
+
+// memberType is the storage of a field, std::optional for `T?` (CODEGEN.md §7.2).
+func (g *gen) memberType(t ir.TypeRef, optional bool) string {
+	if optional {
+		return fmt.Sprintf(optionalFormat, g.storage(t))
+	}
+	return g.storage(t)
+}
+
+// memberInit initializes a scalar member (CODEGEN.md §7.2: members are initialized).
+func memberInit(t ir.TypeRef, optional bool) string {
+	switch {
+	case optional:
+		return ""
+	case t.Kind == types.Bool:
+		return initFalse
+	case t.Kind == types.Int:
+		return initZero
+	case t.Kind == types.Float && t.Bits == float32Bits:
+		return initZeroF
+	case t.Kind == types.Float:
+		return initZeroD
+	case t.Kind == types.Duration:
+		return initBraceZero
+	case t.Kind == types.Enum:
+		return initBraces
+	case t.Kind == types.Ref && t.Key != nil:
+		return memberInit(*t.Key, false)
+	}
+	return ""
+}
+
+// caseName is a case's class, T + UpperCamel(c), or its @cpp(name:) (CODEGEN.md §3.3, §3.5).
+func (g *gen) caseName(v *ir.Variant, c *ir.Case) string {
+	if c.Cpp.Name != "" {
+		return g.qualifier(v.Pkg) + c.Cpp.Name
+	}
+	return g.typeName(v) + upperCamel(c.Name)
+}
+
+// caseAccessor is As + UpperCamel(c), or As + its @cpp(name:) (CODEGEN.md §3.5).
+func caseAccessor(c *ir.Case) string {
+	return asPrefix + override(ir.NameOptions{Name: c.Cpp.Name}, upperCamel(c.Name))
+}
+
+func (g *gen) kindName(v *ir.Variant) string { return g.typeName(v) + kindSuffix }
+
+// keyField is the key field of a keyed list's element record.
+func (g *gen) keyField(t ir.TypeRef) *ir.Field {
+	rec, ok := t.Elem.Named.(*ir.Record)
+	if !ok {
+		g.fail(fmt.Errorf("%w: keyed list of a non-record at %s", ErrMalformed, g.at))
+		return nil
+	}
+	for _, f := range rec.Fields {
+		if f.Name == t.KeyedBy.Name {
+			return f
+		}
+	}
+	g.fail(fmt.Errorf("%w: no key field %s in %s", ErrMalformed, t.KeyedBy.Name, rec.Name))
+	return nil
+}
+
+// kindText names a kind in messages.
+func kindText(k types.Kind) string {
+	if int(k) < len(kindNames) && kindNames[k] != "" {
+		return kindNames[k]
+	}
+	return fmt.Sprintf(kindNumberFormat, k)
+}

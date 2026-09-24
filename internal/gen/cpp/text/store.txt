@@ -1,0 +1,18 @@
+/// The current snapshot of package %[1]s.
+///   auto snap = %[2]s::Current();   // hold it for one tick or request
+///   %[2]s::Reload(dir, error);      // the old snapshot lives while someone holds it
+/// Current() is nullptr until the first successful Reload.
+class %[2]s {
+public:
+    static std::shared_ptr<const %[3]s> Current() { return current_.Load(); }
+
+    /// Loads a new snapshot from `dir` and swaps it in. On failure the current
+    /// snapshot stays, `error` is set and the result is false.
+    static bool Reload(const std::string& dir, std::string& error);
+
+private:
+    friend struct detail::%[4]s;
+
+    static inline canon::AtomicSharedPtr<const %[3]s> current_;
+};
+

@@ -1,0 +1,10 @@
+CODEGEN.md §2.1; meta/decisions/log-2026-09-24.md (gen/cpp round 3): a namespace segment generated C++ uses.
+-- a/a.canon --
+package a
+
+emit cpp { out: "@source/a", namespace: "sov::nlohmann" }
+-- findings.txt --
+error[E8009]  a/a.canon:3:41
+  invalid namespace "sov::nlohmann" for emit cpp: expected ident{::ident} with no C++ keyword
+
+1 error, 0 warnings in 1 package (…)

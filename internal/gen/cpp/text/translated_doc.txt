@@ -1,0 +1,2 @@
+// Translated from %s (%s.%s). The method and the
+// conformance test both call it, so the test checks the code that runs.

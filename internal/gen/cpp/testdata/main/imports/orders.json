@@ -1,0 +1,7 @@
+{
+  "$schema": "demo.app.Order@00000001",
+  "rows": [
+    {"id": "o1", "color": "blue", "at": {"x": 3}, "trail": [{"x": 1}, {"x": 2}], "kind": "solid", "tint": "green", "alt": null, "$hue": {"red": 1, "green": 2, "blue": 3}},
+    {"id": "o2", "color": "red", "at": {"x": -1}, "trail": [], "kind": "clear", "alt": {"x": 9}, "$hue": {"red": 4, "green": 5, "blue": 6}}
+  ]
+}

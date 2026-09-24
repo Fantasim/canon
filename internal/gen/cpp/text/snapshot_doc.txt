@@ -1,0 +1,2 @@
+/// Every @reload value of package %s, loaded together and never modified.
+/// A reload builds a new snapshot; readers keep the one they hold.

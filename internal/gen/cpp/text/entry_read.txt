@@ -1,0 +1,4 @@
+            dec.String((*rows)[i], "$id", values[i].id_);
+            if (const nlohmann::json* retired = dec.Optional((*rows)[i], "$retired")) {
+                dec.AsBool(*retired, "$retired", values[i].retired_);
+            }

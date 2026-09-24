@@ -1,0 +1,4 @@
+    canon::SetEvalErrorHandler(previous);
+    return failures;
+}
+

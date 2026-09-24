@@ -1,0 +1,6 @@
+        const nlohmann::json* rows = dec.Array(doc, "rows");
+        if (rows == nullptr) return error = dec.Error(), false;
+        std::vector<%s> values(rows->size());
+        std::vector<%s> keys(rows->size());
+        for (size_t i = 0; i < rows->size(); ++i) {
+            dec.Push("rows[" + std::to_string(i) + "]");

@@ -1,0 +1,3 @@
+    /// Reads %s from `dir`. Returns nullptr and sets `error` if a file is
+    /// missing, is not JSON, or was built from another schema. Values are not
+    /// validated here: `canon build` already did, and filled every default.

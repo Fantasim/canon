@@ -1,0 +1,4 @@
+std::shared_ptr<const %[1]s> %[1]s::Load(const std::string& dir, std::string& error) {
+    return detail::%[2]s::LoadSnapshot(dir, error);
+}
+

@@ -102,10 +102,13 @@ func IsGoKeyword(s string) bool { return goKeywords[s] }
 // IsCppKeyword reports a C++20 keyword or alternative token, which a namespace may not use and a generated verbatim name escapes (CODEGEN.md §2.1, §3.4).
 func IsCppKeyword(s string) bool { return cppKeywords[s] }
 
-// cppNamespace reports `ident{::ident}` with no C++ keyword.
+// IsCppNamespace reports canon, std or nlohmann: a namespace generated C++ names (CODEGEN.md §3.4).
+func IsCppNamespace(s string) bool { return cppNamespaces[s] }
+
+// cppNamespace reports `ident{::ident}` with no C++ keyword and no namespace generated C++ names.
 func cppNamespace(s string) bool {
 	for part := range strings.SplitSeq(s, cppScope) {
-		if !identRe.MatchString(part) || cppKeywords[part] {
+		if !identRe.MatchString(part) || cppKeywords[part] || cppNamespaces[part] {
 			return false
 		}
 	}

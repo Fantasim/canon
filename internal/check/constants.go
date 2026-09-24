@@ -449,6 +449,9 @@ var goKeywords = map[string]bool{
 	"var": true,
 }
 
+// cppNamespaces are namespaces generated C++ names, closed to an emit's (log-2026-09-24, round 3).
+var cppNamespaces = map[string]bool{"canon": true, "std": true, "nlohmann": true}
+
 // cppKeywords are C++20's keywords and alternative tokens, which a namespace may not use.
 var cppKeywords = map[string]bool{
 	"alignas": true, "alignof": true, "and": true, "and_eq": true, "asm": true, "auto": true,

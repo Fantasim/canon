@@ -1,0 +1,8 @@
+namespace {
+
+std::string_view g_code;  // first evaluation error of the current call, empty if none
+
+void Capture(std::string_view code, std::string_view /*message*/) {
+    if (g_code.empty()) g_code = code;
+}
+

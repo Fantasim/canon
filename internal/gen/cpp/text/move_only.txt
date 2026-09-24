@@ -1,0 +1,6 @@
+    %[1]s() = default;
+    %[1]s(const %[1]s&) = delete;
+    %[1]s& operator=(const %[1]s&) = delete;
+    %[1]s(%[1]s&&) = default;
+    %[1]s& operator=(%[1]s&&) = default;
+

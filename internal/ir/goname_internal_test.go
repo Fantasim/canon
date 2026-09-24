@@ -10,8 +10,8 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// TestGoWords is CODEGEN.md §3.1: the word split, with the document's examples (decision 120).
-func TestGoWords(t *testing.T) {
+// TestWords is CODEGEN.md §3.1: the word split, with the document's examples (decision 120).
+func TestWords(t *testing.T) {
 	cases := []struct {
 		in   string
 		want []string
@@ -28,8 +28,8 @@ func TestGoWords(t *testing.T) {
 		{"_", nil},
 	}
 	for _, c := range cases {
-		if got := goWords(c.in); !slices.Equal(got, c.want) {
-			t.Errorf("goWords(%q) = %q, want %q", c.in, got, c.want)
+		if got := Words(c.in); !slices.Equal(got, c.want) {
+			t.Errorf("Words(%q) = %q, want %q", c.in, got, c.want)
 		}
 	}
 }
@@ -178,7 +178,7 @@ func TestReservedSets(t *testing.T) {
 		}
 	}
 	for _, w := range []string{"class", "xor_eq", "detail", "nlohmann"} {
-		if !cppReserved(w) {
+		if !CppReserved(w) {
 			t.Errorf("%q must be reserved in a C++ verbatim position", w)
 		}
 	}

@@ -11,7 +11,7 @@ import (
 // goUpperCamel is Go's UpperCamel(x) (CODEGEN.md §3.2): GoCap of every word.
 func goUpperCamel(name string) string {
 	var b strings.Builder
-	for _, w := range goWords(name) {
+	for _, w := range Words(name) {
 		b.WriteString(goCap(w))
 	}
 	return b.String()
@@ -19,7 +19,7 @@ func goUpperCamel(name string) string {
 
 // goLowerCamel is Go's lowerCamel(x) (CODEGEN.md §3.2): the first word lower case, then goUpperCamel of the rest.
 func goLowerCamel(name string) string {
-	ws := goWords(name)
+	ws := Words(name)
 	if len(ws) == 0 {
 		return ""
 	}
@@ -86,18 +86,20 @@ func goTypeName(n NameOptions, canon string) string {
 func goValidOverride(name string) bool { return token.IsIdentifier(name) && token.IsExported(name) }
 
 // cppValidIdent reports whether name can be declared in C++: a plain identifier that is not a keyword, an alternative token or a name generated code reserves (CODEGEN.md §3.5, E8011).
-func cppValidIdent(name string) bool { return identPattern.MatchString(name) && !cppReserved(name) }
+func cppValidIdent(name string) bool { return identPattern.MatchString(name) && !CppReserved(name) }
 
 // goReserved reports what a Go lower-case position escapes: a Go keyword, a predeclared identifier, a package a generated file imports, or `self` (CODEGEN.md §3.4).
 func goReserved(name string) bool {
 	return check.IsGoKeyword(name) || goPredeclared[name] || goImportNames[name] || name == goSelf
 }
 
-// cppReserved reports what a C++ verbatim position escapes: a C++20 keyword or alternative token, or a name generated code reserves for itself (CODEGEN.md §3.4).
-func cppReserved(name string) bool { return check.IsCppKeyword(name) || cppOwnNames[name] }
+// CppReserved reports what a C++ verbatim position escapes: a C++20 keyword or alternative token, or a name generated code reserves for itself (CODEGEN.md §3.4).
+func CppReserved(name string) bool {
+	return check.IsCppKeyword(name) || check.IsCppNamespace(name) || cppOwnNames[name]
+}
 
-// goWords splits a Canon identifier into words, CODEGEN.md §3.1 (every target splits the same way).
-func goWords(name string) []string {
+// Words splits a Canon identifier into words, CODEGEN.md §3.1 (every target splits the same way).
+func Words(name string) []string {
 	var out []string
 	for piece := range strings.SplitSeq(name, underscore) {
 		start := 0

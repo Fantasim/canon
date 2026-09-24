@@ -1,0 +1,4 @@
+            Decode((*rows)[i], dec, values[i]);
+            dec.Pop();
+            if (!dec.Ok()) return error = dec.Error(), false;
+            keys[i] = values[i].%s;

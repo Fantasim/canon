@@ -1,0 +1,2 @@
+/// Fingerprint of the schema of %s (types, wire names, units), not of
+/// its values. The loader refuses a file built from another schema.
