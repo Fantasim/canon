@@ -1786,6 +1786,17 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      the declarations that call it. Reason: a broken check reached the evaluator as an internal
      error (demo of 2026-09-24); skipping only that check would widen the frozen `check.Info`.
 
+210. **Implicit frames: field defaults and `where` runs (amends 195, 197; EVALUATION.md §3.3).**
+     Evaluating a field default and running a `where` predicate (the stage-B root included) each
+     open one implicit frame that counts toward E4402's 10 000 limit, so no input reaches the host
+     stack (195). Implicit frames are never listed in `Stack` and are not counted by `(n more
+     frames)` (197's count is the listed kind); they cost no step (§12.1 already charges their
+     nodes). An E4402 met on entering an implicit frame is reported at the default expression or
+     at the predicate: the frame has no call syntax, and that is its only source text. A fold
+     (TYPES.md §15) is constant-only: it reads no let (a key dereference reads one), calls no user
+     fn or method and runs no `load`; one that does stops without a finding (150's E3015).
+     Reason: three valid programs overflowed the host stack (overnight run, A3 eval).
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.
