@@ -58,7 +58,7 @@ func pipeline() *ir.Package {
 				"The generated getter just returns it, in every language.",
 		},
 		{
-			Name: "healFor", Kind: ir.FnTranslated, Result: tInt,
+			Name: "healFor", File: "potion.canon", Kind: ir.FnTranslated, Result: tInt,
 			Doc: "Needs a runtime input (the player's missing HP), so the body is translated into\n" +
 				"each target. Only the portable subset is allowed, and `canon build` emits a\n" +
 				"conformance test per target so the translations cannot drift.",

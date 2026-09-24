@@ -1,0 +1,10 @@
+void jsonIntBool(const nlohmann::json& x, canon::json::Decoder& dec, std::string_view key, bool& out) {
+    int64_t n = 0;
+    if (!dec.AsInt(x, key, n)) return;
+    if (n == 0 || n == 1) {
+        out = n == 1;
+    } else {
+        dec.Fail(key, "expected 0 or 1, not " + std::to_string(n));
+    }
+}
+

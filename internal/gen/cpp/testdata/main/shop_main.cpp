@@ -78,6 +78,8 @@ void CheckItems(const Items& items) {
     Check(sword->BestKey() == "anvil" && &sword->Best() == anvil && &items.At(2).Best() == sword, "a precomputed ref");
     Check(sword->PairFor(Tone::warning) == &items.At(2) && sword->PairFor(Tone::info) == nullptr &&
               *items.At(2).PairForKey(Tone::info) == "sword", "a lookup ref");
+    Check(sword->Kin(true).size() == 2 && sword->Kin(true)[1] == anvil && sword->Kin(false).empty() &&
+              anvil->Kin(false)[0] == sword && sword->KinKeys(true)[0] == "air", "a lookup of a list of refs");
     Check(sword->BonusOr(7) == 7 && anvil->BonusOr(7) == -2, "?? on an optional field");
     Check(sword->OriginX(1) == -3 && anvil->OriginX(1) == 1, "?? through an optional record");
     Check(sword->NoteOr("x") == "x" && anvil->NoteOr("x") == "heavy", "?? on an optional String");

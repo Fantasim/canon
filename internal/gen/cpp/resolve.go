@@ -16,6 +16,7 @@ type slot struct {
 	optional bool
 	list     bool
 	cells    int
+	paths    []string // with cells, each cell's key path in load errors (cellPaths)
 }
 
 // target is the ref's element type: t itself, or a list's element.

@@ -66,6 +66,7 @@ func (g *gen) loader(v *ir.Value, resolve bool) {
 	}
 	g.c.printf(rowsOpenText, s.elem, s.key)
 	if rec, ok := v.Type.Elem.Named.(*ir.Record); ok && g.entries[rec] {
+		g.use(&jsonRowText)
 		g.c.write(entryReadText)
 	}
 	g.c.printf(rowDecodeText, key)

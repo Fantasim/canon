@@ -1,0 +1,12 @@
+void jsonRow(const nlohmann::json& row, canon::json::Decoder& dec, std::string& id, bool& retired) {
+    if (!jsonObject(row, dec)) return;
+    if (const nlohmann::json* x = jsonCell(row, dec, "$id", false)) dec.AsString(*x, "$id", id);
+    const auto it = row.find("$retired");
+    if (it == row.end()) return;
+    if (it->is_boolean() && it->get<bool>()) {
+        retired = true;
+    } else {
+        dec.Fail("$retired", "not true");
+    }
+}
+

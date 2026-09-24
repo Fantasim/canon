@@ -9,7 +9,10 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-const shopPkg = "demo.shop"
+const (
+	shopPkg  = "demo.shop"
+	shopFile = "shop.canon"
+)
 
 // The codes a vector expects (CONFORMANCE.md §3), built so no code literal sits in the source.
 var (
@@ -167,7 +170,7 @@ func caseTotal() *ir.ExportFn {
 		return vec([]value.Value{num(count)}, []value.Value{num(times)}, num(want), code)
 	}
 	return &ir.ExportFn{
-		Name: "total", Kind: ir.FnTranslated, Result: tInt, Body: body,
+		Name: "total", File: shopFile, Kind: ir.FnTranslated, Result: tInt, Body: body,
 		Params:  []*ir.Param{{Name: "times", Type: tInt}},
 		Reads:   []*ir.Read{{Name: "count", Path: []string{"count"}, Type: tInt32}},
 		Vectors: []*ir.Vector{v(3, 4, 12, ""), v(3, math.MaxInt64, 0, codeOverflow), v(-2, 5, -10, "")},
@@ -219,7 +222,7 @@ func (s *shop) fields() {
 		field("label", "label", "", tString), next, field("kids", "kids", "", listOf(s.t(s.node, types.Record))),
 	}, s.nodeRefs()...)
 	s.node.Methods = []*ir.ExportFn{{
-		Name: "nextLabel", Kind: ir.FnTranslated, Result: tString,
+		Name: "nextLabel", File: shopFile, Kind: ir.FnTranslated, Result: tString,
 		Params: []*ir.Param{{Name: "s", Type: tString}},
 		Reads:  []*ir.Read{{Name: "next_label", Path: []string{"next", "label"}, Type: tString, Optional: true}},
 		Body:   &ir.Coalesce{T: tString, X: &ir.ReadRef{T: tString, Index: 0}, Y: &ir.ParamRef{T: tString, Index: 0}},
@@ -234,7 +237,7 @@ func (s *shop) fields() {
 func itemMethods(s *shop) []*ir.ExportFn {
 	nick := tString
 	discounted := &ir.ExportFn{
-		Name: "discounted", Kind: ir.FnTranslated, Result: tInt, Doc: "The price code after a discount.",
+		Name: "discounted", File: shopFile, Kind: ir.FnTranslated, Result: tInt, Doc: "The price code after a discount.",
 		Params: []*ir.Param{{Name: "pct", Type: tInt, Range: &types.Bound{Lo: types.Limit{I: 0}, Hi: types.Limit{I: 100}, HasLo: true, HasHi: true, HiIncluded: true}}},
 		Reads:  []*ir.Read{{Name: "code", Path: []string{"code"}, Type: tUInt16}},
 		Body: &ir.Binary{T: tInt, Op: ir.OpDiv, Y: lit(tInt, num(100)), X: &ir.Binary{
@@ -249,7 +252,7 @@ func itemMethods(s *shop) []*ir.ExportFn {
 	discounted.Vectors = []*ir.Vector{d(200, 10, 180, ""), d(200, 0, 200, ""), d(200, 101, 0, codeRange), d(200, -1, 0, codeRange)}
 	reward := s.t(s.reward, types.Variant)
 	worth := &ir.ExportFn{
-		Name: "worth", Kind: ir.FnTranslated, Result: tInt,
+		Name: "worth", File: shopFile, Kind: ir.FnTranslated, Result: tInt,
 		Params: []*ir.Param{{Name: "times", Type: tInt}},
 		Reads:  []*ir.Read{{Name: "reward", Path: []string{"reward"}, Type: reward}},
 		Body: &ir.If{
@@ -287,6 +290,7 @@ func lookupMethods(s *shop) []*ir.ExportFn {
 			Name: "pairFor", Kind: ir.FnLookup, Result: ir.TypeRef{Kind: types.Optional, Elem: &itemRef},
 			Params: []*ir.Param{{Name: "tone", Type: s.t(s.tone, types.Enum)}},
 		},
+		{Name: "kin", Kind: ir.FnLookup, Result: related, Params: []*ir.Param{{Name: "loud", Type: tBool}}},
 	}
 }
 
@@ -307,17 +311,17 @@ func coalesceMethods() []*ir.ExportFn {
 	}
 	return []*ir.ExportFn{
 		{
-			Name: "bonusOr", Kind: ir.FnTranslated, Result: tInt, Body: coalesce(tInt, tInt),
+			Name: "bonusOr", File: shopFile, Kind: ir.FnTranslated, Result: tInt, Body: coalesce(tInt, tInt),
 			Params: []*ir.Param{{Name: "d", Type: tInt}}, Reads: read("bonus", tInt, "bonus"),
 			Vectors: pairs(num(7), num(5)),
 		},
 		{
-			Name: "originX", Kind: ir.FnTranslated, Result: tInt, Body: coalesce(tInt16, tInt),
+			Name: "originX", File: shopFile, Kind: ir.FnTranslated, Result: tInt, Body: coalesce(tInt16, tInt),
 			Params: []*ir.Param{{Name: "d", Type: tInt}}, Reads: read("origin_x", tInt16, "origin", "x"),
 			Vectors: pairs(num(1), num(-3)),
 		},
 		{
-			Name: "noteOr", Kind: ir.FnTranslated, Result: tString, Body: coalesce(tString, tString),
+			Name: "noteOr", File: shopFile, Kind: ir.FnTranslated, Result: tString, Body: coalesce(tString, tString),
 			Params: []*ir.Param{{Name: "s", Type: tString}}, Reads: read("note", tString, "note"),
 			Vectors: pairs(str("x"), str("heavy")),
 		},

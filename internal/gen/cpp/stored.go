@@ -46,7 +46,7 @@ func (g *gen) storedGetter(sc *scope, c class, name string, fn *ir.ExportFn, dom
 		if list {
 			keyName = name + keysSuffix
 		}
-		s := slot{member: m, wire: dollar + fn.Name, t: t, optional: optional, list: list, cells: cellCount(doms)}
+		s := slot{member: m, wire: dollar + fn.Name, t: t, optional: optional, list: list, cells: cellCount(doms), paths: cellPaths(fn.Name, doms)}
 		if target := g.resolvedTarget(s.target(), c); target != nil {
 			g.doc(1, doc)
 			doc = ""

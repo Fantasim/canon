@@ -330,20 +330,20 @@ bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Node& out);
 bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Badge& out);
 bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, BadgeStar& out);
 
-// Translated from demo/shop/ (Reward.item.total). The method and the
+// Translated from demo/shop/shop.canon (Reward.item.total). The method and the
 // conformance test both call it, so the test checks the code that runs.
 inline int64_t RewardItem_total(int64_t count, int64_t times) {
     return canon::MulInt(count, times);
 }
 
-// Translated from demo/shop/ (Item.discounted). The method and the
+// Translated from demo/shop/shop.canon (Item.discounted). The method and the
 // conformance test both call it, so the test checks the code that runs.
 inline int64_t Item_discounted(int64_t code, int64_t pct) {
     pct = canon::CheckIntRange(pct, 0, 100);
     return canon::DivInt(canon::MulInt(code, canon::SubInt(100, pct)), 100);
 }
 
-// Translated from demo/shop/ (Item.worth). The method and the
+// Translated from demo/shop/shop.canon (Item.worth). The method and the
 // conformance test both call it, so the test checks the code that runs.
 inline int64_t Item_worth(RewardKind reward, int64_t times) {
     if (reward == RewardKind::Coins) {
@@ -352,25 +352,25 @@ inline int64_t Item_worth(RewardKind reward, int64_t times) {
     return 0;
 }
 
-// Translated from demo/shop/ (Item.bonusOr). The method and the
+// Translated from demo/shop/shop.canon (Item.bonusOr). The method and the
 // conformance test both call it, so the test checks the code that runs.
 inline int64_t Item_bonusOr(std::optional<int64_t> bonus, int64_t d) {
     return bonus ? (*bonus) : d;
 }
 
-// Translated from demo/shop/ (Item.originX). The method and the
+// Translated from demo/shop/shop.canon (Item.originX). The method and the
 // conformance test both call it, so the test checks the code that runs.
 inline int64_t Item_originX(std::optional<int64_t> origin_x, int64_t d) {
     return origin_x ? (*origin_x) : d;
 }
 
-// Translated from demo/shop/ (Item.noteOr). The method and the
+// Translated from demo/shop/shop.canon (Item.noteOr). The method and the
 // conformance test both call it, so the test checks the code that runs.
 inline std::string Item_noteOr(std::optional<std::string_view> note, std::string_view s) {
     return note ? std::string(*note) : std::string(s);
 }
 
-// Translated from demo/shop/ (Node.nextLabel). The method and the
+// Translated from demo/shop/shop.canon (Node.nextLabel). The method and the
 // conformance test both call it, so the test checks the code that runs.
 inline std::string Node_nextLabel(std::optional<std::string_view> next_label, std::string_view s) {
     return next_label ? std::string(*next_label) : std::string(s);
@@ -504,6 +504,15 @@ public:
         return pairFor_[i0] ? &*pairFor_[i0] : nullptr;
     }
 
+    const std::vector<const Item*>& Kin(bool loud) const {
+        const size_t i0 = static_cast<size_t>(loud);
+        return kin_ref_[i0];
+    }
+    const std::vector<std::string>& KinKeys(bool loud) const {
+        const size_t i0 = static_cast<size_t>(loud);
+        return kin_[i0];
+    }
+
     int64_t BonusOr(int64_t d) const { return detail::Item_bonusOr([&]() -> std::optional<int64_t> { const auto& s0 = bonus_; if (!s0) return std::nullopt; return (*s0); }(), d); }
 
     int64_t OriginX(int64_t d) const { return detail::Item_originX([&]() -> std::optional<int64_t> { const auto& s0 = origin_; if (!s0) return std::nullopt; return s0->GetX(); }(), d); }
@@ -542,6 +551,8 @@ private:
     std::optional<std::vector<const Item*>> related_ref_;
     std::array<std::optional<std::string>, 4> pairFor_{};
     std::array<const Item*, 4> pairFor_ref_{};
+    std::array<std::vector<std::string>, 2> kin_{};
+    std::array<std::vector<const Item*>, 2> kin_ref_{};
 };
 
 class Bonus {

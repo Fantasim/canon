@@ -76,12 +76,20 @@ func refusals() []struct {
 		{"methods of a fieldless case", func(p *ir.Package, _ *ir.Emit) { fieldlessMethods(p) }, cppgen.ErrUnsupported},
 		{"a resolvable ref in a record two values hold", func(p *ir.Package, _ *ir.Emit) { severalHolders(p) }, cppgen.ErrUnsupported},
 		{"a pairs record of another package", func(p *ir.Package, _ *ir.Emit) { foreignPairs(p) }, cppgen.ErrUnsupported},
+		{"an inline case key equal to a parent key but for case", func(p *ir.Package, _ *ir.Emit) { inlineFold(p, "k", "A") }, cppgen.ErrUnsupported},
+		{"an inline tag equal to a parent key but for case", func(p *ir.Package, _ *ir.Emit) { inlineFold(p, "A", "c") }, cppgen.ErrUnsupported},
 		{"a json emit", func(_ *ir.Package, e *ir.Emit) { e.Target = ir.TargetJSON }, cppgen.ErrTarget},
 		{"no namespace (§2.1)", func(_ *ir.Package, e *ir.Emit) { e.Namespace = "" }, cppgen.ErrMalformed},
 		{"a list without its element", withField(field("l", "l", "", ir.TypeRef{Kind: types.List})), cppgen.ErrMalformed},
 		{"a ref without its key", withField(field("r", "r", "", ir.TypeRef{Kind: types.Ref})), cppgen.ErrMalformed},
 		{"a record kind without its record", withField(field("r", "r", "", ir.TypeRef{Kind: types.Record})), cppgen.ErrMalformed},
 		{"a nil field", withField(nil), cppgen.ErrMalformed},
+		{"a translated method without its file (T3)", func(p *ir.Package, _ *ir.Emit) {
+			fn := translated("f")
+			fn.File = ""
+			thing(p).Methods = append(thing(p).Methods, fn)
+		}, cppgen.ErrMalformed},
+		{"bits over a negative code", func(p *ir.Package, _ *ir.Emit) { negativeBits(p) }, cppgen.ErrMalformed},
 		{"a keyed list without its key field", func(p *ir.Package, _ *ir.Emit) {
 			withValues(p, false, "things")
 			p.Values[0].Type.KeyedBy.Name = "nope"
@@ -91,6 +99,9 @@ func refusals() []struct {
 		{"a field ending in _ (§3.4, §7.2)", withField(field("a_", "b", "", tInt)), cppgen.ErrName},
 		{"FindBy names that collide (§3.5)", func(p *ir.Package, _ *ir.Emit) { stableCollision(p) }, cppgen.ErrNameCollision},
 		{"fields named alike (§3.5)", withField(field("A", "c", "", tInt)), cppgen.ErrNameCollision},
+		{"a constant named like a loader helper (§3.5)", func(p *ir.Package, _ *ir.Emit) {
+			p.Consts = []*ir.Const{{Name: "jsonKeys", Type: tInt, V: num(1)}}
+		}, cppgen.ErrNameCollision},
 	}
 }
 
@@ -109,7 +120,7 @@ func TestRefusals(t *testing.T) {
 
 func translated(name string, reads ...*ir.Read) *ir.ExportFn {
 	return &ir.ExportFn{
-		Name: name, Kind: ir.FnTranslated, Result: tInt, Reads: reads,
+		Name: name, File: "thing.canon", Kind: ir.FnTranslated, Result: tInt, Reads: reads,
 		Params: []*ir.Param{{Name: "n", Type: tInt}}, Body: &ir.ParamRef{T: tInt, Index: 0},
 		Vectors: []*ir.Vector{vec(make([]value.Value, len(reads)), []value.Value{num(1)}, num(1), "")},
 	}
@@ -166,4 +177,21 @@ func stableCollision(p *ir.Package) {
 	a.Cpp.Name, b.Cpp.Name = "GetOne", "GetTwo"
 	thing(p).Fields = append(thing(p).Fields, a, b)
 	withValues(p, false, "things")
+}
+
+// inlineFold: Thing, keyed "a", holds inline a variant tagged tag whose case has a key key (WIRE.md §5.6).
+func inlineFold(p *ir.Package, tag, key string) {
+	v := &ir.Variant{Pkg: "demo", Name: "V", Tag: tag, Cases: []*ir.Case{{Name: "c", Wire: "c", Fields: []*ir.Field{field("x", key, "", tInt)}}}}
+	p.Types = append(p.Types, v)
+	thing(p).Fields = append(thing(p).Fields, &ir.Field{Name: "v", Type: ir.TypeRef{Kind: types.Variant, Named: v}, Inline: true})
+}
+
+// negativeBits is a bits field over a @codes enum with a negative code: no bit holds it (WIRE.md §5.3).
+func negativeBits(p *ir.Package) {
+	codes := tInt
+	e := &ir.Enum{Pkg: "demo", Name: "F", Codes: &codes, Members: []*ir.EnumMember{{Name: "a", Wire: "a", Code: -1}}}
+	p.Types = append(p.Types, e)
+	f := field("fs", "fs", "", listOf(ir.TypeRef{Kind: types.Enum, Named: e}))
+	f.Enc = types.EncBits
+	thing(p).Fields = append(thing(p).Fields, f)
 }

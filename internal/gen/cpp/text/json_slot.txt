@@ -1,0 +1,11 @@
+bool jsonSlot(const nlohmann::json& v, canon::json::Decoder& dec, const char* key, const char* value, bool& empty) {
+    const bool hasKey = v.find(key) != v.end(), hasValue = v.find(value) != v.end();
+    if (!hasKey && !hasValue) {
+        empty = true;
+        return false;
+    }
+    if (hasKey != hasValue) dec.Fail(key, "incomplete pairs slot");
+    if (empty) dec.Fail(key, "pairs slot after an empty one");
+    return dec.Ok();
+}
+

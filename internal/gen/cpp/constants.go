@@ -4,7 +4,6 @@ import (
 	"regexp"
 
 	"github.com/fantasim/canonlang/internal/ir"
-	"github.com/fantasim/canonlang/internal/types"
 )
 
 // Output files, first lines, namespaces, forward declarations (CODEGEN.md §2.3–§2.7, §7.1).
@@ -226,11 +225,9 @@ const (
 	asEnum              = "AsEnum"
 	intTempLine         = "int64_t n = 0;"
 	floatTempLine       = "double d = 0.0;"
-	boolIntFormat       = "if (dec.AsInt(%s, %s, n)) %s = n != 0;"
 	narrowIntFormat     = "if (dec.AsInt(%s, %s, n)) %s = static_cast<%s>(n);"
 	narrowFloatFormat   = "if (dec.AsFloat(%s, %s, d)) %s = static_cast<float>(d);"
 	notArrayFormat      = "if (!%s.is_array()) {"
-	failArrayFormat     = "dec.Fail(%s, \"expected an array\");"
 	forFormat           = "for (size_t %s = 0; %s < %s.size(); ++%s) {"
 	localFormat         = "%s %s%s;"
 	indexFormat         = "%s[%s]"
@@ -245,7 +242,6 @@ const (
 	elseIfTagFormat     = "} else if (tag == %s) {"
 	emplaceIndexFormat  = "out.value_.emplace<%d>();"
 	emplaceDecodeFormat = "Decode(v, dec, out.value_.emplace<%d>());"
-	unknownCaseFormat   = "dec.Fail(%s, \"unknown case \" + tag);"
 	markerIntFormat     = "%s->is_number_integer() && %s->get<int64_t>() == %s"
 	markerNumberFormat  = "%s->is_number() && %s->get<double>() == %s"
 	markerStringFormat  = "%s->is_string() && %s->get_ref<const std::string&>() == %s"
@@ -274,7 +270,6 @@ const (
 	rowsMemberFormat         = "canon::KeyedList<%s, %s> rows_;"
 	snapshotSuffix           = "Snapshot"
 	storeSuffix              = "Store"
-	snapshotOrigin           = "the snapshot"
 	snapshotLoadFormat       = "static std::shared_ptr<const %s> Load(const std::string& dir, std::string& error);"
 	structOpenFormat         = "struct %s {\n"
 	loaderOpenFormat         = "static bool Load%s(const std::string& path, %s& out, std::string& error) {"
@@ -339,7 +334,6 @@ const (
 	memcmpFormat            = "std::memcmp(&%s, &%s, sizeof %s) != 0"
 	failTestFormat          = "if (g_code != v.code || (v.code.empty() && %s)) {"
 	failuresIncrement       = "++failures;"
-	failureTextFormat       = "%s: %s(%s) = %s [%%.*s], canon says %s [%%.*s]\n"
 	fprintfOpen             = "std::fprintf("
 	stderrArg               = "stderr"
 	callClose               = ");"
@@ -392,12 +386,11 @@ const (
 	slotLetter         = "i"
 	slotVar            = "s"
 	slotElem           = "e"
-	slotLoopFormat     = "for (size_t s = 0; s < %d && dec.Optional(%s, %s[s]) != nullptr; ++s) {"
-	bitsOpenFormat     = "if (dec.AsInt(%s, %s, n)) {"
+	slotLoopFormat     = "for (size_t s = 0; s < %d; ++s) {"
+	bitsOpenFormat     = "if (jsonBits(%s, dec, %s, %s, n)) {"
 	bitsArrayFormat    = "constexpr %s bits[] = {%s};"
 	bitsLoopFormat     = "for (%s m : bits) {"
-	bitsTestFormat     = "if ((static_cast<uint64_t>(n) & static_cast<uint64_t>(m)) != 0) %s.push_back(m);"
-	foreignPairs       = "a pairs field of a record from another package"
+	bitsTestFormat     = "if ((n & static_cast<uint64_t>(m)) != 0) %s.push_back(m);"
 	showFunc           = "Show"
 	showCallFormat     = "Show(%s).c_str()"
 	vectorRowFormat    = "{%s, %s, %s},"
@@ -447,47 +440,31 @@ var (
 	}
 )
 
-// modeNames and kindNames name a mode and a kind in messages.
-var (
-	modeNames = [...]string{ir.ModeNone: "none", ir.ModeBaked: "baked", ir.ModeEmbedded: "embedded", ir.ModeData: "data", ir.ModeTypes: "types"}
-	kindNames = [...]string{
-		types.Case: "case type", types.VariantKind: "variant kind", types.Optional: "optional",
-		types.Map: "map", types.DepMap: "dependent map", types.Table: "table-typed field",
-		types.Never: "Never", types.Range: "Range", types.Func: "function type", types.Pair: "pair",
-		types.TypeApp: "dependent type", types.DepUnion: "dependent union", types.Define: "define",
-	}
-)
-
 // Resolving refs at load (CODEGEN.md §5.8, §5.9, §5.11; log-2026-09-24, gen/cpp round 3).
 const (
-	resolveOpenFormat     = "static bool Resolve(%s& x, const %s& ctx, canon::json::Decoder& dec) {"
-	resolveCaseFormat     = "if (auto* c = std::get_if<%d>(&x.value_); c != nullptr && !Resolve(*c, ctx, dec)) return false;"
-	findPrefix            = "ctx.rows_.Find("
-	ctxPrefix             = "ctx."
-	rowsFind              = ".rows_.Find("
-	xPrefix               = "x."
-	cellLoopVar           = "c"
-	refsVar               = "refs"
-	derefStar             = "*"
-	keyPlaceholder        = "%s"
-	valueKey              = "value"
-	rowsKey               = "rows"
-	rowsMember            = ".rows_"
-	findEntryFormat       = "const auto* e = %s%s);"
-	failEntryFormat       = "if (e == nullptr) return dec.Fail(%s, \"no entry \" + %s), false;"
-	pushEntryFormat       = "%s.push_back(e);"
-	resolveOptionalFormat = "if (%s && (%s = %s%s)) == nullptr) return dec.Fail(%s, \"no entry \" + %s), false;"
-	resolveFormat         = "if ((%s = %s%s)) == nullptr) return dec.Fail(%s, \"no entry \" + %s), false;"
-	walkFormat            = "if (!Resolve(%s, ctx, dec)) return false;"
-	keyedElemFormat       = "const_cast<%s&>(%s.At(%s))"
-	lenLoopFormat         = "for (size_t %s = 0; %s < %s.Len(); ++%s) {"
-	resolveValueFormat    = "if (!Resolve(%s, %s, dec)) return %s;"
-	resolveRowFormat      = "if (!Resolve(const_cast<%s&>(%s.rows_.At(%s)), %s, dec)) return %s;"
-	failLoadText          = "error = dec.Error(), false"
-	failSnapshotText      = "error = dec.Error(), nullptr"
-	snapDecoderFormat     = "canon::json::Decoder dec(dir + %s);"
-	snapHolder            = "snap->"
-	snapCtx               = "*snap"
+	resolveOpenFormat  = "static bool Resolve(%s& x, const %s& ctx, canon::json::Decoder& dec) {"
+	resolveCaseFormat  = "if (auto* c = std::get_if<%d>(&x.value_); c != nullptr && !Resolve(*c, ctx, dec)) return false;"
+	findPrefix         = "ctx.rows_.Find("
+	ctxPrefix          = "ctx."
+	rowsFind           = ".rows_.Find("
+	xPrefix            = "x."
+	cellLoopVar        = "c"
+	refsVar            = "refs"
+	derefStar          = "*"
+	keyPlaceholder     = "%s"
+	valueKey           = "value"
+	rowsKey            = "rows"
+	rowsMember         = ".rows_"
+	findEntryFormat    = "const auto* e = %s%s);"
+	pushEntryFormat    = "%s.push_back(e);"
+	walkFormat         = "if (!Resolve(%s, ctx, dec)) return false;"
+	keyedElemFormat    = "const_cast<%s&>(%s.At(%s))"
+	lenLoopFormat      = "for (size_t %s = 0; %s < %s.Len(); ++%s) {"
+	resolveValueFormat = "if (!Resolve(%s, %s, dec)) return %s;"
+	resolveRowFormat   = "if (!Resolve(const_cast<%s&>(%s.rows_.At(%s)), %s, dec)) return %s;"
+	snapDecoderFormat  = "canon::json::Decoder dec(dir + %s);"
+	snapHolder         = "snap->"
+	snapCtx            = "*snap"
 )
 
 // containerNames are the members every container class declares (CODEGEN.md §5.9).
@@ -495,3 +472,25 @@ var containerNames = []string{"Len", "At", "All", "Find", "rows_"}
 
 // escapes are the bytes a C++ string literal writes with a backslash; other controls are octal.
 var escapes = map[byte]string{'"': `\"`, '\\': `\\`, '\n': `\n`, '\t': `\t`}
+
+// Strict loaders: the helpers of .gen.cpp and their calls (log-2026-09-24, gen/go strict loaders).
+const (
+	anonOpen           = "namespace {"
+	anonClose          = "}  // namespace"
+	bracedFormat       = "{%s}"
+	keysReturnFormat   = "if (!jsonKeys(%s, dec, %s)) return false;"
+	keysStmtFormat     = "jsonKeys(%s, dec, %s);"
+	objectReturnFormat = "if (!jsonObject(%s, dec)) return false;"
+	stepOpenFormat     = "if (const nlohmann::json* %s = jsonStep(%s, dec, %s)) {"
+	cellOpenFormat     = "if (const nlohmann::json* %s = jsonCell(%s, dec, %s, %t)) {"
+	intBoolFormat      = "jsonIntBool(%s, dec, %s, %s);"
+	bitsTempLine       = "uint64_t n = 0;"
+	maskFormat         = "0x%x"
+	emptyFlagLine      = "bool empty = false;"
+	slotCheckFormat    = "if (!jsonSlot(%s, dec, %s[s], %s[s], empty)) continue;"
+	cellsArrayFormat   = "constexpr const char* cells[] = {%s};"
+	cellsKey           = "cells[c]"
+)
+
+// jsonHelperNames are the helpers' names, declared in the namespace so no generated name hides them.
+var jsonHelperNames = []string{"jsonObject", "jsonKeys", "jsonCell", "jsonRow", "jsonStep", "jsonSlot", "jsonIntBool", "jsonBits"}

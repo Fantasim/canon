@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/fantasim/canonlang/internal/ir"
+	"github.com/fantasim/canonlang/internal/types"
 )
 
 // decodeList reads an array element by element; a keyed list also collects the keys (§4.2).
@@ -29,6 +30,9 @@ func (g *gen) decodeList(depth int, src, key string, l leaf) {
 		g.c.linef(inner, vectorDeclFormat, g.storage(kf.Type), keys)
 	}
 	g.c.linef(inner, forFormat, i, i, src, i)
+	if k := l.t.Elem.Kind; k != types.Record && k != types.Variant {
+		g.c.linef(body, nullElemFormat, fmt.Sprintf(indexFormat, src, i), elemKey(key, i))
+	}
 	g.c.linef(body, localFormat, elem, e, elemInit(*l.t.Elem))
 	g.decodeValue(body, fmt.Sprintf(indexFormat, src, i), elemKey(key, i), leaf{t: *l.t.Elem, unit: l.unit, enc: l.enc, dst: e})
 	if kf != nil {
@@ -66,6 +70,7 @@ func (g *gen) decodeVariant(v *ir.Variant) {
 		g.fail(fmt.Errorf("%w: variant %s without a tag", ErrMalformed, v.Name))
 		return
 	}
+	g.checkKeys(1, sourceVar, []string{v.Tag}, true)
 	g.c.linef(1, tagDeclLine)
 	g.c.linef(1, tagReadFormat, quote(v.Tag))
 	for i, c := range v.Cases {
@@ -98,6 +103,8 @@ func (g *gen) decodeTable(fn *ir.ExportFn, l leaf) {
 		}
 		g.c.linef(depthTwo, keysArrayFormat, fmt.Sprintf(wireKeysFormat, i), strings.Join(quoted, listSep))
 	}
+	g.use(&jsonKeysText)
+	g.c.linef(depthTwo, keysStmtFormat, fmt.Sprintf(derefFormat, obj), fmt.Sprintf(wireKeysFormat, 0))
 	index, depth := "", depthTwo
 	for i, d := range doms {
 		a := fmt.Sprintf(argVarFormat, i)
@@ -108,11 +115,12 @@ func (g *gen) decodeTable(fn *ir.ExportFn, l leaf) {
 			next := fmt.Sprintf(tableVarFormat, i+1)
 			g.c.linef(depth+1, objectOpenFormat, next, fmt.Sprintf(derefFormat, obj), key)
 			g.c.linef(depth+depthTwo, pushFormat, key)
+			g.c.linef(depth+depthTwo, keysStmtFormat, fmt.Sprintf(derefFormat, next), fmt.Sprintf(wireKeysFormat, i+1))
 			obj, depth = next, depth+depthTwo
 			continue
 		}
 		cell := l
-		cell.dst = fmt.Sprintf(indexFormat, l.dst, index)
+		cell.dst, cell.cell = fmt.Sprintf(indexFormat, l.dst, index), true
 		g.decodeKey(depth+1, fmt.Sprintf(derefFormat, obj), key, cell)
 	}
 	for i := len(doms) - 1; i > 0; i-- {

@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -16,7 +17,101 @@ namespace demo::shop {
 
 namespace detail {
 
+namespace {
+
+bool jsonObject(const nlohmann::json& v, canon::json::Decoder& dec) {
+    if (v.is_object()) return true;
+    dec.Fail("", v.is_null() ? "null" : "expected an object");
+    return false;
+}
+
+template <size_t N>
+bool jsonKeys(const nlohmann::json& v, canon::json::Decoder& dec, const char* const (&keys)[N]) {
+    if (!jsonObject(v, dec)) return false;
+    for (const auto& item : v.items()) {
+        bool known = false;
+        for (const char* key : keys) known = known || item.key() == key;
+        for (size_t k = 0; !known && k < N; ++k) {
+            if (canon::json::EqualFold(item.key(), keys[k])) {
+                dec.Fail(item.key(), "differs from \"" + std::string(keys[k]) + "\" only in letter case");
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+const nlohmann::json* jsonCell(const nlohmann::json& obj, canon::json::Decoder& dec, const char* key, bool optional) {
+    const auto it = obj.find(key);
+    if (it == obj.end()) {
+        dec.Fail(key, "missing");
+        return nullptr;
+    }
+    if (!it->is_null()) return &*it;
+    if (!optional) dec.Fail(key, "null");
+    return nullptr;
+}
+
+void jsonRow(const nlohmann::json& row, canon::json::Decoder& dec, std::string& id, bool& retired) {
+    if (!jsonObject(row, dec)) return;
+    if (const nlohmann::json* x = jsonCell(row, dec, "$id", false)) dec.AsString(*x, "$id", id);
+    const auto it = row.find("$retired");
+    if (it == row.end()) return;
+    if (it->is_boolean() && it->get<bool>()) {
+        retired = true;
+    } else {
+        dec.Fail("$retired", "not true");
+    }
+}
+
+const nlohmann::json* jsonStep(const nlohmann::json& obj, canon::json::Decoder& dec, const char* key) {
+    const auto it = obj.find(key);
+    if (it == obj.end()) return nullptr;
+    if (it->is_object()) return &*it;
+    dec.Fail(key, it->is_null() ? "null" : "expected an object");
+    return nullptr;
+}
+
+bool jsonSlot(const nlohmann::json& v, canon::json::Decoder& dec, const char* key, const char* value, bool& empty) {
+    const bool hasKey = v.find(key) != v.end(), hasValue = v.find(value) != v.end();
+    if (!hasKey && !hasValue) {
+        empty = true;
+        return false;
+    }
+    if (hasKey != hasValue) dec.Fail(key, "incomplete pairs slot");
+    if (empty) dec.Fail(key, "pairs slot after an empty one");
+    return dec.Ok();
+}
+
+void jsonIntBool(const nlohmann::json& x, canon::json::Decoder& dec, std::string_view key, bool& out) {
+    int64_t n = 0;
+    if (!dec.AsInt(x, key, n)) return;
+    if (n == 0 || n == 1) {
+        out = n == 1;
+    } else {
+        dec.Fail(key, "expected 0 or 1, not " + std::to_string(n));
+    }
+}
+
+bool jsonBits(const nlohmann::json& x, canon::json::Decoder& dec, std::string_view key, uint64_t mask, uint64_t& out) {
+    int64_t n = 0;
+    if (!dec.AsInt(x, key, n)) return false;
+    if (n < 0) {
+        dec.Fail(key, "expected a non-negative integer");
+        return false;
+    }
+    out = static_cast<uint64_t>(n);
+    std::string hex;
+    for (uint64_t rest = out & ~mask; rest != 0; rest >>= 4) hex.insert(hex.begin(), "0123456789abcdef"[rest & 15]);
+    if (hex.empty()) return true;
+    dec.Fail(key, "unknown bits 0x" + hex);
+    return false;
+}
+
+}  // namespace
+
 bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Point& out) {
+    if (!jsonKeys(v, dec, {"x", "y"})) return false;
     if (const nlohmann::json* x1 = dec.Required(v, "x")) {
         int64_t n = 0;
         if (dec.AsInt((*x1), "x", n)) out.x_ = static_cast<int16_t>(n);
@@ -29,6 +124,7 @@ bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Point& out) {
 }
 
 bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Reward& out) {
+    if (!jsonKeys(v, dec, {"type"})) return false;
     std::string tag;
     if (!dec.String(v, "type", tag)) return false;
     if (tag == "item") {
@@ -44,6 +140,7 @@ bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Reward& out) {
 }
 
 bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, RewardItem& out) {
+    if (!jsonKeys(v, dec, {"count", "itemId", "type"})) return false;
     dec.String(v, "itemId", out.itemId_);
     if (const nlohmann::json* x1 = dec.Required(v, "count")) {
         int64_t n = 0;
@@ -53,6 +150,7 @@ bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, RewardItem& out)
 }
 
 bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Coins& out) {
+    if (!jsonKeys(v, dec, {"amount", "type"})) return false;
     if (const nlohmann::json* x1 = dec.Required(v, "amount")) {
         int64_t n = 0;
         if (dec.AsInt((*x1), "amount", n)) out.amount_ = static_cast<uint64_t>(n);
@@ -61,6 +159,7 @@ bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Coins& out) {
 }
 
 bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Item& out) {
+    if (!jsonKeys(v, dec, {"$best", "$heavy", "$id", "$kin", "$labelIn", "$nick", "$pairFor", "$rank", "$related", "$retired", "bonus", "code", "delaySec", "element", "isTradable", "label", "legacy", "note", "origin", "path", "price", "reward", "shelf", "tags", "tone", "weight"})) return false;
     if (const nlohmann::json* x1 = dec.Required(v, "code")) {
         int64_t n = 0;
         if (dec.AsInt((*x1), "code", n)) out.code_ = static_cast<uint16_t>(n);
@@ -72,8 +171,7 @@ bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Item& out) {
         if (dec.AsFloat((*x1), "weight", d)) out.weight_ = static_cast<float>(d);
     }
     if (const nlohmann::json* x1 = dec.Required(v, "isTradable")) {
-        int64_t n = 0;
-        if (dec.AsInt((*x1), "isTradable", n)) out.tradable_ = n != 0;
+        jsonIntBool((*x1), dec, "isTradable", out.tradable_);
     }
     dec.Enum(v, "tone", &ToneFromWire, out.tone_);
     dec.Enum(v, "element", &ElementFromCode, out.element_);
@@ -97,6 +195,7 @@ bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Item& out) {
             dec.Fail("tags", "expected an array");
         } else {
             for (size_t i2 = 0; i2 < (*x1).size(); ++i2) {
+                if ((*x1)[i2].is_null()) return dec.Fail("tags[" + std::to_string(i2) + "]", "null"), false;
                 std::string e2;
                 dec.AsString((*x1)[i2], "tags[" + std::to_string(i2) + "]", e2);
                 out.tags_.push_back(std::move(e2));
@@ -125,10 +224,13 @@ bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Item& out) {
         auto& o1 = out.shelf_.emplace();
         dec.AsString((*x1), "shelf", o1);
     }
-    if (const nlohmann::json* p0 = dec.Object(v, "legacy")) {
+    if (const nlohmann::json* p0 = jsonStep(v, dec, "legacy")) {
         dec.Push("legacy");
+        jsonKeys((*p0), dec, {"max"});
         dec.Int((*p0), "max", out.legacyMax_);
         dec.Pop();
+    } else {
+        dec.Fail("legacy.max", "missing");
     }
     dec.Bool(v, "$heavy", out.heavy_);
     if (const nlohmann::json* x1 = dec.Optional(v, "$nick")) {
@@ -139,11 +241,15 @@ bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Item& out) {
         dec.Push("$rank");
         constexpr const char* w0[] = {"warning", "info", "series-1", "legacy"};
         constexpr const char* w1[] = {"false", "true"};
+        jsonKeys((*f0), dec, w0);
         for (size_t a0 = 0; a0 < 4; ++a0) {
             if (const nlohmann::json* f1 = dec.Object((*f0), w0[a0])) {
                 dec.Push(w0[a0]);
+                jsonKeys((*f1), dec, w1);
                 for (size_t a1 = 0; a1 < 2; ++a1) {
-                    dec.Int((*f1), w1[a1], out.rank_[a0 * 2 + a1]);
+                    if (const nlohmann::json* x5 = jsonCell((*f1), dec, w1[a1], false)) {
+                        dec.AsInt((*x5), w1[a1], out.rank_[a0 * 2 + a1]);
+                    }
                 }
                 dec.Pop();
             }
@@ -153,8 +259,9 @@ bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Item& out) {
     if (const nlohmann::json* f0 = dec.Object(v, "$labelIn")) {
         dec.Push("$labelIn");
         constexpr const char* w0[] = {"1", "300"};
+        jsonKeys((*f0), dec, w0);
         for (size_t a0 = 0; a0 < 2; ++a0) {
-            if (const nlohmann::json* x3 = dec.Optional((*f0), w0[a0])) {
+            if (const nlohmann::json* x3 = jsonCell((*f0), dec, w0[a0], true)) {
                 auto& o3 = out.labelIn_[a0].emplace();
                 dec.AsString((*x3), w0[a0], o3);
             }
@@ -170,6 +277,7 @@ bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Item& out) {
             dec.Fail("$related", "expected an array");
         } else {
             for (size_t i2 = 0; i2 < (*x1).size(); ++i2) {
+                if ((*x1)[i2].is_null()) return dec.Fail("$related[" + std::to_string(i2) + "]", "null"), false;
                 std::string e2;
                 dec.AsString((*x1)[i2], "$related[" + std::to_string(i2) + "]", e2);
                 o1.push_back(std::move(e2));
@@ -179,10 +287,31 @@ bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Item& out) {
     if (const nlohmann::json* f0 = dec.Object(v, "$pairFor")) {
         dec.Push("$pairFor");
         constexpr const char* w0[] = {"warning", "info", "series-1", "legacy"};
+        jsonKeys((*f0), dec, w0);
         for (size_t a0 = 0; a0 < 4; ++a0) {
-            if (const nlohmann::json* x3 = dec.Optional((*f0), w0[a0])) {
+            if (const nlohmann::json* x3 = jsonCell((*f0), dec, w0[a0], true)) {
                 auto& o3 = out.pairFor_[a0].emplace();
                 dec.AsString((*x3), w0[a0], o3);
+            }
+        }
+        dec.Pop();
+    }
+    if (const nlohmann::json* f0 = dec.Object(v, "$kin")) {
+        dec.Push("$kin");
+        constexpr const char* w0[] = {"false", "true"};
+        jsonKeys((*f0), dec, w0);
+        for (size_t a0 = 0; a0 < 2; ++a0) {
+            if (const nlohmann::json* x3 = jsonCell((*f0), dec, w0[a0], false)) {
+                if (!(*x3).is_array()) {
+                    dec.Fail(w0[a0], "expected an array");
+                } else {
+                    for (size_t i4 = 0; i4 < (*x3).size(); ++i4) {
+                        if ((*x3)[i4].is_null()) return dec.Fail(std::string(w0[a0]) + "[" + std::to_string(i4) + "]", "null"), false;
+                        std::string e4;
+                        dec.AsString((*x3)[i4], std::string(w0[a0]) + "[" + std::to_string(i4) + "]", e4);
+                        out.kin_[a0].push_back(std::move(e4));
+                    }
+                }
             }
         }
         dec.Pop();
@@ -191,12 +320,14 @@ bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Item& out) {
 }
 
 bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Bonus& out) {
+    if (!jsonKeys(v, dec, {"amount", "stat"})) return false;
     dec.Enum(v, "stat", &ToneFromWire, out.stat_);
     dec.Int(v, "amount", out.amount_);
     return dec.Ok();
 }
 
 bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Shelf& out) {
+    if (!jsonKeys(v, dec, {"b0", "b1", "b2", "delete", "flags", "i", "id", "items", "next", "slots", "v0", "v1", "v2", "waits"})) return false;
     dec.String(v, "id", out.id_);
     if (const nlohmann::json* x1 = dec.Required(v, "slots")) {
         int64_t n = 0;
@@ -207,6 +338,7 @@ bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Shelf& out) {
             dec.Fail("items", "expected an array");
         } else {
             for (size_t i2 = 0; i2 < (*x1).size(); ++i2) {
+                if ((*x1)[i2].is_null()) return dec.Fail("items[" + std::to_string(i2) + "]", "null"), false;
                 std::string e2;
                 dec.AsString((*x1)[i2], "items[" + std::to_string(i2) + "]", e2);
                 out.items_.push_back(std::move(e2));
@@ -222,7 +354,9 @@ bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Shelf& out) {
     {
         constexpr const char* w0[] = {"b0", "b1", "b2"};
         constexpr const char* w1[] = {"v0", "v1", "v2"};
-        for (size_t s = 0; s < 3 && dec.Optional(v, w0[s]) != nullptr; ++s) {
+        bool empty = false;
+        for (size_t s = 0; s < 3; ++s) {
+            if (!jsonSlot(v, dec, w0[s], w1[s], empty)) continue;
             Bonus e;
             dec.Enum(v, w0[s], &ToneFromWire, e.stat_);
             dec.Int(v, w1[s], e.amount_);
@@ -230,11 +364,11 @@ bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Shelf& out) {
         }
     }
     if (const nlohmann::json* x1 = dec.Required(v, "flags")) {
-        int64_t n = 0;
-        if (dec.AsInt((*x1), "flags", n)) {
+        uint64_t n = 0;
+        if (jsonBits((*x1), dec, "flags", 0x7, n)) {
             constexpr Flag bits[] = {Flag::a, Flag::b, Flag::c};
             for (Flag m : bits) {
-                if ((static_cast<uint64_t>(n) & static_cast<uint64_t>(m)) != 0) out.flags_.push_back(m);
+                if ((n & static_cast<uint64_t>(m)) != 0) out.flags_.push_back(m);
             }
         }
     }
@@ -243,6 +377,7 @@ bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Shelf& out) {
             dec.Fail("waits", "expected an array");
         } else {
             for (size_t i2 = 0; i2 < (*x1).size(); ++i2) {
+                if ((*x1)[i2].is_null()) return dec.Fail("waits[" + std::to_string(i2) + "]", "null"), false;
                 std::chrono::milliseconds e2{};
                 dec.AsDuration((*x1)[i2], "waits[" + std::to_string(i2) + "]", 1000, e2);
                 out.waits_.push_back(std::move(e2));
@@ -253,6 +388,7 @@ bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Shelf& out) {
 }
 
 bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Config& out) {
+    if (!jsonKeys(v, dec, {"alts", "amount", "count", "featured", "flags", "itemId", "motd", "picks", "scale", "spawn", "tree", "type"})) return false;
     dec.String(v, "motd", out.motd_);
     if (const nlohmann::json* x1 = dec.Required(v, "spawn")) {
         dec.Push("spawn");
@@ -265,6 +401,7 @@ bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Config& out) {
             dec.Fail("flags", "expected an array");
         } else {
             for (size_t i2 = 0; i2 < (*x1).size(); ++i2) {
+                if ((*x1)[i2].is_null()) return dec.Fail("flags[" + std::to_string(i2) + "]", "null"), false;
                 Tone e2{};
                 dec.AsEnum((*x1)[i2], "flags[" + std::to_string(i2) + "]", &ToneFromWire, e2);
                 out.flags_.push_back(std::move(e2));
@@ -288,6 +425,7 @@ bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Config& out) {
             dec.Fail("picks", "expected an array");
         } else {
             for (size_t i2 = 0; i2 < (*x1).size(); ++i2) {
+                if ((*x1)[i2].is_null()) return dec.Fail("picks[" + std::to_string(i2) + "]", "null"), false;
                 std::string e2;
                 dec.AsString((*x1)[i2], "picks[" + std::to_string(i2) + "]", e2);
                 out.picks_.push_back(std::move(e2));
@@ -300,6 +438,7 @@ bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Config& out) {
             dec.Fail("alts", "expected an array");
         } else {
             for (size_t i2 = 0; i2 < (*x1).size(); ++i2) {
+                if ((*x1)[i2].is_null()) return dec.Fail("alts[" + std::to_string(i2) + "]", "null"), false;
                 std::string e2;
                 dec.AsString((*x1)[i2], "alts[" + std::to_string(i2) + "]", e2);
                 o1.push_back(std::move(e2));
@@ -310,6 +449,7 @@ bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Config& out) {
 }
 
 bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Node& out) {
+    if (!jsonKeys(v, dec, {"badge", "hot", "kids", "label", "next"})) return false;
     dec.String(v, "label", out.label_);
     if (const nlohmann::json* x1 = dec.Optional(v, "next")) {
         auto& o1 = *(out.next_ = std::make_unique<Node>());
@@ -344,6 +484,7 @@ bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Node& out) {
 }
 
 bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Badge& out) {
+    if (!jsonKeys(v, dec, {"kind"})) return false;
     std::string tag;
     if (!dec.String(v, "kind", tag)) return false;
     if (tag == "star") {
@@ -357,6 +498,7 @@ bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Badge& out) {
 }
 
 bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, BadgeStar& out) {
+    if (!jsonKeys(v, dec, {"kind", "of"})) return false;
     if (const nlohmann::json* x1 = dec.Required(v, "of")) {
         dec.AsString((*x1), "of", out.of_);
     }
@@ -376,10 +518,7 @@ struct ShopAccess {
         std::vector<std::string> keys(rows->size());
         for (size_t i = 0; i < rows->size(); ++i) {
             dec.Push("rows[" + std::to_string(i) + "]");
-            dec.String((*rows)[i], "$id", values[i].id_);
-            if (const nlohmann::json* retired = dec.Optional((*rows)[i], "$retired")) {
-                dec.AsBool(*retired, "$retired", values[i].retired_);
-            }
+            jsonRow((*rows)[i], dec, values[i].id_, values[i].retired_);
             Decode((*rows)[i], dec, values[i]);
             dec.Pop();
             if (!dec.Ok()) return error = dec.Error(), false;
@@ -483,7 +622,16 @@ struct ShopAccess {
             }
         }
         for (size_t c = 0; c < 4; ++c) {
-            if (x.pairFor_[c] && (x.pairFor_ref_[c] = ctx.items_.rows_.Find(*x.pairFor_[c])) == nullptr) return dec.Fail("$pairFor", "no entry " + std::string(*x.pairFor_[c])), false;
+            constexpr const char* cells[] = {"$pairFor.warning", "$pairFor.info", "$pairFor.series-1", "$pairFor.legacy"};
+            if (x.pairFor_[c] && (x.pairFor_ref_[c] = ctx.items_.rows_.Find(*x.pairFor_[c])) == nullptr) return dec.Fail(cells[c], "no entry " + std::string(*x.pairFor_[c])), false;
+        }
+        for (size_t c = 0; c < 2; ++c) {
+            constexpr const char* cells[] = {"$kin.false", "$kin.true"};
+            for (size_t i = 0; i < x.kin_[c].size(); ++i) {
+                const auto* e = ctx.items_.rows_.Find(x.kin_[c][i]);
+                if (e == nullptr) return dec.Fail(std::string(cells[c]) + "[" + std::to_string(i) + "]", "no entry " + std::string(x.kin_[c][i])), false;
+                x.kin_ref_[c].push_back(e);
+            }
         }
         return true;
     }

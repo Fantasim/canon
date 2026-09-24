@@ -2,6 +2,7 @@ package cppgen
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/fantasim/canonlang/internal/ir"
 	"github.com/fantasim/canonlang/internal/types"
@@ -16,6 +17,7 @@ type leaf struct {
 	enc      types.Enc
 	dst      string // the C++ lvalue
 	box      string // the class an optional std::unique_ptr holds, or ""
+	cell     bool   // a lookup cell: absent is missing, null is none or an error (WIRE.md §5.11)
 }
 
 // decoders are the detail::Decode definitions, in declaration order (CODEGEN.md §2.7, §7.6).
@@ -39,12 +41,13 @@ func (g *gen) decoders() {
 // decodeRecord reads each field in declaration order, then the `$` keys of the stored fns (§7.6, WIRE.md §5.11).
 func (g *gen) decodeRecord(c class) {
 	fields, fns := c.shape()
+	g.inlineFolds(c)
+	g.checkKeys(1, sourceVar, g.objectKeys(c), true)
 	if len(fields) == 0 && !hasStored(fns) {
-		g.c.linef(1, unusedFormat, sourceVar)
 		g.c.linef(1, unusedFormat, outVar)
 	}
 	for _, f := range fields {
-		g.decodeField(f)
+		g.decodeField(f, fields)
 	}
 	for _, fn := range fns {
 		m, err := member(fn.Name)
@@ -71,8 +74,8 @@ func hasStored(fns []*ir.ExportFn) bool {
 	return false
 }
 
-// decodeField reads one field at its wire path; an inline variant reads the parent object (WIRE.md §5.5, §5.6).
-func (g *gen) decodeField(f *ir.Field) {
+// decodeField reads one field at its wire path, fields its record's; an inline variant reads the parent object (WIRE.md §5.5, §5.6).
+func (g *gen) decodeField(f *ir.Field, fields []*ir.Field) {
 	leave := g.enter(g.at + qnameSep + f.Name)
 	defer leave()
 	if f.Input != nil || f.Type.Kind == types.Never && f.Optional {
@@ -98,18 +101,29 @@ func (g *gen) decodeField(f *ir.Field) {
 	last := len(f.WirePath) - 1
 	for i, seg := range f.WirePath[:last] {
 		v := fmt.Sprintf(pathVarFormat, i)
-		g.c.linef(depth, objectOpenFormat, v, obj, quote(seg))
+		g.use(&jsonStepText)
+		g.c.linef(depth, stepOpenFormat, v, obj, quote(seg))
 		g.c.linef(depth+1, pushFormat, quote(seg))
 		obj, depth = fmt.Sprintf(derefFormat, v), depth+1
+		g.checkKeys(depth, obj, nextSegments(fields, f.WirePath[:i+1]), false)
 	}
 	l := leaf{t: f.Type, optional: f.Optional, none: f.NoneWire, unit: f.Unit, enc: f.Enc, dst: outPrefix + m}
 	if g.boxed[f] {
 		l.box = g.storage(f.Type)
 	}
 	g.decodeKey(depth, obj, quote(f.WirePath[last]), l)
-	for depth > 1 {
+	g.closePath(f, depth)
+}
+
+// closePath closes a path's intermediate objects: an absent one leaves a required field missing (WIRE.md §5.5.3).
+func (g *gen) closePath(f *ir.Field, depth int) {
+	for i := len(f.WirePath) - depthTwo; i >= 0; i-- {
 		g.c.linef(depth, popLine)
 		depth--
+		if !f.Optional {
+			g.c.linef(depth, elseOpen)
+			g.c.linef(depth+1, failMissingFormat, quote(strings.Join(f.WirePath[i:], qnameSep)))
+		}
 		g.c.linef(depth, closeBrace)
 	}
 }
@@ -117,12 +131,15 @@ func (g *gen) decodeField(f *ir.Field) {
 // decodeKey reads obj[key] into l (key a C++ `const char*` expression): a Decoder shortcut
 // when one fits, else Required or Optional, then the value.
 func (g *gen) decodeKey(depth int, obj, key string, l leaf) {
-	if short := g.shortcut(l); short != "" && !l.optional {
+	if short := g.shortcut(l); short != "" && !l.optional && !l.cell {
 		g.c.linef(depth, decCallFormat, short, obj, key, g.shortcutExtra(l), l.dst)
 		return
 	}
 	x := fmt.Sprintf(jsonVarFormat, depth)
 	switch {
+	case l.cell:
+		g.use(&jsonCellText)
+		g.c.linef(depth, cellOpenFormat, x, obj, key, l.optional)
 	case !l.optional:
 		g.c.linef(depth, requiredOpenFormat, x, obj, key)
 	case l.none != nil:
@@ -234,8 +251,8 @@ func (g *gen) decodeValue(depth int, src, key string, l leaf) {
 func (g *gen) decodeNumber(depth int, src, key string, l leaf) {
 	switch {
 	case l.t.Kind == types.Bool && l.enc == types.EncInt:
-		g.c.linef(depth, intTempLine)
-		g.c.linef(depth, boolIntFormat, src, key, l.dst)
+		g.use(&jsonIntBoolText)
+		g.c.linef(depth, intBoolFormat, src, key, l.dst)
 	case l.t.Kind == types.Bool:
 		g.c.linef(depth, decCallFormat, asBool, src, key, "", l.dst)
 	case l.t.Kind == types.Int && l.t.Bits == bits64 && l.t.Signed:

@@ -41,8 +41,11 @@ func (g *gen) detailDecls() {
 	}
 	for _, m := range g.methods {
 		leave := g.enter(m.class.canonName() + qnameSep + m.fn.Name)
+		if m.fn.File == "" {
+			g.fail(fmt.Errorf("%w: translated fn %s without its source file", ErrMalformed, g.at))
+		}
 		g.h.blank()
-		g.h.printf(translatedDocText, g.p.Dir+pathSep, m.class.canonName(), m.fn.Name)
+		g.h.printf(translatedDocText, g.p.Dir+pathSep+m.fn.File, m.class.canonName(), m.fn.Name)
 		g.pureFn(pureName(g.className(m.class), m.fn), m.fn)
 		leave()
 	}

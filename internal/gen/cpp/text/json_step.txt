@@ -1,0 +1,8 @@
+const nlohmann::json* jsonStep(const nlohmann::json& obj, canon::json::Decoder& dec, const char* key) {
+    const auto it = obj.find(key);
+    if (it == obj.end()) return nullptr;
+    if (it->is_object()) return &*it;
+    dec.Fail(key, it->is_null() ? "null" : "expected an object");
+    return nullptr;
+}
+

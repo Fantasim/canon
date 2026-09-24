@@ -141,10 +141,15 @@ func wireName(f *ir.Field) string {
 
 // resolveSlot points a slot at its entries, a list's one by one, through a present optional.
 func (g *gen) resolveSlot(r resolved, find string) {
-	key, ref, depth := xPrefix+r.member, xPrefix+r.member+refSuffix, depthTwo
+	key, ref, depth, wire := xPrefix+r.member, xPrefix+r.member+refSuffix, depthTwo, quote(r.wire)
 	if r.cells > 0 {
+		quoted := make([]string, len(r.paths))
+		for i, p := range r.paths {
+			quoted[i] = quote(p)
+		}
 		g.c.linef(depth, countForFormat, cellLoopVar, cellLoopVar, r.cells, cellLoopVar)
-		key, ref, depth = fmt.Sprintf(indexFormat, key, cellLoopVar), fmt.Sprintf(indexFormat, ref, cellLoopVar), depth+1
+		key, ref, depth, wire = fmt.Sprintf(indexFormat, key, cellLoopVar), fmt.Sprintf(indexFormat, ref, cellLoopVar), depth+1, cellsKey
+		g.c.linef(depth, cellsArrayFormat, strings.Join(quoted, listSep))
 	}
 	text := g.keyText(r.slot.target().Key)
 	switch {
@@ -156,22 +161,26 @@ func (g *gen) resolveSlot(r resolved, find string) {
 	case r.list:
 		g.resolveList(depth, key, ref, find, r)
 	case r.optional:
-		g.c.linef(depth, resolveOptionalFormat, key, ref, find, derefStar+key, quote(r.wire), fmt.Sprintf(text, derefStar+key))
+		g.c.linef(depth, resolveOptionalFormat, key, ref, find, derefStar+key, wire, fmt.Sprintf(text, derefStar+key))
 	default:
-		g.c.linef(depth, resolveFormat, ref, find, key, quote(r.wire), fmt.Sprintf(text, key))
+		g.c.linef(depth, resolveFormat, ref, find, key, wire, fmt.Sprintf(text, key))
 	}
 	if r.cells > 0 {
 		g.c.linef(depthTwo, closeBrace)
 	}
 }
 
-// resolveList resolves each key of keys into refs, a missing one named with its index.
+// resolveList resolves each key of keys into refs, a missing one named with its index (after
+// its cell's key path in a lookup table).
 func (g *gen) resolveList(depth int, keys, refs, find string, r resolved) {
-	wire, text := r.wire, g.keyText(r.slot.target().Key)
+	wire, text := quote(r.wire), g.keyText(r.slot.target().Key)
+	if r.cells > 0 {
+		wire = cellsKey
+	}
 	k := fmt.Sprintf(indexFormat, keys, indexLocal)
 	g.c.linef(depth, forFormat, indexLocal, indexLocal, keys, indexLocal)
 	g.c.linef(depth+1, findEntryFormat, find, k)
-	g.c.linef(depth+1, failEntryFormat, elemKey(quote(wire), indexLocal), fmt.Sprintf(text, k))
+	g.c.linef(depth+1, failEntryFormat, elemKey(wire, indexLocal), fmt.Sprintf(text, k))
 	g.c.linef(depth+1, pushEntryFormat, refs)
 	g.c.linef(depth, closeBrace)
 }

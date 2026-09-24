@@ -7,6 +7,7 @@
 #include <fstream>
 #include <iterator>
 #include <optional>
+#include <set>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -37,15 +38,126 @@ inline bool ReadFile(const std::string& path, std::string& out, std::string& err
     return true;
 }
 
+/// The deepest nesting of arrays and objects a data file may hold (WIRE.md §3.1).
+inline constexpr size_t kMaxNesting = 512;
+
+namespace detail {
+
+/// The byte of `s` at `i`, an ASCII letter lower-cased, and `i` moved past it; the Kelvin sign
+/// (U+212A) reads as k and the long s (U+017F) as s, as in Unicode simple case folding.
+inline char FoldAt(std::string_view s, size_t& i) {
+    if (s.compare(i, 3, "\xE2\x84\xAA") == 0) return i += 3, 'k';
+    if (s.compare(i, 2, "\xC5\xBF") == 0) return i += 2, 's';
+    const char c = s[i++];
+    return c >= 'A' && c <= 'Z' ? static_cast<char>(c - 'A' + 'a') : c;
+}
+
+}  // namespace detail
+
+/// True when `a` and `b` are equal ignoring the case of ASCII letters (and detail::FoldAt's two
+/// signs). A generated loader refuses a key that matches an expected one only this way.
+inline bool EqualFold(std::string_view a, std::string_view b) {
+    size_t i = 0, j = 0;
+    while (i < a.size() && j < b.size()) {
+        if (detail::FoldAt(a, i) != detail::FoldAt(b, j)) return false;
+    }
+    return i == a.size() && j == b.size();
+}
+
+/// A SAX pass over a data file before it is parsed: the file is one object, no object holds a
+/// key twice (nlohmann would keep the last), and nothing nests deeper than kMaxNesting. It stops
+/// at the first finding and names its path ("rows[3].id: duplicate key").
+class StrictCheck {
+public:
+    bool null() { return Value(); }
+    bool boolean(bool) { return Value(); }
+    bool number_integer(Json::number_integer_t) { return Value(); }
+    bool number_unsigned(Json::number_unsigned_t) { return Value(); }
+    bool number_float(Json::number_float_t, const Json::string_t&) { return Value(); }
+    bool string(Json::string_t&) { return Value(); }
+    bool binary(Json::binary_t&) { return Value(); }
+    bool start_object(size_t) { return Open(true); }
+    bool start_array(size_t) { return Open(false); }
+    bool end_object() { return frames_.pop_back(), true; }
+    bool end_array() { return frames_.pop_back(), true; }
+    bool key(Json::string_t& name) {
+        Frame& f = frames_.back();
+        f.key = name;
+        if (f.keys.insert(name).second) return true;
+        return Refuse("duplicate key");
+    }
+    bool parse_error(size_t, const std::string&, const Json::exception&) { return false; }
+
+    /// Empty unless the pass found a duplicate key or a nesting too deep.
+    const std::string& Error() const noexcept { return error_; }
+
+private:
+    struct Frame {
+        bool object = false;
+        size_t next = 0;           // an array's elements started so far
+        std::string key;           // an object's last key
+        std::set<std::string> keys;
+    };
+
+    bool Value() {
+        if (frames_.empty()) return false;
+        if (!frames_.back().object) ++frames_.back().next;
+        return true;
+    }
+
+    bool Open(bool object) {
+        if (frames_.empty() && !object) return false;
+        if (!frames_.empty() && !Value()) return false;
+        if (frames_.size() >= kMaxNesting) {
+            return Refuse("nested deeper than " + std::to_string(kMaxNesting) + " levels");
+        }
+        frames_.emplace_back();
+        frames_.back().object = object;
+        return true;
+    }
+
+    /// The path of the value being read, then what is wrong with it.
+    bool Refuse(const std::string& what) {
+        for (const Frame& f : frames_) {
+            if (f.object) {
+                if (!error_.empty()) error_ += '.';
+                error_ += f.key;
+            } else {
+                error_ += '[' + std::to_string(f.next - 1) + ']';
+            }
+        }
+        error_ += ": " + what;
+        return false;
+    }
+
+    std::vector<Frame> frames_;
+    std::string error_;
+};
+
 /// Parses a data file written by `canon build` and checks its "$schema" against the
 /// fingerprint compiled into this binary. `name` is used in messages (a path, or
-/// "embedded potions.json").
+/// "embedded potions.json"). The envelope's keys ("$schema", "rows", "value", "$fns") match
+/// exactly: one differing only in letter case is refused, as StrictCheck's findings are.
 inline bool ParseDataFile(const std::string& name, const std::string& text, std::string_view schema,
                           Json& doc, std::string& error) {
-    doc = Json::parse(text, nullptr, /*allow_exceptions=*/false);
-    if (doc.is_discarded() || !doc.is_object()) {
+    StrictCheck check;
+    const bool strict = Json::sax_parse(text, &check);
+    if (!check.Error().empty()) {
+        error = name + ": " + check.Error();
+        return false;
+    }
+    if (strict) doc = Json::parse(text, nullptr, /*allow_exceptions=*/false);
+    if (!strict || doc.is_discarded() || !doc.is_object()) {
         error = name + ": not a canon data file (invalid JSON)";
         return false;
+    }
+    for (const auto& item : doc.items()) {
+        for (const char* key : {"$fns", "$schema", "rows", "value"}) {
+            if (item.key() != key && EqualFold(item.key(), key)) {
+                error = name + ": " + item.key() + ": differs from \"" + key + "\" only in letter case";
+                return false;
+            }
+        }
     }
     auto it = doc.find("$schema");
     std::string got = "<none>";

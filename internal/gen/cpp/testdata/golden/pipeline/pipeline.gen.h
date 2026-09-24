@@ -28,7 +28,7 @@ namespace detail {
 struct PipelineAccess;
 bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Potion& out);
 
-// Translated from pipeline/ (Potion.healFor). The method and the
+// Translated from pipeline/potion.canon (Potion.healFor). The method and the
 // conformance test both call it, so the test checks the code that runs.
 inline int64_t Potion_healFor(int64_t heal, int64_t missingHp) {
     return canon::MinInt(heal, canon::MaxInt(missingHp, 0));

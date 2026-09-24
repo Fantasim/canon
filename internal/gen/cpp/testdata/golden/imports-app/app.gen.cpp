@@ -13,7 +13,45 @@ namespace demo::app {
 
 namespace detail {
 
+namespace {
+
+bool jsonObject(const nlohmann::json& v, canon::json::Decoder& dec) {
+    if (v.is_object()) return true;
+    dec.Fail("", v.is_null() ? "null" : "expected an object");
+    return false;
+}
+
+template <size_t N>
+bool jsonKeys(const nlohmann::json& v, canon::json::Decoder& dec, const char* const (&keys)[N]) {
+    if (!jsonObject(v, dec)) return false;
+    for (const auto& item : v.items()) {
+        bool known = false;
+        for (const char* key : keys) known = known || item.key() == key;
+        for (size_t k = 0; !known && k < N; ++k) {
+            if (canon::json::EqualFold(item.key(), keys[k])) {
+                dec.Fail(item.key(), "differs from \"" + std::string(keys[k]) + "\" only in letter case");
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+const nlohmann::json* jsonCell(const nlohmann::json& obj, canon::json::Decoder& dec, const char* key, bool optional) {
+    const auto it = obj.find(key);
+    if (it == obj.end()) {
+        dec.Fail(key, "missing");
+        return nullptr;
+    }
+    if (!it->is_null()) return &*it;
+    if (!optional) dec.Fail(key, "null");
+    return nullptr;
+}
+
+}  // namespace
+
 bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Order& out) {
+    if (!jsonKeys(v, dec, {"$hue", "alt", "at", "color", "id", "kind", "tint", "trail"})) return false;
     dec.String(v, "id", out.id_);
     dec.Enum(v, "color", &demo::base::ColorFromWire, out.color_);
     if (const nlohmann::json* x1 = dec.Required(v, "at")) {
@@ -44,8 +82,11 @@ bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Order& out) {
     if (const nlohmann::json* f0 = dec.Object(v, "$hue")) {
         dec.Push("$hue");
         constexpr const char* w0[] = {"red", "green", "blue"};
+        jsonKeys((*f0), dec, w0);
         for (size_t a0 = 0; a0 < 3; ++a0) {
-            dec.Int((*f0), w0[a0], out.hue_[a0]);
+            if (const nlohmann::json* x3 = jsonCell((*f0), dec, w0[a0], false)) {
+                dec.AsInt((*x3), w0[a0], out.hue_[a0]);
+            }
         }
         dec.Pop();
     }
