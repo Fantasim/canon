@@ -1724,6 +1724,14 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     test lives in `internal/testkit/golden/testdata/smoke/<example>/`, copied beside a temporary
     copy of the module by goldens-vet (expected/ holds only compiler output).
 
+202. **Generated names that are not identifiers, and imports in the name plan (IR round 2).** A
+    name derived without an override that is not a valid identifier in its target (a field `_1`
+    whose Go getter would be `1`, or `__` giving an empty name) is `E8011` at the declaration,
+    as an override would be (ERRORS.md's template names the override; the message names the
+    derived name), so `check` refuses what `build` would (37). The Go name plan declares an
+    import only when the generated code will use it (`math` only for a `-0.0` literal), so a
+    Canon import named like a standard package collides only where gen/go really imports it.
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.
