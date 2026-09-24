@@ -1850,9 +1850,11 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      §1, §11 over 168).** In a broken list, a comma whose removal would attach a `///` comment to
      another item, merge two doc blocks, or turn a `///` written after code into a doc comment is
      not dropped: it stays on its own line, where it was, with its comments (`a` / `/// d1` / `,` /
-     `b`; `a` / `, /// x` / `b`). Every other comma follows 168 and 211. When import names are sorted
-     (FORMATTER §9.1), a kept comma and its comments move with the name before it, like that
-     name's trailing comments; the formatter's same-comments invariant pairs them with that name. Reason: FuzzFormat found
+     `b`; `a` / `, /// x` / `b`). Every other comma follows 168 and 211. Inside import braces (whose
+     names are sorted, FORMATTER §9.1, and can hold no doc), a comma is kept whenever its leading
+     comments end in a doc block with no blank line after it or it carries a `, /// x` comment,
+     whatever follows it (stable under sorting, so idempotent); it moves with the name before it,
+     and the formatter's same-comments invariant pairs its comments with that name. Reason: FuzzFormat found
      `record A{A:A\n///\n,A:A}` changing W1001 (overnight run).
 
 217. **E2001 is judged once, by `build`, on the whole project's package clauses.** A directory's
