@@ -3,8 +3,9 @@ package cxx
 import "time"
 
 const (
-	// maxParentDirs bounds the walk toward the repository root looking for Source/External.
-	maxParentDirs = 5
+	// maxParentDirs bounds the walk toward the repository root looking for Source/External;
+	// a git worktree under .claude/worktrees/ sits three levels deeper than the checkout.
+	maxParentDirs = 8
 	// Timeout bounds one compile or one run in a caller's own loop.
 	Timeout = 5 * time.Minute
 )
