@@ -170,18 +170,11 @@ func memberInit(t ir.TypeRef, optional bool) string {
 
 // caseName is a case's class, T + UpperCamel(c), or its @cpp(name:) (CODEGEN.md §3.3, §3.5).
 func (g *gen) caseName(v *ir.Variant, c *ir.Case) string {
-	if c.Cpp.Name != "" {
-		return g.qualifier(v.Pkg) + c.Cpp.Name
-	}
-	return g.typeName(v) + upperCamel(c.Name)
+	return g.qualifier(v.Pkg) + g.pl.CaseName(v, c)
 }
 
-// caseAccessor is As + UpperCamel(c), or As + its @cpp(name:) (CODEGEN.md §3.5).
-func caseAccessor(c *ir.Case) string {
-	return asPrefix + override(ir.NameOptions{Name: c.Cpp.Name}, upperCamel(c.Name))
-}
-
-func (g *gen) kindName(v *ir.Variant) string { return g.typeName(v) + kindSuffix }
+// kindName is a variant's kind enum, TKind, qualified when v is imported (CODEGEN.md §5.5).
+func (g *gen) kindName(v *ir.Variant) string { return g.qualifier(v.Pkg) + g.pl.KindName(v) }
 
 // keyField is the key field of a keyed list's element record.
 func (g *gen) keyField(t ir.TypeRef) *ir.Field {

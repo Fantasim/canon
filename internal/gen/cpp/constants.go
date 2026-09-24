@@ -121,7 +121,6 @@ const (
 	durationConstFormat = "inline constexpr %s %s{%s};\n"
 	listConstFormat     = "inline const %s %s = %s;\n"
 	schemaPrefix        = "k"
-	schemaSuffix        = "Schema"
 )
 
 // Enums (CODEGEN.md §5.2, §5.5).
@@ -145,7 +144,6 @@ const (
 	fromCodeOpenFormat = "inline std::optional<%s> %s(%s code) {\n"
 	wireTestFormat     = "if (wire == %s) return %s;"
 	returnNullopt      = "return std::nullopt;"
-	kindSuffix         = "Kind"
 )
 
 // Classes and getters (CODEGEN.md §3.3, §5.4, §5.5, §7.2).
@@ -169,7 +167,6 @@ const (
 	retiredMemberDecl   = "bool retired_ = false;"
 	kindGetter          = "GetKind"
 	kindGetterFormat    = "%s GetKind() const { return static_cast<%s>(value_.index()); }"
-	asPrefix            = "As"
 	asGetterFormat      = "const %s* %s() const { return std::get_if<%d>(&value_); }"
 	variantMemberFormat = "std::variant<%s> value_;"
 	methodFormat        = "%s %s(%s) const { return %s; }"

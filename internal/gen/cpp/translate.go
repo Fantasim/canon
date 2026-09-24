@@ -280,7 +280,7 @@ func (t *tr) callFn(x *ir.CallFn, b *block) string {
 	for i := range args {
 		args[i] = unparen(args[i])
 	}
-	return fmt.Sprintf(helperFormat, override(x.Fn.Cpp, upperCamel(x.Fn.Name)), strings.Join(args, listSep))
+	return fmt.Sprintf(helperFormat, t.g.pl.FnName(x.Fn), strings.Join(args, listSep))
 }
 
 // ifExpr is a conditional; a String branch is a std::string, so no view outlives its string.

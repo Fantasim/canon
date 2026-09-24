@@ -2,6 +2,7 @@ package cppgen_test
 
 import (
 	"errors"
+	"strings"
 	"testing"
 
 	cppgen "github.com/fantasim/canonlang/internal/gen/cpp"
@@ -74,7 +75,6 @@ func refusals() []struct {
 			p.Values = []*ir.Value{{Name: "l", Schema: "s", Type: tList}}
 		}, cppgen.ErrUnsupported},
 		{"methods of a fieldless case", func(p *ir.Package, _ *ir.Emit) { fieldlessMethods(p) }, cppgen.ErrUnsupported},
-		{"a resolvable ref in a record two values hold", func(p *ir.Package, _ *ir.Emit) { severalHolders(p) }, cppgen.ErrUnsupported},
 		{"a pairs record of another package", func(p *ir.Package, _ *ir.Emit) { foreignPairs(p) }, cppgen.ErrUnsupported},
 		{"an inline case key equal to a parent key but for case", func(p *ir.Package, _ *ir.Emit) { inlineFold(p, "k", "A") }, cppgen.ErrUnsupported},
 		{"an inline tag equal to a parent key but for case", func(p *ir.Package, _ *ir.Emit) { inlineFold(p, "A", "c") }, cppgen.ErrUnsupported},
@@ -95,10 +95,12 @@ func refusals() []struct {
 			p.Values[0].Type.KeyedBy.Name = "nope"
 		}, cppgen.ErrMalformed},
 		{"a type of a package not imported", withField(field("o", "o", "", ir.TypeRef{Kind: types.Enum, Named: &ir.Enum{Pkg: "other", Name: "E"}})), cppgen.ErrMalformed},
-		{"a storage name with __ (§3.4)", withField(field("x_", "x", "", tInt)), cppgen.ErrName},
-		{"a field ending in _ (§3.4, §7.2)", withField(field("a_", "b", "", tInt)), cppgen.ErrName},
-		{"FindBy names that collide (§3.5)", func(p *ir.Package, _ *ir.Emit) { stableCollision(p) }, cppgen.ErrNameCollision},
-		{"fields named alike (§3.5)", withField(field("A", "c", "", tInt)), cppgen.ErrNameCollision},
+		// The next four are a plan.Problems() stage E should already have refused (E8005/E8011; log-2026-09-24 "Generators trust stage E");
+		// gen/cpp trusts it and reports ErrMalformed rather than re-deriving its own diagnosis.
+		{"a storage name with __ (§3.4)", withField(field("x_", "x", "", tInt)), cppgen.ErrMalformed},
+		{"a field ending in _ (§3.4, §7.2)", withField(field("a_", "b", "", tInt)), cppgen.ErrMalformed},
+		{"FindBy names that collide (§3.5)", func(p *ir.Package, _ *ir.Emit) { stableCollision(p) }, cppgen.ErrMalformed},
+		{"fields named alike (§3.5)", withField(field("A", "c", "", tInt)), cppgen.ErrMalformed},
 	}
 }
 
@@ -113,6 +115,48 @@ func TestRefusals(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestSeveralHoldersResolve is CODEGEN.md §5.8, §5.11 (log-2026-09-24 "ir name plans + support plan").
+func TestSeveralHoldersResolve(t *testing.T) {
+	tests := []struct {
+		name                    string
+		leftReload, rightReload bool
+		resolved                bool
+	}{
+		{"both @reload: every holder resolves into left", true, true, true},
+		{"neither @reload: right does not resolve into left", false, false, false},
+		{"target non-@reload, right @reload: right does not resolve into left", false, true, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			p, e := small(field("a", "a", "", tInt))
+			severalHolders(p, tt.leftReload, tt.rightReload)
+			files, err := cppgen.Generate(p, e)
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			header := string(mustHeader(t, files))
+			if strings.Contains(header, "GetPeer()") != tt.resolved {
+				t.Errorf("header has a resolved GetPeer(): %v, want %v\n%s", strings.Contains(header, "GetPeer()"), tt.resolved, header)
+			}
+			if !strings.Contains(header, "GetPeerKey()") {
+				t.Errorf("header without the key getter GetPeerKey():\n%s", header)
+			}
+		})
+	}
+}
+
+// mustHeader is the .gen.h file's content among files.
+func mustHeader(t *testing.T, files []ir.File) []byte {
+	t.Helper()
+	for _, f := range files {
+		if strings.HasSuffix(f.Path, ".gen.h") {
+			return f.Content
+		}
+	}
+	t.Fatal("no .gen.h among the generated files")
+	return nil
 }
 
 func translated(name string, reads ...*ir.Read) *ir.ExportFn {
@@ -154,8 +198,10 @@ func fieldlessMethods(p *ir.Package) {
 	p.Types = append(p.Types, v)
 }
 
-func severalHolders(p *ir.Package) {
-	withValues(p, true, "left", "right")
+// severalHolders gives Thing a "peer" ref into "left", also held by "right" (CODEGEN.md §5.8).
+func severalHolders(p *ir.Package, leftReload, rightReload bool) {
+	withValues(p, leftReload, "left")
+	withValues(p, rightReload, "right")
 	key := tInt
 	r := ir.TypeRef{Kind: types.Ref, Key: &key, Ref: &ir.RefTarget{Coll: types.CollLet, Pkg: "demo", Value: "left", Elem: thing(p), Keyed: true}}
 	thing(p).Fields = append(thing(p).Fields, field("peer", "peer", "", r))

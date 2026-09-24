@@ -56,7 +56,7 @@ func (g *gen) decodePairs(f *ir.Field, dst string) {
 	elem := g.storage(*f.Type.Elem)
 	g.c.linef(depthThree, localFormat, elem, slotElem, "")
 	for k, ef := range rec.Fields {
-		m, err := member(ef.Name)
+		m, err := g.member(ef.Name)
 		g.fail(err)
 		key := fmt.Sprintf(indexFormat, fmt.Sprintf(wireKeysFormat, k), slotVar)
 		g.decodeKey(depthThree, sourceVar, key, leaf{t: ef.Type, unit: ef.Unit, enc: ef.Enc, dst: slotElem + memberAccess + m})
@@ -87,7 +87,7 @@ func (g *gen) decodeBits(depth int, src, key string, l leaf) {
 	slices.SortStableFunc(members, func(a, b *ir.EnumMember) int { return cmp.Compare(a.Code, b.Code) })
 	names := make([]string, len(members))
 	for i, m := range members {
-		names[i] = g.typeName(e) + scopeSep + enumerator(m)
+		names[i] = g.typeName(e) + scopeSep + g.pl.Enumerator(m)
 	}
 	enum := g.typeName(e)
 	g.c.linef(depth, bitsTempLine)

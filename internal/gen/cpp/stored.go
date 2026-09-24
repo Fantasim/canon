@@ -11,7 +11,7 @@ import (
 func (g *gen) fnMember(sc *scope, c class, fields []*ir.Field, fn *ir.ExportFn) []string {
 	leave := g.enter(g.at + qnameSep + fn.Name)
 	defer leave()
-	name := override(fn.Cpp, upperCamel(fn.Name))
+	name := g.pl.FnName(fn)
 	g.h.blank()
 	switch fn.Kind {
 	case ir.FnPrecomputed:
@@ -35,7 +35,7 @@ type access struct {
 
 // storedGetter is a precomputed or lookup getter; a ref result gets <Name>Key() (log-2026-09-24).
 func (g *gen) storedGetter(sc *scope, c class, name string, fn *ir.ExportFn, doms []domain) []string {
-	m, err := member(fn.Name)
+	m, err := g.member(fn.Name)
 	g.fail(err)
 	t, optional := resultType(fn.Result)
 	acc := g.lookupAccess(fn, doms)
@@ -121,7 +121,7 @@ func (g *gen) ordinalLines(d domain, arg, ord string) []string {
 	}
 	lines := []string{fmt.Sprintf(ordinalVarDecl, ord), fmt.Sprintf(switchFormat, arg)}
 	for i, m := range d.enum.Members {
-		lines = append(lines, fmt.Sprintf(ordinalCaseFormat, g.typeName(d.enum)+scopeSep+enumerator(m), ord, i))
+		lines = append(lines, fmt.Sprintf(ordinalCaseFormat, g.typeName(d.enum)+scopeSep+g.pl.Enumerator(m), ord, i))
 	}
 	return append(lines, abortDefault, closeBrace)
 }

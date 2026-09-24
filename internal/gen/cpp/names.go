@@ -41,11 +41,11 @@ func verbatim(name string) string {
 }
 
 // member is the storage `f_` of a field or stored fn; `f__` is reserved (CODEGEN.md §3.4, §7.2).
-func member(name string) (string, error) {
+func (g *gen) member(name string) (string, error) {
 	if strings.HasSuffix(name, underscore) || strings.Contains(name, reservedRun) {
-		return "", fmt.Errorf("%w: storage of %s", ErrName, name)
+		return "", fmt.Errorf("%w: storage of %s", errName, name)
 	}
-	return name + underscore, nil
+	return g.pl.Member(name), nil
 }
 
 // scope is one C++ scope of generated names (CODEGEN.md §3.5): a namespace, a class, an enum.
@@ -61,10 +61,10 @@ func newScope(what string) *scope {
 // add declares name for origin; a repeat, or a name with `__` or a leading `_X`, is refused.
 func (s *scope) add(name, origin string) error {
 	if strings.Contains(name, reservedRun) || len(name) > 1 && name[0] == '_' && isUpper(name[1]) {
-		return fmt.Errorf("%w: %s (from %s)", ErrName, name, origin)
+		return fmt.Errorf("%w: %s (from %s)", errName, name, origin)
 	}
 	if prev, ok := s.seen[name]; ok {
-		return fmt.Errorf("%w: %s %s: %s, %s", ErrNameCollision, s.what, name, prev, origin)
+		return fmt.Errorf("%w: %s %s: %s, %s", errNameCollision, s.what, name, prev, origin)
 	}
 	s.seen[name] = origin
 	return nil

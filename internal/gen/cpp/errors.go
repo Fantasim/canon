@@ -2,6 +2,7 @@ package cppgen
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/fantasim/canonlang/internal/ir"
 	"github.com/fantasim/canonlang/internal/types"
@@ -14,10 +15,10 @@ var (
 	ErrUnsupported = errors.New("cppgen: not supported")
 	// ErrMalformed is an IR that stage E should not have produced.
 	ErrMalformed = errors.New("cppgen: malformed IR")
-	// ErrName is a generated name C++ cannot declare (CODEGEN.md §3.4).
-	ErrName = errors.New("cppgen: not a C++ identifier")
-	// ErrNameCollision is two generated names equal in one C++ scope (CODEGEN.md §3.5).
-	ErrNameCollision = errors.New("cppgen: generated name collision")
+	// errName is a generated name C++ cannot declare: stage E reports it first, so reaching it is malformed IR.
+	errName = fmt.Errorf("%w: not a C++ identifier", ErrMalformed)
+	// errNameCollision is two generated names equal in one C++ scope: stage E reports it first (malformed IR).
+	errNameCollision = fmt.Errorf("%w: generated name collision", ErrMalformed)
 )
 
 // What this generator refuses (ErrUnsupported, decision 124) or finds malformed (ErrMalformed).
@@ -39,13 +40,13 @@ const (
 	inlineFields     = "an optional or non-variant @json(inline) field"
 	optionalStable   = "an optional @stable field"
 	methodCalls      = "a call to another export method"
-	severalHolders   = "a resolvable ref in a record several emitted values hold"
 	fieldlessMethods = "export fns of a case without fields, which has no As accessor"
 	lookupParams     = "a finite parameter that is not an enum or a Bool"
 	unknownReads     = "a read of self that is not a path of fields"
 	mapFields        = "a map field (nlohmann::json does not keep the key order)"
 	foreignPairs     = "a pairs field of a record from another package"
 	inlineFoldKeys   = "an inline variant key equal to another key of its parent but for letter case"
+	namePlanProblem  = "a C++ name-plan problem stage E should have refused"
 	snapshotOrigin   = "the snapshot"
 	noneMarkerFormat = "none marker %s"
 	typeFormat       = "type %T"

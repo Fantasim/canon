@@ -11,7 +11,7 @@ import (
 
 // typeName is a type's C++ name, qualified when it is imported (CODEGEN.md §2.8, §3.3).
 func (g *gen) typeName(t ir.Type) string {
-	pkg, name := named(t)
+	pkg, name := g.named(t)
 	if name == "" {
 		g.unsupported(fmt.Sprintf(typeFormat, t), g.at)
 		return cppInvalid
@@ -20,15 +20,16 @@ func (g *gen) typeName(t ir.Type) string {
 	return g.qualifier(pkg) + name
 }
 
-// named is a type's package and unqualified C++ name, its @cpp(name:) when it has one.
-func named(t ir.Type) (pkg, name string) {
+// named is a type's package and unqualified C++ name, its @cpp(name:) when it has one
+// (ir's CppNamePlan.TypeName, pure in its argument: it works for any package's type).
+func (g *gen) named(t ir.Type) (pkg, name string) {
 	switch x := t.(type) {
 	case *ir.Record:
-		return x.Pkg, override(ir.NameOptions{Name: x.Cpp.Name}, x.Name)
+		return x.Pkg, g.pl.TypeName(x)
 	case *ir.Enum:
-		return x.Pkg, override(x.Cpp, x.Name)
+		return x.Pkg, g.pl.TypeName(x)
 	case *ir.Variant:
-		return x.Pkg, override(x.Cpp, x.Name)
+		return x.Pkg, g.pl.TypeName(x)
 	default:
 		return "", ""
 	}
@@ -90,7 +91,7 @@ func (g *gen) importIncludes() []string {
 
 // decodeFunc is the decoder of a record or variant: its package's detail::Decode (§2.8, §7.2).
 func (g *gen) decodeFunc(t ir.TypeRef) string {
-	pkg, _ := named(t.Named)
+	pkg, _ := g.named(t.Named)
 	if pkg == g.p.Name {
 		return decodeFunc
 	}

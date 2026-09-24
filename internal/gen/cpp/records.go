@@ -103,7 +103,7 @@ func (g *gen) fieldGetter(sc *scope, c class, f *ir.Field) []string {
 	case f.Type.Kind == types.Never && f.Optional:
 		return nil
 	}
-	m, err := member(f.Name)
+	m, err := g.member(f.Name)
 	g.fail(err)
 	var refs []string
 	doc := f.Doc
@@ -135,19 +135,14 @@ func plain(m string) string { return m }
 
 // baseName is Get + UpperCamel(f), or the field's @cpp(name:) (CODEGEN.md §3.3, §3.5).
 func (g *gen) baseName(f *ir.Field) string {
-	return override(ir.NameOptions{Name: f.Cpp.Name}, getPrefix+upperCamel(f.Name))
+	_, resolved := g.pl.FieldGetter(f)
+	return resolved
 }
 
 // getterName is Get + UpperCamel(f) or @cpp(name:), then Key or Keys for refs (CODEGEN.md §3.3).
 func (g *gen) getterName(f *ir.Field) string {
-	name := g.baseName(f)
-	switch {
-	case f.Type.Kind == types.Ref:
-		return name + keySuffix
-	case f.Type.Kind == types.List && f.Type.Elem != nil && f.Type.Elem.Kind == types.Ref:
-		return name + keysSuffix
-	}
-	return name
+	getter, _ := g.pl.FieldGetter(f)
+	return getter
 }
 
 // variantClass holds its cases in a std::variant; the kind is the index (CODEGEN.md §5.5).
@@ -167,7 +162,7 @@ func (g *gen) variantClass(v *ir.Variant) {
 		}
 		cs := g.caseName(v, c)
 		alts = append(alts, cs)
-		as := caseAccessor(c)
+		as := g.pl.AsName(c)
 		g.fail(sc.add(as, v.Name+qnameSep+c.Name))
 		g.h.linef(1, asGetterFormat, cs, as, i)
 	}

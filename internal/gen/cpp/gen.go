@@ -21,10 +21,11 @@ var (
 type gen struct {
 	p            *ir.Package
 	emit         *ir.Emit
+	pl           *ir.CppNamePlan // the names ir plans (CODEGEN.md §3.3–§3.5)
 	err          error
 	at           string // the Canon item being written, for messages
 	last         string // the last segment of the package: the file stem
-	upper        string // P, UpperCamel of the last segment
+	upper        string // P, UpperCamel of the last segment (pl.Upper())
 	values       []*ir.Value
 	entries      map[*ir.Record]bool      // records that are entries of an emitted table
 	loaders      map[*ir.Record]*ir.Value // a record's static Load reads this non-@reload value
@@ -75,7 +76,7 @@ func newGen(p *ir.Package, e *ir.Emit) *gen {
 	segs := strings.Split(p.Name, qnameSep)
 	last := segs[len(segs)-1]
 	return &gen{
-		p: p, emit: e, at: p.Name, last: last, upper: upperCamel(last),
+		p: p, emit: e, at: p.Name, last: last,
 		entries: map[*ir.Record]bool{}, loaders: map[*ir.Record]*ir.Value{}, imported: map[string]bool{},
 		pairsFriends: map[*ir.Record][]string{}, holders: map[any][]*ir.Value{}, slots: map[any][]resolved{},
 		top: newScope(e.Namespace),
@@ -113,6 +114,12 @@ func (g *gen) plan() {
 	if g.validate(); g.err != nil {
 		return
 	}
+	g.pl = ir.PlanCppNames(g.p, g.emit)
+	if probs := g.pl.Problems(); len(probs) > 0 {
+		g.fail(fmt.Errorf("%w: %s (%s)", ErrMalformed, namePlanProblem, probs[0].Origin))
+		return
+	}
+	g.upper = g.pl.Upper()
 	g.selectValues()
 	g.indexFns()
 	g.boxes()

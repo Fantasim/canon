@@ -67,27 +67,12 @@ func (g *gen) hold(byKey map[any]class, key any, v *ir.Value, seen map[any]bool)
 	}
 }
 
-// resolvedTarget is the value a ref of c resolves into, or nil (§5.8, §5.11; log-2026-09-24).
+// resolvedTarget is the value a ref of c resolves into, or nil (CODEGEN.md §5.8, §5.11; log-2026-09-24 "ir name plans + support plan").
 func (g *gen) resolvedTarget(t ir.TypeRef, c class) *ir.Value {
-	r := t.Ref
-	if r == nil || r.Coll != types.CollLet || r.Local || r.Value == "" || r.Pkg != g.p.Name {
+	if !g.pl.Resolves(t, c.key()) {
 		return nil
 	}
-	target := g.valueNamed(r.Value)
-	if target == nil || target.Type.Kind == types.Record {
-		return nil
-	}
-	holders := g.holders[c.key()]
-	for _, w := range holders {
-		if w == target || w.Reload && target.Reload {
-			if len(holders) > 1 {
-				g.unsupported(severalHolders, c.canonName())
-				return nil
-			}
-			return target
-		}
-	}
-	return nil
+	return g.valueNamed(t.Ref.Value)
 }
 
 func (g *gen) valueNamed(name string) *ir.Value {

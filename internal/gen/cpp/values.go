@@ -29,7 +29,7 @@ func (g *gen) detailDecls() {
 	if g.callsPackageFn() {
 		for _, fn := range g.pkgFns {
 			leave := g.enter(fn.Name)
-			g.h.printf(protoFormat, g.pureSignature(override(fn.Cpp, upperCamel(fn.Name)), fn))
+			g.h.printf(protoFormat, g.pureSignature(g.pl.FnName(fn), fn))
 			leave()
 		}
 		g.h.blank()
@@ -46,7 +46,7 @@ func (g *gen) detailDecls() {
 		}
 		g.h.blank()
 		g.h.printf(translatedDocText, g.p.Dir+pathSep+m.fn.File, m.class.canonName(), m.fn.Name)
-		g.pureFn(pureName(g.className(m.class), m.fn), m.fn)
+		g.pureFn(g.pl.PureName(g.className(m.class), m.fn), m.fn)
 		leave()
 	}
 	g.h.line(detailClose)
@@ -58,7 +58,7 @@ func (g *gen) packageFns() {
 	for _, fn := range g.pkgFns {
 		leave := g.enter(fn.Name)
 		g.doc(0, fn.Doc)
-		g.pureFn(override(fn.Cpp, upperCamel(fn.Name)), fn)
+		g.pureFn(g.pl.FnName(fn), fn)
 		g.h.blank()
 		leave()
 	}
@@ -88,7 +88,7 @@ func (g *gen) containerSpec(v *ir.Value) containerSpec {
 		g.fail(fmt.Errorf("%w: value %s of no record", ErrMalformed, v.Name))
 		return containerSpec{}
 	}
-	s := containerSpec{name: containerName(v), elem: g.typeName(rec), key: cppString, keyName: idKeyName}
+	s := containerSpec{name: g.pl.ContainerName(v), elem: g.typeName(rec), key: cppString, keyName: idKeyName}
 	if v.Type.KeyedBy != nil {
 		kf := g.keyField(v.Type)
 		if kf == nil {
@@ -204,7 +204,7 @@ func (g *gen) snapshot() {
 		if !v.Reload {
 			continue
 		}
-		m, err := member(v.Name)
+		m, err := g.member(v.Name)
 		g.fail(err)
 		name := override(v.Cpp, getPrefix+upperCamel(v.Name))
 		g.h.blank()
@@ -229,7 +229,7 @@ func (g *gen) valueClass(v *ir.Value) string {
 	if v.Type.Kind == types.Record {
 		return g.typeName(v.Type.Named)
 	}
-	return containerName(v)
+	return g.pl.ContainerName(v)
 }
 
 // conformanceDecl declares Run<P>Conformance with T10 (CODEGEN.md §2.7 step 6).

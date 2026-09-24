@@ -1,0 +1,6 @@
+{
+  "$schema": "demo.holders.Item@00000001",
+  "rows": [
+    {"a": "R1", "peer": "nope"}
+  ]
+}

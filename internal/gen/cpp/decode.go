@@ -50,7 +50,7 @@ func (g *gen) decodeRecord(c class) {
 		g.decodeField(f, fields)
 	}
 	for _, fn := range fns {
-		m, err := member(fn.Name)
+		m, err := g.member(fn.Name)
 		t, optional := resultType(fn.Result)
 		l := leaf{t: t, optional: optional, dst: outPrefix + m}
 		switch fn.Kind {
@@ -81,7 +81,7 @@ func (g *gen) decodeField(f *ir.Field, fields []*ir.Field) {
 	if f.Input != nil || f.Type.Kind == types.Never && f.Optional {
 		return
 	}
-	m, err := member(f.Name)
+	m, err := g.member(f.Name)
 	g.fail(err)
 	switch {
 	case f.Pairs != nil:

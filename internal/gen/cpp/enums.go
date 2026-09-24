@@ -44,7 +44,7 @@ func (g *gen) declaredEnum(e *ir.Enum) enumSpec {
 	s := enumSpec{name: g.typeName(e), doc: e.Doc, codes: e.Codes}
 	for _, m := range e.Members {
 		s.members = append(s.members, enumMember{
-			name: enumerator(m), canon: m.Name, wire: m.Wire, doc: m.Doc, code: m.Code, retired: m.Retired,
+			name: g.pl.Enumerator(m), canon: m.Name, wire: m.Wire, doc: m.Doc, code: m.Code, retired: m.Retired,
 		})
 	}
 	s.underlying = underlying(e.Codes, len(s.members))
@@ -59,7 +59,7 @@ func (g *gen) kindEnum(v *ir.Variant) enumSpec {
 		if len(c.Fields) == 0 {
 			doc = c.Doc
 		}
-		s.members = append(s.members, enumMember{name: kindMemberName(c), canon: c.Name, wire: c.Wire, doc: doc, retired: c.Retired})
+		s.members = append(s.members, enumMember{name: g.pl.KindMember(c), canon: c.Name, wire: c.Wire, doc: doc, retired: c.Retired})
 	}
 	s.underlying = underlying(nil, len(s.members))
 	return s
@@ -158,10 +158,5 @@ func (g *gen) doc(depth int, text string) {
 
 // kindMember is the qualified kind-enum member of case i (CODEGEN.md §3.3, §3.5).
 func (g *gen) kindMember(v *ir.Variant, i int) string {
-	return g.kindName(v) + scopeSep + kindMemberName(v.Cases[i])
-}
-
-// kindMemberName is a case's kind member: its @cpp(name:), else its name verbatim (§3.5).
-func kindMemberName(c *ir.Case) string {
-	return override(ir.NameOptions{Name: c.Cpp.Name}, verbatim(c.Name))
+	return g.kindName(v) + scopeSep + g.pl.KindMember(v.Cases[i])
 }

@@ -55,11 +55,11 @@ func defineName(prefix string, m *ir.EnumMember) string {
 func (g *gen) clashes(text string) []string {
 	var out []string
 	for _, e := range append(g.ownEnums(), g.foreignEnums...) {
-		_, enum := named(e)
+		_, enum := g.named(e)
 		for _, m := range e.Members {
 			macro := defineName(e.CppDefines, m)
 			used := regexp.MustCompile(wordBoundary + regexp.QuoteMeta(enum+scopeSep+macro) + wordBoundary)
-			if e.CppDefines != "" && macro == enumerator(m) && used.MatchString(text) && !slices.Contains(out, macro) {
+			if e.CppDefines != "" && macro == g.pl.Enumerator(m) && used.MatchString(text) && !slices.Contains(out, macro) {
 				out = append(out, macro)
 			}
 		}

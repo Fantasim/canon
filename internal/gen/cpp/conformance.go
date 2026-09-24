@@ -70,10 +70,10 @@ func (g *gen) vectorSets() []vectorSet {
 	for _, m := range g.methods {
 		owner := g.className(m.class)
 		label := m.class.canonName() + qnameSep + m.fn.Name
-		out = append(out, g.vectorSet(sc, m.fn, label, owner, detailPrefix+pureName(owner, m.fn)))
+		out = append(out, g.vectorSet(sc, m.fn, label, owner, detailPrefix+g.pl.PureName(owner, m.fn)))
 	}
 	for _, fn := range g.pkgFns {
-		out = append(out, g.vectorSet(sc, fn, fn.Name, "", override(fn.Cpp, upperCamel(fn.Name))))
+		out = append(out, g.vectorSet(sc, fn, fn.Name, "", g.pl.FnName(fn)))
 	}
 	return out
 }

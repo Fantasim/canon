@@ -207,16 +207,16 @@ func (g *gen) declareNames() {
 		}
 	}
 	for _, c := range g.p.Consts {
-		g.declare(override(c.Cpp, c.Name), c.Name)
+		g.declare(g.pl.ConstName(c), c.Name)
 	}
 	for _, v := range g.values {
-		g.declare(schemaName(v), v.Name)
+		g.declare(g.pl.SchemaName(v), v.Name)
 		if v.Type.Kind != types.Record {
-			g.declare(containerName(v), v.Name)
+			g.declare(g.pl.ContainerName(v), v.Name)
 		}
 	}
 	for _, fn := range g.pkgFns {
-		g.declare(override(fn.Cpp, upperCamel(fn.Name)), fn.Name)
+		g.declare(g.pl.FnName(fn), fn.Name)
 	}
 	if g.reloads() > 0 {
 		g.declare(g.upper+snapshotSuffix, snapshotOrigin)
@@ -249,7 +249,7 @@ func (g *gen) forwards() {
 	}
 	for _, v := range g.values {
 		if v.Type.Kind != types.Record {
-			names = append(names, containerName(v))
+			names = append(names, g.pl.ContainerName(v))
 		}
 	}
 	if g.reloads() > 0 {

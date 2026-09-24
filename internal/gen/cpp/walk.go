@@ -76,7 +76,7 @@ func (g *gen) ctxOf(c class) (typ string, snapshot bool) {
 	if len(holders) == 0 || holders[0].Reload {
 		return g.upper + snapshotSuffix, true
 	}
-	return containerName(holders[0]), false
+	return g.pl.ContainerName(holders[0]), false
 }
 
 // resolvers writes one Resolve overload per class of walks; a key naming no entry fails the
@@ -110,7 +110,7 @@ func (g *gen) resolveBody(c class, snapshot bool) {
 	for _, r := range g.slots[c.key()] {
 		find := findPrefix
 		if snapshot {
-			m, err := member(r.target.Name)
+			m, err := g.member(r.target.Name)
 			g.fail(err)
 			find = ctxPrefix + m + rowsFind
 		}
@@ -118,7 +118,7 @@ func (g *gen) resolveBody(c class, snapshot bool) {
 	}
 	fields, _ := c.shape()
 	for _, f := range fields {
-		m, err := member(f.Name)
+		m, err := g.member(f.Name)
 		g.fail(err)
 		if !g.holdsWalk(f.Type) {
 			continue

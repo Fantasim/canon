@@ -69,11 +69,9 @@ func (g *gen) publicMethod(owner string, fields []*ir.Field, fn *ir.ExportFn, na
 		params = append(params, g.publicParam(p.Type)+space+verbatim(p.Name))
 		args = append(args, toPure(p.Type, verbatim(p.Name)))
 	}
-	call := fmt.Sprintf(pureCallFormat, pureName(owner, fn), strings.Join(args, listSep))
+	call := fmt.Sprintf(pureCallFormat, g.pl.PureName(owner, fn), strings.Join(args, listSep))
 	return fmt.Sprintf(methodFormat, g.storage(fn.Result), name, strings.Join(params, listSep), g.fromPure(fn.Result, call))
 }
-
-func pureName(owner string, fn *ir.ExportFn) string { return owner + underscore + fn.Name }
 
 // hop is one step of a path of self: the member or getter call reaching it, its field.
 type hop struct {
@@ -127,7 +125,7 @@ func (g *gen) hops(fields []*ir.Field, path []string) []hop {
 		g.unsupported(unknownReads, path[0])
 		return nil
 	}
-	m, err := member(f.Name)
+	m, err := g.member(f.Name)
 	g.fail(err)
 	out := []hop{{step: m, field: f}}
 	for _, seg := range path[1:] {

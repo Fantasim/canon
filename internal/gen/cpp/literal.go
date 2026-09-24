@@ -107,11 +107,8 @@ func (g *gen) memberLit(t ir.TypeRef, index int) string {
 		g.fail(fmt.Errorf("%w: enum member %d at %s", ErrMalformed, index, g.at))
 		return cppInvalid
 	}
-	return g.typeName(e) + scopeSep + enumerator(e.Members[index])
+	return g.typeName(e) + scopeSep + g.pl.Enumerator(e.Members[index])
 }
-
-// enumerator is a member's C++ name: verbatim, or its @cpp(name:) (CODEGEN.md §3.3).
-func enumerator(m *ir.EnumMember) string { return override(m.Cpp, verbatim(m.Name)) }
 
 // element is the literal of one element or map entry part; a Duration is written as one.
 func (g *gen) element(t ir.TypeRef, v value.Value) string {
@@ -179,7 +176,7 @@ func enumTyped(t ir.TypeRef) bool {
 func (g *gen) constant(c *ir.Const) {
 	leave := g.enter(c.Name)
 	defer leave()
-	name := override(c.Cpp, verbatim(c.Name))
+	name := g.pl.ConstName(c)
 	g.doc(0, c.Doc)
 	switch c.Type.Kind {
 	case types.Bool, types.Int, types.Float, types.Enum:
@@ -204,11 +201,7 @@ func (g *gen) schemaConstants() {
 			continue
 		}
 		g.h.printf(schemaDocText, dataFile(v))
-		g.h.printf(constexprFormat, cppStringView, schemaName(v), quote(v.Schema))
+		g.h.printf(constexprFormat, cppStringView, g.pl.SchemaName(v), quote(v.Schema))
 		g.h.blank()
 	}
 }
-
-func schemaName(v *ir.Value) string { return schemaPrefix + upperCamel(v.Name) + schemaSuffix }
-
-func containerName(v *ir.Value) string { return upperCamel(v.Name) }
