@@ -159,7 +159,7 @@ func (t *tr) branch(fill func(*lines), b *lines) {
 
 // let declares a local of the current scope; a numeric constant is typed explicitly, since Go would give it int or float64 (CONFORMANCE.md §2.3: every integer is int64).
 func (t *tr) let(name string, value ir.PExpr, b *lines) {
-	local, ok := t.p.names[name]
+	local, ok := t.p.plan.Locals[name]
 	if !ok {
 		t.g.failf(ErrMalformed, "let %s without its local in %s", name, t.g.at)
 		return

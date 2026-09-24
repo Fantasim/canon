@@ -74,7 +74,7 @@ func byOrder(a, b *pure) int { return cmp.Compare(a.fn.Order, b.fn.Order) }
 func (g *gen) testView(p *pure) (view testView, optional bool) {
 	inputs := g.inputs(p)
 	view = testView{
-		Name: p.test, T: g.testLocal(), Testing: g.use(testingPkg, testingPkg),
+		Name: p.plan.Test, T: p.plan.TestLocal, Testing: g.use(testingPkg, testingPkg),
 		Result: g.pureType(p.fn.Result),
 	}
 	var args, names, shown []string
@@ -91,7 +91,7 @@ func (g *gen) testView(p *pure) (view testView, optional bool) {
 		names = append(names, in.canon+equals+spec)
 		shown = append(shown, arg)
 	}
-	view.Call = p.name + lparen + strings.Join(args, listSep) + rparen
+	view.Call = p.plan.Pure + lparen + strings.Join(args, listSep) + rparen
 	if p.fn.Result.Kind == types.Float {
 		view.Math = g.use(mathPkg, mathPkg)
 	}
@@ -104,37 +104,20 @@ func (g *gen) testView(p *pure) (view testView, optional bool) {
 	return view, optional
 }
 
-// inputs are the reads of self then the parameters, named as the pure function names them; one named like a field of the template's gets `_` (CONFORMANCE.md §7.2).
+// inputs are the reads of self then the parameters, named as the plan's vector fields (ir.GoPure.Fields, CONFORMANCE.md §7.2).
 func (g *gen) inputs(p *pure) []input {
 	var out []input
-	taken := map[string]bool{}
-	field := func(name string) string {
-		for taken[name] || vectorFields[name] {
-			name += underscore
-		}
-		taken[name] = true
-		return name
-	}
 	for i, r := range p.fn.Reads {
-		in := input{canon: r.Name, field: field(p.names[r.Name]), t: r.Type}
-		if p.oks[i] != "" {
-			in.ok = field(p.oks[i])
+		in := input{canon: r.Name, field: p.plan.Fields[i], t: r.Type}
+		if p.plan.FieldOKs[i] != "" {
+			in.ok = p.plan.FieldOKs[i]
 		}
 		out = append(out, in)
 	}
-	for _, prm := range p.fn.Params {
-		out = append(out, input{canon: prm.Name, field: field(p.names[prm.Name]), t: prm.Type})
+	for i, prm := range p.fn.Params {
+		out = append(out, input{canon: prm.Name, field: p.plan.Fields[len(p.fn.Reads)+i], t: prm.Type})
 	}
 	return out
-}
-
-// testLocal is the test's *testing.T, t unless an imported Canon package is called so.
-func (g *gen) testLocal() string {
-	name := testingLocal
-	for g.taken[name] {
-		name += underscore
-	}
-	return name
 }
 
 // verb is the printf verb of a value of type t in a failure message.

@@ -2,6 +2,7 @@ package gogen
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/fantasim/canonlang/internal/ir"
@@ -13,13 +14,13 @@ func (g *gen) resolvers() {
 	for _, t := range g.p.Types {
 		switch x := t.(type) {
 		case *ir.Record:
-			if g.decoded[x] && g.needsWalk(x) {
+			if g.names.NeedsWalk(x) {
 				g.resolveBody(g.bodyOf(x))
 			}
 		case *ir.Variant:
-			if g.decoded[x] && g.needsWalk(x) {
+			if g.names.NeedsWalk(x) {
 				g.resolveVariant(x)
-				g.eachCase(x, func(c *ir.Case) bool { return g.decoded[c] && g.needsWalk(c) }, g.resolveBody)
+				g.eachCase(x, func(c *ir.Case) bool { return g.names.NeedsWalk(c) }, g.resolveBody)
 			}
 		}
 	}
@@ -27,9 +28,9 @@ func (g *gen) resolvers() {
 
 // ctxOf is where a class's refs find their entries, the snapshot or its one holder's container (CODEGEN.md §5.8).
 func (g *gen) ctxOf(key any) (typ string, snapshot bool) {
-	holders := g.holders[key]
+	holders := g.names.Holders(key)
 	if len(holders) == 0 || holders[0].Reload {
-		return pointer + g.snapshotName(), true
+		return pointer + g.names.Snapshot().Type, true
 	}
 	return pointer + g.names.ContainerName(holders[0]), false
 }
@@ -49,7 +50,7 @@ func (g *gen) resolveVariant(v *ir.Variant) {
 	lc := g.lc
 	g.printf(switchCaseFormat, lc.C, lc.Out, ir.GoCaseStore)
 	for _, c := range v.Cases {
-		if len(c.Fields) > 0 && g.needsWalk(c) {
+		if len(c.Fields) > 0 && g.names.NeedsWalk(c) {
 			g.printf(resolveCaseFormat, g.names.CaseName(v, c), g.resolveFunc(c), lc.Name, lc.Path, lc.Ctx, lc.C)
 		}
 	}
@@ -63,19 +64,20 @@ func (g *gen) resolveBody(b *body) {
 	var out strings.Builder
 	for _, s := range b.slots {
 		if s.Resolved {
-			g.resolveSlot(&out, s, g.resolvesTo(s.Ref, b.key, s.origin), snapshot)
+			g.resolveSlot(&out, s, g.slotTarget(s), snapshot)
+			continue
 		}
 		switch {
-		case s.Ref != nil || !g.typeWalks(s.T):
+		case s.Ref != nil:
 		case s.src != nil && s.src.Pairs != nil:
 			g.walkPairs(&out, s, snapshot)
-		default:
+		case g.typeWalks(s.T):
 			g.walkSlot(&out, s)
 		}
 	}
 	for _, f := range b.finite {
 		if f.res.Resolved {
-			g.resolveCells(&out, f, g.resolvesTo(f.res.Ref, b.key, f.origin), snapshot)
+			g.resolveCells(&out, f, g.slotTarget(f.res), snapshot)
 		}
 		if g.typeWalks(f.res.T) {
 			g.fail(newDetail(ErrUnsupported, f.origin, lookupRefFormat, f.origin))
@@ -194,28 +196,26 @@ func (g *gen) walkValue(b *strings.Builder, t ir.TypeRef, expr string, loc locat
 	fmt.Fprintf(b, walkOneFormat, expr, lc.Err, g.resolveFunc(t.Named), lc.Name, prefix, lc.Ctx)
 }
 
-// walkPairs resolves the refs of a pairs field's elements, each named by its slot key (WIRE.md §5.14).
+// walkPairs resolves a pairs field's elements' refs, named by their slot keys (WIRE.md §4.1, §5.14).
 func (g *gen) walkPairs(b *strings.Builder, s *slot, snapshot bool) {
 	rec, ok := g.sub(s.T.Elem).Named.(*ir.Record)
 	if !ok || len(g.bodyOf(rec).slots) < pairFields {
 		return
 	}
 	eb := g.bodyOf(rec)
+	if !slices.ContainsFunc(eb.slots[:pairFields], func(es *slot) bool { return es.Resolved }) {
+		return
+	}
 	i, e := g.temp(tempIndex), g.temp(tempElem)
 	fmt.Fprintf(b, pairsWalkFormat, i, g.lc.Out+dot+s.Store, e)
 	for k, es := range eb.slots[:pairFields] {
-		target := g.resolvesTo(es.Ref, rec, es.origin)
-		walks := es.Ref == nil && g.typeWalks(es.T)
-		if target == nil && !walks {
+		target := g.slotTarget(es)
+		if target == nil {
 			continue
 		}
 		key := g.temp(tempKey)
 		fmt.Fprintf(b, slotKeyFormat, key, strings.Join(g.slotKeys(s.src.Pairs.Keys[k], s.src.Pairs.Slots), listSep), i)
 		loc := g.root().arg(key)
-		if walks {
-			g.walkValue(b, es.T, e+dot+es.Store, loc, false)
-			continue
-		}
 		c := refCell{keys: e + dot + es.KeyStore, dst: e + dot + es.Store, list: es.List, elem: es.Ref.Elem}
 		if es.Optional {
 			c.ok = e + dot + es.OKStore

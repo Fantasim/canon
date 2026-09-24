@@ -54,11 +54,6 @@ func dataRefusals() map[string]func(*ir.Package) {
 			addField(p, wired("peer", "peer", "", thingRef(p, "things")))
 			addMethod(p, &ir.ExportFn{Name: "f", Kind: ir.FnLookup, Result: typed(thing(p), types.Record), Params: []*ir.Param{{Name: "b", Type: boolT}}})
 		},
-		"a resolvable ref in a record two values hold": func(p *ir.Package) {
-			p.Values = nil
-			thingValues(p, true, "left", "right")
-			addField(p, wired("peer", "peer", "", thingRef(p, "left")))
-		},
 		"a data value that is a plain list": func(p *ir.Package) {
 			p.Values = append(p.Values, &ir.Value{Name: "l", Schema: "s", Type: listT(intT)})
 		},
@@ -103,15 +98,15 @@ func TestDataRefusals(t *testing.T) {
 	}
 }
 
-// CODEGEN.md §3.5, decision 203: `const STORE` is Store, the store variable, refused though ir plans baked names only.
+// CODEGEN.md §3.5, decision 203: `const STORE` is Store, the store variable, a plan Problem, ErrMalformed.
 func TestDataNameCollision(t *testing.T) {
 	p := dataThing()
 	p.Values[0].Reload = true
 	p.Consts = []*ir.Const{{Name: "STORE", Type: intT, V: &value.Int{V: 1}}}
 	_, err := gogen.Generate(p, p.Emits[0])
 	var d *gogen.DetailError
-	if !errors.Is(err, gogen.ErrNameCollision) || !errors.As(err, &d) || d.Subject != "Store" {
-		t.Errorf("got %v, want ErrNameCollision naming Store", err)
+	if !errors.Is(err, gogen.ErrMalformed) || !errors.As(err, &d) || d.Subject != "Store" {
+		t.Errorf("got %v, want ErrMalformed naming Store", err)
 	}
 }
 
@@ -154,8 +149,45 @@ func TestDataParamCollisions(t *testing.T) {
 	for _, c := range cases {
 		_, err := gogen.Generate(c.p, c.p.Emits[0])
 		var d *gogen.DetailError
-		if !errors.Is(err, gogen.ErrNameCollision) || !errors.As(err, &d) || d.Subject != c.subject {
-			t.Errorf("%s: got %v, want ErrNameCollision naming %s", c.name, err, c.subject)
+		if !errors.Is(err, gogen.ErrMalformed) || !errors.As(err, &d) || d.Subject != c.subject {
+			t.Errorf("%s: got %v, want ErrMalformed naming %s", c.name, err, c.subject)
+		}
+	}
+}
+
+// log-2026-09-24 "ir name plans + support plan"; CODEGEN.md §5.8, §5.11.
+func TestDataSeveralHoldersResolve(t *testing.T) {
+	intKey := intT
+	newPeer := func(reloadRight bool) *ir.Package {
+		p := dataThing()
+		p.Values = nil
+		thingValues(p, true, "left")
+		thingValues(p, reloadRight, "right")
+		addField(p, wired("peer", "peer", "", ir.TypeRef{
+			Kind: types.Ref, Key: &intKey, Ref: &ir.RefTarget{Coll: types.CollLet, Pkg: "demo", Value: "left", Elem: thing(p), Keyed: true},
+		}))
+		return p
+	}
+	entry, id := "func (self *Thing) Peer() *Thing", "func (self *Thing) PeerID() int64"
+	cases := []struct {
+		name          string
+		p             *ir.Package
+		want, wantNot string
+	}{
+		{"both @reload resolve through the snapshot", newPeer(true), entry, ""},
+		{"holders not all @reload is key-only", newPeer(false), id, entry},
+	}
+	for _, c := range cases {
+		files, err := gogen.Generate(c.p, c.p.Emits[0])
+		if err != nil {
+			t.Fatalf("%s: %v", c.name, err)
+		}
+		src := string(files[len(files)-1].Content)
+		if !strings.Contains(src, id) || !strings.Contains(src, c.want) {
+			t.Errorf("%s: no %q or %q in\n%s", c.name, id, c.want, src)
+		}
+		if c.wantNot != "" && strings.Contains(src, c.wantNot) {
+			t.Errorf("%s: unwanted %q in\n%s", c.name, c.wantNot, src)
 		}
 	}
 }

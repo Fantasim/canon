@@ -208,24 +208,17 @@ var (
 
 // Data mode's generated names (CODEGEN.md §3.3, §5.9, §5.11, §6.1) and its templates.
 const (
-	schemaConstSuffix  = "Schema"
-	snapshotTypeSuffix = "Snapshot"
-	storeTypeSuffix    = "Store"
-	loadPrefix         = "Load"
-	loadLocalPrefix    = "load"
-	decodePrefix       = "decode"
-	resolvePrefix      = "resolve"
-	dollar             = "$"
-	underscore         = "_"
-	packageScope       = "package"
-	dataTemplateSet    = "data"
-	tableTemplate      = "table"
-	loaderTemplate     = "loader"
-	loadTemplate       = "load"
-	snapshotTemplate   = "snapshot"
-	stringTypeFormat   = "type %s string\n\n"
-	constDeclFormat    = "const %s = %s\n\n"
-	schemaDocFormat    = "// %s is the fingerprint of the schema of %s (types, wire names,\n" +
+	dollar           = "$"
+	underscore       = "_"
+	packageScope     = "package"
+	dataTemplateSet  = "data"
+	tableTemplate    = "table"
+	loaderTemplate   = "loader"
+	loadTemplate     = "load"
+	snapshotTemplate = "snapshot"
+	stringTypeFormat = "type %s string\n\n"
+	constDeclFormat  = "const %s = %s\n\n"
+	schemaDocFormat  = "// %s is the fingerprint of the schema of %s (types, wire names,\n" +
 		"// units), not of its values. The loader refuses a file built from another schema.\n"
 	slotLetter = "i"
 	pairFields = 2
@@ -262,13 +255,10 @@ const (
 // Generated Go of data mode's decoders and resolvers: shapes with the locals as arguments.
 const (
 	rawMessage       = ".RawMessage"
-	objectType       = "map[string]"
 	durationFromMs   = ".DurationFromMs("
 	isOne            = " == 1"
-	notNil           = " != nil"
 	plus             = "+"
 	closeBrace       = "}\n"
-	closeBlock       = "}\n\n"
 	returnNil        = "return nil\n}\n\n"
 	funcOpenFormat   = "func %[1]s(%[2]s, %[3]s string, %[4]s %[5]s, %[6]s *%[7]s) error {\n"
 	missingFormat    = "%s.Missing(%s, %s, %s)"
@@ -390,9 +380,6 @@ const (
 	methodTemplate   = "method"
 	pureTemplate     = "pure"
 	pureDocFormat    = "// %s is translated from %s (%s). The method\n// and the conformance test both call it, so the test checks the code that runs.\n"
-	testPrefix       = "Test"
-	conformanceWord  = "Conformance"
-	okSuffix         = "Ok"
 	pathSep          = "/"
 	tempLocal        = "t"
 	goFloat64        = "float64"
@@ -431,8 +418,6 @@ var (
 		ir.BuiltinMax: {"max", "MaxFloat"}, ir.BuiltinAbs: {"AbsInt", "AbsFloat"}, ir.BuiltinClamp: {"ClampInt", "ClampFloat"},
 		ir.BuiltinFloor: {"FloorFloat", "FloorFloat"}, ir.BuiltinCeil: {"CeilFloat", "CeilFloat"}, ir.BuiltinRound: {"RoundFloat", "RoundFloat"},
 	}
-	// vectorFields are the fields text/conformance.txt gives every vector besides its inputs (CONFORMANCE.md §7.2).
-	vectorFields = map[string]bool{"want": true, "code": true}
 	// opPrecedence is Go's binding of the native operators, tightest last (the Go spec, Operator precedence).
 	opPrecedence = map[ir.Op]int{ir.OpOr: 1, ir.OpAnd: 2, ir.OpEq: 3, ir.OpNe: 3, ir.OpLt: 3, ir.OpLe: 3, ir.OpGt: 3, ir.OpGe: 3, ir.OpNot: 4}
 	scalarKinds  = map[types.Kind]bool{types.Bool: true, types.Int: true, types.Float: true, types.String: true, types.Duration: true, types.Enum: true}
@@ -450,7 +435,6 @@ const (
 	conformanceTemplate  = "conformance"
 	testTemplate         = "conformanceTest"
 	testingPkg           = "testing"
-	testingLocal         = "t"
 	vectorLocal          = "v"
 	equals               = "="
 	verbDecimal          = "%d"

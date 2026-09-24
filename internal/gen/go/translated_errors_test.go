@@ -56,7 +56,7 @@ func TestTranslatedLookupRefused(t *testing.T) {
 	}
 }
 
-// CONFORMANCE.md §7.1: two fns whose tests would share a name are a collision, never two tests of one name.
+// CONFORMANCE.md §7.1: two fns whose tests would share a name are a plan Problem, ErrMalformed.
 func TestTranslatedTestNamesCollide(t *testing.T) {
 	a, ab := record("A"), record("AB")
 	m := twice()
@@ -65,7 +65,7 @@ func TestTranslatedTestNamesCollide(t *testing.T) {
 	n.Name = "c"
 	a.Methods, ab.Methods = []*ir.ExportFn{m}, []*ir.ExportFn{n}
 	err := generateErr(pkg(a, ab), nil)
-	if !errors.Is(err, gogen.ErrNameCollision) || !strings.Contains(err.Error(), "TestABCConformance") {
+	if !errors.Is(err, gogen.ErrMalformed) || !strings.Contains(err.Error(), "TestABCConformance") {
 		t.Errorf("got %v, want a collision of TestABCConformance", err)
 	}
 }

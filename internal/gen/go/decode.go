@@ -13,28 +13,56 @@ import (
 
 // decoders writes the loaders' helpers, then a decoder per class a value holds (CODEGEN.md §6.1).
 func (g *gen) decoders() {
-	if len(g.decoded) == 0 {
-		return
-	}
 	outer := g.body
 	g.body = bytes.Buffer{}
+	wrote := false
 	for _, t := range g.p.Types {
 		switch x := t.(type) {
 		case *ir.Record:
-			if g.decoded[x] {
+			if g.names.Decoded(x) {
+				wrote = true
 				g.decodeBody(g.bodyOf(x))
 			}
 		case *ir.Variant:
-			if g.decoded[x] {
+			if g.names.Decoded(x) {
+				wrote = true
 				g.decodeVariant(x)
-				g.eachCase(x, func(c *ir.Case) bool { return g.decoded[c] }, g.decodeBody)
+				g.eachCase(x, func(c *ir.Case) bool { return g.names.Decoded(c) }, g.decodeBody)
 			}
 		}
 	}
 	decoders := g.body
 	g.body = outer
+	if !wrote {
+		return
+	}
 	g.helpers()
 	g.body.Write(decoders.Bytes())
+}
+
+// decodeFunc and resolveFunc are the plan's names for a class, refusing one the plan never named.
+func (g *gen) decodeFunc(key any) string {
+	g.checkClass(key)
+	return g.names.DecodeFunc(key)
+}
+
+func (g *gen) resolveFunc(key any) string {
+	g.checkClass(key)
+	return g.names.ResolveFunc(key)
+}
+
+// checkClass refuses a class the plan does not name: a *ir.Case without its variant, or
+// anything that is no ir.Type.
+func (g *gen) checkClass(key any) {
+	if c, ok := key.(*ir.Case); ok {
+		if g.variantOf[c] == nil {
+			g.failf(ErrMalformed, "a case %s without its variant", c.Name)
+		}
+		return
+	}
+	if _, ok := key.(ir.Type); !ok {
+		g.failf(ErrMalformed, "a class %T", key)
+	}
 }
 
 // eachCase calls do on the body of each case with fields that keep accepts.
@@ -46,23 +74,6 @@ func (g *gen) eachCase(v *ir.Variant, keep func(*ir.Case) bool, do func(*body)) 
 	}
 }
 
-// classGoName is the Go type of a record, variant or case.
-func (g *gen) classGoName(key any) string {
-	if c, ok := key.(*ir.Case); ok {
-		if v := g.variantOf[c]; v != nil {
-			return g.names.CaseName(v, c)
-		}
-	}
-	if t, ok := key.(ir.Type); ok {
-		return g.goName(t)
-	}
-	g.failf(ErrMalformed, "a class %T", key)
-	return ""
-}
-
-func (g *gen) decodeFunc(key any) string  { return decodePrefix + g.classGoName(key) }
-func (g *gen) resolveFunc(key any) string { return resolvePrefix + g.classGoName(key) }
-
 // decodeBody writes a record's or case's decoder: its object and key case, each field in
 // declaration order, then each stored fn's `$` key in method order, as the C++ loader reads them.
 func (g *gen) decodeBody(b *body) {
@@ -70,7 +81,7 @@ func (g *gen) decodeBody(b *body) {
 	g.temps = 0
 	g.inlineFolds(b)
 	lc := g.lc
-	g.printf(funcOpenFormat, decodePrefix+b.goName, lc.Name, lc.Path, lc.Raw, g.rawType(), lc.Out, b.goName)
+	g.printf(funcOpenFormat, g.decodeFunc(b.key), lc.Name, lc.Path, lc.Raw, g.rawType(), lc.Out, b.goName)
 	g.openObject(g.expectedKeys(b))
 	for _, s := range b.slots {
 		if s.fn == nil {

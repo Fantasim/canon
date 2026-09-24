@@ -38,7 +38,7 @@ func (g *gen) load(v *ir.Value) {
 	}
 	g.ownClass(ir.TypeRef{Kind: types.Record, Named: rec})
 	view := loadView{
-		Func: g.loadFunc(v), Type: g.valueType(v), Schema: g.schemaName(v), Decode: g.decodeFunc(rec),
+		Func: g.names.LoadFunc(v), Type: g.valueType(v), Schema: g.names.SchemaName(v), Decode: g.decodeFunc(rec),
 		RT: g.rt(), L: g.lc, M: containerMembers, Record: !isContainer(v),
 	}
 	if !view.Record {
@@ -64,7 +64,7 @@ func (g *gen) rows(view *loadView, v *ir.Value, rec *ir.Record) {
 		view.DupKey = strconv.Quote(strings.Join(kf.WirePath, dot))
 		view.DupToken = g.keyTokenExpr(kf.Type, keyExpr)
 	}
-	if !v.Reload && g.needsWalk(rec) {
+	if !v.Reload && g.names.NeedsWalk(rec) {
 		view.Resolve = g.resolveFunc(rec)
 	}
 }

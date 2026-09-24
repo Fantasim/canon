@@ -62,25 +62,14 @@ func (g *gen) execTo(w io.Writer, name string, data any) {
 // schemas writes each emitted value's schema constant, T2 (CODEGEN.md §3.3, FINGERPRINT.md §2).
 func (g *gen) schemas() {
 	for _, v := range g.emitted {
-		name := g.schemaName(v)
+		name := g.names.SchemaName(v)
 		g.printf(schemaDocFormat, name, dataFile(v))
 		g.printf(constDeclFormat, name, strconv.Quote(v.Schema))
 	}
 }
 
-func (g *gen) schemaName(v *ir.Value) string { return g.names.ContainerName(v) + schemaConstSuffix }
-
 // dataFile is the file the package's emit json writes v to (WIRE.md §8.1, E8153).
 func dataFile(v *ir.Value) string { return v.Name + ir.JSONExt }
-
-// upperCamel is the plan's UpperCamel of a Canon name (CODEGEN.md §3.2).
-func (g *gen) upperCamel(name string) string { return g.names.ContainerName(&ir.Value{Name: name}) }
-
-// snapshotName is <P>Snapshot, P the UpperCamel of the package's last segment (§3.3).
-func (g *gen) snapshotName() string {
-	segs := strings.Split(g.p.Name, dot)
-	return g.upperCamel(segs[len(segs)-1]) + snapshotTypeSuffix
-}
 
 // dataTable is a data-mode table container, keyed by the string id, with FindBy indexes (CODEGEN.md §5.3, §5.9).
 func (g *gen) dataTable(v *ir.Value, rec *ir.Record) {
@@ -109,14 +98,6 @@ func (g *gen) indexes(v *ir.Value, rec *ir.Record) []index {
 	return out
 }
 
-// loaderName is Load<V>, or the value's @go(name:) override: the data-mode accessor (§3.3, §3.5).
-func (g *gen) loaderName(v *ir.Value) string {
-	if v.Go.Name != "" {
-		return v.Go.Name
-	}
-	return loadPrefix + g.names.ContainerName(v)
-}
-
 // valueType is the Go type a value loads into: its container, or its record (CODEGEN.md §5.9).
 func (g *gen) valueType(v *ir.Value) string {
 	if isContainer(v) {
@@ -135,16 +116,13 @@ func (g *gen) loaders() {
 		if v.Reload {
 			continue
 		}
-		name := g.loaderName(v)
+		name := g.names.LoaderName(v)
 		g.exec(loaderTemplate, struct {
 			Doc, Name, Type, Func string
 			L                     locals
-		}{docFor(name, v.Doc), name, g.valueType(v), g.loadFunc(v), g.lc})
+		}{docFor(name, v.Doc), name, g.valueType(v), g.names.LoadFunc(v), g.lc})
 	}
 }
-
-// loadFunc is the unexported loader of one data file, load<V>.
-func (g *gen) loadFunc(v *ir.Value) string { return loadLocalPrefix + g.names.ContainerName(v) }
 
 // snapshotValue is one @reload value of the snapshot.
 type snapshotValue struct {
@@ -163,9 +141,9 @@ func (g *gen) snapshot() {
 		getter := g.names.ContainerName(v)
 		sv := snapshotValue{
 			Doc: docFor(getter, v.Doc), Store: g.names.ValueStore(v), Type: g.valueType(v), Getter: getter,
-			Load: g.loadFunc(v), File: strconv.Quote(pathSep + dataFile(v)), Record: !isContainer(v),
+			Load: g.names.LoadFunc(v), File: strconv.Quote(pathSep + dataFile(v)), Record: !isContainer(v),
 		}
-		if key := rootKey(v); key != nil && g.needsWalk(key) {
+		if key := rootKey(v); key != nil && g.names.NeedsWalk(key) {
 			sv.Resolve = g.resolveFunc(key)
 		}
 		vals = append(vals, sv)
@@ -174,14 +152,14 @@ func (g *gen) snapshot() {
 	if len(vals) == 0 {
 		return
 	}
-	snap := g.snapshotName()
+	names := g.names.Snapshot()
 	g.exec(snapshotTemplate, struct {
 		Snap, StoreType, Pkg, GoPkg, Files, FMT, Atomic string
 		Values                                          []snapshotValue
 		L                                               locals
 		M                                               members
 	}{
-		snap, strings.TrimSuffix(snap, snapshotTypeSuffix) + storeTypeSuffix, g.p.Name, g.e.GoPackage, strings.Join(files, listSep),
+		names.Type, names.Store, g.p.Name, g.e.GoPackage, strings.Join(files, listSep),
 		g.use(fmtPkg, fmtPkg), g.use(atomicPath, atomicName), vals, g.lc, containerMembers,
 	})
 }

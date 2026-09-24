@@ -83,7 +83,7 @@ func (t *tr) param(i int) string {
 		t.g.failf(ErrMalformed, "parameter %d of %s", i, t.g.at)
 		return nilLit
 	}
-	return t.p.names[t.p.fn.Params[i].Name]
+	return t.p.plan.Locals[t.p.fn.Params[i].Name]
 }
 
 // read is a path of self's parameter; an optional one is read only by `??`.
@@ -92,7 +92,7 @@ func (t *tr) read(i int, optional bool) string {
 		t.g.failf(ErrMalformed, "read %d of %s", i, t.g.at)
 		return nilLit
 	}
-	return t.p.names[t.p.fn.Reads[i].Name]
+	return t.p.plan.Locals[t.p.fn.Reads[i].Name]
 }
 
 func (t *tr) unary(x *ir.Unary, b *lines) string {
@@ -271,7 +271,7 @@ func (t *tr) coalesce(x *ir.Coalesce, b *lines) string {
 	v := t.read(r.Index, true)
 	tmp := t.p.temp(t.g, tempLocal)
 	b.add(defineFormat, tmp, v)
-	b.add(ifOpenFormat, not+t.p.oks[r.Index])
+	b.add(ifOpenFormat, not+t.p.plan.OKs[r.Index])
 	t.assign(tmp, x.Y, b)
 	b.add(closeBrace)
 	return tmp

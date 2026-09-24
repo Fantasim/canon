@@ -32,7 +32,7 @@ func (g *gen) readArgs(b *body, p *pure) (pre string, args []string) {
 			args = append(args, g.toPure(hops[len(hops)-1].t, strings.Join(steps, dot)))
 			continue
 		}
-		v, ok := p.names[r.Name], p.oks[i]
+		v, ok := p.plan.Locals[r.Name], p.plan.OKs[i]
 		fmt.Fprintf(&sb, varFormat, v, g.pureType(r.Type))
 		fmt.Fprintf(&sb, varFormat, ok, goBool)
 		g.optionalRead(&sb, p, hops, v, ok)

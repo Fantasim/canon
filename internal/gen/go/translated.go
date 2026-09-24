@@ -12,15 +12,12 @@ import (
 	"github.com/fantasim/canonlang/internal/types"
 )
 
-// pure is a translated fn as written (CODEGEN.md §5.10): its Go names, which its public method, its body and the conformance test share.
+// pure is a translated fn as written: the plan's names (ir.GoPure), and the numbered temps the plan does not name (CODEGEN.md §5.10).
 type pure struct {
 	fn    *ir.ExportFn
-	label string            // <T>.<fn>, or <fn> at package level: the Canon name failures print
-	name  string            // the pure function
-	test  string            // Test<T><Fn>Conformance (CONFORMANCE.md §7.1)
-	names map[string]string // the Go local of each Canon read, parameter and let (CODEGEN.md §3.4)
-	oks   []string          // per read, its ok parameter; "" when the read is not optional
-	taken map[string]bool   // every Go name given in the fn
+	label string          // <T>.<fn>, or <fn> at package level: the Canon name failures print
+	plan  *ir.GoPure      // the pure function, the public method, the test, the locals (ir's plan)
+	taken map[string]bool // the plan's locals and ok parameters, which a fresh temp must not repeat
 	temps int
 }
 
@@ -40,10 +37,9 @@ func (g *gen) translatedMethod(b *body, fn *ir.ExportFn) {
 	if !g.translatable(fn) {
 		return
 	}
-	name := g.names.MethodSlot(fn).Getter
-	p := g.newPure(fn, label, lowerCamel(b.goName)+name, testPrefix+b.goName+name+conformanceWord)
-	g.publicMethod(b, p, name)
-	g.writePure(p, fmt.Sprintf(pureDocFormat, p.name, g.p.Dir+pathSep+fn.File, label))
+	p := g.newPure(fn, label)
+	g.publicMethod(b, p)
+	g.writePure(p, fmt.Sprintf(pureDocFormat, p.plan.Pure, g.p.Dir+pathSep+fn.File, label))
 }
 
 // translatedFn writes a package-level translated fn, public and pure at once (CODEGEN.md §5.10).
@@ -52,8 +48,8 @@ func (g *gen) translatedFn(fn *ir.ExportFn) {
 	if !g.translatable(fn) {
 		return
 	}
-	name := g.names.MethodSlot(fn).Getter
-	g.writePure(g.newPure(fn, fn.Name, name, testPrefix+name+conformanceWord), docFor(name, fn.Doc))
+	p := g.newPure(fn, fn.Name)
+	g.writePure(p, docFor(p.plan.Public, fn.Doc))
 }
 
 // translatable refuses a translated fn stage E left without a body, a source file or vectors.
@@ -73,43 +69,27 @@ func (g *gen) translatable(fn *ir.ExportFn) bool {
 	return false
 }
 
-// newPure names the fn's locals: reads, then parameters, then lets, each escaped once.
-func (g *gen) newPure(fn *ir.ExportFn, label, name, test string) *pure {
-	p := &pure{fn: fn, label: label, name: name, test: test, names: map[string]string{}, taken: map[string]bool{name: true}}
-	for _, r := range fn.Reads {
-		p.bind(g, r.Name)
-	}
-	for _, prm := range fn.Params {
-		p.bind(g, prm.Name)
-	}
-	for _, l := range letNames(fn.Body, nil) {
-		p.bind(g, l)
-	}
-	for _, r := range fn.Reads {
-		ok := ""
-		if r.Optional {
-			ok = p.fresh(g, p.names[r.Name]+okSuffix)
+// newPure takes the fn's names and locals off the plan, never a nil dereference (CODEGEN.md §3.3-§3.4, §5.10).
+func (g *gen) newPure(fn *ir.ExportFn, label string) *pure {
+	plan := g.names.Pure(fn)
+	if plan == nil {
+		g.failf(ErrMalformed, "translated fn %s has no plan", label)
+		plan = &ir.GoPure{
+			Locals: map[string]string{}, OKs: make([]string, len(fn.Reads)),
+			Fields: make([]string, len(fn.Reads)+len(fn.Params)), FieldOKs: make([]string, len(fn.Reads)),
 		}
-		p.oks = append(p.oks, ok)
+	}
+	p := &pure{fn: fn, label: label, plan: plan, taken: map[string]bool{plan.Pure: true}}
+	for _, local := range plan.Locals { //canon:unordered a set
+		p.taken[local] = true
+	}
+	for _, ok := range plan.OKs {
+		if ok != "" {
+			p.taken[ok] = true
+		}
 	}
 	g.pures = append(g.pures, p)
 	return p
-}
-
-// bind gives a Canon name its Go local, the same in every block that binds it.
-func (p *pure) bind(g *gen, canon string) {
-	if _, done := p.names[canon]; !done {
-		p.names[canon] = p.fresh(g, canon)
-	}
-}
-
-// fresh is name with `_` appended while it is reserved or already given (CODEGEN.md §3.4).
-func (p *pure) fresh(g *gen, name string) string {
-	for g.reserved(name) || p.taken[name] {
-		name += underscore
-	}
-	p.taken[name] = true
-	return name
 }
 
 // temp is a numbered local of the function being written, which no Canon name takes.
@@ -166,55 +146,18 @@ func (g *gen) typeNames(t ir.Type) {
 	}
 }
 
-// letNames are the names every `let` of a body binds, in order.
-func letNames(n ir.PExpr, out []string) []string {
-	switch x := n.(type) {
-	case *ir.Let:
-		return letNames(x.Body, append(out, x.Name))
-	case *ir.If:
-		return letNames(x.Else, letNames(x.Then, out))
-	case *ir.Block:
-		return blockLets(x, out)
-	}
-	return out
-}
-
-func blockLets(x *ir.Block, out []string) []string {
-	if x == nil {
-		return out
-	}
-	for _, st := range x.Stmts {
-		switch s := st.(type) {
-		case *ir.LetStmt:
-			out = append(out, s.Name)
-		case *ir.IfStmt:
-			out = blockLets(s.Else, blockLets(s.Then, out))
-		}
-	}
-	return out
-}
-
-// lowerCamel is a Go type name with its first word lower-cased: Potion, potion (CODEGEN.md §5.10).
-func lowerCamel(goName string) string {
-	ws := ir.Words(goName)
-	if len(ws) == 0 {
-		return goName
-	}
-	return strings.ToLower(ws[0]) + strings.Join(ws[1:], "")
-}
-
 // publicMethod calls the pure function on self's paths and the converted arguments (CONFORMANCE.md §2.3).
-func (g *gen) publicMethod(b *body, p *pure, name string) {
+func (g *gen) publicMethod(b *body, p *pure) {
 	pre, args := g.readArgs(b, p)
 	params := make([]string, 0, len(p.fn.Params))
 	for _, prm := range p.fn.Params {
-		local := p.names[prm.Name]
+		local := p.plan.Locals[prm.Name]
 		params = append(params, local+space+g.goType(prm.Type))
 		args = append(args, g.toPure(prm.Type, local))
 	}
-	call := g.fromPure(p.fn.Result, p.name+lparen+strings.Join(args, listSep)+rparen)
+	call := g.fromPure(p.fn.Result, p.plan.Pure+lparen+strings.Join(args, listSep)+rparen)
 	g.exec(methodTemplate, methodView{
-		Doc: docFor(name, p.fn.Doc), Type: b.goName, Name: name, Params: strings.Join(params, listSep),
+		Doc: docFor(p.plan.Public, p.fn.Doc), Type: b.goName, Name: p.plan.Public, Params: strings.Join(params, listSep),
 		Result: g.goType(p.fn.Result), Pre: pre, Call: call,
 	})
 }
@@ -223,14 +166,14 @@ func (g *gen) publicMethod(b *body, p *pure, name string) {
 func (g *gen) writePure(p *pure, doc string) {
 	params := make([]string, 0, len(p.fn.Reads)+len(p.fn.Params))
 	for i, r := range p.fn.Reads {
-		params = append(params, p.names[r.Name]+space+g.pureType(r.Type))
-		if p.oks[i] != "" {
-			params = append(params, p.oks[i]+space+goBool)
+		params = append(params, p.plan.Locals[r.Name]+space+g.pureType(r.Type))
+		if p.plan.OKs[i] != "" {
+			params = append(params, p.plan.OKs[i]+space+goBool)
 		}
 	}
 	var entry strings.Builder
 	for _, prm := range p.fn.Params {
-		local := p.names[prm.Name]
+		local := p.plan.Locals[prm.Name]
 		params = append(params, local+space+g.pureType(prm.Type))
 		for _, c := range g.entryChecks(prm, local) {
 			fmt.Fprintf(&entry, assignLineFormat, local, c)
@@ -238,7 +181,7 @@ func (g *gen) writePure(p *pure, doc string) {
 	}
 	p.temps = 0
 	g.exec(pureTemplate, pureView{
-		Doc: doc, Name: p.name, Params: strings.Join(params, listSep), Result: g.pureType(p.fn.Result),
+		Doc: doc, Name: p.plan.Pure, Params: strings.Join(params, listSep), Result: g.pureType(p.fn.Result),
 		Body: entry.String() + (&tr{g: g, p: p}).body(),
 	})
 }

@@ -34,7 +34,6 @@ func (g *gen) recordBody(key any, owner, goName string, fields []*ir.Field, fns 
 		}
 		s := g.newSlot(owner+dot+f.Name, g.names.Slot(f))
 		s.doc, s.field, s.src = f.Doc, f.Name, f
-		g.dataSlot(s, key)
 		b.slots = append(b.slots, s)
 	}
 	for _, fn := range fns {
@@ -49,15 +48,26 @@ func (g *gen) addMethod(b *body, owner string, fn *ir.ExportFn) {
 	case ir.FnPrecomputed:
 		s := g.newSlot(origin, g.names.MethodSlot(fn))
 		s.doc, s.fn = fn.Doc, fn
-		g.dataSlot(s, b.key)
 		b.slots = append(b.slots, s)
 	case ir.FnLookup:
 		f := g.newFinite(origin, fn)
 		f.method = true
-		g.dataFinite(f, b.key)
+		g.checkLookupParams(f)
 		b.finite = append(b.finite, f)
 	default:
 		b.translated = append(b.translated, fn)
+	}
+}
+
+// checkLookupParams refuses a data-mode lookup over a parameter that is no enum or Bool (CODEGEN.md §5.10).
+func (g *gen) checkLookupParams(f *finiteMethod) {
+	if !g.isData() {
+		return
+	}
+	for _, p := range f.fn.Params {
+		if p.Type.Kind != types.Bool && p.Type.Kind != types.Enum {
+			g.fail(newDetail(ErrUnsupported, f.origin, lookupParamFormat, f.origin))
+		}
 	}
 }
 

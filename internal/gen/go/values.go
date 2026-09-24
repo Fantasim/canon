@@ -26,7 +26,7 @@ func (g *gen) indexValues() {
 		case !ok || rec.Pkg != g.p.Name:
 			g.failf(ErrUnsupported, "table %s of a record of another package", v.Name)
 		case g.tableOf[rec] != nil:
-			g.failf(ErrNameCollision, "%s is the id type of both %s and %s", g.idType(rec), g.tableOf[rec].Name, v.Name)
+			g.failf(errNameCollision, "%s is the id type of both %s and %s", g.idType(rec), g.tableOf[rec].Name, v.Name)
 		default:
 			g.tableOf[rec] = v
 			g.checkStable(v, rec)

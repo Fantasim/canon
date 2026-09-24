@@ -30,9 +30,7 @@ type gen struct {
 	data      string // the local that holds the baked data: d, escaped (§3.4)
 	at        string // the Canon item being written: the Subject of a kind refusal
 	bodies    map[any]*body
-	holders   map[any][]*ir.Value // data mode: per record, variant or case, the emitted values holding it
 	variantOf map[*ir.Case]*ir.Variant
-	decoded   map[any]bool    // data mode: the classes a loader decodes whole
 	lc        locals          // data mode: the escaped locals of loaders, decoders and resolvers
 	taken     map[string]bool // the Go names of the imported Canon packages, which locals avoid
 	temps     int             // the last numbered local of the function being written
@@ -78,16 +76,13 @@ func newGen(p *ir.Package, e *ir.Emit) *gen {
 	}
 	g.data = g.names.Data().Local
 	g.taken = importedNames(p)
-	for _, pr := range g.names.Problems() {
-		if !g.isData() || pr.Kind != ir.GoCollision {
-			g.fail(nameError(pr))
-			break
-		}
+	if problems := g.names.Problems(); len(problems) > 0 {
+		g.fail(nameError(problems[0]))
 	}
 	g.indexValues()
 	g.indexInstances()
 	if g.isData() {
-		g.indexHolders()
+		g.indexVariants()
 		g.lc = g.newLocals()
 	}
 	return g
@@ -148,7 +143,7 @@ func (g *gen) header(out *bytes.Buffer) {
 // use records an import and returns the name code refers to it by; the plan declared it, so two paths under one name are a plan defect.
 func (g *gen) use(importPath, name string) string {
 	if prev, ok := g.importOf[name]; ok && prev != importPath {
-		g.failf(ErrNameCollision, "the imports %s and %s are both %s", prev, importPath, name)
+		g.failf(errNameCollision, "the imports %s and %s are both %s", prev, importPath, name)
 	}
 	g.imports[importPath], g.importOf[name] = name, importPath
 	return name

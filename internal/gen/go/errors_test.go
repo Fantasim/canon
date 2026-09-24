@@ -51,7 +51,7 @@ func generateErr(p *ir.Package, edit func(*ir.Emit)) error {
 	return err
 }
 
-// CODEGEN.md §3.5: two generated names equal in one Go scope are refused.
+// CODEGEN.md §3.5: two generated names equal in one Go scope are a plan Problem, ErrMalformed.
 func TestNameCollisions(t *testing.T) {
 	strong := record("Gem", "strong")
 	strong.Methods = []*ir.ExportFn{{Name: "strong", Kind: ir.FnPrecomputed, Result: boolT}}
@@ -91,16 +91,16 @@ func TestNameCollisions(t *testing.T) {
 		"field and export fn strong", "container Potion and record", "two imports named iter",
 		"two types of one name", "a const named like its enum", "a member override ToneB next to member b",
 	} {
-		if err := generateErr(cases[name], nil); !errors.Is(err, gogen.ErrNameCollision) {
-			t.Errorf("%s: got %v, want ErrNameCollision", name, err)
+		if err := generateErr(cases[name], nil); !errors.Is(err, gogen.ErrMalformed) {
+			t.Errorf("%s: got %v, want ErrMalformed", name, err)
 		}
 	}
 }
 
-// CODEGEN.md §3.4: a Canon name with no Go spelling is refused.
+// CODEGEN.md §3.4, go.md §3: a Canon name with no Go spelling is a plan Problem, ErrMalformed.
 func TestNameNotIdentifier(t *testing.T) {
-	if err := generateErr(pkg(record("R", "_")), nil); !errors.Is(err, gogen.ErrName) {
-		t.Errorf("got %v, want ErrName", err)
+	if err := generateErr(pkg(record("R", "_")), nil); !errors.Is(err, gogen.ErrMalformed) {
+		t.Errorf("got %v, want ErrMalformed", err)
 	}
 }
 
@@ -202,7 +202,7 @@ func TestDefineRefsRefused(t *testing.T) {
 	}
 }
 
-// CODEGEN.md §1.3, §3.5: a @go(name:) override names public API, so it must be exported.
+// CODEGEN.md §1.3, §3.5: a @go(name:) override names public API, so it must be exported, or ErrMalformed.
 func TestUnexportedOverride(t *testing.T) {
 	field := record("R", "heal")
 	field.Fields[0].Go.Name = "heal"
@@ -213,8 +213,8 @@ func TestUnexportedOverride(t *testing.T) {
 	for _, p := range []*ir.Package{pkg(field), pkg(member), fn} {
 		err := generateErr(p, nil)
 		var d *gogen.DetailError
-		if !errors.Is(err, gogen.ErrName) || !errors.As(err, &d) {
-			t.Errorf("got %v, want ErrName for an unexported override", err)
+		if !errors.Is(err, gogen.ErrMalformed) || !errors.As(err, &d) {
+			t.Errorf("got %v, want ErrMalformed for an unexported override", err)
 		}
 	}
 }
@@ -226,8 +226,8 @@ func TestOverrideCollidesWithMethod(t *testing.T) {
 	table := ir.TypeRef{Kind: types.Table, Elem: &ir.TypeRef{Kind: types.Record, Named: status}}
 	p := pkg(status)
 	p.Values = []*ir.Value{{Name: "statuses", Type: table, V: &value.Table{}}}
-	if err := generateErr(p, nil); !errors.Is(err, gogen.ErrNameCollision) {
-		t.Errorf("got %v, want ErrNameCollision", err)
+	if err := generateErr(p, nil); !errors.Is(err, gogen.ErrMalformed) {
+		t.Errorf("got %v, want ErrMalformed", err)
 	}
 }
 

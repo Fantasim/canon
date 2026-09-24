@@ -18,19 +18,21 @@ type locals struct {
 	At                                                                                                  string
 }
 
+// newLocals reads data mode's fixed loader locals off the plan (CODEGEN.md §3.4, decision 182).
 func (g *gen) newLocals() locals {
+	n := g.names.DataLocal
 	return locals{
-		Name: g.local(localName), Path: g.local(localPath), Raw: g.local(localRaw), Out: g.local(localOut),
-		Obj: g.local(localObj), Err: g.local(localErr), F: g.local(localFile),
-		Rows: g.local(ir.GoRows), Values: g.local(localValues), Keys: g.local(localKeys), I: g.local(localIndex),
-		ID: g.local(ir.GoIDStore), Retired: g.local(ir.GoRetiredStore), Dir: g.local(localDir), S: g.local(localSnap), Ctx: g.local(localCtx),
-		Tag: g.local(localTag), C: g.local(localCase),
-		Key: g.local(keyArg), K: g.local(tempKey), R: g.local(tempRaw), OK: g.local(tempOK),
-		Bad: g.local(localBad), Want: g.local(localWant), Dst: g.local(localDst), N: g.local(tempInt), Lo: g.local(localLo),
-		Hi: g.local(localHi), V: g.local(tempValue), Kr: g.local(localKr), Vr: g.local(localVr), HasK: g.local(localHasK),
-		HasV: g.local(localHasV), First: g.local(localFirst), Empty: g.local(tempEmpty), Marker: g.local(localMarker),
-		A: g.local(localA), M: g.local(tempMember), Af: g.local(localAf), Mf: g.local(localMf),
-		At: g.local(localAt),
+		Name: n(localName), Path: n(localPath), Raw: n(localRaw), Out: n(localOut),
+		Obj: n(localObj), Err: n(localErr), F: n(localFile),
+		Rows: n(ir.GoRows), Values: n(localValues), Keys: n(localKeys), I: n(localIndex),
+		ID: n(ir.GoIDStore), Retired: n(ir.GoRetiredStore), Dir: n(localDir), S: n(localSnap), Ctx: n(localCtx),
+		Tag: n(localTag), C: n(localCase),
+		Key: n(keyArg), K: n(tempKey), R: n(tempRaw), OK: n(tempOK),
+		Bad: n(localBad), Want: n(localWant), Dst: n(localDst), N: n(tempInt), Lo: n(localLo),
+		Hi: n(localHi), V: n(tempValue), Kr: n(localKr), Vr: n(localVr), HasK: n(localHasK),
+		HasV: n(localHasV), First: n(localFirst), Empty: n(tempEmpty), Marker: n(localMarker),
+		A: n(localA), M: n(tempMember), Af: n(localAf), Mf: n(localMf),
+		At: n(localAt),
 	}
 }
 
@@ -61,7 +63,7 @@ func (g *gen) temp(base string) string {
 	return g.local(base + strconv.Itoa(g.temps))
 }
 
-// checkNames refuses a file declaring a name twice in one scope, a function's parameters included; in data mode also a parameter named like an import (decision 203: ir plans baked names only).
+// checkNames parses the source and refuses a name declared twice in one scope, or in data mode a parameter named like an import (decision 203).
 func checkNames(src []byte, data bool) error {
 	f, err := parser.ParseFile(token.NewFileSet(), "", src, parser.SkipObjectResolution)
 	if err != nil {
@@ -99,7 +101,7 @@ func (c *nameCheck) add(scope, name string) {
 		c.scopes[scope] = names
 	}
 	if names[name] && c.err == nil {
-		c.err = newDetail(ErrNameCollision, name, dataCollisionFormat, scope, name)
+		c.err = newDetail(errNameCollision, name, dataCollisionFormat, scope, name)
 	}
 	names[name] = true
 }
@@ -186,7 +188,7 @@ func (c *nameCheck) locals(d *ast.FuncDecl) {
 
 func (c *nameCheck) local(scope, name string, names map[string]bool) {
 	if (names[name] || c.data && c.imports[name]) && c.err == nil && name != underscore {
-		c.err = newDetail(ErrNameCollision, name, dataCollisionFormat, scope, name)
+		c.err = newDetail(errNameCollision, name, dataCollisionFormat, scope, name)
 	}
 	names[name] = true
 }
