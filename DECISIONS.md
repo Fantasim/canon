@@ -1598,6 +1598,18 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     follows the conventions of the code beside it: Go those of sovcommon, C++ those of Source's
     recent code, never its legacy style (no `m_` members, no `C` class prefix).
 
+200. **Generated-program testing joins the test strategy (Louis, 2026-09-24; amends
+    IMPLEMENTATION-PLAN §7.7).** Right after M1, QA builds a program generator in
+    `internal/testkit` and four nightly property suites, each under a memory cap:
+    rule-targeted mutation of the examples (one operator per ERRORS.md rule, the exact code
+    expected); grammar-driven generation with token mutations (valid programs parse and survive
+    format-reparse unchanged; corrupted ones get a located finding, never a panic);
+    type-directed well-typed programs (check clean ⇒ build succeeds, generated Go compiles, its
+    answers equal the evaluator's); metamorphic variants (renames, reordering, comments and
+    whitespace change no finding and no output). A counterexample is shrunk and kept as a txtar.
+    Reason: every rule is proven where someone thought to test it; this proves it where nobody
+    did.
+
 ## Decided without Louis (autonomous session 2026-09-24), to review
 
 193. **Which sovcommon conventions baked Go adopts (DECISIONS 192, the gen/go review).** Adopted:

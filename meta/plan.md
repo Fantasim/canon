@@ -41,6 +41,14 @@ block in [state.md](state.md).
   and current; `canon.lock` equals its golden, `E6001` on delete/rename, retire passes;
   the sovcommon `teamboard` integration is postponed out of M1 (DECISIONS 189).
 
+## M1.5 — Generated-program testing (QA, DECISIONS 200)
+
+- [ ] `internal/testkit` program generator (grammar- and type-directed, seeded, shrinking) and
+  the four nightly suites: rule mutation (every ERRORS.md rule), grammar + token mutation,
+  well-typed programs (check ⇒ build ⇒ Go compiles ⇒ equals the evaluator), metamorphic.
+  Accept: every rule has a mutation operator; one nightly run clean under a 3 GB cap; each
+  counterexample kept as a txtar. Budget ~3k lines. Runs beside M2.
+
 ## M2 — Pipeline: data mode for Go and C++
 
 - [ ] First step: regenerate `examples/pipeline/expected/` (GEN-01); the orchestrator reviews the
