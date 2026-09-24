@@ -77,6 +77,25 @@ block in [state.md](state.md).
 - [ ] Accept (§6 M3): every example prints its `findings.txt`; view models validate against the
   schema and equal goldens; `balance.parity` golden; `canon explain` golden; C++ `types` decode.
 
+**M3 execution (agreed with Louis 2026-09-24).** Layers/amend/inputs already exist in
+`check`/`eval` (M1), and dependent types are partly in `check`/`types`, so no unit rebuilds from the spec
+blindly. Waves; one builder per package at a time, ≤ 3 in parallel on disjoint packages
+(worktrees); review + `make check` + commit per unit; cleanup + progen rule-mutation rerun per
+wave; every funded run ends on a wave boundary with a report in `meta/handoff/`.
+- [ ] **W0 gap map** (sonnet, read-only): per M3 feature, spec rule ids × implemented × tested,
+  and what each example fails on today → `meta/m3-gaps.md`. Every later unit is scoped from it.
+- [ ] **W1** load forms (`load`, `wire`, drop `build.ErrLoad`; sonnet) ∥ dependent types
+  (`types`, `check`; opus) ∥ layers + inputs completion and explain provenance (`eval`; opus).
+- [ ] **W2** dependent verification + assets (`verify`; opus) ∥ view and translation checking
+  (`check`, after W1's check unit; opus) ∥ unions + `LoadInputs` (`gen/go` then `gen/cpp`;
+  sonnet) ∥ `types` mode in `ir` (opus).
+- [ ] **W3** `views`, `i18n`, `gen/view` (sonnet, schema + goldens) ∥ C++ `types` mode and TS
+  data (`gen/cpp`, `gen/ts`; sonnet) ∥ `api` Check/Value/ViewModel, `api/vm`, `cli explain`
+  (opus: frozen contract).
+- [ ] **W4 acceptance**: progen mutation operators for every new code; real-data run; every
+  example equals its `findings.txt`. Real-data findings in `Resource/` go to Louis as a **list
+  only** (`meta/handoff/<date>-realdata-findings.md`), no fixes proposed, not gating.
+
 ## M4 — Formatter and the edit API
 
 - [ ] `format` (SYN), incremental memo (EVL, API), `edit`, `workspace`, full `api` (API).
