@@ -1855,6 +1855,15 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      name's trailing comments; the formatter's same-comments invariant pairs them with that name. Reason: FuzzFormat found
      `record A{A:A\n///\n,A:A}` changing W1001 (overnight run).
 
+217. **E2001 is judged once, by `build`, on the whole project's package clauses.** A directory's
+     packages are a property of the layout, which only phase 1 (every file parsed) sees whole:
+     `build` reports E2001 for each loaded package whose directory also holds a file of another
+     package, both files legally placed (TYPES.md §3.1 rule 1: the directory's own package or an
+     ancestor), at the loaded package's file, in its Result, whichever of the two is selected;
+     an illegally placed file is E2006's alone (check). `check` no longer judges E2001. No
+     unloaded package is ever resolved or checked (EVALUATION.md §1). ERRORS.md moves E2001's
+     owner to `build`. Reason: A3 build review (overnight run).
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.
