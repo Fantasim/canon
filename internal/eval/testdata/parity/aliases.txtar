@@ -1,0 +1,75 @@
+EVALUATION.md §4.2, §9.2, §9.3, TYPES.md §7.5: copies share the instance: a let written into a field
+is the let's instance, its refs equal the let's entries; a default's copy of its literal owns its
+map's ref keys, so an amend path's ref key replaces one; an amended copy becomes its own instance.
+-- layers --
+dev
+-- a/a.canon --
+/// A.
+package a
+
+/// Tier.
+record Tier {
+  /// Weight.
+  weight: Int = 1
+}
+
+/// Plan.
+record Plan {
+  /// Tiers.
+  tiers: table Tier = { low {} }
+  /// Pick.
+  pick: ref Tier = low
+  /// By tier.
+  m: {ref Tier: Int} = { low: 1 }
+}
+
+/// The standard plan.
+let std: Plan = {}
+
+/// Holder.
+record Holder {
+  /// Plan, a default.
+  plan: Plan = {}
+  /// Other.
+  other: Plan
+}
+
+/// Both plans amended.
+let h: Holder = { other: std }
+/// Both plans amended.
+let hWritten: Holder = { plan: { m: { low: 2 } }, other: { m: { low: 3 } } }
+
+/// Not amended.
+let k: Holder = { other: std }
+/// Not amended.
+let kWritten: Holder = { other: std }
+
+/// Its other plan is std's instance.
+let same: [Bool] = [k.other.pick == std.tiers.low, [k.other.pick].contains(std.tiers.low), k.other.m.keys().contains(std.tiers.low)]
+/// Its other plan is std's instance.
+let sameWritten: [Bool] = [kWritten.other.pick == std.tiers.low, [kWritten.other.pick].contains(std.tiers.low), kWritten.other.m.keys().contains(std.tiers.low)]
+
+/// The amended plans are their own.
+let own: [Bool] = [h.other.pick == std.tiers.low, h.other.pick == h.other.tiers.low, h.plan.m.keys().contains(h.plan.tiers.low), h.other.m.keys().contains(h.other.tiers.low)]
+/// The amended plans are their own.
+let ownWritten: [Bool] = [hWritten.other.pick == std.tiers.low, hWritten.other.pick == hWritten.other.tiers.low, hWritten.plan.m.keys().contains(hWritten.plan.tiers.low), hWritten.other.m.keys().contains(hWritten.other.tiers.low)]
+-- a/dev.canon --
+package a
+layer dev
+
+amend h {
+  plan.m[low]: 2
+  other.m[low]: 3
+}
+-- dump.txt --
+a.std = Plan{tiers: {low: Tier{weight: 1}}, pick: low, m: {low: 1}}
+a.h = Holder{plan: Plan{tiers: {low: Tier{weight: 1}}, pick: low, m: {low: 2}}, other: Plan{tiers: {low: Tier{weight: 1}}, pick: low, m: {low: 3}}}
+a.hWritten = Holder{plan: Plan{tiers: {low: Tier{weight: 1}}, pick: low, m: {low: 2}}, other: Plan{tiers: {low: Tier{weight: 1}}, pick: low, m: {low: 3}}}
+a.k = Holder{plan: Plan{tiers: {low: Tier{weight: 1}}, pick: low, m: {low: 1}}, other: Plan{tiers: {low: Tier{weight: 1}}, pick: low, m: {low: 1}}}
+a.kWritten = Holder{plan: Plan{tiers: {low: Tier{weight: 1}}, pick: low, m: {low: 1}}, other: Plan{tiers: {low: Tier{weight: 1}}, pick: low, m: {low: 1}}}
+a.same = [true, true, true]
+a.sameWritten = [true, true, true]
+a.own = [false, true, true, true]
+a.ownWritten = [false, true, true, true]
+
+0 errors, 0 warnings in 1 package (…)

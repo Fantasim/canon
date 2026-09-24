@@ -53,8 +53,9 @@ type Evaluator struct {
 	colls      map[collKey]*types.Collection
 	fieldColls map[*types.Field]*types.Collection
 	ownedBy    map[*types.RecordType]map[*types.Collection]bool
-	refTypes   map[types.Type]bool // types whose values may hold a ref (prune.go)
+	refTypes   map[refHold]bool // types whose values may hold a ref (prune.go)
 	clean      map[cleanKey]bool
+	origin     map[*value.Record]*value.Record // a copy of an owning instance, to the record it copies (instance.go)
 	sites      map[*types.Field]site
 	pkgs       map[string]*check.Package
 	stable     []StableAmendment
@@ -127,8 +128,9 @@ func newEvaluator(bags check.Bags, opt Options) *Evaluator {
 
 		fieldColls: map[*types.Field]*types.Collection{},
 		ownedBy:    map[*types.RecordType]map[*types.Collection]bool{},
-		refTypes:   map[types.Type]bool{},
+		refTypes:   map[refHold]bool{},
 		clean:      map[cleanKey]bool{},
+		origin:     map[*value.Record]*value.Record{},
 		sites:      map[*types.Field]site{},
 		selfReads:  map[*syntax.FnDecl][]syntax.Expr{},
 	}

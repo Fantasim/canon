@@ -1,0 +1,78 @@
+EVALUATION.md §4.1, §4.2, §3.4, §9.3: a let placed into two holders, whose far ref each binds, is a
+copy in each; amending one copy leaves the let and the other copy as they were: an amendment's
+right-hand side reading the let through a ref reads its own entries, and each copy's refs equal
+its own entries.
+-- layers --
+dev
+-- a/a.canon --
+/// A.
+package a
+
+/// Tier.
+record Tier {
+  /// Weight.
+  weight: Int = 1
+}
+
+/// Far.
+record Far {
+  /// X.
+  x: Int = 0
+}
+
+/// Plan.
+record Plan {
+  /// Tiers.
+  tiers: table Tier = { low {} }
+  /// Pick.
+  pick: ref Tier = low
+  /// Far (Holder's).
+  far: ref Far = f
+}
+
+/// The standard plan, its far ref unbound.
+let std: Plan = {}
+
+/// Holder.
+record Holder {
+  /// Fars.
+  fars: table Far = { f {} }
+  /// Other.
+  other: Plan
+  /// N.
+  n: Int = 0
+}
+
+/// Holder, its plan std's, amended.
+let h: Holder = { other: std }
+/// Holder, its plan std's.
+let h2: Holder = { other: std }
+
+/// Std's weight, read after h.
+let w: Int = std.pick.weight
+
+/// Each copy's refs are its own entries.
+let own: [Bool] = [
+  h.other.pick == h.other.tiers.low, [h.other.pick].contains(h.other.tiers.low), h.other.far == h.fars.f,
+  h2.other.pick == h2.other.tiers.low, [h2.other.pick].contains(h2.other.tiers.low), h2.other.far == h2.fars.f,
+  std.pick == std.tiers.low, h.other.pick == h2.other.tiers.low, h2.other.pick == std.tiers.low,
+]
+-- a/dev.canon --
+package a
+layer dev
+
+amend h {
+  other.tiers.low.weight: 5
+  n: std.pick.weight
+}
+-- dump.txt --
+a.std = Plan{tiers: {low: Tier{weight: 1}}, pick: low, far: f}
+a.h = Holder{fars: {f: Far{x: 0}}, other: Plan{tiers: {low: Tier{weight: 5}}, pick: low, far: f}, n: 1}
+a.h2 = Holder{fars: {f: Far{x: 0}}, other: Plan{tiers: {low: Tier{weight: 1}}, pick: low, far: f}, n: 0}
+a.w = 1
+a.own = [true, true, true, true, true, true, true, false, false]
+
+error[E3505]  a/a.canon:23:18
+  std.far: ref Far has no enclosing Holder to resolve against
+
+1 error, 0 warnings in 1 package (…)

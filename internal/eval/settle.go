@@ -3,35 +3,69 @@ package eval
 import (
 	"slices"
 
-	"github.com/fantasim/canonlang/internal/eval/std"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// copied is to, the copy an amendment made of from along its path: the same value (carry),
-// and a fresh one no one else holds, which settle may complete in place.
-func (r *run) copied(from, to value.Value) value.Value {
-	if r.fresh == nil {
-		r.fresh = map[value.Value]bool{}
-	}
-	r.fresh[to] = true
-	return r.ev.carry(from, to)
+// moves are the copies one let's amendments made, until it settles: the values they built,
+// which no one else holds, and each of those instances replaced by a copy since.
+type moves struct {
+	fresh   map[value.Value]bool
+	lineage map[*value.Record]*value.Record
 }
 
-// moved records that an amendment replaced the instance old by its copy cp.
-func (r *run) moved(old, cp *value.Record) {
-	if r.lineage == nil {
-		r.lineage = map[*value.Record]*value.Record{}
-	}
-	r.lineage[old] = cp
+// isFresh reports a value the amendments built, which settle may complete in place.
+func (m *moves) isFresh(v value.Value) bool {
+	return m != nil && m.fresh[v]
 }
 
-// latest is the last copy the amendments made of rec, rec itself when none.
-func latest(lineage map[*value.Record]*value.Record, rec *value.Record) *value.Record {
-	for next, ok := lineage[rec]; ok; next, ok = lineage[rec] {
+// follow records that cp replaces v: fresh when v is, then the latest copy of v's instance.
+func (m *moves) follow(v, cp value.Value) {
+	if !m.isFresh(v) || v == cp {
+		return
+	}
+	m.fresh[cp] = true
+	if old, ok := v.(*value.Record); ok {
+		if rec, isRec := cp.(*value.Record); isRec {
+			m.lineage[old] = rec
+		}
+	}
+}
+
+// latest is the last copy made of a fresh rec, whose entries may still name it until settled;
+// rec itself when none, so no other value reads a copy of it.
+func (m *moves) latest(rec *value.Record) *value.Record {
+	if m == nil {
+		return rec
+	}
+	for next, ok := m.lineage[rec]; ok; next, ok = m.lineage[rec] {
 		rec = next
 	}
 	return rec
+}
+
+// copied is to, the copy an amendment made of from along its path: the same value (carry),
+// and a fresh one no one else holds, which settle may complete in place.
+func (r *run) copied(from, to value.Value) value.Value {
+	r.moving().fresh[to] = true
+	return r.ev.carry(from, to)
+}
+
+func (r *run) moving() *moves {
+	if r.mv == nil {
+		r.mv = &moves{fresh: map[value.Value]bool{}, lineage: map[*value.Record]*value.Record{}}
+	}
+	return r.mv
+}
+
+// moved records that an amendment replaced the instance old by its copy cp (EVALUATION.md §4.1).
+func (r *run) moved(old, cp *value.Record) {
+	if mv := r.moving(); mv.isFresh(old) {
+		r.ev.copiedFrom(old, cp)
+		mv.lineage[old] = cp
+		return
+	}
+	r.ev.adoptInto(cp, r.mv.fresh) // old may be another value's: its copy owns its entries at once
 }
 
 // boundKey is a path's ref key bound to the nearest amended instance owning its target (EVALUATION.md §9.2).
@@ -54,17 +88,17 @@ func (r *run) boundKey(key value.Value, m *amending) value.Value {
 
 // settle makes each amended copy own its collections' entries, once per let, walking copies only (TYPES.md §10.2).
 func (r *run) settle(v value.Value) {
-	if r.fresh == nil {
+	if r.mv == nil {
 		return
 	}
 	r.settleIn(v, map[value.Value]bool{})
-	r.fresh, r.lineage = nil, nil
+	r.mv = nil
 }
 
 // settleIn settles v's fresh components first, then v, so a copy adoption makes of a fresh
 // collection never hides the fresh records below it.
 func (r *run) settleIn(v value.Value, done map[value.Value]bool) {
-	if !r.fresh[v] || done[v] {
+	if !r.mv.isFresh(v) || done[v] {
 		return
 	}
 	done[v] = true
@@ -72,27 +106,6 @@ func (r *run) settleIn(v value.Value, done map[value.Value]bool) {
 		r.settleIn(c, done)
 	}
 	if rec, ok := v.(*value.Record); ok {
-		r.adoptInto(rec)
-	}
-}
-
-// adoptInto gives rec's collection fields rec as owner; an entry the amendments copied takes
-// it in place, so the refs bound to that entry stay bound to it.
-func (r *run) adoptInto(rec *value.Record) {
-	rt := recordOf(rec.T)
-	if rt == nil {
-		return
-	}
-	for i, f := range fieldsOf(rec.T) {
-		c := r.ev.fieldColl(rt, f)
-		if c == nil || i >= len(rec.Fields) || rec.Fields[i] == nil {
-			continue
-		}
-		for _, el := range std.Elems(rec.Fields[i]) {
-			if en, ok := el.(*value.Record); ok && r.fresh[en] && en.Ident != nil {
-				en.Ident = &value.Identity{Coll: c, Owner: rec, Key: en.Ident.Key, Retired: en.Ident.Retired}
-			}
-		}
-		rec.Fields[i] = r.ev.adopt(rec.Fields[i], c, rec)
+		r.ev.adoptInto(rec, r.mv.fresh)
 	}
 }

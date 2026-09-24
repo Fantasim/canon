@@ -1,0 +1,118 @@
+EVALUATION.md §3.4, §4.2, §9.2, TYPES.md §7.5: copies of one shared let the binder completes in two
+parents are two instances: an amend path's ref key names only the copy it came from, and a layer
+placing a key bound to one copy leaves it bound, as the same values written in source.
+-- layers --
+dev
+-- a/a.canon --
+/// A.
+package a
+
+/// Tier.
+record Tier {
+  /// W.
+  w: Int = 1
+}
+
+/// Slot.
+record Slot {
+  /// Size.
+  size: Int = 2
+}
+
+/// Mid.
+record Mid {
+  /// Slots.
+  slots: table Slot = { s1 {} }
+  /// Pick slot.
+  slot: ref Slot = s1
+  /// Pick tier (outer).
+  tier: ref Tier = low
+  /// Extra.
+  extra: {ref Slot: Int} = {}
+}
+
+/// Config.
+record Config {
+  /// Tiers.
+  tiers: table Tier = { low {} }
+  /// Mid.
+  mid: Mid
+}
+
+/// Shared, its tier unbound.
+let m: Mid = {}
+/// One parent.
+let c1: Config = { mid: m }
+/// Another parent.
+let c2: Config = { mid: m }
+/// Keys from both copies.
+let c3: Config = { mid: { extra: { c1.mid.slot: 1, c2.mid.slot: 2 } } }
+/// Written.
+let c3Written: Config = { mid: { extra: { c1.mid.slot: 1, c2.mid.slot: 5 } } }
+/// Read c2 key.
+let r: Int = c3.mid.extra[c2.mid.slot]
+/// Read c2 key written.
+let rWritten: Int = c3Written.mid.extra[c2.mid.slot]
+/// Read c1 key.
+let r1: Int = c3.mid.extra[c1.mid.slot]
+/// Read c1 key written.
+let r1Written: Int = c3Written.mid.extra[c1.mid.slot]
+/// Placed by a layer into a copy of m.
+let c6: Config = { mid: m }
+/// Written.
+let c6Written: Config = { mid: { extra: { c1.mid.slot: 1 } } }
+/// Read.
+let r6: Int = c6.mid.extra[c1.mid.slot]
+/// Read written.
+let r6Written: Int = c6Written.mid.extra[c1.mid.slot]
+/// Eq6.
+let e6: Bool = c6.mid.extra.keys()[0] == c1.mid.slot
+/// Eq6 written.
+let e6Written: Bool = c6Written.mid.extra.keys()[0] == c1.mid.slot
+/// Eq.
+let e: Bool = c1.mid.slot == c2.mid.slot
+/// Each placed copy's refs are its own entries.
+let own: [Bool] = [
+  c1.mid.slot == c1.mid.slots.s1, [c1.mid.slot].contains(c1.mid.slots.s1), c1.mid.tier == c1.tiers.low,
+  c2.mid.slot == c2.mid.slots.s1, [c2.mid.slot].contains(c2.mid.slots.s1), c2.mid.tier == c2.tiers.low,
+  c3.mid.slot == c3.mid.slots.s1, [c3.mid.slot].contains(c3.mid.slots.s1), c3.mid.tier == c3.tiers.low,
+  c6.mid.slot == c6.mid.slots.s1, [c6.mid.slot].contains(c6.mid.slots.s1), c6.mid.tier == c6.tiers.low,
+  m.slot == m.slots.s1, [m.slot].contains(m.slots.s1),
+]
+/// Each placed copy's refs are its own entries.
+let ownWritten: [Bool] = [true, true, true, true, true, true, true, true, true, true, true, true, true, true]
+-- a/dev.canon --
+package a
+layer dev
+
+amend c6 {
+  mid.extra: { c1.mid.slot: 1 }
+}
+
+amend c3 {
+  mid.extra[c2.mid.slot]: 5
+}
+-- dump.txt --
+a.m = Mid{slots: {s1: Slot{size: 2}}, slot: s1, tier: low, extra: {}}
+a.c1 = Config{tiers: {low: Tier{w: 1}}, mid: Mid{slots: {s1: Slot{size: 2}}, slot: s1, tier: low, extra: {}}}
+a.c2 = Config{tiers: {low: Tier{w: 1}}, mid: Mid{slots: {s1: Slot{size: 2}}, slot: s1, tier: low, extra: {}}}
+a.c3 = Config{tiers: {low: Tier{w: 1}}, mid: Mid{slots: {s1: Slot{size: 2}}, slot: s1, tier: low, extra: {s1: 1, s1: 5}}}
+a.c3Written = Config{tiers: {low: Tier{w: 1}}, mid: Mid{slots: {s1: Slot{size: 2}}, slot: s1, tier: low, extra: {s1: 1, s1: 5}}}
+a.r = 5
+a.rWritten = 5
+a.r1 = 1
+a.r1Written = 1
+a.c6 = Config{tiers: {low: Tier{w: 1}}, mid: Mid{slots: {s1: Slot{size: 2}}, slot: s1, tier: low, extra: {s1: 1}}}
+a.c6Written = Config{tiers: {low: Tier{w: 1}}, mid: Mid{slots: {s1: Slot{size: 2}}, slot: s1, tier: low, extra: {s1: 1}}}
+a.r6 = 1
+a.r6Written = 1
+a.e6 = true
+a.e6Written = true
+a.e = false
+a.own = [true, true, true, true, true, true, true, true, true, true, true, true, true, true]
+a.ownWritten = [true, true, true, true, true, true, true, true, true, true, true, true, true, true]
+
+error[E3505]  a/a.canon:23:20
+  m.tier: ref Tier has no enclosing Config to resolve against
+
+1 error, 0 warnings in 1 package (…)

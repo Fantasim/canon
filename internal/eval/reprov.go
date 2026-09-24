@@ -4,7 +4,13 @@ import "github.com/fantasim/canonlang/internal/value"
 
 // reprov is v with a new origin p, without v's history; a composite copied only when composites (EVALUATION.md §4.2).
 func (e *Evaluator) reprov(v value.Value, p *value.Prov, composites bool) value.Value {
-	return e.mark(v, reprovValue(v, p, composites))
+	out := reprovValue(v, p, composites)
+	if rec, ok := v.(*value.Record); ok {
+		if cp, isRec := out.(*value.Record); isRec {
+			e.copiedFrom(rec, cp)
+		}
+	}
+	return e.mark(v, out)
 }
 
 func reprovValue(v value.Value, p *value.Prov, composites bool) value.Value {

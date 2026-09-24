@@ -33,8 +33,7 @@ type run struct {
 	h          *stdHost
 	test       *testState
 	freeSteps  int64
-	fresh      map[value.Value]bool            // the values the amendments of this root built, until settled (settle.go)
-	lineage    map[*value.Record]*value.Record // an instance an amendment copied, to its copy (settle.go)
+	mv         *moves // what the amendments of this root copied, until settled (settle.go)
 }
 
 // frame is one call frame, or a root's own frame (fn empty).

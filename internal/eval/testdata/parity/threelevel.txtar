@@ -1,0 +1,251 @@
+EVALUATION.md §4.2, §3.4, §9.3 step 4, TYPES.md §7.5, §10.2: three levels of owners (Config owns
+tiers, Mid slots, Inner parts); the ref binder copies Mid and Inner when Config completes, and
+those copies are the same instances: refs bound at every level resolve, equal their entries and
+find them in a set, after an amendment at any level, exactly as the same values written in source.
+-- layers --
+dev
+-- a/a.canon --
+/// A.
+package a
+
+/// Tier.
+record Tier {
+  /// Weight.
+  weight: Int = 1
+}
+
+/// Slot, naming an outer tier.
+record Slot {
+  /// Size.
+  size: Int = 2
+  /// Tier (Config's).
+  tier: ref Tier = low
+}
+
+/// Part, naming a mid slot and an outer tier.
+record Part {
+  /// N.
+  n: Int = 0
+  /// Slot (Mid's).
+  slot: ref Slot = s1
+  /// Tier (Config's).
+  tier: ref Tier = low
+}
+
+/// Inner.
+record Inner {
+  /// Parts.
+  parts: table Part = { p1 {} }
+  /// Pick (Inner's).
+  pick: ref Part = p1
+  /// Slot (Mid's).
+  slot: ref Slot = s1
+  /// Tier (Config's).
+  tier: ref Tier = low
+  /// X.
+  x: Int = 0
+}
+
+/// Mid.
+record Mid {
+  /// Slots.
+  slots: table Slot = { s1 {} }
+  /// Inner.
+  inner: Inner = {}
+  /// Y.
+  y: Int = 0
+}
+
+/// Config.
+record Config {
+  /// Tiers.
+  tiers: table Tier = { low { weight: 3 } }
+  /// Mid.
+  mid: Mid = {}
+}
+
+/// Every ref of c against the entry it names: ==, contains and unique.
+fn same(c: Config) -> [Bool] {
+  let i = c.mid.inner
+  return [
+    i.pick == i.parts.p1, [i.pick].contains(i.parts.p1), [i.pick, i.parts.p1].unique().len() == 1,
+    i.slot == c.mid.slots.s1, [i.slot].contains(c.mid.slots.s1), [i.slot, c.mid.slots.s1].unique().len() == 1,
+    i.tier == c.tiers.low, [i.tier].contains(c.tiers.low),
+    i.parts.p1.slot == c.mid.slots.s1, [i.parts.p1.slot].contains(c.mid.slots.s1),
+    i.parts.p1.tier == c.tiers.low, [i.parts.p1.tier].contains(c.tiers.low),
+    c.mid.slots.s1.tier == c.tiers.low, [c.mid.slots.s1.tier].contains(c.tiers.low),
+  ]
+}
+
+/// What c's refs read, through every level.
+fn reads(c: Config) -> [Int] {
+  let i = c.mid.inner
+  return [i.pick.n, i.slot.size, i.slot.tier.weight, i.parts.p1.slot.size, i.parts.p1.slot.tier.weight, i.tier.weight]
+}
+
+/// Base.
+let base: Config = {}
+/// Base.
+let baseWritten: Config = {}
+
+/// Inner's entry amended.
+let deep: Config = {}
+/// Inner's entry amended.
+let deepWritten: Config = { mid: { inner: { parts: { p1 { n: 4 } } } } }
+
+/// Mid's entry amended.
+let mid: Config = {}
+/// Mid's entry amended.
+let midWritten: Config = { mid: { slots: { s1 { size: 5 } } } }
+
+/// A mid field after inner amended.
+let midY: Config = {}
+/// A mid field after inner amended.
+let midYWritten: Config = { mid: { y: 1 } }
+
+/// An inner field after its refs amended.
+let innerX: Config = {}
+/// An inner field after its refs amended.
+let innerXWritten: Config = { mid: { inner: { x: 1 } } }
+
+/// The outer entry amended.
+let outer: Config = {}
+/// The outer entry amended.
+let outerWritten: Config = { tiers: { low { weight: 7 } } }
+
+/// Two levels amended.
+let both: Config = {}
+/// Two levels amended.
+let bothWritten: Config = { tiers: { low { weight: 6 } }, mid: { slots: { s1 { size: 8 } }, inner: { parts: { p1 { n: 9 } } } } }
+
+/// Same.
+let sBase: [Bool] = same(base)
+/// Same.
+let sBaseWritten: [Bool] = same(baseWritten)
+/// Same.
+let sDeep: [Bool] = same(deep)
+/// Same.
+let sDeepWritten: [Bool] = same(deepWritten)
+/// Same.
+let sMid: [Bool] = same(mid)
+/// Same.
+let sMidWritten: [Bool] = same(midWritten)
+/// Same.
+let sMidY: [Bool] = same(midY)
+/// Same.
+let sMidYWritten: [Bool] = same(midYWritten)
+/// Same.
+let sInnerX: [Bool] = same(innerX)
+/// Same.
+let sInnerXWritten: [Bool] = same(innerXWritten)
+/// Same.
+let sOuter: [Bool] = same(outer)
+/// Same.
+let sOuterWritten: [Bool] = same(outerWritten)
+/// Same.
+let sBoth: [Bool] = same(both)
+/// Same.
+let sBothWritten: [Bool] = same(bothWritten)
+
+/// Reads.
+let rBase: [Int] = reads(base)
+/// Reads.
+let rBaseWritten: [Int] = reads(baseWritten)
+/// Reads.
+let rDeep: [Int] = reads(deep)
+/// Reads.
+let rDeepWritten: [Int] = reads(deepWritten)
+/// Reads.
+let rMid: [Int] = reads(mid)
+/// Reads.
+let rMidWritten: [Int] = reads(midWritten)
+/// Reads.
+let rMidY: [Int] = reads(midY)
+/// Reads.
+let rMidYWritten: [Int] = reads(midYWritten)
+/// Reads.
+let rInnerX: [Int] = reads(innerX)
+/// Reads.
+let rInnerXWritten: [Int] = reads(innerXWritten)
+/// Reads.
+let rOuter: [Int] = reads(outer)
+/// Reads.
+let rOuterWritten: [Int] = reads(outerWritten)
+/// Reads.
+let rBoth: [Int] = reads(both)
+/// Reads.
+let rBothWritten: [Int] = reads(bothWritten)
+-- a/dev.canon --
+package a
+layer dev
+
+amend deep {
+  mid.inner.parts.p1.n: 4
+}
+
+amend mid {
+  mid.slots.s1.size: 5
+}
+
+amend midY {
+  mid.y: 1
+}
+
+amend innerX {
+  mid.inner.x: 1
+}
+
+amend outer {
+  tiers.low.weight: 7
+}
+
+amend both {
+  tiers.low.weight: 6
+  mid.slots.s1.size: 8
+  mid.inner.parts.p1.n: 9
+}
+-- dump.txt --
+a.base = Config{tiers: {low: Tier{weight: 3}}, mid: Mid{slots: {s1: Slot{size: 2, tier: low}}, inner: Inner{parts: {p1: Part{n: 0, slot: s1, tier: low}}, pick: p1, slot: s1, tier: low, x: 0}, y: 0}}
+a.baseWritten = Config{tiers: {low: Tier{weight: 3}}, mid: Mid{slots: {s1: Slot{size: 2, tier: low}}, inner: Inner{parts: {p1: Part{n: 0, slot: s1, tier: low}}, pick: p1, slot: s1, tier: low, x: 0}, y: 0}}
+a.deep = Config{tiers: {low: Tier{weight: 3}}, mid: Mid{slots: {s1: Slot{size: 2, tier: low}}, inner: Inner{parts: {p1: Part{n: 4, slot: s1, tier: low}}, pick: p1, slot: s1, tier: low, x: 0}, y: 0}}
+a.deepWritten = Config{tiers: {low: Tier{weight: 3}}, mid: Mid{slots: {s1: Slot{size: 2, tier: low}}, inner: Inner{parts: {p1: Part{n: 4, slot: s1, tier: low}}, pick: p1, slot: s1, tier: low, x: 0}, y: 0}}
+a.mid = Config{tiers: {low: Tier{weight: 3}}, mid: Mid{slots: {s1: Slot{size: 5, tier: low}}, inner: Inner{parts: {p1: Part{n: 0, slot: s1, tier: low}}, pick: p1, slot: s1, tier: low, x: 0}, y: 0}}
+a.midWritten = Config{tiers: {low: Tier{weight: 3}}, mid: Mid{slots: {s1: Slot{size: 5, tier: low}}, inner: Inner{parts: {p1: Part{n: 0, slot: s1, tier: low}}, pick: p1, slot: s1, tier: low, x: 0}, y: 0}}
+a.midY = Config{tiers: {low: Tier{weight: 3}}, mid: Mid{slots: {s1: Slot{size: 2, tier: low}}, inner: Inner{parts: {p1: Part{n: 0, slot: s1, tier: low}}, pick: p1, slot: s1, tier: low, x: 0}, y: 1}}
+a.midYWritten = Config{tiers: {low: Tier{weight: 3}}, mid: Mid{slots: {s1: Slot{size: 2, tier: low}}, inner: Inner{parts: {p1: Part{n: 0, slot: s1, tier: low}}, pick: p1, slot: s1, tier: low, x: 0}, y: 1}}
+a.innerX = Config{tiers: {low: Tier{weight: 3}}, mid: Mid{slots: {s1: Slot{size: 2, tier: low}}, inner: Inner{parts: {p1: Part{n: 0, slot: s1, tier: low}}, pick: p1, slot: s1, tier: low, x: 1}, y: 0}}
+a.innerXWritten = Config{tiers: {low: Tier{weight: 3}}, mid: Mid{slots: {s1: Slot{size: 2, tier: low}}, inner: Inner{parts: {p1: Part{n: 0, slot: s1, tier: low}}, pick: p1, slot: s1, tier: low, x: 1}, y: 0}}
+a.outer = Config{tiers: {low: Tier{weight: 7}}, mid: Mid{slots: {s1: Slot{size: 2, tier: low}}, inner: Inner{parts: {p1: Part{n: 0, slot: s1, tier: low}}, pick: p1, slot: s1, tier: low, x: 0}, y: 0}}
+a.outerWritten = Config{tiers: {low: Tier{weight: 7}}, mid: Mid{slots: {s1: Slot{size: 2, tier: low}}, inner: Inner{parts: {p1: Part{n: 0, slot: s1, tier: low}}, pick: p1, slot: s1, tier: low, x: 0}, y: 0}}
+a.both = Config{tiers: {low: Tier{weight: 6}}, mid: Mid{slots: {s1: Slot{size: 8, tier: low}}, inner: Inner{parts: {p1: Part{n: 9, slot: s1, tier: low}}, pick: p1, slot: s1, tier: low, x: 0}, y: 0}}
+a.bothWritten = Config{tiers: {low: Tier{weight: 6}}, mid: Mid{slots: {s1: Slot{size: 8, tier: low}}, inner: Inner{parts: {p1: Part{n: 9, slot: s1, tier: low}}, pick: p1, slot: s1, tier: low, x: 0}, y: 0}}
+a.sBase = [true, true, true, true, true, true, true, true, true, true, true, true, true, true]
+a.sBaseWritten = [true, true, true, true, true, true, true, true, true, true, true, true, true, true]
+a.sDeep = [true, true, true, true, true, true, true, true, true, true, true, true, true, true]
+a.sDeepWritten = [true, true, true, true, true, true, true, true, true, true, true, true, true, true]
+a.sMid = [true, true, true, true, true, true, true, true, true, true, true, true, true, true]
+a.sMidWritten = [true, true, true, true, true, true, true, true, true, true, true, true, true, true]
+a.sMidY = [true, true, true, true, true, true, true, true, true, true, true, true, true, true]
+a.sMidYWritten = [true, true, true, true, true, true, true, true, true, true, true, true, true, true]
+a.sInnerX = [true, true, true, true, true, true, true, true, true, true, true, true, true, true]
+a.sInnerXWritten = [true, true, true, true, true, true, true, true, true, true, true, true, true, true]
+a.sOuter = [true, true, true, true, true, true, true, true, true, true, true, true, true, true]
+a.sOuterWritten = [true, true, true, true, true, true, true, true, true, true, true, true, true, true]
+a.sBoth = [true, true, true, true, true, true, true, true, true, true, true, true, true, true]
+a.sBothWritten = [true, true, true, true, true, true, true, true, true, true, true, true, true, true]
+a.rBase = [0, 2, 3, 2, 3, 3]
+a.rBaseWritten = [0, 2, 3, 2, 3, 3]
+a.rDeep = [4, 2, 3, 2, 3, 3]
+a.rDeepWritten = [4, 2, 3, 2, 3, 3]
+a.rMid = [0, 5, 3, 5, 3, 3]
+a.rMidWritten = [0, 5, 3, 5, 3, 3]
+a.rMidY = [0, 2, 3, 2, 3, 3]
+a.rMidYWritten = [0, 2, 3, 2, 3, 3]
+a.rInnerX = [0, 2, 3, 2, 3, 3]
+a.rInnerXWritten = [0, 2, 3, 2, 3, 3]
+a.rOuter = [0, 2, 7, 2, 7, 7]
+a.rOuterWritten = [0, 2, 7, 2, 7, 7]
+a.rBoth = [9, 8, 6, 8, 6, 6]
+a.rBothWritten = [9, 8, 6, 8, 6, 6]
+
+0 errors, 0 warnings in 1 package (…)

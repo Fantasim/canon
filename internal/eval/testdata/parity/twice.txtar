@@ -1,0 +1,80 @@
+EVALUATION.md §9.3 steps 2 and 3, §4.2: an amended instance re-derives its defaults from its latest
+copy: a ref taken from one of its entries by a derived default reads the entries the amendment
+set, the second one's when amended twice, as the same value written in source does.
+-- layers --
+dev louis
+-- a/a.canon --
+/// A.
+package a
+
+/// Slot.
+record Slot {
+  /// Size.
+  size: Int = 2
+}
+
+/// Mid.
+record Mid {
+  /// Slots.
+  slots: table Slot = { s1 {} }
+  /// First, from an entry.
+  first: ref Slot = slots.s1
+  /// Its size, derived through the ref.
+  size: Int = first.size
+}
+
+/// Config.
+record Config {
+  /// Mid.
+  mid: Mid = {}
+}
+
+/// Amended twice at the root.
+let m: Mid = {}
+/// Amended twice at the root.
+let mWritten: Mid = { slots: { s1 { size: 6 } } }
+
+/// Amended twice below the root.
+let c: Config = {}
+/// Amended twice below the root.
+let cWritten: Config = { mid: { slots: { s1 { size: 6 } } } }
+
+/// Amended once.
+let one: Mid = {}
+/// Amended once.
+let oneWritten: Mid = { slots: { s1 { size: 5 } } }
+-- a/dev.canon --
+package a
+layer dev
+
+amend one {
+  slots.s1.size: 5
+}
+
+amend m {
+  slots.s1.size: 5
+}
+
+amend c {
+  mid.slots.s1.size: 5
+}
+-- a/louis.canon --
+package a
+layer louis
+
+amend m {
+  slots.s1.size: 6
+}
+
+amend c {
+  mid.slots.s1.size: 6
+}
+-- dump.txt --
+a.m = Mid{slots: {s1: Slot{size: 6}}, first: s1, size: 6}
+a.mWritten = Mid{slots: {s1: Slot{size: 6}}, first: s1, size: 6}
+a.c = Config{mid: Mid{slots: {s1: Slot{size: 6}}, first: s1, size: 6}}
+a.cWritten = Config{mid: Mid{slots: {s1: Slot{size: 6}}, first: s1, size: 6}}
+a.one = Mid{slots: {s1: Slot{size: 5}}, first: s1, size: 5}
+a.oneWritten = Mid{slots: {s1: Slot{size: 5}}, first: s1, size: 5}
+
+0 errors, 0 warnings in 1 package (…)

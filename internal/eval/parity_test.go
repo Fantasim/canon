@@ -12,7 +12,7 @@ import (
 // writtenSuffix names the let holding, written in source, what a layer makes of its twin.
 const writtenSuffix = "Written"
 
-// EVALUATION.md §9.3 step 4, §3.4: an amended let `x` equals its twin `xWritten`, written in source.
+// EVALUATION.md §9.3 step 4, §3.4, §4.2, TYPES.md §7.5: an amended let equals, refs included, its written twin.
 func TestLayerParity(t *testing.T) {
 	golden.Run(t, "testdata/parity/*.txtar", func(t *testing.T, c golden.Case) []byte {
 		t.Helper()
@@ -29,6 +29,9 @@ func TestLayerParity(t *testing.T) {
 			v, amended := b.values[root]
 			if amended != written || amended && v.CanonText() != w.CanonText() {
 				t.Errorf("%s: amended %t %v, written %t %v", root.Name, amended, v, written, w)
+			}
+			if ia, iw := identities(v), identities(w); amended && ia != iw {
+				t.Errorf("%s: refs equal to entries amended\n%s\nwritten\n%s", root.Name, ia, iw)
 			}
 		}
 		if pairs == 0 {

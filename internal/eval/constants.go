@@ -17,6 +17,13 @@ const (
 	poisoned
 )
 
+// What a binder does to the refs it walks: bind, rebind to its instance's copy, unbind (refs.go).
+const (
+	modeBind bindMode = iota
+	modeRebind
+	modeUnbind
+)
+
 // How a statement completes.
 const (
 	flowNext flow = iota

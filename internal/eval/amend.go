@@ -141,7 +141,7 @@ func (r *run) mapSlot(mp *value.Map, seg *syntax.AmendSegment, m *amending) (int
 	if key == nil {
 		return 0, nil, false
 	}
-	return keyPosition(mp, key), key, true
+	return r.ev.keyAt(mp, key), key, true
 }
 
 func keyPosition(m *value.Map, k value.Value) int {

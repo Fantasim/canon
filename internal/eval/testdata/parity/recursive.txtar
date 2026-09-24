@@ -1,0 +1,65 @@
+EVALUATION.md §3.4, §4.2, TYPES.md §7.5, §10.2: a record holding a table of itself binds each ref to
+its nearest instance; copies the binder makes of every level, when the outer instance binds the
+refs at the bottom, stay those instances, after an amendment at the bottom as written in source.
+-- layers --
+dev
+-- a/a.canon --
+/// A.
+package a
+
+/// Tier.
+record Tier {
+  /// W.
+  w: Int = 1
+}
+
+/// Node.
+record Node {
+  /// Kids.
+  kids: table Node = {}
+  /// Pick, one of its kids.
+  pick: ref Node? = none
+  /// Tier (Config's).
+  tier: ref Tier = low
+  /// N.
+  n: Int = 0
+}
+
+/// Config.
+record Config {
+  /// Tiers.
+  tiers: table Tier = { low { w: 3 } }
+  /// Root.
+  root: Node
+}
+
+/// Amended at the bottom.
+let c: Config = { root: { kids: { a { kids: { b { n: 1 } }, pick: b } }, pick: a } }
+/// Amended at the bottom.
+let cWritten: Config = { root: { kids: { a { kids: { b { n: 2 } }, pick: b } }, pick: a } }
+
+/// Same.
+let s: [Bool] = [c.root.pick == c.root.kids.a, c.root.kids.a.pick == c.root.kids.a.kids.b, [c.root.kids.a.pick].contains(c.root.kids.a.kids.b), c.root.kids.a.kids.b.tier == c.tiers.low]
+/// Same.
+let sWritten: [Bool] = [cWritten.root.pick == cWritten.root.kids.a, cWritten.root.kids.a.pick == cWritten.root.kids.a.kids.b, [cWritten.root.kids.a.pick].contains(cWritten.root.kids.a.kids.b), cWritten.root.kids.a.kids.b.tier == cWritten.tiers.low]
+
+/// Reads.
+let r: [Int] = [c.root.kids.a.pick!.n, c.root.kids.a.pick!.tier.w, c.root.pick!.kids.b.n, c.root.pick!.pick!.n]
+/// Reads.
+let rWritten: [Int] = [cWritten.root.kids.a.pick!.n, cWritten.root.kids.a.pick!.tier.w, cWritten.root.pick!.kids.b.n, cWritten.root.pick!.pick!.n]
+-- a/dev.canon --
+package a
+layer dev
+
+amend c {
+  root.kids.a.kids.b.n: 2
+}
+-- dump.txt --
+a.c = Config{tiers: {low: Tier{w: 3}}, root: Node{kids: {a: Node{kids: {b: Node{kids: {}, pick: none, tier: low, n: 2}}, pick: b, tier: low, n: 0}}, pick: a, tier: low, n: 0}}
+a.cWritten = Config{tiers: {low: Tier{w: 3}}, root: Node{kids: {a: Node{kids: {b: Node{kids: {}, pick: none, tier: low, n: 2}}, pick: b, tier: low, n: 0}}, pick: a, tier: low, n: 0}}
+a.s = [true, true, true, true]
+a.sWritten = [true, true, true, true]
+a.r = [2, 3, 2, 2]
+a.rWritten = [2, 3, 2, 2]
+
+0 errors, 0 warnings in 1 package (…)

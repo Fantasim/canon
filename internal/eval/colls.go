@@ -227,6 +227,7 @@ func (e *Evaluator) withIdentity(rec *value.Record, id *value.Identity) *value.R
 	cp := *rec
 	cp.Ident = id
 	e.carry(rec, &cp)
+	e.copiedFrom(rec, &cp)
 	return &cp
 }
 

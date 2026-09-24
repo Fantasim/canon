@@ -6,28 +6,44 @@ import (
 	"github.com/fantasim/canonlang/internal/types"
 )
 
-// mayHoldRef reports whether a value of type t may hold a ref: a binder need not walk one
-// that cannot, so rebinding an amended instance costs its ref-holding parts only.
-func (e *Evaluator) mayHoldRef(t types.Type) bool {
-	if h, ok := e.refTypes[t]; ok {
+// mayHoldRef reports whether a value of type t may hold a ref into a collection an instance
+// of rt owns, any ref when rt is nil: a binder need not walk one that cannot, so rebinding an
+// amended instance costs its ref-holding parts only.
+func (e *Evaluator) mayHoldRef(t types.Type, rt *types.RecordType) bool {
+	key := refHold{t: t, rt: rt}
+	if h, ok := e.refTypes[key]; ok {
 		return h
 	}
-	h := holdsRef(t, map[types.Type]bool{})
-	e.refTypes[t] = h
+	var into map[*types.Collection]bool
+	if rt != nil {
+		into = e.owned(rt)
+	}
+	h := holdsRef(t, into, map[types.Type]bool{})
+	e.refTypes[key] = h
 	return h
 }
 
-// holdsRef is mayHoldRef without memo; a type already on the way adds no ref.
-func holdsRef(t types.Type, seen map[types.Type]bool) bool {
+// refHold is a type and the record type whose collections its refs are looked for in.
+type refHold struct {
+	t  types.Type
+	rt *types.RecordType
+}
+
+// holdsRef is mayHoldRef without memo, into the collections into when not nil; a type already
+// on the way adds no ref.
+func holdsRef(t types.Type, into map[*types.Collection]bool, seen map[types.Type]bool) bool {
 	if t == nil {
 		return true
+	}
+	if r, ok := t.(*types.RefType); ok && into != nil {
+		return into[r.Target]
 	}
 	if seen[t] {
 		return false
 	}
 	seen[t] = true
 	parts, known := typeParts(t)
-	return !known || slices.ContainsFunc(parts, func(p types.Type) bool { return holdsRef(p, seen) })
+	return !known || slices.ContainsFunc(parts, func(p types.Type) bool { return holdsRef(p, into, seen) })
 }
 
 // typeParts are the types a value of t holds; a ref, or a type it does not know, may be one.

@@ -1,0 +1,123 @@
+EVALUATION.md §4.2, §3.4, §9.3, TYPES.md §7.5: the copy the ref binder makes of a mid-level owner
+when an outer instance completes is the same instance: the refs it owned before the copy resolve
+and compare with its entries after a layer (==, contains and unique agree), and a derived default
+re-derived by a layer reads them unbound (E3505), as written in source.
+-- layers --
+dev
+-- a/a.canon --
+/// A.
+package a
+
+/// Tier.
+record Tier {
+  /// Weight.
+  weight: Int = 1
+}
+
+/// Slot.
+record Slot {
+  /// Size.
+  size: Int = 2
+}
+
+/// Inner.
+record Inner {
+  /// Tier pick (outer).
+  tier: ref Tier = low
+  /// Slot pick (mid).
+  slot: ref Slot = s1
+  /// X.
+  x: Int = 0
+  /// Reads the mid collection when x.
+  a: Int = if x > 0 { slot.size } else { 0 }
+}
+
+/// Mid.
+record Mid {
+  /// Slots.
+  slots: table Slot = { s1 {} }
+  /// Inner.
+  inner: Inner = {}
+}
+
+/// Config.
+record Config {
+  /// Tiers.
+  tiers: table Tier = { low { weight: 3 } }
+  /// Mid.
+  mid: Mid = {}
+}
+
+/// X.
+let base: Config = {}
+/// X.
+let cx: Config = {}
+/// X written.
+let cxWritten: Config = { mid: { inner: { x: 1 } } }
+/// Slots amended.
+let cs: Config = {}
+/// Slots written.
+let csWritten: Config = { mid: { slots: { s1 { size: 5 } } } }
+/// R.
+let r: Int = cs.mid.inner.slot.size
+/// R written.
+let rWritten: Int = csWritten.mid.inner.slot.size
+/// Q.
+let q: Bool = cs.mid.inner.slot == cs.mid.slots.s1
+/// Q written.
+let qWritten: Bool = csWritten.mid.inner.slot == csWritten.mid.slots.s1
+/// K.
+let k: Bool = [cs.mid.inner.slot].contains(cs.mid.slots.s1)
+/// K written.
+let kWritten: Bool = [csWritten.mid.inner.slot].contains(csWritten.mid.slots.s1)
+/// U.
+let u: Int = [cs.mid.inner.slot, cs.mid.slots.s1].unique().len()
+/// U written.
+let uWritten: Int = [csWritten.mid.inner.slot, csWritten.mid.slots.s1].unique().len()
+/// Base K.
+let kBase: Bool = [base.mid.inner.slot].contains(base.mid.slots.s1)
+/// Tier amended.
+let ctr: Config = {}
+/// R2.
+let r2: Int = ctr.mid.inner.slot.size + ctr.mid.inner.tier.weight
+/// R2 written.
+let r2Written: Int = 7
+-- a/dev.canon --
+package a
+layer dev
+
+amend cs {
+  mid.slots.s1.size: 5
+}
+
+amend ctr {
+  tiers.low.weight: 5
+  mid.slots.s1.size: 2
+}
+
+amend cx {
+  mid.inner.x: 1
+}
+-- dump.txt --
+a.base = Config{tiers: {low: Tier{weight: 3}}, mid: Mid{slots: {s1: Slot{size: 2}}, inner: Inner{tier: low, slot: s1, x: 0, a: 0}}}
+a.cx poisoned
+a.cxWritten poisoned
+a.cs = Config{tiers: {low: Tier{weight: 3}}, mid: Mid{slots: {s1: Slot{size: 5}}, inner: Inner{tier: low, slot: s1, x: 0, a: 0}}}
+a.csWritten = Config{tiers: {low: Tier{weight: 3}}, mid: Mid{slots: {s1: Slot{size: 5}}, inner: Inner{tier: low, slot: s1, x: 0, a: 0}}}
+a.r = 5
+a.rWritten = 5
+a.q = true
+a.qWritten = true
+a.k = true
+a.kWritten = true
+a.u = 1
+a.uWritten = 1
+a.kBase = true
+a.ctr = Config{tiers: {low: Tier{weight: 5}}, mid: Mid{slots: {s1: Slot{size: 2}}, inner: Inner{tier: low, slot: s1, x: 0, a: 0}}}
+a.r2 = 7
+a.r2Written = 7
+
+error[E3505]  a/a.canon:25:23
+  ref Slot has no enclosing Mid to resolve against
+
+1 error, 0 warnings in 1 package (…)

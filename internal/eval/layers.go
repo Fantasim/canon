@@ -142,11 +142,11 @@ func (r *run) setField(rec *value.Record, segs []*syntax.AmendSegment, m *amendi
 	cp.Fields, cp.Set = append([]value.Value(nil), rec.Fields...), append([]bool(nil), rec.Set...)
 	cp.Fields[i], cp.Set[i] = nv, true
 	r.moved(rec, &cp)
-	r.ev.unbindFrom(&cp, r.lineage, m.at[:len(m.at)-1])
+	r.ev.unbindFrom(&cp, m.at, r.mv)
 	if !r.derive(&cp, i) {
 		return nil
 	}
-	r.ev.bindTo(&cp, r.lineage) // EVALUATION.md §3.4: the copy is the instance its refs resolve against
+	r.ev.bindTo(&cp, rec, r.mv) // EVALUATION.md §3.4: the copy is the instance its refs resolve against
 	return r.copied(rec, &cp)
 }
 
