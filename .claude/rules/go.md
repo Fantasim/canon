@@ -65,3 +65,5 @@ failing target and the file that causes it.
   `-- <reason>`.
 - Hand-editing a golden, a `*.gen.go`, `internal/diag/codes.go` or anything marked generated.
 - Editing SPEC.md, CLI.md, DECISIONS.md, `spec/`, or anything outside this directory.
+- `git stash`, `git checkout -- <path>`, `git reset` or any command that rewrites the working tree:
+  several agents share it. To test a revert, copy the file aside and back, or use a scratch copy.
