@@ -45,7 +45,9 @@ None. Direction questions of the run, if any: `handoff/2026-09-24-questions.md`.
   `Define`; `is a {typ}` templates reworded; E8007 names its fix. Then spec sync #2.
 - **Cleanups:** translated-fn classification ×3 (check/ir/eval); `internalError` →
   `internal/build/errors.go`; ASCII-fold/inline-fold rule as one ir helper; `osFS.EvalSymlinks`
-  → `write.go`; the compile-and-run loop duplicated between two `_test.go` files.
+  → `write.go`; the compile-and-run loop duplicated between two `_test.go` files; the `"$id"`
+  wire key has no shared constant (wire vs gen/cpp const-dup); tools/audit: an unmeasured lane
+  fails, the lint lane waits for the lock; one fixture FS in testkit (4 copies).
 
 ## Operating notes
 
