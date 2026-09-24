@@ -1,0 +1,89 @@
+EVALUATION.md §9.3: E1905 at application for an index out of range, a none on the way and a
+case without the field; LOCK.md §6.1: replacing a stable entry's @stable value is refused.
+-- layers --
+bad
+-- a/a.canon --
+/// A.
+package a
+
+/// Shape.
+variant Shape {
+  circle { r: Int = 1 }
+  square { w: Int = 1 }
+}
+
+/// Inner.
+record Inner {
+  /// N.
+  n: Int = 0
+}
+
+/// Box.
+record Box {
+  /// Xs.
+  xs: [Int] = [1]
+  /// Inner.
+  inner: Inner? = none
+  /// Shape.
+  shape: Shape = circle
+}
+
+/// E.
+record E {
+  /// Code.
+  code: Int @stable
+}
+
+/// Index.
+let index: Box = {}
+
+/// Hole.
+let hole: Box = {}
+
+/// Case.
+let case_: Box = {}
+
+/// Es.
+let es: stable table E = { a { code: 1 } }
+-- a/bad.canon --
+package a
+layer bad
+
+amend index {
+  xs[5]: 2
+}
+
+amend hole {
+  inner.n: 2
+}
+
+amend case_ {
+  shape.w: 2
+}
+
+amend es {
+  a: { code: 9001 }
+}
+-- dump.txt --
+a.index poisoned
+a.hole poisoned
+a.case_ poisoned
+a.es poisoned
+stable amendment: layer bad table "" field "code"
+
+warning[W1002]  a/a.canon:6:12
+  field r has no doc comment
+
+warning[W1002]  a/a.canon:7:12
+  field w has no doc comment
+
+error[E1905]  a/bad.canon:5:5
+  amend path xs[5]: index 5 out of range
+
+error[E1905]  a/bad.canon:9:3
+  amend path inner.n: passes through none
+
+error[E1905]  a/bad.canon:13:8
+  amend path shape.w: case circle has no field w
+
+3 errors, 2 warnings in 1 package (…)

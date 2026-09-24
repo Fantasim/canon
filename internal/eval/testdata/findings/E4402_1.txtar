@@ -1,0 +1,30 @@
+EVALUATION.md §3.3: a call deeper than 10000 frames.
+-- a/a.canon --
+/// A.
+package a
+
+local fn down(n: Int) -> Int { return down(n + 1) }
+
+local let y: Int = down(0)
+-- findings.txt --
+error[E4402]  a/a.canon:4:39
+  call depth exceeds 10000
+  in down (a/a.canon:4)
+  in down (a/a.canon:4)
+  in down (a/a.canon:4)
+  in down (a/a.canon:4)
+  in down (a/a.canon:4)
+  in down (a/a.canon:4)
+  in down (a/a.canon:4)
+  in down (a/a.canon:4)
+  in down (a/a.canon:4)
+  in down (a/a.canon:4)
+  in down (a/a.canon:4)
+  in down (a/a.canon:4)
+  in down (a/a.canon:4)
+  in down (a/a.canon:4)
+  in down (a/a.canon:4)
+  in down (a/a.canon:4)
+  (9984 more frames)
+
+1 error, 0 warnings in 1 package (…)

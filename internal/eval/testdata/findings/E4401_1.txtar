@@ -1,0 +1,23 @@
+EVALUATION.md §12.2: spending the last step of the budget, with the heaviest root.
+-- budget --
+200
+-- a/a.canon --
+/// A.
+package a
+
+local fn loop(n: Int) -> Int {
+  var i = 0
+  while i < n { i += 1 }
+  return i
+}
+
+local let small: Int = loop(3)
+
+local let big: Int = loop(1000)
+-- findings.txt --
+error[E4401]  a/a.canon:6:9
+  evaluation budget of 200 steps exhausted
+  heaviest: big (170 steps)
+  in loop (a/a.canon:12)
+
+1 error, 0 warnings in 1 package (…)

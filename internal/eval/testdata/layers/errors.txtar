@@ -1,0 +1,58 @@
+EVALUATION.md §9.3: an intermediate key that does not exist is E1905, hard; a layer reading
+the let it amends is E4301; a layer adding to a stable table is poisoned and left to lock.
+-- layers --
+bad
+-- a/a.canon --
+/// A.
+package a
+
+/// Tier.
+record Tier {
+  /// Weight.
+  weight: Int = 1
+}
+
+/// Box.
+record Box {
+  /// N.
+  n: Int = 1
+  /// Limits.
+  limits: {String: [Int]} = { "a": [1] }
+}
+
+/// Tiers.
+let tiers: stable table Tier = { low {} }
+
+/// Box.
+let box: Box = {}
+
+/// Other.
+let other: Box = {}
+-- a/bad.canon --
+package a
+layer bad
+
+amend other {
+  limits["zz"][0]: 2
+}
+
+amend tiers {
+  high: { weight: 5 }
+}
+
+amend box {
+  n: box.n + 1
+}
+-- dump.txt --
+a.tiers poisoned
+a.box poisoned
+a.other poisoned
+stable amendment: layer bad table "tiers" field ""
+
+error[E1905]  a/bad.canon:5:9
+  amend path limits["zz"][0]: key zz does not exist
+
+error[E4301]  a/bad.canon:13:6
+  cycle between values: box -> box
+
+2 errors, 0 warnings in 1 package (…)

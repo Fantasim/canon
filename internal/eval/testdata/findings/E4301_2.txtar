@@ -1,0 +1,15 @@
+DECISIONS 172: a cycle between consts, which check breaks with no finding, reported once.
+-- a/a.canon --
+/// A.
+package a
+
+const A = B + 1
+
+const B = C
+
+const C = A
+-- findings.txt --
+error[E4301]  a/a.canon:8:11
+  cycle between values: A -> B -> C -> A
+
+1 error, 0 warnings in 1 package (…)

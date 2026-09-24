@@ -1,0 +1,36 @@
+EVALUATION.md §3.4: dereferencing a level-1 ref no enclosing instance bound.
+-- a/a.canon --
+/// A.
+package a
+
+/// Node.
+record Node {
+  /// Name.
+  name: String
+}
+
+/// Link.
+record Link {
+  /// To.
+  to: ref Node
+}
+
+/// Tree.
+record Tree {
+  /// Nodes.
+  nodes: [Node] keyed by name
+  /// Links.
+  links: [Link]
+}
+
+local let orphan: Link = { to: "x" }
+
+local let n: String = orphan.to.name
+-- findings.txt --
+error[E3505]  a/a.canon:24:32
+  orphan.to: ref Node has no enclosing Tree to resolve against
+
+error[E3505]  a/a.canon:26:23
+  ref Node has no enclosing Tree to resolve against
+
+2 errors, 0 warnings in 1 package (…)

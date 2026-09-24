@@ -1,0 +1,15 @@
+EVALUATION.md §3.2: a cycle between values, every value on it poisoned.
+-- a/a.canon --
+/// A.
+package a
+
+local let a: Int = b + 1
+
+local let b: Int = c
+
+local let c: Int = a
+-- findings.txt --
+error[E4301]  a/a.canon:8:20
+  cycle between values: a -> b -> c -> a
+
+1 error, 0 warnings in 1 package (…)

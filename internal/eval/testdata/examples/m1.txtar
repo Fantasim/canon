@@ -1,0 +1,24 @@
+M1: teamboard with the sovcommon packages it imports, and sovcommon/time.
+-- packages --
+sovcommon/roles sovcommon.roles
+sovcommon/ui sovcommon.ui
+sovcommon/time sovcommon.time
+teamboard teamboard
+-- dump.txt --
+sovcommon.time.DAY = 1440
+sovcommon.time.WEEK = 10080
+teamboard.VERSION = 7
+teamboard.intents = {issue: Intent{tone: warning, icon: alert_triangle, label: "Something is wrong", minRole: gm_junior}, idea: Intent{tone: accent, icon: lightbulb, label: "Idea or request", minRole: gm_junior}}
+teamboard.flags = {blocking: Flag{tone: danger, icon: hand, label: "This blocks my work", hint: none, setBy: reporter, viewMinRole: none}, sensitive: Flag{tone: warning, icon: lock, label: "Only the dev team should see", hint: "Exploits, dupes, security problems.", setBy: reporter, viewMinRole: maintainer}}
+teamboard.statuses = {open: Status{tone: warning, label: "Open", terminal: false, next: [taken, wont_do, duplicate], requires: [], optional: [], by: none}, taken: Status{tone: info, label: "Taken", terminal: false, next: [open, fixed, wont_do, duplicate], requires: [assignee], optional: [], by: none}, fixed: Status{tone: accent, label: "Fixed", terminal: false, next: [verified, open], requires: [], optional: [fixed_in], by: none}, verified: Status{tone: success, label: "Verified", terminal: true, next: [open], requires: [], optional: [], by: reporter_or_triager}, wont_do: Status{tone: neutral, label: "Won't do", terminal: true, next: [open], requires: [reason], optional: [], by: none}, duplicate: Status{tone: neutral, label: "Duplicate", terminal: true, next: [open], requires: [duplicate_of], optional: [], by: none}}
+teamboard.assigneeMinRole = maintainer
+teamboard.triageMinRole = maintainer
+teamboard.deck = Deck{layouts: ["4:1", "2:2"], maxHidden: 2}
+teamboard.columns = {unclaimed: Column{label: "Unclaimed", icon: inbox, statuses: [open], assigneeFilter: false, hideable: true}, taken: Column{label: "Taken", icon: hand, statuses: [taken], assigneeFilter: true, hideable: true}, fixed: Column{label: "Fixed, to verify", icon: check, statuses: [fixed], assigneeFilter: false, hideable: true}, done: Column{label: "Done", icon: archive, statuses: [verified, wont_do, duplicate], assigneeFilter: false, hideable: true}}
+teamboard.severities = {low: Severity{tone: neutral, label: "Low", default: false}, normal: Severity{tone: info, label: "Normal", default: true}, critical: Severity{tone: danger, label: "Critical", default: false}}
+teamboard.areaGroups = {in_game: AreaGroup{label: "In game"}, out_game: AreaGroup{label: "Out of game"}, internal: AreaGroup{label: "Internal"}}
+teamboard.areas = {game: Area{group: in_game, tone: series_1, icon: gamepad, label: "Game", hint: "Anything you saw while playing.", minRole: gm_junior, routesTo: [game_server, client, resource, balance]}, balance: Area{group: in_game, tone: series_1, icon: scale, label: "Balance", hint: "Nothing is broken, the numbers feel wrong.", minRole: gm_junior, routesTo: []}, website: Area{group: out_game, tone: series_2, icon: globe, label: "Website", hint: "The site, accounts, rankings, donations and payments.", minRole: gm_junior, routesTo: []}, resource_studio: Area{group: internal, tone: series_3, icon: layers, label: "Resource Studio", hint: none, minRole: maintainer, routesTo: []}, game_server: Area{group: in_game, tone: series_1, icon: server, label: "Game server", hint: none, minRole: admin, routesTo: []}, client: Area{group: in_game, tone: series_1, icon: monitor, label: "Game client", hint: none, minRole: maintainer, routesTo: []}, resource: Area{group: in_game, tone: series_1, icon: database, label: "Game data (Resource)", hint: none, minRole: maintainer, routesTo: []}, sovcommon: Area{group: internal, tone: series_3, icon: package, label: "sovcommon", hint: none, minRole: admin, routesTo: []}, admin_panel: Area{group: internal, tone: series_2, icon: shield, label: "Admin panel", hint: none, minRole: admin, routesTo: []}, analytics: Area{group: internal, tone: series_2, icon: bar_chart, label: "Analytics panel", hint: none, minRole: admin, routesTo: []}, team_board: Area{group: internal, tone: series_2, icon: columns, label: "Team board", hint: "This board itself: something broken or missing here.", minRole: gm_junior, routesTo: []}, internal: Area{group: internal, tone: series_4, icon: terminal, label: "Internal (sov, boxes, deploy)", hint: none, minRole: admin, routesTo: []}}
+teamboard.initialStatus = open
+teamboard.defaultSeverity = normal
+
+0 errors, 0 warnings in 4 packages (…)

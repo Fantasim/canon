@@ -1,0 +1,23 @@
+TYPES.md §6.2: a record that is not an entry of the target, converted to a ref.
+-- a/a.canon --
+/// A.
+package a
+
+/// R.
+record R {
+  /// N.
+  n: Int
+}
+
+/// Rs.
+let rs: table R = { x { n: 1 } }
+
+local fn pick() -> ref R { return R { n: 2 } }
+
+local let p: ref R = pick()
+-- findings.txt --
+error[E3503]  a/a.canon:13:35
+  this a.R is not an entry of rs
+  in pick (a/a.canon:15)
+
+1 error, 0 warnings in 1 package (…)

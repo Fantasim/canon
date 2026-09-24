@@ -1,0 +1,13 @@
+STDLIB.md §2.2: clamp with lo > hi.
+-- a/a.canon --
+/// A.
+package a
+
+local let lo: Int = 10
+
+local let x: Int = clamp(5, lo, 1)
+-- findings.txt --
+error[E4108]  a/a.canon:6:20
+  clamp: lower bound 10 is above upper bound 1
+
+1 error, 0 warnings in 1 package (…)

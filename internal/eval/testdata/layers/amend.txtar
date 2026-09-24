@@ -1,0 +1,57 @@
+EVALUATION.md §9.3: two layers stack; a derived default follows its field; a map and a table
+grow at their last segment; the knights layer of balance/parity amends a record of lists.
+-- layers --
+dev louis
+-- a/a.canon --
+/// A.
+package a
+
+/// Server.
+record Server {
+  /// Port.
+  port: Int(1024..) = 8080
+  /// Host.
+  host: String = "localhost"
+  /// URL, derived.
+  url: String = "http://{host}:{port}"
+}
+
+/// Tier.
+record Tier {
+  /// Weight.
+  weight: Int = 1
+}
+
+/// Config.
+record Config {
+  /// Server.
+  server: Server = {}
+  /// Limits.
+  limits: {String: Int} = { "a": 1 }
+  /// Tiers.
+  tiers: table Tier = { low {} }
+}
+
+/// Config.
+let config: Config = {}
+-- a/dev.canon --
+package a
+layer dev
+
+amend config {
+  server.port: 9000
+  limits["b"]: 2
+}
+-- a/louis.canon --
+package a
+layer louis
+
+amend config {
+  server.host: "box"
+  tiers.high: { weight: 5 }
+  tiers[#0].weight: 3
+}
+-- dump.txt --
+a.config = Config{server: Server{port: 9000, host: "box", url: "http://box:9000"}, limits: {"a": 1, "b": 2}, tiers: {low: Tier{weight: 3}, high: Tier{weight: 5}}}
+
+0 errors, 0 warnings in 1 package (…)

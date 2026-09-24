@@ -1,0 +1,13 @@
+EVALUATION.md §4.1: an index out of range.
+-- a/a.canon --
+/// A.
+package a
+
+local let xs: [Int] = [1, 2]
+
+local let y: Int = xs[5]
+-- findings.txt --
+error[E4002]  a/a.canon:6:20
+  index 5 out of range for length 2
+
+1 error, 0 warnings in 1 package (…)

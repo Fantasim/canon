@@ -1,0 +1,13 @@
+STDLIB.md §4.1: a slice out of range.
+-- a/a.canon --
+/// A.
+package a
+
+local let xs: [Int] = [1, 2, 3]
+
+local let y: [Int] = xs[1..7]
+-- findings.txt --
+error[E4002]  a/a.canon:6:22
+  slice 1..7 out of range
+
+1 error, 0 warnings in 1 package (…)

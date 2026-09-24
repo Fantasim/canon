@@ -1,0 +1,55 @@
+EVALUATION.md §8.3: a package check block reports each fail and warn call at its value; a
+hard error in a check aborts that run silently when it read an invalid value (§7.3).
+-- a/a.canon --
+/// A.
+package a
+
+/// Item.
+record Item {
+  /// Price.
+  price: Int(0..)
+}
+
+/// Items.
+let items: table Item = {
+  cheap { price: 1 }
+  free { price: 0 }
+}
+
+/// Wrong, then read.
+let broken: Int(0..) = items.cheap.price - 5
+
+check {
+  for it in items.active() {
+    if it.price == 0 {
+      fail(it, "item {it.id} is free")
+    }
+    if it.price < 2 {
+      warn(it, "item {it.id} is cheap")
+    }
+  }
+}
+
+check {
+  if broken < 0 {
+    fail(broken / (broken - broken), "never reported")
+  }
+}
+-- findings.txt --
+warning[W5002]  a/a.canon:12:3
+  items.cheap: item cheap is cheap
+  expected by a/a.canon:19 (check)
+
+error[E5002]  a/a.canon:13:3
+  items.free: item free is free
+  expected by a/a.canon:19 (check)
+
+warning[W5002]  a/a.canon:13:3
+  items.free: item free is cheap
+  expected by a/a.canon:19 (check)
+
+error[E3204]  a/a.canon:17:24
+  broken: -4 is outside 0..
+  expected by a/a.canon:17 (broken: Int(0..))
+
+2 errors, 2 warnings in 1 package (…)

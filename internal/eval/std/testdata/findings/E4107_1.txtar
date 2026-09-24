@@ -1,0 +1,13 @@
+STDLIB.md §7: a string slice bound inside a UTF-8 character.
+-- a/a.canon --
+/// A.
+package a
+
+local let word: String = "été"
+
+local let head: String = word[0..1]
+-- findings.txt --
+error[E4107]  a/a.canon:6:26
+  slice bound 1 is inside a UTF-8 character
+
+1 error, 0 warnings in 1 package (…)

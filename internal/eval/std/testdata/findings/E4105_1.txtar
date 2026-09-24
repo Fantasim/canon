@@ -1,0 +1,13 @@
+STDLIB.md §4.2: zip of sequences of different lengths.
+-- a/a.canon --
+/// A.
+package a
+
+local let xs: [Int] = [1, 2, 3]
+
+local let pairs: Int = xs.zip(["a"]).len()
+-- findings.txt --
+error[E4105]  a/a.canon:6:24
+  zip: lengths differ (3 and 1)
+
+1 error, 0 warnings in 1 package (…)

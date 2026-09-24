@@ -1,0 +1,24 @@
+STDLIB.md §2.3: topoSort meets a cycle, and names it.
+-- a/a.canon --
+/// A.
+package a
+
+/// Step.
+record Step {
+  /// After.
+  after: [ref Step] = []
+}
+
+/// Steps.
+let steps: table Step = {
+  build { after: [test] }
+  test { after: [ship] }
+  ship { after: [test] }
+}
+
+local let order: [ref Step] = topoSort(steps.keys(), next: s => s.after)
+-- findings.txt --
+error[E4501]  a/a.canon:17:31
+  topoSort: cycle test -> ship -> test
+
+1 error, 0 warnings in 1 package (…)

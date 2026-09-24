@@ -1,0 +1,32 @@
+EVALUATION.md §7.1: dereferencing a ref to a missing key is a hard E3501 in the reader
+(verify reports the ref itself, soft, in stage B). The keys of a keyed list are dynamic
+(TYPES.md §4.1), so the symbolic key zz reaches evaluation.
+-- a/a.canon --
+/// A.
+package a
+
+/// R.
+record R {
+  /// K.
+  k: String
+  /// X.
+  x: Int
+}
+
+/// Rs.
+let rs: [R] keyed by k = [R { k: "a", x: 1 }]
+
+/// P.
+let p: ref rs = zz
+
+/// V.
+let v: Int = p.x
+-- findings.txt --
+error[E3501]  a/a.canon:16:17
+  p: unknown key zz in rs
+  expected by a/a.canon:16 (p: ref rs)
+
+error[E3501]  a/a.canon:19:14
+  unknown key zz in rs
+
+2 errors, 0 warnings in 1 package (…)

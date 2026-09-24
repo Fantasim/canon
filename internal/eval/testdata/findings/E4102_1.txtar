@@ -1,0 +1,13 @@
+EVALUATION.md §6.1: an integer division by zero.
+-- a/a.canon --
+/// A.
+package a
+
+local let zero: Int = 0
+
+local let y: Int = 7 / zero
+-- findings.txt --
+error[E4102]  a/a.canon:6:20
+  division by zero
+
+1 error, 0 warnings in 1 package (…)

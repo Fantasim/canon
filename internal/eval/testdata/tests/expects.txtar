@@ -1,0 +1,100 @@
+EVALUATION.md §10.3 and §10.4: every expect form; a failing expect does not stop the test,
+a hard error outside a subject does; a subject reading a poisoned value fails, naming it.
+-- a/a.canon --
+package a
+
+record Box {
+  size: Int(0..10)
+  label: String = "box"
+
+  check big: size < 8 else "box {label} is too big"
+  warn size > 0 else "empty box"
+}
+
+let boxes: [Box] = [{ size: 1 }]
+local let broken: Int = 1 / (boxes.len() - 1)
+
+fn half(n: Int) -> Int { return n / 2 }
+
+test "expect forms" {
+  expect half(4) == 2
+  expect half(4) == 3
+  expect Box { size: 9 } fails big
+  expect Box { size: 9 } fails "too big"
+  expect Box { size: 9 } fails E5001
+  expect Box { size: 0 } warns "empty"
+  expect Box { size: 1 } passes
+  expect Box { size: half(22) } fails E3204
+  expect half(boxes.len() / 0) == 0
+  expect broken == 0
+}
+
+test "a hard error stops the test" {
+  let x = boxes.len() / 0
+  expect x == 1
+}
+
+test "a poisoned read stops the test and names the value" {
+  let y = broken + 1
+  expect y == 2
+}
+
+local let long: String = "abcdef"
+
+/// Holds a string.
+record Holder {
+  /// Short.
+  s: String(..3)
+}
+
+local let invalid: Holder = { s: long }
+
+test "a tainted test still captures its findings" {
+  let s = invalid.s
+  expect boxes[5] fails E4002
+}
+
+test "a broken test does not run" {
+  expect nothing == 1
+}
+-- outcomes.txt --
+a "expect forms": failed true, stopped false, broken false
+  expect line 17: passed true
+  expect line 18: passed false
+  expect line 19: passed true [E5001 box box is too big]
+  expect line 20: passed true [E5001 box box is too big]
+  expect line 21: passed true [E5001 box box is too big]
+  expect line 22: passed true [W5001 empty box]
+  expect line 23: passed true
+  expect line 24: passed true [E3204 11 is outside 0..10]
+  expect line 25: passed false [E4102 division by zero]
+  expect line 26: passed false (reads poisoned broken)
+a "a hard error stops the test": failed true, stopped true, broken false
+a "a poisoned read stops the test and names the value": failed true, stopped true, broken false, reads poisoned broken
+a "a tainted test still captures its findings": failed false, stopped false, broken false
+  expect line 51: passed true [E4002 index 5 out of range for length 1]
+a "a broken test does not run": failed true, stopped false, broken true
+
+warning[W1002]  a/a.canon:3:8
+  record Box has no doc comment
+
+warning[W1002]  a/a.canon:4:3
+  field size has no doc comment
+
+warning[W1002]  a/a.canon:5:3
+  field label has no doc comment
+
+error[E4102]  a/a.canon:12:25
+  division by zero
+
+error[E4102]  a/a.canon:30:11
+  division by zero
+
+error[E3204]  a/a.canon:39:26
+  invalid.s: abcdef is outside ..3
+  expected by a/a.canon:44 (s: String(..3))
+
+error[E3008]  a/a.canon:55:10
+  cannot infer the type of this expression; add a type
+
+4 errors, 3 warnings in 1 package (…)
