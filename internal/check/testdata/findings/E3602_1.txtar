@@ -1,0 +1,17 @@
+TYPES.md §12.6: a pattern already covered.
+-- a/a.canon --
+package a
+
+local enum E { a, b }
+
+local fn f(e: E) -> Int {
+  return match e {
+    a => 1
+    b, a => 2
+  }
+}
+-- findings.txt --
+error[E3602]  a/a.canon:8:8
+  pattern a is already covered
+
+1 error, 0 warnings in 1 package (…)

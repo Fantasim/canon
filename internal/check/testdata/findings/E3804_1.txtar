@@ -1,0 +1,26 @@
+TYPES.md §11.4: a field read on a dependent value.
+-- a/a.canon --
+package a
+
+local enum K { num, text }
+
+local record Ev {
+  k: K
+}
+
+local type P(e: Ev) = match e.k {
+  num => Int
+  text => String
+}
+
+local record R {
+  ev: Ev
+  p: P(ev)
+
+  check p.len() > 0 else "empty"
+}
+-- findings.txt --
+error[E3804]  a/a.canon:18:11
+  len is not available on a dependent value (P(*))
+
+1 error, 0 warnings in 1 package (…)

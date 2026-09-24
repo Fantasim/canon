@@ -1,0 +1,17 @@
+TYPES.md §8.3: is with a name that is not a case.
+-- a/a.canon --
+package a
+
+local variant V {
+  one
+  two
+}
+
+local fn f(v: V) -> Bool {
+  return v is three
+}
+-- findings.txt --
+error[E3605]  a/a.canon:9:15
+  three is not a case of a.V
+
+1 error, 0 warnings in 1 package (…)

@@ -1,0 +1,22 @@
+EVALUATION.md §9.1: one package declares a layer name twice.
+-- a/a.canon --
+package a
+
+local let port: Int = 1
+-- a/one.layer.canon --
+package a
+layer dev
+
+amend port {
+}
+-- a/two.layer.canon --
+package a
+layer dev
+
+amend port {
+}
+-- findings.txt --
+error[E1906]  a/two.layer.canon:2:7
+  package a declares layer dev twice (first at a/one.layer.canon:2)
+
+1 error, 0 warnings in 1 package (…)

@@ -1,0 +1,24 @@
+EVALUATION.md §11.1: a list in a function body.
+-- a/a.canon --
+package a
+
+local record Gen {
+  key: input String? from env "KEY"
+}
+
+/// The config.
+let cfg: Wrap = { gen: {} }
+
+local record Wrap {
+  gen: Gen
+}
+
+local fn none1() -> Int {
+  let gens: [Gen] = []
+  return gens.len()
+}
+-- findings.txt --
+error[E1903]  a/a.canon:3:14
+  Gen has input fields, so it must be reached from exactly one public value through record fields
+
+1 error, 0 warnings in 1 package (…)

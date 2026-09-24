@@ -1,0 +1,10 @@
+TYPES.md §13.3: a Range value with a Float bound.
+-- a/a.canon --
+package a
+
+local let r: Range = 1.5..3
+-- findings.txt --
+error[E3025]  a/a.canon:3:22
+  a Range value must have Int bounds and a start
+
+1 error, 0 warnings in 1 package (…)

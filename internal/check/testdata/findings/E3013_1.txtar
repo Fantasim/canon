@@ -1,0 +1,12 @@
+TYPES.md §9.3: a table of something that is not a record.
+-- a/a.canon --
+package a
+
+local enum E { a, b }
+
+local let t: table E = {}
+-- findings.txt --
+error[E3013]  a/a.canon:5:20
+  a table holds records; a.E is not a record
+
+1 error, 0 warnings in 1 package (…)

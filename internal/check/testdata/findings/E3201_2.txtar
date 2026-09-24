@@ -1,0 +1,13 @@
+TYPES.md §8.1: a code outside the @codes type.
+-- a/a.canon --
+package a
+
+local enum E @codes(UInt8) {
+  a = 1
+  b = 256
+}
+-- findings.txt --
+error[E3201]  a/a.canon:5:7
+  256 does not fit UInt8
+
+1 error, 0 warnings in 1 package (…)

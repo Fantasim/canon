@@ -1,0 +1,11 @@
+TYPES.md §7.4: a literal statically outside its range refinement.
+-- a/a.canon --
+package a
+
+local let stack: Int(1..) = 0
+-- findings.txt --
+error[E3204]  a/a.canon:3:29
+  0 is outside 1..
+  expected by a/a.canon:3 (stack: Int(1..))
+
+1 error, 0 warnings in 1 package (…)

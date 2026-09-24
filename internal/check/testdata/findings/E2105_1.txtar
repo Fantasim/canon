@@ -1,0 +1,14 @@
+TYPES.md §3.6: a table element declaring id.
+-- a/a.canon --
+package a
+
+local record Row {
+  id: String
+}
+
+local let rows: table Row = {}
+-- findings.txt --
+error[E2105]  a/a.canon:4:3
+  id is reserved on table entries
+
+1 error, 0 warnings in 1 package (…)

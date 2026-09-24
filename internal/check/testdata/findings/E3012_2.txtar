@@ -1,0 +1,14 @@
+TYPES.md §9.1: keyed by a field whose type cannot be a key.
+-- a/a.canon --
+package a
+
+local record Row {
+  on: Bool
+}
+
+local let rows: [Row] keyed by on = []
+-- findings.txt --
+error[E3012]  a/a.canon:7:32
+  keyed by on: type Bool cannot be a key
+
+1 error, 0 warnings in 1 package (…)

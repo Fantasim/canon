@@ -1,0 +1,12 @@
+CODEGEN.md §2.1: a value that is not a public let of the package.
+-- a/a.canon --
+package a
+
+local let hidden: Int = 1
+
+emit json { out: "@sovcommon/a/", values: [hidden] }
+-- findings.txt --
+error[E8009]  a/a.canon:5:44
+  values of emit json: hidden is not a public let of this package
+
+1 error, 0 warnings in 1 package (…)

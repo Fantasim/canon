@@ -1,0 +1,37 @@
+TYPES.md §8, §12.6: case literals, `is` narrowing, match bindings and kinds.
+-- a/a.canon --
+package a
+
+local variant Reward {
+  item {
+    count: Int(1..) = 1
+  }
+  gold {
+    amount: Int
+  }
+  nothing
+}
+
+local fn total(rewards: [Reward]) -> Int {
+  var n = 0
+  for reward in rewards {
+    if reward is item {
+      n += reward.count
+    }
+  }
+  return n
+}
+
+local fn amount(r: Reward) -> Int {
+  return match r {
+    item(i) => i.count
+    gold(g) => g.amount
+    nothing => 0
+  }
+}
+
+local fn isGold(r: Reward) -> Bool {
+  return r.kind == gold
+}
+
+local let defaults: [Reward] = [item, gold { amount: 5 }, Reward.nothing]

@@ -1,0 +1,37 @@
+TYPES.md §6.5: optional chains, `??`, `!` and none tests.
+-- a/a.canon --
+package a
+
+local record Item {
+  code: String
+  value: Int
+}
+
+local let items: table Item = {
+  gold { code: "G", value: 1 }
+}
+
+local record Weapon {
+  item: ref items
+  alt: Item?
+}
+
+local fn weaponId(w: Weapon?) -> String {
+  return w?.item.code ?? ""
+}
+
+local fn weaponValue(w: Weapon?) -> Int {
+  return w?.item.value ?? 0
+}
+
+local fn altValue(w: Weapon?) -> Int? {
+  return w?.alt?.value
+}
+
+local fn forced(w: Weapon?) -> Int {
+  return w!.item.value
+}
+
+local fn present(w: Weapon?) -> Bool {
+  return w?.alt != none
+}

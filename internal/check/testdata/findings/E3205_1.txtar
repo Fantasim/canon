@@ -1,0 +1,11 @@
+TYPES.md §7.4: a literal statically not matching its pattern.
+-- a/a.canon --
+package a
+
+local let id: String(/^II_/) = "SI_X"
+-- findings.txt --
+error[E3205]  a/a.canon:3:32
+  "SI_X" does not match /^II_/
+  expected by a/a.canon:3 (id: String(/^II_/))
+
+1 error, 0 warnings in 1 package (…)

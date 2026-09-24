@@ -1,0 +1,15 @@
+STDLIB.md §4.3: the sum of an empty list without an expected type.
+-- a/a.canon --
+package a
+
+local fn f() -> Int {
+  let s = [].sum()
+  return 1
+}
+
+local let n: Int = [].sum()
+-- findings.txt --
+error[E3314]  a/a.canon:4:11
+  cannot sum a list whose element type is unknown
+
+1 error, 0 warnings in 1 package (…)

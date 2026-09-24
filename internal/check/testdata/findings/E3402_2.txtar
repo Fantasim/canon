@@ -1,0 +1,20 @@
+TYPES.md §6.5: parentheses end a chain, so `(w?.item).id` reads a field of an optional.
+-- a/a.canon --
+package a
+
+local record Item {
+  code: String
+}
+
+local record Weapon {
+  item: Item
+}
+
+local fn f(w: Weapon?) -> String {
+  return (w?.item).code
+}
+-- findings.txt --
+error[E3402]  a/a.canon:12:10
+  (w?.item) may be none: use ?., !, ?? or test != none first
+
+1 error, 0 warnings in 1 package (…)

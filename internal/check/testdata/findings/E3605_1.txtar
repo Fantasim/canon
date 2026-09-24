@@ -1,0 +1,14 @@
+TYPES.md §8.3: is on a value that is not a variant.
+-- a/a.canon --
+package a
+
+local enum E { a, b }
+
+local fn f(e: E) -> Bool {
+  return e is a
+}
+-- findings.txt --
+error[E3605]  a/a.canon:6:10
+  is needs a variant, found a.E
+
+1 error, 0 warnings in 1 package (…)

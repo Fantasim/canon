@@ -1,0 +1,10 @@
+WIRE.md §2.1, TYPES.md §13.4: an asset root naming an undeclared root.
+-- a/a.canon --
+package a
+
+local type Icon = asset("@nowhere/Icon", ext: [dds])
+-- findings.txt --
+error[E7003]  a/a.canon:3:25
+  unknown root @nowhere; roots: client, features, generated, parity, pipeline_go, resource, services, source, sovcommon, web
+
+1 error, 0 warnings in 1 package (…)

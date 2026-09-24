@@ -1,0 +1,12 @@
+TYPES.md §6.5: parentheses are transparent: one finding, at the innermost expression.
+-- a/a.canon --
+package a
+
+local fn f(x: Int?) -> Int {
+  return ((x))
+}
+-- findings.txt --
+error[E3403]  a/a.canon:4:12
+  expected Int, found Int?: prove it is present (!= none, !, ??)
+
+1 error, 0 warnings in 1 package (…)

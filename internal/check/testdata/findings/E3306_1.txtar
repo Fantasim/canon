@@ -1,0 +1,12 @@
+TYPES.md §12.3: a function type as a record field.
+-- a/a.canon --
+package a
+
+local record R {
+  f: fn(Int) -> Int
+}
+-- findings.txt --
+error[E3306]  a/a.canon:4:6
+  a function type is not allowed here
+
+1 error, 0 warnings in 1 package (…)

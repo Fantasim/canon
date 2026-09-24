@@ -1,0 +1,11 @@
+CODEGEN.md §2.1: two emits of one target.
+-- a/a.canon --
+package a
+
+emit go { out: "@sovcommon/a", package: "a" }
+emit go { out: "@sovcommon/b", package: "b" }
+-- findings.txt --
+error[E8002]  a/a.canon:4:6
+  package a has two emits for target go
+
+1 error, 0 warnings in 1 package (…)

@@ -1,0 +1,10 @@
+CODEGEN.md §2.1: a Go package that is a keyword.
+-- a/a.canon --
+package a
+
+emit go { out: "@sovcommon/a", package: "func" }
+-- findings.txt --
+error[E8009]  a/a.canon:3:41
+  invalid package "func" for emit go: not a Go identifier, or a Go keyword
+
+1 error, 0 warnings in 1 package (…)

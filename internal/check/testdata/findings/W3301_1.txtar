@@ -1,0 +1,15 @@
+TYPES.md §16: a deprecated field given a value in a literal.
+-- a/a.canon --
+package a
+
+local record R {
+  a: Int
+  old: Int = 0 @deprecated("use a")
+}
+
+local let r: R = { a: 1, old: 2 }
+-- findings.txt --
+warning[W3301]  a/a.canon:8:26
+  old is deprecated: use a
+
+0 errors, 1 warning in 1 package (…)

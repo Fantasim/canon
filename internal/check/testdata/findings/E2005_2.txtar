@@ -1,0 +1,17 @@
+TYPES.md §3.1: an import binding a name the package declares.
+-- a/a.canon --
+package a
+
+import b { X }
+
+local const X = 3
+-- b/b.canon --
+package b
+
+/// X.
+const X = 1
+-- findings.txt --
+error[E2005]  a/a.canon:3:12
+  X is bound twice in this file (first at a/a.canon:5)
+
+1 error, 0 warnings in 2 packages (…)

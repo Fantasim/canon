@@ -1,0 +1,13 @@
+TYPES.md §1: an error in a lambda body gives the error type, with no E3008 after it.
+-- a/a.canon --
+package a
+
+local fn f(xs: [Int]) -> Int {
+  let ys = xs.map(v => v + "a")
+  return ys.len()
+}
+-- findings.txt --
+error[E3007]  a/a.canon:4:24
+  operator + is not defined for Int and String
+
+1 error, 0 warnings in 1 package (…)

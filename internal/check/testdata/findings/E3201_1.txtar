@@ -1,0 +1,11 @@
+TYPES.md §7.2: a literal outside its sized integer type.
+-- a/a.canon --
+package a
+
+local let b: UInt8 = 300
+-- findings.txt --
+error[E3201]  a/a.canon:3:22
+  300 does not fit UInt8
+  expected by a/a.canon:3 (b: UInt8)
+
+1 error, 0 warnings in 1 package (…)

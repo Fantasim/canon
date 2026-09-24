@@ -1,0 +1,15 @@
+TYPES.md §6.6: an index path is never narrowed.
+-- a/a.canon --
+package a
+
+local fn f(xs: [Int?]) -> Int {
+  if xs[0] != none {
+    return xs[0]
+  }
+  return 0
+}
+-- findings.txt --
+error[E3403]  a/a.canon:5:12
+  expected Int, found Int?: prove it is present (!= none, !, ??)
+
+1 error, 0 warnings in 1 package (…)

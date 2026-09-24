@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("package A enum Grade{A}fn A(grade:Grade)->0{match grade{A.A=>}}")

@@ -1,0 +1,14 @@
+TYPES.md §3.1: an import cycle, named.
+-- a/a.canon --
+package a
+
+import b
+-- b/b.canon --
+package b
+
+import a
+-- findings.txt --
+error[E2002]  b/b.canon:3:8
+  import cycle: a -> b -> a
+
+1 error, 0 warnings in 2 packages (…)

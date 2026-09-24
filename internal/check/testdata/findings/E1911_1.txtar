@@ -1,0 +1,15 @@
+EVALUATION.md §11.1: an invalid environment variable name.
+-- a/a.canon --
+package a
+
+local record Gen {
+  key: input String? from env "1KEY"
+}
+
+/// The generator.
+let g: Gen = {}
+-- findings.txt --
+error[E1911]  a/a.canon:4:31
+  1KEY is not a valid environment variable name
+
+1 error, 0 warnings in 1 package (…)

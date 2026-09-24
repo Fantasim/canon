@@ -1,0 +1,15 @@
+EVALUATION.md §11.1: an input field with a default.
+-- a/a.canon --
+package a
+
+local record Gen {
+  apiKey: input String? from env "KEY" = none
+}
+
+/// The generator.
+let g: Gen = {}
+-- findings.txt --
+error[E1907]  a/a.canon:4:42
+  input apiKey cannot have a default
+
+1 error, 0 warnings in 1 package (…)

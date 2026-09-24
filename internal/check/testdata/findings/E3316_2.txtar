@@ -1,0 +1,13 @@
+WIRE.md §4.2: two fields with one wire name.
+-- a/a.canon --
+package a
+
+local record R {
+  a: Int @json("x")
+  b: Int @json("x")
+}
+-- findings.txt --
+error[E3316]  a/a.canon:5:3
+  wire key x of b collides with a
+
+1 error, 0 warnings in 1 package (…)

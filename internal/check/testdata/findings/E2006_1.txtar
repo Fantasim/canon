@@ -1,0 +1,8 @@
+TYPES.md §3.1: a file declaring a descendant package.
+-- a/a.canon --
+package a.b
+-- findings.txt --
+error[E2006]  a/a.canon:1:9
+  a file in a declares package a.b, which is neither that directory's package nor an ancestor of it
+
+1 error, 0 warnings in 1 package (…)

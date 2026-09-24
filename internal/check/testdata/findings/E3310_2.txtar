@@ -1,0 +1,14 @@
+TYPES.md §7.5: ordering an enum that is not ordered.
+-- a/a.canon --
+package a
+
+local enum E { a, b }
+
+local fn f(x: E, y: E) -> Bool {
+  return x < y
+}
+-- findings.txt --
+error[E3310]  a/a.canon:6:10
+  < needs an orderable type, found a.E
+
+1 error, 0 warnings in 1 package (…)

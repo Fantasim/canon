@@ -1,0 +1,19 @@
+TYPES.md §6.2: refs into two collections never convert.
+-- a/a.canon --
+package a
+
+local record Node {
+  n: Int
+}
+
+local let one: table Node = {}
+local let two: table Node = {}
+
+local fn f(a: ref one) -> ref two {
+  return a
+}
+-- findings.txt --
+error[E3002]  a/a.canon:11:10
+  expected ref a.two, found ref a.one
+
+1 error, 0 warnings in 1 package (…)

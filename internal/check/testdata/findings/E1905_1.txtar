@@ -1,0 +1,21 @@
+EVALUATION.md §9.2: an amend path with no such field.
+-- a/a.canon --
+package a
+
+local record Cfg {
+  port: Int
+}
+
+local let cfg: Cfg = { port: 1 }
+-- a/dev.layer.canon --
+package a
+layer dev
+
+amend cfg {
+  host: "x"
+}
+-- findings.txt --
+error[E1905]  a/dev.layer.canon:5:3
+  amend path host: no such field
+
+1 error, 0 warnings in 1 package (…)

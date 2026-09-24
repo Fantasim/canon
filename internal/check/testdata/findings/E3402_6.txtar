@@ -1,0 +1,17 @@
+TYPES.md §6.6: an arm that also matches `none` does not see the scrutinee present.
+-- a/a.canon --
+package a
+
+local enum E { a, b }
+
+local fn g(x: E?) -> Int {
+  return match x {
+    none, a => x.index
+    b => 1
+  }
+}
+-- findings.txt --
+error[E3402]  a/a.canon:7:16
+  x may be none: use ?., !, ?? or test != none first
+
+1 error, 0 warnings in 1 package (…)

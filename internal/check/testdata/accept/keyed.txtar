@@ -1,0 +1,51 @@
+TYPES.md §9: keyed lists, tables, maps and their methods.
+-- a/a.canon --
+package a
+
+local record Row {
+  id: Int
+  name: String
+}
+
+local record Named {
+  name: String
+  n: Int
+}
+
+local let rows: [Row] keyed by id = [
+  { id: 1, name: "one" }
+]
+
+local let named: [Named] keyed by name = [
+  { name: "a", n: 1 }
+]
+
+local let byName: {String: [Row]} = rows.groupBy(.name)
+
+local fn find(id: Int) -> Row? {
+  return rows.get(id)
+}
+
+local fn lookup() -> Int {
+  return named.a.n + named["a"].n + named.at(0).n
+}
+
+local fn hasOne() -> Bool {
+  return 1 in rows and rows.contains(1)
+}
+
+local fn positions() -> [Int] {
+  return [i for i, r in rows.enumerate()]
+}
+
+local fn sorted() -> [Row] {
+  return rows.sortBy(r => r.name).reverse()
+}
+
+local fn total(m: {String: Int}) -> Int {
+  var n = 0
+  for k, v in m {
+    n += v
+  }
+  return n + m.values().sum()
+}

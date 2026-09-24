@@ -1,0 +1,21 @@
+EVALUATION.md §9.2: a layer amends a value of another package.
+-- a/a.canon --
+package a
+
+/// The port.
+let port: Int = 1
+-- b/b.canon --
+package b
+
+local let other: Int = 1
+-- b/dev.layer.canon --
+package b
+layer dev
+
+amend port {
+}
+-- findings.txt --
+error[E1909]  b/dev.layer.canon:4:7
+  amend port: layers amend values of their own package only
+
+1 error, 0 warnings in 2 packages (…)

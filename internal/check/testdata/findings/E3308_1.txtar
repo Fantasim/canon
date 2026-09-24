@@ -1,0 +1,13 @@
+TYPES.md §6.4: branches with incompatible types.
+-- a/a.canon --
+package a
+
+local fn f(b: Bool) -> Int {
+  let x = if b { 1 } else { "a" }
+  return 1
+}
+-- findings.txt --
+error[E3308]  a/a.canon:4:29
+  branches have incompatible types Int and String
+
+1 error, 0 warnings in 1 package (…)

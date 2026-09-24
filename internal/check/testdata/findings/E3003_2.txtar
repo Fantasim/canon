@@ -1,0 +1,19 @@
+TYPES.md §8.3: a case field read on an un-narrowed variant.
+-- a/a.canon --
+package a
+
+local variant V {
+  one {
+    n: Int
+  }
+  two
+}
+
+local fn f(v: V) -> Int {
+  return v.n
+}
+-- findings.txt --
+error[E3003]  a/a.canon:11:12
+  a.V has no field n
+
+1 error, 0 warnings in 1 package (…)

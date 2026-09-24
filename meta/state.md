@@ -10,9 +10,8 @@ encoder, fingerprint, `gen/json`; `project` loading + `build` skeleton + `cli`/`
 (`version`, `init`, `new`, `check`; DECISIONS 139–145, ADR-0002); `verify` (stage B), `lock`
 verification/update, `rules` (stages C/D) on hand-built values (DECISIONS 146–149).
 
-**TYP done, uncommitted:** `internal/check` (resolver + checker, DECISIONS 150–161) and
-`types.Identical/Assignable/Join`; teamboard/ui/roles and every example check with 0 findings;
-130+ txtars, Info goldens. Not yet typed: views, translation templates; `W1003` (needs selection).
+**TYP done, uncommitted** (reviews A, B fixed): `internal/check`, `types.Identical/Assignable/Join`
+(DECISIONS 150–161, 171, 172, 177); every example checks with 0 findings. Not typed: views, translations.
 **Uncommitted, blocked:** `internal/gen/go` (baked Go generator; `rt.go.txt` names E3201,
 E4101–E4104, E4108, which need txtar cases in `check`/`eval`/`eval/std` first, DECISIONS 125).
 
@@ -60,9 +59,12 @@ E4101–E4104, E4108, which need txtar cases in `check`/`eval`/`eval/std` first,
    in letter case: both are data-fix scripts for later, not compiler work.
 9. **Audit tighten bypass:** the M0.5 agent ran `go run . baseline --tighten` directly because
    `make audit-tighten` needed an approval nobody could give at night (it only removes lines).
-10. **M1 TYP (DECISIONS 150–161):** `Check` has no selection (`W1003`); `Keys`/`Symbols` cannot
-    hold a `name:` map key (an `Ident`); no `E3015` kind for load arguments; `E3204`/`E3205`
-    static but owned by `verify`; `values` on code emits (CODEGEN §2.1 table vs bullet).
+10. **M1 TYP** (gaps settled by DECISIONS 151, 153, 154, 156, 157, 160, 161, 171, 172, 177): `W1003`
+    needs a selection; `Keys`/`Symbols` take no `Ident`; no code/variant for E3015 load args, E3004
+    twice, `matches`, E3603 binders, E3803 refinements, E3804's conversion arg; E3204/5, E3102,
+    E7003, E1132 reported by check, E4301 by eval; `1 + 1` E3008; refs in aliases; emit rule timing;
+    E2005 wording; E1903 transitivity; §5.2 vs dependent unions; `keys()` on non-let tables; §7.5;
+    154 vs §7.1; import path prefixes; code-emit `values`; `p == q` on `P(*)` (§4.1 vs §11.4).
 11. **SYN jsonsrc (DECISIONS 162–165):** E7104 "first at line:col" (WIRE §3.2) vs `Loc` = path:line
     (ERRORS §1.3); E7105 `{offset}` raw vs normalized; E7109 byte vs character, detail `""` at EOF;
     `\ud800\udcGG` E7105 over E7109; BOM counted in line-1 columns; E7104 key rendered verbatim.

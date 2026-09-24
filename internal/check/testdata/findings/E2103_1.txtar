@@ -1,0 +1,16 @@
+TYPES.md §10.2: ref T with no collection of T.
+-- a/a.canon --
+package a
+
+local record Node {
+  id: String
+}
+
+local record Link {
+  to: ref Node
+}
+-- findings.txt --
+error[E2103]  a/a.canon:8:11
+  ref Node: there is no collection of Node; write ref <collection name>
+
+1 error, 0 warnings in 1 package (…)

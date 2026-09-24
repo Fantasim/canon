@@ -1,0 +1,17 @@
+TYPES.md §12.6: a match that does not cover every member.
+-- a/a.canon --
+package a
+
+local enum E { a, b, c }
+
+local fn f(e: E) -> Int {
+  return match e {
+    a => 1
+    b => 2
+  }
+}
+-- findings.txt --
+error[E3601]  a/a.canon:6:10
+  match does not cover c; add them or _
+
+1 error, 0 warnings in 1 package (…)

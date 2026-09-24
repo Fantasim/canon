@@ -1,0 +1,150 @@
+package check
+
+import (
+	"github.com/fantasim/canonlang/internal/diag"
+	"github.com/fantasim/canonlang/internal/syntax"
+	"github.com/fantasim/canonlang/internal/types"
+)
+
+// resolveSignature types a top-level function (TYPES.md §12.1).
+func (c *checker) resolveSignature(o *object) {
+	if o.typ != nil {
+		return
+	}
+	o.typ = c.signature(c.declEnv(o), o, o.decl.(*syntax.FnDecl))
+}
+
+// signature is a function's type: parameter types (a function type allowed, E3306 elsewhere),
+// then the result; its parameters' objects are kept for the body. E2106 for a parameter
+// declared twice.
+func (c *checker) signature(env *env, o *object, fn *syntax.FnDecl) *types.FuncType {
+	ft := &types.FuncType{}
+	ptc := &typeCtx{env: env, pos: posFn}
+	seen := map[string]*object{}
+	var params []*object
+	for _, p := range fn.Params {
+		t := c.resolveType(ptc, p.Type)
+		po := c.newObject(ObjParam, p.Name.Name, env.pkg, p, env.file)
+		po.typ = t
+		c.info.Defs[p.Name] = po
+		ft.Params = append(ft.Params, t)
+		params = append(params, po)
+		if first, dup := seen[p.Name.Name]; dup {
+			c.report(env, diag.E2106.At(env.span(p.Name), p.Name.Name, declSpan(first)))
+			continue
+		}
+		seen[p.Name.Name] = po
+	}
+	ft.Result = c.resolveType(&typeCtx{env: env}, fn.Result)
+	c.fnParams[o] = params
+	return ft
+}
+
+// resolveLetAnnotation types a top-level let's annotation: `stable table` allowed as the whole type (LOCK.md §1).
+func (c *checker) resolveLetAnnotation(o *object) {
+	d := o.decl.(*syntax.LetDecl)
+	if d.Type == nil {
+		if !o.local {
+			c.report(c.declEnv(o), diag.E3001.At(o.file.Span(d.Name), o.name))
+		}
+		return
+	}
+	if o.typ != nil {
+		return
+	}
+	o.typ = c.resolveType(&typeCtx{env: c.declEnv(o), pos: posStable}, d.Type)
+	if _, isTable := o.typ.Base().(*types.TableType); !isTable {
+		o.keys = nil
+	}
+}
+
+// letType is a top-level let's type: its annotation, or its initializer synthesized when first needed (TYPES.md §15).
+func (c *checker) letType(o *object) types.Type {
+	if o.typ != nil {
+		return o.typ
+	}
+	d := o.decl.(*syntax.LetDecl)
+	if d.Type != nil {
+		c.resolveLetAnnotation(o)
+		return o.typ
+	}
+	env := c.declEnv(o)
+	if o.state == stateResolving {
+		c.report(env, diag.E3008.At(env.span(d.Name)))
+		return types.ErrorType
+	}
+	o.state = stateResolving
+	t := c.expr(env, d.Value, nil)
+	o.state = stateDone
+	if o.typ == nil {
+		o.typ = t
+	}
+	if _, isTable := o.typ.Base().(*types.TableType); !isTable {
+		o.keys = nil
+	}
+	c.initDone[o] = true
+	return o.typ
+}
+
+// resolveWidget types a widget's parameters: `_` is allowed there (TYPES.md §13.6).
+func (c *checker) resolveWidget(o *object) {
+	d := o.decl.(*syntax.WidgetDecl)
+	env := c.declEnv(o)
+	tc := &typeCtx{env: env, pos: posAny}
+	for i, p := range d.Params {
+		t := c.resolveType(tc, p.Type)
+		po := c.newObject(ObjParam, p.Name.Name, env.pkg, p, env.file)
+		po.typ = t
+		c.info.Defs[p.Name] = po
+		if i == 0 {
+			o.typ = t
+		}
+	}
+	if o.typ == nil {
+		o.typ = types.ErrorType
+	}
+}
+
+// checkSelfContaining is E3022: a record holding itself through required fields (TYPES.md §13.1).
+func (c *checker) checkSelfContaining(p *pkgState) {
+	for _, o := range p.all {
+		rec, ok := o.typ.(*types.RecordType)
+		if o.kind != ObjTypeName || !ok {
+			continue
+		}
+		if c.reaches(rec, rec, map[*types.RecordType]bool{}) {
+			env := c.declEnv(o)
+			c.report(env, diag.E3022.At(env.span(rec.Decl.Name), o.name))
+		}
+	}
+}
+
+// reaches reports that a value of from needs a value of to through required record fields.
+func (c *checker) reaches(from, to *types.RecordType, seen map[*types.RecordType]bool) bool {
+	if seen[from] {
+		return false
+	}
+	seen[from] = true
+	for _, f := range from.Fields {
+		next := requiredRecord(f.Type)
+		if next == nil || f.Input != nil {
+			continue
+		}
+		if next == to || c.reaches(next, to, seen) {
+			return true
+		}
+	}
+	return false
+}
+
+// requiredRecord is the record a field type needs directly: not optional, not in a list, map,
+// table or ref.
+func requiredRecord(t types.Type) *types.RecordType {
+	switch x := t.Base().(type) {
+	case *types.RecordType:
+		return x
+	case *types.AppliedRecord:
+		return x.Rec
+	}
+	return nil
+}

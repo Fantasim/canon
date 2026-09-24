@@ -1,0 +1,19 @@
+TYPES.md §7.5: comparing refs into two collections.
+-- a/a.canon --
+package a
+
+local record Node {
+  n: Int
+}
+
+local let one: table Node = {}
+local let two: table Node = {}
+
+local fn f(a: ref one, b: ref two) -> Bool {
+  return a == b
+}
+-- findings.txt --
+error[E3309]  a/a.canon:11:10
+  ref a.one and ref a.two reference different collections
+
+1 error, 0 warnings in 1 package (…)

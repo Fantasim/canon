@@ -1,0 +1,18 @@
+TYPES.md §12.6: an unreachable _ arm.
+-- a/a.canon --
+package a
+
+local enum E { a, b }
+
+local fn f(e: E) -> Int {
+  return match e {
+    a => 1
+    b => 2
+    _ => 3
+  }
+}
+-- findings.txt --
+warning[W3601]  a/a.canon:9:5
+  _ is unreachable: every case is covered
+
+0 errors, 1 warning in 1 package (…)

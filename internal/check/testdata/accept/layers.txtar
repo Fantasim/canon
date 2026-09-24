@@ -1,0 +1,27 @@
+EVALUATION.md §9.2, §9.3, TYPES.md §9.3: a path through an optional (none is found when applied), one path on two lets, a bare table key.
+-- a/a.canon --
+package a
+
+local record Net {
+  port: Int
+}
+
+local record Cfg {
+  net: Net?
+  tags: table Net
+}
+
+local let one: Cfg = { net: { port: 1 }, tags: { web { port: 80 } } }
+local let two: Cfg = { net: none, tags: {} }
+-- a/dev.layer.canon --
+package a
+layer dev
+
+amend one {
+  net.port: 2
+  tags[web].port: 8080
+}
+
+amend two {
+  net.port: 3
+}

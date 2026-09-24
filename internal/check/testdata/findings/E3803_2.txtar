@@ -1,0 +1,18 @@
+TYPES.md §11.2: a result refinement of a type function may not use its parameters (a range bound, a where predicate).
+-- a/a.canon --
+package a
+
+local record Ev {
+  max: Int
+}
+
+local type F(e: Ev) = Int(..e.max)
+local type G(e: Ev) = Int where it < e.max
+-- findings.txt --
+error[E3803]  a/a.canon:7:26
+  a type-function argument must be a path rooted at a parameter
+
+error[E3803]  a/a.canon:8:33
+  a type-function argument must be a path rooted at a parameter
+
+2 errors, 0 warnings in 1 package (…)

@@ -1,0 +1,10 @@
+CODEGEN.md §2.1: an unknown emit option.
+-- a/a.canon --
+package a
+
+emit go { out: "@sovcommon/a", flavor: "x" }
+-- findings.txt --
+error[E8003]  a/a.canon:3:32
+  unknown option flavor for emit go
+
+1 error, 0 warnings in 1 package (…)

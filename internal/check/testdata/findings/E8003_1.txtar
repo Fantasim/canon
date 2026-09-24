@@ -1,0 +1,10 @@
+CODEGEN.md §2.1: an unknown emit target.
+-- a/a.canon --
+package a
+
+emit rust { out: "@sovcommon/a" }
+-- findings.txt --
+error[E8003]  a/a.canon:3:6
+  unknown emit target rust: expected go, cpp, ts, json or view
+
+1 error, 0 warnings in 1 package (…)

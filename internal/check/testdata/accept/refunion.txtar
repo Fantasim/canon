@@ -1,0 +1,21 @@
+TYPES.md §13.2, §6.2: a ref is assignable to a literal union whose base is that ref.
+-- a/a.canon --
+package a
+
+local record Item {
+  size: Int
+}
+
+local let items: table Item = {
+  small { size: 1 }
+}
+
+local record Pick {
+  item: ref items | "all"
+}
+
+local fn pick(r: ref items) -> Pick {
+  return { item: r }
+}
+
+local let every: Pick = { item: "all" }

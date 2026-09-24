@@ -1,0 +1,35 @@
+TYPES.md §11.5, §10.2: a dependent map's domain names a collection as `ref c` does: a let, a path through its record fields, or `pkg.v`; §7.4: its length may be refined.
+-- b/b.canon --
+package b
+
+/// A kind.
+record Kind {
+  /// Its size.
+  size: Int
+}
+
+let kinds: table Kind = {
+  small { size: 1 }
+}
+-- a/a.canon --
+package a
+
+import b
+
+local record Unit {
+  n: Int
+}
+
+local record Cat {
+  units: table Unit
+}
+
+local let cat: Cat = { units: { one { n: 1 } } }
+
+local type Count(u: Unit) = Int
+
+local record Plan {
+  here: {u in cat.units: Count(u)} = {}
+  there: {k in b.kinds: Int} = {}
+  capped: {u in cat.units: Int}(..=3) = {}
+}

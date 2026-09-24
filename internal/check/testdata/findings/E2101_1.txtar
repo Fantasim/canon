@@ -1,0 +1,15 @@
+TYPES.md §4.2: a contextual name also a parameter of the expected type.
+-- a/a.canon --
+package a
+
+local enum Tone { warning, info }
+
+local fn pick(warning: Tone) -> Tone {
+  let t: Tone = warning
+  return t
+}
+-- findings.txt --
+error[E2101]  a/a.canon:6:17
+  warning is ambiguous: Tone.warning or the parameter warning; write it qualified
+
+1 error, 0 warnings in 1 package (…)

@@ -1,0 +1,16 @@
+TYPES.md §12.7: one name over a map.
+-- a/a.canon --
+package a
+
+local fn f(m: {String: Int}) -> Int {
+  var n = 0
+  for k in m {
+    n += 1
+  }
+  return n
+}
+-- findings.txt --
+error[E3018]  a/a.canon:5:12
+  for k,  in needs a map or pairs, found {String: Int}
+
+1 error, 0 warnings in 1 package (…)

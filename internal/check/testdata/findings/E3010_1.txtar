@@ -1,0 +1,14 @@
+TYPES.md §15: a field default reading a let.
+-- a/a.canon --
+package a
+
+local let limit: Int = 3
+
+local record R {
+  n: Int = limit
+}
+-- findings.txt --
+error[E3010]  a/a.canon:6:12
+  a default may use only constants, earlier fields, parameters and built-ins
+
+1 error, 0 warnings in 1 package (…)

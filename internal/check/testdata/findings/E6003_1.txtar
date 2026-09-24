@@ -1,0 +1,16 @@
+LOCK.md §1: stable table that is not the whole type of a top-level let.
+-- a/a.canon --
+package a
+
+local record Row {
+  n: Int
+}
+
+local record Holder {
+  rows: stable table Row
+}
+-- findings.txt --
+error[E6003]  a/a.canon:8:9
+  stable table must be the whole type of a top-level let
+
+1 error, 0 warnings in 1 package (…)

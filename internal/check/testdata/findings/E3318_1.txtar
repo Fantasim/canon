@@ -1,0 +1,21 @@
+WIRE.md §4.2: two inline fields in one record.
+-- a/a.canon --
+package a
+
+local variant V {
+  one
+}
+
+local variant W @json(tag: "t") {
+  two
+}
+
+local record R {
+  v: V @json(inline)
+  w: W @json(inline)
+}
+-- findings.txt --
+error[E3318]  a/a.canon:13:3
+  a record may have only one @json(inline) field
+
+1 error, 0 warnings in 1 package (…)

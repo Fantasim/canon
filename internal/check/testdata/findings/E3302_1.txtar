@@ -1,0 +1,15 @@
+TYPES.md §5.2: a missing required field.
+-- a/a.canon --
+package a
+
+local record R {
+  a: Int
+  b: Int
+}
+
+local let r: R = { a: 1 }
+-- findings.txt --
+error[E3302]  a/a.canon:8:18
+  a.R needs field b
+
+1 error, 0 warnings in 1 package (…)

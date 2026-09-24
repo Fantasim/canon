@@ -1,0 +1,1311 @@
+14:18 Ident roles names Package teamboard.roles
+14:26 Ident Role names TypeName sovcommon.roles.Role: sovcommon.roles.Role
+15:18 Ident ui names Package teamboard.ui
+15:23 Ident Icon names TypeName sovcommon.ui.Icon: sovcommon.ui.Icon
+15:29 Ident Tone names TypeName sovcommon.ui.Tone: sovcommon.ui.Tone
+18:7 Ident VERSION def Const teamboard.VERSION: Int
+18:17 IntLit : Int
+25:6 Ident Actor def TypeName teamboard.Actor: teamboard.Actor
+25:14 Ident reporter def Member teamboard.reporter: teamboard.Actor
+25:24 Ident triager def Member teamboard.triager: teamboard.Actor
+25:33 Ident reporter_or_triager def Member teamboard.reporter_or_triager: teamboard.Actor
+28:6 Ident PostField def TypeName teamboard.PostField: teamboard.PostField
+28:18 Ident assignee def Member teamboard.assignee: teamboard.PostField
+28:28 Ident fixed_in def Member teamboard.fixed_in: teamboard.PostField
+28:38 Ident reason def Member teamboard.reason: teamboard.PostField
+28:46 Ident duplicate_of def Member teamboard.duplicate_of: teamboard.PostField
+31:6 Ident Layout def TypeName teamboard.Layout: teamboard.Layout
+31:15 NamedType type String(/^[1-9]:[1-9]$/)
+31:15 Ident String names Builtin String: String
+31:22 RegexLit : String
+34:8 Ident Intent def TypeName teamboard.Intent: teamboard.Intent
+36:3 Ident tone def Field teamboard.tone: sovcommon.ui.Tone
+36:9 NamedType type sovcommon.ui.Tone
+36:9 Ident Tone names TypeName sovcommon.ui.Tone: sovcommon.ui.Tone
+38:3 Ident icon def Field teamboard.icon: sovcommon.ui.Icon
+38:9 NamedType type sovcommon.ui.Icon
+38:9 Ident Icon names TypeName sovcommon.ui.Icon: sovcommon.ui.Icon
+40:3 Ident label def Field teamboard.label: String(1..)
+40:10 NamedType type String(1..)
+40:10 Ident String names Builtin String: String
+40:17 RangeExpr : Range
+40:17 IntLit : Int
+42:3 Ident minRole def Field teamboard.minRole: sovcommon.roles.Role
+42:12 NamedType type sovcommon.roles.Role
+42:12 Ident Role names TypeName sovcommon.roles.Role: sovcommon.roles.Role
+46:8 Ident Flag def TypeName teamboard.Flag: teamboard.Flag
+48:3 Ident tone def Field teamboard.tone: sovcommon.ui.Tone
+48:9 NamedType type sovcommon.ui.Tone
+48:9 Ident Tone names TypeName sovcommon.ui.Tone: sovcommon.ui.Tone
+50:3 Ident icon def Field teamboard.icon: sovcommon.ui.Icon
+50:9 NamedType type sovcommon.ui.Icon
+50:9 Ident Icon names TypeName sovcommon.ui.Icon: sovcommon.ui.Icon
+52:3 Ident label def Field teamboard.label: String(1..)
+52:10 NamedType type String(1..)
+52:10 Ident String names Builtin String: String
+52:17 RangeExpr : Range
+52:17 IntLit : Int
+54:3 Ident hint def Field teamboard.hint: String?
+54:9 OptionalType type String?
+54:9 NamedType type String
+54:9 Ident String names Builtin String: String
+54:19 NoneLit : none
+56:3 Ident setBy def Field teamboard.setBy: teamboard.Actor
+56:10 NamedType type teamboard.Actor
+56:10 Ident Actor names TypeName teamboard.Actor: teamboard.Actor
+58:3 Ident viewMinRole def Field teamboard.viewMinRole: sovcommon.roles.Role?
+58:16 OptionalType type sovcommon.roles.Role?
+58:16 NamedType type sovcommon.roles.Role
+58:16 Ident Role names TypeName sovcommon.roles.Role: sovcommon.roles.Role
+58:24 NoneLit : none
+62:8 Ident Status def TypeName teamboard.Status: teamboard.Status
+64:3 Ident tone def Field teamboard.tone: sovcommon.ui.Tone
+64:9 NamedType type sovcommon.ui.Tone
+64:9 Ident Tone names TypeName sovcommon.ui.Tone: sovcommon.ui.Tone
+66:3 Ident label def Field teamboard.label: String(1..)
+66:10 NamedType type String(1..)
+66:10 Ident String names Builtin String: String
+66:17 RangeExpr : Range
+66:17 IntLit : Int
+68:3 Ident terminal def Field teamboard.terminal: Bool
+68:13 NamedType type Bool
+68:13 Ident Bool names Builtin Bool: Bool
+70:3 Ident next def Field teamboard.next: [ref teamboard.statuses]
+70:9 ListType type [ref teamboard.statuses]
+70:10 RefType type ref teamboard.statuses
+70:14 Ident Status names TypeName teamboard.Status: teamboard.Status
+72:3 Ident requires def Field teamboard.requires: [teamboard.PostField]
+72:13 ListType type [teamboard.PostField]
+72:14 NamedType type teamboard.PostField
+72:14 Ident PostField names TypeName teamboard.PostField: teamboard.PostField
+72:27 ListLit : [teamboard.PostField]
+74:3 Ident optional def Field teamboard.optional: [teamboard.PostField]
+74:13 ListType type [teamboard.PostField]
+74:14 NamedType type teamboard.PostField
+74:14 Ident PostField names TypeName teamboard.PostField: teamboard.PostField
+74:27 ListLit : [teamboard.PostField]
+76:3 Ident by def Field teamboard.by: teamboard.Actor?
+76:7 OptionalType type teamboard.Actor?
+76:7 NamedType type teamboard.Actor
+76:7 Ident Actor names TypeName teamboard.Actor: teamboard.Actor
+76:16 NoneLit : none
+78:9 CallExpr : Bool
+78:9 CallExpr call Builtin <nil> isUnique#0 [ref teamboard.statuses]
+78:9 SelectorExpr : fn() -> Bool
+78:9 SelectorExpr select Method Builtin isUnique recv [ref teamboard.statuses] deref=false
+78:9 IdentExpr next uses Field teamboard.next: [ref teamboard.statuses]
+78:9 IdentExpr : [ref teamboard.statuses]
+78:14 Ident isUnique names Builtin isUnique
+78:30 StringLit : String
+79:9 UnaryExpr : Bool
+79:13 CallExpr : Bool
+79:13 CallExpr call Builtin <nil> contains#0 [ref teamboard.statuses]
+79:13 SelectorExpr : fn(ref teamboard.statuses) -> Bool
+79:13 SelectorExpr select Method Builtin contains recv [ref teamboard.statuses] deref=false
+79:13 IdentExpr next uses Field teamboard.next: [ref teamboard.statuses]
+79:13 IdentExpr : [ref teamboard.statuses]
+79:18 Ident contains names Builtin contains
+79:27 SelfExpr : teamboard.Status
+79:27 SelfExpr conv EntryToRef(teamboard.Status -> ref teamboard.statuses)
+79:38 StringLit : String
+80:9 CallExpr : Bool
+80:9 CallExpr call Builtin <nil> isEmpty#0 [teamboard.PostField]
+80:9 SelectorExpr : fn() -> Bool
+80:9 SelectorExpr select Method Builtin isEmpty recv [teamboard.PostField] deref=false
+80:9 CallExpr : [teamboard.PostField]
+80:9 CallExpr call Builtin <nil> intersect#0 [teamboard.PostField]
+80:9 SelectorExpr : fn([teamboard.PostField]) -> [teamboard.PostField]
+80:9 SelectorExpr select Method Builtin intersect recv [teamboard.PostField] deref=false
+80:9 IdentExpr requires uses Field teamboard.requires: [teamboard.PostField]
+80:9 IdentExpr : [teamboard.PostField]
+80:18 Ident intersect names Builtin intersect
+80:28 IdentExpr optional uses Field teamboard.optional: [teamboard.PostField]
+80:28 IdentExpr : [teamboard.PostField]
+80:38 Ident isEmpty names Builtin isEmpty
+80:53 StringLit : String
+84:8 Ident Severity def TypeName teamboard.Severity: teamboard.Severity
+86:3 Ident tone def Field teamboard.tone: sovcommon.ui.Tone
+86:9 NamedType type sovcommon.ui.Tone
+86:9 Ident Tone names TypeName sovcommon.ui.Tone: sovcommon.ui.Tone
+88:3 Ident label def Field teamboard.label: String(1..)
+88:10 NamedType type String(1..)
+88:10 Ident String names Builtin String: String
+88:17 RangeExpr : Range
+88:17 IntLit : Int
+90:3 Ident default def Field teamboard.default: Bool
+90:12 NamedType type Bool
+90:12 Ident Bool names Builtin Bool: Bool
+90:19 BoolLit : Bool
+94:8 Ident AreaGroup def TypeName teamboard.AreaGroup: teamboard.AreaGroup
+96:3 Ident label def Field teamboard.label: String(1..)
+96:10 NamedType type String(1..)
+96:10 Ident String names Builtin String: String
+96:17 RangeExpr : Range
+96:17 IntLit : Int
+100:8 Ident Area def TypeName teamboard.Area: teamboard.Area
+102:3 Ident group def Field teamboard.group: ref teamboard.areaGroups
+102:10 RefType type ref teamboard.areaGroups
+102:14 Ident AreaGroup names TypeName teamboard.AreaGroup: teamboard.AreaGroup
+104:3 Ident tone def Field teamboard.tone: sovcommon.ui.Tone
+104:9 NamedType type sovcommon.ui.Tone
+104:9 Ident Tone names TypeName sovcommon.ui.Tone: sovcommon.ui.Tone
+106:3 Ident icon def Field teamboard.icon: sovcommon.ui.Icon
+106:9 NamedType type sovcommon.ui.Icon
+106:9 Ident Icon names TypeName sovcommon.ui.Icon: sovcommon.ui.Icon
+108:3 Ident label def Field teamboard.label: String(1..)
+108:10 NamedType type String(1..)
+108:10 Ident String names Builtin String: String
+108:17 RangeExpr : Range
+108:17 IntLit : Int
+110:3 Ident hint def Field teamboard.hint: String?
+110:9 OptionalType type String?
+110:9 NamedType type String
+110:9 Ident String names Builtin String: String
+110:19 NoneLit : none
+112:3 Ident minRole def Field teamboard.minRole: sovcommon.roles.Role
+112:12 NamedType type sovcommon.roles.Role
+112:12 Ident Role names TypeName sovcommon.roles.Role: sovcommon.roles.Role
+114:3 Ident routesTo def Field teamboard.routesTo: [ref teamboard.areas]
+114:13 ListType type [ref teamboard.areas]
+114:14 RefType type ref teamboard.areas
+114:18 Ident Area names TypeName teamboard.Area: teamboard.Area
+114:26 ListLit : [ref teamboard.areas]
+116:9 CallExpr : Bool
+116:9 CallExpr call Builtin <nil> isUnique#0 [ref teamboard.areas]
+116:9 SelectorExpr : fn() -> Bool
+116:9 SelectorExpr select Method Builtin isUnique recv [ref teamboard.areas] deref=false
+116:9 IdentExpr routesTo uses Field teamboard.routesTo: [ref teamboard.areas]
+116:9 IdentExpr : [ref teamboard.areas]
+116:18 Ident isUnique names Builtin isUnique
+116:34 StringLit : String
+117:9 UnaryExpr : Bool
+117:13 CallExpr : Bool
+117:13 CallExpr call Builtin <nil> contains#0 [ref teamboard.areas]
+117:13 SelectorExpr : fn(ref teamboard.areas) -> Bool
+117:13 SelectorExpr select Method Builtin contains recv [ref teamboard.areas] deref=false
+117:13 IdentExpr routesTo uses Field teamboard.routesTo: [ref teamboard.areas]
+117:13 IdentExpr : [ref teamboard.areas]
+117:22 Ident contains names Builtin contains
+117:31 SelfExpr : teamboard.Area
+117:31 SelfExpr conv EntryToRef(teamboard.Area -> ref teamboard.areas)
+117:42 StringLit : String
+121:8 Ident Column def TypeName teamboard.Column: teamboard.Column
+123:3 Ident label def Field teamboard.label: String(1..)
+123:10 NamedType type String(1..)
+123:10 Ident String names Builtin String: String
+123:17 RangeExpr : Range
+123:17 IntLit : Int
+125:3 Ident icon def Field teamboard.icon: sovcommon.ui.Icon
+125:9 NamedType type sovcommon.ui.Icon
+125:9 Ident Icon names TypeName sovcommon.ui.Icon: sovcommon.ui.Icon
+127:3 Ident statuses def Field teamboard.statuses: [ref teamboard.statuses]
+127:13 ListType type [ref teamboard.statuses]
+127:14 RefType type ref teamboard.statuses
+127:18 Ident Status names TypeName teamboard.Status: teamboard.Status
+129:3 Ident assigneeFilter def Field teamboard.assigneeFilter: Bool
+129:19 NamedType type Bool
+129:19 Ident Bool names Builtin Bool: Bool
+129:26 BoolLit : Bool
+131:3 Ident hideable def Field teamboard.hideable: Bool
+131:13 NamedType type Bool
+131:13 Ident Bool names Builtin Bool: Bool
+131:20 BoolLit : Bool
+133:9 UnaryExpr : Bool
+133:13 CallExpr : Bool
+133:13 CallExpr call Builtin <nil> isEmpty#0 [ref teamboard.statuses]
+133:13 SelectorExpr : fn() -> Bool
+133:13 SelectorExpr select Method Builtin isEmpty recv [ref teamboard.statuses] deref=false
+133:13 IdentExpr statuses uses Field teamboard.statuses: [ref teamboard.statuses]
+133:13 IdentExpr : [ref teamboard.statuses]
+133:22 Ident isEmpty names Builtin isEmpty
+133:37 StringLit : String
+137:8 Ident Deck def TypeName teamboard.Deck: teamboard.Deck
+139:3 Ident layouts def Field teamboard.layouts: [teamboard.Layout]
+139:12 ListType type [teamboard.Layout]
+139:13 NamedType type teamboard.Layout
+139:13 Ident Layout names TypeName teamboard.Layout: teamboard.Layout
+141:3 Ident maxHidden def Field teamboard.maxHidden: Int(1..)
+141:14 NamedType type Int(1..)
+141:14 Ident Int names Builtin Int: Int
+141:18 RangeExpr : Range
+141:18 IntLit : Int
+143:9 UnaryExpr : Bool
+143:13 CallExpr : Bool
+143:13 CallExpr call Builtin <nil> isEmpty#0 [String]
+143:13 SelectorExpr : fn() -> Bool
+143:13 SelectorExpr select Method Builtin isEmpty recv [teamboard.Layout] deref=false
+143:13 IdentExpr layouts uses Field teamboard.layouts: [teamboard.Layout]
+143:13 IdentExpr : [teamboard.Layout]
+143:21 Ident isEmpty names Builtin isEmpty
+143:36 StringLit : String
+144:9 CallExpr : Bool
+144:9 CallExpr call Builtin <nil> isUnique#0 [String]
+144:9 SelectorExpr : fn() -> Bool
+144:9 SelectorExpr select Method Builtin isUnique recv [teamboard.Layout] deref=false
+144:9 IdentExpr layouts uses Field teamboard.layouts: [teamboard.Layout]
+144:9 IdentExpr : [teamboard.Layout]
+144:17 Ident isUnique names Builtin isUnique
+144:33 StringLit : String
+152:5 Ident intents def Let teamboard.intents: stable table teamboard.Intent
+152:14 TableType type stable table teamboard.Intent
+152:27 Ident Intent names TypeName teamboard.Intent: teamboard.Intent
+152:36 BraceLit : stable table teamboard.Intent
+152:36 BraceLit literal TableLit
+153:3 Ident issue def Entry teamboard.issue: teamboard.Intent
+153:9 BraceLit : teamboard.Intent
+153:9 BraceLit literal RecordLit
+153:11 Ident tone names Field teamboard.tone: sovcommon.ui.Tone
+153:17 IdentExpr warning uses Member sovcommon.ui.warning: sovcommon.ui.Tone
+153:17 IdentExpr : sovcommon.ui.Tone
+153:26 Ident icon names Field teamboard.icon: sovcommon.ui.Icon
+153:32 IdentExpr alert_triangle uses Member sovcommon.ui.alert_triangle: sovcommon.ui.Icon
+153:32 IdentExpr : sovcommon.ui.Icon
+153:48 Ident label names Field teamboard.label: String(1..)
+153:55 StringLit : String
+153:77 Ident minRole names Field teamboard.minRole: sovcommon.roles.Role
+153:86 IdentExpr gm_junior uses Member sovcommon.roles.gm_junior: sovcommon.roles.Role
+153:86 IdentExpr : sovcommon.roles.Role
+154:3 Ident idea def Entry teamboard.idea: teamboard.Intent
+154:8 BraceLit : teamboard.Intent
+154:8 BraceLit literal RecordLit
+154:10 Ident tone names Field teamboard.tone: sovcommon.ui.Tone
+154:16 IdentExpr accent uses Member sovcommon.ui.accent: sovcommon.ui.Tone
+154:16 IdentExpr : sovcommon.ui.Tone
+154:24 Ident icon names Field teamboard.icon: sovcommon.ui.Icon
+154:30 IdentExpr lightbulb uses Member sovcommon.ui.lightbulb: sovcommon.ui.Icon
+154:30 IdentExpr : sovcommon.ui.Icon
+154:41 Ident label names Field teamboard.label: String(1..)
+154:48 StringLit : String
+154:67 Ident minRole names Field teamboard.minRole: sovcommon.roles.Role
+154:76 IdentExpr gm_junior uses Member sovcommon.roles.gm_junior: sovcommon.roles.Role
+154:76 IdentExpr : sovcommon.roles.Role
+158:5 Ident flags def Let teamboard.flags: stable table teamboard.Flag
+158:12 TableType type stable table teamboard.Flag
+158:25 Ident Flag names TypeName teamboard.Flag: teamboard.Flag
+158:32 BraceLit : stable table teamboard.Flag
+158:32 BraceLit literal TableLit
+159:3 Ident blocking def Entry teamboard.blocking: teamboard.Flag
+159:12 BraceLit : teamboard.Flag
+159:12 BraceLit literal RecordLit
+159:14 Ident tone names Field teamboard.tone: sovcommon.ui.Tone
+159:20 IdentExpr danger uses Member sovcommon.ui.danger: sovcommon.ui.Tone
+159:20 IdentExpr : sovcommon.ui.Tone
+159:28 Ident icon names Field teamboard.icon: sovcommon.ui.Icon
+159:34 IdentExpr hand uses Member sovcommon.ui.hand: sovcommon.ui.Icon
+159:34 IdentExpr : sovcommon.ui.Icon
+159:40 Ident label names Field teamboard.label: String(1..)
+159:47 StringLit : String
+159:70 Ident setBy names Field teamboard.setBy: teamboard.Actor
+159:77 IdentExpr reporter uses Member teamboard.reporter: teamboard.Actor
+159:77 IdentExpr : teamboard.Actor
+160:3 Ident sensitive def Entry teamboard.sensitive: teamboard.Flag
+160:13 BraceLit : teamboard.Flag
+160:13 BraceLit literal RecordLit
+161:5 Ident tone names Field teamboard.tone: sovcommon.ui.Tone
+161:11 IdentExpr warning uses Member sovcommon.ui.warning: sovcommon.ui.Tone
+161:11 IdentExpr : sovcommon.ui.Tone
+162:5 Ident icon names Field teamboard.icon: sovcommon.ui.Icon
+162:11 IdentExpr lock uses Member sovcommon.ui.lock: sovcommon.ui.Icon
+162:11 IdentExpr : sovcommon.ui.Icon
+163:5 Ident label names Field teamboard.label: String(1..)
+163:12 StringLit : String
+164:5 Ident setBy names Field teamboard.setBy: teamboard.Actor
+164:12 IdentExpr reporter uses Member teamboard.reporter: teamboard.Actor
+164:12 IdentExpr : teamboard.Actor
+165:5 Ident viewMinRole names Field teamboard.viewMinRole: sovcommon.roles.Role?
+165:18 IdentExpr maintainer uses Member sovcommon.roles.maintainer: sovcommon.roles.Role
+165:18 IdentExpr : sovcommon.roles.Role
+165:18 IdentExpr conv Wrap(sovcommon.roles.Role -> sovcommon.roles.Role?)
+166:5 Ident hint names Field teamboard.hint: String?
+166:11 StringLit : String
+166:11 StringLit conv Wrap(String -> String?)
+171:5 Ident statuses def Let teamboard.statuses: stable table teamboard.Status
+171:15 TableType type stable table teamboard.Status
+171:28 Ident Status names TypeName teamboard.Status: teamboard.Status
+171:37 BraceLit : stable table teamboard.Status
+171:37 BraceLit literal TableLit
+172:3 Ident open def Entry teamboard.open: teamboard.Status
+172:8 BraceLit : teamboard.Status
+172:8 BraceLit literal RecordLit
+172:10 Ident tone names Field teamboard.tone: sovcommon.ui.Tone
+172:16 IdentExpr warning uses Member sovcommon.ui.warning: sovcommon.ui.Tone
+172:16 IdentExpr : sovcommon.ui.Tone
+172:25 Ident label names Field teamboard.label: String(1..)
+172:32 StringLit : String
+172:40 Ident terminal names Field teamboard.terminal: Bool
+172:50 BoolLit : Bool
+172:57 Ident next names Field teamboard.next: [ref teamboard.statuses]
+172:63 ListLit : [ref teamboard.statuses]
+172:64 IdentExpr taken uses Entry teamboard.taken: teamboard.Status
+172:64 IdentExpr : ref teamboard.statuses
+172:71 IdentExpr wont_do uses Entry teamboard.wont_do: teamboard.Status
+172:71 IdentExpr : ref teamboard.statuses
+172:80 IdentExpr duplicate uses Entry teamboard.duplicate: teamboard.Status
+172:80 IdentExpr : ref teamboard.statuses
+173:3 Ident taken def Entry teamboard.taken: teamboard.Status
+173:9 BraceLit : teamboard.Status
+173:9 BraceLit literal RecordLit
+174:5 Ident tone names Field teamboard.tone: sovcommon.ui.Tone
+174:11 IdentExpr info uses Member sovcommon.ui.info: sovcommon.ui.Tone
+174:11 IdentExpr : sovcommon.ui.Tone
+175:5 Ident label names Field teamboard.label: String(1..)
+175:12 StringLit : String
+176:5 Ident terminal names Field teamboard.terminal: Bool
+176:15 BoolLit : Bool
+177:5 Ident next names Field teamboard.next: [ref teamboard.statuses]
+177:11 ListLit : [ref teamboard.statuses]
+177:12 IdentExpr open uses Entry teamboard.open: teamboard.Status
+177:12 IdentExpr : ref teamboard.statuses
+177:18 IdentExpr fixed uses Entry teamboard.fixed: teamboard.Status
+177:18 IdentExpr : ref teamboard.statuses
+177:25 IdentExpr wont_do uses Entry teamboard.wont_do: teamboard.Status
+177:25 IdentExpr : ref teamboard.statuses
+177:34 IdentExpr duplicate uses Entry teamboard.duplicate: teamboard.Status
+177:34 IdentExpr : ref teamboard.statuses
+178:5 Ident requires names Field teamboard.requires: [teamboard.PostField]
+178:15 ListLit : [teamboard.PostField]
+178:16 IdentExpr assignee uses Member teamboard.assignee: teamboard.PostField
+178:16 IdentExpr : teamboard.PostField
+180:3 Ident fixed def Entry teamboard.fixed: teamboard.Status
+180:9 BraceLit : teamboard.Status
+180:9 BraceLit literal RecordLit
+181:5 Ident tone names Field teamboard.tone: sovcommon.ui.Tone
+181:11 IdentExpr accent uses Member sovcommon.ui.accent: sovcommon.ui.Tone
+181:11 IdentExpr : sovcommon.ui.Tone
+182:5 Ident label names Field teamboard.label: String(1..)
+182:12 StringLit : String
+183:5 Ident terminal names Field teamboard.terminal: Bool
+183:15 BoolLit : Bool
+184:5 Ident next names Field teamboard.next: [ref teamboard.statuses]
+184:11 ListLit : [ref teamboard.statuses]
+184:12 IdentExpr verified uses Entry teamboard.verified: teamboard.Status
+184:12 IdentExpr : ref teamboard.statuses
+184:22 IdentExpr open uses Entry teamboard.open: teamboard.Status
+184:22 IdentExpr : ref teamboard.statuses
+185:5 Ident optional names Field teamboard.optional: [teamboard.PostField]
+185:15 ListLit : [teamboard.PostField]
+185:16 IdentExpr fixed_in uses Member teamboard.fixed_in: teamboard.PostField
+185:16 IdentExpr : teamboard.PostField
+187:3 Ident verified def Entry teamboard.verified: teamboard.Status
+187:12 BraceLit : teamboard.Status
+187:12 BraceLit literal RecordLit
+188:5 Ident tone names Field teamboard.tone: sovcommon.ui.Tone
+188:11 IdentExpr success uses Member sovcommon.ui.success: sovcommon.ui.Tone
+188:11 IdentExpr : sovcommon.ui.Tone
+189:5 Ident label names Field teamboard.label: String(1..)
+189:12 StringLit : String
+190:5 Ident terminal names Field teamboard.terminal: Bool
+190:15 BoolLit : Bool
+191:5 Ident next names Field teamboard.next: [ref teamboard.statuses]
+191:11 ListLit : [ref teamboard.statuses]
+191:12 IdentExpr open uses Entry teamboard.open: teamboard.Status
+191:12 IdentExpr : ref teamboard.statuses
+192:5 Ident by names Field teamboard.by: teamboard.Actor?
+192:9 IdentExpr reporter_or_triager uses Member teamboard.reporter_or_triager: teamboard.Actor
+192:9 IdentExpr : teamboard.Actor
+192:9 IdentExpr conv Wrap(teamboard.Actor -> teamboard.Actor?)
+194:3 Ident wont_do def Entry teamboard.wont_do: teamboard.Status
+194:11 BraceLit : teamboard.Status
+194:11 BraceLit literal RecordLit
+194:13 Ident tone names Field teamboard.tone: sovcommon.ui.Tone
+194:19 IdentExpr neutral uses Member sovcommon.ui.neutral: sovcommon.ui.Tone
+194:19 IdentExpr : sovcommon.ui.Tone
+194:28 Ident label names Field teamboard.label: String(1..)
+194:35 StringLit : String
+194:47 Ident terminal names Field teamboard.terminal: Bool
+194:57 BoolLit : Bool
+194:63 Ident next names Field teamboard.next: [ref teamboard.statuses]
+194:69 ListLit : [ref teamboard.statuses]
+194:70 IdentExpr open uses Entry teamboard.open: teamboard.Status
+194:70 IdentExpr : ref teamboard.statuses
+194:77 Ident requires names Field teamboard.requires: [teamboard.PostField]
+194:87 ListLit : [teamboard.PostField]
+194:88 IdentExpr reason uses Member teamboard.reason: teamboard.PostField
+194:88 IdentExpr : teamboard.PostField
+195:3 Ident duplicate def Entry teamboard.duplicate: teamboard.Status
+195:13 BraceLit : teamboard.Status
+195:13 BraceLit literal RecordLit
+196:5 Ident tone names Field teamboard.tone: sovcommon.ui.Tone
+196:11 IdentExpr neutral uses Member sovcommon.ui.neutral: sovcommon.ui.Tone
+196:11 IdentExpr : sovcommon.ui.Tone
+197:5 Ident label names Field teamboard.label: String(1..)
+197:12 StringLit : String
+198:5 Ident terminal names Field teamboard.terminal: Bool
+198:15 BoolLit : Bool
+199:5 Ident next names Field teamboard.next: [ref teamboard.statuses]
+199:11 ListLit : [ref teamboard.statuses]
+199:12 IdentExpr open uses Entry teamboard.open: teamboard.Status
+199:12 IdentExpr : ref teamboard.statuses
+200:5 Ident requires names Field teamboard.requires: [teamboard.PostField]
+200:15 ListLit : [teamboard.PostField]
+200:16 IdentExpr duplicate_of uses Member teamboard.duplicate_of: teamboard.PostField
+200:16 IdentExpr : teamboard.PostField
+206:5 Ident assigneeMinRole def Let teamboard.assigneeMinRole: sovcommon.roles.Role
+206:22 NamedType type sovcommon.roles.Role
+206:22 Ident Role names TypeName sovcommon.roles.Role: sovcommon.roles.Role
+206:29 IdentExpr maintainer uses Member sovcommon.roles.maintainer: sovcommon.roles.Role
+206:29 IdentExpr : sovcommon.roles.Role
+208:5 Ident triageMinRole def Let teamboard.triageMinRole: sovcommon.roles.Role
+208:20 NamedType type sovcommon.roles.Role
+208:20 Ident Role names TypeName sovcommon.roles.Role: sovcommon.roles.Role
+208:27 IdentExpr maintainer uses Member sovcommon.roles.maintainer: sovcommon.roles.Role
+208:27 IdentExpr : sovcommon.roles.Role
+211:5 Ident deck def Let teamboard.deck: teamboard.Deck
+211:11 NamedType type teamboard.Deck
+211:11 Ident Deck names TypeName teamboard.Deck: teamboard.Deck
+211:18 BraceLit : teamboard.Deck
+211:18 BraceLit literal RecordLit
+211:20 Ident layouts names Field teamboard.layouts: [teamboard.Layout]
+211:29 ListLit : [teamboard.Layout]
+211:30 StringLit : String
+211:37 StringLit : String
+211:45 Ident maxHidden names Field teamboard.maxHidden: Int(1..)
+211:56 IntLit : Int
+214:5 Ident columns def Let teamboard.columns: stable table teamboard.Column
+214:14 TableType type stable table teamboard.Column
+214:27 Ident Column names TypeName teamboard.Column: teamboard.Column
+214:36 BraceLit : stable table teamboard.Column
+214:36 BraceLit literal TableLit
+215:3 Ident unclaimed def Entry teamboard.unclaimed: teamboard.Column
+215:13 BraceLit : teamboard.Column
+215:13 BraceLit literal RecordLit
+215:15 Ident label names Field teamboard.label: String(1..)
+215:22 StringLit : String
+215:35 Ident icon names Field teamboard.icon: sovcommon.ui.Icon
+215:41 IdentExpr inbox uses Member sovcommon.ui.inbox: sovcommon.ui.Icon
+215:41 IdentExpr : sovcommon.ui.Icon
+215:48 Ident statuses names Field teamboard.statuses: [ref teamboard.statuses]
+215:58 ListLit : [ref teamboard.statuses]
+215:59 IdentExpr open uses Entry teamboard.open: teamboard.Status
+215:59 IdentExpr : ref teamboard.statuses
+216:3 Ident taken def Entry teamboard.taken: teamboard.Column
+216:9 BraceLit : teamboard.Column
+216:9 BraceLit literal RecordLit
+216:11 Ident label names Field teamboard.label: String(1..)
+216:18 StringLit : String
+216:27 Ident icon names Field teamboard.icon: sovcommon.ui.Icon
+216:33 IdentExpr hand uses Member sovcommon.ui.hand: sovcommon.ui.Icon
+216:33 IdentExpr : sovcommon.ui.Icon
+216:39 Ident statuses names Field teamboard.statuses: [ref teamboard.statuses]
+216:49 ListLit : [ref teamboard.statuses]
+216:50 IdentExpr taken uses Entry teamboard.taken: teamboard.Status
+216:50 IdentExpr : ref teamboard.statuses
+216:58 Ident assigneeFilter names Field teamboard.assigneeFilter: Bool
+216:74 BoolLit : Bool
+217:3 Ident fixed def Entry teamboard.fixed: teamboard.Column
+217:9 BraceLit : teamboard.Column
+217:9 BraceLit literal RecordLit
+217:11 Ident label names Field teamboard.label: String(1..)
+217:18 StringLit : String
+217:38 Ident icon names Field teamboard.icon: sovcommon.ui.Icon
+217:44 IdentExpr check uses Member sovcommon.ui.check: sovcommon.ui.Icon
+217:44 IdentExpr : sovcommon.ui.Icon
+217:51 Ident statuses names Field teamboard.statuses: [ref teamboard.statuses]
+217:61 ListLit : [ref teamboard.statuses]
+217:62 IdentExpr fixed uses Entry teamboard.fixed: teamboard.Status
+217:62 IdentExpr : ref teamboard.statuses
+218:3 Ident done def Entry teamboard.done: teamboard.Column
+218:8 BraceLit : teamboard.Column
+218:8 BraceLit literal RecordLit
+218:10 Ident label names Field teamboard.label: String(1..)
+218:17 StringLit : String
+218:25 Ident icon names Field teamboard.icon: sovcommon.ui.Icon
+218:31 IdentExpr archive uses Member sovcommon.ui.archive: sovcommon.ui.Icon
+218:31 IdentExpr : sovcommon.ui.Icon
+218:40 Ident statuses names Field teamboard.statuses: [ref teamboard.statuses]
+218:50 ListLit : [ref teamboard.statuses]
+218:51 IdentExpr verified uses Entry teamboard.verified: teamboard.Status
+218:51 IdentExpr : ref teamboard.statuses
+218:61 IdentExpr wont_do uses Entry teamboard.wont_do: teamboard.Status
+218:61 IdentExpr : ref teamboard.statuses
+218:70 IdentExpr duplicate uses Entry teamboard.duplicate: teamboard.Status
+218:70 IdentExpr : ref teamboard.statuses
+222:5 Ident severities def Let teamboard.severities: stable table teamboard.Severity
+222:17 TableType type stable table teamboard.Severity
+222:30 Ident Severity names TypeName teamboard.Severity: teamboard.Severity
+222:41 BraceLit : stable table teamboard.Severity
+222:41 BraceLit literal TableLit
+223:3 Ident low def Entry teamboard.low: teamboard.Severity
+223:7 BraceLit : teamboard.Severity
+223:7 BraceLit literal RecordLit
+223:9 Ident tone names Field teamboard.tone: sovcommon.ui.Tone
+223:15 IdentExpr neutral uses Member sovcommon.ui.neutral: sovcommon.ui.Tone
+223:15 IdentExpr : sovcommon.ui.Tone
+223:24 Ident label names Field teamboard.label: String(1..)
+223:31 StringLit : String
+224:3 Ident normal def Entry teamboard.normal: teamboard.Severity
+224:10 BraceLit : teamboard.Severity
+224:10 BraceLit literal RecordLit
+224:12 Ident tone names Field teamboard.tone: sovcommon.ui.Tone
+224:18 IdentExpr info uses Member sovcommon.ui.info: sovcommon.ui.Tone
+224:18 IdentExpr : sovcommon.ui.Tone
+224:24 Ident label names Field teamboard.label: String(1..)
+224:31 StringLit : String
+224:41 Ident default names Field teamboard.default: Bool
+224:50 BoolLit : Bool
+225:3 Ident critical def Entry teamboard.critical: teamboard.Severity
+225:12 BraceLit : teamboard.Severity
+225:12 BraceLit literal RecordLit
+225:14 Ident tone names Field teamboard.tone: sovcommon.ui.Tone
+225:20 IdentExpr danger uses Member sovcommon.ui.danger: sovcommon.ui.Tone
+225:20 IdentExpr : sovcommon.ui.Tone
+225:28 Ident label names Field teamboard.label: String(1..)
+225:35 StringLit : String
+229:5 Ident areaGroups def Let teamboard.areaGroups: stable table teamboard.AreaGroup
+229:17 TableType type stable table teamboard.AreaGroup
+229:30 Ident AreaGroup names TypeName teamboard.AreaGroup: teamboard.AreaGroup
+229:42 BraceLit : stable table teamboard.AreaGroup
+229:42 BraceLit literal TableLit
+230:3 Ident in_game def Entry teamboard.in_game: teamboard.AreaGroup
+230:11 BraceLit : teamboard.AreaGroup
+230:11 BraceLit literal RecordLit
+230:13 Ident label names Field teamboard.label: String(1..)
+230:20 StringLit : String
+231:3 Ident out_game def Entry teamboard.out_game: teamboard.AreaGroup
+231:12 BraceLit : teamboard.AreaGroup
+231:12 BraceLit literal RecordLit
+231:14 Ident label names Field teamboard.label: String(1..)
+231:21 StringLit : String
+232:3 Ident internal def Entry teamboard.internal: teamboard.AreaGroup
+232:12 BraceLit : teamboard.AreaGroup
+232:12 BraceLit literal RecordLit
+232:14 Ident label names Field teamboard.label: String(1..)
+232:21 StringLit : String
+236:5 Ident areas def Let teamboard.areas: stable table teamboard.Area
+236:12 TableType type stable table teamboard.Area
+236:25 Ident Area names TypeName teamboard.Area: teamboard.Area
+236:32 BraceLit : stable table teamboard.Area
+236:32 BraceLit literal TableLit
+237:3 Ident game def Entry teamboard.game: teamboard.Area
+237:8 BraceLit : teamboard.Area
+237:8 BraceLit literal RecordLit
+238:5 Ident group names Field teamboard.group: ref teamboard.areaGroups
+238:12 IdentExpr in_game uses Entry teamboard.in_game: teamboard.AreaGroup
+238:12 IdentExpr : ref teamboard.areaGroups
+239:5 Ident tone names Field teamboard.tone: sovcommon.ui.Tone
+239:11 IdentExpr series_1 uses Member sovcommon.ui.series_1: sovcommon.ui.Tone
+239:11 IdentExpr : sovcommon.ui.Tone
+240:5 Ident icon names Field teamboard.icon: sovcommon.ui.Icon
+240:11 IdentExpr gamepad uses Member sovcommon.ui.gamepad: sovcommon.ui.Icon
+240:11 IdentExpr : sovcommon.ui.Icon
+241:5 Ident label names Field teamboard.label: String(1..)
+241:12 StringLit : String
+242:5 Ident minRole names Field teamboard.minRole: sovcommon.roles.Role
+242:14 IdentExpr gm_junior uses Member sovcommon.roles.gm_junior: sovcommon.roles.Role
+242:14 IdentExpr : sovcommon.roles.Role
+243:5 Ident hint names Field teamboard.hint: String?
+243:11 StringLit : String
+243:11 StringLit conv Wrap(String -> String?)
+244:5 Ident routesTo names Field teamboard.routesTo: [ref teamboard.areas]
+244:15 ListLit : [ref teamboard.areas]
+244:16 IdentExpr game_server uses Entry teamboard.game_server: teamboard.Area
+244:16 IdentExpr : ref teamboard.areas
+244:29 IdentExpr client uses Entry teamboard.client: teamboard.Area
+244:29 IdentExpr : ref teamboard.areas
+244:37 IdentExpr resource uses Entry teamboard.resource: teamboard.Area
+244:37 IdentExpr : ref teamboard.areas
+244:47 IdentExpr balance uses Entry teamboard.balance: teamboard.Area
+244:47 IdentExpr : ref teamboard.areas
+246:3 Ident balance def Entry teamboard.balance: teamboard.Area
+246:11 BraceLit : teamboard.Area
+246:11 BraceLit literal RecordLit
+247:5 Ident group names Field teamboard.group: ref teamboard.areaGroups
+247:12 IdentExpr in_game uses Entry teamboard.in_game: teamboard.AreaGroup
+247:12 IdentExpr : ref teamboard.areaGroups
+248:5 Ident tone names Field teamboard.tone: sovcommon.ui.Tone
+248:11 IdentExpr series_1 uses Member sovcommon.ui.series_1: sovcommon.ui.Tone
+248:11 IdentExpr : sovcommon.ui.Tone
+249:5 Ident icon names Field teamboard.icon: sovcommon.ui.Icon
+249:11 IdentExpr scale uses Member sovcommon.ui.scale: sovcommon.ui.Icon
+249:11 IdentExpr : sovcommon.ui.Icon
+250:5 Ident label names Field teamboard.label: String(1..)
+250:12 StringLit : String
+251:5 Ident minRole names Field teamboard.minRole: sovcommon.roles.Role
+251:14 IdentExpr gm_junior uses Member sovcommon.roles.gm_junior: sovcommon.roles.Role
+251:14 IdentExpr : sovcommon.roles.Role
+252:5 Ident hint names Field teamboard.hint: String?
+252:11 StringLit : String
+252:11 StringLit conv Wrap(String -> String?)
+254:3 Ident website def Entry teamboard.website: teamboard.Area
+254:11 BraceLit : teamboard.Area
+254:11 BraceLit literal RecordLit
+255:5 Ident group names Field teamboard.group: ref teamboard.areaGroups
+255:12 IdentExpr out_game uses Entry teamboard.out_game: teamboard.AreaGroup
+255:12 IdentExpr : ref teamboard.areaGroups
+256:5 Ident tone names Field teamboard.tone: sovcommon.ui.Tone
+256:11 IdentExpr series_2 uses Member sovcommon.ui.series_2: sovcommon.ui.Tone
+256:11 IdentExpr : sovcommon.ui.Tone
+257:5 Ident icon names Field teamboard.icon: sovcommon.ui.Icon
+257:11 IdentExpr globe uses Member sovcommon.ui.globe: sovcommon.ui.Icon
+257:11 IdentExpr : sovcommon.ui.Icon
+258:5 Ident label names Field teamboard.label: String(1..)
+258:12 StringLit : String
+259:5 Ident minRole names Field teamboard.minRole: sovcommon.roles.Role
+259:14 IdentExpr gm_junior uses Member sovcommon.roles.gm_junior: sovcommon.roles.Role
+259:14 IdentExpr : sovcommon.roles.Role
+260:5 Ident hint names Field teamboard.hint: String?
+260:11 StringLit : String
+260:11 StringLit conv Wrap(String -> String?)
+262:3 Ident resource_studio def Entry teamboard.resource_studio: teamboard.Area
+262:19 BraceLit : teamboard.Area
+262:19 BraceLit literal RecordLit
+263:5 Ident group names Field teamboard.group: ref teamboard.areaGroups
+263:12 IdentExpr internal uses Entry teamboard.internal: teamboard.AreaGroup
+263:12 IdentExpr : ref teamboard.areaGroups
+264:5 Ident tone names Field teamboard.tone: sovcommon.ui.Tone
+264:11 IdentExpr series_3 uses Member sovcommon.ui.series_3: sovcommon.ui.Tone
+264:11 IdentExpr : sovcommon.ui.Tone
+265:5 Ident icon names Field teamboard.icon: sovcommon.ui.Icon
+265:11 IdentExpr layers uses Member sovcommon.ui.layers: sovcommon.ui.Icon
+265:11 IdentExpr : sovcommon.ui.Icon
+266:5 Ident label names Field teamboard.label: String(1..)
+266:12 StringLit : String
+267:5 Ident minRole names Field teamboard.minRole: sovcommon.roles.Role
+267:14 IdentExpr maintainer uses Member sovcommon.roles.maintainer: sovcommon.roles.Role
+267:14 IdentExpr : sovcommon.roles.Role
+270:3 Ident game_server def Entry teamboard.game_server: teamboard.Area
+270:15 BraceLit : teamboard.Area
+270:15 BraceLit literal RecordLit
+270:17 Ident group names Field teamboard.group: ref teamboard.areaGroups
+270:24 IdentExpr in_game uses Entry teamboard.in_game: teamboard.AreaGroup
+270:24 IdentExpr : ref teamboard.areaGroups
+270:33 Ident tone names Field teamboard.tone: sovcommon.ui.Tone
+270:39 IdentExpr series_1 uses Member sovcommon.ui.series_1: sovcommon.ui.Tone
+270:39 IdentExpr : sovcommon.ui.Tone
+270:49 Ident icon names Field teamboard.icon: sovcommon.ui.Icon
+270:55 IdentExpr server uses Member sovcommon.ui.server: sovcommon.ui.Icon
+270:55 IdentExpr : sovcommon.ui.Icon
+270:63 Ident label names Field teamboard.label: String(1..)
+270:70 StringLit : String
+270:85 Ident minRole names Field teamboard.minRole: sovcommon.roles.Role
+270:94 IdentExpr admin uses Member sovcommon.roles.admin: sovcommon.roles.Role
+270:94 IdentExpr : sovcommon.roles.Role
+271:3 Ident client def Entry teamboard.client: teamboard.Area
+271:10 BraceLit : teamboard.Area
+271:10 BraceLit literal RecordLit
+272:5 Ident group names Field teamboard.group: ref teamboard.areaGroups
+272:12 IdentExpr in_game uses Entry teamboard.in_game: teamboard.AreaGroup
+272:12 IdentExpr : ref teamboard.areaGroups
+273:5 Ident tone names Field teamboard.tone: sovcommon.ui.Tone
+273:11 IdentExpr series_1 uses Member sovcommon.ui.series_1: sovcommon.ui.Tone
+273:11 IdentExpr : sovcommon.ui.Tone
+274:5 Ident icon names Field teamboard.icon: sovcommon.ui.Icon
+274:11 IdentExpr monitor uses Member sovcommon.ui.monitor: sovcommon.ui.Icon
+274:11 IdentExpr : sovcommon.ui.Icon
+275:5 Ident label names Field teamboard.label: String(1..)
+275:12 StringLit : String
+276:5 Ident minRole names Field teamboard.minRole: sovcommon.roles.Role
+276:14 IdentExpr maintainer uses Member sovcommon.roles.maintainer: sovcommon.roles.Role
+276:14 IdentExpr : sovcommon.roles.Role
+278:3 Ident resource def Entry teamboard.resource: teamboard.Area
+278:12 BraceLit : teamboard.Area
+278:12 BraceLit literal RecordLit
+279:5 Ident group names Field teamboard.group: ref teamboard.areaGroups
+279:12 IdentExpr in_game uses Entry teamboard.in_game: teamboard.AreaGroup
+279:12 IdentExpr : ref teamboard.areaGroups
+280:5 Ident tone names Field teamboard.tone: sovcommon.ui.Tone
+280:11 IdentExpr series_1 uses Member sovcommon.ui.series_1: sovcommon.ui.Tone
+280:11 IdentExpr : sovcommon.ui.Tone
+281:5 Ident icon names Field teamboard.icon: sovcommon.ui.Icon
+281:11 IdentExpr database uses Member sovcommon.ui.database: sovcommon.ui.Icon
+281:11 IdentExpr : sovcommon.ui.Icon
+282:5 Ident label names Field teamboard.label: String(1..)
+282:12 StringLit : String
+283:5 Ident minRole names Field teamboard.minRole: sovcommon.roles.Role
+283:14 IdentExpr maintainer uses Member sovcommon.roles.maintainer: sovcommon.roles.Role
+283:14 IdentExpr : sovcommon.roles.Role
+285:3 Ident sovcommon def Entry teamboard.sovcommon: teamboard.Area
+285:13 BraceLit : teamboard.Area
+285:13 BraceLit literal RecordLit
+285:15 Ident group names Field teamboard.group: ref teamboard.areaGroups
+285:22 IdentExpr internal uses Entry teamboard.internal: teamboard.AreaGroup
+285:22 IdentExpr : ref teamboard.areaGroups
+285:32 Ident tone names Field teamboard.tone: sovcommon.ui.Tone
+285:38 IdentExpr series_3 uses Member sovcommon.ui.series_3: sovcommon.ui.Tone
+285:38 IdentExpr : sovcommon.ui.Tone
+285:48 Ident icon names Field teamboard.icon: sovcommon.ui.Icon
+285:54 IdentExpr package uses Member sovcommon.ui.package: sovcommon.ui.Icon
+285:54 IdentExpr : sovcommon.ui.Icon
+285:63 Ident label names Field teamboard.label: String(1..)
+285:70 StringLit : String
+285:83 Ident minRole names Field teamboard.minRole: sovcommon.roles.Role
+285:92 IdentExpr admin uses Member sovcommon.roles.admin: sovcommon.roles.Role
+285:92 IdentExpr : sovcommon.roles.Role
+288:3 Ident admin_panel def Entry teamboard.admin_panel: teamboard.Area
+288:15 BraceLit : teamboard.Area
+288:15 BraceLit literal RecordLit
+289:5 Ident group names Field teamboard.group: ref teamboard.areaGroups
+289:12 IdentExpr internal uses Entry teamboard.internal: teamboard.AreaGroup
+289:12 IdentExpr : ref teamboard.areaGroups
+290:5 Ident tone names Field teamboard.tone: sovcommon.ui.Tone
+290:11 IdentExpr series_2 uses Member sovcommon.ui.series_2: sovcommon.ui.Tone
+290:11 IdentExpr : sovcommon.ui.Tone
+291:5 Ident icon names Field teamboard.icon: sovcommon.ui.Icon
+291:11 IdentExpr shield uses Member sovcommon.ui.shield: sovcommon.ui.Icon
+291:11 IdentExpr : sovcommon.ui.Icon
+292:5 Ident label names Field teamboard.label: String(1..)
+292:12 StringLit : String
+293:5 Ident minRole names Field teamboard.minRole: sovcommon.roles.Role
+293:14 IdentExpr admin uses Member sovcommon.roles.admin: sovcommon.roles.Role
+293:14 IdentExpr : sovcommon.roles.Role
+296:3 Ident analytics def Entry teamboard.analytics: teamboard.Area
+296:13 BraceLit : teamboard.Area
+296:13 BraceLit literal RecordLit
+297:5 Ident group names Field teamboard.group: ref teamboard.areaGroups
+297:12 IdentExpr internal uses Entry teamboard.internal: teamboard.AreaGroup
+297:12 IdentExpr : ref teamboard.areaGroups
+298:5 Ident tone names Field teamboard.tone: sovcommon.ui.Tone
+298:11 IdentExpr series_2 uses Member sovcommon.ui.series_2: sovcommon.ui.Tone
+298:11 IdentExpr : sovcommon.ui.Tone
+299:5 Ident icon names Field teamboard.icon: sovcommon.ui.Icon
+299:11 IdentExpr bar_chart uses Member sovcommon.ui.bar_chart: sovcommon.ui.Icon
+299:11 IdentExpr : sovcommon.ui.Icon
+300:5 Ident label names Field teamboard.label: String(1..)
+300:12 StringLit : String
+301:5 Ident minRole names Field teamboard.minRole: sovcommon.roles.Role
+301:14 IdentExpr admin uses Member sovcommon.roles.admin: sovcommon.roles.Role
+301:14 IdentExpr : sovcommon.roles.Role
+303:3 Ident team_board def Entry teamboard.team_board: teamboard.Area
+303:14 BraceLit : teamboard.Area
+303:14 BraceLit literal RecordLit
+304:5 Ident group names Field teamboard.group: ref teamboard.areaGroups
+304:12 IdentExpr internal uses Entry teamboard.internal: teamboard.AreaGroup
+304:12 IdentExpr : ref teamboard.areaGroups
+305:5 Ident tone names Field teamboard.tone: sovcommon.ui.Tone
+305:11 IdentExpr series_2 uses Member sovcommon.ui.series_2: sovcommon.ui.Tone
+305:11 IdentExpr : sovcommon.ui.Tone
+306:5 Ident icon names Field teamboard.icon: sovcommon.ui.Icon
+306:11 IdentExpr columns uses Member sovcommon.ui.columns: sovcommon.ui.Icon
+306:11 IdentExpr : sovcommon.ui.Icon
+307:5 Ident label names Field teamboard.label: String(1..)
+307:12 StringLit : String
+308:5 Ident minRole names Field teamboard.minRole: sovcommon.roles.Role
+308:14 IdentExpr gm_junior uses Member sovcommon.roles.gm_junior: sovcommon.roles.Role
+308:14 IdentExpr : sovcommon.roles.Role
+309:5 Ident hint names Field teamboard.hint: String?
+309:11 StringLit : String
+309:11 StringLit conv Wrap(String -> String?)
+311:3 Ident internal def Entry teamboard.internal: teamboard.Area
+311:12 BraceLit : teamboard.Area
+311:12 BraceLit literal RecordLit
+312:5 Ident group names Field teamboard.group: ref teamboard.areaGroups
+312:12 IdentExpr internal uses Entry teamboard.internal: teamboard.AreaGroup
+312:12 IdentExpr : ref teamboard.areaGroups
+313:5 Ident tone names Field teamboard.tone: sovcommon.ui.Tone
+313:11 IdentExpr series_4 uses Member sovcommon.ui.series_4: sovcommon.ui.Tone
+313:11 IdentExpr : sovcommon.ui.Tone
+314:5 Ident icon names Field teamboard.icon: sovcommon.ui.Icon
+314:11 IdentExpr terminal uses Member sovcommon.ui.terminal: sovcommon.ui.Icon
+314:11 IdentExpr : sovcommon.ui.Icon
+315:5 Ident label names Field teamboard.label: String(1..)
+315:12 StringLit : String
+316:5 Ident minRole names Field teamboard.minRole: sovcommon.roles.Role
+316:14 IdentExpr admin uses Member sovcommon.roles.admin: sovcommon.roles.Role
+316:14 IdentExpr : sovcommon.roles.Role
+325:5 Ident initialStatus def Let teamboard.initialStatus: ref teamboard.statuses
+325:20 RefType type ref teamboard.statuses
+325:24 Ident Status names TypeName teamboard.Status: teamboard.Status
+325:33 IndexExpr : ref teamboard.statuses
+325:33 SelectorExpr : [ref teamboard.statuses]
+325:33 SelectorExpr select Field Field teamboard.statuses: [ref teamboard.statuses] recv teamboard.Column deref=false
+325:33 ForceExpr : teamboard.Column
+325:33 CallExpr : teamboard.Column?
+325:33 CallExpr call Builtin <nil> first#0 [teamboard.Column]
+325:33 SelectorExpr : fn() -> teamboard.Column?
+325:33 SelectorExpr select Method Builtin first recv [teamboard.Column] deref=false
+325:33 CallExpr : [teamboard.Column]
+325:33 CallExpr call Builtin <nil> active#0 [teamboard.Column]
+325:33 SelectorExpr : fn() -> [teamboard.Column]
+325:33 SelectorExpr select Method Builtin active recv stable table teamboard.Column deref=false
+325:33 IdentExpr columns uses Let teamboard.columns: stable table teamboard.Column
+325:33 IdentExpr : stable table teamboard.Column
+325:41 Ident active names Builtin active
+325:50 Ident first names Builtin first
+325:59 Ident statuses names Field teamboard.statuses: [ref teamboard.statuses]
+325:68 IntLit : Int
+329:5 Ident defaultSeverity def Let teamboard.defaultSeverity: ref teamboard.severities
+329:22 RefType type ref teamboard.severities
+329:26 Ident Severity names TypeName teamboard.Severity: teamboard.Severity
+329:37 ForceExpr : teamboard.Severity
+329:37 ForceExpr conv EntryToRef(teamboard.Severity -> ref teamboard.severities)
+329:37 CallExpr : teamboard.Severity?
+329:37 CallExpr call Builtin <nil> first#1 [teamboard.Severity]
+329:37 SelectorExpr : fn(fn(teamboard.Severity) -> Bool) -> teamboard.Severity?
+329:37 SelectorExpr select Method Builtin first recv [teamboard.Severity] deref=false
+329:37 CallExpr : [teamboard.Severity]
+329:37 CallExpr call Builtin <nil> active#0 [teamboard.Severity]
+329:37 SelectorExpr : fn() -> [teamboard.Severity]
+329:37 SelectorExpr select Method Builtin active recv stable table teamboard.Severity deref=false
+329:37 IdentExpr severities uses Let teamboard.severities: stable table teamboard.Severity
+329:37 IdentExpr : stable table teamboard.Severity
+329:48 Ident active names Builtin active
+329:57 Ident first names Builtin first
+329:63 ShorthandLambda : fn(teamboard.Severity) -> Bool
+329:63 SelectorExpr : Bool
+329:63 SelectorExpr select Field Field teamboard.default: Bool recv teamboard.Severity deref=false
+329:64 Ident default names Field teamboard.default: Bool
+336:7 Ident s def Local teamboard.s: teamboard.Status
+336:12 CallExpr : [teamboard.Status]
+336:12 CallExpr call Builtin <nil> active#0 [teamboard.Status]
+336:12 SelectorExpr : fn() -> [teamboard.Status]
+336:12 SelectorExpr select Method Builtin active recv stable table teamboard.Status deref=false
+336:12 IdentExpr statuses uses Let teamboard.statuses: stable table teamboard.Status
+336:12 IdentExpr : stable table teamboard.Status
+336:21 Ident active names Builtin active
+337:9 Ident owners def Local teamboard.owners: [teamboard.Column]
+337:18 CallExpr : [teamboard.Column]
+337:18 CallExpr call Builtin <nil> filter#0 [teamboard.Column]
+337:18 SelectorExpr : fn(fn(teamboard.Column) -> Bool) -> [teamboard.Column]
+337:18 SelectorExpr select Method Builtin filter recv [teamboard.Column] deref=false
+337:18 CallExpr : [teamboard.Column]
+337:18 CallExpr call Builtin <nil> active#0 [teamboard.Column]
+337:18 SelectorExpr : fn() -> [teamboard.Column]
+337:18 SelectorExpr select Method Builtin active recv stable table teamboard.Column deref=false
+337:18 IdentExpr columns uses Let teamboard.columns: stable table teamboard.Column
+337:18 IdentExpr : stable table teamboard.Column
+337:26 Ident active names Builtin active
+337:35 Ident filter names Builtin filter
+337:42 LambdaExpr : fn(teamboard.Column) -> Bool
+337:42 Ident c def Param teamboard.c: teamboard.Column
+337:47 CallExpr : Bool
+337:47 CallExpr call Builtin <nil> contains#0 [ref teamboard.statuses]
+337:47 SelectorExpr : fn(ref teamboard.statuses) -> Bool
+337:47 SelectorExpr select Method Builtin contains recv [ref teamboard.statuses] deref=false
+337:47 SelectorExpr : [ref teamboard.statuses]
+337:47 SelectorExpr select Field Field teamboard.statuses: [ref teamboard.statuses] recv teamboard.Column deref=false
+337:47 IdentExpr c uses Param teamboard.c: teamboard.Column
+337:47 IdentExpr : teamboard.Column
+337:49 Ident statuses names Field teamboard.statuses: [ref teamboard.statuses]
+337:58 Ident contains names Builtin contains
+337:67 IdentExpr s uses Local teamboard.s: teamboard.Status
+337:67 IdentExpr : teamboard.Status
+337:67 IdentExpr conv EntryToRef(teamboard.Status -> ref teamboard.statuses)
+338:8 CallExpr : Bool
+338:8 CallExpr call Builtin <nil> isEmpty#0 [teamboard.Column]
+338:8 SelectorExpr : fn() -> Bool
+338:8 SelectorExpr select Method Builtin isEmpty recv [teamboard.Column] deref=false
+338:8 IdentExpr owners uses Local teamboard.owners: [teamboard.Column]
+338:8 IdentExpr : [teamboard.Column]
+338:15 Ident isEmpty names Builtin isEmpty
+339:7 CallExpr : none
+339:7 CallExpr call Builtin <nil> fail#0 []
+339:7 IdentExpr fail uses Builtin fail
+339:7 IdentExpr : fn(_, String) -> none
+339:12 IdentExpr s uses Local teamboard.s: teamboard.Status
+339:12 IdentExpr : teamboard.Status
+339:15 StringLit : String
+339:24 SelectorExpr : String
+339:24 SelectorExpr select BuiltinMember Builtin id recv teamboard.Status deref=false
+339:24 IdentExpr s uses Local teamboard.s: teamboard.Status
+339:24 IdentExpr : teamboard.Status
+339:26 Ident id names Builtin id
+340:15 BinaryExpr : Bool
+340:15 CallExpr : Int
+340:15 CallExpr call Builtin <nil> len#0 [teamboard.Column]
+340:15 SelectorExpr : fn() -> Int
+340:15 SelectorExpr select Method Builtin len recv [teamboard.Column] deref=false
+340:15 IdentExpr owners uses Local teamboard.owners: [teamboard.Column]
+340:15 IdentExpr : [teamboard.Column]
+340:22 Ident len names Builtin len
+340:30 IntLit : Int
+341:7 CallExpr : none
+341:7 CallExpr call Builtin <nil> fail#0 []
+341:7 IdentExpr fail uses Builtin fail
+341:7 IdentExpr : fn(_, String) -> none
+341:12 IdentExpr s uses Local teamboard.s: teamboard.Status
+341:12 IdentExpr : teamboard.Status
+341:15 StringLit : String
+341:24 SelectorExpr : String
+341:24 SelectorExpr select BuiltinMember Builtin id recv teamboard.Status deref=false
+341:24 IdentExpr s uses Local teamboard.s: teamboard.Status
+341:24 IdentExpr : teamboard.Status
+341:26 Ident id names Builtin id
+341:62 CallExpr : String
+341:62 CallExpr call Builtin <nil> join#0 [String]
+341:62 SelectorExpr : fn(String) -> String
+341:62 SelectorExpr select Method Builtin join recv [String] deref=false
+341:62 CallExpr : [String]
+341:62 CallExpr call Builtin <nil> map#0 [teamboard.Column, String]
+341:62 SelectorExpr : fn(fn(teamboard.Column) -> String) -> [String]
+341:62 SelectorExpr select Method Builtin map recv [teamboard.Column] deref=false
+341:62 IdentExpr owners uses Local teamboard.owners: [teamboard.Column]
+341:62 IdentExpr : [teamboard.Column]
+341:69 Ident map names Builtin map
+341:73 ShorthandLambda : fn(teamboard.Column) -> String
+341:73 SelectorExpr : String
+341:73 SelectorExpr select BuiltinMember Builtin id recv teamboard.Column deref=false
+341:74 Ident id names Builtin id
+341:78 Ident join names Builtin join
+341:83 StringLit : String
+346:7 BinaryExpr : Bool
+346:7 CallExpr : Int
+346:7 CallExpr call Builtin <nil> len#0 [ref teamboard.statuses]
+346:7 SelectorExpr : fn() -> Int
+346:7 SelectorExpr select Method Builtin len recv [ref teamboard.statuses] deref=false
+346:7 SelectorExpr : [ref teamboard.statuses]
+346:7 SelectorExpr select Field Field teamboard.statuses: [ref teamboard.statuses] recv teamboard.Column deref=false
+346:7 ForceExpr : teamboard.Column
+346:7 CallExpr : teamboard.Column?
+346:7 CallExpr call Builtin <nil> first#0 [teamboard.Column]
+346:7 SelectorExpr : fn() -> teamboard.Column?
+346:7 SelectorExpr select Method Builtin first recv [teamboard.Column] deref=false
+346:7 CallExpr : [teamboard.Column]
+346:7 CallExpr call Builtin <nil> active#0 [teamboard.Column]
+346:7 SelectorExpr : fn() -> [teamboard.Column]
+346:7 SelectorExpr select Method Builtin active recv stable table teamboard.Column deref=false
+346:7 IdentExpr columns uses Let teamboard.columns: stable table teamboard.Column
+346:7 IdentExpr : stable table teamboard.Column
+346:15 Ident active names Builtin active
+346:24 Ident first names Builtin first
+346:33 Ident statuses names Field teamboard.statuses: [ref teamboard.statuses]
+346:42 Ident len names Builtin len
+346:51 IntLit : Int
+347:8 StringLit : String
+349:7 BinaryExpr : Bool
+349:7 CallExpr : Int
+349:7 CallExpr call Builtin <nil> count#0 [teamboard.Severity]
+349:7 SelectorExpr : fn(fn(teamboard.Severity) -> Bool) -> Int
+349:7 SelectorExpr select Method Builtin count recv [teamboard.Severity] deref=false
+349:7 CallExpr : [teamboard.Severity]
+349:7 CallExpr call Builtin <nil> active#0 [teamboard.Severity]
+349:7 SelectorExpr : fn() -> [teamboard.Severity]
+349:7 SelectorExpr select Method Builtin active recv stable table teamboard.Severity deref=false
+349:7 IdentExpr severities uses Let teamboard.severities: stable table teamboard.Severity
+349:7 IdentExpr : stable table teamboard.Severity
+349:18 Ident active names Builtin active
+349:27 Ident count names Builtin count
+349:33 ShorthandLambda : fn(teamboard.Severity) -> Bool
+349:33 SelectorExpr : Bool
+349:33 SelectorExpr select Field Field teamboard.default: Bool recv teamboard.Severity deref=false
+349:34 Ident default names Field teamboard.default: Bool
+349:46 IntLit : Int
+349:53 StringLit : String
+351:7 BinaryExpr : Bool
+351:7 SelectorExpr : Int(1..)
+351:7 SelectorExpr select Field Field teamboard.maxHidden: Int(1..) recv teamboard.Deck deref=false
+351:7 IdentExpr deck uses Let teamboard.deck: teamboard.Deck
+351:7 IdentExpr : teamboard.Deck
+351:12 Ident maxHidden names Field teamboard.maxHidden: Int(1..)
+351:24 CallExpr : Int
+351:24 CallExpr call Builtin <nil> len#0 [teamboard.Column]
+351:24 SelectorExpr : fn() -> Int
+351:24 SelectorExpr select Method Builtin len recv [teamboard.Column] deref=false
+351:24 CallExpr : [teamboard.Column]
+351:24 CallExpr call Builtin <nil> active#0 [teamboard.Column]
+351:24 SelectorExpr : fn() -> [teamboard.Column]
+351:24 SelectorExpr select Method Builtin active recv stable table teamboard.Column deref=false
+351:24 IdentExpr columns uses Let teamboard.columns: stable table teamboard.Column
+351:24 IdentExpr : stable table teamboard.Column
+351:32 Ident active names Builtin active
+351:41 Ident len names Builtin len
+352:8 StringLit : String
+352:21 SelectorExpr : Int(1..)
+352:21 SelectorExpr select Field Field teamboard.maxHidden: Int(1..) recv teamboard.Deck deref=false
+352:21 IdentExpr deck uses Let teamboard.deck: teamboard.Deck
+352:21 IdentExpr : teamboard.Deck
+352:26 Ident maxHidden names Field teamboard.maxHidden: Int(1..)
+355:7 Ident g def Local teamboard.g: teamboard.AreaGroup
+355:12 CallExpr : [teamboard.AreaGroup]
+355:12 CallExpr call Builtin <nil> active#0 [teamboard.AreaGroup]
+355:12 SelectorExpr : fn() -> [teamboard.AreaGroup]
+355:12 SelectorExpr select Method Builtin active recv stable table teamboard.AreaGroup deref=false
+355:12 IdentExpr areaGroups uses Let teamboard.areaGroups: stable table teamboard.AreaGroup
+355:12 IdentExpr : stable table teamboard.AreaGroup
+355:23 Ident active names Builtin active
+356:8 UnaryExpr : Bool
+356:12 CallExpr : Bool
+356:12 CallExpr call Builtin <nil> any#0 [teamboard.Area]
+356:12 SelectorExpr : fn(fn(teamboard.Area) -> Bool) -> Bool
+356:12 SelectorExpr select Method Builtin any recv [teamboard.Area] deref=false
+356:12 CallExpr : [teamboard.Area]
+356:12 CallExpr call Builtin <nil> active#0 [teamboard.Area]
+356:12 SelectorExpr : fn() -> [teamboard.Area]
+356:12 SelectorExpr select Method Builtin active recv stable table teamboard.Area deref=false
+356:12 IdentExpr areas uses Let teamboard.areas: stable table teamboard.Area
+356:12 IdentExpr : stable table teamboard.Area
+356:18 Ident active names Builtin active
+356:27 Ident any names Builtin any
+356:31 LambdaExpr : fn(teamboard.Area) -> Bool
+356:31 Ident a def Param teamboard.a: teamboard.Area
+356:36 BinaryExpr : Bool
+356:36 SelectorExpr : ref teamboard.areaGroups
+356:36 SelectorExpr conv Deref(ref teamboard.areaGroups -> teamboard.AreaGroup)
+356:36 SelectorExpr select Field Field teamboard.group: ref teamboard.areaGroups recv teamboard.Area deref=false
+356:36 IdentExpr a uses Param teamboard.a: teamboard.Area
+356:36 IdentExpr : teamboard.Area
+356:38 Ident group names Field teamboard.group: ref teamboard.areaGroups
+356:47 IdentExpr g uses Local teamboard.g: teamboard.AreaGroup
+356:47 IdentExpr : teamboard.AreaGroup
+357:7 CallExpr : none
+357:7 CallExpr call Builtin <nil> fail#0 []
+357:7 IdentExpr fail uses Builtin fail
+357:7 IdentExpr : fn(_, String) -> none
+357:12 IdentExpr g uses Local teamboard.g: teamboard.AreaGroup
+357:12 IdentExpr : teamboard.AreaGroup
+357:15 StringLit : String
+357:28 SelectorExpr : String
+357:28 SelectorExpr select BuiltinMember Builtin id recv teamboard.AreaGroup deref=false
+357:28 IdentExpr g uses Local teamboard.g: teamboard.AreaGroup
+357:28 IdentExpr : teamboard.AreaGroup
+357:30 Ident id names Builtin id
+363:7 BinaryExpr : Bool
+363:7 UnaryExpr : Bool
+363:11 SelectorExpr : Bool
+363:11 SelectorExpr select BuiltinMember Builtin retired recv teamboard.Flag deref=false
+363:11 SelectorExpr : teamboard.Flag
+363:11 SelectorExpr select Entry Entry teamboard.blocking: teamboard.Flag recv stable table teamboard.Flag deref=false
+363:11 IdentExpr flags uses Let teamboard.flags: stable table teamboard.Flag
+363:11 IdentExpr : stable table teamboard.Flag
+363:17 Ident blocking names Entry teamboard.blocking: teamboard.Flag
+363:26 Ident retired names Builtin retired
+363:38 UnaryExpr : Bool
+363:42 SelectorExpr : Bool
+363:42 SelectorExpr select BuiltinMember Builtin retired recv teamboard.Flag deref=false
+363:42 SelectorExpr : teamboard.Flag
+363:42 SelectorExpr select Entry Entry teamboard.sensitive: teamboard.Flag recv stable table teamboard.Flag deref=false
+363:42 IdentExpr flags uses Let teamboard.flags: stable table teamboard.Flag
+363:42 IdentExpr : stable table teamboard.Flag
+363:48 Ident sensitive names Entry teamboard.sensitive: teamboard.Flag
+363:58 Ident retired names Builtin retired
+364:8 StringLit : String
+368:7 Ident seen def Local teamboard.seen: [ref teamboard.statuses]
+368:14 CallExpr : [ref teamboard.statuses]
+368:14 CallExpr call Builtin <nil> reachable#0 [ref teamboard.statuses]
+368:14 IdentExpr reachable uses Builtin reachable
+368:14 IdentExpr : fn(ref teamboard.statuses, fn(ref teamboard.statuses) -> [ref teamboard.statuses]) -> [ref teamboard.statuses]
+368:30 IdentExpr initialStatus uses Let teamboard.initialStatus: ref teamboard.statuses
+368:30 IdentExpr : ref teamboard.statuses
+368:51 ShorthandLambda : fn(ref teamboard.statuses) -> [ref teamboard.statuses]
+368:51 SelectorExpr : [ref teamboard.statuses]
+368:51 SelectorExpr select Field Field teamboard.next: [ref teamboard.statuses] recv ref teamboard.statuses deref=true
+368:52 Ident next names Field teamboard.next: [ref teamboard.statuses]
+369:7 Ident s def Local teamboard.s: teamboard.Status
+369:12 CallExpr : [teamboard.Status]
+369:12 CallExpr call Builtin <nil> active#0 [teamboard.Status]
+369:12 SelectorExpr : fn() -> [teamboard.Status]
+369:12 SelectorExpr select Method Builtin active recv stable table teamboard.Status deref=false
+369:12 IdentExpr statuses uses Let teamboard.statuses: stable table teamboard.Status
+369:12 IdentExpr : stable table teamboard.Status
+369:21 Ident active names Builtin active
+370:8 UnaryExpr : Bool
+370:12 CallExpr : Bool
+370:12 CallExpr call Builtin <nil> contains#0 [ref teamboard.statuses]
+370:12 SelectorExpr : fn(ref teamboard.statuses) -> Bool
+370:12 SelectorExpr select Method Builtin contains recv [ref teamboard.statuses] deref=false
+370:12 IdentExpr seen uses Local teamboard.seen: [ref teamboard.statuses]
+370:12 IdentExpr : [ref teamboard.statuses]
+370:17 Ident contains names Builtin contains
+370:26 IdentExpr s uses Local teamboard.s: teamboard.Status
+370:26 IdentExpr : teamboard.Status
+370:26 IdentExpr conv EntryToRef(teamboard.Status -> ref teamboard.statuses)
+371:7 CallExpr : none
+371:7 CallExpr call Builtin <nil> fail#0 []
+371:7 IdentExpr fail uses Builtin fail
+371:7 IdentExpr : fn(_, String) -> none
+371:12 IdentExpr s uses Local teamboard.s: teamboard.Status
+371:12 IdentExpr : teamboard.Status
+371:15 StringLit : String
+371:24 SelectorExpr : String
+371:24 SelectorExpr select BuiltinMember Builtin id recv teamboard.Status deref=false
+371:24 IdentExpr s uses Local teamboard.s: teamboard.Status
+371:24 IdentExpr : teamboard.Status
+371:26 Ident id names Builtin id
+371:57 SelectorExpr : String
+371:57 SelectorExpr select BuiltinMember Builtin id recv ref teamboard.statuses deref=true
+371:57 IdentExpr initialStatus uses Let teamboard.initialStatus: ref teamboard.statuses
+371:57 IdentExpr : ref teamboard.statuses
+371:71 Ident id names Builtin id
+378:7 Ident s def Local teamboard.s: teamboard.Status
+378:12 CallExpr : [teamboard.Status]
+378:12 CallExpr call Builtin <nil> active#0 [teamboard.Status]
+378:12 SelectorExpr : fn() -> [teamboard.Status]
+378:12 SelectorExpr select Method Builtin active recv stable table teamboard.Status deref=false
+378:12 IdentExpr statuses uses Let teamboard.statuses: stable table teamboard.Status
+378:12 IdentExpr : stable table teamboard.Status
+378:21 Ident active names Builtin active
+379:8 BinaryExpr : Bool
+379:8 UnaryExpr : Bool
+379:12 SelectorExpr : Bool
+379:12 SelectorExpr select Field Field teamboard.terminal: Bool recv teamboard.Status deref=false
+379:12 IdentExpr s uses Local teamboard.s: teamboard.Status
+379:12 IdentExpr : teamboard.Status
+379:14 Ident terminal names Field teamboard.terminal: Bool
+379:27 CallExpr : Bool
+379:27 CallExpr call Builtin <nil> isEmpty#0 [ref teamboard.statuses]
+379:27 SelectorExpr : fn() -> Bool
+379:27 SelectorExpr select Method Builtin isEmpty recv [ref teamboard.statuses] deref=false
+379:27 SelectorExpr : [ref teamboard.statuses]
+379:27 SelectorExpr select Field Field teamboard.next: [ref teamboard.statuses] recv teamboard.Status deref=false
+379:27 IdentExpr s uses Local teamboard.s: teamboard.Status
+379:27 IdentExpr : teamboard.Status
+379:29 Ident next names Field teamboard.next: [ref teamboard.statuses]
+379:34 Ident isEmpty names Builtin isEmpty
+380:7 CallExpr : none
+380:7 CallExpr call Builtin <nil> fail#0 []
+380:7 IdentExpr fail uses Builtin fail
+380:7 IdentExpr : fn(_, String) -> none
+380:12 IdentExpr s uses Local teamboard.s: teamboard.Status
+380:12 IdentExpr : teamboard.Status
+380:15 StringLit : String
+380:24 SelectorExpr : String
+380:24 SelectorExpr select BuiltinMember Builtin id recv teamboard.Status deref=false
+380:24 IdentExpr s uses Local teamboard.s: teamboard.Status
+380:24 IdentExpr : teamboard.Status
+380:26 Ident id names Builtin id
+392:11 Ident canTransition def Fn teamboard.canTransition: fn(ref teamboard.statuses, ref teamboard.statuses) -> Bool
+392:25 Ident from def Param teamboard.from: ref teamboard.statuses
+392:31 RefType type ref teamboard.statuses
+392:35 Ident Status names TypeName teamboard.Status: teamboard.Status
+392:43 Ident to def Param teamboard.to: ref teamboard.statuses
+392:47 RefType type ref teamboard.statuses
+392:51 Ident Status names TypeName teamboard.Status: teamboard.Status
+392:62 NamedType type Bool
+392:62 Ident Bool names Builtin Bool: Bool
+392:76 CallExpr : Bool
+392:76 CallExpr call Builtin <nil> contains#0 [ref teamboard.statuses]
+392:76 SelectorExpr : fn(ref teamboard.statuses) -> Bool
+392:76 SelectorExpr select Method Builtin contains recv [ref teamboard.statuses] deref=false
+392:76 SelectorExpr : [ref teamboard.statuses]
+392:76 SelectorExpr select Field Field teamboard.next: [ref teamboard.statuses] recv ref teamboard.statuses deref=true
+392:76 IdentExpr from uses Param teamboard.from: ref teamboard.statuses
+392:76 IdentExpr : ref teamboard.statuses
+392:81 Ident next names Field teamboard.next: [ref teamboard.statuses]
+392:86 Ident contains names Builtin contains
+392:95 IdentExpr to uses Param teamboard.to: ref teamboard.statuses
+392:95 IdentExpr : ref teamboard.statuses
+396:11 Ident columnOf def Fn teamboard.columnOf: fn(ref teamboard.statuses) -> ref teamboard.columns?
+396:20 Ident s def Param teamboard.s: ref teamboard.statuses
+396:23 RefType type ref teamboard.statuses
+396:27 Ident Status names TypeName teamboard.Status: teamboard.Status
+396:38 OptionalType type ref teamboard.columns?
+396:38 RefType type ref teamboard.columns
+396:42 Ident Column names TypeName teamboard.Column: teamboard.Column
+397:10 CallExpr : teamboard.Column?
+397:10 CallExpr conv Present(teamboard.Column? -> ref teamboard.columns?) inner EntryToRef(teamboard.Column -> ref teamboard.columns)
+397:10 CallExpr call Builtin <nil> first#1 [teamboard.Column]
+397:10 SelectorExpr : fn(fn(teamboard.Column) -> Bool) -> teamboard.Column?
+397:10 SelectorExpr select Method Builtin first recv [teamboard.Column] deref=false
+397:10 CallExpr : [teamboard.Column]
+397:10 CallExpr call Builtin <nil> active#0 [teamboard.Column]
+397:10 SelectorExpr : fn() -> [teamboard.Column]
+397:10 SelectorExpr select Method Builtin active recv stable table teamboard.Column deref=false
+397:10 IdentExpr columns uses Let teamboard.columns: stable table teamboard.Column
+397:10 IdentExpr : stable table teamboard.Column
+397:18 Ident active names Builtin active
+397:27 Ident first names Builtin first
+397:33 LambdaExpr : fn(teamboard.Column) -> Bool
+397:33 Ident c def Param teamboard.c: teamboard.Column
+397:38 CallExpr : Bool
+397:38 CallExpr call Builtin <nil> contains#0 [ref teamboard.statuses]
+397:38 SelectorExpr : fn(ref teamboard.statuses) -> Bool
+397:38 SelectorExpr select Method Builtin contains recv [ref teamboard.statuses] deref=false
+397:38 SelectorExpr : [ref teamboard.statuses]
+397:38 SelectorExpr select Field Field teamboard.statuses: [ref teamboard.statuses] recv teamboard.Column deref=false
+397:38 IdentExpr c uses Param teamboard.c: teamboard.Column
+397:38 IdentExpr : teamboard.Column
+397:40 Ident statuses names Field teamboard.statuses: [ref teamboard.statuses]
+397:49 Ident contains names Builtin contains
+397:58 IdentExpr s uses Param teamboard.s: ref teamboard.statuses
+397:58 IdentExpr : ref teamboard.statuses
+401:11 Ident areasVisibleTo def Fn teamboard.areasVisibleTo: fn(sovcommon.roles.Role) -> [ref teamboard.areas]
+401:26 Ident role def Param teamboard.role: sovcommon.roles.Role
+401:32 NamedType type sovcommon.roles.Role
+401:32 Ident Role names TypeName sovcommon.roles.Role: sovcommon.roles.Role
+401:41 ListType type [ref teamboard.areas]
+401:42 RefType type ref teamboard.areas
+401:46 Ident Area names TypeName teamboard.Area: teamboard.Area
+402:10 ListComp : [ref teamboard.areas]
+402:11 IdentExpr a uses Local teamboard.a: teamboard.Area
+402:11 IdentExpr : teamboard.Area
+402:11 IdentExpr conv EntryToRef(teamboard.Area -> ref teamboard.areas)
+402:17 Ident a def Local teamboard.a: teamboard.Area
+402:22 CallExpr : [teamboard.Area]
+402:22 CallExpr call Builtin <nil> active#0 [teamboard.Area]
+402:22 SelectorExpr : fn() -> [teamboard.Area]
+402:22 SelectorExpr select Method Builtin active recv stable table teamboard.Area deref=false
+402:22 IdentExpr areas uses Let teamboard.areas: stable table teamboard.Area
+402:22 IdentExpr : stable table teamboard.Area
+402:28 Ident active names Builtin active
+402:40 BinaryExpr : Bool
+402:40 IdentExpr role uses Param teamboard.role: sovcommon.roles.Role
+402:40 IdentExpr : sovcommon.roles.Role
+402:48 SelectorExpr : sovcommon.roles.Role
+402:48 SelectorExpr select Field Field teamboard.minRole: sovcommon.roles.Role recv teamboard.Area deref=false
+402:48 IdentExpr a uses Local teamboard.a: teamboard.Area
+402:48 IdentExpr : teamboard.Area
+402:50 Ident minRole names Field teamboard.minRole: sovcommon.roles.Role
+406:8 Ident AreaSection def TypeName teamboard.AreaSection: teamboard.AreaSection
+408:3 Ident group def Field teamboard.group: ref teamboard.areaGroups
+408:10 RefType type ref teamboard.areaGroups
+408:14 Ident AreaGroup names TypeName teamboard.AreaGroup: teamboard.AreaGroup
+410:3 Ident areas def Field teamboard.areas: [ref teamboard.areas]
+410:10 ListType type [ref teamboard.areas]
+410:11 RefType type ref teamboard.areas
+410:15 Ident Area names TypeName teamboard.Area: teamboard.Area
+414:11 Ident groupedAreasVisibleTo def Fn teamboard.groupedAreasVisibleTo: fn(sovcommon.roles.Role) -> [teamboard.AreaSection]
+414:33 Ident role def Param teamboard.role: sovcommon.roles.Role
+414:39 NamedType type sovcommon.roles.Role
+414:39 Ident Role names TypeName sovcommon.roles.Role: sovcommon.roles.Role
+414:48 ListType type [teamboard.AreaSection]
+414:49 NamedType type teamboard.AreaSection
+414:49 Ident AreaSection names TypeName teamboard.AreaSection: teamboard.AreaSection
+415:10 ListComp : [teamboard.AreaSection]
+416:5 BraceLit : teamboard.AreaSection
+416:5 BraceLit literal RecordLit
+416:7 Ident group names Field teamboard.group: ref teamboard.areaGroups
+416:14 IdentExpr g uses Local teamboard.g: teamboard.AreaGroup
+416:14 IdentExpr : teamboard.AreaGroup
+416:14 IdentExpr conv EntryToRef(teamboard.AreaGroup -> ref teamboard.areaGroups)
+416:17 Ident areas names Field teamboard.areas: [ref teamboard.areas]
+416:24 CallExpr : [ref teamboard.areas]
+416:24 CallExpr call Builtin <nil> filter#0 [ref teamboard.areas]
+416:24 SelectorExpr : fn(fn(ref teamboard.areas) -> Bool) -> [ref teamboard.areas]
+416:24 SelectorExpr select Method Builtin filter recv [ref teamboard.areas] deref=false
+416:24 CallExpr : [ref teamboard.areas]
+416:24 CallExpr call Fn Fn teamboard.areasVisibleTo: fn(sovcommon.roles.Role) -> [ref teamboard.areas] #0 []
+416:24 IdentExpr areasVisibleTo uses Fn teamboard.areasVisibleTo: fn(sovcommon.roles.Role) -> [ref teamboard.areas]
+416:24 IdentExpr : fn(sovcommon.roles.Role) -> [ref teamboard.areas]
+416:39 IdentExpr role uses Param teamboard.role: sovcommon.roles.Role
+416:39 IdentExpr : sovcommon.roles.Role
+416:45 Ident filter names Builtin filter
+416:52 LambdaExpr : fn(ref teamboard.areas) -> Bool
+416:52 Ident a def Param teamboard.a: ref teamboard.areas
+416:57 BinaryExpr : Bool
+416:57 SelectorExpr : ref teamboard.areaGroups
+416:57 SelectorExpr conv Deref(ref teamboard.areaGroups -> teamboard.AreaGroup)
+416:57 SelectorExpr select Field Field teamboard.group: ref teamboard.areaGroups recv ref teamboard.areas deref=true
+416:57 IdentExpr a uses Param teamboard.a: ref teamboard.areas
+416:57 IdentExpr : ref teamboard.areas
+416:59 Ident group names Field teamboard.group: ref teamboard.areaGroups
+416:68 IdentExpr g uses Local teamboard.g: teamboard.AreaGroup
+416:68 IdentExpr : teamboard.AreaGroup
+417:9 Ident g def Local teamboard.g: teamboard.AreaGroup
+417:14 CallExpr : [teamboard.AreaGroup]
+417:14 CallExpr call Builtin <nil> active#0 [teamboard.AreaGroup]
+417:14 SelectorExpr : fn() -> [teamboard.AreaGroup]
+417:14 SelectorExpr select Method Builtin active recv stable table teamboard.AreaGroup deref=false
+417:14 IdentExpr areaGroups uses Let teamboard.areaGroups: stable table teamboard.AreaGroup
+417:14 IdentExpr : stable table teamboard.AreaGroup
+417:25 Ident active names Builtin active
+418:8 CallExpr : Bool
+418:8 CallExpr call Builtin <nil> any#0 [ref teamboard.areas]
+418:8 SelectorExpr : fn(fn(ref teamboard.areas) -> Bool) -> Bool
+418:8 SelectorExpr select Method Builtin any recv [ref teamboard.areas] deref=false
+418:8 CallExpr : [ref teamboard.areas]
+418:8 CallExpr call Fn Fn teamboard.areasVisibleTo: fn(sovcommon.roles.Role) -> [ref teamboard.areas] #0 []
+418:8 IdentExpr areasVisibleTo uses Fn teamboard.areasVisibleTo: fn(sovcommon.roles.Role) -> [ref teamboard.areas]
+418:8 IdentExpr : fn(sovcommon.roles.Role) -> [ref teamboard.areas]
+418:23 IdentExpr role uses Param teamboard.role: sovcommon.roles.Role
+418:23 IdentExpr : sovcommon.roles.Role
+418:29 Ident any names Builtin any
+418:33 LambdaExpr : fn(ref teamboard.areas) -> Bool
+418:33 Ident a def Param teamboard.a: ref teamboard.areas
+418:38 BinaryExpr : Bool
+418:38 SelectorExpr : ref teamboard.areaGroups
+418:38 SelectorExpr conv Deref(ref teamboard.areaGroups -> teamboard.AreaGroup)
+418:38 SelectorExpr select Field Field teamboard.group: ref teamboard.areaGroups recv ref teamboard.areas deref=true
+418:38 IdentExpr a uses Param teamboard.a: ref teamboard.areas
+418:38 IdentExpr : ref teamboard.areas
+418:40 Ident group names Field teamboard.group: ref teamboard.areaGroups
+418:49 IdentExpr g uses Local teamboard.g: teamboard.AreaGroup
+418:49 IdentExpr : teamboard.AreaGroup

@@ -1,0 +1,12 @@
+STDLIB.md §7, §8: matches takes a regex literal, not a string.
+-- a/a.canon --
+package a
+
+local fn f(s: String) -> Bool {
+  return s.matches("b")
+}
+-- findings.txt --
+error[E3007]  a/a.canon:4:10
+  operator matches is not defined for String and String
+
+1 error, 0 warnings in 1 package (…)

@@ -1,0 +1,12 @@
+TYPES.md §9.3: an entry for a let that is not a table or keyed list.
+-- a/a.canon --
+package a
+
+local let n: Int = 1
+
+entry n.x {}
+-- findings.txt --
+error[E3103]  a/a.canon:5:7
+  entry n.x: n is not a table or keyed list of this package
+
+1 error, 0 warnings in 1 package (…)

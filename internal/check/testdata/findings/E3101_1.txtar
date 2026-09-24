@@ -1,0 +1,17 @@
+TYPES.md §9.3: a table key given twice.
+-- a/a.canon --
+package a
+
+local record Row {
+  n: Int
+}
+
+local let rows: table Row = {
+  a { n: 1 }
+  a { n: 2 }
+}
+-- findings.txt --
+error[E3101]  a/a.canon:9:3
+  duplicate key a in rows (first at a/a.canon:8)
+
+1 error, 0 warnings in 1 package (…)

@@ -1,0 +1,57 @@
+WIRE.md §4.1: `pairs:` needs an element record of exactly two non-optional scalar fields, no input and no export fn that is not translated.
+-- a/a.canon --
+package a
+
+local record Three {
+  a: Int
+  b: Int
+  c: Int
+}
+
+local record Opt {
+  a: Int
+  b: Int?
+}
+
+local record Nested {
+  a: Int
+  b: [Int]
+}
+
+local record Fn {
+  a: Int
+  b: Int
+
+  /// The sum.
+  export fn sum(self) -> Int { return a + b }
+}
+
+local record Ok {
+  a: Int
+  b: String
+
+  /// Scaled.
+  export fn scaled(self, by: Int) -> Int { return a * by }
+}
+
+local record Holder {
+  three: [Three](..=2) @json(pairs: ["a{i}", "b{i}"])
+  opt: [Opt](..=2) @json(pairs: ["a{i}", "b{i}"])
+  nested: [Nested](..=2) @json(pairs: ["a{i}", "b{i}"])
+  withFn: [Fn](..=2) @json(pairs: ["a{i}", "b{i}"])
+  ok: [Ok](..=2) @json(pairs: ["a{i}", "b{i}"])
+}
+-- findings.txt --
+error[E3316]  a/a.canon:36:24
+  @json(pairs) does not apply to [a.Three](..=2)
+
+error[E3316]  a/a.canon:37:20
+  @json(pairs) does not apply to [a.Opt](..=2)
+
+error[E3316]  a/a.canon:38:26
+  @json(pairs) does not apply to [a.Nested](..=2)
+
+error[E3316]  a/a.canon:39:22
+  @json(pairs) does not apply to [a.Fn](..=2)
+
+4 errors, 0 warnings in 1 package (…)

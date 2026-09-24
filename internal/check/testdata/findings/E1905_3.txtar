@@ -1,0 +1,23 @@
+TYPES.md §1, EVALUATION.md §9.2: after an unfit path, a contextual name in the value is not reported.
+-- a/a.canon --
+package a
+
+local enum Tone { warning, calm }
+
+local record Cfg {
+  port: Int
+}
+
+local let c: Cfg = { port: 1 }
+-- a/dev.layer.canon --
+package a
+layer dev
+
+amend c {
+  tone: warning
+}
+-- findings.txt --
+error[E1905]  a/dev.layer.canon:5:3
+  amend path tone: no such field
+
+1 error, 0 warnings in 1 package (…)

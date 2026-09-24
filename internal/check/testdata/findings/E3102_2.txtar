@@ -1,0 +1,14 @@
+TYPES.md §9.3: two elements of a keyed list literal with the same written key.
+-- a/a.canon --
+package a
+
+local record Tag {
+  name: String
+}
+
+local let tags: [Tag] keyed by name = [{ name: "x" }, { name: "x" }]
+-- findings.txt --
+error[E3102]  a/a.canon:7:63
+  key x is used twice (first at a/a.canon:7)
+
+1 error, 0 warnings in 1 package (…)

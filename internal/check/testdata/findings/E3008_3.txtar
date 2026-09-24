@@ -1,0 +1,35 @@
+TYPES.md §5.3, §6.4: a join types only a branch's own `none`, `[]` or `{}`, never one nested in it.
+-- a/a.canon --
+package a
+
+local fn f(c: Bool, xs: [Int]) -> Int {
+  let a = [[none]]
+  let b = if c { [none] } else { [none] }
+  let d = { "a": [none] }
+  let e = if c { xs.map(v => none) } else { [none] }
+  let g = [xs.map(v => [])]
+  return 1
+}
+-- findings.txt --
+error[E3008]  a/a.canon:4:12
+  cannot infer the type of this expression; add a type
+
+error[E3008]  a/a.canon:5:18
+  cannot infer the type of this expression; add a type
+
+error[E3008]  a/a.canon:5:34
+  cannot infer the type of this expression; add a type
+
+error[E3008]  a/a.canon:6:18
+  cannot infer the type of this expression; add a type
+
+error[E3008]  a/a.canon:7:30
+  cannot infer the type of this expression; add a type
+
+error[E3008]  a/a.canon:7:45
+  cannot infer the type of this expression; add a type
+
+error[E3008]  a/a.canon:8:24
+  cannot infer the type of this expression; add a type
+
+7 errors, 0 warnings in 1 package (…)

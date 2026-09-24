@@ -1,0 +1,17 @@
+EVALUATION.md §11.1: a record with an input field reached from two public values.
+-- a/a.canon --
+package a
+
+local record Gen {
+  key: input String? from env "KEY"
+}
+
+/// One.
+let one: Gen = {}
+/// Two.
+let two: Gen = {}
+-- findings.txt --
+error[E1903]  a/a.canon:3:14
+  Gen has input fields, so it must be reached from exactly one public value through record fields
+
+1 error, 0 warnings in 1 package (…)

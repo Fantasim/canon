@@ -1,0 +1,17 @@
+TYPES.md §9.3: a retired entry of a keyed list.
+-- a/a.canon --
+package a
+
+local record Row {
+  id: String
+  n: Int
+}
+
+local let rows: [Row] keyed by id = []
+
+retired entry rows.x { n: 1 }
+-- findings.txt --
+error[E3103]  a/a.canon:10:1
+  retired entry needs a table
+
+1 error, 0 warnings in 1 package (…)

@@ -1,0 +1,19 @@
+TYPES.md §10.2: ref T with several collections of T at one level.
+-- a/a.canon --
+package a
+
+local record Node {
+  name: String
+}
+
+local let one: table Node = {}
+local let two: table Node = {}
+
+local record Link {
+  to: ref Node
+}
+-- findings.txt --
+error[E2103]  a/a.canon:11:11
+  ref Node: several collections of Node (one, two); write ref <collection name>
+
+1 error, 0 warnings in 1 package (…)

@@ -1,0 +1,16 @@
+TYPES.md §3.5: an unknown field.
+-- a/a.canon --
+package a
+
+local record R {
+  a: Int
+}
+
+local fn f(r: R) -> Int {
+  return r.b
+}
+-- findings.txt --
+error[E3003]  a/a.canon:8:12
+  a.R has no field b
+
+1 error, 0 warnings in 1 package (…)

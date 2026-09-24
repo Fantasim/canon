@@ -1,0 +1,16 @@
+TYPES.md §5.2: a spread that is not first.
+-- a/a.canon --
+package a
+
+local record R {
+  a: Int
+  b: Int = 0
+}
+
+local let base: R = { a: 1 }
+local let r: R = { b: 2, ...base }
+-- findings.txt --
+error[E3323]  a/a.canon:9:26
+  a spread must come first and appear once
+
+1 error, 0 warnings in 1 package (…)

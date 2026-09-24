@@ -1,0 +1,16 @@
+TYPES.md §12.2: too many arguments.
+-- a/a.canon --
+package a
+
+local fn f(a: Int) -> Int { return a }
+
+local const X = 1
+
+local fn g() -> Int {
+  return f(1, 2)
+}
+-- findings.txt --
+error[E3004]  a/a.canon:8:15
+  too many arguments in call to f
+
+1 error, 0 warnings in 1 package (…)

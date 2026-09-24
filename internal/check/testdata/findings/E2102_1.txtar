@@ -1,0 +1,11 @@
+TYPES.md §3.3: an unknown name, with a hint.
+-- a/a.canon --
+package a
+
+local const LIMIT = 10
+local const MAX = LIMT
+-- findings.txt --
+error[E2102]  a/a.canon:4:19
+  unknown name LIMT (did you mean LIMIT?)
+
+1 error, 0 warnings in 1 package (…)

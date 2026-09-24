@@ -1,0 +1,10 @@
+CODEGEN.md §2.1: a mode the target does not have.
+-- a/a.canon --
+package a
+
+emit go { out: "@sovcommon/a", mode: fast }
+-- findings.txt --
+error[E8009]  a/a.canon:3:38
+  invalid mode fast for emit go: expected one of baked, embedded, data, types
+
+1 error, 0 warnings in 1 package (…)

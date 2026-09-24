@@ -1,0 +1,10 @@
+CODEGEN.md §2.1: a namespace using a C++ keyword.
+-- a/a.canon --
+package a
+
+emit cpp { out: "@source/a", namespace: "sov::class" }
+-- findings.txt --
+error[E8009]  a/a.canon:3:41
+  invalid namespace "sov::class" for emit cpp: expected ident{::ident} with no C++ keyword
+
+1 error, 0 warnings in 1 package (…)

@@ -1,0 +1,34 @@
+TYPES.md §5: contextual names, brace literals, integer literals as Float, joins.
+-- a/a.canon --
+package a
+
+local enum Tone { warning, info }
+
+local enum Profile { pve, pvp }
+
+local record Badge {
+  tone: Tone
+  weight: Float = 1
+}
+
+local let badge: Badge = { tone: warning, weight: 2 }
+
+local let byProfile: {Profile: Int} = { pve: 1, pvp: 2 }
+
+local let names = { "a": 1, "b": 2 }
+
+local fn isWarning(tone: Tone) -> Bool {
+  return tone == warning and warning == tone
+}
+
+local fn pick(c: Bool) -> [Int] {
+  return if c { [1] } else { [] }
+}
+
+local let mixed = [1, 2.5]
+
+local fn half(x: Float) -> Float {
+  return x / 2
+}
+
+local let spread: Badge = { ...badge, tone: info }

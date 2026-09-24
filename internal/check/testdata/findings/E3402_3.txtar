@@ -1,0 +1,20 @@
+TYPES.md §6.5: after `?.`, an optional segment needs its own `?.`: `a?.b.c` with b optional.
+-- a/a.canon --
+package a
+
+local record C {
+  n: Int
+}
+
+local record B {
+  c: C?
+}
+
+local fn f(b: B?) -> Int? {
+  return b?.c.n
+}
+-- findings.txt --
+error[E3402]  a/a.canon:12:10
+  b?.c may be none: use ?., !, ?? or test != none first
+
+1 error, 0 warnings in 1 package (…)

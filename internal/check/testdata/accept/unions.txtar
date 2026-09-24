@@ -1,0 +1,17 @@
+TYPES.md §13.2: a literal union compared with one of its literals or with its alternative.
+-- a/a.canon --
+package a
+
+local enum Stage { one, two }
+
+local type Key = Stage | "default"
+
+local fn isDefault(k: Key) -> Bool {
+  return k == "default"
+}
+
+local fn isOne(k: Key, s: Stage) -> Bool {
+  return k == s
+}
+
+local let rates: {Key: Int} = { "default": 1, one: 2 }

@@ -1,0 +1,12 @@
+TYPES.md §6.5: minus on an optional, with an expected Float: one finding.
+-- a/a.canon --
+package a
+
+local fn f(x: Int?) -> Float {
+  return -x
+}
+-- findings.txt --
+error[E3402]  a/a.canon:4:11
+  x may be none: use ?., !, ?? or test != none first
+
+1 error, 0 warnings in 1 package (…)

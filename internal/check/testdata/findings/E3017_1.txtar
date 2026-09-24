@@ -1,0 +1,14 @@
+TYPES.md §12.7: assignment to a let.
+-- a/a.canon --
+package a
+
+local fn f() -> Int {
+  let x = 1
+  x = 2
+  return x
+}
+-- findings.txt --
+error[E3017]  a/a.canon:5:3
+  cannot assign to x: it is not a var
+
+1 error, 0 warnings in 1 package (…)

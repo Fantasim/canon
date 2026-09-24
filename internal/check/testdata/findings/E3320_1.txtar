@@ -1,0 +1,14 @@
+TYPES.md §5.2: a table entry in a record literal.
+-- a/a.canon --
+package a
+
+local record R {
+  a: Int
+}
+
+local let r: R = { a: 1, x { a: 2 } }
+-- findings.txt --
+error[E3320]  a/a.canon:7:26
+  table entry items are not allowed in record literals
+
+1 error, 0 warnings in 1 package (…)

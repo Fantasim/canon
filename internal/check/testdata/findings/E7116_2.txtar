@@ -1,0 +1,25 @@
+WIRE.md §6.1: load.text builds a String; load.csv builds [[String]] without a header, a collection with one.
+-- a/a.canon --
+package a
+
+local record Row {
+  name: String
+}
+
+local let n: Int = load.text("@resource/a.txt")
+local let s: String = load.text("@resource/a.txt")
+local let rows: [Row] = load.csv("@resource/a.csv")
+local let cells: [[String]] = load.csv("@resource/a.csv")
+local let named: [Row] = load.csv("@resource/a.csv", header: true)
+local let ints: [[Int]] = load.csv("@resource/a.csv", header: false)
+-- findings.txt --
+error[E7116]  a/a.canon:7:20
+  load.text cannot produce Int
+
+error[E7116]  a/a.canon:9:25
+  load.csv cannot produce [a.Row]
+
+error[E7116]  a/a.canon:12:27
+  load.csv cannot produce [[Int]]
+
+3 errors, 0 warnings in 1 package (…)

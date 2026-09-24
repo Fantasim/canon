@@ -1,0 +1,13 @@
+TYPES.md §12.7: an expression statement with no effect.
+-- a/a.canon --
+package a
+
+local fn f(n: Int) -> Int {
+  n + 1
+  return n
+}
+-- findings.txt --
+error[E3020]  a/a.canon:4:3
+  this expression has no effect
+
+1 error, 0 warnings in 1 package (…)

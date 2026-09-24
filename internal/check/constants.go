@@ -1,5 +1,11 @@
 package check
 
+import (
+	"github.com/fantasim/canonlang/internal/diag"
+	"github.com/fantasim/canonlang/internal/syntax"
+	"github.com/fantasim/canonlang/internal/types"
+)
+
 // NoneIndex is the index MatchInfo.Covers gives the `none` pattern (TYPES.md §12.6).
 const NoneIndex = -1
 
@@ -95,3 +101,375 @@ var calleeNames = [...]string{
 var litNames = [...]string{
 	LitRecord: "RecordLit", LitTable: "TableLit", LitMap: "MapLit", LitMapComp: "MapComp", LitError: "ErrorLit",
 }
+
+// The resolution states of a top-level declaration.
+const (
+	stateNone resolveState = iota
+	stateResolving
+	stateDone
+)
+
+// The flags of an env: modeJoin types a branch a join may still type (TYPES.md §6.4).
+const (
+	modeJoin mode = 1 << iota
+)
+
+// What a type position allows: a function type, `_`, `stable table`.
+const (
+	posFn typePos = 1 << iota
+	posAny
+	posStable
+)
+
+// The constraints of STDLIB.md §1.1, and consString for join's elements.
+const (
+	consNone constraint = iota
+	consNum
+	consNumD
+	consOrd
+	consEq
+	consKey
+	consString
+)
+
+// The states of the import cycle walk.
+const (
+	unvisited visit = iota
+	visiting
+	visited
+)
+
+// noConstant is env.what outside a constant expression.
+const noConstant = diag.Kind(^uint8(0))
+
+// Limits and fixed numbers.
+const (
+	selfID          = 0
+	hintDistance    = 2
+	pairArity       = 2
+	pairCount       = 2
+	minPathSegments = 2
+	bits64          = 64
+	decimalBase     = 10
+	maxBit          = int64(1) << 62
+	underscoreByte  = '_'
+)
+
+// Punctuation and fixed words.
+const (
+	dot          = "."
+	slash        = "/"
+	colon        = ":"
+	hash         = "#"
+	openBracket  = "["
+	closeBracket = "]"
+	closeParen   = ")"
+	underscore   = "_"
+	hyphen       = "-"
+	dollar       = "$"
+	rootSigil    = "@"
+	rootDir      = dot // the project directory as a display path (API.md §1.3)
+	cppScope     = "::"
+	optDotText   = "?."
+	forceText    = "!"
+	emptyArray   = "[]"
+	emptyObject  = "{}"
+	indexText    = emptyArray
+	seqText      = "Seq("
+	expMark      = "e"
+	tsSuffix     = ".ts"
+	extForbidden = "./\\"
+	itName       = "it"
+	selfKey      = "self"
+	noneWord     = "none"
+	trueWord     = "true"
+	falseWord    = "false"
+
+	envNamePattern = `^[A-Za-z_][A-Za-z0-9_]*$`
+	identPattern   = envNamePattern
+)
+
+// Built-in members (STDLIB.md §3).
+const (
+	idMember      = "id"
+	retiredMember = "retired"
+	kindMember    = "kind"
+	nameMember    = "name"
+	indexMember   = "index"
+	wireMember    = "wire"
+	codeMember    = "code"
+	startMember   = "start"
+	endMember     = "end"
+	defaultTag    = kindMember
+)
+
+// Annotations and their arguments (GRAMMAR.md §8.3, WIRE.md §4).
+const (
+	annotJSON       = "json"
+	annotDeprecated = "deprecated"
+	annotStable     = "stable"
+	annotCodes      = "codes"
+	jsonCodes       = annotCodes
+	jsonPath        = "path"
+	jsonInline      = "inline"
+	jsonInt         = "int"
+	jsonBits        = "bits"
+	jsonUnit        = "unit"
+	jsonNone        = noneWord
+	jsonPairsName   = "pairs"
+	jsonCase        = "case"
+	jsonTag         = "tag"
+	caseSnake       = "snake"
+	caseKebab       = "kebab"
+	caseUpperSnake  = "upper_snake"
+	letterS         = "s"
+)
+
+// unportableForms are the regex constructs outside the RE2 ∩ ECMAScript subset (EVALUATION.md §11.3).
+var unportableForms = []string{`(?i`, `(?m`, `(?s`, `(?U`, `(?P<`, `(?<`, `\p`, `\P`, `\A`, `\z`, `\b`, `\B`, `[[:`}
+
+// backslash starts an escape in a regex.
+const backslash = '\\'
+
+// pairSlot is the position variable of a `@json(pairs:)` template (WIRE.md §5.14).
+var pairSlot = openBrace + paramI + closeBrace
+
+// unitSymbols are the wire units in types.Unit order.
+var unitSymbols = [...]string{types.UnitMs: "ms", types.UnitS: letterS, types.UnitM: "m", types.UnitH: "h", types.UnitD: "d"}
+
+// Emit targets and options (CODEGEN.md §2.1, WIRE.md §8.1).
+const (
+	targetGo        = "go"
+	targetCpp       = "cpp"
+	targetTS        = "ts"
+	targetJSON      = annotJSON
+	targetView      = "view"
+	optionOut       = "out"
+	optionMode      = "mode"
+	optionPackage   = "package"
+	optionNamespace = "namespace"
+	optionValues    = methodValues
+	modeBaked       = "baked"
+	modeEmbedded    = "embedded"
+	modeData        = "data"
+	modeTypes       = "types"
+)
+
+var codeModes = []string{modeBaked, modeEmbedded, modeData, modeTypes}
+
+// emitSpecs are the targets of CODEGEN.md §2.1 with their options and modes.
+var emitSpecs = map[string]emitSpec{
+	targetGo:   {options: []string{optionOut, optionMode, optionPackage, optionValues}, modes: codeModes},
+	targetCpp:  {options: []string{optionOut, optionMode, optionNamespace, optionValues}, modes: codeModes},
+	targetTS:   {options: []string{optionOut, optionMode, optionValues}, modes: codeModes},
+	targetJSON: {options: []string{optionOut, optionValues}},
+	targetView: {options: []string{optionOut}},
+}
+
+// Load forms and options (WIRE.md §6.1).
+const (
+	loadName      = "load"
+	loadForm      = ""
+	loadDefines   = "defines"
+	loadText      = "text"
+	loadCSV       = "csv"
+	optionFormat  = "format"
+	optionPartial = "partial"
+	optionHeader  = "header"
+)
+
+// Type parameter names of the built-in signatures.
+const (
+	nameT    = "T"
+	nameU    = "U"
+	nameK    = "K"
+	nameV    = "V"
+	nameKT   = "KT"
+	nameR    = "R"
+	nameRefT = "ref T"
+)
+
+// Built-in types (TYPES.md §3.3 step 6).
+const (
+	typeInt      = "Int"
+	typeInt8     = "Int8"
+	typeInt16    = "Int16"
+	typeInt32    = "Int32"
+	typeUInt8    = "UInt8"
+	typeUInt16   = "UInt16"
+	typeUInt32   = "UInt32"
+	typeUInt64   = "UInt64"
+	typeFloat    = "Float"
+	typeFloat32  = "Float32"
+	typeString   = "String"
+	typeBool     = "Bool"
+	typeDuration = "Duration"
+	typeRange    = "Range"
+	typeNever    = "Never"
+	typeDefine   = "Define"
+)
+
+// Built-in free functions (STDLIB.md §2, §10).
+const (
+	fnAbs       = "abs"
+	fnMin       = methodMin
+	fnMax       = methodMax
+	fnClamp     = "clamp"
+	fnFloor     = "floor"
+	fnCeil      = "ceil"
+	fnRound     = "round"
+	fnSqrt      = "sqrt"
+	fnPow       = "pow"
+	fnReachable = "reachable"
+	fnCycles    = "cycles"
+	fnTopoSort  = "topoSort"
+	fnFail      = "fail"
+	fnWarn      = "warn"
+)
+
+// Built-in methods (STDLIB.md §4 to §7, §10).
+const (
+	methodLen        = "len"
+	methodIsEmpty    = "isEmpty"
+	methodFirst      = "first"
+	methodLast       = "last"
+	methodContains   = "contains"
+	methodIndexOf    = "indexOf"
+	methodMap        = "map"
+	methodFilter     = "filter"
+	methodFlatMap    = "flatMap"
+	methodFlatten    = "flatten"
+	methodReverse    = "reverse"
+	methodSortBy     = "sortBy"
+	methodUnique     = "unique"
+	methodEnumerate  = "enumerate"
+	methodPairs      = jsonPairsName
+	methodZip        = "zip"
+	methodIntersect  = "intersect"
+	methodUnion      = "union"
+	methodDiff       = "diff"
+	methodGroupBy    = "groupBy"
+	methodToMap      = "toMap"
+	methodJoin       = "join"
+	methodAny        = "any"
+	methodAll        = "all"
+	methodCount      = "count"
+	methodIsUnique   = "isUnique"
+	methodSum        = "sum"
+	methodMin        = "min"
+	methodMax        = "max"
+	methodMinBy      = "minBy"
+	methodMaxBy      = "maxBy"
+	methodGet        = "get"
+	methodFind       = "find"
+	methodAt         = "at"
+	methodKeys       = "keys"
+	methodValues     = "values"
+	methodActive     = "active"
+	methodStartsWith = "startsWith"
+	methodEndsWith   = "endsWith"
+	methodSplit      = "split"
+	methodTrim       = "trim"
+	methodLower      = "lower"
+	methodUpper      = "upper"
+	methodReplace    = "replace"
+	methodMatches    = "matches"
+)
+
+// Parameter names of the built-ins.
+const (
+	paramX       = "x"
+	paramY       = "y"
+	paramA       = "a"
+	paramB       = "b"
+	paramF       = "f"
+	paramI       = "i"
+	paramK       = "k"
+	paramS       = letterS
+	paramRe      = "re"
+	paramSep     = "sep"
+	paramPred    = "pred"
+	paramOther   = "other"
+	paramKeyF    = "keyF"
+	paramValF    = "valF"
+	paramLo      = "lo"
+	paramHi      = "hi"
+	paramFrom    = "from"
+	paramNext    = "next"
+	paramXs      = "xs"
+	paramAt      = methodAt
+	paramMessage = "message"
+)
+
+// compoundOps is the operator of each compound assignment (TYPES.md §7.1).
+var compoundOps = map[syntax.TokenKind]syntax.TokenKind{
+	syntax.TokAddAssign: syntax.TokPlus, syntax.TokSubAssign: syntax.TokMinus,
+	syntax.TokMulAssign: syntax.TokStar, syntax.TokDivAssign: syntax.TokSlash,
+}
+
+// arithRow is a row of the operator table of TYPES.md §7.1 on scalars.
+type arithRow struct {
+	ka, kb types.Kind
+	ops    map[syntax.TokenKind]bool
+	result types.Type
+}
+
+var (
+	allArith = map[syntax.TokenKind]bool{syntax.TokPlus: true, syntax.TokMinus: true, syntax.TokStar: true, syntax.TokSlash: true, syntax.TokPercent: true}
+	fourOps  = map[syntax.TokenKind]bool{syntax.TokPlus: true, syntax.TokMinus: true, syntax.TokStar: true, syntax.TokSlash: true}
+	addSub   = map[syntax.TokenKind]bool{syntax.TokPlus: true, syntax.TokMinus: true}
+	mulOnly  = map[syntax.TokenKind]bool{syntax.TokStar: true}
+	divOnly  = map[syntax.TokenKind]bool{syntax.TokSlash: true}
+	mulDiv   = map[syntax.TokenKind]bool{syntax.TokStar: true, syntax.TokSlash: true}
+	plusOnly = map[syntax.TokenKind]bool{syntax.TokPlus: true}
+)
+
+var arithRows = []arithRow{
+	{ka: types.Int, kb: types.Int, ops: allArith, result: types.IntType},
+	{ka: types.Float, kb: types.Float, ops: fourOps, result: types.FloatType},
+	{ka: types.Duration, kb: types.Duration, ops: addSub, result: types.DurationType},
+	{ka: types.Duration, kb: types.Int, ops: mulDiv, result: types.DurationType},
+	{ka: types.Int, kb: types.Duration, ops: mulOnly, result: types.DurationType},
+	{ka: types.Duration, kb: types.Duration, ops: divOnly, result: types.FloatType},
+	{ka: types.String, kb: types.String, ops: plusOnly, result: types.StringType},
+}
+
+// goKeywords are Go's keywords, which a Go package name may not be (CODEGEN.md §2.1).
+var goKeywords = map[string]bool{
+	"break": true, "case": true, "chan": true, "const": true, "continue": true, "default": true,
+	"defer": true, "else": true, "fallthrough": true, "for": true, "func": true, "go": true,
+	"goto": true, "if": true, "import": true, "interface": true, "map": true, "package": true,
+	"range": true, "return": true, "select": true, "struct": true, "switch": true, "type": true,
+	"var": true,
+}
+
+// cppKeywords are C++20's keywords and alternative tokens, which a namespace may not use.
+var cppKeywords = map[string]bool{
+	"alignas": true, "alignof": true, "and": true, "and_eq": true, "asm": true, "auto": true,
+	"bitand": true, "bitor": true, "bool": true, "break": true, "case": true, "catch": true,
+	"char": true, "char8_t": true, "char16_t": true, "char32_t": true, "class": true, "compl": true,
+	"concept": true, "const": true, "consteval": true, "constexpr": true, "constinit": true,
+	"const_cast": true, "continue": true, "co_await": true, "co_return": true, "co_yield": true,
+	"decltype": true, "default": true, "delete": true, "do": true, "double": true,
+	"dynamic_cast": true, "else": true, "enum": true, "explicit": true, "export": true,
+	"extern": true, "false": true, "float": true, "for": true, "friend": true, "goto": true,
+	"if": true, "inline": true, "int": true, "long": true, "mutable": true, "namespace": true,
+	"new": true, "noexcept": true, "not": true, "not_eq": true, "nullptr": true, "operator": true,
+	"or": true, "or_eq": true, "private": true, "protected": true, "public": true, "register": true,
+	"reinterpret_cast": true, "requires": true, "return": true, "short": true, "signed": true,
+	"sizeof": true, "static": true, "static_assert": true, "static_cast": true, "struct": true,
+	"switch": true, "template": true, "this": true, "thread_local": true, "throw": true,
+	"true": true, "try": true, "typedef": true, "typeid": true, "typename": true, "union": true,
+	"unsigned": true, "using": true, "virtual": true, "void": true, "volatile": true,
+	"wchar_t": true, "while": true, "xor": true, "xor_eq": true,
+}
+
+const (
+	openBrace      = "{"
+	closeBrace     = "}"
+	newline        = "\n"
+	manyPaths      = 2 // E1903 needs to know only "more than one"
+	maxLiteralText = 40
+
+	elidedLiteral sourceText = "{ … }"
+)

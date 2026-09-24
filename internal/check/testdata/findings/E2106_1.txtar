@@ -1,0 +1,11 @@
+TYPES.md §3.2: two declarations with one name.
+-- a/a.canon --
+package a
+
+local const X = 1
+local const X = 2
+-- findings.txt --
+error[E2106]  a/a.canon:4:13
+  X is declared twice (first at a/a.canon:3)
+
+1 error, 0 warnings in 1 package (…)

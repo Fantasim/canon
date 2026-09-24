@@ -1,0 +1,68 @@
+TYPES.md §4.1, §5.1, §6.6, §11.4: bare keys in membership, narrowed calls and op=, facts on either side, `??` against its expected type, a brace literal for a dependent value.
+-- a/a.canon --
+package a
+
+local record Flag {
+  label: String
+}
+
+local let flags: table Flag = {
+  blocking { label: "b" }
+  sensitive { label: "s" }
+}
+
+local fn keys() -> Bool {
+  return blocking in flags and flags.contains(sensitive) and flags.indexOf(blocking) != none
+}
+
+local fn call(g: (fn(Int) -> Int)?) -> Int {
+  if g != none {
+    return g(1)
+  }
+  return 0
+}
+
+local fn bump(start: Int?) -> Int {
+  var x = start
+  if x != none {
+    x += 1
+  }
+  return 0
+}
+
+local fn right(x: Int?) -> Int {
+  if 3 == x {
+    return x
+  }
+  if none != x {
+    return x
+  }
+  return 0
+}
+
+local fn coalesce(a: Int?, b: Int?) -> Int? {
+  let n: Int? = a ?? b
+  return n
+}
+
+local enum K { point, label }
+
+local record Point {
+  x: Int
+}
+
+local record Ev {
+  k: K
+}
+
+local type P(e: Ev) = match e.k {
+  point => Point
+  label => String
+}
+
+local record Mark {
+  ev: Ev
+  at: P(ev)
+}
+
+local let mark: Mark = { ev: { k: point }, at: { x: 1 } }

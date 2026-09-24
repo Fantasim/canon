@@ -1185,12 +1185,12 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     values (unknown holder and unknown value); retirements do not count. `Update` only adds.
     `E6004` needs `eval`'s layer application. Reason: every violation reported once.
 
-150. **The M1 checker folds through `check.LiteralFolder` until `eval.NewFolder` exists.**
-    `check.Check` keeps §4.7's signature; a nil `fold` is `check.LiteralFolder`, which folds a
-    literal, a parenthesized one, and the name of a `const` whose initializer folds, and returns
-    false with no finding for anything else (the declaration is then broken). `build.Checker`
-    (DECISIONS 145) may bind it until the evaluator lands. Reason: refinement bounds must fold in
-    phase 2, and teamboard's are all literals; the evaluator stays the one evaluator.
+150. **`check.Check` folds only through the Folder it is given.** A nil `bags` or `fold` is API
+    misuse: `Check` returns nil (IMPLEMENTATION-PLAN §4.7 keeps the signature, so there is no
+    error to return); `build` binds `eval.NewFolder`. The literal folder is a fixture of `check`'s
+    tests only (§4.7: "tests of `check` pass a fixture folder that knows only literals"). A fold
+    that fails without a finding in the owner's bag is `E3015` at the expression, so no
+    declaration breaks silently. Reason: the evaluator stays the one evaluator.
 
 151. **What imports bind.** `import p` binds the last segment of `p` (SPEC §3's `import shared.ui
     // use qualified: ui.Tone`), `import p as q` binds `q`, `import p { A }` binds only `A`. Every
@@ -1214,8 +1214,8 @@ Choices made while Louis was away are listed here, each with its reason, so he c
 153. **Resolution details TYPES leaves open.** Level 1 of `ref T` (§10.2) counts the record whose
     field holds the ref as containing itself, and containment follows tables too. `.id` and
     `.retired` are members of a record exactly when some table of the program has it as its
-    element (the condition of `E2105`). `E2102`'s hint is the name in scope at edit distance ≤ 2
-    and shorter than the typed one, ties by byte order. `E2101` names the member qualified by its
+    element (the condition of `E2105`). `E2102`'s hint is the other name in scope at the smallest edit
+    distance, 1 or 2 and below the typed name's length, ties by byte order. `E2101` names the member qualified by its
     type's declared name (`Tone.warning`), as the user writes it. Reason: the strictest reading
     that keeps every example well typed.
 
@@ -1264,10 +1264,12 @@ Choices made while Louis was away are listed here, each with its reason, so he c
 161. **Gaps the checker leaves strict.** `_` outside a widget parameter and a lone literal type are
     `E3002` although no expected/found pair fits the message (it prints `_`). A map literal key
     written `name:` that is a symbolic key of a collection with dynamic keys, or of a dependent
-    key, has no `Info` entry: `Keys` and `Symbols` are keyed by expression and the key is an
-    `Ident` (contract gap). A record parameter whose type is neither a record nor a ref has no
-    code (TYPES §11.1), nor has an `@codes` member without a value; a type-function result whose
-    refinement depends on a parameter is not yet `E3803`.
+    key, and an amend segment `.k` naming a new key or an entry of a table with dynamic keys,
+    have no `Info` entry: `Keys` and `Symbols` are keyed by expression and those keys are
+    `Ident`s (contract gap). A record parameter whose type is neither a record nor a ref has no
+    code (TYPES §11.1). A `@codes` member without a value is `E3201` with the value `none`; a
+    type-function result refinement naming a parameter is `E3803`'s `argument` variant (§11.2
+    has no variant of its own).
 
 162. **`E7109` locates the offending character and quotes it.** The span is the first character
     at which the text stops being JSON (zero width at the end of the source), the `detail` is
@@ -1302,9 +1304,10 @@ Choices made while Louis was away are listed here, each with its reason, so he c
 
 166. **The formatter's entry points.** `format.Source(src, kind, bag)` parses with the file
     kind the caller gives and returns `ErrSyntax` when `bag` holds an error of that file other than
-    `E1123` (a lone BOM is removed, FORMATTER §1); `format.File` prints a tree that parsed without
-    error. Reason: the caller (`api.Format`, `canon fmt`) builds its `*SyntaxError` from the bag,
-    and only it knows whether a `project.canon` is the project root's.
+    `E1123` (a lone BOM is removed, FORMATTER §1); `format.File(tree) ([]byte, error)` prints a
+    tree and returns `ErrSyntax`, never panics, for a tree holding a `Bad` node or an empty node
+    (an error the lexer alone reports leaves a whole tree, which only `Source` refuses). Reason: the caller (`api.Format`, `canon fmt`) builds its `*SyntaxError` from the bag, and
+    only it knows whether a `project.canon` is the project root's.
 
 167. **Comments sit outside their node's groups.** A node's own-line and trailing comments are
     printed around the node's groups, so a trailing comment breaks the lists enclosing its item but
@@ -1313,27 +1316,164 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     the comma precedes an item's trailing comment. Reason: §7.1 does not say which group owns a
     comment's hard break; inside the item it would move every commented field's annotations.
 
-168. **Comment placement FORMATTER §8.2 leaves open.** An own-line comment inside a construct
-    (before `else`, a `.` step, an operator, a value) starts a continuation line one level deeper,
-    and the token after an own-line comment takes that comment's indentation; after a trailing line
-    comment where the layout has no break point, the next token continues one level deeper. A block
-    comment spanning lines after a token, with what follows it on its line, leads the next token;
-    comments that shared a line keep sharing it; a one-line block comment on its own line stays
-    there. Every line of a block comment loses its trailing blanks (§2; "byte for byte" is read as
-    "not re-indented"). A dropped token's comments (a comma, the colon of project map sugar) go to
-    its neighbours: trailing ones to the token before, own-line ones to the token after. Reason:
-    the strictest reading that keeps the tree, every comment and idempotence (fuzzed, and tested by
-    injecting a comment at every position of every example).
+168. **Comment placement FORMATTER §8 leaves open.** A comment ending a line inside a
+    construct, or an own-line comment there, puts the break before the next token: an operator
+    starts the continuation line with its operand (`a // c` / `  + b`), an `else` goes one level
+    deeper with its block, whose `}` aligns with it; other own-line comments start a continuation
+    line one level deeper and the token after one takes its indentation. A one-line block comment
+    followed on its line by code stays inline before it (§8.2 over §8.1), with one space on each
+    side of every inline block comment; a block comment spanning lines after a token leads the next
+    token, with what follows it on its line, on a line of its own; comments that shared a line keep
+    sharing it. Every line of a block comment loses its trailing blanks (§2; "byte for byte" is
+    read as "not re-indented"). A dropped comma leaves its comments to its neighbours: its trailing
+    ones follow the separator written again after the token before (after the item in a broken
+    brace list) when the comma shared that token's line, else they lead the next token on a line
+    of their own. The colon of `key: { … }` in `project.canon` is kept when a comment follows it.
+    Reason: the strictest reading that keeps the tree, every comment in order at its token, and
+    idempotence (fuzzed, and tested by injecting a comment at every position of every example).
 
 169. **Layout details FORMATTER §6–§7 leave open.** Hugging applies to a lone positional argument
-    whose parentheses hold no comment. A postfix chain is its primary expression then its steps;
+    with no comment on its parentheses or at its edges. A postfix chain is its primary expression,
+    the steps before its first `.`/`?.` step (kept on the head's line, §3), then its other steps;
     with two calls or more a break point stands before every `.`/`?.` step, field steps included.
-    An empty statement block is `{}` and does not break its if chain. Type aliases and match-type
-    arms use rule A; expressions inside a type (refinements, `where`, dependent-map domains) are
-    flat, like annotation arguments. A range whose upper bound starts with `.` keeps a space after
-    the operator (`a...x` would lex as `...`). The names in an import's braces keep no blank line
-    (§4's import block). Reason: the literal readings; the range space is the one spot where "no
-    spaces" would change the tokens.
+    An empty statement block is `{}` and does not break its if chain; a comment between a list's
+    brackets breaks it (§6.1). Type aliases and match-type arms use rule A; expressions inside a
+    type (refinements, `where`, dependent-map domains) are flat, like annotation arguments, whose
+    comma precedes a trailing comment and whose own-line comments are indented one level. Rule A
+    step 3's "fits on a new line" measures the value flat at the deeper indentation followed by
+    the rest of that line, as §7.1's `fits` does. A range whose upper bound starts with `.` keeps a
+    space after the operator (`a...x` would lex as `...`). The names in an import's braces keep no
+    blank line (§4's import block). Reason: the literal readings; the range space is the one spot
+    where "no spaces" would change the tokens.
+
+170. **Groups holding a single-line bit keep their holder's mode in `fits` (FORMATTER §7.1).**
+    §7.1 counts a group met after the one being decided as flat unless it holds a hard line break.
+    With §6.1's single-line bit that is not idempotent (§1), as fuzzing showed: on one line and too
+    wide, `fn f(a: A) -> A { … }` breaks its parameters, the block counting flat, then the block
+    breaks too; the second run finds the block broken and keeps the parameters flat. A group that
+    holds a brace list, a block or an if chain (a group whose layout reads a single-line bit) is
+    counted in the mode of the command holding it, broken if it holds a hard line break; every
+    other group follows §7.1 literally, so a later width-only group still counts flat (`(a, b) =>
+    value` breaks its parameters when the flat value does not fit). `fits` meets a broken rule-A
+    group as the printer does (step 3 ends the line after the operator). All examples stay fixed
+    points and 10 minutes of fuzzing find no non-idempotent input. Gap for Louis: §7.1's parenthesis
+    could read "a group met in rest that holds a brace list counts in the mode of the command
+    holding it; any other counts as FLAT unless it contains a hardline".
+
+171. **Expression details the part-B review settled (TYPES §5–§12).** Parentheses are
+    transparent: checked once, a parenthesis's `Types` is its content's, `Conv` sits on the
+    innermost node, facts see through them. A brace literal against a dependent union (§11.4) is
+    classified against the first branch that classifies it, in declaration order (the body, then
+    the arms): §5.2 has no row (gap). A join (§6.4) types only a branch's own `none`, `[]` or
+    `{}`; one nested deeper is `E3008`. `[].sum()` without an expected type is `E3314`.
+    `s.matches(e)` with a non-regex `e` is `E3007` (`operator matches is not defined for String
+    and T`), a parameter given by position and by name `E3004` `many` at the named argument, a
+    binder in an arm of several patterns `E3603` at the binder, `Int` ordered against `Float`
+    `E3310` with the right operand's type: no code or variant names them (gaps). A free built-in
+    type parameter prints as `_`, a bound one as its type; a constraint failure is reported at
+    the argument that bound it (`E3403` when it holds for `T` of a `T?`, `E3310` for an ordering
+    constraint, else `E3002` against a type that meets it). `E3002`'s found side for a literal
+    is its source text when it fits one line of 40 bytes, else `{ … }`. Reason: one finding per
+    mistake, at the node written.
+
+172. **Declaration details the part-A review settled.** A cycle between `const`s breaks them with
+    no finding: `eval` finds the chain through their initializers' `Uses` and reports `E4301`
+    (EVALUATION §3.2), which `check` does not own. An amend path steps through `T?` (`none` is
+    `E1905` when applied, §9.3) but never through a `ref` (`E1905`: §9.2 has no row); `E1908`
+    compares paths of the same let; a second layer file of one name is still checked; `[k]` on a
+    table or keyed list reached by record fields reads a bare `k` as a key. A dependent value is
+    assignable only where the same type function is expected (`E3804`); a ref is assignable to a
+    literal union over it. `pairs:` elements follow WIRE §4.1 (a translated `export fn` has a
+    non-finite parameter: not `Bool`, an enum or a ref into a table). `E1903` containment is
+    transitive (a record holding the input record through fields counts) and covers every type
+    written in the package, bodies, aliases and signatures included; paths are counted once per
+    record, a cycle reaching the record counting as many. Keyed-list keys written twice (literal
+    elements, `entry t.k`) are `E3102` statically, the `DECISIONS 155` way; an entry key is an
+    `INT` only for an integer key field, else `E3002`. An asset root is any path of WIRE §2.1,
+    file-relative included; an unknown `@root` is `E7003`, as `project` words it. `load.text`
+    needs a `String` type, `load.csv` without `header: true` needs `[[String]]` (`E7116`). An
+    interpolated emit string is `E1132`, which the parser does not reach there. A `Name`
+    argument is qualified only for another package (ERRORS §1.3); a static `E3201`/`E3204`/
+    `E3205` relates the field or let it is stored in (EVALUATION §4.3); `E2006` writes the project
+    directory as `.`. A package qualifier has no `Types` entry (DECISIONS 152).
+
+173. **`wire` decodes, `load` reads.** `wire.Decoder{Bag, Pkg, Host, Partial, Coll}` has
+    `Decode(ctx, Selection, t)` (a JSON value, or what an `at:` path with `*` selected, each `*`
+    level a map or list of the items below it), `Dir(ctx, []File, t)` (load.dir: the files'
+    selections and stems) and `CSV(ctx, header, rows, t)` (cells already split by RFC 4180; a nil
+    header is `[[String]]`). Each returns the value, `ok` (false after any finding: the value is
+    poisoned, WIRE §3.4) and a Go error for a misuse the checker or `load` should have refused: a
+    type with no wire form met while decoding (`Range`, a function, `Kind(V)`, a case type), a `*`
+    level whose type is no map or list (`ErrStar`), a default or dereference without a host.
+    `wire.Host` is `Default(ctx, f, Instance, via)` (defaults are expressions, which only the
+    evaluator runs; an optional field without default or `= none` needs no host) and `Deref(ctx,
+    ref)` (a discriminant read through a ref); the host reports its own false results. Files,
+    globs, `at:` (`E7106`), CSV syntax (`E7113`), encodings (`E7105`) and `W7107` stay in `load`.
+    Reason: one mapping, the file forms around it in the package that owns them (§3).
+
+174. **What decoding reports, and where.** Every finding carries the value's RFC 6901 pointer (a
+    key's finding: its member value's) and no value path, which a keyed-list element's key,
+    decoded after the failing field, would need. Besides WIRE's codes it reports the TYPES codes
+    the mapping meets: `E3201` (integer, code key or Duration out of range, a token past `Int`
+    quoted as written), `E3202` (a float overflowing its width), `E3301`, `E3302` (at the object,
+    or the header row for CSV), `E3312`, `E3102` (two load.dir files with one stem, at `File.At`),
+    `E7104` (a repeated CSV column), `E7116` (a CSV column naming a field no cell can hold,
+    `load.csv`). Keyed-list keys (`E3102`), refs (`E3501`), retired members and cases (`E3506`)
+    and assets stay stage B's (DECISIONS 146). `E7110`'s `int`, `bits` and `retired` variants
+    quote a scalar's JSON; a container there, and a `null` path intermediate, get the `kind`
+    variant, whose type for an intermediate is its record's. `E7111`'s hint is the wire value of
+    the member whose Canon name the text is, else the nearest wire value within 2 edits and
+    shorter than the text, ties by byte order (as `E2102`, DECISIONS 153). Two object keys
+    decoding to one key (`0` and `-0`, the only case) are `E3317` quoting both as written. A table
+    key or stem is a `WORD` (`^[A-Za-z_][A-Za-z0-9_]*$`, not `_`), as table literals accept
+    (TYPES §9.3); a root table, like a root record, ignores `$schema` (§5.12), a root map does
+    not (its keys are data). A whole decoded table or keyed list is `Decoder.Coll`; a field collection some
+    ref of the type targets is that interned collection, its owner the enclosing instance, as a
+    level-1 ref's (RES-03); any other gets a collection of its own. Numbers are exact decimals
+    whose exponent saturates, never `big.Rat` on a token (`1e999999999` would exhaust memory).
+    Reason: WIRE §3.4's "every mismatch", with the codes TYPES already owns.
+
+175. **A dependent value on a `Never` branch decodes as a symbol; verification rejects it.**
+    WIRE §5.9 and §9 give `E3802` to a present value there, ERRORS gives `E3802` to `verify`, and
+    TYPES §11.6 resolves dependent values in verification. The decoder computes every branch
+    (reading discriminants through `Host.Deref`) and decodes against it; on `Never` it keeps the
+    value as a `value.Symbol` (a string's text, else its compact JSON), which stage B rejects as
+    a name the computed type lacks. Gap: `verify` does not evaluate dependent types yet
+    (DECISIONS 147), so until it does such a value is not reported; `E3801` likewise waits.
+    Reason: one owner per code, and a decoded value is what stage B verifies.
+
+176. **CSV cells (WIRE §6.6).** An integer cell is a Canon `INT` (underscores between digits, no
+    leading zero, `0x`, `0b`) with an optional `-`; a float cell an `INT` or `FLOAT`; a Duration
+    cell either, exact, in the field's unit; a code cell or integer ref key `-?(0|[1-9][0-9]*)`.
+    An unknown wire value is `E7111` and a range `E3201`/`E3202`/`E3203` as in JSON; only a cell
+    that is no literal of its type is `E7108`. A cell equal to a string `none:` marker's text, or
+    to another marker's JSON, is `none`. A column names a field by its one-key wire name (path,
+    inline and pairs fields have none). A `table R` without a `$id` column is `E3302` naming
+    `$id` at the header (gap: no code says it). Reason: the strictest reading of each row of the
+    cell table.
+
+177. **Checker details the re-reviews settled.** The extensions of `asset(…, ext: [dds, png])`
+    written as identifiers name no object, like an import path's leading parts (DECISIONS 151,
+    152): `Symbols` holds only `IdentExpr`s. A WORD key of `entry t.k` is a member of an enum key
+    field (`E3003` otherwise), a key of a ref key field (checked by `verify`), a `String`, or
+    `E3002` (`expected Int, found String`). A name no scope has, checked against the error type,
+    is silent (TYPES §1): it may be a contextual name of the type that failed. A join with an
+    erroneous branch is the error type with no finding. `{ ...x }` with no expected type and `x`
+    not a record is `E3305`. In `p == q` with `p: P(*)`, a bare `q` is read against `P(*)` and
+    so stays symbolic even when a field `q` is in scope (§4.1 step 1 comes before scope; gap
+    for Louis: §11.4 may mean the field).
+
+178. **A multiline string keeps its value over FORMATTER §2.** Re-basing (§3) replaces the old
+    prefix of each content line; a content line of blanks longer than the prefix keeps what follows
+    it, and trailing blanks of content lines stay, since GRAMMAR §2.6 makes them part of the value
+    and §1 forbids changing it. So a line inside a multiline string may end with a blank, against
+    §2's "no line ends with a space or a tab". Gap for Louis: §2 could except string content.
+
+179. **A brace-list item starting with `.` keeps a comma before it.** In a broken list (FORMATTER
+    §6.1: no commas, one item per line) a line starting with `.`, such as a shorthand lambda key in
+    `{ 0: 0, .a: [] }` or a `search` item, continues the line before (GRAMMAR §3.1 rule 3), and §10
+    forbids adding parentheses; the item before it ends with `,`, a separator run. Found by fuzzing.
+    Gap for Louis: §6.1 could state this exception.
 
 ## Still open
 

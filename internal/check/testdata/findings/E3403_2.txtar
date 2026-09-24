@@ -1,0 +1,17 @@
+TYPES.md §6.6: an assignment kills the facts of a var, the right side checked first.
+-- a/a.canon --
+package a
+
+local fn f(start: Int?, next: Int?) -> Int {
+  var at = start
+  if at != none {
+    at = next
+    return at
+  }
+  return 0
+}
+-- findings.txt --
+error[E3403]  a/a.canon:7:12
+  expected Int, found Int?: prove it is present (!= none, !, ??)
+
+1 error, 0 warnings in 1 package (…)

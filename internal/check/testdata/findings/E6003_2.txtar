@@ -1,0 +1,14 @@
+LOCK.md §1: @stable on a field of a record that no stable table holds.
+-- a/a.canon --
+package a
+
+local record Row {
+  code: Int @stable
+}
+
+local let rows: table Row = {}
+-- findings.txt --
+error[E6003]  a/a.canon:4:13
+  @stable needs a field of the element of a stable table
+
+1 error, 0 warnings in 1 package (…)

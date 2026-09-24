@@ -1,0 +1,27 @@
+GRAMMAR.md §5.3: an entry key is an INT only for a keyed list whose key field is an integer.
+-- a/a.canon --
+package a
+
+local record Row {
+  id: Int
+  label: String
+}
+
+local record Named {
+  label: String
+}
+
+local let rows: [Row] keyed by id = []
+
+local let named: table Named = {}
+
+entry rows.seven { label: "a" }
+entry named.7 { label: "b" }
+-- findings.txt --
+error[E3002]  a/a.canon:16:12
+  expected Int, found String
+
+error[E3002]  a/a.canon:17:13
+  expected String, found Int
+
+2 errors, 0 warnings in 1 package (…)

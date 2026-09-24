@@ -1,0 +1,17 @@
+STDLIB.md §1.1: a constraint on a type parameter is reported at the argument that bound it.
+-- a/a.canon --
+package a
+
+local fn f(a: Bool, b: Bool, xs: [Bool]) -> Int {
+  let m = min(a, b)
+  let s = xs.sortBy(v => v)
+  return 1
+}
+-- findings.txt --
+error[E3002]  a/a.canon:4:15
+  expected Int, found Bool
+
+error[E3310]  a/a.canon:5:21
+  sortBy needs an orderable type, found Bool
+
+2 errors, 0 warnings in 1 package (…)

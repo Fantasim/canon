@@ -1,0 +1,41 @@
+10:6 Ident Tone def TypeName sovcommon.ui.Tone: sovcommon.ui.Tone
+11:3 Ident warning def Member sovcommon.ui.warning: sovcommon.ui.Tone
+12:3 Ident info def Member sovcommon.ui.info: sovcommon.ui.Tone
+13:3 Ident accent def Member sovcommon.ui.accent: sovcommon.ui.Tone
+14:3 Ident success def Member sovcommon.ui.success: sovcommon.ui.Tone
+15:3 Ident neutral def Member sovcommon.ui.neutral: sovcommon.ui.Tone
+16:3 Ident danger def Member sovcommon.ui.danger: sovcommon.ui.Tone
+17:3 Ident series_1 def Member sovcommon.ui.series_1: sovcommon.ui.Tone
+17:14 StringLit : String
+18:3 Ident series_2 def Member sovcommon.ui.series_2: sovcommon.ui.Tone
+18:14 StringLit : String
+19:3 Ident series_3 def Member sovcommon.ui.series_3: sovcommon.ui.Tone
+19:14 StringLit : String
+20:3 Ident series_4 def Member sovcommon.ui.series_4: sovcommon.ui.Tone
+20:14 StringLit : String
+21:3 Ident series_5 def Member sovcommon.ui.series_5: sovcommon.ui.Tone
+21:14 StringLit : String
+22:3 Ident series_6 def Member sovcommon.ui.series_6: sovcommon.ui.Tone
+22:14 StringLit : String
+27:6 Ident Icon def TypeName sovcommon.ui.Icon: sovcommon.ui.Icon
+28:3 Ident alert_triangle def Member sovcommon.ui.alert_triangle: sovcommon.ui.Icon
+28:20 StringLit : String
+29:3 Ident archive def Member sovcommon.ui.archive: sovcommon.ui.Icon
+30:3 Ident bar_chart def Member sovcommon.ui.bar_chart: sovcommon.ui.Icon
+30:15 StringLit : String
+31:3 Ident check def Member sovcommon.ui.check: sovcommon.ui.Icon
+32:3 Ident columns def Member sovcommon.ui.columns: sovcommon.ui.Icon
+33:3 Ident database def Member sovcommon.ui.database: sovcommon.ui.Icon
+34:3 Ident gamepad def Member sovcommon.ui.gamepad: sovcommon.ui.Icon
+35:3 Ident globe def Member sovcommon.ui.globe: sovcommon.ui.Icon
+36:3 Ident hand def Member sovcommon.ui.hand: sovcommon.ui.Icon
+37:3 Ident inbox def Member sovcommon.ui.inbox: sovcommon.ui.Icon
+38:3 Ident layers def Member sovcommon.ui.layers: sovcommon.ui.Icon
+39:3 Ident lightbulb def Member sovcommon.ui.lightbulb: sovcommon.ui.Icon
+40:3 Ident lock def Member sovcommon.ui.lock: sovcommon.ui.Icon
+41:3 Ident monitor def Member sovcommon.ui.monitor: sovcommon.ui.Icon
+42:3 Ident package def Member sovcommon.ui.package: sovcommon.ui.Icon
+43:3 Ident scale def Member sovcommon.ui.scale: sovcommon.ui.Icon
+44:3 Ident server def Member sovcommon.ui.server: sovcommon.ui.Icon
+45:3 Ident shield def Member sovcommon.ui.shield: sovcommon.ui.Icon
+46:3 Ident terminal def Member sovcommon.ui.terminal: sovcommon.ui.Icon

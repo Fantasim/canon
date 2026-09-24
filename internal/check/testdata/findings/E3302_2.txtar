@@ -1,0 +1,17 @@
+TYPES.md §8.2: a bare case with a required field.
+-- a/a.canon --
+package a
+
+local variant V {
+  one {
+    n: Int
+  }
+  two
+}
+
+local let v: V = one
+-- findings.txt --
+error[E3302]  a/a.canon:10:18
+  a.V.one needs field n
+
+1 error, 0 warnings in 1 package (…)

@@ -1,0 +1,10 @@
+TYPES.md §5.2: a brace literal whose kind cannot be decided.
+-- a/a.canon --
+package a
+
+local let x = { a: 1 }
+-- findings.txt --
+error[E3305]  a/a.canon:3:15
+  cannot tell what this { … } is; give it a type
+
+1 error, 0 warnings in 1 package (…)

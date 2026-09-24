@@ -1,0 +1,8 @@
+TYPES.md §3.1, API.md §1.3: a file at the project root declaring a package; the root displays as `.`.
+-- x.canon --
+package a
+-- findings.txt --
+error[E2006]  x.canon:1:9
+  a file in . declares package a, which is neither that directory's package nor an ancestor of it
+
+1 error, 0 warnings in 1 package (…)

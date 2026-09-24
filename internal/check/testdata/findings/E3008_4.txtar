@@ -1,0 +1,17 @@
+TYPES.md §1, §6.4: a join with an erroneous branch reports nothing more: one E3008, one E2102.
+-- a/a.canon --
+package a
+
+local fn f(c: Bool) -> Int {
+  let a = if c { [] } else { [none] }
+  let b = if c { [] } else { zork }
+  return 1
+}
+-- findings.txt --
+error[E3008]  a/a.canon:4:30
+  cannot infer the type of this expression; add a type
+
+error[E2102]  a/a.canon:5:30
+  unknown name zork
+
+2 errors, 0 warnings in 1 package (…)

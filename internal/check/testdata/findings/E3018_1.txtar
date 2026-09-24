@@ -1,0 +1,16 @@
+TYPES.md §12.7: two names over a list of Int.
+-- a/a.canon --
+package a
+
+local fn f() -> Int {
+  var n = 0
+  for a, b in [1, 2] {
+    n += 1
+  }
+  return n
+}
+-- findings.txt --
+error[E3018]  a/a.canon:5:15
+  for a, b in needs a map or pairs, found [Int]
+
+1 error, 0 warnings in 1 package (…)

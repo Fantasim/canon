@@ -1,0 +1,25 @@
+EVALUATION.md §9.1: a second layer file of one name is still resolved and type-checked.
+-- a/a.canon --
+package a
+
+local let port: Int = 1
+-- a/one.layer.canon --
+package a
+layer dev
+
+amend port {
+}
+-- a/two.layer.canon --
+package a
+layer dev
+
+amend nothing {
+}
+-- findings.txt --
+error[E1906]  a/two.layer.canon:2:7
+  package a declares layer dev twice (first at a/one.layer.canon:2)
+
+error[E2102]  a/two.layer.canon:4:7
+  unknown name nothing
+
+2 errors, 0 warnings in 1 package (…)

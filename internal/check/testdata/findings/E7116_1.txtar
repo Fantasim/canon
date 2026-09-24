@@ -1,0 +1,10 @@
+WIRE.md §6.1: load.dir into something that is not a collection.
+-- a/a.canon --
+package a
+
+local let x: Int = load.dir("@resource/x/*.json")
+-- findings.txt --
+error[E7116]  a/a.canon:3:20
+  load.dir cannot produce Int
+
+1 error, 0 warnings in 1 package (…)

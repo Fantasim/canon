@@ -1,0 +1,13 @@
+TYPES.md §12.3: a built-in function used as a value.
+-- a/a.canon --
+package a
+
+local fn f() -> Int {
+  let g: fn(Int) -> Int = abs
+  return g(1)
+}
+-- findings.txt --
+error[E3016]  a/a.canon:4:27
+  built-in abs cannot be used as a value; write a lambda
+
+1 error, 0 warnings in 1 package (…)

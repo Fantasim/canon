@@ -1,0 +1,17 @@
+TYPES.md §14: an input field read in a check.
+-- a/a.canon --
+package a
+
+local record Gen {
+  key: input String? from env "KEY"
+
+  check key != none else "no key"
+}
+
+/// The generator.
+let g: Gen = {}
+-- findings.txt --
+error[E3313]  a/a.canon:6:9
+  key is an input: it has no value at build time
+
+1 error, 0 warnings in 1 package (…)

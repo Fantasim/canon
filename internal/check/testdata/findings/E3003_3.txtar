@@ -1,0 +1,20 @@
+TYPES.md §9.3: `entry t.k` of a keyed list whose key field is an enum: k must be a member.
+-- a/a.canon --
+package a
+
+local enum Kind { a, b }
+
+local record Row {
+  kind: Kind
+  label: String
+}
+
+local let rows: [Row] keyed by kind = []
+
+entry rows.a { label: "x" }
+entry rows.nosuch { label: "y" }
+-- findings.txt --
+error[E3003]  a/a.canon:13:12
+  a.Kind has no member nosuch
+
+1 error, 0 warnings in 1 package (…)

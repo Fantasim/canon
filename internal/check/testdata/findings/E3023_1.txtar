@@ -1,0 +1,10 @@
+TYPES.md §7.4: a range refinement on Bool.
+-- a/a.canon --
+package a
+
+local let b: Bool(1..) = true
+-- findings.txt --
+error[E3023]  a/a.canon:3:19
+  refinement 1.. is not valid on Bool
+
+1 error, 0 warnings in 1 package (…)

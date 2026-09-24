@@ -1,0 +1,13 @@
+STDLIB.md §1.1, DECISIONS 171: a lambda of the wrong arity; free type parameters print as `_`.
+-- a/a.canon --
+package a
+
+local fn f(xs: [Int]) -> Int {
+  let ys = xs.map((a, b) => a)
+  return 1
+}
+-- findings.txt --
+error[E3002]  a/a.canon:4:19
+  expected fn(Int) -> _, found fn(_, _) -> _
+
+1 error, 0 warnings in 1 package (…)

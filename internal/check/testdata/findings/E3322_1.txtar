@@ -1,0 +1,10 @@
+TYPES.md §5.2: a map key given twice.
+-- a/a.canon --
+package a
+
+local let m: {String: Int} = { "a": 1, "a": 2 }
+-- findings.txt --
+error[E3322]  a/a.canon:3:40
+  key "a" is given twice
+
+1 error, 0 warnings in 1 package (…)

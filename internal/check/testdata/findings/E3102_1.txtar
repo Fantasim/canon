@@ -1,0 +1,22 @@
+TYPES.md §9.3: keys of a keyed list are unique across its literal and every entry; static when both are written.
+-- a/a.canon --
+package a
+
+local record Row {
+  id: Int
+  label: String
+}
+
+local let rows: [Row] keyed by id = [{ id: 7, label: "a" }, { id: 8, label: "b" }]
+
+entry rows.7 { label: "c" }
+entry rows.9 { label: "d" }
+entry rows.9 { label: "e" }
+-- findings.txt --
+error[E3102]  a/a.canon:10:12
+  key 7 is used twice (first at a/a.canon:8)
+
+error[E3102]  a/a.canon:12:12
+  key 9 is used twice (first at a/a.canon:11)
+
+2 errors, 0 warnings in 1 package (…)

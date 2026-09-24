@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("package A record A0{A: ref A@json(none:)}0")

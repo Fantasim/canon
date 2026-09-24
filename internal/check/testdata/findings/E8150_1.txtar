@@ -1,0 +1,15 @@
+WIRE.md §8.1: emit json to a file with two values.
+-- a/a.canon --
+package a
+
+/// One.
+let one: Int = 1
+/// Two.
+let two: Int = 2
+
+emit json { out: "@sovcommon/a.json", values: [one, two] }
+-- findings.txt --
+error[E8150]  a/a.canon:8:6
+  emit json out "@sovcommon/a.json" is a file but values has 2 elements
+
+1 error, 0 warnings in 1 package (…)

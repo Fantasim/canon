@@ -1,0 +1,14 @@
+TYPES.md §3.4: a local declared twice in one block.
+-- a/a.canon --
+package a
+
+local fn f() -> Int {
+  let x = 1
+  let x = 2
+  return x
+}
+-- findings.txt --
+error[E2107]  a/a.canon:5:7
+  x is already declared in this block
+
+1 error, 0 warnings in 1 package (…)

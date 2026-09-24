@@ -1,0 +1,15 @@
+TYPES.md §5.2: a brace literal led by a spread of a non-record has no kind to decide.
+-- a/a.canon --
+package a
+
+local fn xs() -> [Int] { return [1] }
+
+local fn f() -> Int {
+  let r = { ...xs() }
+  return 1
+}
+-- findings.txt --
+error[E3305]  a/a.canon:6:11
+  cannot tell what this { … } is; give it a type
+
+1 error, 0 warnings in 1 package (…)

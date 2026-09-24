@@ -1,0 +1,7 @@
+10:6 Ident Role def TypeName sovcommon.roles.Role: sovcommon.roles.Role
+11:3 Ident member def Member sovcommon.roles.member: sovcommon.roles.Role
+12:3 Ident gm_junior def Member sovcommon.roles.gm_junior: sovcommon.roles.Role
+13:3 Ident gm_senior def Member sovcommon.roles.gm_senior: sovcommon.roles.Role
+14:3 Ident maintainer def Member sovcommon.roles.maintainer: sovcommon.roles.Role
+15:3 Ident owner def Member sovcommon.roles.owner: sovcommon.roles.Role
+16:3 Ident admin def Member sovcommon.roles.admin: sovcommon.roles.Role

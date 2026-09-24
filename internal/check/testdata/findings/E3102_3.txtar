@@ -1,0 +1,24 @@
+TYPES.md §9.3: an enum key written twice: in the literal and an entry, and in two entries.
+-- a/a.canon --
+package a
+
+local enum Kind { a, b }
+
+local record Row {
+  kind: Kind
+  label: String
+}
+
+local let rows: [Row] keyed by kind = [{ kind: a, label: "z" }]
+
+entry rows.a { label: "x" }
+entry rows.b { label: "y" }
+entry rows.b { label: "w" }
+-- findings.txt --
+error[E3102]  a/a.canon:12:12
+  key a is used twice (first at a/a.canon:10)
+
+error[E3102]  a/a.canon:14:12
+  key b is used twice (first at a/a.canon:13)
+
+2 errors, 0 warnings in 1 package (…)

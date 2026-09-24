@@ -1,0 +1,12 @@
+TYPES.md §12.2: calling something that is not a function.
+-- a/a.canon --
+package a
+
+local fn f(n: Int) -> Int {
+  return n(1)
+}
+-- findings.txt --
+error[E3005]  a/a.canon:4:10
+  Int is not callable
+
+1 error, 0 warnings in 1 package (…)

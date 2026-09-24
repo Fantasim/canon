@@ -1,0 +1,12 @@
+TYPES.md §12.1: a bare return in a function.
+-- a/a.canon --
+package a
+
+local fn f() -> Int {
+  return
+}
+-- findings.txt --
+error[E3019]  a/a.canon:4:3
+  return in f needs a value of type Int
+
+1 error, 0 warnings in 1 package (…)

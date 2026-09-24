@@ -1,0 +1,17 @@
+TYPES.md §3.6: a record held by a table written only in a function body has reserved `id` and `retired`.
+-- a/a.canon --
+package a
+
+local record Row {
+  id: String
+}
+
+local fn count() -> Int {
+  let rows: table Row = {}
+  return rows.len()
+}
+-- findings.txt --
+error[E2105]  a/a.canon:4:3
+  id is reserved on table entries
+
+1 error, 0 warnings in 1 package (…)

@@ -1,0 +1,11 @@
+TYPES.md §13.1: two aliases referring to each other.
+-- a/a.canon --
+package a
+
+local type A = B
+local type B = A
+-- findings.txt --
+error[E3021]  a/a.canon:3:12
+  type alias A refers to itself
+
+1 error, 0 warnings in 1 package (…)

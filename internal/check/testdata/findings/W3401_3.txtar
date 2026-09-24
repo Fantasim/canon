@@ -1,0 +1,16 @@
+TYPES.md §6.5: ?. on a receiver segment that is never none.
+-- a/a.canon --
+package a
+
+local record R {
+  a: Int
+}
+
+local fn f(r: R) -> Int? {
+  return r?.a
+}
+-- findings.txt --
+warning[W3401]  a/a.canon:8:10
+  r is never none: ?. has no effect
+
+0 errors, 1 warning in 1 package (…)

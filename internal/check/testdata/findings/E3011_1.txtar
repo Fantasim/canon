@@ -1,0 +1,10 @@
+TYPES.md §9.2: a type that cannot be a map key.
+-- a/a.canon --
+package a
+
+local let m: {Bool: Int} = {}
+-- findings.txt --
+error[E3011]  a/a.canon:3:15
+  Bool cannot be a map key
+
+1 error, 0 warnings in 1 package (…)

@@ -1,0 +1,21 @@
+TYPES.md §6.6, §6.5: facts of a var assigned in a loop body are killed at its start, so arithmetic on it is on an optional.
+-- a/a.canon --
+package a
+
+local fn f(start: Int?, xs: [Int?]) -> Int {
+  var at = start
+  if at == none {
+    return 0
+  }
+  var n = 0
+  for x in xs {
+    n += at
+    at = x
+  }
+  return n
+}
+-- findings.txt --
+error[E3402]  a/a.canon:10:10
+  at may be none: use ?., !, ?? or test != none first
+
+1 error, 0 warnings in 1 package (…)

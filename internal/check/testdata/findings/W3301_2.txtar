@@ -1,0 +1,15 @@
+TYPES.md §16: a deprecated member used.
+-- a/a.canon --
+package a
+
+local enum E {
+  a
+  b @deprecated
+}
+
+local let e: E = b
+-- findings.txt --
+warning[W3301]  a/a.canon:8:18
+  b is deprecated
+
+0 errors, 1 warning in 1 package (…)

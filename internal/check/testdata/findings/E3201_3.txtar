@@ -1,0 +1,10 @@
+TYPES.md §8.1: every member of an enum with `@codes(T)` needs an integer value that fits T.
+-- a/a.canon --
+package a
+
+local enum Element @codes(UInt8) { FIRE = 1, WATER }
+-- findings.txt --
+error[E3201]  a/a.canon:3:46
+  none does not fit UInt8
+
+1 error, 0 warnings in 1 package (…)

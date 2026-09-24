@@ -1,0 +1,14 @@
+STDLIB.md §9.1: a function value interpolated.
+-- a/a.canon --
+package a
+
+local fn g(n: Int) -> Int { return n }
+
+local fn f() -> String {
+  return "{g}"
+}
+-- findings.txt --
+error[E4503]  a/a.canon:6:12
+  cannot format fn(Int) -> Int
+
+1 error, 0 warnings in 1 package (…)

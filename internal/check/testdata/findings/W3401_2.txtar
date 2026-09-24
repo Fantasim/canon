@@ -1,0 +1,12 @@
+TYPES.md §6.5: a none test on a value that is never none.
+-- a/a.canon --
+package a
+
+local fn f(n: Int) -> Bool {
+  return n != none
+}
+-- findings.txt --
+warning[W3401]  a/a.canon:4:10
+  n is never none: != has no effect
+
+0 errors, 1 warning in 1 package (…)

@@ -1,0 +1,10 @@
+WIRE.md §6.1: load without an expected type.
+-- a/a.canon --
+package a
+
+local let x = load("@resource/x.json")
+-- findings.txt --
+error[E7002]  a/a.canon:3:15
+  load needs an expected type here: annotate the let or the field
+
+1 error, 0 warnings in 1 package (…)

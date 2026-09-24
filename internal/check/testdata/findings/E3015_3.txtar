@@ -1,0 +1,14 @@
+IMPLEMENTATION-PLAN §4.7, TYPES.md §15: a bound the Folder cannot fold and did not report is E3015 (the fixture folder knows no arithmetic).
+-- a/a.canon --
+package a
+
+local const MAX = 4
+
+local record R {
+  n: Int(..MAX * 2)
+}
+-- findings.txt --
+error[E3015]  a/a.canon:6:12
+  this refinement bound must be a constant expression
+
+1 error, 0 warnings in 1 package (…)

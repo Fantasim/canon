@@ -1,0 +1,49 @@
+TYPES.md §6.6: the examples of flow narrowing, all well typed.
+-- a/a.canon --
+package a
+
+local record EtcJob {
+  id: String
+  jobBase: String?
+}
+
+local record Flag {
+  label: String
+  hint: String?
+}
+
+local record Tier {
+  totems: Bool
+}
+
+local fn lineage(etcJobs: [EtcJob], job: String) -> [String] {
+  var out: [String] = []
+  var at = etcJobs.first(j => j.id == job)
+  while at != none and at.jobBase != none {
+    out += [at.jobBase]
+    at = etcJobs.first(j => j.id == at.jobBase)
+  }
+  return out
+}
+
+local fn linkAccepts(link: String?, kind: String, families: {String: [String]}) -> Bool {
+  return link == none or kind in (families.get(link) ?? [link])
+}
+
+local fn totems(tier: Tier?) -> Bool {
+  if tier != none and not tier.totems {
+    return false
+  }
+  return true
+}
+
+local fn priorities(amps: [Flag]) -> [String] {
+  return [a.hint for a in amps if a.hint != none]
+}
+
+local fn label(f: Flag) -> String {
+  if f.hint == none {
+    return f.label
+  }
+  return f.hint
+}

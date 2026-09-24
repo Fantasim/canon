@@ -1,0 +1,15 @@
+LOCK.md §1: @stable on a field that is neither an integer type nor String.
+-- a/a.canon --
+package a
+
+local record Row {
+  on: Bool @stable
+}
+
+/// The rows.
+let rows: stable table Row = {}
+-- findings.txt --
+error[E6003]  a/a.canon:4:12
+  @stable field must be an integer type or String, not Bool
+
+1 error, 0 warnings in 1 package (…)

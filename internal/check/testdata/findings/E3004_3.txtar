@@ -1,0 +1,17 @@
+TYPES.md §12.2: an unknown argument name.
+-- a/a.canon --
+package a
+
+local fn f(a: Int) -> Int { return a }
+
+local fn g() -> Int {
+  return f(b: 1)
+}
+-- findings.txt --
+error[E3004]  a/a.canon:6:10
+  missing argument a in call to f
+
+error[E3004]  a/a.canon:6:12
+  unknown argument b in call to f
+
+2 errors, 0 warnings in 1 package (…)

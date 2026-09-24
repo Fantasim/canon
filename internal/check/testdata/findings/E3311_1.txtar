@@ -1,0 +1,12 @@
+TYPES.md §5.3: an Int expression where a Float is expected.
+-- a/a.canon --
+package a
+
+local fn f(n: Int) -> Float {
+  return n
+}
+-- findings.txt --
+error[E3311]  a/a.canon:4:10
+  n is an Int; write Float(n)
+
+1 error, 0 warnings in 1 package (…)

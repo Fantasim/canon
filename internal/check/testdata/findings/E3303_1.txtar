@@ -1,0 +1,19 @@
+TYPES.md §5.2: a spread of another type.
+-- a/a.canon --
+package a
+
+local record R {
+  a: Int
+}
+
+local record S {
+  a: Int
+}
+
+local let s: S = { a: 1 }
+local let r: R = { ...s }
+-- findings.txt --
+error[E3303]  a/a.canon:12:23
+  cannot spread a a.S into a a.R
+
+1 error, 0 warnings in 1 package (…)

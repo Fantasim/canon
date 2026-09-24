@@ -1,0 +1,21 @@
+TYPES.md §3.1: two imports of one file binding one name.
+-- a/a.canon --
+package a
+
+import b { X }
+import c { X }
+-- b/b.canon --
+package b
+
+/// X.
+const X = 1
+-- c/c.canon --
+package c
+
+/// X.
+const X = 2
+-- findings.txt --
+error[E2005]  a/a.canon:4:12
+  X is bound twice in this file (first at a/a.canon:3)
+
+1 error, 0 warnings in 3 packages (…)

@@ -6,9 +6,11 @@ import (
 	"math/big"
 
 	"github.com/fantasim/canonlang/internal/check"
+	"github.com/fantasim/canonlang/internal/diag"
+	"github.com/fantasim/canonlang/internal/project"
+	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
-	"github.com/fantasim/canonlang/internal/value"
 )
 
 // object is a fixture Object, as tests of later packages build them before the checker exists.
@@ -49,23 +51,36 @@ func Example() {
 	// Output: Let teamboard.limit Int Wrap UInt16?
 }
 
-// literals is the fixture folder tests of check pass: it knows only integer literals.
-type literals struct{}
-
-func (literals) Fold(_ context.Context, _ check.Object, e syntax.Expr, info *check.Info) (value.Value, bool) {
-	lit, ok := e.(*syntax.IntLit)
-	if !ok || !lit.Value.IsInt64() {
-		return nil, false
-	}
-	return &value.Int{V: lit.Value.Int64(), T: info.Types[e]}, true
-}
-
 // A refinement bound is folded as soon as it is typed; eval.NewFolder does it for a build.
 func ExampleFolder() {
-	var fold check.Folder = literals{}
+	var fold check.Folder = literalFolder{}
 	bound := &syntax.IntLit{Value: big.NewInt(100)}
 	owner := &object{kind: check.ObjField, name: "percent", pkg: "resource.farm", typ: types.IntType}
 	v, ok := fold.Fold(context.Background(), owner, bound, &check.Info{Types: map[syntax.Expr]types.Type{bound: types.IntType}})
 	fmt.Println(v.CanonText(), v.Type(), ok)
 	// Output: 100 Int true
+}
+
+// Check types a package: here a table whose `next` refs resolve to it, and a let reading it.
+func ExampleCheck() {
+	fs := &source.FileSet{}
+	src, _ := fs.Add("board/board.canon", "/board/board.canon", []byte(`package board
+
+local record Status {
+  next: [ref Status]
+}
+
+local let statuses: table Status = {
+  open { next: [done] }
+  done { next: [] }
+}
+
+local let first = statuses.active().first()
+`))
+	bag := diag.NewBag(fs, "board")
+	file := syntax.Parse(src, syntax.FileSource, bag)
+	prog := check.Check(context.Background(), project.New("demo", project.Version{Minor: 1}), []*syntax.File{file}, check.Bags{"board": bag}, literalFolder{})
+	decls := prog.Packages[0].Decls
+	fmt.Println(decls[1].Name(), decls[1].Type(), decls[2].Name(), decls[2].Type(), len(bag.Findings()))
+	// Output: statuses table board.Status first board.Status? 0
 }

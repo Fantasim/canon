@@ -1,0 +1,19 @@
+TYPES.md §13.4, WIRE.md §2.1: an asset root that is not a load path (absolute, a backslash, an empty segment); a path relative to the file is one.
+-- a/a.canon --
+package a
+
+local type Abs = asset("/Icon/Item", ext: [dds])
+local type Back = asset("Icon\\Item", ext: [dds])
+local type Empty = asset("Icon//Item", ext: [dds])
+local type Relative = asset("Icon/Item", ext: [dds])
+-- findings.txt --
+error[E3704]  a/a.canon:3:24
+  invalid asset(…): "/Icon/Item" is not a load path
+
+error[E3704]  a/a.canon:4:25
+  invalid asset(…): "Icon\Item" is not a load path
+
+error[E3704]  a/a.canon:5:26
+  invalid asset(…): "Icon//Item" is not a load path
+
+3 errors, 0 warnings in 1 package (…)

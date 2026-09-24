@@ -1,0 +1,14 @@
+TYPES.md §12.1: a function that can finish without returning.
+-- a/a.canon --
+package a
+
+local fn f(b: Bool) -> Int {
+  if b {
+    return 1
+  }
+}
+-- findings.txt --
+error[E3006]  a/a.canon:3:10
+  f can finish without returning a Int
+
+1 error, 0 warnings in 1 package (…)

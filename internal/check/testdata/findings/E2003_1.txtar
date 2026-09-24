@@ -1,0 +1,10 @@
+TYPES.md §3.1: an import of a package that does not exist.
+-- a/a.canon --
+package a
+
+import nowhere
+-- findings.txt --
+error[E2003]  a/a.canon:3:8
+  unknown package nowhere
+
+1 error, 0 warnings in 1 package (…)

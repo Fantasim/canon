@@ -1,0 +1,14 @@
+TYPES.md §12.2: a parameter given by position and by name.
+-- a/a.canon --
+package a
+
+local fn f(a: Int) -> Int { return a }
+
+local fn g() -> Int {
+  return f(1, a: 2)
+}
+-- findings.txt --
+error[E3004]  a/a.canon:6:15
+  too many arguments in call to f
+
+1 error, 0 warnings in 1 package (…)

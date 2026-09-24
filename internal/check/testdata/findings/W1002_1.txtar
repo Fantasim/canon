@@ -1,0 +1,15 @@
+GRAMMAR.md §9.1: a public record and field without a doc comment.
+-- a/a.canon --
+package a
+
+record R {
+  a: Int
+}
+-- findings.txt --
+warning[W1002]  a/a.canon:3:8
+  record R has no doc comment
+
+warning[W1002]  a/a.canon:4:3
+  field a has no doc comment
+
+0 errors, 2 warnings in 1 package (…)

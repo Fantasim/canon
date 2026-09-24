@@ -1,0 +1,15 @@
+EVALUATION.md §11.3: an input pattern with an inline flag.
+-- a/a.canon --
+package a
+
+local record Gen {
+  key: input String(/(?i)^sk-/)? from env "KEY"
+}
+
+/// The generator.
+let gen: Gen = {}
+-- findings.txt --
+error[E1904]  a/a.canon:4:14
+  pattern /(?i)^sk-/ is not in the portable subset: (?i
+
+1 error, 0 warnings in 1 package (…)

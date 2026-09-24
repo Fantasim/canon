@@ -1,0 +1,12 @@
+TYPES.md §6.5: calling a function value that may be none.
+-- a/a.canon --
+package a
+
+local fn f(g: (fn(Int) -> Int)?) -> Int {
+  return g(1)
+}
+-- findings.txt --
+error[E3402]  a/a.canon:4:10
+  g may be none: use ?., !, ?? or test != none first
+
+1 error, 0 warnings in 1 package (…)

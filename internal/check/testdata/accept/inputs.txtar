@@ -1,0 +1,18 @@
+EVALUATION.md §11.1: a record with inputs reached from exactly one public let through record fields and optionals.
+-- a/a.canon --
+package a
+
+local record Gen {
+  key: input String? from env "KEY"
+}
+
+local record Wrap {
+  gen: Gen?
+}
+
+/// The config.
+let cfg: Wrap = { gen: {} }
+
+local fn size(w: Wrap) -> Int {
+  return 1
+}

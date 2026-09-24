@@ -1,0 +1,12 @@
+STDLIB.md §9.5: a format spec on a String.
+-- a/a.canon --
+package a
+
+local fn f(s: String) -> String {
+  return "{s:.2}"
+}
+-- findings.txt --
+error[E4503]  a/a.canon:4:12
+  cannot format String with :.2
+
+1 error, 0 warnings in 1 package (…)

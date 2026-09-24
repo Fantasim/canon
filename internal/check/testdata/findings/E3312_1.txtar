@@ -1,0 +1,15 @@
+TYPES.md §14: a literal giving an input field.
+-- a/a.canon --
+package a
+
+local record Gen {
+  key: input String? from env "KEY"
+}
+
+/// The generator.
+let g: Gen = { key: "x" }
+-- findings.txt --
+error[E3312]  a/a.canon:8:16
+  key is an input: it cannot be given a value
+
+1 error, 0 warnings in 1 package (…)

@@ -1,0 +1,10 @@
+CODEGEN.md §2.1: a ts out not ending in .ts.
+-- a/a.canon --
+package a
+
+emit ts { out: "@web/a.js" }
+-- findings.txt --
+error[E8009]  a/a.canon:3:16
+  invalid out "@web/a.js" for emit ts: it must end in .ts
+
+1 error, 0 warnings in 1 package (…)

@@ -1,0 +1,29 @@
+EVALUATION.md §9.2: the table of segments has no row for a ref; the value after an unfit path is not checked again.
+-- a/a.canon --
+package a
+
+local record Item {
+  size: Int
+}
+
+local let items: table Item = {
+  small { size: 1 }
+}
+
+local record Cfg {
+  pick: ref items
+}
+
+local let cfg: Cfg = { pick: small }
+-- a/dev.layer.canon --
+package a
+layer dev
+
+amend cfg {
+  pick.size: "not an Int"
+}
+-- findings.txt --
+error[E1905]  a/dev.layer.canon:5:7
+  amend path pick.size: no such field
+
+1 error, 0 warnings in 1 package (…)
