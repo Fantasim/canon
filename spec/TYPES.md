@@ -697,6 +697,11 @@ Equality at evaluation:
 | ranges | same start and end |
 | pairs | component-wise |
 
+Evaluating an equality costs one step per pair of values compared, scalar pairs included
+(EVALUATION.md §12.1). A collection that hashes its elements (a set built by `unique`,
+`isUnique`, `intersect`, `union`, `diff`) first converts each element to the call's static
+element type, so values equal by this table hash alike.
+
 **Orderable** (`<`, `<=`, `>`, `>=`): both operands `Int`, both `Float` (an integer literal may
 stand for a `Float`), both `Duration`, both `String` (byte order), or both the same `ordered`
 enum (declaration order). Anything else, including `Bool`, refs, lists, records and

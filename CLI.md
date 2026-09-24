@@ -216,8 +216,9 @@ canon check [packages…] [--layer …] [--watch]
 
 Runs every phase of a build except emit (SPEC §11.2, [spec/EVALUATION.md](spec/EVALUATION.md)
 §1): every value of the selected packages is evaluated, verified and checked, and the results of
-`export fn`s are computed as `build` would emit them (stage E), so `check` and `build` report the
-same findings. No file is written. Prints every finding, then the summary.
+`export fn`s and the conformance vectors of translated functions are computed as `build` would
+emit them (stage E), so `check` and `build` report the same findings, `E9008` and `E9009`
+included. No file is written. Prints every finding, then the summary.
 
 - `--watch`: re-check on every change to a source, a loaded file or a layer, printing only what
   changed since the previous run.
@@ -231,16 +232,19 @@ canon build [packages…] [--layer …] [--target go|cpp|ts|json|view]… [--che
             [--adopt <path>]…
 ```
 
-Runs `check`; if there is no error, writes every `emit` output of the selected packages and
-appends new stable values to each `canon.lock`. View models (`emit view`) are written even when
-there are errors, so the studio can show them; code, data and the lock are not.
+Runs `check`; if there is no error in any loaded package, selected or imported, writes every
+`emit` output of the selected packages and appends new stable values to each `canon.lock`. An
+imported package's error findings are then printed with the selection's, so nothing is refused
+without its reason. View models (`emit view`) are written even when there are errors, so the
+studio can show them; code, data and the lock are not. A build with `--layer` never writes
+`canon.lock` (spec/LOCK.md §6.1).
 
 | Flag | Meaning |
 |---|---|
 | `--target t` | emit only these targets (repeatable) |
 | `--check` | write nothing; exit 1 if any output or lock would change (conformance tests included). For CI |
 | `--watch` | rebuild on every change; used by a local server and by the studio |
-| `--adopt <path>` | take over the hand-written file at `path`, which the build would otherwise refuse to overwrite (`E8001`): the header of a legacy C++ struct moving to `access: both` (SPEC §15.3). The build prints `adopting <path>`; from then on the file carries the marker. Repeatable |
+| `--adopt <path>` | take over the hand-written file at `path`, which the build would otherwise refuse to overwrite (`E8001`): the header of a legacy C++ struct moving to `access: both` (SPEC §15.3). Only a C++ header can be adopted: a JSON output without a `$schema` is `E8001` even when listed. The build prints `adopting <path>`; from then on the file carries the marker. Under `--check` nothing is adopted: the output is reported and counted as stale. Repeatable |
 
 - Outputs are written atomically: into a temporary file, then renamed. A failed build leaves every
   previous output untouched.
@@ -256,7 +260,36 @@ there are errors, so the studio can show them; code, data and the lock are not.
   header, `canon convert --adopt` for a JSON source (§3.10).
 - A build with `--layer` writes the same `out` files as a plain build: do not commit outputs of a
   layered build.
-- Prints the list of written files, grouped by target.
+- **Report.** After the findings and the summary line (§2.4), the text report prints one line
+  `adopting <path>` per adopted output, then lists the outputs the build changed (with `--check`:
+  would change), grouped by target in the order `go`, `cpp`, `ts`, `json`, `view`: a line
+  `<target>:`, then one line per output, indented two spaces, in byte order; an adopted output is
+  listed in its group too. Unchanged outputs are not listed. A `canon.lock` is listed, under
+  `lock:`, only when it gains lines. Under `--check` every listed output and lock is prefixed
+  `stale `. Every printed path is a display path (§2.1), in error messages too:
+
+  ```
+  0 errors, 0 warnings in 1 package (0.2 s)
+  json:
+    @out/tiers.json
+  lock:
+    a/canon.lock
+  ```
+
+- With `--format json`: the findings, then one `output` line per output, `unchanged` ones
+  included, then one `lock` line per appended lock line, then check's summary (`truncated` kept)
+  followed by `"written"` and `"stale"`: the number of outputs and locks changed, or, under
+  `--check`, that would change (spec/IMPLEMENTATION-PLAN.md §8.1). An output's `status` is
+  `written`, `unchanged`, `stale` or `adopted`:
+
+  ```json
+  {"output":{"path":"@out/tiers.json","target":"json","package":"a","status":"written"}}
+  {"lock":{"package":"a","file":"a/canon.lock","line":"table  a.tiers  low"}}
+  {"summary":{"errors":0,"warnings":0,"packages":1,"ms":12,"written":2,"stale":0}}
+  ```
+
+- `-q` prints error findings and the summary only: warnings, the output listing and the lock
+  listing are not printed, in text and JSON alike.
 
 Exit: 0, 1, 2, 3, 4.
 

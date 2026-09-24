@@ -176,8 +176,11 @@ func (p *Project) Revision() Revision
 - **S3.** A revision is `"r1:"` followed by the lowercase hex SHA-256 of the **read-set listing**:
   one line per file, `<display path> NUL <lowercase hex SHA-256 of the content> LF`, sorted by
   display path bytes. The read set is `project.canon`, every source, translation and layer file
-  of the packages loaded so far, every `canon.lock` of those packages, and every file read by
-  `load` (globs expanded). Overlays (§3.4) replace file contents in the listing.
+  of the packages loaded so far, every file read by `load` (globs expanded), and, whatever the
+  packages loaded, the existing `canon.lock` of every directory below the project root that
+  holds a source file or is an ancestor of one (every place a package's lock can be, LOCK.md §2.1):
+  the revision cannot know the packages of files not yet parsed. Overlays (§3.4) replace file
+  contents in the listing.
 - **S4.** The project remembers the per-file hashes of at least the last 64 revisions it has
   produced. A revision it does not remember, or one from another `Project`, is stale.
 - **S5.** A revision is compared per package: an edit or an evaluation against `Base` is **stale**
@@ -1147,10 +1150,20 @@ type LockChange struct { Package string; File string; Lines []string }
   runs even with errors (VM-07); outputs are written atomically and only when their content
   changes; a target without the GENERATED marker of GEN-05 is `E8001` (a finding, not an error
   value).
+- **B1a.** An error in any loaded package, selected or imported, blocks code, data and the lock;
+  the error findings of an imported package are then reported with the selection's (beyond R2),
+  so nothing is refused without its reason. A build with layers never writes `canon.lock`
+  (LOCK.md §6.1).
+- **B1b.** A `Target` in `BuildOptions.Targets` that is not `go`, `cpp`, `ts`, `json` or `view` is
+  refused with `*ValueError` (wraps `ErrBadValue`; `Expected` is `go, cpp, ts, json or view`),
+  never dropped. A `Build` that writes holds the project's write lock (S9) and returns the
+  revision read after its writes (S10), in `Check.Revision`.
 - **B2.** An output that exists without the generated-file marker is taken over only when it is
   listed in `BuildOptions.Adopt` (CLI `canon build --adopt <path>`: the header of an
   `access: both` struct, CODEGEN.md §7.8.3), or by `canon convert --adopt` (IMPLEMENTATION-PLAN.md
   §8.3). Its `Status` is then `adopted` (GEN-05). Any other unmarked output is `E8001`.
+  `BuildOptions.Adopt` takes only a C++ header: a JSON output without its `$schema` is `E8001`
+  even when listed.
 
 ### 13.2 Test and lock check
 
@@ -1219,7 +1232,7 @@ Errors are Go errors, distinct from findings. Every error type wraps one sentine
 | `ErrAmbiguousPath` | `*PathError` | unqualified root matches several packages (P6) | 2 |
 | `ErrNoValue` | `*PathError` | the value is poisoned (R6) | 1 |
 | `ErrBadOp` | `*PathError` | op not valid for that container (E2) | 2 |
-| `ErrBadValue` | `*ValueError` | value does not fit the type; bad template value (V1, N2) | 2 |
+| `ErrBadValue` | `*ValueError` | value does not fit the type; bad template value (V1, N2); unknown build `Target` (B1b) | 2 |
 | `ErrKeyExists` | `*PathError` | E3 | 1 |
 | `ErrStableKey` | `*PathError` | E4 (`Remove`, `Rename`, `Unretire` of a stable id), E13 | 1 |
 | `ErrNotEditable` | `*NotEditableError` | §7.2 | 1 |

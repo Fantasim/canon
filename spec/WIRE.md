@@ -847,13 +847,15 @@ emit json { out: "<path>", values: [v1, v2, …] }
   runtime helper files of CODEGEN.md §2.3, written with identical content by several emits into one
   directory, are not a collision. (Two Go emits writing different files into one directory are
   CODEGEN.md's `E8008`.)
-- A value whose type contains `Range` or a function type is `E8151`.
+- A value whose type contains `Range`, a function type, or the `Define` record of `load.defines`
+  (a define table included: it has no `canon-fp` form, FINGERPRINT.md §8) is `E8151`. A `ref`
+  into a define table is a key and is written.
 - **Data mode link** (EMT-03/05, RLD-01): every value emitted by a `data`-mode code target of the
-  package must be written by the package's `emit json`, and each `@reload` value must be written to
-  a file named `<value>.json`, all `@reload` values of the package in the same directory
-  [`E8153`]. This code also covers a `@reload` value that no `emit json` writes. The generated
-  loaders read those files (CODEGEN.md §5.9, §5.11). `embedded` mode embeds the same document
-  (§8.2) in the generated code (CODEGEN.md §2.3).
+  package, and each `@reload` value, must be written by the package's `emit json` to a file named
+  `<value>.json`, all `@reload` values of the package in the same directory [`E8153`]. This code
+  also covers a `@reload` value that no `emit json` writes. The generated loaders read those
+  files (CODEGEN.md §5.9, §5.11). `embedded` mode embeds the same document (§8.2) in the
+  generated code (CODEGEN.md §2.3).
 
 The pipeline example: `emit json { out: "out/potions.json", values: [potions] }` is file mode,
 file `pipeline/out/potions.json`; `potions` is `@reload`, and its file is named `potions.json`.

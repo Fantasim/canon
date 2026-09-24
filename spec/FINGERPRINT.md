@@ -187,6 +187,7 @@ numbered like local ones.
 | `A \| "lit1" \| "lit2"` | `union(A,"lit1","lit2")`, literals in source order |
 | dependent type, e.g. `Param(eventType)` | `dep(<source>,<path>,"<m1>"=T1,…)`: `<source>` is what the discriminant is read from (`field["eventType"]`, `param0`, `key`); `<path>` is the wire path from that value to the discriminant (`["param"]`, or `[]` when the source itself is the discriminant); one arm per member of the discriminant's enum in declaration order (retired included), keyed by the member's wire value (`"false"`, `"true"` for a `Bool` discriminant); a `Never` arm is `never` |
 | `Never` | `never` |
+| `Define` (element of `load.defines`) | none: refused (§8) |
 
 ### 4.5 Fields, members and `$` functions
 
@@ -665,5 +666,9 @@ type @15 record params=0
 ## 8. Diagnostics
 
 This document defines no diagnostic of its own. The fingerprint is always computable for a type
-that has a wire form; types without one are rejected by WIRE.md (`E8151`, `E7116`). A mismatch at
-run time is reported by the generated loader as an error value (CODEGEN.md), not as a Canon finding.
+that has a wire form, except `Define` (below); types without one are rejected by WIRE.md (`E8151`,
+`E7116`). The `Define` record of `load.defines`, and so a define table, has no form in
+`canon-fp v1` (§4.4): a value that holds one is refused wherever a fingerprint is needed, by `emit json`
+(`E8151`) and by a `data` or `embedded` code emit (`E8012`, CODEGEN.md §4.4). A `ref` into a define
+table is `ref(String)`. A mismatch at run time is reported by the generated loader as an error
+value (CODEGEN.md), not as a Canon finding.

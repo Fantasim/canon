@@ -2,10 +2,10 @@
 
 Version: **0.1 (draft)**, companion to [SPEC.md](../SPEC.md) §9.4 and §15.6. Normative.
 
-An `export fn` with a runtime input is **translated** into Go, C++ and TypeScript (SPEC §9.4).
-This document fixes what a translated function may contain, what the translation must compute
-(including every error), how `canon build` picks the input vectors of the generated conformance
-tests, and the test files themselves. Names, files and the pure-function shape come from
+An `export fn` with a runtime input is **translated** into Go, C++ and TypeScript (SPEC §9.4). This
+document fixes what a translated function may contain, what the translation must compute (including
+every error), how `canon check` and `canon build` pick the input vectors of the generated
+conformance tests, and the test files themselves. Names, files and the pure-function shape come from
 [CODEGEN.md](CODEGEN.md) §5.10.
 
 "Must" and "is an error" are requirements on the compiler. Codes are listed in
@@ -53,6 +53,10 @@ tests, and the test files themselves. Names, files and the pure-function shape c
 A method with runtime inputs must be called by at least one `test` of its package, so that the
 conformance test has a receiver (`E9008`). A package-level function needs no test.
 
+Only a code emit (`go`, `cpp`, `ts`) translates a function, so vectors, `E9008` and `E9009` apply
+only to a package with at least one of them. A package emitted only to `json` or `view` has no
+translated function and no conformance file (§7.1).
+
 ### 2.2 The portable subset
 
 SPEC §9.4 lists the constructs. Precisely:
@@ -73,7 +77,8 @@ SPEC §9.4 lists the constructs. Precisely:
 - **Reads:** paths of `self` through non-collection fields (`self.startUtc.hour`, `self.bonus?.value
   ?? 0`), enum members.
 - **Calls** to other export fns of the same package: a translated one (its pure function is
-  called), a precomputed method of `self` (its value is read like a field), a lookup function
+  called), a precomputed method of `self` (its value is a constant of the receiver, read like a
+  field: a vector takes it from the evaluator, as it takes the fields), a lookup function
   (called; it is baked data).
 
 Everything else is `E9001`, naming the construct: loops, `var` and assignment, `match`, lambdas,
@@ -222,19 +227,29 @@ by value (floats by bit pattern).
 
 The receivers are the `self` values of the calls of `F` made while running the package's `test`
 blocks, in the order the calls are evaluated, each **projected** on the paths the body reads
-(§2.3). Distinct projections are kept in first-seen order. None is `E9008`.
+(§2.3). Distinct projections are kept in first-seen order. None is `E9008`. `canon check` and
+`canon build` both run the tests to collect these calls, and only for that. Each package's tests
+run as `canon test <pkg>` runs them: values forced afresh, never reusing stage A's, one budget of
+`project.budget` steps shared by that package's tests only, in declaration order, not the
+project's budget. None of their findings is reported, and the calls made before any stop are kept
+(EVALUATION.md §1). A call whose
+receiver reads a precomputed method of `self` that fails there (an error code or a limit, on a
+receiver built only in a test) gives no receiver and no vector, but still counts as a call for
+`E9008`; `canon test` reports the failure.
 
 ### 6.2 Candidate values of one parameter, for one receiver `r`
 
 Let `τ` be the parameter's type, `[lo, hi]` its type range (int64 for `Int`, the sized range,
 ±9 223 372 036 854 for `Duration`, ±1.7976931348623157e308 for `Float`, ±3.4028234663852886e38
-for `Float32`) and `R` its refinement range if any (inclusive bounds; for `a..b`, the upper bound
-is `b − 1`).
+for `Float32`) and `R` its refinement range if any (for integers and durations, inclusive bounds:
+for `a..b`, the upper bound is `b − 1`). For a float, `pred(b)` and `succ(b)` are the
+representable values adjacent to `b` in the parameter's type (binary64 for `Float`, binary32 for
+`Float32`: `math.Nextafter`, `math.Nextafter32`).
 
 | `τ` | Candidates |
 |---|---|
 | integers, `Duration` | the arguments given to this parameter by every test call of `F` ∪ {0, 1, −1, lo, hi} ∪ {b−1, b, b+1 for each finite bound b of R} ∪ {v−1, v, v+1 for each value v of `r` read by the body with the same kind (integer values for integer parameters, durations for duration parameters)} |
-| `Float`, `Float32` | test arguments ∪ {0.0, −0.0, 1.0, −1.0, 0.5, −0.5, 1e300, −1e300, lo, hi} ∪ {b−1, b, b+1 for each bound b of R} ∪ {v−1, v, v+1 for each `Float` value v of `r` read by the body}, rounded to `float` for `Float32` |
+| `Float`, `Float32` | test arguments ∪ {0.0, −0.0, 1.0, −1.0, 0.5, −0.5, 1e300, −1e300, lo, hi} ∪ {pred(b), b, succ(b) for each finite bound b of R, the exclusive upper bound of `..b` included} ∪ {v−1, v, v+1 for each `Float` value v of `r` read by the body}, rounded to `float` for `Float32` |
 | `Bool` | false, true |
 | enum | every member, in declaration order, retired ones included |
 | `String` | "" ∪ test arguments |
@@ -283,11 +298,13 @@ With a single parameter, the product is the list itself.
 Each vector is evaluated by the evaluator: the result, or the code of the first error. The TS
 expectation is computed in TS mode (§4). Both are written into the test files.
 
-**Step cap.** These evaluations never spend the project budget (EVALUATION.md §2.3). Each vector
-has its own budget of **1 000 000 steps**, counted as EVALUATION.md §12.1 says, and the call-depth
-limit of EVALUATION.md §3.3. A vector that exhausts either (unbounded recursion between translated
-functions) is not an expected outcome: it is `E9009` at the function, and the build fails, because
-the translation would not terminate either.
+**Step cap.** These evaluations never spend the project budget (EVALUATION.md §2.3). Each vector has
+its own budget of **1 000 000 steps**, counted as EVALUATION.md §12.1 says, and the call-depth limit
+of EVALUATION.md §3.3; a value first forced during a vector's evaluation is charged to that vector.
+A vector that exhausts either (unbounded recursion between translated functions) is not an expected
+outcome: it is `E9009` at the function, and `canon check` and `canon build` fail, because the
+translation would not terminate either. Each vector cut short is its own `E9009`; the function's
+other vectors still run, and the function keeps no vectors.
 
 ### 6.6 Worked example: `Potion.healFor`
 
@@ -370,11 +387,7 @@ with the `damageAt` example added (verified: compiled by `tsc` 5.9 with `strict`
 
 ```ts
 // GENERATED by canon from pipeline/. DO NOT EDIT.
-//
-// Conformance vectors for every translated function of package pipeline. The
-// expected results were computed by the Canon evaluator, which is the reference;
-// these tests check that the TypeScript translation gives the same answers, errors
-// included. Run with `node --test` on the compiled output.
+// Conformance vectors of package pipeline, computed by the Canon evaluator.
 import { test } from "node:test";
 import * as assert from "node:assert/strict";
 import { $potionDamageAt, $potionHealFor, CanonEvalError } from "./generated.js";

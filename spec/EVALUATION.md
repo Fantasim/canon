@@ -32,13 +32,21 @@ This replaces SPEC §11.2.
 | 4 | **Stage B, verify** every evaluated value (§5) | verification findings |
 | 5 | **Stage C, instance checks** (§8.1) | check findings |
 | 6 | **Stage D, package checks** (§8.5) | check findings |
-| 7 | **Stage E, precompute** export fn results (§2.3), then **validate every emit** of the selected packages: build its IR and check every emit rule (CODEGEN.md §12, WIRE.md §8), writing nothing | values for codegen, findings |
+| 7 | **Stage E, precompute** export fn results (§2.3), then **validate every emit** of the selected packages: build its IR and check every emit rule (CODEGEN.md §12, WIRE.md §8), writing nothing; then compute the conformance vectors of every translated function (CONFORMANCE.md §6) | values for codegen, conformance vectors, findings |
 | 8 | Emit (not in this document): code, data and `canon.lock` only if there is no error finding; `emit view` even with errors (VIEWMODEL.md J4, API.md B1) | files |
 
 - `canon check` runs phases 1–7. `canon build` runs 1–8. So `check` and `build` report the same
   findings (CLI.md §3.3), except `E8001` and `E8152`, which need the output files and are reported
   in phase 8 only. `canon test` runs 1–2, then the
   tests (§10).
+- `canon check` and `canon build` both compute the conformance vectors in phase 7, so both report
+  `E9008` and `E9009`. Computing them runs the tests of a package with a translated function, only
+  to collect the calls the vectors need (CONFORMANCE.md §6.1). Each package's tests run as
+  `canon test <pkg>` runs them (§10): values forced afresh, never reusing stage A's, one budget of
+  `project.budget` steps shared by that package's tests only, in declaration order, not the
+  project's budget. So the calls collected, hence the vectors, are what `canon test` sees; none of
+  the tests' findings is reported, and the calls made before any stop are kept. No other part of
+  `check` or `build` runs tests.
 - A **broken** declaration (TYPES.md §1) is never evaluated. A value, check or test that is
   broken produces no evaluation finding. Other values are evaluated normally.
 - A value forced for the first time after stage B has started (for example by a package check)
@@ -89,7 +97,10 @@ without runtime inputs is evaluated as CODEGEN.md requires:
   order of CODEGEN.md §5.10 (for each receiver, as above);
 - a function without parameters: once.
 
-An evaluation error there is a finding at the failing expression. Its outermost stack frame names
+A method of an imported type is also precomputed on the receivers this package holds, because
+their encoded `$` keys need it (WIRE.md §5.11). Every receiver and every cell is evaluated, and
+each failure is reported: nothing stops at the first. An evaluation error there is a finding at
+the failing expression. Its outermost stack frame names
 the fn and its inputs: `while computing canTransition(open, taken)`. `canon check` runs stage E
 too, so `check` and `build` report the same findings.
 
@@ -127,8 +138,12 @@ way, at type-checking time.
 ### 3.3 Call depth
 
 A user function, method or lambda call that would make the call stack deeper than **10,000**
-frames is `E4402` at the call. The limit keeps deep recursion deterministic and away from the
-host stack.
+frames is `E4402` at the call. The frames counted are every live user frame of the invocation,
+across nested roots (a value forced inside a call, a check run, a `where` re-run, a
+precomputation), so chained forcing is bounded too; the finding's `(n more frames)` line
+(API.md F13) counts the same frames. The limit keeps deep recursion deterministic and away from
+the host stack: every walk over a value (equality, text form, set hashing, binding refs) and
+every graph built-in runs iteratively or on an explicit stack, charged per node it visits.
 
 ### 3.4 Refs resolved per instance
 
@@ -466,7 +481,8 @@ rewrites the outputs each time. This is by design; the CI build runs without lay
 - `canon test` runs the test blocks of the selected packages whose name matches `--run` (RE2
   search, default: all), in package order, then file path order, then source order.
 - Test names are unique within a package (`E5005`).
-- Tests are type-checked in every `canon check`, but run only by `canon test`.
+- Tests are type-checked in every `canon check`, but run only by `canon test`, and silently when
+  conformance vectors are computed (§1).
 - Top-level values are forced on demand, verified (§5), and shared by all tests of the
   invocation. Instance checks and package checks do not run on them in `canon test`.
 - The body is a block. Its statements run in order; `expect` is allowed only in test blocks
@@ -594,9 +610,26 @@ invocation costs one step plus its body's nodes: one for the implicit parameter 
 postfix step and argument node (`.f` costs 1 + 2). A `where` predicate costs its nodes each time it runs. Default
 expressions cost their nodes when evaluated.
 
+**Work proportional to a value** is charged as it is done, so every step buys a bounded amount of
+time and memory and `E4401` is the only way evaluation runs long:
+
+- **Equality.** Every equality the evaluator runs (`==`, `!=`, `in`, `contains`, `indexOf`,
+  `unique`, map and set lookups) costs one step per pair of values compared, scalar pairs
+  included, in addition to the listed cost of the node or built-in: `x in xs` over n elements
+  costs n. A map finds a key through a hash index, never a scan, so `m[k]` is charged only for the
+  pairs its genuine hash matches compare.
+- **Producing a string or a list.** `+` on lists and strings costs one step per element or byte
+  of its result; every built-in that produces a string (interpolation, `join`, `replace`,
+  `lower`, `upper`, `trim`, `String`, format specs) costs one step per byte of its result,
+  charged before building it, and `split` one step per part and per byte of its parts, in
+  addition to its listed cost (STDLIB.md §1.3).
+
 **Free:** reading and decoding files, conversions and refinement checks other than `where`,
 verification other than type functions, the traversal of instance checks, layer path
-resolution, and formatting findings.
+resolution, the `@stable` comparisons made while applying an amendment, and formatting findings.
+Stage B's re-run of a `where` predicate that the conversion already ran (and paid) is free; such a
+re-run is capped at the budget, and past it that re-run alone stops, its value is poisoned, no
+`E4401` is reported and evaluation continues.
 
 ### 12.2 Budget
 
@@ -608,7 +641,7 @@ resolution, and formatting findings.
   another root charges the forced value, not the forcer. All runs of one instance-check
   declaration are charged to that declaration.
 - Spending the last step is `E4401` at the expression being evaluated, with its stack and the
-  heaviest root:
+  heaviest root (on a tie, the first charged):
 
 ```
 error[E4401]  balance/parity/sweep_plan.canon:265:15

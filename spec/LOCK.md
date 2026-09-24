@@ -208,10 +208,10 @@ The lock is append-only for tools. People may edit it in a reviewed commit for t
 | Operation | Lock |
 |---|---|
 | `canon check`, `canon test`, `canon lock check` | read only |
-| `canon build` with no error (any `--target` selection) | new facts appended and retirements recorded, for each **selected** package; written only if the bytes change, atomically with the other outputs |
-| `canon build` with an error | not written (a failed build leaves every output untouched) |
+| `canon build` with no error in any loaded package, selected or imported (any `--target` selection) | new facts appended and retirements recorded, for each **selected** package; written only if the bytes change, atomically with the other outputs |
+| `canon build` with an error in any loaded package | not written (a failed build leaves every output untouched) |
 | `canon build --check` | not written; exit 1 if any selected lock would change (CLI.md §3.4) |
-| `canon build --layer …` | the same facts as without the layer (§6.1) |
+| `canon build --layer …` | never written (§6.1); the lock rules are checked as in a plain build |
 | edit API `Add` on a stable table | the new `table` (and `field`) facts are written in the same atomic edit as the source |
 | edit API `Retire` | the fact gets `retired` in the same atomic edit |
 | edit API `Remove` on a stable entry | refused (`E6001`) |

@@ -76,7 +76,7 @@ services/configlang/
 - **Module path.** `github.com/fantasim/canonlang` (DECISIONS 23). The repository is public, so
   every contributor runs the same gate (§12).
 - **Go version.** The compiler is written for Go 1.25 (`go 1.25` in go.mod). Generated code
-  targets Go ≥ 1.23 (CG-10); the two are independent.
+  targets the current Go release only (CG-10, DECISIONS 205); the two are independent.
 - **Import path of the API.** The public package is `github.com/fantasim/canonlang/api`, package
   name `canon` (API.md §1.1). ORG-01 named it `api`; the directory keeps that name, the package is
   `canon` so callers write `canon.Open`.
@@ -118,7 +118,7 @@ one position type; JSON sources get their own syntax tree (`jsonsrc`) because bo
 | `i18n` | key catalogue, translation files, fallback, `i18n stub`/`status` | I18N.md | check |
 | `api/vm` (package `vm`) | view-model Go structs, generated from `spec/viewmodel.schema.json`; `ViewModel.Decode` targets them (API.md §5.4) | VIEWMODEL.md, viewmodel.schema.json | — |
 | `views` | view resolution (groups, controls, labels, `when`/`show`, usage, search index) shared by `gen/view` and `Evaluate` | VIEWMODEL.md, MOCKUP-GAPS | check, eval, i18n |
-| `ir` | target-neutral emit IR (§4.5 of this plan), fingerprint, emit validation (stage E), portable-subset check (`E9xxx`) | §4.5, FINGERPRINT.md, CODEGEN.md (what the IR must carry) | check, verify, value, types |
+| `ir` | target-neutral emit IR (§4.5 of this plan), fingerprint, emit validation (stage E), portable-subset check (`E9xxx`) | §4.5, FINGERPRINT.md, CODEGEN.md (what the IR must carry) | check, verify, value, types, project |
 | `conform` | conformance vector selection and expected results | CONFORMANCE.md | ir, eval |
 | `gen/json` | `emit json` files | WIRE.md (emit layout) | ir, wire |
 | `gen/go` | Go code, `rt` package, Go conformance tests | CODEGEN.md (Go), CONFORMANCE.md | ir, conform |
@@ -739,15 +739,17 @@ acceptance tests pass.
 | Phase | SYN | TYP | EVL | VER | LOD | IR | GO / CPP / TS | VM | API | LSP / MIG | QA |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | **M0** contracts | `source`, `ast.go` | `types.go`, `check/info.go` | `value.go`, `eval/host.go` | lock format types | `project` schema types | `ir.go` | review `ir.go`; IR fixtures | review | `api/canon.go` (done), `edit/path.go` | — | `diag`, `diaggen` and `codes.go` generated from ERRORS.md, harness skeleton, CI skeleton, fixture extractor |
-| **M1** taxonomy | parser (all examples), AST goldens | checker | eval + std subset | verify, lock, rules | `project`, `wire` encode | `ir`, `gen/json`, `build` | GO: baked; CPP/TS: baked from IR fixtures | — | `cli` check/build/version/init/new | — | fixtures, findings files, determinism job |
+| **M1** taxonomy | parser (all examples), AST goldens | checker | eval + std subset, layers (DECISIONS 187, 196) | verify, lock, rules | `project`, `wire` encode | `ir`, `gen/json`, `build` | GO: baked; CPP/TS: baked from IR fixtures | — | `cli` check/build/version/init/new | — | fixtures, findings files, determinism job |
+| **M1.5** generated programs | — | — | — | — | — | — | — | — | — | — | program generator and the four suites of §7.7 (beside M2) |
 | **M2** pipeline | `jsonsrc` | export fns | `conform` | `rules` tests | `wire` decode, `load.dir` | fingerprint, reload IR, portable subset check | GO/CPP: data mode, stores, conformance | — | `cli` test | — | toolchain CI jobs |
-| **M3** load + view | `format` (start) | dependent types, views, i18n, layers | layers | dependent verification, assets | `load` (all forms) | `types` mode | CPP: `types` mode; TS: data | `views`, `gen/view`, `i18n`, `api/vm` | `Check`/`Value`/`ViewModel` in `api` | — | real-data job, benchmark generator |
+| **M3** load + view | `format` (start) | dependent types, views, i18n, layers | — | dependent verification, assets | `load` (all forms) | `types` mode | CPP: `types` mode; TS: data | `views`, `gen/view`, `i18n`, `api/vm` | `Check`/`Value`/`ViewModel` in `api` | — | real-data job, benchmark generator |
 | **M4** fmt + edit | `format` done, JSON source printer | — | incremental memo | — | — | — | — | `Evaluate` support | `edit`, `workspace`, full `api`, fmt/explain/refs/watch | — | edit goldens, fuzzing, perf gates |
 | **M5** LSP | recovery hardening | completion queries | — | — | — | — | — | — | support | LSP: server, grammar, extension | LSP transcripts |
 | **M6** legacy C++ + TS | — | — | — | — | — | legacy IR | CPP: `fields`/`both`/`getters`; TS: complete | — | — | — | feature examples |
 | **M7** migration | — | — | — | — | — | — | — | `i18n stub`/`status` | `cli` wiring | MIG: `convert` | real-data runs |
 
-M5, M6 and M7 run in parallel once M4 is accepted. M6's C++ work may start after M3.
+M5, M6 and M7 run in parallel once M4 is accepted. M6's C++ work may start after M3. M1.5 runs
+beside M2 (DECISIONS 206).
 
 ### 5.3 Rules for parallel agents
 
@@ -795,14 +797,26 @@ determinism job green (§7.5), and every new registry code tested (§7.2).
      `emit json`). The `emit ts` of these packages waits for `gen/ts` (M6). This milestone adds
      `examples/teamboard/expected/MANIFEST` and the output goldens it lists (§7.1), including
      `teamboard/canon.lock canon.lock`.
-  4. The generated Go compiles with Go 1.23 and the current Go, passes `go vet`, and a smoke test
-     reads every value through the getters.
+  4. The generated Go compiles with the current Go (DECISIONS 205), passes `go vet`, and a smoke
+     test reads every value through the getters.
   5. `canon.lock` of `teamboard` equals its golden `examples/teamboard/expected/canon.lock`
      (LOCK.md §9.1), compared through the MANIFEST like every output (§7.1); deleting a status
      gives `E6001`; renaming one gives `E6001`; retiring one and building passes.
-  6. **Integration**: in a branch of `services/sovcommon`, `teamboard`'s hand-written loader is
-     replaced by the generated package and the service tests pass (README "next steps" 2). Owner:
-     GO, reviewed by Louis.
+- M1 is accepted on items 1–5. The `teamboard` integration (in a branch of `services/sovcommon`,
+  its hand-written loader replaced by the generated package, the service tests passing) is not
+  part of it: like every consumer integration, it waits for the integration gate of M1.5
+  (DECISIONS 189, 206).
+
+### M1.5 — Generated-program testing
+
+- Scope: the program generator and the four suites of §7.7 (DECISIONS 200), built by QA in
+  `internal/testkit`. It runs beside M2.
+- Accepted when: every ERRORS.md rule has a mutation operator; one nightly run of the four suites
+  is clean under its memory cap; every counterexample found is shrunk and kept as a txtar.
+- **Integration gate.** No consumer integration (sovcommon `teamboard` included) starts before
+  the four suites run clean (every ERRORS.md rule mutated, well-typed programs agreeing between
+  the evaluator and the generated code, metamorphic variants unchanged) and conformance is green
+  (DECISIONS 206).
 
 ### M2 — Pipeline: data mode for Go and C++, with goldens
 
@@ -810,8 +824,9 @@ determinism job green (§7.5), and every new registry code tested (§7.2).
   kinds, conformance vectors and tests for Go and C++, `data` mode loaders, `@reload` stores and
   snapshots, fingerprints, `canon test`, `jsonsrc` positions in findings.
 - Accepted when:
-  1. At the start of M2 the compiler regenerates `examples/pipeline/expected/` (GEN-01); Louis
-     reviews the diff against the illustrative files; from then on `canon build pipeline` equals
+  1. At the start of M2 the compiler regenerates `examples/pipeline/expected/` (GEN-01); the
+     orchestrator reviews the diff against the conventions of the existing Go and C++ code
+     (sovcommon, Source) and decides (DECISIONS 190); from then on `canon build pipeline` equals
      them byte for byte.
   2. Generated C++ compiles with `-std=c++17 -Wall -Wextra -Werror` on GCC 9 and current, Clang 10
      and current, and MSVC 19.2x `/std:c++17 /W4 /WX`, with nlohmann/json 3.9 and current.
@@ -858,9 +873,8 @@ determinism job green (§7.5), and every new registry code tested (§7.2).
      the edit.
   6. Stress test under `-race`: 8 readers, 1 editor and 1 watcher for 60 s, no race, no stale read
      after an edit returns.
-  7. **Integration spike** with the studio team: resourcestudio opens `examples/`, renders the farm
-     from the view model, edits `farm.global.visitCost` through `Edit`, and shows `Evaluate`
-     results. Owner: API.
+- M4 has no studio integration spike: the current resourcestudio is not adapted, and a new
+  studio is built on the Canon API (DECISIONS 191).
 
 ### M5 — Language server
 
@@ -913,8 +927,11 @@ determinism job green (§7.5), and every new registry code tested (§7.2).
 - **Comparison.** Byte for byte. The one exception is the transition of GEN-01: until the start of
   M2, the illustrative pipeline goldens are compared semantically (parsed JSON; Go and C++ modulo
   comments and whitespace) and the test is marked "illustrative".
-- **Update.** `go test ./internal/testkit/golden -update` rewrites goldens. CI never updates; a
-  golden change is reviewed in the diff like code.
+- **Update.** `go test ./internal/testkit/golden -update` rewrites goldens (`Check`, then `Build`
+  into the fixture roots). CI never updates; a golden change is reviewed in the diff like code.
+- **Smoke tests.** `expected/` holds only compiler output. The smoke test of an example's
+  generated Go module lives in `internal/testkit/golden/testdata/smoke/<example>/`, and
+  `goldens-vet` copies it beside a temporary copy of the module (DECISIONS 201).
 - **Command output goldens.** The samples in CLI.md (§2.4, §3.5, §3.7, §3.8) are frozen as
   goldens in `internal/cli/testdata/` (CLI-03), run against the examples.
 
@@ -1003,15 +1020,29 @@ in API.md and fails when one has no test.
   value hash for checks that statically read no package value. The `value` store is designed for
   this from M1 (values addressable by (root, key) and hash-consed provenance).
 
-### 7.7 Fuzzing
+### 7.7 Fuzzing and generated programs
 
 Native Go fuzz targets, run 10 minutes nightly each: the lexer and parser (no panic; every error
 has a span), `Format` idempotence, `FormatJSONSource` idempotence, wire round trip
 (`decode(encode(v)) == v`), path `Parse`/`String` round trip, and edit invariants (API.md M6).
 
+A program generator in `internal/testkit` (M1.5, DECISIONS 200) drives four nightly property
+suites, each under a memory cap:
+
+1. **Rule mutation** of the examples: one operator per ERRORS.md rule; each mutant gets exactly
+   the code its rule names.
+2. **Grammar-driven generation with token mutations**: valid programs parse and survive a
+   format-reparse unchanged; corrupted ones get a located finding, never a panic.
+3. **Type-directed well-typed programs**: a clean `check` implies a successful `build`, the
+   generated Go compiles, and its answers equal the evaluator's.
+4. **Metamorphic variants**: renames, reordering, comments and whitespace change no finding and
+   no output.
+
+A counterexample is shrunk and kept as a txtar case.
+
 ### 7.8 Target toolchains
 
-Generated code is compiled and its tests run in CI: Go 1.23 and current (in a temporary module);
+Generated code is compiled and its tests run in CI: the current Go (in a temporary module);
 GCC 9 and current, Clang 10 and current, MSVC 19.2x; nlohmann/json 3.9 and current (vendored under
 `internal/testkit/third_party/`); TypeScript 5.0 and current with Node 20 and current. C++ is built
 with `-ffp-contract=off` (CNF-03).
@@ -1056,7 +1087,7 @@ order shown, and ends with one `summary` object:
 | Command | Lines |
 |---|---|
 | `check`, `lock check` | one finding per line (API.md F5), then `{"summary":{"errors":2,"warnings":5,"packages":3,"ms":1400,"truncated":[…]}}` |
-| `build` | findings, then `{"output":{"path":…,"target":"go","package":…,"status":"written"}}` per output, `{"lock":{"package":…,"file":…,"line":…}}` per appended line, then the summary with `"written"` and `"stale"` counts |
+| `build` | findings, then `{"output":{"path":…,"target":"go","package":…,"status":"written"}}` per output, `unchanged` ones included, `{"lock":{"package":…,"file":…,"line":…}}` per appended line, then check's summary (`truncated` kept) followed by `"written"` and `"stale"`, the outputs and locks changed or, under `--check`, that would change; with `-q`, only the error findings and the summary (CLI.md §3.4) |
 | `test` | `{"test":{"package":…,"name":…,"file":…,"line":…,"status":"pass"\|"fail","failures":[{"file","line","col","expect","expected","got","findings":[…]}]}}` per test, then `{"summary":{"passed":12,"failed":1,"ms":300}}` |
 | `explain` | `{"explain":{"path":…,"type":…,"text":…,"value":<wire JSON>,"origin":{…},"parts":[…]}}` (parts recursive to `--depth`) |
 | `refs` | `{"ref":{"kind":…,"package":…,"path":…,"file":…,"line":…,"col":…}}` per ref, then `{"summary":{"target":…,"count":14}}` |
@@ -1149,8 +1180,9 @@ Not part of v0.1 (DECISIONS 188).
   `check` and the output hashes of `build`, plus a stat table `(path, size, mtime, sha256)` so an
   unchanged file is not re-hashed. The format has a version in its first line; another version is
   ignored and rebuilt. Deleting the directory is always safe.
-- **`canon build`** prints written files grouped by target, one per line, in byte order; unchanged
-  files are not listed unless `-v`.
+- **`canon build`** prints, after the summary, the changed outputs grouped by target, one per line,
+  in byte order, then the locks that gained lines; under `--check` each is prefixed `stale `;
+  unchanged outputs are listed only in the JSON form (CLI.md §3.4, DECISIONS 201).
 - **`canon version`** prints three lines: `canon <compiler version> (<commit>)`, `language 0.1`,
   `formats canon-fp v1, canon-vm/1, canon.lock v1`.
 
@@ -1249,7 +1281,9 @@ The one gate, the same for every contributor (the repository is public) and in C
 1. **format**: `gofmt -l` prints nothing for the hand-written Go files;
 2. **vet**: `go vet ./...`;
 3. **tests**: `go test ./...` (CI adds `-race`);
-4. **goldens**: each golden Go module under `examples/**/expected/` is vetted and tested in place;
+4. **goldens**: each golden Go module under `examples/**/expected/` is vetted and tested in a
+   temporary copy, with its smoke test from `internal/testkit/golden/testdata/smoke/<example>/`
+   (DECISIONS 201);
    every `expected/MANIFEST` line names a golden that exists; and the goldens are diff-clean:
    every example rebuilt by the compiler writes exactly its `expected/` files (§7.1; the rebuild
    is wired when the compiler can build, M1);
@@ -1308,9 +1342,11 @@ The module layout keeps packages inside the limits; each owner plans files per c
 
 Of the fleet doctrine's rules on agent docs (its rule 7), these apply to this repository:
 `CLAUDE.md` at most 80 lines, and so is any `.claude/` rule or agent file. The project's auditor
-has no meta lane (DECISIONS 25), so review keeps these caps. The rules about `meta/`, handoffs,
-state files and ADRs have nothing to apply to: the repository has no `meta/` directory, and its
-decisions are recorded in `DECISIONS.md`, one short entry each. The normative documents (SPEC.md,
+has no meta lane (DECISIONS 25), so review keeps these caps. `meta/` holds the working state
+(`meta/state.md`, capped at 80 lines like `CLAUDE.md`), the plan, the handoffs to Louis and the
+orchestrator's decision logs (`meta/decisions/log-<date>.md`). Language and direction decisions
+are recorded in `DECISIONS.md`, one short entry each; a technical call the orchestrator makes
+where the spec is silent goes to the decision log (DECISIONS 207). The normative documents (SPEC.md,
 CLI.md, `spec/*.md`, DECISIONS.md) are not agent docs and have no cap; like every Markdown file,
 they are checked for dead links (the `dead-link` rule).
 

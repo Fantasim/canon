@@ -59,7 +59,19 @@ identity (TYPES.md §6.3). No method changes its receiver: values are immutable.
 Each call costs one step for the call node (EVALUATION.md §12). The **Cost** column gives the
 additional steps. Each invocation of a function argument costs its own steps (invocation plus body
 nodes). `n` is the number of elements of the receiver. "Visited" counts elements until the method
-stops.
+stops. Every built-in charges per element as it takes it, before invoking its function; `sortBy`
+charges comparisons only (§4.5).
+
+Two charges add to the listed cost, never replace it (EVALUATION.md §12.1):
+
+- **Equality.** Every equality a built-in runs (`contains`, `indexOf`, `unique`, `isUnique`,
+  `intersect`, `union`, `diff`, key lookups) costs one step per pair of values compared, scalar
+  pairs included: `xs.contains(x)` over n elements costs its visits plus n pairs. Sets and maps
+  find a value through a hash index, never a scan, so a lookup compares only genuine hash
+  matches; a set operation over n elements costs O(n) plus those comparisons.
+- **Produced text.** Every built-in that produces a string costs one step per byte of its result,
+  charged before the string is built: interpolation, `join`, `replace`, `lower`, `upper`, `trim`,
+  `String(x)` and format specs (§9). `split` costs one step per part and per byte of its parts.
 
 ### 1.4 Errors
 
@@ -196,10 +208,11 @@ slice.
 | `union(b: Seq(T)) -> [T]` | the receiver, then the elements of `b` that are not in the receiver, in `b` order, each once | `b` without duplicates | | n + len(b) |
 | `diff(b: Seq(T)) -> [T]` | elements of the receiver that do not occur in `b`, in receiver order | `[]` | | n + len(b) |
 | `groupBy<K: Key>(f: fn(T) -> K) -> {K: [T]}` | elements grouped by `f`; keys in **first-seen** order, elements in receiver order | `{}` | | n |
-| `toMap<K: Key, V>(keyF: fn(T) -> K, valF: fn(T) -> V) -> {K: V}` | one entry per element, in order | `{}` | `E4502` on a duplicate key | n |
+| `toMap<K: Key, V>(keyF: fn(T) -> K, valF: fn(T) -> V) -> {K: V}` | one entry per element, in order; per element, `keyF` runs, a duplicate key is detected, then `valF` runs | `{}` | `E4502` on a duplicate key | n |
 | `join(sep: String) -> String` (receiver `Seq(String)`) | elements separated by `sep` | `""` | `E3002` on other element types | n |
 
-`xs + ys` concatenates two lists (TYPES.md §7.1); it is an operator node and costs 0 extra.
+`xs + ys` concatenates two lists (TYPES.md §7.1); it is an operator node and costs one step per
+element of its result.
 
 ### 4.3 Predicates and aggregates
 
@@ -310,8 +323,8 @@ Lengths and indexes count **bytes** of the UTF-8 encoding. Case mapping is ASCII
 | `matches(re) -> Bool` | RE2 search (§8); `re` must be a regex literal | | 1 |
 | `s[a..b]` and the other slice forms | bytes `a` to `b` exclusive, with the bounds of §4.1 | `E4002` out of range; `E4107` if a bound is not at a character boundary | 1 |
 
-`+` concatenates. `s[i]` (a single index) is not defined (`E3007`): use a slice. String
-comparison with `<` is byte order.
+`+` concatenates, one step per byte of its result. `s[i]` (a single index) is not defined
+(`E3007`): use a slice. String comparison with `<` is byte order.
 
 ---
 
@@ -363,7 +376,8 @@ messages, finding messages that quote values, `canon explain`, and the text of a
 | `Define` entry | `Define{value: 5}` | |
 
 A function value cannot be formatted (`E4503`, static). Formatting costs 1 step per value
-visited: a scalar is 1, a composite is 1 plus its components.
+visited (a scalar is 1, a composite is 1 plus its components), plus the per-byte charge of §1.3
+on the text produced.
 
 ### 9.2 Floats
 
@@ -442,7 +456,9 @@ CONFORMANCE.md §2.2). The steps, in order:
 - **`load`, `load.dir`, `load.defines`, `load.csv`, `load.text`**: typing in TYPES.md §5.1,
   decoding in WIRE.md. `load.defines` has type `table Define`, `load.text` has type `String`,
   the others take the expected type. Loading costs 0 steps.
-- **Ranges**: `r.len() -> Int` (`end − start`; `E4002` if open), `r.isEmpty() -> Bool`,
+- **Ranges**: `r.len() -> Int` (`max(end − start, 0)`: a range's elements are `start`,
+  `start + 1`, … below `end`, §1.2, so `r.len() == 0` exactly when `r.isEmpty()`; `E4002` if
+  open), `r.isEmpty() -> Bool`,
   `r.contains(x: Int) -> Bool` (same as `x in r`), each cost 1. `for i in a..b` iterates in
   ascending order.
 
