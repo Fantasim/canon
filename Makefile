@@ -90,3 +90,13 @@ audit:
 # After a cleanup: lower .sovaudit/baseline.tsv to what is left (it never grows).
 audit-tighten:
 	$(AUDIT) baseline --tighten --repo ../..
+
+# DECISIONS 200: the generated-program suites at nightly size, under the memory cap; a crash is
+# reported with its seed and the suite goes on; -progen.keep writes the shrunk counterexamples.
+PROGEN_N    ?= 5000
+PROGEN_SEED ?= 1
+.PHONY: progen-nightly
+progen-nightly:
+	systemd-run --user --scope -q -p MemoryMax=3G env GOTOOLCHAIN=local go test -count=1 -timeout 0 \
+	  -run 'TestMutations|TestGrammar|TestCorruption' ./internal/testkit/progen \
+	  -progen.n $(PROGEN_N) -progen.seed $(PROGEN_SEED) -progen.keep
