@@ -52,7 +52,7 @@ var (
 )
 
 // widgetParams are the parameter words of a widget, in order (GRAMMAR.md §5.3).
-var widgetParams = [...]string{wordValue, wordSiblings}
+var widgetParams = [...]string{WordValue, wordSiblings}
 
 // siteKinds name each annotation site in E1118, by position (GRAMMAR.md §8.1).
 var siteKinds = [...]struct {

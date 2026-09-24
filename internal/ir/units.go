@@ -66,6 +66,7 @@ func (s *stage) assembleConst(u *unit, obj check.Object, d *syntax.ConstDecl) {
 		return
 	}
 	c := &constSite{c: s.constant(obj, d), obj: obj, decl: d}
+	s.nodeSites[c.c] = declSite{file: obj.File(), node: d.Name}
 	u.consts = append(u.consts, c)
 	u.p.Consts = append(u.p.Consts, c.c)
 }
@@ -74,7 +75,9 @@ func (s *stage) assembleLet(u *unit, obj check.Object, d *syntax.LetDecl) {
 	if local(d.Mods) {
 		return
 	}
-	u.values = append(u.values, s.letValue(obj, d))
+	v := s.letValue(obj, d)
+	s.nodeSites[v.v] = v.span()
+	u.values = append(u.values, v)
 }
 
 func (s *stage) assembleFn(u *unit, obj check.Object, d *syntax.FnDecl) {

@@ -1,5 +1,7 @@
 package syntax
 
+import "slices"
+
 // annSite is where an annotation stands: one bit per position, and per declaration kind at the
 // top level and on type headers.
 type annSite uint16
@@ -68,13 +70,16 @@ var annCatalog = map[string]*annSpec{
 		{name: ArgAccess, named: true, kind: valSymbol, values: accessModes, sites: siteRecordHeader},
 		{name: WordField, named: true, kind: valString, sites: siteField},
 		{name: tokenNames[KwType], named: true, kind: valString, sites: siteField},
-		{name: wordValue, named: true, kind: valInteger, sites: siteCase},
+		{name: WordValue, named: true, kind: valInteger, sites: siteCase},
 		{name: ArgUnit, named: true, kind: valSymbol, values: unitsLongestFirst[:], sites: siteField},
 		nameArg,
 	}},
 	AnnGo: {args: []argSpec{nameArg}},
-	AnnTS: {args: []argSpec{nameArg, {name: argBigint, kind: valFlag, sites: siteField}}},
+	AnnTS: {args: []argSpec{nameArg, {name: ArgBigint, kind: valFlag, sites: siteField}}},
 }
+
+// AccessModes are the symbols of @cpp(access:), in order (GRAMMAR.md §8.3), a copy the caller may keep.
+func AccessModes() []string { return slices.Clone(accessModes) }
 
 // nameArg is the name: argument of @cpp, @go and @ts (CODEGEN.md CG-02).
 var nameArg = argSpec{name: ArgName, named: true, kind: valString, sites: nameSites}

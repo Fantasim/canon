@@ -1,0 +1,13 @@
+CODEGEN.md §3.3, §3.5, decision 194: an enum member's @go(name:) is its whole constant, so ToneB on member a collides with member b's own ToneB in the package scope.
+-- a/a.canon --
+package a
+
+/// A tone.
+enum Tone { a @go(name: "ToneB"), b }
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+error[E8005]  a/a.canon:4:35
+  go: ToneB is generated for both a.Tone.a and a.Tone.b
+
+1 error, 0 warnings in 1 package (…)

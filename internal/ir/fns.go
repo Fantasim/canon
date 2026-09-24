@@ -61,6 +61,7 @@ func (s *stage) exportFn(obj check.Object, d *syntax.FnDecl, sig *types.FuncType
 		param.Range, _ = ownRefinements(p)
 		if i < len(d.Params) && d.Params[i].Name != nil {
 			param.Name = d.Params[i].Name.Name
+			s.nodeSites[param] = declSite{file: obj.File(), node: d.Params[i].Name}
 		}
 		fn.Params = append(fn.Params, param)
 	}

@@ -27,23 +27,23 @@ const (
 	retiredDoc       = "Retired."
 )
 
-// The fixed comments of container methods (T8) and the container templates (§5.9).
+// The fixed comments of container methods (T8) and the container templates (§5.9), whose member and method names are ir's.
 const (
 	tableContainerFormat = `type %[1]s struct {
-rows []%[2]s
+%[5]s []%[2]s
 }
 
 // Len returns the number of entries.
-func (self *%[1]s) Len() int { return len(self.rows) }
+func (self *%[1]s) %[6]s() int { return len(self.%[5]s) }
 
 // At returns entry i, in source order.
-func (self *%[1]s) At(i int) *%[2]s { return &self.rows[i] }
+func (self *%[1]s) %[7]s(i int) *%[2]s { return &self.%[5]s[i] }
 
 // All yields every entry in source order.
-func (self *%[1]s) All() %[3]s.Seq[*%[2]s] {
+func (self *%[1]s) %[8]s() %[3]s.Seq[*%[2]s] {
 return func(yield func(*%[2]s) bool) {
-for i := range self.rows {
-if !yield(&self.rows[i]) {
+for i := range self.%[5]s {
+if !yield(&self.%[5]s[i]) {
 return
 }
 }
@@ -51,36 +51,36 @@ return
 }
 
 // Find returns the entry whose id is key.
-func (self *%[1]s) Find(key string) (*%[2]s, bool) {
+func (self *%[1]s) %[9]s(key string) (*%[2]s, bool) {
 id, ok := Parse%[4]s(key)
 if !ok {
 return nil, false
 }
-return &self.rows[id], true
+return &self.%[5]s[id], true
 }
 
-func (self *%[1]s) Get(id %[4]s) *%[2]s { return &self.rows[id] }
+func (self *%[1]s) %[10]s(id %[4]s) *%[2]s { return &self.%[5]s[id] }
 
 `
 	keyedContainerFormat = `type %[1]s struct {
-rows %[2]s
+%[7]s %[2]s
 }
 
 // Len returns the number of entries.
-func (self *%[1]s) Len() int { return self.rows.Len() }
+func (self *%[1]s) %[8]s() int { return self.%[7]s.Len() }
 
 // At returns entry i, in source order.
-func (self *%[1]s) At(i int) *%[3]s { return self.rows.At(i) }
+func (self *%[1]s) %[9]s(i int) *%[3]s { return self.%[7]s.At(i) }
 
 // All yields every entry in source order.
-func (self *%[1]s) All() %[4]s.Seq[*%[3]s] { return self.rows.All() }
+func (self *%[1]s) %[10]s() %[4]s.Seq[*%[3]s] { return self.%[7]s.All() }
 
 // Find returns the entry whose %[5]s is key.
-func (self *%[1]s) Find(key %[6]s) (*%[3]s, bool) { return self.rows.Find(key) }
+func (self *%[1]s) %[11]s(key %[6]s) (*%[3]s, bool) { return self.%[7]s.Find(key) }
 
 `
 	findByIndexFormat = `var %[1]s = %[2]s.OnceValue(func() map[%[3]s]int {
-rows := %[4]s().rows
+rows := %[4]s().%[6]s
 idx := make(map[%[3]s]int, len(rows))
 for i, r := range rows {
 idx[r.%[5]s] = i
@@ -94,7 +94,7 @@ i, ok := %[5]s()[key]
 if !ok {
 return nil, false
 }
-return &self.rows[i], true
+return &self.%[6]s[i], true
 }
 
 `
@@ -114,7 +114,7 @@ return
 }
 
 `
-	codesFormat = `func (self %[1]s) Code() %[2]s { return %[2]s(self) }
+	codesFormat = `func (self %[1]s) %[4]s() %[2]s { return %[2]s(self) }
 
 func %[3]s(code %[2]s) (%[1]s, bool) {
 switch v := %[1]s(code); v {
@@ -125,15 +125,15 @@ switch v := %[1]s(code); v {
 // Variant templates (CODEGEN.md §5.5).
 const (
 	variantFormat = `type %[1]s struct {
-kind %[2]s
-value any
+%[3]s %[2]s
+%[4]s any
 }
 
-func (self *%[1]s) Kind() %[2]s { return self.kind }
+func (self *%[1]s) %[5]s() %[2]s { return self.%[3]s }
 
 `
 	asCaseFormat = `func (self *%[1]s) %[2]s() (*%[3]s, bool) {
-c, ok := self.value.(*%[3]s)
+c, ok := self.%[4]s.(*%[3]s)
 return c, ok
 }
 
@@ -188,7 +188,6 @@ const (
 	ampersand        = "&"
 	dot              = "."
 	space            = " "
-	underscore       = "_"
 	newline          = "\n"
 	lparen           = "("
 	rparen           = ")"
@@ -224,38 +223,10 @@ var goStdImports = map[string]bool{timePkg: true, iterPkg: true, syncPkg: true, 
 
 // Generated names (CODEGEN.md §3.3) and the reference layout's private names (§6.2).
 const (
-	kindSuffix       = "Kind"
-	idSuffixUpper    = "ID"
-	indexSuffix      = "Index"
-	pluralSuffix     = "s"
-	getPrefix        = "Get"
-	parsePrefix      = "Parse"
-	asPrefix         = "As"
-	findByPrefix     = "FindBy"
-	membersSuffix    = "Members"
-	fromCodeSuffix   = "FromCode"
-	stringMethod     = "String"
-	wireMethod       = "Wire"
-	retiredMethod    = "Retired"
-	wireArg          = "wire"
-	keyArg           = "key"
-	idStore          = "id"
-	retiredStore     = "retired"
-	kindStore        = "kind"
-	caseStore        = "value"
-	rowsField        = "rows"
-	idStoreSuffix    = "_id"
-	idsStoreSuffix   = "_ids"
-	okStoreSuffix    = "_ok"
-	indexLocalSuffix = "_i"
-	tableSuffix      = "Table"
-	dataSuffix       = "Data"
-	valuesSuffix     = "Values"
-	buildPrefix      = "build"
-	dataVar          = "d"
-	selfRecv         = "self"
-	selfDot          = "self."
-	scopePackage     = "package"
+	wireArg  = "wire"
+	keyArg   = "key"
+	selfRecv = "self"
+	selfDot  = "self."
 )
 
 // Number formats.

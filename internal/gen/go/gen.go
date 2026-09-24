@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"go/format"
+	"go/token"
 	"path"
 	"slices"
 	"strings"
@@ -12,23 +13,22 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// gen is one run of the generator over a package and one of its go emits.
+// gen is one run of the generator over a package and one of its go emits; every Go name it writes comes from names, the plan stage E checks too (decision 194).
 type gen struct {
 	p         *ir.Package
 	e         *ir.Emit
+	names     *ir.GoNamePlan
 	body      bytes.Buffer
 	imports   map[string]string // import path → the name code uses
+	importOf  map[string]string // the name code uses → its import path
 	err       error
-	top       *scope
-	last      string // lowerCamel of the package's last segment: teamboardData
 	emitted   []*ir.Value
 	byValue   map[string]*valueInfo
 	tableOf   map[*ir.Record]*ir.Value
 	instances map[*ir.ExportFn]map[*value.Record]*ir.Instance
-	usedData  bool            // an expression read the baked data (d.…) since the flag was cleared
-	data      string          // the local that holds the baked data: d, escaped (§3.4)
-	canonGo   map[string]bool // Go names of the imported Canon packages
-	at        string          // the Canon item being written: the Subject of a kind refusal
+	usedData  bool   // an expression read the baked data (d.…) since the flag was cleared
+	data      string // the local that holds the baked data: d, escaped (§3.4)
+	at        string // the Canon item being written: the Subject of a kind refusal
 }
 
 // Generate is the Go generator (ir.Generator): <gopkg>.gen.go, and rt/rt.go verbatim (§2.3, §6.3).
@@ -39,7 +39,7 @@ func Generate(p *ir.Package, e *ir.Emit) ([]ir.File, error) {
 	if e.Mode != ir.ModeBaked {
 		return nil, fmt.Errorf("%w: mode %s of %s", ErrUnsupported, modeText(e.Mode), e.Out)
 	}
-	if !validIdent(e.GoPackage) || e.GoImport == "" {
+	if !token.IsIdentifier(e.GoPackage) || e.GoImport == "" {
 		return nil, fmt.Errorf("%w: go emit %s without a package or an import path", ErrMalformed, e.Out)
 	}
 	if len(p.Defines) > 0 {
@@ -58,22 +58,14 @@ func Generate(p *ir.Package, e *ir.Emit) ([]ir.File, error) {
 }
 
 func newGen(p *ir.Package, e *ir.Emit) *gen {
-	segs := strings.Split(p.Name, dot)
 	g := &gen{
-		p: p, e: e, imports: map[string]string{}, top: newScope(scopePackage),
-		last: lowerCamel(segs[len(segs)-1]), at: p.Name,
+		p: p, e: e, names: ir.PlanGoNames(p, e), imports: map[string]string{}, importOf: map[string]string{}, at: p.Name,
 		byValue: map[string]*valueInfo{}, tableOf: map[*ir.Record]*ir.Value{},
 	}
-	g.canonGo = map[string]bool{}
-	for _, ref := range p.Imports {
-		for _, imp := range ref.Emits {
-			if imp.Target == ir.TargetGo {
-				g.canonGo[imp.GoPackage] = true
-			}
-		}
+	g.data = g.names.Data().Local
+	if problems := g.names.Problems(); len(problems) > 0 {
+		g.fail(nameError(problems[0]))
 	}
-	g.data = g.local(dataVar, p.Name)
-	g.checkOverrides()
 	g.indexValues()
 	g.indexInstances()
 	return g
@@ -95,11 +87,6 @@ func (g *gen) enter(origin string) (leave func()) {
 	prev := g.at
 	g.at = origin
 	return func() { g.at = prev }
-}
-
-// declare adds a package-level name.
-func (g *gen) declare(name, origin string) {
-	g.fail(g.top.add(name, origin))
 }
 
 // printf writes generated text; go/format lays it out afterwards.
@@ -131,12 +118,12 @@ func (g *gen) header(out *bytes.Buffer) {
 	g.writeImports(out)
 }
 
-// use records an import and returns the name code refers to it by.
+// use records an import and returns the name code refers to it by; the plan declared it, so two paths under one name are a plan defect.
 func (g *gen) use(importPath, name string) string {
-	if _, ok := g.imports[importPath]; !ok {
-		g.imports[importPath] = name
-		g.declare(name, importPath)
+	if prev, ok := g.importOf[name]; ok && prev != importPath {
+		g.failf(ErrNameCollision, "the imports %s and %s are both %s", prev, importPath, name)
 	}
+	g.imports[importPath], g.importOf[name] = name, importPath
 	return name
 }
 

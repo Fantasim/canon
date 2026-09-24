@@ -1,0 +1,13 @@
+CODEGEN.md §3.4, §3.5: an enum member's @cpp(name:) that is a C++ keyword is refused at the member.
+-- a/a.canon --
+package a
+
+/// A tone.
+enum Tone { a @cpp(name: "class"), b }
+
+emit cpp { out: "@features/a" }
+-- findings.txt --
+error[E8011]  a/a.canon:4:13
+  class is not a valid cpp identifier for @cpp(name:)
+
+1 error, 0 warnings in 1 package (…)

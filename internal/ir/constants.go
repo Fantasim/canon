@@ -2,8 +2,10 @@ package ir
 
 import (
 	"regexp"
+	"slices"
 
 	"github.com/fantasim/canonlang/internal/check"
+	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
 )
 
@@ -135,13 +137,6 @@ var fpComposites = map[types.Kind]string{
 // fpEncNames is `enc=` of a field (§4.5).
 var fpEncNames = [...]string{types.EncPlain: fpNone, types.EncInt: "int", types.EncBits: "bits"}
 
-// The annotation arguments stage E reads that CODEGEN.md names nowhere else (§3.5, §7.8).
-const (
-	argType    = "type"
-	argValue   = "value"
-	flagBigInt = "bigint"
-)
-
 // Paths, separators and names stage E composes.
 const (
 	curDir    = "."
@@ -160,7 +155,8 @@ const maxCells = 65_536
 var (
 	targetWords = [...]string{TargetGo: check.TargetGo, TargetCpp: check.TargetCpp, TargetTS: check.TargetTS, TargetJSON: check.TargetJSON, TargetView: check.TargetView}
 	modeWords   = [...]string{ModeNone: "", ModeBaked: check.ModeBaked, ModeEmbedded: check.ModeEmbedded, ModeData: check.ModeData, ModeTypes: check.ModeTypes}
-	accessWords = [...]string{AccessNone: "", AccessFields: "fields", AccessBoth: "both", AccessGetters: "getters"}
+	// accessWords are syntax's @cpp(access:) symbols, indexed by Access: AccessNone has none.
+	accessWords = append([]string{""}, syntax.AccessModes()...)
 )
 
 // branchKinds are the kinds a dependent type's branch may have (CODEGEN.md §5.6, E8017).
@@ -186,43 +182,100 @@ var goInitialisms = map[string]bool{
 	"db": true, "ip": true, "hp": true, "mp": true, "ts": true,
 }
 
-// goReservedLower is what a Go lower-case position escapes: keywords, predeclared identifiers, the packages a generated file imports, and `self` (CODEGEN.md §3.4).
-var goReservedLower = map[string]bool{
-	"break": true, "case": true, "chan": true, "const": true, "continue": true, "default": true,
-	"defer": true, "else": true, "fallthrough": true, "for": true, "func": true, "go": true,
-	"goto": true, "if": true, "import": true, "interface": true, "map": true, "package": true,
-	"range": true, "return": true, "select": true, "struct": true, "switch": true, "type": true,
-	"var": true, "any": true, "append": true, "bool": true, "byte": true, "cap": true,
-	"clear": true, "close": true, "comparable": true, "complex": true, "complex64": true,
-	"complex128": true, "copy": true, "delete": true, "error": true, "false": true,
-	"float32": true, "float64": true, "imag": true, "int": true, "int8": true, "int16": true,
-	"int32": true, "int64": true, "iota": true, "len": true, "make": true, "max": true,
-	"min": true, "new": true, "nil": true, "panic": true, "print": true, "println": true,
-	"real": true, "recover": true, "rune": true, "string": true, "true": true, "uint": true,
-	"uint8": true, "uint16": true, "uint32": true, "uint64": true, "uintptr": true, "rt": true,
-	"json": true, "fmt": true, "iter": true, "os": true, "filepath": true, "atomic": true,
-	"sync": true, "time": true, "errors": true, "strconv": true, "strings": true, "math": true,
-	"regexp": true, "embed": true, "self": true,
+// goPredeclared are Go's predeclared identifiers (CODEGEN.md §3.4).
+var goPredeclared = map[string]bool{
+	"any": true, "append": true, "bool": true, "byte": true, "cap": true, "clear": true,
+	"close": true, "comparable": true, "complex": true, "complex64": true, "complex128": true,
+	"copy": true, "delete": true, "error": true, boolFalse: true, "float32": true, "float64": true,
+	"imag": true, "int": true, "int8": true, "int16": true, "int32": true, "int64": true,
+	"iota": true, "len": true, "make": true, "max": true, "min": true, "new": true, "nil": true,
+	"panic": true, "print": true, "println": true, "real": true, "recover": true, "rune": true,
+	"string": true, boolTrue: true, "uint": true, "uint8": true, "uint16": true, "uint32": true,
+	"uint64": true, "uintptr": true,
 }
 
-// cppReserved is what a C++ verbatim position escapes: C++20's keywords, its alternative tokens, and the names generated code reserves for itself (CODEGEN.md §3.4).
-var cppReserved = map[string]bool{
-	"alignas": true, "alignof": true, "and": true, "and_eq": true, "asm": true, "auto": true,
-	"bitand": true, "bitor": true, "bool": true, "break": true, "case": true, "catch": true,
-	"char": true, "char8_t": true, "char16_t": true, "char32_t": true, "class": true, "compl": true,
-	"concept": true, "const": true, "consteval": true, "constexpr": true, "constinit": true,
-	"const_cast": true, "continue": true, "co_await": true, "co_return": true, "co_yield": true,
-	"decltype": true, "default": true, "delete": true, "do": true, "double": true,
-	"dynamic_cast": true, "else": true, "enum": true, "explicit": true, "export": true,
-	"extern": true, "false": true, "float": true, "for": true, "friend": true, "goto": true,
-	"if": true, "inline": true, "int": true, "long": true, "mutable": true, "namespace": true,
-	"new": true, "noexcept": true, "not": true, "not_eq": true, "nullptr": true, "operator": true,
-	"or": true, "or_eq": true, "private": true, "protected": true, "public": true, "register": true,
-	"reinterpret_cast": true, "requires": true, "return": true, "short": true, "signed": true,
-	"sizeof": true, "static": true, "static_assert": true, "static_cast": true, "struct": true,
-	"switch": true, "template": true, "this": true, "thread_local": true, "throw": true,
-	"true": true, "try": true, "typedef": true, "typeid": true, "typename": true, "union": true,
-	"unsigned": true, "using": true, "virtual": true, "void": true, "volatile": true,
-	"wchar_t": true, "while": true, "xor": true, "xor_eq": true,
-	"detail": true, "conformance": true, "canon": true, "std": true, "nlohmann": true,
+// goImportNames are the package names generated Go files import (CODEGEN.md §3.4); baked Go writes goStdImports of them.
+var goImportNames = map[string]bool{
+	goRT: true, "json": true, "fmt": true, goIter: true, "os": true, "filepath": true,
+	"atomic": true, goSync: true, goTime: true, "errors": true, goStrconv: true, "strings": true,
+	goMath: true, "regexp": true, "embed": true,
 }
+
+// cppOwnNames are the names generated C++ reserves for itself (CODEGEN.md §3.4).
+var cppOwnNames = map[string]bool{"detail": true, "conformance": true, "canon": true, "std": true, "nlohmann": true}
+
+// The fixed Go names of generated code, which the name plan declares and gen/go's templates write (CODEGEN.md §5.2–§5.9, §6.2).
+const (
+	GoID           = "ID" // the ID method, and the suffix of an id type and a key getter
+	GoRetired      = "Retired"
+	GoKind         = "Kind" // the Kind method, and the suffix of a kind enum
+	GoString       = "String"
+	GoWire         = "Wire"
+	GoCode         = "Code"
+	GoLen          = "Len"
+	GoAt           = "At"
+	GoAll          = "All"
+	GoFind         = "Find"
+	GoGet          = "Get" // a table container's Get, and the prefix of an accessor
+	GoRows         = "rows"
+	GoIDStore      = "id"
+	GoRetiredStore = "retired"
+	GoKindStore    = "kind"
+	GoCaseStore    = "value"
+)
+
+// Generated Go names and the reference layout's own names (CODEGEN.md §3.3, §5.2–§5.10, §6.2; decisions 121, 193).
+const (
+	goAsPrefix         = "As"
+	goParsePrefix      = "Parse"
+	goMembersSuffix    = "Members"
+	goFromCodeSuffix   = "FromCode"
+	goFindByPrefix     = "FindBy"
+	goIndexSuffix      = "Index"
+	goTableSuffix      = "Table"
+	goDataSuffix       = "Data"
+	goValuesSuffix     = "Values"
+	goBuildPrefix      = "build"
+	goDataLocal        = "d"
+	goKeyStoreSuffix   = "_id"
+	goKeysStoreSuffix  = "_ids"
+	goOKStoreSuffix    = "_ok"
+	goIndexLocalSuffix = "_i"
+	goPluralSuffix     = "s"
+	goSelf             = "self"
+	goScopePackage     = "package"
+	goParamsSuffix     = "()"
+)
+
+// The standard packages baked Go imports, in the order the plan declares them (CODEGEN.md §2.8).
+const (
+	goRT      = "rt"
+	goTime    = "time"
+	goIter    = "iter"
+	goSync    = "sync"
+	goStrconv = "strconv"
+	goMath    = "math"
+)
+
+// The kinds of GoNameProblem.
+const (
+	// GoCollision is two names equal in one scope (E8005).
+	GoCollision GoProblemKind = iota
+	// GoNotIdentifier is a generated name that is no Go identifier.
+	GoNotIdentifier
+	// GoUnexported is a @go(name:) override that is not an exported identifier (E8011, decision 182).
+	GoUnexported
+)
+
+var (
+	goStdImports       = []string{goRT, goTime, goIter, goSync, goStrconv, goMath}
+	goVariantMembers   = []string{GoKindStore, GoCaseStore, GoKind}
+	goIDEnumMethods    = []string{GoString}
+	goEnumMethods      = append(slices.Clone(goIDEnumMethods), GoWire)
+	goCodesEnumMethods = append(slices.Clone(goEnumMethods), GoCode)
+	goContainerMembers = []string{GoRows, GoLen, GoAt, GoAll, GoFind}
+	// goPointerKinds are the kinds whose getter returns a pointer, which nil marks absent (CODEGEN.md §4.2, §4.3).
+	goPointerKinds = map[types.Kind]bool{types.Record: true, types.Variant: true, types.Case: true}
+	// goStdOfKind is the package a type of each kind makes baked Go import; math comes from a -0.0 literal only (decisions 181, 202).
+	goStdOfKind = map[types.Kind]string{types.List: goRT, types.Map: goRT, types.DepMap: goRT, types.Duration: goTime}
+)

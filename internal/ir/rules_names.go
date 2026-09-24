@@ -6,175 +6,83 @@ import (
 	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/source"
-	"github.com/fantasim/canonlang/internal/types"
 )
 
-// checkOverrideNames is E8011: a @go/@cpp/@ts(name:) override that is not a valid identifier for its target, or is reserved there (CODEGEN.md §3.5, decision 120); an enum member's or a variant case's own override has no tracked span yet and is not checked here.
+// checkOverrideNames is E8011 for @cpp and @ts(name:): an override its emitted target cannot declare, at every position that takes one, enum members and cases included (CODEGEN.md §3.5); the go target's come from the name plan (checkGoNames).
 func (s *stage) checkOverrideNames(u *unit) {
-	for _, t := range u.p.Types {
-		span := s.decls[t].span()
-		switch x := t.(type) {
-		case *Record:
-			s.checkNames(u, span, x.Go.Name, x.Cpp.Name, x.TS.Name)
-			s.overrideFields(u, x.Fields)
-			s.overrideFns(u, x.Methods)
-		case *Enum:
-			s.checkNames(u, span, x.Go.Name, x.Cpp.Name, x.TS.Name)
-		case *Variant:
-			s.checkNames(u, span, x.Go.Name, x.Cpp.Name, x.TS.Name)
-			for _, c := range x.Cases {
-				s.overrideFields(u, c.Fields)
-				s.overrideFns(u, c.Methods)
-			}
-		case *Dependent:
-			s.checkNames(u, span, x.Go.Name, x.Cpp.Name, x.TS.Name)
+	cpp, ts := hasTarget(u, TargetCpp), hasTarget(u, TargetTS)
+	for _, site := range overrideSites(u.p).sites {
+		if cpp && site.cpp != "" && !cppValidIdent(site.cpp) {
+			u.report(diag.E8011.At(s.itemSpan(site.item, source.Span{}), site.cpp, check.TargetCpp))
 		}
-	}
-	for _, c := range u.consts {
-		s.checkNames(u, c.span(), c.c.Go.Name, c.c.Cpp.Name, c.c.TS.Name)
-	}
-	for _, v := range u.values {
-		s.checkNames(u, v.span().span(), v.v.Go.Name, v.v.Cpp.Name, v.v.TS.Name)
-	}
-}
-
-func (s *stage) overrideFields(u *unit, fields []*Field) {
-	for _, f := range fields {
-		s.checkNames(u, s.fieldSites[f].span(), f.Go.Name, f.Cpp.Name, f.TS.Name)
-	}
-}
-
-func (s *stage) overrideFns(u *unit, fns []*ExportFn) {
-	for _, fn := range fns {
-		if site := s.fnObjs[fn]; site != nil {
-			s.checkNames(u, site.span(), fn.Go.Name, fn.Cpp.Name, fn.TS.Name)
+		if ts && site.tsName != "" && !identPattern.MatchString(site.tsName) {
+			u.report(diag.E8011.At(s.itemSpan(site.item, source.Span{}), site.tsName, check.TargetTS))
 		}
 	}
 }
 
-// checkNames reports E8011 for each non-empty override that its own emitted target holds but cannot use.
-func (s *stage) checkNames(u *unit, span source.Span, goName, cppName, tsName string) {
-	if hasTarget(u, TargetGo) && goName != "" && !goValidIdent(goName) {
-		u.report(diag.E8011.At(span, goName, check.TargetGo))
-	}
-	if hasTarget(u, TargetCpp) && cppName != "" && !cppValidIdent(cppName) {
-		u.report(diag.E8011.At(span, cppName, check.TargetCpp))
-	}
-	if hasTarget(u, TargetTS) && tsName != "" && !identPattern.MatchString(tsName) {
-		u.report(diag.E8011.At(span, tsName, check.TargetTS))
-	}
-}
-
-// checkNameCollisions is E8005 for the go target: two generated names equal in one scope (CODEGEN.md §3.5, decision 120); cpp and ts have no backend yet to compute their own names against.
-func (s *stage) checkNameCollisions(u *unit) {
-	if !hasTarget(u, TargetGo) {
+// checkGoNames reports the go emit's names (CODEGEN.md §3.5): E8011 for a @go(name:) that is not an exported identifier (decision 182), in every mode; in baked mode, from the name plan gen/go writes from (decision 194), E8011 for a derived name that is no Go identifier (decision 202) and E8005 for two names of one scope, at the item named second, or at the emit for an import or the package's own names. The other modes have no plan until M2 (decision 203); cpp and ts have no backend yet to plan their names.
+func (s *stage) checkGoNames(u *unit) {
+	es := emitFor(u, TargetGo)
+	if es == nil {
 		return
 	}
-	s.checkPackageScope(u)
-	for _, t := range u.p.Types {
-		switch x := t.(type) {
-		case *Record:
-			s.checkMemberScope(u, x.QName(), x.Fields, x.Methods)
-		case *Enum:
-			s.checkEnumScope(u, x)
-		case *Variant:
-			for _, c := range x.Cases {
-				s.checkMemberScope(u, x.QName()+qnameSep+c.Name, c.Fields, c.Methods)
-			}
+	problems := goOverrideProblems(u.p)
+	if es.e.Mode == ModeBaked {
+		problems = PlanGoNames(u.p, es.e).Problems()
+	}
+	refused := map[any]bool{}
+	for _, pr := range problems {
+		span := s.itemSpan(pr.Item, es.span())
+		if pr.Kind == GoCollision {
+			u.report(diag.E8005.At(span, check.TargetGo, pr.Name, pr.First, pr.Origin))
+			continue
+		}
+		if pr.Item != nil && refused[pr.Item] {
+			continue // one E8011 per declaration: its override, else its first derived name
+		}
+		refused[pr.Item] = true
+		u.report(diag.E8011.At(span, shownName(pr), check.TargetGo))
+	}
+}
+
+// shownName is the name an E8011 shows: the derived or override name, or the source identifier when the derived name is empty (`__`), since a message never shows a blank name (meta/decisions/log-2026-09-24.md, IR round 2 review).
+func shownName(pr GoNameProblem) string {
+	if pr.Name != "" {
+		return pr.Name
+	}
+	return pr.Origin[strings.LastIndex(pr.Origin, qnameSep)+1:]
+}
+
+// emitFor is the package's emit of target t, or nil (CODEGEN.md §2.1: at most one per target).
+func emitFor(u *unit, t Target) *emitSite {
+	for _, es := range u.emits {
+		if es.e.Target == t {
+			return es
 		}
 	}
+	return nil
 }
 
-// nameScope tracks the origin of every generated name reported once in one scope, so a repeat reports E8005 naming both origins.
-type nameScope struct {
-	seen map[string]string
-}
-
-func (n *nameScope) add(u *unit, span source.Span, name, origin string) {
-	if prev, ok := n.seen[name]; ok {
-		u.report(diag.E8005.At(span, check.TargetGo, name, prev, origin))
-		return
-	}
-	if n.seen == nil {
-		n.seen = map[string]string{}
-	}
-	n.seen[name] = origin
-}
-
-// checkPackageScope is E8005 among a package's own type names, value containers, constants and package-level export fns (CODEGEN.md §3.3, §3.5).
-func (s *stage) checkPackageScope(u *unit) {
-	var scope nameScope
-	for _, t := range u.p.Types {
-		if name, origin, span := s.typeGoName(t); name != "" {
-			scope.add(u, span, name, origin)
+// itemSpan locates an IR node of this package: a type, field or export fn at its declaration, an enum member, case, parameter, constant or value at its name; fallback for anything else.
+func (s *stage) itemSpan(item any, fallback source.Span) source.Span {
+	var d declSite
+	switch x := item.(type) {
+	case Type:
+		d = s.decls[x]
+	case *Field:
+		if site := s.fieldSites[x]; site != nil {
+			d = site.declSite
 		}
-	}
-	for _, v := range u.values {
-		// only a table or a keyed list gets its own container class (CODEGEN.md §5.9); a record or variant value is the type itself, naming nothing new.
-		t := v.v.Type
-		if t.Kind == types.Table || t.Kind == types.List && t.KeyedBy != nil {
-			scope.add(u, v.span().span(), GoUpperCamel(v.v.Name), v.v.Name)
+	case *ExportFn:
+		if site := s.fnObjs[x]; site != nil {
+			return site.span()
 		}
+	default:
+		d = s.nodeSites[item]
 	}
-	for _, c := range u.consts {
-		scope.add(u, c.span(), effectiveGo(c.c.Go, c.c.Name), c.c.Name)
+	if d.file == nil {
+		return fallback
 	}
-	for _, site := range u.fns {
-		scope.add(u, site.span(), effectiveGo(site.fn.Go, site.fn.Name), site.label)
-	}
-}
-
-// checkMemberScope is E8005 among one record's or case's own fields and methods (CODEGEN.md §3.5: "a field strong next to an export fn getStrong").
-func (s *stage) checkMemberScope(u *unit, owner string, fields []*Field, fns []*ExportFn) {
-	var scope nameScope
-	for _, f := range fields {
-		scope.add(u, s.fieldSites[f].span(), effectiveGo(f.Go, f.Name), owner+qnameSep+f.Name)
-	}
-	for _, fn := range fns {
-		if site := s.fnObjs[fn]; site != nil {
-			scope.add(u, site.span(), effectiveGo(fn.Go, fn.Name), site.label)
-		}
-	}
-}
-
-// checkEnumScope is E8005 among one enum's own members (CODEGEN.md §3.5: "series_1 and series1 in one enum").
-func (s *stage) checkEnumScope(u *unit, e *Enum) {
-	var scope nameScope
-	span := s.decls[e].span()
-	for _, m := range e.Members {
-		scope.add(u, span, effectiveGo(m.Go, m.Name), e.QName()+qnameSep+m.Name)
-	}
-}
-
-// typeGoName is a public type's own Go name package-scope: "T", first letter uppercased, or its @go(name:) override (CODEGEN.md §3.3).
-func (s *stage) typeGoName(t Type) (name, origin string, span source.Span) {
-	switch x := t.(type) {
-	case *Record:
-		return effectiveTypeName(x.Go, x.Name), x.Name, s.decls[t].span()
-	case *Enum:
-		return effectiveTypeName(x.Go, x.Name), x.Name, s.decls[t].span()
-	case *Variant:
-		return effectiveTypeName(x.Go, x.Name), x.Name, s.decls[t].span()
-	case *Dependent:
-		return effectiveTypeName(x.Go, x.Name), x.Name, s.decls[t].span()
-	}
-	return "", "", source.Span{}
-}
-
-func effectiveTypeName(n NameOptions, canon string) string {
-	if n.Name != "" {
-		return n.Name
-	}
-	if canon == "" {
-		return canon
-	}
-	return strings.ToUpper(canon[:1]) + canon[1:]
-}
-
-// effectiveGo is a member, field, constant or export fn's Go name: its @go(name:) override, or GoUpperCamel of its Canon name.
-func effectiveGo(n NameOptions, canon string) string {
-	if n.Name != "" {
-		return n.Name
-	}
-	return GoUpperCamel(canon)
+	return d.span()
 }

@@ -29,7 +29,7 @@ func (s *stage) fields(fs []*types.Field, items []syntax.RecordItem, owner check
 		n := nameOverrides(f.Annotations)
 		fd.Go, fd.TS = n.goName, n.ts
 		fd.Cpp = fieldCpp(f.Annotations)
-		fd.BigInt = hasFlag(annotation(f.Annotations, syntax.AnnTS), flagBigInt)
+		fd.BigInt = hasFlag(annotation(f.Annotations, syntax.AnnTS), syntax.ArgBigint)
 		s.fieldDefault(fd, f, owner, params)
 		out = append(out, fd)
 		site := &fieldSite{tf: f}

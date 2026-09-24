@@ -1,0 +1,18 @@
+DECISIONS 203: a field's @go(name:) renames its storage too, so `a: Int @go(name: "B")` next to `b` collides in the getter B and the storage b, reported once, at the getter.
+-- a/a.canon --
+package a
+
+/// A rule.
+record Rule {
+  /// One score.
+  a: Int @go(name: "B")
+  /// The other score.
+  b: Int
+}
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+error[E8005]  a/a.canon:8:3
+  go: B is generated for both a.Rule.a and a.Rule.b
+
+1 error, 0 warnings in 1 package (…)

@@ -16,7 +16,7 @@ func (s *stage) precompute() {
 		}
 		for _, site := range u.fns {
 			if site.fn.Kind != FnTranslated && s.computable(site) {
-				site.fn.Value, site.fn.Table = s.results(site, nil)
+				site.fn.Value, site.fn.Table, _ = s.results(site, nil)
 			}
 		}
 		for _, v := range u.values {
@@ -35,15 +35,16 @@ func hasDataEmit(u *unit) bool {
 	return false
 }
 
-// receiver computes the stored methods of one receiver: a record or case instance, of this package or an imported one, whose encoded `$` keys need them too (WIRE.md §5.11, decision 128).
+// receiver computes the stored methods of one receiver: a record or case instance, of this package or an imported one, whose encoded `$` keys need them too (WIRE.md §5.11, decision 128). A failed call leaves out this receiver's Instance only: every other receiver is still evaluated, each failure reported by the host (decision 194).
 func (s *stage) receiver(r *value.Record) {
 	for _, m := range s.methodsOf(r.T) {
 		site := s.fnObjs[m]
 		if m.Kind == FnTranslated || site == nil || !s.computable(site) {
 			continue
 		}
-		result, table := s.results(site, r)
-		m.Instances = append(m.Instances, &Instance{Recv: r, Result: result, Table: table})
+		if result, table, ok := s.results(site, r); ok {
+			m.Instances = append(m.Instances, &Instance{Recv: r, Result: result, Table: table})
+		}
 	}
 }
 
@@ -65,20 +66,17 @@ func (s *stage) methodsOf(t types.Type) []*ExportFn {
 }
 
 // computable reports a stored fn whose signature stage E accepts: no optional parameter
-// (E9003) and at most maxCells cells (E9002); a failed call leaves it uncomputed.
+// (E9003) and at most maxCells cells (E9002).
 func (s *stage) computable(site *fnSite) bool {
-	switch {
-	case s.failed[site.fn]:
-		return false
-	case site.fn.Kind == FnPrecomputed:
+	if site.fn.Kind == FnPrecomputed {
 		return true
 	}
 	_, n, ok := s.domains(site)
 	return ok && n <= maxCells
 }
 
-// results is a fn's value for recv (nil for a package fn): a precomputed result, or the dense table over its domains, the first parameter varying slowest (CODEGEN.md §5.10); every cell is still called after one fails, so every failure is reported (EVALUATION.md §2.3, decision 194).
-func (s *stage) results(site *fnSite, recv *value.Record) (value.Value, *LookupTable) {
+// results is a fn's value for recv (nil for a package fn): a precomputed result, or the dense table over its domains, the first parameter varying slowest (CODEGEN.md §5.10); every cell is still called after one fails, so every failure is reported (EVALUATION.md §2.3, decision 194), and a failure is false with no result.
+func (s *stage) results(site *fnSite, recv *value.Record) (value.Value, *LookupTable, bool) {
 	var self value.Value
 	if recv != nil {
 		self = recv
@@ -86,10 +84,9 @@ func (s *stage) results(site *fnSite, recv *value.Record) (value.Value, *LookupT
 	if site.fn.Kind == FnPrecomputed {
 		v, ok := s.in.Host.Call(s.ctx, site.obj, self, nil)
 		if !ok {
-			s.failed[site.fn] = true
-			return nil, nil
+			return nil, nil, false
 		}
-		return v, nil
+		return v, nil, true
 	}
 	domains, n, _ := s.domains(site)
 	table := &LookupTable{Domains: domains, Cells: make([]value.Value, n)}
@@ -109,10 +106,9 @@ func (s *stage) results(site *fnSite, recv *value.Record) (value.Value, *LookupT
 		table.Cells[c] = v
 	}
 	if failed {
-		s.failed[site.fn] = true
-		return nil, nil
+		return nil, nil, false
 	}
-	return nil, table
+	return nil, table, true
 }
 
 // domains are the values of each finite parameter in domain order (CODEGEN.md §5.10): enum members and table entries retired included, false then true; n is the number of cells.

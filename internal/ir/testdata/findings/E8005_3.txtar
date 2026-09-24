@@ -1,0 +1,21 @@
+CODEGEN.md §3.5, §5.9, decision 194: a table the go emit selects gets its container class UpperCamel(v), which collides with the record of the same name.
+-- a/a.canon --
+package a
+
+/// A potion.
+record Potion {
+  /// Its heal.
+  heal: Int
+}
+
+/// The potions.
+let potion: table Potion = {
+  small { heal: 1 }
+}
+
+emit go { out: "@features/a", package: "a", values: [potion] }
+-- findings.txt --
+error[E8005]  a/a.canon:10:5
+  go: Potion is generated for both a.Potion and potion
+
+1 error, 0 warnings in 1 package (…)

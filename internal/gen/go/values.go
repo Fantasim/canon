@@ -1,7 +1,6 @@
 package gogen
 
 import (
-	"slices"
 	"strconv"
 
 	"github.com/fantasim/canonlang/internal/ir"
@@ -27,18 +26,15 @@ func (g *gen) indexValues() {
 		case !ok || rec.Pkg != g.p.Name:
 			g.failf(ErrUnsupported, "table %s of a record of another package", v.Name)
 		case g.tableOf[rec] != nil:
-			g.failf(ErrNameCollision, "%s is the id type of both %s and %s", idTypeName(g.goName(rec)), g.tableOf[rec].Name, v.Name)
+			g.failf(ErrNameCollision, "%s is the id type of both %s and %s", g.idType(rec), g.tableOf[rec].Name, v.Name)
 		default:
 			g.tableOf[rec] = v
 			g.checkStable(v, rec)
 		}
 	}
-	for _, v := range g.p.Values {
-		if len(g.e.Values) > 0 && !slices.Contains(g.e.Values, v.Name) {
-			continue
-		}
-		g.emitted = append(g.emitted, v)
-		g.byValue[v.Name] = &valueInfo{v: v, store: storageName(v.Name), index: g.entryIndex(v)}
+	g.emitted = g.names.Emitted()
+	for _, v := range g.emitted {
+		g.byValue[v.Name] = &valueInfo{v: v, store: g.names.ValueStore(v), index: g.entryIndex(v)}
 	}
 }
 
@@ -121,11 +117,6 @@ func (g *gen) instanceOf(fn *ir.ExportFn, origin string, r *value.Record) *ir.In
 	}
 	g.failf(ErrMalformed, "no precomputed result of %s for a receiver", origin)
 	return &ir.Instance{}
-}
-
-// resolvable reports a ref into a value of this package and emit: its getter returns the entry (§5.8).
-func (g *gen) resolvable(r *ir.RefTarget) bool {
-	return r.Coll == types.CollLet && !r.Local && r.Pkg == g.p.Name && g.byValue[r.Value] != nil
 }
 
 // resolvedExpr points at the entry of an emitted value whose key is k, in the baked data d.

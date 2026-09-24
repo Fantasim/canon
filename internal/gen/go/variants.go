@@ -23,14 +23,8 @@ func (g *gen) types() {
 // variant writes the variant, then one type per case with fields (CODEGEN.md §5.5).
 func (g *gen) variant(v *ir.Variant) {
 	name := g.goName(v)
-	kind := kindName(name)
-	g.declare(name, v.QName())
 	g.body.WriteString(docFor(name, v.Doc))
-	g.printf(variantFormat, name, kind)
-	methods := newScope(v.QName())
-	for _, n := range []string{kindStore, caseStore, kindSuffix} {
-		g.fail(methods.add(n, v.QName()))
-	}
+	g.printf(variantFormat, name, g.names.KindName(v), ir.GoKindStore, ir.GoCaseStore, ir.GoKind)
 	for _, c := range v.Cases {
 		if len(c.Fields) == 0 {
 			if len(c.Methods) > 0 {
@@ -38,9 +32,7 @@ func (g *gen) variant(v *ir.Variant) {
 			}
 			continue
 		}
-		as := asPrefix + exportedName(c.Go.Name, c.Name)
-		g.fail(methods.add(as, v.QName()))
-		g.printf(asCaseFormat, name, as, caseName(name, c))
+		g.printf(asCaseFormat, name, g.names.AsName(c), g.names.CaseName(v, c), ir.GoCaseStore)
 	}
 	for _, c := range v.Cases {
 		if len(c.Fields) > 0 {
@@ -51,8 +43,7 @@ func (g *gen) variant(v *ir.Variant) {
 
 func (g *gen) caseType(v *ir.Variant, c *ir.Case) {
 	origin := v.QName() + dot + c.Name
-	name := caseName(g.goName(v), c)
-	g.declare(name, origin)
+	name := g.names.CaseName(v, c)
 	g.typeDecl(g.recordBody(origin, name, c.Fields, c.Methods), c.Doc)
 }
 
@@ -75,15 +66,15 @@ func (g *gen) variantExpr(t ir.TypeRef, r *value.Record) string {
 	name := g.goName(v)
 	var lit string
 	if len(c.Fields) > 0 {
-		b := g.recordBody(v.QName()+dot+c.Name, caseName(name, c), c.Fields, c.Methods)
-		lit = ampersand + compositeLit(caseName(name, c), g.bodyLit(b, r))
+		b := g.recordBody(v.QName()+dot+c.Name, g.names.CaseName(v, c), c.Fields, c.Methods)
+		lit = ampersand + compositeLit(b.goName, g.bodyLit(b, r))
 	}
 	if t.Kind == types.Case {
 		return lit
 	}
-	parts := []pair{{kindStore, g.kindLit(v, ct.Index)}}
+	parts := []pair{{ir.GoKindStore, g.kindLit(v, ct.Index)}}
 	if lit != "" {
-		parts = append(parts, pair{caseStore, lit})
+		parts = append(parts, pair{ir.GoCaseStore, lit})
 	}
 	return ampersand + compositeLit(name, parts)
 }

@@ -24,7 +24,7 @@ func (g *gen) goType(t ir.TypeRef) string {
 	case types.Enum:
 		return g.typeName(t.Named)
 	case types.VariantKind:
-		return g.qualify(typePkg(t.Named), kindName(g.goName(t.Named)))
+		return g.qualify(typePkg(t.Named), g.kindType(t.Named))
 	case types.Record, types.Variant:
 		return pointer + g.typeName(t.Named)
 	case types.Case:
@@ -117,7 +117,7 @@ func (g *gen) keyType(t ir.TypeRef) string {
 		return goString
 	}
 	if isTableRef(t.Ref) {
-		return g.qualify(t.Ref.Pkg, idTypeName(g.goName(t.Ref.Elem)))
+		return g.qualify(t.Ref.Pkg, g.idType(t.Ref.Elem))
 	}
 	if t.Key == nil {
 		g.failf(ErrMalformed, noKeyType)
@@ -136,27 +136,37 @@ func (g *gen) typeName(t ir.Type) string {
 	return g.qualify(typePkg(t), g.goName(t))
 }
 
-// goName is the Go name of a named type in its own package (CODEGEN.md §3.3).
+// goName is the Go name of a named type in its own package (CODEGEN.md §3.3); anything else is an IR defect.
 func (g *gen) goName(t ir.Type) string {
-	switch t := t.(type) {
-	case *ir.Record:
-		return typeGoName(t.Go.Name, t.Name)
-	case *ir.Enum:
-		return typeGoName(t.Go.Name, t.Name)
-	case *ir.Variant:
-		return typeGoName(t.Go.Name, t.Name)
-	case *ir.Dependent:
-		return typeGoName(t.Go.Name, t.Name)
+	name := g.names.TypeName(t)
+	if name == "" {
+		g.failf(ErrMalformed, "a named type %T", t)
 	}
-	g.failf(ErrMalformed, "a named type %T", t)
-	return ""
+	return name
 }
 
-func typeGoName(override, name string) string {
-	if override != "" {
-		return override
+// idType is the id enum of a table of elem (CODEGEN.md §5.3), elem a named type.
+func (g *gen) idType(elem ir.Type) string {
+	if g.goName(elem) == "" {
+		return ""
 	}
-	return firstUpper(name)
+	return g.names.IDTypeName(elem)
+}
+
+// kindType is the kind enum of variant v (CODEGEN.md §5.5).
+func (g *gen) kindType(v ir.Type) string {
+	if g.goName(v) == "" {
+		return ""
+	}
+	return g.names.KindName(v)
+}
+
+// idMember is the id constant of key in a table of elem.
+func (g *gen) idMember(elem ir.Type, key string) string {
+	if g.goName(elem) == "" {
+		return ""
+	}
+	return g.names.IDMemberName(elem, key)
 }
 
 func (g *gen) caseTypeName(t ir.TypeRef) string {
@@ -169,20 +179,8 @@ func (g *gen) caseTypeName(t ir.TypeRef) string {
 		g.fail(newDetail(ErrUnsupported, v.QName()+dot+t.Case.Name,
 			"the type %s.%s, a case without fields, which has no Go type", v.QName(), t.Case.Name))
 	}
-	return g.qualify(v.Pkg, caseName(g.goName(v), t.Case))
+	return g.qualify(v.Pkg, g.names.CaseName(v, t.Case))
 }
-
-// caseName is T + UpperCamel(c), or the whole @go(name:) override, verbatim (CODEGEN.md §3.5).
-func caseName(variant string, c *ir.Case) string {
-	if c.Go.Name != "" {
-		return c.Go.Name
-	}
-	return variant + upperCamel(c.Name)
-}
-
-func kindName(variant string) string { return variant + kindSuffix }
-
-func idTypeName(elem string) string { return elem + idSuffixUpper }
 
 // qualify prefixes name with the import name of pkg, a Canon package other than this one.
 func (g *gen) qualify(pkg, name string) string {

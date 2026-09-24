@@ -159,11 +159,4 @@ func selects(u *unit, e *Emit, name string) bool {
 	return slices.Contains(selectedNames(u, e), name)
 }
 
-func hasTarget(u *unit, t Target) bool {
-	for _, es := range u.emits {
-		if es.e.Target == t {
-			return true
-		}
-	}
-	return false
-}
+func hasTarget(u *unit, t Target) bool { return emitFor(u, t) != nil }

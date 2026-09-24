@@ -1,0 +1,19 @@
+decision 194, decision 126: an embedded-mode value carries its fingerprint, which a define record has none of, so any code emit in data or embedded mode refuses it.
+-- a/a.canon --
+package a
+
+/// A rule.
+record Rule {
+  /// A define.
+  it: Define
+}
+
+/// The rule.
+let rule: Rule = { it: { value: 3 } }
+
+emit cpp { out: "@features/a", mode: embedded }
+-- findings.txt --
+error[E8012]  a/a.canon:10:5
+  rule cannot be emitted: Define has no representation in generated code
+
+1 error, 0 warnings in 1 package (…)

@@ -4,20 +4,22 @@ import (
 	"go/token"
 	"strings"
 	"unicode"
+
+	"github.com/fantasim/canonlang/internal/check"
 )
 
-// GoUpperCamel is Go's UpperCamel(x) (CODEGEN.md §3.2), gen/go's own copy so the two cannot drift (decision 120).
-func GoUpperCamel(name string) string {
+// goUpperCamel is Go's UpperCamel(x) (CODEGEN.md §3.2): GoCap of every word.
+func goUpperCamel(name string) string {
 	var b strings.Builder
-	for _, w := range GoWords(name) {
+	for _, w := range goWords(name) {
 		b.WriteString(goCap(w))
 	}
 	return b.String()
 }
 
-// GoLowerCamel is Go's lowerCamel(x) (CODEGEN.md §3.2): the first word lower case, then GoUpperCamel of the rest.
-func GoLowerCamel(name string) string {
-	ws := GoWords(name)
+// goLowerCamel is Go's lowerCamel(x) (CODEGEN.md §3.2): the first word lower case, then goUpperCamel of the rest.
+func goLowerCamel(name string) string {
+	ws := goWords(name)
 	if len(ws) == 0 {
 		return ""
 	}
@@ -40,22 +42,62 @@ func goCap(w string) string {
 	return strings.ToUpper(w[:1]) + strings.ToLower(w[1:])
 }
 
-// GoEscapeLower suffixes `_` to a name reserved in a Go lower-case position: a keyword, a predeclared identifier, the name of a package a generated file imports, or `self` (CODEGEN.md §3.4).
-func GoEscapeLower(name string) string {
-	if goReservedLower[name] {
+// goEscapeLower suffixes `_` to a name reserved in a Go lower-case position: a keyword, a predeclared identifier, the name of a package a generated file imports, or `self` (CODEGEN.md §3.4).
+func goEscapeLower(name string) string {
+	if goReserved(name) {
 		return name + underscore
 	}
 	return name
 }
 
-// goValidIdent reports whether name can be declared in Go: an identifier that is not a keyword (CODEGEN.md §3.5, E8011).
-func goValidIdent(name string) bool { return token.IsIdentifier(name) }
+// goStorageName is the unexported, escaped name of a field, parameter or value (CODEGEN.md §3.4, §6.1).
+func goStorageName(canon string) string { return goEscapeLower(goLowerCamel(canon)) }
+
+// goEffectiveStore is the storage of a field, method or value: from its @go(name:) override when there is one, so the override renames it whole (decision 203; meta/decisions/log-2026-09-24.md, IR round 2 review).
+func goEffectiveStore(n NameOptions, canon string) string {
+	return goStorageName(goEffective(n, canon))
+}
+
+// goEffective is the name every generated storage name derives from: the @go(name:) override, else the Canon name (decision 203).
+func goEffective(n NameOptions, canon string) string {
+	if n.Name != "" {
+		return n.Name
+	}
+	return canon
+}
+
+// goExported is UpperCamel(canon), or the whole @go(name:) override (CODEGEN.md §3.3, §3.5).
+func goExported(n NameOptions, canon string) string {
+	if n.Name != "" {
+		return n.Name
+	}
+	return goUpperCamel(canon)
+}
+
+// goTypeName is a type's Go name: its first letter upper-cased, or the whole @go(name:) override (CODEGEN.md §3.3).
+func goTypeName(n NameOptions, canon string) string {
+	if n.Name != "" || canon == "" {
+		return n.Name
+	}
+	return strings.ToUpper(canon[:1]) + canon[1:]
+}
+
+// goValidOverride reports a @go(name:) override Go can declare as public API: an exported identifier (CODEGEN.md §1.3, §3.5, decision 182; E8011).
+func goValidOverride(name string) bool { return token.IsIdentifier(name) && token.IsExported(name) }
 
 // cppValidIdent reports whether name can be declared in C++: a plain identifier that is not a keyword, an alternative token or a name generated code reserves (CODEGEN.md §3.5, E8011).
-func cppValidIdent(name string) bool { return identPattern.MatchString(name) && !cppReserved[name] }
+func cppValidIdent(name string) bool { return identPattern.MatchString(name) && !cppReserved(name) }
 
-// GoWords splits a Canon identifier into words, as Go generation does (CODEGEN.md §3.1).
-func GoWords(name string) []string {
+// goReserved reports what a Go lower-case position escapes: a Go keyword, a predeclared identifier, a package a generated file imports, or `self` (CODEGEN.md §3.4).
+func goReserved(name string) bool {
+	return check.IsGoKeyword(name) || goPredeclared[name] || goImportNames[name] || name == goSelf
+}
+
+// cppReserved reports what a C++ verbatim position escapes: a C++20 keyword or alternative token, or a name generated code reserves for itself (CODEGEN.md §3.4).
+func cppReserved(name string) bool { return check.IsCppKeyword(name) || cppOwnNames[name] }
+
+// goWords splits a Canon identifier into words, CODEGEN.md §3.1 (every target splits the same way).
+func goWords(name string) []string {
 	var out []string
 	for piece := range strings.SplitSeq(name, underscore) {
 		start := 0

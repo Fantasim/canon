@@ -118,3 +118,105 @@ emit cpp { out: "@features/a" }
 		t.Errorf("a define record with no baked go emit must not be %s:\n%s", string(diag.E8012.Def().Code), out)
 	}
 }
+
+// TestE8007OnlyForUnmappedRoot is decision 194's review: an unselected dependency's go emit whose out does not resolve at all is not E8007 ("under no mapped root"); only a resolved directory outside every go_module root is.
+func TestE8007OnlyForUnmappedRoot(t *testing.T) {
+	w := newWorld(t)
+	w.add(t, "b/b.canon", []byte(`package b
+
+/// A colour.
+enum Tone { red, blue }
+
+emit go { out: "@nosuchroot/b", package: "b" }
+`))
+	w.add(t, "a/a.canon", []byte(`package a
+
+import b { Tone }
+
+/// A badge.
+record Badge {
+  /// Its colour.
+  tone: Tone
+}
+
+emit go { out: "@features/a", package: "a" }
+`))
+	w.calls = w.fixtureCalls
+	w.build(t, "a")
+	if out := w.findings(t); strings.Contains(out, "["+string(diag.E8007.Def().Code)+"]") {
+		t.Errorf("an out that does not resolve is not %s:\n%s", string(diag.E8007.Def().Code), out)
+	}
+}
+
+// TestGoNamePlanIsExact is CODEGEN.md §3.3, §3.5 and decisions 194, 203: E8005 reads the names gen/go declares, so an enum member's override that is its whole constant (B next to ToneB), a table the go emit leaves out of `values` (no container Potion) and and an override that renames the storage too (a field's FooBarAlt and fooBarAlt next to fooBar; a value's getOther next to fooBar; a package fn's otherTable next to aBTable; meta/decisions/log-2026-09-24.md, IR round 2 review) are clean.
+func TestGoNamePlanIsExact(t *testing.T) {
+	for name, src := range map[string]string{ //canon:unordered each case alone
+		"value override renames storage": `package a
+
+/// One flag.
+let fooBar: Bool = true
+
+/// The other flag.
+@go(name: "GetOther")
+let foo_bar: Bool = false
+
+emit go { out: "@features/a", package: "a" }
+`,
+		"fn override renames its table": `package a
+
+/// One answer.
+export fn aB() -> Int { return 1 }
+
+/// The other answer.
+@go(name: "Other")
+export fn a_b() -> Int { return 2 }
+
+emit go { out: "@features/a", package: "a" }
+`,
+		"override renames storage": `package a
+
+/// A rule.
+record Rule {
+  /// One score.
+  fooBar: Int
+  /// The other score.
+  foo_bar: Int @go(name: "FooBarAlt")
+}
+
+emit go { out: "@features/a", package: "a" }
+`,
+		"enum override": `package a
+
+/// A tone.
+enum Tone { a @go(name: "B"), b }
+
+emit go { out: "@features/a", package: "a" }
+`,
+		"unselected table": `package a
+
+/// A potion.
+record Potion {
+  /// Its heal.
+  heal: Int
+}
+
+/// The potions.
+let potion: table Potion = {
+  small { heal: 1 }
+}
+
+/// Whether potions are on.
+let on: Bool = true
+
+emit go { out: "@features/a", package: "a", values: [on] }
+`,
+	} {
+		w := newWorld(t)
+		w.add(t, "a/a.canon", []byte(src))
+		w.calls = w.fixtureCalls
+		w.build(t)
+		if out := w.findings(t); !strings.HasPrefix(out, noFindings) {
+			t.Errorf("%s must be clean:\n%s", name, out)
+		}
+	}
+}

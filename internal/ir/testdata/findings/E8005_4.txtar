@@ -1,0 +1,18 @@
+DECISIONS 203, CODEGEN.md §3.5: fields fooBar and foo_bar collide in their getter FooBar and their storage fooBar, one cause reported once, at the getter.
+-- a/a.canon --
+package a
+
+/// A rule.
+record Rule {
+  /// One score.
+  fooBar: Int
+  /// The other score.
+  foo_bar: Int
+}
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+error[E8005]  a/a.canon:8:3
+  go: FooBar is generated for both a.Rule.fooBar and a.Rule.foo_bar
+
+1 error, 0 warnings in 1 package (…)

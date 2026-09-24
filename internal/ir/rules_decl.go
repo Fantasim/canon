@@ -84,7 +84,7 @@ func (s *stage) checkOrderedCodes(u *unit) {
 	}
 }
 
-// checkRepresentable is E8012: no emitted type, value, constant or stored fn holds a Range, a function type, `_` or a Never outside an optional field (CODEGEN.md §4.4); a define record or a table of one is added only when the package has a baked go emit, the one target known to refuse it (decision 180), so check fails wherever build would (decision 37).
+// checkRepresentable is E8012: no emitted type, value, constant or stored fn holds a Range, a function type, `_` or a Never outside an optional field (CODEGEN.md §4.4); a define record or a table of one is added when the package has a baked go emit, which cannot represent it (decisions 180, 194), so check fails wherever build would (decision 37). Data and embedded modes refuse one through their values' fingerprints (checkFingerprinted).
 func (s *stage) checkRepresentable(u *unit) {
 	defines := bakedFor(u, TargetGo)
 	s.eachOwnField(u, func(owner string, f *Field) {
@@ -168,48 +168,57 @@ func subTypes(t types.Type) []types.Type {
 	return nil
 }
 
-// noWireForm reports a type holding a Range or a function type, through records and variants (WIRE.md §5.9: E8151; FINGERPRINT.md §8); a define record counts only when defines is set (decision 180, decision 37: check fails wherever build would).
-func noWireForm(t types.Type, seen map[types.Type]bool, defines bool) bool {
+// wireFind is the first type of t, through records, variants and their fields (inputs excluded) and composites, for which bad holds (WIRE.md §5.9, FINGERPRINT.md §8), or nil.
+func wireFind(t types.Type, seen map[types.Type]bool, bad func(types.Type) bool) types.Type {
 	b := t.Base()
 	if seen[b] {
-		return false
+		return nil
 	}
 	seen[b] = true
+	if bad(b) {
+		return t
+	}
+	for _, sub := range wireParts(b) {
+		if found := wireFind(sub, seen, bad); found != nil {
+			return found
+		}
+	}
+	return nil
+}
+
+// wireParts are the types a type's wire form holds: a record's or case's fields but inputs, an applied record's record, a variant's cases, a composite's parts.
+func wireParts(b types.Type) []types.Type {
 	switch x := b.(type) {
 	case *types.RecordType:
-		return defines && x.Kind() == types.Define || fieldsWithoutWire(x.Fields, seen, defines)
+		return fieldTypes(nil, x.Fields)
 	case *types.AppliedRecord:
-		return noWireForm(x.Rec, seen, defines)
+		return []types.Type{x.Rec}
+	case *types.CaseType:
+		return fieldTypes(nil, x.Fields)
 	case *types.VariantType:
-		return casesWithoutWire(x.Cases, seen, defines)
-	}
-	if k := b.Kind(); k == types.Range || k == types.Func || defines && isDefineType(b) {
-		return true
-	}
-	for _, sub := range subTypes(b) {
-		if noWireForm(sub, seen, defines) {
-			return true
+		var out []types.Type
+		for _, c := range x.Cases {
+			out = fieldTypes(out, c.Fields)
 		}
+		return out
 	}
-	return false
+	return subTypes(b)
 }
 
-func fieldsWithoutWire(fields []*types.Field, seen map[types.Type]bool, defines bool) bool {
+// fieldTypes appends the types of fields that are not inputs to out.
+func fieldTypes(out []types.Type, fields []*types.Field) []types.Type {
 	for _, f := range fields {
-		if f.Input == nil && noWireForm(f.Type, seen, defines) {
-			return true
+		if f.Input == nil {
+			out = append(out, f.Type)
 		}
 	}
-	return false
+	return out
 }
 
-func casesWithoutWire(cases []*types.CaseType, seen map[types.Type]bool, defines bool) bool {
-	for _, c := range cases {
-		if fieldsWithoutWire(c.Fields, seen, defines) {
-			return true
-		}
-	}
-	return false
+// noWire is a type with no wire form or no fingerprint: a Range, a function type, a define record or a table of one (WIRE.md §5.9; canon-fp has no Define form, decisions 126, 194).
+func noWire(b types.Type) bool {
+	k := b.Kind()
+	return k == types.Range || k == types.Func || isDefineType(b)
 }
 
 // checkBranches is E8017: a dependent type's branches are scalars, String, enums or refs (CODEGEN.md §5.6).

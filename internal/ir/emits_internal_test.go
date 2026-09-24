@@ -16,6 +16,8 @@ func TestBelowRejectsAbove(t *testing.T) {
 		{"..", ".", "..", false},
 		{"../other", ".", "../other", false},
 		{"other", ".", "other", true},
+		{"../../../x", "../..", "../x", false},
+		{"../../x", "../..", "x", true},
 	}
 	for _, c := range cases {
 		rel, ok := below(c.dir, c.root)

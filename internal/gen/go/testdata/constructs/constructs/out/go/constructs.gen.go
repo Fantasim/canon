@@ -300,7 +300,7 @@ type Potion struct {
 	extra     *Shape
 	default_  bool
 	apiKey    string
-	hp        uint64
+	hitPoints uint64
 	runes     rt.List[*Rune]
 	runes_ids rt.List[RuneID]
 	grades    rt.List[rt.List[Grade]]
@@ -352,7 +352,7 @@ func (self *Potion) Default() bool { return self.default_ }
 
 func (self *Potion) APIKey() string { return self.apiKey }
 
-func (self *Potion) HitPoints() uint64 { return self.hp }
+func (self *Potion) HitPoints() uint64 { return self.hitPoints }
 
 func (self *Potion) Runes() rt.List[*Rune] { return self.runes }
 
@@ -558,7 +558,7 @@ func buildConstructs() *constructsData {
 		},
 		default_:  false,
 		apiKey:    "",
-		hp:        1,
+		hitPoints: 1,
 		runes:     rt.MakeList([]*Rune{d.runes.At(0)}),
 		runes_ids: rt.MakeList([]RuneID{RuneIDAlpha}),
 		grades: rt.MakeList([]rt.List[Grade]{
@@ -601,7 +601,7 @@ func buildConstructs() *constructsData {
 		},
 		default_:  true,
 		apiKey:    "k",
-		hp:        18446744073709551,
+		hitPoints: 18446744073709551,
 		runes:     rt.MakeList([]*Rune{d.runes.At(1), d.runes.At(0)}),
 		runes_ids: rt.MakeList([]RuneID{RuneIDBeta2, RuneIDAlpha}),
 		grades:    rt.List[rt.List[Grade]]{},

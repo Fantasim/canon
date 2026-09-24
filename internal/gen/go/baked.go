@@ -19,45 +19,38 @@ func (g *gen) containers() {
 	}
 }
 
-func containerName(v *ir.Value) string { return upperCamel(v.Name) }
-
 func (g *gen) tableContainer(v *ir.Value) {
 	rec, ok := g.sub(v.Type.Elem).Named.(*ir.Record)
 	if !ok {
 		return
 	}
-	name, elem := containerName(v), g.goName(rec)
-	g.declare(name, v.Name)
+	name, elem := g.names.ContainerName(v), g.goName(rec)
 	g.body.WriteString(docFor(name, v.Doc))
-	g.printf(tableContainerFormat, name, elem, g.use(iterPkg, iterPkg), idTypeName(elem))
-	methods := newScope(name)
+	g.printf(tableContainerFormat, name, elem, g.use(iterPkg, iterPkg), g.idType(rec),
+		ir.GoRows, ir.GoLen, ir.GoAt, ir.GoAll, ir.GoFind, ir.GoGet)
 	for _, f := range rec.Fields {
 		if f.Stable {
-			g.findBy(methods, v, elem, f)
+			g.findBy(v, elem, f)
 		}
 	}
 }
 
 // findBy is FindBy<F> for a @stable field: a map index built once by the builder replaces a scan.
-func (g *gen) findBy(methods *scope, v *ir.Value, elem string, f *ir.Field) {
+func (g *gen) findBy(v *ir.Value, elem string, f *ir.Field) {
 	defer g.enter(v.Name + dot + f.Name)()
-	container, ft := containerName(v), g.goType(f.Type)
-	index := storageName(v.Name) + upperCamel(f.Name) + indexSuffix
-	g.declare(index, container+dot+f.Name)
-	g.printf(findByIndexFormat, index, g.use(syncPkg, syncPkg), ft, accessorName(v), storageName(f.Name))
-	name := findByPrefix + exportedName(f.Go.Name, f.Name)
-	g.fail(methods.add(name, container))
-	g.printf(findByFormat, container, name, ft, elem, index)
+	container, ft := g.names.ContainerName(v), g.goType(f.Type)
+	index := g.names.FindByIndex(v, f)
+	g.printf(findByIndexFormat, index, g.use(syncPkg, syncPkg), ft, g.names.AccessorName(v), g.names.Slot(f).Store, ir.GoRows)
+	g.printf(findByFormat, container, g.names.FindByName(f), ft, elem, index, ir.GoRows)
 }
 
 func (g *gen) keyedContainer(v *ir.Value) {
 	defer g.enter(v.Name)()
-	name := containerName(v)
-	g.declare(name, v.Name)
+	name := g.names.ContainerName(v)
 	key := g.keyField(v.Type)
 	g.body.WriteString(docFor(name, v.Doc))
 	g.printf(keyedContainerFormat, name, g.listType(v.Type), g.typeName(g.sub(v.Type.Elem).Named),
-		g.use(iterPkg, iterPkg), key.Name, g.goType(key.Type))
+		g.use(iterPkg, iterPkg), key.Name, g.goType(key.Type), ir.GoRows, ir.GoLen, ir.GoAt, ir.GoAll, ir.GoFind)
 }
 
 // values writes the baked data, built once through sync.OnceValue, and its accessors (§6.2).
@@ -65,17 +58,15 @@ func (g *gen) values() {
 	if len(g.emitted) == 0 {
 		return
 	}
-	data, values, build := g.dataNames()
-	fields := newScope(data)
-	g.printf(structOpen, data)
+	d := g.names.Data()
+	g.printf(structOpen, d.Type)
 	for _, v := range g.emitted {
 		for _, m := range g.valueStorage(v) {
-			g.fail(fields.add(m.name, m.origin))
 			g.printf("%s %s\n", m.name, m.typ)
 		}
 	}
-	g.printf("}\n\nvar %s = %s.OnceValue(%s)\n\n", values, g.use(syncPkg, syncPkg), build)
-	g.printf("func %s() *%s {\n%s := &%s{}\n", build, data, g.data, data)
+	g.printf("}\n\nvar %s = %s.OnceValue(%s)\n\n", d.Values, g.use(syncPkg, syncPkg), d.Build)
+	g.printf("func %s() *%s {\n%s := &%s{}\n", d.Build, d.Type, g.data, d.Type)
 	for _, v := range g.emitted {
 		g.allocate(v)
 	}
@@ -84,17 +75,8 @@ func (g *gen) values() {
 	}
 	g.printf("return %s\n}\n\n", g.data)
 	for _, v := range g.emitted {
-		g.accessors(v, values)
+		g.accessors(v, d.Values)
 	}
-}
-
-// dataNames are the baked data's type, its OnceValue and its builder (CODEGEN.md §6.2).
-func (g *gen) dataNames() (data, values, build string) {
-	data, values, build = g.last+dataSuffix, g.last+valuesSuffix, buildPrefix+firstUpper(g.last)
-	for _, n := range []string{data, values, build} {
-		g.declare(n, g.p.Name)
-	}
-	return data, values, build
 }
 
 func isContainer(v *ir.Value) bool {
@@ -103,15 +85,14 @@ func isContainer(v *ir.Value) bool {
 
 // valueSlot reads a value that is not a container like a field of its type.
 func (g *gen) valueSlot(v *ir.Value) *slot {
-	t, opt := unwrapOptional(v.Type)
-	s := g.newSlot(v.Name, accessorName(v), g.byValue[v.Name].store, t, opt)
+	s := g.newSlot(v.Name, g.names.ValueSlot(v))
 	s.doc = v.Doc
 	return s
 }
 
 func (g *gen) valueStorage(v *ir.Value) []member {
 	if isContainer(v) {
-		return []member{{g.byValue[v.Name].store, containerName(v), v.Name}}
+		return []member{{g.byValue[v.Name].store, g.names.ContainerName(v)}}
 	}
 	return g.storage(g.valueSlot(v))
 }
@@ -119,7 +100,7 @@ func (g *gen) valueStorage(v *ir.Value) []member {
 // allocate gives every container its rows first, so any entry can point at any other.
 func (g *gen) allocate(v *ir.Value) {
 	defer g.enter(v.Name)()
-	store := g.data + dot + g.byValue[v.Name].store + dot + rowsField
+	store := g.data + dot + g.byValue[v.Name].store + dot + ir.GoRows
 	n := strconv.Itoa(len(g.entries(v)))
 	switch {
 	case v.Type.Kind == types.Table:
@@ -149,7 +130,7 @@ func (g *gen) fill(v *ir.Value) {
 		return
 	}
 	for i, r := range g.entries(v) {
-		row := store + dot + rowsField + lbracket + strconv.Itoa(i) + rbracket
+		row := store + dot + ir.GoRows + lbracket + strconv.Itoa(i) + rbracket
 		if v.Type.Kind != types.Table {
 			row = pointer + store + atCall + strconv.Itoa(i) + rparen
 		}
@@ -162,20 +143,17 @@ func (g *gen) accessors(v *ir.Value, values string) {
 	recv := values + callSuffix
 	if !isContainer(v) {
 		for _, gt := range g.getters(g.valueSlot(v), recv) {
-			g.declare(gt.name, v.Name)
 			g.writeFunc(gt)
 		}
 		return
 	}
-	name := accessorName(v)
-	g.declare(name, v.Name)
 	g.writeFunc(getter{
-		name: name, result: pointer + containerName(v), doc: v.Doc, origin: v.Name,
+		name: g.names.AccessorName(v), result: pointer + g.names.ContainerName(v), doc: v.Doc,
 		body: returnKw + ampersand + recv + dot + g.byValue[v.Name].store,
 	})
 }
 
 // writeFunc writes a package-level getter.
 func (g *gen) writeFunc(gt getter) {
-	g.writeGetter(newScope(gt.name), funcKw, gt)
+	g.writeGetter(funcKw, gt)
 }

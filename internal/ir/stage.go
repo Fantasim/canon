@@ -56,7 +56,8 @@ func Build(ctx context.Context, in Input) []*Package {
 }
 
 // stage is one run of stage E. named maps a declaration (*types.RecordType, EnumType,
-// VariantType or TypeFunc) to its IR type, shared by every package that reaches it.
+// VariantType or TypeFunc) to its IR type, shared by every package that reaches it; decls,
+// fieldSites, fnObjs and nodeSites locate the IR nodes findings point at.
 type stage struct {
 	ctx         context.Context
 	in          Input
@@ -67,7 +68,7 @@ type stage struct {
 	order       []*unit
 	decls       map[Type]declSite
 	fnObjs      map[*ExportFn]*fnSite
-	failed      map[*ExportFn]bool
+	nodeSites   map[any]declSite // enum members, cases, parameters, constants and values
 	domainsOf   map[*ExportFn]*fnDomains
 	fieldSites  map[*Field]*fieldSite
 	depFns      map[*Dependent]*types.TypeFunc
@@ -127,7 +128,7 @@ type valueSite struct {
 func newStage(ctx context.Context, in Input) *stage {
 	s := &stage{
 		ctx: ctx, in: in, info: in.Program.Info, named: map[any]Type{}, units: map[string]*unit{},
-		decls: map[Type]declSite{}, fnObjs: map[*ExportFn]*fnSite{}, failed: map[*ExportFn]bool{},
+		decls: map[Type]declSite{}, fnObjs: map[*ExportFn]*fnSite{}, nodeSites: map[any]declSite{},
 		domainsOf: map[*ExportFn]*fnDomains{}, fieldSites: map[*Field]*fieldSite{}, depFns: map[*Dependent]*types.TypeFunc{},
 		branchTypes: map[*Branch]types.Type{},
 	}

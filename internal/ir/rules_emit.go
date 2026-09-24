@@ -18,8 +18,8 @@ func init() {
 	emitRules[TargetGo], emitRules[TargetCpp] = code, code
 	emitRules[TargetTS] = append(slices.Clone(code), (*stage).checkSafeInts, (*stage).checkNoInputs)
 	emitRules[TargetJSON] = []func(*stage, *unit, *emitSite){(*stage).checkWireForms}
-	modeRules[ModeEmbedded] = []func(*stage, *unit, *emitSite){(*stage).checkContainers, (*stage).checkDecoders}
-	modeRules[ModeData] = []func(*stage, *unit, *emitSite){(*stage).checkContainers, (*stage).checkDecoders, (*stage).checkDataFns}
+	modeRules[ModeEmbedded] = []func(*stage, *unit, *emitSite){(*stage).checkContainers, (*stage).checkDecoders, (*stage).checkFingerprinted}
+	modeRules[ModeData] = []func(*stage, *unit, *emitSite){(*stage).checkContainers, (*stage).checkDecoders, (*stage).checkDataFns, (*stage).checkFingerprinted}
 	modeRules[ModeTypes] = []func(*stage, *unit, *emitSite){(*stage).checkDecoders, (*stage).checkTypesMode}
 }
 
@@ -29,9 +29,10 @@ func (s *stage) validate(u *unit) {
 	if hasCodeEmit(u) {
 		s.checkOrderedCodes(u)
 		s.checkRepresentable(u)
+		s.checkDefineRefs(u)
 		s.checkBranches(u)
 		s.checkOverrideNames(u)
-		s.checkNameCollisions(u)
+		s.checkGoNames(u)
 	}
 	for _, es := range u.emits {
 		for _, rule := range emitRules[es.e.Target] {
@@ -75,16 +76,16 @@ func (s *stage) checkImports(u *unit, es *emitSite) {
 	}
 }
 
-// checkImportedGoRoots is E8007 for an unselected dependency's own go emit: it never checked itself, so the importer reports it, whose build would else reference a missing import path (IMPLEMENTATION-PLAN §4.5).
+// checkImportedGoRoots is E8007 for an unselected dependency's own go emit whose output resolved under no go_module root: it never checked itself, so the importer reports it, whose build would else reference a missing import path (IMPLEMENTATION-PLAN §4.5). An out that is missing or does not resolve is not E8007: the dependency's own finding, reported when it is checked.
 func (s *stage) checkImportedGoRoots(u *unit, es *emitSite) {
 	for _, imp := range u.p.Imports {
 		dep := s.units[imp.Name]
 		if dep == nil || dep.selected {
 			continue
 		}
-		for _, e := range imp.Emits {
-			if e.Target == TargetGo && e.GoImport == "" {
-				u.report(diag.E8007.At(es.span(), e.Out))
+		for _, d := range dep.emits {
+			if d.e.Target == TargetGo && d.unmapped {
+				u.report(diag.E8007.At(es.span(), d.e.Out))
 			}
 		}
 	}
@@ -166,12 +167,8 @@ func (s *stage) checkDecoders(u *unit, es *emitSite) {
 
 // bakedFor reports a package whose emit of target t is in baked mode.
 func bakedFor(u *unit, t Target) bool {
-	for _, es := range u.emits {
-		if es.e.Target == t {
-			return es.e.Mode == ModeBaked
-		}
-	}
-	return false
+	es := emitFor(u, t)
+	return es != nil && es.e.Mode == ModeBaked
 }
 
 // checkNoInputs is E8104: a package with input fields has no TypeScript emit (§5.12).
@@ -183,12 +180,24 @@ func (s *stage) checkNoInputs(u *unit, _ *emitSite) {
 	})
 }
 
-// checkWireForms is E8151: a value written to JSON has a wire form (WIRE.md §5.9, §8.1).
+// checkWireForms is E8151: a value written to JSON has a wire form and a fingerprint, so no define record (WIRE.md §5.9, §8.1; decisions 126, 194).
 func (s *stage) checkWireForms(u *unit, es *emitSite) {
-	defines := bakedFor(u, TargetGo)
 	for _, v := range selectedValues(u, es.e) {
-		if noWireForm(v.t, map[types.Type]bool{}, defines) {
+		if wireFind(v.t, map[types.Type]bool{}, noWire) != nil {
 			u.report(diag.E8151.At(v.span().span(), v.v.Name, v.t))
+		}
+	}
+}
+
+// checkFingerprinted is E8012 for a data or embedded code emit: each value it selects carries its fingerprint, which a define record has none of (decisions 126, 194); a value baked go already refuses as a whole is not reported twice.
+func (s *stage) checkFingerprinted(u *unit, es *emitSite) {
+	goBaked := bakedFor(u, TargetGo)
+	for _, v := range selectedValues(u, es.e) {
+		if goBaked && unrepresentable(v.t, false, true) != nil {
+			continue
+		}
+		if what := wireFind(v.t, map[types.Type]bool{}, isDefineType); what != nil {
+			u.report(diag.E8012.At(v.span().span(), v.v.Name, what))
 		}
 	}
 }

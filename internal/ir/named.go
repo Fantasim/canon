@@ -41,6 +41,7 @@ func (s *stage) enum(e *types.EnumType) *Enum {
 		if i < len(decls) {
 			n := nameOverrides(decls[i].Annotations)
 			im.Go, im.Cpp, im.TS = n.goName, n.cpp, n.ts
+			s.nodeSites[im] = declSite{file: s.decls[out].file, node: decls[i].Name}
 		}
 		out.Members = append(out.Members, im)
 	}
@@ -89,7 +90,11 @@ func (s *stage) variant(v *types.VariantType) *Variant {
 		out.Cases = append(out.Cases, &Case{Name: c.Name, Wire: c.Wire, Doc: c.Doc, Retired: c.Retired})
 	}
 	for i, c := range v.Cases {
-		s.fillCase(out.Cases[i], c, caseDecl(items, c.Name), out.Name)
+		d := caseDecl(items, c.Name)
+		if d != nil {
+			s.nodeSites[out.Cases[i]] = declSite{file: s.decls[out].file, node: d.Name}
+		}
+		s.fillCase(out.Cases[i], c, d, out.Name)
 	}
 	return out
 }

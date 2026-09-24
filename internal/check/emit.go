@@ -96,6 +96,12 @@ func (c *checker) emitString(env *env, fi *syntax.FieldItem, target string) (str
 
 var identRe = regexp.MustCompile(identPattern)
 
+// IsGoKeyword reports a Go keyword, which a Go package name may not be and a generated lower-case name escapes (CODEGEN.md §2.1, §3.4).
+func IsGoKeyword(s string) bool { return goKeywords[s] }
+
+// IsCppKeyword reports a C++20 keyword or alternative token, which a namespace may not use and a generated verbatim name escapes (CODEGEN.md §2.1, §3.4).
+func IsCppKeyword(s string) bool { return cppKeywords[s] }
+
 // cppNamespace reports `ident{::ident}` with no C++ keyword.
 func cppNamespace(s string) bool {
 	for part := range strings.SplitSeq(s, cppScope) {

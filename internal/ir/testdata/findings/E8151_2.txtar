@@ -1,0 +1,19 @@
+decision 194, decision 126: canon-fp has no Define form, so a value holding a define record has no fingerprint for emit json, whatever other emit the package has.
+-- a/a.canon --
+package a
+
+/// A rule.
+record Rule {
+  /// A define.
+  it: Define
+}
+
+/// The rule.
+let rule: Rule = { it: { value: 3 } }
+
+emit json { out: "out/" }
+-- findings.txt --
+error[E8151]  a/a.canon:10:5
+  value rule of type a.Rule has no wire form
+
+1 error, 0 warnings in 1 package (…)

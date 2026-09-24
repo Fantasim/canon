@@ -18,9 +18,7 @@ func (s *stage) finish(u *unit) {
 		if vs.v.Name == first {
 			fns = u.p.Fns
 		}
-		// Schema fails only on a type shape check's own phase 2 already refuses (an unnamed
-		// TypeApp, a malformed dependent match, a Basic of 0 bits): unreachable for a program
-		// that reached stage E, so a value it cannot fingerprint is simply left without one.
+		// Schema fails on a define record, which canon-fp has no form for (decision 126): validate refuses it where an emit needs the fingerprint (E8151, E8012, decision 194); check's phase 2 refuses its other failures.
 		if id, err := Schema(u.p.Name, vs.v.Name, &vs.v.Type, fns); err == nil {
 			vs.v.Schema = id
 		}

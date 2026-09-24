@@ -13,11 +13,12 @@ import (
 
 // emitSite is an emit with its declaration and the spans findings point at.
 type emitSite struct {
-	e       *Emit
-	decl    *syntax.EmitDecl
-	file    *syntax.File
-	outSpan source.Span
-	display string // the output as a display path (WIRE.md §2.3)
+	e        *Emit
+	decl     *syntax.EmitDecl
+	file     *syntax.File
+	outSpan  source.Span
+	display  string // the output as a display path (WIRE.md §2.3)
+	unmapped bool   // a go emit whose resolved directory is under no go_module root (E8007)
 }
 
 func (es *emitSite) span() source.Span { return es.file.Span(es.decl.Target) }
@@ -138,6 +139,7 @@ func (s *stage) resolveOut(u *unit, es *emitSite, layout *project.Layout, bag *d
 		e.GoPackage = path.Base(p.Abs)
 	}
 	imp, mapped := s.goImport(e.Dir)
+	es.unmapped = !mapped
 	if !mapped && u.selected {
 		u.report(diag.E8007.At(es.outSpan, p.Display))
 	}

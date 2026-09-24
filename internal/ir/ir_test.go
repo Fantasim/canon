@@ -2,7 +2,6 @@ package ir_test
 
 import (
 	"regexp"
-	"slices"
 	"strings"
 	"testing"
 
@@ -74,76 +73,6 @@ func TestDependentBranches(t *testing.T) {
 	}
 	if want := "monster=monster none_=never element=element"; strings.Join(got, " ") != want {
 		t.Errorf("arms = %q, want %q", strings.Join(got, " "), want)
-	}
-}
-
-// TestGoWords is CODEGEN.md §3.1: the word split, with the document's examples (decision 120).
-func TestGoWords(t *testing.T) {
-	cases := []struct {
-		in   string
-		want []string
-	}{
-		{"II_WEA_AXE_ANGEL", []string{"II", "WEA", "AXE", "ANGEL"}},
-		{"gm_junior", []string{"gm", "junior"}},
-		{"Stage_1", []string{"Stage", "1"}},
-		{"none_", []string{"none"}},
-		{"stage1Rate", []string{"stage", "1", "Rate"}},
-		{"minRole", []string{"min", "Role"}},
-		{"series1", []string{"series", "1"}},
-		{"HTTPServer", []string{"HTTP", "Server"}},
-		{"__a__b", []string{"a", "b"}},
-		{"_", nil},
-	}
-	for _, c := range cases {
-		if got := ir.GoWords(c.in); !slices.Equal(got, c.want) {
-			t.Errorf("GoWords(%q) = %q, want %q", c.in, got, c.want)
-		}
-	}
-}
-
-// TestGoCamel is CODEGEN.md §3.2: Go camel case with the closed initialism list (II is none of them).
-func TestGoCamel(t *testing.T) {
-	cases := []struct{ in, upper, lower string }{
-		{"id", "ID", "id"},
-		{"minRole", "MinRole", "minRole"},
-		{"apiKey", "APIKey", "apiKey"},
-		{"series_1", "Series1", "series1"},
-		{"II_WEA_AXE_ANGEL", "IiWeaAxeAngel", "iiWeaAxeAngel"},
-		{"none_", "None", "none"},
-		{"url_ts_db", "URLTSDB", "urlTSDB"},
-		{"hpMax", "HPMax", "hpMax"},
-		{"JSONPath", "JSONPath", "jsonPath"},
-		{"_", "", ""},
-	}
-	for _, c := range cases {
-		if got := ir.GoUpperCamel(c.in); got != c.upper {
-			t.Errorf("GoUpperCamel(%q) = %q, want %q", c.in, got, c.upper)
-		}
-		if got := ir.GoLowerCamel(c.in); got != c.lower {
-			t.Errorf("GoLowerCamel(%q) = %q, want %q", c.in, got, c.lower)
-		}
-	}
-}
-
-// TestGoEscapeLower is CODEGEN.md §3.4: a reserved name in a lower-case position gets a `_` suffix.
-func TestGoEscapeLower(t *testing.T) {
-	cases := []struct{ in, want string }{
-		{"default", "default_"},
-		{"type", "type_"},
-		{"len", "len_"},
-		{"string", "string_"},
-		{"rt", "rt_"},
-		{"iter", "iter_"},
-		{"self", "self_"},
-		{"embed", "embed_"},
-		{"json", "json_"},
-		{"minRole", "minRole"},
-		{"route", "route"},
-	}
-	for _, c := range cases {
-		if got := ir.GoEscapeLower(c.in); got != c.want {
-			t.Errorf("GoEscapeLower(%q) = %q, want %q", c.in, got, c.want)
-		}
 	}
 }
 
@@ -325,5 +254,40 @@ func TestLookupTable(t *testing.T) {
 	always := &ir.ExportFn{Name: "always", Kind: ir.FnPrecomputed, Result: boolRef, Value: tr}
 	if strong.Instances[0].Result != tr || always.Value != tr || (&ir.Instance{Table: table}).Table.Domains[0][1] != tr {
 		t.Errorf("precomputed results are kept per receiver instance")
+	}
+}
+
+// TestEveryReceiverIsEvaluated is EVALUATION.md §2.3 and decision 194: a method that fails on one receiver is still called on every other, each failure reported by the host (a false result follows its finding), and only the failed receivers lack an Instance.
+func TestEveryReceiverIsEvaluated(t *testing.T) {
+	w := newWorld(t)
+	w.add(t, "a/a.canon", []byte(`package a
+
+/// A gem.
+record Gem {
+  /// Its power.
+  power: Int
+
+  /// Whether it is strong.
+  export fn isStrong(self) -> Bool { return power >= 2 }
+}
+
+/// The gems.
+let gems: [Gem] = [{ power: 1 }, { power: 3 }]
+
+emit go { out: "@features/a", package: "a" }
+`))
+	w.add(t, "a.gems.json", []byte(`[{"power": 1}, {"power": 3}]`))
+	failures := 0
+	w.calls = func(check.Object, value.Value, []value.Value) (value.Value, bool) {
+		failures++
+		return nil, false
+	}
+	pkgs := w.build(t)
+	if failures != 2 {
+		t.Errorf("Host.Call failed %d times, want 2: one call, one failure and so one host finding per receiver", failures)
+	}
+	rec, ok := pkgs[0].Types[0].(*ir.Record)
+	if !ok || len(rec.Methods) != 1 || len(rec.Methods[0].Instances) != 0 {
+		t.Errorf("a receiver whose call failed must have no Instance")
 	}
 }

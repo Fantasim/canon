@@ -10,7 +10,6 @@ import (
 
 // enumSpec is a Canon enum, a variant's kind enum or a table's id enum (CODEGEN.md §5.2–§5.5).
 type enumSpec struct {
-	origin   string
 	name     string
 	doc      string
 	under    string
@@ -38,7 +37,7 @@ func (g *gen) enums() {
 
 func (g *gen) enumSpec(e *ir.Enum) *enumSpec {
 	defer g.enter(e.QName())()
-	s := &enumSpec{origin: e.QName(), name: g.goName(e), doc: e.Doc, parseArg: wireArg, members: true}
+	s := &enumSpec{name: g.goName(e), doc: e.Doc, parseArg: wireArg, members: true}
 	s.under = smallestUint(len(e.Members))
 	if e.Codes != nil {
 		s.codes = g.goType(*e.Codes)
@@ -49,7 +48,7 @@ func (g *gen) enumSpec(e *ir.Enum) *enumSpec {
 		if e.Codes != nil {
 			v = strconv.FormatInt(m.Code, decimal)
 		}
-		s.consts = append(s.consts, enumConst{memberName(s.name, m), v, withRetired(m.Doc, m.Retired)})
+		s.consts = append(s.consts, enumConst{g.names.MemberName(e, m), v, withRetired(m.Doc, m.Retired)})
 		s.names = append(s.names, m.Name)
 		s.wires = append(s.wires, m.Wire)
 	}
@@ -74,10 +73,9 @@ func (g *gen) kindEnums() {
 		if !ok {
 			continue
 		}
-		kind := kindName(g.goName(v))
-		s := &enumSpec{origin: v.QName(), name: kind, under: smallestUint(len(v.Cases)), parseArg: wireArg}
+		s := &enumSpec{name: g.names.KindName(v), under: smallestUint(len(v.Cases)), parseArg: wireArg}
 		for i, c := range v.Cases {
-			s.consts = append(s.consts, enumConst{name: kind + exportedName(c.Go.Name, c.Name), value: strconv.Itoa(i), doc: kindMemberDoc(c)})
+			s.consts = append(s.consts, enumConst{name: g.names.KindMemberName(v, c), value: strconv.Itoa(i), doc: kindMemberDoc(c)})
 			s.names = append(s.names, c.Name)
 			s.wires = append(s.wires, c.Wire)
 		}
@@ -111,10 +109,9 @@ func (g *gen) idEnums() {
 		if !ok {
 			continue
 		}
-		name := idTypeName(g.goName(rec))
-		s := &enumSpec{origin: v.Name, name: name, under: smallestUint(len(v.IDs)), parseArg: keyArg}
+		s := &enumSpec{name: g.names.IDTypeName(rec), under: smallestUint(len(v.IDs)), parseArg: keyArg}
 		for i, id := range v.IDs {
-			s.consts = append(s.consts, enumConst{name: idMemberName(name, id), value: strconv.Itoa(i)})
+			s.consts = append(s.consts, enumConst{name: g.names.IDMemberName(rec, id), value: strconv.Itoa(i)})
 			s.names = append(s.names, id)
 		}
 		g.writeEnum(s)
@@ -123,18 +120,16 @@ func (g *gen) idEnums() {
 
 // writeEnum writes the type, its constants and its methods.
 func (g *gen) writeEnum(s *enumSpec) {
-	g.declare(s.name, s.origin)
 	g.body.WriteString(docFor(s.name, s.doc))
 	g.printf("type %s %s\n\nconst (\n", s.name, s.under)
-	for i, c := range s.consts {
-		g.declare(c.name, s.origin+dot+s.names[i])
+	for _, c := range s.consts {
 		g.body.WriteString(docFor(c.name, c.doc))
 		g.printf("%s %s = %s\n", c.name, s.name, c.value)
 	}
 	g.printf(")\n\n")
-	g.writeSwitch(stringMethod, s, s.names)
+	g.writeSwitch(ir.GoString, s, s.names)
 	if s.wires != nil {
-		g.writeSwitch(wireMethod, s, s.wires)
+		g.writeSwitch(ir.GoWire, s, s.wires)
 	}
 	g.writeParse(s)
 	if s.members {
@@ -155,8 +150,7 @@ func (g *gen) writeSwitch(method string, s *enumSpec, texts []string) {
 }
 
 func (g *gen) writeParse(s *enumSpec) {
-	name := parsePrefix + s.name
-	g.declare(name, s.origin)
+	name := g.names.ParseName(s.name)
 	g.printf("func %s(%s string) (%s, bool) {\nswitch %s {\n", name, s.parseArg, s.name, s.parseArg)
 	for i, c := range s.consts {
 		text := s.names[i]
@@ -169,8 +163,7 @@ func (g *gen) writeParse(s *enumSpec) {
 }
 
 func (g *gen) writeMembers(s *enumSpec) {
-	name := s.name + membersSuffix
-	g.declare(name, s.origin)
+	name := g.names.MembersName(s.name)
 	names := make([]string, len(s.consts))
 	for i, c := range s.consts {
 		names[i] = c.name
@@ -180,9 +173,8 @@ func (g *gen) writeMembers(s *enumSpec) {
 
 // writeCodes writes Code and <E>FromCode of an enum whose values are its @codes (§5.2).
 func (g *gen) writeCodes(s *enumSpec) {
-	name := s.name + fromCodeSuffix
-	g.declare(name, s.origin)
-	g.printf(codesFormat, s.name, s.codes, name)
+	name := g.names.FromCodeName(s.name)
+	g.printf(codesFormat, s.name, s.codes, name, ir.GoCode)
 	for _, c := range s.consts {
 		g.printf("case %s:\nreturn v, true\n", c.name)
 	}

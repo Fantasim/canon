@@ -1,0 +1,16 @@
+DECISIONS 202 and meta/decisions/log-2026-09-24.md (IR round 2 review): a field `__` derives an empty Go getter and storage, refused once at the field, the message naming the source identifier.
+-- a/a.canon --
+package a
+
+/// A rule.
+record Rule {
+  /// Its score.
+  __: Int
+}
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+error[E8011]  a/a.canon:6:3
+  __ is not a valid go identifier for @go(name:)
+
+1 error, 0 warnings in 1 package (…)

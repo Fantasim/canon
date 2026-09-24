@@ -1,0 +1,16 @@
+DECISIONS 202, CODEGEN.md §3.3: a field `_1` whose derived Go getter `1` is no Go identifier is refused at the field, once, as an override would be.
+-- a/a.canon --
+package a
+
+/// A rule.
+record Rule {
+  /// Its first score.
+  _1: Int
+}
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+error[E8011]  a/a.canon:6:3
+  1 is not a valid go identifier for @go(name:)
+
+1 error, 0 warnings in 1 package (…)

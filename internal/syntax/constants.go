@@ -386,7 +386,7 @@ const (
 const (
 	wordAt, wordFrom, wordEnv, wordKeyed, wordBy, wordOrdered, wordExt = "at", "from", "env", "keyed", "by", "ordered", "ext"
 	wordPasses, wordFails, wordWarns, wordDefault                      = "passes", "fails", "warns", "default"
-	wordValue, wordSiblings, wordMulti, wordAdvanced, wordWhen         = "value", "siblings", "multi", "advanced", "when"
+	WordValue, wordSiblings, wordMulti, wordAdvanced, wordWhen         = "value", "siblings", "multi", "advanced", "when"
 	wordTitle, wordSubtitle, wordSingular, wordPlural, wordMenu        = "title", "subtitle", "singular", "plural", "menu"
 	wordIcon, wordPreview, wordSearch, wordFilters, wordColumns        = "icon", "preview", "search", "filters", "columns"
 	wordGroup, wordShow, WordField, matchesName, failName, pairIndex   = "group", "show", "field", "matches", "fail", "i"
@@ -437,7 +437,7 @@ const (
 	annFiles, annMenu, AnnCpp, AnnGo, AnnTS                          = "files", "menu", "cpp", "go", "ts"
 	argWire, argPath, argCase, argTag, argInline, ArgUnit, argInt    = "wire", "path", "case", "tag", "inline", "unit", "int"
 	argBits, argPairs, argT, argWhy, argN, argTpl, argLabel          = "bits", "pairs", "T", "why", "n", "tpl", "label"
-	ArgDefines, ArgStruct, ArgHeader, ArgAccess, ArgName, argBigint  = "defines", "struct", "header", "access", "name", "bigint"
+	ArgDefines, ArgStruct, ArgHeader, ArgAccess, ArgName, ArgBigint  = "defines", "struct", "header", "access", "name", "bigint"
 )
 
 // Closed sets of annotation symbols (GRAMMAR.md §8.3).

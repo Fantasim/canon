@@ -17,8 +17,7 @@ func (g *gen) constants() {
 
 func (g *gen) constant(c *ir.Const) {
 	defer g.enter(c.Name)()
-	name := exportedName(c.Go.Name, c.Name)
-	g.declare(name, c.Name)
+	name := g.names.ConstName(c)
 	g.body.WriteString(docFor(name, c.Doc))
 	switch c.Type.Kind {
 	case types.List, types.Map:

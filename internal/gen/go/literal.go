@@ -76,14 +76,7 @@ func (g *gen) memberLit(t ir.TypeRef, index int) string {
 		g.failf(ErrMalformed, "member %d of enum %s", index, qname(t.Named))
 		return zeroLit
 	}
-	return g.qualify(e.Pkg, memberName(g.goName(e), e.Members[index]))
-}
-
-func memberName(enum string, m *ir.EnumMember) string {
-	if m.Go.Name != "" {
-		return m.Go.Name
-	}
-	return enum + upperCamel(m.Name)
+	return g.qualify(e.Pkg, g.names.MemberName(e, e.Members[index]))
 }
 
 func (g *gen) kindLit(named ir.Type, index int) string {
@@ -92,15 +85,13 @@ func (g *gen) kindLit(named ir.Type, index int) string {
 		g.failf(ErrMalformed, "case %d of variant %s", index, qname(named))
 		return zeroLit
 	}
-	kind := kindName(g.goName(v))
-	c := v.Cases[index]
-	return g.qualify(v.Pkg, kind+exportedName(c.Go.Name, c.Name))
+	return g.qualify(v.Pkg, g.names.KindMemberName(v, v.Cases[index]))
 }
 
 // keyLit is a ref's key: a table id constant, or a literal of the key's type (§5.8).
 func (g *gen) keyLit(t ir.TypeRef, k value.Key) string {
 	if isTableRef(t.Ref) {
-		return g.qualify(t.Ref.Pkg, idMemberName(idTypeName(g.goName(t.Ref.Elem)), k.S))
+		return g.qualify(t.Ref.Pkg, g.idMember(t.Ref.Elem, k.S))
 	}
 	switch {
 	case t.Key == nil:
@@ -112,8 +103,6 @@ func (g *gen) keyLit(t ir.TypeRef, k value.Key) string {
 	}
 	return strconv.Quote(k.S)
 }
-
-func idMemberName(idType, key string) string { return idType + upperCamel(key) }
 
 // memberIndex is the index of the enum member named name, or -1.
 func memberIndex(named ir.Type, name string) int {

@@ -2,6 +2,7 @@ package gogen_test
 
 import (
 	"errors"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -82,10 +83,13 @@ func TestNameCollisions(t *testing.T) {
 		"a const named like its enum":       {Name: "p", Dir: "p", Types: []ir.Type{enum("E", "x")}, Consts: []*ir.Const{{Name: "e", Type: boolT, V: &value.Bool{}}}, Emits: []*ir.Emit{goEmit()}},
 	}
 	cases["a const named like its enum"].Consts[0].Go.Name = "E"
+	overridden := enum("Tone", "a", "b")
+	overridden.Members[0].Go.Name = "ToneB"
+	cases["a member override ToneB next to member b"] = pkg(overridden)
 	for _, name := range []string{
 		"a parameter q, imports q and q_", "enum members series_1 and series1", "fields fooBar and foo_bar",
 		"field and export fn strong", "container Potion and record", "two imports named iter",
-		"two types of one name", "a const named like its enum",
+		"two types of one name", "a const named like its enum", "a member override ToneB next to member b",
 	} {
 		if err := generateErr(cases[name], nil); !errors.Is(err, gogen.ErrNameCollision) {
 			t.Errorf("%s: got %v, want ErrNameCollision", name, err)
@@ -289,5 +293,19 @@ func TestTypesWithoutGo(t *testing.T) {
 		if !errors.Is(err, gogen.ErrUnsupported) || !errors.As(err, &d) || d.Subject != c.want {
 			t.Errorf("%s: got %v, want ErrUnsupported naming %s", c.name, err, c.want)
 		}
+	}
+}
+
+// CODEGEN.md §3.3, §3.5, decision 194: an enum member's override is its whole constant, so `a @go(name: "B"), b` generates B next to ToneB, as stage E's name plan accepts it.
+func TestEnumOverrideGenerates(t *testing.T) {
+	tone := enum("Tone", "a", "b")
+	tone.Members[0].Go.Name = "B"
+	files, err := gogen.Generate(pkg(tone), goEmit())
+	if err != nil {
+		t.Fatal(err)
+	}
+	src := string(files[len(files)-1].Content)
+	if !regexp.MustCompile(`\tB +Tone = 0\n`).MatchString(src) || !strings.Contains(src, "\tToneB Tone = 1\n") {
+		t.Errorf("want the constants B and ToneB:\n%s", src)
 	}
 }

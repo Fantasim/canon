@@ -100,7 +100,7 @@ func fieldCpp(anns []*syntax.Annotation) CppFieldOptions {
 	var o CppFieldOptions
 	o.Name = argText(a, syntax.ArgName)
 	o.Member = argText(a, syntax.WordField)
-	o.Type = argText(a, argType)
+	o.Type = argText(a, syntax.KwType.String())
 	if word, ok := argWord(a, syntax.ArgUnit); ok {
 		o.Unit, o.HasUnit = unitOf(word)
 	}
@@ -112,7 +112,7 @@ func caseCpp(anns []*syntax.Annotation) CppCaseOptions {
 	a := annotation(anns, syntax.AnnCpp)
 	var o CppCaseOptions
 	o.Name = argText(a, syntax.ArgName)
-	o.Value, o.HasValue = argInt(a, argValue)
+	o.Value, o.HasValue = argInt(a, syntax.WordValue)
 	return o
 }
 

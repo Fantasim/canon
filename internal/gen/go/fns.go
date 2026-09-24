@@ -12,23 +12,25 @@ import (
 
 // finiteMethod is an export fn of finite parameters, read from a dense table (CODEGEN.md §5.10).
 type finiteMethod struct {
-	fn     *ir.ExportFn
-	origin string
-	name   string // the Go function or method
-	store  string // the table: a struct member, or a package variable
-	read   string // how the function reads the table: self.x, xTable or xTable()
-	res    *slot  // how a cell is read, like a getter of the result type
-	pair   bool   // cells are {v, ok}: an optional result nil cannot mark
-	dims   []int
+	fn      *ir.ExportFn
+	origin  string
+	name    string   // the Go function or method
+	store   string   // the table: a struct member, or a package variable
+	read    string   // how the function reads the table: self.x, xTable or xTable()
+	params  []string // the parameters' locals, escaped (decision 182)
+	indexes []string // each parameter's index local, or "" (decision 122)
+	res     *slot    // how a cell is read, like a getter of the result type
+	pair    bool     // cells are {v, ok}: an optional result nil cannot mark
+	dims    []int
 }
 
-func (g *gen) newFinite(origin, name, store string, fn *ir.ExportFn) *finiteMethod {
-	t, opt := unwrapOptional(fn.Result)
+func (g *gen) newFinite(origin string, fn *ir.ExportFn) *finiteMethod {
+	names := g.names.Finite(fn)
 	f := &finiteMethod{
-		fn: fn, origin: origin, name: name, store: store, read: selfDot + store,
-		res: g.newSlot(origin, name, store, t, opt),
+		fn: fn, origin: origin, name: names.Name, store: names.Store, read: selfDot + names.Store,
+		params: names.Params, indexes: names.Indexes, res: g.newSlot(origin, names.Result),
 	}
-	f.pair = opt && !strings.HasPrefix(g.cellType(f), pointer)
+	f.pair = f.res.Optional && !strings.HasPrefix(g.cellType(f), pointer)
 	for _, p := range fn.Params {
 		f.dims = append(f.dims, g.domainSize(origin, p.Type))
 	}
@@ -136,18 +138,14 @@ func (g *gen) cell(f *finiteMethod, v value.Value) string {
 }
 
 // writeFinite writes the function or method that reads a finite table (CODEGEN.md §5.10).
-func (g *gen) writeFinite(sc *scope, prefix string, f *finiteMethod) {
+func (g *gen) writeFinite(prefix string, f *finiteMethod) {
 	defer g.enter(f.origin)()
-	g.fail(sc.add(f.name, f.origin))
-	params := newScope(f.origin)
-	g.fail(params.add(strings.TrimSuffix(strings.Split(f.read, dot)[0], callSuffix), f.origin))
 	sig := make([]string, len(f.fn.Params))
 	var prelude, index strings.Builder
 	for i, p := range f.fn.Params {
-		name := g.local(storageName(p.Name), f.origin)
-		g.fail(params.add(name, f.origin))
+		name := f.params[i]
 		sig[i] = name + space + g.paramType(p.Type)
-		index.WriteString(lbracket + g.paramIndex(&prelude, name, p.Type) + rbracket)
+		index.WriteString(lbracket + g.paramIndex(&prelude, name, f.indexes[i], p.Type) + rbracket)
 	}
 	cell := f.read + index.String()
 	body := returnKw + cell
@@ -166,10 +164,9 @@ func (g *gen) paramType(t ir.TypeRef) string {
 	return g.goType(t)
 }
 
-// paramIndex is the array index of a parameter: itself for an enum or a table id, else a
-// local the prelude computes (a Bool, or an enum whose values are @codes).
-func (g *gen) paramIndex(prelude *strings.Builder, name string, t ir.TypeRef) string {
-	local := name + indexLocalSuffix
+// paramIndex is the array index of a parameter: itself for an enum or a table id, else the
+// plan's local the prelude computes (a Bool, or an enum whose values are @codes).
+func (g *gen) paramIndex(prelude *strings.Builder, name, local string, t ir.TypeRef) string {
 	switch {
 	case t.Kind == types.Bool:
 		prelude.WriteString(fmtBoolIndex(local, name))
@@ -206,14 +203,11 @@ func (g *gen) codesIndex(local, name string, t ir.TypeRef) string {
 // fns writes the package-level export fns in declaration order (CODEGEN.md §5.10).
 func (g *gen) fns() {
 	for _, fn := range g.p.Fns {
-		name := exportedName(fn.Go.Name, fn.Name)
-		g.declare(name, fn.Name)
 		switch fn.Kind {
 		case ir.FnLookup:
-			g.packageTable(g.newFinite(fn.Name, name, lowerCamel(fn.Name)+tableSuffix, fn), fn.Table)
+			g.packageTable(g.newFinite(fn.Name, fn), fn.Table)
 		case ir.FnPrecomputed:
-			f := g.newFinite(fn.Name, name, lowerCamel(fn.Name)+tableSuffix, fn)
-			g.packageTable(f, &ir.LookupTable{Cells: []value.Value{fn.Value}})
+			g.packageTable(g.newFinite(fn.Name, fn), &ir.LookupTable{Cells: []value.Value{fn.Value}})
 		default:
 			g.failf(ErrUnsupported, translatedFormat, fn.Name)
 		}
@@ -222,7 +216,6 @@ func (g *gen) fns() {
 
 // packageTable is a lookup's table, built once by pointer when a cell reads d (decision 183).
 func (g *gen) packageTable(f *finiteMethod, t *ir.LookupTable) {
-	g.declare(f.store, f.origin)
 	g.usedData = false
 	lit, typed := g.cellArray(f, t)
 	typ := g.storageType(f)
@@ -233,12 +226,12 @@ func (g *gen) packageTable(f *finiteMethod, t *ir.LookupTable) {
 			typ, lit = pointer+typ, ampersand+lit
 		}
 		g.printf("var %s = %s.OnceValue(func() %s {\n%s := %s()\nreturn %s\n})\n\n",
-			f.store, g.use(syncPkg, syncPkg), typ, g.data, g.last+valuesSuffix, lit)
+			f.store, g.use(syncPkg, syncPkg), typ, g.data, g.names.Data().Values, lit)
 		f.read += callSuffix
 	case typed:
 		g.printf("var %s = %s\n\n", f.store, lit)
 	default:
 		g.printf("var %s %s = %s\n\n", f.store, typ, lit)
 	}
-	g.writeFinite(newScope(f.name), funcKw, f)
+	g.writeFinite(funcKw, f)
 }
