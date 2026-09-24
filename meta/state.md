@@ -15,12 +15,13 @@ Part A (close open work) then Part B (M3 waves W0–W4). Ticked = committed on `
   `progen` (mutator/shrinker artifacts, A6), 1 `ir` (E8011_725 interim), 2 new (E3013 check,
   E1107 syntax — landing with W1 load).
 - [x] A4 M2 close: position test on `examples/pipeline/data/II_POT_HEAL_L.json`; M2 ticked.
-- [ ] A5 consumer units gen/go ∥ gen/cpp in verification; ir plan-gap unit next; ERRORS.md pass:
-  ir group in fixes (E8019 partial), check and load groups queued; spec sync #2; cleanups.
+- [ ] A5 consumer units landed (d5de44d, 5d8232a); ir plan-gap unit after the ERRORS ir group;
+  ERRORS.md pass: ir group in fixes, check/load groups queued; spec sync #2; cleanups.
 - [ ] A6 M1.5 second wave (type-directed, metamorphic).
 - [x] W0 gap map → `meta/m3-gaps.md` (1b0a332).
-- [ ] W1: eval layers/provenance landed (bc99b99; identity follow-up in flight); load forms in
-  review fixes; dependent types (check) and the load gate lift not started.
+- [ ] W1: eval layers/provenance + identity landed; load forms in round 2; dependent types
+  (check/types) in flight; load gate lift after load. W2 started early: gen/go ∥ gen/cpp
+  LoadInputs + dependent types.
 - [ ] W2 · [ ] W3 · [ ] W4 (see [plan.md](plan.md) "M3 execution").
 
 Milestones: M0, M1, M2 accepted (M1 item 6 deferred to after M7). M1.5 foundation committed
