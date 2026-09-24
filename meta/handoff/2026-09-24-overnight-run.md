@@ -95,7 +95,11 @@ continue). After each wave: an integration cleanup, the progen rule-mutation rer
 **Real-data findings** (acceptance 7) are a **list for Louis only**, grouped by code and by file
 (counts plus a few examples each), in `meta/handoff/<date>-realdata-findings.md`. Propose no
 fixes. The law never bends to fit the data: a rule that real data breaks massively is flagged in
-the list, not relaxed.
+the list, not relaxed. The example packages' types are not edited to make real data pass (for
+example, to accept a legacy sentinel like `0` meaning "no item" in a `ref` field). What the data
+*means* is Louis's call: list the pattern with its count and move on. The spec is final: build
+it as written, and put an implementation concern about a feature in the report; never cut or
+simplify the feature.
 
 ## End of run
 
