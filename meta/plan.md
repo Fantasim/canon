@@ -33,10 +33,10 @@ block in [state.md](state.md).
 
 - [x] Parser for every example, AST goldens (SYN, `syntax`). Accept: no `E11xx`, dumps equal
   `internal/syntax/testdata/ast/`.
-- [ ] Resolver + checker (TYP, `check`); evaluator + stdlib subset (EVL, `eval`); verify, lock,
+- [x] Resolver + checker (TYP, `check`); evaluator + stdlib subset (EVL, `eval`); verify, lock,
   rules (VER); `project`, `wire` encode (LOD); `ir`, `gen/json`, `build` (IR); `gen/go` baked
   (GO); `cli` check/build/version/init/new (API); `goldens-check` wired in the Makefile (QA).
-- [ ] Accept (§6 M1): `canon check teamboard` prints its `findings.txt`; `canon build teamboard
+- [x] Accept (§6 M1): `canon check teamboard` prints its `findings.txt`; `canon build teamboard
   sovcommon...` equals the goldens and a new `expected/MANIFEST`; generated Go builds on the current
   Go (DECISIONS 205); `canon.lock` equals its golden, `E6001` on delete/rename, retire passes;
   the sovcommon `teamboard` integration waits on the advanced-test gate (DECISIONS 189, 206).

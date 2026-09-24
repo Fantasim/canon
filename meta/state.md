@@ -4,7 +4,7 @@ Updated: 2026-09-24 (day, autonomous session with Louis intermittently present)
 
 ## Current focus
 
-**M1 finishing, M2 started** ([plan.md](plan.md)). M1 items 1–5 met: `canon check teamboard`
+**M1 accepted (items 1–5; item 6 waits on the 206 gate), M2 in progress, M1.5 started** ([plan.md](plan.md)). M1 items 1–5 met: `canon check teamboard`
 equals findings.txt, `canon build --target go,json teamboard sovcommon...` equals the new goldens
 (MANIFEST, rebuilt and diffed by `make goldens-check`), canon.lock equals its golden, the generated
 module vets. Item 6 postponed (DECISIONS 189). Open before ticking M1: the api/cli review, IR
