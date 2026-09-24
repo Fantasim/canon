@@ -245,31 +245,31 @@ var unitSymbols = [...]string{types.UnitMs: "ms", types.UnitS: letterS, types.Un
 
 // Emit targets and options (CODEGEN.md §2.1, WIRE.md §8.1).
 const (
-	targetGo        = "go"
-	targetCpp       = "cpp"
-	targetTS        = "ts"
-	targetJSON      = annotJSON
-	targetView      = "view"
-	optionOut       = "out"
-	optionMode      = "mode"
-	optionPackage   = "package"
-	optionNamespace = "namespace"
-	optionValues    = methodValues
-	modeBaked       = "baked"
-	modeEmbedded    = "embedded"
-	modeData        = "data"
-	modeTypes       = "types"
+	TargetGo     = "go"
+	TargetCpp    = "cpp"
+	TargetTS     = "ts"
+	TargetJSON   = annotJSON
+	TargetView   = "view"
+	OptOut       = "out"
+	OptMode      = "mode"
+	OptPackage   = "package"
+	OptNamespace = "namespace"
+	OptValues    = methodValues
+	ModeBaked    = "baked"
+	ModeEmbedded = "embedded"
+	ModeData     = "data"
+	ModeTypes    = "types"
 )
 
-var codeModes = []string{modeBaked, modeEmbedded, modeData, modeTypes}
+var codeModes = []string{ModeBaked, ModeEmbedded, ModeData, ModeTypes}
 
 // emitSpecs are the targets of CODEGEN.md §2.1 with their options and modes.
 var emitSpecs = map[string]emitSpec{
-	targetGo:   {options: []string{optionOut, optionMode, optionPackage, optionValues}, modes: codeModes},
-	targetCpp:  {options: []string{optionOut, optionMode, optionNamespace, optionValues}, modes: codeModes},
-	targetTS:   {options: []string{optionOut, optionMode, optionValues}, modes: codeModes},
-	targetJSON: {options: []string{optionOut, optionValues}},
-	targetView: {options: []string{optionOut}},
+	TargetGo:   {options: []string{OptOut, OptMode, OptPackage, OptValues}, modes: codeModes},
+	TargetCpp:  {options: []string{OptOut, OptMode, OptNamespace, OptValues}, modes: codeModes},
+	TargetTS:   {options: []string{OptOut, OptMode, OptValues}, modes: codeModes},
+	TargetJSON: {options: []string{OptOut, OptValues}},
+	TargetView: {options: []string{OptOut}},
 }
 
 // Load forms and options (WIRE.md §6.1).

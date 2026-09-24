@@ -263,7 +263,7 @@ func (p *parser) viewShow(start Tok, doc *DocComment) *ViewShow {
 // a separator is itself the name.
 func (p *parser) viewField(start Tok, doc *DocComment) *ViewField {
 	f := &ViewField{Doc: doc, Field: NoTok}
-	if p.atWord(wordField) && isWord(p.peek(1)) {
+	if p.atWord(WordField) && isWord(p.peek(1)) {
 		f.Field = p.next()
 	}
 	if f.Name = p.word(); f.Name == nil {

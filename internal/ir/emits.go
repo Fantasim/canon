@@ -4,6 +4,7 @@ import (
 	"path"
 	"strings"
 
+	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/project"
 	"github.com/fantasim/canonlang/internal/source"
@@ -23,7 +24,6 @@ func (es *emitSite) span() source.Span { return es.file.Span(es.decl.Target) }
 
 // emits reads every emit of u and resolves its output (CODEGEN.md §2.1, §2.8, decision 108), the first of each target only: a second one is check's E8002.
 func (s *stage) emits(u *unit) {
-	layout, _ := project.NewLayout(s.in.Project, curDir, nil, nil)
 	bag := u.bag
 	if !u.selected || bag == nil {
 		bag = diag.NewBag(nil, u.cp.Path)
@@ -42,14 +42,14 @@ func (s *stage) emits(u *unit) {
 			seen[t] = true
 			es := &emitSite{e: &Emit{Target: t}, decl: ed, file: f}
 			s.readOptions(u, es)
-			s.resolveOut(u, es, layout, bag)
+			s.resolveOut(u, es, s.layout, bag)
 			u.emits = append(u.emits, es)
 			u.p.Emits = append(u.p.Emits, es.e)
 		}
 	}
 }
 
-// readOptions types the options check validated (E8003, E8009): out, mode, values, package, namespace; an absent `values` is nil, `values: []` an empty list (decision 127).
+// readOptions types the options check validated (E8003, E8009): out, mode, values, package, namespace; an absent `values` and an explicit `values: []` both read as nil, so selectedNames expands either to every public value (decision 127).
 func (s *stage) readOptions(u *unit, es *emitSite) {
 	e := es.e
 	if e.Target == TargetGo || e.Target == TargetCpp || e.Target == TargetTS {
@@ -61,18 +61,18 @@ func (s *stage) readOptions(u *unit, es *emitSite) {
 			continue
 		}
 		switch fi.Name.Name {
-		case optOut:
+		case check.OptOut:
 			e.Out = constString(fi.Value)
 			es.outSpan = es.file.Span(fi.Value)
-		case optMode:
+		case check.OptMode:
 			if id, isWord := fi.Value.(*syntax.IdentExpr); isWord {
 				e.Mode, _ = wordIndex[Mode](modeWords[:], id.Name)
 			}
-		case optValues:
+		case check.OptValues:
 			e.Values = valueNames(fi.Value)
-		case optPackage:
+		case check.OptPackage:
 			e.GoPackage = constString(fi.Value)
-		case optNamespace:
+		case check.OptNamespace:
 			e.Namespace = constString(fi.Value)
 		}
 	}
@@ -99,12 +99,13 @@ func constString(x syntax.Node) string {
 	return ""
 }
 
+// valueNames is an explicit `values` list's names, nil for an empty list too (decision 127).
 func valueNames(x syntax.Expr) []string {
 	list, ok := x.(*syntax.ListLit)
 	if !ok {
 		return nil
 	}
-	out := []string{}
+	var out []string
 	for _, el := range list.Elems {
 		if id, isName := el.(*syntax.IdentExpr); isName {
 			out = append(out, id.Name)
@@ -170,8 +171,13 @@ func below(dir, root string) (string, bool) {
 	case dir == root:
 		return "", true
 	case root == curDir:
-		return dir, dir != parentDir && !strings.HasPrefix(dir, parentDir+pathSep)
+		return dir, notAbove(dir)
 	}
 	rel, ok := strings.CutPrefix(dir, root+pathSep)
-	return rel, ok
+	return rel, ok && notAbove(rel)
+}
+
+// notAbove reports a relative path that does not walk back out of root through "..".
+func notAbove(rel string) bool {
+	return rel != parentDir && !strings.HasPrefix(rel, parentDir+pathSep)
 }

@@ -35,7 +35,7 @@ func hasDataEmit(u *unit) bool {
 	return false
 }
 
-// receiver computes the stored methods of one receiver: a record or case instance.
+// receiver computes the stored methods of one receiver: a record or case instance, of this package or an imported one, whose encoded `$` keys need them too (WIRE.md §5.11, decision 128).
 func (s *stage) receiver(r *value.Record) {
 	for _, m := range s.methodsOf(r.T) {
 		site := s.fnObjs[m]
@@ -77,7 +77,7 @@ func (s *stage) computable(site *fnSite) bool {
 	return ok && n <= maxCells
 }
 
-// results is a fn's value for recv (nil for a package fn): a precomputed result, or the dense table over its domains, the first parameter varying slowest (CODEGEN.md §5.10). The first failing call stops it: the evaluator reported the finding.
+// results is a fn's value for recv (nil for a package fn): a precomputed result, or the dense table over its domains, the first parameter varying slowest (CODEGEN.md §5.10); every cell is still called after one fails, so every failure is reported (EVALUATION.md §2.3, decision 194).
 func (s *stage) results(site *fnSite, recv *value.Record) (value.Value, *LookupTable) {
 	var self value.Value
 	if recv != nil {
@@ -92,8 +92,9 @@ func (s *stage) results(site *fnSite, recv *value.Record) (value.Value, *LookupT
 		return v, nil
 	}
 	domains, n, _ := s.domains(site)
-	table := &LookupTable{Domains: domains, Cells: make([]value.Value, 0, n)}
+	table := &LookupTable{Domains: domains, Cells: make([]value.Value, n)}
 	args := make([]value.Value, len(domains))
+	failed := false
 	for c := range int(n) {
 		rest := c
 		for i := len(domains) - 1; i >= 0; i-- {
@@ -102,10 +103,14 @@ func (s *stage) results(site *fnSite, recv *value.Record) (value.Value, *LookupT
 		}
 		v, ok := s.in.Host.Call(s.ctx, site.obj, self, append([]value.Value(nil), args...))
 		if !ok {
-			s.failed[site.fn] = true
-			return nil, nil
+			failed = true
+			continue
 		}
-		table.Cells = append(table.Cells, v)
+		table.Cells[c] = v
+	}
+	if failed {
+		s.failed[site.fn] = true
+		return nil, nil
 	}
 	return nil, table
 }

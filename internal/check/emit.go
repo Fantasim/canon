@@ -49,13 +49,13 @@ func (c *checker) checkEmit(env *env, e *syntax.EmitDecl, seen map[string]bool) 
 			continue
 		}
 		switch fi.Name.Name {
-		case optionMode:
+		case OptMode:
 			c.emitMode(env, fi, target, spec.modes)
-		case optionValues:
+		case OptValues:
 			values = c.emitValues(env, fi, target)
 		default:
 			s, isStr := c.emitString(env, fi, target)
-			if isStr && fi.Name.Name == optionOut {
+			if isStr && fi.Name.Name == OptOut {
 				out = s
 			}
 		}
@@ -84,11 +84,11 @@ func (c *checker) emitString(env *env, fi *syntax.FieldItem, target string) (str
 	}
 	text := constText(s)
 	switch {
-	case fi.Name.Name == optionPackage && (!identRe.MatchString(text) || goKeywords[text]):
+	case fi.Name.Name == OptPackage && (!identRe.MatchString(text) || goKeywords[text]):
 		c.report(env, diag.E8009.AtPackage(env.span(fi.Value), text))
-	case fi.Name.Name == optionNamespace && !cppNamespace(text):
+	case fi.Name.Name == OptNamespace && !cppNamespace(text):
 		c.report(env, diag.E8009.AtNamespace(env.span(fi.Value), text))
-	case fi.Name.Name == optionOut && target == targetTS && !strings.HasSuffix(text, tsSuffix):
+	case fi.Name.Name == OptOut && target == TargetTS && !strings.HasSuffix(text, tsSuffix):
 		c.report(env, diag.E8009.AtTsOut(env.span(fi.Value), text))
 	}
 	return text, true
@@ -147,7 +147,7 @@ func (c *checker) emitValues(env *env, fi *syntax.FieldItem, target string) int 
 
 // emitFileMode is E8150: `emit json` whose out names a .json file writes exactly one value.
 func (c *checker) emitFileMode(env *env, e *syntax.EmitDecl, target, out string, values int) {
-	if target != targetJSON || !strings.HasSuffix(out, dot+targetJSON) {
+	if target != TargetJSON || !strings.HasSuffix(out, dot+TargetJSON) {
 		return
 	}
 	if values < 0 {

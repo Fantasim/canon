@@ -1,0 +1,19 @@
+decision 180, decision 37: a define record has no representation in a baked go emit, so check reports it there, matching what build would refuse.
+-- a/a.canon --
+package a
+
+/// A rule.
+record Rule {
+  /// A define.
+  it: Define
+}
+
+/// The rule.
+let rule: Rule = { it: { value: 3 } }
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+error[E8012]  a/a.canon:6:3
+  Rule.it cannot be emitted: Define has no representation in generated code
+
+1 error, 0 warnings in 1 package (…)

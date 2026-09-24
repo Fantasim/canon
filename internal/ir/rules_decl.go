@@ -84,21 +84,22 @@ func (s *stage) checkOrderedCodes(u *unit) {
 	}
 }
 
-// checkRepresentable is E8012: no emitted type, value, constant or stored fn holds a Range, a function type, `_`, a define record or a Never outside an optional field (CODEGEN.md §4.4).
+// checkRepresentable is E8012: no emitted type, value, constant or stored fn holds a Range, a function type, `_` or a Never outside an optional field (CODEGEN.md §4.4); a define record or a table of one is added only when the package has a baked go emit, the one target known to refuse it (decision 180), so check fails wherever build would (decision 37).
 func (s *stage) checkRepresentable(u *unit) {
+	defines := bakedFor(u, TargetGo)
 	s.eachOwnField(u, func(owner string, f *Field) {
 		site := s.fieldSites[f]
-		if what := unrepresentable(site.tf.Type, true); what != nil {
+		if what := unrepresentable(site.tf.Type, true, defines); what != nil {
 			u.report(diag.E8012.At(site.span(), owner+qnameSep+f.Name, what))
 		}
 	})
 	for _, v := range u.values {
-		if what := unrepresentable(v.t, false); what != nil {
+		if what := unrepresentable(v.t, false, defines); what != nil {
 			u.report(diag.E8012.At(v.span().span(), v.v.Name, what))
 		}
 	}
 	for _, c := range u.consts {
-		if what := unrepresentable(c.obj.Type(), false); what != nil {
+		if what := unrepresentable(c.obj.Type(), false, defines); what != nil {
 			u.report(diag.E8012.At(c.span(), c.c.Name, what))
 		}
 	}
@@ -106,35 +107,46 @@ func (s *stage) checkRepresentable(u *unit) {
 		if site.fn.Kind == FnTranslated {
 			continue
 		}
-		if what := unrepresentable(site.sig.Result, false); what != nil {
+		if what := unrepresentable(site.sig.Result, false, defines); what != nil {
 			u.report(diag.E8012.At(site.span(), site.label, what))
 		}
 	}
 }
 
-// unrepresentable is the first part of t generated code cannot hold; a field's own `Never?`
-// is not emitted at all. Named types are judged at their own declarations.
-func unrepresentable(t types.Type, field bool) types.Type {
+// unrepresentable is the first part of t generated code cannot hold; a field's own `Never?` is
+// not emitted at all, and a define record or a table of one counts only when defines is set.
+// Named types are judged at their own declarations.
+func unrepresentable(t types.Type, field, defines bool) types.Type {
 	b := t.Base()
 	if o, ok := b.(*types.OptionalType); ok && field && o.Elem.Base().Kind() == types.Never {
 		return nil
 	}
-	switch b.Kind() {
-	case types.Range, types.Func, types.Any, types.Never, types.Define:
+	switch {
+	case isUniversallyUnrepresentable(b.Kind()):
 		return t
-	case types.Table:
-		if b.(*types.TableType).Elem.Base().Kind() == types.Define {
-			return t
-		}
-	default:
-		// every other kind is representable at this level; its sub-types are still checked below.
+	case defines && isDefineType(b):
+		return t
 	}
 	for _, sub := range subTypes(b) {
-		if what := unrepresentable(sub, false); what != nil {
+		if what := unrepresentable(sub, false, defines); what != nil {
 			return what
 		}
 	}
 	return nil
+}
+
+// isUniversallyUnrepresentable is CODEGEN.md §4.4's fixed list: no target can hold these.
+func isUniversallyUnrepresentable(k types.Kind) bool {
+	return k == types.Range || k == types.Func || k == types.Any || k == types.Never
+}
+
+// isDefineType is a define record, or a table of one (decision 180).
+func isDefineType(b types.Type) bool {
+	if b.Kind() == types.Define {
+		return true
+	}
+	t, ok := b.(*types.TableType)
+	return ok && t.Elem.Base().Kind() == types.Define
 }
 
 // subTypes are the types a composite type holds by value; a ref holds only a key.
@@ -156,8 +168,8 @@ func subTypes(t types.Type) []types.Type {
 	return nil
 }
 
-// noWireForm reports a type holding a Range, a function type or a define record, through records and variants (WIRE.md §5.9: E8151; FINGERPRINT.md §8).
-func noWireForm(t types.Type, seen map[types.Type]bool) bool {
+// noWireForm reports a type holding a Range or a function type, through records and variants (WIRE.md §5.9: E8151; FINGERPRINT.md §8); a define record counts only when defines is set (decision 180, decision 37: check fails wherever build would).
+func noWireForm(t types.Type, seen map[types.Type]bool, defines bool) bool {
 	b := t.Base()
 	if seen[b] {
 		return false
@@ -165,31 +177,35 @@ func noWireForm(t types.Type, seen map[types.Type]bool) bool {
 	seen[b] = true
 	switch x := b.(type) {
 	case *types.RecordType:
-		return x.Kind() == types.Define || fieldsWithoutWire(x.Fields, seen)
+		return defines && x.Kind() == types.Define || fieldsWithoutWire(x.Fields, seen, defines)
 	case *types.AppliedRecord:
-		return noWireForm(x.Rec, seen)
+		return noWireForm(x.Rec, seen, defines)
 	case *types.VariantType:
-		for _, c := range x.Cases {
-			if fieldsWithoutWire(c.Fields, seen) {
-				return true
-			}
-		}
-		return false
+		return casesWithoutWire(x.Cases, seen, defines)
 	}
-	if k := b.Kind(); k == types.Range || k == types.Func {
+	if k := b.Kind(); k == types.Range || k == types.Func || defines && isDefineType(b) {
 		return true
 	}
 	for _, sub := range subTypes(b) {
-		if noWireForm(sub, seen) {
+		if noWireForm(sub, seen, defines) {
 			return true
 		}
 	}
 	return false
 }
 
-func fieldsWithoutWire(fields []*types.Field, seen map[types.Type]bool) bool {
+func fieldsWithoutWire(fields []*types.Field, seen map[types.Type]bool, defines bool) bool {
 	for _, f := range fields {
-		if f.Input == nil && noWireForm(f.Type, seen) {
+		if f.Input == nil && noWireForm(f.Type, seen, defines) {
+			return true
+		}
+	}
+	return false
+}
+
+func casesWithoutWire(cases []*types.CaseType, seen map[types.Type]bool, defines bool) bool {
+	for _, c := range cases {
+		if fieldsWithoutWire(c.Fields, seen, defines) {
 			return true
 		}
 	}

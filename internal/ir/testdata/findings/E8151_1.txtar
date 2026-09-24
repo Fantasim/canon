@@ -1,22 +1,19 @@
-WIRE.md §5.9, §8.1: a value whose record holds a function is written to JSON.
+WIRE.md §5.9, §8.1: a value whose record holds a Range is written to JSON.
 -- a/a.canon --
 package a
 
 /// A rule.
 record Rule {
-  /// How it scores.
-  score: fn(Int) -> Int
+  /// The allowed span.
+  span: Range
 }
 
 /// The rule.
-let rule: Rule = { score: x => x * 2 }
+let rule: Rule = { span: 0..3 }
 
 emit json { out: "out/" }
 -- findings.txt --
-error[E3306]  a/a.canon:6:10
-  a function type is not allowed here
-
 error[E8151]  a/a.canon:10:5
   value rule of type a.Rule has no wire form
 
-2 errors, 0 warnings in 1 package (…)
+1 error, 0 warnings in 1 package (…)

@@ -18,6 +18,9 @@ func (s *stage) finish(u *unit) {
 		if vs.v.Name == first {
 			fns = u.p.Fns
 		}
+		// Schema fails only on a type shape check's own phase 2 already refuses (an unnamed
+		// TypeApp, a malformed dependent match, a Basic of 0 bits): unreachable for a program
+		// that reached stage E, so a value it cannot fingerprint is simply left without one.
 		if id, err := Schema(u.p.Name, vs.v.Name, &vs.v.Type, fns); err == nil {
 			vs.v.Schema = id
 		}
@@ -131,6 +134,9 @@ func (s *stage) defineTable(pkg, name string) *DefineTable {
 	slices.SortFunc(entries, func(a, b *value.Record) int { return cmp.Compare(a.Ident.Key.S, b.Ident.Key.S) })
 	d := &DefineTable{Pkg: pkg, Value: name}
 	for _, e := range entries {
+		if len(e.Fields) == 0 {
+			return nil
+		}
 		n, isInt := e.Fields[0].(*value.Int)
 		if !isInt {
 			return nil

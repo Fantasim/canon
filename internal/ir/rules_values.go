@@ -8,13 +8,15 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// checkSafeInts is E8101: an integer a TypeScript emit writes fits a number, unless its field has @ts(bigint) (CODEGEN.md §4.1); constants included.
+// checkSafeInts is E8101: an integer a TypeScript emit writes fits a number, unless its field has @ts(bigint) (CODEGEN.md §4.1); not a value's own data in `types` mode, which emits none (decision 194).
 func (s *stage) checkSafeInts(u *unit, es *emitSite) {
-	for _, v := range selectedValues(u, es.e) {
-		span := v.span().span()
-		s.unsafeInts(v.v.V, v.v.Name, false, func(n *value.Int, field string) {
-			u.report(diag.E8101.At(span, n, field))
-		})
+	if es.e.Mode != ModeTypes {
+		for _, v := range selectedValues(u, es.e) {
+			span := v.span().span()
+			s.unsafeInts(v.v.V, v.v.Name, false, func(n *value.Int, field string) {
+				u.report(diag.E8101.At(span, n, field))
+			})
+		}
 	}
 	for _, c := range u.consts {
 		s.unsafeInts(c.c.V, c.c.Name, false, func(n *value.Int, field string) {
@@ -136,11 +138,21 @@ func (s *stage) checkReload(u *unit) {
 			}
 			u.report(diag.E8202.At(v.span().span(), v.v.Name, targetWords[es.e.Target], modeWords[es.e.Mode]))
 		}
-		rec := elemRecord(&v.v.Type)
-		if rec != nil && hasTarget(u, TargetCpp) && (rec.Cpp.Access == AccessFields || rec.Cpp.Access == AccessBoth) {
-			u.report(diag.E8201.At(v.span().span(), v.v.Name, rec.Name, rec.Cpp.Struct, accessWords[rec.Cpp.Access]))
+		if hasTarget(u, TargetCpp) {
+			s.checkReloadStructs(u, v)
 		}
 	}
+}
+
+// checkReloadStructs is E8201: an `@reload` value's type, or any type it contains at any depth (a map, a variant case, a nested record of any package), maps onto a legacy C++ struct in `fields` or `both` access (SPEC.md §15.5).
+func (s *stage) checkReloadStructs(u *unit, v *valueSite) {
+	w := newWalker(func(n Type) bool {
+		if rec, ok := n.(*Record); ok && (rec.Cpp.Access == AccessFields || rec.Cpp.Access == AccessBoth) {
+			u.report(diag.E8201.At(v.span().span(), v.v.Name, rec.Name, rec.Cpp.Struct, accessWords[rec.Cpp.Access]))
+		}
+		return true
+	}, func(*TypeRef) {})
+	w.ref(&v.v.Type)
 }
 
 func selects(u *unit, e *Emit, name string) bool {
@@ -154,16 +166,4 @@ func hasTarget(u *unit, t Target) bool {
 		}
 	}
 	return false
-}
-
-// elemRecord is the record a value's rows are: T, T?, [T], table T or their optional form.
-func elemRecord(t *TypeRef) *Record {
-	for t != nil && (t.Kind == types.Optional || t.Kind == types.List || t.Kind == types.Table) {
-		t = t.Elem
-	}
-	if t == nil {
-		return nil
-	}
-	r, _ := t.Named.(*Record)
-	return r
 }

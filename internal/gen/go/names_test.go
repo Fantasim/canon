@@ -2,35 +2,10 @@ package gogen
 
 import (
 	"errors"
-	"slices"
 	"testing"
 )
 
-// CODEGEN.md §3.1: the word split, with the document's examples.
-func TestWords(t *testing.T) {
-	cases := []struct {
-		in   string
-		want []string
-	}{
-		{"II_WEA_AXE_ANGEL", []string{"II", "WEA", "AXE", "ANGEL"}},
-		{"gm_junior", []string{"gm", "junior"}},
-		{"Stage_1", []string{"Stage", "1"}},
-		{"none_", []string{"none"}},
-		{"stage1Rate", []string{"stage", "1", "Rate"}},
-		{"minRole", []string{"min", "Role"}},
-		{"series1", []string{"series", "1"}},
-		{"HTTPServer", []string{"HTTP", "Server"}},
-		{"__a__b", []string{"a", "b"}},
-		{"_", nil},
-	}
-	for _, c := range cases {
-		if got := words(c.in); !slices.Equal(got, c.want) {
-			t.Errorf("words(%q) = %q, want %q", c.in, got, c.want)
-		}
-	}
-}
-
-// CODEGEN.md §3.2: Go camel case with the closed initialism list (II is none of them).
+// CODEGEN.md §3.2: Go camel case with the closed initialism list (II is none of them; ir.GoWords tests the split itself, decision 120).
 func TestCamel(t *testing.T) {
 	cases := []struct{ in, upper, lower string }{
 		{"id", "ID", "id"},

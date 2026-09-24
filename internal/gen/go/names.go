@@ -4,84 +4,18 @@ import (
 	"fmt"
 	"go/token"
 	"strings"
-	"unicode"
 
 	"github.com/fantasim/canonlang/internal/ir"
 )
 
-// words splits a Canon identifier into words (CODEGEN.md §3.1).
-func words(name string) []string {
-	var out []string
-	for piece := range strings.SplitSeq(name, underscore) {
-		start := 0
-		for i := 1; i < len(piece); i++ {
-			if boundary(piece, i) {
-				out = append(out, piece[start:i])
-				start = i
-			}
-		}
-		if start < len(piece) {
-			out = append(out, piece[start:])
-		}
-	}
-	return out
-}
+// upperCamel is Go's UpperCamel(x) (CODEGEN.md §3.2), ir's own copy so the two generators cannot drift (decision 120).
+func upperCamel(name string) string { return ir.GoUpperCamel(name) }
 
-// boundary reports a word boundary between s[i-1] and s[i] (CODEGEN.md §3.1 rule 2).
-func boundary(s string, i int) bool {
-	a, b := rune(s[i-1]), rune(s[i])
-	switch {
-	case unicode.IsLower(a) && unicode.IsUpper(b):
-		return true
-	case unicode.IsLetter(a) && unicode.IsDigit(b), unicode.IsDigit(a) && unicode.IsLetter(b):
-		return true
-	}
-	return unicode.IsUpper(a) && unicode.IsUpper(b) && i+1 < len(s) && unicode.IsLower(rune(s[i+1]))
-}
-
-// capWord is Cap(w) of CODEGEN.md §3.2: the first character upper case, the rest lower case.
-func capWord(w string) string {
-	return strings.ToUpper(w[:1]) + strings.ToLower(w[1:])
-}
-
-// goCap is GoCap(w): an initialism of the closed list is all upper case (CODEGEN.md §3.2).
-func goCap(w string) string {
-	if goInitialisms[strings.ToLower(w)] {
-		return strings.ToUpper(w)
-	}
-	return capWord(w)
-}
-
-// upperCamel is Go's UpperCamel(x) (CODEGEN.md §3.2).
-func upperCamel(name string) string {
-	var b strings.Builder
-	for _, w := range words(name) {
-		b.WriteString(goCap(w))
-	}
-	return b.String()
-}
-
-// lowerCamel is lowerCamel(x): the first word lower case, then UpperCamel of the rest.
-func lowerCamel(name string) string {
-	ws := words(name)
-	if len(ws) == 0 {
-		return ""
-	}
-	var b strings.Builder
-	b.WriteString(strings.ToLower(ws[0]))
-	for _, w := range ws[1:] {
-		b.WriteString(goCap(w))
-	}
-	return b.String()
-}
+// lowerCamel is lowerCamel(x): the first word lower case, then UpperCamel of the rest (CODEGEN.md §3.2).
+func lowerCamel(name string) string { return ir.GoLowerCamel(name) }
 
 // escapeLower suffixes `_` to a name reserved in a Go lower-case position (CODEGEN.md §3.4).
-func escapeLower(name string) string {
-	if goReservedLower[name] {
-		return name + underscore
-	}
-	return name
-}
+func escapeLower(name string) string { return ir.GoEscapeLower(name) }
 
 // local escapes a parameter or local named like an imported package (§3.4, decision 182).
 func (g *gen) local(name, origin string) string {

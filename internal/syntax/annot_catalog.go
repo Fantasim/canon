@@ -36,7 +36,7 @@ var annCatalog = map[string]*annSpec{
 		{name: argTag, named: true, kind: valString, sites: siteVariantHeader},
 		{name: argInline, kind: valFlag, sites: siteField, groups: groupShape},
 		{name: tokenNames[KwNone], named: true, kind: valLiteral, sites: siteField},
-		{name: argUnit, named: true, kind: valSymbol, values: unitsLongestFirst[:], sites: siteField, groups: groupShape},
+		{name: ArgUnit, named: true, kind: valSymbol, values: unitsLongestFirst[:], sites: siteField, groups: groupShape},
 		{name: argInt, kind: valFlag, sites: siteField, groups: groupShape},
 		{name: argBits, kind: valFlag, sites: siteField, groups: groupShape},
 		{name: annCodes, kind: valFlag, sites: siteEnumHeader},
@@ -52,7 +52,7 @@ var annCatalog = map[string]*annSpec{
 	annSince: {args: []argSpec{
 		{name: argN, kind: valSince, sites: siteAll, required: true},
 	}},
-	annReload: {bare: siteLet},
+	AnnReload: {bare: siteLet},
 	annFiles: {args: []argSpec{
 		{name: argTpl, kind: valTemplate, sites: siteLet, required: true},
 	}},
@@ -61,23 +61,23 @@ var annCatalog = map[string]*annSpec{
 		{name: wordIcon, named: true, kind: valStudio, sites: siteLet},
 		{name: argLabel, named: true, kind: valString, sites: siteLet},
 	}},
-	annCpp: {args: []argSpec{
-		{name: argDefines, named: true, kind: valString, sites: siteEnumHeader},
-		{name: argStruct, named: true, kind: valString, sites: siteRecordHeader},
-		{name: argHeader, named: true, kind: valString, sites: siteRecordHeader},
-		{name: argAccess, named: true, kind: valSymbol, values: accessModes, sites: siteRecordHeader},
-		{name: wordField, named: true, kind: valString, sites: siteField},
+	AnnCpp: {args: []argSpec{
+		{name: ArgDefines, named: true, kind: valString, sites: siteEnumHeader},
+		{name: ArgStruct, named: true, kind: valString, sites: siteRecordHeader},
+		{name: ArgHeader, named: true, kind: valString, sites: siteRecordHeader},
+		{name: ArgAccess, named: true, kind: valSymbol, values: accessModes, sites: siteRecordHeader},
+		{name: WordField, named: true, kind: valString, sites: siteField},
 		{name: tokenNames[KwType], named: true, kind: valString, sites: siteField},
 		{name: wordValue, named: true, kind: valInteger, sites: siteCase},
-		{name: argUnit, named: true, kind: valSymbol, values: unitsLongestFirst[:], sites: siteField},
+		{name: ArgUnit, named: true, kind: valSymbol, values: unitsLongestFirst[:], sites: siteField},
 		nameArg,
 	}},
-	annGo: {args: []argSpec{nameArg}},
-	annTS: {args: []argSpec{nameArg, {name: argBigint, kind: valFlag, sites: siteField}}},
+	AnnGo: {args: []argSpec{nameArg}},
+	AnnTS: {args: []argSpec{nameArg, {name: argBigint, kind: valFlag, sites: siteField}}},
 }
 
 // nameArg is the name: argument of @cpp, @go and @ts (CODEGEN.md CG-02).
-var nameArg = argSpec{name: argName, named: true, kind: valString, sites: nameSites}
+var nameArg = argSpec{name: ArgName, named: true, kind: valString, sites: nameSites}
 
 // argNeed is an argument that needs another one of the same annotation.
 type argNeed struct {
@@ -85,4 +85,4 @@ type argNeed struct {
 }
 
 // annNeeds are the arguments that need another one (GRAMMAR.md §8.3: header needs struct).
-var annNeeds = map[string]argNeed{annCpp: {arg: argHeader, needs: argStruct}}
+var annNeeds = map[string]argNeed{AnnCpp: {arg: ArgHeader, needs: ArgStruct}}

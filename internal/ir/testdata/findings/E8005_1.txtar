@@ -1,0 +1,13 @@
+CODEGEN.md §3.5: two enum members generate the same Go name in one scope.
+-- a/a.canon --
+package a
+
+/// A tone.
+enum Tone { series_1, series1 }
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+error[E8005]  a/a.canon:4:6
+  go: Series1 is generated for both a.Tone.series_1 and a.Tone.series1
+
+1 error, 0 warnings in 1 package (…)

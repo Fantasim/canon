@@ -2,9 +2,11 @@ package ir_test
 
 import (
 	"regexp"
+	"slices"
 	"strings"
 	"testing"
 
+	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/ir"
 	"github.com/fantasim/canonlang/internal/types"
@@ -72,6 +74,172 @@ func TestDependentBranches(t *testing.T) {
 	}
 	if want := "monster=monster none_=never element=element"; strings.Join(got, " ") != want {
 		t.Errorf("arms = %q, want %q", strings.Join(got, " "), want)
+	}
+}
+
+// TestGoWords is CODEGEN.md §3.1: the word split, with the document's examples (decision 120).
+func TestGoWords(t *testing.T) {
+	cases := []struct {
+		in   string
+		want []string
+	}{
+		{"II_WEA_AXE_ANGEL", []string{"II", "WEA", "AXE", "ANGEL"}},
+		{"gm_junior", []string{"gm", "junior"}},
+		{"Stage_1", []string{"Stage", "1"}},
+		{"none_", []string{"none"}},
+		{"stage1Rate", []string{"stage", "1", "Rate"}},
+		{"minRole", []string{"min", "Role"}},
+		{"series1", []string{"series", "1"}},
+		{"HTTPServer", []string{"HTTP", "Server"}},
+		{"__a__b", []string{"a", "b"}},
+		{"_", nil},
+	}
+	for _, c := range cases {
+		if got := ir.GoWords(c.in); !slices.Equal(got, c.want) {
+			t.Errorf("GoWords(%q) = %q, want %q", c.in, got, c.want)
+		}
+	}
+}
+
+// TestGoCamel is CODEGEN.md §3.2: Go camel case with the closed initialism list (II is none of them).
+func TestGoCamel(t *testing.T) {
+	cases := []struct{ in, upper, lower string }{
+		{"id", "ID", "id"},
+		{"minRole", "MinRole", "minRole"},
+		{"apiKey", "APIKey", "apiKey"},
+		{"series_1", "Series1", "series1"},
+		{"II_WEA_AXE_ANGEL", "IiWeaAxeAngel", "iiWeaAxeAngel"},
+		{"none_", "None", "none"},
+		{"url_ts_db", "URLTSDB", "urlTSDB"},
+		{"hpMax", "HPMax", "hpMax"},
+		{"JSONPath", "JSONPath", "jsonPath"},
+		{"_", "", ""},
+	}
+	for _, c := range cases {
+		if got := ir.GoUpperCamel(c.in); got != c.upper {
+			t.Errorf("GoUpperCamel(%q) = %q, want %q", c.in, got, c.upper)
+		}
+		if got := ir.GoLowerCamel(c.in); got != c.lower {
+			t.Errorf("GoLowerCamel(%q) = %q, want %q", c.in, got, c.lower)
+		}
+	}
+}
+
+// TestGoEscapeLower is CODEGEN.md §3.4: a reserved name in a lower-case position gets a `_` suffix.
+func TestGoEscapeLower(t *testing.T) {
+	cases := []struct{ in, want string }{
+		{"default", "default_"},
+		{"type", "type_"},
+		{"len", "len_"},
+		{"string", "string_"},
+		{"rt", "rt_"},
+		{"iter", "iter_"},
+		{"self", "self_"},
+		{"embed", "embed_"},
+		{"json", "json_"},
+		{"minRole", "minRole"},
+		{"route", "route"},
+	}
+	for _, c := range cases {
+		if got := ir.GoEscapeLower(c.in); got != c.want {
+			t.Errorf("GoEscapeLower(%q) = %q, want %q", c.in, got, c.want)
+		}
+	}
+}
+
+// TestLambdaParamIsNotComputed is TYPES.md §15, decision 80: a field default that reads the owner record's own parameter is Computed, but a lambda's own parameter of the same kind, bound inside that default, is not.
+func TestLambdaParamIsNotComputed(t *testing.T) {
+	w := newWorld(t)
+	w.add(t, "a/a.canon", []byte(`package a
+
+/// R.
+record R(n: Int) {
+  /// Reads its own parameter: computed.
+  double: Int = n * 2
+  /// A lambda's own parameter must not count as reading the instance.
+  total: Int = [1, 2, 3].map(x => x + 1).sum()
+}
+
+emit go { out: "@features/a", package: "a" }
+`))
+	w.calls = w.fixtureCalls
+	pkgs := w.build(t)
+	if out := w.findings(t); !strings.HasPrefix(out, noFindings) {
+		t.Fatalf("findings:\n%s", out)
+	}
+	rec, ok := pkgs[0].Types[0].(*ir.Record)
+	if !ok || len(rec.Fields) != 2 || !rec.Fields[0].Computed || rec.Fields[1].Computed {
+		t.Errorf("double must be Computed and total must not be")
+	}
+}
+
+// TestLookupTableCallsEveryCell is EVALUATION.md §2.3 and decision 194: a failing call does not stop the rest of the domain.
+func TestLookupTableCallsEveryCell(t *testing.T) {
+	w := newWorld(t)
+	w.add(t, "a/a.canon", []byte(`package a
+
+/// A grade.
+enum Grade { normal, unique }
+
+/// A tier.
+enum Tier { vagrant, expert }
+
+/// Whether tier may use grade: a 2 x 2 table, every cell always fails here.
+export fn canUse(grade: Grade, tier: Tier) -> Bool {
+  return true
+}
+
+emit go { out: "@features/a", package: "a" }
+`))
+	calls := 0
+	w.calls = func(check.Object, value.Value, []value.Value) (value.Value, bool) {
+		calls++
+		return nil, false
+	}
+	pkgs := w.build(t)
+	if calls != 4 {
+		t.Errorf("Host.Call was invoked %d times, want 4 (one per cell of the 2x2 domain)", calls)
+	}
+	for _, fn := range pkgs[0].Fns {
+		if fn.Name == "canUse" && (fn.Table != nil || fn.Value != nil) {
+			t.Errorf("a fn with a failing cell must stay uncomputed")
+		}
+	}
+}
+
+// TestWildcardBranchName is decision 194: a wildcard `_ =>` arm's branch is named after the first member it covers, in declaration order.
+func TestWildcardBranchName(t *testing.T) {
+	w := newWorld(t)
+	w.add(t, "a/a.canon", []byte(`package a
+
+/// A kind.
+enum Kind { alpha, beta, gamma }
+
+/// A thing.
+record Thing {
+  /// Its kind.
+  k: Kind
+}
+
+/// What a thing's payload is.
+type Payload(t: Thing) = match t.k {
+  alpha => Int
+  _ => String
+}
+
+/// A thing.
+let thing: Thing = { k: alpha }
+
+emit go { out: "@features/a", package: "a" }
+`))
+	w.calls = w.fixtureCalls
+	pkgs := w.build(t)
+	if out := w.findings(t); !strings.HasPrefix(out, noFindings) {
+		t.Fatalf("findings:\n%s", out)
+	}
+	dep, ok := pkgs[0].Types[2].(*ir.Dependent)
+	if !ok || len(dep.Branches) != 2 || dep.Branches[1].Name != "beta" {
+		t.Errorf("the wildcard branch should be named beta, the first member it covers")
 	}
 }
 

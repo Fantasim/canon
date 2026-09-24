@@ -13,7 +13,7 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// Host is what stage E asks of the evaluator (EVALUATION.md §2.3); `build` implements it with eval, which ir may not import (IMPLEMENTATION-PLAN §3). A false result follows a finding the evaluator or the verifier already reported.
+// Host is what stage E asks of the evaluator (EVALUATION.md §2.3); `build` implements it with eval, which is not in ir's own Consumes column (IMPLEMENTATION-PLAN §3). A false result follows a finding the evaluator or the verifier already reported.
 type Host interface {
 	// Value is the evaluated, verified top-level const or let name of pkg.
 	Value(ctx context.Context, pkg, name string) (value.Value, bool)
@@ -61,6 +61,7 @@ type stage struct {
 	ctx         context.Context
 	in          Input
 	info        *check.Info
+	layout      *project.Layout
 	named       map[any]Type
 	units       map[string]*unit
 	order       []*unit
@@ -130,6 +131,8 @@ func newStage(ctx context.Context, in Input) *stage {
 		domainsOf: map[*ExportFn]*fnDomains{}, fieldSites: map[*Field]*fieldSite{}, depFns: map[*Dependent]*types.TypeFunc{},
 		branchTypes: map[*Branch]types.Type{},
 	}
+	// nil overrides (decision 108) never name an undeclared root, so NewLayout's ok is always true.
+	s.layout, _ = project.NewLayout(in.Project, curDir, nil, nil)
 	for _, cp := range in.Program.Packages {
 		u := &unit{cp: cp, bag: in.Bags[cp.Path], selected: in.Selected == nil || slices.Contains(in.Selected, cp.Path)}
 		u.p = &Package{Name: cp.Path, Dir: packageDir(cp), Doc: packageDoc(cp)}

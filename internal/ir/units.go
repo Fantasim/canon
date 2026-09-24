@@ -134,7 +134,7 @@ func (s *stage) constant(obj check.Object, d *syntax.ConstDecl) *Const {
 
 // letValue is a public let: its declared type, value, @reload and table ids (EMT-04).
 func (s *stage) letValue(obj check.Object, d *syntax.LetDecl) *valueSite {
-	v := &Value{Name: obj.Name(), Doc: docOf(d.Doc), Type: s.ref(obj.Type()), Reload: annotation(d.Annotations, cgAnnReload) != nil}
+	v := &Value{Name: obj.Name(), Doc: docOf(d.Doc), Type: s.ref(obj.Type()), Reload: annotation(d.Annotations, syntax.AnnReload) != nil}
 	n := nameOverrides(d.Annotations)
 	v.Go, v.Cpp, v.TS = n.goName, n.cpp, n.ts
 	if val, ok := s.in.Host.Value(s.ctx, obj.Pkg(), obj.Name()); ok {

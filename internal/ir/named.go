@@ -33,7 +33,7 @@ func (s *stage) enum(e *types.EnumType) *Enum {
 		s.decls[out] = s.site(e.Decl.Name, e.Decl.Name)
 		n := nameOverrides(e.Decl.Annotations)
 		out.Go, out.Cpp, out.TS = n.goName, n.cpp, n.ts
-		out.CppDefines = argText(annotation(e.Decl.Annotations, cgAnnCpp), cgArgDefines)
+		out.CppDefines = argText(annotation(e.Decl.Annotations, syntax.AnnCpp), syntax.ArgDefines)
 		decls = e.Decl.Members
 	}
 	for i, m := range e.Members {
@@ -66,7 +66,7 @@ func (s *stage) record(r *types.RecordType) *Record {
 			items = r.Decl.Body.Items
 		}
 	}
-	out.Fields = s.fields(r.Fields, items, owner)
+	out.Fields = s.fields(r.Fields, items, owner, s.recordParams(r))
 	out.Methods = s.methods(r.Methods, items, out.Name, r)
 	return out
 }
@@ -107,7 +107,7 @@ func (s *stage) fillCase(ic *Case, c *types.CaseType, d *syntax.VariantCase, var
 			items = d.Body.Items
 		}
 	}
-	ic.Fields = s.fields(c.Fields, items, owner)
+	ic.Fields = s.fields(c.Fields, items, owner, nil)
 	ic.Methods = s.methods(c.Methods, items, variant+qnameSep+c.Name, c)
 }
 

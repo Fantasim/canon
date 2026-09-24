@@ -75,20 +75,20 @@ type names struct {
 
 func nameOverrides(anns []*syntax.Annotation) names {
 	var n names
-	n.goName.Name = argText(annotation(anns, cgAnnGo), cgArgName)
-	n.cpp.Name = argText(annotation(anns, cgAnnCpp), cgArgName)
-	n.ts.Name = argText(annotation(anns, cgAnnTS), cgArgName)
+	n.goName.Name = argText(annotation(anns, syntax.AnnGo), syntax.ArgName)
+	n.cpp.Name = argText(annotation(anns, syntax.AnnCpp), syntax.ArgName)
+	n.ts.Name = argText(annotation(anns, syntax.AnnTS), syntax.ArgName)
 	return n
 }
 
 // recordCpp is @cpp(name:, struct:, header:, access:) on a record header (CODEGEN.md §7.8).
 func recordCpp(anns []*syntax.Annotation) CppOptions {
-	a := annotation(anns, cgAnnCpp)
+	a := annotation(anns, syntax.AnnCpp)
 	var o CppOptions
-	o.Name = argText(a, cgArgName)
-	o.Struct = argText(a, cgArgStruct)
-	o.Header = argText(a, cgArgHeader)
-	if word, ok := argWord(a, cgArgAccess); ok {
+	o.Name = argText(a, syntax.ArgName)
+	o.Struct = argText(a, syntax.ArgStruct)
+	o.Header = argText(a, syntax.ArgHeader)
+	if word, ok := argWord(a, syntax.ArgAccess); ok {
 		o.Access, _ = wordIndex[Access](accessWords[:], word)
 	}
 	return o
@@ -96,12 +96,12 @@ func recordCpp(anns []*syntax.Annotation) CppOptions {
 
 // fieldCpp is @cpp(name:, field:, type:, unit:) on a field.
 func fieldCpp(anns []*syntax.Annotation) CppFieldOptions {
-	a := annotation(anns, cgAnnCpp)
+	a := annotation(anns, syntax.AnnCpp)
 	var o CppFieldOptions
-	o.Name = argText(a, cgArgName)
-	o.Member = argText(a, argField)
+	o.Name = argText(a, syntax.ArgName)
+	o.Member = argText(a, syntax.WordField)
 	o.Type = argText(a, argType)
-	if word, ok := argWord(a, cgArgUnit); ok {
+	if word, ok := argWord(a, syntax.ArgUnit); ok {
 		o.Unit, o.HasUnit = unitOf(word)
 	}
 	return o
@@ -109,9 +109,9 @@ func fieldCpp(anns []*syntax.Annotation) CppFieldOptions {
 
 // caseCpp is @cpp(name:, value:) on a variant case.
 func caseCpp(anns []*syntax.Annotation) CppCaseOptions {
-	a := annotation(anns, cgAnnCpp)
+	a := annotation(anns, syntax.AnnCpp)
 	var o CppCaseOptions
-	o.Name = argText(a, cgArgName)
+	o.Name = argText(a, syntax.ArgName)
 	o.Value, o.HasValue = argInt(a, argValue)
 	return o
 }

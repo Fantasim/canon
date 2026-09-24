@@ -290,28 +290,3 @@ var (
 	unsignedTypes = map[int]string{8: goUint8, 16: goUint16, 32: goUint32, 64: "uint64"}
 	floatTypes    = map[int]string{32: "float32", 64: "float64"}
 )
-
-// goInitialisms is the closed initialism list of GoCap (CODEGEN.md §3.2).
-var goInitialisms = map[string]bool{
-	"id": true, "url": true, "api": true, "http": true, "json": true, "ui": true,
-	"db": true, "ip": true, "hp": true, "mp": true, "ts": true,
-}
-
-// goReservedLower is what a Go lower-case position escapes (CODEGEN.md §3.4).
-var goReservedLower = map[string]bool{
-	"break": true, "case": true, "chan": true, "const": true, "continue": true, "default": true,
-	"defer": true, "else": true, "fallthrough": true, "for": true, "func": true, "go": true,
-	"goto": true, "if": true, "import": true, "interface": true, "map": true, "package": true,
-	"range": true, "return": true, "select": true, "struct": true, "switch": true, "type": true,
-	"var": true, "any": true, "append": true, "bool": true, "byte": true, "cap": true,
-	"clear": true, "close": true, "comparable": true, "complex": true, "complex64": true,
-	"complex128": true, "copy": true, "delete": true, "error": true, "false": true,
-	"float32": true, "float64": true, "imag": true, "int": true, "int8": true, "int16": true,
-	"int32": true, "int64": true, "iota": true, "len": true, "make": true, "max": true,
-	"min": true, "new": true, "nil": true, "panic": true, "print": true, "println": true,
-	"real": true, "recover": true, "rune": true, "string": true, "true": true, "uint": true,
-	"uint8": true, "uint16": true, "uint32": true, "uint64": true, "uintptr": true, "rt": true,
-	"json": true, "fmt": true, "iter": true, "os": true, "filepath": true, "atomic": true,
-	"sync": true, "time": true, "errors": true, "strconv": true, "strings": true, "math": true,
-	"regexp": true, "embed": true, "self": true,
-}

@@ -30,6 +30,8 @@ func (s *stage) validate(u *unit) {
 		s.checkOrderedCodes(u)
 		s.checkRepresentable(u)
 		s.checkBranches(u)
+		s.checkOverrideNames(u)
+		s.checkNameCollisions(u)
 	}
 	for _, es := range u.emits {
 		for _, rule := range emitRules[es.e.Target] {
@@ -66,6 +68,24 @@ func (s *stage) checkImports(u *unit, es *emitSite) {
 	for _, imp := range u.p.Imports {
 		if !slices.ContainsFunc(imp.Emits, func(e *Emit) bool { return e.Target == es.e.Target }) {
 			u.report(diag.E8004.At(es.span(), u.firstUse[imp.Name], imp.Name, targetWords[es.e.Target]))
+		}
+	}
+	if es.e.Target == TargetGo {
+		s.checkImportedGoRoots(u, es)
+	}
+}
+
+// checkImportedGoRoots is E8007 for an unselected dependency's own go emit: it never checked itself, so the importer reports it, whose build would else reference a missing import path (IMPLEMENTATION-PLAN §4.5).
+func (s *stage) checkImportedGoRoots(u *unit, es *emitSite) {
+	for _, imp := range u.p.Imports {
+		dep := s.units[imp.Name]
+		if dep == nil || dep.selected {
+			continue
+		}
+		for _, e := range imp.Emits {
+			if e.Target == TargetGo && e.GoImport == "" {
+				u.report(diag.E8007.At(es.span(), e.Out))
+			}
 		}
 	}
 }
@@ -165,8 +185,9 @@ func (s *stage) checkNoInputs(u *unit, _ *emitSite) {
 
 // checkWireForms is E8151: a value written to JSON has a wire form (WIRE.md §5.9, §8.1).
 func (s *stage) checkWireForms(u *unit, es *emitSite) {
+	defines := bakedFor(u, TargetGo)
 	for _, v := range selectedValues(u, es.e) {
-		if noWireForm(v.t, map[types.Type]bool{}) {
+		if noWireForm(v.t, map[types.Type]bool{}, defines) {
 			u.report(diag.E8151.At(v.span().span(), v.v.Name, v.t))
 		}
 	}

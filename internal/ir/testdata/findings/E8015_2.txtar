@@ -1,0 +1,14 @@
+CODEGEN.md §2.1, decision 127: an explicit `values: []` expands to every public value, not none.
+-- a/a.canon --
+package a
+
+/// A level cap.
+let cap: Int = 3
+
+emit go { out: "@features/a", package: "a", mode: data, values: [] }
+emit json { out: "out/" }
+-- findings.txt --
+error[E8015]  a/a.canon:4:5
+  cap is a Int: data and embedded modes emit tables, keyed lists and records
+
+1 error, 0 warnings in 1 package (…)
