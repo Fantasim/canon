@@ -33,6 +33,7 @@ func (e *Evaluator) force(ctx context.Context, st *rootState, reader *run, at sy
 	e.stack = append(e.stack, st)
 	v, ok := e.evalRoot(ctx, st)
 	e.stack = e.stack[:len(e.stack)-1]
+	clear(e.clean) // its temporaries are not kept alive past the root (DECISIONS 199)
 	if ok && st.status == forcing {
 		st.status, st.v = done, v
 		e.completed = append(e.completed, st)

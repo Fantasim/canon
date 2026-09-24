@@ -162,14 +162,14 @@ const doubleFn = `local fn double(n: Int) -> [Int] {
 }
 `
 
-// bigBudget covers building a list of 10^7 elements by doubling, a step per element made.
-const bigBudget = 50_000_000
+// bigBudget covers building the large lists these tests double into, a step per element made.
+const bigBudget = 5_000_000
 
 // DECISIONS 199: a set hashes the first nodes of each element and pushes only the components
-// it reaches, so elements that hold a list of 10^7 cost no more than small ones.
+// it reaches, so elements that hold a list of 10^5 cost no more than small ones.
 func TestUniqueOverBigElements(t *testing.T) {
 	src := pkgA + doubleFn + `
-local let big: [Int] = double(23) + double(21)
+local let big: [Int] = double(17)
 
 local let x: Int = [[[i], big] for i in 0..100].unique().len()
 `

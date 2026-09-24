@@ -49,9 +49,11 @@ var equalCases = []struct {
 	{"records differ", clock(8, 30), clock(9, 30), false},
 	{"cases differ", &value.Record{T: nothing}, &value.Record{T: item, Fields: []value.Value{num(1), num(1)}}, false},
 	{"applied records erase arguments", &value.Record{T: &types.AppliedRecord{Rec: hourly}}, &value.Record{T: hourly}, true},
+	// TYPES.md §7.5 non-transitivity gap (a Louis-call): equal by identity, hashed by structure.
 	{"entries by identity", entry("open", "Open"), entry("open", "Changed"), true},
 	{"entries by key", entry("open", "Open"), entry("taken", "Open"), false},
 	{"entry ignores identity against a plain record", entry("open", "Open"), &value.Record{T: status, Fields: []value.Value{str("Open")}}, true},
+	// TYPES.md §7.5 non-transitivity gap (a Louis-call): a ref hashes by identity, an entry by structure.
 	{"ref and entry", &value.Ref{T: refStatus, Key: value.Key{S: "open"}}, entry("open", "Open"), true},
 	{"refs", &value.Ref{T: &types.Refined{Of: refStatus}, Key: value.Key{S: "open"}}, &value.Ref{T: refStatus, Key: value.Key{S: "open"}}, true},
 	{"refs differ", &value.Ref{T: refStatus, Key: value.Key{S: "open"}}, &value.Ref{T: refStatus, Key: value.Key{S: "done"}}, false},

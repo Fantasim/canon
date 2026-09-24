@@ -386,6 +386,7 @@ func TestChargeBeforeError(t *testing.T) {
 func TestSetsOfRefs(t *testing.T) {
 	runCases(t, []evalCase{
 		{"STDLIB.md §4.2 unique", "Int", "[r, pets[rex]].unique().len()", "1"},
+		{"DECISIONS 199 unique: maps in any order are one", "Int", `[{ "a": 1, "b": 2 }, { "b": 2, "a": 1 }].unique().len()`, "1"},
 		{"STDLIB.md §4.2 union", "Int", "refs.union([pets[rex]]).len()", "2"},
 		{"STDLIB.md §4.2 diff", "Int", "refs.diff([pets[rex]]).len()", "1"},
 		{"STDLIB.md §4.2 toMap with ref keys", "Int", "[pets[rex], pets[tom]].toMap(p => if p.age > 2 { r } else { refs[1] }, p => 1).len()", "2"},

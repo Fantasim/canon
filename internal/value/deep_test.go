@@ -2,6 +2,7 @@ package value_test
 
 import (
 	"math"
+	"runtime/debug"
 	"strings"
 	"testing"
 
@@ -9,8 +10,12 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// deepDepth is how deep the nested list goes: far past what a recursive walk would stand.
-const deepDepth = 1_000_000
+// deepDepth is how deep the nested list goes: past what a recursive walk stands in deepStack.
+const deepDepth = 100_000
+
+// deepStack is the host stack the deep walks run under: a recursive walk 10^5 deep overflows
+// it and dies, an iterative one does not need it. No test of this package runs in parallel.
+const deepStack = 8 << 20
 
 // towerLevels is how many times a tower doubles its sharing: 2^60 paths, 61 distinct nodes.
 const towerLevels = 60
@@ -33,16 +38,23 @@ func tower(levels int, leaf int64) value.Value {
 	return v
 }
 
-// DECISIONS 197: equality and the text form walk a value a million lists deep without
-// recursing on the host stack.
+// DECISIONS 197: equality, the text form, its length and the hash walk a value 10^5 lists
+// deep under a host stack a recursive walk would overflow.
 func TestDeepValues(t *testing.T) {
-	a, b := deepList(deepDepth, 1), deepList(deepDepth, 1)
-	if !value.Equal(a, b) || value.Equal(a, deepList(deepDepth, 2)) {
+	a, b, c := deepList(deepDepth, 1), deepList(deepDepth, 1), deepList(deepDepth, 2)
+	want := strings.Repeat("[", deepDepth) + "1" + strings.Repeat("]", deepDepth)
+	defer debug.SetMaxStack(debug.SetMaxStack(deepStack))
+	if !value.Equal(a, b) || value.Equal(a, c) {
 		t.Error("equality over a deep list")
 	}
-	want := strings.Repeat("[", deepDepth) + "1" + strings.Repeat("]", deepDepth)
-	if a.CanonText() != want {
+	if eq, ok, _ := value.EqualUpTo(a, b, math.MaxInt); !eq || !ok {
+		t.Error("EqualUpTo over a deep list")
+	}
+	if a.CanonText() != want || value.TextLenUpTo(a, math.MaxInt) != len(want) {
 		t.Error("text of a deep list")
+	}
+	if value.Hash(a) != value.Hash(b) {
+		t.Error("equal deep lists hash apart")
 	}
 }
 
