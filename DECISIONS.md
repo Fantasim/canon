@@ -1846,6 +1846,13 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      (E1109, E1110, E1111 …) has the error type (TYPES §1): no fold, no static check on a made-up
      value. Reason: check C1 review (overnight run).
 
+216. **A comma is kept where dropping it would change what a `///` comment documents (FORMATTER
+     §1, §11 over 168).** In a broken list, a comma whose removal would attach a `///` comment to
+     another item, merge two doc blocks, or turn a `///` written after code into a doc comment is
+     not dropped: it stays on its own line, where it was, with its comments (`a` / `/// d1` / `,` /
+     `b`; `a` / `, /// x` / `b`). Every other comma follows 168 and 211. Reason: FuzzFormat found
+     `record A{A:A\n///\n,A:A}` changing W1001 (overnight run).
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.
