@@ -121,7 +121,7 @@ func (g *gen) durationFrom(src string, unit types.Unit) string {
 func (g *gen) readEnum(b *strings.Builder, t ir.TypeRef, raw string, loc location) string {
 	e, ok := t.Named.(*ir.Enum)
 	if !ok {
-		g.failf(ErrMalformed, "an enum type without its enum at %s", g.at)
+		g.failf(ErrMalformed, noEnumFormat, g.at)
 		return raw
 	}
 	name := g.goName(e)
@@ -225,7 +225,64 @@ func (g *gen) readKeyed(b *strings.Builder, t ir.TypeRef, array string, loc loca
 	v, k, i, x := g.temp(tempValue), g.temp(tempKey), g.temp(tempIndex), g.temp(tempElem)
 	fmt.Fprintf(b, keyedFromFormat, v, g.goName(rec), array, k, g.goType(kf.Type), i, x,
 		g.lc.Err, g.decodeFunc(rec), g.lc.Name, g.locExpr(loc.index(i).dot()), g.keyMember(rec, kf))
+	g.dupCheck(b, k, kf, loc)
 	return g.rt() + makeKeyedList + v + listSep + k + rparen
+}
+
+// dupCheck refuses two rows sharing a key, naming the first duplicate in row order (WIRE.md §5.7).
+func (g *gen) dupCheck(b *strings.Builder, keys string, kf *ir.Field, loc location) {
+	at, first, ok := g.temp(localAt), g.temp(localFirst), g.temp(tempOK)
+	token := g.keyTokenExpr(kf.Type, keys+lbracket+at+rbracket)
+	prefix, key := g.splitLoc(loc.index(at).dot().key(strings.Join(kf.WirePath, dot)))
+	fmt.Fprintf(b, dupCheckFormat, at, first, ok, g.rt(), keys, g.lc.Name, prefix, key, token, g.locExpr(loc.index(first)))
+}
+
+// keyTokenExpr is expr's canonical JSON token for a duplicate-id error message (WIRE.md §7.3).
+func (g *gen) keyTokenExpr(t ir.TypeRef, expr string) string {
+	switch t.Kind {
+	case types.String, types.LitUnion:
+		return g.rt() + wireTokenCall + goString + lparen + expr + rparen + rparen
+	case types.Int:
+		return fmt.Sprintf(formatIntFormat, g.use(strconvPkg, strconvPkg), goInt64+lparen+expr+rparen)
+	case types.Enum:
+		return g.enumKeyToken(t, expr)
+	case types.Ref:
+		return g.refKeyToken(t, expr)
+	default:
+		g.failKind(t.Kind)
+		return expr
+	}
+}
+
+// enumKeyToken is an enum key's wire token: a @codes enum's code, else its wire value (WIRE.md §5.3).
+func (g *gen) enumKeyToken(t ir.TypeRef, expr string) string {
+	e, ok := t.Named.(*ir.Enum)
+	if !ok {
+		g.failf(ErrMalformed, noEnumFormat, g.at)
+		return expr
+	}
+	if e.JSONCodes && e.Codes != nil {
+		return fmt.Sprintf(formatIntFormat, g.use(strconvPkg, strconvPkg), goInt64+lparen+expr+dot+ir.GoCode+callSuffix+rparen)
+	}
+	return g.rt() + wireTokenCall + expr + dot + ir.GoWire + callSuffix + rparen
+}
+
+// refKeyToken is a ref key's wire token, mirroring keyType's cases (gotype.go, WIRE.md §5.8).
+func (g *gen) refKeyToken(t ir.TypeRef, expr string) string {
+	if t.Ref != nil && t.Ref.Coll == types.CollDefines {
+		return g.rt() + wireTokenCall + goString + lparen + expr + rparen + rparen
+	}
+	if isTableRef(t.Ref) {
+		if g.enumIDs(t.Ref.Pkg) {
+			return g.rt() + wireTokenCall + expr + dot + ir.GoString + callSuffix + rparen
+		}
+		return g.rt() + wireTokenCall + goString + lparen + expr + rparen + rparen
+	}
+	if t.Key != nil {
+		return g.keyTokenExpr(*t.Key, expr)
+	}
+	g.failf(ErrMalformed, noKeyType)
+	return expr
 }
 
 // readBits lists the members a mask sets, in code order; a bit no code holds fails (WIRE.md §5.3).

@@ -1,6 +1,9 @@
 package gogen
 
 import (
+	"strconv"
+	"strings"
+
 	"github.com/fantasim/canonlang/internal/ir"
 	"github.com/fantasim/canonlang/internal/types"
 )
@@ -10,6 +13,7 @@ type loadView struct {
 	Func, Type, Schema, Decode, RT, JSON, FMT  string
 	Elem, Key, KeyStore, IDStore, RetiredStore string
 	Resolve                                    string
+	DupKey, DupToken                           string
 	Record, Table                              bool
 	Indexes                                    []index
 	L                                          locals
@@ -47,13 +51,18 @@ func (g *gen) load(v *ir.Value) {
 func (g *gen) rows(view *loadView, v *ir.Value, rec *ir.Record) {
 	view.JSON, view.FMT = g.use(jsonPath, jsonPkg), g.use(fmtPkg, fmtPkg)
 	view.Elem, view.Table = g.goName(rec), v.Type.Kind == types.Table
+	keyExpr := view.L.Keys + lbracket + view.L.At + rbracket
 	if view.Table {
 		view.Key, view.KeyStore = g.idType(rec), ir.GoIDStore
 		view.IDStore, view.RetiredStore = ir.GoIDStore, ir.GoRetiredStore
 		view.Indexes = g.indexes(v, rec)
+		view.DupKey = strconv.Quote("$id") // where jsonRowID (text/data.txt) writes it
+		view.DupToken = g.keyTokenExpr(ir.TypeRef{Kind: types.String}, keyExpr)
 	} else {
 		kf := g.keyField(v.Type)
 		view.Key, view.KeyStore = g.goType(kf.Type), g.keyMember(rec, kf)
+		view.DupKey = strconv.Quote(strings.Join(kf.WirePath, dot))
+		view.DupToken = g.keyTokenExpr(kf.Type, keyExpr)
 	}
 	if !v.Reload && g.needsWalk(rec) {
 		view.Resolve = g.resolveFunc(rec)

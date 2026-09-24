@@ -15,6 +15,7 @@ import (
 type locals struct {
 	Name, Path, Raw, Out, Obj, Err, F, Rows, Values, Keys, I, ID, Retired, Dir, S, Ctx, Tag, C          string
 	Key, K, R, OK, Bad, Want, Dst, N, Lo, Hi, V, Kr, Vr, HasK, HasV, First, Empty, Marker, A, M, Af, Mf string
+	At                                                                                                  string
 }
 
 func (g *gen) newLocals() locals {
@@ -29,6 +30,7 @@ func (g *gen) newLocals() locals {
 		Hi: g.local(localHi), V: g.local(tempValue), Kr: g.local(localKr), Vr: g.local(localVr), HasK: g.local(localHasK),
 		HasV: g.local(localHasV), First: g.local(localFirst), Empty: g.local(tempEmpty), Marker: g.local(localMarker),
 		A: g.local(localA), M: g.local(tempMember), Af: g.local(localAf), Mf: g.local(localMf),
+		At: g.local(localAt),
 	}
 }
 

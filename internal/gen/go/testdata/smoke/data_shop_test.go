@@ -1,7 +1,10 @@
 package shop_test
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
+	"math"
 	"strings"
 	"testing"
 	"time"
@@ -151,7 +154,7 @@ func TestFailures(t *testing.T) {
 	}{
 		{shop.Store.Reload("testdata/stale"), []string{"demo.shop.Item@ffffffff", shop.ItemsSchema}},
 		{shop.Store.Reload("testdata/badsnap"), []string{"badsnap/items.json: rows[2].$best: no entry nope"}},
-		{shop.Store.Reload("testdata/nowhere"), []string{"items.json"}},
+		{shop.Store.Reload("testdata/nowhere"), []string{"cannot open testdata/nowhere/items.json"}},
 		{load("testdata/bad/shelves.json"), []string{"testdata/bad/shelves.json: rows[0].next: no entry gone"}},
 		{load("testdata/bad/tone.json"), []string{"testdata/bad/tone.json: rows[0].b0: unknown value loud"}},
 		{load("testdata/bad/missing.json"), []string{"testdata/bad/missing.json: rows[0].slots: missing"}},
@@ -176,6 +179,14 @@ func TestFailures(t *testing.T) {
 		{shop.Store.Reload("testdata/nullrecelem"), []string{"nullrecelem/items.json: rows[0].path[1]: null"}},
 		{shop.Store.Reload("testdata/nullid"), []string{"nullid/items.json: rows[0].$id: null"}},
 		{shop.Store.Reload("testdata/domaincase"), []string{"domaincase/items.json: rows[0].$score.WARNING: differs from \"warning\" only in letter case"}},
+		// WIRE.md §5.7, TYPES.md §9.1's E3102 at run time: a table and a keyed list both refuse
+		// a duplicate id, naming the second row and where it was first seen.
+		{shop.Store.Reload("testdata/dupitem"), []string{"dupitem/items.json: rows[2].$id: duplicate id \"sword\" (first at rows[0])"}},
+		{load("testdata/bad/dupshelf.json"), []string{"testdata/bad/dupshelf.json: rows[2].id: duplicate id \"front\" (first at rows[0])"}},
+		// A1 log "duplicate ids, order and form": a container is checked for duplicates only
+		// once fully decoded, so a later row's decode error wins, even at the duplicate row itself.
+		{load("testdata/bad/dupthendecode.json"), []string{"testdata/bad/dupthendecode.json: rows[2].slots: expected an integer from -128 to 127"}},
+		{load("testdata/bad/dupdecode.json"), []string{"testdata/bad/dupdecode.json: rows[1].slots: expected an integer from -128 to 127"}},
 	}
 	for i, c := range cases {
 		for _, w := range c.want {
@@ -186,6 +197,50 @@ func TestFailures(t *testing.T) {
 	}
 	if shop.Store.Current() != snap {
 		t.Error("a failed Reload replaced the snapshot")
+	}
+}
+
+// WIRE.md §5.1: "-0", "-0.0" and a negative underflow to zero read as +0, for Float and Float32.
+func TestNegativeZero(t *testing.T) {
+	items := reload(t).Items()
+	for _, id := range []string{"air", "zeroe5", "zerounder"} {
+		it, ok := items.Find(id)
+		if !ok || it.Price() != 0 || math.Signbit(it.Price()) {
+			t.Errorf("%s price: %v", id, it.Price())
+		}
+		if math.Signbit(float64(it.Weight())) {
+			t.Errorf("%s weight: %v", id, it.Weight())
+		}
+	}
+}
+
+// WIRE.md §5.1: Float32 rounds once, from the exact decimal to the nearest float32; rounding
+// through float64 first (double rounding) would give a different result for this decimal:
+// 1.00000017881393421514957253748434595763683319091796875 rounds directly to 1.00000012
+// (0x1.000002p+00), but decimal->float64->float32 gives 1.0000002 (0x1.000004p+00).
+func TestFloat32SingleRounding(t *testing.T) {
+	precise, ok := reload(t).Items().Find("precise")
+	want := float32(1.00000017881393421514957253748434595763683319091796875)
+	if !ok || precise.Weight() != want {
+		t.Errorf("weight: %v, want %v", precise.Weight(), want)
+	}
+}
+
+// CODEGEN.md §7.5, A1 log: a file that cannot be opened or read has Error() exactly "cannot
+// open <path>" / "cannot read <path>", no os error suffix; the os error reaches only Unwrap.
+func TestMissingFile(t *testing.T) {
+	err := load("testdata/nowhere/shelves.json")
+	want := "cannot open testdata/nowhere/shelves.json"
+	if err == nil || err.Error() != want {
+		t.Fatalf("%v, want %s", err, want)
+	}
+	if !errors.Is(err, fs.ErrNotExist) {
+		t.Error("errors.Is(err, fs.ErrNotExist) is false")
+	}
+	err = load("testdata/bad")
+	want = "cannot read testdata/bad"
+	if err == nil || err.Error() != want {
+		t.Fatalf("%v, want %s", err, want)
 	}
 }
 

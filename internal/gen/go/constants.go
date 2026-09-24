@@ -74,6 +74,7 @@ const (
 	unknownMode     = "an unknown mode"
 	defineRefFormat = "a ref into the load.defines table %s, whose define value getter and table are not generated yet"
 	noKeyType       = "a ref without a key type"
+	noEnumFormat    = "an enum type without its enum at %s"
 	structOpen      = "type %s struct {\n"
 )
 
@@ -111,6 +112,9 @@ const (
 	makeList         = ".MakeList("
 	makeKeyedList    = ".MakeKeyedList("
 	makeMap          = ".MakeMap("
+	firstDupCall     = ".FirstDup("
+	dupRowCall       = ".DupRow("
+	wireTokenCall    = ".WireToken("
 	sliceOf          = "[]"
 	pointer          = "*"
 	ampersand        = "&"
@@ -291,6 +295,8 @@ const (
 	keyedFromFormat  = "%[1]s := make([]%[2]s, len(%[3]s))\n%[4]s := make([]%[5]s, len(%[3]s))\n" +
 		"for %[6]s, %[7]s := range %[3]s {\nif %[8]s := %[9]s(%[10]s, %[11]s, %[7]s, &%[1]s[%[6]s]); %[8]s != nil {\n" +
 		"return %[8]s\n}\n%[4]s[%[6]s] = %[1]s[%[6]s].%[12]s\n}\n"
+	dupCheckFormat = "if %[1]s, %[2]s, %[3]s := %[4]s" + firstDupCall + "%[5]s); %[3]s {\n" +
+		"return %[4]s" + dupRowCall + "%[6]s, %[7]s, %[8]s, %[9]s, %[10]s)\n}\n"
 	bitsFormat = "var %[1]s []%[2]s\nfor _, %[3]s := range [...]%[2]s{%[4]s} {\nif %[5]s&uint64(%[3]s) != 0 {\n" +
 		"%[1]s = append(%[1]s, %[3]s)\n}\n}\n"
 	switchTagFormat   = "switch %s {\n"
@@ -339,6 +345,7 @@ const (
 	localHasK        = "hasK"
 	localHasV        = "hasV"
 	localFirst       = "first"
+	localAt          = "at"
 	localMarker      = "marker"
 	localA           = "a"
 	localAf          = "af"

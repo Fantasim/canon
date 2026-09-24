@@ -73,6 +73,9 @@ func (self *{{$.Name}}) {{.Method}}(key {{.Type}}) (*{{$.Elem}}, bool) {
 {{- end}}
 		{{.L.Keys}}[{{.L.I}}] = {{.L.Values}}[{{.L.I}}].{{.KeyStore}}
 	}
+	if {{.L.At}}, {{.L.First}}, {{.L.OK}} := {{.RT}}.FirstDup({{.L.Keys}}); {{.L.OK}} {
+		return {{.RT}}.DupRow({{.L.Path}}, {{.FMT}}.Sprintf("rows[%d].", {{.L.At}}), {{.DupKey}}, {{.DupToken}}, {{.FMT}}.Sprintf("rows[%d]", {{.L.First}}))
+	}
 	{{.L.Out}}.{{.M.Rows}} = {{.RT}}.MakeKeyedList({{.L.Values}}, {{.L.Keys}})
 {{- range .Indexes}}
 	{{$.L.Out}}.{{.Member}} = make(map[{{.Type}}]int, len({{$.L.Values}}))
@@ -218,12 +221,18 @@ func jsonCell({{.L.Name}}, {{.L.Path}} string, {{.L.Obj}} map[string]{{.JSON}}.R
 
 {{end}}
 {{define "jsonRead"}}// jsonRead reads raw into dst, a string, bool, float or array: null, or a value of another
-// kind, fails the load at path+key, naming what was expected.
+// kind, fails the load at path+key, naming what was expected. A Float result of exactly zero is
+// stored as +0 (WIRE.md §5.1: "-0"/"-0.0" read as 0); Float32 follows it too (A1 log).
 func jsonRead({{.L.Name}}, {{.L.Path}}, {{.L.Key}} string, {{.L.Raw}} {{.JSON}}.RawMessage, {{.L.Dst}} any) error {
 	if string({{.L.Raw}}) == "null" {
 		return {{.FMT}}.Errorf("%s: %s%s: null", {{.L.Name}}, {{.L.Path}}, {{.L.Key}})
 	}
 	if {{.JSON}}.Unmarshal({{.L.Raw}}, {{.L.Dst}}) == nil {
+		if {{.L.V}}, {{.L.OK}} := {{.L.Dst}}.(*float64); {{.L.OK}} && *{{.L.V}} == 0 {
+			*{{.L.V}} = 0
+		} else if {{.L.V}}, {{.L.OK}} := {{.L.Dst}}.(*float32); {{.L.OK}} && *{{.L.V}} == 0 {
+			*{{.L.V}} = 0
+		}
 		return nil
 	}
 	{{.L.Want}} := "expected a string"

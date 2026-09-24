@@ -1,0 +1,8 @@
+{
+  "$schema": "demo.shop.Shelf@0000000b",
+  "rows": [
+    {"id": "front", "slots": 12, "items": [], "next": null, "delete": 8, "i": 31, "flags": 0, "waits": [], "lit": 0, "size": {"depth": 1}},
+    {"id": "front", "slots": 12, "items": [], "next": null, "delete": 8, "i": 31, "flags": 0, "waits": [], "lit": 0, "size": {"depth": 1}},
+    {"id": "back", "slots": "x", "items": [], "next": null, "delete": 7, "i": 30, "flags": 0, "waits": [], "lit": 1, "size": {"depth": 3}}
+  ]
+}

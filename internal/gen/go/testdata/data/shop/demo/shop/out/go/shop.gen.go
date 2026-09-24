@@ -853,12 +853,18 @@ func jsonCell(name, path string, obj map[string]json.RawMessage, key string) (js
 }
 
 // jsonRead reads raw into dst, a string, bool, float or array: null, or a value of another
-// kind, fails the load at path+key, naming what was expected.
+// kind, fails the load at path+key, naming what was expected. A Float result of exactly zero is
+// stored as +0 (WIRE.md §5.1: "-0"/"-0.0" read as 0); Float32 follows it too (A1 log).
 func jsonRead(name, path, key string, raw json.RawMessage, dst any) error {
 	if string(raw) == "null" {
 		return fmt.Errorf("%s: %s%s: null", name, path, key)
 	}
 	if json.Unmarshal(raw, dst) == nil {
+		if v, ok := dst.(*float64); ok && *v == 0 {
+			*v = 0
+		} else if v, ok := dst.(*float32); ok && *v == 0 {
+			*v = 0
+		}
 		return nil
 	}
 	want := "expected a string"
@@ -2048,6 +2054,9 @@ func loadItems(path string, out *Items) error {
 		values[i].id, values[i].retired = ItemID(id), retired
 		keys[i] = values[i].id
 	}
+	if at, first, ok := rt.FirstDup(keys); ok {
+		return rt.DupRow(path, fmt.Sprintf("rows[%d].", at), "$id", rt.WireToken(string(keys[at])), fmt.Sprintf("rows[%d]", first))
+	}
 	out.rows = rt.MakeKeyedList(values, keys)
 	out.itemsCodeIndex = make(map[uint16]int, len(values))
 	for i := range values {
@@ -2075,6 +2084,9 @@ func loadShelves(path string, out *Shelves) error {
 			return err
 		}
 		keys[i] = values[i].id
+	}
+	if at, first, ok := rt.FirstDup(keys); ok {
+		return rt.DupRow(path, fmt.Sprintf("rows[%d].", at), "id", rt.WireToken(string(keys[at])), fmt.Sprintf("rows[%d]", first))
 	}
 	out.rows = rt.MakeKeyedList(values, keys)
 	for i := range out.rows.Len() {

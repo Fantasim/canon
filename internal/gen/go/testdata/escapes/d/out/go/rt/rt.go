@@ -358,11 +358,27 @@ type DataFile struct {
 	Value  json.RawMessage `json:"value"`
 }
 
+// fileError is the error of a data file that could not be opened or read: Error() is exactly
+// "cannot open <path>" or "cannot read <path>", and Unwrap returns the os error, so
+// errors.Is(err, fs.ErrNotExist) still holds.
+type fileError struct {
+	text string
+	err  error
+}
+
+func (e *fileError) Error() string { return e.text }
+func (e *fileError) Unwrap() error { return e.err }
+
 // ReadDataFile reads a data file and checks its $schema against schema.
 func ReadDataFile(path, schema string) (*DataFile, error) {
-	raw, err := os.ReadFile(path)
+	f, err := os.Open(path)
 	if err != nil {
-		return nil, err
+		return nil, &fileError{text: "cannot open " + path, err: err}
+	}
+	defer f.Close()
+	raw, err := io.ReadAll(f)
+	if err != nil {
+		return nil, &fileError{text: "cannot read " + path, err: err}
 	}
 	return ParseDataFile(path, raw, schema)
 }
@@ -548,6 +564,50 @@ func validSpan(b []byte) bool {
 // Missing is the error of a required key absent from a data file.
 func Missing(name, path, key string) error {
 	return fmt.Errorf("%s: %s%s: missing", name, path, key)
+}
+
+// FirstDup finds the first key of a keyed data container (a table's ids, a keyed list's keys)
+// that repeats an earlier one: at is its index, first the earlier one's; ok is false when every
+// key is unique. Scans in order, so at is the first duplicate a generated loader must report.
+func FirstDup[K comparable](keys []K) (at, first int, ok bool) {
+	seen := make(map[K]int, len(keys))
+	for i, k := range keys {
+		if j, dup := seen[k]; dup {
+			return i, j, true
+		}
+		seen[k] = i
+	}
+	return 0, 0, false
+}
+
+// WireToken quotes and escapes s exactly as the data wire writes a String (WIRE.md §7.3): used
+// only to name a key's canonical JSON token in an error message.
+func WireToken(s string) string {
+	var b strings.Builder
+	b.WriteByte('"')
+	for _, r := range s {
+		if e, ok := jsonEscapes[r]; ok {
+			b.WriteString(e)
+		} else if r < 0x20 {
+			fmt.Fprintf(&b, `\u%04x`, r)
+		} else {
+			b.WriteRune(r)
+		}
+	}
+	b.WriteByte('"')
+	return b.String()
+}
+
+// jsonEscapes are the named escapes WireToken uses (WIRE.md §7.3); everything else below U+0020
+// is \u00xx, lower-case hex.
+var jsonEscapes = map[rune]string{
+	'"': `\"`, '\\': `\\`, '\b': `\b`, '\t': `\t`, '\n': `\n`, '\f': `\f`, '\r': `\r`,
+}
+
+// DupRow is the error of two entries of a keyed data container sharing a key: the load fails,
+// naming the key's canonical JSON token and the entry where it was first seen.
+func DupRow(name, path, key, token, first string) error {
+	return fmt.Errorf("%s: %s%s: duplicate id %s (first at %s)", name, path, key, token, first)
 }
 
 // ---------------------------------------------------------------------------
