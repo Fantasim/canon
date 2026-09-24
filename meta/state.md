@@ -9,14 +9,16 @@ Updated: 2026-09-24, overnight run in progress (brief:
 Part A (close open work) then Part B (M3 waves W0–W4). Ticked = committed on `main`.
 - [ ] A1 loader parity (gen/go ∥ gen/cpp): dup row ids, `-0`→+0, Float32 single rounding,
   `cannot open <path>`. In flight.
-- [ ] A2 demo bugs: (1) unknown enum member ICE → check finding (in flight); (2) E7109 empty
-  detail (jsonsrc, in flight); (3) stays (poisoning, logged); (4) "is a Int" → ERRORS pass,
-  E4402 frames stay (logged); (5) E8007 hint → ERRORS pass.
+- [x] A2 demo bugs: (1) E2102, a broken check breaks its record (428fbad, DECISIONS 209);
+  (2) E7109 variants (6534f56, DECISIONS 208); (3) stays (poisoning, logged); (4) "is a Int" →
+  ERRORS pass, E4402 frames stay (logged); (5) E8007 hint → ERRORS pass.
 - [ ] A3 M1.5 bug-fix wave, 73 archives: check 35, eval 4, format 20, ir 9, syntax 3, build 2.
-- [ ] A4 M2 close: position test on `examples/pipeline/data/II_POT_HEAL_L.json`.
+  eval (in review), format, ir, syntax in flight; then QA judge redesign (log "Progen archives
+  after a fix"), then check and build. Also c3eb74d: C++ tests skipped in worktrees (fixed).
+- [ ] A4 M2 close: position test on `examples/pipeline/data/II_POT_HEAL_L.json` (in flight).
 - [ ] A5 consumer unit (name plans) · cleanups · ERRORS.md pass + spec sync #2.
 - [ ] A6 M1.5 second wave (type-directed, metamorphic).
-- [ ] W0 gap map → `meta/m3-gaps.md` (read-only, in flight early).
+- [x] W0 gap map → `meta/m3-gaps.md` (1b0a332).
 - [ ] W1 · [ ] W2 · [ ] W3 · [ ] W4 (see [plan.md](plan.md) "M3 execution").
 
 Milestones: M0, M1 accepted (M1 item 6 deferred to after M7). M2 all items done but item 7
