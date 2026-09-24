@@ -144,6 +144,8 @@ func (c *checker) declareMembers(env *env, owner types.Type, body *recordCtx, it
 			}
 			env.pkg.all = append(env.pkg.all, o)
 			c.memberChecks[it] = o
+			// TYPES.md §1, DECISIONS 209: a broken check breaks the record or variant it runs through.
+			c.dependsOn(env, o)
 		}
 	}
 	return methods, checks

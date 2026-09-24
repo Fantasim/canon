@@ -3,10 +3,10 @@ name E3304 TYPES.md §5.2 (identifier map key)
 case 792
 seed 4294968089
 open eval
-sig panic panic: runtime error: invalid memory address or nil pointer dereference in value.(*Ref).identity < value.identity
+sig extra E1116/token, E2102/plain, E3002, W1002
 packages features.matching
 want E3304 features/matching/matching.canon 164 165 check
-failure panic panic: runtime error: invalid memory address or nil pointer dereference
+failure extra [W1002 features/matching/matching.canon:2:6 "enum Season has no doc comment"; W1002 features/matching/matching.canon:3:8 "record Mail has no doc comment"; W1002 features/matching/matching.canon:4:3 "field subject has no doc comment"; W1002 features/matching/matching.canon:5:3 "field season has no doc comment"; E1116 features/matching/matching.canon:5:18 "expected NL, \",\", \"}\"; found {"; E3002 features/matching/matching.canon:9:12 "expected Bool, found { … }"; E2102 features/matching/matching.canon:12:23 "unknown name attachment"] besides [E3304 features/matching/matching.canon:8:34 "map key a would be a variable; write \"a\": or (a):"]
 -- features/matching/matching.canon --
 package features.matching
 enum Season { spring }

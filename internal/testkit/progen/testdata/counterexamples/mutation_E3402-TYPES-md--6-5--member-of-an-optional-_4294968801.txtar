@@ -3,10 +3,10 @@ name E3402 TYPES.md §6.5 (member of an optional)
 case 1504
 seed 4294968801
 open check
-sig internal evaluation met a state the checker excludes: CallExpr
+sig missing E1116/token, E1117, E2102/plain, W1002
 packages features.matching
 want E3402 features/matching/matching.canon 150 155 check
-failure internal evaluation met a state the checker excludes: CallExpr at features/matching/matching.canon:11:8 evaluation met a state the checker excludes: CallExpr at features/matching/matching.canon:11:8
+failure missing E3402, got [W1002 features/matching/matching.canon:2:6 "enum Season has no doc comment"; E1117 features/matching/matching.canon:2:22 "missing separator: put \",\" or a new line between items"; W1002 features/matching/matching.canon:3:8 "record Mail has no doc comment"; W1002 features/matching/matching.canon:4:3 "field subject has no doc comment"; W1002 features/matching/matching.canon:5:3 "field season has no doc comment"; E1116 features/matching/matching.canon:5:18 "expected NL, \",\", \"}\"; found {"; E2102 features/matching/matching.canon:11:8 "unknown name isHoliday"; E2102 features/matching/matching.canon:11:23 "unknown name attachment"; E1117 features/matching/matching.canon:18:28 "missing separator: put \",\" or a new line between items"]
 -- features/matching/matching.canon --
 package features.matching
 enum Season { spring autumn }

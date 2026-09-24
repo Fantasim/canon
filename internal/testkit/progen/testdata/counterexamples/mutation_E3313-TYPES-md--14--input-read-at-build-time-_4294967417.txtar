@@ -3,10 +3,10 @@ name E3313 TYPES.md §14 (input read at build time)
 case 120
 seed 4294967417
 open check
-sig internal evaluation met a state the checker excludes:
+sig extra E1131/missing, W1002
 packages service.resourcestudio
 want E3313 service/resourcestudio/resourcestudio.canon 76 82 check
-failure internal evaluation met a state the checker excludes:
+failure extra [W1002 service/resourcestudio/resourcestudio.canon:2:8 "record Gen has no doc comment"; W1002 service/resourcestudio/resourcestudio.canon:3:3 "field apiKey has no doc comment"; E1131 service/resourcestudio/resourcestudio.canon:3:11 "an input field needs from env \"VAR\""; W1002 service/resourcestudio/resourcestudio.canon:7:8 "record Config has no doc comment"; W1002 service/resourcestudio/resourcestudio.canon:8:3 "field gen has no doc comment"] besides [E3313 service/resourcestudio/resourcestudio.canon:5:9 "apiKey is an input: it has no value at build time"]
 -- project.canon --
 project sovereign {
   canon: "0.1"

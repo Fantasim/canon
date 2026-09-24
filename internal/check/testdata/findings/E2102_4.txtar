@@ -1,0 +1,18 @@
+TYPES.md §5.1, §4.1, §3.3: in a comparison with an enum operand, a bare name that is neither a
+member of the enum nor a name in scope is E2102; the record holding the check is broken (§1).
+-- shop/shop.canon --
+package shop
+
+local enum Rarity { common, rare, epic }
+
+local record Item {
+  id: String
+  rarity: Rarity
+  price: Int(0..=1_000_000)
+  warn cheap_epic: not (rarity == legendary and price < 1_000) else "an epic item this cheap"
+}
+-- findings.txt --
+error[E2102]  shop/shop.canon:9:35
+  unknown name legendary
+
+1 error, 0 warnings in 1 package (…)

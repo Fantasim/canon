@@ -3,10 +3,10 @@ name E3019 TYPES.md §12.1 (bare return)
 case 321
 seed 4294967618
 open check
-sig internal evaluation met a state the checker excludes: FnDecl
+sig extra E1116/token, E1117, W1002
 packages features.matching
 want E3019 features/matching/matching.canon 147 153 check
-failure internal evaluation met a state the checker excludes: FnDecl at features/matching/matching.canon:7:3 evaluation met a state the checker excludes: FnDecl at features/matching/matching.canon:7:3
+failure extra [W1002 features/matching/matching.canon:2:6 "enum Season has no doc comment"; E1117 features/matching/matching.canon:2:22 "missing separator: put \",\" or a new line between items"; W1002 features/matching/matching.canon:3:8 "record Mail has no doc comment"; W1002 features/matching/matching.canon:4:3 "field subject has no doc comment"; W1002 features/matching/matching.canon:5:3 "field season has no doc comment"; E1116 features/matching/matching.canon:5:18 "expected NL, \",\", \"}\"; found {"; E1117 features/matching/matching.canon:17:28 "missing separator: put \",\" or a new line between items"] besides [E3019 features/matching/matching.canon:8:5 "return in isHoliday needs a value of type Bool"]
 -- features/matching/matching.canon --
 package features.matching
 enum Season { spring autumn }
