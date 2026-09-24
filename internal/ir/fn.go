@@ -9,10 +9,11 @@ import (
 // FnKind is how an export fn is emitted (SPEC §9.4).
 type FnKind uint8
 
-// ExportFn is an export fn, in Record.Methods, Case.Methods or Package.Fns. A method keeps
-// Instances; a package-level fn keeps Value or Table; a translated one keeps Body onwards.
+// ExportFn is an export fn, in Record.Methods, Case.Methods or Package.Fns: a method keeps Instances, a package fn Value or Table, a translated one Body onwards; File is its source file in Package.Dir (CODEGEN.md §2.5 T3), Order its rank among the package's export fns in declaration order (CONFORMANCE.md §7.2).
 type ExportFn struct {
 	Name, Doc   string
+	File        string
+	Order       int
 	Kind        FnKind
 	Params      []*Param
 	Result      TypeRef
@@ -23,6 +24,7 @@ type ExportFn struct {
 	Body        PExpr
 	Reads       []*Read
 	Vectors     []*Vector
+	Err         error // ErrInternal: a translated fn stage E could not translate, with no error reported
 	Go, Cpp, TS NameOptions
 }
 
@@ -46,7 +48,7 @@ type LookupTable struct {
 	Cells   []value.Value
 }
 
-// Read is a path of self a translated method reads; Name joins Path with `_`.
+// Read is a path of self a translated method reads (fields, or one precomputed method of self), Name its Path joined with `_` (CONFORMANCE.md §2.3); Type excludes the `?` Optional keeps.
 type Read struct {
 	Name     string
 	Path     []string

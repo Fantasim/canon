@@ -81,6 +81,7 @@ func packageFns(s *shop) []*ir.ExportFn {
 	}
 	specs = append(specs, floatFns()...)
 	specs = append(specs, logicFns(s)...)
+	specs = append(specs, stmtFns()...)
 	specs = append(specs, moreFns(s)...)
 	out := make([]*ir.ExportFn, len(specs))
 	for i, f := range specs {

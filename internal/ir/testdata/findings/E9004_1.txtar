@@ -1,0 +1,13 @@
+CONFORMANCE.md §2.1: a translated function returns an optional; its body is not refused for the conversion that result asks for.
+-- a/a.canon --
+package a
+
+/// Maybe n.
+export fn maybe(n: Int) -> Int? { return n }
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+error[E9004]  a/a.canon:4:28
+  translated function maybe returns Int?: only scalars, strings, enums and refs are allowed
+
+1 error, 0 warnings in 1 package (…)

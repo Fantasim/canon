@@ -1,0 +1,19 @@
+CONFORMANCE.md §2.2: a String method and a call of a function that is not exported.
+-- a/a.canon --
+package a
+
+/// Twice x.
+fn twice(x: Int) -> Int { return x * 2 }
+
+/// A score.
+export fn score(name: String, n: Int) -> Int { return name.len() + twice(n) }
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+error[E9001]  a/a.canon:7:55
+  name.len() is not allowed in translated function score: it is outside the portable subset
+
+error[E9001]  a/a.canon:7:68
+  twice(n) is not allowed in translated function score: it is outside the portable subset
+
+2 errors, 0 warnings in 1 package (…)

@@ -1,0 +1,13 @@
+CONFORMANCE.md §2.1: a String length on a translated result.
+-- a/a.canon --
+package a
+
+/// A short tag.
+export fn tag(n: Int) -> String(..8) { return "t{n}" }
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+error[E9007]  a/a.canon:4:26
+  refinement (..8) of the result of tag cannot be checked at run time
+
+1 error, 0 warnings in 1 package (…)

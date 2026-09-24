@@ -49,6 +49,8 @@ func (t *tr) local(b *block, ty ir.TypeRef, name, v string) {
 // stmts translates a body in statement position: `let` binds a const, `if` returns early.
 func (t *tr) stmts(n ir.PExpr, b *block) {
 	switch x := n.(type) {
+	case *ir.Block:
+		t.block(x, b)
 	case *ir.Let:
 		t.local(b, x.Value.Type(), verbatim(x.Name), unparen(t.expr(x.Value, b)))
 		t.stmts(x.Body, b)
@@ -72,6 +74,47 @@ func (t *tr) stmts(n ir.PExpr, b *block) {
 			v = fmt.Sprintf(stringOfFormat, v)
 		}
 		b.add(returnFormat, t.g.exitChecks(t.fn.Result, t.fn.ResultRange, v))
+	}
+}
+
+// block emits a Block's statements in order: a `let` is a const local, an `if` a C++ block per
+// branch (which scopes its lets) falling through when it does not return, a `return` the result.
+func (t *tr) block(x *ir.Block, b *block) {
+	for _, st := range x.Stmts {
+		switch s := st.(type) {
+		case *ir.LetStmt:
+			t.local(b, s.Value.Type(), verbatim(s.Name), unparen(t.expr(s.Value, b)))
+		case *ir.IfStmt:
+			t.ifStmt(s, b)
+		case *ir.ReturnStmt:
+			t.stmts(s.X, b)
+		default:
+			t.g.fail(fmt.Errorf("%w: statement %T in %s", ErrMalformed, st, t.g.at))
+		}
+	}
+}
+
+// ifStmt is `if (c) { … } else { … }`, each branch in braces.
+func (t *tr) ifStmt(s *ir.IfStmt, b *block) {
+	if s.Then == nil {
+		t.g.fail(fmt.Errorf("%w: if without then in %s", ErrMalformed, t.g.at))
+		return
+	}
+	b.add(ifOpenFormat, unparen(t.expr(s.Cond, b)))
+	t.nested(s.Then, b)
+	if s.Else != nil {
+		b.add(elseOpen)
+		t.nested(s.Else, b)
+	}
+	b.add(closeBrace)
+}
+
+// nested emits a branch's Block, indented inside its braces.
+func (t *tr) nested(x *ir.Block, b *block) {
+	var inner block
+	t.block(x, &inner)
+	for _, l := range inner.lines {
+		b.add(indentedFormat, l)
 	}
 }
 

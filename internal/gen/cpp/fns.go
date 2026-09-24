@@ -102,7 +102,25 @@ func collectLocals(n ir.PExpr, used map[string]bool) {
 	case *ir.If:
 		collectLocals(x.Then, used)
 		collectLocals(x.Else, used)
+	case *ir.Block:
+		collectBlockLocals(x, used)
 	default:
+	}
+}
+
+// collectBlockLocals marks every `let` name of a Block and of its branches.
+func collectBlockLocals(x *ir.Block, used map[string]bool) {
+	if x == nil {
+		return
+	}
+	for _, st := range x.Stmts {
+		switch s := st.(type) {
+		case *ir.LetStmt:
+			used[verbatim(s.Name)] = true
+		case *ir.IfStmt:
+			collectBlockLocals(s.Then, used)
+			collectBlockLocals(s.Else, used)
+		}
 	}
 }
 

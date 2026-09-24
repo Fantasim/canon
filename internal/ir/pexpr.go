@@ -73,8 +73,8 @@ type Call struct {
 
 func (n *Call) Type() TypeRef { return n.T }
 
-// CallFn calls an export fn of the package: a translated one, a precomputed method of self
-// (no Args) or a lookup function.
+// CallFn calls a package-level export fn of the package: a translated one or a lookup function;
+// a precomputed method of self is a Read instead.
 type CallFn struct {
 	T    TypeRef
 	Fn   *ExportFn
@@ -130,3 +130,41 @@ type IsCase struct {
 }
 
 func (n *IsCase) Type() TypeRef { return n.T }
+
+// Block is a translated body as statements, run in order in a scope of their own: a `let` binds
+// for the rest of its block, an `if` whose branch does not return falls through to the next
+// statement, and every path of a fn's Body ends in a ReturnStmt. It keeps the IR linear.
+type Block struct {
+	T     TypeRef
+	Stmts []Stmt
+}
+
+func (n *Block) Type() TypeRef { return n.T }
+
+// Stmt is a statement of a Block: *LetStmt, *IfStmt or *ReturnStmt.
+type Stmt interface {
+	stmtNode()
+}
+
+// LetStmt binds Name to Value for the rest of its Block.
+type LetStmt struct {
+	Name  string
+	Value PExpr
+}
+
+func (*LetStmt) stmtNode() {}
+
+// IfStmt runs Then when Cond holds, else Else (nil: nothing); each is a Block of its own.
+type IfStmt struct {
+	Cond       PExpr
+	Then, Else *Block
+}
+
+func (*IfStmt) stmtNode() {}
+
+// ReturnStmt returns X from the fn.
+type ReturnStmt struct {
+	X PExpr
+}
+
+func (*ReturnStmt) stmtNode() {}

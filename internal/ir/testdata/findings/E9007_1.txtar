@@ -1,0 +1,13 @@
+CONFORMANCE.md §2.1: a `where` refinement on a translated parameter.
+-- a/a.canon --
+package a
+
+/// Half of an even n.
+export fn half(n: Int where it % 2 == 0) -> Int { return n / 2 }
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+error[E9007]  a/a.canon:4:16
+  refinement it % 2 == 0 of parameter n of half cannot be checked at run time
+
+1 error, 0 warnings in 1 package (…)

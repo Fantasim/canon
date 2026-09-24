@@ -1,0 +1,23 @@
+CONFORMANCE.md §2.2, DECISIONS 204: a translated method calling another translated method of self has no candidate rule for it.
+-- pipeline/potion.canon --
+/// Potions.
+package pipeline
+
+/// A healing potion.
+record Potion {
+  /// Hit points restored.
+  heal: Int
+
+  /// What a player missing missingHp gets back.
+  export fn healFor(self, missingHp: Int) -> Int { return min(heal, max(missingHp, 0)) }
+
+  /// Twice that.
+  export fn twiceFor(self, missingHp: Int) -> Int { return healFor(missingHp) * 2 }
+}
+
+emit cpp { out: "@features/pipeline" }
+-- findings.txt --
+error[E9001]  pipeline/potion.canon:13:60
+  healFor(missingHp) is not allowed in translated function Potion.twiceFor: it is outside the portable subset
+
+1 error, 0 warnings in 1 package (…)

@@ -88,9 +88,30 @@ func children(n ir.PExpr) []ir.PExpr {
 			}
 		}
 		return out
+	case *ir.Block:
+		return blockChildren(x)
 	default:
 		return nil
 	}
+}
+
+// blockChildren are a Block's let values, if conditions and branches, and returned values.
+func blockChildren(x *ir.Block) []ir.PExpr {
+	var out []ir.PExpr
+	for _, st := range x.Stmts {
+		switch s := st.(type) {
+		case *ir.LetStmt:
+			out = append(out, s.Value)
+		case *ir.IfStmt:
+			out = append(out, s.Cond, s.Then)
+			if s.Else != nil {
+				out = append(out, s.Else)
+			}
+		case *ir.ReturnStmt:
+			out = append(out, s.X)
+		}
+	}
+	return out
 }
 
 func anySignals(xs ...ir.PExpr) bool {

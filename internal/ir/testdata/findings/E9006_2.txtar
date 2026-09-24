@@ -1,0 +1,31 @@
+CONFORMANCE.md §2.3, §6.2, DECISIONS 204: a ref read from self would be a parameter of the pure function with no candidate values.
+-- a/a.canon --
+package a
+
+/// A tier.
+record Tier {
+  /// Its rank.
+  rank: Int
+}
+
+/// The tiers.
+let tiers: table Tier = {
+  low { rank: 1 }
+  high { rank: 2 }
+}
+
+/// A member.
+record Member {
+  /// Its tier.
+  tier: ref Tier
+
+  /// Its tier, whatever n.
+  export fn tierAt(self, n: Int) -> ref Tier { return self.tier }
+}
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+error[E9006]  a/a.canon:21:55
+  parameter tier of Member.tierAt is a ref a.tiers: translated functions take Bool, integers, Float, String, Duration and enums
+
+1 error, 0 warnings in 1 package (…)

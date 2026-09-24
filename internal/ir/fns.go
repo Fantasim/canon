@@ -1,6 +1,8 @@
 package ir
 
 import (
+	"path"
+
 	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
@@ -55,6 +57,9 @@ func (s *stage) exportFn(obj check.Object, d *syntax.FnDecl, sig *types.FuncType
 	if d.Doc != nil {
 		fn.Doc = d.Doc.Text
 	}
+	if f := obj.File(); f != nil && f.Src != nil {
+		fn.File = path.Base(f.Src.Path)
+	}
 	fn.ResultRange, _ = ownRefinements(sig.Result)
 	for i, p := range sig.Params {
 		param := &Param{Type: s.ref(p)}
@@ -69,7 +74,53 @@ func (s *stage) exportFn(obj check.Object, d *syntax.FnDecl, sig *types.FuncType
 	fn.Go, fn.Cpp, fn.TS = n.goName, n.cpp, n.ts
 	site := &fnSite{fn: fn, obj: obj, decl: d, sig: sig, label: obj.Name(), pkg: obj.Pkg()}
 	s.fnObjs[fn] = site
+	s.fnByObj[obj] = site
 	return site
+}
+
+// orderFns numbers u's export fns in declaration order, methods and package fns together, so a conformance file lists them as declared (CONFORMANCE.md §7.2).
+func (s *stage) orderFns(u *unit) {
+	n := 0
+	for _, obj := range u.cp.Decls {
+		for _, d := range fnDecls(obj.Decl()) {
+			if site := s.fnByObj[s.info.Defs[d.Name]]; site != nil {
+				site.fn.Order = n
+				n++
+			}
+		}
+	}
+}
+
+// fnDecls are the named fn declarations of a top-level declaration: itself, or those of its record or case bodies, in order.
+func fnDecls(d syntax.Node) []*syntax.FnDecl {
+	switch x := d.(type) {
+	case *syntax.FnDecl:
+		return bodyFns([]syntax.RecordItem{x})
+	case *syntax.RecordDecl:
+		if x.Body != nil {
+			return bodyFns(x.Body.Items)
+		}
+	case *syntax.VariantDecl:
+		var out []*syntax.FnDecl
+		for _, it := range x.Items {
+			if c, ok := it.(*syntax.VariantCase); ok && c.Body != nil {
+				out = append(out, bodyFns(c.Body.Items)...)
+			}
+		}
+		return out
+	}
+	return nil
+}
+
+// bodyFns are the named fn declarations among items, in order.
+func bodyFns(items []syntax.RecordItem) []*syntax.FnDecl {
+	var out []*syntax.FnDecl
+	for _, it := range items {
+		if fd, ok := it.(*syntax.FnDecl); ok && fd.Name != nil {
+			out = append(out, fd)
+		}
+	}
+	return out
 }
 
 // kindOf is how an export fn is emitted (SPEC §9.4): no parameter, only finite ones, else translated. Finite is as check's `$` keys read it (WIRE.md §5.11): Bool, an enum, a ref into a collection that is not a keyed list.

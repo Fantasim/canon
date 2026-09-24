@@ -33,6 +33,7 @@ func (s *stage) validate(u *unit) {
 		s.checkBranches(u)
 		s.checkOverrideNames(u)
 		s.checkGoNames(u)
+		s.translateFns(u)
 	}
 	for _, es := range u.emits {
 		for _, rule := range emitRules[es.e.Target] {

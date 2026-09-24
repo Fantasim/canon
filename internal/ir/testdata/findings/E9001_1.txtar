@@ -1,0 +1,22 @@
+CONFORMANCE.md §2.2: a loop and a `var` in a translated function; the loop is named by its head.
+-- a/a.canon --
+package a
+
+/// Sums below n.
+export fn below(n: Int) -> Int {
+  var total = 0
+  for i in 0..n {
+    total += i
+  }
+  return total
+}
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+error[E9001]  a/a.canon:5:3
+  var total = 0 is not allowed in translated function below: it is outside the portable subset
+
+error[E9001]  a/a.canon:6:3
+  for i in 0..n is not allowed in translated function below: it is outside the portable subset
+
+2 errors, 0 warnings in 1 package (…)

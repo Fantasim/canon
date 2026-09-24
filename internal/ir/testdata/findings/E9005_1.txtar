@@ -1,0 +1,13 @@
+CONFORMANCE.md §2.2: a Float interpolated in a translated template.
+-- a/a.canon --
+package a
+
+/// A label.
+export fn label(x: Float) -> String { return "x = {x}" }
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+error[E9005]  a/a.canon:4:52
+  x is a Float: translated templates may only interpolate String, integer and enum values
+
+1 error, 0 warnings in 1 package (…)

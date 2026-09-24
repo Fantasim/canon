@@ -1,0 +1,22 @@
+CONFORMANCE.md §2.2: a precomputed package fn is not among the calls a translated function may make, and arguments out of parameter order would change the evaluation order.
+-- a/a.canon --
+package a
+
+/// The cap.
+export fn cap() -> Int { return 10 }
+
+/// A difference.
+export fn diff(a: Int, b: Int) -> Int { return a - b }
+
+/// Capped n.
+export fn capped(n: Int) -> Int { return min(n, cap()) + diff(b: n, a: 1) + diff(a: n, b: 2) }
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+error[E9001]  a/a.canon:10:49
+  cap() is not allowed in translated function capped: it is outside the portable subset
+
+error[E9001]  a/a.canon:10:58
+  diff(b: n, a: 1) is not allowed in translated function capped: it is outside the portable subset
+
+2 errors, 0 warnings in 1 package (…)

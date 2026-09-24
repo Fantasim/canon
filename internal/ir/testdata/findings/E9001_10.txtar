@@ -1,0 +1,28 @@
+CONFORMANCE.md §2.3: a read of self named like a `let` local of the body would be declared twice in the pure function; it is refused.
+-- a/a.canon --
+package a
+
+/// A bonus.
+record Bonus {
+  /// Its value.
+  value: Int
+}
+
+/// A potion.
+record Potion {
+  /// Its bonus.
+  bonus: Bonus
+
+  /// The bonus, times n.
+  export fn boosted(self, n: Int) -> Int {
+    let bonus_value = n * 2
+    return self.bonus.value + bonus_value
+  }
+}
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+error[E9001]  a/a.canon:17:12
+  self.bonus.value is not allowed in translated function Potion.boosted: it is outside the portable subset
+
+1 error, 0 warnings in 1 package (…)

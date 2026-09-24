@@ -308,6 +308,8 @@ inline int64_t ClampTo(int64_t x, int64_t hi);
 inline int64_t MinOf(int64_t a, int64_t b, int64_t c);
 inline bool IsLoud(Tone t);
 inline int64_t LevelUp(int64_t level);
+inline int64_t Guarded(int64_t x, int64_t y);
+inline int64_t Rescoped(int64_t x);
 inline std::string Echo(std::string_view s);
 inline std::string PickShelf(bool front);
 inline double Unit(double x);
@@ -798,6 +800,155 @@ inline bool IsLoud(Tone t) {
 inline int64_t LevelUp(int64_t level) {
     level = canon::CheckIntRange(level, 1, 149);
     return canon::AddInt(level, 1);
+}
+
+inline int64_t Guarded(int64_t x, int64_t y) {
+    if (x == 0) {
+        const int64_t z = canon::MulInt(y, 1);
+        if (z > 0) {
+            return z;
+        }
+    }
+    if (x == 1) {
+        const int64_t z = canon::MulInt(y, 2);
+        if (z > 1) {
+            return z;
+        }
+    }
+    if (x == 2) {
+        const int64_t z = canon::MulInt(y, 3);
+        if (z > 2) {
+            return z;
+        }
+    }
+    if (x == 3) {
+        const int64_t z = canon::MulInt(y, 4);
+        if (z > 3) {
+            return z;
+        }
+    }
+    if (x == 4) {
+        const int64_t z = canon::MulInt(y, 5);
+        if (z > 4) {
+            return z;
+        }
+    }
+    if (x == 5) {
+        const int64_t z = canon::MulInt(y, 6);
+        if (z > 5) {
+            return z;
+        }
+    }
+    if (x == 6) {
+        const int64_t z = canon::MulInt(y, 7);
+        if (z > 6) {
+            return z;
+        }
+    }
+    if (x == 7) {
+        const int64_t z = canon::MulInt(y, 8);
+        if (z > 7) {
+            return z;
+        }
+    }
+    if (x == 8) {
+        const int64_t z = canon::MulInt(y, 9);
+        if (z > 8) {
+            return z;
+        }
+    }
+    if (x == 9) {
+        const int64_t z = canon::MulInt(y, 10);
+        if (z > 9) {
+            return z;
+        }
+    }
+    if (x == 10) {
+        const int64_t z = canon::MulInt(y, 11);
+        if (z > 10) {
+            return z;
+        }
+    }
+    if (x == 11) {
+        const int64_t z = canon::MulInt(y, 12);
+        if (z > 11) {
+            return z;
+        }
+    }
+    if (x == 12) {
+        const int64_t z = canon::MulInt(y, 13);
+        if (z > 12) {
+            return z;
+        }
+    }
+    if (x == 13) {
+        const int64_t z = canon::MulInt(y, 14);
+        if (z > 13) {
+            return z;
+        }
+    }
+    if (x == 14) {
+        const int64_t z = canon::MulInt(y, 15);
+        if (z > 14) {
+            return z;
+        }
+    }
+    if (x == 15) {
+        const int64_t z = canon::MulInt(y, 16);
+        if (z > 15) {
+            return z;
+        }
+    }
+    if (x == 16) {
+        const int64_t z = canon::MulInt(y, 17);
+        if (z > 16) {
+            return z;
+        }
+    }
+    if (x == 17) {
+        const int64_t z = canon::MulInt(y, 18);
+        if (z > 17) {
+            return z;
+        }
+    }
+    if (x == 18) {
+        const int64_t z = canon::MulInt(y, 19);
+        if (z > 18) {
+            return z;
+        }
+    }
+    if (x == 19) {
+        const int64_t z = canon::MulInt(y, 20);
+        if (z > 19) {
+            return z;
+        }
+    }
+    if (x == 20) {
+        const int64_t z = canon::MulInt(y, 21);
+        if (z > 20) {
+            return z;
+        }
+    }
+    if (x == 21) {
+        const int64_t z = canon::MulInt(y, 22);
+        if (z > 21) {
+            return z;
+        }
+    }
+    return 0;
+}
+
+inline int64_t Rescoped(int64_t x) {
+    if (x > 0) {
+        const int64_t z = canon::AddInt(x, 1);
+        if (z > 5) {
+            return z;
+        }
+    } else {
+        return canon::SubInt(0, x);
+    }
+    const int64_t z = canon::MulInt(x, 2);
+    return z;
 }
 
 inline std::string Echo(std::string_view s) {

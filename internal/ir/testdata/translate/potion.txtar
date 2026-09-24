@@ -1,0 +1,147 @@
+CONFORMANCE.md §2.2, §2.3: the portable subset of a record's translated methods and of package fns.
+Reads are the paths of self in field declaration order, then precomputed methods of self; a read
+named like a parameter takes `self_`. `if` without `else` falls through to the rest of the body.
+-- pipeline/potion.canon --
+/// Potions.
+package pipeline
+
+/// A tone.
+enum Tone { soft, loud }
+
+/// An ordered grade.
+enum Grade ordered { low, mid, high }
+
+/// A bonus.
+record Bonus {
+  /// Its value.
+  value: Int
+  /// Its grade.
+  grade: Grade
+}
+
+/// A healing potion.
+record Potion {
+  /// Its name.
+  name: String
+  /// Hit points restored.
+  heal: Int(1..=100_000)
+  /// Its tone.
+  tone: Tone
+  /// An optional bonus.
+  bonus: Bonus?
+  /// Its cooldown.
+  cooldown: Duration
+
+  /// Whether it heals a lot.
+  export fn isStrong(self) -> Bool { return heal >= 2_000 }
+
+  /// What a player missing missingHp gets back.
+  export fn healFor(self, missingHp: Int) -> Int { return min(heal, max(missingHp, 0)) }
+
+  /// The damage a thrown potion does at level.
+  export fn damageAt(self, level: Int(1..=150)) -> Int { return heal * level / 100 }
+
+  /// Early returns, lets, a method of self and optional paths.
+  export fn score(self, n: Int, heal: Int) -> Int {
+    let base = self.bonus?.value ?? 0
+    if self.isStrong() {
+      return base + n
+    } else if self.tone == Tone.loud {
+      return -n
+    }
+    if (self.bonus?.grade ?? Grade.low) > Grade.mid {
+      if n > 0 { return heal }
+    }
+    return self.heal * 2
+  }
+
+  /// A template.
+  export fn label(self, n: Int) -> String { return "{name} x{n} ({tone})" }
+
+  /// Floats.
+  export fn ratio(self, f: Float, n: Int) -> Float { return Float(n) / f + abs(-f) + 1 }
+
+  /// Durations.
+  export fn wait(self, k: Int) -> Duration { return if not isStrong() and k != 0 { cooldown * k } else { 0s } }
+}
+
+/// The sign of n; the `return` after an `if` whose branches all return is dropped.
+export fn sign(n: Int) -> Int {
+  if n > 0 { return 1 } else { return -1 }
+  return 0
+}
+
+/// Doubles x.
+export fn twice(x: Int) -> Int { return x * 2 }
+
+/// Calls twice.
+export fn quad(x: Int) -> Int { return twice(twice(x)) }
+
+/// A lookup the translated fn calls.
+export fn loud(t: Tone) -> Bool { return t == Tone.loud }
+
+/// Calls a lookup.
+export fn volume(t: Tone, n: Int) -> Int { return if loud(t) { n } else { n / 2 } }
+
+emit cpp { out: "@features/pipeline" }
+-- bodies.txt --
+package pipeline dir=pipeline
+fn Potion.isStrong file=potion.canon order=0 kind=precomputed
+fn Potion.healFor file=potion.canon order=1 kind=translated
+  read 0 heal [heal] Int opt=false
+  body (min:Int read0:Int (max:Int param0:Int 0:Int))
+fn Potion.damageAt file=potion.canon order=2 kind=translated
+  read 0 heal [heal] Int opt=false
+  body (/:Int (*:Int read0:Int param0:Int) 100:Int)
+fn Potion.score file=potion.canon order=3 kind=translated
+  read 0 self_heal [heal] Int opt=false
+  read 1 tone [tone] pipeline.Tone opt=false
+  read 2 bonus_value [bonus value] Int opt=true
+  read 3 bonus_grade [bonus grade] pipeline.Grade opt=true
+  read 4 isStrong [isStrong] Bool opt=false
+  body {:Int
+    let base = (??:Int read2:Int 0:Int)
+    if read4:Bool then {:Int
+      return (+:Int base:Int param0:Int)
+    } else {:Int
+      if (==:Bool read1:pipeline.Tone loud:pipeline.Tone) then {:Int
+        return (neg:Int param0:Int)
+      } else none
+    }
+    if (>:Bool (??:pipeline.Grade read3:pipeline.Grade low:pipeline.Grade) mid:pipeline.Grade) then {:Int
+      if (>:Bool param0:Int 0:Int) then {:Int
+        return param1:Int
+      } else none
+    } else none
+    return (*:Int read0:Int 2:Int)
+  }
+fn Potion.label file=potion.canon order=4 kind=translated
+  read 0 name [name] String opt=false
+  read 1 tone [tone] pipeline.Tone opt=false
+  body (template:String "" read0:String " x" param0:Int " (" read1:pipeline.Tone ")")
+fn Potion.ratio file=potion.canon order=5 kind=translated
+  body (+:Float (+:Float (/:Float (Float:Float param1:Int) param0:Float) (abs:Float (neg:Float param0:Float))) 1:Float)
+fn Potion.wait file=potion.canon order=6 kind=translated
+  read 0 cooldown [cooldown] Duration opt=false
+  read 1 isStrong [isStrong] Bool opt=false
+  body (if:Duration (and:Bool (not:Bool read1:Bool) (!=:Bool param0:Int 0:Int))
+    then (*:Duration read0:Duration param0:Int)
+    else 0s:Duration)
+fn sign file=potion.canon order=7 kind=translated
+  body {:Int
+    if (>:Bool param0:Int 0:Int) then {:Int
+      return 1:Int
+    } else {:Int
+      return -1:Int
+    }
+  }
+fn twice file=potion.canon order=8 kind=translated
+  body (*:Int param0:Int 2:Int)
+fn quad file=potion.canon order=9 kind=translated
+  body (call twice:Int (call twice:Int param0:Int))
+fn loud file=potion.canon order=10 kind=lookup
+fn volume file=potion.canon order=11 kind=translated
+  body (if:Int (call loud:Bool param0:pipeline.Tone)
+    then param1:Int
+    else (/:Int param1:Int 2:Int))
+0 errors, 0 warnings in 1 package (…)

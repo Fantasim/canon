@@ -1,0 +1,23 @@
+CONFORMANCE.md §2.1, §7.1: only a code emit translates a function; a package emitted to json alone gets no body and no portable-subset finding.
+-- a/a.canon --
+/// A.
+package a
+
+/// A sum below n.
+export fn below(n: Int) -> Int {
+  var total = 0
+  for i in 0..n {
+    total += i
+  }
+  return total
+}
+
+/// The limit.
+let limit: Int = 3
+
+emit json { out: "@features/a/a.json" }
+-- bodies.txt --
+package a dir=a
+fn below file=a.canon order=0 kind=translated
+  body none
+0 errors, 0 warnings in 1 package (…)

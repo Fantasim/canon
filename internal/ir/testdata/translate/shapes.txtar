@@ -1,0 +1,55 @@
+CONFORMANCE.md §2.2: `is` on a variant-typed path of self reads its case kind; a case's own methods read its fields.
+CONFORMANCE.md §7.2: Order ranks methods and package fns together, in declaration order (file path,
+then position: more.canon first); File is each one's own source file (CODEGEN.md §2.5, T3).
+-- a/shapes.canon --
+/// Shapes.
+package a
+
+/// A shape.
+variant Shape {
+  /// A circle.
+  circle {
+    /// Its radius.
+    r: Int
+
+    /// Its scaled radius.
+    export fn scaled(self, k: Int) -> Int { return r * k }
+  }
+  /// A square.
+  square {
+    /// Its side.
+    side: Int
+  }
+}
+
+/// The area of a square of side n.
+export fn area(n: Int) -> Int { return n * n }
+
+/// Holds a shape.
+record Holder {
+  /// The shape.
+  shape: Shape
+
+  /// Whether the shape is round, for n.
+  export fn isRound(self, n: Int) -> Bool { return shape is circle and n > 0 }
+}
+
+emit go { out: "@features/a", package: "a" }
+-- a/more.canon --
+package a
+
+/// Thrice n.
+export fn thrice(n: Int) -> Int { return n * 3 }
+-- bodies.txt --
+package a dir=a
+fn thrice file=more.canon order=0 kind=translated
+  body (*:Int param0:Int 3:Int)
+fn Shape.circle.scaled file=shapes.canon order=1 kind=translated
+  read 0 r [r] Int opt=false
+  body (*:Int read0:Int param0:Int)
+fn area file=shapes.canon order=2 kind=translated
+  body (*:Int param0:Int param0:Int)
+fn Holder.isRound file=shapes.canon order=3 kind=translated
+  read 0 shape [shape] a.Shape opt=false
+  body (and:Bool (is case0 read0:a.Shape) (>:Bool param0:Int 0:Int))
+0 errors, 0 warnings in 1 package (…)

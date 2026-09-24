@@ -1,0 +1,27 @@
+CONFORMANCE.md §2.2: a `match` is named by its head; a format spec by its interpolation.
+-- a/a.canon --
+package a
+
+/// A tone.
+enum Tone { soft, loud }
+
+/// A level.
+export fn level(t: Tone, n: Int) -> Int {
+  return match t {
+    soft => n
+    loud => n * 2
+  }
+}
+
+/// A padded n.
+export fn padded(n: Int) -> String { return "{n:,}" }
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+error[E9001]  a/a.canon:8:10
+  match t is not allowed in translated function level: it is outside the portable subset
+
+error[E9001]  a/a.canon:15:47
+  n:, is not allowed in translated function padded: it is outside the portable subset
+
+2 errors, 0 warnings in 1 package (…)

@@ -1,6 +1,7 @@
 package ir
 
 import (
+	"cmp"
 	"regexp"
 
 	"github.com/fantasim/canonlang/internal/check"
@@ -98,16 +99,15 @@ func (s *stage) readsInstance(e syntax.Expr, params map[check.Object]bool) bool 
 	return found
 }
 
-// ownRefinements are the range and pattern written on an input field's type, through aliases (CODEGEN.md §5.12: checked at run time).
+// ownRefinements are the range and pattern written on a type, through aliases (CODEGEN.md §5.12): nested ranges as their intersection, the outermost pattern.
 func ownRefinements(t types.Type) (*types.Bound, *regexp.Regexp) {
 	var rng *types.Bound
 	var pat *regexp.Regexp
+	float := t.Base().Kind() == types.Float
 	for t != nil {
 		switch x := t.(type) {
 		case *types.Refined:
-			if rng == nil {
-				rng = x.Range
-			}
+			rng = intersect(rng, x.Range, float)
 			if pat == nil {
 				pat = x.Pattern
 			}
@@ -119,4 +119,27 @@ func ownRefinements(t types.Type) (*types.Bound, *regexp.Regexp) {
 		}
 	}
 	return rng, pat
+}
+
+// intersect is the values both bounds admit, nil when neither bounds; F compares for a Float base, I otherwise.
+func intersect(a, b *types.Bound, float bool) *types.Bound {
+	if a == nil || b == nil {
+		return cmp.Or(a, b)
+	}
+	less := func(x, y types.Limit) bool { return x.I < y.I }
+	if float {
+		less = func(x, y types.Limit) bool { return x.F < y.F }
+	}
+	out := *a
+	if b.HasLo && (!out.HasLo || less(out.Lo, b.Lo)) {
+		out.Lo, out.HasLo = b.Lo, true
+	}
+	switch {
+	case !b.HasHi:
+	case !out.HasHi || less(b.Hi, out.Hi):
+		out.Hi, out.HasHi, out.HiIncluded = b.Hi, true, b.HiIncluded
+	case !less(out.Hi, b.Hi):
+		out.HiIncluded = out.HiIncluded && b.HiIncluded // equal ends: the exclusive one is tighter
+	}
+	return &out
 }

@@ -1,0 +1,25 @@
+CONFORMANCE.md §2.1: under a refused result no conversion to that result type is judged, so neither the branches of an `if` nor a `??` fallback the optional result wraps is also E9001.
+-- a/a.canon --
+package a
+
+/// Maybe n.
+export fn maybe(n: Int) -> Int? { return if n > 0 { n } else { 0 } }
+
+/// A box.
+record Box {
+  /// Maybe a value.
+  o: Int?
+
+  /// Maybe o, else n.
+  export fn either(self, n: Int) -> Int? { return if n > 0 { o ?? n } else { n } }
+}
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+error[E9004]  a/a.canon:4:28
+  translated function maybe returns Int?: only scalars, strings, enums and refs are allowed
+
+error[E9004]  a/a.canon:12:37
+  translated function Box.either returns Int?: only scalars, strings, enums and refs are allowed
+
+2 errors, 0 warnings in 1 package (…)

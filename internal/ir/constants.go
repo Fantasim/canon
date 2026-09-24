@@ -74,6 +74,62 @@ const (
 	BuiltinRound
 )
 
+// The built-in functions and conversions of the portable subset, by name (CONFORMANCE.md §2.2).
+const (
+	fnMin      = "min"
+	fnMax      = "max"
+	convFloat  = "Float"
+	convInt    = "Int"
+	minMinMax  = 2 // min and max take two or more arguments
+	clampArity = 3
+	selfPrefix = "self_" // a read named like a declared parameter (CONFORMANCE.md §2.3)
+)
+
+// portableBuiltins are the built-in functions of the portable subset, with the kinds their arguments may have (CONFORMANCE.md §2.2, §3); arity is exact, or the least when variadic.
+var portableBuiltins = map[string]builtinSpec{
+	fnMin: {fn: BuiltinMin, arity: minMinMax, variadic: true, kinds: numericKinds}, fnMax: {fn: BuiltinMax, arity: minMinMax, variadic: true, kinds: numericKinds},
+	"abs": {fn: BuiltinAbs, arity: 1, kinds: numericKinds}, "clamp": {fn: BuiltinClamp, arity: clampArity, kinds: numericKinds},
+	"floor": {fn: BuiltinFloor, arity: 1, kinds: floatKinds}, "ceil": {fn: BuiltinCeil, arity: 1, kinds: floatKinds},
+	"round": {fn: BuiltinRound, arity: 1, kinds: floatKinds},
+}
+
+// portableConversions are `Float(i)` and `Int(f)`, with the kind each converts from (CONFORMANCE.md §3).
+var portableConversions = map[string]builtinSpec{
+	convFloat: {fn: BuiltinFloat, arity: 1, kinds: map[types.Kind]bool{types.Int: true}},
+	convInt:   {fn: BuiltinInt, arity: 1, kinds: floatKinds},
+}
+
+// The kinds of the portable subset: of arithmetic, of a parameter, read or equality, of a result, of an interpolation (CONFORMANCE.md §2.1, §2.2).
+var (
+	numericKinds  = map[types.Kind]bool{types.Int: true, types.Float: true, types.Duration: true}
+	floatKinds    = map[types.Kind]bool{types.Float: true}
+	scalarKinds   = map[types.Kind]bool{types.Bool: true, types.Int: true, types.Float: true, types.String: true, types.Duration: true, types.Enum: true}
+	resultKinds   = map[types.Kind]bool{types.Bool: true, types.Int: true, types.Float: true, types.String: true, types.Duration: true, types.Enum: true, types.Ref: true}
+	templateKinds = map[types.Kind]bool{types.String: true, types.Int: true, types.Enum: true}
+	// untemplated are the kinds E9005 names in a template; any other kind there is E9001.
+	untemplated = map[types.Kind]bool{types.Float: true, types.Duration: true}
+)
+
+// binaryOps are the binary operators of the portable subset by token; `??` is Coalesce (CONFORMANCE.md §2.2).
+var binaryOps = map[syntax.TokenKind]Op{
+	syntax.TokPlus: OpAdd, syntax.TokMinus: OpSub, syntax.TokStar: OpMul, syntax.TokSlash: OpDiv,
+	syntax.TokPercent: OpMod, syntax.KwAnd: OpAnd, syntax.KwOr: OpOr, syntax.TokEq: OpEq,
+	syntax.TokNe: OpNe, syntax.TokLt: OpLt, syntax.TokLe: OpLe, syntax.TokGt: OpGt, syntax.TokGe: OpGe,
+}
+
+// unaryOps are the unary operators of the portable subset, with the kinds of their operand.
+var unaryOps = map[syntax.TokenKind]unarySpec{
+	syntax.TokMinus: {op: OpNeg, kinds: numericKinds},
+	syntax.KwNot:    {op: OpNot, kinds: map[types.Kind]bool{types.Bool: true}},
+}
+
+// Where a path of self is read.
+const (
+	ctxValue readCtx = iota
+	ctxCoalesce
+	ctxIs
+)
+
 // NoBranch marks a discriminant member whose arm is Never.
 const NoBranch = -1
 

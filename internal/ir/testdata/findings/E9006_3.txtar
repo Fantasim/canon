@@ -1,0 +1,19 @@
+CONFORMANCE.md §4: `@ts(bigint)` is not supported on a parameter of the pure function, a field read from self included.
+-- a/a.canon --
+package a
+
+/// A wallet.
+record Wallet {
+  /// Its balance.
+  balance: UInt64 @ts(bigint)
+
+  /// Whether n fits.
+  export fn fits(self, n: Int) -> Bool { return balance >= n }
+}
+
+emit ts { out: "@features/a/a.ts" }
+-- findings.txt --
+error[E9006]  a/a.canon:9:49
+  parameter balance of Wallet.fits is a UInt64: translated functions take Bool, integers, Float, String, Duration and enums
+
+1 error, 0 warnings in 1 package (…)

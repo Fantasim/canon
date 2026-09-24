@@ -1,0 +1,27 @@
+CONFORMANCE.md §2.3: two reads of self whose names join to the same `a_b`; the later in declaration order is refused (§2.3 has no other rename than `self_`).
+-- a/a.canon --
+package a
+
+/// An inner record.
+record Inner {
+  /// Its b.
+  b: Int
+}
+
+/// An outer record.
+record Outer {
+  /// Its a.
+  a: Inner
+  /// Its a_b.
+  a_b: Int
+
+  /// Their sum, times n.
+  export fn sum(self, n: Int) -> Int { return (self.a.b + a_b) * n }
+}
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+error[E9001]  a/a.canon:17:59
+  a_b is not allowed in translated function Outer.sum: it is outside the portable subset
+
+1 error, 0 warnings in 1 package (…)

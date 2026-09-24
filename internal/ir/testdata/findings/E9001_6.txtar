@@ -1,0 +1,16 @@
+CONFORMANCE.md §2.2, EVALUATION.md §4.3: a `let` of a sized type checks its value when stored, which a translation has no node for.
+-- a/a.canon --
+package a
+
+/// Narrowed n.
+export fn narrowed(n: Int) -> Int {
+  let small: Int32 = n + 1
+  return small
+}
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+error[E9001]  a/a.canon:5:3
+  let small: Int32 = n + 1 is not allowed in translated function narrowed: it is outside the portable subset
+
+1 error, 0 warnings in 1 package (…)

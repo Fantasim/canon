@@ -292,6 +292,33 @@ constexpr LevelUpVector kLevelUp[] = {
     {0, 0, "E3204"},
 };
 
+struct GuardedVector {
+    int64_t x;
+    int64_t y;
+    int64_t want;
+    std::string_view code;  // expected error code; empty when `want` is expected
+};
+
+constexpr GuardedVector kGuarded[] = {
+    {3, 5, 20, ""},
+    {30, 1, 0, ""},
+    {5, 0, 0, ""},
+    {21, 1, 22, ""},
+    {1, canon::kIntMax, 0, "E4101"},
+};
+
+struct RescopedVector {
+    int64_t x;
+    int64_t want;
+    std::string_view code;  // expected error code; empty when `want` is expected
+};
+
+constexpr RescopedVector kRescoped[] = {
+    {7, 8, ""},
+    {2, 4, ""},
+    {-3, 3, ""},
+};
+
 struct EchoVector {
     std::string_view s;
     std::string_view want;
@@ -607,6 +634,30 @@ int RunShopConformance() {
             std::fprintf(stderr,
                          "demo.shop: levelUp(level=%lld) = %lld [%.*s], canon says %lld [%.*s]\n",
                          static_cast<long long>(v.level), static_cast<long long>(got),
+                         static_cast<int>(g_code.size()), g_code.data(), static_cast<long long>(v.want),
+                         static_cast<int>(v.code.size()), v.code.data());
+            ++failures;
+        }
+    }
+    for (const GuardedVector& v : kGuarded) {
+        g_code = std::string_view();
+        const int64_t got = Guarded(v.x, v.y);
+        if (g_code != v.code || (v.code.empty() && got != v.want)) {
+            std::fprintf(stderr,
+                         "demo.shop: guarded(x=%lld, y=%lld) = %lld [%.*s], canon says %lld [%.*s]\n",
+                         static_cast<long long>(v.x), static_cast<long long>(v.y), static_cast<long long>(got),
+                         static_cast<int>(g_code.size()), g_code.data(), static_cast<long long>(v.want),
+                         static_cast<int>(v.code.size()), v.code.data());
+            ++failures;
+        }
+    }
+    for (const RescopedVector& v : kRescoped) {
+        g_code = std::string_view();
+        const int64_t got = Rescoped(v.x);
+        if (g_code != v.code || (v.code.empty() && got != v.want)) {
+            std::fprintf(stderr,
+                         "demo.shop: rescoped(x=%lld) = %lld [%.*s], canon says %lld [%.*s]\n",
+                         static_cast<long long>(v.x), static_cast<long long>(got),
                          static_cast<int>(g_code.size()), g_code.data(), static_cast<long long>(v.want),
                          static_cast<int>(v.code.size()), v.code.data());
             ++failures;

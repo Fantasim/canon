@@ -1,0 +1,99 @@
+CONFORMANCE.md §2.2, decision 194: a refused comparison still has its operands translated, so the Float its template interpolates is E9005 too; a `let` whose value needs a conversion outside the subset is named by the `let`.
+Round 3 (decision 194 without cascades): inside a refused construct, only codes of another cause
+(E9005 here) are reported, never a second E9001; a receiver, arguments and match-arm values are
+still translated. Under E9004 only returned values skip their conversion: the `let` keeps its E9001.
+-- a/a.canon --
+package a
+
+/// A tone.
+enum Tone { soft, loud }
+
+/// A bag.
+record Bag {
+  /// Its items.
+  items: [Int]
+
+  /// The first item, plus n.
+  export fn first(self, n: Int) -> Int { return self.items[0] + n }
+}
+
+/// Whether the label of x sorts first.
+export fn first(x: Float) -> Bool { return "{x}" < "b" }
+
+/// n, kept optional.
+export fn kept(n: Int) -> Int {
+  let y: Int? = n
+  return n
+}
+
+/// Whether s starts with the label of x.
+export fn prefixed(s: String, x: Float) -> Bool { return s.startsWith("{x}") }
+
+/// A label per tone.
+export fn named(t: Tone, x: Float) -> String {
+  return match t {
+    soft => "{x}"
+    loud => "b"
+  }
+}
+
+/// x with two decimals.
+export fn decimals(x: Float) -> String { return "{x:.2}" }
+
+/// Maybe n, through a local.
+export fn maybe(n: Int) -> Int? {
+  let y: Int? = n
+  return y
+}
+
+emit go { out: "@features/a", package: "a" }
+-- bodies.txt --
+package a dir=a
+fn Bag.first file=a.canon order=0 kind=translated
+  body none
+fn first file=a.canon order=1 kind=translated
+  body none
+fn kept file=a.canon order=2 kind=translated
+  body none
+fn prefixed file=a.canon order=3 kind=translated
+  body none
+fn named file=a.canon order=4 kind=translated
+  body none
+fn decimals file=a.canon order=5 kind=translated
+  body none
+fn maybe file=a.canon order=6 kind=translated
+  body none
+error[E9001]  a/a.canon:12:49
+  self.items[0] is not allowed in translated function Bag.first: it is outside the portable subset
+
+error[E9001]  a/a.canon:16:44
+  "{x}" < "b" is not allowed in translated function first: it is outside the portable subset
+
+error[E9005]  a/a.canon:16:46
+  x is a Float: translated templates may only interpolate String, integer and enum values
+
+error[E9001]  a/a.canon:20:3
+  let y: Int? = n is not allowed in translated function kept: it is outside the portable subset
+
+error[E9001]  a/a.canon:25:58
+  s.startsWith("{x}") is not allowed in translated function prefixed: it is outside the portable subset
+
+error[E9005]  a/a.canon:25:73
+  x is a Float: translated templates may only interpolate String, integer and enum values
+
+error[E9001]  a/a.canon:29:10
+  match t is not allowed in translated function named: it is outside the portable subset
+
+error[E9005]  a/a.canon:30:15
+  x is a Float: translated templates may only interpolate String, integer and enum values
+
+error[E9001]  a/a.canon:36:51
+  x:.2 is not allowed in translated function decimals: it is outside the portable subset
+
+error[E9005]  a/a.canon:36:51
+  x is a Float: translated templates may only interpolate String, integer and enum values
+
+error[E9004]  a/a.canon:39:28
+  translated function maybe returns Int?: only scalars, strings, enums and refs are allowed
+
+11 errors, 0 warnings in 1 package (…)
