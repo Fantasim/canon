@@ -1732,6 +1732,14 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     import only when the generated code will use it (`math` only for a `-0.0` literal), so a
     Canon import named like a standard package collides only where gen/go really imports it.
 
+203. **A Go override also renames its storage; one E8005 per cause (IR round 2 review).** A
+    field's Go storage name derives from its effective name (the `@go(name:)` override when there
+    is one, lowerCamel'd, interior-`_` forms of decision 121 unchanged), so the remedy CODEGEN
+    §3.5 gives for a collision fixes it whole. Two items colliding in several derived names
+    (getter and storage) give one `E8005`, at the getter. The Go name plan covers baked mode; a
+    `data`/`embedded`/`types` go emit is checked only for its overrides (`E8011`) until M2 gives
+    those modes their plan.
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.
