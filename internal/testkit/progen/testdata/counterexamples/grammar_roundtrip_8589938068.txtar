@@ -2,6 +2,7 @@ suite grammar
 name roundtrip
 case 3475
 seed 8589938068
+born property idempotence in File/TypeDecl
 sig idempotence in File/TypeDecl
 want roundtrip
 failure idempotence: formatting the formatted file changes it: package gen local type Item(stepSize: Reward where ..=1s) = nextDeck where -a * -"" % count.Kind {}.if.if! != 0e3

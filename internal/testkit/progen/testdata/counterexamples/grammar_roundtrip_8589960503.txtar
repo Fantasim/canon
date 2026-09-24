@@ -2,6 +2,7 @@ suite grammar
 name roundtrip
 case 25910
 seed 8589960503
+born property idempotence in File/FnDecl
 sig idempotence in File/FnDecl
 want roundtrip
 failure idempotence: formatting the formatted file changes it: package lib local fn b(label: Item where {}) -> Status {} warn -if _tmp { "-\}Z-" } else { 9223372036854775807 }.IK1_WEAPON else r""" """

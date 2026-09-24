@@ -2,11 +2,12 @@ suite mutation
 name E1129 GRAMMAR.md §6.1 (brace literal in a header)
 case 266
 seed 4294967563
-open syntax
-sig extra E1128, E3002
+open check
+born mismatch extra E3002
+sig extra E3002
 packages sovcommon.time
-want E1129 sovcommon/time/time.canon 717 719 check
-failure extra [E1128 sovcommon/time/time.canon:27:18 "comparisons do not chain: write \"a < b and b < c\""; E3002 sovcommon/time/time.canon:27:21 "expected Bool, found {}"] besides [E1129 sovcommon/time/time.canon:27:21 "parenthesize this expression: \"{\" here would start the block"]
+want E1129 sovcommon/time/time.canon 719 721 check
+failure extra [E3002 sovcommon/time/time.canon:27:23 "expected Bool, found {}"] besides [E1129 sovcommon/time/time.canon:27:23 "parenthesize this expression: \"{\" here would start the block"]
 -- project.canon --
 project sovereign {
   canon: "0.1"
@@ -48,8 +49,8 @@ fn occupancy(w: Window) -> [Range] {
   let start = w.day.index * w.startUtc.minutes()
   var length = w.endUtc.minutes() - w.startUtc.minutes()
   let end = length
-  if end <= WEEK == {} { return [] }
-  return []
+  if (end <= WEEK) == {} { return [start..] }
+  return [start.., 0..]
 }
 -- studio/studio.canon --
 package studio

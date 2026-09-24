@@ -2,6 +2,7 @@ suite mutation
 name E2001 TYPES.md §3.1 (two packages in one directory)
 case 60
 seed 4294967357
+born mismatch missing
 sig missing
 packages zz.y
 want E2001 zz/y/w/two.canon 8 12 check

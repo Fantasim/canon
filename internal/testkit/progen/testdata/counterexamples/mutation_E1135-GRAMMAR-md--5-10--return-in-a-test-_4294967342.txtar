@@ -2,11 +2,12 @@ suite mutation
 name E1135 GRAMMAR.md §5.10 (return in a test)
 case 45
 seed 4294967342
-open progen
-sig extra E8009/package
+born mismatch extra E9008
+left E8009/package
+sig extra E9008
 packages pipeline
 want E1135 pipeline/potion.canon 716 722 check
-failure extra [E8009 pipeline/potion.canon:21:6 "invalid package \"go\" for emit go: not a Go identifier, or a Go keyword"] besides [E1135 pipeline/potion.canon:18:3 "return outside a function"]
+failure extra [E9008 pipeline/potion.canon:15:13 "translated method Potion.healFor is called by no test of package pipeline: add one, it gives the conformance test its receiver"] besides [E1135 pipeline/potion.canon:18:3 "return outside a function"]
 -- pipeline/data/II_POT_HEAL_S.json --
 {
   "dwID": "II_POT_HEAL_S",

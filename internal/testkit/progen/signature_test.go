@@ -63,7 +63,7 @@ func templateRe(tpl string) *regexp.Regexp {
 func shapeOf(code diag.Code, message string) string {
 	for _, v := range variants()[code] {
 		if v.name != "" && v.re.MatchString(message) {
-			return string(code) + "/" + v.name
+			return string(code) + variantSep + v.name
 		}
 	}
 	return string(code)
@@ -76,7 +76,7 @@ func shapes(fs []progen.Finding) string {
 		out = append(out, shapeOf(f.Code, f.Message))
 	}
 	slices.Sort(out)
-	return strings.Join(slices.Compact(out), ", ")
+	return strings.Join(slices.Compact(out), shapeSep)
 }
 
 // compilerFrames are the first distinct compiler functions of a panic's stack, innermost first.

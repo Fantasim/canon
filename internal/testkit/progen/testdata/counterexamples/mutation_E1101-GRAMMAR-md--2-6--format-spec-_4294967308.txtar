@@ -2,10 +2,11 @@ suite mutation
 name E1101 GRAMMAR.md §2.6 (format spec)
 case 11
 seed 4294967308
-sig extra E5002
+born mismatch extra E4503/plain
+sig extra E4503/plain
 packages teamboard
 want E1101 teamboard/taxonomy.canon 5502 5504 check
-failure extra [E5002 teamboard/taxonomy.canon:93:3 "status Status{tone: warning, label: \"Open\", terminal: false, next: [taken, wont_do], requires: [], by: none}"; E5002 teamboard/taxonomy.canon:94:3 "status Status{tone: info, label: \"Taken\", terminal: false, next: [open, fixed, wont_do], requires: [], by: none}"; E5002 teamboard/taxonomy.canon:100:3 "status Status{tone: accent, label: \"Fixed\", terminal: false, next: [verified], requires: [], by: none}"; E5002 teamboard/taxonomy.canon:106:3 "status Status{tone: success, label: \"Verified\", terminal: true, next: [], requires: [], by: none}"; E5002 teamboard/taxonomy.canon:112:3 "status Status{tone: neutral, label: \"Won't do\", terminal: true, next: [], requires: [], by: none}"; E5002 teamboard/taxonomy.canon:113:3 "status Status{tone: neutral, label: \"Duplicate\", terminal: true, next: [], requires: [], by: none}"] besides [E1101 teamboard/taxonomy.canon:218:25 "invalid format spec \"q\": expected [+][,][.N] with N at most 20"]
+failure extra [E4503 teamboard/taxonomy.canon:218:24 "cannot format teamboard.Status with :q"] besides [E1101 teamboard/taxonomy.canon:218:25 "invalid format spec \"q\": expected [+][,][.N] with N at most 20"]
 -- project.canon --
 project sovereign {
   canon: "0.1"

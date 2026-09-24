@@ -3,24 +3,31 @@ name E1126 GRAMMAR.md §4.3 (none as enum member)
 case 1191
 seed 4294968488
 open check
+born mismatch extra E3601
 sig extra E3601
 packages features.lookup
-want E1126 features/lookup/lookup.canon 93 97 check
-failure extra [E3601 features/lookup/lookup.canon:8:10 "match does not cover hero; add them or _"; E3601 features/lookup/lookup.canon:13:10 "match does not cover ultimate, none; add them or _"] besides [E1126 features/lookup/lookup.canon:3:24 "\"none\" cannot name an enum member, variant case or table key"]
+want E1126 features/lookup/lookup.canon 109 113 check
+failure extra [E3601 features/lookup/lookup.canon:8:10 "match does not cover none; add them or _"; E3601 features/lookup/lookup.canon:16:10 "match does not cover none; add them or _"] besides [E1126 features/lookup/lookup.canon:3:40 "\"none\" cannot name an enum member, variant case or table key"]
 -- features/lookup/lookup.canon --
 package features.lookup
 /// Upgrade grades of a weapon, lowest first.
-enum Grade { ultimate, none }
+enum Grade { normal, unique, ultimate, none }
 /// Job tiers, lowest first.
-enum Tier { hero }
+enum Tier ordered { pro, master }
 /// generated code.
-export fn canUpgrade(grade: Tier) -> Bool {
+export fn canUpgrade(grade: Grade, tier: Tier) -> Bool {
   return match grade {
+    normal => true
+    unique => tier >= pro
+    ultimate => tier >= master
   }
 }
 /// Penya an upgrade costs: a 3-entry table.
 export fn upgradeCost(grade: Grade) -> Int {
   return match grade {
+    normal => 10_000
+    unique => 500_000
+    ultimate => 20_000_000
   }
 }
 -- project.canon --

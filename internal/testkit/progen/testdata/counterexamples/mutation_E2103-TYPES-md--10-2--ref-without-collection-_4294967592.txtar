@@ -3,10 +3,11 @@ name E2103 TYPES.md §10.2 (ref without collection)
 case 295
 seed 4294967592
 open check
+born mismatch extra E3003
 sig extra E3003
 packages teamboard
-want E2103 teamboard/taxonomy.canon 5414 5425 check
-failure extra [E3003 teamboard/taxonomy.canon:209:12 "teamboard.Deck has no method len"; E3003 teamboard/taxonomy.canon:218:82 "invalid has no field next"; E3003 teamboard/taxonomy.canon:221:34 "teamboard.Column has no method statuses"; E3003 teamboard/taxonomy.canon:237:30 "sovcommon.roles.Role has no method filter"] besides [E2103 teamboard/taxonomy.canon:218:35 "ref AreaSection: there is no collection of AreaSection; write ref <collection name>"]
+want E2103 teamboard/taxonomy.canon 5442 5453 check
+failure extra [E3003 teamboard/taxonomy.canon:218:82 "invalid has no field next"] besides [E2103 teamboard/taxonomy.canon:218:35 "ref AreaSection: there is no collection of AreaSection; write ref <collection name>"]
 -- project.canon --
 project sovereign {
   canon: "0.1"
@@ -165,7 +166,7 @@ let flags: table Flag = {
   }
 }
 let statuses: table Status = {
-  open { tone: warning, label: "Open", terminal: false, next: [taken, wont_do,] }
+  open { tone: warning, label: "Open", terminal: false, next: [taken, wont_do] }
   taken {
     tone: info
     label: "Taken"
@@ -281,7 +282,7 @@ check {
   for s in statuses.active() {
   }
 }
-check deck.len()
+check deck.maxHidden < columns.active().len()
   else "maxHidden ({deck.maxHidden}) must be less than the number of columns"
 check {
   for g in areaGroups.active() {
@@ -290,10 +291,10 @@ check {
   }
 }
 /// sovcommon's CanTransition.
-export fn canTransition(from: ref AreaSection, to: Status) -> Bool { return from.next }
+export fn canTransition(from: ref AreaSection, to: Status) -> Bool { return from.next.contains }
 /// status can be in that case), like the `(Column, bool)` it replaces.
 export fn columnOf(s: Status) -> Column? {
-  return columns.active().first(.statuses())
+  return columns.active().first(.statuses.contains(s))
 }
 /// sovcommon's AreasVisibleTo: minRole gates viewing and posting.
 export fn areasVisibleTo(role: Role) -> [ Area] {
@@ -309,7 +310,7 @@ record AreaSection {
 /// sovcommon's GroupedAreasVisibleTo: headers only for groups with a visible area.
 export fn groupedAreasVisibleTo(role: Role) -> [AreaSection] {
   return [
-    { group: g, areas:(role).filter(a =>group == g) }
+    { group: g, areas: areasVisibleTo(role).filter(a => a.group == g) }
     for g in areaGroups.active()
   ]
 }

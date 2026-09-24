@@ -3,10 +3,11 @@ name E3020 TYPES.md §12.7 (expression without effect)
 case 93
 seed 4294967390
 open check
+born mismatch missing E3008
 sig missing E3008
 packages sovcommon.time
-want E3020 sovcommon/time/time.canon 685 690 check
-failure missing E3020, got [E3008 sovcommon/time/time.canon:2:14 "cannot infer the type of this expression; add a type"; E3008 sovcommon/time/time.canon:23:14 "cannot infer the type of this expression; add a type"; E3008 sovcommon/time/time.canon:24:15 "cannot infer the type of this expression; add a type"; E3008 sovcommon/time/time.canon:29:3 "cannot infer the type of this expression; add a type"; E3008 sovcommon/time/time.canon:30:10 "cannot infer the type of this expression; add a type"]
+want E3020 sovcommon/time/time.canon 736 741 check
+failure missing E3020, got [E3008 sovcommon/time/time.canon:30:3 "cannot infer the type of this expression; add a type"]
 -- project.canon --
 project sovereign {
   canon: "0.1"
@@ -23,7 +24,8 @@ project sovereign {
 }
 -- sovcommon/time/time.canon --
 package sovcommon.time
-const WEEK = DAY * 7
+const DAY = 1440
+const WEEK = DAY
 /// Declared Sunday first so that `.index` equals C's tm_wday.
 enum Weekday { }
 /// A time of day, in UTC wherever it is used.
@@ -44,14 +46,14 @@ record Window {
   endUtc: TimeOfDay
 }
 fn occupancy(w: Window) -> [Range] {
-  let start =.startUtc()
-  var length =.startUtc()
+  let start = w.startUtc.minutes()
+  var length = w.startUtc.minutes()
   let end = length
-  return []
+  return [start..]
 }
-fn overlaps(a: Window) -> Bool {
+fn overlaps(a: Window, b: Window) -> Bool {
   1 + 2
-  return(x =>(end))
+  return occupancy(a).any(x => occupancy(b).any(y => x.start < x.end))
 }
 local fn at(day: Weekday, from: Int, to: Int) -> Window {
   return { day: day, startUtc: { hour: from, minute: 0 }, endUtc: { hour: to, minute: 0 } }

@@ -1,13 +1,13 @@
 suite mutation
-name E3401 TYPES.md §2 (optional of an optional)
-case 128
-seed 4294967425
+name E3022 TYPES.md §13.1 (record contains itself, with a default)
+case 328
+seed 4294967625
 open check
-born mismatch extra E1910
-sig extra E1910
+born mismatch extra E1903
+sig extra E1903
 packages service.resourcestudio
-want E3401 service/resourcestudio/resourcestudio.canon 481 494 check
-failure extra [E1910 service/resourcestudio/resourcestudio.canon:14:17 "input apiKey: type invalid cannot be read or checked at run time"] besides [E3401 service/resourcestudio/resourcestudio.canon:14:17 "String(1..)?? is not a type: String(1..)? is already optional"]
+want E3022 service/resourcestudio/resourcestudio.canon 306 309 check
+failure extra [E1903 service/resourcestudio/resourcestudio.canon:10:8 "Gen has input fields, so it must be reached from exactly one public value through record fields"] besides [E3022 service/resourcestudio/resourcestudio.canon:10:8 "Gen contains itself and can never be built"]
 -- project.canon --
 project sovereign {
   canon: "0.1"
@@ -28,24 +28,18 @@ project sovereign {
 -- service/resourcestudio/resourcestudio.canon --
 package service.resourcestudio
 /// expanded: Canon has no environment. Machine-specific paths belong in a layer.
-type Path = String
+type Path = String(1..)
 /// Where the studio reads and caches files.
 record Paths {
-  /// The Resource checkout. Default: derived from the repository layout.
-  cacheDir: Path
   /// The tool is local by design (ADR-0005 d.1).
   readOnly: Bool = false
 }
 /// Generation features.
 record Gen {
   /// Entered right before the action and never stored (ADR-0005).
-  apiKey: input String(1..)?? from env "RESOURCESTUDIO_GEMINI_KEY"
+  apiKey: input String(1..) from env "RESOURCESTUDIO_GEMINI_KEY"
+  /// Itself.
+  zzSelf: Gen = {}
 }
-/// Every setting of the studio.
-record Config {
-  /// Where files are.
-  gen: Gen = {}
-}
-let config: Config = {}
 -- studio/studio.canon --
 package studio

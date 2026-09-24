@@ -17,10 +17,12 @@ import (
 var (
 	flagReplay = flag.String("progen.replay", "", "replay one kept counterexample and print its verdict (TestCounterexamples' child)")
 	flagResig  = flag.Bool("progen.resig", false, "rewrite the signature of each open counterexample whose failure changed")
+	flagFixed  = flag.Bool("progen.fixed", false, "drop the open line of each counterexample whose born bug is gone, recording its leftovers")
 )
 
-// TestCounterexamples replays every kept counterexample in a child process: a crash fails its
-// case, not the run; an open one must fail with its signature, a fixed one guards the fix.
+// TestCounterexamples replays each kept counterexample in a child, judged as doc.go says: an open
+// one must still fail with its signature, a fixed one guards the fix within its left line (only
+// -progen.fixed writes it; -progen.resig never rewrites born or left).
 func TestCounterexamples(t *testing.T) {
 	paths, err := filepath.Glob(keptGlob)
 	if err != nil {
@@ -32,6 +34,7 @@ func TestCounterexamples(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			checkHeader(t, c)
 			v := replayInChild(t, p)
 			switch {
 			case c.Open != "" && v.Kind != "" && sigKey(v.Sig) == sigKey(c.Sig):
@@ -42,12 +45,34 @@ func TestCounterexamples(t *testing.T) {
 				writeArchive(t, p, c)
 			case c.Open != "" && v.Kind != "":
 				t.Errorf("the failure changed: archived %q, replayed %q (%s)", c.Sig, v.Sig, v.Text)
+			case c.Open != "" && *flagFixed:
+				t.Logf("fixed: open line dropped, leftovers %q", v.Sig)
+				c.Open, c.Left = "", v.Sig
+				writeArchive(t, p, c)
 			case c.Open != "":
-				t.Errorf("it passes now: drop the open line of %s so that it guards the fix", p)
+				t.Errorf("it passes now: -progen.fixed drops the open line of %s and records its leftovers (%s)", p, v.Text)
 			case v.Kind != "":
 				t.Errorf("regressed: %s", v.Text)
+			case v.Text != "":
+				t.Log(v.Text)
 			}
 		})
+	}
+}
+
+// checkHeader fails t for a born line that is not its signature's class and that signature, a
+// guard line on an archive not born of a crash, and a left line on one that is open or whose
+// suite judges its whole property.
+func checkHeader(t *testing.T, c *progen.Counterexample) {
+	t.Helper()
+	if c.Born == "" || c.Born != bornOf(c.Suite, bornSig(c.Born)) {
+		t.Fatalf("born line %q: want the class of the signature it was born with, then that signature", c.Born)
+	}
+	if class, _, _ := strings.Cut(c.Born, " "); c.Guard != "" && (c.Suite != suiteMutation || !validGuard(class, c.Guard)) {
+		t.Fatalf("guard line %q: only a mutation archive born of a crash may be guarded, by %q", c.Guard, kindCrash)
+	}
+	if c.Left != "" && (c.Suite != suiteMutation || c.Open != "") {
+		t.Fatalf("left line %q: only a fixed mutation archive records leftovers", c.Left)
 	}
 }
 

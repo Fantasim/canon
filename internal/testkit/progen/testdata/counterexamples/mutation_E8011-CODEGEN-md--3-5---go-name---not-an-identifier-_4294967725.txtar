@@ -3,6 +3,7 @@ name E8011 CODEGEN.md §3.5 (@go(name:) not an identifier)
 case 428
 seed 4294967725
 open ir
+born mismatch extra E8011
 sig extra E8011
 packages teamboard
 want E8011 teamboard/taxonomy.canon 1276 1284 check

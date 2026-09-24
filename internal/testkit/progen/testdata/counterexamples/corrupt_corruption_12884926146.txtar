@@ -2,6 +2,7 @@ suite corrupt
 name corruption
 case 24257
 seed 12884926146
+born property idempotence in RecordBody/FieldDecl
 sig idempotence in RecordBody/FieldDecl
 want corruption
 failure idempotence: formatting the formatted file changes it: package lib local let v2 = if "{"日a:{stepSize}_?0é"}" { a } else if "{a}" { stepSize } else { b }()[a()[9223372036854775807]["é._a-"]] warn ("data/*.json")[if 7 { a } else { label }]( ("data/*.json")[r""] and { "text": total or "é éa{0x1F}" ...{ series_1: "{"."}!!\n" for count in total } done: stepSize }, )[[] - _tmp + if 42 { "{_tmp}" } else { r"{éé" }()] else r"{é {" record Deck { b: _ where { fire {} }() @ts() }

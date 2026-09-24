@@ -2,11 +2,12 @@ suite mutation
 name E3015 TYPES.md §15 (refinement bound reads a let)
 case 88
 seed 4294967385
-open eval
-sig extra W1002
+born panic panic panic: runtime error: invalid memory address or nil pointer dereference in eval.collectionOf < eval.(*Evaluator).letColl
+left W1002*2
+sig panic panic: runtime error: invalid memory address or nil pointer dereference in eval.collectionOf < eval.(*Evaluator).letColl
 packages pipeline
 want E3015 pipeline/potion.canon 48 55 check
-failure extra [W1002 pipeline/potion.canon:2:8 "record Potion has no doc comment"; W1002 pipeline/potion.canon:3:3 "field heal has no doc comment"] besides [E3015 pipeline/potion.canon:3:16 "this refinement bound must be a constant expression"]
+failure panic panic: runtime error: invalid memory address or nil pointer dereference
 -- pipeline/potion.canon --
 package pipeline
 record Potion {

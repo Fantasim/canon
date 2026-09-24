@@ -25,6 +25,9 @@ const (
 	keySeed      = "seed"
 	keySig       = "sig"
 	keyOpen      = "open"
+	keyBorn      = "born"
+	keyGuard     = "guard"
+	keyLeft      = "left"
 	keyPackages  = "packages"
 	keyLayers    = "layers"
 	keyWant      = "want"
@@ -37,4 +40,4 @@ const (
 )
 
 // headerKeys are the keys of a counterexample's header, in the order Format writes them.
-var headerKeys = []string{keySuite, keyName, keyCase, keySeed, keyOpen, keySig, keyPackages, keyLayers, keyWant, keyNote}
+var headerKeys = []string{keySuite, keyName, keyCase, keySeed, keyOpen, keyBorn, keyGuard, keyLeft, keySig, keyPackages, keyLayers, keyWant, keyNote}

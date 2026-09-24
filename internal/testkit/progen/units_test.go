@@ -95,8 +95,13 @@ func sample(goroutines ...string) string {
 	return sampleMark + "\n" + strings.Join(goroutines, "\n") + sampleEnd + "\n"
 }
 
-// Decision log "M1.5 round 2 calls": a hang is named by the compiler functions its stuck
-// goroutine never left over the samples, whichever instant each caught; "hang" without one.
+// elided is a running goroutine whose traceback Go cut after the compiler functions names.
+func elided(names ...string) string {
+	return goroutine("running", names...) + elidedMark + "additional frames elided...\n"
+}
+
+// Decision log "M1.5 round 2 calls" and "Owed (M1.5)": a hang is named by the compiler functions
+// its stuck goroutine never left, those every sample shares from the root; "hang" without one.
 func TestHangVerdict(t *testing.T) {
 	waiting := goroutine("chan receive", "build.(*run).wait", "build.Run")
 	loop := func(leaf ...string) string {
@@ -104,6 +109,8 @@ func TestHangVerdict(t *testing.T) {
 	}
 	for _, tc := range []struct{ name, out, want string }{
 		{"the leaf moves", sample(loop("eval.step")) + sample(loop()) + sample(waiting, loop("eval.other", "eval.step")), "check.Run ~ eval.loop"},
+		{"a helper reached by two paths", sample(loop("eval.helper", "eval.a")) + sample(loop("eval.helper", "eval.b")), "check.Run ~ eval.loop"},
+		{"elided stacks share no root", sample(elided("eval.helper", "eval.loop")) + sample(elided("eval.helper", "eval.x", "eval.loop")), "eval.helper ~ eval.loop"},
 		{"running before waiting", sample(waiting, goroutine("running", "eval.loop")), "eval.loop"},
 		{"waiting only", sample(goroutine("select"), waiting), "build.(*run).wait ~ build.Run"},
 		{"a sample without the compiler", sample(loop()) + sample(goroutine("running")), ""},

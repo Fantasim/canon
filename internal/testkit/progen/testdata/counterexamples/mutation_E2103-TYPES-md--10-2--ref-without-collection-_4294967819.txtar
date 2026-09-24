@@ -3,10 +3,11 @@ name E2103 TYPES.md §10.2 (ref without collection)
 case 522
 seed 4294967819
 open check
+born mismatch extra E3002
 sig extra E3002
 packages teamboard
-want E2103 teamboard/taxonomy.canon 4988 4999 check
-failure extra [E3002 teamboard/taxonomy.canon:149:11 "expected sovcommon.ui.Icon, found table teamboard.Column"; E3002 teamboard/taxonomy.canon:171:33 "expected fn(teamboard.Column) -> Bool, found Bool"; E3002 teamboard/taxonomy.canon:187:24 "expected [ref ], found [teamboard.Area]"] besides [E2103 teamboard/taxonomy.canon:182:15 "ref AreaSection: there is no collection of AreaSection; write ref <collection name>"]
+want E2103 teamboard/taxonomy.canon 4992 5003 check
+failure extra [E3002 teamboard/taxonomy.canon:187:24 "expected [ref ], found [ref teamboard.areas]"] besides [E2103 teamboard/taxonomy.canon:182:15 "ref AreaSection: there is no collection of AreaSection; write ref <collection name>"]
 -- project.canon --
 project sovereign {
   canon: "0.1"
@@ -52,6 +53,7 @@ enum Icon {
   archive
   bar_chart
   check
+  columns
   database
   gamepad
   globe
@@ -67,7 +69,7 @@ enum Icon {
   shield
   terminal
 }
-emit go { out: "@sovcommon/ui", package: "ui", mode: baked }
+emit go { package: "ui", mode: baked }
 emit ts { out: "@web/ui.generated.ts" }
 -- studio/studio.canon --
 package studio
@@ -242,10 +244,10 @@ check {
 }
 /// status can be in that case), like the `(Column, bool)` it replaces.
 export fn columnOf(s: Status) -> Column? {
-  return columns.active().first(statuses.contains(s))
+  return columns.active().first(.statuses.contains(s))
 }
 /// sovcommon's AreasVisibleTo: minRole gates viewing and posting.
-export fn areasVisibleTo(role: Role) -> [ Area] {
+export fn areasVisibleTo(role: Role) -> [ref Area] {
   return [a for a in areas.active() if role >= a.minRole]
 }
 /// One group header with the areas shown under it.

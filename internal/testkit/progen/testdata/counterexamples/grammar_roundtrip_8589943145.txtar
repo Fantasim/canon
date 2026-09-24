@@ -2,6 +2,7 @@ suite grammar
 name roundtrip
 case 8552
 seed 8589943145
+born property idempotence in MatchType/TypeArm
 sig idempotence in MatchType/TypeArm
 want roundtrip
 failure idempotence: formatting the formatted file changes it: package lib widget stepSize( value: match ({ type: 1_000_000 / a % r"x" for it in { series_1: 0, done: "éZ.!?", type: 42 }[0x1F or item] let a = { taken: match [] {} for xs in {}(("{{{"?:a. !"}").record, a: item and a) }[v2]?.IK1_WEAPON })[match "日a!" {}()() - xs ?? match "'日 \}" {}[12]?.if]?.open { _, IK1_WEAPON => Item where -match not ["", total, 42]?.taken { open, type, _0 => it and a }?.for }, siblings: Row, ) local enum T @since(1) {}

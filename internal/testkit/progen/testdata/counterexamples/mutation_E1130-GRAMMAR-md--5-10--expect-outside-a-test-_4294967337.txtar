@@ -2,11 +2,12 @@ suite mutation
 name E1130 GRAMMAR.md §5.10 (expect outside a test)
 case 40
 seed 4294967337
-open progen
-sig extra E1117, W1002
+born internal internal evaluation met a state the checker excludes: ExpectStmt
+left E1117*2, W1002*2
+sig internal evaluation met a state the checker excludes: ExpectStmt
 packages features.lookup
 want E1130 features/lookup/lookup.canon 109 120 check
-failure extra [W1002 features/lookup/lookup.canon:2:6 "enum Grade has no doc comment"; E1117 features/lookup/lookup.canon:2:21 "missing separator: put \",\" or a new line between items"; E1117 features/lookup/lookup.canon:2:28 "missing separator: put \",\" or a new line between items"; W1002 features/lookup/lookup.canon:3:11 "function upgradeCost has no doc comment"] besides [E1130 features/lookup/lookup.canon:4:3 "expect is only allowed in a test block"]
+failure internal evaluation met a state the checker excludes: ExpectStmt at features/lookup/lookup.canon:4:3 evaluation met a state the checker excludes: ExpectStmt at features/lookup/lookup.canon:4:3 evaluation met a state the checker excludes: ExpectStmt at features/lookup/lookup.canon:4:3
 -- features/lookup/lookup.canon --
 package features.lookup
 enum Grade { normal unique ultimate }

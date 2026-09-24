@@ -2,6 +2,7 @@ suite mutation
 name E1111 GRAMMAR.md §2.5 (unit order)
 case 475
 seed 4294967772
+born mismatch extra E3204
 sig extra E3204
 packages pipeline
 want E1111 pipeline/potion.canon 368 373 check

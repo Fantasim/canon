@@ -141,7 +141,7 @@ func diagShapes(fs []diag.Finding) string {
 		out = append(out, shapeOf(f.Code, f.Message))
 	}
 	slices.Sort(out)
-	return strings.Join(slices.Compact(out), ", ")
+	return strings.Join(slices.Compact(out), shapeSep)
 }
 
 // nodeAt names where an offset of a parsed file lies: the kinds of its two innermost nodes.

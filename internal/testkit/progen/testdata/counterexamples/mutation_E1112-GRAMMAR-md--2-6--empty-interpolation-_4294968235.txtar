@@ -2,11 +2,12 @@ suite mutation
 name E1112 GRAMMAR.md §2.6 (empty interpolation)
 case 938
 seed 4294968235
-open check
-sig extra W1002
+born internal internal evaluation met a state the checker excludes: BadExpr
+left W1002*4
+sig internal evaluation met a state the checker excludes: BadExpr
 packages service.resourcestudio
 want E1112 service/resourcestudio/resourcestudio.canon 93 95 check
-failure extra [W1002 service/resourcestudio/resourcestudio.canon:2:8 "record Server has no doc comment"; W1002 service/resourcestudio/resourcestudio.canon:3:3 "field host has no doc comment"; W1002 service/resourcestudio/resourcestudio.canon:7:8 "record Config has no doc comment"; W1002 service/resourcestudio/resourcestudio.canon:8:3 "field server has no doc comment"] besides [E1112 service/resourcestudio/resourcestudio.canon:4:18 "invalid interpolation: {} is empty"]
+failure internal evaluation met a state the checker excludes: BadExpr at service/resourcestudio/resourcestudio.canon:4:19
 -- project.canon --
 project sovereign {
   canon: "0.1"

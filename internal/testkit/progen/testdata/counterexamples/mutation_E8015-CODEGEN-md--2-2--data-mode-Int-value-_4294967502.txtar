@@ -2,6 +2,7 @@ suite mutation
 name E8015 CODEGEN.md §2.2 (data mode Int value)
 case 205
 seed 4294967502
+born mismatch extra E8153/notWritten
 sig extra E8153/notWritten
 packages pipeline
 want E8015 pipeline/potion.canon 949 954 check

@@ -2,11 +2,12 @@ suite mutation
 name E3016 TYPES.md §12.3 (built-in as a value)
 case 776
 seed 4294968073
-open check
-sig extra E1116/token, E1117, E2102/plain, E3002, W1002
+born internal internal evaluation met a state the checker excludes: IdentExpr
+left E1116/token, E1117*2, E2102/plain, E3002, W1002*4
+sig internal evaluation met a state the checker excludes: IdentExpr
 packages features.matching
 want E3016 features/matching/matching.canon 170 173 check
-failure extra [W1002 features/matching/matching.canon:2:6 "enum Season has no doc comment"; E1117 features/matching/matching.canon:2:22 "missing separator: put \",\" or a new line between items"; W1002 features/matching/matching.canon:3:8 "record Mail has no doc comment"; W1002 features/matching/matching.canon:4:3 "field subject has no doc comment"; W1002 features/matching/matching.canon:5:3 "field season has no doc comment"; E1116 features/matching/matching.canon:5:18 "expected NL, \",\", \"}\"; found {"; E3002 features/matching/matching.canon:9:12 "expected Bool, found { … }"; E2102 features/matching/matching.canon:12:23 "unknown name attachment"; E1117 features/matching/matching.canon:19:28 "missing separator: put \",\" or a new line between items"] besides [E3016 features/matching/matching.canon:8:33 "built-in abs cannot be used as a value; write a lambda"]
+failure internal evaluation met a state the checker excludes: IdentExpr at features/matching/matching.canon:8:33 evaluation met a state the checker excludes: IdentExpr at features/matching/matching.canon:8:33
 -- features/matching/matching.canon --
 package features.matching
 enum Season { spring autumn }

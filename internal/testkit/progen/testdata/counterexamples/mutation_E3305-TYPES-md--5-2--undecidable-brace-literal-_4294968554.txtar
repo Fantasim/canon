@@ -2,11 +2,12 @@ suite mutation
 name E3305 TYPES.md §5.2 (undecidable brace literal)
 case 1257
 seed 4294968554
-open check
-sig extra E1116/token, E1117, E2102/plain, E3002, W1002
+born internal internal evaluation met a state the checker excludes: BraceLit
+left E1116/token, E1117*2, E2102/plain, E3002, W1002*4
+sig internal evaluation met a state the checker excludes: BraceLit
 packages features.matching
 want E3305 features/matching/matching.canon 156 164 check
-failure extra [W1002 features/matching/matching.canon:2:6 "enum Season has no doc comment"; E1117 features/matching/matching.canon:2:22 "missing separator: put \",\" or a new line between items"; W1002 features/matching/matching.canon:3:8 "record Mail has no doc comment"; W1002 features/matching/matching.canon:4:3 "field subject has no doc comment"; W1002 features/matching/matching.canon:5:3 "field season has no doc comment"; E1116 features/matching/matching.canon:5:18 "expected NL, \",\", \"}\"; found {"; E3002 features/matching/matching.canon:9:12 "expected Bool, found { … }"; E2102 features/matching/matching.canon:12:23 "unknown name attachment"; E1117 features/matching/matching.canon:19:28 "missing separator: put \",\" or a new line between items"] besides [E3305 features/matching/matching.canon:8:19 "cannot tell what this { … } is; give it a type"]
+failure internal evaluation met a state the checker excludes: BraceLit at features/matching/matching.canon:8:19 evaluation met a state the checker excludes: BraceLit at features/matching/matching.canon:8:19
 -- features/matching/matching.canon --
 package features.matching
 enum Season { spring autumn }

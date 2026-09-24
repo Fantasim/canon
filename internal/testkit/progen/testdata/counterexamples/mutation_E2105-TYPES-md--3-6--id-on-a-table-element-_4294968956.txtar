@@ -3,10 +3,11 @@ name E2105 TYPES.md §3.6 (id on a table element)
 case 1659
 seed 4294968956
 open check
+born mismatch extra E3002
 sig extra E3002
 packages teamboard
 want E2105 teamboard/taxonomy.canon 1747 1749 check
-failure extra [E3002 teamboard/taxonomy.canon:159:62 "expected [String], found [Int]"; E3002 teamboard/taxonomy.canon:163:7 "expected Bool, found Int"] besides [E2105 teamboard/taxonomy.canon:56:3 "id is reserved on table entries"]
+failure extra [E3002 teamboard/taxonomy.canon:147:62 "expected [String], found [Int]"] besides [E2105 teamboard/taxonomy.canon:56:3 "id is reserved on table entries"]
 -- project.canon --
 project sovereign {
   canon: "0.1"
@@ -52,6 +53,7 @@ enum Icon {
   archive
   bar_chart
   check
+  columns
   database
   gamepad
   globe
@@ -67,7 +69,7 @@ enum Icon {
   shield
   terminal
 }
-emit go { out: "@sovcommon/ui", package: "ui", mode: baked }
+emit go { package: "ui", mode: baked }
 emit ts { out: "@web/ui.generated.ts" }
 -- studio/studio.canon --
 package studio
@@ -141,18 +143,6 @@ record Deck {
 let statuses: table Status = {
   open { tone: warning, label: "Open", terminal: false, next: [] }
   taken {
-    tone: info
-    label: "Taken"
-    terminal: false
-    next: []
-  }
-  fixed {
-    tone: accent
-    label: "Fixed"
-    terminal: false
-    next: []
-  }
-  verified {
     tone: success
     label: "Verified"
     terminal: true
@@ -234,7 +224,7 @@ check {
     }
   }
 }
-check columns.active().first()!.statuses.len()
+check columns.active().first()!.statuses.len() == 1
   else "the first column must hold exactly one status: it is the initial status"
 /// status can be in that case), like the `(Column, bool)` it replaces.
 export fn columnOf(s: Status) -> Column? {
@@ -242,7 +232,15 @@ export fn columnOf(s: Status) -> Column? {
 }
 /// sovcommon's AreasVisibleTo: minRole gates viewing and posting.
 export fn areasVisibleTo(role: Role) -> [ Area] {
+  return [a for a in areas.active() if role >= a.minRole]
+}
+/// One group header with the areas shown under it.
+record AreaSection {
+  /// The header.
+  areas: [ Area]
+}
+/// sovcommon's GroupedAreasVisibleTo: headers only for groups with a visible area.
+export fn groupedAreasVisibleTo(role: Role) -> [AreaSection] {
   return [
   ]
 }
-emit go { out: "@sovcommon/teamboard", package: "teamboard", mode: baked }

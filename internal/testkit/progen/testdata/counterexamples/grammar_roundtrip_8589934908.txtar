@@ -2,6 +2,7 @@ suite grammar
 name roundtrip
 case 315
 seed 8589934908
+born property idempotence in Param/Ident
 sig idempotence in Param/Ident
 want roundtrip
 failure idempotence: formatting the formatted file changes it: package a local type T( stepSize: {count: Item}, ) = _ where match -a { type(it), fire, none => {} == " " + "" }[12 is IK1_WEAPON and label - 1_000_000]

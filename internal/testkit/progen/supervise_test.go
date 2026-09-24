@@ -205,15 +205,18 @@ func crashLines(out []byte) string {
 }
 
 // crashCase is a crashing case rebuilt: its archive, the places shrinking keeps (the expected
-// finding's first), and how to write its want once they moved.
+// finding's first), how to write its want once they moved, and whether a shrunk candidate still
+// holds what its site needs (always, for a generated file).
 type crashCase struct {
-	c    *progen.Counterexample
-	pins []progen.Place
-	want func(progen.Place) string
+	c      *progen.Counterexample
+	pins   []progen.Place
+	want   func(progen.Place) string
+	placed func(q *progen.Project, pins []progen.Place) bool
 }
 
 // keepCrash rebuilds a crashing case, shrinks it with every candidate replayed in a child
-// process while it crashes with sig, and keeps it.
+// process while it crashes with sig, and keeps it. A crash hides findings, so the shrink leaves
+// some its fix shows: -progen.fixed records them as the archive's left line.
 func keepCrash(t *testing.T, test string, k int, seed uint64, sig string) {
 	t.Helper()
 	cc := programCase(suiteGrammar, k, seed)
@@ -233,7 +236,7 @@ func keepCrash(t *testing.T, test string, k int, seed uint64, sig string) {
 	}
 	left := crashTries
 	small, pins := shrinkProject(c.Files, cc.pins, func(q *progen.Project, pins []progen.Place) bool {
-		if left--; left < 0 {
+		if left--; left < 0 || !cc.placed(q, pins) {
 			return false
 		}
 		trial := *c
@@ -275,7 +278,8 @@ func programCase(suite string, k int, seed uint64) crashCase {
 	files.Set(projectFile, []byte(genProject))
 	files.Set(genFile, src)
 	c := &progen.Counterexample{Suite: suite, Name: prop, Case: k, Seed: seed, Want: prop, Files: files}
-	return crashCase{c: c, want: func(progen.Place) string { return prop }}
+	always := func(*progen.Project, []progen.Place) bool { return true }
+	return crashCase{c: c, want: func(progen.Place) string { return prop }, placed: always}
 }
 
 // mutationCase is case k's mutated project, with the site's places pinned.
@@ -293,5 +297,7 @@ func mutationCase(t *testing.T, k int, seed uint64) crashCase {
 		Suite: suiteMutation, Name: o.name(), Case: k, Seed: seed, Packages: p.pkgs, Layers: p.layers,
 		Want: wantOf(o, m.At), Files: m.Project,
 	}
-	return crashCase{c: arch, pins: pins, want: func(at progen.Place) string { return wantOf(o, at) }}
+	f := failure{o: o, run: p.run, m: m}
+	placed := func(q *progen.Project, pins []progen.Place) bool { return stillPlaced(f, q, pins[1:]) }
+	return crashCase{c: arch, pins: pins, want: func(at progen.Place) string { return wantOf(o, at) }, placed: placed}
 }

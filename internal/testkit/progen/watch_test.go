@@ -147,25 +147,42 @@ func hangVerdict(out []byte, limit time.Duration) verdict {
 	return verdict{Kind: kindHang, Sig: sig, Text: text}
 }
 
-// stuckFunctions are the compiler functions on the stuck goroutine's stack in every complete
-// sample the child printed, sorted: those it never left, whichever instant each sample caught.
-// With no complete sample, those of its SIGQUIT dump.
+// stuckFunctions are the compiler functions the stuck goroutine never left, sorted: the frames
+// every complete sample shares from the root down, so that a helper the loop reaches by two
+// paths never names it (decision log "Owed (M1.5)"); with no complete sample, its SIGQUIT dump's.
 func stuckFunctions(out string) []string {
 	dumps := samples(out)
 	if _, quit, ok := strings.Cut(out, quitMark); ok && len(dumps) == 0 {
 		dumps = []string{quit}
 	}
 	var common []string
+	elided := false
 	for i, d := range dumps {
-		names := frameList(stuckGoroutine(d), len(d))
+		g := stuckGoroutine(d)
+		elided = elided || strings.Contains(g, "\n"+elidedMark)
+		names := frameList(g, len(d))
+		slices.Reverse(names)
 		if i == 0 {
 			common = names
 			continue
 		}
-		common = slices.DeleteFunc(common, func(n string) bool { return !slices.Contains(names, n) })
+		common = sharedFrames(common, names, elided)
 	}
 	slices.Sort(common)
 	return slices.Compact(common)
+}
+
+// sharedFrames are the frames of common, root first, that names shares: its prefix, or, once a
+// stack was elided and has no root to align on, every frame names holds.
+func sharedFrames(common, names []string, elided bool) []string {
+	if elided {
+		return slices.DeleteFunc(common, func(n string) bool { return !slices.Contains(names, n) })
+	}
+	n := 0
+	for n < min(len(common), len(names)) && common[n] == names[n] {
+		n++
+	}
+	return common[:n]
 }
 
 // samples are the complete goroutine samples of a child's output, in order.

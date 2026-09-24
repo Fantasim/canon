@@ -3,10 +3,11 @@ name E3022 TYPES.md §13.1 (record contains itself)
 case 95
 seed 4294967392
 open check
+born mismatch extra E3302
 sig extra E3302
 packages pipeline
 want E3022 pipeline/potion.canon 78 84 check
-failure extra [E3302 pipeline/potion.canon:20:19 "pipeline.Potion needs field name"; E3302 pipeline/potion.canon:20:19 "pipeline.Potion needs field zzSelf"] besides [E3022 pipeline/potion.canon:3:8 "Potion contains itself and can never be built"]
+failure extra [E3302 pipeline/potion.canon:20:19 "pipeline.Potion needs field zzSelf"] besides [E3022 pipeline/potion.canon:3:8 "Potion contains itself and can never be built"]
 -- pipeline/potion.canon --
 package pipeline
 /// A healing potion. Each one is a file under data/.
@@ -27,7 +28,7 @@ record Potion {
   zzSelf: Potion
 }
 test "healFor never overheals and never goes negative" {
-  let p: Potion = { id: "IDS_T", heal: 500, cooldown: 1s }
+  let p: Potion = { id: "II_POT_T", name: "IDS_T", heal: 500, cooldown: 1s }
 }
 -- project.canon --
 project sovereign {

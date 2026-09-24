@@ -3,10 +3,11 @@ name E3504 TYPES.md §10.2 (ref to a const)
 case 815
 seed 4294968112
 open check
+born mismatch extra E3003
 sig extra E3003
 packages teamboard
-want E3504 teamboard/taxonomy.canon 5223 5230 check
-failure extra [E3003 teamboard/taxonomy.canon:214:78 "invalid has no method next"; E3003 teamboard/taxonomy.canon:217:40 "teamboard.Column has no method statuses"; E3003 teamboard/taxonomy.canon:233:30 "sovcommon.roles.Role has no method filter"] besides [E3504 teamboard/taxonomy.canon:214:35 "ref VERSION: VERSION is not a collection or a record type"]
+want E3504 teamboard/taxonomy.canon 5232 5239 check
+failure extra [E3003 teamboard/taxonomy.canon:214:78 "invalid has no field next"] besides [E3504 teamboard/taxonomy.canon:214:35 "ref VERSION: VERSION is not a collection or a record type"]
 -- project.canon --
 project sovereign {
   canon: "0.1"
@@ -281,15 +282,15 @@ check deck.maxHidden < columns.active().len()
   else "maxHidden ({deck.maxHidden}) must be less than the number of columns"
 check {
   for g in areaGroups.active() {
-    if areas.any(a => a.group == g) {
+    if areas.active().any(a => a.group == g) {
     }
   }
 }
 /// sovcommon's CanTransition.
-export fn canTransition(from: ref VERSION, to: Status) -> Bool { return from.next() }
+export fn canTransition(from: ref VERSION, to: Status) -> Bool { return from.next.contains() }
 /// status can be in that case), like the `(Column, bool)` it replaces.
 export fn columnOf(s: Status) -> Column? {
-  return columns.active().first(c => c.statuses())
+  return columns.active().first(c => c.statuses.contains(s))
 }
 /// sovcommon's AreasVisibleTo: minRole gates viewing and posting.
 export fn areasVisibleTo(role: Role) -> [ Area] {
@@ -305,7 +306,7 @@ record AreaSection {
 /// sovcommon's GroupedAreasVisibleTo: headers only for groups with a visible area.
 export fn groupedAreasVisibleTo(role: Role) -> [AreaSection] {
   return [
-    { group: g, areas:(role).filter(a =>group == g) }
+    { group: g, areas: areasVisibleTo(role).filter(a => a.group == g) }
     for g in areaGroups.active()
   ]
 }

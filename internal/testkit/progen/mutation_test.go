@@ -113,26 +113,42 @@ type verdict struct {
 
 // judge runs the mutated project and compares its findings with the one o expects at the site.
 func judge(o operator, r run, at progen.Place, p *progen.Project) verdict {
-	out := progen.Run(context.Background(), p, progen.RunOptions{
+	return sorted(o, r, at, p).verdict(o.code, at.Region)
+}
+
+// judged is a mutated project's outcome, its findings sorted: hit, the operator's code at the
+// site; other, every finding the operator does not expect.
+type judged struct {
+	out        progen.Outcome
+	hit, other []progen.Finding
+}
+
+// sorted runs the mutated project and sorts its findings against the one o expects at the site.
+func sorted(o operator, r run, at progen.Place, p *progen.Project) judged {
+	j := judged{out: progen.Run(context.Background(), p, progen.RunOptions{
 		Packages: r.pkgs, Roots: exampleRoots(), Layers: r.layers, Build: o.build, Targets: goAndJSON,
-	})
-	if v, bad := broken(out); bad {
-		return v
-	}
-	var hit, other []progen.Finding
-	for _, f := range out.Findings {
+	})}
+	for _, f := range j.out.Findings {
 		inside := o.loose || f.Path == at.Path && at.Start <= f.Start && f.Start <= at.End
 		switch {
 		case f.Code == o.code && inside:
-			hit = append(hit, f)
+			j.hit = append(j.hit, f)
 		case !inside || !slices.Contains(o.also, f.Code):
-			other = append(other, f)
+			j.other = append(j.other, f)
 		}
 	}
-	if o.many && len(hit) > 1 {
-		hit = hit[:1]
+	if o.many && len(j.hit) > 1 {
+		j.hit = j.hit[:1]
 	}
-	return classify(o.code, hit, other, out.Err, at.Region)
+	return j
+}
+
+// verdict is the case's verdict: "" when it reports code at the site and nothing else.
+func (j judged) verdict(code diag.Code, at progen.Region) verdict {
+	if v, bad := broken(j.out); bad {
+		return v
+	}
+	return classify(code, j.hit, j.other, j.out.Err, at)
 }
 
 // broken is the verdict of a run that panicked or met an internal error: never acceptable,
@@ -153,15 +169,15 @@ func classify(code diag.Code, hit, other []progen.Finding, err error, at progen.
 	sig := shapes(other)
 	switch {
 	case len(hit) == 0 && slices.ContainsFunc(other, func(f progen.Finding) bool { return f.Code == code }):
-		return verdict{Kind: "misplaced", Sig: "misplaced " + sig, Text: fmt.Sprintf("misplaced %s, want bytes %d..%d", describe(other), at.Start, at.End)}
+		return verdict{Kind: kindMisplaced, Sig: kindMisplaced + " " + sig, Text: fmt.Sprintf("misplaced %s, want bytes %d..%d", describe(other), at.Start, at.End)}
 	case len(hit) == 0 && err != nil && len(other) == 0:
-		return verdict{Kind: "error", Sig: "error " + unplaced(err.Error()), Text: fmt.Sprintf("error %v", err)}
+		return verdict{Kind: kindError, Sig: kindError + " " + unplaced(err.Error()), Text: fmt.Sprintf("error %v", err)}
 	case len(hit) == 0:
 		return verdict{Kind: kindMissing, Sig: kindMissing + " " + sig, Text: fmt.Sprintf("missing %s, got %s", code, describe(other))}
 	case len(other) > 0:
-		return verdict{Kind: "extra", Sig: "extra " + sig, Text: fmt.Sprintf("extra %s besides %s", describe(other), describe(hit))}
+		return verdict{Kind: kindExtra, Sig: kindExtra + " " + sig, Text: fmt.Sprintf("extra %s besides %s", describe(other), describe(hit))}
 	case len(hit) > 1:
-		return verdict{Kind: "repeated", Sig: "repeated " + shapes(hit), Text: fmt.Sprintf("repeated %s", describe(hit))}
+		return verdict{Kind: kindRepeated, Sig: kindRepeated + " " + shapes(hit), Text: fmt.Sprintf("repeated %s", describe(hit))}
 	}
 	return verdict{}
 }
@@ -186,16 +202,20 @@ type failure struct {
 	seed uint64
 }
 
-// shrinkMutation shrinks a failing mutation, keeping every region and file the site wrote and
-// the verdict's signature.
+// shrinkMutation shrinks a failing mutation, keeping every region and file the site wrote, the
+// verdict's signature, and no finding the unshrunk case did not report: a leftover of shrinking
+// is never born with the archive. A case born missing or broken keeps its site's precondition.
 func shrinkMutation(f failure) *progen.Counterexample {
 	pins := append([]progen.Place{f.m.At}, f.m.Written...)
+	base := reportedBy(sorted(f.o, f.run, f.m.At, f.m.Project).out.Findings)
+	placed := f.v.Kind == kindMissing || slices.Contains(crashKinds, f.v.Kind)
 	small, pins := shrinkProject(f.m.Project, pins, func(q *progen.Project, pins []progen.Place) bool {
 		heartbeat()
-		if judge(f.o, f.run, pins[0], q).Sig != f.v.Sig {
+		j := sorted(f.o, f.run, pins[0], q)
+		if j.verdict(f.o.code, pins[0].Region).Sig != f.v.Sig || !base.covers(j.other) {
 			return false
 		}
-		return f.v.Kind != kindMissing || stillPlaced(f, q, pins[1:])
+		return !placed || stillPlaced(f, q, pins[1:])
 	}, shrinkTries)
 	at := pins[0]
 	v := judge(f.o, f.run, at, small)
@@ -268,7 +288,7 @@ func subset(p *progen.Project, names []string, keep []bool) *progen.Project {
 }
 
 // replayMutation re-runs a kept mutation counterexample with its catalogue operator; Kind ""
-// when it now passes.
+// when the bug it was born with is gone, or, with no born line yet, when it passes.
 func replayMutation(c *progen.Counterexample) verdict {
 	f := strings.Fields(c.Want)
 	if len(f) != wantFields {
@@ -284,5 +304,13 @@ func replayMutation(c *progen.Counterexample) verdict {
 		o = catalogue()[i]
 	}
 	at := progen.Place{Path: f[1], Region: progen.Region{Start: start, End: end}}
-	return judge(o, run{pkgs: c.Packages, layers: c.Layers}, at, c.Files)
+	j := sorted(o, run{pkgs: c.Packages, layers: c.Layers}, at, c.Files)
+	if c.Born == "" {
+		return j.verdict(o.code, at.Region)
+	}
+	v := j.bornVerdict(o.code, at.Region, c.Born, c.Guard)
+	if v.Kind == "" && c.Open == "" {
+		return withinLeft(v, c.Left)
+	}
+	return v
 }

@@ -2,6 +2,7 @@ suite mutation
 name E2106 TYPES.md §3.2 (declared twice)
 case 71
 seed 4294967368
+born mismatch extra E8005
 sig extra E8005
 packages teamboard
 want E2106 teamboard/taxonomy.canon 109 116 check

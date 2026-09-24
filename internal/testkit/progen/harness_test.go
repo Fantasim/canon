@@ -62,6 +62,15 @@ const (
 	kindHarness      = "harness"
 	kindMissing      = "missing"
 	kindHang         = "hang"
+	kindExtra        = "extra"
+	kindMisplaced    = "misplaced"
+	kindRepeated     = "repeated"
+	kindError        = "error"
+	classMismatch    = "mismatch" // born of a mutation's findings, not of a crash (doc.go)
+	classProperty    = "property" // born of a grammar or corruption property
+	shapeSep         = ", "
+	variantSep       = "/"
+	countSep         = "*"              // between a leftover's shape and its count
 	childTimeout     = 2 * time.Minute  // -progen.childtimeout's default
 	watchChecks      = 8                // idle checks per child time limit
 	waitDelay        = 10 * time.Second // how long Wait waits for a killed child's output
@@ -260,14 +269,15 @@ var kept = map[string]bool{}
 // earlier run kept: -progen.keep writes one of each.
 func alreadyKept(suite, name, sig string) bool {
 	return kept[suite+" "+name+" "+sigKey(sig)] || slices.ContainsFunc(keptArchives(), func(c *progen.Counterexample) bool {
-		return c.Suite == suite && c.Name == name && sigKey(c.Sig) == sigKey(sig)
+		return standsFor(c, suite, name, sig)
 	})
 }
 
-// report fails t with a shrunk counterexample; under -progen.keep it also writes the archive,
-// the first of its suite, name and signature only.
+// report fails t with a shrunk counterexample, born with its signature; under -progen.keep it
+// also writes the archive, the first of its suite, name and signature only.
 func report(t *testing.T, c *progen.Counterexample, v verdict) {
 	t.Helper()
+	c.Born = bornOf(c.Suite, c.Sig)
 	body := c.Format()
 	if *flagKeep && !alreadyKept(c.Suite, c.Name, c.Sig) {
 		kept[c.Suite+" "+c.Name+" "+sigKey(c.Sig)] = true
@@ -309,9 +319,9 @@ func keptArchives() []*progen.Counterexample {
 	return keptVal
 }
 
-// openBug reports a kept counterexample, still open, whose signature is this failure's.
+// openBug reports a kept counterexample, still open, that stands for this failure.
 func openBug(suite, name, sig string) bool {
 	return slices.ContainsFunc(keptArchives(), func(c *progen.Counterexample) bool {
-		return c.Open != "" && c.Suite == suite && c.Name == name && sigKey(c.Sig) == sigKey(sig)
+		return c.Open != "" && standsFor(c, suite, name, sig)
 	})
 }

@@ -2,11 +2,12 @@ suite mutation
 name E1129 GRAMMAR.md §6.1 (brace literal in a header)
 case 39
 seed 4294967336
-open syntax
+open check
+born mismatch extra E3002
 sig extra E3002
 packages teamboard
-want E1129 teamboard/taxonomy.canon 5550 5552 check
-failure extra [E3002 teamboard/taxonomy.canon:193:11 "expected sovcommon.ui.Icon, found table teamboard.Column"; E3002 teamboard/taxonomy.canon:219:16 "expected [teamboard.Status], found {}"; E3002 teamboard/taxonomy.canon:225:34 "expected fn(teamboard.Column) -> Bool, found teamboard.Status"; E3002 teamboard/taxonomy.canon:229:22 "expected [_], found teamboard.Area"] besides [E1129 teamboard/taxonomy.canon:219:16 "parenthesize this expression: \"{\" here would start the block"]
+want E1129 teamboard/taxonomy.canon 5565 5567 check
+failure extra [E3002 teamboard/taxonomy.canon:219:31 "expected Bool, found {}"] besides [E1129 teamboard/taxonomy.canon:219:31 "parenthesize this expression: \"{\" here would start the block"]
 -- project.canon --
 project sovereign {
   canon: "0.1"
@@ -52,6 +53,7 @@ enum Icon {
   archive
   bar_chart
   check
+  columns
   database
   gamepad
   globe
@@ -67,7 +69,7 @@ enum Icon {
   shield
   terminal
 }
-emit go { out: "@sovcommon/ui", package: "ui", mode: baked }
+emit go { package: "ui", mode: baked }
 emit ts { out: "@web/ui.generated.ts" }
 -- studio/studio.canon --
 package studio
@@ -290,17 +292,17 @@ check {
   }
   let seen = reachable(from: initialStatus, next: .next)
   for s in statuses.active() {
-    if seen == {} {
+    if ( seen.contains(s)) == {} {
     }
   }
 }
 /// status can be in that case), like the `(Column, bool)` it replaces.
 export fn columnOf(s: Status) -> Column? {
-  return columns.active().first((s))
+  return columns.active().first(.statuses.contains(s))
 }
 /// sovcommon's AreasVisibleTo: minRole gates viewing and posting.
 export fn areasVisibleTo(role: Role) -> [ Area] {
-  return [a for a in areas.minRole]
+  return [a for a in areas.active() if role >= a.minRole]
 }
 /// One group header with the areas shown under it.
 record AreaSection {

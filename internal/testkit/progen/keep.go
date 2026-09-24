@@ -12,15 +12,18 @@ import (
 )
 
 // Counterexample is a shrunk failing case kept as a txtar regression test: a "key value" header
-// line per field, then the project's files. The tool writes every field but Open, which a
-// person sets when triaging the bug.
+// line per field, then the project's files. The tool writes every field but Open and Guard,
+// which a person sets when triaging the bug. A replay judges it on the bug it was born with (doc.go).
 type Counterexample struct {
 	Suite    string   // the suite that found it
 	Name     string   // what the suite ran: an operator's rule, a property
 	Case     int      // the case's number when kept; a replay finds the operator by Name
 	Seed     uint64   // the case's seed
 	Open     string   // the package that owns the open bug; "" once it is fixed
-	Sig      string   // the failure's signature: an open archive stands for this one only
+	Born     string   // its class, then its signature, when kept; never rewritten but by -progen.rekeep
+	Guard    string   // "crash": judged on its crash alone, its shrink having cut the site's need
+	Left     string   // once fixed, the leftover findings' shapes (and counts) it may still report
+	Sig      string   // the current failure's signature: an open archive stands for this one
 	Packages []string // the selectors the case checks
 	Layers   []string // the layers the case activates
 	Want     string   // the suite's expectation, in its own words
@@ -32,7 +35,7 @@ type Counterexample struct {
 func (c *Counterexample) Format() []byte {
 	var head bytes.Buffer
 	values := []string{
-		c.Suite, c.Name, strconv.Itoa(c.Case), strconv.FormatUint(c.Seed, decimal), c.Open, c.Sig,
+		c.Suite, c.Name, strconv.Itoa(c.Case), strconv.FormatUint(c.Seed, decimal), c.Open, c.Born, c.Guard, c.Left, c.Sig,
 		strings.Join(c.Packages, fieldSep), strings.Join(c.Layers, fieldSep), c.Want, c.Note,
 	}
 	for i, key := range headerKeys {
@@ -73,7 +76,7 @@ func ReadCounterexample(name string) (*Counterexample, error) {
 }
 
 func (c *Counterexample) set(key, value string) error {
-	fields := map[string]*string{keySuite: &c.Suite, keyName: &c.Name, keyOpen: &c.Open, keySig: &c.Sig, keyWant: &c.Want, keyNote: &c.Note}
+	fields := map[string]*string{keySuite: &c.Suite, keyName: &c.Name, keyOpen: &c.Open, keyBorn: &c.Born, keyGuard: &c.Guard, keyLeft: &c.Left, keySig: &c.Sig, keyWant: &c.Want, keyNote: &c.Note}
 	switch {
 	case fields[key] != nil:
 		*fields[key] = value

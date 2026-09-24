@@ -2,6 +2,7 @@ suite corrupt
 name corruption
 case 22043
 seed 12884923932
+born property reparse E1116/token in File/VariantDecl
 sig reparse E1116/token in File/VariantDecl
 want corruption
 failure reparse: the formatted file has findings: E1116@285 "expected NL, \",\", \"}\"; found in" package gen variant Reward @since(1) {} local variant Point { series_1 { total: Row() label: input T from env "CANON_GEN_KEY" next: a @json(none: 0) @stable @deprecated label: Point() = b(name: "Fx") xs: since() } taken {} IK1_WEAPON _0 @cpp(value: 3) in } enum Item {}

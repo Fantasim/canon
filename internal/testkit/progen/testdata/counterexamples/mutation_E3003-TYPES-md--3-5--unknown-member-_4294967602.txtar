@@ -2,11 +2,13 @@ suite mutation
 name E3003 TYPES.md §3.5 (unknown member)
 case 305
 seed 4294967602
-open check
-sig missing E1116/token, E2102/plain, W1002
+born internal internal evaluation met a state the checker excludes: CallExpr
+guard crash
+left E1116/token, E2102/plain, W1002*5
+sig internal evaluation met a state the checker excludes: CallExpr
 packages teamboard
 want E3003 teamboard/taxonomy.canon 143 152 check
-failure missing E3003, got [W1002 teamboard/taxonomy.canon:3:8 "record Status has no doc comment"; W1002 teamboard/taxonomy.canon:4:3 "field tone has no doc comment"; W1002 teamboard/taxonomy.canon:5:3 "field label has no doc comment"; W1002 teamboard/taxonomy.canon:6:3 "field terminal has no doc comment"; W1002 teamboard/taxonomy.canon:7:3 "field next has no doc comment"; E2102 teamboard/taxonomy.canon:8:9 "unknown name notzzisEmpty"; E1116 teamboard/taxonomy.canon:16:5 "expected NL, \",\", \"}\"; found {"]
+failure internal evaluation met a state the checker excludes: CallExpr at teamboard/taxonomy.canon:8:9 evaluation met a state the checker excludes: CallExpr at teamboard/taxonomy.canon:8:9
 -- project.canon --
 project sovereign {
   canon: "0.1"

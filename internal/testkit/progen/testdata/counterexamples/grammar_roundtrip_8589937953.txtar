@@ -2,6 +2,7 @@ suite grammar
 name roundtrip
 case 3360
 seed 8589937953
+born property idempotence in RecordBody/FnDecl
 sig idempotence in RecordBody/FnDecl
 want roundtrip
 failure idempotence: formatting the formatted file changes it: package gen local record Deck(name: "Rx") @since(1) { fn total( self, ) -> T(match "\\éa'?" {}?.if % false * {}[r""]()[0e3] - {}(.if, item and item, a: a ?? 9223372036854775807)["{xs}"]) | Tone { if ({ taken: r""" """ for _ in _tmp if it }) * 1e-3 { while ({})(7, a: 7) {} match (it).IK1_WEAPON { fire(a), none, done => { if 7 {} } _ => {} } if ("")() or "\t:é." != xs {} } } }

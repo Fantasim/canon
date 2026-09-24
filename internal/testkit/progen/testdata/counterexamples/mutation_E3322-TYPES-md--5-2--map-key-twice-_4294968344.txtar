@@ -2,6 +2,7 @@ suite mutation
 name E3322 TYPES.md §5.2 (map key twice)
 case 1047
 seed 4294968344
+born mismatch repeated E3322
 sig repeated E3322
 packages features.matching
 want E3322 features/matching/matching.canon 767 770 check

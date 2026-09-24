@@ -3,6 +3,7 @@ name roundtrip
 case 3535
 seed 8589938128
 open check
+born crash crash fatal error: stack overflow in check.(*checker).domain ~ check.(*checker).letCollection ~ check.(*checker).letType ~ check.(*checker).resolveDepMap ~ check.(*checker).resolveLetAnnotation ~ check.(*checker).resolveType ~ check.(*checker).resolveTypeNode
 sig crash fatal error: stack overflow in check.(*checker).domain ~ check.(*checker).letCollection ~ check.(*checker).letType ~ check.(*checker).resolveDepMap ~ check.(*checker).resolveLetAnnotation ~ check.(*checker).resolveType ~ check.(*checker).resolveTypeNode
 want roundtrip
 failure crash fatal error: stack overflow | | runtime stack:

@@ -3,10 +3,11 @@ name E3504 TYPES.md §10.2 (ref to a const)
 case 134
 seed 4294967431
 open check
+born mismatch extra E3002
 sig extra E3002
 packages teamboard
-want E3504 teamboard/taxonomy.canon 4653 4660 check
-failure extra [E3002 teamboard/taxonomy.canon:152:11 "expected sovcommon.ui.Icon, found table teamboard.Column"; E3002 teamboard/taxonomy.canon:178:10 "expected ref , found teamboard.Column?"; E3002 teamboard/taxonomy.canon:182:22 "expected [_], found teamboard.Area"] besides [E3504 teamboard/taxonomy.canon:177:38 "ref VERSION: VERSION is not a collection or a record type"]
+want E3504 teamboard/taxonomy.canon 4652 4659 check
+failure extra [E3002 teamboard/taxonomy.canon:178:10 "expected ref ?, found teamboard.Column?"] besides [E3504 teamboard/taxonomy.canon:177:38 "ref VERSION: VERSION is not a collection or a record type"]
 -- project.canon --
 project sovereign {
   canon: "0.1"
@@ -52,6 +53,7 @@ enum Icon {
   archive
   bar_chart
   check
+  columns
   database
   gamepad
   globe
@@ -67,7 +69,7 @@ enum Icon {
   shield
   terminal
 }
-emit go { out: "@sovcommon/ui", package: "ui", mode: baked }
+emit go { package: "ui", mode: baked }
 emit ts { out: "@web/ui.generated.ts" }
 -- studio/studio.canon --
 package studio
@@ -196,7 +198,7 @@ let deck: Deck = { layouts: [], maxHidden: 2 }
 let columns: table Column = {
   taken { label: "Taken", icon: hand, statuses: [] }
   fixed { label: "Fixed, to verify", icon: check, statuses: [] }
-  done { label: "Done", icon: archive, statuses: [verified, wont_do,] }
+  done { label: "Done", icon: archive, statuses: [verified, wont_do] }
 }
 let severities: Severity = {
 }
@@ -248,12 +250,12 @@ check {
   }
 }
 /// status can be in that case), like the `(Column, bool)` it replaces.
-export fn columnOf(s: Status) -> ref VERSION {
+export fn columnOf(s: Status) -> ref VERSION? {
   return columns.active().first(c => c.statuses.contains(s))
 }
 /// sovcommon's AreasVisibleTo: minRole gates viewing and posting.
 export fn areasVisibleTo(role: Role) -> [ Area] {
-  return [a for a in areas.active]
+  return [a for a in areas.active() if role >= a.minRole]
 }
 /// One group header with the areas shown under it.
 record AreaSection {

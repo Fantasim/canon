@@ -2,11 +2,13 @@ suite mutation
 name E3314 STDLIB.md §4.3 (sum of an unknown list)
 case 1495
 seed 4294968792
-open check
-sig missing E1116/token, E1117, E2102/plain, W1002
+born internal internal evaluation met a state the checker excludes: CallExpr
+guard crash
+left E1116/token, E1117*2, E2102/plain, W1002*4
+sig internal evaluation met a state the checker excludes: CallExpr
 packages features.matching
 want E3314 features/matching/matching.canon 123 131 check
-failure missing E3314, got [W1002 features/matching/matching.canon:2:6 "enum Season has no doc comment"; E1117 features/matching/matching.canon:2:22 "missing separator: put \",\" or a new line between items"; W1002 features/matching/matching.canon:3:8 "record Mail has no doc comment"; W1002 features/matching/matching.canon:4:3 "field subject has no doc comment"; W1002 features/matching/matching.canon:5:3 "field season has no doc comment"; E1116 features/matching/matching.canon:5:18 "expected NL, \",\", \"}\"; found {"; E2102 features/matching/matching.canon:9:8 "unknown name isHoliday"; E1117 features/matching/matching.canon:16:28 "missing separator: put \",\" or a new line between items"]
+failure internal evaluation met a state the checker excludes: CallExpr at features/matching/matching.canon:9:8 evaluation met a state the checker excludes: CallExpr at features/matching/matching.canon:9:8
 -- features/matching/matching.canon --
 package features.matching
 enum Season { spring autumn }

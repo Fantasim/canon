@@ -2,6 +2,7 @@ suite mutation
 name E8009 CODEGEN.md §2.1 (invalid mode)
 case 653
 seed 4294967950
+born mismatch extra E8202
 sig extra E8202
 packages pipeline
 want E8009 pipeline/potion.canon 1050 1056 check

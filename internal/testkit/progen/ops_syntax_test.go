@@ -326,10 +326,12 @@ func chainedComparison(tg target) []progen.Site {
 	})
 }
 
+// braceInHeader compares an if's condition, parenthesized, with {}: the condition may itself be
+// a comparison, which a bare "== {}" would chain (E1128, a second, unrelated error).
 func braceInHeader(tg target) []progen.Site {
 	return sitesOf(tg, func(s *syntax.IfStmt) bool { return s.Cond != nil }, func(s *syntax.IfStmt) progen.Site {
-		_, e := span(tg, s.Cond)
-		return seq(1, insert(e, " == "), insert(e, "{}"))
+		b, e := span(tg, s.Cond)
+		return seq(3, insert(b, "("), insert(e, ")"), insert(e, " == "), insert(e, "{}"))
 	})
 }
 
