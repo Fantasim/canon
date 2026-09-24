@@ -62,12 +62,10 @@ block in [state.md](state.md).
 - [x] `jsonsrc` (SYN), `wire` decode + `load.dir` (LOD), `conform` (EVL), fingerprint + reload IR
   (IR), data mode + stores + conformance (GO, CPP), `cli test` (API). All landed 2026-09-24
   (see [state.md](state.md) "What exists").
-- [ ] Accept (§6 M2): pipeline byte-exact (done); C++ builds with `-Werror`
-  (done on the local g++/clang++; the §7.8 matrix is deferred by Louis, 2026-09-24); conformance
-  green with `-race` (done); `canon test` output format (done); fingerprint refusal (done);
-  FINGERPRINT.md vectors (done, `internal/ir/fingerprint_test.go`); finding positions in JSON
-  sources (open — no committed test pins `data/II_POT_HEAL_L.json`'s position). Box ticks once
-  every sub-item does.
+- [x] Accept (§6 M2): pipeline byte-exact; C++ builds with `-Werror` (on the local g++/clang++;
+  the §7.8 matrix is deferred by Louis, 2026-09-24); conformance green with `-race`; `canon test`
+  output format; fingerprint refusal; FINGERPRINT.md vectors (`internal/ir/fingerprint_test.go`);
+  finding positions in JSON sources (`internal/testkit/golden/position_test.go`, overnight run).
 
 ## M3 — Load and the view model
 

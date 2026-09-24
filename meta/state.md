@@ -15,14 +15,14 @@ Part A (close open work) then Part B (M3 waves W0–W4). Ticked = committed on `
 - [ ] A3 M1.5 bug-fix wave, 73 archives: check 35, eval 4, format 20, ir 9, syntax 3, build 2.
   eval (in review), format, ir, syntax in flight; then QA judge redesign (log "Progen archives
   after a fix"), then check and build. Also c3eb74d: C++ tests skipped in worktrees (fixed).
-- [ ] A4 M2 close: position test on `examples/pipeline/data/II_POT_HEAL_L.json` (in flight).
+- [x] A4 M2 close: position test on `examples/pipeline/data/II_POT_HEAL_L.json`; M2 ticked.
 - [ ] A5 consumer unit (name plans) · cleanups · ERRORS.md pass + spec sync #2.
 - [ ] A6 M1.5 second wave (type-directed, metamorphic).
 - [x] W0 gap map → `meta/m3-gaps.md` (1b0a332).
 - [ ] W1 · [ ] W2 · [ ] W3 · [ ] W4 (see [plan.md](plan.md) "M3 execution").
 
-Milestones: M0, M1 accepted (M1 item 6 deferred to after M7). M2 all items done but item 7
-(A4). M1.5 foundation committed (f498713), not ticked.
+Milestones: M0, M1, M2 accepted (M1 item 6 deferred to after M7). M1.5 foundation committed
+(f498713), not ticked.
 
 ## What exists (committed)
 
