@@ -1,0 +1,43 @@
+suite mutation
+name E3304 TYPES.md §5.2 (identifier map key)
+case 792
+seed 4294968089
+open eval
+sig panic panic: runtime error: invalid memory address or nil pointer dereference in value.(*Ref).identity < value.identity
+packages features.matching
+want E3304 features/matching/matching.canon 164 165 check
+failure panic panic: runtime error: invalid memory address or nil pointer dereference
+-- features/matching/matching.canon --
+package features.matching
+enum Season { spring }
+record Mail {
+  subject: String
+  season: Season {
+  }
+  fn isHoliday() -> Bool {
+    let zzMap: {String: Int} = { a: 1 }
+    return {
+    }
+  }
+  warn isHoliday() or attachment is gold else "a holiday mail usually carries penya"
+}
+let mails: [Mail] = [
+  {
+    subject: "Spring cleaning"
+    season: spring
+  }
+]
+-- project.canon --
+project sovereign {
+  canon: "0.1"
+  roots {
+    resource: "../../../Resource"
+    client: "../../../Client"
+    source: "../../../Source"
+    services: "../.."
+    sovcommon: "../../sovcommon"
+    web: "../../sovcommon/web/src/lib"
+    parity: "../../balance/parity"
+    generated: "../../resourcestudio/generated"
+  }
+}

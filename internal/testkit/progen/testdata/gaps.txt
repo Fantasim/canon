@@ -1,0 +1,10 @@
+# Codes the compiler a build runs can report (TestCoverage finds them) that have no mutation
+# operator yet (DECISIONS 200). This list only shrinks: TestCoverage fails on a reachable code
+# that is neither here nor in the catalogue, and on a line whose code got an operator or is no
+# longer reachable. One line per code: CODE reason.
+E1003 the harness opens a project; E1003 is the search for project.canon failing (CLI.md §2.1), which Run never does
+E3317 needs a map field in loaded data; load.dir refuses a map element type (build.ErrLoad, DECISIONS 173, internal/load/supported.go)
+E7108 needs a CSV file loaded; load.dir reads JSON only and load.csv is not wired (build.ErrLoad, DECISIONS 196)
+E7112 needs a variant field in loaded data; load.dir refuses a variant element type (build.ErrLoad, DECISIONS 173, internal/load/supported.go)
+E7117 needs a pairs field in loaded data; the example's record literals omit it, so it needs a default [], and load.dir refuses a non-scalar default (build.ErrLoad, DECISIONS 173)
+W6006 reported by canon lock check only (LOCK.md §8), which neither check nor build runs

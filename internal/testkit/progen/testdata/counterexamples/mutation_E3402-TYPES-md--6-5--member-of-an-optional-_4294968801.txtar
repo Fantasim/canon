@@ -1,0 +1,43 @@
+suite mutation
+name E3402 TYPES.md §6.5 (member of an optional)
+case 1504
+seed 4294968801
+open check
+sig internal evaluation met a state the checker excludes: CallExpr
+packages features.matching
+want E3402 features/matching/matching.canon 150 155 check
+failure internal evaluation met a state the checker excludes: CallExpr at features/matching/matching.canon:11:8 evaluation met a state the checker excludes: CallExpr at features/matching/matching.canon:11:8
+-- features/matching/matching.canon --
+package features.matching
+enum Season { spring autumn }
+record Mail {
+  subject: String
+  season: Season {
+    let zzOpt: [Int]? = none
+  let zzLen = zzOpt.len()
+    return {
+    }
+  }
+  warn isHoliday() or attachment is gold else "a holiday mail usually carries penya"
+}
+let mails: [Mail] = [
+  {
+    subject: "Spring cleaning"
+    season: spring
+  },
+  { subject: "Autumn news" season: autumn }
+]
+-- project.canon --
+project sovereign {
+  canon: "0.1"
+  roots {
+    resource: "../../../Resource"
+    client: "../../../Client"
+    source: "../../../Source"
+    services: "../.."
+    sovcommon: "../../sovcommon"
+    web: "../../sovcommon/web/src/lib"
+    parity: "../../balance/parity"
+    generated: "../../resourcestudio/generated"
+  }
+}

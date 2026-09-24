@@ -1,0 +1,34 @@
+suite mutation
+name E1112 GRAMMAR.md §2.6 (empty interpolation)
+case 938
+seed 4294968235
+open check
+sig internal evaluation met a state the checker excludes: BadExpr
+packages service.resourcestudio
+want E1112 service/resourcestudio/resourcestudio.canon 93 95 check
+failure internal evaluation met a state the checker excludes: BadExpr at service/resourcestudio/resourcestudio.canon:4:19
+-- project.canon --
+project sovereign {
+  canon: "0.1"
+  roots {
+    resource: "../../../Resource"
+    client: "../../../Client"
+    source: "../../../Source"
+    services: "../.."
+    sovcommon: "../../sovcommon"
+    web: "../../sovcommon/web/src/lib"
+    parity: "../../balance/parity"
+    generated: "../../resourcestudio/generated"
+  }
+}
+-- service/resourcestudio/resourcestudio.canon --
+package service.resourcestudio
+record Server {
+  host: String = "127.0.0.1"
+  check host == "{}127.0.0.1"
+    else "Resource Studio only listens on the loopback interface"
+}
+record Config {
+  server: Server = {}
+}
+let config: Config = {}

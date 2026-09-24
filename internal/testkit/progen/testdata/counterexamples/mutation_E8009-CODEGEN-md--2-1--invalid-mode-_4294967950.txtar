@@ -1,0 +1,65 @@
+suite mutation
+name E8009 CODEGEN.md §2.1 (invalid mode)
+case 653
+seed 4294967950
+open ir
+sig extra E8202
+packages pipeline
+want E8009 pipeline/potion.canon 1050 1056 check
+failure extra [E8202 pipeline/potion.canon:22:5 "@reload on potions: the go emit is in mode, which has no file to reload"] besides [E8009 pipeline/potion.canon:26:53 "invalid mode zzmode for emit go: expected one of baked, embedded, data, types"]
+-- pipeline/data/II_POT_HEAL_S.json --
+{
+  "dwID": "II_POT_HEAL_S",
+  "szName": "IDS_PROPITEM_TXT_POT_S",
+  "nHeal": 500,
+  "dwCooldownMs": 3000
+}
+-- pipeline/potion.canon --
+package pipeline
+/// A healing potion. Each one is a file under data/.
+record Potion {
+  /// The item define. Stored in inventories: never renamed.
+  id: String(/^II_[A-Z0-9_]+$/) @json("dwID")
+  /// Text key of the displayed name.
+  name: String(/^IDS_/) @json("szName")
+  /// Hit points restored.
+  heal: Int @json("nHeal")
+  /// Time before the same potion can be drunk again.
+  cooldown: Duration(..=10m) @json("dwCooldownMs", unit: ms)
+  warn not (heal > 5_000 and cooldown < 2s)
+    else "heals {cooldown}: that outheals most bosses"
+  /// conformance test per target so the translations cannot drift.
+  export fn healFor( missingHp: Int) -> Int { return min(heal, max(missingHp, 0)) }
+}
+test "healFor never overheals and never goes negative" {
+  let p: Potion = { id: "II_POT_T", name: "IDS_T", heal: 500, cooldown: 1s }
+  expect p.healFor(5) == 0
+}
+@reload
+let potions: [Potion] keyed by id = load.dir("data/*.json")
+view Potion {
+}
+emit json { out: "out/potions.json", values: [potions] }
+emit go { out: "out/go/", package: "potions", mode: zzmode }
+-- project.canon --
+project sovereign {
+  canon: "0.1"
+  roots {
+    resource: "../../../Resource"
+    client: "../../../Client"
+    source: "../../../Source"
+    services: "../.."
+    sovcommon: "../../sovcommon"
+    web: "../../sovcommon/web/src/lib"
+    parity: "../../balance/parity"
+    generated: "../../resourcestudio/generated"
+    pipeline_go: "pipeline/out/go"
+  }
+  go_module {
+    pipeline_go: "example.com/potions"
+  }
+}
+-- sovcommon/time/time.canon --
+package sovcommon
+-- studio/studio.canon --
+package studio

@@ -1,0 +1,66 @@
+suite mutation
+name E8015 CODEGEN.md §2.2 (data mode Int value)
+case 205
+seed 4294967502
+open ir
+sig extra E8153/notWritten
+packages pipeline
+want E8015 pipeline/potion.canon 949 954 check
+failure extra [E8153 pipeline/potion.canon:27:5 "zzCap is emitted in data mode but not written by emit json"] besides [E8015 pipeline/potion.canon:27:5 "zzCap is a Int: data and embedded modes emit tables, keyed lists and records"]
+-- pipeline/data/II_POT_HEAL_S.json --
+{
+  "dwID": "II_POT_HEAL_S",
+  "szName": "IDS_PROPITEM_TXT_POT_S",
+  "nHeal": 500,
+  "dwCooldownMs": 3000
+}
+-- pipeline/potion.canon --
+package pipeline
+/// A healing potion. Each one is a file under data/.
+record Potion {
+  /// The item define. Stored in inventories: never renamed.
+  id: String(/^II_[A-Z0-9_]+$/)
+  /// Text key of the displayed name.
+  name: String(/^IDS_/) @json()
+  /// Hit points restored.
+  heal: Int
+  /// Time before the same potion can be drunk again.
+  cooldown: Duration(..=10m) @json("dwCooldownMs", unit: ms)
+  warn (heal > 5_000 and cooldown < 2s)
+    else "heals {cooldown}: that outheals most bosses"
+  /// conformance test per target so the translations cannot drift.
+  export fn healFor( missingHp: Int) -> Int { return min(heal, max(missingHp, 0)) }
+}
+test "healFor never overheals and never goes negative" {
+  let p: Potion = { id: "II_POT_T", name: "IDS_T", heal: 500, cooldown: 1s }
+  expect p.healFor(5) == 0
+}
+view Potion {
+}
+emit go { out: "out/go/", package: "potions", mode: data }
+emit view { out: "out/potion.view.json" }
+
+/// A cap.
+let zzCap: Int = 3
+-- project.canon --
+project sovereign {
+  canon: "0.1"
+  roots {
+    resource: "../../../Resource"
+    client: "../../../Client"
+    source: "../../../Source"
+    services: "../.."
+    sovcommon: "../../sovcommon"
+    web: "../../sovcommon/web/src/lib"
+    parity: "../../balance/parity"
+    generated: "../../resourcestudio/generated"
+    pipeline_go: "pipeline/out/go"
+  }
+  go_module {
+    pipeline_go: "example.com/potions"
+  }
+}
+-- sovcommon/time/time.canon --
+package sovcommon
+-- studio/studio.canon --
+package studio

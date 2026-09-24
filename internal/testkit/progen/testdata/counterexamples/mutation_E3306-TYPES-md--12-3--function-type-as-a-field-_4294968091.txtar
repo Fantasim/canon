@@ -1,0 +1,75 @@
+suite mutation
+name E3306 TYPES.md §12.3 (function type as a field)
+case 794
+seed 4294968091
+open ir
+sig extra E8151
+packages features.matching
+want E3306 features/matching/matching.canon 887 904 check
+failure extra [E8151 features/matching/matching.canon:41:5 "value mails of type [features.matching.Mail] has no wire form"] besides [E3306 features/matching/matching.canon:39:10 "a function type is not allowed here"]
+-- features/matching/matching.canon --
+package features.matching
+/// What a system mail carries.
+variant Attachment @json(tag: "type") {
+  item {
+    /// The item define.
+    count: Int(1..) = 1
+  }
+  gold {
+    /// How much.
+    amount: Int(1..)
+  }
+  nothing
+}
+/// When a mail is sent.
+enum Season { spring }
+/// A mail the server sends to every player once.
+record Mail {
+  /// Title in the mailbox.
+  subject: String(1..)
+  /// When it is sent.
+  season: Season
+  /// What it carries.
+  attachment: Attachment = nothing
+  /// No runtime input, so `canon build` computes it and ships the value.
+  export fn quantity() -> Int {
+    return match attachment {
+      item(i) => i.count
+      gold(g) => g.amount
+      nothing => 0
+    }
+  }
+  fn isHoliday() -> Bool {
+    return match season {
+      _ => false
+    }
+  }
+  warn isHoliday() or attachment is gold else "a holiday mail usually carries penya"
+  /// Added.
+  zzFn: (fn(Int) -> Int)? = none
+}
+let mails: [Mail] = [
+  {
+    subject: "Spring cleaning"
+    season: spring
+  }
+]
+test "quantity follows the attachment" {
+}
+emit json { out: "out/mails.json", values: [mails] }
+-- project.canon --
+project sovereign {
+  canon: "0.1"
+  roots {
+    resource: "../../../Resource"
+    client: "../../../Client"
+    source: "../../../Source"
+    services: "../.."
+    sovcommon: "../../sovcommon"
+    web: "../../sovcommon/web/src/lib"
+    parity: "../../balance/parity"
+    generated: "../../resourcestudio/generated"
+  }
+}
+-- studio/studio.canon --
+package studio

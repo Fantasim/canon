@@ -1,0 +1,18 @@
+suite grammar
+name roundtrip
+case 5068
+seed 8589939661
+open format
+sig idempotence in File/WidgetDecl
+want roundtrip
+failure idempotence: formatting the formatted file changes it: package lib widget a(value: Tone(1m % {})) local fn label(count: (". 0-") | Deck() where -count > total * "") -> a | Deck { {} } record Reward(name: "Rx") { stepSize: Status() }
+-- gen/gen.canon --
+package lib
+widget a(value: Tone(60s % {
+}))
+local fn label(count:(". 0-") | Deck() where -count > total * "") -> a | Deck { {
+  }
+}
+record Reward(name: "Rx") {
+  stepSize: Status()
+}

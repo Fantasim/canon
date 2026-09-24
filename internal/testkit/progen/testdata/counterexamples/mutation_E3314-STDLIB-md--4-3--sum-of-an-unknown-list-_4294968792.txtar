@@ -1,0 +1,41 @@
+suite mutation
+name E3314 STDLIB.md §4.3 (sum of an unknown list)
+case 1495
+seed 4294968792
+open check
+sig internal evaluation met a state the checker excludes: CallExpr
+packages features.matching
+want E3314 features/matching/matching.canon 123 131 check
+failure internal evaluation met a state the checker excludes: CallExpr at features/matching/matching.canon:9:8 evaluation met a state the checker excludes: CallExpr at features/matching/matching.canon:9:8
+-- features/matching/matching.canon --
+package features.matching
+enum Season { spring autumn }
+record Mail {
+  subject: String
+  season: Season {
+    let zzSum = [].sum()
+    return
+  }
+  warn isHoliday() else "a holiday mail usually carries penya"
+}
+let mails: [Mail] = [
+  {
+    subject: "Spring cleaning"
+    season: spring
+  },
+  { subject: "Autumn news" season: autumn }
+]
+-- project.canon --
+project sovereign {
+  canon: "0.1"
+  roots {
+    resource: "../../../Resource"
+    client: "../../../Client"
+    source: "../../../Source"
+    services: "../.."
+    sovcommon: "../../sovcommon"
+    web: "../../sovcommon/web/src/lib"
+    parity: "../../balance/parity"
+    generated: "../../resourcestudio/generated"
+  }
+}

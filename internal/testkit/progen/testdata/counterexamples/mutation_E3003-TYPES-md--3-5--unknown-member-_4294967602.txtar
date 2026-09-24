@@ -1,0 +1,64 @@
+suite mutation
+name E3003 TYPES.md §3.5 (unknown member)
+case 305
+seed 4294967602
+open check
+sig internal evaluation met a state the checker excludes: CallExpr
+packages teamboard
+want E3003 teamboard/taxonomy.canon 143 152 check
+failure internal evaluation met a state the checker excludes: CallExpr at teamboard/taxonomy.canon:8:9 evaluation met a state the checker excludes: CallExpr at teamboard/taxonomy.canon:8:9
+-- project.canon --
+project sovereign {
+  canon: "0.1"
+  roots {
+    resource: "../../../Resource"
+    client: "../../../Client"
+    source: "../../../Source"
+    services: "../.."
+    sovcommon: "../../sovcommon"
+    web: "../../sovcommon/web/src/lib"
+    parity: "../../balance/parity"
+    generated: "../../resourcestudio/generated"
+  }
+}
+-- sovcommon/ui/ui.canon --
+package sovcommon.ui
+enum Tone {
+  warning
+  info
+  accent
+  success
+  neutral
+}
+enum Icon {
+  archive
+  check
+  hand
+  inbox
+}
+-- teamboard/taxonomy.canon --
+package teamboard
+import sovcommon.ui { Tone }
+record Status {
+  tone: Tone
+  label: String(1..)
+  terminal: Bool
+  next: [ Status]
+  check notzzisEmpty() else "a column holds at least one status"
+}
+let statuses: table Status = {
+  open {
+    tone: info
+    label: "Taken"
+    terminal: false
+    next: []
+  } { []
+  } { []
+  } { [] [] }
+  duplicate {
+    tone: neutral
+    label: "Duplicate"
+    terminal: true
+    next: []
+  }
+}

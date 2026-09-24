@@ -1,0 +1,55 @@
+suite mutation
+name E1109 GRAMMAR.md §2.6 (invalid escape)
+case 1608
+seed 4294968905
+open check
+sig extra E5001
+packages service.resourcestudio
+want E1109 service/resourcestudio/resourcestudio.canon 330 332 check
+failure extra [E5001 service/resourcestudio/resourcestudio.canon:22:20 "Resource Studio only listens on the loopback interface"] besides [E1109 service/resourcestudio/resourcestudio.canon:11:10 "invalid escape sequence \"\\q\""]
+-- project.canon --
+project sovereign {
+  canon: "0.1"
+  roots {
+    resource: "../../../Resource"
+    client: "../../../Client"
+    source: "../../../Source"
+    services: "../.."
+    sovcommon: "../../sovcommon"
+    web: "../../sovcommon/web/src/lib"
+    parity: "../../balance/parity"
+    generated: "../../resourcestudio/generated"
+  }
+  go_module {
+    services: "gitlab.com/sovereign15"
+  }
+}
+-- service/resourcestudio/resourcestudio.canon --
+package service.resourcestudio
+/// expanded: Canon has no environment. Machine-specific paths belong in a layer.
+type Path = String(1..)
+/// Where the studio reads and caches files.
+record Paths {
+}
+/// The local HTTP server.
+record Server {
+  /// The tool is local by design (ADR-0005 d.1).
+  host: String = "127.0.0.1"
+  check "\q127.0.0.1" == "localhost"
+    else "Resource Studio only listens on the loopback interface"
+}
+/// Generation features.
+record Gen {
+  /// Entered right before the action and never stored (ADR-0005).
+  apiKey: input String(1..) from env "RESOURCESTUDIO_GEMINI_KEY"
+}
+/// Every setting of the studio.
+record Config {
+  /// Where files are.
+  server: Server = {}
+  /// Generation features. Its only field is an input, so the literal is empty.
+  gen: Gen = {}
+}
+let config: Config = {}
+-- studio/studio.canon --
+package studio

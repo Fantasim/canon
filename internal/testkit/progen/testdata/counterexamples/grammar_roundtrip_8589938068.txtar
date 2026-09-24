@@ -1,0 +1,12 @@
+suite grammar
+name roundtrip
+case 3475
+seed 8589938068
+open format
+sig idempotence in File/TypeDecl
+want roundtrip
+failure idempotence: formatting the formatted file changes it: package gen local type Item(stepSize: Reward where ..=1s) = nextDeck where -a * -"" % count.Kind {}.if.if! != 0e3
+-- gen/gen.canon --
+package gen
+local type Item(stepSize: Reward where ..=1_000ms) = nextDeck where -a * -"" % count.Kind {
+}.if.if!  !=  0e3

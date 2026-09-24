@@ -1,0 +1,114 @@
+suite corrupt
+name corruption
+case 3220
+seed 12884905109
+open check
+sig crash fatal error: stack overflow in check.(*checker).domain ~ check.(*checker).letCollection ~ check.(*checker).letType ~ check.(*checker).resolveDepMap ~ check.(*checker).resolveLetAnnotation ~ check.(*checker).resolveOptional ~ check.(*checker).resolveType ~ check.(*checker).resolveTypeNode
+want corruption
+failure crash fatal error: stack overflow | | runtime stack:
+-- gen/gen.canon --
+package gen
+import lib.core { Point, Kindx }
+import lib as total
+
+// c1
+///c2
+///c3
+local enum Kind @cpp(defines: "P_") {
+  package = "text" @deprecated
+  type = 0x1F
+  taken @since(1)
+  _0 @go(name: "Mx")
+}
+
+@go(name: "Lx")
+local let next: Tone(/^II_/) = -(not r"}" ??  not _tmp)?.IK1_WEAPON.emit[not stepSize % label]  % load("data.json")?.type or ----"\t{label}"  % ---false[r""][xs]
+
+// c4
+/// c5
+@go(name: "Dx")
+local const Kind = """
+  
+  日..?é日_0:日
+  """[Deck]?.for is type
+
+/// c6
+///c7
+record Row {
+  itinput : Deck(0.., 0x1F..)? from env "CANON_GEN_KEY"
+  fn b(self, item: {xs.Deck?: asset(".:!日") where ..=0b1010 in  -"{"":.20}"}) -> Point? {
+    for label in "{"":,.0}"  ?? 1_000_000 {
+      let label = 1_000_000 // c8
+      return b
+      continue
+    }
+    var b = "日" + it
+    while 9223372036854775807 or 7 {
+    }
+    if load.dir("data/*.json")!?._0.type {
+      xs()
+      if a {
+      } else {
+      } // c9
+      if 0 {
+      } else {
+      }
+      if b {
+      } else if ".'.'" {
+      }
+    } else {
+      var item = v2
+      next += a
+      for total in 9223372036854775807 {
+      }
+    }
+  }
+  fn a(self, v2: _ | "0-" where "\u{1F600}\}_"!(.if, a: r"éé")) -> asset(r"x ", ext: [item, "next"]) {
+    if next {
+    } // c10
+    if ":0Z日é{r" {x"}" {
+    } else {
+    }
+    var stepSize = xs
+    return 7
+  }
+  /// c11
+  ///c12
+  next: Point(/(?i)abc/) @json(path: "a.b")
+}
+
+enum Status @cpp(defines: "P_") {}
+
+@reload
+local let _tmp: {item in _tmp: Kind | Deck where "{total}"}? = total  or r"a \ "
+
+enum Kind ordered {
+  IK1_WEAPON @since(1)
+  open""" = "text" @since(1)
+  taken @go(name: "Mx")
+  IK1_WEAPON = "text" @deprecated
+}
+
+// c13
+/// c14
+///c15
+@since(1)
+test "?" {
+}
+
+///c16
+@since(1)
+view Item {}
+
+widget total(value: {v2 in total: Point} where _tmp  * next)
+
+variant Row { package {}, export fn stepSize(self, item: Kind? | _?, v2: xs.T) -> next.Deck? {
+}, _0 @cpp(value: 3), @go(name: "Str") warn not _tmp >= 0 at total else "{0x1F}:!_?{0x1F:.2}", retired done {} }
+
+@go(name: "Dx")
+local type (Decka: (Status), stepSize: (a.Deck)) = Row(..0b1010, ..=12) | Deck
+-- project.canon --
+project gen {
+  canon: "0.1"
+  budget: 200_000
+}

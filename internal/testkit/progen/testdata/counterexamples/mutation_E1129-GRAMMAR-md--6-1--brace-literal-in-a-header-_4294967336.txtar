@@ -1,0 +1,318 @@
+suite mutation
+name E1129 GRAMMAR.md §6.1 (brace literal in a header)
+case 39
+seed 4294967336
+open syntax
+sig extra E3002
+packages teamboard
+want E1129 teamboard/taxonomy.canon 5550 5552 check
+failure extra [E3002 teamboard/taxonomy.canon:193:11 "expected sovcommon.ui.Icon, found table teamboard.Column"; E3002 teamboard/taxonomy.canon:219:16 "expected [teamboard.Status], found {}"; E3002 teamboard/taxonomy.canon:225:34 "expected fn(teamboard.Column) -> Bool, found teamboard.Status"; E3002 teamboard/taxonomy.canon:229:22 "expected [_], found teamboard.Area"] besides [E1129 teamboard/taxonomy.canon:219:16 "parenthesize this expression: \"{\" here would start the block"]
+-- project.canon --
+project sovereign {
+  canon: "0.1"
+  roots {
+    resource: "../../../Resource"
+    client: "../../../Client"
+    source: "../../../Source"
+    services: "../.."
+    sovcommon: "../../sovcommon"
+    web: "../../sovcommon/web/src/lib"
+    parity: "../../balance/parity"
+    generated: "../../resourcestudio/generated"
+  }
+  go_module {
+    services: "gitlab.com/sovereign15"
+  }
+}
+-- sovcommon/roles/roles.canon --
+package sovcommon.roles
+enum Role ordered {
+  gm_junior
+  maintainer
+  admin
+}
+emit go { out: "@sovcommon/roles", package: "roles", mode: baked }
+emit ts { out: "@web/roles.generated.ts" }
+-- sovcommon/ui/ui.canon --
+package sovcommon.ui
+enum Tone {
+  warning
+  info
+  accent
+  success
+  neutral
+  danger
+  series_1
+  series_2 = "series-2"
+  series_3
+  series_4 = "series-4"
+}
+enum Icon {
+  alert_triangle
+  archive
+  bar_chart
+  check
+  database
+  gamepad
+  globe
+  hand
+  inbox
+  layers
+  lightbulb
+  lock
+  monitor
+  package
+  scale
+  server
+  shield
+  terminal
+}
+emit go { out: "@sovcommon/ui", package: "ui", mode: baked }
+emit ts { out: "@web/ui.generated.ts" }
+-- studio/studio.canon --
+package studio
+-- teamboard/taxonomy.canon --
+package teamboard
+import sovcommon.roles { Role }
+import sovcommon.ui { Icon, Tone }
+/// Who may set a flag or make a transition.
+enum Actor { reporter, triager }
+/// Inputs a status transition may collect.
+enum PostField { assignee, fixed_in, reason }
+/// A deck arrangement, "<columns per row>:<rows>".
+type Layout = String
+/// What kind of post this is; `minRole` gates who may post it.
+record Intent {
+}
+/// One of the reporter's booleans.
+record Flag {
+  /// Colour of the flag's badge.
+  tone: Tone
+  /// Icon of the flag's badge.
+  icon: Icon
+  /// What the reporter ticks, as a sentence.
+  label: String(1..)
+  /// Shown under the label.
+  setBy: Actor
+  /// Who may see that the flag was set; `none` means whoever can see the post.
+  viewMinRole: Role? = none
+}
+/// One point of the post lifecycle.
+record Status {
+  /// Colour of the status badge.
+  tone: Tone
+  /// Name of the status.
+  label: String(1..)
+  /// A terminal status closes the post. It can still be reopened through `next`.
+  terminal: Bool
+  /// The closed set of statuses a post may move to from here.
+  next: [ref Status]
+  /// Inputs a transition INTO this status must collect.
+  requires: [PostField] = []
+  /// Inputs a transition INTO this status may collect.
+  by: Actor? = none
+}
+/// Set by a triager only. The reporter's single signal is the `blocking` flag.
+record Severity {
+  /// Colour of the severity badge.
+  default: Bool = false
+}
+/// A header the area picker and the move-to-area menu group areas under.
+record AreaGroup {
+  /// Header text.
+  label: String(1..)
+}
+/// Where the reporter stood, never which component is at fault.
+record Area {
+  /// The header the area is listed under.
+  group: ref AreaGroup
+  /// Family: series_1 game, series_2 web, series_3 tooling, series_4 internal.
+  tone: Tone
+  /// Icon next to the area's name.
+  icon: Icon
+  /// Name of the area.
+  label: String(1..)
+  /// Shown under the label.
+  minRole: Role
+  /// Technical areas a triager typically moves a post into. Orders the move menu only.
+  routesTo: [ Area] = []
+}
+/// One fixed column of the deck: a named set of statuses.
+record Column {
+  /// Column header.
+  label: String(1..)
+  /// Icon in the column header.
+  icon: Icon
+  /// The statuses whose posts the column shows.
+  statuses: [ref Status]
+  /// Adds a multi-select of eligible members inside the column.
+  assigneeFilter: Bool = false
+}
+/// The deck: fixed columns, in order. Nobody adds, removes or edits a column.
+record Deck {
+  /// The only arrangements: all in one row, or a 2x2 grid.
+  layouts: [Layout]
+  /// How many columns may be collapsed at once, so the deck never goes fully empty.
+  maxHidden: Int(1..)
+}
+let flags: table Flag = {
+  sensitive {
+    tone: warning
+    icon: lock
+    label: "Only the dev team should see"
+    setBy: reporter
+  }
+}
+let statuses: table Status = {
+  open { tone: warning, label: "Open", terminal: false, next: [taken, wont_do,] }
+  taken {
+    tone: info
+    label: "Taken"
+    terminal: false
+    next: [open, fixed, wont_do,]
+  }
+  fixed {
+    tone: accent
+    label: "Fixed"
+    terminal: false
+    next: [verified,]
+  }
+  verified {
+    tone: success
+    label: "Verified"
+    terminal: true
+    next: []
+  }
+  wont_do { tone: neutral, label: "Won't do", terminal: true, next: [], requires: [] }
+  duplicate {
+    tone: neutral
+    label: "Duplicate"
+    terminal: true
+    next: []
+  }
+}
+let deck: Deck = { layouts: ["4:1",], maxHidden: 2 }
+let columns: table Column = {
+  taken { label: "Taken", icon: hand, statuses: [taken], assigneeFilter: true }
+  fixed { label: "Fixed, to verify", icon: check, statuses: [] }
+  done { label: "Done", icon: archive, statuses: [verified, wont_do,] }
+}
+let severities: Severity = {
+}
+let areaGroups: table AreaGroup = {
+  in_game { label: "In game" }
+  out_game { label: "Out of game" }
+  internal { label: "Internal" }
+}
+let areas: table Area = {
+  game {
+    group: in_game
+    tone: series_1
+    icon: gamepad
+    label: "Game"
+    minRole: gm_junior
+  }
+  balance {
+    group: in_game
+    tone: series_1
+    icon: scale
+    label: "Balance"
+    minRole: gm_junior
+  }
+  website {
+    group: out_game
+    tone: series_2
+    icon: globe
+    label: "Website"
+    minRole: gm_junior
+  }
+  resource_studio {
+    group: internal
+    tone: series_3
+    icon: layers
+    label: "Resource Studio"
+    minRole: maintainer
+  }
+  client {
+    group: in_game
+    tone: series_1
+    icon: monitor
+    label: "Game client"
+    minRole: maintainer
+  }
+  resource {
+    group: in_game
+    tone: series_1
+    icon: database
+    label: "Game data (Resource)"
+    minRole: maintainer
+  }
+  admin_panel {
+    group: internal
+    tone: series_2
+    icon: shield
+    label: "Admin panel"
+    minRole: admin
+  }
+  analytics {
+    group: internal
+    tone: series_2
+    icon: bar_chart
+    label: "Analytics panel"
+    minRole: admin
+  }
+  team_board {
+    group: internal
+    tone: series_2
+    icon: columns
+    label: "Team board"
+    minRole: gm_junior
+  }
+  internal {
+    group: internal
+    tone: series_4
+    icon: terminal
+    label: "Internal (sov, boxes, deploy)"
+    minRole: admin
+  }
+}
+let initialStatus: Status = columns.active().first()!.statuses[0]
+check {
+  for s in statuses.active() {
+  }
+}
+check deck.maxHidden < columns.active().len()
+  else "maxHidden ({deck.maxHidden}) must be less than the number of columns"
+check {
+  for g in areaGroups.active() {
+    if areas.active().any(a => a.group == g) {
+    }
+  }
+  let seen = reachable(from: initialStatus, next: .next)
+  for s in statuses.active() {
+    if seen == {} {
+    }
+  }
+}
+/// status can be in that case), like the `(Column, bool)` it replaces.
+export fn columnOf(s: Status) -> Column? {
+  return columns.active().first((s))
+}
+/// sovcommon's AreasVisibleTo: minRole gates viewing and posting.
+export fn areasVisibleTo(role: Role) -> [ Area] {
+  return [a for a in areas.minRole]
+}
+/// One group header with the areas shown under it.
+record AreaSection {
+  /// The header.
+  group: AreaGroup
+  /// The areas under it, in declaration order.
+  areas: [ Area]
+}
+/// sovcommon's GroupedAreasVisibleTo: headers only for groups with a visible area.
+export fn groupedAreasVisibleTo(role: Role) -> [AreaSection] {
+  return [
+    { group: g, areas: areasVisibleTo(role).filter(a => a.group == g) }
+    for g in areaGroups.active()
+  ]
+}

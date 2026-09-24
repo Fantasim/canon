@@ -1,0 +1,16 @@
+suite corrupt
+name corruption
+case 2618
+seed 12884904507
+open format
+sig reparse E1116/token in File/EnumDecl
+want corruption
+failure reparse: the formatted file has findings: E1116@94 "expected NL, \",\", \"}\"; found in" package a enum Kind { _0 @since(1) @deprecated @go(name: "Mx") retired taken @since(1) in = 7 @go(name: "Mx") } retired entry xs.0 { taken: [ emit()[{}], ] "text": [].emit }
+-- gen/gen.canon --
+package a
+enum Kind { _0 @since(1) @deprecated @go(name: "Mx"), retired taken @since(1), in = 7 @go(name: "Mx") }
+retired entry xs.0 {
+  taken:[emit()[ {
+  }]]
+  "text":[].emit
+}

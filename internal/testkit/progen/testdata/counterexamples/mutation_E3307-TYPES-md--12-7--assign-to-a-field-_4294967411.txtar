@@ -1,0 +1,45 @@
+suite mutation
+name E3307 TYPES.md §12.7 (assign to a field)
+case 114
+seed 4294967411
+open check
+sig internal evaluation met a state the checker excludes: AssignStmt
+packages features.matching
+want E3307 features/matching/matching.canon 171 178 check
+failure internal evaluation met a state the checker excludes: AssignStmt at features/matching/matching.canon:9:5 evaluation met a state the checker excludes: AssignStmt at features/matching/matching.canon:9:5
+-- features/matching/matching.canon --
+package features.matching
+enum Season { spring autumn }
+record Mail {
+  subject: String
+  season: Season {
+  }
+  fn isHoliday() -> Bool {
+    var zzCopy = self
+    zzCopy.subject = zzCopy.subject
+    return {
+    }
+  }
+  warn isHoliday() or attachment is gold else "a holiday mail usually carries penya"
+}
+let mails: [Mail] = [
+  {
+    subject: "Spring cleaning"
+    season: spring
+  },
+  { subject: "Autumn news" season: autumn }
+]
+-- project.canon --
+project sovereign {
+  canon: "0.1"
+  roots {
+    resource: "../../../Resource"
+    client: "../../../Client"
+    source: "../../../Source"
+    services: "../.."
+    sovcommon: "../../sovcommon"
+    web: "../../sovcommon/web/src/lib"
+    parity: "../../balance/parity"
+    generated: "../../resourcestudio/generated"
+  }
+}

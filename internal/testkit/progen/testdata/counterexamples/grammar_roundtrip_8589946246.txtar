@@ -1,0 +1,24 @@
+suite grammar
+name roundtrip
+case 11653
+seed 8589946246
+open format
+sig idempotence in OptionalType/MatchType
+want roundtrip
+failure idempotence: formatting the formatted file changes it: package lib view Kind { group series_1 "" when ("data/*.json")?.fire(.for or "Zé:-") {} } local type Item = {match (if (if stepSize { total } else { b })[v2] { total } else { "\"" in 12 }).package and (..{})[() => 0x1F][r"é" is _0]?.check[match r""" """ {}?.fire]( match .for( if it and 7 { r"é{}" } else if stepSize ?? next { "" } else if r""" """ and "}} _:" { 9223372036854775807 != 7 } else if none { count + 0b1010 } else { a => item }, ) { _, _ => v2 == 42 }, ).fire { open, _ => r"" }? where match ({ taken {} }) - 250ms {} - { ...0, series_1 @deprecated() {}, package: count, series_1 @since(1) {} }() | "':": {it in xs: fn(Point, {_: Point} where a + "!\n") -> it()}} local fn total(v2: Reward, xs: Status() = 1_000_000) -> {count(): Kind} {}
+-- gen/gen.canon --
+package lib
+view Kind {
+  group series_1 "" when("data/*.json")?.fire(.for or "Zé:-") { }
+}
+local type Item = {match(if (if stepSize { total } else { b })[v2] {total } else { "\"" in 12 }).package and (.. {
+})[() => 0x1F][r"é" is _0]?.check [match r"""
+  """ {}?.fire] (match.for (if it and 7 {r"é{}" } else if stepSize ?? next { "" } else if r"""
+  """ and "}} _:" { 9223372036854775807 != 7 } else if none { count + 0b1010 } else { a => item }) {
+  _, _ =>v2 == 42
+}).fire { open, _ => r"" }? where match ({
+  taken { }
+})-250ms {
+}-{ ...0, series_1 @deprecated() {}, package: count, series_1 @since(1) {} }() | "':": {it in xs: fn(Point, {_: Point} where a + "!\n") -> it()}}
+local fn total(v2: Reward, xs: Status() =1_000_000) -> {count(): Kind} {
+}

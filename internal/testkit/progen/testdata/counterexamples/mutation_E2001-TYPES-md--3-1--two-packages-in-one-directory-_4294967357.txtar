@@ -1,0 +1,29 @@
+suite mutation
+name E2001 TYPES.md §3.1 (two packages in one directory)
+case 60
+seed 4294967357
+open build
+sig missing
+packages zz.y
+want E2001 zz/y/w/two.canon 8 12 check
+failure missing E2001, got []
+-- project.canon --
+project sovereign {
+  canon: "0.1"
+  roots {
+    resource: "../../../Resource"
+    client: "../../../Client"
+    source: "../../../Source"
+    services: "../.."
+    sovcommon: "../../sovcommon"
+    web: "../../sovcommon/web/src/lib"
+    parity: "../../balance/parity"
+    generated: "../../resourcestudio/generated"
+  }
+}
+-- studio/studio.canon --
+package studio
+-- zz/y/w/one.canon --
+package zz
+-- zz/y/w/two.canon --
+package zz.y

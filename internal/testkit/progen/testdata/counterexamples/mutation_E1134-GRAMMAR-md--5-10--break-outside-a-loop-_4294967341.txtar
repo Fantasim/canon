@@ -1,0 +1,101 @@
+suite mutation
+name E1134 GRAMMAR.md §5.10 (break outside a loop)
+case 44
+seed 4294967341
+open check
+sig internal evaluation met a state the checker excludes: FnDecl
+packages teamboard
+want E1134 teamboard/taxonomy.canon 708 713 check
+failure internal evaluation met a state the checker excludes: FnDecl at teamboard/taxonomy.canon:41:1 evaluation met a state the checker excludes: FnDecl at teamboard/taxonomy.canon:41:1 evaluation met a state the checker excludes: FnDecl at teamboard/taxonomy.canon:41:1
+-- project.canon --
+project sovereign {
+  canon: "0.1"
+  roots {
+    resource: "../../../Resource"
+    client: "../../../Client"
+    source: "../../../Source"
+    services: "../.."
+    sovcommon: "../../sovcommon"
+    web: "../../sovcommon/web/src/lib"
+    parity: "../../balance/parity"
+    generated: "../../resourcestudio/generated"
+  }
+}
+-- sovcommon/roles/roles.canon --
+package sovcommon.roles
+enum Role ordered {
+  gm_junior
+  maintainer
+  admin
+}
+-- sovcommon/ui/ui.canon --
+package sovcommon.ui
+enum Tone {
+  series_1
+  series_2
+  series_3
+  series_4
+}
+enum Icon {
+  bar_chart
+  columns
+  database
+  gamepad
+  globe
+  layers
+  monitor
+  package
+  scale
+  server
+  shield
+  terminal
+}
+-- teamboard/taxonomy.canon --
+package teamboard
+import sovcommon.roles { Role }
+import sovcommon.ui { Icon Tone }
+record AreaGroup {
+  label: String
+}
+record Area {
+  group: ref AreaGroup
+  tone: Tone
+  icon: Icon
+  label: String(1..)
+  minRole: Role
+}
+let areaGroups: table AreaGroup = {
+  in_game { label: "In game" }
+}
+let areas: table Area = {
+  game {
+    group: in_game
+    tone: series_1
+    icon: gamepad
+    label: "Game"
+    minRole: gm_junior
+  } {
+  } {
+  } {
+  } {
+  } {
+  } {
+  } {
+  } {
+  } {
+  }
+} fn areasVisibleTo(role: Role) -> [ Area] {
+  return [a for a areas.active() if role >= a.minRole]
+}
+record AreaSection {
+  group: AreaGroup
+  areas: [ Area]
+}
+export fn groupedAreasVisibleTo(role: Role) -> [AreaSection] {
+  break
+  return [
+    { group: g areas: areasVisibleTo(role).filter(a => a.group == g) }
+    for g areaGroups.active()
+  ]
+}
+emit ts { }

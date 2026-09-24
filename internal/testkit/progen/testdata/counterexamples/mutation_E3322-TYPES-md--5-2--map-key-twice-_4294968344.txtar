@@ -1,0 +1,73 @@
+suite mutation
+name E3322 TYPES.md §5.2 (map key twice)
+case 1047
+seed 4294968344
+open check
+sig repeated E3322
+packages features.matching
+want E3322 features/matching/matching.canon 767 770 check
+failure repeated [E3322 features/matching/matching.canon:33:40 "key \"a\" is given twice"; E3322 features/matching/matching.canon:33:40 "key a is given twice"]
+-- features/matching/matching.canon --
+package features.matching
+/// What a system mail carries.
+variant Attachment @json(tag: "type") {
+  item {
+    /// The item define.
+    count: Int(1..) = 1
+  }
+  gold {
+    /// How much.
+    amount: Int(1..)
+  }
+  nothing
+}
+/// When a mail is sent.
+enum Season { spring }
+/// A mail the server sends to every player once.
+record Mail {
+  /// Title in the mailbox.
+  subject: String(1..)
+  /// When it is sent.
+  season: Season
+  /// What it carries.
+  attachment: Attachment = nothing
+  /// No runtime input, so `canon build` computes it and ships the value.
+  export fn quantity() -> Int {
+    return match attachment {
+      item(i) => i.count
+      gold(g) => g.amount
+      nothing => 0
+    }
+  }
+  fn isHoliday() -> Bool {
+    let zzM: {String: Int} = { "a": 1, "a": 2 }
+    return match season {
+      _ => false
+    }
+  }
+  warn not isHoliday() or attachment is gold else "a holiday mail usually carries penya"
+}
+let mails: [Mail] = [
+  {
+    subject: "Spring cleaning"
+    season: spring
+  }
+]
+test "quantity follows the attachment" {
+}
+-- project.canon --
+project sovereign {
+  canon: "0.1"
+  roots {
+    resource: "../../../Resource"
+    client: "../../../Client"
+    source: "../../../Source"
+    services: "../.."
+    sovcommon: "../../sovcommon"
+    web: "../../sovcommon/web/src/lib"
+    parity: "../../balance/parity"
+    generated: "../../resourcestudio/generated"
+  }
+}
+-- studio/studio.canon --
+package studio

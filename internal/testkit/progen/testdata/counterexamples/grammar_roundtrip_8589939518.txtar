@@ -1,0 +1,16 @@
+suite grammar
+name roundtrip
+case 4925
+seed 8589939518
+open format
+sig idempotence in UnaryExpr/BinaryExpr
+want roundtrip
+failure idempotence: formatting the formatted file changes it: package gen local variant Tone { series_1 @since(3) { it: match not ("data.json") + 42 {} where {}[if it { 0x1F } else { v2 }.check] % (["k{i}", "v{i}"])() } }
+-- gen/gen.canon --
+package gen
+local variant Tone {
+  series_1 @since(3) {
+    it: match not("data.json")  + 42 {} where {
+    }[if it { 0x1F } else { v2 }.check] %( ["k{i}", "v{i}"])()
+  }
+}

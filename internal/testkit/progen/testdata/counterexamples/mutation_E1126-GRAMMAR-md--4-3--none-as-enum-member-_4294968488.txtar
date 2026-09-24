@@ -1,0 +1,41 @@
+suite mutation
+name E1126 GRAMMAR.md §4.3 (none as enum member)
+case 1191
+seed 4294968488
+open check
+sig extra E3601
+packages features.lookup
+want E1126 features/lookup/lookup.canon 93 97 check
+failure extra [E3601 features/lookup/lookup.canon:8:10 "match does not cover hero; add them or _"; E3601 features/lookup/lookup.canon:13:10 "match does not cover ultimate, none; add them or _"] besides [E1126 features/lookup/lookup.canon:3:24 "\"none\" cannot name an enum member, variant case or table key"]
+-- features/lookup/lookup.canon --
+package features.lookup
+/// Upgrade grades of a weapon, lowest first.
+enum Grade { ultimate, none }
+/// Job tiers, lowest first.
+enum Tier { hero }
+/// generated code.
+export fn canUpgrade(grade: Tier) -> Bool {
+  return match grade {
+  }
+}
+/// Penya an upgrade costs: a 3-entry table.
+export fn upgradeCost(grade: Grade) -> Int {
+  return match grade {
+  }
+}
+-- project.canon --
+project sovereign {
+  canon: "0.1"
+  roots {
+    resource: "../../../Resource"
+    client: "../../../Client"
+    source: "../../../Source"
+    services: "../.."
+    sovcommon: "../../sovcommon"
+    web: "../../sovcommon/web/src/lib"
+    parity: "../../balance/parity"
+    generated: "../../resourcestudio/generated"
+  }
+}
+-- studio/studio.canon --
+package studio

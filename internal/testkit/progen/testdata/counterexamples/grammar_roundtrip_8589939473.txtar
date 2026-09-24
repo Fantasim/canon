@@ -1,0 +1,20 @@
+suite grammar
+name roundtrip
+case 4880
+seed 8589939473
+open format
+sig idempotence in MatchType/BinaryExpr
+want roundtrip
+failure idempotence: formatting the formatted file changes it: package lib view Row { menu taken icon package } export fn item(item: ("日0aa"), label: {(r"\}x}"): Reward}) -> count | asset(".a", ext: []) { ("data/*.json").if - [] // c3 } record Point( total: Kind = { package { fire: "" } } is taken, label: Reward, ) @go(name: "Rx") {} local type Tone( total: match (it).fire() - label {} where { package: "{"{xs}"}{r"x"}\u{41}" }("data/*.json").IK1_WEAPON, ) = ("é")
+-- gen/gen.canon --
+package lib
+view Row { menu taken icon package }
+export fn item(item:("日0aa"), label: {(r"\}x}"):Reward}) -> count | asset(".a", ext: []) {("data/*.json").if -[] // c3
+}
+record Point(total: Kind = {
+  package { fire: "" }
+} is taken, label: Reward) @go(name: "Rx") {
+}
+local type Tone( total: match(it).fire()-label {} where {
+  package: "{"{xs}"}{r"x"}\u{41}"
+}("data/*.json").IK1_WEAPON) =("é")

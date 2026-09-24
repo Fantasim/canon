@@ -1,0 +1,60 @@
+suite mutation
+name E1135 GRAMMAR.md §5.10 (return in a test)
+case 45
+seed 4294967342
+open check
+sig extra E9008
+packages pipeline
+want E1135 pipeline/potion.canon 716 722 check
+failure extra [E9008 pipeline/potion.canon:15:13 "translated method Potion.healFor is called by no test of package pipeline: add one, it gives the conformance test its receiver"] besides [E1135 pipeline/potion.canon:18:3 "return outside a function"]
+-- pipeline/data/II_POT_HEAL_S.json --
+{
+  "dwID": "II_POT_HEAL_S",
+  "szName": "IDS_PROPITEM_TXT_POT_S",
+  "nHeal": 500,
+  "dwCooldownMs": 3000
+}
+-- pipeline/potion.canon --
+package pipeline
+/// A healing potion. Each one is a file under data/.
+record Potion {
+  /// The item define. Stored in inventories: never renamed.
+  id: String(/^II_[A-Z0-9_]+$/) @json()
+  /// Text key of the displayed name.
+  name: String(/^IDS_/) @json()
+  /// Hit points restored.
+  heal: Int(..=100_000) @json()
+  /// Time before the same potion can be drunk again.
+  cooldown: Duration(..=10m) @json()
+  warn (heal > 5_000 and cooldown < 2s)
+    else "heals {cooldown}: that outheals most bosses"
+  /// conformance test per target so the translations cannot drift.
+  export fn healFor( missingHp: Int) -> Int { return min(heal, max(missingHp, 0)) }
+}
+test "healFor never overheals and never goes negative" {
+  return
+  let p: Potion = { id: "II_POT_T", name: "IDS_T", heal: 500, cooldown: 1s }
+}
+emit go { out: "out/go/" }
+-- project.canon --
+project sovereign {
+  canon: "0.1"
+  roots {
+    resource: "../../../Resource"
+    client: "../../../Client"
+    source: "../../../Source"
+    services: "../.."
+    sovcommon: "../../sovcommon"
+    web: "../../sovcommon/web/src/lib"
+    parity: "../../balance/parity"
+    generated: "../../resourcestudio/generated"
+    pipeline_go: "pipeline/out/go"
+  }
+  go_module {
+    pipeline_go: "example.com/potions"
+  }
+}
+-- sovcommon/time/time.canon --
+package sovcommon
+-- studio/studio.canon --
+package studio

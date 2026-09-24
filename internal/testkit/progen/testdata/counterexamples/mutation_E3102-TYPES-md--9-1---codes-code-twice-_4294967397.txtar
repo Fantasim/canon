@@ -1,0 +1,32 @@
+suite mutation
+name E3102 TYPES.md §9.1 (@codes code twice)
+case 100
+seed 4294967397
+open build
+sig missing
+packages features.retirement
+want E3102 features/retirement/retirement.canon 148 164 check
+failure missing E3102, got []
+-- features/retirement/retirement.canon --
+package features.retirement
+/// ticket went away with its event: its code 3 is retired, never reused.
+enum TicketKind @codes(UInt8) { standard = 1, retired event = 1 }
+/// A prize tier of the lottery. Tickets store the tier they won, so ids are stable.
+record Tier {
+}
+-- project.canon --
+project sovereign {
+  canon: "0.1"
+  roots {
+    resource: "../../../Resource"
+    client: "../../../Client"
+    source: "../../../Source"
+    services: "../.."
+    sovcommon: "../../sovcommon"
+    web: "../../sovcommon/web/src/lib"
+    parity: "../../balance/parity"
+    generated: "../../resourcestudio/generated"
+  }
+}
+-- studio/studio.canon --
+package studio

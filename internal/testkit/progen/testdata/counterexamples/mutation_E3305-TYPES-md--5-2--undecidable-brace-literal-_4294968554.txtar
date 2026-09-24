@@ -1,0 +1,44 @@
+suite mutation
+name E3305 TYPES.md §5.2 (undecidable brace literal)
+case 1257
+seed 4294968554
+open check
+sig internal evaluation met a state the checker excludes: BraceLit
+packages features.matching
+want E3305 features/matching/matching.canon 156 164 check
+failure internal evaluation met a state the checker excludes: BraceLit at features/matching/matching.canon:8:19 evaluation met a state the checker excludes: BraceLit at features/matching/matching.canon:8:19
+-- features/matching/matching.canon --
+package features.matching
+enum Season { spring autumn }
+record Mail {
+  subject: String
+  season: Season {
+  }
+  fn isHoliday() -> Bool {
+    let zzBrace = { a: 1 }
+    return {
+    }
+  }
+  warn isHoliday() or attachment is gold else "a holiday mail usually carries penya"
+}
+let mails: [Mail] = [
+  {
+    subject: "Spring cleaning"
+    season: spring
+  },
+  { subject: "Autumn news" season: autumn }
+]
+-- project.canon --
+project sovereign {
+  canon: "0.1"
+  roots {
+    resource: "../../../Resource"
+    client: "../../../Client"
+    source: "../../../Source"
+    services: "../.."
+    sovcommon: "../../sovcommon"
+    web: "../../sovcommon/web/src/lib"
+    parity: "../../balance/parity"
+    generated: "../../resourcestudio/generated"
+  }
+}

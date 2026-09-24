@@ -1,0 +1,54 @@
+suite mutation
+name E1111 GRAMMAR.md §2.5 (unit order)
+case 475
+seed 4294967772
+open check
+sig extra E3204
+packages pipeline
+want E1111 pipeline/potion.canon 368 373 check
+failure extra [E3204 pipeline/potion.canon:18:73 "1s is outside ..=10m1d"] besides [E1111 pipeline/potion.canon:11:25 "invalid duration \"10m1d\": units must decrease (d, h, m, s, ms)"]
+-- pipeline/data/II_POT_HEAL_S.json --
+{
+  "dwID": "II_POT_HEAL_S",
+  "szName": "IDS_PROPITEM_TXT_POT_S",
+  "nHeal": 500,
+  "dwCooldownMs": 3000
+}
+-- pipeline/potion.canon --
+package pipeline
+/// A healing potion. Each one is a file under data/.
+record Potion {
+  /// The item define. Stored in inventories: never renamed.
+  id: String
+  /// Text key of the displayed name.
+  name: String(/^IDS_/) @json()
+  /// Hit points restored.
+  heal: Int(..=100_000) @json()
+  /// Time before the same potion can be drunk again.
+  cooldown: Duration(..=10m1d) @json()
+  warn (heal > 5_000 and cooldown < 2s)
+    else "heals {cooldown}: that outheals most bosses"
+  /// conformance test per target so the translations cannot drift.
+  export fn healFor( missingHp: Int) -> Int { return min(heal, max(missingHp, 0)) }
+}
+test "healFor never overheals and never goes negative" {
+  let p: Potion = { id: "II_POT_T", name: "IDS_T", heal: 500, cooldown: 1s }
+}
+-- project.canon --
+project sovereign {
+  canon: "0.1"
+  roots {
+    resource: "../../../Resource"
+    client: "../../../Client"
+    source: "../../../Source"
+    services: "../.."
+    sovcommon: "../../sovcommon"
+    web: "../../sovcommon/web/src/lib"
+    parity: "../../balance/parity"
+    generated: "../../resourcestudio/generated"
+  }
+}
+-- sovcommon/time/time.canon --
+package sovcommon
+-- studio/studio.canon --
+package studio

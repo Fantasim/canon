@@ -1,0 +1,34 @@
+suite mutation
+name E3022 TYPES.md §13.1 (record contains itself, with a default)
+case 96
+seed 4294967393
+open eval
+sig crash fatal error: stack overflow in eval.(*run).defaultValue ~ eval.(*run).defaults ~ eval.(*run).eval ~ eval.(*run).node ~ eval.(*run).recordLit ~ eval.evalBrace
+packages service.resourcestudio
+want E3022 service/resourcestudio/resourcestudio.canon 85 91 check
+failure crash fatal error: stack overflow | | runtime stack:
+-- project.canon --
+project sovereign {
+  canon: "0.1"
+  roots {
+    resource: "../../../Resource"
+    client: "../../../Client"
+    source: "../../../Source"
+    services: "../.."
+    sovcommon: "../../sovcommon"
+    web: "../../sovcommon/web/src/lib"
+    parity: "../../balance/parity"
+    generated: "../../resourcestudio/generated"
+  }
+}
+-- service/resourcestudio/resourcestudio.canon --
+package service.resourcestudio
+record Server {
+  port: Int(..=65535) = 8765
+}
+record Config {
+  server: Server = {} {}
+  /// Itself.
+  zzSelf: Config = {}
+}
+emit go { }

@@ -1,0 +1,35 @@
+suite mutation
+name E1130 GRAMMAR.md §5.10 (expect outside a test)
+case 40
+seed 4294967337
+open check
+sig internal evaluation met a state the checker excludes: ExpectStmt
+packages features.lookup
+want E1130 features/lookup/lookup.canon 109 120 check
+failure internal evaluation met a state the checker excludes: ExpectStmt at features/lookup/lookup.canon:4:3 evaluation met a state the checker excludes: ExpectStmt at features/lookup/lookup.canon:4:3 evaluation met a state the checker excludes: ExpectStmt at features/lookup/lookup.canon:4:3
+-- features/lookup/lookup.canon --
+package features.lookup
+enum Grade { normal unique ultimate }
+export fn upgradeCost(grade: Grade) -> Int {
+  expect true
+  return match grade {
+    normal => 10_000
+    unique => 500_000
+    ultimate => 20_000_000
+  }
+}
+emit go { }
+-- project.canon --
+project sovereign {
+  canon: "0.1"
+  roots {
+    resource: "../../../Resource"
+    client: "../../../Client"
+    source: "../../../Source"
+    services: "../.."
+    sovcommon: "../../sovcommon"
+    web: "../../sovcommon/web/src/lib"
+    parity: "../../balance/parity"
+    generated: "../../resourcestudio/generated"
+  }
+}

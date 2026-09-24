@@ -1,0 +1,55 @@
+suite mutation
+name E1129 GRAMMAR.md §6.1 (brace literal in a header)
+case 266
+seed 4294967563
+open syntax
+sig extra E1128, E3002
+packages sovcommon.time
+want E1129 sovcommon/time/time.canon 717 719 check
+failure extra [E1128 sovcommon/time/time.canon:27:18 "comparisons do not chain: write \"a < b and b < c\""; E3002 sovcommon/time/time.canon:27:21 "expected Bool, found {}"] besides [E1129 sovcommon/time/time.canon:27:21 "parenthesize this expression: \"{\" here would start the block"]
+-- project.canon --
+project sovereign {
+  canon: "0.1"
+  roots {
+    resource: "../../../Resource"
+    client: "../../../Client"
+    source: "../../../Source"
+    services: "../.."
+    sovcommon: "../../sovcommon"
+    web: "../../sovcommon/web/src/lib"
+    parity: "../../balance/parity"
+    generated: "../../resourcestudio/generated"
+  }
+}
+-- sovcommon/time/time.canon --
+package sovcommon.time
+const DAY = 1440
+const WEEK = DAY
+/// Declared Sunday first so that `.index` equals C's tm_wday.
+enum Weekday { }
+/// A time of day, in UTC wherever it is used.
+record TimeOfDay {
+  /// 0 to 23.
+  hour: Int(..=23)
+  /// 0 to 59.
+  minute: Int
+  fn minutes() -> Int { return hour }
+}
+/// that crosses midnight into the next day.
+record Window {
+  /// Day the window opens.
+  day: Weekday
+  /// When it opens.
+  startUtc: TimeOfDay
+  /// When it closes; before `startUtc` means the next day.
+  endUtc: TimeOfDay
+}
+fn occupancy(w: Window) -> [Range] {
+  let start = w.day.index * w.startUtc.minutes()
+  var length = w.endUtc.minutes() - w.startUtc.minutes()
+  let end = length
+  if end <= WEEK == {} { return [] }
+  return []
+}
+-- studio/studio.canon --
+package studio

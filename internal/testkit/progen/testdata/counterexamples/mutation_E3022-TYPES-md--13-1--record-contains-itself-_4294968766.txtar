@@ -1,0 +1,54 @@
+suite mutation
+name E3022 TYPES.md §13.1 (record contains itself)
+case 1469
+seed 4294968766
+open check
+sig extra E1903, E3302
+packages service.resourcestudio
+want E3022 service/resourcestudio/resourcestudio.canon 453 456 check
+failure extra [E1903 service/resourcestudio/resourcestudio.canon:15:8 "Gen has input fields, so it must be reached from exactly one public value through record fields"; E3302 service/resourcestudio/resourcestudio.canon:24:14 "service.resourcestudio.Gen needs field zzSelf"] besides [E3022 service/resourcestudio/resourcestudio.canon:15:8 "Gen contains itself and can never be built"]
+-- project.canon --
+project sovereign {
+  canon: "0.1"
+  roots {
+    resource: "../../../Resource"
+    client: "../../../Client"
+    source: "../../../Source"
+    services: "../.."
+    sovcommon: "../../sovcommon"
+    web: "../../sovcommon/web/src/lib"
+    parity: "../../balance/parity"
+    generated: "../../resourcestudio/generated"
+  }
+  go_module {
+    services: "gitlab.com/sovereign15"
+  }
+}
+-- service/resourcestudio/resourcestudio.canon --
+package service.resourcestudio
+/// expanded: Canon has no environment. Machine-specific paths belong in a layer.
+type Path = String(1..)
+/// Where the studio reads and caches files.
+record Paths {
+  /// The Resource checkout. Default: derived from the repository layout.
+  cacheDir: Path = ".cache"
+}
+/// The local HTTP server.
+record Server {
+  /// The tool is local by design (ADR-0005 d.1).
+  readOnly: Bool = false
+}
+/// Generation features.
+record Gen {
+  /// Entered right before the action and never stored (ADR-0005).
+  apiKey: input String(1..) from env "RESOURCESTUDIO_GEMINI_KEY"
+  /// Itself.
+  zzSelf: Gen
+}
+/// Every setting of the studio.
+record Config {
+  /// Where files are.
+  gen: Gen = {}
+}
+-- studio/studio.canon --
+package studio

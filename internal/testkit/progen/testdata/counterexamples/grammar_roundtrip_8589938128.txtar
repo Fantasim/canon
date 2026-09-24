@@ -1,0 +1,25 @@
+suite grammar
+name roundtrip
+case 3535
+seed 8589938128
+open check
+sig crash fatal error: stack overflow in check.(*checker).domain ~ check.(*checker).letCollection ~ check.(*checker).letType ~ check.(*checker).resolveDepMap ~ check.(*checker).resolveLetAnnotation ~ check.(*checker).resolveType ~ check.(*checker).resolveTypeNode
+want roundtrip
+failure crash fatal error: stack overflow | | runtime stack:
+-- gen/gen.canon --
+package gen
+let label: {next in label: Item} = T
+test r"\}" {
+  for _ in("\}")[item] {
+  }
+}
+test "" {
+  for next in count {
+  }
+}
+entry it.fire {
+  _0 {
+  }
+  "text": count
+}
+-- project.canon --

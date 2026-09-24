@@ -1,0 +1,50 @@
+suite mutation
+name E3401 TYPES.md §2 (optional of an optional)
+case 128
+seed 4294967425
+open check
+sig extra E1910
+packages service.resourcestudio
+want E3401 service/resourcestudio/resourcestudio.canon 481 494 check
+failure extra [E1910 service/resourcestudio/resourcestudio.canon:14:17 "input apiKey: type invalid cannot be read or checked at run time"] besides [E3401 service/resourcestudio/resourcestudio.canon:14:17 "String(1..)?? is not a type: String(1..)? is already optional"]
+-- project.canon --
+project sovereign {
+  canon: "0.1"
+  roots {
+    resource: "../../../Resource"
+    client: "../../../Client"
+    source: "../../../Source"
+    services: "../.."
+    sovcommon: "../../sovcommon"
+    web: "../../sovcommon/web/src/lib"
+    parity: "../../balance/parity"
+    generated: "../../resourcestudio/generated"
+  }
+  go_module {
+    services: "gitlab.com/sovereign15"
+  }
+}
+-- service/resourcestudio/resourcestudio.canon --
+package service.resourcestudio
+/// expanded: Canon has no environment. Machine-specific paths belong in a layer.
+type Path = String
+/// Where the studio reads and caches files.
+record Paths {
+  /// The Resource checkout. Default: derived from the repository layout.
+  cacheDir: Path
+  /// The tool is local by design (ADR-0005 d.1).
+  readOnly: Bool = false
+}
+/// Generation features.
+record Gen {
+  /// Entered right before the action and never stored (ADR-0005).
+  apiKey: input String(1..)?? from env "RESOURCESTUDIO_GEMINI_KEY"
+}
+/// Every setting of the studio.
+record Config {
+  /// Where files are.
+  gen: Gen = {}
+}
+let config: Config = {}
+-- studio/studio.canon --
+package studio

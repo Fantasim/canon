@@ -1,0 +1,44 @@
+suite mutation
+name E3025 TYPES.md §13.3 (Float bound in a Range)
+case 98
+seed 4294967395
+open check
+sig internal evaluation met a state the checker excludes: FloatLit
+packages features.matching
+want E3025 features/matching/matching.canon 159 165 check
+failure internal evaluation met a state the checker excludes: FloatLit at features/matching/matching.canon:8:22 evaluation met a state the checker excludes: FloatLit at features/matching/matching.canon:8:22
+-- features/matching/matching.canon --
+package features.matching
+enum Season { spring autumn }
+record Mail {
+  subject: String
+  season: Season {
+  }
+  fn isHoliday() -> Bool {
+    let zzR: Range = 1.5..3
+    return {
+    }
+  }
+  warn isHoliday() or attachment is gold else "a holiday mail usually carries penya"
+}
+let mails: [Mail] = [
+  {
+    subject: "Spring cleaning"
+    season: spring
+  },
+  { subject: "Autumn news" season: autumn }
+]
+-- project.canon --
+project sovereign {
+  canon: "0.1"
+  roots {
+    resource: "../../../Resource"
+    client: "../../../Client"
+    source: "../../../Source"
+    services: "../.."
+    sovcommon: "../../sovcommon"
+    web: "../../sovcommon/web/src/lib"
+    parity: "../../balance/parity"
+    generated: "../../resourcestudio/generated"
+  }
+}

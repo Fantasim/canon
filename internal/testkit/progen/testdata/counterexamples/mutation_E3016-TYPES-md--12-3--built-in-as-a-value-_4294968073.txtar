@@ -1,0 +1,44 @@
+suite mutation
+name E3016 TYPES.md §12.3 (built-in as a value)
+case 776
+seed 4294968073
+open check
+sig internal evaluation met a state the checker excludes: IdentExpr
+packages features.matching
+want E3016 features/matching/matching.canon 170 173 check
+failure internal evaluation met a state the checker excludes: IdentExpr at features/matching/matching.canon:8:33 evaluation met a state the checker excludes: IdentExpr at features/matching/matching.canon:8:33
+-- features/matching/matching.canon --
+package features.matching
+enum Season { spring autumn }
+record Mail {
+  subject: String
+  season: Season {
+  }
+  fn isHoliday() -> Bool {
+    let zzAbs: fn(Int) -> Int = abs
+    return {
+    }
+  }
+  warn isHoliday() or attachment is gold else "a holiday mail usually carries penya"
+}
+let mails: [Mail] = [
+  {
+    subject: "Spring cleaning"
+    season: spring
+  },
+  { subject: "Autumn news" season: autumn }
+]
+-- project.canon --
+project sovereign {
+  canon: "0.1"
+  roots {
+    resource: "../../../Resource"
+    client: "../../../Client"
+    source: "../../../Source"
+    services: "../.."
+    sovcommon: "../../sovcommon"
+    web: "../../sovcommon/web/src/lib"
+    parity: "../../balance/parity"
+    generated: "../../resourcestudio/generated"
+  }
+}

@@ -1,0 +1,65 @@
+suite mutation
+name E3306 TYPES.md §12.3 (function type as a field)
+case 567
+seed 4294967864
+open ir
+sig extra E8012
+packages sovcommon.time
+want E3306 sovcommon/time/time.canon 332 349 check
+failure extra [E8012 sovcommon/time/time.canon:14:3 "TimeOfDay.zzFn cannot be emitted: fn(Int) -> Int has no representation in generated code"] besides [E3306 sovcommon/time/time.canon:14:10 "a function type is not allowed here"]
+-- project.canon --
+project sovereign {
+  canon: "0.1"
+  roots {
+    resource: "../../../Resource"
+    client: "../../../Client"
+    source: "../../../Source"
+    services: "../.."
+    sovcommon: "../../sovcommon"
+    web: "../../sovcommon/web/src/lib"
+    parity: "../../balance/parity"
+    generated: "../../resourcestudio/generated"
+  }
+}
+-- sovcommon/time/time.canon --
+package sovcommon.time
+const DAY = 1440
+const WEEK = DAY
+/// Declared Sunday first so that `.index` equals C's tm_wday.
+enum Weekday { }
+/// A time of day, in UTC wherever it is used.
+record TimeOfDay {
+  /// 0 to 23.
+  hour: Int(..=23)
+  /// 0 to 59.
+  minute: Int(..=59)
+  fn minutes() -> Int { return hour }
+  /// Added.
+  zzFn: (fn(Int) -> Int)? = none
+}
+/// that crosses midnight into the next day.
+record Window {
+  /// Day the window opens.
+  day: Weekday
+  /// When it opens.
+  startUtc: TimeOfDay
+  /// When it closes; before `startUtc` means the next day.
+  endUtc: TimeOfDay
+}
+fn occupancy(w: Window) -> [Range] {
+  let start = w.day.index + w.startUtc.minutes()
+  var length = w.endUtc.minutes()
+  let end = start
+  return [ 0..]
+}
+fn overlaps(a: Window, b: Window) -> Bool {
+  return occupancy(a).any(x => occupancy(b).any(y => y.start < x.end))
+}
+emit cpp { out: "@source/Generated/time" }
+local fn at(day: Weekday, from: Int, to: Int) -> Window {
+  return { day: day, startUtc: { hour: from, minute: 0 }, endUtc: { hour: to, minute: 0 } }
+}
+test "touching windows do not overlap" {
+}
+-- studio/studio.canon --
+package studio

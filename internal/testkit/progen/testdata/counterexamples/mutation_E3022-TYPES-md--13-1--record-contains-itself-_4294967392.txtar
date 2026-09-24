@@ -1,0 +1,49 @@
+suite mutation
+name E3022 TYPES.md §13.1 (record contains itself)
+case 95
+seed 4294967392
+open check
+sig extra E3302
+packages pipeline
+want E3022 pipeline/potion.canon 78 84 check
+failure extra [E3302 pipeline/potion.canon:20:19 "pipeline.Potion needs field name"; E3302 pipeline/potion.canon:20:19 "pipeline.Potion needs field zzSelf"] besides [E3022 pipeline/potion.canon:3:8 "Potion contains itself and can never be built"]
+-- pipeline/potion.canon --
+package pipeline
+/// A healing potion. Each one is a file under data/.
+record Potion {
+  /// The item define. Stored in inventories: never renamed.
+  id: String
+  /// Text key of the displayed name.
+  name: String(/^IDS_/) @json()
+  /// Hit points restored.
+  heal: Int(..=100_000) @json()
+  /// Time before the same potion can be drunk again.
+  cooldown: Duration(..=10m) @json()
+  warn (heal > 5_000 and cooldown < 2s)
+    else "heals {cooldown}: that outheals most bosses"
+  /// conformance test per target so the translations cannot drift.
+  export fn healFor( missingHp: Int) -> Int { return min(heal, max(missingHp, 0)) }
+  /// Itself.
+  zzSelf: Potion
+}
+test "healFor never overheals and never goes negative" {
+  let p: Potion = { id: "IDS_T", heal: 500, cooldown: 1s }
+}
+-- project.canon --
+project sovereign {
+  canon: "0.1"
+  roots {
+    resource: "../../../Resource"
+    client: "../../../Client"
+    source: "../../../Source"
+    services: "../.."
+    sovcommon: "../../sovcommon"
+    web: "../../sovcommon/web/src/lib"
+    parity: "../../balance/parity"
+    generated: "../../resourcestudio/generated"
+  }
+}
+-- sovcommon/time/time.canon --
+package sovcommon
+-- studio/studio.canon --
+package studio

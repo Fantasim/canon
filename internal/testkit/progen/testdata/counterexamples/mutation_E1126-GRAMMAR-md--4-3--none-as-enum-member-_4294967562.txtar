@@ -1,0 +1,34 @@
+suite mutation
+name E1126 GRAMMAR.md §4.3 (none as enum member)
+case 265
+seed 4294967562
+open check
+sig extra E3201
+packages features.retirement
+want E1126 features/retirement/retirement.canon 168 172 check
+failure extra [E3201 features/retirement/retirement.canon:3:60 "none does not fit UInt8"; E3201 features/retirement/retirement.canon:3:67 "none does not fit UInt8"] besides [E1126 features/retirement/retirement.canon:3:67 "\"none\" cannot name an enum member, variant case or table key"]
+-- features/retirement/retirement.canon --
+package features.retirement
+/// ticket went away with its event: its code 3 is retired, never reused.
+enum TicketKind @codes(UInt8) { standard = 1, premium = 2, event, none }
+/// A prize tier of the lottery. Tickets store the tier they won, so ids are stable.
+record Tier {
+}
+let tiers: Tier = {
+}
+-- project.canon --
+project sovereign {
+  canon: "0.1"
+  roots {
+    resource: "../../../Resource"
+    client: "../../../Client"
+    source: "../../../Source"
+    services: "../.."
+    sovcommon: "../../sovcommon"
+    web: "../../sovcommon/web/src/lib"
+    parity: "../../balance/parity"
+    generated: "../../resourcestudio/generated"
+  }
+}
+-- studio/studio.canon --
+package studio

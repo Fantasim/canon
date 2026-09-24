@@ -1,0 +1,47 @@
+suite mutation
+name E2102 TYPES.md §3.3 (unknown name)
+case 521
+seed 4294967818
+open check
+sig missing E3008
+packages features.lookup
+want E2102 features/lookup/lookup.canon 301 307 check
+failure missing E2102, got [E3008 features/lookup/lookup.canon:10:15 "cannot infer the type of this expression; add a type"]
+-- features/lookup/lookup.canon --
+package features.lookup
+/// Upgrade grades of a weapon, lowest first.
+enum Grade { normal, unique, ultimate }
+/// Job tiers, lowest first.
+enum Tier ordered { master }
+/// generated code.
+export fn canUpgrade(grade: Grade, tier: Tier) -> Bool {
+  return match grade {
+    normal => true
+    unique => zztier >= pro
+    ultimate => tier >= master
+  }
+}
+/// Penya an upgrade costs: a 3-entry table.
+export fn upgradeCost(grade: Grade) -> Int {
+  return match grade {
+    normal => 10_000
+    unique => 500_000
+    ultimate => 20_000_000
+  }
+}
+-- project.canon --
+project sovereign {
+  canon: "0.1"
+  roots {
+    resource: "../../../Resource"
+    client: "../../../Client"
+    source: "../../../Source"
+    services: "../.."
+    sovcommon: "../../sovcommon"
+    web: "../../sovcommon/web/src/lib"
+    parity: "../../balance/parity"
+    generated: "../../resourcestudio/generated"
+  }
+}
+-- studio/studio.canon --
+package studio

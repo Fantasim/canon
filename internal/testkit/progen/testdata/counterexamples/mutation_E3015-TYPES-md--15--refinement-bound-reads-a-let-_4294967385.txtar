@@ -1,0 +1,29 @@
+suite mutation
+name E3015 TYPES.md §15 (refinement bound reads a let)
+case 88
+seed 4294967385
+open eval
+sig panic panic: runtime error: invalid memory address or nil pointer dereference in eval.collectionOf < eval.(*Evaluator).letColl
+packages pipeline
+want E3015 pipeline/potion.canon 48 55 check
+failure panic panic: runtime error: invalid memory address or nil pointer dereference
+-- pipeline/potion.canon --
+package pipeline
+record Potion {
+  heal: Int(..=zzLimit) }
+
+local let zzLimit: Int = 3
+-- project.canon --
+project sovereign {
+  canon: "0.1"
+  roots {
+    resource: "../../../Resource"
+    client: "../../../Client"
+    source: "../../../Source"
+    services: "../.."
+    sovcommon: "../../sovcommon"
+    web: "../../sovcommon/web/src/lib"
+    parity: "../../balance/parity"
+    generated: "../../resourcestudio/generated"
+  }
+}

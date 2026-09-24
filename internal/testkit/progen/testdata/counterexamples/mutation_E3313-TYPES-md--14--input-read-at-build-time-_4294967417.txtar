@@ -1,0 +1,34 @@
+suite mutation
+name E3313 TYPES.md §14 (input read at build time)
+case 120
+seed 4294967417
+open check
+sig internal evaluation met a state the checker excludes:
+packages service.resourcestudio
+want E3313 service/resourcestudio/resourcestudio.canon 76 82 check
+failure internal evaluation met a state the checker excludes:
+-- project.canon --
+project sovereign {
+  canon: "0.1"
+  roots {
+    resource: "../../../Resource"
+    client: "../../../Client"
+    source: "../../../Source"
+    services: "../.."
+    sovcommon: "../../sovcommon"
+    web: "../../sovcommon/web/src/lib"
+    parity: "../../balance/parity"
+    generated: "../../resourcestudio/generated"
+  }
+}
+-- service/resourcestudio/resourcestudio.canon --
+package service.resourcestudio
+record Gen {
+  apiKey: input String
+
+  check apiKey != none else "no key"
+}
+record Config {
+  gen: Gen = {}
+}
+let config: Config = {}

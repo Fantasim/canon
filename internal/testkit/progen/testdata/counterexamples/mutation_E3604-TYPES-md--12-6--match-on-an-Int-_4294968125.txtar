@@ -1,0 +1,43 @@
+suite mutation
+name E3604 TYPES.md §12.6 (match on an Int)
+case 828
+seed 4294968125
+open check
+sig internal evaluation met a state the checker excludes:
+packages features.matching
+want E3604 features/matching/matching.canon 158 159 check
+failure internal evaluation met a state the checker excludes: evaluation met a state the checker excludes:
+-- features/matching/matching.canon --
+package features.matching
+enum Season { spring autumn }
+record Mail {
+  subject: String
+  season: Season {
+  }
+  fn isHoliday() -> Bool {
+    let zzM = match 1 { _ => 1 }
+    return
+  }
+  warn isHoliday() or attachment is gold else "a holiday mail usually carries penya"
+}
+let mails: [Mail] = [
+  {
+    subject: "Spring cleaning"
+    season: spring
+  },
+  { subject: "Autumn news" season: autumn }
+]
+-- project.canon --
+project sovereign {
+  canon: "0.1"
+  roots {
+    resource: "../../../Resource"
+    client: "../../../Client"
+    source: "../../../Source"
+    services: "../.."
+    sovcommon: "../../sovcommon"
+    web: "../../sovcommon/web/src/lib"
+    parity: "../../balance/parity"
+    generated: "../../resourcestudio/generated"
+  }
+}
