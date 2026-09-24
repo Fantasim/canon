@@ -22,6 +22,9 @@ Each item names what needs you. DECISIONS 192–200 outrank the spec text until 
   and instance-check walks (internal/verify, internal/rules): need a code in ERRORS.md or a
   charge rule (EVALUATION §12.1).
 - TYPES §7.5: equality is not transitive (entry vs record by fields, entry vs entry by identity).
+  Effect: after `var t = pets; t[rex] = Pet{…}`, `[pets.rex, t.rex].unique()` keeps 2 while
+  `contains` says equal; no hash can agree. Options: entry-to-entry equality also compares fields,
+  or element assignment into a table gives a fresh identity.
 - E3501 is reported twice for one bad ref (stage-A dereference + stage-B verify): legal as
   written; say if you want one.
 - IMPLEMENTATION-PLAN §3: ir's Consumes column omits `project` (needed by §4.5).
@@ -29,8 +32,9 @@ Each item names what needs you. DECISIONS 192–200 outrank the spec text until 
 - ERRORS.md templates: E8153 says "emitted in data mode" for @reload values no data emit
   selects; E8015 renders "a Int".
 - `--adopt` entries: display path or file-system path (M6).
-- CLI.md gives no sample of `canon build`'s own report; the txtars froze a format (see
-  internal/cli/testdata/commands/build_*.txtar).
+- CLI.md gives no sample of `canon build`'s own report; DECISIONS 201 fixes one (confirm).
+- API.md §15 has no sentinel for build's Go errors (ErrNoGenerator, ErrLoad, write I/O) nor for a
+  bad `BuildOptions` value (201 reuses `ErrBadValue`); B1 does not state Build's error set.
 
 ## Repository and tooling
 - `pkg-size` (observe only): eval, eval/std, ir, check, format exceed 15 files / 4000 lines. The

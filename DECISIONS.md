@@ -1711,6 +1711,19 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     listed cost (`contains` over n costs its visits plus n pairs), as 197's per-byte charges do. Reason: every step of the budget
     buys a bounded amount of time and memory, so `E4401` is the only way evaluation runs long.
 
+201. **`Build` and `canon build` where API.md and CLI.md are silent (the api/cli review).** An
+    unknown `Target` in `BuildOptions.Targets` is refused with `ErrBadValue` (`*ValueError`,
+    expected `go, cpp, ts, json or view`), never dropped; a writing `Build` holds the project's
+    write lock (S9) and returns the revision read after its writes (S10). The build report: a lock
+    is listed only when it gains lines; text lists changed outputs under their target, prefixed
+    `stale ` under `--check`; JSON lists every output, `unchanged` included; the JSON summary is
+    check's (`truncated` kept) followed by `written` and `stale`; `-q` prints errors only. Every
+    printed path is a display path, write errors included. Example goldens are written by
+    `internal/testkit/golden -update` (Check, then Build into the fixture roots), and
+    `goldens-check` also fails on a written output MANIFEST does not list. A golden module's smoke
+    test lives in `internal/testkit/golden/testdata/smoke/<example>/`, copied beside a temporary
+    copy of the module by goldens-vet (expected/ holds only compiler output).
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.
