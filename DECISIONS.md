@@ -1799,13 +1799,16 @@ Choices made while Louis was away are listed here, each with its reason, so he c
 
 211. **A broken brace list keeps a comma wherever GRAMMAR §3.1 would join the lines (extends
      179).** In a broken brace list (FORMATTER §6.1: no commas), the item before a line break ends
-     with `,` when that item's last token is in rule 2's cannot-end set, or when the next item's
-     first token is in rule 3's continuation set that can start an item (`.`, `?.`, `??`, and the
-     keywords `and or in is else where not as` used as data-symbol names, LEX-08(a)); FORMATTER
-     §6.1 states the exception. The line rules stay lexical: a keyword used as a data word joins
-     like the keyword (this supersedes the M1.5 log call "keywords used as names … no join").
-     Reason: an enum member named `in` in a broken list reparsed as a continuation (E1116), or
-     could not end a line (E1117), found by progen and fuzzing (overnight run).
+     with `,` when that item's last token is in rule 2's cannot-end set (the keywords `and or not
+     in is else where as` used as data-symbol names, LEX-08(a)), or when the next item's first
+     token is in the part of rule 3's continuation set that can start an item (`.` and the keywords
+     `and or in is else where`); FORMATTER §6.1 states the exception. The line rules stay lexical:
+     a keyword used as a data word joins like the keyword (this supersedes the M1.5 log call
+     "keywords used as names … no join"). Blank lines between own-line comments follow FORMATTER
+     §4 (removed inside expressions and `( )`/`[ ]` lists), except between two doc-comment blocks,
+     which stay apart everywhere (§8.1: formatting never moves or merges a doc comment). Reason: an
+     enum member named `in` reparsed as a continuation (E1116) or could not end a line (E1117);
+     two `///` blocks merged (progen and fuzzing, overnight run).
 
 212. **`fits` measures a group as the printer prints it (amends 170).** A group met while measuring
      is broken if it holds a hard line break, or its own written-broken bit is set, **and its holder
