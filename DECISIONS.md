@@ -1797,6 +1797,13 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      fn or method and runs no `load`; one that does stops without a finding (150's E3015).
      Reason: three valid programs overflowed the host stack (overnight run, A3 eval).
 
+211. **Every brace-list item that would continue the line before keeps a comma (extends 179).** In
+     a broken brace list (FORMATTER §6.1), the item before any item whose first token is in
+     GRAMMAR §3.1 rule 3's continuation set that can start an item (`.`, `?.`, `??`, and the
+     keywords `and or in is else where` used as data-symbol names, LEX-08(a)) ends with `,`, as 179
+     says for `.`; FORMATTER §6.1 states the exception. Reason: an enum member named `in` in a
+     broken list reparsed as a continuation (E1116), found by progen (overnight run).
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.
