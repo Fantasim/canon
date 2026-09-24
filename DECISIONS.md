@@ -1752,6 +1752,18 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     is refused at stage E with the E900x code whose meaning fits, never at build time as a Go
     error; if none fits, it stays a Louis-call.
 
+## 2026-09-24 — Louis (afternoon)
+
+205. **Generated Go targets the current Go only.** The Go 1.23 floor (CG-10, IMPLEMENTATION-PLAN
+     §6 M1 item 4 and §7.8's "Go 1.23 and current") is dropped: generated Go is built, vetted and
+     smoke-tested with the Go installed here. Reason: no consumer needs 1.23.
+
+206. **No integration before the language is proven flawless on advanced tests.** The sovcommon
+     `teamboard` integration (postponed by 189) and every other consumer integration wait until
+     the generated-program suites of decision 200 run clean (every ERRORS.md rule mutated, well-
+     typed programs agreeing between evaluator and generated code, metamorphic variants) and
+     conformance is green. M1.5 is therefore pulled forward: it starts now, beside M2.
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.

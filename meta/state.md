@@ -8,7 +8,7 @@ Updated: 2026-09-24 (day, autonomous session with Louis intermittently present)
 equals findings.txt, `canon build --target go,json teamboard sovcommon...` equals the new goldens
 (MANIFEST, rebuilt and diffed by `make goldens-check`), canon.lock equals its golden, the generated
 module vets. Item 6 postponed (DECISIONS 189). Open before ticking M1: the api/cli review, IR
-round 2, Go 1.23 toolchain (not installed here).
+round 2.
 **In flight (all uncommitted in the tree; session resumed after a limit cut at ~11:03):** IR
 round 2 (202/203; ir, gen/go, syntax, check; was red) → go-dev resuming; M2 `load.dir` (load +
 build wiring) → go-dev resuming; M2 `gen/cpp` → go-dev resuming; `conform` built, → review, then
@@ -26,7 +26,7 @@ Committed: spec + DECISIONS 1–200; `syntax`, `format`, `jsonsrc`, `wire`, `che
 ## Open Louis-calls
 
 Non-technical only (Louis, 2026-09-24): [handoff/2026-09-24-louis-calls.md](handoff/2026-09-24-louis-calls.md)
-— hooks, spec sync, toolchains, real data, sovcommon integration. Technical gaps and the calls
+— only the spec sync (DECISIONS 205/206 settled the rest). Technical gaps and the calls
 made on them: [decisions/log-2026-09-24.md](decisions/log-2026-09-24.md); the orchestrator
 decides them, never asks.
 
@@ -46,5 +46,5 @@ decides them, never asks.
 
 ## What could not be verified
 
-Go 1.23 toolchain build of generated Go; GCC 9 / Clang 10 / MSVC; `fixturegen` on real data; CI
+GCC 9 / Clang 10 / MSVC; `fixturegen` on real data; CI
 on a runner; whether relative `..` permission patterns match.
