@@ -2,6 +2,7 @@ package canon
 
 import (
 	"context"
+	"fmt"
 	"runtime/debug"
 	"strconv"
 	"strings"
@@ -43,30 +44,89 @@ type BuildResult struct {
 }
 
 // Build checks the selected packages and, without errors, writes their outputs (rules B1, B2).
+// A writing Build (Check false) holds the project's write lock (S9) and returns the revision
+// read after its writes (S10); Build with Check true is a read (S8) and takes no lock.
 func (p *Project) Build(ctx context.Context, o BuildOptions) (res *BuildResult, err error) {
 	defer recoverInternal(&err)
 	b, err := p.open()
 	if err != nil {
 		return nil, err
 	}
+	targets, err := irTargets(o.Targets)
+	if err != nil {
+		return nil, err
+	}
+	if !o.Check {
+		if err := p.acquireWrite(ctx); err != nil {
+			return nil, err
+		}
+		defer p.releaseWrite()
+	}
 	start := time.Now()
 	r, err := b.Build(ctx, build.BuildOptions{
-		Packages: o.Packages, Targets: irTargets(o.Targets), Adopt: o.Adopt, Check: o.Check,
+		Packages: o.Packages, Targets: targets, Adopt: o.Adopt, Check: o.Check,
 	})
 	if err != nil {
 		return nil, apiError(err)
 	}
-	p.setRevision(r.Revision)
+	rev := r.Revision
+	if !o.Check {
+		rev = revisionAfterWrite(ctx, b, rev)
+	}
+	p.setRevision(rev)
+	r.Revision = rev
 	return buildResultOf(r, time.Since(start)), nil
 }
 
-// buildResultOf converts a build's result into the API's form (rule B1).
+// acquireWrite takes the project's one-writer lock, returning ctx.Err() promptly if ctx is done first instead of blocking on it (S9, S11); a Project not opened through Open makes its own lock.
+func (p *Project) acquireWrite(ctx context.Context) error {
+	select {
+	case p.writeSemaphore() <- struct{}{}:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
+// releaseWrite frees the lock a matching acquireWrite took.
+func (p *Project) releaseWrite() {
+	<-p.writeSemaphore()
+}
+
+// writeSemaphore is the project's 1-slot write-lock channel, made on first use.
+func (p *Project) writeSemaphore() chan struct{} {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if p.writeSem == nil {
+		p.writeSem = make(chan struct{}, 1)
+	}
+	return p.writeSem
+}
+
+// revisionAfterWrite is the revision a writing Build returns: a fresh read, retried with ctx's
+// values but not its cancellation so a cancelled re-read does not drop an otherwise successful
+// write, else the revision the write itself already read (rule S10).
+func revisionAfterWrite(ctx context.Context, b *build.Project, fallback string) string {
+	if rev, err := b.Revision(ctx); err == nil {
+		return rev
+	}
+	if rev, err := b.Revision(context.WithoutCancel(ctx)); err == nil {
+		return rev
+	}
+	return fallback
+}
+
+// buildResultOf converts a build's result into the API's form (rule B1); a lock is listed only
+// when it gained lines (DECISIONS 201).
 func buildResultOf(r *build.BuildResult, d time.Duration) *BuildResult {
 	out := &BuildResult{Check: checkResultOf(r.Result, d), Stale: r.Stale}
 	for _, o := range r.Outputs {
 		out.Outputs = append(out.Outputs, Output{Path: o.Path, Target: apiTarget(o.Target), Package: o.Package, Status: apiStatus(o.Status)})
 	}
 	for _, l := range r.Locks {
+		if len(l.Lines) == 0 {
+			continue
+		}
 		out.Lock = append(out.Lock, LockChange{Package: l.Package, File: l.Path, Lines: l.Lines})
 	}
 	return out
@@ -77,21 +137,30 @@ var targetNames = [...]Target{
 	ir.TargetGo: TargetGo, ir.TargetCpp: TargetCpp, ir.TargetTS: TargetTS, ir.TargetJSON: TargetJSON, ir.TargetView: TargetView,
 }
 
-// irTargets is ts translated to ir.Target, an unknown value dropped (SPEC §14).
-func irTargets(ts []Target) []ir.Target {
+// irTargets is ts translated to ir.Target; an unknown value is *ValueError (rule V1, DECISIONS
+// 201): a list must never widen to every target because one entry did not fit.
+func irTargets(ts []Target) ([]ir.Target, error) {
 	if len(ts) == 0 {
-		return nil
+		return nil, nil
 	}
 	out := make([]ir.Target, 0, len(ts))
 	for _, t := range ts {
-		for i, name := range targetNames {
-			if name == t {
-				out = append(out, ir.Target(i))
-				break
-			}
+		it, ok := irTarget(t)
+		if !ok {
+			return nil, &ValueError{Op: -1, Expected: expectedTargets, Got: fmt.Sprintf(fmtQuoted, t)}
+		}
+		out = append(out, it)
+	}
+	return out, nil
+}
+
+func irTarget(t Target) (ir.Target, bool) {
+	for i, name := range targetNames {
+		if name == t {
+			return ir.Target(i), true
 		}
 	}
-	return out
+	return 0, false
 }
 
 // apiTarget is t as the API names it.

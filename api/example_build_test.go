@@ -65,35 +65,41 @@ func ExampleProject_Watch() {
 	// Output:
 }
 
+// Build checks the selected packages and, without error, writes their outputs and appends new
+// stable values to canon.lock (rules B1, B2); building again with nothing changed leaves every
+// output unchanged.
 func ExampleProject_Build() {
 	p, err := openExamples()
 	if err != nil {
 		return
 	}
 	defer p.Close()
-	res, err := p.Build(context.Background(), canon.BuildOptions{
-		Packages: []string{"teamboard"},
-		Targets:  []canon.Target{canon.TargetGo, canon.TargetCpp, canon.TargetTS, canon.TargetJSON, canon.TargetView},
-		Check:    true,
-		Adopt:    []string{"@source/_Common/ItemProp.h"},
-	})
+	opts := canon.BuildOptions{Packages: []string{"teamboard"}, Targets: []canon.Target{canon.TargetGo, canon.TargetJSON}}
+	first, err := p.Build(context.Background(), opts)
+	if err != nil {
+		return
+	}
+	written := 0
+	for _, o := range first.Outputs {
+		if o.Status == canon.OutputWritten {
+			written++
+		}
+	}
+	fmt.Println(written, len(first.Lock))
+	again, err := p.Build(context.Background(), opts)
 	if err != nil {
 		return
 	}
 	unchanged := 0
-	for _, o := range res.Outputs {
-		switch o.Status {
-		case canon.OutputWritten, canon.OutputStale, canon.OutputAdopted:
-			fmt.Println(o.Status, o.Target, o.Package, o.Path)
-		case canon.OutputUnchanged:
+	for _, o := range again.Outputs {
+		if o.Status == canon.OutputUnchanged {
 			unchanged++
 		}
 	}
-	for _, l := range res.Lock {
-		fmt.Println(l.Package, l.File, len(l.Lines))
-	}
-	fmt.Println(unchanged, res.Stale, res.Check.HasErrors())
+	fmt.Println(unchanged, len(again.Lock), again.Check.HasErrors())
 	// Output:
+	// 14 1
+	// 14 0 false
 }
 
 func ExampleProject_Test() {

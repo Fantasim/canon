@@ -34,15 +34,16 @@ func newLockLine(l canon.LockChange, line string) lockLine {
 	return out
 }
 
-// buildSummary is canon build's final JSON summary line (IMPLEMENTATION-PLAN.md §8.1).
+// buildSummary is canon build's final JSON summary line: check's summary, `truncated` kept, then written and stale (IMPLEMENTATION-PLAN.md §8.1, DECISIONS 201).
 type buildSummary struct {
 	Summary struct {
-		Errors   int `json:"errors"`
-		Warnings int `json:"warnings"`
-		Packages int `json:"packages"`
-		Ms       int `json:"ms"`
-		Written  int `json:"written"`
-		Stale    int `json:"stale"`
+		Errors    int                `json:"errors"`
+		Warnings  int                `json:"warnings"`
+		Packages  int                `json:"packages"`
+		Ms        int                `json:"ms"`
+		Truncated []canon.Truncation `json:"truncated,omitempty"`
+		Written   int                `json:"written"`
+		Stale     int                `json:"stale"`
 	} `json:"summary"`
 }
 
@@ -50,6 +51,7 @@ func newBuildSummary(check *canon.CheckResult, written, stale int) buildSummary 
 	var s buildSummary
 	s.Summary.Errors, s.Summary.Warnings, s.Summary.Packages = check.Summary.Errors, check.Summary.Warnings, check.Summary.Packages
 	s.Summary.Ms = int(check.Duration.Milliseconds())
+	s.Summary.Truncated = check.Summary.Truncated
 	s.Summary.Written, s.Summary.Stale = written, stale
 	return s
 }

@@ -6,7 +6,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
-	"fmt"
 	"io/fs"
 	"path"
 	"slices"
@@ -102,7 +101,7 @@ func (s *snapshot) readLocks(fsys project.FS, dir string) error {
 		case errors.Is(err, fs.ErrNotExist):
 			continue
 		case err != nil:
-			return fmt.Errorf(fmtWrap, err)
+			return displayError(name, err)
 		}
 		s.locks[name] = data
 		s.sums = append(s.sums, project.FileSum{Path: name, Sum: sha256.Sum256(data)})
@@ -142,7 +141,7 @@ func (p *Project) load(ctx context.Context) (*snapshot, error) {
 	}
 	r := &project.Reader{FS: p.fs, Dir: p.dir, Set: s.set, BagOf: s.bag}
 	if s.units, err = r.Parse(ctx, s.names); err != nil {
-		return nil, err
+		return nil, displayErrorIn(p.dir, err)
 	}
 	s.sums = append(s.sums, r.Sums...)
 	if err := s.readLocks(p.fs, p.dir); err != nil {

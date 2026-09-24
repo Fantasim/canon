@@ -38,23 +38,25 @@ func runBuild(inv *invocation) int {
 	return exitOK
 }
 
-// writeBuild prints the check's findings, then the build's own report (CLI.md §3.4).
+// writeBuild prints the check's findings, then the build's own report; -q drops the report too, the error findings and the summary kept (DECISIONS 201, CLI.md §2.3; meta/decisions/log-2026-09-24.md "Chosen while resuming").
 func (inv *invocation) writeBuild(res *canon.BuildResult) error {
 	shown := res.Check.Findings
 	if inv.opt.quiet {
 		shown = slices.DeleteFunc(slices.Clone(shown), func(f canon.Finding) bool { return f.Severity != canon.SeverityError })
 	}
-	changed := changedOutputs(res.Outputs)
 	if inv.opt.format == formatJSON {
-		return inv.writeBuildJSON(shown, changed, res)
+		return inv.writeBuildJSON(shown, res)
 	}
 	if err := inv.writeFindings(shown, res.Check.Summary, res.Check.Duration); err != nil {
 		return err
 	}
-	return inv.writeBuildText(changed, res.Lock)
+	if inv.opt.quiet {
+		return nil
+	}
+	return inv.writeBuildText(changedOutputs(res.Outputs), res.Lock)
 }
 
-// changedOutputs drops an output a build left untouched (CLI.md §8.5).
+// changedOutputs drops an output a build left untouched: text lists changed outputs only, JSON lists every one (IMPLEMENTATION-PLAN.md §8.5, DECISIONS 201).
 func changedOutputs(outputs []canon.Output) []canon.Output {
 	out := make([]canon.Output, 0, len(outputs))
 	for _, o := range outputs {
@@ -65,53 +67,96 @@ func changedOutputs(outputs []canon.Output) []canon.Output {
 	return out
 }
 
-// writeBuildText is canon build's own text report (CLI.md §3.4).
+// writeBuildText is canon build's own text report: outputs grouped by target, a stale one prefixed under --check, then the lock section (IMPLEMENTATION-PLAN.md §8.5, DECISIONS 201).
 func (inv *invocation) writeBuildText(outputs []canon.Output, locks []canon.LockChange) error {
 	for _, o := range outputs {
 		if o.Status == canon.OutputAdopted {
 			writeLine(inv.env.Stdout, fmt.Sprintf(fmtAdopting, o.Path))
 		}
 	}
-	byTarget := map[canon.Target][]string{}
+	byTarget := map[canon.Target][]canon.Output{}
 	for _, o := range outputs {
-		byTarget[o.Target] = append(byTarget[o.Target], o.Path)
+		byTarget[o.Target] = append(byTarget[o.Target], o)
 	}
 	for _, t := range buildTargets {
-		paths := byTarget[t]
-		if len(paths) == 0 {
+		group := byTarget[t]
+		if len(group) == 0 {
 			continue
 		}
 		writeLine(inv.env.Stdout, string(t)+targetHeaderSuffix)
-		for _, path := range paths {
-			writeLine(inv.env.Stdout, outputIndent+path)
+		for _, o := range group {
+			writeLine(inv.env.Stdout, outputIndent+stalePrefix(o.Status)+o.Path)
 		}
 	}
 	if len(locks) == 0 {
 		return nil
 	}
 	writeLine(inv.env.Stdout, lockHeader)
+	prefix := lockPrefix(inv.opt.checkFlag)
 	for _, l := range locks {
-		if len(l.Lines) > 0 {
-			writeLine(inv.env.Stdout, outputIndent+l.File)
-		}
+		writeLine(inv.env.Stdout, outputIndent+prefix+l.File)
 	}
 	return nil
 }
 
-// writeBuildJSON is canon build's own JSON report (IMPLEMENTATION-PLAN.md §8.1).
-func (inv *invocation) writeBuildJSON(findings []canon.Finding, outputs []canon.Output, res *canon.BuildResult) error {
+// stalePrefix marks a would-be output change under --check (IMPLEMENTATION-PLAN.md §8.5, DECISIONS 201).
+func stalePrefix(s canon.OutputStatus) string {
+	if s == canon.OutputStale {
+		return stalePathPrefix
+	}
+	return ""
+}
+
+// lockPrefix marks a would-be lock change under --check: every lock a --check build lists is prospective, since nothing is written (DECISIONS 201; meta/decisions/log-2026-09-24.md "Chosen while resuming").
+func lockPrefix(check bool) string {
+	if check {
+		return stalePathPrefix
+	}
+	return ""
+}
+
+// countsWritten reports an output status the report counts as written, an adopted one included (rule B2, DECISIONS 201).
+func countsWritten(s canon.OutputStatus) bool {
+	return s == canon.OutputWritten || s == canon.OutputAdopted
+}
+
+// countChanges counts every output and lock the build changed, or, under --check, would change: canon build's written/stale summary, lock changes counted (DECISIONS 201; meta/decisions/log-2026-09-24.md "Chosen while resuming").
+func countChanges(res *canon.BuildResult, check bool) (written, stale int) {
+	for _, o := range res.Outputs {
+		switch {
+		case o.Status == canon.OutputStale:
+			stale++
+		case countsWritten(o.Status):
+			written++
+		}
+	}
+	if check {
+		stale += len(res.Lock)
+	} else {
+		written += len(res.Lock)
+	}
+	return written, stale
+}
+
+// writeBuildJSON is canon build's own JSON report: every finding, then, unless -q, every output and appended lock line, then the summary (IMPLEMENTATION-PLAN.md §8.1, DECISIONS 201).
+func (inv *invocation) writeBuildJSON(findings []canon.Finding, res *canon.BuildResult) error {
 	for _, f := range findings {
 		if err := inv.writeJSONLine(f); err != nil {
 			return err
 		}
 	}
-	written, stale := 0, 0
-	for _, o := range outputs {
-		if o.Status == canon.OutputStale {
-			stale++
-		} else {
-			written++
+	if !inv.opt.quiet {
+		if err := inv.writeBuildJSONLines(res); err != nil {
+			return err
 		}
+	}
+	written, stale := countChanges(res, inv.opt.checkFlag)
+	return inv.writeJSONLine(newBuildSummary(res.Check, written, stale))
+}
+
+// writeBuildJSONLines prints every output, then every appended lock line.
+func (inv *invocation) writeBuildJSONLines(res *canon.BuildResult) error {
+	for _, o := range res.Outputs {
 		if err := inv.writeJSONLine(newOutputLine(o)); err != nil {
 			return err
 		}
@@ -123,7 +168,7 @@ func (inv *invocation) writeBuildJSON(findings []canon.Finding, outputs []canon.
 			}
 		}
 	}
-	return inv.writeJSONLine(newBuildSummary(res.Check, written, stale))
+	return nil
 }
 
 func (inv *invocation) writeJSONLine(v any) error {

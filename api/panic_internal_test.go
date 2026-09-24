@@ -60,7 +60,8 @@ func (f mapFS) ReadDir(name string) ([]fs.DirEntry, error) {
 	return f.m.ReadDir(strings.TrimPrefix(name, "/"))
 }
 
-// Rules R3, X2: a compiler bug a build reports as build.ErrInternal is an *InternalError.
+// Rules R3, X2: a compiler bug a build reports as build.ErrInternal is an *InternalError, from
+// Build as from Check.
 func TestBuildInternalError(t *testing.T) {
 	fsys := newMapFS(map[string][]byte{
 		"/law/project.canon": []byte("project a {\n  canon: \"0.1\"\n}\n"),
@@ -73,9 +74,9 @@ func TestBuildInternalError(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = (&Project{root: "/law", b: b}).Check(context.Background())
+	_, err = (&Project{root: "/law", b: b}).Build(context.Background(), BuildOptions{})
 	var ierr *InternalError
 	if !errors.Is(err, ErrInternal) || !errors.As(err, &ierr) || !strings.Contains(ierr.Msg, build.ErrInternal.Error()) {
-		t.Errorf("Check: %v", err)
+		t.Errorf("Build: %v", err)
 	}
 }

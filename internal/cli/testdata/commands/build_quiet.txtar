@@ -1,0 +1,31 @@
+CLI.md §2.3, DECISIONS 201: canon build -q prints errors only; the output and lock listing is
+suppressed too (meta/decisions/log-2026-09-24.md "Chosen while resuming").
+-- args --
+build
+-q
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    out: "out"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Dangling.
+
+let x: Int = 1
+
+emit json { out: "@out/" }
+-- want --
+[exit 0]
+[stdout]
+0 errors, 1 warning in 1 package (…)
+[stderr]
+[file out/x.json]
+{
+  "$schema": "a.x@f51a4c21",
+  "value": 1
+}

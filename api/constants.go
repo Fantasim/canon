@@ -191,4 +191,6 @@ const (
 	fmtWrap          = "%w: %w"
 	fmtUnknown       = "%w: %s"
 	fmtMixed         = "%w: %s: %w"
+	fmtQuoted        = "%q"
+	expectedTargets  = "go, cpp, ts, json or view"
 )

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/fs"
 	"path"
 	"regexp"
@@ -26,7 +25,7 @@ func (r *run) place(outputs []*output, adopt []string) ([]*output, error) {
 			o.Status = StatusWritten
 			continue
 		case err != nil:
-			return nil, fmt.Errorf(fmtWrap, err)
+			return nil, displayError(o.Path, err)
 		}
 		o.old, o.existed = old, true
 		switch {

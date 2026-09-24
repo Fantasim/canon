@@ -3,6 +3,7 @@ package build_test
 import (
 	"context"
 	"errors"
+	"io/fs"
 	"maps"
 	"os"
 	"path/filepath"
@@ -136,6 +137,31 @@ func TestRevisionHashesLocks(t *testing.T) {
 	}
 }
 
+// linkErrorFS is mapFS whose Rename fails as a real cross-device rename does: with an
+// *os.LinkError (not a *fs.PathError), both its own paths absolute.
+type linkErrorFS struct{ mapFS }
+
+func (f linkErrorFS) Rename(oldname, newname string) error {
+	return &os.LinkError{Op: "rename", Old: oldname, New: newname, Err: os.ErrPermission}
+}
+
+// DECISIONS 201: a rename failure's *os.LinkError also names the display path; its own two
+// absolute paths never appear.
+func TestWriteRenameLinkErrorNamesDisplayPath(t *testing.T) {
+	fsys := linkErrorFS{tierTree()}
+	p, err := build.Open(fsys, "/p", build.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = p.Build(context.Background(), build.BuildOptions{})
+	if err == nil {
+		t.Fatal("no error")
+	}
+	if msg := err.Error(); !strings.Contains(msg, "@out/tiers.json: rename: ") || strings.Contains(msg, "/p/out") {
+		t.Errorf("build error = %q", msg)
+	}
+}
+
 func writeTree(t *testing.T, dir string, files map[string]string) {
 	t.Helper()
 	//canon:unordered each file is written under its own name
@@ -169,6 +195,119 @@ func TestOSWrites(t *testing.T) {
 		if broken != (err != nil) || broken != (lockErr != nil) || broken != (outErr != nil) {
 			t.Errorf("broken %t: %v, lock %v, output %v", broken, err, lockErr, outErr)
 		}
+	}
+}
+
+// DECISIONS 201: a write error names the display path, its op and cause kept; the absolute
+// temporary path never appears.
+func TestOSWriteErrorNamesDisplayPath(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("root ignores file permissions")
+	}
+	dir := t.TempDir()
+	writeTree(t, dir, map[string]string{"project.canon": outProject, "a/a.canon": jsonSource})
+	out := filepath.Join(dir, "out")
+	if err := os.Mkdir(out, 0o500); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chmod(out, 0o750) })
+	p, err := build.Open(build.OS(), filepath.ToSlash(dir), build.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = p.Build(context.Background(), build.BuildOptions{})
+	if err == nil {
+		t.Fatal("build over a read-only output directory: no error")
+	}
+	if msg := err.Error(); !strings.Contains(msg, "@out/v.json: open: ") || strings.Contains(msg, dir) {
+		t.Errorf("write error = %q, dir %q", msg, dir)
+	}
+}
+
+// DECISIONS 201, CLI.md §3.4: an unreadable source or canon.lock names its project-relative display path, never the absolute one, for both Build and Check.
+func TestUnreadableFileNamesDisplayPath(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("root ignores file permissions")
+	}
+	for _, c := range []struct {
+		name, display string
+		unready       func(t *testing.T, dir string)
+	}{
+		{"source", "a/a.canon", func(t *testing.T, dir string) {
+			t.Helper()
+			path := filepath.Join(dir, "a", "a.canon")
+			if err := os.Chmod(path, 0o000); err != nil {
+				t.Fatal(err)
+			}
+			t.Cleanup(func() { _ = os.Chmod(path, 0o600) })
+		}},
+		{"lock", "a/canon.lock", func(t *testing.T, dir string) {
+			t.Helper()
+			if err := os.Mkdir(filepath.Join(dir, "a", "canon.lock"), 0o750); err != nil {
+				t.Fatal(err)
+			}
+		}},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			dir := t.TempDir()
+			writeTree(t, dir, map[string]string{"project.canon": outProject, "a/a.canon": jsonSource})
+			c.unready(t, dir)
+			p, err := build.Open(build.OS(), filepath.ToSlash(dir), build.Options{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			for _, call := range []struct {
+				name string
+				run  func() error
+			}{
+				{"build", func() error { _, err := p.Build(context.Background(), build.BuildOptions{}); return err }},
+				{"check", func() error { _, err := p.Check(context.Background(), nil); return err }},
+			} {
+				t.Run(call.name, func(t *testing.T) {
+					err := call.run()
+					if err == nil {
+						t.Fatal("no error")
+					}
+					if msg := err.Error(); !strings.Contains(msg, c.display+": ") || strings.Contains(msg, dir) {
+						t.Errorf("%s error = %q, dir %q", call.name, msg, dir)
+					}
+				})
+			}
+		})
+	}
+}
+
+// DECISIONS 201, CLI.md §2.1: an unreadable project directory is named ".", by Build and Check.
+func TestUnreadableProjectDirNamesDot(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("root ignores file permissions")
+	}
+	dir := t.TempDir()
+	writeTree(t, dir, map[string]string{"project.canon": outProject, "a/a.canon": jsonSource})
+	p, err := build.Open(build.OS(), filepath.ToSlash(dir), build.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(dir, 0o000); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chmod(dir, 0o750) })
+	for _, call := range []struct {
+		name string
+		run  func() error
+	}{
+		{"build", func() error { _, err := p.Build(context.Background(), build.BuildOptions{}); return err }},
+		{"check", func() error { _, err := p.Check(context.Background(), nil); return err }},
+	} {
+		t.Run(call.name, func(t *testing.T) {
+			err := call.run()
+			if !errors.Is(err, fs.ErrPermission) {
+				t.Fatalf("%s error = %v, want fs.ErrPermission", call.name, err)
+			}
+			if msg := err.Error(); !strings.HasPrefix(msg, ".: ") || strings.Contains(msg, dir) {
+				t.Errorf("%s error = %q, dir %q", call.name, msg, dir)
+			}
+		})
 	}
 }
 

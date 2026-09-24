@@ -89,12 +89,13 @@ const (
 	parentDir     = ".."
 )
 
-// canon build's own text report, not a CLI.md sample (CLI.md §3.4).
+// canon build's own text report (IMPLEMENTATION-PLAN.md §8.5).
 const (
 	fmtAdopting        = "adopting %s"
 	targetHeaderSuffix = ":"
 	outputIndent       = "  "
 	lockHeader         = "lock:"
+	stalePathPrefix    = "stale "
 )
 
 // Messages of the CLI itself: usage errors and failures that are not findings.

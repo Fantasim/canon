@@ -62,6 +62,9 @@ const (
 	fmtNoGenerator  = "package %s, emit %s: %w"
 	fmtNoValue      = "%w: package %s: %s has no value"
 	fmtNoLoadSite   = "%w: a forced load expression is in no file of the program"
+	// fmtDisplayCause and fmtDisplayOpCause name a write's display path in place of the absolute one a *fs.PathError carries, the op kept when there is one (DECISIONS 201).
+	fmtDisplayCause   = "%s: %w"
+	fmtDisplayOpCause = "%s: %s: %v"
 )
 
 var (

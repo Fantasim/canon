@@ -40,11 +40,12 @@ type FS interface {
 
 // Project is an opened Canon project, safe for concurrent use (API.md §3).
 type Project struct {
-	root   string
-	b      *build.Project
-	mu     sync.Mutex
-	rev    Revision
-	closed bool
+	root     string
+	b        *build.Project
+	mu       sync.Mutex
+	writeSem chan struct{} // a writing Build's 1-slot lock, cancellable, made lazily (S9, S11)
+	rev      Revision
+	closed   bool
 }
 
 // FindProject returns the directory holding project.canon in dir or a parent (rule O1).

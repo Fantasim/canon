@@ -28,22 +28,31 @@ vet:
 test:
 	go test ./...
 
+# A golden module with a smoke test (internal/testkit/golden/testdata/smoke/<example>/, DECISIONS
+# 201) is copied to a temporary directory with the smoke test added, so expected/ keeps holding
+# only compiler output; one without is vetted and tested in place. Assumes one golden Go module
+# per example: the smoke directory is named after the example two levels above expected/'s go.mod.
 goldens-vet:
-	@for m in $(GOLDEN_MODS); do echo "golden module $$m"; (cd $$m && go vet ./... && go test ./...) || exit 1; done
-
-# Examples whose compiler build cannot run yet: pipeline is illustrative until GEN-01 regenerates
-# it (M2, DOCTRINE.md §4); an example that forces `load` fails with build.ErrLoad until M3
-# (DECISIONS 196). Add to this list, never delete a MANIFEST, when a new example cannot build.
-GOLDEN_BUILD_SKIP := pipeline
-# Roots examples/project.canon declares that only a build writes to (examples/_fixtures/README.md);
-# resource and client are redirected to the fixtures instead, read-only.
-GOLDEN_WRITE_ROOTS := source services sovcommon web parity generated
+	@for m in $(GOLDEN_MODS); do \
+	  echo "golden module $$m"; \
+	  smoke="internal/testkit/golden/testdata/smoke/$$(basename $$(dirname $$(dirname $$m)))"; \
+	  if [ -d "$$smoke" ]; then \
+	    tmp=$$(mktemp -d); trap 'rm -rf "$$tmp"' EXIT; \
+	    cp -r "$$m/." "$$tmp" && mkdir -p "$$tmp/smoke" && cp -r "$$smoke/." "$$tmp/smoke" && \
+	      (cd "$$tmp" && go vet ./... && go test ./...); \
+	    status=$$?; rm -rf "$$tmp"; trap - EXIT; \
+	    [ $$status -eq 0 ] || exit $$status; \
+	  else \
+	    (cd $$m && go vet ./... && go test ./...) || exit 1; \
+	  fi; \
+	done
 
 # Every expected/MANIFEST line names a golden that exists, and every file of that expected/ is
-# listed (findings.txt, MANIFEST and go.mod excepted). Then, for every buildable example
-# (GOLDEN_BUILD_SKIP aside), rebuild it into a temporary copy of examples/ with every root
-# outside the project redirected (examples/_fixtures/README.md) and diff each listed file
-# against its golden (IMPLEMENTATION-PLAN.md §7.1).
+# listed (findings.txt, MANIFEST and go.mod excepted). internal/testkit/golden's TestExamples
+# then rebuilds every buildable example (its own skip list, currently pipeline, aside) into a
+# temporary copy of examples/ with every outside root redirected and diffs it, failing also when
+# the build wrote an output the MANIFEST does not list (IMPLEMENTATION-PLAN.md §7.1, DECISIONS
+# 201).
 goldens-check:
 	@status=0; for m in $$(find examples -path '*/expected/MANIFEST' | sort); do \
 	  d=$$(dirname $$m); \
@@ -53,35 +62,9 @@ goldens-check:
 	  for f in $$(cd $$d && find . -type f ! -name findings.txt ! -name MANIFEST ! -name go.mod | sed 's|^\./||' | sort); do \
 	    if ! awk '{ print $$2 }' $$m | grep -qx "$$f"; then echo "goldens-check: $$d/$$f is not listed in $$m"; status=1; fi; \
 	  done; \
-	  ex=$$(basename $$(dirname $$d)); \
-	  case " $(GOLDEN_BUILD_SKIP) " in *" $$ex "*) continue ;; esac; \
-	  sel="$$ex"; \
-	  case "$$ex" in teamboard) sel="teamboard sovcommon..." ;; esac; \
-	  tmp=$$(mktemp -d); \
-	  cp -r examples/. "$$tmp/proj"; \
-	  for r in $(GOLDEN_WRITE_ROOTS); do mkdir -p "$$tmp/out/$$r"; done; \
-	  rootargs="--root resource=$$tmp/proj/_fixtures/resource --root client=$$tmp/proj/_fixtures/client"; \
-	  for r in $(GOLDEN_WRITE_ROOTS); do rootargs="$$rootargs --root $$r=$$tmp/out/$$r"; done; \
-	  if ! go run ./cmd/canon build --project "$$tmp/proj" $$rootargs --target go --target json $$sel > "$$tmp/build.log" 2>&1; then \
-	    echo "goldens-check: canon build $$sel failed:"; cat "$$tmp/build.log"; status=1; rm -rf "$$tmp"; continue; \
-	  fi; \
-	  while read -r display golden; do \
-	    case "$$display" in \
-	      @*) rest=$${display#@}; root=$${rest%%/*}; sub=$${rest#*/} ;; \
-	      *) rest="" ;; \
-	    esac; \
-	    if [ -n "$$rest" ]; then \
-	      case " $(GOLDEN_WRITE_ROOTS) " in \
-	        *" $$root "*) src="$$tmp/out/$$root/$$sub" ;; \
-	        *) src="$$tmp/proj/$$root/$$sub" ;; \
-	      esac; \
-	    else \
-	      src="$$tmp/proj/$$display"; \
-	    fi; \
-	    if ! diff -u "$$src" "$$d/$$golden"; then status=1; fi; \
-	  done < "$$m"; \
-	  rm -rf "$$tmp"; \
-	done; exit $$status
+	done; \
+	go test ./internal/testkit/golden/... -run TestExamples -v || status=1; \
+	exit $$status
 
 # internal/diag/codes.go and its generated test table equal what diaggen generates from
 # spec/ERRORS.md into a temporary directory, and the runtime helper texts under internal/gen

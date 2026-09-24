@@ -3,6 +3,7 @@ package build
 import (
 	"errors"
 	"io/fs"
+	"strings"
 	"testing"
 
 	"github.com/fantasim/canonlang/internal/check"
@@ -56,6 +57,26 @@ func TestComplete(t *testing.T) {
 	}
 	if err := complete(&ir.Package{Name: "a", Consts: []*ir.Const{{Name: "C"}}}); !errors.Is(err, ErrInternal) {
 		t.Errorf("empty const: %v", err)
+	}
+}
+
+// failingRead is a project.FS whose ReadFile always fails with an absolute path.
+type failingRead struct{ project.FS }
+
+var errReadDenied = &fs.PathError{Op: "open", Path: "/o/v.json", Err: fs.ErrPermission}
+
+func (failingRead) ReadFile(string) ([]byte, error) { return nil, errReadDenied }
+
+// DECISIONS 201: a read error on an existing output names the display path, not r.p.fs's
+// absolute one.
+func TestPlaceReadErrorNamesDisplayPath(t *testing.T) {
+	r := &run{p: &Project{fs: failingRead{}}}
+	_, err := r.place([]*output{{Output: Output{Path: "@out/v.json", Abs: "/o/v.json", Package: "a"}}}, nil)
+	if !errors.Is(err, fs.ErrPermission) {
+		t.Fatalf("place: %v", err)
+	}
+	if msg := err.Error(); !strings.Contains(msg, "@out/v.json: open: ") || strings.Contains(msg, "/o/v.json") {
+		t.Errorf("place error = %q", msg)
 	}
 }
 

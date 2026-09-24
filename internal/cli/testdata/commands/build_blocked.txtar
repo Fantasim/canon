@@ -22,4 +22,4 @@ a file where the output directory goes
 [exit 2]
 [stdout]
 [stderr]
-canon: open $TMP/out/x.json: not a directory
+canon: @out/x.json: open: not a directory

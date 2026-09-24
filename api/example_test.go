@@ -80,8 +80,8 @@ func ExampleProject_Check() {
 		return
 	}
 	defer p.Close()
-	// teamboard and sovcommon... force no `load` (DECISIONS 196: a package that does, such as
-	// resource..., fails the whole call with build.ErrLoad until M3).
+	// teamboard and sovcommon... force no `load`; a package that does fails the whole call
+	// until load lands (M3, DECISIONS 196).
 	res, err := p.Check(context.Background(), "teamboard", "sovcommon...")
 	switch {
 	case errors.Is(err, canon.ErrUnknownPackage), errors.Is(err, canon.ErrUnknownLayer):

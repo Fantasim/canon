@@ -30,7 +30,7 @@ emit json { out: "@out/" }
 [stdout]
 {"output":{"path":"@out/tiers.json","target":"json","package":"a","status":"written"}}
 {"lock":{"package":"a","file":"a/canon.lock","line":"table  a.tiers  low"}}
-{"summary":{"errors":0,"warnings":0,"packages":1,"ms":0,"written":1,"stale":0}}
+{"summary":{"errors":0,"warnings":0,"packages":1,"ms":0,"written":2,"stale":0}}
 [stderr]
 [file a/canon.lock]
 # canon.lock v1

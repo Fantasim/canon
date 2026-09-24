@@ -78,7 +78,7 @@ func (p *Project) open() (*snapshot, error) {
 	}
 	names, err := project.Scan(p.fs, p.dir)
 	if err != nil {
-		return nil, fmt.Errorf(fmtWrap, err)
+		return nil, displayErrorIn(p.dir, err)
 	}
 	s.names = names
 	return s, nil
@@ -90,12 +90,12 @@ func (p *Project) readProject(s *snapshot) error {
 		if errors.Is(err, project.ErrNoProject) {
 			return &OpenError{Err: err}
 		}
-		return fmt.Errorf(fmtWrap, err)
+		return displayErrorIn(p.dir, err)
 	}
 	file := path.Join(p.dir, project.FileName)
 	content, err := p.fs.ReadFile(file)
 	if err != nil {
-		return fmt.Errorf(fmtWrap, err)
+		return displayError(project.FileName, err)
 	}
 	s.sums = append(s.sums, project.FileSum{Path: project.FileName, Sum: sha256.Sum256(content)})
 	src, err := s.set.Add(project.FileName, file, content)

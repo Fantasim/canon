@@ -9,6 +9,7 @@ import (
 	"path"
 	"path/filepath"
 	"slices"
+	"strings"
 
 	"github.com/fantasim/canonlang/internal/project"
 )
@@ -60,11 +61,11 @@ type lockOut struct {
 	old []byte
 }
 
-// change is one file a build replaces: its new and previous content.
+// change is one file a build replaces: its new and previous content, and the path a write error names (WIRE.md §2.3).
 type change struct {
-	abs       string
-	data, old []byte
-	existed   bool
+	abs, display string
+	data, old    []byte
+	existed      bool
 }
 
 // commit writes what changed, or, in Check mode, marks it stale and writes nothing (CLI.md §3.4).
@@ -72,13 +73,13 @@ func (r *run) commit(check bool, out *BuildResult, outputs []*output, locks []*l
 	var changes []change
 	for _, o := range outputs {
 		if o.Status == StatusWritten || o.Status == StatusAdopted {
-			changes = append(changes, change{abs: o.Abs, data: o.Content, old: o.old, existed: o.existed})
+			changes = append(changes, change{abs: o.Abs, display: o.Path, data: o.Content, old: o.old, existed: o.existed})
 		}
 		out.Outputs = append(out.Outputs, o.Output)
 	}
 	for _, l := range locks {
 		if l.Status == StatusWritten {
-			changes = append(changes, change{abs: l.Abs, data: l.Content, old: l.old, existed: l.old != nil})
+			changes = append(changes, change{abs: l.Abs, display: l.Path, data: l.Content, old: l.old, existed: l.old != nil})
 		}
 		out.Locks = append(out.Locks, l.Lock)
 	}
@@ -98,10 +99,11 @@ func (r *run) commit(check bool, out *BuildResult, outputs []*output, locks []*l
 	return writeAll(fsys, changes)
 }
 
-// markStale gives every output and lock a build would write the status stale.
+// markStale gives every output and lock a build would write or adopt the status stale, an
+// --adopt output included: under --check nothing is written (DECISIONS 201).
 func markStale(out *BuildResult) {
 	for i := range out.Outputs {
-		if out.Outputs[i].Status == StatusWritten {
+		if out.Outputs[i].Status == StatusWritten || out.Outputs[i].Status == StatusAdopted {
 			out.Outputs[i].Status = StatusStale
 		}
 	}
@@ -132,18 +134,80 @@ func writeAll(fsys WriteFS, changes []change) error {
 		if err := w.stage(c); err != nil {
 			removeTemps(fsys, changes[:i+1])
 			w.removeDirs()
-			return err
+			return displayError(c.display, err)
 		}
 	}
 	for i, c := range changes {
 		if err := fsys.Rename(tempOf(c.abs), c.abs); err != nil {
 			removeTemps(fsys, changes[i:])
-			err = errors.Join(err, restore(fsys, changes[:i]))
+			err = errors.Join(displayError(c.display, err), restore(fsys, changes[:i]))
 			w.removeDirs()
 			return err
 		}
 	}
 	return nil
+}
+
+// displayErr prints a display path, op and cause in place of an OS error's absolute path, and
+// unwraps to the whole original error, so errors.Is and errors.As see all it wrapped.
+type displayErr struct {
+	msg string
+	err error
+}
+
+// Error is the display message.
+func (e *displayErr) Error() string { return e.msg }
+
+// Unwrap is the original error.
+func (e *displayErr) Unwrap() error { return e.err }
+
+// displayError names display in place of the absolute path (or two, a rename's) a *fs.PathError
+// or *os.LinkError carries, its op and cause kept (DECISIONS 201).
+func displayError(display string, err error) error {
+	if pe, ok := asPathError(err); ok {
+		return &displayErr{msg: fmt.Sprintf(fmtDisplayOpCause, display, pe.Op, pe.Err), err: err}
+	}
+	return fmt.Errorf(fmtDisplayCause, display, err)
+}
+
+// asPathError is err's *fs.PathError, or its rename's *os.LinkError as one naming the target;
+// their paths are in the OS's form, usually absolute, and never printed as they are.
+func asPathError(err error) (*fs.PathError, bool) {
+	var pe *fs.PathError
+	if errors.As(err, &pe) {
+		return pe, true
+	}
+	var le *os.LinkError
+	if errors.As(err, &le) {
+		return &fs.PathError{Op: le.Op, Path: le.New, Err: le.Err}, true
+	}
+	return nil, false
+}
+
+// displayErrorIn names err's path by its display path in the project at dir (DECISIONS 201).
+func displayErrorIn(dir string, err error) error {
+	pe, ok := asPathError(err)
+	if !ok {
+		return err
+	}
+	return displayError(relativeTo(dir, pe.Path, filepath.Separator), err)
+}
+
+// relativeTo is the '/'-separated display path of name, an OS path separated by sep, in dir:
+// "." for dir, dir's prefix cut at a separator, and only the last element of a path outside it.
+func relativeTo(dir, name string, sep rune) string {
+	abs := path.Clean(strings.ReplaceAll(name, string(sep), pathSep))
+	root := path.Clean(dir)
+	if abs == root {
+		return listingMark
+	}
+	if rel, ok := strings.CutPrefix(abs, strings.TrimSuffix(root, pathSep)+pathSep); ok {
+		return rel
+	}
+	if base := path.Base(abs); base != pathSep {
+		return base
+	}
+	return listingMark
 }
 
 // stage writes a change's temporary file, its directory created, an existing file's mode kept.
@@ -198,19 +262,25 @@ func removeTemps(fsys WriteFS, changes []change) {
 	}
 }
 
-// restore puts back the previous content of files already replaced, or removes a new one.
+// restore puts back the previous content of files already replaced, or removes a new one; each
+// failure names its display path, not the temporary one (DECISIONS 201).
 func restore(fsys WriteFS, done []change) error {
 	var errs []error
 	for _, c := range done {
-		if !c.existed {
-			errs = append(errs, fsys.Remove(c.abs))
-			continue
+		if err := restoreOne(fsys, c); err != nil {
+			errs = append(errs, displayError(c.display, err))
 		}
-		err := fsys.WriteFile(tempOf(c.abs), c.old)
-		if err == nil {
-			err = fsys.Rename(tempOf(c.abs), c.abs)
-		}
-		errs = append(errs, err)
 	}
 	return errors.Join(errs...)
+}
+
+// restoreOne restores one file already replaced, or removes one that did not exist before.
+func restoreOne(fsys WriteFS, c change) error {
+	if !c.existed {
+		return fsys.Remove(c.abs)
+	}
+	if err := fsys.WriteFile(tempOf(c.abs), c.old); err != nil {
+		return err
+	}
+	return fsys.Rename(tempOf(c.abs), c.abs)
 }
