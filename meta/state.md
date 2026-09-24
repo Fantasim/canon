@@ -11,15 +11,17 @@ Part A (close open work) then Part B (M3 waves W0–W4). Ticked = committed on `
 - [x] A2 demo bugs: (1) E2102, a broken check breaks its record (428fbad, DECISIONS 209);
   (2) E7109 variants (6534f56, DECISIONS 208); (3) stays (poisoning, logged); (4) "is a Int" →
   ERRORS pass, E4402 frames stay (logged); (5) E8007 hint → ERRORS pass.
-- [ ] A3 M1.5 bug-fix wave. Landed: eval 5bbd911, syntax af5a768, ir 5e42c65, check C1 +
-  ir df73915, format e91da17 (DECISIONS 208–217). Open archives on main: check 29, eval 4,
-  syntax 2, build 2 (landing), ir 1, progen 3. Next: build lands → QA judge redesign (log
-  "Progen archives after a fix") → check C2 triage of what still fails → `make progen-nightly`.
+- [ ] A3 M1.5 bug-fix wave. Landed: eval, syntax, ir, check C1, format, build, QA progen
+  judge (born/left/guard lines; 53 archives guard fixes). Open: check 20 (C2 in flight), ir 1
+  (E8011_725 interim). Nightly run once (N=5000): 1 new archive.
 - [x] A4 M2 close: position test on `examples/pipeline/data/II_POT_HEAL_L.json`; M2 ticked.
-- [ ] A5 consumer units gen/go ∥ gen/cpp in flight · cleanups · ERRORS.md pass + spec sync #2.
+- [ ] A5 consumer units gen/go ∥ gen/cpp finishing; ir plan-gap unit next; ERRORS.md pass
+  (inventory in flight) + spec sync #2; cleanups (fixture FS, ASCII fold, fn classification ×3).
 - [ ] A6 M1.5 second wave (type-directed, metamorphic).
 - [x] W0 gap map → `meta/m3-gaps.md` (1b0a332).
-- [ ] W1 · [ ] W2 · [ ] W3 · [ ] W4 (see [plan.md](plan.md) "M3 execution").
+- [ ] W1: eval layers/provenance landed (bc99b99; identity follow-up in flight); load forms in
+  review fixes; dependent types (check) and the load gate lift not started.
+- [ ] W2 · [ ] W3 · [ ] W4 (see [plan.md](plan.md) "M3 execution").
 
 Milestones: M0, M1, M2 accepted (M1 item 6 deferred to after M7). M1.5 foundation committed
 (f498713), not ticked.
