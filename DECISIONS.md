@@ -1860,7 +1860,8 @@ Choices made while Louis was away are listed here, each with its reason, so he c
 217. **E2001 is judged once, by `build`, on the whole project's package clauses.** A directory's
      packages are a property of the layout, which only phase 1 (every file parsed) sees whole:
      `build` reports E2001 for each loaded package whose directory also holds a file of another
-     package, neither being the directory's own package (TYPES.md §3.1), both files legally placed (TYPES.md §3.1 rule 1: the directory's own package or an
+     package, both files legally placed, unless the directory holds its own package (TYPES.md §3.1:
+     a directory holding its own package is never E2001) (TYPES.md §3.1 rule 1: the directory's own package or an
      ancestor), at the loaded package's file, in its Result, whichever of the two is selected;
      an illegally placed file is E2006's alone (check). `check` no longer judges E2001. No
      unloaded package is ever resolved or checked (EVALUATION.md §1). ERRORS.md moves E2001's
