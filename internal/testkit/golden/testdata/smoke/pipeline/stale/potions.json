@@ -1,0 +1,7 @@
+{
+  "$schema": "pipeline.Potion@00000000",
+  "rows": [
+    {"dwID": "II_POT_HEAL_L", "szName": "IDS_PROPITEM_TXT_POT_L", "nHeal": 2500, "dwCooldownMs": 8000, "nStack": 20, "$isStrong": true},
+    {"dwID": "II_POT_HEAL_S", "szName": "IDS_PROPITEM_TXT_POT_S", "nHeal": 500, "dwCooldownMs": 3000, "nStack": 99, "$isStrong": false}
+  ]
+}

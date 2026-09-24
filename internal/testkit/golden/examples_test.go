@@ -3,6 +3,9 @@ package golden
 import (
 	"bytes"
 	"context"
+	"errors"
+	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"sort"
@@ -12,25 +15,45 @@ import (
 	canon "github.com/fantasim/canonlang/api"
 )
 
+// errDuplicateGolden is buildManifest's error when two display paths would share one golden
+// name: one would silently overwrite the other's file.
+var errDuplicateGolden = errors.New("two display paths share one golden name")
+
 const (
 	examplesDir  = "../../../examples"
 	manifestFile = "MANIFEST"
 	findingsFile = "findings.txt"
 )
 
-// exampleSkip lists examples whose build cannot run yet: pipeline is illustrative until GEN-01 regenerates it (M2, DOCTRINE.md §4).
-var exampleSkip = map[string]bool{"pipeline": true}
+// defaultTargets are the targets an example without its own row in exampleTargets is built for.
+var defaultTargets = []canon.Target{canon.TargetGo, canon.TargetJSON}
+
+// exampleTargets overrides defaultTargets for pipeline, the only example with a cpp emit today; teamboard's extra selector sovcommon... also reaches sovcommon.time's unsupported cpp mode, left unselected under defaultTargets.
+var exampleTargets = map[string][]canon.Target{"pipeline": {canon.TargetGo, canon.TargetCpp, canon.TargetJSON}}
+
+// targetsFor is exampleTargets[name], or defaultTargets without a row.
+func targetsFor(name string) []canon.Target {
+	if t, ok := exampleTargets[name]; ok {
+		return t
+	}
+	return defaultTargets
+}
 
 // exampleExtra are extra selectors an example's Build needs beyond its own package (M1
 // acceptance item 3: sovcommon.ui and sovcommon.roles must also be emitted, not just imported).
 var exampleExtra = map[string][]string{"teamboard": {"sovcommon..."}}
+
+// outDir is the directory name an emit's own out: option always writes under: copyProject skips
+// it so a fixture's own out/, if ever checked in by mistake, never looks "unchanged" on the
+// harness's first build.
+const outDir = "out"
 
 // exampleWriteRoots are the roots examples/project.canon declares that only a build writes to;
 // resource and client are redirected to the fixtures instead, read-only
 // (examples/_fixtures/README.md).
 var exampleWriteRoots = []string{"source", "services", "sovcommon", "web", "parity", "generated"}
 
-// TestExamples rebuilds every example with expected/MANIFEST (exampleSkip aside), comparing every listed file with its golden (-update rewrites it) and failing on an unlisted write (IMPLEMENTATION-PLAN.md §7.1, DECISIONS 201).
+// TestExamples rebuilds every example with expected/MANIFEST, comparing every listed file with its golden (-update rewrites it) and failing on an unlisted write or a listed-but-unwritten path (DECISIONS 201).
 func TestExamples(t *testing.T) {
 	root, err := filepath.Abs(examplesDir)
 	if err != nil {
@@ -47,9 +70,6 @@ func TestExamples(t *testing.T) {
 	for _, m := range manifests {
 		expected := filepath.Dir(m)
 		name := filepath.Base(filepath.Dir(expected))
-		if exampleSkip[name] {
-			continue
-		}
 		t.Run(name, func(t *testing.T) { runExample(t, root, name, expected) })
 	}
 }
@@ -60,7 +80,7 @@ func runExample(t *testing.T, root, name, expected string) {
 	t.Helper()
 	tmp := t.TempDir()
 	proj := filepath.Join(tmp, "proj")
-	if err := os.CopyFS(proj, os.DirFS(root)); err != nil {
+	if err := copyProject(proj, root); err != nil {
 		t.Fatal(err)
 	}
 	roots := exampleRoots(proj, tmp)
@@ -78,13 +98,36 @@ func runExample(t *testing.T, root, name, expected string) {
 	compareFindings(t, expected, checked)
 	selectors := append([]string{name}, exampleExtra[name]...)
 	res, err := p.Build(context.Background(), canon.BuildOptions{
-		Packages: selectors, Targets: []canon.Target{canon.TargetGo, canon.TargetJSON},
+		Packages: selectors, Targets: targetsFor(name),
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	listed := compareManifest(t, expected, proj, roots)
+	listed := compareManifest(t, expected, proj, roots, res)
 	checkNothingUnlisted(t, res, listed)
+	checkNothingUnwritten(t, res, listed)
+}
+
+// copyProject copies root into proj, skipping every out/ directory: a fixture's own out/, if
+// ever checked in by mistake, would let a first build report its matching outputs "unchanged"
+// and hide a MANIFEST entry checkNothingUnlisted or checkNothingUnwritten should have caught.
+func copyProject(proj, root string) error {
+	return fs.WalkDir(os.DirFS(root), ".", func(p string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			if d.Name() == outDir {
+				return fs.SkipDir
+			}
+			return os.MkdirAll(filepath.Join(proj, p), dirPerm)
+		}
+		b, err := os.ReadFile(filepath.Join(root, p))
+		if err != nil {
+			return err
+		}
+		return os.WriteFile(filepath.Join(proj, p), b, filePerm)
+	})
 }
 
 // exampleRoots redirects every root outside the project into tmp, and resource/client into the
@@ -112,11 +155,22 @@ func compareFindings(t *testing.T, expected string, check *canon.CheckResult) {
 	compareOrUpdate(t, filepath.Join(expected, findingsFile), buf.Bytes())
 }
 
-// compareManifest resolves and compares (or, under -update, rewrites) every file
-// expected/MANIFEST lists, and returns the display paths it names.
-func compareManifest(t *testing.T, expected, proj string, roots map[string]string) map[string]bool {
+// compareManifest resolves and compares every file expected/MANIFEST lists; under -update it
+// first rewrites MANIFEST itself from res's outputs and locks (DECISIONS 201: a golden, never
+// typed by hand), then rewrites each file it names. It returns the display paths it names.
+func compareManifest(t *testing.T, expected, proj string, roots map[string]string, res *canon.BuildResult) map[string]bool {
 	t.Helper()
-	data, err := os.ReadFile(filepath.Join(expected, manifestFile))
+	manifest := filepath.Join(expected, manifestFile)
+	if *update {
+		content, err := buildManifest(res)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(manifest, content, filePerm); err != nil {
+			t.Fatal(err)
+		}
+	}
+	data, err := os.ReadFile(manifest)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -140,6 +194,49 @@ func compareManifest(t *testing.T, expected, proj string, roots map[string]strin
 	return listed
 }
 
+// buildManifest is expected/MANIFEST's content for a build's result (IMPLEMENTATION-PLAN §7.1): one line per output, then per lock, "<display path written> <golden path relative to expected/>". Two display paths that would share one golden name are an error: one would silently overwrite the other's file.
+func buildManifest(res *canon.BuildResult) ([]byte, error) {
+	var b strings.Builder
+	seen := map[string]string{}
+	add := func(display string) error {
+		golden := manifestGolden(display)
+		if prev, ok := seen[golden]; ok {
+			return fmt.Errorf("%w: %s and %s", errDuplicateGolden, prev, display)
+		}
+		seen[golden] = display
+		fmt.Fprintf(&b, "%s %s\n", display, golden)
+		return nil
+	}
+	for _, o := range res.Outputs {
+		if err := add(o.Path); err != nil {
+			return nil, err
+		}
+	}
+	for _, l := range res.Lock {
+		if err := add(l.File); err != nil {
+			return nil, err
+		}
+	}
+	return []byte(b.String()), nil
+}
+
+// manifestGolden is the golden name MANIFEST pairs with a display path: an outside root's "@"
+// dropped, or a project-relative path's package directory and, right after it, an "out/" segment
+// dropped (a lock, written beside the package's source, has neither to drop).
+func manifestGolden(display string) string {
+	if rest, ok := strings.CutPrefix(display, "@"); ok {
+		return rest
+	}
+	_, rest, ok := strings.Cut(display, "/")
+	if !ok {
+		return display
+	}
+	if trimmed, ok := strings.CutPrefix(rest, "out/"); ok {
+		return trimmed
+	}
+	return rest
+}
+
 // resolveDisplay is the file a display path (WIRE.md §2.3) names in this rebuild.
 func resolveDisplay(display, proj string, roots map[string]string) (string, bool) {
 	rest, ok := strings.CutPrefix(display, "@")
@@ -154,24 +251,48 @@ func resolveDisplay(display, proj string, roots map[string]string) (string, bool
 	return filepath.Join(dir, filepath.FromSlash(sub)), true
 }
 
-// reporter is the subset of *testing.T checkNothingUnlisted needs, so a test can capture its findings without failing (DECISIONS 201).
+// reporter is the subset of *testing.T checkNothingUnlisted and checkNothingUnwritten need, so a test can capture their findings without failing (DECISIONS 201).
 type reporter interface {
 	Helper()
 	Errorf(format string, args ...any)
 }
 
-// checkNothingUnlisted fails when the build wrote an output, or appended a lock, that
-// expected/MANIFEST does not list (DECISIONS 201).
+// checkNothingUnlisted fails when the build reported an output, of any status, or appended a
+// lock, that expected/MANIFEST does not list (DECISIONS 201).
 func checkNothingUnlisted(t reporter, res *canon.BuildResult, listed map[string]bool) {
 	t.Helper()
 	for _, o := range res.Outputs {
-		if o.Status != canon.OutputUnchanged && !listed[o.Path] {
+		if !listed[o.Path] {
 			t.Errorf("MANIFEST does not list the output %s (%s)", o.Path, o.Status)
 		}
 	}
 	for _, l := range res.Lock {
 		if !listed[l.File] {
 			t.Errorf("MANIFEST does not list the lock %s", l.File)
+		}
+	}
+}
+
+// checkNothingUnwritten fails when expected/MANIFEST lists a path that is neither an output nor
+// a lock the build reported: a stale entry left over from an emit the build no longer runs (the
+// reverse of checkNothingUnlisted; DECISIONS 201).
+func checkNothingUnwritten(t reporter, res *canon.BuildResult, listed map[string]bool) {
+	t.Helper()
+	written := map[string]bool{}
+	for _, o := range res.Outputs {
+		written[o.Path] = true
+	}
+	for _, l := range res.Lock {
+		written[l.File] = true
+	}
+	paths := make([]string, 0, len(listed))
+	for path := range listed {
+		paths = append(paths, path)
+	}
+	sort.Strings(paths)
+	for _, path := range paths {
+		if !written[path] {
+			t.Errorf("MANIFEST lists %s, which the build did not report", path)
 		}
 	}
 }
@@ -205,6 +326,42 @@ func TestCheckNothingUnlistedFailsOnExtra(t *testing.T) {
 		if got != c.want {
 			t.Errorf("%s: %d findings, want %d", c.name, got, c.want)
 		}
+	}
+}
+
+// DECISIONS 201: a path expected/MANIFEST lists that the build reported neither as an output
+// nor as a lock fails the check; one it did report does not.
+func TestCheckNothingUnwrittenFailsOnMissing(t *testing.T) {
+	res := &canon.BuildResult{
+		Outputs: []canon.Output{{Path: "@out/kept.json", Status: canon.OutputWritten}},
+		Lock:    []canon.LockChange{{Package: "a", File: "a/canon.lock"}},
+	}
+	for _, c := range []struct {
+		name   string
+		listed map[string]bool
+		want   errCounter
+	}{
+		{"stale output entry", map[string]bool{"@out/kept.json": true, "@out/stale.json": true, "a/canon.lock": true}, 1},
+		{"stale lock entry", map[string]bool{"@out/kept.json": true, "a/canon.lock": true, "b/canon.lock": true}, 1},
+		{"every entry written", map[string]bool{"@out/kept.json": true, "a/canon.lock": true}, 0},
+	} {
+		var got errCounter
+		checkNothingUnwritten(&got, res, c.listed)
+		if got != c.want {
+			t.Errorf("%s: %d findings, want %d", c.name, got, c.want)
+		}
+	}
+}
+
+// buildManifest fails when two outputs would share one golden name (a display path that
+// manifestGolden reduces to the same string as another's).
+func TestBuildManifestFailsOnDuplicateGolden(t *testing.T) {
+	res := &canon.BuildResult{Outputs: []canon.Output{
+		{Path: "a/out/x.json", Status: canon.OutputWritten},
+		{Path: "b/out/x.json", Status: canon.OutputWritten},
+	}}
+	if _, err := buildManifest(res); !errors.Is(err, errDuplicateGolden) {
+		t.Errorf("buildManifest: %v, want %v", err, errDuplicateGolden)
 	}
 }
 

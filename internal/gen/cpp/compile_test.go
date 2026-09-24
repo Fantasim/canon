@@ -9,44 +9,41 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/fantasim/canonlang/internal/ir"
+	"github.com/fantasim/canonlang/internal/testkit/cxx"
 )
 
-// The toolchains and flags of IMPLEMENTATION-PLAN.md §7.8, CODEGEN.md §9 and CONFORMANCE.md §5.
-var (
-	cxxCompilers = []string{"g++", "clang++"}
-	cxxFlags     = []string{"-std=c++17", "-Wall", "-Wextra", "-Wpedantic", "-Werror", "-ffp-contract=off", "-O1"}
-	cxxModes     = [][]string{nil, {"-fno-exceptions"}}
-	// nlohmannDirs: the Sovereign checkout's vendored copy (read only), or a system install.
-	nlohmannDirs = []string{filepath.Join("..", "..", "..", "..", "..", "Source", "External"), "/usr/include"}
-)
-
-const compileTimeout = 5 * time.Minute
-
-// toolchain finds the compilers and the nlohmann/json include directory, or skips.
-func toolchain(t *testing.T) (compilers []string, include string) {
+// buildAndRun compiles sources in dir with every compiler cxx.Toolchain finds and every mode of
+// cxx.Modes, runs each binary with args, and returns the output of each run; a failed build or
+// a non-zero exit fails the test.
+func buildAndRun(t *testing.T, dir string, sources []string, args ...string) []string {
 	t.Helper()
-	for _, c := range cxxCompilers {
-		if p, err := exec.LookPath(c); err == nil {
-			compilers = append(compilers, p)
-		}
-	}
-	if len(compilers) == 0 {
-		t.Skip("no C++ compiler (g++, clang++) on PATH")
-	}
-	for _, d := range nlohmannDirs {
-		if _, err := os.Stat(filepath.Join(d, "nlohmann", "json.hpp")); err == nil {
-			abs, err := filepath.Abs(d)
-			if err != nil {
-				t.Fatal(err)
+	compilers, include := cxx.Toolchain(t)
+	var outs []string
+	for _, cc := range compilers {
+		for i, mode := range cxx.Modes {
+			bin := filepath.Join(dir, filepath.Base(cc)+"-"+string(rune('a'+i)))
+			cmdArgs := append(append(append([]string(nil), cxx.Flags...), mode...), "-I", dir, "-I", include, "-o", bin)
+			for _, s := range sources {
+				cmdArgs = append(cmdArgs, filepath.Join(dir, s))
 			}
-			return compilers, abs
+			ctx, cancel := context.WithTimeout(context.Background(), cxx.Timeout)
+			out, err := exec.CommandContext(ctx, cc, cmdArgs...).CombinedOutput()
+			cancel()
+			if err != nil {
+				t.Fatalf("%s %s: %v\n%s", filepath.Base(cc), strings.Join(mode, " "), err, out)
+			}
+			var stdout, stderr bytes.Buffer
+			run := exec.Command(bin, args...)
+			run.Stdout, run.Stderr = &stdout, &stderr
+			if err := run.Run(); err != nil {
+				t.Fatalf("%s %s: run: %v\n%s%s", filepath.Base(cc), strings.Join(mode, " "), err, stdout.String(), stderr.String())
+			}
+			outs = append(outs, stdout.String())
 		}
 	}
-	t.Skip("nlohmann/json.hpp not found")
-	return nil, ""
+	return outs
 }
 
 // writeFiles writes the generated files into dir.
@@ -64,37 +61,6 @@ func writeTree(t *testing.T, dir string, files []ir.File, driver string) {
 	t.Helper()
 	writeFiles(t, dir, files)
 	copyFile(t, filepath.Join("testdata", "main", driver), filepath.Join(dir, "main.cpp"), same)
-}
-
-// buildAndRun compiles sources in dir with every toolchain and mode, runs each binary with
-// args, and returns the output of each run; a failed build or a non-zero exit fails the test.
-func buildAndRun(t *testing.T, dir string, sources []string, args ...string) []string {
-	t.Helper()
-	compilers, include := toolchain(t)
-	var outs []string
-	for _, cxx := range compilers {
-		for i, mode := range cxxModes {
-			bin := filepath.Join(dir, filepath.Base(cxx)+"-"+string(rune('a'+i)))
-			cmdArgs := append(append(append([]string(nil), cxxFlags...), mode...), "-I", dir, "-I", include, "-o", bin)
-			for _, s := range sources {
-				cmdArgs = append(cmdArgs, filepath.Join(dir, s))
-			}
-			ctx, cancel := context.WithTimeout(context.Background(), compileTimeout)
-			out, err := exec.CommandContext(ctx, cxx, cmdArgs...).CombinedOutput()
-			cancel()
-			if err != nil {
-				t.Fatalf("%s %s: %v\n%s", filepath.Base(cxx), strings.Join(mode, " "), err, out)
-			}
-			var stdout, stderr bytes.Buffer
-			run := exec.Command(bin, args...)
-			run.Stdout, run.Stderr = &stdout, &stderr
-			if err := run.Run(); err != nil {
-				t.Fatalf("%s %s: run: %v\n%s%s", filepath.Base(cxx), strings.Join(mode, " "), err, stdout.String(), stderr.String())
-			}
-			outs = append(outs, stdout.String())
-		}
-	}
-	return outs
 }
 
 // copyFile copies a committed data file into the test tree.
@@ -147,13 +113,13 @@ func TestConformanceReportsAFailure(t *testing.T) {
 	healFor.Vectors[3].Code = codeOverflow
 	dir := t.TempDir()
 	writeTree(t, dir, generate(t, p), "conformance_main.cpp")
-	compilers, include := toolchain(t)
-	for _, cxx := range compilers {
-		bin := filepath.Join(dir, filepath.Base(cxx))
-		args := append(append([]string(nil), cxxFlags...), "-I", include, "-o", bin,
+	compilers, include := cxx.Toolchain(t)
+	for _, cc := range compilers {
+		bin := filepath.Join(dir, filepath.Base(cc))
+		args := append(append([]string(nil), cxx.Flags...), "-I", include, "-o", bin,
 			filepath.Join(dir, "pipeline_conformance.gen.cpp"), filepath.Join(dir, "main.cpp"))
-		if out, err := exec.Command(cxx, args...).CombinedOutput(); err != nil {
-			t.Fatalf("%s: %v\n%s", cxx, err, out)
+		if out, err := exec.Command(cc, args...).CombinedOutput(); err != nil {
+			t.Fatalf("%s: %v\n%s", cc, err, out)
 		}
 		var stdout, stderr bytes.Buffer
 		run := exec.Command(bin)
@@ -162,12 +128,12 @@ func TestConformanceReportsAFailure(t *testing.T) {
 			t.Fatal(err)
 		}
 		if stdout.String() != "failures: 2\n" {
-			t.Errorf("%s: %q", cxx, stdout.String())
+			t.Errorf("%s: %q", cc, stdout.String())
 		}
 		want := "pipeline: Potion.healFor(heal=500, missingHp=200) = 200 [], canon says 201 []\n" +
 			"pipeline: Potion.healFor(heal=500, missingHp=-9223372036854775808) = 0 [], canon says 0 [" + string(codeOverflow) + "]\n"
 		if stderr.String() != want {
-			t.Errorf("%s: stderr\n%s\nwant\n%s", cxx, stderr.String(), want)
+			t.Errorf("%s: stderr\n%s\nwant\n%s", cc, stderr.String(), want)
 		}
 	}
 }
@@ -205,11 +171,11 @@ func TestConstructsCompileAndRun(t *testing.T) {
 // A lookup argument that is no member of its enum aborts instead of reading past the table
 // (log-2026-09-24, gen/cpp review calls).
 func TestLookupNonMemberAborts(t *testing.T) {
-	compilers, include := toolchain(t)
+	compilers, include := cxx.Toolchain(t)
 	dir := t.TempDir()
 	writeTree(t, dir, generate(t, constructs()), "abort_main.cpp")
 	bin := filepath.Join(dir, "abort")
-	args := append(append([]string(nil), cxxFlags...), "-I", dir, "-I", include, "-o", bin, filepath.Join(dir, "main.cpp"))
+	args := append(append([]string(nil), cxx.Flags...), "-I", dir, "-I", include, "-o", bin, filepath.Join(dir, "main.cpp"))
 	if out, err := exec.Command(compilers[0], args...).CombinedOutput(); err != nil {
 		t.Fatalf("%v\n%s", err, out)
 	}

@@ -14,6 +14,7 @@ namespace sov::gen {
 namespace detail {
 
 bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Potion& out) {
+    if (!canon::json::detail::Keys(v, dec, {"$isStrong", "dwCooldownMs", "dwID", "nHeal", "nStack", "szName"})) return false;
     dec.String(v, "dwID", out.id_);
     dec.String(v, "szName", out.name_);
     dec.Int(v, "nHeal", out.heal_);

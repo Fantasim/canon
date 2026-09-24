@@ -32,6 +32,9 @@ test:
 # 201) is copied to a temporary directory with the smoke test added, so expected/ keeps holding
 # only compiler output; one without is vetted and tested in place. Assumes one golden Go module
 # per example: the smoke directory is named after the example two levels above expected/'s go.mod.
+# A data-mode example's own top-level *.json (examples/<ex>/expected/*.json, e.g. pipeline's
+# potions.json) is copied into the smoke module's data/ too, so the smoke test loads the real
+# golden instead of a hand-kept copy; a baked example's data already sits inside its module.
 goldens-vet:
 	@for m in $(GOLDEN_MODS); do \
 	  echo "golden module $$m"; \
@@ -39,20 +42,24 @@ goldens-vet:
 	  if [ -d "$$smoke" ]; then \
 	    tmp=$$(mktemp -d); trap 'rm -rf "$$tmp"' EXIT; \
 	    cp -r "$$m/." "$$tmp" && mkdir -p "$$tmp/smoke" && cp -r "$$smoke/." "$$tmp/smoke" && \
-	      (cd "$$tmp" && go vet ./... && go test ./...); \
+	      for j in $$(find "$$(dirname $$m)" -maxdepth 1 -name '*.json'); do \
+	        mkdir -p "$$tmp/smoke/data" && cp "$$j" "$$tmp/smoke/data/"; \
+	      done && \
+	      (cd "$$tmp" && go vet ./... && go test -race ./...); \
 	    status=$$?; rm -rf "$$tmp"; trap - EXIT; \
 	    [ $$status -eq 0 ] || exit $$status; \
 	  else \
-	    (cd $$m && go vet ./... && go test ./...) || exit 1; \
+	    (cd $$m && go vet ./... && go test -race ./...) || exit 1; \
 	  fi; \
 	done
 
 # Every expected/MANIFEST line names a golden that exists, and every file of that expected/ is
-# listed (findings.txt, MANIFEST and go.mod excepted). internal/testkit/golden's TestExamples
-# then rebuilds every buildable example (its own skip list, currently pipeline, aside) into a
-# temporary copy of examples/ with every outside root redirected and diffs it, failing also when
-# the build wrote an output the MANIFEST does not list (IMPLEMENTATION-PLAN.md §7.1, DECISIONS
-# 201).
+# listed (findings.txt, MANIFEST and go.mod excepted; also examples/pipeline/expected/potion.
+# view.json by its exact path, held until M3 wires gen/view, VIEWMODEL.md's golden link and
+# GEN-01, DECISIONS 190). internal/testkit/golden's TestExamples then rebuilds every buildable
+# example into a temporary copy of examples/ with every outside root redirected and diffs it,
+# failing also when the build wrote an output the MANIFEST does not list (IMPLEMENTATION-PLAN.md
+# §7.1, DECISIONS 201).
 goldens-check:
 	@status=0; for m in $$(find examples -path '*/expected/MANIFEST' | sort); do \
 	  d=$$(dirname $$m); \
@@ -60,10 +67,11 @@ goldens-check:
 	    if [ ! -f "$$d/$$g" ]; then echo "goldens-check: $$m names $$g, which does not exist"; status=1; fi; \
 	  done; \
 	  for f in $$(cd $$d && find . -type f ! -name findings.txt ! -name MANIFEST ! -name go.mod | sed 's|^\./||' | sort); do \
+	    if [ "$$d/$$f" = "examples/pipeline/expected/potion.view.json" ]; then continue; fi; \
 	    if ! awk '{ print $$2 }' $$m | grep -qx "$$f"; then echo "goldens-check: $$d/$$f is not listed in $$m"; status=1; fi; \
 	  done; \
 	done; \
-	go test ./internal/testkit/golden/... -run TestExamples -v || status=1; \
+	go test -race ./internal/testkit/golden/... -run TestExamples -v || status=1; \
 	exit $$status
 
 # internal/diag/codes.go and its generated test table equal what diaggen generates from
