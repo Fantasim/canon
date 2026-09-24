@@ -35,6 +35,7 @@ type evalHost struct {
 	errs      []error
 	logBags   func() check.Bags            // set by canon test: each verification gets fresh bags...
 	causes    map[eval.Root][]diag.Finding // ...and a value it poisons keeps their errors
+	fold      check.Folder                 // phase 2's folder, whose internal errors failure reports (DECISIONS 195)
 }
 
 // Load runs e's form against expected; an unsupported form, option or default is ErrLoad,
@@ -66,9 +67,6 @@ func (h *evalHost) LoadInto(ctx context.Context, e *syntax.LoadExpr, expected ty
 		return v, ok
 	}
 }
-
-// EvalSymlinks lets load.dir follow links through the OS file system a build reads (WIRE.md §6.5).
-func (f osFS) EvalSymlinks(name string) (string, error) { return project.EvalSymlinks(f.FS, name) }
 
 // unsupportedCause is a load.UnsupportedError's own cause, "" for a bare ErrUnsupported.
 func unsupportedCause(err error) string {
@@ -154,6 +152,9 @@ func (h *evalHost) failure(set *source.FileSet, prog *check.Program) error {
 		return &LoadError{Span: span, Site: set.Locate(span), Cause: h.loadCause}
 	}
 	errs := slices.Clone(h.errs)
+	if err := eval.FoldErr(h.fold); err != nil {
+		errs = append(errs, internal(err))
+	}
 	if err := h.ev.Err(); err != nil {
 		errs = append(errs, internal(err))
 	}
@@ -268,18 +269,4 @@ func (a *assets) files(dir string) []string {
 	}
 	a.dirs[dir] = names
 	return names
-}
-
-// internalError is a compiler bug a build met: ErrInternal, its text the cause's alone, the API writing the sentinel's (API.md §15 X1).
-type internalError struct {
-	cause error
-}
-
-func (e *internalError) Error() string { return e.cause.Error() }
-
-func (e *internalError) Unwrap() []error { return []error{ErrInternal, e.cause} }
-
-// internal is cause as a build's internal error.
-func internal(cause error) error {
-	return &internalError{cause: cause}
 }

@@ -639,7 +639,7 @@ Owner: TYPES.md.
 
 | Code | Severity | Package | Owner | Meaning |
 |---|---|---|---|---|
-| E2001 | error | check | TYPES.md §3.1 | one directory holds files of two packages, neither being the directory's |
+| E2001 | error | build | TYPES.md §3.1 | one directory holds files of two packages, neither being the directory's |
 | E2002 | error | check | TYPES.md §3.1 | import cycle |
 | E2003 | error | check | TYPES.md §3.1 | import of a package that does not exist |
 | E2004 | error | check | TYPES.md §3.1 | selective import of a missing or `local` name |

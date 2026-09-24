@@ -93,22 +93,24 @@ func (r *run) analyze(ctx context.Context) error {
 func (r *run) check(ctx context.Context) error {
 	opt := eval.Options{Budget: r.s.proj.Budget, Layers: r.p.opt.Layers}
 	r.fold = eval.NewFolder(r.bags, opt)
+	files := filesOf(r.loaded)
 	if r.p.opt.Checker != nil {
-		r.prog = r.p.opt.Checker(ctx, r.s.proj, filesOf(r.loaded), r.bags)
+		r.prog = r.p.opt.Checker(ctx, r.s.proj, files, r.bags)
 	} else {
-		r.prog = check.Check(ctx, r.s.proj, filesOf(r.loaded), r.bags, r.fold)
+		r.prog = check.Check(ctx, r.s.proj, files, r.bags, r.fold)
 	}
 	if r.prog == nil {
 		return internal(errNoProgram)
 	}
 	r.opt = opt
+	r.dirConflicts()
 	return nil
 }
 
 // newHost is the run's host and evaluator, reporting into bags: stage A's, or canon test's.
 func (r *run) newHost(bags check.Bags) {
 	r.vix, r.rix = verify.NewIndex(r.prog), rules.NewIndex(r.prog)
-	r.host = &evalHost{prog: r.prog, bags: bags, index: r.vix}
+	r.host = &evalHost{prog: r.prog, bags: bags, index: r.vix, fold: r.fold}
 	r.host.loader = &load.Loader{FS: r.p.fs, Layout: r.s.layout, Set: r.s.set}
 	r.ev = eval.New(r.prog, r.host, bags, r.opt)
 	r.host.ev = r.ev
@@ -140,10 +142,28 @@ func (r *run) selects(pkg string) bool {
 	return slices.ContainsFunc(r.selected, func(u *project.Unit) bool { return u.Name == pkg })
 }
 
-// stageB verifies what stage A evaluated, then compares the locks (LOCK.md §4.5).
+// stageB verifies what stage A evaluated, then the codes, then compares the locks (LOCK.md §4.5).
 func (r *run) stageB(ctx context.Context) error {
 	r.ev.BeginVerification(ctx)
+	if err := r.verifyCodes(); err != nil {
+		return err
+	}
 	return r.compareLocks(ctx)
+}
+
+// verifyCodes checks every @codes enum of every loaded package once (TYPES.md §8.1).
+func (r *run) verifyCodes() error {
+	for _, cp := range r.prog.Packages {
+		for _, obj := range cp.Decls {
+			if obj.Kind() != check.ObjTypeName || r.prog.Info.Broken[obj] {
+				continue
+			}
+			if _, err := r.host.verifier.Codes(obj); err != nil {
+				return internal(err)
+			}
+		}
+	}
+	return nil
 }
 
 // stagesCD runs the instance checks, then the package checks (EVALUATION.md §8).

@@ -2,7 +2,6 @@ suite mutation
 name E3102 TYPES.md §9.1 (@codes code twice)
 case 100
 seed 4294967397
-open build
 sig missing
 packages features.retirement
 want E3102 features/retirement/retirement.canon 148 164 check

@@ -5,8 +5,7 @@ import "errors"
 var (
 	// ErrUnknownLayer is a layer name no loaded package has a file for (API.md O4).
 	ErrUnknownLayer = errors.New("unknown layer")
-	// ErrNoGenerator is an emit whose target has no generator in this compiler yet.
-	ErrNoGenerator = errors.New("no generator for this emit target yet")
+	ErrNoGenerator  = errors.New("no generator for this emit target yet")
 	// ErrLoad is a load form or option the load package does not read yet (DECISIONS 196).
 	ErrLoad = errors.New("load is not supported by this compiler yet")
 	// ErrInternal is a compiler bug met by a build: the evaluator's, a stage's or a placement's.
@@ -17,3 +16,16 @@ var (
 	errNoProgram  = errors.New("the checker returned no program")
 	errNoLoadSite = errors.New("a forced load expression is in no file of the program")
 )
+
+// internalError is a build's ErrInternal, its text the cause's alone (API.md §15 X1).
+type internalError struct {
+	cause error
+}
+
+func (e *internalError) Error() string { return e.cause.Error() }
+
+func (e *internalError) Unwrap() []error { return []error{ErrInternal, e.cause} }
+
+func internal(cause error) error {
+	return &internalError{cause: cause}
+}

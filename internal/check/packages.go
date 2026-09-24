@@ -63,7 +63,6 @@ func (c *checker) loadPackages(files []*syntax.File) {
 	for _, p := range c.sorted {
 		c.checkDirs(p)
 	}
-	c.checkSharedDirs()
 }
 
 func (c *checker) newPackage(name string) *pkgState {
@@ -112,42 +111,6 @@ func (c *checker) checkDirs(p *pkgState) {
 			dir = rootDir
 		}
 		diag.E2006.At(f.Span(f.Package), dir, p.path).Report(p.bag)
-	}
-}
-
-// checkSharedDirs is E2001: a directory holding files of two packages, neither its own.
-func (c *checker) checkSharedDirs() {
-	byDir := map[string][]*syntax.File{}
-	var dirs []string
-	for _, p := range c.sorted {
-		for _, f := range p.files {
-			d := fileDir(f)
-			if _, ok := byDir[d]; !ok {
-				dirs = append(dirs, d)
-			}
-			byDir[d] = append(byDir[d], f)
-		}
-	}
-	slices.Sort(dirs)
-	for _, d := range dirs {
-		c.checkSharedDir(d, byDir[d])
-	}
-}
-
-func (c *checker) checkSharedDir(dir string, files []*syntax.File) {
-	slices.SortFunc(files, func(a, b *syntax.File) int { return cmp.Compare(a.Src.Path, b.Src.Path) })
-	own := strings.ReplaceAll(dir, slash, dot)
-	first := qualified(files[0].Package)
-	for _, f := range files {
-		if qualified(f.Package) == own {
-			return
-		}
-	}
-	for _, f := range files[1:] {
-		if name := qualified(f.Package); name != first {
-			diag.E2001.At(f.Span(f.Package), dir, first, name).Report(c.pkgs[name].bag)
-			return
-		}
 	}
 }
 

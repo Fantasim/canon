@@ -1,0 +1,34 @@
+TYPES.md §3.1, CODEGEN.md §3.5: a/b holding a.b, its own package, and a, an ancestor, is
+legal (no E2001); the unloaded a's own error (an unknown name) and its cpp emit, which would
+collide (E8005) with a.b's in the same C++ namespace were it ever built, never reach the
+Result: the sibling is never resolved, type-checked or IR-built.
+-- select --
+a.b
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    out: "out"
+  }
+}
+-- a/b/b.canon --
+/// B.
+package a.b
+
+/// Tone.
+enum Tone { soft, loud }
+
+emit cpp { out: "@out/b", namespace: "sov::gen", mode: data }
+-- a/b/extra.canon --
+/// Extra: an unloaded sibling of a.b's directory, its own error and a colliding cpp identifier.
+package a
+
+/// Tone.
+enum Tone { high, low }
+
+emit cpp { out: "@out/a", namespace: "sov::gen", mode: data }
+
+/// Bad.
+const BAD = nowhere
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

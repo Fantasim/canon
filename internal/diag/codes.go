@@ -947,7 +947,7 @@ var Registry = []Def{
 		},
 	},
 	{
-		Code: "E2001", Severity: Error, Package: "check",
+		Code: "E2001", Severity: Error, Package: "build",
 		Variants: []Variant{
 			{Args: []Arg{{Name: "dir", Type: ArgTypePath}, {Name: "a", Type: ArgTypeName}, {Name: "b", Type: ArgTypeName}}, Template: "directory {dir} holds files of packages {a} and {b}"},
 		},

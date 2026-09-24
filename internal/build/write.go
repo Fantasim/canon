@@ -48,6 +48,9 @@ func (osFS) MkdirAll(name string) error {
 	return wrapIO(os.MkdirAll(filepath.FromSlash(name), dirMode))
 }
 
+// EvalSymlinks lets load.dir follow links through the OS file system a build reads (WIRE.md §6.5).
+func (f osFS) EvalSymlinks(name string) (string, error) { return project.EvalSymlinks(f.FS, name) }
+
 func wrapIO(err error) error {
 	if err != nil {
 		return fmt.Errorf(fmtWrap, err)

@@ -1,0 +1,20 @@
+TYPES.md §3.1, DECISIONS 217: a directory holding files of two packages, neither being its
+own, is E2001 once per loaded package that shares it, even when both are loaded together.
+-- select --
+x x.y
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- x/y/z/one.canon --
+package x
+-- x/y/z/two.canon --
+package x.y
+-- findings.txt --
+error[E2001]  x/y/z/one.canon:1:9
+  directory x/y/z holds files of packages x and x.y
+
+error[E2001]  x/y/z/two.canon:1:9
+  directory x/y/z holds files of packages x.y and x
+
+2 errors, 0 warnings in 2 packages (…)
