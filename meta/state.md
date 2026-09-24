@@ -9,9 +9,11 @@ equals findings.txt, `canon build --target go,json teamboard sovcommon...` equal
 (MANIFEST, rebuilt and diffed by `make goldens-check`), canon.lock equals its golden, the generated
 module vets. Item 6 postponed (DECISIONS 189). Open before ticking M1: the api/cli review, IR
 round 2, Go 1.23 toolchain (not installed here).
-**In flight:** IR stage E round 2 (one Go name plan shared by ir and gen/go, E8005/E8011
-complete); eval 199 amendment (to commit); M2 `load.dir` of JSON; M2 `gen/cpp` (data mode,
-runtime, conformance). **Next:** gen/go data mode + stores + translated fns (after IR round 2),
+**In flight (all uncommitted in the tree; session resumed after a limit cut at ~11:03):** IR
+round 2 (202/203; ir, gen/go, syntax, check; was red) → go-dev resuming; M2 `load.dir` (load +
+build wiring) → go-dev resuming; M2 `gen/cpp` → go-dev resuming; `conform` built, → review, then
+204 amendments (needs eval TestCalls/Evaluate and ir ExportFn.Reads/Body before build wiring);
+build API/report (201; api, build, cli, Makefile) → review. **Next:** gen/go data mode + stores + translated fns (after IR round 2),
 `conform`, `canon test`, GEN-01 review (handoff), M1.5 program generator (DECISIONS 200).
 
 ## What exists
@@ -23,15 +25,10 @@ Committed: spec + DECISIONS 1–200; `syntax`, `format`, `jsonsrc`, `wire`, `che
 
 ## Open Louis-calls
 
-1. **Enable the hooks** (`.claude/README.md` § Hooks).
-2. **Review DECISIONS 30–199** made without you; 192 is my reading of your header instruction.
-3. **Today's list:** [handoff/2026-09-24-louis-calls.md](handoff/2026-09-24-louis-calls.md):
-   spec text to update, rule gaps (free verify walk depth, equality transitivity, double E3501,
-   TS reserved words), tooling (pkg-size, citing comments on one line, dead README link).
-4. IMPLEMENTATION-PLAN §12.5 is stale (no `meta/`). 5. Absolute-path denies (ADR-0001).
-6. `make check-real` lands with M3. 7. Real data: 123 pairs violations, icon letter case.
-8. Older calls 6–14 of the previous state (LOD/API, VER, TYP, SYN, LOD decode, FMT, EVL): see
-   git history of this file (`git show f89be79:meta/state.md`); none was resolved today.
+Non-technical only (Louis, 2026-09-24): [handoff/2026-09-24-louis-calls.md](handoff/2026-09-24-louis-calls.md)
+— hooks, spec sync, toolchains, real data, sovcommon integration. Technical gaps and the calls
+made on them: [decisions/log-2026-09-24.md](decisions/log-2026-09-24.md); the orchestrator
+decides them, never asks.
 
 ## Operating notes (today)
 
