@@ -6,11 +6,12 @@ Code cloud session on branch `claude/m3-run` (Louis fast-forwards `main` from th
 [handoff/2026-09-25-pause.md](handoff/2026-09-25-pause.md); calls of the cloud run:
 [decisions/log-2026-09-25.md](decisions/log-2026-09-25.md); earlier calls:
 [decisions/log-2026-09-24.md](decisions/log-2026-09-24.md) "Overnight run". Stopped on budget;
-report and remaining lists: [handoff/2026-09-25-cloud-run.md](handoff/2026-09-25-cloud-run.md).
+report and remaining lists: [handoff/2026-09-25-cloud-run-2.md](handoff/2026-09-25-cloud-run-2.md)
+(run 1: [handoff/2026-09-25-cloud-run.md](handoff/2026-09-25-cloud-run.md)).
 
 ## Current focus — overnight run tracker (resume from here)
 
-Ticked means committed on `claude/m3-run` (cloud run) or `main`. Unfinished units sit as unreviewed `wip:` commits on their
+Ticked means committed on `claude/m3-run-2`, `claude/m3-run` or `main`. Unfinished units sit as unreviewed `wip:` commits on their
 worktree branches. They are listed in the pause report with what each still needs.
 - [x] A1 loader parity (2eb3294, c9a44cb) · [x] A2 demo bugs (428fbad, 6534f56) · [x] A3 M1.5
   bug-fix wave · [x] A4 M2 accepted (94ddb96).
@@ -23,11 +24,12 @@ worktree branches. They are listed in the pause report with what each still need
 - [ ] W1: landed: eval layers/provenance (bc99b99, 02f203c), load forms (1a77900), dependent
   types in check (3e46ab3, b2f063c). Gate lift + load into an applied type landed on
   `claude/m3-run` (d5062a3).
-- [ ] W2: gen/go inputs + unions landed (8e816d3). Open: gen/cpp inputs round 2 WIP
-  (`claude/wip-cpp-inputs`, with the gen/cpp plan switch) and gen/go plan switch
-  (`claude/wip-go-plans`) in flight; ir name plans landed (ad23ae8, run 2);
-  pattern translator; verify dependent (E3801/E3802);
-  view/translation checking; ir `types` mode; dependent types in both generators.
+- [ ] W2: gen/go inputs + unions landed (8e816d3). Run 2 landed: ir name plans (ad23ae8),
+  ir pattern translator (f47e51c), gen/cpp inputs + dependent types + plan switch (4d165ff),
+  gen/go plan switch + dependent types in data mode (4a8852e). Open: ir lifts E8019
+  DependentType per generator; pattern automaton (C++ `std::regex` recursion); verify dependent
+  (E3801/E3802); view/translation checking; ir `types` mode. Queue: report
+  [handoff/2026-09-25-cloud-run-2.md](handoff/2026-09-25-cloud-run-2.md) "Owed".
 - [ ] W3 · [ ] W4 (see [plan.md](plan.md) "M3 execution").
 
 Milestones: M0, M1, M2 accepted (M1 item 6 deferred to after M7). M1.5 foundation committed
