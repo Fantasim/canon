@@ -7,6 +7,8 @@ const (
 	maxParentDirs = 8
 	// Timeout bounds one compile or one run in a caller's own loop.
 	Timeout = 5 * time.Minute
+	// noCompilerMsg is Compilers and Toolchain's gate reason when PATH holds no compiler.
+	noCompilerMsg = "no C++ compiler (g++, clang++) on PATH"
 )
 
 // compilerNames are the C++ compilers Toolchain looks for, in order.

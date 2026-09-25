@@ -21,7 +21,7 @@ var harnessLocales = []string{"C", "C.utf8"}
 // pattern × input of the corpus, std::regex_search (ECMAScript, over the bytes) of the translation
 // agrees with Go's regexp.MatchString of the pattern, per compiler found and harnessLocales entry.
 func TestCppPatternStdRegex(t *testing.T) {
-	compilers, _ := cxx.Toolchain(t)
+	compilers := cxx.Compilers(t)
 	patterns, inputs := fullCorpus()
 	stdin, want := harnessCase(t, patterns, inputs)
 	dir := t.TempDir()

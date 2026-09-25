@@ -5,26 +5,52 @@ import (
 	"os/exec"
 	"path/filepath"
 	"testing"
+
+	"github.com/fantasim/canonlang/internal/testkit/cxx/config"
 )
 
+// Compilers finds every compiler on PATH (meta/state.md: MSVC unverifiable), or gates the test.
+func Compilers(t *testing.T) []string {
+	t.Helper()
+	found := lookupCompilers()
+	if len(found) == 0 {
+		gate(t, noCompilerMsg)
+	}
+	return found
+}
+
 // Toolchain finds every compiler on PATH and the nlohmann/json include directory reachable
-// from the working directory: the vendored copy, walked up toward the repository root, or a
-// system install. It skips the test when either is missing (meta/state.md: MSVC unverifiable).
+// from the working directory, or gates the test on whichever piece is missing.
 func Toolchain(t *testing.T) (found []string, include string) {
 	t.Helper()
+	found = lookupCompilers()
+	if len(found) == 0 {
+		gate(t, noCompilerMsg)
+	}
+	if dir, ok := findNlohmann(); ok {
+		return found, dir
+	}
+	gate(t, "nlohmann/json.hpp not found")
+	return nil, ""
+}
+
+// lookupCompilers is every compilerNames entry found on PATH.
+func lookupCompilers() (found []string) {
 	for _, c := range compilerNames {
 		if p, err := exec.LookPath(c); err == nil {
 			found = append(found, p)
 		}
 	}
-	if len(found) == 0 {
-		t.Skip("no C++ compiler (g++, clang++) on PATH")
+	return found
+}
+
+// gate skips the test on msg, or fails it when config.RequireCxx is set.
+func gate(t *testing.T, msg string) {
+	t.Helper()
+	if config.RequireCxx() {
+		t.Fatal(msg)
 	}
-	if dir, ok := findNlohmann(); ok {
-		return found, dir
-	}
-	t.Skip("nlohmann/json.hpp not found")
-	return nil, ""
+	t.Skip(msg)
 }
 
 // findNlohmann is the include directory holding nlohmann/json.hpp: the vendored copy at every

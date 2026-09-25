@@ -17,6 +17,10 @@ GO_FILES     = $(shell find . -name '*.go' -not -path './examples/*/expected/*' 
 
 .PHONY: check fmt-check vet test goldens-vet goldens-check diag-check audit-self audit-check audit audit-tighten scope
 
+# CANON_REQUIRE_CXX turns a missing C++ compiler or nlohmann/json header (internal/testkit/cxx)
+# from a silent test skip into a failure, and is inherited by every prerequisite below: make
+# check must not pass green having skipped every C++ compile test for want of a toolchain.
+check: export CANON_REQUIRE_CXX=1
 check: fmt-check vet test goldens-vet goldens-check diag-check audit-self audit-check
 
 fmt-check:
