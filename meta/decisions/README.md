@@ -23,3 +23,4 @@ the narration.
 | [0002](0002-api-session.md) | `api/session.go`: the API's glue to `internal/build` |
 | [0003](0003-eval-conformance-api.md) | The evaluator's conformance API: test calls, vectors, TS mode |
 | [0004](0004-api-testresult-check.md) | `api.TestResult` carries the static check findings |
+| [0005](0005-wire-host-dependent-decoding.md) | `wire.Decoder`/`wire.Host` grow for dependent types in loaded data |

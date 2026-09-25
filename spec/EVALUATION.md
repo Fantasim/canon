@@ -79,7 +79,10 @@ Evaluation is eager and strictly left to right as written:
   needs; `?.` skips the rest of its chain on `none` (TYPES.md §6.5);
 - call arguments in the order written, then the function body;
 - a record or case literal evaluates its spread, then its written fields in the order written,
-  then the defaults of the remaining fields in declaration order;
+  then the defaults of the remaining fields in declaration order; one exception: a field a
+  dependent field's type arguments read (TYPES.md §11.1), written after it or defaulted, is
+  evaluated just before that dependent field, then this order resumes (evaluation is pure, so
+  only step charging and which of two errors surfaces first can tell);
 - list, map and table literals evaluate their items in order;
 - a comprehension runs its clauses as nested loops, left to right;
 - `for` iterates over a snapshot of its collection taken when the loop starts (values are

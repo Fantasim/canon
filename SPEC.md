@@ -384,7 +384,8 @@ the package: usable by the package's own code, never imported, never emitted.
 
 ```
 const FARM_MAX_MODELS = 100
-const WEEK = 7 * 1440
+const DAY = 1440
+const WEEK = 7 * DAY
 ```
 
 A constant is a value computable without `load`: literals, other constants, operators and the

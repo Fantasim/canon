@@ -1884,6 +1884,15 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      until they do (owed feature). Reason: the ERRORS ir-group unit found a check-clean program
      whose build aborted on the fingerprint (overnight run).
 
+220. **`wire.Host` for dependent types in loaded data (amends 173).** `wire.Decoder` gains
+     `Outer` (the record whose field the load gives, its arguments, the dependent map binders:
+     what the decoded value's type arguments may name), and `wire.Host` gains `Bind(rec, params)`
+     (arguments bound to an applied record instance, TYPES §11.1), `Cycle(ctx, ref)` (an entry
+     needed to decode itself, EVALUATION §3.2), `Reads(f, fields)` (the fields a default reads,
+     TYPES §15: a default waits only on a waiting field it reads) and `Savepoint()` (an attempt
+     whose undo takes back its steps and bindings, leaving no trace). `wire` still evaluates
+     nothing. Reason: the gate lift (d5062a3) decodes dependent types in two passes; ADR-0005.
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.

@@ -295,8 +295,12 @@ synthesize.
 For a comparison or arithmetic operator, the operand that is **context-dependent** is the one
 checked: a bare identifier not resolvable in steps 2–6, `none`, `[]`, `{}`, or a numeric
 literal. Otherwise the left operand is synthesized and the right one checked. If both operands
-are context-dependent the expression is `E3008`. So `tone == warning` and `warning == tone`
-both resolve `warning` against `Tone`.
+are context-dependent, an arithmetic expression checks both against its own expected type, when
+it has one; otherwise the expression is `E3008`. So `tone == warning` and `warning == tone`
+both resolve `warning` against `Tone`; `x == 0 - 20` (with `x: Int`) and `let w: Int = 7 *
+1440` are well-typed, `let f: Float = 1 / 2` is a `Float` division (`0.5`), and `1 == 2`, an
+untyped local `let n = 1 + 2` or `const WEEK = 7 * 1440` is `E3008` (`const WEEK = 7 * DAY`,
+with `const DAY = 1440`, is an `Int`).
 
 ### 5.2 Brace literals (GRM-10)
 
@@ -856,12 +860,14 @@ RES-07). Other packages then validate against that collection.
 ### 11.1 Declarations
 
 - `record R(p: P, …) { … }` and `type F(p: P, …) = type` take **value** parameters. `P` is a
-  record type or a `ref` type (DEP-05).
+  record type, a `ref` type (DEP-05), an enum or `Bool` (the finite scrutinees of §11.2's
+  type-level `match`).
 - The parameters are in scope in field types, defaults and checks of `R`, and in the body of
   `F`.
 - `R(args)` and `F(args)` need exactly the declared number of arguments, each checked against
   its parameter type (a `ref` argument dereferences, so `Param(eventType)` with `eventType: ref
-  eventTypes` is fine). Wrong arity or type is `E3806`.
+  eventTypes` is fine). Wrong arity or type is `E3806`. A bare name `R` is zero arguments, so a
+  field typed `R` or a typed literal `R { … }` of a parameterized `R` is `E3806` too.
 - An argument must be a stable path rooted at a type parameter, an **earlier** field of the
   same record, or the binder of a dependent map (§11.5). A later field, the field itself, or any
   other expression is `E3805` (for fields) or `E3803` (otherwise).
@@ -1040,8 +1046,9 @@ only be passed on. Its text form is `(a, b)` (STDLIB.md).
 ### 13.2 String-literal unions (TYP-09)
 
 - `A | "lit" | …`: the alternatives other than the first are string literals. `A` must have a
-  string wire form: `String` (possibly refined), an enum, a `ref`, or a type application whose
-  branches do (`E3002` otherwise). `Never | "default"` accepts only `"default"`.
+  string wire form: `String` (possibly refined), an enum without `@json(codes)`, a `ref` whose
+  key is one of those, or a type application whose branches do (`E3002` otherwise: a
+  `@json(codes)` enum, or a `ref` keyed by one, is written as a number). `Never | "default"` accepts only `"default"`.
 - A value of the union is either an `A` or one of the literals. Such unions are valid map keys.
 - A string literal equal to one of the literals is that literal, even if `A` would also accept
   it (TYP-09: "the literal wins").

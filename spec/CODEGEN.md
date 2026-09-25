@@ -82,8 +82,10 @@ in [§12](#12-diagnostics).
 - A package has at most one `emit` per target (`E8002`). A target word not in this table, or an
   unknown option, is `E8003`. An invalid option value is `E8009`: a mode the target does not
   have, a `package` that is not a Go identifier or is a Go keyword, a `namespace` that is not
-  `ident{::ident}` or uses a C++ keyword, a `ts` `out` not ending in `.ts`, a `values` item that
-  is not a public top-level `let` of the package or is listed twice.
+  `ident{::ident}` or uses a C++ keyword, a `namespace` with a segment `canon`, `std` or
+  `nlohmann` (reserved: the runtime's and the libraries' namespaces), a `ts` `out` not ending in
+  `.ts`, a `values` item that is not a public top-level `let` of the package or is listed twice.
+  `out` is required for every target (`E8009` `missing` without it).
 - **Typing of the options.** The options of each target form a built-in schema, checked in
   phase 2 like `project.canon` (GRAMMAR.md §7): nothing in an `emit` is an expression, is
   evaluated, or is resolved in scope.
@@ -456,6 +458,18 @@ in one enum; fields `fooBar` and `foo_bar`; a field `strong` (`GetStrong`) next 
 collides with the record; a Go method colliding with a generated one (`ID`, `Retired`, `Kind`,
 `Branch`, `As<Case>`, `Len`, `At`, `All`, `Find`, `Get`, `String`, `Wire`).
 
+Every name a generator writes is in these scopes, fixed names included: the names of dependent
+types (class or struct, branch enum and its members, `As<Branch>`, `GetBranch`/`Branch`,
+`Decode<Alias>`), `LoadInputs`, the per-package input namespace and input slots (§5.12, §7.7)
+and the §7.7 input helpers a package uses (`EnvText`, `AllDigits`, `IsDecDigit`,
+`Parse<Kind>Literal`). C++ adds the scopes name lookup crosses (C++17 [basic.scope.hiding]): a
+class member equal to a namespace-scope type that the class body names (`Tone Tone() const;`
+changes the meaning of `Tone`), overrides included; a nested namespace segment equal to a class
+of an enclosing namespace (a record `gen` of package `sov` and a package emitted into
+`sov::gen`); and a name one package's namespace declares that another package emitted into the
+same namespace also declares (two packages with runtime inputs in one namespace both declare
+`LoadInputs`). Each is `E8005`, reported at the later declaration.
+
 `W8006` warns when a generated C++ identifier is a macro name that common platform headers define:
 `min max near far IN OUT OPTIONAL ERROR DELETE TRUE FALSE VOID CONST interface small TEXT
 ABSOLUTE RELATIVE TRANSPARENT OPAQUE CALLBACK WINAPI PASCAL CDECL EXPORT DOMAIN OVERFLOW UNDERFLOW
@@ -764,6 +778,11 @@ export type Param =
 The wire is untagged; loaders pick the branch from the discriminant through a static table
 generated from the `match` (the discriminant is read first). Dependent maps and keys follow
 §4.2 (DEP-04).
+
+- The Go struct stores `branch` and `value` (unexported); the Go branch enum has no `String`,
+  `Wire` or `Parse<…>` (it is never on the wire). A C++ loader writes `decode<T>` only for the
+  dependent types a decoded class holds. Every name here comes from the name plan and collides
+  under §3.5.
 
 ### 5.7 Parameterized records
 
@@ -2355,6 +2374,11 @@ one loader per `@reload` value with `dir + "/" + <file name>`.
 When a package has input fields, `.gen.cpp` contains, in an anonymous namespace, the fixed helpers
 below (the C++ counterpart of `rt.Env` and `rt.Parse*Literal`), followed by `LoadInputs`, which
 reads the variables in field declaration order and appends one line per failure to `error`.
+Only the helpers the package's inputs use are written (`AllDigits` only for `Int`, `Float` and
+`Duration` inputs), so the file stays warning-free under `-Wall` (§9). The loaded values live in
+slots `detail::<P>Inputs::<Class>`, with the flag `detail::<P>InputsLoaded` beside them; Go's
+counterparts are the package variables `input_<T>_<store>`, `input_<T>_<store>_OK` and
+`input_<T>_<store>_Pattern`. All these names come from the name plan (§3.5).
 
 ```cpp
 namespace {
