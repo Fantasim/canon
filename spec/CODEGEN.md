@@ -407,7 +407,8 @@ A generated name that is reserved in its position gets a `_` suffix:
 - **C++** verbatim positions (enumerators, id members, constants, parameters): C++20 keywords,
   the alternative tokens (`and and_eq bitand bitor compl not not_eq or or_eq xor xor_eq`), and
   `detail`, `conformance`, `canon`, `std`, `nlohmann`. Private members are `f_` and never collide.
-  A name starting with `_` followed by an uppercase letter, or containing `__`, is `E8005`.
+  A name starting with `_` followed by an uppercase letter, or containing `__`, is `E8011`
+  (a reserved name, not a collision).
 - **TS** top-level bindings and parameters: the ES2020 reserved words (`await break case catch
   class const continue debugger default delete do else enum export extends false finally for
   function if import in instanceof new null return super switch this throw true try typeof var
@@ -421,7 +422,9 @@ A generated name that is reserved in its position gets a `_` suffix:
 
 `@go(name: "…")`, `@cpp(name: "…")` and `@ts(name: "…")` replace the whole generated name of a
 field getter, type, enum member, case, value accessor, constant or export fn in that target
-(`@cpp(name: "GetID")`). The argument must be an identifier that is not reserved (`E8011`); a
+(`@cpp(name: "GetID")`). A `@cpp(name:)` override on a type carries into the names C++ derives
+from it as `@go(name:)` does below (the branch enum `<T>Branch`, `Decode<Alias>`, the kind enum
+`<T>Kind`). The argument must be an identifier that is not reserved (`E8011`); a
 `@go(name:)` override names public API (§1.3), so it must also be exported (`E8011`).
 
 A `@go(name:)` override renames exactly what the Go name plan derives from it:
@@ -458,23 +461,23 @@ in one enum; fields `fooBar` and `foo_bar`; a field `strong` (`GetStrong`) next 
 collides with the record; a Go method colliding with a generated one (`ID`, `Retired`, `Kind`,
 `Branch`, `As<Case>`, `Len`, `At`, `All`, `Find`, `Get`, `String`, `Wire`).
 
-Every name a generator writes is in these scopes, fixed names included: the names of dependent
-types (class or struct, branch enum and its members, `As<Branch>`, `As<Branch>Value`,
+Every name a generator writes is in these scopes, fixed names included: the names of dependent types
+(class or struct, branch enum and its members, `As<Branch>`, `As<Branch>Value`,
 `GetBranch`/`Branch`, Go's `branch`/`value` storage and `decode<T>`, C++'s `Decode<Alias>`),
 `LoadInputs`, the per-package input namespace, input slots and flags (§5.12, §7.7) and the §7.7
 input helpers a package uses (`EnvText`, `IsDecDigit`, `AllDigits`, `DurationDigits`,
 `Parse<Kind>Literal`). C++ adds the scopes name lookup crosses (C++17 [basic.scope.class],
-[basic.scope.declarative]): a class member equal to a namespace-scope type that the class body
-names (`Tone Tone() const;` changes the meaning of `Tone`), overrides included, and likewise a member of a container, of
-the snapshot or of the `detail::<P>Access` struct against that scope's own name and the types
-its body names; a nested
-namespace segment equal to any name its enclosing namespace declares (a class `gen`, from
-`@cpp(name: "gen")`, emitted into `sov`, and a package emitted into `sov::gen`); and a name one
-package's namespace declares that another package emitted into the same namespace also declares
-(two packages with runtime inputs in one namespace both declare `LoadInputs`; their §7.7
-helpers, local to each `.gen.cpp`, never meet each other but meet every other name of the
-namespace). Each is `E8005`: at the user's declaration when it meets a fixed name, at the later
-package's `emit` when two packages meet.
+[basic.scope.declarative]): a class member equal to a namespace-scope type that the class body names
+(`Tone Tone() const;` changes the meaning of `Tone`), overrides included; a parameter, or a member
+of a conformance vector struct, equal to a type the same signature names (`Echo(Tone Tone, Tone
+other)`); and likewise a member of a container, of the snapshot or of the `detail::<P>Access` struct
+against that scope's own name and the types its body names; a nested namespace segment equal to any
+name its enclosing namespace declares (a class `gen`, from `@cpp(name: "gen")`, emitted into `sov`,
+and a package emitted into `sov::gen`); and a name one package's namespace declares that another
+package emitted into the same namespace also declares (two packages with runtime inputs in one
+namespace both declare `LoadInputs`; their §7.7 helpers, local to each `.gen.cpp`, never meet each
+other but meet every other name of the namespace). Each is `E8005`: at the user's declaration when
+it meets a fixed name, at the later package's `emit` when two packages meet.
 
 `W8006` warns when a generated C++ identifier is a macro name that common platform headers define:
 `min max near far IN OUT OPTIONAL ERROR DELETE TRUE FALSE VOID CONST interface small TEXT
@@ -788,7 +791,8 @@ generated from the `match` (the discriminant is read first). Dependent maps and 
 - The Go struct stores `branch` and `value` (unexported); the Go branch enum has no `String`,
   `Wire` or `Parse<…>` (it is never on the wire). A Go data-mode loader writes `decode<T>`
   (§6.1) only for the dependent types a decoded class holds (through lists and optionals); C++
-  writes `Decode<Alias>`. Every name here comes from the name plan and collides under §3.5.
+  writes `Decode<Alias>`. The C++ branch enum likewise has no `k<E>Members`, `<E>FromWire` or
+  `ToName`/`ToWire` overload. Every name here comes from the name plan and collides under §3.5.
 
 ### 5.7 Parameterized records
 
@@ -2397,6 +2401,7 @@ bool EnvText(const char* name, std::string& out) {
     out = v;
     return true;
 }
+bool IsDecDigit(char c) { return c >= '0' && c <= '9'; }
 bool AllDigits(std::string_view s) {
     if (s.empty()) return false;
     for (char c : s) {
