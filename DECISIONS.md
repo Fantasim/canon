@@ -1872,6 +1872,13 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      `reason:Text` (ERRORS.md §1.3: English is never an argument). Reason: the load-forms unit
      (overnight run) had to invent the reason words.
 
+219. **A case used as a type has a canon-fp form.** A field typed `Shape.box` (valid Canon, TYPES
+     §12) fingerprints as `case(@N,"<case wire tag>")` — the variant numbered as usual and the
+     case's wire tag (FINGERPRINT §4.4) — so data holding it has a schema and `emit json` never
+     aborts. Generators that do not write such a field yet report it at stage E (E8019 `CaseField`)
+     until they do (owed feature). Reason: the ERRORS ir-group unit found a check-clean program
+     whose build aborted on the fingerprint (overnight run).
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.

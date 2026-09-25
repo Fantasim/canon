@@ -176,6 +176,7 @@ numbered like local ones.
 | alias | its expansion (`type Penya = Int(0..)` → `Int`; `type Layout = String(/…/)` → `String`) |
 | asset | `String` |
 | record, variant, enum | `@N` |
+| a case of a variant used as a type (`Shape.box`) | `case(@N,"<case wire tag>")`: the variant's number and the case's wire tag (DECISIONS 219) |
 | parameterised record applied to arguments | `@N<s1,…>`, one `source` per parameter: `field<path>` when the argument is an earlier field of the enclosing record, `param<i>` when it is the enclosing record's `i`-th parameter (from 0), `key` when it is the key of a dependent map |
 | `[T]` | `list(T)` |
 | `[T] keyed by f` | `keyed(<wire path of f>,T)` |
