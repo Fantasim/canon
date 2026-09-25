@@ -11,8 +11,7 @@ Ticked means committed on `main`. Unfinished units sit as unreviewed `wip:` comm
 worktree branches. They are listed in the pause report with what each still needs.
 - [x] A1 loader parity (2eb3294, c9a44cb) · [x] A2 demo bugs (428fbad, 6534f56) · [x] A3 M1.5
   bug-fix wave · [x] A4 M2 accepted (94ddb96).
-- [ ] A5: consumer units landed (d5de44d, 5d8232a). ERRORS.md pass: ir group in final verify
-  (worktree agent-a0de…, see pause report); check group WIP (agent-ac6d…); load group queued
+- [ ] A5: consumer units landed (d5de44d, 5d8232a). ERRORS.md pass: ir group landed (e1eaa0a); check group WIP (agent-ac6d…); load group queued
   (script `load.py`, see pause report). Spec sync #2 and cleanups queued.
 - [ ] A6 M1.5 second wave: WIP (agent-a988…).
 - [x] W0 gap map (1b0a332).
