@@ -1,0 +1,32 @@
+TYPES.md §4.2, §11.4: a parameter named like a member a branch offers, and assignable to that branch, is ambiguous as a map key of a dependent key type too; a package let of that name is not (it loses silently).
+-- a/a.canon --
+package a
+
+local enum K { num, text }
+
+local enum Icon { columns, rows }
+
+local record Ev {
+  k: K
+}
+
+local type P(e: Ev) = match e.k {
+  num => String
+  text => Icon
+}
+
+local let rows: Icon = columns
+
+local record R {
+  ev: Ev
+  byP: {P(ev): Int} = {}
+}
+
+local fn keyed(columns: Icon) -> R {
+  return { ev: { k: text }, byP: { columns: 1, rows: 2 } }
+}
+-- findings.txt --
+error[E2101]  a/a.canon:24:36
+  columns is ambiguous: Icon.columns or the parameter columns; write it qualified
+
+1 error, 0 warnings in 1 package (…)

@@ -1,0 +1,32 @@
+TYPES.md §4.2, §11.4: against a dependent type a local, parameter or field in scope wins over the symbolic reading; it is ambiguous only when a branch offers the name statically (the member `K.num`) and the local is assignable to that branch.
+-- a/a.canon --
+package a
+
+local enum K { num, text }
+
+local record Ev {
+  k: K
+}
+
+local type Names(e: Ev) = match e.k {
+  num => String
+  text => K
+}
+
+local record R {
+  ev: Ev
+  q: Names(ev)
+}
+
+local fn clash(num: K) -> R {
+  return { ev: { k: text }, q: num }
+}
+
+local fn fine(text: String) -> R {
+  return { ev: { k: num }, q: text }
+}
+-- findings.txt --
+error[E2101]  a/a.canon:20:32
+  num is ambiguous: K.num or the parameter num; write it qualified
+
+1 error, 0 warnings in 1 package (…)

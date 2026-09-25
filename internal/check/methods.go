@@ -97,7 +97,7 @@ func withoutActive(rows []row) []row {
 }
 
 // receiverFits checks what a method asks of its receiver's elements: numbers for sum, min and
-// max, strings for join, lists for flatten (E3002 otherwise).
+// max, strings for join, lists for flatten (E3002 otherwise, E3804 for dependent elements).
 func (c *checker) receiverFits(env *env, bc *builtinCall, s *syntax.SelectorExpr, recv types.Type, sig bsig) bool {
 	elem, bound := bc.b.vars[tT]
 	if !bound {
@@ -113,7 +113,9 @@ func (c *checker) receiverFits(env *env, bc *builtinCall, s *syntax.SelectorExpr
 		return true
 	}
 	if sig.elemCons != consNone && !satisfies(elem, sig.elemCons) {
-		c.report(env, diag.E3002.At(env.span(s), listT(consExample(sig.elemCons)), recv))
+		if !c.notDependent(env, s, elem, sig.name) {
+			c.report(env, diag.E3002.At(env.span(s), listT(consExample(sig.elemCons)), recv))
+		}
 		return false
 	}
 	return true

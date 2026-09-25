@@ -9,7 +9,7 @@ import (
 // accept is `e ⇐ want` once e is typed s (TYPES.md §6.2).
 func (c *checker) accept(env *env, e syntax.Expr, s, want types.Type) {
 	e = inner(e)
-	if s.Kind() == types.Error || want.Kind() == types.Error {
+	if s.Kind() == types.Error || want.Kind() == types.Error || c.dependentLiteral(env, e, s, want) {
 		return
 	}
 	conv, ok := c.convert(s, want)
@@ -90,6 +90,8 @@ func (c *checker) convert(s, want types.Type) (*Conversion, bool) {
 		return nil, types.Assignable(sb, wb)
 	case wb.Kind() == types.Any || wb.Kind() == types.DepUnion || wb.Kind() == types.TypeApp:
 		return nil, true
+	case sb.Kind() == types.DepMap && wb.Kind() != types.DepMap:
+		return c.convert(staticView(sb), want)
 	case types.Identical(sb, wb):
 		return nil, true
 	case wb.Kind() == types.Optional:

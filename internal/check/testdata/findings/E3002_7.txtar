@@ -1,0 +1,39 @@
+TYPES.md §13.2: a literal union over a type application needs every branch to have a string wire form; an Int branch, or one reached through a nested application, is E3002.
+-- a/a.canon --
+package a
+
+local enum K { num, text, off }
+
+local record Ev {
+  k: K
+}
+
+local type P(e: Ev) = match e.k {
+  num => Int
+  text => String
+  off => Never
+}
+
+local type Q(e: Ev) = match e.k {
+  num => K
+  text => P(e)
+  off => Never
+}
+
+local type Names(e: Ev) = match e.k {
+  num => String
+  text => K
+  off => Never
+}
+
+local type Bad(e: Ev) = P(e) | "default"
+local type Nested(e: Ev) = Q(e) | "default"
+local type Good(e: Ev) = Names(e) | "default"
+-- findings.txt --
+error[E3002]  a/a.canon:27:25
+  expected String, found Int
+
+error[E3002]  a/a.canon:28:28
+  expected String, found Int
+
+2 errors, 0 warnings in 1 package (…)

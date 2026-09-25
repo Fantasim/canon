@@ -1,0 +1,32 @@
+TYPES.md §11.4 "Literals", §11.6, §13.5: `none` fits a dependent field only when the field or one of its branches is optional; in a non-optional field whose branches are Int, String and Never it is E3403.
+-- a/a.canon --
+package a
+
+local enum K { num, text, off }
+
+local record Ev {
+  k: K
+}
+
+local type P(e: Ev) = match e.k {
+  num => Int
+  text => String
+  off => Never
+}
+
+local type O(e: Ev) = match e.k {
+  num => Int?
+  _ => Never
+}
+
+local record R {
+  ev: Ev
+  p: P(ev) = none
+  maybe: P(ev)? = none
+  opt: O(ev) = none
+}
+-- findings.txt --
+error[E3403]  a/a.canon:22:14
+  expected a.P(*), found a.P(*)?: prove it is present (!= none, !, ??)
+
+1 error, 0 warnings in 1 package (…)

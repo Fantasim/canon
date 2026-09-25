@@ -13,6 +13,9 @@ func (c *checker) ident(env *env, e *syntax.IdentExpr, want types.Type) types.Ty
 			return t
 		}
 	}
+	if fn := depFunc(unwrapUnion(want)); fn != nil {
+		return c.dependentIdent(env, e, want, fn)
+	}
 	o := c.lookup(env, e.Name)
 	if o == nil && e.Name == itName && env.it != nil {
 		o = env.it
@@ -85,13 +88,9 @@ func (c *checker) staticKeys(coll *types.Collection) *entryKeys {
 func (c *checker) contextual(env *env, e *syntax.IdentExpr, want types.Type) (types.Type, bool) {
 	o, t := c.inExpected(unwrapUnion(want), e.Name)
 	if o == nil {
-		if d, isDep := unwrap(want).(*types.DepUnionType); isDep {
-			c.info.Symbols[e] = true
-			return d, true
-		}
 		return nil, false
 	}
-	c.ambiguity(env, e, o, t)
+	c.ambiguity(env, e, e.Name, o, t)
 	c.info.Uses[e] = o
 	c.deprecatedUse(env, e, o)
 	if o.kind == ObjCase && t.Kind() == types.Case {
@@ -136,14 +135,14 @@ func (c *checker) inExpected(t types.Type, name string) (*object, types.Type) {
 	return nil, nil
 }
 
-// ambiguity is E2101 (TYPES.md §4.2).
-func (c *checker) ambiguity(env *env, e *syntax.IdentExpr, o *object, t types.Type) {
-	other := env.lookupLocal(e.Name)
+// ambiguity is E2101 (TYPES.md §4.2); it reports whether it fired.
+func (c *checker) ambiguity(env *env, n syntax.Node, name string, o *object, t types.Type) bool {
+	other := env.lookupLocal(name)
 	if other == nil {
-		other = env.lookupRecord(e.Name)
+		other = env.lookupRecord(name)
 	}
 	if other == nil || other.typ == nil || other.kind == ObjMethod || !c.assignable(other.typ, t) {
-		return
+		return false
 	}
 	kind := diag.KindLocal
 	switch other.kind {
@@ -153,7 +152,8 @@ func (c *checker) ambiguity(env *env, e *syntax.IdentExpr, o *object, t types.Ty
 		kind = diag.KindField
 	default:
 	}
-	c.report(env, diag.E2101.At(env.span(e), e.Name, qualifiedMember(o), kind))
+	c.report(env, diag.E2101.At(env.span(n), name, qualifiedMember(o), kind))
+	return true
 }
 
 // qualifiedMember is the qualified form of a contextual name: `Icon.columns`, `statuses.open`.
@@ -190,13 +190,13 @@ func (c *checker) use(env *env, e *syntax.IdentExpr, o *object) types.Type {
 	}
 	switch o.kind {
 	case ObjLocal, ObjParam:
-		return c.narrowed(env, e, o.typ)
+		return c.narrowed(env, e, staticView(o.typ))
 	case ObjField:
 		return c.fieldRead(env, e, o)
 	case ObjConst:
 		return c.constType(o)
 	case ObjLet:
-		return c.narrowed(env, e, c.letType(o))
+		return c.narrowed(env, e, staticView(c.letType(o)))
 	case ObjFn:
 		return o.typ
 	case ObjMethod:
@@ -221,19 +221,6 @@ func (c *checker) fieldRead(env *env, e syntax.Expr, o *object) types.Type {
 	}
 	c.deprecatedUse(env, e, o)
 	return c.narrowed(env, e, staticView(o.field.Type))
-}
-
-// staticView is DepUnion for a type application, optional or not (TYPES.md §11.3, §11.4).
-func staticView(t types.Type) types.Type {
-	switch x := t.Base().(type) {
-	case *types.TypeAppType:
-		return &types.DepUnionType{Fn: x.Fn}
-	case *types.OptionalType:
-		if app, ok := x.Elem.Base().(*types.TypeAppType); ok {
-			return &types.OptionalType{Elem: &types.DepUnionType{Fn: app.Fn}}
-		}
-	}
-	return t
 }
 
 // deprecatedUse is W3301 for a deprecated field, member or entry named in Canon source.

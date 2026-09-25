@@ -1,0 +1,52 @@
+TYPES.md §13.2, WIRE.md §5.9: a ref has a string wire form only when its key's does; a literal union over a ref into an integer-keyed list, directly or as a branch of a type application, is E3002, while a table, a String-keyed list and a list keyed by a ref into a table are fine.
+-- a/a.canon --
+package a
+
+local enum K { num, text }
+
+local record Ev {
+  k: K
+}
+
+local record Node {
+  id: Int
+}
+
+local record Named {
+  id: String
+}
+
+local record Tag {
+  n: Int = 1
+}
+
+local let tags: table Tag = {
+  red {}
+}
+
+local record Tagged {
+  tag: ref tags
+}
+
+local let nodes: [Node] keyed by id = [{ id: 1 }]
+local let names: [Named] keyed by id = [{ id: "a" }]
+local let tagged: [Tagged] keyed by tag = [{ tag: red }]
+
+local type P(e: Ev) = match e.k {
+  num => ref nodes
+  text => String
+}
+
+local type ByNode = ref nodes | "all"
+local type ByBranch(e: Ev) = P(e) | "all"
+local type ByName = ref names | "all"
+local type ByTag = ref tags | "all"
+local type ByTagged = ref tagged | "all"
+-- findings.txt --
+error[E3002]  a/a.canon:38:21
+  expected String, found ref a.nodes
+
+error[E3002]  a/a.canon:39:30
+  expected String, found ref a.nodes
+
+2 errors, 0 warnings in 1 package (…)

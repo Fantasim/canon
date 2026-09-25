@@ -23,6 +23,10 @@ func (c *checker) index(env *env, x *syntax.IndexExpr) (types.Type, bool) {
 	if r, isRef := t.Base().(*types.RefType); isRef {
 		t = c.coll(r).Elem
 	}
+	if c.notDependent(env, x, t, indexText) {
+		c.indexAlone(env, x.Index)
+		return types.ErrorType, opt
+	}
 	if rng, isRange := x.Index.(*syntax.RangeExpr); isRange {
 		return c.slice(env, x, t, rng), opt
 	}

@@ -39,11 +39,11 @@ func (c *checker) newCoverage(env *env, t types.Type) *coverage {
 		c.completeVariant(x.Variant)
 		cov.objs = c.cases[x.Variant]
 	}
+	if b.Kind() == types.Bool {
+		cov.objs = c.boolObjs
+	}
 	for _, o := range cov.objs {
 		cov.names = append(cov.names, o.name)
-	}
-	if b.Kind() == types.Bool {
-		cov.names = []string{falseWord, trueWord}
 	}
 	return cov
 }

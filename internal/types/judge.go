@@ -2,9 +2,9 @@ package types
 
 import "slices"
 
-// Identical is static identity (TYPES.md §6.1).
+// Identical is static identity (TYPES.md §6.1); an application is its type function's union (TYP-18).
 func Identical(a, b Type) bool {
-	a, b = a.Base(), b.Base()
+	a, b = erasedApp(expandUnion(a.Base())), erasedApp(expandUnion(b.Base()))
 	if a.Kind() != b.Kind() {
 		return false
 	}
@@ -13,12 +13,12 @@ func Identical(a, b Type) bool {
 
 // Assignable is S ≤ E on types (TYPES.md §6.2); the rules about literals belong to the checker.
 func Assignable(from, to Type) bool {
-	f, t := from.Base(), to.Base()
+	f, t := from.Base(), expandUnion(to.Base())
 	switch {
 	case f.Kind() == Error || t.Kind() == Error || f.Kind() == Never:
 		return true
 	case f.Kind() == DepUnion || f.Kind() == TypeApp:
-		return t.Kind() == Any || storesDependent(f, t)
+		return t.Kind() == Any || storesDependent(f, t) || Identical(f, t)
 	case t.Kind() == Any || t.Kind() == DepUnion || t.Kind() == TypeApp:
 		return true
 	case Identical(f, t):
@@ -34,13 +34,56 @@ func Assignable(from, to Type) bool {
 	return rule != nil && rule(f, t)
 }
 
-// storesDependent reports a dependent value stored as the same type function, optional or not (TYPES.md §11.4).
+// storesDependent reports a dependent value stored as the same type function, optional or not, or in a literal union over it (TYPES.md §11.4).
 func storesDependent(f, t Type) bool {
 	if o, ok := t.(*OptionalType); ok {
-		t = o.Elem.Base()
+		t = expandUnion(o.Elem.Base())
+	}
+	if u, ok := t.(*LitUnionType); ok {
+		t = u.Of.Base()
 	}
 	fn := typeFuncOf(f)
 	return fn != nil && fn == typeFuncOf(t)
+}
+
+// erasedApp is F(*) for an application F(args), arguments being erased statically; else t.
+func erasedApp(t Type) Type {
+	if app, ok := t.(*TypeAppType); ok {
+		return &DepUnionType{Fn: app.Fn}
+	}
+	return t
+}
+
+// expandUnion is the literal union an application of a type function whose body is one stands for (TYPES.md §13.2).
+func expandUnion(t Type) Type {
+	u := unionBody(typeFuncOf(t))
+	if u == nil || unionCycles(typeFuncOf(t)) {
+		return t
+	}
+	return u
+}
+
+// unionBody is the literal union a type function's body is, nil for any other body.
+func unionBody(fn *TypeFunc) *LitUnionType {
+	if fn == nil || fn.Body == nil {
+		return nil
+	}
+	u, _ := fn.Body.Base().(*LitUnionType)
+	return u
+}
+
+// unionCycles reports a chain of union bodies, each over the next type function, that comes
+// back to one already met (the checker reports it, E3021); expanding it would never end.
+func unionCycles(fn *TypeFunc) bool {
+	seen := map[*TypeFunc]bool{}
+	for u := unionBody(fn); u != nil; u = unionBody(fn) {
+		if seen[fn] {
+			return true
+		}
+		seen[fn] = true
+		fn = typeFuncOf(u.Of.Base())
+	}
+	return false
 }
 
 // Join is the least common type of two branches (TYPES.md §6.4, TYP-05).

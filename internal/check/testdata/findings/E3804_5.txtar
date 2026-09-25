@@ -1,0 +1,91 @@
+TYPES.md §11.4, DECISIONS 156: no branch narrowing, index, iteration, `is`, conversion or element-constrained built-in (join, sum, max) on a dependent value (match on the discriminating field instead).
+-- a/a.canon --
+package a
+
+local enum K { num, text }
+
+local record Ev {
+  k: K
+}
+
+local type P(e: Ev) = match e.k {
+  num => Int
+  text => String
+}
+
+local record R {
+  ev: Ev
+  p: P(ev)
+  o: P(ev)? = none
+  ps: [P(ev)] = []
+}
+
+local fn matched(r: R) -> Int {
+  return match r.p {
+    _ => 1
+  }
+}
+
+local fn indexed(r: R) -> Int {
+  return r.p[0]
+}
+
+local fn iterated(r: R) -> Int {
+  for x in r.p {
+    return 1
+  }
+  return 0
+}
+
+local fn tested(r: R) -> Bool {
+  return r.o is num
+}
+
+local fn converted(r: R) -> Int {
+  return Int(r.p)
+}
+
+local fn largest(r: R) -> Int {
+  return max(r.p, 1)
+}
+
+local fn joined(r: R) -> String {
+  return r.ps.join(",")
+}
+
+local fn summed(r: R) -> Int {
+  return r.ps.sum()
+}
+
+local fn most(r: R) -> Bool {
+  return r.ps.max() == r.ps[0]
+}
+-- findings.txt --
+error[E3804]  a/a.canon:22:16
+  match is not available on a dependent value (P(*))
+
+error[E3804]  a/a.canon:28:10
+  [] is not available on a dependent value (P(*))
+
+error[E3804]  a/a.canon:32:12
+  for is not available on a dependent value (P(*))
+
+error[E3804]  a/a.canon:39:10
+  is is not available on a dependent value (P(*))
+
+error[E3804]  a/a.canon:43:14
+  Int is not available on a dependent value (P(*))
+
+error[E3804]  a/a.canon:47:14
+  max is not available on a dependent value (P(*))
+
+error[E3804]  a/a.canon:51:10
+  join is not available on a dependent value (P(*))
+
+error[E3804]  a/a.canon:55:10
+  sum is not available on a dependent value (P(*))
+
+error[E3804]  a/a.canon:59:10
+  max is not available on a dependent value (P(*))
+
+9 errors, 0 warnings in 1 package (…)

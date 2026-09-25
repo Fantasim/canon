@@ -1,0 +1,66 @@
+TYPES.md §4.1, §4.2, §11.4: a bare name against a dependent type. A name a branch offers statically (`Icon.columns`, `Rounding.max`, the key `one`) stays the branch's: a package let, a function and a built-in of that name lose silently (map keys: dependent_test.go, E2101_3). A name no branch offers is a local or package value when there is one (`limit`), else it stays symbolic, a built-in function never being a value (`min`). §6.2, §13.2: a dependent value is assignable to a literal union over its type function, and an application of a type function whose body is a literal union is that union; `==` on a union nested through another (`SK2(e) = SK(e) | "y"`) accepts the literals of every union reached.
+-- a/a.canon --
+package a
+
+local enum K { num, mode, icon }
+
+local enum Rounding { floor, ceil, round, max }
+
+local enum Icon { columns, rows }
+
+local record Ev {
+  k: K
+}
+
+local record Item {
+  n: Int = 1
+}
+
+local let items: table Item = {
+  one {}
+}
+
+local let columns: Int = 3
+
+local fn rows() -> Int {
+  return 2
+}
+
+local let limit: String = "limit"
+
+local type P(e: Ev) = match e.k {
+  num => ref items
+  mode => Rounding
+  icon => Icon
+}
+
+local type SK(e: Ev) = P(e) | "default"
+
+local type SK2(e: Ev) = SK(e) | "y"
+
+local record R {
+  ev: Ev
+  p: P(ev)
+  s: P(ev) | "default" = "default"
+  sk: SK(ev) = "default"
+  fromP: SK(ev) = p
+  s2: SK2(ev) = "default"
+}
+
+local let rs: [R] = [
+  { ev: { k: icon }, p: columns },
+  { ev: { k: icon }, p: rows },
+  { ev: { k: mode }, p: max },
+  { ev: { k: mode }, p: floor },
+  { ev: { k: num }, p: one },
+  { ev: { k: num }, p: limit },
+  { ev: { k: num }, p: min },
+]
+
+local fn stored(r: R) -> R {
+  return { ev: r.ev, p: r.p, s: r.p, sk: r.p, fromP: r.sk }
+}
+
+local fn compared(r: R) -> Bool {
+  return r.sk == r.s and r.sk != r.p and r.s == r.sk and r.sk == "default" and r.s2 == "default" and r.s2 != "y" and r.s2 != r.p and r.s2 != r.sk
+}

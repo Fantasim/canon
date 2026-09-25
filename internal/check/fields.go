@@ -87,7 +87,7 @@ func dependsOn(t types.Type) []int {
 	return out
 }
 
-// walkArgs calls f on every type argument of t, through lists, maps and optionals.
+// walkArgs calls f on every type argument of t, through lists, maps, dependent maps and optionals.
 func walkArgs(t types.Type, f func(*types.Arg)) {
 	switch x := t.Base().(type) {
 	case *types.TypeAppType:
@@ -107,6 +107,8 @@ func walkArgs(t types.Type, f func(*types.Arg)) {
 		walkArgs(x.Value, f)
 	case *types.LitUnionType:
 		walkArgs(x.Of, f)
+	case *types.DepMapType:
+		walkArgs(x.Value, f)
 	}
 }
 

@@ -1,0 +1,153 @@
+TYPES.md §11: what a dependent value supports. §11.1 parameters in field types, defaults and checks, a case's earlier field, a ref argument dereferenced; §11.2 a Bool scrutinee with `true`/`false` arms (and a Bool match expression), a nested application, a ref to a local collection, a list and Never as results; §11.4 == and != with the same DepUnion or none, narrowing on != none, interpolation, String(x), fail/warn, storing in a field or list of the same declared type, literals checked against the branches (a symbolic name, an integer, a string key, a string, none in an optional field, a list or brace literal against its branch); §4.1/§4.2 a local, parameter or field named like no branch member wins over the symbolic reading; §11.5 a dependent map read, returned and joined as {ref c: T}, and a {ref c: T} stored in one; §13.2 a literal union over a type application, its literal, and == with its literals, itself and its dependent alternative.
+-- a/a.canon --
+package a
+
+local enum K { num, text, pair, off }
+
+local enum Size { small, large }
+
+local record Ev {
+  k: K
+  size: Size = small
+  max: Int = 3
+  on: Bool = false
+}
+
+local record Item {
+  n: Int = 1
+}
+
+local let items: table Item = {
+  one {}
+}
+
+local type BySize(e: Ev) = match e.size {
+  small => Int
+  large => String
+}
+
+local type P(e: Ev) = match e.k {
+  num => BySize(e)
+  text => ref items
+  pair => [Int]
+  off => Never
+}
+
+local type Flag(e: Ev) = match e.on {
+  true => Int
+  false => String
+}
+
+local type Box(e: Ev) = match e.k {
+  num => Item
+  _ => Never
+}
+
+local type Names(e: Ev) = match e.k {
+  num => String
+  text => ref items
+  _ => Never
+}
+
+local type SK(e: Ev) = Names(e) | "default"
+
+local record Limits(e: Ev) {
+  lim: Int = e.max
+  keys: {SK(e): Int} = {}
+
+  check lim <= e.max else "over"
+}
+
+local variant V {
+  c {
+    ev: Ev
+    p: P(ev)
+  }
+  d
+}
+
+local record R {
+  ev: Ev
+  flag: Flag(ev)
+  p: P(ev)
+  o: P(ev)? = none
+  ps: [P(ev)] = []
+  limits: Limits(ev)
+  box: Box(ev)? = none
+  byItem: {i in items: P(ev)} = {}
+  counts: {i in items: Int} = {}
+
+  check p == p else "eq"
+  check "{p}" != String(p) or true else "interp"
+  check {
+    if o != none {
+      fail(o, "{o}")
+    }
+    warn(p, "p")
+  }
+}
+
+local fn sign(b: Bool) -> Int {
+  return match b {
+    true => 1
+    false => 0
+  }
+}
+
+local fn total(m: {ref items: Int}) -> Int {
+  return m.len()
+}
+
+local fn same(r: R) -> Bool {
+  if r.o != none {
+    return r.o == r.p and r.ps.len() > 0 and total(r.counts) > 0
+  }
+  return r.p != none
+}
+
+local fn kept(r: R) -> R {
+  return { ev: r.ev, flag: r.flag, p: r.p, ps: [r.p], limits: r.limits }
+}
+
+local let rs: [R] = [
+  { ev: { k: num }, p: 3, flag: 1, limits: { keys: { "default": 1, "one": 2 } } },
+  { ev: { k: text }, flag: "s", p: one, limits: {} },
+  { ev: { k: text }, flag: "s", p: "one", limits: {} },
+  { ev: { k: num, size: large }, flag: "s", p: "s", limits: {} },
+  { ev: { k: pair }, flag: "s", p: [1, 2], limits: {} },
+  { ev: { k: num }, flag: "s", p: 1, limits: {}, box: { n: 2 }, byItem: { one: 5 } },
+]
+
+local let v: V = c { ev: { k: num }, p: symbol }
+
+local record Q {
+  ev: Ev
+  q: Names(ev) | "all" = "all"
+  alt: Names(ev) | "all" = q
+  sk: SK(ev) = "default"
+  n: Names(ev)
+}
+
+local fn mk(q: String) -> Q {
+  return { ev: { k: num }, q: q, n: q }
+}
+
+local fn unions(x: Q) -> Bool {
+  return x.q == "all" and x.q != x.n and x.sk == "default" and x.sk != x.n and x.q == x.alt
+}
+
+local record H {
+  counts: {i in items: Int} = {}
+  plain: {ref items: Int} = {}
+}
+
+local fn through(m: {i in items: Int}) -> {i in items: Int} {
+  return m
+}
+
+local fn shapes(h: H, b: Bool, m: {i in items: Int}) -> [H] {
+  let both = [m, through(m)]
+  let either = if b { m } else { through(m) }
+  let same = h.counts == through(h.counts)
+  return [{ counts: through(h.counts) }, { plain: h.counts }, { counts: h.plain }, { counts: either, plain: both[0] }]
+}

@@ -54,7 +54,7 @@ func (c *checker) callBuiltin(env *env, x *syntax.CallExpr, id *syntax.IdentExpr
 	return c.applyRows(env, bc, rows)
 }
 
-// conversion is `Int(x)`, `Float(x)`, `String(x)` (STDLIB.md §2.1).
+// conversion is `Int(x)`, `Float(x)`, `String(x)` (STDLIB.md §2.1); E3804 on a dependent value (DECISIONS 156).
 func (c *checker) conversion(env *env, bc *builtinCall, rows []row) types.Type {
 	if len(bc.x.Args) != 1 || bc.x.Args[0].Name != nil {
 		return c.applyRows(env, bc, rows)
@@ -73,7 +73,7 @@ func (c *checker) conversion(env *env, bc *builtinCall, rows []row) types.Type {
 			return c.finishBuiltin(bc, r)
 		}
 	}
-	if at.Kind() != types.Error {
+	if at.Kind() != types.Error && !c.notDependent(env, arg, at, bc.name) {
 		c.report(env, diag.E3002.At(env.span(arg), bc.b.shown(rows[0].sig.params[0].t), at))
 	}
 	return types.ErrorType
@@ -211,12 +211,14 @@ func (c *checker) bindArg(env *env, bc *builtinCall, e syntax.Expr, pat types.Ty
 	}
 }
 
-// argMismatch is E3403 for an optional whose present form fits (TYPES.md §6.5), else E3002; then nothing cascades.
+// argMismatch is E3804 for a dependent value, E3403 for an optional whose present form fits (TYPES.md §6.5), else E3002.
 func (c *checker) argMismatch(env *env, bc *builtinCall, e syntax.Expr, pat, t types.Type) {
 	want := bc.b.shown(pat)
-	if t.Base().Kind() == types.Optional && pat.Kind() != types.Optional {
+	switch {
+	case c.notDependent(env, e, t, want.String()):
+	case t.Base().Kind() == types.Optional && pat.Kind() != types.Optional:
 		c.report(env, diag.E3403.At(env.span(e), want))
-	} else {
+	default:
 		c.report(env, diag.E3002.At(env.span(e), want, t))
 	}
 	bc.b.poison(pat)
@@ -300,12 +302,15 @@ func (c *checker) builtinResult(env *env, bc *builtinCall, r row) types.Type {
 	return c.finishBuiltin(bc, r)
 }
 
-// constraintError is E3310 for an Ord type parameter, E3002 for any other constraint.
+// constraintError is E3804 for a dependent value (TYPES.md §11.4), E3310 for Ord, E3002 for any other constraint.
 func (c *checker) constraintError(env *env, bc *builtinCall, v *tvar) {
 	t := bc.b.vars[v]
 	at := syntax.Node(bc.x)
 	if src := bc.b.src[v]; src != nil {
 		at = src
+	}
+	if c.notDependent(env, at, t, bc.name) {
+		return
 	}
 	if o, isOpt := t.Base().(*types.OptionalType); isOpt && satisfies(o.Elem, v.cons) {
 		c.report(env, diag.E3403.At(env.span(at), o.Elem))

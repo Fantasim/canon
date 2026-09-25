@@ -22,6 +22,7 @@ func (c *checker) resolvePackage(p *pkgState) {
 		}
 	}
 	c.resolvePending(p)
+	c.checkUnions(p)
 	c.checkSelfContaining(p)
 }
 
@@ -88,6 +89,8 @@ func (c *checker) completeRecord(r *types.RecordType) {
 		return
 	}
 	o.state = stateResolving
+	c.records++
+	defer func() { c.records-- }()
 	d := r.Decl
 	env := c.declEnv(o)
 	tc := &typeCtx{env: env, encl: r, scope: map[string]typeArgRoot{}}
@@ -229,6 +232,8 @@ func (c *checker) completeVariant(v *types.VariantType) {
 		return
 	}
 	o.state = stateResolving
+	c.records++
+	defer func() { c.records-- }()
 	env := c.declEnv(o)
 	d := v.Decl
 	c.variantAnnotations(v, d.Annotations)

@@ -196,7 +196,7 @@ func (c *checker) equality(env *env, e *syntax.BinaryExpr, tx, ty types.Type) ty
 		return types.BoolType
 	}
 	a, b := optElem(tx), optElem(ty)
-	if c.dependent(env, e, a, b) {
+	if c.unionEquality(env, e, a, b) || c.dependent(env, e, a, b) {
 		return types.BoolType
 	}
 	switch {

@@ -16,6 +16,9 @@ var (
 
 // listLit is `[a, b, …]` (TYPES.md §5.1).
 func (c *checker) listLit(env *env, e *syntax.ListLit, want types.Type) types.Type {
+	if depFunc(unwrapUnion(want)) != nil {
+		return c.dependentList(env, e, want)
+	}
 	if l, ok := unwrap(want).(*types.ListType); ok {
 		for _, x := range e.Elems {
 			c.expr(env, x, l.Elem)
@@ -93,7 +96,7 @@ func (c *checker) join2(a, b types.Type, before []syntax.Expr, next syntax.Expr)
 	case b.Base().Kind() == types.Float && allIntLiterals(before):
 		return b, true
 	}
-	return types.Join(a, b)
+	return types.Join(staticView(a), staticView(b))
 }
 
 func allIntLiterals(es []syntax.Expr) bool {
@@ -154,6 +157,9 @@ func (c *checker) iterTypes(env *env, vars []*syntax.Ident, x syntax.Expr, t typ
 	}
 	if t.Base().Kind() == types.Optional {
 		c.report(env, diag.E3402.At(env.span(x), env.span(x)))
+		return errs
+	}
+	if c.notDependent(env, x, t, syntax.KwFor.String()) {
 		return errs
 	}
 	if len(vars) == pairArity {

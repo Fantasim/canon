@@ -1,0 +1,46 @@
+TYPES.md §11.3, §11.4: a value whose declared type contains a type application has the static type with each one as its DepUnion: an element of a `[P(ev)]` or a key of a `{P(ev): Int}` is `P(*)`, compared with a `P(*)` freely and with anything else not.
+-- a/a.canon --
+package a
+
+local enum K { num, text }
+
+local record Ev {
+  k: K
+}
+
+local type P(e: Ev) = match e.k {
+  num => Int
+  text => String
+}
+
+local record R {
+  ev: Ev
+  p: P(ev)
+  ps: [P(ev)] = []
+  byKey: {P(ev): Int} = {}
+}
+
+local fn first(r: R) -> Bool {
+  let q = r.ps[0]
+  return q == r.p
+}
+
+local fn keyed(r: R) -> Int {
+  for k, v in r.byKey {
+    if k == r.p {
+      return v
+    }
+    if k == "x" {
+      return 0
+    }
+  }
+  return r.ps[0] + 1
+}
+-- findings.txt --
+error[E3804]  a/a.canon:31:8
+  == is not available on a dependent value (P(*))
+
+error[E3804]  a/a.canon:35:10
+  + is not available on a dependent value (P(*))
+
+2 errors, 0 warnings in 1 package (…)

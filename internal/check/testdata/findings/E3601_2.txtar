@@ -1,0 +1,26 @@
+TYPES.md §11.2, §12.6: a type-level match must cover every member of its scrutinee's enum, or `true` and `false`.
+-- a/a.canon --
+package a
+
+local enum K { num, text, off }
+
+local record Ev {
+  k: K
+  on: Bool = false
+}
+
+local type P(e: Ev) = match e.k {
+  num => Int
+}
+
+local type B(e: Ev) = match e.on {
+  true => Int
+}
+-- findings.txt --
+error[E3601]  a/a.canon:10:23
+  match does not cover text, off; add them or _
+
+error[E3601]  a/a.canon:14:23
+  match does not cover false; add them or _
+
+2 errors, 0 warnings in 1 package (…)

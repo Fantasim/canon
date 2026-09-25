@@ -26,8 +26,7 @@ func (c *checker) mapLit(env *env, e *syntax.BraceLit, key, value, t types.Type)
 	return t
 }
 
-// identKey is `name:` in a map literal: contextual against the key type, then in scope; a
-// String or integer key type is E3304 (write "name": or (name):).
+// identKey is `name:` in a map literal: contextual, in scope, else symbolic (dynamic or dependent keys, TYPES.md §4.1); E3304 on String or Int keys.
 func (c *checker) identKey(env *env, n *syntax.Ident, key types.Type) {
 	switch key.Base().Kind() {
 	case types.String, types.Int:
@@ -40,12 +39,19 @@ func (c *checker) identKey(env *env, n *syntax.Ident, key types.Type) {
 		c.deprecatedUse(env, n, o)
 		return
 	}
+	if fn := depFunc(unwrapUnion(key)); fn != nil {
+		if o := c.dependentName(env, n, n.Name, fn); o != nil {
+			c.info.NameUses[n] = o
+			c.dependsOn(env, o)
+		}
+		return
+	}
 	if o := c.lookup(env, n.Name); o != nil && c.valueOf(o, key) {
 		c.info.NameUses[n] = o
 		c.dependsOn(env, o)
 		return
 	}
-	if c.dynamicKeys(key) != nil || unwrap(key).Kind() == types.DepUnion {
+	if c.dynamicKeys(key) != nil {
 		return
 	}
 	c.unknownName(env, n, n.Name)

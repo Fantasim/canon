@@ -1,0 +1,40 @@
+TYPES.md §13.1, §11.2: a type function reaching itself through a match arm is E3021 and broken; a record on the way (`Box` holding a `C(...)`) is no cycle.
+-- a/a.canon --
+package a
+
+local enum K { num, text }
+
+local record Ev {
+  k: K
+}
+
+local type C(e: Ev) = match e.k {
+  num => C(e)
+  text => String
+}
+
+local record Box {
+  ev: Ev
+  inner: Fine(ev)? = none
+}
+
+local type Fine(e: Ev) = match e.k {
+  num => Box
+  text => String
+}
+
+local record R {
+  ev: Ev
+  c: C(ev) = "zz"
+  d: C(ev) = 3
+  f: Fine(ev) = "ok"
+}
+
+local fn same(r: R, q: R) -> Bool {
+  return r.c == q.c and r.f == q.f
+}
+-- findings.txt --
+error[E3021]  a/a.canon:9:12
+  type alias C refers to itself
+
+1 error, 0 warnings in 1 package (…)

@@ -222,6 +222,9 @@ func (c *checker) newUniverse() map[string]*object {
 	for _, name := range builtinMembers {
 		c.builtins[name] = c.newObject(ObjBuiltin, name, nil, nil, nil)
 	}
+	for _, name := range []string{falseWord, trueWord} {
+		c.boolObjs = append(c.boolObjs, c.newObject(ObjBuiltin, name, nil, nil, nil))
+	}
 	for _, table := range [][]bsig{seqMethods, listMethods, keyedMethods, mapMethods, stringMethods, rangeMethods} {
 		for _, s := range table {
 			if _, ok := c.builtins[s.name]; !ok {

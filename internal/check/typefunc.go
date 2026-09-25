@@ -19,10 +19,14 @@ type typeArgRoot struct {
 
 // resolveTypeFunc is `type F(p: P, …) = type` (TYPES.md §11.2).
 func (c *checker) resolveTypeFunc(o *object, td *syntax.TypeDecl) types.Type {
+	if o.state == stateResolving && c.records == c.funcDepth[o] {
+		return c.typeFuncCycle(o, td)
+	}
 	if o.state != stateNone {
 		return o.typ
 	}
 	o.state = stateResolving
+	c.funcDepth[o] = c.records
 	fn := &types.TypeFunc{Pkg: o.pkg, Name: o.name, Doc: docText(td.Doc), Decl: td}
 	c.typeFuncs[o] = fn
 	o.typ = &types.DepUnionType{Fn: fn}
@@ -35,7 +39,20 @@ func (c *checker) resolveTypeFunc(o *object, td *syntax.TypeDecl) types.Type {
 	} else {
 		fn.Body = c.resolveType(tc, td.Type)
 	}
+	if o.state == stateDone {
+		fn.Body, fn.Arms, fn.Scrutinee = types.ErrorType, nil, nil
+		return o.typ
+	}
 	o.state = stateDone
+	return o.typ
+}
+
+// typeFuncCycle is E3021 for a type function reaching itself with no record on the way (TYPES.md §13.1).
+func (c *checker) typeFuncCycle(o *object, td *syntax.TypeDecl) types.Type {
+	diag.E3021.At(o.file.Span(td.Name), o.name).Report(c.pkgs[o.pkg].bag)
+	c.breakObj(o)
+	o.state = stateDone
+	o.typ = types.ErrorType
 	return o.typ
 }
 
@@ -44,7 +61,9 @@ func (c *checker) resolveTypeFunc(o *object, td *syntax.TypeDecl) types.Type {
 func (c *checker) typeMatch(tc *typeCtx, fn *types.TypeFunc, m *syntax.MatchType) {
 	env := tc.env
 	c.info.TypeExprs[m] = &types.DepUnionType{Fn: fn}
-	arg, t, ok := c.typeArgPath(tc, m.Scrutinee)
+	sc := *tc
+	sc.scrut = true
+	arg, t, ok := c.typeArgPath(&sc, m.Scrutinee)
 	if !ok || arg.Source != types.ArgParam || !matchable(t) {
 		if ok {
 			c.report(env, diag.E3803.AtScrutinee(env.span(m.Scrutinee)))
@@ -81,7 +100,7 @@ func (c *checker) typeArgPath(tc *typeCtx, e syntax.Expr) (*types.Arg, types.Typ
 	env := tc.env
 	root, segs := pathParts(e)
 	if root == nil {
-		c.report(env, diag.E3803.AtArgument(env.span(e)))
+		c.notTypePath(tc, e)
 		return nil, nil, false
 	}
 	r, ok := tc.scope[root.Name]
@@ -89,7 +108,7 @@ func (c *checker) typeArgPath(tc *typeCtx, e syntax.Expr) (*types.Arg, types.Typ
 		if tc.later[root.Name] {
 			c.report(env, diag.E3805.At(env.span(root), root.Name))
 		} else {
-			c.report(env, diag.E3803.AtArgument(env.span(e)))
+			c.notTypePath(tc, e)
 		}
 		return nil, nil, false
 	}
@@ -97,6 +116,10 @@ func (c *checker) typeArgPath(tc *typeCtx, e syntax.Expr) (*types.Arg, types.Typ
 	c.info.Uses[root] = r.obj
 	c.info.Types[root] = t
 	for _, s := range segs {
+		if t.Base().Kind() == types.Optional {
+			c.notTypePath(tc, e)
+			return nil, nil, false
+		}
 		f := c.fieldOf(env, t, s.Name)
 		if f == nil {
 			return nil, nil, false
@@ -108,6 +131,19 @@ func (c *checker) typeArgPath(tc *typeCtx, e syntax.Expr) (*types.Arg, types.Typ
 		c.info.Types[s] = t
 	}
 	return arg, t, true
+}
+
+// notTypePath is E3803 for a type argument or a scrutinee not rooted at a parameter (TYPES.md §11.1, §11.2).
+func (c *checker) notTypePath(tc *typeCtx, e syntax.Expr) {
+	if _, bad := e.(*syntax.BadExpr); bad {
+		c.breakObj(tc.env.owner)
+		return
+	}
+	if tc.scrut {
+		c.report(tc.env, diag.E3803.AtScrutinee(tc.env.span(e)))
+		return
+	}
+	c.report(tc.env, diag.E3803.AtArgument(tc.env.span(e)))
 }
 
 // pathParts splits `a.b.c` into its root and its selectors, root first; nil root otherwise.

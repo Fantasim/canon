@@ -1,0 +1,19 @@
+TYPES.md §11.2: a type-level match pattern already covered by an earlier arm.
+-- a/a.canon --
+package a
+
+local enum K { num, text }
+
+local record Ev {
+  k: K
+}
+
+local type P(e: Ev) = match e.k {
+  num, text => Int
+  num => String
+}
+-- findings.txt --
+error[E3602]  a/a.canon:11:3
+  pattern num is already covered
+
+1 error, 0 warnings in 1 package (…)

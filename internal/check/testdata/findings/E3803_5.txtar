@@ -1,0 +1,40 @@
+TYPES.md §11.1, §11.2: a path through an optional field is not a type path: E3803, for an argument and for a scrutinee.
+-- a/a.canon --
+package a
+
+local enum K { num, text }
+
+local record Sub {
+  k: K
+}
+
+local record Ev {
+  k: K
+  sub: Sub? = none
+}
+
+local type P(e: Sub) = match e.k {
+  num => Int
+  text => String
+}
+
+local type Q(e: Ev) = match e.sub.k {
+  _ => Int
+}
+
+local record R {
+  ev: Ev
+  p: P(ev.sub)
+  deep: P(ev.sub.k)
+}
+-- findings.txt --
+error[E3803]  a/a.canon:19:29
+  a type function must match on a path rooted at a parameter, of an enum or Bool type
+
+error[E3806]  a/a.canon:25:8
+  P takes 1 arguments of types a.Sub
+
+error[E3803]  a/a.canon:26:11
+  a type-function argument must be a path rooted at a parameter
+
+3 errors, 0 warnings in 1 package (…)

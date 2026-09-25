@@ -29,7 +29,7 @@ func (c *checker) ifExpr(env *env, e *syntax.IfExpr, want types.Type) types.Type
 func (c *checker) scrutinee(env *env, x syntax.Expr) (*coverage, bool) {
 	t := c.synth(env, x)
 	cov := c.newCoverage(env, t)
-	if t.Kind() == types.Error {
+	if t.Kind() == types.Error || c.notDependent(env, x, t, syntax.KwMatch.String()) {
 		return cov, false
 	}
 	if !cov.matchable() {

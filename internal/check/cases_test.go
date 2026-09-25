@@ -203,6 +203,10 @@ local fn keys() -> Bool {
 
 // TYPES.md §1: a node the parser already reported gives the error type, with no second finding.
 func TestNoCascadeAfterSyntaxError(t *testing.T) {
+	_, _, out := checkFile(t, "package a\n\nlocal record E {\n  n: Int\n}\n\nlocal type P(e: E) = Int\n\nlocal record R {\n  e: E\n  p: P(*)\n}\n")
+	if !hasOnly(out, diag.E1116.Def()) {
+		t.Errorf("a type argument the parser refused: want only %s, got:\n%s", diag.E1116.Def().Code, out)
+	}
 	for _, decl := range []string{
 		"local let r: Int = max(1, /a/)",
 		`local let r: Bool = "a".matches((/a/))`,

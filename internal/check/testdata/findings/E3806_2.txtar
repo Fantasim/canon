@@ -1,0 +1,40 @@
+TYPES.md §11.1: each type argument is checked against its parameter's type: a field of another type, or an optional one, is E3806; a ref to an entry of the parameter's type dereferences.
+-- a/a.canon --
+package a
+
+local enum K { num, text }
+
+local record Ev {
+  k: K
+}
+
+local type P(e: Ev) = match e.k {
+  num => Int
+  text => String
+}
+
+local record Item {
+  ev: Ev
+}
+
+local let evs: table Ev = {
+  one { k: num }
+}
+
+local record R {
+  ev: Ev
+  maybe: Ev? = none
+  item: Item
+  byRef: ref evs
+  wrong: P(item)
+  optional: P(maybe)
+  deref: P(byRef)
+}
+-- findings.txt --
+error[E3806]  a/a.canon:27:12
+  P takes 1 arguments of types a.Ev
+
+error[E3806]  a/a.canon:28:15
+  P takes 1 arguments of types a.Ev
+
+2 errors, 0 warnings in 1 package (…)

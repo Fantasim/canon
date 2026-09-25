@@ -1,0 +1,38 @@
+TYPES.md §11.1: a type argument must be a path rooted at a type parameter, an earlier field or a dependent map's binder: a let, a function parameter, a local and a call are not.
+-- a/a.canon --
+package a
+
+local enum K { num, text }
+
+local record Ev {
+  k: K
+}
+
+local type P(e: Ev) = match e.k {
+  num => Int
+  text => String
+}
+
+local let x: Ev = { k: num }
+
+local record R {
+  ev: Ev
+  fromLet: P(x)
+  called: P(ev.k.name())
+}
+
+local fn f(e: Ev) -> Int {
+  let p: P(e) = 1
+  return 1
+}
+-- findings.txt --
+error[E3803]  a/a.canon:18:14
+  a type-function argument must be a path rooted at a parameter
+
+error[E3803]  a/a.canon:19:13
+  a type-function argument must be a path rooted at a parameter
+
+error[E3803]  a/a.canon:23:12
+  a type-function argument must be a path rooted at a parameter
+
+3 errors, 0 warnings in 1 package (…)

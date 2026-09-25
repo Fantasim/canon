@@ -1,0 +1,29 @@
+TYPES.md §11.2: a type-level match pattern must be a member of the scrutinee's enum, or `true`/`false` on a Bool.
+-- a/a.canon --
+package a
+
+local enum K { num, text }
+
+local record Ev {
+  k: K
+  on: Bool = false
+}
+
+local type P(e: Ev) = match e.k {
+  num => Int
+  other => String
+  _ => Never
+}
+
+local type B(e: Ev) = match e.on {
+  yes => Int
+  _ => String
+}
+-- findings.txt --
+error[E3603]  a/a.canon:12:3
+  other is not a member of a.K
+
+error[E3603]  a/a.canon:17:3
+  yes is not a member of Bool
+
+2 errors, 0 warnings in 1 package (…)

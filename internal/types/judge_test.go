@@ -20,6 +20,12 @@ var (
 
 var otherFn = &types.TypeFunc{Pkg: "resource", Name: "Other", Body: types.IntType}
 
+// overParam is `P(e) | "default"`, and keyFn the type function SK(e) whose body it is.
+var (
+	overParam = &types.LitUnionType{Of: &types.TypeAppType{Fn: paramFn}, Literals: []string{"default"}}
+	keyFn     = &types.TypeFunc{Pkg: "resource", Name: "SK", Body: overParam}
+)
+
 func list(t types.Type) *types.ListType { return &types.ListType{Elem: t} }
 
 // TYPES.md §6.1: static identity ignores refinements, aliases, widths and record arguments.
@@ -40,6 +46,8 @@ func TestIdentical(t *testing.T) {
 		{"lists component-wise", list(label), list(types.StringType), true},
 		{"keyed list compares its key", keyedEvents, list(eventType), false},
 		{"type applications by function", &types.TypeAppType{Fn: paramFn}, &types.TypeAppType{Fn: paramFn}, true},
+		{"an application is its function's union (TYP-18)", &types.TypeAppType{Fn: paramFn}, &types.DepUnionType{Fn: paramFn}, true},
+		{"a union type function is its expanded union (§13.2)", &types.DepUnionType{Fn: keyFn}, &types.LitUnionType{Of: &types.DepUnionType{Fn: paramFn}, Literals: []string{"default"}}, true},
 		{"cases by declaration", rewardItem, rewardNone, false},
 	} {
 		if got := types.Identical(tc.a, tc.b); got != tc.want {
@@ -81,6 +89,11 @@ func TestAssignable(t *testing.T) {
 		{"applied type function to the optional union", &types.TypeAppType{Fn: paramFn}, &types.OptionalType{Elem: &types.DepUnionType{Fn: paramFn}}, true},
 		{"dependent value to another type function (§11.4)", &types.DepUnionType{Fn: paramFn}, &types.DepUnionType{Fn: otherFn}, false},
 		{"dependent value to a plain type (§11.4)", &types.DepUnionType{Fn: paramFn}, types.IntType, false},
+		{"dependent value to a literal union over it (§13.2)", &types.DepUnionType{Fn: paramFn}, overParam, true},
+		{"dependent value to an application of a union type function (§13.2)", &types.DepUnionType{Fn: paramFn}, &types.TypeAppType{Fn: keyFn}, true},
+		{"union type function to its expanded union (§13.2)", &types.DepUnionType{Fn: keyFn}, overParam, true},
+		{"union type function to its own application (§11.4)", &types.DepUnionType{Fn: keyFn}, &types.TypeAppType{Fn: keyFn}, true},
+		{"union type function to its alternative (§11.4)", &types.DepUnionType{Fn: keyFn}, &types.TypeAppType{Fn: paramFn}, false},
 		{"literal union base", types.StringType, &types.LitUnionType{Of: types.StringType, Literals: []string{"x"}}, true},
 		{"no Int to Float", types.IntType, types.FloatType, false},
 		{"no Int to Duration", types.IntType, types.DurationType, false},
@@ -91,6 +104,16 @@ func TestAssignable(t *testing.T) {
 		if got := types.Assignable(tc.from, tc.to); got != tc.want {
 			t.Errorf("%s: Assignable(%s, %s) = %v, want %v", tc.name, tc.from, tc.to, got, tc.want)
 		}
+	}
+}
+
+// TYPES.md §13.1: a type function whose union body comes back to itself (E3021) is never expanded, so judging it ends.
+func TestUnionCycleEnds(t *testing.T) {
+	self := &types.TypeFunc{Pkg: "a", Name: "SK"}
+	self.Body = &types.LitUnionType{Of: &types.TypeAppType{Fn: self}, Literals: []string{"x"}}
+	a, b := &types.TypeAppType{Fn: self}, &types.DepUnionType{Fn: self}
+	if !types.Identical(a, b) || !types.Assignable(a, b) || !types.Assignable(types.StringType, a) {
+		t.Error("an application of a cyclic union type function is its own F(*)")
 	}
 }
 

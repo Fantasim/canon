@@ -91,7 +91,7 @@ func (c *checker) callUser(env *env, x *syntax.CallExpr, o *object) types.Type {
 	}
 	c.info.Calls[x] = &Callee{Kind: kind, Obj: o}
 	c.userArgs(env, x, o.name, c.paramObjects(o), ft.Params)
-	return ft.Result
+	return staticView(ft.Result)
 }
 
 // paramObjects are the parameter objects of a function or method.
@@ -238,7 +238,7 @@ func (c *checker) callValue(env *env, x *syntax.CallExpr, t types.Type, name str
 	if n := len(x.Args); n < len(ft.Params) {
 		c.report(env, diag.E3004.AtMissing(env.span(x), argPosition(n), name))
 	}
-	return ft.Result
+	return staticView(ft.Result)
 }
 
 // argPosition names the n-th parameter of a function type, which has no names.

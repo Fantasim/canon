@@ -20,8 +20,8 @@ func (c *checker) braceLit(env *env, e *syntax.BraceLit, want types.Type) types.
 		return c.mapLit(env, e, w.Key, w.Value, w)
 	case *types.DepMapType:
 		return c.mapLit(env, e, &types.RefType{Target: w.Coll}, staticView(w.Value), w)
-	case *types.DepUnionType:
-		if b := braceBranch(w.Fn); b != nil {
+	case *types.DepUnionType, *types.TypeAppType:
+		if b := braceBranch(depFunc(w)); b != nil {
 			return c.braceLit(env, e, b)
 		}
 	case nil:
@@ -35,22 +35,15 @@ func (c *checker) braceLit(env *env, e *syntax.BraceLit, want types.Type) types.
 	return types.ErrorType
 }
 
-// braceBranch is the first branch of a type function a brace literal classifies against (TYPES.md §11.4).
+// braceBranch is the first branch of a type function a brace literal classifies against (DECISIONS 171).
 func braceBranch(fn *types.TypeFunc) types.Type {
-	results := []types.Type{fn.Body}
-	for _, a := range fn.Arms {
-		results = append(results, a.Result)
-	}
-	for _, r := range results {
-		if r == nil {
-			continue
-		}
+	return firstBranch(fn, func(r types.Type) bool {
 		switch unwrap(r).(type) {
 		case *types.RecordType, *types.AppliedRecord, *types.CaseType, *types.TableType, *types.MapType, *types.DepMapType:
-			return r
+			return true
 		}
-	}
-	return nil
+		return false
+	})
 }
 
 // untypedBrace is a brace literal without an expected type: a record typed by its leading

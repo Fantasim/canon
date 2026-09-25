@@ -1,0 +1,28 @@
+TYPES.md §13.1: two type functions reaching each other through their union alternatives are E3021 at the one found in the cycle; uses of either report nothing more.
+-- a/a.canon --
+package a
+
+local enum K { num, text }
+
+local record Ev {
+  k: K
+}
+
+local type A(e: Ev) = B(e) | "a"
+local type B(e: Ev) = A(e) | "b"
+
+local record R {
+  ev: Ev
+  a: A(ev) = "a"
+  b: B(ev) = "zz"
+  c: A(ev) = 3
+}
+
+local fn same(r: R, q: R) -> Bool {
+  return r.a == q.a and r.b == r.a and r.a == "b"
+}
+-- findings.txt --
+error[E3021]  a/a.canon:9:12
+  type alias A refers to itself
+
+1 error, 0 warnings in 1 package (…)

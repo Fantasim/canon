@@ -14,6 +14,7 @@ type typeCtx struct {
 	scope  map[string]typeArgRoot // the roots a type argument may name (TYPES.md §11.1)
 	later  map[string]bool        // the fields declared after the one typed (E3805)
 	fnBody bool                   // the body of a type function: no refinement may use a parameter
+	scrut  bool                   // a type-level match's scrutinee: E3803 names it (TYPES.md §11.2)
 }
 
 // typePos is a set of flags: the kinds of types a position allows.
@@ -84,7 +85,7 @@ func (c *checker) resolveNamed(tc *typeCtx, t *syntax.NamedType) types.Type {
 	}
 	c.dependsOn(tc.env, o)
 	base := c.typeOfName(tc.env, o, t.Name)
-	if base == nil || t.Args == nil {
+	if base == nil || t.Args == nil || base.Kind() == types.Error {
 		return base
 	}
 	if fn := c.typeFuncs[o]; fn != nil {

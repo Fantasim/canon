@@ -1,0 +1,55 @@
+TYPES.md §11.4 "Literals": a literal given to a dependent field is checked against the union of the branches; a Bool, a Float, a Duration or a list literal no branch accepts is E3002, in a field, a default and a literal union over the dependent type.
+-- a/a.canon --
+package a
+
+local enum K { num, text, off }
+
+local record Ev {
+  k: K
+}
+
+local type P(e: Ev) = match e.k {
+  num => Int
+  text => String
+  off => Never
+}
+
+local type Names(e: Ev) = match e.k {
+  num => String
+  text => K
+  off => Never
+}
+
+local record R {
+  ev: Ev
+  p: P(ev)
+  q: Names(ev) | "all" = 2.5
+}
+
+local let bad: [R] = [
+  { ev: { k: num }, p: true },
+  { ev: { k: num }, p: 2.5 },
+  { ev: { k: num }, p: 3s },
+  { ev: { k: num }, p: [1] },
+  { ev: { k: num }, p: 1, q: false },
+]
+-- findings.txt --
+error[E3002]  a/a.canon:24:26
+  expected a.Names(*) | "all", found Float
+
+error[E3002]  a/a.canon:28:24
+  expected a.P(*), found Bool
+
+error[E3002]  a/a.canon:29:24
+  expected a.P(*), found Float
+
+error[E3002]  a/a.canon:30:24
+  expected a.P(*), found Duration
+
+error[E3002]  a/a.canon:31:24
+  expected a.P(*), found [1]
+
+error[E3002]  a/a.canon:32:30
+  expected a.Names(*) | "all", found Bool
+
+6 errors, 0 warnings in 1 package (…)

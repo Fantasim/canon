@@ -66,6 +66,7 @@ type checker struct {
 	stableOf   map[*types.RecordType]bool         // records used as the element of a stable table
 	keyedOf    map[*types.RecordType]bool         // records used as the element of a keyed list
 	builtins   map[string]*object                 // built-in members and methods, by name
+	boolObjs   []*object                          // `false` and `true` as match patterns, in index order
 	bodies     bool                               // step 3 has begun: a new ref resolves at once
 	constStack []*object                          // the consts being typed, innermost last
 	listKeys   map[*object]map[string]source.Span // keys written in a keyed list's literal and entries
@@ -84,6 +85,9 @@ type checker struct {
 	initDone     map[*object]bool
 	boundSpans   map[*types.Bound]source.Span
 	wheres       []whereJob
+	unions       []unionJob
+	records      int                  // records and variants being completed, innermost last
+	funcDepth    map[*object]int      // records being completed when a type function began
 	syntaxHeld   map[syntax.Node]bool // declarations holding a syntax error (DECISIONS 214)
 	reported     int                  // the errors report added so far
 	badLits      map[syntax.Node]bool // literal tokens holding a lexer error (DECISIONS 215)
@@ -121,6 +125,7 @@ func newChecker(ctx context.Context, proj *project.Project, bags Bags, fold Fold
 		syntaxHeld:   map[syntax.Node]bool{},
 		badLits:      map[syntax.Node]bool{},
 		unmatchable:  map[syntax.Node]bool{},
+		funcDepth:    map[*object]int{},
 	}
 	c.universe = c.newUniverse()
 	return c
