@@ -1,0 +1,37 @@
+TYPES.md §3.2, §11.1, §11.2: declaration order does not matter: a record field `H(ev)` and a type function arm `H(e)` naming a parameterized record declared later are applications, as are their twins naming one declared earlier.
+-- a/a.canon --
+package a
+
+local enum K { num, text }
+
+local record Ev {
+  k: K
+}
+
+local record Before {
+  ev: Ev
+  h: Late(ev)
+}
+
+local type BeforeF(e: Ev) = match e.k {
+  num => Late(e)
+  text => String
+}
+
+local record Late(e: Ev) {
+  n: Int = 1
+}
+
+local record Early(e: Ev) {
+  n: Int = 1
+}
+
+local record After {
+  ev: Ev
+  h: Early(ev)
+}
+
+local type AfterF(e: Ev) = match e.k {
+  num => Early(e)
+  text => String
+}

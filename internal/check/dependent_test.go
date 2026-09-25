@@ -2,6 +2,7 @@ package check_test
 
 import (
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/fantasim/canonlang/internal/check"
@@ -117,6 +118,55 @@ func TestDependsOnThroughDependentMaps(t *testing.T) {
 		return
 	}
 	t.Fatal("no record R")
+}
+
+// formsSource holds locals of a dependent type compared with themselves and a symbolic map key.
+const formsSource = `package a
+
+local enum K { num, colour }
+
+local enum Colour { red, blue }
+
+local record Ev {
+  k: K
+}
+
+local type P(e: Ev) = match e.k {
+  num => String
+  colour => Colour
+}
+
+local record R {
+  ev: Ev
+  p: P(ev)
+  byP: {P(ev): Int} = {}
+}
+
+local fn same(r: R) -> Bool {
+  let p = r.p
+  let q = r.p
+  return p == p and [q].contains(q)
+}
+
+local let one: R = { ev: { k: colour }, p: red, byP: { red: 1, green: 2 } }
+`
+
+// TYPES.md §4.1, §11.4: a local holding a dependent value is that local; a dependent map key stays symbolic.
+func TestDependentFormsMapKeys(t *testing.T) {
+	prog, f, out := checkFile(t, formsSource)
+	if !strings.HasPrefix(out, noFindings) {
+		t.Fatalf("findings:\n%s", out)
+	}
+	for _, id := range nodesOf[*syntax.IdentExpr](f) {
+		if (id.Name == "p" || id.Name == "q") && (prog.Info.Uses[id] == nil || prog.Info.Symbols[id]) {
+			t.Errorf("%s at %v is not its local", id.Name, id.Bounds)
+		}
+	}
+	for _, fi := range nodesOf[*syntax.FieldItem](f) {
+		if (fi.Name.Name == "red" || fi.Name.Name == "green") && prog.Info.NameUses[fi.Name] != nil {
+			t.Errorf("the key %s names %v, want it symbolic", fi.Name.Name, prog.Info.NameUses[fi.Name])
+		}
+	}
 }
 
 // namesSource names package values and built-ins like the members a branch offers.

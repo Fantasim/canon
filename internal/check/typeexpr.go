@@ -91,7 +91,8 @@ func (c *checker) resolveNamed(tc *typeCtx, t *syntax.NamedType) types.Type {
 	if fn := c.typeFuncs[o]; fn != nil {
 		return c.applyTypeFunc(tc, t, fn)
 	}
-	if rec, ok := base.(*types.RecordType); ok && len(rec.Params) > 0 {
+	// A record may still be a shell (TYPES.md §3.2): its declaration says whether it takes parameters.
+	if rec, ok := base.(*types.RecordType); ok && rec.Decl != nil && len(rec.Decl.Params) > 0 {
 		return c.applyRecord(tc, t, rec)
 	}
 	return c.refine(tc, base, t.Args)

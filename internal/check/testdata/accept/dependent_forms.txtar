@@ -1,0 +1,45 @@
+TYPES.md §4.1, §11.4, §13.2: forms the eval gate-lift unit relies on. A local or parameter holding a dependent value is itself in `==` and `.contains` (a local wins, logged call (a)); a symbolic name stays symbolic as an element of a `[P(ev)]` list and as an amended value; a union-bodied type function compares with its literal and stores a dependent value (call (c)). Symbolic map keys: TestDependentFormsMapKeys (they have no Info entry, the logged §4.7 gap).
+-- a/a.canon --
+package a
+
+local enum K { num, colour }
+
+local enum Colour { red, blue }
+
+local record Ev {
+  k: K
+}
+
+local type P(e: Ev) = match e.k {
+  num => String
+  colour => Colour
+}
+
+local type SK(e: Ev) = P(e) | "default"
+
+local record R {
+  ev: Ev
+  p: P(ev)
+  ps: [P(ev)] = []
+  sk: SK(ev) = "default"
+  fromP: SK(ev) = p
+}
+
+local fn same(r: R) -> Bool {
+  let p = r.p
+  return p == p
+}
+
+local fn contains(r: R) -> Bool {
+  let q = r.p
+  return [q].contains(q) and r.sk == "default"
+}
+
+local let one: R = { ev: { k: colour }, p: red, ps: [red, blue] }
+-- a/dev.layer.canon --
+package a
+layer dev
+
+amend one {
+  p: blue
+}

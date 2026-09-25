@@ -56,15 +56,15 @@ func erasedApp(t Type) Type {
 
 // expandUnion is the literal union an application of a type function whose body is one stands for (TYPES.md §13.2).
 func expandUnion(t Type) Type {
-	u := unionBody(typeFuncOf(t))
+	u := UnionBody(typeFuncOf(t))
 	if u == nil || unionCycles(typeFuncOf(t)) {
 		return t
 	}
 	return u
 }
 
-// unionBody is the literal union a type function's body is, nil for any other body.
-func unionBody(fn *TypeFunc) *LitUnionType {
+// UnionBody is the literal union a type function's body is, nil for any other body.
+func UnionBody(fn *TypeFunc) *LitUnionType {
 	if fn == nil || fn.Body == nil {
 		return nil
 	}
@@ -76,7 +76,7 @@ func unionBody(fn *TypeFunc) *LitUnionType {
 // back to one already met (the checker reports it, E3021); expanding it would never end.
 func unionCycles(fn *TypeFunc) bool {
 	seen := map[*TypeFunc]bool{}
-	for u := unionBody(fn); u != nil; u = unionBody(fn) {
+	for u := UnionBody(fn); u != nil; u = UnionBody(fn) {
 		if seen[fn] {
 			return true
 		}

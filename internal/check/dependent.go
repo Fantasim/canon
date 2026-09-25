@@ -187,21 +187,12 @@ func unionChain(u *types.LitUnionType) ([]string, []*types.TypeFunc, types.Type)
 			return lits, fns, u.Of
 		}
 		fns = append(fns, fn)
-		next := unionBody(fn)
+		next := types.UnionBody(fn)
 		if next == nil {
 			return lits, fns, u.Of
 		}
 		u = next
 	}
-}
-
-// unionBody is the literal union a type function's body is, nil for any other body.
-func unionBody(fn *types.TypeFunc) *types.LitUnionType {
-	if fn.Body == nil {
-		return nil
-	}
-	u, _ := fn.Body.Base().(*types.LitUnionType)
-	return u
 }
 
 // keyLiteral reports a literal that is a key of coll: an integer literal of an integer-keyed

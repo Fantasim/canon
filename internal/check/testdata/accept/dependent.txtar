@@ -1,4 +1,4 @@
-TYPES.md §11: what a dependent value supports. §11.1 parameters in field types, defaults and checks, a case's earlier field, a ref argument dereferenced; §11.2 a Bool scrutinee with `true`/`false` arms (and a Bool match expression), a nested application, a ref to a local collection, a list and Never as results; §11.4 == and != with the same DepUnion or none, narrowing on != none, interpolation, String(x), fail/warn, storing in a field or list of the same declared type, literals checked against the branches (a symbolic name, an integer, a string key, a string, none in an optional field, a list or brace literal against its branch); §4.1/§4.2 a local, parameter or field named like no branch member wins over the symbolic reading; §11.5 a dependent map read, returned and joined as {ref c: T}, and a {ref c: T} stored in one; §13.2 a literal union over a type application, its literal, and == with its literals, itself and its dependent alternative.
+TYPES.md §11: what a dependent value supports. §11.1 parameters in field types, defaults and checks, a case's earlier field, a ref argument dereferenced; §11.2, §13.1 a type function reaching itself through a variant case (`Nest` → `W.c`) or through the record its scrutinee completes (`G` → `Holder.g`) is no cycle, a Bool scrutinee with `true`/`false` arms (and a Bool match expression), a nested application, a ref to a local collection, a list and Never as results; §11.4 == and != with the same DepUnion or none, narrowing on != none, interpolation, String(x), fail/warn, storing in a field or list of the same declared type, literals checked against the branches (a symbolic name, an integer, a string key, a string, none in an optional field, a list or brace literal against its branch); §4.1/§4.2 a local, parameter or field named like no branch member wins over the symbolic reading; §11.5 a dependent map read, returned and joined as {ref c: T}, and a {ref c: T} stored in one; §13.2 a literal union over a type application, its literal, and == with its literals, itself and its dependent alternative.
 -- a/a.canon --
 package a
 
@@ -62,6 +62,32 @@ local variant V {
   c {
     ev: Ev
     p: P(ev)
+  }
+  d
+}
+
+local type Nest(e: Ev) = match e.k {
+  num => W
+  _ => String
+}
+
+local type G(e: Holder) = match e.ev.k {
+  num => Int
+  _ => String
+}
+
+local record Holder {
+  ev: Ev
+  prev: ref holders
+  g: G(prev)? = none
+}
+
+local let holders: table Holder = {}
+
+local variant W {
+  c {
+    ev: Ev
+    inner: Nest(ev)
   }
   d
 }

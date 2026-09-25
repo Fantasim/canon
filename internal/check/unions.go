@@ -113,7 +113,7 @@ func unionOver(t types.Type) *types.LitUnionType {
 			return x
 		}
 	case *types.DepUnionType:
-		return unionBody(x.Fn)
+		return types.UnionBody(x.Fn)
 	}
 	return nil
 }
