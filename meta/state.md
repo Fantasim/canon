@@ -1,68 +1,60 @@
 # State — Canon compiler
 
-Updated: 2026-09-24, overnight run in progress (brief:
-[handoff/2026-09-24-overnight-run.md](handoff/2026-09-24-overnight-run.md)). Decisions of the run:
-[decisions/log-2026-09-24.md](decisions/log-2026-09-24.md) "Overnight run".
+Updated: 2026-09-25 ~05:10. The overnight run was paused cleanly at Louis's request, before M3
+(brief: [handoff/2026-09-24-overnight-run.md](handoff/2026-09-24-overnight-run.md); pause
+report and resume steps: [handoff/2026-09-25-pause.md](handoff/2026-09-25-pause.md)). Every call
+of the run: [decisions/log-2026-09-24.md](decisions/log-2026-09-24.md) "Overnight run".
 
-## Current focus — overnight run tracker
+## Current focus — overnight run tracker (resume from here)
 
-Part A (close open work) then Part B (M3 waves W0–W4). Ticked = committed on `main`.
-- [x] A1 loader parity: gen/go 2eb3294, gen/cpp (fix(gen/cpp) commit); parity on values.
-- [x] A2 demo bugs: (1) E2102, a broken check breaks its record (428fbad, DECISIONS 209);
-  (2) E7109 variants (6534f56, DECISIONS 208); (3) stays (poisoning, logged); (4) "is a Int" →
-  ERRORS pass, E4402 frames stay (logged); (5) E8007 hint → ERRORS pass.
-- [x] A3 M1.5 bug-fix wave: all owner archives fixed or re-owned (check C2 cf70701); open: 7
-  `progen` (mutator/shrinker artifacts, A6), 1 `ir` (E8011_725 interim), 2 new (E3013 check,
-  E1107 syntax — landing with W1 load).
-- [x] A4 M2 close: position test on `examples/pipeline/data/II_POT_HEAL_L.json`; M2 ticked.
-- [ ] A5 consumer units landed (d5de44d, 5d8232a); ir plan-gap unit after the ERRORS ir group;
-  ERRORS.md pass: ir group in fixes, check/load groups queued; spec sync #2; cleanups.
-- [ ] A6 M1.5 second wave (type-directed, metamorphic).
-- [x] W0 gap map → `meta/m3-gaps.md` (1b0a332).
-- [ ] W1: eval layers/provenance + identity, load forms (1a77900) landed; dependent types
-  (check/types) final round; load gate lift + eval dependent types in flight. W2 started early:
-  gen/go ∥ gen/cpp runtime inputs (dependent types in gens wait for ir naming support).
-- [ ] W2 · [ ] W3 · [ ] W4 (see [plan.md](plan.md) "M3 execution").
+Ticked means committed on `main`. Unfinished units sit as unreviewed `wip:` commits on their
+worktree branches. They are listed in the pause report with what each still needs.
+- [x] A1 loader parity (2eb3294, c9a44cb) · [x] A2 demo bugs (428fbad, 6534f56) · [x] A3 M1.5
+  bug-fix wave · [x] A4 M2 accepted (94ddb96).
+- [ ] A5: consumer units landed (d5de44d, 5d8232a). ERRORS.md pass: ir group in final verify
+  (worktree agent-a0de…, see pause report); check group WIP (agent-ac6d…); load group queued
+  (script `load.py`, see pause report). Spec sync #2 and cleanups queued.
+- [ ] A6 M1.5 second wave: WIP (agent-a988…).
+- [x] W0 gap map (1b0a332).
+- [ ] W1: landed: eval layers/provenance (bc99b99, 02f203c), load forms (1a77900), dependent
+  types in check (3e46ab3, b2f063c). Open: gate lift round 2 WIP (agent-aca7…); load into an
+  applied type (`l: L(ev) = load(..)`).
+- [ ] W2: gen/go inputs + unions landed (8e816d3). Open: gen/cpp inputs round 2 WIP
+  (agent-a173…); ir name-plan unit + pattern translator; verify dependent (E3801/E3802);
+  view/translation checking; ir `types` mode; dependent types in both generators.
+- [ ] W3 · [ ] W4 (see [plan.md](plan.md) "M3 execution").
 
 Milestones: M0, M1, M2 accepted (M1 item 6 deferred to after M7). M1.5 foundation committed
 (f498713), not ticked.
 
 ## What exists (committed)
 
-spec + DECISIONS 1–207; `syntax`, `format`, `jsonsrc`, `wire` (decode + `load.dir`), `check`/
-`types`, `eval`/`eval/std` + `value` (bounded memory/time), `verify`, `lock`, `rules`, `ir` (stage
-E export fns, fingerprint, Go and C++ name plans), `gen/json`, `gen/go` (baked, data mode, stores,
-translated fns, conformance), `gen/cpp` (data mode, stores, runtime, conformance, strict loaders),
-`conform`, `load` (`load.dir` of JSON), `build` (whole pipeline, conformance wiring, `cppgen`
-registered), `project`, `api` (Check/Build/Test), `cli` (version/init/new/check/build/test),
-`internal/testkit` (+ `cxx` toolchain helper, `progen`); `tools/audit`.
+spec + DECISIONS 1–219; `syntax`, `format`, `jsonsrc`, `wire`, `load` (every WIRE §6 form),
+`check`/`types` (dependent types), `eval`/`eval/std` + `value` (layers, provenance), `verify`,
+`lock`, `rules`, `ir` (stage E, fingerprint, Go and C++ name plans), `gen/json`, `gen/go` (baked,
+data, stores, translated fns, conformance, runtime inputs, unions), `gen/cpp` (data mode, stores,
+runtime, conformance, strict loaders), `conform`, `build`, `project`, `api` (Check/Build/Test),
+`cli` (version/init/new/check/build/test), `internal/testkit` (+ `cxx`, `progen`);
+`tools/audit`.
 
 ## Open Louis-calls
 
-None. Direction questions of the run, if any: `handoff/2026-09-24-questions.md`.
-
-## Owed (feeds A5; full lists in the log)
-
-- **ERRORS.md pass:** a general "cannot generate this construct" code; E8011 variants; E7004/
-  E7005 cause vocabularies; W7115 wording; a code for a scalar `-0.0` constant; E8012/E8151 for
-  `Define`; `is a {typ}` templates reworded; E8007 names its fix. Then spec sync #2.
-- **Cleanups:** translated-fn classification ×3 (check/ir/eval); `internalError` →
-  `internal/build/errors.go`; ASCII-fold/inline-fold rule as one ir helper; `osFS.EvalSymlinks`
-  → `write.go`; the compile-and-run loop duplicated between two `_test.go` files; the `"$id"`
-  wire key has no shared constant (wire vs gen/cpp const-dup); one fixture FS in testkit (4 copies);
-  tools/audit: a malformed baseline row is skipped silently by ratchet.Parse (should fail).
+None. There are no direction questions (`handoff/2026-09-24-questions.md` does not exist).
 
 ## Operating notes
 
 - Every agent test runs under `systemd-run --user --scope -p MemoryMax=3G` (an uncapped eval
-  probe took 24 GB twice and froze the laptop); a watchdog kills any test process over 5 GB.
-- Agents share one working tree — **never `git stash`**; parallel units run in worktrees
-  (fast-forward, commit there, cherry-pick, `make check` before every continue).
-- The golangci-lint cache must be private per worktree (`GOLANGCI_LINT_CACHE`); a stale entry
-  shared by content hash across `tools/audit` copies broke `audit-self` once (remedy: `cd
-  tools/audit/toolchain && go tool golangci-lint cache clean`).
-- Sonnet units that failed review twice moved to opus (gen/go, ir).
+  probe took 24 GB twice). Temp dirs go to `/var/tmp`, never `/tmp` (a 15 GB tmpfs that filled
+  twice).
+- Agents share one working tree, so **never `git stash`**. Parallel units run in worktrees:
+  commit there, cherry-pick, and run `make check` before every continue. A worktree whose base
+  is old is rebased onto main by the orchestrator before its review.
+- `GOLANGCI_LINT_CACHE` is private per worktree. The audit now fails on an unmeasured lane
+  (5b37369).
+- Sonnet units that failed review twice moved to opus. Review catches real defects: plan on
+  2–3 rounds per unit.
 
 ## What could not be verified
 
 Windows and macOS real runs; MSVC 19.2x; GCC 9; Clang 10; nlohmann/json 3.9; CI on a runner.
+Only local g++ 15.2 and clang++ 21.1 were used.
