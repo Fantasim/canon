@@ -11,6 +11,8 @@ import subprocess
 import sys
 
 STATE_HEAD_LINES = 30
+TESTDATA_URL = "https://x-access-token:{}@github.com/Fantasim/canon-testdata.git"
+TESTDATA_TIMEOUT = 50
 
 
 def run(args, cwd):
@@ -58,10 +60,27 @@ def state_head(repo):
     return ["---"] + lines
 
 
+def fetch_testdata(repo):
+    """Cloud sessions: clone testdata-real/ from the private mirror (DECISIONS 29)."""
+    token = os.environ.get("CANON_TESTDATA_TOKEN")
+    target = os.path.join(repo, "testdata-real")
+    if not token or os.path.isdir(target):
+        return []
+    try:
+        result = subprocess.run(["git", "clone", "--depth", "1", "-q", TESTDATA_URL.format(token),
+                                 target], capture_output=True, timeout=TESTDATA_TIMEOUT)
+        ok = result.returncode == 0
+    except Exception:
+        ok = False
+    return ["testdata-real/: fetched from canon-testdata." if ok else
+            "testdata-real/: fetch FAILED; real-data targets unavailable this session."]
+
+
 def main():
     try:
         repo = repo_dir()
         out = ["## Session orientation (auto-generated)"]
+        out.extend(fetch_testdata(repo))
         out.extend(git_lines(repo))
         out.extend(state_head(repo))
         sys.stdout.write("\n".join(out) + "\n")

@@ -183,7 +183,9 @@ triaged before writing the companion documents.
 29. **Real game data never enters git.** Copies of real Resource data used for tests live in
     `testdata-real/`, which is git-ignored and used by opt-in targets (`make check-real`).
     Committed fixtures stay small (`examples/_fixtures/`). Resource, Source and every other
-    service are read-only from this project.
+    service are read-only from this project. For cloud sessions, `testdata-real/` is mirrored in
+    the private repository Fantasim/canon-testdata, fetched at session start when
+    `CANON_TESTDATA_TOKEN` is set; it never enters `canon`'s history. (Amended 2026-09-25 by Louis.)
 
 ## Decided without Louis (autonomous session 2026-09-23 night), to review
 
