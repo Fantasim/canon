@@ -1,0 +1,28 @@
+EVALUATION.md §11.3, TYPES.md §7.4: a refinement on a named type adds to the named type's own, and both are checked, so every pattern of an input's alias chain is E1904-checked, each reported.
+-- a/a.canon --
+package a
+
+local type Key = String(/\x41/)
+
+local type Inner = String(/^sk-/)
+
+local type Outer = Inner(/(?i)x/)
+
+local record Gen {
+  key: input Key(/\t/)? from env "KEY"
+  inner: input Outer? from env "INNER"
+}
+
+/// The generator.
+let gen: Gen = {}
+-- findings.txt --
+error[E1904]  a/a.canon:10:14
+  pattern /\t/ is not in the portable subset: \t
+
+error[E1904]  a/a.canon:10:14
+  pattern /\x41/ is not in the portable subset: \x
+
+error[E1904]  a/a.canon:11:16
+  pattern /(?i)x/ is not in the portable subset: (?i
+
+3 errors, 0 warnings in 1 package (…)

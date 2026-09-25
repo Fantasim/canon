@@ -2,7 +2,6 @@ package check
 
 import (
 	"slices"
-	"strings"
 
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/syntax"
@@ -28,7 +27,7 @@ func (c *checker) checkInputs(p *pkgState) {
 	}
 }
 
-// portable is E1904 for an input pattern outside the portable subset (EVALUATION.md §11.3).
+// portable is E1904 for each pattern of an input's alias chain (EVALUATION.md §11.3, TYPES.md §7.4).
 func (c *checker) portable(env *env, f *types.Field, at syntax.Node) {
 	for t := f.Type; t != nil; {
 		switch x := t.(type) {
@@ -53,21 +52,6 @@ func (c *checker) portablePattern(env *env, r *types.Refined, at syntax.Node) {
 	if construct := unportable(r.Pattern.String()); construct != "" {
 		c.report(env, diag.E1904.At(env.span(at), r.Pattern.String(), construct))
 	}
-}
-
-// unportable is the first construct of re outside the portable subset, "" when there is none.
-func unportable(re string) string {
-	for i := 0; i < len(re); i++ {
-		for _, bad := range unportableForms {
-			if strings.HasPrefix(re[i:], bad) {
-				return bad
-			}
-		}
-		if re[i] == backslash {
-			i++
-		}
-	}
-	return ""
 }
 
 func hasInput(r *types.RecordType) bool {

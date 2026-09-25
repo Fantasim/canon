@@ -1,0 +1,10 @@
+CODEGEN.md §2.1: without a namespace option, a default namespace (the package path, `.` → `::`) with a C++ keyword segment is E8009 at the emit's target, as a written namespace would be (log-2026-09-25 "Gap: default C++ namespace").
+-- a/int/a.canon --
+package a.int
+
+emit cpp { out: "@source/a" }
+-- findings.txt --
+error[E8009]  a/int/a.canon:3:6
+  invalid namespace "a::int" for emit cpp: expected ident{::ident} with no C++ keyword
+
+1 error, 0 warnings in 1 package (…)

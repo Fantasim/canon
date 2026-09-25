@@ -216,7 +216,7 @@ func (c *checker) applyRecord(tc *typeCtx, t *syntax.NamedType, rec *types.Recor
 }
 
 // typeArgs checks the arity (none written is 0 given) and the type of each argument against its
-// parameter (E3806); a ref argument dereferences.
+// parameter (E3806).
 func (c *checker) typeArgs(tc *typeCtx, t *syntax.NamedType, name string, params []*types.Param) ([]*types.Arg, bool) {
 	env := tc.env
 	if t.Args == nil || len(t.Args.Args) != len(params) {
@@ -232,13 +232,21 @@ func (c *checker) typeArgs(tc *typeCtx, t *syntax.NamedType, name string, params
 			continue
 		}
 		c.info.Types[a] = at
-		if !types.Assignable(c.deref(at), params[i].Type) && !types.Assignable(at, params[i].Type) {
+		if !c.argFits(at, params[i].Type) {
 			c.wrongArity(env, a, name, params)
 			ok = false
 		}
 		out = append(out, arg)
 	}
 	return out, ok
+}
+
+// argFits reports an argument fit for its parameter, a ref dereferenced, never an optional (TYPES.md §11.2).
+func (c *checker) argFits(at, param types.Type) bool {
+	if at.Base().Kind() == types.Optional {
+		return false
+	}
+	return types.Assignable(c.deref(at), param) || types.Assignable(at, param)
 }
 
 // wrongArity is E3806 at at: name takes exactly its declared parameters, each of its type (TYPES.md §11.1).

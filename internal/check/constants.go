@@ -229,8 +229,15 @@ const (
 	letterS         = "s"
 )
 
-// unportableForms are the regex constructs outside the RE2 ∩ ECMAScript subset (EVALUATION.md §11.3).
-var unportableForms = []string{`(?i`, `(?m`, `(?s`, `(?U`, `(?P<`, `(?<`, `\p`, `\P`, `\A`, `\z`, `\b`, `\B`, `[[:`}
+// The escapes, groups and quantifier spellings of the portable pattern subset (EVALUATION.md §11.3).
+const (
+	perlClassLetters = "dDwWsS"
+	patternEscapes   = perlClassLetters + `\^$.|?*+()[]{}/`
+	classEscapes     = patternEscapes + hyphen
+	flagGroup        = "(?"
+	plainGroup       = flagGroup + colon
+	repeatPattern    = `^\{(0|[1-9][0-9]*)(,(0|[1-9][0-9]*)?)?\}`
+)
 
 // backslash starts an escape in a regex.
 const backslash = '\\'

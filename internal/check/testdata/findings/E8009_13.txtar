@@ -1,0 +1,25 @@
+CODEGEN.md §2.1: without a namespace option, the default namespace (the package path, `.` → `::`) is checked as a written one: a segment canon, std or nlohmann is E8009 reservedNamespace at the emit's target (log-2026-09-25 "Gap: default C++ namespace").
+-- std/x/a.canon --
+package std.x
+
+emit cpp { out: "@source/x" }
+-- canon/b.canon --
+package canon
+
+emit cpp { out: "@source/c", mode: types }
+-- std/y/a.canon --
+package std.y
+
+emit cpp { out: "@source/y", namespace: "ok" }
+-- n/b.canon --
+package n
+
+emit cpp { out: "@source/n", namespace: "n::ok" }
+-- findings.txt --
+error[E8009]  canon/b.canon:3:6
+  invalid namespace "canon" for emit cpp: canon, std and nlohmann are reserved
+
+error[E8009]  std/x/a.canon:3:6
+  invalid namespace "std::x" for emit cpp: canon, std and nlohmann are reserved
+
+2 errors, 0 warnings in 4 packages (…)

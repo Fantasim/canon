@@ -1,0 +1,19 @@
+EVALUATION.md §11.3: every construct of the portable pattern subset passes E1904: literal characters and escaped metacharacters, `.`, bracket classes with ranges and negation (a literal `-` first or last, a class escape inside, a literal `^` not first), `\d \D \w \W \s \S`, anchors, `( )` and `(?: )` (quantified even when holding an anchor), `|`, and `* + ? {n} {n,} {n,m}` with their lazy forms.
+-- a/a.canon --
+package a
+
+local record Gen {
+  lit: input String(/abc é日😀/)? from env "LIT"
+  meta: input String(/\\\^\$\.\|\?\*\+\(\)\[\]\{\}\//)? from env "META"
+  dot: input String(/a.c/)? from env "DOT"
+  cls: input String(/[a-z0-9_][^a-c][-a][a-][\d\s-][\^\]\-\\][a^]/)? from env "CLS"
+  esc: input String(/\d\D\w\W\s\S/)? from env "ESC"
+  anchors: input String(/^a$/)? from env "ANCHORS"
+  groups: input String(/(ab)(?:cd)(?:^)*(a|)/)? from env "GROUPS"
+  alt: input String(/a|b|c/)? from env "ALT"
+  quant: input String(/a*b+c?d{2}e{2,}f{2,3}/)? from env "QUANT"
+  lazy: input String(/a*?b+?c??d{2}?e{2,}?f{2,3}?/)? from env "LAZY"
+}
+
+/// The generator.
+let gen: Gen = {}

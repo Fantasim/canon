@@ -1,0 +1,63 @@
+EVALUATION.md §11.3: the portable subset escapes only a class (\d \D \w \W \s \S) or a metacharacter; RE2-only escapes are E1904: quoting, octal, hex, control and Unicode escapes, \A \z \b \B, and an escaped `-` outside a class.
+-- a/a.canon --
+package a
+
+local record Gen {
+  f1: input String(/\Qa.b\E/)? from env "F1"
+  f2: input String(/\101/)? from env "F2"
+  f3: input String(/\x41/)? from env "F3"
+  f4: input String(/\x{263A}/)? from env "F4"
+  f5: input String(/\t/)? from env "F5"
+  f6: input String(/\n/)? from env "F6"
+  f7: input String(/\pL/)? from env "F7"
+  f8: input String(/\P{Greek}/)? from env "F8"
+  f9: input String(/\Aa/)? from env "F9"
+  f10: input String(/a\z/)? from env "F10"
+  f11: input String(/\ba/)? from env "F11"
+  f12: input String(/a\B/)? from env "F12"
+  f13: input String(/a\-b/)? from env "F13"
+}
+
+/// The generator.
+let gen: Gen = {}
+-- findings.txt --
+error[E1904]  a/a.canon:4:13
+  pattern /\Qa.b\E/ is not in the portable subset: \Q
+
+error[E1904]  a/a.canon:5:13
+  pattern /\101/ is not in the portable subset: \1
+
+error[E1904]  a/a.canon:6:13
+  pattern /\x41/ is not in the portable subset: \x
+
+error[E1904]  a/a.canon:7:13
+  pattern /\x{263A}/ is not in the portable subset: \x
+
+error[E1904]  a/a.canon:8:13
+  pattern /\t/ is not in the portable subset: \t
+
+error[E1904]  a/a.canon:9:13
+  pattern /\n/ is not in the portable subset: \n
+
+error[E1904]  a/a.canon:10:13
+  pattern /\pL/ is not in the portable subset: \p
+
+error[E1904]  a/a.canon:11:13
+  pattern /\P{Greek}/ is not in the portable subset: \P
+
+error[E1904]  a/a.canon:12:13
+  pattern /\Aa/ is not in the portable subset: \A
+
+error[E1904]  a/a.canon:13:14
+  pattern /a\z/ is not in the portable subset: \z
+
+error[E1904]  a/a.canon:14:14
+  pattern /\ba/ is not in the portable subset: \b
+
+error[E1904]  a/a.canon:15:14
+  pattern /a\B/ is not in the portable subset: \B
+
+error[E1904]  a/a.canon:16:14
+  pattern /a\-b/ is not in the portable subset: \-
+
+13 errors, 0 warnings in 1 package (…)

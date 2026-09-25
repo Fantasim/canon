@@ -1,0 +1,39 @@
+EVALUATION.md §11.3: quantifiers are * + ? {n} {n,} {n,m} and their lazy forms; a { that starts none, and a bare } or ], are RE2 literals ECMAScript refuses (E1904); so is a count with a leading zero, which RE2 reads as a literal and ECMAScript as a quantifier.
+-- a/a.canon --
+package a
+
+local record Gen {
+  f1: input String(/a{/)? from env "F1"
+  f2: input String(/x{,3}/)? from env "F2"
+  f3: input String(/a{b}/)? from env "F3"
+  f4: input String(/a}/)? from env "F4"
+  f5: input String(/a]/)? from env "F5"
+  f6: input String(/a{01}/)? from env "F6"
+  f7: input String(/a{1,02}/)? from env "F7"
+}
+
+/// The generator.
+let gen: Gen = {}
+-- findings.txt --
+error[E1904]  a/a.canon:4:13
+  pattern /a{/ is not in the portable subset: {
+
+error[E1904]  a/a.canon:5:13
+  pattern /x{,3}/ is not in the portable subset: {
+
+error[E1904]  a/a.canon:6:13
+  pattern /a{b}/ is not in the portable subset: {
+
+error[E1904]  a/a.canon:7:13
+  pattern /a}/ is not in the portable subset: }
+
+error[E1904]  a/a.canon:8:13
+  pattern /a]/ is not in the portable subset: ]
+
+error[E1904]  a/a.canon:9:13
+  pattern /a{01}/ is not in the portable subset: {
+
+error[E1904]  a/a.canon:10:13
+  pattern /a{1,02}/ is not in the portable subset: {
+
+7 errors, 0 warnings in 1 package (…)

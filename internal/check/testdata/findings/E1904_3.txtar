@@ -1,0 +1,39 @@
+EVALUATION.md §11.3: groups are ( ) and (?: ) only; inline flags, flag groups (clearing a flag too) and named groups are E1904.
+-- a/a.canon --
+package a
+
+local record Gen {
+  f1: input String(/(?s:.)/)? from env "F1"
+  f2: input String(/(?-s:.)/)? from env "F2"
+  f3: input String(/(?U)a+/)? from env "F3"
+  f4: input String(/(?m)^a/)? from env "F4"
+  f5: input String(/(?P<n>a)/)? from env "F5"
+  f6: input String(/(?<n>a)/)? from env "F6"
+  f7: input String(/(?i:a)/)? from env "F7"
+}
+
+/// The generator.
+let gen: Gen = {}
+-- findings.txt --
+error[E1904]  a/a.canon:4:13
+  pattern /(?s:.)/ is not in the portable subset: (?s
+
+error[E1904]  a/a.canon:5:13
+  pattern /(?-s:.)/ is not in the portable subset: (?-
+
+error[E1904]  a/a.canon:6:13
+  pattern /(?U)a+/ is not in the portable subset: (?U
+
+error[E1904]  a/a.canon:7:13
+  pattern /(?m)^a/ is not in the portable subset: (?m
+
+error[E1904]  a/a.canon:8:13
+  pattern /(?P<n>a)/ is not in the portable subset: (?P
+
+error[E1904]  a/a.canon:9:13
+  pattern /(?<n>a)/ is not in the portable subset: (?<
+
+error[E1904]  a/a.canon:10:13
+  pattern /(?i:a)/ is not in the portable subset: (?i
+
+7 errors, 0 warnings in 1 package (…)

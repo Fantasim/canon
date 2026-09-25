@@ -41,7 +41,7 @@ func (c *checker) checkEmit(env *env, e *syntax.EmitDecl, seen map[string]bool) 
 	}
 	seen[target] = true
 	values := -1
-	out, named := "", false
+	out := ""
 	c.emitRequired(env, e, target)
 	for _, it := range e.Options.Items {
 		fi, isField := it.(*syntax.FieldItem)
@@ -49,7 +49,6 @@ func (c *checker) checkEmit(env *env, e *syntax.EmitDecl, seen map[string]bool) 
 			c.report(env, diag.E8003.AtOption(env.span(it), itemName(it), target))
 			continue
 		}
-		named = named || fi.Name.Name == OptPackage
 		switch fi.Name.Name {
 		case OptMode:
 			c.emitMode(env, fi, target, spec.modes)
@@ -63,19 +62,24 @@ func (c *checker) checkEmit(env *env, e *syntax.EmitDecl, seen map[string]bool) 
 		}
 	}
 	c.emitFileMode(env, e, target, out, values)
-	if target == TargetGo && !named {
+	switch {
+	case target == TargetGo && !hasOption(e, OptPackage):
 		c.defaultGoPackage(env, e, out)
+	case target == TargetCpp && !hasOption(e, OptNamespace):
+		c.defaultCppNamespace(env, e)
 	}
 }
 
 // emitRequired is E8009 `missing`: every target's `out` is required, with no default (CODEGEN.md §2.1, WIRE.md §8.1).
 func (c *checker) emitRequired(env *env, e *syntax.EmitDecl, target string) {
-	for _, it := range e.Options.Items {
-		if itemName(it) == OptOut {
-			return
-		}
+	if !hasOption(e, OptOut) {
+		c.report(env, diag.E8009.AtMissing(env.span(e.Target), OptOut, target))
 	}
-	c.report(env, diag.E8009.AtMissing(env.span(e.Target), OptOut, target))
+}
+
+// hasOption reports an option written in e, of any value.
+func hasOption(e *syntax.EmitDecl, name string) bool {
+	return slices.ContainsFunc(e.Options.Items, func(it syntax.BraceItem) bool { return itemName(it) == name })
 }
 
 // defaultGoPackage validates the last element of out as the package (CODEGEN.md §2.1, DECISIONS 213).
@@ -83,6 +87,21 @@ func (c *checker) defaultGoPackage(env *env, e *syntax.EmitDecl, out string) {
 	name, known := c.lastElement(env, out)
 	if known && (!identRe.MatchString(name) || goKeywords[name]) {
 		c.report(env, diag.E8009.AtPackage(env.span(e.Target), name))
+	}
+}
+
+// defaultCppNamespace checks the default namespace as a written one (CODEGEN.md §2.1; log-2026-09-25).
+func (c *checker) defaultCppNamespace(env *env, e *syntax.EmitDecl) {
+	c.namespaceFinding(env, e.Target, strings.ReplaceAll(env.pkg.path, dot, cppScope))
+}
+
+// namespaceFinding is E8009 at at for a namespace not `ident{::ident}`, using a C++ keyword or a reserved segment.
+func (c *checker) namespaceFinding(env *env, at syntax.Node, ns string) {
+	switch {
+	case !cppNamespace(ns):
+		c.report(env, diag.E8009.AtNamespace(env.span(at), ns))
+	case reservedNamespace(ns):
+		c.report(env, diag.E8009.AtReservedNamespace(env.span(at), ns))
 	}
 }
 
@@ -112,10 +131,8 @@ func (c *checker) emitString(env *env, fi *syntax.FieldItem, target string) (str
 	switch {
 	case fi.Name.Name == OptPackage && (!identRe.MatchString(text) || goKeywords[text]):
 		c.report(env, diag.E8009.AtPackage(env.span(fi.Value), text))
-	case fi.Name.Name == OptNamespace && !cppNamespace(text):
-		c.report(env, diag.E8009.AtNamespace(env.span(fi.Value), text))
-	case fi.Name.Name == OptNamespace && reservedNamespace(text):
-		c.report(env, diag.E8009.AtReservedNamespace(env.span(fi.Value), text))
+	case fi.Name.Name == OptNamespace:
+		c.namespaceFinding(env, fi.Value, text)
 	case fi.Name.Name == OptOut && target == TargetTS && !strings.HasSuffix(text, tsSuffix):
 		c.report(env, diag.E8009.AtTsOut(env.span(fi.Value), text))
 	}

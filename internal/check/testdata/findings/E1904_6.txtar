@@ -1,0 +1,28 @@
+EVALUATION.md §11.3: quantifiers apply to atoms; RE2 quantifies a bare anchor, ECMAScript refuses it (E1904), while a quantified group holding an anchor is portable.
+-- a/a.canon --
+package a
+
+local record Gen {
+  f1: input String(/^*a/)? from env "F1"
+  f2: input String(/a$+/)? from env "F2"
+  f3: input String(/^{2}a/)? from env "F3"
+  f4: input String(/^?a/)? from env "F4"
+  f5: input String(/(?:^)*a/)? from env "F5"
+}
+
+/// The generator.
+let gen: Gen = {}
+-- findings.txt --
+error[E1904]  a/a.canon:4:13
+  pattern /^*a/ is not in the portable subset: ^*
+
+error[E1904]  a/a.canon:5:13
+  pattern /a$+/ is not in the portable subset: $+
+
+error[E1904]  a/a.canon:6:13
+  pattern /^{2}a/ is not in the portable subset: ^{2}
+
+error[E1904]  a/a.canon:7:13
+  pattern /^?a/ is not in the portable subset: ^?
+
+4 errors, 0 warnings in 1 package (…)
