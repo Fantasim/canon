@@ -15,6 +15,8 @@ func FuzzParse(f *testing.F) {
 	for _, ex := range examples(f) {
 		f.Add(ex.file.Src.Content)
 	}
+	// GRAMMAR.md §2.7, LEX-01: a character class holding both "\\" and "/" must keep its backslash.
+	f.Add([]byte(`let x = f(/[\\/]/)` + "\n"))
 	cases, err := filepath.Glob("testdata/*/*.txtar")
 	if err != nil {
 		f.Fatal(err)

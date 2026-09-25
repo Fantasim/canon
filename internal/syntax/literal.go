@@ -85,9 +85,24 @@ func scalar(hex []byte) (rune, bool) {
 	return r, utf8.ValidRune(r)
 }
 
-// regexPattern is a regex body with each `\/` replaced by "/" (GRAMMAR.md §2.7).
+// regexPattern is a regex body with each unescaped `\/` replaced by "/" (GRAMMAR.md §2.7, LEX-01).
 func regexPattern(body []byte) string {
-	return strings.ReplaceAll(string(body), escapedSlash, slashText)
+	var b strings.Builder
+	b.Grow(len(body))
+	for i := 0; i < len(body); {
+		if body[i] == '\\' && i+1 < len(body) {
+			if body[i+1] == '/' {
+				b.WriteByte('/')
+			} else {
+				b.Write(body[i : i+pairWidth])
+			}
+			i += pairWidth
+			continue
+		}
+		b.WriteByte(body[i])
+		i++
+	}
+	return b.String()
 }
 
 // unescape decodes the text of a string piece: escapes, "{{" and "}}"; an escape the lexer

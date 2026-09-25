@@ -351,7 +351,7 @@ const (
 	utf8Self, asciiLowerBit, pairWidth, maxHexDigits, runeBits, boolCount, nlShare = utf8.RuneSelf, 0x20, 2, 6, 32, 2, 4
 	bomText, tripleQuote, quoteText, rawPrefix, blankChars, spaceText, lf          = "\xEF\xBB\xBF", `"""`, `"`, "r", " \t", " ", "\n"
 	docPrefix, ordinaryDoc, lineCommentText, blockOpen, blockClose                 = "///", "////", "//", "/*", "*/"
-	slashText, escapedSlash, openBraceText, closeBraceText                         = "/", `\/`, "{", "}"
+	slashText, openBraceText, closeBraceText                                       = "/", "{", "}"
 	unicodeOpen                                                                    = 3
 )
 
