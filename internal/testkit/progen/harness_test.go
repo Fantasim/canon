@@ -42,8 +42,18 @@ const (
 	suiteMutation    = "mutation"
 	suiteGrammar     = "grammar"
 	suiteCorrupt     = "corrupt"
+	suiteTyped       = "typed"       // DECISIONS 200 item 3: type-directed well-typed programs
+	suiteMeta        = "metamorphic" // DECISIONS 200 item 4: renames, reordering, comments, whitespace
 	modeCheck        = "check"
 	modeBuild        = "build"
+	modeData         = "data"        // an emit mode (CODEGEN.md §2.1)
+	modeEmbedded     = "embedded"    // an emit mode (CODEGEN.md §2.1)
+	kindGoFail       = "gofail"      // the generated Go's temporary module failed to build or test
+	kindMissingJSON  = "missingjson" // a root's JSON output is missing
+	kindBadJSON      = "badjson"     // a root's JSON output does not parse
+	kindJSONMismatch = "jsonmismatch"
+	kindMetaFindings = "metafindings" // a metamorphic variant gains or loses a finding
+	kindMetaOutput   = "metaoutput"   // a metamorphic variant writes an output differently
 	wantFields       = 5
 	decimalBase      = 10
 	seedBits         = 64
@@ -51,6 +61,7 @@ const (
 	lockFields       = 3
 	testRunFlag      = "test.run"
 	failMark         = "progen-failure\t"
+	relayMark        = "progen-log\t"
 	childTest        = "^TestReplayChild$"
 	childMark        = "progen-verdict\t"
 	verdictFields    = 3
@@ -99,6 +110,7 @@ const (
 	examplesBudget   = "budget: 100_000_000"
 	harnessBudget    = "budget: 2_000_000"
 	outRoots         = "_out/"
+	rootsKey         = "roots" // GRAMMAR.md §7.1
 	fixtureResource  = "_fixtures/resource"
 	fixtureClient    = "_fixtures/client"
 )
@@ -248,7 +260,7 @@ func parse(name string, src []byte) *syntax.File {
 var goAndJSON = []ir.Target{ir.TargetGo, ir.TargetJSON}
 
 // suites are the suites in the order that spaces their seeds apart.
-var suites = []string{suiteMutation, suiteGrammar, suiteCorrupt}
+var suites = []string{suiteMutation, suiteGrammar, suiteCorrupt, suiteTyped, suiteMeta}
 
 // caseSeed is the seed of case i of a suite: suites draw from disjoint runs of seeds.
 func caseSeed(suite string, i int) uint64 {

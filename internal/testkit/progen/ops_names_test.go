@@ -315,6 +315,9 @@ func importCycle(tg target) []progen.Site {
 	}
 	var out []progen.Site
 	for _, q := range importers(tg) {
+		if tokenExists(tg, path.Base(strings.ReplaceAll(q, ".", "/"))) {
+			continue // its alias would be bound twice (E2005)
+		}
 		_, e := span(tg, tg.file.Package)
 		out = append(out, seq(1, insert(e, "\n\nimport "), insert(e, q), insert(e, "\n")))
 	}
@@ -422,13 +425,14 @@ func boundNames(tg target) map[string]bool {
 	return out
 }
 
-// unknownName misspells a use of a bound name inside a function, check or test body.
+// unknownName misspells a bound name in a body, never beside a context-dependent operand (TYPES.md §5.1).
 func unknownName(tg target) []progen.Site {
 	bound := boundNames(tg)
+	skip := contextOperands(tg, bound)
 	var out []progen.Site
 	for _, b := range nodes[*syntax.Block](tg) {
 		syntax.Inspect(b, func(n syntax.Node) bool {
-			if id, ok := n.(*syntax.IdentExpr); ok && bound[id.Name] {
+			if id, ok := n.(*syntax.IdentExpr); ok && bound[id.Name] && !skip[id] {
 				s, e := span(tg, id)
 				out = append(out, site(replace(s, e, "zz"+id.Name)))
 			}
@@ -436,6 +440,57 @@ func unknownName(tg target) []progen.Site {
 		})
 	}
 	return out
+}
+
+// checkedPairs are the comparison and arithmetic operators, whose operands TYPES.md §5.1 types as a pair.
+var checkedPairs = []syntax.TokenKind{
+	syntax.TokEq, syntax.TokNe, syntax.TokLt, syntax.TokLe, syntax.TokGt, syntax.TokGe,
+	syntax.TokPlus, syntax.TokMinus, syntax.TokStar, syntax.TokSlash, syntax.TokPercent,
+}
+
+// contextOperands are the names beside a context-dependent operand, and those left of `in` (TYPES.md §5.1).
+func contextOperands(tg target, bound map[string]bool) map[*syntax.IdentExpr]bool {
+	skip := map[*syntax.IdentExpr]bool{}
+	for _, b := range nodes[*syntax.BinaryExpr](tg) {
+		x, y := bareIdent(b.X), bareIdent(b.Y)
+		switch {
+		case b.Op == syntax.KwIn:
+			skip[x] = true
+		case slices.Contains(checkedPairs, b.Op):
+			skip[x] = skip[x] || contextDependent(b.Y, bound)
+			skip[y] = skip[y] || contextDependent(b.X, bound)
+		}
+	}
+	delete(skip, nil)
+	return skip
+}
+
+// bareIdent is e's name through parentheses and unary operators, nil when e is not a name.
+func bareIdent(e syntax.Expr) *syntax.IdentExpr {
+	switch n := e.(type) {
+	case *syntax.IdentExpr:
+		return n
+	case *syntax.ParenExpr:
+		return bareIdent(n.X)
+	case *syntax.UnaryExpr:
+		return bareIdent(n.X)
+	}
+	return nil
+}
+
+// contextDependent tells an operand TYPES.md §5.1 calls context-dependent (an unbound name counts).
+func contextDependent(e syntax.Expr, bound map[string]bool) bool {
+	switch n := e.(type) {
+	case *syntax.IdentExpr:
+		return !bound[n.Name]
+	case *syntax.NoneLit, *syntax.ListLit, *syntax.BraceLit, *syntax.IntLit, *syntax.FloatLit:
+		return true
+	case *syntax.ParenExpr:
+		return contextDependent(n.X, bound)
+	case *syntax.UnaryExpr:
+		return contextDependent(n.X, bound)
+	}
+	return false
 }
 
 // uncollected are the records of tg's package that no let holds a collection of.

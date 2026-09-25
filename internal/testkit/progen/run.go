@@ -34,10 +34,12 @@ type RunOptions struct {
 	Targets  []ir.Target       // Build's targets; none is every target
 }
 
-// Outcome is what one run produced: its findings in the build's order, the error that stopped
-// it, and a recovered panic with its stack ("" when the compiler did not panic).
+// Outcome is what one run produced: its findings in the build's order, the outputs a Build call
+// wrote (nil for Check), the error that stopped it, and a recovered panic with its stack ("" when
+// the compiler did not panic).
 type Outcome struct {
 	Findings []Finding
+	Outputs  []build.Output
 	Err      error
 	Panic    string
 }
@@ -59,7 +61,7 @@ func Run(ctx context.Context, p *Project, opt RunOptions) (out Outcome) {
 		if err != nil {
 			return failed(err)
 		}
-		return Outcome{Findings: reduce(res.Findings)}
+		return Outcome{Findings: reduce(res.Findings), Outputs: res.Outputs}
 	}
 	res, err := proj.Check(ctx, opt.Packages)
 	if err != nil {

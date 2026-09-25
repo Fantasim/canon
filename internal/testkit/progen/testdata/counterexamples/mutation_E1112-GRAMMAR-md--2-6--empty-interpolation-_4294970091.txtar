@@ -1,0 +1,168 @@
+suite mutation
+name E1112 GRAMMAR.md §2.6 (empty interpolation)
+case 2794
+seed 4294970091
+open check
+born mismatch extra E3305
+sig extra E3305
+packages balance.parity
+want E1112 balance/parity/sweep_plan.canon 230 232 check
+failure extra [E3305 balance/parity/sweep_plan.canon:11:23 "cannot tell what this { … } is; give it a type"] besides [E1112 balance/parity/sweep_plan.canon:12:4 "invalid interpolation: {} is empty"]
+-- _fixtures/client/Client/Text/etc.json --
+{
+  "IDS_ETC_INC_000000": {
+    "us": "Vagrant",
+    "gr": "Vagrant"
+  }
+}
+-- _fixtures/resource/Server/Balance/presets.json --
+{
+  "canonicalBuilds": {
+    "JOB_MERCENARY": {
+      "statRatio": {
+      },
+      "weapon": "IK3_SWD"
+    },
+    "JOB_ACROBAT": {
+      "weapon": "IK3_BOW"
+    },
+    "JOB_ASSIST": {
+      "statRatio": {
+      },
+      "weapon": "IK3_KNUCKLEHAMMER"
+    },
+    "JOB_MAGICIAN": {
+      "statRatio": {
+      },
+      "weapon": "IK3_WAND"
+    },
+    "JOB_BLADE": {
+      "statRatio": {
+      },
+      "weapon": "IK3_SWD"
+    },
+    "JOB_KNIGHT": {
+      "statRatio": {
+      },
+      "weapon": "IK3_SWD"
+    },
+    "JOB_RANGER": {
+      "weapon": "IK3_BOW"
+    },
+    "JOB_JESTER": {
+      "statRatio": {
+      },
+      "weapon": "IK3_YOYO"
+    },
+    "JOB_ELEMENTOR": {
+      "statRatio": {
+      },
+      "weapon": "IK3_STAFF"
+    },
+    "JOB_PSYCHIKEEPER": {
+      "statRatio": {
+      },
+      "weapon": "IK3_WAND"
+    },
+    "JOB_BILLPOSTER": {
+      "statRatio": {
+      },
+      "weapon": "IK3_KNUCKLEHAMMER"
+    },
+    "JOB_RINGMASTER": {
+      "weapon": "IK3_CHEERSTICK"
+    }
+  }
+}
+-- _fixtures/resource/Server/Balance/targets.json --
+{
+  "solver": {
+    "excludeJobs": [
+    ],
+    "kAnchors": [
+    ]
+  }
+}
+-- _fixtures/resource/Server/Define/defineJob.h --
+#define MAX_JOB_LEVEL			15
+#define MAX_EXP_LEVEL			45
+-- _fixtures/resource/Server/Define/defineObj.h --
+-- _fixtures/resource/Server/Define/defineSkill.h --
+#define SI_VAG_ONE_CLEANHIT                1
+#define SI_VAG_ONE_BRANDISH                2
+#define SI_MER_ONE_SPLMASH                 4
+#define SI_MAG_FIRE_BOOMERANG             64
+#define SI_ASS_KNU_TAMPINGHOLE           104
+#define SI_MAG_MAG_MENTALSTRIKE          121
+#define SI_GEN_FLASH				187
+#define SI_ACR_BOW_JUNKBOW		194
+#define SI_ACR_YOYO_PULLING		206
+-- _fixtures/resource/Server/Define/defineitem.h --
+#define II_WEA_SWO_WOODEN 16
+#define II_ARM_M_VAG_HELMET02 504
+#define II_GEN_MAT_ORICHALCUM01 815
+#define II_GEN_MAT_MOONSTONE 816
+#define II_GEN_FOO_INS_HOTDOG 980
+#define II_GEN_MAT_ELE_VOLCANO3 1203
+#define II_WEA_SWO_TRITIUM 2258
+#define II_WEA_WAN_TRITIUM 2262
+#define II_WEA_AXE_ANGEL 3625
+#define II_WEA_KNU_SUHO 3631
+#define II_WEA_BOW_SUHO 3639
+#define II_SYS_SYS_SCR_PERIN 4414
+#define II_FARM_PRODUCTION_BLE			17028
+#define II_FOURELEMENT05			17113
+#define II_SYS_SYS_SCR_FAERY_EXP_5000			34337
+#define II_SYS_SYS_SCR_AP_50			34340
+-- _fixtures/resource/Server/Item/propItem.json --
+{
+  "items": [
+  ]
+}
+-- _fixtures/resource/Server/Npc/etc.json --
+{
+  "jobs": [
+  ],
+  "structures": []
+}
+-- _fixtures/resource/Server/Skill/skills.json --
+{
+  "skills": [
+  ]
+}
+-- balance/parity/sweep_plan.canon --
+package balance.parity
+local record SkillRow {
+}
+local record Weapon {
+}
+/// A row of etc.json's `jobs`.
+record Settings {
+  /// The bot character that runs the sweep.
+  includePuppeteer: Bool = false
+}
+const LINK_FAMILIES = {
+  "{}IK3_YOBO": ["IK3_YOYO"]
+}
+const PRO_JOBS = [
+  "JOB_ELEMENTOR"
+]
+const FALLBACK_KIND = {
+  "JOB_PUPPETEER": "IK3_SWD"
+}
+-- project.canon --
+project sovereign {
+  canon: "0.1"
+  roots {
+    resource: "../../../Resource"
+    client: "../../../Client"
+    source: "../../../Source"
+    services: "../.."
+    sovcommon: "../../sovcommon"
+    web: "../../sovcommon/web/src/lib"
+    parity: "../../balance/parity"
+    generated: "../../resourcestudio/generated"
+  }
+}
+-- studio/studio.canon --
+package studio

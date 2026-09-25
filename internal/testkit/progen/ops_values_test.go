@@ -67,16 +67,26 @@ func valuesOperators() []operator {
 
 // recordLiterals are the brace literals of let values that name fields.
 func recordLiterals(tg target) []*syntax.BraceLit {
+	fields := fieldDecls(tg)
 	var out []*syntax.BraceLit
 	for _, b := range valueLiterals(tg) {
-		for _, it := range b.Items {
-			if _, ok := it.(*syntax.FieldItem); ok {
-				out = append(out, b)
-				break
-			}
+		if len(b.Items) > 0 && allFields(b, fields) {
+			out = append(out, b)
 		}
 	}
 	return out
+}
+
+// allFields tells a brace literal whose every item is a field the package declares: never a map
+// literal, whose identifier keys are enum members (E2102 for a new one, not E3301).
+func allFields(b *syntax.BraceLit, fields map[string][]*syntax.FieldDecl) bool {
+	for _, it := range b.Items {
+		f, ok := it.(*syntax.FieldItem)
+		if !ok || len(fields[f.Name.Name]) == 0 {
+			return false
+		}
+	}
+	return true
 }
 
 // afterRecordItem inserts before+focus+after after the first item of every record literal.

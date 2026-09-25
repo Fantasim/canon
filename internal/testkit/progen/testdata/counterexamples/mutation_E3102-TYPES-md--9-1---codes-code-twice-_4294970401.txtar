@@ -1,0 +1,51 @@
+suite mutation
+name E3102 TYPES.md §9.1 (@codes code twice)
+case 3104
+seed 4294970401
+open load
+born mismatch extra E7111/member
+sig extra E7111/member
+packages features.codes
+want E3102 features/codes/codes.canon 168 178 check
+failure extra [E7111 features/codes/data/guild_rights.json:2:12 "\"2\" is not a member of GuildRank"] besides [E3102 features/codes/codes.canon:5:13 "code 1 is used twice (first at features/codes/codes.canon:4)"]
+-- features/codes/codes.canon --
+package features.codes
+/// Guild ranks. The database, the packets and the guild config all store the number.
+enum GuildRank @codes(UInt8) @json(codes) {
+  master = 1
+  kingpin = 1
+  captain = 3
+  supporter = 4
+  rookie = 5
+}
+/// What one rank may do.
+record RankRights {
+  /// The rank. Written `"rank": 3` in the file.
+  rank: GuildRank
+  /// Members it may invite per day.
+  invitesPerDay: Int(0..)
+  /// Whether it may take from the guild bank.
+  bank: Bool = false
+}
+let rights: [RankRights] keyed by rank = load("data/guild_rights.json")
+-- features/codes/data/guild_rights.json --
+[
+  {"rank": 2, "invitesPerDay": 30, "bank": true},
+  {"rank": 5, "invitesPerDay": 0}
+]
+-- project.canon --
+project sovereign {
+  canon: "0.1"
+  roots {
+    resource: "../../../Resource"
+    client: "../../../Client"
+    source: "../../../Source"
+    services: "../.."
+    sovcommon: "../../sovcommon"
+    web: "../../sovcommon/web/src/lib"
+    parity: "../../balance/parity"
+    generated: "../../resourcestudio/generated"
+  }
+}
+-- studio/studio.canon --
+package studio

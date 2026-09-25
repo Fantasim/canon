@@ -10,6 +10,7 @@ import (
 	"runtime/debug"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/fantasim/canonlang/internal/testkit/progen"
 )
@@ -35,7 +36,7 @@ func TestCounterexamples(t *testing.T) {
 				t.Fatal(err)
 			}
 			checkHeader(t, c)
-			v := replayInChild(t, p)
+			v := replayInChild(t, p, replayLimit(c))
 			switch {
 			case c.Open != "" && v.Kind != "" && sigKey(v.Sig) == sigKey(c.Sig):
 				t.Skipf("open bug, owned by %s: %s", c.Open, c.Sig)
@@ -87,13 +88,13 @@ func writeArchive(t *testing.T, p string, c *progen.Counterexample) {
 // replayInChild runs TestReplayChild on one archive and reads its verdict. A child that dies
 // with a crash is a crash verdict, one silent past -progen.replaytimeout a hang; one that dies
 // otherwise without a verdict fails t.
-func replayInChild(t *testing.T, archive string) verdict {
+func replayInChild(t *testing.T, archive string, limit time.Duration) verdict {
 	t.Helper()
 	cmd, cancel := childCommand(t, "-test.run="+childTest, "-progen.replay="+archive)
 	defer cancel()
-	out, hung, runErr := runWatched(cmd, *flagReplayTimeout)
+	out, hung, runErr := runWatched(cmd, limit)
 	if hung {
-		return hangVerdict(out, *flagReplayTimeout)
+		return hangVerdict(out, limit)
 	}
 	sc := bufio.NewScanner(bytes.NewReader(out))
 	sc.Buffer(nil, scanLimit)
@@ -110,6 +111,15 @@ func replayInChild(t *testing.T, archive string) verdict {
 	}
 	t.Errorf("the replay of %s printed no verdict (%v):\n%s", archive, runErr, out)
 	return verdict{Kind: kindHarness, Sig: kindHarness, Text: "no verdict"}
+}
+
+// replayLimit is how long the replay of c may stay silent: a typed archive compiles and tests a
+// Go module (goTestTimeout) besides building its program.
+func replayLimit(c *progen.Counterexample) time.Duration {
+	if c.Suite == suiteTyped {
+		return max(*flagReplayTimeout, typedReplayTimeout)
+	}
+	return *flagReplayTimeout
 }
 
 // crashVerdict is the verdict of a child's output that holds a crash.
@@ -146,6 +156,10 @@ func TestReplayChild(t *testing.T) {
 	switch c.Suite {
 	case suiteMutation:
 		v = replayMutation(c)
+	case suiteTyped:
+		v = replayTyped(c)
+	case suiteMeta:
+		v = replayMeta(c)
 	default:
 		v = replayProgram(c)
 	}

@@ -1,0 +1,87 @@
+suite mutation
+name E1110 GRAMMAR.md §2.4 (leading zero)
+case 713
+seed 4294968010
+open check
+born mismatch extra E3316/pairsBound
+sig extra E3316/pairsBound
+packages game.items
+want E1110 game/items/item.canon 938 939 check
+failure extra [E3316 game/items/item.canon:32:49 "@json(pairs:) on stats needs a list type with a finite upper length bound"] besides [E1110 game/items/item.canon:32:27 "invalid number literal \"06\""]
+-- _fixtures/resource/Server/Define/defineAttribute.h --
+-- _fixtures/resource/Server/Define/defineJob.h --
+-- _fixtures/resource/Server/Define/defineSound.h --
+-- _fixtures/resource/Server/Text/serverNames.json --
+{
+  "strings": {
+  },
+  "version": 1
+}
+-- game/items/item.canon --
+package game.items
+local let attributes = load.defines("@resource/Server/Define/defineAttribute.h", prefix: "DST_")
+/// would have made it legal, this one refuses it.
+enum WeaponType {
+}
+/// A weapon's family (dwItemKind2).
+enum WeaponKind3 {
+}
+/// What a material is used for (dwItemKind3).
+enum MaterialKind {
+}
+/// What kind of food (dwItemKind3).
+enum ItemElement {
+}
+/// are errors until the bit is named or cleared.
+enum ItemFlag @codes(UInt32) {
+}
+/// A stat an item raises, and by how much.
+record StatBonus {
+  /// The stat raised (a DST_* define).
+  value: Int
+}
+/// propItem.json's `defaults` block; "=" on the wire means "not set".
+record Item {
+  /// Format version of the row (nVer). The loader ignores it.
+  nameKey: String(/^IDS_/) = "IDS_PROPITEM_TXT_030168" @json()
+}
+/// material cannot carry an attack speed.
+variant ItemKind @json(tag: "dwItemKind1") {
+  IK1_WEAPON {
+    /// Weapon family.
+    stats: [StatBonus](..=06) = [] @json(pairs: ["dwDestParam{i}", "nAdjParamVal{i}"])
+    /// The sub-kind, with its own fields.
+    kind2: GeneralKind @json()
+  }
+}
+/// the studio orders a material's fields by what materials set.
+variant GeneralKind {
+  IK2_MATERIAL {
+    /// What the material is used for.
+    referStat: ref attributes? = none @json()
+  }
+  IK2_FOOD {
+    /// What kind of food.
+    cooldown: Duration? = none @json( unit: ms)
+  }
+}
+-- project.canon --
+project sovereign {
+  canon: "0.1"
+  roots {
+    resource: "../../../Resource"
+    client: "../../../Client"
+    source: "../../../Source"
+    services: "../.."
+    sovcommon: "../../sovcommon"
+    web: "../../sovcommon/web/src/lib"
+    parity: "../../balance/parity"
+    generated: "../../resourcestudio/generated"
+  }
+}
+-- resource/vocab/vocab.canon --
+package resource
+-- sovcommon/time/time.canon --
+package sovcommon
+-- studio/studio.canon --
+package studio

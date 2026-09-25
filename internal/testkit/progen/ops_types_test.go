@@ -1,6 +1,9 @@
 package progen_test
 
 import (
+	"regexp"
+	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/fantasim/canonlang/internal/diag"
@@ -28,7 +31,8 @@ func typesOperators() []operator {
 		op(diag.E3017.Def().Code, "TYPES.md §12.7 (assign to a let)", assignLet),
 		op(diag.E3018.Def().Code, "TYPES.md §12.7 (two names over a list)", twoNamesOverList),
 		op(diag.E3019.Def().Code, "TYPES.md §12.1 (bare return)", bareReturn),
-		op(diag.E3020.Def().Code, "TYPES.md §12.7 (expression without effect)", fnStatementFocus("", "1 + 2", "")),
+		// TYPES.md §5.1 (a bare "1 + 2" has no context, so E3008 pre-empts E3020: progen artifact)
+		op(diag.E3020.Def().Code, "TYPES.md §12.7 (expression without effect)", fnStatementFocus("", "true", "")),
 		op(diag.E3021.Def().Code, "TYPES.md §13.1 (alias refers to itself)", selfAlias),
 		op(diag.E3022.Def().Code, "TYPES.md §13.1 (record contains itself)", selfRecord("")),
 		op(diag.E3022.Def().Code, "TYPES.md §13.1 (record contains itself, with a default)", selfRecordDefault),
@@ -37,7 +41,7 @@ func typesOperators() []operator {
 		op(diag.E3101.Def().Code, "TYPES.md §9.3 (duplicate table key)", duplicateTableEntry),
 		op(diag.E3102.Def().Code, "TYPES.md §9.1 (@codes code twice)", codeTwice),
 		op(diag.E3103.Def().Code, "TYPES.md §9.3 (entry of a non-table)", entryOfNonTable),
-		op(diag.E3201.Def().Code, "TYPES.md §7.2 (code outside UInt8)", codeOutOfRange),
+		op(diag.E3201.Def().Code, "TYPES.md §7.2 (code outside its @codes type)", codeOutOfRange),
 		op(diag.E3204.Def().Code, "TYPES.md §7.4 (default below its range)", defaultBelowRange),
 		op(diag.E3205.Def().Code, "TYPES.md §7.4 (literal not matching its pattern)", patternMismatch),
 	}
@@ -294,11 +298,11 @@ func allDefaulted(tg target, name string) bool {
 	return false
 }
 
-// selfRecord adds to every record a documented field of its own type, then after.
+// selfRecord adds a field of its own type, then after, to each record without input fields (DECISIONS 214).
 func selfRecord(after string) func(target) []progen.Site {
 	return func(tg target) []progen.Site {
 		return sitesOf(tg, func(r *syntax.RecordDecl) bool {
-			return r.Body != nil && len(r.Body.Items) > 0 && len(r.Params) == 0
+			return r.Body != nil && len(r.Body.Items) > 0 && len(r.Params) == 0 && !hasInputField(r)
 		}, func(r *syntax.RecordDecl) progen.Site {
 			ns, ne := span(tg, r.Name)
 			_, e := span(tg, r.Body.Items[len(r.Body.Items)-1])
@@ -306,6 +310,14 @@ func selfRecord(after string) func(target) []progen.Site {
 			return site(mark(tg, ns, ne), insert(e, "\n"+ind+"/// Itself.\n"+ind+"zzSelf: "+r.Name.Name+after))
 		})
 	}
+}
+
+// hasInputField tells a record with an `input` field (TYPES.md §14).
+func hasInputField(r *syntax.RecordDecl) bool {
+	return slices.ContainsFunc(r.Body.Items, func(it syntax.RecordItem) bool {
+		f, ok := it.(*syntax.FieldDecl)
+		return ok && f.Input.Valid()
+	})
 }
 
 func rangeOnBool(tg target) []progen.Site {
@@ -325,28 +337,52 @@ func duplicateTableEntry(tg target) []progen.Site {
 		})
 }
 
-// codedMembers are the members with an integer value of enums with @codes.
-func codedMembers(tg target) [][]*syntax.EnumMember {
-	var out [][]*syntax.EnumMember
+// codedEnum is an enum with @codes: its codes type and the members with an integer value.
+type codedEnum struct {
+	typ     string
+	members []*syntax.EnumMember
+}
+
+// codedEnums are tg's enums with @codes.
+func codedEnums(tg target) []codedEnum {
+	var out []codedEnum
 	for _, d := range nodes[*syntax.EnumDecl](tg) {
-		coded := false
-		for _, a := range d.Annotations {
-			coded = coded || a.Name.Name == "codes"
+		if ce, ok := codedOf(tg, d); ok {
+			out = append(out, ce)
 		}
-		var ms []*syntax.EnumMember
-		for _, m := range d.Members {
-			if _, ok := m.Value.(*syntax.IntLit); ok && coded {
-				ms = append(ms, m)
-			}
-		}
-		out = append(out, ms)
 	}
 	return out
 }
 
+// codedOf is d as a codedEnum, false when d has no @codes.
+func codedOf(tg target, d *syntax.EnumDecl) (codedEnum, bool) {
+	typ, ok := codesType(tg, d)
+	if !ok {
+		return codedEnum{}, false
+	}
+	ce := codedEnum{typ: typ}
+	for _, m := range d.Members {
+		if _, ok := m.Value.(*syntax.IntLit); ok {
+			ce.members = append(ce.members, m)
+		}
+	}
+	return ce, true
+}
+
+// codesType is the type an enum's @codes annotation names (GRAMMAR.md §8), false without one.
+func codesType(tg target, d *syntax.EnumDecl) (string, bool) {
+	for _, a := range d.Annotations {
+		if a.Name.Name == "codes" && len(a.Args) == 1 {
+			return text(tg, a.Args[0]), true
+		}
+	}
+	return "", false
+}
+
 func codeTwice(tg target) []progen.Site {
 	var out []progen.Site
-	for _, ms := range codedMembers(tg) {
+	for _, ce := range codedEnums(tg) {
+		ms := ce.members
 		for i := 1; i < len(ms); i++ {
 			s, e := span(tg, ms[i].Value)
 			ns, _ := span(tg, ms[i])
@@ -356,23 +392,58 @@ func codeTwice(tg target) []progen.Site {
 	return out
 }
 
+// codesBits is, per @codes type, the exponent of the least power of two past its range (TYPES.md §7.2).
+var codesBits = map[string]int{
+	"Int8": 7, "UInt8": 8, "Int16": 15, "UInt16": 16, "Int32": 31, "UInt32": 32, "Int": maxCodeBits, "UInt64": maxCodeBits,
+}
+
+// definesCall starts a let's value that is a load.defines table.
+const definesCall = "load.defines("
+
+// maxCodeBits is 63: 2^63 is past every integer literal (GRAMMAR.md §2.4).
+const maxCodeBits = 63
+
+// codeOutOfRange writes a code its enum's @codes type cannot hold, in the enums whose type a
+// literal can overflow.
 func codeOutOfRange(tg target) []progen.Site {
 	var out []progen.Site
-	for _, ms := range codedMembers(tg) {
-		for _, m := range ms {
+	for _, ce := range codedEnums(tg) {
+		bits, ok := codesBits[ce.typ]
+		if !ok || bits >= maxCodeBits {
+			continue
+		}
+		past := strconv.FormatUint(1<<bits, decimalBase)
+		for _, m := range ce.members {
 			s, e := span(tg, m.Value)
-			out = append(out, site(replace(s, e, "300")))
+			out = append(out, site(replace(s, e, past)))
 		}
 	}
 	return out
 }
 
-// collections are the names of the corpus's lets typed as a table or a keyed list.
+// freeCode is the least power of two ce's type holds that no member of ce uses (so a member
+// written with it meets neither E3102, E3201 nor @json(bits)); false when there is none.
+func freeCode(ce codedEnum) (string, bool) {
+	used := map[string]bool{}
+	for _, m := range ce.members {
+		used[m.Value.(*syntax.IntLit).Value.String()] = true
+	}
+	for k := range codesBits[ce.typ] {
+		if code := strconv.FormatUint(1<<k, decimalBase); !used[code] {
+			return code, true
+		}
+	}
+	return "", false
+}
+
+// collections are the names of the corpus's lets typed as a table or a keyed list, or holding a
+// load.defines table (STDLIB.md: `table Define`), whose members are keys.
 func collections(tg target) map[string]bool {
 	out := map[string]bool{}
 	for _, p := range *tg.all {
 		for _, d := range nodes[*syntax.LetDecl](p) {
-			if t := textOr(p, d.Type); strings.Contains(t, "table") || strings.Contains(t, "keyed") {
+			t := textOr(p, d.Type)
+			if strings.Contains(t, "table") || strings.Contains(t, "keyed") || strings.HasPrefix(textOr(p, d.Value), definesCall) {
 				out[d.Name.Name] = true
 			}
 		}
@@ -434,43 +505,63 @@ func defaultBelowRange(tg target) []progen.Site {
 	})
 }
 
-// patterned are the fields of tg's package whose type is String refined by a pattern.
-func patterned(tg target) map[string]bool {
-	out := map[string]bool{}
+// patterned are the patterns of the package's fields refined by a regex alone, by field name.
+func patterned(tg target) map[string][]*regexp.Regexp {
+	out := map[string][]*regexp.Regexp{}
 	for _, p := range peers(tg) {
 		for _, f := range nodes[*syntax.FieldDecl](p) {
-			if hasRegex(f.Type) {
-				out[f.Name.Name] = true
+			if re, ok := regexOf(f.Type); ok {
+				out[f.Name.Name] = append(out[f.Name.Name], re)
 			}
 		}
 	}
 	return out
 }
 
-// hasRegex tells a named type refined by a regex alone.
-func hasRegex(t syntax.Type) bool {
+// regexOf is the pattern of a named type refined by a regex alone.
+func regexOf(t syntax.Type) (*regexp.Regexp, bool) {
 	nt, ok := t.(*syntax.NamedType)
 	if !ok || nt.Args == nil || len(nt.Args.Args) != 1 {
-		return false
+		return nil, false
 	}
-	_, re := nt.Args.Args[0].(*syntax.RegexLit)
-	return re
+	lit, ok := nt.Args.Args[0].(*syntax.RegexLit)
+	if !ok {
+		return nil, false
+	}
+	re, err := regexp.Compile(lit.Pattern)
+	return re, err == nil
 }
 
+// patternMismatch writes, in place of a string of a pattern-refined field, the first candidate
+// every pattern of that field name refuses (an RE2 search, STD-03).
 func patternMismatch(tg target) []progen.Site {
 	fields := patterned(tg)
 	var out []progen.Site
 	for _, b := range valueLiterals(tg) {
 		for _, it := range b.Items {
 			f, ok := it.(*syntax.FieldItem)
-			if !ok || !fields[f.Name.Name] {
+			if !ok || len(fields[f.Name.Name]) == 0 {
 				continue
 			}
-			if _, str := f.Value.(*syntax.StringLit); str {
+			bad, found := refused(fields[f.Name.Name])
+			if _, str := f.Value.(*syntax.StringLit); str && found {
 				s, e := span(tg, f.Value)
-				out = append(out, site(replace(s, e, `"zz"`)))
+				out = append(out, site(replace(s, e, strconv.Quote(bad))))
 			}
 		}
 	}
 	return out
+}
+
+// mismatches are the strings patternMismatch tries, in order.
+var mismatches = []string{"zz", "", "zz !?", "0"}
+
+// refused is the first of mismatches no pattern finds a match in.
+func refused(patterns []*regexp.Regexp) (string, bool) {
+	for _, m := range mismatches {
+		if !slices.ContainsFunc(patterns, func(re *regexp.Regexp) bool { return re.MatchString(m) }) {
+			return m, true
+		}
+	}
+	return "", false
 }

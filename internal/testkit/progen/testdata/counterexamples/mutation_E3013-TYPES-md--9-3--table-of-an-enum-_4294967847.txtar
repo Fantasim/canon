@@ -1,0 +1,56 @@
+suite mutation
+name E3013 TYPES.md §9.3 (table of an enum)
+case 550
+seed 4294967847
+open check
+born mismatch extra E3103/target
+sig extra E3103/target
+packages game.items
+want E3013 game/items/item.canon 165 176 check
+failure extra [E3103 game/items/entries/IK1_WEAPON/II_WEA_AXE_ANGEL.canon:2:7 "entry items.II_WEA_AXE_ANGEL: items is not a table or keyed list of this package"] besides [E3013 game/items/item.canon:8:18 "a table holds records; game.items.WeaponKind3 is not a record"]
+-- _fixtures/resource/Server/Define/defineAttribute.h --
+-- _fixtures/resource/Server/Define/defineJob.h --
+-- _fixtures/resource/Server/Define/defineSound.h --
+-- _fixtures/resource/Server/Text/serverNames.json --
+{
+  "strings": {
+  },
+  "version": 1
+}
+-- game/items/entries/IK1_WEAPON/II_WEA_AXE_ANGEL.canon --
+package game.items
+entry items.II_WEA_AXE_ANGEL {
+  kind {
+    stats: [
+    ]
+  }
+}
+-- game/items/item.canon --
+package game.items
+/// would have made it legal, this one refuses it.
+enum WeaponType {
+}
+/// A weapon's family (dwItemKind2).
+enum WeaponKind3 {
+}
+let items: table WeaponKind3 = {}
+-- project.canon --
+project sovereign {
+  canon: "0.1"
+  roots {
+    resource: "../../../Resource"
+    client: "../../../Client"
+    source: "../../../Source"
+    services: "../.."
+    sovcommon: "../../sovcommon"
+    web: "../../sovcommon/web/src/lib"
+    parity: "../../balance/parity"
+    generated: "../../resourcestudio/generated"
+  }
+}
+-- resource/vocab/vocab.canon --
+package resource
+-- sovcommon/time/time.canon --
+package sovcommon
+-- studio/studio.canon --
+package studio

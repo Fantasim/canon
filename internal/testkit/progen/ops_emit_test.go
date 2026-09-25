@@ -434,11 +434,13 @@ func reloadBaked(tg target) []progen.Site {
 	return out
 }
 
-// dataMode tells a file with a data-mode go emit, whose json emit's files are fixed (E8153).
+// dataMode tells a package with an emit in data or embedded mode (E8015, E8153; CODEGEN.md §2.2).
 func dataMode(tg target) bool {
-	for _, g := range emitsOf(tg, "go") {
-		if optionText(tg, g, "mode") == "data" {
-			return true
+	for _, p := range peers(tg) {
+		for _, d := range emitsOf(p, "") {
+			if m := optionText(p, d, "mode"); m == modeData || m == modeEmbedded {
+				return true
+			}
 		}
 	}
 	return false

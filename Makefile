@@ -99,15 +99,22 @@ audit:
 audit-tighten:
 	$(AUDIT) baseline --tighten --repo ../..
 
-# DECISIONS 200: the generated-program suites at nightly size, under the memory cap; a crash is
-# reported with its seed and the suite goes on; -progen.keep writes the shrunk counterexamples.
-PROGEN_N    ?= 5000
-PROGEN_SEED ?= 1
+# DECISIONS 200: the generated-program suites at nightly size, under the memory cap, once per
+# seed of PROGEN_SEEDS (decision log A3: larger N, several seeds; seeds a million apart so no
+# two runs share a case); a crash is reported with its seed and the suite goes on; -progen.keep
+# writes the shrunk counterexamples. Every seed runs even when one fails. TestTyped caps its
+# cases at 1000 (each compiles and tests a Go module), TestMetamorphic at 5000. Cost, measured
+# at N=5000 on 4 cores: about 10 min a seed (TestTyped 7 of them); at N=10000 an estimated 13 min.
+PROGEN_N     ?= 10000
+PROGEN_SEEDS ?= 1 1000001 2000001
 .PHONY: progen-nightly
 progen-nightly:
-	systemd-run --user --scope -q -p MemoryMax=3G env GOTOOLCHAIN=local go test -count=1 -timeout 0 \
-	  -run 'TestMutations|TestGrammar|TestCorruption' ./internal/testkit/progen \
-	  -progen.n $(PROGEN_N) -progen.seed $(PROGEN_SEED) -progen.keep
+	@status=0; for seed in $(PROGEN_SEEDS); do \
+	  echo "progen-nightly: seed $$seed"; \
+	  systemd-run --user --scope -q -p MemoryMax=3G env GOTOOLCHAIN=local go test -count=1 -timeout 0 \
+	    -run 'TestMutations|TestGrammar|TestCorruption|TestTyped|TestMetamorphic' ./internal/testkit/progen \
+	    -progen.n $(PROGEN_N) -progen.seed $$seed -progen.keep || status=1; \
+	done; exit $$status
 
 # Project-size report: git-tracked code lines, blanks and comments excluded (tools/scope.sh).
 scope:

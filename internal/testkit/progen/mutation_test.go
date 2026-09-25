@@ -237,14 +237,10 @@ func wantOf(o operator, at progen.Place) string {
 // shrinkProject drops the files a failure does not need, then lines and tokens of every kept
 // file, never project.canon, a pinned file or a pinned region; still sees where the pins lie.
 func shrinkProject(p *progen.Project, pins []progen.Place, still func(*progen.Project, []progen.Place) bool, tries int) (*progen.Project, []progen.Place) {
-	names := p.Names()
-	pinned := make([]bool, len(names))
-	for i, n := range names {
-		pinned[i] = n == projectFile || slices.ContainsFunc(pins, func(pl progen.Place) bool { return pl.Path == n })
+	pinned := func(n string) bool {
+		return n == projectFile || slices.ContainsFunc(pins, func(pl progen.Place) bool { return pl.Path == n })
 	}
-	small := subset(p, names, progen.Shrink(len(names), pinned, func(keep []bool) bool {
-		return still(subset(p, names, keep), pins)
-	}, tries))
+	small := trimFiles(p, pinned, func(q *progen.Project) bool { return still(q, pins) }, tries)
 	for _, name := range small.Names() {
 		pins = shrinkFile(small, name, pins, still, tries)
 	}

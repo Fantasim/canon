@@ -39,7 +39,8 @@ func syntaxOperators() []operator {
 		op(diag.E1126.Def().Code, "GRAMMAR.md §4.3 (none as enum member)", noneMember),
 		op(diag.E1127.Def().Code, "GRAMMAR.md §5.2 (import after a declaration)", lateImport),
 		op(diag.E1128.Def().Code, "GRAMMAR.md §5.11 (chained comparison)", chainedComparison),
-		op(diag.E1129.Def().Code, "GRAMMAR.md §6.1 (brace literal in a header)", braceInHeader),
+		// DECISIONS 214: a misplaced construct keeps its node; "{}"'s own E3002 is no cascade
+		{code: diag.E1129.Def().Code, rule: "GRAMMAR.md §6.1 (brace literal in a header)", also: []diag.Code{diag.E3002.Def().Code}, sites: braceInHeader},
 		op(diag.E1130.Def().Code, "GRAMMAR.md §5.10 (expect outside a test)", fnStatement("expect true")),
 		op(diag.E1131.Def().Code, "GRAMMAR.md §5.4 (from env without input)", fromEnvWithoutInput),
 		op(diag.E1132.Def().Code, "GRAMMAR.md §2.6 (interpolated test name)", interpolatedTestName),
@@ -302,12 +303,27 @@ func reservedAlias(tg target) []progen.Site {
 	})
 }
 
+// noneMember appends a member "none"; in a @codes enum, with a free code of its type, since the
+// member still exists for checking and a missing or clashing code is a finding of its own
+// (decision log "Check C2 — calls").
 func noneMember(tg target) []progen.Site {
-	return sitesOf(tg, func(d *syntax.EnumDecl) bool { return isSource(tg) && len(d.Members) > 0 },
-		func(d *syntax.EnumDecl) progen.Site {
-			_, e := span(tg, d.Members[len(d.Members)-1])
-			return seq(1, insert(e, ", "), insert(e, "none"))
-		})
+	var out []progen.Site
+	for _, d := range nodes[*syntax.EnumDecl](tg) {
+		if !isSource(tg) || len(d.Members) == 0 {
+			continue
+		}
+		_, e := span(tg, d.Members[len(d.Members)-1])
+		s := seq(1, insert(e, ", "), insert(e, "none"))
+		if ce, coded := codedOf(tg, d); coded {
+			code, ok := freeCode(ce)
+			if !ok {
+				continue
+			}
+			s.Edits = append(s.Edits, insert(e, " = "+code))
+		}
+		out = append(out, s)
+	}
+	return out
 }
 
 func lateImport(tg target) []progen.Site {
@@ -317,9 +333,11 @@ func lateImport(tg target) []progen.Site {
 	return []progen.Site{appendDecl(tg, "", "import", " sovcommon.roles")}
 }
 
+// chainedComparison chains "== true" onto a comparison, never onto a test against none, whose
+// narrowing the chain would undo (E3402, E3403 of the mutant's own making).
 func chainedComparison(tg target) []progen.Site {
 	return sitesOf(tg, func(b *syntax.BinaryExpr) bool {
-		return isSource(tg) && (b.Op == syntax.TokEq || b.Op == syntax.TokNe || b.Op == syntax.TokLt || b.Op == syntax.TokGe)
+		return isSource(tg) && (b.Op == syntax.TokEq || b.Op == syntax.TokNe || b.Op == syntax.TokLt || b.Op == syntax.TokGe) && !narrows(b)
 	}, func(b *syntax.BinaryExpr) progen.Site {
 		_, e := span(tg, b)
 		return seq(1, insert(e, " "), insert(e, "=="), insert(e, " true"))
@@ -327,9 +345,9 @@ func chainedComparison(tg target) []progen.Site {
 }
 
 // braceInHeader compares an if's condition, parenthesized, with {}: the condition may itself be
-// a comparison, which a bare "== {}" would chain (E1128, a second, unrelated error).
+// a comparison, which a bare "== {}" would chain (E1128); never a condition that narrows.
 func braceInHeader(tg target) []progen.Site {
-	return sitesOf(tg, func(s *syntax.IfStmt) bool { return s.Cond != nil }, func(s *syntax.IfStmt) progen.Site {
+	return sitesOf(tg, func(s *syntax.IfStmt) bool { return s.Cond != nil && !narrows(s.Cond) }, func(s *syntax.IfStmt) progen.Site {
 		b, e := span(tg, s.Cond)
 		return seq(3, insert(b, "("), insert(e, ")"), insert(e, " == "), insert(e, "{}"))
 	})
@@ -394,4 +412,22 @@ func commentControl(tg target) []progen.Site {
 		}
 	}
 	return out
+}
+
+// narrows tells an expression holding a test that narrows an optional or a variant: a comparison
+// with none, or `is`.
+func narrows(e syntax.Node) bool {
+	found := false
+	syntax.Inspect(e, func(n syntax.Node) bool {
+		switch v := n.(type) {
+		case *syntax.IsExpr:
+			found = true
+		case *syntax.BinaryExpr:
+			_, x := v.X.(*syntax.NoneLit)
+			_, y := v.Y.(*syntax.NoneLit)
+			found = found || x || y
+		}
+		return !found
+	})
+	return found
 }

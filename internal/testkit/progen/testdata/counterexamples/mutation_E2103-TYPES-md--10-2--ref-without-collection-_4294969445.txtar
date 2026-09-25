@@ -1,13 +1,13 @@
 suite mutation
-name E1129 GRAMMAR.md §6.1 (brace literal in a header)
-case 39
-seed 4294967336
+name E2103 TYPES.md §10.2 (ref without collection)
+case 2148
+seed 4294969445
+open check
 born mismatch extra E3002
-left E8009/missing
 sig extra E3002, E8009/missing
 packages teamboard
-want E1129 teamboard/taxonomy.canon 5565 5567 check
-failure extra [E3002 teamboard/taxonomy.canon:219:31 "expected Bool, found {}"; E8009 sovcommon/ui/ui.canon:35:6 "emit go is missing out"] besides [E1129 teamboard/taxonomy.canon:219:31 "parenthesize this expression: \"{\" here would start the block"]
+want E2103 teamboard/taxonomy.canon 953 964 check
+failure extra [E3002 teamboard/taxonomy.canon:204:51 "expected fn(ref teamboard.statuses) -> [ref teamboard.statuses], found fn(ref teamboard.statuses) -> [ref ]"; E8009 sovcommon/ui/ui.canon:35:6 "emit go is missing out"] besides [E2103 teamboard/taxonomy.canon:33:14 "ref AreaSection: there is no collection of AreaSection; write ref <collection name>"]
 -- project.canon --
 project sovereign {
   canon: "0.1"
@@ -80,11 +80,11 @@ import sovcommon.ui { Icon, Tone }
 /// Who may set a flag or make a transition.
 enum Actor { reporter, triager }
 /// Inputs a status transition may collect.
-enum PostField { assignee, fixed_in, reason }
-/// A deck arrangement, "<columns per row>:<rows>".
-type Layout = String
+type Layout = String(/^[1-9]:[1-9]$/)
 /// What kind of post this is; `minRole` gates who may post it.
 record Intent {
+  /// Colour of the intent's badge.
+  tone: Tone
 }
 /// One of the reporter's booleans.
 record Flag {
@@ -96,8 +96,6 @@ record Flag {
   label: String(1..)
   /// Shown under the label.
   setBy: Actor
-  /// Who may see that the flag was set; `none` means whoever can see the post.
-  viewMinRole: Role? = none
 }
 /// One point of the post lifecycle.
 record Status {
@@ -108,10 +106,8 @@ record Status {
   /// A terminal status closes the post. It can still be reopened through `next`.
   terminal: Bool
   /// The closed set of statuses a post may move to from here.
-  next: [ref Status]
+  next: [ref AreaSection]
   /// Inputs a transition INTO this status must collect.
-  requires: [PostField] = []
-  /// Inputs a transition INTO this status may collect.
   by: Actor? = none
 }
 /// Set by a triager only. The reporter's single signal is the `blocking` flag.
@@ -142,11 +138,7 @@ record Area {
 /// One fixed column of the deck: a named set of statuses.
 record Column {
   /// Column header.
-  label: String(1..)
-  /// Icon in the column header.
-  icon: Icon
-  /// The statuses whose posts the column shows.
-  statuses: [ref Status]
+  statuses: [ Status]
   /// Adds a multi-select of eligible members inside the column.
   assigneeFilter: Bool = false
 }
@@ -166,18 +158,17 @@ let flags: table Flag = {
   }
 }
 let statuses: table Status = {
-  open { tone: warning, label: "Open", terminal: false, next: [taken, wont_do,] }
   taken {
     tone: info
     label: "Taken"
     terminal: false
-    next: [open, fixed, wont_do,]
+    next: [open, fixed, wont_do]
   }
   fixed {
     tone: accent
     label: "Fixed"
     terminal: false
-    next: [verified,]
+    next: []
   }
   verified {
     tone: success
@@ -185,7 +176,6 @@ let statuses: table Status = {
     terminal: true
     next: []
   }
-  wont_do { tone: neutral, label: "Won't do", terminal: true, next: [], requires: [] }
   duplicate {
     tone: neutral
     label: "Duplicate"
@@ -193,11 +183,8 @@ let statuses: table Status = {
     next: []
   }
 }
-let deck: Deck = { layouts: ["4:1",], maxHidden: 2 }
+let deck: Deck = { layouts: ["4:1"], maxHidden: 2 }
 let columns: table Column = {
-  taken { label: "Taken", icon: hand, statuses: [taken], assigneeFilter: true }
-  fixed { label: "Fixed, to verify", icon: check, statuses: [] }
-  done { label: "Done", icon: archive, statuses: [verified, wont_do,] }
 }
 let severities: Severity = {
 }
@@ -278,7 +265,7 @@ let areas: table Area = {
     minRole: admin
   }
 }
-let initialStatus: Status = columns.active().first()!.statuses[0]
+let initialStatus: ref Status = columns.active().first()!.statuses[0]
 check {
   for s in statuses.active() {
   }
@@ -292,8 +279,6 @@ check {
   }
   let seen = reachable(from: initialStatus, next: .next)
   for s in statuses.active() {
-    if ( seen.contains(s)) == {} {
-    }
   }
 }
 /// status can be in that case), like the `(Column, bool)` it replaces.

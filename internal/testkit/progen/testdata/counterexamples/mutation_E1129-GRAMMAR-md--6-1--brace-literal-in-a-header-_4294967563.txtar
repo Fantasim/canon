@@ -2,7 +2,6 @@ suite mutation
 name E1129 GRAMMAR.md §6.1 (brace literal in a header)
 case 266
 seed 4294967563
-open progen
 born mismatch extra E3002
 sig extra E3002
 packages sovcommon.time
