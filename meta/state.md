@@ -18,7 +18,7 @@ worktree branches. They are listed in the pause report with what each still need
   154aa30, a1aa811); load group + symlink resolver + load on types' format rules landed
   (db15f7e, run 2). Spec syncs of the logged calls landed (68ffb95, d44a17f, 438f828, 5b21388);
   ADR-0005 + DECISIONS 220. Cleanups queued.
-- [ ] A6 M1.5 second wave: round 2 under review, branch `claude/wip-a6-progen-2`.
+- [x] A6 M1.5 second wave: progen suites 3–4 landed (3616a6c, run 2).
 - [x] W0 gap map (1b0a332).
 - [ ] W1: landed: eval layers/provenance (bc99b99, 02f203c), load forms (1a77900), dependent
   types in check (3e46ab3, b2f063c). Gate lift + load into an applied type landed on
