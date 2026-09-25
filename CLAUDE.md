@@ -45,12 +45,12 @@ nothing is implemented yet. [README.md](README.md) maps every document.
    targets. Committed fixtures stay small and live in `examples/_fixtures/`.
 5. **Read-only outside this directory**: `../../Resource`, `../../Source` and every sibling
    service. A need there is a handoff in [meta/handoff/](meta/handoff/README.md).
-6. **Local git only** (DECISIONS 28): small conventional commits after a green `make check`;
-   never a remote, never a push.
+6. **Git** (DECISIONS 28): small conventional commits after a green `make check`; a cloud
+   session pushes only its own `claude/*` branch, never `main`, never `--force`.
 
 ## Forbidden, period
 
-- Editing anything outside this directory; `git push`, `git remote add`.
+- Editing anything outside this directory; pushing `main` or `--force`; `git remote add`.
 - Hand-editing a golden, `.sovaudit/baseline.tsv` or `.sovaudit/state.tsv` (only
   `make audit-tighten` writes the baseline, and it only shrinks).
 - A diagnostic message or code string outside `internal/diag`; raising an audit limit; a

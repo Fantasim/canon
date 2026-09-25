@@ -173,9 +173,12 @@ triaged before writing the companion documents.
     - Go sentinel errors in `errors.go` remain for Go-level failures only (I/O, stale revision,
       API errors), and the `err-*` rules apply to those.
 
-28. **Local git, no remote.** `configlang/` is a git repository with local commits only (never
-    a remote, never a push). Commits are small, happen after a green `make check`, and use
-    `feat:`, `fix:`, `docs:`, `chore:` and similar prefixes.
+28. **Git with one GitHub remote.** `configlang/` is mirrored to `origin`
+    (github.com/Fantasim/canon) so Claude Code cloud sessions can work on it. Only Louis or the
+    local orchestrator pushes `main`, after a green `make check`; a cloud session pushes only its
+    own `claude/*` branch, never `main`, never a force-push, and CI (`make check`, `-race`) gates
+    it before it lands. No other remote. Commits are small, happen after a green `make check`, and
+    use `feat:`, `fix:`, `docs:`, `chore:` and similar prefixes. (Amended 2026-09-25 by Louis.)
 
 29. **Real game data never enters git.** Copies of real Resource data used for tests live in
     `testdata-real/`, which is git-ignored and used by opt-in targets (`make check-real`).

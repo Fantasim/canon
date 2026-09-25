@@ -78,7 +78,10 @@
       "Write(/tools/audit/.sovaudit/baseline.tsv)",
       "Edit(/tools/audit/.sovaudit/state.tsv)",
       "Write(/tools/audit/.sovaudit/state.tsv)",
-      "Bash(git push*)",
+      "Bash(git push*main*)",
+      "Bash(git push*--force*)",
+      "Bash(git push*-f *)",
+      "Bash(git push*+*)",
       "Bash(git remote add*)",
       "Bash(git remote set-url*)"
     ]

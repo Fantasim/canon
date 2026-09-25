@@ -63,8 +63,8 @@ promise before 1.0; a breaking change to a versioned format bumps its version, n
 
 ## §8 What agents never do
 
-- Edit outside this directory (Resource, Source, sibling services are read-only), push, or add
-  a remote.
+- Edit outside this directory (Resource, Source, sibling services are read-only), push `main`
+  or force-push, or add a remote (a cloud session's `claude/*` branch: DECISIONS 28).
 - Edit DECISIONS.md, SPEC.md, CLI.md or `spec/` during implementation: a needed change is
   reported to Louis.
 - Hand-edit a golden, a generated file, `.sovaudit/baseline.tsv` or `.sovaudit/state.tsv`.
