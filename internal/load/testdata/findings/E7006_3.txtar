@@ -1,0 +1,13 @@
+WIRE.md §6.1, §6.2, log 2026-09-24 "W1 load review calls": a `format:` other than json, csv
+and text is E7006 format.
+-- call --
+load("data/a.dat", format: xml)
+-- type --
+text
+-- data/a.dat --
+hello
+-- findings.txt --
+error[E7006]  call:1:1
+  format xml is not one of json, csv and text
+
+1 error, 0 warnings in 1 package (…)

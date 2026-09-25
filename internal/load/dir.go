@@ -16,32 +16,51 @@ import (
 	"github.com/fantasim/canonlang/internal/wire"
 )
 
-// dir runs `load.dir(pattern)` of JSON files against t (WIRE.md §6.5).
+// dir runs `load.dir(pattern[, at:][, partial:][, format:])` of JSON files against t (WIRE.md §6.5).
 func (l *Loader) dir(ctx context.Context, req Request, e *syntax.LoadExpr, t types.Type) (value.Value, bool, error) {
-	pattern, ok := dirPattern(e)
+	c, ok := parseCall(e)
 	if !ok {
-		return nil, false, unsupported("a load.dir option, this milestone reads only its one path")
+		return nil, false, unsupported(causeDirOption)
 	}
 	if !supported(t) {
-		return nil, false, unsupported("an element type this milestone cannot decode without the evaluator")
+		return nil, false, unsupported(causeDirElem)
 	}
-	matches, ok := l.match(pattern, req)
+	forcedJSON, err := dirForcedJSON(c)
+	if err != nil {
+		return nil, false, err
+	}
+	if !checkOptions(methodDir, c, fmtJSON, req) {
+		return nil, false, nil
+	}
+	matches, ok := l.match(c.path, req)
 	if !ok {
 		return nil, false, nil
 	}
 	if len(matches) == 0 {
-		diag.W7107.At(req.Span, pattern).Report(req.Bag)
+		diag.W7107.At(req.Span, c.path).Report(req.Bag)
 	}
-	if ok, err := l.checkFormats(matches, req); err != nil || !ok {
+	if ok, err := l.checkFormats(matches, forcedJSON, req); err != nil || !ok {
 		return nil, false, err
 	}
-	files, readOK := l.readFiles(matches, req)
+	files, readOK := l.readFiles(matches, c.at, req)
 	host := wireHost{span: req.Span}
-	v, decOK, err := (&wire.Decoder{Bag: req.Bag, Pkg: req.Pkg, Host: host}).Dir(ctx, files, t)
+	dec := &wire.Decoder{Bag: req.Bag, Pkg: req.Pkg, Host: host, Partial: c.boolOpt(c.partial)}
+	v, decOK, err := dec.Dir(ctx, files, t)
 	if err != nil {
 		return nil, false, err
 	}
 	return v, readOK && decOK, nil
+}
+
+// dirForcedJSON is whether c.format: names json; any other symbol is ErrUnsupported (WIRE.md §6.5).
+func dirForcedJSON(c parsedCall) (bool, error) {
+	if c.format == nil {
+		return false, nil
+	}
+	if f, ok := formatSymbol(*c.format); ok && f == fmtJSON {
+		return true, nil
+	}
+	return false, unsupported(causeDirFormat)
 }
 
 // match resolves pattern to its matched files, in path order; ok is false after a finding (WIRE.md §6.5).
@@ -78,6 +97,10 @@ func causeOf(err error) string {
 		return causePermission
 	case errors.Is(err, errNotDir):
 		return causeNotDir
+	case errors.Is(err, errIsDir):
+		return causeIsDir
+	case errors.Is(err, errNotRegular):
+		return causeNotRegular
 	case errors.Is(err, source.ErrFileTooLarge):
 		return causeTooLarge
 	default:
@@ -87,11 +110,14 @@ func causeOf(err error) string {
 
 // checkFormats refuses a csv or text match first (ErrUnsupported, no finding before it), then
 // reports E7007 for every unrecognized extension; the extension is the match's own, not its
-// link target's.
-func (l *Loader) checkFormats(matches []matchFile, req Request) (bool, error) {
+// link target's. forcedJSON (an explicit `format: json`) skips both: every match reads as json.
+func (l *Loader) checkFormats(matches []matchFile, forcedJSON bool, req Request) (bool, error) {
+	if forcedJSON {
+		return true, nil
+	}
 	for _, m := range matches {
 		if f := formatOf(m.Display); f == fmtCSV || f == fmtText {
-			return false, unsupported("a load.dir file whose format is not json")
+			return false, unsupported(causeDirFileFormat)
 		}
 	}
 	ok := true
@@ -138,12 +164,12 @@ func lowerASCII(c byte) byte {
 	return c
 }
 
-// readFiles reads and parses every match into wire's per-file selection; ok is false after any read or JSON error (WIRE.md §6.5).
-func (l *Loader) readFiles(matches []matchFile, req Request) ([]wire.File, bool) {
+// readFiles parses every match, at applied to each when given (WIRE.md §6.5, §6.3).
+func (l *Loader) readFiles(matches []matchFile, at *string, req Request) ([]wire.File, bool) {
 	ok := true
 	files := make([]wire.File, 0, len(matches))
 	for _, m := range matches {
-		f, fOK := l.readFile(m, req)
+		f, fOK := l.readFile(m, at, req)
 		if f != nil {
 			files = append(files, *f)
 		}
@@ -153,7 +179,7 @@ func (l *Loader) readFiles(matches []matchFile, req Request) ([]wire.File, bool)
 }
 
 // readFile reads, then parses one matched file into wire's per-file selection.
-func (l *Loader) readFile(m matchFile, req Request) (*wire.File, bool) {
+func (l *Loader) readFile(m matchFile, at *string, req Request) (*wire.File, bool) {
 	data, err := l.FS.ReadFile(m.Abs)
 	if err != nil {
 		diag.E7004.At(req.Span, m.Display, causeOf(err)).Report(req.Bag)
@@ -168,7 +194,14 @@ func (l *Loader) readFile(m matchFile, req Request) (*wire.File, bool) {
 	if err != nil {
 		return nil, reportEncoding(req.Bag, m.Display, data, err)
 	}
-	return &wire.File{Sel: wire.Selection{Node: root}, Stem: stem(m.Display), At: root.Span}, true
+	sel := wire.Selection{Node: root}
+	if at != nil {
+		var ok bool
+		if sel, ok = applyAt(root, *at, req); !ok {
+			return nil, false
+		}
+	}
+	return &wire.File{Sel: sel, Stem: stem(m.Display), At: root.Span}, true
 }
 
 // reportEncoding is E7105 for a jsonsrc encoding error, data's raw bytes giving the file
@@ -190,7 +223,7 @@ func rawOffset(data []byte, normalized int) int64 {
 	raw, n := 0, 0
 	for n < normalized && raw < len(data) {
 		if data[raw] == '\r' && raw+1 < len(data) && data[raw+1] == '\n' {
-			raw += crlfLen
+			raw += twoBytes
 		} else {
 			raw++
 		}
@@ -199,20 +232,32 @@ func rawOffset(data []byte, normalized int) int64 {
 	return int64(raw)
 }
 
+// foldCursor is rawOffset's inverse: data's raw offsets in the FileSet's CRLF-folded content.
+// It resumes from its last answer, so a scanner asking in order walks the file once, not once per cell.
+type foldCursor struct {
+	data  []byte
+	next  int // every "\r\n" starting before next is counted in pairs
+	last  int // the last offset asked, raw
+	pairs int
+}
+
+// at is raw's folded offset: raw less the "\r\n" pairs that end at or before it.
+func (c *foldCursor) at(raw int) int {
+	raw = min(max(raw, 0), len(c.data))
+	if raw < c.last {
+		c.next, c.pairs = 0, 0
+	}
+	c.last = raw
+	for ; c.next+1 < raw; c.next++ {
+		if c.data[c.next] == '\r' && c.data[c.next+1] == '\n' {
+			c.pairs++
+		}
+	}
+	return raw - c.pairs
+}
+
 // stem is a load.dir file's table key: its name with no extension (WIRE.md §6.5).
 func stem(display string) string {
 	base := path.Base(display)
 	return strings.TrimSuffix(base, path.Ext(base))
-}
-
-// dirPattern is load.dir's one positional argument, a plain literal path; its options wait for M3.
-func dirPattern(e *syntax.LoadExpr) (string, bool) {
-	if len(e.Args) != 1 || e.Args[0].Name != nil {
-		return "", false
-	}
-	s, ok := e.Args[0].Value.(*syntax.StringLit)
-	if !ok {
-		return "", false
-	}
-	return plainString(s)
 }

@@ -1,0 +1,12 @@
+WIRE.md §6.6: text after a closing quote is malformed CSV, E7113.
+-- call --
+load.csv("data/a.csv")
+-- type --
+strings
+-- data/a.csv --
+a,"b"c
+-- findings.txt --
+error[E7113]  data/a.csv:1:6
+  CSV: text after a closing quote at record 1
+
+1 error, 0 warnings in 1 package (…)

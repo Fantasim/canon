@@ -139,7 +139,7 @@ func TestFindings(t *testing.T) {
 		bag := diag.NewBag(set, "p")
 		data, ok := archiveFile(c.Archive, patternFile)
 		if !ok {
-			t.Fatalf("%s: no pattern file", c.Path)
+			t.Skip("no pattern file: a call-form case, TestFindingsCall's")
 		}
 		pattern := strings.TrimSuffix(string(data), "\n")
 		src, err := set.Add(patternFile, path.Join(projectDir, patternFile), data)

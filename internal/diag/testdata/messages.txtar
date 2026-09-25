@@ -329,7 +329,8 @@ E7002 -: load needs an expected type here: annotate the let or the field
 E7003 -: unknown root @resource.vocab.items; roots: go, cpp
 E7004 -: cannot read @resource/Server/Item/propItem.json: 0.9
 E7005 -: invalid glob 0.9: 0.9
-E7006 -: option resource.vocab.items is not valid for resource.vocab.items (resource.vocab.items)
+E7006 option: option resource.vocab.items is not valid for resource.vocab.items (resource.vocab.items)
+E7006 format: format resource.vocab.items is not one of json, csv and text
 E7007 -: cannot tell the format of @resource/Server/Item/propItem.json; add format: json, csv or text
 E7102 -: resource.vocab.items redefined with a different value (-42, first -42 at @resource/Server/System/farm_config.json:1)
 E7103 number: 0.9 is not an integer
@@ -357,7 +358,12 @@ E7111 hint: "0.9" is not a member of resource.vocab.items (did you mean resource
 E7111 bits: bits -42 are not members of resource.vocab.items
 E7112 tag: missing tag "0.9" for variant resource.vocab.items
 E7112 case: unknown case "0.9" of resource.vocab.items; cases: go, cpp
-E7113 -: CSV: 0.9 at record -42
+E7113 bareQuote: CSV: a quote inside an unquoted field at record -42
+E7113 unclosed: CSV: an unterminated quoted field at record -42
+E7113 afterQuote: CSV: text after a closing quote at record -42
+E7113 fieldCount: CSV: record -42 has -42 fields, the first has -42
+E7113 bareCR: CSV: a carriage return inside an unquoted field at record -42
+E7113 noHeader: CSV: header: true but the file has no header record
 E7114 -: "0.9" is not a valid table key (an identifier)
 E7116 -: resource.vocab.items cannot produce Int
 E7117 key: @json(pairs:) slot -42 of resource.vocab.items: resource.vocab.items without resource.vocab.items

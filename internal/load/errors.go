@@ -2,16 +2,19 @@ package load
 
 import "errors"
 
-// ErrUnsupported is a load form, option, format or default this milestone does not read yet;
-// the caller (build) falls back to its own refusal until the form's milestone (DECISIONS 196).
+// ErrUnsupported is a form, option, format or default this milestone does not read (DECISIONS 196).
 var ErrUnsupported = errors.New("load: not supported yet")
 
-// errNotDir is a glob's base, or a literal load.dir path, naming a file where a directory is
-// needed (E7004 cause "not a directory", meta/decisions/log-2026-09-24.md "load.dir review").
+// errNotDir is a glob base or load.dir path naming a file where a directory is needed.
 var errNotDir = errors.New("not a directory")
 
-// UnsupportedError is ErrUnsupported naming its cause, which the caller prints (DECISIONS 196:
-// every refusal names its cause).
+// errIsDir is a single-file form's path naming a directory, not a regular file (WIRE.md §6.1).
+var errIsDir = errors.New("is a directory")
+
+// errNotRegular is a single-file form's path naming a FIFO, socket or device (WIRE.md §6.1).
+var errNotRegular = errors.New("not a regular file")
+
+// UnsupportedError is ErrUnsupported naming its cause (DECISIONS 196).
 type UnsupportedError struct {
 	Cause string
 }

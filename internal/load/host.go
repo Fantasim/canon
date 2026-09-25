@@ -16,10 +16,14 @@ type wireHost struct {
 	span source.Span
 }
 
-// Default reads f's default literally, typed as the non-optional base (DECISIONS 173).
+// Default reads f's default literally, a redundant "(...)" around it unwrapped as supported's
+// gate does (defaultLiteralOK); with none, it is the load call's span (DECISIONS 173).
 func (h wireHost) Default(_ context.Context, f *types.Field, _ wire.Instance, via *value.Prov) (value.Value, bool) {
 	p := &value.Prov{Kind: value.ProvDefault, Span: h.span, Via: via}
-	switch n := f.Default.(type) {
+	if f.Default == nil {
+		return &value.None{T: f.Type, P: p}, true
+	}
+	switch n := unparen(f.Default).(type) {
 	case *syntax.NoneLit:
 		return &value.None{T: f.Type, P: p}, true
 	case *syntax.BoolLit:

@@ -322,7 +322,7 @@ func (codeE2103) AtSeveral(span source.Span, typ string, colls []string) *Builde
 
 ---
 
-The catalogue holds 298 codes: 277 errors, 18 warnings and 3 run-time codes, with 440 messages.
+The catalogue holds 298 codes: 277 errors, 18 warnings and 3 run-time codes, with 446 messages.
 
 ## E10xx, W10xx: Project file, doc comments and naming
 
@@ -1031,7 +1031,8 @@ Owner: WIRE.md.
 | E7003 | - | name:Name, roots:Names | `unknown root @{name}; roots: {roots}` |
 | E7004 | - | path:Path, cause:Text | `cannot read {path}: {cause}` |
 | E7005 | - | pattern:Text, cause:Text | `invalid glob {pattern}: {cause}` |
-| E7006 | - | option:Name, form:Name, format:Name | `option {option} is not valid for {form} ({format})` |
+| E7006 | option | option:Name, form:Name, format:Name | `option {option} is not valid for {form} ({format})` |
+| E7006 | format | format:Name | `format {format} is not one of json, csv and text` |
 | E7007 | - | path:Path | `cannot tell the format of {path}; add format: json, csv or text` |
 | W7101 | one | path:Path, name:Name | `1 define skipped in {path} ({name}): not a supported integer expression` |
 | W7101 | many | n:Int, path:Path, name:Name | `{n} defines skipped in {path} (first: {name}): not a supported integer expression` |
@@ -1062,7 +1063,12 @@ Owner: WIRE.md.
 | E7111 | bits | bits:Int, enum:Name | `bits {bits} are not members of {enum}` |
 | E7112 | tag | tag:Text, variant:Name | `missing tag "{tag}" for variant {variant}` |
 | E7112 | case | wire:Text, variant:Name, cases:Names | `unknown case "{wire}" of {variant}; cases: {cases}` |
-| E7113 | - | reason:Text, n:Int | `CSV: {reason} at record {n}` |
+| E7113 | bareQuote | n:Int | `CSV: a quote inside an unquoted field at record {n}` |
+| E7113 | unclosed | n:Int | `CSV: an unterminated quoted field at record {n}` |
+| E7113 | afterQuote | n:Int | `CSV: text after a closing quote at record {n}` |
+| E7113 | fieldCount | n:Int, got:Int, want:Int | `CSV: record {n} has {got} fields, the first has {want}` |
+| E7113 | bareCR | n:Int | `CSV: a carriage return inside an unquoted field at record {n}` |
+| E7113 | noHeader | - | `CSV: header: true but the file has no header record` |
 | E7114 | - | key:Text | `"{key}" is not a valid table key (an identifier)` |
 | W7115 | - | path:Path | `symbolic link {path} points outside the roots; skipped` |
 | E7116 | - | form:Name, typ:Type | `{form} cannot produce {typ}` |

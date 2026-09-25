@@ -1,0 +1,13 @@
+WIRE.md §6.8: the same #define name redefined with a different value is E7102.
+-- call --
+load.defines("data/a.h")
+-- type --
+defines
+-- data/a.h --
+#define X 1
+#define X 2
+-- findings.txt --
+error[E7102]  data/a.h:2:1
+  X redefined with a different value (2, first 1 at data/a.h:1)
+
+1 error, 0 warnings in 1 package (…)

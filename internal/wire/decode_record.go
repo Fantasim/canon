@@ -200,14 +200,14 @@ func (r *run) absent(n *jsonsrc.Node, f *types.Field, i int, rv *value.Record, f
 	return v != nil
 }
 
-// fill is an absent field's value: none for an optional without default, else its default,
-// which the host evaluates, unless the record has failed; required when there is neither.
+// fill is an absent field's value: none for an optional without default (fillNone), else its
+// default, which the host evaluates unless the record has failed; required when there is neither.
 func (r *run) fill(f *types.Field, rv *value.Record, fr *frame, via *value.Prov) (value.Value, bool) {
 	switch {
 	case f.Pairs != nil:
 		return &value.List{T: f.Type, P: via}, false
 	case f.Type.Kind() == types.Optional && f.Default == nil:
-		return &value.None{T: f.Type, P: &value.Prov{Kind: value.ProvDefault, Via: via}}, false
+		return r.fillNone(f, rv, fr, via)
 	case f.Default == nil:
 		return nil, true
 	case fr.failed:
@@ -216,6 +216,22 @@ func (r *run) fill(f *types.Field, rv *value.Record, fr *frame, via *value.Prov)
 		r.misuse(ErrNoHost, f.Type)
 		return nil, false
 	}
+	return r.hostDefault(f, rv, fr, via)
+}
+
+// fillNone is an optional field's implicit none: only a host (DECISIONS 173: "only an optional
+// field without default needs no host" stays true, one is just consulted when set) can supply
+// a provenance better than via alone.
+func (r *run) fillNone(f *types.Field, rv *value.Record, fr *frame, via *value.Prov) (value.Value, bool) {
+	if r.d.Host == nil {
+		return &value.None{T: f.Type, P: &value.Prov{Kind: value.ProvDefault, Via: via}}, false
+	}
+	return r.hostDefault(f, rv, fr, via)
+}
+
+// hostDefault asks the host for f's value in rv (a default expression, or an optional field's
+// implicit none), unless the record has already failed.
+func (r *run) hostDefault(f *types.Field, rv *value.Record, fr *frame, via *value.Prov) (value.Value, bool) {
 	v, ok := r.d.Host.Default(r.ctx, f, Instance{Record: rv, Params: fr.params}, via)
 	if !ok {
 		r.failed = true

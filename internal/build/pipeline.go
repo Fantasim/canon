@@ -83,6 +83,7 @@ func (r *run) analyze(ctx context.Context) error {
 		return err
 	}
 	r.reportStableAmendments()
+	r.host.loader.FinishDefines() // once every stage has forced its loads (WIRE.md §6.8)
 	if err := ctx.Err(); err != nil {
 		return err
 	}

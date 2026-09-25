@@ -36,22 +36,28 @@ type evalHost struct {
 	logBags   func() check.Bags            // set by canon test: each verification gets fresh bags...
 	causes    map[eval.Root][]diag.Finding // ...and a value it poisons keeps their errors
 	fold      check.Folder                 // phase 2's folder, whose internal errors failure reports (DECISIONS 195)
+	scratch   bool                         // bags is throwaway: load keeps nothing it reads (a test call's host)
 }
 
 // Load runs e's form against expected; an unsupported form, option or default is ErrLoad,
 // naming the cause load reported (DECISIONS 196).
 func (h *evalHost) Load(ctx context.Context, e *syntax.LoadExpr, expected types.Type) (value.Value, bool) {
-	return h.LoadInto(ctx, e, expected, h.bags)
+	return h.loadInto(ctx, e, expected, h.bags, h.scratch)
 }
 
-// LoadInto is Load reporting into bags: a vector's throwaway bags (ADR-0003, DECISIONS 204).
+// LoadInto is Load into a vector's throwaway bags, a scratch load (ADR-0003, DECISIONS 204).
 func (h *evalHost) LoadInto(ctx context.Context, e *syntax.LoadExpr, expected types.Type, bags check.Bags) (value.Value, bool) {
+	return h.loadInto(ctx, e, expected, bags, true)
+}
+
+// loadInto is Load into bags; scratch: bags is throwaway (load.Request.Scratch).
+func (h *evalHost) loadInto(ctx context.Context, e *syntax.LoadExpr, expected types.Type, bags check.Bags, scratch bool) (value.Value, bool) {
 	site, ok := findLoad(h.prog, e)
 	if !ok {
 		h.loads = append(h.loads, e)
 		return nil, false
 	}
-	req := load.Request{Pkg: site.pkg, From: path.Dir(site.file.Src.Path), Span: site.span, Bag: bags[site.pkg]}
+	req := load.Request{Pkg: site.pkg, From: path.Dir(site.file.Src.Path), Span: site.span, Bag: bags[site.pkg], Scratch: scratch}
 	v, ok, err := h.loader.Load(ctx, req, e, expected)
 	switch {
 	case errors.Is(err, load.ErrUnsupported):
@@ -244,8 +250,9 @@ type assets struct {
 	dirs   map[string][]string
 }
 
+// Exists resolves root+"/"+name: root is an AssetSpec.Root, already carrying its own "@" (TYPES.md §13.4).
 func (a *assets) Exists(root, name string) bool {
-	p, ok := a.layout.Resolve(rootMark+root+pathSep+name, "", source.Span{}, diag.NewBag(nil, ""))
+	p, ok := a.layout.Resolve(root+pathSep+name, "", source.Span{}, diag.NewBag(nil, ""))
 	if !ok || p.Dir {
 		return false
 	}

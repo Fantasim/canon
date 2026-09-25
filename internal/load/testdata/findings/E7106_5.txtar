@@ -1,0 +1,10 @@
+WIRE.md §6.3: `*` applied to a scalar is E7106.
+-- call --
+load("data/a.json", at: "items.*")
+-- data/a.json --
+{"items": 5}
+-- findings.txt --
+error[E7106]  data/a.json:1:11
+  at: "items.*": * applied to a scalar at #/items
+
+1 error, 0 warnings in 1 package (…)

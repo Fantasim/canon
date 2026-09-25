@@ -1,0 +1,13 @@
+WIRE.md §6.6, DECISIONS 218: a lone CR inside an unquoted field is E7113 bareCR.
+-- call --
+load.csv("data/a.csv")
+-- type --
+strings
+-- data/a.csv --
+a,b
+cd,e
+-- findings.txt --
+error[E7113]  data/a.csv:2:2
+  CSV: a carriage return inside an unquoted field at record 2
+
+1 error, 0 warnings in 1 package (…)

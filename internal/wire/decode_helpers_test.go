@@ -27,10 +27,16 @@ func newHost() *host {
 	return &host{defaults: map[*types.Field]value.Value{}, entries: map[*types.Collection][]*value.Record{}}
 }
 
-func (h *host) Default(_ context.Context, f *types.Field, _ wire.Instance, _ *value.Prov) (value.Value, bool) {
+// Default serves a registered field's value; an unregistered field with no default gets none.
+func (h *host) Default(_ context.Context, f *types.Field, _ wire.Instance, via *value.Prov) (value.Value, bool) {
 	h.calls++
-	v, ok := h.defaults[f]
-	return v, ok
+	if v, ok := h.defaults[f]; ok {
+		return v, true
+	}
+	if f.Default == nil {
+		return &value.None{T: f.Type, P: &value.Prov{Kind: value.ProvDefault, Via: via}}, true
+	}
+	return nil, false
 }
 
 func (h *host) Deref(_ context.Context, r *value.Ref) (*value.Record, bool) {

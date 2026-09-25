@@ -1,0 +1,12 @@
+WIRE.md §6.1: an option not listed for the form (`partial:` on load.text) is E7006.
+-- call --
+load.text("data/a.txt", partial: true)
+-- type --
+text
+-- data/a.txt --
+hello
+-- findings.txt --
+error[E7006]  call:1:1
+  option partial is not valid for load.text (text)
+
+1 error, 0 warnings in 1 package (…)

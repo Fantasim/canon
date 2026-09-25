@@ -1,0 +1,13 @@
+WIRE.md §6.1, §13, log 2026-09-24 "W1 load review calls": a bare load whose detected format
+(text) cannot produce the expected type is E7116, reported by load itself.
+-- call --
+load("data/a.txt")
+-- type --
+strings
+-- data/a.txt --
+hello
+-- findings.txt --
+error[E7116]  call:1:1
+  load cannot produce [[String]]
+
+1 error, 0 warnings in 1 package (…)

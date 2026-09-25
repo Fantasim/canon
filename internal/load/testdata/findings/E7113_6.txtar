@@ -1,0 +1,11 @@
+WIRE.md §6.6, DECISIONS 218: `header: true` on a file with no record is E7113 noHeader, at 1:1.
+-- call --
+load.csv("data/a.csv", header: true)
+-- type --
+rows
+-- data/a.csv --
+-- findings.txt --
+error[E7113]  data/a.csv:1:1
+  CSV: header: true but the file has no header record
+
+1 error, 0 warnings in 1 package (…)

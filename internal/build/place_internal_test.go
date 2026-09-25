@@ -99,6 +99,48 @@ func TestAssetListing(t *testing.T) {
 	}
 }
 
+// memDirFS lists a fixed set of file names for one directory, nothing else.
+type memDirFS struct {
+	project.FS
+	dir   string
+	names []string
+}
+
+func (m memDirFS) ReadDir(name string) ([]fs.DirEntry, error) {
+	if name != m.dir {
+		return nil, fs.ErrNotExist
+	}
+	entries := make([]fs.DirEntry, len(m.names))
+	for i, n := range m.names {
+		entries[i] = dirEntryName(n)
+	}
+	return entries, nil
+}
+
+type dirEntryName string
+
+func (n dirEntryName) Name() string             { return string(n) }
+func (dirEntryName) IsDir() bool                { return false }
+func (dirEntryName) Type() fs.FileMode          { return 0 }
+func (dirEntryName) Info() (fs.FileInfo, error) { return nil, nil }
+
+// TYPES.md §13.4: root already carries its own "@" (AssetSpec.Root); Exists must not prepend a second one.
+func TestAssetExistsRootAlreadyMarked(t *testing.T) {
+	p := &project.Project{Roots: []project.Root{{Name: "resource", Path: "res"}}}
+	layout, ok := project.NewLayout(p, "/p", nil, diag.NewBag(nil, ""))
+	if !ok {
+		t.Fatal("layout")
+	}
+	mfs := memDirFS{dir: "/p/res/Icon", names: []string{"Item.dds"}}
+	a := &assets{fs: mfs, layout: layout, host: &evalHost{}, dirs: map[string][]string{}}
+	if !a.Exists("@resource/Icon", "Item.dds") {
+		t.Error("Exists: false for a root already carrying its own @")
+	}
+	if a.Exists("@resource/Icon", "Missing.dds") {
+		t.Error("Exists: true for a name not listed")
+	}
+}
+
 // failingDirAbs fails every listing with a *fs.PathError carrying an absolute path.
 type failingDirAbs struct{ project.FS }
 

@@ -1,0 +1,13 @@
+WIRE.md §6.8: several skipped defines count as one W7101, at the first.
+-- call --
+load.defines("data/a.h")
+-- type --
+defines
+-- data/a.h --
+#define FOO(x) ((x)+1)
+#define BAR "text"
+-- findings.txt --
+warning[W7101]  data/a.h:1:1
+  2 defines skipped in data/a.h (first: FOO): not a supported integer expression
+
+0 errors, 1 warning in 1 package (…)

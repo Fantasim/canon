@@ -1,0 +1,13 @@
+WIRE.md §6.6: a record with a different field count than the first is malformed CSV, E7113.
+-- call --
+load.csv("data/a.csv")
+-- type --
+strings
+-- data/a.csv --
+a,b
+c
+-- findings.txt --
+error[E7113]  data/a.csv:2:1
+  CSV: record 2 has 1 fields, the first has 2
+
+1 error, 0 warnings in 1 package (…)

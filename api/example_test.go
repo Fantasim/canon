@@ -122,7 +122,8 @@ func ExampleFinding_MarshalJSON() {
 		return
 	}
 	defer p.Close()
-	res, err := p.Check(context.Background())
+	// teamboard and pipeline print no finding (their own goldens): a stable, empty round trip.
+	res, err := p.Check(context.Background(), "teamboard", "pipeline")
 	if err != nil {
 		return
 	}

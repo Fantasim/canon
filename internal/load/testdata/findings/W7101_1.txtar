@@ -1,0 +1,12 @@
+WIRE.md §6.8: a function-like macro is skipped and counted, at most one W7101 per file.
+-- call --
+load.defines("data/a.h")
+-- type --
+defines
+-- data/a.h --
+#define FOO(x) ((x)+1)
+-- findings.txt --
+warning[W7101]  data/a.h:1:1
+  1 define skipped in data/a.h (FOO): not a supported integer expression
+
+0 errors, 1 warning in 1 package (…)

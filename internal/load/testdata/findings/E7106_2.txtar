@@ -1,0 +1,10 @@
+WIRE.md §6.3: an index past an array's length on the `at:` path is E7106.
+-- call --
+load("data/a.json", at: "items[2]")
+-- data/a.json --
+{"items": [1, 2]}
+-- findings.txt --
+error[E7106]  data/a.json:1:11
+  at: "items[2]": index 2 out of range at #/items
+
+1 error, 0 warnings in 1 package (…)

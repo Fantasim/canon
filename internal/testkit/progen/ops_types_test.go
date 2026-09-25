@@ -422,9 +422,12 @@ func defaultBelowRange(tg target) []progen.Site {
 			return false
 		}
 		r, ok := nt.Args.Args[0].(*syntax.RangeExpr)
+		if !ok {
+			return false
+		}
 		lo, isInt := r.Lo.(*syntax.IntLit)
 		_, defInt := f.Default.(*syntax.IntLit)
-		return ok && isInt && defInt && lo.Value.Sign() >= 0
+		return isInt && defInt && lo.Value.Sign() >= 0
 	}, func(f *syntax.FieldDecl) progen.Site {
 		s, e := span(tg, f.Default)
 		return site(replace(s, e, "-1"))

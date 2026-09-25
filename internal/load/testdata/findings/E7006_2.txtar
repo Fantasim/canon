@@ -1,0 +1,12 @@
+WIRE.md §6.1, §6.2: `at:` is not valid once the format is csv, E7006.
+-- call --
+load("data/a.csv", at: "x")
+-- type --
+strings
+-- data/a.csv --
+a,b
+-- findings.txt --
+error[E7006]  call:1:1
+  option at is not valid for load (csv)
+
+1 error, 0 warnings in 1 package (…)

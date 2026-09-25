@@ -24,7 +24,7 @@ func itemType() *types.RecordType {
 }
 
 // loaderFor builds a Loader and Request over an archive's files, none of them named "pattern".
-func loaderFor(t *testing.T, files map[string]string) (*load.Loader, load.Request) {
+func loaderFor(t testing.TB, files map[string]string) (*load.Loader, load.Request) {
 	t.Helper()
 	var a txtar.Archive
 	for name, data := range files {
@@ -74,11 +74,13 @@ func TestLoadDirKeyedList(t *testing.T) {
 	}
 }
 
-// M2: every load form but a plain `load.dir` is ErrUnsupported, its cause set (DECISIONS 196).
+// Every load form this milestone still cannot read without the evaluator (a non-literal path
+// or option) is ErrUnsupported, its cause set (DECISIONS 196); a plain load.dir path is read
+// directly (see TestLoadDirTable and friends).
 func TestLoadUnsupportedForms(t *testing.T) {
 	l, req := loaderFor(t, map[string]string{"data/a.json": `{"id": "a", "name": "A"}`})
-	t.Run("plain load", func(t *testing.T) {
-		e := &syntax.LoadExpr{Args: []*syntax.Arg{{Value: &syntax.StringLit{Parts: []syntax.StringPart{{Text: "data/a.json"}}}}}}
+	t.Run("a non-literal path", func(t *testing.T) {
+		e := &syntax.LoadExpr{Args: []*syntax.Arg{{Value: &syntax.IdentExpr{Name: "p"}}}}
 		_, _, err := l.Load(context.Background(), req, e, &types.TableType{Elem: itemType()})
 		var ue *load.UnsupportedError
 		if !errors.Is(err, load.ErrUnsupported) || !errors.As(err, &ue) || ue.Cause == "" {

@@ -1,0 +1,13 @@
+WIRE.md §6.6, DECISIONS 218, log 2026-09-24 "W1 load round-3 calls": a CR after a closing quote
+that no LF follows is E7113 afterQuote, at the CR (the next byte is never dropped).
+-- call --
+load.csv("data/a.csv")
+-- type --
+strings
+-- data/a.csv --
+"a"b
+-- findings.txt --
+error[E7113]  data/a.csv:1:4
+  CSV: text after a closing quote at record 1
+
+1 error, 0 warnings in 1 package (…)

@@ -52,7 +52,7 @@ func (c conformer) Evaluate(ctx context.Context, x conform.Call, m conform.Mode)
 // into bags nothing reads, one per package of the program; its evaluator has the run's options.
 func (r *run) throwawayHost() *evalHost {
 	bags := r.throwawayBags()
-	h := &evalHost{prog: r.prog, bags: bags, loader: r.host.loader, assets: r.assets, index: r.vix}
+	h := &evalHost{prog: r.prog, bags: bags, loader: r.host.loader, assets: r.assets, index: r.vix, scratch: true}
 	h.ev = eval.New(r.prog, h, bags, r.opt)
 	h.verifier = verify.NewShared(r.vix, h.ev, bags, r.assets)
 	return h

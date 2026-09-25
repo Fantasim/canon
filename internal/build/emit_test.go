@@ -116,8 +116,10 @@ func TestTargets(t *testing.T) {
 // API.md R1, R3, O4, DECISIONS 196: a load, a cancellation, an unknown selector or layer fail the call.
 func TestBuildErrors(t *testing.T) {
 	ctx := context.Background()
-	load := "/// A.\npackage a\n\n/// V.\nlet v: [Int] = load(\"x.json\")\n"
-	p, err := build.Open(mapFS{"p/project.canon": file(outProject), "p/a/a.canon": file(load)}, "/p", build.Options{})
+	// M3 still refuses a load.dir match whose format is not json (DECISIONS 173, 196).
+	load := "/// A.\npackage a\n\n/// V.\nlet v: [Int] = load.dir(\"x.txt\")\n"
+	fsys := mapFS{"p/project.canon": file(outProject), "p/a/a.canon": file(load), "p/a/x.txt": file("1")}
+	p, err := build.Open(fsys, "/p", build.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}

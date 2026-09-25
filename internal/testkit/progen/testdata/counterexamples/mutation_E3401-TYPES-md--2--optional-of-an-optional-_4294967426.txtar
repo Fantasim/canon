@@ -1,0 +1,73 @@
+suite mutation
+name E3401 TYPES.md §2 (optional of an optional)
+case 129
+seed 4294967426
+open check
+born mismatch extra E3316/form
+sig extra E3316/form
+packages game.items
+want E3401 game/items/item.canon 478 488 check
+failure extra [E3316 game/items/item.canon:14:42 "@json(none) does not apply to invalid"] besides [E3401 game/items/item.canon:14:11 "Int(0..)?? is not a type: Int(0..)? is already optional"]
+-- _fixtures/resource/Server/Define/defineAttribute.h --
+-- _fixtures/resource/Server/Define/defineJob.h --
+-- _fixtures/resource/Server/Define/defineSound.h --
+-- _fixtures/resource/Server/Text/serverNames.json --
+{
+  "strings": {
+  },
+  "version": 1
+}
+-- game/items/item.canon --
+package game.items
+local let attributes = load.defines("@resource/Server/Define/defineAttribute.h", prefix: "DST_")
+/// would have made it legal, this one refuses it.
+enum WeaponType @codes(UInt32) {
+}
+/// A stat an item raises, and by how much.
+record StatBonus {
+  /// The stat raised (a DST_* define).
+  value: Int
+}
+/// propItem.json's `defaults` block; "=" on the wire means "not set".
+record Item {
+  /// Format version of the row (nVer). The loader ignores it.
+  rarity: Int(0..)?? = none @json( none: "=")
+}
+/// material cannot carry an attack speed.
+variant ItemKind @json(tag: "dwItemKind1") {
+  IK1_WEAPON {
+    /// The sub-kind, with its own fields.
+    kind2: GeneralKind @json()
+  }
+}
+/// the studio orders a material's fields by what materials set.
+variant GeneralKind @json(tag: "dwItemKind2") {
+  IK2_MATERIAL {
+    /// What the material is used for.
+    referStat: ref attributes? @json("dwReferStat2", none: "=")
+  }
+  IK2_FOOD {
+    /// What kind of food.
+    cooldown: Duration @json()
+  }
+}
+-- project.canon --
+project sovereign {
+  canon: "0.1"
+  roots {
+    resource: "../../../Resource"
+    client: "../../../Client"
+    source: "../../../Source"
+    services: "../.."
+    sovcommon: "../../sovcommon"
+    web: "../../sovcommon/web/src/lib"
+    parity: "../../balance/parity"
+    generated: "../../resourcestudio/generated"
+  }
+}
+-- resource/vocab/vocab.canon --
+package resource
+-- sovcommon/time/time.canon --
+package sovcommon
+-- studio/studio.canon --
+package studio

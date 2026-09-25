@@ -52,6 +52,19 @@ func TestDecodeNone(t *testing.T) {
 	}
 }
 
+// DECISIONS 173: an optional field with no default asks the host when one is set, else needs none.
+func TestDecodeNoneAsksHost(t *testing.T) {
+	f := field("a", opt(types.IntType))
+	n := record("p", "N", f)
+	h := newHost()
+	if got := decodeJSON(t, wire.Decoder{Host: h}, `{}`, n).text(); got != "N{a: none}" || h.calls != 1 {
+		t.Errorf("with a host: %q after %d calls, want N{a: none} after 1", got, h.calls)
+	}
+	if got := decodeJSON(t, wire.Decoder{}, `{}`, n).text(); got != "N{a: none}" {
+		t.Errorf("without a host: %q, want N{a: none}", got)
+	}
+}
+
 // WIRE.md §5.5.1, §5.12, §6.4: unknown keys, `$schema` at the root, `partial` at every depth.
 func TestDecodeUnknownKeys(t *testing.T) {
 	inner := record("p", "In", field("x", types.IntType))

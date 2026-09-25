@@ -1755,7 +1755,8 @@ var Registry = []Def{
 	{
 		Code: "E7006", Severity: Error, Package: "load",
 		Variants: []Variant{
-			{Args: []Arg{{Name: "option", Type: ArgTypeName}, {Name: "form", Type: ArgTypeName}, {Name: "format", Type: ArgTypeName}}, Template: "option {option} is not valid for {form} ({format})"},
+			{Name: "option", Args: []Arg{{Name: "option", Type: ArgTypeName}, {Name: "form", Type: ArgTypeName}, {Name: "format", Type: ArgTypeName}}, Template: "option {option} is not valid for {form} ({format})"},
+			{Name: "format", Args: []Arg{{Name: "format", Type: ArgTypeName}}, Template: "format {format} is not one of json, csv and text"},
 		},
 	},
 	{
@@ -1843,7 +1844,12 @@ var Registry = []Def{
 	{
 		Code: "E7113", Severity: Error, Package: "load",
 		Variants: []Variant{
-			{Args: []Arg{{Name: "reason", Type: ArgTypeText}, {Name: "n", Type: ArgTypeInt}}, Template: "CSV: {reason} at record {n}"},
+			{Name: "bareQuote", Args: []Arg{{Name: "n", Type: ArgTypeInt}}, Template: "CSV: a quote inside an unquoted field at record {n}"},
+			{Name: "unclosed", Args: []Arg{{Name: "n", Type: ArgTypeInt}}, Template: "CSV: an unterminated quoted field at record {n}"},
+			{Name: "afterQuote", Args: []Arg{{Name: "n", Type: ArgTypeInt}}, Template: "CSV: text after a closing quote at record {n}"},
+			{Name: "fieldCount", Args: []Arg{{Name: "n", Type: ArgTypeInt}, {Name: "got", Type: ArgTypeInt}, {Name: "want", Type: ArgTypeInt}}, Template: "CSV: record {n} has {got} fields, the first has {want}"},
+			{Name: "bareCR", Args: []Arg{{Name: "n", Type: ArgTypeInt}}, Template: "CSV: a carriage return inside an unquoted field at record {n}"},
+			{Name: "noHeader", Template: "CSV: header: true but the file has no header record"},
 		},
 	},
 	{
@@ -5662,9 +5668,14 @@ type codeE7006 struct{}
 // Def is the registry entry of E7006.
 func (codeE7006) Def() *Def { return &Registry[222] }
 
-// At reports: option {option} is not valid for {form} ({format})
-func (codeE7006) At(span source.Span, option string, form string, format string) *Builder {
+// AtOption reports: option {option} is not valid for {form} ({format})
+func (codeE7006) AtOption(span source.Span, option string, form string, format string) *Builder {
 	return newBuilder(&Registry[222], 0, span, option, form, format)
+}
+
+// AtFormat reports: format {format} is not one of json, csv and text
+func (codeE7006) AtFormat(span source.Span, format string) *Builder {
+	return newBuilder(&Registry[222], 1, span, format)
 }
 
 // E7007: the format of a loaded file cannot be told from its extension (WIRE.md §6.2).
@@ -5898,9 +5909,34 @@ type codeE7113 struct{}
 // Def is the registry entry of E7113.
 func (codeE7113) Def() *Def { return &Registry[234] }
 
-// At reports: CSV: {reason} at record {n}
-func (codeE7113) At(span source.Span, reason string, n int64) *Builder {
-	return newBuilder(&Registry[234], 0, span, reason, n)
+// AtBareQuote reports: CSV: a quote inside an unquoted field at record {n}
+func (codeE7113) AtBareQuote(span source.Span, n int64) *Builder {
+	return newBuilder(&Registry[234], 0, span, n)
+}
+
+// AtUnclosed reports: CSV: an unterminated quoted field at record {n}
+func (codeE7113) AtUnclosed(span source.Span, n int64) *Builder {
+	return newBuilder(&Registry[234], 1, span, n)
+}
+
+// AtAfterQuote reports: CSV: text after a closing quote at record {n}
+func (codeE7113) AtAfterQuote(span source.Span, n int64) *Builder {
+	return newBuilder(&Registry[234], 2, span, n)
+}
+
+// AtFieldCount reports: CSV: record {n} has {got} fields, the first has {want}
+func (codeE7113) AtFieldCount(span source.Span, n int64, got int64, want int64) *Builder {
+	return newBuilder(&Registry[234], 3, span, n, got, want)
+}
+
+// AtBareCR reports: CSV: a carriage return inside an unquoted field at record {n}
+func (codeE7113) AtBareCR(span source.Span, n int64) *Builder {
+	return newBuilder(&Registry[234], 4, span, n)
+}
+
+// AtNoHeader reports: CSV: header: true but the file has no header record
+func (codeE7113) AtNoHeader(span source.Span) *Builder {
+	return newBuilder(&Registry[234], 5, span)
 }
 
 // E7114: a table key that is not a Canon identifier (WIRE.md §5.7).

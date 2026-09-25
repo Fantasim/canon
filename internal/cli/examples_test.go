@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"maps"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -20,21 +19,19 @@ import (
 
 const examplesDir = "../../examples"
 
-// loadExamples force a load form M2 does not read yet, so the whole check fails with build.ErrLoad.
-var loadExamples = map[string]bool{
-	"balance.parity":          true,
-	"features.codes":          true,
-	"features.csv":            true,
-	"features.embedded":       true,
-	"features.legacycpp":      true,
-	"features.text":           true,
-	"game.items":              true,
+// dependentBlocked force a load of a record holding a dependent type, refused loudly rather
+// than silently poisoning (internal/load.hasDependent, DECISIONS 173), not a load bug.
+var dependentBlocked = map[string]bool{
 	"resource.adventurequest": true,
-	"resource.events":         true,
-	"resource.farm":           true,
 	"resource.heistia":        true,
-	"resource.rules":          true,
-	"resource.vocab":          true,
+}
+
+// defaultBlocked force a load of a record whose field default is not a plain literal (WIRE.md §6.1).
+var defaultBlocked = map[string]bool{
+	"resource.events": true,
+	"resource.farm":   true,
+	"resource.rules":  true,
+	"resource.vocab":  true,
 }
 
 // exampleRoots redirects every root of examples/project.canon (examples/_fixtures/README.md):
@@ -74,7 +71,7 @@ func owners() map[diag.Code]string {
 }
 
 // M1 acceptance 1, examples/_fixtures/README.md: `canon check` of every example package that
-// does not force a `load` (loadExamples, DECISIONS 196), every root redirected, prints no
+// does not force a dependent-typed load (dependentBlocked), every root redirected, prints no
 // finding of the parser or of project.canon.
 func TestExamplesParse(t *testing.T) {
 	dir, _ := filepath.Abs(examplesDir)
@@ -88,7 +85,7 @@ func TestExamplesParse(t *testing.T) {
 	}
 	owner := owners()
 	for _, pkg := range pkgs {
-		if loadExamples[pkg.Name] {
+		if dependentBlocked[pkg.Name] || defaultBlocked[pkg.Name] {
 			continue
 		}
 		_, out := checkExample(t, "--format", "json", pkg.Name)
@@ -108,18 +105,28 @@ func TestExamplesParse(t *testing.T) {
 	}
 }
 
-// DECISIONS 196: `canon check` of a loadExamples package fails as a whole with build.ErrLoad
-// (exit 2), not with per-package findings, until its load form or option's milestone (M3,
-// meta/decisions/log-2026-09-24.md "load.dir review (M2)": M2 reads only a plain load.dir).
-func TestExamplesLoadUntilM3(t *testing.T) {
-	dir, _ := filepath.Abs(examplesDir)
-	names := slices.Sorted(maps.Keys(loadExamples))
-	for _, name := range names {
-		args := append(append([]string{"check", "--project", dir}, exampleRoots(t)...), name)
+// TestBlockedLoadsFailWithTheirCause is each blocked package's own cause text on stderr (WIRE.md §6.1).
+func TestBlockedLoadsFailWithTheirCause(t *testing.T) {
+	const dependentCause = "a dependent type this milestone cannot decode without the evaluator"
+	const defaultCause = "a default this milestone cannot decode without the evaluator"
+	cases := map[string]string{
+		"resource.adventurequest": dependentCause,
+		"resource.heistia":        dependentCause,
+		"resource.events":         defaultCause,
+		"resource.farm":           defaultCause,
+		"resource.rules":          defaultCause,
+		"resource.vocab":          defaultCause,
+	}
+	dir, err := filepath.Abs(examplesDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for pkg, cause := range cases {
 		var stdout, stderr bytes.Buffer
-		code := cli.Main(context.Background(), args, cli.Env{Stdout: &stdout, Stderr: &stderr, Dir: dir})
-		if code != 2 || stdout.Len() != 0 || !strings.Contains(stderr.String(), "load is not supported") {
-			t.Errorf("%s: exit %d, stdout %q, stderr %q", name, code, stdout.String(), stderr.String())
+		args := append(append([]string{"check", "--project", dir}, exampleRoots(t)...), pkg)
+		cli.Main(context.Background(), args, cli.Env{Stdout: &stdout, Stderr: &stderr, Dir: dir})
+		if !strings.Contains(stderr.String(), cause) {
+			t.Errorf("%s: stderr %q does not contain %q", pkg, stderr.String(), cause)
 		}
 	}
 }

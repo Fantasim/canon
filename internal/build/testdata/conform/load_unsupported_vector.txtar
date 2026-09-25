@@ -1,7 +1,8 @@
-DECISIONS 196 (meta/decisions/log-2026-09-24.md, build wiring review): a load form M2 does not
-read, first forced inside a vector (settled() reads a's raw), leaves the vector without an outcome;
-the recorded load explains it, so check fails with build.ErrLoad, never an internal error. Check
-only: gen/cpp refuses a translated body that reads a precomputed method of self until ir plans it.
+DECISIONS 196 (meta/decisions/log-2026-09-24.md, build wiring review): a load form M3 does not
+read (a load.dir match whose format is not json), first forced inside a vector (settled() reads
+a's raw), leaves the vector without an outcome; the recorded load explains it, so check fails
+with build.ErrLoad, never an internal error. Check only: gen/cpp refuses a translated body that
+reads a precomputed method of self until ir plans it.
 -- project.canon --
 project acme {
   canon: "0.1"
@@ -11,7 +12,9 @@ project acme {
 package a
 
 /// Raw numbers.
-let raw: [Int] = load("x.json")
+let raw: [Int] = load.dir("x.txt")
+-- a/x.txt --
+1
 -- b/b.canon --
 /// B.
 package b
@@ -45,5 +48,5 @@ emit cpp { out: "out/", namespace: "acme::gen", mode: data }
 b
 -- check-only --
 -- build.txt --
-check error (load error true, internal false): load is not supported by this compiler yet (a load form other than load.dir): a/a.canon:5:18
-build error (load error true, internal false): load is not supported by this compiler yet (a load form other than load.dir): a/a.canon:5:18
+check error (load error true, internal false): load is not supported by this compiler yet (a load.dir file whose format is not json): a/a.canon:5:18
+build error (load error true, internal false): load is not supported by this compiler yet (a load.dir file whose format is not json): a/a.canon:5:18
