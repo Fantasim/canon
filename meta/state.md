@@ -20,7 +20,7 @@ worktree branches. They are listed in the pause report with what each still need
 - [x] W0 gap map (1b0a332).
 - [ ] W1: landed: eval layers/provenance (bc99b99, 02f203c), load forms (1a77900), dependent
   types in check (3e46ab3, b2f063c). Gate lift + load into an applied type landed on
-  `claude/m3-run` ("feat(eval,load,wire): loads backed by the evaluator").
+  `claude/m3-run` (d5062a3).
 - [ ] W2: gen/go inputs + unions landed (8e816d3). Open: gen/cpp inputs round 2 WIP
   (`claude/wip-a17381f528923b9cb`); ir name-plan unit WIP, review FAILED (`claude/wip-ir-names`);
   pattern translator; verify dependent (E3801/E3802);
