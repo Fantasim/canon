@@ -1,0 +1,28 @@
+TYPES.md §5.1: both operands context-dependent is E3008, arithmetic of literals included, with no type to take (synthesized alone, compared with another such operand, or compared to Bool); §5.3: `-1` is an integer literal. A non-numeric context gives arithmetic no type either.
+-- a/a.canon --
+package a
+
+local let d: Duration = 5s
+
+local let alone = 1 + 2
+local let bothSides: Bool = 0 - 20 == 1
+local let literals: Bool = 1 == 2
+local let negatives: Bool = -1 == -2
+local let duration: Duration = 1 + 2
+-- findings.txt --
+error[E3008]  a/a.canon:5:19
+  cannot infer the type of this expression; add a type
+
+error[E3008]  a/a.canon:6:29
+  cannot infer the type of this expression; add a type
+
+error[E3008]  a/a.canon:7:28
+  cannot infer the type of this expression; add a type
+
+error[E3008]  a/a.canon:8:29
+  cannot infer the type of this expression; add a type
+
+error[E3008]  a/a.canon:9:32
+  cannot infer the type of this expression; add a type
+
+5 errors, 0 warnings in 1 package (…)

@@ -1,0 +1,33 @@
+TYPES.md §5.1: arithmetic whose operands are both context-dependent (numeric literals, `-` of one) is itself context-dependent: it takes the other operand's type, or the expected type, as a literal would; §7.2, §7.3: a sized integer is Int and a Float32 is Float in expressions, so a literal operand is never judged against the stored range; §5.3: an integer literal stands for a Float.
+-- a/a.canon --
+package a
+
+local let x: Int = 1
+local let f: Float = 1.5
+local let f32: Float32 = 2.5
+local let s: Int8 = 3
+local let u: UInt8 = 4
+local let n: Int? = none
+
+local let intRight: Bool = x == 0 - 20
+local let intLeft: Bool = 0 - 20 == x
+local let intOrder: Bool = x < (1 + 2) * 3
+local let intNeg: Bool = x == -(1 + 2)
+local let floatRight: Bool = f == 0 - 20
+local let floatLeft: Bool = 0 - 20 < f
+local let floatMixed: Bool = f == 1.5 - 2
+local let floatNested: Bool = f >= (1 + 2) * 3
+local let float32Right: Bool = f32 != 1 / 2
+local let sizedRight: Bool = s == 0 - 200
+local let sizedLeft: Bool = 300 - 1 > u
+local let optional: Bool = n == 0 - 1
+local let sum: Int = x + (2 * 3)
+
+local let expected: Int = 0 - 20
+local let expectedFloat: Float = 1 / 2
+local let expectedSized: Int8 = 200 - 100
+local let expectedOptional: Float? = 1 + 1
+local let week: Int = 7 * 1440
+local let negFloat: Float = -1 + 2
+local let negFloatCompare: Bool = f == -1 + 2
+local let negParen: Bool = f < -(1 + 2)

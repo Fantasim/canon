@@ -3,6 +3,7 @@ name E3306 TYPES.md §12.3 (function type as a field)
 case 113
 seed 4294967410
 born mismatch extra E8012, E8151
+left E8009/missing*2
 sig extra E8012, E8151
 packages teamboard
 want E3306 teamboard/taxonomy.canon 410 427 check

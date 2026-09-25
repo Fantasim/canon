@@ -1,0 +1,30 @@
+TYPES.md §11.1: a parameterized record named without arguments is 0 given, in either declaration order (TYPES.md §3.2).
+-- a/a.canon --
+package a
+
+local enum K { num, text }
+
+local record Ev {
+  k: K
+}
+
+local record Early(e: Ev) {
+  n: Int = 0
+}
+
+local record R {
+  before: Early
+  after: Late?
+}
+
+local record Late(e: Ev) {
+  n: Int = 0
+}
+-- findings.txt --
+error[E3806]  a/a.canon:14:11
+  Early takes 1 arguments of types a.Ev
+
+error[E3806]  a/a.canon:15:10
+  Late takes 1 arguments of types a.Ev
+
+2 errors, 0 warnings in 1 package (…)

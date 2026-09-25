@@ -54,8 +54,12 @@ func cleanSegments(segs []string) bool {
 	return true
 }
 
-// jsonForms applies inline, int, bits, unit and none, each only on a type it fits.
+// jsonForms applies inline, int, bits, unit and none, each judged on a type it fits, never on the error type (TYPES.md §1).
 func (c *checker) jsonForms(env *env, f *types.Field, j *syntax.Annotation) {
+	if f.Type.Base().Kind() == types.Error {
+		c.untypedForms(env, f, j)
+		return
+	}
 	if a := flagArg(j, jsonInline); a != nil {
 		f.Inline = true
 		if f.Type.Base().Kind() != types.Variant {
@@ -93,6 +97,26 @@ func (c *checker) jsonNone(env *env, f *types.Field, v syntax.AnnValue) {
 	}
 	if f.Type.Base().Kind() != types.Optional || known && f.NoneWire == nil {
 		c.report(env, diag.E3316.AtForm(env.span(v), jsonNone, f.Type))
+	}
+}
+
+// untypedForms applies the forms of a field of the error type, judging only pairs: templates (WIRE.md §5.14).
+func (c *checker) untypedForms(env *env, f *types.Field, j *syntax.Annotation) {
+	f.Inline = flagArg(j, jsonInline) != nil
+	if flagArg(j, jsonInt) != nil {
+		f.Enc = types.EncInt
+	}
+	if flagArg(j, jsonBits) != nil {
+		f.Enc = types.EncBits
+	}
+	if v := named(j, jsonUnit); v != nil {
+		f.Unit = unitOf(symbol(v))
+	}
+	if v := named(j, jsonNone); v != nil && !c.holdsLexError(v) {
+		f.NoneWire = noneWire(v)
+	}
+	if list, ok := named(j, jsonPairsName).(*syntax.AnnotationList); ok {
+		c.pairKeys(env, list)
 	}
 }
 
@@ -355,7 +379,7 @@ func (c *checker) caseWireCase(ct *types.CaseType) string {
 	return c.variantCases[ct.Variant]
 }
 
-// enumAnnotations is `@codes(T)` and `@json(codes)` on an enum header.
+// enumAnnotations is `@codes(T)` and `@json(codes)` on an enum header; the latter needs the former (GRAMMAR.md §8.3).
 func (c *checker) enumAnnotations(e *types.EnumType, anns []*syntax.Annotation) {
 	if codes := annotation(anns, annotCodes); codes != nil {
 		if b, ok := c.universe[symbol(firstArg(codes))]; ok && b.typ != nil {
@@ -364,7 +388,7 @@ func (c *checker) enumAnnotations(e *types.EnumType, anns []*syntax.Annotation) 
 			}
 		}
 	}
-	e.WireCodes = flag(annotation(anns, annotJSON), jsonCodes)
+	e.WireCodes = e.Codes != nil && flag(annotation(anns, annotJSON), jsonCodes)
 }
 
 // enumMember is a member's wire value and code (WIRE.md §5.3, TYPES.md §8.1).

@@ -85,7 +85,7 @@ func (c *checker) resolveNamed(tc *typeCtx, t *syntax.NamedType) types.Type {
 	}
 	c.dependsOn(tc.env, o)
 	base := c.typeOfName(tc.env, o, t.Name)
-	if base == nil || t.Args == nil || base.Kind() == types.Error {
+	if base == nil || base.Kind() == types.Error {
 		return base
 	}
 	if fn := c.typeFuncs[o]; fn != nil {
@@ -94,6 +94,9 @@ func (c *checker) resolveNamed(tc *typeCtx, t *syntax.NamedType) types.Type {
 	// A record may still be a shell (TYPES.md §3.2): its declaration says whether it takes parameters.
 	if rec, ok := base.(*types.RecordType); ok && rec.Decl != nil && len(rec.Decl.Params) > 0 {
 		return c.applyRecord(tc, t, rec)
+	}
+	if t.Args == nil {
+		return base
 	}
 	return c.refine(tc, base, t.Args)
 }
@@ -181,7 +184,7 @@ func (c *checker) resolveList(tc *typeCtx, t *syntax.ListType) types.Type {
 func (c *checker) resolveKeyed(tc *typeCtx, t *syntax.KeyedType) types.Type {
 	inner := c.resolveType(tc, t.List)
 	l, ok := listOf(inner)
-	if !ok {
+	if !ok || l.Elem.Base().Kind() == types.Error {
 		return inner
 	}
 	rec, ok := l.Elem.Base().(*types.RecordType)
@@ -267,20 +270,11 @@ func mapKey(t types.Type) bool {
 	}
 }
 
-// resolveTable is `[stable] table T`, T a record (TYPES.md §9.3, LOCK.md §1).
+// resolveTable is `[stable] table T`, T a record; an element in error loses @stable's table (TYPES.md §9.3, LOCK.md §1).
 func (c *checker) resolveTable(tc *typeCtx, t *syntax.TableType) types.Type {
-	o := c.typeName(tc.env, t.Name)
-	if o == nil {
-		return types.ErrorType
-	}
-	c.dependsOn(tc.env, o)
-	elem := c.typeOfName(tc.env, o, t.Name)
-	if elem == nil {
-		return types.ErrorType
-	}
-	rec, ok := elem.Base().(*types.RecordType)
-	if !ok {
-		c.report(tc.env, diag.E3013.At(tc.env.span(t.Name), elem))
+	rec, elem := c.tableElement(tc, t)
+	if rec == nil {
+		c.stableLost[tc.env.pkg] = c.stableLost[tc.env.pkg] || t.Stable.Valid()
 		return types.ErrorType
 	}
 	c.tableOf[rec] = true
@@ -292,6 +286,30 @@ func (c *checker) resolveTable(tc *typeCtx, t *syntax.TableType) types.Type {
 		c.report(tc.env, diag.E6003.AtTable(tc.env.span(t)))
 	}
 	return &types.TableType{Elem: elem, Stable: stable}
+}
+
+// tableElement is a table's record, else E3013, or E3806 for a parameterized one; nil after a finding (TYPES.md §9.3, §11.1).
+func (c *checker) tableElement(tc *typeCtx, t *syntax.TableType) (*types.RecordType, types.Type) {
+	o := c.typeName(tc.env, t.Name)
+	if o == nil {
+		return nil, nil
+	}
+	c.dependsOn(tc.env, o)
+	elem := c.typeOfName(tc.env, o, t.Name)
+	if elem == nil {
+		return nil, nil
+	}
+	rec, ok := elem.Base().(*types.RecordType)
+	if !ok {
+		c.report(tc.env, diag.E3013.At(tc.env.span(t.Name), elem))
+		return nil, nil
+	}
+	if rec.Decl != nil && len(rec.Decl.Params) > 0 {
+		c.completeRecord(rec)
+		c.wrongArity(tc.env, t.Name, rec.Name, rec.Params)
+		return nil, nil
+	}
+	return rec, elem
 }
 
 // resolveOptional is `T?`; `T??` is E3401.

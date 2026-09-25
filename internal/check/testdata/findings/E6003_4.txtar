@@ -1,0 +1,45 @@
+LOCK.md §1, TYPES.md §1: a stable table whose element is in error could name a record of its own package or of one it imports, so no `@stable` there is judged off a stable table; a package that only imports it keeps its E6003. Here d's lost table silences d.D, c's silences e.E (c imports e), and a, importing d, still gets E6003.
+-- d/d.canon --
+package d
+
+/// D.
+record D {
+  /// Its code.
+  code: Int @stable
+}
+
+local let lost: stable table Nope = {}
+-- a/a.canon --
+package a
+
+import d
+
+local record A {
+  code: Int @stable
+  from: d.D
+}
+-- e/e.canon --
+package e
+
+/// E.
+record E {
+  /// Its code.
+  code: Int @stable
+}
+-- c/c.canon --
+package c
+
+import e
+
+local let lost: stable table e.Nope = {}
+-- findings.txt --
+error[E6003]  a/a.canon:6:13
+  @stable needs a field of the element of a stable table
+
+error[E2004]  c/c.canon:5:32
+  e has no public Nope
+
+error[E2102]  d/d.canon:9:30
+  unknown name Nope
+
+3 errors, 0 warnings in 4 packages (…)

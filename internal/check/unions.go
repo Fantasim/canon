@@ -73,13 +73,15 @@ func (c *checker) unionWire(j unionJob) {
 	}
 }
 
-// stringWire reports a string wire form: String, an enum, Never, a dependent type, or a ref keyed by one (WIRE.md §5.9).
+// stringWire reports a string wire form: String, an enum without @json(codes), Never, a dependent type, a ref keyed by one (WIRE.md §5.9).
 func (c *checker) stringWire(t types.Type) bool {
 	seen := map[*types.Collection]bool{}
 	for {
 		switch t.Base().Kind() {
-		case types.String, types.Enum, types.Never, types.TypeApp, types.DepUnion, types.Error:
+		case types.String, types.Never, types.TypeApp, types.DepUnion, types.Error:
 			return true
+		case types.Enum:
+			return !t.Base().(*types.EnumType).WireCodes
 		case types.Ref:
 		default:
 			return false

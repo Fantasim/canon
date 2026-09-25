@@ -199,7 +199,7 @@ func (c *checker) typedLit(env *env, e *syntax.TypedLit, want types.Type) types.
 	return types.ErrorType
 }
 
-// literalType resolves the name of a typed literal.
+// literalType resolves the name of a typed literal; a parameterized record named bare is E3806 (TYPES.md §11.1).
 func (c *checker) literalType(env *env, q *syntax.QualifiedName, want types.Type) types.Type {
 	if v := variantOf(unwrap(want)); v != nil && len(q.Parts) == 1 {
 		if cs := c.caseObject(v, q.Parts[0].Name); cs != nil {
@@ -216,5 +216,11 @@ func (c *checker) literalType(env *env, q *syntax.QualifiedName, want types.Type
 	if o.kind == ObjCase {
 		c.deprecatedUse(env, q.Parts[len(q.Parts)-1], o)
 	}
-	return c.typeOfName(env, o, q)
+	t := c.typeOfName(env, o, q)
+	if rec, ok := t.(*types.RecordType); ok && rec.Decl != nil && len(rec.Decl.Params) > 0 {
+		c.completeRecord(rec)
+		c.wrongArity(env, q, rec.Name, rec.Params)
+		return nil
+	}
+	return t
 }

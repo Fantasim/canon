@@ -2,7 +2,7 @@ suite mutation
 name E3013 TYPES.md §9.3 (table of an enum)
 case 88
 seed 4294967385
-open check
+open progen
 born mismatch extra E6003/field
 sig extra E6003/field
 packages resource.vocab

@@ -242,9 +242,73 @@ func TestLexErrorOutsideExpressions(t *testing.T) {
 		{"@json none marker", "local record R {\n  s: Int? @json(none: \"a\\q\")\n}\n", diag.E1109.Def()},
 		{"@json pairs template", pair + "local record R {\n  ps: [Pair](..=4) @json(pairs: [\"a{i}\\q\", \"a{i}\\q\"])\n}\n", diag.E1109.Def()},
 		{"emit package", "emit go {\n  out: \"gen\"\n  package: \"p\\q\"\n}\n", diag.E1109.Def()},
+		{"two codes, both unknown", "local enum K @codes(UInt8) {\n  a = 0x\n  b = 0x\n}\n", diag.E1110.Def()},
+		{"@cpp(defines:)", "local enum K @codes(UInt8) @cpp(defines: \"P\\q\") {\n  a = 1\n}\n", diag.E1109.Def()},
+		{"@cpp(struct:, header:)", "local record R @cpp(struct: \"S\\q\", header: \"h\\q\") {\n  n: Int @cpp(field: \"m\\q\", type: \"T\\q\")\n}\n", diag.E1109.Def()},
+		{"@go(name:), @cpp(name:)", "local record R @go(name: \"R\\q\") @cpp(name: \"R\\q\") {\n  n: Int\n}\n", diag.E1109.Def()},
+		{"@json(tag:) and a case's field", "local variant V @json(tag: \"k\\q\") {\n  c {\n    k: Int @json(\"k\\q\")\n  }\n}\n", diag.E1109.Def()},
+		{"@deprecated reason", "local record R {\n  n: Int @deprecated(\"x\\q\")\n}\n", diag.E1109.Def()},
 	})
 	out := checkBuilt(t, "package a\n\nlocal record R {\n  s: Int @json(none: \"a\\q\")\n}\n").out
 	if want := "error[" + string(diag.E3316.Def().Code) + "]"; !strings.Contains(out, want) {
 		t.Errorf("none: on a non-optional field is %s whatever its marker; got:\n%s", want, out)
 	}
+}
+
+// TYPES.md §1, WIRE.md §4.1, §5.14 (progen E3401_426): no @json form is judged on a field of the error type, but pairs: templates.
+func TestJSONFormsOnErrorType(t *testing.T) {
+	runCascades(t, []cascadeCase{
+		{"§2 none: on T??", "local record R {\n  r: Int(0..)?? = none @json(none: \"=\")\n}\n", diag.E3401.Def()},
+		{"inline", "local record R {\n  v: Nope @json(inline)\n}\n", diag.E2102.Def()},
+		{"int", "local record R {\n  b: Nope @json(int)\n}\n", diag.E2102.Def()},
+		{"bits", "local record R {\n  b: Nope @json(bits)\n}\n", diag.E2102.Def()},
+		{"unit", "local record R {\n  d: Nope @json(unit: s)\n}\n", diag.E2102.Def()},
+		{"pairs", "local record R {\n  ps: Nope @json(pairs: [\"a{i}\", \"b{i}\"])\n}\n", diag.E2102.Def()},
+	})
+	out := checkBuilt(t, "package a\n\nlocal record R {\n  ps: Nope @json(pairs: [\"a{i}\", \"a{i}\"])\n}\n").out
+	if want := "error[" + string(diag.E3316.Def().Code) + "]"; !strings.Contains(out, want) {
+		t.Errorf("two equal pairs: templates are %s whatever the field's type; got:\n%s", want, out)
+	}
+}
+
+// LOCK.md §1, TYPES.md §1 (progen E3013_385): no @stable is judged off a stable table whose element is in error, nor on a field of the error type.
+func TestStableOffALostTable(t *testing.T) {
+	const rec = "local record Ev {\n  code: UInt16 @stable\n}\n\n"
+	runCascades(t, []cascadeCase{
+		{"an enum as the element", rec + "local enum K { a }\n\nlocal let evs: stable table K = {}\n", diag.E3013.Def()},
+		{"unknown element", rec + "local let evs: stable table Nope = {}\n", diag.E2102.Def()},
+		{"field type in error", "local record Ev {\n  code: Nope @stable\n}\n\nlocal let evs: stable table Ev = {}\n", diag.E2102.Def()},
+	})
+	got := checkBuilt(t, "package a\n\n"+rec+"local enum K { a }\n\nlocal let evs: table K = {}\n").codes
+	if want := sortedCodes([]diag.Code{diag.E6003.Def().Code, diag.E3013.Def().Code}); !slices.Equal(got, want) {
+		t.Errorf("a plain table lost nothing stable: want %v, got %v", want, got)
+	}
+}
+
+// TYPES.md §1, WIRE.md §6.1: an expected type holding the error type anywhere gets no E7116.
+func TestLoadIntoErrorType(t *testing.T) {
+	runCascades(t, []cascadeCase{
+		{"headered csv", "local let x: [Nope] = load.csv(\"a.csv\", header: true)\n", diag.E2102.Def()},
+		{"dir of text", "local let x: [Nope] = load.dir(\"d/*.txt\", format: text)\n", diag.E2102.Def()},
+		{"bare text", "local let x: [Nope] = load(\"x.txt\")\n", diag.E2102.Def()},
+		{"plain csv", "local let x: [[Nope]] = load.csv(\"a.csv\")\n", diag.E2102.Def()},
+		{"optional text", "local let x: Nope? = load(\"x.txt\")\n", diag.E2102.Def()},
+		{"load.text", "local let x: Nope? = load.text(\"x.txt\")\n", diag.E2102.Def()},
+	})
+}
+
+// TYPES.md §1, §9.1: a keyed list whose element is in error reports nothing of its key.
+func TestKeyedErrorElement(t *testing.T) {
+	const h = "local enum K { a }\n\nlocal record Ev {\n  k: K\n}\n\nlocal record H(e: Ev) {\n  n: Int\n}\n\n"
+	runCascades(t, []cascadeCase{
+		{"§11.1 parameterized", h + "local let hs: [H] keyed by n = []\n", diag.E3806.Def()},
+		{"unknown", "local let xs: [Nope] keyed by n = []\n", diag.E2102.Def()},
+	})
+}
+
+// GRAMMAR.md §8.3, TYPES.md §13.2: `@json(codes)` refused for want of `@codes` does not make a union's enum wire as codes.
+func TestRefusedJSONCodes(t *testing.T) {
+	runCascades(t, []cascadeCase{
+		{"no @codes", "local enum T @json(codes) { a }\n\nlocal type U = T | \"all\"\n", diag.E1119.Def()},
+	})
 }

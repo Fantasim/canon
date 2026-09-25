@@ -1,0 +1,54 @@
+TYPES.md §13.2, WIRE.md §5.3, §5.9: a `@json(codes)` enum is written as its code, a number, so it has no string wire form; nor has a ref into a list keyed by one. A literal union over either, directly or as a branch of a type application, is E3002; a `@codes` enum without `@json(codes)` keeps its string wire form. Declaration order does not matter (TYPES.md §3.2).
+-- a/a.canon --
+package a
+
+local enum K { num, text }
+
+local enum Coded @codes(Int) @json(codes) {
+  one = 1
+  two = 2
+}
+
+local enum Plain @codes(Int) {
+  one = 1
+  two = 2
+}
+
+local record Ev {
+  k: K
+}
+
+local record Slot {
+  code: Coded
+}
+
+local let slots: [Slot] keyed by code = [{ code: one }]
+
+local type P(e: Ev) = match e.k {
+  num => Coded
+  text => String
+}
+
+local type ByCode = Coded | "all"
+local type BySlot = ref slots | "all"
+local type ByBranch(e: Ev) = P(e) | "all"
+local type ByPlain = Plain | "all"
+local type ByLate = Late | "all"
+
+local enum Late @codes(Int) @json(codes) {
+  one = 1
+}
+-- findings.txt --
+error[E3002]  a/a.canon:30:21
+  expected String, found a.Coded
+
+error[E3002]  a/a.canon:31:21
+  expected String, found ref a.slots
+
+error[E3002]  a/a.canon:32:30
+  expected String, found a.Coded
+
+error[E3002]  a/a.canon:34:21
+  expected String, found a.Late
+
+4 errors, 0 warnings in 1 package (…)

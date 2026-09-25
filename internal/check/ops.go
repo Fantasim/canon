@@ -13,7 +13,7 @@ func (c *checker) unary(env *env, e *syntax.UnaryExpr, want types.Type) types.Ty
 		return types.BoolType
 	}
 	var t types.Type
-	if literalOf(e.X) != nil {
+	if literalOf(e.X) != nil || c.contextOperation(env, e.X) {
 		t = c.expr(env, e.X, numericWant(want))
 	} else {
 		t = c.synth(env, e.X)
@@ -62,8 +62,12 @@ func (c *checker) binary(env *env, e *syntax.BinaryExpr, want types.Type) types.
 		return c.inExpr(env, e)
 	default:
 	}
-	if unknownContext(want) && c.contextDependent(env, e.X) && c.contextDependent(env, e.Y) {
+	both := c.contextDependent(env, e.X) && c.contextDependent(env, e.Y)
+	if both && unknownContext(want) {
 		return types.ErrorType
+	}
+	if w := exprType(want); both && w != nil && allArith[e.Op] {
+		return c.contextArith(env, e, w)
 	}
 	tx, ty, ok := c.operands(env, e)
 	if !ok {
@@ -109,8 +113,63 @@ func (c *checker) contextDependent(env *env, e syntax.Expr) bool {
 		return len(x.Items) == 0 && len(x.Clauses) == 0
 	case *syntax.ParenExpr:
 		return c.contextDependent(env, x.X)
+	case *syntax.UnaryExpr:
+		return x.Op == syntax.TokMinus && c.contextDependent(env, x.X)
+	case *syntax.BinaryExpr:
+		return allArith[x.Op] && c.contextDependent(env, x.X) && c.contextDependent(env, x.Y)
 	}
 	return false
+}
+
+// contextOperation reports `-e` or arithmetic of context-dependent operands, typed like a literal (TYPES.md §5.1).
+func (c *checker) contextOperation(env *env, e syntax.Expr) bool {
+	switch inner(e).(type) {
+	case *syntax.UnaryExpr, *syntax.BinaryExpr:
+		return c.contextDependent(env, e)
+	default:
+		return false
+	}
+}
+
+// contextArith checks both context-dependent operands against w, then applies the operator table (TYPES.md §5.1, §7.1).
+func (c *checker) contextArith(env *env, e *syntax.BinaryExpr, w types.Type) types.Type {
+	tx, ty := c.contextOperand(env, e.X, w), c.contextOperand(env, e.Y, w)
+	if tx.Kind() == types.Error || ty.Kind() == types.Error {
+		return types.ErrorType
+	}
+	return c.arithmetic(env, e, tx, ty)
+}
+
+// contextOperand checks one operand against w; an integer literal stands for an expected Float (TYPES.md §5.3).
+func (c *checker) contextOperand(env *env, e syntax.Expr, w types.Type) types.Type {
+	t := c.expr(env, e, w)
+	switch {
+	case t.Kind() == types.Error:
+		return t
+	case isIntLiteral(e) && floatTarget(w):
+		return w
+	case !c.assignable(t, w):
+		return types.ErrorType // reported by expr's accept
+	}
+	return t
+}
+
+// exprType is what a context-dependent operand takes from t: Int, Float, or t's list; nil otherwise (TYPES.md §7.2, §7.3).
+func exprType(t types.Type) types.Type {
+	u := unwrap(t)
+	if u == nil {
+		return nil
+	}
+	switch u.Kind() {
+	case types.Int:
+		return types.IntType
+	case types.Float:
+		return types.FloatType
+	case types.List:
+		return u
+	default:
+		return nil
+	}
 }
 
 // operands types both operands of a comparison or arithmetic: the context-dependent one is
@@ -159,6 +218,10 @@ func (c *checker) operand(env *env, e syntax.Expr, other types.Type) types.Type 
 	case *syntax.StringLit, *syntax.RawStringLit:
 		if _, isUnion := unwrap(other).(*types.LitUnionType); isUnion {
 			return c.checkedOperand(env, e, other)
+		}
+	case *syntax.UnaryExpr, *syntax.BinaryExpr:
+		if w := exprType(other); w != nil && c.contextOperation(env, e) {
+			return c.expr(env, e, w)
 		}
 	}
 	return c.synth(env, e)

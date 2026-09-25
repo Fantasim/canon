@@ -1,0 +1,10 @@
+CODEGEN.md §3.4 (canon, std, nlohmann are namespaces generated C++ uses): a namespace that is one of them is E8009 reservedNamespace.
+-- a/a.canon --
+package a
+
+emit cpp { out: "@source/a", namespace: "std" }
+-- findings.txt --
+error[E8009]  a/a.canon:3:41
+  invalid namespace "std" for emit cpp: canon, std and nlohmann are reserved
+
+1 error, 0 warnings in 1 package (…)

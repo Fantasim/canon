@@ -25,27 +25,65 @@ func (c *checker) load(env *env, e *syntax.LoadExpr, want types.Type) types.Type
 		c.report(env, diag.E7002.At(env.span(e)))
 		return types.ErrorType
 	}
-	if form == loadCSV && !hasHeader(e) {
-		if !stringRows(want) {
-			c.report(env, diag.E7116.At(env.span(e), loadName+dot+form, want))
-			return types.ErrorType
-		}
+	if holds(want, types.Error) {
 		return want
 	}
-	if form != loadForm && !collectionTarget(want) {
-		c.report(env, diag.E7116.At(env.span(e), loadName+dot+form, want))
-		return types.ErrorType
-	}
-	if want.Base().Kind() == types.Range || want.Base().Kind() == types.Func {
-		c.report(env, diag.E7116.At(env.span(e), loadName, want))
+	if !c.loadFits(e, form, want) {
+		label := loadName
+		if form != loadForm {
+			label += dot + form
+		}
+		c.report(env, diag.E7116.At(env.span(e), label, want))
 		return types.ErrorType
 	}
 	return want
 }
 
+// loadFits reports whether a load form can build want, else E7116 (WIRE.md §6.1, §6.2, §6.5, §6.6, §5.9).
+func (c *checker) loadFits(e *syntax.LoadExpr, form string, want types.Type) bool {
+	switch form {
+	case loadCSV:
+		return types.CSVFits(hasHeader(e), want)
+	case loadForm:
+		k := want.Base().Kind()
+		return k != types.Range && k != types.Func && types.FormatFits(c.loadFormat(e, true), hasHeader(e), want)
+	default:
+		return dirFits(c.loadFormat(e, false), want)
+	}
+}
+
+// loadFormat is the format `format:` names, else when byPath its path literal's extension's (WIRE.md §6.2).
+func (c *checker) loadFormat(e *syntax.LoadExpr, byPath bool) types.LoadFormat {
+	for _, a := range e.Args {
+		if id, ok := a.Value.(*syntax.IdentExpr); ok && a.Name != nil && a.Name.Name == optionFormat {
+			return types.FormatNamed(id.Name)
+		}
+	}
+	if !byPath || len(e.Args) == 0 || e.Args[0].Name != nil {
+		return types.FormatUnknown
+	}
+	s, ok := e.Args[0].Value.(syntax.StrLit)
+	if !ok || !interpolationFree(e.Args[0].Value) || c.lexError(e.Args[0].Value) {
+		return types.FormatUnknown
+	}
+	return types.FormatOfPath(constText(s))
+}
+
+// dirFits is a list, keyed list or table, never an optional, of what one file of format builds with no header (WIRE.md §6.5).
+func dirFits(f types.LoadFormat, t types.Type) bool {
+	switch b := t.Base().(type) {
+	case *types.ListType:
+		return types.FormatFits(f, false, b.Elem)
+	case *types.TableType:
+		return types.FormatFits(f, false, b.Elem)
+	default:
+		return false
+	}
+}
+
 // loadText is `load.text(path)`: a String, or an alias or refinement of it (WIRE.md §6.1).
 func (c *checker) loadText(env *env, e *syntax.LoadExpr, want types.Type) types.Type {
-	if want == nil || want.Base().Kind() == types.Error {
+	if want == nil || holds(want, types.Error) {
 		return types.StringType
 	}
 	if want.Base().Kind() != types.String {
@@ -61,27 +99,6 @@ func hasHeader(e *syntax.LoadExpr) bool {
 		b, ok := a.Value.(*syntax.BoolLit)
 		return a.Name != nil && a.Name.Name == optionHeader && ok && b.Value
 	})
-}
-
-// stringRows reports `[[String]]`, what load.csv builds without a header (WIRE.md §6.1).
-func stringRows(t types.Type) bool {
-	rows, ok := t.Base().(*types.ListType)
-	if !ok || rows.KeyedBy != nil {
-		return false
-	}
-	row, ok := rows.Elem.Base().(*types.ListType)
-	return ok && row.KeyedBy == nil && types.Identical(row.Elem, types.StringType)
-}
-
-// collectionTarget reports what load.dir and load.csv (with a header) build: a list, a keyed
-// list or a table.
-func collectionTarget(t types.Type) bool {
-	switch unwrap(t).Kind() {
-	case types.List, types.Table:
-		return true
-	default:
-		return false
-	}
 }
 
 // loadArgs types the path and options of a load as constants: strings, Bool flags, and the

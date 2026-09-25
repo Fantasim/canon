@@ -215,16 +215,12 @@ func (c *checker) applyRecord(tc *typeCtx, t *syntax.NamedType, rec *types.Recor
 	return &types.AppliedRecord{Rec: rec, Args: args}
 }
 
-// typeArgs checks the arity and the type of each argument against its parameter (E3806); a
-// ref argument dereferences.
+// typeArgs checks the arity (none written is 0 given) and the type of each argument against its
+// parameter (E3806); a ref argument dereferences.
 func (c *checker) typeArgs(tc *typeCtx, t *syntax.NamedType, name string, params []*types.Param) ([]*types.Arg, bool) {
 	env := tc.env
-	var want []diag.TypeArg
-	for _, p := range params {
-		want = append(want, p.Type)
-	}
-	if len(t.Args.Args) != len(params) {
-		c.report(env, diag.E3806.At(env.span(t.Args), name, int64(len(params)), want))
+	if t.Args == nil || len(t.Args.Args) != len(params) {
+		c.wrongArity(env, arityNode(t), name, params)
 		return nil, false
 	}
 	var out []*types.Arg
@@ -237,12 +233,29 @@ func (c *checker) typeArgs(tc *typeCtx, t *syntax.NamedType, name string, params
 		}
 		c.info.Types[a] = at
 		if !types.Assignable(c.deref(at), params[i].Type) && !types.Assignable(at, params[i].Type) {
-			c.report(env, diag.E3806.At(env.span(a), name, int64(len(params)), want))
+			c.wrongArity(env, a, name, params)
 			ok = false
 		}
 		out = append(out, arg)
 	}
 	return out, ok
+}
+
+// wrongArity is E3806 at at: name takes exactly its declared parameters, each of its type (TYPES.md §11.1).
+func (c *checker) wrongArity(env *env, at syntax.Node, name string, params []*types.Param) {
+	var want []diag.TypeArg
+	for _, p := range params {
+		want = append(want, p.Type)
+	}
+	c.report(env, diag.E3806.At(env.span(at), name, int64(len(params)), want))
+}
+
+// arityNode is where a wrong arity is reported: the arguments, or the bare name (TYPES.md §11.1).
+func arityNode(t *syntax.NamedType) syntax.Node {
+	if t.Args == nil {
+		return t.Name
+	}
+	return t.Args
 }
 
 // deref is the entry type of a ref, or t itself.

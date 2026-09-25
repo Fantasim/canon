@@ -64,6 +64,7 @@ type checker struct {
 	deps       map[*object][]*object
 	tableOf    map[*types.RecordType]bool         // records used as the element of a table (TYPES.md §3.6)
 	stableOf   map[*types.RecordType]bool         // records used as the element of a stable table
+	stableLost map[*pkgState]bool                 // packages with a stable table whose element is in error
 	keyedOf    map[*types.RecordType]bool         // records used as the element of a keyed list
 	builtins   map[string]*object                 // built-in members and methods, by name
 	boolObjs   []*object                          // `false` and `true` as match patterns, in index order
@@ -98,16 +99,17 @@ type checker struct {
 func newChecker(ctx context.Context, proj *project.Project, bags Bags, fold Folder) *checker {
 	c := &checker{
 		ctx: ctx, proj: proj, bags: bags, fold: fold,
-		info:     newInfo(),
-		pkgs:     map[string]*pkgState{},
-		pending:  map[*types.RefType]*pendingRef{},
-		colls:    map[collKey]*types.Collection{},
-		deps:     map[*object][]*object{},
-		tableOf:  map[*types.RecordType]bool{},
-		stableOf: map[*types.RecordType]bool{},
-		keyedOf:  map[*types.RecordType]bool{},
-		builtins: map[string]*object{},
-		listKeys: map[*object]map[string]source.Span{},
+		info:       newInfo(),
+		pkgs:       map[string]*pkgState{},
+		pending:    map[*types.RefType]*pendingRef{},
+		colls:      map[collKey]*types.Collection{},
+		deps:       map[*object][]*object{},
+		tableOf:    map[*types.RecordType]bool{},
+		stableOf:   map[*types.RecordType]bool{},
+		stableLost: map[*pkgState]bool{},
+		keyedOf:    map[*types.RecordType]bool{},
+		builtins:   map[string]*object{},
+		listKeys:   map[*object]map[string]source.Span{},
 
 		typeObjects:  map[types.Type]*object{},
 		members:      map[*types.EnumType][]*object{},

@@ -3,6 +3,7 @@ name E1101 GRAMMAR.md §2.6 (format spec)
 case 11
 seed 4294967308
 born mismatch extra E4503/plain
+left E8009/missing
 sig extra E4503/plain
 packages teamboard
 want E1101 teamboard/taxonomy.canon 5502 5504 check

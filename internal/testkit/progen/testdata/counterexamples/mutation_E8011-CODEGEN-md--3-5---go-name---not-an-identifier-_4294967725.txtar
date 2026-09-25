@@ -4,10 +4,10 @@ case 428
 seed 4294967725
 open ir
 born mismatch extra E8011
-sig extra E8011/derived
+sig extra E8009/missing, E8011/derived
 packages teamboard
 want E8011 teamboard/taxonomy.canon 1276 1284 check
-failure extra [E8011 teamboard/taxonomy.canon:237:6 ", the go name derived for , is not a valid identifier"] besides [E8011 teamboard/taxonomy.canon:40:8 "1Bad is not a valid go identifier for @go(name:)"]
+failure extra [E8011 teamboard/taxonomy.canon:237:6 ", the go name derived for , is not a valid identifier"; E8009 sovcommon/ui/ui.canon:35:6 "emit go is missing out"] besides [E8011 teamboard/taxonomy.canon:40:8 "1Bad is not a valid go identifier for @go(name:)"]
 -- project.canon --
 project sovereign {
   canon: "0.1"

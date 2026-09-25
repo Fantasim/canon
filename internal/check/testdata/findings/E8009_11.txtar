@@ -1,0 +1,22 @@
+WIRE.md §8.1 (out is required), CODEGEN.md §2.1: emit json and emit view with no out are E8009 missing; out of the wrong kind is not missing.
+-- a/a.canon --
+package a
+
+let x: Int = 1
+
+emit json { values: [x] }
+
+emit view { }
+
+emit ts { out: 3 }
+-- findings.txt --
+error[E8009]  a/a.canon:5:6
+  emit json is missing out
+
+error[E8009]  a/a.canon:7:6
+  emit view is missing out
+
+error[E8009]  a/a.canon:9:16
+  option out of emit ts must be a constant string
+
+3 errors, 0 warnings in 1 package (…)

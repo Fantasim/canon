@@ -1,0 +1,33 @@
+TYPES.md §11.1: a type function named without arguments is 0 given, in either declaration order (TYPES.md §3.2).
+-- a/a.canon --
+package a
+
+local enum K { num, text }
+
+local record Ev {
+  k: K
+}
+
+local type Before(e: Ev) = match e.k {
+  num => Int
+  text => String
+}
+
+local record R {
+  ev: Ev
+  b: Before
+  a: [After]
+}
+
+local type After(e: Ev) = match e.k {
+  num => Int
+  text => String
+}
+-- findings.txt --
+error[E3806]  a/a.canon:16:6
+  Before takes 1 arguments of types a.Ev
+
+error[E3806]  a/a.canon:17:7
+  After takes 1 arguments of types a.Ev
+
+2 errors, 0 warnings in 1 package (…)

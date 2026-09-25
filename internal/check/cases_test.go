@@ -18,6 +18,9 @@ import (
 
 const checkPkg = "github.com/fantasim/canonlang/internal/check"
 
+// binaryOperands is the operand count of a binary expression.
+const binaryOperands = 2
+
 // checkSource checks one file of package a and fails on any finding.
 func checkSource(t *testing.T, src string) (*check.Program, *syntax.File) {
 	t.Helper()
@@ -306,5 +309,23 @@ local record R {
 	}
 	if d := time.Since(start); d > time.Second {
 		t.Errorf("took %v", d)
+	}
+}
+
+// TYPES.md §5.1, §5.3 (log 2026-09-24, W1 dependent types): in `let f: Float = 1 / 2` each literal takes Float, so the division is Float's.
+func TestContextArithmeticInfo(t *testing.T) {
+	prog, f := checkSource(t, "package a\n\nlocal let f: Float = 1 / 2\n")
+	bin := nodesOf[*syntax.BinaryExpr](f)[0]
+	if got := prog.Info.Types[bin]; got == nil || got.Kind() != types.Float {
+		t.Errorf("Types[1 / 2] = %v, want Float", got)
+	}
+	lits := nodesOf[*syntax.IntLit](f)
+	if len(lits) != binaryOperands {
+		t.Fatalf("%d integer literals, want one per operand", len(lits))
+	}
+	for _, lit := range lits {
+		if cv := prog.Info.Conv[lit]; cv == nil || cv.Kind != check.ConvIntLitToFloat {
+			t.Errorf("Conv[%v] = %v, want IntLitToFloat", lit.Value, cv)
+		}
 	}
 }

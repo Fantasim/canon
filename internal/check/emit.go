@@ -42,6 +42,7 @@ func (c *checker) checkEmit(env *env, e *syntax.EmitDecl, seen map[string]bool) 
 	seen[target] = true
 	values := -1
 	out, named := "", false
+	c.emitRequired(env, e, target)
 	for _, it := range e.Options.Items {
 		fi, isField := it.(*syntax.FieldItem)
 		if !isField || !slices.Contains(spec.options, fi.Name.Name) {
@@ -65,6 +66,16 @@ func (c *checker) checkEmit(env *env, e *syntax.EmitDecl, seen map[string]bool) 
 	if target == TargetGo && !named {
 		c.defaultGoPackage(env, e, out)
 	}
+}
+
+// emitRequired is E8009 `missing`: every target's `out` is required, with no default (CODEGEN.md §2.1, WIRE.md §8.1).
+func (c *checker) emitRequired(env *env, e *syntax.EmitDecl, target string) {
+	for _, it := range e.Options.Items {
+		if itemName(it) == OptOut {
+			return
+		}
+	}
+	c.report(env, diag.E8009.AtMissing(env.span(e.Target), OptOut, target))
 }
 
 // defaultGoPackage validates the last element of out as the package (CODEGEN.md §2.1, DECISIONS 213).
@@ -103,6 +114,8 @@ func (c *checker) emitString(env *env, fi *syntax.FieldItem, target string) (str
 		c.report(env, diag.E8009.AtPackage(env.span(fi.Value), text))
 	case fi.Name.Name == OptNamespace && !cppNamespace(text):
 		c.report(env, diag.E8009.AtNamespace(env.span(fi.Value), text))
+	case fi.Name.Name == OptNamespace && reservedNamespace(text):
+		c.report(env, diag.E8009.AtReservedNamespace(env.span(fi.Value), text))
 	case fi.Name.Name == OptOut && target == TargetTS && !strings.HasSuffix(text, tsSuffix):
 		c.report(env, diag.E8009.AtTsOut(env.span(fi.Value), text))
 	}
@@ -120,14 +133,24 @@ func IsCppKeyword(s string) bool { return cppKeywords[s] }
 // IsCppNamespace reports canon, std or nlohmann: a namespace generated C++ names (CODEGEN.md §3.4).
 func IsCppNamespace(s string) bool { return cppNamespaces[s] }
 
-// cppNamespace reports `ident{::ident}` with no C++ keyword and no namespace generated C++ names.
+// cppNamespace reports `ident{::ident}` with no C++ keyword (CODEGEN.md §2.1).
 func cppNamespace(s string) bool {
 	for part := range strings.SplitSeq(s, cppScope) {
-		if !identRe.MatchString(part) || cppKeywords[part] || cppNamespaces[part] {
+		if !identRe.MatchString(part) || cppKeywords[part] {
 			return false
 		}
 	}
 	return true
+}
+
+// reservedNamespace reports a segment naming canon, std or nlohmann, which generated C++ uses (CODEGEN.md §3.4).
+func reservedNamespace(s string) bool {
+	for part := range strings.SplitSeq(s, cppScope) {
+		if cppNamespaces[part] {
+			return true
+		}
+	}
+	return false
 }
 
 // emitMode is `mode: word`, a mode of the target (E8009), never looked up in scope.

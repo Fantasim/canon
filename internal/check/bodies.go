@@ -1,6 +1,8 @@
 package check
 
 import (
+	"slices"
+
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
@@ -242,7 +244,7 @@ func (c *checker) fieldDefaults(o *object, body *recordCtx) {
 	}
 }
 
-// stableFields is E6003 for `@stable` off a stable table's element or on another type (LOCK.md §1).
+// stableFields is E6003 for `@stable` off a stable table's element or of a wrong type, unless the table or type is in error (LOCK.md §1, TYPES.md §1).
 func (c *checker) stableFields(o *object, r *types.RecordType) {
 	env := c.declEnv(o)
 	for _, fo := range o.body.order {
@@ -251,12 +253,22 @@ func (c *checker) stableFields(o *object, r *types.RecordType) {
 		}
 		at := env.span(annotation(fo.decl.(*syntax.FieldDecl).Annotations, annotStable))
 		switch k := fo.field.Type.Base().Kind(); {
-		case !c.stableOf[r]:
+		case !c.stableOf[r] && !c.lostStable(env.pkg):
 			c.report(env, diag.E6003.AtField(at))
-		case k != types.Int && k != types.String:
+		case k != types.Int && k != types.String && k != types.Error:
 			c.report(env, diag.E6003.AtType(at, fo.field.Type))
 		}
 	}
+}
+
+// lostStable reports a stable table in error that could name a record of p: one in p or in a package importing p.
+func (c *checker) lostStable(p *pkgState) bool {
+	for _, q := range c.sorted {
+		if c.stableLost[q] && (q == p || slices.Contains(q.imports, p)) {
+			return true
+		}
+	}
+	return false
 }
 
 // reservedEntryNames is E2105: a table's element may not declare `id` or `retired`.

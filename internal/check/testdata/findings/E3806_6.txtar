@@ -1,0 +1,29 @@
+TYPES.md §11.1, §5.2: a typed literal names its record, so a parameterized record written bare as `H { … }` is 0 given (E3806); its fields are then not judged (TYPES.md §1).
+-- a/a.canon --
+package a
+
+local enum K { num, text }
+
+local record Ev {
+  k: K
+}
+
+local record H(e: Ev) {
+  n: Int = 0
+}
+
+local record Holder {
+  ev: Ev
+  h: H(ev)
+}
+
+local let alone = H { n: 1, nope: 2 }
+local let held: Holder = { ev: { k: num }, h: H { n: "x" } }
+-- findings.txt --
+error[E3806]  a/a.canon:18:19
+  H takes 1 arguments of types a.Ev
+
+error[E3806]  a/a.canon:19:47
+  H takes 1 arguments of types a.Ev
+
+2 errors, 0 warnings in 1 package (…)

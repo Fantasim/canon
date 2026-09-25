@@ -1,0 +1,24 @@
+TYPES.md §11.1, §9.3: a table names its element without arguments, so a parameterized record as the element of a table, stable or not, is 0 given (E3806), and the table stands for the error type.
+-- a/a.canon --
+package a
+
+local enum K { num, text }
+
+local record Ev {
+  k: K
+}
+
+local record H(e: Ev) {
+  n: Int = 0
+}
+
+local let hs: table H = {}
+local let locked: stable table H = {}
+-- findings.txt --
+error[E3806]  a/a.canon:13:21
+  H takes 1 arguments of types a.Ev
+
+error[E3806]  a/a.canon:14:32
+  H takes 1 arguments of types a.Ev
+
+2 errors, 0 warnings in 1 package (…)

@@ -3,7 +3,7 @@ name E2105 TYPES.md §3.6 (id on a table element)
 case 1659
 seed 4294968956
 born mismatch extra E3002
-left E3004/missing
+left E3004/missing, E8009/missing
 sig extra E3002
 packages teamboard
 want E2105 teamboard/taxonomy.canon 1747 1749 check

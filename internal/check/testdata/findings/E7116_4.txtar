@@ -1,0 +1,39 @@
+WIRE.md §6.1, §6.2: a bare load builds what its format builds, the format being the one `format:` names or the path's extension gives, compared ASCII case-insensitively: a text file a String (§6.7), a csv file `[[String]]`, or records with `header: true` (§6.6); json anything with a wire form (§5.9: no Range, no function).
+-- a/a.canon --
+package a
+
+local record Row {
+  name: String
+}
+
+local let n: Int = load("@resource/a.txt")
+local let loud: Int = load("@resource/A.TXT")
+local let s: String = load("@resource/a.txt")
+local let rows: [Row] = load("@resource/a.csv")
+local let cells: [[String]] = load("@resource/a.Csv")
+local let named: [Row] = load("@resource/a.csv", header: true)
+local let forced: Int = load("@resource/a.json", format: text)
+local let asJSON: [Row] = load("@resource/a.txt", format: json)
+local let json: Int = load("@resource/a.json")
+local let r: Range = load("@resource/a.json")
+local let broken: Nope = load("@resource/a.txt")
+-- findings.txt --
+error[E7116]  a/a.canon:7:20
+  load cannot produce Int
+
+error[E7116]  a/a.canon:8:23
+  load cannot produce Int
+
+error[E7116]  a/a.canon:10:25
+  load cannot produce [a.Row]
+
+error[E7116]  a/a.canon:13:25
+  load cannot produce Int
+
+error[E7116]  a/a.canon:16:22
+  load cannot produce Range
+
+error[E2102]  a/a.canon:17:19
+  unknown name Nope
+
+6 errors, 0 warnings in 1 package (…)

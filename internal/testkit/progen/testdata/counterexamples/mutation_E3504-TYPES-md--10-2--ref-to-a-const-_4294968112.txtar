@@ -3,6 +3,7 @@ name E3504 TYPES.md §10.2 (ref to a const)
 case 815
 seed 4294968112
 born mismatch extra E3003
+left E8009/missing
 sig extra E3003
 packages teamboard
 want E3504 teamboard/taxonomy.canon 5232 5239 check

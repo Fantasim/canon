@@ -2,7 +2,6 @@ suite mutation
 name E3401 TYPES.md §2 (optional of an optional)
 case 129
 seed 4294967426
-open check
 born mismatch extra E3316/form
 sig extra E3316/form
 packages game.items

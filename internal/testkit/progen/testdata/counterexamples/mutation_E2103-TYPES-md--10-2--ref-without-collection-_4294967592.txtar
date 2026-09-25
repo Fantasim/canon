@@ -3,6 +3,7 @@ name E2103 TYPES.md §10.2 (ref without collection)
 case 295
 seed 4294967592
 born mismatch extra E3003
+left E8009/missing
 sig extra E3003
 packages teamboard
 want E2103 teamboard/taxonomy.canon 5442 5453 check

@@ -1,0 +1,37 @@
+WIRE.md §6.1, §6.6: load.csv with `header: true` builds a list, keyed list or table of records, never an optional one; load.dir a list, keyed list or table, never an optional one (§6.5); with `format:` naming text or csv, each element is what that format builds (§6.7, §6.6: a String, or `[[String]]`, load.dir having no header).
+-- a/a.canon --
+package a
+
+local record Row {
+  name: String
+}
+
+local let ints: [Int] = load.csv("@resource/a.csv", header: true)
+local let maybe: [Row]? = load.csv("@resource/a.csv", header: true)
+local let keyed: [Row] keyed by name = load.csv("@resource/a.csv", header: true)
+local let byName: table Row = load.csv("@resource/a.csv", header: true)
+
+local let dirMaybe: [Row]? = load.dir("@resource/rows/*.json")
+local let dirRows: [Row] keyed by name = load.dir("@resource/rows/*.json")
+local let dirTable: table Row = load.dir("@resource/rows/*.json")
+local let texts: [String] = load.dir("@resource/rows/*.txt", format: text)
+local let textRows: [Row] = load.dir("@resource/rows/*.txt", format: text)
+local let grids: [[[String]]] = load.dir("@resource/rows/*.csv", format: csv)
+local let csvRows: table Row = load.dir("@resource/rows/*.csv", format: csv)
+-- findings.txt --
+error[E7116]  a/a.canon:7:25
+  load.csv cannot produce [Int]
+
+error[E7116]  a/a.canon:8:27
+  load.csv cannot produce [a.Row]?
+
+error[E7116]  a/a.canon:12:30
+  load.dir cannot produce [a.Row]?
+
+error[E7116]  a/a.canon:16:29
+  load.dir cannot produce [a.Row]
+
+error[E7116]  a/a.canon:18:32
+  load.dir cannot produce table a.Row
+
+5 errors, 0 warnings in 1 package (…)

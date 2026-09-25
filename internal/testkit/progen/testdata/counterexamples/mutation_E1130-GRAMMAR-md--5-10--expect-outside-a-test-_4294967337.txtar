@@ -3,7 +3,7 @@ name E1130 GRAMMAR.md §5.10 (expect outside a test)
 case 40
 seed 4294967337
 born internal internal evaluation met a state the checker excludes: ExpectStmt
-left E1117*2, W1002*2
+left E1117*2, E8009/missing, W1002*2
 sig internal evaluation met a state the checker excludes: ExpectStmt
 packages features.lookup
 want E1130 features/lookup/lookup.canon 109 120 check

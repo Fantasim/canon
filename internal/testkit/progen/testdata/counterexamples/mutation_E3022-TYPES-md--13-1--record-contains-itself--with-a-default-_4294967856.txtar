@@ -3,7 +3,7 @@ name E3022 TYPES.md §13.1 (record contains itself, with a default)
 case 559
 seed 4294967856
 born crash crash fatal error: stack overflow in eval.(*run).defaultValue ~ eval.(*run).defaults ~ eval.(*run).eval ~ eval.(*run).node ~ eval.(*run).recordLit ~ eval.(*run).walk ~ eval.evalBrace
-left W1002*5
+left E8009/missing, W1002*5
 sig crash fatal error: stack overflow in eval.(*run).defaultValue ~ eval.(*run).defaults ~ eval.(*run).eval ~ eval.(*run).node ~ eval.(*run).recordLit ~ eval.(*run).walk ~ eval.evalBrace
 packages service.resourcestudio
 want E3022 service/resourcestudio/resourcestudio.canon 119 125 check

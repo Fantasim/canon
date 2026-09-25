@@ -12,14 +12,14 @@ project acme {
 /// A.
 package a
 
-let x: Int = 1 / 0
+let x: Int = true
 
 emit json { out: "@out/" }
 -- want --
 [exit 1]
 [stdout]
-error[E3008]  a/a.canon:4:14
-  cannot infer the type of this expression; add a type
+error[E3002]  a/a.canon:4:14
+  expected Int, found Bool
 
 1 error, 0 warnings in 1 package (…)
 [stderr]
