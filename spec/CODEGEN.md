@@ -465,8 +465,9 @@ types (class or struct, branch enum and its members, `As<Branch>`, `As<Branch>Va
 input helpers a package uses (`EnvText`, `IsDecDigit`, `AllDigits`, `DurationDigits`,
 `Parse<Kind>Literal`). C++ adds the scopes name lookup crosses (C++17 [basic.scope.class],
 [basic.scope.declarative]): a class member equal to a namespace-scope type that the class body
-names (`Tone Tone() const;` changes the meaning of `Tone`), overrides included, and likewise a container, the snapshot or
-the `detail::<P>Access` struct against its own name and the types its body names; a nested
+names (`Tone Tone() const;` changes the meaning of `Tone`), overrides included, and likewise a member of a container, of
+the snapshot or of the `detail::<P>Access` struct against that scope's own name and the types
+its body names; a nested
 namespace segment equal to any name its enclosing namespace declares (a class `gen`, from
 `@cpp(name: "gen")`, emitted into `sov`, and a package emitted into `sov::gen`); and a name one
 package's namespace declares that another package emitted into the same namespace also declares
