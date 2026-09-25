@@ -762,7 +762,7 @@ record QuestConfig {
 - `{k in coll: T(k)}` is a map keyed by `ref coll` whose value type depends on the key.
 - **Restrictions.** A type-level `match` must be exhaustive (checked statically). Its scrutinee is
   an enum- or `Bool`-typed path rooted at a type parameter or an earlier field; parameters are
-  records or refs; result types have no refinement that depends on the parameter.
+  records, refs, enums or `Bool`; result types have no refinement that depends on the parameter.
 - **Checking.** The type function is evaluated for each value when values are verified (stage B,
   §11.2), and counts toward the step budget. A mismatch is `E3802` ("value does not match
   `Param(COMBAT_KILL_FFA)` = `Never`"). `none` is always valid for an optional dependent field.

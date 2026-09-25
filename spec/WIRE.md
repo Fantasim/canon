@@ -645,8 +645,8 @@ and `partial` to each. With expected type:
   without a column is `E3302`, reported once at the header.
 - **Cells.** Only scalar, enum, `ref`, asset and literal-union fields (optionally optional) may be
   read from CSV; any other field type is `E7116`. A dependent field, or a literal union over a
-  type application, is such another type (a cell carries no branch, DECISIONS 173): `E7116` at
-  the column's header cell. A cell is read as text:
+  type application, is one of those other types (the cell types name no type application):
+  `E7116` at the column's header cell. A cell is read as text:
 
   | Field type | Cell text |
   |---|---|

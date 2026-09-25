@@ -293,14 +293,16 @@ synthesize.
 | unary `-e`, `(e)` | passes the expected type through |
 
 For a comparison or arithmetic operator, the operand that is **context-dependent** is the one
-checked: a bare identifier not resolvable in steps 2–6, `none`, `[]`, `{}`, or a numeric
-literal. Otherwise the left operand is synthesized and the right one checked. If both operands
-are context-dependent, an arithmetic expression checks both against its own expected type, when
-it has one; otherwise the expression is `E3008`. So `tone == warning` and `warning == tone`
-both resolve `warning` against `Tone`; `x == 0 - 20` (with `x: Int`) and `let w: Int = 7 *
-1440` are well-typed, `let f: Float = 1 / 2` is a `Float` division (`0.5`), and `1 == 2`, an
-untyped local `let n = 1 + 2` or `const WEEK = 7 * 1440` is `E3008` (`const WEEK = 7 * DAY`,
-with `const DAY = 1440`, is an `Int`).
+checked: a bare identifier not resolvable in steps 2–6, `none`, `[]`, `{}`, a numeric
+literal, or `(e)`, `-e` or an arithmetic `a op b` whose operands are context-dependent.
+Otherwise the left operand is synthesized and the right one checked. If both operands are
+context-dependent, an arithmetic expression whose expected type is `Int`, `Float` or a list type
+(aliases, refinements, sizes and one `?` removed) checks both against that type; any other is
+`E3008`. So `tone == warning` and `warning == tone` both resolve `warning` against `Tone`; `x ==
+0 - 20` and `0 - 20 == x` (with `x: Int`), `let w: Int = 7 * 1440` and `let v: Int = (1 + 2) *
+3` are well-typed, `let f: Float = 1 / 2` is a `Float` division (`0.5`); `1 == 2`, `let d:
+Duration = 2 * 3`, an untyped `let n = 1 + 2` or `const WEEK = 7 * 1440` is `E3008` (`const
+WEEK = 7 * DAY`, with `const DAY = 1440`, is an `Int`).
 
 ### 5.2 Brace literals (GRM-10)
 
@@ -1047,8 +1049,9 @@ only be passed on. Its text form is `(a, b)` (STDLIB.md).
 
 - `A | "lit" | …`: the alternatives other than the first are string literals. `A` must have a
   string wire form: `String` (possibly refined), an enum without `@json(codes)`, a `ref` whose
-  key is one of those, or a type application whose branches do (`E3002` otherwise: a
-  `@json(codes)` enum, or a `ref` keyed by one, is written as a number). `Never | "default"` accepts only `"default"`.
+  key type has a string wire form, or a type application whose branches do (`E3002`
+  otherwise: a `@json(codes)` enum, or a `ref` keyed by one, is written as a number).
+  `Never | "default"` accepts only `"default"`.
 - A value of the union is either an `A` or one of the literals. Such unions are valid map keys.
 - A string literal equal to one of the literals is that literal, even if `A` would also accept
   it (TYP-09: "the literal wins").
@@ -1187,7 +1190,7 @@ source of diagnostics (DECISIONS 27); this table says when each code fires.
 | E3005 | error | calling something that is not a function |
 | E3006 | error | §12.1 |
 | E3007 | error | §7.1, function equality |
-| E3008 | error | `none`, `[]`, lambda without expected type, unbound type parameter, both operands context-dependent, inference cycle |
+| E3008 | error | `none`, `[]`, lambda without expected type, unbound type parameter, both operands context-dependent (arithmetic: without an `Int`, `Float` or list expected type), inference cycle |
 | E3010 | error | §15 |
 | E3011 | error | §9.2 |
 | E3012 | error | §9.1 |

@@ -459,16 +459,21 @@ collides with the record; a Go method colliding with a generated one (`ID`, `Ret
 `Branch`, `As<Case>`, `Len`, `At`, `All`, `Find`, `Get`, `String`, `Wire`).
 
 Every name a generator writes is in these scopes, fixed names included: the names of dependent
-types (class or struct, branch enum and its members, `As<Branch>`, `GetBranch`/`Branch`,
-`Decode<Alias>`), `LoadInputs`, the per-package input namespace and input slots (§5.12, §7.7)
-and the §7.7 input helpers a package uses (`EnvText`, `AllDigits`, `IsDecDigit`,
-`Parse<Kind>Literal`). C++ adds the scopes name lookup crosses (C++17 [basic.scope.hiding]): a
-class member equal to a namespace-scope type that the class body names (`Tone Tone() const;`
-changes the meaning of `Tone`), overrides included; a nested namespace segment equal to a class
-of an enclosing namespace (a record `gen` of package `sov` and a package emitted into
-`sov::gen`); and a name one package's namespace declares that another package emitted into the
-same namespace also declares (two packages with runtime inputs in one namespace both declare
-`LoadInputs`). Each is `E8005`, reported at the later declaration.
+types (class or struct, branch enum and its members, `As<Branch>`, `As<Branch>Value`,
+`GetBranch`/`Branch`, Go's `branch`/`value` storage and `decode<T>`, C++'s `Decode<Alias>`),
+`LoadInputs`, the per-package input namespace, input slots and flags (§5.12, §7.7) and the §7.7
+input helpers a package uses (`EnvText`, `IsDecDigit`, `AllDigits`, `DurationDigits`,
+`Parse<Kind>Literal`). C++ adds the scopes name lookup crosses (C++17 [basic.scope.class],
+[basic.scope.declarative]): a class member equal to a namespace-scope type that the class body
+names (`Tone Tone() const;` changes the meaning of `Tone`), overrides included, and likewise a container, the snapshot or
+the `detail::<P>Access` struct against its own name and the types its body names; a nested
+namespace segment equal to any name its enclosing namespace declares (a class `gen`, from
+`@cpp(name: "gen")`, emitted into `sov`, and a package emitted into `sov::gen`); and a name one
+package's namespace declares that another package emitted into the same namespace also declares
+(two packages with runtime inputs in one namespace both declare `LoadInputs`; their §7.7
+helpers, local to each `.gen.cpp`, never meet each other but meet every other name of the
+namespace). Each is `E8005`: at the user's declaration when it meets a fixed name, at the later
+package's `emit` when two packages meet.
 
 `W8006` warns when a generated C++ identifier is a macro name that common platform headers define:
 `min max near far IN OUT OPTIONAL ERROR DELETE TRUE FALSE VOID CONST interface small TEXT
@@ -780,9 +785,9 @@ generated from the `match` (the discriminant is read first). Dependent maps and 
 §4.2 (DEP-04).
 
 - The Go struct stores `branch` and `value` (unexported); the Go branch enum has no `String`,
-  `Wire` or `Parse<…>` (it is never on the wire). A C++ loader writes `decode<T>` only for the
-  dependent types a decoded class holds. Every name here comes from the name plan and collides
-  under §3.5.
+  `Wire` or `Parse<…>` (it is never on the wire). A Go data-mode loader writes `decode<T>`
+  (§6.1) only for the dependent types a decoded class holds (through lists and optionals); C++
+  writes `Decode<Alias>`. Every name here comes from the name plan and collides under §3.5.
 
 ### 5.7 Parameterized records
 
@@ -2374,11 +2379,13 @@ one loader per `@reload` value with `dir + "/" + <file name>`.
 When a package has input fields, `.gen.cpp` contains, in an anonymous namespace, the fixed helpers
 below (the C++ counterpart of `rt.Env` and `rt.Parse*Literal`), followed by `LoadInputs`, which
 reads the variables in field declaration order and appends one line per failure to `error`.
-Only the helpers the package's inputs use are written (`AllDigits` only for `Int`, `Float` and
-`Duration` inputs), so the file stays warning-free under `-Wall` (§9). The loaded values live in
+Only the helpers the package's inputs use are written, so the file stays warning-free under
+`-Wall` (§9): `EnvText` always; `IsDecDigit` and `AllDigits` for `Int`, `Float` and `Duration`;
+`DurationDigits` for `Duration`; `Parse<Kind>Literal` per input kind. The loaded values live in
 slots `detail::<P>Inputs::<Class>`, with the flag `detail::<P>InputsLoaded` beside them; Go's
 counterparts are the package variables `input_<T>_<store>`, `input_<T>_<store>_OK` and
-`input_<T>_<store>_Pattern`. All these names come from the name plan (§3.5).
+`input_<T>_<store>_Pattern`, and the flag `inputsLoaded_`. All these names come from the name
+plan (§3.5).
 
 ```cpp
 namespace {
