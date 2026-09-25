@@ -23,7 +23,7 @@ func (g *gen) readPath(owner *body, s *slot) {
 		g.keysCheck(o, next, nextSegments(owner, f.WirePath[:i+1]))
 		obj, levels = o, append(levels, next)
 	}
-	g.readKey(s, obj, levels[last], f.WirePath[last])
+	g.readKey(owner, s, obj, levels[last], f.WirePath[last])
 	for i := last - 1; i >= 0; i-- {
 		if !s.Optional {
 			g.printf(elseReturnFormat, g.missing(levels[i], strconv.Quote(strings.Join(f.WirePath[i:], dot))))

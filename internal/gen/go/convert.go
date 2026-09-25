@@ -12,11 +12,12 @@ import (
 	"github.com/fantasim/canonlang/internal/types"
 )
 
-// leaf is one wire value: its type after the optional, and its field's unit and encoding.
+// leaf is one wire value: its type after the optional, its field's unit, encoding and a dependent type's discriminant expression (CODEGEN.md §5.6).
 type leaf struct {
 	t    ir.TypeRef
 	unit types.Unit
 	enc  types.Enc
+	disc string
 }
 
 func (g *gen) rawType() string { return g.use(jsonPath, jsonPkg) + rawMessage }
@@ -48,6 +49,8 @@ func (g *gen) readValue(b *strings.Builder, l leaf, raw string, loc location) st
 		return g.decodeInto(b, l.t, raw, loc)
 	case types.List:
 		return g.readList(b, l, raw, loc)
+	case types.TypeApp:
+		return g.readDependentValue(b, l, raw, loc)
 	default:
 		g.refuseKind(l.t.Kind, readRefused)
 		return raw
@@ -180,11 +183,11 @@ func (g *gen) stringWire(t ir.TypeRef) {
 	if e, ok := t.Elem.Named.(*ir.Enum); ok && !e.JSONCodes {
 		return
 	}
-	sentinel := ErrUnsupported // a string-wired ref or dependent type: owed
 	if !ir.StringWire(t.Elem) {
-		sentinel = ErrMalformed // E8019 NonStringLiteralUnion
+		g.fail(newDetail(ErrMalformed, g.at, unionMalformedFormat, g.at))
+		return
 	}
-	g.fail(newDetail(sentinel, g.at, unionFormat, g.at))
+	g.fail(newDetail(ErrUnsupported, g.at, unionFormat, g.at)) // a string-wired ref or dependent type: owed
 }
 
 // ownClass refuses a record or variant of another package: its decoder is unexported there.

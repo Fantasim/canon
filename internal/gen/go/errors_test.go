@@ -148,7 +148,6 @@ func TestMalformedIR(t *testing.T) {
 	width.Consts = []*ir.Const{{Name: "N", Type: ir.TypeRef{Kind: types.Int, Bits: 12}, V: &value.Int{}}}
 	noElem := pkg()
 	noElem.Consts = []*ir.Const{{Name: "L", Type: ir.TypeRef{Kind: types.List}, V: &value.List{}}}
-	dependent := pkg(&ir.Dependent{Pkg: "p", Name: "Param"})
 	foreignRec := &ir.Record{Pkg: "other", Name: "O"}
 	foreignRecList := pkg()
 	foreignRecList.Consts = []*ir.Const{{Name: "L", Type: listOf(ir.TypeRef{Kind: types.Record, Named: foreignRec}), V: &value.List{Elems: []value.Value{&value.Record{}}}}}
@@ -163,14 +162,14 @@ func TestMalformedIR(t *testing.T) {
 	fieldlessCase := pkg(fieldless)
 	cases := map[string]*ir.Package{
 		"ids without entries": ids, "a Bool for an Int": wrongValue, "a 12-bit Int": width,
-		"a list without its element": noElem, "a dependent type": dependent,
+		"a list without its element":            noElem,
 		"a record of another package in a list": foreignRecList, "a variant of another package in a list": foreignVariantList,
 		"a table of a record of another package": foreignTable, "export fns of a case without fields": fieldlessCase,
 		"a -0.0 constant": negZero,
 	}
 	names := []string{
 		"ids without entries", "a Bool for an Int", "a 12-bit Int", "a list without its element",
-		"a dependent type", "a record of another package in a list", "a variant of another package in a list",
+		"a record of another package in a list", "a variant of another package in a list",
 		"a table of a record of another package", "export fns of a case without fields", "a -0.0 constant",
 	}
 	for _, name := range names {

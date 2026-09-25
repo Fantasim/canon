@@ -23,19 +23,24 @@ type inputSpec struct {
 	checks                            []inputCheck
 }
 
-// inputVars is field f of record rec's package slot (CODEGEN.md §5.12).
+// inputVars is field f of record rec's package slot, from the plan (CODEGEN.md §5.12).
 func (g *gen) inputVars(rec *ir.Record, f *ir.Field) (value, ok string) {
-	base := inputVarPrefix + g.goName(rec) + g.names.Slot(f).Getter
-	if !f.Optional {
-		return base, ""
-	}
-	return base, base + inputOKSuffix
+	in := g.names.Input(rec, f)
+	return in.Value, in.OK
 }
 
 // inputPatternVar is field f's compiled pattern, one package var per pattern (EVALUATION.md §11.3).
 func (g *gen) inputPatternVar(rec *ir.Record, f *ir.Field) string {
-	value, _ := g.inputVars(rec, f)
-	return value + inputPatternSuffix
+	return g.names.Input(rec, f).Pattern
+}
+
+// inputReason is ir.InputReasonText; "" (a Kind or reason it names no text for) is a plan defect.
+func (g *gen) inputReason(r ir.InputReason, t ir.TypeRef) string {
+	s := ir.InputReasonText(r, t)
+	if s == "" {
+		g.failf(ErrMalformed, "no input failure text for kind %s (EVALUATION.md §11.3)", kindText(t.Kind))
+	}
+	return s
 }
 
 // assignStmt is value, ok = expr, true, or value = expr when the field is required.
@@ -73,7 +78,7 @@ func (g *gen) inputGetter(s *slot) getter {
 	}
 	value, ok := g.inputVars(s.rec, s.src)
 	code, msg := e8302(s.origin)
-	body := fmt.Sprintf(inputCheckFormat, inputLoadedVar, g.rt(), strconv.Quote(code), strconv.Quote(msg)) +
+	body := fmt.Sprintf(inputCheckFormat, g.names.Inputs().Loaded, g.rt(), strconv.Quote(code), strconv.Quote(msg)) +
 		returns(value, s.needsOK(), ok)
 	return getter{name: s.Getter, result: results(g.mainType(s), s.needsOK()), body: body, doc: s.doc}
 }
@@ -127,15 +132,17 @@ func (g *gen) inputDecls(recs []*ir.Record) {
 			}
 		}
 	}
-	g.printf(inputVarLine, inputLoadedVar, goBool)
+	g.printf(inputVarLine, g.names.Inputs().Loaded, goBool)
 	g.printf(closeParenFormat)
 }
 
 // loadInputsFunc writes LoadInputs, one field at a time (CODEGEN.md §5.12).
 func (g *gen) loadInputsFunc(recs []*ir.Record) {
 	g.temps = 0
-	g.printf(inputsDocFormat)
-	g.printf(inputsOpenFormat)
+	in := g.names.Inputs()
+	g.inputErrs = in.Errs
+	g.printf(inputsDocFormat, in.Func)
+	g.printf(inputsOpenFormat, in.Func, g.inputErrs)
 	for _, rec := range recs {
 		for _, f := range rec.Fields {
 			if f.Input != nil {
@@ -143,7 +150,7 @@ func (g *gen) loadInputsFunc(recs []*ir.Record) {
 			}
 		}
 	}
-	g.printf(inputsCloseFormat, inputLoadedVar, g.use(errorsPkg, errorsPkg))
+	g.printf(inputsCloseFormat, in.Loaded, g.inputErrs, g.use(errorsPkg, errorsPkg), g.inputErrs)
 }
 
 // inputField resets the field's slot, then writes its env guard (EVALUATION.md §11.3).
@@ -160,7 +167,7 @@ func (g *gen) inputField(rec *ir.Record, f *ir.Field) {
 		return
 	}
 	g.printf(elseLine)
-	g.printf(inputErrFormat, g.rt(), env, strconv.Quote(inputNotSetText))
+	g.printf(inputErrFormat, g.inputErrs, g.rt(), env, strconv.Quote(g.inputReason(ir.InputNotSet, ir.TypeRef{})))
 	g.printf(closeBrace)
 }
 
@@ -200,10 +207,10 @@ func (g *gen) inputBody(rec *ir.Record, f *ir.Field, raw, env string) {
 func (g *gen) writeInputLiteral(s inputSpec) {
 	g.printf(inputParseFormat, s.parsed, s.errv, g.rt(), s.parseFn, s.raw)
 	g.printf(inputSwitchOpen, s.errv)
-	g.printf(inputErrFormat, g.rt(), s.env, strconv.Quote(fmt.Sprintf(inputInvalidFormat, kindNames[s.kind])))
+	g.printf(inputErrFormat, g.inputErrs, g.rt(), s.env, strconv.Quote(g.inputReason(ir.InputNotValid, ir.TypeRef{Kind: s.kind})))
 	for _, c := range s.checks {
 		g.printf(caseFormat, c.cond)
-		g.printf(inputErrFormat, g.rt(), s.env, strconv.Quote(c.reason))
+		g.printf(inputErrFormat, g.inputErrs, g.rt(), s.env, strconv.Quote(c.reason))
 	}
 	g.printf(inputDefaultOpen)
 	g.body.WriteString(assignStmt(s.value, s.ok, s.assign))
@@ -254,9 +261,9 @@ func (g *gen) inputFloat32Body(rec *ir.Record, f *ir.Field, raw, env string) {
 	rounded := g.temp(tempValue)
 	g.printf(inputParseFormat, parsed, errv, g.rt(), parseFloatLiteral, raw)
 	g.printf(inputSwitchOpen, errv)
-	g.printf(inputErrFormat, g.rt(), env, strconv.Quote(fmt.Sprintf(inputInvalidFormat, kindNames[types.Float])))
+	g.printf(inputErrFormat, g.inputErrs, g.rt(), env, strconv.Quote(g.inputReason(ir.InputNotValid, ir.TypeRef{Kind: types.Float})))
 	g.printf(caseFormat, g.rt()+float32Overflow+parsed+rparen)
-	g.printf(inputErrFormat, g.rt(), env, strconv.Quote(inputRangeText))
+	g.printf(inputErrFormat, g.inputErrs, g.rt(), env, strconv.Quote(g.inputReason(ir.InputOutsideRange, ir.TypeRef{})))
 	g.printf(inputDefaultOpen)
 	g.printf(inputRoundFormat, rounded, parsed)
 	g.inputFloat32Range(f.Range, rounded, value, ok, env)
@@ -272,7 +279,7 @@ func (g *gen) inputFloat32Range(r *types.Bound, rounded, value, ok, env string) 
 		return
 	}
 	g.printf(ifOpenFormat, check.cond)
-	g.printf(inputErrFormat, g.rt(), env, strconv.Quote(check.reason))
+	g.printf(inputErrFormat, g.inputErrs, g.rt(), env, strconv.Quote(check.reason))
 	g.printf(elseLine)
 	g.body.WriteString(assignStmt(value, ok, rounded))
 	g.printf(closeBrace)
@@ -283,7 +290,7 @@ func (g *gen) inputDurationBody(rec *ir.Record, f *ir.Field, raw, env string) {
 	parsed, errv := g.temp(tempValue), g.temp(localErr)
 	g.writeInputLiteral(inputSpec{
 		value: value, ok: ok, env: env, parsed: parsed, errv: errv, raw: raw,
-		parseFn: parseDurationLiteral, kind: types.Duration, checks: durationChecks(f, parsed), assign: parsed,
+		parseFn: parseDurationLiteral, kind: types.Duration, checks: g.durationChecks(f, parsed), assign: parsed,
 	})
 }
 
@@ -291,7 +298,7 @@ func (g *gen) inputStringBody(rec *ir.Record, f *ir.Field, raw, env string) {
 	value, ok := g.inputVars(rec, f)
 	parsed, errv := g.temp(tempValue), g.temp(localErr)
 	var checks []inputCheck
-	if c, has := lengthCheck(f, parsed); has {
+	if c, has := g.lengthCheck(f, parsed); has {
 		checks = append(checks, c)
 	}
 	if c, has := g.patternCheck(rec, f, parsed); has {
@@ -320,7 +327,7 @@ func (g *gen) inputEnumBody(rec *ir.Record, f *ir.Field, raw, env string) {
 		g.body.WriteString(assignStmt(value, okVar, g.qualify(e.Pkg, g.names.MemberName(e, m))))
 	}
 	g.printf(inputDefaultOpen)
-	g.printf(inputErrFormat, g.rt(), env, strconv.Quote(fmt.Sprintf(inputNotMemberFormat, e.Name)))
+	g.printf(inputErrFormat, g.inputErrs, g.rt(), env, strconv.Quote(g.inputReason(ir.InputNotMember, f.Type)))
 	g.printf(closeBrace)
 }
 
@@ -363,7 +370,7 @@ func (g *gen) intChecks(f *ir.Field, expr string) []inputCheck {
 		return nil
 	}
 	cond, _ := intBoundCheck(expr, true, lo, true, hi)
-	return []inputCheck{{cond: cond, reason: inputRangeText}}
+	return []inputCheck{{cond: cond, reason: g.inputReason(ir.InputOutsideRange, ir.TypeRef{})}}
 }
 
 // floatRangeCheck is a Float or Float32 input's own explicit range.
@@ -385,11 +392,11 @@ func (g *gen) floatRangeCheck(r *types.Bound, expr string) (inputCheck, bool) {
 	if len(parts) == 0 {
 		return inputCheck{}, false
 	}
-	return inputCheck{cond: strings.Join(parts, orSep), reason: inputRangeText}, true
+	return inputCheck{cond: strings.Join(parts, orSep), reason: g.inputReason(ir.InputOutsideRange, ir.TypeRef{})}, true
 }
 
 // durationChecks is a Duration input's own explicit range, in milliseconds (EVALUATION.md §11.3).
-func durationChecks(f *ir.Field, expr string) []inputCheck {
+func (g *gen) durationChecks(f *ir.Field, expr string) []inputCheck {
 	r := f.Range
 	if r == nil {
 		return nil
@@ -403,11 +410,11 @@ func durationChecks(f *ir.Field, expr string) []inputCheck {
 	if !has {
 		return nil
 	}
-	return []inputCheck{{cond: cond, reason: inputRangeText}}
+	return []inputCheck{{cond: cond, reason: g.inputReason(ir.InputOutsideRange, ir.TypeRef{})}}
 }
 
 // lengthCheck is a String input's own length-in-bytes refinement (EVALUATION.md §11.3).
-func lengthCheck(f *ir.Field, expr string) (inputCheck, bool) {
+func (g *gen) lengthCheck(f *ir.Field, expr string) (inputCheck, bool) {
 	r := f.Range
 	if r == nil {
 		return inputCheck{}, false
@@ -421,7 +428,7 @@ func lengthCheck(f *ir.Field, expr string) (inputCheck, bool) {
 	if !has {
 		return inputCheck{}, false
 	}
-	return inputCheck{cond: cond, reason: inputRangeText}, true
+	return inputCheck{cond: cond, reason: g.inputReason(ir.InputOutsideRange, ir.TypeRef{})}, true
 }
 
 // patternCheck is a String input's own pattern (EVALUATION.md §11.3).
@@ -430,5 +437,5 @@ func (g *gen) patternCheck(rec *ir.Record, f *ir.Field, expr string) (inputCheck
 		return inputCheck{}, false
 	}
 	call := g.inputPatternVar(rec, f) + matchStringCall + expr + rparen
-	return inputCheck{cond: not + call, reason: inputPatternText}, true
+	return inputCheck{cond: not + call, reason: g.inputReason(ir.InputNoMatch, ir.TypeRef{})}, true
 }

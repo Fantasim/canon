@@ -84,3 +84,27 @@ func TestInputsDataCompiles(t *testing.T) {
 	files := generateData(t, inputsPkg("geninputsdata", ir.ModeData))
 	runData(t, files, "geninputsdata/out/go", "testdata/smoke/inputs_data_test.go", nil)
 }
+
+// CODEGEN.md §5.12: input_<T>_<store> keeps Gen.flagX and GenFlag.x apart.
+func TestInputsCollisionFreeNames(t *testing.T) {
+	gen := &ir.Record{Pkg: "collide", Name: "Gen", Fields: []*ir.Field{
+		{Name: "flagX", Type: boolT, Optional: true, Input: &types.Input{Env: "COLLIDE_FLAGX"}},
+	}}
+	genFlag := &ir.Record{Pkg: "collide", Name: "GenFlag", Fields: []*ir.Field{
+		{Name: "x", Type: boolT, Optional: true, Input: &types.Input{Env: "COLLIDE_X"}},
+	}}
+	p := &ir.Package{
+		Name: "collide", Dir: "collide", Types: []ir.Type{gen, genFlag},
+		Emits: []*ir.Emit{{
+			Target: ir.TargetGo, Out: "out/go/", Dir: "collide/out/go",
+			GoImport: dataModule + "/collide/out/go", Mode: ir.ModeBaked, GoPackage: "collide",
+		}},
+	}
+	files := generateData(t, p)
+	src := string(files["collide/out/go/collide.gen.go"])
+	for _, want := range []string{"input_Gen_flagX", "input_GenFlag_x"} {
+		if !strings.Contains(src, want) {
+			t.Errorf("want %s in generated source:\n%s", want, src)
+		}
+	}
+}

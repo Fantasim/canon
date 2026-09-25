@@ -45,7 +45,7 @@ type index struct{ Member, Method, Type, Store string }
 // dataSections are a data-mode file's sections in CODEGEN.md §2.7's order: decoders last.
 func (g *gen) dataSections() []func() {
 	return []func(){
-		g.constants, g.schemas, g.enums, g.kindEnums, g.idEnums, g.types, g.containers,
+		g.constants, g.schemas, g.enums, g.kindEnums, g.branchEnums, g.idEnums, g.types, g.containers,
 		g.loaders, g.snapshot, g.fns, g.runtimeInputs, g.decoders, g.resolvers, g.loads,
 	}
 }

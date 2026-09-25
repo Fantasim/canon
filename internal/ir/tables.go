@@ -163,7 +163,7 @@ var (
 		"name", "path", "raw", goOut, "obj", "err", "f", GoRows, goValues,
 		"keys", "i", GoIDStore, GoRetiredStore, "dir", "s", "ctx", "tag", "c", "key", "k", "r",
 		"ok", "bad", goWant, "dst", "n", "lo", "hi", "v", "kr", "vr", "hasK", "hasV", "first",
-		"empty", "marker", "a", "m", "af", "mf", "at",
+		"empty", "marker", "a", "m", "af", "mf", "at", "disc",
 	}
 	goVectorOwn        = []string{goWant, "code"}
 	goCheckedOps       = map[Op]bool{OpAdd: true, OpSub: true, OpMul: true, OpDiv: true, OpMod: true}

@@ -2,7 +2,6 @@ package gogen
 
 import (
 	"fmt"
-	"slices"
 	"strings"
 
 	"github.com/fantasim/canonlang/internal/ir"
@@ -196,16 +195,13 @@ func (g *gen) walkValue(b *strings.Builder, t ir.TypeRef, expr string, loc locat
 	fmt.Fprintf(b, walkOneFormat, expr, lc.Err, g.resolveFunc(t.Named), lc.Name, prefix, lc.Ctx)
 }
 
-// walkPairs resolves a pairs field's elements' refs, named by their slot keys (WIRE.md §4.1, §5.14).
+// walkPairs resolves a pairs field's elements' refs, named by their slot keys (WIRE.md §4.1, §5.14, CODEGEN.md §5.8).
 func (g *gen) walkPairs(b *strings.Builder, s *slot, snapshot bool) {
 	rec, ok := g.sub(s.T.Elem).Named.(*ir.Record)
-	if !ok || len(g.bodyOf(rec).slots) < pairFields {
+	if !ok || len(g.bodyOf(rec).slots) < pairFields || !g.names.Walks(rec) {
 		return
 	}
 	eb := g.bodyOf(rec)
-	if !slices.ContainsFunc(eb.slots[:pairFields], func(es *slot) bool { return es.Resolved }) {
-		return
-	}
 	i, e := g.temp(tempIndex), g.temp(tempElem)
 	fmt.Fprintf(b, pairsWalkFormat, i, g.lc.Out+dot+s.Store, e)
 	for k, es := range eb.slots[:pairFields] {

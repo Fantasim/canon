@@ -25,7 +25,7 @@ func (g *gen) goType(t ir.TypeRef) string {
 		return g.typeName(t.Named)
 	case types.VariantKind:
 		return g.qualify(typePkg(t.Named), g.kindType(t.Named))
-	case types.Record, types.Variant:
+	case types.Record, types.Variant, types.TypeApp:
 		return pointer + g.typeName(t.Named)
 	case types.Case:
 		return pointer + g.caseTypeName(t)

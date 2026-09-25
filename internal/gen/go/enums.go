@@ -125,12 +125,12 @@ func (g *gen) idEnums() {
 // writeEnum writes the type, its constants and its methods.
 func (g *gen) writeEnum(s *enumSpec) {
 	g.body.WriteString(docFor(s.name, s.doc))
-	g.printf("type %s %s\n\nconst (\n", s.name, s.under)
+	g.printf(enumHeaderFormat, s.name, s.under)
 	for _, c := range s.consts {
 		g.body.WriteString(docFor(c.name, c.doc))
-		g.printf("%s %s = %s\n", c.name, s.name, c.value)
+		g.printf(enumConstFormat, c.name, s.name, c.value)
 	}
-	g.printf(")\n\n")
+	g.printf(closeParenFormat)
 	g.writeSwitch(ir.GoString, s, s.names)
 	if s.wires != nil {
 		g.writeSwitch(ir.GoWire, s, s.wires)

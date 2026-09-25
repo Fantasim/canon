@@ -32,6 +32,7 @@ type gen struct {
 	bodies    map[any]*body
 	variantOf map[*ir.Case]*ir.Variant
 	lc        locals          // data mode: the escaped locals of loaders, decoders and resolvers
+	inputErrs string          // LoadInputs' escaped local of failures (CODEGEN.md §5.12)
 	taken     map[string]bool // the Go names of the imported Canon packages, which locals avoid
 	temps     int             // the last numbered local of the function being written
 	pures     []*pure         // the translated fns written, which the conformance file tests
@@ -113,7 +114,7 @@ func (g *gen) printf(format string, args ...any) {
 
 // source is the formatted main file: every section in CODEGEN.md §2.7's order.
 func (g *gen) source() []byte {
-	sections := []func(){g.constants, g.enums, g.kindEnums, g.idEnums, g.types, g.containers, g.values, g.fns, g.runtimeInputs}
+	sections := []func(){g.constants, g.enums, g.kindEnums, g.branchEnums, g.idEnums, g.types, g.containers, g.values, g.fns, g.runtimeInputs}
 	if g.isData() {
 		sections = g.dataSections()
 	}

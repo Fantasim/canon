@@ -75,101 +75,101 @@ func (self *Gen) Flag() (bool, bool) {
 	if !inputsLoaded_ {
 		rt.Fail("E8302", "geninputsdata.Gen.flag is a runtime input and LoadInputs has not been called")
 	}
-	return inputGenFlag, inputGenFlagOK_
+	return input_Gen_flag, input_Gen_flag_OK
 }
 
 func (self *Gen) Count() (int8, bool) {
 	if !inputsLoaded_ {
 		rt.Fail("E8302", "geninputsdata.Gen.count is a runtime input and LoadInputs has not been called")
 	}
-	return inputGenCount, inputGenCountOK_
+	return input_Gen_count, input_Gen_count_OK
 }
 
 func (self *Gen) Ratio() (float64, bool) {
 	if !inputsLoaded_ {
 		rt.Fail("E8302", "geninputsdata.Gen.ratio is a runtime input and LoadInputs has not been called")
 	}
-	return inputGenRatio, inputGenRatioOK_
+	return input_Gen_ratio, input_Gen_ratio_OK
 }
 
 func (self *Gen) Span() (time.Duration, bool) {
 	if !inputsLoaded_ {
 		rt.Fail("E8302", "geninputsdata.Gen.span is a runtime input and LoadInputs has not been called")
 	}
-	return inputGenSpan, inputGenSpanOK_
+	return input_Gen_span, input_Gen_span_OK
 }
 
 func (self *Gen) Name() (string, bool) {
 	if !inputsLoaded_ {
 		rt.Fail("E8302", "geninputsdata.Gen.name is a runtime input and LoadInputs has not been called")
 	}
-	return inputGenName, inputGenNameOK_
+	return input_Gen_name, input_Gen_name_OK
 }
 
 func (self *Gen) Code() (string, bool) {
 	if !inputsLoaded_ {
 		rt.Fail("E8302", "geninputsdata.Gen.code is a runtime input and LoadInputs has not been called")
 	}
-	return inputGenCode, inputGenCodeOK_
+	return input_Gen_code, input_Gen_code_OK
 }
 
 func (self *Gen) Scale() (float32, bool) {
 	if !inputsLoaded_ {
 		rt.Fail("E8302", "geninputsdata.Gen.scale is a runtime input and LoadInputs has not been called")
 	}
-	return inputGenScale, inputGenScaleOK_
+	return input_Gen_scale, input_Gen_scale_OK
 }
 
 func (self *Gen) Mode() (Mode, bool) {
 	if !inputsLoaded_ {
 		rt.Fail("E8302", "geninputsdata.Gen.mode is a runtime input and LoadInputs has not been called")
 	}
-	return inputGenMode, inputGenModeOK_
+	return input_Gen_mode, input_Gen_mode_OK
 }
 
 func (self *Gen) Required() int64 {
 	if !inputsLoaded_ {
 		rt.Fail("E8302", "geninputsdata.Gen.required is a runtime input and LoadInputs has not been called")
 	}
-	return inputGenRequired
+	return input_Gen_required
 }
 
 var (
-	inputGenFlag        bool
-	inputGenFlagOK_     bool
-	inputGenCount       int8
-	inputGenCountOK_    bool
-	inputGenRatio       float64
-	inputGenRatioOK_    bool
-	inputGenSpan        time.Duration
-	inputGenSpanOK_     bool
-	inputGenName        string
-	inputGenNameOK_     bool
-	inputGenCode        string
-	inputGenCodeOK_     bool
-	inputGenCodePattern = regexp.MustCompile("^[A-Z]+$")
-	inputGenScale       float32
-	inputGenScaleOK_    bool
-	inputGenMode        Mode
-	inputGenModeOK_     bool
-	inputGenRequired    int64
-	inputsLoaded_       bool
+	input_Gen_flag         bool
+	input_Gen_flag_OK      bool
+	input_Gen_count        int8
+	input_Gen_count_OK     bool
+	input_Gen_ratio        float64
+	input_Gen_ratio_OK     bool
+	input_Gen_span         time.Duration
+	input_Gen_span_OK      bool
+	input_Gen_name         string
+	input_Gen_name_OK      bool
+	input_Gen_code         string
+	input_Gen_code_OK      bool
+	input_Gen_code_Pattern = regexp.MustCompile("^[A-Z]+$")
+	input_Gen_scale        float32
+	input_Gen_scale_OK     bool
+	input_Gen_mode         Mode
+	input_Gen_mode_OK      bool
+	input_Gen_required     int64
+	inputsLoaded_          bool
 )
 
 // LoadInputs reads every runtime input of the package (CODEGEN.md §5.12).
 func LoadInputs() error {
 	var errs []error
-	inputGenFlag, inputGenFlagOK_ = false, false
+	input_Gen_flag, input_Gen_flag_OK = false, false
 	if r1, ok2 := rt.Env("GENINPUTSDATA_FLAG"); ok2 {
 		v3, err4 := rt.ParseBoolLiteral(r1)
 		switch {
 		case err4 != nil:
 			errs = append(errs, rt.InputError("GENINPUTSDATA_FLAG", "not a valid Bool"))
 		default:
-			inputGenFlag, inputGenFlagOK_ = v3, true
+			input_Gen_flag, input_Gen_flag_OK = v3, true
 		}
 	}
-	inputGenCount, inputGenCountOK_ = 0, false
+	input_Gen_count, input_Gen_count_OK = 0, false
 	if r5, ok6 := rt.Env("GENINPUTSDATA_COUNT"); ok6 {
 		v7, err8 := rt.ParseIntLiteral(r5)
 		switch {
@@ -178,10 +178,10 @@ func LoadInputs() error {
 		case v7 < -128 || v7 > 127:
 			errs = append(errs, rt.InputError("GENINPUTSDATA_COUNT", "outside its refinement range"))
 		default:
-			inputGenCount, inputGenCountOK_ = int8(v7), true
+			input_Gen_count, input_Gen_count_OK = int8(v7), true
 		}
 	}
-	inputGenRatio, inputGenRatioOK_ = 0, false
+	input_Gen_ratio, input_Gen_ratio_OK = 0, false
 	if r9, ok10 := rt.Env("GENINPUTSDATA_RATIO"); ok10 {
 		v11, err12 := rt.ParseFloatLiteral(r9)
 		switch {
@@ -190,10 +190,10 @@ func LoadInputs() error {
 		case v11 < 0 || v11 > 1:
 			errs = append(errs, rt.InputError("GENINPUTSDATA_RATIO", "outside its refinement range"))
 		default:
-			inputGenRatio, inputGenRatioOK_ = v11, true
+			input_Gen_ratio, input_Gen_ratio_OK = v11, true
 		}
 	}
-	inputGenSpan, inputGenSpanOK_ = 0, false
+	input_Gen_span, input_Gen_span_OK = 0, false
 	if r13, ok14 := rt.Env("GENINPUTSDATA_SPAN"); ok14 {
 		v15, err16 := rt.ParseDurationLiteral(r13)
 		switch {
@@ -202,10 +202,10 @@ func LoadInputs() error {
 		case v15.Milliseconds() > 60000:
 			errs = append(errs, rt.InputError("GENINPUTSDATA_SPAN", "outside its refinement range"))
 		default:
-			inputGenSpan, inputGenSpanOK_ = v15, true
+			input_Gen_span, input_Gen_span_OK = v15, true
 		}
 	}
-	inputGenName, inputGenNameOK_ = "", false
+	input_Gen_name, input_Gen_name_OK = "", false
 	if r17, ok18 := rt.Env("GENINPUTSDATA_NAME"); ok18 {
 		v19, err20 := rt.ParseStringLiteral(r17)
 		switch {
@@ -214,22 +214,22 @@ func LoadInputs() error {
 		case len(v19) < 1 || len(v19) > 5:
 			errs = append(errs, rt.InputError("GENINPUTSDATA_NAME", "outside its refinement range"))
 		default:
-			inputGenName, inputGenNameOK_ = v19, true
+			input_Gen_name, input_Gen_name_OK = v19, true
 		}
 	}
-	inputGenCode, inputGenCodeOK_ = "", false
+	input_Gen_code, input_Gen_code_OK = "", false
 	if r21, ok22 := rt.Env("GENINPUTSDATA_CODE"); ok22 {
 		v23, err24 := rt.ParseStringLiteral(r21)
 		switch {
 		case err24 != nil:
 			errs = append(errs, rt.InputError("GENINPUTSDATA_CODE", "not a valid String"))
-		case !inputGenCodePattern.MatchString(v23):
+		case !input_Gen_code_Pattern.MatchString(v23):
 			errs = append(errs, rt.InputError("GENINPUTSDATA_CODE", "does not match its pattern"))
 		default:
-			inputGenCode, inputGenCodeOK_ = v23, true
+			input_Gen_code, input_Gen_code_OK = v23, true
 		}
 	}
-	inputGenScale, inputGenScaleOK_ = 0, false
+	input_Gen_scale, input_Gen_scale_OK = 0, false
 	if r25, ok26 := rt.Env("GENINPUTSDATA_SCALE"); ok26 {
 		v27, err28 := rt.ParseFloatLiteral(r25)
 		switch {
@@ -242,29 +242,29 @@ func LoadInputs() error {
 			if float64(v29) < 0 || float64(v29) > 10 {
 				errs = append(errs, rt.InputError("GENINPUTSDATA_SCALE", "outside its refinement range"))
 			} else {
-				inputGenScale, inputGenScaleOK_ = v29, true
+				input_Gen_scale, input_Gen_scale_OK = v29, true
 			}
 		}
 	}
-	inputGenMode, inputGenModeOK_ = 0, false
+	input_Gen_mode, input_Gen_mode_OK = 0, false
 	if r30, ok31 := rt.Env("GENINPUTSDATA_MODE"); ok31 {
 		switch r30 {
 		case "fast":
-			inputGenMode, inputGenModeOK_ = ModeFast, true
+			input_Gen_mode, input_Gen_mode_OK = ModeFast, true
 		case "slow":
-			inputGenMode, inputGenModeOK_ = ModeSlow, true
+			input_Gen_mode, input_Gen_mode_OK = ModeSlow, true
 		default:
 			errs = append(errs, rt.InputError("GENINPUTSDATA_MODE", "not a member of Mode"))
 		}
 	}
-	inputGenRequired = 0
+	input_Gen_required = 0
 	if r32, ok33 := rt.Env("GENINPUTSDATA_REQUIRED"); ok33 {
 		v34, err35 := rt.ParseIntLiteral(r32)
 		switch {
 		case err35 != nil:
 			errs = append(errs, rt.InputError("GENINPUTSDATA_REQUIRED", "not a valid Int"))
 		default:
-			inputGenRequired = v34
+			input_Gen_required = v34
 		}
 	} else {
 		errs = append(errs, rt.InputError("GENINPUTSDATA_REQUIRED", "not set"))

@@ -11,7 +11,7 @@ import (
 	"github.com/fantasim/canonlang/internal/types"
 )
 
-// decoders writes the loaders' helpers, then a decoder per class a value holds (CODEGEN.md §6.1).
+// decoders writes the loaders' helpers, then a decoder per class a value holds, dependent types last (CODEGEN.md §5.6, §6.1).
 func (g *gen) decoders() {
 	outer := g.body
 	g.body = bytes.Buffer{}
@@ -29,6 +29,12 @@ func (g *gen) decoders() {
 				g.decodeVariant(x)
 				g.eachCase(x, func(c *ir.Case) bool { return g.names.Decoded(c) }, g.decodeBody)
 			}
+		}
+	}
+	for _, t := range g.p.Types {
+		if x, ok := t.(*ir.Dependent); ok && g.names.Decoded(x) {
+			wrote = true
+			g.decodeDependent(x)
 		}
 	}
 	decoders := g.body
@@ -105,7 +111,7 @@ func (g *gen) readField(owner *body, s *slot) {
 	case len(f.WirePath) > 1:
 		g.readPath(owner, s)
 	case len(f.WirePath) == 1:
-		g.readKey(s, g.lc.Obj, g.root(), f.WirePath[0])
+		g.readKey(owner, s, g.lc.Obj, g.root(), f.WirePath[0])
 	default:
 		g.failf(ErrMalformed, "field %s without a wire path", s.origin)
 	}
@@ -115,7 +121,7 @@ func (g *gen) readField(owner *body, s *slot) {
 func (g *gen) readMethod(b *body, fn *ir.ExportFn) {
 	for _, s := range b.slots {
 		if s.fn == fn {
-			g.readKey(s, g.lc.Obj, g.root(), dollar+fn.Name)
+			g.readKey(b, s, g.lc.Obj, g.root(), dollar+fn.Name)
 		}
 	}
 	for _, f := range b.finite {
@@ -136,11 +142,18 @@ func (g *gen) objectExtras(b *body) []string {
 	return nil
 }
 
-// slotLeaf is what a slot reads: its type after the optional, its field's unit, encoding and none marker.
-func slotLeaf(s *slot) (leaf, []byte) {
+// slotLeaf is what a slot reads: its type after the optional, its field's unit, encoding, none marker and a dependent type's discriminant (CODEGEN.md §5.6).
+func (g *gen) slotLeaf(owner *body, s *slot) (leaf, []byte) {
 	l := leaf{t: s.T}
 	if f := s.src; s.fn == nil && f != nil {
 		l.unit, l.enc = f.Unit, f.Enc
+		if s.T.Kind == types.TypeApp {
+			expr, reason := g.dependentDisc(owner, s.T)
+			if reason != "" {
+				g.fail(newDetail(ErrUnsupported, g.at, reason, g.at))
+			}
+			l.disc = expr
+		}
 		if f.Optional {
 			return l, f.NoneWire
 		}
@@ -149,9 +162,9 @@ func slotLeaf(s *slot) (leaf, []byte) {
 }
 
 // readKey reads key of obj, the object at at, into the slot; optional: absent, null or the marker is none (WIRE.md §5.4).
-func (g *gen) readKey(s *slot, obj string, at location, key string) {
+func (g *gen) readKey(owner *body, s *slot, obj string, at location, key string) {
 	lc := g.lc
-	l, marker := slotLeaf(s)
+	l, marker := g.slotLeaf(owner, s)
 	r, loc, quoted := g.temp(tempRaw), at.key(key), strconv.Quote(key)
 	if !s.Optional {
 		g.printf(needFormat, r, lc.Err, g.helper(helperNeed), lc.Name, g.locExpr(at), obj, quoted)

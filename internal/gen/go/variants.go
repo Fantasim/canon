@@ -15,8 +15,7 @@ func (g *gen) types() {
 		case *ir.Variant:
 			g.variant(t)
 		case *ir.Dependent:
-			// E8019 DependentType already refuses this at stage E: unreachable.
-			g.failf(ErrMalformed, "dependent type %s", t.QName())
+			g.dependentType(t)
 		}
 	}
 }

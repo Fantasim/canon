@@ -37,6 +37,9 @@ func (g *gen) expr(t ir.TypeRef, v value.Value) string {
 		return g.mapExpr(t, as[value.Map](g, v))
 	case types.Ref:
 		return g.keyLit(t, as[value.Ref](g, v).Key)
+	case types.TypeApp:
+		g.fail(newDetail(ErrUnsupported, g.at, dependentLiteralFormat, g.at))
+		return zeroLit
 	default:
 		g.refuseKind(t.Kind, typeRefused)
 		return ""

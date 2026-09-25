@@ -27,10 +27,12 @@ const (
 	retiredDoc       = "Retired."
 )
 
-// Enum templates (CODEGEN.md §5.2): the String/Wire fallback, Members and the @codes pair.
+// Enum templates (CODEGEN.md §5.2, §5.6): the String/Wire fallback, Members and the @codes pair.
 const (
-	fallbackFormat = "}\nreturn \"%[1]s(\" + %[2]s.FormatInt(int64(self), 10) + \")\"\n}\n\n"
-	membersFormat  = `func %[1]s() %[2]s.Seq[%[3]s] {
+	enumHeaderFormat = "type %s %s\n\nconst (\n"
+	enumConstFormat  = "%s %s = %s\n"
+	fallbackFormat   = "}\nreturn \"%[1]s(\" + %[2]s.FormatInt(int64(self), 10) + \")\"\n}\n\n"
+	membersFormat    = `func %[1]s() %[2]s.Seq[%[3]s] {
 return func(yield func(%[3]s) bool) {
 for _, m := range [...]%[3]s{%[4]s} {
 if !yield(m) {
@@ -65,6 +67,14 @@ return c, ok
 }
 
 `
+)
+
+// Dependent-type templates (CODEGEN.md §5.6).
+const (
+	dependentAsFormat       = "func (self *%[1]s) %[2]s() (%[3]s, bool) {\nif self.%[4]s != %[5]s {\nvar zero %[3]s\nreturn zero, false\n}\nreturn self.%[6]s.(%[3]s), true\n}\n\n"
+	dependentFuncOpenFormat = "func %[1]s(%[2]s, %[3]s string, %[4]s %[5]s, %[6]s %[7]s, %[8]s *%[9]s) error {\n"
+	dependentDecodeFormat   = "%[1]s := &%[2]s{}\nif %[3]s := %[4]s(%[5]s, %[6]s, %[7]s, %[8]s, %[1]s); %[3]s != nil {\nreturn %[3]s\n}\n"
+	localDisc               = "disc"
 )
 
 // Messages of the generator's errors, and texts written twice.
@@ -438,14 +448,10 @@ var (
 
 // Runtime inputs (CODEGEN.md §5.12, EVALUATION.md §11.3); closeBrace, elseLine, ifOpenFormat above close and open every block below.
 const (
-	inputVarPrefix       = "input"
-	inputOKSuffix        = "OK_"
-	inputPatternSuffix   = "Pattern"
-	inputLoadedVar       = "inputsLoaded_"
 	inputCheckFormat     = "if !%s {\n%s.Fail(%s, %s)\n}\n"
-	inputsDocFormat      = "// LoadInputs reads every runtime input of the package (CODEGEN.md §5.12).\n"
-	inputsOpenFormat     = "func LoadInputs() error {\nvar errs []error\n"
-	inputsCloseFormat    = "%s = true\nif len(errs) > 0 {\nreturn %s.Join(errs...)\n}\nreturn nil\n}\n\n"
+	inputsDocFormat      = "// %s reads every runtime input of the package (CODEGEN.md §5.12).\n"
+	inputsOpenFormat     = "func %[1]s() error {\nvar %[2]s []error\n"
+	inputsCloseFormat    = "%[1]s = true\nif len(%[2]s) > 0 {\nreturn %[3]s.Join(%[2]s...)\n}\nreturn nil\n}\n\n"
 	inputVarBlockOpen    = "var (\n"
 	inputVarLine         = "%s %s\n"
 	inputPatternVarLine  = "%s = %s.MustCompile(%s)\n"
@@ -456,15 +462,10 @@ const (
 	inputEnvOpenFormat   = "if %s, %s := %s.Env(%s); %s {\n"
 	inputOptionalClose   = "}\n"
 	inputParseFormat     = "%s, %s := %s.%s(%s)\n"
-	inputErrFormat       = "errs = append(errs, %s.InputError(%s, %s))\n"
+	inputErrFormat       = "%[1]s = append(%[1]s, %[2]s.InputError(%[3]s, %[4]s))\n"
 	inputSwitchOpen      = "switch {\ncase %s != nil:\n"
 	inputDefaultOpen     = "default:\n"
 	inputRoundFormat     = "%s := float32(%s)\n"
-	inputNotSetText      = "not set"
-	inputInvalidFormat   = "not a valid %s"
-	inputRangeText       = "outside its refinement range"
-	inputPatternText     = "does not match its pattern"
-	inputNotMemberFormat = "not a member of %s"
 	condFormat           = "%s %s %s"
 	orSep                = " || "
 	lenCall              = "len("
