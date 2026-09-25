@@ -3,6 +3,8 @@
 
 #include <cstdint>
 #include <string>
+#include <string_view>
+#include <utility>
 
 #include "canon_runtime_json.h"
 
@@ -37,6 +39,27 @@ bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, PaintSolid& out)
     if (!canon::json::detail::Keys(v, dec, {"kind", "tint"})) return false;
     dec.Enum(v, "tint", &ColorFromWire, out.tint_);
     return dec.Ok();
+}
+
+bool DecodeShade(const nlohmann::json& v, std::string_view key, ::demo::base::Color disc, canon::json::Decoder& dec, ::demo::base::Shade& out) {
+    switch (disc) {
+    case ::demo::base::Color::red: {
+        std::string t2;
+        dec.AsString(v, key, t2);
+        out.value_.emplace<0>(std::move(t2));
+        return dec.Ok();
+    }
+    case ::demo::base::Color::green: {
+        int32_t t2{};
+        int64_t n = 0;
+        if (dec.AsIntIn(v, key, -2147483648, 2147483647, n)) t2 = static_cast<int32_t>(n);
+        out.value_.emplace<1>(std::move(t2));
+        return dec.Ok();
+    }
+    default: break;
+    }
+    dec.Fail(key, "no branch for this value");
+    return false;
 }
 
 struct BaseAccess {

@@ -25,7 +25,6 @@ type gen struct {
 	err          error
 	at           string // the Canon item being written, for messages
 	last         string // the last segment of the package: the file stem
-	upper        string // P, UpperCamel of the last segment (pl.Upper())
 	values       []*ir.Value
 	entries      map[*ir.Record]bool      // records that are entries of an emitted table
 	loaders      map[*ir.Record]*ir.Value // a record's static Load reads this non-@reload value
@@ -35,7 +34,9 @@ type gen struct {
 	foreignEnums []*ir.Enum               // imported enums the code names, in first-use order
 	holders      map[any][]*ir.Value      // per class, the emitted values holding it
 	slots        map[any][]resolved       // per class, the refs resolved at load
-	classes      []class                  // records, cases and variants, topologically sorted (§2.7)
+	classes      []class                  // records, cases, variants, dependent types, topologically sorted (§2.7)
+	inputs       []inputField             // input fields, declaration order (§5.12)
+	inputNames   ir.CppInputs             // LoadInputs, the slots' namespace and flag, the helpers (§7.7)
 	top          *scope
 	pkgFns       []*ir.ExportFn // package-level translated fns
 	methods      []*method      // translated methods, declaration order
@@ -128,13 +129,13 @@ func (g *gen) plan() {
 		g.fail(fmt.Errorf("%w: %s (%s)", ErrMalformed, namePlanProblem, probs[0].Origin))
 		return
 	}
-	g.upper = g.pl.Upper()
 	g.selectValues()
 	g.indexFns()
 	g.boxes()
 	g.pairsParents()
 	g.holdersOf()
 	g.sortClasses()
+	g.collectInputs()
 	g.declareNames()
 }
 
@@ -165,7 +166,8 @@ func (g *gen) header() []byte {
 	g.h = writer{}
 	sections := []func(){
 		g.constants, g.schemaConstants, g.enums, g.enumConstants, g.forwards,
-		g.detailDecls, g.classDecls, g.containers, g.packageFns, g.snapshot, g.conformanceDecl,
+		g.detailDecls, g.classDecls, g.containers, g.packageFns, g.snapshot, g.inputsDecl,
+		g.conformanceDecl,
 	}
 	for _, s := range sections {
 		s()
@@ -188,7 +190,7 @@ func headerGroups(g *gen) [][]string {
 	return [][]string{{includeJSONFwd}, last}
 }
 
-// source is <last>.gen.cpp: the helpers decoders call, decoders, the access struct, out-of-line members (§2.7).
+// source is <last>.gen.cpp: the helpers decoders call, decoders, the access struct, out-of-line members, then the runtime inputs (§2.7, §7.7).
 func (g *gen) source() []byte {
 	g.c = writer{}
 	g.decoders()
@@ -201,6 +203,7 @@ func (g *gen) source() []byte {
 	g.c.line(detailClose)
 	g.c.blank()
 	g.outOfLine()
+	g.loadInputs()
 	var out writer
 	out.printf(markerFormat, g.p.Dir)
 	out.linef(0, includeQuotedFormat, g.last+genHeaderSuffix)
@@ -208,41 +211,6 @@ func (g *gen) source() []byte {
 	includes(&out, g.c.String(), [][]string{{includeRuntimeJSON}})
 	g.namespaceBody(&out, g.emit.Namespace, g.c.String())
 	return out.bytes()
-}
-
-// includes writes the standard headers the text uses, sorted, then each group (CODEGEN.md §2.7).
-func includes(out *writer, text string, groups [][]string) {
-	std := stdIncludes(text)
-	if len(std) > 0 {
-		for _, h := range std {
-			out.printf(includeFormat, h)
-		}
-		out.blank()
-	}
-	for _, grp := range groups {
-		for _, h := range grp {
-			out.line(h)
-		}
-		out.blank()
-	}
-}
-
-// stdIncludes are the standard headers of every standard name the code (comments aside) uses, in byte order.
-func stdIncludes(text string) []string {
-	var code strings.Builder
-	for l := range strings.SplitSeq(text, newline) {
-		if !strings.HasPrefix(strings.TrimSpace(l), commentStart) {
-			code.WriteString(l)
-			code.WriteString(newline)
-		}
-	}
-	var out []string
-	for _, u := range stdUses {
-		if u.re.MatchString(code.String()) {
-			out = append(out, u.header)
-		}
-	}
-	return out
 }
 
 // selectValues is the emit's values in declaration order; data mode takes tables, keyed lists and records (E8015).

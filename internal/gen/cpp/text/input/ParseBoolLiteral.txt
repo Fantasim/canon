@@ -1,0 +1,6 @@
+// Bool input: true or false, exactly (EVALUATION.md §11.3).
+bool ParseBoolLiteral(std::string_view s, bool& out) {
+    if (s != "true" && s != "false") return false;
+    out = s == "true";
+    return true;
+}

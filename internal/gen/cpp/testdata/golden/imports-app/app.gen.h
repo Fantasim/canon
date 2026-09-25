@@ -22,24 +22,38 @@ namespace demo::app {
 /// its values. The loader refuses a file built from another schema.
 inline constexpr std::string_view kOrdersSchema = "demo.app.Order@00000001";
 
+class demo;
 class Order;
 class Orders;
 
 namespace detail {
 struct AppAccess;
+bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, demo& out);
 bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Order& out);
 }  // namespace detail
+
+class demo {
+public:
+    int64_t GetN() const { return n_; }
+
+private:
+    friend struct detail::AppAccess;
+    friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, demo&);
+
+    int64_t n_ = 0;
+};
 
 class Order {
 public:
     const std::string& GetId() const { return id_; }
-    demo::base::Color GetColor() const { return color_; }
-    const demo::base::Pt& GetAt() const { return at_; }
-    const std::vector<demo::base::Pt>& GetTrail() const { return trail_; }
-    const demo::base::Paint& GetPaint() const { return paint_; }
-    const demo::base::Pt* GetAlt() const { return alt_ ? &*alt_ : nullptr; }
+    ::demo::base::Color GetColor() const { return color_; }
+    const ::demo::base::Pt& GetAt() const { return at_; }
+    const std::vector<::demo::base::Pt>& GetTrail() const { return trail_; }
+    const ::demo::base::Paint& GetPaint() const { return paint_; }
+    const ::demo::base::Pt* GetAlt() const { return alt_ ? &*alt_ : nullptr; }
+    const ::demo::base::Shade* GetShade() const { return shade_ ? &*shade_ : nullptr; }
 
-    int64_t Hue(demo::base::Color c) const {
+    int64_t Hue(::demo::base::Color c) const {
         const size_t i0 = static_cast<size_t>(c);
         if (i0 >= 3) std::abort();
         return hue_[i0];
@@ -50,11 +64,12 @@ private:
     friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, Order&);
 
     std::string id_;
-    demo::base::Color color_{};
-    demo::base::Pt at_;
-    std::vector<demo::base::Pt> trail_;
-    demo::base::Paint paint_;
-    std::optional<demo::base::Pt> alt_;
+    ::demo::base::Color color_{};
+    ::demo::base::Pt at_;
+    std::vector<::demo::base::Pt> trail_;
+    ::demo::base::Paint paint_;
+    std::optional<::demo::base::Pt> alt_;
+    std::optional<::demo::base::Shade> shade_;
     std::array<int64_t, 3> hue_{};
 };
 
@@ -79,8 +94,8 @@ private:
     canon::KeyedList<std::string, Order> rows_;
 };
 
-inline bool Warm(demo::base::Color c) {
-    return c == demo::base::Color::red;
+inline bool Warm(::demo::base::Color c) {
+    return c == ::demo::base::Color::red;
 }
 
 namespace conformance {

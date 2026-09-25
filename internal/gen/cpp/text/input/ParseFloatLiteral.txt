@@ -1,0 +1,26 @@
+// Float input: -?[0-9]+(\.[0-9]+)?([eE][+-]?[0-9]+)?, finite (EVALUATION.md §11.3); read with
+// std::istringstream imbued with std::locale::classic(), so no locale applies.
+bool ParseFloatLiteral(std::string_view s, double& out) {
+    std::string_view body = s;
+    if (!body.empty() && body.front() == '-') body.remove_prefix(1);
+    const size_t epos = body.find_first_of("eE");
+    const std::string_view mant = body.substr(0, epos);
+    const size_t dot = mant.find('.');
+    if (!AllDigits(mant.substr(0, dot))) return false;
+    if (dot != std::string_view::npos && !AllDigits(mant.substr(dot + 1))) return false;
+    if (epos != std::string_view::npos) {
+        std::string_view exp = body.substr(epos + 1);
+        if (!exp.empty() && (exp.front() == '+' || exp.front() == '-')) exp.remove_prefix(1);
+        if (!AllDigits(exp)) return false;
+    }
+    std::istringstream in{std::string(s)};
+    in.imbue(std::locale::classic());
+    double v = 0;
+    in >> v;
+    // The syntax is checked above, so failbit is a range error; libc++ and MSVC also set it on an
+    // underflow, which Go and libstdc++ accept as rounded (1e-400 is 0, 4e-320 a subnormal).
+    if (in.fail() && !(std::isfinite(v) && std::fabs(v) < DBL_MIN)) return false;
+    if (!in.eof() || !std::isfinite(v)) return false;
+    out = v;
+    return true;
+}

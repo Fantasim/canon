@@ -45,7 +45,7 @@ func (g *gen) conformance() []byte {
 	for _, s := range sets {
 		g.vectorTable(&body, s)
 	}
-	body.printf(runOpenText, g.upper)
+	body.printf(runOpenText, g.pl.RunConformanceName())
 	for _, s := range sets {
 		g.vectorLoop(&body, s)
 	}
@@ -79,11 +79,8 @@ func (g *gen) vectorSets() []vectorSet {
 }
 
 func (g *gen) vectorSet(sc *scope, fn *ir.ExportFn, label, owner, call string) vectorSet {
-	base := owner + upperCamel(fn.Name)
-	s := vectorSet{
-		fn: fn, label: label, call: call,
-		structName: base + vectorSuffix, arrayName: schemaPrefix + base,
-	}
+	vec := g.pl.Vector(owner, fn)
+	s := vectorSet{fn: fn, label: label, call: call, structName: vec.Struct, arrayName: vec.Table}
 	for _, n := range []string{s.structName, s.arrayName} {
 		g.fail(sc.add(n, label))
 	}
@@ -285,7 +282,7 @@ func (g *gen) printArg(t ir.TypeRef, optional bool, v string) (spec, arg string)
 	case types.Bool:
 		return specString, fmt.Sprintf(boolTextFormat, v)
 	case types.Enum, types.Variant:
-		return specView, codeArgs(fmt.Sprintf(helperFormat, toNameFunc, v))
+		return specView, codeArgs(fmt.Sprintf(helperFormat, ir.CppToName, v))
 	case types.Ref:
 		if t.Key != nil {
 			return g.printArg(*t.Key, false, v)

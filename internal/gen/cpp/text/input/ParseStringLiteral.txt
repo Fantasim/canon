@@ -1,0 +1,33 @@
+// String input: the text byte for byte, valid UTF-8 as Go's utf8.ValidString reads it: no
+// overlong form, no surrogate (U+D800 to U+DFFF), nothing past U+10FFFF (EVALUATION.md §11.3).
+bool ParseStringLiteral(std::string_view s, std::string& out) {
+    size_t i = 0;
+    while (i < s.size()) {
+        const unsigned char c = static_cast<unsigned char>(s[i]);
+        size_t n = 1;
+        unsigned char lo = 0x80, hi = 0xBF;
+        if (c >= 0xC2 && c <= 0xDF) {
+            n = 2;
+        } else if (c >= 0xE0 && c <= 0xEF) {
+            n = 3;
+            lo = c == 0xE0 ? 0xA0 : lo;
+            hi = c == 0xED ? 0x9F : hi;
+        } else if (c >= 0xF0 && c <= 0xF4) {
+            n = 4;
+            lo = c == 0xF0 ? 0x90 : lo;
+            hi = c == 0xF4 ? 0x8F : hi;
+        } else if (c >= 0x80) {
+            return false;
+        }
+        if (s.size() - i < n) return false;
+        for (size_t k = 1; k < n; ++k) {
+            const unsigned char b = static_cast<unsigned char>(s[i + k]);
+            if (b < lo || b > hi) return false;
+            lo = 0x80;
+            hi = 0xBF;
+        }
+        i += n;
+    }
+    out = std::string(s);
+    return true;
+}

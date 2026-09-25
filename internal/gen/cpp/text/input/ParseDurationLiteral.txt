@@ -1,0 +1,40 @@
+// Duration input: a Canon duration literal, 250ms, 90s, 1h30m, -5m (EVALUATION.md §11.3): units
+// d h m s ms at most once each, largest first; past the Duration limit it is not a Duration.
+bool ParseDurationLiteral(std::string_view s, int64_t& out) {
+    constexpr int64_t kDurationLimitMs = {DurationLimit};  // TYPES.md §7.2
+    const bool neg = !s.empty() && s.front() == '-';
+    std::string_view body = neg ? s.substr(1) : s;
+    struct Unit {
+        std::string_view suffix;
+        int64_t ms;
+        int order;
+    };
+    static const Unit kUnits[] = {{"d", 86400000, 0}, {"h", 3600000, 1}, {"ms", 1, 4}, {"m", 60000, 2}, {"s", 1000, 3}};
+    int64_t total = 0;
+    int last = -1;
+    while (!body.empty()) {
+        size_t i = 0;
+        while (i < body.size() && (IsDecDigit(body[i]) || body[i] == '_')) ++i;
+        std::string digits;
+        if (!DurationDigits(body.substr(0, i), digits)) return false;
+        const std::string_view rest = body.substr(i);
+        const Unit* unit = nullptr;
+        for (const Unit& u : kUnits) {
+            if (rest.substr(0, u.suffix.size()) == u.suffix) {
+                unit = &u;
+                break;
+            }
+        }
+        if (unit == nullptr || unit->order <= last) return false;
+        last = unit->order;
+        errno = 0;
+        char* end = nullptr;
+        const long long n = std::strtoll(digits.c_str(), &end, 10);
+        if (errno == ERANGE || *end != '\0' || n > (canon::kIntMax - total) / unit->ms) return false;
+        total += n * unit->ms;
+        body = rest.substr(unit->suffix.size());
+    }
+    if (last < 0 || total > kDurationLimitMs) return false;
+    out = neg ? -total : total;
+    return true;
+}

@@ -47,7 +47,7 @@ func (g *gen) storage(t ir.TypeRef) string {
 		return cppString
 	case types.Duration:
 		return cppMillis
-	case types.Enum, types.Record, types.Variant:
+	case types.Enum, types.Record, types.Variant, types.TypeApp:
 		return g.typeName(t.Named)
 	case types.LitUnion:
 		return g.unionStorage(t)
@@ -72,17 +72,18 @@ func (g *gen) mapStorage(t ir.TypeRef) string {
 	return fmt.Sprintf(flatMapFormat, g.storage(*t.Key), g.storage(*t.Elem))
 }
 
-// refuseUnion refuses the union being written: malformed when its first arm has no string wire form (E8019 NonStringLiteralUnion), else not supported yet (a string-wired ref or dependent type, owed).
+// refuseUnion refuses the union being written: malformed when its first arm has no string wire form (check's E3002, TYPES.md §13.2), else not generated yet (a string-wired ref or dependent type, owed).
 func (g *gen) refuseUnion(t ir.TypeRef) {
 	if t.Elem == nil || !ir.StringWire(t.Elem) {
 		g.malformed(unionNonString, g.at)
 		return
 	}
-	g.unsupported(unionNonString, g.at)
+	g.unsupported(unionRefOrDependent, g.at)
 }
 
+// unionStorage is a string-literal union's wire text: always a string (CODEGEN.md §4.1).
 func (g *gen) unionStorage(t ir.TypeRef) string {
-	if t.Elem == nil || t.Elem.Kind != types.String && t.Elem.Kind != types.Enum {
+	if !g.stringWire(t) {
 		g.refuseUnion(t)
 	}
 	return cppString

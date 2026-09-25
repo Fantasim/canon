@@ -7,20 +7,23 @@ import (
 	"github.com/fantasim/canonlang/internal/types"
 )
 
-// class is a generated C++ class of a record, a variant, or a variant case with fields.
+// class is a generated C++ class of a record, a variant, a variant case with fields, or a dependent type.
 type class struct {
-	rec     *ir.Record
-	variant *ir.Variant
-	cs      *ir.Case // with variant: a case class
+	rec       *ir.Record
+	variant   *ir.Variant
+	cs        *ir.Case      // with variant: a case class
+	dependent *ir.Dependent // a dependent type's class (CODEGEN.md §5.6)
 }
 
-// key identifies a class across the sort: the record, the case, or the variant.
+// key identifies a class across the sort: the record, the case, the dependent type, or the variant.
 func (c class) key() any {
 	switch {
 	case c.rec != nil:
 		return c.rec
 	case c.cs != nil:
 		return c.cs
+	case c.dependent != nil:
+		return c.dependent
 	}
 	return c.variant
 }
@@ -43,6 +46,8 @@ func (g *gen) className(c class) string {
 		return g.typeName(c.rec)
 	case c.cs != nil:
 		return g.caseName(c.variant, c.cs)
+	case c.dependent != nil:
+		return g.typeName(c.dependent)
 	}
 	return g.typeName(c.variant)
 }
@@ -54,11 +59,13 @@ func (c class) canonName() string {
 		return c.rec.Name
 	case c.cs != nil:
 		return c.variant.Name + qnameSep + c.cs.Name
+	case c.dependent != nil:
+		return c.dependent.Name
 	}
 	return c.variant.Name
 }
 
-// declared is every class in declaration order: a variant, then its case classes.
+// declared is every class in declaration order: a variant, then its case classes; a dependent type is a class too (CODEGEN.md §5.6).
 func (g *gen) declared() []class {
 	var out []class
 	for _, t := range g.p.Types {
@@ -68,7 +75,7 @@ func (g *gen) declared() []class {
 		case *ir.Variant:
 			out = append(out, variantClasses(x)...)
 		case *ir.Dependent:
-			g.malformed(dependentTypes, x.Name) // E8019 DependentType
+			out = append(out, class{dependent: x})
 		}
 	}
 	return out
@@ -145,10 +152,10 @@ func (g *gen) deps(c class) []dep {
 	return out
 }
 
-// typeDeps adds the classes t holds; through a list or a map they are weak.
+// typeDeps adds the classes t holds, a dependent type's included; through a list or a map they are weak.
 func typeDeps(t ir.TypeRef, strong bool, out []dep) []dep {
 	switch {
-	case t.Kind == types.Record, t.Kind == types.Variant:
+	case t.Kind == types.Record, t.Kind == types.Variant, t.Kind == types.TypeApp:
 		return append(out, dep{to: t.Named, strong: strong})
 	case t.Elem == nil:
 		return out
@@ -219,16 +226,17 @@ func (g *gen) declareNames() {
 		g.declare(g.pl.FnName(fn), fn.Name)
 	}
 	if g.reloads() > 0 {
-		g.declare(g.upper+snapshotSuffix, snapshotOrigin)
-		g.declare(g.upper+storeSuffix, snapshotOrigin)
+		g.declare(g.pl.SnapshotName(), snapshotOrigin)
+		g.declare(g.pl.StoreName(), snapshotOrigin)
 	}
 }
 
 // declareEnum declares an enum and its helpers that are not overloads.
 func (g *gen) declareEnum(name, origin string) {
+	helpers := g.pl.EnumHelpers(name)
 	g.declare(name, origin)
-	g.declare(fmt.Sprintf(membersFormat, name), origin)
-	g.declare(name+fromWireSuffix, origin)
+	g.declare(helpers.Members, origin)
+	g.declare(helpers.FromWire, origin)
 }
 
 func (g *gen) reloads() int {
@@ -253,7 +261,7 @@ func (g *gen) forwards() {
 		}
 	}
 	if g.reloads() > 0 {
-		names = append(names, g.upper+snapshotSuffix, g.upper+storeSuffix)
+		names = append(names, g.pl.SnapshotName(), g.pl.StoreName())
 	}
 	for _, n := range names {
 		g.h.printf(forwardFormat, n)

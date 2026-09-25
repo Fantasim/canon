@@ -8,13 +8,16 @@ import (
 	"github.com/fantasim/canonlang/internal/types"
 )
 
-// classDecls writes the records, cases and variants in dependency order (CODEGEN.md §5.4, §5.5).
+// classDecls writes the records, cases, variants and dependent types in dependency order (CODEGEN.md §5.4–§5.6).
 func (g *gen) classDecls() {
 	for _, c := range g.classes {
 		leave := g.enter(c.canonName())
-		if c.variant != nil && c.cs == nil {
+		switch {
+		case c.dependent != nil:
+			g.dependentClass(c.dependent)
+		case c.variant != nil && c.cs == nil:
 			g.variantClass(c.variant)
-		} else {
+		default:
 			g.recordClass(c)
 		}
 		leave()
@@ -35,7 +38,7 @@ func (g *gen) recordClass(c class) {
 	var members []string
 	g.h.printf(classOpenFormat, name)
 	if c.rec != nil && g.loaders[c.rec] != nil {
-		g.fail(sc.add(loadFunc, g.loaders[c.rec].Name))
+		g.fail(sc.add(ir.CppLoad, g.loaders[c.rec].Name))
 		g.h.linef(1, loadDeclFormat, name)
 	}
 	if c.rec != nil && g.entries[c.rec] {
@@ -74,7 +77,7 @@ func (g *gen) private(name string, members bool, pairsParents ...string) {
 		g.h.blank()
 	}
 	g.h.line(privateLabel)
-	g.h.linef(1, friendAccessFormat, g.accessName())
+	g.h.linef(1, friendAccessFormat, g.pl.AccessName())
 	for _, n := range append([]string{name}, pairsParents...) {
 		g.h.linef(1, friendDecodeFormat, n)
 	}
@@ -82,8 +85,6 @@ func (g *gen) private(name string, members bool, pairsParents ...string) {
 		g.h.blank()
 	}
 }
-
-func (g *gen) accessName() string { return g.upper + accessSuffix }
 
 // getter declares a getter and its member in the class scope, then writes the getter line.
 func (g *gen) getter(sc *scope, name, line, mem, origin string) {
@@ -97,8 +98,10 @@ func (g *gen) fieldGetter(sc *scope, c class, f *ir.Field) []string {
 	leave := g.enter(g.at + qnameSep + f.Name)
 	defer leave()
 	switch {
+	case f.Input != nil && c.rec != nil:
+		g.inputGetter(sc, c.rec, f)
+		return nil
 	case f.Input != nil:
-		g.unsupported(inputFields, f.Name)
 		return nil
 	case f.Type.Kind == types.Never && f.Optional:
 		return nil
@@ -108,7 +111,7 @@ func (g *gen) fieldGetter(sc *scope, c class, f *ir.Field) []string {
 	var refs []string
 	doc := f.Doc
 	if list, isRef := refSlot(f.Type); isRef {
-		s := slot{member: m, wire: wireName(f), t: f.Type, optional: f.Optional, list: list}
+		s := slot{member: m, ref: g.pl.RefMember(f.Name), wire: wireName(f), t: f.Type, optional: f.Optional, list: list}
 		if target := g.resolvedTarget(s.target(), c); target != nil {
 			g.doc(1, doc)
 			doc = ""

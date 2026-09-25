@@ -1,6 +1,6 @@
-std::shared_ptr<const %[1]s> %[1]s::Load(const std::string& path, std::string& error) {
+std::shared_ptr<const %[1]s> %[1]s::%[4]s(const std::string& path, std::string& error) {
     auto out = std::make_shared<%[1]s>();
-    if (!detail::%[2]s::Load%[3]s(path, *out, error)) return nullptr;
+    if (!detail::%[2]s::%[3]s(path, *out, error)) return nullptr;
     return out;
 }
 

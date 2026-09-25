@@ -1,5 +1,5 @@
 }  // namespace
 
-int Run%sConformance() {
+int %s() {
     int failures = 0;
     const canon::EvalErrorHandler previous = canon::SetEvalErrorHandler(&Capture);

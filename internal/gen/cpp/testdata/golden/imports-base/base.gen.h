@@ -4,6 +4,7 @@
 #include <array>
 #include <cstdint>
 #include <optional>
+#include <string>
 #include <string_view>
 #include <variant>
 
@@ -75,15 +76,22 @@ inline std::optional<PaintKind> PaintKindFromWire(std::string_view wire) {
     return std::nullopt;
 }
 
+enum class ShadeBranch : uint8_t {
+    red,
+    green,
+};
+
 class Pt;
 class Paint;
 class PaintSolid;
+class Shade;
 
 namespace detail {
 struct BaseAccess;
 bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Pt& out);
 bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Paint& out);
 bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, PaintSolid& out);
+bool DecodeShade(const nlohmann::json& v, std::string_view key, ::demo::base::Color disc, canon::json::Decoder& dec, ::demo::base::Shade& out);
 }  // namespace detail
 
 class Pt {
@@ -118,6 +126,19 @@ private:
     friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, Paint&);
 
     std::variant<PaintSolid, std::monostate> value_;
+};
+
+class Shade {
+public:
+    ShadeBranch GetBranch() const { return static_cast<ShadeBranch>(value_.index()); }
+    const std::string* AsRed() const { return std::get_if<0>(&value_); }
+    std::optional<int32_t> AsGreen() const { const auto* p = std::get_if<1>(&value_); return p ? std::optional<int32_t>(*p) : std::nullopt; }
+
+private:
+    friend struct detail::BaseAccess;
+    friend bool detail::DecodeShade(const nlohmann::json&, std::string_view, ::demo::base::Color, canon::json::Decoder&, ::demo::base::Shade&);
+
+    std::variant<std::string, int32_t> value_;
 };
 
 }  // namespace demo::base

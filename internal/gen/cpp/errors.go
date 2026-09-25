@@ -23,34 +23,42 @@ var (
 
 // What this generator refuses (ErrUnsupported, decision 124) or finds malformed (ErrMalformed).
 const (
-	nilItem          = "a nil item"
-	noElem           = "a list, optional or table without its element type"
-	noKey            = "a map or ref without its key type"
-	noDecl           = "a record, variant or enum kind without its declaration"
-	noKeyField       = "a keyed list without its key field"
-	defineRefs       = "a ref into a load.defines table"
-	unionNonString   = "a literal union whose wire is not a string"
-	optionalElems    = "a list of optional elements"
-	dataValueKind    = "a data value that is not a table, a keyed list or a record"
-	recursiveTypes   = "a type that holds itself"
-	dependentTypes   = "a dependent type"
-	packageStoredFn  = "a package-level stored export fn in data mode"
-	legacyStructs    = "a legacy struct (@cpp(struct:))"
-	inputFields      = "an input field"
-	inlineFields     = "an optional or non-variant @json(inline) field"
-	methodCalls      = "a call to another export method"
-	lookupParams     = "a finite parameter that is not an enum or a Bool"
-	unknownReads     = "a read of self that is not a path of fields"
-	mapFields        = "a map field (nlohmann::json does not keep the key order)"
-	foreignPairs     = "a pairs field of a record from another package"
-	inlineFoldKeys   = "an inline variant key equal to another key of its parent but for letter case"
-	namePlanProblem  = "a C++ name-plan problem stage E should have refused"
-	snapshotOrigin   = "the snapshot"
-	noneMarkerFormat = "none marker %s"
-	typeFormat       = "type %T"
-	valueFormat      = "value %T"
-	exprFormat       = "expression %T"
-	kindNumberFormat = "kind %d"
+	nilItem             = "a nil item"
+	noElem              = "a list, optional or table without its element type"
+	noKey               = "a map or ref without its key type"
+	noDecl              = "a record, variant or enum kind without its declaration"
+	noKeyField          = "a keyed list without its key field"
+	defineRefs          = "a ref into a load.defines table"
+	unionNonString      = "a literal union whose wire is not a string"
+	unionRefOrDependent = "a literal union over a ref or dependent type, not generated yet"
+	optionalElems       = "a list of optional elements"
+	dataValueKind       = "a data value that is not a table, a keyed list or a record"
+	recursiveTypes      = "a type that holds itself"
+	dependentParam      = "a dependent field whose discriminant is a record parameter (CODEGEN.md §5.7) or a dependent map key (§4.2)"
+	dependentThroughRef = "a dependent field whose discriminant is read through a ref, an optional or an input field"
+	dependentElsewhere  = "a dependent type that is not a field's type or its list's elements"
+	dependentNoBranch   = "a dependent type every arm of which is Never"
+	dependentNoDisc     = "a dependent type without its Bool or enum discriminant"
+	dependentBadArm     = "a dependent type whose members and branches disagree"
+	dependentBadPath    = "a dependent field whose discriminant path names no earlier field"
+	packageStoredFn     = "a package-level stored export fn in data mode"
+	legacyStructs       = "a legacy struct (@cpp(struct:))"
+	inputOutsideRecord  = "an input field outside a record"
+	inputHelperUnknown  = "a runtime input helper this generator has no text for"
+	inlineFields        = "an optional or non-variant @json(inline) field"
+	methodCalls         = "a call to another export method"
+	lookupParams        = "a finite parameter that is not an enum or a Bool"
+	unknownReads        = "a read of self that is not a path of fields"
+	mapFields           = "a map field (nlohmann::json does not keep the key order)"
+	foreignPairs        = "a pairs field of a record from another package"
+	inlineFoldKeys      = "an inline variant key equal to another key of its parent but for letter case"
+	namePlanProblem     = "a C++ name-plan problem stage E should have refused"
+	snapshotOrigin      = "the snapshot"
+	noneMarkerFormat    = "none marker %s"
+	typeFormat          = "type %T"
+	valueFormat         = "value %T"
+	exprFormat          = "expression %T"
+	kindNumberFormat    = "kind %d"
 )
 
 // modeNames and kindNames name a mode and a kind in messages.
@@ -74,12 +82,25 @@ const (
 	failLoadText          = "error = dec.Error(), false"
 	failSnapshotText      = "error = dec.Error(), nullptr"
 	failMissingFormat     = "dec.Fail(%s, \"missing\");"
+	noBranchLine          = "dec.Fail(key, \"no branch for this value\");"
 	nullElemFormat        = "if (%s.is_null()) return dec.Fail(%s, \"null\"), false;"
 	failureTextFormat     = "%s: %s(%s) = %s [%%.*s], canon says %s [%%.*s]\n"
 )
 
+// E8302's signal, and the conditions under which LoadInputs refuses a variable (CODEGEN.md §5.12; EVALUATION.md §11.3).
+const (
+	inputGetterFormat     = "%s %s() const { if (!%s) canon::OnEvalError(%s, %s); %s }"
+	notParsedFormat       = "!%s(%s, %s)"
+	outsideFormat         = "%s < %s || %s > %s"
+	float32OverflowFormat = "std::fabs(%s) >= 3.4028235677973366e+38"
+	noMatchFormat         = "!std::regex_search(%s, %s)"
+	isMemberFormat        = "*%s == %s"
+	orSep                 = " || "
+	notValFormat          = "!%s"
+)
+
 // The kinds stage E refuses (E8019) where gen/cpp stores or decodes a type, or writes a constant: meeting one there is ErrMalformed.
 var (
-	typeRefused  = map[types.Kind]bool{types.Optional: true, types.Table: true, types.TypeApp: true, types.DepMap: true, types.Case: true}
+	typeRefused  = map[types.Kind]bool{types.Optional: true, types.Table: true, types.DepMap: true, types.Case: true}
 	constRefused = map[types.Kind]bool{types.Record: true, types.Variant: true, types.Case: true}
 )

@@ -186,16 +186,28 @@ func (g *gen) rangeCheck(t ir.TypeRef, b *types.Bound, v string) string {
 		return ""
 	}
 	if t.Kind == types.Float {
-		lo, hi := floatMinText, floatMaxText
-		if b.HasLo {
-			lo = g.floatLit(b.Lo.F, bits64)
-		}
-		if b.HasHi {
-			hi = g.floatLit(inclusiveHi(b), bits64)
-		}
+		lo, hi := g.floatBounds(b)
 		return fmt.Sprintf(helper3Format, checkFloatRange, v, lo, hi)
 	}
-	lo, hi := intMinConst, intMaxConst
+	lo, hi := intBounds(b)
+	return fmt.Sprintf(helper3Format, checkIntRange, v, lo, hi)
+}
+
+// floatBounds are a Float range's inclusive bounds as C++ literals, the double limits for an open end.
+func (g *gen) floatBounds(b *types.Bound) (lo, hi string) {
+	lo, hi = floatMinText, floatMaxText
+	if b.HasLo {
+		lo = g.floatLit(b.Lo.F, bits64)
+	}
+	if b.HasHi {
+		hi = g.floatLit(inclusiveHi(b), bits64)
+	}
+	return lo, hi
+}
+
+// intBounds are an integer or Duration range's inclusive bounds (for `a..b`, b − 1), the int64 limits for an open end.
+func intBounds(b *types.Bound) (lo, hi string) {
+	lo, hi = intMinConst, intMaxConst
 	if b.HasLo {
 		lo = intLit(b.Lo.I)
 	}
@@ -204,5 +216,5 @@ func (g *gen) rangeCheck(t ir.TypeRef, b *types.Bound, v string) string {
 	} else if b.HasHi {
 		hi = intLit(b.Hi.I - 1)
 	}
-	return fmt.Sprintf(helper3Format, checkIntRange, v, lo, hi)
+	return lo, hi
 }

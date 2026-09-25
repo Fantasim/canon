@@ -54,10 +54,8 @@ func refusals() []struct {
 		{"embedded mode", func(_ *ir.Package, e *ir.Emit) { e.Mode = ir.ModeEmbedded }, cppgen.ErrUnsupported},
 		{"types mode", func(_ *ir.Package, e *ir.Emit) { e.Mode = ir.ModeTypes }, cppgen.ErrUnsupported},
 		{"baked mode", func(_ *ir.Package, e *ir.Emit) { e.Mode = ir.ModeBaked }, cppgen.ErrUnsupported},
-		{"an input field", withField(&ir.Field{Name: "key", Type: tString, Input: &types.Input{Env: "KEY"}}), cppgen.ErrUnsupported},
 		{"a load.defines table", func(p *ir.Package, _ *ir.Emit) { p.Defines = []*ir.DefineTable{{Pkg: "demo", Value: "jobs"}} }, cppgen.ErrUnsupported},
-		{"a union over a string-keyed ref (owed)", withField(field("u", "u", "", ir.TypeRef{Kind: types.LitUnion, Elem: &ir.TypeRef{Kind: types.Ref, Key: &tString}})), cppgen.ErrUnsupported},
-		// unreachable: stage E refuses it first (E8019 NonStringLiteralUnion).
+		// unreachable: check refuses it first (E3002, TYPES.md §13.2).
 		{"a non-string literal union", withField(field("u", "u", "", ir.TypeRef{Kind: types.LitUnion, Elem: &tInt})), cppgen.ErrMalformed},
 		{"a legacy struct", func(p *ir.Package, _ *ir.Emit) { thing(p).Cpp.Struct = "ItemProp" }, cppgen.ErrUnsupported},
 		{"a json emit", func(_ *ir.Package, e *ir.Emit) { e.Target = ir.TargetJSON }, cppgen.ErrTarget},
@@ -70,8 +68,8 @@ func refusals() []struct {
 		{"an optional @stable field", func(p *ir.Package, _ *ir.Emit) { optionalStable(p) }, cppgen.ErrMalformed},
 		// ir's E8019 FieldlessCaseExportFn already refuses this at stage E: unreachable.
 		{"methods of a fieldless case", func(p *ir.Package, _ *ir.Emit) { fieldlessMethods(p) }, cppgen.ErrMalformed},
-		// unreachable: stage E refuses it first (E8019 DependentType).
-		{"a dependent type", func(p *ir.Package, _ *ir.Emit) { p.Types = append(p.Types, &ir.Dependent{Pkg: "demo", Name: "D"}) }, cppgen.ErrMalformed},
+		// stage E never builds a dependent type without its discriminant (CODEGEN.md §5.6).
+		{"a dependent type without its discriminant", func(p *ir.Package, _ *ir.Emit) { p.Types = append(p.Types, &ir.Dependent{Pkg: "demo", Name: "D"}) }, cppgen.ErrMalformed},
 		// unreachable: stage E refuses it first (E8019 OptionalElementList).
 		{"a list of optionals", withField(field("o", "o", "", listOf(optInt))), cppgen.ErrMalformed},
 		// unreachable: stage E refuses it first (E8019 MapField).

@@ -1,7 +1,7 @@
         const nlohmann::json* value = dec.Required(doc, "value");
         if (value == nullptr) return error = dec.Error(), false;
         dec.Push("value");
-        Decode(*value, dec, out);
+        %s(*value, dec, out);
         dec.Pop();
         if (!dec.Ok()) return error = dec.Error(), false;
         return true;

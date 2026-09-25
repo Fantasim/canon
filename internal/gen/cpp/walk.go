@@ -74,7 +74,7 @@ func (g *gen) classNamed(key any) (class, bool) {
 func (g *gen) ctxOf(c class) (typ string, snapshot bool) {
 	holders := g.holders[c.key()]
 	if len(holders) == 0 || holders[0].Reload {
-		return g.upper + snapshotSuffix, true
+		return g.pl.SnapshotName(), true
 	}
 	return g.pl.ContainerName(holders[0]), false
 }
@@ -141,7 +141,7 @@ func wireName(f *ir.Field) string {
 
 // resolveSlot points a slot at its entries, a list's one by one, through a present optional.
 func (g *gen) resolveSlot(r resolved, find string) {
-	key, ref, depth, wire := xPrefix+r.member, xPrefix+r.member+refSuffix, depthTwo, quote(r.wire)
+	key, ref, depth, wire := xPrefix+r.member, xPrefix+r.ref, depthTwo, quote(r.wire)
 	if r.cells > 0 {
 		quoted := make([]string, len(r.paths))
 		for i, p := range r.paths {
@@ -191,7 +191,7 @@ func (g *gen) keyText(t *ir.TypeRef) string {
 	case t == nil || t.Kind == types.String:
 		return stringOfFormat
 	case t.Kind == types.Enum:
-		return fmt.Sprintf(stringOfFormat, fmt.Sprintf(helperFormat, toWireFunc, keyPlaceholder))
+		return fmt.Sprintf(stringOfFormat, fmt.Sprintf(helperFormat, ir.CppToWire, keyPlaceholder))
 	default:
 		return toStringFormat
 	}

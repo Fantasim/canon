@@ -13,13 +13,19 @@ namespace demo::app {
 
 namespace detail {
 
+bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, demo& out) {
+    if (!canon::json::detail::Keys(v, dec, {"n"})) return false;
+    dec.Int(v, "n", out.n_);
+    return dec.Ok();
+}
+
 bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Order& out) {
-    if (!canon::json::detail::Keys(v, dec, {"$hue", "alt", "at", "color", "id", "kind", "tint", "trail"})) return false;
+    if (!canon::json::detail::Keys(v, dec, {"$hue", "alt", "at", "color", "id", "kind", "shade", "tint", "trail"})) return false;
     dec.String(v, "id", out.id_);
-    dec.Enum(v, "color", &demo::base::ColorFromWire, out.color_);
+    dec.Enum(v, "color", &::demo::base::ColorFromWire, out.color_);
     if (const nlohmann::json* x1 = dec.Required(v, "at")) {
         dec.Push("at");
-        demo::base::detail::Decode((*x1), dec, out.at_);
+        ::demo::base::detail::Decode((*x1), dec, out.at_);
         dec.Pop();
     }
     if (const nlohmann::json* x1 = dec.Required(v, "trail")) {
@@ -27,20 +33,24 @@ bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Order& out) {
             dec.Fail("trail", "expected an array");
         } else {
             for (size_t i2 = 0; i2 < (*x1).size(); ++i2) {
-                demo::base::Pt e2;
+                ::demo::base::Pt e2;
                 dec.Push("trail[" + std::to_string(i2) + "]");
-                demo::base::detail::Decode((*x1)[i2], dec, e2);
+                ::demo::base::detail::Decode((*x1)[i2], dec, e2);
                 dec.Pop();
                 out.trail_.push_back(std::move(e2));
             }
         }
     }
-    demo::base::detail::Decode(v, dec, out.paint_);
+    ::demo::base::detail::Decode(v, dec, out.paint_);
     if (const nlohmann::json* x1 = dec.Optional(v, "alt")) {
         auto& o1 = out.alt_.emplace();
         dec.Push("alt");
-        demo::base::detail::Decode((*x1), dec, o1);
+        ::demo::base::detail::Decode((*x1), dec, o1);
         dec.Pop();
+    }
+    if (const nlohmann::json* x1 = dec.Optional(v, "shade")) {
+        auto& o1 = out.shade_.emplace();
+        ::demo::base::detail::DecodeShade((*x1), "shade", out.GetColor(), dec, o1);
     }
     if (const nlohmann::json* f0 = dec.Object(v, "$hue")) {
         dec.Push("$hue");

@@ -37,6 +37,11 @@ int main(int argc, char** argv) {
     Check(o2->GetPaint().GetKind() == demo::base::PaintKind::clear && o1->GetAlt() == nullptr && o2->GetAlt()->GetX() == 9,
           "foreign fieldless case and optional record");
     Check(o1->Hue(Color::green) == 2 && o2->Hue(Color::blue) == 6, "a lookup over a foreign enum");
+    // A foreign dependent type, decoded by its own package's Decode<Alias> (CODEGEN.md §2.8, §5.6).
+    Check(o1->GetShade() == nullptr, "a Never branch is none");
+    Check(o2->GetShade() != nullptr && o2->GetShade()->GetBranch() == demo::base::ShadeBranch::red &&
+              *o2->GetShade()->AsRed() == "warm" && !o2->GetShade()->AsGreen(),
+          "a foreign dependent type");
     std::printf("failures: %d\n", failures);
     return failures;
 }

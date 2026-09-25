@@ -28,8 +28,8 @@ func TestWords(t *testing.T) {
 		{"_", nil},
 	}
 	for _, c := range cases {
-		if got := Words(c.in); !slices.Equal(got, c.want) {
-			t.Errorf("Words(%q) = %q, want %q", c.in, got, c.want)
+		if got := words(c.in); !slices.Equal(got, c.want) {
+			t.Errorf("words(%q) = %q, want %q", c.in, got, c.want)
 		}
 	}
 }

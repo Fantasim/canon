@@ -11,7 +11,7 @@ import (
 // goUpperCamel is Go's UpperCamel(x) (CODEGEN.md §3.2): GoCap of every word.
 func goUpperCamel(name string) string {
 	var b strings.Builder
-	for _, w := range Words(name) {
+	for _, w := range words(name) {
 		b.WriteString(goCap(w))
 	}
 	return b.String()
@@ -19,7 +19,7 @@ func goUpperCamel(name string) string {
 
 // goLowerCamel is Go's lowerCamel(x) (CODEGEN.md §3.2): the first word lower case, then goUpperCamel of the rest.
 func goLowerCamel(name string) string {
-	ws := Words(name)
+	ws := words(name)
 	if len(ws) == 0 {
 		return ""
 	}
@@ -109,8 +109,8 @@ func CppReserved(name string) bool {
 	return check.IsCppKeyword(name) || check.IsCppNamespace(name) || cppOwnNames[name]
 }
 
-// Words splits a Canon identifier into words, CODEGEN.md §3.1 (every target splits the same way).
-func Words(name string) []string {
+// words splits a Canon identifier into words, CODEGEN.md §3.1 (every target splits the same way).
+func words(name string) []string {
 	var out []string
 	for piece := range strings.SplitSeq(name, underscore) {
 		start := 0

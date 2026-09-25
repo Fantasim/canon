@@ -31,12 +31,14 @@ func (g *gen) named(t ir.Type) (pkg, name string) {
 		return x.Pkg, g.pl.TypeName(x)
 	case *ir.Variant:
 		return x.Pkg, g.pl.TypeName(x)
+	case *ir.Dependent:
+		return x.Pkg, g.pl.TypeName(x)
 	default:
 		return "", ""
 	}
 }
 
-// qualifier is `<namespace>::` of an imported package's cpp emit, "" for this package; it
+// qualifier is `::<namespace>::` of an imported package's cpp emit, from the global namespace so that no name of the including namespace hijacks it (log-2026-09-25 "imported qualifiers can be hijacked"), "" for this package; it
 // records the header the generated header then includes.
 func (g *gen) qualifier(pkg string) string {
 	if pkg == g.p.Name {
@@ -54,7 +56,7 @@ func (g *gen) qualifier(pkg string) string {
 	}
 	segs := strings.Split(pkg, qnameSep)
 	g.imported[path.Join(relPath(g.emit.Dir, e.Dir), segs[len(segs)-1]+genHeaderSuffix)] = true
-	return e.Namespace + scopeSep
+	return scopeSep + e.Namespace + scopeSep
 }
 
 func cppEmitOf(emits []*ir.Emit) *ir.Emit {
@@ -94,7 +96,7 @@ func (g *gen) importIncludes() []string {
 func (g *gen) decodeFunc(t ir.TypeRef) string {
 	pkg, _ := g.named(t.Named)
 	if pkg == g.p.Name {
-		return decodeFunc
+		return ir.CppDecode
 	}
-	return g.qualifier(pkg) + detailPrefix + decodeFunc
+	return g.qualifier(pkg) + detailPrefix + ir.CppDecode
 }

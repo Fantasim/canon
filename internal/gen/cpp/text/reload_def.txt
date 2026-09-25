@@ -1,5 +1,5 @@
 bool %[1]s::Reload(const std::string& dir, std::string& error) {
-    std::shared_ptr<const %[2]s> fresh = %[2]s::Load(dir, error);
+    std::shared_ptr<const %[2]s> fresh = %[2]s::%[3]s(dir, error);
     if (!fresh) return false;
     current_.Store(std::move(fresh));
     return true;

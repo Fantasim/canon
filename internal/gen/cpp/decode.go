@@ -18,12 +18,18 @@ type leaf struct {
 	dst      string // the C++ lvalue
 	box      string // the class an optional std::unique_ptr holds, or ""
 	cell     bool   // a lookup cell: absent is missing, null is none or an error (WIRE.md §5.11)
+	disc     string // a dependent type's discriminant, read before it (CODEGEN.md §5.6)
 }
 
-// decoders are the detail::Decode definitions, in declaration order (CODEGEN.md §2.7, §7.6).
+// decoders are the detail::Decode and Decode<Alias> definitions, in declaration order (CODEGEN.md §2.7, §5.6, §7.6).
 func (g *gen) decoders() {
 	for _, c := range g.declared() {
 		leave := g.enter(c.canonName())
+		if c.dependent != nil {
+			g.dependentDecoder(c.dependent)
+			leave()
+			continue
+		}
 		name := g.className(c)
 		g.c.printf(decodeOpenFormat, name)
 		if c.variant != nil && c.cs == nil {
@@ -43,7 +49,7 @@ func (g *gen) decodeRecord(c class) {
 	fields, fns := c.shape()
 	g.inlineFolds(c)
 	g.checkKeys(1, sourceVar, g.objectKeys(c), true)
-	if len(fields) == 0 && !hasStored(fns) {
+	if !anyFieldDecodes(fields) && !hasStored(fns) {
 		g.c.linef(1, unusedFormat, outVar)
 	}
 	for _, f := range fields {
@@ -68,6 +74,16 @@ func (g *gen) decodeRecord(c class) {
 func hasStored(fns []*ir.ExportFn) bool {
 	for _, fn := range fns {
 		if fn.Kind != ir.FnTranslated {
+			return true
+		}
+	}
+	return false
+}
+
+// anyFieldDecodes reports a field decodeField writes to out (CODEGEN.md §5.12, §7.6).
+func anyFieldDecodes(fields []*ir.Field) bool {
+	for _, f := range fields {
+		if f.Input == nil && (f.Type.Kind != types.Never || !f.Optional) {
 			return true
 		}
 	}
@@ -109,6 +125,9 @@ func (g *gen) decodeField(f *ir.Field, fields []*ir.Field) {
 	l := leaf{t: f.Type, optional: f.Optional, none: f.NoneWire, unit: f.Unit, enc: f.Enc, dst: outPrefix + m}
 	if g.boxed[f] {
 		l.box = g.storage(f.Type)
+	}
+	if app, ok := heldDependent(f.Type); ok {
+		l.disc = g.discExpr(fields, app)
 	}
 	g.decodeKey(depth, obj, quote(f.WirePath[last]), l)
 	g.closePath(f, depth)
@@ -154,7 +173,7 @@ func (g *gen) decodeKey(depth int, obj, key string, l leaf) {
 		dst = fmt.Sprintf(optVarFormat, depth)
 		g.c.linef(depth+1, emplaceFormat, dst, l.dst)
 	}
-	g.decodeValue(depth+1, fmt.Sprintf(derefFormat, x), key, leaf{t: l.t, unit: l.unit, enc: l.enc, dst: dst})
+	g.decodeValue(depth+1, fmt.Sprintf(derefFormat, x), key, leaf{t: l.t, unit: l.unit, enc: l.enc, dst: dst, disc: l.disc})
 	g.c.linef(depth, closeBrace)
 }
 
@@ -198,9 +217,9 @@ func (g *gen) parser(t ir.TypeRef) string {
 		return cppInvalid
 	}
 	if e.JSONCodes {
-		return addressOf + g.typeName(e) + fromCodeSuffix
+		return addressOf + g.enumHelpers(e).FromCode
 	}
-	return addressOf + g.typeName(e) + fromWireSuffix
+	return addressOf + g.enumHelpers(e).FromWire
 }
 
 // stringWire reports a literal union whose wire is always a JSON string.
@@ -232,6 +251,8 @@ func (g *gen) decodeValue(depth int, src, key string, l leaf) {
 		g.decodeValue(depth, src, key, leaf{t: *l.t.Key, dst: l.dst})
 	case types.Record, types.Variant:
 		g.decodeObject(depth, src, key, l)
+	case types.TypeApp:
+		g.decodeDependent(depth, src, key, l)
 	case types.List:
 		if l.enc == types.EncBits {
 			g.decodeBits(depth, src, key, l)

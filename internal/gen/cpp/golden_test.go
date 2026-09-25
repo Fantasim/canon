@@ -20,7 +20,10 @@ type fixture struct {
 	build func() *ir.Package
 }
 
-var fixtures = []fixture{{"pipeline", pipeline}, {"constructs", constructs}, {"imports-base", importBase}, {"imports-app", importApp}}
+var fixtures = []fixture{
+	{"pipeline", pipeline}, {"constructs", constructs}, {"imports-base", importBase}, {"imports-app", importApp},
+	{"dependent", dependentPackage}, {"inputs", inputsPackage},
+}
 
 // generate runs the generator twice: the same bytes both times (CODEGEN.md §2.7, NFR-05).
 func generate(t *testing.T, p *ir.Package) []ir.File {

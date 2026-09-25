@@ -34,7 +34,7 @@ func (g *gen) decodeList(depth int, src, key string, l leaf) {
 		g.c.linef(body, nullElemFormat, fmt.Sprintf(indexFormat, src, i), elemKey(key, i))
 	}
 	g.c.linef(body, localFormat, elem, e, elemInit(*l.t.Elem))
-	g.decodeValue(body, fmt.Sprintf(indexFormat, src, i), elemKey(key, i), leaf{t: *l.t.Elem, unit: l.unit, enc: l.enc, dst: e})
+	g.decodeValue(body, fmt.Sprintf(indexFormat, src, i), elemKey(key, i), leaf{t: *l.t.Elem, unit: l.unit, enc: l.enc, dst: e, disc: l.disc})
 	if kf != nil {
 		g.c.linef(body, pushBackKeyFormat, keys, e, g.getterName(kf))
 		g.c.linef(body, pushBackFormat, rows, e)

@@ -35,9 +35,13 @@ func (g *gen) detailDecls() {
 		g.h.blank()
 	}
 	g.h.line(detailOpen)
-	g.h.printf(accessDeclFormat, g.accessName())
+	g.h.printf(accessDeclFormat, g.pl.AccessName())
 	for _, c := range g.declared() {
-		g.h.printf(decodeDeclFormat, g.className(c))
+		if c.dependent != nil {
+			g.dependentDecodeDecl(c.dependent)
+		} else {
+			g.h.printf(decodeDeclFormat, g.className(c))
+		}
 	}
 	for _, m := range g.methods {
 		leave := g.enter(m.class.canonName() + qnameSep + m.fn.Name)
@@ -49,6 +53,7 @@ func (g *gen) detailDecls() {
 		g.pureFn(g.pl.PureName(g.className(m.class), m.fn), m.fn)
 		leave()
 	}
+	g.inputSlots()
 	g.h.line(detailClose)
 	g.h.blank()
 }
@@ -133,7 +138,7 @@ func (g *gen) container(v *ir.Value) {
 	g.h.printf(classOpenFormat, s.name)
 	g.h.printf(moveOnlyText, s.name)
 	if !v.Reload {
-		g.fail(sc.add(loadFunc, v.Name))
+		g.fail(sc.add(ir.CppLoad, v.Name))
 		g.h.linef(1, loadDeclFormat, s.name)
 	}
 	g.h.linef(1, lenFormat)
@@ -146,13 +151,13 @@ func (g *gen) container(v *ir.Value) {
 	}
 	g.h.blank()
 	g.h.line(privateLabel)
-	g.h.linef(1, friendAccessFormat, g.accessName())
+	g.h.linef(1, friendAccessFormat, g.pl.AccessName())
 	g.h.blank()
 	g.h.linef(1, rowsMemberFormat, s.key, s.elem)
 	for _, f := range s.stable {
-		idx := byPrefix + upperCamel(f.Name)
-		g.h.linef(1, vectorDeclFormat, g.storage(f.Type), idx+keysSuffix+underscore)
-		g.h.linef(1, vectorDeclFormat, cppUint32, idx+underscore)
+		fb := g.pl.FindBy(f)
+		g.h.linef(1, vectorDeclFormat, g.storage(f.Type), fb.Keys)
+		g.h.linef(1, vectorDeclFormat, cppUint32, fb.Index)
 	}
 	g.h.line(closeClass)
 	g.h.blank()
@@ -160,16 +165,16 @@ func (g *gen) container(v *ir.Value) {
 
 // findBy is FindBy<F>: escaped parameter, a local apart from it, names declared (§3.4, §5.9).
 func (g *gen) findBy(sc *scope, s containerSpec, f *ir.Field) {
-	idx := byPrefix + upperCamel(f.Name)
+	fb := g.pl.FindBy(f)
 	param, local := verbatim(f.Name), indexLocal
 	for local == param {
 		local += underscore
 	}
-	for _, n := range []string{findByPrefix + upperCamel(f.Name), idx + keysSuffix + underscore, idx + underscore} {
+	for _, n := range []string{fb.Func, fb.Keys, fb.Index} {
 		g.fail(sc.add(n, f.Name))
 	}
-	g.h.linef(1, findByOpenFormat, s.elem, upperCamel(f.Name), lookupType(g.storage(f.Type)), param)
-	g.h.linef(depthTwo, findSortedFormat, local, idx+keysSuffix+underscore, idx+underscore, param)
+	g.h.linef(1, findByOpenFormat, s.elem, fb.Func, lookupType(g.storage(f.Type)), param)
+	g.h.linef(depthTwo, findSortedFormat, local, fb.Keys, fb.Index, param)
 	g.h.linef(depthTwo, findResultFormat, local)
 	g.h.linef(1, closeBrace)
 }
@@ -187,7 +192,7 @@ func (g *gen) snapshot() {
 	if g.reloads() == 0 {
 		return
 	}
-	snap, store := g.upper+snapshotSuffix, g.upper+storeSuffix
+	snap, store := g.pl.SnapshotName(), g.pl.StoreName()
 	var files []string
 	for _, v := range g.values {
 		if v.Reload {
@@ -207,7 +212,7 @@ func (g *gen) snapshot() {
 		}
 		m, err := g.member(v.Name)
 		g.fail(err)
-		name := override(v.Cpp, getPrefix+upperCamel(v.Name))
+		name := g.pl.SnapshotGetter(v)
 		g.h.blank()
 		g.doc(1, v.Doc)
 		g.getter(sc, name, fmt.Sprintf(getterFormat, fmt.Sprintf(constRefFormat, g.valueClass(v)), name, "", fmt.Sprintf(returnFormat, m)), m, v.Name)
@@ -215,14 +220,14 @@ func (g *gen) snapshot() {
 	}
 	g.h.blank()
 	g.h.line(privateLabel)
-	g.h.linef(1, friendAccessFormat, g.accessName())
+	g.h.linef(1, friendAccessFormat, g.pl.AccessName())
 	g.h.blank()
 	for _, m := range members {
 		g.h.lineAt(1, m)
 	}
 	g.h.line(closeClass)
 	g.h.blank()
-	g.h.printf(storeText, g.p.Name, store, snap, g.accessName())
+	g.h.printf(storeText, g.p.Name, store, snap, g.pl.AccessName())
 }
 
 // valueClass is a value's container class, or its record type (CODEGEN.md §5.9).
@@ -236,6 +241,6 @@ func (g *gen) valueClass(v *ir.Value) string {
 // conformanceDecl declares Run<P>Conformance with T10 (CODEGEN.md §2.7 step 6).
 func (g *gen) conformanceDecl() {
 	if g.translated() {
-		g.h.printf(conformanceDeclText, g.last, g.upper)
+		g.h.printf(conformanceDeclText, g.last, g.pl.RunConformanceName())
 	}
 }

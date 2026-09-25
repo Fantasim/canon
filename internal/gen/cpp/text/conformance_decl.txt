@@ -1,6 +1,6 @@
 namespace conformance {
 /// Defined in %s_conformance.gen.cpp: runs every conformance vector of the
 /// package and returns the number of failures (0 when the translation agrees).
-int Run%sConformance();
+int %s();
 }  // namespace conformance
 

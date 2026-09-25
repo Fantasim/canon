@@ -1,10 +1,6 @@
 package cppgen
 
-import (
-	"regexp"
-
-	"github.com/fantasim/canonlang/internal/ir"
-)
+import "github.com/fantasim/canonlang/internal/ir"
 
 // Output files, first lines, namespaces, forward declarations (CODEGEN.md §2.3–§2.7, §7.1).
 const (
@@ -68,8 +64,7 @@ const (
 	detailPrefix         = "detail::"
 	forwardFormat        = "class %s;\n"
 	accessDeclFormat     = "struct %s;\n"
-	accessSuffix         = "Access"
-	decodeDeclFormat     = "bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, %s& out);\n"
+	decodeDeclFormat     = "bool " + ir.CppDecode + "(const nlohmann::json& v, canon::json::Decoder& dec, %s& out);\n"
 	protoFormat          = "inline %s;\n"
 )
 
@@ -116,11 +111,11 @@ const (
 	floatMaxText        = "1.7976931348623157e308"
 	falseLit            = "false"
 	zeroInt             = "0"
+	oneInt              = "1"
 	zeroFloat           = "0.0"
 	constexprFormat     = "inline constexpr %s %s = %s;\n"
 	durationConstFormat = "inline constexpr %s %s{%s};\n"
 	listConstFormat     = "inline const %s %s = %s;\n"
-	schemaPrefix        = "k"
 )
 
 // Enums (CODEGEN.md §5.2, §5.5).
@@ -128,18 +123,13 @@ const (
 	enumOpenFormat     = "enum class %s : %s {\n"
 	enumMemberFormat   = "%s,"
 	enumCodeFormat     = "%s = %d,"
-	membersFormat      = "k%sMembers"
 	membersArrayFormat = "inline constexpr std::array<%s, %d> %s = {%s};\n"
-	toNameFunc         = "ToName"
-	toWireFunc         = "ToWire"
 	nameFuncOpenFormat = "inline std::string_view %s(%s v) {\n"
 	switchFormat       = "switch (%s) {"
 	enumArg            = "v"
 	codeField          = "code"
 	caseReturnFormat   = "case %s: return %s;"
 	returnEmpty        = "return {};"
-	fromWireSuffix     = "FromWire"
-	fromCodeSuffix     = "FromCode"
 	fromWireOpenFormat = "inline std::optional<%s> %s(std::string_view wire) {\n"
 	fromCodeOpenFormat = "inline std::optional<%s> %s(%s code) {\n"
 	wireTestFormat     = "if (wire == %s) return %s;"
@@ -150,13 +140,10 @@ const (
 const (
 	classOpenFormat     = "class %s {\n" + publicLabel + "\n"
 	friendAccessFormat  = "friend struct detail::%s;"
-	friendDecodeFormat  = "friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, %s&);"
+	friendDecodeFormat  = "friend bool detail::" + ir.CppDecode + "(const nlohmann::json&, canon::json::Decoder&, %s&);"
 	returnFormat        = "return %s;"
 	returnPtrFormat     = "return %[1]s ? &*%[1]s : nullptr;"
 	memberFormat        = "%s %s%s;"
-	getPrefix           = "Get"
-	keySuffix           = "Key"
-	keysSuffix          = "Keys"
 	idGetter            = "GetId"
 	idMember            = "id_"
 	getIDLine           = "const std::string& GetId() const { return id_; }"
@@ -166,9 +153,9 @@ const (
 	getRetiredLine      = "bool GetRetired() const { return retired_; }"
 	retiredMemberDecl   = "bool retired_ = false;"
 	kindGetter          = "GetKind"
-	kindGetterFormat    = "%s GetKind() const { return static_cast<%s>(value_.index()); }"
-	asGetterFormat      = "const %s* %s() const { return std::get_if<%d>(&value_); }"
-	variantMemberFormat = "std::variant<%s> value_;"
+	kindGetterFormat    = "%s GetKind() const { return static_cast<%s>(" + ir.CppVariantMember + ".index()); }"
+	asGetterFormat      = "const %s* %s() const { return std::get_if<%d>(&" + ir.CppVariantMember + "); }"
+	variantMemberFormat = "std::variant<%s> " + ir.CppVariantMember + ";"
 	methodFormat        = "%s %s(%s) const { return %s; }"
 	pureCallFormat      = "detail::%s(%s)"
 	memberAccess        = "."
@@ -181,14 +168,13 @@ const (
 
 // Decoders (CODEGEN.md §7.5, §7.6; WIRE.md §5).
 const (
-	decodeOpenFormat        = "bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, %s& out) {\n"
+	decodeOpenFormat        = "bool " + ir.CppDecode + "(const nlohmann::json& v, canon::json::Decoder& dec, %s& out) {\n"
 	unusedFormat            = "static_cast<void>(%s);"
 	returnOk                = "return dec.Ok();"
 	sourceVar               = "v"
 	outVar                  = "out"
 	outPrefix               = "out."
 	decodeCallFormat        = "%s(%s, dec, %s);"
-	decodeFunc              = "Decode"
 	pathVarFormat           = "p%d"
 	jsonVarFormat           = "x%d"
 	optVarFormat            = "o%d"
@@ -232,7 +218,7 @@ const (
 	fromRowsFormat          = "%s = canon::KeyedList<%s, %s>::FromRows(std::move(%s), std::move(%s));"
 	checkUniqueNestedFormat = "canon::json::detail::CheckUnique(%s, dec, %s, %s, %s);"
 	genericKeyRender        = "[](const auto& k) { return canon::json::detail::KeyToken(k); }"
-	wireKeyRenderFormat     = "[](%s e) { return canon::json::detail::KeyToken(std::string(ToWire(e))); }"
+	wireKeyRenderFormat     = "[](%s e) { return canon::json::detail::KeyToken(std::string(" + ir.CppToWire + "(e))); }"
 	codeKeyRenderFormat     = "[](%s e) { return canon::json::detail::KeyToken(static_cast<%s>(e)); }"
 	elemKeyLitFormat        = "\"%s[\" + std::to_string(%s) + \"]\""
 	elemKeyExprFormat       = "std::string(%s) + \"[\" + std::to_string(%s) + \"]\""
@@ -240,8 +226,8 @@ const (
 	tagReadFormat           = "if (!dec.String(v, %s, tag)) return false;"
 	ifTagFormat             = "if (tag == %s) {"
 	elseIfTagFormat         = "} else if (tag == %s) {"
-	emplaceIndexFormat      = "out.value_.emplace<%d>();"
-	emplaceDecodeFormat     = "Decode(v, dec, out.value_.emplace<%d>());"
+	emplaceIndexFormat      = "out." + ir.CppVariantMember + ".emplace<%d>();"
+	emplaceDecodeFormat     = "" + ir.CppDecode + "(v, dec, out." + ir.CppVariantMember + ".emplace<%d>());"
 	markerIntFormat         = "%s->is_number_integer() && %s->get<int64_t>() == %s"
 	markerNumberFormat      = "%s->is_number() && %s->get<double>() == %s"
 	markerStringFormat      = "%s->is_string() && %s->get_ref<const std::string&>() == %s"
@@ -251,37 +237,74 @@ const (
 	jsonArray               = "is_array"
 )
 
+// Dependent types (CODEGEN.md §5.6): the class, its branch accessors, Decode<Alias>; runtime inputs.
+const (
+	boolMembers           = 2
+	discParam             = "disc"
+	keyParam              = "key"
+	branchGetterFormat    = "%s %s() const { return static_cast<%s>(" + ir.CppVariantMember + ".index()); }"
+	branchValueFormat     = "std::optional<%s> %s() const { const auto* p = std::get_if<%d>(&" + ir.CppVariantMember + "); return p ? std::optional<%s>(*p) : std::nullopt; }"
+	friendDependentFormat = "friend bool detail::%s(const nlohmann::json&, std::string_view, %s, canon::json::Decoder&, %s&);"
+	dependentDeclFormat   = "bool %s(const nlohmann::json& v, std::string_view key, %s disc, canon::json::Decoder& dec, %s& out);\n"
+	dependentOpenFormat   = "bool %s(const nlohmann::json& v, std::string_view key, %s disc, canon::json::Decoder& dec, %s& out) {\n"
+	dependentCallFormat   = "%s(%s, %s, %s, dec, %s);"
+	caseLabelFormat       = "case %s:"
+	caseOpenFormat        = "case %s: {"
+	defaultBreak          = "default: break;"
+	returnFalse           = "return false;"
+	emplaceMoveFormat     = "out." + ir.CppVariantMember + ".emplace<%d>(std::move(%s));"
+
+	// Runtime inputs (CODEGEN.md §5.12, §7.7; EVALUATION.md §11.3).
+	inputHelperDir       = "text/input"
+	inputHelperExt       = ".txt"
+	anonOpen             = "namespace {"
+	anonClose            = "}  // namespace"
+	inlineFlagFormat     = "inline bool %s = false;"
+	inlineSlotFormat     = "inline %s %s%s;"
+	loadInputsDeclFormat = "bool %s(std::string& error);\n"
+	loadInputsOpenFormat = "bool %s(std::string& error) {\n"
+	errorParam           = "error"
+	problemsVar          = "problems"
+	problemsEmpty        = problemsVar + ".empty()"
+	rawVar               = "raw"
+	valVar               = "val"
+	patternVar           = "kPattern"
+	envTextFormat        = "if (%s(%s, raw)) {"
+	durationLimitMark    = "{DurationLimit}"
+	elseIfFormat         = "} else if (%s) {"
+	appendFormat         = "%s += %s;"
+	sizeFormat           = "static_cast<int64_t>(%s.size())"
+	patternFormat        = "static const std::regex %s(%s);"
+	moveFormat           = "std::move(%s)"
+	constAutoFormat      = "const auto %s = %s;"
+)
+
 // Containers, loaders, snapshot and store (CODEGEN.md §5.9, §5.11, §7.6, T4–T6, T8, T9).
 const (
 	idKeyName                = "id"
-	loadFunc                 = "Load"
-	byPrefix                 = "by"
-	loadDeclFormat           = "static std::shared_ptr<const %s> Load(const std::string& path, std::string& error);"
+	loadDeclFormat           = "static std::shared_ptr<const %s> " + ir.CppLoad + "(const std::string& path, std::string& error);"
 	lenFormat                = "size_t Len() const { return rows_.All().size(); }"
 	atFormat                 = "const %s& At(size_t i) const { return rows_.At(i); }"
 	allFormat                = "const std::vector<%s>& All() const { return rows_.All(); }"
 	findDocFormat            = "/// Binary search by %s. Never allocates; nullptr when absent."
 	findFormat               = "const %s* Find(%s %[3]s) const { return rows_.Find(%[3]s); }"
-	findByOpenFormat         = "const %s* FindBy%s(%s %s) const {"
+	findByOpenFormat         = "const %s* %s(%s %s) const {"
 	findSortedFormat         = "const auto %s = canon::detail::FindSorted(%s, %s, %s);"
 	findResultFormat         = "return %[1]s < 0 ? nullptr : &rows_.At(static_cast<size_t>(%[1]s));"
 	indexLocal               = "i"
-	findByPrefix             = "FindBy"
 	rowsMemberFormat         = "canon::KeyedList<%s, %s> rows_;"
-	snapshotSuffix           = "Snapshot"
-	storeSuffix              = "Store"
-	snapshotLoadFormat       = "static std::shared_ptr<const %s> Load(const std::string& dir, std::string& error);"
+	snapshotLoadFormat       = "static std::shared_ptr<const %s> " + ir.CppLoad + "(const std::string& dir, std::string& error);"
 	structOpenFormat         = "struct %s {\n"
-	loaderOpenFormat         = "static bool Load%s(const std::string& path, %s& out, std::string& error) {"
+	loaderOpenFormat         = "static bool %s(const std::string& path, %s& out, std::string& error) {"
 	stableKeyFormat          = "out.%s.push_back(values[i].%s);"
 	fromRowsOutFormat        = "out.rows_ = canon::KeyedList<%s, %s>::FromRows(std::move(values), std::move(keys));"
 	checkUniqueFormat        = "if (!canon::json::detail::CheckUnique(keys, dec, %s, \"rows\", %s)) return error = dec.Error(), false;"
 	checkUniqueIDLine        = "if (!canon::json::detail::CheckUnique(keys, dec, \"$id\", \"rows\", " + genericKeyRender + ")) return error = dec.Error(), false;"
 	sortedIndexFormat        = "out.%s = canon::detail::SortedIndex(out.%s);"
 	returnTrue               = "return true;"
-	snapshotLoaderOpenFormat = "static std::shared_ptr<const %s> LoadSnapshot(const std::string& dir, std::string& error) {"
+	snapshotLoaderOpenFormat = "static std::shared_ptr<const %s> %s(const std::string& dir, std::string& error) {"
 	makeSnapFormat           = "auto snap = std::make_shared<%s>();"
-	loadIntoFormat           = "if (!Load%s(dir + %s, snap->%s, error)) return nullptr;"
+	loadIntoFormat           = "if (!%s(dir + %s, snap->%s, error)) return nullptr;"
 	returnSnap               = "return snap;"
 )
 
@@ -322,7 +345,6 @@ const (
 	conformanceNS           = "conformance"
 	codeGlobal              = "g_code"
 	captureFunc             = "Capture"
-	vectorSuffix            = "Vector"
 	wantField               = "want"
 	fieldDeclFormat         = "%s %s;"
 	codeFieldLine           = "std::string_view code;  // expected error code; empty when `want` is expected"
@@ -366,7 +388,6 @@ const (
 	ordinalCaseFormat  = "case %s: %s = %d; break;"
 	abortDefault       = "default: std::abort();"
 	getterOpenFormat   = "%s %s(%s) const {"
-	refSuffix          = "ref_"
 	initNull           = " = nullptr"
 	derefReturnFormat  = "return *%s;"
 	rowMajorFormat     = "%s * %d + %s"
@@ -398,33 +419,11 @@ const (
 	vectorRowFormat    = "{%s, %s, %s},"
 	showIntFormat      = "std::string Show(std::optional<%s> v) { return v ? std::to_string(*v) : \"none\"; }\n"
 	showStringFormat   = "std::string Show(std::optional<%s> v) { return v ? std::string(*v) : \"none\"; }\n"
-	showNameFormat     = "std::string Show(std::optional<%s> v) { return v ? std::string(ToName(*v)) : \"none\"; }\n"
+	showNameFormat     = "std::string Show(std::optional<%s> v) { return v ? std::string(" + ir.CppToName + "(*v)) : \"none\"; }\n"
 	showBoolFormat     = "std::string Show(std::optional<%s> v) { return v ? (*v ? \"true\" : \"false\") : \"none\"; }\n"
 	showFloatFormat    = "std::string Show(std::optional<%s> v) {\n    if (!v) return \"none\";\n" +
 		"    char text[32];\n    std::snprintf(text, sizeof text, \"%%.17g\", *v);\n    return text;\n}\n"
 )
-
-// stdUses maps each standard name to its header, in header order (§2.7; log-2026-09-24, gen/cpp).
-var stdUses = []struct {
-	re     *regexp.Regexp
-	header string
-}{
-	{regexp.MustCompile(`\bstd::find\b`), "<algorithm>"},
-	{regexp.MustCompile(`\bstd::array\b`), "<array>"},
-	{regexp.MustCompile(`\bstd::chrono\b`), "<chrono>"},
-	{regexp.MustCompile(`\bsize_t\b`), "<cstddef>"},
-	{regexp.MustCompile(`\bu?int(?:8|16|32|64)_t\b`), "<cstdint>"},
-	{regexp.MustCompile(`\bstd::s?n?f?printf\b`), "<cstdio>"},
-	{regexp.MustCompile(`\bstd::abort\b`), "<cstdlib>"},
-	{regexp.MustCompile(`\bstd::memcmp\b`), "<cstring>"},
-	{regexp.MustCompile(`\bstd::(?:shared_ptr|make_shared|unique_ptr|make_unique)\b`), "<memory>"},
-	{regexp.MustCompile(`\bstd::(?:optional|nullopt)\b`), "<optional>"},
-	{regexp.MustCompile(`\bstd::(?:string|to_string)\b`), "<string>"},
-	{regexp.MustCompile(`\bstd::string_view\b`), "<string_view>"},
-	{regexp.MustCompile(`\bstd::move\b`), "<utility>"},
-	{regexp.MustCompile(`\bstd::(?:variant|monostate|get_if)\b`), "<variant>"},
-	{regexp.MustCompile(`\bstd::vector\b`), "<vector>"},
-}
 
 // The operators and built-ins of the portable subset (CONFORMANCE.md §3).
 var (
@@ -444,8 +443,8 @@ var (
 
 // Resolving refs at load (CODEGEN.md §5.8, §5.9, §5.11; log-2026-09-24, gen/cpp round 3).
 const (
-	resolveOpenFormat  = "static bool Resolve(%s& x, const %s& ctx, canon::json::Decoder& dec) {"
-	resolveCaseFormat  = "if (auto* c = std::get_if<%d>(&x.value_); c != nullptr && !Resolve(*c, ctx, dec)) return false;"
+	resolveOpenFormat  = "static bool " + ir.CppResolve + "(%s& x, const %s& ctx, canon::json::Decoder& dec) {"
+	resolveCaseFormat  = "if (auto* c = std::get_if<%d>(&x." + ir.CppVariantMember + "); c != nullptr && !" + ir.CppResolve + "(*c, ctx, dec)) return false;"
 	findPrefix         = "ctx.rows_.Find("
 	ctxPrefix          = "ctx."
 	rowsFind           = ".rows_.Find("
@@ -459,11 +458,11 @@ const (
 	rowsMember         = ".rows_"
 	findEntryFormat    = "const auto* e = %s%s);"
 	pushEntryFormat    = "%s.push_back(e);"
-	walkFormat         = "if (!Resolve(%s, ctx, dec)) return false;"
+	walkFormat         = "if (!" + ir.CppResolve + "(%s, ctx, dec)) return false;"
 	keyedElemFormat    = "const_cast<%s&>(%s.At(%s))"
 	lenLoopFormat      = "for (size_t %s = 0; %s < %s.Len(); ++%s) {"
-	resolveValueFormat = "if (!Resolve(%s, %s, dec)) return %s;"
-	resolveRowFormat   = "if (!Resolve(const_cast<%s&>(%s.rows_.At(%s)), %s, dec)) return %s;"
+	resolveValueFormat = "if (!" + ir.CppResolve + "(%s, %s, dec)) return %s;"
+	resolveRowFormat   = "if (!" + ir.CppResolve + "(const_cast<%s&>(%s.rows_.At(%s)), %s, dec)) return %s;"
 	snapDecoderFormat  = "canon::json::Decoder dec(dir + %s);"
 	snapHolder         = "snap->"
 	snapCtx            = "*snap"

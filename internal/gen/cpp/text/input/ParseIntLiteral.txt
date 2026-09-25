@@ -1,0 +1,13 @@
+// Integer input: decimal digits with an optional leading '-' (EVALUATION.md §11.3).
+bool ParseIntLiteral(std::string_view s, int64_t& out) {
+    std::string_view body = s;
+    if (!body.empty() && body.front() == '-') body.remove_prefix(1);
+    if (!AllDigits(body)) return false;
+    std::string text(s);
+    errno = 0;
+    char* end = nullptr;
+    long long v = std::strtoll(text.c_str(), &end, 10);
+    if (errno == ERANGE || *end != '\0') return false;
+    out = static_cast<int64_t>(v);
+    return true;
+}

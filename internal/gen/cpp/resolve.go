@@ -11,6 +11,7 @@ import (
 // after the optional, whether it is a list of refs, and its table's cell count (0 for none).
 type slot struct {
 	member   string
+	ref      string // the member holding the resolved entry, f_ref_ (CODEGEN.md §5.8)
 	wire     string // the key a load error names
 	t        ir.TypeRef
 	optional bool
@@ -87,7 +88,7 @@ func (g *gen) valueNamed(name string) *ir.Value {
 // resolvedGetter writes a slot's entry getter, unset in a default-constructed record (log-2026-09-24).
 func (g *gen) resolvedGetter(sc *scope, name string, acc access, s slot, target *ir.Value) string {
 	storage := fmt.Sprintf(constPtrFormat, g.valueElem(target))
-	m, init := s.member+refSuffix, initNull
+	m, init := s.ref, initNull
 	typ, body := fmt.Sprintf(constRefFormat, g.valueElem(target)), fmt.Sprintf(derefReturnFormat, acc.cell(m))
 	switch {
 	case s.list && s.optional:

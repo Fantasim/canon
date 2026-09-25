@@ -22,7 +22,7 @@ type enumMember struct {
 	retired                bool
 }
 
-// enums writes the declared enums, then the kind enums of variants (CODEGEN.md §2.7, §5.2, §5.5).
+// enums writes the declared enums, the kind enums of variants, then the branch enums of dependent types (CODEGEN.md §2.7, §5.2, §5.5, §5.6).
 func (g *gen) enums() {
 	for _, t := range g.p.Types {
 		if e, ok := t.(*ir.Enum); ok {
@@ -38,6 +38,7 @@ func (g *gen) enums() {
 			leave()
 		}
 	}
+	g.branchEnums()
 }
 
 func (g *gen) declaredEnum(e *ir.Enum) enumSpec {
@@ -97,10 +98,10 @@ func (g *gen) enum(s enumSpec) {
 	}
 	g.h.line(closeClass)
 	g.h.blank()
-	g.h.printf(membersArrayFormat, s.name, len(s.members), fmt.Sprintf(membersFormat, s.name), strings.Join(qualified, listSep))
+	g.h.printf(membersArrayFormat, s.name, len(s.members), g.pl.EnumHelpers(s.name).Members, strings.Join(qualified, listSep))
 	g.h.blank()
-	g.nameSwitch(s, toNameFunc, func(m enumMember) string { return m.canon })
-	g.nameSwitch(s, toWireFunc, func(m enumMember) string { return m.wire })
+	g.nameSwitch(s, ir.CppToName, func(m enumMember) string { return m.canon })
+	g.nameSwitch(s, ir.CppToWire, func(m enumMember) string { return m.wire })
 	g.fromWire(s)
 	if s.codes != nil {
 		g.fromCode(s)
@@ -121,7 +122,7 @@ func (g *gen) nameSwitch(s enumSpec, fn string, text func(enumMember) string) {
 }
 
 func (g *gen) fromWire(s enumSpec) {
-	g.h.printf(fromWireOpenFormat, s.name, s.name+fromWireSuffix)
+	g.h.printf(fromWireOpenFormat, s.name, g.pl.EnumHelpers(s.name).FromWire)
 	for _, m := range s.members {
 		g.h.linef(1, wireTestFormat, quote(m.wire), s.name+scopeSep+m.name)
 	}
@@ -131,7 +132,7 @@ func (g *gen) fromWire(s enumSpec) {
 }
 
 func (g *gen) fromCode(s enumSpec) {
-	g.h.printf(fromCodeOpenFormat, s.name, s.name+fromCodeSuffix, intType(*s.codes))
+	g.h.printf(fromCodeOpenFormat, s.name, g.pl.EnumHelpers(s.name).FromCode, intType(*s.codes))
 	g.h.linef(1, switchFormat, codeField)
 	for _, m := range s.members {
 		g.h.linef(1, caseReturnFormat, fmt.Sprint(m.code), s.name+scopeSep+m.name)
@@ -159,4 +160,11 @@ func (g *gen) doc(depth int, text string) {
 // kindMember is the qualified kind-enum member of case i (CODEGEN.md §3.3, §3.5).
 func (g *gen) kindMember(v *ir.Variant, i int) string {
 	return g.kindName(v) + scopeSep + g.pl.KindMember(v.Cases[i])
+}
+
+// enumHelpers are e's k<E>Members, <E>FromWire and <E>FromCode, qualified when e is imported (CODEGEN.md §2.8, §5.2).
+func (g *gen) enumHelpers(e *ir.Enum) ir.CppEnumHelpers {
+	g.noteEnum(e)
+	h, q := g.pl.EnumHelpers(g.pl.TypeName(e)), g.qualifier(e.Pkg)
+	return ir.CppEnumHelpers{Members: q + h.Members, FromWire: q + h.FromWire, FromCode: q + h.FromCode}
 }

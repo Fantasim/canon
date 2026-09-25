@@ -1,0 +1,8 @@
+// One or more decimal digits.
+bool AllDigits(std::string_view s) {
+    if (s.empty()) return false;
+    for (char c : s) {
+        if (!IsDecDigit(c)) return false;
+    }
+    return true;
+}

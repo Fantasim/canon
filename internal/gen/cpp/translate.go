@@ -345,7 +345,7 @@ func stringOf(ty ir.TypeRef, v string) string {
 	case types.Int:
 		return fmt.Sprintf(toStringFormat, v)
 	case types.Enum:
-		return fmt.Sprintf(stringOfFormat, fmt.Sprintf(helperFormat, toNameFunc, v))
+		return fmt.Sprintf(stringOfFormat, fmt.Sprintf(helperFormat, ir.CppToName, v))
 	default:
 		return fmt.Sprintf(stringOfFormat, v)
 	}

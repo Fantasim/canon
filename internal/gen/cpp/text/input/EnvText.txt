@@ -1,0 +1,7 @@
+// Unset or empty is unset (EVALUATION.md §11.3).
+bool EnvText(const char* name, std::string& out) {
+    const char* v = std::getenv(name);
+    if (v == nullptr || *v == '\0') return false;
+    out = v;
+    return true;
+}

@@ -16,14 +16,14 @@ void Capture(std::string_view code, std::string_view /*message*/) {
 }
 
 struct WarmVector {
-    demo::base::Color c;
+    ::demo::base::Color c;
     bool want;
     std::string_view code;  // expected error code; empty when `want` is expected
 };
 
 constexpr WarmVector kWarm[] = {
-    {demo::base::Color::red, true, ""},
-    {demo::base::Color::blue, false, ""},
+    {::demo::base::Color::red, true, ""},
+    {::demo::base::Color::blue, false, ""},
 };
 
 }  // namespace

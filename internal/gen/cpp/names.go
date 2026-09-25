@@ -7,31 +7,6 @@ import (
 	"github.com/fantasim/canonlang/internal/ir"
 )
 
-// capWord is Cap(w) (CODEGEN.md §3.2): the first character upper case, the rest lower case.
-func capWord(w string) string {
-	if w == "" {
-		return w
-	}
-	return strings.ToUpper(w[:1]) + strings.ToLower(w[1:])
-}
-
-// upperCamel is C++ UpperCamel(x) over the words of CODEGEN.md §3.1.
-func upperCamel(name string) string {
-	var b strings.Builder
-	for _, w := range ir.Words(name) {
-		b.WriteString(capWord(w))
-	}
-	return b.String()
-}
-
-// override is the @cpp(name:) of an item, or derived when there is none (CODEGEN.md §3.5).
-func override(n ir.NameOptions, derived string) string {
-	if n.Name != "" {
-		return n.Name
-	}
-	return derived
-}
-
 // verbatim is a name as Canon spells it, with `_` added when C++ reserves it (CODEGEN.md §3.4).
 func verbatim(name string) string {
 	if ir.CppReserved(name) {

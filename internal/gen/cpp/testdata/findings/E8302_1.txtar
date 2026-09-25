@@ -1,0 +1,18 @@
+CODEGEN.md §5.12: a getter of an input field called before LoadInputs signals E8302 at run
+time; the generated C++ getter calls canon::OnEvalError with the registry's rendered text
+(internal/gen/cpp's e8302 renders it from the template; TestE8302MatchesFindingsTxtar checks the getter).
+-- a/a.canon --
+/// A.
+package a
+
+/// Config: one input field.
+public record Config {
+  /// apiKey, from the environment.
+  apiKey: input String(1..)? from env "A_API_KEY"
+}
+
+let config: Config = Config {}
+
+emit cpp { out: "@features/a", namespace: "a" }
+-- findings.txt --
+E8302: a.Config.apiKey is a runtime input and LoadInputs has not been called

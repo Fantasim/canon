@@ -28,7 +28,7 @@ var (
 
 // accessStruct is detail::<P>Access: one loader per value, then the snapshot's (§7.6).
 func (g *gen) accessStruct() {
-	g.c.printf(structOpenFormat, g.accessName())
+	g.c.printf(structOpenFormat, g.pl.AccessName())
 	walks := g.walks()
 	for i, v := range g.values {
 		if i > 0 {
@@ -50,10 +50,10 @@ func (g *gen) accessStruct() {
 // loader reads one data file, checks `$schema`, and decodes `rows` or `value` (CODEGEN.md §7.6).
 func (g *gen) loader(v *ir.Value, resolve bool) {
 	cls := g.valueClass(v)
-	g.c.linef(1, loaderOpenFormat, upperCamel(v.Name), cls)
+	g.c.linef(1, loaderOpenFormat, g.pl.AccessLoader(v), cls)
 	g.c.printf(loaderPreludeText, g.pl.SchemaName(v))
 	if v.Type.Kind == types.Record {
-		g.c.write(valueLoaderText)
+		g.c.printf(valueLoaderText, ir.CppDecode)
 		g.c.linef(1, closeBrace)
 		return
 	}
@@ -68,11 +68,11 @@ func (g *gen) loader(v *ir.Value, resolve bool) {
 	if rec, ok := v.Type.Elem.Named.(*ir.Record); ok && g.entries[rec] {
 		g.c.write(entryReadText)
 	}
-	g.c.printf(rowDecodeText, key)
+	g.c.printf(rowDecodeText, ir.CppDecode, key)
 	for _, f := range s.stable {
 		m, err := g.member(f.Name)
 		g.fail(err)
-		g.c.linef(depthThree, stableKeyFormat, byPrefix+upperCamel(f.Name)+keysSuffix+underscore, m)
+		g.c.linef(depthThree, stableKeyFormat, g.pl.FindBy(f).Keys, m)
 	}
 	g.c.linef(depthTwo, closeBrace)
 	if s.wireKey == "" {
@@ -82,8 +82,8 @@ func (g *gen) loader(v *ir.Value, resolve bool) {
 	}
 	g.c.linef(depthTwo, fromRowsOutFormat, s.key, s.elem)
 	for _, f := range s.stable {
-		idx := byPrefix + upperCamel(f.Name)
-		g.c.linef(depthTwo, sortedIndexFormat, idx+underscore, idx+keysSuffix+underscore)
+		fb := g.pl.FindBy(f)
+		g.c.linef(depthTwo, sortedIndexFormat, fb.Index, fb.Keys)
 	}
 	if resolve {
 		g.resolveRows(depthTwo, v, outVar, outVar, failLoadText)
@@ -94,8 +94,8 @@ func (g *gen) loader(v *ir.Value, resolve bool) {
 
 // snapshotLoader loads each @reload value from dir + "/" + its file (CODEGEN.md §5.11, §7.6).
 func (g *gen) snapshotLoader(walks []class) {
-	snap := g.upper + snapshotSuffix
-	g.c.linef(1, snapshotLoaderOpenFormat, snap)
+	snap := g.pl.SnapshotName()
+	g.c.linef(1, snapshotLoaderOpenFormat, snap, g.pl.AccessSnapshotLoader())
 	g.c.linef(depthTwo, makeSnapFormat, snap)
 	for _, v := range g.values {
 		if !v.Reload {
@@ -103,7 +103,7 @@ func (g *gen) snapshotLoader(walks []class) {
 		}
 		m, err := g.member(v.Name)
 		g.fail(err)
-		g.c.linef(depthTwo, loadIntoFormat, upperCamel(v.Name), quote(pathSep+dataFile(v)), m)
+		g.c.linef(depthTwo, loadIntoFormat, g.pl.AccessLoader(v), quote(pathSep+dataFile(v)), m)
 	}
 	for _, v := range g.values {
 		if m, err := g.member(v.Name); v.Reload && err == nil && g.rootWalks(v, walks) {
@@ -121,17 +121,17 @@ func (g *gen) snapshotLoader(walks []class) {
 func (g *gen) outOfLine() {
 	for _, c := range g.classes {
 		if v := g.loaders[c.rec]; c.rec != nil && v != nil {
-			g.c.printf(containerLoadText, g.typeName(c.rec), g.accessName(), upperCamel(v.Name))
+			g.c.printf(containerLoadText, g.typeName(c.rec), g.pl.AccessName(), g.pl.AccessLoader(v), ir.CppLoad)
 		}
 	}
 	for _, v := range g.values {
 		if !v.Reload && v.Type.Kind != types.Record {
-			g.c.printf(containerLoadText, g.pl.ContainerName(v), g.accessName(), upperCamel(v.Name))
+			g.c.printf(containerLoadText, g.pl.ContainerName(v), g.pl.AccessName(), g.pl.AccessLoader(v), ir.CppLoad)
 		}
 	}
 	if g.reloads() > 0 {
-		snap := g.upper + snapshotSuffix
-		g.c.printf(snapshotLoadDefText, snap, g.accessName())
-		g.c.printf(reloadDefText, g.upper+storeSuffix, snap)
+		snap := g.pl.SnapshotName()
+		g.c.printf(snapshotLoadDefText, snap, g.pl.AccessName(), g.pl.AccessSnapshotLoader(), ir.CppLoad)
+		g.c.printf(reloadDefText, g.pl.StoreName(), snap, ir.CppLoad)
 	}
 }

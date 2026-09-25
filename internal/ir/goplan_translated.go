@@ -57,7 +57,7 @@ func (pl *GoNamePlan) declarePure(top *nameScope, owner, origin string, fn *Expo
 
 // goLowerFirst is a Go type name with its first word lower-cased: Potion, potion (CODEGEN.md §5.10).
 func goLowerFirst(goName string) string {
-	ws := Words(goName)
+	ws := words(goName)
 	if len(ws) == 0 {
 		return goName
 	}

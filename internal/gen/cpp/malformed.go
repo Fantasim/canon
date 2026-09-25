@@ -49,7 +49,9 @@ func (g *gen) validateType(t ir.Type) {
 			g.checkFields(c.Fields, x.Name+qnameSep+c.Name)
 			g.checkFns(c.Methods, x.Name+qnameSep+c.Name)
 		}
-	case *ir.Enum, *ir.Dependent:
+	case *ir.Dependent:
+		g.checkDependent(x)
+	case *ir.Enum:
 	default:
 		g.malformed(nilItem, g.p.Name)
 	}
@@ -119,7 +121,7 @@ func malformedType(t ir.TypeRef) string {
 	}
 }
 
-// namedAs reports that a record, variant or enum kind names a declaration of that kind.
+// namedAs reports that a record, variant, enum or type-application kind names a declaration of that kind.
 func namedAs(t ir.TypeRef) bool {
 	switch t.Kind {
 	case types.Record:
@@ -130,6 +132,9 @@ func namedAs(t ir.TypeRef) bool {
 		return ok
 	case types.Enum:
 		_, ok := t.Named.(*ir.Enum)
+		return ok
+	case types.TypeApp:
+		_, ok := t.Named.(*ir.Dependent)
 		return ok
 	default:
 		return true

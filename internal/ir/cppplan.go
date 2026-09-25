@@ -49,7 +49,7 @@ func (pl *CppNamePlan) Problems() []GoNameProblem { return pl.problems }
 // cppUpperCamel is C++'s UpperCamel(x) (CODEGEN.md §3.2): Cap of every word.
 func cppUpperCamel(name string) string {
 	var b strings.Builder
-	for _, w := range Words(name) {
+	for _, w := range words(name) {
 		b.WriteString(strings.ToUpper(w[:1]) + strings.ToLower(w[1:]))
 	}
 	return b.String()
