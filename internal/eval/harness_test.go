@@ -122,14 +122,14 @@ type host struct {
 	load     loader
 }
 
-// loader serves a load expression, nil when the build loads nothing.
-type loader func(e *syntax.LoadExpr, t types.Type) (value.Value, bool)
+// loader serves a load expression, decoded through ev (DECISIONS 173); nil when the build loads nothing.
+type loader func(ev *eval.Evaluator, e *syntax.LoadExpr, t types.Type) (value.Value, bool)
 
 func (h *host) Load(_ context.Context, e *syntax.LoadExpr, t types.Type) (value.Value, bool) {
 	if h.load == nil {
 		return nil, false
 	}
-	return h.load(e, t)
+	return h.load(h.ev, e, t)
 }
 
 func (h *host) Verify(ctx context.Context, root eval.Root, v value.Value) bool {

@@ -112,10 +112,4 @@ func TestLoadUnsupportedForms(t *testing.T) {
 			t.Errorf("findings before the refusal: %+v", f)
 		}
 	})
-	t.Run("an unsupported element type", func(t *testing.T) {
-		ref := &types.RecordType{Pkg: "p", Name: "Item", Fields: []*types.Field{{Name: "r", Type: &types.RefType{}}}}
-		if _, _, err := l.Load(context.Background(), req, dirExpr("data/*.json"), &types.TableType{Elem: ref}); !errors.Is(err, load.ErrUnsupported) {
-			t.Errorf("err = %v, want ErrUnsupported", err)
-		}
-	})
 }

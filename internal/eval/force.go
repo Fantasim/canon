@@ -59,6 +59,9 @@ func (e *Evaluator) evalRoot(ctx context.Context, st *rootState) (value.Value, b
 	}
 	r := e.newRun(ctx, charge{pkg: st.root.Pkg, name: st.root.Name}, st.obj.File())
 	r.root = st
+	loading := e.loading // a root forced while a load decodes is not part of it (Savepoint)
+	e.loading = nil
+	defer func() { e.loading = loading }()
 	var v value.Value
 	switch d := st.obj.Decl().(type) {
 	case *syntax.ConstDecl:

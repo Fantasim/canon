@@ -1,0 +1,96 @@
+DECISIONS 173, 175, WIRE.md §5.9, TYPES.md §11.1, §11.5: a loaded dependent field decodes as
+the branch its discriminant selects, read through the evaluator (a ref discriminant is
+dereferenced); a dependent map's applied records bind their parameter to their key, which their
+defaults and checks read; a discriminant naming no entry is E3501 at the loaded ref, with its
+pointer, and poisons the value.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    out: "out"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// K.
+enum K { num, text, off }
+
+/// Item.
+record Item {
+  /// N.
+  n: Int = 1
+}
+
+/// Items.
+let items: table Item = { one {}, two { n: 2 } }
+
+/// Ev.
+record Ev {
+  /// K.
+  k: K
+  /// Max.
+  max: Int = 5
+}
+
+/// Evs.
+let evs: table Ev = { a { k: num }, b { k: text, max: 7 }, c { k: off } }
+
+/// P.
+type P(e: Ev) = match e.k {
+  num => Int
+  text => ref items
+  off => Never
+}
+
+/// L.
+record L(e: Ev) {
+  /// Limit, the event's max unless given.
+  lim: Int = e.max
+
+  warn lim < e.max at lim else "lim {lim} of max {e.max}"
+}
+
+/// Task.
+record Task {
+  /// Ev.
+  ev: ref evs
+  /// P.
+  p: P(ev)?
+  /// Limits.
+  limits: {x in evs: L(x)} = {}
+
+  warn p == none at p else "p {p}"
+}
+
+/// Tasks.
+let tasks: [Task] = load("tasks.json")
+
+/// Dangling.
+let dangling: [Task] = load("dangling.json")
+-- a/tasks.json --
+[
+  {"ev": "a", "p": 3, "limits": {"a": {}, "b": {"lim": 2}}},
+  {"ev": "b", "p": "two"},
+  {"ev": "c"}
+]
+-- a/dangling.json --
+[{"ev": "zz", "p": 1}]
+-- build.txt --
+warning[W5001]  a/a.canon:37:14
+  tasks[0].limits[a].lim: lim 5 of max 5
+  expected by a/a.canon:39 (check)
+
+error[E3501]  a/dangling.json:1:9
+  unknown key zz in evs
+
+warning[W5001]  a/tasks.json:2:20
+  tasks[0].p: p 3
+  expected by a/a.canon:51 (check)
+
+warning[W5001]  a/tasks.json:3:20
+  tasks[1].p: p two
+  expected by a/a.canon:51 (check)
+
+1 error, 3 warnings in 1 package (…)

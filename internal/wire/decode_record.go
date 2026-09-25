@@ -1,6 +1,7 @@
 package wire
 
 import (
+	"slices"
 	"strings"
 
 	"github.com/fantasim/canonlang/internal/diag"
@@ -66,11 +67,22 @@ func (r *run) recordAt(n *jsonsrc.Node, t types.Type, outer *frame, rw *rowState
 	o := newObject(n)
 	ok = rw == nil || r.retired(o, rw)
 	rv := &value.Record{T: t, Fields: make([]value.Value, len(fields)), Set: make([]bool, len(fields)), P: prov(n)}
-	ok = r.fields(o, fields, rv, &frame{params: params, rec: rv, failed: !ok}) && ok
+	r.bound(rv, params)
+	fr := &frame{params: params, rec: rv, failed: !ok}
+	first, p := len(r.later), r.pend(o, fields, rv, fr)
+	ok = r.fields(o, fields, rv, fr, p) && ok
 	if !r.unknown(o, n, t) || !ok {
 		return nil
 	}
+	r.keep(p, first)
 	return rv
+}
+
+// bound tells the host the arguments of an applied record instance (TYPES.md §11.1).
+func (r *run) bound(rv *value.Record, params map[*types.Param]value.Value) {
+	if params != nil && r.d.Host != nil {
+		r.d.Host.Bind(rv, params)
+	}
 }
 
 // shape is the fields of a record type, and the values of its parameters for R(args).
@@ -103,12 +115,20 @@ func (r *run) retired(o *object, rw *rowState) bool {
 	return false
 }
 
-// fields decodes each field into rv, reporting every failure before giving up.
-func (r *run) fields(o *object, fields []*types.Field, rv *value.Record, fr *frame) bool {
+// fields decodes each field into rv, reporting every failure before giving up; the fields p
+// defers wait for the second pass (decode_later.go).
+func (r *run) fields(o *object, fields []*types.Field, rv *value.Record, fr *frame, p *pending) bool {
 	r.enter(rv)
 	defer r.leave()
 	ok := true
 	for i, f := range fields {
+		if p != nil && r.deferred(p, i, rv.T) {
+			p.waiting = append(p.waiting, i)
+			if p.trail == nil {
+				p.trail = slices.Clone(r.trail)
+			}
+			continue
+		}
 		r.trail = append(r.trail, step{field: f.Name})
 		ok = r.field(o, f, i, rv, fr) && ok
 		fr.failed = fr.failed || !ok
@@ -340,9 +360,12 @@ func (r *run) caseOf(o *object, vt *types.VariantType) *types.CaseType {
 // caseValue decodes the case's fields from o; a case sees no enclosing parameter.
 func (r *run) caseValue(o *object, c *types.CaseType) *value.Record {
 	cv := &value.Record{T: c, Fields: make([]value.Value, len(c.Fields)), Set: make([]bool, len(c.Fields)), P: prov(o.n)}
-	if !r.fields(o, c.Fields, cv, &frame{rec: cv}) {
+	fr := &frame{rec: cv}
+	first, p := len(r.later), r.pend(o, c.Fields, cv, fr)
+	if !r.fields(o, c.Fields, cv, fr, p) {
 		return nil
 	}
+	r.keep(p, first)
 	return cv
 }
 

@@ -87,12 +87,6 @@ func (l *Loader) bare(ctx context.Context, req Request, e *syntax.LoadExpr, t ty
 	if !checkOptions(loadForm, c, format, req) {
 		return nil, false, nil
 	}
-	if hasDependent(t) {
-		return nil, false, unsupportedDependent()
-	}
-	if hasBadDefault(t) {
-		return nil, false, unsupportedDefault()
-	}
 	if !formatFits(format, c.boolOpt(c.header), t) {
 		diag.E7116.At(req.Span, formLabel(loadForm), t).Report(req.Bag)
 		return nil, false, nil
@@ -131,8 +125,7 @@ func (l *Loader) bareJSON(ctx context.Context, req Request, c parsedCall, p proj
 			return nil, false, nil
 		}
 	}
-	host := wireHost{span: req.Span}
-	dec := &wire.Decoder{Bag: req.Bag, Pkg: req.Pkg, Host: host, Partial: c.boolOpt(c.partial)}
+	dec := req.decoder(c.boolOpt(c.partial))
 	return dec.Decode(ctx, sel, t)
 }
 
@@ -201,12 +194,6 @@ func (l *Loader) csv(ctx context.Context, req Request, e *syntax.LoadExpr, t typ
 	if !checkOptions(methodCSV, c, fmtCSV, req) {
 		return nil, false, nil
 	}
-	if hasDependent(t) {
-		return nil, false, unsupportedDependent()
-	}
-	if hasBadDefault(t) {
-		return nil, false, unsupportedDefault()
-	}
 	if !csvFits(c.boolOpt(c.header), t) {
 		diag.E7116.At(req.Span, formLabel(methodCSV), t).Report(req.Bag)
 		return nil, false, nil
@@ -241,7 +228,7 @@ func decodeCSV(ctx context.Context, req Request, c parsedCall, res csvRows, t ty
 	if hasHeader {
 		header, rows = rows[0], rows[1:]
 	}
-	dec := &wire.Decoder{Bag: req.Bag, Pkg: req.Pkg, Host: wireHost{span: req.Span}, Partial: c.boolOpt(c.partial)}
+	dec := req.decoder(c.boolOpt(c.partial))
 	return dec.CSV(ctx, header, rows, t)
 }
 

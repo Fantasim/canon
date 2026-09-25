@@ -120,15 +120,21 @@ func (r *run) tableLit(lit *syntax.BraceLit, at *vpath) value.Value {
 	return &value.Table{T: t, Entries: entries, P: r.prov(lit, value.ProvLiteral)}
 }
 
-// mapLit is a map literal, keys and values in the order written.
+// mapLit is a map literal in the order written, a dependent map's binder bound to each key (TYPES.md §11.5).
 func (r *run) mapLit(lit *syntax.BraceLit, at *vpath) value.Value {
 	m := &value.Map{T: r.typeOf(lit), P: r.prov(lit, value.ProvLiteral)}
+	binder := mapBinder(m.T, r.dep)
 	for _, it := range lit.Items {
 		k, kn, x := r.mapItem(it, mapKeyType(m.T))
 		if k == nil {
 			return nil
 		}
+		outer := r.dep
+		if binder != "" {
+			r.dep = outer.withBinder(binder, k, x)
+		}
 		v := r.evalAt(x, at.key(mapKey(k)))
+		r.dep = outer
 		if v == nil {
 			return nil
 		}
@@ -152,15 +158,16 @@ func (r *run) mapItem(it syntax.BraceItem, kt types.Type) (value.Value, syntax.N
 	return nil, nil, nil
 }
 
-// identKey is the key `name:` denotes in a map literal (TYPES.md §4.1, §5.2).
+// identKey is the key `name:` denotes in a map literal, a dependent one symbolic until stored (TYPES.md §11.4).
 func (r *run) identKey(n *syntax.Ident, kt types.Type) value.Value {
 	p := r.prov(n, value.ProvLiteral)
 	obj := r.ev.info.NameUses[n]
 	if obj == nil {
-		if d, isDep := unwrapOptional(kt).Base().(*types.DepUnionType); isDep {
-			return &value.Symbol{Name: n.Name, T: d, P: p}
+		t := unwrapOptional(kt)
+		if dependentKey(t) {
+			return &value.Symbol{Name: n.Name, T: t, P: p}
 		}
-		return r.refKey(n, unwrapOptional(kt), value.Key{S: n.Name}, p)
+		return r.refKey(n, t, value.Key{S: n.Name}, p)
 	}
 	switch obj.Kind() {
 	case check.ObjEntry:

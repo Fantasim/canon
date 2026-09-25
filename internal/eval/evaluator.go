@@ -61,6 +61,9 @@ type Evaluator struct {
 	stable     []StableAmendment
 	bugs       []error
 	selfReads  map[*syntax.FnDecl][]syntax.Expr
+	bound      map[*value.Record]map[*types.Param]value.Value // each applied record instance's arguments (params.go)
+	loading    *loadSite                                      // the load being decoded, and the run forcing it (decode.go)
+	reads      map[*types.Field][]int                         // the fields each default reads (Reads)
 
 	parent    *Evaluator                // a vector's evaluator reads its parent's settled values (vector.go)
 	vec       *vectorState              // set on a vector's evaluator only
@@ -133,6 +136,8 @@ func newEvaluator(bags check.Bags, opt Options) *Evaluator {
 		origin:     map[*value.Record]*value.Record{},
 		sites:      map[*types.Field]site{},
 		selfReads:  map[*syntax.FnDecl][]syntax.Expr{},
+		bound:      map[*value.Record]map[*types.Param]value.Value{},
+		reads:      map[*types.Field][]int{},
 	}
 }
 

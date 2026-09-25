@@ -59,7 +59,7 @@ func (r *run) literalKey(e syntax.Expr) (value.Key, bool) {
 func (r *run) objectValue(obj check.Object, at syntax.Expr) value.Value {
 	switch obj.Kind() {
 	case check.ObjLocal, check.ObjParam:
-		return r.local(obj)
+		return r.local(obj, at)
 	case check.ObjField:
 		return r.selfField(obj.Name())
 	case check.ObjConst, check.ObjLet:
@@ -78,13 +78,16 @@ func (r *run) objectValue(obj check.Object, at syntax.Expr) value.Value {
 	return nil
 }
 
-// local is a local, a parameter, or `it` in a where predicate.
-func (r *run) local(obj check.Object) value.Value {
+// local is a local, a parameter (of a record included: TYPES.md §11.1), or `it` in a where predicate.
+func (r *run) local(obj check.Object, at syntax.Expr) value.Value {
 	if v, ok := r.fr.vars[obj]; ok {
 		return r.read(v)
 	}
 	if obj.Name() == itWord && r.fr.it != nil {
 		return r.read(r.fr.it)
+	}
+	if v, ok := r.paramValue(obj, at); ok {
+		return r.read(v)
 	}
 	r.bug(nil)
 	return nil

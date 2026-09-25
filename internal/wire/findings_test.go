@@ -17,7 +17,7 @@ import (
 
 // catalogue names the types the findings cases decode against; `type` in a case picks one.
 func catalogue(h *host) map[string]types.Type {
-	config, _ := heistia(h, newVocab(h))
+	config, task := heistia(h, newVocab(h))
 	skill, _, _ := fpdemoSkill()
 	bonus := record("game.items", "StatBonus", field("attribute", types.StringType), field("value", types.IntType))
 	stats := field("stats", listOf(bonus))
@@ -27,6 +27,8 @@ func catalogue(h *host) map[string]types.Type {
 	return map[string]types.Type{
 		"pipeline.Potion":                        potionFixture(h),
 		"resource.heistia.HeistiaConfig":         config,
+		"[resource.heistia.Task]":                listOf(task),
+		"[resource.heistia.Filter]":              listOf(filterFixture(task)),
 		"resource.events.Event":                  eventFixture(h),
 		"fpdemo.Skill":                           skill,
 		"game.items.Item":                        record("game.items", "Item", field("id", types.StringType, "dwID"), stats),
@@ -96,4 +98,11 @@ func (c caseRun) decode(t *testing.T, name string, data []byte) {
 	if derr != nil {
 		t.Fatalf("%s: %v", name, derr)
 	}
+}
+
+// filterFixture is `record Filter { eventType: ref eventTypes  v: Param(eventType) | "all" }`.
+func filterFixture(task *types.RecordType) *types.RecordType {
+	dep := task.Fields[1].Type.(*types.OptionalType).Elem
+	return record("resource.heistia", "Filter", field("eventType", task.Fields[0].Type),
+		field("v", &types.LitUnionType{Of: dep, Literals: []string{"all"}}))
 }

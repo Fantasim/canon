@@ -64,10 +64,14 @@ func (e *Evaluator) carry(from, to value.Value) value.Value {
 	return e.mark(from, to)
 }
 
-// mark gives a value built from another the invalid mark the other has (EVALUATION.md §7.3).
+// mark gives a value built from another its invalid mark and, a record, its arguments (EVALUATION.md §7.3).
 func (e *Evaluator) mark(from, to value.Value) value.Value {
-	if from != to && from != nil && to != nil && e.Invalid(from) {
+	if from == to || from == nil || to == nil {
+		return to
+	}
+	if e.Invalid(from) {
 		e.invalid[to] = true
 	}
+	e.shareParams(from, to)
 	return to
 }

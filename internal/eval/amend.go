@@ -12,7 +12,7 @@ import (
 func (r *run) setElement(cur value.Value, t types.Type, segs []*syntax.AmendSegment, m *amending) value.Value {
 	seg := segs[0]
 	elems := std.Elems(cur)
-	i, key, ok := r.slotOf(cur, seg, m.path)
+	i, key, ok := r.slotOf(cur, seg, m)
 	if !ok {
 		return nil
 	}
@@ -27,17 +27,17 @@ func (r *run) setElement(cur value.Value, t types.Type, segs []*syntax.AmendSegm
 }
 
 // slotOf is the element a segment names: its index, -1 for a key the collection lacks.
-func (r *run) slotOf(cur value.Value, seg *syntax.AmendSegment, path string) (int, value.Value, bool) {
+func (r *run) slotOf(cur value.Value, seg *syntax.AmendSegment, m *amending) (int, value.Value, bool) {
 	elems := std.Elems(cur)
 	if seg.Position != nil {
-		return r.inRange(seg, path, seg.Position.Value.Int64(), len(elems), nil)
+		return r.inRange(seg, m, seg.Position.Value.Int64(), len(elems), nil)
 	}
-	key := r.segmentKey(seg)
+	key := r.keyOf(seg, m)
 	if key == nil {
 		return 0, nil, false
 	}
 	if n, isInt := key.(*value.Int); isInt && isPlainList(cur) {
-		return r.inRange(seg, path, n.V, len(elems), key)
+		return r.inRange(seg, m, n.V, len(elems), key)
 	}
 	k, _ := std.KeyOf(key)
 	for i, e := range elems {
@@ -48,17 +48,30 @@ func (r *run) slotOf(cur value.Value, seg *syntax.AmendSegment, path string) (in
 	return -1, key, true
 }
 
-// inRange is position n of a sequence of length size, negative from the end; E1905 outside.
-func (r *run) inRange(seg *syntax.AmendSegment, path string, n int64, size int, key value.Value) (int, value.Value, bool) {
+// inRange is position n of a sequence of length size, negative from the end; E1905 outside,
+// unless the path is only being located.
+func (r *run) inRange(seg *syntax.AmendSegment, m *amending, n int64, size int, key value.Value) (int, value.Value, bool) {
 	i := n
 	if i < 0 && key != nil {
 		i += int64(size)
 	}
 	if i < 0 || i >= int64(size) {
-		r.fail(diag.E1905.AtIndex(r.span(seg), path, n))
+		if !m.quiet {
+			r.fail(diag.E1905.AtIndex(r.span(seg), m.path, n))
+		}
 		return 0, nil, false
 	}
 	return int(i), key, true
+}
+
+// keyOf is the key a segment writes, evaluated once per amendment (locate, then the replace).
+func (r *run) keyOf(seg *syntax.AmendSegment, m *amending) value.Value {
+	if k, ok := m.keys[seg]; ok {
+		return k
+	}
+	k := r.segmentKey(seg)
+	m.keys[seg] = k
+	return k
 }
 
 // segmentKey is the key a segment writes: a word, or an expression in the layer's scope.
@@ -132,12 +145,14 @@ func (r *run) mapSlot(mp *value.Map, seg *syntax.AmendSegment, m *amending) (int
 	if seg.Position != nil {
 		i := seg.Position.Value.Int64()
 		if i < 0 || i >= int64(len(mp.Keys)) {
-			r.fail(diag.E1905.AtIndex(r.span(seg), m.path, i))
+			if !m.quiet {
+				r.fail(diag.E1905.AtIndex(r.span(seg), m.path, i))
+			}
 			return 0, nil, false
 		}
 		return int(i), mp.Keys[i], true
 	}
-	key := r.boundKey(r.segmentKey(seg), m)
+	key := r.boundKey(r.keyOf(seg, m), m)
 	if key == nil {
 		return 0, nil, false
 	}

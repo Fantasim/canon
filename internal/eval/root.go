@@ -15,8 +15,10 @@ func (r *run) letValue(st *rootState, d *syntax.LetDecl) value.Value {
 	if coll != nil {
 		r.coll = &collHint{c: coll, at: at}
 	}
+	outer := r.dep
+	r.dep = &depCtx{field: obj.Type(), at: d.Value}
 	v := r.evalAt(d.Value, at)
-	r.coll = nil
+	r.coll, r.dep = nil, outer
 	if v = r.addEntries(st, v, coll, at); v == nil {
 		return nil
 	}

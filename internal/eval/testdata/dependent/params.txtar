@@ -1,0 +1,61 @@
+TYPES.md §11.1, §11.5, DECISIONS 147: a record's parameters are in scope in its defaults and
+checks, bound per instance where it sits: to an earlier field (written after it in the literal,
+or defaulted), to a dependent map's key, or to a parameter of the record around it; a ref
+argument reads through to its entry. EVALUATION.md §2.2: a field whose type reads an earlier
+field is evaluated after it, whatever the written order.
+-- a/a.canon --
+/// A.
+package a
+
+/// Ev.
+record Ev {
+  /// Max.
+  max: Int = 5
+}
+
+/// Evs.
+let evs: table Ev = { a {}, b { max: 7 } }
+
+/// L.
+record L(e: Ev) {
+  /// Limit, the event's max unless given.
+  lim: Int = e.max
+  /// Half of it.
+  half: Int = lim / 2
+
+  check lim <= e.max else "lim {lim} above {e.max}"
+}
+
+/// M: its L reads M's own parameter.
+record M(e: Ev) {
+  /// L.
+  l: L(e) = {}
+}
+
+/// R.
+record R {
+  /// Ev, defaulted.
+  ev: ref evs = b
+  /// L.
+  l: L(ev) = {}
+  /// M.
+  m: M(ev) = {}
+  /// By ev.
+  byEv: {x in evs: L(x)} = {}
+}
+
+/// Rs.
+let rs: [R] = [
+  { l: { lim: 9 }, ev: a, byEv: { a: {}, b: { lim: 1 } } },
+  { m: { l: { lim: 3 } } },
+  {},
+]
+-- dump.txt --
+a.evs = {a: Ev{max: 5}, b: Ev{max: 7}}
+a.rs = [R{ev: a, l: L{lim: 9, half: 4}, m: M{l: L{lim: 5, half: 2}}, byEv: {a: L{lim: 5, half: 2}, b: L{lim: 1, half: 0}}}, R{ev: b, l: L{lim: 7, half: 3}, m: M{l: L{lim: 3, half: 1}}, byEv: {}}, R{ev: b, l: L{lim: 7, half: 3}, m: M{l: L{lim: 7, half: 3}}, byEv: {}}]
+
+error[E5001]  a/a.canon:43:8
+  rs[0].l: lim 9 above 5
+  expected by a/a.canon:20 (check)
+
+1 error, 0 warnings in 1 package (…)

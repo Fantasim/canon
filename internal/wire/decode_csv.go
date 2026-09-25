@@ -57,9 +57,10 @@ func cellAt(c Cell) site { return site{span: c.Span, kind: value.ProvCSV} }
 
 // columns maps each field to its column, -1 for none, and finds a table's `$id` column.
 type columns struct {
-	of   []int
-	id   int
-	span source.Span
+	refused []bool // a field whose column was refused (E7116): it has a column
+	of      []int
+	id      int
+	span    source.Span
 }
 
 // csvRecords reads each record as an element of t, with the columns the header names.
@@ -75,14 +76,14 @@ func (r *run) csvRecords(header []Cell, rows [][]Cell, t types.Type) value.Value
 		r.misuse(ErrNoWireType, t)
 		return nil
 	}
-	fields, _, ok := r.shape(elem, &frame{})
+	fields, params, ok := r.shape(elem, r.rootFrame())
 	if !ok {
 		return nil
 	}
 	cols, ok := r.columns(header, fields, elem, lt == nil)
 	recs := make([]*value.Record, len(rows))
 	for i, row := range rows {
-		recs[i] = r.csvRecord(row, cols, fields, elem)
+		recs[i] = r.csvRecord(row, cols, fields, &frame{params: params}, elem)
 		ok = ok && recs[i] != nil
 	}
 	switch {
@@ -96,7 +97,7 @@ func (r *run) csvRecords(header []Cell, rows [][]Cell, t types.Type) value.Value
 
 // columns reads the header: each name the wire name of a field, once (WIRE.md §6.6).
 func (r *run) columns(header []Cell, fields []*types.Field, elem types.Type, table bool) (columns, bool) {
-	c := columns{of: make([]int, len(fields)), id: -1}
+	c := columns{of: make([]int, len(fields)), refused: make([]bool, len(fields)), id: -1}
 	for i := range c.of {
 		c.of[i] = -1
 	}
@@ -132,6 +133,7 @@ func (r *run) column(h Cell, j int, fields []*types.Field, elem types.Type, c *c
 		r.report(diag.E3312.At(h.Span, f.Name), nil)
 	case !cellType(f.Type):
 		r.report(diag.E7116.At(h.Span, formCSV, f.Type), nil)
+		c.refused[f.Index] = true
 	default:
 		c.of[f.Index] = j
 		return true
@@ -144,7 +146,7 @@ func (r *run) column(h Cell, j int, fields []*types.Field, elem types.Type, c *c
 func (r *run) required(fields []*types.Field, elem types.Type, c columns, table bool) bool {
 	ok := true
 	for i, f := range fields {
-		if c.of[i] < 0 && f.Input == nil && f.Pairs == nil && f.Default == nil && f.Type.Kind() != types.Optional {
+		if c.of[i] < 0 && !c.refused[i] && f.Input == nil && f.Pairs == nil && f.Default == nil && f.Type.Kind() != types.Optional {
 			r.report(diag.E3302.At(c.span, elem, f.Name), nil)
 			ok = false
 		}
@@ -171,22 +173,25 @@ func cellType(t types.Type) bool {
 	switch t.Kind() {
 	case types.Optional:
 		return cellType(t.Base().(*types.OptionalType).Elem)
-	case types.Bool, types.Int, types.Float, types.String, types.Duration, types.Enum, types.Ref, types.LitUnion:
+	case types.LitUnion:
+		return cellType(t.Base().(*types.LitUnionType).Of)
+	case types.Bool, types.Int, types.Float, types.String, types.Duration, types.Enum, types.Ref:
 		return true
 	default:
 		return false
 	}
 }
 
-// csvRecord reads one record: an empty cell is an absent field (WIRE.md §5.4, §6.6).
-func (r *run) csvRecord(row []Cell, c columns, fields []*types.Field, elem types.Type) *value.Record {
+// csvRecord reads one record in fr, with the element's arguments; an empty cell is absent (WIRE.md §6.6).
+func (r *run) csvRecord(row []Cell, c columns, fields []*types.Field, fr *frame, elem types.Type) *value.Record {
 	rv := &value.Record{T: elem, Fields: make([]value.Value, len(fields)), Set: make([]bool, len(fields))}
 	if len(row) > 0 {
 		rv.P = cellAt(Cell{Span: spanOf(row[0].Span, row[len(row)-1].Span)}).prov()
 	}
+	r.bound(rv, fr.params)
 	r.enter(rv)
 	defer r.leave()
-	fr := &frame{rec: rv}
+	fr.rec = rv
 	ok := true
 	for i, f := range fields {
 		ok = r.csvField(row, c.of[i], f, i, fr) && ok

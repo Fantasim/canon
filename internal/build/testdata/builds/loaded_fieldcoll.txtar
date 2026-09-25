@@ -1,0 +1,109 @@
+TYPES.md §10.2, EVALUATION.md §3.2, §3.4, WIRE.md §5.9 (orchestrator log, W1 gate lift review
+calls): a discriminant through a level-1 ref into a table field of the record being loaded,
+declared before or after the field that holds it, reads the decoded entry once the whole value
+has its other fields; a key naming no entry is E3501 at the ref; a default reading another entry
+of a table still being decoded is E4301, never an internal error.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// K.
+enum K { num, col }
+
+/// Color.
+enum Color { red, blue }
+
+/// Kind.
+record Kind {
+  /// K.
+  k: K
+}
+
+/// Node.
+record Node {
+  /// K.
+  k: K
+  /// Like.
+  like: ref Node
+  /// Kind.
+  kind: ref Kind
+  /// P.
+  p: P(like)
+  /// Q.
+  q: Q(kind)
+
+  warn false at p else "p {p} q {q}"
+}
+
+/// P.
+type P(e: Node) = match e.k {
+  num => Int
+  col => Color
+}
+
+/// Q.
+type Q(e: Kind) = match e.k {
+  num => Int
+  col => Color
+}
+
+/// Tree: its kinds are declared after the nodes that read them.
+record Tree {
+  /// Nodes.
+  nodes: table Node
+  /// Kinds.
+  kinds: table Kind
+}
+
+/// Tree.
+let tree: Tree = load("tree.json")
+
+/// A kind naming no entry.
+let dangling: Tree = load("dangling.json")
+
+/// Leaf: its default reads another entry of the table being decoded.
+record Leaf {
+  /// Like.
+  like: ref Leaf
+  /// K.
+  k: K = num
+  /// Its like's k.
+  d: K = like.k
+}
+
+/// Grove.
+record Grove {
+  /// Leaves.
+  leaves: table Leaf
+}
+
+/// Grove.
+let grove: Grove = load("grove.json")
+-- a/tree.json --
+{"nodes": {"a": {"k": "num", "like": "b", "kind": "x", "p": "red", "q": 1},
+           "b": {"k": "col", "like": "a", "kind": "y", "p": 2, "q": "blue"}},
+ "kinds": {"x": {"k": "num"}, "y": {"k": "col"}}}
+-- a/dangling.json --
+{"nodes": {"a": {"k": "num", "like": "a", "kind": "zz", "p": 1, "q": 1}}, "kinds": {}}
+-- a/grove.json --
+{"leaves": {"a": {"like": "b"}, "b": {"like": "a"}}}
+-- build.txt --
+error[E4301]  a/a.canon:65:10
+  cycle between values: Grove.leaves -> Grove.leaves
+
+error[E3501]  a/dangling.json:1:51
+  unknown key zz in Tree.kinds
+
+warning[W5001]  a/tree.json:1:61
+  tree.nodes.a.p: p red q 1
+  expected by a/a.canon:29 (check)
+
+warning[W5001]  a/tree.json:2:61
+  tree.nodes.b.p: p 2 q blue
+  expected by a/a.canon:29 (check)
+
+2 errors, 2 warnings in 1 package (…)

@@ -12,6 +12,7 @@ import (
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
+	"github.com/fantasim/canonlang/internal/wire"
 )
 
 // Loader reads every load form against a project's files, one per build run (WIRE.md §6).
@@ -24,13 +25,21 @@ type Loader struct {
 	headers map[string]*headerFile // by resolved absolute path
 }
 
-// Request is a load expression forced from one file: its package, directory, call site and bag (WIRE.md §2.2).
+// Request is a load forced from one file: package, directory, site, bag, decoding host (DECISIONS 173).
 type Request struct {
 	Pkg     string
 	From    string
 	Span    source.Span
 	Bag     *diag.Bag
-	Scratch bool // Bag is thrown away (a test call's, a vector's): the Loader caches nothing for it
+	Host    wire.Host
+	Coll    *types.Collection // the let collection the load is the whole value of (wire.Decoder.Coll)
+	Outer   wire.Outer        // what the loaded type's arguments name around the load
+	Scratch bool              // Bag is thrown away (a test call's, a vector's): the Loader caches nothing for it
+}
+
+// decoder is the wire decoder of req's load.
+func (req Request) decoder(partial bool) *wire.Decoder {
+	return &wire.Decoder{Bag: req.Bag, Pkg: req.Pkg, Host: req.Host, Partial: partial, Coll: req.Coll, Outer: req.Outer}
 }
 
 // Load reads e against t; false after a finding, poisoning the value (EVALUATION.md §7).

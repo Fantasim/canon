@@ -1,0 +1,211 @@
+EVALUATION.md §3.2, WIRE.md §5.9 (orchestrator log, W1 gate lift review calls): a loaded table or
+keyed list decodes each entry's dependent fields after every entry's other fields, so a
+discriminant ref into the collection being loaded reads its decoded entry, never a cycle; one
+naming no entry is E3501 at the ref, with its pointer. A dependent value nested in an entry
+waits with its field, a default reading a waiting field waits too (TYPES.md §15) and one reading
+none does not, so entries reading each other's defaulted discriminant decode; an applied record
+branch binds its argument (TYPES.md §11.1); an entry whose waiting field is needed to decode
+itself (its discriminant's default reads it) is E4301 at the ref closing the cycle.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// K.
+enum K { num, col }
+
+/// Color.
+enum Color { red, blue }
+
+/// Item, nested in a node.
+record Item {
+  /// Like.
+  like: ref nodes
+  /// P.
+  p: P(like)
+}
+
+/// Node.
+record Node {
+  /// K.
+  k: K
+  /// Like.
+  like: ref nodes
+  /// P.
+  p: P(like)
+  /// D, reading p.
+  d: String = "d {p}"
+  /// Items.
+  items: [Item] = []
+
+  warn false at p else "p {p} {d} {items}"
+}
+
+/// P.
+type P(e: Node) = match e.k {
+  num => Int
+  col => Color
+}
+
+/// Nodes, a table.
+let nodes: table Node = load("nodes.json")
+
+/// Keyed.
+record Keyed {
+  /// Id.
+  id: Int
+  /// K.
+  k: K
+  /// Like.
+  like: ref keyed
+  /// Q.
+  q: Q(like)
+
+  warn false at q else "q {q}"
+}
+
+/// Q.
+type Q(e: Keyed) = match e.k {
+  num => Int
+  col => Color
+}
+
+/// Keyed, a keyed list.
+let keyed: [Keyed] keyed by id = load("keyed.json")
+
+/// Dangling.
+record Dangling {
+  /// K.
+  k: K
+  /// Like.
+  like: ref dangling
+  /// P.
+  p: D(like)
+}
+
+/// D.
+type D(e: Dangling) = match e.k {
+  num => Int
+  col => Color
+}
+
+/// Its discriminant names no entry.
+let dangling: table Dangling = load("dangling.json")
+
+/// Sub, of a tree node.
+record Sub(e: Tree) {
+  /// Lim.
+  lim: Int = 4
+
+  warn false else "lim {lim} of {e.k}"
+}
+
+/// Tree.
+record Tree {
+  /// K.
+  k: K
+  /// Like.
+  like: ref trees
+  /// T.
+  t: T(like)
+}
+
+/// T.
+type T(e: Tree) = match e.k {
+  num => Int
+  col => Sub(e)
+}
+
+/// Trees: a record branch.
+let trees: table Tree = load("trees.json")
+
+/// Loop.
+record Loop {
+  /// Like.
+  like: ref loops
+  /// L.
+  l: LP(like)
+  /// K, defaulted after l: its default reads nothing, so it does not wait.
+  k: K = num
+
+  warn false at l else "l {l}"
+}
+
+/// LP.
+type LP(e: Loop) = match e.k {
+  num => Int
+  col => Color
+}
+
+/// Loops: each entry's l needs the other's k.
+let loops: table Loop = load("loops.json")
+
+/// Cyc.
+record Cyc {
+  /// Like.
+  like: ref cycs
+  /// L.
+  l: CP(like)?
+  /// K, reading l: it waits for l.
+  k: K = if l == none { num } else { col }
+}
+
+/// CP.
+type CP(e: Cyc) = match e.k {
+  num => Int
+  col => Color
+}
+
+/// Cycs: each entry's l needs the other's k, which waits for its own l.
+let cycs: table Cyc = load("cycs.json")
+-- a/nodes.json --
+{"a": {"k": "num", "like": "b", "p": "red", "items": [{"like": "a", "p": 2}]}, "b": {"k": "col", "like": "a", "p": 3}}
+-- a/keyed.json --
+[{"id": 1, "k": "num", "like": 2, "q": "blue"}, {"id": 2, "k": "col", "like": 1, "q": 7}]
+-- a/dangling.json --
+{"a": {"k": "num", "like": "zz", "p": 1}}
+-- a/trees.json --
+{"a": {"k": "num", "like": "b", "t": {"lim": 1}}, "b": {"k": "col", "like": "a", "t": 3}}
+-- a/loops.json --
+{"a": {"like": "b", "l": 1}, "b": {"like": "a", "l": 2}}
+-- a/cycs.json --
+{"a": {"like": "b", "l": 1}, "b": {"like": "a", "l": 2}}
+-- build.txt --
+error[E4301]  a/cycs.json:1:44
+  cycle between values: cycs -> cycs
+
+error[E3501]  a/dangling.json:1:28
+  unknown key zz in dangling
+
+warning[W5001]  a/keyed.json:1:40
+  keyed[1].q: q blue
+  expected by a/a.canon:54 (check)
+
+warning[W5001]  a/keyed.json:1:87
+  keyed[2].q: q 7
+  expected by a/a.canon:54 (check)
+
+warning[W5001]  a/loops.json:1:26
+  loops.a.l: l 1
+  expected by a/a.canon:121 (check)
+
+warning[W5001]  a/loops.json:1:54
+  loops.b.l: l 2
+  expected by a/a.canon:121 (check)
+
+warning[W5001]  a/nodes.json:1:38
+  nodes.a.p: p red d red [Item{like: a, p: 2}]
+  expected by a/a.canon:31 (check)
+
+warning[W5001]  a/nodes.json:1:116
+  nodes.b.p: p 3 d 3 []
+  expected by a/a.canon:31 (check)
+
+warning[W5001]  a/trees.json:1:38
+  trees.a.t: lim 1 of col
+  expected by a/a.canon:90 (check)
+
+2 errors, 7 warnings in 1 package (…)

@@ -99,11 +99,15 @@ func (r *run) arg(a *types.Arg, fr *frame) (value.Value, bool) {
 	return r.follow(v, path)
 }
 
-// follow reads fields along path, dereferencing refs through the host.
+// follow reads fields along path, dereferencing refs through the host; an entry of the
+// collection being decoded first gets the fields it still waits for.
 func (r *run) follow(v value.Value, path []*types.Field) (value.Value, bool) {
 	for _, f := range path {
 		rec, ok := r.deref(v)
 		if !ok {
+			return nil, false
+		}
+		if f.Index < len(rec.Fields) && rec.Fields[f.Index] == nil && !r.settle(rec, f.Index, v) {
 			return nil, false
 		}
 		if f.Index >= len(rec.Fields) || rec.Fields[f.Index] == nil {
@@ -120,7 +124,13 @@ func (r *run) deref(v value.Value) (*value.Record, bool) {
 	case *value.Record:
 		return x, true
 	case *value.Ref:
-		if r.d.Host == nil {
+		rec, mine := r.localEntry(x)
+		switch {
+		case rec != nil:
+			return rec, true
+		case mine && r.failed: // an entry that failed to decode, already reported
+			return nil, false
+		case r.d.Host == nil:
 			r.misuse(ErrNoHost, x.T)
 			return nil, false
 		}
@@ -137,7 +147,7 @@ func (r *run) deref(v value.Value) (*value.Record, bool) {
 
 // silent is a value a failure already reported leaves missing; without one, a misuse.
 func (r *run) silent() (value.Value, bool) {
-	if !r.failed {
+	if !r.failed && len(r.needs) == 0 {
 		r.misuse(ErrShape, nil)
 	}
 	return nil, false

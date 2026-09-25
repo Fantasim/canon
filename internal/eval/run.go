@@ -33,7 +33,8 @@ type run struct {
 	h          *stdHost
 	test       *testState
 	freeSteps  int64
-	mv         *moves // what the amendments of this root copied, until settled (settle.go)
+	mv         *moves  // what the amendments of this root copied, until settled (settle.go)
+	dep        *depCtx // what a type argument names in the value being built (params.go)
 }
 
 // frame is one call frame, or a root's own frame (fn empty).

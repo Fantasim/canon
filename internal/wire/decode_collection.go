@@ -29,7 +29,7 @@ func (d *Decoder) Dir(ctx context.Context, files []File, t types.Type) (value.Va
 		for i, f := range files {
 			sels[i] = f.Sel
 		}
-		v = r.elements(sels, t, x, wscope{root: true, fr: &frame{}}, nil)
+		v = r.elements(sels, t, x, wscope{root: true, fr: r.rootFrame()}, nil)
 	case *types.TableType:
 		v = r.dirTable(files, t, x)
 	default:
@@ -91,7 +91,9 @@ func (r *run) elements(sels []Selection, t types.Type, lt *types.ListType, sc ws
 	l := &value.List{T: t, Elems: make([]value.Value, 0, len(sels)), P: p}
 	ok := true
 	for _, s := range sels {
+		r.entryKey = lt.KeyedBy
 		v := r.element(s, lt.Elem, sc.inner())
+		r.entryKey = nil
 		if v == nil {
 			ok = false
 			continue
@@ -100,6 +102,9 @@ func (r *run) elements(sels []Selection, t types.Type, lt *types.ListType, sc ws
 			identify(v, lt.KeyedBy, coll, owner)
 		}
 		l.Elems = append(l.Elems, v)
+	}
+	if lt.KeyedBy != nil && r.entryOf(lt.Elem, sc) {
+		r.remember(l.Elems)
 	}
 	if !ok {
 		return nil
@@ -145,10 +150,22 @@ func (r *run) table(sel Selection, t types.Type, sc wscope) value.Value {
 		e.Ident = &value.Identity{Coll: coll, Owner: owner, Key: value.Key{S: m.Key}, Retired: retired}
 		tv.Entries = append(tv.Entries, e)
 	}
+	if r.entryOf(tt.Elem, sc) {
+		r.remember(recordValues(tv.Entries))
+	}
 	if !ok {
 		return nil
 	}
 	return tv
+}
+
+// recordValues is a table's entries as values.
+func recordValues(entries []*value.Record) []value.Value {
+	out := make([]value.Value, len(entries))
+	for i, e := range entries {
+		out[i] = e
+	}
+	return out
 }
 
 // row decodes a table row: the entry's record, and whether `$retired` retires it.
@@ -171,13 +188,16 @@ func (r *run) dirTable(files []File, t types.Type, tt *types.TableType) value.Va
 			return nil
 		}
 		stemOK := r.stem(f, first)
-		e, retired := r.row(f.Sel.Node, tt.Elem, &frame{})
+		e, retired := r.row(f.Sel.Node, tt.Elem, r.rootFrame())
 		if e == nil || !stemOK {
 			ok = false
 			continue
 		}
 		e.Ident = &value.Identity{Coll: coll, Key: value.Key{S: f.Stem}, Retired: retired}
 		tv.Entries = append(tv.Entries, e)
+	}
+	if r.entryOf(tt.Elem, wscope{root: true}) {
+		r.remember(recordValues(tv.Entries))
 	}
 	if !ok {
 		return nil

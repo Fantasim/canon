@@ -1,0 +1,12 @@
+WIRE.md §6.6 (orchestrator log, W1 gate lift calls): a dependent field is no CSV cell type, since
+a cell carries no branch; a column naming one is E7116 at its header cell.
+-- type --
+[resource.heistia.Task]
+-- tasks.csv --
+eventType,filterParam,targetPerPlayer,maxDurationMin,description
+COMBAT_KILL_FFA,,1,1,d
+-- findings.txt --
+error[E7116]  tasks.csv:1:11
+  load.csv cannot produce resource.vocab.Param(eventType)?
+
+1 error, 0 warnings in 1 package (…)

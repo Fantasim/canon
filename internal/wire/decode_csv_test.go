@@ -107,7 +107,7 @@ func TestDecodeCSVShapes(t *testing.T) {
 		t.Errorf("partial table: %q", got)
 	}
 	nested := record("p", "L", field("xs", listOf(types.IntType)))
-	if got := decodeCSV(t, wire.Decoder{}, "xs\n1\n", listOf(nested)).text(); got != findings(at(diag.E3302, "1:1", ""), at(diag.E7116, "1:1", "")) {
+	if got := decodeCSV(t, wire.Decoder{}, "xs\n1\n", listOf(nested)).text(); got != at(diag.E7116, "1:1", "") {
 		t.Errorf("list column: %q", got)
 	}
 	if got := decodeCSV(t, wire.Decoder{}, "$id,label\nopen,A\nopen,B\n", table).text(); got != at(diag.E3102, "3:1", "") {

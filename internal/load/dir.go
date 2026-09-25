@@ -22,9 +22,6 @@ func (l *Loader) dir(ctx context.Context, req Request, e *syntax.LoadExpr, t typ
 	if !ok {
 		return nil, false, unsupported(causeDirOption)
 	}
-	if !supported(t) {
-		return nil, false, unsupported(causeDirElem)
-	}
 	forcedJSON, err := dirForcedJSON(c)
 	if err != nil {
 		return nil, false, err
@@ -43,8 +40,7 @@ func (l *Loader) dir(ctx context.Context, req Request, e *syntax.LoadExpr, t typ
 		return nil, false, err
 	}
 	files, readOK := l.readFiles(matches, c.at, req)
-	host := wireHost{span: req.Span}
-	dec := &wire.Decoder{Bag: req.Bag, Pkg: req.Pkg, Host: host, Partial: c.boolOpt(c.partial)}
+	dec := req.decoder(c.boolOpt(c.partial))
 	v, decOK, err := dec.Dir(ctx, files, t)
 	if err != nil {
 		return nil, false, err

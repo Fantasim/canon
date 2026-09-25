@@ -150,8 +150,8 @@ func evalSelf(r *run, e syntax.Expr, _ *vpath) value.Value {
 	return r.fr.self
 }
 
-// evalLoad forces a load through the host; false poisons silently (EVALUATION.md §7.1).
-func evalLoad(r *run, e syntax.Expr, _ *vpath) value.Value {
+// evalLoad forces a load, decoded in this run; false poisons silently (EVALUATION.md §7.1).
+func evalLoad(r *run, e syntax.Expr, at *vpath) value.Value {
 	if r.nonConstant() {
 		return nil
 	}
@@ -159,8 +159,11 @@ func evalLoad(r *run, e syntax.Expr, _ *vpath) value.Value {
 		r.bug(e)
 		return nil
 	}
-	v, ok := r.ev.host.Load(r.ctx, e.(*syntax.LoadExpr), r.typeOf(e))
-	if !ok {
+	t, outer, cx := r.typeOf(e), r.ev.loading, r.depAt(e)
+	r.ev.loading = &loadSite{r: r, at: e, coll: r.hint(at), cx: cx}
+	v, ok := r.ev.host.Load(r.ctx, e.(*syntax.LoadExpr), t)
+	r.ev.loading = outer
+	if !ok || r.failed {
 		r.stop()
 		return nil
 	}

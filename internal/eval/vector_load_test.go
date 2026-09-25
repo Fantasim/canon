@@ -61,7 +61,7 @@ type loadInto struct {
 	*loadHost
 }
 
-func (h loadInto) LoadInto(_ context.Context, _ *syntax.LoadExpr, _ types.Type, bags check.Bags) (value.Value, bool) {
+func (h loadInto) LoadInto(_ context.Context, _ *eval.Evaluator, _ *syntax.LoadExpr, _ types.Type, bags check.Bags) (value.Value, bool) {
 	h.given = append(h.given, bags)
 	if h.fail {
 		diag.E4102.At(source.Span{}).Report(bags[loadsPkg])

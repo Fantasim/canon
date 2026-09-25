@@ -11,6 +11,7 @@ import (
 	"github.com/fantasim/canonlang/internal/eval"
 	"github.com/fantasim/canonlang/internal/eval/std"
 	"github.com/fantasim/canonlang/internal/jsonsrc"
+	"github.com/fantasim/canonlang/internal/load"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/testkit/golden"
 	"github.com/fantasim/canonlang/internal/types"
@@ -71,9 +72,10 @@ func archiveFile(a *txtar.Archive, name string) []byte {
 	return nil
 }
 
-// jsonLoader serves load("@root/f.json") with the archive's root/f.json, decoded by wire.
+// jsonLoader serves load("@root/f.json") with the archive's root/f.json, decoded by wire
+// through the evaluator as build's load does (load.Request.Through).
 func jsonLoader(t *testing.T, p *program, a *txtar.Archive) loader {
-	return func(e *syntax.LoadExpr, typ types.Type) (value.Value, bool) {
+	return func(ev *eval.Evaluator, e *syntax.LoadExpr, typ types.Type) (value.Value, bool) {
 		lit, ok := e.Args[0].Value.(*syntax.StringLit)
 		if !ok || len(lit.Parts) != 1 {
 			t.Errorf("load: want one plain string argument")
@@ -90,7 +92,9 @@ func jsonLoader(t *testing.T, p *program, a *txtar.Archive) loader {
 			t.Errorf("%s: %v", name, err)
 			return nil, false
 		}
-		v, decoded, err := (&wire.Decoder{Bag: bag}).Decode(context.Background(), wire.Selection{Node: root}, typ)
+		req := load.Request{Bag: bag}.Through(ev)
+		dec := &wire.Decoder{Bag: req.Bag, Host: req.Host, Coll: req.Coll, Outer: req.Outer}
+		v, decoded, err := dec.Decode(context.Background(), wire.Selection{Node: root}, typ)
 		if err != nil || !decoded {
 			t.Errorf("%s: decoded %t, %v, %d findings", name, decoded, err, len(bag.Findings()))
 		}

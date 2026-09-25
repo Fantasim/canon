@@ -1,0 +1,86 @@
+EVALUATION.md §13, DECISIONS 173 (orchestrator log, M3 W1 eval calls): a loaded record's default
+is evaluated as a literal's is and is `default` at its default expression, via the JSON object
+that omitted it, not at the load call; a literal inside it stays a literal; an omitted optional
+without default is at its field declaration; a dependent field is the branch its discriminant
+selects (a ref read through, TYPES.md §11.6), located at its JSON value.
+-- paths --
+a:rows[0].mode
+a:rows[0].tags
+a:rows[0].twice
+a:rows[0].note
+a:rows[1].twice
+a:rows[1].p
+a:rows[0].p
+-- a/a.canon --
+/// A.
+package a
+
+/// Mode.
+enum Mode { off, on }
+
+/// Item.
+record Item {
+  /// N.
+  n: Int = 1
+}
+
+/// Items.
+let items: table Item = { one {} }
+
+/// Ev.
+record Ev {
+  /// On.
+  on: Bool
+}
+
+/// Evs.
+let evs: table Ev = { yes { on: true }, no { on: false } }
+
+/// P.
+type P(e: Ev) = match e.on {
+  true => ref items
+  false => Int
+}
+
+/// Row.
+record Row {
+  /// Base.
+  base: Int
+  /// Mode.
+  mode: Mode = on
+  /// Tags.
+  tags: [String] = ["t"]
+  /// Twice the base.
+  twice: Int = base * 2
+  /// Note.
+  note: String?
+  /// Ev.
+  ev: ref evs
+  /// P.
+  p: P(ev)
+}
+
+/// Rows.
+let rows: [Row] = load("@resource/rows.json")
+-- resource/rows.json --
+[
+  {"base": 1, "ev": "no", "p": 4},
+  {"base": 3, "twice": 5, "ev": "yes", "p": "one"}
+]
+-- provenance.txt --
+a:rows[0].mode = on
+  default a/a.canon:36:16-36:18 via (json @resource/rows.json:2:3-2:34 pointer /0)
+a:rows[0].tags = ["t"]
+  default a/a.canon:38:20-38:25 via (json @resource/rows.json:2:3-2:34 pointer /0)
+a:rows[0].twice = 2
+  default a/a.canon:40:16-40:24 via (json @resource/rows.json:2:3-2:34 pointer /0)
+a:rows[0].note = none
+  default a/a.canon:42:3-42:16 via (json @resource/rows.json:2:3-2:34 pointer /0)
+a:rows[1].twice = 5
+  json @resource/rows.json:3:24-3:25 pointer /1/twice
+a:rows[1].p = one
+  json @resource/rows.json:3:45-3:50 pointer /1/p
+a:rows[0].p = 4
+  json @resource/rows.json:2:32-2:33 pointer /0/p
+
+0 errors, 0 warnings in 1 package (…)

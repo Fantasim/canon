@@ -123,3 +123,12 @@ var starKinds = [...]bool{
 	types.List: true, types.Map: true, types.DepMap: true, types.Optional: true,
 	types.LitUnion: true, types.TypeApp: true, types.Error: false,
 }
+
+// entryState is where a pending entry's second pass is (decode_later.go).
+type entryState uint8
+
+const (
+	entryWaiting entryState = iota
+	entryRunning
+	entryDone
+)

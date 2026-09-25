@@ -19,21 +19,6 @@ import (
 
 const examplesDir = "../../examples"
 
-// dependentBlocked force a load of a record holding a dependent type, refused loudly rather
-// than silently poisoning (internal/load.hasDependent, DECISIONS 173), not a load bug.
-var dependentBlocked = map[string]bool{
-	"resource.adventurequest": true,
-	"resource.heistia":        true,
-}
-
-// defaultBlocked force a load of a record whose field default is not a plain literal (WIRE.md §6.1).
-var defaultBlocked = map[string]bool{
-	"resource.events": true,
-	"resource.farm":   true,
-	"resource.rules":  true,
-	"resource.vocab":  true,
-}
-
 // exampleRoots redirects every root of examples/project.canon (examples/_fixtures/README.md):
 // the read roots to their fixtures, the written ones to a new directory.
 func exampleRoots(t *testing.T) []string {
@@ -70,9 +55,8 @@ func owners() map[diag.Code]string {
 	return out
 }
 
-// M1 acceptance 1, examples/_fixtures/README.md: `canon check` of every example package that
-// does not force a dependent-typed load (dependentBlocked), every root redirected, prints no
-// finding of the parser or of project.canon.
+// M1 acceptance 1, examples/_fixtures/README.md: `canon check` of every example package, every
+// root redirected, prints no finding of the parser or of project.canon.
 func TestExamplesParse(t *testing.T) {
 	dir, _ := filepath.Abs(examplesDir)
 	p, err := canon.Open(dir, canon.Options{})
@@ -85,9 +69,6 @@ func TestExamplesParse(t *testing.T) {
 	}
 	owner := owners()
 	for _, pkg := range pkgs {
-		if dependentBlocked[pkg.Name] || defaultBlocked[pkg.Name] {
-			continue
-		}
 		_, out := checkExample(t, "--format", "json", pkg.Name)
 		lines := strings.Split(strings.TrimSuffix(out, "\n"), "\n")
 		if !strings.HasPrefix(lines[len(lines)-1], `{"summary":`) {
@@ -105,28 +86,20 @@ func TestExamplesParse(t *testing.T) {
 	}
 }
 
-// TestBlockedLoadsFailWithTheirCause is each blocked package's own cause text on stderr (WIRE.md §6.1).
-func TestBlockedLoadsFailWithTheirCause(t *testing.T) {
-	const dependentCause = "a dependent type this milestone cannot decode without the evaluator"
-	const defaultCause = "a default this milestone cannot decode without the evaluator"
-	cases := map[string]string{
-		"resource.adventurequest": dependentCause,
-		"resource.heistia":        dependentCause,
-		"resource.events":         defaultCause,
-		"resource.farm":           defaultCause,
-		"resource.rules":          defaultCause,
-		"resource.vocab":          defaultCause,
-	}
-	dir, err := filepath.Abs(examplesDir)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for pkg, cause := range cases {
-		var stdout, stderr bytes.Buffer
-		args := append(append([]string{"check", "--project", dir}, exampleRoots(t)...), pkg)
-		cli.Main(context.Background(), args, cli.Env{Stdout: &stdout, Stderr: &stderr, Dir: dir})
-		if !strings.Contains(stderr.String(), cause) {
-			t.Errorf("%s: stderr %q does not contain %q", pkg, stderr.String(), cause)
+// DECISIONS 173: the resource examples load through the evaluator and print their findings, W1701 aside.
+func TestResourceFindings(t *testing.T) {
+	for _, pkg := range []string{
+		"resource.adventurequest", "resource.events", "resource.farm",
+		"resource.heistia", "resource.rules", "resource.vocab",
+	} {
+		want, err := os.ReadFile(filepath.Join(examplesDir, filepath.FromSlash(strings.ReplaceAll(pkg, ".", "/")), "expected", "findings.txt"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		code, out := checkExample(t, pkg)
+		got := durations.ReplaceAllString(out, "(…)")
+		if wantClean := withoutW1701(string(want)); code != 0 || got != wantClean {
+			t.Errorf("%s: exit %d\n--- want\n%s--- got\n%s", pkg, code, wantClean, got)
 		}
 	}
 }

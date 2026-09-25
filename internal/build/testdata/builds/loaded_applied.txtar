@@ -1,0 +1,110 @@
+TYPES.md §11.1, §11.5, WIRE.md §5.9, §6 (orchestrator log, W1 gate lift calls): a load into an
+applied type whose arguments come from the enclosing literal decodes with those arguments, as a
+dependent default does: a written field or a default, a list, a dependent map's value bound to
+its key, a load.dir and a load.csv element, and a dependent field whose branch is a record.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// K.
+enum K { num, rec }
+
+/// Ev.
+record Ev {
+  /// K.
+  k: K = num
+  /// Max.
+  max: Int = 5
+}
+
+/// Evs.
+let evs: table Ev = { a {}, b { max: 7, k: rec } }
+
+/// L.
+record L(e: Ev) {
+  /// Lim, the event's max unless given.
+  lim: Int = e.max
+
+  warn false else "lim {lim} of max {e.max}"
+}
+
+/// P.
+type P(e: Ev) = match e.k {
+  num => Int
+  rec => L(e)
+}
+
+/// R.
+record R {
+  /// Ev.
+  ev: ref evs
+  /// L, loaded by default.
+  l: L(ev) = load("l.json")
+  /// Ls.
+  ls: [L(ev)] = load("ls.json")
+  /// By ev.
+  by: {x in evs: L(x)} = { a: load("l.json"), b: load("l.json") }
+  /// Ds.
+  ds: [L(ev)] = load.dir("ds/*.json")
+  /// Cs.
+  cs: [L(ev)] = load.csv("cs.csv", header: true)
+  /// P.
+  p: P(ev) = load("l.json")
+}
+
+/// R, its l written.
+let r: R = { ev: b, l: load("l2.json") }
+-- a/l.json --
+{}
+-- a/l2.json --
+{"lim": 2}
+-- a/ls.json --
+[{}, {"lim": 1}]
+-- a/ds/x.json --
+{"lim": 3}
+-- a/cs.csv --
+lim
+6
+
+-- build.txt --
+warning[W5001]  a/a.canon:47:14
+  r.p: lim 7 of max 7
+  expected by a/a.canon:23 (check)
+
+warning[W5001]  a/cs.csv:2:1
+  r.cs[0]: lim 6 of max 7
+  expected by a/a.canon:23 (check)
+
+warning[W5001]  a/cs.csv:3:1
+  r.cs[1]: lim 7 of max 7
+  expected by a/a.canon:23 (check)
+
+warning[W5001]  a/ds/x.json:1:1
+  r.ds[0]: lim 3 of max 7
+  expected by a/a.canon:23 (check)
+
+warning[W5001]  a/l.json:1:1
+  r.by[a]: lim 5 of max 5
+  expected by a/a.canon:23 (check)
+
+warning[W5001]  a/l.json:1:1
+  r.by[b]: lim 7 of max 7
+  expected by a/a.canon:23 (check)
+
+warning[W5001]  a/l2.json:1:1
+  r.l: lim 2 of max 7
+  expected by a/a.canon:23 (check)
+
+warning[W5001]  a/ls.json:1:2
+  r.ls[0]: lim 7 of max 7
+  expected by a/a.canon:23 (check)
+
+warning[W5001]  a/ls.json:1:6
+  r.ls[1]: lim 1 of max 7
+  expected by a/a.canon:23 (check)
+
+0 errors, 9 warnings in 1 package (…)

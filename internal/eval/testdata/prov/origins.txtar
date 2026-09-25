@@ -3,9 +3,8 @@ via the literal that omitted it, a literal inside a default staying a literal; a
 from its key to its body; a map key at its key; a spread with via the copied value; values
 computed at the top and inside functions, with their stacks; a JSON value with its pointer; an
 absent optional without default, loaded and written; an input has no value (§11.2); a literal
-inside a lambda within a default is computed (review call e). `a:srv.note` has wire's zero span
-until the load unit gives wire's side the field declaration (orchestrator log, M3 W1 eval calls):
-this line of the golden changes then.
+inside a lambda within a default is computed (review call e). A loaded `a:srv.note` is at its
+field declaration too, the evaluator backing the decoder (orchestrator log, M3 W1 eval calls).
 -- paths --
 a:lit
 a:alias
@@ -164,7 +163,7 @@ a:srv.port = 80
 a:srv.host = h
   json @resource/srv.json:2:10-2:13 pointer /host
 a:srv.note = none
-  default :0:0-0:0 via (json @resource/srv.json:1:1-2:14)
+  default a/a.canon:39:3-39:16 via (json @resource/srv.json:1:1-2:14)
 a:here.note = none
   default a/a.canon:39:3-39:16 via (literal a/a.canon:81:20-81:42)
 

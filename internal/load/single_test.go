@@ -2,8 +2,6 @@ package load_test
 
 import (
 	"context"
-	"errors"
-	"math/big"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -185,18 +183,8 @@ func TestBareLoadE7007NamesDisplayPath(t *testing.T) {
 	}
 }
 
-// WIRE.md §6.1: an enum-member default needs the evaluator, so a load holding one refuses loudly.
-func TestLoadBadDefaultRefused(t *testing.T) {
-	l, req := loaderFor(t, map[string]string{"a.json": `{}`})
-	_, _, err := l.Load(context.Background(), req, bareExpr("a.json"), enumDefaultFixture())
-	var ue *load.UnsupportedError
-	if !errors.Is(err, load.ErrUnsupported) || !errors.As(err, &ue) || ue.Cause == "" {
-		t.Errorf("bare load: err = %v, want ErrUnsupported with a cause", err)
-	}
-}
-
-// enumDefaultFixture is a record with a field whose default is an enum member, needing the
-// evaluator to resolve (mirrors resource/vocab/vocab.canon's rollMode default).
+// enumDefaultFixture is a record with a field whose default is an enum member, which the
+// evaluator runs (mirrors resource/vocab/vocab.canon's rollMode default).
 func enumDefaultFixture() *types.RecordType {
 	kind := &types.EnumType{Pkg: "p", Name: "Kind"}
 	f := &types.Field{
@@ -298,22 +286,5 @@ func BenchmarkLoadCSV100k(b *testing.B) {
 		if _, ok, err := l.Load(context.Background(), req, csvExpr("a.csv"), rowsType()); err != nil || !ok {
 			b.Fatalf("ok=%v err=%v", ok, err)
 		}
-	}
-}
-
-// DECISIONS 173: a parenthesized literal default is read by the host as the gate accepts it.
-func TestBareLoadParenthesizedDefaults(t *testing.T) {
-	s := &types.Field{Name: "s", Type: types.StringType, Wire: "s", WirePath: []string{"s"}, Index: 0,
-		Default: &syntax.ParenExpr{X: &syntax.StringLit{Parts: []syntax.StringPart{{Text: "szName"}}}}}
-	n := &types.Field{Name: "n", Type: types.IntType, Wire: "n", WirePath: []string{"n"}, Index: 1,
-		Default: &syntax.ParenExpr{X: &syntax.ParenExpr{X: &syntax.IntLit{Value: big.NewInt(7)}}}}
-	rec := &types.RecordType{Pkg: "p", Name: "R", Fields: []*types.Field{s, n}}
-	l, req := loaderFor(t, map[string]string{"x.json": "{}"})
-	v, ok, err := l.Load(context.Background(), req, bareExpr("x.json"), rec)
-	if err != nil || !ok {
-		t.Fatalf("ok=%v err=%v findings=%+v", ok, err, req.Bag.Findings())
-	}
-	if got := v.CanonText(); got != `R{s: "szName", n: 7}` {
-		t.Errorf("value = %s", got)
 	}
 }

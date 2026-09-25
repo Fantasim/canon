@@ -1,0 +1,81 @@
+EVALUATION.md §9.3, TYPES.md §11.1: an amended copy of an applied record keeps its arguments,
+which its re-derived defaults read; a default applied record re-derived after its argument is
+amended binds the new one; an applied record an amendment gives binds the arguments where its
+path lands.
+-- layers --
+dev
+-- a/a.canon --
+/// A.
+package a
+
+/// K.
+enum K { col, num }
+
+/// Color.
+enum Color { red, blue }
+
+/// Ev.
+record Ev {
+  /// K.
+  k: K
+  /// Max.
+  max: Int = 5
+}
+
+/// Evs.
+let evs: table Ev = { a { k: col }, b { k: num, max: 7 } }
+
+/// P.
+type P(e: Ev) = match e.k {
+  col => Color
+  num => Int
+}
+
+/// L.
+record L(e: Ev) {
+  /// Limit.
+  lim: Int = 1
+  /// Its event's max plus the limit.
+  top: Int = e.max + lim
+}
+
+/// R.
+record R {
+  /// Ev.
+  ev: ref evs
+  /// P.
+  p: P(ev)
+  /// L.
+  l: L(ev) = {}
+}
+
+/// R.
+let r: R = { ev: a, p: red }
+
+/// R2.
+let r2: R = { ev: a, p: red }
+
+/// R3.
+let r3: R = { ev: b, p: 4 }
+-- a/dev.canon --
+package a
+layer dev
+
+amend r {
+  l.lim: 9
+}
+
+amend r2 {
+  ev: b
+}
+
+amend r3 {
+  l: { lim: 2 }
+}
+-- dump.txt --
+a.evs = {a: Ev{k: col, max: 5}, b: Ev{k: num, max: 7}}
+a.r = R{ev: a, p: red, l: L{lim: 9, top: 14}}
+a.r2 = R{ev: b, p: red, l: L{lim: 1, top: 8}}
+a.r3 = R{ev: b, p: 4, l: L{lim: 2, top: 9}}
+
+0 errors, 0 warnings in 1 package (…)

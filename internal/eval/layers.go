@@ -23,7 +23,8 @@ func (e *Evaluator) StableAmendments() []StableAmendment {
 	return e.stable
 }
 
-// amending is one amendment being applied; at holds the instances on its path, outermost first.
+// amending is one amendment being applied: its value, the instances on its path, outermost
+// first, what a type argument names where the path lands, and the keys its path evaluated.
 type amending struct {
 	layer string
 	a     *syntax.Amendment
@@ -31,6 +32,9 @@ type amending struct {
 	path  string
 	root  check.Object
 	at    []*value.Record
+	dep   *depCtx
+	keys  map[*syntax.AmendSegment]value.Value
+	quiet bool // the path is being located: a missing segment is the replace's E1905
 }
 
 // applyLayers applies a let's amendments, layer order then source order (EVALUATION.md §9.3).
@@ -72,19 +76,35 @@ func (r *run) amendBlock(obj check.Object, blk *syntax.AmendBlock, layer string,
 	return v
 }
 
-// amend evaluates one amendment's value in the layer's file and replaces the sub-value at its
-// path; reading the amended let itself is E4301, as for any cycle.
+// amend evaluates an amendment's value where its path lands, converts it, replaces (EVALUATION.md §9.3).
 func (r *run) amend(obj check.Object, blk *syntax.AmendBlock, a *syntax.Amendment, layer string, v value.Value) value.Value {
+	if len(a.Path) == 0 {
+		return nil
+	}
 	saved := r.fr
 	r.fr = r.ev.rootFrame(r.ev.index.file[blk])
 	defer func() { r.fr = saved }()
-	rhs := r.eval(a.Value)
-	if rhs == nil || len(a.Path) == 0 {
+	m := &amending{layer: layer, a: a, root: obj, path: r.pathText(a), keys: map[*syntax.AmendSegment]value.Value{}}
+	m.dep = &depCtx{field: obj.Type(), at: a.Value}
+	if r.locate(v, obj.Type(), m); r.failed {
 		return nil
 	}
-	rhs = r.ev.reprov(rhs, &value.Prov{Kind: value.ProvLayer, Span: r.span(a.Value), Layer: layer}, true)
-	m := &amending{layer: layer, a: a, rhs: rhs, root: obj, path: r.pathText(a)}
+	if m.rhs = r.rhs(m); m.rhs == nil {
+		return nil
+	}
 	return r.setPath(v, obj.Type(), a.Path, m)
+}
+
+// rhs is the amendment's value, evaluated where its path lands, in layer provenance (EVALUATION.md §9.3).
+func (r *run) rhs(m *amending) value.Value {
+	outer := r.dep
+	r.dep = m.dep
+	v := r.eval(m.a.Value)
+	r.dep = outer
+	if v == nil {
+		return nil
+	}
+	return r.ev.reprov(v, &value.Prov{Kind: value.ProvLayer, Span: r.span(m.a.Value), Layer: m.layer}, true)
 }
 
 // pathText is an amendment's path as written, for E1905.
@@ -142,6 +162,7 @@ func (r *run) setField(rec *value.Record, segs []*syntax.AmendSegment, m *amendi
 	cp.Fields, cp.Set = append([]value.Value(nil), rec.Fields...), append([]bool(nil), rec.Set...)
 	cp.Fields[i], cp.Set[i] = nv, true
 	r.moved(rec, &cp)
+	r.ev.shareParams(rec, &cp) // its re-derived defaults read the same arguments (TYPES.md §11.1)
 	r.ev.unbindFrom(&cp, m.at, r.mv)
 	if !r.derive(&cp, i) {
 		return nil
@@ -190,7 +211,7 @@ func (r *run) derive(rec *value.Record, i int) bool {
 		if j <= i || rec.Set[j] || f.Default == nil || f.Input != nil {
 			continue
 		}
-		v := r.defaultValue(rec, f, nil)
+		v := r.defaultValue(rec, f, nil, rec.P)
 		if v == nil {
 			return false
 		}

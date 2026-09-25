@@ -21,10 +21,18 @@ type host struct {
 	entries  map[*types.Collection][]*value.Record
 	misses   int // the refs Deref found no entry for, which build's host would report
 	calls    int // the defaults evaluated
+	bound    map[*value.Record]map[*types.Param]value.Value
+	cycles   []*value.Ref           // the refs Cycle reported
+	reads    map[*types.Field][]int // what a default reads, by field index
+	attempts int                    // the savepoints taken, one per attempt of the second pass
+	undone   int                    // the attempts taken back
 }
 
 func newHost() *host {
-	return &host{defaults: map[*types.Field]value.Value{}, entries: map[*types.Collection][]*value.Record{}}
+	return &host{
+		defaults: map[*types.Field]value.Value{}, entries: map[*types.Collection][]*value.Record{},
+		bound: map[*value.Record]map[*types.Param]value.Value{}, reads: map[*types.Field][]int{},
+	}
 }
 
 // Default serves a registered field's value; an unregistered field with no default gets none.
@@ -47,6 +55,27 @@ func (h *host) Deref(_ context.Context, r *value.Ref) (*value.Record, bool) {
 	}
 	h.misses++
 	return nil, false
+}
+
+func (h *host) Bind(rec *value.Record, params map[*types.Param]value.Value) {
+	h.bound[rec] = params
+}
+
+func (h *host) Cycle(_ context.Context, r *value.Ref) {
+	h.cycles = append(h.cycles, r)
+}
+
+func (h *host) Reads(f *types.Field, _ []*types.Field) []int {
+	return h.reads[f]
+}
+
+func (h *host) Savepoint() func(bool) {
+	h.attempts++
+	return func(undo bool) {
+		if undo {
+			h.undone++
+		}
+	}
 }
 
 // withDefault gives f a default the host evaluates to v.

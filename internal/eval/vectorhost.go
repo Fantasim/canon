@@ -12,9 +12,10 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// vectorLoader is a Host that forces a load reporting into the bags it is given.
+// vectorLoader is a Host that forces a load reporting into the bags it is given, decoded
+// through ev, the vector's evaluator (Default, Deref).
 type vectorLoader interface {
-	LoadInto(ctx context.Context, e *syntax.LoadExpr, expected types.Type, bags check.Bags) (value.Value, bool)
+	LoadInto(ctx context.Context, ev *Evaluator, e *syntax.LoadExpr, expected types.Type, bags check.Bags) (value.Value, bool)
 }
 
 // vectorVerifier is a Host that verifies a value through ev, reporting into the bags it is
@@ -37,7 +38,7 @@ func (h *vectorHost) Load(ctx context.Context, e *syntax.LoadExpr, expected type
 		return nil, false
 	}
 	bags := h.throwaway()
-	v, ok := l.LoadInto(ctx, e, expected, bags)
+	v, ok := l.LoadInto(ctx, h.ev, e, expected, bags)
 	h.note(bags)
 	return v, ok
 }

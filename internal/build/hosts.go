@@ -42,22 +42,32 @@ type evalHost struct {
 // Load runs e's form against expected; an unsupported form, option or default is ErrLoad,
 // naming the cause load reported (DECISIONS 196).
 func (h *evalHost) Load(ctx context.Context, e *syntax.LoadExpr, expected types.Type) (value.Value, bool) {
-	return h.loadInto(ctx, e, expected, h.bags, h.scratch)
+	return h.loadInto(ctx, e, expected, loadTarget{ev: h.ev, bags: h.bags, scratch: h.scratch})
 }
 
-// LoadInto is Load into a vector's throwaway bags, a scratch load (ADR-0003, DECISIONS 204).
-func (h *evalHost) LoadInto(ctx context.Context, e *syntax.LoadExpr, expected types.Type, bags check.Bags) (value.Value, bool) {
-	return h.loadInto(ctx, e, expected, bags, true)
+// LoadInto is Load into a vector's throwaway bags, decoded through its evaluator ev (DECISIONS 204).
+func (h *evalHost) LoadInto(ctx context.Context, ev *eval.Evaluator, e *syntax.LoadExpr, expected types.Type, bags check.Bags) (value.Value, bool) {
+	return h.loadInto(ctx, e, expected, loadTarget{ev: ev, bags: bags, scratch: true})
 }
 
-// loadInto is Load into bags; scratch: bags is throwaway (load.Request.Scratch).
-func (h *evalHost) loadInto(ctx context.Context, e *syntax.LoadExpr, expected types.Type, bags check.Bags, scratch bool) (value.Value, bool) {
+// loadTarget is where a load goes: the evaluator decoding it (defaults, discriminants), the
+// bags its findings go to, and whether they are throwaway (load.Request.Scratch).
+type loadTarget struct {
+	ev      *eval.Evaluator
+	bags    check.Bags
+	scratch bool
+}
+
+// loadInto is Load into to's bags, decoded through to's evaluator.
+func (h *evalHost) loadInto(ctx context.Context, e *syntax.LoadExpr, expected types.Type, to loadTarget) (value.Value, bool) {
 	site, ok := findLoad(h.prog, e)
 	if !ok {
 		h.loads = append(h.loads, e)
 		return nil, false
 	}
-	req := load.Request{Pkg: site.pkg, From: path.Dir(site.file.Src.Path), Span: site.span, Bag: bags[site.pkg], Scratch: scratch}
+	req := load.Request{
+		Pkg: site.pkg, From: path.Dir(site.file.Src.Path), Span: site.span, Bag: to.bags[site.pkg], Scratch: to.scratch,
+	}.Through(to.ev)
 	v, ok, err := h.loader.Load(ctx, req, e, expected)
 	switch {
 	case errors.Is(err, load.ErrUnsupported):

@@ -7,6 +7,7 @@ import (
 
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/eval/std"
+	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
@@ -14,6 +15,11 @@ import (
 
 // deref is the entry a ref names: E3501 or E3505 when none, both hard (EVALUATION.md §7.1).
 func (r *run) deref(v value.Value, at syntax.Node) value.Value {
+	return r.derefAt(v, at, at)
+}
+
+// derefAt is deref forcing the target at at, E3501 and E3505 at loc, or at the ref itself for nil.
+func (r *run) derefAt(v value.Value, at, loc syntax.Node) value.Value {
 	ref, ok := v.(*value.Ref)
 	if !ok {
 		return v
@@ -23,27 +29,43 @@ func (r *run) deref(v value.Value, at syntax.Node) value.Value {
 		r.bug(at)
 		return nil
 	}
-	coll := r.collValue(ref, rt.Target, at)
+	coll := r.collValue(ref, rt.Target, at, loc)
 	if coll == nil {
 		return nil
 	}
 	e, found := r.ev.entry(coll, ref.Key)
 	if !found {
-		r.fail(diag.E3501.At(r.span(at), ref, r.collName(rt.Target)))
+		r.refFail(diag.E3501.At(r.refSpan(ref, loc), ref, r.collName(rt.Target)), ref, loc)
 		return nil
 	}
 	return r.read(e)
 }
 
-// collValue is the collection a ref's target names (EVALUATION.md §3.4).
-func (r *run) collValue(ref *value.Ref, c *types.Collection, at syntax.Node) value.Value {
+// refSpan locates a dereference: the expression at, else the ref's own provenance (EVALUATION.md §13).
+func (r *run) refSpan(ref *value.Ref, at syntax.Node) source.Span {
+	if at != nil {
+		return r.span(at)
+	}
+	return located(ref, source.Span{})
+}
+
+// refFail reports a hard dereference error; one located at a loaded ref carries its pointer.
+func (r *run) refFail(b *diag.Builder, ref *value.Ref, at syntax.Node) {
+	if p := origin(ref.P); at == nil && p != nil {
+		b.Pointer(p.Pointer)
+	}
+	r.fail(b)
+}
+
+// collValue is the collection a ref's target names, forced at at, E3505 at loc (EVALUATION.md §3.4).
+func (r *run) collValue(ref *value.Ref, c *types.Collection, at, loc syntax.Node) value.Value {
 	if c.Kind != types.CollField && r.nonConstant() { // a key dereference in a fold reads a let (DECISIONS 210)
 		return nil
 	}
 	var base value.Value
 	if c.Kind == types.CollField {
 		if ref.Owner == nil {
-			r.fail(diag.E3505.At(r.span(at), elemName(c), ownerName(c)))
+			r.refFail(diag.E3505.At(r.refSpan(ref, loc), elemName(c), ownerName(c)), ref, loc)
 			return nil
 		}
 		base = r.mv.latest(ref.Owner) // a fresh instance's entries name it until its let settles
@@ -66,8 +88,13 @@ func (r *run) collValue(ref *value.Ref, c *types.Collection, at syntax.Node) val
 		if ok {
 			i = fieldIndex(rec.T, name)
 		}
-		if i < 0 || rec.Fields[i] == nil {
+		if i < 0 {
 			r.bug(at)
+			return nil
+		}
+		if rec.Fields[i] == nil { // its instance is still being decoded (EVALUATION.md §3.2)
+			name := r.collName(c)
+			r.refFail(diag.E4301.At(r.refSpan(ref, loc), []string{name, name}), ref, loc)
 			return nil
 		}
 		base = rec.Fields[i]

@@ -1,0 +1,65 @@
+EVALUATION.md §3.2 (orchestrator log, W1 gate lift review calls): a dependent field whose
+discriminant is a ref between entries of the table being built is kept as written, no cycle and
+no silent poison; a default reading an entry of that table through a parameter is a cycle,
+E4301 at the read.
+-- a/a.canon --
+/// A.
+package a
+
+/// K.
+enum K { num, col }
+
+/// Color.
+enum Color { red, blue }
+
+/// Node.
+record Node {
+  /// K.
+  k: K
+  /// Like.
+  like: ref nodes
+  /// P.
+  p: P(like)
+}
+
+/// P.
+type P(e: Node) = match e.k {
+  num => Int
+  col => Color
+}
+
+/// Nodes.
+let nodes: table Node = {
+  a { k: num, like: b, p: red }
+  b { k: col, like: a, p: 3 }
+}
+
+/// Limit of an item, its item's weight unless given.
+record Lim(e: Item) {
+  /// Limit.
+  lim: Int = e.w
+}
+
+/// Item.
+record Item {
+  /// Weight.
+  w: Int = 1
+  /// Other.
+  other: ref cyclic
+  /// Limit.
+  l: Lim(other) = {}
+}
+
+/// Cyclic: an entry's default reads another entry while the table is built.
+let cyclic: table Item = {
+  x { other: y }
+  y { other: x }
+}
+-- dump.txt --
+a.nodes = {a: Node{k: num, like: b, p: red}, b: Node{k: col, like: a, p: 3}}
+a.cyclic poisoned
+
+error[E4301]  a/a.canon:35:14
+  cycle between values: cyclic -> cyclic
+
+1 error, 0 warnings in 1 package (…)

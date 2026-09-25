@@ -3,44 +3,46 @@ package load
 import (
 	"context"
 
-	"github.com/fantasim/canonlang/internal/source"
-	"github.com/fantasim/canonlang/internal/syntax"
+	"github.com/fantasim/canonlang/internal/eval"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
 	"github.com/fantasim/canonlang/internal/wire"
 )
 
-// wireHost is wire.Host for a decode this milestone can run without the evaluator (DECISIONS 173).
-// span is every default's Prov.Span, the load.dir call's own, until the evaluator backs Default.
-type wireHost struct {
-	span source.Span
+// evalHost is wire.Host backed by the evaluator forcing the load (DECISIONS 173).
+type evalHost struct {
+	ev *eval.Evaluator
 }
 
-// Default reads f's default literally, a redundant "(...)" around it unwrapped as supported's
-// gate does (defaultLiteralOK); with none, it is the load call's span (DECISIONS 173).
-func (h wireHost) Default(_ context.Context, f *types.Field, _ wire.Instance, via *value.Prov) (value.Value, bool) {
-	p := &value.Prov{Kind: value.ProvDefault, Span: h.span, Via: via}
-	if f.Default == nil {
-		return &value.None{T: f.Type, P: p}, true
-	}
-	switch n := unparen(f.Default).(type) {
-	case *syntax.NoneLit:
-		return &value.None{T: f.Type, P: p}, true
-	case *syntax.BoolLit:
-		return &value.Bool{V: n.Value, P: p}, true
-	case *syntax.IntLit:
-		return &value.Int{V: n.Value.Int64(), T: baseType(f.Type), P: p}, true
-	case *syntax.DurationLit:
-		return &value.Dur{Ms: n.Millis, P: p}, true
-	case *syntax.StringLit:
-		s, _ := plainString(n)
-		return &value.Str{V: s, T: baseType(f.Type), P: p}, true
-	default:
-		return nil, false
-	}
+func (h evalHost) Default(ctx context.Context, f *types.Field, in wire.Instance, via *value.Prov) (value.Value, bool) {
+	return h.ev.Default(ctx, f, in.Record, in.Params, via)
 }
 
-// Deref is never reached: supported refuses a decode whose type has a ref field.
-func (wireHost) Deref(context.Context, *value.Ref) (*value.Record, bool) {
-	return nil, false
+func (h evalHost) Deref(ctx context.Context, r *value.Ref) (*value.Record, bool) {
+	return h.ev.Deref(ctx, r)
+}
+
+func (h evalHost) Bind(rec *value.Record, params map[*types.Param]value.Value) {
+	h.ev.Bind(rec, params)
+}
+
+func (h evalHost) Cycle(ctx context.Context, r *value.Ref) {
+	h.ev.Cycle(ctx, r)
+}
+
+func (h evalHost) Reads(f *types.Field, fields []*types.Field) []int {
+	return h.ev.Reads(f, fields)
+}
+
+func (h evalHost) Savepoint() func(undo bool) {
+	return h.ev.Savepoint()
+}
+
+// Through is req decoding through ev: its host, the let collection the load is the whole of, and
+// what its type arguments name around it.
+func (req Request) Through(ev *eval.Evaluator) Request {
+	lc := ev.Loading()
+	req.Host, req.Coll = evalHost{ev: ev}, lc.Coll
+	req.Outer = wire.Outer{Record: lc.Record, Params: lc.Params, Binders: lc.Binders}
+	return req
 }

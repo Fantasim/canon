@@ -17,6 +17,14 @@ type Host interface {
 	Default(ctx context.Context, f *types.Field, in Instance, via *value.Prov) (value.Value, bool)
 	// Deref is the entry r names; false when there is none or its collection is poisoned.
 	Deref(ctx context.Context, r *value.Ref) (*value.Record, bool)
+	// Bind keeps the arguments the decoder bound to an applied record instance (TYPES.md §11.1).
+	Bind(rec *value.Record, params map[*types.Param]value.Value)
+	// Cycle reports that the entry r names is needed to decode itself (EVALUATION.md §3.2).
+	Cycle(ctx context.Context, r *value.Ref)
+	// Reads is the fields of fields, f's record, that f's default reads (TYPES.md §15).
+	Reads(f *types.Field, fields []*types.Field) []int
+	// Savepoint marks a decoding attempt; end(true) takes back its steps and bindings.
+	Savepoint() (end func(undo bool))
 }
 
 // Instance is what a default sees of the record being decoded: the fields decoded so far,
@@ -33,6 +41,15 @@ type Decoder struct {
 	Host    Host              // nil: a default or a dereference is ErrNoHost
 	Partial bool              // WIRE.md §6.4
 	Coll    *types.Collection // what a whole decoded table or keyed list is (TYPES.md §6.3)
+	Outer   Outer             // what the decoded value's type arguments name around it
+}
+
+// Outer is what a loaded value's type arguments may name around it: the record whose field the
+// load gives, that record's arguments, the dependent map binders.
+type Outer struct {
+	Record  *value.Record
+	Params  map[*types.Param]value.Value
+	Binders map[string]value.Value
 }
 
 // Selection is what `at:` selects: a value, or under a `*` one item per member (WIRE.md §6.3).
@@ -45,18 +62,34 @@ type Selection struct {
 // Decode reads sel as t: not ok after a finding (WIRE.md §3.4); err is the caller's misuse.
 func (d *Decoder) Decode(ctx context.Context, sel Selection, t types.Type) (value.Value, bool, error) {
 	r := d.start(ctx, t)
-	v := r.value(sel, t, wscope{root: true, fr: &frame{}})
+	v := r.value(sel, t, wscope{root: true, fr: r.rootFrame()})
 	return r.result(v)
 }
 
-// run is one call of the decoder: where it is, and whether it reported or failed.
+// run is one call of the decoder: where it is, and whether it reported or failed; the records
+// whose dependent fields wait for the second pass are in later (decode_later.go).
 type run struct {
-	ctx    context.Context
-	d      *Decoder
-	colls  map[collKey]*types.Collection
-	trail  []step
-	failed bool
-	err    error
+	ctx      context.Context
+	d        *Decoder
+	colls    map[collKey]*types.Collection
+	trail    []step
+	failed   bool
+	err      error
+	entryKey *types.Field // the key field of the keyed-list element decoded next
+	later    []*pending
+	waiting  map[*value.Record]*pending
+	local    map[value.Key]*value.Record // Decoder.Coll's entries by key
+	pass2    bool
+	needs    []want            // the records an attempt of the second pass needs
+	needed   map[*pending]bool // the same, as a set; nil outside an attempt
+	apps     map[types.Type]bool
+	deps     map[types.Type]bool
+}
+
+// rootFrame is what the decoded whole's type arguments name: the Decoder's Outer.
+func (r *run) rootFrame() *frame {
+	o := r.d.Outer
+	return &frame{params: o.Params, binders: o.Binders, rec: o.Record}
 }
 
 // wscope is what a value inherits from its field (WIRE.md §4.1) and the names its type may use.
@@ -79,10 +112,16 @@ func (s wscope) inner() wscope {
 }
 
 func (d *Decoder) start(ctx context.Context, t types.Type) *run {
-	return &run{ctx: ctx, d: d, colls: fieldCollections(t)}
+	return &run{
+		ctx: ctx, d: d, colls: fieldCollections(t), waiting: map[*value.Record]*pending{},
+		apps: map[types.Type]bool{}, deps: map[types.Type]bool{},
+	}
 }
 
 func (r *run) result(v value.Value) (value.Value, bool, error) {
+	if !r.finishAll() {
+		r.failed = true
+	}
 	if r.err != nil {
 		return nil, false, r.err
 	}

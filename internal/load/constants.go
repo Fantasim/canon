@@ -37,16 +37,13 @@ const (
 	causeBrace      = "unclosed, empty or nested {"
 )
 
-// Causes of ErrUnsupported, what this milestone cannot read without the evaluator (DECISIONS 196).
+// Causes of ErrUnsupported, what this milestone does not read yet (DECISIONS 196).
 const (
 	causeArticle       = "a "
 	causeNotLiteral    = " call this milestone reads only in its plain literal form"
 	causeDirOption     = "a load.dir option, this milestone reads only its literal form"
-	causeDirElem       = "an element type this milestone cannot decode without the evaluator"
 	causeDirFormat     = "a load.dir format: this milestone reads only json"
 	causeDirFileFormat = "a load.dir file whose format is not json"
-	causeDependent     = "a dependent type this milestone cannot decode without the evaluator"
-	causeDefault       = "a default this milestone cannot decode without the evaluator"
 	causeUnknownForm   = "a load form this milestone does not recognize"
 )
 
