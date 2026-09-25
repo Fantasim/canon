@@ -70,23 +70,31 @@ const (
 	KindBoolean
 	KindBuiltin
 	KindCase
+	KindCaseField
 	KindCheck
 	KindCode
 	KindComputedDefault
 	KindConst
 	KindConstValue
 	KindConstantString
+	KindCrossPackageBakedValue
 	KindDefineTable
+	KindDependentType
 	KindEmit
 	KindEntry
 	KindEnum
 	KindEnumMember
 	KindField
+	KindFieldlessCaseExportFn
+	KindForeignDataRecord
+	KindForeignPairsField
+	KindForeignTableLookupParam
 	KindFunction
 	KindGroup
 	KindIcon
 	KindImport
 	KindImportAlias
+	KindInlineFoldedKey
 	KindInteger
 	KindLayer
 	KindLet
@@ -96,27 +104,37 @@ const (
 	KindLowerCamel
 	KindLowerSnake
 	KindMap
+	KindMapField
 	KindMember
 	KindMemberValue
 	KindMenu
 	KindMethod
 	KindMethodOrCheck
 	KindModeName
+	KindNonStringLiteralUnion
 	KindNull
 	KindNumber
 	KindObject
+	KindOptionalElementList
+	KindOptionalMapValue
 	KindPackageSegment
 	KindParameter
 	KindParameterDefault
 	KindPrecomputedFunction
 	KindRecord
+	KindRecordConstant
+	KindRecordCycleThroughMethod
+	KindRecursiveVariantCase
 	KindRefinementBound
+	KindResolvedLookupResult
+	KindSelfReadNotAPath
 	KindShowLine
 	KindSpread
 	KindStableValue
 	KindString
 	KindTable
 	KindTableEntry
+	KindTableField
 	KindTemplateString
 	KindTest
 	KindTone
@@ -160,23 +178,31 @@ var kindNames = [...]string{
 	"Boolean",
 	"Builtin",
 	"Case",
+	"CaseField",
 	"Check",
 	"Code",
 	"ComputedDefault",
 	"Const",
 	"ConstValue",
 	"ConstantString",
+	"CrossPackageBakedValue",
 	"DefineTable",
+	"DependentType",
 	"Emit",
 	"Entry",
 	"Enum",
 	"EnumMember",
 	"Field",
+	"FieldlessCaseExportFn",
+	"ForeignDataRecord",
+	"ForeignPairsField",
+	"ForeignTableLookupParam",
 	"Function",
 	"Group",
 	"Icon",
 	"Import",
 	"ImportAlias",
+	"InlineFoldedKey",
 	"Integer",
 	"Layer",
 	"Let",
@@ -186,27 +212,37 @@ var kindNames = [...]string{
 	"LowerCamel",
 	"LowerSnake",
 	"Map",
+	"MapField",
 	"Member",
 	"MemberValue",
 	"Menu",
 	"Method",
 	"MethodOrCheck",
 	"ModeName",
+	"NonStringLiteralUnion",
 	"Null",
 	"Number",
 	"Object",
+	"OptionalElementList",
+	"OptionalMapValue",
 	"PackageSegment",
 	"Parameter",
 	"ParameterDefault",
 	"PrecomputedFunction",
 	"Record",
+	"RecordConstant",
+	"RecordCycleThroughMethod",
+	"RecursiveVariantCase",
 	"RefinementBound",
+	"ResolvedLookupResult",
+	"SelfReadNotAPath",
 	"ShowLine",
 	"Spread",
 	"StableValue",
 	"String",
 	"Table",
 	"TableEntry",
+	"TableField",
 	"TemplateString",
 	"Test",
 	"Tone",
@@ -230,23 +266,31 @@ var kindWords = [...]string{
 	"true or false",
 	"built-in",
 	"case",
+	"a case used as a type",
 	"check",
 	"code",
 	"computed default",
 	"const",
 	"const value",
 	"a constant string",
+	"a value of a record, variant or table of another package",
 	"define table",
+	"a dependent type",
 	"emit",
 	"entry",
 	"enum",
 	"enum member",
 	"field",
+	"an export fn of a case without fields",
+	"a record or variant of another package read by a data loader",
+	"a pairs field of a record of another package",
+	"a lookup whose parameter is a ref into a table of another package",
 	"function",
 	"group",
 	"icon",
 	"import",
 	"import alias",
+	"an inline variant key equal to a parent key but for letter case",
 	"an integer",
 	"layer",
 	"let",
@@ -256,27 +300,37 @@ var kindWords = [...]string{
 	"lowerCamel",
 	"lower_snake",
 	"map",
+	"a map",
 	"member",
 	"member value",
 	"menu",
 	"method",
 	"method or check",
 	"a mode name",
+	"a literal union whose wire form is not a string",
 	"null",
 	"a number",
 	"an object",
+	"a list of optional elements",
+	"a map with optional values",
 	"package segment",
 	"parameter",
 	"parameter default",
 	"precomputed function",
 	"record",
+	"a constant of a record or variant type",
+	"a by-value cycle of records through a stored method result",
+	"a variant that recurses through a case",
 	"refinement bound",
+	"a lookup method whose result holds a ref resolved at load",
+	"a read of self that is not a path of fields",
 	"show line",
 	"spread",
 	"stable value",
 	"a string",
 	"table",
 	"table entry",
+	"a table field",
 	"a template string",
 	"test",
 	"tone",
@@ -1906,7 +1960,7 @@ var Registry = []Def{
 	{
 		Code: "E8007", Severity: Error, Package: "ir",
 		Variants: []Variant{
-			{Args: []Arg{{Name: "out", Type: ArgTypePath}}, Template: "Go output {out} is under no root listed in go_module"},
+			{Args: []Arg{{Name: "out", Type: ArgTypePath}}, Template: "Go output {out} is under no root listed in go_module: map its root in project.canon go_module"},
 		},
 	},
 	{
@@ -1936,13 +1990,17 @@ var Registry = []Def{
 	{
 		Code: "E8011", Severity: Error, Package: "ir",
 		Variants: []Variant{
-			{Args: []Arg{{Name: "name", Type: ArgTypeText}, {Name: "target", Type: ArgTypeName}}, Template: "{name} is not a valid {target} identifier for @{target}(name:)"},
+			{Name: "override", Args: []Arg{{Name: "name", Type: ArgTypeText}, {Name: "target", Type: ArgTypeName}}, Template: "{name} is not a valid {target} identifier for @{target}(name:)"},
+			{Name: "unexported", Args: []Arg{{Name: "name", Type: ArgTypeText}}, Template: "{name} is not exported: an @go(name:) override starts with an upper-case letter"},
+			{Name: "derived", Args: []Arg{{Name: "name", Type: ArgTypeText}, {Name: "origin", Type: ArgTypeName}, {Name: "target", Type: ArgTypeName}}, Template: "{name}, the {target} name derived for {origin}, is not a valid identifier"},
+			{Name: "reserved", Args: []Arg{{Name: "name", Type: ArgTypeText}, {Name: "origin", Type: ArgTypeName}}, Template: "{name}, the C++ name derived for {origin}, is a keyword or a reserved name"},
 		},
 	},
 	{
 		Code: "E8012", Severity: Error, Package: "ir",
 		Variants: []Variant{
-			{Args: []Arg{{Name: "typ", Type: ArgTypeName}, {Name: "what", Type: ArgTypeType}}, Template: "{typ} cannot be emitted: {what} has no representation in generated code"},
+			{Name: "type", Args: []Arg{{Name: "typ", Type: ArgTypeName}, {Name: "what", Type: ArgTypeType}}, Template: "{typ} cannot be emitted: {what} has no representation in generated code"},
+			{Name: "define", Args: []Arg{{Name: "typ", Type: ArgTypeName}}, Template: "{typ} cannot be emitted: a load.defines table or record has no representation in generated code"},
 		},
 	},
 	{
@@ -1961,19 +2019,31 @@ var Registry = []Def{
 	{
 		Code: "E8015", Severity: Error, Package: "ir",
 		Variants: []Variant{
-			{Args: []Arg{{Name: "value", Type: ArgTypeName}, {Name: "typ", Type: ArgTypeType}}, Template: "{value} is a {typ}: data and embedded modes emit tables, keyed lists and records"},
+			{Args: []Arg{{Name: "value", Type: ArgTypeName}, {Name: "typ", Type: ArgTypeType}}, Template: "{value} has type {typ}: data and embedded modes emit tables, keyed lists and records"},
 		},
 	},
 	{
 		Code: "E8017", Severity: Error, Package: "ir",
 		Variants: []Variant{
-			{Args: []Arg{{Name: "branch", Type: ArgTypeName}, {Name: "alias", Type: ArgTypeName}, {Name: "typ", Type: ArgTypeType}}, Template: "branch {branch} of {alias} is a {typ}: dependent types may only have scalar, String, enum or ref branches"},
+			{Args: []Arg{{Name: "branch", Type: ArgTypeName}, {Name: "alias", Type: ArgTypeName}, {Name: "typ", Type: ArgTypeType}}, Template: "branch {branch} of {alias} has type {typ}: dependent types may only have scalar, String, enum or ref branches"},
 		},
 	},
 	{
 		Code: "E8018", Severity: Error, Package: "ir",
 		Variants: []Variant{
 			{Args: []Arg{{Name: "typ", Type: ArgTypeName}, {Name: "emit", Type: ArgTypeName}, {Name: "pkg", Type: ArgTypeName}}, Template: "{typ} is decoded from JSON by {emit}, but package {pkg} is emitted in baked mode"},
+		},
+	},
+	{
+		Code: "E8019", Severity: Error, Package: "ir",
+		Variants: []Variant{
+			{Args: []Arg{{Name: "target", Type: ArgTypeName}, {Name: "mode", Type: ArgTypeName}, {Name: "what", Type: ArgTypeKind}}, Template: "emit {target} in {mode} mode cannot generate {what}"},
+		},
+	},
+	{
+		Code: "E8020", Severity: Error, Package: "ir",
+		Variants: []Variant{
+			{Args: []Arg{{Name: "name", Type: ArgTypeName}}, Template: "constant {name} is -0.0, which a Go constant cannot hold: make it a let"},
 		},
 	},
 	{
@@ -2037,7 +2107,8 @@ var Registry = []Def{
 	{
 		Code: "E8151", Severity: Error, Package: "ir",
 		Variants: []Variant{
-			{Args: []Arg{{Name: "value", Type: ArgTypeName}, {Name: "typ", Type: ArgTypeType}}, Template: "value {value} of type {typ} has no wire form"},
+			{Name: "type", Args: []Arg{{Name: "value", Type: ArgTypeName}, {Name: "typ", Type: ArgTypeType}}, Template: "value {value} of type {typ} has no wire form"},
+			{Name: "define", Args: []Arg{{Name: "value", Type: ArgTypeName}}, Template: "value {value} is a load.defines table or record, which has no wire form"},
 		},
 	},
 	{
@@ -2111,13 +2182,13 @@ var Registry = []Def{
 	{
 		Code: "E9005", Severity: Error, Package: "ir",
 		Variants: []Variant{
-			{Args: []Arg{{Name: "expr", Type: ArgTypeExpr}, {Name: "typ", Type: ArgTypeType}}, Template: "{expr} is a {typ}: translated templates may only interpolate String, integer and enum values"},
+			{Args: []Arg{{Name: "expr", Type: ArgTypeExpr}, {Name: "typ", Type: ArgTypeType}}, Template: "{expr} has type {typ}: translated templates may only interpolate String, integer and enum values"},
 		},
 	},
 	{
 		Code: "E9006", Severity: Error, Package: "ir",
 		Variants: []Variant{
-			{Args: []Arg{{Name: "param", Type: ArgTypeName}, {Name: "fn", Type: ArgTypeName}, {Name: "typ", Type: ArgTypeType}}, Template: "parameter {param} of {fn} is a {typ}: translated functions take Bool, integers, Float, String, Duration and enums"},
+			{Args: []Arg{{Name: "param", Type: ArgTypeName}, {Name: "fn", Type: ArgTypeName}, {Name: "typ", Type: ArgTypeType}}, Template: "parameter {param} of {fn} has type {typ}: translated functions take Bool, integers, Float, String, Duration and enums"},
 		},
 	},
 	{
@@ -6066,7 +6137,7 @@ type codeE8007 struct{}
 // Def is the registry entry of E8007.
 func (codeE8007) Def() *Def { return &Registry[243] }
 
-// At reports: Go output {out} is under no root listed in go_module
+// At reports: Go output {out} is under no root listed in go_module: map its root in project.canon go_module
 func (codeE8007) At(span source.Span, out string) *Builder {
 	return newBuilder(&Registry[243], 0, span, out)
 }
@@ -6140,7 +6211,7 @@ func (codeE8010) At(span source.Span, enum string) *Builder {
 	return newBuilder(&Registry[246], 0, span, enum)
 }
 
-// E8011: an `@go`/`@cpp`/`@ts(name:)` that is not a valid identifier (CODEGEN.md §3.5).
+// E8011: an override or a derived name that is not a usable identifier in the target (CODEGEN.md §3.5).
 var E8011 codeE8011
 
 type codeE8011 struct{}
@@ -6148,9 +6219,24 @@ type codeE8011 struct{}
 // Def is the registry entry of E8011.
 func (codeE8011) Def() *Def { return &Registry[247] }
 
-// At reports: {name} is not a valid {target} identifier for @{target}(name:)
-func (codeE8011) At(span source.Span, name string, target string) *Builder {
+// AtOverride reports: {name} is not a valid {target} identifier for @{target}(name:)
+func (codeE8011) AtOverride(span source.Span, name string, target string) *Builder {
 	return newBuilder(&Registry[247], 0, span, name, target)
+}
+
+// AtUnexported reports: {name} is not exported: an @go(name:) override starts with an upper-case letter
+func (codeE8011) AtUnexported(span source.Span, name string) *Builder {
+	return newBuilder(&Registry[247], 1, span, name)
+}
+
+// AtDerived reports: {name}, the {target} name derived for {origin}, is not a valid identifier
+func (codeE8011) AtDerived(span source.Span, name string, origin string, target string) *Builder {
+	return newBuilder(&Registry[247], 2, span, name, origin, target)
+}
+
+// AtReserved reports: {name}, the C++ name derived for {origin}, is a keyword or a reserved name
+func (codeE8011) AtReserved(span source.Span, name string, origin string) *Builder {
+	return newBuilder(&Registry[247], 3, span, name, origin)
 }
 
 // E8012: an emitted type or value with no representation in generated code (CODEGEN.md §4.4).
@@ -6161,9 +6247,14 @@ type codeE8012 struct{}
 // Def is the registry entry of E8012.
 func (codeE8012) Def() *Def { return &Registry[248] }
 
-// At reports: {typ} cannot be emitted: {what} has no representation in generated code
-func (codeE8012) At(span source.Span, typ string, what TypeArg) *Builder {
+// AtType reports: {typ} cannot be emitted: {what} has no representation in generated code
+func (codeE8012) AtType(span source.Span, typ string, what TypeArg) *Builder {
 	return newBuilder(&Registry[248], 0, span, typ, what)
+}
+
+// AtDefine reports: {typ} cannot be emitted: a load.defines table or record has no representation in generated code
+func (codeE8012) AtDefine(span source.Span, typ string) *Builder {
+	return newBuilder(&Registry[248], 1, span, typ)
 }
 
 // E8013: an export fn that `data` mode cannot hold (CODEGEN.md §5.10).
@@ -6205,7 +6296,7 @@ type codeE8015 struct{}
 // Def is the registry entry of E8015.
 func (codeE8015) Def() *Def { return &Registry[251] }
 
-// At reports: {value} is a {typ}: data and embedded modes emit tables, keyed lists and records
+// At reports: {value} has type {typ}: data and embedded modes emit tables, keyed lists and records
 func (codeE8015) At(span source.Span, value string, typ TypeArg) *Builder {
 	return newBuilder(&Registry[251], 0, span, value, typ)
 }
@@ -6218,7 +6309,7 @@ type codeE8017 struct{}
 // Def is the registry entry of E8017.
 func (codeE8017) Def() *Def { return &Registry[252] }
 
-// At reports: branch {branch} of {alias} is a {typ}: dependent types may only have scalar, String, enum or ref branches
+// At reports: branch {branch} of {alias} has type {typ}: dependent types may only have scalar, String, enum or ref branches
 func (codeE8017) At(span source.Span, branch string, alias string, typ TypeArg) *Builder {
 	return newBuilder(&Registry[252], 0, span, branch, alias, typ)
 }
@@ -6236,17 +6327,43 @@ func (codeE8018) At(span source.Span, typ string, emit string, pkg string) *Buil
 	return newBuilder(&Registry[253], 0, span, typ, emit, pkg)
 }
 
+// E8019: an emit whose generator cannot produce a construct valid Canon allows (EVALUATION.md §1).
+var E8019 codeE8019
+
+type codeE8019 struct{}
+
+// Def is the registry entry of E8019.
+func (codeE8019) Def() *Def { return &Registry[254] }
+
+// At reports: emit {target} in {mode} mode cannot generate {what}
+func (codeE8019) At(span source.Span, target string, mode string, what Kind) *Builder {
+	return newBuilder(&Registry[254], 0, span, target, mode, what)
+}
+
+// E8020: a Go constant of -0.0, which Go constants cannot hold (CODEGEN.md §5.1).
+var E8020 codeE8020
+
+type codeE8020 struct{}
+
+// Def is the registry entry of E8020.
+func (codeE8020) Def() *Def { return &Registry[255] }
+
+// At reports: constant {name} is -0.0, which a Go constant cannot hold: make it a let
+func (codeE8020) At(span source.Span, name string) *Builder {
+	return newBuilder(&Registry[255], 0, span, name)
+}
+
 // E8101: an emitted integer outside the TypeScript safe range without `@ts(bigint)` (CODEGEN.md §4.1).
 var E8101 codeE8101
 
 type codeE8101 struct{}
 
 // Def is the registry entry of E8101.
-func (codeE8101) Def() *Def { return &Registry[254] }
+func (codeE8101) Def() *Def { return &Registry[256] }
 
 // At reports: {value} does not fit a TypeScript number; add @ts(bigint) to {field}
 func (codeE8101) At(span source.Span, value ValueArg, field string) *Builder {
-	return newBuilder(&Registry[254], 0, span, value, field)
+	return newBuilder(&Registry[256], 0, span, value, field)
 }
 
 // E8102: a value with no wire form for its field (not a whole unit, equals the `none` marker, repeated bits member) (WIRE.md §5.1).
@@ -6255,21 +6372,21 @@ var E8102 codeE8102
 type codeE8102 struct{}
 
 // Def is the registry entry of E8102.
-func (codeE8102) Def() *Def { return &Registry[255] }
+func (codeE8102) Def() *Def { return &Registry[257] }
 
 // AtUnit reports: {value} has no wire form for {field}: not a whole number of {unit}
 func (codeE8102) AtUnit(span source.Span, value ValueArg, field string, unit string) *Builder {
-	return newBuilder(&Registry[255], 0, span, value, field, unit)
+	return newBuilder(&Registry[257], 0, span, value, field, unit)
 }
 
 // AtNone reports: {value} has no wire form for {field}: it equals the none marker {marker}
 func (codeE8102) AtNone(span source.Span, value ValueArg, field string, marker string) *Builder {
-	return newBuilder(&Registry[255], 1, span, value, field, marker)
+	return newBuilder(&Registry[257], 1, span, value, field, marker)
 }
 
 // AtBits reports: {value} has no wire form for {field}: {member} appears twice in a bits set
 func (codeE8102) AtBits(span source.Span, value ValueArg, field string, member string) *Builder {
-	return newBuilder(&Registry[255], 2, span, value, field, member)
+	return newBuilder(&Registry[257], 2, span, value, field, member)
 }
 
 // E8103: a string or list longer than its fixed-size legacy C++ array (CODEGEN.md §7.8.1).
@@ -6278,11 +6395,11 @@ var E8103 codeE8103
 type codeE8103 struct{}
 
 // Def is the registry entry of E8103.
-func (codeE8103) Def() *Def { return &Registry[256] }
+func (codeE8103) Def() *Def { return &Registry[258] }
 
 // At reports: {member} ({ctype}) holds at most {capacity}; this value needs {length}
 func (codeE8103) At(span source.Span, member string, ctype string, capacity int64, length int64) *Builder {
-	return newBuilder(&Registry[256], 0, span, member, ctype, capacity, length)
+	return newBuilder(&Registry[258], 0, span, member, ctype, capacity, length)
 }
 
 // E8104: a TypeScript emit of a package with input fields (CODEGEN.md §5.12).
@@ -6291,11 +6408,11 @@ var E8104 codeE8104
 type codeE8104 struct{}
 
 // Def is the registry entry of E8104.
-func (codeE8104) Def() *Def { return &Registry[257] }
+func (codeE8104) Def() *Def { return &Registry[259] }
 
 // At reports: input field {field} cannot be emitted to TypeScript
 func (codeE8104) At(span source.Span, field string) *Builder {
-	return newBuilder(&Registry[257], 0, span, field)
+	return newBuilder(&Registry[259], 0, span, field)
 }
 
 // E8106: a value outside the range of its legacy C++ member (CODEGEN.md §7.8.1).
@@ -6304,11 +6421,11 @@ var E8106 codeE8106
 type codeE8106 struct{}
 
 // Def is the registry entry of E8106.
-func (codeE8106) Def() *Def { return &Registry[258] }
+func (codeE8106) Def() *Def { return &Registry[260] }
 
 // At reports: {value} does not fit {member} ({ctype})
 func (codeE8106) At(span source.Span, value ValueArg, member string, ctype string) *Builder {
-	return newBuilder(&Registry[258], 0, span, value, member, ctype)
+	return newBuilder(&Registry[260], 0, span, value, member, ctype)
 }
 
 // E8107: unknown or incompatible `@cpp(type:)` (CODEGEN.md §7.8.1).
@@ -6317,11 +6434,11 @@ var E8107 codeE8107
 type codeE8107 struct{}
 
 // Def is the registry entry of E8107.
-func (codeE8107) Def() *Def { return &Registry[259] }
+func (codeE8107) Def() *Def { return &Registry[261] }
 
 // At reports: unknown or incompatible @cpp(type: {ctype}) for {field} of type {typ}
 func (codeE8107) At(span source.Span, ctype string, field string, typ TypeArg) *Builder {
-	return newBuilder(&Registry[259], 0, span, ctype, field, typ)
+	return newBuilder(&Registry[261], 0, span, ctype, field, typ)
 }
 
 // E8108: a case of an inline variant on a legacy struct lacks `@cpp(value:)` (CODEGEN.md §7.8.1).
@@ -6330,11 +6447,11 @@ var E8108 codeE8108
 type codeE8108 struct{}
 
 // Def is the registry entry of E8108.
-func (codeE8108) Def() *Def { return &Registry[260] }
+func (codeE8108) Def() *Def { return &Registry[262] }
 
 // At reports: case {caseName} of {variant} needs @cpp(value:) to fill {member}
 func (codeE8108) At(span source.Span, caseName string, variant string, member string) *Builder {
-	return newBuilder(&Registry[260], 0, span, caseName, variant, member)
+	return newBuilder(&Registry[262], 0, span, caseName, variant, member)
 }
 
 // E8109: invalid `@cpp(struct:)` mapping (missing header, bad access, unmappable field) (CODEGEN.md §7.8).
@@ -6343,21 +6460,21 @@ var E8109 codeE8109
 type codeE8109 struct{}
 
 // Def is the registry entry of E8109.
-func (codeE8109) Def() *Def { return &Registry[261] }
+func (codeE8109) Def() *Def { return &Registry[263] }
 
 // AtHeader reports: @cpp(struct:) on {typ}: access {access} needs header
 func (codeE8109) AtHeader(span source.Span, typ string, access string) *Builder {
-	return newBuilder(&Registry[261], 0, span, typ, access)
+	return newBuilder(&Registry[263], 0, span, typ, access)
 }
 
 // AtAccess reports: @cpp(struct:) on {typ}: access must be fields, both or getters, not {access}
 func (codeE8109) AtAccess(span source.Span, typ string, access string) *Builder {
-	return newBuilder(&Registry[261], 1, span, typ, access)
+	return newBuilder(&Registry[263], 1, span, typ, access)
 }
 
 // AtField reports: @cpp(struct:) on {typ}: field {field} cannot map onto a legacy struct (a map, a non-inline variant, a nested record or a list of records)
 func (codeE8109) AtField(span source.Span, typ string, field string) *Builder {
-	return newBuilder(&Registry[261], 2, span, typ, field)
+	return newBuilder(&Registry[263], 2, span, typ, field)
 }
 
 // E8150: `emit json` file mode with other than one value (WIRE.md §8.1).
@@ -6366,11 +6483,11 @@ var E8150 codeE8150
 type codeE8150 struct{}
 
 // Def is the registry entry of E8150.
-func (codeE8150) Def() *Def { return &Registry[262] }
+func (codeE8150) Def() *Def { return &Registry[264] }
 
 // At reports: emit json out "{out}" is a file but values has {n} elements
 func (codeE8150) At(span source.Span, out string, n int64) *Builder {
-	return newBuilder(&Registry[262], 0, span, out, n)
+	return newBuilder(&Registry[264], 0, span, out, n)
 }
 
 // E8151: a value with no wire form (`Range`, function) emitted to JSON (WIRE.md §5.9).
@@ -6379,11 +6496,16 @@ var E8151 codeE8151
 type codeE8151 struct{}
 
 // Def is the registry entry of E8151.
-func (codeE8151) Def() *Def { return &Registry[263] }
+func (codeE8151) Def() *Def { return &Registry[265] }
 
-// At reports: value {value} of type {typ} has no wire form
-func (codeE8151) At(span source.Span, value string, typ TypeArg) *Builder {
-	return newBuilder(&Registry[263], 0, span, value, typ)
+// AtType reports: value {value} of type {typ} has no wire form
+func (codeE8151) AtType(span source.Span, value string, typ TypeArg) *Builder {
+	return newBuilder(&Registry[265], 0, span, value, typ)
+}
+
+// AtDefine reports: value {value} is a load.defines table or record, which has no wire form
+func (codeE8151) AtDefine(span source.Span, value string) *Builder {
+	return newBuilder(&Registry[265], 1, span, value)
 }
 
 // E8152: two outputs of a build with the same path, or paths differing only in letter case (WIRE.md §8.1).
@@ -6392,11 +6514,11 @@ var E8152 codeE8152
 type codeE8152 struct{}
 
 // Def is the registry entry of E8152.
-func (codeE8152) Def() *Def { return &Registry[264] }
+func (codeE8152) Def() *Def { return &Registry[266] }
 
 // At reports: outputs collide: {a} and {b}
 func (codeE8152) At(span source.Span, a string, b string) *Builder {
-	return newBuilder(&Registry[264], 0, span, a, b)
+	return newBuilder(&Registry[266], 0, span, a, b)
 }
 
 // E8153: a `data`-mode or `@reload` value not written by the package's `emit json` as `<value>.json` (WIRE.md §8.1).
@@ -6405,21 +6527,21 @@ var E8153 codeE8153
 type codeE8153 struct{}
 
 // Def is the registry entry of E8153.
-func (codeE8153) Def() *Def { return &Registry[265] }
+func (codeE8153) Def() *Def { return &Registry[267] }
 
 // AtNotWritten reports: {value} is emitted in data mode but not written by emit json
 func (codeE8153) AtNotWritten(span source.Span, value string) *Builder {
-	return newBuilder(&Registry[265], 0, span, value)
+	return newBuilder(&Registry[267], 0, span, value)
 }
 
 // AtFileName reports: {value} is emitted in data mode but its file must be {value}.json
 func (codeE8153) AtFileName(span source.Span, value string) *Builder {
-	return newBuilder(&Registry[265], 1, span, value)
+	return newBuilder(&Registry[267], 1, span, value)
 }
 
 // AtDirectory reports: {value} is emitted in data mode but @reload files must share a directory
 func (codeE8153) AtDirectory(span source.Span, value string) *Builder {
-	return newBuilder(&Registry[265], 2, span, value)
+	return newBuilder(&Registry[267], 2, span, value)
 }
 
 // E8201: `@reload` on data mapped to a legacy struct in `fields` or `both` mode (CODEGEN.md §5.11).
@@ -6428,11 +6550,11 @@ var E8201 codeE8201
 type codeE8201 struct{}
 
 // Def is the registry entry of E8201.
-func (codeE8201) Def() *Def { return &Registry[266] }
+func (codeE8201) Def() *Def { return &Registry[268] }
 
 // At reports: @reload on {value}: {typ} maps onto legacy struct {legacy} in {access} mode, whose pointers legacy code keeps
 func (codeE8201) At(span source.Span, value string, typ string, legacy string, access string) *Builder {
-	return newBuilder(&Registry[266], 0, span, value, typ, legacy, access)
+	return newBuilder(&Registry[268], 0, span, value, typ, legacy, access)
 }
 
 // E8202: `@reload` on a value emitted in a mode that has no file to reload (CODEGEN.md §5.11).
@@ -6441,11 +6563,11 @@ var E8202 codeE8202
 type codeE8202 struct{}
 
 // Def is the registry entry of E8202.
-func (codeE8202) Def() *Def { return &Registry[267] }
+func (codeE8202) Def() *Def { return &Registry[269] }
 
 // At reports: @reload on {value}: the {target} emit is in {mode} mode, which has no file to reload
 func (codeE8202) At(span source.Span, value string, target string, mode string) *Builder {
-	return newBuilder(&Registry[267], 0, span, value, target, mode)
+	return newBuilder(&Registry[269], 0, span, value, target, mode)
 }
 
 // E8301: embedded data failed to decode (signalled at run time) (CODEGEN.md §5.9).
@@ -6454,7 +6576,7 @@ var E8301 codeE8301
 type codeE8301 struct{}
 
 // Def is the registry entry of E8301.
-func (codeE8301) Def() *Def { return &Registry[268] }
+func (codeE8301) Def() *Def { return &Registry[270] }
 
 // E8302: an input getter called before `LoadInputs` (signalled at run time) (CODEGEN.md §5.12).
 var E8302 codeE8302
@@ -6462,7 +6584,7 @@ var E8302 codeE8302
 type codeE8302 struct{}
 
 // Def is the registry entry of E8302.
-func (codeE8302) Def() *Def { return &Registry[269] }
+func (codeE8302) Def() *Def { return &Registry[271] }
 
 // E8303: an integer outside the TypeScript safe range in translated code (signalled at run time) (CODEGEN.md §8.2).
 var E8303 codeE8303
@@ -6470,7 +6592,7 @@ var E8303 codeE8303
 type codeE8303 struct{}
 
 // Def is the registry entry of E8303.
-func (codeE8303) Def() *Def { return &Registry[270] }
+func (codeE8303) Def() *Def { return &Registry[272] }
 
 // E9001: a construct outside the portable subset in a translated function (CONFORMANCE.md §2.2).
 var E9001 codeE9001
@@ -6478,11 +6600,11 @@ var E9001 codeE9001
 type codeE9001 struct{}
 
 // Def is the registry entry of E9001.
-func (codeE9001) Def() *Def { return &Registry[271] }
+func (codeE9001) Def() *Def { return &Registry[273] }
 
 // At reports: {construct} is not allowed in translated function {fn}: it is outside the portable subset
 func (codeE9001) At(span source.Span, construct source.Span, fn string) *Builder {
-	return newBuilder(&Registry[271], 0, span, construct, fn)
+	return newBuilder(&Registry[273], 0, span, construct, fn)
 }
 
 // E9002: a lookup table over 65 536 cells (CONFORMANCE.md §8 (CODEGEN.md §5.10)).
@@ -6491,11 +6613,11 @@ var E9002 codeE9002
 type codeE9002 struct{}
 
 // Def is the registry entry of E9002.
-func (codeE9002) Def() *Def { return &Registry[272] }
+func (codeE9002) Def() *Def { return &Registry[274] }
 
 // At reports: lookup table of {fn} would have {n} cells (limit 65536)
 func (codeE9002) At(span source.Span, fn string, n int64) *Builder {
-	return newBuilder(&Registry[272], 0, span, fn, n)
+	return newBuilder(&Registry[274], 0, span, fn, n)
 }
 
 // E9003: an optional parameter in an export fn with parameters (CONFORMANCE.md §2.1).
@@ -6504,11 +6626,11 @@ var E9003 codeE9003
 type codeE9003 struct{}
 
 // Def is the registry entry of E9003.
-func (codeE9003) Def() *Def { return &Registry[273] }
+func (codeE9003) Def() *Def { return &Registry[275] }
 
 // At reports: parameter {param} of export fn {fn} is optional
 func (codeE9003) At(span source.Span, param string, fn string) *Builder {
-	return newBuilder(&Registry[273], 0, span, param, fn)
+	return newBuilder(&Registry[275], 0, span, param, fn)
 }
 
 // E9004: a translated function returns a type that is not allowed (CONFORMANCE.md §2.1).
@@ -6517,11 +6639,11 @@ var E9004 codeE9004
 type codeE9004 struct{}
 
 // Def is the registry entry of E9004.
-func (codeE9004) Def() *Def { return &Registry[274] }
+func (codeE9004) Def() *Def { return &Registry[276] }
 
 // At reports: translated function {fn} returns {typ}: only scalars, strings, enums and refs are allowed
 func (codeE9004) At(span source.Span, fn string, typ TypeArg) *Builder {
-	return newBuilder(&Registry[274], 0, span, fn, typ)
+	return newBuilder(&Registry[276], 0, span, fn, typ)
 }
 
 // E9005: a `Float` or `Duration` interpolated in a translated template (CONFORMANCE.md §2.2).
@@ -6530,11 +6652,11 @@ var E9005 codeE9005
 type codeE9005 struct{}
 
 // Def is the registry entry of E9005.
-func (codeE9005) Def() *Def { return &Registry[275] }
+func (codeE9005) Def() *Def { return &Registry[277] }
 
-// At reports: {expr} is a {typ}: translated templates may only interpolate String, integer and enum values
+// At reports: {expr} has type {typ}: translated templates may only interpolate String, integer and enum values
 func (codeE9005) At(span source.Span, expr source.Span, typ TypeArg) *Builder {
-	return newBuilder(&Registry[275], 0, span, expr, typ)
+	return newBuilder(&Registry[277], 0, span, expr, typ)
 }
 
 // E9006: a translated function parameter of a type that is not allowed (CONFORMANCE.md §2.1).
@@ -6543,11 +6665,11 @@ var E9006 codeE9006
 type codeE9006 struct{}
 
 // Def is the registry entry of E9006.
-func (codeE9006) Def() *Def { return &Registry[276] }
+func (codeE9006) Def() *Def { return &Registry[278] }
 
-// At reports: parameter {param} of {fn} is a {typ}: translated functions take Bool, integers, Float, String, Duration and enums
+// At reports: parameter {param} of {fn} has type {typ}: translated functions take Bool, integers, Float, String, Duration and enums
 func (codeE9006) At(span source.Span, param string, fn string, typ TypeArg) *Builder {
-	return newBuilder(&Registry[276], 0, span, param, fn, typ)
+	return newBuilder(&Registry[278], 0, span, param, fn, typ)
 }
 
 // E9007: a refinement on a translated parameter or result that cannot be checked at run time (CONFORMANCE.md §2.1).
@@ -6556,16 +6678,16 @@ var E9007 codeE9007
 type codeE9007 struct{}
 
 // Def is the registry entry of E9007.
-func (codeE9007) Def() *Def { return &Registry[277] }
+func (codeE9007) Def() *Def { return &Registry[279] }
 
 // AtParam reports: refinement {refinement} of parameter {param} of {fn} cannot be checked at run time
 func (codeE9007) AtParam(span source.Span, refinement source.Span, param string, fn string) *Builder {
-	return newBuilder(&Registry[277], 0, span, refinement, param, fn)
+	return newBuilder(&Registry[279], 0, span, refinement, param, fn)
 }
 
 // AtResult reports: refinement {refinement} of the result of {fn} cannot be checked at run time
 func (codeE9007) AtResult(span source.Span, refinement source.Span, fn string) *Builder {
-	return newBuilder(&Registry[277], 1, span, refinement, fn)
+	return newBuilder(&Registry[279], 1, span, refinement, fn)
 }
 
 // E9008: a translated method no test of its package calls (CONFORMANCE.md §6.1).
@@ -6574,11 +6696,11 @@ var E9008 codeE9008
 type codeE9008 struct{}
 
 // Def is the registry entry of E9008.
-func (codeE9008) Def() *Def { return &Registry[278] }
+func (codeE9008) Def() *Def { return &Registry[280] }
 
 // At reports: translated method {typ}.{fn} is called by no test of package {pkg}: add one, it gives the conformance test its receiver
 func (codeE9008) At(span source.Span, typ string, fn string, pkg string) *Builder {
-	return newBuilder(&Registry[278], 0, span, typ, fn, pkg)
+	return newBuilder(&Registry[280], 0, span, typ, fn, pkg)
 }
 
 // E9009: a conformance vector exceeds its step cap or the call-depth limit (CONFORMANCE.md §6.5).
@@ -6587,16 +6709,16 @@ var E9009 codeE9009
 type codeE9009 struct{}
 
 // Def is the registry entry of E9009.
-func (codeE9009) Def() *Def { return &Registry[279] }
+func (codeE9009) Def() *Def { return &Registry[281] }
 
 // AtSteps reports: conformance vector {n} of {fn} exceeds {limit} steps
 func (codeE9009) AtSteps(span source.Span, n int64, fn string, limit int64) *Builder {
-	return newBuilder(&Registry[279], 0, span, n, fn, limit)
+	return newBuilder(&Registry[281], 0, span, n, fn, limit)
 }
 
 // AtDepth reports: conformance vector {n} of {fn} exceeds the call-depth limit
 func (codeE9009) AtDepth(span source.Span, n int64, fn string) *Builder {
-	return newBuilder(&Registry[279], 1, span, n, fn)
+	return newBuilder(&Registry[281], 1, span, n, fn)
 }
 
 // W1001: a doc comment attaches to nothing (blank line, wrong position, after code) (GRAMMAR.md §9.1).
@@ -6605,11 +6727,11 @@ var W1001 codeW1001
 type codeW1001 struct{}
 
 // Def is the registry entry of W1001.
-func (codeW1001) Def() *Def { return &Registry[280] }
+func (codeW1001) Def() *Def { return &Registry[282] }
 
 // At reports: doc comment is not attached to anything
 func (codeW1001) At(span source.Span) *Builder {
-	return newBuilder(&Registry[280], 0, span)
+	return newBuilder(&Registry[282], 0, span)
 }
 
 // W1002: a public type, field or `export fn` has no doc comment (GRAMMAR.md §9.1).
@@ -6618,11 +6740,11 @@ var W1002 codeW1002
 type codeW1002 struct{}
 
 // Def is the registry entry of W1002.
-func (codeW1002) Def() *Def { return &Registry[281] }
+func (codeW1002) Def() *Def { return &Registry[283] }
 
 // At reports: {kind} {name} has no doc comment
 func (codeW1002) At(span source.Span, kind Kind, name string) *Builder {
-	return newBuilder(&Registry[281], 0, span, kind, name)
+	return newBuilder(&Registry[283], 0, span, kind, name)
 }
 
 // W1003: a declared name breaks its naming convention (GRAMMAR.md §9.2).
@@ -6631,11 +6753,11 @@ var W1003 codeW1003
 type codeW1003 struct{}
 
 // Def is the registry entry of W1003.
-func (codeW1003) Def() *Def { return &Registry[282] }
+func (codeW1003) Def() *Def { return &Registry[284] }
 
 // At reports: {kind} name "{name}" should be {convention}
 func (codeW1003) At(span source.Span, kind Kind, name string, convention Kind) *Builder {
-	return newBuilder(&Registry[282], 0, span, kind, name, convention)
+	return newBuilder(&Registry[284], 0, span, kind, name, convention)
 }
 
 // W1604: a field named `key` or `index` hides the view's magic name (VIEWMODEL.md §3.4).
@@ -6644,11 +6766,11 @@ var W1604 codeW1604
 type codeW1604 struct{}
 
 // Def is the registry entry of W1604.
-func (codeW1604) Def() *Def { return &Registry[283] }
+func (codeW1604) Def() *Def { return &Registry[285] }
 
 // At reports: field {name} of {typ} hides the view name {name}: {{{name}}} reads the field
 func (codeW1604) At(span source.Span, name string, typ string) *Builder {
-	return newBuilder(&Registry[283], 0, span, name, typ)
+	return newBuilder(&Registry[285], 0, span, name, typ)
 }
 
 // W1640: an editable public value has no menu (packages with an `emit view` only) (VIEWMODEL.md §10).
@@ -6657,11 +6779,11 @@ var W1640 codeW1640
 type codeW1640 struct{}
 
 // Def is the registry entry of W1640.
-func (codeW1640) Def() *Def { return &Registry[284] }
+func (codeW1640) Def() *Def { return &Registry[286] }
 
 // At reports: value {value} has no menu: the studio lists it under "No menu"
 func (codeW1640) At(span source.Span, value string) *Builder {
-	return newBuilder(&Registry[284], 0, span, value)
+	return newBuilder(&Registry[286], 0, span, value)
 }
 
 // W1641: a required field without a default is `hidden` (VIEWMODEL.md §5.5).
@@ -6670,11 +6792,11 @@ var W1641 codeW1641
 type codeW1641 struct{}
 
 // Def is the registry entry of W1641.
-func (codeW1641) Def() *Def { return &Registry[285] }
+func (codeW1641) Def() *Def { return &Registry[287] }
 
 // At reports: required field {field} is hidden: new values cannot be completed in the studio
 func (codeW1641) At(span source.Span, field string) *Builder {
-	return newBuilder(&Registry[285], 0, span, field)
+	return newBuilder(&Registry[287], 0, span, field)
 }
 
 // W1642: a deprecated field is named in a group (VIEWMODEL.md §5.2).
@@ -6683,11 +6805,11 @@ var W1642 codeW1642
 type codeW1642 struct{}
 
 // Def is the registry entry of W1642.
-func (codeW1642) Def() *Def { return &Registry[286] }
+func (codeW1642) Def() *Def { return &Registry[288] }
 
 // At reports: deprecated field {field} is named in group {group}; it is shown under "Unused fields"
 func (codeW1642) At(span source.Span, field string, group string) *Builder {
-	return newBuilder(&Registry[286], 0, span, field, group)
+	return newBuilder(&Registry[288], 0, span, field, group)
 }
 
 // W1701: a package that emits a view has translations missing in a language (one per package and language) (I18N.md §5).
@@ -6696,16 +6818,16 @@ var W1701 codeW1701
 type codeW1701 struct{}
 
 // Def is the registry entry of W1701.
-func (codeW1701) Def() *Def { return &Registry[287] }
+func (codeW1701) Def() *Def { return &Registry[289] }
 
 // AtOne reports: 1 text of package {pkg} has no {lang} translation (canon i18n status {pkg} --lang {lang} --list)
 func (codeW1701) AtOne(span source.Span, pkg string, lang string) *Builder {
-	return newBuilder(&Registry[287], 0, span, pkg, lang)
+	return newBuilder(&Registry[289], 0, span, pkg, lang)
 }
 
 // AtMany reports: {n} texts of package {pkg} have no {lang} translation (canon i18n status {pkg} --lang {lang} --list)
 func (codeW1701) AtMany(span source.Span, n int64, pkg string, lang string) *Builder {
-	return newBuilder(&Registry[287], 1, span, n, pkg, lang)
+	return newBuilder(&Registry[289], 1, span, n, pkg, lang)
 }
 
 // W3301: use of a deprecated field, member or entry in Canon source (TYPES.md §16).
@@ -6714,16 +6836,16 @@ var W3301 codeW3301
 type codeW3301 struct{}
 
 // Def is the registry entry of W3301.
-func (codeW3301) Def() *Def { return &Registry[288] }
+func (codeW3301) Def() *Def { return &Registry[290] }
 
 // AtPlain reports: {name} is deprecated
 func (codeW3301) AtPlain(span source.Span, name string) *Builder {
-	return newBuilder(&Registry[288], 0, span, name)
+	return newBuilder(&Registry[290], 0, span, name)
 }
 
 // AtReason reports: {name} is deprecated: {reason}
 func (codeW3301) AtReason(span source.Span, name string, reason string) *Builder {
-	return newBuilder(&Registry[288], 1, span, name, reason)
+	return newBuilder(&Registry[290], 1, span, name, reason)
 }
 
 // W3401: `!`, `?.`, `??` or a `none` test on a value that is never `none` (TYPES.md §6.5).
@@ -6732,11 +6854,11 @@ var W3401 codeW3401
 type codeW3401 struct{}
 
 // Def is the registry entry of W3401.
-func (codeW3401) Def() *Def { return &Registry[289] }
+func (codeW3401) Def() *Def { return &Registry[291] }
 
 // At reports: {expr} is never none: {op} has no effect
 func (codeW3401) At(span source.Span, expr source.Span, op string) *Builder {
-	return newBuilder(&Registry[289], 0, span, expr, op)
+	return newBuilder(&Registry[291], 0, span, expr, op)
 }
 
 // W3601: an unreachable `_` arm (TYPES.md §12.6).
@@ -6745,11 +6867,11 @@ var W3601 codeW3601
 type codeW3601 struct{}
 
 // Def is the registry entry of W3601.
-func (codeW3601) Def() *Def { return &Registry[290] }
+func (codeW3601) Def() *Def { return &Registry[292] }
 
 // At reports: _ is unreachable: every case is covered
 func (codeW3601) At(span source.Span) *Builder {
-	return newBuilder(&Registry[290], 0, span)
+	return newBuilder(&Registry[292], 0, span)
 }
 
 // W5001: a one-line `warn` is false (EVALUATION.md §8.3).
@@ -6758,11 +6880,11 @@ var W5001 codeW5001
 type codeW5001 struct{}
 
 // Def is the registry entry of W5001.
-func (codeW5001) Def() *Def { return &Registry[291] }
+func (codeW5001) Def() *Def { return &Registry[293] }
 
 // At reports: {message}
 func (codeW5001) At(span source.Span, message string) *Builder {
-	return newBuilder(&Registry[291], 0, span, message)
+	return newBuilder(&Registry[293], 0, span, message)
 }
 
 // W5002: `warn(at, message)` in a check block (EVALUATION.md §8.3).
@@ -6771,11 +6893,11 @@ var W5002 codeW5002
 type codeW5002 struct{}
 
 // Def is the registry entry of W5002.
-func (codeW5002) Def() *Def { return &Registry[292] }
+func (codeW5002) Def() *Def { return &Registry[294] }
 
 // At reports: {message}
 func (codeW5002) At(span source.Span, message string) *Builder {
-	return newBuilder(&Registry[292], 0, span, message)
+	return newBuilder(&Registry[294], 0, span, message)
 }
 
 // W6006: stable values not yet in `canon.lock` (`canon lock check` only) (LOCK.md §8).
@@ -6784,16 +6906,16 @@ var W6006 codeW6006
 type codeW6006 struct{}
 
 // Def is the registry entry of W6006.
-func (codeW6006) Def() *Def { return &Registry[293] }
+func (codeW6006) Def() *Def { return &Registry[295] }
 
 // AtOne reports: 1 stable value is not in canon.lock yet: run canon build
 func (codeW6006) AtOne(span source.Span) *Builder {
-	return newBuilder(&Registry[293], 0, span)
+	return newBuilder(&Registry[295], 0, span)
 }
 
 // AtMany reports: {n} stable values are not in canon.lock yet: run canon build
 func (codeW6006) AtMany(span source.Span, n int64) *Builder {
-	return newBuilder(&Registry[293], 1, span, n)
+	return newBuilder(&Registry[295], 1, span, n)
 }
 
 // W7101: `load.defines` skipped defines it cannot evaluate (once per file) (WIRE.md §6.8).
@@ -6802,16 +6924,16 @@ var W7101 codeW7101
 type codeW7101 struct{}
 
 // Def is the registry entry of W7101.
-func (codeW7101) Def() *Def { return &Registry[294] }
+func (codeW7101) Def() *Def { return &Registry[296] }
 
 // AtOne reports: 1 define skipped in {path} ({name}): not a supported integer expression
 func (codeW7101) AtOne(span source.Span, path string, name string) *Builder {
-	return newBuilder(&Registry[294], 0, span, path, name)
+	return newBuilder(&Registry[296], 0, span, path, name)
 }
 
 // AtMany reports: {n} defines skipped in {path} (first: {name}): not a supported integer expression
 func (codeW7101) AtMany(span source.Span, n int64, path string, name string) *Builder {
-	return newBuilder(&Registry[294], 1, span, n, path, name)
+	return newBuilder(&Registry[296], 1, span, n, path, name)
 }
 
 // W7107: a glob matches no file (WIRE.md §6.5).
@@ -6820,11 +6942,11 @@ var W7107 codeW7107
 type codeW7107 struct{}
 
 // Def is the registry entry of W7107.
-func (codeW7107) Def() *Def { return &Registry[295] }
+func (codeW7107) Def() *Def { return &Registry[297] }
 
 // At reports: glob {pattern} matches no file
 func (codeW7107) At(span source.Span, pattern string) *Builder {
-	return newBuilder(&Registry[295], 0, span, pattern)
+	return newBuilder(&Registry[297], 0, span, pattern)
 }
 
 // W7115: a symbolic link pointing outside the roots is skipped (WIRE.md §6.5).
@@ -6833,11 +6955,11 @@ var W7115 codeW7115
 type codeW7115 struct{}
 
 // Def is the registry entry of W7115.
-func (codeW7115) Def() *Def { return &Registry[296] }
+func (codeW7115) Def() *Def { return &Registry[298] }
 
 // At reports: symbolic link {path} points outside the roots; skipped
 func (codeW7115) At(span source.Span, path string) *Builder {
-	return newBuilder(&Registry[296], 0, span, path)
+	return newBuilder(&Registry[298], 0, span, path)
 }
 
 // W8006: a generated C++ name is a common platform macro (CODEGEN.md §3.5).
@@ -6846,9 +6968,9 @@ var W8006 codeW8006
 type codeW8006 struct{}
 
 // Def is the registry entry of W8006.
-func (codeW8006) Def() *Def { return &Registry[297] }
+func (codeW8006) Def() *Def { return &Registry[299] }
 
 // At reports: C++ name {name} (from {item}) is a macro in common platform headers
 func (codeW8006) At(span source.Span, name string, item string) *Builder {
-	return newBuilder(&Registry[297], 0, span, name, item)
+	return newBuilder(&Registry[299], 0, span, name, item)
 }

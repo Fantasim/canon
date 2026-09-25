@@ -1,0 +1,36 @@
+Decision 37, clean: gen/go's data loader reads another package's pairs record slot by slot, with no decoder (ForeignPairsField and ForeignDataRecord are refused elsewhere).
+-- b/b.canon --
+package b
+
+/// A bonus.
+record Bonus {
+  /// The stat.
+  stat: Int
+  /// The amount.
+  amount: Int
+}
+
+emit go { out: "@features/b", package: "b", mode: data }
+emit json { out: "out/b/" }
+-- a/a.canon --
+package a
+
+import b { Bonus }
+
+/// An item.
+record Item {
+  /// Its bonuses.
+  stats: [Bonus](..=2) = [] @json(pairs: ["s{i}", "a{i}"])
+}
+
+/// The items.
+let items: table Item = {
+  one { stats: [{ stat: 1, amount: 2 }] }
+}
+
+emit go { out: "@features/a", package: "a", mode: data }
+emit json { out: "out/a/" }
+-- a.items.json --
+{"one": {"s0": 1, "a0": 2}}
+-- findings.txt --
+0 errors, 0 warnings in 2 packages (…)

@@ -1,0 +1,38 @@
+EVALUATION.md §1, CODEGEN.md §5.6: a field of another package's dependent type is DependentType at the field, not at the value holding its record, and not CrossPackageBakedValue; the type's own package reports its declaration.
+-- b/b.canon --
+package b
+
+/// A kind.
+enum K { n, s }
+
+/// A payload.
+type P(k: K) = match k { n => Int, s => String }
+
+emit go { out: "@features/b", package: "b" }
+-- a/a.canon --
+package a
+
+import b { K, P }
+
+/// A rule.
+record R {
+  /// Its kind.
+  k: K
+  /// Its payload.
+  v: P(k)
+}
+
+/// The rule.
+let r: R = { k: n, v: 1 }
+
+emit go { out: "@features/a", package: "a" }
+-- a.r.json --
+{"k": "n", "v": 1}
+-- findings.txt --
+error[E8019]  a/a.canon:10:3
+  emit go in baked mode cannot generate a dependent type
+
+error[E8019]  b/b.canon:7:6
+  emit go in baked mode cannot generate a dependent type
+
+2 errors, 0 warnings in 2 packages (…)

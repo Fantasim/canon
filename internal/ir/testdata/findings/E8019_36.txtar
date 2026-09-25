@@ -1,0 +1,33 @@
+EVALUATION.md §1, log-2026-09-24 "E8019 closing calls": in data mode a map of optional values a loader reads is MapField alone; one it does not read (Loose, held by no value) is OptionalMapValue.
+-- a/a.canon --
+package a
+
+/// A row.
+record Row {
+  /// The cells.
+  cells: {String: Int?}
+}
+
+/// Held by no value.
+record Loose {
+  /// The cells.
+  cells: {String: Int?}
+}
+
+/// The rows.
+let rows: table Row = {
+  one { cells: {"a": 1} }
+}
+
+emit go { out: "@features/a", package: "a", mode: data }
+emit json { out: "out/" }
+-- a.rows.json --
+{"one": {"cells": {"a": 1}}}
+-- findings.txt --
+error[E8019]  a/a.canon:6:3
+  emit go in data mode cannot generate a map
+
+error[E8019]  a/a.canon:12:3
+  emit go in data mode cannot generate a map with optional values
+
+2 errors, 0 warnings in 1 package (…)

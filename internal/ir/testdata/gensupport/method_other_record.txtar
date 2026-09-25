@@ -1,0 +1,23 @@
+Decision 37, clean: a stored method returning another record makes no cycle (RecordCycleThroughMethod).
+-- a/a.canon --
+package a
+
+/// A stat.
+record Stat {
+  /// Its value.
+  v: Int
+}
+
+/// A node.
+record Node {
+  /// Its value.
+  v: Int
+
+  /// Its stat.
+  export fn stat(self) -> Stat { return { v: v } }
+}
+
+emit cpp { out: "@features/a", namespace: "a", mode: data }
+emit json { out: "out/a/" }
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

@@ -1,7 +1,7 @@
 ADR-0003, DECISIONS 204: a supported load first forced inside a vector (settled() reads a's items)
 reports its finding into the vector's throwaway bags; its error fails the precomputed read, so
 the call gives no vector, and nothing is reported. Check only: gen/cpp refuses a translated body
-that reads a precomputed method of self until ir plans it in stage E.
+that reads a precomputed method of self, and stage E reports it (E8019 SelfReadNotAPath, decision 37).
 -- project.canon --
 project acme {
   canon: "0.1"
@@ -53,4 +53,7 @@ emit cpp { out: "out/", namespace: "acme::gen", mode: data }
 b
 -- check-only --
 -- build.txt --
-0 errors, 0 warnings in 1 package (…)
+error[E8019]  b/b.canon:15:13
+  emit cpp in data mode cannot generate a read of self that is not a path of fields
+
+1 error, 0 warnings in 1 package (…)

@@ -1,0 +1,27 @@
+EVALUATION.md §1, CODEGEN.md §5.1: constants are written in every mode, so a constant holding a record of another package is CrossPackageBakedValue in data mode too.
+-- b/b.canon --
+package b
+
+/// A point.
+record Point {
+  /// Across.
+  x: Int
+}
+
+emit go { out: "@features/b", package: "b", mode: data }
+-- a/a.canon --
+package a
+
+import b { Point }
+
+/// The origins.
+const origins = [Point { x: 0 }]
+
+emit go { out: "@features/a", package: "a", mode: data }
+-- a.origins.json --
+[{"x": 0}]
+-- findings.txt --
+error[E8019]  a/a.canon:6:7
+  emit go in data mode cannot generate a value of a record, variant or table of another package
+
+1 error, 0 warnings in 2 packages (…)

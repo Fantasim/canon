@@ -1,0 +1,10 @@
+Decision 37, clean: a positive zero constant in baked go (only -0.0 is refused).
+-- a/a.canon --
+package a
+
+/// Zero.
+const Z = 0.0
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

@@ -1,0 +1,30 @@
+EVALUATION.md §1, CODEGEN.md §5.9: gen/go's data loader refuses a map in a class it decodes, one an emitted value holds; Loose, held by no value, is not decoded and is fine.
+-- a/a.canon --
+package a
+
+/// A row.
+record Row {
+  /// The cells.
+  cells: {String: Int}
+}
+
+/// Not held by any value.
+record Loose {
+  /// The cells.
+  cells: {String: Int}
+}
+
+/// The rows.
+let rows: table Row = {
+  one { cells: {"a": 1} }
+}
+
+emit go { out: "@features/a", package: "a", mode: data }
+emit json { out: "out/" }
+-- a.rows.json --
+{"one": {"cells": {"a": 1}}}
+-- findings.txt --
+error[E8019]  a/a.canon:6:3
+  emit go in data mode cannot generate a map
+
+1 error, 0 warnings in 1 package (…)

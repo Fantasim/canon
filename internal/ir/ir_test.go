@@ -159,7 +159,7 @@ type Payload(t: Thing) = match t.k {
 /// A thing.
 let thing: Thing = { k: alpha }
 
-emit go { out: "@features/a", package: "a" }
+emit ts { out: "out/a.ts" }
 `))
 	w.calls = w.fixtureCalls
 	pkgs := w.build(t)

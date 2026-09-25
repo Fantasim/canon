@@ -1,0 +1,13 @@
+Decision 37, clean: a dependent type in a mode no generator writes yet (go types).
+-- a/a.canon --
+package a
+
+/// A kind.
+enum K { one, two }
+
+/// A payload.
+type P(k: K) = match k { one => Int, two => String }
+
+emit go { out: "@features/a", package: "a", mode: types }
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

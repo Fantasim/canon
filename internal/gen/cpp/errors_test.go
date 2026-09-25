@@ -55,35 +55,53 @@ func refusals() []struct {
 		{"types mode", func(_ *ir.Package, e *ir.Emit) { e.Mode = ir.ModeTypes }, cppgen.ErrUnsupported},
 		{"baked mode", func(_ *ir.Package, e *ir.Emit) { e.Mode = ir.ModeBaked }, cppgen.ErrUnsupported},
 		{"an input field", withField(&ir.Field{Name: "key", Type: tString, Input: &types.Input{Env: "KEY"}}), cppgen.ErrUnsupported},
-		{"a dependent type", func(p *ir.Package, _ *ir.Emit) { p.Types = append(p.Types, &ir.Dependent{Pkg: "demo", Name: "D"}) }, cppgen.ErrUnsupported},
 		{"a load.defines table", func(p *ir.Package, _ *ir.Emit) { p.Defines = []*ir.DefineTable{{Pkg: "demo", Value: "jobs"}} }, cppgen.ErrUnsupported},
-		{"a table-typed field", withField(field("t", "t", "", ir.TypeRef{Kind: types.Table, Elem: &tInt})), cppgen.ErrUnsupported},
-		{"a list of optionals", withField(field("o", "o", "", listOf(optInt))), cppgen.ErrUnsupported},
-		{"a map field", withField(field("m", "m", "", ir.TypeRef{Kind: types.Map, Key: &tString, Elem: &tInt})), cppgen.ErrUnsupported},
-		{"a non-string literal union", withField(field("u", "u", "", ir.TypeRef{Kind: types.LitUnion, Elem: &tInt})), cppgen.ErrUnsupported},
-		{"an optional inline field", func(p *ir.Package, _ *ir.Emit) { optionalInline(p) }, cppgen.ErrUnsupported},
-		{"an optional @stable field", func(p *ir.Package, _ *ir.Emit) { optionalStable(p) }, cppgen.ErrUnsupported},
+		{"a union over a string-keyed ref (owed)", withField(field("u", "u", "", ir.TypeRef{Kind: types.LitUnion, Elem: &ir.TypeRef{Kind: types.Ref, Key: &tString}})), cppgen.ErrUnsupported},
+		// unreachable: stage E refuses it first (E8019 NonStringLiteralUnion).
+		{"a non-string literal union", withField(field("u", "u", "", ir.TypeRef{Kind: types.LitUnion, Elem: &tInt})), cppgen.ErrMalformed},
 		{"a legacy struct", func(p *ir.Package, _ *ir.Emit) { thing(p).Cpp.Struct = "ItemProp" }, cppgen.ErrUnsupported},
-		{"a lookup over an Int", withMethod(&ir.ExportFn{Name: "f", Kind: ir.FnLookup, Result: tInt, Params: []*ir.Param{{Name: "n", Type: tInt}}}), cppgen.ErrUnsupported},
-		{"a package-level stored fn", func(p *ir.Package, _ *ir.Emit) {
-			p.Fns = []*ir.ExportFn{{Name: "f", Kind: ir.FnPrecomputed, Result: tInt}}
-		}, cppgen.ErrUnsupported},
-		{"a read that is no field", withMethod(translated("f", &ir.Read{Name: "g", Path: []string{"g"}, Type: tInt})), cppgen.ErrUnsupported},
-		{"a call to another method", func(p *ir.Package, _ *ir.Emit) { methodCall(p) }, cppgen.ErrUnsupported},
-		{"a type that holds itself", func(p *ir.Package, _ *ir.Emit) { selfHolding(p) }, cppgen.ErrUnsupported},
-		{"a data value that is a plain list", func(p *ir.Package, _ *ir.Emit) {
-			p.Values = []*ir.Value{{Name: "l", Schema: "s", Type: tList}}
-		}, cppgen.ErrUnsupported},
-		{"methods of a fieldless case", func(p *ir.Package, _ *ir.Emit) { fieldlessMethods(p) }, cppgen.ErrUnsupported},
-		{"a pairs record of another package", func(p *ir.Package, _ *ir.Emit) { foreignPairs(p) }, cppgen.ErrUnsupported},
-		{"an inline case key equal to a parent key but for case", func(p *ir.Package, _ *ir.Emit) { inlineFold(p, "k", "A") }, cppgen.ErrUnsupported},
-		{"an inline tag equal to a parent key but for case", func(p *ir.Package, _ *ir.Emit) { inlineFold(p, "A", "c") }, cppgen.ErrUnsupported},
 		{"a json emit", func(_ *ir.Package, e *ir.Emit) { e.Target = ir.TargetJSON }, cppgen.ErrTarget},
 		{"no namespace (§2.1)", func(_ *ir.Package, e *ir.Emit) { e.Namespace = "" }, cppgen.ErrMalformed},
 		{"a list without its element", withField(field("l", "l", "", ir.TypeRef{Kind: types.List})), cppgen.ErrMalformed},
 		{"a ref without its key", withField(field("r", "r", "", ir.TypeRef{Kind: types.Ref})), cppgen.ErrMalformed},
 		{"a record kind without its record", withField(field("r", "r", "", ir.TypeRef{Kind: types.Record})), cppgen.ErrMalformed},
 		{"a nil field", withField(nil), cppgen.ErrMalformed},
+		// check's stableFields (E6003) already refuses an optional @stable field: unreachable.
+		{"an optional @stable field", func(p *ir.Package, _ *ir.Emit) { optionalStable(p) }, cppgen.ErrMalformed},
+		// ir's E8019 FieldlessCaseExportFn already refuses this at stage E: unreachable.
+		{"methods of a fieldless case", func(p *ir.Package, _ *ir.Emit) { fieldlessMethods(p) }, cppgen.ErrMalformed},
+		// unreachable: stage E refuses it first (E8019 DependentType).
+		{"a dependent type", func(p *ir.Package, _ *ir.Emit) { p.Types = append(p.Types, &ir.Dependent{Pkg: "demo", Name: "D"}) }, cppgen.ErrMalformed},
+		// unreachable: stage E refuses it first (E8019 OptionalElementList).
+		{"a list of optionals", withField(field("o", "o", "", listOf(optInt))), cppgen.ErrMalformed},
+		// unreachable: stage E refuses it first (E8019 MapField).
+		{"a map field", withField(field("m", "m", "", ir.TypeRef{Kind: types.Map, Key: &tString, Elem: &tInt})), cppgen.ErrMalformed},
+		// unreachable: stage E refuses it first (check's E3316).
+		{"an optional inline field", func(p *ir.Package, _ *ir.Emit) { optionalInline(p) }, cppgen.ErrMalformed},
+		// unreachable: stage E refuses it first (E8013 refParam (a finite parameter is a Bool, an enum or a ref)).
+		{"a lookup over an Int", withMethod(&ir.ExportFn{Name: "f", Kind: ir.FnLookup, Result: tInt, Params: []*ir.Param{{Name: "n", Type: tInt}}}), cppgen.ErrMalformed},
+		// unreachable: stage E refuses it first (E8019 SelfReadNotAPath).
+		{"a read that is no field", withMethod(translated("f", &ir.Read{Name: "g", Path: []string{"g"}, Type: tInt})), cppgen.ErrMalformed},
+		// unreachable: stage E refuses it first (ir's CallFn (package fns only) and E8013).
+		{"a call to another method", func(p *ir.Package, _ *ir.Emit) { methodCall(p) }, cppgen.ErrMalformed},
+		// unreachable: stage E refuses it first (E8019 ForeignPairsField).
+		{"a pairs record of another package", func(p *ir.Package, _ *ir.Emit) { foreignPairs(p) }, cppgen.ErrMalformed},
+		// unreachable: stage E refuses it first (E8019 InlineFoldedKey).
+		{"an inline case key equal to a parent key but for case", func(p *ir.Package, _ *ir.Emit) { inlineFold(p, "k", "A") }, cppgen.ErrMalformed},
+		// unreachable: stage E refuses it first (E8019 InlineFoldedKey).
+		{"an inline tag equal to a parent key but for case", func(p *ir.Package, _ *ir.Emit) { inlineFold(p, "A", "c") }, cppgen.ErrMalformed},
+		// unreachable: stage E refuses it first (E8013 package).
+		{"a package-level stored fn", func(p *ir.Package, _ *ir.Emit) {
+			p.Fns = []*ir.ExportFn{{Name: "f", Kind: ir.FnPrecomputed, Result: tInt}}
+		}, cppgen.ErrMalformed},
+		// unreachable: stage E refuses it first (E8015).
+		{"a data value that is a plain list", func(p *ir.Package, _ *ir.Emit) {
+			p.Values = []*ir.Value{{Name: "l", Schema: "s", Type: tList}}
+		}, cppgen.ErrMalformed},
+		// unreachable: stage E refuses it first (E8019 TableField).
+		{"a table-typed field", withField(field("t", "t", "", ir.TypeRef{Kind: types.Table, Elem: &tInt})), cppgen.ErrMalformed},
+		// unreachable: stage E refuses it first (E8019 RecursiveVariantCase or RecordCycleThroughMethod).
+		{"a type that holds itself", func(p *ir.Package, _ *ir.Emit) { selfHolding(p) }, cppgen.ErrMalformed},
 		{"a translated method without its file (T3)", func(p *ir.Package, _ *ir.Emit) {
 			fn := translated("f")
 			fn.File = ""

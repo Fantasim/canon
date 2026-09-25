@@ -13,11 +13,11 @@ import (
 func (s *stage) checkOverrideNames(u *unit) {
 	cpp, ts := hasTarget(u, TargetCpp), hasTarget(u, TargetTS)
 	for _, site := range overrideSites(u.p).sites {
-		if cpp && site.cpp != "" && !cppValidIdent(site.cpp) {
-			u.report(diag.E8011.At(s.itemSpan(site.item, source.Span{}), site.cpp, check.TargetCpp))
+		if ok, _ := cppValidIdent(site.cpp); cpp && site.cpp != "" && !ok {
+			u.report(diag.E8011.AtOverride(s.itemSpan(site.item, source.Span{}), site.cpp, check.TargetCpp))
 		}
 		if ts && site.tsName != "" && !identPattern.MatchString(site.tsName) {
-			u.report(diag.E8011.At(s.itemSpan(site.item, source.Span{}), site.tsName, check.TargetTS))
+			u.report(diag.E8011.AtOverride(s.itemSpan(site.item, source.Span{}), site.tsName, check.TargetTS))
 		}
 	}
 }
@@ -58,7 +58,8 @@ func (s *stage) checkCppNames(u *unit) {
 	u.cppNames = pl.shared
 	refused := map[any]bool{}
 	for _, site := range overrideSites(u.p).sites {
-		refused[site.item] = site.cpp != "" && !cppValidIdent(site.cpp) // checkOverrideNames reported it
+		ok, _ := cppValidIdent(site.cpp)
+		refused[site.item] = site.cpp != "" && !ok // checkOverrideNames reported it
 	}
 	reportNames(u, s.itemSpans(es), pl.Problems(), check.TargetCpp, refused)
 }
@@ -68,7 +69,7 @@ func (s *stage) itemSpans(es *emitSite) func(any) source.Span {
 	return func(item any) source.Span { return s.itemSpan(item, es.span()) }
 }
 
-// reportNames reports a plan's problems for target: E8005 for a collision, at the item named second; E8011 once per declaration not refused yet, for its override when that is invalid, else its first invalid derived name.
+// reportNames reports a plan's problems for target: E8005 for a collision, E8011 once per declaration not refused yet (decisions 202, 218).
 func reportNames(u *unit, span func(any) source.Span, problems []GoNameProblem, target string, refused map[any]bool) {
 	for _, pr := range problems {
 		if pr.Kind == GoCollision {
@@ -79,7 +80,22 @@ func reportNames(u *unit, span func(any) source.Span, problems []GoNameProblem, 
 			continue
 		}
 		refused[pr.Item] = true
-		u.report(diag.E8011.At(span(pr.Item), shownName(pr), target))
+		u.report(nameProblemFinding(span(pr.Item), pr, target))
+	}
+}
+
+// nameProblemFinding is the E8011 variant a non-collision GoNameProblem reports (decisions 182, 202, 218).
+func nameProblemFinding(span source.Span, pr GoNameProblem, target string) *diag.Builder {
+	name := shownName(pr)
+	switch {
+	case pr.Kind == GoOverrideInvalid:
+		return diag.E8011.AtOverride(span, name, target)
+	case pr.Kind == GoUnexported:
+		return diag.E8011.AtUnexported(span, name)
+	case pr.Reserved:
+		return diag.E8011.AtReserved(span, name, pr.Origin)
+	default:
+		return diag.E8011.AtDerived(span, name, pr.Origin, target)
 	}
 }
 

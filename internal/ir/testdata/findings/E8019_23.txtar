@@ -1,0 +1,35 @@
+EVALUATION.md §1, WIRE.md §5.6: the cpp case of InlineFoldedKey.
+-- a/a.canon --
+package a
+
+/// A shape.
+variant Shape {
+  /// A box.
+  box {
+    /// Its side.
+    side: Int
+  }
+}
+
+/// A thing.
+record Thing {
+  /// Its side.
+  Side: Int
+  /// Its shape.
+  shape: Shape @json(inline)
+}
+
+/// The things.
+let things: table Thing = {
+  one { Side: 1, shape: box { side: 2 } }
+}
+
+emit cpp { out: "@features/a", namespace: "a", mode: data }
+emit json { out: "out/" }
+-- a.things.json --
+{"one": {"Side": 1, "kind": "box", "side": 2}}
+-- findings.txt --
+error[E8019]  a/a.canon:17:3
+  emit cpp in data mode cannot generate an inline variant key equal to a parent key but for letter case
+
+1 error, 0 warnings in 1 package (…)

@@ -1,4 +1,4 @@
-SPEC.md §15.5: @reload on a value whose type only contains the legacy struct through a nested record and a map, not directly.
+SPEC.md §15.5: @reload on a value whose type only contains the legacy struct through a nested record and a list, not directly (a map field is E8019 in cpp data mode).
 -- a/a.canon --
 package a
 
@@ -10,12 +10,12 @@ record Item @cpp(struct: "ItemProp", header: "ItemProp.h", access: fields) {
 
 /// A bundle of items by slot.
 record Bundle {
-  /// The items, by slot.
-  bySlot: {String: Item}
+  /// The items, in slot order.
+  bySlot: [Item]
 }
 
 /// The bundle.
-@reload let bundle: Bundle = { bySlot: { "sword": { id: "sword" } } }
+@reload let bundle: Bundle = { bySlot: [{ id: "sword" }] }
 
 emit cpp { out: "out/", mode: data }
 emit json { out: "out/" }

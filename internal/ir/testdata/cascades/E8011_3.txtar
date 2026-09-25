@@ -28,9 +28,9 @@ error[E8011]  a/a.canon:4:8
   1 is not a valid go identifier for @go(name:)
 
 error[E8011]  a/a.canon:17:3
-  1 is not a valid go identifier for @go(name:)
+  1, the go name derived for a.Bb._1, is not a valid identifier
 
 error[E8011]  a/a.canon:21:7
-  1Z is not a valid go identifier for @go(name:)
+  1Z, the go name derived for a._1z, is not a valid identifier
 
 3 errors, 0 warnings in 1 package (…)

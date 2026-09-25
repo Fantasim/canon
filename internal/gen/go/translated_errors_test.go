@@ -44,15 +44,15 @@ func TestTranslatedMalformed(t *testing.T) {
 	}
 }
 
-// CONFORMANCE.md §2.2: a lookup whose result a pure function cannot hold is refused, naming it.
+// CONFORMANCE.md §2.2: a call of a lookup whose result a pure function cannot hold is refused, naming it; ir's translator never writes one (E9001), so it is ErrMalformed.
 func TestTranslatedLookupRefused(t *testing.T) {
 	c := newCalc()
 	p := c.pkg()
 	c.loud.Result = optT(boolT)
 	_, err := gogen.Generate(p, p.Emits[0])
 	var d *gogen.DetailError
-	if !errors.Is(err, gogen.ErrUnsupported) || !errors.As(err, &d) || d.Subject != "loud" {
-		t.Errorf("got %v, want ErrUnsupported naming loud", err)
+	if !errors.Is(err, gogen.ErrMalformed) || !errors.As(err, &d) || d.Subject != "loud" {
+		t.Errorf("got %v, want ErrMalformed naming loud", err)
 	}
 }
 

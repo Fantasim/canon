@@ -1,0 +1,13 @@
+Decision 37, clean: a map field of a class no emitted value holds, in data go (never decoded).
+-- a/a.canon --
+package a
+
+/// A row.
+record Row {
+  /// The cells.
+  cells: {String: Int}
+}
+
+emit go { out: "@features/a", package: "a", mode: data }
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

@@ -84,7 +84,7 @@ func (fp *fingerprint) walk(t *TypeRef) error {
 		return fmt.Errorf("%w: missing type", ErrFingerprint)
 	}
 	switch t.Kind {
-	case types.Enum, types.Record, types.Variant:
+	case types.Enum, types.Record, types.Variant, types.Case:
 		return fp.named(t.Named)
 	case types.TypeApp:
 		return fp.walkArms(t)

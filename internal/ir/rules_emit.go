@@ -14,7 +14,7 @@ var emitRules [TargetView + 1][]func(*stage, *unit, *emitSite)
 var modeRules [ModeTypes + 1][]func(*stage, *unit, *emitSite)
 
 func init() {
-	code := []func(*stage, *unit, *emitSite){(*stage).checkImports, (*stage).checkMode}
+	code := []func(*stage, *unit, *emitSite){(*stage).checkImports, (*stage).checkMode, (*stage).checkGenSupport}
 	emitRules[TargetGo], emitRules[TargetCpp] = code, code
 	emitRules[TargetTS] = append(slices.Clone(code), (*stage).checkSafeInts, (*stage).checkNoInputs)
 	emitRules[TargetJSON] = []func(*stage, *unit, *emitSite){(*stage).checkWireForms}
@@ -114,7 +114,7 @@ func dataContainer(t TypeRef) bool {
 	return t.Kind == types.Table || t.Kind == types.Record || t.Kind == types.List && t.KeyedBy != nil
 }
 
-// checkDataFns is E8013: data files hold no package fn, and no method table keyed by a ref (CODEGEN.md §5.10).
+// checkDataFns is E8013: data files hold no package fn and no method table keyed by a ref (CODEGEN.md §5.10).
 func (s *stage) checkDataFns(u *unit, _ *emitSite) {
 	for _, site := range s.ownFns(u) {
 		switch {
@@ -185,24 +185,29 @@ func (s *stage) checkNoInputs(u *unit, _ *emitSite) {
 	})
 }
 
-// checkWireForms is E8151: a value written to JSON has a wire form and a fingerprint, so no define record (WIRE.md §5.9, §8.1; decisions 126, 194).
+// checkWireForms is E8151: a value written to JSON has a wire form and a fingerprint, so no define record (WIRE.md §5.9, §8.1; decisions 126, 194); the `define` variant reports a load.defines table or record specifically, the general one a Range or a function.
 func (s *stage) checkWireForms(u *unit, es *emitSite) {
 	for _, v := range selectedValues(u, es.e) {
-		if wireFind(v.t, map[types.Type]bool{}, noWire) != nil {
-			u.report(diag.E8151.At(v.span().span(), v.v.Name, v.t))
+		what := wireFind(v.t, map[types.Type]bool{}, noWire)
+		switch {
+		case what == nil:
+		case isDefineType(what.Base()):
+			u.report(diag.E8151.AtDefine(v.span().span(), v.v.Name))
+		default:
+			u.report(diag.E8151.AtType(v.span().span(), v.v.Name, v.t))
 		}
 	}
 }
 
-// checkFingerprinted is E8012 for a data or embedded code emit: each value it selects carries its fingerprint, which a define record has none of (decisions 126, 194); a value baked go already refuses as a whole is not reported twice.
+// checkFingerprinted is E8012 `define` for a data or embedded code emit: each value it selects carries its fingerprint, which a define record has none of (decisions 126, 194); a value baked go already refuses as a whole is not reported twice.
 func (s *stage) checkFingerprinted(u *unit, es *emitSite) {
 	goBaked := bakedFor(u, TargetGo)
 	for _, v := range selectedValues(u, es.e) {
 		if goBaked && unrepresentable(v.t, false, true) != nil {
 			continue
 		}
-		if what := wireFind(v.t, map[types.Type]bool{}, isDefineType); what != nil {
-			u.report(diag.E8012.At(v.span().span(), v.v.Name, what))
+		if wireFind(v.t, map[types.Type]bool{}, isDefineType) != nil {
+			u.report(diag.E8012.AtDefine(v.span().span(), v.v.Name))
 		}
 	}
 }

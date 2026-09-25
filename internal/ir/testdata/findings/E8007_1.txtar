@@ -5,6 +5,6 @@ package a
 emit go { out: "out/go/", package: "a" }
 -- findings.txt --
 error[E8007]  a/a.canon:3:16
-  Go output a/out/go/ is under no root listed in go_module
+  Go output a/out/go/ is under no root listed in go_module: map its root in project.canon go_module
 
 1 error, 0 warnings in 1 package (…)

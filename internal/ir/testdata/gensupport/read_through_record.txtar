@@ -1,0 +1,22 @@
+Decision 37, clean: a translated method reading fields through a record, in data cpp.
+-- a/a.canon --
+package a
+
+/// A stat.
+record Stat {
+  /// Its value.
+  v: Int
+}
+
+/// A potion.
+record Potion {
+  /// Its stat.
+  stat: Stat
+
+  /// Its heal for a missing amount.
+  export fn healFor(self, missing: Int) -> Int { return min(stat.v, missing) }
+}
+
+emit cpp { out: "@features/a", namespace: "a", mode: data }
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

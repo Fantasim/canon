@@ -20,7 +20,7 @@ func (g *gen) pairsParents() {
 			if rec != nil && rec.Pkg == g.p.Name {
 				g.pairsFriends[rec] = append(g.pairsFriends[rec], g.className(c))
 			} else if rec != nil {
-				g.unsupported(foreignPairs, f.Name)
+				g.malformed(foreignPairs, f.Name) // E8019 ForeignPairsField
 			}
 		}
 	}

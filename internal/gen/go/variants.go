@@ -15,7 +15,8 @@ func (g *gen) types() {
 		case *ir.Variant:
 			g.variant(t)
 		case *ir.Dependent:
-			g.failf(ErrUnsupported, "dependent type %s", t.QName())
+			// E8019 DependentType already refuses this at stage E: unreachable.
+			g.failf(ErrMalformed, "dependent type %s", t.QName())
 		}
 	}
 }
@@ -28,7 +29,8 @@ func (g *gen) variant(v *ir.Variant) {
 	for _, c := range v.Cases {
 		if len(c.Fields) == 0 {
 			if len(c.Methods) > 0 {
-				g.failf(ErrUnsupported, "export fns of %s.%s, a case without fields", v.QName(), c.Name)
+				// E8019 FieldlessCaseExportFn already refuses this at stage E: unreachable.
+				g.failf(ErrMalformed, "export fns of %s.%s, a case without fields", v.QName(), c.Name)
 			}
 			continue
 		}
@@ -58,7 +60,8 @@ func (g *gen) variantExpr(t ir.TypeRef, r *value.Record) string {
 		return nilLit
 	}
 	if v.Pkg != g.p.Name {
-		g.failf(ErrUnsupported, "a baked value of %s, a variant of another package", v.QName())
+		// E8019 CrossPackageBakedValue already refuses this at stage E: unreachable.
+		g.failf(ErrMalformed, "a baked value of %s, a variant of another package", v.QName())
 	}
 	c := v.Cases[ct.Index]
 	name := g.goName(v)

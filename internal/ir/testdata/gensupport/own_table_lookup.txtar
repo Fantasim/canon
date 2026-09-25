@@ -1,0 +1,25 @@
+Decision 37, clean: a lookup over a table of its own package (ForeignTableLookupParam).
+-- a/a.canon --
+package a
+
+/// A status.
+record Status {
+  /// Its label.
+  label: String
+}
+
+/// The statuses.
+let statuses: table Status = {
+  open { label: "Open" }
+}
+
+/// A weight per status.
+export fn weight(s: ref statuses) -> Int { return 1 }
+
+emit go { out: "@features/a", package: "a" }
+-- a.statuses.json --
+{"open": {"label": "Open"}}
+-- a.weight.calls.json --
+{"statuses.open": 1, "open": 1, "a.statuses.open": 1}
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

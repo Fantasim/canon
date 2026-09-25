@@ -1,0 +1,31 @@
+Decision 37, clean: a lookup method whose result holds no ref needs no resolver (ResolvedLookupResult).
+-- a/a.canon --
+package a
+
+/// A tone.
+enum Tone { soft, loud }
+
+/// A stat.
+record Stat {
+  /// Its value.
+  v: Int
+}
+
+/// A thing.
+record Thing {
+  /// Its key.
+  a: Int
+
+  /// A stat per tone.
+  export fn stat(self, t: Tone) -> Stat { return { v: a } }
+}
+
+/// The things.
+let things: [Thing] keyed by a = [{ a: 1 }]
+
+emit go { out: "@features/a", package: "a", mode: data }
+emit json { out: "out/a/" }
+-- a.things.json --
+[{"a": 1, "$stat": {"soft": {"v": 1}, "loud": {"v": 1}}}]
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

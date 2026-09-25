@@ -89,6 +89,9 @@ func (g *gen) literal(t ir.TypeRef, v value.Value) string {
 		return g.listLit(t, x)
 	case *value.Map:
 		return g.mapLit(t, x)
+	case *value.Record:
+		g.malformed(fmt.Sprintf(valueFormat, v), g.at) // E8019 RecordConstant: only a constant writes a record literal
+		return cppInvalid
 	}
 	g.unsupported(fmt.Sprintf(valueFormat, v), g.at)
 	return cppInvalid
@@ -188,7 +191,7 @@ func (g *gen) constant(c *ir.Const) {
 	case types.List, types.Map:
 		g.h.printf(listConstFormat, g.storage(c.Type), name, g.literal(c.Type, c.V))
 	default:
-		g.unsupported(kindText(c.Type.Kind), c.Name)
+		g.refuseKind(c.Type.Kind, c.Name, constRefused)
 	}
 	g.h.blank()
 }

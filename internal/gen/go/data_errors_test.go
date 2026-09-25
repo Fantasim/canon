@@ -82,20 +82,35 @@ func dataRefusals() map[string]func(*ir.Package) {
 			addField(p, &ir.Field{Name: "v", Type: typed(v, types.Variant), Inline: true})
 		},
 		"a table-typed field": func(p *ir.Package) { addField(p, wired("t", "t", "", ir.TypeRef{Kind: types.Table, Elem: &intT})) },
+		"a union over a string-keyed ref (owed)": func(p *ir.Package) {
+			addField(p, wired("u", "u", "", ir.TypeRef{Kind: types.LitUnion, Elem: &ir.TypeRef{Kind: types.Ref, Key: &strT}, Literals: []string{"none"}}))
+		},
 	}
 }
 
-// Each refusal names its cause through ErrUnsupported (decision 124).
+// Each refusal names its cause through ErrUnsupported (decision 124); one stage E refuses first (E8013, E8015, E8019, check's E3316) is ErrMalformed (decision 37).
 func TestDataRefusals(t *testing.T) {
 	refusals := dataRefusals()
 	for _, name := range slices.Sorted(maps.Keys(refusals)) {
 		p := dataThing()
 		refusals[name](p)
 		_, err := gogen.Generate(p, p.Emits[0])
-		if !errors.Is(err, gogen.ErrUnsupported) {
-			t.Errorf("%s: got %v, want ErrUnsupported", name, err)
+		want := gogen.ErrUnsupported
+		if dataUnreachable[name] {
+			want = gogen.ErrMalformed
+		}
+		if !errors.Is(err, want) {
+			t.Errorf("%s: got %v, want %v", name, err, want)
 		}
 	}
+}
+
+// dataUnreachable are the refusals stage E already reports: E8013 package and refParam, E8015, E3316, and E8019.
+var dataUnreachable = map[string]bool{
+	"a package-level stored fn": true, "a lookup over a table's ref": true, "a data value that is a plain list": true,
+	"an optional inline variant": true, "an inline variant key equal to a parent key but for letter case": true,
+	"a list of optionals": true, "a lookup whose record result holds a resolved ref": true, "a map field": true,
+	"a record of another package": true, "a table-typed field": true, "a non-string literal union": true,
 }
 
 // CODEGEN.md §3.5, decision 203: `const STORE` is Store, the store variable, a plan Problem, ErrMalformed.

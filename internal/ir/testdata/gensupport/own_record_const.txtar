@@ -1,0 +1,16 @@
+Decision 37, clean: a list constant of the package's own records, in baked go.
+-- a/a.canon --
+package a
+
+/// A point.
+record Point {
+  /// Across.
+  x: Int
+}
+
+/// The origins.
+const origins = [Point { x: 0 }]
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

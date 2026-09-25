@@ -88,7 +88,7 @@ func (g *gen) decodeField(f *ir.Field, fields []*ir.Field) {
 		g.decodePairs(f, outPrefix+m)
 		return
 	case f.Inline && (f.Type.Kind != types.Variant || f.Optional):
-		g.unsupported(inlineFields, f.Name)
+		g.malformed(inlineFields, f.Name) // check's E3316 refuses it
 		return
 	case f.Inline:
 		g.c.linef(1, decodeCallFormat, g.decodeFunc(f.Type), sourceVar, outPrefix+m)
@@ -221,7 +221,7 @@ func (g *gen) decodeValue(depth int, src, key string, l leaf) {
 		g.c.linef(depth, decCallFormat, asString, src, key, "", l.dst)
 	case types.LitUnion:
 		if !g.stringWire(l.t) {
-			g.unsupported(unionNonString, g.at)
+			g.refuseUnion(l.t)
 		}
 		g.c.linef(depth, decCallFormat, asString, src, key, "", l.dst)
 	case types.Duration:
@@ -239,9 +239,9 @@ func (g *gen) decodeValue(depth int, src, key string, l leaf) {
 		}
 		g.decodeList(depth, src, key, l)
 	case types.Map:
-		g.unsupported(mapFields, g.at)
+		g.malformed(mapFields, g.at) // E8019 MapField
 	default:
-		g.unsupported(kindText(l.t.Kind), g.at)
+		g.refuseKind(l.t.Kind, g.at, typeRefused)
 	}
 }
 

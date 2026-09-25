@@ -16,17 +16,17 @@ func (s *stage) checkDefineRefs(u *unit) {
 	own := u.p.Name
 	s.eachOwnField(u, func(owner string, f *Field) {
 		if site := s.fieldSites[f]; reachesDefine(own, &f.Type) {
-			u.report(diag.E8012.At(site.span(), owner+qnameSep+f.Name, site.tf.Type))
+			u.report(diag.E8012.AtDefine(site.span(), owner+qnameSep+f.Name))
 		}
 	})
 	for _, v := range u.values {
 		if reachesDefine(own, &v.v.Type) {
-			u.report(diag.E8012.At(v.span().span(), v.v.Name, v.t))
+			u.report(diag.E8012.AtDefine(v.span().span(), v.v.Name))
 		}
 	}
 	for _, c := range u.consts {
 		if reachesDefine(own, &c.c.Type) {
-			u.report(diag.E8012.At(c.span(), c.c.Name, c.obj.Type()))
+			u.report(diag.E8012.AtDefine(c.span(), c.c.Name))
 		}
 	}
 	for _, site := range s.ownFns(u) {
@@ -44,11 +44,11 @@ func (s *stage) fnDefineRefs(u *unit, site *fnSite) {
 	span := site.span()
 	for i, p := range site.fn.Params {
 		if i < len(site.sig.Params) && reachesDefine(u.p.Name, &p.Type) {
-			u.report(diag.E8012.At(s.itemSpan(p, span), site.label, site.sig.Params[i]))
+			u.report(diag.E8012.AtDefine(s.itemSpan(p, span), site.label))
 		}
 	}
 	if reachesDefine(u.p.Name, &site.fn.Result) {
-		u.report(diag.E8012.At(span, site.label, site.sig.Result))
+		u.report(diag.E8012.AtDefine(span, site.label))
 	}
 }
 
@@ -56,7 +56,7 @@ func (s *stage) fnDefineRefs(u *unit, site *fnSite) {
 func (s *stage) branchDefineRefs(u *unit, d *Dependent) {
 	for _, br := range d.Branches {
 		if reachesDefine(u.p.Name, &br.Type) {
-			u.report(diag.E8012.At(s.itemSpan(d, source.Span{}), d.Name+qnameSep+br.Name, s.branchTypes[br]))
+			u.report(diag.E8012.AtDefine(s.itemSpan(d, source.Span{}), d.Name+qnameSep+br.Name))
 		}
 	}
 }

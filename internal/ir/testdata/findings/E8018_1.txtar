@@ -1,4 +1,4 @@
-CODEGEN.md §2.8: a data-mode emit decodes a record of a package emitted in baked mode.
+CODEGEN.md §2.8: a data-mode emit decodes a record of a package emitted in baked mode (cpp: gen/go data refuses any record of another package, E8019 ForeignDataRecord).
 -- b/b.canon --
 package b
 
@@ -8,7 +8,7 @@ record Point {
   x: Int
 }
 
-emit go { out: "@features/b", package: "b" }
+emit cpp { out: "@features/b", namespace: "b" }
 -- a/a.canon --
 package a
 
@@ -25,10 +25,10 @@ record Place {
 /// Every place.
 let places: [Place] keyed by id = [{ id: "home", at: { x: 1 } }]
 
-emit go { out: "@features/a", package: "a", mode: data }
+emit cpp { out: "@features/a", namespace: "a", mode: data }
 emit json { out: "out/" }
 -- findings.txt --
 error[E8018]  a/a.canon:16:6
-  b.Point is decoded from JSON by go, but package b is emitted in baked mode
+  b.Point is decoded from JSON by cpp, but package b is emitted in baked mode
 
 1 error, 0 warnings in 2 packages (…)

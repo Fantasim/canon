@@ -11,6 +11,6 @@ record Rule {
 emit go { out: "@features/a", package: "a" }
 -- findings.txt --
 error[E8011]  a/a.canon:6:3
-  1 is not a valid go identifier for @go(name:)
+  1, the go name derived for a.Rule._1, is not a valid identifier
 
 1 error, 0 warnings in 1 package (…)

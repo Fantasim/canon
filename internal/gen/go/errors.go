@@ -3,6 +3,8 @@ package gogen
 import (
 	"errors"
 	"fmt"
+
+	"github.com/fantasim/canonlang/internal/types"
 )
 
 var (
@@ -34,7 +36,7 @@ func (e *DetailError) Error() string { return e.err.Error() + ": " + e.message }
 
 func (e *DetailError) Unwrap() error { return e.err }
 
-// What data mode refuses (ErrUnsupported, decision 124) and the collision its name check finds.
+// What data mode refuses (ErrUnsupported, decision 124), finds malformed (ErrMalformed: stage E refuses it first) and the collision its name check finds.
 const (
 	packageFnFormat     = "package-level export fn %s in data mode (CODEGEN.md §5.10)"
 	lookupParamFormat   = "%s: a finite parameter that is not an enum or a Bool, in data mode (CODEGEN.md §5.10)"
@@ -46,4 +48,11 @@ const (
 	foldFormat          = "%s: an inline variant key equal to another key of its parent but for letter case, in data mode"
 	noneMarkerFormat    = "%s: the none marker %s, a non-empty object or array, in data mode"
 	dataCollisionFormat = "%s declares %s twice in data mode"
+)
+
+// The kinds stage E refuses (E8019) where gen/go writes a type, a value literal, a value it reads or a constant: meeting one there is ErrMalformed.
+var (
+	typeRefused  = map[types.Kind]bool{types.Optional: true, types.Table: true, types.TypeApp: true}
+	readRefused  = map[types.Kind]bool{types.Optional: true, types.Table: true, types.TypeApp: true, types.Map: true, types.DepMap: true, types.Case: true}
+	constRefused = map[types.Kind]bool{types.Record: true, types.Variant: true, types.Case: true}
 )

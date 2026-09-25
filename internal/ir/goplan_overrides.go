@@ -1,5 +1,7 @@
 package ir
 
+import "go/token"
+
 // nameSite is one position that takes @go/@cpp/@ts(name:) (CODEGEN.md §3.5): the IR node it names, that node in messages, and its three overrides.
 type nameSite struct {
 	item                any
@@ -21,7 +23,7 @@ func overrideSites(p *Package) *nameSites {
 		s.typ(t)
 	}
 	for _, c := range p.Consts {
-		s.add(c, c.Name, c.Go, c.Cpp, c.TS)
+		s.add(c, p.Name+qnameSep+c.Name, c.Go, c.Cpp, c.TS)
 	}
 	for _, v := range p.Values {
 		s.add(v, v.Name, v.Go, v.Cpp, v.TS)
@@ -70,9 +72,21 @@ func (s *nameSites) body(owner string, fields []*Field, fns []*ExportFn) {
 func goOverrideProblems(p *Package) []GoNameProblem {
 	var out []GoNameProblem
 	for _, site := range overrideSites(p).sites {
-		if site.goName != "" && !goValidOverride(site.goName) {
-			out = append(out, GoNameProblem{Kind: GoUnexported, Name: site.goName, Origin: site.origin, Item: site.item})
+		if kind, bad := goOverrideKind(site.goName); bad {
+			out = append(out, GoNameProblem{Kind: kind, Name: site.goName, Origin: site.origin, Item: site.item})
 		}
 	}
 	return out
+}
+
+// goOverrideKind is the E8011 variant of an invalid @go(name:) override (decision 182).
+func goOverrideKind(name string) (kind GoProblemKind, bad bool) {
+	switch {
+	case name == "" || goValidOverride(name):
+		return 0, false
+	case !token.IsIdentifier(name):
+		return GoOverrideInvalid, true
+	default:
+		return GoUnexported, true
+	}
 }

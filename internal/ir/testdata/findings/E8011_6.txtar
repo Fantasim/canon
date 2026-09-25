@@ -8,6 +8,6 @@ enum Tone { a @go(name: "toneA"), b }
 emit go { out: "@features/a", package: "a", mode: data }
 -- findings.txt --
 error[E8011]  a/a.canon:4:13
-  toneA is not a valid go identifier for @go(name:)
+  toneA is not exported: an @go(name:) override starts with an upper-case letter
 
 1 error, 0 warnings in 1 package (…)

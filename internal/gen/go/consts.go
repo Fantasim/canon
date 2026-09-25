@@ -27,14 +27,14 @@ func (g *gen) constant(c *ir.Const) {
 	case types.Bool, types.String, types.LitUnion, types.Duration, types.Enum:
 		g.printf(constDeclFormat, name, g.constExpr(c))
 	default:
-		g.failKind(c.Type.Kind)
+		g.refuseKind(c.Type.Kind, constRefused)
 	}
 }
 
 // constExpr is a constant's value; -0.0 has no Go constant.
 func (g *gen) constExpr(c *ir.Const) string {
 	if f, ok := c.V.(*value.Float); ok && f.V == 0 && math.Signbit(f.V) {
-		g.failf(ErrUnsupported, "constant %s is -0.0, which Go constants cannot hold", c.Name)
+		g.failf(ErrMalformed, "constant %s is -0.0, which Go constants cannot hold", c.Name) // stage E reports it
 	}
 	return g.expr(c.Type, c.V)
 }

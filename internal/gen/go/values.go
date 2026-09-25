@@ -24,7 +24,8 @@ func (g *gen) indexValues() {
 		rec, ok := g.sub(v.Type.Elem).Named.(*ir.Record)
 		switch {
 		case !ok || rec.Pkg != g.p.Name:
-			g.failf(ErrUnsupported, "table %s of a record of another package", v.Name)
+			// E8019 CrossPackageBakedValue and stage E's shape already rule this out.
+			g.failf(ErrMalformed, "table %s of a record of another package", v.Name)
 		case g.tableOf[rec] != nil:
 			g.failf(errNameCollision, "%s is the id type of both %s and %s", g.idType(rec), g.tableOf[rec].Name, v.Name)
 		default:

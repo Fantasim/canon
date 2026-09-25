@@ -99,7 +99,8 @@ func (g *gen) containerSpec(v *ir.Value) containerSpec {
 	}
 	for _, f := range rec.Fields {
 		if f.Stable && f.Optional {
-			g.unsupported(optionalStable, f.Name)
+			// check's stableFields (E6003) already refuses an optional @stable field: unreachable.
+			g.fail(fmt.Errorf("%w: optional @stable field %s", ErrMalformed, f.Name))
 		} else if f.Stable {
 			s.stable = append(s.stable, f)
 		}

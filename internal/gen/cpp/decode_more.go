@@ -176,6 +176,6 @@ func (g *gen) markerTest(x string, marker []byte) string {
 			return fmt.Sprintf(markerEmptyFormat, x, jsonArray, x)
 		}
 	}
-	g.unsupported(fmt.Sprintf(noneMarkerFormat, marker), g.at)
+	g.malformed(fmt.Sprintf(noneMarkerFormat, marker), g.at) // check's noneWire: only an empty object or array (E3316)
 	return cppInvalid
 }

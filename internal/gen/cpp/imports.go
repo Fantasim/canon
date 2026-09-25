@@ -13,7 +13,8 @@ import (
 func (g *gen) typeName(t ir.Type) string {
 	pkg, name := g.named(t)
 	if name == "" {
-		g.unsupported(fmt.Sprintf(typeFormat, t), g.at)
+		// every caller passes a record, enum or variant; a kind without its declaration is validate's.
+		g.malformed(fmt.Sprintf(typeFormat, t), g.at)
 		return cppInvalid
 	}
 	g.noteEnum(t)

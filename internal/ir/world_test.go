@@ -127,10 +127,26 @@ func (w *world) Value(ctx context.Context, pkg, name string) (value.Value, bool)
 	w.cache[key] = nil
 	root := w.node(key)
 	obj := w.object(pkg, name)
-	if root == nil || obj == nil {
+	if obj == nil {
 		return nil, false
 	}
+	if root == nil {
+		return w.foldConst(key, obj)
+	}
 	v, ok := w.decode(ctx, pkg, root, obj.Type())
+	if ok {
+		w.cache[key] = v
+	}
+	return v, ok
+}
+
+// foldConst folds a const with no fixture file from its declaration: JSON cannot hold -0.0 (WIRE.md §5.1).
+func (w *world) foldConst(key string, obj check.Object) (value.Value, bool) {
+	d, isConst := obj.Decl().(*syntax.ConstDecl)
+	if !isConst {
+		return nil, false
+	}
+	v, ok := fold(d.Value, w.prog.Info)
 	if ok {
 		w.cache[key] = v
 	}
@@ -234,14 +250,15 @@ func fold(e syntax.Expr, info *check.Info) (value.Value, bool) {
 	case *syntax.IdentExpr:
 		return foldName(x, info)
 	case *syntax.UnaryExpr:
-		if n, ok := x.X.(*syntax.IntLit); ok && x.Op == syntax.TokMinus {
-			return fold(&syntax.IntLit{Value: new(big.Int).Neg(n.Value)}, info)
-		}
+		return foldNeg(x, info)
 	case *syntax.IntLit:
 		return &value.Int{V: x.Value.Int64(), T: t}, x.Value.IsInt64()
 	case *syntax.FloatLit:
 		f, err := strconv.ParseFloat(x.Coef.String()+"e"+strconv.FormatInt(x.Exp, 10), 64)
-		return &value.Float{V: f, T: t}, err == nil && !x.Neg
+		if x.Neg {
+			f = -f
+		}
+		return &value.Float{V: f, T: t}, err == nil
 	case *syntax.DurationLit:
 		return &value.Dur{Ms: x.Millis}, true
 	case *syntax.BoolLit:
@@ -252,6 +269,23 @@ func fold(e syntax.Expr, info *check.Info) (value.Value, bool) {
 		return foldString(x, t)
 	case *syntax.ListLit:
 		return foldList(x, info)
+	}
+	return nil, false
+}
+
+// foldNeg folds `-n` of an integer or float literal; -0.0 keeps its sign, as the evaluator's does.
+func foldNeg(x *syntax.UnaryExpr, info *check.Info) (value.Value, bool) {
+	if x.Op != syntax.TokMinus {
+		return nil, false
+	}
+	switch n := x.X.(type) {
+	case *syntax.IntLit:
+		return fold(&syntax.IntLit{Value: new(big.Int).Neg(n.Value)}, info)
+	case *syntax.FloatLit:
+		v, ok := fold(n, info)
+		if f, isFloat := v.(*value.Float); ok && isFloat {
+			return &value.Float{V: -f.V, T: info.Types[x]}, true
+		}
 	}
 	return nil, false
 }

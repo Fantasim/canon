@@ -186,7 +186,8 @@ func (t *tr) expr(n ir.PExpr, b *block) string {
 	case *ir.Coalesce:
 		return t.coalesce(x)
 	default:
-		t.g.unsupported(fmt.Sprintf(exprFormat, n), t.g.at)
+		// ir writes a Let or a Block only as a body, and nothing else outside this switch.
+		t.g.malformed(fmt.Sprintf(exprFormat, n), t.g.at)
 		return cppInvalid
 	}
 }
@@ -273,7 +274,8 @@ func (t *tr) call(x *ir.Call, b *block) string {
 // callFn calls a package-level translated fn; a method call is not emitted yet.
 func (t *tr) callFn(x *ir.CallFn, b *block) string {
 	if x.Fn == nil || x.Fn.Kind != ir.FnTranslated || !slices.Contains(t.g.pkgFns, x.Fn) {
-		t.g.unsupported(methodCalls, t.g.at)
+		// ir's CallFn holds package fns only, and a stored one is E8013 in data mode: unreachable.
+		t.g.malformed(methodCalls, t.g.at)
 		return cppInvalid
 	}
 	args := t.operands(x.Args, b)

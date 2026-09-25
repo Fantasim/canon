@@ -1,0 +1,34 @@
+Decision 37, clean: gen/cpp decodes a record of another package (ForeignDataRecord is gen/go's).
+-- b/b.canon --
+package b
+
+/// A point.
+record Point {
+  /// Across.
+  x: Int
+}
+
+emit cpp { out: "@features/b", namespace: "b", mode: data }
+emit json { out: "out/b/" }
+-- a/a.canon --
+package a
+
+import b { Point }
+
+/// A place.
+record Place {
+  /// Where.
+  at: Point
+}
+
+/// The places.
+let places: table Place = {
+  one { at: { x: 1 } }
+}
+
+emit cpp { out: "@features/a", namespace: "a", mode: data }
+emit json { out: "out/a/" }
+-- a.places.json --
+{"one": {"at": {"x": 1}}}
+-- findings.txt --
+0 errors, 0 warnings in 2 packages (…)

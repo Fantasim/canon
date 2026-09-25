@@ -1,7 +1,6 @@
 package ir
 
 import (
-	"go/token"
 	"slices"
 	"strings"
 
@@ -30,6 +29,7 @@ type GoNameProblem struct {
 	Scope, Name   string
 	First, Origin string // First: what declared Name before Origin, for a collision
 	Item          any
+	Reserved      bool // GoNotIdentifier only: name failed for a reserved reason (E8011 `reserved`), cpp only
 }
 
 // originPair is two origins whose names collide, the first declared first.
@@ -66,7 +66,7 @@ type GoData struct {
 func PlanGoNames(p *Package, e *Emit) *GoNamePlan {
 	pl := &GoNamePlan{
 		p: p, e: e, byValue: map[string]*Value{}, pkgFns: map[*ExportFn]bool{}, imports: map[string]string{},
-		namer: newNamer(token.IsIdentifier), pures: map[*ExportFn]*GoPure{},
+		namer: newNamer(goValidIdent), pures: map[*ExportFn]*GoPure{},
 	}
 	for _, fn := range p.Fns {
 		pl.pkgFns[fn] = true

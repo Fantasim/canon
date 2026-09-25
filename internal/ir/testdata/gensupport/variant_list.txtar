@@ -1,0 +1,18 @@
+Decision 37, clean: a variant recursing through a list in data cpp (held weakly).
+-- a/a.canon --
+package a
+
+/// A tree.
+variant Tree {
+  /// A leaf.
+  leaf
+  /// A node.
+  node {
+    /// Its kids.
+    kids: [Tree]
+  }
+}
+
+emit cpp { out: "@features/a", namespace: "a", mode: data }
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

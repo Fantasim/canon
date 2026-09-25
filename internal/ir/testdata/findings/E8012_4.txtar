@@ -13,6 +13,6 @@ record Rule {
 emit go { out: "@features/a", package: "a" }
 -- findings.txt --
 error[E8012]  a/a.canon:8:3
-  Rule.kind cannot be emitted: ref a.kinds has no representation in generated code
+  Rule.kind cannot be emitted: a load.defines table or record has no representation in generated code
 
 1 error, 0 warnings in 1 package (…)

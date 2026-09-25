@@ -1,0 +1,24 @@
+EVALUATION.md §1, CODEGEN.md §4.2: neither generator has a type for a list of optional elements, wherever it is written (a field, a constant).
+-- a/a.canon --
+package a
+
+/// A row.
+record Row {
+  /// The cells.
+  cells: [Int?]
+}
+
+/// Some cells.
+const some = [1, none]
+
+emit go { out: "@features/a", package: "a" }
+-- a.some.json --
+[1, null]
+-- findings.txt --
+error[E8019]  a/a.canon:6:3
+  emit go in baked mode cannot generate a list of optional elements
+
+error[E8019]  a/a.canon:10:7
+  emit go in baked mode cannot generate a list of optional elements
+
+2 errors, 0 warnings in 1 package (…)

@@ -8,6 +8,6 @@ let zzCap: Int = 3
 emit go { out: "@features/a", package: "a", mode: data }
 -- findings.txt --
 error[E8015]  a/a.canon:4:5
-  zzCap is a Int: data and embedded modes emit tables, keyed lists and records
+  zzCap has type Int: data and embedded modes emit tables, keyed lists and records
 
 1 error, 0 warnings in 1 package (…)

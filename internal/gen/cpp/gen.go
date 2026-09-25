@@ -94,6 +94,15 @@ func (g *gen) unsupported(what, where string) {
 	g.fail(fmt.Errorf("%w: %s (%s)", ErrUnsupported, what, where))
 }
 
+// refuseKind is unsupported for a kind, but malformed for one stage E already refuses at this position (E8019).
+func (g *gen) refuseKind(k types.Kind, where string, refused map[types.Kind]bool) {
+	if refused[k] {
+		g.malformed(kindText(k), where)
+		return
+	}
+	g.unsupported(kindText(k), where)
+}
+
 // declare adds a name of the emit's namespace.
 func (g *gen) declare(name, origin string) {
 	g.fail(g.top.add(name, origin))
@@ -252,7 +261,7 @@ func (g *gen) selectValues() {
 		case v.Type.Kind == types.Record:
 			g.recordLoader(v)
 		default:
-			g.unsupported(dataValueKind, v.Name)
+			g.malformed(dataValueKind, v.Name) // E8015
 		}
 		g.values = append(g.values, v)
 		leave()

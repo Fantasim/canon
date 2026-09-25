@@ -1,0 +1,24 @@
+Decision 37, clean: in data go, a case with fields used as a type in a class no loader decodes has a Go type (CaseField is the loader's).
+-- a/a.canon --
+package a
+
+/// A shape.
+variant Shape {
+  /// A dot.
+  dot
+  /// A box.
+  box {
+    /// Its side.
+    side: Int
+  }
+}
+
+/// A row.
+record Row {
+  /// The box.
+  b: Shape.box
+}
+
+emit go { out: "@features/a", package: "a", mode: data }
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

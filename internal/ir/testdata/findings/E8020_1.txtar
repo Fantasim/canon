@@ -1,0 +1,16 @@
+CODEGEN.md §5.1: a Go constant cannot hold -0.0 (Go's constant arithmetic has no negative zero); gen/go writes a Float constant as a `const`.
+-- a/a.canon --
+package a
+
+/// Zero, negative.
+const Z = -0.0
+
+/// Zero.
+const Y = 0.0
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+error[E8020]  a/a.canon:4:7
+  constant Z is -0.0, which a Go constant cannot hold: make it a let
+
+1 error, 0 warnings in 1 package (…)

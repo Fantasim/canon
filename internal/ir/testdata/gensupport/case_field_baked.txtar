@@ -1,0 +1,24 @@
+Decision 37, clean: a field of a case with fields has a Go type (CaseField).
+-- a/a.canon --
+package a
+
+/// A shape.
+variant Shape {
+  /// A dot.
+  dot
+  /// A box.
+  box {
+    /// Its side.
+    side: Int
+  }
+}
+
+/// A row.
+record Row {
+  /// The box.
+  b: Shape.box
+}
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

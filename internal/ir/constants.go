@@ -164,6 +164,7 @@ const (
 	fpNever       = "never"
 	fpKeyed       = "keyed("
 	fpDep         = "dep("
+	fpCaseType    = "case("
 	fpMap         = "map("
 	fpSourceField = "field"
 	fpSourceParam = "param"
@@ -233,6 +234,22 @@ const maxSafeInt = 1<<53 - 1
 const JSONExt = ".json"
 
 const underscore = "_"
+
+// pairsOpen and pairsClose delimit the slot index of a `pairs:` key template, `{i}` (WIRE.md §5.14).
+const (
+	pairsOpen  = "{"
+	pairsClose = "}"
+)
+
+// recordKinds are the kinds whose values are records: a record, a variant, a case.
+var recordKinds = map[types.Kind]bool{types.Record: true, types.Variant: true, types.Case: true}
+
+// The states of a class in classGraph's depth-first order.
+const (
+	unvisited = iota
+	visiting
+	visited
+)
 
 // identPattern is a plain identifier: a letter or underscore, then letters, digits or underscores (CODEGEN.md §3.5, E8011).
 var identPattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
@@ -399,8 +416,10 @@ const (
 	GoCollision GoProblemKind = iota
 	// GoNotIdentifier is a generated name that is no Go identifier.
 	GoNotIdentifier
-	// GoUnexported is a @go(name:) override that is not an exported identifier (E8011, decision 182).
+	// GoUnexported is a @go(name:) override that is a valid identifier but not exported (E8011, decision 182).
 	GoUnexported
+	// GoOverrideInvalid is a @go(name:) override that is no Go identifier at all (E8011 `override`).
+	GoOverrideInvalid
 )
 
 var (

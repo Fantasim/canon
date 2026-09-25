@@ -8,6 +8,6 @@ export fn pick(xs: [Int], n: Int) -> Int { return n }
 emit go { out: "@features/a", package: "a" }
 -- findings.txt --
 error[E9006]  a/a.canon:4:16
-  parameter xs of pick is a [Int]: translated functions take Bool, integers, Float, String, Duration and enums
+  parameter xs of pick has type [Int]: translated functions take Bool, integers, Float, String, Duration and enums
 
 1 error, 0 warnings in 1 package (…)

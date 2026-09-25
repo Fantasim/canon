@@ -101,7 +101,7 @@ func (g *gen) inlineFolds(c class) {
 		own := g.fieldKeys(f)
 		for _, k := range own {
 			if slices.ContainsFunc(all, func(p string) bool { return !slices.Contains(own, p) && asciiFold(k, p) }) {
-				g.unsupported(inlineFoldKeys, c.canonName()+qnameSep+f.Name)
+				g.malformed(inlineFoldKeys, c.canonName()+qnameSep+f.Name) // E8019 InlineFoldedKey
 				return
 			}
 		}

@@ -12,15 +12,17 @@ type nameScope struct {
 	names map[string]string
 }
 
-// namer is a name plan's scopes and problems; ident tells an identifier of the target.
+// namer is a name plan's scopes and problems; ident tells an identifier of the target, and
+// whether an invalid one fails for a reserved reason (E8011 `reserved`) rather than for not
+// being a plain identifier at all (E8011 `derived`).
 type namer struct {
 	scopes   []*nameScope
 	problems []GoNameProblem
 	reported map[originPair]bool // the pairs of origins already reported colliding: one E8005 per cause (decision 203)
-	ident    func(string) bool
+	ident    func(string) (ok, reserved bool)
 }
 
-func newNamer(ident func(string) bool) namer {
+func newNamer(ident func(string) (ok, reserved bool)) namer {
 	return namer{reported: map[originPair]bool{}, ident: ident}
 }
 
@@ -38,9 +40,9 @@ func (n *namer) declare(sc *nameScope, name, origin string, item any) {
 
 // declareFrom is declare for a name built on the name of type from (a member constant, a case type, a table id): when from is refused already, a name that is no identifier is from's E8011, not item's (decision 213).
 func (n *namer) declareFrom(sc *nameScope, name, origin string, item, from any) {
-	if !n.ident(name) {
+	if ok, reserved := n.ident(name); !ok {
 		if from == nil || !n.refused(from) {
-			n.problems = append(n.problems, GoNameProblem{Kind: GoNotIdentifier, Scope: sc.what, Name: name, Origin: origin, Item: item})
+			n.problems = append(n.problems, GoNameProblem{Kind: GoNotIdentifier, Scope: sc.what, Name: name, Origin: origin, Item: item, Reserved: reserved})
 		}
 		return
 	}
@@ -71,7 +73,7 @@ func unlessOverridden(own NameOptions, from Type) any {
 func (pl *GoNamePlan) declareAll() {
 	top := pl.scope(goScopePackage)
 	for _, c := range pl.p.Consts {
-		pl.declare(top, pl.ConstName(c), c.Name, c)
+		pl.declare(top, pl.ConstName(c), pl.p.Name+qnameSep+c.Name, c)
 	}
 	if pl.data != nil {
 		pl.declareSchemas(top)

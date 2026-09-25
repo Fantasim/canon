@@ -51,7 +51,8 @@ func (t *tr) expr(n ir.PExpr, b *lines) string {
 	case *ir.Coalesce:
 		return t.coalesce(x, b)
 	}
-	t.g.failf(ErrUnsupported, "the expression %T in %s", n, t.g.at)
+	// ir writes a Let or a Block only as a body, and nothing else outside this switch.
+	t.g.failf(ErrMalformed, "the expression %T in %s", n, t.g.at)
 	return nilLit
 }
 
@@ -229,7 +230,8 @@ func (t *tr) callFn(x *ir.CallFn, b *lines) string {
 	case fn.Kind == ir.FnLookup && fn.Result.Kind == types.Ref:
 		return t.g.lookupKey(fn, args)
 	}
-	t.g.fail(newDetail(ErrUnsupported, fn.Name, "a call of %s, whose result is an optional or composite lookup, in %s", fn.Name, t.g.at))
+	// ir's translator calls a lookup only when its result is a scalar or a ref (E9001 otherwise).
+	t.g.fail(newDetail(ErrMalformed, fn.Name, "a call of %s, whose result is an optional or composite lookup, in %s", fn.Name, t.g.at))
 	return nilLit
 }
 

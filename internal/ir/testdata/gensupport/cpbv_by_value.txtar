@@ -1,0 +1,32 @@
+Decision 37, clean: a baked value whose field of another package's record is none, and an empty list of them, writes no foreign literal (CrossPackageBakedValue by value).
+-- b/b.canon --
+package b
+
+/// A point.
+record Point {
+  /// Across.
+  x: Int
+}
+
+emit go { out: "@features/b", package: "b" }
+-- a/a.canon --
+package a
+
+import b { Point }
+
+/// A place.
+record Place {
+  /// Where, if known.
+  at: Point?
+  /// Other points.
+  more: [Point] = []
+}
+
+/// The place.
+let place: Place = { at: none }
+
+emit go { out: "@features/a", package: "a" }
+-- a.place.json --
+{"at": null, "more": []}
+-- findings.txt --
+0 errors, 0 warnings in 2 packages (…)

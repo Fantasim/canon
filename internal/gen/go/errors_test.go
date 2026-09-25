@@ -124,21 +124,6 @@ func TestRefusedEmits(t *testing.T) {
 	}
 }
 
-// Constructs baked Go does not emit yet are refused, never skipped.
-func TestUnsupportedConstructs(t *testing.T) {
-	negZero := pkg()
-	negZero.Consts = []*ir.Const{{Name: "Z", Type: ir.TypeRef{Kind: types.Float, Bits: 64}, V: &value.Float{V: negativeZero()}}}
-	cases := map[string]*ir.Package{
-		"dependent type": pkg(&ir.Dependent{Pkg: "p", Name: "Param"}),
-		"-0.0 constant":  negZero,
-	}
-	for _, name := range []string{"dependent type", "-0.0 constant"} {
-		if err := generateErr(cases[name], nil); !errors.Is(err, gogen.ErrUnsupported) {
-			t.Errorf("%s: got %v, want ErrUnsupported", name, err)
-		}
-	}
-}
-
 // EVALUATION.md §11.1: an input field never reaches a variant case.
 func TestInputFieldNotOnRecord(t *testing.T) {
 	v := &ir.Variant{Pkg: "p", Name: "V", Cases: []*ir.Case{
@@ -163,13 +148,39 @@ func TestMalformedIR(t *testing.T) {
 	width.Consts = []*ir.Const{{Name: "N", Type: ir.TypeRef{Kind: types.Int, Bits: 12}, V: &value.Int{}}}
 	noElem := pkg()
 	noElem.Consts = []*ir.Const{{Name: "L", Type: ir.TypeRef{Kind: types.List}, V: &value.List{}}}
-	cases := map[string]*ir.Package{"ids without entries": ids, "a Bool for an Int": wrongValue, "a 12-bit Int": width, "a list without its element": noElem}
-	for _, name := range []string{"ids without entries", "a Bool for an Int", "a 12-bit Int", "a list without its element"} {
+	dependent := pkg(&ir.Dependent{Pkg: "p", Name: "Param"})
+	foreignRec := &ir.Record{Pkg: "other", Name: "O"}
+	foreignRecList := pkg()
+	foreignRecList.Consts = []*ir.Const{{Name: "L", Type: listOf(ir.TypeRef{Kind: types.Record, Named: foreignRec}), V: &value.List{Elems: []value.Value{&value.Record{}}}}}
+	foreignVariant := &ir.Variant{Pkg: "other", Name: "V", Tag: "k", Cases: []*ir.Case{{Name: "a", Wire: "a"}}}
+	foreignVariantList := pkg()
+	foreignVariantList.Consts = []*ir.Const{{Name: "L", Type: listOf(ir.TypeRef{Kind: types.Variant, Named: foreignVariant}), V: &value.List{Elems: []value.Value{&value.Record{T: &types.CaseType{Index: 0}}}}}}
+	foreignTable := pkg()
+	foreignTable.Values = []*ir.Value{{Name: "os", Schema: "s", Type: ir.TypeRef{Kind: types.Table, Elem: &ir.TypeRef{Kind: types.Record, Named: foreignRec}}, V: &value.Table{}}}
+	negZero := pkg()
+	negZero.Consts = []*ir.Const{{Name: "Z", Type: ir.TypeRef{Kind: types.Float, Bits: 64}, V: &value.Float{V: negativeZero()}}}
+	fieldless := &ir.Variant{Pkg: "p", Name: "V", Tag: "k", Cases: []*ir.Case{{Name: "a", Wire: "a", Methods: []*ir.ExportFn{{Name: "f", Kind: ir.FnPrecomputed, Result: intT}}}}}
+	fieldlessCase := pkg(fieldless)
+	cases := map[string]*ir.Package{
+		"ids without entries": ids, "a Bool for an Int": wrongValue, "a 12-bit Int": width,
+		"a list without its element": noElem, "a dependent type": dependent,
+		"a record of another package in a list": foreignRecList, "a variant of another package in a list": foreignVariantList,
+		"a table of a record of another package": foreignTable, "export fns of a case without fields": fieldlessCase,
+		"a -0.0 constant": negZero,
+	}
+	names := []string{
+		"ids without entries", "a Bool for an Int", "a 12-bit Int", "a list without its element",
+		"a dependent type", "a record of another package in a list", "a variant of another package in a list",
+		"a table of a record of another package", "export fns of a case without fields", "a -0.0 constant",
+	}
+	for _, name := range names {
 		if err := generateErr(cases[name], nil); !errors.Is(err, gogen.ErrMalformed) {
 			t.Errorf("%s: got %v, want ErrMalformed", name, err)
 		}
 	}
 }
+
+func listOf(elem ir.TypeRef) ir.TypeRef { return ir.TypeRef{Kind: types.List, Elem: &elem} }
 
 func negativeZero() float64 {
 	z := 0.0
@@ -288,16 +299,18 @@ func TestTypesWithoutGo(t *testing.T) {
 		name string
 		p    *ir.Package
 		want string
+		err  error
 	}{
-		{"a field of a case without fields", pkg(shape, caseField), "p.Shape.none"},
-		{"a Never field", pkg(never), "p.N.n"},
-		{"a record constant", constant, "origin"},
+		// stage E refuses the first and the last (E8019 CaseField, RecordConstant): ErrMalformed.
+		{"a field of a case without fields", pkg(shape, caseField), "p.Shape.none", gogen.ErrMalformed},
+		{"a Never field", pkg(never), "p.N.n", gogen.ErrUnsupported},
+		{"a record constant", constant, "origin", gogen.ErrMalformed},
 	}
 	for _, c := range cases {
 		err := generateErr(c.p, nil)
 		var d *gogen.DetailError
-		if !errors.Is(err, gogen.ErrUnsupported) || !errors.As(err, &d) || d.Subject != c.want {
-			t.Errorf("%s: got %v, want ErrUnsupported naming %s", c.name, err, c.want)
+		if !errors.Is(err, c.err) || !errors.As(err, &d) || d.Subject != c.want {
+			t.Errorf("%s: got %v, want %v naming %s", c.name, err, c.err, c.want)
 		}
 	}
 }

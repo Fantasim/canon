@@ -28,7 +28,9 @@ func (g *gen) pureType(t ir.TypeRef) string {
 		}
 	default:
 	}
-	g.unsupported(kindText(t.Kind), g.at)
+	// ir translates only scalar parameters and reads (E9006), a variant read left of `is`, and
+	// scalar or ref results (E9004): unreachable.
+	g.malformed(kindText(t.Kind), g.at)
 	return cppInvalid
 }
 

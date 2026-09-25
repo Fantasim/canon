@@ -1,0 +1,52 @@
+suite mutation
+name E8017 CODEGEN.md §5.6 (list branch)
+case 207
+seed 4294967504
+open gen
+born mismatch extra E8019
+sig extra E8019
+packages features.lookup
+want E8017 features/lookup/lookup.canon 458 466 check
+failure extra [E8019 features/lookup/lookup.canon:21:6 "emit go in baked mode cannot generate a dependent type"] besides [E8017 features/lookup/lookup.canon:21:6 "branch many of ZzAmount has type [Int]: dependent types may only have scalar, String, enum or ref branches"]
+-- features/lookup/lookup.canon --
+package features.lookup
+/// Upgrade grades of a weapon, lowest first.
+enum Grade { normal, unique, ultimate }
+/// Job tiers, lowest first.
+enum ordered { }
+/// generated code.
+export fn canUpgrade(grade: Grade) -> Int {
+  return match grade {
+    normal => 10_000
+    unique => 500_000
+    ultimate => 20_000_000
+  }
+}
+emit go { out: "lookup", mode: baked }
+emit ts { out: "out/lookup.generated.ts" }
+
+/// Kinds.
+enum ZzKind { one, many }
+
+/// Amounts.
+type ZzAmount(k: ZzKind) = match k { one => Int, many => [Int] }
+-- project.canon --
+project sovereign {
+  canon: "0.1"
+  roots {
+    resource: "../../../Resource"
+    client: "../../../Client"
+    source: "../../../Source"
+    services: "../.."
+    sovcommon: "../../sovcommon"
+    web: "../../sovcommon/web/src/lib"
+    parity: "../../balance/parity"
+    generated: "../../resourcestudio/generated"
+    features: "features"
+  }
+  go_module {
+    features: "example.com/features"
+  }
+}
+-- studio/studio.canon --
+package studio

@@ -29,7 +29,7 @@ func (g *gen) domains(fn *ir.ExportFn) []domain {
 			}
 			out = append(out, d)
 		default:
-			g.unsupported(lookupParams, fn.Name)
+			g.malformed(lookupParams, fn.Name) // E8013 refParam: a data-mode finite parameter is a Bool or an enum
 		}
 	}
 	return out
@@ -122,7 +122,7 @@ func (g *gen) hops(fields []*ir.Field, path []string) []hop {
 	}
 	f := fieldNamed(fields, path[0])
 	if f == nil {
-		g.unsupported(unknownReads, path[0])
+		g.malformed(unknownReads, path[0])
 		return nil
 	}
 	m, err := g.member(f.Name)
@@ -131,11 +131,11 @@ func (g *gen) hops(fields []*ir.Field, path []string) []hop {
 	for _, seg := range path[1:] {
 		rec, ok := f.Type.Named.(*ir.Record)
 		if f.Type.Kind != types.Record || !ok {
-			g.unsupported(unknownReads, seg)
+			g.malformed(unknownReads, seg)
 			return nil
 		}
 		if f = fieldNamed(rec.Fields, seg); f == nil {
-			g.unsupported(unknownReads, seg)
+			g.malformed(unknownReads, seg)
 			return nil
 		}
 		out = append(out, hop{step: g.getterName(f) + callSuffix, field: f})

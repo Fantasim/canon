@@ -38,9 +38,7 @@ const (
 	legacyStructs    = "a legacy struct (@cpp(struct:))"
 	inputFields      = "an input field"
 	inlineFields     = "an optional or non-variant @json(inline) field"
-	optionalStable   = "an optional @stable field"
 	methodCalls      = "a call to another export method"
-	fieldlessMethods = "export fns of a case without fields, which has no As accessor"
 	lookupParams     = "a finite parameter that is not an enum or a Bool"
 	unknownReads     = "a read of self that is not a path of fields"
 	mapFields        = "a map field (nlohmann::json does not keep the key order)"
@@ -78,4 +76,10 @@ const (
 	failMissingFormat     = "dec.Fail(%s, \"missing\");"
 	nullElemFormat        = "if (%s.is_null()) return dec.Fail(%s, \"null\"), false;"
 	failureTextFormat     = "%s: %s(%s) = %s [%%.*s], canon says %s [%%.*s]\n"
+)
+
+// The kinds stage E refuses (E8019) where gen/cpp stores or decodes a type, or writes a constant: meeting one there is ErrMalformed.
+var (
+	typeRefused  = map[types.Kind]bool{types.Optional: true, types.Table: true, types.TypeApp: true, types.DepMap: true, types.Case: true}
+	constRefused = map[types.Kind]bool{types.Record: true, types.Variant: true, types.Case: true}
 )

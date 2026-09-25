@@ -90,17 +90,17 @@ func (s *stage) checkRepresentable(u *unit) {
 	s.eachOwnField(u, func(owner string, f *Field) {
 		site := s.fieldSites[f]
 		if what := unrepresentable(site.tf.Type, true, defines); what != nil {
-			u.report(diag.E8012.At(site.span(), owner+qnameSep+f.Name, what))
+			u.report(unrepresentableFinding(site.span(), owner+qnameSep+f.Name, what))
 		}
 	})
 	for _, v := range u.values {
 		if what := unrepresentable(v.t, false, defines); what != nil {
-			u.report(diag.E8012.At(v.span().span(), v.v.Name, what))
+			u.report(unrepresentableFinding(v.span().span(), v.v.Name, what))
 		}
 	}
 	for _, c := range u.consts {
 		if what := unrepresentable(c.obj.Type(), false, defines); what != nil {
-			u.report(diag.E8012.At(c.span(), c.c.Name, what))
+			u.report(unrepresentableFinding(c.span(), c.c.Name, what))
 		}
 	}
 	for _, site := range s.ownFns(u) {
@@ -108,9 +108,17 @@ func (s *stage) checkRepresentable(u *unit) {
 			continue
 		}
 		if what := unrepresentable(site.sig.Result, false, defines); what != nil {
-			u.report(diag.E8012.At(site.span(), site.label, what))
+			u.report(unrepresentableFinding(site.span(), site.label, what))
 		}
 	}
+}
+
+// unrepresentableFinding is E8012 `define` for a load.defines table or record, else the general variant.
+func unrepresentableFinding(span source.Span, name string, what types.Type) *diag.Builder {
+	if isDefineType(what.Base()) {
+		return diag.E8012.AtDefine(span, name)
+	}
+	return diag.E8012.AtType(span, name, what)
 }
 
 // unrepresentable is the first part of t generated code cannot hold; a field's own `Never?` is

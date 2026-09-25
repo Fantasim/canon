@@ -1,0 +1,18 @@
+Decision 37, clean: a variant recursing through an optional field in data cpp (boxed).
+-- a/a.canon --
+package a
+
+/// A tree.
+variant Tree {
+  /// A leaf.
+  leaf
+  /// A node.
+  node {
+    /// Its left.
+    left: Tree?
+  }
+}
+
+emit cpp { out: "@features/a", namespace: "a", mode: data }
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

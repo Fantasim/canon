@@ -85,9 +85,18 @@ func goTypeName(n NameOptions, canon string) string {
 // goValidOverride reports a @go(name:) override Go can declare as public API: an exported identifier (CODEGEN.md §1.3, §3.5, decision 182; E8011).
 func goValidOverride(name string) bool { return token.IsIdentifier(name) && token.IsExported(name) }
 
-// cppValidIdent reports whether name can be declared in C++: a plain identifier that is not a keyword, an alternative token or a name generated code reserves, and not reserved to the implementation, holding `__` or starting with `_` and an upper-case letter (CODEGEN.md §3.4, §3.5; log-2026-09-24 "ir name plans + support plan": E8011).
-func cppValidIdent(name string) bool {
-	return identPattern.MatchString(name) && !CppReserved(name) && !strings.Contains(name, cppReservedRun) && !cppReservedStart.MatchString(name)
+// goValidIdent is the namer's identifier test for the go plan: Go has no `reserved` E8011 variant.
+func goValidIdent(name string) (ok, reserved bool) { return token.IsIdentifier(name), false }
+
+// cppValidIdent reports whether name can be declared in C++: a plain identifier that is not a keyword, an alternative token or a name generated code reserves, and not reserved to the implementation, holding `__` or starting with `_` and an upper-case letter (CODEGEN.md §3.4, §3.5; log-2026-09-24 "ir name plans + support plan": E8011). reserved is set when name fails for a reserved reason (E8011 `reserved`) rather than for not being a plain identifier at all (E8011 `derived`).
+func cppValidIdent(name string) (ok, reserved bool) {
+	if !identPattern.MatchString(name) {
+		return false, false
+	}
+	if CppReserved(name) || strings.Contains(name, cppReservedRun) || cppReservedStart.MatchString(name) {
+		return false, true
+	}
+	return true, false
 }
 
 // goReserved reports what a Go lower-case position escapes: a Go keyword, a predeclared identifier, a package a generated file imports, or `self` (CODEGEN.md §3.4).

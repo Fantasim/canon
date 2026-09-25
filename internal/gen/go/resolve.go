@@ -80,7 +80,7 @@ func (g *gen) resolveBody(b *body) {
 			g.resolveCells(&out, f, g.slotTarget(f.res), snapshot)
 		}
 		if g.typeWalks(f.res.T) {
-			g.fail(newDetail(ErrUnsupported, f.origin, lookupRefFormat, f.origin))
+			g.fail(newDetail(ErrMalformed, f.origin, lookupRefFormat, f.origin)) // E8019 ResolvedLookupResult
 		}
 	}
 	g.body.WriteString(out.String())

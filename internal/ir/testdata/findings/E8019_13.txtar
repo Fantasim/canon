@@ -1,0 +1,33 @@
+EVALUATION.md §1, CODEGEN.md §5.6: gen/cpp refuses a dependent type in data mode too, its declaration and a field of another package's.
+-- b/b.canon --
+package b
+
+/// A kind.
+enum K { n, s }
+
+/// A payload.
+type P(k: K) = match k { n => Int, s => String }
+
+emit cpp { out: "@features/b", namespace: "b", mode: data }
+-- a/a.canon --
+package a
+
+import b { K, P }
+
+/// A rule.
+record R {
+  /// Its kind.
+  k: K
+  /// Its payload.
+  v: P(k)
+}
+
+emit cpp { out: "@features/a", namespace: "a", mode: data }
+-- findings.txt --
+error[E8019]  a/a.canon:10:3
+  emit cpp in data mode cannot generate a dependent type
+
+error[E8019]  b/b.canon:7:6
+  emit cpp in data mode cannot generate a dependent type
+
+2 errors, 0 warnings in 2 packages (…)

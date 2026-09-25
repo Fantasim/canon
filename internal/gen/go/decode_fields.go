@@ -236,7 +236,7 @@ func (g *gen) inlineFolds(b *body) {
 			return slices.ContainsFunc(all, func(p string) bool { return !slices.Contains(own, p) && asciiFold(k, p) })
 		}
 		if slices.ContainsFunc(own, folds) {
-			g.fail(newDetail(ErrUnsupported, s.origin, foldFormat, s.origin))
+			g.fail(newDetail(ErrMalformed, s.origin, foldFormat, s.origin)) // E8019 InlineFoldedKey
 			return
 		}
 	}

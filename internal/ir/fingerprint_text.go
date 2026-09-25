@@ -15,6 +15,8 @@ func (fp *fingerprint) typ(b []byte, t *TypeRef) ([]byte, error) {
 		return fp.namedRef(b, t)
 	case types.TypeApp:
 		return fp.dep(b, t)
+	case types.Case:
+		return fp.caseRef(b, t)
 	case types.Never:
 		return append(b, fpNever...), nil
 	case types.List, types.Table, types.Optional, types.Map, types.DepMap, types.Ref, types.LitUnion:
@@ -79,6 +81,18 @@ func (fp *fingerprint) namedRef(b []byte, t *TypeRef) ([]byte, error) {
 		b = appendSource(b, s)
 	}
 	return append(b, fpArgsClose...), nil
+}
+
+// caseRef appends case(@N,"<case wire tag>"): a case used as a type, N its variant's number (FINGERPRINT.md §4.4, decision 219).
+func (fp *fingerprint) caseRef(b []byte, t *TypeRef) ([]byte, error) {
+	if t.Case == nil {
+		return nil, fmt.Errorf("%w: case type without its case", ErrFingerprint)
+	}
+	b, err := fp.namedRef(append(b, fpCaseType...), &TypeRef{Kind: types.Variant, Named: t.Named})
+	if err != nil {
+		return nil, err
+	}
+	return append(diag.AppendJSONString(append(b, fpComma...), t.Case.Wire), fpClose...), nil
 }
 
 // dep appends dep(source,path,"m1"=T1,…), one arm per discriminant member (FINGERPRINT.md §4.4).

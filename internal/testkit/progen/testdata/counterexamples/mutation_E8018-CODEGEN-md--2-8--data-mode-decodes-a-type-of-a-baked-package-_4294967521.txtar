@@ -1,0 +1,79 @@
+suite mutation
+name E8018 CODEGEN.md §2.8 (data mode decodes a type of a baked package)
+case 224
+seed 4294967521
+open gen
+born mismatch extra E8019
+sig extra E8019
+packages pipeline
+want E8018 pipeline/potion.canon 954 956 check
+failure extra [E8019 pipeline/potion.canon:14:3 "emit go in data mode cannot generate a record or variant of another package read by a data loader"] besides [E8018 pipeline/potion.canon:26:6 "zzbaked.ZzPoint is decoded from JSON by go, but package zzbaked is emitted in baked mode"]
+-- pipeline/data/II_POT_HEAL_S.json --
+{
+  "dwID": "II_POT_HEAL_S",
+  "szName": "IDS_PROPITEM_TXT_POT_S",
+  "nHeal": 500,
+  "dwCooldownMs": 3000
+}
+-- pipeline/potion.canon --
+package pipeline
+import zzbaked { ZzPoint }
+/// A healing potion. Each one is a file under data/.
+record Potion {
+  /// The item define. Stored in inventories: never renamed.
+  id: String(/^II_[A-Z0-9_]+$/) @json("dwID")
+  /// Text key of the displayed name.
+  name: String(/^IDS_/) @json("szName")
+  /// Hit points restored.
+  heal: Int @json("nHeal")
+  /// Time before the same potion can be drunk again.
+  cooldown: Duration(..=10m) @json("dwCooldownMs", unit: ms)
+  /// Zz.
+  zzAt: ZzPoint? @json("zzAt")
+  /// conformance test per target so the translations cannot drift.
+  export fn healFor(self, missingHp: Int) -> Int { return min(heal, max(missingHp, 0)) }
+}
+test "healFor never overheals and never goes negative" {
+  let p: Potion = { id: "II_POT_T", name: "IDS_T", heal: 500, cooldown: 1s }
+  expect p.healFor(200) == 200
+}
+let potions: [Potion] keyed by id = load.dir("data/*.json")
+view Potion {
+}
+emit json { out: "out/potions.json" }
+emit go { out: "out/go/", package: "potions", mode: data }
+-- project.canon --
+project sovereign {
+  canon: "0.1"
+  roots {
+    resource: "../../../Resource"
+    client: "../../../Client"
+    source: "../../../Source"
+    services: "../.."
+    sovcommon: "../../sovcommon"
+    web: "../../sovcommon/web/src/lib"
+    parity: "../../balance/parity"
+    generated: "../../resourcestudio/generated"
+    pipeline_go: "pipeline/out/go"
+  }
+  go_module {
+    sovcommon: "gitlab.com/sovereign15/sovcommon"
+    pipeline_go: "example.com/potions"
+  }
+}
+-- sovcommon/time/time.canon --
+package sovcommon
+-- studio/studio.canon --
+package studio
+-- zzbaked/zzbaked.canon --
+/// A package emitted in baked mode.
+package zzbaked
+
+/// A point.
+record ZzPoint {
+  /// Across.
+  x: Int
+}
+
+emit go { out: "@sovcommon/zzbaked", package: "zzbaked", mode: baked }
+emit cpp { out: "@source/Generated/zzbaked", namespace: "zz", mode: types }

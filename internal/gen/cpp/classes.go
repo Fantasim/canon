@@ -68,7 +68,7 @@ func (g *gen) declared() []class {
 		case *ir.Variant:
 			out = append(out, variantClasses(x)...)
 		case *ir.Dependent:
-			g.unsupported(dependentTypes, x.Name)
+			g.malformed(dependentTypes, x.Name) // E8019 DependentType
 		}
 	}
 	return out
@@ -101,7 +101,7 @@ func (g *gen) sortClasses() {
 			switch {
 			case !ok, state[d.to] == visited:
 			case state[d.to] == visiting && d.strong:
-				g.unsupported(recursiveTypes, c.canonName())
+				g.malformed(recursiveTypes, c.canonName()) // E8019 RecursiveVariantCase, RecordCycleThroughMethod
 			case state[d.to] != visiting:
 				visit(target)
 			}
@@ -165,7 +165,7 @@ func typeDeps(t ir.TypeRef, strong bool, out []dep) []dep {
 func (g *gen) indexFns() {
 	for _, fn := range g.p.Fns {
 		if fn.Kind != ir.FnTranslated {
-			g.unsupported(packageStoredFn, fn.Name)
+			g.malformed(packageStoredFn, fn.Name) // E8013 package
 			continue
 		}
 		g.pkgFns = append(g.pkgFns, fn)
@@ -181,13 +181,13 @@ func (g *gen) indexFns() {
 	}
 }
 
-// fieldlessMethods refuses export fns of a case without fields: it has no class (§5.5).
+// fieldlessMethods is a defensive guard: E8019 already refuses export fns of a fieldless case.
 func (g *gen) fieldlessMethods() {
 	for _, t := range g.p.Types {
 		v, ok := t.(*ir.Variant)
 		for i := 0; ok && i < len(v.Cases); i++ {
 			if c := v.Cases[i]; len(c.Fields) == 0 && len(c.Methods) > 0 {
-				g.unsupported(fieldlessMethods, v.Name+qnameSep+c.Name)
+				g.fail(fmt.Errorf("%w: export fns of %s without fields", ErrMalformed, v.Name+qnameSep+c.Name))
 			}
 		}
 	}

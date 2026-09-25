@@ -1,0 +1,13 @@
+Decision 37, clean: an optional map field is no map of optional values (OptionalMapValue).
+-- a/a.canon --
+package a
+
+/// A row.
+record Row {
+  /// The cells.
+  cells: {String: Int}?
+}
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

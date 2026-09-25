@@ -1,0 +1,16 @@
+Decision 37, clean: a union of an enum written as codes in baked go (no loader reads it).
+-- a/a.canon --
+package a
+
+/// A tone.
+enum Tone @codes(UInt8) @json(codes) { soft = 1, loud = 2 }
+
+/// A cap.
+record Cap {
+  /// The tone.
+  tone: Tone | "auto"
+}
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

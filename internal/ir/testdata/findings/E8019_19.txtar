@@ -1,0 +1,27 @@
+EVALUATION.md §1, WIRE.md §5.9: an enum written as its codes has no string wire form, so a union of it is not a string union; gen/cpp stores every literal union as a std::string.
+-- a/a.canon --
+package a
+
+/// A tone.
+enum Tone @codes(UInt8) @json(codes) { soft = 1, loud = 2 }
+
+/// A cap.
+record Cap {
+  /// The tone.
+  tone: Tone | "auto"
+}
+
+/// The caps.
+let caps: table Cap = {
+  one { tone: "auto" }
+}
+
+emit cpp { out: "@features/a", namespace: "a", mode: data }
+emit json { out: "out/" }
+-- a.caps.json --
+{"one": {"tone": "auto"}}
+-- findings.txt --
+error[E8019]  a/a.canon:9:3
+  emit cpp in data mode cannot generate a literal union whose wire form is not a string
+
+1 error, 0 warnings in 1 package (…)

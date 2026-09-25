@@ -58,7 +58,7 @@ func (g *gen) storage(t ir.TypeRef) string {
 	case types.Map:
 		return g.mapStorage(t)
 	default:
-		g.unsupported(kindText(t.Kind), g.at)
+		g.refuseKind(t.Kind, g.at, typeRefused)
 		return cppInvalid
 	}
 }
@@ -72,9 +72,18 @@ func (g *gen) mapStorage(t ir.TypeRef) string {
 	return fmt.Sprintf(flatMapFormat, g.storage(*t.Key), g.storage(*t.Elem))
 }
 
+// refuseUnion refuses the union being written: malformed when its first arm has no string wire form (E8019 NonStringLiteralUnion), else not supported yet (a string-wired ref or dependent type, owed).
+func (g *gen) refuseUnion(t ir.TypeRef) {
+	if t.Elem == nil || !ir.StringWire(t.Elem) {
+		g.malformed(unionNonString, g.at)
+		return
+	}
+	g.unsupported(unionNonString, g.at)
+}
+
 func (g *gen) unionStorage(t ir.TypeRef) string {
 	if t.Elem == nil || t.Elem.Kind != types.String && t.Elem.Kind != types.Enum {
-		g.unsupported(unionNonString, g.at)
+		g.refuseUnion(t)
 	}
 	return cppString
 }
@@ -86,7 +95,7 @@ func (g *gen) listStorage(t ir.TypeRef) string {
 		return cppInvalid
 	}
 	if t.Elem.Kind == types.Optional {
-		g.unsupported(optionalElems, g.at)
+		g.malformed(optionalElems, g.at) // E8019 OptionalElementList
 	}
 	elem := g.storage(*t.Elem)
 	if t.KeyedBy == nil {

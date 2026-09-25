@@ -11,6 +11,6 @@ record double {
 emit cpp { out: "@features/a", namespace: "a", mode: data }
 -- findings.txt --
 error[E8011]  a/a.canon:4:8
-  double is not a valid cpp identifier for @cpp(name:)
+  double, the C++ name derived for a.double, is a keyword or a reserved name
 
 1 error, 0 warnings in 1 package (…)

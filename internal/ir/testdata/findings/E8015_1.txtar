@@ -9,6 +9,6 @@ emit go { out: "@features/a", package: "a", mode: data }
 emit json { out: "out/" }
 -- findings.txt --
 error[E8015]  a/a.canon:4:5
-  cap is a Int: data and embedded modes emit tables, keyed lists and records
+  cap has type Int: data and embedded modes emit tables, keyed lists and records
 
 1 error, 0 warnings in 1 package (…)

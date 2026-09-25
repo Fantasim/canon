@@ -70,7 +70,7 @@ func (g *gen) checkLookupParams(f *finiteMethod) {
 	}
 	for _, p := range f.fn.Params {
 		if p.Type.Kind != types.Bool && p.Type.Kind != types.Enum {
-			g.fail(newDetail(ErrUnsupported, f.origin, lookupParamFormat, f.origin))
+			g.fail(newDetail(ErrMalformed, f.origin, lookupParamFormat, f.origin)) // E8013 refParam
 		}
 	}
 }
@@ -173,7 +173,8 @@ func (g *gen) recordExpr(t ir.TypeRef, r *value.Record) string {
 // recordLit is R{…}: the id of a table entry, then every slot and finite method.
 func (g *gen) recordLit(rec *ir.Record, r *value.Record) string {
 	if rec.Pkg != g.p.Name {
-		g.failf(ErrUnsupported, "a baked value of %s, a record of another package", rec.QName())
+		// E8019 CrossPackageBakedValue already refuses this at stage E: unreachable.
+		g.failf(ErrMalformed, "a baked value of %s, a record of another package", rec.QName())
 	}
 	var parts []pair
 	if tv := g.tableOf[rec]; tv != nil && r.Ident != nil {

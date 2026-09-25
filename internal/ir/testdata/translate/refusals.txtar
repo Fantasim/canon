@@ -70,7 +70,7 @@ error[E9001]  a/a.canon:16:44
   "{x}" < "b" is not allowed in translated function first: it is outside the portable subset
 
 error[E9005]  a/a.canon:16:46
-  x is a Float: translated templates may only interpolate String, integer and enum values
+  x has type Float: translated templates may only interpolate String, integer and enum values
 
 error[E9001]  a/a.canon:20:3
   let y: Int? = n is not allowed in translated function kept: it is outside the portable subset
@@ -79,19 +79,19 @@ error[E9001]  a/a.canon:25:58
   s.startsWith("{x}") is not allowed in translated function prefixed: it is outside the portable subset
 
 error[E9005]  a/a.canon:25:73
-  x is a Float: translated templates may only interpolate String, integer and enum values
+  x has type Float: translated templates may only interpolate String, integer and enum values
 
 error[E9001]  a/a.canon:29:10
   match t is not allowed in translated function named: it is outside the portable subset
 
 error[E9005]  a/a.canon:30:15
-  x is a Float: translated templates may only interpolate String, integer and enum values
+  x has type Float: translated templates may only interpolate String, integer and enum values
 
 error[E9001]  a/a.canon:36:51
   x:.2 is not allowed in translated function decimals: it is outside the portable subset
 
 error[E9005]  a/a.canon:36:51
-  x is a Float: translated templates may only interpolate String, integer and enum values
+  x has type Float: translated templates may only interpolate String, integer and enum values
 
 error[E9004]  a/a.canon:39:28
   translated function maybe returns Int?: only scalars, strings, enums and refs are allowed

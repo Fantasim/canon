@@ -49,7 +49,7 @@ func (g *gen) readValue(b *strings.Builder, l leaf, raw string, loc location) st
 	case types.List:
 		return g.readList(b, l, raw, loc)
 	default:
-		g.failKind(l.t.Kind)
+		g.refuseKind(l.t.Kind, readRefused)
 		return raw
 	}
 }
@@ -180,13 +180,17 @@ func (g *gen) stringWire(t ir.TypeRef) {
 	if e, ok := t.Elem.Named.(*ir.Enum); ok && !e.JSONCodes {
 		return
 	}
-	g.fail(newDetail(ErrUnsupported, g.at, unionFormat, g.at))
+	sentinel := ErrUnsupported // a string-wired ref or dependent type: owed
+	if !ir.StringWire(t.Elem) {
+		sentinel = ErrMalformed // E8019 NonStringLiteralUnion
+	}
+	g.fail(newDetail(sentinel, g.at, unionFormat, g.at))
 }
 
 // ownClass refuses a record or variant of another package: its decoder is unexported there.
 func (g *gen) ownClass(t ir.TypeRef) {
 	if pkg := typePkg(t.Named); pkg != g.p.Name {
-		g.fail(newDetail(ErrUnsupported, g.at, foreignClassFormat, qname(t.Named), g.at))
+		g.fail(newDetail(ErrMalformed, g.at, foreignClassFormat, qname(t.Named), g.at)) // E8019 ForeignDataRecord
 	}
 }
 

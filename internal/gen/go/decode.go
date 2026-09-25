@@ -179,7 +179,7 @@ func (g *gen) storeRead(s *slot, l leaf, raw string, loc location) {
 func (g *gen) markerTest(raw string, marker []byte) string {
 	var v any
 	if json.Unmarshal(marker, &v) == nil && nonEmpty(v) {
-		g.fail(newDetail(ErrUnsupported, g.at, noneMarkerFormat, g.at, marker))
+		g.fail(newDetail(ErrMalformed, g.at, noneMarkerFormat, g.at, marker)) // check's noneWire: only an empty object or array (E3316)
 	}
 	return notMarkerPrefix + g.helper(helperSame) + lparen + raw + listSep + strconv.Quote(string(bytes.TrimSpace(marker))) + rparen
 }
@@ -244,7 +244,7 @@ func (g *gen) decodeVariant(v *ir.Variant) {
 // readInline decodes a variant written in the parent object: the tag and the case's fields.
 func (g *gen) readInline(s *slot) {
 	if s.Optional || s.T.Kind != types.Variant {
-		g.fail(newDetail(ErrUnsupported, s.origin, inlineFormat, s.origin))
+		g.fail(newDetail(ErrMalformed, s.origin, inlineFormat, s.origin)) // check's E3316 refuses it
 		return
 	}
 	var b strings.Builder

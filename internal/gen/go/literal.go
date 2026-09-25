@@ -38,7 +38,7 @@ func (g *gen) expr(t ir.TypeRef, v value.Value) string {
 	case types.Ref:
 		return g.keyLit(t, as[value.Ref](g, v).Key)
 	default:
-		g.failKind(t.Kind)
+		g.refuseKind(t.Kind, typeRefused)
 		return ""
 	}
 }

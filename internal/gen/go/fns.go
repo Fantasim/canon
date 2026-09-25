@@ -59,7 +59,8 @@ func (g *gen) domainSize(origin string, t ir.TypeRef) int {
 			}
 		}
 	}
-	g.failf(ErrUnsupported, "a parameter of %s that is not a Bool, an enum or a table of this package", origin)
+	// a lookup's parameters are finite (a Bool, an enum, a table ref), and a foreign table's is E8019 ForeignTableLookupParam.
+	g.failf(ErrMalformed, "a parameter of %s that is not a Bool, an enum or a table of this package", origin)
 	return 0
 }
 
@@ -222,7 +223,7 @@ func (g *gen) codesIndex(local, name string, t ir.TypeRef) string {
 func (g *gen) fns() {
 	for _, fn := range g.p.Fns {
 		if g.isData() && fn.Kind != ir.FnTranslated {
-			g.fail(newDetail(ErrUnsupported, fn.Name, packageFnFormat, fn.Name))
+			g.fail(newDetail(ErrMalformed, fn.Name, packageFnFormat, fn.Name)) // E8013 package
 			continue
 		}
 		switch fn.Kind {

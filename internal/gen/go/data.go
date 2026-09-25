@@ -110,7 +110,7 @@ func (g *gen) valueType(v *ir.Value) string {
 func (g *gen) loaders() {
 	for _, v := range g.emitted {
 		if !isContainer(v) && v.Type.Kind != types.Record {
-			g.fail(newDetail(ErrUnsupported, v.Name, dataValueFormat, v.Name))
+			g.fail(newDetail(ErrMalformed, v.Name, dataValueFormat, v.Name)) // E8015
 			continue
 		}
 		if v.Reload {

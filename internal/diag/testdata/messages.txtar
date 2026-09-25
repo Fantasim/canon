@@ -375,7 +375,7 @@ E8003 target: unknown emit target resource.vocab.items: expected go, cpp, ts, js
 E8003 option: unknown option resource.vocab.items for emit resource.vocab.items
 E8004 -: resource.vocab.items of package resource.vocab.items is used by this resource.vocab.items emit, but resource.vocab.items has no resource.vocab.items emit
 E8005 -: resource.vocab.items: resource.vocab.items is generated for both resource.vocab.items and resource.vocab.items
-E8007 -: Go output @resource/Server/Item/propItem.json is under no root listed in go_module
+E8007 -: Go output @resource/Server/Item/propItem.json is under no root listed in go_module: map its root in project.canon go_module
 E8008 -: Go directory @resource/Server/Item/propItem.json is written by two emits (resource.vocab.items, resource.vocab.items)
 E8009 mode: invalid mode resource.vocab.items for emit resource.vocab.items: expected one of go, cpp
 E8009 package: invalid package "0.9" for emit go: not a Go identifier, or a Go keyword
@@ -385,14 +385,20 @@ E8009 values: values of emit resource.vocab.items: resource.vocab.items is not a
 E8009 valuesTwice: values of emit resource.vocab.items: resource.vocab.items is listed twice
 E8009 kind: option resource.vocab.items of emit resource.vocab.items must be a constant string
 E8010 -: ordered enum resource.vocab.items has codes that do not increase in declaration order
-E8011 -: 0.9 is not a valid resource.vocab.items identifier for @resource.vocab.items(name:)
-E8012 -: resource.vocab.items cannot be emitted: Int has no representation in generated code
+E8011 override: 0.9 is not a valid resource.vocab.items identifier for @resource.vocab.items(name:)
+E8011 unexported: 0.9 is not exported: an @go(name:) override starts with an upper-case letter
+E8011 derived: 0.9, the resource.vocab.items name derived for resource.vocab.items, is not a valid identifier
+E8011 reserved: 0.9, the C++ name derived for resource.vocab.items, is a keyword or a reserved name
+E8012 type: resource.vocab.items cannot be emitted: Int has no representation in generated code
+E8012 define: resource.vocab.items cannot be emitted: a load.defines table or record has no representation in generated code
 E8013 package: resource.vocab.items needs baked or embedded mode: data files cannot hold package functions
 E8013 refParam: resource.vocab.items needs baked or embedded mode: data files cannot hold a method with a ref parameter
 E8014 -: types mode cannot emit the computed default of resource.vocab.items: there is no data to read it from
-E8015 -: resource.vocab.items is a Int: data and embedded modes emit tables, keyed lists and records
-E8017 -: branch resource.vocab.items of resource.vocab.items is a Int: dependent types may only have scalar, String, enum or ref branches
+E8015 -: resource.vocab.items has type Int: data and embedded modes emit tables, keyed lists and records
+E8017 -: branch resource.vocab.items of resource.vocab.items has type Int: dependent types may only have scalar, String, enum or ref branches
 E8018 -: resource.vocab.items is decoded from JSON by resource.vocab.items, but package resource.vocab.items is emitted in baked mode
+E8019 -: emit resource.vocab.items in resource.vocab.items mode cannot generate a case used as a type
+E8020 -: constant resource.vocab.items is -0.0, which a Go constant cannot hold: make it a let
 E8101 -: "II_SYS_SYS_SCR_FARM3" does not fit a TypeScript number; add @ts(bigint) to resource.vocab.items
 E8102 unit: "II_SYS_SYS_SCR_FARM3" has no wire form for resource.vocab.items: not a whole number of resource.vocab.items
 E8102 none: "II_SYS_SYS_SCR_FARM3" has no wire form for resource.vocab.items: it equals the none marker 0.9
@@ -406,7 +412,8 @@ E8109 header: @cpp(struct:) on resource.vocab.items: access resource.vocab.items
 E8109 access: @cpp(struct:) on resource.vocab.items: access must be fields, both or getters, not 0.9
 E8109 field: @cpp(struct:) on resource.vocab.items: field resource.vocab.items cannot map onto a legacy struct (a map, a non-inline variant, a nested record or a list of records)
 E8150 -: emit json out "0.9" is a file but values has -42 elements
-E8151 -: value resource.vocab.items of type Int has no wire form
+E8151 type: value resource.vocab.items of type Int has no wire form
+E8151 define: value resource.vocab.items is a load.defines table or record, which has no wire form
 E8152 -: outputs collide: @resource/Server/Item/propItem.json and @resource/Server/Item/propItem.json
 E8153 notWritten: resource.vocab.items is emitted in data mode but not written by emit json
 E8153 fileName: resource.vocab.items is emitted in data mode but its file must be resource.vocab.items.json
@@ -420,8 +427,8 @@ E9001 -: a b is not allowed in translated function resource.vocab.items: it is o
 E9002 -: lookup table of resource.vocab.items would have -42 cells (limit 65536)
 E9003 -: parameter resource.vocab.items of export fn resource.vocab.items is optional
 E9004 -: translated function resource.vocab.items returns Int: only scalars, strings, enums and refs are allowed
-E9005 -: a b is a Int: translated templates may only interpolate String, integer and enum values
-E9006 -: parameter resource.vocab.items of resource.vocab.items is a Int: translated functions take Bool, integers, Float, String, Duration and enums
+E9005 -: a b has type Int: translated templates may only interpolate String, integer and enum values
+E9006 -: parameter resource.vocab.items of resource.vocab.items has type Int: translated functions take Bool, integers, Float, String, Duration and enums
 E9007 param: refinement a b of parameter resource.vocab.items of resource.vocab.items cannot be checked at run time
 E9007 result: refinement a b of the result of resource.vocab.items cannot be checked at run time
 E9008 -: translated method resource.vocab.items.resource.vocab.items is called by no test of package resource.vocab.items: add one, it gives the conformance test its receiver

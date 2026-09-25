@@ -36,7 +36,7 @@ func (g *gen) goType(t ir.TypeRef) string {
 	case types.Ref:
 		return g.keyType(t)
 	default:
-		g.failKind(t.Kind)
+		g.refuseKind(t.Kind, typeRefused)
 		return ""
 	}
 }
@@ -52,6 +52,15 @@ func kindText(k types.Kind) string {
 // failKind refuses an untranslatable kind of the item being written, the Subject (go.md §3).
 func (g *gen) failKind(k types.Kind) {
 	g.fail(newDetail(ErrUnsupported, g.at, kindFormat, g.at, kindText(k)))
+}
+
+// refuseKind is failKind, but ErrMalformed for a kind stage E already refuses at this position (E8019).
+func (g *gen) refuseKind(k types.Kind, refused map[types.Kind]bool) {
+	if refused[k] {
+		g.fail(newDetail(ErrMalformed, g.at, kindFormat, g.at, kindText(k)))
+		return
+	}
+	g.failKind(k)
 }
 
 // modeText names an emit mode in a message: an out-of-range mode never indexes modeNames (CODEGEN.md §2.1).
@@ -176,7 +185,7 @@ func (g *gen) caseTypeName(t ir.TypeRef) string {
 		return ""
 	}
 	if len(t.Case.Fields) == 0 {
-		g.fail(newDetail(ErrUnsupported, v.QName()+dot+t.Case.Name,
+		g.fail(newDetail(ErrMalformed, v.QName()+dot+t.Case.Name, // E8019 CaseField
 			"the type %s.%s, a case without fields, which has no Go type", v.QName(), t.Case.Name))
 	}
 	return g.qualify(v.Pkg, g.names.CaseName(v, t.Case))

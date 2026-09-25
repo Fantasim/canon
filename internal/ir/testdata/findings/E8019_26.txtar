@@ -1,0 +1,38 @@
+EVALUATION.md §1, CODEGEN.md §5.1: gen/go writes constants of scalars, enums, lists and maps; a constant of a record, variant or case type is RecordConstant.
+-- a/a.canon --
+package a
+
+/// A shape.
+variant Shape {
+  /// A dot.
+  dot
+  /// A box.
+  box {
+    /// Its side.
+    side: Int
+  }
+}
+
+/// A point.
+record Point {
+  /// Across.
+  x: Int
+}
+
+/// The origin.
+const origin = Point { x: 0 }
+
+/// A dot.
+const d = Shape.dot
+
+emit go { out: "@features/a", package: "a" }
+-- a.origin.json --
+{"x": 0}
+-- findings.txt --
+error[E8019]  a/a.canon:21:7
+  emit go in baked mode cannot generate a constant of a record or variant type
+
+error[E8019]  a/a.canon:24:7
+  emit go in baked mode cannot generate a constant of a record or variant type
+
+2 errors, 0 warnings in 1 package (…)

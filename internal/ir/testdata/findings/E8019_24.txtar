@@ -1,0 +1,35 @@
+EVALUATION.md §1, CODEGEN.md §2.7, §7.2: gen/cpp holds classes by value and refuses a variant that holds itself through a case's non-optional field (an optional one is boxed).
+-- a/a.canon --
+package a
+
+/// A tree.
+variant Tree {
+  /// A leaf.
+  leaf
+  /// A node.
+  node {
+    /// Its left.
+    left: Tree
+  }
+}
+
+/// A forest.
+record Forest {
+  /// Its tree.
+  tree: Tree
+}
+
+/// The forests.
+let forests: table Forest = {
+  one { tree: leaf }
+}
+
+emit cpp { out: "@features/a", namespace: "a", mode: data }
+emit json { out: "out/" }
+-- a.forests.json --
+{"one": {"tree": {"kind": "leaf"}}}
+-- findings.txt --
+error[E8019]  a/a.canon:8:3
+  emit cpp in data mode cannot generate a variant that recurses through a case
+
+1 error, 0 warnings in 1 package (…)

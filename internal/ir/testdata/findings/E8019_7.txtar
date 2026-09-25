@@ -1,0 +1,30 @@
+EVALUATION.md §1: two distinct causes in one package are two E8019 findings, not one.
+-- a/a.canon --
+package a
+
+/// A kind.
+enum K { one, two }
+
+/// A payload.
+type P(k: K) = match k { one => Int, two => String }
+
+/// A shape.
+variant Shape {
+  /// A circle.
+  circle
+  /// A point.
+  point {
+    /// Whether it is at the origin.
+    export fn atOrigin(self) -> Bool { return true }
+  }
+}
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+error[E8019]  a/a.canon:7:6
+  emit go in baked mode cannot generate a dependent type
+
+error[E8019]  a/a.canon:14:3
+  emit go in baked mode cannot generate an export fn of a case without fields
+
+2 errors, 0 warnings in 1 package (…)

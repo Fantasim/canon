@@ -1,0 +1,29 @@
+EVALUATION.md §1, CODEGEN.md §4.2: a table-typed field is specified but neither generator writes it yet (TableField); a table value is its container, not a table field.
+-- a/a.canon --
+package a
+
+/// A cell.
+record Cell {
+  /// Its value.
+  v: Int
+}
+
+/// A row.
+record Row {
+  /// The cells.
+  cells: table Cell
+}
+
+/// The cells, fine.
+let cells: table Cell = {
+  c1 { v: 1 }
+}
+
+emit go { out: "@features/a", package: "a" }
+-- a.cells.json --
+{"c1": {"v": 1}}
+-- findings.txt --
+error[E8019]  a/a.canon:12:3
+  emit go in baked mode cannot generate a table field
+
+1 error, 0 warnings in 1 package (…)

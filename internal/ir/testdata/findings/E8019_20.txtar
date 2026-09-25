@@ -1,0 +1,30 @@
+EVALUATION.md §1, CONFORMANCE.md §2.3: gen/cpp passes a translated method the paths of its receiver's fields and has no argument for a precomputed method of self the body reads.
+-- a/a.canon --
+package a
+
+/// A potion.
+record Potion {
+  /// Its heal.
+  heal: Int
+
+  /// Its heal, doubled.
+  export fn twice(self) -> Int { return heal * 2 }
+
+  /// Its heal for a missing amount.
+  export fn healFor(self, missing: Int) -> Int { return min(self.twice(), missing) }
+}
+
+/// The potions.
+let potions: table Potion = {
+  small { heal: 1 }
+}
+
+emit cpp { out: "@features/a", namespace: "a", mode: data }
+emit json { out: "out/" }
+-- a.potions.json --
+{"small": {"heal": 1}}
+-- findings.txt --
+error[E8019]  a/a.canon:12:13
+  emit cpp in data mode cannot generate a read of self that is not a path of fields
+
+1 error, 0 warnings in 1 package (…)
