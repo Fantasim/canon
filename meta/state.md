@@ -19,9 +19,9 @@ Part A (close open work) then Part B (M3 waves W0–W4). Ticked = committed on `
   ERRORS.md pass: ir group in fixes, check/load groups queued; spec sync #2; cleanups.
 - [ ] A6 M1.5 second wave (type-directed, metamorphic).
 - [x] W0 gap map → `meta/m3-gaps.md` (1b0a332).
-- [ ] W1: eval layers/provenance + identity landed; load forms in round 2; dependent types
-  (check/types) in flight; load gate lift after load. W2 started early: gen/go ∥ gen/cpp
-  LoadInputs + dependent types.
+- [ ] W1: eval layers/provenance + identity, load forms (1a77900) landed; dependent types
+  (check/types) final round; load gate lift + eval dependent types in flight. W2 started early:
+  gen/go ∥ gen/cpp runtime inputs (dependent types in gens wait for ir naming support).
 - [ ] W2 · [ ] W3 · [ ] W4 (see [plan.md](plan.md) "M3 execution").
 
 Milestones: M0, M1, M2 accepted (M1 item 6 deferred to after M7). M1.5 foundation committed
