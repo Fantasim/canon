@@ -11,3 +11,12 @@ const fmtUntranslated = "%w: translated fn %s has no body and no finding explain
 // ErrFingerprint is a type the canon-fp v1 grammar cannot print: a malformed TypeRef, or a
 // kind with no wire form, which stage E refuses first (E8151).
 var ErrFingerprint = errors.New("ir: type has no canon-fp v1 form")
+
+// ErrPattern is a pattern CppPattern cannot translate: one outside EVALUATION.md §11.3's portable subset, which check refuses first (E1904).
+var ErrPattern = errors.New("ir: pattern outside the portable subset")
+
+// fmtPatternParse and fmtPatternOp say why a pattern has no translation.
+const (
+	fmtPatternParse = "%w: %w"
+	fmtPatternOp    = "%w: %v has no portable form"
+)

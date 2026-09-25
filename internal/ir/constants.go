@@ -1,6 +1,10 @@
 package ir
 
-import "regexp"
+import (
+	"regexp"
+	resyntax "regexp/syntax"
+	"unicode/utf8"
+)
 
 // The emit targets of CODEGEN.md §2.1.
 const (
@@ -363,3 +367,68 @@ const (
 	// GoOverrideInvalid is a @go(name:) override that is no Go identifier at all (E8011 `override`).
 	GoOverrideInvalid
 )
+
+// The ECMAScript text CppPattern writes (EVALUATION.md §11.3), and how tightly each part binds.
+const (
+	reGroupOpen  = "(?:"
+	reGroupClose = ")"
+	reEmptyGroup = reGroupOpen + reGroupClose
+	reClassOpen  = "["
+	reClassClose = "]"
+	reRangeDash  = "-"
+	reHexEscape  = `\x`
+	reBar        = "|"
+	reCaret      = "^"
+	reDollar     = "$"
+	reBraceOpen  = "{"
+	reBraceClose = "}"
+	reComma      = ","
+)
+
+// How tightly a translated part binds: an alternation, a concatenation, an atom.
+const (
+	reAlt = iota
+	reConcat
+	reAtom
+)
+
+// UTF-8 (RFC 3629): the last code point of each encoded length, the payload bits of a
+// continuation byte, the surrogates no valid text encodes, and 0xFF, a byte it never holds.
+const (
+	utf8ContBits  = 6
+	surrogateMin  = 0xD800
+	surrogateMax  = 0xDFFF
+	utf8Top2      = 0x7FF
+	utf8Top3      = 0xFFFF
+	reNoMatchByte = 0xFF
+	pairWidth     = 2    // a rune class is lo, hi pairs
+	asciiLowerBit = 0x20 // ORed into an ASCII letter, its lower case
+)
+
+// utf8Spans are the multi-byte encoded lengths: their code points and the compact form of all of
+// them, exact on valid UTF-8 (lead byte, then its continuation bytes; no overlong, no surrogate).
+var utf8Spans = [...]struct {
+	lo, hi rune
+	all    string
+}{
+	{utf8.RuneSelf, utf8Top2, `[\xc2-\xdf][\x80-\xbf]`},
+	{utf8Top2 + 1, utf8Top3, `[\xe0-\xef][\x80-\xbf]{2}`},
+	{utf8Top3 + 1, utf8.MaxRune, `[\xf0-\xf4][\x80-\xbf]{3}`},
+}
+
+// The code points of `.` (all but `\n`: the Perl flags lack DotNL) and of any, as rune pairs.
+var (
+	anyRuneNotNL = []rune{0, '\n' - 1, '\n' + 1, utf8.MaxRune}
+	anyRune      = []rune{0, utf8.MaxRune}
+)
+
+// reQuantifiers are the quantifiers written as themselves; OpRepeat writes its bounds.
+var reQuantifiers = map[resyntax.Op]string{resyntax.OpStar: "*", resyntax.OpPlus: "+", resyntax.OpQuest: "?"}
+
+// reRawBytes are the bytes CppPattern writes unescaped: letters, digits and `_`.
+var reRawBytes = func() (raw [utf8.RuneSelf]bool) {
+	for c := range raw {
+		raw[c] = c == '_' || '0' <= c && c <= '9' || 'a' <= c|asciiLowerBit && c|asciiLowerBit <= 'z'
+	}
+	return raw
+}()
