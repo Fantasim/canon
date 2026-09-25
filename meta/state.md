@@ -1,7 +1,8 @@
 # State — Canon compiler
 
-Updated: 2026-09-25 (cloud run). The overnight run resumed in a Claude Code cloud session on
-branch `claude/m3-run` (stands in for `main`; Louis fast-forwards `main` from it). Resume plan:
+Updated: 2026-09-25 (cloud run 2, on `claude/m3-run-2`, which stands in for `main`; the first
+cloud run's `claude/m3-run` is merged into `origin/main`). The overnight run resumed in a Claude
+Code cloud session on branch `claude/m3-run` (Louis fast-forwards `main` from these branches). Resume plan:
 [handoff/2026-09-25-pause.md](handoff/2026-09-25-pause.md); calls of the cloud run:
 [decisions/log-2026-09-25.md](decisions/log-2026-09-25.md); earlier calls:
 [decisions/log-2026-09-24.md](decisions/log-2026-09-24.md) "Overnight run". Stopped on budget;
@@ -14,15 +15,17 @@ worktree branches. They are listed in the pause report with what each still need
 - [x] A1 loader parity (2eb3294, c9a44cb) · [x] A2 demo bugs (428fbad, 6534f56) · [x] A3 M1.5
   bug-fix wave · [x] A4 M2 accepted (94ddb96).
 - [ ] A5: consumer units landed (d5de44d, 5d8232a). ERRORS.md pass: ir group landed (e1eaa0a); check group + check follow-up landed (7d35a39,
-  154aa30, a1aa811); load group queued
-  (script `load.py`, see pause report). Spec sync #2 and cleanups queued.
-- [ ] A6 M1.5 second wave: WIP, review FAILED, branch `claude/wip-a6-progen`.
+  154aa30, a1aa811); load group + symlink resolver + load on types' format rules landed
+  (db15f7e, run 2). Spec syncs of the logged calls landed (68ffb95, d44a17f, 438f828, 5b21388);
+  ADR-0005 + DECISIONS 220. Cleanups queued.
+- [ ] A6 M1.5 second wave: round 2 under review, branch `claude/wip-a6-progen-2`.
 - [x] W0 gap map (1b0a332).
 - [ ] W1: landed: eval layers/provenance (bc99b99, 02f203c), load forms (1a77900), dependent
   types in check (3e46ab3, b2f063c). Gate lift + load into an applied type landed on
   `claude/m3-run` (d5062a3).
 - [ ] W2: gen/go inputs + unions landed (8e816d3). Open: gen/cpp inputs round 2 WIP
-  (`claude/wip-a17381f528923b9cb`); ir name-plan unit WIP, review FAILED (`claude/wip-ir-names`);
+  (`claude/wip-cpp-inputs`, with the gen/cpp plan switch) and gen/go plan switch
+  (`claude/wip-go-plans`) in flight; ir name plans landed (ad23ae8, run 2);
   pattern translator; verify dependent (E3801/E3802);
   view/translation checking; ir `types` mode; dependent types in both generators.
 - [ ] W3 · [ ] W4 (see [plan.md](plan.md) "M3 execution").
