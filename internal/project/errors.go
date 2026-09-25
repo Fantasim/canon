@@ -14,8 +14,10 @@ var (
 // errNoLinks is EvalSymlinks on an FS that resolves no symbolic link (WIRE.md §6.5).
 var errNoLinks = errors.New("the file system resolves no symbolic link")
 
-// UnknownError names what a call selected that the project does not have: a package selector
-// (ErrUnknownPackage, or ErrMixedDirectory for a directory, API.md R1), or a layer (API.md O4).
+// ErrSymlinkLoop is a link chain past maxSymlinkHops; load reports it as W7115 looping.
+var ErrSymlinkLoop = errors.New("too many levels of symbolic links")
+
+// UnknownError names what a call selected that the project does not have: a package selector (API.md R1) or a layer (API.md O4).
 type UnknownError struct {
 	Err  error
 	Name string

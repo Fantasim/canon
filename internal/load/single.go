@@ -42,10 +42,10 @@ func (l *Loader) statFile(p project.Path, req Request) bool {
 		diag.E7004.At(req.Span, p.Display, causeOf(err)).Report(req.Bag)
 		return false
 	case info.IsDir():
-		diag.E7004.At(req.Span, p.Display, causeOf(errIsDir)).Report(req.Bag)
+		diag.E7004.At(req.Span, p.Display, diag.KindReadIsDir).Report(req.Bag)
 		return false
 	case !info.Mode().IsRegular():
-		diag.E7004.At(req.Span, p.Display, causeOf(errNotRegular)).Report(req.Bag)
+		diag.E7004.At(req.Span, p.Display, diag.KindReadNotRegular).Report(req.Bag)
 		return false
 	}
 	return true
@@ -87,7 +87,7 @@ func (l *Loader) bare(ctx context.Context, req Request, e *syntax.LoadExpr, t ty
 	if !checkOptions(loadForm, c, format, req) {
 		return nil, false, nil
 	}
-	if !formatFits(format, c.boolOpt(c.header), t) {
+	if !types.FormatFits(format, c.boolOpt(c.header), t) {
 		diag.E7116.At(req.Span, formLabel(loadForm), t).Report(req.Bag)
 		return nil, false, nil
 	}
@@ -95,9 +95,9 @@ func (l *Loader) bare(ctx context.Context, req Request, e *syntax.LoadExpr, t ty
 		return nil, false, nil
 	}
 	switch format {
-	case fmtJSON:
+	case types.FormatJSON:
 		return l.bareJSON(ctx, req, c, p, t)
-	case fmtCSV:
+	case types.FormatCSV:
 		return l.bareCSV(ctx, req, c, p, t)
 	default:
 		return l.textValue(req, p, t)
@@ -156,7 +156,7 @@ func (l *Loader) text(_ context.Context, req Request, e *syntax.LoadExpr, t type
 	if !ok {
 		return nil, false, notLiteral(methodText)
 	}
-	if !checkOptions(methodText, c, fmtText, req) {
+	if !checkOptions(methodText, c, types.FormatText, req) {
 		return nil, false, nil
 	}
 	p, ok := l.resolveFile(c.path, req)
@@ -191,10 +191,10 @@ func (l *Loader) csv(ctx context.Context, req Request, e *syntax.LoadExpr, t typ
 	if !ok {
 		return nil, false, notLiteral(methodCSV)
 	}
-	if !checkOptions(methodCSV, c, fmtCSV, req) {
+	if !checkOptions(methodCSV, c, types.FormatCSV, req) {
 		return nil, false, nil
 	}
-	if !csvFits(c.boolOpt(c.header), t) {
+	if !types.CSVFits(c.boolOpt(c.header), t) {
 		diag.E7116.At(req.Span, formLabel(methodCSV), t).Report(req.Bag)
 		return nil, false, nil
 	}

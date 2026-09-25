@@ -1,6 +1,6 @@
-WIRE.md §6.5, meta/decisions/log-2026-09-24.md "load.dir round 3": a broken link, whose target
-does not exist, is skipped with W7115, never silently. The archive's own FS resolves the link, so
-the case never depends on the machine's disk.
+WIRE.md §6.5, ERRORS.md W7115 "dangling": a broken link, whose target does not exist, is skipped
+with W7115 dangling, never silently. The archive's own FS resolves the link, so the case never
+depends on the machine's disk.
 -- pattern --
 data/*.json
 -- data/a.json --
@@ -9,6 +9,6 @@ data/*.json
 data/badlink.json /p/data/gone.json
 -- findings.txt --
 warning[W7115]  pattern:1:1
-  symbolic link data/badlink.json points outside the roots; skipped
+  symbolic link data/badlink.json points to nothing; skipped
 
 0 errors, 1 warning in 1 package (…)

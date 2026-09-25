@@ -94,7 +94,7 @@ func (c *parsedCall) setBool(dst **bool, e syntax.Expr) bool {
 }
 
 // checkOptions is WIRE.md §6.1's E7006 (form or format), formOptions and formatInvalid the data.
-func checkOptions(form string, c parsedCall, format wireFormat, req Request) bool {
+func checkOptions(form string, c parsedCall, format types.LoadFormat, req Request) bool {
 	ok := true
 	for _, name := range c.names {
 		if !formOptions[form][name] || formatInvalid(name, format) {
@@ -106,14 +106,14 @@ func checkOptions(form string, c parsedCall, format wireFormat, req Request) boo
 }
 
 // formatInvalid is WIRE.md §6.1's format-specific E7006 causes.
-func formatInvalid(option string, format wireFormat) bool {
+func formatInvalid(option string, format types.LoadFormat) bool {
 	switch option {
 	case optionAt:
-		return format == fmtCSV || format == fmtText
+		return format == types.FormatCSV || format == types.FormatText
 	case optHeader:
-		return format != fmtCSV
+		return format != types.FormatCSV
 	case optPartial:
-		return format == fmtText
+		return format == types.FormatText
 	default:
 		return false
 	}
@@ -132,8 +132,9 @@ func notLiteral(form string) error {
 	return unsupported(causeArticle + formLabel(form) + causeNotLiteral)
 }
 
-// formatText is the format E7006 names: a fixed form's own, else the bare or dir call's wireFormat.
-func formatText(form string, format wireFormat) string {
+// formatText is the format E7006 names: a fixed form's own, else the bare or dir call's format,
+// a name types itself does not provide.
+func formatText(form string, format types.LoadFormat) string {
 	switch form {
 	case methodCSV:
 		return methodCSV
@@ -147,88 +148,26 @@ func formatText(form string, format wireFormat) string {
 }
 
 // detectFormat is display's format from its extension (WIRE.md §6.2); ok is false after E7007.
-func detectFormat(display string, req Request) (wireFormat, bool) {
-	f := formatOf(display)
-	if f == fmtUnknown {
+func detectFormat(display string, req Request) (types.LoadFormat, bool) {
+	f := types.FormatOfPath(display)
+	if f == types.FormatUnknown {
 		diag.E7007.At(req.Span, display).Report(req.Bag)
-		return fmtUnknown, false
+		return types.FormatUnknown, false
 	}
 	return f, true
 }
 
-// formatSymbol is format:'s value as a wireFormat; false for a name this milestone refuses (WIRE.md §6.2).
-func formatSymbol(s string) (wireFormat, bool) {
-	for f, name := range formatNames {
-		if wireFormat(f) != fmtUnknown && name == s {
-			return wireFormat(f), true
-		}
-	}
-	return fmtUnknown, false
-}
-
 // resolveCallFormat is c's format: c.format's symbol if given, else display's extension (WIRE.md §6.2).
-func resolveCallFormat(c parsedCall, display string, req Request) (wireFormat, bool) {
+func resolveCallFormat(c parsedCall, display string, req Request) (types.LoadFormat, bool) {
 	if c.format != nil {
-		f, ok := formatSymbol(*c.format)
-		if !ok {
+		f := types.FormatNamed(*c.format)
+		if f == types.FormatUnknown {
 			diag.E7006.AtFormat(req.Span, *c.format).Report(req.Bag)
-			return fmtUnknown, false
+			return types.FormatUnknown, false
 		}
 		return f, true
 	}
 	return detectFormat(display, req)
-}
-
-// formatFits is whether format, once known, can produce t: a bare load's runtime-detected format is not visible to internal/check (WIRE.md §6.1).
-func formatFits(format wireFormat, header bool, t types.Type) bool {
-	switch format {
-	case fmtText:
-		return t.Base().Kind() == types.String
-	case fmtCSV:
-		return csvFits(header, t)
-	default:
-		return true
-	}
-}
-
-// csvFits is WIRE.md §6.6: header:true builds a collection of records, header:false [[String]].
-func csvFits(header bool, t types.Type) bool {
-	if !header {
-		return stringRows(t)
-	}
-	return recordRows(t)
-}
-
-// stringRows reports [[String]], what a headerless csv (detected or load.csv) builds (WIRE.md §6.6).
-func stringRows(t types.Type) bool {
-	rows, ok := t.Base().(*types.ListType)
-	if !ok || rows.KeyedBy != nil {
-		return false
-	}
-	row, ok := rows.Elem.Base().(*types.ListType)
-	return ok && row.KeyedBy == nil && types.Identical(row.Elem, types.StringType)
-}
-
-// recordRows reports a List or Table of Record elements, what a headered csv builds (WIRE.md §6.6).
-func recordRows(t types.Type) bool {
-	switch b := t.Base().(type) {
-	case *types.ListType:
-		return isRecordKind(b.Elem)
-	case *types.TableType:
-		return isRecordKind(b.Elem)
-	default:
-		return false
-	}
-}
-
-// isRecordKind reports a plain or applied record type.
-func isRecordKind(t types.Type) bool {
-	switch t.Base().(type) {
-	case *types.RecordType, *types.AppliedRecord:
-		return true
-	default:
-		return false
-	}
 }
 
 // atStep is one step of a parsed `at:` path: a member name, an array index, or `*` (WIRE.md §6.3).

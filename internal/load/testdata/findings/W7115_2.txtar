@@ -1,5 +1,6 @@
-WIRE.md §6.5: a link whose target resolves outside every declared root and the project is
-skipped with W7115; the link inside the project is followed (b.json, no finding).
+WIRE.md §6.5, ERRORS.md W7115 "outsideRoots": a link whose target resolves outside every
+declared root and the project is skipped with W7115; the link inside the project is followed
+(b.json, no finding).
 -- pattern --
 data/*.json
 -- data/a.json --

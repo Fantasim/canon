@@ -29,7 +29,7 @@ func (l *Loader) defines(_ context.Context, req Request, e *syntax.LoadExpr, t t
 	if !ok {
 		return nil, false, notLiteral(formDefines)
 	}
-	if !checkOptions(formDefines, c, fmtUnknown, req) {
+	if !checkOptions(formDefines, c, types.FormatUnknown, req) {
 		return nil, false, nil
 	}
 	p, ok := l.resolveFile(c.path, req)

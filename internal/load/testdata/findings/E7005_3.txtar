@@ -4,6 +4,6 @@ expanded (WIRE.md §6.5 allows no nesting).
 data/{a,{b}}.json
 -- findings.txt --
 error[E7005]  pattern:1:1
-  invalid glob data/{a,{b}}.json: unclosed, empty or nested {
+  invalid glob data/{a,{b}}.json: an unclosed, empty or nested brace
 
 1 error, 0 warnings in 1 package (…)

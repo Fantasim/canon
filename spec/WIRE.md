@@ -616,7 +616,10 @@ Pattern syntax, per `/`-separated segment:
   `.`. `**` never enters a directory whose name starts with `.`.
 - Only regular files match (after following links). Symbolic links are followed only when their
   target resolves inside a declared root or the project; any other link is skipped with `W7115`. A
-  directory link already on the current walk path is not followed again.
+  directory link already on the current walk path is not followed again. The same bounds hold for
+  a `load.dir` base directory, and a literal `load.dir` path, that is or passes through a link: outside
+  the roots and the project it is skipped with `W7115`, naming the first linked segment; a base
+  or path whose link is dangling or part of a loop is `E7004` (`ReadMissing`, `ReadLinkLoop`).
 - **Order**: ascending byte order of the matched path relative to the base, with `/` separators.
 - Zero matches is `W7107` at the `load.dir`; the result is empty.
 

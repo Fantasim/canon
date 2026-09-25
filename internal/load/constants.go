@@ -1,6 +1,10 @@
 package load
 
-import "regexp"
+import (
+	"regexp"
+
+	"github.com/fantasim/canonlang/internal/types"
+)
 
 // Load forms (WIRE.md §6.1): loadForm is the bare `load(path)`, whose method is nil.
 const (
@@ -30,11 +34,15 @@ const (
 // magicChars start a glob's pattern part; the segments before it are a literal path (WIRE.md §6.5).
 const magicChars = "*?[{"
 
-// Causes of E7005, an invalid load.dir glob segment (WIRE.md §6.5, a fixed vocabulary for now).
+// globVerdict is validateGlob's outcome kind.
+type globVerdict uint8
+
+// globEmptySeg is E7001 empty, globDotSeg is E7001 dot (globCheck.seg carries "." or ".."), globInvalid is E7005 (globCheck.kind carries the cause).
 const (
-	causeDoubleStar = "** must be a whole segment"
-	causeBracket    = "unclosed ["
-	causeBrace      = "unclosed, empty or nested {"
+	globWellFormed globVerdict = iota
+	globEmptySeg
+	globDotSeg
+	globInvalid
 )
 
 // Causes of ErrUnsupported, what this milestone does not read yet (DECISIONS 196).
@@ -47,30 +55,13 @@ const (
 	causeUnknownForm   = "a load form this milestone does not recognize"
 )
 
-// Causes of E7004, chosen by errors.Is rather than an OS message or a path (DOCTRINE.md §5).
-const (
-	causeMissing    = "no such file or directory"
-	causePermission = "permission denied"
-	causeNotDir     = "not a directory"
-	causeIsDir      = "is a directory"
-	causeNotRegular = "not a regular file"
-	causeTooLarge   = "too large"
-	causeUnreadable = "unreadable"
-)
-
-// wireFormat is a loaded file's format, told apart by extension or `format:` (WIRE.md §6.2).
-type wireFormat int
-
-// load.dir still reads only fmtJSON matches (DECISIONS 173).
-const (
-	fmtUnknown wireFormat = iota
-	fmtJSON
-	fmtCSV
-	fmtText
-)
-
-// formatNames is each wireFormat's E7006/E7007 message text (WIRE.md §6.2).
-var formatNames = [...]string{fmtUnknown: "unknown", fmtJSON: "json", fmtCSV: "csv", fmtText: "text"}
+// formatNames is each types.LoadFormat's E7006 message text, a name types itself does not provide (WIRE.md §6.2).
+var formatNames = [...]string{
+	types.FormatUnknown: "unknown",
+	types.FormatJSON:    "json",
+	types.FormatCSV:     "csv",
+	types.FormatText:    "text",
+}
 
 // formOptions is each form's allowed named options (WIRE.md §6.1's table, DECISIONS 26).
 var formOptions = map[string]map[string]bool{

@@ -1,0 +1,17 @@
+WIRE.md §6.5 (as synced): a literal load.dir path (no magic character) that is itself a link,
+outside every root and the project, is skipped with W7115 naming the whole path — the empty
+walk it prevents is W7107 too.
+-- pattern --
+data/lit.json
+-- /outside/lit.json --
+{"label": "x"}
+-- symlinks --
+data/lit.json /outside/lit.json
+-- findings.txt --
+warning[W7107]  pattern:1:1
+  glob data/lit.json matches no file
+
+warning[W7115]  pattern:1:1
+  symbolic link data/lit.json points outside the roots; skipped
+
+0 errors, 2 warnings in 1 package (…)

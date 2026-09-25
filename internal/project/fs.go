@@ -5,7 +5,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
 // FS reads the project's files; names are absolute and '/'-separated (API.md §2.2).
@@ -60,15 +59,7 @@ func (osFS) ReadDir(name string) ([]fs.DirEntry, error) {
 	return entries, nil
 }
 
+// EvalSymlinks resolves name itself, project's own walk (evalSymlinksOS), never the OS's own EvalSymlinks or its ELOOP wording.
 func (osFS) EvalSymlinks(name string) (string, error) {
-	real, err := filepath.EvalSymlinks(filepath.FromSlash(name))
-	if err != nil {
-		return "", fmt.Errorf(fmtWrap, err)
-	}
-	return slashed(real, filepath.Separator), nil
-}
-
-// slashed is p, an OS path whose separator is osSep, '/'-separated as FS names are (API.md §2.2).
-func slashed(p string, osSep rune) string {
-	return strings.ReplaceAll(p, string(osSep), sep)
+	return evalSymlinksOS(name)
 }

@@ -1,0 +1,11 @@
+WIRE.md §6.5 (as synced): a load.dir base directory reached through a link that stays inside a
+declared root or the project is followed, no finding at all; only a link leaving every bound is
+skipped.
+-- pattern --
+indir/*.json
+-- real/f.json --
+{"label": "f"}
+-- symlinks --
+indir real
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

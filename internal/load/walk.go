@@ -17,22 +17,29 @@ type matchFile struct {
 	Abs     string
 }
 
-// globMatches is base's matches: itself with no glob, else rest walked under base's resolved
-// directory, one per resolved file, in path order.
+// globMatches is base's matches: itself with no glob, else rest walked under base's resolved directory, one per resolved file, in path order; base's own link is bounds-checked first, the same rule a walk entry gets.
 func (l *Loader) globMatches(base project.Path, rest string, req Request) ([]matchFile, error) {
-	if rest == "" {
-		return l.literalMatch(base)
+	bounds := l.walkBounds()
+	real, matched, err := l.resolveBase(base, bounds, req)
+	if err != nil {
+		return nil, err
 	}
-	info, err := l.FS.Stat(base.Abs)
+	if !matched {
+		return nil, nil
+	}
+	if rest == "" {
+		return l.literalMatch(base, real)
+	}
+	info, err := l.FS.Stat(real)
 	switch {
 	case err != nil:
 		return nil, err
 	case !info.IsDir():
 		return nil, errNotDir
 	}
-	w, baseReal := l.newWalker(base, req), l.realOr(base.Abs)
-	hits, err := w.descend(baseReal, func() ([]hit, error) {
-		return w.dirSegs("", baseReal, mergeStars(strings.Split(rest, sepStr)))
+	w := l.newWalker(base, bounds, req)
+	hits, err := w.descend(real, func() ([]hit, error) {
+		return w.dirSegs("", real, mergeStars(strings.Split(rest, sepStr)))
 	})
 	if err != nil {
 		return nil, err
@@ -45,16 +52,16 @@ func (l *Loader) globMatches(base project.Path, rest string, req Request) ([]mat
 	return out, nil
 }
 
-// literalMatch is a glob with no magic character: base itself, or nothing for a directory.
-func (l *Loader) literalMatch(base project.Path) ([]matchFile, error) {
-	info, err := l.FS.Stat(base.Abs)
+// literalMatch is a glob with no magic character: base itself at its resolved path real, or nothing for a directory (WIRE.md §6.5).
+func (l *Loader) literalMatch(base project.Path, real string) ([]matchFile, error) {
+	info, err := l.FS.Stat(real)
 	switch {
 	case err != nil:
 		return nil, err
 	case info.IsDir():
 		return nil, nil
 	}
-	return []matchFile{{Display: base.Display, Abs: base.Abs}}, nil
+	return []matchFile{{Display: base.Display, Abs: real}}, nil
 }
 
 // mergeStars collapses every run of consecutive "**" into one, so it walks exactly once.

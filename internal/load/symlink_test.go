@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/fantasim/canonlang/internal/diag"
@@ -165,6 +166,56 @@ func TestLoadDirSymlinksAcrossRoots(t *testing.T) {
 	}
 }
 
+// firstLinkedFinding runs load.dir(pattern) over fsys/layout and returns the first W7115
+// finding's rendered message, "" when none.
+func firstLinkedFinding(t *testing.T, fsys project.FS, layout *project.Layout, pattern string) string {
+	t.Helper()
+	set := &source.FileSet{}
+	bag := diag.NewBag(set, "p")
+	l := &load.Loader{FS: fsys, Layout: layout, Set: set}
+	item := itemType()
+	keyed := &types.ListType{Elem: item, KeyedBy: item.Fields[0]}
+	if _, _, err := l.Load(context.Background(), load.Request{Pkg: "p", Bag: bag}, dirExpr(pattern), keyed); err != nil {
+		t.Fatalf("err=%v findings %+v", err, bag.Findings())
+	}
+	for _, f := range bag.Findings() {
+		if f.Code == diag.W7115.Def().Code {
+			return f.Message
+		}
+	}
+	return ""
+}
+
+// WIRE.md §6.5: a link in the middle of a load.dir base path names itself, not a real segment before or after it.
+func TestLoadDirSymlinksMidBaseSegment(t *testing.T) {
+	skipOnWindows(t)
+	root := t.TempDir()
+	mkTree(t, root, map[string]string{"outside/target/sub/keep.json": "{}"},
+		map[string]string{"proj/data/mid": "outside/target"})
+	layout := layoutAt(t, filepath.ToSlash(filepath.Join(root, "proj")))
+	msg := firstLinkedFinding(t, project.OS(), layout, "data/mid/sub/*.json")
+	if want := "data/mid/"; !strings.Contains(msg, want) {
+		t.Errorf("message = %q, want it to name %q", msg, want)
+	}
+}
+
+// WIRE.md §6.5: the same base through an aliased parent (macOS /tmp): the alias's own resolution does not make an unlinked segment look linked.
+func TestLoadDirSymlinksMidBaseSegmentThroughAlias(t *testing.T) {
+	skipOnWindows(t)
+	root := t.TempDir()
+	mkTree(t, filepath.Join(root, "real"), map[string]string{"outside/target/sub/keep.json": "{}"},
+		map[string]string{"proj/data/mid": "outside/target"})
+	alias := filepath.Join(root, "alias")
+	if err := os.Symlink(filepath.Join(root, "real"), alias); err != nil {
+		t.Fatal(err)
+	}
+	layout := layoutAt(t, filepath.ToSlash(filepath.Join(alias, "proj")))
+	msg := firstLinkedFinding(t, project.OS(), layout, "data/mid/sub/*.json")
+	if want := "data/mid/"; !strings.Contains(msg, want) {
+		t.Errorf("message through the alias = %q, want it to name %q", msg, want)
+	}
+}
+
 // linkArchive is an in-memory tree with a directory link and a file link, both in the project.
 func linkArchive() *txtar.Archive {
 	return &txtar.Archive{Files: []txtar.File{
@@ -186,6 +237,42 @@ func TestLoadDirSymlinksThroughFS(t *testing.T) {
 	}
 	if run.w7115 {
 		t.Errorf("unexpected %s", diag.W7115.Def().Code)
+	}
+}
+
+// statFailFS makes one link resolve to target with no existence check, so a link that resolves
+// but whose target Stat then fails is testable without a real race (ERRORS.md W7115 "statFailed").
+type statFailFS struct {
+	memFS
+	link, target string
+}
+
+func (f statFailFS) EvalSymlinks(name string) (string, error) {
+	if name == f.link {
+		return f.target, nil
+	}
+	return f.memFS.EvalSymlinks(name)
+}
+
+// ERRORS.md W7115 "statFailed": a link resolving to a path the FS then cannot Stat is reported
+// distinctly from a dangling or looping one.
+func TestLoadDirSymlinksStatFailed(t *testing.T) {
+	fsys := statFailFS{memFS: newMemFS(linkArchive()), link: "/p/data/gooddir", target: "/p/data/ghost"}
+	set := &source.FileSet{}
+	bag := diag.NewBag(set, "p")
+	l := &load.Loader{FS: fsys, Layout: layoutAt(t, projectDir), Set: set}
+	item := itemType()
+	keyed := &types.ListType{Elem: item, KeyedBy: item.Fields[0]}
+	_, _, err := l.Load(context.Background(), load.Request{Pkg: "p", Bag: bag}, dirExpr("data/**/*.json"), keyed)
+	if err != nil {
+		t.Fatalf("err=%v findings %+v", err, bag.Findings())
+	}
+	found := false
+	for _, f := range bag.Findings() {
+		found = found || (f.Code == diag.W7115.Def().Code && strings.Contains(f.Message, "cannot be resolved or read"))
+	}
+	if !found {
+		t.Errorf("no %s statFailed for a link whose resolved target cannot be Stat'd; findings=%+v", diag.W7115.Def().Code, bag.Findings())
 	}
 }
 

@@ -2,24 +2,16 @@ package load_test
 
 import (
 	"context"
-	"path/filepath"
-	"runtime"
 	"strings"
-	"syscall"
 	"testing"
 	"time"
 
 	"github.com/fantasim/canonlang/internal/diag"
-	"github.com/fantasim/canonlang/internal/load"
-	"github.com/fantasim/canonlang/internal/project"
 	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
 )
-
-// fifoWaitTimeout bounds TestResolveFileRefusesFIFO: past it, Load tried to read the FIFO.
-const fifoWaitTimeout = 5 * time.Second
 
 // A large CR LF file with quoted CR LF cells; linearTimeBound is far above a linear read, even
 // under -race, and far below a quadratic one (minutes).
@@ -29,36 +21,16 @@ const (
 	linearTimeBound = 10 * time.Second
 )
 
-// WIRE.md §6.1: a single-file form refuses a FIFO before reading it, rather than hanging forever.
-func TestResolveFileRefusesFIFO(t *testing.T) {
-	if runtime.GOOS == "windows" {
-		t.Skip("no FIFOs on windows")
+// WIRE.md §6.1: a single-file form's path naming a directory is E7004 ReadIsDir.
+func TestBareLoadOnDirectoryIsE7004ReadIsDir(t *testing.T) {
+	l, req := loaderFor(t, map[string]string{"data.json/a.json": "{}"})
+	_, ok, err := l.Load(context.Background(), req, bareExpr("data.json"), types.StringType)
+	if err != nil || ok {
+		t.Fatalf("ok=%v err=%v, want a refused decode", ok, err)
 	}
-	dir := t.TempDir()
-	fifo := filepath.Join(dir, "p.txt")
-	if err := syscall.Mkfifo(fifo, 0o600); err != nil {
-		t.Fatal(err)
-	}
-	layout, ok := project.NewLayout(&project.Project{}, dir, nil, diag.NewBag(nil, ""))
-	if !ok {
-		t.Fatal("layout")
-	}
-	set := &source.FileSet{}
-	bag := diag.NewBag(set, "p")
-	l := &load.Loader{FS: project.OS(), Layout: layout, Set: set}
-	req := load.Request{Pkg: "p", Bag: bag}
-	done := make(chan struct{})
-	go func() {
-		l.Load(context.Background(), req, textExpr("p.txt"), types.StringType)
-		close(done)
-	}()
-	select {
-	case <-done:
-	case <-time.After(fifoWaitTimeout):
-		t.Fatal("Load did not return: it tried to read the FIFO")
-	}
-	if len(bag.Findings()) != 1 || bag.Findings()[0].Code != diag.E7004.Def().Code {
-		t.Errorf("findings = %+v, want one %s", bag.Findings(), diag.E7004.Def().Code)
+	fd := req.Bag.Findings()
+	if len(fd) != 1 || fd[0].Code != diag.E7004.Def().Code || !strings.Contains(fd[0].Message, "is a directory") {
+		t.Errorf(`findings = %+v, want one %s naming "is a directory"`, fd, diag.E7004.Def().Code)
 	}
 }
 

@@ -1,11 +1,10 @@
-meta/decisions/log-2026-09-24.md "load.dir review (M2)": a "." or ".." segment in the glob
-part itself is E7001, not silently normalized; a walk can never match either. Segments before
-the first magic character are the literal base and follow WIRE.md §2.2's own normalization,
-unaffected.
+ERRORS.md E7001 "dot": a "." or ".." segment in the glob part itself is E7001, not silently
+normalized; a walk can never match either. Segments before the first magic character are the
+literal base and follow WIRE.md §2.2's own normalization, unaffected.
 -- pattern --
 data/*/../x.json
 -- findings.txt --
 error[E7001]  pattern:1:1
-  path data/*/../x.json: empty segment
+  path data/*/../x.json: ".." is not a path segment
 
 1 error, 0 warnings in 1 package (…)

@@ -1,0 +1,14 @@
+WIRE.md §6.5, ERRORS.md W7115 "looping": a link naming itself never resolves; the archive's own
+memFS (findings_test.go, itself hop-bounded) reports project.ErrSymlinkLoop, which load maps
+here (project's own resolver gets the equivalent evalSymlinksOS test in internal/project).
+-- pattern --
+data/*.json
+-- data/a.json --
+{"label": "a"}
+-- symlinks --
+data/self.json /p/data/self.json
+-- findings.txt --
+warning[W7115]  pattern:1:1
+  symbolic link data/self.json is part of a loop; skipped
+
+0 errors, 1 warning in 1 package (…)

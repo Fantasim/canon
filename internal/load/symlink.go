@@ -1,6 +1,7 @@
 package load
 
 import (
+	"errors"
 	"io/fs"
 	"path"
 	"strings"
@@ -26,10 +27,10 @@ type hit struct {
 	rel, real string
 }
 
-// newWalker starts a walk under base, its bounds resolved once (WIRE.md §2.2, §6.5).
-func (l *Loader) newWalker(base project.Path, req Request) *walker {
+// newWalker starts a walk under base, bounds already resolved once by the caller (WIRE.md §2.2, §6.5).
+func (l *Loader) newWalker(base project.Path, bounds []string, req Request) *walker {
 	return &walker{
-		l: l, bounds: l.walkBounds(), onPath: map[string]bool{},
+		l: l, bounds: bounds, onPath: map[string]bool{},
 		from: base.Display, span: req.Span, bag: req.Bag,
 	}
 }
@@ -63,9 +64,66 @@ func within(real string, bounds []string) bool {
 	return false
 }
 
-// reportSkipped is W7115 for link name in directory rel, broken ones too (log "load.dir round 3").
-func (w *walker) reportSkipped(rel, name string) {
-	diag.W7115.At(w.span, path.Join(w.from, rel, name)).Report(w.bag)
+// reportSkipped is W7115 for link name in directory rel, its variant chosen by the caller
+// (log "load.dir round 3").
+func (w *walker) reportSkipped(rel, name string, at func(source.Span, string) *diag.Builder) {
+	at(w.span, path.Join(w.from, rel, name)).Report(w.bag)
+}
+
+// linkCause is W7115's variant for err, project.EvalSymlinks's own result, chosen by errors.Is, never OS text; anything else, an unresolvable FS included, falls to statFailed.
+func linkCause(err error) func(source.Span, string) *diag.Builder {
+	switch {
+	case errors.Is(err, project.ErrSymlinkLoop):
+		return diag.W7115.AtLooping
+	case errors.Is(err, fs.ErrNotExist):
+		return diag.W7115.AtDangling
+	default:
+		return diag.W7115.AtStatFailed
+	}
+}
+
+// resolveBase is base's directory, base.Abs itself when no link changed it: outside every bound it is W7115 with an empty match; a dangling or looping link is an error instead, E7004 at the caller.
+func (l *Loader) resolveBase(base project.Path, bounds []string, req Request) (real string, matched bool, err error) {
+	real, evalErr := project.EvalSymlinks(l.FS, base.Abs)
+	switch {
+	case evalErr == nil && (real == base.Abs || within(real, bounds)):
+		return real, true, nil
+	case evalErr == nil:
+		diag.W7115.AtOutsideRoots(req.Span, l.firstLinkedSegment(base)).Report(req.Bag)
+		return "", false, nil
+	case errors.Is(evalErr, fs.ErrNotExist), errors.Is(evalErr, project.ErrSymlinkLoop):
+		return "", false, evalErr
+	default:
+		return base.Abs, true, nil
+	}
+}
+
+// firstLinkedSegment is base's own written prefix up to and including the first segment itself a link (its real prefix differs from its resolved parent's plus its own text, an aliased ancestor told apart that way), base.Display when the base itself is that link.
+func (l *Loader) firstLinkedSegment(base project.Path) string {
+	displaySegs := strings.Split(strings.TrimSuffix(base.Display, sepStr), sepStr)
+	ownStart := 0
+	if base.Root != "" {
+		ownStart = 1
+	}
+	own := displaySegs[ownStart:]
+	absSegs := strings.Split(strings.TrimSuffix(base.Abs, sepStr), sepStr)
+	if len(own) == 0 || len(own) > len(absSegs) {
+		return base.Display
+	}
+	head := len(absSegs) - len(own)
+	realParent := l.realOr(strings.Join(absSegs[:head], sepStr))
+	for i, seg := range own {
+		real := l.realOr(strings.Join(absSegs[:head+i+1], sepStr))
+		if real == realParent+sepStr+seg {
+			realParent = real
+			continue
+		}
+		if i == len(own)-1 {
+			return base.Display
+		}
+		return strings.Join(displaySegs[:ownStart+i+1], sepStr) + sepStr
+	}
+	return base.Display
 }
 
 // descend recurses into a directory resolved at childReal, silently not when already on the walk path.
@@ -94,13 +152,17 @@ func (w *walker) classify(rel, real string, e fs.DirEntry) entryKind {
 		return entryKind{isFile: e.Type().IsRegular(), isDir: e.IsDir(), real: child, ok: true}
 	}
 	target, err := project.EvalSymlinks(w.l.FS, child)
-	if err != nil || !within(target, w.bounds) {
-		w.reportSkipped(rel, e.Name())
+	switch {
+	case err != nil:
+		w.reportSkipped(rel, e.Name(), linkCause(err))
+		return entryKind{}
+	case !within(target, w.bounds):
+		w.reportSkipped(rel, e.Name(), diag.W7115.AtOutsideRoots)
 		return entryKind{}
 	}
 	info, err := w.l.FS.Stat(target)
 	if err != nil {
-		w.reportSkipped(rel, e.Name())
+		w.reportSkipped(rel, e.Name(), diag.W7115.AtStatFailed)
 		return entryKind{}
 	}
 	return entryKind{isFile: info.Mode().IsRegular(), isDir: info.IsDir(), real: target, ok: true}

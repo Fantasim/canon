@@ -68,11 +68,20 @@ const (
 	relPrefix    = "./"
 )
 
+// uncPrefix starts a UNC share; driveLen is a drive letter volume's length, both volumeOf parses as text, never through the OS.
+const (
+	uncPrefix = "//"
+	driveLen  = 2
+)
+
 // Texts of Go errors.
 const (
 	fmtWrap    = "%w"
 	unknownSep = ": "
 )
+
+// maxSymlinkHops bounds evalSymlinksOS's own walk, an acyclic but excessively long chain reported as a loop too, as the OS itself does.
+const maxSymlinkHops = 40
 
 // identPattern is the shape of an IDENT, reserved words aside (GRAMMAR.md §2.3).
 var identPattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)

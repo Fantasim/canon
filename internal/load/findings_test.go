@@ -3,7 +3,6 @@ package load_test
 import (
 	"bytes"
 	"context"
-	"errors"
 	"io/fs"
 	"path"
 	"strings"
@@ -30,8 +29,6 @@ const (
 	findingsFile = "findings.txt"
 	maxLinkHops  = 40
 )
-
-var errLinkLoop = errors.New("too many levels of symbolic links")
 
 // memFS is an archive's tree as a project.FS under projectDir, its control files aside; it
 // resolves links itself, so no case depends on the machine's disk.
@@ -83,7 +80,7 @@ func (m memFS) EvalSymlinks(name string) (string, error) {
 			continue
 		}
 		if hops++; hops > maxLinkHops {
-			return "", errLinkLoop
+			return "", project.ErrSymlinkLoop
 		}
 		target := string(f.Data)
 		if !path.IsAbs(target) {

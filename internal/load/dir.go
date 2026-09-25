@@ -9,6 +9,7 @@ import (
 
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/jsonsrc"
+	"github.com/fantasim/canonlang/internal/project"
 	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
@@ -26,7 +27,7 @@ func (l *Loader) dir(ctx context.Context, req Request, e *syntax.LoadExpr, t typ
 	if err != nil {
 		return nil, false, err
 	}
-	if !checkOptions(methodDir, c, fmtJSON, req) {
+	if !checkOptions(methodDir, c, types.FormatJSON, req) {
 		return nil, false, nil
 	}
 	matches, ok := l.match(c.path, req)
@@ -53,7 +54,7 @@ func dirForcedJSON(c parsedCall) (bool, error) {
 	if c.format == nil {
 		return false, nil
 	}
-	if f, ok := formatSymbol(*c.format); ok && f == fmtJSON {
+	if types.FormatNamed(*c.format) == types.FormatJSON {
 		return true, nil
 	}
 	return false, unsupported(causeDirFormat)
@@ -66,14 +67,19 @@ func (l *Loader) match(pattern string, req Request) ([]matchFile, bool) {
 		return nil, false
 	}
 	chk := validateGlob(rest)
-	switch {
-	case chk.e7001:
+	switch chk.verdict {
+	case globWellFormed:
+	case globEmptySeg:
 		diag.E7001.AtEmpty(req.Span, pattern).Report(req.Bag)
 		return nil, false
-	case chk.e7005Cause != "":
-		diag.E7005.At(req.Span, pattern, chk.e7005Cause).Report(req.Bag)
+	case globDotSeg:
+		diag.E7001.AtDot(req.Span, pattern, chk.seg).Report(req.Bag)
 		return nil, false
-	case chk.dirOnly:
+	case globInvalid:
+		diag.E7005.At(req.Span, pattern, chk.kind).Report(req.Bag)
+		return nil, false
+	}
+	if chk.dirOnly {
 		return nil, true
 	}
 	matches, err := l.globMatches(base, rest, req)
@@ -84,23 +90,21 @@ func (l *Loader) match(pattern string, req Request) ([]matchFile, bool) {
 	return matches, true
 }
 
-// causeOf is E7004's fixed cause for err, chosen by errors.Is, never the OS message or a path.
-func causeOf(err error) string {
+// causeOf is E7004's fixed Kind for err, chosen by errors.Is, never the OS message or a path (ERRORS.md §1.4, WIRE.md §6.1, §6.5).
+func causeOf(err error) diag.Kind {
 	switch {
 	case errors.Is(err, fs.ErrNotExist):
-		return causeMissing
+		return diag.KindReadMissing
+	case errors.Is(err, project.ErrSymlinkLoop):
+		return diag.KindReadLinkLoop
 	case errors.Is(err, fs.ErrPermission):
-		return causePermission
+		return diag.KindReadPermission
 	case errors.Is(err, errNotDir):
-		return causeNotDir
-	case errors.Is(err, errIsDir):
-		return causeIsDir
-	case errors.Is(err, errNotRegular):
-		return causeNotRegular
+		return diag.KindReadNotDir
 	case errors.Is(err, source.ErrFileTooLarge):
-		return causeTooLarge
+		return diag.KindReadTooLarge
 	default:
-		return causeUnreadable
+		return diag.KindReadUnreadable
 	}
 }
 
@@ -112,52 +116,18 @@ func (l *Loader) checkFormats(matches []matchFile, forcedJSON bool, req Request)
 		return true, nil
 	}
 	for _, m := range matches {
-		if f := formatOf(m.Display); f == fmtCSV || f == fmtText {
+		if f := types.FormatOfPath(m.Display); f == types.FormatCSV || f == types.FormatText {
 			return false, unsupported(causeDirFileFormat)
 		}
 	}
 	ok := true
 	for _, m := range matches {
-		if formatOf(m.Display) == fmtUnknown {
+		if types.FormatOfPath(m.Display) == types.FormatUnknown {
 			diag.E7007.At(req.Span, m.Display).Report(req.Bag)
 			ok = false
 		}
 	}
 	return ok, nil
-}
-
-// formatOf is name's format from its extension, compared ASCII case-insensitively (WIRE.md §6.2).
-func formatOf(name string) wireFormat {
-	switch ext := path.Ext(name); {
-	case equalFoldASCII(ext, ".json"):
-		return fmtJSON
-	case equalFoldASCII(ext, ".csv"):
-		return fmtCSV
-	case equalFoldASCII(ext, ".txt"):
-		return fmtText
-	default:
-		return fmtUnknown
-	}
-}
-
-// equalFoldASCII is whether a and b are equal, ASCII letter case ignored only (WIRE.md §6.2).
-func equalFoldASCII(a, b string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for i := 0; i < len(a); i++ {
-		if lowerASCII(a[i]) != lowerASCII(b[i]) {
-			return false
-		}
-	}
-	return true
-}
-
-func lowerASCII(c byte) byte {
-	if 'A' <= c && c <= 'Z' {
-		return c + 'a' - 'A'
-	}
-	return c
 }
 
 // readFiles parses every match, at applied to each when given (WIRE.md §6.5, §6.3).

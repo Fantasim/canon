@@ -1,0 +1,11 @@
+WIRE.md §6.5 (as synced): a load.dir base directory that is itself a looping link is E7004
+ReadLinkLoop, not W7115; ErrSymlinkLoop from the resolver maps here.
+-- pattern --
+loopdir/*.json
+-- symlinks --
+loopdir /p/loopdir
+-- findings.txt --
+error[E7004]  pattern:1:1
+  cannot read loopdir/: a symbolic link loop
+
+1 error, 0 warnings in 1 package (…)

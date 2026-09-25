@@ -123,6 +123,9 @@ wording is a variant, and a closed set of words is a `Kind`.
 | `ForeignPairsField` | a pairs field of a record of another package | `E8019` |
 | `ForeignTableLookupParam` | a lookup whose parameter is a ref into a table of another package | `E8019` |
 | `Function` | function | `W1002`, `W1003`, `E1125`, `E1133` |
+| `GlobBrace` | an unclosed, empty or nested brace | `E7005` |
+| `GlobBracket` | an unclosed bracket | `E7005` |
+| `GlobDoubleStar` | a double star that is not a whole segment | `E7005` |
 | `Group` | group | `E1613` |
 | `Icon` | icon | `E1610` |
 | `Import` | import | `E1133` |
@@ -154,6 +157,14 @@ wording is a variant, and a closed set of words is a `Kind`.
 | `Parameter` | parameter | `W1003`, `E1125`, `E2101` |
 | `ParameterDefault` | parameter default | `E3015` |
 | `PrecomputedFunction` | precomputed function | `E8014` |
+| `ReadIsDir` | is a directory | `E7004` |
+| `ReadLinkLoop` | a symbolic link loop | `E7004` |
+| `ReadMissing` | no such file or directory | `E7004` |
+| `ReadNotDir` | not a directory | `E7004` |
+| `ReadNotRegular` | not a regular file | `E7004` |
+| `ReadPermission` | permission denied | `E7004` |
+| `ReadTooLarge` | too large | `E7004` |
+| `ReadUnreadable` | unreadable | `E7004` |
 | `Record` | record | `W1002`, `W1003`, `E1125`, `E1133`, `E1627`, `E3320` |
 | `RecordConstant` | a constant of a record or variant type | `E8019` |
 | `RecordCycleThroughMethod` | a by-value cycle of records through a stored method result | `E8019` |
@@ -340,7 +351,7 @@ func (codeE2103) AtSeveral(span source.Span, typ string, colls []string) *Builde
 
 ---
 
-The catalogue holds 300 codes: 279 errors, 18 warnings and 3 run-time codes, with 455 messages.
+The catalogue holds 300 codes: 279 errors, 18 warnings and 3 run-time codes, with 459 messages.
 
 ## E10xx, W10xx: Project file, doc comments and naming
 
@@ -1034,7 +1045,7 @@ Owner: WIRE.md.
 | E7112 | error | wire | WIRE.md §5.6 | a variant object without its tag, or with an unknown case |
 | E7113 | error | load | WIRE.md §6.6 | malformed CSV |
 | E7114 | error | wire | WIRE.md §5.7 | a table key that is not a Canon identifier |
-| W7115 | warning | load | WIRE.md §6.5 | a symbolic link pointing outside the roots is skipped |
+| W7115 | warning | load | WIRE.md §6.5 | a symbolic link skipped: outside the roots, dangling, looping or unreadable |
 | E7116 | error | check | WIRE.md §6.1 | a load form that cannot produce the expected type |
 | E7117 | error | wire | WIRE.md §5.14 | an `@json(pairs:)` slot with one key but not the other, a `null`, or a filled slot after an empty one |
 
@@ -1043,12 +1054,13 @@ Owner: WIRE.md.
 | E7001 | root | path:Text, root:Name | `path {path}: leaves root @{root}` |
 | E7001 | project | path:Text | `path {path}: leaves the project` |
 | E7001 | empty | path:Text | `path {path}: empty segment` |
+| E7001 | dot | path:Text, seg:Text | `path {path}: "{seg}" is not a path segment` |
 | E7001 | absolute | path:Text | `path {path}: absolute path` |
 | E7001 | backslash | path:Text | `path {path}: "\\" is not a separator` |
 | E7002 | - | - | `load needs an expected type here: annotate the let or the field` |
 | E7003 | - | name:Name, roots:Names | `unknown root @{name}; roots: {roots}` |
-| E7004 | - | path:Path, cause:Text | `cannot read {path}: {cause}` |
-| E7005 | - | pattern:Text, cause:Text | `invalid glob {pattern}: {cause}` |
+| E7004 | - | path:Path, cause:Kind | `cannot read {path}: {cause}` |
+| E7005 | - | pattern:Text, cause:Kind | `invalid glob {pattern}: {cause}` |
 | E7006 | option | option:Name, form:Name, format:Name | `option {option} is not valid for {form} ({format})` |
 | E7006 | format | format:Name | `format {format} is not one of json, csv and text` |
 | E7007 | - | path:Path | `cannot tell the format of {path}; add format: json, csv or text` |
@@ -1088,7 +1100,10 @@ Owner: WIRE.md.
 | E7113 | bareCR | n:Int | `CSV: a carriage return inside an unquoted field at record {n}` |
 | E7113 | noHeader | - | `CSV: header: true but the file has no header record` |
 | E7114 | - | key:Text | `"{key}" is not a valid table key (an identifier)` |
-| W7115 | - | path:Path | `symbolic link {path} points outside the roots; skipped` |
+| W7115 | outsideRoots | path:Path | `symbolic link {path} points outside the roots; skipped` |
+| W7115 | dangling | path:Path | `symbolic link {path} points to nothing; skipped` |
+| W7115 | looping | path:Path | `symbolic link {path} is part of a loop; skipped` |
+| W7115 | statFailed | path:Path | `symbolic link {path} cannot be resolved or read; skipped` |
 | E7116 | - | form:Name, typ:Type | `{form} cannot produce {typ}` |
 | E7117 | key | slot:Int, field:Name, k:Name, v:Name | `@json(pairs:) slot {slot} of {field}: {k} without {v}` |
 | E7117 | null | slot:Int, field:Name | `@json(pairs:) slot {slot} of {field}: null value` |

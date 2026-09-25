@@ -90,6 +90,9 @@ const (
 	KindForeignPairsField
 	KindForeignTableLookupParam
 	KindFunction
+	KindGlobBrace
+	KindGlobBracket
+	KindGlobDoubleStar
 	KindGroup
 	KindIcon
 	KindImport
@@ -121,6 +124,14 @@ const (
 	KindParameter
 	KindParameterDefault
 	KindPrecomputedFunction
+	KindReadIsDir
+	KindReadLinkLoop
+	KindReadMissing
+	KindReadNotDir
+	KindReadNotRegular
+	KindReadPermission
+	KindReadTooLarge
+	KindReadUnreadable
 	KindRecord
 	KindRecordConstant
 	KindRecordCycleThroughMethod
@@ -198,6 +209,9 @@ var kindNames = [...]string{
 	"ForeignPairsField",
 	"ForeignTableLookupParam",
 	"Function",
+	"GlobBrace",
+	"GlobBracket",
+	"GlobDoubleStar",
 	"Group",
 	"Icon",
 	"Import",
@@ -229,6 +243,14 @@ var kindNames = [...]string{
 	"Parameter",
 	"ParameterDefault",
 	"PrecomputedFunction",
+	"ReadIsDir",
+	"ReadLinkLoop",
+	"ReadMissing",
+	"ReadNotDir",
+	"ReadNotRegular",
+	"ReadPermission",
+	"ReadTooLarge",
+	"ReadUnreadable",
 	"Record",
 	"RecordConstant",
 	"RecordCycleThroughMethod",
@@ -286,6 +308,9 @@ var kindWords = [...]string{
 	"a pairs field of a record of another package",
 	"a lookup whose parameter is a ref into a table of another package",
 	"function",
+	"an unclosed, empty or nested brace",
+	"an unclosed bracket",
+	"a double star that is not a whole segment",
 	"group",
 	"icon",
 	"import",
@@ -317,6 +342,14 @@ var kindWords = [...]string{
 	"parameter",
 	"parameter default",
 	"precomputed function",
+	"is a directory",
+	"a symbolic link loop",
+	"no such file or directory",
+	"not a directory",
+	"not a regular file",
+	"permission denied",
+	"too large",
+	"unreadable",
 	"record",
 	"a constant of a record or variant type",
 	"a by-value cycle of records through a stored method result",
@@ -1778,6 +1811,7 @@ var Registry = []Def{
 			{Name: "root", Args: []Arg{{Name: "path", Type: ArgTypeText}, {Name: "root", Type: ArgTypeName}}, Template: "path {path}: leaves root @{root}"},
 			{Name: "project", Args: []Arg{{Name: "path", Type: ArgTypeText}}, Template: "path {path}: leaves the project"},
 			{Name: "empty", Args: []Arg{{Name: "path", Type: ArgTypeText}}, Template: "path {path}: empty segment"},
+			{Name: "dot", Args: []Arg{{Name: "path", Type: ArgTypeText}, {Name: "seg", Type: ArgTypeText}}, Template: "path {path}: \"{seg}\" is not a path segment"},
 			{Name: "absolute", Args: []Arg{{Name: "path", Type: ArgTypeText}}, Template: "path {path}: absolute path"},
 			{Name: "backslash", Args: []Arg{{Name: "path", Type: ArgTypeText}}, Template: "path {path}: \"\\\\\" is not a separator"},
 		},
@@ -1797,13 +1831,13 @@ var Registry = []Def{
 	{
 		Code: "E7004", Severity: Error, Package: "load",
 		Variants: []Variant{
-			{Args: []Arg{{Name: "path", Type: ArgTypePath}, {Name: "cause", Type: ArgTypeText}}, Template: "cannot read {path}: {cause}"},
+			{Args: []Arg{{Name: "path", Type: ArgTypePath}, {Name: "cause", Type: ArgTypeKind}}, Template: "cannot read {path}: {cause}"},
 		},
 	},
 	{
 		Code: "E7005", Severity: Error, Package: "load",
 		Variants: []Variant{
-			{Args: []Arg{{Name: "pattern", Type: ArgTypeText}, {Name: "cause", Type: ArgTypeText}}, Template: "invalid glob {pattern}: {cause}"},
+			{Args: []Arg{{Name: "pattern", Type: ArgTypeText}, {Name: "cause", Type: ArgTypeKind}}, Template: "invalid glob {pattern}: {cause}"},
 		},
 	},
 	{
@@ -2316,7 +2350,10 @@ var Registry = []Def{
 	{
 		Code: "W7115", Severity: Warning, Package: "load",
 		Variants: []Variant{
-			{Args: []Arg{{Name: "path", Type: ArgTypePath}}, Template: "symbolic link {path} points outside the roots; skipped"},
+			{Name: "outsideRoots", Args: []Arg{{Name: "path", Type: ArgTypePath}}, Template: "symbolic link {path} points outside the roots; skipped"},
+			{Name: "dangling", Args: []Arg{{Name: "path", Type: ArgTypePath}}, Template: "symbolic link {path} points to nothing; skipped"},
+			{Name: "looping", Args: []Arg{{Name: "path", Type: ArgTypePath}}, Template: "symbolic link {path} is part of a loop; skipped"},
+			{Name: "statFailed", Args: []Arg{{Name: "path", Type: ArgTypePath}}, Template: "symbolic link {path} cannot be resolved or read; skipped"},
 		},
 	},
 	{
@@ -5671,14 +5708,19 @@ func (codeE7001) AtEmpty(span source.Span, path string) *Builder {
 	return newBuilder(&Registry[217], 2, span, path)
 }
 
+// AtDot reports: path {path}: "{seg}" is not a path segment
+func (codeE7001) AtDot(span source.Span, path string, seg string) *Builder {
+	return newBuilder(&Registry[217], 3, span, path, seg)
+}
+
 // AtAbsolute reports: path {path}: absolute path
 func (codeE7001) AtAbsolute(span source.Span, path string) *Builder {
-	return newBuilder(&Registry[217], 3, span, path)
+	return newBuilder(&Registry[217], 4, span, path)
 }
 
 // AtBackslash reports: path {path}: "\\" is not a separator
 func (codeE7001) AtBackslash(span source.Span, path string) *Builder {
-	return newBuilder(&Registry[217], 4, span, path)
+	return newBuilder(&Registry[217], 5, span, path)
 }
 
 // E7002: `load` without an expected type (WIRE.md §6.1).
@@ -5716,7 +5758,7 @@ type codeE7004 struct{}
 func (codeE7004) Def() *Def { return &Registry[220] }
 
 // At reports: cannot read {path}: {cause}
-func (codeE7004) At(span source.Span, path string, cause string) *Builder {
+func (codeE7004) At(span source.Span, path string, cause Kind) *Builder {
 	return newBuilder(&Registry[220], 0, span, path, cause)
 }
 
@@ -5729,7 +5771,7 @@ type codeE7005 struct{}
 func (codeE7005) Def() *Def { return &Registry[221] }
 
 // At reports: invalid glob {pattern}: {cause}
-func (codeE7005) At(span source.Span, pattern string, cause string) *Builder {
+func (codeE7005) At(span source.Span, pattern string, cause Kind) *Builder {
 	return newBuilder(&Registry[221], 0, span, pattern, cause)
 }
 
@@ -6961,7 +7003,7 @@ func (codeW7107) At(span source.Span, pattern string) *Builder {
 	return newBuilder(&Registry[297], 0, span, pattern)
 }
 
-// W7115: a symbolic link pointing outside the roots is skipped (WIRE.md §6.5).
+// W7115: a symbolic link skipped: outside the roots, dangling, looping or unreadable (WIRE.md §6.5).
 var W7115 codeW7115
 
 type codeW7115 struct{}
@@ -6969,9 +7011,24 @@ type codeW7115 struct{}
 // Def is the registry entry of W7115.
 func (codeW7115) Def() *Def { return &Registry[298] }
 
-// At reports: symbolic link {path} points outside the roots; skipped
-func (codeW7115) At(span source.Span, path string) *Builder {
+// AtOutsideRoots reports: symbolic link {path} points outside the roots; skipped
+func (codeW7115) AtOutsideRoots(span source.Span, path string) *Builder {
 	return newBuilder(&Registry[298], 0, span, path)
+}
+
+// AtDangling reports: symbolic link {path} points to nothing; skipped
+func (codeW7115) AtDangling(span source.Span, path string) *Builder {
+	return newBuilder(&Registry[298], 1, span, path)
+}
+
+// AtLooping reports: symbolic link {path} is part of a loop; skipped
+func (codeW7115) AtLooping(span source.Span, path string) *Builder {
+	return newBuilder(&Registry[298], 2, span, path)
+}
+
+// AtStatFailed reports: symbolic link {path} cannot be resolved or read; skipped
+func (codeW7115) AtStatFailed(span source.Span, path string) *Builder {
+	return newBuilder(&Registry[298], 3, span, path)
 }
 
 // W8006: a generated C++ name is a common platform macro (CODEGEN.md §3.5).

@@ -29,11 +29,12 @@ func (l *Loader) globBase(pattern, from string, span source.Span, bag *diag.Bag)
 	return base, rest, ok
 }
 
-// globCheck is validateGlob's verdict: e7001, e7005Cause, dirOnly, or well-formed to walk.
+// globCheck is validateGlob's verdict: well-formed (dirOnly told apart) or one of the errors below, with the extra data its message needs (WIRE.md §2.1, §6.5).
 type globCheck struct {
-	e7001      bool
-	e7005Cause string
-	dirOnly    bool
+	verdict globVerdict
+	seg     string
+	kind    diag.Kind
+	dirOnly bool
 }
 
 // validateGlob checks rest, the glob after its literal base (WIRE.md §2.1, §6.5).
@@ -44,11 +45,13 @@ func validateGlob(rest string) globCheck {
 	segs, dirOnly := cutTrailingSlash(rest)
 	for _, seg := range segs {
 		switch seg {
-		case "", dotSeg, dotDotSeg:
-			return globCheck{e7001: true}
+		case "":
+			return globCheck{verdict: globEmptySeg}
+		case dotSeg, dotDotSeg:
+			return globCheck{verdict: globDotSeg, seg: seg}
 		}
-		if cause, ok := validateSegment(seg); !ok {
-			return globCheck{e7005Cause: cause}
+		if kind, ok := validateSegment(seg); !ok {
+			return globCheck{verdict: globInvalid, kind: kind}
 		}
 	}
 	return globCheck{dirOnly: dirOnly}
@@ -64,9 +67,9 @@ func cutTrailingSlash(rest string) ([]string, bool) {
 }
 
 // validateSegment is one glob segment's E7005 cause: a whole "**", every "[" and "{" closed (WIRE.md §6.5).
-func validateSegment(seg string) (string, bool) {
+func validateSegment(seg string) (diag.Kind, bool) {
 	if strings.Contains(seg, doubleStar) && seg != doubleStar {
-		return causeDoubleStar, false
+		return diag.KindGlobDoubleStar, false
 	}
 	for i := 0; i < len(seg); i++ {
 		var next int
@@ -84,15 +87,15 @@ func validateSegment(seg string) (string, bool) {
 		}
 		i = next - 1
 	}
-	return "", true
+	return 0, true
 }
 
 // causeOfDelim is E7005's cause for an unclosed delimiter, "[" or "{".
-func causeOfDelim(c byte) string {
+func causeOfDelim(c byte) diag.Kind {
 	if c == '[' {
-		return causeBracket
+		return diag.KindGlobBracket
 	}
-	return causeBrace
+	return diag.KindGlobBrace
 }
 
 // skipClass is the index past a "[...]" class at i, or false when unclosed (WIRE.md §6.5).

@@ -3,6 +3,6 @@ WIRE.md §6.5: an unclosed `[` character class is E7005.
 data/[abc.json
 -- findings.txt --
 error[E7005]  pattern:1:1
-  invalid glob data/[abc.json: unclosed [
+  invalid glob data/[abc.json: an unclosed bracket
 
 1 error, 0 warnings in 1 package (…)

@@ -1,6 +1,10 @@
 package load
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/fantasim/canonlang/internal/diag"
+)
 
 // WIRE.md §6.5's "Base": the segments before the first magic character are the literal prefix.
 func TestSplitGlob(t *testing.T) {
@@ -31,20 +35,20 @@ func TestValidateGlob(t *testing.T) {
 		{"*.json", globCheck{}},
 		{"a/", globCheck{dirOnly: true}},
 		{"a/**", globCheck{}},
-		{"a/**b", globCheck{e7005Cause: causeDoubleStar}},
-		{"a/[abc", globCheck{e7005Cause: causeBracket}},
-		{"a/{b,c", globCheck{e7005Cause: causeBrace}},
-		{"a/{b,}", globCheck{e7005Cause: causeBrace}},
-		{"a/{{b}}", globCheck{e7005Cause: causeBrace}},
-		{"a//b", globCheck{e7001: true}},
-		{"a/./b", globCheck{e7001: true}},
-		{"a/../b", globCheck{e7001: true}},
+		{"a/**b", globCheck{verdict: globInvalid, kind: diag.KindGlobDoubleStar}},
+		{"a/[abc", globCheck{verdict: globInvalid, kind: diag.KindGlobBracket}},
+		{"a/{b,c", globCheck{verdict: globInvalid, kind: diag.KindGlobBrace}},
+		{"a/{b,}", globCheck{verdict: globInvalid, kind: diag.KindGlobBrace}},
+		{"a/{{b}}", globCheck{verdict: globInvalid, kind: diag.KindGlobBrace}},
+		{"a//b", globCheck{verdict: globEmptySeg}},
+		{"a/./b", globCheck{verdict: globDotSeg, seg: "."}},
+		{"a/../b", globCheck{verdict: globDotSeg, seg: ".."}},
 		{"a/[!x]", globCheck{}},
 		{"a/{b,c}", globCheck{}},
 		{"a/{a,[}]}", globCheck{}},
 		{"a/{a,[,,]}", globCheck{}},
-		{"a/{a,[b}", globCheck{e7005Cause: causeBrace}},
-		{"a/{[]}", globCheck{e7005Cause: causeBrace}},
+		{"a/{a,[b}", globCheck{verdict: globInvalid, kind: diag.KindGlobBrace}},
+		{"a/{[]}", globCheck{verdict: globInvalid, kind: diag.KindGlobBrace}},
 	}
 	for _, c := range cases {
 		if got := validateGlob(c.rest); got != c.want {

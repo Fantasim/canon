@@ -323,12 +323,13 @@ E6005 merge: canon.lock: merge conflict marker
 E7001 root: path 0.9: leaves root @resource.vocab.items
 E7001 project: path 0.9: leaves the project
 E7001 empty: path 0.9: empty segment
+E7001 dot: path 0.9: "0.9" is not a path segment
 E7001 absolute: path 0.9: absolute path
 E7001 backslash: path 0.9: "\" is not a separator
 E7002 -: load needs an expected type here: annotate the let or the field
 E7003 -: unknown root @resource.vocab.items; roots: go, cpp
-E7004 -: cannot read @resource/Server/Item/propItem.json: 0.9
-E7005 -: invalid glob 0.9: 0.9
+E7004 -: cannot read @resource/Server/Item/propItem.json: is a directory
+E7005 -: invalid glob 0.9: an unclosed, empty or nested brace
 E7006 option: option resource.vocab.items is not valid for resource.vocab.items (resource.vocab.items)
 E7006 format: format resource.vocab.items is not one of json, csv and text
 E7007 -: cannot tell the format of @resource/Server/Item/propItem.json; add format: json, csv or text
@@ -456,5 +457,8 @@ W6006 many: -42 stable values are not in canon.lock yet: run canon build
 W7101 one: 1 define skipped in @resource/Server/Item/propItem.json (resource.vocab.items): not a supported integer expression
 W7101 many: -42 defines skipped in @resource/Server/Item/propItem.json (first: resource.vocab.items): not a supported integer expression
 W7107 -: glob 0.9 matches no file
-W7115 -: symbolic link @resource/Server/Item/propItem.json points outside the roots; skipped
+W7115 outsideRoots: symbolic link @resource/Server/Item/propItem.json points outside the roots; skipped
+W7115 dangling: symbolic link @resource/Server/Item/propItem.json points to nothing; skipped
+W7115 looping: symbolic link @resource/Server/Item/propItem.json is part of a loop; skipped
+W7115 statFailed: symbolic link @resource/Server/Item/propItem.json cannot be resolved or read; skipped
 W8006 -: C++ name resource.vocab.items (from resource.vocab.items) is a macro in common platform headers

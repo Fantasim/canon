@@ -1,0 +1,17 @@
+WIRE.md §6.5 (as synced): a load.dir base directory that is itself a link, outside every root
+and the project, is skipped with W7115, naming the first linked segment (outdir, not a file
+found through it, such as outdir/e.json) — the empty walk it prevents is W7107 too.
+-- pattern --
+outdir/*.json
+-- /outside/e.json --
+{"label": "e"}
+-- symlinks --
+outdir /outside
+-- findings.txt --
+warning[W7107]  pattern:1:1
+  glob outdir/*.json matches no file
+
+warning[W7115]  pattern:1:1
+  symbolic link outdir/ points outside the roots; skipped
+
+0 errors, 2 warnings in 1 package (…)
