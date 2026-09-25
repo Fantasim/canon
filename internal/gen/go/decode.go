@@ -84,7 +84,7 @@ func (g *gen) decodeBody(b *body) {
 	g.printf(funcOpenFormat, g.decodeFunc(b.key), lc.Name, lc.Path, lc.Raw, g.rawType(), lc.Out, b.goName)
 	g.openObject(g.expectedKeys(b))
 	for _, s := range b.slots {
-		if s.fn == nil {
+		if s.fn == nil && !s.isInput() {
 			g.readField(b, s)
 		}
 	}

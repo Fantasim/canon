@@ -36,7 +36,11 @@ func (g *gen) readPath(owner *body, s *slot) {
 func nextSegments(b *body, prefix []string) []string {
 	var keys []string
 	for _, s := range b.slots {
-		if p := s.src; s.fn == nil && p != nil && len(p.WirePath) > len(prefix) && slices.Equal(p.WirePath[:len(prefix)], prefix) {
+		p := s.src
+		if s.fn != nil || p == nil || s.isInput() {
+			continue
+		}
+		if len(p.WirePath) > len(prefix) && slices.Equal(p.WirePath[:len(prefix)], prefix) {
 			keys = append(keys, p.WirePath[len(prefix)])
 		}
 	}
@@ -200,7 +204,7 @@ func (g *gen) objectKeys(b *body) []string {
 		switch f := s.src; {
 		case s.fn != nil:
 			keys = append(keys, dollar+s.fn.Name)
-		case f == nil:
+		case f == nil, s.isInput():
 		case f.Pairs != nil:
 			keys = append(keys, g.pairsKeys(f)...)
 		case f.Inline:

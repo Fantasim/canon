@@ -1,0 +1,14 @@
+CODEGEN.md §5.12: an input getter called before LoadInputs.
+-- a/a.canon --
+/// A.
+package a
+
+record Gen {
+  apiKey: input String(1..)? from env "A_API_KEY"
+}
+
+let gen: Gen = {}
+
+emit go { out: "@a", package: "a", mode: baked }
+-- findings.txt --
+panic: E8302: a.Gen.apiKey is a runtime input and LoadInputs has not been called

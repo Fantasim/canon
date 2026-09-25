@@ -159,10 +159,17 @@ const (
 	atomicName = "atomic"
 )
 
+// Standard library packages runtime inputs import (CODEGEN.md §5.12).
+const (
+	errorsPkg = "errors"
+	regexpPkg = "regexp"
+)
+
 // goStdImports classifies a generated import by its origin, not by whether its path has a dot.
 var goStdImports = map[string]bool{
 	timePkg: true, iterPkg: true, syncPkg: true, strconvPkg: true, mathPkg: true, testingPkg: true,
 	jsonPath: true, fmtPkg: true, atomicPath: true, stringsPkg: true, slicesPkg: true,
+	errorsPkg: true, regexpPkg: true,
 }
 
 // Generated names (CODEGEN.md §3.3) and the reference layout's private names (§6.2).
@@ -424,8 +431,51 @@ var (
 	// goImportNames are the packages a generated file may import, which a local never takes (CODEGEN.md §3.4).
 	goImportNames = map[string]bool{
 		rtName: true, jsonPkg: true, fmtPkg: true, iterPkg: true, "os": true, atomicName: true, syncPkg: true,
-		timePkg: true, strconvPkg: true, stringsPkg: true, slicesPkg: true, mathPkg: true, "regexp": true, "embed": true,
+		timePkg: true, strconvPkg: true, stringsPkg: true, slicesPkg: true, mathPkg: true, regexpPkg: true,
+		"embed": true, errorsPkg: true,
 	}
+)
+
+// Runtime inputs (CODEGEN.md §5.12, EVALUATION.md §11.3); closeBrace, elseLine, ifOpenFormat above close and open every block below.
+const (
+	inputVarPrefix       = "input"
+	inputOKSuffix        = "OK_"
+	inputPatternSuffix   = "Pattern"
+	inputLoadedVar       = "inputsLoaded_"
+	inputCheckFormat     = "if !%s {\n%s.Fail(%s, %s)\n}\n"
+	inputsDocFormat      = "// LoadInputs reads every runtime input of the package (CODEGEN.md §5.12).\n"
+	inputsOpenFormat     = "func LoadInputs() error {\nvar errs []error\n"
+	inputsCloseFormat    = "%s = true\nif len(errs) > 0 {\nreturn %s.Join(errs...)\n}\nreturn nil\n}\n\n"
+	inputVarBlockOpen    = "var (\n"
+	inputVarLine         = "%s %s\n"
+	inputPatternVarLine  = "%s = %s.MustCompile(%s)\n"
+	closeParenFormat     = ")\n\n"
+	inputAssignFormat    = "%s = %s\n"
+	inputAssignOKFormat  = "%s, %s = %s, true\n"
+	inputResetOKFormat   = "%s, %s = %s, false\n"
+	inputEnvOpenFormat   = "if %s, %s := %s.Env(%s); %s {\n"
+	inputOptionalClose   = "}\n"
+	inputParseFormat     = "%s, %s := %s.%s(%s)\n"
+	inputErrFormat       = "errs = append(errs, %s.InputError(%s, %s))\n"
+	inputSwitchOpen      = "switch {\ncase %s != nil:\n"
+	inputDefaultOpen     = "default:\n"
+	inputRoundFormat     = "%s := float32(%s)\n"
+	inputNotSetText      = "not set"
+	inputInvalidFormat   = "not a valid %s"
+	inputRangeText       = "outside its refinement range"
+	inputPatternText     = "does not match its pattern"
+	inputNotMemberFormat = "not a member of %s"
+	condFormat           = "%s %s %s"
+	orSep                = " || "
+	lenCall              = "len("
+	matchStringCall      = ".MatchString("
+	float32Overflow      = ".Float32Overflows("
+	durationMillis       = ".Milliseconds()"
+	parseBoolLiteral     = "ParseBoolLiteral"
+	parseIntLiteral      = "ParseIntLiteral"
+	parseFloatLiteral    = "ParseFloatLiteral"
+	parseDurationLiteral = "ParseDurationLiteral"
+	parseStringLiteral   = "ParseStringLiteral"
 )
 
 // The conformance file (CONFORMANCE.md §7, T7, T11): its name, header, locals and failure message.

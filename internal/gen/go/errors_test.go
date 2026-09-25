@@ -126,19 +126,28 @@ func TestRefusedEmits(t *testing.T) {
 
 // Constructs baked Go does not emit yet are refused, never skipped.
 func TestUnsupportedConstructs(t *testing.T) {
-	input := record("Gen", "apiKey")
-	input.Fields[0].Input = &types.Input{Env: "KEY"}
 	negZero := pkg()
 	negZero.Consts = []*ir.Const{{Name: "Z", Type: ir.TypeRef{Kind: types.Float, Bits: 64}, V: &value.Float{V: negativeZero()}}}
 	cases := map[string]*ir.Package{
 		"dependent type": pkg(&ir.Dependent{Pkg: "p", Name: "Param"}),
-		"input field":    pkg(input),
 		"-0.0 constant":  negZero,
 	}
-	for _, name := range []string{"dependent type", "input field", "-0.0 constant"} {
+	for _, name := range []string{"dependent type", "-0.0 constant"} {
 		if err := generateErr(cases[name], nil); !errors.Is(err, gogen.ErrUnsupported) {
 			t.Errorf("%s: got %v, want ErrUnsupported", name, err)
 		}
+	}
+}
+
+// EVALUATION.md §11.1: an input field never reaches a variant case.
+func TestInputFieldNotOnRecord(t *testing.T) {
+	v := &ir.Variant{Pkg: "p", Name: "V", Cases: []*ir.Case{
+		{Name: "c", Wire: "c", Fields: []*ir.Field{
+			{Name: "x", Type: boolT, Optional: true, Input: &types.Input{Env: "X"}},
+		}},
+	}}
+	if err := generateErr(pkg(v), nil); !errors.Is(err, gogen.ErrMalformed) {
+		t.Errorf("got %v, want ErrMalformed", err)
 	}
 }
 

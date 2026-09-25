@@ -26,14 +26,18 @@ type body struct {
 func (g *gen) recordBody(key any, owner, goName string, fields []*ir.Field, fns []*ir.ExportFn) *body {
 	b := &body{key: key, owner: owner, goName: goName, fields: fields, methods: fns}
 	for _, f := range fields {
-		if f.Input != nil {
-			g.failf(ErrUnsupported, "input field %s.%s", owner, f.Name)
-		}
 		if f.Optional && f.Type.Kind == types.Never {
 			continue // CODEGEN.md §4.4: a Never? field is not emitted at all
 		}
 		s := g.newSlot(owner+dot+f.Name, g.names.Slot(f))
 		s.doc, s.field, s.src = f.Doc, f.Name, f
+		if f.Input != nil {
+			r, ok := key.(*ir.Record)
+			if !ok {
+				g.failf(ErrMalformed, "input field %s.%s on %T, not a record (EVALUATION.md §11.1)", owner, f.Name, key)
+			}
+			s.rec = r
+		}
 		b.slots = append(b.slots, s)
 	}
 	for _, fn := range fns {
@@ -186,6 +190,9 @@ func (g *gen) recordLit(rec *ir.Record, r *value.Record) string {
 func (g *gen) bodyLit(b *body, r *value.Record) []pair {
 	var parts []pair
 	for _, s := range b.slots {
+		if s.isInput() {
+			continue
+		}
 		var v value.Value
 		if s.fn == nil {
 			v = g.fieldValue(r, s.field)

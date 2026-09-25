@@ -46,7 +46,7 @@ type index struct{ Member, Method, Type, Store string }
 func (g *gen) dataSections() []func() {
 	return []func(){
 		g.constants, g.schemas, g.enums, g.kindEnums, g.idEnums, g.types, g.containers,
-		g.loaders, g.snapshot, g.fns, g.decoders, g.resolvers, g.loads,
+		g.loaders, g.snapshot, g.fns, g.runtimeInputs, g.decoders, g.resolvers, g.loads,
 	}
 }
 

@@ -331,10 +331,16 @@ func CheckIntWidth(v, lo, hi int64) int64 {
 
 // ToFloat32 stores a Float into a Float32, rounding to nearest-even; overflow is E3202.
 func ToFloat32(v float64) float32 {
-	if math.Abs(v) >= 3.4028235677973366e+38 {
+	if Float32Overflows(v) {
 		Fail("E3202", "value overflows Float32")
 	}
 	return float32(v)
+}
+
+// Float32Overflows reports whether v does not fit Float32: ToFloat32's own bound, also used to
+// check a runtime input's implicit range for a Float32 field (CODEGEN.md §5.12).
+func Float32Overflows(v float64) bool {
+	return math.Abs(v) >= 3.4028235677973366e+38
 }
 
 // CheckFloatArg: a Float argument that is NaN or infinite is E4104 on entry.
@@ -772,5 +778,5 @@ func ParseDurationLiteral(s string) (time.Duration, error) {
 
 // InputError is the error of a runtime input that is missing or invalid.
 func InputError(name, reason string) error {
-	return fmt.Errorf("environment variable %s: %s", name, reason)
+	return fmt.Errorf("%s: %s", name, reason)
 }

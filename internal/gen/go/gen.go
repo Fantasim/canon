@@ -113,7 +113,7 @@ func (g *gen) printf(format string, args ...any) {
 
 // source is the formatted main file: every section in CODEGEN.md §2.7's order.
 func (g *gen) source() []byte {
-	sections := []func(){g.constants, g.enums, g.kindEnums, g.idEnums, g.types, g.containers, g.values, g.fns}
+	sections := []func(){g.constants, g.enums, g.kindEnums, g.idEnums, g.types, g.containers, g.values, g.fns, g.runtimeInputs}
 	if g.isData() {
 		sections = g.dataSections()
 	}

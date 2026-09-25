@@ -16,6 +16,7 @@ type slot struct {
 	src    *ir.Field // that field, whose wire form data mode reads
 	doc    string
 	fn     *ir.ExportFn // the export fn of a precomputed result
+	rec    *ir.Record   // the owning record of an input field's slot (CODEGEN.md §5.12); nil otherwise
 }
 
 // member is one storage field: a struct field or a member of the baked data.
@@ -44,6 +45,9 @@ func (s *slot) refType() ir.TypeRef {
 	}
 	return s.T
 }
+
+// isInput reports a field slot backed by a runtime input (CODEGEN.md §5.12).
+func (s *slot) isInput() bool { return s.src != nil && s.src.Input != nil }
 
 func (s *slot) hasMain() bool { return s.Main }
 
@@ -78,6 +82,9 @@ func (g *gen) slotKeyType(s *slot) string {
 
 // storage is the slot's members: main, key, then the presence flag.
 func (g *gen) storage(s *slot) []member {
+	if s.isInput() {
+		return nil
+	}
 	var out []member
 	if s.hasMain() {
 		out = append(out, member{s.Store, g.mainType(s)})
@@ -93,6 +100,9 @@ func (g *gen) storage(s *slot) []member {
 
 // getters is the main getter, then the key getter of a ref; recv reads the storage.
 func (g *gen) getters(s *slot, recv string) []getter {
+	if s.isInput() {
+		return []getter{g.inputGetter(s)}
+	}
 	var out []getter
 	ok := s.needsOK()
 	if s.hasMain() {
@@ -152,6 +162,9 @@ func (g *gen) zeroKey(t ir.TypeRef) string {
 // assign is the storage of v, member by member; none leaves every member zero.
 func (g *gen) assign(s *slot, v value.Value) []pair {
 	defer g.enter(s.origin)()
+	if s.isInput() {
+		return nil
+	}
 	if _, none := v.(*value.None); none || v == nil {
 		if !s.Optional {
 			g.failf(ErrMalformed, "%s has no value", s.origin)
