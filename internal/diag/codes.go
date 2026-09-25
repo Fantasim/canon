@@ -114,7 +114,6 @@ const (
 	KindMethod
 	KindMethodOrCheck
 	KindModeName
-	KindNonStringLiteralUnion
 	KindNull
 	KindNumber
 	KindObject
@@ -233,7 +232,6 @@ var kindNames = [...]string{
 	"Method",
 	"MethodOrCheck",
 	"ModeName",
-	"NonStringLiteralUnion",
 	"Null",
 	"Number",
 	"Object",
@@ -332,7 +330,6 @@ var kindWords = [...]string{
 	"method",
 	"method or check",
 	"a mode name",
-	"a literal union whose wire form is not a string",
 	"null",
 	"a number",
 	"an object",

@@ -147,7 +147,6 @@ wording is a variant, and a closed set of words is a `Kind`.
 | `Method` | method | `W1003`, `E1125`, `E1613`, `E3003`, `E3016` |
 | `MethodOrCheck` | method or check | `E1118` |
 | `ModeName` | a mode name | `E8009` |
-| `NonStringLiteralUnion` | a literal union whose wire form is not a string | `E8019` |
 | `Null` | null | `E7110` |
 | `Number` | a number | `E7110` |
 | `Object` | an object | `E7110` |

@@ -251,7 +251,8 @@ on its kind-enum member (§5.5). Undocumented items get no comment (the build wa
   with respect to declaration order).
 - Within a file, the order of sections is fixed: constants, enums (declaration order, then kind
   enums of variants, branch enums of dependent types, id enums of tables), records and variants,
-  containers, value accessors, export fns, snapshot and store, inputs, decoders.
+  containers, value accessors, export fns, snapshot and store, inputs, decoders (those of
+  classes in declaration order, then those of dependent types a decoded class holds).
 - **C++ declares before use**, so a header refines that order: (1) constants, then the schema
   constants (T2); (2) enums, as above; (3) a forward declaration `class <T>;` of every class of
   the header, in declaration order; (4) `namespace detail {`: `struct <P>Access;`, the decoder
@@ -270,7 +271,10 @@ on its kind-enum member (§5.5). Undocumented items get no comment (the build wa
     `<cstddef>`, `int64_t` and the other fixed-width integers `<cstdint>`, `std::fprintf`
     `<cstdio>`, `std::shared_ptr`/`std::make_shared` `<memory>`, `std::optional` `<optional>`,
     `std::string`/`std::to_string` `<string>`, `std::string_view` `<string_view>`, `std::move`
-    `<utility>`, `std::vector` `<vector>`, `std::array` `<array>`;
+    `<utility>`, `std::vector` `<vector>`, `std::array` `<array>`, `errno`/`ERANGE` `<cerrno>`,
+    `DBL_MIN` `<cfloat>`, `std::fabs`/`std::isfinite` `<cmath>`, `std::getenv`/`std::strtoll`
+    `<cstdlib>`, `std::locale` `<locale>`, `std::regex` `<regex>`, `std::istringstream`
+    `<sstream>`;
   - then, in a `.gen.h`, `<nlohmann/json_fwd.hpp>` (in its own group) when the header declares a
     decoder, and `"canon_runtime.h"` followed by the headers of imported packages (§2.8) in byte
     order; in a `.gen.cpp` of a mode that decodes JSON, `"canon_runtime_json.h"`.
@@ -314,7 +318,9 @@ go_module {
   grouped as Go does: standard library, blank line, others; each group sorted.
 - **C++.** A header of another package is included by its path relative to the including file's
   directory (`#include "../vocab/vocab.gen.h"`). Every output directory includes its own
-  `canon_runtime.h` as `#include "canon_runtime.h"`.
+  `canon_runtime.h` as `#include "canon_runtime.h"`. A name of an imported package is written
+  fully qualified from the global namespace (`::sov::vocab::Element`), so no class or namespace
+  of the including package can hijack it (log-2026-09-25).
 - **TS.** Imports are relative paths from the importing file to the imported file, with `.ts`
   replaced by `.js`, always starting with `./` or `../`. Types are imported with `import type`.
 - **Decoders across packages.** If a record or variant of package P is held by value inside a type
@@ -1011,9 +1017,15 @@ const std::string* GetApiKey() const;       // before LoadInputs: canon::OnEvalE
   siblings ([§6.3](#63-the-rt-package)) and the C++ template of [§7.7](#77-runtime-inputs)
   implement it.
 - The field's own refinement is checked (EVALUATION.md §11.3): the implicit range of a sized type
-  (and the `Duration` range), ranges, length in bytes, and pattern with search semantics (Go
+  (a `Duration` beyond ±`DurationLimit` is not a valid literal), ranges, length in bytes, and pattern with search semantics (Go
   `regexp.MatchString`, C++ `std::regex_search` with ECMAScript grammar; patterns are limited to
-  the RE2 ∩ ECMAScript subset by `E1904`). `where` is never checked at runtime. A failed check is
+  the RE2 ∩ ECMAScript subset by `E1904`). The C++ pattern is not the source text: it is
+  translated into an ECMAScript pattern over UTF-8 bytes whose `std::regex_search` accepts
+  exactly the (valid UTF-8) texts Go's `regexp.MatchString` accepts, RE2 being the reference: `.`
+  is one code point but `\n`; a negated class and `\D`, `\W`, `\S` are one code point; `\d`,
+  `\w`, `\s` are the ASCII classes `[0-9]`, `[0-9A-Z_a-z]`, `[\t\n\f\r ]`; non-ASCII members
+  become UTF-8 byte alternations; groups are non-capturing and laziness is dropped, neither
+  changing acceptance. `where` is never checked at runtime. A failed check is
   an error naming the variable.
 - A TS emit whose package declares an input field is `E8104`.
 
@@ -2383,7 +2395,8 @@ one loader per `@reload` value with `dir + "/" + <file name>`.
 
 When a package has input fields, `.gen.cpp` contains, in an anonymous namespace, the fixed helpers
 below (the C++ counterpart of `rt.Env` and `rt.Parse*Literal`), followed by `LoadInputs`, which
-reads the variables in field declaration order and appends one line per failure to `error`.
+reads the variables in field declaration order and sets `error` to one line per failure (it
+replaces the caller's text, as every `Load` of §7.5 does).
 Only the helpers the package's inputs use are written, so the file stays warning-free under
 `-Wall` (§9): `EnvText` always; `IsDecDigit` and `AllDigits` for `Int`, `Float` and `Duration`;
 `DurationDigits` for `Duration`; `Parse<Kind>Literal` per input kind. The loaded values live in
