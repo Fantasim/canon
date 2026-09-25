@@ -26,8 +26,9 @@ worktree branches. They are listed in the pause report with what each still need
   `claude/m3-run` (d5062a3).
 - [ ] W2: gen/go inputs + unions landed (8e816d3). Run 2 landed: ir name plans (ad23ae8),
   ir pattern translator (f47e51c), gen/cpp inputs + dependent types + plan switch (4d165ff),
-  gen/go plan switch + dependent types in data mode (4a8852e). Open: ir lifts E8019
-  DependentType per generator; pattern automaton (C++ `std::regex` recursion); verify dependent
+  gen/go plan switch + dependent types in data mode (4a8852e), ir E8019 lift per generator
+  (1512297), check E1904 whitelist/E3806/E8009 (adce4a0). Open: remaining dependent shapes in
+  both generators; pattern automaton (C++ `std::regex` recursion); verify dependent
   (E3801/E3802); view/translation checking; ir `types` mode. Queue: report
   [handoff/2026-09-25-cloud-run-2.md](handoff/2026-09-25-cloud-run-2.md) "Owed".
 - [ ] W3 · [ ] W4 (see [plan.md](plan.md) "M3 execution").
