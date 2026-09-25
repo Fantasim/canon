@@ -4,7 +4,8 @@ Updated: 2026-09-25 (cloud run). The overnight run resumed in a Claude Code clou
 branch `claude/m3-run` (stands in for `main`; Louis fast-forwards `main` from it). Resume plan:
 [handoff/2026-09-25-pause.md](handoff/2026-09-25-pause.md); calls of the cloud run:
 [decisions/log-2026-09-25.md](decisions/log-2026-09-25.md); earlier calls:
-[decisions/log-2026-09-24.md](decisions/log-2026-09-24.md) "Overnight run".
+[decisions/log-2026-09-24.md](decisions/log-2026-09-24.md) "Overnight run". Stopped on budget;
+report and remaining lists: [handoff/2026-09-25-cloud-run.md](handoff/2026-09-25-cloud-run.md).
 
 ## Current focus — overnight run tracker (resume from here)
 
@@ -15,13 +16,14 @@ worktree branches. They are listed in the pause report with what each still need
 - [ ] A5: consumer units landed (d5de44d, 5d8232a). ERRORS.md pass: ir group landed (e1eaa0a); check group + check follow-up landed (7d35a39,
   154aa30, a1aa811); load group queued
   (script `load.py`, see pause report). Spec sync #2 and cleanups queued.
-- [ ] A6 M1.5 second wave: WIP (agent-a988…).
+- [ ] A6 M1.5 second wave: WIP, review FAILED, branch `claude/wip-a6-progen`.
 - [x] W0 gap map (1b0a332).
 - [ ] W1: landed: eval layers/provenance (bc99b99, 02f203c), load forms (1a77900), dependent
-  types in check (3e46ab3, b2f063c). Open: gate lift round 2 WIP (agent-aca7…); load into an
-  applied type (`l: L(ev) = load(..)`).
+  types in check (3e46ab3, b2f063c). Gate lift + load into an applied type landed on
+  `claude/m3-run` ("feat(eval,load,wire): loads backed by the evaluator").
 - [ ] W2: gen/go inputs + unions landed (8e816d3). Open: gen/cpp inputs round 2 WIP
-  (agent-a173…); ir name-plan unit + pattern translator; verify dependent (E3801/E3802);
+  (`claude/wip-a17381f528923b9cb`); ir name-plan unit WIP, review FAILED (`claude/wip-ir-names`);
+  pattern translator; verify dependent (E3801/E3802);
   view/translation checking; ir `types` mode; dependent types in both generators.
 - [ ] W3 · [ ] W4 (see [plan.md](plan.md) "M3 execution").
 
