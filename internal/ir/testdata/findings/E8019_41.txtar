@@ -1,0 +1,47 @@
+EVALUATION.md §1, CODEGEN.md §5.6 (gen/go dependentArgFormat, gen/cpp dependentThroughRef; log-2026-09-25 "gen/cpp round-2 review calls"): a discriminant read through a ref (WIRE.md §10) is DependentType at the field, in both loaders.
+-- a/a.canon --
+package a
+
+/// A kind.
+enum K { one, two }
+
+/// An event.
+record Ev {
+  /// Its kind.
+  k: K
+}
+
+/// The events.
+let evs: table Ev = { x { k: one } }
+
+/// A payload.
+type P(e: Ev) = match e.k { one => Int, two => String }
+
+/// A thing.
+record Thing {
+  /// Its event.
+  ev: ref evs
+  /// Its payload.
+  p: P(ev)
+}
+
+/// The things.
+let things: table Thing = {
+  a { ev: x, p: 1 }
+}
+
+emit go { out: "@features/a", package: "a", mode: data }
+emit cpp { out: "@features/ac", namespace: "a", mode: data }
+emit json { out: "out/" }
+-- a.evs.json --
+{"x": {"k": "one"}}
+-- a.things.json --
+{"a": {"ev": "x", "p": 1}}
+-- findings.txt --
+error[E8019]  a/a.canon:23:3
+  emit cpp in data mode cannot generate a dependent type
+
+error[E8019]  a/a.canon:23:3
+  emit go in data mode cannot generate a dependent type
+
+2 errors, 0 warnings in 1 package (…)

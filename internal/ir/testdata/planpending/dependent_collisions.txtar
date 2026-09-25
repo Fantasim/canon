@@ -1,4 +1,4 @@
-CODEGEN.md §3.5, §5.6: branches a_b and aB give the same As<Branch> and Go branch member (their enum members apart by overrides), and a record PBranch meets the branch enum in the Go package and the C++ namespace: E8005 from both plans, beside E8019 DependentType until the generators write dependent types.
+CODEGEN.md §3.5, §5.6: branches a_b and aB give the same As<Branch> and Go branch member (their enum members apart by overrides), and a record PBranch meets the branch enum in the Go package and the C++ namespace: E8005 from both plans, and no E8019 now the generators write dependent types.
 -- a/a.canon --
 package a
 
@@ -39,16 +39,10 @@ error[E8005]  a/a.canon:7:6
 error[E8005]  a/a.canon:7:6
   go: PBranchAB is generated for both a.P.a_b and a.P.aB
 
-error[E8019]  a/a.canon:7:6
-  emit cpp in data mode cannot generate a dependent type
-
-error[E8019]  a/a.canon:7:6
-  emit go in baked mode cannot generate a dependent type
-
 error[E8005]  a/a.canon:10:8
   cpp: PBranch is generated for both a.P and a.PBranch
 
 error[E8005]  a/a.canon:10:8
   go: PBranch is generated for both a.P and a.PBranch
 
-6 errors, 0 warnings in 1 package (…)
+4 errors, 0 warnings in 1 package (…)

@@ -1,4 +1,4 @@
-CODEGEN.md §3.3, §5.6, §7.6 (log-2026-09-24 "W2 gen/cpp inputs review", Names): a dependent type's struct or class, its branch enum PBranch and its members in arm order (a Never arm has none), Branch/GetBranch, As<Branch>, the storage, Go data mode's decodeP and detail's DecodeP; stage E still refuses the type (E8019 DependentType) until the generators write it.
+CODEGEN.md §3.3, §5.6, §7.6 (log-2026-09-24 "W2 gen/cpp inputs review", Names): a dependent type's struct or class, its branch enum PBranch and its members in arm order (a Never arm has none), Branch/GetBranch, As<Branch>, the storage, Go data mode's decodeP and detail's DecodeP; both generators write it, so stage E reports nothing.
 -- a/a.canon --
 package a
 
@@ -60,10 +60,4 @@ Thing: GetId GetK GetP GetRetired id_ k_ p_ retired_
 Things: All At Find Len Load rows_
 a: K KFromWire P PBranch Tag Tags Thing Things ToName ToWire kKMembers kTagsSchema kThingsSchema
 detail: AAccess Decode DecodeP
-error[E8019]  a/a.canon:18:6
-  emit cpp in data mode cannot generate a dependent type
-
-error[E8019]  a/a.canon:18:6
-  emit go in data mode cannot generate a dependent type
-
-2 errors, 0 warnings in 1 package (…)
+0 errors, 0 warnings in 1 package (…)

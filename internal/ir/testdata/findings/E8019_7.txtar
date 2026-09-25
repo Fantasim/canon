@@ -8,6 +8,17 @@ enum K { one, two }
 /// A payload.
 type P(k: K) = match k { one => Int, two => String }
 
+/// A thing.
+record Thing {
+  /// Its kind.
+  k: K
+  /// Its payload.
+  p: P(k)
+}
+
+/// Holds a payload.
+let full: Thing = { k: one, p: 1 }
+
 /// A shape.
 variant Shape {
   /// A circle.
@@ -20,11 +31,13 @@ variant Shape {
 }
 
 emit go { out: "@features/a", package: "a" }
+-- a.full.json --
+{"k": "one", "p": 1}
 -- findings.txt --
-error[E8019]  a/a.canon:7:6
+error[E8019]  a/a.canon:18:5
   emit go in baked mode cannot generate a dependent type
 
-error[E8019]  a/a.canon:14:3
+error[E8019]  a/a.canon:25:3
   emit go in baked mode cannot generate an export fn of a case without fields
 
 2 errors, 0 warnings in 1 package (…)

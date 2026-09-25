@@ -53,41 +53,51 @@ func cellsOf(t *LookupTable) []value.Value {
 	return t.Cells
 }
 
-// bakesForeign reports that the Go literal of v, of type t, writes a record, variant or case of a package other than own: none is written for a `none` or an empty list; an own record's fns' results are reported at the fn.
+// bakesForeign reports that the Go literal of v, of type t, writes a record, variant or case of a package other than own; an own record's fns' results are reported at the fn.
 func bakesForeign(own string, t *TypeRef, v value.Value) bool {
+	return literalHolds(t, v, func(t *TypeRef, v value.Value) bool {
+		_, rec := v.(*value.Record)
+		return rec && recordKinds[t.Kind] && t.Named != nil && pkgOf(t.Named) != own
+	})
+}
+
+// literalHolds reports a part of the Go literal of v, of type t, that bad accepts, v itself or its elements, keys, map values and fields: none is written for a `none` or an empty list.
+func literalHolds(t *TypeRef, v value.Value, bad func(*TypeRef, value.Value) bool) bool {
 	if t == nil || v == nil {
 		return false
 	}
 	if t.Kind == types.Optional {
-		return bakesForeign(own, t.Elem, v)
+		return literalHolds(t.Elem, v, bad)
+	}
+	if bad(t, v) {
+		return true
+	}
+	holds := func(t *TypeRef) func(value.Value) bool {
+		return func(e value.Value) bool { return literalHolds(t, e, bad) }
 	}
 	switch x := v.(type) {
 	case *value.Record:
-		return recordBakesForeign(own, t, x)
+		return recordHolds(t, x, bad)
 	case *value.List:
-		return slices.ContainsFunc(x.Elems, func(e value.Value) bool { return bakesForeign(own, t.Elem, e) })
+		return slices.ContainsFunc(x.Elems, holds(t.Elem))
 	case *value.Table:
-		return slices.ContainsFunc(x.Entries, func(e *value.Record) bool { return bakesForeign(own, t.Elem, e) })
+		return slices.ContainsFunc(x.Entries, func(e *value.Record) bool { return literalHolds(t.Elem, e, bad) })
 	case *value.Map:
-		return slices.ContainsFunc(x.Keys, func(k value.Value) bool { return bakesForeign(own, t.Key, k) }) ||
-			slices.ContainsFunc(x.Vals, func(e value.Value) bool { return bakesForeign(own, t.Elem, e) })
+		return slices.ContainsFunc(x.Keys, holds(t.Key)) || slices.ContainsFunc(x.Vals, holds(t.Elem))
 	default:
 		return false
 	}
 }
 
-// recordBakesForeign reports a record value of another package, or one of its fields' values writing one.
-func recordBakesForeign(own string, t *TypeRef, r *value.Record) bool {
+// recordHolds reports a field value of a record value that literalHolds accepts.
+func recordHolds(t *TypeRef, r *value.Record, bad func(*TypeRef, value.Value) bool) bool {
 	if !recordKinds[t.Kind] || t.Named == nil {
 		return false
-	}
-	if pkgOf(t.Named) != own {
-		return true
 	}
 	decl := ownFields(r.T)
 	for _, f := range bodyFields(t, r) {
 		i := slices.IndexFunc(decl, func(d *types.Field) bool { return d.Name == f.Name })
-		if i >= 0 && i < len(r.Fields) && bakesForeign(own, &f.Type, r.Fields[i]) {
+		if i >= 0 && i < len(r.Fields) && literalHolds(&f.Type, r.Fields[i], bad) {
 			return true
 		}
 	}

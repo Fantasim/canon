@@ -1,0 +1,107 @@
+CODEGEN.md §5.6, §2.8, EVALUATION.md §1: a project whose dependent types stage E passes builds, and its Go (data and baked) and C++ (data) outputs compile: package a in data mode, package b baked for Go, holding a's dependent type across packages.
+-- project.canon --
+project demo {
+  canon: "0.1"
+  roots {
+    gen: "gen"
+  }
+  go_module {
+    gen: "example.com/gen"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A kind.
+enum K { one, two, text, gone }
+
+/// A tag.
+record Tag {
+  /// Its label.
+  label: String
+}
+
+/// The tags.
+let tags: table Tag = {
+  red { label: "red" }
+}
+
+/// A payload.
+type P(k: K) = match k { one => Int, two => ref tags, text => String, gone => Never }
+
+/// A switch payload.
+type Q(on: Bool) = match on { false => Int, true => String }
+
+/// An event.
+record Ev {
+  /// Its kind.
+  k: K
+}
+
+/// A payload read through an event.
+type R(e: Ev) = match e.k { one => Int, _ => String }
+
+/// A thing.
+record Thing {
+  /// Its kind.
+  k: K
+  /// Its payload.
+  p: P(k)?
+  /// Its required payload.
+  q: P(k)
+}
+
+/// Read by gen/cpp only: no value holds it.
+record Loose {
+  /// Its kind.
+  k: K
+  /// Its payloads.
+  ps: [P(k)]
+  /// Whether it is on.
+  on: Bool
+  /// Its switch payload.
+  sw: Q(on)
+  /// Its event.
+  ev: Ev
+  /// Its event payload.
+  r: R(ev)
+}
+
+/// The things.
+let things: table Thing = {
+  a { k: one, p: 1, q: 2 }
+  b { k: text, p: "y", q: "z" }
+  d { k: text, q: "x" }
+}
+
+emit go { out: "@gen/go/a", package: "a", mode: data }
+emit cpp { out: "@gen/cpp/a", namespace: "a", mode: data }
+emit json { out: "@gen/data/a/" }
+-- b/b.canon --
+/// B.
+package b
+
+import a { K, P }
+
+/// A switch.
+type S(on: Bool) = match on { false => Int, true => String }
+
+/// A rule.
+record Rule {
+  /// Its kind.
+  k: K
+  /// Its payload, of another package's dependent type.
+  v: P(k)?
+  /// Whether it is on.
+  on: Bool
+  /// Its switch payload.
+  s: S(on)?
+}
+
+/// A rule without payloads.
+let rule: Rule = { k: gone, on: false }
+
+emit go { out: "@gen/go/b", package: "b" }
+emit cpp { out: "@gen/cpp/b", namespace: "b", mode: data }
+emit json { out: "@gen/data/b/" }

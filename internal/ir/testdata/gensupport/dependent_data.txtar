@@ -1,0 +1,73 @@
+Decision 37, clean (CODEGEN.md §5.6): both data loaders read an optional dependent field whose discriminant is an earlier required enum field, a ref branch and a Never arm included; gen/cpp also reads a list of them, a Bool discriminant and a match path through a record held by value, and gen/go writes a dependent type no class it decodes holds.
+-- a/a.canon --
+package a
+
+/// A kind.
+enum K { one, two, text, gone }
+
+/// A tag.
+record Tag {
+  /// Its label.
+  label: String
+}
+
+/// The tags.
+let tags: table Tag = {
+  red { label: "red" }
+}
+
+/// A payload.
+type P(k: K) = match k { one => Int, two => ref tags, text => String, gone => Never }
+
+/// A switch payload.
+type Q(on: Bool) = match on { false => Int, true => String }
+
+/// An event.
+record Ev {
+  /// Its kind.
+  k: K
+}
+
+/// A payload read through an event.
+type R(e: Ev) = match e.k { one => Int, _ => String }
+
+/// A thing.
+record Thing {
+  /// Its kind.
+  k: K
+  /// Its payload.
+  p: P(k)?
+}
+
+/// Read by gen/cpp only: no value holds it.
+record Loose {
+  /// Its kind.
+  k: K
+  /// Its payloads.
+  ps: [P(k)]
+  /// Whether it is on.
+  on: Bool
+  /// Its switch payload.
+  q: Q(on)
+  /// Its event.
+  ev: Ev
+  /// Its event payload.
+  r: R(ev)
+}
+
+/// The things.
+let things: table Thing = {
+  a { k: one, p: 1 }
+  b { k: two, p: red }
+  c { k: gone }
+}
+
+emit go { out: "@features/a", package: "a", mode: data }
+emit cpp { out: "@features/ac", namespace: "a", mode: data }
+emit json { out: "out/" }
+-- a.tags.json --
+{"red": {"label": "red"}}
+-- a.things.json --
+{"a": {"k": "one", "p": 1}, "b": {"k": "two", "p": "red"}, "c": {"k": "gone"}}
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

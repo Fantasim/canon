@@ -18,13 +18,13 @@ var genRules [TargetView + 1][ModeTypes + 1][]genRule
 
 func init() {
 	common := []genRule{
-		(*stage).checkFieldlessCaseFns, (*stage).checkDependentTypes, (*stage).checkForeignDependents, (*stage).checkOptionalElements,
+		(*stage).checkFieldlessCaseFns, (*stage).checkOptionalElements,
 		(*stage).checkOptionalMapValues, (*stage).checkTableFields, (*stage).checkCaseFields, (*stage).checkRecordConstants,
 	}
 	goCode := append(slices.Clone(common), (*stage).checkForeignTables, (*stage).checkConstLiterals, (*stage).checkNegativeZero)
-	genRules[TargetGo][ModeBaked] = append(slices.Clone(goCode), (*stage).checkBakedLiterals, (*stage).checkForeignTableLookups)
-	genRules[TargetGo][ModeData] = append(slices.Clone(goCode), (*stage).checkGoDecoded, (*stage).checkResolvedLookups)
-	genRules[TargetCpp][ModeData] = append(slices.Clone(common), (*stage).checkCppDecoded,
+	genRules[TargetGo][ModeBaked] = append(slices.Clone(goCode), (*stage).checkBakedLiterals, (*stage).checkForeignTableLookups, (*stage).checkGoDependentLiterals)
+	genRules[TargetGo][ModeData] = append(slices.Clone(goCode), (*stage).checkGoDecoded, (*stage).checkResolvedLookups, (*stage).checkGoDecodedDependents)
+	genRules[TargetCpp][ModeData] = append(slices.Clone(common), (*stage).checkCppDecoded, (*stage).checkCppDependents,
 		(*stage).checkForeignPairs, (*stage).checkClassCycles, (*stage).checkSelfReads)
 }
 
@@ -51,15 +51,6 @@ func (s *stage) checkFieldlessCaseFns(u *unit, es *emitSite) {
 			if len(c.Fields) == 0 && len(c.Methods) > 0 {
 				u.reportGenConstruct(es, s.itemSpan(c, source.Span{}), diag.KindFieldlessCaseExportFn)
 			}
-		}
-	}
-}
-
-// checkDependentTypes is E8019 `DependentType`: gen/go and gen/cpp refuse every dependent type of the package they emit, used or not (CODEGEN.md §5.6).
-func (s *stage) checkDependentTypes(u *unit, es *emitSite) {
-	for _, t := range u.p.Types {
-		if d, ok := t.(*Dependent); ok {
-			u.reportGenConstruct(es, s.decls[d].span(), diag.KindDependentType)
 		}
 	}
 }

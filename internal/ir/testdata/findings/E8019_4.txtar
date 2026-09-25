@@ -1,4 +1,4 @@
-EVALUATION.md §1 (stage E, CODEGEN.md §5.6): gen/go refuses every dependent type of the package it emits, whether or not any value uses it.
+EVALUATION.md §1 (stage E, CODEGEN.md §5.6; gen/go dependentLiteralFormat): baked gen/go writes a dependent type but no literal of one, so a selected value holding a dependent value is DependentType at the value; a value whose dependent field is none writes none.
 -- a/a.canon --
 package a
 
@@ -8,9 +8,27 @@ enum K { one, two }
 /// A payload.
 type P(k: K) = match k { one => Int, two => String }
 
+/// A thing.
+record Thing {
+  /// Its kind.
+  k: K
+  /// Its payload.
+  p: P(k)?
+}
+
+/// Holds a payload.
+let full: Thing = { k: one, p: 1 }
+
+/// Holds none.
+let empty: Thing = { k: two }
+
 emit go { out: "@features/a", package: "a" }
+-- a.full.json --
+{"k": "one", "p": 1}
+-- a.empty.json --
+{"k": "two"}
 -- findings.txt --
-error[E8019]  a/a.canon:7:6
+error[E8019]  a/a.canon:18:5
   emit go in baked mode cannot generate a dependent type
 
 1 error, 0 warnings in 1 package (…)

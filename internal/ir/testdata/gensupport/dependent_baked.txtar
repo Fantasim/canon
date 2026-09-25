@@ -1,0 +1,42 @@
+Decision 37, clean (CODEGEN.md §5.6): baked gen/go writes a dependent type, a field of it and a value whose dependent field is none; gen/cpp reads another package's dependent type through its Decode.
+-- b/b.canon --
+package b
+
+/// A kind.
+enum K { n, s }
+
+/// A payload.
+type P(k: K) = match k { n => Int, s => String }
+
+emit go { out: "@features/b", package: "b" }
+emit cpp { out: "@features/bc", namespace: "b", mode: data }
+-- a/a.canon --
+package a
+
+import b { K, P }
+
+/// A rule.
+record R {
+  /// Its kind.
+  k: K
+  /// Its payload.
+  v: P(k)?
+}
+
+/// Holds none.
+let r: R = { k: n }
+
+/// The rules.
+let rules: table R = {
+  one { k: s, v: "x" }
+}
+
+emit go { out: "@features/a", package: "a", values: [r] }
+emit cpp { out: "@features/ac", namespace: "a", mode: data }
+emit json { out: "out/a/" }
+-- a.r.json --
+{"k": "n"}
+-- a.rules.json --
+{"one": {"k": "s", "v": "x"}}
+-- findings.txt --
+0 errors, 0 warnings in 2 packages (…)

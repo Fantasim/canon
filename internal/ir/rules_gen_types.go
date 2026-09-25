@@ -1,8 +1,6 @@
 package ir
 
 import (
-	"slices"
-
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/types"
@@ -55,13 +53,6 @@ func typeHolds(t *TypeRef, bad func(*TypeRef) bool) bool {
 		return false
 	}
 	return bad(t) || typeHolds(t.Elem, bad) || typeHolds(t.Key, bad)
-}
-
-// checkForeignDependents is E8019 `DependentType` at a type naming a dependent type the package does not declare, which both generators refuse (CODEGEN.md §5.6).
-func (s *stage) checkForeignDependents(u *unit, es *emitSite) {
-	s.reportTypeSites(u, es, diag.KindDependentType, func(t *TypeRef) bool {
-		return t.Kind == types.TypeApp && !slices.Contains(u.p.Types, t.Named)
-	}, nil)
 }
 
 // checkOptionalElements is E8019 `OptionalElementList`: neither generator has a type for a list of optional elements (CODEGEN.md §4.2).

@@ -1,0 +1,42 @@
+EVALUATION.md §1, CODEGEN.md §5.6, §5.7 (gen/go dependentArgFormat, gen/cpp dependentParam): a dependent field whose argument is a record parameter is DependentType at the field, in both loaders.
+-- a/a.canon --
+package a
+
+/// A kind.
+enum K { one, two }
+
+/// A payload.
+type P(k: K) = match k { one => Int, two => String }
+
+/// A limit.
+record L(k: K) {
+  /// Its payload.
+  p: P(k)
+}
+
+/// A thing.
+record Thing {
+  /// Its kind.
+  k: K
+  /// Its limit.
+  l: L(k)
+}
+
+/// The things.
+let things: table Thing = {
+  a { k: one, l: { p: 1 } }
+}
+
+emit go { out: "@features/a", package: "a", mode: data }
+emit cpp { out: "@features/ac", namespace: "a", mode: data }
+emit json { out: "out/" }
+-- a.things.json --
+{"a": {"k": "one", "l": {"p": 1}}}
+-- findings.txt --
+error[E8019]  a/a.canon:12:3
+  emit cpp in data mode cannot generate a dependent type
+
+error[E8019]  a/a.canon:12:3
+  emit go in data mode cannot generate a dependent type
+
+2 errors, 0 warnings in 1 package (…)

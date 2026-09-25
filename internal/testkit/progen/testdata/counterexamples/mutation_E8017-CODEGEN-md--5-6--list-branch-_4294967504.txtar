@@ -2,7 +2,6 @@ suite mutation
 name E8017 CODEGEN.md §5.6 (list branch)
 case 207
 seed 4294967504
-open gen
 born mismatch extra E8019
 sig extra E8019
 packages features.lookup

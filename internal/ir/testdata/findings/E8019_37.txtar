@@ -1,0 +1,30 @@
+EVALUATION.md §1, CODEGEN.md §5.6 (gen/go dependentDiscKindFormat): gen/go's data loader decodes only an enum discriminant, so a Bool-discriminated dependent field it reads is DependentType at the field; gen/cpp reads it.
+-- a/a.canon --
+package a
+
+/// A payload.
+type P(on: Bool) = match on { false => Int, true => String }
+
+/// A thing.
+record Thing {
+  /// Whether it is on.
+  on: Bool
+  /// Its payload.
+  p: P(on)
+}
+
+/// The things.
+let things: table Thing = {
+  a { on: false, p: 1 }
+}
+
+emit go { out: "@features/a", package: "a", mode: data }
+emit cpp { out: "@features/ac", namespace: "a", mode: data }
+emit json { out: "out/" }
+-- a.things.json --
+{"a": {"on": false, "p": 1}}
+-- findings.txt --
+error[E8019]  a/a.canon:11:3
+  emit go in data mode cannot generate a dependent type
+
+1 error, 0 warnings in 1 package (…)
