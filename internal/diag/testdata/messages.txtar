@@ -384,6 +384,8 @@ E8009 tsOut: invalid out "0.9" for emit ts: it must end in .ts
 E8009 values: values of emit resource.vocab.items: resource.vocab.items is not a public let of this package
 E8009 valuesTwice: values of emit resource.vocab.items: resource.vocab.items is listed twice
 E8009 kind: option resource.vocab.items of emit resource.vocab.items must be a constant string
+E8009 missing: emit resource.vocab.items is missing resource.vocab.items
+E8009 reservedNamespace: invalid namespace "0.9" for emit cpp: canon, std and nlohmann are reserved
 E8010 -: ordered enum resource.vocab.items has codes that do not increase in declaration order
 E8011 override: 0.9 is not a valid resource.vocab.items identifier for @resource.vocab.items(name:)
 E8011 unexported: 0.9 is not exported: an @go(name:) override starts with an upper-case letter

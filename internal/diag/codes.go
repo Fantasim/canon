@@ -1979,6 +1979,8 @@ var Registry = []Def{
 			{Name: "values", Args: []Arg{{Name: "name", Type: ArgTypeName}, {Name: "target", Type: ArgTypeName}}, Template: "values of emit {target}: {name} is not a public let of this package"},
 			{Name: "valuesTwice", Args: []Arg{{Name: "name", Type: ArgTypeName}, {Name: "target", Type: ArgTypeName}}, Template: "values of emit {target}: {name} is listed twice"},
 			{Name: "kind", Args: []Arg{{Name: "option", Type: ArgTypeName}, {Name: "target", Type: ArgTypeName}, {Name: "expected", Type: ArgTypeKind}}, Template: "option {option} of emit {target} must be {expected}"},
+			{Name: "missing", Args: []Arg{{Name: "option", Type: ArgTypeName}, {Name: "target", Type: ArgTypeName}}, Template: "emit {target} is missing {option}"},
+			{Name: "reservedNamespace", Args: []Arg{{Name: "value", Type: ArgTypeText}}, Template: "invalid namespace \"{value}\" for emit cpp: canon, std and nlohmann are reserved"},
 		},
 	},
 	{
@@ -6196,6 +6198,16 @@ func (codeE8009) AtValuesTwice(span source.Span, name string, target string) *Bu
 // AtKind reports: option {option} of emit {target} must be {expected}
 func (codeE8009) AtKind(span source.Span, option string, target string, expected Kind) *Builder {
 	return newBuilder(&Registry[245], 6, span, option, target, expected)
+}
+
+// AtMissing reports: emit {target} is missing {option}
+func (codeE8009) AtMissing(span source.Span, option string, target string) *Builder {
+	return newBuilder(&Registry[245], 7, span, option, target)
+}
+
+// AtReservedNamespace reports: invalid namespace "{value}" for emit cpp: canon, std and nlohmann are reserved
+func (codeE8009) AtReservedNamespace(span source.Span, value string) *Builder {
+	return newBuilder(&Registry[245], 8, span, value)
 }
 
 // E8010: an `ordered` enum whose codes do not increase (CODEGEN.md §5.2).

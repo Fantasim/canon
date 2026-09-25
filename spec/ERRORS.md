@@ -340,7 +340,7 @@ func (codeE2103) AtSeveral(span source.Span, typ string, colls []string) *Builde
 
 ---
 
-The catalogue holds 300 codes: 279 errors, 18 warnings and 3 run-time codes, with 453 messages.
+The catalogue holds 300 codes: 279 errors, 18 warnings and 3 run-time codes, with 455 messages.
 
 ## E10xx, W10xx: Project file, doc comments and naming
 
@@ -1155,6 +1155,8 @@ Owner: CODEGEN.md, WIRE.md.
 | E8009 | values | name:Name, target:Name | `values of emit {target}: {name} is not a public let of this package` |
 | E8009 | valuesTwice | name:Name, target:Name | `values of emit {target}: {name} is listed twice` |
 | E8009 | kind | option:Name, target:Name, expected:Kind | `option {option} of emit {target} must be {expected}` |
+| E8009 | missing | option:Name, target:Name | `emit {target} is missing {option}` |
+| E8009 | reservedNamespace | value:Text | `invalid namespace "{value}" for emit cpp: canon, std and nlohmann are reserved` |
 | E8010 | - | enum:Name | `ordered enum {enum} has codes that do not increase in declaration order` |
 | E8011 | override | name:Text, target:Name | `{name} is not a valid {target} identifier for @{target}(name:)` |
 | E8011 | unexported | name:Text | `{name} is not exported: an @go(name:) override starts with an upper-case letter` |

@@ -386,6 +386,8 @@ var constructed = []*Builder{
 	E8009.AtValues(sampleSpan, sampleName, sampleName),
 	E8009.AtValuesTwice(sampleSpan, sampleName, sampleName),
 	E8009.AtKind(sampleSpan, sampleName, sampleName, KindConstantString),
+	E8009.AtMissing(sampleSpan, sampleName, sampleName),
+	E8009.AtReservedNamespace(sampleSpan, sampleText),
 	E8010.At(sampleSpan, sampleName),
 	E8011.AtOverride(sampleSpan, sampleText, sampleName),
 	E8011.AtUnexported(sampleSpan, sampleText),
