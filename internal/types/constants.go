@@ -181,3 +181,18 @@ const (
 )
 
 const maxInt = math.MaxInt64
+
+// The formats a load reads a file as, told apart by extension or `format:` (WIRE.md §6.2).
+const (
+	FormatUnknown LoadFormat = iota
+	FormatJSON
+	FormatCSV
+	FormatText
+)
+
+// formatWords are each format's `format:` symbol and file extension (WIRE.md §6.2).
+var formatWords = [...]struct{ symbol, ext string }{
+	FormatJSON: {"json", ".json"},
+	FormatCSV:  {"csv", ".csv"},
+	FormatText: {"text", ".txt"},
+}
