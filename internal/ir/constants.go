@@ -1,13 +1,6 @@
 package ir
 
-import (
-	"regexp"
-	"slices"
-
-	"github.com/fantasim/canonlang/internal/check"
-	"github.com/fantasim/canonlang/internal/syntax"
-	"github.com/fantasim/canonlang/internal/types"
-)
+import "regexp"
 
 // The emit targets of CODEGEN.md §2.1.
 const (
@@ -85,44 +78,6 @@ const (
 	selfPrefix = "self_" // a read named like a declared parameter (CONFORMANCE.md §2.3)
 )
 
-// portableBuiltins are the built-in functions of the portable subset, with the kinds their arguments may have (CONFORMANCE.md §2.2, §3); arity is exact, or the least when variadic.
-var portableBuiltins = map[string]builtinSpec{
-	fnMin: {fn: BuiltinMin, arity: minMinMax, variadic: true, kinds: numericKinds}, fnMax: {fn: BuiltinMax, arity: minMinMax, variadic: true, kinds: numericKinds},
-	"abs": {fn: BuiltinAbs, arity: 1, kinds: numericKinds}, "clamp": {fn: BuiltinClamp, arity: clampArity, kinds: numericKinds},
-	"floor": {fn: BuiltinFloor, arity: 1, kinds: floatKinds}, "ceil": {fn: BuiltinCeil, arity: 1, kinds: floatKinds},
-	"round": {fn: BuiltinRound, arity: 1, kinds: floatKinds},
-}
-
-// portableConversions are `Float(i)` and `Int(f)`, with the kind each converts from (CONFORMANCE.md §3).
-var portableConversions = map[string]builtinSpec{
-	convFloat: {fn: BuiltinFloat, arity: 1, kinds: map[types.Kind]bool{types.Int: true}},
-	convInt:   {fn: BuiltinInt, arity: 1, kinds: floatKinds},
-}
-
-// The kinds of the portable subset: of arithmetic, of a parameter, read or equality, of a result, of an interpolation (CONFORMANCE.md §2.1, §2.2).
-var (
-	numericKinds  = map[types.Kind]bool{types.Int: true, types.Float: true, types.Duration: true}
-	floatKinds    = map[types.Kind]bool{types.Float: true}
-	scalarKinds   = map[types.Kind]bool{types.Bool: true, types.Int: true, types.Float: true, types.String: true, types.Duration: true, types.Enum: true}
-	resultKinds   = map[types.Kind]bool{types.Bool: true, types.Int: true, types.Float: true, types.String: true, types.Duration: true, types.Enum: true, types.Ref: true}
-	templateKinds = map[types.Kind]bool{types.String: true, types.Int: true, types.Enum: true}
-	// untemplated are the kinds E9005 names in a template; any other kind there is E9001.
-	untemplated = map[types.Kind]bool{types.Float: true, types.Duration: true}
-)
-
-// binaryOps are the binary operators of the portable subset by token; `??` is Coalesce (CONFORMANCE.md §2.2).
-var binaryOps = map[syntax.TokenKind]Op{
-	syntax.TokPlus: OpAdd, syntax.TokMinus: OpSub, syntax.TokStar: OpMul, syntax.TokSlash: OpDiv,
-	syntax.TokPercent: OpMod, syntax.KwAnd: OpAnd, syntax.KwOr: OpOr, syntax.TokEq: OpEq,
-	syntax.TokNe: OpNe, syntax.TokLt: OpLt, syntax.TokLe: OpLe, syntax.TokGt: OpGt, syntax.TokGe: OpGe,
-}
-
-// unaryOps are the unary operators of the portable subset, with the kinds of their operand.
-var unaryOps = map[syntax.TokenKind]unarySpec{
-	syntax.TokMinus: {op: OpNeg, kinds: numericKinds},
-	syntax.KwNot:    {op: OpNot, kinds: map[types.Kind]bool{types.Bool: true}},
-}
-
 // Where a path of self is read.
 const (
 	ctxValue readCtx = iota
@@ -166,6 +121,7 @@ const (
 	fpDep         = "dep("
 	fpCaseType    = "case("
 	fpMap         = "map("
+	fpEncInt      = "int"
 	fpSourceField = "field"
 	fpSourceParam = "param"
 	fpSourceKey   = "key"
@@ -185,15 +141,6 @@ const (
 	decimalBase   = 10
 )
 
-// fpComposites opens each composite type of §4.4 but the keyed list.
-var fpComposites = map[types.Kind]string{
-	types.List: "list(", types.Table: "table(", types.Optional: "opt(", types.Map: fpMap,
-	types.DepMap: fpMap, types.Ref: "ref(", types.LitUnion: "union(",
-}
-
-// fpEncNames is `enc=` of a field (§4.5).
-var fpEncNames = [...]string{types.EncPlain: fpNone, types.EncInt: "int", types.EncBits: "bits"}
-
 // Paths, separators and names stage E composes.
 const (
 	curDir    = "."
@@ -208,41 +155,24 @@ const (
 // maxCells is the largest lookup table (CODEGEN.md §5.10, E9002).
 const maxCells = 65_536
 
-// The words of targets, modes and @cpp(access:) (CODEGEN.md §2.1, CPP-01), by value.
-var (
-	targetWords = [...]string{TargetGo: check.TargetGo, TargetCpp: check.TargetCpp, TargetTS: check.TargetTS, TargetJSON: check.TargetJSON, TargetView: check.TargetView}
-	modeWords   = [...]string{ModeNone: "", ModeBaked: check.ModeBaked, ModeEmbedded: check.ModeEmbedded, ModeData: check.ModeData, ModeTypes: check.ModeTypes}
-	// accessWords are syntax's @cpp(access:) symbols, indexed by Access: AccessNone has none.
-	accessWords = append([]string{""}, syntax.AccessModes()...)
-)
+// maxSafeInt is Number.MAX_SAFE_INTEGER, 2^53 - 1 (CODEGEN.md §4.1, E8101).
+const maxSafeInt = 1<<53 - 1
 
-// branchKinds are the kinds a dependent type's branch may have (CODEGEN.md §5.6, E8017).
-var branchKinds = map[types.Kind]bool{
-	types.Bool: true, types.Int: true, types.Float: true, types.String: true, types.Duration: true,
-	types.Enum: true, types.Ref: true,
-}
-
-// definesRefused are the emits whose generator refuses a ref into a load.defines table, having no define value getter nor table yet (decisions 180, 194): baked and data go; a mode gen/go does not have reports nothing.
+// definesRefused are the emits refusing a ref into a load.defines table (decisions 180, 194).
 var definesRefused = [TargetView + 1][ModeTypes + 1]bool{
 	TargetGo: {ModeBaked: true, ModeData: true},
 }
-
-// maxSafeInt is Number.MAX_SAFE_INTEGER, 2^53 - 1 (CODEGEN.md §4.1, E8101).
-const maxSafeInt = 1<<53 - 1
 
 // JSONExt ends a file-mode JSON `out` and every directory-mode file name (WIRE.md §8.1).
 const JSONExt = ".json"
 
 const underscore = "_"
 
-// pairsOpen and pairsClose delimit the slot index of a `pairs:` key template, `{i}` (WIRE.md §5.14).
+// pairsOpen and pairsClose delimit a `pairs:` key template's slot index, `{i}` (WIRE.md §5.14).
 const (
 	pairsOpen  = "{"
 	pairsClose = "}"
 )
-
-// recordKinds are the kinds whose values are records: a record, a variant, a case.
-var recordKinds = map[types.Kind]bool{types.Record: true, types.Variant: true, types.Case: true}
 
 // The states of a class in classGraph's depth-first order.
 const (
@@ -251,38 +181,10 @@ const (
 	visited
 )
 
-// identPattern is a plain identifier: a letter or underscore, then letters, digits or underscores (CODEGEN.md §3.5, E8011).
+// identPattern is a plain identifier: a letter or `_`, then letters, digits or `_` (E8011).
 var identPattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
 
-// goInitialisms is the closed initialism list of GoCap (CODEGEN.md §3.2).
-var goInitialisms = map[string]bool{
-	"id": true, "url": true, "api": true, "http": true, "json": true, "ui": true,
-	"db": true, "ip": true, "hp": true, "mp": true, "ts": true,
-}
-
-// goPredeclared are Go's predeclared identifiers (CODEGEN.md §3.4).
-var goPredeclared = map[string]bool{
-	"any": true, "append": true, "bool": true, "byte": true, "cap": true, "clear": true,
-	"close": true, "comparable": true, "complex": true, "complex64": true, "complex128": true,
-	"copy": true, "delete": true, "error": true, boolFalse: true, "float32": true, "float64": true,
-	"imag": true, "int": true, "int8": true, "int16": true, "int32": true, "int64": true,
-	"iota": true, "len": true, "make": true, "max": true, "min": true, "new": true, "nil": true,
-	"panic": true, "print": true, "println": true, "real": true, "recover": true, "rune": true,
-	"string": true, boolTrue: true, "uint": true, "uint8": true, "uint16": true, "uint32": true,
-	"uint64": true, "uintptr": true,
-}
-
-// goImportNames are the package names generated Go files import (CODEGEN.md §3.4); baked Go writes goStdImports of them.
-var goImportNames = map[string]bool{
-	goRT: true, goJSON: true, goFmt: true, goIter: true, "os": true, goFilepath: true,
-	goAtomic: true, goSync: true, goTime: true, goErrors: true, goStrconv: true, goStrings: true,
-	goMath: true, "regexp": true, "embed": true, goSlices: true,
-}
-
-// cppOwnNames are the namespaces generated C++ declares itself, beside check's (CODEGEN.md §3.4).
-var cppOwnNames = map[string]bool{cppDetail: true, cppConformance: true}
-
-// A C++ name reserved to the implementation: one holding `__`, or starting with `_` and an upper-case letter (CODEGEN.md §3.4).
+// A C++ name reserved to the implementation holds `__` or starts `_[A-Z]` (CODEGEN.md §3.4).
 const cppReservedRun = "__"
 
 var cppReservedStart = regexp.MustCompile(`^_[A-Z]`)
@@ -296,32 +198,21 @@ const (
 	cppFromWire      = "FromWire"
 	cppKey           = "Key"
 	cppKeys          = "Keys"
-	cppLoad          = "Load"
+	CppLoad          = "Load" // static Load of records, containers, the snapshot; detail's Load<V>
 	cppRefSuffix     = "ref_"
 	cppByPrefix      = "by"
 	cppAccessSuffix  = "Access"
 	cppRunPrefix     = "Run"
 	cppVectorSuffix  = "Vector"
 	cppShow          = "Show"   // the conformance file's printer of an optional input
-	cppDecode        = "Decode" // detail's decoders, one overload per class (CODEGEN.md §7.2)
-	cppResolve       = "Resolve"
-	cppVariantMember = "value_" // a variant's std::variant (CODEGEN.md §5.5)
+	CppDecode        = "Decode" // detail's decoder overloads (CODEGEN.md §7.2), Decode<Alias>
+	CppResolve       = "Resolve"
+	CppVariantMember = "value_" // a variant's or dependent type's std::variant (§5.5, §5.6)
+	CppToName        = "ToName" // the enum helpers, one overload per enum (CODEGEN.md §5.2)
+	CppToWire        = "ToWire"
 )
 
-var (
-	// cppEntryMembers are a table entry's id and retired getters and members (CODEGEN.md §5.3).
-	cppEntryMembers = []string{"GetId", "id_", "GetRetired", "retired_"}
-	// cppContainerMembers are every container's methods and rows (CODEGEN.md §5.9).
-	cppContainerMembers = []string{GoLen, GoAt, GoAll, GoFind, "rows_"}
-	// cppConformanceOwn are the conformance namespace's own names (CONFORMANCE.md §7.2).
-	cppConformanceOwn = []string{"g_code", "Capture"}
-	// cppStoreMembers are the store's methods and its atomic pointer (CODEGEN.md §5.11, T9).
-	cppStoreMembers = []string{"Current", "Reload", "current_"}
-	// cppEnumOverloads are the namespace's ToName and ToWire, one overload per enum (CODEGEN.md §5.2).
-	cppEnumOverloads = []string{"ToName", "ToWire"}
-)
-
-// The fixed Go names of generated code, which the name plan declares and gen/go's templates write (CODEGEN.md §5.2–§5.9, §6.2).
+// The fixed Go names the plan declares and gen/go's templates write (CODEGEN.md §5.2–§6.2).
 const (
 	GoID           = "ID" // the ID method, and the suffix of an id type and a key getter
 	GoRetired      = "Retired"
@@ -341,7 +232,7 @@ const (
 	GoCaseStore    = "value"
 )
 
-// Generated Go names and the reference layout's own names (CODEGEN.md §3.3, §5.2–§5.10, §6.2; decisions 121, 193).
+// Generated Go names and the reference layout's own names (CODEGEN.md §3.3, §5.2–§6.2).
 const (
 	goAsPrefix         = "As"
 	goParsePrefix      = "Parse"
@@ -364,7 +255,7 @@ const (
 	goParamsSuffix     = "()"
 )
 
-// The standard packages generated Go imports, by the name code uses, in the order the plan declares them (CODEGEN.md §2.8): baked Go's, data mode's, the conformance file's.
+// The standard packages generated Go imports, by the name code uses (CODEGEN.md §2.8).
 const (
 	goRT       = "rt"
 	goTime     = "time"
@@ -380,9 +271,60 @@ const (
 	goAtomic   = "atomic"
 	goTesting  = "testing"
 	goSlices   = "slices"
+	goRegexp   = "regexp"
 )
 
-// Data mode's generated names (CODEGEN.md §3.3, §5.9, §5.11, §6.1) and its loaders' fixed locals.
+// Names both generators' stores and loaders write (CODEGEN.md §5.11, §6.1).
+const (
+	storeCurrent = "Current"
+	storeReload  = "Reload"
+	goOut        = "out"
+	goValues     = "values"
+)
+
+// Runtime inputs: LoadInputs, Go's input_<T>_<store>, C++'s detail::<P>Inputs (CODEGEN.md §5.12).
+const (
+	loadInputs           = "LoadInputs"
+	inputLineSep         = ": "
+	goInputPrefix        = "input_"
+	goInputOKSuffix      = "_OK"
+	goInputPatternSuffix = "_Pattern"
+	goInputsLoaded       = "inputsLoaded_"
+	goInputErrs          = "errs"
+	cppInputsSuffix      = "Inputs"
+	cppInputsLoaded      = "InputsLoaded"
+	branchWord           = "Branch" // dependent types (§5.6): TBranch, Go's Branch, C++'s GetBranch
+	goBranchStore        = "branch"
+	asValueSuffix        = "Value" // As<Branch>Value of a ref into a load.defines table
+)
+
+// How another package's same C++ name meets a name: only overloads, TU-locals, namespaces pass.
+const (
+	meetsNever cppMeet = iota
+	meetsOverload
+	meetsLocal
+	meetsNamespace
+)
+
+// The reasons of LoadInputs' failure lines (InputReasonText).
+const (
+	InputNotSet InputReason = iota
+	InputNotValid
+	InputOutsideRange
+	InputNoMatch
+	InputNotMember
+)
+
+// inputReasons are the failure-line reasons, byte for byte in every target (CODEGEN.md §5.12).
+var inputReasons = [...]string{
+	InputNotSet:       "not set",
+	InputNotValid:     "not a valid %s",
+	InputOutsideRange: "outside its refinement range",
+	InputNoMatch:      "does not match its pattern",
+	InputNotMember:    "not a member of %s",
+}
+
+// Data mode's generated names and its loaders' fixed locals (CODEGEN.md §3.3, §5.9–§6.1).
 const (
 	goSchemaSuffix     = "Schema"
 	goLoadPrefix       = "Load"
@@ -416,36 +358,8 @@ const (
 	GoCollision GoProblemKind = iota
 	// GoNotIdentifier is a generated name that is no Go identifier.
 	GoNotIdentifier
-	// GoUnexported is a @go(name:) override that is a valid identifier but not exported (E8011, decision 182).
+	// GoUnexported is a @go(name:) override, an identifier but not exported (E8011).
 	GoUnexported
 	// GoOverrideInvalid is a @go(name:) override that is no Go identifier at all (E8011 `override`).
 	GoOverrideInvalid
-)
-
-var (
-	goStdImports = []string{goRT, goTime, goIter, goSync, goStrconv, goMath, goJSON, goFmt, goStrings, goSlices, goAtomic, goTesting}
-	// goDataImports are the packages data mode's loaders and JSON helpers write.
-	goDataImports = []string{goRT, goJSON, goFmt, goStrings, goSlices}
-	// goStoreMembers are the store's atomic pointer and methods (CODEGEN.md §5.11, T9).
-	goStoreMembers = []string{"current", "Current", "Reload"}
-	// goJSONHelpers are the JSON reads every data-mode file with decoders writes, in its order (log-2026-09-24 "Loader parity").
-	goJSONHelpers = []string{"jsonObject", "jsonKeys", "jsonNeed", "jsonMay", "jsonCell", "jsonRead", "jsonInt", "jsonSlot", "jsonSame"}
-	// goDataLocals are the fixed locals of data mode's loaders, decoders and resolvers.
-	goDataLocals = []string{
-		"name", "path", "raw", "out", "obj", "err", "f", GoRows, "values", "keys", "i", GoIDStore, GoRetiredStore, "dir", "s", "ctx", "tag", "c",
-		"key", "k", "r", "ok", "bad", goWant, "dst", "n", "lo", "hi", "v", "kr", "vr", "hasK", "hasV", "first", "empty", "marker", "a", "m", "af", "mf",
-	}
-	// goVectorOwn are the fields a conformance vector has besides its inputs (CONFORMANCE.md §7.2).
-	goVectorOwn = []string{goWant, "code"}
-	// goCheckedOps are the operators gen/go writes as checked rt helpers (CONFORMANCE.md §3).
-	goCheckedOps       = map[Op]bool{OpAdd: true, OpSub: true, OpMul: true, OpDiv: true, OpMod: true}
-	goVariantMembers   = []string{GoKindStore, GoCaseStore, GoKind}
-	goIDEnumMethods    = []string{GoString}
-	goEnumMethods      = append(slices.Clone(goIDEnumMethods), GoWire)
-	goCodesEnumMethods = append(slices.Clone(goEnumMethods), GoCode)
-	goContainerMembers = []string{GoRows, GoLen, GoAt, GoAll, GoFind}
-	// goPointerKinds are the kinds whose getter returns a pointer, which nil marks absent (CODEGEN.md §4.2, §4.3).
-	goPointerKinds = map[types.Kind]bool{types.Record: true, types.Variant: true, types.Case: true}
-	// goStdOfKind is the package a type of each kind makes baked Go import; math comes from a -0.0 literal only (decisions 181, 202).
-	goStdOfKind = map[types.Kind]string{types.List: goRT, types.Map: goRT, types.DepMap: goRT, types.Duration: goTime}
 )

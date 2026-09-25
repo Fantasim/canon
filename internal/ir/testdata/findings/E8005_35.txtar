@@ -1,0 +1,33 @@
+CONFORMANCE.md §7.2, CODEGEN.md §3.5: `check b` loads b's import a, which is not selected; a's conformance vector struct TwiceVector, planned from a's declarations, hides b's enum TwiceVector of the namespace both packages share, reported at b.
+-- selected.txt --
+b
+-- a/a.canon --
+package a
+
+/// A rank.
+enum Rank { low, high }
+
+/// Doubles x.
+export fn twice(x: Int) -> Int { return x * 2 }
+
+emit cpp { out: "@features/a", namespace: "sov::gen", mode: data }
+-- b/b.canon --
+package b
+
+import a { Rank }
+
+/// Named like a's vector struct.
+enum TwiceVector { one, two }
+
+/// A thing.
+record Thing {
+  /// Its rank.
+  rank: Rank
+}
+
+emit cpp { out: "@features/b", namespace: "sov::gen", mode: data }
+-- findings.txt --
+error[E8005]  b/b.canon:14:6
+  cpp: TwiceVector is generated for both a.twice and b.TwiceVector
+
+1 error, 0 warnings in 2 packages (…)

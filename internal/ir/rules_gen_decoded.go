@@ -39,13 +39,10 @@ func readFieldSites(f *Field, span source.Span) []typeSite {
 	return out
 }
 
-// checkDecodedType is E8019 `MapField`, and `NonStringLiteralUnion` if unions, for a type a loader reads: neither reads an ordered map, nor a union arm that is not a string.
-func (s *stage) checkDecodedType(u *unit, es *emitSite, site typeSite, unions bool) {
+// checkDecodedType is E8019 `MapField` for a type a loader reads: no loader reads an ordered map. A literal union without a string wire form is check's E3002 (log-2026-09-24 "W1 gate lift review").
+func (s *stage) checkDecodedType(u *unit, es *emitSite, site typeSite) {
 	if decodedHolds(site.t, isMap) {
 		u.reportGenConstruct(es, site.span, diag.KindMapField)
-	}
-	if unions && decodedHolds(site.t, nonStringUnion) {
-		u.reportGenConstruct(es, site.span, diag.KindNonStringLiteralUnion)
 	}
 }
 
@@ -65,12 +62,7 @@ func decodedHolds(t *TypeRef, bad func(*TypeRef) bool) bool {
 	return false
 }
 
-// nonStringUnion is a literal union whose first arm is not written as a string, which no loader reads (WIRE.md §5.9).
-func nonStringUnion(t *TypeRef) bool {
-	return t.Kind == types.LitUnion && t.Elem != nil && t.Elem.Kind != types.Never && !StringWire(t.Elem)
-}
-
-// StringWire reports a type written as a JSON string (WIRE.md §5.8): String, an enum without @json(codes), a ref keyed by one (check lets a union over a ref keyed by a codes enum through: it counts every enum), a dependent type whose branches all are.
+// StringWire reports a type written as a JSON string (WIRE.md §5.8): String, an enum without @json(codes), a ref keyed by one, a dependent type whose branches all are.
 func StringWire(t *TypeRef) bool {
 	switch t.Kind {
 	case types.String:

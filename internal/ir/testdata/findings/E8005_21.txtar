@@ -1,0 +1,22 @@
+CODEGEN.md §3.5, §7.7; log-2026-09-24 "Owed (C++ plan)": package a's input slots live in detail::AInputs, which inside detail hides the record AInputs of the namespace (g++ refuses the header).
+-- a/a.canon --
+package a
+
+/// Named like the input namespace.
+record AInputs {
+  /// A key.
+  key: input String? from env "KEY"
+}
+
+/// The settings.
+let inputs: AInputs = {}
+
+emit cpp { out: "@features/a", namespace: "a", mode: data }
+emit json { out: "out/" }
+-- a.inputs.json --
+{}
+-- findings.txt --
+error[E8005]  a/a.canon:4:8
+  cpp: AInputs is generated for both a.AInputs and a
+
+1 error, 0 warnings in 1 package (…)

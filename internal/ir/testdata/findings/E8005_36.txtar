@@ -1,0 +1,16 @@
+CODEGEN.md §3.5, CONFORMANCE.md §7.2: echo's parameter Tone is named like the enum its own type names, so its conformance vector `struct EchoVector { Tone Tone; … }` changes the meaning of Tone (g++ -Wchanges-meaning); one E8005, at the parameter.
+-- a/a.canon --
+package a
+
+/// A tone.
+enum Tone { soft, loud }
+
+/// Echoes k.
+export fn echo(Tone: Tone, k: Int) -> Int { return k }
+
+emit cpp { out: "@features/a", namespace: "a", mode: data }
+-- findings.txt --
+error[E8005]  a/a.canon:7:16
+  cpp: Tone is generated for both a.Tone and echo.Tone
+
+1 error, 0 warnings in 1 package (…)

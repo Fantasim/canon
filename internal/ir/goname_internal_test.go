@@ -83,9 +83,17 @@ func TestGoEscapeLower(t *testing.T) {
 // TestGoStorageName is CODEGEN.md §3.4: a storage name is lowerCamel, escaped when reserved.
 func TestGoStorageName(t *testing.T) {
 	cases := []struct{ in, want string }{
-		{"default", "default_"}, {"type", "type_"}, {"len", "len_"}, {"string", "string_"},
-		{"rt", "rt_"}, {"iter", "iter_"}, {"self", "self_"}, {"embed", "embed_"},
-		{"minRole", "minRole"}, {"Default", "default_"}, {"route", "route"},
+		{"default", "default_"},
+		{"type", "type_"},
+		{"len", "len_"},
+		{"string", "string_"},
+		{"rt", "rt_"},
+		{"iter", "iter_"},
+		{"self", "self_"},
+		{"embed", "embed_"},
+		{"minRole", "minRole"},
+		{"Default", "default_"},
+		{"route", "route"},
 	}
 	for _, c := range cases {
 		if got := goStorageName(c.in); got != c.want {
@@ -269,8 +277,10 @@ func TestGoPlanNegZeroInStoredResult(t *testing.T) {
 	floatT := TypeRef{Kind: types.Float, Bits: 64}
 	gem := &Record{Pkg: "p", Name: "Gem"}
 	recv := &value.Record{}
-	gem.Methods = []*ExportFn{{Name: "weight", Kind: FnPrecomputed, Result: floatT,
-		Instances: []*Instance{{Recv: recv, Result: &value.Float{V: math.Copysign(0, -1), T: types.FloatType}}}}}
+	gem.Methods = []*ExportFn{{
+		Name: "weight", Kind: FnPrecomputed, Result: floatT,
+		Instances: []*Instance{{Recv: recv, Result: &value.Float{V: math.Copysign(0, -1), T: types.FloatType}}},
+	}}
 	p := &Package{Name: "p", Types: []Type{gem}, Values: []*Value{
 		{Name: "gem", Type: TypeRef{Kind: types.Record, Named: gem}, V: recv},
 	}}

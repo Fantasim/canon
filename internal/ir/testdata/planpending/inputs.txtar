@@ -1,0 +1,79 @@
+CODEGEN.md §3.4, §5.12, §7.7 (log-2026-09-24 "gen/go runtime inputs landed": collision-free slots): LoadInputs, Go's slots input_<T>_<store> with _OK and _Pattern, inputsLoaded_ and LoadInputs' errs, C++'s detail::AInputs with a namespace per class and AInputsLoaded; Gen.flagX and GenFlag.x, code (with a pattern) and codePattern, A_b.c and A.b_c never share a slot. An input field has a getter and no storage.
+-- a/a.canon --
+package a
+
+/// Generator settings.
+record Gen {
+  /// A flag.
+  flagX: input Bool? from env "FLAG_X"
+  /// A code.
+  code: input String(/^[a-z]+$/) from env "CODE"
+  /// Its pattern.
+  codePattern: input String? from env "CODE_PATTERN"
+  /// A size.
+  size: Int
+}
+
+/// More settings.
+record GenFlag {
+  /// A number.
+  x: input Int? from env "GEN_FLAG_X"
+}
+
+/// Underscored.
+record A_b {
+  /// A number.
+  c: input Int? from env "C"
+}
+
+/// Plain.
+record A {
+  /// A number.
+  b_c: input Int? from env "B_C"
+}
+
+/// Everything.
+record Root {
+  /// The generator.
+  gen: Gen
+  /// The flag.
+  genFlag: GenFlag
+  /// Underscored.
+  ab: A_b
+  /// Plain.
+  a: A
+}
+
+/// The settings.
+let settings: Root = { gen: { size: 1 }, genFlag: {}, ab: {}, a: {} }
+
+emit go { out: "@features/a", package: "a" }
+emit cpp { out: "@features/ac", namespace: "a", mode: data }
+emit json { out: "out/" }
+-- a.settings.json --
+{ "gen": { "size": 1 }, "genFlag": {}, "ab": {}, "a": {} }
+-- plan.txt --
+== go a
+A: BC
+A_b: C
+Gen: Code CodePattern FlagX Size size
+GenFlag: X
+LoadInputs(): errs
+Root: A Ab Gen GenFlag a ab gen genFlag
+aData: settings
+package: A A_b Gen GenFlag GetSettings LoadInputs Root aData aValues buildA errors input_A_bC input_A_bC_OK input_A_b_c input_A_b_c_OK input_GenFlag_x input_GenFlag_x_OK input_Gen_code input_Gen_codePattern input_Gen_codePattern_OK input_Gen_code_Pattern input_Gen_flagX input_Gen_flagX_OK inputsLoaded_ regexp rt sync
+== cpp a
+A: GetBC
+AAccess: LoadSettings
+AInputs: A A_b Gen GenFlag
+AInputs::A: b_c_
+AInputs::A_b: c_
+AInputs::Gen: codePattern_ code_ flagX_
+AInputs::GenFlag: x_
+A_b: GetC
+Gen: GetCode GetCodePattern GetFlagX GetSize size_
+GenFlag: GetX
+Root: GetA GetAb GetGen GetGenFlag Load a_ ab_ genFlag_ gen_
+a: A A_b AllDigits EnvText Gen GenFlag IsDecDigit LoadInputs ParseBoolLiteral ParseIntLiteral ParseStringLiteral Root kSettingsSchema
+detail: AAccess AInputs AInputsLoaded Decode
+0 errors, 0 warnings in 1 package (…)

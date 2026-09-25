@@ -11,8 +11,10 @@ func shop(target ir.Target) (*ir.Package, *ir.Record) {
 	intT := ir.TypeRef{Kind: types.Int, Bits: 64, Signed: true}
 	item := &ir.Record{Pkg: "shop", Name: "Item"}
 	ref := ir.TypeRef{Kind: types.Ref, Key: &intT, Ref: &ir.RefTarget{Coll: types.CollLet, Pkg: "shop", Value: "items", Elem: item, Keyed: true}}
-	times := &ir.ExportFn{Name: "times", Kind: ir.FnTranslated, Result: intT, Params: []*ir.Param{{Name: "int", Type: intT}},
-		Reads: []*ir.Read{{Name: "price", Path: []string{"price"}, Type: intT}}}
+	times := &ir.ExportFn{
+		Name: "times", Kind: ir.FnTranslated, Result: intT, Params: []*ir.Param{{Name: "int", Type: intT}},
+		Reads: []*ir.Read{{Name: "price", Path: []string{"price"}, Type: intT}},
+	}
 	item.Fields = []*ir.Field{{Name: "price", Type: intT}, {Name: "next", Type: ref}}
 	item.Methods = []*ir.ExportFn{times}
 	items := &ir.Value{Name: "items", Reload: true, Type: ir.TypeRef{Kind: types.List, Elem: &ir.TypeRef{Kind: types.Record, Named: item}, KeyedBy: &ir.KeyField{Name: "price"}}}

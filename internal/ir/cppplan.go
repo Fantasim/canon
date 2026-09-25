@@ -7,7 +7,7 @@ import (
 	"github.com/fantasim/canonlang/internal/types"
 )
 
-// CppNamePlan is every C++ name gen/cpp declares for a package and its cpp emit in data mode, per scope (CODEGEN.md §3.3–§3.5, §5, §7.2): the namespace, detail, conformance, each class and enum; stage E reports E8005 and E8011 from its problems (decision 37), and across the packages emitted into one namespace; gen/cpp writes its names from the lookups.
+// CppNamePlan is every C++ name gen/cpp declares for a package and its cpp emit in data mode, per scope (CODEGEN.md §3.3–§3.5, §5, §7.2, §7.7): the namespace, detail, conformance, the input namespace, each class and enum; stage E reports E8005 and E8011 from its problems (decision 37), and across the packages emitted into one namespace; gen/cpp writes its names from the lookups.
 type CppNamePlan struct {
 	p       *Package
 	e       *Emit
@@ -19,16 +19,19 @@ type CppNamePlan struct {
 	shared  []cppShared
 }
 
-// cppShared is a name a header declares in the emit's namespace, or in its detail or conformance namespace, with what declared it.
+// cppShared is a name a header declares in the emit's namespace, or in its detail or conformance namespace, a name its sources declare in an anonymous namespace there, or a segment of the namespace itself, with what declared it.
 type cppShared struct {
 	scope, name, origin string
 	item                any
-	overload            bool // ToName, ToWire, Decode: overloads of another package's meet it legally
+	meets               cppMeet // the same kind of another package's meets it legally
 }
+
+// cppMeet is how a shared name meets another package's same name (CODEGEN.md §3.5).
+type cppMeet uint8
 
 // PlanCppNames is the name plan of p's cpp emit e, with every problem found.
 func PlanCppNames(p *Package, e *Emit) *CppNamePlan {
-	pl := &CppNamePlan{p: p, e: e, holders: map[any][]*Value{}, nsItems: map[string]any{}, namer: newNamer(cppValidIdent)}
+	pl := &CppNamePlan{p: p, e: e, holders: map[any][]*Value{}, nsItems: map[string]any{}, namer: newNamer(p.Name, cppValidIdent)}
 	for _, v := range p.Values {
 		if e.Values == nil || slices.Contains(e.Values, v.Name) {
 			pl.values = append(pl.values, v)
@@ -36,6 +39,7 @@ func PlanCppNames(p *Package, e *Emit) *CppNamePlan {
 	}
 	pl.holdersOf()
 	pl.declareAll()
+	pl.shareSegments()
 	return pl
 }
 
@@ -66,7 +70,7 @@ func cppOverride(n NameOptions, derived string) string {
 	return derived
 }
 
-// TypeName is a record's, enum's or variant's C++ name: its Canon name, or its @cpp(name:) (CODEGEN.md §3.3, §3.5); "" for another Type.
+// TypeName is a record's, enum's, variant's or dependent type's C++ name: its Canon name, or its @cpp(name:) (CODEGEN.md §3.3, §3.5); "" for another Type.
 func (pl *CppNamePlan) TypeName(t Type) string {
 	switch x := t.(type) {
 	case *Record:
@@ -74,6 +78,8 @@ func (pl *CppNamePlan) TypeName(t Type) string {
 	case *Enum:
 		return cppOverride(x.Cpp, x.Name)
 	case *Variant:
+		return cppOverride(x.Cpp, x.Name)
+	case *Dependent:
 		return cppOverride(x.Cpp, x.Name)
 	}
 	return ""
@@ -104,6 +110,9 @@ func (pl *CppNamePlan) KindMember(c *Case) string {
 
 // ConstName is a constant, verbatim or its @cpp(name:) (CODEGEN.md §3.3).
 func (pl *CppNamePlan) ConstName(c *Const) string { return cppOverride(c.Cpp, cppVerbatim(c.Name)) }
+
+// valueOrigin is value v as messages name it, qualified by the package.
+func (pl *CppNamePlan) valueOrigin(v *Value) string { return pl.p.Name + qnameSep + v.Name }
 
 // ContainerName is a table's or keyed list's class, UpperCamel(v) (CODEGEN.md §5.9).
 func (pl *CppNamePlan) ContainerName(v *Value) string { return cppUpperCamel(v.Name) }

@@ -1,0 +1,22 @@
+CODEGEN.md §3.5 (orchestrator call, round 3: C++ parameter lists hide names): the method mix's pure function takes `Tone Tone, Tone other`, where the second Tone is the parameter, not the enum (g++: "'Tone' is not a type"); E8005 at the parameter.
+-- a/a.canon --
+package a
+
+/// A tone.
+enum Tone { soft, loud }
+
+/// An item.
+record Item {
+  /// Its level.
+  n: Int
+
+  /// Its level, or zero when the tones differ.
+  export fn mix(self, Tone: Tone, other: Tone) -> Int { return if Tone == other { n } else { 0 } }
+}
+
+emit cpp { out: "@features/a", namespace: "a", mode: data }
+-- findings.txt --
+error[E8005]  a/a.canon:12:23
+  cpp: Tone is generated for both a.Tone and a.Item.mix.Tone
+
+1 error, 0 warnings in 1 package (…)

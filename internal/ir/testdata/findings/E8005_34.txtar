@@ -1,0 +1,27 @@
+CODEGEN.md §3.5, §7.6: detail::AAccess declares LoadGen for the value gen and names the record LoadGen in every loader of that type, so after LoadGen the record is no type inside the struct (g++: "'LoadGen' is not a type").
+-- a/a.canon --
+package a
+
+/// Named like the value's loader.
+record LoadGen {
+  /// Its size.
+  n: Int
+}
+
+/// The settings.
+let gen: LoadGen = { n: 1 }
+
+/// The other settings.
+let other: LoadGen = { n: 2 }
+
+emit cpp { out: "@features/a", namespace: "a", mode: data }
+emit json { out: "out/" }
+-- a.gen.json --
+{ "n": 1 }
+-- a.other.json --
+{ "n": 2 }
+-- findings.txt --
+error[E8005]  a/a.canon:10:5
+  cpp: LoadGen is generated for both a.LoadGen and a.gen
+
+1 error, 0 warnings in 1 package (…)

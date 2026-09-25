@@ -1,0 +1,23 @@
+CODEGEN.md §3.5, §7.1; log-2026-09-24 "Owed (C++ plan)": the earlier package a's detail::AAccess hides the later package b's record AAccess inside detail, reported at b.
+-- a/a.canon --
+package a
+
+/// A tone.
+enum Tone { soft, loud }
+
+emit cpp { out: "@features/a", namespace: "sov::gen", mode: data }
+-- b/b.canon --
+package b
+
+/// Named like a's access struct.
+record AAccess {
+  /// Its size.
+  n: Int
+}
+
+emit cpp { out: "@features/b", namespace: "sov::gen", mode: data }
+-- findings.txt --
+error[E8005]  b/b.canon:9:6
+  cpp: AAccess is generated for both a and b.AAccess
+
+1 error, 0 warnings in 2 packages (…)

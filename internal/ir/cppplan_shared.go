@@ -1,6 +1,8 @@
 package ir
 
 import (
+	"strings"
+
 	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/syntax"
@@ -16,25 +18,61 @@ type cppHolder struct {
 	u *unit
 }
 
-// sharedCppNames is E8005 for a name the cpp headers of two packages the build loads declare in one namespace, selected or imported (CODEGEN.md §3.5: a C++ namespace holds all packages emitted into it that the build loads; log-2026-09-24 "ir plans review"), once per pair of items, at the later package's emit when it is selected, else at the earlier's; overloads of each other (ToName, ToWire, Decode) meet legally.
+// sharedCppNames is E8005 for a name the cpp headers of two packages the build loads declare in one namespace, selected or imported (CODEGEN.md §3.5: a C++ namespace holds all packages emitted into it that the build loads; log-2026-09-24 "ir plans review"), once per pair of items, at the later package's emit when it is selected, else at the earlier's; overloads of each other (ToName, ToWire, Decode), names local to each package's sources, and a namespace opened twice meet legally.
 func (s *stage) sharedCppNames() {
 	first := map[cppSharedKey]cppHolder{}
 	reported := map[originPair]bool{}
+	var inner []cppHolder
 	for _, u := range s.order {
 		for _, n := range s.cppNamesOf(u) {
 			k := cppSharedKey{n.scope, n.name}
+			if innerScope(n.scope) != "" {
+				inner = append(inner, cppHolder{n, u})
+			}
 			f, seen := first[k]
 			if !seen {
 				first[k] = cppHolder{n, u}
 				continue
 			}
 			pair := originPair{f.origin, n.origin}
-			if f.u != u && (!f.overload || !n.overload) && !reported[pair] {
+			if f.u != u && (f.meets == meetsNever || f.meets != n.meets) && !reported[pair] {
 				reported[pair] = true
 				reportShared(f, cppHolder{n, u})
 			}
 		}
 	}
+	s.hiddenCppNames(first, inner, reported)
+}
+
+// hiddenCppNames is E8005 for a detail or conformance name of one package equal to a namespace name of another package sharing the namespace: inside detail it hides that name (log-2026-09-24 "Owed (C++ plan)": b's detail::BAccess vs a's record BAccess), reported once per pair as sharedCppNames does.
+func (s *stage) hiddenCppNames(first map[cppSharedKey]cppHolder, inner []cppHolder, reported map[originPair]bool) {
+	index := map[*unit]int{}
+	for i, u := range s.order {
+		index[u] = i
+	}
+	for _, h := range inner {
+		f, seen := first[cppSharedKey{innerScope(h.scope), h.name}]
+		if !seen || f.u == h.u {
+			continue
+		}
+		if index[h.u] < index[f.u] {
+			f, h = h, f
+		}
+		if pair := (originPair{f.origin, h.origin}); !reported[pair] {
+			reported[pair] = true
+			reportShared(f, h)
+		}
+	}
+}
+
+// innerScope is the namespace holding scope when scope is its detail or conformance namespace, else "".
+func innerScope(scope string) string {
+	for _, inner := range []string{cppDetail, cppConformance} {
+		if parent, ok := strings.CutSuffix(scope, cppScope+inner); ok {
+			return parent
+		}
+	}
+	return ""
 }
 
 // reportShared reports two packages' one name at the later one when it is selected, else at the earlier one, when selected.

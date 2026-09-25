@@ -163,8 +163,10 @@ var (
 	targetNames    = []string{"go", "cpp", "ts", "json", "view"}
 	modeNames      = []string{"-", "baked", "embedded", "data", "types"}
 	kindNames      = []string{"precomputed", "lookup", "translated"}
-	compositeNames = map[types.Kind]string{types.List: "list", types.Table: "table", types.Optional: "opt",
-		types.Map: "map", types.DepMap: "depmap", types.LitUnion: "union"}
+	compositeNames = map[types.Kind]string{
+		types.List: "list", types.Table: "table", types.Optional: "opt",
+		types.Map: "map", types.DepMap: "depmap", types.LitUnion: "union",
+	}
 )
 
 func compositeText(t *ir.TypeRef) string {

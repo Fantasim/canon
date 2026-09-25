@@ -1,0 +1,32 @@
+CODEGEN.md §3.5, §7.7: b's Bool input makes gen/cpp write ParseBoolLiteral in an anonymous namespace of sov::gen, which a's record ParseBoolLiteral shares, reported at b.
+-- a/a.canon --
+package a
+
+/// Named like an input helper.
+record ParseBoolLiteral {
+  /// Its size.
+  n: Int
+}
+
+emit cpp { out: "@features/a", namespace: "sov::gen", mode: data }
+-- b/b.canon --
+package b
+
+/// Settings.
+record Gen {
+  /// A flag.
+  on: input Bool? from env "ON"
+}
+
+/// The settings.
+let gen: Gen = {}
+
+emit cpp { out: "@features/b", namespace: "sov::gen", mode: data }
+emit json { out: "out/" }
+-- b.gen.json --
+{}
+-- findings.txt --
+error[E8005]  b/b.canon:12:6
+  cpp: ParseBoolLiteral is generated for both a.ParseBoolLiteral and b
+
+1 error, 0 warnings in 2 packages (…)

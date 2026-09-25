@@ -13,7 +13,7 @@ type goData struct {
 	decoded map[any]bool
 }
 
-// indexClasses maps each own field and export method to its record or case, and each record, variant and case with fields to its Go type.
+// indexClasses maps each own field and export method to its record or case, and each record, variant, case with fields and dependent type to its Go type.
 func (pl *GoNamePlan) indexClasses() {
 	pl.classOf, pl.goNameOf = map[any]any{}, map[any]string{}
 	own := func(class any, goName string, fields []*Field, fns []*ExportFn) {
@@ -34,6 +34,8 @@ func (pl *GoNamePlan) indexClasses() {
 			for _, c := range x.Cases {
 				own(c, pl.CaseName(x, c), c.Fields, c.Methods)
 			}
+		case *Dependent:
+			pl.goNameOf[x] = pl.TypeName(x)
 		}
 	}
 }
@@ -78,6 +80,9 @@ func (d *goData) decode(key any) {
 		return
 	}
 	d.decoded[key] = true
+	for _, dep := range heldDependents(key) {
+		d.decoded[dep] = true
+	}
 	for _, to := range goHeldBy(key, false) {
 		d.decode(to)
 	}
@@ -175,11 +180,14 @@ func (d *goData) resolvesOwn(key any) bool {
 	return false
 }
 
-// Decoded reports a record, variant or case a data-mode loader decodes whole: it gets wire<T> and decode<T> (CODEGEN.md §6.1).
+// Decoded reports a record, variant or case a data-mode loader decodes whole, or a dependent type one of them holds: it gets decode<T> (CODEGEN.md §5.6, §6.1).
 func (pl *GoNamePlan) Decoded(class any) bool { return pl.data != nil && pl.data.decoded[class] }
 
 // NeedsWalk reports a decoded class whose refs, or its held classes' refs, a data-mode loader resolves: it gets resolve<T> (CODEGEN.md §5.8).
-func (pl *GoNamePlan) NeedsWalk(class any) bool { return pl.Decoded(class) && pl.data.needsWalk(class) }
+func (pl *GoNamePlan) NeedsWalk(class any) bool { return pl.Decoded(class) && pl.Walks(class) }
+
+// Walks is NeedsWalk for any class a data-mode load holds, decoded whole or not: a pairs-held class resolves its refs inline (log-2026-09-24 "Consumer units (A5)").
+func (pl *GoNamePlan) Walks(class any) bool { return pl.data != nil && pl.data.needsWalk(class) }
 
 // Holders are the emitted values holding a class by value, in declaration order (data mode).
 func (pl *GoNamePlan) Holders(class any) []*Value {

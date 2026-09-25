@@ -107,6 +107,6 @@ ShapeKind: String Wire
 TestShapeCircleScaledConformance vectors: code n radius want
 club.Shape.circle.scaled(): n radius
 conformance imports: math rt testing
-locals: a af bad c ctx dir dst empty err f first hasK hasV hi i id k key keys kr lo m marker mf n name_ obj ok out path r raw retired rows s tag v values vr want
+locals: a af at bad c ctx dir dst empty err f first hasK hasV hi i id k key keys kr lo m marker mf n name_ obj ok out path r raw retired rows s tag v values vr want
 package: Bonus Club ClubSchema ClubSnapshot ClubStore LoadClubSnapshot Member MemberID Members MembersSchema ParseShapeKind ReadSettings Settings SettingsSchema Shape ShapeCircle ShapeKind ShapeKindCircle ShapeKindDot Store TestShapeCircleScaledConformance atomic canonCatch decodeClub decodeMember decodeSettings decodeShape decodeShapeCircle fmt iter json jsonCell jsonInt jsonKeys jsonMay jsonNeed jsonObject jsonRead jsonRowID jsonSame jsonSlot loadClub loadMembers loadSettings name resolveClub resolveMember rt shapeCircleScaled slices strconv strings
 0 errors, 0 warnings in 2 packages (…)

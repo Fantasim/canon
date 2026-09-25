@@ -44,13 +44,17 @@ func TestGoNamePlanMatchesCells(t *testing.T) {
 	negZero := &value.Float{V: math.Copysign(0, -1), T: types.FloatType}
 	one := &value.Float{V: 1, T: types.FloatType}
 	cells := func(a, b value.Value) *ir.Package {
-		fn := &ir.ExportFn{Name: "weight", Kind: ir.FnLookup, Result: floatT,
+		fn := &ir.ExportFn{
+			Name: "weight", Kind: ir.FnLookup, Result: floatT,
 			Params: []*ir.Param{{Name: "on", Type: ir.TypeRef{Kind: types.Bool}}},
-			Table:  &ir.LookupTable{Domains: [][]value.Value{{&value.Bool{}, &value.Bool{V: true}}}, Cells: []value.Value{a, b}}}
+			Table:  &ir.LookupTable{Domains: [][]value.Value{{&value.Bool{}, &value.Bool{V: true}}}, Cells: []value.Value{a, b}},
+		}
 		return goPackage(&ir.Package{Fns: []*ir.ExportFn{fn}})
 	}
-	list := goPackage(&ir.Package{Consts: []*ir.Const{{Name: "weights", Type: ir.TypeRef{Kind: types.List, Elem: &floatT},
-		V: &value.List{T: &types.ListType{Elem: types.FloatType}, Elems: []value.Value{negZero}}}}})
+	list := goPackage(&ir.Package{Consts: []*ir.Const{{
+		Name: "weights", Type: ir.TypeRef{Kind: types.List, Elem: &floatT},
+		V: &value.List{T: &types.ListType{Elem: types.FloatType}, Elems: []value.Value{negZero}},
+	}}})
 	for name, p := range map[string]*ir.Package{"-0.0 cell": cells(negZero, one), "plain cells": cells(one, one), "-0.0 in a list": list} { //canon:unordered each package compared alone
 		comparePlan(t, name, p, p.Emits[0])
 	}

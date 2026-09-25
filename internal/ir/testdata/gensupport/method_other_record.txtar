@@ -13,8 +13,8 @@ record Node {
   /// Its value.
   v: Int
 
-  /// Its stat.
-  export fn stat(self) -> Stat { return { v: v } }
+  /// Its best stat (not `stat`: a getter Stat would change the meaning of the class Stat, E8005).
+  export fn best(self) -> Stat { return { v: v } }
 }
 
 emit cpp { out: "@features/a", namespace: "a", mode: data }

@@ -24,7 +24,7 @@ func init() {
 	goCode := append(slices.Clone(common), (*stage).checkForeignTables, (*stage).checkConstLiterals, (*stage).checkNegativeZero)
 	genRules[TargetGo][ModeBaked] = append(slices.Clone(goCode), (*stage).checkBakedLiterals, (*stage).checkForeignTableLookups)
 	genRules[TargetGo][ModeData] = append(slices.Clone(goCode), (*stage).checkGoDecoded, (*stage).checkResolvedLookups)
-	genRules[TargetCpp][ModeData] = append(slices.Clone(common), (*stage).checkCppDecoded, (*stage).checkUnionStorage,
+	genRules[TargetCpp][ModeData] = append(slices.Clone(common), (*stage).checkCppDecoded,
 		(*stage).checkForeignPairs, (*stage).checkClassCycles, (*stage).checkSelfReads)
 }
 

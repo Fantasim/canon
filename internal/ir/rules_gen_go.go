@@ -49,7 +49,7 @@ func (s *stage) checkGoDecoded(u *unit, es *emitSite) {
 		}
 		fields, fns := classBody(class)
 		for _, site := range s.decodedSites(fields, fns) {
-			s.checkDecodedType(u, es, site, true)
+			s.checkDecodedType(u, es, site)
 			if decodedHolds(site.t, func(t *TypeRef) bool { return foreignClass(own, t) }) {
 				u.reportGenConstruct(es, site.span, diag.KindForeignDataRecord)
 			}

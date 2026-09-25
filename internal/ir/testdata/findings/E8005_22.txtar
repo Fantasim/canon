@@ -1,0 +1,23 @@
+CODEGEN.md §3.5, §7.1; log-2026-09-24 "Owed (C++ plan)": packages a and b share namespace sov::gen, so b's detail::BAccess hides a's record BAccess inside detail (g++ refuses b's header although check was clean), reported at b.
+-- a/a.canon --
+package a
+
+/// Named like b's access struct.
+record BAccess {
+  /// Its size.
+  n: Int
+}
+
+emit cpp { out: "@features/a", namespace: "sov::gen", mode: data }
+-- b/b.canon --
+package b
+
+/// A tone.
+enum Tone { soft, loud }
+
+emit cpp { out: "@features/b", namespace: "sov::gen", mode: data }
+-- findings.txt --
+error[E8005]  b/b.canon:6:6
+  cpp: BAccess is generated for both a.BAccess and b
+
+1 error, 0 warnings in 2 packages (…)

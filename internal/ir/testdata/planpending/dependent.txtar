@@ -1,0 +1,69 @@
+CODEGEN.md §3.3, §5.6, §7.6 (log-2026-09-24 "W2 gen/cpp inputs review", Names): a dependent type's struct or class, its branch enum PBranch and its members in arm order (a Never arm has none), Branch/GetBranch, As<Branch>, the storage, Go data mode's decodeP and detail's DecodeP; stage E still refuses the type (E8019 DependentType) until the generators write it.
+-- a/a.canon --
+package a
+
+/// A kind.
+enum K { one, two, text, gone }
+
+/// A tag.
+record Tag {
+  /// Its label.
+  label: String
+}
+
+/// The tags.
+let tags: table Tag = {
+  red { label: "red" }
+}
+
+/// A payload.
+type P(k: K) = match k { one => Int, two => ref tags, text => String, gone => Never }
+
+/// A thing.
+record Thing {
+  /// Its kind.
+  k: K
+  /// Its payload.
+  p: P(k)?
+}
+
+/// The things.
+let things: table Thing = {
+  a { k: one, p: 1 }
+}
+
+emit go { out: "@features/a", package: "a", mode: data }
+emit cpp { out: "@features/ac", namespace: "a", mode: data }
+emit json { out: "out/" }
+-- a.tags.json --
+{ "red": { "label": "red" } }
+-- a.things.json --
+{ "a": { "k": "one", "p": 1 } }
+-- plan.txt --
+== go a
+K: String Wire
+P: AsOne AsText AsTwo Branch branch value
+Tag: ID Label Retired id label retired
+Tags: All At Find Len rows
+Thing: ID K P Retired id k p p_ok retired
+Things: All At Find Len rows
+locals: a af at bad c ctx dir dst empty err f first hasK hasV hi i id k key keys kr lo m marker mf n name obj ok out path r raw retired rows s tag v values vr want
+package: K KGone KMembers KOne KText KTwo LoadTags LoadThings P PBranch PBranchOne PBranchText PBranchTwo ParseK Tag TagID Tags TagsSchema Thing ThingID Things ThingsSchema decodeP decodeTag decodeThing fmt iter json jsonCell jsonInt jsonKeys jsonMay jsonNeed jsonObject jsonRead jsonRowID jsonSame jsonSlot loadTags loadThings rt slices strconv strings
+== cpp a
+AAccess: LoadTags LoadThings
+K: gone one text two
+P: AsOne AsText AsTwo GetBranch value_
+PBranch: one text two
+Tag: GetId GetLabel GetRetired id_ label_ retired_
+Tags: All At Find Len Load rows_
+Thing: GetId GetK GetP GetRetired id_ k_ p_ retired_
+Things: All At Find Len Load rows_
+a: K KFromWire P PBranch Tag Tags Thing Things ToName ToWire kKMembers kTagsSchema kThingsSchema
+detail: AAccess Decode DecodeP
+error[E8019]  a/a.canon:18:6
+  emit cpp in data mode cannot generate a dependent type
+
+error[E8019]  a/a.canon:18:6
+  emit go in data mode cannot generate a dependent type
+
+2 errors, 0 warnings in 1 package (…)

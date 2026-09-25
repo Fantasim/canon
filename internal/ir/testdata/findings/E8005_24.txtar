@@ -1,0 +1,22 @@
+CODEGEN.md §3.5, §7.7 (log-2026-09-24 "Helper set"): gen/cpp writes the input helper EnvText in an anonymous namespace of the package's namespace, so a record EnvText there is ambiguous (g++: "reference to 'EnvText' is ambiguous").
+-- a/a.canon --
+package a
+
+/// Named like an input helper.
+record EnvText {
+  /// A key.
+  key: input String? from env "KEY"
+}
+
+/// The settings.
+let env: EnvText = {}
+
+emit cpp { out: "@features/a", namespace: "a", mode: data }
+emit json { out: "out/" }
+-- a.env.json --
+{}
+-- findings.txt --
+error[E8005]  a/a.canon:4:8
+  cpp: EnvText is generated for both a and a.EnvText
+
+1 error, 0 warnings in 1 package (…)

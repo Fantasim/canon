@@ -1,0 +1,28 @@
+CODEGEN.md §3.3, §3.5: the stored method tone is the getter Tone of Item, whose declaration `Tone Tone() const` changes the meaning of the enum Tone inside the class (g++ -Wchanges-meaning).
+-- a/a.canon --
+package a
+
+/// A tone.
+enum Tone { soft, loud }
+
+/// An item.
+record Item {
+  /// Its level.
+  n: Int
+
+  /// Its tone.
+  export fn tone(self) -> Tone { return if n > 1 { Tone.loud } else { Tone.soft } }
+}
+
+/// The item.
+let item: Item = { n: 2 }
+
+emit cpp { out: "@features/a", namespace: "a", mode: data }
+emit json { out: "out/" }
+-- a.item.json --
+{ "n": 2, "tone": "loud" }
+-- findings.txt --
+error[E8005]  a/a.canon:12:13
+  cpp: Tone is generated for both a.Tone and a.Item.tone
+
+1 error, 0 warnings in 1 package (…)

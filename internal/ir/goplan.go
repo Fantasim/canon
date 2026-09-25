@@ -17,7 +17,7 @@ type GoNamePlan struct {
 	imports map[string]string // the Go package name of each imported Canon package's go emit → its import path
 	namer
 	classOf  map[any]any    // each own field and export method → its *Record or *Case
-	goNameOf map[any]string // each own record, variant and case with fields → its Go type
+	goNameOf map[any]string // each own record, variant, case with fields and dependent type → its Go type
 	data     *goData        // data mode's layout (CODEGEN.md §5.8, §5.11); nil in baked mode
 	pures    map[*ExportFn]*GoPure
 	pkgNames map[string]bool // the package-level names a translated body may name unqualified
@@ -66,7 +66,7 @@ type GoData struct {
 func PlanGoNames(p *Package, e *Emit) *GoNamePlan {
 	pl := &GoNamePlan{
 		p: p, e: e, byValue: map[string]*Value{}, pkgFns: map[*ExportFn]bool{}, imports: map[string]string{},
-		namer: newNamer(goValidIdent), pures: map[*ExportFn]*GoPure{},
+		namer: newNamer(p.Name, goValidIdent), pures: map[*ExportFn]*GoPure{},
 	}
 	for _, fn := range p.Fns {
 		pl.pkgFns[fn] = true

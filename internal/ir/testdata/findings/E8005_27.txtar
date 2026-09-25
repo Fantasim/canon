@@ -1,0 +1,19 @@
+CODEGEN.md §3.5: a field's @cpp(name: "Tone") makes its getter Tone, which changes the meaning of the enum Tone its own declaration names inside the class.
+-- a/a.canon --
+package a
+
+/// A tone.
+enum Tone { soft, loud }
+
+/// An item.
+record Item {
+  /// Its tone.
+  tone: Tone @cpp(name: "Tone")
+}
+
+emit cpp { out: "@features/a", namespace: "a", mode: data }
+-- findings.txt --
+error[E8005]  a/a.canon:9:3
+  cpp: Tone is generated for both a.Tone and a.Item.tone
+
+1 error, 0 warnings in 1 package (…)

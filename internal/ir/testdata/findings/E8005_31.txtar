@@ -1,0 +1,38 @@
+CODEGEN.md §3.5, §5.12, §7.7: packages a and b both have input fields and share namespace sov::gen, so both declare LoadInputs there; their input helpers, local to each source, meet legally.
+-- a/a.canon --
+package a
+
+/// Settings.
+record Gen {
+  /// A key.
+  key: input String? from env "A_KEY"
+}
+
+/// The settings.
+let gen: Gen = {}
+
+emit cpp { out: "@features/a", namespace: "sov::gen", mode: data }
+emit json { out: "out/" }
+-- a.gen.json --
+{}
+-- b/b.canon --
+package b
+
+/// Settings.
+record Conf {
+  /// A key.
+  key: input String? from env "B_KEY"
+}
+
+/// The settings.
+let conf: Conf = {}
+
+emit cpp { out: "@features/b", namespace: "sov::gen", mode: data }
+emit json { out: "out/b/" }
+-- b.conf.json --
+{}
+-- findings.txt --
+error[E8005]  b/b.canon:12:6
+  cpp: LoadInputs is generated for both a and b
+
+1 error, 0 warnings in 2 packages (…)

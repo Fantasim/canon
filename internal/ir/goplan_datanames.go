@@ -25,7 +25,7 @@ func (pl *GoNamePlan) LoaderName(v *Value) string {
 // LoadFunc is the unexported reader of a value's data file, load<V> (CODEGEN.md §6.1).
 func (pl *GoNamePlan) LoadFunc(v *Value) string { return goLoadLocalPrefix + pl.ContainerName(v) }
 
-// DecodeFunc is a decoded class's decode<T> (CODEGEN.md §6.1); class is an own *Record, *Variant or *Case.
+// DecodeFunc is a decoded class's decode<T> (CODEGEN.md §6.1); class is an own *Record, *Variant, *Case or *Dependent.
 func (pl *GoNamePlan) DecodeFunc(class any) string { return goDecodePrefix + pl.goNameOf[class] }
 
 // ResolveFunc is the function resolving a class's refs after a load (CODEGEN.md §5.8).
@@ -130,6 +130,7 @@ func (pl *GoNamePlan) declareDecoders(top *nameScope) {
 			pl.declare(top, pl.DecodeFunc(class), pl.goNameOf[class], class)
 		}
 	}
+	pl.declareDependentDecoders(top)
 }
 
 // classes are the package's records, and each variant followed by its cases with fields, in declaration order.
@@ -177,10 +178,15 @@ func (pl *GoNamePlan) declareLoads(top *nameScope) {
 func (pl *GoNamePlan) declareDataLocals() {
 	sc := pl.scope(goScopeLocals)
 	for _, n := range goDataLocals {
-		local, ok := pl.local(n)
-		if !ok {
-			pl.problems = append(pl.problems, GoNameProblem{Kind: GoCollision, Scope: sc.what, Name: local, First: pl.imports[local], Origin: pl.p.Name})
-		}
-		pl.declare(sc, local, pl.p.Name, nil)
+		pl.declareFixedLocal(sc, n)
 	}
+}
+
+// declareFixedLocal declares a fixed local of generated code, escaped once when an imported Canon package is named so (CODEGEN.md §3.4, decision 182): an escaped name that is an import too is E8005.
+func (pl *GoNamePlan) declareFixedLocal(sc *nameScope, name string) {
+	local, ok := pl.local(name)
+	if !ok {
+		pl.problems = append(pl.problems, GoNameProblem{Kind: GoCollision, Scope: sc.what, Name: local, First: pl.imports[local], Origin: pl.p.Name})
+	}
+	pl.declare(sc, local, pl.p.Name, nil)
 }

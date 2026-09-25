@@ -14,21 +14,9 @@ func (s *stage) checkCppDecoded(u *unit, es *emitSite) {
 	for _, class := range packageClasses(u.p) {
 		fields, fns := classBody(class)
 		for _, site := range s.decodedSites(fields, fns) {
-			s.checkDecodedType(u, es, site, false)
+			s.checkDecodedType(u, es, site)
 		}
 		s.checkInlineFolds(u, es, class, shape)
-	}
-}
-
-// checkUnionStorage is E8019 `NonStringLiteralUnion`: gen/cpp stores a literal union as a std::string, but for a scalar constant (CODEGEN.md §4.1).
-func (s *stage) checkUnionStorage(u *unit, es *emitSite) {
-	for _, site := range s.typeSites(u, es) {
-		if site.isConst && site.t.Kind == types.LitUnion {
-			continue
-		}
-		if typeHolds(site.t, nonStringUnion) {
-			u.reportGenConstruct(es, site.span, diag.KindNonStringLiteralUnion)
-		}
 	}
 }
 

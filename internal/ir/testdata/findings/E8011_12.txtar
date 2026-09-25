@@ -1,0 +1,22 @@
+CODEGEN.md §3.4, §7.7: an input field key_ has the slot key__ in detail::AInputs::Gen, a name reserved to the implementation, refused at the field as E8011.
+-- a/a.canon --
+package a
+
+/// Settings.
+record Gen {
+  /// A key.
+  key_: input String? from env "KEY"
+}
+
+/// The settings.
+let gen: Gen = {}
+
+emit cpp { out: "@features/a", namespace: "a", mode: data }
+emit json { out: "out/" }
+-- a.gen.json --
+{}
+-- findings.txt --
+error[E8011]  a/a.canon:6:3
+  key__, the C++ name derived for a.Gen.key_, is a keyword or a reserved name
+
+1 error, 0 warnings in 1 package (…)

@@ -1,0 +1,20 @@
+CONFORMANCE.md §7.2, CODEGEN.md §3.5; log-2026-09-24 "Owed (C++ plan)": b's conformance vector struct TwiceVector hides a's enum TwiceVector of the namespace both packages share, reported at b.
+-- a/a.canon --
+package a
+
+/// Named like b's vector struct.
+enum TwiceVector { one, two }
+
+emit cpp { out: "@features/a", namespace: "sov::gen", mode: data }
+-- b/b.canon --
+package b
+
+/// Doubles x.
+export fn twice(x: Int) -> Int { return x * 2 }
+
+emit cpp { out: "@features/b", namespace: "sov::gen", mode: data }
+-- findings.txt --
+error[E8005]  b/b.canon:6:6
+  cpp: TwiceVector is generated for both a.TwiceVector and b.twice
+
+1 error, 0 warnings in 2 packages (…)

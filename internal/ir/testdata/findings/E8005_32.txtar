@@ -1,0 +1,22 @@
+CODEGEN.md §3.5, §5.9: the keyed list `all` has the container class All, whose member All() is named like the class itself (g++: "return type specification for constructor invalid").
+-- a/a.canon --
+package a
+
+/// A thing.
+record Thing {
+  /// Its key.
+  a: Int
+}
+
+/// Every thing.
+let all: [Thing] keyed by a = [{ a: 1 }]
+
+emit cpp { out: "@features/a", namespace: "a", mode: data }
+emit json { out: "out/" }
+-- a.all.json --
+[{ "a": 1 }]
+-- findings.txt --
+error[E8005]  a/a.canon:10:5
+  cpp: All is generated for both a.all and a
+
+1 error, 0 warnings in 1 package (…)

@@ -1,0 +1,23 @@
+CODEGEN.md §3.5, §7.1: package b emits into sov::gen, so the namespace gen of sov meets package a's class gen there (g++: "redeclared as different kind of entity"), reported at b.
+-- a/a.canon --
+package a
+
+/// Named like b's namespace.
+record Gen @cpp(name: "gen") {
+  /// Its size.
+  n: Int
+}
+
+emit cpp { out: "@features/a", namespace: "sov", mode: data }
+-- b/b.canon --
+package b
+
+/// A tone.
+enum Tone { soft, loud }
+
+emit cpp { out: "@features/b", namespace: "sov::gen", mode: data }
+-- findings.txt --
+error[E8005]  b/b.canon:6:6
+  cpp: gen is generated for both a.Gen and b
+
+1 error, 0 warnings in 2 packages (…)

@@ -7,17 +7,18 @@ import (
 	"github.com/fantasim/canonlang/internal/types"
 )
 
-// declareAll declares the namespace's names in gen/cpp's order (CODEGEN.md §2.7, §3.5): enums, classes with their kind enums, constants, values, package fns, snapshot and store; then each enum's and class's members, detail and conformance.
+// declareAll declares the namespace's names in gen/cpp's order (CODEGEN.md §2.7, §3.5): enums, classes with their kind enums, constants, values, package fns, snapshot and store; then each enum's and class's members, detail and conformance. LoadInputs and its helpers come first, so a clash is reported at the user's item.
 func (pl *CppNamePlan) declareAll() {
 	pl.ns = pl.scope(pl.e.Namespace)
+	pl.declareInputNames()
 	pl.declareNamespaceTypes()
 	for _, c := range pl.p.Consts {
 		pl.shareNS(pl.ConstName(c), c.Name, c)
 	}
 	for _, v := range pl.values {
-		pl.shareNS(pl.SchemaName(v), v.Name, v)
+		pl.shareNS(pl.SchemaName(v), pl.valueOrigin(v), v)
 		if v.Type.Kind != types.Record {
-			pl.shareNS(pl.ContainerName(v), v.Name, v)
+			pl.shareNS(pl.ContainerName(v), pl.valueOrigin(v), v)
 		}
 	}
 	for _, fn := range pl.p.Fns {
@@ -26,15 +27,16 @@ func (pl *CppNamePlan) declareAll() {
 		}
 	}
 	if pl.reloads() {
-		pl.shareNS(pl.Upper()+goSnapshotSuffix, pl.p.Name, nil)
-		pl.shareNS(pl.Upper()+goStoreSuffix, pl.p.Name, nil)
+		pl.shareNS(pl.SnapshotName(), pl.p.Name, nil)
+		pl.shareNS(pl.StoreName(), pl.p.Name, nil)
 	}
 	pl.declareMembers()
+	pl.checkSignatures()
 	pl.declareDetail()
 	pl.declareConformance()
 }
 
-// declareNamespaceTypes declares the enums with their helpers, ToName and ToWire once for them all (overloads, CODEGEN.md §5.2), then the classes with the kind enums of variants.
+// declareNamespaceTypes declares the enums with their helpers, ToName and ToWire once for them all (overloads, CODEGEN.md §5.2), the dependent types (§5.6), then the classes with the kind enums of variants.
 func (pl *CppNamePlan) declareNamespaceTypes() {
 	for _, t := range pl.p.Types {
 		if e, ok := t.(*Enum); ok {
@@ -44,9 +46,10 @@ func (pl *CppNamePlan) declareNamespaceTypes() {
 	if slices.ContainsFunc(pl.p.Types, func(t Type) bool { _, isEnum := t.(*Enum); _, isVariant := t.(*Variant); return isEnum || isVariant }) {
 		for _, n := range cppEnumOverloads {
 			pl.declare(pl.ns, n, pl.p.Name, nil)
-			pl.shared = append(pl.shared, cppShared{scope: pl.e.Namespace, name: n, origin: pl.p.Name, overload: true})
+			pl.shareAs(pl.e.Namespace, n, pl.p.Name, nil, meetsOverload)
 		}
 	}
+	pl.declareDependents()
 	for _, c := range pl.classes() {
 		pl.shareNSFrom(pl.className(c), pl.classOrigin(c), c, pl.classFrom(c))
 		if v, ok := c.(*Variant); ok {
@@ -71,19 +74,33 @@ func (pl *CppNamePlan) shareNSFrom(name, origin string, item, from any) {
 
 // share records a name other packages' headers can meet in scope, its origin qualified by the package.
 func (pl *CppNamePlan) share(scope, name, origin string, item any) {
+	pl.shareAs(scope, name, origin, item, meetsNever)
+}
+
+// shareAs is share for a name that meets another package's same name of kind meets legally.
+func (pl *CppNamePlan) shareAs(scope, name, origin string, item any, meets cppMeet) {
 	if origin != pl.p.Name && !strings.HasPrefix(origin, pl.p.Name+qnameSep) {
 		origin = pl.p.Name + qnameSep + origin
 	}
-	pl.shared = append(pl.shared, cppShared{scope: scope, name: name, origin: origin, item: item})
+	pl.shared = append(pl.shared, cppShared{scope: scope, name: name, origin: origin, item: item, meets: meets})
+}
+
+// shareSegments shares each segment of the emit's namespace in its parent: a class or any other name of another package there collides with the namespace (CODEGEN.md §3.5; g++: "redeclared as different kind of entity").
+func (pl *CppNamePlan) shareSegments() {
+	segs := strings.Split(pl.e.Namespace, cppScope)
+	for i := range segs {
+		pl.shareAs(strings.Join(segs[:i], cppScope), segs[i], pl.p.Name, nil, meetsNamespace)
+	}
 }
 
 // declareEnum declares an enum, k<E>Members, <E>FromWire and, with @codes, <E>FromCode (CODEGEN.md §5.2), then its members.
 func (pl *CppNamePlan) declareEnum(name, origin string, item any, codes bool) {
+	h := pl.EnumHelpers(name)
 	pl.shareNS(name, origin, item)
-	pl.shareNS(cppConstPrefix+name+goMembersSuffix, origin, item)
-	pl.shareNS(name+cppFromWire, origin, item)
+	pl.shareNS(h.Members, origin, item)
+	pl.shareNS(h.FromWire, origin, item)
 	if codes {
-		pl.shareNS(name+goFromCodeSuffix, origin, item)
+		pl.shareNS(h.FromCode, origin, item)
 	}
 	sc := pl.scope(name)
 	switch x := item.(type) {

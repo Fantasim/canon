@@ -82,16 +82,31 @@ func TestIRShapesDriveConformFill(t *testing.T) {
 		t.Fatal(err)
 	}
 	checkVectors(t, methods["healFor"], []vectorRow{
-		{500, 200, 200, 200, "", ""}, {500, 9000, 500, 500, "", ""}, {500, -5, 0, 0, "", ""},
-		{500, math.MinInt64, 0, 0, "", codeTS}, {500, -1, 0, 0, "", ""}, {500, 0, 0, 0, "", ""},
-		{500, 1, 1, 1, "", ""}, {500, 499, 499, 499, "", ""}, {500, 500, 500, 500, "", ""},
-		{500, 501, 500, 500, "", ""}, {500, math.MaxInt64, 500, 0, "", codeTS},
+		{500, 200, 200, 200, "", ""},
+		{500, 9000, 500, 500, "", ""},
+		{500, -5, 0, 0, "", ""},
+		{500, math.MinInt64, 0, 0, "", codeTS},
+		{500, -1, 0, 0, "", ""},
+		{500, 0, 0, 0, "", ""},
+		{500, 1, 1, 1, "", ""},
+		{500, 499, 499, 499, "", ""},
+		{500, 500, 500, 500, "", ""},
+		{500, 501, 500, 500, "", ""},
+		{500, math.MaxInt64, 500, 0, "", codeTS},
 	})
 	checkVectors(t, methods["damageAt"], []vectorRow{
-		{500, 10, 50, 50, "", ""}, {500, math.MinInt64, 0, 0, codeRange, codeTS}, {500, -1, 0, 0, codeRange, codeRange},
-		{500, 0, 0, 0, codeRange, codeRange}, {500, 1, 5, 5, "", ""}, {500, 2, 10, 10, "", ""},
-		{500, 149, 745, 745, "", ""}, {500, 150, 750, 750, "", ""}, {500, 151, 0, 0, codeRange, codeRange},
-		{500, 499, 0, 0, codeRange, codeRange}, {500, 500, 0, 0, codeRange, codeRange}, {500, 501, 0, 0, codeRange, codeRange},
+		{500, 10, 50, 50, "", ""},
+		{500, math.MinInt64, 0, 0, codeRange, codeTS},
+		{500, -1, 0, 0, codeRange, codeRange},
+		{500, 0, 0, 0, codeRange, codeRange},
+		{500, 1, 5, 5, "", ""},
+		{500, 2, 10, 10, "", ""},
+		{500, 149, 745, 745, "", ""},
+		{500, 150, 750, 750, "", ""},
+		{500, 151, 0, 0, codeRange, codeRange},
+		{500, 499, 0, 0, codeRange, codeRange},
+		{500, 500, 0, 0, codeRange, codeRange},
+		{500, 501, 0, 0, codeRange, codeRange},
 		{500, math.MaxInt64, 0, 0, codeRange, codeTS},
 	})
 	if r := methods["scaledTenth"].Reads; len(r) != 1 || r[0].Name != "tenth" || len(r[0].Path) != 1 || r[0].Path[0] != "tenth" {

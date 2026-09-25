@@ -86,11 +86,15 @@ func vectorRole() fpCase {
 
 // Vector 9, WIRE.md §8.3's flow: the first emitted value carries the package fns.
 func vectorFlow() fpCase {
-	status := &ir.Record{Pkg: "flow", Name: "Status", Fields: []*ir.Field{fld(str(), "label"), fld(listOf(refString()), "next")},
-		Methods: []*ir.ExportFn{{Name: "isTerminal", Kind: ir.FnPrecomputed, Result: boolean()}}}
+	status := &ir.Record{
+		Pkg: "flow", Name: "Status", Fields: []*ir.Field{fld(str(), "label"), fld(listOf(refString()), "next")},
+		Methods: []*ir.ExportFn{{Name: "isTerminal", Kind: ir.FnPrecomputed, Result: boolean()}},
+	}
 	elem := named(status)
-	canTransition := &ir.ExportFn{Name: "canTransition", Kind: ir.FnLookup, Result: boolean(),
-		Params: []*ir.Param{{Name: "from", Type: refString()}, {Name: "to", Type: refString()}}}
+	canTransition := &ir.ExportFn{
+		Name: "canTransition", Kind: ir.FnLookup, Result: boolean(),
+		Params: []*ir.Param{{Name: "from", Type: refString()}, {Name: "to", Type: refString()}},
+	}
 	return fpCase{"flow", "statuses", ir.TypeRef{Kind: types.Table, Elem: &elem}, []*ir.ExportFn{canTransition}}
 }
 
@@ -100,11 +104,15 @@ func paramOf(questStyle *ir.Enum) *ir.Dependent {
 		"upgradeType", "gameMode", "questStyle")
 	element := withCodes(enumOf("resource.vocab", "Element", "FIRE", "WATER", "ELECTRICITY", "WIND", "EARTH"), uint8Ref(), 1)
 	disc := named(paramKind)
-	return &ir.Dependent{Pkg: "resource.vocab", Name: "Param", Params: 1, DiscParam: 0, DiscPath: []string{"param"}, Disc: &disc,
+	return &ir.Dependent{
+		Pkg: "resource.vocab", Name: "Param", Params: 1, DiscParam: 0, DiscPath: []string{"param"}, Disc: &disc,
 		Branches: []*ir.Branch{
-			{Name: "monster", Members: []int{1}, Type: refString()}, {Name: "item", Members: []int{2}, Type: refString()},
-			{Name: "dungeon", Members: []int{3}, Type: refString()}, {Name: "element", Members: []int{4}, Type: named(element)},
-			{Name: "quest_style", Members: []int{8}, Type: named(questStyle)}, {Name: "upgrade_type", Members: []int{6}, Type: refString()},
+			{Name: "monster", Members: []int{1}, Type: refString()},
+			{Name: "item", Members: []int{2}, Type: refString()},
+			{Name: "dungeon", Members: []int{3}, Type: refString()},
+			{Name: "element", Members: []int{4}, Type: named(element)},
+			{Name: "quest_style", Members: []int{8}, Type: named(questStyle)},
+			{Name: "upgrade_type", Members: []int{6}, Type: refString()},
 			{Name: "game_mode", Members: []int{7}, Type: str()},
 		},
 		ByMember: []int{ir.NoBranch, 0, 1, 2, 3, ir.NoBranch, 5, 6, 4},

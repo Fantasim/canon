@@ -134,8 +134,12 @@ func TestFingerprintChanges(t *testing.T) {
 // FINGERPRINT.md §8: a type with no wire form has no fingerprint.
 func TestFingerprintRefusals(t *testing.T) {
 	bad := []ir.TypeRef{
-		{Kind: types.Range}, {Kind: types.Func}, {Kind: types.Int}, {Kind: types.List},
-		{Kind: types.Record}, {Kind: types.TypeApp, Named: vectorRole().root.Named},
+		{Kind: types.Range},
+		{Kind: types.Func},
+		{Kind: types.Int},
+		{Kind: types.List},
+		{Kind: types.Record},
+		{Kind: types.TypeApp, Named: vectorRole().root.Named},
 	}
 	for _, b := range bad {
 		if _, err := ir.Fingerprint(&b, nil); !errors.Is(err, ir.ErrFingerprint) {

@@ -6,10 +6,10 @@ import (
 	"github.com/fantasim/canonlang/internal/types"
 )
 
-// nameScope is one namespace of generated code and what declared each of its names (§3.5).
+// nameScope is one namespace of generated code and what declared each of its names (§3.5); hidden are the names its body uses that a name declared in it would hide, with what declared them.
 type nameScope struct {
-	what  string
-	names map[string]string
+	what          string
+	names, hidden map[string]string
 }
 
 // namer is a name plan's scopes and problems; ident tells an identifier of the target, and
@@ -20,10 +20,11 @@ type namer struct {
 	problems []GoNameProblem
 	reported map[originPair]bool // the pairs of origins already reported colliding: one E8005 per cause (decision 203)
 	ident    func(string) (ok, reserved bool)
+	self     string // the package: what an item meeting its own name is reported against
 }
 
-func newNamer(ident func(string) (ok, reserved bool)) namer {
-	return namer{reported: map[originPair]bool{}, ident: ident}
+func newNamer(pkg string, ident func(string) (ok, reserved bool)) namer {
+	return namer{reported: map[originPair]bool{}, ident: ident, self: pkg}
 }
 
 // scope opens a new scope of the plan.
@@ -47,13 +48,26 @@ func (n *namer) declareFrom(sc *nameScope, name, origin string, item, from any) 
 		return
 	}
 	if first, ok := sc.names[name]; ok {
-		if pair := (originPair{first, origin}); !n.reported[pair] {
-			n.reported[pair] = true
-			n.problems = append(n.problems, GoNameProblem{Kind: GoCollision, Scope: sc.what, Name: name, First: first, Origin: origin, Item: item})
-		}
+		n.collide(sc, name, first, origin, item)
 		return
 	}
 	sc.names[name] = origin
+	if first, ok := sc.hidden[name]; ok {
+		n.collide(sc, name, first, origin, item)
+	}
+}
+
+// collide is E8005 for name, declared in sc for first and for origin at item, once per pair of
+// origins; an item meeting a name of its own (a container's member named like the container) is
+// reported against the package's generated code, so no message names one thing twice.
+func (n *namer) collide(sc *nameScope, name, first, origin string, item any) {
+	if origin == first {
+		origin = n.self
+	}
+	if pair := (originPair{first, origin}); !n.reported[pair] {
+		n.reported[pair] = true
+		n.problems = append(n.problems, GoNameProblem{Kind: GoCollision, Scope: sc.what, Name: name, First: first, Origin: origin, Item: item})
+	}
 }
 
 // refused reports an item whose own name is already a problem other than a collision: an invalid override, or a name that is no identifier.
@@ -72,6 +86,9 @@ func unlessOverridden(own NameOptions, from Type) any {
 // declareAll declares every name of the package scope in gen/go's section order (CODEGEN.md §2.7), and each struct's, container's, data's and parameter list's own scope.
 func (pl *GoNamePlan) declareAll() {
 	top := pl.scope(goScopePackage)
+	if len(inputRecords(pl.p)) > 0 { // first, so a clash is reported at the user's item (CODEGEN.md §3.5, §5.12)
+		pl.declare(top, loadInputs, pl.p.Name, nil)
+	}
 	for _, c := range pl.p.Consts {
 		pl.declare(top, pl.ConstName(c), pl.p.Name+qnameSep+c.Name, c)
 	}
@@ -93,6 +110,7 @@ func (pl *GoNamePlan) declareAll() {
 		pl.declareValues(top)
 	}
 	pl.declareFns(top)
+	pl.declareInputs(top)
 	if pl.data != nil {
 		pl.declareDecoders(top)
 		pl.declareResolvers(top)
@@ -180,7 +198,7 @@ func tableRecord(v *Value) *Record {
 	return rec
 }
 
-// declareType declares a record, or a variant and its case types, with their own member scopes (CODEGEN.md §5.4, §5.5); a dependent type, which baked gen/go refuses (decision 124), declares nothing yet.
+// declareType declares a record, a variant and its case types, or a dependent type and its branch enum, with their own member scopes (CODEGEN.md §5.4–§5.6).
 func (pl *GoNamePlan) declareType(top *nameScope, t Type) {
 	switch x := t.(type) {
 	case *Record:
@@ -188,6 +206,8 @@ func (pl *GoNamePlan) declareType(top *nameScope, t Type) {
 		pl.declareBody(pl.TypeName(x), x.QName(), x, x.Fields, x.Methods)
 	case *Variant:
 		pl.declareVariant(top, x)
+	case *Dependent:
+		pl.declareDependent(top, x)
 	}
 }
 
@@ -230,12 +250,7 @@ func (pl *GoNamePlan) declareBody(goName, owner string, rec *Record, fields []*F
 		b.stores = append(b.stores, bodyMember{GoIDStore, owner, rec}, bodyMember{GoRetiredStore, owner, rec})
 		b.getters = append(b.getters, bodyMember{GoID, owner, rec}, bodyMember{GoRetired, owner, rec})
 	}
-	for _, f := range fields {
-		if f.Optional && f.Type.Kind == types.Never {
-			continue // CODEGEN.md §4.4: a Never? field is not emitted at all
-		}
-		b.addSlot(owner+qnameSep+f.Name, f, pl.Slot(f))
-	}
+	pl.addFields(&b, owner, fields)
 	for _, fn := range fns {
 		origin := owner + qnameSep + fn.Name
 		switch fn.Kind {
@@ -252,6 +267,19 @@ func (pl *GoNamePlan) declareBody(goName, owner string, rec *Record, fields []*F
 	for _, list := range [][]bodyMember{b.getters, b.finite, b.stores, b.tables} {
 		for _, m := range list {
 			pl.declare(sc, m.name, m.origin, m.item)
+		}
+	}
+}
+
+// addFields adds each field's storage and getters: none for a Never? field (CODEGEN.md §4.4), only the getter for an input field, which reads the package's slot (§5.12).
+func (pl *GoNamePlan) addFields(b *bodyNames, owner string, fields []*Field) {
+	for _, f := range fields {
+		switch {
+		case f.Optional && f.Type.Kind == types.Never:
+		case f.Input != nil:
+			b.getters = append(b.getters, bodyMember{pl.Slot(f).Getter, owner + qnameSep + f.Name, f})
+		default:
+			b.addSlot(owner+qnameSep+f.Name, f, pl.Slot(f))
 		}
 	}
 }

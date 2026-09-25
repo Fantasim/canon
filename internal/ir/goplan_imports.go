@@ -57,6 +57,7 @@ func (u *goImportUse) named(t Type) {
 		u.ref(x.Codes)
 	case *Record:
 		u.body(x.Fields, x.Methods)
+		u.inputImports(x.Fields)
 	case *Variant:
 		u.std[goStrconv] = true
 		for _, c := range x.Cases {
