@@ -28,7 +28,7 @@ Tick with the landing SHA.
 - [ ] ★U11 `views` V3: the rest of the model (§5, §7–§10, §12.4, §12.6–§12.11) [sonnet]
 - [ ] ★U12 `build` writes the `view` target in phase 8, even with errors [sonnet]
 - [ ] ★U13 view goldens (pipeline, farm, events) + schema validation; GEN-01 view diff [sonnet]
-- [ ] U14 `api.Value` + `Origin.Replaced` (ADR-0007) + `cli explain` golden [opus]
+- [x] U14 (d20ec40) `api.Value` + `Origin.Replaced` (ADR-0007) + `cli explain` golden [opus]
 - [ ] U15 `api.ViewModel` (JSON equals the emit bytes) [opus]
 - [ ] U16 `gen/cpp` `types` mode; events compiles, Decode accepts EventConfig.json [sonnet]
 - [ ] U17 `ir` `types` mode rules mirroring U16's refusals [opus]

@@ -111,6 +111,7 @@ wording is a variant, and a closed set of words is a `Kind`.
 | `ConstValue` | const value | `E3015` |
 | `ConstantString` | a constant string | `E1119`, `E8009` |
 | `CrossPackageBakedValue` | a value of a record, variant or table of another package | `E8019` |
+| `DefineKey` | a lookup parameter that refs a load.defines table | `E8019` |
 | `DefineTable` | define table | `E1627` |
 | `DependentType` | a dependent type | `E8019` |
 | `Emit` | emit | `E1133` |
@@ -130,7 +131,7 @@ wording is a variant, and a closed set of words is a `Kind`.
 | `Import` | import | `E1133` |
 | `ImportAlias` | import alias | `W1003`, `E1125` |
 | `InlineFoldedKey` | an inline variant key equal to a parent key but for letter case | `E8019` |
-| `InputField` | an `input` field in a `types`-mode emit | `E8019` |
+| `InputField` | an `input` field | `E8019` |
 | `Integer` | an integer | `E1119`, `E7110` |
 | `Layer` | layer | `E1125` |
 | `Let` | let | `W1003`, `E1125`, `E1133` |
@@ -168,6 +169,7 @@ wording is a variant, and a closed set of words is a `Kind`.
 | `RecordConstant` | a constant of a record or variant type | `E8019` |
 | `RecordCycleThroughMethod` | a by-value cycle of records through a stored method result | `E8019` |
 | `RecursiveVariantCase` | a variant that recurses through a case | `E8019` |
+| `RefUnion` | a literal union over a ref | `E8019` |
 | `RefinementBound` | refinement bound | `E3015` |
 | `ResolvedLookupResult` | a lookup method whose result holds a ref resolved at load | `E8019` |
 | `SelfReadNotAPath` | a read of self that is not a path of fields | `E8019` |

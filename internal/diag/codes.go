@@ -78,6 +78,7 @@ const (
 	KindConstValue
 	KindConstantString
 	KindCrossPackageBakedValue
+	KindDefineKey
 	KindDefineTable
 	KindDependentType
 	KindEmit
@@ -135,6 +136,7 @@ const (
 	KindRecordConstant
 	KindRecordCycleThroughMethod
 	KindRecursiveVariantCase
+	KindRefUnion
 	KindRefinementBound
 	KindResolvedLookupResult
 	KindSelfReadNotAPath
@@ -195,6 +197,7 @@ var kindNames = [...]string{
 	"ConstValue",
 	"ConstantString",
 	"CrossPackageBakedValue",
+	"DefineKey",
 	"DefineTable",
 	"DependentType",
 	"Emit",
@@ -252,6 +255,7 @@ var kindNames = [...]string{
 	"RecordConstant",
 	"RecordCycleThroughMethod",
 	"RecursiveVariantCase",
+	"RefUnion",
 	"RefinementBound",
 	"ResolvedLookupResult",
 	"SelfReadNotAPath",
@@ -292,6 +296,7 @@ var kindWords = [...]string{
 	"const value",
 	"a constant string",
 	"a value of a record, variant or table of another package",
+	"a lookup parameter that refs a load.defines table",
 	"define table",
 	"a dependent type",
 	"emit",
@@ -311,7 +316,7 @@ var kindWords = [...]string{
 	"import",
 	"import alias",
 	"an inline variant key equal to a parent key but for letter case",
-	"an `input` field in a `types`-mode emit",
+	"an `input` field",
 	"an integer",
 	"layer",
 	"let",
@@ -349,6 +354,7 @@ var kindWords = [...]string{
 	"a constant of a record or variant type",
 	"a by-value cycle of records through a stored method result",
 	"a variant that recurses through a case",
+	"a literal union over a ref",
 	"refinement bound",
 	"a lookup method whose result holds a ref resolved at load",
 	"a read of self that is not a path of fields",
