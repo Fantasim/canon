@@ -1,4 +1,4 @@
-VIEWMODEL.md §3.2–§3.7, G7, G11, G16, T6a, DECISIONS 221: well-formed views check with no finding and their Info is complete: targets (record, variant, case, enum, define table, an alias of a record, which is transparent: log-2026-09-28 U5 round 2), item names (fields, methods, case fields of an inline variant, cases, members), studio names resolved without an import (menu, icon, tone, unit, widget), templates and expressions in the §3.4 scope with the magic names typed where the target can stand (log-2026-09-28 decision 7: `id` String in a table, `key` the map's key type, `index` Int in a list, the step text's `{index}`), a field named `key` or `index` hiding the magic name while a method named `index` does not (G11), `check … at f` (G19). I18N.md T1–T3: the translation file's key segments resolve and its templates type in the scope of their source item: a view template, a show line, a step text, a record check, a case check and a package check.
+VIEWMODEL.md §3.2–§3.7, G7, G11, G16, T6a, DECISIONS 221: well-formed views check with no finding and their Info is complete: targets (record, variant, case, enum, define table, an alias of a record, which is transparent: log-2026-09-28 U5 round 2), item names (fields, methods, case fields of an inline variant, cases, members), studio names resolved without an import (menu, icon, tone, unit, widget, `@menu(items, icon: gem)`: G23; `icon` and `tone` bare or qualified, `Icon.gem`: §3.5, G16), `filters { kind }` in a variant view naming the case filter (T6a, TYPES.md §3.6), templates and expressions in the §3.4 scope with the magic names typed where the target can stand (log-2026-09-28 decision 7: `id` String in a table, `key` the map's key type, `index` Int in a list, the step text's `{index}`), a field named `key` or `index` hiding the magic name while a method named `index` does not (G11), `check … at f` (G19). I18N.md T1–T3: the translation file's key segments resolve and its templates type in the scope of their source item: a view template, a show line, a step text, a record check, a case check and a package check.
 -- studio/studio.canon --
 package studio
 
@@ -92,6 +92,10 @@ local type Jewel = Gem
 
 local let gems: [Jewel] = []
 
+/// The shop.
+@menu(items, icon: gem)
+let shop: [Jewel] = []
+
 local let items: table Item = {}
 
 local let byName: {String: Named} = {}
@@ -131,7 +135,9 @@ view Named {
 view Kind {
   title "{self.kind}"
   columns { attack, heal }
+  filters { kind multi, heal }
   weapon "Weapon" { icon: gear, tone: danger }
+  food "Food" { icon: Icon.gem, tone: Tone.info }
 }
 
 view Kind.weapon {

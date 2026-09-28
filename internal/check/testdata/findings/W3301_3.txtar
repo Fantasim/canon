@@ -1,0 +1,70 @@
+TYPES.md §16, VIEWMODEL.md §3.5, G16 (log-2026-09-28 "check follow-ups 4 review"): a deprecated studio member used by `icon:` or `tone:`, bare or qualified by its enum (`Icon.gem`, resolved without an import), or by a view's `menu m icon i`, is W3301 at that use. A qualified name the studio's enum does not declare (`Icon.ruby`) is views' E1610, silent here.
+-- studio/studio.canon --
+package studio
+
+/// Menus.
+enum Menu {
+  items
+  old @deprecated("use items")
+}
+
+/// Icons.
+enum Icon {
+  gem
+  gear @deprecated
+}
+
+/// Tones.
+enum Tone {
+  info
+  warm @deprecated("use info")
+}
+-- a/a.canon --
+package a
+
+/// A cut.
+local enum Cut { round, square, oval }
+
+view Cut {
+  round { icon: Icon.gem, tone: Tone.info }
+  square { icon: Icon.gear, tone: Tone.warm }
+  oval { icon: gear, tone: warm }
+}
+
+/// A gem.
+local record Gem {
+  /// Its cut.
+  cut: Cut
+}
+
+view Gem {
+  menu old icon gear
+  cut { help: "The cut." }
+}
+
+/// A shape.
+local enum Shape { flat }
+
+view Shape {
+  flat { icon: Icon.ruby, tone: Tone.cold }
+}
+-- findings.txt --
+warning[W3301]  a/a.canon:8:23
+  gear is deprecated
+
+warning[W3301]  a/a.canon:8:40
+  warm is deprecated: use info
+
+warning[W3301]  a/a.canon:9:16
+  gear is deprecated
+
+warning[W3301]  a/a.canon:9:28
+  warm is deprecated: use info
+
+warning[W3301]  a/a.canon:19:8
+  old is deprecated: use items
+
+warning[W3301]  a/a.canon:19:17
+  gear is deprecated
+
+0 errors, 6 warnings in 2 packages (…)

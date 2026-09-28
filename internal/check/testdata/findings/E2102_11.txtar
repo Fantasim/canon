@@ -1,0 +1,19 @@
+TYPES.md §2, §1 (log-2026-09-28 "check follow-ups 4 review"): `Nope??` is the error type: its only finding is the E2102 of `Nope`, no E3401 about the error type, for a field as for a function parameter.
+-- a/a.canon --
+package a
+
+local record R {
+  a: Nope??
+}
+
+local fn f(x: Nope2??) -> Int {
+  return 1
+}
+-- findings.txt --
+error[E2102]  a/a.canon:4:6
+  unknown name Nope
+
+error[E2102]  a/a.canon:7:15
+  unknown name Nope2
+
+2 errors, 0 warnings in 1 package (…)

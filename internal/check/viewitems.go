@@ -55,7 +55,7 @@ func (c *checker) viewSubtitle(vc *viewCtx, it syntax.ViewItem) {
 }
 
 // viewMenu resolves `menu m icon i` in the studio package (VIEWMODEL.md G16).
-func (c *checker) viewMenu(_ *viewCtx, it syntax.ViewItem) {
+func (c *checker) viewMenu(vc *viewCtx, it syntax.ViewItem) {
 	m := it.(*syntax.ViewMenu)
 	for _, n := range []struct {
 		id   *syntax.Ident
@@ -66,6 +66,7 @@ func (c *checker) viewMenu(_ *viewCtx, it syntax.ViewItem) {
 		}
 		if o := c.studioMember(n.enum, n.id.Name); o != nil {
 			c.info.NameUses[n.id] = o
+			c.deprecatedUse(vc.env, n.id, o)
 		}
 	}
 }
@@ -82,7 +83,7 @@ func (c *checker) viewColumns(vc *viewCtx, it syntax.ViewItem) {
 
 func (c *checker) viewFilters(vc *viewCtx, it syntax.ViewItem) {
 	for _, f := range it.(*syntax.ViewFilters).Items {
-		c.itemName(f.Name, func(n string) *object { return c.columnName(vc, n) })
+		c.itemName(f.Name, func(n string) *object { return c.filterName(vc, n) })
 	}
 }
 

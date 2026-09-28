@@ -1,0 +1,33 @@
+TYPES.md §12.1, §3.2, §3.6: a method written twice in a variant body outside any case is E2106 once, at the refused duplicate, as in a record; only the method kept is judged against the cases' names (a case method of its name is E2106, `kind` is E2105).
+-- a/a.canon --
+package a
+
+local variant Reward {
+  item {
+    count: Int
+
+    fn label(self) -> String { return "item" }
+  }
+
+  fn label(self) -> String { return "a" }
+
+  fn label(self) -> String { return "b" }
+
+  fn kind(self) -> Int { return 1 }
+
+  fn kind(self) -> Int { return 2 }
+}
+-- findings.txt --
+error[E2106]  a/a.canon:10:6
+  label is declared twice (first at a/a.canon:7)
+
+error[E2106]  a/a.canon:12:6
+  label is declared twice (first at a/a.canon:10)
+
+error[E2105]  a/a.canon:14:6
+  kind is reserved on variant cases
+
+error[E2106]  a/a.canon:16:6
+  kind is declared twice (first at a/a.canon:14)
+
+4 errors, 0 warnings in 1 package (…)

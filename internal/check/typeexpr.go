@@ -312,12 +312,14 @@ func (c *checker) tableElement(tc *typeCtx, t *syntax.TableType) (*types.RecordT
 	return rec, elem
 }
 
-// resolveOptional is `T?`; `T??` is E3401.
+// resolveOptional is `T?`; `T??` is E3401 and recovers to `T?`, the evident intent (TYPES.md §2).
 func (c *checker) resolveOptional(tc *typeCtx, t *syntax.OptionalType) types.Type {
 	elem := c.resolveType(tc.inner(), t.Elem)
 	if elem.Base().Kind() == types.Optional {
-		c.report(tc.env, diag.E3401.At(tc.env.span(t), elem))
-		return types.ErrorType
+		if !holdsError(elem) { // TYPES.md §1: `Nope??` has only Nope's finding
+			c.report(tc.env, diag.E3401.At(tc.env.span(t), elem))
+		}
+		return elem
 	}
 	return &types.OptionalType{Elem: elem}
 }

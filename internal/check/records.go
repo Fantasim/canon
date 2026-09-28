@@ -1,6 +1,8 @@
 package check
 
 import (
+	"slices"
+
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/syntax"
@@ -83,12 +85,12 @@ func (c *checker) fieldItem(env *env, it *syntax.FieldItem, t types.Type, fields
 	c.expr(env.storing(fo), it.Value, staticView(f.Type))
 }
 
-// requiredFields is E3302 for each field with no default, not optional and not an input,
-// that the literal leaves out; a field its record contains itself through is E3022's.
+// requiredFields is E3302 for each required field the literal leaves out; a field its record
+// contains itself through is E3022's.
 func (c *checker) requiredFields(env *env, e *syntax.BraceLit, t types.Type, fields []*types.Field, given map[string]bool) {
 	owner := requiredRecord(t)
 	for _, f := range fields {
-		if given[f.Name] || f.Default != nil || f.Input != nil || f.Type.Base().Kind() == types.Optional {
+		if given[f.Name] || !required(f) {
 			continue
 		}
 		if selfContaining(owner, f) {
@@ -96,6 +98,55 @@ func (c *checker) requiredFields(env *env, e *syntax.BraceLit, t types.Type, fie
 		}
 		c.report(env, diag.E3302.At(env.tokSpan(e.First()), t, f.Name))
 	}
+}
+
+// required reports a field a literal must give: no default, not optional, no input, type not in error (TYPES.md §5.2).
+func required(f *types.Field) bool {
+	return f.Default == nil && f.Input == nil && f.Type.Base().Kind() != types.Optional && !holdsError(f.Type)
+}
+
+// holdsError reports the error type anywhere in t: key, element, value, ref target (TYPES.md §5.2).
+func holdsError(t types.Type) bool {
+	if t == nil {
+		return false
+	}
+	if t.Base().Kind() == types.Error {
+		return true
+	}
+	return slices.ContainsFunc(typeParts(t.Base()), holdsError)
+}
+
+// typeParts are the types t is built of, a named type's none; a ref's is its target's element.
+func typeParts(t types.Type) []types.Type {
+	switch x := t.(type) {
+	case *types.OptionalType:
+		return []types.Type{x.Elem}
+	case *types.ListType:
+		return []types.Type{x.Elem}
+	case *types.TableType:
+		return []types.Type{x.Elem}
+	case *types.MapType:
+		return []types.Type{x.Key, x.Value}
+	case *types.DepMapType:
+		return append(collParts(x.Coll), x.Value)
+	case *types.RefType:
+		return collParts(x.Target)
+	case *types.LitUnionType:
+		return []types.Type{x.Of}
+	case *types.PairType:
+		return []types.Type{x.A, x.B}
+	case *types.FuncType:
+		return append(slices.Clone(x.Params), x.Result)
+	}
+	return nil
+}
+
+// collParts is a collection's element; a missing collection is the error type.
+func collParts(c *types.Collection) []types.Type {
+	if c == nil {
+		return []types.Type{types.ErrorType}
+	}
+	return []types.Type{c.Elem}
 }
 
 // tokSpan is the span of one token of env's file.

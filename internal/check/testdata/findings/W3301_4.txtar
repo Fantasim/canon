@@ -1,0 +1,46 @@
+TYPES.md §16, VIEWMODEL.md G23, G16 (log-2026-09-28 "check follow-ups 4 review"): `@menu`'s menu and its `icon:` resolve against project.studio without an import; a deprecated one is W3301 at that use. A name the studio does not declare (`ruby`) is views' E1610, silent here. (Both are a WORD, GRAMMAR.md `studio{Enum}`: a qualified form is syntax's E1119.)
+-- studio/studio.canon --
+package studio
+
+/// Menus.
+enum Menu {
+  items
+  old @deprecated("use items")
+}
+
+/// Icons.
+enum Icon {
+  gem
+  gear @deprecated
+}
+-- a/a.canon --
+package a
+
+/// A gem.
+record Gem {
+  /// Its cut.
+  cut: Int
+}
+
+/// The gems.
+@menu(old, icon: gear)
+let gems: [Gem] = []
+
+/// The stones.
+@menu(old, label: "Stones")
+let stones: [Gem] = []
+
+/// The rubies.
+@menu(items, icon: ruby)
+let rubies: [Gem] = []
+-- findings.txt --
+warning[W3301]  a/a.canon:10:7
+  old is deprecated: use items
+
+warning[W3301]  a/a.canon:10:18
+  gear is deprecated
+
+warning[W3301]  a/a.canon:14:7
+  old is deprecated: use items
+
+0 errors, 3 warnings in 2 packages (…)

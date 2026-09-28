@@ -1,0 +1,65 @@
+TYPES.md §5.2, §1 (log-2026-09-28 "check follow-ups 4 review"): the error type anywhere in a field's declared type makes the field not required, whatever the shape: a map key or value, a ref target (unknown, or a collection whose element is in error), a keyed list's element, a dependent map's collection or value, a literal union's base, an optional inside a list, a function type (E3306). The literal `{}` draws E3302 only for `b`, the one field genuinely required.
+-- a/a.canon --
+package a
+
+local record T {
+  name: String
+}
+
+local let ts: table T = {}
+
+local let bad: table Nope1 = {}
+
+local record R {
+  mk: {Nope2: Int}
+  mv: {String: Nope3}
+  r: ref Nope4
+  rc: ref bad
+  k: [Nope5] keyed by id
+  dv: {k in ts: Nope6}
+  dc: {k in nope7: Int}
+  u: Nope8 | "x"
+  lo: [{Int: Nope9?}]
+  f: fn(Nope10) -> Int
+  b: Int
+}
+
+local let r: R = {}
+-- findings.txt --
+error[E2102]  a/a.canon:9:22
+  unknown name Nope1
+
+error[E2102]  a/a.canon:12:8
+  unknown name Nope2
+
+error[E2102]  a/a.canon:13:16
+  unknown name Nope3
+
+error[E2102]  a/a.canon:14:10
+  unknown name Nope4
+
+error[E2102]  a/a.canon:16:7
+  unknown name Nope5
+
+error[E2102]  a/a.canon:17:17
+  unknown name Nope6
+
+error[E2102]  a/a.canon:18:13
+  unknown name nope7
+
+error[E2102]  a/a.canon:19:6
+  unknown name Nope8
+
+error[E2102]  a/a.canon:20:14
+  unknown name Nope9
+
+error[E3306]  a/a.canon:21:6
+  a function type is not allowed here
+
+error[E2102]  a/a.canon:21:9
+  unknown name Nope10
+
+error[E3302]  a/a.canon:25:18
+  a.R needs field b
+
+12 errors, 0 warnings in 1 package (…)

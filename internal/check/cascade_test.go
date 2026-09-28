@@ -223,8 +223,8 @@ func TestSelfContainingRecordCascades(t *testing.T) {
 	})
 }
 
-// TYPES.md §2 and §1: an input field whose type is in error (E3401) is not also E1910.
-func TestInputOfErrorType(t *testing.T) {
+// TYPES.md §2 and §1: an input field declared `T??` (E3401, recovered to `T?`) is not also E1910.
+func TestInputOfDoubleOptional(t *testing.T) {
 	runCascades(t, []cascadeCase{
 		{"§2 T??", "local record Gen {\n  key: input String?? from env \"KEY\"\n}\n\n" +
 			"local record Cfg {\n  gen: Gen\n}\n\n/// The config.\nlet cfg: Cfg = { gen: {} }\n", diag.E3401.Def()},

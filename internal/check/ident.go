@@ -170,11 +170,11 @@ func qualifiedMember(o *object) string {
 	return o.name
 }
 
-// bareCase is a case written without fields: E3302 when a field has no default (TYPES.md §8.2).
+// bareCase is a case written without fields: E3302 when a field is required (TYPES.md §8.2, §5.2).
 func (c *checker) bareCase(env *env, e syntax.Node, o *object) {
 	ct := o.typ.(*types.CaseType)
 	for _, f := range ct.Fields {
-		if f.Default == nil && f.Input == nil && f.Type.Base().Kind() != types.Optional {
+		if required(f) {
 			c.report(env, diag.E3302.At(env.span(e), ct, f.Name))
 			return
 		}

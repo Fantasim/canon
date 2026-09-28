@@ -282,9 +282,15 @@ func (c *checker) variantMembers(env *env, v *types.VariantType, d *syntax.Varia
 			items = append(items, ri)
 		}
 	}
-	c.declareMembers(env, v, c.variantBody[v], items)
+	body := c.variantBody[v]
+	c.declareMembers(env, v, body, items)
 	for _, it := range items {
-		if fn, ok := it.(*syntax.FnDecl); ok {
+		fn, ok := it.(*syntax.FnDecl)
+		if !ok {
+			continue
+		}
+		// A method refused as a duplicate has its E2106 already, as a record's (TYPES.md §12.1).
+		if m := body.methods[fn.Name.Name]; m != nil && m.decl == fn {
 			c.sharedName(env, v, fn)
 		}
 	}

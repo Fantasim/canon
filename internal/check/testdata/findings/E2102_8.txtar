@@ -1,0 +1,34 @@
+TYPES.md §5.2, §8.2, §1: a field whose declared type holds the error type is not required: a record literal or a bare case leaving it out draws no E3302; its own finding stands alone. A field that is genuinely required and missing is still E3302, once (`r2`).
+-- a/a.canon --
+package a
+
+local record R {
+  a: Nope
+  xs: [Nope2]
+  b: Int
+}
+
+local let r: R = { b: 1 }
+
+local let r2: R = {}
+
+local variant V {
+  one { c: Nope3 }
+  two
+}
+
+local let v: V = one
+-- findings.txt --
+error[E2102]  a/a.canon:4:6
+  unknown name Nope
+
+error[E2102]  a/a.canon:5:8
+  unknown name Nope2
+
+error[E3302]  a/a.canon:11:19
+  a.R needs field b
+
+error[E2102]  a/a.canon:14:12
+  unknown name Nope3
+
+4 errors, 0 warnings in 1 package (…)

@@ -227,3 +227,78 @@ func TestItemAndKeyNames(t *testing.T) {
 		}
 	}
 }
+
+// VIEWMODEL.md T6a, TYPES.md §3.6: a variant view's filter `kind` is the case filter; a case field stays a field.
+func TestVariantCaseFilter(t *testing.T) {
+	v := loadViews(t)
+	want := map[string]check.ObjKind{"kind": check.ObjBuiltin, "heal": check.ObjField}
+	seen := 0
+	for _, it := range v.view("Kind").Items {
+		fs, ok := it.(*syntax.ViewFilters)
+		if !ok {
+			continue
+		}
+		for _, f := range fs.Items {
+			seen++
+			if o := v.prog.Info.NameUses[f.Name]; o == nil || o.Kind() != want[f.Name.Name] {
+				t.Errorf("T6a: filter %s names %v, want a %v", f.Name.Name, o, want[f.Name.Name])
+			}
+		}
+	}
+	if seen != len(want) {
+		t.Errorf("T6a: view Kind filters %d names, want %d", seen, len(want))
+	}
+}
+
+// VIEWMODEL.md §3.5, G16: `icon: Icon.gem`, `tone: Tone.info` name the studio's member without an import.
+func TestQualifiedStudioNames(t *testing.T) {
+	v := loadViews(t)
+	var sels []*syntax.SelectorExpr
+	syntax.Inspect(v.view("Kind"), func(n syntax.Node) bool {
+		if s, ok := n.(*syntax.SelectorExpr); ok && s.X.Kind() == syntax.KindIdentExpr {
+			sels = append(sels, s)
+		}
+		return true
+	})
+	if len(sels) != 2 {
+		t.Fatalf("G16: view Kind has %d qualified names, want 2", len(sels))
+	}
+	for _, s := range sels {
+		q, _ := s.X.(*syntax.IdentExpr)
+		enum, member := v.prog.Info.Uses[q], v.prog.Info.NameUses[s.Name]
+		if enum == nil || enum.Kind() != check.ObjTypeName || enum.Pkg() != "studio" {
+			t.Fatalf("G16: %v is %v, want the studio's enum", s.X, enum)
+		}
+		if member == nil || member.Kind() != check.ObjMember || v.prog.Info.Types[s] != enum.Type() {
+			t.Errorf("G16: %s.%s is %v typed %v, want a member of %v", enum.Name(), s.Name.Name, member, v.prog.Info.Types[s], enum.Type())
+		}
+	}
+}
+
+// VIEWMODEL.md G23, G16: `@menu(items, icon: gem)` names the studio's Menu and Icon members without an import.
+func TestMenuAnnotationNames(t *testing.T) {
+	v := loadViews(t)
+	var names []*syntax.Ident
+	for _, f := range v.files {
+		syntax.Inspect(f, func(n syntax.Node) bool {
+			a, ok := n.(*syntax.Annotation)
+			if !ok || a.Name.Name != syntax.AnnMenu {
+				return true
+			}
+			for _, arg := range a.Args {
+				if q, isName := arg.Value.(*syntax.QualifiedName); isName {
+					names = append(names, q.Parts[0])
+				}
+			}
+			return true
+		})
+	}
+	if len(names) != 2 {
+		t.Fatalf("G23: %d @menu names, want 2", len(names))
+	}
+	for _, id := range names {
+		if o := v.prog.Info.NameUses[id]; o == nil || o.Kind() != check.ObjMember || o.Pkg() != "studio" {
+			t.Errorf("G23: @menu's %s names %v, want a studio member", id.Name, o)
+		}
+	}
+}

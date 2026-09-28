@@ -1,0 +1,17 @@
+TYPES.md §2, §5.2, §1 (log-2026-09-28 "progen triage"): `T??` is E3401 and the field recovers to `T?`, the evident intent, not the error type: a literal leaving it out draws no E3302, and it reads as a `T?`.
+-- a/a.canon --
+package a
+
+local record R {
+  b: Int
+  a: Int??
+}
+
+local let r: R = { b: 1 }
+
+local let n: Int = r.a ?? 0
+-- findings.txt --
+error[E3401]  a/a.canon:5:6
+  Int?? is not a type: Int? is already optional
+
+1 error, 0 warnings in 1 package (…)

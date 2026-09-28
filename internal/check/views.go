@@ -37,15 +37,18 @@ func (c *checker) checkPresentation() {
 	}
 }
 
-// checkViews checks the views of p's source files in path and source order.
+// checkViews checks the views and `@menu` annotations of p's source files in path and source order.
 func (c *checker) checkViews(p *pkgState) {
 	for _, f := range p.files {
 		if f.FileKind != syntax.FileSource {
 			continue
 		}
 		for _, d := range f.Decls {
-			if v, ok := d.(*syntax.ViewDecl); ok {
-				c.checkView(p, f, v)
+			switch d := d.(type) {
+			case *syntax.ViewDecl:
+				c.checkView(p, f, d)
+			case *syntax.LetDecl:
+				c.menuAnnotation(p, f, d)
 			}
 		}
 	}
@@ -209,6 +212,14 @@ func (c *checker) columnName(vc *viewCtx, name string) *object {
 		return nil
 	}
 	return c.memberName(vc, name)
+}
+
+// filterName is what a filter names: a column's, or a variant view's `kind`, the case filter (VIEWMODEL.md T6a).
+func (c *checker) filterName(vc *viewCtx, name string) *object {
+	if vc.variant != nil && name == kindMember {
+		return c.builtins[kindMember]
+	}
+	return c.columnName(vc, name)
 }
 
 // inlineField is the first field named name of a case of an `@json(inline)` variant field, depth first.

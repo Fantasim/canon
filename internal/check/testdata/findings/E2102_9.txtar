@@ -1,0 +1,44 @@
+TYPES.md §1, §5.2 (log-2026-09-28 "progen triage"): a typed literal `Name { … }` checked against the error type is silent, whatever `Name` would name (a case, a record, nothing) and whatever it holds: the only finding is the one that made the type an error.
+-- a/a.canon --
+package a
+
+local record Big {
+  n: Int
+}
+
+local variant V {
+  big { n: Int }
+}
+
+local let u: Nope = big { n: 1, s: [{ a: X }] }
+
+local let w: Nope2 = Big { n: 1 }
+
+local let x: [Nope3] = [Nope4 { n: 1 }]
+
+local record Holder {
+  k: Nope5
+}
+
+local let h: Holder = { k: big { s: [{ a: X }] } }
+
+local let t: table Nope6 = {
+  a { kind: big { s: [{ a: X }] } }
+}
+-- findings.txt --
+error[E2102]  a/a.canon:11:14
+  unknown name Nope
+
+error[E2102]  a/a.canon:13:14
+  unknown name Nope2
+
+error[E2102]  a/a.canon:15:15
+  unknown name Nope3
+
+error[E2102]  a/a.canon:18:6
+  unknown name Nope5
+
+error[E2102]  a/a.canon:23:20
+  unknown name Nope6
+
+5 errors, 0 warnings in 1 package (…)
