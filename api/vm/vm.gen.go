@@ -80,14 +80,15 @@ type TypeExpr struct {
 	Fn           string            `json:"fn,omitzero"`           // kind: dependent
 	On           *Driver           `json:"on,omitzero"`           // kind: dependent
 	Predicate    *string           `json:"predicate,omitzero"`
+	Case         string            `json:"case,omitzero"` // kind: variant
 }
 
 // Driver is #/$defs/driver of spec/viewmodel.schema.json, its 3 branches in one struct.
 type Driver struct {
 	Field string   `json:"field,omitzero"`
-	Path  []string `json:"path,omitzero"`
 	Param string   `json:"param,omitzero"`
 	Key   bool     `json:"key,omitzero"`
+	Path  []string `json:"path,omitzero"`
 }
 
 // Sibling is #/$defs/sibling of spec/viewmodel.schema.json.
@@ -284,6 +285,7 @@ type Control struct {
 	Widget       string           `json:"widget,omitzero"`
 	Siblings     bool             `json:"siblings,omitzero"`
 	Fallback     *Control         `json:"fallback,omitzero"`
+	Case         string           `json:"case,omitzero"`
 }
 
 // Source is the object of Control.source.

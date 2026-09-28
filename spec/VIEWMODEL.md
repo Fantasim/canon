@@ -400,7 +400,8 @@ optional stripped):
 ### 4.6 Widgets
 
 - **C41.** A widget control is `{kind: "widget", widget, siblings?, fallback}`. `fallback` is the
-  control the field would get without the widget (C1 steps 2 to 4). A studio that does not
+  control the field would get without the widget (C1 steps 2 and 4: a default widget is never a
+  fallback). A studio that does not
   implement the widget MUST render `fallback` and SHOULD log it once.
 - **C42.** The studio passes the widget the value, the resolved control of its type, the unit, and
   when declared the siblings (G21).
@@ -409,7 +410,8 @@ optional stripped):
 
 - **C43.** A field is shown read-only when its view entry has `readonly` (§12.4): `"view"` (the
   `readonly: true` property), `"deprecated"`, `"single"` (C34) or `"input"` (a runtime input, no
-  value at build time, shown as "from environment variable NAME"). It is also read-only when
+  value at build time, shown as "from environment variable NAME"); when several apply, the first of
+  `input`, `deprecated`, `single`, `view` is written. It is also read-only when
   `Value.Editable.Mode` is `none` (API.md §7.2 reasons: `computed`, `layered`, `format`, `input`,
   `key`, `pseudo`), and then the studio shows the reason (for `layered`, the layer's name,
   MOCKUP-GAPS 48). A value set by an active layer is `layered` unless `Options.EditLayer` names
@@ -960,7 +962,7 @@ Top level, every member always present except `studio`:
 | `duration` | `min`?, `max`? | inclusive, integer milliseconds |
 | `enum` | `ref` | qualified enum name |
 | `record` | `ref`, `bind`? | `bind` maps each parameter of a parameterized record to its driver (below) |
-| `variant` | `ref` | |
+| `variant` | `ref`, `case`? | `case`: a case of the variant used as a type (`c: Shape.circle`) |
 | `list` | `of`, `min`?, `max`?, `keyedBy`?, `unique`? | `min`/`max`: length bounds; `unique`: declared a set (C32) |
 | `table` | `of`, `stable`? | |
 | `map` | `key`, `value`, `min`?, `max`?, `dependent`? | `dependent`: a dependent map `{k in c: T(k)}` |
@@ -986,8 +988,9 @@ predicate, when it has one (VM-02).
   `keyType` is `"string"` or `"int"`. `count` and `active` are the target's entry counts in this
   build (0 for `sibling`).
 - **J13.** Drivers, used by `on` and `bind`: `{"field": f}` (an earlier field of the same record or
-  case; `{"field": f, "path": [g, …]}` when the argument reads down fields of `f`, TYPES.md §11.1), `{"param": p}` (a parameter of the enclosing parameterized record, bound at its use), or
-  `{"key": true}` (the key of the enclosing dependent map). The studio resolves `param` by walking
+  case), `{"param": p}` (a parameter of the enclosing parameterized record, bound at its use), or
+  `{"key": true}` (the key of the enclosing dependent map); each with `"path": [g, …]` when the
+  argument reads down fields of it (TYPES.md §11.1). The studio resolves `param` by walking
   out to the `record` expression's `bind`.
 
 **Type definitions**, tagged by `kind`:
@@ -1079,7 +1082,7 @@ A control is an object tagged by `kind`. Members are present only where they app
 | Member | On kinds | Content |
 |---|---|---|
 | `kind` | all | one of `switch checkbox segmented radio select search checkboxes chips input textarea code number slider duration color text file section card tags positional range table list enumRow cards map variant dependent never widget` |
-| `source` | choice kinds, `checkboxes`, `chips`, `enumRow`, `cards` | `{"bool": true}`, `{"enum": name}`, `{"cases": name}`, `{"collection": id}`, or `{"sibling": {up, field}}` |
+| `source` | choice kinds, `checkboxes`, `chips`, `enumRow`, `cards` (the key domain of a dependent map) | `{"bool": true}`, `{"enum": name}`, `{"cases": name}`, `{"collection": id}`, or `{"sibling": {up, field}}` |
 | `pinned` | choice kinds and any control of a literal union | the literals (D9) |
 | `optional` | any | `{unset: "segment" \| "clear", threeState?}` (C35, C36) |
 | `min`, `max`, `minExclusive`, `maxExclusive` | `number`, `slider`, `duration` | bounds as in the type expression |
@@ -1088,7 +1091,8 @@ A control is an object tagged by `kind`. Members are present only where they app
 | `units` | `duration` | offered units, largest last (X12) |
 | `minLen`, `maxLen`, `pattern` | `input`, `textarea`, `code` | from the type |
 | `root`, `ext` | `file` | asset root and extensions |
-| `of` | `section`, `card`, `table`, `cards`, `variant` | qualified type name |
+| `of` | `section`, `card`, `table`, `cards`, `variant` | qualified type name (on `cards`, only when the value is a record, a variant or a `match` type function) |
+| `case` | `variant`, `table` | a variant case used as a type: the fixed case (no `selector`) |
 | `element` | `tags`, `positional`, `range`, `list` | the element control |
 | `count`, `minCount` | `positional` | number of inputs; required leading inputs |
 | `strict` | `range` | true for `<` |

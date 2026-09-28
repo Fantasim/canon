@@ -48,7 +48,7 @@
         "$ref": "#/$defs/value"
       },
       "propertyNames": {
-        "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*:[A-Za-z_][A-Za-z0-9_]*$"
+        "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*:[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*$"
       }
     },
     "usage": {
@@ -66,7 +66,7 @@
         "$ref": "#/$defs/searchIndex"
       },
       "propertyNames": {
-        "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*:[A-Za-z_][A-Za-z0-9_]*$"
+        "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*:[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*$"
       }
     },
     "assets": {
@@ -195,6 +195,13 @@
           "properties": {
             "param": {
               "$ref": "#/$defs/identifier"
+            },
+            "path": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/identifier"
+              },
+              "minItems": 1
             }
           },
           "additionalProperties": false,
@@ -207,6 +214,13 @@
           "properties": {
             "key": {
               "const": true
+            },
+            "path": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/identifier"
+              },
+              "minItems": 1
             }
           },
           "additionalProperties": false,
@@ -439,6 +453,9 @@
             },
             "predicate": {
               "type": "string"
+            },
+            "case": {
+              "$ref": "#/$defs/identifier"
             }
           },
           "additionalProperties": false,
@@ -1144,7 +1161,7 @@
             }
           },
           "propertyNames": {
-            "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*:[A-Za-z_][A-Za-z0-9_]*$"
+            "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*:[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*$"
           }
         }
       },
@@ -1510,6 +1527,9 @@
         },
         "fallback": {
           "$ref": "#/$defs/control"
+        },
+        "case": {
+          "$ref": "#/$defs/identifier"
         }
       },
       "additionalProperties": false,
