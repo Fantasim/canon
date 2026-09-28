@@ -1933,6 +1933,10 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      `input_<T>_<store>_Pattern`, `_Pattern2`, …; range and length before the patterns; one line
      per variable. CODEGEN §5.12/§7.7 synced.
 
+226. **Variant-level methods (TYPES §12.1).** GRAMMAR §7 admits `fn` in a variant body outside any
+     case, and TYPES gave it no scope, so check never checked it. `self` is the variant value
+     (typed `V`), no field is in scope, and the case is read through `self.kind`, `match` or `is`.
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.

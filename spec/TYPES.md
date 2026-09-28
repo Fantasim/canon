@@ -171,7 +171,7 @@ acceptable there, plus let names after `ref` (§10.2).
 - `let`, `var`, loop variables and parameters are block-scoped.
 - Declaring a name that is already declared **in the same block** (or a parameter redeclared
   in the function's top block) is `E2107`. Shadowing a name of an outer scope is allowed.
-- `self` outside a record or case body is `E2108`. `it` outside a refinement predicate
+- `self` outside a record, case or variant body is `E2108`. `it` outside a refinement predicate
   (`where`) is `E2109`.
 
 ### 3.5 `.name`: field, entry or method (RES-05)
@@ -994,6 +994,9 @@ above.
 - Recursion, including mutual recursion, is allowed (the budget bounds it).
 - Methods (`fn m(self, …)`) exist in record and case bodies. Inside them, fields are in scope
   (§3.3). `self` must be the first parameter and only there.
+- A method written in a variant body outside any case applies to every case: `self` is the
+  variant value, typed `V`; no field is in scope (a variant has none of its own); the body reads
+  the case through `self.kind`, `match self` or `is`. Its body is checked like any method's.
 
 ### 12.2 Calls
 
