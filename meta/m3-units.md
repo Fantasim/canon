@@ -9,7 +9,7 @@ Tick with the landing SHA.
 - [x] check follow-ups (2900de3): E3806 at a parameter declaration, union readings, progen cascades [opus]
 - [x] verify (bd2c5b6): dependent verification E3801/E3802/E3501/E3322, resolved values to outputs [opus]
 - [x] pattern automaton (2b24d52, 8b5210b, 7df809a): ir table + gen/cpp iterative matcher [opus]
-- [ ] gen consumers' dependent refusals (gen/go, gen/cpp, ir), all-Never → E8019, ir alias-chain
+- [x] gen consumers' dependent refusals (31dab01) (gen/go, gen/cpp, ir), all-Never → E8019, ir alias-chain
       patterns, `LoadInputs` hiding scope, example golden [opus] (after the three above)
 
 ## View model, i18n, API
