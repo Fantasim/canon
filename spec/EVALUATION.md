@@ -381,7 +381,8 @@ A **named** check (`check name: …`) puts `name` in the finding's `check` field
 inherit nothing: `fail`/`warn` findings of a named block check carry its name too.
 
 Check names are unique within a record or case (a variant-level check shares every case's names),
-and within a package for package checks (`E5003`).
+and within a package for package checks (`E5003`); a clash is reported at the later of the two in source, once
+per case it clashes in.
 
 `fail` and `warn` are allowed only lexically inside `check { }` blocks (`E1105`, GRAMMAR.md).
 `at` may be any value, including `none` (located where that `none` was written or defaulted).
