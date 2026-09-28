@@ -1,0 +1,28 @@
+VIEWMODEL.md G16, 3.5 (log-2026-09-28 G16 contract): a qualified icon naming no member of the studio's Icon enum is E1610 (icon), the studio imported or not; a qualified member it declares is none.
+-- studio/studio.canon --
+/// The studio vocabulary.
+package studio
+
+/// Menus.
+enum Menu { items, system }
+
+/// Icons.
+enum Icon { gem, gear }
+
+/// Tones.
+enum Tone { info, danger }
+-- a/a.canon --
+package a
+
+/// Rarities.
+enum Rarity { common, rare }
+
+view Rarity {
+  common "Common" { icon: Icon.gem }
+  rare "Rare" { icon: Icon.nope }
+}
+-- findings.txt --
+error[E1610]  a/a.canon:8:23
+  unknown icon nope: not declared in studio package studio
+
+1 error, 0 warnings in 2 packages (…)
