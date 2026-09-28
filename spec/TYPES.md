@@ -706,7 +706,8 @@ Equality at evaluation:
 Evaluating an equality costs one step per pair of values compared, scalar pairs included
 (EVALUATION.md §12.1). A collection that hashes its elements (a set built by `unique`,
 `isUnique`, `intersect`, `union`, `diff`) first converts each element to the call's static
-element type, so values equal by this table hash alike.
+element type, so values equal by this table hash alike; for a `DepUnion` element type that is
+the container's computed element type (§11.4 "Symbols after verification").
 
 **Orderable** (`<`, `<=`, `>`, `>=`): both operands `Int`, both `Float` (an integer literal may
 stand for a `Float`), both `Duration`, both `String` (byte order), or both the same `ordered`
@@ -917,7 +918,16 @@ dependent value.
 **Literals.** When a literal gives a value to a dependent field, the value is checked against
 the union of the branches: a bare identifier stays **symbolic**, and string and integer
 literals are kept as written. The value is converted to the computed branch at evaluation
-(§11.6).
+(§11.6): only literals convert (§6.2; a loaded wire value counts as a literal), so a computed
+`Int` given to a `Float` branch, or a computed `String` given to a `ref` branch, is `E3802`.
+`none` given to a non-optional dependent field is accepted here when a branch is optional and
+judged at verification against the computed type (`E3801` for `Never`, else `E3802`).
+
+**Symbols after verification.** A symbolic identifier kept as written (in a check, a function,
+a value of stage A) that meets a converted dependent value — as the other operand of `==`/`!=`,
+in `in`, as a lookup key, as an element of a set built-in (§7.5) — is resolved against that
+value's type (for a container, its computed element or key type); one naming nothing there is
+unequal, with no finding.
 
 ### 11.5 Dependent maps
 
