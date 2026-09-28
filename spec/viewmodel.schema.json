@@ -1657,7 +1657,6 @@
           },
           "then": {
             "required": [
-              "of",
               "value"
             ]
           }
@@ -1756,8 +1755,17 @@
             ]
           },
           "then": {
-            "required": [
-              "selector"
+            "oneOf": [
+              {
+                "required": [
+                  "selector"
+                ]
+              },
+              {
+                "required": [
+                  "case"
+                ]
+              }
             ]
           }
         },
