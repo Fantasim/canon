@@ -872,6 +872,11 @@ RES-07). Other packages then validate against that collection.
   its parameter type (a `ref` argument dereferences, so `Param(eventType)` with `eventType: ref
   eventTypes` is fine). Wrong arity or type is `E3806`. A bare name `R` is zero arguments, so a
   field typed `R` or a typed literal `R { … }` of a parameterized `R` is `E3806` too.
+- An applied record instance keeps the arguments it was built with (DECISIONS 220 `Bind`; an
+  amended copy keeps them too): its dependent fields are judged against its own arguments. Stored
+  where the computed type applies the same record to different arguments (`l: x.l` into a
+  record whose `L(ev)` computes `L(b)` while `x.l` was built as `L(a)`), it is `E3802` at that
+  field.
 - An argument must be a stable path rooted at a type parameter, an **earlier** field of the
   same record, or the binder of a dependent map (§11.5). A later field, the field itself, or any
   other expression is `E3805` (for fields) or `E3803` (otherwise).
