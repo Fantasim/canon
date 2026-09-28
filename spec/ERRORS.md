@@ -350,7 +350,7 @@ func (codeE2103) AtSeveral(span source.Span, typ string, colls []string) *Builde
 
 ---
 
-The catalogue holds 300 codes: 279 errors, 18 warnings and 3 run-time codes, with 460 messages.
+The catalogue holds 300 codes: 279 errors, 18 warnings and 3 run-time codes, with 461 messages.
 
 ## E10xx, W10xx: Project file, doc comments and naming
 
@@ -618,7 +618,8 @@ Owner: I18N.md.
 | E1702 | plain | key:Name, pkg:Name | `translation key {key} matches no text of package {pkg}` |
 | E1702 | noLetter | key:Name, pkg:Name | `translation key {key} matches no text of package {pkg}: its source text has no letter, so it is not translatable` |
 | E1702 | form | key:Name, pkg:Name, hint:Name | `translation key {key} matches no text of package {pkg}; write {hint}` |
-| E1703 | - | key:Name, detail:Message | `translation of {key}: {detail}` |
+| E1703 | type | key:Name, detail:Message | `translation of {key}: {detail}` |
+| E1703 | step | key:Name, expr:Expr | `translation of {key}: a step text may only use {{index}}, not {{{expr}}}` |
 | E1704 | - | lang:Name, languages:Names | `language {lang} is not in project.languages ({languages})` |
 | E1705 | - | key:Name, first:Loc | `translation key {key} is given twice (first at {first})` |
 | E1706 | - | lang:Name | `{lang} is the source language: its texts are the sources, not a translation file` |

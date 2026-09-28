@@ -125,7 +125,8 @@ E1634 -: field resource.vocab.items has both control and widget
 E1702 plain: translation key resource.vocab.items matches no text of package resource.vocab.items
 E1702 noLetter: translation key resource.vocab.items matches no text of package resource.vocab.items: its source text has no letter, so it is not translatable
 E1702 form: translation key resource.vocab.items matches no text of package resource.vocab.items; write resource.vocab.items
-E1703 -: translation of resource.vocab.items: project.canon must declare "canon"
+E1703 type: translation of resource.vocab.items: project.canon must declare "canon"
+E1703 step: translation of resource.vocab.items: a step text may only use {index}, not {a b}
 E1704 -: language resource.vocab.items is not in project.languages (go, cpp)
 E1705 -: translation key resource.vocab.items is given twice (first at @resource/Server/System/farm_config.json:1)
 E1706 -: resource.vocab.items is the source language: its texts are the sources, not a translation file

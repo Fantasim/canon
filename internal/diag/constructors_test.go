@@ -20,7 +20,7 @@ func TestConstructorsTakeTypedArguments(t *testing.T) {
 	span := source.Span{File: 1, Start: 12, End: 20}
 	built := []*diag.Builder{
 		diag.E3002.At(span, typeText("Int"), typeText("String")),
-		diag.E1703.At(span, "farm.title", diag.E3501.At(span, valueText(`"II_SYS_SYS_SCR_FARM3"`), "resource.vocab.items").Message()),
+		diag.E1703.AtType(span, "farm.title", diag.E3501.At(span, valueText(`"II_SYS_SYS_SCR_FARM3"`), "resource.vocab.items").Message()),
 		diag.E1005.AtRoot(span, "resource"),
 	}
 	for i, b := range built {

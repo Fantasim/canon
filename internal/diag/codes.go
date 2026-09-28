@@ -932,7 +932,8 @@ var Registry = []Def{
 	{
 		Code: "E1703", Severity: Error, Package: "check",
 		Variants: []Variant{
-			{Args: []Arg{{Name: "key", Type: ArgTypeName}, {Name: "detail", Type: ArgTypeMessage}}, Template: "translation of {key}: {detail}"},
+			{Name: "type", Args: []Arg{{Name: "key", Type: ArgTypeName}, {Name: "detail", Type: ArgTypeMessage}}, Template: "translation of {key}: {detail}"},
+			{Name: "step", Args: []Arg{{Name: "key", Type: ArgTypeName}, {Name: "expr", Type: ArgTypeExpr}}, Template: "translation of {key}: a step text may only use {{index}}, not {{{expr}}}"},
 		},
 	},
 	{
@@ -3638,9 +3639,14 @@ type codeE1703 struct{}
 // Def is the registry entry of E1703.
 func (codeE1703) Def() *Def { return &Registry[81] }
 
-// At reports: translation of {key}: {detail}
-func (codeE1703) At(span source.Span, key string, detail Message) *Builder {
+// AtType reports: translation of {key}: {detail}
+func (codeE1703) AtType(span source.Span, key string, detail Message) *Builder {
 	return newBuilder(&Registry[81], 0, span, key, detail)
+}
+
+// AtStep reports: translation of {key}: a step text may only use {{index}}, not {{{expr}}}
+func (codeE1703) AtStep(span source.Span, key string, expr source.Span) *Builder {
+	return newBuilder(&Registry[81], 1, span, key, expr)
 }
 
 // E1704: a translation file for a language not in `project.languages` (I18N.md §4).
