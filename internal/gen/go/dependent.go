@@ -52,7 +52,7 @@ func (g *gen) dependentAccessor(n ir.GoDependent, b ir.GoBranch, branch *ir.Bran
 	g.printf(dependentAsFormat, n.Type, b.As, t, n.BranchStore, b.Member, n.ValueStore)
 }
 
-// decodeDependent writes decode<T> of a dependent type a decoded class holds: the untagged wire switches on the discriminant its caller already decoded, an enum or a Bool (CODEGEN.md §5.6, §6.1).
+// decodeDependent writes decode<T> of a dependent type a decoded class holds: the untagged wire switches on the discriminant its caller already decoded, an enum or a Bool (CODEGEN.md §5.6, §6.1); a member no branch covers (a Never arm's) is refused with the same text gen/cpp writes (WIRE.md §5.9).
 func (g *gen) decodeDependent(d *ir.Dependent) {
 	defer g.enter(d.QName())()
 	g.temps = 0
@@ -77,11 +77,7 @@ func (g *gen) decodeDependent(d *ir.Dependent) {
 		g.printf(assignPairFormat, lc.Out+dot+n.BranchStore, lc.Out+dot+n.ValueStore, n.Branches[i].Member, x)
 		g.body.WriteString(returnKw + nilLit + newline)
 	}
-	shown := disc + dot + ir.GoString + callSuffix
-	if discType == goBool {
-		shown = fmt.Sprintf(formatBoolFormat, g.use(strconvPkg, strconvPkg), disc)
-	}
-	g.printf(unknownCaseFormat, g.errAt(g.root(), unknownCaseText, shown))
+	g.printf(unknownCaseFormat, g.errAt(g.root(), noBranchText, ""))
 	g.body.WriteString(closeBrace + newline)
 }
 

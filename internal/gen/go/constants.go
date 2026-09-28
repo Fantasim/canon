@@ -74,7 +74,6 @@ const (
 	dependentAsFormat       = "func (self *%[1]s) %[2]s() (%[3]s, bool) {\nif self.%[4]s != %[5]s {\nvar zero %[3]s\nreturn zero, false\n}\nreturn self.%[6]s.(%[3]s), true\n}\n\n"
 	dependentFuncOpenFormat = "func %[1]s(%[2]s, %[3]s string, %[4]s %[5]s, %[6]s %[7]s, %[8]s *%[9]s) error {\n"
 	dependentDecodeFormat   = "%[1]s := &%[2]s{}\nif %[3]s := %[4]s(%[5]s, %[6]s, %[7]s, %[8]s, %[1]s); %[3]s != nil {\nreturn %[3]s\n}\n"
-	formatBoolFormat        = "%s.FormatBool(%s)"
 	localDisc               = "disc"
 )
 
@@ -271,6 +270,7 @@ const (
 	unknownValueText = "unknown value %s"
 	unknownCodeText  = "unknown value %d"
 	unknownCaseText  = "unknown case %s"
+	noBranchText     = "no branch for this value"
 	noEntryText      = "no entry %v"
 	unknownBitsText  = "unknown bits %#x"
 	parsedFormat     = "%[1]s, %[2]s := %[3]s\nif !%[2]s {\nreturn %[4]s\n}\n"

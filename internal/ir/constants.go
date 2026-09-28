@@ -330,6 +330,9 @@ var inputReasons = [...]string{
 	InputNotMember:    "not a member of %s",
 }
 
+// inputFieldPlaceholder is E8302's one template placeholder, `{field}` (InputGetterFailure).
+const inputFieldPlaceholder = "{%s}"
+
 // Data mode's generated names and its loaders' fixed locals (CODEGEN.md §3.3, §5.9–§6.1).
 const (
 	goSchemaSuffix     = "Schema"

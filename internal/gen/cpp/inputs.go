@@ -2,9 +2,7 @@ package cppgen
 
 import (
 	"fmt"
-	"strings"
 
-	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/ir"
 )
 
@@ -83,19 +81,8 @@ func (g *gen) inputGetter(sc *scope, rec *ir.Record, f *ir.Field) {
 	if f.Optional && !byValue(f.Type) {
 		body = fmt.Sprintf(returnPtrFormat, slot)
 	}
-	code, message := e8302(g.p.Name + qnameSep + rec.Name + qnameSep + f.Name)
+	code, message := ir.InputGetterFailure(g.p.Name + qnameSep + rec.Name + qnameSep + f.Name)
 	g.doc(1, f.Doc)
 	g.fail(sc.add(name, f.Name))
 	g.h.linef(1, inputGetterFormat, g.getterType(f.Type, f.Optional), name, g.inputsLoaded(), quote(code), quote(message), body)
-}
-
-// e8302 is E8302's code and message, its template's placeholders replaced by the qualified field (ERRORS.md §1.6: rendered from the template).
-func e8302(field string) (code, message string) {
-	def := diag.E8302.Def()
-	v := def.Variants[0]
-	message = v.Template
-	for _, a := range v.Args {
-		message = strings.ReplaceAll(message, fmt.Sprintf(bracedFormat, a.Name), field)
-	}
-	return string(def.Code), message
 }

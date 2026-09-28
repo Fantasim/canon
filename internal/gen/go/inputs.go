@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/ir"
 	"github.com/fantasim/canonlang/internal/types"
 )
@@ -59,17 +58,6 @@ func resetStmt(value, ok, zero string) string {
 	return fmt.Sprintf(inputResetOKFormat, value, ok, zero)
 }
 
-// e8302 is E8302's code and message, rendered by the diag registry (ERRORS.md §1.6).
-func e8302(field string) (code, message string) {
-	def := diag.E8302.Def()
-	v := def.Variants[0]
-	msg := v.Template
-	for _, a := range v.Args {
-		msg = strings.ReplaceAll(msg, lbrace+a.Name+rbrace, field)
-	}
-	return string(def.Code), msg
-}
-
 // inputGetter is an input field's getter (CODEGEN.md §5.12).
 func (g *gen) inputGetter(s *slot) getter {
 	if s.rec == nil {
@@ -77,7 +65,7 @@ func (g *gen) inputGetter(s *slot) getter {
 		return getter{name: s.Getter, result: results(g.mainType(s), s.needsOK())}
 	}
 	value, ok := g.inputVars(s.rec, s.src)
-	code, msg := e8302(s.origin)
+	code, msg := ir.InputGetterFailure(s.origin)
 	body := fmt.Sprintf(inputCheckFormat, g.names.Inputs().Loaded, g.rt(), strconv.Quote(code), strconv.Quote(msg)) +
 		returns(value, s.needsOK(), ok)
 	return getter{name: s.Getter, result: results(g.mainType(s), s.needsOK()), body: body, doc: s.doc}

@@ -42,10 +42,11 @@ func TestDependentShapes(t *testing.T) {
 	}
 }
 
-// WIRE.md §5.9: a present value whose discriminant selects a Never arm is a load error at its own path.
+// WIRE.md §5.9: a present value whose discriminant selects a Never arm is a load error at its
+// own path, the same text gen/cpp writes for the same case.
 func TestDependentNeverArm(t *testing.T) {
 	_, err := deps.LoadThings("testdata/bad/things.json")
-	if err == nil || !strings.Contains(err.Error(), "rows[0].s: unknown case three") {
+	if err == nil || !strings.Contains(err.Error(), "rows[0].s: no branch for this value") {
 		t.Fatalf("got %v, want the Never arm refused at rows[0].s", err)
 	}
 }

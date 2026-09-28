@@ -11,7 +11,7 @@ import (
 	"github.com/fantasim/canonlang/internal/types"
 )
 
-// TestE8302Message: e8302 renders testdata/findings/E8302_1.txtar's findings.txt exactly.
+// TestE8302Message: ir.InputGetterFailure, the one renderer gen/go and gen/cpp share, renders testdata/findings/E8302_1.txtar's findings.txt exactly (ERRORS.md §1.6).
 func TestE8302Message(t *testing.T) {
 	paths, err := filepath.Glob("testdata/findings/E8302_*.txtar")
 	if err != nil || len(paths) == 0 {
@@ -23,10 +23,10 @@ func TestE8302Message(t *testing.T) {
 			t.Fatal(err)
 		}
 		want := findingsOf(a)
-		code, msg := e8302("a.Gen.apiKey")
+		code, msg := ir.InputGetterFailure("a.Gen.apiKey")
 		got := "panic: " + code + ": " + msg + "\n"
 		if got != want {
-			t.Errorf("%s: e8302 = %q, want %q", p, got, want)
+			t.Errorf("%s: ir.InputGetterFailure = %q, want %q", p, got, want)
 		}
 	}
 }

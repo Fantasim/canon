@@ -40,16 +40,17 @@ func TestDependentDecode(t *testing.T) {
 	}
 }
 
-// CODEGEN.md §5.6: a discriminant member no branch covers is a load error naming the field's
-// own path, without a trailing dot (rows[0].p, not rows[0].p.).
+// CODEGEN.md §5.6, WIRE.md §5.9: a discriminant member no branch covers is a load error naming
+// the field's own path, without a trailing dot (rows[0].p, not rows[0].p.), the same text
+// gen/cpp writes for the same case.
 func TestDependentUnknownCase(t *testing.T) {
 	_, err := dep.LoadThings("testdata/bad/things.json")
 	if err == nil {
 		t.Fatal("want an error: k selects a branch P does not cover")
 	}
 	msg := err.Error()
-	if !strings.Contains(msg, "rows[0].p: unknown case three") {
-		t.Errorf("got %q, want it to name rows[0].p and the unknown case", msg)
+	if !strings.Contains(msg, "rows[0].p: no branch for this value") {
+		t.Errorf("got %q, want it to name rows[0].p and the no-branch refusal", msg)
 	}
 	if strings.Contains(msg, "rows[0].p.:") {
 		t.Errorf("got %q, a trailing dot after the field path", msg)

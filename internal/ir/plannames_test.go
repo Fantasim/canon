@@ -46,6 +46,13 @@ func ExampleInputReasonText() {
 	// Output: RATE: not a valid Float
 }
 
+// E8302's one renderer, shared by gen/go and gen/cpp so an input getter called before LoadInputs signals the same bytes in both (CODEGEN.md §5.12; ERRORS.md §1.6).
+func ExampleInputGetterFailure() {
+	code, msg := ir.InputGetterFailure("a.Config.apiKey")
+	fmt.Println(code, msg)
+	// Output: E8302 a.Config.apiKey is a runtime input and LoadInputs has not been called
+}
+
 // inputPackage has the input fields of the logged slot collisions (log-2026-09-24 "gen/go runtime inputs landed"): Gen.flagX and GenFlag.x, code with a pattern and codePattern, A_b.c and A.b_c.
 func inputPackage(target ir.Target) (*ir.Package, map[*ir.Field]*ir.Record) {
 	in := func(name string, opt bool) *ir.Field {

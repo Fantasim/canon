@@ -2,7 +2,9 @@ package ir
 
 import (
 	"fmt"
+	"strings"
 
+	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/types"
 )
 
@@ -30,3 +32,14 @@ func InputReasonText(r InputReason, t TypeRef) string {
 
 // InputLine is one failure line of LoadInputs, `<ENV>: <reason>` (CODEGEN.md §5.12, §6.3 rt.InputError).
 func InputLine(env, reason string) string { return env + inputLineSep + reason }
+
+// InputGetterFailure is E8302's code and message for field, rendered once so gen/go and gen/cpp signal the same bytes (CODEGEN.md §5.12; ERRORS.md §1.6).
+func InputGetterFailure(field string) (code, message string) {
+	def := diag.E8302.Def()
+	v := def.Variants[0]
+	message = v.Template
+	for _, a := range v.Args {
+		message = strings.ReplaceAll(message, fmt.Sprintf(inputFieldPlaceholder, a.Name), field)
+	}
+	return string(def.Code), message
+}

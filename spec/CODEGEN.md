@@ -794,7 +794,8 @@ generated from the `match` (the discriminant is read first). Dependent maps and 
 §4.2 (DEP-04). A loader reads the discriminant down the argument's then the match's path from what
 it has already decoded: earlier required fields of the class, then fields of records held by
 value, none a `ref` or optional; a `Bool` discriminant's cases are `false` and `true`. A list of
-dependent values shares its field's discriminant. Baked Go writes a dependent value (a field's, or
+dependent values shares its field's discriminant. A discriminant member no branch covers (a `Never` arm, WIRE.md §5.9) refuses
+the value with the loader text `no branch for this value` at its pointer, in every loader. Baked Go writes a dependent value (a field's, or
 its list's elements) as `&T{branch, value}` in the branch the record's own fields select, the value
 typed as `As<Branch>` returns it. What a generator does not write is E8019 `DependentType` at
 stage E: a discriminant read through a `ref` or a record parameter, a dependent value in a map or
