@@ -933,7 +933,7 @@ Top level, every member always present except `studio`:
   a let's fields).
 - **J9.** A **text reference** is either a string `"<package>:<key>"`, naming key `<key>` of
   package `<package>` (I18N.md), or an object `{"text": "…"}` for a language-neutral text (a text
-  with no letter, I18N.md §2). The studio resolves a string reference in the view model of
+  with no letter, I18N.md §2, or the Canon name of a studio symbol that has no key, I18N.md K3). The studio resolves a string reference in the view model of
   `<package>`: `i18n.languages[<lang>].texts[<key>]`, else the source language's text (X3). The
   source-language table always has the key.
 - **J10.** **Value encoding** in the view model (defaults, `single`, literals): `Bool` → boolean;
