@@ -1937,6 +1937,12 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      case, and TYPES gave it no scope, so check never checked it. `self` is the variant value
      (typed `V`), no field is in scope, and the case is read through `self.kind`, `match` or `is`.
 
+227. **The studio package is loaded for view checks only when the selection uses it.** VIEWMODEL
+     G16 resolves studio names against `project.studio` whether or not it is imported. The studio
+     is loaded, checked and treated as an import (its errors reported and blocking, DECISIONS 196)
+     only when a loaded package declares a view, a `@menu` or an `emit view`; otherwise it is not
+     loaded, so an error in it never blocks an unrelated selection.
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.
