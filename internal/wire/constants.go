@@ -74,6 +74,8 @@ const (
 	hexBase       = 16
 	binBase       = 2
 	formCSV       = "load.csv"
+	// csvPointerSep separates a CSV cell's row and column in its provenance pointer (WIRE.md §6.6).
+	csvPointerSep = "/"
 
 	// maxExponent saturates a decimal exponent far past every exact range.
 	maxExponent = 1 << 40

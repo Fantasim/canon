@@ -12,10 +12,12 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// Cell is one CSV field, unquoted, and where it is.
+// Cell is one CSV field, unquoted, and where it is: Row and Col are 1-based, Col 0 for a record (WIRE.md §6.6).
 type Cell struct {
 	Text string
 	Span source.Span
+	Row  int64
+	Col  int64
 }
 
 // CSV reads load.csv records as t: records named by a header, else [[String]] (WIRE.md §6.6).
@@ -53,7 +55,19 @@ func (r *run) csvStrings(rows [][]Cell, t types.Type) value.Value {
 	return l
 }
 
-func cellAt(c Cell) site { return site{span: c.Span, kind: value.ProvCSV} }
+// cellAt is a CSV cell's site: its provenance pointer is "/<row>/<column>" (WIRE.md §6.6).
+func cellAt(c Cell) site {
+	return site{span: c.Span, kind: value.ProvCSV, pointer: csvPointer(c.Row, c.Col)}
+}
+
+// csvPointer is row and, when col is not 0 (the whole record), column, both formatted decimal.
+func csvPointer(row, col int64) string {
+	p := csvPointerSep + strconv.FormatInt(row, decimalBase)
+	if col != 0 {
+		p += csvPointerSep + strconv.FormatInt(col, decimalBase)
+	}
+	return p
+}
 
 // columns maps each field to its column, -1 for none, and finds a table's `$id` column.
 type columns struct {
@@ -186,7 +200,7 @@ func cellType(t types.Type) bool {
 func (r *run) csvRecord(row []Cell, c columns, fields []*types.Field, fr *frame, elem types.Type) *value.Record {
 	rv := &value.Record{T: elem, Fields: make([]value.Value, len(fields)), Set: make([]bool, len(fields))}
 	if len(row) > 0 {
-		rv.P = cellAt(Cell{Span: spanOf(row[0].Span, row[len(row)-1].Span)}).prov()
+		rv.P = cellAt(Cell{Span: spanOf(row[0].Span, row[len(row)-1].Span), Row: row[0].Row}).prov()
 	}
 	r.bound(rv, fr.params)
 	r.enter(rv)

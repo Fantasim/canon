@@ -13,21 +13,22 @@ import (
 	"github.com/fantasim/canonlang/internal/wire"
 )
 
-// cells splits a CSV text without quotes into cells located in file f, as load's reader does.
+// cells splits a CSV text without quotes into cells located in file f, Row and Col as WIRE.md §6.6.
 func cells(f *source.File) [][]wire.Cell {
 	var rows [][]wire.Cell
-	pos := 0
+	pos, record := 0, int64(0)
 	for _, line := range strings.SplitAfter(string(f.Content), "\n") {
 		text := strings.TrimSuffix(line, "\n")
 		if text == "" {
 			pos += len(line)
 			continue
 		}
+		record++
 		var row []wire.Cell
 		start := pos
-		for _, c := range strings.Split(text, ",") {
+		for i, c := range strings.Split(text, ",") {
 			span := source.Span{File: f.ID, Start: source.Pos(start), End: source.Pos(start + len(c))}
-			row = append(row, wire.Cell{Text: c, Span: span})
+			row = append(row, wire.Cell{Text: c, Span: span, Row: record, Col: int64(i + 1)})
 			start += len(c) + 1
 		}
 		rows = append(rows, row)

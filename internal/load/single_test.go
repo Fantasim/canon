@@ -177,6 +177,13 @@ func headerRowsType() *types.ListType {
 	return &types.ListType{Elem: &types.RecordType{Pkg: "p", Name: "N", Fields: []*types.Field{f}}}
 }
 
+// abType is a two-field record: "a", "b", for the header cases of TestCSVCellProvenancePointer.
+func abType() *types.RecordType {
+	a := &types.Field{Name: "a", Type: types.StringType, Wire: "a", WirePath: []string{"a"}}
+	b := &types.Field{Name: "b", Type: types.StringType, Wire: "b", WirePath: []string{"b"}, Index: 1}
+	return &types.RecordType{Pkg: "p", Name: "AB", Fields: []*types.Field{a, b}}
+}
+
 // sameFinding fails unless got is exactly the finding want builds: code, message and span.
 func sameFinding(t *testing.T, set *source.FileSet, got diag.Finding, want *diag.Builder) {
 	t.Helper()
@@ -211,6 +218,44 @@ func TestCSVQuotedCellThenCRLF(t *testing.T) {
 	}
 	if rows := v.(*value.List).Elems; len(rows) != 2 || rows[1].(*value.List).Elems[0].(*value.Str).V != "b" {
 		t.Errorf("rows = %s, want [[a], [b]]", v.CanonText())
+	}
+}
+
+// WIRE.md §6.6: a CSV cell's provenance pointer is "/<row>/<column>", a multi-line cell one row.
+func TestCSVCellProvenancePointerWithHeader(t *testing.T) {
+	l, req := loaderFor(t, map[string]string{"a.csv": "a,b\n\"x\ny\",z\np,q\n"})
+	e := csvExpr("a.csv")
+	e.Args = append(e.Args, headerOpt(true))
+	v, ok, err := l.Load(context.Background(), req, e, &types.ListType{Elem: abType()})
+	if err != nil || !ok {
+		t.Fatalf("ok=%v err=%v findings=%+v", ok, err, req.Bag.Findings())
+	}
+	want := [][2]string{{"/2/1", "/2/2"}, {"/3/1", "/3/2"}}
+	for i, row := range v.(*value.List).Elems {
+		fields := row.(*value.Record).Fields
+		for j, f := range fields {
+			if got := f.Prov().Pointer; got != want[i][j] {
+				t.Errorf("row %d field %d pointer = %q, want %q", i, j, got, want[i][j])
+			}
+		}
+	}
+}
+
+// WIRE.md §6.6, EVALUATION.md §13: without `header: true`, the first record is row 1.
+func TestCSVCellProvenancePointerNoHeader(t *testing.T) {
+	l, req := loaderFor(t, map[string]string{"a.csv": "a,b\n\"x\ny\",z\n"})
+	v, ok, err := l.Load(context.Background(), req, csvExpr("a.csv"), rowsType())
+	if err != nil || !ok {
+		t.Fatalf("ok=%v err=%v findings=%+v", ok, err, req.Bag.Findings())
+	}
+	want := [][2]string{{"/1/1", "/1/2"}, {"/2/1", "/2/2"}}
+	for i, row := range v.(*value.List).Elems {
+		elems := row.(*value.List).Elems
+		for j, c := range elems {
+			if got := c.Prov().Pointer; got != want[i][j] {
+				t.Errorf("row %d cell %d pointer = %q, want %q", i, j, got, want[i][j])
+			}
+		}
 	}
 }
 

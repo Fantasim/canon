@@ -332,7 +332,7 @@ func parseCSV(src *source.File, data []byte, start int, req Request) ([][]wire.C
 	return rows, true
 }
 
-// readRecord reads one record: fields separated by ",", ending at "\n", "\r\n" or EOF.
+// readRecord reads one record: fields separated by ",", ending at "\n", "\r\n" or EOF, each cell's Row and Col set for its provenance pointer (WIRE.md §6.6).
 func (sc *csvScanner) readRecord() ([]wire.Cell, bool) {
 	var row []wire.Cell
 	for {
@@ -340,6 +340,7 @@ func (sc *csvScanner) readRecord() ([]wire.Cell, bool) {
 		if !ok {
 			return nil, false
 		}
+		cell.Row, cell.Col = sc.record, int64(len(row)+1)
 		row = append(row, cell)
 		switch {
 		case sc.pos >= len(sc.data):

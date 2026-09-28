@@ -206,11 +206,12 @@ func (r *run) name(pkg, name string) string {
 	return pkg + pointSep + name
 }
 
-// site is where a value is read: a JSON value, an object key or a CSV cell (EVALUATION.md §13).
+// site is where a value is read: a JSON value, an object key or a CSV cell's own pointer (EVALUATION.md §13).
 type site struct {
-	span source.Span
-	node *jsonsrc.Node
-	kind value.ProvKind
+	span    source.Span
+	node    *jsonsrc.Node
+	kind    value.ProvKind
+	pointer string
 }
 
 func at(n *jsonsrc.Node) site { return site{span: n.Span, node: n, kind: value.ProvJSON} }
@@ -220,7 +221,7 @@ func keyAt(m *jsonsrc.Member) site {
 }
 
 func (s site) prov() *value.Prov {
-	p := &value.Prov{Kind: s.kind, Span: s.span}
+	p := &value.Prov{Kind: s.kind, Span: s.span, Pointer: s.pointer}
 	if s.node != nil {
 		p.Pointer = s.node.Pointer()
 	}
