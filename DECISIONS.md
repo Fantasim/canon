@@ -1302,8 +1302,8 @@ Choices made while Louis was away are listed here, each with its reason, so he c
 165. **`jsonsrc.Format` writes a number's text as read.** FMT-02 canonicalizes the numbers read into
     Canon fields (WIRE.md §7.2) and keeps the others; `jsonsrc` does not know the types, so the
     caller sets `Node.Text` of each typed number first. `Format` writes no BOM. The layout equals
-    WIRE.md §7.4 `pretty`, which `wire` implements again (`node.pretty`): a later cleanup can make
-    `wire` build a `jsonsrc` tree. A node's pointer is built on demand from its container links
+    WIRE.md §7.4 `pretty`; `wire` builds a `jsonsrc` tree and prints through
+    `jsonsrc.AppendPretty` (the one printer, 2026-09-28). A node's pointer is built on demand from its container links
     (`Node.Pointer()`), never stored, so a tree's memory stays linear in its source. Reason:
     `jsonsrc` depends on `source` and `diag` only.
 
