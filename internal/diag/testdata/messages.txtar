@@ -113,7 +113,8 @@ E1620 -: cannot filter on Int (field resource.vocab.items)
 E1621 -: multi applies to enum, ref, case and list filters, not Int
 E1622 -: a search term must be text, a number, an enum, a ref or an asset, not Int
 E1623 -: a step text may only use {index}, not {resource.vocab.items}
-E1626 -: resource.vocab.items is a value that does not come from load.defines: only define tables take a view
+E1626 let: resource.vocab.items is a value that does not come from load.defines: only define tables take a view
+E1626 type: resource.vocab.items is not a record, variant or enum: a view targets one of these or a load.defines table
 E1627 -: resource.vocab.items is not allowed in the view of this case
 E1628 -: resource.vocab.items names case fields of different types (go, cpp): name them in the case views
 E1629 -: resource.vocab.items has two default widgets: resource.vocab.items and resource.vocab.items

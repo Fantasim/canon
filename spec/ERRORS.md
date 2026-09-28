@@ -350,7 +350,7 @@ func (codeE2103) AtSeveral(span source.Span, typ string, colls []string) *Builde
 
 ---
 
-The catalogue holds 300 codes: 279 errors, 18 warnings and 3 run-time codes, with 461 messages.
+The catalogue holds 300 codes: 279 errors, 18 warnings and 3 run-time codes, with 462 messages.
 
 ## E10xx, W10xx: Project file, doc comments and naming
 
@@ -542,7 +542,7 @@ Owner: VIEWMODEL.md.
 | E1621 | error | views | VIEWMODEL.md §7.3 | `multi` on a filter that is not a choice, case or contains filter |
 | E1622 | error | views | VIEWMODEL.md §3.4 | a `search` term of a type that cannot be searched |
 | E1623 | error | views | VIEWMODEL.md §3.5 | a `step` text uses a name other than `{index}` |
-| E1626 | error | views | VIEWMODEL.md §3.2 | a view on a `let` that is not a `load.defines` table |
+| E1626 | error | views | VIEWMODEL.md §3.2 | a view on a `let` that is not a `load.defines` table, or on a name that is not a record, variant or enum |
 | E1627 | error | views | VIEWMODEL.md §3.2 | a view item not allowed for its target kind |
 | E1628 | error | views | VIEWMODEL.md §3.3 | a name matches case fields of different types |
 | E1629 | error | views | VIEWMODEL.md §3.8 | two default widgets for one type |
@@ -584,7 +584,8 @@ Owner: VIEWMODEL.md.
 | E1621 | - | typ:Type | `multi applies to enum, ref, case and list filters, not {typ}` |
 | E1622 | - | typ:Type | `a search term must be text, a number, an enum, a ref or an asset, not {typ}` |
 | E1623 | - | name:Name | `a step text may only use {{index}}, not {{{name}}}` |
-| E1626 | - | name:Name | `{name} is a value that does not come from load.defines: only define tables take a view` |
+| E1626 | let | name:Name | `{name} is a value that does not come from load.defines: only define tables take a view` |
+| E1626 | type | name:Name | `{name} is not a record, variant or enum: a view targets one of these or a load.defines table` |
 | E1627 | - | item:Name, target:Kind | `{item} is not allowed in the view of this {target}` |
 | E1628 | - | name:Name, cases:Names | `{name} names case fields of different types ({cases}): name them in the case views` |
 | E1629 | - | typ:Name, first:Name, second:Name | `{typ} has two default widgets: {first} and {second}` |

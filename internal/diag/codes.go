@@ -870,7 +870,8 @@ var Registry = []Def{
 	{
 		Code: "E1626", Severity: Error, Package: "views",
 		Variants: []Variant{
-			{Args: []Arg{{Name: "name", Type: ArgTypeName}}, Template: "{name} is a value that does not come from load.defines: only define tables take a view"},
+			{Name: "let", Args: []Arg{{Name: "name", Type: ArgTypeName}}, Template: "{name} is a value that does not come from load.defines: only define tables take a view"},
+			{Name: "type", Args: []Arg{{Name: "name", Type: ArgTypeName}}, Template: "{name} is not a record, variant or enum: a view targets one of these or a load.defines table"},
 		},
 	},
 	{
@@ -3491,7 +3492,7 @@ func (codeE1623) At(span source.Span, name string) *Builder {
 	return newBuilder(&Registry[70], 0, span, name)
 }
 
-// E1626: a view on a `let` that is not a `load.defines` table (VIEWMODEL.md §3.2).
+// E1626: a view on a `let` that is not a `load.defines` table, or on a name that is not a record, variant or enum (VIEWMODEL.md §3.2).
 var E1626 codeE1626
 
 type codeE1626 struct{}
@@ -3499,9 +3500,14 @@ type codeE1626 struct{}
 // Def is the registry entry of E1626.
 func (codeE1626) Def() *Def { return &Registry[71] }
 
-// At reports: {name} is a value that does not come from load.defines: only define tables take a view
-func (codeE1626) At(span source.Span, name string) *Builder {
+// AtLet reports: {name} is a value that does not come from load.defines: only define tables take a view
+func (codeE1626) AtLet(span source.Span, name string) *Builder {
 	return newBuilder(&Registry[71], 0, span, name)
+}
+
+// AtType reports: {name} is not a record, variant or enum: a view targets one of these or a load.defines table
+func (codeE1626) AtType(span source.Span, name string) *Builder {
+	return newBuilder(&Registry[71], 1, span, name)
 }
 
 // E1627: a view item not allowed for its target kind (VIEWMODEL.md §3.2).
