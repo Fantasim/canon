@@ -1,0 +1,78 @@
+TYPES.md §1, VIEWMODEL.md §3.4: a table of an enum is E3013 and nothing follows it: a view's magic name whose position a collection in error may have given (`id` of a table, `key` of a map, `index` of a list) is the error type, not an unknown name, only in views whose target can sit in the erring collection: the target's package is the erring one (a) or is imported by it (e, silent). Package b, which imports a, and package c, unrelated to a, still get E2102 for a magic name their target has no position for (log-2026-09-28 U5 round 2).
+-- e/e.canon --
+package e
+
+/// A stone.
+record Stone {
+  /// Its label.
+  label: String
+}
+
+view Stone {
+  title "{label} {id}"
+}
+-- b/b.canon --
+package b
+
+import a
+
+local record Pearl {
+  label: String
+}
+
+local let pearl: Pearl = { label: "x" }
+
+view Pearl {
+  title "{label} {id}"
+}
+-- c/c.canon --
+package c
+
+local record Gem {
+  label: String
+}
+
+local let gem: Gem = { label: "x" }
+
+view Gem {
+  title "{label} {id}"
+}
+-- a/a.canon --
+package a
+
+import e
+
+local let stone: e.Stone? = none
+
+local enum Rarity { common, rare }
+
+local record Item {
+  label: String
+}
+
+local let items: table Rarity = {}
+
+local let byName: {String: Nope} = {}
+
+local let rows: [Nope] = []
+
+view Item {
+  title "{label} {id} {key} {index}"
+}
+-- findings.txt --
+error[E3013]  a/a.canon:13:24
+  a table holds records; a.Rarity is not a record
+
+error[E2102]  a/a.canon:15:28
+  unknown name Nope
+
+error[E2102]  a/a.canon:17:18
+  unknown name Nope
+
+error[E2102]  b/b.canon:12:19
+  unknown name id
+
+error[E2102]  c/c.canon:10:19
+  unknown name id
+
+5 errors, 0 warnings in 4 packages (…)

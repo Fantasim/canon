@@ -69,7 +69,7 @@ var brokenCases = []brokenCase{
 	{name: "§8.1 unknown enum built-in member, record check", record: `  check rarity.nope != "" else "nope"`, want: diag.E3003.Def()},
 	{name: "§7.5 mismatch, record check", record: `  check rarity == 3 else "three"`, want: diag.E3002.Def()},
 	{name: "§3.3 unknown name in a check message", record: `  check price < 10 else "too dear: {nope}"`, want: diag.E2102.Def()},
-	{name: "§3.5 check at an unknown field", record: `  check price < 10 at nope else "at nope"`, want: diag.E3003.Def()},
+	{name: "VIEWMODEL G19 check at an unknown field", record: `  check price < 10 at nope else "at nope"`, want: diag.E1633.Def()},
 	{name: "§3.3 unknown name, record block check",
 		record: `  check { if rarity == legendary { fail(price, "legendary price") } }`, want: diag.E2102.Def()},
 	{name: "§3.3 unknown name, case check", gold: `    check amount > LIMT else "too little"`, want: diag.E2102.Def()},

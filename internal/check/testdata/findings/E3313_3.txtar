@@ -1,0 +1,33 @@
+VIEWMODEL.md G13: an input field cannot be read in a view expression (E3313): in a title, a search term, a show line and a `when`.
+-- a/a.canon --
+package a
+
+local record Mode {
+  secret: input String from env "SECRET"
+  on: input Bool from env "ON"
+  label: String
+}
+
+/// The mode.
+let mode: Mode = { label: "x" }
+
+view Mode {
+  title "{label} {secret}"
+  search { secret }
+  show "Secret" "{secret.len()}"
+  label { when: on }
+}
+-- findings.txt --
+error[E3313]  a/a.canon:13:19
+  secret is an input: it has no value at build time
+
+error[E3313]  a/a.canon:14:12
+  secret is an input: it has no value at build time
+
+error[E3313]  a/a.canon:15:19
+  secret is an input: it has no value at build time
+
+error[E3313]  a/a.canon:16:17
+  on is an input: it has no value at build time
+
+4 errors, 0 warnings in 1 package (…)

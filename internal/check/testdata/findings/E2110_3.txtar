@@ -1,0 +1,26 @@
+VIEWMODEL.md §3.2, TYPES.md §3.2, log-2026-09-28 U5 review calls: a view's target names a type or a define table; a function or a constant is a value, E2110 at the target, and nothing in the view is checked further.
+-- a/a.canon --
+package a
+
+local fn level() -> Int {
+  return 1
+}
+
+/// The most.
+const MAX = 3
+
+view level {
+  title "{nope}"
+}
+
+view MAX {
+  title "{nope}"
+}
+-- findings.txt --
+error[E2110]  a/a.canon:10:6
+  level is a value, not a type
+
+error[E2110]  a/a.canon:14:6
+  MAX is a value, not a type
+
+2 errors, 0 warnings in 1 package (…)

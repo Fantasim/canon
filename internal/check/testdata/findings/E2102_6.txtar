@@ -1,0 +1,48 @@
+VIEWMODEL.md §3.4, log-2026-09-28 decision 7: a magic name is in scope only where the view's target can stand in its position; elsewhere it is an unknown name (E2102): `id` off a table, `key` off a map, `index` off a list, and `key` for a target held by maps with different key types, which has no one static type (log-2026-09-28 U5 calls). An unknown name in a template is E2102 too. What views reports stays silent here (DECISIONS 221): an item naming nothing (E1602), braces in a plain label (E1615), a step text reading another name (E1623), an unknown studio name (E1610).
+-- a/a.canon --
+package a
+
+local record Loose {
+  label: String
+  steps: [Int]
+}
+
+local let loose: Loose = { label: "x", steps: [] }
+
+view Loose {
+  title "{label} {id} {key} {index}"
+  subtitle "{lable}"
+  nope "Nope {x}"
+  steps { step: "Step {n}", unit: nothing, widget: nowhere }
+}
+
+local enum Slot { head, hand }
+
+local record Gem {
+  label: String
+}
+
+local let byName: {String: Gem} = {}
+
+local let bySlot: {Slot: Gem} = {}
+
+view Gem {
+  title "{label} {key}"
+}
+-- findings.txt --
+error[E2102]  a/a.canon:11:19
+  unknown name id
+
+error[E2102]  a/a.canon:11:24
+  unknown name key (did you mean Gem?)
+
+error[E2102]  a/a.canon:11:30
+  unknown name index
+
+error[E2102]  a/a.canon:12:14
+  unknown name lable (did you mean label?)
+
+error[E2102]  a/a.canon:28:19
+  unknown name key (did you mean Gem?)
+
+5 errors, 0 warnings in 1 package (…)

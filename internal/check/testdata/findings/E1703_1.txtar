@@ -1,0 +1,64 @@
+I18N.md T1, T2, log-2026-09-28 U5 calls: a translated template is typed in the scope of its source item; each error is E1703 at the interpolation, with the type error as its detail, and the TYPES code is not reported apart: an unknown name in a view title, an operator on a mismatch in a show line, an input read in a check message (the check's scope: its record's fields), a step text with any interpolation but a bare `{index}` (another name, `{index + 1}`, `{index:,}`: the detail says only `{index}` is allowed; a bare one beside it is fine), and a package check's message. Plain keys and unknown keys are i18n's (E1707, E1702): no finding here, a step key of a field no view gives a `step` included (log-2026-09-28 U5 review calls).
+-- a/a.canon --
+package a
+
+local record Level {
+  level: Int
+  heal: Int
+  secret: input String from env "SECRET"
+  steps: [Int]
+  rungs: [Int]
+  ranks: [Int]
+  plain: [Int]
+  warn weak: heal >= 1 else "level {level} heals {heal}"
+}
+
+/// The first level.
+let first: Level = { level: 1, heal: 1, steps: [], rungs: [], ranks: [], plain: [] }
+
+check few: first.heal < 10 else "{first.heal} heals"
+
+view Level {
+  title "Level {level}"
+  show avg "Average" "{heal / 2}"
+  steps { step: "Step {index}" }
+  rungs { step: "Rung {index}" }
+  ranks { step: "Rank {index}" }
+}
+-- a/a.fr.canon --
+package a
+translation fr
+
+Level.title "Palier {levle}"
+Level.show.avg.text "{heal + true}"
+Level.check.weak "palier {secret}"
+Level.steps.step "Étape {index} de {level}"
+Level.rungs.step "Barreau {index + 1}"
+Level.ranks.step "Rang {index:,}"
+Level.plain.step "Rien {level}"
+check.few "{first.heal + true} soins"
+Level.heal "Soin {heal}"
+Level.nope "{nope}"
+-- findings.txt --
+error[E1703]  a/a.fr.canon:4:22
+  translation of Level.title: unknown name levle (did you mean level?)
+
+error[E1703]  a/a.fr.canon:5:23
+  translation of Level.show.avg.text: operator + is not defined for Int and Bool
+
+error[E1703]  a/a.fr.canon:6:27
+  translation of Level.check.weak: secret is an input: it has no value at build time
+
+error[E1703]  a/a.fr.canon:7:38
+  translation of Level.steps.step: a step text may only use {index}, not {level}
+
+error[E1703]  a/a.fr.canon:8:28
+  translation of Level.rungs.step: a step text may only use {index}, not {index + 1}
+
+error[E1703]  a/a.fr.canon:9:25
+  translation of Level.ranks.step: a step text may only use {index}, not {index:,}
+
+error[E1703]  a/a.fr.canon:11:13
+  translation of check.few: operator + is not defined for Int and Bool
+
+7 errors, 0 warnings in 1 package (…)

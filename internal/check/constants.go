@@ -207,6 +207,19 @@ const (
 	defaultTag    = kindMember
 )
 
+// View words, properties and studio names (VIEWMODEL.md G16), translation key segments
+// (I18N.md K4): reservedSegments lists the reserved ones.
+const (
+	titleWord, subtitleWord, showWord, textWord, stepWord        = "title", "subtitle", "show", loadText, "step"
+	fieldSegment, methodWord, caseWord, memberWord, checkSegment = "field", "method", jsonCase, "member", "check"
+	propUnit, propWidget, propIcon, propTone, propControl        = jsonUnit, "widget", "icon", "tone", "control"
+	propWhen, propReadonly, propHidden, propStep                 = "when", "readonly", "hidden", stepWord
+	propHelp, propPlaceholder, propNone, keyName                 = "help", "placeholder", noneWord, "key"
+	studioMenu, studioIcon, studioTone, studioUnits              = "Menu", "Icon", "Tone", "units"
+
+	reservedSegments = "help title subtitle singular plural group show check intro text deprecated placeholder none step field method case member"
+)
+
 // Annotations and their arguments (GRAMMAR.md §8.3, WIRE.md §4).
 const (
 	annotJSON       = "json"
@@ -424,13 +437,6 @@ var compoundOps = map[syntax.TokenKind]syntax.TokenKind{
 	syntax.TokMulAssign: syntax.TokStar, syntax.TokDivAssign: syntax.TokSlash,
 }
 
-// arithRow is a row of the operator table of TYPES.md §7.1 on scalars.
-type arithRow struct {
-	ka, kb types.Kind
-	ops    map[syntax.TokenKind]bool
-	result types.Type
-}
-
 var (
 	allArith = map[syntax.TokenKind]bool{syntax.TokPlus: true, syntax.TokMinus: true, syntax.TokStar: true, syntax.TokSlash: true, syntax.TokPercent: true}
 	fourOps  = map[syntax.TokenKind]bool{syntax.TokPlus: true, syntax.TokMinus: true, syntax.TokStar: true, syntax.TokSlash: true}
@@ -441,6 +447,13 @@ var (
 	plusOnly = map[syntax.TokenKind]bool{syntax.TokPlus: true}
 )
 
+// arithRow is a row of the operator table of TYPES.md §7.1 on scalars.
+type arithRow struct {
+	ka, kb types.Kind
+	ops    map[syntax.TokenKind]bool
+	result types.Type
+}
+
 var arithRows = []arithRow{
 	{ka: types.Int, kb: types.Int, ops: allArith, result: types.IntType},
 	{ka: types.Float, kb: types.Float, ops: fourOps, result: types.FloatType},
@@ -449,39 +462,6 @@ var arithRows = []arithRow{
 	{ka: types.Int, kb: types.Duration, ops: mulOnly, result: types.DurationType},
 	{ka: types.Duration, kb: types.Duration, ops: divOnly, result: types.FloatType},
 	{ka: types.String, kb: types.String, ops: plusOnly, result: types.StringType},
-}
-
-// goKeywords are Go's keywords, which a Go package name may not be (CODEGEN.md §2.1).
-var goKeywords = map[string]bool{
-	"break": true, "case": true, "chan": true, "const": true, "continue": true, "default": true,
-	"defer": true, "else": true, "fallthrough": true, "for": true, "func": true, "go": true,
-	"goto": true, "if": true, "import": true, "interface": true, "map": true, "package": true,
-	"range": true, "return": true, "select": true, "struct": true, "switch": true, "type": true,
-	"var": true,
-}
-
-// cppNamespaces are namespaces generated C++ names, closed to an emit's (log-2026-09-24, round 3).
-var cppNamespaces = map[string]bool{"canon": true, "std": true, "nlohmann": true}
-
-// cppKeywords are C++20's keywords and alternative tokens, which a namespace may not use.
-var cppKeywords = map[string]bool{
-	"alignas": true, "alignof": true, "and": true, "and_eq": true, "asm": true, "auto": true,
-	"bitand": true, "bitor": true, "bool": true, "break": true, "case": true, "catch": true,
-	"char": true, "char8_t": true, "char16_t": true, "char32_t": true, "class": true, "compl": true,
-	"concept": true, "const": true, "consteval": true, "constexpr": true, "constinit": true,
-	"const_cast": true, "continue": true, "co_await": true, "co_return": true, "co_yield": true,
-	"decltype": true, "default": true, "delete": true, "do": true, "double": true,
-	"dynamic_cast": true, "else": true, "enum": true, "explicit": true, "export": true,
-	"extern": true, "false": true, "float": true, "for": true, "friend": true, "goto": true,
-	"if": true, "inline": true, "int": true, "long": true, "mutable": true, "namespace": true,
-	"new": true, "noexcept": true, "not": true, "not_eq": true, "nullptr": true, "operator": true,
-	"or": true, "or_eq": true, "private": true, "protected": true, "public": true, "register": true,
-	"reinterpret_cast": true, "requires": true, "return": true, "short": true, "signed": true,
-	"sizeof": true, "static": true, "static_assert": true, "static_cast": true, "struct": true,
-	"switch": true, "template": true, "this": true, "thread_local": true, "throw": true,
-	"true": true, "try": true, "typedef": true, "typeid": true, "typename": true, "union": true,
-	"unsigned": true, "using": true, "virtual": true, "void": true, "volatile": true,
-	"wchar_t": true, "while": true, "xor": true, "xor_eq": true,
 }
 
 const (

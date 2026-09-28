@@ -1,0 +1,39 @@
+VIEWMODEL.md G19: `check … at f` names a field of the record or case holding the check; another name is E1633 (log-2026-09-28 decision 3), in a record and in a variant's case, a method's name included; on a package-level check, which has no fields, it names the package (log-2026-09-28 U5 calls).
+-- a/a.canon --
+package a
+
+local record Level {
+  heal: Int
+  warn low: heal >= 1 at hael else "heal {heal} is low"
+
+  fn doubled(self) -> Int {
+    return heal * 2
+  }
+
+  check heal < 100 at doubled else "too much"
+}
+
+local variant Reward {
+  gold {
+    amount: Int
+    check amount > 0 at count else "no gold"
+  }
+}
+
+local let n: Int = 3
+
+check few: n < 10 at n else "too many"
+-- findings.txt --
+error[E1633]  a/a.canon:5:26
+  at hael: Level has no field hael
+
+error[E1633]  a/a.canon:11:23
+  at doubled: Level has no field doubled
+
+error[E1633]  a/a.canon:17:25
+  at count: Reward.gold has no field count
+
+error[E1633]  a/a.canon:23:22
+  at n: a has no field n
+
+4 errors, 0 warnings in 1 package (…)

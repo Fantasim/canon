@@ -1,0 +1,24 @@
+VIEWMODEL.md §3.2, log-2026-09-28 U5 review calls: a view's target is resolved in the package namespace and the file's imports; an unknown name is E2102 at the target, with the closest name as a hint, and nothing in the view is checked further (no finding for its unknown names).
+-- a/a.canon --
+package a
+
+local record Level {
+  heal: Int
+}
+
+view Levle {
+  title "{nope}"
+  heal "Heal" { when: nope }
+}
+
+view Nothing {
+  title "{nope}"
+}
+-- findings.txt --
+error[E2102]  a/a.canon:7:6
+  unknown name Levle (did you mean Level?)
+
+error[E2102]  a/a.canon:12:6
+  unknown name Nothing
+
+2 errors, 0 warnings in 1 package (…)

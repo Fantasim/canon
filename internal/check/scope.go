@@ -28,6 +28,10 @@ type env struct {
 
 	shorthand types.Type // the receiver of a shorthand lambda's chain (TYPES.md §12.4)
 	site      *object    // the field or let a value is stored in, for EVALUATION.md §4.3's related note
+
+	magic     map[string]*object // a view's magic names in scope (VIEWMODEL.md §3.4)
+	scopeFile *syntax.File       // the file whose imports are in scope, when not file (I18N.md T1)
+	trans     *transCtx          // a translated template: its errors are E1703 (I18N.md T2)
 }
 
 // mode is a set of flags on an env.
@@ -134,7 +138,7 @@ func (c *checker) lookupGlobal(env *env, name string) *object {
 	if o, ok := env.pkg.names[name]; ok {
 		return o
 	}
-	if fs := env.pkg.scopes[env.file]; fs != nil {
+	if fs := env.pkg.scopes[env.scoped()]; fs != nil {
 		if o, ok := fs.names[name]; ok {
 			return o
 		}
@@ -147,10 +151,24 @@ func (c *checker) lookup(env *env, name string) *object {
 	if o := env.lookupLocal(name); o != nil {
 		return o
 	}
+	if env.rec != nil && env.rec.fields[name] != nil {
+		return env.rec.fields[name]
+	}
+	if o := env.magic[name]; o != nil { // only a field or a parameter hides one (VIEWMODEL.md G11)
+		return o
+	}
 	if o := env.lookupRecord(name); o != nil {
 		return o
 	}
 	return c.lookupGlobal(env, name)
+}
+
+// scoped is the file whose imports env sees.
+func (env *env) scoped() *syntax.File {
+	if env.scopeFile != nil {
+		return env.scopeFile
+	}
+	return env.file
 }
 
 // lookupType is the lookup in type position (TYPES.md §3.3): type parameters, package, imports, built-in types.
@@ -180,11 +198,7 @@ func (c *checker) closest(env *env, name string) string {
 	if env.rec != nil {
 		names = appendKeys(appendKeys(names, env.rec.fields), env.rec.methods)
 	}
-	names = appendKeys(names, env.pkg.names)
-	if fs := env.pkg.scopes[env.file]; fs != nil {
-		names = appendKeys(names, fs.names)
-	}
-	names = appendKeys(names, c.universe)
+	names = c.globalNames(env, appendKeys(names, env.magic))
 	slices.Sort(names)
 	best, bestD := "", hintDistance+1
 	for _, n := range names {
@@ -193,6 +207,15 @@ func (c *checker) closest(env *env, name string) string {
 		}
 	}
 	return best
+}
+
+// globalNames appends the names of steps 4 to 6 to names.
+func (c *checker) globalNames(env *env, names []string) []string {
+	names = appendKeys(names, env.pkg.names)
+	if fs := env.pkg.scopes[env.scoped()]; fs != nil {
+		names = appendKeys(names, fs.names)
+	}
+	return appendKeys(names, c.universe)
 }
 
 func appendKeys(out []string, m map[string]*object) []string {

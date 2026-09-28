@@ -1,0 +1,38 @@
+VIEWMODEL.md §3.2, log-2026-09-28 U5 review calls: `view V.c` names a case of the variant V; a name no case has is E3003 (case) at it, and so is a case of a record or an enum, which have none; nothing in the view is checked further.
+-- a/a.canon --
+package a
+
+local variant Reward {
+  gold {
+    amount: Int
+  }
+}
+
+local record Level {
+  heal: Int
+}
+
+local enum Rarity { common, rare }
+
+view Reward.silver {
+  title "{nope}"
+}
+
+view Level.heal {
+  title "{nope}"
+}
+
+view Rarity.common {
+  title "{nope}"
+}
+-- findings.txt --
+error[E3003]  a/a.canon:15:13
+  a.Reward has no case silver
+
+error[E3003]  a/a.canon:19:12
+  a.Level has no case heal
+
+error[E3003]  a/a.canon:23:13
+  a.Rarity has no case common
+
+3 errors, 0 warnings in 1 package (…)

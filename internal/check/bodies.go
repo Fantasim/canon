@@ -309,6 +309,7 @@ func (c *checker) checkBody(o *object) {
 	if d.At != nil {
 		c.checkAt(env, d.At)
 	}
+	c.messageEnvs[d] = env.withFacts(ff)
 	if s, ok := d.Message.(*syntax.StringLit); ok {
 		c.interpolations(env.withFacts(ff), s)
 	}
@@ -329,15 +330,19 @@ func (c *checker) checkOwnerBody(o *object) *recordCtx {
 	return nil
 }
 
-// checkAt is `at f`: a field of the same record or case (E3003 otherwise).
+// checkAt is `at f`: a field of the same record or case (VIEWMODEL.md G19), else E1633, at
+// package level too, naming the package.
 func (c *checker) checkAt(env *env, at *syntax.Ident) {
-	if env.rec != nil {
-		if fo, ok := env.rec.fields[at.Name]; ok {
-			c.info.NameUses[at] = fo
-			return
-		}
-		c.report(env, diag.E3003.At(env.span(at), env.rec.self, diag.KindField, at.Name))
+	if env.rec == nil {
+		c.report(env, diag.E1633.At(env.span(at), at.Name, env.pkg.path))
+		return
 	}
+	if fo, ok := env.rec.fields[at.Name]; ok {
+		c.info.NameUses[at] = fo
+		return
+	}
+	self := env.rec.self
+	c.report(env, diag.E1633.At(env.span(at), at.Name, env.localName(self.String(), ownerPkg(self))))
 }
 
 // testBody checks a test's block (EVALUATION.md §10).

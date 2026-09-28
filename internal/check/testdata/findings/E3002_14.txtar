@@ -1,0 +1,27 @@
+VIEWMODEL.md G13, §16: view expressions are type-checked with TYPES.md: a group's `when` and a field's `when`, `readonly` and `hidden` must be Bool (E3002); a template and a search term are typed in the view's scope.
+-- a/a.canon --
+package a
+
+local record Item {
+  label: String
+  count: Int
+}
+
+view Item {
+  title "{label}"
+  search { label, count }
+  group main "Main" when count {
+    label { when: label, readonly: 1, hidden: false }
+  }
+}
+-- findings.txt --
+error[E3002]  a/a.canon:11:26
+  expected Bool, found Int
+
+error[E3002]  a/a.canon:12:19
+  expected Bool, found String
+
+error[E3002]  a/a.canon:12:36
+  expected Bool, found Int
+
+3 errors, 0 warnings in 1 package (…)

@@ -1,0 +1,186 @@
+VIEWMODEL.md §3.2–§3.7, G7, G11, G16, T6a, DECISIONS 221: well-formed views check with no finding and their Info is complete: targets (record, variant, case, enum, define table, an alias of a record, which is transparent: log-2026-09-28 U5 round 2), item names (fields, methods, case fields of an inline variant, cases, members), studio names resolved without an import (menu, icon, tone, unit, widget), templates and expressions in the §3.4 scope with the magic names typed where the target can stand (log-2026-09-28 decision 7: `id` String in a table, `key` the map's key type, `index` Int in a list, the step text's `{index}`), a field named `key` or `index` hiding the magic name while a method named `index` does not (G11), `check … at f` (G19). I18N.md T1–T3: the translation file's key segments resolve and its templates type in the scope of their source item: a view template, a show line, a step text, a record check, a case check and a package check.
+-- studio/studio.canon --
+package studio
+
+/// Menus.
+enum Menu { items, system }
+
+/// Icons.
+enum Icon { gem, gear }
+
+/// Tones.
+enum Tone { info, danger }
+
+/// A unit.
+record UnitSpec {
+  /// Appended.
+  suffix: String = ""
+}
+
+/// Units.
+let units: table UnitSpec = {
+  hp { suffix: " HP" }
+}
+
+/// Numbered steps.
+widget ordered_steps(value: [_])
+-- a/a.canon --
+package a
+
+local enum Rarity { common, rare }
+
+local enum Slot { head, hand }
+
+local variant Kind {
+  weapon {
+    attack: Int
+    handed: Bool = false
+    check attack >= 0 at attack else "attack {attack} is negative"
+  }
+  food {
+    heal: Int
+  }
+}
+
+local record Level {
+  level: Int
+  heal: Int
+  warn weak: heal >= 1 at heal else "level {level} heals {heal}"
+
+  fn doubled(self) -> Int {
+    return heal * 2
+  }
+}
+
+local record Named {
+  key: String
+}
+
+local record Item {
+  label: String
+  rarity: Rarity
+  levels: [Level]
+  bySlot: {Slot: Level}
+  kind: Kind @json(inline)
+  off: Bool = false
+}
+
+local record Rung {
+  height: Int
+
+  fn index(self) -> Int {
+    return height
+  }
+}
+
+local record Tier {
+  index: Int
+}
+
+local record Ladder {
+  rungs: [Rung]
+  tiers: [Tier]
+}
+
+local let ladder: Ladder = { rungs: [], tiers: [] }
+
+local record Gem {
+  cut: Int
+}
+
+local type Jewel = Gem
+
+local let gems: [Jewel] = []
+
+local let items: table Item = {}
+
+local let byName: {String: Named} = {}
+
+local let names = load.defines("@resource/names.h", prefix: "N_")
+
+check few: items.len() < 1_000 else "{items.len()} items"
+
+view Item {
+  title "{label} ({id})"
+  subtitle "{rarity}"
+  search { label, id }
+  menu items icon gem
+  columns { label 120, rarity, attack }
+  filters { rarity multi, handed }
+  group main "Main" "The basics." when not off {
+    label "Label" { placeholder: "a label", help: "Its label", readonly: false, when: not off }
+    rarity
+    show "Levels" "{levels.len()}"
+  }
+  levels "Levels" { widget: ordered_steps, step: "Level {index}" }
+  attack "Attack" { unit: hp }
+}
+
+view Level {
+  title "Level {level} (#{index}, {key})"
+  show avg "Average" "{doubled()}"
+  show "Heal" "{heal:,}"
+  heal "Heal" { unit: hp }
+  doubled "Doubled"
+}
+
+view Named {
+  title "{key}"
+}
+
+view Kind {
+  title "{self.kind}"
+  columns { attack, heal }
+  weapon "Weapon" { icon: gear, tone: danger }
+}
+
+view Kind.weapon {
+  title "{attack}"
+  attack "Attack"
+}
+
+view Rarity {
+  common "Common" { icon: gem, tone: info }
+  rare "Rare"
+}
+
+view Rung {
+  title "{index} ({height})"
+  index "Index"
+}
+
+view Tier {
+  title "{index}"
+}
+
+view Jewel {
+  title "{cut} #{index}"
+  cut "Cut"
+}
+
+view names {
+  title "{id} = {value}"
+}
+-- a/a.fr.canon --
+package a
+translation fr
+
+Item.title "{label} [{id}]"
+Item.group.main "Principal"
+Item.group.main.intro "L'essentiel."
+Item.label.placeholder "un libellé"
+Item.levels.step "Palier {index}"
+Level.title "Palier {level} ({key})"
+Level.show.avg.text "{doubled()}"
+Level.show._0.text "{heal}"
+Level.check.weak "le palier {level} soigne {heal}"
+Level.doubled "Double"
+Level.method.doubled "Double"
+Kind.weapon "Arme"
+Kind.case.food "Nourriture"
+Kind.weapon.title "{attack}"
+Kind.weapon.field.attack "Attaque"
+Rarity.rare "Rare"
+Rarity.member.common "Commun"
+names.title "{id}"
+check.few "{items.len()} objets"

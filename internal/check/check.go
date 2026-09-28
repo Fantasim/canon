@@ -43,6 +43,7 @@ func Check(ctx context.Context, proj *project.Project, files []*syntax.File, bag
 		}
 		c.checkPackage(p)
 	}
+	c.checkPresentation()
 	c.propagateBroken()
 	return c.program()
 }
@@ -96,6 +97,12 @@ type checker struct {
 	badLits      map[syntax.Node]bool        // literal tokens holding a lexer error (DECISIONS 215)
 	unmatchable  map[syntax.Node]bool        // members and cases named by an E1126 word
 	layout       *project.Layout             // the roots as written, no --root override (DECISIONS 215)
+
+	views       map[viewKey]*viewCtx       // the first view of each target (VIEWMODEL.md §3.2)
+	messageEnvs map[*syntax.CheckDecl]*env // the scope of each one-line check's message (I18N.md T1)
+	positions   map[types.Type]*position   // where a view target's values occur (VIEWMODEL.md §3.4)
+	lost        map[*pkgState]*position    // by package, the positions collections in error may have given
+	steps       map[*object]bool           // the fields a view gives a `step` text (I18N.md §3.3)
 }
 
 func newChecker(ctx context.Context, proj *project.Project, bags Bags, fold Folder) *checker {
@@ -132,6 +139,10 @@ func newChecker(ctx context.Context, proj *project.Project, bags Bags, fold Fold
 		refused:      map[*types.Param]types.Type{},
 		unmatchable:  map[syntax.Node]bool{},
 		funcDepth:    map[*object]int{},
+		views:        map[viewKey]*viewCtx{},
+		messageEnvs:  map[*syntax.CheckDecl]*env{},
+		lost:         map[*pkgState]*position{},
+		steps:        map[*object]bool{},
 	}
 	c.universe = c.newUniverse()
 	return c
@@ -155,9 +166,13 @@ func newInfo() *Info {
 	}
 }
 
-// report adds an error found in env's declaration, which becomes broken (TYPES.md §1).
+// report adds an error of env's declaration, which breaks; a translated template's is E1703's detail.
 func (c *checker) report(env *env, b *diag.Builder) {
 	c.reported++
+	if env.trans != nil {
+		diag.E1703.AtType(env.trans.at, env.trans.key, b.Message()).Report(env.pkg.bag)
+		return
+	}
 	b.Report(env.pkg.bag)
 	c.breakObj(env.owner)
 }

@@ -178,6 +178,11 @@ func (c *checker) letCollection(env *env, let *object, path []*syntax.Ident, q *
 		c.report(env, diag.E3504.At(env.span(q), qualified(q)))
 		return nil
 	}
+	return c.internLet(let, names, elem, keyed)
+}
+
+// internLet is the collection a let, or the field path names through its records, holds.
+func (c *checker) internLet(let *object, names []string, elem types.Type, keyed *types.Field) *types.Collection {
 	kind := types.CollLet
 	if isDefines(let) {
 		kind = types.CollDefines

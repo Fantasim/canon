@@ -71,6 +71,8 @@ func loadExamples(t *testing.T, dirs ...string) *loaded {
 // exampleProject is the project of examples/project.canon, as far as check reads it.
 func exampleProject() *project.Project {
 	p := project.New("sovereign", project.Version{Major: 0, Minor: 1})
+	p.Languages = []string{"en", "fr"}
+	p.Studio = project.Package{Path: "studio"}
 	for _, r := range exampleRoots {
 		p.Roots = append(p.Roots, project.Root{Name: r, Path: r})
 	}
@@ -113,8 +115,7 @@ func TestTeamboardHasNoFinding(t *testing.T) {
 	}
 }
 
-// Every example checks with no finding, and Info covers every declaration but the views, which
-// the checker does not type yet (meta/state.md).
+// Every example checks with no finding; Info covers its declarations, views and translations (DECISIONS 221).
 func TestExamplesCheck(t *testing.T) {
 	l := loadExamples(t)
 	prog, out := l.run(t)
@@ -122,13 +123,8 @@ func TestExamplesCheck(t *testing.T) {
 		t.Errorf("findings:\n%s", out)
 	}
 	for _, f := range l.files {
-		for _, g := range gaps(f, prog.Info, isView) {
+		for _, g := range gaps(f, prog.Info, func(syntax.Decl) bool { return false }) {
 			t.Error(g)
 		}
 	}
-}
-
-func isView(d syntax.Decl) bool {
-	_, ok := d.(*syntax.ViewDecl)
-	return ok
 }

@@ -4,10 +4,10 @@ case 17
 seed 4294967314
 open syntax
 born mismatch misplaced E1107
-sig misplaced E1107
+sig misplaced E1107, E2102/plain
 packages resource.vocab
 want E1107 resource/vocab/vocab.canon 1890 1891 check
-failure misplaced [E1107 resource/vocab/vocab.canon:57:18 "unterminated string"], want bytes 1890..1891
+failure misplaced [E2102 resource/vocab/vocab.canon:57:11 "unknown name display"; E1107 resource/vocab/vocab.canon:57:18 "unterminated string"], want bytes 1890..1891
 -- _fixtures/resource/Server/Define/defineJob.h --
 -- _fixtures/resource/Server/Define/defineObj.h --
 -- _fixtures/resource/Server/Define/defineUpgradeType.h --

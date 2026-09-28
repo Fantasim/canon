@@ -2,16 +2,19 @@ package check_test
 
 import (
 	"fmt"
+	"slices"
+	"strings"
 	"testing"
 
 	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/syntax"
 )
 
-// gaps lists the nodes of f's imports, declarations and amend blocks Info misses (IMPLEMENTATION-PLAN §4.7).
+// gaps lists the nodes of f's imports, declarations, amends and translations Info misses (IMPLEMENTATION-PLAN §4.7).
 func gaps(f *syntax.File, info *check.Info, broken func(syntax.Decl) bool) []string {
 	var out []string
 	noObject := map[*syntax.Ident]bool{}
+	noRecord := map[syntax.Node]bool{}
 	for _, root := range roots(f, broken) {
 		syntax.Inspect(root, func(n syntax.Node) bool {
 			if n == nil || exemptNode(n) || noObject[identOf(n)] {
@@ -19,6 +22,12 @@ func gaps(f *syntax.File, info *check.Info, broken func(syntax.Decl) bool) []str
 			}
 			for _, id := range namesNoObject(info, n) {
 				noObject[id] = true
+			}
+			if props := viewProps(n); props != nil {
+				noRecord[props] = true
+			}
+			if noRecord[n] {
+				return true
 			}
 			if msg := missing(info, n); msg != "" {
 				line, col := f.Src.Position(f.Span(n).Start)
@@ -47,6 +56,9 @@ func roots(f *syntax.File, broken func(syntax.Decl) bool) []syntax.Node {
 	}
 	for _, b := range f.Amends {
 		out = append(out, b)
+	}
+	for _, e := range f.Entries {
+		out = append(out, e)
 	}
 	return out
 }
@@ -87,8 +99,69 @@ func namesNoObject(info *check.Info, n syntax.Node) []*syntax.Ident {
 				out = append(out, id)
 			}
 		}
+	default:
+		out = presentationNoObject(n)
 	}
 	return out
+}
+
+// presentationNoObject are the identifiers of a view or translation node naming no object:
+// group and show ids, property names, a key's reserved segments and ids (I18N.md K5).
+func presentationNoObject(n syntax.Node) []*syntax.Ident {
+	switch n := n.(type) {
+	case *syntax.ViewGroup:
+		return []*syntax.Ident{n.ID}
+	case *syntax.ViewShow:
+		return []*syntax.Ident{n.ID}
+	case *syntax.ViewField:
+		return propNames(n.Props)
+	case *syntax.TranslationEntry:
+		return keyNoObject(n.Key.Parts)
+	}
+	return nil
+}
+
+// propNames are the property names of a view field's list (VIEWMODEL.md §3.5).
+func propNames(props *syntax.BraceLit) []*syntax.Ident {
+	if props == nil {
+		return nil
+	}
+	var out []*syntax.Ident
+	for _, it := range props.Items {
+		if fi, ok := it.(*syntax.FieldItem); ok {
+			out = append(out, fi.Name)
+		}
+	}
+	return out
+}
+
+// reservedSegments are I18N.md §3.2's; the kind words among them are followed by a name.
+var (
+	reservedSegments = strings.Fields("help title subtitle singular plural group show check intro text deprecated placeholder none step field method case member")
+	kindWords        = []string{"field", "method", "case", "member"}
+)
+
+// keyNoObject reads a key as K5 does and returns the segments that are not names.
+func keyNoObject(parts []*syntax.Ident) []*syntax.Ident {
+	var out []*syntax.Ident
+	prev := ""
+	for _, p := range parts {
+		switch {
+		case slices.Contains(kindWords, prev):
+		case prev == "group" || prev == "show" || slices.Contains(reservedSegments, p.Name):
+			out = append(out, p)
+		}
+		prev = p.Name
+	}
+	return out
+}
+
+// viewProps is a view field's property list, which is no value: only its values are recorded.
+func viewProps(n syntax.Node) syntax.Node {
+	if f, ok := n.(*syntax.ViewField); ok && f.Props != nil {
+		return f.Props
+	}
+	return nil
 }
 
 func argNames(args []*syntax.Arg) []*syntax.Ident {
