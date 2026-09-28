@@ -93,7 +93,6 @@ const (
 	KindGlobBrace
 	KindGlobBracket
 	KindGlobDoubleStar
-	KindGroup
 	KindIcon
 	KindImport
 	KindImportAlias
@@ -138,7 +137,6 @@ const (
 	KindRefinementBound
 	KindResolvedLookupResult
 	KindSelfReadNotAPath
-	KindShowLine
 	KindSpread
 	KindStableValue
 	KindString
@@ -211,7 +209,6 @@ var kindNames = [...]string{
 	"GlobBrace",
 	"GlobBracket",
 	"GlobDoubleStar",
-	"Group",
 	"Icon",
 	"Import",
 	"ImportAlias",
@@ -256,7 +253,6 @@ var kindNames = [...]string{
 	"RefinementBound",
 	"ResolvedLookupResult",
 	"SelfReadNotAPath",
-	"ShowLine",
 	"Spread",
 	"StableValue",
 	"String",
@@ -309,7 +305,6 @@ var kindWords = [...]string{
 	"an unclosed, empty or nested brace",
 	"an unclosed bracket",
 	"a double star that is not a whole segment",
-	"group",
 	"icon",
 	"import",
 	"import alias",
@@ -354,7 +349,6 @@ var kindWords = [...]string{
 	"refinement bound",
 	"a lookup method whose result holds a ref resolved at load",
 	"a read of self that is not a path of fields",
-	"show line",
 	"spread",
 	"stable value",
 	"a string",
@@ -803,6 +797,7 @@ var Registry = []Def{
 		Variants: []Variant{
 			{Name: "property", Args: []Arg{{Name: "property", Type: ArgTypeName}, {Name: "item", Type: ArgTypeKind}}, Template: "{property} is not a property of this {item}"},
 			{Name: "width", Args: []Arg{{Name: "width", Type: ArgTypeInt}}, Template: "column width {width} is out of range: widths go from 16 to 2000"},
+			{Name: "twice", Args: []Arg{{Name: "property", Type: ArgTypeName}, {Name: "first", Type: ArgTypeLoc}}, Template: "{property} is given twice for this item (first at {first})"},
 		},
 	},
 	{
@@ -3352,7 +3347,12 @@ func (codeE1613) AtWidth(span source.Span, width int64) *Builder {
 	return newBuilder(&Registry[60], 1, span, width)
 }
 
-// E1614: a field's label declared in two views (VIEWMODEL.md §3.3).
+// AtTwice reports: {property} is given twice for this item (first at {first})
+func (codeE1613) AtTwice(span source.Span, property string, first source.Span) *Builder {
+	return newBuilder(&Registry[60], 2, span, property, first)
+}
+
+// E1614: an item's label declared twice (in one view or two) (VIEWMODEL.md §3.3).
 var E1614 codeE1614
 
 type codeE1614 struct{}

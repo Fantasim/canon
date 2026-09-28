@@ -126,7 +126,6 @@ wording is a variant, and a closed set of words is a `Kind`.
 | `GlobBrace` | an unclosed, empty or nested brace | `E7005` |
 | `GlobBracket` | an unclosed bracket | `E7005` |
 | `GlobDoubleStar` | a double star that is not a whole segment | `E7005` |
-| `Group` | group | `E1613` |
 | `Icon` | icon | `E1610` |
 | `Import` | import | `E1133` |
 | `ImportAlias` | import alias | `W1003`, `E1125` |
@@ -164,14 +163,13 @@ wording is a variant, and a closed set of words is a `Kind`.
 | `ReadPermission` | permission denied | `E7004` |
 | `ReadTooLarge` | too large | `E7004` |
 | `ReadUnreadable` | unreadable | `E7004` |
-| `Record` | record | `W1002`, `W1003`, `E1125`, `E1133`, `E1627`, `E3320` |
+| `Record` | record | `W1002`, `W1003`, `E1125`, `E1133`, `E3320` |
 | `RecordConstant` | a constant of a record or variant type | `E8019` |
 | `RecordCycleThroughMethod` | a by-value cycle of records through a stored method result | `E8019` |
 | `RecursiveVariantCase` | a variant that recurses through a case | `E8019` |
 | `RefinementBound` | refinement bound | `E3015` |
 | `ResolvedLookupResult` | a lookup method whose result holds a ref resolved at load | `E8019` |
 | `SelfReadNotAPath` | a read of self that is not a path of fields | `E8019` |
-| `ShowLine` | show line | `E1613` |
 | `Spread` | spread | `E3320` |
 | `StableValue` | stable value | `E6001` |
 | `String` | a string | `E7110` |
@@ -350,7 +348,7 @@ func (codeE2103) AtSeveral(span source.Span, typ string, colls []string) *Builde
 
 ---
 
-The catalogue holds 300 codes: 279 errors, 18 warnings and 3 run-time codes, with 462 messages.
+The catalogue holds 300 codes: 279 errors, 18 warnings and 3 run-time codes, with 463 messages.
 
 ## E10xx, W10xx: Project file, doc comments and naming
 
@@ -532,7 +530,7 @@ Owner: VIEWMODEL.md.
 | E1611 | error | views | VIEWMODEL.md §3.5 | `unit` on a field that is not a number or a list or map of numbers |
 | E1612 | error | views | VIEWMODEL.md §3.4 | `preview` is not an asset |
 | E1613 | error | views | VIEWMODEL.md §3.5 | unknown or misplaced property of a view item (or a column width out of range) |
-| E1614 | error | views | VIEWMODEL.md §3.3 | a field's label declared in two views |
+| E1614 | error | views | VIEWMODEL.md §3.3 | an item's label declared twice (in one view or two) |
 | E1615 | error | views | VIEWMODEL.md §3.4 | an unescaped `{` in a plain view text |
 | E1616 | error | views | VIEWMODEL.md §3.3 | a view names a method that takes parameters |
 | E1617 | error | views | VIEWMODEL.md §3.6 | duplicate group or show id in a view |
@@ -572,6 +570,7 @@ Owner: VIEWMODEL.md.
 | E1612 | - | typ:Type | `preview must be an asset, not {typ}` |
 | E1613 | property | property:Name, item:Kind | `{property} is not a property of this {item}` |
 | E1613 | width | width:Int | `column width {width} is out of range: widths go from 16 to 2000` |
+| E1613 | twice | property:Name, first:Loc | `{property} is given twice for this item (first at {first})` |
 | E1614 | - | field:Name, first:Loc | `the label of {field} is declared twice (first at {first})` |
 | E1615 | - | - | `{{ in plain text: labels, help, intros, placeholders and none texts are not templates (write {{{{)` |
 | E1616 | - | name:Name | `method {name} takes parameters: a view may name only methods without parameters` |

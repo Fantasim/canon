@@ -101,6 +101,7 @@ E1611 -: unit applies to numbers and to lists and maps of numbers, not Int
 E1612 -: preview must be an asset, not Int
 E1613 property: resource.vocab.items is not a property of this case
 E1613 width: column width -42 is out of range: widths go from 16 to 2000
+E1613 twice: resource.vocab.items is given twice for this item (first at @resource/Server/System/farm_config.json:1)
 E1614 -: the label of resource.vocab.items is declared twice (first at @resource/Server/System/farm_config.json:1)
 E1615 -: { in plain text: labels, help, intros, placeholders and none texts are not templates (write {{)
 E1616 -: method resource.vocab.items takes parameters: a view may name only methods without parameters

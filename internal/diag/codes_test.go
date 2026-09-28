@@ -105,6 +105,7 @@ var constructed = []*Builder{
 	E1612.At(sampleSpan, sampleType),
 	E1613.AtProperty(sampleSpan, sampleName, KindCase),
 	E1613.AtWidth(sampleSpan, sampleInt),
+	E1613.AtTwice(sampleSpan, sampleName, sampleLoc),
 	E1614.At(sampleSpan, sampleName, sampleLoc),
 	E1615.At(sampleSpan),
 	E1616.At(sampleSpan, sampleName),
