@@ -187,7 +187,6 @@ const (
 	compilerVersion   = "0.1.0"
 	languageVersion   = "0.1"
 	fingerprintFormat = "canon-fp v1"
-	viewModelFormat   = "canon-vm/1"
 	lockFormat        = "canon.lock v1"
 	vcsRevisionKey    = "vcs.revision"
 	vcsModifiedKey    = "vcs.modified"

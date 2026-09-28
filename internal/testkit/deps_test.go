@@ -80,7 +80,7 @@ func TestViewsSubPackagesRankWithViews(t *testing.T) {
 		t.Fatal(err)
 	}
 	views := rankOf(rows, "internal/views")
-	for _, dir := range []string{"internal/views/rules", "internal/views/shape"} {
+	for _, dir := range []string{"internal/views/control", "internal/views/encode", "internal/views/rules", "internal/views/shape", "internal/views/typedef"} {
 		if r := rankOf(rows, dir); r != views {
 			t.Errorf("%s is in row %d, want views' row %d", dir, r, views)
 		}

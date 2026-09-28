@@ -39,7 +39,7 @@ func init() {
 		syntax.PropWidget:      {on: field, check: (*view).widget},
 		syntax.PropReadonly:    {on: field},
 		syntax.PropHidden:      {on: method, check: (*view).hidden},
-		syntax.PropPlaceholder: {on: field, check: plain},
+		syntax.PropPlaceholder: {on: field, check: (*view).placeholder},
 		syntax.PropWhen:        {on: method},
 		syntax.PropNone:        {on: field, valid: optionalField, check: plain},
 		syntax.PropStep:        {on: field, valid: listField, check: func(v *view, _ named, fi *syntax.FieldItem) { v.step(fi.Value) }},

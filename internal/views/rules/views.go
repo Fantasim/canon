@@ -8,6 +8,7 @@ import (
 	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
+	"github.com/fantasim/canonlang/internal/views/control"
 )
 
 // Check reports the static view findings of prog into its bags after check (DECISIONS 221):
@@ -34,20 +35,22 @@ func Check(ctx context.Context, prog *check.Program, bags check.Bags, studio str
 
 // checker is one pass over a program's views.
 type checker struct {
-	info   *check.Info
-	studio *studio                 // nil when project.studio names no loaded package
-	first  map[any]source.Span     // each target's first view (E1607)
-	labels map[any]source.Span     // each item's first label (E1614)
-	given  map[propKey]source.Span // each item's properties, on whichever line (E1613 twice)
+	info     *check.Info
+	studio   *studio // nil when project.studio names no loaded package
+	controls *control.Resolver
+	first    map[any]source.Span     // each target's first view (E1607)
+	labels   map[any]source.Span     // each item's first label (E1614)
+	given    map[propKey]source.Span // each item's properties, on whichever line (E1613 twice)
 }
 
 func newChecker(prog *check.Program, bags check.Bags, studio string) *checker {
 	return &checker{
-		info:   prog.Info,
-		studio: studioOf(prog, bags, studio),
-		first:  map[any]source.Span{},
-		labels: map[any]source.Span{},
-		given:  map[propKey]source.Span{},
+		info:     prog.Info,
+		studio:   studioOf(prog, bags, studio),
+		controls: control.NewResolver(control.NewIndex(prog, studio), control.Env{}),
+		first:    map[any]source.Span{},
+		labels:   map[any]source.Span{},
+		given:    map[propKey]source.Span{},
 	}
 }
 

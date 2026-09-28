@@ -1,0 +1,89 @@
+VIEWMODEL.md §3.5, §4: `placeholder` is E1613 (property) on a field whose resolved control is not input, textarea, code, number, segmented, select or search: a switch, a radio, a duration, a slider, a widget, a table; the input, the code hint, the number (optional too), the stepper, a segmented enum and a select over a ref take it.
+-- studio/studio.canon --
+/// The studio vocabulary.
+package studio
+
+/// Menus.
+enum Menu { items, system }
+
+/// Icons.
+enum Icon { gem, gear }
+
+/// Tones.
+enum Tone { info, danger }
+
+/// A unit.
+record UnitSpec {
+  /// Appended.
+  suffix: String = ""
+}
+
+/// Units.
+let units: table UnitSpec = {
+  hp { suffix: " HP" }
+}
+
+/// Numbered steps.
+widget ordered_steps(value: [_])
+-- a/a.canon --
+package a
+
+local enum Rarity { common, rare }
+
+local record Pt {
+  x: Int
+}
+
+local let pts: table Pt = {
+  p1 { x: 1 }
+}
+
+local record Item {
+  on: Bool
+  rarity: Rarity
+  tier: Rarity
+  pick: ref pts?
+  wait: Duration
+  level: Int(1..=10)
+  steps: [Int]
+  pts: [Pt]
+  name: String
+  source: String
+  count: Int?
+  tries: Int
+}
+
+view Item {
+  on { placeholder: "Off" }
+  rarity { placeholder: "Pick one" }
+  tier { control: radio, placeholder: "Pick one" }
+  pick { placeholder: "No point" }
+  wait { placeholder: "Soon" }
+  level { control: slider, placeholder: "Low" }
+  steps { widget: ordered_steps, placeholder: "None" }
+  pts { placeholder: "No points" }
+  name { placeholder: "A name" }
+  source { control: code, placeholder: "Code" }
+  count { placeholder: "Unset" }
+  tries { control: stepper, placeholder: "Once" }
+}
+-- findings.txt --
+error[E1613]  a/a.canon:29:8
+  placeholder is not a property of this field
+
+error[E1613]  a/a.canon:31:26
+  placeholder is not a property of this field
+
+error[E1613]  a/a.canon:33:10
+  placeholder is not a property of this field
+
+error[E1613]  a/a.canon:34:28
+  placeholder is not a property of this field
+
+error[E1613]  a/a.canon:35:34
+  placeholder is not a property of this field
+
+error[E1613]  a/a.canon:36:9
+  placeholder is not a property of this field
+
+6 errors, 0 warnings in 2 packages (…)

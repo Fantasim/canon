@@ -1,28 +1,5 @@
 package rules
 
-// The built-in control hints (VIEWMODEL.md §4.5).
-const (
-	ctlSwitch     = "switch"
-	ctlCheckbox   = "checkbox"
-	ctlSegmented  = "segmented"
-	ctlRadio      = "radio"
-	ctlSelect     = "select"
-	ctlSearch     = "search"
-	ctlCheckboxes = "checkboxes"
-	ctlChips      = "chips"
-	ctlInput      = "input"
-	ctlTextarea   = "textarea"
-	ctlCode       = "code"
-	ctlNumber     = "number"
-	ctlStepper    = "stepper"
-	ctlSlider     = "slider"
-	ctlColor      = "color"
-	ctlText       = "text"
-)
-
-// colorPattern is the regex source a String needs for `control: color` (VIEWMODEL.md §4.5).
-const colorPattern = `^#[0-9a-fA-F]{6}$`
-
 // Column widths in pixels (VIEWMODEL.md §3.6).
 const (
 	minWidth = 16
@@ -59,17 +36,15 @@ const (
 // idKind is the namespace of a view id: groups or show lines (VIEWMODEL.md G17).
 type idKind uint8
 
-// The two id namespaces of a view.
 const (
 	idGroup idKind = iota
 	idShow
 	idKinds
 )
 
-// filterKind is the kind of filter a field's type gives (VIEWMODEL.md T11).
+// filterKind is the kind of filter a field's type gives (VIEWMODEL.md T11); filterNone is none.
 type filterKind uint8
 
-// The filter kinds of T11; filterNone is a type that cannot be filtered.
 const (
 	filterNone filterKind = iota
 	filterChoice

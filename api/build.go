@@ -11,6 +11,7 @@ import (
 
 	"github.com/fantasim/canonlang/internal/build"
 	"github.com/fantasim/canonlang/internal/ir"
+	"github.com/fantasim/canonlang/internal/views"
 )
 
 // BuildOptions selects what Build does (API.md §13.1).
@@ -302,7 +303,7 @@ func Version() VersionInfo {
 		Compiler:    compilerVersion,
 		Languages:   []string{languageVersion},
 		Fingerprint: fingerprintFormat,
-		ViewModel:   viewModelFormat,
+		ViewModel:   views.SchemaVersion,
 		Lock:        lockFormat,
 		Commit:      buildCommit(),
 	}
