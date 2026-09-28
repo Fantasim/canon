@@ -68,7 +68,9 @@ This replaces SPEC §11.2.
    position);
 2. whatever these values read, lazily, including values of imported packages.
 
-Values of imported packages that nothing reads are not evaluated. `canon test` forces only what
+Values of imported packages that nothing reads are not evaluated; phase 8 evaluates, on demand,
+the values a view model reads that phases 3–7 did not (their counts, VIEWMODEL.md C3/J12), and
+reports nothing from them. `canon test` forces only what
 the tests read (§10).
 
 ### 2.2 Order of evaluation inside an expression
