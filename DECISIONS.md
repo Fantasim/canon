@@ -1827,7 +1827,9 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      directory and package in every rule that does not depend on the mode (E8004, E8007, E8008,
      E8011 of its package name, E8104); only mode-dependent validation is skipped. A name derived
      from a refused `@go`/`@cpp` type name (its members, id type, case types) is that type's E8011,
-     not its own; provenance decides, never a text prefix. The default Go `package` (the last
+     not its own; provenance decides, never a text prefix. The same holds for its methods' generated
+     helpers (Go pure functions and tests, C++ `<Class>_<fn>`, conformance vectors), and only when
+     the name built on the type's default name is valid; otherwise the item keeps its own E8011. The default Go `package` (the last
      element of `out`) is validated like a written one: not a Go identifier, or a keyword, is E8009
      `package` at the emit. Reason: A3 ir review (overnight run).
 

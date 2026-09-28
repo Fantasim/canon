@@ -455,7 +455,10 @@ A name derived without an override that is not a valid identifier in its target 
 whose Go getter would be `1`; a field `__`, whose name would be empty) is `E8011` at the
 declaration, as a bad override is, so `canon check` refuses what `canon build` would. A
 declaration gets one `E8011`: for its override when that is invalid, else for its first invalid
-derived name.
+derived name. A name built on a type whose override is refused (its members, id type, case types,
+and its methods' generated helpers: Go pure functions and conformance tests, C++ `<Class>_<fn>`
+and conformance vectors) is that type's `E8011` when the same name built on the type's default
+name is valid; otherwise it is the item's own (DECISIONS 213).
 
 `E8005` is reported when two generated names of one scope are equal after conversion and
 escaping. Scopes: a Go package; a C++ namespace (all packages emitted into it that the build
