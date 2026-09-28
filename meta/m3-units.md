@@ -8,15 +8,15 @@ Tick with the landing SHA.
 
 - [ ] check follow-ups: E3806 at a parameter declaration, union readings, progen cascades [opus]
 - [ ] verify: dependent verification E3801/E3802/E3501/E3322, resolved values to outputs [opus]
-- [ ] pattern automaton: ir table + gen/cpp iterative matcher [opus]
+- [x] pattern automaton (2b24d52, 8b5210b, 7df809a): ir table + gen/cpp iterative matcher [opus]
 - [ ] gen consumers' dependent refusals (gen/go, gen/cpp, ir), all-Never → E8019, ir alias-chain
       patterns, `LoadInputs` hiding scope, example golden [opus] (after the three above)
 
 ## View model, i18n, API
 
-- [ ] U1 `api/vm` + `api/vm/internal/vmgen` + `vm-check` gate; ADR on union flattening [opus]
+- [x] U1 (cda1581) `api/vm` + `api/vm/internal/vmgen` + `vm-check` gate; ADR on union flattening [opus]
 - [ ] U2 `internal/testkit/jsonschema` subset validator (26 keywords, unknown keyword fails) [sonnet]
-- [ ] U3 golden harness finds nested examples; `balance.parity` MANIFEST + golden [sonnet]
+- [x] U3 (f251383) golden harness finds nested examples; `balance.parity` MANIFEST + golden [sonnet]
 - [ ] U4a `build` analysis handle (Program, Evaluator, bags, findings) for api/edit/views [sonnet]
 - [ ] U4b `edit.Snapshot`/`Resolve` (API §6 P1–P10) + editability (API §7) [opus]
 - [ ] ★U5 `check`: resolve/type views and translation files; E1703, E1633 [opus]
@@ -28,7 +28,7 @@ Tick with the landing SHA.
 - [ ] ★U11 `views` V3: the rest of the model (§5, §7–§10, §12.4, §12.6–§12.11) [sonnet]
 - [ ] ★U12 `build` writes the `view` target in phase 8, even with errors [sonnet]
 - [ ] ★U13 view goldens (pipeline, farm, events) + schema validation; GEN-01 view diff [sonnet]
-- [ ] U14 `api.Value` + `Origin.Replaced` (ADR-0006) + `cli explain` golden [opus]
+- [ ] U14 `api.Value` + `Origin.Replaced` (ADR-0007) + `cli explain` golden [opus]
 - [ ] U15 `api.ViewModel` (JSON equals the emit bytes) [opus]
 - [ ] U16 `gen/cpp` `types` mode; events compiles, Decode accepts EventConfig.json [sonnet]
 - [ ] U17 `ir` `types` mode rules mirroring U16's refusals [opus]
