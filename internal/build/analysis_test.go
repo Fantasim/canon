@@ -238,3 +238,57 @@ func TestAnalysisFrozenAfterBudgetExhaustion(t *testing.T) {
 		t.Errorf("Bag(\"a\") changed after Force: before %v, after %v", wantFindings, bag.Findings())
 	}
 }
+
+// EVALUATION.md §2.1, API.md R4: Force reads only what stage A settled, and reports nothing.
+func TestAnalysisForceReadsSettled(t *testing.T) {
+	fsys := mapFS{
+		"law/project.canon": file("project acme {\n  canon: \"0.1\"\n}\n"),
+		"law/a/a.canon": file("/// A.\npackage a\n\n/// Good.\nlet good: Int = 6 * 7\n\n/// Bad.\nlet bad: Int = [1][3]\n\n" +
+			"/// Twice.\nfn twice(n: Int) -> Int {\n  return n * 2\n}\n"),
+	}
+	p, err := build.Open(fsys, "/law", build.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	a, err := p.Analyze(context.Background(), []string{"a"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	before := render(t, a.Result().Findings)
+	if v, ok := a.Force(eval.Root{Pkg: "a", Name: "good"}); !ok || v.CanonText() != "42" {
+		t.Errorf("Force(good) = %v, %t, want 42", v, ok)
+	}
+	for _, name := range []string{"bad", "twice", "nothing"} {
+		if v, ok := a.Force(eval.Root{Pkg: "a", Name: name}); ok || v != nil {
+			t.Errorf("Force(%s) = %v, %t, want nil, false", name, v, ok)
+		}
+	}
+	if got := render(t, a.Result().Findings); got != before {
+		t.Errorf("Result changed after Force:\nbefore %s\nafter  %s", before, got)
+	}
+}
+
+// API.md R6, EVALUATION.md §7.2: Cause is a poisoned root's own error or its upstream root's.
+func TestAnalysisCause(t *testing.T) {
+	fsys := mapFS{
+		"law/project.canon": file("project acme {\n  canon: \"0.1\"\n}\n"),
+		"law/a/a.canon":     file("/// A.\npackage a\n\nimport b\n\n/// Reads b.\nlet total: Int = b.bad + 1\n\n/// Fine.\nlet fine: Int = 1\n"),
+		"law/b/b.canon":     file("/// B.\npackage b\n\n/// Bad.\nlet bad: Int = [1, 2][5]\n"),
+	}
+	p, err := build.Open(fsys, "/law", build.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	a, err := p.Analyze(context.Background(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, root := range []eval.Root{{Pkg: "a", Name: "total"}, {Pkg: "b", Name: "bad"}} {
+		if c := a.Cause(root); len(c) != 1 || c[0].Package != "b" {
+			t.Errorf("Cause(%v) = %v, want b's one error", root, c)
+		}
+	}
+	if c := a.Cause(eval.Root{Pkg: "a", Name: "fine"}); len(c) != 0 {
+		t.Errorf("Cause(fine) = %v", c)
+	}
+}

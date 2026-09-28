@@ -16,4 +16,5 @@ var (
 	errBadName        = errors.New("not an identifier; give the project name with --name")
 	errBadPackage     = errors.New("each segment must be a lowerCamel identifier")
 	errExists         = errors.New("already exists")
+	errNoContainer    = errors.New("an input field has no container")
 )

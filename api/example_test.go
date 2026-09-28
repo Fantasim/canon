@@ -168,9 +168,27 @@ func ExampleProject_Value() {
 	}
 	describe(v)
 	describeOrigin(v.Origin)
-	describeEditability(v.Editable)
 	fmt.Println(v.Type.Expr, string(v.JSON()))
-	// Output:
+	// Output: teamboard:statuses.open.next[0] taken
+	// literal at teamboard/taxonomy.canon:172
+	// ref teamboard.statuses "taken"
+}
+
+func ExampleEditability() {
+	opts := exampleOptions()
+	opts.Layers = []string{"louis"}
+	p, err := canon.Open(exampleRoot, opts)
+	if err != nil {
+		return
+	}
+	defer p.Close()
+	for _, path := range []string{"config.server.host", "config.server.port"} {
+		if v, err := p.Value(context.Background(), path); err == nil {
+			describeEditability(v.Editable)
+		}
+	}
+	// Output: edits service/resourcestudio/resourcestudio.canon
+	// set by layer louis
 }
 
 func ExampleValue_String() {

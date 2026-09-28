@@ -1,0 +1,19 @@
+API.md P7a, CLI.md §3.7: an enum member's path names the member; it has no provenance line.
+-- args --
+explain
+a:Color.red
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A color.
+enum Color { red, blue }
+-- want --
+[exit 0]
+[stdout]
+a:Color.red = red  a.Color
+[stderr]

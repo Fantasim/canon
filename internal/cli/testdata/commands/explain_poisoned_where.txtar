@@ -1,0 +1,39 @@
+API.md R6, EVALUATION.md §7.1, §5: a value only verification poisons (a `where` predicate of a
+dependent type, run in stage B, raising a hard error) is explained by that error; exit 1.
+-- args --
+explain
+things
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// K.
+enum K { num, many }
+
+/// P.
+type P(k: K) = match k {
+  num => Int where [1][it] == 1
+  many => [Int]
+}
+
+/// Thing.
+record Thing {
+  /// K.
+  k: K
+  /// Payload.
+  p: P(k)
+}
+
+/// Things.
+let things: [Thing] = [{ k: num, p: 3 }]
+-- want --
+[exit 1]
+[stdout]
+error[E4002]  a/a.canon:9:20
+  index 3 out of range for length 1
+[stderr]
+canon: things: value could not be computed: root things

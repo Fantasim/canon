@@ -1,0 +1,14 @@
+CLI.md §3.7, IMPLEMENTATION-PLAN.md §8.1: the JSON line of the sample, the origin with the one
+it replaced.
+-- args --
+explain
+config.server.port
+--layer
+louis
+--format
+json
+-- want --
+[exit 0]
+[stdout]
+{"explain":{"path":"service.resourcestudio:config.server.port","type":"Int(1024..=65535)","text":"9000","value":9000,"origin":{"kind":"layer","file":"service/resourcestudio/louis.layer.canon","line":11,"col":16,"endLine":11,"endCol":20,"layer":"louis","replaced":{"kind":"default","file":"service/resourcestudio/resourcestudio.canon","line":29,"col":29,"endLine":29,"endCol":33,"via":{"kind":"literal","file":"service/resourcestudio/resourcestudio.canon","line":50,"col":20,"endLine":50,"endCol":22},"text":"8765"},"text":"9000"}}}
+[stderr]

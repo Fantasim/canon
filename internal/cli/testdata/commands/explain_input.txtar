@@ -1,0 +1,26 @@
+EVALUATION.md §11.2, CLI.md §3.7: an input field has no value at build time; explain prints
+`input from env NAME` for it and exits 0.
+-- args --
+explain
+gen.key
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Secrets.
+record Gen {
+  /// A key.
+  key: input String? from env "A_KEY"
+}
+
+/// The secrets.
+let gen: Gen = {}
+-- want --
+[exit 0]
+[stdout]
+gen.key = input from env A_KEY
+[stderr]

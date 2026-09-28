@@ -1,0 +1,30 @@
+API.md R6, EVALUATION.md §7.2: a value poisoned by reading a poisoned value of another package
+is explained by that package's error, which evaluation recorded as its cause; exit 1, no summary.
+-- args --
+explain
+a:total
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+import b
+
+/// Reads b's poisoned value.
+let total: Int = b.bad + 1
+-- b/b.canon --
+/// B.
+package b
+
+/// Past the end of its list.
+let bad: Int = [1, 2][5]
+-- want --
+[exit 1]
+[stdout]
+error[E4002]  b/b.canon:5:16
+  index 5 out of range for length 2
+[stderr]
+canon: a:total: value could not be computed: root a:total

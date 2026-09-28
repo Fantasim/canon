@@ -17,6 +17,16 @@ func (e *Evaluator) beginTestLog() {
 	}
 }
 
+// LogCauses makes the evaluator keep what poisons each value it forces, as a test's log does (EVALUATION.md §7.2).
+func (e *Evaluator) LogCauses() {
+	if e.testFiles == nil {
+		e.testFiles = e.files()
+	}
+	if e.causes == nil {
+		e.causes, e.via = map[*rootState]*diag.Bag{}, map[*rootState]*rootState{}
+	}
+}
+
 // logBag is an unlimited bag of pkg for a test's log.
 func (e *Evaluator) logBag(pkg string) *diag.Bag {
 	b := diag.NewBag(e.testFiles, pkg)
@@ -41,23 +51,27 @@ func (e *Evaluator) stopFindings() []diag.Finding {
 	return out
 }
 
-// noteStop keeps, while a test runs, a hard error of its own statements, or the one that
-// poisons the top-level value a run evaluates, in its frame's package; the bag gets it too.
+// noteStop keeps, while a test runs, a hard error of its own statements, and, while causes are
+// logged, the one that poisons the value a run evaluates or verifies; the bag gets it too.
 func (r *run) noteStop(b *diag.Builder) {
 	e := r.ev
 	switch {
-	case e.testStops == nil:
-	case r.sink == nil && r.test != nil:
+	case e.testStops != nil && r.sink == nil && r.test != nil:
 		b.Report(e.stopBag(r.fr.pkg))
-	case r.root != nil && e.causes[r.root] == nil:
+	case e.causes != nil && (r.free || r.emitted != nil) && e.aside == nil: // stage B; a host verifying aside keeps its own
+		if e.stageB == nil {
+			e.stageB = e.logBag(r.fr.pkg)
+		}
+		b.Report(e.stageB)
+	case e.causes != nil && r.root != nil && e.causes[r.root] == nil:
 		e.causes[r.root] = e.logBag(r.fr.pkg)
 		b.Report(e.causes[r.root])
 	}
 }
 
-// notePoisonedRead keeps, while a test runs, that the value r evaluates is poisoned by reading root.
+// notePoisonedRead keeps, while causes are logged, that the value r evaluates is poisoned by reading root.
 func (e *Evaluator) notePoisonedRead(r *run, root Root) {
-	if e.testStops == nil || r.root == nil || e.via[r.root] != nil {
+	if e.causes == nil || r.root == nil || e.via[r.root] != nil {
 		return
 	}
 	if st := e.rootState(root); st != nil {

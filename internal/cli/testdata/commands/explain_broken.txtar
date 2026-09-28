@@ -1,0 +1,22 @@
+API.md R6, TYPES.md §1: a root the checker broke is never evaluated; its type error, inside its
+declaration, explains it; exit 1.
+-- args --
+explain
+x
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A type error.
+let x: Int = "s"
+-- want --
+[exit 1]
+[stdout]
+error[E3002]  a/a.canon:5:14
+  expected Int, found String
+[stderr]
+canon: x: value could not be computed: root x

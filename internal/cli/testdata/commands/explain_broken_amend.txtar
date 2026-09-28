@@ -1,0 +1,37 @@
+API.md R6, EVALUATION.md §9.2: under an active layer whose amendment the checker refused, the
+value is not computed; that amendment's error explains it; exit 1.
+-- args --
+explain
+v
+--layer
+dev
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// R.
+record R {
+  /// P.
+  p: Int = 1
+}
+
+/// V.
+let v: R = {}
+-- a/dev.layer.canon --
+package a
+layer dev
+
+amend v {
+  q: 5
+}
+-- want --
+[exit 1]
+[stdout]
+error[E1905]  a/dev.layer.canon:5:3
+  amend path q: no such field
+[stderr]
+canon: v: value could not be computed: root v

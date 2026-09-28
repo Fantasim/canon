@@ -26,10 +26,11 @@ type options struct {
 	layers      []string
 	run         string
 	verbose     bool
+	depth       int
 }
 
 func newOptions() *options {
-	return &options{roots: map[string]string{}, format: formatText, maxWarnings: unlimited}
+	return &options{roots: map[string]string{}, format: formatText, maxWarnings: unlimited, depth: unlimited}
 }
 
 // newFlagSet is the global flags of CLI.md §2.3, then the command's own.
@@ -67,6 +68,26 @@ func testFlags(fs *flag.FlagSet, o *options) {
 	fs.BoolVar(&o.verbose, flagVerbose, o.verbose, usageVerbose)
 }
 
+// explainFlags are canon explain's own flags (CLI.md §3.7), on top of the global ones.
+func explainFlags(fs *flag.FlagSet, o *options) {
+	fs.Func(flagDepth, usageDepth, o.setDepth)
+}
+
+// setDepth records --depth, a count of levels of parts, 0 or more.
+func (o *options) setDepth(v string) (err error) {
+	o.depth, err = count(v)
+	return err
+}
+
+// count is a flag's count, 0 or more.
+func count(v string) (int, error) {
+	n, err := strconv.Atoi(v)
+	if err != nil || n < 0 {
+		return 0, errBadMax
+	}
+	return n, nil
+}
+
 // addLayer records one --layer, in the order given (CLI.md §2.3).
 func (o *options) addLayer(v string) error {
 	o.layers = append(o.layers, v)
@@ -102,13 +123,9 @@ func (o *options) addRoot(v string) error {
 	return nil
 }
 
-func (o *options) setMaxWarnings(v string) error {
-	n, err := strconv.Atoi(v)
-	if err != nil || n < 0 {
-		return errBadMax
-	}
-	o.maxWarnings = n
-	return nil
+func (o *options) setMaxWarnings(v string) (err error) {
+	o.maxWarnings, err = count(v)
+	return err
 }
 
 // check refuses flag values the flag package cannot judge alone.

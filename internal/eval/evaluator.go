@@ -47,6 +47,7 @@ type Evaluator struct {
 
 	invalid    map[value.Value]bool
 	history    map[value.Value]value.Value // what a layer amendment replaced with a value (history.go)
+	rebuilt    map[value.Value]value.Value // a container an amendment copied to change a descendant, to the one it copies (history.go)
 	keyed      map[value.Value]map[value.Key]*value.Record
 	regexps    map[string]*regexp.Regexp
 	frees      map[syntax.Node][]check.Object
@@ -76,6 +77,7 @@ type Evaluator struct {
 	testFiles diag.Files                // the files their bags resolve against
 	causes    map[*rootState]*diag.Bag  // the hard error that poisoned a value forced while tests run
 	via       map[*rootState]*rootState // a value poisoned by reading another poisoned one
+	stageB    *diag.Bag                 // a stage-B where predicate's hard errors, until Poison makes them the cause
 }
 
 // status is where a top-level value is in its evaluation.
@@ -128,6 +130,7 @@ func newEvaluator(bags check.Bags, opt Options) *Evaluator {
 		roots:   map[Root]*rootState{},
 		invalid: map[value.Value]bool{},
 		history: map[value.Value]value.Value{},
+		rebuilt: map[value.Value]value.Value{},
 		keyed:   map[value.Value]map[value.Key]*value.Record{},
 		regexps: map[string]*regexp.Regexp{},
 		frees:   map[syntax.Node][]check.Object{},
@@ -186,6 +189,21 @@ func (e *Evaluator) Force(ctx context.Context, root Root) (value.Value, bool) {
 	return e.force(ctx, st, nil, nil)
 }
 
+// Settled is root's value when its forcing completed; it never evaluates and changes nothing (EVALUATION.md §3.1).
+func (e *Evaluator) Settled(root Root) (value.Value, bool) {
+	st := e.roots[root]
+	if st == nil && e.parent != nil && e.parent.roots[root] != nil {
+		st = e.parent.roots[root]
+		if own := e.states[st.obj]; own != nil {
+			st = own // a vector's own forcing of it (DECISIONS 204)
+		}
+	}
+	if st == nil || st.status != done {
+		return nil, false
+	}
+	return st.v, true
+}
+
 // BeginVerification starts stage B over the values forced so far (EVALUATION.md §1, §5).
 func (e *Evaluator) BeginVerification(ctx context.Context) {
 	e.verifying = true
@@ -204,7 +222,9 @@ func (e *Evaluator) flush(ctx context.Context) {
 		st := e.queue[0]
 		e.queue = e.queue[1:]
 		if st.status == done {
+			e.stageB = nil // a cause is its own verification's (Poison)
 			e.host.Verify(ctx, st.root, st.v)
+			e.stageB = nil
 		}
 	}
 	e.flushing = false
@@ -225,9 +245,14 @@ func (e *Evaluator) Invalid(v value.Value) bool {
 // Poison poisons a top-level value after the fact: stage B met a hard error in it (DECISIONS
 // 147); it is no longer read, amended or traversed.
 func (e *Evaluator) Poison(root Root) {
+	cause := e.stageB
+	e.stageB = nil
 	st := e.rootState(root)
 	if st == nil || e.parent != nil && e.parent.roots[root] == st {
 		return // a vector poisons only what it forced
 	}
 	st.status, st.v = poisoned, nil
+	if e.causes != nil && cause != nil && e.causes[st] == nil {
+		e.causes[st] = cause // its verification's where predicate failed (EVALUATION.md §7.1)
+	}
 }

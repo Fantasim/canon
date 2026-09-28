@@ -1,0 +1,33 @@
+CLI.md §3.7, IMPLEMENTATION-PLAN.md §8.1: the JSON line holds the qualified path (API.md P10),
+the type, the text, the wire value and the origin with its via; parts are the same objects,
+down to --depth, and a part whose parts are not written has no `parts` key.
+-- args --
+explain
+cfg
+--depth
+1
+--format
+json
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Settings.
+record Cfg {
+  /// A name.
+  name: String
+  /// Its tags.
+  tags: [String] = ["x"]
+}
+
+/// The settings.
+let cfg: Cfg = { name: "main" }
+-- want --
+[exit 0]
+[stdout]
+{"explain":{"path":"a:cfg","type":"a.Cfg","text":"Cfg{name: \"main\", tags: [\"x\"]}","value":{"name":"main","tags":["x"]},"origin":{"kind":"literal","file":"a/a.canon","line":13,"col":16,"endLine":13,"endCol":32,"text":"Cfg{name: \"main\", tags: [\"x\"]}"},"parts":[{"path":"a:cfg.name","type":"String","text":"main","value":"main","origin":{"kind":"literal","file":"a/a.canon","line":13,"col":24,"endLine":13,"endCol":30,"text":"main"}},{"path":"a:cfg.tags","type":"[String]","text":"[\"x\"]","value":["x"],"origin":{"kind":"default","file":"a/a.canon","line":9,"col":20,"endLine":9,"endCol":25,"via":{"kind":"literal","file":"a/a.canon","line":13,"col":16,"endLine":13,"endCol":32},"text":"[\"x\"]"}}]}}
+[stderr]

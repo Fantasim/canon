@@ -1,0 +1,39 @@
+CLI.md §3.7, EVALUATION.md §13, API.md §5.2: a field copied by a spread is `spread` at the spread
+with the spread expression as detail; a field written after it is a literal; --depth 1 lists the
+parts of the value once.
+-- args --
+explain
+other
+--depth
+1
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A label.
+record Label {
+  /// Its text.
+  text: String
+  /// Its size.
+  size: Int = 3
+}
+
+/// The base label.
+let base: Label = { text: "Base", size: 5 }
+
+/// A copy with another text.
+let other: Label = { ...base, text: "Other" }
+-- want --
+[exit 0]
+[stdout]
+other = Label{text: "Other", size: 5}  a.Label
+  literal  a/a.canon:16
+other.text = Other  String
+  literal  a/a.canon:16
+other.size = 5  Int
+  spread  a/a.canon:16  ...base
+[stderr]

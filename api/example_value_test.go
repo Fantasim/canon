@@ -1,6 +1,7 @@
 package canon_test
 
 import (
+	"context"
 	"fmt"
 
 	canon "github.com/fantasim/canonlang/api"
@@ -73,6 +74,29 @@ func describeOrigin(o canon.Origin) {
 			fmt.Printf("in %s (%s:%d)\n", f.Fn, f.File, f.Line)
 		}
 	}
+}
+
+// The origins `canon explain config.server.port --layer louis` prints (CLI.md §3.7).
+func ExampleOrigin() {
+	opts := exampleOptions()
+	opts.Layers = []string{"louis"}
+	p, err := canon.Open(exampleRoot, opts)
+	if err != nil {
+		return
+	}
+	defer p.Close()
+	v, err := p.Value(context.Background(), "config.server.port")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(v.Path, "=", v, v.Type.Expr)
+	for o := &v.Origin; o != nil; o = o.Replaced {
+		fmt.Printf("%s %s:%d %s\n", o.Kind, o.File, o.Line, o.Text)
+	}
+	// Output: service.resourcestudio:config.server.port = 9000 Int(1024..=65535)
+	// layer service/resourcestudio/louis.layer.canon:11 9000
+	// default service/resourcestudio/resourcestudio.canon:29 8765
 }
 
 // describeEditability says where an edit of the value would go, or why there is none.

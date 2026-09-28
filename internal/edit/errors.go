@@ -3,6 +3,8 @@ package edit
 import (
 	"errors"
 	"fmt"
+
+	"github.com/fantasim/canonlang/internal/eval"
 )
 
 // The API wraps each exported sentinel as its own (API.md §15).
@@ -38,10 +40,11 @@ func (e *SyntaxError) Unwrap() []error {
 }
 
 // PathError is a path Resolve refuses: Err at segment Seg, -1 for the root; Candidates are the
-// roots an ambiguous path matches, sorted.
+// roots an ambiguous path matches, sorted; Root is the poisoned root of ErrNoValue.
 type PathError struct {
 	Seg        int
 	Candidates []string
+	Root       eval.Root
 	Err        error
 }
 

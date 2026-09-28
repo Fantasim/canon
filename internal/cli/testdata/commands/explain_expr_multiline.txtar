@@ -1,0 +1,24 @@
+CLI.md §3.7: one line per value and origin: the value's text and the expression holding a
+multiline string write their line breaks as `\n`, their bytes otherwise as written.
+-- args --
+explain
+help
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Help, computed.
+let help: String = """
+  First line.
+    Indented.
+  """ + "!"
+-- want --
+[exit 0]
+[stdout]
+help = First line.\n  Indented.!  String
+  computed  a/a.canon:5  """\n  First line.\n    Indented.\n  """ + "!"
+[stderr]

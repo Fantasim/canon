@@ -23,6 +23,7 @@ func (p *Project) Analyze(ctx context.Context, selectors []string) (*Analysis, e
 	if err != nil {
 		return nil, err
 	}
+	r.causes = true
 	if err := r.analyze(ctx); err != nil {
 		return nil, err
 	}
@@ -46,14 +47,28 @@ func (a *Analysis) Bag(pkg string) *diag.Bag {
 // Files locates every span Bag or Result reports.
 func (a *Analysis) Files() diag.Files { return a.r.s.set }
 
-// Force is root's already-settled value, (nil, false) for any other: stage A forces every root of a selected package (EVALUATION.md §2.1) and exhaustion is final (§12.2), so this never evaluates.
+// Force is root's value if stage A settled it, (nil, false) for any other; it never evaluates (EVALUATION.md §2.1).
 func (a *Analysis) Force(root eval.Root) (value.Value, bool) {
 	if !a.r.selects(root.Pkg) {
 		return nil, false
 	}
 	a.mu.Lock()
 	defer a.mu.Unlock()
-	return a.r.ev.Force(context.Background(), root)
+	return a.r.ev.Settled(root)
+}
+
+// Cause is the errors that poisoned root: its own, or the first poisoned value's it read, in any package (API.md R6, EVALUATION.md §7.2).
+func (a *Analysis) Cause(root eval.Root) []diag.Finding {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	return a.r.ev.PoisonCause(root).Findings
+}
+
+// Produced is v as its origin produced it, before later amendments of its descendants copied it (CLI.md §3.7).
+func (a *Analysis) Produced(v value.Value) value.Value {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	return a.r.ev.Produced(v)
 }
 
 // History is path's last value, then each value amendments replaced, newest first (CLI.md §3.7).

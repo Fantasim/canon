@@ -24,6 +24,7 @@ const (
 	cmdNew     = "new"
 	cmdVersion = "version"
 	cmdTest    = "test"
+	cmdExplain = "explain"
 )
 
 // Flags (CLI.md §2.3, §3.1, §3.4).
@@ -41,6 +42,7 @@ const (
 	flagLayer       = "layer"
 	flagRun         = "run"
 	flagVerbose     = "v"
+	flagDepth       = "depth"
 	formatText      = "text"
 	formatJSON      = "json"
 	rootAssign      = "="
@@ -61,6 +63,7 @@ const (
 	usageLayer       = "apply the layer `name`; repeatable, applied in order"
 	usageRun         = "run only the tests whose name matches the RE2 `regex`"
 	usageVerbose     = "also print each passing test"
+	usageDepth       = "print parts `n` levels deep (default: every part)"
 )
 
 // usageText lists the commands; the flags follow it (CLI.md §1).
@@ -69,6 +72,7 @@ const usageText = `usage: canon <command> [arguments] [flags]
 commands:
   build [packages...]   check, then write the outputs of packages
   check [packages...]   parse and check packages, print findings
+  explain <path>        print a value, its type and where each part was set
   init                  create project.canon in the current directory
   new <package>         create a package directory with a first file
   test [packages...]    run the test blocks of packages
@@ -130,6 +134,39 @@ const (
 	statusPass     = "pass"
 	statusFail     = "fail"
 )
+
+// canon explain's text (CLI.md §3.7): the head line, the origin columns and their details.
+const (
+	fmtExplainHead = "%s = %s"
+	fmtFileLine    = "%s:%d"
+	fmtFrame       = "  in %s (%s:%d)"
+	fmtMoreFrames  = "  (%d more frames)"
+	fmtInputFrom   = "input from env %s"
+	labelSetBy     = "set by"
+	labelLoaded    = "loaded"
+	layerWord      = "layer "
+	pointerMark    = "#"
+	rowWord        = "row "
+
+	pkgMark       = ':'
+	fieldMark     = '.'
+	lineBreakRune = '\n'
+	escapeByte    = '\\'
+	newlineLetter = 'n' // a line break written `\n` in a one-line detail
+)
+
+// originLabels are the origins CLI.md §3.7 names otherwise than API.md's OriginKind.
+var originLabels = map[canon.OriginKind]string{
+	canon.OriginLayer: labelSetBy, canon.OriginJSON: labelLoaded, canon.OriginCSV: labelLoaded,
+	canon.OriginDefines: labelLoaded, canon.OriginText: labelLoaded,
+}
+
+// originDetails writes each origin's detail column (CLI.md §3.7).
+var originDetails = map[canon.OriginKind]func(*explainer, canon.Origin) string{
+	canon.OriginLayer: layerDetail, canon.OriginLiteral: noDetail, canon.OriginJSON: pointerDetail,
+	canon.OriginCSV: rowDetail, canon.OriginDefines: noDetail, canon.OriginText: noDetail,
+	canon.OriginDefault: textDetail, canon.OriginSpread: sourceDetail, canon.OriginComputed: sourceDetail,
+}
 
 // Messages of the CLI itself: usage errors and failures that are not findings.
 const (

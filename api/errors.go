@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/fantasim/canonlang/internal/edit"
 )
 
 // Sentinel errors (API.md §15). Every error type below wraps exactly one of them; use errors.Is.
@@ -17,6 +19,7 @@ var (
 	ErrNoPath             = errors.New("no value at path")
 	ErrAmbiguousPath      = errors.New("ambiguous path")
 	ErrNoValue            = errors.New("value could not be computed")
+	ErrInputField         = errors.New("input field has no value at build time")
 	ErrBadOp              = errors.New("operation not valid here")
 	ErrBadValue           = errors.New("value does not fit the type")
 	ErrKeyExists          = errors.New("key already exists")
@@ -33,6 +36,20 @@ var (
 
 	errSeverity = errors.New("unknown severity")
 )
+
+// sentinelMap is one of edit's path refusals and the API sentinel it is (API.md §15).
+type sentinelMap struct {
+	from error
+	to   error
+}
+
+// pathSentinels maps edit's path refusals to the API's (rules R5, R6).
+var pathSentinels = [...]sentinelMap{
+	{from: edit.ErrBadPath, to: ErrBadPath},
+	{from: edit.ErrNoPath, to: ErrNoPath},
+	{from: edit.ErrAmbiguousPath, to: ErrAmbiguousPath},
+	{from: edit.ErrNoValue, to: ErrNoValue},
+}
 
 // errUnimplemented is what a stub with an error result returns until M4 (rule X2).
 func errUnimplemented() error { return &InternalError{Msg: msgUnimplemented} }

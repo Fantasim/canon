@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/fs"
 	"log/slog"
+	"slices"
 	"sync"
 
 	"github.com/fantasim/canonlang/internal/build"
@@ -40,12 +41,14 @@ type FS interface {
 
 // Project is an opened Canon project, safe for concurrent use (API.md §3).
 type Project struct {
-	root     string
-	b        *build.Project
-	mu       sync.Mutex
-	writeSem chan struct{} // a writing Build's 1-slot lock, cancellable, made lazily (S9, S11)
-	rev      Revision
-	closed   bool
+	root      string
+	b         *build.Project
+	mu        sync.Mutex
+	writeSem  chan struct{} // a writing Build's 1-slot lock, cancellable, made lazily (S9, S11)
+	rev       Revision
+	closed    bool
+	layers    []string // Options.Layers, the active layers
+	editLayer string   // Options.EditLayer, which Value's Editable is judged with (API.md §7.5)
 }
 
 // FindProject returns the directory holding project.canon in dir or a parent (rule O1).
@@ -83,7 +86,7 @@ func Open(root string, opts Options) (p *Project, err error) {
 	if err != nil {
 		return nil, apiError(err)
 	}
-	return &Project{root: dir, b: b}, nil
+	return &Project{root: dir, b: b, editLayer: opts.EditLayer, layers: slices.Clone(opts.Layers)}, nil
 }
 
 // Close releases the project and stops every Watch (rule O6).

@@ -36,6 +36,7 @@ type run struct {
 	order    []eval.Root   // the forced set, in order (EVALUATION.md §2.1)
 	locks    []*lockState
 	ir       []*ir.Package
+	causes   bool // Analyze: the evaluator logs what poisons each root (Analysis.Cause)
 }
 
 // prepare is phase 1: the snapshot parsed, the selection with its imports, the layers checked.
@@ -111,6 +112,9 @@ func (r *run) newHost(bags check.Bags) {
 // stageA forces every const and let of the selected packages in order (EVALUATION.md §2.1).
 func (r *run) stageA(ctx context.Context) {
 	r.newHost(r.bags)
+	if r.causes {
+		r.ev.LogCauses() // API.md R6
+	}
 	for _, cp := range r.prog.Packages {
 		if !r.selects(cp.Path) {
 			continue

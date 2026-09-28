@@ -26,6 +26,7 @@ func commands() map[string]command {
 	return map[string]command{
 		cmdBuild:   {flags: buildFlags, run: runBuild},
 		cmdCheck:   {run: runCheck},
+		cmdExplain: {flags: explainFlags, run: runExplain},
 		cmdInit:    {flags: initFlags, run: runInit},
 		cmdNew:     {run: runNew},
 		cmdTest:    {flags: testFlags, run: runTest},

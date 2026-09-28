@@ -1,0 +1,22 @@
+API.md R6, §15, CLI.md §2.5: a value that could not be computed is ErrNoValue, exit 1, after the
+findings that explain why.
+-- args --
+explain
+bad
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Past the end of its list.
+let bad: Int = [1, 2][5]
+-- want --
+[exit 1]
+[stdout]
+error[E4002]  a/a.canon:5:16
+  index 5 out of range for length 2
+[stderr]
+canon: bad: value could not be computed: root bad

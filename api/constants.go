@@ -1,6 +1,10 @@
 package canon
 
-import "github.com/fantasim/canonlang/internal/diag"
+import (
+	"github.com/fantasim/canonlang/internal/diag"
+	"github.com/fantasim/canonlang/internal/edit"
+	"github.com/fantasim/canonlang/internal/value"
+)
 
 // Severity of a finding (API.md §4.1).
 type Severity string
@@ -142,6 +146,35 @@ const (
 	OutputStale     OutputStatus = "stale"   // Check mode: would be written
 	OutputAdopted   OutputStatus = "adopted" // taken over through BuildOptions.Adopt (rule B2)
 )
+
+// originKinds names each provenance kind as OriginKind does, indexed by value.ProvKind (EVALUATION.md §13).
+var originKinds = [...]OriginKind{
+	value.ProvLiteral: OriginLiteral, value.ProvJSON: OriginJSON, value.ProvCSV: OriginCSV,
+	value.ProvDefines: OriginDefines, value.ProvText: OriginText, value.ProvDefault: OriginDefault,
+	value.ProvSpread: OriginSpread, value.ProvComputed: OriginComputed, value.ProvLayer: OriginLayer,
+}
+
+// editModes and reasons are edit's answers in the API's words, indexed by edit's (API.md §7).
+var (
+	editModes = [...]EditMode{edit.ModeNone: EditNone, edit.ModeCanon: EditCanon, edit.ModeJSON: EditJSON}
+	reasons   = [...]Reason{
+		edit.ReasonNone: ReasonNone, edit.ReasonComputed: ReasonComputed, edit.ReasonLayered: ReasonLayered,
+		edit.ReasonFormat: ReasonFormat, edit.ReasonInput: ReasonInput, edit.ReasonKey: ReasonKey,
+		edit.ReasonPseudo: ReasonPseudo, edit.ReasonOrder: ReasonOrder, edit.ReasonLayer: ReasonLayer,
+	}
+)
+
+// Paths as Value reads them: a lone segment's root, a segment's first bytes, error details (API.md §6.1).
+const (
+	segmentRoot       = "v"
+	pathSegmentStarts = ".["
+	fmtAtByte         = "%v at byte %d"
+	fmtSegment        = "segment %s"
+	fmtRoot           = "root %s"
+)
+
+// wireSchema is the `$schema` of the document Value.JSON reads a value's wire form back from.
+const wireSchema = "canon.value@00000000"
 
 // severities maps each Severity to the one diag writes (API.md §4.1).
 var severities = map[Severity]diag.Severity{

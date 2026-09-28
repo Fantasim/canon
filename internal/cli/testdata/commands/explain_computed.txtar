@@ -1,0 +1,33 @@
+CLI.md §3.7, API.md F13, EVALUATION.md §13: a computed value shows the expression that built it,
+then one `in <fn> (<file>:<line>)` line per frame of the stack that built it, innermost first.
+-- args --
+explain
+size
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Twice n.
+fn twice(n: Int) -> Int {
+  return n * 2
+}
+
+/// Twice n plus one.
+fn grow(n: Int) -> Int {
+  return twice(n + 1)
+}
+
+/// Computed through two calls.
+let size: Int = grow(4)
+-- want --
+[exit 0]
+[stdout]
+size = 10  Int
+  computed  a/a.canon:6  n * 2
+  in twice (a/a.canon:11)
+  in grow (a/a.canon:15)
+[stderr]

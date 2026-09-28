@@ -37,6 +37,25 @@ func (e *Evaluator) historyOf(path []value.Value, seen map[value.Value]bool, out
 	}
 }
 
+// Produced is v as its origin produced it: before the copies later amendments of its descendants made (CLI.md §3.7).
+func (e *Evaluator) Produced(v value.Value) value.Value {
+	for from := e.copyOf(v); from != nil; from = e.copyOf(v) {
+		v = from
+	}
+	return v
+}
+
+// copyOf is the value v is an amendment's copy of, nil for none.
+func (e *Evaluator) copyOf(v value.Value) value.Value {
+	if from, ok := e.rebuilt[v]; ok {
+		return from
+	}
+	if e.parent != nil {
+		return e.parent.copyOf(v)
+	}
+	return nil
+}
+
 // before is the value an amendment replaced with v, nil for none.
 func (e *Evaluator) before(v value.Value) value.Value {
 	if old, ok := e.history[v]; ok {

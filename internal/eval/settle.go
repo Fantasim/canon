@@ -48,6 +48,9 @@ func (m *moves) latest(rec *value.Record) *value.Record {
 // and a fresh one no one else holds, which settle may complete in place.
 func (r *run) copied(from, to value.Value) value.Value {
 	r.moving().fresh[to] = true
+	if from != nil && to != nil && from != to {
+		r.ev.rebuilt[to] = from
+	}
 	return r.ev.carry(from, to)
 }
 

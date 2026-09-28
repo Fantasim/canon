@@ -1,0 +1,29 @@
+CLI.md §3.7, EVALUATION.md §13: a CSV cell is `loaded` with its row, read from its pointer
+`/<row>/<column>`: a quoted cell over two lines makes the next record's row differ from its line;
+the lists that hold the cells have no provenance of their own and print no origin line.
+-- args --
+explain
+cells[1]
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Cells, read from CSV.
+let cells: [[String]] = load.csv("cells.csv")
+-- a/cells.csv --
+x,"two
+lines"
+z,w
+-- want --
+[exit 0]
+[stdout]
+cells[1] = ["z", "w"]  [String]
+cells[1][0] = z  String
+  loaded  a/cells.csv:3  row 2
+cells[1][1] = w  String
+  loaded  a/cells.csv:3  row 2
+[stderr]

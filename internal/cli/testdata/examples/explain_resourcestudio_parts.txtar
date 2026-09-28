@@ -1,0 +1,23 @@
+CLI.md §3.7: a record and each of its parts, depth-first, with a qualified path printed
+qualified; the layer louis amends two of them.
+-- args --
+explain
+service.resourcestudio:config.server
+--layer
+louis
+-- want --
+[exit 0]
+[stdout]
+service.resourcestudio:config.server = Server{host: "127.0.0.1", port: 9000, openBrowser: false, readOnly: false}  service.resourcestudio.Server
+  default  service/resourcestudio/resourcestudio.canon:50  Server{host: "127.0.0.1", port: 8765, openBrowser: true, readOnly: false}
+service.resourcestudio:config.server.host = 127.0.0.1  String
+  default  service/resourcestudio/resourcestudio.canon:27  127.0.0.1
+service.resourcestudio:config.server.port = 9000  Int(1024..=65535)
+  set by  service/resourcestudio/louis.layer.canon:11  layer louis
+  default  service/resourcestudio/resourcestudio.canon:29  8765
+service.resourcestudio:config.server.openBrowser = false  Bool
+  set by  service/resourcestudio/louis.layer.canon:12  layer louis
+  default  service/resourcestudio/resourcestudio.canon:31  true
+service.resourcestudio:config.server.readOnly = false  Bool
+  default  service/resourcestudio/resourcestudio.canon:33  false
+[stderr]

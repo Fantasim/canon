@@ -1,0 +1,46 @@
+CLI.md §3.7, EVALUATION.md §13: a value read from JSON is `loaded` with its pointer as `#/…`; a
+field its object omits is its `default`; a qualified path prints qualified.
+-- args --
+explain
+a:rows
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A row.
+record Row {
+  /// Its name.
+  name: String
+  /// Its count.
+  n: Int = 2
+}
+
+/// Rows, read from JSON.
+let rows: [Row] = load("rows.json")
+-- a/rows.json --
+[
+  {"name": "one", "n": 7},
+  {"name": "two"}
+]
+-- want --
+[exit 0]
+[stdout]
+a:rows = [Row{name: "one", n: 7}, Row{name: "two", n: 2}]  [a.Row]
+  loaded  a/rows.json:1  #
+a:rows[0] = Row{name: "one", n: 7}  a.Row
+  loaded  a/rows.json:2  #/0
+a:rows[0].name = one  String
+  loaded  a/rows.json:2  #/0/name
+a:rows[0].n = 7  Int
+  loaded  a/rows.json:2  #/0/n
+a:rows[1] = Row{name: "two", n: 2}  a.Row
+  loaded  a/rows.json:3  #/1
+a:rows[1].name = two  String
+  loaded  a/rows.json:3  #/1/name
+a:rows[1].n = 2  Int
+  default  a/a.canon:9  2
+[stderr]

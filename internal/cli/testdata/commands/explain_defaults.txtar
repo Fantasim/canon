@@ -1,0 +1,42 @@
+CLI.md §3.7, API.md §5.2 Origin.Text, STD-06: a `default` line's detail is the canonical text
+of the value the default produced: a string unquoted, a derived default's value, and `none` for
+an omitted optional.
+-- args --
+explain
+cfg
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Settings.
+record Cfg {
+  /// A host.
+  host: String = "127.0.0.1"
+  /// A base.
+  base: Int = 4
+  /// Twice the base.
+  twice: Int = base * 2
+  /// An optional note.
+  note: String?
+}
+
+/// The settings.
+let cfg: Cfg = { base: 5 }
+-- want --
+[exit 0]
+[stdout]
+cfg = Cfg{host: "127.0.0.1", base: 5, twice: 10, note: none}  a.Cfg
+  literal  a/a.canon:17
+cfg.host = 127.0.0.1  String
+  default  a/a.canon:7  127.0.0.1
+cfg.base = 5  Int
+  literal  a/a.canon:17
+cfg.twice = 10  Int
+  default  a/a.canon:11  10
+cfg.note = none  String?
+  default  a/a.canon:13  none
+[stderr]

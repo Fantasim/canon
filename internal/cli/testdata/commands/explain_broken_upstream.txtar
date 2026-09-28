@@ -1,0 +1,30 @@
+API.md R6, TYPES.md §1: a root broken only by naming a root the checker broke, in another
+package, is explained by that root's error; exit 1.
+-- args --
+explain
+y
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+import b
+
+/// Names b's broken value.
+let y: Int = b.x + 1
+-- b/b.canon --
+/// B.
+package b
+
+/// A type error.
+let x: Int = "s"
+-- want --
+[exit 1]
+[stdout]
+error[E3002]  b/b.canon:5:14
+  expected Int, found String
+[stderr]
+canon: y: value could not be computed: root y

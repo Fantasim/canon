@@ -1913,6 +1913,12 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      Reason: M3 acceptance 6 (`events` refs a define table) and examples `game.items`,
      `features.legacycpp` check clean but could not be built.
 
+223. **`api.Origin` carries the amendment chain, the produced text and cut frames; `ErrInputField`
+     (frozen contract, IMPLEMENTATION-PLAN §4 review rule; ADR-0007).** `Origin` gains `Text`,
+     `MoreFrames` and `Replaced` (appended after `Stack`); `ErrInputField` is new (R5); R6 names
+     what `ErrNoValue` wraps; `Value.JSON()` is the compact wire form. `canon explain` (CLI §3.7)
+     reads them. Reason: M3 acceptance 4.
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.

@@ -1,0 +1,26 @@
+API.md P6, R5, §15: an unqualified root public in two packages is ErrAmbiguousPath, exit 2,
+listing the qualified candidates.
+-- args --
+explain
+limit
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A limit.
+let limit: Int = 1
+-- b/b.canon --
+/// B.
+package b
+
+/// B's limit.
+let limit: Int = 2
+-- want --
+[exit 2]
+[stdout]
+[stderr]
+canon: limit: ambiguous path: a:limit, b:limit

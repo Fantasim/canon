@@ -1,0 +1,14 @@
+M3 acceptance 4, CLI.md §3.7: the sample of explain, from examples/service/resourcestudio: the
+layer that set the port, then the default it replaced.
+-- args --
+explain
+config.server.port
+--layer
+louis
+-- want --
+[exit 0]
+[stdout]
+config.server.port = 9000  Int(1024..=65535)
+  set by  service/resourcestudio/louis.layer.canon:11  layer louis
+  default  service/resourcestudio/resourcestudio.canon:29  8765
+[stderr]

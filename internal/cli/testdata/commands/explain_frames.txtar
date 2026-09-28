@@ -1,0 +1,43 @@
+CLI.md §3.7, API.md F13, EVALUATION.md §13: a value computed 20 calls deep keeps the 16 innermost
+frames of its stack, then one `(<n> more frames)` line for the rest.
+-- args --
+explain
+deep
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Seven, n calls down.
+fn down(n: Int) -> Int {
+  return if n == 0 { 7 * 1 } else { down(n - 1) }
+}
+
+/// Computed at the bottom of 20 calls.
+let deep: Int = down(19)
+-- want --
+[exit 0]
+[stdout]
+deep = 7  Int
+  computed  a/a.canon:6  7 * 1
+  in down (a/a.canon:6)
+  in down (a/a.canon:6)
+  in down (a/a.canon:6)
+  in down (a/a.canon:6)
+  in down (a/a.canon:6)
+  in down (a/a.canon:6)
+  in down (a/a.canon:6)
+  in down (a/a.canon:6)
+  in down (a/a.canon:6)
+  in down (a/a.canon:6)
+  in down (a/a.canon:6)
+  in down (a/a.canon:6)
+  in down (a/a.canon:6)
+  in down (a/a.canon:6)
+  in down (a/a.canon:6)
+  in down (a/a.canon:6)
+  (4 more frames)
+[stderr]

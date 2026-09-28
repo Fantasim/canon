@@ -1,0 +1,42 @@
+CLI.md §3.7, §2.5: --depth is a count of 0 or more; anything else is a usage error.
+-- args --
+explain
+x
+--depth
+-1
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- want --
+[exit 2]
+[stdout]
+[stderr]
+canon: invalid value "-1" for flag -depth: want a count of 0 or more
+usage: canon <command> [arguments] [flags]
+
+commands:
+  build [packages...]   check, then write the outputs of packages
+  check [packages...]   parse and check packages, print findings
+  explain <path>        print a value, its type and where each part was set
+  init                  create project.canon in the current directory
+  new <package>         create a package directory with a first file
+  test [packages...]    run the test blocks of packages
+  version               print the compiler, language and format versions
+
+flags:
+  -depth n
+    	print parts n levels deep (default: every part)
+  -format format
+    	output format: text or json (default "text")
+  -layer name
+    	apply the layer name; repeatable, applied in order
+  -max-warnings n
+    	exit with code 4 when there are more than n warnings
+  -project string
+    	project root (default: search upward from the current directory)
+  -q	print errors only
+  -quiet
+    	print errors only
+  -root name=dir
+    	use name=dir for a declared root; repeatable

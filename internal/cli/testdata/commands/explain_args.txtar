@@ -1,0 +1,12 @@
+CLI.md §3.7, §2.5: explain takes exactly one path.
+-- args --
+explain
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- want --
+[exit 2]
+[stdout]
+[stderr]
+canon: explain: takes exactly one argument

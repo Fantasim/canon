@@ -1,0 +1,25 @@
+API.md R5, §15, CLI.md §2.5: a path with no value is ErrNoPath, exit 2, naming the segment.
+-- args --
+explain
+cfg.missing
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Settings.
+record Cfg {
+  /// A name.
+  name: String
+}
+
+/// The settings.
+let cfg: Cfg = { name: "main" }
+-- want --
+[exit 2]
+[stdout]
+[stderr]
+canon: cfg.missing: no value at path: segment .missing

@@ -1,0 +1,19 @@
+CLI.md §3.7: without the layer, the port is its default, and --depth 1 stops at the parts of
+config.
+-- args --
+explain
+config
+--depth
+1
+-- want --
+[exit 0]
+[stdout]
+config = Config{paths: Paths{resourceRoot: "../../Resource", clientRoot: "../../Client", iconDir: none, cacheDir: ".cache"}, server: Server{host: "127.0.0.1", port: 8765, openBrowser: true, readOnly: false}, gen: Gen{}}  service.resourcestudio.Config
+  literal  service/resourcestudio/resourcestudio.canon:56
+config.paths = Paths{resourceRoot: "../../Resource", clientRoot: "../../Client", iconDir: none, cacheDir: ".cache"}  service.resourcestudio.Paths
+  default  service/resourcestudio/resourcestudio.canon:48  Paths{resourceRoot: "../../Resource", clientRoot: "../../Client", iconDir: none, cacheDir: ".cache"}
+config.server = Server{host: "127.0.0.1", port: 8765, openBrowser: true, readOnly: false}  service.resourcestudio.Server
+  default  service/resourcestudio/resourcestudio.canon:50  Server{host: "127.0.0.1", port: 8765, openBrowser: true, readOnly: false}
+config.gen = Gen{}  service.resourcestudio.Gen
+  default  service/resourcestudio/resourcestudio.canon:52  Gen{}
+[stderr]

@@ -53,7 +53,7 @@ func apiError(err error) error {
 	case errors.As(err, &ue):
 		return fmt.Errorf(fmtUnknown, ErrUnknownPackage, ue.Name)
 	case errors.Is(err, build.ErrInternal):
-		return &InternalError{Msg: err.Error(), Stack: string(debug.Stack())}
+		return internalError(err)
 	}
 	return err
 }

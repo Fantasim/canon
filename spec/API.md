@@ -419,9 +419,14 @@ Methods, all cheap, never re-evaluating:
 
 - **R4.** A `*Value` holds its snapshot: it stays valid and unchanged after later edits.
 - **R5.** `Value` on a path that does not exist is `ErrNoPath`; a syntax error is `ErrBadPath`;
-  an ambiguous unqualified root is `ErrAmbiguousPath` (§6.3).
+  an ambiguous unqualified root is `ErrAmbiguousPath` (§6.3); a path ending at an `input` field is
+  `ErrInputField` (the field has no value at build time, EVALUATION.md §11.2), with `Detail` its
+  environment variable.
 - **R6.** A value that could not be computed (poisoned, EVALUATION.md) is `ErrNoValue`, which
-  wraps the findings that explain why.
+  wraps the findings that explain why: the cause evaluation or verification recorded for its root
+  (its own hard error or, through taint, the first poisoned value it read, in any package), else
+  the checker's findings in the root's declaration and in its active layers' amendments, else those
+  of the checker-broken declarations it depends on.
 
 `Origin` records where a value comes from (EVL-07):
 
@@ -435,6 +440,11 @@ type Origin struct {
     Via     *Origin    // default: the literal or JSON object that omitted the field;
                        // spread: the origin of the copied value
     Stack   []Frame    // computed: the Canon call stack that built it, at most 16 frames
+    Text       string  // canonical text (STDLIB STD-06) of the value this origin produced, before
+                       // any later amendment of it or its descendants; "" when not known
+    MoreFrames int     // frames cut from Stack (F13); 0 when none
+    Replaced   *Origin // the origin of the value an amendment replaced with this one (EVALUATION.md
+                       // §9.3), and so on back to the base value, newest first; nil if none
 }
 ```
 
@@ -1233,6 +1243,7 @@ Errors are Go errors, distinct from findings. Every error type wraps one sentine
 | `ErrNoPath` | `*PathError` | nothing at that path | 2 |
 | `ErrAmbiguousPath` | `*PathError` | unqualified root matches several packages (P6) | 2 |
 | `ErrNoValue` | `*PathError` | the value is poisoned (R6) | 1 |
+| `ErrInputField` | `*PathError` | the path names an `input` field (R5); `Detail` is its environment variable | 2 |
 | `ErrBadOp` | `*PathError` | op not valid for that container (E2) | 2 |
 | `ErrBadValue` | `*ValueError` | value does not fit the type; bad template value (V1, N2); unknown build `Target` (B1b) | 2 |
 | `ErrKeyExists` | `*PathError` | E3 | 1 |

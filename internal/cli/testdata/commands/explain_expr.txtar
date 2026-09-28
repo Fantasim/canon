@@ -1,0 +1,24 @@
+CLI.md §3.7: an expression written over several lines is quoted on one line from the sources
+the analysis read: each line break and its indentation become one space, while a string literal
+keeps its bytes, its inner spaces included.
+-- args --
+explain
+label
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A label, computed.
+let label: String = ["a  b",
+    "c"]
+  .join(",")
+-- want --
+[exit 0]
+[stdout]
+label = a  b,c  String
+  computed  a/a.canon:5  ["a  b", "c"] .join(",")
+[stderr]

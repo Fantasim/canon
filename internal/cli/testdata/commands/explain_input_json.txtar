@@ -1,0 +1,28 @@
+EVALUATION.md §11.2, CLI.md §2.6, API.md P10: an input field's JSON line holds its canonical,
+qualified path, its container resolved as a value.
+-- args --
+explain
+gen.key
+--format
+json
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Secrets.
+record Gen {
+  /// A key.
+  key: input String? from env "A_KEY"
+}
+
+/// The secrets.
+let gen: Gen = {}
+-- want --
+[exit 0]
+[stdout]
+{"explain":{"path":"a:gen.key","type":"","text":"input from env A_KEY","value":null,"origin":{}}}
+[stderr]

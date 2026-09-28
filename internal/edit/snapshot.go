@@ -118,7 +118,7 @@ func (s *Snapshot) force(r rootRef) (value.Value, error) {
 	if s.a.Bag(r.pkg.Path) == nil {
 		return nil, &PathError{Seg: rootSeg, Err: ErrNotAnalyzed}
 	}
-	return nil, &PathError{Seg: rootSeg, Err: ErrNoValue}
+	return nil, &PathError{Seg: rootSeg, Err: ErrNoValue, Root: eval.Root{Pkg: r.pkg.Path, Name: r.obj.Name()}}
 }
 
 // display is the display path of a file of the snapshot, "" for none.

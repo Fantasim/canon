@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/fantasim/canonlang/internal/edit"
+	"github.com/fantasim/canonlang/internal/eval"
 	"github.com/fantasim/canonlang/internal/value"
 )
 
@@ -264,7 +265,12 @@ func TestResolveUnsettledRoots(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	checkErrs(t, analyze(t, p, []string{"p"}, false), []errCase{{"p:bad", edit.ErrNoValue, -1}})
+	f := analyze(t, p, []string{"p"}, false)
+	checkErrs(t, f, []errCase{{"p:bad", edit.ErrNoValue, -1}})
+	var pe *edit.PathError
+	if err := resolveErr(t, f, "bad"); !errors.As(err, &pe) || pe.Root != (eval.Root{Pkg: "p", Name: "bad"}) {
+		t.Errorf("bad: %v names root %v, want p:bad", err, pe)
+	}
 	checkErrs(t, lawFixture(t, nil, "u"), []errCase{{"a:shared", edit.ErrNotAnalyzed, -1}})
 }
 
