@@ -753,16 +753,16 @@ variant EventKind @json(tag: "type") {
   is named after the first member it covers, in the discriminant enum's declaration order. (The
   name is `<Alias>Branch`, not `<Alias>Kind` as DEP-03 proposed: `ParamKind` is the natural name
   of the discriminating enum and already exists in `resource.vocab`.)
-- Each branch has an accessor. A `ref` branch exposes the key; a ref to a `load.defines` table
-  also exposes the define's value ([§5.8](#58-references)). A branch whose type is not a scalar,
-  `String`, enum or `ref` is `E8017`.
+- Each branch has an accessor. A `ref` branch exposes the key. A branch that is a ref into a
+  `load.defines` table is E8019 `DependentType` in every generator (no `As<Branch>Value` is
+  written; `monster` below stands for a ref into an ordinary collection). A branch whose type is
+  not a scalar, `String`, enum or `ref` is `E8017`.
 
 ```go
 type ParamBranch uint8 // ParamBranchMonster, ParamBranchItem, ParamBranchElement, ParamBranchGameMode
 type Param struct{ /* … */ }
 func (self *Param) Branch() ParamBranch
-func (self *Param) AsMonster() (string, bool)       // ref monsters: the define name
-func (self *Param) AsMonsterValue() (int64, bool)   // its value
+func (self *Param) AsMonster() (string, bool)       // ref monsters: the key
 func (self *Param) AsItem() (string, bool)
 func (self *Param) AsElement() (Element, bool)
 func (self *Param) AsGameMode() (string, bool)
@@ -774,7 +774,6 @@ class Param {
 public:
     ParamBranch GetBranch() const;
     const std::string* AsMonster() const;           // nullptr unless GetBranch() == monster
-    std::optional<int64_t> AsMonsterValue() const;
     const std::string* AsItem() const;
     std::optional<Element> AsElement() const;
     const std::string* AsGameMode() const;
@@ -839,8 +838,9 @@ and define tables. Key getters return: Go `K`, `(K, bool)` for `ref T?`, `rt.Lis
 
 The **define value getter** (`XxxValue()`, `GetXxxValue()`) returns the integer value of the
 define as `int64`/`int64_t`. Define values are compile-time facts of the runtime (the header is
-compiled into it), so every Go and C++ emit carries a baked, sorted `(name, value)` table of the
-defines its refs use, and loaders resolve the value when they read the key. A key missing from
+compiled into it), so every Go and C++ emit carries a baked, sorted `(name, value)` table holding
+every define of each define table a field of the emit's own classes refs (whether or not a value
+uses it), and loaders resolve the value right after reading the key. A key missing from
 that table (data built with a newer header than the binary) is a load error.
 
 - **The table.** One per define table the emit's refs use, named from the table's `let`
@@ -849,12 +849,17 @@ that table (data built with a newer header than the binary) is a load error.
   `constexpr std::array<std::pair<std::string_view, int64_t>, N>`. Entries are sorted by the
   define name's bytes and looked up by binary search. The names join the package's generated
   names ([§3.5](#35-overrides-and-collisions)): a colliding user name is `E8005`. A baked emit
-  writes the value next to the key and needs no lookup at run time.
+  writes the table too and reads no key from it at run time. `<Table>` in the load error below is
+  C++'s UpperCamel of the `let` in both loaders ([§3.2](#32-casing-functions)); Go's variable name
+  `defines<Table>` uses Go's UpperCamel.
 - **Getters.** For `f: ref D` (D a define table): the key getter as above (`String`), plus the
   value getter — Go `FValue() int64`, C++ `int64_t GetFValue() const`. For `ref D?`: Go
   `FValue() (int64, bool)`, C++ `std::optional<int64_t> GetFValue() const`. For `[ref D]`: Go
   `FValues() rt.List[int64]`, C++ `const std::vector<int64_t>& GetFValues() const`, in the list's
-  order. Refs to defines inside maps and nested lists are keys only (as every ref there).
+  order; for `[ref D]?`, Go `FValues() (rt.List[int64], bool)`, C++ `const std::vector<int64_t>*
+  GetFValues() const` ([§4.3](#43-optional-values)). Value getters exist only for fields (a pairs
+  record's fields included); a value, constant or `export fn` result that is a ref into a define
+  table exposes its key only. Refs to defines inside maps and nested lists are keys only (as every ref there).
 - **Loading** (data, embedded and types modes). The loader looks the key up when it reads it and
   stores the value; a key missing from the table is the load error
   `<pointer>: define <name> is not in this program's <Table> table` (its text is part of this
