@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 	"testing"
@@ -23,6 +24,9 @@ const (
 	examplesDir  = "../../../examples"
 	manifestFile = "MANIFEST"
 	findingsFile = "findings.txt"
+	// expectedDir and fixturesDir are discoverManifests' special directory names.
+	expectedDir = "expected"
+	fixturesDir = "_fixtures"
 )
 
 // defaultTargets are the targets an example without its own row in exampleTargets is built for.
@@ -59,19 +63,50 @@ func TestExamples(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	manifests, err := filepath.Glob(filepath.Join(root, "*", "expected", manifestFile))
+	manifests, err := discoverManifests(root)
 	if err != nil {
 		t.Fatal(err)
 	}
-	sort.Strings(manifests)
 	if len(manifests) == 0 {
 		t.Fatal("no example has expected/MANIFEST")
 	}
 	for _, m := range manifests {
 		expected := filepath.Dir(m)
-		name := filepath.Base(filepath.Dir(expected))
+		name := manifestName(root, expected)
 		t.Run(name, func(t *testing.T) { runExample(t, root, name, expected) })
 	}
+}
+
+// discoverManifests is every expected/MANIFEST under root, sorted, at any depth, skipping fixturesDir (IMPLEMENTATION-PLAN §7.1).
+func discoverManifests(root string) ([]string, error) {
+	var manifests []string
+	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() && d.Name() == fixturesDir {
+			return fs.SkipDir
+		}
+		if !d.IsDir() && d.Name() == manifestFile && filepath.Base(filepath.Dir(path)) == expectedDir {
+			manifests = append(manifests, path)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	sort.Strings(manifests)
+	return manifests, nil
+}
+
+// manifestName is the package name TestExamples runs an example's subtest under: expected's
+// parent directory, relative to root, with "/" turned into "." (balance/parity → balance.parity).
+func manifestName(root, expected string) string {
+	rel, err := filepath.Rel(root, filepath.Dir(expected))
+	if err != nil {
+		return filepath.Base(filepath.Dir(expected))
+	}
+	return strings.ReplaceAll(filepath.ToSlash(rel), "/", ".")
 }
 
 // runExample copies examples/ into a temporary project, builds name (and exampleExtra[name])
@@ -365,10 +400,50 @@ func TestBuildManifestFailsOnDuplicateGolden(t *testing.T) {
 	}
 }
 
-// compareOrUpdate compares got with path's content, or, under -update, writes it.
+// discoverManifests finds a nested package's expected/MANIFEST, not just a top-level one's,
+// skips one under fixturesDir, and manifestName turns its path back into a dotted name:
+// balance/parity/expected/MANIFEST names the package "balance.parity".
+func TestDiscoverManifestsNamesNestedPackages(t *testing.T) {
+	root := t.TempDir()
+	for _, dir := range []string{
+		"pipeline/expected",
+		"balance/parity/expected",
+		fixturesDir + "/resource/expected",
+	} {
+		if err := os.MkdirAll(filepath.Join(root, dir), dirPerm); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, dir := range []string{"pipeline/expected", "balance/parity/expected"} {
+		if err := os.WriteFile(filepath.Join(root, dir, manifestFile), nil, filePerm); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := os.WriteFile(filepath.Join(root, fixturesDir, "resource", "expected", manifestFile), nil, filePerm); err != nil {
+		t.Fatal(err)
+	}
+	manifests, err := discoverManifests(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	names := make([]string, len(manifests))
+	for i, m := range manifests {
+		names[i] = manifestName(root, filepath.Dir(m))
+	}
+	if want := []string{"balance.parity", "pipeline"}; !slices.Equal(names, want) {
+		t.Errorf("names: %v, want %v", names, want)
+	}
+}
+
+// compareOrUpdate compares got with path's content, or, under -update, writes it, creating
+// path's directory first: a new example's golden (balance.parity's expected/parity/, e.g.) has
+// none yet, unlike every directory an already-generated golden writes into again.
 func compareOrUpdate(t *testing.T, path string, got []byte) {
 	t.Helper()
 	if *update {
+		if err := os.MkdirAll(filepath.Dir(path), dirPerm); err != nil {
+			t.Fatal(err)
+		}
 		if err := os.WriteFile(path, got, filePerm); err != nil {
 			t.Fatal(err)
 		}

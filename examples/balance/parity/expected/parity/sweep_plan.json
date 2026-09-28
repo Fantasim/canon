@@ -1,0 +1,143 @@
+{
+  "$schema": "balance.parity.Plan@a2305fd5",
+  "value": {
+    "charName": "ClaudeBot1",
+    "hitsPerBlock": 120,
+    "actionDelayMs": 700,
+    "totemIndex": {
+      "pve": 3588,
+      "pvp": 3593
+    },
+    "combos": [
+      {
+        "job": "JOB_VAGRANT",
+        "jobToken": "Vagrant",
+        "level": 1,
+        "weapon": "II_WEA_SWO_WOODEN",
+        "weaponId": 16,
+        "weaponKind": "IK3_SWD",
+        "ranged": false,
+        "profiles": [
+          "pve",
+          "pvp"
+        ],
+        "skills": []
+      },
+      {
+        "job": "JOB_MERCENARY",
+        "jobToken": "Mercenary",
+        "level": 60,
+        "weapon": "II_WEA_SWO_TRITIUM",
+        "weaponId": 2258,
+        "weaponKind": "IK3_SWD",
+        "ranged": false,
+        "profiles": [
+          "pve",
+          "pvp"
+        ],
+        "skills": [
+          {
+            "slot": 0,
+            "id": 1,
+            "mp": 0
+          },
+          {
+            "slot": 1,
+            "id": 2,
+            "mp": 0
+          },
+          {
+            "slot": 2,
+            "id": 4,
+            "mp": 7
+          }
+        ]
+      },
+      {
+        "job": "JOB_ACROBAT",
+        "jobToken": "Acrobat",
+        "level": 60,
+        "weapon": "II_WEA_BOW_SUHO",
+        "weaponId": 3639,
+        "weaponKind": "IK3_BOW",
+        "ranged": true,
+        "profiles": [
+          "pve",
+          "pvp"
+        ],
+        "skills": [
+          {
+            "slot": 0,
+            "id": 194,
+            "mp": 0
+          }
+        ]
+      },
+      {
+        "job": "JOB_ASSIST",
+        "jobToken": "Assist",
+        "level": 60,
+        "weapon": "II_WEA_KNU_SUHO",
+        "weaponId": 3631,
+        "weaponKind": "IK3_KNUCKLEHAMMER",
+        "ranged": false,
+        "profiles": [
+          "pve",
+          "pvp"
+        ],
+        "skills": [
+          {
+            "slot": 0,
+            "id": 1,
+            "mp": 0
+          },
+          {
+            "slot": 1,
+            "id": 2,
+            "mp": 0
+          },
+          {
+            "slot": 2,
+            "id": 104,
+            "mp": 0
+          }
+        ]
+      },
+      {
+        "job": "JOB_MAGICIAN",
+        "jobToken": "Magician",
+        "level": 60,
+        "weapon": "II_WEA_WAN_TRITIUM",
+        "weaponId": 2262,
+        "weaponKind": "IK3_WAND",
+        "ranged": false,
+        "profiles": [
+          "pve",
+          "pvp"
+        ],
+        "skills": [
+          {
+            "slot": 0,
+            "id": 121,
+            "mp": 0
+          },
+          {
+            "slot": 1,
+            "id": 1,
+            "mp": 0
+          },
+          {
+            "slot": 2,
+            "id": 2,
+            "mp": 0
+          },
+          {
+            "slot": 3,
+            "id": 64,
+            "mp": 0
+          }
+        ]
+      }
+    ]
+  }
+}
