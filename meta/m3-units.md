@@ -7,7 +7,7 @@ Tick with the landing SHA.
 ## Wave 1 (in flight at the start)
 
 - [x] check follow-ups (2900de3): E3806 at a parameter declaration, union readings, progen cascades [opus]
-- [ ] verify: dependent verification E3801/E3802/E3501/E3322, resolved values to outputs [opus]
+- [x] verify (bd2c5b6): dependent verification E3801/E3802/E3501/E3322, resolved values to outputs [opus]
 - [x] pattern automaton (2b24d52, 8b5210b, 7df809a): ir table + gen/cpp iterative matcher [opus]
 - [ ] gen consumers' dependent refusals (gen/go, gen/cpp, ir), all-Never → E8019, ir alias-chain
       patterns, `LoadInputs` hiding scope, example golden [opus] (after the three above)
@@ -23,7 +23,7 @@ Tick with the landing SHA.
 - [ ] ★U6 `i18n`: catalogue, translation files, W1701, E1702, E1704–E1707 [sonnet]
 - [ ] ★U7 `views` V1: static checks E1601–E1632/E1634, W16xx [opus]
 - [ ] ★U8 wire i18n/views checks into `build`; generic findings test over every example [sonnet]
-- [ ] U9 `gen/view`: bytes from `*vm.ViewModel` (J1–J3, J10, WIRE §7) [sonnet]
+- [x] U9 (dfba53b) `gen/view`: bytes from `*vm.ViewModel` (J1–J3, J10, WIRE §7) [sonnet]
 - [ ] ★U10 `views` V2: `types` and controls (VIEWMODEL §4, §6, §12.3, §12.5) [sonnet→opus]
 - [ ] ★U11 `views` V3: the rest of the model (§5, §7–§10, §12.4, §12.6–§12.11) [sonnet]
 - [ ] ★U12 `build` writes the `view` target in phase 8, even with errors [sonnet]
