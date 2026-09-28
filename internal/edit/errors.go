@@ -5,9 +5,14 @@ import (
 	"fmt"
 )
 
+// The API wraps each exported sentinel as its own (API.md §15).
 var (
-	// ErrBadPath is a path that does not follow API.md §6.1; the API wraps it as canon.ErrBadPath.
-	ErrBadPath = errors.New("invalid path")
+	ErrBadPath       = errors.New("invalid path")
+	ErrNoPath        = errors.New("no value at path")
+	ErrAmbiguousPath = errors.New("ambiguous path")
+	ErrNoValue       = errors.New("value not computed")
+	ErrNotAnalyzed   = errors.New("package not analyzed") // a root of a package the analysis did not select
+	ErrForeign       = errors.New("path resolved in another snapshot")
 
 	errUnexpected = errors.New("unexpected character")
 	errName       = errors.New("expected a name")
@@ -31,3 +36,17 @@ func (e *SyntaxError) Error() string {
 func (e *SyntaxError) Unwrap() []error {
 	return []error{ErrBadPath, e.Reason}
 }
+
+// PathError is a path Resolve refuses: Err at segment Seg, -1 for the root; Candidates are the
+// roots an ambiguous path matches, sorted.
+type PathError struct {
+	Seg        int
+	Candidates []string
+	Err        error
+}
+
+func (e *PathError) Error() string {
+	return fmt.Sprintf(fmtPathError, e.Err, e.Seg)
+}
+
+func (e *PathError) Unwrap() error { return e.Err }

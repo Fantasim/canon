@@ -55,7 +55,7 @@ var annCatalog = map[string]*annSpec{
 		{name: argN, kind: valSince, sites: siteAll, required: true},
 	}},
 	AnnReload: {bare: siteLet},
-	annFiles: {args: []argSpec{
+	AnnFiles: {args: []argSpec{
 		{name: argTpl, kind: valTemplate, sites: siteLet, required: true},
 	}},
 	annMenu: {args: []argSpec{
