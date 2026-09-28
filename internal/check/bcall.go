@@ -201,7 +201,7 @@ func (c *checker) bindArg(env *env, bc *builtinCall, e syntax.Expr, pat types.Ty
 	}
 	t := c.expr(env, e, c.literalHint(e, bc.b, pat))
 	before := len(bc.b.order)
-	if !bc.b.unify(pat, t) {
+	if !bc.b.unify(pat, c.unbroken(t)) {
 		c.argMismatch(env, bc, e, pat, t)
 		return
 	}
@@ -267,7 +267,7 @@ func (c *checker) lambdaArg(env *env, bc *builtinCall, e syntax.Expr, pat types.
 		return
 	}
 	before := len(bc.b.order)
-	if !bc.b.unify(pat, lt) {
+	if !bc.b.unify(pat, c.unbroken(lt)) {
 		c.report(env, diag.E3002.At(env.span(e), bc.b.shown(pat), lt))
 		bc.b.poison(pat)
 		return
@@ -356,7 +356,7 @@ func (c *checker) nextForm(env *env, bc *builtinCall, e syntax.Expr, rows []row)
 	}
 	for _, r := range rows {
 		pat := r.sig.params[bparamIndex(r.sig.params, paramNext)].t
-		if bc.b.unify(pat, t) {
+		if bc.b.unify(pat, c.unbroken(t)) {
 			return r
 		}
 	}

@@ -59,6 +59,8 @@ const (
 	seedBits         = 64
 	crashContext     = 3000
 	lockFields       = 3
+	annotJSON        = "json"  // the @json annotation (WIRE.md §4)
+	argPairs         = "pairs" // its pairs: argument (WIRE.md §5.14)
 	testRunFlag      = "test.run"
 	failMark         = "progen-failure\t"
 	relayMark        = "progen-log\t"

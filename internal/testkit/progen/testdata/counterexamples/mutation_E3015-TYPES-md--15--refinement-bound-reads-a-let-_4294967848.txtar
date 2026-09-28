@@ -2,7 +2,6 @@ suite mutation
 name E3015 TYPES.md §15 (refinement bound reads a let)
 case 551
 seed 4294967848
-open check
 born mismatch extra E3316/pairsBound
 sig extra E3316/pairsBound
 packages game.items

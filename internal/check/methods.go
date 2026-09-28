@@ -104,6 +104,10 @@ func (c *checker) receiverFits(env *env, bc *builtinCall, s *syntax.SelectorExpr
 		return true
 	}
 	if sig.name == methodFlatten {
+		if elem.Kind() == types.Error { // elements of the error type flatten to it (TYPES.md §1)
+			bc.b.bind(tU, types.ErrorType)
+			return true
+		}
 		inner, isList := elem.Base().(*types.ListType)
 		if !isList {
 			c.report(env, diag.E3002.At(env.span(s), listT(listT(elem)), recv))

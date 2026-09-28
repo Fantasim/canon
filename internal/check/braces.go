@@ -28,11 +28,28 @@ func (c *checker) braceLit(env *env, e *syntax.BraceLit, want types.Type) types.
 		return c.untypedBrace(env, e)
 	}
 	c.info.Literals[e] = LitError
-	c.itemsAlone(env, e.Items)
-	if want.Kind() != types.Error {
-		c.report(env, diag.E3002.At(env.span(e), want, env.literalText(e)))
+	if want.Kind() == types.Error {
+		c.itemsInError(env, e.Items)
+		return types.ErrorType
 	}
+	c.itemsAlone(env, e.Items)
+	c.report(env, diag.E3002.At(env.span(e), want, env.literalText(e)))
 	return types.ErrorType
+}
+
+// itemsInError checks each item of a brace literal of the error type against it (TYPES.md §1).
+func (c *checker) itemsInError(env *env, items []syntax.BraceItem) {
+	for _, it := range items {
+		switch it := it.(type) {
+		case *syntax.FieldItem:
+			c.expr(env, it.Value, types.ErrorType)
+		case *syntax.MapItem:
+			c.expr(env, it.Key, types.ErrorType)
+			c.expr(env, it.Value, types.ErrorType)
+		case *syntax.SpreadItem:
+			c.expr(env, it.X, types.ErrorType)
+		}
+	}
 }
 
 // braceBranch is the first branch of a type function a brace literal classifies against (DECISIONS 171).
@@ -64,7 +81,7 @@ func (c *checker) untypedBrace(env *env, e *syntax.BraceLit) types.Type {
 			c.itemsAlone(env, e.Items[1:])
 			return types.ErrorType
 		}
-		if allStringKeys(e.Items) {
+		if c.allStringKeys(e.Items) {
 			return c.stringMap(env, e)
 		}
 	}
@@ -77,13 +94,14 @@ func (c *checker) untypedBrace(env *env, e *syntax.BraceLit) types.Type {
 	return types.ErrorType
 }
 
-func allStringKeys(items []syntax.BraceItem) bool {
+// allStringKeys reports map items keyed by plain string literals, one holding a lexer error included (DECISIONS 215).
+func (c *checker) allStringKeys(items []syntax.BraceItem) bool {
 	for _, it := range items {
 		m, ok := it.(*syntax.MapItem)
 		if !ok {
 			return false
 		}
-		if _, isStr := m.Key.(syntax.StrLit); !isStr || !interpolationFree(m.Key) {
+		if _, isStr := m.Key.(syntax.StrLit); !isStr || (!interpolationFree(m.Key) && !c.lexError(m.Key)) {
 			return false
 		}
 	}

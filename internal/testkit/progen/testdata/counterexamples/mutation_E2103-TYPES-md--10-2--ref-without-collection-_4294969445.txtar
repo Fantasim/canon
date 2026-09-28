@@ -2,8 +2,8 @@ suite mutation
 name E2103 TYPES.md §10.2 (ref without collection)
 case 2148
 seed 4294969445
-open check
 born mismatch extra E3002
+left E8009/missing
 sig extra E3002, E8009/missing
 packages teamboard
 want E2103 teamboard/taxonomy.canon 953 964 check

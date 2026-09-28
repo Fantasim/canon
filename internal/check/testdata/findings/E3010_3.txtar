@@ -1,0 +1,19 @@
+TYPES.md §1, §15, WIRE.md §5.14: a default of a pairs field that names a let is E3010, the default in error, so it is not judged again as a default other than `[]` (no E3316).
+-- a/a.canon --
+package a
+
+local record Pair {
+  k: Int
+  v: Int
+}
+
+local let some: [Pair] = []
+
+local record R {
+  stats: [Pair](..=3) = some @json(pairs: ["dst{i}", "val{i}"])
+}
+-- findings.txt --
+error[E3010]  a/a.canon:11:25
+  a default may use only constants, earlier fields, parameters and built-ins
+
+1 error, 0 warnings in 1 package (…)

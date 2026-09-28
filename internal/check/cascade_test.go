@@ -218,6 +218,7 @@ func TestSelfContainingRecordCascades(t *testing.T) {
 		{"§13.1 literal", "local record P {\n  a: Int\n  me: P\n}\n\nlocal let p: P = { a: 1 }\n", diag.E3022.Def()},
 		{"§13.1 through another record", "local record P {\n  q: Q\n}\n\nlocal record Q {\n  p: P\n}\n\nlocal let p: P = {}\n", diag.E3022.Def()},
 		{"§11.1 input record", strings.Replace(gen, "%s", "", 1), diag.E3022.Def()},
+		{"§11.1 input record reached from no value (progen E3022_7625, E3022_8766)", "local record Gen {\n  key: input String from env \"KEY\"\n  me: Gen = {}\n}\n", diag.E3022.Def()},
 		{"§11.1 optional cycle", strings.Replace(gen, "%s", "?", 1), diag.E1903.Def()},
 	})
 }
@@ -252,6 +253,46 @@ func TestLexErrorOutsideExpressions(t *testing.T) {
 	out := checkBuilt(t, "package a\n\nlocal record R {\n  s: Int @json(none: \"a\\q\")\n}\n").out
 	if want := "error[" + string(diag.E3316.Def().Code) + "]"; !strings.Contains(out, want) {
 		t.Errorf("none: on a non-optional field is %s whatever its marker; got:\n%s", want, out)
+	}
+}
+
+// TYPES.md §1, §7.4, §13.4, DECISIONS 215 (progen E1110_8010): a lexer error in a bound or an asset makes no E3316 or E3704.
+func TestLexErrorInTypes(t *testing.T) {
+	const pair = "local record Pair {\n  k: Int\n  v: Int\n}\n\n"
+	runCascades(t, []cascadeCase{
+		{"§7.4 pairs bound, invalid number", pair + "local record R {\n  ps: [Pair](..=06) = [] @json(pairs: [\"a{i}\", \"b{i}\"])\n}\n", diag.E1110.Def()},
+		{"§7.4 unit on a Duration bound, invalid duration", "local record R {\n  d: Duration(..=1s1d)? = none @json(unit: s)\n}\n", diag.E1111.Def()},
+		{"§13.4 asset root, invalid escape", "local type A = asset(\"@resource/I\\q\", ext: [dds])\n", diag.E1109.Def()},
+		{"§13.4 asset extension, invalid escape", "local type A = asset(\"Icon\", ext: [\"d\\qs\"])\n", diag.E1109.Def()},
+	})
+}
+
+// TYPES.md §5.2, §1, DECISIONS 215 (progen E1112_70091): a map key holding a lexer error is a string key (no E3305).
+func TestLexErrorInMapKey(t *testing.T) {
+	runCascades(t, []cascadeCase{
+		{"empty interpolation", "const FAMILIES = {\n  \"{}IK3_YOBO\": [\"IK3_YOYO\"]\n}\n", diag.E1112.Def()},
+	})
+}
+
+// TYPES.md §1, §3.2, WIRE.md §4.1: a field's own type expression decides its @json forms, in either declaration order.
+func TestFieldTypeErrorOrderFree(t *testing.T) {
+	e2102, e3002, e3015, e3316 := diag.E2102.Def().Code, diag.E3002.Def().Code, diag.E3015.Def().Code, diag.E3316.Def().Code
+	for _, tc := range []struct {
+		name, decl, rec string
+		want            []diag.Code
+	}{
+		{"unit on an alias holding an error", "local type D = Duration | \"never\" | Nope2\n\n",
+			"local record R {\n  d: D @json(unit: s)\n}\n\n", []diag.Code{e2102, e3002, e3002, e3316}},
+		{"pairs over a record with an error field", "local record Pair {\n  k: Int\n  v: Int\n  w: Nope\n}\n\n",
+			"local record R {\n  ps: [Pair](..=3) = [] @json(pairs: [\"a{i}\", \"b{i}\"])\n}\n\n", []diag.Code{e2102, e3316}},
+		{"pairs bound reading a let", "local let lim = 3\n\nlocal record Pair {\n  k: Int\n  v: Int\n}\n\n",
+			"local record R {\n  ps: [Pair](..=lim) = [] @json(pairs: [\"a{i}\", \"b{i}\"])\n}\n\n", []diag.Code{e3015}},
+	} {
+		before := checkBuilt(t, "package a\n\n"+tc.decl+tc.rec).codes
+		after := checkBuilt(t, "package a\n\n"+tc.rec+tc.decl).codes
+		if want := sortedCodes(tc.want); !slices.Equal(before, want) || !slices.Equal(after, want) {
+			t.Errorf("%s: want %v in both orders, got %v declared first, %v declared last", tc.name, want, before, after)
+		}
 	}
 }
 

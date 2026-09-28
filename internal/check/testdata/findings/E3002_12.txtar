@@ -1,0 +1,43 @@
+TYPES.md §13.2: in `A | "lit"` the alternatives after the first are string literals, so `"none" | P(k)` is E3002 (a literal alternative in A's place, and `P(k)` where a literal is due; write `P(k) | "none"`). A value of `P(k) | "none"`, written directly or as `SK(k)` whose body it is, that is neither a literal of the union nor fits a branch of `P` (§11.4 "Literals") is E3002, and the expected type printed for `SK(k)` is its expansion `P(*) | "none"` (§13.1: an alias with parameters is transparent, `F(*)` names only a match-bodied type function; log-2026-09-28 reading 2).
+-- a/a.canon --
+package a
+
+local enum K { name, colour, off }
+
+local enum Colour { red, blue }
+
+local type P(k: K) = match k {
+  name => String
+  colour => Colour
+  off => Never
+}
+
+local type SK(k: K) = P(k) | "none"
+
+local record R {
+  k: K
+  u: P(k) | "none"
+  sk: SK(k) = "none"
+}
+
+local record S {
+  k: K
+  first: "none" | P(k)
+}
+
+local let one: R = { k: colour, u: 3 }
+local let two: R = { k: colour, u: "none", sk: 4 }
+-- findings.txt --
+error[E3002]  a/a.canon:23:10
+  expected _, found String
+
+error[E3002]  a/a.canon:23:19
+  expected String, found a.P(k)
+
+error[E3002]  a/a.canon:26:36
+  expected a.P(*) | "none", found Int
+
+error[E3002]  a/a.canon:27:48
+  expected a.P(*) | "none", found Int
+
+4 errors, 0 warnings in 1 package (…)

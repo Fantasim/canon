@@ -1,0 +1,74 @@
+TYPES.md §11.1: a parameter of a record or type function must be a record, a ref, an enum or `Bool`; one of another type (an optional, through an alias too, a refined `Int`, a `String`) is E3806 at its declaration, and stands for the error type, so no use of the record or function reports it again (an argument of any type, a scrutinee, a path through it); a wrong number of arguments is still E3806 at the use, naming the declared type. A record, ref, enum, `Bool` or an alias of one is accepted, a `ref` argument to a `ref` parameter included (`Fine`).
+-- a/a.canon --
+package a
+
+local enum K { num, text }
+
+local type MK = K?
+
+local type AK = K
+
+local record Ev {
+  k: K
+}
+
+local let evs: table Ev = {
+  one { k: num }
+}
+
+local record H(k: K?) {
+  n: Int = 0
+}
+
+local record I(n: Int(0..), m: MK) {
+  n2: Int = 0
+}
+
+local type F(s: String) = match s {
+  _ => Int
+}
+
+local type G(e: Ev?) = match e.k {
+  num => Int
+  text => String
+}
+
+local record Fine(e: Ev, r: ref evs, k: AK, b: Bool) {
+  n: Int = 0
+}
+
+local record R {
+  k: K
+  mk: MK
+  n: Int
+  ev: Ev
+  r: ref evs
+  b: Bool
+  h1: H(k)
+  h2: H(mk)
+  i: I(n, n)
+  f: F(n)
+  g: G(k)
+  few: H
+  fine: Fine(ev, r, k, b)
+}
+-- findings.txt --
+error[E3806]  a/a.canon:17:19
+  type parameter k must be a record, a ref, an enum or Bool, found a.K?
+
+error[E3806]  a/a.canon:21:19
+  type parameter n must be a record, a ref, an enum or Bool, found Int(0..)
+
+error[E3806]  a/a.canon:21:32
+  type parameter m must be a record, a ref, an enum or Bool, found a.MK
+
+error[E3806]  a/a.canon:25:17
+  type parameter s must be a record, a ref, an enum or Bool, found String
+
+error[E3806]  a/a.canon:29:17
+  type parameter e must be a record, a ref, an enum or Bool, found a.Ev?
+
+error[E3806]  a/a.canon:50:8
+  H takes 1 arguments of types a.K?
+
+6 errors, 0 warnings in 1 package (…)

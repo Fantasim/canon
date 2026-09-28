@@ -1,0 +1,17 @@
+TYPES.md §1, §13.1, WIRE.md §4.1: a record that contains itself is E3022 and broken, so its use as the element of `@json(pairs:)` is not judged (no E3316).
+-- a/a.canon --
+package a
+
+local record Pair {
+  k: Int
+  v: Pair
+}
+
+local record R {
+  stats: [Pair](..=3) = [] @json(pairs: ["dst{i}", "val{i}"])
+}
+-- findings.txt --
+error[E3022]  a/a.canon:3:14
+  Pair contains itself and can never be built
+
+1 error, 0 warnings in 1 package (…)

@@ -1,0 +1,66 @@
+TYPES.md §6.2, §6.1, §12.3: a function value is assignable to a function type whose parameters are the same types (static identity, a keyed list's key field included) and whose result it is assignable to; `ref items` and `Item`, or `[Item] keyed by name` and `[Item]`, are different parameter types in either direction (E3002), for a let and for an argument alike, while the same types pass. The error type is the only wildcard (E2103_3).
+-- a/a.canon --
+package a
+
+local record Item {
+  name: String
+  n: Int = 0
+}
+
+local let items: table Item = {
+  a { name: "a" }
+}
+
+local fn g(r: ref items) -> Int {
+  return 1
+}
+
+local fn h(i: Item) -> Int {
+  return 1
+}
+
+local fn k(xs: [Item] keyed by name) -> Int {
+  return 1
+}
+
+local fn l(xs: [Item]) -> Int {
+  return 1
+}
+
+local fn byItem(f: fn(Item) -> Int) -> Int {
+  return 1
+}
+
+local fn byRef(f: fn(ref items) -> Int) -> Int {
+  return 1
+}
+
+local fn probes() -> Int {
+  let f1: fn(Item) -> Int = g
+  let f2: fn(ref items) -> Int = h
+  let f3: fn([Item]) -> Int = k
+  let f4: fn([Item] keyed by name) -> Int = l
+  let same1: fn(ref items) -> Int = g
+  let same2: fn([Item] keyed by name) -> Int = k
+  return byItem(g) + byRef(h) + byItem(h) + byRef(g)
+}
+-- findings.txt --
+error[E3002]  a/a.canon:37:29
+  expected fn(a.Item) -> Int, found fn(ref a.items) -> Int
+
+error[E3002]  a/a.canon:38:34
+  expected fn(ref a.items) -> Int, found fn(a.Item) -> Int
+
+error[E3002]  a/a.canon:39:31
+  expected fn([a.Item]) -> Int, found fn([a.Item] keyed by name) -> Int
+
+error[E3002]  a/a.canon:40:45
+  expected fn([a.Item] keyed by name) -> Int, found fn([a.Item]) -> Int
+
+error[E3002]  a/a.canon:43:17
+  expected fn(a.Item) -> Int, found fn(ref a.items) -> Int
+
+error[E3002]  a/a.canon:43:28
+  expected fn(ref a.items) -> Int, found fn(a.Item) -> Int
+
+6 errors, 0 warnings in 1 package (…)

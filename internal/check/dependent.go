@@ -8,41 +8,71 @@ import (
 	"github.com/fantasim/canonlang/internal/types"
 )
 
-// staticView is t with each type application its DepUnion and each dependent map `{ref c: V}` (TYPES.md §11.3–§11.5).
+// staticView is t with each type application expanded and each dependent map `{ref c: V}` (TYPES.md §11.3–§11.5, §13.1).
 func staticView(t types.Type) types.Type {
-	if v, changed := erase(t); changed {
+	e := eraser{seen: map[*types.TypeFunc]bool{}}
+	if v, changed := e.erase(t); changed {
 		return v
 	}
 	return t
 }
 
+// eraser is one staticView walk; seen stops an expansion at a type function already being expanded (E3021 is its declaration's).
+type eraser struct {
+	seen map[*types.TypeFunc]bool
+}
+
 // erase is staticView on the components of t; unchanged, t itself is returned, aliases kept.
-func erase(t types.Type) (types.Type, bool) {
+func (e eraser) erase(t types.Type) (types.Type, bool) {
 	switch x := t.Base().(type) {
 	case *types.TypeAppType:
-		return &types.DepUnionType{Fn: x.Fn}, true
+		return e.expand(x.Fn), true
+	case *types.DepUnionType:
+		if x.Fn.Body != nil {
+			return e.expand(x.Fn), true
+		}
 	case *types.DepMapType:
-		return &types.MapType{Key: &types.RefType{Target: x.Coll}, Value: staticView(x.Value)}, true
+		v, _ := e.erase(x.Value)
+		return &types.MapType{Key: &types.RefType{Target: x.Coll}, Value: v}, true
 	case *types.OptionalType:
-		if e, ch := erase(x.Elem); ch {
-			return &types.OptionalType{Elem: e}, true
+		if el, ch := e.erase(x.Elem); ch {
+			return &types.OptionalType{Elem: el}, true
 		}
 	case *types.ListType:
-		if e, ch := erase(x.Elem); ch {
-			return &types.ListType{Elem: e, KeyedBy: x.KeyedBy}, true
+		if el, ch := e.erase(x.Elem); ch {
+			return &types.ListType{Elem: el, KeyedBy: x.KeyedBy}, true
 		}
 	case *types.MapType:
-		k, kc := erase(x.Key)
-		v, vc := erase(x.Value)
+		k, kc := e.erase(x.Key)
+		v, vc := e.erase(x.Value)
 		if kc || vc {
 			return &types.MapType{Key: k, Value: v}, true
 		}
 	case *types.LitUnionType:
-		if of, ch := erase(x.Of); ch {
-			return &types.LitUnionType{Of: of, Literals: x.Literals}, true
+		if of, ch := e.erase(x.Of); ch {
+			return flatUnion(of, x.Literals), true
 		}
 	}
 	return t, false
+}
+
+// flatUnion is `of | lits`, one union when of is one: an expanded `SK(e) | "y"` (TYPES.md §13.1, §13.2).
+func flatUnion(of types.Type, lits []string) *types.LitUnionType {
+	if u, ok := of.Base().(*types.LitUnionType); ok {
+		return &types.LitUnionType{Of: u.Of, Literals: append(slices.Clip(u.Literals), lits...)}
+	}
+	return &types.LitUnionType{Of: of, Literals: lits}
+}
+
+// expand is an application of fn: `F(*)` for a match body, else its body's static view (TYPES.md §11.4, §13.1).
+func (e eraser) expand(fn *types.TypeFunc) types.Type {
+	if fn.Body == nil || e.seen[fn] {
+		return &types.DepUnionType{Fn: fn}
+	}
+	e.seen[fn] = true
+	v, _ := e.erase(fn.Body)
+	delete(e.seen, fn)
+	return v
 }
 
 // depFunc is the type function of a dependent type (an application or its union), after

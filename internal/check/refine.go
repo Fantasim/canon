@@ -11,61 +11,67 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// refine applies `(lo..hi)` or `(/re/)` to base (TYPES.md §7.4).
+// refine applies `(lo..hi)` or `(/re/)` to base, recording one dropped for an error (TYPES.md §7.4).
 func (c *checker) refine(tc *typeCtx, base types.Type, args *syntax.TypeArgs) types.Type {
-	env := tc.env
 	if c.usesParam(tc, args) {
 		return base
 	}
-	if len(args.Args) != 1 {
-		c.report(env, diag.E3023.AtInvalid(env.span(args), env.span(args), base))
-		return base
+	t, ok := c.refineArg(tc.env, base, args)
+	if !ok {
+		c.unrefined[args] = true
 	}
-	switch a := args.Args[0].(type) {
-	case *syntax.RegexLit:
-		return c.refineRegex(env, base, a)
-	case *syntax.RangeExpr:
-		return c.refineRange(env, base, a)
-	}
-	c.report(env, diag.E3023.AtInvalid(env.span(args), env.span(args), base))
-	return base
+	return t
 }
 
-func (c *checker) refineRegex(env *env, base types.Type, re *syntax.RegexLit) types.Type {
+// refineArg is the one refinement of args, else E3023; false when it is dropped.
+func (c *checker) refineArg(env *env, base types.Type, args *syntax.TypeArgs) (types.Type, bool) {
+	if len(args.Args) == 1 {
+		switch a := args.Args[0].(type) {
+		case *syntax.RegexLit:
+			return c.refineRegex(env, base, a)
+		case *syntax.RangeExpr:
+			return c.refineRange(env, base, a)
+		}
+	}
+	c.report(env, diag.E3023.AtInvalid(env.span(args), env.span(args), base))
+	return base, false
+}
+
+func (c *checker) refineRegex(env *env, base types.Type, re *syntax.RegexLit) (types.Type, bool) {
 	c.info.Types[re] = types.StringType
 	if base.Base().Kind() != types.String {
 		c.report(env, diag.E3023.AtInvalid(env.span(re), env.span(re), base))
-		return base
+		return base, false
 	}
 	pattern, err := regexp.Compile(re.Pattern)
 	if err != nil {
 		c.breakObj(env.owner)
-		return base
+		return base, false
 	}
-	return &types.Refined{Of: base, Pattern: pattern}
+	return &types.Refined{Of: base, Pattern: pattern}, true
 }
 
 // refineRange folds the bounds (constant expressions of the base type, §15) and builds the range; `lo > hi` is E3023.
-func (c *checker) refineRange(env *env, base types.Type, r *syntax.RangeExpr) types.Type {
+func (c *checker) refineRange(env *env, base types.Type, r *syntax.RangeExpr) (types.Type, bool) {
 	bound, ok := boundType(base)
 	c.info.Types[r] = types.RangeType
 	if !ok {
 		c.checkBounds(env, r, types.ErrorType)
 		c.report(env, diag.E3023.AtInvalid(env.span(r), env.span(r), base))
-		return base
+		return base, false
 	}
 	lo, hi, folded := c.checkBounds(env, r, bound)
 	if !folded {
-		return base
+		return base, false
 	}
 	b := &types.Bound{HasLo: lo != nil, HasHi: hi != nil, HiIncluded: r.Op == syntax.TokRangeIncl}
 	b.Lo, b.Hi = limitOf(lo, bound), limitOf(hi, bound)
 	if b.HasLo && b.HasHi && emptyBound(b, bound) {
 		c.report(env, diag.E3023.AtEmpty(env.span(r), env.span(r)))
-		return base
+		return base, false
 	}
 	c.boundSpans[b] = env.span(r)
-	return &types.Refined{Of: base, Range: b}
+	return &types.Refined{Of: base, Range: b}, true
 }
 
 // boundType is the type of a range's bounds on base: the scalar for a value range, Int for a
@@ -197,13 +203,13 @@ func constText(s syntax.StrLit) string {
 	return ""
 }
 
-// resolveAsset is `asset(root, ext: […])` (TYPES.md §13.4).
+// resolveAsset is `asset(root, ext: […])`; a part holding a lexer error is not judged (TYPES.md §13.4, §1).
 func (c *checker) resolveAsset(tc *typeCtx, t *syntax.AssetType) types.Type {
 	env := tc.env
 	root := constText(t.Dir)
 	c.info.Types[t.Dir] = types.StringType
 	spec := &types.AssetSpec{Root: root}
-	ok := c.assetRoot(env, t.Dir, root)
+	ok := !c.lexError(t.Dir) && c.assetRoot(env, t.Dir, root)
 	if len(t.Exts) == 0 {
 		c.report(env, diag.E3704.AtMissing(env.span(t)))
 		ok = false
@@ -212,6 +218,10 @@ func (c *checker) resolveAsset(tc *typeCtx, t *syntax.AssetType) types.Type {
 		ext := nameLitText(e)
 		if s, isStr := e.(*syntax.StringLit); isStr {
 			c.info.Types[s] = types.StringType
+		}
+		if c.lexError(e) {
+			ok = false
+			continue
 		}
 		if ext == "" || strings.ContainsAny(ext, extForbidden) {
 			c.report(env, diag.E3704.AtExt(env.span(e), ext))

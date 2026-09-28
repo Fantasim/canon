@@ -2,7 +2,6 @@ suite mutation
 name E3013 TYPES.md §9.3 (table of an enum)
 case 550
 seed 4294967847
-open check
 born mismatch extra E3103/target
 sig extra E3103/target
 packages game.items

@@ -106,18 +106,40 @@ func (c *checker) stringBranches(fn *types.TypeFunc) (types.Type, bool) {
 	return bad, bad == nil
 }
 
-// unionOver is the literal union a value compares as when it is one over a dependent type, or
-// an application of a type function whose body is a literal union; nil otherwise.
+// unionOver is t's literal union when it reaches a dependent type, else nil (TYPES.md §13.2).
 func unionOver(t types.Type) *types.LitUnionType {
-	switch x := t.Base().(type) {
-	case *types.LitUnionType:
-		if depFunc(x.Of) != nil {
-			return x
-		}
-	case *types.DepUnionType:
-		return types.UnionBody(x.Fn)
+	u, ok := t.Base().(*types.LitUnionType)
+	if !ok {
+		return nil
 	}
-	return nil
+	if _, fns, _ := unionChain(u); len(fns) == 0 {
+		return nil
+	}
+	return u
+}
+
+// unionValues is E3007 for `==`/`!=` between two values of one literal union, neither a literal nor an `A` (TYPES.md §13.2).
+func (c *checker) unionValues(env *env, e *syntax.BinaryExpr, tx, ty types.Type) bool {
+	if !c.unionValue(e.X, tx) || !c.unionValue(e.Y, ty) || !types.Identical(optElem(tx), optElem(ty)) {
+		return false
+	}
+	c.report(env, diag.E3007.AtBinary(env.span(e), e.Op.String(), tx, ty))
+	return true
+}
+
+// unionValue reports an operand typed as a literal union, optional or not, that is neither a
+// string literal nor a symbol: a union value, not one of its literals or an `A` written bare.
+func (c *checker) unionValue(e syntax.Expr, t types.Type) bool {
+	if optElem(t).Base().Kind() != types.LitUnion {
+		return false
+	}
+	switch x := inner(e).(type) {
+	case syntax.StrLit:
+		return false
+	case *syntax.IdentExpr:
+		return !c.info.Symbols[x]
+	}
+	return true
 }
 
 // unionEquality is `==`/`!=` with such a union: a literal of it, itself or its alternative, else E3002 or E3804 (TYPES.md §13.2).

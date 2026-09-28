@@ -2,7 +2,6 @@ suite mutation
 name E1110 GRAMMAR.md §2.4 (leading zero)
 case 713
 seed 4294968010
-open check
 born mismatch extra E3316/pairsBound
 sig extra E3316/pairsBound
 packages game.items

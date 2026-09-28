@@ -1,0 +1,74 @@
+TYPES.md §1: a name found nowhere is E2102 and the error type; inside a list, map or optional (`[invalid]`) it is a wildcard (§6.2), so storing, returning, passing, joining or calling a method on such a value reports nothing more (no E3002); the values of a map comprehension over it (`[invalid]`) flatten to the error type (progen nightly, E2102 "unknown name": no `expected [[invalid]], found [invalid]`). The error type is a wildcard only where it stands: an independent mismatch around it is still E3002 (`[invalid]` where an `Int` is expected, `5` where `[invalid]` is, a list where a map is).
+-- a/a.canon --
+package a
+
+local fn one(xs: [Int]) -> Int {
+  return xs.len()
+}
+
+local fn f() -> [Int] {
+  let xs = [nope]
+  let m = { "a": nope }
+  let o = if true { nope } else { none }
+  let ys: [Int] = xs
+  let n: {String: Int} = m
+  let p: Int? = o
+  let q = one(xs) + one([nope])
+  let r = if true { xs } else { [1] }
+  let s: [String] = xs.map(x => x)
+  let t = xs.contains(1) and [nope].contains("a")
+  let u = xs.sum() + max(xs.len(), 1)
+  let v: [Int] = xs + [1]
+  let byName = { k: w.ids for k, w in nope }
+  let flat: [Int] = byName.values().flatten().unique()
+  return xs
+}
+
+local fn g(xs: [Nope]) -> Int {
+  let o: Int = xs
+  return xs
+}
+
+local let w: [Nope] = 5
+local let v: {String: Nope} = [1, 2]
+-- findings.txt --
+error[E2102]  a/a.canon:8:13
+  unknown name nope (did you mean one?)
+
+error[E2102]  a/a.canon:9:18
+  unknown name nope (did you mean one?)
+
+error[E2102]  a/a.canon:10:21
+  unknown name nope (did you mean one?)
+
+error[E2102]  a/a.canon:14:26
+  unknown name nope (did you mean one?)
+
+error[E2102]  a/a.canon:17:31
+  unknown name nope (did you mean one?)
+
+error[E2102]  a/a.canon:20:39
+  unknown name nope (did you mean one?)
+
+error[E2102]  a/a.canon:25:17
+  unknown name Nope (did you mean one?)
+
+error[E3002]  a/a.canon:26:16
+  expected Int, found [invalid]
+
+error[E3002]  a/a.canon:27:10
+  expected Int, found [invalid]
+
+error[E2102]  a/a.canon:30:15
+  unknown name Nope (did you mean one?)
+
+error[E3002]  a/a.canon:30:23
+  expected [invalid], found Int
+
+error[E2102]  a/a.canon:31:23
+  unknown name Nope (did you mean one?)
+
+error[E3002]  a/a.canon:31:31
+  expected {String: invalid}, found [Int]
+
+13 errors, 0 warnings in 1 package (…)

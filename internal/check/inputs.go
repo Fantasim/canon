@@ -8,12 +8,12 @@ import (
 	"github.com/fantasim/canonlang/internal/types"
 )
 
-// checkInputs is E1903: an input record reached once through fields, in no container (EVALUATION.md §11.1).
+// checkInputs is E1903: an input record reached once through fields, in no container, E3022's alone (EVALUATION.md §11.1).
 func (c *checker) checkInputs(p *pkgState) {
 	var written []types.Type
 	for _, o := range p.all {
 		r, ok := o.typ.(*types.RecordType)
-		if o.kind != ObjTypeName || !ok || !hasInput(r) {
+		if o.kind != ObjTypeName || !ok || !hasInput(r) || reaches(r, r, map[*types.RecordType]bool{}) {
 			continue
 		}
 		if written == nil {

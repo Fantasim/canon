@@ -1,0 +1,34 @@
+TYPES.md §1, §9.3 (progen E3013_7847): a table of an enum is E3013 and the let is of the error type, so an entry of it is not also E3103, and its values are checked against the error type: a bare name (the defines key `DST_STR`) is not judged, an error of its own (`1 + "x"`, E3007) still is; an entry of a let that is no collection still is E3103.
+-- a/a.canon --
+package a
+
+local enum K { a, b }
+
+local record Stat {
+  n: Int
+}
+
+local let items: table K = {}
+
+local let plain: Int = 1
+
+entry items.first {
+  n: 1
+  nope: DST_STR
+  bad: 1 + "x"
+}
+
+entry plain.second {
+  n: 2
+}
+-- findings.txt --
+error[E3013]  a/a.canon:9:24
+  a table holds records; a.K is not a record
+
+error[E3007]  a/a.canon:16:8
+  operator + is not defined for Int and String
+
+error[E3103]  a/a.canon:19:7
+  entry plain.second: plain is not a table or keyed list of this package
+
+3 errors, 0 warnings in 1 package (…)

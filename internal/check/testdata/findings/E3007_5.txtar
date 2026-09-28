@@ -1,0 +1,50 @@
+TYPES.md §13.2, §7.5: the operations on a string-literal union are `==`/`!=` with a literal of the union or with an `A`, interpolation and `String(x)`, and the list is exhaustive (log-2026-09-28 reading 1): `==`/`!=` between two values of the same literal union, neither side a literal nor an `A`, is E3007 naming the operator and both types (§7.1), optional or not, over a plain `A`, over a dependent type and through an applied type function whose body is a union (§13.1, its expansion); two values of different types stay E3002 (§7.5 "other mismatches").
+-- a/a.canon --
+package a
+
+local enum K { num, text }
+
+local type P(k: K) = match k {
+  num => String
+  text => K
+}
+
+local type SK(k: K) = P(k) | "default"
+
+local type Tag = String | "all"
+
+local type Other = String | "any"
+
+local record R {
+  k: K
+  s: P(k) | "default" = "default"
+  sk: SK(k) = "default"
+}
+
+local fn plain(a: Tag, b: Tag, o: Tag?, x: Other) -> Bool {
+  return a == b or a != o or (a) == x
+}
+
+local fn dependent(r: R, q: R) -> Bool {
+  return r.s == r.s or r.sk != q.s or r.sk == q.sk
+}
+-- findings.txt --
+error[E3007]  a/a.canon:23:10
+  operator == is not defined for a.Tag and a.Tag
+
+error[E3007]  a/a.canon:23:20
+  operator != is not defined for a.Tag and a.Tag?
+
+error[E3002]  a/a.canon:23:37
+  expected a.Tag, found a.Other
+
+error[E3007]  a/a.canon:27:10
+  operator == is not defined for a.P(*) | "default" and a.P(*) | "default"
+
+error[E3007]  a/a.canon:27:24
+  operator != is not defined for a.P(*) | "default" and a.P(*) | "default"
+
+error[E3007]  a/a.canon:27:39
+  operator == is not defined for a.P(*) | "default" and a.P(*) | "default"
+
+6 errors, 0 warnings in 1 package (…)

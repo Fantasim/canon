@@ -64,14 +64,14 @@ func (c *checker) fieldType(f *types.Field) types.Type {
 	return f.Type
 }
 
-// resolveField types one field, then its wire mapping and input.
+// resolveField types one field, then its wire mapping and input, unjudged when its type is in error (TYPES.md §1).
 func (c *checker) resolveField(tc *typeCtx, fo *object, wireCase string) {
 	fd := fo.decl.(*syntax.FieldDecl)
 	f := fo.field
 	f.Type = c.resolveType(tc, fd.Type)
 	fo.typ = f.Type
 	f.DependsOn = dependsOn(f.Type)
-	c.fieldAnnotations(tc.env, f, fd, wireCase)
+	c.fieldAnnotations(tc.env, f, fd, wireCase, c.typeInError(fd.Type, f.Type))
 	c.fieldInput(tc.env, f, fd)
 	tc.scope[fo.name] = typeArgRoot{field: f, obj: fo}
 }
@@ -162,4 +162,17 @@ func inputType(t types.Type) bool {
 			return false
 		}
 	}
+}
+
+// typeInError reports a field's own type holding the error type, a dropped refinement or a lexer error (TYPES.md §1).
+func (c *checker) typeInError(expr syntax.Type, t types.Type) bool {
+	if holds(t, types.Error) {
+		return true
+	}
+	bad := false
+	syntax.Inspect(expr, func(n syntax.Node) bool {
+		bad = bad || c.unrefined[n] || c.lexError(n)
+		return !bad
+	})
+	return bad
 }

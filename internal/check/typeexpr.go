@@ -322,16 +322,17 @@ func (c *checker) resolveOptional(tc *typeCtx, t *syntax.OptionalType) types.Typ
 	return &types.OptionalType{Elem: elem}
 }
 
-// resolveFnType is `fn(T, …) -> R`, allowed only for a parameter or a local let or var (E3306).
+// resolveFnType is `fn(T, …) -> R`, allowed only for a parameter or a local let or var; elsewhere E3306 and the error type (TYPES.md §1).
 func (c *checker) resolveFnType(tc *typeCtx, t *syntax.FnType) types.Type {
-	if tc.pos&posFn == 0 {
-		c.report(tc.env, diag.E3306.At(tc.env.span(t)))
-	}
 	in := tc.inner()
 	in.pos |= posFn
 	f := &types.FuncType{Result: c.resolveType(in, t.Result)}
 	for _, p := range t.Params {
 		f.Params = append(f.Params, c.resolveType(in, p))
+	}
+	if tc.pos&posFn == 0 {
+		c.report(tc.env, diag.E3306.At(tc.env.span(t)))
+		return types.ErrorType
 	}
 	return f
 }

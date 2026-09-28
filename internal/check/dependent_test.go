@@ -60,16 +60,16 @@ local fn reads(r: R) -> Int {
 }
 `
 
-// TYPES.md §11.3–§11.5: a field whose type contains an application, of R(x) too, reads with each one its DepUnion.
+// TYPES.md §11.3–§11.5, §13.1: an application reads as its DepUnion, or as its expansion for a union body.
 func TestDependentStaticViews(t *testing.T) {
 	prog, f := checkSource(t, dependentSource)
 	want := map[string]string{
 		"o":      "a.P(*)?",
 		"ps":     "[a.P(*)]",
-		"keys":   "{a.SK(*): Int}",
+		"keys":   `{a.P(*) | "default": Int}`,
 		"byItem": "{ref a.items: a.P(*)}",
 		"counts": "{ref a.items: Int}",
-		"lkeys":  "{a.SK(*): Int}",
+		"lkeys":  `{a.P(*) | "default": Int}`,
 	}
 	seen := 0
 	for _, s := range nodesOf[*syntax.SelectorExpr](f) {
@@ -118,6 +118,53 @@ func TestDependsOnThroughDependentMaps(t *testing.T) {
 		return
 	}
 	t.Fatal("no record R")
+}
+
+// nestedSource applies a union-bodied type function nested in another: SK2(e) is `P(*) | "d" | "y"`.
+const nestedSource = `package a
+
+local enum K { num, colour }
+
+local enum Colour { red, blue }
+
+local record Ev {
+  k: K
+}
+
+local type P(e: Ev) = match e.k {
+  num => String
+  colour => Colour
+}
+
+local type SK(e: Ev) = P(e) | "d"
+
+local type SK2(e: Ev) = SK(e) | "y"
+
+local record Q {
+  ev: Ev
+  a: SK2(ev)
+  xs: [SK2(ev)] = []
+  m: {SK2(ev): Int} = {}
+}
+
+local let q: Q = { ev: { k: colour }, a: blue, xs: [blue, "y", "d"], m: { blue: 1, "y": 2 } }
+
+local fn f(x: Q) -> Bool {
+  return x.xs[0] == blue and x.a == red and x.a != "y" and x.a == "d"
+}
+`
+
+// TYPES.md §13.1, §13.2, §11.4: a nested union expands flat, so its branch names stay symbolic everywhere.
+func TestNestedUnionExpands(t *testing.T) {
+	prog, f := checkSource(t, nestedSource)
+	for _, s := range nodesOf[*syntax.SelectorExpr](f) {
+		if s.Name.Name != "a" {
+			continue
+		}
+		if got := prog.Info.Types[s]; got == nil || got.String() != `a.P(*) | "d" | "y"` {
+			t.Errorf("x.a has static type %v, want a.P(*) | \"d\" | \"y\"", got)
+		}
+	}
 }
 
 // formsSource holds locals of a dependent type compared with themselves and a symbolic map key.

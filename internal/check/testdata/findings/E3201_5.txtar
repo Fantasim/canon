@@ -1,0 +1,31 @@
+TYPES.md §1, §7.2, WIRE.md §4.1 (progen nightly, E3201 "code outside its @codes type"): a member code outside its `@codes` type is E3201 and the member has no code, so `@json(bits)` judges only the members with a code (no E3316 for it); a member with a code that is no power of two is still E3316.
+-- a/a.canon --
+package a
+
+local enum Flag @codes(UInt32) {
+  a = 1
+  b = 4294967296
+  c = 4
+}
+
+local enum Bad @codes(UInt32) {
+  x = 1
+  y = 4294967296
+  z = 3
+}
+
+local record R {
+  flags: [Flag] @json(bits)
+  bad: [Bad] @json(bits)
+}
+-- findings.txt --
+error[E3201]  a/a.canon:5:7
+  4294967296 does not fit UInt32
+
+error[E3201]  a/a.canon:11:7
+  4294967296 does not fit UInt32
+
+error[E3316]  a/a.canon:17:20
+  @json(bits) needs every code of a.Bad to be a power of two from 1 to 2^62
+
+3 errors, 0 warnings in 1 package (…)

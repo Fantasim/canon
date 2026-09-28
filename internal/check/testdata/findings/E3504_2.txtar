@@ -1,0 +1,31 @@
+TYPES.md §1, §10.2 (progen nightly, E3504 "ref to a const"): a ref naming a const is E3504 and stands for the error type wherever it is nested, so `reachable`'s `next:` over a field holding it (`[ref ]`, `ref ?`) fits (no E3002), nor does storing or returning it report.
+-- a/a.canon --
+package a
+
+local const LIMIT = 3
+
+local record Node {
+  n: Int
+  next: [ref LIMIT]
+  up: ref LIMIT?
+}
+
+local let nodes: table Node = {
+  root { n: 1, next: [], up: none }
+}
+
+local let down = reachable(from: nodes.root, next: .next)
+local let up = reachable(from: nodes.root, next: .up)
+
+local fn f(x: Node) -> [ref nodes] {
+  let u: ref nodes? = x.up
+  return x.next
+}
+-- findings.txt --
+error[E3504]  a/a.canon:7:14
+  ref LIMIT: LIMIT is not a collection or a record type
+
+error[E3504]  a/a.canon:8:11
+  ref LIMIT: LIMIT is not a collection or a record type
+
+2 errors, 0 warnings in 1 package (…)

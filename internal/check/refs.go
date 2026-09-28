@@ -79,6 +79,7 @@ func (c *checker) refTarget(r *types.RefType) types.Type {
 		return r
 	}
 	delete(c.pending, r)
+	r.Target = errorColl // read again while its name resolves (a let inferred on the way), it is the error type (TYPES.md §1)
 	coll := c.resolveRefName(&pr.tc, pr.node)
 	if coll == nil {
 		coll = errorColl

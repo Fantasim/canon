@@ -65,7 +65,7 @@ func (c *checker) typeMatch(tc *typeCtx, fn *types.TypeFunc, m *syntax.MatchType
 	sc.scrut = true
 	arg, t, ok := c.typeArgPath(&sc, m.Scrutinee)
 	if !ok || arg.Source != types.ArgParam || !matchable(t) {
-		if ok {
+		if ok && t.Kind() != types.Error {
 			c.report(env, diag.E3803.AtScrutinee(env.span(m.Scrutinee)))
 		}
 		return
@@ -115,7 +115,13 @@ func (c *checker) typeArgPath(tc *typeCtx, e syntax.Expr) (*types.Arg, types.Typ
 	arg, t := rootArg(r)
 	c.info.Uses[root] = r.obj
 	c.info.Types[root] = t
+	if c.inputArg(env, e, root, r.field) {
+		return nil, nil, false
+	}
 	for _, s := range segs {
+		if t.Kind() == types.Error { // a path through a refused parameter names nothing (TYPES.md §1)
+			return arg, t, true
+		}
 		if t.Base().Kind() == types.Optional {
 			c.notTypePath(tc, e)
 			return nil, nil, false
@@ -126,11 +132,24 @@ func (c *checker) typeArgPath(tc *typeCtx, e syntax.Expr) (*types.Arg, types.Typ
 		}
 		c.info.Selections[s] = &Selection{Kind: SelField, Obj: c.fieldObjects[f], Recv: t, Deref: t.Base().Kind() == types.Ref}
 		c.info.NameUses[s.Name] = c.fieldObjects[f]
+		if c.inputArg(env, e, s.Name, f) {
+			return nil, nil, false
+		}
 		arg.Path = append(arg.Path, f)
 		t = c.fieldType(f)
 		c.info.Types[s] = t
 	}
 	return arg, t, true
+}
+
+// inputArg is E3313 at at for a type argument reading the input field f, then of the error type (TYPES.md §14).
+func (c *checker) inputArg(env *env, e syntax.Expr, at syntax.Node, f *types.Field) bool {
+	if f == nil || f.Input == nil {
+		return false
+	}
+	c.report(env, diag.E3313.At(env.span(at), f.Name))
+	c.info.Types[e] = types.ErrorType
+	return true
 }
 
 // notTypePath is E3803 for a type argument or a scrutinee not rooted at a parameter (TYPES.md §11.1, §11.2).
@@ -243,8 +262,14 @@ func (c *checker) typeArgs(tc *typeCtx, t *syntax.NamedType, name string, params
 
 // argFits reports an argument fit for its parameter, a ref dereferenced, never an optional (TYPES.md §11.2).
 func (c *checker) argFits(at, param types.Type) bool {
+	if param.Kind() == types.Error { // a refused parameter takes any argument (TYPES.md §1)
+		return true
+	}
 	if at.Base().Kind() == types.Optional {
 		return false
+	}
+	if r, ok := param.Base().(*types.RefType); ok {
+		c.coll(r) // a ref parameter is compared by its target, resolved
 	}
 	return types.Assignable(c.deref(at), param) || types.Assignable(at, param)
 }
@@ -253,6 +278,10 @@ func (c *checker) argFits(at, param types.Type) bool {
 func (c *checker) wrongArity(env *env, at syntax.Node, name string, params []*types.Param) {
 	var want []diag.TypeArg
 	for _, p := range params {
+		if d, ok := c.refused[p]; ok {
+			want = append(want, d)
+			continue
+		}
 		want = append(want, p.Type)
 	}
 	c.report(env, diag.E3806.AtArity(env.span(at), name, int64(len(params)), want))

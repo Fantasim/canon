@@ -2,7 +2,6 @@ suite mutation
 name E1112 GRAMMAR.md §2.6 (empty interpolation)
 case 2794
 seed 4294970091
-open check
 born mismatch extra E3305
 sig extra E3305
 packages balance.parity

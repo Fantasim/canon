@@ -1,0 +1,19 @@
+TYPES.md §1, §15, WIRE.md §5.14 (progen E3015_7848): a refinement bound that reads a let is E3015 and the refinement is dropped; a field whose type had a finding has its @json forms unjudged, so `@json(pairs:)` reports no missing finite bound (no E3316).
+-- a/a.canon --
+package a
+
+local let zzLimit = 3
+
+local record Pair {
+  k: Int
+  v: Int
+}
+
+local record R {
+  stats: [Pair](..=zzLimit) = [] @json(pairs: ["dst{i}", "val{i}"])
+}
+-- findings.txt --
+error[E3015]  a/a.canon:11:20
+  this refinement bound must be a constant expression
+
+1 error, 0 warnings in 1 package (…)

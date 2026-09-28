@@ -2,7 +2,6 @@ suite mutation
 name E3022 TYPES.md §13.1 (record contains itself)
 case 1469
 seed 4294968766
-open check
 born mismatch extra E1903, E3302
 sig extra E1903
 packages service.resourcestudio

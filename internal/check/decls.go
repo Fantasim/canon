@@ -110,8 +110,12 @@ func (c *checker) typeParams(tc *typeCtx, params []*syntax.Param) []*types.Param
 	env := tc.env
 	env.params = map[string]*object{}
 	for i, p := range params {
-		t := c.resolveType(tc, p.Type)
+		declared := c.resolveType(tc, p.Type)
+		t := c.paramType(env, p, declared)
 		tp := &types.Param{Name: p.Name.Name, Index: i, Type: t}
+		if t != declared {
+			c.refused[tp] = declared
+		}
 		po := c.newObject(ObjParam, p.Name.Name, env.pkg, p, env.file)
 		po.typ = t
 		c.info.Defs[p.Name] = po
@@ -125,6 +129,15 @@ func (c *checker) typeParams(tc *typeCtx, params []*syntax.Param) []*types.Param
 		out = append(out, tp)
 	}
 	return out
+}
+
+// paramType is t for a record, ref, enum or Bool parameter, else E3806 and the error type (TYPES.md §11.1).
+func (c *checker) paramType(env *env, p *syntax.Param, t types.Type) types.Type {
+	if k := t.Base().Kind(); k == types.Record || k == types.Ref || matchable(t) || k == types.Error {
+		return t
+	}
+	c.report(env, diag.E3806.AtParam(env.span(p.Type), p.Name.Name, t))
+	return types.ErrorType
 }
 
 // declareMembers declares the methods and checks of a record or case body: E2104 when a

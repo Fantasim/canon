@@ -176,11 +176,11 @@ func (c *checker) checkTag(env *env, v *types.VariantType) {
 	}
 }
 
-// checkPairsDefault is E3316: a pairs field takes no default but `[]` (WIRE.md §5.14).
+// checkPairsDefault is E3316: a pairs field takes no default but `[]`, one of the error type unjudged (WIRE.md §5.14).
 func (c *checker) checkPairsDefault(env *env, body *recordCtx) {
 	for _, fo := range body.order {
 		f := fo.field
-		if f.Pairs == nil || f.Default == nil {
+		if f.Pairs == nil || f.Default == nil || c.errorTyped(f.Default) {
 			continue
 		}
 		if l, ok := f.Default.(*syntax.ListLit); ok && len(l.Elems) == 0 {
@@ -188,4 +188,10 @@ func (c *checker) checkPairsDefault(env *env, body *recordCtx) {
 		}
 		c.report(env, diag.E3316.AtPairsDefault(env.span(f.Default), f.Name))
 	}
+}
+
+// errorTyped reports an expression the checker gave the error type (TYPES.md §1).
+func (c *checker) errorTyped(e syntax.Expr) bool {
+	t := c.info.Types[e]
+	return t != nil && t.Kind() == types.Error
 }

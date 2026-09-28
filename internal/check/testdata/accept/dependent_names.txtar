@@ -1,4 +1,4 @@
-TYPES.md §4.1, §4.2, §11.4: a bare name against a dependent type. A name a branch offers statically (`Icon.columns`, `Rounding.max`, the key `one`) stays the branch's: a package let, a function and a built-in of that name lose silently (map keys: dependent_test.go, E2101_3). A name no branch offers is a local or package value when there is one (`limit`), else it stays symbolic, a built-in function never being a value (`min`). §6.2, §13.2: a dependent value is assignable to a literal union over its type function, and an application of a type function whose body is a literal union is that union; `==` on a union nested through another (`SK2(e) = SK(e) | "y"`) accepts the literals of every union reached.
+TYPES.md §4.1, §4.2, §11.4: a bare name against a dependent type. A name a branch offers statically (`Icon.columns`, `Rounding.max`, the key `one`) stays the branch's: a package let, a function and a built-in of that name lose silently (map keys: dependent_test.go, E2101_3). A name no branch offers is a local or package value when there is one (`limit`), else it stays symbolic, a built-in function never being a value (`min`). §6.2, §13.2: a dependent value is assignable to a literal union over its type function, and an application of a type function whose body is a literal union is that union, its expansion (§13.1, log-2026-09-28 reading 2); a union nested through another (`SK2(e) = SK(e) | "y"`) expands to one flat union, `P(*) | "default" | "y"`, so a bare branch name stays symbolic in a field and a list of it (a map key: TestNestedUnionExpands), and `==` accepts the literals of every union reached, a branch name and the dependent alternative, never another union value (reading 1, E3007_5).
 -- a/a.canon --
 package a
 
@@ -62,5 +62,20 @@ local fn stored(r: R) -> R {
 }
 
 local fn compared(r: R) -> Bool {
-  return r.sk == r.s and r.sk != r.p and r.s == r.sk and r.sk == "default" and r.s2 == "default" and r.s2 != "y" and r.s2 != r.p and r.s2 != r.sk
+  return r.sk != r.p and r.sk == "default" and r.s2 == "default" and r.s2 != "y" and r.s2 != r.p
+}
+
+local record Q {
+  ev: Ev
+  a: SK2(ev)
+  xs: [SK2(ev)] = []
+  m: {SK2(ev): Int} = {}
+}
+
+local let qs: [Q] = [
+  { ev: { k: mode }, a: floor, xs: [ceil, "y", "default"], m: { "y": 2 } },
+]
+
+local fn nested(q: Q) -> Bool {
+  return q.xs[0] == floor and q.a == ceil and q.a != "y"
 }

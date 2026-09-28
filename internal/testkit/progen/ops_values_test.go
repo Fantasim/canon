@@ -19,7 +19,7 @@ func valuesOperators() []operator {
 		op(diag.E3303.Def().Code, "TYPES.md §5.2 (spread of a table)", spreadTable),
 		op(diag.E3304.Def().Code, "TYPES.md §5.2 (identifier map key)", fnStatementFocus("let zzMap: {String: Int} = { ", "a", ": 1 }")),
 		op(diag.E3305.Def().Code, "TYPES.md §5.2 (undecidable brace literal)", fnStatementFocus("let zzBrace = ", "{ a: 1 }", "")),
-		op(diag.E3306.Def().Code, "TYPES.md §12.3 (function type as a field)", recordField("zzFn: ", "(fn(Int) -> Int)?", " = none")),
+		op(diag.E3306.Def().Code, "TYPES.md §12.3 (function type as a field)", fnField),
 		op(diag.E3307.Def().Code, "TYPES.md §12.7 (assign to a field)", assignField),
 		op(diag.E3308.Def().Code, "TYPES.md §6.4 (incompatible branches)", fnStatementFocus("let zzIf = if true { 1 } else { ", `"a"`, " }")),
 		op(diag.E3309.Def().Code, "TYPES.md §7.5 (refs into two collections)", refsIntoTwoTables),
@@ -192,8 +192,63 @@ func spreadTable(tg target) []progen.Site {
 
 // recordField adds a documented field before+focus+after as the last item of every record.
 func recordField(before, focus, after string) func(target) []progen.Site {
+	return recordFieldOf(func(target) func(*syntax.RecordDecl) bool {
+		return func(*syntax.RecordDecl) bool { return true }
+	}, before, focus, after)
+}
+
+// fnField adds a function-typed field to a record that is no pairs element, whose count it would break (WIRE.md §4.1).
+func fnField(tg target) []progen.Site {
+	return recordFieldOf(func(tg target) func(*syntax.RecordDecl) bool {
+		elems := pairsElements(tg)
+		return func(r *syntax.RecordDecl) bool { return !elems[r.Name.Name] }
+	}, "zzFn: ", "(fn(Int) -> Int)?", " = none")(tg)
+}
+
+// pairsElements are the names of the records any field of the project uses as a `@json(pairs:)` element.
+func pairsElements(tg target) map[string]bool {
+	out := map[string]bool{}
+	for _, p := range *tg.all {
+		for _, f := range nodes[*syntax.FieldDecl](p) {
+			l, isList := f.Type.(*syntax.ListType)
+			n, isNamed := elemNamed(l, isList)
+			if isNamed && pairsForm(f.Annotations) {
+				out[n.Name.Parts[len(n.Name.Parts)-1].Name] = true
+			}
+		}
+	}
+	return out
+}
+
+// elemNamed is the element of a list type when it is a named type.
+func elemNamed(l *syntax.ListType, isList bool) (*syntax.NamedType, bool) {
+	if !isList {
+		return nil, false
+	}
+	n, ok := l.Elem.(*syntax.NamedType)
+	return n, ok
+}
+
+// pairsForm reports a `@json(…)` with a `pairs:` argument among as.
+func pairsForm(as []*syntax.Annotation) bool {
+	for _, a := range as {
+		if a.Name == nil || a.Name.Name != annotJSON {
+			continue
+		}
+		for _, arg := range a.Args {
+			if arg.Name != nil && arg.Name.Name == argPairs {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// recordFieldOf adds before+focus+after as the last field of every record keep accepts.
+func recordFieldOf(keepOf func(target) func(*syntax.RecordDecl) bool, before, focus, after string) func(target) []progen.Site {
 	return func(tg target) []progen.Site {
-		return sitesOf(tg, func(r *syntax.RecordDecl) bool { return r.Body != nil && len(r.Body.Items) > 0 }, func(r *syntax.RecordDecl) progen.Site {
+		keep := keepOf(tg)
+		return sitesOf(tg, func(r *syntax.RecordDecl) bool { return r.Body != nil && len(r.Body.Items) > 0 && keep(r) }, func(r *syntax.RecordDecl) progen.Site {
 			_, e := span(tg, r.Body.Items[len(r.Body.Items)-1])
 			ind := indent(tg, e)
 			return seq(1, insert(e, "\n"+ind+"/// Added.\n"+ind+before), insert(e, focus), insert(e, after))

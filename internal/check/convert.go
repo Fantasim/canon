@@ -1,6 +1,8 @@
 package check
 
 import (
+	"slices"
+
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
@@ -44,6 +46,88 @@ func (c *checker) mismatch(env *env, e syntax.Expr, s, want types.Type) {
 	}
 }
 
+// unbroken is t with each ref to no collection the error type it stands for (TYPES.md §1).
+func (c *checker) unbroken(t types.Type) types.Type {
+	u, _ := c.unbreak(t)
+	return u
+}
+
+// unbreak is unbroken, and whether anything changed; t itself when nothing did.
+func (c *checker) unbreak(t types.Type) (types.Type, bool) {
+	switch x := t.Base().(type) {
+	case *types.RefType:
+		if c.coll(x) == errorColl {
+			return types.ErrorType, true
+		}
+	case *types.OptionalType:
+		if e, ch := c.unbreak(x.Elem); ch {
+			return &types.OptionalType{Elem: e}, true
+		}
+	case *types.ListType:
+		if e, ch := c.unbreak(x.Elem); ch {
+			return &types.ListType{Elem: e, KeyedBy: x.KeyedBy}, true
+		}
+	case *types.MapType:
+		k, kc := c.unbreak(x.Key)
+		v, vc := c.unbreak(x.Value)
+		if kc || vc {
+			return &types.MapType{Key: k, Value: v}, true
+		}
+	case *types.PairType:
+		a, ac := c.unbreak(x.A)
+		b, bc := c.unbreak(x.B)
+		if ac || bc {
+			return &types.PairType{A: a, B: b}, true
+		}
+	case *types.FuncType:
+		return c.unbreakFunc(x)
+	}
+	return t, false
+}
+
+func (c *checker) unbreakFunc(f *types.FuncType) (types.Type, bool) {
+	out := &types.FuncType{Params: make([]types.Type, len(f.Params))}
+	changed := false
+	for i, p := range f.Params {
+		q, ch := c.unbreak(p)
+		out.Params[i], changed = q, changed || ch
+	}
+	r, ch := c.unbreak(f.Result)
+	out.Result = r
+	if !changed && !ch {
+		return f, false
+	}
+	return out, true
+}
+
+// alike is static identity, key fields included, the error type its only wildcard (TYPES.md §6.1, §1).
+func alike(a, b types.Type) bool {
+	a, b = a.Base(), b.Base()
+	switch {
+	case a.Kind() == types.Error || b.Kind() == types.Error:
+		return true
+	case a.Kind() != b.Kind():
+		return false
+	}
+	switch x := a.(type) {
+	case *types.ListType:
+		y := b.(*types.ListType)
+		return x.KeyedBy == y.KeyedBy && alike(x.Elem, y.Elem)
+	case *types.OptionalType:
+		return alike(x.Elem, b.(*types.OptionalType).Elem)
+	case *types.MapType:
+		y := b.(*types.MapType)
+		return alike(x.Key, y.Key) && alike(x.Value, y.Value)
+	case *types.PairType:
+		y := b.(*types.PairType)
+		return alike(x.A, y.A) && alike(x.B, y.B)
+	case *types.FuncType:
+		y := b.(*types.FuncType)
+		return slices.EqualFunc(x.Params, y.Params, alike) && alike(x.Result, y.Result)
+	}
+	return types.Identical(a, b)
+}
+
 // assignable is S ≤ E for the checker, refs resolved.
 func (c *checker) assignable(s, want types.Type) bool {
 	_, ok := c.convert(s, want)
@@ -80,6 +164,7 @@ func intToFloat(s, want types.Type) *Conversion {
 
 // convert is S ≤ E with its conversion (TYPES.md §6.2).
 func (c *checker) convert(s, want types.Type) (*Conversion, bool) {
+	s, want = c.unbroken(s), c.unbroken(want)
 	sb, wb := s.Base(), want.Base()
 	switch {
 	case sb.Kind() == types.Error || wb.Kind() == types.Error || sb.Kind() == types.Never:
@@ -147,7 +232,7 @@ func (c *checker) convertComposite(s, sb, want, wb types.Type) (*Conversion, boo
 		return c.convert(s, w.Of)
 	case *types.FuncType:
 		f, ok := sb.(*types.FuncType)
-		return nil, ok && types.Assignable(f, w) && c.assignable(f.Result, w.Result)
+		return nil, ok && slices.EqualFunc(f.Params, w.Params, alike) && c.assignable(f.Result, w.Result)
 	}
 	return nil, false
 }

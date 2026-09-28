@@ -87,13 +87,15 @@ type checker struct {
 	boundSpans   map[*types.Bound]source.Span
 	wheres       []whereJob
 	unions       []unionJob
-	records      int                  // records and variants being completed, innermost last
-	funcDepth    map[*object]int      // records being completed when a type function began
-	syntaxHeld   map[syntax.Node]bool // declarations holding a syntax error (DECISIONS 214)
-	reported     int                  // the errors report added so far
-	badLits      map[syntax.Node]bool // literal tokens holding a lexer error (DECISIONS 215)
-	unmatchable  map[syntax.Node]bool // members and cases named by an E1126 word
-	layout       *project.Layout      // the roots as written, no --root override (DECISIONS 215)
+	records      int                         // records and variants being completed, innermost last
+	funcDepth    map[*object]int             // records being completed when a type function began
+	syntaxHeld   map[syntax.Node]bool        // declarations holding a syntax error (DECISIONS 214)
+	reported     int                         // the errors report added so far
+	unrefined    map[syntax.Node]bool        // refinements dropped for an error (TYPES.md §1)
+	refused      map[*types.Param]types.Type // the declared type of a parameter refused by E3806, for messages
+	badLits      map[syntax.Node]bool        // literal tokens holding a lexer error (DECISIONS 215)
+	unmatchable  map[syntax.Node]bool        // members and cases named by an E1126 word
+	layout       *project.Layout             // the roots as written, no --root override (DECISIONS 215)
 }
 
 func newChecker(ctx context.Context, proj *project.Project, bags Bags, fold Folder) *checker {
@@ -126,6 +128,8 @@ func newChecker(ctx context.Context, proj *project.Project, bags Bags, fold Fold
 		boundSpans:   map[*types.Bound]source.Span{},
 		syntaxHeld:   map[syntax.Node]bool{},
 		badLits:      map[syntax.Node]bool{},
+		unrefined:    map[syntax.Node]bool{},
+		refused:      map[*types.Param]types.Type{},
 		unmatchable:  map[syntax.Node]bool{},
 		funcDepth:    map[*object]int{},
 	}

@@ -1,0 +1,29 @@
+WIRE.md §4.1, TYPES.md §1: a `@json(pairs:)` element has two present scalar fields; an optional field is not one, whether its type is `Int?` or the error type made optional (`Nope?`), so both are E3316 (the error type is a wildcard only where it stands).
+-- a/a.canon --
+package a
+
+local record IntOpt {
+  k: Int
+  v: Int?
+}
+
+local record TwoOpt {
+  k: Int
+  v: Nope?
+}
+
+local record R {
+  a: [IntOpt](..=3) = [] @json(pairs: ["a{i}", "b{i}"])
+  b: [TwoOpt](..=3) = [] @json(pairs: ["c{i}", "d{i}"])
+}
+-- findings.txt --
+error[E2102]  a/a.canon:10:6
+  unknown name Nope
+
+error[E3316]  a/a.canon:14:26
+  @json(pairs) does not apply to [a.IntOpt](..=3)
+
+error[E3316]  a/a.canon:15:26
+  @json(pairs) does not apply to [a.TwoOpt](..=3)
+
+3 errors, 0 warnings in 1 package (…)

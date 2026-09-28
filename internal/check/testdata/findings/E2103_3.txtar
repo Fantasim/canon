@@ -1,0 +1,55 @@
+TYPES.md §1, §6.2, §10.2 (progen E2103_69445): a ref naming no collection is E2103 and stands for the error type wherever it is nested (in a list, a function's result, an optional); the error type is a wildcard inside a type, so a lambda or value holding it is assignable where its well-typed form is expected (no E3002 naming `[ref ]`), but an independent mismatch around it is still reported: an optional where a plain ref is expected (E3403), a list where a String is expected (E3002).
+-- a/a.canon --
+package a
+
+local record Section {
+  n: Int
+}
+
+local record Status {
+  n: Int
+  next: [ref Section]
+  back: ref Section?
+}
+
+local let statuses: table Status = {
+  open { n: 1, next: [], back: none }
+}
+
+local fn walk(f: fn(ref statuses) -> [ref statuses]) -> Int {
+  return 1
+}
+
+local fn g(s: Status) -> [ref statuses] {
+  return s.next
+}
+
+local fn h(s: Status) -> ref statuses? {
+  return s.back
+}
+
+local fn k(s: Status) -> ref statuses {
+  let r: ref statuses = s.back
+  let t: String = s.next
+  return s.back
+}
+
+local let seen = reachable(from: statuses.open, next: .next)
+local let w = walk(.next)
+-- findings.txt --
+error[E2103]  a/a.canon:9:14
+  ref Section: there is no collection of Section; write ref <collection name>
+
+error[E2103]  a/a.canon:10:13
+  ref Section: there is no collection of Section; write ref <collection name>
+
+error[E3403]  a/a.canon:30:25
+  expected ref a.statuses, found ref a.statuses?: prove it is present (!= none, !, ??)
+
+error[E3002]  a/a.canon:31:19
+  expected String, found [ref ]
+
+error[E3403]  a/a.canon:32:10
+  expected ref a.statuses, found ref a.statuses?: prove it is present (!= none, !, ??)
+
+5 errors, 0 warnings in 1 package (…)

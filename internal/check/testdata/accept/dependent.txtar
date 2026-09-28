@@ -1,4 +1,4 @@
-TYPES.md §11: what a dependent value supports. §11.1 parameters in field types, defaults and checks, a case's earlier field, a ref argument dereferenced; §11.2, §13.1 a type function reaching itself through a variant case (`Nest` → `W.c`) or through the record its scrutinee completes (`G` → `Holder.g`) is no cycle, a Bool scrutinee with `true`/`false` arms (and a Bool match expression), a nested application, a ref to a local collection, a list and Never as results; §11.4 == and != with the same DepUnion or none, narrowing on != none, interpolation, String(x), fail/warn, storing in a field or list of the same declared type, literals checked against the branches (a symbolic name, an integer, a string key, a string, none in an optional field, a list or brace literal against its branch); §4.1/§4.2 a local, parameter or field named like no branch member wins over the symbolic reading; §11.5 a dependent map read, returned and joined as {ref c: T}, and a {ref c: T} stored in one; §13.2 a literal union over a type application, its literal, and == with its literals, itself and its dependent alternative.
+TYPES.md §11: what a dependent value supports. §11.1 parameters in field types, defaults and checks, a case's earlier field, a ref argument dereferenced; §11.2, §13.1 a type function reaching itself through a variant case (`Nest` → `W.c`) or through the record its scrutinee completes (`G` → `Holder.g`) is no cycle, a Bool scrutinee with `true`/`false` arms (and a Bool match expression), a nested application, a ref to a local collection, a list and Never as results; §11.4 == and != with the same DepUnion or none, narrowing on != none, interpolation, String(x), fail/warn, storing in a field or list of the same declared type, literals checked against the branches (a symbolic name, an integer, a string key, a string, none in an optional field, a list or brace literal against its branch); §4.1/§4.2 a local, parameter or field named like no branch member wins over the symbolic reading; §11.5 a dependent map read, returned and joined as {ref c: T}, and a {ref c: T} stored in one; §13.2 a literal union over a type application, its literal, and == with its literals and its dependent alternative (never between two union values, log-2026-09-28 reading 1: E3007_5); §13.1 an application of a type function whose body is a literal union is its expansion (reading 2).
 -- a/a.canon --
 package a
 
@@ -159,7 +159,7 @@ local fn mk(q: String) -> Q {
 }
 
 local fn unions(x: Q) -> Bool {
-  return x.q == "all" and x.q != x.n and x.sk == "default" and x.sk != x.n and x.q == x.alt
+  return x.q == "all" and x.q != x.n and x.sk == "default" and x.sk != x.n
 }
 
 local record H {

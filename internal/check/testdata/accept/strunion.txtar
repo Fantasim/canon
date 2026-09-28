@@ -1,0 +1,45 @@
+TYPES.md §13.2, §13.1, §11.4: `P(k) | "none"` where every non-Never branch of `P` has a string wire form (`String`, an enum without `@json(codes)`) is a valid literal union, written directly or as a type function's body; the application `SK(k)` of a type function whose body is a literal union is its expansion, `P(*) | "none"` (an alias with parameters is transparent; `F(*)` is only a match-bodied type function, log-2026-09-28 reading 2), so a value of one is stored in the other. A string literal equal to a literal of the union is that literal, whatever the branch (`"none"` with `k: name`); any other value is an `A`, checked against the union of `P`'s branches (§11.4 "Literals"; the computed branch is judged at evaluation, §11.6): `"x"` fits `String`, `red` fits `Colour`. `==`/`!=` with a literal of the union or with an `A` (a `P(*)` value, a symbol of a branch; `String` for `Tag`, a key for `Target`), never between two union values (E3007_5).
+-- a/a.canon --
+package a
+
+local enum K { name, colour, off }
+
+local enum Colour { red, blue }
+
+local type P(k: K) = match k {
+  name => String
+  colour => Colour
+  off => Never
+}
+
+local type SK(k: K) = P(k) | "none"
+
+local type Tag = String | "all"
+
+local record Item {
+  n: Int = 0
+}
+
+local let items: table Item = { sword {} }
+
+local type Target = ref items | "all"
+
+local record R {
+  k: K
+  p: P(k)
+  lit: P(k) | "none" = "none"
+  branch: P(k) | "none"
+  sk: SK(k) = "none"
+  copy: SK(k) = lit
+}
+
+local let one: R = { k: colour, p: blue, branch: red, sk: blue }
+local let two: R = { k: name, p: "y", lit: "none", branch: "x", sk: "y" }
+
+local fn f(r: R) -> Bool {
+  return r.lit == "none" or r.branch == r.p or r.sk != "none" or r.sk == r.p or r.lit == red
+}
+
+local fn g(t: Tag, s: String, u: Target?) -> Bool {
+  return t == "all" or t != s or s == t or u == "all" or u == sword or u == items.sword
+}

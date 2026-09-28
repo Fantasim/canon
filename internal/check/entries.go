@@ -17,7 +17,13 @@ func (c *checker) entryDecl(o *object) {
 	}
 	c.info.NameUses[d.Table] = table
 	c.dependsOn(env, table)
-	elem, keyed, isColl := collectionElem(c.letType(table))
+	lt := c.letType(table)
+	if lt.Kind() == types.Error { // the let's own finding is the one; its values are checked against the error type (TYPES.md §1)
+		o.typ = types.ErrorType
+		c.expr(env, d.Value, types.ErrorType)
+		return
+	}
+	elem, keyed, isColl := collectionElem(lt)
 	if !isColl {
 		c.report(env, diag.E3103.AtTarget(env.span(d.Table), d.Table.Name, o.name))
 		return

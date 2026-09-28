@@ -10,8 +10,8 @@ import (
 	"github.com/fantasim/canonlang/internal/types"
 )
 
-// fieldAnnotations resolves a field's annotations into its wire mapping (WIRE.md §4, §5.5.2).
-func (c *checker) fieldAnnotations(env *env, f *types.Field, fd *syntax.FieldDecl, wireCase string) {
+// fieldAnnotations resolves a field's annotations into its wire mapping, typeErr after a finding in its type (WIRE.md §4).
+func (c *checker) fieldAnnotations(env *env, f *types.Field, fd *syntax.FieldDecl, wireCase string, typeErr bool) {
 	if why, ok := c.deprecation(fd.Annotations); ok {
 		f.Deprecated = &types.Deprecation{Why: why}
 	}
@@ -26,7 +26,7 @@ func (c *checker) fieldAnnotations(env *env, f *types.Field, fd *syntax.FieldDec
 		f.Wire, f.WirePath = w, []string{w}
 	}
 	c.jsonPath(env, f, j)
-	c.jsonForms(env, f, j)
+	c.jsonForms(env, f, j, typeErr)
 }
 
 // jsonPath is `@json(path: "a.b")`: two or more non-empty segments, none starting with $.
@@ -54,9 +54,9 @@ func cleanSegments(segs []string) bool {
 	return true
 }
 
-// jsonForms applies inline, int, bits, unit and none, each judged on a type it fits, never on the error type (TYPES.md §1).
-func (c *checker) jsonForms(env *env, f *types.Field, j *syntax.Annotation) {
-	if f.Type.Base().Kind() == types.Error {
+// jsonForms applies inline, int, bits, unit and none, judged on a type it fits, never after a type error (TYPES.md §1).
+func (c *checker) jsonForms(env *env, f *types.Field, j *syntax.Annotation, typeErr bool) {
+	if typeErr || f.Type.Base().Kind() == types.Error {
 		c.untypedForms(env, f, j)
 		return
 	}
@@ -161,6 +161,9 @@ func (c *checker) checkBits(env *env, f *types.Field, a *syntax.AnnotationArg) {
 	}
 	c.completeEnum(c.typeObjects[e], e)
 	for _, m := range e.Members {
+		if !m.HasCode {
+			continue // no code: its E3201 or lexer error is the one finding (TYPES.md §1)
+		}
 		if m.Code < 1 || m.Code > maxBit || m.Code&(m.Code-1) != 0 {
 			c.report(env, diag.E3316.AtBits(env.span(a), e.String()))
 			return
@@ -240,13 +243,16 @@ func (c *checker) pairKeys(env *env, list *syntax.AnnotationList) (keys [pairCou
 	return keys, true, true
 }
 
-// pairsElem reports an element record of two present scalar fields, no input, no `$` key (WIRE.md §4.1).
+// pairsElem reports an element record of two present scalar fields, no input, no `$` key; one containing itself is E3022's (WIRE.md §4.1).
 func (c *checker) pairsElem(list types.Type) bool {
 	rec, ok := list.Base().(*types.ListType).Elem.Base().(*types.RecordType)
 	if !ok {
 		return false
 	}
 	c.completeRecord(rec)
+	if reaches(rec, rec, map[*types.RecordType]bool{}) {
+		return true
+	}
 	if len(rec.Fields) != pairCount {
 		return false
 	}
@@ -258,7 +264,7 @@ func (c *checker) pairsElem(list types.Type) bool {
 	return !slices.ContainsFunc(rec.Methods, func(m *types.Method) bool { return m.Export && !c.translated(m) })
 }
 
-// scalarWire reports a type whose wire form is one JSON scalar, an optional excluded.
+// scalarWire reports a type whose wire form is one JSON scalar, an optional excluded, the error type included (TYPES.md §1).
 func scalarWire(t types.Type) bool {
 	switch t.Base().Kind() {
 	case types.Bool, types.Int, types.Float, types.String, types.Duration, types.Enum, types.Ref,

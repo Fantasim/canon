@@ -1,0 +1,38 @@
+TYPES.md §14, §11.1: reading an input is E3313 in any expression, and as (part of) a type-function argument: `P(k)` with `k` an input field, a path through an input field of another record, and a dependent map key type's argument; the argument is of the error type, so the field's value is not judged against the dependent type (no follow-on finding, not even for a literal no branch fits).
+-- a/a.canon --
+package a
+
+local enum K { num, text }
+
+local type P(k: K) = match k {
+  num => String
+  text => K
+}
+
+local type SK(k: K) = P(k) | "default"
+
+local record Mode {
+  k: input K from env "MODE"
+}
+
+local record R {
+  k: input K from env "MODE"
+  mode: Mode = {}
+  p: P(k) = true
+  q: P(mode.k)? = none
+  m: {SK(k): Int} = {}
+}
+
+/// The config.
+let r: R = {}
+-- findings.txt --
+error[E3313]  a/a.canon:19:8
+  k is an input: it has no value at build time
+
+error[E3313]  a/a.canon:20:13
+  k is an input: it has no value at build time
+
+error[E3313]  a/a.canon:21:10
+  k is an input: it has no value at build time
+
+3 errors, 0 warnings in 1 package (…)

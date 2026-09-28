@@ -1,4 +1,4 @@
-TYPES.md §13.2, §11.4: a literal union over a dependent type, or an applied type function whose body is one, compares with its literals, the same union and its dependent alternative; another string literal is E3002 and any other value E3804.
+TYPES.md §13.2, §11.4: a literal union over a dependent type, or an applied type function whose body is one (its expansion, §13.1, log-2026-09-28 reading 2), compares with its literals and its dependent alternative, through a union nested in it too (`SK2`; another union value is E3007_5); another string literal is E3002 and any other value E3804.
 -- a/a.canon --
 package a
 
@@ -15,15 +15,18 @@ local type P(e: Ev) = match e.k {
 
 local type SK(e: Ev) = P(e) | "default"
 
+local type SK2(e: Ev) = SK(e) | "y"
+
 local record R {
   ev: Ev
   p: P(ev)
   s: P(ev) | "default" = "default"
   k: SK(ev) = "default"
+  k2: SK2(ev) = "y"
 }
 
 local fn fine(r: R) -> Bool {
-  return r.s == "default" and r.s != r.p and r.k == "default" and r.k != r.p and r.s == r.s
+  return r.s == "default" and r.s != r.p and r.k == "default" and r.k != r.p
 }
 
 local fn other(r: R) -> Bool {
@@ -31,19 +34,22 @@ local fn other(r: R) -> Bool {
 }
 
 local fn number(r: R) -> Bool {
-  return r.s == 3 or r.k != 3
+  return r.s == 3 or r.k != 3 or r.k2 == 3
 }
 -- findings.txt --
-error[E3002]  a/a.canon:28:17
+error[E3002]  a/a.canon:31:17
   expected a.P(*) | "default", found String
 
-error[E3002]  a/a.canon:28:35
-  expected a.SK(*), found String
+error[E3002]  a/a.canon:31:35
+  expected a.P(*) | "default", found String
 
-error[E3804]  a/a.canon:32:10
+error[E3804]  a/a.canon:35:10
   == is not available on a dependent value (P(*))
 
-error[E3804]  a/a.canon:32:22
-  != is not available on a dependent value (SK(*))
+error[E3804]  a/a.canon:35:22
+  != is not available on a dependent value (P(*))
 
-4 errors, 0 warnings in 1 package (…)
+error[E3804]  a/a.canon:35:34
+  == is not available on a dependent value (P(*))
+
+5 errors, 0 warnings in 1 package (…)

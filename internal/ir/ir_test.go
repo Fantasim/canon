@@ -82,9 +82,9 @@ func TestLambdaParamIsNotComputed(t *testing.T) {
 	w.add(t, "a/a.canon", []byte(`package a
 
 /// R.
-record R(n: Int) {
+record R(on: Bool) {
   /// Reads its own parameter: computed.
-  double: Int = n * 2
+  double: Int = if on { 2 } else { 1 }
   /// A lambda's own parameter must not count as reading the instance.
   total: Int = [1, 2, 3].map(x => x + 1).sum()
 }

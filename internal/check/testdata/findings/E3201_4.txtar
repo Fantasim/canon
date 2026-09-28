@@ -1,0 +1,17 @@
+TYPES.md §1, §7.2, WIRE.md §5.14: a length bound outside `Int` is E3201 and the refinement is dropped; a field whose type had a finding has its @json forms unjudged, so `@json(pairs:)` reports no missing finite bound (no E3316).
+-- a/a.canon --
+package a
+
+local record Pair {
+  k: Int
+  v: Int
+}
+
+local record R {
+  stats: [Pair](..=99999999999999999999) = [] @json(pairs: ["dst{i}", "val{i}"])
+}
+-- findings.txt --
+error[E3201]  a/a.canon:9:20
+  99999999999999999999 does not fit Int
+
+1 error, 0 warnings in 1 package (…)
