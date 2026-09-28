@@ -19,12 +19,28 @@ type namer struct {
 	scopes   []*nameScope
 	problems []GoNameProblem
 	reported map[originPair]bool // the pairs of origins already reported colliding: one E8005 per cause (decision 203)
+	derived  map[any]bool        // the items whose name, built on a refused type's, is that type's E8011 (decision 213)
 	ident    func(string) (ok, reserved bool)
 	self     string // the package: what an item meeting its own name is reported against
+	bare     bool   // while a derived name is rebuilt on the default type names: every type's and case's override is ignored (decision 213)
+}
+
+// derivation is a name built on the name of type from, and how to build it: rebuilt bare, it tells a name refused through from from one refused for the item's own reason (decision 213).
+type derivation struct {
+	from  any
+	build func() string
+}
+
+// typeOverride is a type's or case's own name options, none while a name is rebuilt bare.
+func (n *namer) typeOverride(o NameOptions) NameOptions {
+	if n.bare {
+		return NameOptions{}
+	}
+	return o
 }
 
 func newNamer(pkg string, ident func(string) (ok, reserved bool)) namer {
-	return namer{reported: map[originPair]bool{}, ident: ident, self: pkg}
+	return namer{reported: map[originPair]bool{}, derived: map[any]bool{}, ident: ident, self: pkg}
 }
 
 // fnOrigin is a package-level export fn's origin, qualified as a method's is (a.echo, like a.Item.mix).
@@ -39,15 +55,8 @@ func (n *namer) scope(what string) *nameScope {
 
 // declare adds name to sc for origin; a name that is no identifier of the target (decision 202), or that sc already holds, is a problem. Two origins collide once in the whole plan, however many of their names meet, in any scope (decision 203).
 func (n *namer) declare(sc *nameScope, name, origin string, item any) {
-	n.declareFrom(sc, name, origin, item, nil)
-}
-
-// declareFrom is declare for a name built on the name of type from (a member constant, a case type, a table id): when from is refused already, a name that is no identifier is from's E8011, not item's (decision 213).
-func (n *namer) declareFrom(sc *nameScope, name, origin string, item, from any) {
 	if ok, reserved := n.ident(name); !ok {
-		if from == nil || !n.refused(from) {
-			n.problems = append(n.problems, GoNameProblem{Kind: GoNotIdentifier, Scope: sc.what, Name: name, Origin: origin, Item: item, Reserved: reserved})
-		}
+		n.problems = append(n.problems, GoNameProblem{Kind: GoNotIdentifier, Scope: sc.what, Name: name, Origin: origin, Item: item, Reserved: reserved})
 		return
 	}
 	if first, ok := sc.names[name]; ok {
@@ -75,9 +84,34 @@ func (n *namer) collide(sc *nameScope, name, first, origin string, item any) {
 	n.problems = append(n.problems, GoNameProblem{Kind: GoCollision, Scope: sc.what, Name: name, First: first, Origin: origin, Item: item})
 }
 
-// refused reports an item whose own name is already a problem other than a collision: an invalid override, or a name that is no identifier.
+// declareFrom is declare for a name d builds on the name of a type (a member constant, a case type, a table id, a method's generated helper), unless it is that type's E8011 (builtOnRefused).
+func (n *namer) declareFrom(sc *nameScope, origin string, item any, d derivation) {
+	if name := d.build(); !n.builtOnRefused(name, item, d) {
+		n.declare(sc, name, origin, item)
+	}
+}
+
+// builtOnRefused reports a name of item, built by d on the name of a type refused already, that is no identifier while the same name built on the default type names is one: it is the type's E8011, not item's, and is not declared (decision 213, CODEGEN.md §3.5; provenance decides, never a text prefix). item is then refused through the type, so a name built on item's in turn (a case type's method) is the type's too.
+func (n *namer) builtOnRefused(name string, item any, d derivation) bool {
+	if d.from == nil || !n.refused(d.from) {
+		return false
+	}
+	if ok, _ := n.ident(name); ok {
+		return false
+	}
+	n.bare = true
+	def := d.build()
+	n.bare = false
+	if ok, _ := n.ident(def); !ok {
+		return false
+	}
+	n.derived[item] = true
+	return true
+}
+
+// refused reports an item whose own name is already a problem other than a collision (an invalid override, or a name that is no identifier), or one through the type it is built on (builtOnRefused).
 func (n *namer) refused(item any) bool {
-	return slices.ContainsFunc(n.problems, func(pr GoNameProblem) bool { return pr.Kind != GoCollision && pr.Item == item })
+	return n.derived[item] || slices.ContainsFunc(n.problems, func(pr GoNameProblem) bool { return pr.Kind != GoCollision && pr.Item == item })
 }
 
 // unlessOverridden is the type a derived name is built on, or nil when the item's own override replaces the whole name (CODEGEN.md §3.5).
@@ -137,7 +171,7 @@ func (pl *GoNamePlan) declareEnums(top *nameScope) {
 		name, origin := pl.TypeName(e), e.QName()
 		pl.declare(top, name, origin, e)
 		for _, m := range e.Members {
-			pl.declareFrom(top, pl.MemberName(e, m), origin+qnameSep+m.Name, m, unlessOverridden(m.Go, e))
+			pl.declareFrom(top, origin+qnameSep+m.Name, m, derivation{unlessOverridden(m.Go, e), func() string { return pl.MemberName(e, m) }})
 		}
 		pl.declare(top, pl.ParseName(name), origin, e)
 		pl.declare(top, pl.MembersName(name), origin, e)
@@ -160,7 +194,7 @@ func (pl *GoNamePlan) declareKindEnums(top *nameScope) {
 		kind, origin := pl.KindName(v), v.QName()
 		pl.declare(top, kind, origin, v)
 		for _, c := range v.Cases {
-			pl.declareFrom(top, pl.KindMemberName(v, c), origin+qnameSep+c.Name, c, v)
+			pl.declareFrom(top, origin+qnameSep+c.Name, c, derivation{v, func() string { return pl.KindMemberName(v, c) }})
 		}
 		pl.declare(top, pl.ParseName(kind), origin, v)
 		pl.declareMethods(kind, origin, v, goEnumMethods)
@@ -183,14 +217,14 @@ func (pl *GoNamePlan) declareIDEnums(top *nameScope) {
 			continue
 		}
 		name := pl.IDTypeName(rec)
-		pl.declareFrom(top, name, v.Name, v, rec)
+		pl.declareFrom(top, v.Name, v, derivation{rec, func() string { return pl.IDTypeName(rec) }})
 		if pl.data != nil {
 			continue
 		}
 		for _, id := range v.IDs {
-			pl.declareFrom(top, pl.IDMemberName(rec, id), v.Name+qnameSep+id, v, rec)
+			pl.declareFrom(top, v.Name+qnameSep+id, v, derivation{rec, func() string { return pl.IDMemberName(rec, id) }})
 		}
-		pl.declareFrom(top, pl.ParseName(name), v.Name, v, rec)
+		pl.declareFrom(top, v.Name, v, derivation{rec, func() string { return pl.ParseName(pl.IDTypeName(rec)) }})
 		pl.declareMethods(name, v.Name, v, goIDEnumMethods)
 	}
 }
@@ -209,7 +243,7 @@ func (pl *GoNamePlan) declareType(top *nameScope, t Type) {
 	switch x := t.(type) {
 	case *Record:
 		pl.declare(top, pl.TypeName(x), x.QName(), x)
-		pl.declareBody(pl.TypeName(x), x.QName(), x, x.Fields, x.Methods)
+		pl.declareBody(x.QName(), goStruct{x, func() string { return pl.TypeName(x) }}, x.Fields, x.Methods)
 	case *Variant:
 		pl.declareVariant(top, x)
 	case *Dependent:
@@ -232,8 +266,9 @@ func (pl *GoNamePlan) declareVariant(top *nameScope, v *Variant) {
 	}
 	for _, c := range v.Cases {
 		if len(c.Fields) > 0 {
-			pl.declareFrom(top, pl.CaseName(v, c), origin+qnameSep+c.Name, c, unlessOverridden(c.Go, v))
-			pl.declareBody(pl.CaseName(v, c), origin+qnameSep+c.Name, nil, c.Fields, c.Methods)
+			st := goStruct{c, func() string { return pl.CaseName(v, c) }}
+			pl.declareFrom(top, origin+qnameSep+c.Name, c, derivation{unlessOverridden(c.Go, v), st.name})
+			pl.declareBody(origin+qnameSep+c.Name, st, c.Fields, c.Methods)
 		}
 	}
 }
@@ -249,10 +284,24 @@ type bodyNames struct {
 	stores, tables, getters, finite []bodyMember
 }
 
-// declareBody declares the storage and methods of the struct goName, one Go selector namespace (decision 182), getters first so a cause is reported at its getter (decision 203). rec is the record, nil for a case; a table entry has ID and Retired, id and retired first (CODEGEN.md §5.3).
-func (pl *GoNamePlan) declareBody(goName, owner string, rec *Record, fields []*Field, fns []*ExportFn) {
+// goStruct is a record or case and how its Go type is named, which a translated method's pure function and test are built on (decision 213); zero at package level.
+type goStruct struct {
+	self any
+	name func() string
+}
+
+// goName is the struct's Go type name, "" at package level.
+func (st goStruct) goName() string {
+	if st.name == nil {
+		return ""
+	}
+	return st.name()
+}
+
+// declareBody declares the storage and methods of the struct st, one Go selector namespace (decision 182), getters first so a cause is reported at its getter (decision 203); a table entry has ID and Retired, id and retired first (CODEGEN.md §5.3).
+func (pl *GoNamePlan) declareBody(owner string, st goStruct, fields []*Field, fns []*ExportFn) {
 	var b bodyNames
-	if rec != nil && pl.isTableRecord(rec) {
+	if rec, ok := st.self.(*Record); ok && pl.isTableRecord(rec) {
 		b.stores = append(b.stores, bodyMember{GoIDStore, owner, rec}, bodyMember{GoRetiredStore, owner, rec})
 		b.getters = append(b.getters, bodyMember{GoID, owner, rec}, bodyMember{GoRetired, owner, rec})
 	}
@@ -266,10 +315,10 @@ func (pl *GoNamePlan) declareBody(goName, owner string, rec *Record, fields []*F
 			pl.addFinite(&b, origin, fn)
 		case FnTranslated:
 			b.finite = append(b.finite, bodyMember{goExported(fn.Go, fn.Name), origin, fn})
-			pl.declarePure(pl.scopes[0], goName, origin, fn)
+			pl.declarePure(pl.scopes[0], origin, fn, st)
 		}
 	}
-	sc := pl.scope(goName)
+	sc := pl.scope(st.goName())
 	for _, list := range [][]bodyMember{b.getters, b.finite, b.stores, b.tables} {
 		for _, m := range list {
 			pl.declare(sc, m.name, m.origin, m.item)

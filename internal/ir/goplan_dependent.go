@@ -36,9 +36,9 @@ func DefinesRef(t TypeRef) bool {
 func (pl *GoNamePlan) declareDependent(top *nameScope, d *Dependent) {
 	n, origin := pl.Dependent(d), d.QName()
 	pl.declare(top, n.Type, origin, d)
-	pl.declareFrom(top, n.Branch, origin, d, d)
-	for i, b := range n.Branches {
-		pl.declareFrom(top, b.Member, origin+qnameSep+d.Branches[i].Name, d, d)
+	pl.declareFrom(top, origin, d, derivation{d, func() string { return pl.Dependent(d).Branch }})
+	for i := range n.Branches {
+		pl.declareFrom(top, origin+qnameSep+d.Branches[i].Name, d, derivation{d, func() string { return pl.Dependent(d).Branches[i].Member }})
 	}
 	sc := pl.scope(n.Type)
 	pl.declare(sc, n.Method, origin, d)

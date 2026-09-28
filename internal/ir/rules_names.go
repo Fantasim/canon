@@ -35,7 +35,7 @@ func (s *stage) checkGoNames(u *unit) {
 	reportNames(u, s.itemSpans(es), problems, check.TargetGo, map[any]bool{})
 }
 
-// refusedImport reports the import name of a dependency whose go package check refused at that emit (E8009), written or defaulted from out (decisions 213, 215), matched by its import path, never by the name's text: the importer adds nothing to it.
+// refusedImport reports the import name of a dependency whose go package check refused at that emit (E8009): written, defaulted from out, or none for an emit with no out or one that does not resolve (decisions 213, 215), matched by its import path, never by the name's text: the importer adds nothing to it.
 func (s *stage) refusedImport(u *unit) func(GoNameProblem) bool {
 	refused := map[string]bool{}
 	for _, imp := range u.p.Imports {

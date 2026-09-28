@@ -51,7 +51,7 @@ func (pl *CppNamePlan) declareNamespaceTypes() {
 	}
 	pl.declareDependents()
 	for _, c := range pl.classes() {
-		pl.shareNSFrom(pl.className(c), pl.classOrigin(c), c, pl.classFrom(c))
+		pl.shareNSFrom(pl.classOrigin(c), c, derivation{pl.classFrom(c), func() string { return pl.className(c) }})
 		if v, ok := c.(*Variant); ok {
 			pl.declareEnum(pl.KindName(v), v.QName(), v, false)
 		}
@@ -60,15 +60,16 @@ func (pl *CppNamePlan) declareNamespaceTypes() {
 
 // shareNS declares a namespace name that the header writes, which other packages emitted into the namespace share (§3.5).
 func (pl *CppNamePlan) shareNS(name, origin string, item any) {
-	pl.shareNSFrom(name, origin, item, nil)
+	pl.shareNSFrom(origin, item, derivation{build: func() string { return name }})
 }
 
-// shareNSFrom is shareNS for a name built on the name of type from (declareFrom).
-func (pl *CppNamePlan) shareNSFrom(name, origin string, item, from any) {
+// shareNSFrom is shareNS for a name d builds on the name of a type (declareFrom).
+func (pl *CppNamePlan) shareNSFrom(origin string, item any, d derivation) {
+	name := d.build()
 	if _, seen := pl.nsItems[name]; !seen {
 		pl.nsItems[name] = item
 	}
-	pl.declareFrom(pl.ns, name, origin, item, from)
+	pl.declareFrom(pl.ns, origin, item, d)
 	pl.share(pl.e.Namespace, name, origin, item)
 }
 

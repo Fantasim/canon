@@ -163,8 +163,8 @@ func (pl *CppNamePlan) declareDependents() {
 			continue
 		}
 		n, origin := pl.Dependent(d), d.QName()
-		pl.shareNSFrom(n.Class, origin, d, nil)
-		pl.shareNSFrom(n.Branch, origin, d, d)
+		pl.shareNS(n.Class, origin, d)
+		pl.shareNSFrom(origin, d, derivation{d, func() string { return pl.Dependent(d).Branch }})
 		enum, class := pl.scope(n.Branch), pl.classScope(n.Class, origin, d)
 		pl.declare(class, n.GetBranch, origin, d)
 		for i, b := range n.Branches {
@@ -191,7 +191,7 @@ func (pl *CppNamePlan) declareInputSlots(detail *nameScope) {
 	inputs := pl.scope(names.Namespace)
 	for _, rec := range recs {
 		class := pl.TypeName(rec)
-		pl.declareFrom(inputs, class, rec.QName(), rec, rec)
+		pl.declareFrom(inputs, rec.QName(), rec, derivation{rec, func() string { return pl.TypeName(rec) }})
 		slots := pl.scope(names.Namespace + cppScope + class)
 		for _, f := range inputFields(rec) {
 			_, slot := pl.InputSlot(rec, f)

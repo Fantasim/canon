@@ -18,19 +18,24 @@ type GoPure struct {
 	TestLocal          string // the test's *testing.T
 	fn                 *ExportFn
 	origin             string
+	test               derivation // the test's name, built on the struct's (decision 213)
 }
 
 // Pure is a translated fn's names, nil for another fn or one the emit does not write.
 func (pl *GoNamePlan) Pure(fn *ExportFn) *GoPure { return pl.pures[fn] }
 
-// declarePure names a translated fn of the struct owner ("" at package level): its pure function lowerCamel(owner) + the public name, then its locals and vector fields, each escaped once (CODEGEN.md §3.4; log-2026-09-24 "gen/go translated fns").
-func (pl *GoNamePlan) declarePure(top *nameScope, owner, origin string, fn *ExportFn) {
+// declarePure names a translated fn of the struct st (zero at package level): its pure function lowerCamel(st) + the public name and its test, both built on st's name (decision 213), then its locals and vector fields, each escaped once (CODEGEN.md §3.4; log-2026-09-24 "gen/go translated fns").
+func (pl *GoNamePlan) declarePure(top *nameScope, origin string, fn *ExportFn, st goStruct) {
 	public := goExported(fn.Go, fn.Name)
-	p := &GoPure{Public: public, Pure: public, Test: goTestPrefix + owner + public + goConformanceSuffix, Locals: map[string]string{}, fn: fn, origin: origin}
-	if owner != "" {
-		p.Pure = goLowerFirst(owner) + public
-	}
-	pl.declare(top, p.Pure, origin, fn)
+	pure := derivation{st.self, func() string {
+		if owner := st.goName(); owner != "" {
+			return goLowerFirst(owner) + public
+		}
+		return public
+	}}
+	test := derivation{st.self, func() string { return goTestPrefix + st.goName() + public + goConformanceSuffix }}
+	p := &GoPure{Public: public, Pure: pure.build(), Test: test.build(), Locals: map[string]string{}, fn: fn, origin: origin, test: test}
+	pl.declareFrom(top, origin, fn, pure)
 	pl.pures[fn] = p
 	sc := pl.scope(origin + goParamsSuffix)
 	names := make([]string, 0, len(fn.Reads)+len(fn.Params))
@@ -186,7 +191,7 @@ func (pl *GoNamePlan) declareConformance(top *nameScope) {
 	}
 	show := false
 	for _, fn := range fns {
-		pl.declare(top, pl.pures[fn].Test, pl.pures[fn].origin, fn)
+		pl.declareFrom(top, pl.pures[fn].origin, fn, pl.pures[fn].test)
 		show = show || slices.ContainsFunc(fn.Reads, func(r *Read) bool { return r.Optional })
 	}
 	pl.declare(top, goCanonCatch, pl.p.Name, nil)

@@ -35,14 +35,14 @@ func isTemplate(v AnnValue) bool {
 	return templateVars(v, func(string) bool { return true })
 }
 
-// templateVars reports a template whose every variable's root name passes ok.
+// templateVars reports a template whose every variable's root name passes ok; an interpolation holding a syntax error is not judged (DECISIONS 214).
 func templateVars(v AnnValue, ok func(root string) bool) bool {
 	switch v := v.(type) {
 	case *RawStringLit:
 		return true
 	case *StringLit:
 		for _, part := range v.Parts {
-			if part.Interp == nil {
+			if part.Interp == nil || holdsBad(part.Interp) {
 				continue
 			}
 			root, path := pathRoot(part.Interp.X)
@@ -67,6 +67,17 @@ func pathRoot(x Expr) (string, bool) {
 		return pathRoot(x.X)
 	}
 	return "", false
+}
+
+// holdsBad reports a node holding a BadExpr: a syntax error the lexer or parser has reported.
+func holdsBad(n Node) bool {
+	bad := false
+	Inspect(n, func(c Node) bool {
+		_, isBad := c.(*BadExpr)
+		bad = bad || isBad
+		return !bad
+	})
+	return bad
 }
 
 func isInteger(v AnnValue) bool {

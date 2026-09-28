@@ -20,7 +20,7 @@ func (pl *CppNamePlan) declareDetail() {
 		}
 	}
 	for _, m := range pl.methods() {
-		pl.shareInner(sc, pl.PureName(pl.className(m.class), m.fn), m.origin, m.fn)
+		pl.innerFrom(sc, m, meetsNever, func() string { return pl.PureName(pl.className(m.class), m.fn) })
 	}
 	for _, d := range ownDefineRefs(pl.p) {
 		pl.declareInner(sc, pl.DefinesName(d), d.Pkg+qnameSep+d.Value, d)
@@ -48,7 +48,22 @@ func (pl *CppNamePlan) localInner(sc *nameScope, name, origin string, item any, 
 	pl.shareAs(pl.e.Namespace+cppScope+sc.what, name, origin, item, meets)
 }
 
-// cppMethod is a translated method with its class and its name in messages.
+// innerFrom is localInner for the name build makes of m on its class's name, unless it is the class's E8011 (builtOnRefused, decision 213).
+func (pl *CppNamePlan) innerFrom(sc *nameScope, m cppMethod, meets cppMeet, build func() string) {
+	if name := build(); !pl.builtOnRefused(name, m.fn, derivation{m.class, build}) {
+		pl.localInner(sc, name, m.origin, m.fn, meets)
+	}
+}
+
+// ownerName is m's class name, "" for a package fn.
+func (pl *CppNamePlan) ownerName(m cppMethod) string {
+	if m.class == nil {
+		return ""
+	}
+	return pl.className(m.class)
+}
+
+// cppMethod is a translated method with its class and its name in messages; a package fn has no class.
 type cppMethod struct {
 	fn     *ExportFn
 	class  any
@@ -90,18 +105,19 @@ func (pl *CppNamePlan) declareConformance() {
 	}
 	pl.shareInner(sc, pl.RunConformanceName(), pl.p.Name, nil)
 	for _, m := range methods {
-		pl.declareVectors(sc, pl.className(m.class), m.origin, m.fn)
+		pl.declareVectors(sc, m)
 	}
 	for _, fn := range fns {
-		pl.declareVectors(sc, "", pl.fnOrigin(fn), fn)
+		pl.declareVectors(sc, cppMethod{fn: fn, origin: pl.fnOrigin(fn)})
 	}
 }
 
-// declareVectors declares a fn's vector struct, its fields and table (CONFORMANCE.md §7.2).
-func (pl *CppNamePlan) declareVectors(sc *nameScope, owner, origin string, fn *ExportFn) {
-	vec := pl.Vector(owner, fn)
-	pl.localInner(sc, vec.Struct, origin, fn, meetsLocal)
-	pl.localInner(sc, vec.Table, origin, fn, meetsLocal)
+// declareVectors declares a fn's vector struct, its fields and table, built on its class's name (CONFORMANCE.md §7.2).
+func (pl *CppNamePlan) declareVectors(sc *nameScope, m cppMethod) {
+	fn, origin := m.fn, m.origin
+	vec := pl.Vector(pl.ownerName(m), fn)
+	pl.innerFrom(sc, m, meetsLocal, func() string { return pl.Vector(pl.ownerName(m), fn).Struct })
+	pl.innerFrom(sc, m, meetsLocal, func() string { return pl.Vector(pl.ownerName(m), fn).Table })
 	fields := pl.scope(vec.Struct)
 	fields.hidden = pl.signatureTypes(fn)
 	var inputs []string

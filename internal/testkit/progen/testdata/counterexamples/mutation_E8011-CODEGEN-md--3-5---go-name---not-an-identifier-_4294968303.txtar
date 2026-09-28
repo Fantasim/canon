@@ -2,7 +2,6 @@ suite mutation
 name E8011 CODEGEN.md §3.5 (@go(name:) not an identifier)
 case 941
 seed 4294968303
-open ir
 born mismatch extra E8011/derived
 sig extra E8011/derived
 packages pipeline

@@ -1,0 +1,48 @@
+DECISIONS 213, CODEGEN.md §3.5, §5.10: a translated method's pure function and conformance test are named after the struct that holds it; under a refused @go(name:) (a record's, or a variant's its case type is built on) they are that type's E8011, not the method's, the name built on the type's default name being valid.
+-- a/a.canon --
+package a
+
+/// A potion.
+record Potion @go(name: "1Bad") {
+  /// Hit points restored.
+  heal: Int
+
+  /// What it heals of missing.
+  export fn healFor(self, missing: Int) -> Int { return min(heal, missing) }
+}
+
+/// A shape.
+variant Shape @go(name: "2Bad") {
+  /// A circle.
+  circle {
+    /// Its radius.
+    r: Int
+
+    /// Its scaled radius.
+    export fn scaled(self, k: Int) -> Int { return r * k }
+  }
+  /// A square.
+  square
+}
+
+/// An elixir: its conformance test TestBad-xMixConformance is built on the refused name too.
+record Elixir @go(name: "Bad-x") {
+  /// Its strength.
+  power: Int
+
+  /// Its mix.
+  export fn mix(self, k: Int) -> Int { return power * k }
+}
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+error[E8011]  a/a.canon:4:8
+  1Bad is not a valid go identifier for @go(name:)
+
+error[E8011]  a/a.canon:13:9
+  2Bad is not a valid go identifier for @go(name:)
+
+error[E8011]  a/a.canon:27:8
+  Bad-x is not a valid go identifier for @go(name:)
+
+3 errors, 0 warnings in 1 package (…)

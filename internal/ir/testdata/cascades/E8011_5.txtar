@@ -1,0 +1,85 @@
+DECISIONS 213, CODEGEN.md §3.5, CONFORMANCE.md §7.2: a translated method's vector struct and table are named after the class that holds it; under a refused @cpp(name:) (a record's, or a variant's its case class is built on) they are that type's E8011, not the method's, only when the same name built on the type's default name is valid; otherwise the method keeps its own E8011 (the pure function <Class>__x).
+-- a/a.canon --
+package a
+
+/// A potion.
+record Potion @cpp(name: "1Bad") {
+  /// Hit points restored.
+  heal: Int
+
+  /// What it heals of missing.
+  export fn healFor(self, missing: Int) -> Int { return min(heal, missing) }
+}
+
+/// A shape.
+variant Shape @cpp(name: "2Bad") {
+  /// A circle.
+  circle {
+    /// Its radius.
+    r: Int
+
+    /// Its scaled radius.
+    export fn scaled(self, k: Int) -> Int { return r * k }
+  }
+  /// A square.
+  square
+}
+
+/// A tonic: a keyword override; its method's pure function class__x is reserved for the fn's own name (Tonic__x is too), so the fn keeps its E8011.
+record Tonic @cpp(name: "class") {
+  /// Its strength.
+  power: Int
+
+  /// Its boost.
+  export fn _x(self, missing: Int) -> Int { return min(power, missing) }
+}
+
+/// An elixir: 1Bad__x is no identifier, but Elixir__x is reserved for the fn's own name, so the fn keeps its E8011.
+record Elixir @cpp(name: "1Bad") {
+  /// Its strength.
+  power: Int
+
+  /// Its boost.
+  export fn _x(self, missing: Int) -> Int { return min(power, missing) }
+}
+
+/// The potion.
+let potion: Potion = { heal: 5 }
+
+/// The tonic.
+let tonic: Tonic = { power: 1 }
+
+/// The elixir.
+let elixir: Elixir = { power: 2 }
+
+/// Holds a shape.
+record Holder {
+  /// The shape.
+  shape: Shape
+}
+
+/// The holder.
+let holder: Holder = { shape: circle { r: 2 } }
+
+emit cpp { out: "@features/a", mode: data }
+emit json { out: "out/" }
+-- findings.txt --
+error[E8011]  a/a.canon:4:8
+  1Bad is not a valid cpp identifier for @cpp(name:)
+
+error[E8011]  a/a.canon:13:9
+  2Bad is not a valid cpp identifier for @cpp(name:)
+
+error[E8011]  a/a.canon:27:8
+  class is not a valid cpp identifier for @cpp(name:)
+
+error[E8011]  a/a.canon:32:13
+  class__x, the C++ name derived for a.Tonic._x, is a keyword or a reserved name
+
+error[E8011]  a/a.canon:36:8
+  1Bad is not a valid cpp identifier for @cpp(name:)
+
+error[E8011]  a/a.canon:41:13
+  1Bad__x, the cpp name derived for a.Elixir._x, is not a valid identifier
+
+6 errors, 0 warnings in 1 package (…)

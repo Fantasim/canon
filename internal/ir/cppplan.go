@@ -74,20 +74,20 @@ func cppOverride(n NameOptions, derived string) string {
 func (pl *CppNamePlan) TypeName(t Type) string {
 	switch x := t.(type) {
 	case *Record:
-		return cppOverride(NameOptions{Name: x.Cpp.Name}, x.Name)
+		return cppOverride(pl.typeOverride(NameOptions{Name: x.Cpp.Name}), x.Name)
 	case *Enum:
-		return cppOverride(x.Cpp, x.Name)
+		return cppOverride(pl.typeOverride(x.Cpp), x.Name)
 	case *Variant:
-		return cppOverride(x.Cpp, x.Name)
+		return cppOverride(pl.typeOverride(x.Cpp), x.Name)
 	case *Dependent:
-		return cppOverride(x.Cpp, x.Name)
+		return cppOverride(pl.typeOverride(x.Cpp), x.Name)
 	}
 	return ""
 }
 
 // CaseName is a case's class, T + UpperCamel(c), or its @cpp(name:) (CODEGEN.md §3.3).
 func (pl *CppNamePlan) CaseName(v *Variant, c *Case) string {
-	return cppOverride(NameOptions{Name: c.Cpp.Name}, pl.TypeName(v)+cppUpperCamel(c.Name))
+	return cppOverride(pl.typeOverride(NameOptions{Name: c.Cpp.Name}), pl.TypeName(v)+cppUpperCamel(c.Name))
 }
 
 // AsName is a case's accessor, As + UpperCamel(c) or As + its @cpp(name:) (CODEGEN.md §3.5).

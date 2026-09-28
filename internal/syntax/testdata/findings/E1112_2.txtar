@@ -1,0 +1,22 @@
+DECISIONS 214, TYPES.md §1, GRAMMAR.md §2.6, §8.2: an empty interpolation in an annotation's template (a pairs element, @files) breaks its declaration and is not judged further: no E1119 "expected a template string" beside the E1112. A comment inside an interpolation keeps its expression, so that template stays judged and sound (non-regression line).
+-- a/a.canon --
+package a
+
+record R {
+  g: [P] @json(pairs: ["k{i}", "{}v{i}"])
+  h: [P] @json(pairs: ["k{i /* c */}", "v{i}"])
+}
+
+@files("{}.json")
+let y = 2
+-- findings.txt --
+error[E1112]  a/a.canon:4:33
+  invalid interpolation: {} is empty
+
+error[E1112]  a/a.canon:5:29
+  invalid interpolation: a comment inside it
+
+error[E1112]  a/a.canon:8:9
+  invalid interpolation: {} is empty
+
+3 errors, 0 warnings in 1 package (…)

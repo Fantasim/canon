@@ -2,7 +2,6 @@ suite mutation
 name E1112 GRAMMAR.md §2.6 (empty interpolation)
 case 4432
 seed 4294971731
-open syntax
 born mismatch extra E1119/kind
 sig extra E1119/kind
 packages game.items

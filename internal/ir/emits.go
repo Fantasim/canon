@@ -20,7 +20,7 @@ type emitSite struct {
 	display  string // the output as a display path (WIRE.md §2.3)
 	unmapped bool   // a go emit whose resolved directory is under no go_module root (E8007)
 	named    bool   // a go emit that writes its package, so none is defaulted from out
-	refused  bool   // a go emit whose package check refused (E8009, or E1132 for an interpolation), written or defaulted (decisions 213, 215)
+	refused  bool   // a go emit whose package check refused (E8009, or E1132 for an interpolation), written, defaulted, or none for want of an out (decisions 213, 215)
 }
 
 func (es *emitSite) span() source.Span { return es.file.Span(es.decl.Target) }
@@ -41,7 +41,7 @@ func (s *stage) emits(u *unit) {
 	}
 }
 
-// emit reads one emit of u, unless its target is unknown (E8003) or already seen (E8002).
+// emit reads one emit of u, unless its target is unknown (E8003) or already seen (E8002). A go emit whose package check refused, written, defaulted or missing with its out (E8009), is marked refused: its importers do not refuse the import name again (decisions 213, 215).
 func (s *stage) emit(u *unit, f *syntax.File, ed *syntax.EmitDecl, seen map[Target]bool, bag *diag.Bag) {
 	t, known := wordIndex[Target](targetWords[:], ed.Target.Name)
 	if !known || seen[t] {
@@ -51,6 +51,7 @@ func (s *stage) emit(u *unit, f *syntax.File, ed *syntax.EmitDecl, seen map[Targ
 	es := &emitSite{e: &Emit{Target: t}, decl: ed, file: f}
 	s.readOptions(u, es)
 	s.resolveOut(u, es, s.layout, bag)
+	es.refused = t == TargetGo && !goPackageName(es.e.GoPackage)
 	u.emits = append(u.emits, es)
 	u.p.Emits = append(u.p.Emits, es.e)
 }
@@ -84,7 +85,7 @@ func (s *stage) readOptions(u *unit, es *emitSite) {
 			e.Values = valueNames(fi.Value)
 		case check.OptPackage:
 			e.GoPackage = constString(fi.Value)
-			es.named, es.refused = true, !goPackageName(e.GoPackage)
+			es.named = true
 		case check.OptNamespace:
 			e.Namespace = constString(fi.Value)
 		}
@@ -174,12 +175,11 @@ func (s *stage) resolveOut(u *unit, es *emitSite, layout *project.Layout, bag *d
 	e.GoImport = imp
 }
 
-// goDefault is a go emit's package when it writes none: the last element of its directory as declared, none for the project directory itself, validated as check validates it (CODEGEN.md §2.1, decisions 213, 215).
+// goDefault is a go emit's package when it writes none: the last element of its directory as declared, none for the project directory itself; emit validates it as check does (CODEGEN.md §2.1, decisions 213, 215).
 func goDefault(es *emitSite, dir, projectDir string) {
 	if dir != projectDir {
 		es.e.GoPackage = path.Base(dir)
 	}
-	es.refused = !goPackageName(es.e.GoPackage)
 }
 
 // goImport is the import path of Go directory dir: the module of the mapped root that is dir or its closest ancestor, joined with the rest of dir (CODEGEN.md §2.8).

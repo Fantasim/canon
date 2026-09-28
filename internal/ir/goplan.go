@@ -105,13 +105,13 @@ func (pl *GoNamePlan) Emitted() []*Value { return pl.emitted }
 func (pl *GoNamePlan) TypeName(t Type) string {
 	switch x := t.(type) {
 	case *Record:
-		return goTypeName(x.Go, x.Name)
+		return goTypeName(pl.typeOverride(x.Go), x.Name)
 	case *Enum:
-		return goTypeName(x.Go, x.Name)
+		return goTypeName(pl.typeOverride(x.Go), x.Name)
 	case *Variant:
-		return goTypeName(x.Go, x.Name)
+		return goTypeName(pl.typeOverride(x.Go), x.Name)
 	case *Dependent:
-		return goTypeName(x.Go, x.Name)
+		return goTypeName(pl.typeOverride(x.Go), x.Name)
 	}
 	return ""
 }
@@ -134,8 +134,8 @@ func (pl *GoNamePlan) KindMemberName(v *Variant, c *Case) string {
 
 // CaseName is a case's type: T + UpperCamel(c), or the whole override (CODEGEN.md §3.3, decision 193).
 func (pl *GoNamePlan) CaseName(v *Variant, c *Case) string {
-	if c.Go.Name != "" {
-		return c.Go.Name
+	if own := pl.typeOverride(c.Go); own.Name != "" {
+		return own.Name
 	}
 	return pl.TypeName(v) + goUpperCamel(c.Name)
 }

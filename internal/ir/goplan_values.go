@@ -79,7 +79,7 @@ func (pl *GoNamePlan) declareFns(top *nameScope) {
 		origin := pl.fnOrigin(fn)
 		switch {
 		case fn.Kind == FnTranslated:
-			pl.declarePure(top, "", origin, fn)
+			pl.declarePure(top, origin, fn, goStruct{})
 		case pl.data == nil:
 			f := pl.Finite(fn)
 			pl.declare(top, f.Name, origin, fn)

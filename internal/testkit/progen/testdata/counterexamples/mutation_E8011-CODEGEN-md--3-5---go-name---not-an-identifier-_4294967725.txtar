@@ -2,8 +2,8 @@ suite mutation
 name E8011 CODEGEN.md §3.5 (@go(name:) not an identifier)
 case 428
 seed 4294967725
-open ir
 born mismatch extra E8011
+left E8009/missing
 sig extra E8009/missing, E8011/derived
 packages teamboard
 want E8011 teamboard/taxonomy.canon 1276 1284 check
