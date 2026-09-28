@@ -672,7 +672,7 @@ Every value carries a **provenance**:
 | `origin` | `literal`, `json`, `csv`, `defines`, `text`, `default`, `spread`, `computed` or `layer` (API.md `OriginKind`) |
 | `file` | project-relative path, or `@root/…` for a file under a declared root |
 | `line`, `col`, `endLine`, `endCol` | 1-based; columns count UTF-8 bytes |
-| `pointer` | RFC 6901 JSON pointer (`json` only) |
+| `pointer` | RFC 6901 JSON pointer for `json`; `/<row>/<column>` for a `csv` cell (1-based, the header counted as row 1; `/<row>` for a whole record) |
 | `layer` | the layer name (`layer` only) |
 | `stack` | up to the 16 innermost user-function frames `{fn, file, line, col}`, innermost first, plus a count of omitted frames |
 | `via` | a second provenance (below; API.md `Origin.Via`) |

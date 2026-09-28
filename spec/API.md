@@ -430,7 +430,7 @@ type Origin struct {
     Kind    OriginKind // literal | json | csv | defines | text | default | spread | computed | layer
     Span               // the literal, the JSON value's first byte, the default expression, the
                        // building expression, or the amendment
-    Pointer string     // RFC 6901, for json
+    Pointer string     // RFC 6901 for json; "/<row>/<column>" for a csv cell (EVALUATION.md §13)
     Layer   string     // for layer
     Via     *Origin    // default: the literal or JSON object that omitted the field;
                        // spread: the origin of the copied value
