@@ -77,7 +77,7 @@ block in [state.md](state.md).
 
 **M3 execution (agreed with Louis 2026-09-24).** Layers/amend/inputs already exist in
 `check`/`eval` (M1), and dependent types are partly in `check`/`types`, so no unit rebuilds from the spec
-blindly. Waves; one builder per package at a time, ≤ 3 in parallel on disjoint packages
+blindly. Waves; one builder per package at a time, ≤ 3 (≤ 6 from 2026-09-28, Louis) in parallel on disjoint packages
 (worktrees); review + `make check` + commit per unit; cleanup + progen rule-mutation rerun per
 wave; every funded run ends on a wave boundary with a report in `meta/handoff/`.
 - [ ] **W0 gap map** (sonnet, read-only): per M3 feature, spec rule ids × implemented × tested,
