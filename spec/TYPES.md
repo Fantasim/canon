@@ -202,12 +202,15 @@ So the table entry `units.count` is the entry, and `units.count(pred)` is the me
 
 ### 3.7 Public signatures
 
-A `local` type is never emitted and a public one always is (SPEC §4, CODEGEN.md §2.1), so a
-public declaration MUST NOT expose a `local` record, variant, enum or alias. The field types of a
-public record or of a public variant's cases, a public alias's body (a type function's arms
-included), the parameters and result of a public `fn` or `export fn` or of a public record's
-methods, and a public `let`'s annotation may name a `local` type only as the target of a `ref`
-(held by its key, §10.2). Anything else is `E2111`, at the type expression that names it.
+A `local` type is never emitted and a public one always is (SPEC §4, CODEGEN.md §2.1), so what a
+`go`, `cpp` or `ts` emit writes as a type MUST NOT expose a `local` record, variant, enum or
+alias: the field types of a public record or of a public variant's cases, a public alias's body
+(a type function's arms included), the parameters and results of an `export fn` and of a public
+record's or variant's methods, and the annotation of a public `let` that such an emit of the
+package selects. These may name a `local` type only as the target of a `ref` (held by its key,
+§10.2). Anything else is `E2111`, at the type expression that names it. A public `fn` that is not
+exported, and a public `let` no such emit selects (one only written as JSON, say), may use
+`local` types: neither is emitted as a type.
 
 ---
 

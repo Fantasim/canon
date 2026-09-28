@@ -687,7 +687,7 @@ Owner: TYPES.md.
 | E2108 | error | check | TYPES.md §3.4 | `self` outside a record or case body |
 | E2109 | error | check | TYPES.md §3.4 | `it` outside a refinement predicate |
 | E2110 | error | check | TYPES.md §3.2 | a type name used as a value, or a value name as a type |
-| E2111 | error | check | TYPES.md §3.7 | a public declaration exposes a `local` type |
+| E2111 | error | check | TYPES.md §3.7 | an emitted public declaration exposes a `local` type |
 
 | Code | Variant | Args | Template |
 |---|---|---|---|

@@ -4118,7 +4118,7 @@ func (codeE2110) AtValue(span source.Span, name string) *Builder {
 	return newBuilder(&Registry[112], 1, span, name)
 }
 
-// E2111: a public declaration exposes a `local` type (TYPES.md §3.7).
+// E2111: an emitted public declaration exposes a `local` type (TYPES.md §3.7).
 var E2111 codeE2111
 
 type codeE2111 struct{}

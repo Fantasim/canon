@@ -1919,10 +1919,12 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      what `ErrNoValue` wraps; `Value.JSON()` is the compact wire form. `canon explain` (CLI §3.7)
      reads them. Reason: M3 acceptance 4.
 
-224. **A public declaration never exposes a `local` type (`E2111`, TYPES §3.7).** SPEC §4 says a
-     `local` type is never emitted and CODEGEN §2.1 that every public type is, and nothing said
-     which wins when a public record held a local one by value (the generated C++ did not
-     compile). The strictest reading: `check` refuses it, except as a `ref` target (held by key).
+224. **What a code emit writes as a type never exposes a `local` type (`E2111`, TYPES §3.7).** SPEC
+     §4 says a `local` type is never emitted and CODEGEN §2.1 that every public type is, and nothing
+     said which wins when a public record held a local one by value (the generated C++ did not
+     compile). `check` refuses it wherever a `go`, `cpp` or `ts` emit would write the local type
+     (public types, `export fn` and method signatures, selected public lets), except as a `ref`
+     target (held by key); a non-exported public `fn` or a JSON-only value may use local types.
 
 ## Still open
 
