@@ -15,13 +15,13 @@ GO_FILES     = $(shell find . -name '*.go' -not -path './examples/*/expected/*' 
                  -not -path './examples/_fixtures/*' -not -path '*/testdata/*' \
                  -not -path './.claude/*' -not -name '*.gen.go')
 
-.PHONY: check fmt-check vet test goldens-vet goldens-check diag-check audit-self audit-check audit audit-tighten scope
+.PHONY: check fmt-check vet test goldens-vet goldens-check diag-check vm-check audit-self audit-check audit audit-tighten scope
 
 # CANON_REQUIRE_CXX turns a missing C++ compiler or nlohmann/json header (internal/testkit/cxx)
 # from a silent test skip into a failure, and is inherited by every prerequisite below: make
 # check must not pass green having skipped every C++ compile test for want of a toolchain.
 check: export CANON_REQUIRE_CXX=1
-check: fmt-check vet test goldens-vet goldens-check diag-check audit-self audit-check
+check: fmt-check vet test goldens-vet goldens-check diag-check vm-check audit-self audit-check
 
 fmt-check:
 	@out="$$(gofmt -l $(GO_FILES))"; if [ -n "$$out" ]; then echo "gofmt -l: not formatted:"; echo "$$out"; exit 1; fi
@@ -86,6 +86,13 @@ diag-check:
 	  go run ./internal/diag/cmd/diaggen -out "$$tmp" -runtime internal/gen && \
 	  diff -u internal/diag/codes.go "$$tmp/codes.go" && \
 	  diff -u internal/diag/codes_test.go "$$tmp/codes_test.go"
+
+# api/vm/vm.gen.go equals what vmgen generates from spec/viewmodel.schema.json into a temporary
+# directory (API.md R10).
+vm-check:
+	@tmp=$$(mktemp -d) && trap 'rm -rf "$$tmp"' EXIT && \
+	  go run ./api/vm/internal/vmgen -out "$$tmp" && \
+	  diff -u api/vm/vm.gen.go "$$tmp/vm.gen.go"
 
 # The audit tool gates itself first: its own vet, tests and baseline (tools/audit/.sovaudit).
 audit-self:
