@@ -169,6 +169,7 @@ E2108 -: self is only valid in a record or case body
 E2109 -: it is only valid in a refinement predicate
 E2110 type: resource.vocab.items is a type, not a value
 E2110 value: resource.vocab.items is a value, not a type
+E2111 -: resource.vocab.items is public but exposes the local type resource.vocab.items: make resource.vocab.items public or resource.vocab.items local
 E3001 -: public value resource.vocab.items needs a type annotation
 E3002 -: expected Int, found Int
 E3003 -: Int has no case resource.vocab.items

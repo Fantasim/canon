@@ -351,7 +351,7 @@ func (codeE2103) AtSeveral(span source.Span, typ string, colls []string) *Builde
 
 ---
 
-The catalogue holds 300 codes: 279 errors, 18 warnings and 3 run-time codes, with 463 messages.
+The catalogue holds 301 codes: 280 errors, 18 warnings and 3 run-time codes, with 464 messages.
 
 ## E10xx, W10xx: Project file, doc comments and naming
 
@@ -687,6 +687,7 @@ Owner: TYPES.md.
 | E2108 | error | check | TYPES.md §3.4 | `self` outside a record or case body |
 | E2109 | error | check | TYPES.md §3.4 | `it` outside a refinement predicate |
 | E2110 | error | check | TYPES.md §3.2 | a type name used as a value, or a value name as a type |
+| E2111 | error | check | TYPES.md §3.7 | a public declaration exposes a `local` type |
 
 | Code | Variant | Args | Template |
 |---|---|---|---|
@@ -710,6 +711,7 @@ Owner: TYPES.md.
 | E2109 | - | - | `it is only valid in a refinement predicate` |
 | E2110 | type | name:Name | `{name} is a type, not a value` |
 | E2110 | value | name:Name | `{name} is a value, not a type` |
+| E2111 | - | decl:Name, typ:Name | `{decl} is public but exposes the local type {typ}: make {typ} public or {decl} local` |
 
 ## E3xxx, W3xxx: Types, literals, refs, assets, dependent types
 

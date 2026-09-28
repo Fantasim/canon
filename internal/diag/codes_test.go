@@ -173,6 +173,7 @@ var constructed = []*Builder{
 	E2109.At(sampleSpan),
 	E2110.AtType(sampleSpan, sampleName),
 	E2110.AtValue(sampleSpan, sampleName),
+	E2111.At(sampleSpan, sampleName, sampleName),
 	E3001.At(sampleSpan, sampleName),
 	E3002.At(sampleSpan, sampleType, sampleType),
 	E3003.At(sampleSpan, sampleType, KindCase, sampleName),

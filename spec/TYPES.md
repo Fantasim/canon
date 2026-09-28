@@ -200,6 +200,15 @@ So the table entry `units.count` is the entry, and `units.count(pred)` is the me
   where GRAMMAR.md allows them. They never clash with declarations: they live in their type or
   collection, not in the package namespace.
 
+### 3.7 Public signatures
+
+A `local` type is never emitted and a public one always is (SPEC §4, CODEGEN.md §2.1), so a
+public declaration MUST NOT expose a `local` record, variant, enum or alias. The field types of a
+public record or of a public variant's cases, a public alias's body (a type function's arms
+included), the parameters and result of a public `fn` or `export fn` or of a public record's
+methods, and a public `let`'s annotation may name a `local` type only as the target of a `ref`
+(held by its key, §10.2). Anything else is `E2111`, at the type expression that names it.
+
 ---
 
 ## 4. Contextual names
