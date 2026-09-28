@@ -1945,6 +1945,11 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      only when a loaded package declares a view, a `@menu` or an `emit view`; otherwise it is not
      loaded, so an error in it never blocks an unrelated selection.
 
+228. **Which views are broken is recorded by check (`Info.BrokenViews`, frozen-contract addition
+     under IMPLEMENTATION-PLAN §4's review rule; ADR-0009).** VIEWMODEL J4 and I18N F4 act on a
+     view holding an error; deciding it from the bag's findings made the view model and the
+     catalogue depend on the findings limit (API F7).
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.
