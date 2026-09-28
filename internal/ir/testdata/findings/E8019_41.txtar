@@ -1,4 +1,4 @@
-EVALUATION.md §1, CODEGEN.md §5.6 (gen/go dependentArgFormat, gen/cpp dependentThroughRef; log-2026-09-25 "gen/cpp round-2 review calls"): a discriminant read through a ref (WIRE.md §10) is DependentType at the field, in both loaders.
+EVALUATION.md §1, CODEGEN.md §5.6, WIRE.md §5.9 (ir.DiscFields; gen/go dependentDiscFormat, gen/cpp dependentBadPath; log-2026-09-25 "gen/cpp round-2 review calls"): a discriminant read through a ref needs a load-time resolution CODEGEN.md does not write, so the field is DependentType, in both loaders.
 -- a/a.canon --
 package a
 

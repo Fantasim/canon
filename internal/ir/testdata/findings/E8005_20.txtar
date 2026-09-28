@@ -20,6 +20,6 @@ emit json { out: "out/" }
 {}
 -- findings.txt --
 error[E8005]  a/a.canon:13:11
-  cpp: LoadInputs is generated for both a and loadInputs
+  cpp: LoadInputs is generated for both a and a.loadInputs
 
 1 error, 0 warnings in 1 package (…)

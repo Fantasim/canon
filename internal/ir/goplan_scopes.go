@@ -27,6 +27,9 @@ func newNamer(pkg string, ident func(string) (ok, reserved bool)) namer {
 	return namer{reported: map[originPair]bool{}, ident: ident, self: pkg}
 }
 
+// fnOrigin is a package-level export fn's origin, qualified as a method's is (a.echo, like a.Item.mix).
+func (n *namer) fnOrigin(fn *ExportFn) string { return n.self + qnameSep + fn.Name }
+
 // scope opens a new scope of the plan.
 func (n *namer) scope(what string) *nameScope {
 	sc := &nameScope{what: what, names: map[string]string{}}
@@ -57,17 +60,19 @@ func (n *namer) declareFrom(sc *nameScope, name, origin string, item, from any) 
 	}
 }
 
-// collide is E8005 for name, declared in sc for first and for origin at item, once per pair of
-// origins; an item meeting a name of its own (a container's member named like the container) is
-// reported against the package's generated code, so no message names one thing twice.
+// collide is E8005 for name, declared in sc for first and for origin at item, once per pair of origins as declared; an item
+// meeting a name of its own (a container's member named like the container) is reported against the package's generated
+// code, so no message names one thing twice, yet stays apart from first meeting a name the package itself declares.
 func (n *namer) collide(sc *nameScope, name, first, origin string, item any) {
+	pair := originPair{first, origin}
+	if n.reported[pair] {
+		return
+	}
+	n.reported[pair] = true
 	if origin == first {
 		origin = n.self
 	}
-	if pair := (originPair{first, origin}); !n.reported[pair] {
-		n.reported[pair] = true
-		n.problems = append(n.problems, GoNameProblem{Kind: GoCollision, Scope: sc.what, Name: name, First: first, Origin: origin, Item: item})
-	}
+	n.problems = append(n.problems, GoNameProblem{Kind: GoCollision, Scope: sc.what, Name: name, First: first, Origin: origin, Item: item})
 }
 
 // refused reports an item whose own name is already a problem other than a collision: an invalid override, or a name that is no identifier.

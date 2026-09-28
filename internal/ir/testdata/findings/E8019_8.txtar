@@ -1,4 +1,4 @@
-EVALUATION.md §1, CODEGEN.md §5.6 (gen/go dependentLiteralFormat): baked gen/go writes a field of another package's dependent type, but no literal of one: DependentType at the value holding one, not CrossPackageBakedValue; the type's own package writes it.
+EVALUATION.md §1, CODEGEN.md §5.6 (gen/go dependentForeignFormat): baked gen/go writes a field of another package's dependent type, but no literal of one (its fields are unexported there): DependentType at the value holding one, not CrossPackageBakedValue; the type's own package writes it.
 -- b/b.canon --
 package b
 

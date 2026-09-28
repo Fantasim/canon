@@ -83,7 +83,7 @@ bool ParseFloatLiteral(std::string_view s, double& out) {
     in >> v;
     // The syntax is checked above, so failbit is a range error; libc++ and MSVC also set it on an
     // underflow, which Go and libstdc++ accept as rounded (1e-400 is 0, 4e-320 a subnormal).
-    if (in.fail() && !(std::isfinite(v) && std::fabs(v) < DBL_MIN)) return false;
+    if (in.fail() && !(std::isfinite(v) && std::fabs(v) <= DBL_MIN)) return false;
     if (!in.eof() || !std::isfinite(v)) return false;
     out = v;
     return true;

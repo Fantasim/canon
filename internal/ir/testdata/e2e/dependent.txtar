@@ -1,4 +1,4 @@
-CODEGEN.md §5.6, §2.8, EVALUATION.md §1: a project whose dependent types stage E passes builds, and its Go (data and baked) and C++ (data) outputs compile: package a in data mode, package b baked for Go, holding a's dependent type across packages.
+CODEGEN.md §5.6, §2.8, EVALUATION.md §1: a project whose dependent types stage E passes builds, and its Go (data and baked) and C++ (data) outputs compile: package a in data mode (optional, list, Bool and match-path discriminants), package b baked for Go, holding a's dependent type across packages and baking its own (a Bool discriminant, a match path, a list).
 -- project.canon --
 project demo {
   canon: "0.1"
@@ -52,7 +52,7 @@ record Thing {
   q: P(k)
 }
 
-/// Read by gen/cpp only: no value holds it.
+/// Several payload shapes, which both data loaders read.
 record Loose {
   /// Its kind.
   k: K
@@ -75,6 +75,11 @@ let things: table Thing = {
   d { k: text, q: "x" }
 }
 
+/// The loose ones.
+let looses: table Loose = {
+  l { k: one, ps: [1, 2], on: true, sw: "s", ev: { k: two }, r: "t" }
+}
+
 emit go { out: "@gen/go/a", package: "a", mode: data }
 emit cpp { out: "@gen/cpp/a", namespace: "a", mode: data }
 emit json { out: "@gen/data/a/" }
@@ -87,6 +92,15 @@ import a { K, P }
 /// A switch.
 type S(on: Bool) = match on { false => Int, true => String }
 
+/// An event.
+record Ev {
+  /// Whether it is on.
+  on: Bool
+}
+
+/// A payload read through an event.
+type T(e: Ev) = match e.on { false => Float, true => String }
+
 /// A rule.
 record Rule {
   /// Its kind.
@@ -97,10 +111,17 @@ record Rule {
   on: Bool
   /// Its switch payload.
   s: S(on)?
+  /// Its event.
+  ev: Ev
+  /// Its payloads by the event.
+  ts: [T(ev)]
 }
 
 /// A rule without payloads.
-let rule: Rule = { k: gone, on: false }
+let rule: Rule = { k: gone, on: false, ev: { on: false }, ts: [] }
+
+/// A rule whose own payloads are baked (CODEGEN.md §5.6).
+let full: Rule = { k: gone, on: false, s: 3, ev: { on: false }, ts: [1.5, 2.0] }
 
 emit go { out: "@gen/go/b", package: "b" }
 emit cpp { out: "@gen/cpp/b", namespace: "b", mode: data }

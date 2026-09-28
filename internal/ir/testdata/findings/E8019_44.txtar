@@ -1,4 +1,4 @@
-EVALUATION.md §1, CODEGEN.md §5.6, §5.8 (gen/cpp refStorage: a define table's value getter is not emitted yet): gen/cpp refuses a dependent type with a branch into a load.defines table, DependentType at its declaration, used or not.
+EVALUATION.md §1, CODEGEN.md §5.6, §5.8 (gen/cpp dependentDefines: a define table's value getter is not emitted yet): gen/cpp refuses a dependent type with a branch into a load.defines table, DependentType at its declaration, used or not.
 -- a/a.canon --
 package a
 

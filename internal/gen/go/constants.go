@@ -74,19 +74,12 @@ const (
 	dependentAsFormat       = "func (self *%[1]s) %[2]s() (%[3]s, bool) {\nif self.%[4]s != %[5]s {\nvar zero %[3]s\nreturn zero, false\n}\nreturn self.%[6]s.(%[3]s), true\n}\n\n"
 	dependentFuncOpenFormat = "func %[1]s(%[2]s, %[3]s string, %[4]s %[5]s, %[6]s %[7]s, %[8]s *%[9]s) error {\n"
 	dependentDecodeFormat   = "%[1]s := &%[2]s{}\nif %[3]s := %[4]s(%[5]s, %[6]s, %[7]s, %[8]s, %[1]s); %[3]s != nil {\nreturn %[3]s\n}\n"
+	formatBoolFormat        = "%s.FormatBool(%s)"
 	localDisc               = "disc"
 )
 
-// Messages of the generator's errors, and texts written twice.
-const (
-	kindFormat      = "%s: a value of kind %s"
-	unknownKind     = "an unknown kind"
-	unknownMode     = "an unknown mode"
-	defineRefFormat = "a ref into the load.defines table %s, whose define value getter and table are not generated yet"
-	noKeyType       = "a ref without a key type"
-	noEnumFormat    = "an enum type without its enum at %s"
-	structOpen      = "type %s struct {\n"
-)
+// A text written twice.
+const structOpen = "type %s struct {\n"
 
 // Lookup bodies (CODEGEN.md §5.10): a Bool or @codes parameter is indexed through a local.
 const (
@@ -200,21 +193,6 @@ const (
 	maxInline        = 80 // bytes of a list literal kept on one line
 	float32Bits      = 32
 )
-
-// modeNames name the modes in messages (CODEGEN.md §2.1).
-var modeNames = [...]string{ir.ModeNone: "none", ir.ModeBaked: "baked", ir.ModeEmbedded: "embedded", ir.ModeData: "data", ir.ModeTypes: "types"}
-
-// kindNames name the type kinds in messages (TYPES.md §2).
-var kindNames = [...]string{
-	types.Bool: "Bool", types.Int: "Int", types.Float: "Float", types.String: "String",
-	types.Duration: "Duration", types.Enum: "enum", types.Record: "record", types.Variant: "variant",
-	types.Case: "case", types.VariantKind: "variant kind", types.Optional: "optional",
-	types.List: "list", types.Map: "map", types.DepMap: "dependent map", types.Table: "table",
-	types.Ref: "ref", types.LitUnion: "literal union", types.Never: "Never", types.Range: "Range",
-	types.Func: "function", types.Pair: "pair", types.TypeApp: "dependent type",
-	types.DepUnion: "dependent union", types.Define: "define", types.Any: "Any", types.None: "None",
-	types.Error: "error",
-}
 
 // Go types by width (CODEGEN.md §4.1).
 var (

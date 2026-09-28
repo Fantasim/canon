@@ -120,58 +120,89 @@ func TestDependentDataCompiles(t *testing.T) {
 	runData(t, files, "dep/out/go", "testdata/smoke/dependent_test.go", data)
 }
 
-// dependentRefusals: one row per dependent-type construct data mode refuses (CODEGEN.md §5.6).
-func dependentRefusals() map[string]func(*ir.Package) {
-	return map[string]func(*ir.Package){
-		"a dependent type with a Bool discriminant": func(p *ir.Package) {
+// dependentRefusal is one dependent-type construct stage E refuses (E8019 DependentType, E8012, E3806), which the generator then finds malformed with its own text naming subject.
+type dependentRefusal struct {
+	edit    func(*ir.Package)
+	cause   error
+	subject string
+}
+
+// dependentRefusals: one row per dependent-type construct stage E refuses first (CODEGEN.md §5.6; decision 37).
+func dependentRefusals() map[string]dependentRefusal {
+	return map[string]dependentRefusal{
+		"a discriminant of another type than the field's": {func(p *ir.Package) {
 			d, _ := dependentField(p)
-			d.Disc = &ir.TypeRef{Kind: types.Bool}
-		},
-		"a dependent type whose match reads further than its parameter": func(p *ir.Package) {
+			d.Disc = &boolT
+		}, gogen.ErrDependentDisc, "demo.Thing"},
+		"a match path through a field that holds no record": {func(p *ir.Package) {
 			d, _ := dependentField(p)
 			d.DiscPath = []string{"x"}
-		},
-		"a dependent type argument from a record's own parameter": func(p *ir.Package) {
+		}, gogen.ErrDependentDisc, "demo.Thing"},
+		"an argument from a record's own parameter (CODEGEN.md §5.7)": {func(p *ir.Package) {
 			_, f := dependentField(p)
 			f.Type.Args[0].From = types.ArgParam
-		},
-		"a dependent type argument from a dependent map's binder": func(p *ir.Package) {
+		}, gogen.ErrDependentDisc, "demo.Thing"},
+		"an argument from a dependent map's binder (CODEGEN.md §4.2)": {func(p *ir.Package) {
 			_, f := dependentField(p)
 			f.Type.Args[0].From = types.ArgKey
-		},
-		"a dependent type argument read through more than one field": func(p *ir.Package) {
+		}, gogen.ErrDependentDisc, "demo.Thing"},
+		"an argument read through a field that holds no record": {func(p *ir.Package) {
 			_, f := dependentField(p)
 			f.Type.Args[0].WirePath = []string{"k", "sub"}
-		},
-		"a dependent type inside a list field": func(p *ir.Package) {
-			_, f := dependentField(p)
-			f.Type = listT(f.Type)
-		},
-		"a dependent type discriminant field that is optional": func(p *ir.Package) {
+		}, gogen.ErrDependentDisc, "demo.Thing"},
+		"an optional discriminant field, which check refuses": {func(p *ir.Package) {
 			dependentField(p)
 			optionalField(thing(p), "k")
-		},
-		"a ref into a load.defines table's define value getter": func(p *ir.Package) {
+		}, gogen.ErrDependentDisc, "demo.Thing"},
+		"a discriminant of neither Bool nor enum type": {func(p *ir.Package) {
+			d, _ := dependentField(p)
+			d.Disc = &intT
+			thing(p).Fields[1].Type = intT
+		}, gogen.ErrDependentNoDisc, "demo.P"},
+		"another package's dependent type": {func(p *ir.Package) {
+			d, _ := dependentField(p)
+			d.Pkg = "other"
+			p.Types = p.Types[:len(p.Types)-1]
+			p.Imports = []*ir.PackageRef{{Name: "other", Emits: []*ir.Emit{{Target: ir.TargetGo, GoImport: "example.com/other", GoPackage: "other"}}}}
+		}, gogen.ErrDependentForeign, "demo.Thing"},
+		"a ref into a load.defines table's define value getter": {func(p *ir.Package) {
 			d, _ := dependentField(p)
 			d.Branches[0].Type = ir.TypeRef{Kind: types.Ref, Ref: &ir.RefTarget{Coll: types.CollDefines, Pkg: "demo", Value: "defs"}}
-		},
+		}, gogen.ErrDependentValue, "demo.P"},
+		"a dependent type every arm of which is Never (log-2026-09-28)": {func(p *ir.Package) {
+			d, _ := dependentField(p)
+			d.Branches = nil
+		}, gogen.ErrDependentNoBranch, "demo.P"},
+		"a literal union over a dependent type": {func(p *ir.Package) {
+			d, f := dependentField(p)
+			d.Branches[0].Type = strT
+			app := f.Type
+			f.Type = ir.TypeRef{Kind: types.LitUnion, Elem: &app, Literals: []string{"none"}}
+		}, gogen.ErrDependentUnion, "demo.Thing"},
 	}
 }
 
-// Each dependent-type refusal names its cause through ErrUnsupported (CODEGEN.md §5.6).
+// Each dependent-type construct stage E refuses is ErrMalformed through its own cause, naming its subject (CODEGEN.md §5.6; decision 37).
 func TestDependentRefusals(t *testing.T) {
 	refusals := dependentRefusals()
 	for _, name := range slices.Sorted(maps.Keys(refusals)) {
-		p := dataThing()
-		refusals[name](p)
+		p, r := dataThing(), refusals[name]
+		r.edit(p)
 		_, err := gogen.Generate(p, p.Emits[0])
-		if !errors.Is(err, gogen.ErrUnsupported) {
-			t.Errorf("%s: got %v, want ErrUnsupported", name, err)
-		}
+		checkRefusal(t, name, err, r.cause, r.subject)
 	}
 }
 
-// CODEGEN.md §5.6: a baked or embedded literal of a dependent type has its own refusal text.
+// checkRefusal requires err to be a *DetailError about subject whose cause is cause, itself ErrMalformed (go.md §3: fields, never the message).
+func checkRefusal(t *testing.T, name string, err, cause error, subject string) {
+	t.Helper()
+	var detail *gogen.DetailError
+	if !errors.As(err, &detail) || detail.Subject != subject || !errors.Is(err, cause) || !errors.Is(err, gogen.ErrMalformed) {
+		t.Errorf("%s: got %v, want a malformed-IR refusal of %s through its own cause", name, err, subject)
+	}
+}
+
+// CODEGEN.md §5.6: baked gen/go writes a dependent value only as a field of its record, in the branch its discriminant selects.
 func TestDependentBakedLiteralRefused(t *testing.T) {
 	k := &ir.Enum{Pkg: "demo", Name: "K", Members: []*ir.EnumMember{{Name: "one", Wire: "one"}}}
 	d := &ir.Dependent{
@@ -184,8 +215,21 @@ func TestDependentBakedLiteralRefused(t *testing.T) {
 		Emits: []*ir.Emit{{Target: ir.TargetGo, Out: "out/go/", Dir: "demo/out/go", GoImport: dataModule + "/demo/out/go", Mode: ir.ModeBaked, GoPackage: "demo"}},
 	}
 	_, err := gogen.Generate(p, p.Emits[0])
-	if !errors.Is(err, gogen.ErrUnsupported) {
-		t.Errorf("got %v, want ErrUnsupported", err)
+	checkRefusal(t, "a value of a dependent type", err, gogen.ErrDependentNested, "v")
+	never := shapesPkg("depsbaked", ir.ModeBaked)
+	never.Values[0].V.(*value.Table).Entries[1].Fields[6] = &value.Int{V: 1} // b's ev.k selects P's Never arm
+	_, err = gogen.Generate(never, never.Emits[0])
+	checkRefusal(t, "a value in a Never arm", err, gogen.ErrDependentNever, "depsbaked.Thing.s")
+}
+
+// CODEGEN.md §4.3: an optional dependent field's getter returns *T, nil for none, with no presence flag.
+func TestOptionalDependentGetter(t *testing.T) {
+	p := dataThing()
+	dependentField(p)
+	optionalField(thing(p), "p")
+	src := string(generateData(t, p)["demo/out/go/demo.gen.go"])
+	if !strings.Contains(src, "func (self *Thing) P() *P {") || strings.Contains(src, "p_ok") {
+		t.Errorf("want P() *P and no p_ok flag:\n%s", src)
 	}
 }
 

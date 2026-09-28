@@ -8,6 +8,6 @@ export fn add(int: Int, int_: Int) -> Int { return int + int_ }
 emit go { out: "@features/a", package: "a" }
 -- findings.txt --
 error[E8005]  a/a.canon:4:11
-  go: int_ is generated for both add.int and add.int_
+  go: int_ is generated for both a.add.int and a.add.int_
 
 1 error, 0 warnings in 1 package (…)

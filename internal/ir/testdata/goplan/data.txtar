@@ -105,5 +105,5 @@ package: Item ItemID Items ItemsSchema LoadItems LoadShopSnapshot MaxPrice Parse
 shop.Item.after(): self t
 shop.Item.priceFor(): self t
 shop.Item.times(): n price
-twice(): x
+shop.twice(): x
 0 errors, 0 warnings in 1 package (…)

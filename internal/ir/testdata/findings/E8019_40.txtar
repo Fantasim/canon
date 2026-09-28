@@ -1,33 +1,37 @@
-EVALUATION.md §1, CODEGEN.md §5.6 (gen/go dependentNestedFormat): a list of dependent values is DependentType at a field gen/go's data loader reads; gen/cpp reads each element with the field's discriminant.
+EVALUATION.md §1, CODEGEN.md §4.1, §5.6: baked gen/go writes a literal union as its wire string, so a selected value holding a union over a dependent type whose value is not a string (an enum branch's member) is DependentType at the value; a string value is written.
 -- a/a.canon --
 package a
 
 /// A kind.
 enum K { one, two }
 
+/// A color.
+enum Color { red, blue }
+
 /// A payload.
-type P(k: K) = match k { one => Int, two => String }
+type P(k: K) = match k { one => String, two => Color }
 
 /// A thing.
 record Thing {
   /// Its kind.
   k: K
-  /// Its payloads.
-  ps: [P(k)]
+  /// Its payload, or none.
+  u: P(k) | "none"
 }
 
-/// The things.
-let things: table Thing = {
-  a { k: one, ps: [1, 2] }
-}
+/// Holds a color.
+let colored: Thing = { k: two, u: red }
 
-emit go { out: "@features/a", package: "a", mode: data }
-emit cpp { out: "@features/ac", namespace: "a", mode: data }
-emit json { out: "out/" }
--- a.things.json --
-{"a": {"k": "one", "ps": [1, 2]}}
+/// Holds a string.
+let named: Thing = { k: one, u: "x" }
+
+emit go { out: "@features/a", package: "a" }
+-- a.colored.json --
+{"k": "two", "u": "red"}
+-- a.named.json --
+{"k": "one", "u": "x"}
 -- findings.txt --
-error[E8019]  a/a.canon:14:3
-  emit go in data mode cannot generate a dependent type
+error[E8019]  a/a.canon:21:5
+  emit go in baked mode cannot generate a dependent type
 
 1 error, 0 warnings in 1 package (…)

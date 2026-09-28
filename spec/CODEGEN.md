@@ -792,7 +792,15 @@ export type Param =
 
 The wire is untagged; loaders pick the branch from the discriminant through a static table
 generated from the `match` (the discriminant is read first). Dependent maps and keys follow
-§4.2 (DEP-04).
+§4.2 (DEP-04). A loader reads the discriminant down the argument's then the match's path from what
+it has already decoded: earlier required fields of the class, then fields of records held by
+value, none a `ref` or optional; a `Bool` discriminant's cases are `false` and `true`. A list of
+dependent values shares its field's discriminant. Baked Go writes a dependent value (a field's, or
+its list's elements) as `&T{branch, value}` in the branch the record's own fields select, the value
+typed as `As<Branch>` returns it. What a generator does not write is E8019 `DependentType` at
+stage E: a discriminant read through a `ref` or a record parameter, a dependent value in a map or
+in a literal union a loader reads, another package's dependent type in a Go loader or baked Go
+literal, and a dependent type every arm of which is `Never`.
 
 - The Go struct stores `branch` and `value` (unexported); the Go branch enum has no `String`,
   `Wire` or `Parse<…>` (it is never on the wire). A Go data-mode loader writes `decode<T>`

@@ -1063,6 +1063,7 @@ exists under `examples/features/<name>/`:
 | `lookup` | finite-input export fns (lookup tables), including a table-keyed parameter | M2 | present |
 | `warns` | `expect … warns` and `fails name` | M2 | present |
 | `csv`, `text` | `load.csv` with and without header, `load.text` | M3 | present |
+| `dependent` | dependent types: enum, `Bool` and match-path discriminants, lists, baked Go literals, C++ data loader | M3 | present |
 | `legacycpp` | `@cpp(struct, access)` with the hand-written header fixture `ProjectCmn.h` | M6 | present |
 | `entries` | `entry` files, `@files`, entry order, duplicate keys, entries of a keyed list | M1 (build), M4 (edit) | to add |
 | `pairs` | `@json(pairs:)`: slots, gaps (`E7117`), fingerprint | M2 | to add |

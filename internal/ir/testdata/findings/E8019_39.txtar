@@ -1,39 +1,36 @@
-EVALUATION.md §1, CODEGEN.md §5.6 (gen/go dependentArgFormat): an argument read through two fields (ev.k) is DependentType at a field gen/go's data loader reads; gen/cpp reads it.
+EVALUATION.md §1, CODEGEN.md §5.6 (gen/go dependentUnionFormat, gen/cpp unionDependent): neither data loader reads a literal union over a dependent type, so such a field of a class it decodes is DependentType at the field, in both loaders.
 -- a/a.canon --
 package a
 
 /// A kind.
 enum K { one, two }
 
-/// An event.
-record Ev {
-  /// Its kind.
-  k: K
-}
-
 /// A payload.
-type P(k: K) = match k { one => Int, two => String }
+type P(k: K) = match k { one => String, two => String }
 
 /// A thing.
 record Thing {
-  /// Its event.
-  ev: Ev
-  /// Its payload.
-  p: P(ev.k)
+  /// Its kind.
+  k: K
+  /// Its payload, or none.
+  u: P(k) | "none"
 }
 
 /// The things.
 let things: table Thing = {
-  a { ev: { k: one }, p: 1 }
+  a { k: one, u: "x" }
 }
 
 emit go { out: "@features/a", package: "a", mode: data }
 emit cpp { out: "@features/ac", namespace: "a", mode: data }
 emit json { out: "out/" }
 -- a.things.json --
-{"a": {"ev": {"k": "one"}, "p": 1}}
+{"a": {"k": "one", "u": "x"}}
 -- findings.txt --
-error[E8019]  a/a.canon:20:3
+error[E8019]  a/a.canon:14:3
+  emit cpp in data mode cannot generate a dependent type
+
+error[E8019]  a/a.canon:14:3
   emit go in data mode cannot generate a dependent type
 
-1 error, 0 warnings in 1 package (…)
+2 errors, 0 warnings in 1 package (…)

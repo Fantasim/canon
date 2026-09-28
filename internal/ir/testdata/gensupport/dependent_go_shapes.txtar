@@ -1,0 +1,52 @@
+Decision 37, clean (CODEGEN.md §5.6; TYPES.md §11.1, §11.2): both data loaders read, in a class they decode, a Bool discriminant, a match path through a record held by value (e.k), an argument read through two fields (ev.k) and a list of dependent values sharing the field's discriminant.
+-- a/a.canon --
+package a
+
+/// A kind.
+enum K { one, two }
+
+/// An event.
+record Ev {
+  /// Its kind.
+  k: K
+}
+
+/// A payload.
+type P(k: K) = match k { one => Int, two => String }
+
+/// A switch payload.
+type Q(on: Bool) = match on { false => Int, true => String }
+
+/// A payload read through an event.
+type R(e: Ev) = match e.k { one => Int, two => String }
+
+/// A thing.
+record Thing {
+  /// Whether it is on.
+  on: Bool
+  /// Its switch payload.
+  q: Q(on)
+  /// Its event.
+  ev: Ev
+  /// Its event payload.
+  r: R(ev)
+  /// Its payload by the event's kind.
+  s: P(ev.k)
+  /// Its kind.
+  k: K
+  /// Its payloads.
+  ps: [P(k)]
+}
+
+/// The things.
+let things: table Thing = {
+  a { on: false, q: 1, ev: { k: one }, r: 2, s: 3, k: two, ps: ["x", "y"] }
+}
+
+emit go { out: "@features/a", package: "a", mode: data }
+emit cpp { out: "@features/ac", namespace: "a", mode: data }
+emit json { out: "out/" }
+-- a.things.json --
+{"a": {"on": false, "q": 1, "ev": {"k": "one"}, "r": 2, "s": 3, "k": "two", "ps": ["x", "y"]}}
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

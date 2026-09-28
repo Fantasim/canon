@@ -97,7 +97,7 @@ func (pl *CppNamePlan) Dependent(d *Dependent) CppDependent {
 	out := CppDependent{Class: name, Branch: name + branchWord, GetBranch: GoGet + branchWord, Value: CppVariantMember, Decode: CppDecode + name}
 	for _, b := range d.Branches {
 		br := CppBranch{Enumerator: cppVerbatim(b.Name), As: cppAsPrefix + cppUpperCamel(b.Name)}
-		if definesRef(b.Type) {
+		if DefinesRef(b.Type) {
 			br.AsValue = br.As + asValueSuffix
 		}
 		out.Branches = append(out.Branches, br)

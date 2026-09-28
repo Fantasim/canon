@@ -19,7 +19,7 @@ func (pl *GoNamePlan) Dependent(d *Dependent) GoDependent {
 	out := GoDependent{Type: name, Branch: name + branchWord, Method: branchWord, BranchStore: goBranchStore, ValueStore: GoCaseStore}
 	for _, b := range d.Branches {
 		br := GoBranch{Member: out.Branch + goUpperCamel(b.Name), As: goAsPrefix + goUpperCamel(b.Name)}
-		if definesRef(b.Type) {
+		if DefinesRef(b.Type) {
 			br.AsValue = br.As + asValueSuffix
 		}
 		out.Branches = append(out.Branches, br)
@@ -27,8 +27,8 @@ func (pl *GoNamePlan) Dependent(d *Dependent) GoDependent {
 	return out
 }
 
-// definesRef reports a ref into a load.defines table, whose accessor also exposes the define's value (CODEGEN.md §5.6, §5.8).
-func definesRef(t TypeRef) bool {
+// DefinesRef reports a ref into a load.defines table, whose accessor also exposes the define's value (CODEGEN.md §5.6, §5.8).
+func DefinesRef(t TypeRef) bool {
 	return t.Kind == types.Ref && t.Ref != nil && t.Ref.Coll == types.CollDefines
 }
 

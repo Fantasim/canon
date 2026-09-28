@@ -118,10 +118,11 @@ func (g *gen) enter(origin string) (leave func()) {
 
 // plan refuses what this generator cannot emit, then indexes values, classes and fns.
 func (g *gen) plan() {
+	g.validate() // first: a dependent type stage E refuses is malformed before its define table is unsupported
 	if len(g.p.Defines) > 0 {
 		g.unsupported(defineRefs, g.p.Name)
 	}
-	if g.validate(); g.err != nil {
+	if g.err != nil {
 		return
 	}
 	g.pl = ir.PlanCppNames(g.p, g.emit)

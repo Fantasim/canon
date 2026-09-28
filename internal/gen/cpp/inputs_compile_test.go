@@ -35,6 +35,7 @@ var inputCases = []inputCase{
 	{"CANON_TEST_RATE", "not-a-number", "not a valid Float"}, {"CANON_TEST_RATE", "1e40", "outside its refinement range"},
 	{"CANON_TEST_RATE", "2.0", "outside its refinement range"}, {"CANON_TEST_RATE", "1.00000001", ""},
 	{"CANON_TEST_RATIO", "1e-400", ""}, {"CANON_TEST_RATIO", "4e-320", ""}, {"CANON_TEST_RATIO", "-0", ""},
+	{"CANON_TEST_RATIO", "2.2250738585072012e-308", ""}, // below DBL_MIN, rounds to it: accepted as Go does
 	{"CANON_TEST_RATIO", "00012", ""}, {"CANON_TEST_RATIO", "1E+5", ""}, {"CANON_TEST_RATIO", "1e400", "not a valid Float"},
 	{"CANON_TEST_RATIO", "1.", "not a valid Float"}, {"CANON_TEST_RATIO", ".5", "not a valid Float"},
 	{"CANON_TEST_RATIO", "+1", "not a valid Float"}, {"CANON_TEST_RATIO", "inf", "not a valid Float"},

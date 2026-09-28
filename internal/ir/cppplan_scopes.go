@@ -23,7 +23,7 @@ func (pl *CppNamePlan) declareAll() {
 	}
 	for _, fn := range pl.p.Fns {
 		if fn.Kind == FnTranslated {
-			pl.shareNS(pl.FnName(fn), fn.Name, fn)
+			pl.shareNS(pl.FnName(fn), pl.fnOrigin(fn), fn)
 		}
 	}
 	if pl.reloads() {

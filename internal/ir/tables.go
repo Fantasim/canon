@@ -131,7 +131,7 @@ type cppInputHelper struct {
 
 // cppInputHelpers are CODEGEN.md §7.7's helpers in gen/cpp's order; an enum uses <E>FromWire.
 var cppInputHelpers = []cppInputHelper{
-	{nil, []string{"EnvText"}},
+	{nil, []string{CppEnvText}},
 	{[]types.Kind{types.Int, types.Float, types.Duration}, []string{"IsDecDigit", "AllDigits"}},
 	{[]types.Kind{types.Int}, []string{"ParseIntLiteral"}},
 	{[]types.Kind{types.Float}, []string{"ParseFloatLiteral"}},
@@ -172,7 +172,7 @@ var (
 	goEnumMethods      = append(slices.Clone(goIDEnumMethods), GoWire)
 	goCodesEnumMethods = append(slices.Clone(goEnumMethods), GoCode)
 	goContainerMembers = []string{GoRows, GoLen, GoAt, GoAll, GoFind}
-	goPointerKinds     = kindSet(types.Record, types.Variant, types.Case) // nil marks absent
+	goPointerKinds     = kindSet(types.Record, types.Variant, types.Case, types.TypeApp) // nil marks absent (CODEGEN.md §4.3)
 	goStdOfKind        = map[types.Kind]string{
 		types.List: goRT, types.Map: goRT, types.DepMap: goRT, types.Duration: goTime,
 	}

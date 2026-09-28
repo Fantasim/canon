@@ -9,7 +9,7 @@ import (
 	"github.com/fantasim/canonlang/internal/types"
 )
 
-// checkDependent refuses a dependent type without a Bool or enum discriminant or whose member map disagrees with its branches (malformed), or whose every arm is Never (CODEGEN.md §4.4, §5.6).
+// checkDependent refuses a dependent type without a Bool or enum discriminant or whose member map disagrees with its branches, and one stage E refuses (E8019 DependentType): every arm Never, or a branch into a load.defines table (CODEGEN.md §4.4, §5.6, §5.8).
 func (g *gen) checkDependent(d *ir.Dependent) {
 	members, ok := discMembers(d)
 	switch {
@@ -18,7 +18,9 @@ func (g *gen) checkDependent(d *ir.Dependent) {
 	case len(d.ByMember) != members || slices.ContainsFunc(d.ByMember, func(b int) bool { return b < ir.NoBranch || b >= len(d.Branches) }):
 		g.malformed(dependentBadArm, d.Name)
 	case len(d.Branches) == 0:
-		g.unsupported(dependentNoBranch, d.Name)
+		g.malformed(dependentNoBranch, d.Name)
+	case slices.ContainsFunc(d.Branches, func(b *ir.Branch) bool { return ir.DefinesRef(b.Type) }):
+		g.malformed(dependentDefines, d.Name)
 	}
 }
 
@@ -156,11 +158,11 @@ func (g *gen) global(t ir.TypeRef) string {
 	return g.storage(t)
 }
 
-// decodeDependent calls the dependent type's Decode<Alias>, its package's (CODEGEN.md §2.8, §5.6).
+// decodeDependent calls the dependent type's Decode<Alias>, its package's (CODEGEN.md §2.8, §5.6); a dependent value outside a field or its list's elements is refused at stage E (E8019 DependentType).
 func (g *gen) decodeDependent(depth int, src, key string, l leaf) {
 	d, ok := l.t.Named.(*ir.Dependent)
 	if !ok || l.disc == "" {
-		g.unsupported(dependentElsewhere, g.at)
+		g.malformed(dependentElsewhere, g.at)
 		return
 	}
 	call := g.pl.Dependent(d).Decode
@@ -170,64 +172,16 @@ func (g *gen) decodeDependent(depth int, src, key string, l leaf) {
 	g.c.linef(depth, dependentCallFormat, call, src, key, l.disc, l.dst)
 }
 
-// heldDependent is the type application a field holds, itself or through lists: its discriminant is read once per field (CODEGEN.md §5.6).
-func heldDependent(t ir.TypeRef) (ir.TypeRef, bool) {
-	for t.Kind == types.List && t.Elem != nil {
-		t = *t.Elem
-	}
-	return t, t.Kind == types.TypeApp
-}
-
-// discExpr is the discriminant of field f's type application, read from what the decoder has already decoded: an earlier field of the class, then a path of fields of records held by value, each through its getter (TYPES.md §11.1; WIRE.md §5.5.1: decoding follows declaration order).
+// discExpr is the discriminant of a field's type application, read from what the decoder has already decoded: ir.DiscFields' path from the class's fields, each through its getter (TYPES.md §11.1; WIRE.md §5.5.1: decoding follows declaration order); stage E refuses any other (E8019 DependentType).
 func (g *gen) discExpr(fields []*ir.Field, app ir.TypeRef) string {
-	d, ok := app.Named.(*ir.Dependent)
-	if !ok || d.DiscParam < 0 || d.DiscParam >= len(app.Args) || app.Args[d.DiscParam] == nil {
+	path := ir.DiscFields(fields, app)
+	if path == nil {
 		g.malformed(dependentBadPath, g.at)
 		return ""
 	}
-	src := app.Args[d.DiscParam]
-	if src.From != types.ArgField {
-		g.unsupported(dependentParam, g.at)
-		return ""
-	}
-	segs := append(slices.Clone(src.WirePath), d.DiscPath...)
 	calls := []string{outVar}
-	var last *ir.Field
-	for len(segs) > 0 {
-		f := fieldAt(fields, segs)
-		if f == nil {
-			g.malformed(dependentBadPath, g.at)
-			return ""
-		}
-		if f.Optional || f.Input != nil || f.Type.Kind == types.Ref {
-			g.unsupported(dependentThroughRef, g.at)
-			return ""
-		}
+	for _, f := range path {
 		calls = append(calls, g.getterName(f)+callSuffix)
-		segs, last = segs[len(f.WirePath):], f
-		fields = recordFields(f.Type)
-	}
-	if last == nil || last.Type.Kind != d.Disc.Kind || last.Type.Named != d.Disc.Named {
-		g.malformed(dependentBadPath, g.at)
-		return ""
 	}
 	return strings.Join(calls, memberAccess)
-}
-
-// fieldAt is the field of fields whose wire path starts segs, or nil.
-func fieldAt(fields []*ir.Field, segs []string) *ir.Field {
-	for _, f := range fields {
-		if n := len(f.WirePath); n > 0 && n <= len(segs) && slices.Equal(f.WirePath, segs[:n]) {
-			return f
-		}
-	}
-	return nil
-}
-
-// recordFields are the fields of the record t holds by value, else none.
-func recordFields(t ir.TypeRef) []*ir.Field {
-	if rec, ok := t.Named.(*ir.Record); ok && t.Kind == types.Record {
-		return rec.Fields
-	}
-	return nil
 }

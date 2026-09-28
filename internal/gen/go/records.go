@@ -194,13 +194,14 @@ func (g *gen) bodyLit(b *body, r *value.Record) []pair {
 		if s.isInput() {
 			continue
 		}
-		var v value.Value
-		if s.fn == nil {
-			v = g.fieldValue(r, s.field)
-		} else {
-			v = g.instanceOf(s.fn, s.origin, r).Result
+		switch {
+		case s.fn != nil:
+			parts = append(parts, g.assign(s, g.instanceOf(s.fn, s.origin, r).Result)...)
+		case ir.HeldApp(s.T) != nil:
+			parts = append(parts, g.assignDependent(b, r, s, g.fieldValue(r, s.field))...)
+		default:
+			parts = append(parts, g.assign(s, g.fieldValue(r, s.field))...)
 		}
-		parts = append(parts, g.assign(s, v)...)
 	}
 	for _, f := range b.finite {
 		inst := g.instanceOf(f.fn, f.origin, r)

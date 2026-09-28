@@ -1,0 +1,70 @@
+/// Dependent types (TYPES §11, CODEGEN §5.6): a field whose type an earlier field chooses.
+/// Generated code holds the union of the branches with a branch enum; baked Go writes each
+/// value in the branch its record selects, and the C++ loader picks the branch from the
+/// discriminant it has already read.
+package features.dependent
+
+/// What a daily objective counts.
+enum Goal { kill, collect, reach_level, visit }
+
+/// What an objective aims at, by goal: a monster, a number of items, a level. Visiting a
+/// place aims at nothing.
+type Target(g: Goal) = match g {
+  kill => String(1..)
+  collect => Int(1..)
+  reach_level => Int(1..=300)
+  visit => Never
+}
+
+/// A reward: gold, or an item.
+type Reward(item: Bool) = match item {
+  false => Int(1..)
+  true => String(1..)
+}
+
+/// Where an objective sends the player.
+record Place {
+  /// Whether rewards there are items.
+  items: Bool
+}
+
+/// A daily objective.
+record Objective {
+  /// What it counts.
+  goal: Goal
+  /// What it aims at; none when the goal aims at nothing.
+  target: Target(goal)?
+  /// Whether its rewards are items rather than gold.
+  itemRewards: Bool
+  /// What completing it gives.
+  rewards: [Reward(itemRewards)]
+  /// Where it sends the player.
+  place: Place
+  /// The reward for finding the place, chosen by the place.
+  bonus: Reward(place.items)
+}
+
+/// The daily objectives.
+let objectives: table Objective = {
+  slay {
+    goal: kill
+    target: "wolf"
+    itemRewards: false
+    rewards: [100, 50]
+    place: { items: true }
+    bonus: "map"
+  }
+  gather {
+    goal: collect
+    target: 10
+    itemRewards: true
+    rewards: ["potion"]
+    place: { items: false }
+    bonus: 5
+  }
+  explore { goal: visit, itemRewards: false, rewards: [], place: { items: false }, bonus: 20 }
+}
+
+emit go { out: "out/go/", package: "dependent", mode: baked }
+emit cpp { out: "out/cpp/", namespace: "features::dependent", mode: data }
+emit json { out: "out/objectives.json", values: [objectives] }

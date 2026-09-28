@@ -32,7 +32,7 @@ func fromField(from string) func(*ir.Dependent) ir.TypeRef {
 	return func(d *ir.Dependent) ir.TypeRef { return appOf(d, from) }
 }
 
-// TestDependentAndInputRefusals is CODEGEN.md §4.1, §5.6, §5.7, §5.12 (decision 124): each refusal through its sentinel and its own words.
+// TestDependentAndInputRefusals is CODEGEN.md §4.1, §5.6, §5.7, §5.12 (decisions 37, 124): each refusal through its sentinel and its own words; a dependent shape stage E refuses (E8019 DependentType) is malformed.
 func TestDependentAndInputRefusals(t *testing.T) {
 	flag := field("flag", "flag", "", tBool)
 	refFlag := field("rf", "rf", "", ir.TypeRef{Kind: types.Ref, Key: &tString})
@@ -43,28 +43,34 @@ func TestDependentAndInputRefusals(t *testing.T) {
 		edit        func(*ir.Package, *ir.Emit)
 		want        error
 	}{
-		{"a discriminant that is a record parameter (§5.7)", "a record parameter", withDependent("p", func(d *ir.Dependent) ir.TypeRef {
+		{"a discriminant that is a record parameter (§5.7)", "whose discriminant is not read from earlier required fields", withDependent("p", func(d *ir.Dependent) ir.TypeRef {
 			return ir.TypeRef{Kind: types.TypeApp, Named: d, Args: []*ir.Source{{From: types.ArgParam}}}
-		}), cppgen.ErrUnsupported},
-		{"a discriminant that is a dependent map key (§4.2)", "a dependent map key", withDependent("p", func(d *ir.Dependent) ir.TypeRef {
+		}), cppgen.ErrMalformed},
+		{"a discriminant that is a dependent map key (§4.2)", "whose discriminant is not read from earlier required fields", withDependent("p", func(d *ir.Dependent) ir.TypeRef {
 			return ir.TypeRef{Kind: types.TypeApp, Named: d, Args: []*ir.Source{{From: types.ArgKey}}}
-		}), cppgen.ErrUnsupported},
+		}), cppgen.ErrMalformed},
 		{"a dependent stored result", "not a field's type", func(p *ir.Package, _ *ir.Emit) {
 			d := payloadOf()
 			p.Types = append(p.Types, d)
 			thing(p).Fields = append(thing(p).Fields, flag)
 			thing(p).Methods = []*ir.ExportFn{{Name: "f", Kind: ir.FnPrecomputed, Result: appOf(d, "flag")}}
-		}, cppgen.ErrUnsupported},
-		{"a dependent type every arm of which is Never", "every arm of which is Never", func(p *ir.Package, _ *ir.Emit) {
+		}, cppgen.ErrMalformed},
+		{"a dependent type every arm of which is Never (log-2026-09-28)", "every arm of which is Never", func(p *ir.Package, _ *ir.Emit) {
 			p.Types = append(p.Types, allNever)
-		}, cppgen.ErrUnsupported},
-		{"a discriminant read through a ref", "through a ref", func(p *ir.Package, e *ir.Emit) {
+		}, cppgen.ErrMalformed},
+		{"a dependent type with a branch into a load.defines table (§5.8)", "a branch into a load.defines table", func(p *ir.Package, _ *ir.Emit) {
+			d := payloadOf()
+			d.Branches[1].Type = ir.TypeRef{Kind: types.Ref, Key: &tString, Ref: &ir.RefTarget{Coll: types.CollDefines, Pkg: "demo", Value: "defs"}}
+			p.Types = append(p.Types, d)
+			p.Defines = []*ir.DefineTable{{Pkg: "demo", Value: "defs"}}
+		}, cppgen.ErrMalformed},
+		{"a discriminant read through a ref (WIRE.md §5.9)", "whose discriminant is not read from earlier required fields", func(p *ir.Package, e *ir.Emit) {
 			thing(p).Fields = append(thing(p).Fields, refFlag)
 			withDependent("p", fromField("rf"))(p, e)
-		}, cppgen.ErrUnsupported},
-		{"a discriminant path naming no field", "names no earlier field", withDependent("p", fromField("nope")), cppgen.ErrMalformed},
-		{"a discriminant of another kind", "names no earlier field", withDependent("p", fromField("a")), cppgen.ErrMalformed},
-		{"a discriminant of another enum", "names no earlier field", func(p *ir.Package, _ *ir.Emit) {
+		}, cppgen.ErrMalformed},
+		{"a discriminant path naming no field", "whose discriminant is not read from earlier required fields", withDependent("p", fromField("nope")), cppgen.ErrMalformed},
+		{"a discriminant of another kind", "whose discriminant is not read from earlier required fields", withDependent("p", fromField("a")), cppgen.ErrMalformed},
+		{"a discriminant of another enum", "whose discriminant is not read from earlier required fields", func(p *ir.Package, _ *ir.Emit) {
 			disc, other := enumOf("D", "x", "y"), enumOf("O", "x", "y")
 			tDisc := ir.TypeRef{Kind: types.Enum, Named: disc}
 			d := &ir.Dependent{Pkg: "demo", Name: "P", Params: 1, Disc: &tDisc, ByMember: []int{0, 0},
@@ -82,15 +88,15 @@ func TestDependentAndInputRefusals(t *testing.T) {
 				{Name: "c", Wire: "c", Fields: []*ir.Field{input("x", "X", tString, true, nil)}},
 			}})
 		}, cppgen.ErrMalformed},
-		{"a union over a string-keyed ref (owed)", "a literal union over a ref or dependent type, not generated yet",
+		{"a union over a string-keyed ref (owed)", "a literal union over a ref, not generated yet",
 			withField(field("u", "u", "", ir.TypeRef{Kind: types.LitUnion, Elem: &ir.TypeRef{Kind: types.Ref, Key: &tString}})), cppgen.ErrUnsupported},
-		{"a union over a dependent type (owed)", "a literal union over a ref or dependent type, not generated yet", func(p *ir.Package, e *ir.Emit) {
+		{"a union over a dependent type, which stage E refuses", "a literal union over a dependent type", func(p *ir.Package, e *ir.Emit) {
 			thing(p).Fields = append(thing(p).Fields, flag)
 			withDependent("u", func(d *ir.Dependent) ir.TypeRef {
 				app := appOf(d, "flag")
 				return ir.TypeRef{Kind: types.LitUnion, Elem: &app}
 			})(p, e)
-		}, cppgen.ErrUnsupported},
+		}, cppgen.ErrMalformed},
 		{"a union over an Int-keyed ref (check refuses it)", "a literal union whose wire is not a string",
 			withField(field("u", "u", "", ir.TypeRef{Kind: types.LitUnion, Elem: &ir.TypeRef{Kind: types.Ref, Key: &tInt}})), cppgen.ErrMalformed},
 	}

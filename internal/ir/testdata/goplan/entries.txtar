@@ -26,8 +26,8 @@ TestTierForConformance vectors: code n want
 Tier: ID Rank Retired id rank retired
 TierID: String
 Tiers: All At Find Get Len rows
+a.tierFor(): n
 aData: tiers
 conformance imports: math rt testing
 package: GetTiers ParseTierID TestTierForConformance Tier TierFor TierID TierIDHigh TierIDLow Tiers aData aValues buildA canonCatch iter strconv sync
-tierFor(): n
 0 errors, 0 warnings in 1 package (…)

@@ -37,8 +37,8 @@ func (g *gen) expr(t ir.TypeRef, v value.Value) string {
 		return g.mapExpr(t, as[value.Map](g, v))
 	case types.Ref:
 		return g.keyLit(t, as[value.Ref](g, v).Key)
-	case types.TypeApp:
-		g.fail(newDetail(ErrUnsupported, g.at, dependentLiteralFormat, g.at))
+	case types.TypeApp: // a field's value is assignDependent's; stage E refuses any other (E8019 DependentType)
+		g.fail(newDetail(errDependentNested, g.at, dependentNestedFormat, g.at))
 		return zeroLit
 	default:
 		g.refuseKind(t.Kind, typeRefused)
@@ -124,15 +124,21 @@ func (g *gen) listExpr(t ir.TypeRef, v *value.List) string {
 	if t.KeyedBy != nil {
 		return g.keyedListExpr(t, v)
 	}
-	elem := g.goType(g.sub(t.Elem))
+	return g.plainList(t, v, g.expr)
+}
+
+// plainList is an rt.List whose elements elem writes.
+func (g *gen) plainList(t ir.TypeRef, v *value.List, elem func(ir.TypeRef, value.Value) string) string {
+	et := g.sub(t.Elem)
+	typ := g.goType(et)
 	if len(v.Elems) == 0 {
-		return g.rt() + listType + lbracket + elem + rbracket + emptyBraces
+		return g.rt() + listType + lbracket + typ + rbracket + emptyBraces
 	}
 	items := make([]string, len(v.Elems))
 	for i, x := range v.Elems {
-		items[i] = g.expr(g.sub(t.Elem), x)
+		items[i] = elem(et, x)
 	}
-	return g.rt() + makeList + sliceOf + elem + braced(elide(elem, items)) + rparen
+	return g.rt() + makeList + sliceOf + typ + braced(elide(typ, items)) + rparen
 }
 
 func (g *gen) keyedListExpr(t ir.TypeRef, v *value.List) string {

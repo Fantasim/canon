@@ -1,4 +1,4 @@
-EVALUATION.md §1, CODEGEN.md §2.8, §5.6 (gen/go readDependentValue: another package's decoder is unexported): gen/go's data loader cannot read a field of another package's dependent type, DependentType at the field; gen/cpp calls that package's Decode, and the type's own package writes it.
+EVALUATION.md §1, CODEGEN.md §2.8, §5.6 (gen/go dependentForeignFormat: another package's decoder is unexported): gen/go's data loader cannot read a field of another package's dependent type, DependentType at the field; gen/cpp calls that package's Decode, and the type's own package writes it.
 -- b/b.canon --
 package b
 

@@ -1,0 +1,3 @@
+features/dependent/out/go/dependent.gen.go dependent/out/go/dependent.gen.go
+features/dependent/out/go/rt/rt.go dependent/out/go/rt/rt.go
+features/dependent/out/objectives.json dependent/out/objectives.json

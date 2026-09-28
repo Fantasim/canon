@@ -130,7 +130,7 @@ func (pl *CppNamePlan) checkSignatures() {
 		}
 	}
 	for _, fn := range pl.p.Fns {
-		pl.checkSignature(fn.Name, fn)
+		pl.checkSignature(pl.fnOrigin(fn), fn)
 	}
 }
 

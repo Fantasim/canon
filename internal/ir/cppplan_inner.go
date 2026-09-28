@@ -90,7 +90,7 @@ func (pl *CppNamePlan) declareConformance() {
 		pl.declareVectors(sc, pl.className(m.class), m.origin, m.fn)
 	}
 	for _, fn := range fns {
-		pl.declareVectors(sc, "", fn.Name, fn)
+		pl.declareVectors(sc, "", pl.fnOrigin(fn), fn)
 	}
 }
 

@@ -161,6 +161,11 @@ func (g *gen) zeroKey(t ir.TypeRef) string {
 
 // assign is the storage of v, member by member; none leaves every member zero.
 func (g *gen) assign(s *slot, v value.Value) []pair {
+	return g.assignWith(s, v, g.mainExpr)
+}
+
+// assignWith is assign with main writing the main member's expression.
+func (g *gen) assignWith(s *slot, v value.Value, main func(*slot, value.Value) string) []pair {
 	defer g.enter(s.origin)()
 	if s.isInput() {
 		return nil
@@ -173,7 +178,7 @@ func (g *gen) assign(s *slot, v value.Value) []pair {
 	}
 	var out []pair
 	if s.hasMain() {
-		out = append(out, pair{s.Store, g.mainExpr(s, v)})
+		out = append(out, pair{s.Store, main(s, v)})
 	}
 	if s.hasKey() {
 		out = append(out, pair{s.KeyStore, g.keyExpr(s, v)})

@@ -108,7 +108,6 @@ TestTwiceConformance vectors: code want x
 TestVolumeConformance vectors: code n t want
 Tone: String Wire
 conformance imports: fmt math rt testing
-loud(): loudTable t
 package: Bonus GetPotions Grade GradeHigh GradeLow GradeMembers GradeMid Loud ParseGrade ParseTone Potion Potions Quad Sign TestPotionDamageAtConformance TestPotionHealForConformance TestPotionLabelConformance TestPotionRatioConformance TestPotionScoreConformance TestPotionWaitConformance TestQuadConformance TestSignConformance TestTwiceConformance TestVolumeConformance Tone ToneLoud ToneMembers ToneSoft Twice Volume buildPipeline canonCatch canonShow iter loudTable pipelineData pipelineValues potionDamageAt potionHealFor potionLabel potionRatio potionScore potionWait rt strconv sync time
 pipeline.Potion.damageAt(): heal level
 pipeline.Potion.healFor(): heal missingHp
@@ -116,9 +115,10 @@ pipeline.Potion.label(): n name tone
 pipeline.Potion.ratio(): f n
 pipeline.Potion.score(): base bonus_grade bonus_gradeOk bonus_value bonus_valueOk heal isStrong n self_heal tone
 pipeline.Potion.wait(): cooldown isStrong k
+pipeline.loud(): loudTable t
+pipeline.quad(): x
+pipeline.sign(): n
+pipeline.twice(): x
+pipeline.volume(): n t
 pipelineData: potions
-quad(): x
-sign(): n
-twice(): x
-volume(): n t
 0 errors, 0 warnings in 1 package (…)

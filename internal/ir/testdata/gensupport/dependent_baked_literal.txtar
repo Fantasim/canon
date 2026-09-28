@@ -1,0 +1,48 @@
+Decision 37, clean (CODEGEN.md §5.6): baked gen/go writes a selected value's dependent field in the branch its record's discriminant selects, a Bool one, one read through a record held by value and a list of them included; a none writes none.
+-- a/a.canon --
+package a
+
+/// A kind.
+enum K { one, two }
+
+/// An event.
+record Ev {
+  /// Its kind.
+  k: K
+}
+
+/// A payload.
+type P(k: K) = match k { one => Int, two => String }
+
+/// A switch payload.
+type Q(on: Bool) = match on { false => Float, true => String }
+
+/// A thing.
+record Thing {
+  /// Its kind.
+  k: K
+  /// Its payload.
+  p: P(k)?
+  /// Whether it is on.
+  on: Bool
+  /// Its switch payload.
+  q: Q(on)
+  /// Its event.
+  ev: Ev
+  /// Its payloads by the event's kind.
+  ps: [P(ev.k)]
+}
+
+/// Holds payloads.
+let full: Thing = { k: one, p: 1, on: false, q: 2.5, ev: { k: two }, ps: ["x"] }
+
+/// Holds none.
+let empty: Thing = { k: two, on: true, q: "y", ev: { k: one }, ps: [] }
+
+emit go { out: "@features/a", package: "a" }
+-- a.full.json --
+{"k": "one", "p": 1, "on": false, "q": 2.5, "ev": {"k": "two"}, "ps": ["x"]}
+-- a.empty.json --
+{"k": "two", "on": true, "q": "y", "ev": {"k": "one"}, "ps": []}
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

@@ -215,6 +215,7 @@ const (
 	CppToName        = "ToName" // the enum helpers, one overload per enum (CODEGEN.md §5.2)
 	CppToWire        = "ToWire"
 	CppMatchPattern  = "MatchPattern" // §7.7's pattern search, the input helper a loader calls by name
+	CppEnvText       = "EnvText"      // §7.7's variable reader, the input helper each LoadInputs block calls
 )
 
 // The fixed Go names the plan declares and gen/go's templates write (CODEGEN.md §5.2–§6.2).

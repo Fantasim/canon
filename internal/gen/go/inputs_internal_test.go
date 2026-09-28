@@ -1,10 +1,14 @@
 package gogen
 
 import (
+	"errors"
 	"path/filepath"
 	"testing"
 
 	"golang.org/x/tools/txtar"
+
+	"github.com/fantasim/canonlang/internal/ir"
+	"github.com/fantasim/canonlang/internal/types"
 )
 
 // TestE8302Message: e8302 renders testdata/findings/E8302_1.txtar's findings.txt exactly.
@@ -24,6 +28,18 @@ func TestE8302Message(t *testing.T) {
 		if got != want {
 			t.Errorf("%s: e8302 = %q, want %q", p, got, want)
 		}
+	}
+}
+
+// CODEGEN.md §5.12: a reason ir names no text for (not a valid list) is a plan defect, ErrMalformed, never a failure line.
+func TestInputReasonWithoutText(t *testing.T) {
+	g := &gen{}
+	if got := g.inputReason(ir.InputNotValid, ir.TypeRef{Kind: types.List}); got != "" || !errors.Is(g.err, ErrMalformed) {
+		t.Errorf("inputReason = %q, err %v; want \"\" and ErrMalformed", got, g.err)
+	}
+	g = &gen{}
+	if got := g.inputReason(ir.InputNotSet, ir.TypeRef{Kind: types.Int}); got == "" || g.err != nil {
+		t.Errorf("inputReason(InputNotSet) = %q, err %v; want its text and no error", got, g.err)
 	}
 }
 

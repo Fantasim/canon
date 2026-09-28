@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/fantasim/canonlang/internal/ir"
@@ -94,7 +95,7 @@ func compileOnly(t *testing.T, dir string, sources []string) {
 			t.Fatalf("%s: %v\n%s", filepath.Base(cc), err, out)
 		}
 	}
-	if _, err := os.Stat(filepath.Join(dir, "kbool.gen.o")); err != nil {
+	if _, err := os.Stat(filepath.Join(dir, strings.TrimSuffix(sources[0], ".cpp")+".o")); err != nil {
 		t.Errorf("no object file: %v", err)
 	}
 }

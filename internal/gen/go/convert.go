@@ -183,11 +183,14 @@ func (g *gen) stringWire(t ir.TypeRef) {
 	if e, ok := t.Elem.Named.(*ir.Enum); ok && !e.JSONCodes {
 		return
 	}
-	if !ir.StringWire(t.Elem) {
+	switch {
+	case !ir.StringWire(t.Elem):
 		g.fail(newDetail(ErrMalformed, g.at, unionMalformedFormat, g.at))
-		return
+	case t.Elem.Kind == types.TypeApp:
+		g.fail(newDetail(errDependentUnion, g.at, dependentUnionFormat, g.at)) // E8019 DependentType
+	default:
+		g.fail(newDetail(ErrUnsupported, g.at, unionFormat, g.at)) // a string-wired ref: owed
 	}
-	g.fail(newDetail(ErrUnsupported, g.at, unionFormat, g.at)) // a string-wired ref or dependent type: owed
 }
 
 // ownClass refuses a record or variant of another package: its decoder is unexported there.
@@ -216,7 +219,7 @@ func (g *gen) readList(b *strings.Builder, l leaf, raw string, loc location) str
 	elem := g.sub(l.t.Elem)
 	v, i, x := g.temp(tempValue), g.temp(tempIndex), g.temp(tempElem)
 	fmt.Fprintf(b, listOpenFormat, v, g.goType(elem), array, i, x)
-	e := g.readValue(b, leaf{t: elem, unit: l.unit, enc: l.enc}, x, loc.index(i))
+	e := g.readValue(b, leaf{t: elem, unit: l.unit, enc: l.enc, disc: l.disc}, x, loc.index(i))
 	fmt.Fprintf(b, listCloseFormat, v, i, e)
 	return g.rt() + makeList + v + rparen
 }

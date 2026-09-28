@@ -9,40 +9,92 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// dependentReader is how a target's data loader reads a dependent field: through lists or only as the field's own type, and whether it can read the discriminant of an application.
-type dependentReader struct {
-	throughLists bool
-	disc         func(own string, fields []*Field, app *TypeRef) bool
+// checkNeverDependents is E8019 `DependentType` at a dependent type every arm of which is Never, used or not: no generator writes one (log-2026-09-28 "Start").
+func (s *stage) checkNeverDependents(u *unit, es *emitSite) {
+	for _, t := range u.p.Types {
+		if d, ok := t.(*Dependent); ok && len(d.Branches) == 0 {
+			u.reportGenConstruct(es, s.decls[d].span(), diag.KindDependentType)
+		}
+	}
 }
 
-var (
-	goDependents  = dependentReader{disc: goDiscRead}
-	cppDependents = dependentReader{throughLists: true, disc: cppDiscRead}
-)
-
-// checkGoDependentLiterals is E8019 `DependentType` where baked Go would write a dependent value as a literal: a selected value holding one, and a stored fn's results once, at the fn (CODEGEN.md §5.6; gen/go's dependentLiteralFormat).
+// checkGoDependentLiterals is E8019 `DependentType` where baked Go cannot write a dependent value as a literal: a selected value holding one, and a stored fn's results once, at the fn (CODEGEN.md §5.6; gen/go assignDependent).
 func (s *stage) checkGoDependentLiterals(u *unit, es *emitSite) {
+	own := u.p.Name
 	for _, v := range selectedValues(u, es.e) {
-		if literalHolds(&v.v.Type, v.v.V, dependentLiteral) {
+		if bakedDependent(own, &v.v.Type, v.v.V) {
 			u.reportGenConstruct(es, v.span().span(), diag.KindDependentType)
 		}
 	}
 	for _, site := range s.ownFns(u) {
 		fn := site.fn
-		results := func(r value.Value) bool { return literalHolds(&fn.Result, r, dependentLiteral) }
+		results := func(r value.Value) bool { return bakedDependent(own, &fn.Result, r) }
 		if fn.Kind != FnTranslated && slices.ContainsFunc(storedResults(fn), results) {
 			u.reportGenConstruct(es, site.span(), diag.KindDependentType)
 		}
 	}
 }
 
-// dependentLiteral is a present dependent value, or a non-string value of a literal union over a dependent type (a string is written as one): gen/go writes neither as a literal.
-func dependentLiteral(t *TypeRef, v value.Value) bool {
-	if _, none := v.(*value.None); none {
+// bakedDependent reports a present dependent value of v, of type t, that baked gen/go does not write: one outside a field (a value's or a result's own, a map's), one of a field whose record does not hold its discriminant as goDiscRead reads it, or a non-string value of a literal union over one (a string is written as one).
+func bakedDependent(own string, t *TypeRef, v value.Value) bool {
+	if decodedHolds(t, isApp) && written(v) {
+		return true
+	}
+	return literalHolds(t, v, func(t *TypeRef, v value.Value) bool {
+		switch x := v.(type) {
+		case *value.Record:
+			return unwrittenFields(own, t, x)
+		case *value.Map:
+			return len(x.Keys) > 0 && (typeHolds(t.Key, isApp) || typeHolds(t.Elem, isApp))
+		case *value.Str, *value.None:
+			return false
+		}
+		return t.Kind == types.LitUnion && t.Elem != nil && t.Elem.Kind == types.TypeApp
+	})
+}
+
+// unwrittenFields reports a present value of a dependent field of the record value r, of type t, whose discriminant goDiscRead does not read from the record's fields.
+func unwrittenFields(own string, t *TypeRef, r *value.Record) bool {
+	if !recordKinds[t.Kind] || t.Named == nil {
 		return false
 	}
-	_, literal := v.(*value.Str)
-	return t.Kind == types.TypeApp || t.Kind == types.LitUnion && !literal && t.Elem != nil && t.Elem.Kind == types.TypeApp
+	decl, fields := ownFields(r.T), bodyFields(t, r)
+	for _, f := range fields {
+		app := HeldApp(f.Type)
+		i := slices.IndexFunc(decl, func(d *types.Field) bool { return d.Name == f.Name })
+		if app == nil || i < 0 || i >= len(r.Fields) || !written(r.Fields[i]) {
+			continue
+		}
+		if !goDiscRead(own, fields, app) {
+			return true
+		}
+	}
+	return false
+}
+
+// written reports a value a literal writes: not none, and a list with an element that is written.
+func written(v value.Value) bool {
+	switch x := v.(type) {
+	case nil, *value.None:
+		return false
+	case *value.List:
+		return slices.ContainsFunc(x.Elems, written)
+	}
+	return true
+}
+
+func isApp(t *TypeRef) bool { return t.Kind == types.TypeApp }
+
+// HeldApp is the type application t holds, itself or through lists, or nil: a field's elements share its discriminant (CODEGEN.md §5.6).
+func HeldApp(t TypeRef) *TypeRef {
+	app := &t
+	for app.Kind == types.List && app.Elem != nil {
+		app = app.Elem
+	}
+	if app.Kind != types.TypeApp {
+		return nil
+	}
+	return app
 }
 
 // checkGoDecodedDependents is E8019 `DependentType` where gen/go's data loader cannot read a dependent value of a class it decodes (the plan's Decoded; CODEGEN.md §5.6; log-2026-09-25 "gen/go review round 1 calls").
@@ -50,33 +102,31 @@ func (s *stage) checkGoDecodedDependents(u *unit, es *emitSite) {
 	pl := PlanGoNames(u.p, es.e)
 	for _, class := range packageClasses(u.p) {
 		if pl.Decoded(class) {
-			s.reportDecodedDependents(u, es, class, goDependents)
+			s.reportDecodedDependents(u, es, class, goDiscRead)
 		}
 	}
 }
 
-// checkCppDependents is E8019 `DependentType` where gen/cpp refuses a dependent type: one every arm of which is Never, one with a branch into a load.defines table (its refStorage), and what its loader, which decodes every class, cannot read (CODEGEN.md §4.4, §5.6, §5.8).
+// checkCppDependents is E8019 `DependentType` where gen/cpp refuses a dependent type: one with a branch into a load.defines table (its refStorage), and what its loader, which decodes every class, cannot read (CODEGEN.md §5.6, §5.8).
 func (s *stage) checkCppDependents(u *unit, es *emitSite) {
 	for _, t := range u.p.Types {
-		if d, ok := t.(*Dependent); ok && cppRefusesDependent(d) {
+		if d, ok := t.(*Dependent); ok && slices.ContainsFunc(d.Branches, func(b *Branch) bool { return DefinesRef(b.Type) }) {
 			u.reportGenConstruct(es, s.decls[d].span(), diag.KindDependentType)
 		}
 	}
 	for _, class := range packageClasses(u.p) {
-		s.reportDecodedDependents(u, es, class, cppDependents)
+		s.reportDecodedDependents(u, es, class, cppDiscRead)
 	}
 }
 
-// cppRefusesDependent reports a dependent type gen/cpp does not write: every arm Never (dependentNoBranch), or a branch into a load.defines table (refStorage).
-func cppRefusesDependent(d *Dependent) bool {
-	return len(d.Branches) == 0 || slices.ContainsFunc(d.Branches, func(b *Branch) bool { return definesRef(b.Type) })
-}
+// discReader reports that a loader reads app's discriminant from fields, those of a class of package own.
+type discReader func(own string, fields []*Field, app *TypeRef) bool
 
-// reportDecodedDependents is `DependentType` at each field and stored fn of class whose dependent value r's loader cannot read; a map is MapField's.
-func (s *stage) reportDecodedDependents(u *unit, es *emitSite, class any, r dependentReader) {
+// reportDecodedDependents is `DependentType` at each field and stored fn of class whose dependent value the loader cannot read; a map is MapField's.
+func (s *stage) reportDecodedDependents(u *unit, es *emitSite, class any, reads discReader) {
 	fields, fns := classBody(class)
 	for _, f := range fields {
-		if f.Input == nil && (!f.Optional || f.Type.Kind != types.Never) && !r.readsField(u.p.Name, fields, f) {
+		if f.Input == nil && (!f.Optional || f.Type.Kind != types.Never) && !readsField(u.p.Name, fields, f, reads) {
 			u.reportGenConstruct(es, s.itemSpan(f, source.Span{}), diag.KindDependentType)
 		}
 	}
@@ -87,73 +137,63 @@ func (s *stage) reportDecodedDependents(u *unit, es *emitSite, class any, r depe
 	}
 }
 
-// readsField reports that the loader reads field f of fields: no dependent type in it, or one application it holds whose discriminant it reads; a pairs field's slots are read without one.
-func (r dependentReader) readsField(own string, fields []*Field, f *Field) bool {
+// readsField reports that the loader reads field f of fields: no dependent type in it, or one application it holds, itself or through lists, whose discriminant it reads; a pairs field's slots are read without one.
+func readsField(own string, fields []*Field, f *Field, reads discReader) bool {
 	if f.Pairs != nil {
 		return !slices.ContainsFunc(readFieldSites(f, source.Span{}), func(site typeSite) bool { return unreadDependent(site.t) })
 	}
-	app := &f.Type
-	for r.throughLists && app.Kind == types.List && app.Elem != nil {
-		app = app.Elem
-	}
-	if app.Kind == types.TypeApp {
-		return r.disc(own, fields, app)
+	if app := HeldApp(f.Type); app != nil {
+		return reads(own, fields, app)
 	}
 	return !unreadDependent(&f.Type)
 }
 
 // unreadDependent reports a dependent type in t, a literal union's base included, that is not in a map (MapField's).
 func unreadDependent(t *TypeRef) bool {
-	return !decodedHolds(t, isMap) && typeHolds(t, func(t *TypeRef) bool { return t.Kind == types.TypeApp })
+	return !decodedHolds(t, isMap) && typeHolds(t, isApp)
 }
 
-// goDiscRead reports that gen/go reads app's discriminant: an own dependent type with an enum discriminant, argument the whole of one required earlier field of the class that is the discriminant itself (gen/go dependentDisc; its decoder is unexported, so another package's is refused). An input field is refused deliberately: the loader never decodes its slot (log-2026-09-25, E8019 lift round 2).
+// goDiscRead reports that gen/go reads app's discriminant: DiscFields finds it, of an own dependent type (its decoder is unexported, so another package's is refused).
 func goDiscRead(own string, fields []*Field, app *TypeRef) bool {
-	d, src := appSource(app)
-	if d == nil || d.Pkg != own || d.Disc.Kind != types.Enum || len(d.DiscPath) > 0 || src.From != types.ArgField || len(src.WirePath) != 1 {
-		return false
-	}
-	if _, ok := d.Disc.Named.(*Enum); !ok {
-		return false
-	}
-	i := slices.IndexFunc(fields, func(f *Field) bool { return slices.Equal(f.WirePath, src.WirePath) })
-	return i >= 0 && discField(fields[i], d)
+	d, ok := app.Named.(*Dependent)
+	return ok && d.Pkg == own && DiscFields(fields, *app) != nil
 }
 
-// cppDiscRead reports that gen/cpp reads app's discriminant: the argument's then the match's path, through earlier fields of the class and of records held by value, none optional, an input or a ref, ending at the discriminant (gen/cpp discExpr). An input field is refused deliberately, as for gen/go (log-2026-09-25, E8019 lift round 2).
+// cppDiscRead reports that gen/cpp reads app's discriminant: DiscFields finds it, of any package's dependent type (it calls that package's Decode<Alias>).
 func cppDiscRead(_ string, fields []*Field, app *TypeRef) bool {
-	d, src := appSource(app)
-	if d == nil || src.From != types.ArgField {
-		return false
+	return DiscFields(fields, *app) != nil
+}
+
+// DiscFields are the fields a loader, or a baked literal, reads from fields to app's discriminant, in order: the argument's then the match's wire path, through earlier fields of records held by value, none optional (check's E3806) or a ref (a WIRE.md §5.9 load-time resolution CODEGEN.md does not write), ending at a field of the discriminant's type; nil for any other argument, a record parameter's (§5.7) or a dependent map binder's (§4.2) included (TYPES.md §11.1, §11.2).
+func DiscFields(fields []*Field, app TypeRef) []*Field {
+	d, ok := app.Named.(*Dependent)
+	if !ok || d.Disc == nil || d.DiscParam < 0 || d.DiscParam >= len(app.Args) || app.Args[d.DiscParam] == nil {
+		return nil
+	}
+	src := app.Args[d.DiscParam]
+	if src.From != types.ArgField {
+		return nil
 	}
 	segs := slices.Concat(src.WirePath, d.DiscPath)
-	var last *Field
+	var out []*Field
 	for len(segs) > 0 {
 		f := fieldAtWire(fields, segs)
-		if f == nil || f.Optional || f.Input != nil || f.Type.Kind == types.Ref {
-			return false
+		if f == nil || f.Optional || f.Type.Kind == types.Ref {
+			return nil
 		}
-		segs, last = segs[len(f.WirePath):], f
+		segs, out = segs[len(f.WirePath):], append(out, f)
 		fields = nil
 		if rec, ok := f.Type.Named.(*Record); ok && f.Type.Kind == types.Record {
 			fields = rec.Fields
 		}
 	}
-	return last != nil && last.Type.Kind == d.Disc.Kind && last.Type.Named == d.Disc.Named
-}
-
-// appSource is the dependent type app applies and the source of its discriminant's argument; nil for a malformed application.
-func appSource(app *TypeRef) (*Dependent, *Source) {
-	d, ok := app.Named.(*Dependent)
-	if !ok || d.Disc == nil || d.DiscParam < 0 || d.DiscParam >= len(app.Args) || app.Args[d.DiscParam] == nil {
-		return nil, nil
+	if len(out) == 0 {
+		return nil
 	}
-	return d, app.Args[d.DiscParam]
-}
-
-// discField reports a field that holds d's discriminant as the loader has decoded it: required, not an input, of the discriminant's type.
-func discField(f *Field, d *Dependent) bool {
-	return !f.Optional && f.Input == nil && f.Type.Kind == d.Disc.Kind && f.Type.Named == d.Disc.Named
+	if last := out[len(out)-1]; last.Type.Kind != d.Disc.Kind || last.Type.Named != d.Disc.Named {
+		return nil
+	}
+	return out
 }
 
 // fieldAtWire is the field of fields whose wire path starts segs, or nil.

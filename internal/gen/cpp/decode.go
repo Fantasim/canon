@@ -126,8 +126,8 @@ func (g *gen) decodeField(f *ir.Field, fields []*ir.Field) {
 	if g.boxed[f] {
 		l.box = g.storage(f.Type)
 	}
-	if app, ok := heldDependent(f.Type); ok {
-		l.disc = g.discExpr(fields, app)
+	if app := ir.HeldApp(f.Type); app != nil { // its elements share the field's discriminant (CODEGEN.md §5.6)
+		l.disc = g.discExpr(fields, *app)
 	}
 	g.decodeKey(depth, obj, quote(f.WirePath[last]), l)
 	g.closePath(f, depth)

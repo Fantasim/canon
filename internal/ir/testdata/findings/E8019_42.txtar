@@ -1,4 +1,4 @@
-EVALUATION.md §1, CODEGEN.md §5.6, §5.7 (gen/go dependentArgFormat, gen/cpp dependentParam): a dependent field whose argument is a record parameter is DependentType at the field, in both loaders.
+EVALUATION.md §1, CODEGEN.md §5.6, §5.7 (ir.DiscFields; gen/go dependentDiscFormat, gen/cpp dependentBadPath): a dependent field whose argument is a record parameter, which the erased class never receives, is DependentType at the field, in both loaders.
 -- a/a.canon --
 package a
 

@@ -72,13 +72,16 @@ func (g *gen) mapStorage(t ir.TypeRef) string {
 	return fmt.Sprintf(flatMapFormat, g.storage(*t.Key), g.storage(*t.Elem))
 }
 
-// refuseUnion refuses the union being written: malformed when its first arm has no string wire form (check's E3002, TYPES.md §13.2), else not generated yet (a string-wired ref or dependent type, owed).
+// refuseUnion refuses the union being written: malformed when its first arm has no string wire form (check's E3002, TYPES.md §13.2) or is a dependent type (stage E's E8019 DependentType), else not generated yet (a string-wired ref, owed).
 func (g *gen) refuseUnion(t ir.TypeRef) {
-	if t.Elem == nil || !ir.StringWire(t.Elem) {
+	switch {
+	case t.Elem == nil || !ir.StringWire(t.Elem):
 		g.malformed(unionNonString, g.at)
-		return
+	case t.Elem.Kind == types.TypeApp:
+		g.malformed(unionDependent, g.at)
+	default:
+		g.unsupported(unionRef, g.at)
 	}
-	g.unsupported(unionRefOrDependent, g.at)
 }
 
 // unionStorage is a string-literal union's wire text: always a string (CODEGEN.md §4.1).

@@ -147,12 +147,8 @@ func (g *gen) slotLeaf(owner *body, s *slot) (leaf, []byte) {
 	l := leaf{t: s.T}
 	if f := s.src; s.fn == nil && f != nil {
 		l.unit, l.enc = f.Unit, f.Enc
-		if s.T.Kind == types.TypeApp {
-			expr, reason := g.dependentDisc(owner, s.T)
-			if reason != "" {
-				g.fail(newDetail(ErrUnsupported, g.at, reason, g.at))
-			}
-			l.disc = expr
+		if app := ir.HeldApp(s.T); app != nil { // its elements share the field's discriminant
+			l.disc = g.dependentDisc(owner, *app)
 		}
 		if f.Optional {
 			return l, f.NoneWire

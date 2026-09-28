@@ -76,14 +76,15 @@ func (pl *GoNamePlan) declareValues(top *nameScope) {
 // declareFns declares each package-level export fn in declaration order: a translated one's function, public and pure at once, and its names (CODEGEN.md §5.10); a stored one's function and the variable of its table (decision 183), which data mode has none of (E8013).
 func (pl *GoNamePlan) declareFns(top *nameScope) {
 	for _, fn := range pl.p.Fns {
+		origin := pl.fnOrigin(fn)
 		switch {
 		case fn.Kind == FnTranslated:
-			pl.declarePure(top, "", fn.Name, fn)
+			pl.declarePure(top, "", origin, fn)
 		case pl.data == nil:
 			f := pl.Finite(fn)
-			pl.declare(top, f.Name, fn.Name, fn)
-			pl.declare(top, f.Store, fn.Name, fn)
-			pl.declareParams(f.Store, fn.Name, fn)
+			pl.declare(top, f.Name, origin, fn)
+			pl.declare(top, f.Store, origin, fn)
+			pl.declareParams(f.Store, origin, fn)
 		}
 	}
 }

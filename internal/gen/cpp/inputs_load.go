@@ -4,6 +4,7 @@ import (
 	"embed"
 	"fmt"
 	"path"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -36,7 +37,7 @@ func (g *gen) loadInputs() {
 		return
 	}
 	names := g.inputNames
-	if len(names.Helpers) == 0 {
+	if !slices.Contains(names.Helpers, ir.CppEnvText) {
 		g.malformed(inputHelperUnknown, g.p.Name)
 		return
 	}
@@ -72,7 +73,7 @@ func (g *gen) loadInputs() {
 // inputBlock reads one variable: unset or empty is unset, a failure when the field is required (EVALUATION.md §11.3 step 1).
 func (g *gen) inputBlock(in inputField) {
 	env := in.f.Input.Env
-	g.c.linef(1, envTextFormat, g.inputNames.Helpers[0], quote(env))
+	g.c.linef(1, envTextFormat, ir.CppEnvText, quote(env))
 	g.inputChain(in, g.inputRead(in.f))
 	if !in.f.Optional {
 		g.c.linef(1, elseOpen)

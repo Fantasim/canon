@@ -1,0 +1,253 @@
+File: File FileKind=source @1:1-71:1
+  Doc: DocComment "Dependent types (TYPES §11, CODEGEN §5.6): a field whose type an earlier field chooses.\nGenerated code holds the union of the branches with a branch enum; baked Go writes each\nvalue in the branch its record selects, and the C++ loader picks the branch from the\ndiscriminant it has already read." @1:1-4:38
+  Package: QualifiedName features.dependent @5:9-5:27
+  Decls[0]: EnumDecl @8:1-8:48
+    Doc: DocComment "What a daily objective counts." @7:1-7:35
+    Name: Ident Goal @8:6-8:10
+    Members[0]: EnumMember @8:13-8:17
+      Name: Ident kill @8:13-8:17
+    Members[1]: EnumMember @8:19-8:26
+      Name: Ident collect @8:19-8:26
+    Members[2]: EnumMember @8:28-8:39
+      Name: Ident reach_level @8:28-8:39
+    Members[3]: EnumMember @8:41-8:46
+      Name: Ident visit @8:41-8:46
+  Decls[1]: TypeDecl @12:1-17:2
+    Doc: DocComment "What an objective aims at, by goal: a monster, a number of items, a level. Visiting a\nplace aims at nothing." @10:1-11:27
+    Name: Ident Target @12:6-12:12
+    Params[0]: Param @12:13-12:20
+      Name: Ident g @12:13-12:14
+      Type: NamedType @12:16-12:20
+        Name: QualifiedName Goal @12:16-12:20
+    Type: MatchType @12:24-17:2
+      Scrutinee: IdentExpr g @12:30-12:31
+      Arms[0]: TypeArm @13:3-13:22
+        Patterns[0]: Pattern @13:3-13:7
+          Name: QualifiedName kill @13:3-13:7
+        Type: NamedType @13:11-13:22
+          Name: QualifiedName String @13:11-13:17
+          Args: TypeArgs @13:17-13:22
+            Args[0]: RangeExpr Op=.. @13:18-13:21
+              Lo: IntLit Value=1 @13:18-13:19
+      Arms[1]: TypeArm @14:3-14:22
+        Patterns[0]: Pattern @14:3-14:10
+          Name: QualifiedName collect @14:3-14:10
+        Type: NamedType @14:14-14:22
+          Name: QualifiedName Int @14:14-14:17
+          Args: TypeArgs @14:17-14:22
+            Args[0]: RangeExpr Op=.. @14:18-14:21
+              Lo: IntLit Value=1 @14:18-14:19
+      Arms[2]: TypeArm @15:3-15:30
+        Patterns[0]: Pattern @15:3-15:14
+          Name: QualifiedName reach_level @15:3-15:14
+        Type: NamedType @15:18-15:30
+          Name: QualifiedName Int @15:18-15:21
+          Args: TypeArgs @15:21-15:30
+            Args[0]: RangeExpr Op=..= @15:22-15:29
+              Lo: IntLit Value=1 @15:22-15:23
+              Hi: IntLit Value=300 @15:26-15:29
+      Arms[3]: TypeArm @16:3-16:17
+        Patterns[0]: Pattern @16:3-16:8
+          Name: QualifiedName visit @16:3-16:8
+        Type: NamedType @16:12-16:17
+          Name: QualifiedName Never @16:12-16:17
+  Decls[2]: TypeDecl @20:1-23:2
+    Doc: DocComment "A reward: gold, or an item." @19:1-19:32
+    Name: Ident Reward @20:6-20:12
+    Params[0]: Param @20:13-20:23
+      Name: Ident item @20:13-20:17
+      Type: NamedType @20:19-20:23
+        Name: QualifiedName Bool @20:19-20:23
+    Type: MatchType @20:27-23:2
+      Scrutinee: IdentExpr item @20:33-20:37
+      Arms[0]: TypeArm @21:3-21:20
+        Patterns[0]: Pattern @21:3-21:8
+          Name: QualifiedName false @21:3-21:8
+        Type: NamedType @21:12-21:20
+          Name: QualifiedName Int @21:12-21:15
+          Args: TypeArgs @21:15-21:20
+            Args[0]: RangeExpr Op=.. @21:16-21:19
+              Lo: IntLit Value=1 @21:16-21:17
+      Arms[1]: TypeArm @22:3-22:22
+        Patterns[0]: Pattern @22:3-22:7
+          Name: QualifiedName true @22:3-22:7
+        Type: NamedType @22:11-22:22
+          Name: QualifiedName String @22:11-22:17
+          Args: TypeArgs @22:17-22:22
+            Args[0]: RangeExpr Op=.. @22:18-22:21
+              Lo: IntLit Value=1 @22:18-22:19
+  Decls[3]: RecordDecl @26:1-29:2
+    Doc: DocComment "Where an objective sends the player." @25:1-25:41
+    Name: Ident Place @26:8-26:13
+    Body: RecordBody @26:14-29:2
+      Items[0]: FieldDecl @28:3-28:14
+        Doc: DocComment "Whether rewards there are items." @27:3-27:39
+        Name: Ident items @28:3-28:8
+        Type: NamedType @28:10-28:14
+          Name: QualifiedName Bool @28:10-28:14
+  Decls[4]: RecordDecl @32:1-45:2
+    Doc: DocComment "A daily objective." @31:1-31:23
+    Name: Ident Objective @32:8-32:17
+    Body: RecordBody @32:18-45:2
+      Items[0]: FieldDecl @34:3-34:13
+        Doc: DocComment "What it counts." @33:3-33:22
+        Name: Ident goal @34:3-34:7
+        Type: NamedType @34:9-34:13
+          Name: QualifiedName Goal @34:9-34:13
+      Items[1]: FieldDecl @36:3-36:24
+        Doc: DocComment "What it aims at; none when the goal aims at nothing." @35:3-35:59
+        Name: Ident target @36:3-36:9
+        Type: OptionalType @36:11-36:24
+          Elem: NamedType @36:11-36:23
+            Name: QualifiedName Target @36:11-36:17
+            Args: TypeArgs @36:17-36:23
+              Args[0]: IdentExpr goal @36:18-36:22
+      Items[2]: FieldDecl @38:3-38:20
+        Doc: DocComment "Whether its rewards are items rather than gold." @37:3-37:54
+        Name: Ident itemRewards @38:3-38:14
+        Type: NamedType @38:16-38:20
+          Name: QualifiedName Bool @38:16-38:20
+      Items[3]: FieldDecl @40:3-40:33
+        Doc: DocComment "What completing it gives." @39:3-39:32
+        Name: Ident rewards @40:3-40:10
+        Type: ListType @40:12-40:33
+          Elem: NamedType @40:13-40:32
+            Name: QualifiedName Reward @40:13-40:19
+            Args: TypeArgs @40:19-40:32
+              Args[0]: IdentExpr itemRewards @40:20-40:31
+      Items[4]: FieldDecl @42:3-42:15
+        Doc: DocComment "Where it sends the player." @41:3-41:33
+        Name: Ident place @42:3-42:8
+        Type: NamedType @42:10-42:15
+          Name: QualifiedName Place @42:10-42:15
+      Items[5]: FieldDecl @44:3-44:29
+        Doc: DocComment "The reward for finding the place, chosen by the place." @43:3-43:61
+        Name: Ident bonus @44:3-44:8
+        Type: NamedType @44:10-44:29
+          Name: QualifiedName Reward @44:10-44:16
+          Args: TypeArgs @44:16-44:29
+            Args[0]: SelectorExpr @44:17-44:28
+              X: IdentExpr place @44:17-44:22
+              Name: Ident items @44:23-44:28
+  Decls[5]: LetDecl @48:1-66:2
+    Doc: DocComment "The daily objectives." @47:1-47:26
+    Name: Ident objectives @48:5-48:15
+    Type: TableType @48:17-48:32
+      Name: QualifiedName Objective @48:23-48:32
+    Value: BraceLit @48:35-66:2
+      Items[0]: EntryItem @49:3-56:4
+        Key: Ident slay @49:3-49:7
+        Value: BraceLit @49:8-56:4
+          Items[0]: FieldItem @50:5-50:15
+            Name: Ident goal @50:5-50:9
+            Value: IdentExpr kill @50:11-50:15
+          Items[1]: FieldItem @51:5-51:19
+            Name: Ident target @51:5-51:11
+            Value: StringLit @51:13-51:19
+              Parts[0]: text "wolf"
+          Items[2]: FieldItem @52:5-52:23
+            Name: Ident itemRewards @52:5-52:16
+            Value: BoolLit @52:18-52:23
+          Items[3]: FieldItem @53:5-53:23
+            Name: Ident rewards @53:5-53:12
+            Value: ListLit @53:14-53:23
+              Elems[0]: IntLit Value=100 @53:15-53:18
+              Elems[1]: IntLit Value=50 @53:20-53:22
+          Items[4]: FieldItem @54:5-54:27
+            Name: Ident place @54:5-54:10
+            Value: BraceLit @54:12-54:27
+              Items[0]: FieldItem @54:14-54:25
+                Name: Ident items @54:14-54:19
+                Value: BoolLit Value @54:21-54:25
+          Items[5]: FieldItem @55:5-55:17
+            Name: Ident bonus @55:5-55:10
+            Value: StringLit @55:12-55:17
+              Parts[0]: text "map"
+      Items[1]: EntryItem @57:3-64:4
+        Key: Ident gather @57:3-57:9
+        Value: BraceLit @57:10-64:4
+          Items[0]: FieldItem @58:5-58:18
+            Name: Ident goal @58:5-58:9
+            Value: IdentExpr collect @58:11-58:18
+          Items[1]: FieldItem @59:5-59:15
+            Name: Ident target @59:5-59:11
+            Value: IntLit Value=10 @59:13-59:15
+          Items[2]: FieldItem @60:5-60:22
+            Name: Ident itemRewards @60:5-60:16
+            Value: BoolLit Value @60:18-60:22
+          Items[3]: FieldItem @61:5-61:24
+            Name: Ident rewards @61:5-61:12
+            Value: ListLit @61:14-61:24
+              Elems[0]: StringLit @61:15-61:23
+                Parts[0]: text "potion"
+          Items[4]: FieldItem @62:5-62:28
+            Name: Ident place @62:5-62:10
+            Value: BraceLit @62:12-62:28
+              Items[0]: FieldItem @62:14-62:26
+                Name: Ident items @62:14-62:19
+                Value: BoolLit @62:21-62:26
+          Items[5]: FieldItem @63:5-63:13
+            Name: Ident bonus @63:5-63:10
+            Value: IntLit Value=5 @63:12-63:13
+      Items[2]: EntryItem @65:3-65:95
+        Key: Ident explore @65:3-65:10
+        Value: BraceLit @65:11-65:95
+          Items[0]: FieldItem @65:13-65:24
+            Name: Ident goal @65:13-65:17
+            Value: IdentExpr visit @65:19-65:24
+          Items[1]: FieldItem @65:26-65:44
+            Name: Ident itemRewards @65:26-65:37
+            Value: BoolLit @65:39-65:44
+          Items[2]: FieldItem @65:46-65:57
+            Name: Ident rewards @65:46-65:53
+            Value: ListLit @65:55-65:57
+          Items[3]: FieldItem @65:59-65:82
+            Name: Ident place @65:59-65:64
+            Value: BraceLit @65:66-65:82
+              Items[0]: FieldItem @65:68-65:80
+                Name: Ident items @65:68-65:73
+                Value: BoolLit @65:75-65:80
+          Items[4]: FieldItem @65:84-65:93
+            Name: Ident bonus @65:84-65:89
+            Value: IntLit Value=20 @65:91-65:93
+  Decls[6]: EmitDecl @68:1-68:62
+    Target: Ident go @68:6-68:8
+    Options: BraceLit @68:9-68:62
+      Items[0]: FieldItem @68:11-68:25
+        Name: Ident out @68:11-68:14
+        Value: StringLit @68:16-68:25
+          Parts[0]: text "out/go/"
+      Items[1]: FieldItem @68:27-68:47
+        Name: Ident package @68:27-68:34
+        Value: StringLit @68:36-68:47
+          Parts[0]: text "dependent"
+      Items[2]: FieldItem @68:49-68:60
+        Name: Ident mode @68:49-68:53
+        Value: IdentExpr baked @68:55-68:60
+  Decls[7]: EmitDecl @69:1-69:75
+    Target: Ident cpp @69:6-69:9
+    Options: BraceLit @69:10-69:75
+      Items[0]: FieldItem @69:12-69:27
+        Name: Ident out @69:12-69:15
+        Value: StringLit @69:17-69:27
+          Parts[0]: text "out/cpp/"
+      Items[1]: FieldItem @69:29-69:61
+        Name: Ident namespace @69:29-69:38
+        Value: StringLit @69:40-69:61
+          Parts[0]: text "features::dependent"
+      Items[2]: FieldItem @69:63-69:73
+        Name: Ident mode @69:63-69:67
+        Value: IdentExpr data @69:69-69:73
+  Decls[8]: EmitDecl @70:1-70:63
+    Target: Ident json @70:6-70:10
+    Options: BraceLit @70:11-70:63
+      Items[0]: FieldItem @70:13-70:39
+        Name: Ident out @70:13-70:16
+        Value: StringLit @70:18-70:39
+          Parts[0]: text "out/objectives.json"
+      Items[1]: FieldItem @70:41-70:61
+        Name: Ident values @70:41-70:47
+        Value: ListLit @70:49-70:61
+          Elems[0]: IdentExpr objectives @70:50-70:60
+== findings
+0 errors, 0 warnings in 1 package (…)
