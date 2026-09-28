@@ -255,7 +255,7 @@ func (c *checker) wrongArity(env *env, at syntax.Node, name string, params []*ty
 	for _, p := range params {
 		want = append(want, p.Type)
 	}
-	c.report(env, diag.E3806.At(env.span(at), name, int64(len(params)), want))
+	c.report(env, diag.E3806.AtArity(env.span(at), name, int64(len(params)), want))
 }
 
 // arityNode is where a wrong arity is reported: the arguments, or the bare name (TYPES.md §11.1).

@@ -267,7 +267,8 @@ E3803 argument: a type-function argument must be a path rooted at a parameter
 E3803 scrutinee: a type function must match on a path rooted at a parameter, of an enum or Bool type
 E3804 -: resource.vocab.items is not available on a dependent value (resource.vocab.items(*))
 E3805 -: field type may only use earlier fields: resource.vocab.items
-E3806 -: resource.vocab.items takes -42 arguments of types Int, String
+E3806 arity: resource.vocab.items takes -42 arguments of types Int, String
+E3806 param: type parameter resource.vocab.items must be a record, a ref, an enum or Bool, found Int
 E4001 -: a b is none
 E4002 index: index -42 out of range for length -42
 E4002 key: no key "II_SYS_SYS_SCR_FARM3" in resource.vocab.items

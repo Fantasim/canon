@@ -863,7 +863,8 @@ RES-07). Other packages then validate against that collection.
 
 - `record R(p: P, …) { … }` and `type F(p: P, …) = type` take **value** parameters. `P` is a
   record type, a `ref` type (DEP-05), an enum or `Bool` (the finite scrutinees of §11.2's
-  type-level `match`).
+  type-level `match`); a parameter of another type (`K?`, `Int`, …) is `E3806` at its
+  declaration.
 - The parameters are in scope in field types, defaults and checks of `R`, and in the body of
   `F`.
 - `R(args)` and `F(args)` need exactly the declared number of arguments, each checked against
@@ -899,8 +900,10 @@ with parameters erased: a field whose type mentions a parameter has the static t
 
 ### 11.4 Static view of dependent values (DEP-01)
 
-A field or value whose declared type is a type application `F(args)` (or contains one) has the
-static type `DepUnion(F)`, printed `F(*)`. It supports only:
+A field or value whose declared type is an application `F(args)` of a `match`-bodied type
+function (or contains one) has the static type `DepUnion(F)`, printed `F(*)`. An application of
+any other type function is its expansion, like an alias (§13.1): `SK(k)` with `type SK(k: K) =
+P(k) | "none"` is `P(*) | "none"`. A `DepUnion` supports only:
 
 - `==` and `!=` with the same `DepUnion` or with `none`, and flow narrowing on `!= none`;
 - interpolation and `String(x)`;
@@ -1056,7 +1059,7 @@ only be passed on. Its text form is `(a, b)` (STDLIB.md).
 - A string literal equal to one of the literals is that literal, even if `A` would also accept
   it (TYP-09: "the literal wins").
 - Operations: `==` / `!=` with a string literal of the union or with an `A`, interpolation,
-  `String(x)`.
+  `String(x)`. The list is exhaustive: `==` between two values of the union is `E3007`.
 
 ### 13.3 `Range` (TYP-12)
 

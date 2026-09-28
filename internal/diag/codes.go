@@ -1614,7 +1614,8 @@ var Registry = []Def{
 	{
 		Code: "E3806", Severity: Error, Package: "check",
 		Variants: []Variant{
-			{Args: []Arg{{Name: "fn", Type: ArgTypeName}, {Name: "n", Type: ArgTypeInt}, {Name: "types", Type: ArgTypeTypes}}, Template: "{fn} takes {n} arguments of types {types}"},
+			{Name: "arity", Args: []Arg{{Name: "fn", Type: ArgTypeName}, {Name: "n", Type: ArgTypeInt}, {Name: "types", Type: ArgTypeTypes}}, Template: "{fn} takes {n} arguments of types {types}"},
+			{Name: "param", Args: []Arg{{Name: "name", Type: ArgTypeName}, {Name: "typ", Type: ArgTypeType}}, Template: "type parameter {name} must be a record, a ref, an enum or Bool, found {typ}"},
 		},
 	},
 	{
@@ -5203,7 +5204,7 @@ func (codeE3805) At(span source.Span, field string) *Builder {
 	return newBuilder(&Registry[188], 0, span, field)
 }
 
-// E3806: wrong number or types of arguments to a parameterized type (TYPES.md §11.1).
+// E3806: wrong number or types of arguments to a parameterized type, or a parameter of another kind (TYPES.md §11.1).
 var E3806 codeE3806
 
 type codeE3806 struct{}
@@ -5211,9 +5212,14 @@ type codeE3806 struct{}
 // Def is the registry entry of E3806.
 func (codeE3806) Def() *Def { return &Registry[189] }
 
-// At reports: {fn} takes {n} arguments of types {types}
-func (codeE3806) At(span source.Span, fn string, n int64, types []TypeArg) *Builder {
+// AtArity reports: {fn} takes {n} arguments of types {types}
+func (codeE3806) AtArity(span source.Span, fn string, n int64, types []TypeArg) *Builder {
 	return newBuilder(&Registry[189], 0, span, fn, n, types)
+}
+
+// AtParam reports: type parameter {name} must be a record, a ref, an enum or Bool, found {typ}
+func (codeE3806) AtParam(span source.Span, name string, typ TypeArg) *Builder {
+	return newBuilder(&Registry[189], 1, span, name, typ)
 }
 
 // E4001: postfix `!` on `none` (the rule: TYPES.md §6.5) (EVALUATION.md §7.1).

@@ -350,7 +350,7 @@ func (codeE2103) AtSeveral(span source.Span, typ string, colls []string) *Builde
 
 ---
 
-The catalogue holds 300 codes: 279 errors, 18 warnings and 3 run-time codes, with 459 messages.
+The catalogue holds 300 codes: 279 errors, 18 warnings and 3 run-time codes, with 460 messages.
 
 ## E10xx, W10xx: Project file, doc comments and naming
 
@@ -792,7 +792,7 @@ Owner: TYPES.md, WIRE.md.
 | E3803 | error | check | TYPES.md §11.2 | a type-function argument or scrutinee that is not a path rooted at a parameter |
 | E3804 | error | check | TYPES.md §11.4 | an operation not available on a dependent value |
 | E3805 | error | check | TYPES.md §11.1 | a field type that uses a later field |
-| E3806 | error | check | TYPES.md §11.1 | wrong number or types of arguments to a parameterized type |
+| E3806 | error | check | TYPES.md §11.1 | wrong number or types of arguments to a parameterized type, or a parameter of another kind |
 
 | Code | Variant | Args | Template |
 |---|---|---|---|
@@ -901,7 +901,8 @@ Owner: TYPES.md, WIRE.md.
 | E3803 | scrutinee | - | `a type function must match on a path rooted at a parameter, of an enum or Bool type` |
 | E3804 | - | op:Name, fn:Name | `{op} is not available on a dependent value ({fn}(*))` |
 | E3805 | - | field:Name | `field type may only use earlier fields: {field}` |
-| E3806 | - | fn:Name, n:Int, types:Types | `{fn} takes {n} arguments of types {types}` |
+| E3806 | arity | fn:Name, n:Int, types:Types | `{fn} takes {n} arguments of types {types}` |
+| E3806 | param | name:Name, typ:Type | `type parameter {name} must be a record, a ref, an enum or Bool, found {typ}` |
 
 ## E4xxx: Evaluation and the standard library
 
