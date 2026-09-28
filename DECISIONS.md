@@ -1903,6 +1903,16 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      The model's `findings` are those of phases 1–7. Magic names are typed (VIEWMODEL §3.4). TS
      data mode moves from M3 to M6. Reason: M3 scoping (log-2026-09-28).
 
+222. **Refs into `load.defines` tables are written in Go and C++ (lifts 180; amends 194).** CODEGEN
+     §5.8 now names the per-emit define table (Go `defines<Table>`, C++ `detail::k<Table>Defines`,
+     sorted, binary search, generated names under §3.5), the value getters for `ref D`, `ref D?` and
+     `[ref D]`, and the load error for a key missing from the table; baked emits write the value.
+     Stage E no longer refuses a ref into a define table for baked Go; a define table or record
+     itself stays E8012/E8151 where canon-fp or the target cannot represent it (126, 194). `types`
+     mode: an `input` field is E8019 `InputField` (types mode has no `LoadInputs`, CODEGEN §2.2).
+     Reason: M3 acceptance 6 (`events` refs a define table) and examples `game.items`,
+     `features.legacycpp` check clean but could not be built.
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.

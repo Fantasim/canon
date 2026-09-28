@@ -843,6 +843,24 @@ compiled into it), so every Go and C++ emit carries a baked, sorted `(name, valu
 defines its refs use, and loaders resolve the value when they read the key. A key missing from
 that table (data built with a newer header than the binary) is a load error.
 
+- **The table.** One per define table the emit's refs use, named from the table's `let`
+  (`UpperCamel(let)`, [§3.3](#33-names-of-generated-items)): Go an unexported package variable
+  `defines<Table>` of `[]struct{ name string; value int64 }`; C++ `detail::k<Table>Defines`, a
+  `constexpr std::array<std::pair<std::string_view, int64_t>, N>`. Entries are sorted by the
+  define name's bytes and looked up by binary search. The names join the package's generated
+  names ([§3.5](#35-overrides-and-collisions)): a colliding user name is `E8005`. A baked emit
+  writes the value next to the key and needs no lookup at run time.
+- **Getters.** For `f: ref D` (D a define table): the key getter as above (`String`), plus the
+  value getter — Go `FValue() int64`, C++ `int64_t GetFValue() const`. For `ref D?`: Go
+  `FValue() (int64, bool)`, C++ `std::optional<int64_t> GetFValue() const`. For `[ref D]`: Go
+  `FValues() rt.List[int64]`, C++ `const std::vector<int64_t>& GetFValues() const`, in the list's
+  order. Refs to defines inside maps and nested lists are keys only (as every ref there).
+- **Loading** (data, embedded and types modes). The loader looks the key up when it reads it and
+  stores the value; a key missing from the table is the load error
+  `<pointer>: define <name> is not in this program's <Table> table` (its text is part of this
+  document, like every loader text). Go and C++ read the same keys, accept and refuse the same
+  data, and report the same texts.
+
 ### 5.9 Values: containers and accessors
 
 For each emitted value `v` of type `X`, the **container** is:

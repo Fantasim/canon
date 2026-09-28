@@ -97,6 +97,7 @@ const (
 	KindImport
 	KindImportAlias
 	KindInlineFoldedKey
+	KindInputField
 	KindInteger
 	KindLayer
 	KindLet
@@ -213,6 +214,7 @@ var kindNames = [...]string{
 	"Import",
 	"ImportAlias",
 	"InlineFoldedKey",
+	"InputField",
 	"Integer",
 	"Layer",
 	"Let",
@@ -309,6 +311,7 @@ var kindWords = [...]string{
 	"import",
 	"import alias",
 	"an inline variant key equal to a parent key but for letter case",
+	"an `input` field in a `types`-mode emit",
 	"an integer",
 	"layer",
 	"let",

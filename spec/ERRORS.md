@@ -130,6 +130,7 @@ wording is a variant, and a closed set of words is a `Kind`.
 | `Import` | import | `E1133` |
 | `ImportAlias` | import alias | `W1003`, `E1125` |
 | `InlineFoldedKey` | an inline variant key equal to a parent key but for letter case | `E8019` |
+| `InputField` | an `input` field in a `types`-mode emit | `E8019` |
 | `Integer` | an integer | `E1119`, `E7110` |
 | `Layer` | layer | `E1125` |
 | `Let` | let | `W1003`, `E1125`, `E1133` |
