@@ -1,0 +1,44 @@
+VIEWMODEL.md G16, EVALUATION.md §1 row 4: a view field's `unit:` naming no entry of the studio's
+evaluated `units` is E1610, reported by canon check through CheckUnits.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  studio: studio
+}
+-- studio/studio.canon --
+/// Studio.
+package studio
+
+/// A unit.
+record UnitSpec {
+  /// Suffix.
+  suffix: String = ""
+}
+
+/// Units.
+let units: table UnitSpec = {
+  hp { suffix: " HP" }
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// An item.
+record Item {
+  /// Its hp.
+  hp: Int
+}
+
+/// One.
+let item: Item = { hp: 1 }
+
+view Item {
+  hp { unit: bogus }
+}
+-- select --
+a
+-- findings.txt --
+error[E1610]  a/a.canon:14:14
+  unknown unit bogus: not declared in studio package studio
+
+1 error, 0 warnings in 1 package (…)

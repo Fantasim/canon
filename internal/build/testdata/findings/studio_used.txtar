@@ -1,0 +1,33 @@
+DECISIONS 227: a selection with a view loads project.studio as an import, so a broken studio's
+own finding is reported and blocks the build (DECISIONS 196).
+-- project.canon --
+project acme {
+  canon: "0.1"
+  studio: studio
+}
+-- studio/studio.canon --
+/// Studio.
+package studio
+
+/// Bad.
+const Bad = 1 + "x"
+-- withview/withview.canon --
+/// A thing.
+package withview
+
+/// An item.
+record Item {
+  /// Its name.
+  name: String
+}
+
+view Item {
+  title "{name}"
+}
+-- select --
+withview
+-- findings.txt --
+error[E3007]  studio/studio.canon:5:13
+  operator + is not defined for Int and String
+
+1 error, 0 warnings in 1 package (…)

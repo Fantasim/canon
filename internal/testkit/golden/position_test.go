@@ -86,7 +86,7 @@ func runPositionCase(t *testing.T, root string, c positionCase) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	f := onlyFinding(t, checked.Findings)
+	f := onlyFinding(t, withoutBaseline(checked.Findings))
 	want := fmt.Sprintf("%s %s:%d:%d %s", c.code, dataDisplay, c.line, c.col, c.pointer)
 	got := fmt.Sprintf("%s %s:%d:%d %s", f.Code, f.File, f.Line, f.Col, f.Pointer)
 	if got != want {
@@ -109,6 +109,28 @@ func mutateJSON(t *testing.T, proj, old, mu string) {
 	if err := os.WriteFile(path, mutated, filePerm); err != nil {
 		t.Fatal(err)
 	}
+}
+
+// pipelineW1701 is pipeline's own baseline W1701 (I18N.md W1: no fr translation), unrelated to
+// any mutation here since M3's i18n wiring (DECISIONS 221): its exact position, from
+// examples/pipeline/expected/findings.txt.
+var pipelineW1701 = struct {
+	path      string
+	line, col int
+}{"pipeline/potion.canon", 7, 1}
+
+// withoutBaseline drops pipelineW1701 by its exact position, not by code alone, like progen's
+// own baseline matching (internal/testkit/progen/baseline_test.go's corpus.baselineOf).
+func withoutBaseline(findings []canon.Finding) []canon.Finding {
+	code := string(diag.W1701.Def().Code)
+	out := make([]canon.Finding, 0, len(findings))
+	for _, f := range findings {
+		if f.Code == code && f.File == pipelineW1701.path && f.Line == pipelineW1701.line && f.Col == pipelineW1701.col {
+			continue
+		}
+		out = append(out, f)
+	}
+	return out
 }
 
 // onlyFinding fails unless findings holds exactly one finding, and returns it.

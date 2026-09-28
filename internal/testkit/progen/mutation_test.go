@@ -97,11 +97,12 @@ func runOperator(t *testing.T, c *corpus, o operator, k int) {
 		fail(t, "%s seed %d: %v", o.name(), seed, err)
 		return
 	}
-	v := judge(o, p.run, m.At, m.Project)
+	base := c.baselineOf(p.run.pkgs)
+	v := judge(o, p.run, m.At, m.Project, base)
 	if v.Kind == "" || reported(t, suiteMutation, o.name(), seed, v) {
 		return
 	}
-	report(t, shrinkMutation(failure{o: o, run: p.run, m: m, v: v, k: k, seed: seed}), v)
+	report(t, shrinkMutation(failure{o: o, run: p.run, m: m, v: v, k: k, seed: seed, base: base}), v)
 }
 
 // verdict is how a case failed its property: Kind is the kind of failure ("" for none), Sig its
@@ -111,9 +112,10 @@ type verdict struct {
 	Kind, Sig, Text, Detail string
 }
 
-// judge runs the mutated project and compares its findings with the one o expects at the site.
-func judge(o operator, r run, at progen.Place, p *progen.Project) verdict {
-	return sorted(o, r, at, p).verdict(o.code, at.Region)
+// judge runs the mutated project and compares its findings with the one o expects at the site;
+// base is the run's packages' own unmutated findings (DECISIONS 200), neither hit nor extra.
+func judge(o operator, r run, at progen.Place, p *progen.Project, base map[baselineKey]bool) verdict {
+	return sorted(o, r, at, p, base).verdict(o.code, at.Region)
 }
 
 // judged is a mutated project's outcome, its findings sorted: hit, the operator's code at the
@@ -124,7 +126,7 @@ type judged struct {
 }
 
 // sorted runs the mutated project and sorts its findings against the one o expects at the site.
-func sorted(o operator, r run, at progen.Place, p *progen.Project) judged {
+func sorted(o operator, r run, at progen.Place, p *progen.Project, base map[baselineKey]bool) judged {
 	j := judged{out: progen.Run(context.Background(), p, progen.RunOptions{
 		Packages: r.pkgs, Roots: exampleRoots(), Layers: r.layers, Build: o.build, Targets: goAndJSON,
 	})}
@@ -133,6 +135,8 @@ func sorted(o operator, r run, at progen.Place, p *progen.Project) judged {
 		switch {
 		case f.Code == o.code && inside:
 			j.hit = append(j.hit, f)
+		case base[keyOf(f)]:
+			// the run's own unmutated finding, same code and position: neither hit nor extra.
 		case !inside || !slices.Contains(o.also, f.Code):
 			j.other = append(j.other, f)
 		}
@@ -191,8 +195,8 @@ func describe(fs []progen.Finding) string {
 	return "[" + strings.Join(parts, "; ") + "]"
 }
 
-// failure is a mutation case that failed: its operator, run, mutated project, verdict, number
-// and seed.
+// failure is a mutation case that failed: its operator, run, mutated project, verdict, number,
+// seed and the run's baseline (DECISIONS 200).
 type failure struct {
 	o    operator
 	run  run
@@ -200,6 +204,7 @@ type failure struct {
 	v    verdict
 	k    int
 	seed uint64
+	base map[baselineKey]bool
 }
 
 // shrinkMutation shrinks a failing mutation, keeping every region and file the site wrote, the
@@ -207,18 +212,18 @@ type failure struct {
 // is never born with the archive. A case born missing or broken keeps its site's precondition.
 func shrinkMutation(f failure) *progen.Counterexample {
 	pins := append([]progen.Place{f.m.At}, f.m.Written...)
-	base := reportedBy(sorted(f.o, f.run, f.m.At, f.m.Project).out.Findings)
+	base := reportedBy(sorted(f.o, f.run, f.m.At, f.m.Project, f.base).out.Findings)
 	placed := f.v.Kind == kindMissing || slices.Contains(crashKinds, f.v.Kind)
 	small, pins := shrinkProject(f.m.Project, pins, func(q *progen.Project, pins []progen.Place) bool {
 		heartbeat()
-		j := sorted(f.o, f.run, pins[0], q)
+		j := sorted(f.o, f.run, pins[0], q, f.base)
 		if j.verdict(f.o.code, pins[0].Region).Sig != f.v.Sig || !base.covers(j.other) {
 			return false
 		}
 		return !placed || stillPlaced(f, q, pins[1:])
 	}, shrinkTries)
 	at := pins[0]
-	v := judge(f.o, f.run, at, small)
+	v := judge(f.o, f.run, at, small, f.base)
 	return &progen.Counterexample{
 		Suite: suiteMutation, Name: f.o.name(), Case: f.k, Seed: f.seed, Sig: v.Sig,
 		Packages: f.run.pkgs, Layers: f.run.layers, Want: wantOf(f.o, at), Note: v.Text, Files: small,
@@ -283,9 +288,10 @@ func subset(p *progen.Project, names []string, keep []bool) *progen.Project {
 	return q
 }
 
-// replayMutation re-runs a kept mutation counterexample with its catalogue operator; Kind ""
-// when the bug it was born with is gone, or, with no born line yet, when it passes.
-func replayMutation(c *progen.Counterexample) verdict {
+// replayMutation re-runs a kept mutation counterexample with its catalogue operator, against
+// corp's baseline for its packages (DECISIONS 200); Kind "" when the bug it was born with is
+// gone, or, with no born line yet, when it passes.
+func replayMutation(c *progen.Counterexample, corp *corpus) verdict {
 	f := strings.Fields(c.Want)
 	if len(f) != wantFields {
 		return verdict{Kind: kindMalformed, Text: "malformed want " + c.Want}
@@ -300,7 +306,7 @@ func replayMutation(c *progen.Counterexample) verdict {
 		o = catalogue()[i]
 	}
 	at := progen.Place{Path: f[1], Region: progen.Region{Start: start, End: end}}
-	j := sorted(o, run{pkgs: c.Packages, layers: c.Layers}, at, c.Files)
+	j := sorted(o, run{pkgs: c.Packages, layers: c.Layers}, at, c.Files, corp.baselineOf(c.Packages))
 	if c.Born == "" {
 		return j.verdict(o.code, at.Region)
 	}

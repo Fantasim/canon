@@ -53,11 +53,12 @@ func rekeep(t *testing.T, c *corpus, p string, arch *progen.Counterexample) {
 	if !sameSite(arch, m) {
 		t.Skip("the seed no longer picks the archived site")
 	}
-	v := judge(o, pl.run, m.At, m.Project)
+	base := c.baselineOf(pl.run.pkgs)
+	v := judge(o, pl.run, m.At, m.Project, base)
 	if v.Kind == "" || slices.Contains(crashKinds, v.Kind) || !strings.HasPrefix(arch.Born, classMismatch) {
 		t.Skipf("born %q; the unshrunk case now: %q", arch.Born, v.Sig)
 	}
-	small := shrinkMutation(failure{o: o, run: pl.run, m: m, v: v, k: arch.Case, seed: arch.Seed})
+	small := shrinkMutation(failure{o: o, run: pl.run, m: m, v: v, k: arch.Case, seed: arch.Seed, base: base})
 	small.Open, small.Born = arch.Open, bornOf(suiteMutation, small.Sig)
 	t.Logf("born %q, was %q", small.Born, arch.Born)
 	writeArchive(t, p, small)

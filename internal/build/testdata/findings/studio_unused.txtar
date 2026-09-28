@@ -1,0 +1,24 @@
+DECISIONS 227: the studio is loaded, checked and treated as an import only when a loaded
+package declares a view, a @menu or an emit view; a selection that uses none of those never
+loads it, so a broken studio never blocks it.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  studio: studio
+}
+-- studio/studio.canon --
+/// Studio.
+package studio
+
+/// Bad.
+const Bad = 1 + "x"
+-- noview/noview.canon --
+/// No view here.
+package noview
+
+/// N.
+const N = 1
+-- select --
+noview
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

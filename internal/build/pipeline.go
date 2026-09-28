@@ -9,12 +9,15 @@ import (
 	"github.com/fantasim/canonlang/internal/conform"
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/eval"
+	"github.com/fantasim/canonlang/internal/i18n"
 	"github.com/fantasim/canonlang/internal/ir"
 	"github.com/fantasim/canonlang/internal/load"
 	"github.com/fantasim/canonlang/internal/lock"
 	"github.com/fantasim/canonlang/internal/project"
 	"github.com/fantasim/canonlang/internal/rules"
+	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/verify"
+	viewrules "github.com/fantasim/canonlang/internal/views/rules"
 )
 
 // run is one pass of phases 1 to 7 over a snapshot (EVALUATION.md §1).
@@ -49,7 +52,7 @@ func (p *Project) prepare(ctx context.Context, selectors []string) (*run, error)
 	if err != nil {
 		return nil, err
 	}
-	loaded := imported(s.units, selected)
+	loaded := withStudio(s.units, imported(s.units, selected), s.proj.Studio.Path)
 	if err := p.checkLayers(s, loaded); err != nil {
 		return nil, err
 	}
@@ -94,7 +97,27 @@ func (r *run) check(ctx context.Context) error {
 	}
 	r.opt = opt
 	r.dirConflicts()
+	r.checkViews(ctx)
 	return nil
+}
+
+// checkViews runs phase 2's static view and translation checks (EVALUATION.md §1 row 2, DECISIONS 221).
+func (r *run) checkViews(ctx context.Context) {
+	ev := r.emitsView()
+	studio := r.s.proj.Studio.Path
+	viewrules.Check(ctx, r.prog, r.bags, studio, ev)
+	i18n.Check(r.prog, r.s.proj, r.bags, ev)
+}
+
+// emitsView is the selected packages that declare `emit view` (I18N.md W1, VIEWMODEL.md N4).
+func (r *run) emitsView() map[string]bool {
+	out := map[string]bool{}
+	for _, cp := range r.prog.Packages {
+		if r.selects(cp.Path) && hasEmitView(cp.Files) {
+			out[cp.Path] = true
+		}
+	}
+	return out
 }
 
 // newHost is the run's host and evaluator, reporting into bags: stage A's, or canon test's.
@@ -141,7 +164,21 @@ func (r *run) stageB(ctx context.Context) error {
 	if err := r.verifyCodes(); err != nil {
 		return err
 	}
-	return r.compareLocks(ctx)
+	if err := r.compareLocks(ctx); err != nil {
+		return err
+	}
+	r.checkUnits(ctx)
+	return nil
+}
+
+// checkUnits reports an unknown unit name against the studio's evaluated `units` (EVALUATION.md §1 row 4, VIEWMODEL.md G16).
+func (r *run) checkUnits(ctx context.Context) {
+	studio := r.s.proj.Studio.Path
+	if studio == "" {
+		return
+	}
+	units, _ := r.ev.Force(ctx, eval.Root{Pkg: studio, Name: syntax.StudioUnits})
+	viewrules.CheckUnits(ctx, r.prog, r.bags, studio, units)
 }
 
 // verifyCodes checks every @codes enum of every loaded package once (TYPES.md §8.1).

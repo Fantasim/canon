@@ -4,10 +4,10 @@ case 192
 seed 4294967489
 open gen
 born mismatch extra E8019
-sig extra E8009/missing, E8019
+sig extra E8009/missing, E8019, W1640
 packages pipeline
 want E7114 pipeline/data/II_POT_HEAL_L.json 12 17 check
-failure extra [E8019 pipeline/potion.canon:15:3 "emit go in data mode cannot generate a table field"; E8009 pipeline/potion.canon:20:6 "emit json is missing out"] besides [E7114 pipeline/data/II_POT_HEAL_L.json:1:13 "\"a b\" is not a valid table key (an identifier)"]
+failure extra [E8019 pipeline/potion.canon:15:3 "emit go in data mode cannot generate a table field"; W1640 pipeline/potion.canon:17:5 "value potions has no menu: the studio lists it under \"No menu\""; E8009 pipeline/potion.canon:20:6 "emit json is missing out"] besides [E7114 pipeline/data/II_POT_HEAL_L.json:1:13 "\"a b\" is not a valid table key (an identifier)"]
 -- pipeline/data/II_POT_HEAL_L.json --
 {"zzSubs": {"a b": {"n": 1}},
   "dwID": "II_POT_HEAL_L",

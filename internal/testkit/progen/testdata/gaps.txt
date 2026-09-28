@@ -3,5 +3,45 @@
 # that is neither here nor in the catalogue, and on a line whose code got an operator or is no
 # longer reachable. One line per code: CODE reason.
 E1003 the harness opens a project; E1003 is the search for project.canon failing (CLI.md §2.1), which Run never does
+E1601 VIEWMODEL.md C40/§4.5: views' own testdata/findings/E1601_1.txtar proves it; DECISIONS 221 gives it to views, not check
+E1602 VIEWMODEL.md G8: views' own testdata/findings/E1602_1.txtar proves it; DECISIONS 221 gives it to views, not check
+E1603 VIEWMODEL.md G4: views' own testdata/findings/E1603_1.txtar proves it; DECISIONS 221 gives it to views, not check
+E1605 VIEWMODEL.md G9: views' own testdata/findings/E1605_*.txtar proves it; DECISIONS 221 gives it to views, not check
+E1606 VIEWMODEL.md §3.3/VIEW-09: views' own testdata/findings/E1606_*.txtar proves it; DECISIONS 221 gives it to views, not check
+E1607 VIEWMODEL.md G5: views' own testdata/findings/E1607_*.txtar proves it; DECISIONS 221 gives it to views, not check
+E1608 VIEWMODEL.md G20: views' own testdata/findings/E1608_1.txtar proves it; DECISIONS 221 gives it to views, not check
+E1609 VIEWMODEL.md C40: views' own testdata/findings/E1609_1.txtar proves it; DECISIONS 221 gives it to views, not check
+E1610 VIEWMODEL.md G16: views' own testdata/findings/E1610_*.txtar proves it; DECISIONS 221 gives it to views, not check
+E1611 VIEWMODEL.md §3.5: views' own testdata/findings/E1611_1.txtar proves it; DECISIONS 221 gives it to views, not check
+E1612 VIEWMODEL.md G13: views' own testdata/findings/E1612_1.txtar proves it; DECISIONS 221 gives it to views, not check
+E1613 VIEWMODEL.md §3.5/§3.6: views' own testdata/findings/E1613_*.txtar proves it; DECISIONS 221 gives it to views, not check
+E1614 VIEWMODEL.md G10: views' own testdata/findings/E1614_*.txtar proves it; DECISIONS 221 gives it to views, not check
+E1615 VIEWMODEL.md G14: views' own testdata/findings/E1615_1.txtar proves it; DECISIONS 221 gives it to views, not check
+E1616 VIEWMODEL.md §3.3: views' own testdata/findings/E1616_1.txtar proves it; DECISIONS 221 gives it to views, not check
+E1617 VIEWMODEL.md G17: views' own testdata/findings/E1617_*.txtar proves it; DECISIONS 221 gives it to views, not check
+E1618 VIEWMODEL.md G17: views' own testdata/findings/E1618_1.txtar proves it; DECISIONS 221 gives it to views, not check
+E1619 VIEWMODEL.md §4.5: views' own testdata/findings/E1619_*.txtar proves it; DECISIONS 221 gives it to views, not check
+E1620 VIEWMODEL.md T14: views' own testdata/findings/E1620_1.txtar proves it; DECISIONS 221 gives it to views, not check
+E1621 VIEWMODEL.md T14: views' own testdata/findings/E1621_1.txtar proves it; DECISIONS 221 gives it to views, not check
+E1622 VIEWMODEL.md G13: views' own testdata/findings/E1622_1.txtar proves it; DECISIONS 221 gives it to views, not check
+E1623 VIEWMODEL.md §3.5: views' own testdata/findings/E1623_1.txtar proves it; DECISIONS 221 gives it to views, not check
+E1626 VIEWMODEL.md G6: views' own testdata/findings/E1626_*.txtar proves it; DECISIONS 221 gives it to views, not check
+E1627 VIEWMODEL.md G6: views' own testdata/findings/E1627_*.txtar proves it; DECISIONS 221 gives it to views, not check
+E1628 VIEWMODEL.md G8: views' own testdata/findings/E1628_1.txtar proves it; DECISIONS 221 gives it to views, not check
+E1629 VIEWMODEL.md G22: views' own testdata/findings/E1629_1.txtar proves it; DECISIONS 221 gives it to views, not check
+E1630 VIEWMODEL.md G22: views' own testdata/findings/E1630_1.txtar proves it; DECISIONS 221 gives it to views, not check
+E1631 VIEWMODEL.md G21: views' own testdata/findings/E1631_1.txtar proves it; DECISIONS 221 gives it to views, not check
+E1632 VIEWMODEL.md G23: views' own testdata/findings/E1632_1.txtar proves it; DECISIONS 221 gives it to views, not check
+E1634 VIEWMODEL.md G15: views' own testdata/findings/E1634_1.txtar proves it; DECISIONS 221 gives it to views, not check
+E1702 I18N.md F4: i18n's own testdata/findings/E1702_*.txtar proves it; DECISIONS 221 gives it to i18n, not check
+E1704 I18N.md F2: i18n's own testdata/findings/E1704_1.txtar proves it; DECISIONS 221 gives it to i18n, not check
+E1705 I18N.md F3: i18n's own testdata/findings/E1705_1.txtar proves it; DECISIONS 221 gives it to i18n, not check
+E1706 I18N.md F2: i18n's own testdata/findings/E1706_1.txtar proves it; DECISIONS 221 gives it to i18n, not check
+E1707 I18N.md F6: i18n's own testdata/findings/E1707_1.txtar proves it; DECISIONS 221 gives it to i18n, not check
 E8019 each E8019 construct is a generator gap; an operator would break once the generator implements it
+W1604 VIEWMODEL.md G11: views' own testdata/findings/W1604_1.txtar proves it; DECISIONS 221 gives it to views, not check
+W1640 VIEWMODEL.md N4: views' own testdata/findings/W1640_1.txtar proves it; no example's own findings.txt carries it (baseline_test.go's corpus.baselineOf finds none to match against there); DECISIONS 221 gives it to views, not check
+W1641 VIEWMODEL.md L15: views' own testdata/findings/W1641_1.txtar proves it; DECISIONS 221 gives it to views, not check
+W1642 VIEWMODEL.md L6: views' own testdata/findings/W1642_1.txtar proves it; DECISIONS 221 gives it to views, not check
+W1701 I18N.md W1-W4: i18n's own testdata/findings/W1701_*.txtar proves it, and 9 of the 25 examples' own findings.txt already carry it (e.g. pipeline, sovcommon.time; baseline_test.go's corpus.baselineOf matches each by exact position); DECISIONS 221 gives it to i18n, not check
 W6006 reported by canon lock check only (LOCK.md §8), which neither check nor build runs

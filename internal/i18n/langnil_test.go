@@ -1,6 +1,11 @@
 package i18n_test
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+
+	"github.com/fantasim/canonlang/internal/diag"
+)
 
 // I18N.md F2: a translation file whose language did not parse gets no E1704 on top of the
 // syntax error already reported for it.
@@ -10,7 +15,8 @@ translation
 
 foo "bar"
 `})
-	if out := c.render(t); out != "0 errors, 0 warnings in 1 package (…)\n" {
-		t.Errorf("a missing language should add nothing to the syntax error:\n%s", out)
+	want := fmt.Sprintf("error[%s]  nl/nl.canon:2:12\n  expected IDENT; found NL\n\n1 error, 0 warnings in 1 package (…)\n", diag.E1116.Def().Code)
+	if out := c.render(t); out != want {
+		t.Errorf("a missing language should add nothing beyond the syntax error:\n%s", out)
 	}
 }

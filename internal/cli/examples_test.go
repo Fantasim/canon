@@ -4,10 +4,9 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
-	"regexp"
 	"slices"
 	"strings"
 	"testing"
@@ -18,6 +17,13 @@ import (
 )
 
 const examplesDir = "../../examples"
+
+// expectedDir and findingsFile are exampleFindings' special names (IMPLEMENTATION-PLAN §7.1/§7.2).
+const (
+	expectedDir  = "expected"
+	findingsFile = "findings.txt"
+	fixturesDir  = "_fixtures"
+)
 
 // exampleRoots redirects every root of examples/project.canon (examples/_fixtures/README.md):
 // the read roots to their fixtures, the written ones to a new directory.
@@ -86,83 +92,63 @@ func TestExamplesParse(t *testing.T) {
 	}
 }
 
-// DECISIONS 173: the resource examples load through the evaluator and print their findings, W1701 aside.
-func TestResourceFindings(t *testing.T) {
-	for _, pkg := range []string{
-		"resource.adventurequest", "resource.events", "resource.farm",
-		"resource.heistia", "resource.rules", "resource.vocab",
-	} {
-		want, err := os.ReadFile(filepath.Join(examplesDir, filepath.FromSlash(strings.ReplaceAll(pkg, ".", "/")), "expected", "findings.txt"))
+// exampleFindings is the dot-joined name of every example with an expected/findings.txt, sorted (IMPLEMENTATION-PLAN §7.2).
+func exampleFindings(t *testing.T) []string {
+	t.Helper()
+	root, err := filepath.Abs(examplesDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var names []string
+	err = filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
-			t.Fatal(err)
+			return err
 		}
-		code, out := checkExample(t, pkg)
-		got := durations.ReplaceAllString(out, "(…)")
-		if wantClean := withoutW1701(string(want)); code != 0 || got != wantClean {
-			t.Errorf("%s: exit %d\n--- want\n%s--- got\n%s", pkg, code, wantClean, got)
+		if d.IsDir() && d.Name() == fixturesDir {
+			return fs.SkipDir
 		}
-	}
-}
-
-// M1 acceptance 2: `canon check teamboard` exits 0 and prints exactly its expected findings.
-func TestTeamboardFindings(t *testing.T) {
-	want, err := os.ReadFile(filepath.Join(examplesDir, "teamboard", "expected", "findings.txt"))
+		if !d.IsDir() && d.Name() == findingsFile && filepath.Base(filepath.Dir(path)) == expectedDir {
+			rel, relErr := filepath.Rel(root, filepath.Dir(filepath.Dir(path)))
+			if relErr != nil {
+				return relErr
+			}
+			names = append(names, strings.ReplaceAll(filepath.ToSlash(rel), "/", "."))
+		}
+		return nil
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	code, out := checkExample(t, "teamboard")
-	if got := durations.ReplaceAllString(out, "(…)"); code != 0 || got != string(want) {
-		t.Errorf("exit %d\n--- want\n%s--- got\n%s", code, want, got)
-	}
+	slices.Sort(names)
+	return names
 }
 
-// `canon check pipeline` exits 0 and prints exactly its expected findings, W1701 aside (i18n
-// status waits for M3), so a load or wire finding it now reaches fails here, not TestExamplesParse.
-func TestPipelineFindings(t *testing.T) {
-	want, err := os.ReadFile(filepath.Join(examplesDir, "pipeline", "expected", "findings.txt"))
-	if err != nil {
-		t.Fatal(err)
+// wantExitError is CLI.md §2.5's exit code 1: at least one error finding.
+const wantExitError = 1
+
+// wantExit is the exit code want's own summary line implies (CLI.md §2.5), not assumed clean.
+func wantExit(want string) int {
+	lines := strings.Split(strings.TrimSuffix(want, "\n"), "\n")
+	if n, _, _ := strings.Cut(lines[len(lines)-1], " "); n != "0" {
+		return wantExitError
 	}
-	code, out := checkExample(t, "pipeline")
-	got := durations.ReplaceAllString(out, "(…)")
-	if wantClean := withoutW1701(string(want)); code != 0 || got != wantClean {
-		t.Errorf("exit %d\n--- want\n%s--- got\n%s", code, wantClean, got)
-	}
+	return 0
 }
 
-// summaryCountsRe matches a rendered summary's leading counts (API.md F15).
-var summaryCountsRe = regexp.MustCompile(`^\d+ errors?, \d+ warnings? in`)
-
-// i18nStatusPrefix is the rendered header of a W1701 finding (the registry names the code).
-var i18nStatusPrefix = "warning[" + string(diag.W1701.Def().Code) + "]"
-
-// withoutW1701 removes want's W1701 block (i18n status) and recomputes the summary's counts,
-// so any other finding still fails the comparison it is used in.
-func withoutW1701(want string) string {
-	parts := strings.Split(strings.TrimSuffix(want, "\n"), "\n\n")
-	summary, blocks := parts[len(parts)-1], parts[:len(parts)-1]
-	var kept []string
-	errs, warns := 0, 0
-	for _, b := range blocks {
-		if strings.HasPrefix(b, i18nStatusPrefix) {
-			continue
-		}
-		kept = append(kept, b)
-		switch {
-		case strings.HasPrefix(b, "error["):
-			errs++
-		case strings.HasPrefix(b, "warning["):
-			warns++
-		}
+// `canon check <pkg>` prints exactly its findings.txt for every example (IMPLEMENTATION-PLAN §6 M3 item 1; replaces TestResourceFindings/DECISIONS 173 and TestTeamboardFindings/M1 acceptance 2).
+func TestExampleFindings(t *testing.T) {
+	for _, pkg := range exampleFindings(t) {
+		t.Run(pkg, func(t *testing.T) {
+			path := filepath.Join(examplesDir, filepath.FromSlash(strings.ReplaceAll(pkg, ".", "/")), expectedDir, findingsFile)
+			want, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			code, out := checkExample(t, pkg)
+			got := durations.ReplaceAllString(out, "(…)")
+			if code != wantExit(string(want)) || got != string(want) {
+				t.Errorf("exit %d\n--- want\n%s--- got\n%s", code, want, got)
+			}
+		})
 	}
-	summary = summaryCountsRe.ReplaceAllString(summary, plural(errs, "error")+", "+plural(warns, "warning")+" in")
-	return strings.Join(append(kept, summary), "\n\n") + "\n"
-}
-
-// plural is "<n> <noun>", singular when n is 1 (API.md F15).
-func plural(n int, noun string) string {
-	if n == 1 {
-		return "1 " + noun
-	}
-	return fmt.Sprintf("%d %ss", n, noun)
 }

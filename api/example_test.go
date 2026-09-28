@@ -99,7 +99,9 @@ func ExampleProject_Check() {
 		fmt.Println(t.Package, t.Errors, t.Warnings)
 	}
 	fmt.Println(res.HasErrors(), res.Summary.Errors, res.Summary.Warnings, res.Summary.Packages)
-	// Output: false 0 0 4
+	// Output:
+	// warning[W1701] sovcommon/time/time.canon:6:1 20 texts of package sovcommon.time have no fr translation (canon i18n status sovcommon.time --lang fr --list)
+	// false 0 1 4
 }
 
 func ExampleProject_LockCheck() {
@@ -122,7 +124,7 @@ func ExampleFinding_MarshalJSON() {
 		return
 	}
 	defer p.Close()
-	// teamboard and pipeline print no finding (their own goldens): a stable, empty round trip.
+	// teamboard prints no finding (its own golden); pipeline prints one, its round trip stable.
 	res, err := p.Check(context.Background(), "teamboard", "pipeline")
 	if err != nil {
 		return
@@ -139,6 +141,7 @@ func ExampleFinding_MarshalJSON() {
 		fmt.Println(string(line))
 	}
 	// Output:
+	// {"severity":"warning","code":"W1701","file":"pipeline/potion.canon","line":7,"col":1,"endLine":7,"endCol":17,"package":"pipeline","message":"14 texts of package pipeline have no fr translation (canon i18n status pipeline --lang fr --list)"}
 }
 
 func ExampleCheckResult_HasErrors() {

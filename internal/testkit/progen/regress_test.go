@@ -155,7 +155,7 @@ func TestReplayChild(t *testing.T) {
 	var v verdict
 	switch c.Suite {
 	case suiteMutation:
-		v = replayMutation(c)
+		v = replayMutation(c, examples(t))
 	case suiteTyped:
 		v = replayTyped(c)
 	case suiteMeta:

@@ -40,46 +40,55 @@ type checked struct {
 // runCase parses c's .canon files, checks them and runs i18n.Check.
 func runCase(t *testing.T, c golden.Case) *checked {
 	t.Helper()
-	fs := &source.FileSet{}
-	parse := diag.NewBag(fs, "")
-	var files []*syntax.File
+	files := map[string][]byte{}
 	for _, f := range c.Archive.Files {
-		if path.Ext(f.Name) != canonExt {
-			continue
+		if path.Ext(f.Name) == canonExt {
+			files[f.Name] = f.Data
 		}
-		src, err := fs.Add(f.Name, "/"+f.Name, f.Data)
-		if err != nil {
-			t.Fatal(err)
-		}
-		files = append(files, syntax.Parse(src, syntax.FileSource, parse))
 	}
-	bags := check.Bags{}
-	proj := fixtureProject()
-	prog := check.Check(context.Background(), proj, files, bags, eval.NewFolder(bags, eval.Options{}))
-	res := i18n.Check(prog, proj, bags, emitsView(prog))
-	return &checked{fs: fs, bags: bags, prog: prog, res: res}
+	return checkBytes(t, files)
 }
 
 // checkFiles checks the given sources (name -> content) and runs i18n.Check, for tests that
 // assert on the catalogue or a Result directly rather than on rendered findings.
 func checkFiles(t *testing.T, files map[string]string) *checked {
 	t.Helper()
+	bytes := map[string][]byte{}
+	for _, name := range slices.Sorted(maps.Keys(files)) {
+		bytes[name] = []byte(files[name])
+	}
+	return checkBytes(t, bytes)
+}
+
+// checkBytes parses each file into its package's own bag (its directory, every fixture's
+// convention), as the real pipeline shares parsing and checking bags: a fixture can then show
+// I18N.md F4's unparsed branch, not only what check reports afterwards.
+func checkBytes(t *testing.T, files map[string][]byte) *checked {
+	t.Helper()
 	fs := &source.FileSet{}
-	parse := diag.NewBag(fs, "")
+	bags := check.Bags{}
 	names := slices.Sorted(maps.Keys(files))
 	var parsed []*syntax.File
 	for _, name := range names {
-		src, err := fs.Add(name, "/"+name, []byte(files[name]))
+		src, err := fs.Add(name, "/"+name, files[name])
 		if err != nil {
 			t.Fatal(err)
 		}
-		parsed = append(parsed, syntax.Parse(src, syntax.FileSource, parse))
+		parsed = append(parsed, syntax.Parse(src, syntax.FileSource, packageBag(bags, fs, name)))
 	}
-	bags := check.Bags{}
 	proj := fixtureProject()
 	prog := check.Check(context.Background(), proj, parsed, bags, eval.NewFolder(bags, eval.Options{}))
 	res := i18n.Check(prog, proj, bags, emitsView(prog))
 	return &checked{fs: fs, bags: bags, prog: prog, res: res}
+}
+
+// packageBag is name's directory's bag in bags (every fixture's package), made on first use.
+func packageBag(bags check.Bags, fs *source.FileSet, name string) *diag.Bag {
+	pkg := path.Dir(name)
+	if bags[pkg] == nil {
+		bags[pkg] = diag.NewBag(fs, pkg)
+	}
+	return bags[pkg]
 }
 
 // emitsView is every loaded package (all of them "selected", here) that declares `emit view`

@@ -22,7 +22,7 @@ Tick with the landing SHA.
 - [x] ★U5 (844d07d) `check`: resolve/type views and translation files; E1703, E1633 [opus]
 - [x] ★U6 (9c10bac) `i18n`: catalogue, translation files, W1701, E1702, E1704–E1707 [sonnet]
 - [x] ★U7 (8873caa) `views` V1: static checks E1601–E1632/E1634, W16xx [opus]
-- [ ] ★U8 wire i18n/views checks into `build`; generic findings test over every example [sonnet]
+- [x] ★U8 (pending) wire i18n/views checks into `build`; generic findings test over every example [sonnet]
 - [x] U9 (dfba53b) `gen/view`: bytes from `*vm.ViewModel` (J1–J3, J10, WIRE §7) [sonnet]
 - [x] ★U10 (a1663da) `views` V2: `types` and controls (VIEWMODEL §4, §6, §12.3, §12.5) [sonnet→opus]
 - [ ] ★U11 `views` V3: the rest of the model (§5, §7–§10, §12.4, §12.6–§12.11) [sonnet]

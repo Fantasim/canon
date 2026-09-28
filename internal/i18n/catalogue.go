@@ -2,6 +2,7 @@ package i18n
 
 import (
 	"slices"
+	"strings"
 
 	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/syntax"
@@ -20,9 +21,12 @@ type Catalogue struct {
 	Package string
 	Entries []Entry
 
-	byKey  map[string]int
-	shadow map[string]bool   // keys that exist but whose source text has no letter (F4 noLetter)
-	form   map[string]string // a K4-wrong key -> the key its writer meant (F4 form)
+	byKey    map[string]int
+	shadow   map[string]bool   // keys that exist but whose source text has no letter (F4 noLetter)
+	form     map[string]string // a K4-wrong key -> the key its writer meant (F4 form)
+	names    map[string]bool   // every top-level declaration's name, broken or not (F4 silent)
+	broken   map[string]bool   // top-level declarations left out of the catalogue because they are broken (F4 silent)
+	unparsed bool              // a source file of the package did not fully parse (F4 silent)
 }
 
 // Lookup is the entry named key, when key is in the catalogue.
@@ -38,6 +42,7 @@ func (c *Catalogue) Lookup(key string) (Entry, bool) {
 type Resolution struct {
 	Entry    Entry
 	Found    bool
+	Silent   bool   // a cascade, not a defect: report nothing (F4, TYPES.md §1)
 	NoLetter bool   // key exists but its source text has no letter
 	FormHint string // the key its writer meant, when only its K4 form differs
 }
@@ -47,6 +52,9 @@ func (c *Catalogue) Resolve(key string) Resolution {
 	if e, ok := c.Lookup(key); ok {
 		return Resolution{Entry: e, Found: true}
 	}
+	if c.silent(key) {
+		return Resolution{Silent: true}
+	}
 	if c.shadow[key] {
 		return Resolution{NoLetter: true}
 	}
@@ -54,6 +62,16 @@ func (c *Catalogue) Resolve(key string) Resolution {
 		return Resolution{FormHint: hint}
 	}
 	return Resolution{}
+}
+
+// silent is F4's cascade carve-out: a broken or, with an unparsed file, an unknown first segment
+// (a check.<n> key counts as unknown then too, F4).
+func (c *Catalogue) silent(key string) bool {
+	first, _, _ := strings.Cut(key, dot)
+	if c.broken[first] {
+		return true
+	}
+	return c.unparsed && !c.names[first]
 }
 
 // builder accumulates a catalogue's entries in the order they are found (Build sorts them).
@@ -84,10 +102,55 @@ func build(pkg *check.Package, info *check.Info, studioPath string) *Catalogue {
 // files, before any entry is added.
 func newBuilder(pkg *check.Package, info *check.Info) *builder {
 	views := firstViews(pkg, info)
+	names, broken := topLevelState(pkg, info)
 	return &builder{
 		pkg: pkg, info: info, views: views, byT: viewsByType(views), files: typeFiles(pkg),
-		cat: &Catalogue{Package: pkg.Path, shadow: map[string]bool{}, form: map[string]string{}},
+		cat: &Catalogue{
+			Package: pkg.Path, shadow: map[string]bool{}, form: map[string]string{},
+			names: names, broken: broken, unparsed: hasBadNode(pkg),
+		},
 	}
+}
+
+// topLevelState is pkg's top-level declaration names, and which of them are broken and so left
+// out of the catalogue (VIEWMODEL.md J4, F4).
+func topLevelState(pkg *check.Package, info *check.Info) (names, broken map[string]bool) {
+	names, broken = map[string]bool{}, map[string]bool{}
+	for _, o := range pkg.Decls {
+		if o.Name() == "" {
+			continue
+		}
+		names[o.Name()] = true
+		if info.Broken[o] {
+			broken[o.Name()] = true
+		}
+	}
+	return names, broken
+}
+
+// hasBadNode reports a source file of pkg holding a node the parser recovered from (I18N.md F4:
+// a file that lost part of its syntax), read from the AST itself: bag.Findings() is sorted, deduplicated
+// and truncated (API.md F2, F7) and could drop the one finding this decides on.
+func hasBadNode(pkg *check.Package) bool {
+	for _, f := range pkg.Files {
+		if f.FileKind == syntax.FileSource && badNodeIn(f) {
+			return true
+		}
+	}
+	return false
+}
+
+// badNodeIn reports f holding a BadDecl, BadStmt, BadExpr or BadType.
+func badNodeIn(f *syntax.File) bool {
+	found := false
+	syntax.Inspect(f, func(n syntax.Node) bool {
+		switch n.(type) {
+		case *syntax.BadDecl, *syntax.BadStmt, *syntax.BadExpr, *syntax.BadType:
+			found = true
+		}
+		return !found
+	})
+	return found
 }
 
 // typeFiles maps each of pkg's type-name objects to its declaring file.

@@ -111,6 +111,8 @@ func checkEntry(ctx entryCtx, e *syntax.TranslationEntry) {
 	switch {
 	case res.Found:
 		checkText(ctx, e, key, res.Entry)
+	case res.Silent:
+		// I18N.md F4: a broken declaration's own finding stands alone (TYPES.md §1)
 	case res.NoLetter:
 		diag.E1702.AtNoLetter(span, key, ctx.cat.Package).Report(ctx.bag)
 	case res.FormHint != "":

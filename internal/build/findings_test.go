@@ -49,7 +49,11 @@ func buildCase(t *testing.T, a *txtar.Archive) *build.BuildResult {
 	if err != nil {
 		t.Fatal(err)
 	}
-	opt := build.BuildOptions{Packages: fields(a, selectFile), Adopt: fields(a, adoptFile)}
+	selectors := fields(a, selectFile)
+	if _, only := archived(a, checkOnly); only {
+		return checkCase(t, p, selectors)
+	}
+	opt := build.BuildOptions{Packages: selectors, Adopt: fields(a, adoptFile)}
 	res, err := p.Build(context.Background(), opt)
 	var oe *build.OpenError
 	if errors.As(err, &oe) { // a refusal with findings: E1901 (EVALUATION.md §9.1)
@@ -59,6 +63,20 @@ func buildCase(t *testing.T, a *txtar.Archive) *build.BuildResult {
 		t.Fatal(err)
 	}
 	return res
+}
+
+// checkCase is check-only's build.BuildResult: phases 1-7 alone (CLI.md §3.3), no write.
+func checkCase(t *testing.T, p *build.Project, selectors []string) *build.BuildResult {
+	t.Helper()
+	res, err := p.Check(context.Background(), selectors)
+	var oe *build.OpenError
+	if errors.As(err, &oe) {
+		return &build.BuildResult{Result: build.Result{Findings: oe.Findings}}
+	}
+	if err != nil {
+		t.Fatal(err)
+	}
+	return &build.BuildResult{Result: *res}
 }
 
 // IMPLEMENTATION-PLAN.md §7.2: each case builds a project and prints the findings of build's codes.

@@ -1,0 +1,24 @@
+I18N.md W1, EVALUATION.md §1 row 2: a selected package with an `emit view` and a missing
+translation gets W1701; check-only since `emit view` has no generator yet (queued).
+-- check-only --
+-- project.canon --
+project acme {
+  canon: "0.1"
+  languages: [en, fr]
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// N.
+@menu(main)
+let n: Int = 1
+
+emit view { out: "out/a.view.json" }
+-- select --
+a
+-- findings.txt --
+warning[W1701]  a/a.canon:2:1
+  2 texts of package a have no fr translation (canon i18n status a --lang fr --list)
+
+0 errors, 1 warning in 1 package (…)

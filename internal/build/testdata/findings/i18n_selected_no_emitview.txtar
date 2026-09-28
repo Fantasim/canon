@@ -1,0 +1,17 @@
+I18N.md W1: a selected package without an `emit view` gets no W1701, however many translations
+are missing.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  languages: [en, fr]
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// N.
+let n: Int = 1
+-- select --
+a
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

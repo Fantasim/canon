@@ -11,6 +11,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/project"
 	"github.com/fantasim/canonlang/internal/source"
@@ -207,6 +208,65 @@ func imported(all, selected []*project.Unit) []*project.Unit {
 	}
 	slices.SortFunc(out, func(a, b *project.Unit) int { return cmp.Compare(a.Name, b.Name) })
 	return out
+}
+
+// withStudio is loaded plus project.studio's package and its own imports, added only when a
+// loaded package needs it: a view, a `@menu` or an `emit view` (DECISIONS 227).
+func withStudio(all, loaded []*project.Unit, studio string) []*project.Unit {
+	if studio == "" || !slices.ContainsFunc(loaded, usesStudio) {
+		return loaded
+	}
+	i := slices.IndexFunc(all, func(u *project.Unit) bool { return u.Name == studio })
+	if i < 0 || slices.Contains(loaded, all[i]) {
+		return loaded
+	}
+	return imported(all, append(slices.Clone(loaded), all[i]))
+}
+
+// usesStudio reports a unit with a view, a `@menu` or an `emit view` (DECISIONS 227).
+func usesStudio(u *project.Unit) bool {
+	for _, f := range u.Files {
+		if f.FileKind != syntax.FileSource {
+			continue
+		}
+		if slices.ContainsFunc(f.Decls, declUsesStudio) {
+			return true
+		}
+	}
+	return false
+}
+
+// declUsesStudio reports a view, an `emit view`, or a `let` with `@menu` (VIEWMODEL.md G16, G23).
+func declUsesStudio(d syntax.Decl) bool {
+	switch d := d.(type) {
+	case *syntax.ViewDecl:
+		return true
+	case *syntax.EmitDecl:
+		return isEmitView(d)
+	case *syntax.LetDecl:
+		return slices.ContainsFunc(d.Annotations, func(a *syntax.Annotation) bool {
+			return a.Name != nil && a.Name.Name == syntax.AnnMenu
+		})
+	default:
+		return false
+	}
+}
+
+// hasEmitView reports files with an `emit view` (I18N.md W1, VIEWMODEL.md N4's scope).
+func hasEmitView(files []*syntax.File) bool {
+	for _, f := range files {
+		for _, d := range f.Decls {
+			if e, ok := d.(*syntax.EmitDecl); ok && isEmitView(e) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// isEmitView reports d as `emit view` (DECISIONS 227, I18N.md W1).
+func isEmitView(d *syntax.EmitDecl) bool {
+	return d.Target != nil && d.Target.Name == check.TargetView
 }
 
 func filesOf(units []*project.Unit) []*syntax.File {

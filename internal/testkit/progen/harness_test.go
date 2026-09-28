@@ -140,9 +140,10 @@ type target struct {
 
 // corpus is the examples project, its clean packages and their files.
 type corpus struct {
-	project *progen.Project
-	clean   []string
-	targets []target
+	project  *progen.Project
+	clean    []string
+	targets  []target
+	baseline map[string][]progen.Finding // pkg -> its own unmutated findings (DECISIONS 200)
 }
 
 var (
@@ -179,13 +180,14 @@ func loadCorpus() (*corpus, error) {
 	if err != nil {
 		return nil, err
 	}
-	c := &corpus{project: p}
+	c := &corpus{project: p, baseline: map[string][]progen.Finding{}}
 	for _, u := range units {
 		out := progen.Run(context.Background(), p, progen.RunOptions{Packages: []string{u.Name}, Roots: exampleRoots()})
-		if out.Err != nil || out.Panic != "" || len(out.Findings) > 0 {
+		if out.Err != nil || out.Panic != "" || disqualifies(out.Findings) {
 			continue
 		}
 		c.clean = append(c.clean, u.Name)
+		c.baseline[u.Name] = out.Findings
 		for _, name := range u.Files {
 			src, _ := p.Get(name)
 			c.targets = append(c.targets, target{pkg: u.Name, path: name, src: src, file: parse(name, src)})

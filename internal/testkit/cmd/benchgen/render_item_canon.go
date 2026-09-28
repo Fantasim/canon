@@ -107,6 +107,7 @@ func weaponCaseChecks() string {
 // directory (API.md N3): items/{kind}/{id}.canon.
 func writeItemsTable(b *strings.Builder) {
 	b.WriteString("@files(\"{kind}/{id}.canon\")\n")
+	b.WriteString("@menu(items)\n")
 	b.WriteString("let items: stable table Item = {}\n\n")
 }
 
