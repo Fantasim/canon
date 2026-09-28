@@ -2,7 +2,6 @@ package typedef
 
 import (
 	"github.com/fantasim/canonlang/internal/check"
-	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/views/control"
 	"github.com/fantasim/canonlang/internal/views/encode"
@@ -27,7 +26,7 @@ func (s *Types) reachable(p *check.Package) []declared {
 		if k := key(o.Type()); o.Kind() == check.ObjTypeName && declares(o, k) {
 			s.objects[k] = o
 		}
-		if !local(o.Decl()) {
+		if !shape.Local(o.Decl()) {
 			roots = append(roots, o.Type())
 		}
 	}
@@ -64,24 +63,6 @@ func declares(o check.Object, k any) bool {
 		return x.Decl == o.Decl()
 	}
 	return false
-}
-
-// local reports a declaration written `local`.
-func local(d syntax.Node) bool {
-	var m *syntax.Modifiers
-	switch x := d.(type) {
-	case *syntax.RecordDecl:
-		m = x.Mods
-	case *syntax.VariantDecl:
-		m = x.Mods
-	case *syntax.EnumDecl:
-		m = x.Mods
-	case *syntax.TypeDecl:
-		m = x.Mods
-	case *syntax.LetDecl:
-		m = x.Mods
-	}
-	return m != nil && m.Local.Valid()
 }
 
 // walker visits the types reachable from the roots, keeping the package's own declarations.

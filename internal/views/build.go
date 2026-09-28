@@ -3,28 +3,42 @@ package views
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"github.com/fantasim/canonlang/api/vm"
 	"github.com/fantasim/canonlang/internal/check"
+	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/eval"
+	"github.com/fantasim/canonlang/internal/i18n"
+	"github.com/fantasim/canonlang/internal/project"
 	"github.com/fantasim/canonlang/internal/value"
 	"github.com/fantasim/canonlang/internal/views/control"
 	"github.com/fantasim/canonlang/internal/views/encode"
+	"github.com/fantasim/canonlang/internal/views/render"
+	"github.com/fantasim/canonlang/internal/views/shape"
+	"github.com/fantasim/canonlang/internal/views/table"
 	"github.com/fantasim/canonlang/internal/views/typedef"
 )
 
-// Input is what a package's view model is built from (VIEWMODEL.md §12).
+// Input is what a package's view model is built from (VIEWMODEL.md 12).
 type Input struct {
-	Program  *check.Program
-	Package  string                              // the package whose model is built
-	Language string                              // project.canon's `canon` version, "0.1"
-	Studio   string                              // project.studio's package, "" for none
-	Force    func(eval.Root) (value.Value, bool) // a settled value (build.Analysis.Force); nil: none
-	Fold     check.Folder                        // folds constant field defaults; nil writes none
+	Program   *check.Program
+	Package   string                              // the package whose model is built
+	Language  string                              // project.canon's `canon` version, "0.1"
+	Studio    string                              // project.studio's package, "" for none
+	Languages []string                            // project.languages, the source language first
+	Force     func(eval.Root) (value.Value, bool) // a settled value (build.Analysis.Force); nil: none
+	Fold      check.Folder                        // folds constant field defaults; nil writes none
+	I18N      map[string]*i18n.Result             // every package's catalogue and translations (i18n.Check)
+	Layout    *project.Layout                     // places loads and asset roots; nil: none written
+	Layers    []string                            // the active layers, in application order
+	Findings  []diag.Finding                      // the package's findings of phases 1-7, F2 order (J15)
+	Files     diag.Files                          // locates Findings
+	Errors    []diag.Finding                      // every package's error findings: views they break render nowhere (J4)
+	Eval      render.Evaluator                    // evaluates view expressions; nil: nothing rendered
 }
 
-// Build is the view model of in.Package (VIEWMODEL.md 12): its envelope, then each section
-// by steps, in order.
+// Build is the view model of in.Package (VIEWMODEL.md 12), section by section.
 func Build(ctx context.Context, in Input) (*vm.ViewModel, error) {
 	b, err := newBuilder(ctx, in)
 	if err != nil {
@@ -35,35 +49,60 @@ func Build(ctx context.Context, in Input) (*vm.ViewModel, error) {
 	}
 	for _, step := range steps {
 		step(b)
-		if err := ctx.Err(); err != nil { // a step stops early on cancellation: its section is partial
+		if err := ctx.Err(); err != nil {
 			return nil, fmt.Errorf(fmtWrap, err)
 		}
 	}
 	return b.m, nil
 }
 
-// steps fill the sections of the model one after the other.
+// steps fill the sections of the model one after the other; `requires` reads all of them.
 var steps = []func(*builder){
 	(*builder).types,
+	(*builder).views,
+	(*builder).values,
+	(*builder).usage,
+	(*builder).search,
+	(*builder).assets,
+	(*builder).studioSections,
+	(*builder).i18n,
+	(*builder).findings,
+	(*builder).requires,
 }
 
 // builder is one model being built, and what its sections share.
 type builder struct {
-	m     *vm.ViewModel
-	colls *encode.Colls
-	index *control.Index
-	defs  *typedef.Types
+	ctx     context.Context
+	in      Input
+	pkg     *check.Package
+	m       *vm.ViewModel
+	colls   *encode.Colls
+	index   *control.Index
+	res     *control.Resolver
+	texts   *encode.Texts
+	defs    *typedef.Types
+	render  *render.Renderer
+	targets map[string]bool // the lets a ref type of the package targets (S1), once asked
+	roots   *encode.Assets  // asset roots by display path (12.3, 12.9)
 }
 
-// newBuilder starts the model of in.Package: its envelope, every member but `studio` present
-// and empty (J3's "always present" members).
+// newBuilder starts the model: every member but `studio` present and empty (J3).
 func newBuilder(ctx context.Context, in Input) (*builder, error) {
-	if in.Program == nil || !holds(in.Program, in.Package) {
+	pkg := shape.Package(in.Program, in.Package)
+	if pkg == nil {
 		return nil, fmt.Errorf(fmtPackage, ErrNoPackage, in.Package)
 	}
-	b := &builder{colls: encode.NewColls(force(in.Force))}
-	b.index = control.NewIndex(in.Program, in.Studio)
-	b.defs = typedef.New(ctx, typedef.Input{Program: in.Program, Index: b.index, Colls: b.colls, Fold: in.Fold, Studio: in.Studio}, in.Package)
+	b := &builder{ctx: ctx, in: in, pkg: pkg, colls: encode.NewColls(force(in.Force)), texts: encode.NewTexts(catalogues(in.I18N))}
+	b.index = control.NewIndex(in.Program, in.Studio, shape.Errors(slices.Concat(in.Errors, in.Findings)))
+	b.roots = encode.NewAssets(in.Program, in.Layout)
+	tables := table.New(b.index, b.texts)
+	b.res = control.NewResolver(b.index, control.Env{
+		Counts: b.colls.Counts, Fold: control.FoldWith(ctx, in.Program, in.Fold), Table: tables.Complete,
+		Singular: tables.Singular, Assets: b.roots,
+	})
+	tables.Bind(b.res)
+	b.defs = typedef.New(ctx, typedef.Input{Program: in.Program, Index: b.index, Colls: b.colls, Texts: b.texts, Assets: b.roots, Fold: in.Fold}, in.Package)
+	b.render = render.New(ctx, render.Input{Program: in.Program, Index: b.index, Texts: b.texts, Colls: b.colls, Eval: in.Eval})
 	b.m = &vm.ViewModel{
 		Schema: SchemaVersion, Package: in.Package, Language: in.Language, Requires: []string{},
 		Types: map[string]vm.TypeDef{}, Views: map[string]vm.View{}, Values: map[string]vm.Value{},
@@ -73,17 +112,19 @@ func newBuilder(ctx context.Context, in Input) (*builder, error) {
 	return b, nil
 }
 
-// types is the `types` section (§12.3).
+// types is the `types` section (12.3).
 func (b *builder) types() { b.m.Types = b.defs.Section() }
 
-// holds reports a program holding the package path.
-func holds(prog *check.Program, path string) bool {
-	for _, p := range prog.Packages {
-		if p.Path == path {
-			return true
+// catalogues are the key catalogues of results, by package.
+func catalogues(results map[string]*i18n.Result) map[string]*i18n.Catalogue {
+	out := make(map[string]*i18n.Catalogue, len(results))
+	//canon:unordered a map copied into a map
+	for pkg, r := range results {
+		if r != nil {
+			out[pkg] = r.Catalogue
 		}
 	}
-	return false
+	return out
 }
 
 // force reads a settled let through f, none when f is nil.

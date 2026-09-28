@@ -4,6 +4,7 @@ import (
 	"github.com/fantasim/canonlang/api/vm"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/views/encode"
+	"github.com/fantasim/canonlang/internal/views/shape"
 )
 
 // scale is the choice control of n active enum members or variant cases (C4).
@@ -38,13 +39,7 @@ func (r *Resolver) enumControl(_ at, t types.Type) vm.Control {
 // case's fields (C9); `inline` for an @json(inline) field (L17).
 func (r *Resolver) variantControl(c at, t types.Type) vm.Control {
 	v := variantOf(t)
-	n := 0
-	for _, cs := range v.Cases {
-		if !cs.Retired {
-			n++
-		}
-	}
-	sel := vm.Control{Kind: scale(n), Source: &vm.Source{Cases: v.String()}}
+	sel := vm.Control{Kind: scale(activeCases(v)), Source: &vm.Source{Cases: v.String()}}
 	return vm.Control{Kind: ctlVariant, Of: v.String(), Selector: &sel, Inline: c.inline}
 }
 
@@ -71,9 +66,8 @@ func (r *Resolver) refControl(c at, t types.Type) vm.Control {
 	if coll.Kind == types.CollField {
 		return vm.Control{Kind: CtlSelect, Source: src}
 	}
-	_, active := r.counts(coll)
 	kind := ctlSearch
-	if active <= selectMax {
+	if r.active(coll) <= selectMax {
 		kind = CtlSelect
 	}
 	return vm.Control{Kind: kind, Source: src}
@@ -97,12 +91,13 @@ func (r *Resolver) source(c at, t types.Type) *vm.Source {
 	return nil
 }
 
-// counts are a collection's entries and active entries in this build, none without Env.Counts.
-func (r *Resolver) counts(coll *types.Collection) (count, active int) {
+// active is a collection's active entries in this build, none without Env.Counts (C3).
+func (r *Resolver) active(coll *types.Collection) int {
 	if r.env.Counts == nil {
-		return 0, 0
+		return 0
 	}
-	return r.env.Counts(coll)
+	_, active := r.env.Counts(coll)
+	return active
 }
 
 // siblingSource is a choice over a collection of the enclosing instance; none when the record
@@ -112,4 +107,32 @@ func siblingSource(s *vm.Sibling) *vm.Source {
 		return nil
 	}
 	return &vm.Source{Sibling: s}
+}
+
+// Choice is the choice control over t, the optional stripped: an enum's members, a ref's target
+// or a variant's cases (C4, C5, C6), and its number of active choices (C3); false for another type.
+func (r *Resolver) Choice(decl, t types.Type) (vm.Control, int, bool) {
+	t = shape.StripOptional(t)
+	switch x := t.Base().(type) {
+	case *types.EnumType:
+		return r.enumControl(at{}, t), activeMembers(x), true
+	case *types.RefType:
+		return r.refControl(at{decl: decl}, t), r.active(x.Target), true
+	}
+	if v := variantOf(t); v != nil {
+		ctl := r.variantControl(at{}, t)
+		return *ctl.Selector, activeCases(v), true
+	}
+	return vm.Control{}, 0, false
+}
+
+// activeCases counts a variant's cases that are not retired (C3).
+func activeCases(v *types.VariantType) int {
+	n := 0
+	for _, c := range v.Cases {
+		if !c.Retired {
+			n++
+		}
+	}
+	return n
 }

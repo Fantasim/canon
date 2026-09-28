@@ -16,7 +16,7 @@ const (
 	keyRows    = "rows"
 	keyValue   = "value"
 	keyFns     = "$fns"
-	keyID      = "$id"
+	KeyID      = "$id"
 	keyRetired = "$retired"
 	keyDollar  = "$"
 )

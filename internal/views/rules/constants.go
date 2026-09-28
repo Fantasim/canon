@@ -18,9 +18,6 @@ const reserved = "_"
 // dot joins a variant and its case, a package and a name.
 const dot = "."
 
-// ownPackage is this package in ERRORS.md's Package column.
-const ownPackage = "views"
-
 // targetKind is what a view describes (VIEWMODEL.md §3.2).
 type targetKind uint8
 

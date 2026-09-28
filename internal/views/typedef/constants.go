@@ -33,9 +33,6 @@ const wildcard = "_"
 // dot joins the fields of a `select` path and of a wire path.
 const dot = "."
 
-// annJSONWord is the name of the @json annotation, whose `unit:` is a Duration's wire unit.
-const annJSONWord = "json"
-
 // computedDefault is the `default` of a field whose default is not constant (TYP-15).
 const computedDefault = `{"computed":true}`
 

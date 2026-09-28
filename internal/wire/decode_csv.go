@@ -125,7 +125,7 @@ func (r *run) columns(header []Cell, fields []*types.Field, elem types.Type, tab
 		case seen[h.Text]:
 			r.report(diag.E7104.AtCsv(h.Span, h.Text), nil)
 			ok = false
-		case table && h.Text == keyID:
+		case table && h.Text == KeyID:
 			c.id = j
 		default:
 			ok = r.column(h, j, fields, elem, &c) && ok
@@ -166,7 +166,7 @@ func (r *run) required(fields []*types.Field, elem types.Type, c columns, table 
 		}
 	}
 	if table && c.id < 0 {
-		r.report(diag.E3302.At(c.span, elem, keyID), nil)
+		r.report(diag.E3302.At(c.span, elem, KeyID), nil)
 		ok = false
 	}
 	return ok

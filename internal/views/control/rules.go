@@ -19,7 +19,7 @@ func init() {
 		types.Int:      func(_ *Resolver, _ at, t types.Type) vm.Control { return numberControl(t) },
 		types.Float:    func(_ *Resolver, _ at, t types.Type) vm.Control { return numberControl(t) },
 		types.Duration: func(_ *Resolver, c at, t types.Type) vm.Control { return durationControl(c, t) },
-		types.String:   func(_ *Resolver, _ at, t types.Type) vm.Control { return stringControl(t) },
+		types.String:   func(r *Resolver, _ at, t types.Type) vm.Control { return r.stringControl(t) },
 		types.Enum:     (*Resolver).enumControl,
 		types.Variant:  (*Resolver).variantControl,
 		types.Case:     func(_ *Resolver, _ at, t types.Type) vm.Control { return caseControl(t) },
@@ -77,9 +77,9 @@ func durationControl(c at, t types.Type) vm.Control {
 
 // stringControl is an input with the string's lengths and pattern (C11), or a file picker for
 // an asset (C14).
-func stringControl(t types.Type) vm.Control {
+func (r *Resolver) stringControl(t types.Type) vm.Control {
 	if a := shape.LayersOf(t).Asset; a != nil {
-		return vm.Control{Kind: ctlFile, Root: a.Root, Ext: a.Exts}
+		return vm.Control{Kind: ctlFile, Root: r.env.Assets.Root(a), Ext: a.Exts}
 	}
 	minLen, maxLen := encode.Lengths(t)
 	return vm.Control{Kind: ctlInput, MinLen: minLen, MaxLen: maxLen, Pattern: encode.Pattern(t)}
@@ -88,9 +88,9 @@ func stringControl(t types.Type) vm.Control {
 // recordControl is an inline section for at most 6 fields, else a collapsible card, every
 // declared field counted (C18, C19, C31).
 func recordControl(t types.Type) vm.Control {
-	kind := ctlCard
+	kind := CtlCard
 	if len(encode.FieldsOf(t)) <= sectionMax {
-		kind = ctlSection
+		kind = CtlSection
 	}
 	return vm.Control{Kind: kind, Of: encode.Name(t)}
 }

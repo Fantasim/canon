@@ -93,7 +93,7 @@ func (e *encoder) rowNodes(v value.Value) (*node, error) {
 				return nil, fmt.Errorf("%w: table row without identity", ErrShape)
 			}
 			head := objectNode()
-			head.add(keyID, stringNode(r.Ident.Key.Text()))
+			head.add(KeyID, stringNode(r.Ident.Key.Text()))
 			if r.Ident.Retired {
 				head.add(keyRetired, text(textTrue))
 			}

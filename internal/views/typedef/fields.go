@@ -21,7 +21,7 @@ func (s *Types) field(decl types.Type, f *types.Field, key []string) vm.Field {
 		Type:     s.expr(at{decl: decl, enc: f.Enc}, f.Type),
 		Required: f.Default == nil && f.Input == nil && f.Type.Base().Kind() != types.Optional,
 		Default:  s.defaultOf(decl, f),
-		Help:     s.help(s.keyed(), f.Doc, s.in.Index.Field(f), key...),
+		Help:     s.help(f.Doc, s.in.Index.Field(f), key...),
 		Wire:     wire(f),
 		Stable:   f.Stable,
 	}
@@ -34,13 +34,13 @@ func (s *Types) field(decl types.Type, f *types.Field, key []string) vm.Field {
 	return out
 }
 
-// deprecated is a deprecation's reason keyed under key: a language-neutral text when it has no
-// letter, no reason (`""`, the flag kept) or sits outside the catalogue (VIEWMODEL.md J9).
+// deprecated is a deprecation's reason keyed under key: its key when catalogued, else a neutral
+// text, `""` for no reason (the flag kept, VIEWMODEL.md J9).
 func (s *Types) deprecated(why string, key []string) vm.TextRef {
-	if why == "" || !s.keyed() {
-		return vm.TextRef{Text: &why}
+	if ref := s.in.Texts.Text(s.pkg, why, append(slices.Clip(key), syntax.AnnDeprecated)...); ref != (vm.TextRef{}) {
+		return ref
 	}
-	return encode.Plain(why, s.pkg, append(slices.Clip(key), encode.Deprecated)...)
+	return vm.TextRef{Text: &why}
 }
 
 // wire is a field's wire mapping (VIEWMODEL.md 12.3): its key, and when written its path, unit,
@@ -66,7 +66,7 @@ func wire(f *types.Field) vm.Wire {
 // unitWritten reports a field with @json(unit:), whose Unit is then written even when `ms`.
 func unitWritten(f *types.Field) bool {
 	for _, a := range f.Annotations {
-		if a.Name == nil || a.Name.Name != annJSONWord {
+		if a.Name == nil || a.Name.Name != syntax.AnnJSON {
 			continue
 		}
 		for _, arg := range a.Args {

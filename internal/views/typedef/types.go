@@ -8,6 +8,7 @@ import (
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/views/control"
 	"github.com/fantasim/canonlang/internal/views/encode"
+	"github.com/fantasim/canonlang/internal/views/shape"
 )
 
 // Input is what the `types` section reads.
@@ -15,24 +16,26 @@ type Input struct {
 	Program *check.Program
 	Index   *control.Index
 	Colls   *encode.Colls
-	Fold    check.Folder // folds constant field defaults (TYPES.md §15); nil writes none
-	Studio  string       // project.studio's package, "" for none
+	Texts   *encode.Texts
+	Assets  *encode.Assets // asset roots by display path; nil writes them as written
+	Fold    check.Folder   // folds constant field defaults (TYPES.md §15); nil writes none
 }
 
 // Types writes the type definitions and type expressions of one package's view model.
 type Types struct {
-	in      Input
-	ctx     context.Context
-	pkg     string
-	objects map[any]check.Object // each declared record, variant, enum or type function
-	applied map[*types.TypeFunc][]*types.Collection
+	in        Input
+	ctx       context.Context
+	pkg       string
+	objects   map[any]check.Object // each declared record, variant, enum or type function
+	applied   map[*types.TypeFunc][]*types.Collection
+	described []types.Type
 }
 
 // New writes the types of the package pkg of in.Program; without an Index no view property is
 // read, without Colls every collection is empty.
 func New(ctx context.Context, in Input, pkg string) *Types {
 	if in.Index == nil {
-		in.Index = control.NewIndex(&check.Program{Info: in.Program.Info}, "")
+		in.Index = control.NewIndex(&check.Program{Info: in.Program.Info}, "", nil)
 	}
 	if in.Colls == nil {
 		in.Colls = encode.NewColls(nil)
@@ -44,7 +47,7 @@ func New(ctx context.Context, in Input, pkg string) *Types {
 // reachable from a public type or value, broken declarations left out (J4), by qualified name.
 func (s *Types) Section() map[string]vm.TypeDef {
 	out := map[string]vm.TypeDef{}
-	p := s.pkgOf()
+	p := shape.Package(s.in.Program, s.pkg)
 	if p == nil {
 		return out
 	}
@@ -53,19 +56,15 @@ func (s *Types) Section() map[string]vm.TypeDef {
 			return out
 		}
 		out[d.name] = s.def(d)
+		if d.t != nil {
+			s.described = append(s.described, d.t)
+		}
 	}
 	return out
 }
 
-// pkgOf is the checked package being written, nil when the program does not hold it.
-func (s *Types) pkgOf() *check.Package {
-	for _, p := range s.in.Program.Packages {
-		if p.Path == s.pkg {
-			return p
-		}
-	}
-	return nil
-}
+// Described are the records, variants and enums Section wrote, in the order met.
+func (s *Types) Described() []types.Type { return s.described }
 
 // def is one type definition.
 func (s *Types) def(d declared) vm.TypeDef {

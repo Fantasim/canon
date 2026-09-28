@@ -31,7 +31,7 @@ type annSpec struct {
 
 // annCatalog is the annotation catalogue of GRAMMAR.md §8.3 (GRM-18).
 var annCatalog = map[string]*annSpec{
-	annJSON: {args: []argSpec{
+	AnnJSON: {args: []argSpec{
 		{name: argWire, kind: valString, sites: siteField | siteCase | siteCodedMember, groups: groupWire},
 		{name: argPath, named: true, kind: valString, sites: siteField, groups: groupWire},
 		{name: ArgCase, named: true, kind: valSymbol, values: caseStyles, sites: siteRecordHeader | siteVariantHeader | siteCase},

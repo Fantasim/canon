@@ -5,13 +5,18 @@ import (
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
+	"github.com/fantasim/canonlang/internal/views/encode"
 	"github.com/fantasim/canonlang/internal/views/shape"
 )
 
 // Env is what a control reads beyond types and views.
 type Env struct {
-	Counts func(*types.Collection) (count, active int) // entries in this build (C3, C5); nil: none
-	Fold   func(syntax.Expr) (value.Value, bool)       // a constant of a `where` (C34); nil: none
+	Counts func(*types.Collection) (count, active int)   // entries in this build (C3, C5); nil: none
+	Fold   func(syntax.Expr) (value.Value, bool)         // a constant of a `where` (C34); nil: none
+	Table  func(t types.Type, ctl vm.Control) vm.Control // completes a table of t (T1); nil: none
+	Assets *encode.Assets                                // asset roots by display path; nil: as written
+	// Singular is the `singular` of the view of a record or variant (T3, 12.5); nil: none
+	Singular func(t types.Type) vm.TextRef
 }
 
 // Resolver resolves the controls of fields, values, elements, keys and map values (C1–C46).
@@ -37,8 +42,8 @@ type at struct {
 func (r *Resolver) Field(decl types.Type, f *types.Field) vm.Control {
 	c := at{decl: decl, enc: f.Enc, unit: f.Unit, inline: f.Inline}
 	p := r.index.Field(f)
-	fallback := r.control(c, f.Type, p.Name(syntax.PropControl), threeState(f))
-	withUnit(&fallback, p.Name(syntax.PropUnit))
+	fallback := r.control(c, f.Type, p.ident(syntax.PropControl), threeState(f))
+	withUnit(&fallback, p.name(syntax.PropUnit))
 	w, ok := r.index.widget(f.Type, p)
 	if !ok {
 		return fallback

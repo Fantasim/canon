@@ -1,0 +1,30 @@
+VIEWMODEL.md G10, I18N.md K7 (log-2026-09-28 i18n U6 review calls): a case field labelled by the views of two records that both inline its variant is E1614, whichever view comes first; a case field only one of them labels is not.
+-- a/a.canon --
+package a
+
+local variant Kind {
+  weapon { attack: Int }
+  food { heal: Int }
+}
+
+local record Sword {
+  kind: Kind @json(inline)
+}
+
+local record Bread {
+  kind: Kind @json(inline)
+}
+
+view Sword {
+  attack "Attack"
+  heal "Heal"
+}
+
+view Bread {
+  heal "Cure"
+}
+-- findings.txt --
+error[E1614]  a/a.canon:22:8
+  the label of heal is declared twice (first at a/a.canon:18)
+
+1 error, 0 warnings in 1 package (…)

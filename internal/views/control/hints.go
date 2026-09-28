@@ -33,7 +33,7 @@ func init() {
 		CtlSwitch: {isBool, plain}, CtlCheckbox: {isBool, plain},
 		CtlSegmented: {isChoice, (*Resolver).choiceHint}, CtlRadio: {isChoice, (*Resolver).choiceHint},
 		CtlSelect: {isChoice, (*Resolver).choiceHint}, ctlSearch: {isChoice, (*Resolver).choiceHint},
-		ctlCheckboxes: {isChoices, (*Resolver).choicesHint}, ctlChips: {isChoices, (*Resolver).choicesHint},
+		CtlCheckboxes: {isChoices, (*Resolver).choicesHint}, CtlChips: {isChoices, (*Resolver).choicesHint},
 		ctlInput: {isText, textHint}, ctlTextarea: {isText, textHint}, ctlCode: {isText, textHint},
 		CtlNumber: {isNumber, numberHint}, hintStepper: {isNumber, numberHint},
 		CtlSlider: {isNumber, sliderHint},
@@ -82,8 +82,8 @@ func (r *Resolver) choicesHint(c at, t types.Type, name string) vm.Control {
 }
 
 // textHint is input, textarea or code with the string's lengths and pattern (C11).
-func textHint(_ *Resolver, _ at, t types.Type, name string) vm.Control {
-	ctl := stringControl(t)
+func textHint(r *Resolver, _ at, t types.Type, name string) vm.Control {
+	ctl := r.stringControl(t)
 	ctl.Kind = name
 	return ctl
 }

@@ -12,9 +12,10 @@ import (
 
 // prop is a field property: what it is valid on, and how its value is checked.
 type prop struct {
-	on    []diag.Kind
-	valid func(named) bool // a further condition on a field, nil for none
-	check func(v *view, n named, fi *syntax.FieldItem)
+	on      []diag.Kind
+	valid   func(named) bool       // a further condition on a field, nil for none
+	literal func(syntax.Expr) bool // the literal a literal-only property takes, nil for an expression
+	check   func(v *view, n named, fi *syntax.FieldItem)
 }
 
 // props are the properties of VIEWMODEL.md §3.5; another name is E1613.
@@ -28,21 +29,21 @@ func init() {
 	field, method := []diag.Kind{diag.KindField}, []diag.Kind{diag.KindField, diag.KindMethod}
 	choice := []diag.Kind{diag.KindMember, diag.KindCase}
 	plain := func(v *view, _ named, fi *syntax.FieldItem) {
-		if s, ok := fi.Value.(syntax.StrLit); ok {
+		if s, ok := shape.Unparen(fi.Value).(syntax.StrLit); ok {
 			v.plain(s)
 		}
 	}
 	props = map[string]prop{
-		syntax.PropHelp:        {on: slices.Concat(method, choice), check: plain},
+		syntax.PropHelp:        {on: slices.Concat(method, choice), literal: isText, check: plain},
 		syntax.PropUnit:        {on: field, check: (*view).unitType},
 		syntax.PropControl:     {on: field, check: (*view).control},
 		syntax.PropWidget:      {on: field, check: (*view).widget},
-		syntax.PropReadonly:    {on: field},
-		syntax.PropHidden:      {on: method, check: (*view).hidden},
-		syntax.PropPlaceholder: {on: field, check: (*view).placeholder},
+		syntax.PropReadonly:    {on: field, literal: isBool},
+		syntax.PropHidden:      {on: method, literal: isBool, check: (*view).hidden},
+		syntax.PropPlaceholder: {on: field, literal: isText, check: (*view).placeholder},
 		syntax.PropWhen:        {on: method},
-		syntax.PropNone:        {on: field, valid: optionalField, check: plain},
-		syntax.PropStep:        {on: field, valid: listField, check: func(v *view, _ named, fi *syntax.FieldItem) { v.step(fi.Value) }},
+		syntax.PropNone:        {on: field, valid: optionalField, literal: isText, check: plain},
+		syntax.PropStep:        {on: field, valid: listField, literal: isText, check: func(v *view, _ named, fi *syntax.FieldItem) { v.step(fi.Value) }},
 		syntax.PropIcon:        {on: choice, check: studioProp(syntax.StudioIcon, diag.KindIcon)},
 		syntax.PropTone:        {on: choice, check: studioProp(syntax.StudioTone, diag.KindTone)},
 	}
@@ -95,9 +96,25 @@ func (v *view) prop(f *syntax.ViewField, n named, fi *syntax.FieldItem) {
 	if _, rival := v.c.givenAt(n.keys, rivals[name]); rival {
 		v.report(diag.E1634.At(at, f.Name.Name))
 	}
+	if p.literal != nil && !p.literal(fi.Value) {
+		v.report(diag.E1613.AtLiteral(v.span(fi.Value), name)) // log-2026-09-28 check follow-ups 2
+		return
+	}
 	if p.check != nil {
 		p.check(v, n, fi)
 	}
+}
+
+// isText is a string literal: a plain text or a `step` template (VIEWMODEL.md §3.5).
+func isText(e syntax.Expr) bool {
+	_, ok := shape.Unparen(e).(syntax.StrLit)
+	return ok
+}
+
+// isBool is `true` or `false` (VIEWMODEL.md §3.5 `readonly`, `hidden`).
+func isBool(e syntax.Expr) bool {
+	_, ok := shape.Unparen(e).(*syntax.BoolLit)
+	return ok
 }
 
 // optionalField is a field whose type is optional (`none`, VIEWMODEL.md §3.5).
@@ -112,7 +129,7 @@ func listField(n named) bool {
 
 // hidden is `hidden: true` on a required field without a default: W1641 (VIEWMODEL.md L15).
 func (v *view) hidden(n named, fi *syntax.FieldItem) {
-	b, ok := fi.Value.(*syntax.BoolLit)
+	b, ok := shape.Unparen(fi.Value).(*syntax.BoolLit)
 	f := n.field
 	if !ok || !b.Value || f == nil || f.Default != nil || f.Input != nil || f.Type.Base().Kind() == types.Optional {
 		return

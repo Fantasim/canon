@@ -133,7 +133,7 @@ func writeRecord(b *bytes.Buffer, r *value.Record) {
 		b.WriteByte(colonByte)
 	}
 	if c, ok := r.T.Base().(*types.CaseType); ok {
-		member(keyCase)
+		member(KeyCase)
 		writeString(b, c.Name)
 	}
 	for i, f := range FieldsOf(r.T) {

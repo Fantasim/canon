@@ -1,0 +1,23 @@
+VIEWMODEL.md C40, §4.5 (log-2026-09-28 check follow-ups 2): a `control:` given a string or an expression instead of a name is E1609, whatever the text names; a name in parentheses is a name.
+-- a/a.canon --
+package a
+
+local record Item {
+  count: Int
+  label: String
+  on: Bool
+}
+
+view Item {
+  count { control: "slider" }
+  label { control: 3 }
+  on { control: (switch) }
+}
+-- findings.txt --
+error[E1609]  a/a.canon:10:20
+  "slider" is not a built-in control (VIEWMODEL.md §4.5 lists them)
+
+error[E1609]  a/a.canon:11:20
+  3 is not a built-in control (VIEWMODEL.md §4.5 lists them)
+
+2 errors, 0 warnings in 1 package (…)

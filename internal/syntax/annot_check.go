@@ -24,7 +24,7 @@ func (p *parser) checkAnnotations(anns []*Annotation, site annSite) bool {
 			diag.E1120.At(p.nodeSpan(a), name).Report(p.bag)
 		}
 		seen[name] = true
-		if bound := p.checkAnnotation(a, site); name == annJSON && hasFlag(bound, annCodes) {
+		if bound := p.checkAnnotation(a, site); name == AnnJSON && hasFlag(bound, annCodes) {
 			jsonCodes = a
 		}
 	}

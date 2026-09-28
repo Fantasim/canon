@@ -8,6 +8,8 @@ import (
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/value"
+	"github.com/fantasim/canonlang/internal/views/encode"
+	"github.com/fantasim/canonlang/internal/views/shape"
 )
 
 // CheckUnits reports E1610 for each field's `unit:` naming no entry of units, the studio's
@@ -98,8 +100,17 @@ func (v *view) unit(f *syntax.ViewField, keys map[string]bool) {
 		if !ok || fi.Name == nil || fi.Name.Name != syntax.PropUnit || v.unitTwice(n, fi) {
 			continue
 		}
-		if id, isName := fi.Value.(*syntax.IdentExpr); isName && !keys[id.Name] {
-			diag.E1610.At(v.span(id), diag.KindUnit, id.Name, v.c.studio.path).Report(v.bag)
+		if name, ok := unitName(fi.Value); ok && !keys[name] {
+			diag.E1610.At(v.span(fi.Value), diag.KindUnit, name, v.c.studio.path).Report(v.bag)
 		}
 	}
+}
+
+// unitName is a unit written as a name or as a string standing for one (TYPES.md 10.3,
+// log-2026-09-28 check follow-ups 3); false for another expression.
+func unitName(e syntax.Expr) (string, bool) {
+	if id, ok := shape.Unparen(e).(*syntax.IdentExpr); ok {
+		return id.Name, true
+	}
+	return encode.PlainText(shape.Unparen(e))
 }

@@ -145,7 +145,7 @@ func TestHintsAndWidgets(t *testing.T) {
 		{"m", `{"kind":"text"}`, "§4.5 text"},
 		{"n", `{"kind":"number","unit":"hp"}`, "C45"},
 		{"o", `{"kind":"number","unit":"hp","optional":{"unset":"clear"}}`, "C2 C35"},
-		{"p", `{"kind":"widget","widget":"ordered_steps","fallback":{"kind":"tags","element":{"kind":"number","unit":"hp"}}}`, "C41 C45 element"},
+		{"p", `{"kind":"widget","widget":"ordered_steps","fallback":{"kind":"tags","element":{"kind":"number","unit":"hp"},"orderable":true}}`, "C41 C45 element, T2"},
 		{"q", `{"kind":"widget","widget":"clock","fallback":{"kind":"section","of":"studio.Clock"}}`, "G22 C41"},
 		{"r", `{"kind":"text"}`, "G22 a hint wins over a default widget"},
 		{"s", `{"kind":"widget","widget":"weight_share","siblings":true,"fallback":{"kind":"number"}}`, "C41 G21"},

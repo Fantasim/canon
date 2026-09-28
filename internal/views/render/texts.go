@@ -1,0 +1,143 @@
+package render
+
+import (
+	"strings"
+
+	"github.com/fantasim/canonlang/internal/check"
+	"github.com/fantasim/canonlang/internal/syntax"
+	"github.com/fantasim/canonlang/internal/types"
+	"github.com/fantasim/canonlang/internal/value"
+	"github.com/fantasim/canonlang/internal/views/encode"
+	"github.com/fantasim/canonlang/internal/views/shape"
+)
+
+// translations are the non-empty translated texts of each package, by language and key (I18N.md
+// 4): the first of a key given twice (E1705), files in path order.
+type translations map[string]map[string]map[string]syntax.StrLit
+
+func readTranslations(prog *check.Program) translations {
+	out := translations{}
+	if prog == nil {
+		return out
+	}
+	for _, p := range prog.Packages {
+		for _, f := range p.Files {
+			if f.FileKind == syntax.FileTranslation && f.Lang != nil {
+				out.file(p.Path, f)
+			}
+		}
+	}
+	return out
+}
+
+// file adds the entries of the translation file f of pkg; an empty text is missing (I18N.md F5).
+func (t translations) file(pkg string, f *syntax.File) {
+	if t[pkg] == nil {
+		t[pkg] = map[string]map[string]syntax.StrLit{}
+	}
+	byKey := t[pkg][f.Lang.Name]
+	if byKey == nil {
+		byKey = map[string]syntax.StrLit{}
+		t[pkg][f.Lang.Name] = byKey
+	}
+	for _, e := range f.Entries {
+		if e.Key == nil || empty(e.Text) {
+			continue
+		}
+		if key := syntax.Qualified(e.Key); byKey[key] == nil {
+			byKey[key] = e.Text
+		}
+	}
+}
+
+// translated is the translation of the key segs of pkg in lang; false for the source language
+// (lang "") or a missing one.
+func (r *Renderer) translated(pkg, lang string, segs []string) (syntax.StrLit, bool) {
+	if lang == "" {
+		return nil, false
+	}
+	s, ok := r.tr[pkg][lang][strings.Join(segs, dot)]
+	return s, ok
+}
+
+// empty reports a text with nothing in it (I18N.md F5).
+func empty(s syntax.StrLit) bool {
+	switch x := s.(type) {
+	case *syntax.RawStringLit:
+		return x.Value == ""
+	case *syntax.StringLit:
+		for _, p := range x.Parts {
+			if p.Text != "" || p.Interp != nil {
+				return false
+			}
+		}
+		return true
+	}
+	return true
+}
+
+// plainText is the plain text keyed segs of pkg in lang: its translation, else its source text
+// (I18N.md B1); false when neither exists.
+func (r *Renderer) plainText(pkg, lang string, segs []string) (string, bool) {
+	if s, ok := r.translated(pkg, lang, segs); ok {
+		if t, isPlain := encode.PlainText(s); isPlain {
+			return t, true
+		}
+	}
+	src, ok := r.in.Texts.Source(pkg, segs...)
+	return encode.Unescape(src), ok
+}
+
+// memberLabel is an enum member's label in lang, its Canon name without one (VIEWMODEL.md X4).
+func (r *Renderer) memberLabel(m *value.Member, lang string) string {
+	name := m.CanonText()
+	if t, ok := r.plainText(m.Enum.Pkg, lang, []string{m.Enum.Name, encode.MemberSeg(name)}); ok {
+		return t
+	}
+	return name
+}
+
+// noneLabel is the `none` text of the field x reads, a field of self (`{note}`) or of what a
+// selector reads (`{self.note}`, `{a.b}`), in lang (VIEWMODEL.md X4, C38).
+func (r *Renderer) noneLabel(x syntax.Expr, self value.Value, lang string) (string, bool) {
+	decl, name := r.readField(x, self)
+	if decl == nil {
+		return "", false // not a field: `none` (X4)
+	}
+	for _, f := range encode.FieldsOf(decl) {
+		if f.Name == name {
+			return r.fieldNone(decl.Base(), f, lang)
+		}
+	}
+	return "", false
+}
+
+// readField is the record or case type and the field name x reads, nil when x reads no field.
+func (r *Renderer) readField(x syntax.Expr, self value.Value) (types.Type, string) {
+	if r.in.Program == nil {
+		return nil, ""
+	}
+	info := r.in.Program.Info
+	switch e := shape.Unparen(x).(type) {
+	case *syntax.IdentExpr:
+		rec, isRecord := self.(*value.Record)
+		if o := info.Uses[e]; isRecord && o != nil && o.Kind() == check.ObjField {
+			return rec.T, e.Name
+		}
+	case *syntax.SelectorExpr:
+		if sel := info.Selections[e]; sel != nil && sel.Obj != nil && sel.Obj.Kind() == check.ObjField && e.Name != nil {
+			return shape.StripOptional(sel.Recv), e.Name.Name
+		}
+	}
+	return nil, ""
+}
+
+// fieldNone is the `none` text a view gives f in lang: catalogued, else as written (a text
+// without a letter, I18N.md L7).
+func (r *Renderer) fieldNone(decl types.Type, f *types.Field, lang string) (string, bool) {
+	pkg, segs := encode.FieldKey(decl, f)
+	if t, ok := r.plainText(pkg, lang, append(segs, syntax.PropNone)); ok {
+		return t, true
+	}
+	return r.in.Index.Field(f).TextIn(syntax.PropNone, pkg)
+}

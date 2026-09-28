@@ -6,6 +6,7 @@ import (
 	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
+	"github.com/fantasim/canonlang/internal/views/encode"
 	"github.com/fantasim/canonlang/internal/views/shape"
 )
 
@@ -30,6 +31,9 @@ func (v *view) filters(it syntax.ViewItem) {
 		if fl.Name == nil || v.again(v.span(fl.Name), fl.Name.Name, seen) {
 			continue
 		}
+		if v.caseKind(fl.Name) {
+			continue // T6a: a filter on the case, a choice `multi` applies to
+		}
 		if f := v.fieldOnly(fl.Name, diag.E1606.AtFilters); f != nil {
 			v.filter(fl, f)
 		}
@@ -45,6 +49,12 @@ func (v *view) filter(fl *syntax.ViewFilter, f *types.Field) {
 	case fl.Multi.Valid() && k != filterChoice && k != filterCase && k != filterContains:
 		v.report(diag.E1621.At(v.tok(fl.Multi), f.Type))
 	}
+}
+
+// caseKind reports a variant view's filter naming the variant's built-in `kind`, its case (T6a).
+func (v *view) caseKind(id *syntax.Ident) bool {
+	o := v.c.info.NameUses[id]
+	return v.kind == targetVariant && o != nil && o.Kind() == check.ObjBuiltin && o.Name() == encode.KindField
 }
 
 // fieldOnly is the field a column or filter names: nothing is E1602, a method notField's.

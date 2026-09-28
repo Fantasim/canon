@@ -1,10 +1,12 @@
 package views_test
 
 import (
+	"bytes"
 	"os"
 	"reflect"
 	"testing"
 
+	viewgen "github.com/fantasim/canonlang/internal/gen/view"
 	"github.com/fantasim/canonlang/internal/views"
 	"github.com/fantasim/canonlang/internal/views/control"
 )
@@ -77,5 +79,29 @@ func TestPipelineValueControl(t *testing.T) {
 	w := member(golden(t), "values", potionsValue, "control")
 	if got.Kind != control.CtlTable || got.Of != member(w, "of") {
 		t.Errorf("potions control = %s, want kind table and the of of %s", text(got), text(w))
+	}
+}
+
+// VIEWMODEL.md 15.1, J1, J2: the pipeline's whole model, written by gen/view, is the golden's
+// bytes; each section is compared first, so a difference names its section.
+func TestPipelineGolden(t *testing.T) {
+	m := examples(t).model(t, pipelinePkg)
+	got, err := viewgen.Write(m)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want, err := os.ReadFile(pipelineGolden)
+	if err != nil {
+		t.Fatal(err)
+	}
+	g, w := decode(t, got).(map[string]any), decode(t, want).(map[string]any)
+	//canon:unordered each section compared alone
+	for name := range w {
+		if !reflect.DeepEqual(g[name], w[name]) {
+			t.Errorf("%s:\n got %s\nwant %s", name, text(g[name]), text(w[name]))
+		}
+	}
+	if !bytes.Equal(got, want) {
+		t.Errorf("the bytes differ from %s", pipelineGolden)
 	}
 }

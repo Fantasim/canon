@@ -133,6 +133,9 @@ func held(t types.Type) []types.Type {
 
 // FieldsOf are the fields of a record, applied record or case; nil for any other type.
 func FieldsOf(t types.Type) []*types.Field {
+	if t == nil {
+		return nil
+	}
 	switch x := t.Base().(type) {
 	case *types.RecordType:
 		return x.Fields

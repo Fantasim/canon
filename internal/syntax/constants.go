@@ -433,7 +433,7 @@ const (
 
 // The annotation catalogue's names (GRAMMAR.md §8.3).
 const (
-	annJSON, annStable, annCodes, AnnDeprecated, annSince, AnnReload = "json", "stable", "codes", "deprecated", "since", "reload"
+	AnnJSON, annStable, annCodes, AnnDeprecated, annSince, AnnReload = "json", "stable", "codes", "deprecated", "since", "reload"
 	AnnFiles, AnnMenu, AnnCpp, AnnGo, AnnTS                          = "files", "menu", "cpp", "go", "ts"
 	argWire, argPath, ArgCase, argTag, argInline, ArgUnit, argInt    = "wire", "path", "case", "tag", "inline", "unit", "int"
 	argBits, argPairs, argT, argWhy, argN, argTpl, ArgLabel          = "bits", "pairs", "T", "why", "n", "tpl", "label"

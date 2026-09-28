@@ -144,3 +144,21 @@ func Bounds(t types.Type) (lo, hi bool) {
 	}
 	return lo, hi
 }
+
+// MenuType is the record T a value of type t is, or a list, keyed list or table of (VIEWMODEL.md
+// N1); nil for none.
+func MenuType(t types.Type) types.Type {
+	b := t.Base()
+	if e := ElemOf(b); e != nil {
+		b = e.Base()
+	} else if tt, ok := b.(*types.TableType); ok {
+		b = tt.Elem.Base()
+	}
+	if a, ok := b.(*types.AppliedRecord); ok {
+		return a.Rec
+	}
+	if _, ok := b.(*types.RecordType); ok {
+		return b
+	}
+	return nil
+}

@@ -2,6 +2,8 @@ package rules
 
 import (
 	"context"
+	"maps"
+	"slices"
 
 	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/diag"
@@ -9,6 +11,7 @@ import (
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/views/control"
+	"github.com/fantasim/canonlang/internal/views/shape"
 )
 
 // Check reports the static view findings of prog into its bags after check (DECISIONS 221):
@@ -47,7 +50,7 @@ func newChecker(prog *check.Program, bags check.Bags, studio string) *checker {
 	return &checker{
 		info:     prog.Info,
 		studio:   studioOf(prog, bags, studio),
-		controls: control.NewResolver(control.NewIndex(prog, studio), control.Env{}),
+		controls: control.NewResolver(control.NewIndex(prog, studio, allErrors(bags)), control.Env{}),
 		first:    map[any]source.Span{},
 		labels:   map[any]source.Span{},
 		given:    map[propKey]source.Span{},
@@ -57,7 +60,7 @@ func newChecker(prog *check.Program, bags check.Bags, studio string) *checker {
 // eachView runs fn on each checkable view of p's source files, in path and source order;
 // report says whether the target's own findings (E1603, E1607, E1626) are reported.
 func (c *checker) eachView(p *check.Package, bag *diag.Bag, report bool, fn func(*view)) {
-	errs := errorSpans(bag)
+	errs := shape.Errors(bag.Findings())
 	for _, f := range p.Files {
 		if f.FileKind == syntax.FileSource {
 			fileViews(f, func(d *syntax.ViewDecl) {
@@ -81,27 +84,6 @@ func fileViews(f *syntax.File, fn func(*syntax.ViewDecl)) {
 			fn(vd)
 		}
 	}
-}
-
-// errorSpans are the errors other packages reported into bag (TYPES.md §1).
-func errorSpans(bag *diag.Bag) []source.Span {
-	var out []source.Span
-	for _, f := range bag.Findings() {
-		if f.Severity == diag.Error && !ownCode(f.Code) {
-			out = append(out, f.Span)
-		}
-	}
-	return out
-}
-
-// ownCode reports a code this package reports (ERRORS.md, Package column).
-func ownCode(code diag.Code) bool {
-	for i := range diag.Registry {
-		if diag.Registry[i].Code == code {
-			return diag.Registry[i].Package == ownPackage
-		}
-	}
-	return false
 }
 
 // view is one view being checked.
@@ -149,4 +131,15 @@ func (v *view) check() {
 	for _, it := range v.decl.Items {
 		v.item(it)
 	}
+}
+
+// allErrors are the errors of every package's bag that break a view (J4), packages in path
+// order.
+func allErrors(bags check.Bags) []source.Span {
+	names := slices.Sorted(maps.Keys(bags))
+	var out []source.Span
+	for _, name := range names {
+		out = append(out, shape.Errors(bags[name].Findings())...)
+	}
+	return out
 }

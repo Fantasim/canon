@@ -1,11 +1,13 @@
 package views_test
 
 import (
+	"bytes"
 	"encoding/json"
 	"os"
 	"testing"
 
 	"github.com/fantasim/canonlang/api/vm"
+	viewgen "github.com/fantasim/canonlang/internal/gen/view"
 	"github.com/fantasim/canonlang/internal/testkit/jsonschema"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/views/control"
@@ -48,6 +50,54 @@ func validate(t *testing.T, s *jsonschema.Schema, what string, v any) {
 	for _, e := range s.Validate(b) {
 		t.Errorf("%s: %v", what, e)
 	}
+}
+
+// VIEWMODEL.md V2, J1, J5: the whole model of every example package, as gen/view writes it,
+// validates against the schema, and building it twice gives the same bytes; a table control
+// without its columns (T1) does not validate.
+func TestExampleModelsValidate(t *testing.T) {
+	s := wholeSchema(t)
+	x := examples(t)
+	for _, p := range x.a.Program().Packages {
+		out := written(t, x.model(t, p.Path))
+		for _, e := range s.Validate(out) {
+			t.Errorf("%s: %v", p.Path, e)
+		}
+		if again := written(t, x.model(t, p.Path)); !bytes.Equal(out, again) {
+			t.Errorf("%s: two builds differ", p.Path)
+		}
+	}
+	bad := x.model(t, pipelinePkg)
+	v := bad.Values[potionsValue]
+	v.Control.Columns = nil
+	bad.Values[potionsValue] = v
+	if len(s.Validate(written(t, bad))) == 0 {
+		t.Error("the schema takes a table without columns")
+	}
+}
+
+// wholeSchema is the view-model schema (VIEWMODEL.md V2).
+func wholeSchema(t *testing.T) *jsonschema.Schema {
+	t.Helper()
+	b, err := os.ReadFile(schemaPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s, err := jsonschema.Compile(b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return s
+}
+
+// written is m's bytes (J1).
+func written(t *testing.T, m *vm.ViewModel) []byte {
+	t.Helper()
+	b, err := viewgen.Write(m)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return b
 }
 
 // VIEWMODEL.md V2, 12.3: the `types` of every example package validate against the schema's

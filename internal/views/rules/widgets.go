@@ -8,15 +8,21 @@ import (
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/views/control"
+	"github.com/fantasim/canonlang/internal/views/encode"
 	"github.com/fantasim/canonlang/internal/views/shape"
 )
 
-// widget is `widget: w`: a widget the studio does not declare is E1610, one whose `value`
-// parameter the field's type does not match E1608 (VIEWMODEL.md G16, G20).
+// widget is `widget: w`: a widget the studio does not declare is E1610, a string or an
+// expression too (log-2026-09-28 check follow-ups 2); one whose `value` parameter the field's
+// type does not match is E1608 (VIEWMODEL.md G16, G20).
 func (v *view) widget(n named, fi *syntax.FieldItem) {
-	id, ok := fi.Value.(*syntax.IdentExpr)
 	s := v.c.studio
-	if !ok || s == nil {
+	if s == nil {
+		return
+	}
+	id, ok := shape.Unparen(fi.Value).(*syntax.IdentExpr)
+	if !ok {
+		v.report(diag.E1610.At(v.span(fi.Value), diag.KindWidget, encode.SourceText(v.file, fi.Value), s.path))
 		return
 	}
 	o := v.c.info.Uses[id]

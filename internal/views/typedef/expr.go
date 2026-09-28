@@ -23,7 +23,7 @@ func init() {
 		types.Bool:     func(*Types, at, types.Type) vm.TypeExpr { return vm.TypeExpr{Kind: exprBool} },
 		types.Int:      func(_ *Types, _ at, t types.Type) vm.TypeExpr { return intExpr(t) },
 		types.Float:    func(_ *Types, _ at, t types.Type) vm.TypeExpr { return floatExpr(t) },
-		types.String:   func(_ *Types, _ at, t types.Type) vm.TypeExpr { return stringExpr(t) },
+		types.String:   func(s *Types, _ at, t types.Type) vm.TypeExpr { return s.stringExpr(t) },
 		types.Duration: func(_ *Types, _ at, t types.Type) vm.TypeExpr { return bounded(exprDuration, t) },
 		types.Enum:     func(_ *Types, _ at, t types.Type) vm.TypeExpr { return named(defEnum, t) },
 		types.Record:   (*Types).recordExpr,
@@ -80,10 +80,11 @@ func bounded(kind string, t types.Type) vm.TypeExpr {
 	return vm.TypeExpr{Kind: kind, Min: b.Min, Max: b.Max, MinExclusive: b.MinExclusive, MaxExclusive: b.MaxExclusive}
 }
 
-// stringExpr is a string with its byte lengths and pattern, or an asset (§12.3).
-func stringExpr(t types.Type) vm.TypeExpr {
+// stringExpr is a string with its byte lengths and pattern, or an asset by its root display path
+// (12.3).
+func (s *Types) stringExpr(t types.Type) vm.TypeExpr {
 	if a := shape.LayersOf(t).Asset; a != nil {
-		return vm.TypeExpr{Kind: exprAsset, Root: a.Root, Ext: a.Exts}
+		return vm.TypeExpr{Kind: exprAsset, Root: s.in.Assets.Root(a), Ext: a.Exts}
 	}
 	lo, hi := encode.Lengths(t)
 	return vm.TypeExpr{Kind: exprString, MinLen: lo, MaxLen: hi, Pattern: encode.Pattern(t)}

@@ -66,11 +66,21 @@ func (c *checker) studioName(bag *diag.Bag, at source.Span, enumName string, kin
 	}
 }
 
-// studioProp is `icon` or `tone`: a member of the studio's enum enumName.
+// studioProp is `icon` or `tone`: a member of the studio's enum enumName, bare or qualified by
+// the enum (VIEWMODEL.md 3.5, G16). check resolves the qualifier and leaves an unknown member
+// unresolved (log G16 contract): a member without a resolution is E1610, qualifier resolved or not.
 func studioProp(enumName string, kind diag.Kind) func(*view, named, *syntax.FieldItem) {
 	return func(v *view, _ named, fi *syntax.FieldItem) {
-		if id, ok := fi.Value.(*syntax.IdentExpr); ok && v.c.info.Uses[id] == nil {
-			v.c.studioName(v.bag, v.span(id), enumName, kind, id.Name)
+		switch x := shape.Unparen(fi.Value).(type) {
+		case *syntax.IdentExpr:
+			if v.c.info.Uses[x] == nil {
+				v.c.studioName(v.bag, v.span(x), enumName, kind, x.Name)
+			}
+		case *syntax.SelectorExpr:
+			q, ok := x.X.(*syntax.IdentExpr)
+			if ok && x.Name != nil && q.Name == enumName && v.c.info.NameUses[x.Name] == nil {
+				v.c.studioName(v.bag, v.span(x), enumName, kind, x.Name.Name)
+			}
 		}
 	}
 }
@@ -108,7 +118,7 @@ func (c *checker) menuAnnotation(f *syntax.File, l *syntax.LetDecl, bag *diag.Ba
 		if a.Name == nil || a.Name.Name != syntax.AnnMenu {
 			continue
 		}
-		if l.Mods != nil && l.Mods.Local.Valid() {
+		if shape.Local(l) {
 			diag.E1632.At(f.Span(a)).Report(bag)
 		}
 		for _, arg := range a.Args {
@@ -136,10 +146,10 @@ func (c *checker) navigation(p *check.Package, bag *diag.Bag) {
 	menus := c.menuTypes(p)
 	for _, o := range p.Decls {
 		d, ok := o.Decl().(*syntax.LetDecl)
-		if !ok || o.Kind() != check.ObjLet || c.info.Broken[o] || isError(o.Type()) || d.Mods != nil && d.Mods.Local.Valid() {
+		if !ok || o.Kind() != check.ObjLet || c.info.Broken[o] || isError(o.Type()) || shape.Local(d) {
 			continue
 		}
-		if f := shape.SourceForm(c.info, d.Value); f != shape.FormLiteral && f != shape.FormJSON || hasMenu(d) || menus[menuType(o.Type())] {
+		if f := shape.SourceForm(c.info, d.Value); f != shape.FormLiteral && f != shape.FormJSON || shape.Annotation(d, syntax.AnnMenu) != nil || menus[shape.MenuType(o.Type())] {
 			continue
 		}
 		diag.W1640.At(o.File().Span(d.Name), o.Name()).Report(bag)
@@ -163,31 +173,4 @@ func (c *checker) menuTypes(p *check.Package) map[types.Type]bool {
 		})
 	}
 	return out
-}
-
-// menuType is the record T a value of type t is, or a list, keyed list or table of; nil for none.
-func menuType(t types.Type) types.Type {
-	b := t.Base()
-	if e := shape.ElemOf(b); e != nil {
-		b = e.Base()
-	} else if tt, ok := b.(*types.TableType); ok {
-		b = tt.Elem.Base()
-	}
-	if a, ok := b.(*types.AppliedRecord); ok {
-		return a.Rec
-	}
-	if _, ok := b.(*types.RecordType); ok {
-		return b
-	}
-	return nil
-}
-
-// hasMenu reports a let with `@menu` (VIEWMODEL.md G23).
-func hasMenu(d *syntax.LetDecl) bool {
-	for _, a := range d.Annotations {
-		if a.Name != nil && a.Name.Name == syntax.AnnMenu {
-			return true
-		}
-	}
-	return false
 }

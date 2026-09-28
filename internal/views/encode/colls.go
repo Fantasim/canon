@@ -21,6 +21,14 @@ func NewColls(force Force) *Colls {
 	return &Colls{force: force, seen: map[*types.Collection][]*value.Record{}}
 }
 
+// Let is the settled value of the top-level let name of pkg; false when this build has none.
+func (c *Colls) Let(pkg, name string) (value.Value, bool) {
+	if c.force == nil {
+		return nil, false
+	}
+	return c.force(pkg, name)
+}
+
 // Counts are a collection's entries and active entries (J12); 0 for a field of an enclosing
 // record, whose entries are per instance.
 func (c *Colls) Counts(coll *types.Collection) (count, active int) {

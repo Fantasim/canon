@@ -54,7 +54,7 @@ func TestPinnedTypeExpressions(t *testing.T) {
 		fields[member(f, "name").(string)] = member(f, "type")
 	}
 	for _, c := range []struct{ field, want string }{
-		{"icon", `{"kind":"asset","root":"icons","ext":["png"]}`},
+		{"icon", `{"kind":"asset","root":"a/icons","ext":["png"]}`},
 		{"positive", `{"kind":"int","bits":64,"signed":true,"predicate":"it > 0"}`},
 		{"byKey", `{"kind":"list","of":{"kind":"record","ref":"a.Pt"},"keyedBy":"x"}`},
 		{"rows", `{"kind":"table","of":{"kind":"record","ref":"a.Pt"}}`},
@@ -91,7 +91,7 @@ func TestPinnedControls(t *testing.T) {
 	rec := x.named(t, demoPkg, "Pinned")
 	r := x.resolver()
 	for _, c := range []struct{ field, want string }{
-		{"icon", `{"kind":"file","root":"icons","ext":["png"]}`},
+		{"icon", `{"kind":"file","root":"a/icons","ext":["png"]}`},
 		{"round", `{"kind":"variant","of":"a.Shape","case":"circle"}`},
 		{"rounds", `{"kind":"table","of":"a.Shape","case":"circle"}`},
 	} {

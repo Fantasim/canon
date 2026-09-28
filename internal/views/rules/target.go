@@ -1,8 +1,6 @@
 package rules
 
 import (
-	"slices"
-
 	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/source"
@@ -91,27 +89,7 @@ func definesTable(t types.Type) bool {
 
 // broken reports a view holding an error, or on a broken target (TYPES.md §1, VIEWMODEL.md J4).
 func (c *checker) broken(v *view, errs []source.Span) bool {
-	if c.info.Broken[v.target] {
-		return true
-	}
-	within := v.span(v.decl)
-	if slices.ContainsFunc(errs, func(s source.Span) bool {
-		return s.File == within.File && s.Start >= within.Start && s.Start < within.End
-	}) {
-		return true
-	}
-	bad := false
-	syntax.Inspect(v.decl, func(n syntax.Node) bool {
-		switch n.(type) {
-		case *syntax.BadExpr, *syntax.BadDecl:
-			bad = true
-		}
-		if e, ok := n.(syntax.Expr); ok && isError(c.info.Types[e]) {
-			bad = true
-		}
-		return !bad
-	})
-	return bad
+	return c.info.Broken[v.target] || shape.ViewBroken(c.info, v.file, v.decl, errs)
 }
 
-func isError(t types.Type) bool { return t != nil && t.Kind() == types.Error }
+func isError(t types.Type) bool { return shape.IsError(t) }

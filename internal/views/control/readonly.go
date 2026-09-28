@@ -22,7 +22,7 @@ func (r *Resolver) ReadOnly(f *types.Field) (reason string, single json.RawMessa
 		return ReadonlyDeprecated, single
 	case single != nil:
 		return ReadonlySingle, single
-	case r.index.Field(f).isTrue(syntax.PropReadonly):
+	case r.index.Field(f).True(syntax.PropReadonly):
 		return ReadonlyView, nil
 	}
 	return "", nil

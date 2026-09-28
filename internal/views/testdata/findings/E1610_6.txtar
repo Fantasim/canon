@@ -1,0 +1,50 @@
+VIEWMODEL.md G16, TYPES.md §10.3 (log-2026-09-28 check follow-ups 2 and 3): a `unit` written as a string stands for the unit it names, and one naming no entry of the studio's `units` table is E1610 (unit); a `widget` given a string instead of a name is E1610 (widget).
+-- studio/studio.canon --
+/// The studio vocabulary.
+package studio
+
+/// Menus.
+enum Menu { items, system }
+
+/// Icons.
+enum Icon { gem, gear }
+
+/// Tones.
+enum Tone { info, danger }
+
+/// A unit.
+record UnitSpec {
+  /// Appended.
+  suffix: String = ""
+}
+
+/// Units.
+let units: table UnitSpec = {
+  hp { suffix: " HP" }
+  pct { suffix: " %" }
+}
+
+/// A weight and its share.
+widget weight_share(value: Int, siblings: [Int])
+-- a/a.canon --
+package a
+
+local record Item {
+  heal: Int
+  loss: Int
+  share: Int
+}
+
+view Item {
+  heal { unit: "hp" }
+  loss { unit: "nope" }
+  share { widget: "weight_share" }
+}
+-- findings.txt --
+error[E1610]  a/a.canon:11:16
+  unknown unit nope: not declared in studio package studio
+
+error[E1610]  a/a.canon:12:19
+  unknown widget "weight_share": not declared in studio package studio
+
+2 errors, 0 warnings in 2 packages (…)

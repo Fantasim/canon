@@ -1,0 +1,50 @@
+VIEWMODEL.md §3.5 (log-2026-09-28 check follow-ups 2): a literal-only property given an expression of the right type is E1613 (literal): `hidden` and `readonly` take `true` or `false`, `help`, `placeholder`, `none` and `step` a string; `when` takes an expression, and a literal in parentheses is a literal.
+-- a/a.canon --
+package a
+
+const tip = "A tip"
+
+local record Item {
+  count: Int
+  flag: Bool
+  note: String
+  label: String?
+  steps: [Int]
+  size: Int
+
+  fn doubled(self) -> Int {
+    return count * 2
+  }
+}
+
+view Item {
+  count { hidden: count > 1, help: note }
+  flag { readonly: flag, placeholder: tip }
+  label { none: tip, when: flag }
+  steps { step: tip }
+  size { hidden: (false), help: ("Size") }
+  doubled { hidden: flag }
+}
+-- findings.txt --
+error[E1613]  a/a.canon:19:19
+  hidden takes a literal here, not an expression
+
+error[E1613]  a/a.canon:19:36
+  help takes a literal here, not an expression
+
+error[E1613]  a/a.canon:20:20
+  readonly takes a literal here, not an expression
+
+error[E1613]  a/a.canon:20:39
+  placeholder takes a literal here, not an expression
+
+error[E1613]  a/a.canon:21:17
+  none takes a literal here, not an expression
+
+error[E1613]  a/a.canon:22:17
+  step takes a literal here, not an expression
+
+error[E1613]  a/a.canon:24:21
+  hidden takes a literal here, not an expression
+
+7 errors, 0 warnings in 1 package (…)
