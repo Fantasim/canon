@@ -614,6 +614,7 @@ var Registry = []Def{
 			{Name: "missing", Args: []Arg{{Name: "name", Type: ArgTypeName}, {Name: "arg", Type: ArgTypeName}}, Template: "@{name}: argument \"{arg}\" is missing"},
 			{Name: "kind", Args: []Arg{{Name: "name", Type: ArgTypeName}, {Name: "arg", Type: ArgTypeName}, {Name: "expected", Type: ArgTypeKind}}, Template: "@{name}({arg}): expected {expected}"},
 			{Name: "value", Args: []Arg{{Name: "name", Type: ArgTypeName}, {Name: "arg", Type: ArgTypeName}, {Name: "allowed", Type: ArgTypeNames}}, Template: "@{name}({arg}): expected one of {allowed}"},
+			{Name: "studio", Args: []Arg{{Name: "name", Type: ArgTypeName}, {Name: "arg", Type: ArgTypeName}, {Name: "enum", Type: ArgTypeName}}, Template: "@{name}({arg}): expected one word naming a {enum} member of the studio package"},
 			{Name: "exclusive", Args: []Arg{{Name: "name", Type: ArgTypeName}, {Name: "arg", Type: ArgTypeName}, {Name: "other", Type: ArgTypeName}}, Template: "@{name}: \"{arg}\" and \"{other}\" exclude each other"},
 			{Name: "needs", Args: []Arg{{Name: "name", Type: ArgTypeName}, {Name: "arg", Type: ArgTypeName}, {Name: "other", Type: ArgTypeName}}, Template: "@{name}: \"{arg}\" needs \"{other}\""},
 			{Name: "codes", Template: "@json(codes) needs @codes on the same enum"},
@@ -2901,19 +2902,24 @@ func (codeE1119) AtValue(span source.Span, name string, arg string, allowed []st
 	return newBuilder(&Registry[30], 2, span, name, arg, allowed)
 }
 
+// AtStudio reports: @{name}({arg}): expected one word naming a {enum} member of the studio package
+func (codeE1119) AtStudio(span source.Span, name string, arg string, enum string) *Builder {
+	return newBuilder(&Registry[30], 3, span, name, arg, enum)
+}
+
 // AtExclusive reports: @{name}: "{arg}" and "{other}" exclude each other
 func (codeE1119) AtExclusive(span source.Span, name string, arg string, other string) *Builder {
-	return newBuilder(&Registry[30], 3, span, name, arg, other)
+	return newBuilder(&Registry[30], 4, span, name, arg, other)
 }
 
 // AtNeeds reports: @{name}: "{arg}" needs "{other}"
 func (codeE1119) AtNeeds(span source.Span, name string, arg string, other string) *Builder {
-	return newBuilder(&Registry[30], 4, span, name, arg, other)
+	return newBuilder(&Registry[30], 5, span, name, arg, other)
 }
 
 // AtCodes reports: @json(codes) needs @codes on the same enum
 func (codeE1119) AtCodes(span source.Span) *Builder {
-	return newBuilder(&Registry[30], 5, span)
+	return newBuilder(&Registry[30], 6, span)
 }
 
 // E1120: the same annotation twice at one position (GRAMMAR.md §8.1).

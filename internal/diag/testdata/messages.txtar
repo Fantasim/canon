@@ -56,6 +56,7 @@ E1118 -: @resource.vocab.items is not allowed on this enum member
 E1119 missing: @resource.vocab.items: argument "resource.vocab.items" is missing
 E1119 kind: @resource.vocab.items(resource.vocab.items): expected a constant string
 E1119 value: @resource.vocab.items(resource.vocab.items): expected one of go, cpp
+E1119 studio: @resource.vocab.items(resource.vocab.items): expected one word naming a resource.vocab.items member of the studio package
 E1119 exclusive: @resource.vocab.items: "resource.vocab.items" and "resource.vocab.items" exclude each other
 E1119 needs: @resource.vocab.items: "resource.vocab.items" needs "resource.vocab.items"
 E1119 codes: @json(codes) needs @codes on the same enum

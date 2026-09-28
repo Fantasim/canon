@@ -60,6 +60,7 @@ var constructed = []*Builder{
 	E1119.AtMissing(sampleSpan, sampleName, sampleName),
 	E1119.AtKind(sampleSpan, sampleName, sampleName, KindConstantString),
 	E1119.AtValue(sampleSpan, sampleName, sampleName, sampleNames),
+	E1119.AtStudio(sampleSpan, sampleName, sampleName, sampleName),
 	E1119.AtExclusive(sampleSpan, sampleName, sampleName, sampleName),
 	E1119.AtNeeds(sampleSpan, sampleName, sampleName, sampleName),
 	E1119.AtCodes(sampleSpan),
