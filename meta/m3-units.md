@@ -32,7 +32,7 @@ Tick with the landing SHA.
 - [ ] U15 `api.ViewModel` (JSON equals the emit bytes) [opus]
 - [ ] U16 `gen/cpp` `types` mode; events compiles, Decode accepts EventConfig.json [sonnet]
 - [ ] U17 `ir` `types` mode rules mirroring U16's refusals [opus]
-- [ ] U18 `make check-real` (not gating) + realdata findings list [sonnet]
+- [x] U18 (bb2b756) `make check-real` (not gating) + realdata findings list [sonnet]
 - [ ] U19 `benchgen` (IMPLEMENTATION-PLAN §7.6) [sonnet]
 - [ ] U20 progen operators for every new code [sonnet]
 - [ ] U21 spec syncs of the logged calls [orchestrator / docs]
