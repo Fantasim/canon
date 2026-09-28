@@ -21,6 +21,7 @@ coverage.*
 # What `canon build` writes for an example with `emit … { out: "out/" }`; the reviewed copies
 # live in examples/**/expected/.
 /examples/**/out/
+!/examples/**/expected/**/out/
 
 # Local-only agent settings (absolute paths of this machine) and agent worktrees.
 /.claude/settings.local.json

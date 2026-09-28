@@ -1,0 +1,8 @@
+{
+  "$schema": "features.dependent.Objective@07274bc0",
+  "rows": [
+    {"$id": "slay", "goal": "kill", "target": "wolf", "itemRewards": false, "rewards": [100, 50], "place": {"items": true}, "bonus": "map"},
+    {"$id": "gather", "goal": "collect", "target": 10, "itemRewards": true, "rewards": ["potion"], "place": {"items": false}, "bonus": 5},
+    {"$id": "explore", "goal": "visit", "target": null, "itemRewards": false, "rewards": [], "place": {"items": false}, "bonus": 20}
+  ]
+}
