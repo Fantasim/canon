@@ -836,6 +836,9 @@ is the key for a table target. Wire form: WIRE.md.
      `T`.
   3. **Imports.** Public top-level lets of imported packages whose type is a collection of `T`.
 - No candidate at any level is `E2103`. Anything else after `ref` is `E3504`.
+- Finding a level-2 or level-3 candidate infers an unannotated `local let` (§15). If that inference
+  reads the target of the ref being resolved, each let inferred on the way is `E3008`; a ref that
+  resolves to nothing reports no cycle (§1).
 - A level-1 ref is bound per instance at evaluation; dereferencing or verifying one that no
   enclosing instance has bound is `E3505`, as EVALUATION.md §3.4 specifies.
 
