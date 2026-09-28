@@ -529,7 +529,8 @@ optional stripped):
   committed edit (§11). A rendering that fails shows "—" and produces no finding
   (MOCKUP-GAPS 38).
 - **L22.** A `show` line or method written inside a group appears there, in order. One written at
-  view level appears at the top of `_other`, in view order.
+  view level and named by no group appears at the top of `_other`, in view order; one a group
+  names appears only there (the view-level line sets presentation, G9).
 - **L23.** A method's label is its view label or its humanized name; its help is the `help`
   property or its doc comment.
 
@@ -654,7 +655,7 @@ the selected row (SPEC §16.9).
   | `edit` | a scalar field that is not read-only by C34/C43, not a key, not dependent | the cell control (C46), editable inline |
   | `value` | a read-only scalar field (deprecated, single, `readonly`, input) | the value, formatted by §9 |
   | `count` | a list, map or table field | its element count, followed by the element view's `plural` when there is one ("9 levels") (MOCKUP-GAPS 25) |
-  | `case` | a variant field | the current case's label, read-only (D4) |
+  | `case` | a variant field (a fixed case type `V.c` is a record field: `text`) | the current case's label, read-only (D4) |
   | `text` | a record field, a dependent field, a literal union | text rendered by the compiler (`Heading.Cells`, §13): a record's title, a ref's target title, a value's canonical text |
 
 - **T9.** A case field column shows an empty cell for rows whose shape lacks the field.
@@ -765,6 +766,8 @@ the selected row (SPEC §16.9).
 
 - **S8.** A `ref` interpolated in a template renders as its target's title when the target type has
   a view `title`, else as its key; `{r.id}` always renders the key (MOCKUP-GAPS 22, API.md V7).
+  Inside that target title a `ref` renders as its key (one level), and a target title that fails
+  (X7) renders the key.
 - **S9.** When two entries of one collection render the same title, each of them is shown as
   `<title> (<key>)` (MOCKUP-GAPS 26), where `<key>` is the key's canonical text (API.md P9, without
   JSON quotes) or `#<n>` (1-based position) in a plain list. The compiler applies it in index rows
@@ -1130,7 +1133,7 @@ A control is an object tagged by `kind`. Members are present only where they app
 | `reload`? | true for `@reload` |
 | `layers`? | active layers that amend this value, in application order |
 | `failed`? | true when the value could not be evaluated (J4) |
-| `sources` | always present: `{files, glob?, count?, entries?}`: `files` the declaring file, then the loaded file of a single-file `load`; `glob` (project-relative) and `count` (files matched) for `load.dir`; `entries` the number of `entry` declarations in other files |
+| `sources` | always present: `{files, glob?, count?, entries?}`: `files` the declaring file, then the loaded file of a single-file `load`; `glob` (display path, WIRE.md §2.3: project-relative, or `@root/…` when rooted) and `count` (files matched) for `load.dir`; `entries` the number of `entry` declarations in other files |
 
 ### 12.7 `usage`
 
@@ -1164,7 +1167,8 @@ Titles in rows are already disambiguated (S9).
 ### 12.9 `assets`, `units`, `widgets`, `studio`
 
 - `assets` maps each asset root used by the package's types (`"@resource/Icon/Item"`) to
-  `{dir}`, the root's directory relative to the project directory, with `/`. Files are matched
+  `{dir}`, the root's directory relative to the project directory, with `/` (an unrooted root
+  resolves from the file that declares the asset type, as `check` does). Files are matched
   exactly and case-sensitively (DECISIONS 19). The studio lists `dir` for the file picker and reads
   thumbnails from it.
 - `units` maps unit names to `{suffix, scale, thousands, decimals}` copied from the studio
@@ -1174,7 +1178,8 @@ Titles in rows are already disambiguated (S9).
   expressions (`_` is `{"kind": "any"}`), and the doc comment as a plain string (widget docs are not
   translated).
 - `studio`, only in the studio package's view model: `{menus, icons, tones, units, widgets}`:
-  `menus` the `Menu` enum's qualified name, `icons` and `tones` the member names of `Icon` and
+  `menus`? the `Menu` enum's qualified name (omitted when the studio declares no sound `Menu`
+  enum), `icons` and `tones` the member names of `Icon` and
   `Tone` in declaration order, `units` and `widgets` the full catalogues in the shapes above.
 
 ### 12.10 `i18n`

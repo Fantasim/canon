@@ -2627,7 +2627,6 @@
       },
       "additionalProperties": false,
       "required": [
-        "menus",
         "icons",
         "tones",
         "units",

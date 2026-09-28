@@ -428,7 +428,7 @@ type Widget struct {
 
 // Studio is #/$defs/studio of spec/viewmodel.schema.json.
 type Studio struct {
-	Menus   string            `json:"menus"`
+	Menus   string            `json:"menus,omitzero"`
 	Icons   []string          `json:"icons"`
 	Tones   []string          `json:"tones"`
 	Units   map[string]Unit   `json:"units"`
