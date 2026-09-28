@@ -9,14 +9,14 @@ import (
 	"github.com/fantasim/canonlang/internal/ir"
 )
 
-// patternTable declares kPattern, one line per patternRows row (CODEGEN.md §5.12, §7.7).
-func (g *gen) patternTable(re *regexp.Regexp) []string {
+// patternTable declares re's table as name (kPattern, kPattern2 …), one line per patternRows row (CODEGEN.md §5.12, §7.7).
+func (g *gen) patternTable(re *regexp.Regexp, name string) []string {
 	a, err := ir.CompilePattern(re)
 	if err != nil {
 		g.malformed(patternOutside, g.at)
 		return nil
 	}
-	lines := []string{fmt.Sprintf(tableOpenFormat, cppUint32, patternVar)}
+	lines := []string{fmt.Sprintf(tableOpenFormat, cppUint32, name)}
 	for _, row := range patternRows(a) {
 		lines = append(lines, tableRow(row))
 	}

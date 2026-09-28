@@ -8,9 +8,9 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// checkSafeInts is E8101: an integer a TypeScript emit writes fits a number, unless its field has @ts(bigint) (CODEGEN.md §4.1); not a value's own data in `types` mode, which emits none (decision 194), nor in a refused mode (decision 213).
+// checkSafeInts is E8101: an integer a TypeScript emit writes fits a number, unless its field has @ts(bigint) (CODEGEN.md §4.1); not a value's own data in `types` mode, which emits none (decision 194; selectedValues), nor in a refused mode (decision 213).
 func (s *stage) checkSafeInts(u *unit, es *emitSite) {
-	if es.e.Mode != ModeTypes && !modeRefused(es.e) {
+	if !modeRefused(es.e) {
 		for _, v := range selectedValues(u, es.e) {
 			span := v.span().span()
 			s.unsafeInts(v.v.V, v.v.Name, false, func(n *value.Int, field string) {

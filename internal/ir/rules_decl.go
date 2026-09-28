@@ -84,7 +84,7 @@ func (s *stage) checkOrderedCodes(u *unit) {
 	}
 }
 
-// checkRepresentable is E8012: no emitted type, value, constant or stored fn holds a Range, a function type, `_` or a Never outside an optional field (CODEGEN.md §4.4); a define record or a table of one is added when the package has a baked go emit, which cannot represent it (decisions 180, 194), so check fails wherever build would (decision 37). Data and embedded modes refuse one through their values' fingerprints (checkFingerprinted).
+// checkRepresentable is E8012: no emitted type, value, constant or stored fn holds a Range, a function type, `_` or a Never outside an optional field (CODEGEN.md §4.4); a value counts only where a code emit writes it (emittedValues); a define record or a table of one is added for a type or field when the package has a baked go emit, and for a value when a baked go emit selects it, since baked go cannot represent one (decisions 180, 194: per emit), so check fails wherever build would (decision 37). Data and embedded modes refuse one through their values' fingerprints (checkFingerprinted).
 func (s *stage) checkRepresentable(u *unit) {
 	defines := bakedFor(u, TargetGo)
 	s.eachOwnField(u, func(owner string, f *Field) {
@@ -93,8 +93,8 @@ func (s *stage) checkRepresentable(u *unit) {
 			u.report(unrepresentableFinding(site.span(), owner+qnameSep+f.Name, what))
 		}
 	})
-	for _, v := range u.values {
-		if what := unrepresentable(v.t, false, defines); what != nil {
+	for _, v := range emittedValues(u) {
+		if what := unrepresentable(v.t, false, bakedGoSelects(u, v)); what != nil {
 			u.report(unrepresentableFinding(v.span().span(), v.v.Name, what))
 		}
 	}

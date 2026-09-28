@@ -42,8 +42,8 @@ func checkPattern(t *testing.T, p string) (refused bool, pat *regexp.Regexp) {
 	w.add(t, "a.v.json", []byte("{}"))
 	for _, pkg := range w.build(t) {
 		for _, typ := range pkg.Types {
-			if r, ok := typ.(*ir.Record); ok && len(r.Fields) > 0 {
-				pat = r.Fields[0].Pattern
+			if r, ok := typ.(*ir.Record); ok && len(r.Fields) > 0 && len(r.Fields[0].Patterns) == 1 {
+				pat = r.Fields[0].Patterns[0]
 			}
 		}
 	}

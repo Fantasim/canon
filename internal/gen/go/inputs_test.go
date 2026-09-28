@@ -35,7 +35,7 @@ func inputsRecord(pkg string, e *ir.Enum) *ir.Record {
 		},
 		{
 			Name: "code", Type: strT, Optional: true, Input: &types.Input{Env: env("CODE")},
-			Pattern: regexp.MustCompile("^[A-Z]+$"),
+			Patterns: []*regexp.Regexp{regexp.MustCompile("^[A-Z]+$")},
 		},
 		{
 			Name: "scale", Type: f32T, Optional: true, Input: &types.Input{Env: env("SCALE")},

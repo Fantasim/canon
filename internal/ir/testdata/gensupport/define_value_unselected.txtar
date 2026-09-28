@@ -1,0 +1,14 @@
+Decisions 180, 194 (per emit), 37, clean: baked go cannot hold a define record, but E8012 judges only what it writes; a define value that only a baked C++ emit selects, which can hold it, checks clean beside a baked go emit that selects another value.
+-- a/a.canon --
+package a
+
+/// A define.
+let d: Define = { value: 3 }
+
+/// A count.
+let count: Int = 3
+
+emit cpp { out: "@features/ac", namespace: "a" }
+emit go { out: "@features/a", package: "a", values: [count] }
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

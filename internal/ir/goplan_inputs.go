@@ -1,13 +1,16 @@
 package ir
 
+import "strconv"
+
 // GoInputs are the package-level names of runtime inputs (CODEGEN.md §5.12): LoadInputs, the flag every input getter checks, and LoadInputs' local of failures, escaped like a loader's (§3.4).
 type GoInputs struct {
 	Func, Loaded, Errs string
 }
 
-// GoInput is one input field's package slots: its value, its presence flag when it is optional, its compiled pattern when it has one ("" else).
+// GoInput is one input field's package slots: its value, its presence flag when it is optional ("" else), one compiled pattern per pattern of its alias chain, in Field.Patterns' order.
 type GoInput struct {
-	Value, OK, Pattern string
+	Value, OK string
+	Patterns  []string
 }
 
 // Inputs are LoadInputs' names; the plan declares them only when a record of the package has an input field.
@@ -22,9 +25,7 @@ func (pl *GoNamePlan) Input(rec *Record, f *Field) GoInput {
 	if f.Optional {
 		in.OK = in.Value + goInputOKSuffix
 	}
-	if f.Pattern != nil {
-		in.Pattern = in.Value + goInputPatternSuffix
-	}
+	in.Patterns = PatternNames(in.Value+goInputPatternSuffix, len(f.Patterns))
 	return in
 }
 
@@ -59,7 +60,7 @@ func (pl *GoNamePlan) declareInputs(top *nameScope) {
 	for _, rec := range recs {
 		for _, f := range inputFields(rec) {
 			in := pl.Input(rec, f)
-			pl.declareNonEmpty(top, rec.QName()+qnameSep+f.Name, f, in.Value, in.OK, in.Pattern)
+			pl.declareNonEmpty(top, rec.QName()+qnameSep+f.Name, f, append([]string{in.Value, in.OK}, in.Patterns...)...)
 		}
 	}
 	pl.declare(top, pl.Inputs().Loaded, pl.p.Name, nil)
@@ -81,8 +82,20 @@ func (u *goImportUse) inputImports(fields []*Field) {
 		if f.Input != nil {
 			u.mark(goRT, goErrors)
 		}
-		if f.Input != nil && f.Pattern != nil {
+		if f.Input != nil && len(f.Patterns) > 0 {
 			u.mark(goRegexp)
 		}
 	}
+}
+
+// PatternNames are the names of n patterns of one input, from base: base, then base2, base3 … (CODEGEN.md §7.7: Go's input_<T>_<store>_Pattern, C++'s kPattern).
+func PatternNames(base string, n int) []string {
+	out := make([]string, n)
+	for i := range out {
+		out[i] = base
+		if i > 0 {
+			out[i] += strconv.Itoa(i + 1)
+		}
+	}
+	return out
 }

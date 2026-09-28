@@ -1,0 +1,17 @@
+Decisions 126, 194 (per emit): a C++ embedded emit writes a list of define records with its fingerprint, which a define record has none of, so it is E8012 there, even though the package's baked go emit, which does not select it, never judges it.
+-- a/a.canon --
+package a
+
+/// The kinds.
+let kinds: [Define] keyed by value = [{ value: 3 }]
+
+/// A count.
+let count: Int = 3
+
+emit cpp { out: "@features/ac", namespace: "a", mode: embedded, values: [kinds] }
+emit go { out: "@features/a", package: "a", values: [count] }
+-- findings.txt --
+error[E8012]  a/a.canon:4:5
+  kinds cannot be emitted: a load.defines table or record has no representation in generated code
+
+1 error, 0 warnings in 1 package (…)

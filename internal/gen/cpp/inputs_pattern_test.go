@@ -48,7 +48,7 @@ func patternsPackage() (*ir.Package, []string) {
 	for i, p := range loaderPatterns {
 		v := fmt.Sprintf("CANON_PAT_%d", i)
 		f := input(fmt.Sprintf("p%d", i), v, tString, true, nil)
-		f.Pattern = regexp.MustCompile(p)
+		f.Patterns = []*regexp.Regexp{regexp.MustCompile(p)}
 		rec.Fields = append(rec.Fields, f)
 		vars = append(vars, v)
 	}
@@ -122,7 +122,7 @@ func compareMarks(t *testing.T, got, want []string) {
 func TestPatternOutsideSubsetIsMalformed(t *testing.T) {
 	for _, p := range []string{`(?i)a`, `\ba`, `(?m)^a`} {
 		pkg := oneInput("outside", tString)
-		pkg.Types[0].(*ir.Record).Fields[0].Pattern = regexp.MustCompile(p)
+		pkg.Types[0].(*ir.Record).Fields[0].Patterns = []*regexp.Regexp{regexp.MustCompile(p)}
 		_, err := cppgen.Generate(pkg, pkg.Emits[0])
 		if !errors.Is(err, cppgen.ErrMalformed) || !strings.Contains(err.Error(), "an input pattern outside") {
 			t.Errorf("pattern %q: %v, want ErrMalformed naming the pattern", p, err)

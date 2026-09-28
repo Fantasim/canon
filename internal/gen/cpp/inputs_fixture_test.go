@@ -31,7 +31,7 @@ func inputsPackage() *ir.Package {
 		input("count", "CANON_TEST_COUNT", tInt, true, nil),
 		input("wait", "CANON_TEST_WAIT", tDuration, true, nil),
 	}}
-	rec.Fields[3].Pattern = regexp.MustCompile(`^[A-Z]{3}$`)
+	rec.Fields[3].Patterns = []*regexp.Regexp{regexp.MustCompile(`^[A-Z]{3}$`)}
 	emit := &ir.Emit{Target: ir.TargetCpp, Dir: "demo/out", Mode: ir.ModeData, Namespace: "demo"}
 	return &ir.Package{Name: "demo", Dir: "demo", Types: []ir.Type{color, level, rec}, Emits: []*ir.Emit{emit}}
 }

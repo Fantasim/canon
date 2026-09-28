@@ -1,0 +1,17 @@
+CODEGEN.md §2.2, §4.4, decision 37, clean: E8012 judges only a value an emit writes; a types-mode emit writes none and a baked emit writes only its `values`, so a Range and a list of Range that no emit writes check clean. (A function-typed value is E3306 before stage E, TYPES.md §12.3.)
+-- a/a.canon --
+package a
+
+/// A span.
+let span: Range = 1..3
+
+/// Spans.
+let spans: [Range] = [1..2, 4..]
+
+/// A count.
+let count: Int = 3
+
+emit cpp { out: "@features/ac", namespace: "a", mode: types }
+emit go { out: "@features/a", package: "a", values: [count] }
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

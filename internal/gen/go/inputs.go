@@ -29,9 +29,9 @@ func (g *gen) inputVars(rec *ir.Record, f *ir.Field) (value, ok string) {
 	return in.Value, in.OK
 }
 
-// inputPatternVar is field f's compiled pattern, one package var per pattern (EVALUATION.md §11.3).
-func (g *gen) inputPatternVar(rec *ir.Record, f *ir.Field) string {
-	return g.names.Input(rec, f).Pattern
+// inputPatternVars are field f's compiled patterns, one package var per pattern of its alias chain, in Field.Patterns' order (EVALUATION.md §11.3, TYPES.md §7.4).
+func (g *gen) inputPatternVars(rec *ir.Record, f *ir.Field) []string {
+	return g.names.Input(rec, f).Patterns
 }
 
 // inputReason is ir.InputReasonText; "" (a Kind or reason it names no text for) is a plan defect.
@@ -127,8 +127,8 @@ func (g *gen) inputDecls(recs []*ir.Record) {
 			if ok != "" {
 				g.printf(inputVarLine, ok, goBool)
 			}
-			if f.Pattern != nil {
-				g.printf(inputPatternVarLine, g.inputPatternVar(rec, f), g.use(regexpPkg, regexpPkg), strconv.Quote(f.Pattern.String()))
+			for i, name := range g.inputPatternVars(rec, f) {
+				g.printf(inputPatternVarLine, name, g.use(regexpPkg, regexpPkg), strconv.Quote(f.Patterns[i].String()))
 			}
 		}
 	}
@@ -301,9 +301,7 @@ func (g *gen) inputStringBody(rec *ir.Record, f *ir.Field, raw, env string) {
 	if c, has := g.lengthCheck(f, parsed); has {
 		checks = append(checks, c)
 	}
-	if c, has := g.patternCheck(rec, f, parsed); has {
-		checks = append(checks, c)
-	}
+	checks = append(checks, g.patternChecks(rec, f, parsed)...)
 	g.writeInputLiteral(inputSpec{
 		value: value, ok: ok, env: env, parsed: parsed, errv: errv, raw: raw,
 		parseFn: parseStringLiteral, kind: types.String, checks: checks, assign: parsed,
@@ -431,11 +429,12 @@ func (g *gen) lengthCheck(f *ir.Field, expr string) (inputCheck, bool) {
 	return inputCheck{cond: cond, reason: g.inputReason(ir.InputOutsideRange, ir.TypeRef{})}, true
 }
 
-// patternCheck is a String input's own pattern (EVALUATION.md §11.3).
-func (g *gen) patternCheck(rec *ir.Record, f *ir.Field, expr string) (inputCheck, bool) {
-	if f.Pattern == nil {
-		return inputCheck{}, false
+// patternChecks are a String input's own patterns, every one of its alias chain, innermost first (EVALUATION.md §11.3 step 3, TYPES.md §7.4).
+func (g *gen) patternChecks(rec *ir.Record, f *ir.Field, expr string) []inputCheck {
+	var out []inputCheck
+	for _, name := range g.inputPatternVars(rec, f) {
+		call := name + matchStringCall + expr + rparen
+		out = append(out, inputCheck{cond: not + call, reason: g.inputReason(ir.InputNoMatch, ir.TypeRef{})})
 	}
-	call := g.inputPatternVar(rec, f) + matchStringCall + expr + rparen
-	return inputCheck{cond: not + call, reason: g.inputReason(ir.InputNoMatch, ir.TypeRef{})}, true
+	return out
 }

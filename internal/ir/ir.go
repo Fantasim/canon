@@ -67,8 +67,8 @@ type Field struct {
 	Deprecated bool
 	Stable     bool
 	Input      *types.Input
-	Range      *types.Bound   // an input's own refinements, checked at run time
-	Pattern    *regexp.Regexp // idem
+	Range      *types.Bound     // an input's own refinements, checked at run time
+	Patterns   []*regexp.Regexp // idem: every distinct pattern of its alias chain, innermost first in alias-chain order (TYPES.md §7.4; DECISIONS 225)
 	Cpp        CppFieldOptions
 	Go, TS     NameOptions
 	BigInt     bool

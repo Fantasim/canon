@@ -66,6 +66,26 @@ func selectedValues(u *unit, e *Emit) []*valueSite {
 	return out
 }
 
+// emittedValues are the value sites some code emit writes, in declaration order: selected (CODEGEN.md §2.1), in a mode that writes values (§2.2; selectedValues), whose mode was not refused (decision 213).
+func emittedValues(u *unit) []*valueSite {
+	written := map[*valueSite]bool{}
+	for _, es := range u.emits {
+		if !isCode(es.e.Target) || modeRefused(es.e) {
+			continue
+		}
+		for _, v := range selectedValues(u, es.e) {
+			written[v] = true
+		}
+	}
+	var out []*valueSite
+	for _, v := range u.values {
+		if written[v] {
+			out = append(out, v)
+		}
+	}
+	return out
+}
+
 func (v *valueSite) span() declSite { return declSite{file: v.obj.File(), node: v.decl.Name} }
 
 // checkImports is E8004: a package whose types this code emit uses has an emit of its target (CODEGEN.md §2.8).
@@ -172,6 +192,12 @@ func (s *stage) checkDecoders(u *unit, es *emitSite) {
 	}
 }
 
+// bakedGoSelects reports a value the package's baked go emit writes: that emit cannot hold a define record or table (decisions 180, 194, judged per emit).
+func bakedGoSelects(u *unit, v *valueSite) bool {
+	es := emitFor(u, TargetGo)
+	return es != nil && es.e.Mode == ModeBaked && slices.Contains(selectedValues(u, es.e), v)
+}
+
 // bakedFor reports a package whose emit of target t is in baked mode.
 func bakedFor(u *unit, t Target) bool {
 	es := emitFor(u, t)
@@ -201,11 +227,10 @@ func (s *stage) checkWireForms(u *unit, es *emitSite) {
 	}
 }
 
-// checkFingerprinted is E8012 `define` for a data or embedded code emit: each value it selects carries its fingerprint, which a define record has none of (decisions 126, 194); a value baked go already refuses as a whole is not reported twice.
+// checkFingerprinted is E8012 `define` for a data or embedded code emit: each value it selects carries its fingerprint, which a define record has none of (decisions 126, 194); a value a baked go emit selects, and so already refuses as a whole (checkRepresentable), is not reported twice.
 func (s *stage) checkFingerprinted(u *unit, es *emitSite) {
-	goBaked := bakedFor(u, TargetGo)
 	for _, v := range selectedValues(u, es.e) {
-		if goBaked && unrepresentable(v.t, false, true) != nil {
+		if bakedGoSelects(u, v) && unrepresentable(v.t, false, true) != nil {
 			continue
 		}
 		if wireFind(v.t, map[types.Type]bool{}, isDefineType) != nil {

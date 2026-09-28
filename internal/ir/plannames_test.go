@@ -52,7 +52,7 @@ func inputPackage(target ir.Target) (*ir.Package, map[*ir.Field]*ir.Record) {
 		return &ir.Field{Name: name, Type: ir.TypeRef{Kind: types.String}, Optional: opt, Input: &types.Input{Env: name}}
 	}
 	code := in("code", false)
-	code.Pattern = regexp.MustCompile("^[a-z]+$")
+	code.Patterns = []*regexp.Regexp{regexp.MustCompile("^[a-z]+$")}
 	recs := []*ir.Record{
 		{Pkg: "a", Name: "Gen", Fields: []*ir.Field{in("flagX", true), code, in("codePattern", true)}},
 		{Pkg: "a", Name: "GenFlag", Fields: []*ir.Field{in("x", true)}},
@@ -78,7 +78,7 @@ func TestInputSlotsCollisionFree(t *testing.T) {
 	var goSlots []string
 	for f, rec := range owner { //canon:unordered collected, then sorted
 		in := gp.Input(rec, f)
-		for _, n := range []string{in.Value, in.OK, in.Pattern} {
+		for _, n := range append([]string{in.Value, in.OK}, in.Patterns...) {
 			if n != "" && !pkg[n] {
 				t.Errorf("go slot %s of %s.%s is not declared", n, rec.Name, f.Name)
 			}

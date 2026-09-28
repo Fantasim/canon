@@ -112,7 +112,7 @@ func (pl *CppNamePlan) Inputs() CppInputs {
 	for _, rec := range inputRecords(pl.p) {
 		for _, f := range inputFields(rec) {
 			used[f.Type.Kind] = true
-			patterned = patterned || f.Pattern != nil
+			patterned = patterned || len(f.Patterns) > 0
 		}
 	}
 	var helpers []string

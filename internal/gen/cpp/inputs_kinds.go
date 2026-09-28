@@ -51,14 +51,16 @@ func (g *gen) readDuration(f *ir.Field) inputRead {
 	return r
 }
 
-// readString checks the length in bytes, then the pattern with search semantics, by MatchPattern over the pattern's constant automaton (EVALUATION.md §11.3; CODEGEN.md §5.12, §7.7).
+// readString checks the length in bytes, then each pattern of the alias chain, innermost first, with search semantics, by MatchPattern over the pattern's constant automaton (EVALUATION.md §11.3; TYPES.md §7.4; CODEGEN.md §5.12, §7.7): kPattern, kPattern2 …
 func (g *gen) readString(f *ir.Field) inputRead {
 	r := g.parsed(f, cppString)
 	r.checks = ownRange(r.checks, f.Range, fmt.Sprintf(sizeFormat, valVar))
-	if f.Pattern != nil {
-		r.decls = append(g.patternTable(f.Pattern), r.decls...)
-		r.checks = append(r.checks, inputCheck{cond: fmt.Sprintf(noMatchFormat, patternVar, valVar), reason: ir.InputNoMatch})
+	var tables []string
+	for i, name := range ir.PatternNames(patternVar, len(f.Patterns)) {
+		tables = append(tables, g.patternTable(f.Patterns[i], name)...)
+		r.checks = append(r.checks, inputCheck{cond: fmt.Sprintf(noMatchFormat, name, valVar), reason: ir.InputNoMatch})
 	}
+	r.decls = append(tables, r.decls...)
 	r.stored = fmt.Sprintf(moveFormat, valVar)
 	return r
 }

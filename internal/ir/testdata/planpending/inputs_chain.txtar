@@ -1,0 +1,40 @@
+TYPES.md §7.4 ("both are checked"), EVALUATION.md §11.3 step 3, CODEGEN.md §7.7: an input through an alias chain has one Go pattern slot per pattern, innermost first, input_<T>_<store>_Pattern then _Pattern2 and _Pattern3, each declared in the package scope; C++ adds MatchPattern once.
+-- a/a.canon --
+package a
+
+/// A lower-case code.
+type Code = String(/^[a-z]+$/)
+
+/// A short code.
+type Short = Code(/^.{1,4}$/)
+
+/// Settings.
+record Gen {
+  /// A short code, with a pattern of its own.
+  code: input Short(/^a/)? from env "CODE"
+  /// A lower-case code.
+  plain: input Code? from env "PLAIN"
+}
+
+/// The settings.
+let settings: Gen = {}
+
+emit go { out: "@features/a", package: "a" }
+emit cpp { out: "@features/ac", namespace: "a", mode: data }
+emit json { out: "out/" }
+-- a.settings.json --
+{}
+-- plan.txt --
+== go a
+Gen: Code Plain
+LoadInputs(): errs
+aData: settings
+package: Gen GetSettings LoadInputs aData aValues buildA errors input_Gen_code input_Gen_code_OK input_Gen_code_Pattern input_Gen_code_Pattern2 input_Gen_code_Pattern3 input_Gen_plain input_Gen_plain_OK input_Gen_plain_Pattern inputsLoaded_ regexp rt sync
+== cpp a
+AAccess: LoadSettings
+AInputs: Gen
+AInputs::Gen: code_ plain_
+Gen: GetCode GetPlain Load
+a: EnvText Gen LoadInputs MatchPattern ParseStringLiteral kSettingsSchema
+detail: AAccess AInputs AInputsLoaded Decode
+0 errors, 0 warnings in 1 package (…)

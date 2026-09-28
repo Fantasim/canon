@@ -3,6 +3,7 @@ package ir
 import (
 	"cmp"
 	"regexp"
+	"slices"
 
 	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/syntax"
@@ -25,7 +26,7 @@ func (s *stage) fields(fs []*types.Field, items []syntax.RecordItem, owner check
 			fd.WirePath = f.WirePath
 		}
 		if f.Input != nil {
-			fd.Range, fd.Pattern = ownRefinements(t)
+			fd.Range, fd.Patterns = ownRefinements(t)
 		}
 		n := nameOverrides(f.Annotations)
 		fd.Go, fd.TS = n.goName, n.ts
@@ -99,26 +100,38 @@ func (s *stage) readsInstance(e syntax.Expr, params map[check.Object]bool) bool 
 	return found
 }
 
-// ownRefinements are the range and pattern written on a type, through aliases (CODEGEN.md §5.12): nested ranges as their intersection, the outermost pattern.
-func ownRefinements(t types.Type) (*types.Bound, *regexp.Regexp) {
+// ownRefinements are the range and patterns written on a type, through aliases (CODEGEN.md §5.12): nested ranges as their intersection, and every pattern (TYPES.md §7.4: all are checked) innermost first in alias-chain order (not declaration order), as eval checks them at storage points (EVALUATION.md §4.3); the order is not observable in a loader, whose every pattern failure reads the same line. A pattern repeated along the chain is kept once: one table, one regexp.
+func ownRefinements(t types.Type) (*types.Bound, []*regexp.Regexp) {
 	var rng *types.Bound
-	var pat *regexp.Regexp
+	var pats []*regexp.Regexp
 	float := t.Base().Kind() == types.Float
 	for t != nil {
 		switch x := t.(type) {
 		case *types.Refined:
 			rng = intersect(rng, x.Range, float)
-			if pat == nil {
-				pat = x.Pattern
+			if x.Pattern != nil {
+				pats = append(pats, x.Pattern)
 			}
 			t = x.Of
 		case *types.Alias:
 			t = x.Def
 		default:
-			return rng, pat
+			t = nil
 		}
 	}
-	return rng, pat
+	slices.Reverse(pats)
+	return rng, distinctPatterns(pats)
+}
+
+// distinctPatterns keeps the first of each pattern text, in order.
+func distinctPatterns(pats []*regexp.Regexp) []*regexp.Regexp {
+	var out []*regexp.Regexp
+	for _, p := range pats {
+		if !slices.ContainsFunc(out, func(q *regexp.Regexp) bool { return q.String() == p.String() }) {
+			out = append(out, p)
+		}
+	}
+	return out
 }
 
 // intersect is the values both bounds admit, nil when neither bounds; F compares for a Float base, I otherwise.

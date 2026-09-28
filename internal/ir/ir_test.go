@@ -230,9 +230,9 @@ func TestTranslatedBody(t *testing.T) {
 func TestInputsAndDefines(t *testing.T) {
 	key := &ir.Field{
 		Name: "apiKey", Type: stringRef, Optional: true, Input: &types.Input{Env: "RESOURCESTUDIO_GEMINI_KEY"},
-		Range: &types.Bound{HasLo: true, Lo: types.Limit{I: 1}}, Pattern: regexp.MustCompile(`^[A-Za-z0-9_-]+$`),
+		Range: &types.Bound{HasLo: true, Lo: types.Limit{I: 1}}, Patterns: []*regexp.Regexp{regexp.MustCompile(`^[A-Za-z0-9_-]+$`)},
 	}
-	if !key.Pattern.MatchString("abc") || key.Range.Lo.I != 1 || key.Input.Env == "" {
+	if !key.Patterns[0].MatchString("abc") || key.Range.Lo.I != 1 || key.Input.Env == "" {
 		t.Errorf("an input field keeps its refinements")
 	}
 	p := &ir.Package{Defines: []*ir.DefineTable{{Pkg: "resource.vocab", Value: "items", Names: []string{"II_GEN_GOLD", "II_POT_HEAL_L"}, Values: []int64{12, 3}}}}
