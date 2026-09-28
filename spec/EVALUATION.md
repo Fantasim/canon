@@ -347,7 +347,8 @@ refinements are (§4.3).
 Traversal order (stage C): top-level values in forced-set order (§2.1), each walked depth-first
 pre-order: fields in declaration order, elements in order, map entries in insertion order (key,
 then value). An instance reached a second time is skipped. On each instance, its checks run in
-declaration order: for a case value, the case's checks.
+declaration order: for a case value, the variant-level checks (TYPES.md §12.1), then the case's
+checks.
 
 Inside an instance check, the fields are in scope and `self` is the instance (an entry when it is
 one).
@@ -379,8 +380,8 @@ F4, F12).
 A **named** check (`check name: …`) puts `name` in the finding's `check` field. Block checks
 inherit nothing: `fail`/`warn` findings of a named block check carry its name too.
 
-Check names are unique within a record or case, and within a package for package checks
-(`E5003`).
+Check names are unique within a record or case (a variant-level check shares every case's names),
+and within a package for package checks (`E5003`).
 
 `fail` and `warn` are allowed only lexically inside `check { }` blocks (`E1105`, GRAMMAR.md).
 `at` may be any value, including `none` (located where that `none` was written or defaulted).

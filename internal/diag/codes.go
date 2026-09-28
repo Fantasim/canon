@@ -380,7 +380,7 @@ var kindWords = [...]string{
 	"variable",
 	"variant",
 	"variant case",
-	"a method or check declared on a variant outside its cases",
+	"a variant-level method a generator must write",
 	"view",
 	"widget",
 }
