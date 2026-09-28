@@ -208,7 +208,7 @@ that inlines it).
 | `when` | `Bool` expression | field, method | shown only while it holds (§5.5) |
 | `none` | plain text | optional field | the label of `none` (MOCKUP-GAPS 12) |
 | `step` | template over `{index}` only | list field | name of each element in step, list and positional controls (§7.7); another name is `E1623` |
-| `icon` | an `Icon` member of the studio package, bare or qualified (`Icon.gem`) | enum member, case | UI symbol |
+| `icon` | an `Icon` member of the studio package, bare or qualified (`Icon.gem`, resolved by G16 without an import) | enum member, case | UI symbol |
 | `tone` | a `Tone` member of the studio package | enum member, case | UI tone |
 
 - **G15.** `control` and `widget` on the same field is `E1634`.
@@ -640,7 +640,8 @@ the selected row (SPEC §16.9).
 - **T6a.** For a collection of variants, the next column is the case (field `"$case"`, mode
   `case`). A variant
   view's `columns` and `filters` name case fields (§3.3 rule 3 applied to the variant's cases); their
-  field key is `<case>.<field>`, and a filter on the case uses `"$case"`.
+  field key is `<case>.<field>`. `filters { kind }` in a variant view filters on the case (field
+  `"$case"`; `kind` is reserved on cases, TYPES §3.6).
 - **T7.** The declared `columns` follow, in order. A declared column naming the key field of a
   keyed list is not repeated: its width goes to the entry column. Without `columns`, the columns
   are the first 6 scalar fields in declaration order, skipping the key field, hidden fields and
