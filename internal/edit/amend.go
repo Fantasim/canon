@@ -4,6 +4,7 @@ import (
 	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/value"
+	"github.com/fantasim/canonlang/internal/views/shape"
 )
 
 // layerStep is a value an active layer set (W10): layered, or with that layer as the edit layer
@@ -25,9 +26,9 @@ func (j *judge) layerStep(i int) cursor {
 func (j *judge) rhsCursor(it item, layer string) cursor {
 	c := cursor{state: stTree, mode: ModeCanon, node: it.node, file: it.file, span: it.file.Span(it.node), layer: layer}
 	e, _ := it.node.(syntax.Expr)
-	switch sourceForm(j.s.info, e) {
-	case formLiteral:
-	case formJSON:
+	switch shape.SourceForm(j.s.info, e) {
+	case shape.FormLiteral:
+	case shape.FormJSON:
 		c.mode = ModeJSON
 	default:
 		c.state = stOpaque

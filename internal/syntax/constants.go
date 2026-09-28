@@ -434,10 +434,18 @@ const (
 // The annotation catalogue's names (GRAMMAR.md §8.3).
 const (
 	annJSON, annStable, annCodes, annDeprecated, annSince, AnnReload = "json", "stable", "codes", "deprecated", "since", "reload"
-	AnnFiles, annMenu, AnnCpp, AnnGo, AnnTS                          = "files", "menu", "cpp", "go", "ts"
+	AnnFiles, AnnMenu, AnnCpp, AnnGo, AnnTS                          = "files", "menu", "cpp", "go", "ts"
 	argWire, argPath, argCase, argTag, argInline, ArgUnit, argInt    = "wire", "path", "case", "tag", "inline", "unit", "int"
 	argBits, argPairs, argT, argWhy, argN, argTpl, argLabel          = "bits", "pairs", "T", "why", "n", "tpl", "label"
 	ArgDefines, ArgStruct, ArgHeader, ArgAccess, ArgName, ArgBigint  = "defines", "struct", "header", "access", "name", "bigint"
+)
+
+// The view properties and the studio's names, shared by check and views (VIEWMODEL.md §3.5, G16).
+const (
+	PropHelp, PropUnit, PropControl, PropWidget, PropReadonly = "help", ArgUnit, "control", "widget", "readonly"
+	PropHidden, PropPlaceholder, PropWhen, PropNone, PropStep = "hidden", "placeholder", wordWhen, "none", "step"
+	PropIcon, PropTone                                        = wordIcon, "tone"
+	StudioMenu, StudioIcon, StudioTone, StudioUnits           = "Menu", "Icon", "Tone", "units"
 )
 
 // Closed sets of annotation symbols (GRAMMAR.md §8.3).

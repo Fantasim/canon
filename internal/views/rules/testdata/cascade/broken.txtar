@@ -1,0 +1,50 @@
+TYPES.md §1, VIEWMODEL.md J4 (log-2026-09-28 decision 13): a view holding an error of another package (a type error in a template, a syntax error in an item), or whose target is broken, is not checked; one whose target check did not resolve is check's. Views reports nothing here, though each view below also breaks a view rule.
+-- a/a.canon --
+package a
+
+local record Item {
+  label: String
+  count: Int
+}
+
+view Item {
+  title "{lable}"
+  group main "Main" { label }
+  group main "Again" { count }
+}
+
+local record Level {
+  cost: Missing
+  label: String
+}
+
+view Level {
+  label { control: switch }
+}
+
+view Nothing {
+  title "none"
+}
+
+local record Tier {
+  rank: Int
+}
+
+view Tier {
+  rank { control: dial }
+  show "Rank" "{rank +}"
+}
+-- findings.txt --
+error[E2102]  a/a.canon:9:11
+  unknown name lable (did you mean label?)
+
+error[E2102]  a/a.canon:15:9
+  unknown name Missing
+
+error[E2102]  a/a.canon:23:6
+  unknown name Nothing
+
+error[E1116]  a/a.canon:33:23
+  expected expr; found }"
+
+4 errors, 0 warnings in 1 package (…)

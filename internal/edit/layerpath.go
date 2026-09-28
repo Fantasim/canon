@@ -5,6 +5,7 @@ import (
 
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/value"
+	"github.com/fantasim/canonlang/internal/views/shape"
 )
 
 // staticAmendment is where layer x's amendment of res's path or an ancestor, active or not, puts an edit (W11a).
@@ -36,8 +37,8 @@ func (s *Snapshot) amends(f *syntax.File, b *syntax.AmendBlock, res resolution) 
 func (s *Snapshot) inAmendment(it item, res resolution, i int) Editability {
 	for ; i < len(res.Steps); i++ {
 		switch s.nodeForm(it.node) {
-		case formLiteral:
-		case formJSON:
+		case shape.FormLiteral:
+		case shape.FormJSON:
 			return Editability{Mode: ModeJSON, File: loadDisplay(it.file, it.node)}
 		default:
 			return Editability{Reason: ReasonComputed}
@@ -70,12 +71,12 @@ func missingChild(it item, res resolution, i int) Editability {
 }
 
 // nodeForm is sourceForm of a node, an entry being a literal.
-func (s *Snapshot) nodeForm(n syntax.Node) form {
+func (s *Snapshot) nodeForm(n syntax.Node) shape.Form {
 	if _, ok := n.(*syntax.EntryItem); ok {
-		return formLiteral
+		return shape.FormLiteral
 	}
 	e, _ := n.(syntax.Expr)
-	return sourceForm(s.info, e)
+	return shape.SourceForm(s.info, e)
 }
 
 // loadDisplay is the display path of the file a plain load reads (WIRE.md §2.3), "" for load.dir.

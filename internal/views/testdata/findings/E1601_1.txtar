@@ -1,0 +1,88 @@
+VIEWMODEL.md C40, §4.5: a `control:` hint that does not accept the field's type (the optional stripped) is E1601: a switch on a String, a segmented on an Int, chips on a list of strings, color on a String without the colour pattern, number on a Bool; the accepted ones (text on anything, color on its pattern and on UInt32, number on an optional Int, chips on a list of enum members, select on an enum and on a ref) are not.
+-- studio/studio.canon --
+/// The studio vocabulary.
+package studio
+
+/// Menus.
+enum Menu { items, system }
+
+/// Icons.
+enum Icon { gem, gear }
+
+/// Tones.
+enum Tone { info, danger }
+
+/// A unit.
+record UnitSpec {
+  /// Appended.
+  suffix: String = ""
+}
+
+/// Units.
+let units: table UnitSpec = {
+  hp { suffix: " HP" }
+  pct { suffix: " %" }
+}
+
+/// Numbered steps.
+widget ordered_steps(value: [_])
+
+/// A weight and its share.
+widget weight_share(value: Int, siblings: [Int])
+-- a/a.canon --
+package a
+
+local enum Rarity { common, rare }
+
+local record Tag {
+  label: String
+}
+
+local let tags: table Tag = {}
+
+local record Item {
+  name: String
+  count: Int
+  words: [String]
+  hex: String
+  ok: Bool
+  shade: String(/^#[0-9a-fA-F]{6}$/)
+  rgb: UInt32
+  size: Int?
+  rarities: [Rarity]
+  rarity: Rarity
+  tag: ref tags
+  label: String
+}
+
+view Item {
+  name { control: switch }
+  count { control: segmented }
+  words { control: chips }
+  hex { control: color }
+  ok { control: number }
+  shade { control: color }
+  rgb { control: color }
+  size { control: number }
+  rarities { control: chips }
+  rarity { control: select }
+  tag { control: search }
+  label { control: text }
+}
+-- findings.txt --
+error[E1601]  a/a.canon:27:19
+  control switch does not accept String (field name)
+
+error[E1601]  a/a.canon:28:20
+  control segmented does not accept Int (field count)
+
+error[E1601]  a/a.canon:29:20
+  control chips does not accept [String] (field words)
+
+error[E1601]  a/a.canon:30:18
+  control color does not accept String (field hex)
+
+error[E1601]  a/a.canon:31:17
+  control number does not accept Bool (field ok)
+
+5 errors, 0 warnings in 2 packages (…)

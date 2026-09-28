@@ -1,0 +1,55 @@
+VIEWMODEL.md G16, G23: a menu the studio package does not declare is E1610 (menu), in a view's `menu` and in `@menu`, whether or not the studio is imported.
+-- studio/studio.canon --
+/// The studio vocabulary.
+package studio
+
+/// Menus.
+enum Menu { items, system }
+
+/// Icons.
+enum Icon { gem, gear }
+
+/// Tones.
+enum Tone { info, danger }
+
+/// A unit.
+record UnitSpec {
+  /// Appended.
+  suffix: String = ""
+}
+
+/// Units.
+let units: table UnitSpec = {
+  hp { suffix: " HP" }
+  pct { suffix: " %" }
+}
+
+/// Numbered steps.
+widget ordered_steps(value: [_])
+
+/// A weight and its share.
+widget weight_share(value: Int, siblings: [Int])
+-- a/a.canon --
+package a
+
+/// An item.
+record Item {
+  /// Its label.
+  label: String
+}
+
+/// The items.
+@menu(shop)
+let items: [Item] = []
+
+view Item {
+  menu store icon gem
+}
+-- findings.txt --
+error[E1610]  a/a.canon:10:7
+  unknown menu shop: not declared in studio package studio
+
+error[E1610]  a/a.canon:14:8
+  unknown menu store: not declared in studio package studio
+
+2 errors, 0 warnings in 2 packages (…)

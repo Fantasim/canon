@@ -1,0 +1,29 @@
+VIEWMODEL.md §3.5, log-2026-09-28 U5 review calls: a `step` text using anything but a bare `{index}` is E1623: another name, an expression, a format spec; a bare `{index}` beside them is fine.
+-- a/a.canon --
+package a
+
+local record Item {
+  level: Int
+  steps: [Int]
+  rungs: [Int]
+  ranks: [Int]
+  tiers: [Int]
+}
+
+view Item {
+  steps { step: "Step {index} of {level}" }
+  rungs { step: "Rung {index + 1}" }
+  ranks { step: "Rank {index:,}" }
+  tiers { step: "Tier {index}" }
+}
+-- findings.txt --
+error[E1623]  a/a.canon:12:35
+  a step text may only use {index}, not {level}
+
+error[E1623]  a/a.canon:13:24
+  a step text may only use {index}, not {index + 1}
+
+error[E1623]  a/a.canon:14:24
+  a step text may only use {index}, not {index:,}
+
+3 errors, 0 warnings in 1 package (…)

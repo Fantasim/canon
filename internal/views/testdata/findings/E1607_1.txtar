@@ -1,0 +1,32 @@
+VIEWMODEL.md G5: a second view of one target is E1607, pointing at the first; `view V` and `view V.c` are different targets.
+-- a/a.canon --
+package a
+
+local variant Reward {
+  gold { amount: Int }
+  gem { carats: Int }
+}
+
+view Reward {
+  title "{self.kind}"
+}
+
+view Reward.gold {
+  title "{amount}"
+}
+
+view Reward {
+  gem "Gem"
+}
+
+view Reward.gold {
+  amount "Amount"
+}
+-- findings.txt --
+error[E1607]  a/a.canon:16:6
+  Reward already has a view at a/a.canon:8
+
+error[E1607]  a/a.canon:20:6
+  Reward.gold already has a view at a/a.canon:12
+
+2 errors, 0 warnings in 1 package (…)

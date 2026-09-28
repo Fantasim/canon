@@ -1,0 +1,23 @@
+VIEWMODEL.md G6, log-2026-09-28 U5 round 2 calls: a view on a let that does not come from `load.defines` is E1626 (let); a const target is check's E2110.
+-- a/a.canon --
+package a
+
+local let count: Int = 3
+
+local const LIMIT = 10
+
+view count {
+  title "{value}"
+}
+
+view LIMIT {
+  title "Limit"
+}
+-- findings.txt --
+error[E1626]  a/a.canon:7:6
+  count is a value that does not come from load.defines: only define tables take a view
+
+error[E2110]  a/a.canon:11:6
+  LIMIT is a value, not a type
+
+2 errors, 0 warnings in 1 package (…)

@@ -1,0 +1,46 @@
+VIEWMODEL.md G10, log-2026-09-28 views V1 calls: any item's label declared twice is E1614: an enum member, a variant case, a method; an item without a label twice is not.
+-- a/a.canon --
+package a
+
+local enum Rarity { common, rare }
+
+local variant Reward {
+  gold { amount: Int }
+  gem { carats: Int }
+}
+
+local record Item {
+  count: Int
+
+  fn doubled(self) -> Int {
+    return count * 2
+  }
+}
+
+view Rarity {
+  common "Common"
+  rare
+  common "Usual"
+  rare
+}
+
+view Reward {
+  gold "Gold"
+  gold "Coins"
+}
+
+view Item {
+  doubled "Doubled"
+  group main "Main" { doubled "Twice" }
+}
+-- findings.txt --
+error[E1614]  a/a.canon:21:10
+  the label of common is declared twice (first at a/a.canon:19)
+
+error[E1614]  a/a.canon:27:8
+  the label of gold is declared twice (first at a/a.canon:26)
+
+error[E1614]  a/a.canon:32:31
+  the label of doubled is declared twice (first at a/a.canon:31)
+
+3 errors, 0 warnings in 1 package (…)

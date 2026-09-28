@@ -1,0 +1,28 @@
+VIEWMODEL.md §3.3: a view naming a method that takes parameters is E1616, at view level and in a group; one without parameters is fine.
+-- a/a.canon --
+package a
+
+local record Item {
+  count: Int
+
+  fn scaled(self, k: Int) -> Int {
+    return count * k
+  }
+
+  fn doubled(self) -> Int {
+    return count * 2
+  }
+}
+
+view Item {
+  scaled "Scaled"
+  group main "Main" { doubled, scaled }
+}
+-- findings.txt --
+error[E1616]  a/a.canon:16:3
+  method scaled takes parameters: a view may name only methods without parameters
+
+error[E1616]  a/a.canon:17:32
+  method scaled takes parameters: a view may name only methods without parameters
+
+2 errors, 0 warnings in 1 package (…)

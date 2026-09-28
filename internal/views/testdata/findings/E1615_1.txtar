@@ -1,0 +1,48 @@
+VIEWMODEL.md G14: an unescaped `{` in a plain text is E1615: a label, a group label and intro, a show label, `singular`, `plural`, `help`, `placeholder` and `none`; `{{` and the templates are not.
+-- a/a.canon --
+package a
+
+local record Item {
+  label: String?
+  count: Int
+}
+
+view Item {
+  title "{count} {{items}}"
+  singular "an {count}"
+  plural "{count}s"
+  show "Count {count}" "{count}"
+  group main "Main {count}" "The {count}" {
+    count "Count {{x}}"
+  }
+  label "Label {count}" { help: "The {count}", placeholder: "{count}", none: "No {count}" }
+}
+-- findings.txt --
+error[E1615]  a/a.canon:10:17
+  { in plain text: labels, help, intros, placeholders and none texts are not templates (write {{)
+
+error[E1615]  a/a.canon:11:12
+  { in plain text: labels, help, intros, placeholders and none texts are not templates (write {{)
+
+error[E1615]  a/a.canon:12:16
+  { in plain text: labels, help, intros, placeholders and none texts are not templates (write {{)
+
+error[E1615]  a/a.canon:13:21
+  { in plain text: labels, help, intros, placeholders and none texts are not templates (write {{)
+
+error[E1615]  a/a.canon:13:35
+  { in plain text: labels, help, intros, placeholders and none texts are not templates (write {{)
+
+error[E1615]  a/a.canon:16:17
+  { in plain text: labels, help, intros, placeholders and none texts are not templates (write {{)
+
+error[E1615]  a/a.canon:16:39
+  { in plain text: labels, help, intros, placeholders and none texts are not templates (write {{)
+
+error[E1615]  a/a.canon:16:63
+  { in plain text: labels, help, intros, placeholders and none texts are not templates (write {{)
+
+error[E1615]  a/a.canon:16:83
+  { in plain text: labels, help, intros, placeholders and none texts are not templates (write {{)
+
+9 errors, 0 warnings in 1 package (…)

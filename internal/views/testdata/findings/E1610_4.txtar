@@ -1,0 +1,46 @@
+VIEWMODEL.md G16: a widget the studio package does not declare is E1610 (widget).
+-- studio/studio.canon --
+/// The studio vocabulary.
+package studio
+
+/// Menus.
+enum Menu { items, system }
+
+/// Icons.
+enum Icon { gem, gear }
+
+/// Tones.
+enum Tone { info, danger }
+
+/// A unit.
+record UnitSpec {
+  /// Appended.
+  suffix: String = ""
+}
+
+/// Units.
+let units: table UnitSpec = {
+  hp { suffix: " HP" }
+  pct { suffix: " %" }
+}
+
+/// Numbered steps.
+widget ordered_steps(value: [_])
+
+/// A weight and its share.
+widget weight_share(value: Int, siblings: [Int])
+-- a/a.canon --
+package a
+
+local record Item {
+  levels: [Int]
+}
+
+view Item {
+  levels { widget: timeline }
+}
+-- findings.txt --
+error[E1610]  a/a.canon:8:20
+  unknown widget timeline: not declared in studio package studio
+
+1 error, 0 warnings in 2 packages (…)

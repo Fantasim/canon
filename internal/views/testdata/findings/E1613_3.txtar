@@ -1,0 +1,30 @@
+VIEWMODEL.md §3.5, log-2026-09-28 views V1 calls: a property given twice on one item is E1613 (twice), pointing at the first, on a field and on an enum member.
+-- a/a.canon --
+package a
+
+local enum Rarity { common, rare }
+
+local record Item {
+  label: String
+  count: Int
+}
+
+view Item {
+  label { help: "The label", readonly: true, help: "Again" }
+  count { hidden: false, hidden: true }
+}
+
+view Rarity {
+  common { help: "Common", help: "Usual" }
+}
+-- findings.txt --
+error[E1613]  a/a.canon:11:46
+  help is given twice for this item (first at a/a.canon:11)
+
+error[E1613]  a/a.canon:12:26
+  hidden is given twice for this item (first at a/a.canon:12)
+
+error[E1613]  a/a.canon:16:28
+  help is given twice for this item (first at a/a.canon:16)
+
+3 errors, 0 warnings in 1 package (…)

@@ -1,0 +1,26 @@
+VIEWMODEL.md §4.5: a slider on a number type with a lower bound and no upper one is E1619 (upper), UInt64 included.
+-- a/a.canon --
+package a
+
+local record Item {
+  count: Int(0..)
+  big: UInt64
+  delay: Duration(1s..)
+}
+
+view Item {
+  count { control: slider }
+  big { control: slider }
+  delay { control: slider }
+}
+-- findings.txt --
+error[E1619]  a/a.canon:10:20
+  slider needs both bounds, and Int(0..) has no upper bound
+
+error[E1619]  a/a.canon:11:18
+  slider needs both bounds, and UInt64 has no upper bound
+
+error[E1619]  a/a.canon:12:20
+  slider needs both bounds, and Duration(1s..) has no upper bound
+
+3 errors, 0 warnings in 1 package (…)

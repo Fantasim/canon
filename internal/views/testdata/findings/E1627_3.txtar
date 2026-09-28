@@ -1,0 +1,23 @@
+VIEWMODEL.md §3.2, G6: an enum view takes member items only; anything else is E1627 (enum).
+-- a/a.canon --
+package a
+
+local enum Rarity { common, rare }
+
+view Rarity {
+  title "Rarity"
+  common "Common"
+  group main "Main" { rare }
+  plural "rarities"
+}
+-- findings.txt --
+error[E1627]  a/a.canon:6:3
+  title is not allowed in the view of this enum
+
+error[E1627]  a/a.canon:8:3
+  group is not allowed in the view of this enum
+
+error[E1627]  a/a.canon:9:3
+  plural is not allowed in the view of this enum
+
+3 errors, 0 warnings in 1 package (…)

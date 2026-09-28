@@ -1,0 +1,24 @@
+VIEWMODEL.md §3.2, G6: an item a variant view does not take (a group, a show line) is E1627 (variant); its case labels, columns, filters, search and menu are fine.
+-- a/a.canon --
+package a
+
+local variant Reward {
+  gold { amount: Int }
+  gem { carats: Int }
+}
+
+view Reward {
+  title "{self.kind}"
+  gold "Gold"
+  columns { amount }
+  group main "Main" { gold }
+  show "Kind" "{self.kind}"
+}
+-- findings.txt --
+error[E1627]  a/a.canon:12:3
+  group is not allowed in the view of this variant
+
+error[E1627]  a/a.canon:13:3
+  show is not allowed in the view of this variant
+
+2 errors, 0 warnings in 1 package (…)

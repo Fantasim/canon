@@ -1,0 +1,21 @@
+VIEWMODEL.md G17: a show id given twice in one view, at view level or in a group, is E1617 (show).
+-- a/a.canon --
+package a
+
+local record Item {
+  label: String
+  count: Int
+}
+
+view Item {
+  show total "Total" "{count}"
+  group main "Main" {
+    label
+    show total "Again" "{count * 2}"
+  }
+}
+-- findings.txt --
+error[E1617]  a/a.canon:12:10
+  duplicate show id total in view Item (first at a/a.canon:9)
+
+1 error, 0 warnings in 1 package (…)

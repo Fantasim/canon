@@ -1,0 +1,30 @@
+VIEWMODEL.md §3.2, G6, G7: a define-table view takes title, subtitle, singular, plural and search only; a field line or a group is E1627 (define table).
+-- project.canon --
+project demo {
+  canon: "0.1"
+  roots {
+    resource: "res"
+  }
+}
+-- res/names.h --
+#define N_ONE 1
+#define N_TWO 2
+-- a/a.canon --
+package a
+
+local let names = load.defines("@resource/names.h", prefix: "N_")
+
+view names {
+  title "{id} = {value}"
+  search { id }
+  value "Value"
+  group main "Main" { value }
+}
+-- findings.txt --
+error[E1627]  a/a.canon:8:3
+  value is not allowed in the view of this define table
+
+error[E1627]  a/a.canon:9:3
+  group is not allowed in the view of this define table
+
+2 errors, 0 warnings in 1 package (…)

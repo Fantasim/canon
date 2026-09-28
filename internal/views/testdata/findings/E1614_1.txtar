@@ -1,0 +1,32 @@
+VIEWMODEL.md G10: a field labelled twice is E1614: a case field labelled in its case view and in the view of the record that inlines the variant, and a field labelled at view level and in a group.
+-- a/a.canon --
+package a
+
+local variant Kind {
+  weapon { attack: Int }
+  food { heal: Int }
+}
+
+local record Item {
+  label: String
+  kind: Kind @json(inline)
+}
+
+view Kind.weapon {
+  attack "Attack"
+}
+
+view Item {
+  attack "Attack power"
+  heal "Heal"
+  label "Label"
+  group main "Main" { label "Name" }
+}
+-- findings.txt --
+error[E1614]  a/a.canon:18:10
+  the label of attack is declared twice (first at a/a.canon:14)
+
+error[E1614]  a/a.canon:21:29
+  the label of label is declared twice (first at a/a.canon:20)
+
+2 errors, 0 warnings in 1 package (…)

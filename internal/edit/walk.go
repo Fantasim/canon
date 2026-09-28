@@ -4,6 +4,7 @@ import (
 	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/value"
+	"github.com/fantasim/canonlang/internal/views/shape"
 )
 
 // rootCursor is the source of a let's or const's value (W1): its literal, the JSON its load
@@ -13,15 +14,15 @@ func (s *Snapshot) rootCursor(res resolution) cursor {
 	e := unparen(initializer(obj.Decl()))
 	entries := s.entryDecls(res.root)
 	files := len(entries) > 0 || filesLet(obj.Decl())
-	switch sourceForm(s.info, e) {
-	case formLiteral:
+	switch shape.SourceForm(s.info, e) {
+	case shape.FormLiteral:
 		f := obj.File()
 		return cursor{state: stTree, mode: ModeCanon, node: e, file: f, span: f.Span(e), files: files, entries: entries}
-	case formJSON:
+	case shape.FormJSON:
 		c := loadCursor(s.info, e, res.val)
 		c.entries, c.files = entries, c.files || files
 		return c
-	case formFormat:
+	case shape.FormFormat:
 		return cursor{state: stFormat}
 	default:
 		return cursor{state: stComputed}
@@ -30,7 +31,7 @@ func (s *Snapshot) rootCursor(res resolution) cursor {
 
 // loadCursor is the source of the value a load item reads: its JSON, or the format row.
 func loadCursor(info *check.Info, e syntax.Expr, v value.Value) cursor {
-	if loadForm(info, e) == formFormat {
+	if shape.SourceForm(info, e) == shape.FormFormat {
 		return cursor{state: stFormat}
 	}
 	c := cursor{state: stTree, mode: ModeJSON, files: isLoadDir(info, e)}

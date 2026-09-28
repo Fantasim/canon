@@ -69,6 +69,27 @@ func TestViewModelRow(t *testing.T) {
 	}
 }
 
+// IMPLEMENTATION-PLAN.md §3: views' sub-packages rank with views (as eval/std), so edit may import views/shape.
+func TestViewsSubPackagesRankWithViews(t *testing.T) {
+	plan, err := os.ReadFile(planPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rows, err := catalog.Packages(plan)
+	if err != nil {
+		t.Fatal(err)
+	}
+	views := rankOf(rows, "internal/views")
+	for _, dir := range []string{"internal/views/rules", "internal/views/shape"} {
+		if r := rankOf(rows, dir); r != views {
+			t.Errorf("%s is in row %d, want views' row %d", dir, r, views)
+		}
+	}
+	if edit := rankOf(rows, "internal/edit"); edit <= views {
+		t.Errorf("edit (row %d) is not below views (row %d)", edit, views)
+	}
+}
+
 // The rule itself: each kind of violation of a small synthetic graph is reported.
 func TestDependencyRuleReportsViolations(t *testing.T) {
 	rows := []catalog.Package{

@@ -1,0 +1,51 @@
+VIEWMODEL.md G23: `@menu` on a local let is E1632; on a public one it is fine.
+-- studio/studio.canon --
+/// The studio vocabulary.
+package studio
+
+/// Menus.
+enum Menu { items, system }
+
+/// Icons.
+enum Icon { gem, gear }
+
+/// Tones.
+enum Tone { info, danger }
+
+/// A unit.
+record UnitSpec {
+  /// Appended.
+  suffix: String = ""
+}
+
+/// Units.
+let units: table UnitSpec = {
+  hp { suffix: " HP" }
+  pct { suffix: " %" }
+}
+
+/// Numbered steps.
+widget ordered_steps(value: [_])
+
+/// A weight and its share.
+widget weight_share(value: Int, siblings: [Int])
+-- a/a.canon --
+package a
+
+/// An item.
+record Item {
+  /// Its label.
+  label: String
+}
+
+@menu(items)
+local let hidden: [Item] = []
+
+/// The shown items.
+@menu(items, icon: gem, label: "Items")
+let shown: [Item] = []
+-- findings.txt --
+error[E1632]  a/a.canon:9:1
+  @menu applies to public top-level values only
+
+1 error, 0 warnings in 2 packages (…)

@@ -1,0 +1,56 @@
+VIEWMODEL.md G21: a widget whose `siblings` is not exactly a list of its `value` type is E1631 (refinements kept).
+-- studio/studio.canon --
+/// The studio vocabulary.
+package studio
+
+/// Menus.
+enum Menu { items, system }
+
+/// Icons.
+enum Icon { gem, gear }
+
+/// Tones.
+enum Tone { info, danger }
+
+/// A unit.
+record UnitSpec {
+  /// Appended.
+  suffix: String = ""
+}
+
+/// Units.
+let units: table UnitSpec = {
+  hp { suffix: " HP" }
+  pct { suffix: " %" }
+}
+
+/// Numbered steps.
+widget ordered_steps(value: [_])
+
+/// A weight and its share.
+widget weight_share(value: Int, siblings: [Int])
+-- studio/widgets.canon --
+package studio
+
+/// A share.
+widget share(value: Int, siblings: Int)
+
+/// A ratio.
+widget ratio(value: Int(0..), siblings: [Int])
+
+/// A part.
+widget part(value: String, siblings: [String])
+-- a/a.canon --
+package a
+
+local record Item {
+  weight: Int
+}
+-- findings.txt --
+error[E1631]  studio/widgets.canon:4:36
+  siblings must be a list of the value type: expected [Int], got Int
+
+error[E1631]  studio/widgets.canon:7:41
+  siblings must be a list of the value type: expected [Int(0..)], got [Int]
+
+2 errors, 0 warnings in 2 packages (…)

@@ -1,0 +1,30 @@
+VIEWMODEL.md T14: `multi` on a filter that is not a choice, case or contains filter is E1621 (a Bool, a number); on those three it is fine.
+-- a/a.canon --
+package a
+
+local enum Rarity { common, rare }
+
+local variant Reward {
+  gold { amount: Int }
+  gem { carats: Int }
+}
+
+local record Item {
+  on: Bool
+  count: Int
+  rarity: Rarity
+  reward: Reward
+  rarities: [Rarity]
+}
+
+view Item {
+  filters { on multi, count multi, rarity multi, reward multi, rarities multi }
+}
+-- findings.txt --
+error[E1621]  a/a.canon:19:16
+  multi applies to enum, ref, case and list filters, not Bool
+
+error[E1621]  a/a.canon:19:29
+  multi applies to enum, ref, case and list filters, not Int
+
+2 errors, 0 warnings in 1 package (…)

@@ -1,0 +1,22 @@
+VIEWMODEL.md §3.6: a column width outside 16 to 2000 pixels is E1613 (width).
+-- a/a.canon --
+package a
+
+local record Item {
+  label: String
+  count: Int
+  rank: Int
+  level: Int
+}
+
+view Item {
+  columns { label 8, count 3000, rank 16, level 2000 }
+}
+-- findings.txt --
+error[E1613]  a/a.canon:11:19
+  column width 8 is out of range: widths go from 16 to 2000
+
+error[E1613]  a/a.canon:11:28
+  column width 3000 is out of range: widths go from 16 to 2000
+
+2 errors, 0 warnings in 1 package (…)

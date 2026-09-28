@@ -1,0 +1,27 @@
+VIEWMODEL.md G13: `preview` of a type that is not an asset or its optional is E1612.
+-- a/a.canon --
+package a
+
+local record Item {
+  label: String
+}
+
+local record Level {
+  cost: Int
+}
+
+view Item {
+  preview label
+}
+
+view Level {
+  preview cost + 1
+}
+-- findings.txt --
+error[E1612]  a/a.canon:12:11
+  preview must be an asset, not String
+
+error[E1612]  a/a.canon:16:11
+  preview must be an asset, not Int
+
+2 errors, 0 warnings in 1 package (…)

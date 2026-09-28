@@ -1,0 +1,19 @@
+VIEWMODEL.md L6: a deprecated field named in a group is W1642; at view level it is not.
+-- a/a.canon --
+package a
+
+local record Item {
+  label: String
+  old: Int = 0 @deprecated("gone")
+  older: Int = 0 @deprecated
+}
+
+view Item {
+  older "Older"
+  group main "Main" { label, old }
+}
+-- findings.txt --
+warning[W1642]  a/a.canon:11:30
+  deprecated field old is named in group main; it is shown under "Unused fields"
+
+0 errors, 1 warning in 1 package (…)

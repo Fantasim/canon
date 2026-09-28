@@ -1,0 +1,22 @@
+VIEWMODEL.md L15: `hidden: true` on a required field without a default is W1641; an optional field, a field with a default and `hidden: false` are fine.
+-- a/a.canon --
+package a
+
+local record Item {
+  label: String
+  note: String?
+  count: Int = 0
+  code: Int
+}
+
+view Item {
+  label { hidden: true }
+  note { hidden: true }
+  count { hidden: true }
+  code { hidden: false }
+}
+-- findings.txt --
+warning[W1641]  a/a.canon:11:11
+  required field label is hidden: new values cannot be completed in the studio
+
+0 errors, 1 warning in 1 package (…)

@@ -58,8 +58,8 @@ var annCatalog = map[string]*annSpec{
 	AnnFiles: {args: []argSpec{
 		{name: argTpl, kind: valTemplate, sites: siteLet, required: true},
 	}},
-	annMenu: {args: []argSpec{
-		{name: annMenu, kind: valStudio, sites: siteLet, required: true},
+	AnnMenu: {args: []argSpec{
+		{name: AnnMenu, kind: valStudio, sites: siteLet, required: true},
 		{name: wordIcon, named: true, kind: valStudio, sites: siteLet},
 		{name: argLabel, named: true, kind: valString, sites: siteLet},
 	}},

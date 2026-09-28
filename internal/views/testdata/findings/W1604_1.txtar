@@ -1,0 +1,24 @@
+VIEWMODEL.md G11: a field named `key` or `index` hides the magic name; the first template of a view using it is W1604, once per name.
+-- a/a.canon --
+package a
+
+local record Named {
+  key: String
+  index: Int
+}
+
+local let byName: {String: Named} = {}
+
+view Named {
+  title "{key} #{index}"
+  subtitle "{key}"
+  show "Where" "{index}"
+}
+-- findings.txt --
+warning[W1604]  a/a.canon:11:11
+  field key of Named hides the view name key: {key} reads the field
+
+warning[W1604]  a/a.canon:11:18
+  field index of Named hides the view name index: {index} reads the field
+
+0 errors, 2 warnings in 1 package (…)

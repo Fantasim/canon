@@ -29,11 +29,11 @@ func init() {
 		syntax.KindViewField:    (*checker).viewField,
 	}
 	propTable = map[string]func(*checker, *viewCtx, syntax.Expr){
-		propUnit: (*checker).unitProp, propWidget: (*checker).widgetProp,
-		propIcon: studioProp(studioIcon), propTone: studioProp(studioTone),
-		propControl: (*checker).controlProp, propStep: (*checker).stepText,
-		propWhen: (*checker).boolProp, propReadonly: (*checker).boolProp, propHidden: (*checker).boolProp,
-		propHelp: (*checker).plainProp, propPlaceholder: (*checker).plainProp, propNone: (*checker).plainProp,
+		syntax.PropUnit: (*checker).unitProp, syntax.PropWidget: (*checker).widgetProp,
+		syntax.PropIcon: studioProp(syntax.StudioIcon), syntax.PropTone: studioProp(syntax.StudioTone),
+		syntax.PropControl: (*checker).controlProp, syntax.PropStep: (*checker).stepText,
+		syntax.PropWhen: (*checker).boolProp, syntax.PropReadonly: (*checker).boolProp, syntax.PropHidden: (*checker).boolProp,
+		syntax.PropHelp: (*checker).plainProp, syntax.PropPlaceholder: (*checker).plainProp, syntax.PropNone: (*checker).plainProp,
 	}
 }
 
@@ -60,7 +60,7 @@ func (c *checker) viewMenu(_ *viewCtx, it syntax.ViewItem) {
 	for _, n := range []struct {
 		id   *syntax.Ident
 		enum string
-	}{{m.Menu, studioMenu}, {m.Icon, studioIcon}} {
+	}{{m.Menu, syntax.StudioMenu}, {m.Icon, syntax.StudioIcon}} {
 		if n.id == nil {
 			continue
 		}

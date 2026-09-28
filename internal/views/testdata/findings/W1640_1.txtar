@@ -1,0 +1,105 @@
+VIEWMODEL.md N4, DECISIONS 33: an editable public value without a menu is W1640 (a literal or a JSON load) in a package with an `emit view`, once, at its name; a value with `@menu`, one whose record's view in its package has a `menu` (a list of it too), a computed one, a load of CSV or text (format), a local one, the studio's and those of a package without `emit view` are not.
+-- project.canon --
+project demo {
+  canon: "0.1"
+  studio: studio
+  roots {
+    out: "gen"
+    data: "data"
+  }
+}
+-- studio/studio.canon --
+/// The studio vocabulary.
+package studio
+
+/// Menus.
+enum Menu { items, system }
+
+/// Icons.
+enum Icon { gem, gear }
+
+/// Plain numbers.
+let plain: Int = 1
+
+emit view { out: "@out/studio.view.json" }
+-- a/a.canon --
+/// A.
+package a
+
+/// An item.
+record Item {
+  /// Its label.
+  label: String
+}
+
+/// A row.
+record Row {
+  /// Its name.
+  name: String
+}
+
+/// Another record.
+record Other {
+  /// Its count.
+  count: Int
+}
+
+/// Items.
+let items: [Item] = []
+
+/// One item.
+let item: Item = { label: "x" }
+
+/// Special.
+@menu(system)
+let special: Other = { count: 1 }
+
+/// An other.
+let other: Other = { count: 2 }
+
+/// A number.
+let n: Int = 3
+
+/// A sum.
+let total: Int = n + 1
+
+local let hidden: Int = 4
+
+/// Loaded from JSON: editable.
+let fromJSON: Other = load("@data/other.json")
+
+/// A text file.
+let notes: String = load.text("@data/notes.txt")
+
+/// A CSV file.
+let rows: [Row] = load.csv("@data/rows.csv", header: true)
+
+view Item {
+  menu items icon gem
+}
+
+emit view { out: "@out/a.view.json" }
+-- data/other.json --
+{"count": 3}
+-- data/notes.txt --
+Some notes.
+-- data/rows.csv --
+name
+a
+-- b/b.canon --
+/// B.
+package b
+
+/// A number.
+let m: Int = 5
+-- findings.txt --
+warning[W1640]  a/a.canon:33:5
+  value other has no menu: the studio lists it under "No menu"
+
+warning[W1640]  a/a.canon:36:5
+  value n has no menu: the studio lists it under "No menu"
+
+warning[W1640]  a/a.canon:44:5
+  value fromJSON has no menu: the studio lists it under "No menu"
+
+0 errors, 3 warnings in 3 packages (…)

@@ -1,0 +1,33 @@
+VIEWMODEL.md G9: a name placed twice in one view (two groups, or one group twice) is E1605, a method included; a view-level field line does not place its field.
+-- a/a.canon --
+package a
+
+local record Item {
+  label: String
+  count: Int
+
+  fn doubled(self) -> Int {
+    return count * 2
+  }
+}
+
+view Item {
+  label "Label"
+  group main "Main" { label, count, doubled }
+  group more "More" { label, doubled }
+  group last "Last" { count, count }
+}
+-- findings.txt --
+error[E1605]  a/a.canon:15:23
+  label is placed twice in view Item (first at a/a.canon:14)
+
+error[E1605]  a/a.canon:15:30
+  doubled is placed twice in view Item (first at a/a.canon:14)
+
+error[E1605]  a/a.canon:16:23
+  count is placed twice in view Item (first at a/a.canon:14)
+
+error[E1605]  a/a.canon:16:30
+  count is placed twice in view Item (first at a/a.canon:14)
+
+4 errors, 0 warnings in 1 package (…)

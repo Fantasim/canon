@@ -1,0 +1,85 @@
+VIEWMODEL.md §3.5: a property that is unknown, or not valid for what the item names, is E1613 (property): an unknown one on a field, `unit` on a method, `hidden` on an enum member, `unit` on a case, `none` on a field that is not optional, `step` on a field that is not a list.
+-- studio/studio.canon --
+/// The studio vocabulary.
+package studio
+
+/// Menus.
+enum Menu { items, system }
+
+/// Icons.
+enum Icon { gem, gear }
+
+/// Tones.
+enum Tone { info, danger }
+
+/// A unit.
+record UnitSpec {
+  /// Appended.
+  suffix: String = ""
+}
+
+/// Units.
+let units: table UnitSpec = {
+  hp { suffix: " HP" }
+  pct { suffix: " %" }
+}
+
+/// Numbered steps.
+widget ordered_steps(value: [_])
+
+/// A weight and its share.
+widget weight_share(value: Int, siblings: [Int])
+-- a/a.canon --
+package a
+
+local enum Rarity { common, rare }
+
+local variant Reward {
+  gold { amount: Int }
+  gem { carats: Int }
+}
+
+local record Item {
+  count: Int
+  label: String?
+  steps: [Int]
+
+  fn doubled(self) -> Int {
+    return count * 2
+  }
+}
+
+view Item {
+  count { colour: 3, none: "Nothing", step: "Step {index}" }
+  label { none: "Nothing" }
+  steps { step: "Step {index}" }
+  doubled { unit: hp, hidden: false }
+}
+
+view Rarity {
+  common { hidden: true }
+}
+
+view Reward {
+  gold { unit: hp, help: "Gold coins" }
+}
+-- findings.txt --
+error[E1613]  a/a.canon:21:11
+  colour is not a property of this field
+
+error[E1613]  a/a.canon:21:22
+  none is not a property of this field
+
+error[E1613]  a/a.canon:21:39
+  step is not a property of this field
+
+error[E1613]  a/a.canon:24:13
+  unit is not a property of this method
+
+error[E1613]  a/a.canon:28:12
+  hidden is not a property of this member
+
+error[E1613]  a/a.canon:32:10
+  unit is not a property of this case
+
+6 errors, 0 warnings in 2 packages (…)

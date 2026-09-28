@@ -52,7 +52,7 @@ func (c *checker) unitProp(_ *viewCtx, e syntax.Expr) {
 	if !ok || sp == nil {
 		return
 	}
-	let := sp.names[studioUnits]
+	let := sp.names[syntax.StudioUnits]
 	if let == nil || let.kind != ObjLet || let.keys == nil || let.keys.byName[id.Name] == nil {
 		return
 	}

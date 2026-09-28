@@ -1,0 +1,60 @@
+VIEWMODEL.md G22: a default widget whose `value` type is not a named record, variant or enum, optionally in a list, is E1630.
+-- studio/studio.canon --
+/// The studio vocabulary.
+package studio
+
+/// Menus.
+enum Menu { items, system }
+
+/// Icons.
+enum Icon { gem, gear }
+
+/// Tones.
+enum Tone { info, danger }
+
+/// A unit.
+record UnitSpec {
+  /// Appended.
+  suffix: String = ""
+}
+
+/// Units.
+let units: table UnitSpec = {
+  hp { suffix: " HP" }
+  pct { suffix: " %" }
+}
+
+/// Numbered steps.
+widget ordered_steps(value: [_])
+
+/// A weight and its share.
+widget weight_share(value: Int, siblings: [Int])
+-- studio/widgets.canon --
+package studio
+
+import a { Mode }
+
+/// A number.
+widget spinner(value: Int) default
+
+/// Anything.
+widget anything(value: [_]) default
+
+/// A mode.
+widget toggle(value: Mode) default
+
+/// Modes.
+widget modes(value: [Mode]) default
+-- a/a.canon --
+package a
+
+/// A mode.
+enum Mode { on, off }
+-- findings.txt --
+error[E1630]  studio/widgets.canon:6:23
+  a default widget needs a named record, variant or enum type, not Int
+
+error[E1630]  studio/widgets.canon:9:24
+  a default widget needs a named record, variant or enum type, not [_]
+
+2 errors, 0 warnings in 2 packages (…)

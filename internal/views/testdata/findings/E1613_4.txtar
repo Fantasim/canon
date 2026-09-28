@@ -1,0 +1,63 @@
+VIEWMODEL.md §3.5, log-2026-09-28 views V1 review calls: a property set on two field lines of one field is E1613 (twice), at view level and in a group, and in a case view and the view of the record inlining it.
+-- studio/studio.canon --
+/// The studio vocabulary.
+package studio
+
+/// Menus.
+enum Menu { items, system }
+
+/// Icons.
+enum Icon { gem, gear }
+
+/// Tones.
+enum Tone { info, danger }
+
+/// A unit.
+record UnitSpec {
+  /// Appended.
+  suffix: String = ""
+}
+
+/// Units.
+let units: table UnitSpec = {
+  hp { suffix: " HP" }
+  pct { suffix: " %" }
+}
+
+/// Numbered steps.
+widget ordered_steps(value: [_])
+
+/// A weight and its share.
+widget weight_share(value: Int, siblings: [Int])
+-- a/a.canon --
+package a
+
+local variant Kind {
+  weapon { attack: Int }
+  food { heal: Int }
+}
+
+local record Item {
+  cost: Int
+  kind: Kind @json(inline)
+}
+
+view Kind.weapon {
+  attack { help: "Damage" }
+}
+
+view Item {
+  cost { unit: hp }
+  group main "Main" {
+    cost { unit: pct }
+    attack { help: "Its damage" }
+  }
+}
+-- findings.txt --
+error[E1613]  a/a.canon:20:12
+  unit is given twice for this item (first at a/a.canon:18)
+
+error[E1613]  a/a.canon:21:14
+  help is given twice for this item (first at a/a.canon:14)
+
+2 errors, 0 warnings in 2 packages (…)

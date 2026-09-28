@@ -1,0 +1,57 @@
+VIEWMODEL.md G22: two default widgets for one type are E1629, a list of it being another type.
+-- studio/studio.canon --
+/// The studio vocabulary.
+package studio
+
+/// Menus.
+enum Menu { items, system }
+
+/// Icons.
+enum Icon { gem, gear }
+
+/// Tones.
+enum Tone { info, danger }
+
+/// A unit.
+record UnitSpec {
+  /// Appended.
+  suffix: String = ""
+}
+
+/// Units.
+let units: table UnitSpec = {
+  hp { suffix: " HP" }
+  pct { suffix: " %" }
+}
+
+/// Numbered steps.
+widget ordered_steps(value: [_])
+
+/// A weight and its share.
+widget weight_share(value: Int, siblings: [Int])
+-- studio/widgets.canon --
+package studio
+
+import a { TimeOfDay }
+
+/// A clock.
+widget clock(value: TimeOfDay) default
+
+/// A dial.
+widget dial(value: TimeOfDay) default
+
+/// A timeline.
+widget timeline(value: [TimeOfDay]) default
+-- a/a.canon --
+package a
+
+/// A time of day.
+record TimeOfDay {
+  /// Hours.
+  hour: Int
+}
+-- findings.txt --
+error[E1629]  studio/widgets.canon:9:8
+  a.TimeOfDay has two default widgets: clock and dial
+
+1 error, 0 warnings in 2 packages (…)

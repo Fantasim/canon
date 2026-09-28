@@ -1,0 +1,24 @@
+VIEWMODEL.md G4: a view declared outside the package of its target is E1603, its target named with its package; its items are not checked.
+-- b/b.canon --
+/// B.
+package b
+
+/// An item.
+record Item {
+  /// Its label.
+  label: String
+}
+-- a/a.canon --
+package a
+
+import b { Item }
+
+view Item {
+  title "{label}"
+  nothing "Nothing"
+}
+-- findings.txt --
+error[E1603]  a/a.canon:5:6
+  a view of b.Item must be declared in package b
+
+1 error, 0 warnings in 2 packages (…)

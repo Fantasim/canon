@@ -1,0 +1,76 @@
+VIEWMODEL.md G9, log-2026-09-28 views V1 review calls: a view-level item given twice (title, menu, columns, filters, search) and a name repeated in one `columns` or `filters` are E1605.
+-- studio/studio.canon --
+/// The studio vocabulary.
+package studio
+
+/// Menus.
+enum Menu { items, system }
+
+/// Icons.
+enum Icon { gem, gear }
+
+/// Tones.
+enum Tone { info, danger }
+
+/// A unit.
+record UnitSpec {
+  /// Appended.
+  suffix: String = ""
+}
+
+/// Units.
+let units: table UnitSpec = {
+  hp { suffix: " HP" }
+  pct { suffix: " %" }
+}
+
+/// Numbered steps.
+widget ordered_steps(value: [_])
+
+/// A weight and its share.
+widget weight_share(value: Int, siblings: [Int])
+-- a/a.canon --
+package a
+
+local enum Rarity { common, rare }
+
+local record Item {
+  label: String
+  rarity: Rarity
+}
+
+view Item {
+  title "{label}"
+  menu items icon gem
+  columns { label, rarity, label 120 }
+  filters { rarity, rarity multi }
+  search { label }
+  title "{rarity}"
+  menu system icon gear
+  columns { rarity }
+  filters { rarity }
+  search { rarity }
+}
+-- findings.txt --
+error[E1605]  a/a.canon:13:28
+  label is placed twice in view Item (first at a/a.canon:13)
+
+error[E1605]  a/a.canon:14:21
+  rarity is placed twice in view Item (first at a/a.canon:14)
+
+error[E1605]  a/a.canon:16:3
+  title is placed twice in view Item (first at a/a.canon:11)
+
+error[E1605]  a/a.canon:17:3
+  menu is placed twice in view Item (first at a/a.canon:12)
+
+error[E1605]  a/a.canon:18:3
+  columns is placed twice in view Item (first at a/a.canon:13)
+
+error[E1605]  a/a.canon:19:3
+  filters is placed twice in view Item (first at a/a.canon:14)
+
+error[E1605]  a/a.canon:20:3
+  search is placed twice in view Item (first at a/a.canon:15)
+
+7 errors, 0 warnings in 2 packages (…)

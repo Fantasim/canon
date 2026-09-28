@@ -1,0 +1,48 @@
+VIEWMODEL.md G15: a field with both `control` and `widget` is E1634, at the second of the two.
+-- studio/studio.canon --
+/// The studio vocabulary.
+package studio
+
+/// Menus.
+enum Menu { items, system }
+
+/// Icons.
+enum Icon { gem, gear }
+
+/// Tones.
+enum Tone { info, danger }
+
+/// A unit.
+record UnitSpec {
+  /// Appended.
+  suffix: String = ""
+}
+
+/// Units.
+let units: table UnitSpec = {
+  hp { suffix: " HP" }
+  pct { suffix: " %" }
+}
+
+/// Numbered steps.
+widget ordered_steps(value: [_])
+
+/// A weight and its share.
+widget weight_share(value: Int, siblings: [Int])
+-- a/a.canon --
+package a
+
+local record Item {
+  steps: [Int]
+  count: Int
+}
+
+view Item {
+  steps { widget: ordered_steps, control: text }
+  count { control: number, readonly: true }
+}
+-- findings.txt --
+error[E1634]  a/a.canon:9:34
+  field steps has both control and widget
+
+1 error, 0 warnings in 2 packages (…)

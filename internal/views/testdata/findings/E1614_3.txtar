@@ -1,0 +1,45 @@
+VIEWMODEL.md G10, L18, log-2026-09-28 views V1 review calls: a name matching a case field of several cases labels every one of them; a label given to one of them in its case view is E1614 with it, whichever view comes first.
+-- a/a.canon --
+package a
+
+local variant Kind {
+  weapon { power: Int }
+  food { power: Int }
+}
+
+local record Item {
+  kind: Kind @json(inline)
+}
+
+view Kind.food {
+  power "Food power"
+}
+
+view Item {
+  power "Power"
+}
+
+local variant Tool {
+  hammer { weight: Int }
+  saw { weight: Int }
+}
+
+local record Kit {
+  tool: Tool @json(inline)
+}
+
+view Kit {
+  weight "Weight"
+}
+
+view Tool.saw {
+  weight "Saw weight"
+}
+-- findings.txt --
+error[E1614]  a/a.canon:17:9
+  the label of power is declared twice (first at a/a.canon:13)
+
+error[E1614]  a/a.canon:34:10
+  the label of weight is declared twice (first at a/a.canon:30)
+
+2 errors, 0 warnings in 1 package (…)

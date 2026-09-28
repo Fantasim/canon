@@ -1,0 +1,23 @@
+VIEWMODEL.md G5, log-2026-09-28 U5 round 2 calls: an alias of a record is transparent: a view of the alias and one of the record are two views of one target, E1607.
+-- a/a.canon --
+package a
+
+local record Item {
+  label: String
+}
+
+local type Thing = Item
+
+view Thing {
+  title "{label}"
+  label "Label" { placeholder: "a label" }
+}
+
+view Item {
+  label "Name"
+}
+-- findings.txt --
+error[E1607]  a/a.canon:14:6
+  Item already has a view at a/a.canon:9
+
+1 error, 0 warnings in 1 package (…)

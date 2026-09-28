@@ -1,0 +1,21 @@
+VIEWMODEL.md §3.3, VIEWMODEL.md T14: a filter naming a method is E1606 (filters); a field filter is not.
+-- a/a.canon --
+package a
+
+local record Item {
+  label: String
+  count: Int
+
+  fn doubled(self) -> Int {
+    return count * 2
+  }
+}
+
+view Item {
+  filters { doubled, count }
+}
+-- findings.txt --
+error[E1606]  a/a.canon:13:13
+  doubled is not a field of Item: filters name fields only
+
+1 error, 0 warnings in 1 package (…)

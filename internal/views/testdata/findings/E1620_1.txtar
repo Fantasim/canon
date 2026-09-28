@@ -1,0 +1,41 @@
+VIEWMODEL.md T11, T14: a filter on a type that cannot be filtered (a String, a record, a list of strings) is E1620; enum, ref, variant, Bool, number, Duration and enum-list filters are not.
+-- a/a.canon --
+package a
+
+local enum Rarity { common, rare }
+
+local variant Reward {
+  gold { amount: Int }
+  gem { carats: Int }
+}
+
+local record Size {
+  w: Int
+}
+
+local record Item {
+  label: String
+  size: Size
+  words: [String]
+  rarity: Rarity?
+  reward: Reward
+  on: Bool
+  rate: Float
+  delay: Duration
+  rarities: [Rarity]
+}
+
+view Item {
+  filters { label, size, words, rarity, reward, on, rate, delay, rarities }
+}
+-- findings.txt --
+error[E1620]  a/a.canon:27:13
+  cannot filter on String (field label)
+
+error[E1620]  a/a.canon:27:20
+  cannot filter on a.Size (field size)
+
+error[E1620]  a/a.canon:27:26
+  cannot filter on [String] (field words)
+
+3 errors, 0 warnings in 1 package (…)

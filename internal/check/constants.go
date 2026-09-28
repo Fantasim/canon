@@ -212,10 +212,7 @@ const (
 const (
 	titleWord, subtitleWord, showWord, textWord, stepWord        = "title", "subtitle", "show", loadText, "step"
 	fieldSegment, methodWord, caseWord, memberWord, checkSegment = "field", "method", jsonCase, "member", "check"
-	propUnit, propWidget, propIcon, propTone, propControl        = jsonUnit, "widget", "icon", "tone", "control"
-	propWhen, propReadonly, propHidden, propStep                 = "when", "readonly", "hidden", stepWord
-	propHelp, propPlaceholder, propNone, keyName                 = "help", "placeholder", noneWord, "key"
-	studioMenu, studioIcon, studioTone, studioUnits              = "Menu", "Icon", "Tone", "units"
+	keyName                                                      = "key"
 
 	reservedSegments = "help title subtitle singular plural group show check intro text deprecated placeholder none step field method case member"
 )

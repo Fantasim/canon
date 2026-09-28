@@ -1,0 +1,83 @@
+VIEWMODEL.md G8, DECISIONS 221: a name check left unresolved is E1602 in a record view (a field item, a group member, a column, a filter), a variant view (a case, a column of case fields) and an enum view (a member).
+-- studio/studio.canon --
+/// The studio vocabulary.
+package studio
+
+/// Menus.
+enum Menu { items, system }
+
+/// Icons.
+enum Icon { gem, gear }
+
+/// Tones.
+enum Tone { info, danger }
+
+/// A unit.
+record UnitSpec {
+  /// Appended.
+  suffix: String = ""
+}
+
+/// Units.
+let units: table UnitSpec = {
+  hp { suffix: " HP" }
+  pct { suffix: " %" }
+}
+
+/// Numbered steps.
+widget ordered_steps(value: [_])
+
+/// A weight and its share.
+widget weight_share(value: Int, siblings: [Int])
+-- a/a.canon --
+package a
+
+local enum Rarity { common, rare }
+
+local variant Reward {
+  gold { amount: Int }
+  gem { carats: Int }
+}
+
+local record Item {
+  label: String
+}
+
+view Item {
+  lable "Label"
+  group main "Main" { labl }
+  columns { labol }
+  filters { lbl }
+}
+
+view Reward {
+  silver "Silver"
+  columns { weight }
+}
+
+view Rarity {
+  epic "Epic"
+}
+-- findings.txt --
+error[E1602]  a/a.canon:15:3
+  Item has no field, method, case or member named lable
+
+error[E1602]  a/a.canon:16:23
+  Item has no field, method, case or member named labl
+
+error[E1602]  a/a.canon:17:13
+  Item has no field, method, case or member named labol
+
+error[E1602]  a/a.canon:18:13
+  Item has no field, method, case or member named lbl
+
+error[E1602]  a/a.canon:22:3
+  Reward has no field, method, case or member named silver
+
+error[E1602]  a/a.canon:23:13
+  Reward has no field, method, case or member named weight
+
+error[E1602]  a/a.canon:27:3
+  Rarity has no field, method, case or member named epic
+
+7 errors, 0 warnings in 2 packages (…)

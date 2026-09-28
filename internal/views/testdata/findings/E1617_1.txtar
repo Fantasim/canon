@@ -1,0 +1,19 @@
+VIEWMODEL.md G17: a group id given twice in one view is E1617 (group); a show id may equal a group id.
+-- a/a.canon --
+package a
+
+local record Item {
+  label: String
+  count: Int
+}
+
+view Item {
+  group main "Main" { label }
+  show main "Main" "{count}"
+  group main "Again" { count }
+}
+-- findings.txt --
+error[E1617]  a/a.canon:11:9
+  duplicate group id main in view Item (first at a/a.canon:9)
+
+1 error, 0 warnings in 1 package (…)

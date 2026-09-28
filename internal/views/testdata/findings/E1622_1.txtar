@@ -1,0 +1,37 @@
+VIEWMODEL.md G13: a search term of a type that cannot be searched (a record, a Bool, a list of records, an optional list) is E1622; text, a number, an enum, a ref, an optional of one and a list of one are fine.
+-- a/a.canon --
+package a
+
+local enum Rarity { common, rare }
+
+local record Size {
+  w: Int
+}
+
+local record Item {
+  label: String
+  size: Size
+  on: Bool
+  sizes: [Size]
+  count: Int?
+  rarities: [Rarity]
+  maybe: [String]?
+}
+
+view Item {
+  search { label, size, on, sizes, count, rarities, label.len(), maybe }
+}
+-- findings.txt --
+error[E1622]  a/a.canon:20:19
+  a search term must be text, a number, an enum, a ref or an asset, not a.Size
+
+error[E1622]  a/a.canon:20:25
+  a search term must be text, a number, an enum, a ref or an asset, not Bool
+
+error[E1622]  a/a.canon:20:29
+  a search term must be text, a number, an enum, a ref or an asset, not [a.Size]
+
+error[E1622]  a/a.canon:20:66
+  a search term must be text, a number, an enum, a ref or an asset, not [String]?
+
+4 errors, 0 warnings in 1 package (…)

@@ -1,0 +1,62 @@
+VIEWMODEL.md §3.2, G6: an item a case view does not take (menu, columns, filters, search) is E1627 (case); its title, groups, show lines and field lines are fine.
+-- studio/studio.canon --
+/// The studio vocabulary.
+package studio
+
+/// Menus.
+enum Menu { items, system }
+
+/// Icons.
+enum Icon { gem, gear }
+
+/// Tones.
+enum Tone { info, danger }
+
+/// A unit.
+record UnitSpec {
+  /// Appended.
+  suffix: String = ""
+}
+
+/// Units.
+let units: table UnitSpec = {
+  hp { suffix: " HP" }
+  pct { suffix: " %" }
+}
+
+/// Numbered steps.
+widget ordered_steps(value: [_])
+
+/// A weight and its share.
+widget weight_share(value: Int, siblings: [Int])
+-- a/a.canon --
+package a
+
+local variant Reward {
+  gold { amount: Int }
+  gem { carats: Int }
+}
+
+view Reward.gold {
+  title "{amount}"
+  menu items icon gem
+  columns { amount }
+  filters { amount }
+  search { amount }
+  group main "Main" { amount }
+  show "Double" "{amount * 2}"
+}
+-- findings.txt --
+error[E1627]  a/a.canon:10:3
+  menu is not allowed in the view of this case
+
+error[E1627]  a/a.canon:11:3
+  columns is not allowed in the view of this case
+
+error[E1627]  a/a.canon:12:3
+  filters is not allowed in the view of this case
+
+error[E1627]  a/a.canon:13:3
+  search is not allowed in the view of this case
+
+4 errors, 0 warnings in 2 packages (…)

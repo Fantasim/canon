@@ -1,0 +1,31 @@
+VIEWMODEL.md G8: a name matching case fields of different types (refinements kept) is E1628, naming each case; case fields of one type are fine.
+-- a/a.canon --
+package a
+
+local variant Kind {
+  weapon {
+    power: Int
+    label: String
+  }
+  food {
+    power: Int(0..=10)
+    label: String
+  }
+  gem {
+    power: String
+  }
+}
+
+local record Item {
+  kind: Kind @json(inline)
+}
+
+view Item {
+  power "Power"
+  label "Label"
+}
+-- findings.txt --
+error[E1628]  a/a.canon:22:3
+  power names case fields of different types (Kind.weapon, Kind.food, Kind.gem): name them in the case views
+
+1 error, 0 warnings in 1 package (…)

@@ -1,0 +1,98 @@
+VIEWMODEL.md §3.2, G6, log-2026-09-28 U5 round 2 calls: a view whose target is not a record, variant, enum or define table is E1626 (type): a built-in type, a widget, a package, an alias of a scalar type, a type function; an alias of a record is the record's view.
+-- studio/studio.canon --
+/// The studio vocabulary.
+package studio
+
+/// Menus.
+enum Menu { items, system }
+
+/// Icons.
+enum Icon { gem, gear }
+
+/// Tones.
+enum Tone { info, danger }
+
+/// A unit.
+record UnitSpec {
+  /// Appended.
+  suffix: String = ""
+}
+
+/// Units.
+let units: table UnitSpec = {
+  hp { suffix: " HP" }
+  pct { suffix: " %" }
+}
+
+/// Numbered steps.
+widget ordered_steps(value: [_])
+
+/// A weight and its share.
+widget weight_share(value: Int, siblings: [Int])
+
+view ordered_steps {
+  title "steps"
+}
+-- a/a.canon --
+package a
+
+import b
+
+local type Money = Int
+
+local enum Kind { num, text }
+
+local type Payload(k: Kind) = match k {
+  num => Int
+  text => String
+}
+
+local record Item {
+  label: String
+}
+
+local type Thing = Item
+
+view Int {
+  title "int"
+}
+
+view b {
+  title "b"
+}
+
+view Money {
+  title "money"
+}
+
+view Payload {
+  title "payload"
+}
+
+view Thing {
+  title "{label}"
+  label "Label"
+}
+-- b/b.canon --
+/// B.
+package b
+
+/// One.
+let one: Int = 1
+-- findings.txt --
+error[E1626]  a/a.canon:20:6
+  Int is not a record, variant or enum: a view targets one of these or a load.defines table
+
+error[E1626]  a/a.canon:24:6
+  b is not a record, variant or enum: a view targets one of these or a load.defines table
+
+error[E1626]  a/a.canon:28:6
+  Money is not a record, variant or enum: a view targets one of these or a load.defines table
+
+error[E1626]  a/a.canon:32:6
+  Payload is not a record, variant or enum: a view targets one of these or a load.defines table
+
+error[E1626]  studio/studio.canon:31:6
+  ordered_steps is not a record, variant or enum: a view targets one of these or a load.defines table
+
+5 errors, 0 warnings in 3 packages (…)

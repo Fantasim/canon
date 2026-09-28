@@ -1,10 +1,5 @@
 package edit
 
-import (
-	"github.com/fantasim/canonlang/internal/check"
-	"github.com/fantasim/canonlang/internal/syntax"
-)
-
 // The segment forms of API.md §6.1.
 const (
 	SegField SegKind = iota
@@ -90,14 +85,6 @@ const (
 	stOpaque // an amendment's expression: replaced whole, nothing below it is a source
 )
 
-// The forms a source can take (API.md W1, §7.2 format).
-const (
-	formComputed form = iota
-	formLiteral
-	formJSON
-	formFormat
-)
-
 // keyDepth is how many steps a key field lies below its keyed list: the element, then the field.
 const keyDepth = 2
 
@@ -115,24 +102,6 @@ const fmtPathError = "%v at segment %d"
 
 // rootSeg is PathError.Seg for a failure at the root.
 const rootSeg = -1
-
-// forms classifies the expressions that can state a source (API.md W1); any other is computed.
-var forms = map[syntax.NodeKind]func(*check.Info, syntax.Expr) form{
-	syntax.KindIntLit:       alwaysLiteral,
-	syntax.KindFloatLit:     alwaysLiteral,
-	syntax.KindDurationLit:  alwaysLiteral,
-	syntax.KindRawStringLit: alwaysLiteral,
-	syntax.KindRegexLit:     alwaysLiteral,
-	syntax.KindBoolLit:      alwaysLiteral,
-	syntax.KindNoneLit:      alwaysLiteral,
-	syntax.KindListLit:      alwaysLiteral,
-	syntax.KindTypedLit:     alwaysLiteral,
-	syntax.KindStringLit:    stringForm,
-	syntax.KindBraceLit:     braceForm,
-	syntax.KindIdentExpr:    identForm,
-	syntax.KindSelectorExpr: selectorForm,
-	syntax.KindLoadExpr:     loadForm,
-}
 
 // steppers moves a walk one step from each state (API.md W3).
 var steppers = [...]func(*judge, cursor, int) cursor{

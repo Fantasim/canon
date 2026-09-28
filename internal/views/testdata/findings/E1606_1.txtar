@@ -1,0 +1,21 @@
+VIEWMODEL.md §3.3, VIEW-09: a column naming a method is E1606 (columns); a field column is not.
+-- a/a.canon --
+package a
+
+local record Item {
+  label: String
+  count: Int
+
+  fn doubled(self) -> Int {
+    return count * 2
+  }
+}
+
+view Item {
+  columns { label 120, doubled 80, count }
+}
+-- findings.txt --
+error[E1606]  a/a.canon:13:24
+  doubled is not a field of Item: columns name fields only
+
+1 error, 0 warnings in 1 package (…)

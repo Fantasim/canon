@@ -1,0 +1,27 @@
+VIEWMODEL.md §4.5: a slider on a number type without a lower bound is E1619 (lower); a sized integer's limits count, the int64 ones do not.
+-- a/a.canon --
+package a
+
+local record Item {
+  count: Int
+  top: Int(..=10)
+  small: Int8
+  level: Int(0..=10)
+  rate: Float(0.0..1.0)
+}
+
+view Item {
+  count { control: slider }
+  top { control: slider }
+  small { control: slider }
+  level { control: slider }
+  rate { control: slider }
+}
+-- findings.txt --
+error[E1619]  a/a.canon:12:20
+  slider needs both bounds, and Int has no lower bound
+
+error[E1619]  a/a.canon:13:18
+  slider needs both bounds, and Int(..=10) has no lower bound
+
+2 errors, 0 warnings in 1 package (…)

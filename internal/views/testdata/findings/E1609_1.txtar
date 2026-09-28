@@ -1,0 +1,18 @@
+VIEWMODEL.md C40: a `control:` name that is not a built-in control is E1609.
+-- a/a.canon --
+package a
+
+local record Item {
+  count: Int
+  label: String
+}
+
+view Item {
+  count { control: dial }
+  label { control: input }
+}
+-- findings.txt --
+error[E1609]  a/a.canon:9:20
+  dial is not a built-in control (VIEWMODEL.md §4.5 lists them)
+
+1 error, 0 warnings in 1 package (…)

@@ -1,0 +1,65 @@
+VIEWMODEL.md G16: an icon the studio package does not declare is E1610 (icon): a view's `menu … icon`, an `icon` property and `@menu(icon:)`.
+-- studio/studio.canon --
+/// The studio vocabulary.
+package studio
+
+/// Menus.
+enum Menu { items, system }
+
+/// Icons.
+enum Icon { gem, gear }
+
+/// Tones.
+enum Tone { info, danger }
+
+/// A unit.
+record UnitSpec {
+  /// Appended.
+  suffix: String = ""
+}
+
+/// Units.
+let units: table UnitSpec = {
+  hp { suffix: " HP" }
+  pct { suffix: " %" }
+}
+
+/// Numbered steps.
+widget ordered_steps(value: [_])
+
+/// A weight and its share.
+widget weight_share(value: Int, siblings: [Int])
+-- a/a.canon --
+package a
+
+local enum Rarity { common, rare }
+
+/// An item.
+record Item {
+  /// Its label.
+  label: String
+}
+
+/// The items.
+@menu(items, icon: star)
+let items: [Item] = []
+
+view Item {
+  menu items icon sword
+}
+
+view Rarity {
+  common "Common" { icon: leaf }
+  rare "Rare" { icon: gem }
+}
+-- findings.txt --
+error[E1610]  a/a.canon:12:20
+  unknown icon star: not declared in studio package studio
+
+error[E1610]  a/a.canon:16:19
+  unknown icon sword: not declared in studio package studio
+
+error[E1610]  a/a.canon:20:27
+  unknown icon leaf: not declared in studio package studio
+
+3 errors, 0 warnings in 2 packages (…)

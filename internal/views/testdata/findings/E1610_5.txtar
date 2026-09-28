@@ -1,0 +1,53 @@
+VIEWMODEL.md G16, §12.9, EVALUATION.md §1 phase 4 (log-2026-09-28 decision 11): a unit that names no entry of the studio's evaluated `units` table is E1610 (unit), checked after evaluation; not on a field E1611 already refuses a unit.
+-- studio/studio.canon --
+/// The studio vocabulary.
+package studio
+
+/// Menus.
+enum Menu { items, system }
+
+/// Icons.
+enum Icon { gem, gear }
+
+/// Tones.
+enum Tone { info, danger }
+
+/// A unit.
+record UnitSpec {
+  /// Appended.
+  suffix: String = ""
+}
+
+/// Units.
+let units: table UnitSpec = {
+  hp { suffix: " HP" }
+  pct { suffix: " %" }
+}
+
+/// Numbered steps.
+widget ordered_steps(value: [_])
+
+/// A weight and its share.
+widget weight_share(value: Int, siblings: [Int])
+-- a/a.canon --
+package a
+
+local record Item {
+  heal: Int
+  share: Int
+  name: String
+}
+
+view Item {
+  heal { unit: hp }
+  share { unit: percent }
+  name { unit: bogus }
+}
+-- findings.txt --
+error[E1610]  a/a.canon:11:17
+  unknown unit percent: not declared in studio package studio
+
+error[E1611]  a/a.canon:12:16
+  unit applies to numbers and to lists and maps of numbers, not String
+
+2 errors, 0 warnings in 2 packages (…)

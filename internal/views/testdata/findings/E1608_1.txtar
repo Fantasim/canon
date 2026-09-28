@@ -1,0 +1,56 @@
+VIEWMODEL.md G20: a widget whose `value` parameter the field's type does not match is E1608; `[_]` matches every list, and a `T?` field matches a widget for `T`.
+-- studio/studio.canon --
+/// The studio vocabulary.
+package studio
+
+/// Menus.
+enum Menu { items, system }
+
+/// Icons.
+enum Icon { gem, gear }
+
+/// Tones.
+enum Tone { info, danger }
+
+/// A unit.
+record UnitSpec {
+  /// Appended.
+  suffix: String = ""
+}
+
+/// Units.
+let units: table UnitSpec = {
+  hp { suffix: " HP" }
+  pct { suffix: " %" }
+}
+
+/// Numbered steps.
+widget ordered_steps(value: [_])
+
+/// A weight and its share.
+widget weight_share(value: Int, siblings: [Int])
+-- a/a.canon --
+package a
+
+local record Level {
+  cost: Int
+}
+
+local record Item {
+  levels: [Level]
+  names: [String]
+  weight: Int?
+  label: String
+}
+
+view Item {
+  levels { widget: ordered_steps }
+  names { widget: ordered_steps }
+  weight { widget: weight_share }
+  label { widget: weight_share }
+}
+-- findings.txt --
+error[E1608]  a/a.canon:18:19
+  widget weight_share takes Int, not String (field label)
+
+1 error, 0 warnings in 2 packages (…)

@@ -1,0 +1,21 @@
+VIEWMODEL.md G17: a group or show id starting with `_` is E1618.
+-- a/a.canon --
+package a
+
+local record Item {
+  label: String
+  count: Int
+}
+
+view Item {
+  group _other "Other" { label }
+  show _0 "Count" "{count}"
+}
+-- findings.txt --
+error[E1618]  a/a.canon:9:9
+  _other is reserved: ids starting with _ belong to the compiler
+
+error[E1618]  a/a.canon:10:8
+  _0 is reserved: ids starting with _ belong to the compiler
+
+2 errors, 0 warnings in 1 package (…)

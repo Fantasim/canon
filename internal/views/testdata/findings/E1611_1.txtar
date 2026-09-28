@@ -1,0 +1,64 @@
+VIEWMODEL.md §3.5: `unit` on a field that is not a number, nor a list or map of numbers, is E1611 (a Duration included); an optional number, a list of integers and a map of floats take one.
+-- studio/studio.canon --
+/// The studio vocabulary.
+package studio
+
+/// Menus.
+enum Menu { items, system }
+
+/// Icons.
+enum Icon { gem, gear }
+
+/// Tones.
+enum Tone { info, danger }
+
+/// A unit.
+record UnitSpec {
+  /// Appended.
+  suffix: String = ""
+}
+
+/// Units.
+let units: table UnitSpec = {
+  hp { suffix: " HP" }
+  pct { suffix: " %" }
+}
+
+/// Numbered steps.
+widget ordered_steps(value: [_])
+
+/// A weight and its share.
+widget weight_share(value: Int, siblings: [Int])
+-- a/a.canon --
+package a
+
+local enum Slot { head, hand }
+
+local record Item {
+  label: String
+  cooldown: Duration
+  on: Bool
+  heal: Int?
+  steps: [Int]
+  rates: {Slot: Float}
+}
+
+view Item {
+  label { unit: hp }
+  cooldown { unit: hp }
+  on { unit: pct }
+  heal { unit: hp }
+  steps { unit: hp }
+  rates { unit: pct }
+}
+-- findings.txt --
+error[E1611]  a/a.canon:15:17
+  unit applies to numbers and to lists and maps of numbers, not String
+
+error[E1611]  a/a.canon:16:20
+  unit applies to numbers and to lists and maps of numbers, not Duration
+
+error[E1611]  a/a.canon:17:14
+  unit applies to numbers and to lists and maps of numbers, not Bool
+
+3 errors, 0 warnings in 2 packages (…)
