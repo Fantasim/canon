@@ -840,7 +840,8 @@ is the key for a table target. Wire form: WIRE.md.
   inference reads the target of a ref still being resolved (a member, an element, or any type
   judgement that needs that target, such as `+` on lists) is `E3008`; a let that only depends on
   such a let is broken without a finding (§1), whatever the declaration order. A let that is `E3008`
-  carries no other finding from its initializer. A ref that resolves to nothing reports no cycle
+  carries no other finding (warnings included) from its initializer; asking whether a pending
+  ref's target is in error is a judgement that needs that target (the ref is resolved first). A ref that resolves to nothing reports no cycle
   (§1).
 - A level-1 ref is bound per instance at evaluation; dereferencing or verifying one that no
   enclosing instance has bound is `E3505`, as EVALUATION.md §3.4 specifies.
