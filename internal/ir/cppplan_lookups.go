@@ -105,12 +105,14 @@ func (pl *CppNamePlan) Dependent(d *Dependent) CppDependent {
 	return out
 }
 
-// Inputs are the runtime inputs' names; the plan declares them only when a record of the package has an input field.
+// Inputs are the runtime inputs' names; the plan declares them only when a record of the package has an input field. MatchPattern comes last, for a patterned input.
 func (pl *CppNamePlan) Inputs() CppInputs {
 	used := map[types.Kind]bool{}
+	patterned := false
 	for _, rec := range inputRecords(pl.p) {
 		for _, f := range inputFields(rec) {
 			used[f.Type.Kind] = true
+			patterned = patterned || f.Pattern != nil
 		}
 	}
 	var helpers []string
@@ -118,6 +120,9 @@ func (pl *CppNamePlan) Inputs() CppInputs {
 		if h.kinds == nil || slices.ContainsFunc(h.kinds, func(k types.Kind) bool { return used[k] }) {
 			helpers = append(helpers, h.names...)
 		}
+	}
+	if patterned {
+		helpers = append(helpers, CppMatchPattern)
 	}
 	return CppInputs{Func: loadInputs, Namespace: pl.Upper() + cppInputsSuffix, Loaded: pl.Upper() + cppInputsLoaded, Helpers: helpers}
 }

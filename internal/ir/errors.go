@@ -12,11 +12,11 @@ const fmtUntranslated = "%w: translated fn %s has no body and no finding explain
 // kind with no wire form, which stage E refuses first (E8151).
 var ErrFingerprint = errors.New("ir: type has no canon-fp v1 form")
 
-// ErrPattern is a pattern CppPattern cannot translate: one outside EVALUATION.md §11.3's portable subset, which check refuses first (E1904).
+// ErrPattern is a pattern CompilePattern has no automaton for: one outside EVALUATION.md §11.3's portable subset, which check refuses first (E1904).
 var ErrPattern = errors.New("ir: pattern outside the portable subset")
 
-// fmtPatternParse and fmtPatternOp say why a pattern has no translation.
+// fmtPatternParse and fmtPatternInst say why a pattern has no automaton.
 const (
 	fmtPatternParse = "%w: %w"
-	fmtPatternOp    = "%w: %v has no portable form"
+	fmtPatternInst  = "%w: instruction %v has no automaton state"
 )

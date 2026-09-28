@@ -9,8 +9,8 @@ import (
 	"github.com/fantasim/canonlang/internal/ir"
 )
 
-// TestCppPatternAcceptsWhatCheckAccepts is EVALUATION.md §11.3 end to end: every corpus pattern passes check (no E1904) and translates, and every pattern CppPattern refuses is E1904 first, so generation never meets an untranslatable pattern.
-func TestCppPatternAcceptsWhatCheckAccepts(t *testing.T) {
+// TestCompilePatternAcceptsWhatCheckAccepts is EVALUATION.md §11.3 end to end: every corpus pattern passes check (no E1904) and compiles to an automaton, and every pattern CompilePattern refuses is E1904 first, so generation never meets one it cannot write.
+func TestCompilePatternAcceptsWhatCheckAccepts(t *testing.T) {
 	genPats, _ := generatedCorpus()
 	for _, p := range append(append([]string(nil), specPatterns...), genPats...) {
 		refused, pat := checkPattern(t, p)
@@ -20,14 +20,14 @@ func TestCppPatternAcceptsWhatCheckAccepts(t *testing.T) {
 		case pat == nil:
 			t.Errorf("pattern %q: no input pattern in the IR", p)
 		default:
-			if _, err := ir.CppPattern(pat); err != nil {
-				t.Errorf("pattern %q: check accepts it, CppPattern: %v", p, err)
+			if _, err := ir.CompilePattern(pat); err != nil {
+				t.Errorf("pattern %q: check accepts it, CompilePattern: %v", p, err)
 			}
 		}
 	}
-	for _, p := range translatorRefused {
+	for _, p := range automatonRefused {
 		if refused, _ := checkPattern(t, p); !refused {
-			t.Errorf("pattern %q: check lets it through, but CppPattern refuses it", p)
+			t.Errorf("pattern %q: check lets it through, but CompilePattern refuses it", p)
 		}
 	}
 }

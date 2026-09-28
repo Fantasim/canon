@@ -228,7 +228,7 @@ func TestGoWalks(t *testing.T) {
 	}
 }
 
-// TestCppInputHelpers is CODEGEN.md §7.7, EVALUATION.md §11.3: the used helpers only; an enum needs none.
+// TestCppInputHelpers is CODEGEN.md §7.7, EVALUATION.md §11.3: the used helpers only; an enum needs none; a patterned input adds MatchPattern, last.
 func TestCppInputHelpers(t *testing.T) {
 	codes := &ir.Enum{Pkg: "a", Name: "Code", JSONCodes: true}
 	plain := &ir.Enum{Pkg: "a", Name: "Tone"}
@@ -267,8 +267,12 @@ func TestCppInputHelpers(t *testing.T) {
 		t.Errorf("an @json(codes) enum input alone: helpers %v, problems %+v", got, pl.Problems())
 	}
 	p, _ = inputPackage(ir.TargetCpp)
-	if got := ir.PlanCppNames(p, p.Emits[0]).Inputs().Helpers; !slices.Equal(got, []string{"EnvText", "ParseStringLiteral"}) {
-		t.Errorf("String-only helpers %v", got)
+	pl = ir.PlanCppNames(p, p.Emits[0])
+	if got := pl.Inputs().Helpers; !slices.Equal(got, []string{"EnvText", "ParseStringLiteral", ir.CppMatchPattern}) {
+		t.Errorf("String-only helpers, one input patterned: %v", got)
+	}
+	if !ir.CppScopeNames(pl)["a"][ir.CppMatchPattern] {
+		t.Errorf("helper %s is not a name of the namespace", ir.CppMatchPattern)
 	}
 }
 

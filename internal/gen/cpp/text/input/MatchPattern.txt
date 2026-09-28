@@ -1,0 +1,99 @@
+// Pattern search as Go's regexp.MatchString (EVALUATION.md §11.3): the automaton ir compiles, run
+// with one set of states per position, no recursion, memory in the table's size only and time
+// linear in the text; a byte no valid UTF-8 sequence starts reads U+FFFD, as in Go.
+// prog: the state count, a row {op, out, arg, count} per state, then code point pairs. Op 0
+// accepts; 1 goes to out and arg; 2 goes to out where arg holds (1 the start, 2 the end); 3 reads a
+// code point within the count sorted pairs at prog + arg and goes to out. State 0 starts.
+bool MatchPattern(const uint32_t* prog, std::string_view text) {
+    const uint32_t n = prog[0];
+    std::vector<uint32_t> list[2] = {std::vector<uint32_t>(n), std::vector<uint32_t>(n)};
+    std::vector<uint32_t> slot[2] = {std::vector<uint32_t>(n), std::vector<uint32_t>(n)};
+    std::vector<uint32_t> stack(n);
+    size_t size[2] = {0, 0};
+    // Adds from, and every state it reaches reading nothing, to set k; true on accept.
+    const auto add = [&](size_t k, uint32_t from, uint32_t at) {
+        size_t top = 0;
+        const auto push = [&](uint32_t s) {
+            if (slot[k][s] < size[k] && list[k][slot[k][s]] == s) return;
+            slot[k][s] = static_cast<uint32_t>(size[k]);
+            list[k][size[k]++] = s;
+            stack[top++] = s;
+        };
+        push(from);
+        while (top > 0) {
+            const uint32_t* s = prog + 1 + 4 * static_cast<size_t>(stack[--top]);
+            if (s[0] == 0) return true;
+            if (s[0] == 1) {
+                push(s[1]);
+                push(s[2]);
+            } else if (s[0] == 2 && (s[2] & at) == s[2]) {
+                push(s[1]);
+            }
+        }
+        return false;
+    };
+    // The code point at i and its width, as Go's utf8.DecodeRuneInString reads them.
+    const auto decode = [&](size_t i, uint32_t& r) -> size_t {
+        const unsigned char c = static_cast<unsigned char>(text[i]);
+        r = c;
+        if (c < 0x80) return 1;
+        r = 0xFFFD;
+        size_t len = 2;
+        uint32_t v = c & 0x1Fu;
+        unsigned char lo = 0x80, hi = 0xBF;
+        if (c >= 0xE0 && c <= 0xEF) {
+            len = 3;
+            v = c & 0x0Fu;
+            lo = c == 0xE0 ? 0xA0 : lo;
+            hi = c == 0xED ? 0x9F : hi;
+        } else if (c >= 0xF0 && c <= 0xF4) {
+            len = 4;
+            v = c & 0x07u;
+            lo = c == 0xF0 ? 0x90 : lo;
+            hi = c == 0xF4 ? 0x8F : hi;
+        } else if (c < 0xC2 || c > 0xDF) {
+            return 1;
+        }
+        if (text.size() - i < len) return 1;
+        for (size_t k = 1; k < len; ++k) {
+            const unsigned char b = static_cast<unsigned char>(text[i + k]);
+            if (b < lo || b > hi) return 1;
+            v = (v << 6) | (b & 0x3Fu);
+            lo = 0x80;
+            hi = 0xBF;
+        }
+        r = v;
+        return len;
+    };
+    // Whether r is within one of the count sorted pairs at p.
+    const auto within = [](const uint32_t* p, uint32_t count, uint32_t r) {
+        uint32_t lo = 0, hi = count;
+        while (lo < hi) {
+            const uint32_t m = lo + (hi - lo) / 2;
+            if (r < p[2 * m]) {
+                hi = m;
+            } else if (r > p[2 * m + 1]) {
+                lo = m + 1;
+            } else {
+                return true;
+            }
+        }
+        return false;
+    };
+    size_t cur = 0;
+    for (size_t pos = 0;;) {
+        if (add(cur, 0, (pos == 0 ? 1u : 0u) | (pos == text.size() ? 2u : 0u))) return true;
+        if (pos == text.size()) return false;
+        uint32_t r = 0;
+        const size_t w = decode(pos, r);
+        const size_t next = 1 - cur;
+        size[next] = 0;
+        const uint32_t at = pos + w == text.size() ? 2u : 0u;
+        for (size_t i = 0; i < size[cur]; ++i) {
+            const uint32_t* s = prog + 1 + 4 * static_cast<size_t>(list[cur][i]);
+            if (s[0] == 3 && within(prog + s[2], s[3], r) && add(next, s[1], at)) return true;
+        }
+        cur = next;
+        pos += w;
+    }
+}

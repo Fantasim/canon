@@ -51,13 +51,13 @@ func (g *gen) readDuration(f *ir.Field) inputRead {
 	return r
 }
 
-// readString checks the length in bytes, then the pattern with search semantics, compiled once (EVALUATION.md §11.3).
+// readString checks the length in bytes, then the pattern with search semantics, by MatchPattern over the pattern's constant automaton (EVALUATION.md §11.3; CODEGEN.md §5.12, §7.7).
 func (g *gen) readString(f *ir.Field) inputRead {
 	r := g.parsed(f, cppString)
 	r.checks = ownRange(r.checks, f.Range, fmt.Sprintf(sizeFormat, valVar))
 	if f.Pattern != nil {
-		r.decls = append([]string{fmt.Sprintf(patternFormat, patternVar, quote(f.Pattern.String()))}, r.decls...)
-		r.checks = append(r.checks, inputCheck{cond: fmt.Sprintf(noMatchFormat, valVar, patternVar), reason: ir.InputNoMatch})
+		r.decls = append(g.patternTable(f.Pattern), r.decls...)
+		r.checks = append(r.checks, inputCheck{cond: fmt.Sprintf(noMatchFormat, patternVar, valVar), reason: ir.InputNoMatch})
 	}
 	r.stored = fmt.Sprintf(moveFormat, valVar)
 	return r

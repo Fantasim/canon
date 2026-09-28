@@ -274,7 +274,9 @@ const (
 	elseIfFormat         = "} else if (%s) {"
 	appendFormat         = "%s += %s;"
 	sizeFormat           = "static_cast<int64_t>(%s.size())"
-	patternFormat        = "static const std::regex %s(%s);"
+	tableOpenFormat      = "static constexpr %s %s[] = {"
+	patternRow           = 4 // MatchPattern's {op, out, arg, count}, after the state count
+	runePair             = 2 // a code point range: lo, hi
 	moveFormat           = "std::move(%s)"
 	constAutoFormat      = "const auto %s = %s;"
 )

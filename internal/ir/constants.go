@@ -214,6 +214,7 @@ const (
 	CppVariantMember = "value_" // a variant's or dependent type's std::variant (§5.5, §5.6)
 	CppToName        = "ToName" // the enum helpers, one overload per enum (CODEGEN.md §5.2)
 	CppToWire        = "ToWire"
+	CppMatchPattern  = "MatchPattern" // §7.7's pattern search, the input helper a loader calls by name
 )
 
 // The fixed Go names the plan declares and gen/go's templates write (CODEGEN.md §5.2–§6.2).
@@ -368,67 +369,36 @@ const (
 	GoOverrideInvalid
 )
 
-// The ECMAScript text CppPattern writes (EVALUATION.md §11.3), and how tightly each part binds.
-const (
-	reGroupOpen  = "(?:"
-	reGroupClose = ")"
-	reEmptyGroup = reGroupOpen + reGroupClose
-	reClassOpen  = "["
-	reClassClose = "]"
-	reRangeDash  = "-"
-	reHexEscape  = `\x`
-	reBar        = "|"
-	reCaret      = "^"
-	reDollar     = "$"
-	reBraceOpen  = "{"
-	reBraceClose = "}"
-	reComma      = ","
-)
-
-// How tightly a translated part binds: an alternation, a concatenation, an atom.
-const (
-	reAlt = iota
-	reConcat
-	reAtom
-)
-
-// UTF-8 (RFC 3629): the last code point of each encoded length, the payload bits of a
-// continuation byte, the surrogates no valid text encodes, and 0xFF, a byte it never holds.
-const (
-	utf8ContBits  = 6
-	surrogateMin  = 0xD800
-	surrogateMax  = 0xDFFF
-	utf8Top2      = 0x7FF
-	utf8Top3      = 0xFFFF
-	reNoMatchByte = 0xFF
-	pairWidth     = 2    // a rune class is lo, hi pairs
-	asciiLowerBit = 0x20 // ORed into an ASCII letter, its lower case
-)
-
-// utf8Spans are the multi-byte encoded lengths: their code points and the compact form of all of
-// them, exact on valid UTF-8 (lead byte, then its continuation bytes; no overlong, no surrogate).
-var utf8Spans = [...]struct {
-	lo, hi rune
-	all    string
-}{
-	{utf8.RuneSelf, utf8Top2, `[\xc2-\xdf][\x80-\xbf]`},
-	{utf8Top2 + 1, utf8Top3, `[\xe0-\xef][\x80-\xbf]{2}`},
-	{utf8Top3 + 1, utf8.MaxRune, `[\xf0-\xf4][\x80-\xbf]{3}`},
-}
-
 // The code points of `.` (all but `\n`: the Perl flags lack DotNL) and of any, as rune pairs.
 var (
 	anyRuneNotNL = []rune{0, '\n' - 1, '\n' + 1, utf8.MaxRune}
 	anyRune      = []rune{0, utf8.MaxRune}
 )
 
-// reQuantifiers are the quantifiers written as themselves; OpRepeat writes its bounds.
-var reQuantifiers = map[resyntax.Op]string{resyntax.OpStar: "*", resyntax.OpPlus: "+", resyntax.OpQuest: "?"}
+// The states of a pattern automaton (EVALUATION.md §11.3); gen/cpp writes each op as its number.
+const (
+	PatternAccept PatternOp = iota // the search matches
+	PatternSplit                   // continue at Out and at Alt, consuming nothing
+	PatternAnchor                  // continue at Out where the position is every one of At
+	PatternStep                    // consume one code point within Runes, continue at Out
+)
 
-// reRawBytes are the bytes CppPattern writes unescaped: letters, digits and `_`.
-var reRawBytes = func() (raw [utf8.RuneSelf]bool) {
-	for c := range raw {
-		raw[c] = c == '_' || '0' <= c && c <= '9' || 'a' <= c|asciiLowerBit && c|asciiLowerBit <= 'z'
-	}
-	return raw
-}()
+// The positions a PatternAnchor state asserts, as flags.
+const (
+	PatternAtBegin PatternAt = 1 << iota // the start of the text: `^`
+	PatternAtEnd                         // its end: `$`
+)
+
+// instStates convert each instruction a reachable state can be, indexed by its op; nil is refused.
+var instStates = [...]func(*automatonBuilder, *resyntax.Inst) PatternState{
+	resyntax.InstMatch: (*automatonBuilder).accept, resyntax.InstFail: (*automatonBuilder).fail,
+	resyntax.InstAlt: (*automatonBuilder).split, resyntax.InstEmptyWidth: (*automatonBuilder).anchor,
+	resyntax.InstRune: (*automatonBuilder).runes, resyntax.InstRune1: (*automatonBuilder).rune1,
+	resyntax.InstRuneAny: (*automatonBuilder).any, resyntax.InstRuneAnyNotNL: (*automatonBuilder).anyNotNL,
+}
+
+// patternEmpty maps Go's assertions to the ones an automaton keeps; any other (multi-line anchors, word boundaries) has no state.
+var patternEmpty = []struct {
+	op uint32
+	at PatternAt
+}{{uint32(resyntax.EmptyBeginText), PatternAtBegin}, {uint32(resyntax.EmptyEndText), PatternAtEnd}}

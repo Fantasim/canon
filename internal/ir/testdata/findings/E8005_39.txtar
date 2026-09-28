@@ -1,0 +1,22 @@
+CODEGEN.md §3.5, §7.7: gen/cpp writes MatchPattern, the pattern search, in an anonymous namespace of the package's namespace when an input has a pattern, so a record MatchPattern there is ambiguous as EnvText is (E8005_24).
+-- a/a.canon --
+package a
+
+/// Named like the pattern helper.
+record MatchPattern {
+  /// A code.
+  code: input String(/^[a-z]+$/)? from env "CODE"
+}
+
+/// The settings.
+let settings: MatchPattern = {}
+
+emit cpp { out: "@features/a", namespace: "a", mode: data }
+emit json { out: "out/" }
+-- a.settings.json --
+{}
+-- findings.txt --
+error[E8005]  a/a.canon:4:8
+  cpp: MatchPattern is generated for both a and a.MatchPattern
+
+1 error, 0 warnings in 1 package (…)

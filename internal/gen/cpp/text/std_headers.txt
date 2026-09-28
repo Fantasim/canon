@@ -12,7 +12,6 @@
 \bstd::locale\b <locale>
 \bstd::(?:shared_ptr|make_shared|unique_ptr|make_unique)\b <memory>
 \bstd::(?:optional|nullopt)\b <optional>
-\bstd::regex(?:_search)?\b <regex>
 \bstd::istringstream\b <sstream>
 \bstd::(?:string|to_string)\b <string>
 \bstd::string_view\b <string_view>

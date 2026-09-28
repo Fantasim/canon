@@ -19,7 +19,7 @@ var specPatterns = []string{
 	`[^\s\S]`, `^[\s\S]$`, `^\w\W$`, `^(é|e)+$`, `ab|ac|ad`, `a(?:b|c)d`,
 }
 
-// robustPatterns are RE2 spellings outside §11.3's subset that the translator still renders exactly; only the byte, C++ and fuzz tests use them.
+// robustPatterns are RE2 spellings outside §11.3's subset that the automaton still handles exactly; only the corpus and fuzz tests use them.
 var robustPatterns = []string{
 	`^*a`, `^[^\x00-\x{10FFFF}]`, `[\x00-\x{10FFFF}]`, `^\x{10FFFF}$`, `^[\x{7F}-\x{80}]$`,
 	`^[\x{7FF}-\x{800}]$`, `^[\x{FFFF}-\x{10000}]$`, `^[\x{D7FF}-\x{E000}]$`, `a\x{D800}`, `\x00`,
@@ -106,14 +106,4 @@ func genPattern(r *rand.Rand, depth int) string {
 		return genPattern(r, depth-1) + "$"
 	}
 	return genAtoms[r.IntN(len(genAtoms))] + genQuants[r.IntN(len(genQuants))]
-}
-
-// latin1 widens every byte of s to the code point of the same value, so RE2 can run a
-// translated pattern over the bytes std::regex sees.
-func latin1(s string) string {
-	out := make([]rune, len(s))
-	for i := range len(s) {
-		out[i] = rune(s[i])
-	}
-	return string(out)
 }

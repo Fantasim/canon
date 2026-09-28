@@ -74,6 +74,6 @@ A_b: GetC
 Gen: GetCode GetCodePattern GetFlagX GetSize size_
 GenFlag: GetX
 Root: GetA GetAb GetGen GetGenFlag Load a_ ab_ genFlag_ gen_
-a: A A_b AllDigits EnvText Gen GenFlag IsDecDigit LoadInputs ParseBoolLiteral ParseIntLiteral ParseStringLiteral Root kSettingsSchema
+a: A A_b AllDigits EnvText Gen GenFlag IsDecDigit LoadInputs MatchPattern ParseBoolLiteral ParseIntLiteral ParseStringLiteral Root kSettingsSchema
 detail: AAccess AInputs AInputsLoaded Decode
 0 errors, 0 warnings in 1 package (…)
