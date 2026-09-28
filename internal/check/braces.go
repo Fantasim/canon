@@ -125,6 +125,15 @@ func (c *checker) stringMap(env *env, e *syntax.BraceLit) types.Type {
 	return &types.MapType{Key: types.StringType, Value: v}
 }
 
+// itemsUntyped types the items of a literal of unknown type: against an expected error type (TYPES.md §1), else alone.
+func (c *checker) itemsUntyped(env *env, items []syntax.BraceItem, want types.Type) {
+	if unknownContext(want) {
+		c.itemsInError(env, items)
+		return
+	}
+	c.itemsAlone(env, items)
+}
+
 // itemsAlone types the values of items that fit no classification.
 func (c *checker) itemsAlone(env *env, items []syntax.BraceItem) {
 	for _, it := range items {
@@ -201,7 +210,7 @@ func (c *checker) typedLit(env *env, e *syntax.TypedLit, want types.Type) types.
 	t := c.literalType(env, e.Type, want)
 	if t == nil {
 		c.info.Literals[e.Lit] = LitError
-		c.itemsAlone(env, e.Lit.Items)
+		c.itemsUntyped(env, e.Lit.Items, want)
 		c.info.Types[e.Lit] = types.ErrorType
 		return types.ErrorType
 	}
@@ -225,6 +234,9 @@ func (c *checker) literalType(env *env, q *syntax.QualifiedName, want types.Type
 			c.deprecatedUse(env, q.Parts[0], cs)
 			return cs.typ
 		}
+	}
+	if unknownContext(want) && len(q.Parts) == 1 && c.lookupType(env, q.Parts[0].Name) == nil {
+		return nil // a case of the type the error stands for, maybe: not judged (TYPES.md §1, §4.1)
 	}
 	o := c.typeName(env, q)
 	if o == nil {

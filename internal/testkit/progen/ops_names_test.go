@@ -44,7 +44,16 @@ func namesOperators() []operator {
 		op(diag.E2108.Def().Code, "TYPES.md §3.4 (self outside a record)", topFnStatement("let zzSelf = ", "self")),
 		op(diag.E2109.Def().Code, "TYPES.md §3.4 (it outside a predicate)", topFnStatement("let zzIt = ", "it")),
 		op(diag.E2110.Def().Code, "TYPES.md §3.2 (type as a value)", topFnStatement("let zzType = ", "Int")),
+		op(diag.E2111.Def().Code, "TYPES.md §3.7 (public alias of a local type)", localExposed),
 	}
+}
+
+// localExposed declares a public alias whose body is a new local enum.
+func localExposed(tg target) []progen.Site {
+	if !isSource(tg) {
+		return nil
+	}
+	return []progen.Site{appendDecl(tg, "/// Zz.\ntype ZzExposed = ", "ZzLocal", "?\n\nlocal enum ZzLocal { zzA }")}
 }
 
 // peers are the targets of tg's package.

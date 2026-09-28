@@ -27,7 +27,8 @@ import monster { monsters }
 
 local let categories = load.defines("defines/categories.h")
 
-local type ItemIcon = asset("@icons", ext: [png])
+/// An item's icon: a PNG under the icons root.
+type ItemIcon = asset("@icons", ext: [png])
 
 %s%s/// An attribute and how much it changes.
 record StatMod {

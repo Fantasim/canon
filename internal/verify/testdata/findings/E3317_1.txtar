@@ -1,0 +1,31 @@
+WIRE.md §5.8: a map whose keys are known only at evaluation, here built by a comprehension over `["default", default]` of `ZzE | "default"`, holds two different keys that encode to the same text: E3317 at the second key (where its value was written); keys whose texts differ are fine. The keys print in their map-key text form (STDLIB.md §9.1: strings quoted), as check prints its static E3317.
+-- a/a.canon --
+/// A.
+package a
+
+/// E.
+enum ZzE { default, other }
+
+/// K.
+type K = ZzE | "default"
+
+/// Keys.
+let keys: [K] = ["default", default]
+
+/// Clash.
+let clash: {K: Int} = { k: 1 for k in keys }
+
+/// Other keys.
+let others: [K] = ["default", other]
+
+/// Fine.
+let fine: {K: Int} = { k: 1 for k in others }
+-- project.canon --
+project demo {
+  canon: "0.1"
+}
+-- findings.txt --
+error[E3317]  a/a.canon:11:29
+  clash: map keys "default" and default both encode to "default"
+
+1 error, 0 warnings in 1 package (…)

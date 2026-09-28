@@ -685,7 +685,7 @@ Owner: TYPES.md.
 | E2105 | error | check | TYPES.md §3.6 | a reserved member name: `id`/`retired` on a table element, `kind` on a case |
 | E2106 | error | check | TYPES.md §3.2 | a name declared twice in one namespace |
 | E2107 | error | check | TYPES.md §3.4 | a name declared twice in one block |
-| E2108 | error | check | TYPES.md §3.4 | `self` outside a record or case body |
+| E2108 | error | check | TYPES.md §3.4 | `self` outside a record, case or variant body |
 | E2109 | error | check | TYPES.md §3.4 | `it` outside a refinement predicate |
 | E2110 | error | check | TYPES.md §3.2 | a type name used as a value, or a value name as a type |
 | E2111 | error | check | TYPES.md §3.7 | an emitted public declaration exposes a `local` type |
@@ -708,7 +708,7 @@ Owner: TYPES.md.
 | E2105 | case | name:Name | `{name} is reserved on variant cases` |
 | E2106 | - | name:Name, first:Loc | `{name} is declared twice (first at {first})` |
 | E2107 | - | name:Name | `{name} is already declared in this block` |
-| E2108 | - | - | `self is only valid in a record or case body` |
+| E2108 | - | - | `self is only valid in a record, case or variant body` |
 | E2109 | - | - | `it is only valid in a refinement predicate` |
 | E2110 | type | name:Name | `{name} is a type, not a value` |
 | E2110 | value | name:Name | `{name} is a value, not a type` |
@@ -882,7 +882,7 @@ Owner: TYPES.md, WIRE.md.
 | E3401 | - | typ:Type | `{typ}? is not a type: {typ} is already optional` |
 | W3401 | - | expr:Expr, op:Name | `{expr} is never none: {op} has no effect` |
 | E3402 | - | expr:Expr | `{expr} may be none: use ?., !, ?? or test != none first` |
-| E3403 | - | typ:Type | `expected {typ}, found {typ}?: prove it is present (!= none, !, ??)` |
+| E3403 | - | typ:Type, found:Type | `expected {typ}, found {found}: prove it is present (!= none, !, ??)` |
 | E3501 | - | key:Value, coll:Name | `unknown key {key} in {coll}` |
 | E3502 | - | key:Value, entry:Name | `{key} is retired; live {entry} cannot reference it` |
 | E3503 | - | typ:Type, coll:Name | `this {typ} is not an entry of {coll}` |

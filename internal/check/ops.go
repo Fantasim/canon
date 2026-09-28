@@ -367,7 +367,8 @@ func (c *checker) ordering(env *env, e *syntax.BinaryExpr, tx, ty types.Type) ty
 		t types.Type
 	}{{e.X, tx}, {e.Y, ty}} {
 		if k := side.t.Base().Kind(); k == types.Optional || k == types.None {
-			c.report(env, diag.E3403.At(env.span(side.x), optElem(side.t)))
+			elem := optElem(side.t)
+			c.report(env, diag.E3403.At(env.span(side.x), elem, foundOptional(side.t, elem)))
 			return types.BoolType
 		}
 	}

@@ -1,0 +1,27 @@
+TYPES.md §3.7, CODEGEN.md §2.1: a malformed `mode` (a string, or an unknown mode) or a malformed `values` is E8009 alone: such an emit selects no let, so a public let of a local type there is not E2111 too.
+-- a/a.canon --
+package a
+
+local record Stone {
+  n: Int
+}
+
+/// The stones.
+let stones: [Stone] = []
+
+emit go { out: "@sovcommon/a", mode: "types" }
+
+emit cpp { out: "@sovcommon/a", mode: bogus }
+
+emit ts { out: "@sovcommon/a.ts", values: stones }
+-- findings.txt --
+error[E8009]  a/a.canon:10:38
+  option mode of emit go must be a mode name
+
+error[E8009]  a/a.canon:12:39
+  invalid mode bogus for emit cpp: expected one of baked, embedded, data, types
+
+error[E8009]  a/a.canon:14:43
+  option values of emit ts must be a list of value names
+
+3 errors, 0 warnings in 1 package (…)

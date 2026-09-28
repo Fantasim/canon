@@ -54,23 +54,31 @@ func studioProp(enumName string) func(*checker, *viewCtx, syntax.Expr) {
 	}
 }
 
-// unitProp is `unit`: an entry of the studio package's `units` table, a ref into it.
-func (c *checker) unitProp(_ *viewCtx, e syntax.Expr) {
-	id, ok := e.(*syntax.IdentExpr)
+// unitProp is `unit`, a ref into the studio's `units`: a name or string key, else typed (VIEWMODEL.md §16).
+func (c *checker) unitProp(vc *viewCtx, e syntax.Expr) {
 	sp := c.studioPkg()
-	if !ok || sp == nil {
+	if sp == nil {
 		return
 	}
 	let := sp.names[syntax.StudioUnits]
-	if let == nil || let.kind != ObjLet || let.keys == nil || let.keys.byName[id.Name] == nil {
+	if let == nil || let.kind != ObjLet || let.keys == nil {
 		return
 	}
 	elem, keyed, isColl := collectionElem(c.letType(let))
 	if !isColl {
 		return
 	}
-	c.info.Uses[id] = let.keys.byName[id.Name]
-	c.info.Types[id] = &types.RefType{Target: c.internLet(let, nil, elem, keyed)}
+	ref := &types.RefType{Target: c.internLet(let, nil, elem, keyed)}
+	if id, isName := e.(*syntax.IdentExpr); isName {
+		if u := let.keys.byName[id.Name]; u != nil {
+			c.info.Uses[id] = u
+			c.info.Types[id] = ref
+		}
+		return
+	}
+	if _, isStr := e.(syntax.StrLit); !isStr {
+		c.expr(vc.env, e, ref)
+	}
 }
 
 // widgetProp is `widget`: a widget of the studio package, typed by its `value` parameter.

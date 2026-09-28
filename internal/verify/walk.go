@@ -183,12 +183,14 @@ func (w *walker) mapping(m *value.Map, t types.Type, at *Path, sc scope) value.V
 	}
 	ct := w.computedType(m.T, t, sc)
 	if !keys.changed() && !vals.changed() && ct == m.T {
+		w.uniqueWire(m, at)
 		return m
 	}
 	out := &value.Map{T: ct, Keys: keys.all(), Vals: vals.all(), P: m.P}
 	if keys.changed() {
 		w.uniqueResolved(out, at)
 	}
+	w.uniqueWire(out, at)
 	return w.moved(m, out)
 }
 

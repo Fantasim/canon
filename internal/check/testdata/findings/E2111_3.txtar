@@ -1,0 +1,38 @@
+TYPES.md §3.7: a public alias's body, and each arm of a public type function, may not name a local type; E2111 at each type expression naming one.
+-- a/a.canon --
+package a
+
+local enum K { num, text }
+
+local record Stone {
+  n: Int
+}
+
+/// An event.
+record Ev {
+  /// Its kind.
+  k: KindOf
+}
+
+/// The kind.
+type KindOf = K
+
+/// Stones.
+type Stones = [Stone]?
+
+/// The payload.
+type P(e: Ev) = match e.k {
+  num => Stone
+  text => String
+}
+-- findings.txt --
+error[E2111]  a/a.canon:16:15
+  KindOf is public but exposes the local type K: make K public or KindOf local
+
+error[E2111]  a/a.canon:19:16
+  Stones is public but exposes the local type Stone: make Stone public or Stones local
+
+error[E2111]  a/a.canon:23:10
+  P is public but exposes the local type Stone: make Stone public or P local
+
+3 errors, 0 warnings in 1 package (…)

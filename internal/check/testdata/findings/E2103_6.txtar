@@ -1,0 +1,32 @@
+TYPES.md §1, §10.2, WIRE.md §5.8: a literal-union map key whose other type is a ref to nothing (E2103, E3504, or an unknown name, E2102) stands for the error type, so its keys are not compared by wire text: `{ first: 1, "first": 2 }` gives no E3317 beside the ref's own finding.
+-- a/a.canon --
+package a
+
+local record Nothing {
+  n: Int
+}
+
+local const LIMIT = 3
+
+local type KR = ref Nothing | "first"
+
+local type KC = ref LIMIT | "first"
+
+local let m: {KR: Int} = { first: 1, "first": 2 }
+
+local let c: {KC: Int} = { first: 1, "first": 2 }
+
+local type KU = ref Undeclared | "first"
+
+local let u: {KU: Int} = { first: 1, "first": 2 }
+-- findings.txt --
+error[E2103]  a/a.canon:9:21
+  ref Nothing: there is no collection of Nothing; write ref <collection name>
+
+error[E3504]  a/a.canon:11:21
+  ref LIMIT: LIMIT is not a collection or a record type
+
+error[E2102]  a/a.canon:17:21
+  unknown name Undeclared
+
+3 errors, 0 warnings in 1 package (…)

@@ -1,0 +1,48 @@
+WIRE.md §5.8, TYPES.md §13.2: in a `.canon` map literal, two keys of a literal-union key type that encode to the same text are E3317 at the second: the literal `"default"` and the member `default` (either order), a member renamed on the wire (`a = "x"`) and a ref key; keys whose texts differ are not. The keys print in their map-key text form (STDLIB.md §9.1: strings quoted), as verify prints the evaluation form.
+-- a/a.canon --
+package a
+
+local enum ZzE { default, other }
+
+local enum W {
+  a = "x"
+  b
+}
+
+local record Item {
+  n: Int
+}
+
+local let items: table Item = {
+  first { n: 1 }
+}
+
+local type K = ZzE | "default"
+
+local type KW = W | "x"
+
+local type KR = ref items | "first"
+
+local let m1: {K: Int} = { "default": 1, default: 2 }
+
+local let m2: {K: Int} = { default: 1, "default": 2 }
+
+local let m3: {KW: Int} = { a: 1, "x": 2, b: 3 }
+
+local let m4: {KR: Int} = { first: 1, "first": 2 }
+
+local let fine: {K: Int} = { "default": 1, other: 2 }
+-- findings.txt --
+error[E3317]  a/a.canon:24:42
+  map keys "default" and default both encode to "default"
+
+error[E3317]  a/a.canon:26:40
+  map keys default and "default" both encode to "default"
+
+error[E3317]  a/a.canon:28:35
+  map keys a and "x" both encode to "x"
+
+error[E3317]  a/a.canon:30:39
+  map keys first and "first" both encode to "first"
+
+4 errors, 0 warnings in 1 package (…)

@@ -48,8 +48,7 @@ record Thing {
 	}
 }
 
-// K1: a local type reachable from a public field contributes; an unreachable local type does
-// not.
+// K1: a local type reached from a public let (no code emit, TYPES.md §3.7) through a field contributes; an orphan does not.
 func TestCatalogueReachability(t *testing.T) {
 	cat := catalogue(t, map[string]string{"k1r/k1r.canon": `package k1r
 
@@ -65,11 +64,14 @@ local record Orphan {
   dead: Int
 }
 
-/// The public root.
-record Outer {
+/// Holds the inner thing.
+local record Outer {
   /// The inner thing.
   inner: Inner
 }
+
+/// The public root.
+let root: Outer = { inner: { value: 1 } }
 `}, "k1r")
 	if _, ok := cat.Lookup("Inner.help"); !ok {
 		t.Errorf("Inner should be reachable: %v", keys(cat))

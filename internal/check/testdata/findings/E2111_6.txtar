@@ -1,0 +1,24 @@
+TYPES.md §3.7, §15: the inferred type of a public `const` is exposed (constants are emitted in every mode): a local enum's member, or a list of them, is E2111 at the const's name, which has no type expression; a local const may hold anything.
+-- a/a.canon --
+package a
+
+local enum Cut { round, square }
+
+/// The default cut.
+const DEFAULT_CUT = Cut.round
+
+/// Every cut.
+const CUTS = [Cut.round, Cut.square]
+
+/// A count.
+const COUNT = 2
+
+local const FIRST = Cut.square
+-- findings.txt --
+error[E2111]  a/a.canon:6:7
+  DEFAULT_CUT is public but exposes the local type Cut: make Cut public or DEFAULT_CUT local
+
+error[E2111]  a/a.canon:9:7
+  CUTS is public but exposes the local type Cut: make Cut public or CUTS local
+
+2 errors, 0 warnings in 1 package (…)

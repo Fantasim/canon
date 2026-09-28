@@ -14,6 +14,7 @@ func (c *checker) checkPackage(p *pkgState) {
 	for _, o := range p.all {
 		c.checkDecl(o)
 	}
+	c.checkConstExposure(p)
 	c.checkListKeys(p)
 	c.checkEmits(p)
 	c.checkLayers(p)
@@ -326,6 +327,8 @@ func (c *checker) checkOwnerBody(o *object) *recordCtx {
 		return c.bodyOf(t)
 	case *types.CaseType:
 		return c.caseBodies[t]
+	case *types.VariantType:
+		return c.variantBody[t]
 	}
 	return nil
 }

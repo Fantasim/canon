@@ -1,0 +1,39 @@
+TYPES.md §3.7, §8.2, §11.5: a case of a local variant used as a type (`Shape.circle`) names the local variant, and a dependent map's value type is exposed like any field type: E2111 at each; the dependent map's domain is an expression, not exposed.
+-- a/a.canon --
+package a
+
+local variant Shape {
+  circle { r: Int }
+  square
+}
+
+local record Stone {
+  n: Int
+}
+
+/// An item.
+record Item {
+  /// Its count.
+  n: Int = 1
+}
+
+/// The items.
+let items: table Item = {
+  one {}
+}
+
+/// A holder.
+record Holder {
+  /// Its circle.
+  s: Shape.circle
+  /// A stone per item.
+  byItem: {i in items: Stone} = {}
+}
+-- findings.txt --
+error[E2111]  a/a.canon:26:6
+  Holder is public but exposes the local type Shape: make Shape public or Holder local
+
+error[E2111]  a/a.canon:28:24
+  Holder is public but exposes the local type Stone: make Stone public or Holder local
+
+2 errors, 0 warnings in 1 package (…)

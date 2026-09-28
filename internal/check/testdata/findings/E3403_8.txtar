@@ -1,0 +1,44 @@
+TYPES.md §6.5, §10.2; ERRORS.md E3403 (found:Type): the found type is the optional as it was found, not the expected type made optional: `Int?` against a refined `a.Pos`, `Int32?` against `Int`, and a `ref Section?` whose ref names no collection (E2103), printed as written against `ref a.statuses`.
+-- a/a.canon --
+package a
+
+local type Pos = Int where it > 0
+
+local record Section {
+  n: Int
+}
+
+local record Status {
+  n: Int
+  back: ref Section?
+}
+
+local let statuses: table Status = {
+  open { n: 1, back: none }
+}
+
+local fn f(x: Int?) -> Pos {
+  return x
+}
+
+local fn h(x: Int32?) -> Int {
+  return x
+}
+
+local fn g(s: Status) -> ref statuses {
+  return s.back
+}
+-- findings.txt --
+error[E2103]  a/a.canon:11:13
+  ref Section: there is no collection of Section; write ref <collection name>
+
+error[E3403]  a/a.canon:19:10
+  expected a.Pos, found Int?: prove it is present (!= none, !, ??)
+
+error[E3403]  a/a.canon:23:10
+  expected Int, found Int32?: prove it is present (!= none, !, ??)
+
+error[E3403]  a/a.canon:27:10
+  expected ref a.statuses, found ref Section?: prove it is present (!= none, !, ??)
+
+4 errors, 0 warnings in 1 package (…)

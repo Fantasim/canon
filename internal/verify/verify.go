@@ -18,6 +18,8 @@ type Evaluator interface {
 	Force(ctx context.Context, root eval.Root) (value.Value, bool)
 	// MarkInvalid marks the value a soft finding is about (EVALUATION.md §7.3).
 	MarkInvalid(v value.Value)
+	// Invalid reports a value marked invalid, by a conversion or by a soft finding.
+	Invalid(v value.Value) bool
 	// Where re-runs a `where` predicate on it, in its package's scope, at no step cost. ok
 	// false: a hard error, which it reported.
 	Where(ctx context.Context, p *types.Predicate, it value.Value) (holds, ok bool)

@@ -166,7 +166,7 @@ E2105 entry: resource.vocab.items is reserved on table entries
 E2105 case: resource.vocab.items is reserved on variant cases
 E2106 -: resource.vocab.items is declared twice (first at @resource/Server/System/farm_config.json:1)
 E2107 -: resource.vocab.items is already declared in this block
-E2108 -: self is only valid in a record or case body
+E2108 -: self is only valid in a record, case or variant body
 E2109 -: it is only valid in a refinement predicate
 E2110 type: resource.vocab.items is a type, not a value
 E2110 value: resource.vocab.items is a value, not a type
@@ -247,7 +247,7 @@ E3322 -: key "II_SYS_SYS_SCR_FARM3" is given twice
 E3323 -: a spread must come first and appear once
 E3401 -: Int? is not a type: Int is already optional
 E3402 -: a b may be none: use ?., !, ?? or test != none first
-E3403 -: expected Int, found Int?: prove it is present (!= none, !, ??)
+E3403 -: expected Int, found Int: prove it is present (!= none, !, ??)
 E3501 -: unknown key "II_SYS_SYS_SCR_FARM3" in resource.vocab.items
 E3502 -: "II_SYS_SYS_SCR_FARM3" is retired; live resource.vocab.items cannot reference it
 E3503 -: this Int is not an entry of resource.vocab.items

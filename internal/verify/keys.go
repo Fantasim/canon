@@ -9,6 +9,7 @@ import (
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
+	"github.com/fantasim/canonlang/internal/wire"
 )
 
 // uniqueKeys reports each keyed-list key already used, at the second key (TYPES.md §9.1).
@@ -47,6 +48,39 @@ func (w *walker) uniqueResolved(m *value.Map, at *Path) {
 }
 
 func sameKey(a, b value.Value) (bool, bool) { return value.Equal(a, b), true }
+
+// uniqueWire reports a key whose wire text an earlier, different key has, at the second (E3317, WIRE.md §5.8).
+func (w *walker) uniqueWire(m *value.Map, at *Path) {
+	seen := map[string]value.Value{}
+	for _, k := range m.Keys {
+		if w.ev.Invalid(k) {
+			continue // its own finding says it is no key of the type (TYPES.md §1)
+		}
+		text, err := wire.KeyText(k)
+		if err != nil {
+			continue // no wire key (a symbol); its own finding says why
+		}
+		first, dup := seen[text]
+		switch {
+		case !dup:
+			seen[text] = k
+		case !value.Equal(first, k): // equal keys are E3322's
+			s := SiteOf(k)
+			w.report(s, diag.E3317.At(s.Span, mapKeyArg{first}, mapKeyArg{k}, text), at)
+			w.invalid(m)
+		}
+	}
+}
+
+// mapKeyArg is a map key as a Value argument, in a map's key text form: strings quoted (STDLIB.md §9.1).
+type mapKeyArg struct{ v value.Value }
+
+func (k mapKeyArg) CanonText() string {
+	if s, ok := k.v.(*value.Str); ok {
+		return types.QuoteString(s.V)
+	}
+	return k.v.CanonText()
+}
 
 // stableValue is a @stable value as the lock compares it: an integer or a string.
 type stableValue struct {

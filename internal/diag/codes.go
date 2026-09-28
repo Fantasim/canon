@@ -1121,7 +1121,7 @@ var Registry = []Def{
 	{
 		Code: "E2108", Severity: Error, Package: "check",
 		Variants: []Variant{
-			{Template: "self is only valid in a record or case body"},
+			{Template: "self is only valid in a record, case or variant body"},
 		},
 	},
 	{
@@ -1497,7 +1497,7 @@ var Registry = []Def{
 	{
 		Code: "E3403", Severity: Error, Package: "check",
 		Variants: []Variant{
-			{Args: []Arg{{Name: "typ", Type: ArgTypeType}}, Template: "expected {typ}, found {typ}?: prove it is present (!= none, !, ??)"},
+			{Args: []Arg{{Name: "typ", Type: ArgTypeType}, {Name: "found", Type: ArgTypeType}}, Template: "expected {typ}, found {found}: prove it is present (!= none, !, ??)"},
 		},
 	},
 	{
@@ -4080,7 +4080,7 @@ func (codeE2107) At(span source.Span, name string) *Builder {
 	return newBuilder(&Registry[109], 0, span, name)
 }
 
-// E2108: `self` outside a record or case body (TYPES.md §3.4).
+// E2108: `self` outside a record, case or variant body (TYPES.md §3.4).
 var E2108 codeE2108
 
 type codeE2108 struct{}
@@ -4088,7 +4088,7 @@ type codeE2108 struct{}
 // Def is the registry entry of E2108.
 func (codeE2108) Def() *Def { return &Registry[110] }
 
-// At reports: self is only valid in a record or case body
+// At reports: self is only valid in a record, case or variant body
 func (codeE2108) At(span source.Span) *Builder {
 	return newBuilder(&Registry[110], 0, span)
 }
@@ -4965,9 +4965,9 @@ type codeE3403 struct{}
 // Def is the registry entry of E3403.
 func (codeE3403) Def() *Def { return &Registry[169] }
 
-// At reports: expected {typ}, found {typ}?: prove it is present (!= none, !, ??)
-func (codeE3403) At(span source.Span, typ TypeArg) *Builder {
-	return newBuilder(&Registry[169], 0, span, typ)
+// At reports: expected {typ}, found {found}: prove it is present (!= none, !, ??)
+func (codeE3403) At(span source.Span, typ TypeArg, found TypeArg) *Builder {
+	return newBuilder(&Registry[169], 0, span, typ, found)
 }
 
 // E3501: a ref to a key that does not exist (TYPES.md §10.3).

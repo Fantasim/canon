@@ -112,7 +112,10 @@ a.e = false
 a.own = [true, true, true, true, true, true, true, true, true, true, true, true, true, true]
 a.ownWritten = [true, true, true, true, true, true, true, true, true, true, true, true, true, true]
 
+error[E3317]  a/a.canon:21:20
+  c3.mid.extra: map keys s1 and s1 both encode to "s1"
+
 error[E3505]  a/a.canon:23:20
   m.tier: ref Tier has no enclosing Config to resolve against
 
-1 error, 0 warnings in 1 package (…)
+2 errors, 0 warnings in 1 package (…)

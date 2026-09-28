@@ -1,0 +1,28 @@
+TYPES.md §12.1, §8.3: a `check` written in a variant body outside any case is read like a variant-level method, `self` the variant value typed `V`: a condition that is not Bool is E3002, a case field read on `self` is E3003; and a bare call in a case body finds the variant-level method when the case has none of that name (its Int result is E3002 where a String is expected).
+-- a/a.canon --
+package a
+
+local variant Reward {
+  item {
+    count: Int
+
+    fn text(self) -> String { return worth() }
+  }
+  nothing
+
+  fn worth(self) -> Int { return 1 }
+
+  check 1 else "not a condition"
+  check self.count > 0 else "no count on the variant"
+}
+-- findings.txt --
+error[E3002]  a/a.canon:7:38
+  expected String, found Int
+
+error[E3002]  a/a.canon:13:9
+  expected Bool, found Int
+
+error[E3003]  a/a.canon:14:14
+  a.Reward has no field count
+
+3 errors, 0 warnings in 1 package (…)

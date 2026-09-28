@@ -138,7 +138,8 @@ func (c *checker) dependentLiteral(env *env, e syntax.Expr, s, want types.Type) 
 		return false
 	}
 	if s.Kind() == types.None {
-		c.report(env, diag.E3403.At(env.span(e), staticView(want)))
+		view := staticView(want)
+		c.report(env, diag.E3403.At(env.span(e), view, foundOptional(s, view)))
 	} else {
 		c.report(env, diag.E3002.At(env.span(e), staticView(want), s))
 	}

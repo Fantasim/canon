@@ -1,0 +1,64 @@
+TYPES.md §1, §4.1, §9.3 (progen E3013 "table of an enum" on game.items): the entries of a table in error are checked against the error type wherever they are written, in files of their own included: a variant case literal (`GEN { sub: MAT { n: 2 } }`, a name that may be a case of the type the error stands for), a bare name inside it and a list of brace literals are not judged (no E2102, no E3305); an error of its own (`1 + "x"`, E3007) still is.
+-- a/a.canon --
+package a
+
+local enum Sound { DING, DONG }
+
+local enum Weapon3 { AXE, SWORD }
+
+local variant Sub {
+  MAT { n: Int }
+  FOOD
+}
+
+local variant Kind {
+  GEN { sub: Sub }
+  WEA { w: Weapon3, stats: [Stat] }
+}
+
+local record Stat {
+  n: Int
+}
+
+local record Item {
+  cost: Int
+  drop: Sound
+  kind: Kind
+}
+
+@files("entries/{id}.canon")
+local let items: stable table Weapon3 = {}
+-- a/entries/MOON.canon --
+package a
+
+/// Moonstone.
+entry items.MOON {
+  cost: 8000
+  drop: DING
+  kind: GEN {
+    sub: MAT { n: 2 }
+  }
+}
+-- a/entries/AXE.canon --
+package a
+
+entry items.AXE {
+  cost: 1
+  drop: DONG
+  kind: WEA {
+    w: AXE
+    stats: [
+      { n: 1 },
+      { n: DST_STR },
+    ]
+    bad: 1 + "x"
+  }
+}
+-- findings.txt --
+error[E3013]  a/a.canon:28:31
+  a table holds records; a.Weapon3 is not a record
+
+error[E3007]  a/entries/AXE.canon:12:10
+  operator + is not defined for Int and String
+
+2 errors, 0 warnings in 1 package (…)

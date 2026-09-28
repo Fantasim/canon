@@ -24,6 +24,7 @@ func (c *checker) resolvePackage(p *pkgState) {
 	c.resolvePending(p)
 	c.checkUnions(p)
 	c.checkSelfContaining(p)
+	c.checkExposure(p)
 }
 
 // resolveTypeName is the type a type declaration names, resolved on demand; records, enums
@@ -250,6 +251,7 @@ func (c *checker) completeVariant(v *types.VariantType) {
 	env := c.declEnv(o)
 	d := v.Decl
 	c.variantAnnotations(v, d.Annotations)
+	c.variantBody[v] = &recordCtx{self: v, fields: map[string]*object{}, methods: map[string]*object{}}
 	seen := map[string]*object{}
 	for _, it := range d.Items {
 		vc, ok := it.(*syntax.VariantCase)
@@ -268,7 +270,51 @@ func (c *checker) completeVariant(v *types.VariantType) {
 	for _, co := range c.cases[v] {
 		c.completeCase(env, co)
 	}
+	c.variantMembers(env, v, d)
 	o.state = stateDone
+}
+
+// variantMembers declares a variant's methods and checks written outside any case, `self: V` (TYPES.md §12.1).
+func (c *checker) variantMembers(env *env, v *types.VariantType, d *syntax.VariantDecl) {
+	var items []syntax.RecordItem
+	for _, it := range d.Items {
+		if ri, ok := it.(syntax.RecordItem); ok {
+			items = append(items, ri)
+		}
+	}
+	c.declareMembers(env, v, c.variantBody[v], items)
+	for _, it := range items {
+		if fn, ok := it.(*syntax.FnDecl); ok {
+			c.sharedName(env, v, fn)
+		}
+	}
+}
+
+// sharedName is E2105, E2104 or E2106 for a variant-level method sharing a case's name (TYPES.md §12.1).
+func (c *checker) sharedName(env *env, v *types.VariantType, fn *syntax.FnDecl) {
+	name := fn.Name.Name
+	if name == kindMember {
+		c.report(env, diag.E2105.AtCase(env.span(fn.Name), kindMember))
+		return
+	}
+	at := env.span(fn.Name)
+	for _, co := range c.cases[v] {
+		body := co.body
+		if body == nil {
+			continue
+		}
+		if f := body.fields[name]; f != nil {
+			c.report(env, diag.E2104.At(at, env.localName(co.typ.String(), v.Pkg), name))
+			c.breakObj(f)
+		}
+		if m := body.methods[name]; m != nil {
+			first, second := declSpan(m), at
+			if compareSpans(first, second) > 0 {
+				first, second = second, first
+			}
+			c.report(env, diag.E2106.At(second, name, first))
+		}
+	}
 }
 
 // caseObject is the object of a variant's case by name, or nil.
@@ -296,7 +342,7 @@ func (c *checker) declareCase(env *env, v *types.VariantType, vc *syntax.Variant
 // completeCase fills a case body like a record's; `kind` is reserved on cases (E2105).
 func (c *checker) completeCase(env *env, co *object) {
 	ct := co.typ.(*types.CaseType)
-	body := &recordCtx{self: ct, fields: map[string]*object{}, methods: map[string]*object{}}
+	body := &recordCtx{self: ct, fields: map[string]*object{}, methods: map[string]*object{}, outer: c.variantBody[ct.Variant]}
 	co.body = body
 	c.caseBodies[ct] = body
 	vc := co.decl.(*syntax.VariantCase)

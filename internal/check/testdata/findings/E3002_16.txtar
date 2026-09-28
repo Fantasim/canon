@@ -1,0 +1,45 @@
+VIEWMODEL.md §3.5, §16 (last paragraph), TYPES.md §6.2, §10.3 (log-2026-09-28 "Property values of the wrong kind"): property values are typed against their property's kind with the TYPES codes. A `unit` is a ref into the studio's `units` table: a name or a string is its key (`unit: "hp"` is valid; an unknown one is views' E1610), a number is E3002; a non-literal `hidden` or `readonly` whose type is not Bool (`hidden: name`, `hidden: weight`) is E3002, a Bool field is fine.
+-- studio/studio.canon --
+package studio
+
+/// A unit.
+record UnitSpec {
+  /// Its suffix.
+  suffix: String = ""
+}
+
+/// The units.
+let units: table UnitSpec = {
+  hp { suffix: " HP" }
+}
+-- a/a.canon --
+package a
+
+/// A gem.
+local record Gem {
+  /// Its name.
+  name: String
+  /// Its weight.
+  weight: Int
+  /// Whether it is sealed.
+  sealed: Bool
+  /// Its level.
+  level: Int
+}
+
+view Gem {
+  name { hidden: name, readonly: sealed }
+  weight { unit: 3, hidden: weight }
+  level { unit: "hp", hidden: sealed }
+}
+-- findings.txt --
+error[E3002]  a/a.canon:16:18
+  expected Bool, found String
+
+error[E3002]  a/a.canon:17:18
+  expected ref studio.units, found Int
+
+error[E3002]  a/a.canon:17:29
+  expected Bool, found Int
+
+3 errors, 0 warnings in 2 packages (…)

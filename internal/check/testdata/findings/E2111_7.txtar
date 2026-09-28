@@ -1,0 +1,31 @@
+TYPES.md §3.7, §12.1 (DECISIONS 226): the parameters and result of a method written in a public variant's body outside any case are exposed like a case's methods; E2111 at each type expression naming a local type.
+-- a/a.canon --
+package a
+
+local enum Cut { round, square }
+
+local record Stone {
+  n: Int
+}
+
+/// A shape.
+variant Shape {
+  /// A ring.
+  ring {
+    /// Its size.
+    size: Int
+  }
+  /// A bar.
+  bar
+
+  /// The stone for a cut.
+  fn stone(self, at: Cut) -> Stone? { return none }
+}
+-- findings.txt --
+error[E2111]  a/a.canon:20:22
+  Shape is public but exposes the local type Cut: make Cut public or Shape local
+
+error[E2111]  a/a.canon:20:30
+  Shape is public but exposes the local type Stone: make Stone public or Shape local
+
+2 errors, 0 warnings in 1 package (…)

@@ -1,0 +1,41 @@
+TYPES.md §12.1 (DECISIONS 226), §8.3: a method or a `check` written in a variant body outside any case applies to every case: `self` is the variant value, typed `V`, and the body reads the case through `match self`, `self.kind` and `is`; a case value has the variant's methods, called on the value or bare in the case body after the case's own (`label()` is the case's, `worth()` the variant's); no method name is shared (E2106).
+-- a/a.canon --
+package a
+
+local variant Reward {
+  item {
+    count: Int
+
+    fn label(self) -> String { return "item" }
+
+    fn describe(self) -> String { return label() + " worth " + String(worth()) }
+  }
+  gold { amount: Int }
+  nothing
+
+  fn worth(self) -> Int {
+    return match self {
+      item(i) => i.count
+      gold(g) => g.amount
+      nothing => 0
+    }
+  }
+
+  fn isGold(self) -> Bool { return self.kind == gold }
+
+  fn countOr(self, dflt: Int) -> Int {
+    if self is item { return self.count }
+    return dflt
+  }
+
+  check self.kind != nothing or worth() == 0 else "nothing is worth nothing"
+}
+
+local let r: Reward = gold { amount: 3 }
+local let w: Int = r.worth() + r.countOr(1)
+local let g: Bool = r.isGold()
+local let it: Reward.item = item { count: 2 }
+local let n: Int = it.worth()
+local let l: String = it.label()
+local let d: String = it.describe()
+local let rl: Int = r.countOr(0)

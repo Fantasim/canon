@@ -251,7 +251,7 @@ var constructed = []*Builder{
 	E3323.At(sampleSpan),
 	E3401.At(sampleSpan, sampleType),
 	E3402.At(sampleSpan, sampleExpr),
-	E3403.At(sampleSpan, sampleType),
+	E3403.At(sampleSpan, sampleType, sampleType),
 	E3501.At(sampleSpan, sampleValue, sampleName),
 	E3502.At(sampleSpan, sampleValue, sampleName),
 	E3503.At(sampleSpan, sampleType, sampleName),

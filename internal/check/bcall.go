@@ -217,7 +217,7 @@ func (c *checker) argMismatch(env *env, bc *builtinCall, e syntax.Expr, pat, t t
 	switch {
 	case c.notDependent(env, e, t, want.String()):
 	case t.Base().Kind() == types.Optional && pat.Kind() != types.Optional:
-		c.report(env, diag.E3403.At(env.span(e), want))
+		c.report(env, diag.E3403.At(env.span(e), want, t))
 	default:
 		c.report(env, diag.E3002.At(env.span(e), want, t))
 	}
@@ -313,7 +313,7 @@ func (c *checker) constraintError(env *env, bc *builtinCall, v *tvar) {
 		return
 	}
 	if o, isOpt := t.Base().(*types.OptionalType); isOpt && satisfies(o.Elem, v.cons) {
-		c.report(env, diag.E3403.At(env.span(at), o.Elem))
+		c.report(env, diag.E3403.At(env.span(at), o.Elem, t))
 		return
 	}
 	if v.cons == consOrd {

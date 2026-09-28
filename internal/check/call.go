@@ -330,7 +330,13 @@ func (c *checker) userMethod(t types.Type, name string) *object {
 		body = c.bodyOf(x.Rec)
 	case *types.CaseType:
 		c.completeVariant(x.Variant)
-		body = c.caseBodies[x]
+		if cb := c.caseBodies[x]; cb != nil && cb.methods[name] != nil {
+			return cb.methods[name]
+		}
+		body = c.variantBody[x.Variant]
+	case *types.VariantType:
+		c.completeVariant(x)
+		body = c.variantBody[x]
 	}
 	if body == nil {
 		return nil

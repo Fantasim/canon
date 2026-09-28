@@ -1,6 +1,8 @@
 package check
 
 import (
+	"slices"
+
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
@@ -23,6 +25,7 @@ func (c *checker) mapLit(env *env, e *syntax.BraceLit, key, value, t types.Type)
 		}
 	}
 	c.duplicateKeys(env, e.Items)
+	c.wireKeyClash(env, e.Items, key)
 	return t
 }
 
@@ -118,4 +121,93 @@ func (c *checker) mapComp(env *env, e *syntax.BraceLit, want types.Type) types.T
 	c.synth(inner, item.Value)
 	c.report(env, diag.E3002.At(env.span(e), want, &types.MapType{Key: types.AnyType, Value: types.AnyType}))
 	return types.ErrorType
+}
+
+// unionKey is a static literal-union map key: wire text, text as written, a literal or not (WIRE.md §5.8).
+type unionKey struct {
+	text, canon string
+	lit         bool
+}
+
+// wireKeyClash is E3317 at the second of a literal and another key with one wire text (WIRE.md §5.8).
+func (c *checker) wireKeyClash(env *env, items []syntax.BraceItem, key types.Type) {
+	u, ok := key.Base().(*types.LitUnionType)
+	if !ok {
+		return
+	}
+	var seen []unionKey
+	for _, it := range items {
+		k, at, known := c.unionKeyOf(it, u)
+		if !known {
+			continue
+		}
+		i := slices.IndexFunc(seen, func(s unionKey) bool { return s.text == k.text && s.lit != k.lit })
+		if i >= 0 {
+			c.report(env, diag.E3317.At(env.span(at), rawValue(seen[i].canon), rawValue(k.canon), k.text))
+			continue
+		}
+		seen = append(seen, k)
+	}
+}
+
+// unionKeyOf is the unionKey of a string literal key, or of a name the union's other type gives (TYPES.md §13.2).
+func (c *checker) unionKeyOf(it syntax.BraceItem, u *types.LitUnionType) (unionKey, syntax.Node, bool) {
+	canon, at, ok := staticKey(it)
+	if !ok {
+		return unionKey{}, nil, false
+	}
+	switch k := it.(type) {
+	case *syntax.FieldItem:
+		text, known := c.nameKeyText(k.Name, u.Of)
+		return unionKey{text: text, canon: canon}, at, known
+	case *syntax.MapItem:
+		if s, isStr := inner(k.Key).(syntax.StrLit); isStr {
+			text := constText(s)
+			return unionKey{text: text, canon: canon, lit: slices.Contains(u.Literals, text)}, at, true
+		}
+	}
+	return unionKey{}, nil, false
+}
+
+// nameKeyText is the wire key of a name used as a key of type of: an enum member's wire value, or
+// a ref's entry key (its member's wire value for a keyed list keyed by an enum).
+func (c *checker) nameKeyText(n *syntax.Ident, of types.Type) (string, bool) {
+	switch a := of.Base().(type) {
+	case *types.EnumType:
+		if o := c.memberObject(a, n.Name); o == nil || c.info.NameUses[n] != Object(o) {
+			return "", false
+		}
+		return memberWire(a, n.Name)
+	case *types.RefType:
+		coll := c.coll(a)
+		if c.noTarget(coll) || !c.namesKey(n, coll) { // a ref to nothing is the error type (TYPES.md §1)
+			return "", false
+		}
+		if coll.KeyedBy != nil {
+			if e, isEnum := coll.KeyedBy.Type.Base().(*types.EnumType); isEnum {
+				return memberWire(e, n.Name)
+			}
+		}
+		return n.Name, true
+	}
+	return "", false
+}
+
+// namesKey reports a name that is a key of coll, declared or symbolic (TYPES.md §4.1).
+func (c *checker) namesKey(n *syntax.Ident, coll *types.Collection) bool {
+	use := c.info.NameUses[n]
+	if use == nil {
+		return true
+	}
+	keys := c.staticKeys(coll)
+	return keys != nil && use == Object(keys.byName[n.Name])
+}
+
+// memberWire is a member's wire value; none with @json(codes), E3002 in a literal union (TYPES.md §13.2).
+func memberWire(e *types.EnumType, name string) (string, bool) {
+	i := slices.IndexFunc(e.Members, func(m *types.Member) bool { return m.Name == name })
+	if i < 0 || e.WireCodes {
+		return "", false
+	}
+	return e.Members[i].Wire, true
 }

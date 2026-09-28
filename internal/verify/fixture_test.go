@@ -53,6 +53,8 @@ func (e *evaluator) Force(_ context.Context, r eval.Root) (value.Value, bool) {
 
 func (e *evaluator) MarkInvalid(v value.Value) { e.invalid = append(e.invalid, v) }
 
+func (e *evaluator) Invalid(v value.Value) bool { return slices.Contains(e.invalid, v) }
+
 func (e *evaluator) Where(context.Context, *types.Predicate, value.Value) (bool, bool) {
 	return e.holds, !e.hard
 }

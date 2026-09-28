@@ -1,0 +1,46 @@
+TYPES.md §3.7: a public record's field types and its methods' parameters and results may not name a local record, variant, enum or alias, by value or nested in a list, map, optional or table; E2111 at each type expression naming one.
+-- a/a.canon --
+package a
+
+local record Stone {
+  n: Int
+}
+
+local enum Cut { round, square }
+
+local type Weight = Int
+
+/// A gem.
+record Gem {
+  /// Its stone.
+  stone: Stone
+  /// Its cuts.
+  cuts: [Cut]?
+  /// Its weights.
+  weights: {String: Weight}
+  /// Its stones.
+  stones: table Stone
+
+  /// Whether it has cut c.
+  fn has(self, c: Cut) -> Stone? { return none }
+}
+-- findings.txt --
+error[E2111]  a/a.canon:14:10
+  Gem is public but exposes the local type Stone: make Stone public or Gem local
+
+error[E2111]  a/a.canon:16:10
+  Gem is public but exposes the local type Cut: make Cut public or Gem local
+
+error[E2111]  a/a.canon:18:21
+  Gem is public but exposes the local type Weight: make Weight public or Gem local
+
+error[E2111]  a/a.canon:20:11
+  Gem is public but exposes the local type Stone: make Stone public or Gem local
+
+error[E2111]  a/a.canon:23:19
+  Gem is public but exposes the local type Cut: make Cut public or Gem local
+
+error[E2111]  a/a.canon:23:27
+  Gem is public but exposes the local type Stone: make Stone public or Gem local
+
+6 errors, 0 warnings in 1 package (…)

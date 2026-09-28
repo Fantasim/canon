@@ -7,6 +7,6 @@ local fn f() -> Int {
 }
 -- findings.txt --
 error[E2108]  a/a.canon:4:10
-  self is only valid in a record or case body
+  self is only valid in a record, case or variant body
 
 1 error, 0 warnings in 1 package (…)

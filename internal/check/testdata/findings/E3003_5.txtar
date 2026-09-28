@@ -1,0 +1,27 @@
+TYPES.md §12.1 (DECISIONS 226), §8.3, §3.4: a method written in a variant body outside any case is checked like any method: `self` is the variant value (no E2108), no case field is in scope, and a case field read on `self` (typed `V`) is E3003 until narrowed; a result of the wrong type is E3002.
+-- a/a.canon --
+package a
+
+local variant Reward {
+  item { count: Int }
+  nothing
+
+  fn total(self) -> Int { return self.count }
+
+  fn bare(self) -> Int { return count }
+
+  fn name(self) -> String { return 1 }
+
+  fn me(self) -> Reward { return self }
+}
+-- findings.txt --
+error[E3003]  a/a.canon:7:39
+  a.Reward has no field count
+
+error[E2102]  a/a.canon:9:33
+  unknown name count (did you mean round?)
+
+error[E3002]  a/a.canon:11:36
+  expected String, found Int
+
+3 errors, 0 warnings in 1 package (…)

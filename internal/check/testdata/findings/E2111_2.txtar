@@ -1,0 +1,40 @@
+TYPES.md §3.7: a public variant's case field types and its cases' methods' parameters and results may not name a local type; E2111 at each type expression naming one.
+-- a/a.canon --
+package a
+
+local enum Cut { round, square }
+
+local record Stone {
+  n: Int
+}
+
+/// A shape.
+variant Shape {
+  /// A ring.
+  ring {
+    /// Its cut.
+    cut: Cut
+
+    /// The stone at a cut.
+    fn stone(self, at: Cut) -> Stone? { return none }
+  }
+  /// A bar.
+  bar {
+    /// Its stones.
+    stones: [Stone]
+  }
+}
+-- findings.txt --
+error[E2111]  a/a.canon:14:10
+  Shape is public but exposes the local type Cut: make Cut public or Shape local
+
+error[E2111]  a/a.canon:17:24
+  Shape is public but exposes the local type Cut: make Cut public or Shape local
+
+error[E2111]  a/a.canon:17:32
+  Shape is public but exposes the local type Stone: make Stone public or Shape local
+
+error[E2111]  a/a.canon:22:14
+  Shape is public but exposes the local type Stone: make Stone public or Shape local
+
+4 errors, 0 warnings in 1 package (…)

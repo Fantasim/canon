@@ -48,7 +48,8 @@ type recordCtx struct {
 	self    types.Type
 	fields  map[string]*object
 	methods map[string]*object
-	order   []*object // fields in declaration order
+	order   []*object  // fields in declaration order
+	outer   *recordCtx // a case body's variant body, whose methods it has too (TYPES.md §12.1)
 }
 
 // fnCtx is the function whose body is checked.
@@ -130,7 +131,10 @@ func (env *env) lookupRecord(name string) *object {
 	if o, ok := env.rec.fields[name]; ok {
 		return o
 	}
-	return env.rec.methods[name]
+	if o, ok := env.rec.methods[name]; ok || env.rec.outer == nil {
+		return o
+	}
+	return env.rec.outer.methods[name]
 }
 
 // lookupGlobal is steps 4 to 6: the package, the file's imports, the built-ins.

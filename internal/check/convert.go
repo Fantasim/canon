@@ -36,14 +36,22 @@ func (c *checker) mismatch(env *env, e syntax.Expr, s, want types.Type) {
 	case sb.Kind() == types.DepUnion || sb.Kind() == types.TypeApp:
 		c.report(env, diag.E3804.At(env.span(e), want.String(), depName(s)))
 	case sb.Kind() == types.None:
-		c.report(env, diag.E3403.At(env.span(e), want))
+		c.report(env, diag.E3403.At(env.span(e), want, foundOptional(s, want)))
 	case sb.Kind() == types.Optional && c.assignable(sb.(*types.OptionalType).Elem, want):
-		c.report(env, diag.E3403.At(env.span(e), want))
+		c.report(env, diag.E3403.At(env.span(e), want, foundOptional(s, want)))
 	case sb.Kind() == types.Int && want.Base().Kind() == types.Float:
 		c.report(env, diag.E3311.At(env.span(e), env.span(e)))
 	default:
 		c.report(env, diag.E3002.At(env.span(e), want, s))
 	}
+}
+
+// foundOptional is E3403's found type: s when optional, else (none) want made optional (TYPES.md §6.5).
+func foundOptional(s, want types.Type) types.Type {
+	if s.Base().Kind() == types.Optional {
+		return s
+	}
+	return opt(want)
 }
 
 // unbroken is t with each ref to no collection the error type it stands for (TYPES.md §1).

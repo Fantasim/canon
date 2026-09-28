@@ -83,6 +83,7 @@ type checker struct {
 	members      map[*types.EnumType][]*object
 	cases        map[*types.VariantType][]*object
 	caseBodies   map[*types.CaseType]*recordCtx
+	variantBody  map[*types.VariantType]*recordCtx // the methods written outside any case (TYPES.md §12.1)
 	caseDecls    map[*types.CaseType]*syntax.VariantCase
 	variantCases map[*types.VariantType]string // `@json(case:)` of a variant header
 	memberChecks map[*syntax.CheckDecl]*object
@@ -134,6 +135,7 @@ func newChecker(ctx context.Context, proj *project.Project, bags Bags, fold Fold
 		members:      map[*types.EnumType][]*object{},
 		cases:        map[*types.VariantType][]*object{},
 		caseBodies:   map[*types.CaseType]*recordCtx{},
+		variantBody:  map[*types.VariantType]*recordCtx{},
 		caseDecls:    map[*types.CaseType]*syntax.VariantCase{},
 		variantCases: map[*types.VariantType]string{},
 		memberChecks: map[*syntax.CheckDecl]*object{},

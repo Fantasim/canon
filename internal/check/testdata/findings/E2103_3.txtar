@@ -44,12 +44,12 @@ error[E2103]  a/a.canon:10:13
   ref Section: there is no collection of Section; write ref <collection name>
 
 error[E3403]  a/a.canon:30:25
-  expected ref a.statuses, found ref a.statuses?: prove it is present (!= none, !, ??)
+  expected ref a.statuses, found ref Section?: prove it is present (!= none, !, ??)
 
 error[E3002]  a/a.canon:31:19
   expected String, found [ref Section]
 
 error[E3403]  a/a.canon:32:10
-  expected ref a.statuses, found ref a.statuses?: prove it is present (!= none, !, ??)
+  expected ref a.statuses, found ref Section?: prove it is present (!= none, !, ??)
 
 5 errors, 0 warnings in 1 package (…)

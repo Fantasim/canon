@@ -23,6 +23,9 @@ func keyText(k value.Value, seen map[string]bool) (string, error) {
 	return key, nil
 }
 
+// KeyText is the wire key of a map key value, which verify compares for E3317 (WIRE.md §5.8).
+func KeyText(k value.Value) (string, error) { return keyOf(k) }
+
 func keyOf(k value.Value) (string, error) {
 	switch x := k.(type) {
 	case *value.Str:

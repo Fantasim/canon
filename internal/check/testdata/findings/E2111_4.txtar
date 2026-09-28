@@ -1,0 +1,20 @@
+TYPES.md §3.7: an `export fn`'s parameters and result may not name a local type; E2111 at each type expression naming one.
+-- a/a.canon --
+package a
+
+local enum Grade { low, high }
+
+local record Cost {
+  n: Int
+}
+
+/// The cost of a grade.
+export fn cost(g: Grade) -> Cost { return { n: 1 } }
+-- findings.txt --
+error[E2111]  a/a.canon:10:19
+  cost is public but exposes the local type Grade: make Grade public or cost local
+
+error[E2111]  a/a.canon:10:29
+  cost is public but exposes the local type Cost: make Cost public or cost local
+
+2 errors, 0 warnings in 1 package (…)

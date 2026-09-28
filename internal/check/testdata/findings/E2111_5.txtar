@@ -1,0 +1,54 @@
+TYPES.md §3.7, CODEGEN.md §2.1, §2.2: the annotation of a public let that a go, cpp or ts emit of its package selects may not name a local type: `values` absent or `[]` selects every public let, a list the lets it names; E2111 at the type expression.
+-- a/a.canon --
+package a
+
+local record Stone {
+  n: Int
+}
+
+/// The stones.
+let stones: [Stone] = []
+
+/// The first stone.
+let first: Stone? = none
+
+emit go { out: "@sovcommon/a" }
+-- b/b.canon --
+package b
+
+local record Gem {
+  n: Int
+}
+
+/// The gems.
+let gems: {String: Gem} = {}
+
+/// Other gems.
+let others: [Gem] = []
+
+emit cpp { out: "@sovcommon/b", values: [gems] }
+-- c/c.canon --
+package c
+
+local record Row {
+  n: Int
+}
+
+/// The rows.
+let rows: [Row] = []
+
+emit ts { out: "@sovcommon/c.ts", values: [] }
+-- findings.txt --
+error[E2111]  a/a.canon:8:14
+  stones is public but exposes the local type Stone: make Stone public or stones local
+
+error[E2111]  a/a.canon:11:12
+  first is public but exposes the local type Stone: make Stone public or first local
+
+error[E2111]  b/b.canon:8:20
+  gems is public but exposes the local type Gem: make Gem public or gems local
+
+error[E2111]  c/c.canon:8:12
+  rows is public but exposes the local type Row: make Row public or rows local
+
+4 errors, 0 warnings in 3 packages (…)

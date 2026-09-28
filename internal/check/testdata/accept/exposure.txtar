@@ -1,0 +1,61 @@
+TYPES.md §3.7, §10.2: what no code emit writes as a type may use local types: a ref to a local type or to a local collection (held by its key) in a public record, a non-exported public fn, a public let only a json emit selects, a let a go emit's `values` leaves out, every let of a `types`-mode emit; a local declaration may expose anything; the parameter types of a public parameterized record or type function are not exposed (CODEGEN.md §5.7).
+-- a/a.canon --
+package a
+
+local record Stone {
+  n: Int
+}
+
+local let stones: table Stone = {
+  ruby { n: 1 }
+}
+
+/// A gem.
+record Gem {
+  /// Its stone.
+  stone: ref Stone
+  /// Its other stones.
+  others: [ref stones]?
+}
+
+/// The heaviest stone.
+fn heaviest() -> Stone { return stones.ruby }
+
+/// Stones as data.
+let data: [Stone] = []
+
+/// A count.
+let count: Int = 1
+
+local enum Grade { low, high }
+
+/// A limit per grade.
+record Limit(g: Grade) {
+  /// Its value.
+  n: Int = 1
+}
+
+/// A payload per grade.
+type Pay(g: Grade) = match g {
+  low => Int
+  high => String
+}
+
+local record Hidden {
+  s: Stone
+}
+
+emit json { out: "@sovcommon/a/data.json", values: [data] }
+
+emit go { out: "@sovcommon/a", values: [count] }
+-- c/c.canon --
+package c
+
+local record Row {
+  n: Int
+}
+
+/// The rows.
+let rows: [Row] = []
+
+emit ts { out: "@sovcommon/c.ts", mode: types }
