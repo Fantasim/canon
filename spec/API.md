@@ -580,7 +580,9 @@ canonical, so it can be compared as a string:
   `[n]`. Map entries: `[key]`. Nothing uses `[#n]` in canonical form.
 - **P9.** A key is written as a word when it is one and the key type is not an integer type;
   integers are written in decimal; enum keys are written as the Canon member name; every other key
-  is written as a JSON string, escaped as WIRE.md escapes strings.
+  is written as a JSON string, escaped as WIRE.md escapes strings. For a literal-union key type
+  (`T | "lit"`), a key that is one of the literals is always written as a JSON string (P2 reads a
+  word as a `T`), so the canonical form resolves to itself.
 - **P10.** `Value.Path` and `EvalResult.Path` carry the `package:` prefix; `Finding.Path` and
   `Ref.Path` do not (their package is a separate field).
 
