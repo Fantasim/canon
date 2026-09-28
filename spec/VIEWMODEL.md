@@ -208,7 +208,7 @@ that inlines it).
 | `when` | `Bool` expression | field, method | shown only while it holds (§5.5) |
 | `none` | plain text | optional field | the label of `none` (MOCKUP-GAPS 12) |
 | `step` | template over `{index}` only | list field | name of each element in step, list and positional controls (§7.7); another name is `E1623` |
-| `icon` | an `Icon` member of the studio package, bare or qualified (`Icon.gem`, resolved by G16 without an import) | enum member, case | UI symbol |
+| `icon` | an `Icon` member of the studio package, bare or qualified (`Icon.gem`, resolved by G16 without an import; `Icon.x` when the studio has no such enum or member is `E1610`; `studio.Icon.gem` needs an import like any package name) | enum member, case | UI symbol |
 | `tone` | a `Tone` member of the studio package | enum member, case | UI tone |
 
 - **G15.** `control` and `widget` on the same field is `E1634`.
