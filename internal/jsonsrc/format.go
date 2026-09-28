@@ -16,9 +16,14 @@ func init() {
 // that knows a number's Canon type sets its Text to the type's canonical text (DECISIONS 165).
 func Format(n *Node) []byte {
 	// FORMATTER.md §14.1
-	var w printer
-	w.value(n, 0)
-	return append(w.buf, newline)
+	return append(AppendPretty(nil, n, 0), newline)
+}
+
+// AppendPretty appends n's pretty layout (WIRE.md §7.4) to b at indentation depth, Null/Bool/Number's Text written verbatim, for a caller embedding n inside a larger hand-assembled document (WIRE.md §8.2) rather than printing it whole with Format.
+func AppendPretty(b []byte, n *Node, depth int) []byte {
+	w := printer{buf: b}
+	w.value(n, depth)
+	return w.buf
 }
 
 type printer struct {

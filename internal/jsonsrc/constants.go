@@ -17,9 +17,11 @@ const maxDepth = 512
 // indexedMembers is the member count from which an object's keys are found through a map.
 const indexedMembers = 16
 
+// UTF8BOM is the UTF-8 byte order mark: skipped at a JSON source's start (WIRE.md §3.1), never written (§7.1).
+const UTF8BOM = "\xef\xbb\xbf"
+
 const (
 	byteValues = 256
-	utf8BOM    = "\xef\xbb\xbf"
 
 	jsonSpace         = " \t\n\r"
 	shortEscapes      = "\"\\/bfnrt"

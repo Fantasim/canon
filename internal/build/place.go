@@ -12,6 +12,7 @@ import (
 
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/ir"
+	"github.com/fantasim/canonlang/internal/jsonsrc"
 	"github.com/fantasim/canonlang/internal/wire"
 )
 
@@ -84,7 +85,7 @@ func marked(o Output, content []byte) bool {
 
 // jsonMarked reports a JSON object whose first member is a canon $schema (WIRE.md §8.4).
 func jsonMarked(content []byte, schema *regexp.Regexp) bool {
-	content = bytes.TrimPrefix(content, []byte(bom))
+	content = bytes.TrimPrefix(content, []byte(jsonsrc.UTF8BOM))
 	if !json.Valid(content) {
 		return false
 	}

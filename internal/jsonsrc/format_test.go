@@ -37,6 +37,16 @@ func TestFormat(t *testing.T) {
 	}
 }
 
+// WIRE.md §8.2: AppendPretty at depth 1 embeds a member two spaces deep, as "value": pretty(value, 2).
+func TestAppendPrettyDepth(t *testing.T) {
+	root := mustParse(t, `{"a":1,"b":[2,3]}`).root
+	got := string(jsonsrc.AppendPretty(nil, root, 1))
+	want := "{\n    \"a\": 1,\n    \"b\": [\n      2,\n      3\n    ]\n  }"
+	if got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
 // FORMATTER.md §14.1 (numbers), DECISIONS 165: Format writes a number's Text as the caller set it.
 func TestFormatNumberText(t *testing.T) {
 	root := mustParse(t, `{"known": 1.50, "unknown": 1.50}`).root

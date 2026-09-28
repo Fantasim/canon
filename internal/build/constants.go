@@ -33,7 +33,6 @@ const (
 
 // Generated-file markers (CODEGEN.md §2.4, WIRE.md §8.4), the one adoptable kind of output.
 const (
-	bom        = "\xef\xbb\xbf"
 	objectOpen = '{'
 	headerExt  = ".h"
 )

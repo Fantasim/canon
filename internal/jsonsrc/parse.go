@@ -54,8 +54,8 @@ func Parse(f *source.File, bag *diag.Bag) (*Node, error) {
 		return nil, err
 	}
 	p := &parser{src: f.Content, file: f.ID, bag: bag}
-	if bytes.HasPrefix(p.src, []byte(utf8BOM)) {
-		p.pos = len(utf8BOM)
+	if bytes.HasPrefix(p.src, []byte(UTF8BOM)) {
+		p.pos = len(UTF8BOM)
 	}
 	p.space()
 	root := p.value(link{})

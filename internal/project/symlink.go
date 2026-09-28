@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-// evalSymlinksOS is name's real, absolute, '/'-separated path: osFS's own segment-by-segment walk, every link followed, so a cycle is ErrSymlinkLoop past maxSymlinkHops, never the OS's own wording.
+// evalSymlinksOS is name's real, absolute, '/'-separated path: osFS's own segment-by-segment walk, every link followed, so a cycle is ErrSymlinkLoop past MaxSymlinkHops, never the OS's own wording.
 func evalSymlinksOS(name string) (string, error) {
 	vol := volumeOf(name)
 	dest, pending, hops := vol, segmentsOf(strings.TrimPrefix(name, vol)), 0
@@ -28,7 +28,7 @@ func evalSymlinksOS(name string) (string, error) {
 			dest = child
 			continue
 		}
-		if hops++; hops > maxSymlinkHops {
+		if hops++; hops > MaxSymlinkHops {
 			return "", fmt.Errorf("%w: %s", ErrSymlinkLoop, name)
 		}
 		dest, pending = followLink(dest, link, pending)

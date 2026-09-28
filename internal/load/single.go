@@ -271,8 +271,8 @@ func checkUTF8(src *source.File, data []byte, path string, req Request) (int, bo
 	if i := invalidUTF8At(src.Content); i >= 0 {
 		return reportUTF8(fs, req, i, i+1)
 	}
-	if bytes.HasPrefix(src.Content, []byte(utf8BOM)) {
-		return len(utf8BOM), true
+	if bytes.HasPrefix(src.Content, []byte(jsonsrc.UTF8BOM)) {
+		return len(jsonsrc.UTF8BOM), true
 	}
 	return 0, true
 }

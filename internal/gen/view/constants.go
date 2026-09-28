@@ -16,11 +16,9 @@ const (
 	tagSkip     = "-"
 )
 
-// A number's checked precision, J10's safe-integer text, a RawMessage's throwaway file name,
-// and the BOM WIRE.md 7.1 forbids at the start of one.
+// A number's checked precision, J10's safe-integer text, and a RawMessage's throwaway file name.
 const (
 	floatBits      = 64
 	maxSafeIntText = "9007199254740991"
 	rawSourceName  = "default.json"
-	utf8BOM        = "\xef\xbb\xbf"
 )

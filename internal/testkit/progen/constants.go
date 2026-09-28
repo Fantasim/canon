@@ -15,9 +15,8 @@ const (
 	panicFormat   = "panic: %v\n%s"
 
 	// halves is ddmin's split factor.
-	halves      = 2
-	maxLinkHops = 40 // links EvalSymlinks follows before it calls the path a loop, as Linux does
-	shrinkFile  = "shrink.canon"
+	halves     = 2
+	shrinkFile = "shrink.canon"
 
 	keySuite     = "suite"
 	keyName      = "name"

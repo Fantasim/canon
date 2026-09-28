@@ -27,7 +27,6 @@ const (
 	patternFile  = "pattern"
 	symlinksFile = "symlinks"
 	findingsFile = "findings.txt"
-	maxLinkHops  = 40
 )
 
 // memFS is an archive's tree as a project.FS under projectDir, its control files aside; it
@@ -79,7 +78,7 @@ func (m memFS) EvalSymlinks(name string) (string, error) {
 			done = next
 			continue
 		}
-		if hops++; hops > maxLinkHops {
+		if hops++; hops > project.MaxSymlinkHops {
 			return "", project.ErrSymlinkLoop
 		}
 		target := string(f.Data)

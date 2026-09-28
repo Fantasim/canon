@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/fantasim/canonlang/internal/diag"
+	"github.com/fantasim/canonlang/internal/jsonsrc"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
 )
@@ -41,7 +42,7 @@ func (d *Document) Encode() ([]byte, error) {
 	if err == nil && len(d.Fns) > 0 {
 		var fns *node
 		if fns, err = e.fns(d.Fns); err == nil {
-			b = fns.pretty(memberHead(b, keyFns), memberDepth)
+			b = jsonsrc.AppendPretty(memberHead(b, keyFns), fns.toJSON(), memberDepth)
 		}
 	}
 	if err != nil {
@@ -59,7 +60,7 @@ func (e *encoder) main(b []byte, kind types.Kind, v value.Value) ([]byte, error)
 	if err != nil {
 		return nil, err
 	}
-	return n.pretty(memberHead(b, keyValue), memberDepth), nil
+	return jsonsrc.AppendPretty(memberHead(b, keyValue), n.toJSON(), memberDepth), nil
 }
 
 // rows writes a list, keyed list or table as one compact row per line (§8.2).

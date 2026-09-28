@@ -93,8 +93,6 @@ const (
 // foreignBOMs are non-UTF-8 byte order marks, longest first: load reads this rule for csv and text.
 var foreignBOMs = [...]string{"\x00\x00\xfe\xff", "\xff\xfe\x00\x00", "\xfe\xff", "\xff\xfe"}
 
-const utf8BOM = "\xef\xbb\xbf"
-
 // defineLineRe is a #define line: NAME and the classifying rest of the line captured.
 var defineLineRe = regexp.MustCompile(`^([ \t]*)#[ \t]*define[ \t]+([A-Za-z_][A-Za-z0-9_]*)(.*)$`)
 

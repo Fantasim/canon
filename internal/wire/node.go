@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/fantasim/canonlang/internal/diag"
+	"github.com/fantasim/canonlang/internal/jsonsrc"
 )
 
 // node is an encoded JSON value before layout: scalar bytes, an array or an ordered object.
@@ -87,27 +88,24 @@ func (n *node) compact(b []byte) []byte {
 	return append(b, n.raw...)
 }
 
-// pretty appends pretty(v, depth × 2) of WIRE.md §7.4, the layout of JSON.stringify(v, null, 2).
-func (n *node) pretty(b []byte, depth int) []byte {
-	if len(n.elems) == 0 && len(n.members) == 0 {
-		return n.compact(b)
-	}
-	inner := newline + strings.Repeat(indentSpaces, depth+1)
-	if n.array {
-		b = append(b, openArray...)
+// toJSON is n as a jsonsrc.Node for jsonsrc's printer (WIRE.md §7.4), a scalar's raw bytes carried as Kind Number so they print verbatim, never re-escaped as a String would be.
+func (n *node) toJSON() *jsonsrc.Node {
+	switch {
+	case n.array:
+		elems := make([]*jsonsrc.Node, len(n.elems))
 		for i, e := range n.elems {
-			b = append(b, separator(i, inner)...)
-			b = e.pretty(b, depth+1)
+			elems[i] = e.toJSON()
 		}
-		return append(append(b, newline+strings.Repeat(indentSpaces, depth)...), closeArray...)
+		return &jsonsrc.Node{Kind: jsonsrc.Array, Elems: elems}
+	case n.isObject():
+		members := make([]jsonsrc.Member, len(n.members))
+		for i, m := range n.members {
+			members[i] = jsonsrc.Member{Key: m.key, Value: m.val.toJSON()}
+		}
+		return &jsonsrc.Node{Kind: jsonsrc.Object, Members: members}
+	default:
+		return &jsonsrc.Node{Kind: jsonsrc.Number, Text: string(n.raw)}
 	}
-	b = append(b, openObject...)
-	for i, m := range n.members {
-		b = append(b, separator(i, inner)...)
-		b = append(diag.AppendJSONString(b, m.key), sepKey...)
-		b = m.val.pretty(b, depth+1)
-	}
-	return append(append(b, newline+strings.Repeat(indentSpaces, depth)...), closeObject...)
 }
 
 // separator is what precedes the i-th element of a pretty container: its line break and indent.

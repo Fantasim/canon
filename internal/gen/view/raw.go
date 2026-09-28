@@ -14,7 +14,7 @@ import (
 // WIRE.md 7.2's canonical form (VIEWMODEL.md J10) and never rewritten. A leading UTF-8 BOM
 // refuses: a builder-written RawMessage carries none.
 func buildRaw(raw json.RawMessage) (*jsonsrc.Node, error) {
-	if bytes.HasPrefix(raw, []byte(utf8BOM)) {
+	if bytes.HasPrefix(raw, []byte(jsonsrc.UTF8BOM)) {
 		return nil, fmt.Errorf("%w: leading UTF-8 BOM", errRaw)
 	}
 	var fs source.FileSet

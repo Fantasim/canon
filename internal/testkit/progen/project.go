@@ -9,6 +9,8 @@ import (
 	"slices"
 	"strings"
 	"testing/fstest"
+
+	"github.com/fantasim/canonlang/internal/project"
 )
 
 // Project is a Canon project held in memory: its files and symbolic links by project-relative
@@ -128,8 +130,8 @@ func (m memFS) EvalSymlinks(name string) (string, error) {
 			cur = next
 			continue
 		}
-		if hops++; hops > maxLinkHops {
-			return "", fmt.Errorf("%w: %s", errLinkLoop, name)
+		if hops++; hops > project.MaxSymlinkHops {
+			return "", fmt.Errorf("%w: %s", project.ErrSymlinkLoop, name)
 		}
 		target := string(f.Data)
 		if !path.IsAbs(target) {
