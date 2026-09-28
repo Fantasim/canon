@@ -1,0 +1,24 @@
+-- demo5/demo5.canon --
+package demo5
+
+/// A widget.
+record Widget {
+  /// Its name.
+  name: String
+}
+
+emit view { out: "out/widget.view.json" }
+-- demo5/demo5.fr.canon --
+package demo5
+translation fr
+
+Widget.name "Nom"
+Widget.name "Nom encore"
+-- findings.txt --
+warning[W1701]  demo5/demo5.fr.canon:2:1
+  2 texts of package demo5 have no fr translation (canon i18n status demo5 --lang fr --list)
+
+error[E1705]  demo5/demo5.fr.canon:5:1
+  translation key Widget.name is given twice (first at demo5/demo5.fr.canon:4)
+
+1 error, 1 warning in 1 package (…)

@@ -1,0 +1,10 @@
+-- demo6/demo6.canon --
+package demo6
+translation en
+
+foo "bar"
+-- findings.txt --
+error[E1706]  demo6/demo6.canon:2:13
+  en is the source language: its texts are the sources, not a translation file
+
+1 error, 0 warnings in 1 package (…)

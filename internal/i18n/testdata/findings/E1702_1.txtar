@@ -1,0 +1,23 @@
+-- demo2/demo2.canon --
+package demo2
+
+/// A thing.
+record Widget {
+  /// Its name.
+  name: String
+}
+
+emit view { out: "out/widget.view.json" }
+-- demo2/demo2.fr.canon --
+package demo2
+translation fr
+
+Widget.bogus "quelque chose"
+-- findings.txt --
+warning[W1701]  demo2/demo2.fr.canon:2:1
+  3 texts of package demo2 have no fr translation (canon i18n status demo2 --lang fr --list)
+
+error[E1702]  demo2/demo2.fr.canon:4:1
+  translation key Widget.bogus matches no text of package demo2
+
+1 error, 1 warning in 1 package (…)

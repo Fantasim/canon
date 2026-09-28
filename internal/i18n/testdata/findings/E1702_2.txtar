@@ -1,0 +1,27 @@
+-- demo2b/demo2b.canon --
+package demo2b
+
+/// A thing.
+record Widget {
+  /// Its name.
+  name: String
+}
+
+view Widget {
+  title "{name}"
+}
+
+emit view { out: "out/widget.view.json" }
+-- demo2b/demo2b.fr.canon --
+package demo2b
+translation fr
+
+Widget.title "quelque chose"
+-- findings.txt --
+warning[W1701]  demo2b/demo2b.fr.canon:2:1
+  3 texts of package demo2b have no fr translation (canon i18n status demo2b --lang fr --list)
+
+error[E1702]  demo2b/demo2b.fr.canon:4:1
+  translation key Widget.title matches no text of package demo2b: its source text has no letter, so it is not translatable
+
+1 error, 1 warning in 1 package (…)

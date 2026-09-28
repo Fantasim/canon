@@ -81,11 +81,7 @@ func (c *checker) newPackage(name string) *pkgState {
 
 // qualified is a dotted name as written.
 func qualified(q *syntax.QualifiedName) string {
-	parts := make([]string, len(q.Parts))
-	for i, p := range q.Parts {
-		parts[i] = p.Name
-	}
-	return strings.Join(parts, dot)
+	return syntax.Qualified(q)
 }
 
 // packageDir is the directory of a package: its path with dots as slashes.

@@ -387,9 +387,9 @@ const (
 	wordAt, wordFrom, wordEnv, wordKeyed, wordBy, wordOrdered, wordExt = "at", "from", "env", "keyed", "by", "ordered", "ext"
 	wordPasses, wordFails, wordWarns, wordDefault                      = "passes", "fails", "warns", "default"
 	WordValue, wordSiblings, wordMulti, wordAdvanced, wordWhen         = "value", "siblings", "multi", "advanced", "when"
-	wordTitle, wordSubtitle, wordSingular, wordPlural, wordMenu        = "title", "subtitle", "singular", "plural", "menu"
+	WordTitle, WordSubtitle, WordSingular, WordPlural, wordMenu        = "title", "subtitle", "singular", "plural", "menu"
 	wordIcon, wordPreview, wordSearch, wordFilters, wordColumns        = "icon", "preview", "search", "filters", "columns"
-	wordGroup, wordShow, WordField, matchesName, failName, pairIndex   = "group", "show", "field", "matches", "fail", "i"
+	WordGroup, WordShow, WordField, matchesName, failName, pairIndex   = "group", "show", "field", "matches", "fail", "i"
 	maxNesting                                                         = 1000
 )
 
@@ -433,10 +433,10 @@ const (
 
 // The annotation catalogue's names (GRAMMAR.md §8.3).
 const (
-	annJSON, annStable, annCodes, annDeprecated, annSince, AnnReload = "json", "stable", "codes", "deprecated", "since", "reload"
+	annJSON, annStable, annCodes, AnnDeprecated, annSince, AnnReload = "json", "stable", "codes", "deprecated", "since", "reload"
 	AnnFiles, AnnMenu, AnnCpp, AnnGo, AnnTS                          = "files", "menu", "cpp", "go", "ts"
-	argWire, argPath, argCase, argTag, argInline, ArgUnit, argInt    = "wire", "path", "case", "tag", "inline", "unit", "int"
-	argBits, argPairs, argT, argWhy, argN, argTpl, argLabel          = "bits", "pairs", "T", "why", "n", "tpl", "label"
+	argWire, argPath, ArgCase, argTag, argInline, ArgUnit, argInt    = "wire", "path", "case", "tag", "inline", "unit", "int"
+	argBits, argPairs, argT, argWhy, argN, argTpl, ArgLabel          = "bits", "pairs", "T", "why", "n", "tpl", "label"
 	ArgDefines, ArgStruct, ArgHeader, ArgAccess, ArgName, ArgBigint  = "defines", "struct", "header", "access", "name", "bigint"
 )
 
@@ -447,6 +447,17 @@ const (
 	PropIcon, PropTone                                        = wordIcon, "tone"
 	StudioMenu, StudioIcon, StudioTone, StudioUnits           = "Menu", "Icon", "Tone", "units"
 )
+
+// The translation key segments I18N.md K4 does not already name above: a kind word and two
+// text parts.
+const (
+	WordMethod, WordMember, WordCheck, WordText, WordIntro = "method", "member", "check", "text", "intro"
+)
+
+// reservedSegments are I18N.md K4's reserved key segments: a kind word or another text part.
+const reservedSegments = PropHelp + " " + WordTitle + " " + WordSubtitle + " " + WordSingular + " " + WordPlural + " " +
+	WordGroup + " " + WordShow + " " + WordCheck + " " + WordIntro + " " + WordText + " " + AnnDeprecated + " " +
+	PropPlaceholder + " " + PropNone + " " + PropStep + " " + WordField + " " + WordMethod + " " + ArgCase + " " + WordMember
 
 // Closed sets of annotation symbols (GRAMMAR.md §8.3).
 var (

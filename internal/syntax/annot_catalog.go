@@ -34,7 +34,7 @@ var annCatalog = map[string]*annSpec{
 	annJSON: {args: []argSpec{
 		{name: argWire, kind: valString, sites: siteField | siteCase | siteCodedMember, groups: groupWire},
 		{name: argPath, named: true, kind: valString, sites: siteField, groups: groupWire},
-		{name: argCase, named: true, kind: valSymbol, values: caseStyles, sites: siteRecordHeader | siteVariantHeader | siteCase},
+		{name: ArgCase, named: true, kind: valSymbol, values: caseStyles, sites: siteRecordHeader | siteVariantHeader | siteCase},
 		{name: argTag, named: true, kind: valString, sites: siteVariantHeader},
 		{name: argInline, kind: valFlag, sites: siteField, groups: groupShape},
 		{name: tokenNames[KwNone], named: true, kind: valLiteral, sites: siteField},
@@ -48,7 +48,7 @@ var annCatalog = map[string]*annSpec{
 	annCodes: {args: []argSpec{
 		{name: argT, kind: valSymbol, values: codeTypes, sites: siteEnumHeader, required: true},
 	}},
-	annDeprecated: {bare: deprecatedSites, args: []argSpec{
+	AnnDeprecated: {bare: deprecatedSites, args: []argSpec{
 		{name: argWhy, kind: valString, sites: deprecatedSites},
 	}},
 	annSince: {args: []argSpec{
@@ -61,7 +61,7 @@ var annCatalog = map[string]*annSpec{
 	AnnMenu: {args: []argSpec{
 		{name: AnnMenu, kind: valStudio, sites: siteLet, required: true},
 		{name: wordIcon, named: true, kind: valStudio, sites: siteLet},
-		{name: argLabel, named: true, kind: valString, sites: siteLet},
+		{name: ArgLabel, named: true, kind: valString, sites: siteLet},
 	}},
 	AnnCpp: {args: []argSpec{
 		{name: ArgDefines, named: true, kind: valString, sites: siteEnumHeader},

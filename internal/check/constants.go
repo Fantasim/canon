@@ -185,7 +185,7 @@ const (
 	extForbidden = "./\\"
 	itName       = "it"
 	selfKey      = "self"
-	noneWord     = "none"
+	noneWord     = syntax.PropNone
 	trueWord     = "true"
 	falseWord    = "false"
 
@@ -208,19 +208,18 @@ const (
 )
 
 // View words, properties and studio names (VIEWMODEL.md G16), translation key segments
-// (I18N.md K4): reservedSegments lists the reserved ones.
+// (I18N.md K4). The words are internal/syntax's (the grammar owns key syntax); check keeps
+// only its own names for them.
 const (
-	titleWord, subtitleWord, showWord, textWord, stepWord        = "title", "subtitle", "show", loadText, "step"
-	fieldSegment, methodWord, caseWord, memberWord, checkSegment = "field", "method", jsonCase, "member", "check"
+	titleWord, subtitleWord, showWord, textWord, stepWord        = syntax.WordTitle, syntax.WordSubtitle, syntax.WordShow, loadText, syntax.PropStep
+	fieldSegment, methodWord, caseWord, memberWord, checkSegment = syntax.WordField, syntax.WordMethod, jsonCase, syntax.WordMember, syntax.WordCheck
 	keyName                                                      = "key"
-
-	reservedSegments = "help title subtitle singular plural group show check intro text deprecated placeholder none step field method case member"
 )
 
 // Annotations and their arguments (GRAMMAR.md §8.3, WIRE.md §4).
 const (
 	annotJSON       = "json"
-	annotDeprecated = "deprecated"
+	annotDeprecated = syntax.AnnDeprecated
 	annotStable     = "stable"
 	annotCodes      = "codes"
 	jsonCodes       = annotCodes
@@ -231,7 +230,7 @@ const (
 	jsonUnit        = "unit"
 	jsonNone        = noneWord
 	jsonPairsName   = "pairs"
-	jsonCase        = "case"
+	jsonCase        = syntax.ArgCase
 	jsonTag         = "tag"
 	caseSnake       = "snake"
 	caseKebab       = "kebab"
@@ -298,7 +297,7 @@ const (
 	loadName      = "load"
 	loadForm      = ""
 	loadDefines   = "defines"
-	loadText      = "text"
+	loadText      = syntax.WordText
 	loadCSV       = "csv"
 	optionFormat  = "format"
 	optionPartial = "partial"

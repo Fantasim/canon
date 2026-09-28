@@ -7,12 +7,12 @@ var viewTable map[string]func(*parser, Tok, *DocComment) ViewItem
 
 func init() {
 	viewTable = map[string]func(*parser, Tok, *DocComment) ViewItem{
-		wordTitle: (*parser).viewTitle, wordSubtitle: (*parser).viewSubtitle,
-		wordSingular: (*parser).viewSingular, wordPlural: (*parser).viewPlural,
+		WordTitle: (*parser).viewTitle, WordSubtitle: (*parser).viewSubtitle,
+		WordSingular: (*parser).viewSingular, WordPlural: (*parser).viewPlural,
 		wordMenu: (*parser).viewMenu, wordPreview: (*parser).viewPreview,
 		wordSearch: (*parser).viewSearch, wordFilters: (*parser).viewFilters,
-		wordColumns: (*parser).viewColumns, wordGroup: (*parser).viewGroup,
-		wordShow: (*parser).viewShowItem,
+		wordColumns: (*parser).viewColumns, WordGroup: (*parser).viewGroup,
+		WordShow: (*parser).viewShowItem,
 	}
 }
 
@@ -223,7 +223,7 @@ func (p *parser) viewGroup(start Tok, doc *DocComment) ViewItem {
 func (p *parser) groupMember() GroupMember {
 	start := p.pos
 	doc := p.doc(start)
-	if p.atWord(wordShow) {
+	if p.atWord(WordShow) {
 		if s := p.viewShow(start, doc); s != nil {
 			return s
 		}

@@ -70,7 +70,7 @@ func (r *keyReader) use(id *syntax.Ident, o *object) *object {
 }
 
 // reservedSegment reports a reserved segment.
-func reservedSegment(s string) bool { return reservedSet[s] }
+func reservedSegment(s string) bool { return syntax.IsReservedSegment(s) }
 
 // typeKey reads the rest of a key of a record, a variant or an enum (I18N.md §3.3).
 func (r *keyReader) typeKey(t types.Type) *env {

@@ -20,7 +20,7 @@ Tick with the landing SHA.
 - [x] U4a (a256213) `build` analysis handle (Program, Evaluator, bags, findings) for api/edit/views [sonnet]
 - [x] U4b (846e216) `edit.Snapshot`/`Resolve` (API §6 P1–P10) + editability (API §7) [opus]
 - [x] ★U5 (844d07d) `check`: resolve/type views and translation files; E1703, E1633 [opus]
-- [ ] ★U6 `i18n`: catalogue, translation files, W1701, E1702, E1704–E1707 [sonnet]
+- [x] ★U6 (pending-sha) `i18n`: catalogue, translation files, W1701, E1702, E1704–E1707 [sonnet]
 - [x] ★U7 (8873caa) `views` V1: static checks E1601–E1632/E1634, W16xx [opus]
 - [ ] ★U8 wire i18n/views checks into `build`; generic findings test over every example [sonnet]
 - [x] U9 (dfba53b) `gen/view`: bytes from `*vm.ViewModel` (J1–J3, J10, WIRE §7) [sonnet]

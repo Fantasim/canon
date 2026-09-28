@@ -1,0 +1,21 @@
+-- demo/demo.canon --
+package demo
+
+/// A thing.
+record Widget {
+  /// Its name.
+  name: String
+}
+
+let thing: Widget = { name: "x" }
+
+view Widget {
+  title "Widget"
+}
+
+emit view { out: "out/widget.view.json" }
+-- findings.txt --
+warning[W1701]  demo/demo.canon:1:1
+  5 texts of package demo have no fr translation (canon i18n status demo --lang fr --list)
+
+0 errors, 1 warning in 1 package (…)

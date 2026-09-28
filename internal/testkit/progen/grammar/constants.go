@@ -57,7 +57,6 @@ const (
 	fromEnv       = " from env "
 	atWord        = " at "
 	elseWord      = " else "
-	fieldWord     = "field"
 	valueParam    = "value: "
 	siblings      = ", siblings: "
 	defaultWord   = " default"
@@ -75,7 +74,7 @@ const (
 	interpOpen    = "{"
 	interpClose   = "}"
 	specColon     = ":"
-	textPart      = "text"
+	textPart      = syntax.WordText
 	anyType       = "_"
 	rootPath      = "/"
 	corruptFile   = "gen/gen.canon"
@@ -129,7 +128,7 @@ var (
 	ints       = []string{"0", "7", "42", "1_000_000", "0x1F", "0b1010", "9223372036854775807", "12"}
 	emitTarget = []string{"go", "cpp", "ts", "json", "view"}
 	emitModes  = []string{"baked", "data", "embedded", "types"}
-	viewTexts  = []string{"title", "subtitle", "singular", "plural"}
+	viewTexts  = []string{syntax.WordTitle, syntax.WordSubtitle, syntax.WordSingular, syntax.WordPlural}
 	// docOpeners start a doc line: canon fmt spaces the second.
 	docOpeners = []string{docPrefix, docSlashes}
 	// strayBytes are the bytes a corruption inserts (GRAMMAR.md §1, §2).

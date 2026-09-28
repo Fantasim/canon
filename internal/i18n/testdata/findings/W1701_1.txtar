@@ -1,0 +1,12 @@
+-- solo/solo.canon --
+package solo
+
+/// A note.
+record Note {}
+
+emit view { out: "out/note.view.json" }
+-- findings.txt --
+warning[W1701]  solo/solo.canon:1:1
+  1 text of package solo has no fr translation (canon i18n status solo --lang fr --list)
+
+0 errors, 1 warning in 1 package (…)

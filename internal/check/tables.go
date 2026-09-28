@@ -1,7 +1,5 @@
 package check
 
-import "strings"
-
 // goKeywords are Go's keywords, which a Go package name may not be (CODEGEN.md §2.1).
 var goKeywords map[string]bool
 
@@ -10,9 +8,6 @@ var cppNamespaces map[string]bool
 
 // cppKeywords are C++20's keywords and alternative tokens, which a namespace may not use.
 var cppKeywords map[string]bool
-
-// reservedSet holds the translation key segments that are text parts or kind words (I18N.md §3.2).
-var reservedSet map[string]bool
 
 func init() {
 	goKeywords = map[string]bool{
@@ -41,9 +36,5 @@ func init() {
 		"true": true, "try": true, "typedef": true, "typeid": true, "typename": true, "union": true,
 		"unsigned": true, "using": true, "virtual": true, "void": true, "volatile": true,
 		"wchar_t": true, "while": true, "xor": true, "xor_eq": true,
-	}
-	reservedSet = map[string]bool{}
-	for s := range strings.FieldsSeq(reservedSegments) {
-		reservedSet[s] = true
 	}
 }

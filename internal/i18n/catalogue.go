@@ -1,0 +1,182 @@
+package i18n
+
+import (
+	"slices"
+
+	"github.com/fantasim/canonlang/internal/check"
+	"github.com/fantasim/canonlang/internal/syntax"
+	"github.com/fantasim/canonlang/internal/types"
+)
+
+// Entry is one catalogue key, its source text and its kind (I18N.md §3.3).
+type Entry struct {
+	Key  string
+	Text string
+	Kind Kind
+}
+
+// Catalogue is a package's key catalogue, in catalogue order (I18N.md §3, K10).
+type Catalogue struct {
+	Package string
+	Entries []Entry
+
+	byKey  map[string]int
+	shadow map[string]bool   // keys that exist but whose source text has no letter (F4 noLetter)
+	form   map[string]string // a K4-wrong key -> the key its writer meant (F4 form)
+}
+
+// Lookup is the entry named key, when key is in the catalogue.
+func (c *Catalogue) Lookup(key string) (Entry, bool) {
+	i, ok := c.byKey[key]
+	if !ok {
+		return Entry{}, false
+	}
+	return c.Entries[i], true
+}
+
+// Resolution is how a translation key relates to the catalogue (I18N.md F4).
+type Resolution struct {
+	Entry    Entry
+	Found    bool
+	NoLetter bool   // key exists but its source text has no letter
+	FormHint string // the key its writer meant, when only its K4 form differs
+}
+
+// Resolve classifies key against the catalogue for E1702 (I18N.md F4).
+func (c *Catalogue) Resolve(key string) Resolution {
+	if e, ok := c.Lookup(key); ok {
+		return Resolution{Entry: e, Found: true}
+	}
+	if c.shadow[key] {
+		return Resolution{NoLetter: true}
+	}
+	if hint, ok := c.form[key]; ok {
+		return Resolution{FormHint: hint}
+	}
+	return Resolution{}
+}
+
+// builder accumulates a catalogue's entries in the order they are found (Build sorts them).
+type builder struct {
+	pkg    *check.Package
+	info   *check.Info
+	views  map[check.Object]viewEntry // the let targets: a define-table view (I18N.md K "v.title")
+	byT    map[types.Type]viewEntry   // record, variant, case and enum targets
+	files  map[types.Type]*syntax.File
+	inline map[*types.Field]inlineLabel // a case field reached by inlining (I18N.md K7)
+	cat    *Catalogue
+}
+
+// build is pkg's key catalogue (I18N.md K1, K3).
+func build(pkg *check.Package, info *check.Info, studioPath string) *Catalogue {
+	b := newBuilder(pkg, info)
+	if pkg.Path == studioPath {
+		b.studioMenu()
+		b.studioUnits()
+	} else {
+		b.packageEntries()
+	}
+	b.finish()
+	return b.cat
+}
+
+// newBuilder indexes pkg's first views by target object and by type, and its type objects' own
+// files, before any entry is added.
+func newBuilder(pkg *check.Package, info *check.Info) *builder {
+	views := firstViews(pkg, info)
+	return &builder{
+		pkg: pkg, info: info, views: views, byT: viewsByType(views), files: typeFiles(pkg),
+		cat: &Catalogue{Package: pkg.Path, shadow: map[string]bool{}, form: map[string]string{}},
+	}
+}
+
+// typeFiles maps each of pkg's type-name objects to its declaring file.
+func typeFiles(pkg *check.Package) map[types.Type]*syntax.File {
+	files := map[types.Type]*syntax.File{}
+	for _, o := range pkg.Decls {
+		if o.Kind() == check.ObjTypeName {
+			files[o.Type()] = o.File()
+		}
+	}
+	return files
+}
+
+// viewsByType is views' record, variant, case and enum targets, keyed by type.
+func viewsByType(views map[check.Object]viewEntry) map[types.Type]viewEntry {
+	byT := map[types.Type]viewEntry{}
+	for o, v := range views { //canon:unordered each key set once, from its own object
+		if o.Kind() != check.ObjLet {
+			byT[o.Type()] = v
+		}
+	}
+	return byT
+}
+
+// packageEntries adds a non-studio package's types, public lets and named checks (I18N.md K1),
+// a broken declaration left out (VIEWMODEL.md J4).
+func (b *builder) packageEntries() {
+	reach := reachableTypes(b.pkg, b.info)
+	b.inline = inlineLabels(reach, b.byT, b.info)
+	for _, t := range reach {
+		b.typeEntries(t)
+	}
+	for _, o := range b.pkg.Decls {
+		if o.Kind() == check.ObjLet && !b.info.Broken[o] {
+			b.letEntries(o)
+		}
+	}
+	for _, o := range b.pkg.Decls {
+		if o.Kind() == check.ObjCheck && !b.info.Broken[o] {
+			b.packageCheck(o)
+		}
+	}
+}
+
+// finish sorts the entries by byte order (K10) and builds the lookup index.
+func (b *builder) finish() {
+	slices.SortFunc(b.cat.Entries, func(a, c Entry) int {
+		if a.Key < c.Key {
+			return -1
+		}
+		if a.Key > c.Key {
+			return 1
+		}
+		return 0
+	})
+	b.cat.byKey = make(map[string]int, len(b.cat.Entries))
+	for i, e := range b.cat.Entries {
+		b.cat.byKey[e.Key] = i
+	}
+}
+
+// add records text at realKey when ok (I18N.md L6: translatable); altKey, when different, is
+// registered as the wrong K4 form so a translator using it gets a hint (F4).
+func (b *builder) add(realKey, altKey, text string, kind Kind, ok bool) {
+	if altKey != "" && altKey != realKey {
+		b.cat.form[altKey] = realKey
+	}
+	if !ok {
+		b.shadow(realKey)
+		return
+	}
+	b.cat.Entries = append(b.cat.Entries, Entry{Key: realKey, Text: text, Kind: kind})
+}
+
+func (b *builder) shadow(key string) { b.cat.shadow[key] = true }
+
+// addText resolves s's source text (via f, for a template's braces) and adds it at realKey;
+// translatability is judged on s's literal runs, never on an interpolation's expression (L6).
+func (b *builder) addText(realKey, altKey string, f *syntax.File, s syntax.StrLit, kind Kind) {
+	if s == nil {
+		return
+	}
+	b.add(realKey, altKey, sourceText(f, s), kind, translatable(literalRuns(s)))
+}
+
+// addPlain adds an already-normalized plain text (a doc comment, a deprecation reason).
+func (b *builder) addPlain(realKey, altKey, text string) {
+	if text == "" {
+		return
+	}
+	b.add(realKey, altKey, text, Plain, translatable(text))
+}

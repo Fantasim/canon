@@ -1,0 +1,10 @@
+-- demo4/demo4.canon --
+package demo4
+translation de
+
+foo "bar"
+-- findings.txt --
+error[E1704]  demo4/demo4.canon:2:13
+  language de is not in project.languages (en, fr)
+
+1 error, 0 warnings in 1 package (…)

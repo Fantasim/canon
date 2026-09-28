@@ -100,7 +100,7 @@ func (g *gen) viewShow() {
 // viewField is "[field] name ["label"] [{ props }]".
 func (g *gen) viewField() {
 	if g.r.OneIn(oneIn2) {
-		g.w(fieldWord, space, g.pick(viewTexts))
+		g.w(syntax.WordField, space, g.pick(viewTexts))
 	} else {
 		g.w(g.lower())
 	}

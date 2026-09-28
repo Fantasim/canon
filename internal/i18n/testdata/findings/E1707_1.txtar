@@ -1,0 +1,23 @@
+-- demo7/demo7.canon --
+package demo7
+
+/// A widget.
+record Widget {
+  /// Its name.
+  name: String
+}
+
+emit view { out: "out/widget.view.json" }
+-- demo7/demo7.fr.canon --
+package demo7
+translation fr
+
+Widget.name "Nom {name}"
+-- findings.txt --
+warning[W1701]  demo7/demo7.fr.canon:2:1
+  3 texts of package demo7 have no fr translation (canon i18n status demo7 --lang fr --list)
+
+error[E1707]  demo7/demo7.fr.canon:4:19
+  Widget.name is plain text: its translation cannot interpolate (write {{ for a brace)
+
+1 error, 1 warning in 1 package (…)
