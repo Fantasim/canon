@@ -1026,7 +1026,15 @@
                 "minimum": 0
               },
               "code": {
-                "type": "integer"
+                "oneOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "string",
+                    "pattern": "^-?[0-9]+$"
+                  }
+                ]
               },
               "retired": {
                 "const": true

@@ -155,7 +155,7 @@ type Member struct {
 	Name    string  `json:"name"`
 	Wire    Scalar  `json:"wire"`
 	Index   int     `json:"index"`
-	Code    *int    `json:"code,omitzero"`
+	Code    Number  `json:"code,omitzero"`
 	Retired bool    `json:"retired,omitzero"`
 	Label   TextRef `json:"label"`
 	Help    TextRef `json:"help,omitzero"`

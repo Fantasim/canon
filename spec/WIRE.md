@@ -744,7 +744,7 @@ Samples from the real headers (`@resource/Server/Define/`):
 
 ## 7. Canonical JSON bytes (WIR-01)
 
-Every JSON file `canon` writes (data files; the view model follows VIEWMODEL.md but uses §7.1–§7.3)
+Every JSON file `canon` writes (data files; the view model follows VIEWMODEL.md but uses §7.1–§7.4)
 is canonical: two correct implementations produce the same bytes.
 
 ### 7.1 File

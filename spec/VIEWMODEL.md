@@ -935,7 +935,8 @@ Top level, every member always present except `studio`:
   `ref` → key (string, or number for integer keys); `none` → `null`; list → array; map → array of
   `[key, value]` pairs in map order; record → object of Canon field names in declaration order,
   every field present; variant → object with `"$case": "<case>"` first, then the case's fields;
-  literal-union literal → string.
+  literal-union literal → string. The builder writes each number's canonical text (WIRE.md
+  §7.2); the writer checks it and never rewrites it.
 
 ### 12.3 `types`
 
@@ -997,7 +998,9 @@ predicate, when it has one (VM-02).
   `{name, wire, retired?, label, help?, icon?, tone?, fields, methods?}`.
 - `enum`: `name`; `help`?; `ordered`?; `codes`? (the `@codes` type name, `"UInt8"`); `members`
   (always present): each `{name, wire, index, code?, retired?, label, help?, icon?, tone?}`.
-  `wire` is the JSON wire value (a number with `@json(codes)`).
+  `wire` is the JSON wire value (a number with `@json(codes)`); `code` and a numeric `wire`
+  follow J10 (a decimal string beyond ±(2^53−1)): the enum's `json` says which kind its wires
+  are, so a quoted code is never read as a name.
 - `typeFunction`: `name`; `params` (`[{name, type}]`); `select` (the discriminant path relative to
   the single parameter, `""` for the parameter itself); `branches` (`[{match: [members], type}]`,
   in `match` order, `_` written as `["_"]`); `drivers` (for each collection whose entries are
