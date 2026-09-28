@@ -910,7 +910,7 @@ var Registry = []Def{
 		},
 	},
 	{
-		Code: "E1633", Severity: Error, Package: "views",
+		Code: "E1633", Severity: Error, Package: "check",
 		Variants: []Variant{
 			{Args: []Arg{{Name: "field", Type: ArgTypeName}, {Name: "typ", Type: ArgTypeName}}, Template: "at {field}: {typ} has no field {field}"},
 		},
@@ -930,7 +930,7 @@ var Registry = []Def{
 		},
 	},
 	{
-		Code: "E1703", Severity: Error, Package: "i18n",
+		Code: "E1703", Severity: Error, Package: "check",
 		Variants: []Variant{
 			{Args: []Arg{{Name: "key", Type: ArgTypeName}, {Name: "detail", Type: ArgTypeMessage}}, Template: "translation of {key}: {detail}"},
 		},

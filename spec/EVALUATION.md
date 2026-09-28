@@ -27,9 +27,9 @@ This replaces SPEC §11.2.
 | # | Phase | Output |
 |---|---|---|
 | 1 | Parse every file of the selected packages and of their imports (GRAMMAR.md) | syntax trees |
-| 2 | Resolve and type-check, in one bidirectional pass (TYPES.md §1). Every layer file of the loaded packages is checked, active or not (§9.1) | static findings, broken declarations |
+| 2 | Resolve and type-check, in one bidirectional pass (TYPES.md §1). Every layer file of the loaded packages is checked, active or not (§9.1). Then the static view and translation checks (VIEWMODEL.md §16, I18N.md §12) | static findings, broken declarations |
 | 3 | **Stage A, evaluate**: force the values of §2.1, applying active layers to each one right after its base evaluation (§9.3) | values, evaluation findings |
-| 4 | **Stage B, verify** every evaluated value (§5) | verification findings |
+| 4 | **Stage B, verify** every evaluated value (§5), then the view checks that need evaluated values (`E1610` for a `unit` against studio's `units`, VIEWMODEL.md §12.9) | verification findings |
 | 5 | **Stage C, instance checks** (§8.1) | check findings |
 | 6 | **Stage D, package checks** (§8.5) | check findings |
 | 7 | **Stage E, precompute** export fn results (§2.3), then **validate every emit** of the selected packages: build its IR and check every emit rule (CODEGEN.md §12, WIRE.md §8), writing nothing; then compute the conformance vectors of every translated function (CONFORMANCE.md §6) | values for codegen, conformance vectors, findings |

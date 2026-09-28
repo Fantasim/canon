@@ -742,10 +742,10 @@ acceptance tests pass.
 | **M1** taxonomy | parser (all examples), AST goldens | checker | eval + std subset, layers (DECISIONS 187, 196) | verify, lock, rules | `project`, `wire` encode | `ir`, `gen/json`, `build` | GO: baked; CPP/TS: baked from IR fixtures | — | `cli` check/build/version/init/new | — | fixtures, findings files, determinism job |
 | **M1.5** generated programs | — | — | — | — | — | — | — | — | — | — | program generator and the four suites of §7.7 (beside M2) |
 | **M2** pipeline | `jsonsrc` | export fns | `conform` | `rules` tests | `wire` decode, `load.dir` | fingerprint, reload IR, portable subset check | GO/CPP: data mode, stores, conformance | — | `cli` test | — | toolchain CI jobs |
-| **M3** load + view | `format` (start) | dependent types, views, i18n, layers | — | dependent verification, assets | `load` (all forms) | `types` mode | CPP: `types` mode; TS: data | `views`, `gen/view`, `i18n`, `api/vm` | `Check`/`Value`/`ViewModel` in `api` | — | real-data job, benchmark generator |
+| **M3** load + view | `format` (start) | dependent types, views, i18n, layers | — | dependent verification, assets | `load` (all forms) | `types` mode | CPP: `types` mode | `views`, `gen/view`, `i18n`, `api/vm` | `Check`/`Value`/`ViewModel` in `api` | — | real-data job, benchmark generator |
 | **M4** fmt + edit | `format` done, JSON source printer | — | incremental memo | — | — | — | — | `Evaluate` support | `edit`, `workspace`, full `api`, fmt/explain/refs/watch | — | edit goldens, fuzzing, perf gates |
 | **M5** LSP | recovery hardening | completion queries | — | — | — | — | — | — | support | LSP: server, grammar, extension | LSP transcripts |
-| **M6** legacy C++ + TS | — | — | — | — | — | legacy IR | CPP: `fields`/`both`/`getters`; TS: complete | — | — | — | feature examples |
+| **M6** legacy C++ + TS | — | — | — | — | — | legacy IR | CPP: `fields`/`both`/`getters`; TS: data, then complete | — | — | — | feature examples |
 | **M7** migration | — | — | — | — | — | — | — | `i18n stub`/`status` | `cli` wiring | MIG: `convert` | real-data runs |
 
 M5, M6 and M7 run in parallel once M4 is accepted. M6's C++ work may start after M3. M1.5 runs
@@ -855,7 +855,7 @@ determinism job green (§7.5), and every new registry code tested (§7.2).
   6. The C++ `types`-mode output of `events` compiles and `Decode` accepts the fixture
      `EventConfig.json`.
   7. Real-data job (§7.3) runs `canon check resource... balance...` on the real `Resource/` tree
-     and its findings are reviewed and stored as `realdata/findings.txt` (not gating).
+     and its findings are reviewed and stored as `testdata-real/realdata/findings.txt` (not gating, §7.3).
 
 ### M4 — Formatter and the edit API
 
@@ -964,8 +964,10 @@ small). Total size ≤ 300 KB. From M0, QA regenerates them with
 commits the result; the tool is re-run only on purpose. Files an example reads by a relative path
 (`pipeline/data/`, `features/*/data/`) live next to the example.
 
-A **real-data job** (non-gating, runs where `../../Resource` exists) checks the examples against
-the real tree and records `realdata/findings.txt` for review.
+A **real-data job** (`make check-real`, non-gating, runs where `testdata-real/` holds the real
+`Resource/` tree, DECISIONS 29) checks the examples against it, `client` still redirected to the
+fixtures, and records `testdata-real/realdata/findings.txt` (git-ignored) for review; the reviewed
+list goes to `meta/handoff/` as a list only.
 
 ### 7.4 API rule tests
 

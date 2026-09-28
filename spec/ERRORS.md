@@ -549,7 +549,7 @@ Owner: VIEWMODEL.md.
 | E1630 | error | views | VIEWMODEL.md §3.8 | a default widget whose `value` type is not a named record, variant or enum |
 | E1631 | error | views | VIEWMODEL.md §3.8 | a widget's `siblings` is not a list of its `value` type |
 | E1632 | error | views | VIEWMODEL.md §3.9 | `@menu` on something other than a public top-level value |
-| E1633 | error | views | VIEWMODEL.md §3.7 | `check … at f` names no field of the record or case |
+| E1633 | error | check | VIEWMODEL.md §3.7 | `check … at f` names no field of the record or case |
 | E1634 | error | views | VIEWMODEL.md §3.5 | a field has both `control` and `widget` |
 | W1640 | warning | views | VIEWMODEL.md §10 | an editable public value has no menu (packages with an `emit view` only) |
 | W1641 | warning | views | VIEWMODEL.md §5.5 | a required field without a default is `hidden` |
@@ -605,7 +605,7 @@ Owner: I18N.md.
 |---|---|---|---|---|
 | W1701 | warning | i18n | I18N.md §5 | a package that emits a view has translations missing in a language (one per package and language) |
 | E1702 | error | i18n | I18N.md §4 | a translation key that matches no text of the package |
-| E1703 | error | i18n | I18N.md §7 | a translated template does not type-check |
+| E1703 | error | check | I18N.md §7 | a translated template does not type-check |
 | E1704 | error | i18n | I18N.md §4 | a translation file for a language not in `project.languages` |
 | E1705 | error | i18n | I18N.md §4 | a translation key given twice |
 | E1706 | error | i18n | I18N.md §4 | a translation file for the source language |

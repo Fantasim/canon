@@ -1893,6 +1893,16 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      whose undo takes back its steps and bindings, leaving no trace). `wire` still evaluates
      nothing. Reason: the gate lift (d5062a3) decodes dependent types in two passes; ADR-0005.
 
+221. **Who reports view and translation findings; how the view model is written.** `check`
+     resolves and types views and translation files (targets, item and magic names, key
+     segments, every view expression and template) and reports only TYPES/RES codes there, plus
+     `E1633` (`check … at f`) and `E1703` (a translated template's type error, I18N T2); `views`
+     reports the other `E16xx`/`W16xx`, `i18n` the other `E17xx` and `W1701` (ERRORS.md §1's
+     Package column). `views` builds the `api/vm` structs and `gen/view` serializes them; `build`
+     writes the `view` target itself in phase 8 (it is not an `ir.Generator`), even with errors.
+     The model's `findings` are those of phases 1–7. Magic names are typed (VIEWMODEL §3.4). TS
+     data mode moves from M3 to M6. Reason: M3 scoping (log-2026-09-28).
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.

@@ -3,8 +3,8 @@
 Status: **normative**, for language version 0.1. Companion to [SPEC.md](../SPEC.md) §16 (Views)
 and §17 (Translations). This document is the whole contract between the compiler, which writes
 the view model, and the **studio**, the generic editor that renders it. Two teams build from it
-without talking to each other: one writes `internal/gen/view` (and the view checks of
-`internal/check`), the other writes the studio.
+without talking to each other: one writes `internal/views` and `internal/gen/view` (with the
+resolution and typing of views in `internal/check`, DECISIONS 221), the other writes the studio.
 
 Settled here: AUDIT VIEW-01…10 and VM-01…07, the 50 view gaps of MOCKUP-GAPS.md (accepted by
 DECISIONS 20; gap 34 follows DECISIONS 19), and the view parts of DECISIONS 7 and 9.
@@ -164,7 +164,10 @@ are expressions or templates (VIEW-02). Their scope is, in lookup order:
 
 1. the magic names, when the value being shown is in such a position: `id` (the key of a
    **table** entry or of a define-table entry), `key` (the key of a **map** value), `index` (the
-   **1-based** position of a list element, MOCKUP-GAPS 27);
+   **1-based** position of a list element, MOCKUP-GAPS 27). `id` has the key type of the table
+   (or define table) holding the entry, `key` the key type of the map holding the value, `index`
+   is `Int`; a magic name is in scope only where the view's target can occur in such a position
+   (elsewhere it is an unknown name);
 2. `self` and the fields and methods of the target (a case view: the case's fields);
 3. the package scope and imports, as in a method body.
 
@@ -1176,7 +1179,8 @@ Titles in rows are already disambiguated (S9).
 
 ### 12.11 `findings`
 
-- **J15.** `findings` is every finding of the package from the build (errors included, VM-07), in
+- **J15.** `findings` is every finding of the package from phases 1–7 of the build (EVALUATION.md §1;
+  errors included, VM-07; not phase 8's `E8001`/`E8152`, so the model's bytes equal API.md R9's), in
   API.md F2 order, each as the JSON object of API.md §4.2 (F5 key order, which ends with `reads`),
   followed by one view-model member when not empty:
   - `messages`: the message in each non-source language where the check has a translation
