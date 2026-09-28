@@ -140,7 +140,7 @@
     },
     "valueId": {
       "type": "string",
-      "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*:[A-Za-z_][A-Za-z0-9_]*$"
+      "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*:[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*$"
     },
     "identifier": {
       "type": "string",
@@ -176,6 +176,13 @@
           "properties": {
             "field": {
               "$ref": "#/$defs/identifier"
+            },
+            "path": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/identifier"
+              },
+              "minItems": 1
             }
           },
           "additionalProperties": false,

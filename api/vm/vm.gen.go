@@ -84,9 +84,10 @@ type TypeExpr struct {
 
 // Driver is #/$defs/driver of spec/viewmodel.schema.json, its 3 branches in one struct.
 type Driver struct {
-	Field string `json:"field,omitzero"`
-	Param string `json:"param,omitzero"`
-	Key   bool   `json:"key,omitzero"`
+	Field string   `json:"field,omitzero"`
+	Path  []string `json:"path,omitzero"`
+	Param string   `json:"param,omitzero"`
+	Key   bool     `json:"key,omitzero"`
 }
 
 // Sibling is #/$defs/sibling of spec/viewmodel.schema.json.

@@ -204,7 +204,7 @@ that inlines it).
 | `widget` | a widget of the studio package | field | §4.6; unknown `E1610`; type mismatch `E1608` |
 | `readonly` | `true` / `false` | field | shown read-only (§4.7) |
 | `hidden` | `true` / `false` | field, method | not shown (§5.5) |
-| `placeholder` | plain text | field with a text or number control | shown in the empty input |
+| `placeholder` | plain text | field with a text, number or choice control (§4.3: `input`, `textarea`, `code`, `number`, `segmented`, `select`, `search`) | shown in the empty input, or while nothing is chosen |
 | `when` | `Bool` expression | field, method | shown only while it holds (§5.5) |
 | `none` | plain text | optional field | the label of `none` (MOCKUP-GAPS 12) |
 | `step` | template over `{index}` only | list field | name of each element in step, list and positional controls (§7.7); another name is `E1623` |
@@ -929,7 +929,8 @@ Top level, every member always present except `studio`:
 - **J7.** Types are named by qualified name `<package>.<Type>` (VM-03): `resource.farm.Global`. A
   type declared in another package is referenced, never copied.
 - **J8.** Values and search indexes are named by `"<package>:<let>"`, the package-qualified value
-  path of API.md §6: `pipeline:potions`.
+  path of API.md §6: `pipeline:potions` (`"<package>:<let>.<field>…"` for a collection held down
+  a let's fields).
 - **J9.** A **text reference** is either a string `"<package>:<key>"`, naming key `<key>` of
   package `<package>` (I18N.md), or an object `{"text": "…"}` for a language-neutral text (a text
   with no letter, I18N.md §2). The studio resolves a string reference in the view model of
@@ -985,7 +986,7 @@ predicate, when it has one (VM-02).
   `keyType` is `"string"` or `"int"`. `count` and `active` are the target's entry counts in this
   build (0 for `sibling`).
 - **J13.** Drivers, used by `on` and `bind`: `{"field": f}` (an earlier field of the same record or
-  case), `{"param": p}` (a parameter of the enclosing parameterized record, bound at its use), or
+  case; `{"field": f, "path": [g, …]}` when the argument reads down fields of `f`, TYPES.md §11.1), `{"param": p}` (a parameter of the enclosing parameterized record, bound at its use), or
   `{"key": true}` (the key of the enclosing dependent map). The studio resolves `param` by walking
   out to the `record` expression's `bind`.
 
@@ -994,9 +995,9 @@ predicate, when it has one (VM-02).
 - `record`: `name`; `help`? (text reference, the type's doc); `params`? (`[{name, type}]`);
   `fields` (always present, declaration order); `methods`? (parameterless methods named by a view:
   `[{name, returns}]`).
-- **Field**: `name`; `type`; `required`? (no default and not optional); `default`? (J10, or
+- **Field**: `name`; `type`; `required`? (no default, not optional, not an input); `default`? (J10, or
   `{"computed": true}` when the default is not constant, TYP-15); `help`?; `deprecated`? (text
-  reference); `wire` (always present: `name`, and when set `path`, `unit`, `none` (the JSON value),
+  reference; `{"text": ""}` for a `@deprecated` without a reason); `wire` (always present: `name`, and when set `path`, `unit`, `none` (the JSON value),
   `inline`, `int`, `bits`, `pairs`); `stable`?; `input`? (`{"env": "VAR"}`). For a
   `@json(pairs:)` field, `pairs` is `{"keys": [k, v], "slots": N}` (the two templates as written,
   `{i}` included) and `name` is the first template.
