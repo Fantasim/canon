@@ -183,7 +183,7 @@ func (r *keyReader) messageScope(d *syntax.CheckDecl) *env {
 	return r.c.messageEnvs[d]
 }
 
-// variantKey reads a variant's key: its view's texts, then a case (I18N.md §3.3, K4).
+// variantKey reads a variant's key: its view's texts, a variant-level check, then a case (I18N.md §3.3, K4).
 func (r *keyReader) variantKey(v *types.VariantType) *env {
 	id := r.take()
 	if id == nil {
@@ -192,6 +192,9 @@ func (r *keyReader) variantKey(v *types.VariantType) *env {
 	switch {
 	case id.Name == titleWord || id.Name == subtitleWord:
 		return r.viewText(viewKey{typ: v}, id.Name)
+	case id.Name == checkSegment:
+		r.c.completeVariant(v)
+		return r.checkKey(VariantChecks(v.Decl))
 	case id.Name == caseWord:
 		id = r.take()
 	case reservedSegment(id.Name):

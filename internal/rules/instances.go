@@ -2,6 +2,7 @@ package rules
 
 import (
 	"context"
+	"slices"
 
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/eval"
@@ -151,9 +152,9 @@ func (t *traversal) invalidBelow(v value.Value) bool {
 	return bad
 }
 
-// runChecks runs the checks of an instance's record or case, in declaration order.
+// runChecks runs the checks of an instance's record or case, in declaration order; a case value's variant-level checks first (EVALUATION.md §8.1).
 func (t *traversal) runChecks(rec *value.Record, at *verify.Path) {
-	for _, c := range checksOf(rec.T) {
+	for _, c := range t.checksOf(rec.T) {
 		if t.ctx.Err() != nil {
 			return
 		}
@@ -161,12 +162,12 @@ func (t *traversal) runChecks(rec *value.Record, at *verify.Path) {
 	}
 }
 
-func checksOf(t types.Type) []*syntax.CheckDecl {
+func (r *Runner) checksOf(t types.Type) []*syntax.CheckDecl {
 	switch d := t.Base().(type) {
 	case *types.RecordType:
 		return d.Checks
 	case *types.CaseType:
-		return d.Checks
+		return append(slices.Clip(r.shared[d.Variant]), d.Checks...)
 	case *types.AppliedRecord:
 		return d.Rec.Checks
 	}

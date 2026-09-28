@@ -1,0 +1,32 @@
+EVALUATION.md §8.3, TYPES.md §12.1 (DECISIONS 226): a variant-level check shares every case's
+check names: two variant-level checks of one name clash in the variant; a case's check named like a
+variant-level one clashes in the case, reported at the later of the two in source.
+-- teamboard/rewards.canon --
+package teamboard
+
+variant Reward {
+  check positive: 1 == 1 else "a"
+
+  item {
+    count: Int
+
+    check positive: count > 0 else "b"
+    check wide: count < 9 else "c"
+  }
+  gold { amount: Int }
+
+  check wide: 2 == 2 else "d"
+  check capped: 3 == 3 else "e"
+  check capped: 4 == 4 else "f"
+}
+-- findings.txt --
+error[E5003]  teamboard/rewards.canon:9:11
+  check name positive is used twice in Reward.item
+
+error[E5003]  teamboard/rewards.canon:14:9
+  check name wide is used twice in Reward.item
+
+error[E5003]  teamboard/rewards.canon:16:9
+  check name capped is used twice in Reward
+
+3 errors, 0 warnings in 1 package (…)

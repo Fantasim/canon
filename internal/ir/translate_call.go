@@ -26,6 +26,9 @@ func (t *translator) call(e syntax.Expr) PExpr {
 	if n, isRead := t.selfRead(x, ctxValue); isRead {
 		return n
 	}
+	if t.variantCall(x, c) {
+		return nil
+	}
 	_, byName := x.Fun.(*syntax.IdentExpr)
 	switch {
 	case c.Kind == check.CalleeFn:

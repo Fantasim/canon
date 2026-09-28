@@ -1,0 +1,46 @@
+EVALUATION.md §8.1, §8.3, TYPES.md §12.1 (DECISIONS 226): checks written in a variant body outside
+any case run in stage C on every case value, `self` the variant value, before the case's own; a
+false one-line check is reported at the instance, a block check's fail at its value.
+-- a/a.canon --
+/// A.
+package a
+
+local variant Reward {
+  gold {
+    amount: Int
+
+    check capped: amount < 1000 else "{amount} is over the cap"
+  }
+  nothing
+
+  fn worth(self) -> Int {
+    return match self {
+      gold(g) => g.amount
+      nothing => 0
+    }
+  }
+
+  check positive: worth() >= 0 else "{self.kind} is worth {worth()}"
+
+  check {
+    if self is gold {
+      if self.amount > 100 { fail(self, "too much gold") }
+    }
+  }
+}
+
+local let rewards: [Reward] = [gold { amount: -2 }, gold { amount: 5000 }, nothing]
+-- findings.txt --
+error[E5001]  a/a.canon:28:32
+  rewards[0]: gold is worth -2
+  expected by a/a.canon:19 (check positive)
+
+error[E5001]  a/a.canon:28:53
+  rewards[1]: 5000 is over the cap
+  expected by a/a.canon:8 (check capped)
+
+error[E5002]  a/a.canon:28:53
+  rewards[1]: too much gold
+  expected by a/a.canon:21 (check)
+
+3 errors, 0 warnings in 1 package (…)

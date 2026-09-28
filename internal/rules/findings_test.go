@@ -7,6 +7,7 @@ import (
 
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/rules"
+	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/testkit/golden"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
@@ -21,6 +22,8 @@ var cases = map[string]func(fx *fixture){
 	"E5002_1": failCase,
 	"W5002_1": blockWarnCase,
 	"E5003_1": namesCase,
+	"E5001_2": variantLevelCase,
+	"E5003_2": variantNamesCase,
 }
 
 // IMPLEMENTATION-PLAN.md §7.2: each case prints the findings of stages C and D over its values.
@@ -150,4 +153,41 @@ func namesCase(fx *fixture) {
 	reward.Cases = []*types.CaseType{item}
 	fx.typeName(column)
 	fx.typeName(reward)
+}
+
+// rewardVariant is the fixture's variant Reward, declared by its source, with cases of the given fields.
+func rewardVariant(fx *fixture, cases map[string][]*types.Field, order ...string) (*types.VariantType, map[string]*types.CaseType) {
+	fx.t.Helper()
+	reward := &types.VariantType{Pkg: pkg, Name: "Reward"}
+	for _, d := range fx.file.Decls {
+		if vd, ok := d.(*syntax.VariantDecl); ok {
+			reward.Decl = vd
+		}
+	}
+	byName := map[string]*types.CaseType{}
+	for i, name := range order {
+		ct := &types.CaseType{Variant: reward, Name: name, Index: i, Fields: cases[name]}
+		reward.Cases = append(reward.Cases, ct)
+		byName[name] = ct
+	}
+	fx.typeName(reward)
+	return reward, byName
+}
+
+func variantLevelCase(fx *fixture) {
+	reward, cs := rewardVariant(fx, map[string][]*types.Field{"gold": {field("amount", types.IntType)}}, "gold", "nothing")
+	capped, spent := fx.check("check capped"), fx.check("check spent")
+	cs["gold"].Checks = []*syntax.CheckDecl{capped}
+	amount := &value.Int{V: 500, T: types.IntType, P: fx.lit("500")}
+	gold := &value.Record{T: cs["gold"], Fields: []value.Value{amount}, P: fx.lit("gold {", "let rewards")}
+	nothing := &value.Record{T: cs["nothing"], P: fx.lit("nothing", "let rewards")}
+	fx.ev.scripts[spent] = failsFor("an unspent reward", gold)
+	fx.ev.scripts[capped] = failsFor("too much gold", gold)
+	list := &value.List{T: &types.ListType{Elem: reward}, Elems: []value.Value{gold, nothing}, P: fx.lit("[", "let rewards")}
+	fx.let("rewards", list)
+}
+
+func variantNamesCase(fx *fixture) {
+	_, cs := rewardVariant(fx, map[string][]*types.Field{"item": {field("count", types.IntType)}, "gold": {field("amount", types.IntType)}}, "item", "gold")
+	cs["item"].Checks = []*syntax.CheckDecl{fx.check("check positive: count"), fx.check("check wide: count")}
 }

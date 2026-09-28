@@ -128,7 +128,7 @@ func (s *stage) declaredOnly(u *unit) *Package {
 // appendDeclaredFn adds an export fn's name, kind and overrides.
 func appendDeclaredFn(fns []*ExportFn, obj check.Object, d *syntax.FnDecl) []*ExportFn {
 	sig, ok := obj.Type().(*types.FuncType)
-	if !ok || d.Mods == nil || !d.Mods.Export.Valid() {
+	if !ok || !exported(d) {
 		return fns
 	}
 	n := nameOverrides(d.Annotations)

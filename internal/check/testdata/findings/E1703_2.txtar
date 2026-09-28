@@ -1,0 +1,23 @@
+I18N.md §3.3 `T.check.n`, T1, TYPES.md §12.1 (DECISIONS 226): the key of a variant-level named check is `V.check.n`, its translation typed in the check's scope (`self: V`, no field in scope): `self.kind` is fine, a case's field read bare is E1703 at the interpolation.
+-- a/a.canon --
+package a
+
+local variant Reward {
+  gold { amount: Int }
+  nothing
+
+  check positive: self.kind == nothing or self is gold else "a {self.kind} reward"
+}
+
+/// The reward.
+let reward: Reward = nothing
+-- a/a.fr.canon --
+package a
+translation fr
+
+Reward.check.positive "{amount} de {self.kind}"
+-- findings.txt --
+error[E1703]  a/a.fr.canon:4:25
+  translation of Reward.check.positive: unknown name amount
+
+1 error, 0 warnings in 1 package (…)

@@ -1,0 +1,57 @@
+Decision 37, clean: a variant-level export fn (TYPES.md §12.1, DECISIONS 226) is refused only where a
+code emit writes its variant (VariantMethod): a json-only package writes no type, and a local
+variant is never emitted.
+-- a/a.canon --
+package a
+
+/// A reward.
+variant Reward {
+  /// Some gold.
+  gold {
+    /// How much.
+    amount: Int
+  }
+  /// Nothing.
+  nothing
+
+  /// What it is worth.
+  export fn worth(self) -> Int {
+    return match self {
+      gold(g) => g.amount
+      nothing => 0
+    }
+  }
+
+  check worth() >= 0 else "negative"
+}
+
+/// The rewards.
+let rewards: [Reward] = [gold { amount: 2 }, nothing]
+
+emit json { out: "@features/a" }
+-- b/b.canon --
+package b
+
+local variant Bonus {
+  flat { points: Int }
+  zero
+
+  /// What it is worth.
+  export fn worth(self) -> Int {
+    return match self {
+      flat(f) => f.points
+      zero => 0
+    }
+  }
+
+  check worth() >= 0 else "negative"
+}
+
+local let bonus: Bonus = flat { points: 1 }
+
+/// The bonus points.
+let total: Int = bonus.worth()
+
+emit go { out: "@features/b", package: "b" }
+-- findings.txt --
+0 errors, 0 warnings in 2 packages (…)

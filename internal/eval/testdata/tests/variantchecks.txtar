@@ -1,0 +1,40 @@
+EVALUATION.md §10.2, §10.3, TYPES.md §12.1 (DECISIONS 226): building an expect subject runs the
+variant-level checks of every case value it reaches; `fails name`, `fails "text"` and `passes`
+see them like a case's own checks.
+-- a/a.canon --
+package a
+
+local variant Reward {
+  gold { amount: Int }
+  nothing
+
+  fn worth(self) -> Int {
+    return match self {
+      gold(g) => g.amount
+      nothing => 0
+    }
+  }
+
+  check positive: worth() >= 0 else "{self.kind} is worth {worth()}"
+}
+
+local record Chest {
+  reward: Reward
+}
+
+test "variant-level checks" {
+  expect Reward.gold { amount: -1 } fails positive
+  expect Reward.gold { amount: -1 } fails "gold is worth -1"
+  expect Chest { reward: gold { amount: -3 } } fails positive
+  expect Reward.gold { amount: 4 } passes
+  expect Reward.nothing passes
+}
+-- outcomes.txt --
+a "variant-level checks": failed false, stopped false, broken false
+  expect line 22: passed true [E5001 gold is worth -1]
+  expect line 23: passed true [E5001 gold is worth -1]
+  expect line 24: passed true [E5001 gold is worth -3]
+  expect line 25: passed true
+  expect line 26: passed true
+
+0 errors, 0 warnings in 1 package (…)

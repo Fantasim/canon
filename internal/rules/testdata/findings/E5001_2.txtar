@@ -1,0 +1,28 @@
+EVALUATION.md §8.1, §8.3, TYPES.md §12.1 (DECISIONS 226): a check written in a variant body
+outside any case runs on every case value, before the case's own checks; a false one is reported
+at the instance (the case name of its literal), relates its declaration and carries its name.
+-- teamboard/rewards.canon --
+package teamboard
+
+variant Reward {
+  gold {
+    amount: Int
+
+    check capped: amount < 100 else "too much gold"
+  }
+  nothing
+
+  check spent: self.kind == nothing else "an unspent reward"
+}
+
+let rewards: [Reward] = [gold { amount: 500 }, nothing]
+-- findings.txt --
+error[E5001]  teamboard/rewards.canon:14:26
+  rewards[0]: an unspent reward
+  expected by teamboard/rewards.canon:11 (check spent)
+
+error[E5001]  teamboard/rewards.canon:14:26
+  rewards[0]: too much gold
+  expected by teamboard/rewards.canon:7 (check capped)
+
+2 errors, 0 warnings in 1 package (…)

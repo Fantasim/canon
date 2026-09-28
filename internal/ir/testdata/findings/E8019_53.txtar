@@ -1,0 +1,39 @@
+EVALUATION.md §1 (stage E, decision 37), TYPES.md §12.1 (DECISIONS 226), CONFORMANCE.md §2.2: a
+case's translated method reading a variant-level precomputed export fn of self, bare or through
+`self`, is a call the portable subset admits but no generator writes: refused at each call per
+emit (VariantMethod), beside the export fn's own refusal, instead of E9001.
+-- a/a.canon --
+package a
+
+/// A reward.
+variant Reward {
+  /// Some gold.
+  gold {
+    /// How much.
+    amount: Int
+
+    /// Its worth, scaled.
+    export fn scaled(self, k: Int) -> Int { return worth() * k }
+
+    /// Its worth, shifted.
+    export fn shifted(self, k: Int) -> Int { return self.worth() + k }
+  }
+  /// Nothing.
+  nothing
+
+  /// What it is worth.
+  export fn worth(self) -> Int { return 1 }
+}
+
+emit cpp { out: "@features/a", namespace: "a", mode: data }
+-- findings.txt --
+error[E8019]  a/a.canon:11:52
+  emit cpp in data mode cannot generate a variant-level method a generator must write
+
+error[E8019]  a/a.canon:14:53
+  emit cpp in data mode cannot generate a variant-level method a generator must write
+
+error[E8019]  a/a.canon:20:13
+  emit cpp in data mode cannot generate a variant-level method a generator must write
+
+3 errors, 0 warnings in 1 package (…)

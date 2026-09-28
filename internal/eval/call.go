@@ -1,6 +1,8 @@
 package eval
 
 import (
+	"slices"
+
 	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/eval/std"
@@ -233,17 +235,25 @@ func declSite(f *syntax.File, name *syntax.Ident, t syntax.Type) site {
 	return site{decl: sp, has: true}
 }
 
-// fnName names a frame: the function, or `Record.method` for a method.
+// fnName names a frame (API.md F13): the function, `Record.m`, a case's `V.c.m`, a variant-level `V.m` (TYPES.md §12.1).
 func fnName(obj check.Object, self value.Value) string {
 	if rec, ok := self.(*value.Record); ok && obj.Kind() == check.ObjMethod {
 		if rt := recordOf(rec.T); rt != nil {
 			return rt.Name + dot + obj.Name()
 		}
 		if ct, isCase := rec.T.Base().(*types.CaseType); isCase {
-			return ct.Variant.Name + dot + obj.Name()
+			return caseMethodName(ct, obj)
 		}
 	}
 	return obj.Name()
+}
+
+// caseMethodName is `V.m` for a variant-level method of ct's variant, else `V.c.m`.
+func caseMethodName(ct *types.CaseType, obj check.Object) string {
+	if d := ct.Variant.Decl; d != nil && slices.ContainsFunc(d.Items, func(it syntax.VariantItem) bool { return syntax.Node(it) == obj.Decl() }) {
+		return ct.Variant.Name + dot + obj.Name()
+	}
+	return ct.Variant.Name + dot + ct.Name + dot + obj.Name()
 }
 
 // callBuiltin calls a built-in function, conversion or method through the standard library.

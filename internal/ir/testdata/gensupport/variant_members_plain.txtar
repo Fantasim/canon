@@ -1,0 +1,40 @@
+Decision 37, clean: plain variant-level methods and variant-level checks (TYPES.md §12.1, DECISIONS
+226) are never emitted, so a go and a cpp emit writing their variant refuse none of them
+(VariantMethod is for an export fn only), whether bare-called from a case method or not.
+-- a/a.canon --
+package a
+
+/// A reward.
+variant Reward {
+  /// Some gold.
+  gold {
+    /// How much.
+    amount: Int
+
+    fn doubled(self) -> Int { return worth() * 2 }
+  }
+  /// Nothing.
+  nothing
+
+  fn worth(self) -> Int {
+    return match self {
+      gold(g) => g.amount
+      nothing => 0
+    }
+  }
+
+  check worth() >= 0 else "negative"
+
+  warn small: worth() < 100 else "large"
+
+  check {
+    if self is gold {
+      if self.amount > 1000 { fail(self, "too much") }
+    }
+  }
+}
+
+emit go { out: "@features/a", package: "a" }
+emit cpp { out: "@features/a", namespace: "a", mode: data }
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

@@ -75,21 +75,24 @@ type stage struct {
 	fieldSites  map[*Field]*fieldSite
 	depFns      map[*Dependent]*types.TypeFunc
 	branchTypes map[*Branch]types.Type
+	members     map[*Variant][]source.Span // a variant's export fns written outside its cases (TYPES.md §12.1)
+	variantFns  map[*syntax.FnDecl]bool    // every fn written in a variant body outside its cases
 }
 
 // unit is one checked package on its way to IR; firstUse is the first type of each imported
 // package its IR names, for E8004.
 type unit struct {
-	cp       *check.Package
-	p        *Package
-	bag      *diag.Bag
-	selected bool
-	emits    []*emitSite
-	values   []*valueSite
-	fns      []*fnSite
-	consts   []*constSite
-	firstUse map[string]string
-	cppNames []cppShared // the names its data-mode cpp header declares in namespaces other packages share
+	cp           *check.Package
+	p            *Package
+	bag          *diag.Bag
+	selected     bool
+	emits        []*emitSite
+	values       []*valueSite
+	fns          []*fnSite
+	consts       []*constSite
+	firstUse     map[string]string
+	cppNames     []cppShared   // the names its data-mode cpp header declares in namespaces other packages share
+	variantCalls []source.Span // translated calls of a variant-level export fn (E8019 VariantMethod)
 }
 
 // constSite is a public const with its IR and declaration.
@@ -133,7 +136,8 @@ func newStage(ctx context.Context, in Input) *stage {
 		ctx: ctx, in: in, info: in.Program.Info, named: map[any]Type{}, units: map[string]*unit{},
 		decls: map[Type]declSite{}, fnObjs: map[*ExportFn]*fnSite{}, fnByObj: map[check.Object]*fnSite{}, nodeSites: map[any]declSite{},
 		domainsOf: map[*ExportFn]*fnDomains{}, fieldSites: map[*Field]*fieldSite{}, depFns: map[*Dependent]*types.TypeFunc{},
-		branchTypes: map[*Branch]types.Type{},
+		branchTypes: map[*Branch]types.Type{}, members: map[*Variant][]source.Span{},
+		variantFns: map[*syntax.FnDecl]bool{},
 	}
 	// nil overrides (decision 108) never name an undeclared root, so NewLayout's ok is always true.
 	s.layout, _ = project.NewLayout(in.Project, curDir, nil, nil)

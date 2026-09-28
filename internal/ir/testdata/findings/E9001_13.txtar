@@ -1,0 +1,39 @@
+CONFORMANCE.md §2.2, TYPES.md §12.1 (DECISIONS 226): a record's translated export fn calling a
+plain variant-level method of a field calls a non-exported function, outside the portable subset:
+refused at the call, as any such call, and the method itself is never refused.
+-- a/a.canon --
+package a
+
+/// A reward.
+variant Reward {
+  /// Some gold.
+  gold {
+    /// How much.
+    amount: Int
+  }
+  /// Nothing.
+  nothing
+
+  fn worth(self) -> Int {
+    return match self {
+      gold(g) => g.amount
+      nothing => 0
+    }
+  }
+}
+
+/// A chest.
+record Chest {
+  /// What it holds.
+  reward: Reward
+
+  /// Its worth, scaled.
+  export fn scaled(self, k: Int) -> Int { return self.reward.worth() * k }
+}
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+error[E9001]  a/a.canon:27:50
+  self.reward.worth() is not allowed in translated function Chest.scaled: it is outside the portable subset
+
+1 error, 0 warnings in 1 package (…)

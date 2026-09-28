@@ -296,6 +296,20 @@ func (c *checker) variantMembers(env *env, v *types.VariantType, d *syntax.Varia
 	}
 }
 
+// VariantChecks are the checks of a variant body outside any case, in source order (TYPES.md §12.1); nil for a nil declaration.
+func VariantChecks(d *syntax.VariantDecl) []*syntax.CheckDecl {
+	if d == nil {
+		return nil
+	}
+	var out []*syntax.CheckDecl
+	for _, it := range d.Items {
+		if c, ok := it.(*syntax.CheckDecl); ok {
+			out = append(out, c)
+		}
+	}
+	return out
+}
+
 // sharedName is E2105, E2104 or E2106 for a variant-level method sharing a case's name (TYPES.md §12.1).
 func (c *checker) sharedName(env *env, v *types.VariantType, fn *syntax.FnDecl) {
 	name := fn.Name.Name

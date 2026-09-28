@@ -151,16 +151,7 @@ func fieldNamed(fields []*types.Field, name string) *types.Field {
 // argument; any other method call is not a read.
 func (t *translator) selfMethod(x *syntax.CallExpr) (*fnSite, bool) {
 	c := t.s.info.Calls[x]
-	if c == nil || c.Kind != check.CalleeMethod || len(x.Args) != 0 {
-		return nil, false
-	}
-	switch f := x.Fun.(type) {
-	case *syntax.IdentExpr:
-	case *syntax.SelectorExpr:
-		if _, onSelf := unparen(f.X).(*syntax.SelfExpr); !onSelf {
-			return nil, false
-		}
-	default:
+	if c == nil || c.Kind != check.CalleeMethod || len(x.Args) != 0 || !onSelf(x) {
 		return nil, false
 	}
 	site := t.s.fnByObj[c.Obj]
@@ -168,6 +159,18 @@ func (t *translator) selfMethod(x *syntax.CallExpr) (*fnSite, bool) {
 		return nil, false
 	}
 	return site, true
+}
+
+// onSelf reports a method call on self: bare `m()` in a body, or `self.m()`.
+func onSelf(x *syntax.CallExpr) bool {
+	switch f := x.Fun.(type) {
+	case *syntax.IdentExpr:
+		return true
+	case *syntax.SelectorExpr:
+		_, self := unparen(f.X).(*syntax.SelfExpr)
+		return self
+	}
+	return false
 }
 
 // methodRead is the read of a precomputed method of self, keyed after every field.

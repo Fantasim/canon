@@ -35,6 +35,9 @@ func local(m *syntax.Modifiers) bool {
 	return m != nil && m.Local.Valid()
 }
 
+// exported reports an `export fn` (SPEC §9.4).
+func exported(d *syntax.FnDecl) bool { return d.Mods != nil && d.Mods.Export.Valid() }
+
 // assemble builds u's types, constants, values and package fns, each list in declaration order (CODEGEN.md §2.7): every public type, constant and export fn, and every public value.
 func (s *stage) assemble(u *unit) {
 	for _, obj := range u.cp.Decls {
@@ -85,7 +88,7 @@ func (s *stage) assembleLet(u *unit, obj check.Object, d *syntax.LetDecl) {
 
 func (s *stage) assembleFn(u *unit, obj check.Object, d *syntax.FnDecl) {
 	sig, ok := obj.Type().(*types.FuncType)
-	if !ok || d.Mods == nil || !d.Mods.Export.Valid() {
+	if !ok || !exported(d) {
 		return
 	}
 	site := s.exportFn(obj, d, sig)

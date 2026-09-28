@@ -1,0 +1,38 @@
+EVALUATION.md §1 (stage E, decision 37), TYPES.md §12.1 (DECISIONS 226): every generated code
+emit writing the variant refuses its variant-level export fn, under its own target and mode
+(VariantMethod): a data-mode go emit and a data-mode cpp emit; a json emit writes no type and
+refuses nothing, and the variant-level check is never emitted.
+-- a/a.canon --
+package a
+
+/// A reward.
+variant Reward {
+  /// Some gold.
+  gold {
+    /// How much.
+    amount: Int
+  }
+  /// Nothing.
+  nothing
+
+  /// Whether it is gold.
+  export fn isGold(self) -> Bool { return self.kind == gold }
+
+  check {
+    if self is gold {
+      if self.amount < 0 { fail(self, "negative") }
+    }
+  }
+}
+
+emit go { out: "@features/a", package: "a", mode: data }
+emit cpp { out: "@features/a", namespace: "a", mode: data }
+emit json { out: "@features/a" }
+-- findings.txt --
+error[E8019]  a/a.canon:14:13
+  emit cpp in data mode cannot generate a variant-level method a generator must write
+
+error[E8019]  a/a.canon:14:13
+  emit go in data mode cannot generate a variant-level method a generator must write
+
+2 errors, 0 warnings in 1 package (…)

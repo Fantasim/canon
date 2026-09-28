@@ -42,6 +42,7 @@ type Report struct {
 type Runner struct {
 	ev     Evaluator
 	info   *check.Info
+	shared map[*types.VariantType][]*syntax.CheckDecl // the variant-level checks, by variant (TYPES.md §12.1)
 	bags   map[string]*diag.Bag
 	files  map[*syntax.CheckDecl]*syntax.File
 	broken map[types.Type]bool
@@ -55,17 +56,18 @@ type Index struct {
 	info   *check.Info
 	files  map[*syntax.CheckDecl]*syntax.File
 	broken map[types.Type]bool
+	shared map[*types.VariantType][]*syntax.CheckDecl
 }
 
-// NewIndex indexes a checked program for its check runners: each check's file, the broken types.
+// NewIndex indexes a checked program for its check runners: each check's file, the broken types, each variant's variant-level checks.
 func NewIndex(prog *check.Program) *Index {
-	ix := &Index{files: map[*syntax.CheckDecl]*syntax.File{}, broken: map[types.Type]bool{}}
+	ix := &Index{files: map[*syntax.CheckDecl]*syntax.File{}, broken: map[types.Type]bool{}, shared: map[*types.VariantType][]*syntax.CheckDecl{}}
 	if prog == nil {
 		return ix
 	}
 	ix.info = prog.Info
 	for _, pkg := range prog.Packages {
-		ix.indexBroken(pkg)
+		ix.indexTypes(pkg)
 		for _, f := range pkg.Files {
 			syntax.Inspect(f, func(n syntax.Node) bool {
 				if c, ok := n.(*syntax.CheckDecl); ok {
@@ -86,18 +88,24 @@ func New(ev Evaluator, prog *check.Program, bags map[string]*diag.Bag) *Runner {
 // NewShared is New over an index built once, for a runner made per call with bags of its own.
 func NewShared(ix *Index, ev Evaluator, bags map[string]*diag.Bag) *Runner {
 	return &Runner{
-		ev: ev, bags: bags, info: ix.info, files: ix.files, broken: ix.broken,
+		ev: ev, bags: bags, info: ix.info, files: ix.files, broken: ix.broken, shared: ix.shared,
 		seen:  map[*value.Record]bool{},
 		below: map[value.Value]bool{},
 		paths: map[value.Value]*verify.Path{},
 	}
 }
 
-// indexBroken records the broken records and variants, whose checks never run (TYPES.md §1).
-func (ix *Index) indexBroken(pkg *check.Package) {
+// indexTypes records the broken records and variants, whose checks never run (TYPES.md §1), and each variant's variant-level checks (TYPES.md §12.1).
+func (ix *Index) indexTypes(pkg *check.Package) {
 	for _, obj := range pkg.Decls {
-		if obj.Kind() == check.ObjTypeName && ix.info != nil && ix.info.Broken[obj] && obj.Type() != nil {
+		if obj.Kind() != check.ObjTypeName || obj.Type() == nil {
+			continue
+		}
+		if ix.info != nil && ix.info.Broken[obj] {
 			ix.broken[obj.Type().Base()] = true
+		}
+		if v, ok := obj.Type().Base().(*types.VariantType); ok {
+			ix.shared[v] = check.VariantChecks(v.Decl)
 		}
 	}
 }

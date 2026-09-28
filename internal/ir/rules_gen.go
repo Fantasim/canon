@@ -20,7 +20,7 @@ func init() {
 	common := []genRule{
 		(*stage).checkFieldlessCaseFns, (*stage).checkOptionalElements,
 		(*stage).checkOptionalMapValues, (*stage).checkTableFields, (*stage).checkCaseFields, (*stage).checkRecordConstants,
-		(*stage).checkNeverDependents, (*stage).checkDefineBranches,
+		(*stage).checkNeverDependents, (*stage).checkDefineBranches, (*stage).checkVariantMembers,
 	}
 	goCode := append(slices.Clone(common), (*stage).checkForeignTables, (*stage).checkConstLiterals, (*stage).checkNegativeZero)
 	genRules[TargetGo][ModeBaked] = append(slices.Clone(goCode), (*stage).checkBakedLiterals, (*stage).checkForeignTableLookups,

@@ -1,13 +1,15 @@
 package i18n
 
 import (
+	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
 )
 
-// variantType adds the variant's own view texts and every case's keys (I18N.md §3.3).
+// variantType adds the variant's own view texts, its variant-level named checks and every case's keys (I18N.md §3.3).
 func (b *builder) variantType(v *types.VariantType, file *syntax.File) {
 	b.addPlain(join(v.Name, syntax.PropHelp), "", v.Doc)
+	b.checkEntries(v.Name, check.VariantChecks(v.Decl), file)
 	view := b.byT[v]
 	var sc *scanned
 	if view.decl != nil {

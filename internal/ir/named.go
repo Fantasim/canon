@@ -82,6 +82,7 @@ func (s *stage) variant(v *types.VariantType) *Variant {
 	var items []syntax.VariantItem
 	if v.Decl != nil {
 		s.decls[out] = s.site(v.Decl.Name, v.Decl.Name)
+		s.members[out] = s.variantMembers(s.decls[out].file, v.Decl.Items)
 		n := nameOverrides(v.Decl.Annotations)
 		out.Go, out.Cpp, out.TS = n.goName, n.cpp, n.ts
 		items = v.Decl.Items

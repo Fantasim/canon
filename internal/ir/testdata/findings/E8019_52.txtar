@@ -1,0 +1,33 @@
+EVALUATION.md §1 (stage E, decision 37), TYPES.md §12.1 (DECISIONS 226): a variant-level export fn
+is refused by a go emit writing the variant, at its name (VariantMethod); the plain method beside it
+is never emitted, so never refused.
+-- a/a.canon --
+package a
+
+/// A reward.
+variant Reward {
+  /// Some gold.
+  gold {
+    /// How much.
+    amount: Int
+  }
+  /// Nothing.
+  nothing
+
+  /// What it is worth.
+  export fn worth(self) -> Int { return base() }
+
+  fn base(self) -> Int {
+    return match self {
+      gold(g) => g.amount
+      nothing => 0
+    }
+  }
+}
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+error[E8019]  a/a.canon:14:13
+  emit go in baked mode cannot generate a variant-level method a generator must write
+
+1 error, 0 warnings in 1 package (…)

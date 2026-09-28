@@ -13,6 +13,7 @@ import (
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
+	"golang.org/x/tools/txtar"
 )
 
 const treeSource = `package teamboard
@@ -152,5 +153,20 @@ func TestFailWithoutValue(t *testing.T) {
 	got := tr.fx.bag.Findings()
 	if len(got) != 1 || got[0].Span.File != 0 || got[0].Path != "" {
 		t.Errorf("findings %+v", got)
+	}
+}
+
+// EVALUATION.md §8.1, TYPES.md §12.1: on a case value the variant-level checks run first, then the case's.
+func TestVariantLevelChecksFirst(t *testing.T) {
+	a, err := txtar.ParseFile("testdata/findings/E5001_2.txtar")
+	if err != nil {
+		t.Fatal(err)
+	}
+	fx := fromArchive(t, a)
+	variantLevelCase(fx)
+	fx.run()
+	spent, capped := fx.check("check spent"), fx.check("check capped")
+	if want := []*syntax.CheckDecl{spent, capped, spent}; !slices.Equal(fx.ev.calls, want) {
+		t.Errorf("runs %v, want spent, capped on gold, then spent on nothing", fx.ev.calls)
 	}
 }

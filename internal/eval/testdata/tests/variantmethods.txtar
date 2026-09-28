@@ -1,0 +1,98 @@
+TYPES.md §12.1 (DECISIONS 226), EVALUATION.md §2.2, §3.3, §10: a variant-level method runs with
+`self` the variant value, whatever case it holds: called on a variant value, on a case value, on a
+value narrowed by `is` or bound by `match`, and bare from a case method or another variant-level
+method; variant-level and case methods recurse into each other; `canon test` runs them.
+-- a/a.canon --
+package a
+
+local variant Reward {
+  item {
+    count: Int
+
+    fn label(self) -> String { return "item" }
+
+    fn describe(self) -> String { return label() + " worth " + String(worth()) }
+
+    fn down(self, n: Int) -> Int {
+      if n <= 0 { return 0 }
+      return 1 + steps(n - 1)
+    }
+  }
+  gold { amount: Int }
+  nothing
+
+  fn worth(self) -> Int {
+    return match self {
+      item(i) => i.count
+      gold(g) => g.amount
+      nothing => 0
+    }
+  }
+
+  fn doubled(self) -> Int { return worth() * 2 }
+
+  fn isGold(self) -> Bool { return self.kind == gold }
+
+  fn countOr(self, dflt: Int) -> Int {
+    if self is item { return self.count }
+    return dflt
+  }
+
+  fn steps(self, n: Int) -> Int {
+    return match self {
+      item(i) => i.down(n)
+      gold(g) => n
+      nothing => 0
+    }
+  }
+}
+
+local let empty: Reward = nothing
+
+test "variant-level methods" {
+  let r: Reward = gold { amount: 3 }
+  let it: Reward.item = item { count: 2 }
+  let held: Reward = item { count: 5 }
+  expect r.worth() == 3
+  expect r.doubled() == 6
+  expect r.isGold()
+  expect r.countOr(7) == 7
+  expect it.worth() == 2
+  expect it.isGold() == false
+  expect it.countOr(7) == 2
+  expect it.describe() == "item worth 2"
+  expect empty.worth() == 0
+  if held is item { expect held.worth() == 5 }
+  expect match held {
+    item(i) => i.doubled()
+    gold(g) => 0
+    nothing => 0
+  } == 10
+}
+
+test "variant-level and case methods recurse into each other" {
+  let it: Reward.item = item { count: 1 }
+  let held: Reward = it
+  expect it.steps(4) == 4
+  expect held.steps(3) == 3
+  expect it.down(2) == 2
+}
+-- outcomes.txt --
+a "variant-level methods": failed false, stopped false, broken false
+  expect line 51: passed true
+  expect line 52: passed true
+  expect line 53: passed true
+  expect line 54: passed true
+  expect line 55: passed true
+  expect line 56: passed true
+  expect line 57: passed true
+  expect line 58: passed true
+  expect line 59: passed true
+  expect line 60: passed true
+  expect line 61: passed true
+a "variant-level and case methods recurse into each other": failed false, stopped false, broken false
+  expect line 71: passed true
+  expect line 72: passed true
+  expect line 73: passed true
+
+0 errors, 0 warnings in 1 package (…)
