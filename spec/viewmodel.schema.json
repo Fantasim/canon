@@ -1287,10 +1287,26 @@
           ]
         },
         "min": {
-          "type": "number"
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          ]
         },
         "max": {
-          "type": "number"
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          ]
         },
         "minExclusive": {
           "const": true
@@ -2783,6 +2799,10 @@
             ]
           },
           "minItems": 1
+        },
+        "moreFrames": {
+          "type": "integer",
+          "minimum": 1
         },
         "reads": {
           "type": "array",
