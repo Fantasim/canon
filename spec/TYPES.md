@@ -1116,7 +1116,8 @@ EVALUATION.md §11 gives the declaration rules and their codes (`E19xx`). For ty
 - Giving it in a record literal is `E3312`. A loaded object with a key equal to its wire name
   is `E3312` (WIRE.md).
 - Reading it (`config.gen.apiKey`, or `apiKey` in the record body) is `E3313`, in any
-  expression, check, function or view.
+  expression, check, function or view, and as (part of) a type-function argument (`p: P(k)` with
+  `k` an input: a dependent type cannot be judged at build time, §11.6).
 - A record whose only fields are inputs still has a value: `gen: Gen = {}` is valid.
 
 ---
