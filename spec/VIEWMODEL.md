@@ -882,7 +882,8 @@ returned by `Project.ViewModel` (API.md R9), byte for byte the same.
   document (the layout of `JSON.stringify(vm, null, 2)`), ending with one LF.
 - **J2.** Member order: an object whose member names come from the program (qualified type names,
   value ids, field keys, shape keys, languages, text keys, unit and widget names, group ids, show
-  ids) has its members sorted by the **byte order** of the names. Every other object has its
+  ids, case names, method names, type-function parameter names, driver entry keys, asset roots;
+  the list is not exhaustive) has its members sorted by the **byte order** of the names. Every other object has its
   members in the order this section lists them.
 - **J3.** A member listed as optional is **omitted** when it has no value, is `false`, or is an
   empty array or object, unless marked "always present".

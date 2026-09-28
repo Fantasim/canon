@@ -1291,7 +1291,8 @@ The one gate, the same for every contributor (the repository is public) and in C
    is wired when the compiler can build, M1);
 5. **diagnostics**: `internal/diag/codes.go` equals what `diaggen` generates from
    `spec/ERRORS.md`, and the runtime helper texts use only the pairs of ERRORS.md §1.6 (target
-   `diag-check`, from M0, when `internal/diag` exists);
+   `diag-check`, from M0, when `internal/diag` exists); `api/vm/vm.gen.go` equals what
+   `api/vm/internal/vmgen` generates from `spec/viewmodel.schema.json` (target `vm-check`, M3);
 6. **audit**: the auditor checks its own code against its own baseline, then the repository:
    `cd tools/audit && go run . check --repo ../..`, which fails on any finding of an `enforce`
    rule and on any `ratchet` finding that is new or grew against the baseline (§12.3).
