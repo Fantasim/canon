@@ -22,6 +22,12 @@ const examplesDir = "../../examples"
 // the read roots to their fixtures, the written ones to out. Its builds run in Check mode.
 func openExamples(t *testing.T, out string) *build.Project {
 	t.Helper()
+	return openExamplesLayered(t, out, nil)
+}
+
+// openExamplesLayered is openExamples with layers active (EVALUATION.md §9.1).
+func openExamplesLayered(t *testing.T, out string, layers []string) *build.Project {
+	t.Helper()
 	dir, err := filepath.Abs(examplesDir)
 	if err != nil {
 		t.Fatal(err)
@@ -30,7 +36,7 @@ func openExamples(t *testing.T, out string) *build.Project {
 	for _, name := range []string{"source", "services", "sovcommon", "web", "parity", "generated"} {
 		roots[name] = filepath.ToSlash(filepath.Join(out, name))
 	}
-	p, err := build.Open(project.OS(), filepath.ToSlash(dir), build.Options{Roots: roots})
+	p, err := build.Open(project.OS(), filepath.ToSlash(dir), build.Options{Roots: roots, Layers: layers})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -96,10 +102,11 @@ func TestTeamboard(t *testing.T) {
 func TestAnalyzeMatchesBuild(t *testing.T) {
 	p := openExamples(t, t.TempDir())
 	sel := []string{"teamboard", "sovcommon..."}
-	a, err := p.Analyze(context.Background(), sel)
+	analyzed, err := p.Analyze(context.Background(), sel)
 	if err != nil {
 		t.Fatal(err)
 	}
+	a := analyzed.Result()
 	b, err := p.Build(context.Background(), build.BuildOptions{Packages: sel, Targets: goAndJSON, Check: true})
 	if err != nil {
 		t.Fatal(err)

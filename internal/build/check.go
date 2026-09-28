@@ -130,7 +130,11 @@ func digestData(name string, data []byte, err error) digest {
 
 // Check runs phases 1 to 7 on the selected packages and their imports (CLI.md §3.3, API.md R2).
 func (p *Project) Check(ctx context.Context, selectors []string) (*Result, error) {
-	return p.Analyze(ctx, selectors)
+	a, err := p.Analyze(ctx, selectors)
+	if err != nil {
+		return nil, err
+	}
+	return a.Result(), nil
 }
 
 // load reads a new snapshot: project.canon, then every source file, parsed.

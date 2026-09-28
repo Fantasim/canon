@@ -36,7 +36,7 @@ func TestConformance(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		checked, checkErr := p.Analyze(context.Background(), fields(c.Archive, selectFile))
+		checked, checkErr := p.Check(context.Background(), fields(c.Archive, selectFile))
 		if _, only := archived(c.Archive, checkOnly); only && checkErr == nil {
 			return []byte(render(t, checked.Findings))
 		}

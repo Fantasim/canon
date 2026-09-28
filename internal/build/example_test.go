@@ -13,6 +13,7 @@ import (
 	"github.com/fantasim/canonlang/internal/eval"
 	"github.com/fantasim/canonlang/internal/project"
 	"github.com/fantasim/canonlang/internal/syntax"
+	"github.com/fantasim/canonlang/internal/value"
 )
 
 // mapFS is a build's file system under "/": fstest.MapFS with absolute names.
@@ -77,6 +78,30 @@ func Example() {
 	// Output:
 	// [a] 1 1 1
 	// [b] 1 1 1
+}
+
+// Analyze keeps the checked program and the evaluator that forced it (§4.6-§4.8).
+func ExampleProject_Analyze() {
+	fsys := mapFS{
+		"law/project.canon": file("project acme {\n  canon: \"0.1\"\n}\n"),
+		"law/a/a.canon":     file("/// X.\npackage a\n\n/// X.\nlet x: Int = 1\n"),
+	}
+	p, err := build.Open(fsys, "/law", build.Options{})
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	a, err := p.Analyze(context.Background(), []string{"a"})
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(len(a.Program().Packages), a.Result().Summary.Errors)
+	x, ok := a.Force(eval.Root{Pkg: "a", Name: "x"})
+	fmt.Println(x.(*value.Int).V, ok)
+	// Output:
+	// 1 0
+	// 1 true
 }
 
 // A Checker replaces phase 2 over the files and bags of the selection and its imports (§4.7).

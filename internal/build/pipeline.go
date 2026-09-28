@@ -38,18 +38,6 @@ type run struct {
 	ir       []*ir.Package
 }
 
-// Analyze runs phases 1 to 7 and writes nothing: what canon check reports (CLI.md §3.3).
-func (p *Project) Analyze(ctx context.Context, selectors []string) (*Result, error) {
-	r, err := p.prepare(ctx, selectors)
-	if err != nil {
-		return nil, err
-	}
-	if err := r.analyze(ctx); err != nil {
-		return nil, err
-	}
-	return r.result(), nil
-}
-
 // prepare is phase 1: the snapshot parsed, the selection with its imports, the layers checked.
 func (p *Project) prepare(ctx context.Context, selectors []string) (*run, error) {
 	s, err := p.load(ctx)
