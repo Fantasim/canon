@@ -160,6 +160,7 @@ const (
 	KindVariable
 	KindVariant
 	KindVariantCase
+	KindVariantMethod
 	KindView
 	KindWidget
 )
@@ -279,6 +280,7 @@ var kindNames = [...]string{
 	"Variable",
 	"Variant",
 	"VariantCase",
+	"VariantMethod",
 	"View",
 	"Widget",
 }
@@ -378,6 +380,7 @@ var kindWords = [...]string{
 	"variable",
 	"variant",
 	"variant case",
+	"a method or check declared on a variant outside its cases",
 	"view",
 	"widget",
 }

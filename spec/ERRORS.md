@@ -193,6 +193,7 @@ wording is a variant, and a closed set of words is a `Kind`.
 | `Variable` | variable | `W1003`, `E1125` |
 | `Variant` | variant | `W1002`, `W1003`, `E1125`, `E1133`, `E1627` |
 | `VariantCase` | variant case | `E1118` |
+| `VariantMethod` | a method or check declared on a variant outside its cases | `E8019` |
 | `View` | view | `E1133` |
 | `Widget` | widget | `W1003`, `E1125`, `E1133`, `E1610` |
 
