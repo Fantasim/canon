@@ -976,7 +976,7 @@ Top level, every member always present except `studio`:
 | `optional` | `of` | |
 | `ref` | `collection` or `sibling`, `element`, `keyType`, `count`, `active` | below |
 | `union` | `of`, `literals` | `T \| "lit" …` |
-| `asset` | `root`, `ext` | `root` as written (`"@resource/Icon/Item"`), `ext` without dots |
+| `asset` | `root`, `ext` | `root` as its display path (WIRE.md §2.3: `"@resource/Icon/Item"`; an unrooted root resolved from its declaring file, project-relative), `ext` without dots |
 | `never` | | |
 | `dependent` | `fn`, `on` | an application of a type function (below) |
 | `any` | | `_`, only in widget parameter types (§12.9) |
@@ -1166,7 +1166,8 @@ Titles in rows are already disambiguated (S9).
 
 ### 12.9 `assets`, `units`, `widgets`, `studio`
 
-- `assets` maps each asset root used by the package's types (`"@resource/Icon/Item"`) to
+- `assets` maps each asset root used by the package's types, by its display path as in `asset.root`
+  (`"@resource/Icon/Item"`), to
   `{dir}`, the root's directory relative to the project directory, with `/` (an unrooted root
   resolves from the file that declares the asset type, as `check` does). Files are matched
   exactly and case-sensitively (DECISIONS 19). The studio lists `dir` for the file picker and reads
