@@ -14,8 +14,9 @@ pattern, the outermost of the chain, so a generated input loader accepted a valu
 
 ## Decision
 
-- `Pattern *regexp.Regexp` becomes `Patterns []*regexp.Regexp`: every pattern of the chain,
-  innermost first — declaration order, as eval checks at storage points. The order is not
+- `Pattern *regexp.Regexp` becomes `Patterns []*regexp.Regexp`: every distinct pattern of the
+  chain (a repeated pattern is kept once), innermost first in alias-chain order (not declaration
+  order: an outer alias may be declared above its inner one), as eval checks at storage points. The order is not
   observable in a loader (every pattern failure reads the same line); range and length checks
   run before the patterns.
 - The field is replaced, not doubled: a kept `Pattern` would duplicate one element or silently

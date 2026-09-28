@@ -1048,8 +1048,8 @@ const std::string* GetApiKey() const;       // before LoadInputs: canon::OnEvalE
   siblings ([§6.3](#63-the-rt-package)) and the C++ template of [§7.7](#77-runtime-inputs)
   implement it.
 - The field's own refinement is checked (EVALUATION.md §11.3): the implicit range of a sized type
-  (a `Duration` beyond ±`DurationLimit` is not a valid literal), ranges, length in bytes, then every pattern of its alias chain (TYPES.md §7.4), in declaration
-  order, innermost first, with search semantics (Go `regexp.MatchString`, C++ `MatchPattern`, §7.7; patterns are limited to the portable subset by
+  (a `Duration` beyond ±`DurationLimit` is not a valid literal), ranges, length in bytes, then every distinct pattern of its alias chain (TYPES.md §7.4; a repeated
+  pattern is kept once), innermost first (alias-chain order), with search semantics (Go `regexp.MatchString`, C++ `MatchPattern`, §7.7; patterns are limited to the portable subset by
   `E1904`). The C++ loader never uses `std::regex`: ir compiles the pattern to its Thompson
   automaton over code points (the states of Go's own compiled program, `regexp/syntax`
   `Simplify` then `Compile`, reachable from its start, captures and no-ops dropped), which the
@@ -2433,8 +2433,8 @@ replaces the caller's text, as every `Load` of §7.5 does).
 Only the helpers the package's inputs use are written, so the file stays warning-free under
 `-Wall` (§9): `EnvText` always; `IsDecDigit` and `AllDigits` for `Int`, `Float` and `Duration`;
 `DurationDigits` for `Duration`; `Parse<Kind>Literal` per input kind; `MatchPattern`, last, when a
-`String` input has a pattern. A patterned input's block declares one table per pattern of the field's alias chain, innermost
-first: `static constexpr uint32_t kPattern[]`, then `kPattern2[]`, `kPattern3[]` …, each the state count, one row `{op, out, arg, count}` per state (state 0 starts; op 0
+`String` input has a pattern. A patterned input's block declares one table per distinct pattern of the field's alias chain
+(a repeated pattern is kept once), innermost first (alias-chain order): `static constexpr uint32_t kPattern[]`, then `kPattern2[]`, `kPattern3[]` …, each the state count, one row `{op, out, arg, count}` per state (state 0 starts; op 0
 accepts; 1 continues at `out` and at `arg`; 2 continues at `out` where the position `arg` names
 holds, 1 the start of the text and 2 its end; 3 reads one code point within the `count` sorted
 pairs at `kPattern + arg` and continues at `out`), then the code point pairs, each distinct set
