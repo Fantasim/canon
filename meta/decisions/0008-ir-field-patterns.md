@@ -15,7 +15,9 @@ pattern, the outermost of the chain, so a generated input loader accepted a valu
 ## Decision
 
 - `Pattern *regexp.Regexp` becomes `Patterns []*regexp.Regexp`: every pattern of the chain,
-  innermost first — the order verify checks them and the order the aliases are declared.
+  innermost first — declaration order, as eval checks at storage points. The order is not
+  observable in a loader (every pattern failure reads the same line); range and length checks
+  run before the patterns.
 - The field is replaced, not doubled: a kept `Pattern` would duplicate one element or silently
   bring the bug back for a consumer reading only it.
 - Loaders check the patterns in order; the first failure refuses the value with the one line
@@ -25,6 +27,6 @@ pattern, the outermost of the chain, so a generated input loader accepted a valu
 
 ## Consequences
 
-CODEGEN §5.12 and §7.7 are synced; DECISIONS gains the item. Any future consumer of `ir.Field`
+CODEGEN §5.12 and §7.7 are synced; DECISIONS 225. Any future consumer of `ir.Field`
 must walk the list. Stacked patterns in the view model stay the outermost (VIEWMODEL §12.3 has
 one `pattern`; the studio's check is advisory, log 2026-09-28 "views V2 (U10 report, calls)").

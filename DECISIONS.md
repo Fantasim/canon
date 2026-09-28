@@ -1926,6 +1926,13 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      (public types, `export fn` and method signatures, selected public lets), except as a `ref`
      target (held by key); a non-exported public `fn` or a JSON-only value may use local types.
 
+225. **Every pattern of an input's alias chain is checked at load (`ir.Field.Patterns`, frozen
+     contract under IMPLEMENTATION-PLAN §4's review rule; ADR-0008).** TYPES §7.4 checks both
+     patterns of a chain; the loaders checked only the outermost. `ir.Field.Pattern` becomes
+     `Patterns` (innermost first); C++ tables `kPattern`, `kPattern2`, …; Go
+     `input_<T>_<store>_Pattern`, `_Pattern2`, …; range and length before the patterns; one line
+     per variable. CODEGEN §5.12/§7.7 synced.
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.

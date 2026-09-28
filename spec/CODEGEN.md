@@ -1048,12 +1048,13 @@ const std::string* GetApiKey() const;       // before LoadInputs: canon::OnEvalE
   siblings ([§6.3](#63-the-rt-package)) and the C++ template of [§7.7](#77-runtime-inputs)
   implement it.
 - The field's own refinement is checked (EVALUATION.md §11.3): the implicit range of a sized type
-  (a `Duration` beyond ±`DurationLimit` is not a valid literal), ranges, length in bytes, and pattern with search semantics (Go
-  `regexp.MatchString`, C++ `MatchPattern`, §7.7; patterns are limited to the portable subset by
+  (a `Duration` beyond ±`DurationLimit` is not a valid literal), ranges, length in bytes, then every pattern of its alias chain (TYPES.md §7.4), in declaration
+  order, innermost first, with search semantics (Go `regexp.MatchString`, C++ `MatchPattern`, §7.7; patterns are limited to the portable subset by
   `E1904`). The C++ loader never uses `std::regex`: ir compiles the pattern to its Thompson
   automaton over code points (the states of Go's own compiled program, `regexp/syntax`
   `Simplify` then `Compile`, reachable from its start, captures and no-ops dropped), which the
-  `.gen.cpp` holds as a constant table `kPattern` in the variable's block; `MatchPattern` searches
+  `.gen.cpp` holds as a constant table `kPattern` (`kPattern2`, … for further patterns) in the
+  variable's block; `MatchPattern` searches
   it with one set of states per position, iteratively, in memory proportional to the table and
   time linear in the text, decoding UTF-8 as Go does, so it accepts exactly the texts
   `regexp.MatchString` accepts, at any length. Go's `regexp` size limits, which `check` applies
@@ -2432,15 +2433,17 @@ replaces the caller's text, as every `Load` of §7.5 does).
 Only the helpers the package's inputs use are written, so the file stays warning-free under
 `-Wall` (§9): `EnvText` always; `IsDecDigit` and `AllDigits` for `Int`, `Float` and `Duration`;
 `DurationDigits` for `Duration`; `Parse<Kind>Literal` per input kind; `MatchPattern`, last, when a
-`String` input has a pattern. A patterned input's block declares `static constexpr uint32_t
-kPattern[]`: the state count, one row `{op, out, arg, count}` per state (state 0 starts; op 0
+`String` input has a pattern. A patterned input's block declares one table per pattern of the field's alias chain, innermost
+first: `static constexpr uint32_t kPattern[]`, then `kPattern2[]`, `kPattern3[]` …, each the state count, one row `{op, out, arg, count}` per state (state 0 starts; op 0
 accepts; 1 continues at `out` and at `arg`; 2 continues at `out` where the position `arg` names
 holds, 1 the start of the text and 2 its end; 3 reads one code point within the `count` sorted
 pairs at `kPattern + arg` and continues at `out`), then the code point pairs, each distinct set
-once in first-use order; the check is `!MatchPattern(kPattern, val)`. The loaded values live in
+once in first-use order; the checks run in that order after the range and length checks,
+`!MatchPattern(kPattern, val)` first, and the first that fails gives the variable's one line. The loaded values live in
 slots `detail::<P>Inputs::<Class>`, with the flag `detail::<P>InputsLoaded` beside them; Go's
 counterparts are the package variables `input_<T>_<store>`, `input_<T>_<store>_OK` and
-`input_<T>_<store>_Pattern`, and the flag `inputsLoaded_`. All these names come from the name
+`input_<T>_<store>_Pattern` (then `_Pattern2`, `_Pattern3` …, one per pattern, same order), and
+the flag `inputsLoaded_`. All these names come from the name
 plan (§3.5).
 
 ```cpp
