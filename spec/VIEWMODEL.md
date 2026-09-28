@@ -904,8 +904,9 @@ returned by `Project.ViewModel` (API.md R9), byte for byte the same.
   empty array or object, unless marked "always present".
 - **J4.** The view model is produced even when the package has errors (VM-07, API.md R9, B1). A
   declaration that is broken (TYPES.md §1), or that sits in a file that does not parse, is left out
-  of `types`, `views`, `values` and the catalogue (a `view` holding an error is broken: it is
-  left out of `views` and its templates are not rendered); a value that failed to evaluate is listed with
+  of `types`, `views`, `values` and the catalogue (a `view` holding an error, reported in any
+  package, is broken: it is left out of `views` and its templates are not rendered in any model; a
+  broken `view V.c` removes only itself, the case falling back to its default layout, D5); a value that failed to evaluate is listed with
   `failed: true` and contributes no usage and no index rows. Every finding is in `findings`.
 - **J5.** Determinism: the document depends only on the sources, the loaded files, the layers and
   the compiler version (not on `Options.Lang`, time, or the machine).
