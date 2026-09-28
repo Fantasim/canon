@@ -1,0 +1,30 @@
+TYPES.md §13.4, WIRE.md §2.2 rule 1: an unrooted asset root starts at the directory of the file
+declaring it: items/icons/a.png is found, icons/b.png at the project root is not, and the
+message prints the root's display path, project-relative (WIRE.md §2.3, ERRORS.md Path).
+-- items/item.canon --
+/// Items.
+package items
+
+/// Item.
+record Item {
+  /// Icon.
+  icon: asset("icons/", ext: [png])
+}
+
+/// Items.
+let items: stable table Item = {
+  sword { icon: "a.png" }
+  shield { icon: "b.png" }
+}
+-- items/icons/a.png --
+-- icons/b.png --
+-- project.canon --
+project demo {
+  canon: "0.1"
+}
+-- findings.txt --
+error[E3701]  items/item.canon:13:18
+  items.shield.icon: asset b.png not found under items/icons/
+  expected by items/item.canon:7 (icon: asset("icons/", ext: [png]))
+
+1 error, 0 warnings in 1 package (…)

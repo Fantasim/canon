@@ -1,0 +1,32 @@
+WIRE.md §2.2 rule 1, TYPES.md §13.4: a rooted asset root starts at its root's directory, wherever
+the declaring file is; items/art/icons/b.png is not consulted.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    art: "art"
+  }
+}
+-- items/item.canon --
+/// Items.
+package items
+
+/// Item.
+record Item {
+  /// Icon.
+  icon: asset("@art/icons", ext: [png])
+}
+
+/// Items.
+let items: stable table Item = {
+  sword { icon: "a.png" }
+  shield { icon: "b.png" }
+}
+-- art/icons/a.png --
+-- items/art/icons/b.png --
+-- build.txt --
+error[E3701]  items/item.canon:13:18
+  items.shield.icon: asset b.png not found under @art/icons
+  expected by items/item.canon:7 (icon: asset("@art/icons", ext: [png]))
+
+1 error, 0 warnings in 1 package (…)

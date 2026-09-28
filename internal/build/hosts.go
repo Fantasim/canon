@@ -260,13 +260,14 @@ type assets struct {
 	dirs   map[string][]string
 }
 
-// Exists resolves root+"/"+name: root is an AssetSpec.Root, already carrying its own "@" (TYPES.md §13.4).
-func (a *assets) Exists(root, name string) bool {
-	p, ok := a.layout.Resolve(root+pathSep+name, "", source.Span{}, diag.NewBag(nil, ""))
-	if !ok || p.Dir {
-		return false
+// Exists resolves root (its own "@" kept) from its declaring file's directory, then name under it (WIRE.md §2.2).
+func (a *assets) Exists(root, from, name string) (string, bool) {
+	dir, ok := a.layout.Resolve(root, from, source.Span{}, diag.NewBag(nil, ""))
+	if !ok {
+		return root, false
 	}
-	return slices.Contains(a.files(path.Dir(p.Abs)), path.Base(p.Abs))
+	p := path.Join(dir.Abs, name)
+	return dir.Display, slices.Contains(a.files(path.Dir(p)), path.Base(p))
 }
 
 // files is the names of the files of dir, none when it does not exist.

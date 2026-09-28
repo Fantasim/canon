@@ -1,0 +1,31 @@
+WIRE.md §2.2 rule 1, TYPES.md §13.4: an unrooted asset root declared in package lib starts at
+lib's declaring file, also for a value of package items: lib/icons/a.png is found, and
+items/icons/b.png is not consulted.
+-- select --
+items
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- lib/lib.canon --
+/// Lib.
+package lib
+
+/// Icon.
+type Icon = asset("icons", ext: [png])
+-- items/item.canon --
+/// Items.
+package items
+
+import lib
+
+/// Icons.
+let icons: [lib.Icon] = ["a.png", "b.png"]
+-- lib/icons/a.png --
+-- items/icons/b.png --
+-- build.txt --
+error[E3701]  items/item.canon:7:35
+  icons[1]: asset b.png not found under lib/icons
+  expected by lib/lib.canon:5 (asset("icons", ext: [png]))
+
+1 error, 0 warnings in 1 package (…)

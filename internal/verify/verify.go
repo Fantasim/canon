@@ -30,7 +30,8 @@ type dependents interface {
 
 // Assets tells whether a file exists under an asset root, matched byte for byte (TYPES.md §13.4).
 type Assets interface {
-	Exists(root, path string) bool
+	// Exists looks name up under root, written in a file of directory from (WIRE.md §2.2, §2.3).
+	Exists(root, from, name string) (display string, found bool)
 }
 
 // Verifier runs stage B (EVALUATION.md §5), from any goroutine; eval.Host.Verify uses Check.

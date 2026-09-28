@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"path"
+	"slices"
 	"strings"
 	"testing"
 
@@ -56,16 +57,11 @@ func (e *evaluator) Where(context.Context, *types.Predicate, value.Value) (bool,
 	return e.holds, !e.hard
 }
 
-// assets is a fixture listing of asset roots: root -> exact paths.
+// assets is a fixture listing of rooted asset roots, displayed as written: root -> exact paths.
 type assets map[string][]string
 
-func (a assets) Exists(root, p string) bool {
-	for _, f := range a[root] {
-		if f == p {
-			return true
-		}
-	}
-	return false
+func (a assets) Exists(root, _, p string) (string, bool) {
+	return root, slices.Contains(a[root], p)
 }
 
 // fixture is one package of one parsed .canon file, its values built by hand.

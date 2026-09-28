@@ -1,6 +1,8 @@
 package verify
 
 import (
+	"path"
+
 	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/eval"
@@ -15,16 +17,17 @@ type written struct {
 	decl, typ, arg source.Span
 }
 
-// sources locates what a finding relates: the written types Info.TypeExprs resolves, and the
-// declarations of enums and variants.
+// sources locates what a finding relates: the written types Info.TypeExprs resolves, the
+// declarations of enums and variants, and the directory each asset root is written in.
 type sources struct {
-	types map[types.Type]written
-	decls map[syntax.Node]*syntax.File
+	types     map[types.Type]written
+	decls     map[syntax.Node]*syntax.File
+	assetDirs map[*types.AssetSpec]string // the declaring file's directory, project-relative (WIRE.md §2.2 rule 1)
 }
 
 // indexSources inverts Info.TypeExprs for the type pointers written at one place.
 func indexSources(prog *check.Program) *sources {
-	s := &sources{types: map[types.Type]written{}, decls: map[syntax.Node]*syntax.File{}}
+	s := &sources{types: map[types.Type]written{}, decls: map[syntax.Node]*syntax.File{}, assetDirs: map[*types.AssetSpec]string{}}
 	if prog == nil || prog.Info == nil {
 		return s
 	}
@@ -47,6 +50,9 @@ func (s *sources) add(f *syntax.File, info *check.Info) {
 		if name, t := declared(n); t != nil {
 			named[t] = name
 		}
+		if a, isAsset := n.(*syntax.AssetType); isAsset {
+			s.addAsset(f, info.TypeExprs[a])
+		}
 		t, isType := n.(syntax.Type)
 		typ := info.TypeExprs[t]
 		if _, seen := s.types[typ]; isType && writtenOnce(typ) && !seen {
@@ -54,6 +60,14 @@ func (s *sources) add(f *syntax.File, info *check.Info) {
 		}
 		return true
 	})
+}
+
+// addAsset records the directory of the file an asset root is written in; a broken asset type
+// is String, with no root.
+func (s *sources) addAsset(f *syntax.File, t types.Type) {
+	if r, ok := t.(*types.Refined); ok && r.Asset != nil {
+		s.assetDirs[r.Asset] = path.Dir(f.Src.Path)
+	}
 }
 
 // writtenOnce: a type the checker builds where it is written, not a declaration it interns.

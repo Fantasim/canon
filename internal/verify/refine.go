@@ -121,12 +121,22 @@ func (w *walker) asset(v value.Value, r *types.Refined, at *Path) {
 		b = diag.E3703.At(site.Span, s.V)
 	case !slices.Contains(a.Exts, extension(s.V)):
 		b = diag.E3702.At(site.Span, s.V, a.Exts)
-	case w.assets == nil || !w.assets.Exists(a.Root, s.V):
-		b = diag.E3701.At(site.Span, s.V, a.Root)
 	default:
-		return
+		display, found := w.findAsset(a, s.V)
+		if found {
+			return
+		}
+		b = diag.E3701.At(site.Span, s.V, display)
 	}
 	w.flag(site, w.src.related(b, r), v, at)
+}
+
+// findAsset looks name up under a's root, from the file declaring it (WIRE.md §2.2 rule 1, §2.3).
+func (w *walker) findAsset(a *types.AssetSpec, name string) (display string, found bool) {
+	if w.assets == nil {
+		return a.Root, false
+	}
+	return w.assets.Exists(a.Root, w.src.assetDirs[a], name)
 }
 
 // cleanPath: `/` separators, no empty, `.` or `..` segment, no leading `/`, no `\`.
