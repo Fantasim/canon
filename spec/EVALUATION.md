@@ -70,7 +70,9 @@ This replaces SPEC §11.2.
 
 Values of imported packages that nothing reads are not evaluated; phase 8 evaluates, on demand,
 the values a view model reads that phases 3–7 did not (their counts, VIEWMODEL.md C3/J12), and
-reports nothing from them. `canon test` forces only what
+reports no finding from them; it spends no budget, so it runs after `E4401` too (§12.2 governs
+budgeted runs), and an internal error or an unsupported load met there still fails the build
+(DECISIONS 195, 196). `canon test` forces only what
 the tests read (§10).
 
 ### 2.2 Order of evaluation inside an expression
