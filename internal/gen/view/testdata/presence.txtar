@@ -1,0 +1,94 @@
+VIEWMODEL.md J3: an absent optional member (params, required=false) next to an "always present"
+one kept even empty (fields, wire), an empty non-nil slice staying present (fields: []), a
+pointer-to-zero member staying present (select: "", signed: false, missing: 0, code: 0), and the
+J9 `{"text": …}` object form nested at depth >= 3.
+-- input.json --
+{
+  "types": {
+    "pkg.Empty": {"kind": "record", "name": "Empty", "fields": []},
+    "pkg.T": {"kind": "record", "name": "T", "fields": [
+      {
+        "name": "f", "type": {"kind": "int", "bits": 8, "signed": false}, "required": false,
+        "help": {"text": "F help"}, "wire": {"name": "f"}
+      }
+    ]},
+    "pkg.E": {"kind": "enum", "name": "E", "members": [
+      {"name": "A", "wire": 0, "index": 0, "code": 0, "label": "pkg:E.A"}
+    ]},
+    "pkg.F": {"kind": "typeFunction", "name": "F", "params": [], "select": "", "branches": [], "drivers": {}}
+  },
+  "i18n": {"source": "en", "languages": {"fr": {"files": [], "missing": 0, "texts": {}}}}
+}
+-- want --
+{
+  "$schema": "",
+  "package": "",
+  "language": "",
+  "requires": [],
+  "types": {
+    "pkg.E": {
+      "kind": "enum",
+      "name": "E",
+      "members": [
+        {
+          "name": "A",
+          "wire": 0,
+          "index": 0,
+          "code": 0,
+          "label": "pkg:E.A"
+        }
+      ]
+    },
+    "pkg.Empty": {
+      "kind": "record",
+      "name": "Empty",
+      "fields": []
+    },
+    "pkg.F": {
+      "kind": "typeFunction",
+      "name": "F",
+      "params": [],
+      "select": "",
+      "branches": [],
+      "drivers": {}
+    },
+    "pkg.T": {
+      "kind": "record",
+      "name": "T",
+      "fields": [
+        {
+          "name": "f",
+          "type": {
+            "kind": "int",
+            "bits": 8,
+            "signed": false
+          },
+          "help": {
+            "text": "F help"
+          },
+          "wire": {
+            "name": "f"
+          }
+        }
+      ]
+    }
+  },
+  "views": {},
+  "values": {},
+  "usage": {},
+  "search": {},
+  "assets": {},
+  "units": {},
+  "widgets": {},
+  "i18n": {
+    "source": "en",
+    "languages": {
+      "fr": {
+        "files": [],
+        "missing": 0,
+        "texts": {}
+      }
+    }
+  },
+  "findings": []
+}

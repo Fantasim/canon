@@ -1,0 +1,78 @@
+VIEWMODEL.md J10: a decimal-string vm.Number (Control.min/max) and a vm.Scalar wire code/text
+(Member.wire), both beyond or clear of ±(2^53-1).
+-- input.json --
+{
+  "values": {
+    "pkg:v": {
+      "name": "v", "order": 0, "type": {"kind": "bool"}, "label": "pkg:v",
+      "control": {"kind": "number", "min": "-9223372036854775808", "max": "18446744073709551615"},
+      "editable": "none", "sources": {"files": []}
+    }
+  },
+  "types": {
+    "pkg.E": {
+      "kind": "enum", "name": "E",
+      "members": [
+        {"name": "A", "wire": 5, "index": 0, "label": "pkg:E.A"},
+        {"name": "B", "wire": "BEE", "index": 1, "label": "pkg:E.B"}
+      ]
+    }
+  }
+}
+-- want --
+{
+  "$schema": "",
+  "package": "",
+  "language": "",
+  "requires": [],
+  "types": {
+    "pkg.E": {
+      "kind": "enum",
+      "name": "E",
+      "members": [
+        {
+          "name": "A",
+          "wire": 5,
+          "index": 0,
+          "label": "pkg:E.A"
+        },
+        {
+          "name": "B",
+          "wire": "BEE",
+          "index": 1,
+          "label": "pkg:E.B"
+        }
+      ]
+    }
+  },
+  "views": {},
+  "values": {
+    "pkg:v": {
+      "name": "v",
+      "order": 0,
+      "type": {
+        "kind": "bool"
+      },
+      "label": "pkg:v",
+      "control": {
+        "kind": "number",
+        "min": "-9223372036854775808",
+        "max": "18446744073709551615"
+      },
+      "editable": "none",
+      "sources": {
+        "files": []
+      }
+    }
+  },
+  "usage": {},
+  "search": {},
+  "assets": {},
+  "units": {},
+  "widgets": {},
+  "i18n": {
+    "source": "",
+    "languages": {}
+  },
+  "findings": []
+}

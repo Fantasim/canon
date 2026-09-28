@@ -1,0 +1,52 @@
+VIEWMODEL.md J2: a program-named object (types) sorted by the byte order of its keys, including
+a non-ASCII one.
+-- input.json --
+{
+  "types": {
+    "z.T": {"kind": "record", "name": "T", "fields": []},
+    "Z.T": {"kind": "record", "name": "T", "fields": []},
+    "é.T": {"kind": "record", "name": "T", "fields": []},
+    "a.T": {"kind": "record", "name": "T", "fields": []}
+  }
+}
+-- want --
+{
+  "$schema": "",
+  "package": "",
+  "language": "",
+  "requires": [],
+  "types": {
+    "Z.T": {
+      "kind": "record",
+      "name": "T",
+      "fields": []
+    },
+    "a.T": {
+      "kind": "record",
+      "name": "T",
+      "fields": []
+    },
+    "z.T": {
+      "kind": "record",
+      "name": "T",
+      "fields": []
+    },
+    "é.T": {
+      "kind": "record",
+      "name": "T",
+      "fields": []
+    }
+  },
+  "views": {},
+  "values": {},
+  "usage": {},
+  "search": {},
+  "assets": {},
+  "units": {},
+  "widgets": {},
+  "i18n": {
+    "source": "",
+    "languages": {}
+  },
+  "findings": []
+}

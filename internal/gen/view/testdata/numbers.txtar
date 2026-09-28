@@ -1,0 +1,144 @@
+WIRE.md 7.2's canonical numbers, through a Field.Default (VIEWMODEL.md J10, RawMessage), pass
+through unchanged: Write validates, it never reformats (a refused, non-canonical text is
+TestSentinels' testdata, not this golden's).
+-- input.json --
+{"types":{"pkg.T":{"kind":"record","name":"T","fields":[
+{"name":"a","type":{"kind":"int","bits":64,"signed":true},"default":0,"wire":{"name":"a"}},
+{"name":"b","type":{"kind":"int","bits":64,"signed":true},"default":-2500,"wire":{"name":"b"}},
+{"name":"c","type":{"kind":"float","bits":64},"default":0.5,"wire":{"name":"c"}},
+{"name":"d","type":{"kind":"float","bits":64},"default":1e-7,"wire":{"name":"d"}},
+{"name":"e","type":{"kind":"float","bits":64},"default":1e+21,"wire":{"name":"e"}},
+{"name":"f","type":{"kind":"float","bits":64},"default":1e+300,"wire":{"name":"f"}},
+{"name":"g","type":{"kind":"int","bits":64,"signed":true},"default":"9007199254740993","wire":{"name":"g"}},
+{"name":"h","type":{"kind":"float","bits":64},"default":9007199254740994,"wire":{"name":"h"}},
+{"name":"i","type":{"kind":"float","bits":64},"default":100000000000000000000,"wire":{"name":"i"}}
+]}}}
+-- want --
+{
+  "$schema": "",
+  "package": "",
+  "language": "",
+  "requires": [],
+  "types": {
+    "pkg.T": {
+      "kind": "record",
+      "name": "T",
+      "fields": [
+        {
+          "name": "a",
+          "type": {
+            "kind": "int",
+            "bits": 64,
+            "signed": true
+          },
+          "default": 0,
+          "wire": {
+            "name": "a"
+          }
+        },
+        {
+          "name": "b",
+          "type": {
+            "kind": "int",
+            "bits": 64,
+            "signed": true
+          },
+          "default": -2500,
+          "wire": {
+            "name": "b"
+          }
+        },
+        {
+          "name": "c",
+          "type": {
+            "kind": "float",
+            "bits": 64
+          },
+          "default": 0.5,
+          "wire": {
+            "name": "c"
+          }
+        },
+        {
+          "name": "d",
+          "type": {
+            "kind": "float",
+            "bits": 64
+          },
+          "default": 1e-7,
+          "wire": {
+            "name": "d"
+          }
+        },
+        {
+          "name": "e",
+          "type": {
+            "kind": "float",
+            "bits": 64
+          },
+          "default": 1e+21,
+          "wire": {
+            "name": "e"
+          }
+        },
+        {
+          "name": "f",
+          "type": {
+            "kind": "float",
+            "bits": 64
+          },
+          "default": 1e+300,
+          "wire": {
+            "name": "f"
+          }
+        },
+        {
+          "name": "g",
+          "type": {
+            "kind": "int",
+            "bits": 64,
+            "signed": true
+          },
+          "default": "9007199254740993",
+          "wire": {
+            "name": "g"
+          }
+        },
+        {
+          "name": "h",
+          "type": {
+            "kind": "float",
+            "bits": 64
+          },
+          "default": 9007199254740994,
+          "wire": {
+            "name": "h"
+          }
+        },
+        {
+          "name": "i",
+          "type": {
+            "kind": "float",
+            "bits": 64
+          },
+          "default": 100000000000000000000,
+          "wire": {
+            "name": "i"
+          }
+        }
+      ]
+    }
+  },
+  "views": {},
+  "values": {},
+  "usage": {},
+  "search": {},
+  "assets": {},
+  "units": {},
+  "widgets": {},
+  "i18n": {
+    "source": "",
+    "languages": {}
+  },
+  "findings": []
+}

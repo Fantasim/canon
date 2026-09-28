@@ -1,0 +1,73 @@
+VIEWMODEL.md §12.3 (a `union` type expression nesting `of`) and J10 (a variant-shaped default's
+`$case` first, then its fields in declaration order, a nested array and object kept as written),
+re-emitted from json.RawMessage.
+-- input.json --
+{
+  "types": {
+    "pkg.T": {
+      "kind": "record", "name": "T",
+      "fields": [
+        {
+          "name": "u",
+          "type": {"kind": "union", "of": {"kind": "string"}, "literals": ["a", "b"]},
+          "default": {"$case": "A", "x": 1, "y": [1, 2, {"z": 3}]},
+          "wire": {"name": "u"}
+        }
+      ]
+    }
+  }
+}
+-- want --
+{
+  "$schema": "",
+  "package": "",
+  "language": "",
+  "requires": [],
+  "types": {
+    "pkg.T": {
+      "kind": "record",
+      "name": "T",
+      "fields": [
+        {
+          "name": "u",
+          "type": {
+            "kind": "union",
+            "of": {
+              "kind": "string"
+            },
+            "literals": [
+              "a",
+              "b"
+            ]
+          },
+          "default": {
+            "$case": "A",
+            "x": 1,
+            "y": [
+              1,
+              2,
+              {
+                "z": 3
+              }
+            ]
+          },
+          "wire": {
+            "name": "u"
+          }
+        }
+      ]
+    }
+  },
+  "views": {},
+  "values": {},
+  "usage": {},
+  "search": {},
+  "assets": {},
+  "units": {},
+  "widgets": {},
+  "i18n": {
+    "source": "",
+    "languages": {}
+  },
+  "findings": []
+}

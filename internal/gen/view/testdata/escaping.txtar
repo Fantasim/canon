@@ -1,0 +1,30 @@
+WIRE.md §7.3: Finding.Message carries every escape the table names, plus the raw ones.
+-- input.json --
+{"findings":[{"severity":"error","code":"X","package":"p","message":"a\té/\"\u001b<>&  "}]}
+-- want --
+{
+  "$schema": "",
+  "package": "",
+  "language": "",
+  "requires": [],
+  "types": {},
+  "views": {},
+  "values": {},
+  "usage": {},
+  "search": {},
+  "assets": {},
+  "units": {},
+  "widgets": {},
+  "i18n": {
+    "source": "",
+    "languages": {}
+  },
+  "findings": [
+    {
+      "severity": "error",
+      "code": "X",
+      "package": "p",
+      "message": "a\té/\"\u001b<>&  "
+    }
+  ]
+}
