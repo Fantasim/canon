@@ -323,7 +323,8 @@ goldens (`expected/findings.txt`) and every tool agree byte for byte:
   an annotation or a refinement. A second location that is not an expectation (the first of two duplicates)
   goes into the message (`… (first at <file>:<line>)`), never into `Related`.
 - **F13.** One line per `Stack` frame, innermost first: `  in <fn> (<file>:<line>)`; when frames
-  were dropped, one more line `  (<n> more frames)`.
+  were dropped, one more line `  (<n> more frames)`. `<fn>` is `f` for a function, `T.m` for a record
+  or variant-level method, `V.c.m` for a case method.
 - **F14.** Findings are separated by one blank line. After the last finding comes one blank line
   and the summary line; a run without findings prints the summary line alone.
 - **F15.** Summary: `<E> errors, <W> warnings in <P> packages (<duration>)`, where each count is
