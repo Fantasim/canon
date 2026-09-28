@@ -415,7 +415,7 @@ Methods, all cheap, never re-evaluating:
 | `Len() int` | elements of a list, keyed list, table or map; fields of a record, or of a variant's current case; 0 otherwise |
 | `Children() []*Value` | fields in declaration order (absent optional fields included, as `none`), elements in order, map entries in insertion order |
 | `Child(seg string) (*Value, error)` | one child by a path segment (`.f`, `[k]`, `[#n]`) |
-| `JSON() []byte` | the wire form (WIRE.md), exactly as `emit json` would write it inside `value` |
+| `JSON() []byte` | the wire form (WIRE.md §5), compact: the canonical bytes of WIRE.md §7.1–§7.3 without §7.4's layout (`nil` for a value with no wire form: a pair, a range) |
 
 - **R4.** A `*Value` holds its snapshot: it stays valid and unchanged after later edits.
 - **R5.** `Value` on a path that does not exist is `ErrNoPath`; a syntax error is `ErrBadPath`;
