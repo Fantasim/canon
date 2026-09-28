@@ -22,8 +22,7 @@ var (
 	seedShapes = []string{`%s%s`, `(?:%s|%s)`, `(%s)*%s`, `^%s%s`, `%s%s$`, `(?:%s)+?%s`, `(?:%s){0,2}%s`, `%s?%s`, `(?:%s|)%s`}
 )
 
-// seededPatterns are n RE2 patterns over §11.3's atoms (a bare quantified anchor, which E1904
-// refuses, included: the IR is built without check), the same on every run.
+// seededPatterns are n seeded RE2 patterns over §11.3's atoms, bare quantified anchors included.
 func seededPatterns(n int) []string {
 	r := rand.New(rand.NewPCG(20260928, 7))
 	out := make([]string, n)
