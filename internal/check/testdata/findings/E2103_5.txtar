@@ -1,0 +1,64 @@
+TYPES.md §10.2, §1: a ref that resolves to nothing reports no cycle, so a let inferred while it resolves keeps every independent finding of its initializer, exactly as its annotated twin does: an unknown name (E2102) or a mismatch (E3007) beside a read of the ref in error.
+-- a/a.canon --
+package a
+
+/// A section.
+local record Section {
+  /// A number.
+  n: Int
+}
+
+/// A holder.
+local record Holder {
+  /// Its sections.
+  s: [ref Section]
+}
+
+local let h: Holder = { s: [] }
+
+local let x1 = h.s[0].n + nosuch1
+local let x2 = nosuch2 + h.s[0].n
+local let x3 = h.s[0].n + (1 + "a")
+local let x4 = [h.s[0].n, nosuch4]
+local let x5 = h.s.map(q => q.n + nosuch5)
+
+local let y1: Int = h.s[0].n + nosuch6
+local let y2: Int = nosuch7 + h.s[0].n
+local let y3: Int = h.s[0].n + (1 + "a")
+local let y4: [Int] = [h.s[0].n, nosuch8]
+local let y5: [Int] = h.s.map(q => q.n + nosuch9)
+-- findings.txt --
+error[E2103]  a/a.canon:12:11
+  ref Section: there is no collection of Section; write ref <collection name>
+
+error[E2102]  a/a.canon:17:27
+  unknown name nosuch1
+
+error[E2102]  a/a.canon:18:16
+  unknown name nosuch2
+
+error[E3007]  a/a.canon:19:28
+  operator + is not defined for Int and String
+
+error[E2102]  a/a.canon:20:27
+  unknown name nosuch4
+
+error[E2102]  a/a.canon:21:35
+  unknown name nosuch5
+
+error[E2102]  a/a.canon:23:32
+  unknown name nosuch6
+
+error[E2102]  a/a.canon:24:21
+  unknown name nosuch7
+
+error[E3007]  a/a.canon:25:33
+  operator + is not defined for Int and String
+
+error[E2102]  a/a.canon:26:34
+  unknown name nosuch8
+
+error[E2102]  a/a.canon:27:42
+  unknown name nosuch9
+
+11 errors, 0 warnings in 1 package (…)

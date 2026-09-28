@@ -1,0 +1,28 @@
+TYPES.md §10.2, §3.2: only the let whose own inference reads the in-flight target is E3008; a let that depends on it is broken without a finding, whatever the order (x read before a, and b read after c: the same findings).
+-- a/a.canon --
+package a
+
+/// A status.
+local record Status {
+  /// A number.
+  n: Int
+  /// The statuses reachable next.
+  next: [ref Status]
+}
+
+local let statuses: table Status = {
+  open { n: 1, next: [open] }
+}
+
+local let x = statuses.open.next[0].n
+local let a = x + 1
+local let c = b + 1
+local let b = statuses.open.next[0].n
+-- findings.txt --
+error[E3008]  a/a.canon:15:11
+  cannot infer the type of this expression; add a type
+
+error[E3008]  a/a.canon:18:11
+  cannot infer the type of this expression; add a type
+
+2 errors, 0 warnings in 1 package (…)

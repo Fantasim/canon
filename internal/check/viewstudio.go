@@ -16,6 +16,15 @@ func (c *checker) studioPkg() *pkgState {
 // studioMember is the member name of the studio package's enum enumName (`Menu`, `Icon`,
 // `Tone`), nil when there is none: E1610 is views'.
 func (c *checker) studioMember(enumName, name string) *object {
+	e := c.studioEnum(enumName)
+	if e == nil {
+		return nil
+	}
+	return c.memberObject(e, name)
+}
+
+// studioEnum is the studio package's enum enumName, nil when there is none.
+func (c *checker) studioEnum(enumName string) *types.EnumType {
 	sp := c.studioPkg()
 	if sp == nil {
 		return nil
@@ -24,18 +33,18 @@ func (c *checker) studioMember(enumName, name string) *object {
 	if o == nil || o.kind != ObjTypeName {
 		return nil
 	}
-	e, ok := c.resolveTypeName(o).(*types.EnumType)
-	if !ok {
-		return nil
-	}
-	return c.memberObject(e, name)
+	e, _ := c.resolveTypeName(o).(*types.EnumType)
+	return e
 }
 
-// studioProp is the `icon` or `tone` property: a member of the studio enum enumName.
+// studioProp is `icon` or `tone`: a member of the studio enum enumName (VIEWMODEL.md §3.5, §16).
 func studioProp(enumName string) func(*checker, *viewCtx, syntax.Expr) {
-	return func(c *checker, _ *viewCtx, e syntax.Expr) {
+	return func(c *checker, vc *viewCtx, e syntax.Expr) {
 		id, ok := e.(*syntax.IdentExpr)
 		if !ok {
+			if en := c.studioEnum(enumName); en != nil {
+				c.expr(vc.env, e, en)
+			}
 			return
 		}
 		if o := c.studioMember(enumName, id.Name); o != nil {

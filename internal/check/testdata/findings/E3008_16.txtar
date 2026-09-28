@@ -1,0 +1,83 @@
+TYPES.md §10.2, §3.2: x and y read `ref Status` while it resolves and are E3008 alone whether `Status` is declared before (package a) or after (package b) an unrelated record whose ref resolves to nothing: a pending ref asked whether it is in error resolves first, and a let with another finding already (x's E3007, held) is still a reader.
+-- a/a.canon --
+package a
+
+/// A status.
+local record Status {
+  /// A number.
+  n: Int
+  /// The statuses reachable next.
+  next: [ref Status]
+}
+
+local let statuses: table Status = {
+  open { n: 1, next: [open] }
+}
+
+/// A section.
+local record Section {
+  /// A number.
+  n: Int
+}
+
+/// A holder.
+local record Holder {
+  /// Its sections.
+  s: [ref Section]
+}
+
+local let h: Holder = { s: [] }
+
+local let x = (1 + "a") + statuses.open.next[0].n
+local let y = [nosuch2, statuses.open.next[0].n]
+-- b/b.canon --
+package b
+
+/// A section.
+local record Section {
+  /// A number.
+  n: Int
+}
+
+/// A holder.
+local record Holder {
+  /// Its sections.
+  s: [ref Section]
+}
+
+local let h: Holder = { s: [] }
+
+/// A status.
+local record Status {
+  /// A number.
+  n: Int
+  /// The statuses reachable next.
+  next: [ref Status]
+}
+
+local let statuses: table Status = {
+  open { n: 1, next: [open] }
+}
+
+local let x = (1 + "a") + statuses.open.next[0].n
+local let y = [nosuch2, statuses.open.next[0].n]
+-- findings.txt --
+error[E2103]  a/a.canon:24:11
+  ref Section: there is no collection of Section; write ref <collection name>
+
+error[E3008]  a/a.canon:29:11
+  cannot infer the type of this expression; add a type
+
+error[E3008]  a/a.canon:30:11
+  cannot infer the type of this expression; add a type
+
+error[E2103]  b/b.canon:12:11
+  ref Section: there is no collection of Section; write ref <collection name>
+
+error[E3008]  b/b.canon:29:11
+  cannot infer the type of this expression; add a type
+
+error[E3008]  b/b.canon:30:11
+  cannot infer the type of this expression; add a type
+
+6 errors, 0 warnings in 2 packages (…)

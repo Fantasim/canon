@@ -1,0 +1,28 @@
+TYPES.md §5.1, §7.1: a parenthesized operand is typed like the operand it holds, whichever side is checked from the other: `a + (a)`, a list `ys + (ys)`, the same in a function body and through `+=`, beside the shapes that were already right (`1 + (a)`, `a * (a + 1)`, `(a + 1) * a`, `(ys) + [a]`). Every inner name is recorded, and each value is the one the checks expect.
+-- a/a.canon --
+package a
+
+local let a: Int = 1
+local let b: Int = a + (a)
+local let ys: [Int] = [1]
+local let zs: [Int] = ys + (ys)
+local let c: Int = 1 + (a)
+local let d: Int = a * (a + 1)
+local let e: Int = (a + 1) * a
+local let ws: [Int] = (ys) + [a]
+
+local fn twice(n: Int) -> Int {
+  return n + (n)
+}
+
+local fn grown(xs: [Int]) -> Int {
+  var y: [Int] = [0]
+  y += (xs)
+  return y.len()
+}
+
+check b == 2 else "a + (a)"
+check zs.len() == 2 else "ys + (ys)"
+check c == 2 and d == 2 and e == 2 and ws.len() == 2 else "the other shapes"
+check twice(3) == 6 else "n + (n)"
+check grown([1, 2]) == 3 else "y += (xs)"

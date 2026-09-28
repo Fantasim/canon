@@ -1,0 +1,61 @@
+VIEWMODEL.md §3.5, §16 (last paragraph), TYPES.md §6.2: a property value is typed against its property's kind with the TYPES codes: plain text (`help`, `placeholder`, `none`) and a `step` text are a String, `readonly`, `hidden` and `when` a Bool, `icon` and `tone` a member of the studio enum (a string is no enum value). A name or a literal of the right kind is left to views (E1610, E1615, E1623).
+-- studio/studio.canon --
+package studio
+
+/// Icons.
+enum Icon { gem, gear }
+
+/// Tones.
+enum Tone { info, danger }
+-- a/a.canon --
+package a
+
+/// A gem.
+local record Gem {
+  /// Its name.
+  name: String
+  /// Its weight.
+  weight: Int
+  /// Its facets.
+  facets: [Int]
+}
+
+view Gem {
+  name { help: 3, placeholder: weight, none: "No name" }
+  weight { hidden: 1, readonly: "yes", when: weight }
+  facets { step: 2 }
+}
+
+/// A cut.
+local enum Cut { round, square }
+
+view Cut {
+  round { icon: "gem", tone: 4 }
+  square { icon: gear, tone: danger }
+}
+-- findings.txt --
+error[E3002]  a/a.canon:14:16
+  expected String, found Int
+
+error[E3002]  a/a.canon:14:32
+  expected String, found Int
+
+error[E3002]  a/a.canon:15:20
+  expected Bool, found Int
+
+error[E3002]  a/a.canon:15:33
+  expected Bool, found String
+
+error[E3002]  a/a.canon:15:46
+  expected Bool, found Int
+
+error[E3002]  a/a.canon:16:18
+  expected String, found Int
+
+error[E3002]  a/a.canon:23:17
+  expected studio.Icon, found String
+
+error[E3002]  a/a.canon:23:30
+  expected studio.Tone, found Int
+
+8 errors, 0 warnings in 2 packages (…)

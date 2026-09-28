@@ -34,7 +34,7 @@ Tick with the landing SHA.
 - [ ] U17 `ir` `types` mode rules mirroring U16's refusals [opus]
 - [x] U18 (bb2b756) `make check-real` (not gating) + realdata findings list [sonnet]
 - [x] U19 (df4a3dc) `benchgen` (IMPLEMENTATION-PLAN §7.6) [sonnet]
-- [ ] U20 progen operators for every new code [sonnet]
+- [x] U20 (1eaf9b5) progen operators for every new code [sonnet]
 - [ ] U21 spec syncs of the logged calls [orchestrator / docs]
 - [~] Cleanup wave A landed (f9802da); rest: run-2 NITs + cleanup list (handoff/2026-09-25-cloud-run-2.md)
 

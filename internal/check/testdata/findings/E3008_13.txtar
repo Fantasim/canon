@@ -1,0 +1,22 @@
+TYPES.md §10.2, §7.1: arithmetic on a ref still being resolved needs its target: `statuses.open.next[0] + 1` is E3008 alone (no E3007).
+-- a/a.canon --
+package a
+
+/// A status.
+local record Status {
+  /// A number.
+  n: Int
+  /// The statuses reachable next.
+  next: [ref Status]
+}
+
+local let statuses: table Status = {
+  open { n: 1, next: [open] }
+}
+
+local let s = statuses.open.next[0] + 1
+-- findings.txt --
+error[E3008]  a/a.canon:15:11
+  cannot infer the type of this expression; add a type
+
+1 error, 0 warnings in 1 package (…)

@@ -235,19 +235,19 @@ func (c *checker) resolveAsset(tc *typeCtx, t *syntax.AssetType) types.Type {
 	return &types.Refined{Of: types.StringType, Asset: spec}
 }
 
-// assetRoot is E3704 for a root that is no load path, E7003 for an unknown `@root` (WIRE.md §2.1).
+// assetRoot is E3704 (no load path), E7003 (unknown root) or E7001 (leaves it): WIRE.md §2.1, §2.2.
 func (c *checker) assetRoot(env *env, at syntax.Node, root string) bool {
 	if !loadSyntax(root) {
 		c.report(env, diag.E3704.AtRoot(env.span(at), root))
 		return false
 	}
 	name, rooted := strings.CutPrefix(root, rootSigil)
-	if !rooted || c.proj == nil {
+	if c.proj == nil {
 		return true
 	}
 	name, _, _ = strings.Cut(name, slash)
-	if _, declared := c.proj.Root(name); declared {
-		return true
+	if _, declared := c.proj.Root(name); declared || !rooted {
+		return c.contained(env, at, root)
 	}
 	names := make([]string, 0, len(c.proj.Roots))
 	for _, r := range c.proj.Roots {

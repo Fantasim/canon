@@ -1,0 +1,44 @@
+TYPES.md §1, §10.2: two refs naming no collection each stand for the error type, so joining their lists (`+`) ordering them (`<`) or adding to one (`+ 1`) adds no finding (no E3007, no E3310): only the E2103s.
+-- a/a.canon --
+package a
+
+/// A section.
+local record Section {
+  /// A number.
+  n: Int
+}
+
+/// A holder.
+local record R {
+  /// Some.
+  a: [ref Section]
+  /// Others.
+  b: [ref Section]
+  /// One.
+  c: ref Section
+  /// Another.
+  d: ref Section
+}
+
+local fn f(r: R) -> Int {
+  let x = r.a + r.b
+  if r.c < r.d {
+    return x.len()
+  }
+  let y = r.c + 1
+  return 0
+}
+-- findings.txt --
+error[E2103]  a/a.canon:12:11
+  ref Section: there is no collection of Section; write ref <collection name>
+
+error[E2103]  a/a.canon:14:11
+  ref Section: there is no collection of Section; write ref <collection name>
+
+error[E2103]  a/a.canon:16:10
+  ref Section: there is no collection of Section; write ref <collection name>
+
+error[E2103]  a/a.canon:18:10
+  ref Section: there is no collection of Section; write ref <collection name>
+
+4 errors, 0 warnings in 1 package (…)

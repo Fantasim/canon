@@ -1,0 +1,32 @@
+TYPES.md §10.2, §16: a let that is E3008 carries no warning from its initializer either (no W3301 for the deprecated member in x); a let that is not keeps it (w).
+-- a/a.canon --
+package a
+
+/// A status.
+local record Status {
+  /// A number.
+  n: Int
+  /// The statuses reachable next.
+  next: [ref Status]
+}
+
+local let statuses: table Status = {
+  open { n: 1, next: [open] }
+}
+
+/// Kinds.
+local enum E {
+  a
+  b @deprecated
+}
+
+local let x = statuses.open.next[0].n + [E.b].len()
+local let w = [E.b].len()
+-- findings.txt --
+error[E3008]  a/a.canon:21:11
+  cannot infer the type of this expression; add a type
+
+warning[W3301]  a/a.canon:22:18
+  b is deprecated
+
+1 error, 1 warning in 1 package (…)

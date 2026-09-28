@@ -61,6 +61,12 @@ type checker struct {
 	universe   map[string]*object
 	nextID     int
 	pending    map[*types.RefType]*pendingRef
+	resolving  map[*types.Collection]*resolution // by placeholder, the refs whose target is being found
+	current    *resolution                       // the innermost of them
+	inferring  []*object                         // the unannotated lets being inferred, innermost last
+	buffered   map[*object][]func(*diag.Bag)     // the findings of lets being inferred (TYPES.md §10.2)
+	cycled     map[*object]bool                  // the lets that are E3008 for reading a target being found
+	targetless map[*types.Collection]bool        // the targets of refs that resolved to nothing
 	colls      map[collKey]*types.Collection
 	deps       map[*object][]*object
 	tableOf    map[*types.RecordType]bool         // records used as the element of a table (TYPES.md §3.6)
@@ -111,6 +117,10 @@ func newChecker(ctx context.Context, proj *project.Project, bags Bags, fold Fold
 		info:       newInfo(),
 		pkgs:       map[string]*pkgState{},
 		pending:    map[*types.RefType]*pendingRef{},
+		resolving:  map[*types.Collection]*resolution{},
+		targetless: map[*types.Collection]bool{},
+		buffered:   map[*object][]func(*diag.Bag){},
+		cycled:     map[*object]bool{},
 		colls:      map[collKey]*types.Collection{},
 		deps:       map[*object][]*object{},
 		tableOf:    map[*types.RecordType]bool{},
@@ -173,13 +183,28 @@ func (c *checker) report(env *env, b *diag.Builder) {
 		diag.E1703.AtType(env.trans.at, env.trans.key, b.Message()).Report(env.pkg.bag)
 		return
 	}
-	b.Report(env.pkg.bag)
+	c.emit(env, b.Report)
 	c.breakObj(env.owner)
+}
+
+// emit puts a finding in env's bag, or holds it while env's let may be E3008 (TYPES.md §10.2).
+func (c *checker) emit(env *env, put func(*diag.Bag)) {
+	if buf, ok := c.buffered[env.owner]; ok {
+		c.buffered[env.owner] = append(buf, put)
+		return
+	}
+	put(env.pkg.bag)
 }
 
 // warn adds a warning; a warning breaks nothing.
 func (c *checker) warn(env *env, b *diag.Builder) {
-	b.Report(env.pkg.bag)
+	c.emit(env, b.Report)
+}
+
+// counted is report's bookkeeping for a finding the project package put in env's bag.
+func (c *checker) counted(env *env) {
+	c.reported++
+	c.breakObj(env.owner)
 }
 
 func (c *checker) breakObj(o *object) {

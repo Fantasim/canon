@@ -85,8 +85,12 @@ func (c *checker) letType(o *object) types.Type {
 		return types.ErrorType
 	}
 	o.state = stateResolving
+	c.inferring = append(c.inferring, o)
+	c.buffered[o] = nil
 	t := c.expr(env, d.Value, nil)
+	c.inferring = c.inferring[:len(c.inferring)-1]
 	o.state = stateDone
+	c.settle(o)
 	if o.typ == nil {
 		o.typ = t
 	}

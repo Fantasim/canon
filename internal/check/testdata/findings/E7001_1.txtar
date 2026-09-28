@@ -1,0 +1,21 @@
+WIRE.md §2.2 rule 3, TYPES.md §13.4: an asset root is resolved lexically; a rooted one may not climb above its root, an unrooted one (from the declaring file's directory, rule 1) may not leave the project. Climbing inside either is fine.
+-- a/a.canon --
+package a
+
+local type AboveRoot = asset("@resource/../Icon", ext: [dds])
+local type RootParent = asset("@resource/Icon/../..", ext: [dds])
+local type Outside = asset("../../Icon", ext: [dds])
+local type InRoot = asset("@resource/Icon/../Item", ext: [dds])
+local type UpOne = asset("../Icon", ext: [dds])
+local type Here = asset("./Icon", ext: [dds])
+-- findings.txt --
+error[E7001]  a/a.canon:3:30
+  path @resource/../Icon: leaves root @resource
+
+error[E7001]  a/a.canon:4:31
+  path @resource/Icon/../..: leaves root @resource
+
+error[E7001]  a/a.canon:5:28
+  path ../../Icon: leaves the project
+
+3 errors, 0 warnings in 1 package (…)

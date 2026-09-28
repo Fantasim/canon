@@ -1,0 +1,26 @@
+TYPES.md §10.2, §3.2: a let that is E3008 carries no other finding from its initializer, whether the independent error comes before or after the read of the target being found: x and y are E3008 alone.
+-- a/a.canon --
+package a
+
+/// A status.
+local record Status {
+  /// A number.
+  n: Int
+  /// The statuses reachable next.
+  next: [ref Status]
+}
+
+local let statuses: table Status = {
+  open { n: 1, next: [open] }
+}
+
+local let x = (1 + "a") + statuses.open.next[0].n
+local let y = statuses.open.next[0].n + (1 + "a")
+-- findings.txt --
+error[E3008]  a/a.canon:15:11
+  cannot infer the type of this expression; add a type
+
+error[E3008]  a/a.canon:16:11
+  cannot infer the type of this expression; add a type
+
+2 errors, 0 warnings in 1 package (…)

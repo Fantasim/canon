@@ -1,0 +1,20 @@
+VIEWMODEL.md §3.6, TYPES.md §5.3, §7.2: a column width is an integer literal typed Int, so one that does not fit Int is E3201; a width that fits but is out of 16..2000 is views' (E1613).
+-- a/a.canon --
+package a
+
+/// A gem.
+local record Gem {
+  /// Its name.
+  name: String
+  /// Its weight.
+  weight: Int
+}
+
+view Gem {
+  columns { name 99999999999999999999, weight 5000 }
+}
+-- findings.txt --
+error[E3201]  a/a.canon:12:18
+  99999999999999999999 does not fit Int
+
+1 error, 0 warnings in 1 package (…)

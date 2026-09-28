@@ -1,0 +1,33 @@
+TYPES.md §10.2, §3.2: the findings do not depend on declaration order. Here `ref Other` is resolved first and starts inferring x; x reads y, whose inference reads `ref Status`, whose search meets x and y again: E3008 at y, the let that reads the target (as when `ref Status` is resolved first, E3008_6), and x, which only depends on y, is broken without a finding.
+-- a/a.canon --
+package a
+
+/// Another record, resolved first.
+local record Other {
+  /// Others.
+  o: [ref Other]
+}
+
+local let others: table Other = {
+  a { o: [] }
+}
+
+/// A status.
+local record Status {
+  /// A number.
+  n: Int
+  /// The statuses reachable next.
+  next: [ref Status]
+}
+
+local let statuses: table Status = {
+  open { n: 1, next: [open] }
+}
+
+local let x = y + 1
+local let y = statuses.open.next[0].n
+-- findings.txt --
+error[E3008]  a/a.canon:26:11
+  cannot infer the type of this expression; add a type
+
+1 error, 0 warnings in 1 package (…)

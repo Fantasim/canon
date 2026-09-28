@@ -9,7 +9,7 @@ import (
 // builtinMethod calls a built-in method on a receiver of type recv (STDLIB.md §4 to §7, §10).
 func (c *checker) builtinMethod(env *env, x *syntax.CallExpr, s *syntax.SelectorExpr, recv, want types.Type) types.Type {
 	name := s.Name.Name
-	b := newBinding()
+	b := newBinding(c.unbroken)
 	rows := c.methodRows(recv, s.X, name, b)
 	if len(rows) == 0 {
 		if recv.Kind() == types.DepUnion {

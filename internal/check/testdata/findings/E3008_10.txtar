@@ -1,0 +1,26 @@
+TYPES.md §10.2, §6.4: list `+` needs the element target whichever operand holds the in-flight ref: y and y2 are both E3008, and the in-flight ref is never printed without its name.
+-- a/a.canon --
+package a
+
+/// A status.
+local record Status {
+  /// A number.
+  n: Int
+  /// The statuses reachable next.
+  next: [ref Status]
+}
+
+local let statuses: table Status = {
+  open { n: 1, next: [open] }
+}
+
+local let y = [statuses.open] + statuses.open.next
+local let y2 = statuses.open.next + [statuses.open]
+-- findings.txt --
+error[E3008]  a/a.canon:15:11
+  cannot infer the type of this expression; add a type
+
+error[E3008]  a/a.canon:16:11
+  cannot infer the type of this expression; add a type
+
+2 errors, 0 warnings in 1 package (…)

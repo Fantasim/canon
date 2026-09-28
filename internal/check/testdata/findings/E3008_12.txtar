@@ -1,0 +1,43 @@
+TYPES.md §10.2, §13.2, §6.4: a literal union over a ref still being resolved needs its target to be joined or compared: a list of two such values (x), an `if` joining them (j), `==` between them (eq) and `contains` (c) are each E3008 alone. Annotated, the same expressions are checked once every ref resolved, with no finding (annotated, `k1 == k2` is §13.2's E3007 between two values of the union, so it is left out).
+-- a/a.canon --
+package a
+
+/// A status.
+local record Status {
+  /// A number.
+  n: Int
+  /// The statuses reachable next.
+  next: [ref Status]
+}
+
+local let statuses: table Status = {
+  open { n: 1, next: [open] }
+}
+
+local type K = ref Status | "none"
+
+local let k1: K = "none"
+local let k2: ref Status | "none" = "none"
+
+local let x = [k1, k2]
+local let j = if true { k1 } else { k2 }
+local let eq = k1 == k2
+local let c = [k1].contains(k2)
+
+local let xa: [K] = [k1, k2]
+local let ja: K = if true { k1 } else { k2 }
+local let ca: Bool = [k1].contains(k2)
+-- findings.txt --
+error[E3008]  a/a.canon:20:11
+  cannot infer the type of this expression; add a type
+
+error[E3008]  a/a.canon:21:11
+  cannot infer the type of this expression; add a type
+
+error[E3008]  a/a.canon:22:11
+  cannot infer the type of this expression; add a type
+
+error[E3008]  a/a.canon:23:11
+  cannot infer the type of this expression; add a type
+
+4 errors, 0 warnings in 1 package (…)

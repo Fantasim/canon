@@ -234,12 +234,16 @@ func (c *checker) checkedOperand(env *env, e syntax.Expr, other types.Type) type
 	if o, ok := other.Base().(*types.OptionalType); ok {
 		want = o.Elem
 	}
-	t := c.exprNode(env, e, want)
+	t := c.exprNode(env, inner(e), want)
 	if t == nil {
 		t = types.ErrorType
 	}
-	c.info.Types[e] = t
-	return t
+	for x := e; ; x = x.(*syntax.ParenExpr).X { // a paren has its operand's type (TYPES.md §5.1)
+		c.info.Types[x] = t
+		if _, isParen := x.(*syntax.ParenExpr); !isParen {
+			return t
+		}
+	}
 }
 
 func inner(e syntax.Expr) syntax.Expr {
@@ -259,6 +263,9 @@ func (c *checker) equality(env *env, e *syntax.BinaryExpr, tx, ty types.Type) ty
 		return types.BoolType
 	}
 	a, b := optElem(tx), optElem(ty)
+	if c.inError(a) || c.inError(b) {
+		return types.BoolType
+	}
 	if c.unionValues(env, e, tx, ty) || c.unionEquality(env, e, a, b) || c.dependent(env, e, a, b) {
 		return types.BoolType
 	}
@@ -364,7 +371,7 @@ func (c *checker) ordering(env *env, e *syntax.BinaryExpr, tx, ty types.Type) ty
 			return types.BoolType
 		}
 	}
-	if c.dependent(env, e, tx, ty) {
+	if c.dependent(env, e, tx, ty) || c.inError(tx) || c.inError(ty) {
 		return types.BoolType
 	}
 	if !orderable(tx) {
@@ -399,14 +406,16 @@ func (c *checker) arithmetic(env *env, e *syntax.BinaryExpr, tx, ty types.Type) 
 			return types.ErrorType
 		}
 	}
-	if c.dependent(env, e, tx, ty) {
+	if c.dependent(env, e, tx, ty) || c.inError(tx) || c.inError(ty) {
 		return types.ErrorType
 	}
 	if t := arithResult(e.Op, tx.Base(), ty.Base()); t != nil {
 		return t
 	}
 	if e.Op == syntax.TokPlus {
-		if t, ok := listConcat(tx, ty); ok {
+		if t, ok := c.listConcat(tx, ty); ok {
+			c.joined(e.X, tx, t)
+			c.joined(e.Y, ty, t)
 			return t
 		}
 	}
@@ -425,8 +434,20 @@ func arithResult(op syntax.TokenKind, a, b types.Type) types.Type {
 	return nil
 }
 
-// listConcat is `[S] + [T]`, a plain list of S ⊔ T.
-func listConcat(a, b types.Type) (types.Type, bool) {
+// joined records how an operand of `[S] + [T]` becomes the joined list (TYPES.md §6.4).
+func (c *checker) joined(e syntax.Expr, s, t types.Type) {
+	e = inner(e)
+	if _, done := c.info.Conv[e]; done {
+		return
+	}
+	if conv, ok := c.convert(s, t); ok && conv != nil {
+		c.info.Conv[e] = conv
+	}
+}
+
+// listConcat is `[S] + [T]`, a plain list of S ⊔ T; a ref in error joins as the error type (TYPES.md §1).
+func (c *checker) listConcat(a, b types.Type) (types.Type, bool) {
+	a, b = c.unbroken(a), c.unbroken(b)
 	la, okA := a.Base().(*types.ListType)
 	lb, okB := b.Base().(*types.ListType)
 	if !okA || !okB {

@@ -1,0 +1,40 @@
+TYPES.md §10.2, §3.2: a let that is E3008 carries no other finding from its initializer, whatever the declaration order: E3008_12's `k1 == k2` declared first is E3008 alone, as it is declared after the others.
+-- a/a.canon --
+package a
+
+local let eq = k1 == k2
+
+/// A status.
+local record Status {
+  /// A number.
+  n: Int
+  /// The statuses reachable next.
+  next: [ref Status]
+}
+
+local let statuses: table Status = {
+  open { n: 1, next: [open] }
+}
+
+local type K = ref Status | "none"
+
+local let k1: K = "none"
+local let k2: ref Status | "none" = "none"
+
+local let x = [k1, k2]
+local let j = if true { k1 } else { k2 }
+local let c = [k1].contains(k2)
+-- findings.txt --
+error[E3008]  a/a.canon:3:11
+  cannot infer the type of this expression; add a type
+
+error[E3008]  a/a.canon:22:11
+  cannot infer the type of this expression; add a type
+
+error[E3008]  a/a.canon:23:11
+  cannot infer the type of this expression; add a type
+
+error[E3008]  a/a.canon:24:11
+  cannot infer the type of this expression; add a type
+
+4 errors, 0 warnings in 1 package (…)

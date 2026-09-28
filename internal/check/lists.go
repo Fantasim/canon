@@ -96,7 +96,7 @@ func (c *checker) join2(a, b types.Type, before []syntax.Expr, next syntax.Expr)
 	case b.Base().Kind() == types.Float && allIntLiterals(before):
 		return b, true
 	}
-	return types.Join(staticView(a), staticView(b))
+	return types.Join(staticView(c.unbroken(a)), staticView(c.unbroken(b)))
 }
 
 func allIntLiterals(es []syntax.Expr) bool {

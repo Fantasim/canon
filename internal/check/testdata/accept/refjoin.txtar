@@ -1,0 +1,27 @@
+TYPES.md §6.4, §6.2: `[T] + [ref T]` joins to `[T]`; each `ref T` element is dereferenced on the way (a Deref conversion under Elements), in a let, in a function body and through `+=`.
+-- a/a.canon --
+package a
+
+/// A status.
+local record Status {
+  /// A number.
+  n: Int
+  /// The statuses reachable next.
+  next: [ref Status]
+}
+
+local let statuses: table Status = {
+  open { n: 1, next: [open] }
+}
+
+local let y: [Status] = [statuses.open] + statuses.open.next
+local let z: Int = y[1].n
+
+local fn second() -> Int {
+  let w = [statuses.open] + statuses.open.next
+  var v: [Status] = [statuses.open]
+  v += statuses.open.next
+  return w[1].n + v[1].n
+}
+
+local let s: Int = second()

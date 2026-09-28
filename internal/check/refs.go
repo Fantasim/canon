@@ -11,14 +11,19 @@ import (
 	"github.com/fantasim/canonlang/internal/types"
 )
 
+// resolution is a ref whose target is being found: len(inferring) when it began, the let whose
+// inference began it (nil for none), and the lets whose own inference read that target.
+type resolution struct {
+	depth  int
+	reader *object
+	cycle  []*object
+}
+
 // pendingRef is a `ref X` whose target is found once every type of its package is known.
 type pendingRef struct {
 	tc   typeCtx
 	node *syntax.RefType
 }
-
-// errorColl is the target of a ref that resolved to nothing: its element is the error type.
-var errorColl = &types.Collection{Elem: types.ErrorType}
 
 // compareSpans orders two spans of the checked files: by file, then by start.
 func compareSpans(a, b source.Span) int {
@@ -79,26 +84,112 @@ func (c *checker) refTarget(r *types.RefType) types.Type {
 		return r
 	}
 	delete(c.pending, r)
-	r.Target = errorColl // read again while its name resolves (a let inferred on the way), it is the error type (TYPES.md §1)
+	written := r.Target // its own placeholder, read as the error type until it resolves (TYPES.md §1)
+	res := &resolution{depth: len(c.inferring), reader: c.inferred()}
+	c.resolving[written] = res
+	outer := c.current
+	c.current = res
 	coll := c.resolveRefName(&pr.tc, pr.node)
+	c.current = outer
+	delete(c.resolving, written)
 	if coll == nil {
-		coll = errorColl
+		c.targetless[written] = true
 		c.breakObj(pr.tc.env.owner)
+		for _, o := range res.cycle { // no cycle to report (TYPES.md §10.2): their findings stand
+			c.settle(o)
+		}
+		return r
 	}
+	c.inferenceCycleFound(res.cycle)
 	r.Target = coll
 	return r
+}
+
+// inferred is the innermost let being inferred, nil for none.
+func (c *checker) inferred() *object {
+	if len(c.inferring) == 0 {
+		return nil
+	}
+	return c.inferring[len(c.inferring)-1]
 }
 
 // coll is the target of a ref, resolving it first if needed.
 func (c *checker) coll(r *types.RefType) *types.Collection {
 	c.refTarget(r)
+	c.inferenceCycle(r)
 	return r.Target
 }
 
 // brokenRef reports a ref whose target resolved to nothing: it stands for the error type (TYPES.md §1).
 func (c *checker) brokenRef(t types.Type) bool {
 	r, ok := t.Base().(*types.RefType)
-	return ok && r.Target == errorColl // a pending ref is resolved where its package says, never here
+	if !ok {
+		return false
+	}
+	c.refTarget(r) // a pending ref resolves first: its target is needed (TYPES.md §10.2)
+	c.inferenceCycle(r)
+	return c.noTarget(r.Target)
+}
+
+// noTarget reports the target of a ref that resolves to nothing, or not yet.
+func (c *checker) noTarget(coll *types.Collection) bool {
+	return c.targetless[coll] || c.resolving[coll] != nil
+}
+
+// inferenceCycle notes the let whose own inference reads r's target while r resolves.
+func (c *checker) inferenceCycle(r *types.RefType) {
+	if res := c.resolving[r.Target]; res != nil && len(c.inferring) > res.depth {
+		c.readTarget(res, c.inferred())
+	}
+}
+
+// readTarget notes o as reading a target being found.
+func (c *checker) readTarget(res *resolution, o *object) {
+	if o != nil && !slices.Contains(res.cycle, o) {
+		res.cycle = append(res.cycle, o)
+	}
+}
+
+// inferenceCycleFound is E3008 alone at each let that read a target being found (TYPES.md §10.2).
+func (c *checker) inferenceCycleFound(lets []*object) {
+	for _, o := range lets {
+		o.typ = types.ErrorType
+		c.cycled[o] = true
+		env := c.declEnv(o)
+		diag.E3008.At(env.span(o.decl.(*syntax.LetDecl).Name)).Report(env.pkg.bag)
+		c.counted(env)
+		c.settle(o)
+	}
+}
+
+// settle ends the buffering of o's findings once its inference is over and no resolution under
+// way counts it as a reader: dropped for a let that is E3008, else reported in order.
+func (c *checker) settle(o *object) {
+	if o.state == stateResolving || c.readingNow(o) {
+		return
+	}
+	buf, ok := c.buffered[o]
+	if !ok {
+		return
+	}
+	delete(c.buffered, o)
+	if c.cycled[o] {
+		return
+	}
+	bag := c.declEnv(o).pkg.bag
+	for _, put := range buf {
+		put(bag)
+	}
+}
+
+// readingNow reports o among the readers of a target still being found.
+func (c *checker) readingNow(o *object) bool {
+	for _, res := range c.resolving { //canon:unordered a membership test
+		if slices.Contains(res.cycle, o) {
+			return true
+		}
+	}
+	return false
 }
 
 // erroneous reports the error type, or a ref standing for it.
@@ -248,7 +339,10 @@ func (c *checker) searchLevels(tc *typeCtx, rec *types.RecordType, q *syntax.Qua
 func (c *checker) letCandidates(env *env, p *pkgState, rec *types.RecordType, own bool) []*types.Collection {
 	var out []*types.Collection
 	for _, o := range p.all {
-		if o.kind != ObjLet || (o.local && !own) || c.info.Broken[o] && o.typ == nil {
+		if o.kind != ObjLet || (o.local && !own) {
+			continue
+		}
+		if c.onCycle(o) || c.info.Broken[o] && o.typ == nil { // a reader first, broken or not
 			continue
 		}
 		t := c.letType(o)
@@ -257,6 +351,17 @@ func (c *checker) letCandidates(env *env, p *pkgState, rec *types.RecordType, ow
 		}
 	}
 	return out
+}
+
+// onCycle reports a let whose inference led to this search, no candidate (TYPES.md §10.2).
+func (c *checker) onCycle(o *object) bool {
+	d, _ := o.decl.(*syntax.LetDecl)
+	res := c.current
+	if d == nil || d.Type != nil || o.state != stateResolving || res == nil || res.reader == nil {
+		return false
+	}
+	c.readTarget(res, res.reader)
+	return true
 }
 
 // importCandidates are the public collections of rec in the packages the file imports.

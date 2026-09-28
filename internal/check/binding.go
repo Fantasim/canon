@@ -12,11 +12,20 @@ import (
 type binding struct {
 	vars  map[*tvar]types.Type
 	order []*tvar
-	src   map[*tvar]syntax.Expr // the argument or receiver that bound each parameter
+	src   map[*tvar]syntax.Expr       // the argument or receiver that bound each parameter
+	judge func(types.Type) types.Type // a type as a judgement reads it: a ref in error is the error type
 }
 
-func newBinding() *binding {
-	return &binding{vars: map[*tvar]types.Type{}, src: map[*tvar]syntax.Expr{}}
+func newBinding(judge func(types.Type) types.Type) *binding {
+	return &binding{vars: map[*tvar]types.Type{}, src: map[*tvar]syntax.Expr{}, judge: judge}
+}
+
+// judged is t as bind and unify compare it (TYPES.md §1, §10.2).
+func (b *binding) judged(t types.Type) types.Type {
+	if b.judge == nil {
+		return t
+	}
+	return b.judge(t)
 }
 
 // from records e as the source of the parameters bound since the first before of order.
@@ -51,10 +60,11 @@ func (b *binding) shown(pat types.Type) types.Type {
 func (b *binding) bind(v *tvar, t types.Type) bool {
 	t = dropRefinements(t)
 	if old, ok := b.vars[v]; ok {
-		if j, joined := types.Join(old, t); joined && types.Identical(j, old) {
+		o, n := b.judged(old), b.judged(t)
+		if j, joined := types.Join(o, n); joined && types.Identical(j, o) {
 			return true
 		}
-		return types.Identical(old, t)
+		return types.Identical(o, n)
 	}
 	b.vars[v] = t
 	b.order = append(b.order, v)
@@ -84,7 +94,7 @@ func (b *binding) unify(pat, t types.Type) bool {
 	switch p := pat.(type) {
 	case *tvar:
 		if bound, ok := b.vars[p]; ok {
-			return b.unify(bound, t) || types.Identical(bound, t)
+			return b.unify(bound, t) || types.Identical(b.judged(bound), b.judged(t))
 		}
 		return b.bind(p, t)
 	case *seqOf:
@@ -107,7 +117,7 @@ func (b *binding) unify(pat, t types.Type) bool {
 	case *types.FuncType:
 		return b.unifyFunc(p, t)
 	}
-	return b.free(pat) || types.Assignable(t, pat)
+	return b.free(pat) || types.Assignable(b.judged(t), b.judged(pat))
 }
 
 func (b *binding) unifyFunc(p *types.FuncType, t types.Type) bool {

@@ -46,7 +46,7 @@ func (c *checker) callBuiltin(env *env, x *syntax.CallExpr, id *syntax.IdentExpr
 	if c.misplacedArgs(env, x) {
 		return types.ErrorType
 	}
-	bc := &builtinCall{x: x, fun: id, name: id.Name, kind: CalleeBuiltin, b: newBinding(), want: want}
+	bc := &builtinCall{x: x, fun: id, name: id.Name, kind: CalleeBuiltin, b: newBinding(c.unbroken), want: want}
 	if _, isType := builtinTypes[id.Name]; isType {
 		bc.kind = CalleeConvert
 		return c.conversion(env, bc, rows)
@@ -360,7 +360,7 @@ func (c *checker) nextForm(env *env, bc *builtinCall, e syntax.Expr, rows []row)
 			return r
 		}
 	}
-	if ft, ok := t.(*types.FuncType); ok && types.Assignable(ft.Result, elem) {
+	if ft, ok := t.(*types.FuncType); ok && types.Assignable(c.unbroken(ft.Result), c.unbroken(elem)) {
 		return rows[len(rows)-1]
 	}
 	c.report(env, diag.E3002.At(env.span(e), bc.b.subst(rows[0].sig.params[1].t), t))

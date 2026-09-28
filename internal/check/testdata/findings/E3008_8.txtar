@@ -1,0 +1,34 @@
+TYPES.md §10.2, §15: a let on two inference cycles at once (x reads the target of `ref A` being resolved, and `ref B`, resolved on the way, needs x again) is one E3008 (the two reports are one finding, API.md F2).
+-- a/a.canon --
+package a
+
+/// A.
+local record A {
+  /// A number.
+  n: Int
+  /// Next.
+  next: [ref A]
+}
+
+local let alist: table A = {
+  a1 { n: 1, next: [a1] }
+}
+
+/// B.
+local record B {
+  /// A number.
+  m: Int
+  /// Next.
+  next: [ref B]
+}
+
+local let bs: table B = {
+  b1 { m: 1, next: [b1] }
+}
+
+local let x = alist.a1.next[0].n + bs.b1.next[0].m
+-- findings.txt --
+error[E3008]  a/a.canon:27:11
+  cannot infer the type of this expression; add a type
+
+1 error, 0 warnings in 1 package (…)

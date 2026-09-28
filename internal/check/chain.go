@@ -268,7 +268,7 @@ func (c *checker) unknownMember(env *env, s *syntax.SelectorExpr, t types.Type) 
 	switch name := s.Name.Name; {
 	case c.userMethod(t, name) != nil:
 		c.report(env, diag.E3016.At(env.span(s.Name), diag.KindMethod, name))
-	case len(c.methodRows(t, nil, name, newBinding())) > 0:
+	case len(c.methodRows(t, nil, name, newBinding(c.unbroken))) > 0:
 		c.report(env, diag.E3016.At(env.span(s.Name), diag.KindBuiltin, name))
 	default:
 		c.report(env, diag.E3003.At(env.span(s.Name), t, kind, name))

@@ -1,0 +1,39 @@
+TYPES.md §10.2, §6.4: a type judgement needing the target of a ref still being resolved reads it: joining the lists `alist.a1.next + bs.b1.next` while both refs are in flight is E3008 at x (two in-flight refs never share a target), t reads the target of `ref B`, whose search needs t, so E3008 too, and u, which only depends on x, is broken without a finding.
+-- a/a.canon --
+package a
+
+/// A.
+local record A {
+  /// A number.
+  n: Int
+  /// Next.
+  next: [ref A]
+}
+
+/// B.
+local record B {
+  /// A number.
+  m: Int
+  /// Next.
+  next: [ref B]
+}
+
+local let alist: table A = {
+  a1 { n: 1, next: [a1] }
+}
+
+local let bs: table B = {
+  b1 { m: 2, next: [b1] }
+}
+
+local let t = bs.b1.next[0].m
+local let x = alist.a1.next + bs.b1.next
+local let u: Int = x[1].n
+-- findings.txt --
+error[E3008]  a/a.canon:27:11
+  cannot infer the type of this expression; add a type
+
+error[E3008]  a/a.canon:28:11
+  cannot infer the type of this expression; add a type
+
+2 errors, 0 warnings in 1 package (…)

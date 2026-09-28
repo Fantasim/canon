@@ -56,13 +56,15 @@ func (c *checker) unbroken(t types.Type) types.Type {
 func (c *checker) unbreak(t types.Type) (types.Type, bool) {
 	switch x := t.Base().(type) {
 	case *types.RefType:
-		if c.coll(x) == errorColl {
+		if c.noTarget(c.coll(x)) {
 			return types.ErrorType, true
 		}
 	case *types.OptionalType:
 		if e, ch := c.unbreak(x.Elem); ch {
 			return &types.OptionalType{Elem: e}, true
 		}
+	case *types.LitUnionType:
+		return c.unbreakUnion(x)
 	case *types.ListType:
 		if e, ch := c.unbreak(x.Elem); ch {
 			return &types.ListType{Elem: e, KeyedBy: x.KeyedBy}, true
@@ -83,6 +85,23 @@ func (c *checker) unbreak(t types.Type) (types.Type, bool) {
 		return c.unbreakFunc(x)
 	}
 	return t, false
+}
+
+// unbreakUnion is `A | "lit"` with A unbroken: the error type when A is (TYPES.md §1, §13.2).
+func (c *checker) unbreakUnion(u *types.LitUnionType) (types.Type, bool) {
+	of, ch := c.unbreak(u.Of)
+	switch {
+	case !ch:
+		return u, false
+	case of.Kind() == types.Error:
+		return types.ErrorType, true
+	}
+	return &types.LitUnionType{Of: of, Literals: u.Literals}, true
+}
+
+// inError reports a type that stands for the error type once its refs in error are (TYPES.md §1).
+func (c *checker) inError(t types.Type) bool {
+	return c.unbroken(t).Kind() == types.Error
 }
 
 func (c *checker) unbreakFunc(f *types.FuncType) (types.Type, bool) {

@@ -75,6 +75,7 @@ func (c *checker) viewColumns(vc *viewCtx, it syntax.ViewItem) {
 		c.itemName(col.Name, func(n string) *object { return c.columnName(vc, n) })
 		if col.Width != nil {
 			c.info.Types[col.Width] = types.IntType
+			c.checkLiteral(vc.env, col.Width, types.IntType)
 		}
 	}
 }
@@ -167,10 +168,13 @@ func (c *checker) plainText(s syntax.StrLit) {
 	}
 }
 
-func (c *checker) plainProp(_ *viewCtx, e syntax.Expr) {
+// plainProp is `help`, `placeholder` or `none`: plain text, so a String (VIEWMODEL.md §3.5, §16).
+func (c *checker) plainProp(vc *viewCtx, e syntax.Expr) {
 	if s, ok := e.(syntax.StrLit); ok {
 		c.plainText(s)
+		return
 	}
+	c.expr(vc.env, e, types.StringType)
 }
 
 // boolProp is `when`, `readonly` or `hidden`: a Bool (VIEWMODEL.md G13, §3.5).
@@ -190,6 +194,7 @@ func (c *checker) controlProp(_ *viewCtx, e syntax.Expr) {
 func (c *checker) stepText(vc *viewCtx, e syntax.Expr) {
 	s, ok := e.(syntax.StrLit)
 	if !ok {
+		c.expr(vc.env, e, types.StringType)
 		return
 	}
 	c.plainText(s)

@@ -124,7 +124,10 @@ func (c *checker) assignValue(env *env, s *syntax.AssignStmt, target, read types
 	}
 	r := arithResult(op, read.Base(), tv.Base())
 	if r == nil && op == syntax.TokPlus {
-		r, _ = listConcat(read, tv)
+		if l, ok := c.listConcat(read, tv); ok {
+			r = l
+			c.joined(s.Value, tv, l)
+		}
 	}
 	if r == nil {
 		c.report(env, diag.E3007.AtBinary(env.span(s), op.String(), read, tv))

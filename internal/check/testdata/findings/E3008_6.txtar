@@ -1,0 +1,29 @@
+TYPES.md §10.2 level 2, §15: finding the target of `ref Status` infers every unannotated local let; a let whose own inference reads that target (x, q) is E3008, a let that only depends on one (p) is broken without a finding, and a let that only holds the ref (z) reads nothing and is inferred.
+-- a/a.canon --
+package a
+
+/// A status.
+local record Status {
+  /// A number.
+  n: Int
+  /// The statuses reachable next.
+  next: [ref Status]
+}
+
+local let statuses: table Status = {
+  open { n: 1, next: [open] }
+}
+
+local let x = statuses.open.next[0].n
+local let z = statuses.open.next[0]
+local let w: Int = z.n
+local let p = q + 1
+local let q = statuses.open.next[0].n
+-- findings.txt --
+error[E3008]  a/a.canon:15:11
+  cannot infer the type of this expression; add a type
+
+error[E3008]  a/a.canon:19:11
+  cannot infer the type of this expression; add a type
+
+2 errors, 0 warnings in 1 package (…)

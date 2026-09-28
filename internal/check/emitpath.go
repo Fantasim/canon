@@ -6,6 +6,7 @@ import (
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/project"
 	"github.com/fantasim/canonlang/internal/source"
+	"github.com/fantasim/canonlang/internal/syntax"
 )
 
 // lastElement is the last element of the directory out, written in env's file, names against
@@ -33,4 +34,19 @@ func (c *checker) declaredLayout(p *pkgState) *project.Layout {
 		c.layout, _ = project.NewLayout(c.proj, layoutAnchor, nil, diag.NewBag(indexFiles(p.files), p.path))
 	}
 	return c.layout
+}
+
+// contained is E7001 for a path of env's file leaving its root or the project (WIRE.md §2.2 rule 3).
+func (c *checker) contained(env *env, at syntax.Node, written string) bool {
+	l := c.declaredLayout(env.pkg)
+	if l == nil {
+		return true
+	}
+	dir, span := fileDir(env.file), env.span(at)
+	if _, ok := l.Resolve(written, dir, span, diag.NewBag(indexFiles(env.pkg.files), env.pkg.path)); ok {
+		return true
+	}
+	c.emit(env, func(bag *diag.Bag) { l.Resolve(written, dir, span, bag) })
+	c.counted(env)
+	return false
 }

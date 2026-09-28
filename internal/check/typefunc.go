@@ -271,6 +271,7 @@ func (c *checker) argFits(at, param types.Type) bool {
 	if r, ok := param.Base().(*types.RefType); ok {
 		c.coll(r) // a ref parameter is compared by its target, resolved
 	}
+	at, param = c.unbroken(at), c.unbroken(param)
 	return types.Assignable(c.deref(at), param) || types.Assignable(at, param)
 }
 
