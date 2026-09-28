@@ -88,6 +88,16 @@ func sitesOf[T syntax.Node](tg target, keep func(T) bool, f func(T) progen.Site)
 	return out
 }
 
+// holds tells whether n or a node under it satisfies pred.
+func holds(n syntax.Node, pred func(syntax.Node) bool) bool {
+	found := false
+	syntax.Inspect(n, func(c syntax.Node) bool {
+		found = found || pred(c)
+		return !found
+	})
+	return found
+}
+
 // lineEnd is the offset of the line break ending the line of off (or the end of the text).
 func lineEnd(tg target, off int) int {
 	if i := bytes.IndexByte(tg.src[off:], '\n'); i >= 0 {

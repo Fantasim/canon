@@ -376,10 +376,11 @@ func twoInlineFields(tg target) []progen.Site {
 	})
 }
 
+// doubleOptional writes `T??` for a field's `T?`, never at a line's end (GRAMMAR.md §3.1 rule 2).
 func doubleOptional(tg target) []progen.Site {
 	return sitesOf(tg, func(f *syntax.FieldDecl) bool {
 		_, opt := f.Type.(*syntax.OptionalType)
-		return isSource(tg) && opt
+		return isSource(tg) && opt && !endsLine(tg, f.Type)
 	}, func(f *syntax.FieldDecl) progen.Site {
 		s, e := span(tg, f.Type)
 		return site(replace(s, e, text(tg, f.Type)+"?"))

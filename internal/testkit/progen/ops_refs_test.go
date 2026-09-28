@@ -1,6 +1,7 @@
 package progen_test
 
 import (
+	"slices"
 	"strings"
 
 	"github.com/fantasim/canonlang/internal/syntax"
@@ -154,6 +155,45 @@ func hasWildcard(a armed) bool {
 		}
 	}
 	return false
+}
+
+// exhaustivelyMatched are the names the matches without `_` of the corpus name (TYPES.md §12.6).
+func exhaustivelyMatched(tg target) map[string]bool {
+	out := map[string]bool{}
+	for _, other := range *tg.all {
+		for _, ps := range matchPatterns(other) {
+			if !slices.ContainsFunc(ps, func(p *syntax.Pattern) bool { return p.Keyword == syntax.TokUnderscore }) {
+				addPatternNames(out, ps)
+			}
+		}
+	}
+	return out
+}
+
+// addPatternNames adds the name each of ps names, its last part when qualified.
+func addPatternNames(out map[string]bool, ps []*syntax.Pattern) {
+	for _, p := range ps {
+		if p.Name != nil && len(p.Name.Parts) > 0 {
+			out[p.Name.Parts[len(p.Name.Parts)-1].Name] = true
+		}
+	}
+}
+
+// matchPatterns are the patterns of each match of tg, every arm's together, type-level
+// matches included.
+func matchPatterns(tg target) [][]*syntax.Pattern {
+	var out [][]*syntax.Pattern
+	for _, a := range matches(tg) {
+		out = append(out, slices.Concat(a.patterns...))
+	}
+	for _, m := range nodes[*syntax.MatchType](tg) {
+		var ps []*syntax.Pattern
+		for _, arm := range m.Arms {
+			ps = append(ps, arm.Patterns...)
+		}
+		out = append(out, ps)
+	}
+	return out
 }
 
 func dropArm(tg target) []progen.Site {

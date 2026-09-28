@@ -1,0 +1,65 @@
+suite mutation
+name E8011 CODEGEN.md §3.5 (@go(name:) not an identifier)
+case 941
+seed 4294968303
+open ir
+born mismatch extra E8011/derived
+sig extra E8011/derived
+packages pipeline
+want E8011 pipeline/potion.canon 78 84 check
+failure extra [E8011 pipeline/potion.canon:15:13 "1BadHealFor, the go name derived for pipeline.Potion.healFor, is not a valid identifier"] besides [E8011 pipeline/potion.canon:3:8 "1Bad is not a valid go identifier for @go(name:)"]
+-- pipeline/data/II_POT_HEAL_S.json --
+{
+  "dwID": "II_POT_HEAL_S",
+  "szName": "IDS_PROPITEM_TXT_POT_S",
+  "nHeal": 500,
+  "dwCooldownMs": 3000
+}
+-- pipeline/potion.canon --
+package pipeline
+/// A healing potion. Each one is a file under data/.
+record Potion @go(name: "1Bad") {
+  /// The item define. Stored in inventories: never renamed.
+  id: String @json("dwID")
+  /// Text key of the displayed name.
+  name: String(/^IDS_/) @json("szName")
+  /// Hit points restored.
+  heal: Int(..=100_000) @json("nHeal")
+  /// Time before the same potion can be drunk again.
+  cooldown: Duration(..=10m) @json("dwCooldownMs")
+  warn fast_big_heal: not (heal > 5_000 and cooldown < 2s)
+    else "heals {heal} every {cooldown}: that outheals most bosses"
+  /// conformance test per target so the translations cannot drift.
+  export fn healFor(self, missingHp: Int) -> Int { return min(heal, max(missingHp, 0)) }
+}
+test "healFor never overheals and never goes negative" {
+  let p: Potion = { id: "II_POT_T", name: "IDS_T", heal: 500, cooldown: 1s }
+  expect p.healFor(5) == 0
+}
+let potions: [Potion] keyed by id = load.dir("data/*.json")
+view Potion {
+}
+emit json { out: "out/potions.json", values: [potions] }
+emit go { out: "out/go/", package: "potions", mode: data }
+-- project.canon --
+project sovereign {
+  canon: "0.1"
+  roots {
+    resource: "../../../Resource"
+    client: "../../../Client"
+    source: "../../../Source"
+    services: "../.."
+    sovcommon: "../../sovcommon"
+    web: "../../sovcommon/web/src/lib"
+    parity: "../../balance/parity"
+    generated: "../../resourcestudio/generated"
+    pipeline_go: "pipeline/out/go"
+  }
+  go_module {
+    pipeline_go: "example.com/potions"
+  }
+}
+-- sovcommon/time/time.canon --
+package sovcommon
+-- studio/studio.canon --
+package studio

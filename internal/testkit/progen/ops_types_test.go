@@ -15,7 +15,7 @@ import (
 func typesOperators() []operator {
 	return []operator{
 		op(diag.E3001.Def().Code, "TYPES.md §15 (public let without a type)", appendSite("/// Untyped.\nlet ", "zzUntyped", " = 1")),
-		op(diag.E3002.Def().Code, "TYPES.md §6.2 (Int for a String field)", literalFields(func(v syntax.Expr) bool { _, ok := v.(*syntax.StringLit); return ok }, "1")),
+		op(diag.E3002.Def().Code, "TYPES.md §6.2 (Int for a String field)", literalFields(isString, "1")),
 		op(diag.E3003.Def().Code, "TYPES.md §3.5 (unknown member)", unknownMember),
 		op(diag.E3004.Def().Code, "TYPES.md §12.2 (too many arguments)", extraArgument),
 		op(diag.E3005.Def().Code, "TYPES.md §12.2 (calling a constant)", callConstant),
@@ -93,13 +93,17 @@ func valueLiterals(tg target) []*syntax.BraceLit {
 	return out
 }
 
-// literalFields replaces the value of every named item of a let's literal that keep accepts.
+// isString tells a string literal: the values the E3002 operator replaces with an Int.
+func isString(v syntax.Expr) bool { _, ok := v.(*syntax.StringLit); return ok }
+
+// literalFields replaces each let literal item keep accepts, but a dependent field's (TYPES.md §11.4).
 func literalFields(keep func(syntax.Expr) bool, with string) func(target) []progen.Site {
 	return func(tg target) []progen.Site {
 		var out []progen.Site
+		dependent := dependentFields(tg)
 		for _, b := range valueLiterals(tg) {
 			for _, it := range b.Items {
-				if f, ok := it.(*syntax.FieldItem); ok && keep(f.Value) {
+				if f, ok := it.(*syntax.FieldItem); ok && keep(f.Value) && !dependent[f.Name.Name] {
 					s, e := span(tg, f.Value)
 					out = append(out, site(replace(s, e, with)))
 				}
@@ -107,6 +111,31 @@ func literalFields(keep func(syntax.Expr) bool, with string) func(target) []prog
 		}
 		return out
 	}
+}
+
+// dependentFields are the names of tg's package's fields whose type applies a type function.
+func dependentFields(tg target) map[string]bool {
+	fns := map[string]bool{}
+	for _, other := range *tg.all {
+		for _, d := range nodes[*syntax.TypeDecl](other) {
+			fns[d.Name.Name] = fns[d.Name.Name] || len(d.Params) > 0
+		}
+	}
+	out := map[string]bool{}
+	for _, p := range peers(tg) {
+		for _, f := range nodes[*syntax.FieldDecl](p) {
+			out[f.Name.Name] = out[f.Name.Name] || applies(f.Type, fns)
+		}
+	}
+	return out
+}
+
+// applies tells whether n applies one of the type functions fns.
+func applies(n syntax.Node, fns map[string]bool) bool {
+	return holds(n, func(c syntax.Node) bool {
+		t, ok := c.(*syntax.NamedType)
+		return ok && t != nil && t.Args != nil && fns[t.Name.Parts[len(t.Name.Parts)-1].Name]
+	})
 }
 
 // unknownMember renames a member, never a key of a table or keyed list (TYPES.md §3.5).
@@ -183,12 +212,37 @@ func publicLets(tg target) []string {
 }
 
 // defaultReadsLet moves a field's default into a new local let of the field's type, and makes
-// the default read that let: the value is the same, only what the default reads is wrong.
+// the default read that let: the value is the same, only what the default reads is wrong. Never a
+// type or default reading a field or a parameter, which the let would not see.
 func defaultReadsLet(tg target) []progen.Site {
-	return sitesOf(tg, func(f *syntax.FieldDecl) bool { return isSource(tg) && f.Default != nil }, func(f *syntax.FieldDecl) progen.Site {
+	scope := recordScope(tg)
+	return sitesOf(tg, func(f *syntax.FieldDecl) bool {
+		return isSource(tg) && f.Default != nil && !reads(f.Type, scope) && !reads(f.Default, scope)
+	}, func(f *syntax.FieldDecl) progen.Site {
 		s, e := span(tg, f.Default)
 		let := "\n\nlocal let zzDefault: " + text(tg, f.Type) + " = " + text(tg, f.Default) + "\n"
 		return site(replace(s, e, "zzDefault"), insert(declEnd(tg), let))
+	})
+}
+
+// recordScope are the names of tg's fields and parameters: what a field's type or default may
+// read inside its record and a top-level let cannot.
+func recordScope(tg target) map[string]bool {
+	out := map[string]bool{}
+	for _, f := range nodes[*syntax.FieldDecl](tg) {
+		out[f.Name.Name] = true
+	}
+	for _, p := range nodes[*syntax.Param](tg) {
+		out[p.Name.Name] = true
+	}
+	return out
+}
+
+// reads tells whether an expression of n reads one of names.
+func reads(n syntax.Node, names map[string]bool) bool {
+	return holds(n, func(c syntax.Node) bool {
+		id, ok := c.(*syntax.IdentExpr)
+		return ok && id != nil && names[id.Name]
 	})
 }
 
@@ -213,16 +267,32 @@ func referenced(tg target) map[string]bool {
 	return out
 }
 
+// tableOfEnum makes a table hold an enum, never one of a record with a @stable field (LOCK.md §1).
 func tableOfEnum(tg target) []progen.Site {
 	var out []progen.Site
 	refs := referenced(tg)
+	stable := stableFielded(tg)
 	for _, enum := range declared(tg, func(d *syntax.EnumDecl) *syntax.Ident { return d.Name }) {
 		for _, t := range nodes[*syntax.TableType](tg) {
-			if refs[text(tg, t.Name)] {
+			if refs[text(tg, t.Name)] || stable[text(tg, t.Name)] {
 				continue
 			}
 			s, e := span(tg, t.Name)
 			out = append(out, site(replace(s, e, enum)))
+		}
+	}
+	return out
+}
+
+// stableFielded are the records of tg's package with a @stable field.
+func stableFielded(tg target) map[string]bool {
+	out := map[string]bool{}
+	for _, p := range peers(tg) {
+		for _, r := range nodes[*syntax.RecordDecl](p) {
+			out[r.Name.Name] = r.Body != nil && slices.ContainsFunc(r.Body.Items, func(it syntax.RecordItem) bool {
+				f, ok := it.(*syntax.FieldDecl)
+				return ok && annotated(f.Annotations, annotStable)
+			})
 		}
 	}
 	return out

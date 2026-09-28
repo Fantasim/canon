@@ -1,0 +1,54 @@
+suite mutation
+name E3013 TYPES.md §9.3 (table of an enum)
+case 333
+seed 4294967630
+open check
+born mismatch extra E2102/plain, E3305
+sig extra E2102/plain, E3305
+packages game.items
+want E3013 game/items/item.canon 107 117 check
+failure extra [E2102 game/items/entries/IK1_WEAPON/II_WEA_AXE_ANGEL.canon:3:9 "unknown name IK1_WEAPON"; E3305 game/items/entries/IK1_WEAPON/II_WEA_AXE_ANGEL.canon:5:7 "cannot tell what this { … } is; give it a type"; E2102 game/items/entries/IK1_WEAPON/II_WEA_AXE_ANGEL.canon:5:20 "unknown name DST_ATKPOWER_RATE"] besides [E3013 game/items/item.canon:5:18 "a table holds records; game.items.WeaponType is not a record"]
+-- _fixtures/resource/Server/Define/defineAttribute.h --
+-- _fixtures/resource/Server/Define/defineJob.h --
+-- _fixtures/resource/Server/Define/defineSound.h --
+-- _fixtures/resource/Server/Text/serverNames.json --
+{
+  "strings": {
+  },
+  "version": 1
+}
+-- game/items/entries/IK1_WEAPON/II_WEA_AXE_ANGEL.canon --
+package game.items
+entry items.II_WEA_AXE_ANGEL {
+  kind: IK1_WEAPON {
+    stats: [
+      { attribute: DST_ATKPOWER_RATE }
+    ]
+  }
+}
+-- game/items/item.canon --
+package game.items
+/// would have made it legal, this one refuses it.
+enum WeaponType {
+}
+let items: table WeaponType = {}
+-- project.canon --
+project sovereign {
+  canon: "0.1"
+  roots {
+    resource: "../../../Resource"
+    client: "../../../Client"
+    source: "../../../Source"
+    services: "../.."
+    sovcommon: "../../sovcommon"
+    web: "../../sovcommon/web/src/lib"
+    parity: "../../balance/parity"
+    generated: "../../resourcestudio/generated"
+  }
+}
+-- resource/vocab/vocab.canon --
+package resource
+-- sovcommon/time/time.canon --
+package sovcommon
+-- studio/studio.canon --
+package studio

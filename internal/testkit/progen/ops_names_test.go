@@ -231,6 +231,7 @@ func amendForeign(tg target) []progen.Site {
 		return nil
 	}
 	var out []progen.Site
+	taken := takenNames(tg)
 	_, pe := span(tg, tg.file.Package)
 	layer := path.Join(path.Dir(tg.path), "zz.layer.canon")
 	head := "package " + text(tg, tg.file.Package) + "\nlayer zz\n\namend "
@@ -239,7 +240,7 @@ func amendForeign(tg target) []progen.Site {
 			continue
 		}
 		for _, d := range nodes[*syntax.LetDecl](other) {
-			if d.Mods != nil && d.Mods.Local.Valid() {
+			if d.Mods != nil && d.Mods.Local.Valid() || taken[d.Name.Name] {
 				continue
 			}
 			imp := "\n\nimport " + other.pkg + " { " + d.Name.Name + " }"
@@ -250,6 +251,19 @@ func amendForeign(tg target) []progen.Site {
 				Focus: 1,
 				Add:   map[string][]byte{tg.path: []byte(src)},
 			})
+		}
+	}
+	return out
+}
+
+// takenNames are the names tg binds or imports, which no import may bind again (TYPES.md §3.1).
+func takenNames(tg target) map[string]bool {
+	out := boundNames(tg)
+	for _, imp := range tg.file.Imports {
+		for _, n := range append(slices.Clone(imp.Names), imp.Alias) {
+			if n != nil {
+				out[n.Name] = true
+			}
 		}
 	}
 	return out
@@ -493,19 +507,25 @@ func contextDependent(e syntax.Expr, bound map[string]bool) bool {
 	return false
 }
 
-// uncollected are the records of tg's package that no let holds a collection of.
+// uncollected are the records of tg's package no let or field holds a collection of (TYPES.md §10.2).
 func uncollected(tg target) []string {
-	var lets []string
+	var held []string
 	for _, p := range peers(tg) {
 		for _, d := range nodes[*syntax.LetDecl](p) {
 			if d.Type != nil {
-				lets = append(lets, text(p, d.Type))
+				held = append(held, text(p, d.Type))
 			}
+		}
+		for _, t := range nodes[*syntax.TableType](p) {
+			held = append(held, text(p, t.Name))
+		}
+		for _, k := range nodes[*syntax.KeyedType](p) {
+			held = append(held, text(p, k.List))
 		}
 	}
 	var out []string
 	for _, name := range declared(tg, func(d *syntax.RecordDecl) *syntax.Ident { return d.Name }) {
-		if !strings.Contains(strings.Join(lets, " "), name) {
+		if !strings.Contains(strings.Join(held, " "), name) {
 			out = append(out, name)
 		}
 	}

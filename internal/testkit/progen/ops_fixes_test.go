@@ -62,6 +62,46 @@ func TestMutatorsAvoidTheirOwnFindings(t *testing.T) {
 			"package m\nrecord R { id: String(/^[a-z]+$/) }\nlet r: R = { id: \"abc\" }\n",
 			patternMismatch, []string{`""`},
 		},
+		{
+			"TYPES.md §12.6, §11.2: no member added to an enum a match without _ covers",
+			"package m\nenum G { reach_level, kill }\nenum H { go_home, stay }\n" +
+				"type T(g: G) = match g {\n  reach_level => Int\n  kill => String\n}\n" +
+				"fn f(h: H) -> Int {\n  return match h {\n    go_home => 1\n    _ => 2\n  }\n}\n" +
+				"emit go { out: \"o/\", package: \"m\", mode: baked }\n",
+			collidingMember, []string{"goHome"},
+		},
+		{
+			"TYPES.md §10.2: a record a field's keyed list holds is collected at level 1",
+			"package m\nrecord Node {\n  id: Int\n  parent: ref Node\n  kids: [Node] keyed by id\n}\nrecord Loose { n: Int }\n",
+			refWithoutCollection, []string{"Loose"},
+		},
+		{
+			"TYPES.md §15, §11.1: no default moved to a let that would not see its field or parameter",
+			"package m\nrecord R(e: Int) {\n  a: Pick(e) = 1\n  b: Int = 2\n  c: Int = b\n}\n",
+			defaultReadsLet, []string{"zzDefault"},
+		},
+		{
+			"LOCK.md §1: no table of a record with a @stable field turned to an enum",
+			"package m\nenum E { a }\nrecord S {\n  code: Int @stable\n}\nrecord P { n: Int }\nlet s: stable table S = {}\nlet p: table P = {}\n",
+			tableOfEnum, []string{"E"},
+		},
+		{
+			"GRAMMAR.md §3.1 rule 2: no `??` at a line's end, which continues the line",
+			"package m\nrecord R {\n  a: Int?\n  b: Int? @json(\"b\")\n}\n",
+			doubleOptional, []string{"Int??"},
+		},
+		{
+			"TYPES.md §11.4, §11.6: no literal of a field a type function types, judged at verification",
+			"package m\nenum G { a, b }\ntype T(g: G) = match g {\n  a => String\n  b => Int\n}\n" +
+				"record R {\n  g: G\n  t: T(g)\n  s: String\n}\nlet r: R = { g: a, t: \"x\", s: \"y\" }\n",
+			literalFields(isString, "1"), []string{"1"},
+		},
+		{
+			"GRAMMAR.md §9.1: only fields of public records and of cases of public variants need a doc",
+			"package m\nlocal record L {\n  /// a.\n  a: Int\n}\nrecord P {\n  /// b.\n  b: Int\n}\n" +
+				"local variant LV {\n  c {\n    /// c.\n    c: Int\n  }\n}\nvariant PV {\n  d {\n    /// d.\n    d: Int\n  }\n}\n",
+			undocumentedField, []string{"b", "d"},
+		},
 	} {
 		sites := tc.sites(fixtureTarget(tc.src))
 		var got []string
@@ -71,6 +111,25 @@ func TestMutatorsAvoidTheirOwnFindings(t *testing.T) {
 		if strings.Join(got, "|") != strings.Join(tc.want, "|") {
 			t.Errorf("%s: focus texts %q, want %q", tc.rule, got, tc.want)
 		}
+	}
+}
+
+// TYPES.md §3.1 (E2005): amending another package's let never imports a name the file binds.
+func TestAmendForeignSkipsBoundNames(t *testing.T) {
+	all := []target{
+		metaTarget("m/a.canon", "package m\n\nimport o { items }\n"),
+		metaTarget("o/b.canon", "package o\nlet items: [Int] = []\nlet other: [Int] = []\n"),
+	}
+	all[1].pkg = "o"
+	for i := range all {
+		all[i].all = &all
+	}
+	var got []string
+	for _, s := range amendForeign(all[0]) {
+		got = append(got, editTexts(s)[s.Focus])
+	}
+	if strings.Join(got, "|") != "other" {
+		t.Errorf("amended %q, want only other: items is imported already", got)
 	}
 }
 

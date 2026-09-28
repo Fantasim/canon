@@ -3,6 +3,7 @@ package progen_test
 import (
 	"fmt"
 	"path"
+	"slices"
 	"strings"
 
 	"github.com/fantasim/canonlang/internal/diag"
@@ -229,13 +230,17 @@ func camelJoin(name string) string {
 }
 
 // collidingMember adds, to an enum of a package with a go emit, a member whose Go name is an
-// underscored member's.
+// underscored member's; never to an enum a match without `_` must cover.
 func collidingMember(tg target) []progen.Site {
 	if len(emitsOf(tg, "go")) == 0 {
 		return nil
 	}
+	covered := exhaustivelyMatched(tg)
 	var out []progen.Site
 	for _, d := range nodes[*syntax.EnumDecl](tg) {
+		if slices.ContainsFunc(d.Members, func(m *syntax.EnumMember) bool { return covered[m.Name.Name] }) {
+			continue
+		}
 		for _, m := range d.Members {
 			if !strings.Contains(m.Name.Name, "_") || len(d.Annotations) > 0 {
 				continue

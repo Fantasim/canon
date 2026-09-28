@@ -346,7 +346,8 @@ Keys of a map literal:
 Item kinds that do not fit the classification (a table entry in a record literal, a field in a
 map, a spread in a map or table) are `E3320`. In a record literal:
 
-- an unknown field is `E3301`, a missing required field `E3302`, a field given twice `E3321`;
+- an unknown field is `E3301`, a missing required field `E3302` (a field whose declared type is
+  in error is not required: its own finding stands alone, §1), a field given twice `E3321`;
 - a spread must be the first item and appear once (`E3323`). Its type must equal the literal's
   type (`E3303`). A case spread requires the same case. Later fields override;
 - input fields may not be given (`E3312`, §14).

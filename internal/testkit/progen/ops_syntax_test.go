@@ -1,6 +1,8 @@
 package progen_test
 
 import (
+	"cmp"
+	"slices"
 	"strings"
 
 	"github.com/fantasim/canonlang/internal/diag"
@@ -391,12 +393,59 @@ func detachedDoc(tg target) []progen.Site {
 	})
 }
 
+// undocumentedField drops the doc of a field of a public record or case (GRAMMAR.md §9.1).
 func undocumentedField(tg target) []progen.Site {
-	return sitesOf(tg, func(f *syntax.FieldDecl) bool { return isSource(tg) && f.Doc != nil }, func(f *syntax.FieldDecl) progen.Site {
-		s, e := span(tg, f.Name)
-		return site(mark(tg, s, e), replace(lineStart(tg, int(f.Doc.Start)), lineStart(tg, s), ""))
-	})
+	if !isSource(tg) {
+		return nil
+	}
+	var out []progen.Site
+	for _, f := range publicFields(tg) {
+		if f.Doc != nil {
+			s, e := span(tg, f.Name)
+			out = append(out, site(mark(tg, s, e), replace(lineStart(tg, int(f.Doc.Start)), lineStart(tg, s), "")))
+		}
+	}
+	return out
 }
+
+// publicFields are the fields of tg's public records and of the cases of its public variants, in
+// source order.
+func publicFields(tg target) []*syntax.FieldDecl {
+	var bodies []*syntax.RecordBody
+	for _, r := range nodes[*syntax.RecordDecl](tg) {
+		if !isLocal(r.Mods) {
+			bodies = append(bodies, r.Body)
+		}
+	}
+	for _, v := range nodes[*syntax.VariantDecl](tg) {
+		for _, it := range v.Items {
+			if c, ok := it.(*syntax.VariantCase); ok && !isLocal(v.Mods) {
+				bodies = append(bodies, c.Body)
+			}
+		}
+	}
+	var out []*syntax.FieldDecl
+	for _, b := range bodies {
+		for _, it := range bodyItems(b) {
+			if f, ok := it.(*syntax.FieldDecl); ok {
+				out = append(out, f)
+			}
+		}
+	}
+	slices.SortFunc(out, func(a, b *syntax.FieldDecl) int { return cmp.Compare(a.First(), b.First()) })
+	return out
+}
+
+// bodyItems are the items of a record or case body; none for a case written alone.
+func bodyItems(b *syntax.RecordBody) []syntax.RecordItem {
+	if b == nil {
+		return nil
+	}
+	return b.Items
+}
+
+// isLocal tells a declaration marked `local`.
+func isLocal(m *syntax.Modifiers) bool { return m != nil && m.Local.Valid() }
 
 // commentControl puts a control character at the start of a line comment's text.
 func commentControl(tg target) []progen.Site {
