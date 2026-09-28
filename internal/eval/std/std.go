@@ -25,6 +25,8 @@ type Host interface {
 	Regexp(pattern string) *regexp.Regexp
 	// Equal is value equality, a step per composite pair visited (DECISIONS 197).
 	Equal(a, b value.Value) (equal, ok bool)
+	// Key is k as a key of m: a symbol converted to m's key type once verification computed it (TYPES.md §7.5), else k.
+	Key(m *value.Map, k value.Value) value.Value
 	// Coerce converts a value to type t as a storage point does (TYPES.md §6.2).
 	Coerce(v value.Value, t types.Type) (value.Value, bool)
 }

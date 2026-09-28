@@ -1,0 +1,51 @@
+EVALUATION.md §10.2, TYPES.md §11.6 (log-2026-09-28, verify rounds 4-5): an expect subject reaching
+an instance stage B already verified for a top-level value captures that instance's findings at
+its own path: the shared `things[0]` fails E3802 like a fresh one, and `passes` names the finding.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// K.
+enum K { col, num }
+
+/// Color.
+enum Color { red, blue }
+
+/// P.
+type P(k: K) = match k {
+  col => Color
+  num => Int
+}
+
+/// Thing.
+record Thing {
+  /// K.
+  k: K
+  /// Payload.
+  p: P(k)
+}
+
+/// Things.
+let things: [Thing] = [{ k: num, p: red }]
+
+test "the shared instance fails E3802" {
+  expect things[0] fails E3802
+}
+
+test "a fresh instance fails E3802" {
+  expect Thing { k: num, p: red } fails E3802
+}
+
+test "the shared instance does not pass" {
+  expect things[0] passes
+}
+-- tests.txt --
+the shared instance fails E3802 passed=true
+a fresh instance fails E3802 passed=true
+the shared instance does not pass passed=false
+  expect "expect things[0] passes" passes got "" poisoned ""
+    finding E3802 .p: value does not match P(k) = Int

@@ -1,0 +1,62 @@
+TYPES.md §11.1, EVALUATION.md §9.3 (log-2026-09-28, verify rounds 6-7): an applied record instance
+keeps the arguments it was built with; amending the argument its field's type reads leaves an
+explicitly written `l` built as `L(a)` where `L(ev)` now computes `L(b)`, E3802 at `r1.l`, while
+a defaulted `l` is re-derived after the amendment and binds the new argument.
+-- layers --
+dev
+-- a/a.canon --
+/// A.
+package a
+
+/// K.
+enum K { col, num }
+
+/// Ev.
+record Ev {
+  /// K.
+  k: K
+}
+
+/// Evs.
+let evs: table Ev = { a { k: col }, b { k: num } }
+
+/// L.
+record L(e: Ev) {
+  /// Lim.
+  lim: Int = 1
+}
+
+/// R.
+record R {
+  /// Ev.
+  ev: ref evs
+  /// L, defaulted.
+  l: L(ev) = {}
+}
+
+/// R1, its l written.
+let r1: R = { ev: a, l: { lim: 3 } }
+
+/// R2, its l defaulted.
+let r2: R = { ev: a }
+-- a/dev.canon --
+package a
+layer dev
+
+amend r1 {
+  ev: b
+}
+
+amend r2 {
+  ev: b
+}
+-- dump.txt --
+a.evs = {a: Ev{k: col}, b: Ev{k: num}}
+a.r1 = R{ev: b, l: L{lim: 3}}
+a.r2 = R{ev: b, l: L{lim: 1}}
+
+error[E3802]  a/a.canon:31:25
+  r1.l: value does not match L(ev) = a.L(b)
+  expected by a/a.canon:27 (l: L(ev))
+
+1 error, 0 warnings in 1 package (…)

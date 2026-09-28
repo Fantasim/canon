@@ -1,0 +1,66 @@
+TYPES.md §10.3, LOCK.md §4.3 (log-2026-09-28, verify round 5): stage B remembers an instance per
+enclosing entry, which E3502 names: the one `s` held by the live entries `ta.a` and `tb.b` is
+E3502 in each, naming its own entry.
+-- a/a.canon --
+/// A.
+package a
+
+/// K.
+enum K { col, num }
+
+/// Color.
+enum Color { red, blue }
+
+/// P.
+type P(k: K) = match k {
+  col => Color
+  num => Int
+}
+
+/// Tag.
+record Tag {
+  /// Label.
+  label: String
+}
+
+/// Tags.
+let tags: table Tag = { retired old { label: "o" }, cur { label: "c" } }
+
+/// X.
+record X {
+  /// K.
+  k: K
+  /// Payload.
+  p: P(k)
+  /// Tag.
+  t: ref tags
+}
+
+/// T.
+record T {
+  /// X.
+  x: X
+}
+
+/// S.
+let s: X = { k: col, p: red, t: old }
+
+/// Ta.
+let ta: table T = { a { x: s } }
+
+/// Tb.
+let tb: table T = { b { x: s } }
+-- project.canon --
+project demo {
+  canon: "0.1"
+}
+-- findings.txt --
+error[E3502]  a/a.canon:42:33
+  ta.a.x.t: old is retired; live ta.a cannot reference it
+  expected by a/a.canon:32 (t: ref tags)
+
+error[E3502]  a/a.canon:42:33
+  tb.b.x.t: old is retired; live tb.b cannot reference it
+  expected by a/a.canon:32 (t: ref tags)
+
+2 errors, 0 warnings in 1 package (…)

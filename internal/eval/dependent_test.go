@@ -27,7 +27,7 @@ func TestDependent(t *testing.T) {
 	}, golden.Expected(dumpFile))
 }
 
-// TYPES.md §11.6: stage A keeps kept.txtar's dependent values as written; verification resolves them.
+// TYPES.md §11.6: stage A keeps kept.txtar's values as written; the root stage B hands back holds them converted.
 func TestDependentKept(t *testing.T) {
 	a, err := txtar.ParseFile("testdata/dependent/kept.txtar")
 	if err != nil {
@@ -45,13 +45,13 @@ func TestDependentKept(t *testing.T) {
 		want string
 	}{
 		{"an integer", field(0, 1), "*value.Int 3"},
-		{"a symbol on a ref branch", field(1, 1), "*value.Symbol one"},
-		{"a string under a literal union", field(1, 2), "*value.Str two"},
-		{"a string in a dependent list", field(1, 4).(*value.List).Elems[0], "*value.Str one"},
-		{"a symbol in a dependent list", field(1, 4).(*value.List).Elems[1], "*value.Symbol two"},
-		{"a string on a ref branch", field(2, 1), "*value.Str two"},
-		{"a symbol on an enum branch", field(3, 1), "*value.Symbol red"},
-		{"a symbol key", field(3, 3).(*value.Map).Keys[0], "*value.Symbol red"},
+		{"a symbol on a ref branch", field(1, 1), "*value.Ref one"},
+		{"a string under a literal union", field(1, 2), "*value.Ref two"},
+		{"a string in a dependent list", field(1, 4).(*value.List).Elems[0], "*value.Ref one"},
+		{"a symbol in a dependent list", field(1, 4).(*value.List).Elems[1], "*value.Ref two"},
+		{"a string on a ref branch", field(2, 1), "*value.Ref two"},
+		{"a symbol on an enum branch", field(3, 1), "*value.Member red"},
+		{"a symbol key", field(3, 3).(*value.Map).Keys[0], "*value.Member red"},
 		{"a string key", field(3, 3).(*value.Map).Keys[1], "*value.Str red"},
 		{"a case name on a variant branch", field(4, 1), "*value.Symbol box"},
 	}

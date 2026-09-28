@@ -1,0 +1,50 @@
+TYPES.md §5.2, §11.6: a dependent map key is resolved against its computed type at
+verification; two keys that then name one entry, `one` and `"one"`, are E3322 at the second.
+-- a/a.canon --
+/// A.
+package a
+
+/// Item.
+record Item {
+  /// N.
+  n: Int = 1
+}
+
+/// Items.
+let items: table Item = { one {}, two {} }
+
+/// K.
+enum K { text, word }
+
+/// SK.
+type SK(k: K) = match k {
+  text => ref items
+  word => String
+}
+
+/// R.
+record R {
+  /// K.
+  k: K
+  /// Counts.
+  ks: {SK(k): Int}
+}
+
+/// Rs.
+let rs: [R] = [
+  { k: text, ks: { one: 1, "one": 2, two: 3 } },
+  { k: word, ks: { one: 1, "one": 2 } },
+]
+-- project.canon --
+project demo {
+  canon: "0.1"
+}
+-- findings.txt --
+error[E3322]  a/a.canon:32:28
+  rs[0].ks: key one is given twice
+
+error[E3802]  a/a.canon:33:20
+  rs[1].ks[one]: value does not match SK(k) = String
+  expected by a/a.canon:27 (SK(k))
+
+2 errors, 0 warnings in 1 package (…)

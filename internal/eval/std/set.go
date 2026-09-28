@@ -13,6 +13,35 @@ type valueSet struct {
 	vals    []value.Value
 }
 
+// setElem is the element type a set built-in hashes as, a dependent one the lists' computed type (TYPES.md §7.5).
+func setElem(c *Call) types.Type {
+	static := elemType(c.Result)
+	if static.Kind() == types.Any && c.Recv != nil {
+		static = elemType(c.Recv.Type())
+	}
+	if !IsDependent(static) {
+		return static
+	}
+	for _, l := range append([]value.Value{c.Recv}, c.Args...) {
+		if l == nil || l.Type() == nil {
+			continue
+		}
+		if e := elemType(l.Type()); !IsDependent(e) && e.Kind() != types.Any {
+			return e
+		}
+	}
+	return static
+}
+
+// IsDependent reports the static view of a dependent value, or an application (TYPES.md §11.4).
+func IsDependent(t types.Type) bool {
+	switch t.Base().(type) {
+	case *types.DepUnionType, *types.TypeAppType:
+		return true
+	}
+	return false
+}
+
 func newSet(h Host, elem types.Type) *valueSet {
 	return &valueSet{host: h, elem: elem, buckets: map[uint64][]int{}}
 }

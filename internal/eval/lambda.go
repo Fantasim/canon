@@ -103,11 +103,11 @@ func (r *run) invoke(fn value.Value, args []value.Value, site source.Span) value
 		r.bug(nil)
 		return nil
 	}
-	saved := r.fr
-	r.fr = fr
+	saved, dep := r.fr, r.dep
+	r.fr, r.dep = fr, nil // a body computes: its literals are not kept as written (TYPES.md §6.2)
 	r.ev.depth++
 	v := r.eval(body)
-	r.fr = saved
+	r.fr, r.dep = saved, dep
 	r.ev.depth--
 	return v
 }

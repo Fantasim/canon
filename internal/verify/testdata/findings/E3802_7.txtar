@@ -1,0 +1,75 @@
+TYPES.md §11.1, §11.6 (log-2026-09-28, verify round 6): an applied record instance keeps the
+arguments it was built with: `x.l`, built as `L(a)`, is judged against `a` (`red` a Color) wherever
+it is reached; stored where `L(ev)` computes `L(b)`, it is E3802 at that field, in either order.
+-- a/a.canon --
+/// A.
+package a
+
+/// K.
+enum K { col, num }
+
+/// Color.
+enum Color { red, blue }
+
+/// Ev.
+record Ev {
+  /// K.
+  k: K
+}
+
+/// Evs.
+let evs: table Ev = { a { k: col }, b { k: num } }
+
+/// P.
+type P(e: Ev) = match e.k {
+  col => Color
+  num => Int
+}
+
+/// L.
+record L(e: Ev) {
+  /// P.
+  p: P(e)
+}
+
+/// R.
+record R {
+  /// Ev.
+  ev: ref evs
+  /// L.
+  l: L(ev)
+}
+
+/// F, the instance where it was built first.
+fn f() -> [R] {
+  let x: R = { ev: a, l: { p: red } }
+  return [x, { ev: b, l: x.l }]
+}
+
+/// G, the instance stored elsewhere first.
+fn g() -> [R] {
+  let x: R = { ev: a, l: { p: red } }
+  return [{ ev: b, l: x.l }, x]
+}
+
+/// Rs.
+let rs: [R] = f()
+
+/// Rs2.
+let rs2: [R] = g()
+-- project.canon --
+project demo {
+  canon: "0.1"
+}
+-- findings.txt --
+error[E3802]  a/a.canon:41:26
+  rs[1].l: value does not match L(ev) = a.L(b)
+  expected by a/a.canon:36 (l: L(ev))
+  in f (a/a.canon:52)
+
+error[E3802]  a/a.canon:47:26
+  rs2[0].l: value does not match L(ev) = a.L(b)
+  expected by a/a.canon:36 (l: L(ev))
+  in g (a/a.canon:55)
+
+2 errors, 0 warnings in 1 package (…)

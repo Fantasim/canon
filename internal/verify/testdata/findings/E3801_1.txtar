@@ -1,0 +1,46 @@
+TYPES.md §11.6, §13.5: a non-optional field whose type computes Never cannot be built, at its
+value, in literals and in a default; an optional one takes none.
+-- a/a.canon --
+/// A.
+package a
+
+/// K.
+enum K { one, gone }
+
+/// P.
+type P(k: K) = match k {
+  one => Int
+  gone => Never
+}
+
+/// Thing.
+record Thing {
+  /// K.
+  k: K
+  /// Required payload.
+  q: P(k)
+  /// Defaulted payload.
+  d: P(k) = 4
+  /// Optional payload.
+  o: P(k)?
+}
+
+/// Things.
+let things: [Thing] = [
+  { k: one, q: 1 },
+  { k: gone, q: 2 },
+]
+-- project.canon --
+project demo {
+  canon: "0.1"
+}
+-- findings.txt --
+error[E3801]  a/a.canon:20:13
+  things[1].d: d has type P(k) = Never: this value cannot be built
+  expected by a/a.canon:20 (d: P(k))
+
+error[E3801]  a/a.canon:28:17
+  things[1].q: q has type P(k) = Never: this value cannot be built
+  expected by a/a.canon:18 (q: P(k))
+
+2 errors, 0 warnings in 1 package (…)

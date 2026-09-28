@@ -1,0 +1,38 @@
+EVALUATION.md §12.1, §12.2: a `where` refinement of a computed type runs first in stage B,
+charged to the value being verified, a container's too: one step short, E4401 is in the
+predicate and the heaviest root is `things`.
+-- a/a.canon --
+/// A.
+package a
+
+/// K.
+enum K { num, many }
+
+local fn spin(n: Int) -> Int {
+  var i = 0
+  while i < n { i += 1 }
+  return i
+}
+
+/// P.
+type P(k: K) = match k {
+  num => Int where spin(200) == 200
+  many => [Int]
+}
+
+/// Thing.
+record Thing {
+  /// K.
+  k: K
+  /// Payload.
+  p: P(k)
+}
+
+/// Things.
+let things: [Thing] = [{ k: num, p: 3 }]
+-- budget.txt --
+error[E4401]  a/a.canon:15:20
+  evaluation budget of 1222 steps exhausted
+  heaviest: things (1222 steps)
+
+1 error, 0 warnings in 1 package (…)

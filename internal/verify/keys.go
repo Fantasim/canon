@@ -32,6 +32,22 @@ func (w *walker) uniqueKeys(l *value.List, lt *types.ListType, at *Path) {
 	}
 }
 
+// uniqueResolved reports a resolved key equal to an earlier one, `one` then `"one"` (E3322, TYPES.md §5.2).
+func (w *walker) uniqueResolved(m *value.Map, at *Path) {
+	seen := &value.Map{}
+	for _, k := range m.Keys {
+		if i, _ := seen.Lookup(k, sameKey); i >= 0 {
+			s := SiteOf(k)
+			w.report(s, diag.E3322.At(s.Span, k), at)
+			w.invalid(m)
+			continue
+		}
+		seen.Keys = append(seen.Keys, k)
+	}
+}
+
+func sameKey(a, b value.Value) (bool, bool) { return value.Equal(a, b), true }
+
 // stableValue is a @stable value as the lock compares it: an integer or a string.
 type stableValue struct {
 	isString bool

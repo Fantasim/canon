@@ -1,0 +1,37 @@
+TYPES.md §11.6, WIRE.md §5.9, DECISIONS 175: a loaded value on a Never branch decodes as a
+symbol; in a non-optional field verification rejects it with E3801, at the loaded value.
+-- a/a.canon --
+/// A.
+package a
+
+/// K.
+enum K { one, gone }
+
+/// P.
+type P(k: K) = match k {
+  one => Int
+  gone => Never
+}
+
+/// Thing.
+record Thing {
+  /// K.
+  k: K
+  /// Required payload.
+  q: P(k)
+}
+
+/// Things.
+let things: [Thing] = load("things.json")
+-- a/things.json --
+[{"k": "one", "q": 1}, {"k": "gone", "q": 2}]
+-- project.canon --
+project demo {
+  canon: "0.1"
+}
+-- findings.txt --
+error[E3801]  a/things.json:1:43
+  things[1].q: q has type P(k) = Never: this value cannot be built
+  expected by a/a.canon:18 (q: P(k))
+
+1 error, 0 warnings in 1 package (…)

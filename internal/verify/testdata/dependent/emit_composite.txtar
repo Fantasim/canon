@@ -1,0 +1,54 @@
+TYPES.md §11.4, §11.6: a list or map literal given to a dependent field whose computed type is
+a list or a map keeps its symbols as written until verification, which converts each element
+and key against the branch's element and key types; `canon build` then writes them.
+-- a/a.canon --
+/// A.
+package a
+
+/// K.
+enum K { one, many, pair }
+
+/// Color.
+enum Color { red, blue }
+
+/// P.
+type P(k: K) = match k {
+  one => Color
+  many => [Color]
+  pair => {Color: Int}
+}
+
+/// Thing.
+record Thing {
+  /// K.
+  k: K
+  /// Payload.
+  p: P(k)
+}
+
+/// Things.
+let things: [Thing] = [
+  { k: one, p: red },
+  { k: many, p: [red, blue] },
+  { k: pair, p: { red: 1, blue: 2 } },
+]
+
+emit json { out: "@out/" }
+-- project.canon --
+project demo {
+  canon: "0.1"
+  roots {
+    out: "out"
+  }
+}
+-- outputs.txt --
+0 errors, 0 warnings in 1 package (…)
+-- @out/things.json
+{
+  "$schema": "a.Thing@b63bb870",
+  "rows": [
+    {"k": "one", "p": "red"},
+    {"k": "many", "p": ["red", "blue"]},
+    {"k": "pair", "p": {"red": 1, "blue": 2}}
+  ]
+}

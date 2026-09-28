@@ -1,0 +1,57 @@
+TYPES.md §10.3, LOCK.md §4.3 (log-2026-09-28, verify round 5): `tc` is `ta`, its entries the same
+instances, converted once; the judgement that reads the enclosing entry runs again under each
+entry path, so E3502 names `ta.a` and `tc.a` as without dependent types.
+-- a/a.canon --
+/// A.
+package a
+
+/// K.
+enum K { col, num }
+
+/// Color.
+enum Color { red, blue }
+
+/// P.
+type P(k: K) = match k {
+  col => Color
+  num => Int
+}
+
+/// Tag.
+record Tag {
+  /// Label.
+  label: String
+}
+
+/// Tags.
+let tags: table Tag = { retired old { label: "o" }, cur { label: "c" } }
+
+/// X.
+record X {
+  /// K.
+  k: K
+  /// Payload.
+  p: P(k)
+  /// Tag.
+  t: ref tags
+}
+
+/// Ta.
+let ta: table X = { a { k: col, p: red, t: old } }
+
+/// Tc, the same instances.
+let tc: table X = ta
+-- project.canon --
+project demo {
+  canon: "0.1"
+}
+-- findings.txt --
+error[E3502]  a/a.canon:36:44
+  ta.a.t: old is retired; live ta.a cannot reference it
+  expected by a/a.canon:32 (t: ref tags)
+
+error[E3502]  a/a.canon:36:44
+  tc.a.t: old is retired; live tc.a cannot reference it
+  expected by a/a.canon:32 (t: ref tags)
+
+2 errors, 0 warnings in 1 package (…)

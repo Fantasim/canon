@@ -1,0 +1,45 @@
+TYPES.md §11.6: `none` given to a non-optional dependent field is judged against the computed
+type: E3801 where it computes Never, E3802 where it computes a type without none, fine where it
+computes an optional type.
+-- a/a.canon --
+/// A.
+package a
+
+/// K.
+enum K { opt, req, gone }
+
+/// P.
+type P(k: K) = match k {
+  opt => Int?
+  req => Int
+  gone => Never
+}
+
+/// Thing.
+record Thing {
+  /// K.
+  k: K
+  /// Payload.
+  p: P(k)
+}
+
+/// Things.
+let things: [Thing] = [
+  { k: opt, p: none },
+  { k: req, p: none },
+  { k: gone, p: none },
+]
+-- project.canon --
+project demo {
+  canon: "0.1"
+}
+-- findings.txt --
+error[E3802]  a/a.canon:25:16
+  things[1].p: value does not match P(k) = Int
+  expected by a/a.canon:19 (p: P(k))
+
+error[E3801]  a/a.canon:26:17
+  things[2].p: p has type P(k) = Never: this value cannot be built
+  expected by a/a.canon:19 (p: P(k))
+
+2 errors, 0 warnings in 1 package (…)

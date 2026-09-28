@@ -34,7 +34,7 @@ func setOf(h Host, b []value.Value, elem types.Type) (*valueSet, bool) {
 // filterBy keeps the receiver's elements that are (or are not) in b, in receiver order; it
 // costs n + len(b).
 func filterBy(h Host, c *Call, in bool) (value.Value, bool) {
-	s, ok := setOf(h, Elems(c.arg(0)), elemType(c.Result))
+	s, ok := setOf(h, Elems(c.arg(0)), setElem(c))
 	if !ok {
 		return nil, false
 	}
@@ -60,7 +60,7 @@ func seqDiff(h Host, c *Call) (value.Value, bool) {
 // seqUnion is the receiver, then the elements of b it lacks, each as the result's element type.
 func seqUnion(h Host, c *Call) (value.Value, bool) {
 	xs := Elems(c.Recv)
-	s, ok := setOf(h, xs, elemType(c.Result))
+	s, ok := setOf(h, xs, setElem(c))
 	out := append([]value.Value(nil), xs...)
 	ok = ok && eachWhile(h, Elems(c.arg(0)), func(_ int, x value.Value) bool {
 		i, added, ok := s.add(x)

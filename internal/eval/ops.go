@@ -28,7 +28,11 @@ func evalUnary(r *run, e syntax.Expr, _ *vpath) value.Value {
 		return &value.Bool{V: !b.V, P: r.prov(e, value.ProvComputed)}
 	}
 	r.site = r.span(e)
-	return r.std(std.Neg(r.host(), v, r.prov(e, value.ProvComputed)))
+	neg := r.std(std.Neg(r.host(), v, r.prov(e, value.ProvComputed)))
+	if _, isLit := x.X.(*syntax.IntLit); isLit {
+		return r.literal(neg) // a literal token with a leading - (TYPES.md §5.3)
+	}
+	return neg
 }
 
 // evalBinary evaluates operands left to right, `and`, `or`, `??` lazily (EVALUATION.md §2.2).
@@ -94,7 +98,11 @@ func (r *run) binop(op syntax.TokenKind, a, b value.Value, n syntax.Node, t type
 		if !r.spend(size, func() source.Span { return r.span(n) }) {
 			return nil
 		}
-		return concat(a, b, t, p)
+		res := concat(a, b, t, p)
+		if l, ok := res.(*value.List); ok {
+			return r.settledList(l, a, b)
+		}
+		return res
 	}
 	aop, ok := arithOps[op]
 	if !ok {
@@ -113,16 +121,6 @@ func (r *run) binop(op syntax.TokenKind, a, b value.Value, n syntax.Node, t type
 var comparisons = map[syntax.TokenKind]bool{
 	syntax.TokEq: true, syntax.TokNe: true, syntax.TokLt: true, syntax.TokLe: true,
 	syntax.TokGt: true, syntax.TokGe: true,
-}
-
-// equal is value equality charged a step per composite pair visited; past the budget it is
-// E4401 at at (DECISIONS 197).
-func (r *run) equal(a, b value.Value, at func() source.Span) (bool, bool) {
-	eq, done, n := value.EqualUpTo(a, b, r.remaining())
-	if !r.spend(n, at) {
-		return false, false
-	}
-	return eq, done
 }
 
 // boolOr is a Bool of b, or nil once the root aborted.
@@ -192,6 +190,8 @@ func (r *run) memberOf(x, coll value.Value) (bool, bool) {
 	case *value.Map:
 		i, ok := std.MapIndex(r.host(), c, x)
 		return i >= 0, ok
+	case *value.List:
+		x = r.valueAs(x, elemOf(c.T))
 	}
 	if keyedColl(coll) && !isEntryOrRef(x) {
 		k, _ := std.KeyOf(x)

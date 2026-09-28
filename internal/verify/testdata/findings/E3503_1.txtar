@@ -1,0 +1,53 @@
+TYPES.md §6.2, §11.6: at a dependent branch a value is stored as at any storage point: an entry
+of the computed ref's target becomes a ref to it, an entry of another collection is E3503.
+-- a/a.canon --
+/// A.
+package a
+
+/// Tag.
+record Tag {
+  /// Label.
+  label: String
+}
+
+/// Tags.
+let tags: table Tag = {
+  red { label: "red" }
+}
+
+/// Others.
+let others: table Tag = {
+  blue { label: "blue" }
+}
+
+/// K.
+enum K { tag, other }
+
+/// P.
+type P(k: K) = match k {
+  tag => ref tags
+  other => ref others
+}
+
+/// Thing.
+record Thing {
+  /// K.
+  k: K
+  /// Payload.
+  p: P(k)
+}
+
+/// Things.
+let things: [Thing] = [
+  { k: tag, p: tags.red },
+  { k: tag, p: others.blue },
+]
+-- project.canon --
+project demo {
+  canon: "0.1"
+}
+-- findings.txt --
+error[E3503]  a/a.canon:17:3
+  things[1].p: this a.Tag is not an entry of tags
+
+1 error, 0 warnings in 1 package (…)

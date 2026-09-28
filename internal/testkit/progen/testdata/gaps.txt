@@ -4,6 +4,8 @@
 # longer reachable. One line per code: CODE reason.
 E1003 the harness opens a project; E1003 is the search for project.canon failing (CLI.md §2.1), which Run never does
 E3317 needs a map field in loaded data; load.dir refuses a map element type (build.ErrLoad, DECISIONS 173, internal/load/supported.go)
+E3801 no mutation operator yet (a non-optional field whose dependent type computes Never); owed by the M3 progen-operators unit (U20)
+E3802 no mutation operator yet (a dependent value that does not fit its computed type); owed by the M3 progen-operators unit (U20)
 E7006 no example gives a load form an option not listed for it or its detected format (WIRE.md §6.1); no mutation operator generates one
 E7102 needs a header with the same #define name given two values; no example's fixture headers have one and no mutation operator generates one (WIRE.md §6.8)
 E7106 needs an `at:` path that misses in its document; no example's `at:` targets are mutated and no operator generates one (WIRE.md §6.3)

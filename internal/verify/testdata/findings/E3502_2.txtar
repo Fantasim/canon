@@ -1,0 +1,77 @@
+TYPES.md §10.3, LOCK.md §4.3 (log-2026-09-28, verify round 4): stage B remembers an instance per
+retired scope: the one instance held by a retired and a live entry, naming a retired entry, is
+E3502 in the live one, whichever entry comes first.
+-- a/a.canon --
+/// A.
+package a
+
+/// K.
+enum K { col, num }
+
+/// Color.
+enum Color { red, blue }
+
+/// P.
+type P(k: K) = match k {
+  col => Color
+  num => Int
+}
+
+/// Tag.
+record Tag {
+  /// N.
+  n: Int = 1
+}
+
+/// Tags.
+let tags: table Tag = { live {}, retired gone {} }
+
+/// X.
+record X {
+  /// K.
+  k: K
+  /// Payload.
+  p: P(k)
+  /// Tag.
+  tag: ref tags
+}
+
+/// T.
+record T {
+  /// X.
+  x: X
+}
+
+/// Build, the retired entry first.
+fn build() -> table T {
+  let s = X { k: col, p: red, tag: gone }
+  return { retired old { x: s }, cur { x: s } }
+}
+
+/// Build2, the live entry first.
+fn build2() -> table T {
+  let s = X { k: col, p: red, tag: gone }
+  return { cur { x: s }, retired old { x: s } }
+}
+
+/// Ts.
+let ts: table T = build()
+
+/// Ts2.
+let ts2: table T = build2()
+-- project.canon --
+project demo {
+  canon: "0.1"
+}
+-- findings.txt --
+error[E3502]  a/a.canon:43:36
+  ts.cur.x.tag: gone is retired; live ts.cur cannot reference it
+  expected by a/a.canon:32 (tag: ref tags)
+  in build (a/a.canon:54)
+
+error[E3502]  a/a.canon:49:36
+  ts2.cur.x.tag: gone is retired; live ts2.cur cannot reference it
+  expected by a/a.canon:32 (tag: ref tags)
+  in build2 (a/a.canon:57)
+
+2 errors, 0 warnings in 1 package (…)

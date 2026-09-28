@@ -23,6 +23,11 @@ type Evaluator interface {
 	Where(ctx context.Context, p *types.Predicate, it value.Value) (holds, ok bool)
 }
 
+// dependents is what an Evaluator also serves to verify dependent values, each root's steps charged to it (TYPES.md §11.6).
+type dependents interface {
+	Verifying(ctx context.Context, root eval.Root, bag *diag.Bag) *eval.StageB
+}
+
 // Assets tells whether a file exists under an asset root, matched byte for byte (TYPES.md §13.4).
 type Assets interface {
 	Exists(root, path string) bool
@@ -31,6 +36,7 @@ type Assets interface {
 // Verifier runs stage B (EVALUATION.md §5), from any goroutine; eval.Host.Verify uses Check.
 type Verifier struct {
 	ev       Evaluator
+	deps     dependents
 	bags     map[string]*diag.Bag
 	assets   Assets
 	src      *sources
@@ -58,8 +64,10 @@ func New(ev Evaluator, prog *check.Program, bags map[string]*diag.Bag, assets As
 
 // NewShared is New over an index built once, for a verifier made per call with bags of its own.
 func NewShared(ix *Index, ev Evaluator, bags map[string]*diag.Bag, assets Assets) *Verifier {
+	deps, _ := ev.(dependents)
 	return &Verifier{
 		ev:       ev,
+		deps:     deps,
 		bags:     bags,
 		assets:   assets,
 		src:      ix.src,
@@ -81,38 +89,60 @@ type Unbound struct {
 	Path string
 }
 
-// Check verifies a top-level value against its declared type (EVALUATION.md §5).
+// Check verifies a top-level value against its declared type and hands its converted value back (EVALUATION.md §5, §4.1).
 func (v *Verifier) Check(ctx context.Context, root eval.Root, val value.Value) (Result, error) {
 	bag := v.bags[root.Pkg]
 	if bag == nil {
 		return Result{}, fmt.Errorf(fmtNoBag, ErrNoBag, root.Pkg)
 	}
-	w := &walker{Verifier: v, ctx: ctx, bag: bag, pkg: root.Pkg, res: Result{Valid: true}}
+	w := &walker{Verifier: v, ctx: ctx, bag: bag, pkg: root.Pkg, root: root, res: Result{Valid: true}, branches: map[branchKey]branchOut{}}
+	if v.deps != nil {
+		w.stage = v.deps.Verifying(ctx, root, bag)
+	}
 	t, ok := v.declared[root]
 	if !ok {
 		t = val.Type()
 	}
-	w.walk(val, t, Root(root.Name), scope{})
+	nv := w.walk(val, t, Root(root.Name), scope{})
+	if w.err != nil {
+		return w.res, w.err
+	}
+	if nv != val && !w.res.Poisoned && w.stage != nil {
+		w.stage.Replace(nv)
+	}
 	return w.res, nil
 }
 
 type walker struct {
 	*Verifier
-	ctx context.Context
-	bag *diag.Bag
-	pkg string
-	res Result
+	ctx     context.Context
+	bag     *diag.Bag
+	pkg     string
+	root    eval.Root
+	res     Result
+	stage   *eval.StageB
+	err     error
+	halted  bool // the step budget ran out (EVALUATION.md §12.2)
+	charged int  // applications charged so far
+
+	recording []*recorder // the instances being verified, innermost last
+
+	branches map[branchKey]branchOut
 }
 
-// scope is the nearest enclosing table entry and whether a retired one encloses (LOCK.md §4.3).
+// scope is where a value sits: its table entry, the env its type arguments read, its field.
 type scope struct {
 	entry   string
-	retired bool
+	retired bool // a retired entry encloses it (LOCK.md §4.3)
+	env     *env
+	field   string // the field it is given to directly, "" for an element, a key or a map value
+	dep     *depSite
+	direct  bool // the value is dep's own, not one of its parts
 }
 
 // flag reports a soft finding at s and marks v invalid (EVALUATION.md §7.1).
 func (w *walker) flag(s Site, b *diag.Builder, v value.Value, at *Path) {
-	s.Report(b, at, w.bag)
+	w.report(s, b, at)
 	w.invalid(v)
 }
 
@@ -122,5 +152,5 @@ func (w *walker) invalid(v value.Value) {
 }
 
 func (w *walker) stopped() bool {
-	return w.res.Poisoned || w.ctx.Err() != nil
+	return w.res.Poisoned || w.halted || w.err != nil || w.ctx.Err() != nil
 }

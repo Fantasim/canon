@@ -1,0 +1,41 @@
+TYPES.md §11.6, WIRE.md §5.9, DECISIONS 175: a loaded value on the Never branch of an optional
+field decodes as a symbol, which verification rejects with E3802; `null` and an absent key are none.
+-- a/a.canon --
+/// A.
+package a
+
+/// K.
+enum K { one, gone }
+
+/// P.
+type P(k: K) = match k {
+  one => Int
+  gone => Never
+}
+
+/// Thing.
+record Thing {
+  /// K.
+  k: K
+  /// Payload.
+  p: P(k)?
+}
+
+/// Things.
+let things: [Thing] = load("things.json")
+-- a/things.json --
+[{"k": "one", "p": 1}, {"k": "gone", "p": "x"}, {"k": "gone", "p": [1]}, {"k": "gone", "p": null}, {"k": "gone"}]
+-- project.canon --
+project demo {
+  canon: "0.1"
+}
+-- findings.txt --
+error[E3802]  a/things.json:1:43
+  things[1].p: value does not match P(k) = Never
+  expected by a/a.canon:18 (P(k))
+
+error[E3802]  a/things.json:1:68
+  things[2].p: value does not match P(k) = Never
+  expected by a/a.canon:18 (P(k))
+
+2 errors, 0 warnings in 1 package (…)

@@ -1,0 +1,77 @@
+TYPES.md §6.2, §11.4, §11.6 (log-2026-09-28, verify round 3): a value is written only where
+the decoder or a literal gives it to a dependent position: a loaded value read through an
+expression, or a literal a lambda computes, is computed, E3802 when its kind differs.
+-- a/a.canon --
+/// A.
+package a
+
+/// Tag.
+record Tag {
+  /// Label.
+  label: String
+}
+
+/// Tags.
+let tags: table Tag = {
+  red { label: "red" }
+}
+
+/// K.
+enum K { fl, tag }
+
+/// P.
+type P(k: K) = match k {
+  fl => Float
+  tag => ref tags
+}
+
+/// Thing.
+record Thing {
+  /// K.
+  k: K
+  /// Payload.
+  p: P(k)
+}
+
+/// Src, loaded.
+record Src {
+  /// N.
+  n: Int
+  /// S.
+  s: String
+}
+
+/// Srcs.
+let srcs: [Src] = load("srcs.json")
+
+/// Things.
+let things: [Thing] = [
+  { k: fl, p: srcs[0].n },
+  { k: tag, p: srcs[0].s },
+  { k: fl, p: [1, 2].map(x => 3)[0] },
+]
+
+/// Loaded things: the decoder writes each into its computed branch.
+let loaded: [Thing] = load("things.json")
+-- a/srcs.json --
+[{"n": 3, "s": "red"}]
+-- a/things.json --
+[{"k": "fl", "p": 3}, {"k": "tag", "p": "red"}]
+-- project.canon --
+project demo {
+  canon: "0.1"
+}
+-- findings.txt --
+error[E3802]  a/a.canon:47:31
+  things[2].p: value does not match P(k) = Float
+  expected by a/a.canon:29 (p: P(k))
+
+error[E3802]  a/srcs.json:1:8
+  things[0].p: value does not match P(k) = Float
+  expected by a/a.canon:29 (p: P(k))
+
+error[E3802]  a/srcs.json:1:16
+  things[1].p: value does not match P(k) = ref a.tags
+  expected by a/a.canon:29 (p: P(k))
+
+3 errors, 0 warnings in 1 package (…)

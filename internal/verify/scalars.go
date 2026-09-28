@@ -27,7 +27,7 @@ func (w *walker) member(m *value.Member, at *Path, sc scope) {
 	}
 	name, s := e.Members[m.Index].Name, SiteOf(m)
 	b := diag.E3506.At(s.Span, w.local(e.Pkg, e.Name), name)
-	w.flag(s, w.src.relatedNode(b, e.Decl, memberNode(e, name)), m, at)
+	w.flagScoped(s, w.src.relatedNode(b, e.Decl, memberNode(e, name)), m, at)
 }
 
 // retiredCase reports a retired case outside a retired entry (TYPES.md §8.1).
@@ -37,7 +37,7 @@ func (w *walker) retiredCase(r *value.Record, c *types.CaseType, at *Path, sc sc
 	}
 	v, s := c.Variant, SiteOf(r)
 	b := diag.E3506.At(s.Span, w.local(v.Pkg, v.Name), c.Name)
-	w.flag(s, w.src.relatedNode(b, v.Decl, caseNode(v, c.Name)), r, at)
+	w.flagScoped(s, w.src.relatedNode(b, v.Decl, caseNode(v, c.Name)), r, at)
 }
 
 // local names a declaration of pkg, qualified outside the finding's package (ERRORS.md §1.3).

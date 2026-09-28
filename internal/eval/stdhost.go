@@ -54,6 +54,10 @@ func (h *stdHost) Equal(a, b value.Value) (bool, bool) {
 	return h.r.equal(a, b, func() source.Span { return h.r.site })
 }
 
+func (h *stdHost) Key(m *value.Map, k value.Value) value.Value {
+	return h.r.keyFor(m, k)
+}
+
 func (h *stdHost) Remaining() int {
 	return h.r.remaining()
 }

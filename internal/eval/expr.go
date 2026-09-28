@@ -105,7 +105,7 @@ func evalInt(r *run, e syntax.Expr, _ *vpath) value.Value {
 		r.bug(e)
 		return nil
 	}
-	return &value.Int{V: x.Value.Int64(), T: types.IntType, P: r.prov(e, value.ProvLiteral)}
+	return r.literal(&value.Int{V: x.Value.Int64(), T: types.IntType, P: r.prov(e, value.ProvLiteral)})
 }
 
 // evalFloat rounds the literal's exact decimal value to the nearest binary64.
@@ -127,7 +127,7 @@ func evalDuration(r *run, e syntax.Expr, _ *vpath) value.Value {
 }
 
 func evalRaw(r *run, e syntax.Expr, _ *vpath) value.Value {
-	return &value.Str{V: e.(*syntax.RawStringLit).Value, T: types.StringType, P: r.prov(e, value.ProvLiteral)}
+	return r.literal(&value.Str{V: e.(*syntax.RawStringLit).Value, T: types.StringType, P: r.prov(e, value.ProvLiteral)})
 }
 
 // evalRegex is the pattern of a regex literal, the argument of matches (STDLIB.md §8).
@@ -167,6 +167,7 @@ func evalLoad(r *run, e syntax.Expr, at *vpath) value.Value {
 		r.stop()
 		return nil
 	}
+	r.ev.markLoaded(v, t)
 	return v
 }
 

@@ -1,0 +1,67 @@
+TYPES.md §11.6: a value that does not fit its computed type is E3802 at the value: a member of
+another branch, an integer where an enum is computed, a value where an optional field computes
+Never, a string where Int is; `none` fits an optional field on any branch.
+-- a/a.canon --
+/// A.
+package a
+
+/// K.
+enum K { num, col, gone }
+
+/// Color.
+enum Color { red, blue }
+
+/// P.
+type P(k: K) = match k {
+  num => Int
+  col => Color
+  gone => Never
+}
+
+/// Q.
+type Q(k: K) = match k {
+  num => Int
+  col, gone => String
+}
+
+/// Thing.
+record Thing {
+  /// K.
+  k: K
+  /// Payload.
+  p: P(k)?
+  /// Another.
+  q: Q(k)?
+}
+
+/// Things.
+let things: [Thing] = [
+  { k: num, p: red },
+  { k: col, p: 3 },
+  { k: gone, p: 1 },
+  { k: num, q: "x" },
+  { k: col, p: blue, q: "y" },
+  { k: gone },
+]
+-- project.canon --
+project demo {
+  canon: "0.1"
+}
+-- findings.txt --
+error[E3802]  a/a.canon:35:16
+  things[0].p: value does not match P(k) = Int
+  expected by a/a.canon:28 (P(k))
+
+error[E3802]  a/a.canon:36:16
+  things[1].p: value does not match P(k) = a.Color
+  expected by a/a.canon:28 (P(k))
+
+error[E3802]  a/a.canon:37:17
+  things[2].p: value does not match P(k) = Never
+  expected by a/a.canon:28 (P(k))
+
+error[E3802]  a/a.canon:38:16
+  things[3].q: value does not match Q(k) = Int
+  expected by a/a.canon:30 (Q(k))
+
+4 errors, 0 warnings in 1 package (…)

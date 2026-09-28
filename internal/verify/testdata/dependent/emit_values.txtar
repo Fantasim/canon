@@ -1,0 +1,86 @@
+TYPES.md §11.6 (the ir E8019-lift builder's item (1), meta/decisions/log-2026-09-25.md): values
+given to dependent fields are converted to their computed branch in verification, so the JSON
+data of `canon build` holds a ref key, an enum member, a float and a string, never a symbol.
+-- a/a.canon --
+/// A.
+package a
+
+/// K.
+enum K { one, two, col, num, text, gone, f32 }
+
+/// Color.
+enum Color { red, blue }
+
+/// Tag.
+record Tag {
+  /// Label.
+  label: String
+}
+
+/// Tags.
+let tags: table Tag = {
+  red { label: "red" }
+}
+
+/// P.
+type P(k: K) = match k {
+  one => Int
+  two => ref tags
+  col => Color
+  num => Float
+  text => String
+  gone => Never
+  f32 => Float32
+}
+
+/// Thing.
+record Thing {
+  /// K.
+  k: K
+  /// Payload.
+  p: P(k)?
+  /// Payloads.
+  ps: [P(k)] = []
+}
+
+/// Things.
+let things: [Thing] = [
+  { k: two, p: red, ps: [red, "red"] },
+  { k: col, p: red, ps: [blue] },
+  { k: num, p: 3 },
+  { k: text, p: "x" },
+  { k: one, p: 2 },
+  { k: gone },
+  { k: f32, p: 0.1 },
+]
+
+emit json { out: "@out/" }
+-- project.canon --
+project demo {
+  canon: "0.1"
+  roots {
+    out: "out"
+  }
+}
+-- outputs.txt --
+0 errors, 0 warnings in 1 package (…)
+-- @out/tags.json
+{
+  "$schema": "a.Tag@845886c0",
+  "rows": [
+    {"$id": "red", "label": "red"}
+  ]
+}
+-- @out/things.json
+{
+  "$schema": "a.Thing@8a190944",
+  "rows": [
+    {"k": "two", "p": "red", "ps": ["red", "red"]},
+    {"k": "col", "p": "red", "ps": ["blue"]},
+    {"k": "num", "p": 3, "ps": []},
+    {"k": "text", "p": "x", "ps": []},
+    {"k": "one", "p": 2, "ps": []},
+    {"k": "gone", "p": null, "ps": []},
+    {"k": "f32", "p": 0.1, "ps": []}
+  ]
+}

@@ -9,10 +9,10 @@ import (
 	"github.com/fantasim/canonlang/internal/types"
 )
 
-// written is where a type is written: the declaration holding it, and a refinement's bound or
-// predicate.
+// written is where a type is written: the declaration holding it, the type itself (a dependent
+// type's `dep`, ERRORS.md E3801, E3802), and a refinement's bound or predicate.
 type written struct {
-	decl, arg source.Span
+	decl, typ, arg source.Span
 }
 
 // sources locates what a finding relates: the written types Info.TypeExprs resolves, and the
@@ -50,7 +50,7 @@ func (s *sources) add(f *syntax.File, info *check.Info) {
 		t, isType := n.(syntax.Type)
 		typ := info.TypeExprs[t]
 		if _, seen := s.types[typ]; isType && writtenOnce(typ) && !seen {
-			s.types[typ] = written{decl: declSpan(f, named[t], t), arg: f.Span(argOf(t))}
+			s.types[typ] = written{decl: declSpan(f, named[t], t), typ: f.Span(t), arg: f.Span(argOf(t))}
 		}
 		return true
 	})
@@ -60,7 +60,7 @@ func (s *sources) add(f *syntax.File, info *check.Info) {
 func writtenOnce(t types.Type) bool {
 	switch t.(type) {
 	case *types.Refined, *types.RefType, *types.ListType, *types.MapType, *types.DepMapType,
-		*types.TableType, *types.OptionalType, *types.LitUnionType:
+		*types.TableType, *types.OptionalType, *types.LitUnionType, *types.TypeAppType, *types.AppliedRecord:
 		return true
 	}
 	return false

@@ -22,6 +22,9 @@ func (r *run) store(v value.Value, t types.Type, s site, at *vpath) value.Value 
 	if v == nil || t == nil || r.failed {
 		return nil
 	}
+	if len(r.ev.written) > 0 && !r.ev.dependent(t) {
+		delete(r.ev.written, v) // stored as declared: no longer kept as written
+	}
 	if !r.ev.needsCheck(t) {
 		return v
 	}

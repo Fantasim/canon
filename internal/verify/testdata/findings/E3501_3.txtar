@@ -1,0 +1,59 @@
+EVALUATION.md §3.4, §5, TYPES.md §10.2 (log-2026-09-28, verify round 4): a level-1 ref of a
+tree stage B copies stays bound to that tree's copy: `nodes.b.parent == top` holds, `top.parent`
+is none, and a key naming no node of the tree is E3501, its checks skipped.
+-- a/a.canon --
+/// A.
+package a
+
+/// K.
+enum K { col, num }
+
+/// Color.
+enum Color { red, blue }
+
+/// P.
+type P(k: K) = match k {
+  col => Color
+  num => Int
+}
+
+/// Node.
+record Node {
+  /// Parent.
+  parent: ref Node?
+  /// K.
+  k: K = col
+  /// Tag.
+  tag: P(k)
+}
+
+/// Tree.
+record Tree {
+  /// K.
+  k: K
+  /// Payload.
+  p: P(k)
+  /// Nodes.
+  nodes: table Node
+  /// Top.
+  top: ref Node
+
+  check top.parent == none else "top has a parent"
+  check nodes.b.parent == top else "b not under top"
+}
+
+/// Trees.
+let trees: [Tree] = [
+  { k: col, p: red, top: a, nodes: { a { tag: red }, b { parent: a, tag: blue } } },
+  { k: num, p: 3, top: zz, nodes: { a { tag: red }, b { parent: a, tag: blue } } },
+]
+-- project.canon --
+project demo {
+  canon: "0.1"
+}
+-- findings.txt --
+error[E3501]  a/a.canon:44:24
+  trees[1].top: unknown key zz in Tree.nodes
+  expected by a/a.canon:35 (top: ref Node)
+
+1 error, 0 warnings in 1 package (…)

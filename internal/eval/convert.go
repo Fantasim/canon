@@ -132,6 +132,9 @@ func (r *run) coerce(v value.Value, t types.Type, at syntax.Node) value.Value {
 	if v == nil || t == nil || isNone(v) {
 		return v
 	}
+	if s, ok := v.(*value.Symbol); ok {
+		return r.valueAs(s, t)
+	}
 	switch b := unwrapOptional(t).Base().(type) {
 	case *types.RefType:
 		if _, isRec := v.(*value.Record); isRec {

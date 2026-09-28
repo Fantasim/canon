@@ -30,14 +30,13 @@ func (w *walker) ref(r *value.Ref, t types.Type, sc scope, at *Path) {
 		return
 	case reached:
 	}
-	s := SiteOf(r)
 	target, found := entries[r.Key]
-	switch {
-	case !found:
+	if !found {
+		s := SiteOf(r)
 		w.flag(s, w.src.related(diag.E3501.At(s.Span, r, w.collName(rt.Target)), rt), r, at)
-	case target.Ident.Retired && sc.entry != "" && !sc.retired:
-		w.flag(s, w.src.related(diag.E3502.At(s.Span, r, sc.entry), rt), r, at)
+		return
 	}
+	w.retiredTarget(r, rt, target, sc, at)
 }
 
 // collection forces the ref's target and indexes its entries by key.

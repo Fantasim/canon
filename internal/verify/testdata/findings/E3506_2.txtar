@@ -1,0 +1,68 @@
+TYPES.md §8.1, LOCK.md §4.3 (log-2026-09-28, verify round 4): stage B remembers an instance per
+retired scope: the one instance held by a retired and a live entry is E3506 in the live one,
+whichever entry comes first.
+-- a/a.canon --
+/// A.
+package a
+
+/// K.
+enum K { col, num }
+
+/// Color.
+enum Color { red, retired gone }
+
+/// P.
+type P(k: K) = match k {
+  col => Color
+  num => Int
+}
+
+/// X.
+record X {
+  /// K.
+  k: K
+  /// Payload.
+  p: P(k)
+  /// Old.
+  c: Color
+}
+
+/// T.
+record T {
+  /// X.
+  x: X
+}
+
+/// Build, the retired entry first.
+fn build() -> table T {
+  let s = X { k: col, p: red, c: gone }
+  return { retired old { x: s }, cur { x: s } }
+}
+
+/// Build2, the live entry first.
+fn build2() -> table T {
+  let s = X { k: col, p: red, c: gone }
+  return { cur { x: s }, retired old { x: s } }
+}
+
+/// Ts.
+let ts: table T = build()
+
+/// Ts2.
+let ts2: table T = build2()
+-- project.canon --
+project demo {
+  canon: "0.1"
+}
+-- findings.txt --
+error[E3506]  a/a.canon:34:34
+  ts.cur.x.c: Color.gone is retired
+  expected by a/a.canon:8 (retired gone)
+  in build (a/a.canon:45)
+
+error[E3506]  a/a.canon:40:34
+  ts2.cur.x.c: Color.gone is retired
+  expected by a/a.canon:8 (retired gone)
+  in build2 (a/a.canon:48)
+
+2 errors, 0 warnings in 1 package (…)

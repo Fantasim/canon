@@ -1,0 +1,72 @@
+EVALUATION.md §4.2, §8.1 (log-2026-09-28, verify round 3): `b` is `a`, so its records are the
+same instances; with a dependent field, stage B converts each instance once and every root gets
+its one copy, so stage C runs each instance's check once: the budget threshold is the one of the
+same project without dependent types (`plain.canon` replaces `a/a.canon`), up to the type
+functions it charges.
+-- a/a.canon --
+/// A.
+package a
+
+/// K.
+enum K { col }
+
+/// Color.
+enum Color { red, blue }
+
+/// P.
+type P(k: K) = match k {
+  col => Color
+}
+
+local fn spin(n: Int) -> Int {
+  var i = 0
+  while i < n { i += 1 }
+  return i
+}
+
+/// Thing.
+record Thing {
+  /// K.
+  k: K
+  /// Payload.
+  p: P(k)
+
+  check spin(300) == 300 else "spun"
+}
+
+/// A.
+let a: [Thing] = [{ k: col, p: red }, { k: col, p: blue }]
+
+/// B, the same instances.
+let b: [Thing] = a
+-- plain.canon --
+/// A.
+package a
+
+/// K.
+enum K { col }
+
+/// Color.
+enum Color { red, blue }
+
+local fn spin(n: Int) -> Int {
+  var i = 0
+  while i < n { i += 1 }
+  return i
+}
+
+/// Thing.
+record Thing {
+  /// K.
+  k: K
+  /// Payload.
+  p: Color
+
+  check spin(300) == 300 else "spun"
+}
+
+/// A.
+let a: [Thing] = [{ k: col, p: red }, { k: col, p: blue }]
+
+/// B, the same instances.
+let b: [Thing] = a

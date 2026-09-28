@@ -211,7 +211,7 @@ func seqReverse(h Host, c *Call) (value.Value, bool) {
 }
 
 func seqUnique(h Host, c *Call) (value.Value, bool) {
-	seen := newSet(h, elemType(c.Result))
+	seen := newSet(h, setElem(c))
 	var out []value.Value
 	ok := eachWhile(h, Elems(c.Recv), func(_ int, x value.Value) bool {
 		_, added, ok := seen.add(x)
@@ -225,7 +225,7 @@ func seqUnique(h Host, c *Call) (value.Value, bool) {
 
 // seqIsUnique costs n, whatever it finds.
 func seqIsUnique(h Host, c *Call) (value.Value, bool) {
-	seen := newSet(h, elemType(c.Recv.Type()))
+	seen := newSet(h, setElem(c))
 	unique := true
 	ok := eachWhile(h, Elems(c.Recv), func(_ int, x value.Value) bool {
 		_, added, ok := seen.add(x)

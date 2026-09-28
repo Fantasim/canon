@@ -1,8 +1,9 @@
-TYPES.md §11.4, §11.6 (orchestrator log, W1 gate lift review calls): stage A keeps a literal
-dependent value as written, a symbol symbolic and a string or integer as is, in a field, a
-dependent list and a dependent-key map alike, whatever its branch: verification resolves it. So
-written values compare as written, `red` and `"red"` are two keys until then, and a case name on
-a variant branch stays a symbol.
+TYPES.md §11.4, §11.6 (orchestrator log, W1 gate lift review calls; log-2026-09-28, verify
+round 2): stage A keeps a literal dependent value as written, a symbol symbolic and a string or
+integer as is, in a field, a dependent list and a dependent-key map alike, so the values the
+lets compute in stage A compare as written. Stage B converts each to its computed branch and
+hands the converted root back: a key is a ref, a member a member; `"red"` on an enum key is
+E3802, the bare case `box` with a required field E3302.
 -- a/a.canon --
 /// A.
 package a
@@ -88,7 +89,15 @@ let eqs: [Bool] = [rs[3].p == red, red in rs[3].ps, rs[3].ks.get(red) == 1, rs[1
 -- dump.txt --
 a.items = {one: Item{n: 1}, two: Item{n: 1}}
 a.evs = {n: Ev{k: num}, t: Ev{k: text}, c: Ev{k: col}, s: Ev{k: pick}}
-a.rs = [R{ev: n, p: 3, sk: none, ks: {}, ps: []}, R{ev: t, p: one, sk: "two", ks: {}, ps: ["one", two]}, R{ev: t, p: "two", sk: "default", ks: {}, ps: []}, R{ev: c, p: red, sk: none, ks: {red: 1, "red": 2}, ps: [red, blue]}, R{ev: s, p: box, sk: none, ks: {}, ps: []}]
+a.rs = [R{ev: n, p: 3, sk: none, ks: {}, ps: []}, R{ev: t, p: one, sk: two, ks: {}, ps: [one, two]}, R{ev: t, p: two, sk: "default", ks: {}, ps: []}, R{ev: c, p: red, sk: none, ks: {red: 1, "red": 2}, ps: [red, blue]}, R{ev: s, p: box, sk: none, ks: {}, ps: []}]
 a.eqs = [true, true, true, false]
 
-0 errors, 0 warnings in 1 package (…)
+error[E3802]  a/a.canon:76:51
+  rs[3].ks[red]: value does not match SK(ev) = a.Color | "default"
+  expected by a/a.canon:66 (SK(ev))
+
+error[E3302]  a/a.canon:77:15
+  rs[4].p: a.Shape.box needs field w
+  expected by a/a.canon:62 (P(ev))
+
+2 errors, 0 warnings in 1 package (…)

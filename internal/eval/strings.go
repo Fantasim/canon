@@ -32,7 +32,11 @@ func evalString(r *run, e syntax.Expr, _ *vpath) value.Value {
 		}
 		b.WriteString(text)
 	}
-	return &value.Str{V: b.String(), T: types.StringType, P: r.prov(e, kind)}
+	v := &value.Str{V: b.String(), T: types.StringType, P: r.prov(e, kind)}
+	if kind == value.ProvLiteral {
+		return r.literal(v)
+	}
+	return v
 }
 
 // interpolated is the text of one interpolated value, its values visited and its bytes

@@ -140,13 +140,13 @@ func (r *run) invokeFn(c fnCall) value.Value {
 		}
 	}
 	r.ev.record(c)
-	saved := r.fr
-	r.fr = fr
+	saved, dep := r.fr, r.dep
+	r.fr, r.dep = fr, nil // a body computes: its literals are not kept as written (TYPES.md §6.2)
 	r.ev.depth++
 	if r.params(d, ft, c.args) {
 		r.block(d.Body)
 	}
-	r.fr = saved
+	r.fr, r.dep = saved, dep
 	r.ev.depth--
 	if fr.ret == nil {
 		r.bug(c.obj.Decl())

@@ -1,0 +1,38 @@
+TYPES.md §5.3, §7.2, §11.6: an integer literal given to a dependent field is kept as written,
+then must fit the sized integer its computed type is.
+-- a/a.canon --
+/// A.
+package a
+
+/// K.
+enum K { small, big }
+
+/// P.
+type P(k: K) = match k {
+  small => Int8
+  big => Int
+}
+
+/// Thing.
+record Thing {
+  /// K.
+  k: K
+  /// Payload.
+  p: P(k)
+}
+
+/// Things.
+let things: [Thing] = [
+  { k: small, p: 300 },
+  { k: big, p: 300 },
+]
+-- project.canon --
+project demo {
+  canon: "0.1"
+}
+-- findings.txt --
+error[E3201]  a/a.canon:23:18
+  things[0].p: 300 does not fit Int8
+  expected by a/a.canon:18 (p: P(k))
+
+1 error, 0 warnings in 1 package (…)

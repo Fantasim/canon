@@ -1,0 +1,133 @@
+TYPES.md §11.4, §11.6, §7.5: a check compares a dependent value, converted by verification, with
+a name written in the check, which the evaluator converts against it: `!=`, `in`, `.get(k)`
+find it, in literals and in loaded data alike; a name the type lacks is simply unequal.
+-- a/a.canon --
+/// A.
+package a
+
+/// K.
+enum K { col, num }
+
+/// Color.
+enum Color { red, blue }
+
+/// P.
+type P(k: K) = match k {
+  col => Color
+  num => Int
+}
+
+/// Thing.
+record Thing {
+  /// K.
+  k: K
+  /// Payload.
+  p: P(k)
+  /// Payloads.
+  ps: [P(k)] = []
+  /// Counts.
+  ks: {P(k): Int} = {}
+
+  check p != red else "p is red"
+  check not red in ps else "red in ps"
+  check ks.get(red) == none else "ks has red"
+  check p != green else "p is green"
+}
+
+/// Things.
+let things: [Thing] = [
+  { k: col, p: red, ps: [blue, red], ks: { red: 1 } },
+  { k: col, p: blue, ps: [blue], ks: { blue: 1 } },
+]
+
+/// Loaded things.
+let loaded: [Thing] = load("things.json")
+
+/// Pt, without checks.
+record Pt {
+  /// K.
+  k: K
+  /// Payload.
+  p: P(k)
+  /// Payloads.
+  ps: [P(k)] = []
+}
+
+/// Holder.
+record Holder {
+  /// Inner.
+  inner: Pt
+}
+
+/// Holders.
+let hs: [Holder] = [{ inner: { k: col, p: red, ps: [red] } }]
+
+/// Tag.
+record Tag {
+  /// N.
+  n: Int = 1
+}
+
+/// Tags.
+let tags: table Tag = { one {} }
+
+/// Q.
+type Q(k: K) = match k {
+  col => ref tags
+  num => Float
+}
+
+/// Rq, a ref or a Float.
+record Rq {
+  /// K.
+  k: K
+  /// Payload.
+  q: Q(k)
+}
+
+/// Rqs.
+let rqs: [Rq] = [{ k: col, q: one }, { k: num, q: 3 }]
+
+check rqs[0] == Rq { k: col, q: "one" } else "a written string differs from its ref"
+check rqs[1] == Rq { k: num, q: 3 } else "a written integer differs from its Float"
+/// Pts, a table.
+let ts: table Pt = { x { k: col, p: red } }
+
+check ts == { x { k: col, p: red } } else "a table differs from its written twin"
+check hs[0] == Holder { inner: Pt { k: col, p: red, ps: [red] } } else "depth 2 differs"
+check hs[0] != Holder { inner: Pt { k: col, p: blue, ps: [red] } } else "depth 2 equal"
+check (hs[0].inner.ps + [red]).unique().len() == 1 else "unique keeps a written red apart"
+check not (hs[0].inner.ps + [red]).isUnique() else "isUnique keeps a written red apart"
+check hs[0].inner.ps.union(hs[0].inner.ps + [red]).len() == 1 else "union keeps a written red apart"
+-- a/things.json --
+[{"k": "col", "p": "red", "ps": ["red"], "ks": {"red": 1}}, {"k": "num", "p": 3}]
+-- project.canon --
+project demo {
+  canon: "0.1"
+}
+-- findings.txt --
+error[E5001]  a/a.canon:35:3
+  things[0]: ks has red
+  expected by a/a.canon:29 (check)
+
+error[E5001]  a/a.canon:35:3
+  things[0]: p is red
+  expected by a/a.canon:27 (check)
+
+error[E5001]  a/a.canon:35:3
+  things[0]: red in ps
+  expected by a/a.canon:28 (check)
+
+error[E5001]  a/things.json:1:2
+  loaded[0]: ks has red
+  expected by a/a.canon:29 (check)
+
+error[E5001]  a/things.json:1:2
+  loaded[0]: p is red
+  expected by a/a.canon:27 (check)
+
+error[E5001]  a/things.json:1:2
+  loaded[0]: red in ps
+  expected by a/a.canon:28 (check)
+
+6 errors, 0 warnings in 1 package (…)

@@ -78,4 +78,8 @@ a.r = R{ev: a, p: red, l: L{lim: 9, top: 14}}
 a.r2 = R{ev: b, p: red, l: L{lim: 1, top: 8}}
 a.r3 = R{ev: b, p: 4, l: L{lim: 2, top: 9}}
 
-0 errors, 0 warnings in 1 package (…)
+error[E3802]  a/a.canon:49:25
+  r2.p: value does not match P(ev) = Int
+  expected by a/a.canon:40 (p: P(ev))
+
+1 error, 0 warnings in 1 package (…)

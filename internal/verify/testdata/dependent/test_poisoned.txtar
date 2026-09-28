@@ -1,0 +1,65 @@
+EVALUATION.md §7.2, §10.2, CLI.md §3.5 (log-2026-09-28, verify rounds 4-5): canon test verifies
+each value into bags of its own; `box` reaches the instance stage B verified for `things`, then
+the first run of its own `q`'s where predicate poisons it in stage B: the causes a read of `box`
+names are the errors of its verification, the shared instance's E3802 replayed at `box.t.p` and
+the predicate's E4102.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// K.
+enum K { col, num }
+
+/// Color.
+enum Color { red, blue }
+
+/// P.
+type P(k: K) = match k {
+  col => Color
+  num => Int
+}
+
+/// Thing.
+record Thing {
+  /// K.
+  k: K
+  /// Payload.
+  p: P(k)
+}
+
+/// Q, its col branch a predicate stage B runs first.
+type Q(k: K) = match k {
+  col => Int where it / zero == 0
+  num => Int
+}
+
+/// Box.
+record Box {
+  /// K.
+  k: K
+  /// Thing.
+  t: Thing
+  /// Q.
+  q: Q(k)
+}
+
+local let zero: Int = 0
+
+/// Things.
+let things: [Thing] = [{ k: num, p: red }]
+
+/// Box, holding the shared instance.
+let box: Box = { k: col, t: things[0], q: 1 }
+
+test "a read of the poisoned box" {
+  let t: Thing = box.t
+}
+-- tests.txt --
+a read of the poisoned box passed=false
+  expect ""  got "" poisoned "box"
+    cause E4102 : division by zero
+    cause E3802 box.t.p: value does not match P(k) = Int

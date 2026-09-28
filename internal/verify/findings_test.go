@@ -32,6 +32,26 @@ var cases = map[string]func(fx *fixture){
 	"E3701_1": assetCase(`sword.png`, `Shield.png`),
 	"E3702_1": assetCase(`sword.png`, `shield.jpg`),
 	"E3703_1": assetCase(`../sword.png`, `Icon//shield.png`),
+	"E3201_1": builtCase,
+	"E3302_1": builtCase,
+	"E3322_1": builtCase,
+	"E3501_2": builtCase,
+	"E3801_1": builtCase,
+	"E3802_1": builtCase,
+	"E3802_2": builtCase,
+	"E3801_2": builtCase,
+	"E3802_3": builtCase,
+	"E3802_4": builtCase,
+	"E3801_3": builtCase,
+	"E3802_5": builtCase,
+	"E3503_1": builtCase,
+	"E3802_6": builtCase,
+	"E3506_2": builtCase,
+	"E3502_2": builtCase,
+	"E3501_3": builtCase,
+	"E3502_3": builtCase,
+	"E3502_4": builtCase,
+	"E3802_7": builtCase,
 }
 
 // IMPLEMENTATION-PLAN.md §7.2: each case prints the findings of verifying its values.
@@ -47,6 +67,9 @@ func TestFindings(t *testing.T) {
 		seen[name] = true
 		fx := fromArchive(t, c.Archive)
 		build(fx)
+		if fx.out != nil {
+			return fx.out
+		}
 		return fx.render()
 	}, golden.Expected(findingsFile))
 	for name := range cases {

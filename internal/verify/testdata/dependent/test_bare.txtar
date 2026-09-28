@@ -1,0 +1,51 @@
+TYPES.md §8.2, §11.6, EVALUATION.md §10.2 (log-2026-09-28, verify rounds 5-6): the default of a
+case a symbol names bare is evaluated in stage B, and its finding has no value path; an expect
+subject reaching the remembered instance captures it again with its own (empty) path.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// K.
+enum K { pick }
+
+/// Shape.
+variant Shape {
+  /// Dot.
+  dot {
+    /// Size.
+    size: Int(0..3) = [1, 2, 3, 4].len() + 1
+  }
+}
+
+/// P.
+type P(k: K) = match k {
+  pick => Shape
+}
+
+/// Thing.
+record Thing {
+  /// K.
+  k: K
+  /// Payload.
+  p: P(k)
+}
+
+/// Things.
+let things: [Thing] = [{ k: pick, p: dot }]
+
+test "the shared instance fails E3204" {
+  expect things[0] fails E3204
+}
+
+test "the shared instance does not pass" {
+  expect things[0] passes
+}
+-- tests.txt --
+the shared instance fails E3204 passed=true
+the shared instance does not pass passed=false
+  expect "expect things[0] passes" passes got "" poisoned ""
+    finding E3204 : 5 is outside 0..3

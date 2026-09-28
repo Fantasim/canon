@@ -1,0 +1,72 @@
+EVALUATION.md §4.2, §8.1, §12.2 (log-2026-09-28, verify round 5): `tc` is `ta`, so its entries are
+the same instances under other entry paths; stage B gives every root and entry the one copy of an
+instance, so stage C runs each entry's check once: the budget threshold is the one of the same
+project without dependent types (`plain.canon` replaces `a/a.canon`), up to the type functions
+it charges.
+-- a/a.canon --
+/// A.
+package a
+
+/// K.
+enum K { col }
+
+/// Color.
+enum Color { red, blue }
+
+/// P.
+type P(k: K) = match k {
+  col => Color
+}
+
+local fn spin(n: Int) -> Int {
+  var i = 0
+  while i < n { i += 1 }
+  return i
+}
+
+/// Thing.
+record Thing {
+  /// K.
+  k: K
+  /// Payload.
+  p: P(k)
+
+  check spin(300) == 300 else "spun"
+}
+
+/// Ta.
+let ta: table Thing = { a { k: col, p: red }, b { k: col, p: blue } }
+
+/// Tc, the same instances.
+let tc: table Thing = ta
+-- plain.canon --
+/// A.
+package a
+
+/// K.
+enum K { col }
+
+/// Color.
+enum Color { red, blue }
+
+local fn spin(n: Int) -> Int {
+  var i = 0
+  while i < n { i += 1 }
+  return i
+}
+
+/// Thing.
+record Thing {
+  /// K.
+  k: K
+  /// Payload.
+  p: Color
+
+  check spin(300) == 300 else "spun"
+}
+
+/// Ta.
+let ta: table Thing = { a { k: col, p: red }, b { k: col, p: blue } }
+
+/// Tc, the same instances.
+let tc: table Thing = ta

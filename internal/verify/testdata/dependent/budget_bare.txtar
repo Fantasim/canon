@@ -1,0 +1,40 @@
+EVALUATION.md §12.1, §12.2: the defaults of a case a symbol names bare are evaluated in stage B,
+charged to the value being verified: one step short, E4401 is in the default and the heaviest
+root is `things`.
+-- a/a.canon --
+/// A.
+package a
+
+/// K.
+enum K { pick }
+
+/// Shape.
+variant Shape {
+  /// Dot.
+  dot {
+    /// Size.
+    size: Int = [1, 2, 3, 4, 5, 6, 7, 8].map(x => [1, 2, 3, 4, 5, 6, 7, 8].map(y => x * y).len()).len()
+  }
+}
+
+/// P.
+type P(k: K) = match k {
+  pick => Shape
+}
+
+/// Thing.
+record Thing {
+  /// K.
+  k: K
+  /// Payload.
+  p: P(k)
+}
+
+/// Things.
+let things: [Thing] = [{ k: pick, p: dot }]
+-- budget.txt --
+error[E4401]  a/a.canon:12:17
+  evaluation budget of 478 steps exhausted
+  heaviest: things (478 steps)
+
+1 error, 0 warnings in 1 package (…)

@@ -70,14 +70,16 @@ func (a assets) Exists(root, p string) bool {
 
 // fixture is one package of one parsed .canon file, its values built by hand.
 type fixture struct {
-	t      *testing.T
-	fs     *source.FileSet
-	file   *syntax.File
-	src    string
-	prog   *check.Program
-	ev     *evaluator
-	bag    *diag.Bag
-	assets assets
+	t       *testing.T
+	fs      *source.FileSet
+	file    *syntax.File
+	src     string
+	prog    *check.Program
+	ev      *evaluator
+	bag     *diag.Bag
+	assets  assets
+	archive *txtar.Archive // the txtar case the fixture was read from, nil for none
+	out     []byte         // a case's findings when it ran a whole build, nil otherwise
 }
 
 func newFixture(t *testing.T, name string, data []byte) *fixture {
@@ -106,7 +108,9 @@ func fromArchive(t *testing.T, a *txtar.Archive) *fixture {
 	t.Helper()
 	for _, f := range a.Files {
 		if path.Ext(f.Name) == ".canon" {
-			return newFixture(t, f.Name, f.Data)
+			fx := newFixture(t, f.Name, f.Data)
+			fx.archive = a
+			return fx
 		}
 	}
 	t.Fatal("no .canon file in the case")

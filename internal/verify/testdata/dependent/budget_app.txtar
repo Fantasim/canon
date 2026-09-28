@@ -1,0 +1,43 @@
+EVALUATION.md §5, §12.1, §12.2: the type function of `p` is evaluated in verification, charged
+to `things`; with one step less than the check needs, E4401 is at the application.
+-- a/a.canon --
+/// A.
+package a
+
+/// K.
+enum K { one, two }
+
+/// Ev.
+record Ev {
+  /// K.
+  k: K
+}
+
+/// Evs.
+let evs: table Ev = { a { k: one }, b { k: two } }
+
+/// P.
+type P(e: Ev) = match e.k {
+  one => Int
+  two => String
+}
+
+/// Thing.
+record Thing {
+  /// Ev.
+  ev: ref evs
+  /// Payload.
+  p: P(ev)
+}
+
+/// Things.
+let things: [Thing] = [
+  { ev: a, p: 1 },
+  { ev: b, p: "x" },
+]
+-- budget.txt --
+error[E4401]  a/a.canon:27:6
+  evaluation budget of 20 steps exhausted
+  heaviest: things (15 steps)
+
+1 error, 0 warnings in 1 package (…)

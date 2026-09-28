@@ -1,0 +1,68 @@
+EVALUATION.md §3.4, TYPES.md §10.2 (log-2026-09-28, verify round 4): stage B copies a tree whose
+dependent values it converts, and rebinds the level-1 refs its entries hold to the copy: the
+checks reading `top.parent` and `nodes.b.parent` hold, and the JSON names the entries by key.
+-- a/a.canon --
+/// A.
+package a
+
+/// K.
+enum K { col, num }
+
+/// Color.
+enum Color { red, blue }
+
+/// P.
+type P(k: K) = match k {
+  col => Color
+  num => Int
+}
+
+/// Node.
+record Node {
+  /// Parent.
+  parent: ref Node?
+  /// K.
+  k: K = col
+  /// Tag.
+  tag: P(k)
+}
+
+/// Tree.
+record Tree {
+  /// K.
+  k: K
+  /// Payload.
+  p: P(k)
+  /// Nodes.
+  nodes: table Node
+  /// Top.
+  top: ref Node
+
+  check top.parent == none else "top has a parent"
+  check nodes.b.parent == top else "b not under top"
+}
+
+/// Trees.
+let trees: [Tree] = [
+  { k: col, p: red, top: a, nodes: { a { tag: red }, b { parent: a, tag: blue } } },
+  { k: num, p: 3, top: a, nodes: { a { tag: red }, b { parent: a, tag: blue } } },
+]
+
+emit json { out: "@out/" }
+-- project.canon --
+project demo {
+  canon: "0.1"
+  roots {
+    out: "out"
+  }
+}
+-- outputs.txt --
+0 errors, 0 warnings in 1 package (…)
+-- @out/trees.json
+{
+  "$schema": "a.Tree@679e9815",
+  "rows": [
+    {"k": "col", "p": "red", "nodes": {"a": {"parent": null, "k": "col", "tag": "red"}, "b": {"parent": "a", "k": "col", "tag": "blue"}}, "top": "a"},
+    {"k": "num", "p": 3, "nodes": {"a": {"parent": null, "k": "col", "tag": "red"}, "b": {"parent": "a", "k": "col", "tag": "blue"}}, "top": "a"}
+  ]
+}

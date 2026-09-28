@@ -33,8 +33,9 @@ type run struct {
 	h          *stdHost
 	test       *testState
 	freeSteps  int64
-	mv         *moves  // what the amendments of this root copied, until settled (settle.go)
-	dep        *depCtx // what a type argument names in the value being built (params.go)
+	mv         *moves           // what the amendments of this root copied, until settled (settle.go)
+	dep        *depCtx          // what a type argument names in the value being built (params.go)
+	emitted    *[]*diag.Builder // a stage-B run's findings, kept for replay (stageb.go)
 }
 
 // frame is one call frame, or a root's own frame (fn empty).
@@ -195,6 +196,9 @@ func (r *run) stop() {
 // emit reports a finding into the capture of an expect, else its package's bag (a fold's
 // one bag while folding).
 func (r *run) emit(b *diag.Builder) {
+	if r.emitted != nil {
+		*r.emitted = append(*r.emitted, b)
+	}
 	if r.sink != nil {
 		b.Report(r.sink)
 		return

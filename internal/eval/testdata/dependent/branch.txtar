@@ -78,6 +78,22 @@ a.nodes = {a: Node{k: num, max: 5}, b: Node{k: sub, max: 5}, c: Node{k: deep, ma
 a.hs = [Holder{like: b, p: Sub{lim: 9}, ps: [Sub{lim: 5}, Sub{lim: 1}], by: {}, d: Sub{lim: 5}, q: Sub{lim: 5}}, Holder{like: a, p: 3, ps: [Sub{lim: 5}, Sub{lim: 1}], by: {b: Sub{lim: 5}, c: Sub{lim: 7}}, d: Sub{lim: 5}, q: Sub{lim: 5}}, Holder{like: c, p: Sub{lim: 2}, ps: [Sub{lim: 2}, Sub{lim: 1}], by: {}, d: Sub{lim: 2}, q: Sub{lim: 2}}]
 a.top = {c: Sub{lim: 2}, b: Sub{lim: 4}}
 
+error[E3802]  a/a.canon:52:20
+  hs[1].ps[0]: value does not match P(like) = Int
+  expected by a/a.canon:52 (P(like))
+
+error[E3802]  a/a.canon:52:24
+  hs[1].ps[1]: value does not match P(like) = Int
+  expected by a/a.canon:52 (P(like))
+
+error[E3802]  a/a.canon:56:16
+  hs[1].d: value does not match P(like) = Int
+  expected by a/a.canon:56 (d: P(like))
+
+error[E3802]  a/a.canon:58:17
+  hs[0].q: value does not match P2(like) = Int
+  expected by a/a.canon:58 (q: P2(like))
+
 error[E5001]  a/a.canon:63:8
   hs[0].p: lim 9 above 5 of sub
   expected by a/a.canon:23 (check)
@@ -86,4 +102,4 @@ error[E5001]  a/a.canon:64:36
   hs[1].by[c]: lim 7 above 2 of deep
   expected by a/a.canon:23 (check)
 
-2 errors, 0 warnings in 1 package (…)
+6 errors, 0 warnings in 1 package (…)

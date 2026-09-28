@@ -1,0 +1,52 @@
+TYPES.md §11.6: the elements and keys of a list or map a dependent type computes are judged one
+by one: a name the element or key type lacks is E3802 at that element or key (the checker
+classifies a literal against the first list or map branch, here Color's).
+-- a/a.canon --
+/// A.
+package a
+
+/// K.
+enum K { colors, shapes, byColor, byShape }
+
+/// Color.
+enum Color { red, blue }
+
+/// Shape.
+enum Shape { dot, box }
+
+/// P.
+type P(k: K) = match k {
+  colors => [Color]
+  shapes => [Shape]
+  byColor => {Color: Int}
+  byShape => {Shape: Int}
+}
+
+/// Thing.
+record Thing {
+  /// K.
+  k: K
+  /// Payload.
+  p: P(k)
+}
+
+/// Things.
+let things: [Thing] = [
+  { k: shapes, p: [red] },
+  { k: byShape, p: { blue: 2 } },
+  { k: colors, p: [red, blue] },
+]
+-- project.canon --
+project demo {
+  canon: "0.1"
+}
+-- findings.txt --
+error[E3802]  a/a.canon:31:20
+  things[0].p[0]: value does not match P(k) = [a.Shape]
+  expected by a/a.canon:26 (p: P(k))
+
+error[E3802]  a/a.canon:32:22
+  things[1].p[blue]: value does not match P(k) = {a.Shape: Int}
+  expected by a/a.canon:26 (p: P(k))
+
+2 errors, 0 warnings in 1 package (…)

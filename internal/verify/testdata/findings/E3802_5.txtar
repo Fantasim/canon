@@ -1,0 +1,62 @@
+TYPES.md §6.2, §11.6: only a literal converts at a dependent branch; a computed Int or String of
+another kind than the computed type is E3802, where the same literal converts.
+-- a/a.canon --
+/// A.
+package a
+
+/// Tag.
+record Tag {
+  /// Label.
+  label: String
+}
+
+/// Tags.
+let tags: table Tag = {
+  red { label: "red" }
+}
+
+/// K.
+enum K { int, fl, tag }
+
+/// P.
+type P(k: K) = match k {
+  int => Int
+  fl => Float
+  tag => ref tags
+}
+
+/// Thing.
+record Thing {
+  /// K.
+  k: K
+  /// Payload.
+  p: P(k)
+}
+
+/// N.
+let n: Int = 3
+
+/// Label.
+let label: String = "red"
+
+/// Things.
+let things: [Thing] = [
+  { k: fl, p: n },
+  { k: fl, p: 3 },
+  { k: tag, p: label },
+  { k: tag, p: "red" },
+]
+-- project.canon --
+project demo {
+  canon: "0.1"
+}
+-- findings.txt --
+error[E3802]  a/a.canon:34:14
+  things[0].p: value does not match P(k) = Float
+  expected by a/a.canon:30 (p: P(k))
+
+error[E3802]  a/a.canon:37:21
+  things[2].p: value does not match P(k) = ref a.tags
+  expected by a/a.canon:30 (p: P(k))
+
+2 errors, 0 warnings in 1 package (…)

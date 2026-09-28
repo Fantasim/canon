@@ -109,6 +109,16 @@ const (
 	DepthLimit
 )
 
+// How a dependent value fits a computed type: converted, not at all, or a bare case to default.
+const (
+	Fits Fit = iota
+	NoFit
+	BareCase
+)
+
+// eqMemoFrom is the composite pairs an equality walk visits before it remembers the pairs it took (value.EqualUpTo's).
+const eqMemoFrom = 1024
+
 // vectorCap is a conformance vector's own step cap when VectorMode.Steps is 0 (CONFORMANCE.md §6.5).
 const vectorCap int64 = 1_000_000
 
