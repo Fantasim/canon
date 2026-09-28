@@ -75,6 +75,7 @@ func matcherTexts() []string {
 
 // TestMatchPatternRawBytes is CODEGEN.md §7.7 and EVALUATION.md §11.3 on the matcher alone: over raw bytes, valid UTF-8 or not, MatchPattern on gen/cpp's table agrees with regexp.MatchString.
 func TestMatchPatternRawBytes(t *testing.T) {
+	t.Parallel()
 	compilers := cxx.Compilers(t)
 	patterns := append(append([]string(nil), cxxPatterns...), seededPatterns(200)...)
 	texts := matcherTexts()
@@ -123,10 +124,7 @@ func compileMatcher(t *testing.T, compilers []string) []string {
 	for _, cc := range compilers {
 		bin := filepath.Join(dir, filepath.Base(cc))
 		args := append(append([]string(nil), cxx.Flags...), "-I", filepath.Join("text", "input"), "-o", bin, filepath.Join("testdata", "main", "matcher_main.cpp"))
-		ctx, cancel := context.WithTimeout(context.Background(), cxx.Timeout)
-		out, err := exec.CommandContext(ctx, cc, args...).CombinedOutput()
-		cancel()
-		if err != nil {
+		if out, err := compile(cc, args, ""); err != nil {
 			t.Fatalf("%s: %v\n%s", filepath.Base(cc), err, out)
 		}
 		bins = append(bins, bin)

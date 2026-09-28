@@ -169,6 +169,10 @@ const (
 // Decoders (CODEGEN.md §7.5, §7.6; WIRE.md §5).
 const (
 	decodeOpenFormat        = "bool " + ir.CppDecode + "(const nlohmann::json& v, canon::json::Decoder& dec, %s& out) {\n"
+	publicDecodeDeclFormat  = "static std::optional<%s> " + ir.CppDecode + "(const nlohmann::json& v, std::string& error);"
+	absentOpenFormat        = "if (!%s.contains(%s)) {"
+	elseLead                = "} else "
+	sourceDurationFormat    = jsonDetail + "SourceDuration(%s, dec, %s, %d, %s);"
 	unusedFormat            = "static_cast<void>(%s);"
 	returnOk                = "return dec.Ok();"
 	sourceVar               = "v"
@@ -357,6 +361,8 @@ const (
 	gotVar                  = "got"
 	gotFormat               = "const %s got = %s(%s);"
 	differsFormat           = "%s != %s"
+	andSep                  = " && "
+	unionCheckFormat        = "if (%s) dec.Fail(%s, \"unknown value \" + %s);"
 	memcmpFormat            = "std::memcmp(&%s, &%s, sizeof %s) != 0"
 	failTestFormat          = "if (g_code != v.code || (v.code.empty() && %s)) {"
 	failuresIncrement       = "++failures;"
@@ -475,21 +481,3 @@ var containerNames = []string{"Len", "At", "All", "Find", "rows_"}
 
 // escapes are the bytes a C++ string literal writes with a backslash; other controls are octal.
 var escapes = map[byte]string{'"': `\"`, '\\': `\\`, '\n': `\n`, '\t': `\t`}
-
-// Strict loaders: calls of canon_runtime_json.h's detail helpers (CODEGEN.md §7.5).
-const (
-	jsonDetail         = "canon::json::detail::"
-	bracedFormat       = "{%s}"
-	keysReturnFormat   = "if (!" + jsonDetail + "Keys(%s, dec, %s)) return false;"
-	keysStmtFormat     = jsonDetail + "Keys(%s, dec, %s);"
-	objectReturnFormat = "if (!" + jsonDetail + "Object(%s, dec)) return false;"
-	stepOpenFormat     = "if (const nlohmann::json* %s = " + jsonDetail + "Step(%s, dec, %s)) {"
-	cellOpenFormat     = "if (const nlohmann::json* %s = " + jsonDetail + "Cell(%s, dec, %s, %t)) {"
-	intBoolFormat      = "if (dec.AsIntIn(%s, %s, 0, 1, n)) %s = n == 1;"
-	bitsTempLine       = "uint64_t n = 0;"
-	maskFormat         = "0x%x"
-	emptyFlagLine      = "bool empty = false;"
-	slotCheckFormat    = "if (!" + jsonDetail + "Slot(%s, dec, %s[s], %s[s], empty)) continue;"
-	cellsArrayFormat   = "constexpr const char* cells[] = {%s};"
-	cellsKey           = "cells[c]"
-)

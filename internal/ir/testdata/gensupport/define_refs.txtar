@@ -1,0 +1,47 @@
+Decision 222, CODEGEN.md §5.8: go (baked and data) and cpp (data and types) write refs into a load.defines table, one, optional, in a list, an optional list and a pairs record, with their define values.
+-- a/a.canon --
+package a
+
+local let kinds = load.defines("@features/a/kinds.h")
+
+/// A bonus.
+record Bonus {
+  /// The kind.
+  kind: ref kinds
+  /// The amount.
+  amount: Int
+}
+
+/// A rule.
+record Rule {
+  /// Its kind.
+  kind: ref kinds
+  /// Another.
+  alt: ref kinds?
+  /// All.
+  all: [ref kinds]
+  /// Maybe.
+  maybe: [ref kinds]?
+  /// Bonuses.
+  bonuses: [Bonus](..=2) = [] @json(pairs: ["k{i}", "a{i}"])
+}
+
+emit go { out: "@features/a", package: "a" }
+emit cpp { out: "@features/ac", namespace: "a", mode: types }
+-- b/b.canon --
+package b
+
+local let kinds = load.defines("@features/b/kinds.h")
+
+/// A rule.
+record Rule {
+  /// Its kind.
+  kind: ref kinds
+  /// All.
+  all: [ref kinds]
+}
+
+emit go { out: "@features/b", package: "b", mode: data }
+emit cpp { out: "@features/bc", namespace: "b", mode: data }
+-- findings.txt --
+0 errors, 0 warnings in 2 packages (…)

@@ -2,7 +2,6 @@ package cppgen_test
 
 import (
 	"bytes"
-	"context"
 	"errors"
 	"os"
 	"os/exec"
@@ -13,38 +12,6 @@ import (
 	"github.com/fantasim/canonlang/internal/ir"
 	"github.com/fantasim/canonlang/internal/testkit/cxx"
 )
-
-// buildAndRun compiles sources in dir with every compiler cxx.Toolchain finds and every mode of
-// cxx.Modes, runs each binary with args, and returns the output of each run; a failed build or
-// a non-zero exit fails the test.
-func buildAndRun(t *testing.T, dir string, sources []string, args ...string) []string {
-	t.Helper()
-	compilers, include := cxx.Toolchain(t)
-	var outs []string
-	for _, cc := range compilers {
-		for i, mode := range cxx.Modes {
-			bin := filepath.Join(dir, filepath.Base(cc)+"-"+string(rune('a'+i)))
-			cmdArgs := append(append(append([]string(nil), cxx.Flags...), mode...), "-I", dir, "-I", include, "-o", bin)
-			for _, s := range sources {
-				cmdArgs = append(cmdArgs, filepath.Join(dir, s))
-			}
-			ctx, cancel := context.WithTimeout(context.Background(), cxx.Timeout)
-			out, err := exec.CommandContext(ctx, cc, cmdArgs...).CombinedOutput()
-			cancel()
-			if err != nil {
-				t.Fatalf("%s %s: %v\n%s", filepath.Base(cc), strings.Join(mode, " "), err, out)
-			}
-			var stdout, stderr bytes.Buffer
-			run := exec.Command(bin, args...)
-			run.Stdout, run.Stderr = &stdout, &stderr
-			if err := run.Run(); err != nil {
-				t.Fatalf("%s %s: run: %v\n%s%s", filepath.Base(cc), strings.Join(mode, " "), err, stdout.String(), stderr.String())
-			}
-			outs = append(outs, stdout.String())
-		}
-	}
-	return outs
-}
 
 // writeFiles writes the generated files into dir.
 func writeFiles(t *testing.T, dir string, files []ir.File) {
@@ -82,6 +49,7 @@ func same(b []byte) []byte { return b }
 
 // CPP-06, CODEGEN.md §5.9, §5.11, §9, IMPLEMENTATION-PLAN.md §6 M2 items 2 and 5.
 func TestPipelineCompilesAndRuns(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	writeTree(t, dir, generate(t, pipeline()), "pipeline_main.cpp")
 	data := filepath.Join("..", "..", "..", "examples", "pipeline", "expected", "potions.json")
@@ -107,6 +75,7 @@ func TestPipelineCompilesAndRuns(t *testing.T) {
 
 // CONFORMANCE.md §7.2: a disagreeing vector is counted and printed in the §7.2 format.
 func TestConformanceReportsAFailure(t *testing.T) {
+	t.Parallel()
 	p := pipeline()
 	healFor := p.Types[0].(*ir.Record).Methods[1]
 	healFor.Vectors[0].Want = num(201)
@@ -118,7 +87,7 @@ func TestConformanceReportsAFailure(t *testing.T) {
 		bin := filepath.Join(dir, filepath.Base(cc))
 		args := append(append([]string(nil), cxx.Flags...), "-I", include, "-o", bin,
 			filepath.Join(dir, "pipeline_conformance.gen.cpp"), filepath.Join(dir, "main.cpp"))
-		if out, err := exec.Command(cc, args...).CombinedOutput(); err != nil {
+		if out, err := compile(cc, args, dir); err != nil {
 			t.Fatalf("%s: %v\n%s", cc, err, out)
 		}
 		var stdout, stderr bytes.Buffer
@@ -140,6 +109,7 @@ func TestConformanceReportsAFailure(t *testing.T) {
 
 // CODEGEN.md §4, §5, §7.2, §7.6, CONFORMANCE.md §2–§3: every construct compiles and reads back.
 func TestConstructsCompileAndRun(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	files := generate(t, constructs())
 	writeTree(t, dir, files, "shop_main.cpp")
@@ -171,12 +141,13 @@ func TestConstructsCompileAndRun(t *testing.T) {
 // A lookup argument that is no member of its enum aborts instead of reading past the table
 // (log-2026-09-24, gen/cpp review calls).
 func TestLookupNonMemberAborts(t *testing.T) {
+	t.Parallel()
 	compilers, include := cxx.Toolchain(t)
 	dir := t.TempDir()
 	writeTree(t, dir, generate(t, constructs()), "abort_main.cpp")
 	bin := filepath.Join(dir, "abort")
 	args := append(append([]string(nil), cxx.Flags...), "-I", dir, "-I", include, "-o", bin, filepath.Join(dir, "main.cpp"))
-	if out, err := exec.Command(compilers[0], args...).CombinedOutput(); err != nil {
+	if out, err := compile(compilers[0], args, dir); err != nil {
 		t.Fatalf("%v\n%s", err, out)
 	}
 	err := exec.Command(bin).Run()

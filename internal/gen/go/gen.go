@@ -50,10 +50,6 @@ func Generate(p *ir.Package, e *ir.Emit) ([]ir.File, error) {
 	if !token.IsIdentifier(e.GoPackage) || e.GoImport == "" {
 		return nil, fmt.Errorf("%w: go emit %s without a package or an import path", ErrMalformed, e.Out)
 	}
-	if len(p.Defines) > 0 {
-		table := p.Defines[0].Pkg + dot + p.Defines[0].Value
-		return nil, newDetail(ErrUnsupported, table, defineRefFormat, table)
-	}
 	g := newGen(p, e)
 	src := g.source()
 	test := g.conformance()
@@ -114,7 +110,7 @@ func (g *gen) printf(format string, args ...any) {
 
 // source is the formatted main file: every section in CODEGEN.md §2.7's order.
 func (g *gen) source() []byte {
-	sections := []func(){g.constants, g.enums, g.kindEnums, g.branchEnums, g.idEnums, g.types, g.containers, g.values, g.fns, g.runtimeInputs}
+	sections := []func(){g.constants, g.enums, g.kindEnums, g.branchEnums, g.idEnums, g.types, g.defineTables, g.containers, g.values, g.fns, g.runtimeInputs}
 	if g.isData() {
 		sections = g.dataSections()
 	}

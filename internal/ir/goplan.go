@@ -47,6 +47,8 @@ type GoSlot struct {
 	Main, Key, OK            bool
 	Getter, KeyGetter        string
 	Store, KeyStore, OKStore string
+	Define                   bool   // a field's ref into a load.defines table: its value too (CODEGEN.md §5.8)
+	ValueGetter, ValueStore  string // the define's value: <F>Value(s)() and its member
 }
 
 // GoFinite is a stored export fn read from a table (CODEGEN.md §5.10): its function, its table's member or variable, its parameters' locals, the index local of each parameter that needs one ("" when the parameter indexes itself) and how a cell of its result is held.
@@ -196,6 +198,13 @@ func (pl *GoNamePlan) Data() GoData {
 func (pl *GoNamePlan) Slot(f *Field) GoSlot {
 	s := pl.slot(f.Type, f.Optional, goExported(f.Go, f.Name), goEffectiveStore(f.Go, f.Name))
 	pl.data.layout(&s, pl.classOf[f])
+	if DefineTarget(f.Type) != nil && f.Input == nil {
+		s.Define, s.ValueGetter = true, s.Getter+defineSuffix(s.List)
+		s.ValueStore = s.Store + goDefineStoreSuffix
+		if s.List {
+			s.ValueStore += goPluralSuffix
+		}
+	}
 	return s
 }
 
@@ -282,7 +291,26 @@ func (s GoSlot) members() (stores, getters []string) {
 	if s.Ref != nil {
 		getters = append(getters, s.KeyGetter)
 	}
+	if s.Define {
+		stores, getters = append(stores, s.ValueStore), append(getters, s.ValueGetter)
+	}
 	return stores, getters
+}
+
+// DefinesVar is the package variable of a define table, defines<Table> (CODEGEN.md §5.8).
+func (pl *GoNamePlan) DefinesVar(d *DefineTable) string {
+	return goDefinesPrefix + goUpperCamel(d.Value)
+}
+
+// declareDefines declares each define table the fields ref, and data mode's lookup, jsonDefine, beside its decoders (CODEGEN.md §5.8).
+func (pl *GoNamePlan) declareDefines(top *nameScope) {
+	tables := ownDefineRefs(pl.p)
+	for _, d := range tables {
+		pl.declare(top, pl.DefinesVar(d), d.Pkg+qnameSep+d.Value, d)
+	}
+	if pl.data != nil && len(pl.data.decoded) > 0 && len(tables) > 0 {
+		pl.declare(top, goJSONDefine, pl.p.Name, nil)
+	}
 }
 
 // resolvable reports a ref into an emitted value of this package: its getter returns the entry (CODEGEN.md §5.8).

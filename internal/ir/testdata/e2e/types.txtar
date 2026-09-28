@@ -1,0 +1,113 @@
+CODEGEN.md §5.13, §2.8, EVALUATION.md §1: a project of cpp types-mode emits that stage E passes builds, and its C++ compiles: package b's record held by value in package a; a's inline variant whose key folds onto its parent's (types mode checks no key), units, a path, a none marker, pairs, bits, a dependent field, constant defaults of every kind but records and dependent values, a keyed list, a translated method, refs into a load.defines table.
+-- project.canon --
+project demo {
+  canon: "0.1"
+  roots {
+    gen: "gen"
+  }
+}
+-- a/kinds.h --
+#define K_A 1
+#define K_B 2
+-- b/b.canon --
+/// B.
+package b
+
+/// A point.
+record Point {
+  /// Across.
+  x: Int
+}
+
+emit cpp { out: "@gen/cpp/b", namespace: "b", mode: types }
+-- a/a.canon --
+/// A.
+package a
+
+import b { Point }
+
+local let kinds = load.defines("kinds.h", prefix: "K_")
+
+/// A flag.
+enum Flag @codes(UInt8) { red = 1, blue = 2 }
+
+/// A kind.
+enum K { one, two }
+
+/// A payload.
+type P(k: K) = match k { one => Int, two => String }
+
+/// A bonus.
+record Bonus {
+  /// The stat.
+  stat: Int
+  /// The amount.
+  amount: Int
+}
+
+/// A shape.
+variant Shape @json(tag: "kind") {
+  /// A box.
+  box {
+    /// Its side.
+    side: Int
+  }
+  /// Nothing.
+  empty
+}
+
+/// A thing.
+record Thing {
+  /// Its id.
+  id: String
+  /// Where.
+  at: Point
+  /// Its side.
+  Side: Int = 3
+  /// Its shape.
+  shape: Shape @json(inline)
+  /// A wait.
+  wait: Duration? = 90s @json("waitMin", unit: m)
+  /// A cost.
+  cost: Int = 0 @json(path: "legacy.cost")
+  /// A label.
+  label: String? @json(none: "")
+  /// Its bonuses.
+  stats: [Bonus](..=2) = [] @json(pairs: ["s{i}", "a{i}"])
+  /// Its flags.
+  flags: [Flag] = [red] @json(bits)
+  /// A kind.
+  k: K
+  /// A payload.
+  p: P(k)? = none
+  /// Payloads.
+  ps: [P(k)] = []
+  /// A mode.
+  mode: K | "auto" = "auto"
+  /// Counts.
+  counts: [Int] = [1, 2]
+  /// A ratio.
+  ratio: Float32 = 0.5
+  /// Where it was.
+  trail: [Point] = []
+  /// Its kind.
+  sort: ref kinds = K_B
+  /// Its other kinds.
+  kinds: [ref kinds]?
+
+  /// Twice the side.
+  export fn twice(self, n: Int) -> Int { return Side * n }
+}
+
+test "twice doubles the side" {
+  let t: Thing = { id: "a", at: { x: 1 }, shape: empty, k: one }
+  expect t.twice(2) == 6
+}
+
+/// The things.
+record Things {
+  /// Every thing.
+  all: [Thing] keyed by id
+}
+
+emit cpp { out: "@gen/cpp/a", namespace: "a", mode: types }

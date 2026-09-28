@@ -1,0 +1,24 @@
+CODEGEN.md §2.2, decision 37, clean: a types-mode emit writes no value, so no generator rule judges one: a union over a ref and a list of optionals, as values, check clean beside a C++ types emit.
+-- a/a.canon --
+package a
+
+/// A colour.
+record Colour {
+  /// Its name.
+  name: String
+}
+
+/// The colours.
+let colours: table Colour = {
+  red { name: "Red" }
+}
+
+/// A pick.
+let pick: ref colours | "auto" = "auto"
+
+/// Some counts.
+let counts: [Int?] = [1, none]
+
+emit cpp { out: "@features/ac", namespace: "a", mode: types }
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

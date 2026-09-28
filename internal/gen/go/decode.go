@@ -92,6 +92,7 @@ func (g *gen) decodeBody(b *body) {
 	for _, s := range b.slots {
 		if s.fn == nil && !s.isInput() {
 			g.readField(b, s)
+			g.readDefine(s, g.lc.Out, g.keyLoc(strings.Join(s.src.WirePath, dot)))
 		}
 	}
 	for _, fn := range b.methods {

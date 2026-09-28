@@ -1,0 +1,21 @@
+Decision 222, CODEGEN.md §5.10: baked go indexes a lookup's table by the ordinal of each parameter's value, an enum's or a table id's; a define key is a string with no id enum, so a lookup over a load.defines table is refused at its parameter; the field that refs the table is written.
+-- a/a.canon --
+package a
+
+local let kinds = load.defines("@features/a/kinds.h")
+
+/// A rule.
+record Rule {
+  /// Its kind.
+  kind: ref kinds
+
+  /// Its weight for a kind.
+  export fn weight(self, k: ref kinds) -> Int { return 1 }
+}
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+error[E8019]  a/a.canon:11:26
+  emit go in baked mode cannot generate a lookup parameter that refs a load.defines table
+
+1 error, 0 warnings in 1 package (…)

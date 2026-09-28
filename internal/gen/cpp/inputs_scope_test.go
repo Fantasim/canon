@@ -10,6 +10,7 @@ import (
 
 // CODEGEN.md §3.5, §7.7: LoadInputs' parameter and locals (error, problems, raw, val, kPattern) hide namespace names, but its body writes every user name qualified (::kscope::…), so types named like them compile: no E8005 there.
 func TestLoadInputsLocalsMeetNoUserName(t *testing.T) {
+	t.Parallel()
 	val, problems, kPattern := enumOf("val", "a", "b"), enumOf("problems", "x"), enumOf("kPattern", "y")
 	rec := &ir.Record{Pkg: "kscope", Name: "raw", Fields: []*ir.Field{
 		input("v", "V", ir.TypeRef{Kind: types.Enum, Named: val}, true, nil),

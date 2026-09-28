@@ -41,6 +41,7 @@ func callsPackage() *ir.Package {
 
 // log-2026-09-24 (gen/cpp review calls): a package fn called only from a statement body still gets its prototype.
 func TestBlockCallerCompilesAndRuns(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	files := generate(t, callsPackage())
 	writeFiles(t, dir, files)

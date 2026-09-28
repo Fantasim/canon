@@ -1,0 +1,21 @@
+CODEGEN.md §2.2, §5.12, decision 222: a types-mode emit writes no LoadInputs, so gen/cpp has nothing to read an input field with: InputField at the field.
+-- a/a.canon --
+package a
+
+/// Settings.
+record Gen {
+  /// A key.
+  key: input String? from env "KEY"
+  /// A name.
+  name: String
+}
+
+/// The settings.
+let gen: Gen = { name: "x" }
+
+emit cpp { out: "@features/ac", namespace: "a", mode: types }
+-- findings.txt --
+error[E8019]  a/a.canon:6:3
+  emit cpp in types mode cannot generate an `input` field
+
+1 error, 0 warnings in 1 package (…)

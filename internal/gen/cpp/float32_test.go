@@ -28,6 +28,8 @@ const (
 	fitsFloat32 = "rows[0].weight: expected a number that fits Float32"
 	// noToken is the internal error of a midpoint read with no token on record.
 	noToken = "internal error: no token on record for a Float32 rounding midpoint"
+	// unsettled is what a Decoder with no token table, a types-mode one, tells a midpoint (CODEGEN.md §5.13).
+	unsettled = "expected a Float32: the number lies halfway between two Float32 values"
 	// sixtyDigitZeros pads midpoint1 (25 digits) to a 60-digit token with a final 1.
 	sixtyDigitZeros = 34
 	// subnormalMid is 2^-150 written out exactly: halfway between +0 and the smallest float32.
@@ -115,14 +117,15 @@ func buildCommaLocale(t *testing.T) (string, error) {
 	return dir, nil
 }
 
-// log-2026-09-24 A1 C++ Float32: a midpoint read with no token on record fails loudly; a Decoder takes no temporary token table.
+// log-2026-09-24 A1 C++ Float32: a midpoint read with no token on record fails loudly; a Decoder with no table at all (types mode) refuses the number; a Decoder takes no temporary token table.
 func TestFloat32MidpointWithoutToken(t *testing.T) {
+	t.Parallel()
 	if testing.Short() {
 		t.Skip("compiles generated C++")
 	}
 	dir := t.TempDir()
 	writeTree(t, dir, generate(t, nestPackage()), "f32_main.cpp")
-	want := "3f800001\ng.json: value.w: " + noToken + "\nf.json: value.w: " + noToken + "\n"
+	want := "3f800001\ng.json: value.w: " + unsettled + "\nf.json: value.w: " + noToken + "\n"
 	for _, out := range buildAndRun(t, dir, []string{"main.cpp"}) {
 		if out != want {
 			t.Errorf("got\n%swant\n%s", out, want)

@@ -1,0 +1,21 @@
+CODEGEN.md §3.5, §5.8: a define table's detail::k<Table>Defines joins the generated names; inside detail it would hide a constant of the namespace named alike, which the decoders then cannot name.
+-- a/a.canon --
+package a
+
+local let monsters = load.defines("@features/a/monsters.h")
+
+/// A clashing constant.
+const kMonstersDefines = 1
+
+/// A spawn.
+record Spawn {
+  /// Its monster.
+  monster: ref monsters
+}
+
+emit cpp { out: "@features/ac", namespace: "a", mode: types }
+-- findings.txt --
+error[E8005]  a/a.canon:6:7
+  cpp: kMonstersDefines is generated for both kMonstersDefines and a.monsters
+
+1 error, 0 warnings in 1 package (…)

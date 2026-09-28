@@ -32,6 +32,7 @@ func severalHoldersFixture() *ir.Package {
 
 // TestSeveralHoldersCompileAndRun: a good file resolves the ref, a bad key refuses the Reload (CODEGEN.md §5.8, §5.11).
 func TestSeveralHoldersCompileAndRun(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	writeTree(t, dir, generate(t, severalHoldersFixture()), "severalholders_main.cpp")
 	for _, sub := range []string{"good", "bad"} {

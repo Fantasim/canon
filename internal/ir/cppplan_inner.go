@@ -22,6 +22,9 @@ func (pl *CppNamePlan) declareDetail() {
 	for _, m := range pl.methods() {
 		pl.shareInner(sc, pl.PureName(pl.className(m.class), m.fn), m.origin, m.fn)
 	}
+	for _, d := range ownDefineRefs(pl.p) {
+		pl.declareInner(sc, pl.DefinesName(d), d.Pkg+qnameSep+d.Value, d)
+	}
 	pl.declareInputSlots(sc)
 }
 

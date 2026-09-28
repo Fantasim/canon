@@ -1,0 +1,88 @@
+Decision 37, clean: what gen/cpp writes in types mode (CODEGEN.md §5.13): an imported record, an inline variant whose key folds onto its parent's (types mode checks no key), units, paths, a none marker, pairs, bits, a dependent field, constant defaults but records and dependent values, a keyed list, and a translated method.
+-- b/b.canon --
+package b
+
+/// A point.
+record Point {
+  /// Across.
+  x: Int
+}
+
+emit cpp { out: "@features/b", namespace: "b", mode: types }
+-- a/a.canon --
+package a
+
+import b { Point }
+
+/// A flag.
+enum Flag @codes(UInt8) @json(codes) { red = 1, blue = 2 }
+
+/// A kind.
+enum K { one, two }
+
+/// A payload.
+type P(k: K) = match k { one => Int, two => String }
+
+/// A bonus.
+record Bonus {
+  /// The stat.
+  stat: Int
+  /// The amount.
+  amount: Int
+}
+
+/// A shape.
+variant Shape @json(tag: "kind") {
+  /// A box.
+  box {
+    /// Its side.
+    side: Int
+  }
+  /// Nothing.
+  none_
+}
+
+/// A thing.
+record Thing {
+  /// Its id.
+  id: String
+  /// Where.
+  at: Point
+  /// Its side.
+  Side: Int = 3
+  /// Its shape.
+  shape: Shape @json(inline)
+  /// A wait.
+  wait: Duration? = 90s @json("waitMin", unit: m)
+  /// A cost.
+  cost: Int = 0 @json(path: "legacy.cost")
+  /// A label.
+  label: String? @json(none: "")
+  /// Its bonuses.
+  stats: [Bonus](..=2) = [] @json(pairs: ["s{i}", "a{i}"])
+  /// Its flags.
+  flags: [Flag] = [red] @json(bits)
+  /// A kind.
+  k: K
+  /// A payload.
+  p: P(k)? = none
+  /// Payloads.
+  ps: [P(k)] = []
+  /// A mode.
+  mode: K | "auto" = "auto"
+  /// A count.
+  counts: [Int] = [1, 2]
+
+  /// Twice the side.
+  export fn twice(self, n: Int) -> Int { return Side * n }
+}
+
+/// The things.
+record Things {
+  /// Every thing.
+  all: [Thing] keyed by id
+}
+
+emit cpp { out: "@features/a", namespace: "a", mode: types }
+-- findings.txt --
+0 errors, 0 warnings in 2 packages (…)

@@ -60,6 +60,7 @@ func (g *gen) decodePairs(f *ir.Field, dst string) {
 		g.fail(err)
 		key := fmt.Sprintf(indexFormat, fmt.Sprintf(wireKeysFormat, k), slotVar)
 		g.decodeKey(depthThree, sourceVar, key, leaf{t: ef.Type, unit: ef.Unit, enc: ef.Enc, dst: slotElem + memberAccess + m})
+		g.defineLookup(depthThree, ef, slotElem+memberAccess, key)
 	}
 	g.c.linef(depthThree, pushBackFormat, dst, slotElem)
 	g.c.linef(depthTwo, closeBrace)

@@ -86,11 +86,11 @@ func reportShared(first, later cppHolder) {
 	}
 }
 
-// cppNamesOf are the shared names of u's data-mode cpp emit: its plan's when u is selected (checkCppNames), else those of the plan of its declarations, values unevaluated.
+// cppNamesOf are the shared names of u's data- or types-mode cpp emit: its plan's when u is selected (checkCppNames), else those of the plan of its declarations, values unevaluated.
 func (s *stage) cppNamesOf(u *unit) []cppShared {
 	es := emitFor(u, TargetCpp)
 	switch {
-	case es == nil || es.e.Mode != ModeData:
+	case es == nil || es.e.Mode != ModeData && es.e.Mode != ModeTypes:
 		return nil
 	case u.selected:
 		return u.cppNames

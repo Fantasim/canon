@@ -28,9 +28,9 @@ const (
 	noKey              = "a map or ref without its key type"
 	noDecl             = "a record, variant or enum kind without its declaration"
 	noKeyField         = "a keyed list without its key field"
-	defineRefs         = "a ref into a load.defines table"
+	defineMissing      = "a ref into a load.defines table the package's IR does not hold"
 	unionNonString     = "a literal union whose wire is not a string"
-	unionRef           = "a literal union over a ref, not generated yet"
+	unionRef           = "a literal union over a ref"
 	unionDependent     = "a literal union over a dependent type"
 	optionalElems      = "a list of optional elements"
 	dataValueKind      = "a data value that is not a table, a keyed list or a record"
@@ -41,7 +41,11 @@ const (
 	dependentBadArm    = "a dependent type whose members and branches disagree"
 	dependentBadPath   = "a dependent field whose discriminant is not read from earlier required fields of its class (ir.DiscFields)"
 	dependentDefines   = "a dependent type with a branch into a load.defines table"
-	packageStoredFn    = "a package-level stored export fn in data mode"
+	packageStoredFn    = "a package-level stored export fn in data or types mode"
+	typesStoredFn      = "a stored export fn in types mode"
+	typesComputed      = "a computed default in types mode"
+	typesInputs        = "an input field in types mode, which writes no LoadInputs"
+	dependentDefault   = "a default holding a dependent value"
 	legacyStructs      = "a legacy struct (@cpp(struct:))"
 	inputOutsideRecord = "an input field outside a record"
 	inputHelperUnknown = "a runtime input helper this generator has no text for"
@@ -104,4 +108,28 @@ const (
 var (
 	typeRefused  = map[types.Kind]bool{types.Optional: true, types.Table: true, types.DepMap: true, types.Case: true}
 	constRefused = map[types.Kind]bool{types.Record: true, types.Variant: true, types.Case: true}
+)
+
+// Strict loaders: calls of canon_runtime_json.h's detail helpers (CODEGEN.md §7.5).
+const (
+	jsonDetail         = "canon::json::detail::"
+	bracedFormat       = "{%s}"
+	keysReturnFormat   = "if (!" + jsonDetail + "Keys(%s, dec, %s)) return false;"
+	keysStmtFormat     = jsonDetail + "Keys(%s, dec, %s);"
+	objectReturnFormat = "if (!" + jsonDetail + "Object(%s, dec)) return false;"
+	stepOpenFormat     = "if (const nlohmann::json* %s = " + jsonDetail + "Step(%s, dec, %s)) {"
+	cellOpenFormat     = "if (const nlohmann::json* %s = " + jsonDetail + "Cell(%s, dec, %s, %t)) {"
+	intBoolFormat      = "if (dec.AsIntIn(%s, %s, 0, 1, n)) %s = n == 1;"
+	bitsTempLine       = "uint64_t n = 0;"
+	maskFormat         = "0x%x"
+	emptyFlagLine      = "bool empty = false;"
+	slotCheckFormat    = "if (!" + jsonDetail + "Slot(%s, dec, %s[s], %s[s], empty)) continue;"
+	cellsArrayFormat   = "constexpr const char* cells[] = {%s};"
+	cellsKey           = "cells[c]"
+	definesOpenFormat  = "constexpr std::array<std::pair<std::string_view, int64_t>, %d> %s = {{" + newline
+	defineEntryFormat  = "{%s, %s},"
+	definesClose       = "}};"
+	defineCallFormat   = jsonDetail + "Define(%s, %s, dec, %s, %s, %s);"
+	emplaceCall        = ".emplace()"
+	emplaceBackCall    = ".emplace_back()"
 )

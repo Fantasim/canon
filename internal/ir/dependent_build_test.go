@@ -34,7 +34,7 @@ func TestDependentTypesBuild(t *testing.T) {
 		t.Skip("compiles generated code")
 	}
 	dir := t.TempDir()
-	writeProject(t, dir)
+	writeProject(t, dir, e2eProject)
 	p, err := build.Open(build.OS(), filepath.ToSlash(dir), build.Options{})
 	if err != nil {
 		t.Fatal(err)
@@ -59,12 +59,12 @@ func TestDependentTypesBuild(t *testing.T) {
 	compileCpp(t, gen)
 }
 
-// writeProject writes the archive's files under dir.
-func writeProject(t *testing.T, dir string) {
+// writeProject writes the files of the archive at path under dir.
+func writeProject(t *testing.T, dir, path string) {
 	t.Helper()
-	cases, err := golden.Load(e2eProject)
+	cases, err := golden.Load(path)
 	if err != nil || len(cases) != 1 {
-		t.Fatalf("load %s: %v", e2eProject, err)
+		t.Fatalf("load %s: %v", path, err)
 	}
 	for _, f := range cases[0].Archive.Files {
 		path := filepath.Join(dir, filepath.FromSlash(f.Name))

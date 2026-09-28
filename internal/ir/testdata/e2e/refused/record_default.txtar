@@ -1,0 +1,37 @@
+CODEGEN.md §5.13, §5.1 (gen/cpp defaultLit: a types-mode decoder gives an absent key its constant default, and gen/cpp writes no record literal): a field whose default holds a record value is E8019 RecordConstant at the field; an empty list of records is written.
+-- project.canon --
+project demo {
+  canon: "0.1"
+  roots {
+    gen: "gen"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A point.
+record Point {
+  /// Across.
+  x: Int
+}
+
+/// A marker.
+record Marker {
+  /// Where it is.
+  at: Point = { x: 1 }
+  /// Where they are.
+  all: [Point] = [{ x: 2 }]
+  /// Where it was.
+  trail: [Point] = []
+}
+
+emit cpp { out: "@gen/cpp/a", namespace: "a", mode: types }
+-- findings.txt --
+error[E8019]  a/a.canon:13:3
+  emit cpp in types mode cannot generate a constant of a record or variant type
+
+error[E8019]  a/a.canon:15:3
+  emit cpp in types mode cannot generate a constant of a record or variant type
+
+2 errors, 0 warnings in 1 package (…)

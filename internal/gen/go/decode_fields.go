@@ -67,6 +67,7 @@ func (g *gen) readPairs(s *slot) {
 	g.printf(slotFormat, raws[0], raws[1], lc.Err, g.helper(helperSlot), lc.Name, lc.Path, lc.Obj, slotKeys[0], slotKeys[1], empty, elem, g.goName(rec))
 	for k, es := range g.bodyOf(rec).slots[:pairFields] {
 		g.storeInto(es, elem, leaf{t: es.T, unit: es.src.Unit, enc: es.src.Enc}, raws[k], g.root().arg(slotKeys[k]))
+		g.readDefine(es, elem, g.root().arg(slotKeys[k]))
 	}
 	g.printf(pairsCloseFormat, list, elem)
 	var b strings.Builder

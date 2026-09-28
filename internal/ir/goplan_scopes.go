@@ -115,6 +115,7 @@ func (pl *GoNamePlan) declareAll() {
 		pl.declareValues(top)
 	}
 	pl.declareFns(top)
+	pl.declareDefines(top)
 	pl.declareInputs(top)
 	if pl.data != nil {
 		pl.declareDecoders(top)

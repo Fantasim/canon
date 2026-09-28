@@ -95,6 +95,9 @@ func (g *gen) storage(s *slot) []member {
 	if s.needsOK() {
 		out = append(out, member{s.OKStore, goBool})
 	}
+	if s.Define {
+		out = append(out, member{s.ValueStore, g.defineType(s)})
+	}
 	return out
 }
 
@@ -124,7 +127,11 @@ func (g *gen) getters(s *slot, recv string) []getter {
 		key.body = g.derivedKey(s, recv)
 		key.result = results(g.slotKeyType(s), s.Optional)
 	}
-	return append(out, key)
+	out = append(out, key)
+	if s.Define { // CODEGEN.md §5.8: the define's value, beside its key
+		out = append(out, getter{name: s.ValueGetter, result: results(g.defineType(s), ok), body: returns(recv+dot+s.ValueStore, ok, recv+dot+s.OKStore), doc: s.doc})
+	}
+	return out
 }
 
 // derivedKey reads a resolved ref's key off its entry, as GetInitialStatusID does (§6.2).
@@ -185,6 +192,9 @@ func (g *gen) assignWith(s *slot, v value.Value, main func(*slot, value.Value) s
 	}
 	if s.needsOK() {
 		out = append(out, pair{s.OKStore, trueLit})
+	}
+	if s.Define {
+		out = append(out, pair{s.ValueStore, g.defineValue(s, v)})
 	}
 	return out
 }

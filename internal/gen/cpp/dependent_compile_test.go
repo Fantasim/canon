@@ -34,6 +34,7 @@ var dependentCases = []dependentCase{
 
 // CODEGEN.md §5.6, §7.6; WIRE.md §5.9: dependent fields read by the loader, the discriminant first; a Never branch takes only none.
 func TestDependentValueCompilesAndRuns(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	writeTree(t, dir, generate(t, dependentPackage()), "dependent_main.cpp")
 	data := filepath.Join(dir, "data")

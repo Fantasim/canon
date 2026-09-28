@@ -71,7 +71,7 @@ func (g *gen) decodeVariant(v *ir.Variant) {
 		g.fail(fmt.Errorf("%w: variant %s without a tag", ErrMalformed, v.Name))
 		return
 	}
-	g.checkKeys(1, sourceVar, []string{v.Tag}, true)
+	g.checkKeys(1, sourceVar, g.wireKeys([]string{v.Tag}), true)
 	g.c.linef(1, tagDeclLine)
 	g.c.linef(1, tagReadFormat, quote(v.Tag))
 	for i, c := range v.Cases {

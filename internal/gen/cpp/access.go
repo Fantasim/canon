@@ -134,4 +134,5 @@ func (g *gen) outOfLine() {
 		g.c.printf(snapshotLoadDefText, snap, g.pl.AccessName(), g.pl.AccessSnapshotLoader(), ir.CppLoad)
 		g.c.printf(reloadDefText, g.pl.StoreName(), snap, ir.CppLoad)
 	}
+	g.publicDecoders()
 }

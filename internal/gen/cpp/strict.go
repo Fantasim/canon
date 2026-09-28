@@ -92,6 +92,9 @@ func nextSegments(fields []*ir.Field, prefix []string) []string {
 // for ASCII letter case: its case decoder reads the parent's object, and would take that key for
 // a misspelling of its own.
 func (g *gen) inlineFolds(c class) {
+	if g.types() { // no key is checked (wireKeys), so none folds onto another
+		return
+	}
 	fields, _ := c.shape()
 	all := g.objectKeys(c)
 	for _, f := range fields {

@@ -1,0 +1,16 @@
+CODEGEN.md §3.5, §5.13, §7.2: in types mode each record and variant declares its static Decode, so a getter overridden to Decode collides with it in the class scope.
+-- a/a.canon --
+package a
+
+/// A thing.
+record Thing {
+  /// Its decode.
+  code: Int @cpp(name: "Decode")
+}
+
+emit cpp { out: "@features/ac", namespace: "a", mode: types }
+-- findings.txt --
+error[E8005]  a/a.canon:6:3
+  cpp: Decode is generated for both a.Thing and a.Thing.code
+
+1 error, 0 warnings in 1 package (…)

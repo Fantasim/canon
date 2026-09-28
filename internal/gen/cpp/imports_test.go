@@ -74,6 +74,7 @@ func importApp() *ir.Package { _, app := importPair(); return app }
 
 // CODEGEN.md §2.8: imported headers by relative path, qualified types, their own decoders.
 func TestImportsCompileAndRun(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	for _, p := range []*ir.Package{importBase(), importApp()} {
 		out := filepath.Join(dir, filepath.FromSlash(cppEmit(p).Dir))

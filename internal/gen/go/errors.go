@@ -44,7 +44,7 @@ const (
 	lookupRefFormat      = "%s: a finite-parameter method whose result holds a ref resolved at load, in data mode"
 	dataValueFormat      = "data value %s that is not a table, a keyed list or a record (CODEGEN.md §2.2)"
 	foreignClassFormat   = "a record or variant of another package, %s, read by a loader at %s (its decoder is unexported there)"
-	unionFormat          = "%s: a literal union over a ref, not generated yet"
+	unionFormat          = "%s: a literal union over a ref"
 	unionMalformedFormat = "%s: a literal union whose other arm is not string-wired"
 	inlineFormat         = "%s: an optional or non-variant @json(inline) field, in data mode"
 	foldFormat           = "%s: an inline variant key equal to another key of its parent but for letter case, in data mode"
@@ -85,12 +85,11 @@ var (
 
 // Messages of the generator's errors.
 const (
-	kindFormat      = "%s: a value of kind %s"
-	unknownKind     = "an unknown kind"
-	unknownMode     = "an unknown mode"
-	defineRefFormat = "a ref into the load.defines table %s, whose define value getter and table are not generated yet"
-	noKeyType       = "a ref without a key type"
-	noEnumFormat    = "an enum type without its enum at %s"
+	kindFormat   = "%s: a value of kind %s"
+	unknownKind  = "an unknown kind"
+	unknownMode  = "an unknown mode"
+	noKeyType    = "a ref without a key type"
+	noEnumFormat = "an enum type without its enum at %s"
 )
 
 // modeNames name the modes in messages (CODEGEN.md §2.1).

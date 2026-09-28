@@ -7,7 +7,7 @@ import (
 	"github.com/fantasim/canonlang/internal/types"
 )
 
-// CppNamePlan is every C++ name gen/cpp declares for a package and its cpp emit in data mode, per scope (CODEGEN.md §3.3–§3.5, §5, §7.2, §7.7): the namespace, detail, conformance, the input namespace, each class and enum; stage E reports E8005 and E8011 from its problems (decision 37), and across the packages emitted into one namespace; gen/cpp writes its names from the lookups.
+// CppNamePlan is every C++ name gen/cpp declares for a package and its cpp emit in data or types mode, per scope (CODEGEN.md §3.3–§3.5, §5, §7.2, §7.7): the namespace, detail, conformance, the input namespace, each class and enum; stage E reports E8005 and E8011 from its problems (decision 37), and across the packages emitted into one namespace; gen/cpp writes its names from the lookups.
 type CppNamePlan struct {
 	p       *Package
 	e       *Emit
@@ -29,11 +29,11 @@ type cppShared struct {
 // cppMeet is how a shared name meets another package's same name (CODEGEN.md §3.5).
 type cppMeet uint8
 
-// PlanCppNames is the name plan of p's cpp emit e, with every problem found.
+// PlanCppNames is the name plan of p's cpp emit e, with every problem found; a types-mode emit writes no value (CODEGEN.md §2.2).
 func PlanCppNames(p *Package, e *Emit) *CppNamePlan {
 	pl := &CppNamePlan{p: p, e: e, holders: map[any][]*Value{}, nsItems: map[string]any{}, namer: newNamer(p.Name, cppValidIdent)}
 	for _, v := range p.Values {
-		if e.Values == nil || slices.Contains(e.Values, v.Name) {
+		if e.Mode != ModeTypes && (e.Values == nil || slices.Contains(e.Values, v.Name)) {
 			pl.values = append(pl.values, v)
 		}
 	}

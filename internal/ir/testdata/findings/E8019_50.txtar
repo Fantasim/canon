@@ -1,0 +1,28 @@
+EVALUATION.md §1, CODEGEN.md §4.1 (gen/cpp refuseUnion, gen/go stringWire): neither generator writes a literal union over a ref yet: gen/cpp at every type it holds, gen/go's data loader where it reads one.
+-- a/a.canon --
+package a
+
+local let kinds = load.defines("@features/a/kinds.h")
+
+/// A rule.
+record Rule {
+  /// Its kind, or none.
+  c: ref kinds | "none"
+}
+
+/// The rules.
+let rules: table Rule = {
+  one { c: "none" }
+}
+
+emit go { out: "@features/a", package: "a", mode: data }
+emit cpp { out: "@features/ac", namespace: "a", mode: data }
+emit json { out: "out/" }
+-- findings.txt --
+error[E8019]  a/a.canon:8:3
+  emit cpp in data mode cannot generate a literal union over a ref
+
+error[E8019]  a/a.canon:8:3
+  emit go in data mode cannot generate a literal union over a ref
+
+2 errors, 0 warnings in 1 package (…)

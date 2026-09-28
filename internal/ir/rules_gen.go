@@ -20,13 +20,17 @@ func init() {
 	common := []genRule{
 		(*stage).checkFieldlessCaseFns, (*stage).checkOptionalElements,
 		(*stage).checkOptionalMapValues, (*stage).checkTableFields, (*stage).checkCaseFields, (*stage).checkRecordConstants,
-		(*stage).checkNeverDependents,
+		(*stage).checkNeverDependents, (*stage).checkDefineBranches,
 	}
 	goCode := append(slices.Clone(common), (*stage).checkForeignTables, (*stage).checkConstLiterals, (*stage).checkNegativeZero)
-	genRules[TargetGo][ModeBaked] = append(slices.Clone(goCode), (*stage).checkBakedLiterals, (*stage).checkForeignTableLookups, (*stage).checkGoDependentLiterals)
-	genRules[TargetGo][ModeData] = append(slices.Clone(goCode), (*stage).checkGoDecoded, (*stage).checkResolvedLookups, (*stage).checkGoDecodedDependents)
-	genRules[TargetCpp][ModeData] = append(slices.Clone(common), (*stage).checkCppDecoded, (*stage).checkCppDependents,
-		(*stage).checkForeignPairs, (*stage).checkClassCycles, (*stage).checkSelfReads)
+	genRules[TargetGo][ModeBaked] = append(slices.Clone(goCode), (*stage).checkBakedLiterals, (*stage).checkForeignTableLookups,
+		(*stage).checkGoDependentLiterals, (*stage).checkDefineKeys)
+	genRules[TargetGo][ModeData] = append(slices.Clone(goCode), (*stage).checkGoDecoded, (*stage).checkResolvedLookups,
+		(*stage).checkGoDecodedDependents, (*stage).checkRefUnions)
+	cppCode := append(slices.Clone(common), (*stage).checkCppDecoded, (*stage).checkCppDependents,
+		(*stage).checkForeignPairs, (*stage).checkClassCycles, (*stage).checkSelfReads, (*stage).checkRefUnions)
+	genRules[TargetCpp][ModeData] = cppCode
+	genRules[TargetCpp][ModeTypes] = append(slices.Clone(cppCode), (*stage).checkCppDefaults, (*stage).checkTypesInputs)
 }
 
 // checkGenSupport is E8019 and E8020: what the emit's generator refuses, so that check fails where build would (decision 37).

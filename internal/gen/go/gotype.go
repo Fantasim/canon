@@ -118,13 +118,8 @@ func (g *gen) sub(t *ir.TypeRef) ir.TypeRef {
 	return *t
 }
 
-// keyType is a ref's key: a table's id type, else the IR's key type (§5.8, decision 180).
+// keyType is a ref's key: a table's id type, else the IR's key type, a define's name (§5.8).
 func (g *gen) keyType(t ir.TypeRef) string {
-	if t.Ref != nil && t.Ref.Coll == types.CollDefines {
-		table := t.Ref.Pkg + dot + t.Ref.Value
-		g.fail(newDetail(ErrUnsupported, table, defineRefFormat, table))
-		return goString
-	}
 	if isTableRef(t.Ref) {
 		return g.qualify(t.Ref.Pkg, g.idType(t.Ref.Elem))
 	}

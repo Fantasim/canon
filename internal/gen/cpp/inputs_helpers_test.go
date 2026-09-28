@@ -2,9 +2,7 @@ package cppgen_test
 
 import (
 	"bytes"
-	"context"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"regexp"
 	"slices"
@@ -30,6 +28,7 @@ func oneInput(pkg string, t ir.TypeRef, extra ...ir.Type) *ir.Package {
 
 // CODEGEN.md §7.7, §9: only the helpers the inputs use, in ir's order, so -Wall -Werror passes; an enum, @json(codes) or not, needs EnvText only.
 func TestInputHelpersPerKind(t *testing.T) {
+	t.Parallel()
 	codes := ir.TypeRef{Kind: types.Int, Bits: 8}
 	plain, coded := enumOf("E", "a", "b"), enumOf("E", "a", "b")
 	coded.JSONCodes, coded.Codes = true, &codes
@@ -86,12 +85,7 @@ func compileOnly(t *testing.T, dir string, sources []string) {
 	compilers, include := cxx.Toolchain(t)
 	for _, cc := range compilers {
 		args := append(append([]string(nil), cxx.Flags...), "-I", dir, "-I", include, "-c")
-		ctx, cancel := context.WithTimeout(context.Background(), cxx.Timeout)
-		cmd := exec.CommandContext(ctx, cc, append(args, sources...)...)
-		cmd.Dir = dir
-		out, err := cmd.CombinedOutput()
-		cancel()
-		if err != nil {
+		if out, err := compile(cc, append(args, sources...), dir); err != nil {
 			t.Fatalf("%s: %v\n%s", filepath.Base(cc), err, out)
 		}
 	}

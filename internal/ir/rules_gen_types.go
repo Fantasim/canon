@@ -96,10 +96,10 @@ func (s *stage) checkCaseFields(u *unit, es *emitSite) {
 	}
 }
 
-// readSpans are the spans of what es's data loader reads holding a type bad accepts: every class for gen/cpp, the plan's decoded ones for gen/go; none but in data mode.
+// readSpans are the spans of what es's decoders read holding a type bad accepts: every class for gen/cpp, the plan's decoded ones for gen/go; none but where decodesClasses.
 func (s *stage) readSpans(u *unit, es *emitSite, bad func(*TypeRef) bool) map[source.Span]bool {
 	out := map[source.Span]bool{}
-	if es.e.Mode != ModeData {
+	if !decodesClasses(es.e) {
 		return out
 	}
 	var pl *GoNamePlan
@@ -111,7 +111,7 @@ func (s *stage) readSpans(u *unit, es *emitSite, bad func(*TypeRef) bool) map[so
 			continue
 		}
 		fields, fns := classBody(class)
-		for _, site := range s.decodedSites(fields, fns) {
+		for _, site := range s.decodedSites(fields, readFns(es.e, fns)) {
 			out[site.span] = out[site.span] || decodedHolds(site.t, bad)
 		}
 	}

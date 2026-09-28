@@ -32,8 +32,11 @@ const (
 // defaultTargets are the targets an example without its own row in exampleTargets is built for.
 var defaultTargets = []canon.Target{canon.TargetGo, canon.TargetJSON}
 
-// exampleTargets overrides defaultTargets for pipeline, the only example with a cpp emit today; teamboard's extra selector sovcommon... also reaches sovcommon.time's unsupported cpp mode, left unselected under defaultTargets.
-var exampleTargets = map[string][]canon.Target{"pipeline": {canon.TargetGo, canon.TargetCpp, canon.TargetJSON}}
+// exampleTargets overrides defaultTargets for the examples with a MANIFEST whose cpp emit gen/cpp writes: pipeline and features.dependent, both in data mode.
+var exampleTargets = map[string][]canon.Target{
+	"pipeline":           {canon.TargetGo, canon.TargetCpp, canon.TargetJSON},
+	"features.dependent": {canon.TargetGo, canon.TargetCpp, canon.TargetJSON},
+}
 
 // targetsFor is exampleTargets[name], or defaultTargets without a row.
 func targetsFor(name string) []canon.Target {

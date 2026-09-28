@@ -23,6 +23,9 @@ func (g *gen) helpers() {
 	for _, name := range helperOrder {
 		g.exec(name, view)
 	}
+	if len(ir.OwnDefines(g.p)) > 0 {
+		g.exec(helperDefine, view)
+	}
 	for _, v := range g.emitted {
 		if v.Type.Kind == types.Table {
 			g.exec(helperRowID, view)

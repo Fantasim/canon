@@ -204,23 +204,6 @@ func TestEmptyDomain(t *testing.T) {
 	}
 }
 
-// CODEGEN.md §5.8, decision 180: a ref into a load.defines table is refused.
-func TestDefineRefsRefused(t *testing.T) {
-	target := &ir.RefTarget{Coll: types.CollDefines, Pkg: "p", Value: "itemKinds"}
-	str := ir.TypeRef{Kind: types.String}
-	field := record("Item")
-	field.Fields = []*ir.Field{{Name: "kind", Type: ir.TypeRef{Kind: types.Ref, Ref: target, Key: &str}}}
-	table := pkg()
-	table.Defines = []*ir.DefineTable{{Pkg: "p", Value: "itemKinds", Names: []string{"IK1_WEAPON"}, Values: []int64{1}}}
-	for _, p := range []*ir.Package{pkg(field), table} {
-		err := generateErr(p, nil)
-		var d *gogen.DetailError
-		if !errors.Is(err, gogen.ErrUnsupported) || !errors.As(err, &d) || d.Subject != "p.itemKinds" {
-			t.Errorf("got %v, want ErrUnsupported naming the define table p.itemKinds", err)
-		}
-	}
-}
-
 // CODEGEN.md §1.3, §3.5: a @go(name:) override names public API, so it must be exported, or ErrMalformed.
 func TestUnexportedOverride(t *testing.T) {
 	field := record("R", "heal")

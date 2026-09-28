@@ -22,7 +22,7 @@ type fixture struct {
 
 var fixtures = []fixture{
 	{"pipeline", pipeline}, {"constructs", constructs}, {"imports-base", importBase}, {"imports-app", importApp},
-	{"dependent", dependentPackage}, {"inputs", inputsPackage},
+	{"dependent", dependentPackage}, {"inputs", inputsPackage}, {"types-time", typesTimeFixture}, {"types-events", typesEventsFixture},
 }
 
 // generate runs the generator twice: the same bytes both times (CODEGEN.md §2.7, NFR-05).

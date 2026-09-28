@@ -3,6 +3,7 @@
 #define CANON_RUNTIME_JSON_RT_V1
 
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <clocale>
 #include <cmath>
@@ -69,6 +70,10 @@ inline constexpr const char* kFloat32Refused = "expected a number that fits Floa
 /// What a Float32 read is told when nlohmann's double is a rounding midpoint and the token that
 /// decides it is not on record: a bug of the loader, never a guess.
 inline constexpr const char* kFloat32NoToken = "internal error: no token on record for a Float32 rounding midpoint";
+
+/// What a types-mode Float32 read is told at a rounding midpoint: its decoder reads the numbers of
+/// a json it is given, whose tokens are gone, so the double cannot settle the Float32 (CODEGEN.md §5.13).
+inline constexpr const char* kFloat32Unsettled = "expected a Float32: the number lies halfway between two Float32 values";
 
 /// True when `a` and `b` are equal ignoring the case of ASCII letters, and only of them. A
 /// generated loader refuses a key that matches an expected one only this way.
@@ -502,7 +507,7 @@ public:
         } else if (v.is_number_integer()) {
             f = static_cast<float>(v.get<int64_t>());
         } else if (const char* what = detail::RoundFloat32(v.get<double>(), Token(v), f)) {
-            return Fail(key, what), false;
+            return Fail(key, tokens_ == nullptr && what == kFloat32NoToken ? kFloat32Unsettled : what), false;
         }
         out = f == 0.0f ? 0.0f : f;
         return true;
@@ -695,6 +700,36 @@ inline bool Bits(const Json& x, Decoder& dec, std::string_view key, uint64_t mas
     if (hex.empty()) return true;
     dec.Fail(key, "unknown bits 0x" + hex);
     return false;
+}
+
+/// A source-wire Duration (WIRE.md §5.1, §5.13): an integer count of `unitMs` as AsDuration reads
+/// it, or a fraction that is a whole number of milliseconds within kDurationMaxMs. A fraction is
+/// judged on nlohmann's double, the one the caller parsed: its token is not on record.
+inline bool SourceDuration(const Json& v, Decoder& dec, std::string_view key, int64_t unitMs,
+                           std::chrono::milliseconds& out) {
+    if (!v.is_number_float()) return dec.AsDuration(v, key, unitMs, out);
+    const double d = v.get<double>();
+    const double ms = d * static_cast<double>(unitMs);
+    if (!(std::fabs(ms) <= static_cast<double>(kDurationMaxMs))) return dec.Fail(key, "expected a duration within the Duration range"), false;
+    const int64_t n = static_cast<int64_t>(std::llround(ms));
+    if (static_cast<double>(n) / static_cast<double>(unitMs) != d) return dec.Fail(key, "expected a whole number of milliseconds"), false;
+    out = std::chrono::milliseconds(n);
+    return true;
+}
+
+/// The value of define `name` in `defines`, a generated table sorted by name (CODEGEN.md §5.8); a
+/// name it lacks is the load error at `key`, naming `table`, the table's <Table>.
+template <size_t N>
+bool Define(const std::array<std::pair<std::string_view, int64_t>, N>& defines, std::string_view table, Decoder& dec,
+            std::string_view key, const std::string& name, int64_t& out) {
+    const auto it = std::lower_bound(defines.begin(), defines.end(), std::string_view(name),
+                                     [](const std::pair<std::string_view, int64_t>& e, std::string_view n) { return e.first < n; });
+    if (it == defines.end() || it->first != name) {
+        dec.Fail(key, "define " + name + " is not in this program's " + std::string(table) + " table");
+        return false;
+    }
+    out = it->second;
+    return true;
 }
 
 /// The token WIRE.md §7.3 writes for a string key: quoted and escaped.

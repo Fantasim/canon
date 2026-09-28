@@ -162,11 +162,6 @@ const maxCells = 65_536
 // maxSafeInt is Number.MAX_SAFE_INTEGER, 2^53 - 1 (CODEGEN.md §4.1, E8101).
 const maxSafeInt = 1<<53 - 1
 
-// definesRefused are the emits refusing a ref into a load.defines table (decisions 180, 194).
-var definesRefused = [TargetView + 1][ModeTypes + 1]bool{
-	TargetGo: {ModeBaked: true, ModeData: true},
-}
-
 // JSONExt ends a file-mode JSON `out` and every directory-mode file name (WIRE.md §8.1).
 const JSONExt = ".json"
 
@@ -301,7 +296,12 @@ const (
 	cppInputsLoaded      = "InputsLoaded"
 	branchWord           = "Branch" // dependent types (§5.6): TBranch, Go's Branch, C++'s GetBranch
 	goBranchStore        = "branch"
-	asValueSuffix        = "Value" // As<Branch>Value of a ref into a load.defines table
+	asValueSuffix        = "Value"       // As<Branch>Value of a ref into a load.defines table
+	defineValueSuffix    = asValueSuffix // a define ref's value getter, <F>Value (CODEGEN.md §5.8)
+	goDefinesPrefix      = "defines"
+	goDefineStoreSuffix  = "_value"
+	goJSONDefine         = "jsonDefine"
+	cppDefinesSuffix     = "Defines"
 )
 
 // How another package's same C++ name meets a name: only overloads, TU-locals, namespaces pass.

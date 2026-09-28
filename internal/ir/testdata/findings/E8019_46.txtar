@@ -1,0 +1,16 @@
+EVALUATION.md §1, CODEGEN.md §4.2, §5.13 (gen/cpp decodeValue: nlohmann::json does not keep a map's key order): a types-mode decoder reads every class, so a map field is MapField there as in data mode.
+-- a/a.canon --
+package a
+
+/// A table of weights.
+record Weights {
+  /// By name.
+  byName: {String: Int}
+}
+
+emit cpp { out: "@features/ac", namespace: "a", mode: types }
+-- findings.txt --
+error[E8019]  a/a.canon:6:3
+  emit cpp in types mode cannot generate a map
+
+1 error, 0 warnings in 1 package (…)

@@ -41,6 +41,7 @@ func (pl *CppNamePlan) declareMembers() {
 // declareVariant declares GetKind and each case with fields' As<Case> (CODEGEN.md §5.5).
 func (pl *CppNamePlan) declareVariant(v *Variant) {
 	sc := pl.classScope(pl.TypeName(v), v.QName(), v)
+	pl.declarePublicDecode(sc, v.QName(), v)
 	pl.declare(sc, GoGet+GoKind, v.QName(), v)
 	pl.declare(sc, CppVariantMember, v.QName(), v)
 	for _, c := range v.Cases {
@@ -55,6 +56,7 @@ func (pl *CppNamePlan) declareClass(c any) {
 	origin := pl.classOrigin(c)
 	sc := pl.classScope(pl.className(c), origin, c)
 	if rec, ok := c.(*Record); ok {
+		pl.declarePublicDecode(sc, origin, rec)
 		pl.declareRecordOwn(sc, rec, origin)
 	}
 	fields, fns := classBody(c)
@@ -66,6 +68,10 @@ func (pl *CppNamePlan) declareClass(c any) {
 			pl.declare(sc, getter, origin+qnameSep+f.Name, f)
 		default:
 			pl.slotNames(sc, c, cppSlot{getter: getter, resolved: resolved, canon: f.Name, t: f.Type, item: f, origin: origin + qnameSep + f.Name})
+			if value, member, ok := pl.DefineValue(f); ok {
+				pl.declare(sc, value, origin+qnameSep+f.Name, f)
+				pl.declare(sc, member, origin+qnameSep+f.Name, f)
+			}
 		}
 	}
 	for _, fn := range fns {
@@ -76,6 +82,28 @@ func (pl *CppNamePlan) declareClass(c any) {
 		}
 		t, _ := goUnwrap(fn.Result)
 		pl.slotNames(sc, c, cppSlot{getter: getter, resolved: resolved, canon: fn.Name, t: t, item: fn, origin: origin + qnameSep + fn.Name})
+	}
+}
+
+// DefineValue is a field's define value getter, Get<F>Value(s), and its member, false for a field that refs no load.defines table (CODEGEN.md §3.3, §5.8).
+func (pl *CppNamePlan) DefineValue(f *Field) (getter, member string, ok bool) {
+	if DefineTarget(f.Type) == nil || f.Input != nil {
+		return "", "", false
+	}
+	suffix := defineSuffix(f.Type.Kind == types.List)
+	_, resolved := pl.FieldGetter(f)
+	return resolved + suffix, pl.Member(f.Name + suffix), true
+}
+
+// DefinesName is a define table's detail::k<Table>Defines (CODEGEN.md §5.8).
+func (pl *CppNamePlan) DefinesName(d *DefineTable) string {
+	return cppConstPrefix + DefineTableName(d) + cppDefinesSuffix
+}
+
+// declarePublicDecode declares a record's or variant's static Decode in types mode (CODEGEN.md §5.13, §7.2).
+func (pl *CppNamePlan) declarePublicDecode(sc *nameScope, origin string, item any) {
+	if pl.e.Mode == ModeTypes {
+		pl.declare(sc, CppDecode, origin, item)
 	}
 }
 

@@ -1,0 +1,9 @@
+std::optional<%[1]s> %[1]s::%[2]s(const nlohmann::json& v, std::string& error) {
+    canon::json::Decoder dec(%[3]s);
+    dec.Push(%[4]s);
+    std::optional<%[1]s> out;
+    if (detail::%[2]s(v, dec, out.emplace())) return out;
+    error = dec.Error();
+    return std::nullopt;
+}
+

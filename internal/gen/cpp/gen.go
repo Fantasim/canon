@@ -55,7 +55,7 @@ func Generate(p *ir.Package, e *ir.Emit) ([]ir.File, error) {
 	if p == nil || e == nil || e.Target != ir.TargetCpp {
 		return nil, ErrTarget
 	}
-	if e.Mode != ir.ModeData {
+	if e.Mode != ir.ModeData && e.Mode != ir.ModeTypes {
 		return nil, fmt.Errorf("%w: mode %s of %s", ErrUnsupported, modeText(e.Mode), e.Out)
 	}
 	if e.Namespace == "" || p.Dir == "" || p.Name == "" {
@@ -118,10 +118,7 @@ func (g *gen) enter(origin string) (leave func()) {
 
 // plan refuses what this generator cannot emit, then indexes values, classes and fns.
 func (g *gen) plan() {
-	g.validate() // first: a dependent type stage E refuses is malformed before its define table is unsupported
-	if len(g.p.Defines) > 0 {
-		g.unsupported(defineRefs, g.p.Name)
-	}
+	g.validate()
 	if g.err != nil {
 		return
 	}
@@ -130,15 +127,21 @@ func (g *gen) plan() {
 		g.fail(fmt.Errorf("%w: %s (%s)", ErrMalformed, namePlanProblem, probs[0].Origin))
 		return
 	}
-	g.selectValues()
+	if !g.types() {
+		g.selectValues()
+	}
 	g.indexFns()
 	g.boxes()
 	g.pairsParents()
 	g.holdersOf()
 	g.sortClasses()
 	g.collectInputs()
+	g.typesRefusals()
 	g.declareNames()
 }
+
+// types reports a types-mode emit: read-only types and their public decoders, no value (CODEGEN.md §2.2, §5.13).
+func (g *gen) types() bool { return g.emit.Mode == ir.ModeTypes }
 
 // files writes every output of the emit (CODEGEN.md §2.3).
 func (g *gen) files() []ir.File {
@@ -194,6 +197,7 @@ func headerGroups(g *gen) [][]string {
 // source is <last>.gen.cpp: the helpers decoders call, decoders, the access struct, out-of-line members, then the runtime inputs (§2.7, §7.7).
 func (g *gen) source() []byte {
 	g.c = writer{}
+	g.defineTables()
 	g.decoders()
 	g.accessStruct()
 	body := g.c.String()

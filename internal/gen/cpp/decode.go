@@ -6,6 +6,7 @@ import (
 
 	"github.com/fantasim/canonlang/internal/ir"
 	"github.com/fantasim/canonlang/internal/types"
+	"github.com/fantasim/canonlang/internal/value"
 )
 
 // leaf is one JSON value to decode into a C++ lvalue: a field, a `$` key, an element.
@@ -15,10 +16,11 @@ type leaf struct {
 	none     []byte // the @json(none:) marker
 	unit     types.Unit
 	enc      types.Enc
-	dst      string // the C++ lvalue
-	box      string // the class an optional std::unique_ptr holds, or ""
-	cell     bool   // a lookup cell: absent is missing, null is none or an error (WIRE.md §5.11)
-	disc     string // a dependent type's discriminant, read before it (CODEGEN.md §5.6)
+	dst      string      // the C++ lvalue
+	box      string      // the class an optional std::unique_ptr holds, or ""
+	cell     bool        // a lookup cell: absent is missing, null is none or an error (WIRE.md §5.11)
+	disc     string      // a dependent type's discriminant, read before it (CODEGEN.md §5.6)
+	def      value.Value // types mode: the constant default an absent key takes (CODEGEN.md §5.13)
 }
 
 // decoders are the detail::Decode and Decode<Alias> definitions, in declaration order (CODEGEN.md §2.7, §5.6, §7.6).
@@ -48,7 +50,7 @@ func (g *gen) decoders() {
 func (g *gen) decodeRecord(c class) {
 	fields, fns := c.shape()
 	g.inlineFolds(c)
-	g.checkKeys(1, sourceVar, g.objectKeys(c), true)
+	g.checkKeys(1, sourceVar, g.wireKeys(g.objectKeys(c)), true)
 	if !anyFieldDecodes(fields) && !hasStored(fns) {
 		g.c.linef(1, unusedFormat, outVar)
 	}
@@ -113,32 +115,44 @@ func (g *gen) decodeField(f *ir.Field, fields []*ir.Field) {
 		g.fail(fmt.Errorf("%w: field %s without a wire path", ErrMalformed, f.Name))
 		return
 	}
-	obj, depth := sourceVar, 1
-	last := len(f.WirePath) - 1
-	for i, seg := range f.WirePath[:last] {
-		v := fmt.Sprintf(pathVarFormat, i)
-		g.c.linef(depth, stepOpenFormat, v, obj, quote(seg))
-		g.c.linef(depth+1, pushFormat, quote(seg))
-		obj, depth = fmt.Sprintf(derefFormat, v), depth+1
-		g.checkKeys(depth, obj, nextSegments(fields, f.WirePath[:i+1]), false)
-	}
-	l := leaf{t: f.Type, optional: f.Optional, none: f.NoneWire, unit: f.Unit, enc: f.Enc, dst: outPrefix + m}
+	obj, depth := g.openPath(f, fields)
+	l := leaf{t: f.Type, optional: f.Optional, none: f.NoneWire, unit: f.Unit, enc: f.Enc, dst: outPrefix + m, def: g.fieldDefault(f)}
 	if g.boxed[f] {
 		l.box = g.storage(f.Type)
 	}
 	if app := ir.HeldApp(f.Type); app != nil { // its elements share the field's discriminant (CODEGEN.md §5.6)
 		l.disc = g.discExpr(fields, *app)
 	}
-	g.decodeKey(depth, obj, quote(f.WirePath[last]), l)
-	g.closePath(f, depth)
+	g.decodeKey(depth, obj, quote(f.WirePath[len(f.WirePath)-1]), l)
+	g.closePath(f, depth, l)
+	g.defineLookup(1, f, outPrefix, quote(wireName(f)))
 }
 
-// closePath closes a path's intermediate objects: an absent one leaves a required field missing (WIRE.md §5.5.3).
-func (g *gen) closePath(f *ir.Field, depth int) {
+// openPath opens a path's intermediate objects, each on the decoder's path, and returns the innermost; a data loader also checks its keys (WIRE.md §5.5.3).
+func (g *gen) openPath(f *ir.Field, fields []*ir.Field) (obj string, depth int) {
+	obj, depth = sourceVar, 1
+	for i, seg := range f.WirePath[:len(f.WirePath)-1] {
+		v := fmt.Sprintf(pathVarFormat, i)
+		g.c.linef(depth, stepOpenFormat, v, obj, quote(seg))
+		g.c.linef(depth+1, pushFormat, quote(seg))
+		obj, depth = fmt.Sprintf(derefFormat, v), depth+1
+		if !g.types() {
+			g.checkKeys(depth, obj, nextSegments(fields, f.WirePath[:i+1]), false)
+		}
+	}
+	return obj, depth
+}
+
+// closePath closes a path's intermediate objects: an absent one leaves the field absent, so a required field missing, or, in types mode, its default (WIRE.md §5.5.3; CODEGEN.md §5.13).
+func (g *gen) closePath(f *ir.Field, depth int, l leaf) {
 	for i := len(f.WirePath) - depthTwo; i >= 0; i-- {
 		g.c.linef(depth, popLine)
 		depth--
-		if !f.Optional {
+		switch {
+		case l.def != nil:
+			g.c.linef(depth, elseOpen)
+			g.c.linef(depth+1, assignFormat, l.dst, g.defaultLit(l.t, l.def))
+		case !f.Optional:
 			g.c.linef(depth, elseOpen)
 			g.c.linef(depth+1, failMissingFormat, quote(strings.Join(f.WirePath[i:], qnameSep)))
 		}
@@ -149,20 +163,21 @@ func (g *gen) closePath(f *ir.Field, depth int) {
 // decodeKey reads obj[key] into l (key a C++ `const char*` expression): a Decoder shortcut
 // when one fits, else Required or Optional, then the value.
 func (g *gen) decodeKey(depth int, obj, key string, l leaf) {
-	if short := g.shortcut(l); short != "" && !l.optional && !l.cell {
+	lead := g.absentDefault(depth, obj, key, l)
+	if short := g.shortcut(l); short != "" && !l.optional && !l.cell && lead == "" {
 		g.c.linef(depth, decCallFormat, short, obj, key, g.shortcutExtra(l), l.dst)
 		return
 	}
 	x := fmt.Sprintf(jsonVarFormat, depth)
 	switch {
 	case l.cell:
-		g.c.linef(depth, cellOpenFormat, x, obj, key, l.optional)
+		g.c.linef(depth, lead+cellOpenFormat, x, obj, key, l.optional)
 	case !l.optional:
-		g.c.linef(depth, requiredOpenFormat, x, obj, key)
+		g.c.linef(depth, lead+requiredOpenFormat, x, obj, key)
 	case l.none != nil:
-		g.c.linef(depth, markerOpenFormat, x, obj, key, x, g.markerTest(x, l.none))
+		g.c.linef(depth, lead+markerOpenFormat, x, obj, key, x, g.markerTest(x, l.none))
 	default:
-		g.c.linef(depth, optionalOpenFormat, x, obj, key)
+		g.c.linef(depth, lead+optionalOpenFormat, x, obj, key)
 	}
 	dst := l.dst
 	switch {
@@ -186,9 +201,9 @@ func (g *gen) shortcut(l leaf) string {
 		return shortInt
 	case l.t.Kind == types.Float && l.t.Bits != float32Bits:
 		return shortFloat
-	case l.t.Kind == types.String, l.t.Kind == types.LitUnion && g.stringWire(l.t):
+	case l.t.Kind == types.String, l.t.Kind == types.LitUnion && g.stringWire(l.t) && g.unionEnum(l.t) == nil:
 		return shortString
-	case l.t.Kind == types.Duration:
+	case l.t.Kind == types.Duration && !g.types(): // types mode reads a source-wire Duration (WIRE.md §5.13)
 		return shortDuration
 	case l.t.Kind == types.Enum && l.enc == types.EncPlain:
 		return shortEnum
@@ -243,8 +258,9 @@ func (g *gen) decodeValue(depth int, src, key string, l leaf) {
 			g.refuseUnion(l.t)
 		}
 		g.c.linef(depth, decCallFormat, asString, src, key, "", l.dst)
+		g.unionMembership(depth, key, l.dst, l.t)
 	case types.Duration:
-		g.c.linef(depth, decCallFormat, asDuration, src, key, g.shortcutExtra(l), l.dst)
+		g.decodeDuration(depth, src, key, l)
 	case types.Enum:
 		g.c.linef(depth, decCallFormat, asEnum, src, key, g.shortcutExtra(l), l.dst)
 	case types.Ref:

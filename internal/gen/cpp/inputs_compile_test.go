@@ -72,6 +72,7 @@ func wantInputs(cases []inputCase) string {
 
 // CODEGEN.md §5.12, §7.7; EVALUATION.md §11.3: inputs compiled and run with every toolchain; strings are UTF-8 as utf8.ValidString reads them.
 func TestRuntimeInputsCompilesAndRuns(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	writeTree(t, dir, generate(t, inputsPackage()), "inputs_main.cpp")
 	cases := append([]inputCase(nil), inputCases...)

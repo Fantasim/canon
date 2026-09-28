@@ -76,6 +76,7 @@ func goMarks(s string) string {
 
 // TestPatternInputsCompileAndRun is EVALUATION.md §11.3 and CODEGEN.md §5.12, §7.7: with every toolchain, MatchPattern over ir's automaton accepts exactly the texts the Go loader accepts, 128 KiB ones included; a patterned input adds MatchPattern to the helpers.
 func TestPatternInputsCompileAndRun(t *testing.T) {
+	t.Parallel()
 	p, vars := patternsPackage()
 	files := generate(t, p)
 	want := []string{"EnvText", "ParseStringLiteral", ir.CppMatchPattern, "LoadInputs"}

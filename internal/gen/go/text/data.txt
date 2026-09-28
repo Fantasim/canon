@@ -316,6 +316,25 @@ func jsonSame({{.L.Raw}} {{.JSON}}.RawMessage, {{.L.Marker}} string) bool {
 }
 
 {{end}}
+{{define "jsonDefine"}}// jsonDefine is the value of the define named v in obj, a table sorted by name; one it lacks
+// fails the load at path and key, naming the table (CODEGEN.md §5.8).
+func jsonDefine({{.L.Name}}, {{.L.Path}}, {{.L.Key}} string, {{.L.Obj}} []struct {
+	name  string
+	value int64
+}, {{.L.Tag}}, {{.L.V}} string) (int64, error) {
+	{{.L.I}}, {{.L.OK}} := {{.Slices}}.BinarySearchFunc({{.L.Obj}}, {{.L.V}}, func({{.L.A}} struct {
+		name  string
+		value int64
+	}, {{.L.M}} string) int {
+		return {{.Strings}}.Compare({{.L.A}}.name, {{.L.M}})
+	})
+	if !{{.L.OK}} {
+		return 0, {{.FMT}}.Errorf("%s: %s%s: define %s is not in this program's %s table", {{.L.Name}}, {{.L.Path}}, {{.L.Key}}, {{.L.V}}, {{.L.Tag}})
+	}
+	return {{.L.Obj}}[{{.L.I}}].value, nil
+}
+
+{{end}}
 {{define "jsonRowID"}}// jsonRowID reads a table row's $id, and its $retired, which must be true when present.
 func jsonRowID({{.L.Name}}, {{.L.Path}} string, {{.L.Raw}} {{.JSON}}.RawMessage) (string, bool, error) {
 	{{.L.Obj}}, {{.L.Err}} := jsonObject({{.L.Name}}, {{.L.Path}}, {{.L.Raw}})

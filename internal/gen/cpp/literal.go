@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"fmt"
 	"math"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -68,6 +69,9 @@ func (g *gen) floatLit(f float64, bits int) string {
 // literal is the C++ expression of v as a member or pure parameter of type t holds it; a
 // Duration is its millisecond count, an enum member its enumerator, a ref its key.
 func (g *gen) literal(t ir.TypeRef, v value.Value) string {
+	if t.Kind == types.LitUnion {
+		return g.unionLit(t, v)
+	}
 	switch x := v.(type) {
 	case *value.Bool:
 		return strconv.FormatBool(x.V)
@@ -82,7 +86,7 @@ func (g *gen) literal(t ir.TypeRef, v value.Value) string {
 	case *value.Member:
 		return g.memberLit(t, x.Index)
 	case *value.Ref:
-		return keyLit(x.Key)
+		return g.refLit(t, x.Key)
 	case *value.None:
 		return cppNullopt
 	case *value.List:
@@ -95,6 +99,37 @@ func (g *gen) literal(t ir.TypeRef, v value.Value) string {
 	}
 	g.unsupported(fmt.Sprintf(valueFormat, v), g.at)
 	return cppInvalid
+}
+
+// unionLit is a literal union's value as its storage holds it, the wire text: a literal, or a member of its enum (CODEGEN.md §4.1).
+func (g *gen) unionLit(t ir.TypeRef, v value.Value) string {
+	var e *ir.Enum
+	if t.Elem != nil {
+		e, _ = t.Elem.Named.(*ir.Enum)
+	}
+	switch x := v.(type) {
+	case *value.Str:
+		return quote(x.V)
+	case *value.Member:
+		if e != nil && x.Index >= 0 && x.Index < len(e.Members) {
+			return quote(e.Members[x.Index].Wire)
+		}
+	}
+	g.malformed(fmt.Sprintf(valueFormat, v), g.at)
+	return cppInvalid
+}
+
+// refLit is a ref's key as its storage holds it: an enum key's member, by name, else the key itself (CODEGEN.md §5.8).
+func (g *gen) refLit(t ir.TypeRef, k value.Key) string {
+	if t.Key == nil {
+		return keyLit(k)
+	}
+	if e, ok := t.Key.Named.(*ir.Enum); ok && t.Key.Kind == types.Enum {
+		if i := slices.IndexFunc(e.Members, func(m *ir.EnumMember) bool { return m.Name == k.S }); i >= 0 {
+			return g.memberLit(*t.Key, i)
+		}
+	}
+	return keyLit(k)
 }
 
 func keyLit(k value.Key) string {

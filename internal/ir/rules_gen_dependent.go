@@ -107,13 +107,17 @@ func (s *stage) checkGoDecodedDependents(u *unit, es *emitSite) {
 	}
 }
 
-// checkCppDependents is E8019 `DependentType` where gen/cpp refuses a dependent type: one with a branch into a load.defines table (its refStorage), and what its loader, which decodes every class, cannot read (CODEGEN.md §5.6, §5.8).
-func (s *stage) checkCppDependents(u *unit, es *emitSite) {
+// checkDefineBranches is E8019 `DependentType` at a dependent type with a branch into a load.defines table, used or not: neither generator writes its As<Branch>Value (CODEGEN.md §5.6, §5.8; decision 222).
+func (s *stage) checkDefineBranches(u *unit, es *emitSite) {
 	for _, t := range u.p.Types {
 		if d, ok := t.(*Dependent); ok && slices.ContainsFunc(d.Branches, func(b *Branch) bool { return DefinesRef(b.Type) }) {
 			u.reportGenConstruct(es, s.decls[d].span(), diag.KindDependentType)
 		}
 	}
+}
+
+// checkCppDependents is E8019 `DependentType` where gen/cpp's loader, which decodes every class, cannot read a dependent value (CODEGEN.md §5.6).
+func (s *stage) checkCppDependents(u *unit, es *emitSite) {
 	for _, class := range packageClasses(u.p) {
 		s.reportDecodedDependents(u, es, class, cppDiscRead)
 	}
@@ -130,7 +134,7 @@ func (s *stage) reportDecodedDependents(u *unit, es *emitSite, class any, reads 
 			u.reportGenConstruct(es, s.itemSpan(f, source.Span{}), diag.KindDependentType)
 		}
 	}
-	for _, fn := range fns {
+	for _, fn := range readFns(es.e, fns) {
 		if fn.Kind != FnTranslated && unreadDependent(&fn.Result) {
 			u.reportGenConstruct(es, s.itemSpan(fn, source.Span{}), diag.KindDependentType)
 		}

@@ -1,3 +1,7 @@
+features/dependent/out/cpp/canon_runtime.h dependent/out/cpp/canon_runtime.h
+features/dependent/out/cpp/canon_runtime_json.h dependent/out/cpp/canon_runtime_json.h
+features/dependent/out/cpp/dependent.gen.cpp dependent/out/cpp/dependent.gen.cpp
+features/dependent/out/cpp/dependent.gen.h dependent/out/cpp/dependent.gen.h
 features/dependent/out/go/dependent.gen.go dependent/out/go/dependent.gen.go
 features/dependent/out/go/rt/rt.go dependent/out/go/rt/rt.go
 features/dependent/out/objectives.json dependent/out/objectives.json

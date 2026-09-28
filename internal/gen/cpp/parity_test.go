@@ -72,7 +72,7 @@ func TestLoaderParity(t *testing.T) {
 			}
 		}
 	}
-	check("go", runGo(t, units, args))
+	check("go", runGo(t, units, "strict_main.go", args))
 	sources := []string{"main.cpp"}
 	for _, u := range units {
 		writeFiles(t, dir, generate(t, u.pkg))
@@ -84,9 +84,9 @@ func TestLoaderParity(t *testing.T) {
 	}
 }
 
-// runGo builds every unit's Go loaders and testdata/main/strict_main.go into one module and
-// runs the driver with args.
-func runGo(t *testing.T, units []parityUnit, args []string) string {
+// runGo builds every unit's Go loaders and the driver testdata/main/<driver> into one module and
+// runs it with args.
+func runGo(t *testing.T, units []parityUnit, driver string, args []string) string {
 	t.Helper()
 	dir := t.TempDir()
 	write := func(path string, content []byte) {
@@ -108,7 +108,7 @@ func runGo(t *testing.T, units []parityUnit, args []string) string {
 			write(u.goEmit.GoPackage+"/"+f.Path, f.Content)
 		}
 	}
-	copyFile(t, filepath.Join("testdata", "main", "strict_main.go"), filepath.Join(dir, "main.go"), same)
+	copyFile(t, filepath.Join("testdata", "main", driver), filepath.Join(dir, "main.go"), same)
 	bin := filepath.Join(dir, "driver")
 	build := exec.Command("go", "build", "-o", bin, ".")
 	build.Dir = dir

@@ -8,15 +8,55 @@ import (
 	"github.com/fantasim/canonlang/internal/types"
 )
 
-// checkCppDecoded is E8019 `MapField` and `InlineFoldedKey`: gen/cpp's loader decodes every class of the package (CODEGEN.md §7.6).
+// checkCppDecoded is E8019 `MapField` and, in data mode, `InlineFoldedKey`: gen/cpp decodes every class of the package (CODEGEN.md §7.6); a types-mode decoder ignores unknown keys (§5.13), so no key of its parent folds onto an inline case's.
 func (s *stage) checkCppDecoded(u *unit, es *emitSite) {
 	shape := objectShape{extras: s.objectExtras(u, selectedValues(u, es.e)), deep: true}
 	for _, class := range packageClasses(u.p) {
 		fields, fns := classBody(class)
-		for _, site := range s.decodedSites(fields, fns) {
+		for _, site := range s.decodedSites(fields, readFns(es.e, fns)) {
 			s.checkDecodedType(u, es, site)
 		}
-		s.checkInlineFolds(u, es, class, shape)
+		if es.e.Mode == ModeData {
+			s.checkInlineFolds(u, es, class, shape)
+		}
+	}
+}
+
+// decodesClasses reports an emit whose generator decodes the package's classes from JSON: a data loader, or gen/cpp's types-mode decoders (CODEGEN.md §5.13).
+func decodesClasses(e *Emit) bool {
+	return e.Mode == ModeData || e.Target == TargetCpp && e.Mode == ModeTypes
+}
+
+// readFns are the export fns of a class whose results a decoder reads: none in types mode, where a stored fn is E8014's (CODEGEN.md §5.13).
+func readFns(e *Emit, fns []*ExportFn) []*ExportFn {
+	if e.Mode == ModeTypes {
+		return nil
+	}
+	return fns
+}
+
+// checkTypesInputs is E8019 `InputField`: a types-mode emit writes no LoadInputs to read one (CODEGEN.md §2.2, §5.12).
+func (s *stage) checkTypesInputs(u *unit, es *emitSite) {
+	s.eachOwnField(u, func(_ string, f *Field) {
+		if f.Input != nil {
+			u.reportGenConstruct(es, s.fieldSites[f].span(), diag.KindInputField)
+		}
+	})
+}
+
+// checkCppDefaults is E8019 where a types-mode decoder cannot write a field's constant default when its key is absent (CODEGEN.md §5.13): `RecordConstant` for one holding a record or case value (gen/cpp's literals write none, §5.1), `DependentType` for a present value of a dependent type the decoder otherwise reads, whose branch only a discriminant decides (§5.6).
+func (s *stage) checkCppDefaults(u *unit, es *emitSite) {
+	for _, class := range packageClasses(u.p) {
+		fields, _ := classBody(class)
+		for _, f := range fields {
+			switch {
+			case f.Input != nil || !written(f.Default):
+			case holdsRecordValue(f.Default):
+				u.reportGenConstruct(es, s.itemSpan(f, source.Span{}), diag.KindRecordConstant)
+			case typeHolds(&f.Type, isApp) && readsField(u.p.Name, fields, f, cppDiscRead):
+				u.reportGenConstruct(es, s.itemSpan(f, source.Span{}), diag.KindDependentType)
+			}
+		}
 	}
 }
 

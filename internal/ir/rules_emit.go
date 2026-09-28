@@ -29,7 +29,6 @@ func (s *stage) validate(u *unit) {
 	if hasCodeEmit(u) {
 		s.checkOrderedCodes(u)
 		s.checkRepresentable(u)
-		s.checkDefineRefs(u)
 		s.checkBranches(u)
 		s.checkOverrideNames(u)
 		s.checkGoNames(u)
@@ -51,8 +50,11 @@ func hasCodeEmit(u *unit) bool {
 	return slices.ContainsFunc(u.emits, func(es *emitSite) bool { return isCode(es.e.Target) })
 }
 
-// selectedValues are the value sites an emit selects, in its order.
+// selectedValues are the value sites an emit selects, in its order; none in types mode, which writes no value (CODEGEN.md §2.2).
 func selectedValues(u *unit, e *Emit) []*valueSite {
+	if e.Mode == ModeTypes {
+		return nil
+	}
 	var out []*valueSite
 	for _, name := range selectedNames(u, e) {
 		for _, v := range u.values {

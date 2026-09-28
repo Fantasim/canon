@@ -72,7 +72,7 @@ func (g *gen) mapStorage(t ir.TypeRef) string {
 	return fmt.Sprintf(flatMapFormat, g.storage(*t.Key), g.storage(*t.Elem))
 }
 
-// refuseUnion refuses the union being written: malformed when its first arm has no string wire form (check's E3002, TYPES.md §13.2) or is a dependent type (stage E's E8019 DependentType), else not generated yet (a string-wired ref, owed).
+// refuseUnion refuses the union being written, which stage E refuses first: its first arm has no string wire form (check's E3002, TYPES.md §13.2), is a dependent type (E8019 DependentType) or a ref (E8019 RefUnion).
 func (g *gen) refuseUnion(t ir.TypeRef) {
 	switch {
 	case t.Elem == nil || !ir.StringWire(t.Elem):
@@ -80,7 +80,7 @@ func (g *gen) refuseUnion(t ir.TypeRef) {
 	case t.Elem.Kind == types.TypeApp:
 		g.malformed(unionDependent, g.at)
 	default:
-		g.unsupported(unionRef, g.at)
+		g.malformed(unionRef, g.at) // E8019 RefUnion
 	}
 }
 
@@ -112,11 +112,8 @@ func (g *gen) listStorage(t ir.TypeRef) string {
 	return fmt.Sprintf(keyedListFormat, g.storage(key.Type), elem)
 }
 
-// refStorage is a ref's key (CODEGEN.md §5.8); a define table's value getter is not emitted yet.
+// refStorage is a ref's key (CODEGEN.md §5.8); a define ref's value has members of its own (define_refs.go).
 func (g *gen) refStorage(t ir.TypeRef) string {
-	if t.Ref != nil && t.Ref.Coll == types.CollDefines {
-		g.unsupported(defineRefs, g.at)
-	}
 	if t.Key == nil {
 		g.fail(fmt.Errorf("%w: ref without a key type at %s", ErrMalformed, g.at))
 		return cppInvalid

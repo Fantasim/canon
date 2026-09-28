@@ -189,7 +189,7 @@ func (g *gen) stringWire(t ir.TypeRef) {
 	case t.Elem.Kind == types.TypeApp:
 		g.fail(newDetail(errDependentUnion, g.at, dependentUnionFormat, g.at)) // E8019 DependentType
 	default:
-		g.fail(newDetail(ErrUnsupported, g.at, unionFormat, g.at)) // a string-wired ref: owed
+		g.fail(newDetail(ErrMalformed, g.at, unionFormat, g.at)) // E8019 RefUnion
 	}
 }
 

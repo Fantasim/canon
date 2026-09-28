@@ -37,6 +37,9 @@ func (g *gen) recordClass(c class) {
 	sc := newScope(name)
 	var members []string
 	g.h.printf(classOpenFormat, name)
+	if c.rec != nil && g.types() {
+		g.publicDecodeDecl(sc, name)
+	}
 	if c.rec != nil && g.loaders[c.rec] != nil {
 		g.fail(sc.add(ir.CppLoad, g.loaders[c.rec].Name))
 		g.h.linef(1, loadDeclFormat, name)
@@ -130,7 +133,8 @@ func (g *gen) fieldGetter(sc *scope, c class, f *ir.Field) []string {
 	}
 	g.doc(1, doc)
 	g.getter(sc, name, fmt.Sprintf(getterFormat, typ, name, "", body), m, f.Name)
-	return append([]string{fmt.Sprintf(memberFormat, storage, m, memberInit(f.Type, f.Optional))}, refs...)
+	members := append([]string{fmt.Sprintf(memberFormat, storage, m, memberInit(f.Type, f.Optional))}, refs...)
+	return append(members, g.defineGetter(sc, f)...)
 }
 
 // plain is a cell that is the member itself.
@@ -154,8 +158,11 @@ func (g *gen) variantClass(v *ir.Variant) {
 	kind := g.kindName(v)
 	g.doc(0, v.Doc)
 	g.h.printf(classOpenFormat, name)
-	g.h.linef(1, kindGetterFormat, kind, kind)
 	sc := newScope(name)
+	if g.types() {
+		g.publicDecodeDecl(sc, name)
+	}
+	g.h.linef(1, kindGetterFormat, kind, kind)
 	g.fail(sc.add(kindGetter, v.Name))
 	var alts []string
 	for i, c := range v.Cases {

@@ -82,7 +82,7 @@ func dataRefusals() map[string]func(*ir.Package) {
 			addField(p, &ir.Field{Name: "v", Type: typed(v, types.Variant), Inline: true})
 		},
 		"a table-typed field": func(p *ir.Package) { addField(p, wired("t", "t", "", ir.TypeRef{Kind: types.Table, Elem: &intT})) },
-		"a union over a string-keyed ref (owed)": func(p *ir.Package) {
+		"a union over a string-keyed ref": func(p *ir.Package) {
 			addField(p, wired("u", "u", "", ir.TypeRef{Kind: types.LitUnion, Elem: &ir.TypeRef{Kind: types.Ref, Key: &strT}, Literals: []string{"none"}}))
 		},
 	}
@@ -111,6 +111,7 @@ var dataUnreachable = map[string]bool{
 	"an optional inline variant": true, "an inline variant key equal to a parent key but for letter case": true,
 	"a list of optionals": true, "a lookup whose record result holds a resolved ref": true, "a map field": true,
 	"a record of another package": true, "a table-typed field": true, "a non-string literal union": true,
+	"a union over a string-keyed ref": true,
 }
 
 // CODEGEN.md §3.5, decision 203: `const STORE` is Store, the store variable, a plan Problem, ErrMalformed.
