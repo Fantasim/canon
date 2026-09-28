@@ -1,0 +1,19 @@
+GRAMMAR.md §3.1 rule 2 (log-2026-09-28 "check follow-ups 4 review", "round 3"): "??" cannot end a
+line, so a field's type ending in "??" and a field on the next line need no separator: one
+mistake ("T??" is not a type) does not also draw E1117. On one physical line it still does.
+-- a/a.canon --
+package a
+
+record R {
+  a: Int??
+  b: Int
+}
+
+record S {
+  a: Int?? b: Int
+}
+-- findings.txt --
+error[E1117]  a/a.canon:9:12
+  missing separator: put "," or a new line between items
+
+1 error, 0 warnings in 1 package (…)

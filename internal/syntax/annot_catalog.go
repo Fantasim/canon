@@ -10,13 +10,14 @@ type annSite uint16
 type argKind uint8
 
 // argSpec is one argument of an annotation: named or positional (a flag is a positional symbol),
-// its kind, its closed set of symbols, where it may stand, the exclusion groups it belongs to,
-// and whether it is required.
+// its kind, its closed set of symbols (or, for a "studio{Enum}" argument, the enum's name), where
+// it may stand, the exclusion groups it belongs to, and whether it is required.
 type argSpec struct {
 	name     string
 	named    bool
 	kind     argKind
 	values   []string
+	enum     string
 	sites    annSite
 	groups   uint8
 	required bool
@@ -59,8 +60,8 @@ var annCatalog = map[string]*annSpec{
 		{name: argTpl, kind: valTemplate, sites: siteLet, required: true},
 	}},
 	AnnMenu: {args: []argSpec{
-		{name: AnnMenu, kind: valStudio, sites: siteLet, required: true},
-		{name: wordIcon, named: true, kind: valStudio, sites: siteLet},
+		{name: AnnMenu, kind: valStudio, enum: StudioMenu, sites: siteLet, required: true},
+		{name: wordIcon, named: true, kind: valStudio, enum: StudioIcon, sites: siteLet},
 		{name: ArgLabel, named: true, kind: valString, sites: siteLet},
 	}},
 	AnnCpp: {args: []argSpec{

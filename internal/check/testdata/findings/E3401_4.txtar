@@ -1,0 +1,24 @@
+GRAMMAR.md §3.1 rule 2, TYPES.md §2 (log-2026-09-28 "check follow-ups 4 review", "round 3"): "??"
+never ends a line, so a field's "T??" directly followed by another field on the next line is one
+mistake (E3401), not also a missing separator (E1117, syntax owns the fix).
+-- a/a.canon --
+package a
+
+record R {
+  a: Int??
+  b: Int
+}
+-- findings.txt --
+warning[W1002]  a/a.canon:3:8
+  record R has no doc comment
+
+warning[W1002]  a/a.canon:4:3
+  field a has no doc comment
+
+error[E3401]  a/a.canon:4:6
+  Int?? is not a type: Int? is already optional
+
+warning[W1002]  a/a.canon:5:3
+  field b has no doc comment
+
+1 error, 3 warnings in 1 package (…)

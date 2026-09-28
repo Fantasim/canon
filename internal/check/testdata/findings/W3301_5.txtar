@@ -1,0 +1,43 @@
+TYPES.md §16 (log-2026-09-28 "check follow-ups 4 round 3"): a deprecated entry of the studio's
+`units` table used by `unit:` warns, bare or as a string; an unknown one is views' E1610, silent
+here.
+-- studio/studio.canon --
+package studio
+
+/// A unit.
+record UnitSpec {
+  /// Its suffix.
+  suffix: String = ""
+}
+
+/// The units.
+let units: table UnitSpec = {
+  hp @deprecated("use kg") { suffix: " HP" }
+  kg { suffix: " kg" }
+}
+-- a/a.canon --
+package a
+
+/// A gem.
+record Gem {
+  /// Its weight.
+  weight: Int
+  /// Its mass.
+  mass: Int
+  /// Its capacity.
+  capacity: Int
+}
+
+view Gem {
+  weight { unit: hp }
+  mass { unit: "hp" }
+  capacity { unit: kg }
+}
+-- findings.txt --
+warning[W3301]  a/a.canon:14:18
+  hp is deprecated: use kg
+
+warning[W3301]  a/a.canon:15:16
+  hp is deprecated: use kg
+
+0 errors, 2 warnings in 2 packages (…)

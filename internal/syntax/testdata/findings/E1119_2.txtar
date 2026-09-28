@@ -1,0 +1,20 @@
+GRAMMAR.md §8.2 studio{Enum}, §8.3 @menu, ERRORS.md E1119 "studio": a qualified name given where
+a bare WORD is required is E1119, naming the enum the position takes a member of, not the value
+written.
+-- a/a.canon --
+package a
+
+record Gem {
+  cut: Int
+}
+
+@menu(Menu.old, icon: Icon.gem)
+let gems: [Gem] = []
+-- findings.txt --
+error[E1119]  a/a.canon:7:7
+  @menu(menu): expected one word naming a member of Menu in the studio package
+
+error[E1119]  a/a.canon:7:17
+  @menu(icon): expected one word naming a member of Icon in the studio package
+
+2 errors, 0 warnings in 1 package (…)

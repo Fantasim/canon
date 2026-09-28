@@ -97,16 +97,21 @@ func (c *checker) unitProp(vc *viewCtx, e syntax.Expr) {
 		return
 	}
 	ref := &types.RefType{Target: c.internLet(let, nil, elem, keyed)}
-	if id, isName := e.(*syntax.IdentExpr); isName {
-		if u := let.keys.byName[id.Name]; u != nil {
-			c.info.Uses[id] = u
-			c.info.Types[id] = ref
+	switch x := e.(type) {
+	case *syntax.IdentExpr:
+		if u := let.keys.byName[x.Name]; u != nil {
+			c.info.Uses[x] = u
+			c.info.Types[x] = ref
+			c.deprecatedUse(vc.env, x, u)
+		}
+		return
+	case syntax.StrLit:
+		if u := let.keys.byName[constText(x)]; u != nil {
+			c.deprecatedUse(vc.env, x, u)
 		}
 		return
 	}
-	if _, isStr := e.(syntax.StrLit); !isStr {
-		c.expr(vc.env, e, ref)
-	}
+	c.expr(vc.env, e, ref)
 }
 
 // widgetProp is `widget`: a widget of the studio package, typed by its `value` parameter.

@@ -41,7 +41,9 @@ func (p *parser) afterItem(start Tok, ok bool, bad func(Bounds)) bool {
 			p.sepRun()
 			return true
 		case startsItem(p.kind()):
-			diag.E1117.At(p.span(p.pos, p.pos)).Report(p.bag)
+			if !p.coalesceEndedLine() {
+				diag.E1117.At(p.span(p.pos, p.pos)).Report(p.bag)
+			}
 			return true
 		}
 		p.fail(expected(TokNL), expected(TokComma), expected(TokRBrace))
@@ -56,6 +58,12 @@ func (p *parser) afterItem(start Tok, ok bool, bad func(Bounds)) bool {
 	p.bail = false
 	p.sepRun()
 	return true
+}
+
+// coalesceEndedLine reports a real line break after a "??" that ended an item's type (GRAMMAR.md §3.1 rule 2).
+func (p *parser) coalesceEndedLine() bool {
+	prev := p.toks[p.pos-1]
+	return prev.Kind == TokCoalesce && lineBreak(p.src.Content, prev, p.toks[p.pos])
 }
 
 // sepRun consumes a separator run: NL and "," tokens with at most one "," (E1116 for ",,").

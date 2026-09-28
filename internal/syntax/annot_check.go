@@ -130,9 +130,13 @@ func (p *parser) argLabel(arg *AnnotationArg) string {
 func (p *parser) checkValue(name string, b boundArg) {
 	v, sp := b.arg.Value, p.nodeSpan(b.arg)
 	switch s := b.spec; s.kind {
-	case valSymbol, valStudio:
-		if sym := symbolOf(v); sym == "" || (s.kind == valSymbol && !slices.Contains(s.values, sym)) {
+	case valSymbol:
+		if sym := symbolOf(v); sym == "" || !slices.Contains(s.values, sym) {
 			diag.E1119.AtValue(sp, name, s.name, s.values).Report(p.bag)
+		}
+	case valStudio:
+		if symbolOf(v) == "" {
+			diag.E1119.AtStudio(sp, name, s.name, s.enum).Report(p.bag)
 		}
 	case valFlag:
 	default:

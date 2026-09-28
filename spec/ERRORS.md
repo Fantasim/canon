@@ -483,7 +483,7 @@ Owner: GRAMMAR.md.
 | E1119 | missing | name:Name, arg:Name | `@{name}: argument "{arg}" is missing` |
 | E1119 | kind | name:Name, arg:Name, expected:Kind | `@{name}({arg}): expected {expected}` |
 | E1119 | value | name:Name, arg:Name, allowed:Names | `@{name}({arg}): expected one of {allowed}` |
-| E1119 | studio | name:Name, arg:Name, enum:Name | `@{name}({arg}): expected one word naming a {enum} member of the studio package` |
+| E1119 | studio | name:Name, arg:Name, enum:Name | `@{name}({arg}): expected one word naming a member of {enum} in the studio package` |
 | E1119 | exclusive | name:Name, arg:Name, other:Name | `@{name}: "{arg}" and "{other}" exclude each other` |
 | E1119 | needs | name:Name, arg:Name, other:Name | `@{name}: "{arg}" needs "{other}"` |
 | E1119 | codes | - | `@json(codes) needs @codes on the same enum` |
