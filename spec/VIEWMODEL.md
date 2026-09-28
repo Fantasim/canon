@@ -152,10 +152,14 @@ A member item, a group entry, a column or a filter names one of:
 - **G8.** A name found by none of these is `E1602`. A case-field name found in several cases with
   different types (after alias expansion, refinements kept) is `E1628`: name them in the case
   views instead.
-- **G9.** A name placed twice in one view (two groups, or the same group twice) is `E1605`. A view-level field line without a group (`heal "Heal" { unit: hp }`) sets
+- **G9.** A name placed twice in one view (two groups, or the same group twice), a view-level
+  item given twice (`title`, `subtitle`, `singular`, `plural`, `preview`, `menu`, `columns`,
+  `search`, `filters`) or a name repeated inside one `columns` or `filters` is `E1605`. A view-level field line without a group (`heal "Heal" { unit: hp }`) sets
   presentation only; it does not place the field.
 - **G10.** Only the target's own view and, for case fields, the view of the parent record that
-  inlines the variant may give a field its label. A field labelled in both is `E1614`.
+  inlines the variant may give a field its label. A field labelled in both, or any item (field,
+  member, case, method) labelled twice in one view or two, is `E1614`; a name matching case fields
+  of several cases is labelled for every one of them (L18).
 
 ### 3.4 Scope of view expressions
 
@@ -188,7 +192,9 @@ are expressions or templates (VIEW-02). Their scope is, in lookup order:
 ### 3.5 Field properties
 
 A member item's `{ … }` holds properties. Unknown properties, or properties not valid for what the
-item names, are `E1613`.
+item names, are `E1613`; so is a property given twice for one item, whether on one line or on two
+lines of the same field (a view-level line and a group line, or a case view and the parent view
+that inlines it).
 
 | Property | Value | Valid on | Meaning |
 |---|---|---|---|
