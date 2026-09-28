@@ -110,6 +110,14 @@ audit:
 audit-tighten:
 	$(AUDIT) baseline --tighten --repo ../..
 
+# Real-data job (IMPLEMENTATION-PLAN.md §6 M3 item 7, §7.3; DECISIONS 29): `canon check` on the
+# examples that read `@resource`, against the real Resource tree in the git-ignored
+# testdata-real/. Non-gating, never part of `check`; findings go to
+# testdata-real/realdata/findings.txt for review, not to the exit code.
+.PHONY: check-real
+check-real:
+	@bash tools/check-real.sh
+
 # DECISIONS 200: the generated-program suites at nightly size, under the memory cap, once per
 # seed of PROGEN_SEEDS (decision log A3: larger N, several seeds; seeds a million apart so no
 # two runs share a case); a crash is reported with its seed and the suite goes on; -progen.keep
