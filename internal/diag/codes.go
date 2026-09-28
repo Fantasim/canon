@@ -807,6 +807,7 @@ var Registry = []Def{
 			{Name: "property", Args: []Arg{{Name: "property", Type: ArgTypeName}, {Name: "item", Type: ArgTypeKind}}, Template: "{property} is not a property of this {item}"},
 			{Name: "width", Args: []Arg{{Name: "width", Type: ArgTypeInt}}, Template: "column width {width} is out of range: widths go from 16 to 2000"},
 			{Name: "twice", Args: []Arg{{Name: "property", Type: ArgTypeName}, {Name: "first", Type: ArgTypeLoc}}, Template: "{property} is given twice for this item (first at {first})"},
+			{Name: "literal", Args: []Arg{{Name: "property", Type: ArgTypeName}}, Template: "{property} takes a literal here, not an expression"},
 		},
 	},
 	{
@@ -3365,6 +3366,11 @@ func (codeE1613) AtWidth(span source.Span, width int64) *Builder {
 // AtTwice reports: {property} is given twice for this item (first at {first})
 func (codeE1613) AtTwice(span source.Span, property string, first source.Span) *Builder {
 	return newBuilder(&Registry[60], 2, span, property, first)
+}
+
+// AtLiteral reports: {property} takes a literal here, not an expression
+func (codeE1613) AtLiteral(span source.Span, property string) *Builder {
+	return newBuilder(&Registry[60], 3, span, property)
 }
 
 // E1614: an item's label declared twice (in one view or two) (VIEWMODEL.md §3.3).

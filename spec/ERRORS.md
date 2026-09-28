@@ -351,7 +351,7 @@ func (codeE2103) AtSeveral(span source.Span, typ string, colls []string) *Builde
 
 ---
 
-The catalogue holds 301 codes: 280 errors, 18 warnings and 3 run-time codes, with 464 messages.
+The catalogue holds 301 codes: 280 errors, 18 warnings and 3 run-time codes, with 465 messages.
 
 ## E10xx, W10xx: Project file, doc comments and naming
 
@@ -574,6 +574,7 @@ Owner: VIEWMODEL.md.
 | E1613 | property | property:Name, item:Kind | `{property} is not a property of this {item}` |
 | E1613 | width | width:Int | `column width {width} is out of range: widths go from 16 to 2000` |
 | E1613 | twice | property:Name, first:Loc | `{property} is given twice for this item (first at {first})` |
+| E1613 | literal | property:Name | `{property} takes a literal here, not an expression` |
 | E1614 | - | field:Name, first:Loc | `the label of {field} is declared twice (first at {first})` |
 | E1615 | - | - | `{{ in plain text: labels, help, intros, placeholders and none texts are not templates (write {{{{)` |
 | E1616 | - | name:Name | `method {name} takes parameters: a view may name only methods without parameters` |
