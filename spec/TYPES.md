@@ -1000,8 +1000,10 @@ above.
 - A method written in a variant body outside any case applies to every case: `self` is the
   variant value, typed `V`; no field is in scope (a variant has none of its own); the body reads
   the case through `self.kind`, `match self` or `is`. Its body is checked like any method's.
-  A `check` written there is read the same way. A case value has the variant's methods too; a
-  case method of the same name wins, for a call on the value and for a bare call in the case body.
+  A `check` written there is read the same way. A case value has the variant's methods too (a
+  bare call in the case body finds them after the case's own), so they share the case's names: a
+  variant-level method named `kind` is `E2105`, one named like a field of a case is `E2104`, and a
+  case method named like a variant-level method is `E2106` (no override, so no dispatch rule).
 
 ### 12.2 Calls
 
