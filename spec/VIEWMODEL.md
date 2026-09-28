@@ -808,8 +808,8 @@ cells, finding messages.
   else the source template (API.md V8).
 - **X7.** A template whose evaluation fails (an error, a magic name without a value, a read of
   `none`) renders as nothing and is shown as "—"; it produces no finding (API.md V11). Rendering
-  reads only settled values and spends no evaluation budget, so a model's bytes never depend on
-  which other models were built first (J5).
+  evaluates what it reads on demand, aside (EVALUATION.md §2.1: no budget spent, nothing
+  reported), so a model's bytes never depend on which other models were built first (J5).
 
 ### 9.3 Numbers and units
 
