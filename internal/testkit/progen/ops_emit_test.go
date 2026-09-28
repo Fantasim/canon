@@ -37,6 +37,7 @@ func emitOperators() []operator {
 		op(diag.E8014.Def().Code, "CODEGEN.md §5.13 (types mode, precomputed fn)", withMode("", "types", "/// An answer.\nexport fn ", "zzAnswer", "() -> Int { return 42 }")),
 		op(diag.E8015.Def().Code, "CODEGEN.md §2.2 (data mode Int value)", withMode("go", "data", "/// A cap.\nlet ", "zzCap", ": Int = 3")),
 		op(diag.E8017.Def().Code, "CODEGEN.md §5.6 (list branch)", withEmit("go", "/// Kinds.\nenum ZzKind { one, many }\n\n/// Amounts.\ntype ", "ZzAmount", "(k: ZzKind) = match k { one => Int, many => [Int] }")),
+		op(diag.E8020.Def().Code, "CODEGEN.md §5.1 (Float constant of -0.0)", withEmit("go", "/// Zero, negative.\nconst ", "ZZ_NEG", " = -0.0")),
 		op(diag.E8101.Def().Code, "CODEGEN.md §4.1 (integer past the TS range)", withEmit("ts", "/// Big.\nlet ", "zzBig", ": Int = 9_007_199_254_740_993")),
 		op(diag.E8104.Def().Code, "CODEGEN.md §5.12 (TS emit with inputs)", tsWithInputs),
 		op(diag.E8150.Def().Code, "WIRE.md §8.1 (file out, two values)", jsonFileTwoValues),

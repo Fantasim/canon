@@ -3,19 +3,5 @@
 # that is neither here nor in the catalogue, and on a line whose code got an operator or is no
 # longer reachable. One line per code: CODE reason.
 E1003 the harness opens a project; E1003 is the search for project.canon failing (CLI.md §2.1), which Run never does
-E1633 no mutation operator yet; owed by the M3 progen-operators unit (U20)
-E1703 no mutation operator yet; owed by the M3 progen-operators unit (U20)
-E3317 needs a map field in loaded data; load.dir refuses a map element type (build.ErrLoad, DECISIONS 173, internal/load/supported.go)
-E3801 no mutation operator yet (a non-optional field whose dependent type computes Never); owed by the M3 progen-operators unit (U20)
-E3802 no mutation operator yet (a dependent value that does not fit its computed type); owed by the M3 progen-operators unit (U20)
-E7006 no example gives a load form an option not listed for it or its detected format (WIRE.md §6.1); no mutation operator generates one
-E7102 needs a header with the same #define name given two values; no example's fixture headers have one and no mutation operator generates one (WIRE.md §6.8)
-E7106 needs an `at:` path that misses in its document; no example's `at:` targets are mutated and no operator generates one (WIRE.md §6.3)
-E7108 needs a malformed CSV cell in a loaded file; no example's CSV fixtures are mutated and no operator generates one (WIRE.md §6.6, M3's load.csv unit)
-E7112 needs a variant field in loaded data; load.dir refuses a variant element type (build.ErrLoad, DECISIONS 173, internal/load/supported.go)
-E7113 needs a malformed CSV file (a bare quote, an unterminated quote, a ragged record); no example's CSV fixtures are mutated and no operator generates one (WIRE.md §6.6)
-E7117 needs a pairs field in loaded data; the example's record literals omit it, so it needs a default [], and load.dir refuses a non-scalar default (build.ErrLoad, DECISIONS 173)
-E8019 needs a construct one target's generator does not implement yet (a Kind of ERRORS.md §1.4 used by E8019); no mutation operator produces one of the closed Kind list's constructs on its own (E8017's list-branch operator reaches it as a kept side effect, testdata/counterexamples/mutation_E8017-...)
-E8020 needs a Float constant of -0.0 in a package with a go emit; no example holds one and no mutation operator writes one
+E8019 each E8019 construct is a generator gap; an operator would break once the generator implements it
 W6006 reported by canon lock check only (LOCK.md §8), which neither check nor build runs
-W7101 needs a #define header with a function-like macro or an unparseable expression; no example's fixture headers have one and no mutation operator generates one (WIRE.md §6.8)

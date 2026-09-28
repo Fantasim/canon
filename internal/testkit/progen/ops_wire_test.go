@@ -27,9 +27,19 @@ func wireOperators() []operator {
 			field: `zzKind: ZzKind? @json("zzKind")`, decl: "/// Kind.\nenum ZzKind { small, big }",
 			before: `"zzKind": `, focus: `"huge"`,
 		})),
+		op(diag.E7112.Def().Code, "WIRE.md §5.6 (variant object with an unknown case)", addField(newField{
+			field:  `zzVariant: ZzVariant? @json("zzVariant")`,
+			decl:   "/// Variant.\nvariant ZzVariant {\n  /// Small.\n  small {\n    /// N.\n    n: Int = 0\n  }\n}",
+			before: `"zzVariant": {"kind": `, focus: `"zznope"`, after: `}`,
+		})),
 		op(diag.E7114.Def().Code, "WIRE.md §5.7 (table key not an identifier)", addField(newField{
 			field: `zzSubs: (table ZzSub)? @json("zzSubs")`, decl: "/// Sub.\nrecord ZzSub {\n  /// N.\n  n: Int\n}",
 			before: `"zzSubs": {`, focus: `"a b"`, after: `: {"n": 1}}`,
+		})),
+		op(diag.E7117.Def().Code, "WIRE.md §5.14 (pairs slot with one key but not the other)", addField(newField{
+			field: `zzPairs: [ZzPair](..=2) = [] @json(pairs: ["zzK{i}", "zzV{i}"])`,
+			decl:  "/// Pair.\nrecord ZzPair {\n  /// K.\n  k: Int\n  /// V.\n  v: Int\n}",
+			focus: `"zzK0"`, after: `: 1`,
 		})),
 	}
 }

@@ -58,6 +58,8 @@ func valuesOperators() []operator {
 		op(diag.E3702.Def().Code, "TYPES.md §13.4 (asset extension)", assetHolder(`"Itm_ActivityPoints_50.png"`)),
 		op(diag.E3703.Def().Code, "TYPES.md §13.4 (asset path not clean)", assetHolder(`"../Item/Itm_ActivityPoints_50.dds"`)),
 		op(diag.E3704.Def().Code, "TYPES.md §13.4 (asset root not a load path)", appendSite(`local type ZzAsset = asset(`, `"/Icon/Item"`, ", ext: [dds])")),
+		op(diag.E3801.Def().Code, "TYPES.md §11.6, §13.5 (required field whose computed type is Never)", requiredNever),
+		op(diag.E3802.Def().Code, "TYPES.md §11.6 (value not fitting its computed type)", computedMismatch),
 		op(diag.E3803.Def().Code, "TYPES.md §11.2 (type function on an Int)", appendSite("local record ZzEv {\n  n: Int\n}\n\nlocal type ZzP(e: ZzEv) = match ", "e.n", " {\n  _ => Int\n}")),
 		op(diag.E3804.Def().Code, "TYPES.md §11.4 (method of a dependent value)", dependent("  check ", "p.len() > 0", ` else "empty"`)),
 		op(diag.E3805.Def().Code, "TYPES.md §11.1 (field type uses a later field)", laterField),

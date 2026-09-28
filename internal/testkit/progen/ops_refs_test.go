@@ -224,6 +224,25 @@ func dependentArity(tg target) []progen.Site {
 	return appendSite(dependentPrelude+"  ev: ZzEv\n  p: ", "ZzP(ev, ev)", "\n}")(tg)
 }
 
+// neverPrelude declares ZzGK (a Never branch), ZzGP (a third branch too, so a literal of it
+// type-checks generically) and ZzGR, whose field p is dependent on it, up to the value a
+// mutation gives p for the branch member selects.
+func neverPrelude(member string) string {
+	return "local enum ZzGK { num, txt, gone }\n\nlocal record ZzGEv {\n  k: ZzGK\n}\n\n" +
+		"local type ZzGP(e: ZzGEv) = match e.k {\n  num => Int\n  txt => String\n  gone => Never\n}\n\n" +
+		"local record ZzGR {\n  ev: ZzGEv\n  p: ZzGP(ev)\n}\n\nlocal let zzGR: ZzGR = { ev: { k: " + member + " }, p: "
+}
+
+// requiredNever gives ZzGR.p a value on its Never branch (TYPES.md §11.6, §13.5).
+func requiredNever(tg target) []progen.Site {
+	return appendSite(neverPrelude("gone"), "1", " }")(tg)
+}
+
+// computedMismatch gives ZzGR.p a String where its branch computes Int (TYPES.md §11.6).
+func computedMismatch(tg target) []progen.Site {
+	return appendSite(neverPrelude("num"), `"x"`, " }")(tg)
+}
+
 // assetHolder declares an asset field over the fixtures' icons and a value giving it focus.
 func assetHolder(focus string) func(target) []progen.Site {
 	const before = "/// An icon holder.\nlocal record ZzIcon {\n  /// The icon.\n  icon: asset(\"@resource/Icon/Item\", ext: [dds])\n}\n\n" +
