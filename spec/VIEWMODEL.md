@@ -80,7 +80,7 @@ The studio renders three inputs and derives no rule from the language:
 | view | a `view` declaration (§3) |
 | target | what a view describes: a record, a variant, a variant case, an enum, or a define table |
 | item | one line of a view: `title`, `group`, a field line, `show`, … |
-| field key | the name of a field in a view's `fields` map: the field name, or for a case field of an inline variant `<variantField>.<case>.<field>` (§5.7) |
+| field key | the name of a field in a view's `fields` map: the field name, or for a case field of an inline variant `<variantField>.<case>.<field>` (§5.7); in a table of variants (T6a), `<case>.<field>` for a case field and `"$case"` for the case itself |
 | shape | a record type together with the current case of each of its inline variant fields (§5.7) |
 | shape key | the text form of a shape: `""`, or `kind=IK1_WEAPON`, or `kind=IK1_GENERAL/kind2=IK2_MATERIAL` |
 | active | not retired (enum members, variant cases, table entries) |
@@ -208,7 +208,7 @@ that inlines it).
 | `when` | `Bool` expression | field, method | shown only while it holds (§5.5) |
 | `none` | plain text | optional field | the label of `none` (MOCKUP-GAPS 12) |
 | `step` | template over `{index}` only | list field | name of each element in step, list and positional controls (§7.7); another name is `E1623` |
-| `icon` | an `Icon` member of the studio package | enum member, case | UI symbol |
+| `icon` | an `Icon` member of the studio package, bare or qualified (`Icon.gem`) | enum member, case | UI symbol |
 | `tone` | a `Tone` member of the studio package | enum member, case | UI tone |
 
 - **G15.** `control` and `widget` on the same field is `E1634`.
@@ -511,7 +511,8 @@ optional stripped):
   the parent's `_other`. Their field key is `v.<case>.<field>`; for a nested inline variant `w` of
   that case, `v.<case>.w.<case2>.<field>`.
 - **L18.** Each such field belongs to one **case path** (`v=<case>` or
-  `v=<case>/w=<case2>`). It exists in a value when the value's shape starts with that case path.
+  `v=<case>/w=<case2>`). It exists in a value when the value's shape contains each `<field>=<case>` segment of that case
+  path (L19 joins every inline variant field's segment, so other fields' segments may come first).
   A parent group entry that names a case field expands to every field key with that name, in case
   declaration order (G8 guarantees one type).
 - **L19.** The shape key of a value is built from its current cases: for each inline variant field
@@ -636,8 +637,10 @@ the selected row (SPEC §16.9).
 - **T6.** The first column is the **entry column** (`$entry`) when the collection is keyed or the
   element view has a `title`: it shows the preview, the title (the key when there is no title) and
   the subtitle (the key when there is a title and no subtitle) (MOCKUP-GAPS 23).
-- **T6a.** For a collection of variants, the next column is the case (mode `case`). A variant
-  view's `columns` and `filters` name case fields (§3.3 rule 3 applied to the variant's cases).
+- **T6a.** For a collection of variants, the next column is the case (field `"$case"`, mode
+  `case`). A variant
+  view's `columns` and `filters` name case fields (§3.3 rule 3 applied to the variant's cases); their
+  field key is `<case>.<field>`, and a filter on the case uses `"$case"`.
 - **T7.** The declared `columns` follow, in order. A declared column naming the key field of a
   keyed list is not repeated: its width goes to the entry column. Without `columns`, the columns
   are the first 6 scalar fields in declaration order, skipping the key field, hidden fields and
@@ -1098,7 +1101,7 @@ A control is an object tagged by `kind`. Members are present only where they app
 | `strict` | `range` | true for `<` |
 | `key` | `table` | `"$id"` or the key field |
 | `orderable` | `table`, `list`, `tags` | T2 |
-| `columns` | `table` | `[{field, width?, mode, cell?}]` (§7.2); `field` is a field key or `"$entry"` |
+| `columns` | `table` | `[{field, width?, mode, cell?}]` (§7.2); `field` is a field key (`"$case"` included, T6a) or `"$entry"` |
 | `filters` | `table` | `[{field, kind, multi?, none?, control}]` (§7.3) |
 | `search` | `table` | index id (T16) |
 | `singular` | `table`, `list`, `cards` | text reference (T3) |
