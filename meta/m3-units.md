@@ -17,7 +17,7 @@ Tick with the landing SHA.
 - [x] U1 (cda1581) `api/vm` + `api/vm/internal/vmgen` + `vm-check` gate; ADR on union flattening [opus]
 - [ ] U2 `internal/testkit/jsonschema` subset validator (26 keywords, unknown keyword fails) [sonnet]
 - [x] U3 (f251383) golden harness finds nested examples; `balance.parity` MANIFEST + golden [sonnet]
-- [ ] U4a `build` analysis handle (Program, Evaluator, bags, findings) for api/edit/views [sonnet]
+- [x] U4a (a256213) `build` analysis handle (Program, Evaluator, bags, findings) for api/edit/views [sonnet]
 - [ ] U4b `edit.Snapshot`/`Resolve` (API §6 P1–P10) + editability (API §7) [opus]
 - [ ] ★U5 `check`: resolve/type views and translation files; E1703, E1633 [opus]
 - [ ] ★U6 `i18n`: catalogue, translation files, W1701, E1702, E1704–E1707 [sonnet]
