@@ -521,7 +521,7 @@ Owner: VIEWMODEL.md.
 | E1602 | error | views | VIEWMODEL.md §3.3 | a view names no field, method, case or member of its target |
 | E1603 | error | views | VIEWMODEL.md §3.2 | a view declared outside the package of its target |
 | W1604 | warning | views | VIEWMODEL.md §3.4 | a field named `key` or `index` hides the view's magic name |
-| E1605 | error | views | VIEWMODEL.md §3.3 | a name placed twice in one view |
+| E1605 | error | views | VIEWMODEL.md §3.3 | a name, or a view-level item (`title`, `columns`, `filters`, …), placed twice in one view |
 | E1606 | error | views | VIEWMODEL.md §3.3 | `columns` or `filters` names something that is not a field |
 | E1607 | error | views | VIEWMODEL.md §3.2 | a second view for one target |
 | E1608 | error | views | VIEWMODEL.md §3.8 | a widget used on a field whose type does not match its `value` parameter |

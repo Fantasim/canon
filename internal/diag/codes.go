@@ -3220,7 +3220,7 @@ func (codeE1603) At(span source.Span, target string, pkg string) *Builder {
 	return newBuilder(&Registry[51], 0, span, target, pkg)
 }
 
-// E1605: a name placed twice in one view (VIEWMODEL.md §3.3).
+// E1605: a name, or a view-level item (`title`, `columns`, `filters`, …), placed twice in one view (VIEWMODEL.md §3.3).
 var E1605 codeE1605
 
 type codeE1605 struct{}
