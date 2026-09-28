@@ -91,9 +91,9 @@ func (failingDir) ReadDir(string) ([]fs.DirEntry, error) { return nil, errListin
 func TestAssetListing(t *testing.T) {
 	h := &evalHost{}
 	layout, _ := project.NewLayout(&project.Project{}, "/p", nil, diag.NewBag(nil, ""))
-	a := &assets{fs: failingDir{}, layout: layout, host: h, dirs: map[string][]string{}}
-	a.files("/o")
-	a.files("/o")
+	a := &assets{fs: failingDir{}, layout: layout, host: h, dirs: map[string]dirListing{}}
+	a.list("/o")
+	a.list("/o")
 	if len(h.errs) != 1 || !errors.Is(h.errs[0], errListing) {
 		t.Errorf("errors %v", h.errs)
 	}
@@ -132,7 +132,7 @@ func TestAssetExistsRootAlreadyMarked(t *testing.T) {
 		t.Fatal("layout")
 	}
 	mfs := memDirFS{dir: "/p/res/Icon", names: []string{"Item.dds"}}
-	a := &assets{fs: mfs, layout: layout, host: &evalHost{}, dirs: map[string][]string{}}
+	a := &assets{fs: mfs, layout: layout, host: &evalHost{}, dirs: map[string]dirListing{}}
 	if display, found := a.Exists("@resource/Icon", "items", "Item.dds"); !found || display != "@resource/Icon" {
 		t.Errorf("Exists = %q, %v; want @resource/Icon, true for a root already carrying its own @", display, found)
 	}
@@ -154,8 +154,8 @@ func (failingDirAbs) ReadDir(name string) ([]fs.DirEntry, error) {
 func TestAssetListingErrorNamesDisplayPath(t *testing.T) {
 	h := &evalHost{}
 	layout, _ := project.NewLayout(&project.Project{}, "/p", nil, diag.NewBag(nil, ""))
-	a := &assets{fs: failingDirAbs{}, layout: layout, host: h, dirs: map[string][]string{}}
-	a.files("/p/assets/icons")
+	a := &assets{fs: failingDirAbs{}, layout: layout, host: h, dirs: map[string]dirListing{}}
+	a.list("/p/assets/icons")
 	if len(h.errs) != 1 {
 		t.Fatalf("errors %v", h.errs)
 	}

@@ -104,7 +104,7 @@ func (r *run) newHost(bags check.Bags) {
 	r.host.loader = &load.Loader{FS: r.p.fs, Layout: r.s.layout, Set: r.s.set}
 	r.ev = eval.New(r.prog, r.host, bags, r.opt)
 	r.host.ev = r.ev
-	r.assets = &assets{fs: r.p.fs, layout: r.s.layout, host: r.host, dirs: map[string][]string{}}
+	r.assets = &assets{fs: r.p.fs, layout: r.s.layout, host: r.host, dirs: map[string]dirListing{}}
 	r.host.assets = r.assets
 	r.host.verifier = verify.NewShared(r.vix, r.ev, bags, r.assets)
 }

@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"path"
 	"slices"
+	"strings"
 
 	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/diag"
@@ -251,40 +252,70 @@ func (h irHost) Call(ctx context.Context, fn check.Object, recv value.Value, arg
 	return h.ev.Call(ctx, fn, recv, args)
 }
 
-// assets finds asset files under the placed roots, names matched byte for byte, each directory
-// listed once per run; a listing that fails is an error of the run.
+// assets finds asset files, each segment matched exactly against a listing (TYPES.md §13.4).
 type assets struct {
 	fs     project.FS
 	layout *project.Layout
 	host   *evalHost
-	dirs   map[string][]string
+	dirs   map[string]dirListing
 }
 
-// Exists resolves root (its own "@" kept) from its declaring file's directory, then name under it (WIRE.md §2.2).
+// dirListing is one directory's own file and subdirectory names, listed once.
+type dirListing struct {
+	files []string
+	subs  []string
+}
+
+// Exists resolves root, then walks name under it one folder at a time (WIRE.md §2.2, TYPES.md §13.4).
 func (a *assets) Exists(root, from, name string) (string, bool) {
 	dir, ok := a.layout.Resolve(root, from, source.Span{}, diag.NewBag(nil, ""))
 	if !ok {
 		return root, false
 	}
-	p := path.Join(dir.Abs, name)
-	return dir.Display, slices.Contains(a.files(path.Dir(p)), path.Base(p))
+	segs := strings.Split(name, pathSep)
+	abs := dir.Abs
+	for _, seg := range segs[:len(segs)-1] {
+		if !slices.Contains(a.list(abs).subs, seg) {
+			return dir.Display, false
+		}
+		abs = path.Join(abs, seg)
+	}
+	return dir.Display, slices.Contains(a.list(abs).files, segs[len(segs)-1])
 }
 
-// files is the names of the files of dir, none when it does not exist.
-func (a *assets) files(dir string) []string {
-	if names, ok := a.dirs[dir]; ok {
-		return names
+// list is the file and subdirectory names of dir, listed once; neither when it does not exist.
+func (a *assets) list(dir string) dirListing {
+	if l, ok := a.dirs[dir]; ok {
+		return l
 	}
 	entries, err := a.fs.ReadDir(dir)
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		a.host.errs = append(a.host.errs, displayErrorIn(a.layout.Dir, err))
 	}
-	names := []string{}
+	l := dirListing{files: []string{}, subs: []string{}}
 	for _, e := range entries {
-		if !e.IsDir() {
-			names = append(names, e.Name())
+		if isDir, ok := a.kind(dir, e); ok {
+			if isDir {
+				l.subs = append(l.subs, e.Name())
+			} else {
+				l.files = append(l.files, e.Name())
+			}
 		}
 	}
-	a.dirs[dir] = names
-	return names
+	a.dirs[dir] = l
+	return l
+}
+
+// kind is whether e is a directory or a file: its own type for anything but a symbolic link,
+// which is followed to its target; a broken or looping link is neither, so a name under it is
+// silently not found, as a listing of it was before this walk existed.
+func (a *assets) kind(dir string, e fs.DirEntry) (isDir, ok bool) {
+	if e.Type()&fs.ModeSymlink == 0 {
+		return e.IsDir(), true
+	}
+	info, err := a.fs.Stat(path.Join(dir, e.Name()))
+	if err != nil {
+		return false, false
+	}
+	return info.IsDir(), true
 }
