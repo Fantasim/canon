@@ -273,7 +273,7 @@ on its kind-enum member (§5.5). Undocumented items get no comment (the build wa
     `std::string`/`std::to_string` `<string>`, `std::string_view` `<string_view>`, `std::move`
     `<utility>`, `std::vector` `<vector>`, `std::array` `<array>`, `errno`/`ERANGE` `<cerrno>`,
     `DBL_MIN` `<cfloat>`, `std::fabs`/`std::isfinite` `<cmath>`, `std::getenv`/`std::strtoll`
-    `<cstdlib>`, `std::locale` `<locale>`, `std::regex` `<regex>`, `std::istringstream`
+    `<cstdlib>`, `std::locale` `<locale>`, `std::istringstream`
     `<sstream>`;
   - then, in a `.gen.h`, `<nlohmann/json_fwd.hpp>` (in its own group) when the header declares a
     decoder, and `"canon_runtime.h"` followed by the headers of imported packages (§2.8) in byte
@@ -472,7 +472,7 @@ Every name a generator writes is in these scopes, fixed names included: the name
 `GetBranch`/`Branch`, Go's `branch`/`value` storage and `decode<T>`, C++'s `Decode<Alias>`),
 `LoadInputs`, the per-package input namespace, input slots and flags (§5.12, §7.7) and the §7.7
 input helpers a package uses (`EnvText`, `IsDecDigit`, `AllDigits`, `DurationDigits`,
-`Parse<Kind>Literal`). C++ adds the scopes name lookup crosses (C++17 [basic.scope.class],
+`Parse<Kind>Literal`, `MatchPattern`). C++ adds the scopes name lookup crosses (C++17 [basic.scope.class],
 [basic.scope.declarative]): a class member equal to a namespace-scope type that the class body names
 (`Tone Tone() const;` changes the meaning of `Tone`), overrides included; a parameter, or a member
 of a conformance vector struct, equal to a type the same signature names (`Echo(Tone Tone, Tone
@@ -1018,14 +1018,15 @@ const std::string* GetApiKey() const;       // before LoadInputs: canon::OnEvalE
   implement it.
 - The field's own refinement is checked (EVALUATION.md §11.3): the implicit range of a sized type
   (a `Duration` beyond ±`DurationLimit` is not a valid literal), ranges, length in bytes, and pattern with search semantics (Go
-  `regexp.MatchString`, C++ `std::regex_search` with ECMAScript grammar; patterns are limited to
-  the RE2 ∩ ECMAScript subset by `E1904`). The C++ pattern is not the source text: it is
-  translated into an ECMAScript pattern over UTF-8 bytes whose `std::regex_search` accepts
-  exactly the (valid UTF-8) texts Go's `regexp.MatchString` accepts, RE2 being the reference: `.`
-  is one code point but `\n`; a negated class and `\D`, `\W`, `\S` are one code point; `\d`,
-  `\w`, `\s` are the ASCII classes `[0-9]`, `[0-9A-Z_a-z]`, `[\t\n\f\r ]`; non-ASCII members
-  become UTF-8 byte alternations; groups are non-capturing and laziness is dropped, neither
-  changing acceptance. `where` is never checked at runtime. A failed check is
+  `regexp.MatchString`, C++ `MatchPattern`, §7.7; patterns are limited to the portable subset by
+  `E1904`). The C++ loader never uses `std::regex`: ir compiles the pattern to its Thompson
+  automaton over code points (the states of Go's own compiled program, `regexp/syntax`
+  `Simplify` then `Compile`, reachable from its start, captures and no-ops dropped), which the
+  `.gen.cpp` holds as a constant table `kPattern` in the variable's block; `MatchPattern` searches
+  it with one set of states per position, iteratively, in memory proportional to the table and
+  time linear in the text, decoding UTF-8 as Go does, so it accepts exactly the texts
+  `regexp.MatchString` accepts, at any length. Go's `regexp` size limits, which `check` applies
+  when it compiles the pattern, bound the table. `where` is never checked at runtime. A failed check is
   an error naming the variable.
 - A TS emit whose package declares an input field is `E8104`.
 
@@ -2399,7 +2400,13 @@ reads the variables in field declaration order and sets `error` to one line per 
 replaces the caller's text, as every `Load` of §7.5 does).
 Only the helpers the package's inputs use are written, so the file stays warning-free under
 `-Wall` (§9): `EnvText` always; `IsDecDigit` and `AllDigits` for `Int`, `Float` and `Duration`;
-`DurationDigits` for `Duration`; `Parse<Kind>Literal` per input kind. The loaded values live in
+`DurationDigits` for `Duration`; `Parse<Kind>Literal` per input kind; `MatchPattern`, last, when a
+`String` input has a pattern. A patterned input's block declares `static constexpr uint32_t
+kPattern[]`: the state count, one row `{op, out, arg, count}` per state (state 0 starts; op 0
+accepts; 1 continues at `out` and at `arg`; 2 continues at `out` where the position `arg` names
+holds, 1 the start of the text and 2 its end; 3 reads one code point within the `count` sorted
+pairs at `kPattern + arg` and continues at `out`), then the code point pairs, each distinct set
+once in first-use order; the check is `!MatchPattern(kPattern, val)`. The loaded values live in
 slots `detail::<P>Inputs::<Class>`, with the flag `detail::<P>InputsLoaded` beside them; Go's
 counterparts are the package variables `input_<T>_<store>`, `input_<T>_<store>_OK` and
 `input_<T>_<store>_Pattern`, and the flag `inputsLoaded_`. All these names come from the name
