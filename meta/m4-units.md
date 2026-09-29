@@ -56,7 +56,8 @@ entries · B1 Recheck folds on the program's Info. Memo architecture: ADR-0011. 
       neighbour's 216 kept-comma line dropped by the M5 settle (M6); U5b nits (`unwritable` gives
       absolute names their own reason, `lockStable` tests the table first); B1 nits (`replayFolds`
       comment cites the real invariant, a free guard ending the lineage when swapped decls fold,
-      `holdsCode` reuses `hasCode`)
+      `holdsCode` reuses `hasCode`); TestDependencyRule also enforces each package's §3 Consumes row
+      (log M4 P13c-r), violations fixed or reported
 
 ## Final pass
 
