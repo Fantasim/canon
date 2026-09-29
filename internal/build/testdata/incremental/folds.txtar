@@ -1,0 +1,45 @@
+IMPLEMENTATION-PLAN §7.6 (NFR-02), EVALUATION.md §12.2, DECISIONS 104: the check folds refinement
+bounds and stage E folds field defaults with the run's one folder; entry edits recheck along one
+lineage, so the folder's counter must stand where a cold check leaves it at every budget.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+emit go { out: "out/go/", package: "a", mode: data }
+
+/// The highest price.
+const LIMIT = 100
+
+/// A thing sold.
+record Item {
+  /// Its name.
+  name: String(1..)
+  /// Its price.
+  price: Int(0..=LIMIT)
+  /// Its stock.
+  stock: Int(1..=99) = 1 + 2 + 3
+  /// Its weight.
+  weight: Int = 2 * 3 + 4 * 5
+}
+
+/// Items.
+let items: table Item = {}
+-- a/items/one.canon --
+package a
+
+entry items.one {
+  name: "One"
+  price: 10
+}
+-- a/items/two.canon --
+package a
+
+entry items.two {
+  name: "Two"
+  price: 20
+  stock: 7
+}

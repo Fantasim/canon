@@ -46,20 +46,20 @@ func (j *journal) keptBreaks(pl *recheckPlan, out *journal) []int {
 	return at
 }
 
-// replayFolds folds again each kept fold for its findings, against one Info whose Broken
-// grows through the journaled breaks, so each fold sees what its first run saw.
+// replayFolds refolds the kept folds for their findings and steps, in cold's order, before stage E's (DECISIONS 104).
 func (c *checker) replayFolds(ctx context.Context, fold Folder, folds []foldCall) {
 	whole := context.WithoutCancel(ctx) // the result is final: its folds' findings are part of it
 	// The swapped files' own breaks are left out: no Fold reads an entry's Broken, as a let stops
 	// at nonConstant before force (eval/names.go:115) and an ObjEntry is a Ref unread (names.go:73).
-	seen := *c.info
-	seen.Broken = map[Object]bool{}
+	final := c.info.Broken
+	defer func() { c.info.Broken = final }()
+	c.info.Broken = map[Object]bool{} // stage E's Info, Broken as each fold first saw it: one evaluator, one counter
 	next := 0
-	for _, fc := range folds {
+	for _, fc := range folds { // swapped files never fold (entriesOnly, keepable): this is cold's order
 		for ; next < fc.breaks; next++ {
-			seen.Broken[c.journal.breaks[next]] = true
+			c.info.Broken[c.journal.breaks[next]] = true
 		}
-		fold.Fold(whole, fc.owner, fc.e, &seen)
+		fold.Fold(whole, fc.owner, fc.e, c.info)
 	}
 }
 
