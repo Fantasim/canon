@@ -185,6 +185,10 @@ func (c strictCase) write(t *testing.T, dir string) (arg, want string) {
 	t.Helper()
 	caseDir := filepath.Join(dir, c.name)
 	path := filepath.Join(caseDir, c.file)
+	// CODEGEN.md §5.11, §7.6: the snapshot loader's own dir+file join is always "/".
+	if c.mode != nestFile && c.file != shelvesFile {
+		path = caseDir + "/" + c.file
+	}
 	if c.mode != missingFile {
 		c.writeFiles(t, caseDir)
 	}
