@@ -45,6 +45,12 @@ func init() {
 // has it, nil for none. A type without a row (`_`, a function) is `any`.
 func (s *Types) Expr(decl, t types.Type) vm.TypeExpr { return s.expr(at{decl: decl}, t) }
 
+// FieldExpr is the type expression of field f of the record or case decl, as its field
+// definition writes it: its @json(bits) makes a list a set (C32).
+func (s *Types) FieldExpr(decl types.Type, f *types.Field) vm.TypeExpr {
+	return s.expr(at{decl: decl, enc: f.Enc}, f.Type)
+}
+
 // expr is t's type expression with the `where` of its outermost layer as `predicate`.
 func (s *Types) expr(c at, t types.Type) vm.TypeExpr {
 	e := vm.TypeExpr{Kind: exprAny}

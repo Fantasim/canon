@@ -231,15 +231,15 @@ func (vm *ViewModel) JSON() []byte {
 	return vm.data
 }
 
-// Decode unmarshals the view model into v, typically a *vm.ViewModel (rule R10).
+// Decode unmarshals the view model into v, typically a *vm.ViewModel (rule R10), strictly: a
+// member fills only the field of exactly its name, and null only an unconstrained member
+// (json.RawMessage or an interface); a member no field reads is skipped (VIEWMODEL.md J6).
 func (vm *ViewModel) Decode(v any) error {
-	if err := json.Unmarshal(vm.data, v); err != nil {
-		return fmt.Errorf(fmtDecode, vm.Package, err)
-	}
-	return nil
+	return strictDecode(vm.Package, vm.data, v)
 }
 
-// ViewModel returns the view model of pkg, even when the package has errors (rule R9).
-func (p *Project) ViewModel(ctx context.Context, pkg string) (*ViewModel, error) {
-	return nil, errUnimplemented()
+// ViewModel returns pkg's view model, errors or not (R9); a non-name or no package: ErrUnknownPackage.
+func (p *Project) ViewModel(ctx context.Context, pkg string) (m *ViewModel, err error) {
+	defer recoverInternal(&err)
+	return p.viewModel(ctx, pkg)
 }

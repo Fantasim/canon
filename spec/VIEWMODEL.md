@@ -1025,8 +1025,10 @@ predicate, when it has one (VM-02).
 - `typeFunction`: `name`; `params` (`[{name, type}]`); `select` (the discriminant path relative to
   the single parameter, `""` for the parameter itself); `branches` (`[{match: [members], type}]`,
   in `match` order, `_` written as `["_"]`); `drivers` (for each collection whose entries are
-  passed as the parameter in the loaded program: the collection id → `{key: discriminant member}`
-  for every entry).
+  passed as the parameter anywhere in the project — every package, whatever the build selects, so
+  the bytes never depend on the selection (J5); packages read only for this are evaluated aside and
+  report nothing, EVALUATION.md §2.1: the collection id → `{key: discriminant member}` for every
+  entry).
 
 - **J14.** The studio picks the branch of a `dependent` value by: the driver's key → `drivers` →
   discriminant member → the first branch whose `match` contains it or `_`. A driver that is an enum

@@ -18,7 +18,7 @@ import (
 func (s *Types) field(decl types.Type, f *types.Field, key []string) vm.Field {
 	out := vm.Field{
 		Name:     f.Name,
-		Type:     s.expr(at{decl: decl, enc: f.Enc}, f.Type),
+		Type:     s.FieldExpr(decl, f),
 		Required: f.Default == nil && f.Input == nil && f.Type.Base().Kind() != types.Optional,
 		Default:  s.defaultOf(decl, f),
 		Help:     s.help(f.Doc, s.in.Index.Field(f), key...),

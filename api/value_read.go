@@ -20,6 +20,7 @@ type snapshot struct {
 	s         *edit.Snapshot
 	editLayer string
 	layers    []string // Options.Layers, whose amendments may explain a root the checker broke
+	types     *typeEncoder
 }
 
 // Value returns the final value at path (rules R4-R6, API.md §6).
@@ -39,7 +40,7 @@ func (p *Project) Value(ctx context.Context, path string) (v *Value, err error) 
 		return nil, apiError(err)
 	}
 	p.setRevision(a.Result().Revision)
-	s := &snapshot{a: a, s: edit.NewSnapshot(a), editLayer: p.editLayer, layers: p.layers}
+	s := &snapshot{a: a, s: edit.NewSnapshot(a), editLayer: p.editLayer, layers: p.layers, types: newTypeEncoder(ctx, a)}
 	return s.resolve(path, parsed)
 }
 
@@ -55,7 +56,7 @@ func (s *snapshot) resolve(path string, parsed edit.Path) (*Value, error) {
 	return s.value(r)
 }
 
-// value is r's target with its type, text, origin and editability (API.md §5.2, §7).
+// value is r's target with its type, its view-model encoding, text, origin and editability (API.md §5.2, §7).
 func (s *snapshot) value(r edit.Resolved) (*Value, error) {
 	t, err := s.s.Type(r)
 	if err != nil {
@@ -69,8 +70,12 @@ func (s *snapshot) value(r edit.Resolved) (*Value, error) {
 		Path: r.Canonical, Kind: kindOf(r.Target), Text: r.Target.CanonText(),
 		Origin: s.origin(r), Editable: editabilityOf(e), snap: s, res: r,
 	}
-	if t != nil {
-		v.Type.Expr = t.String()
+	if t == nil {
+		return v, nil
+	}
+	v.Type.Expr = t.String()
+	if v.Type.VM, err = s.types.expr(s.siteOf(r), t); err != nil {
+		return nil, internalError(err)
 	}
 	return v, nil
 }

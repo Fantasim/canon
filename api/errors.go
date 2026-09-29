@@ -34,7 +34,9 @@ var (
 	ErrClosed             = errors.New("project is closed")
 	ErrInternal           = errors.New("internal compiler error")
 
-	errSeverity = errors.New("unknown severity")
+	errSeverity   = errors.New("unknown severity")
+	errDecodeNull = errors.New("null where the view model admits none")
+	errDecodeCase = errors.New("member name matches a field only by case")
 )
 
 // sentinelMap is one of edit's path refusals and the API sentinel it is (API.md §15).

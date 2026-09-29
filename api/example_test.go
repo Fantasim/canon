@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 
 	canon "github.com/fantasim/canonlang/api"
+	"github.com/fantasim/canonlang/api/vm"
 )
 
 // openExamples opens the repository's examples/ project in memory, every root redirected
@@ -171,10 +172,10 @@ func ExampleProject_Value() {
 	}
 	describe(v)
 	describeOrigin(v.Origin)
-	fmt.Println(v.Type.Expr, string(v.JSON()))
+	fmt.Println(v.Type.Expr, string(v.JSON()), string(v.Type.VM))
 	// Output: teamboard:statuses.open.next[0] taken
 	// literal at teamboard/taxonomy.canon:172
-	// ref teamboard.statuses "taken"
+	// ref teamboard.statuses "taken" {"kind":"ref","collection":"teamboard:statuses","element":"teamboard.Status","keyType":"string","count":6,"active":6}
 }
 
 func ExampleEditability() {
@@ -231,16 +232,23 @@ func ExampleProject_ViewModel() {
 		return
 	}
 	defer p.Close()
-	vm, err := p.ViewModel(context.Background(), "teamboard")
+	model, err := p.ViewModel(context.Background(), "teamboard")
+	if errors.Is(err, canon.ErrUnknownPackage) {
+		fmt.Println("no such package")
+		return
+	}
 	if err != nil {
 		return
 	}
-	var doc map[string]any
-	if err := vm.Decode(&doc); err != nil {
+	var doc vm.ViewModel
+	if err := model.Decode(&doc); err != nil {
 		return
 	}
-	fmt.Println(vm.Package, vm.Revision, len(vm.JSON()), doc["$schema"])
+	fmt.Println(model.Package, doc.Schema, doc.Language, model.Revision == p.Revision())
+	fmt.Println(doc.Types["teamboard.Status"].Kind, doc.Values["teamboard:statuses"].Type.Kind)
 	// Output:
+	// teamboard canon-vm/1 0.1 true
+	// record table
 }
 
 func ExampleProject_SetOverlay() {

@@ -1,6 +1,8 @@
 package canon
 
 import (
+	"strings"
+
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/edit"
 	"github.com/fantasim/canonlang/internal/value"
@@ -217,6 +219,10 @@ const (
 	textExpected     = "expected "
 	textGot          = ", got "
 	fmtDecode        = "view model %s: %w"
+	fmtAtPointer     = "%w at %q"
+	fmtMemberCase    = "%w at %q: the field is %q"
+	fmtIndexPointer  = "%s/%d"
+	fmtTypeVM        = "type %s: %w"
 	fmtDecodeFinding = "finding: %w"
 	fmtSeverity      = "%w %q"
 	msgUnimplemented = "unimplemented"
@@ -226,4 +232,19 @@ const (
 	fmtQuoted        = "%q"
 	expectedTargets  = "go, cpp, ts, json or view"
 	expectedPattern  = "an RE2 regular expression"
+)
+
+// What ViewModel.Decode reads: pointers, struct tags, a neutral text reference's one member (J9).
+const (
+	pointerSep    = "/"
+	pointerTilde  = "~"
+	structTagJSON = "json"
+	tagSep        = ","
+	tagSkip       = "-"
+	textRefMember = "text"
+)
+
+var (
+	pointerEscaper = strings.NewReplacer(pointerTilde, "~0", pointerSep, "~1")
+	lineEnd        = []byte("\n")
 )

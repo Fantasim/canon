@@ -9,6 +9,7 @@ import (
 	"github.com/fantasim/canonlang/internal/build"
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/eval"
+	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
 )
@@ -61,6 +62,26 @@ func TestAnalysisBagIsOnePackage(t *testing.T) {
 	}
 	if a.Files() == nil {
 		t.Error("no Files")
+	}
+}
+
+// VIEWMODEL.md 12.3 `asset`: Layout resolves an unrooted path from its file's directory to its display path.
+func TestAnalysisLayout(t *testing.T) {
+	fsys := mapFS{
+		"law/project.canon": file("project acme {\n  canon: \"0.1\"\n}\n"),
+		"law/a/a.canon":     file("/// A.\npackage a\n"),
+	}
+	p, err := build.Open(fsys, "/law", build.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	a, err := p.Analyze(context.Background(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, ok := a.Layout().Resolve("icons", "a", source.Span{}, diag.NewBag(nil, ""))
+	if !ok || got.Display != "a/icons" || a.Layout().Dir != "/law" {
+		t.Errorf("Layout: %+v %v, dir %q", got, ok, a.Layout().Dir)
 	}
 }
 

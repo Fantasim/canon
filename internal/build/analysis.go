@@ -9,6 +9,7 @@ import (
 	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/eval"
+	"github.com/fantasim/canonlang/internal/project"
 	"github.com/fantasim/canonlang/internal/value"
 )
 
@@ -67,6 +68,9 @@ func (a *Analysis) Bag(pkg string) *diag.Bag {
 
 // Files locates every span Bag or Result reports.
 func (a *Analysis) Files() diag.Files { return a.r.s.set }
+
+// Layout is the project's roots as this analysis resolved its paths, read-only (VIEWMODEL.md 12.3 `asset`).
+func (a *Analysis) Layout() *project.Layout { return a.r.s.layout }
 
 // Force is root's value if Analyze settled it, (nil, false) for any other, whatever ViewModel evaluated since (EVALUATION.md §2.1).
 func (a *Analysis) Force(root eval.Root) (value.Value, bool) {
