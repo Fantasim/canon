@@ -42,7 +42,8 @@ memo wiring · U13 rules/verify caches + P9 · U9b show templates and methods ·
 - U1b `format` Move kind; edit's Move keeps comments [opus]
 - P12 perf: verify + rules memos, allocation cut; target [items] warm ≤150 ms p95 [opus]
 - P3 perf: load memo, one lineage per selection, rare compaction; target [items,twin] ≤300 ms p95 [opus]
-- Later: cleanup unit (duplicates, P9 leftovers) — after P12/P3 land.
+- Later: cleanup unit (duplicates, P9 leftovers, E1903 for a variant case declaring an input
+      field) — after P12/P3 land.
 
 ## Wave 4 (gates, written now, run long once at the end)
 
