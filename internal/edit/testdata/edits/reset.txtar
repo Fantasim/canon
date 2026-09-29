@@ -1,0 +1,70 @@
+API.md §8.3 Reset: a field that has a default is removed from its literal (M4); API.md E8:
+Reset of a field already absent does nothing; API.md E23: the inverse of Reset is Set(old).
+-- options --
+pkgs: p
+-- edit.json --
+{"ops": [
+  {"op": "reset", "path": "rows.a.limit"},
+  {"op": "reset", "path": "rows.b.limit"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// A row.
+record Row {
+  /// A count.
+  count: Int
+  /// A limit.
+  limit: Int = 5
+}
+
+/// Rows.
+let rows: table Row = {
+  a {
+    count: 1
+    /// The row's own limit.
+    limit: 9
+  }
+  b { count: 2 }
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "p/p.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "set",
+      "path": "p:rows.a.limit",
+      "source": "9"
+    }
+  ],
+  "touched": [
+    "p"
+  ]
+}
+-- after/p/p.canon --
+package p
+
+/// A row.
+record Row {
+  /// A count.
+  count: Int
+  /// A limit.
+  limit: Int = 5
+}
+
+/// Rows.
+let rows: table Row = {
+  a {
+    count: 1
+  }
+  b { count: 2 }
+}

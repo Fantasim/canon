@@ -1,0 +1,33 @@
+API.md E9 (§7.2 order): Insert into, and Move inside, a collection whose order comes from file
+paths is ErrNotEditable with reason order.
+-- options --
+pkgs: pipe
+-- edit.json --
+{"ops": [{"op": "move", "path": "potions[II_POT_B]", "index": 0}]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- pipe/potion.canon --
+package pipe
+
+/// A potion.
+record Potion {
+  /// Its id.
+  id: String @json("dwID")
+}
+
+/// One file per potion.
+let potions: [Potion] keyed by id = load.dir("data/*.json")
+-- pipe/data/II_POT_A.json --
+{
+  "dwID": "II_POT_A"
+}
+-- pipe/data/II_POT_B.json --
+{
+  "dwID": "II_POT_B"
+}
+-- result.json --
+{
+  "error": "op 0: value not editable: reason order"
+}

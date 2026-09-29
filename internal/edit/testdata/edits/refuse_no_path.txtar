@@ -1,0 +1,26 @@
+API.md E3: Set on a map key or table entry that does not exist is ErrNoPath (use AddEntry).
+-- options --
+pkgs: p
+-- edit.json --
+{"ops": [{"op": "set", "path": "rows.b", "source": "{ count: 2 }"}]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// A row.
+record Row {
+  /// A count.
+  count: Int
+}
+
+/// Rows.
+let rows: table Row = {
+  a { count: 1 }
+}
+-- result.json --
+{
+  "error": "op 0: no value at path at segment 0"
+}

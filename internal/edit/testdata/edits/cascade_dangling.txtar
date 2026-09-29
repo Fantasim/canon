@@ -1,0 +1,92 @@
+API.md E15, E22 (log-2026-09-29 M4 U4b-r3): a finding at the dependent field that is not about its fit
+(E3501, a ref to a missing key, already there) does not drop it: its value is kept, and Undo
+restores the driver alone.
+-- options --
+pkgs: dep
+-- edit.json --
+{"ops": [
+  {"op": "set", "path": "things.a.f", "value": false}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- dep/dep.canon --
+package dep
+
+/// A colour.
+record Colour {
+  /// Its name.
+  name: String = ""
+}
+
+/// Colours.
+let colours: table Colour = { red {} }
+
+/// W.
+type W(f: Bool) = match f {
+  true => ref colours
+  false => ref colours
+}
+
+/// A thing.
+record Thing {
+  /// Flag.
+  f: Bool
+  /// Wrapped.
+  w: W(f)?
+}
+
+/// Things.
+let things: table Thing = {
+  a { f: true, w: blue }
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "dep/dep.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "set",
+      "path": "dep:things.a.f",
+      "source": "true"
+    }
+  ],
+  "touched": [
+    "dep"
+  ]
+}
+-- after/dep/dep.canon --
+package dep
+
+/// A colour.
+record Colour {
+  /// Its name.
+  name: String = ""
+}
+
+/// Colours.
+let colours: table Colour = { red {} }
+
+/// W.
+type W(f: Bool) = match f {
+  true => ref colours
+  false => ref colours
+}
+
+/// A thing.
+record Thing {
+  /// Flag.
+  f: Bool
+  /// Wrapped.
+  w: W(f)?
+}
+
+/// Things.
+let things: table Thing = {
+  a { f: false, w: blue }
+}

@@ -1,0 +1,147 @@
+Operations on collections a JSON source states (FORMATTER.md §14.2, API.md M8): AddEntry
+adds a member to a map's object by its wire key and to a table's object by the entry's id;
+Add and Insert add elements to an array; Remove deletes a member or an element with the comma
+of its line; Move reorders an array; Set of a field whose @json(path:) prefix object is absent
+creates it where its first field stands (LOD-09); Rename changes a map member's key in place.
+-- options --
+pkgs: farm
+-- edit.json --
+{"ops": [
+  {"op": "addEntry", "path": "farm.weights", "key": "autumn", "value": 3},
+  {"op": "addEntry", "path": "farm.tiers", "key": "gold", "value": {"price": 30}},
+  {"op": "add", "path": "farm.levels", "value": 40},
+  {"op": "insert", "path": "farm.levels", "index": 0, "value": 5},
+  {"op": "remove", "path": "farm.weights[spring]"},
+  {"op": "move", "path": "farm.levels[3]", "index": 1},
+  {"op": "set", "path": "farm.reqMp", "value": 12},
+  {"op": "rename", "path": "farm.weights[summer]", "key": "winter"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- farm/farm.canon --
+package farm
+
+/// A season.
+enum Season { spring, summer, autumn, winter }
+
+/// A tier.
+record Tier {
+  /// Its price.
+  price: Int
+}
+
+/// The farm's configuration.
+record Farm {
+  /// Weights per season.
+  weights: {Season: Int}
+  /// Tiers.
+  tiers: table Tier
+  /// Levels.
+  levels: [Int]
+  /// A legacy requirement.
+  reqMp: Int = 0 @json(path: "legacy.reqMp")
+  /// A legacy flag.
+  flag: Bool = false @json(path: "legacy.flag")
+}
+
+/// The farm, as the server reads it.
+let farm: Farm = load("farm_config.json")
+-- farm/farm_config.json --
+{
+  "weights": {
+    "spring": 1,
+    "summer": 2
+  },
+  "tiers": {
+    "bronze": {
+      "price": 10
+    }
+  },
+  "levels": [
+    10,
+    20,
+    30
+  ]
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "farm/farm_config.json"
+    }
+  ],
+  "undo": [
+    {
+      "op": "rename",
+      "path": "farm:farm.weights[winter]",
+      "key": "summer"
+    },
+    {
+      "op": "reset",
+      "path": "farm:farm.reqMp"
+    },
+    {
+      "op": "move",
+      "path": "farm:farm.levels[1]",
+      "index": 3
+    },
+    {
+      "op": "addEntry",
+      "path": "farm:farm.weights",
+      "key": "spring",
+      "source": "1"
+    },
+    {
+      "op": "move",
+      "path": "farm:farm.weights[spring]",
+      "index": 0
+    },
+    {
+      "op": "remove",
+      "path": "farm:farm.levels[0]"
+    },
+    {
+      "op": "remove",
+      "path": "farm:farm.levels[3]"
+    },
+    {
+      "op": "remove",
+      "path": "farm:farm.tiers.gold"
+    },
+    {
+      "op": "remove",
+      "path": "farm:farm.weights[autumn]"
+    }
+  ],
+  "touched": [
+    "farm"
+  ]
+}
+-- after/farm/farm_config.json --
+{
+  "weights": {
+    "winter": 2,
+    "autumn": 3
+  },
+  "tiers": {
+    "bronze": {
+      "price": 10
+    },
+    "gold": {
+      "price": 30
+    }
+  },
+  "levels": [
+    5,
+    30,
+    10,
+    20,
+    40
+  ],
+  "legacy": {
+    "reqMp": 12
+  }
+}

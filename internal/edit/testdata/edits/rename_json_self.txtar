@@ -1,0 +1,69 @@
+API.md E11 in a JSON source (log-2026-09-29 M4 U4b-r): the renamed entry's member key is written
+again in place, and the references inside its own value are rewritten with it, as are the
+others; API.md E23: its inverse is Rename back.
+-- options --
+pkgs: tb
+-- edit.json --
+{"ops": [{"op": "rename", "path": "statuses.open", "key": "opened"}]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- tb/tb.canon --
+package tb
+
+/// A status.
+record Status {
+  /// The statuses it may move to.
+  next: [ref Status] = []
+}
+
+/// The statuses.
+let statuses: table Status = load("statuses.json")
+-- tb/statuses.json --
+{
+  "open": {
+    "next": [
+      "open",
+      "done"
+    ]
+  },
+  "done": {
+    "next": [
+      "open"
+    ]
+  }
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "tb/statuses.json"
+    }
+  ],
+  "undo": [
+    {
+      "op": "rename",
+      "path": "tb:statuses.opened",
+      "key": "open"
+    }
+  ],
+  "touched": [
+    "tb"
+  ]
+}
+-- after/tb/statuses.json --
+{
+  "opened": {
+    "next": [
+      "opened",
+      "done"
+    ]
+  },
+  "done": {
+    "next": [
+      "opened"
+    ]
+  }
+}

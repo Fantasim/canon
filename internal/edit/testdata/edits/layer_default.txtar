@@ -1,0 +1,78 @@
+API.md W10, W11 (log-2026-09-29 M4 U4b-r): under an edit layer every write goes to the layer,
+never to the base source: a Set to the field's default rewrites the amendment line with that
+value (removing it would show the base value, not the default); API.md E7: none is written as
+`none`; a path the layer did not amend gets its own line, whose inverse is Reset (API.md E23).
+-- options --
+pkgs: p
+layers: dev
+editLayer: dev
+-- edit.json --
+{"ops": [
+  {"op": "set", "path": "conf.limit", "value": 1},
+  {"op": "set", "path": "conf.hint", "value": null},
+  {"op": "set", "path": "conf.name", "value": "n"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// A configuration.
+record Conf {
+  /// A limit.
+  limit: Int = 1
+  /// A hint.
+  hint: String? = none
+  /// A name.
+  name: String = ""
+}
+
+/// Configuration.
+let conf: Conf = { limit: 2, hint: "base" }
+-- p/dev.layer.canon --
+package p
+layer dev
+
+amend conf {
+  limit: 5
+  hint: "dev"
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "p/dev.layer.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "reset",
+      "path": "p:conf.name"
+    },
+    {
+      "op": "set",
+      "path": "p:conf.hint",
+      "source": "\"dev\""
+    },
+    {
+      "op": "set",
+      "path": "p:conf.limit",
+      "source": "5"
+    }
+  ],
+  "touched": [
+    "p"
+  ]
+}
+-- after/p/dev.layer.canon --
+package p
+layer dev
+
+amend conf {
+  limit: 1
+  hint: none
+  name: "n"
+}

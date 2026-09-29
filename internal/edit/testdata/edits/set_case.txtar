@@ -1,0 +1,101 @@
+API.md M1: a Set that changes a variant's case replaces the whole item; the same case is
+compared field by field.
+-- options --
+pkgs: ev
+-- edit.json --
+{"ops": [
+  {"op": "set", "path": "events.rain.kind", "source": "drop { item: \"II_MOON\", count: 2 }"},
+  {"op": "set", "path": "events.fair.kind", "source": "spawn { region: 3 }"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- ev/ev.canon --
+package ev
+
+/// What an event does.
+variant Kind {
+  /// Spawns in a region.
+  spawn {
+    /// The region.
+    region: Int
+    /// How many.
+    count: Int = 1
+  }
+  /// Drops an item.
+  drop {
+    /// The item.
+    item: String
+    /// How many.
+    count: Int = 1
+  }
+}
+
+/// An event.
+record Event {
+  /// What it does.
+  kind: Kind
+}
+
+/// The events.
+let events: table Event = {
+  rain { kind: spawn { region: 1, count: 4 } }
+  fair { kind: spawn { region: 2 } }
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "ev/ev.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "set",
+      "path": "ev:events.fair.kind",
+      "source": "spawn { region: 2 }"
+    },
+    {
+      "op": "set",
+      "path": "ev:events.rain.kind",
+      "source": "spawn { region: 1, count: 4 }"
+    }
+  ],
+  "touched": [
+    "ev"
+  ]
+}
+-- after/ev/ev.canon --
+package ev
+
+/// What an event does.
+variant Kind {
+  /// Spawns in a region.
+  spawn {
+    /// The region.
+    region: Int
+    /// How many.
+    count: Int = 1
+  }
+  /// Drops an item.
+  drop {
+    /// The item.
+    item: String
+    /// How many.
+    count: Int = 1
+  }
+}
+
+/// An event.
+record Event {
+  /// What it does.
+  kind: Kind
+}
+
+/// The events.
+let events: table Event = {
+  rain { kind: drop { item: "II_MOON", count: 2 } }
+  fair { kind: spawn { region: 3 } }
+}

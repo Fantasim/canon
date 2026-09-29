@@ -1,0 +1,29 @@
+API.md E1 (log-2026-09-29 M4, "E1 vs E21 order"): each operation resolves against the state
+the previous ones left; a path under a value that fails to compute in that state is ErrNoValue,
+even when the edit would be valid as a whole.
+-- options --
+pkgs: p
+-- edit.json --
+{"ops": [
+  {"op": "set", "path": "pick", "value": 7},
+  {"op": "set", "path": "picked", "value": 0}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// Values.
+let values: [Int] = [1, 2, 3]
+
+/// Which value.
+let pick: Int = 1
+
+/// The picked value.
+let picked: Int = values[pick]
+-- result.json --
+{
+  "error": "op 1: value not computed at segment -1"
+}

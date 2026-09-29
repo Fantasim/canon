@@ -1,0 +1,30 @@
+API.md W1, API.md W4 (log-2026-09-29 U4c final): a value loaded as JSON from a file not named
+`.json` (`load("x.cfg", format: json)`) is not editable, reason format: a crashed edit's journal
+keeps only .canon, .json and .lock files.
+-- options --
+pkgs: p
+-- edit.json --
+{"ops": [{"op": "set", "path": "conf.limit", "value": 9}]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// A configuration.
+record Conf {
+  /// A limit.
+  limit: Int
+}
+
+/// Loaded.
+let conf: Conf = load("conf.cfg", format: json)
+-- p/conf.cfg --
+{
+  "limit": 5
+}
+-- result.json --
+{
+  "error": "op 0: value not editable: reason format"
+}

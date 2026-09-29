@@ -1,0 +1,91 @@
+FORMATTER.md §14.2's example: Set of a field its JSON object lacks inserts its wire key right
+after the member of the nearest earlier declared key (API.md M8, W7); a changed member alone is
+re-printed, in the wire form of its field (a Duration in ms); API.md E7: none with a @json(none:)
+marker is written as the marker, and Set to a default removes the member (E6).
+-- options --
+pkgs: pipe
+-- edit.json --
+{"ops": [
+  {"op": "set", "path": "potion.stack", "value": 20},
+  {"op": "set", "path": "potion.cooldown", "source": "8s"},
+  {"op": "set", "path": "potion.parent", "value": null},
+  {"op": "set", "path": "potion.tier", "value": 1}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- pipe/pipe.canon --
+package pipe
+
+/// A healing potion.
+record Potion {
+  /// The item define.
+  id: String @json("dwID")
+  /// Text key of the name.
+  name: String @json("szName")
+  /// Hit points restored.
+  heal: Int @json("nHeal")
+  /// Time before it can be drunk again.
+  cooldown: Duration @json("dwCooldownMs", unit: ms)
+  /// How many fit in a slot.
+  stack: Int = 99 @json("nStack")
+  /// The potion it upgrades, if any.
+  parent: String? = "II_BASE" @json("dwParent", none: "")
+  /// Its tier.
+  tier: Int = 1 @json("nTier")
+}
+
+/// One potion, as the server reads it.
+let potion: Potion = load("data/II_POT_HEAL_S.json")
+-- pipe/data/II_POT_HEAL_S.json --
+{
+  "dwID": "II_POT_HEAL_S",
+  "szName": "IDS_PROPITEM_TXT_POT_S",
+  "nHeal": 500,
+  "dwCooldownMs": 3000,
+  "dwParent": "II_POT_BASE",
+  "nTier": 2
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "pipe/data/II_POT_HEAL_S.json"
+    }
+  ],
+  "undo": [
+    {
+      "op": "set",
+      "path": "pipe:potion.tier",
+      "source": "2"
+    },
+    {
+      "op": "set",
+      "path": "pipe:potion.parent",
+      "source": "\"II_POT_BASE\""
+    },
+    {
+      "op": "set",
+      "path": "pipe:potion.cooldown",
+      "source": "3s"
+    },
+    {
+      "op": "reset",
+      "path": "pipe:potion.stack"
+    }
+  ],
+  "touched": [
+    "pipe"
+  ]
+}
+-- after/pipe/data/II_POT_HEAL_S.json --
+{
+  "dwID": "II_POT_HEAL_S",
+  "szName": "IDS_PROPITEM_TXT_POT_S",
+  "nHeal": 500,
+  "dwCooldownMs": 8000,
+  "nStack": 20,
+  "dwParent": ""
+}

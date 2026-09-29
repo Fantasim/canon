@@ -1,0 +1,26 @@
+API.md E4: Remove of an entry of a stable table is ErrStableKey (retire it instead).
+-- options --
+pkgs: p
+-- edit.json --
+{"ops": [{"op": "remove", "path": "statuses.open"}]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// A status.
+record Status {
+  /// Its label.
+  label: String
+}
+
+/// Statuses.
+let statuses: stable table Status = {
+  open { label: "Open" }
+}
+-- result.json --
+{
+  "error": "op 0: key of a stable table"
+}

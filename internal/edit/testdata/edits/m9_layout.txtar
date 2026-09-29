@@ -1,0 +1,46 @@
+API.md M9: a .canon file not a fixed point of the formatter is normalized entirely first
+(API M9 governs FORMATTER.md §13 there, log-2026-09-29 M4) and listed in NotCanonical.
+-- options --
+pkgs: p
+oneLine: true
+-- edit.json --
+{"ops": [{"op": "set", "path": "limit", "value": 9}]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+/// A limit.
+let limit:Int=5
+/// A name.
+let   name : String = "n"
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "p/p.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "set",
+      "path": "p:limit",
+      "source": "5"
+    }
+  ],
+  "touched": [
+    "p"
+  ],
+  "notCanonical": [
+    "p/p.canon"
+  ]
+}
+-- after/p/p.canon --
+package p
+
+/// A limit.
+let limit: Int = 9
+/// A name.
+let name: String = "n"

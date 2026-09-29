@@ -1,0 +1,72 @@
+API.md M7 (log-2026-09-29 M4 U4b-r3): a String holding `{` or `}` is written with each brace
+escaped as `\{` or `\}` (GRAMMAR.md §2.6), never as an interpolation; API.md E23: the inverse of
+a Set of a String that held braces gives them back, escaped the same way.
+-- options --
+pkgs: p
+oneLine: true
+-- edit.json --
+{"ops": [
+  {"op": "set", "path": "greeting", "value": "Hello {name}"},
+  {"op": "set", "path": "motto", "value": "plain"},
+  {"op": "set", "path": "labels[a]", "value": "}{"},
+  {"op": "addEntry", "path": "labels", "key": "c}", "value": "z"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// A greeting.
+let greeting: String = "Hi"
+
+/// A motto.
+let motto: String = "keep {{this}} and \{that\}"
+
+/// Labels.
+let labels: {String: String} = { "a": "x", "b\{": "y" }
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "p/p.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "remove",
+      "path": "p:labels[\"c}\"]"
+    },
+    {
+      "op": "set",
+      "path": "p:labels[a]",
+      "source": "\"x\""
+    },
+    {
+      "op": "set",
+      "path": "p:motto",
+      "source": "\"keep \\{this\\} and \\{that\\}\""
+    },
+    {
+      "op": "set",
+      "path": "p:greeting",
+      "source": "\"Hi\""
+    }
+  ],
+  "touched": [
+    "p"
+  ]
+}
+-- after/p/p.canon --
+package p
+
+/// A greeting.
+let greeting: String = "Hello \{name\}"
+
+/// A motto.
+let motto: String = "plain"
+
+/// Labels.
+let labels: {String: String} = { "a": "\}\{", "b\{": "y", "c\}": "z" }

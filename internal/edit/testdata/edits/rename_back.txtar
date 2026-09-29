@@ -1,0 +1,43 @@
+API.md N8 (log-2026-09-29 M4 U4b-r): a file renamed and renamed back within one edit is no
+change at all: neither `renamed` nor a Change whose Path is its OldPath.
+-- options --
+pkgs: guild
+-- edit.json --
+{"ops": [
+  {"op": "rename", "path": "ranks.rookie", "key": "novice"},
+  {"op": "rename", "path": "ranks.novice", "key": "rookie"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- guild/guild.canon --
+package guild
+
+/// A guild rank.
+record Rank {
+  /// Its order.
+  order: Int
+}
+
+/// One file per rank.
+let ranks: table Rank = load.dir("ranks/*.json")
+-- guild/ranks/rookie.json --
+{
+  "order": 5
+}
+-- result.json --
+{
+  "undo": [
+    {
+      "op": "rename",
+      "path": "guild:ranks.rookie",
+      "key": "novice"
+    },
+    {
+      "op": "rename",
+      "path": "guild:ranks.novice",
+      "key": "rookie"
+    }
+  ]
+}

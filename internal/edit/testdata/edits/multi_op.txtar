@@ -1,0 +1,79 @@
+API.md E1: operations apply in order to the state the previous ones left: a key added by
+operation 0 is addressed by operation 1, an entry renamed by operation 2 is addressed by its new
+key in operation 3. API.md E23: the inverses in reverse order of the operations.
+-- options --
+pkgs: p
+-- edit.json --
+{"ops": [
+  {"op": "addEntry", "path": "statuses", "key": "blocked", "source": "{ label: \"Blocked\" }"},
+  {"op": "set", "path": "statuses.blocked.terminal", "value": true},
+  {"op": "rename", "path": "statuses.open", "key": "opened"},
+  {"op": "set", "path": "statuses.opened.label", "value": "Opened"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// A status.
+record Status {
+  /// Its label.
+  label: String
+  /// Whether it closes the post.
+  terminal: Bool = false
+}
+
+/// Statuses.
+let statuses: table Status = {
+  open { label: "Open" }
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "p/p.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "set",
+      "path": "p:statuses.opened.label",
+      "source": "\"Open\""
+    },
+    {
+      "op": "rename",
+      "path": "p:statuses.opened",
+      "key": "open"
+    },
+    {
+      "op": "reset",
+      "path": "p:statuses.blocked.terminal"
+    },
+    {
+      "op": "remove",
+      "path": "p:statuses.blocked"
+    }
+  ],
+  "touched": [
+    "p"
+  ]
+}
+-- after/p/p.canon --
+package p
+
+/// A status.
+record Status {
+  /// Its label.
+  label: String
+  /// Whether it closes the post.
+  terminal: Bool = false
+}
+
+/// Statuses.
+let statuses: table Status = {
+  opened { label: "Opened" }
+  blocked { label: "Blocked", terminal: true }
+}

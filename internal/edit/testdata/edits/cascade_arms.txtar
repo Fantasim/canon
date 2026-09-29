@@ -1,0 +1,142 @@
+API.md E15, E16 by re-typing (log-2026-09-29 M4 U4b-r): f a -> b computes w's type again; both
+arms are Inner, so w still fits and is kept, even though an error is reported inside w (at a
+nested field, not at w's exact path). f -> c makes w an Int: a record no longer fits, w is set to
+none and Dropped.
+-- options --
+pkgs: p
+-- edit.json --
+{"ops": [
+  {"op": "set", "path": "rs.one.f", "source": "b"},
+  {"op": "set", "path": "rs.two.f", "source": "c"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// A form.
+enum F { a, b, c }
+
+/// A kind.
+enum K { num, text }
+
+/// A value by kind.
+type V(k: K) = match k {
+  num => Int
+  text => String
+}
+
+/// The inner value.
+record Inner {
+  /// Its kind.
+  k: K
+  /// Its value.
+  v: V(k)
+}
+
+/// A value by form.
+type W(f: F) = match f {
+  a => Inner
+  b => Inner
+  c => Int
+}
+
+/// A row.
+record R {
+  /// Its form.
+  f: F
+  /// Its value.
+  w: W(f)?
+}
+
+/// Rows.
+let rs: table R = {
+  one { f: a, w: { k: num, v: "not a number" } }
+  two { f: a, w: { k: num, v: 1 } }
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "p/p.canon"
+    }
+  ],
+  "dropped": [
+    {
+      "path": "p:rs.two.w",
+      "value": {
+        "k": "num",
+        "v": 1
+      }
+    }
+  ],
+  "undo": [
+    {
+      "op": "set",
+      "path": "p:rs.two.f",
+      "source": "a"
+    },
+    {
+      "op": "set",
+      "path": "p:rs.one.f",
+      "source": "a"
+    },
+    {
+      "op": "set",
+      "path": "p:rs.two.w",
+      "value": {
+        "k": "num",
+        "v": 1
+      }
+    }
+  ],
+  "touched": [
+    "p"
+  ]
+}
+-- after/p/p.canon --
+package p
+
+/// A form.
+enum F { a, b, c }
+
+/// A kind.
+enum K { num, text }
+
+/// A value by kind.
+type V(k: K) = match k {
+  num => Int
+  text => String
+}
+
+/// The inner value.
+record Inner {
+  /// Its kind.
+  k: K
+  /// Its value.
+  v: V(k)
+}
+
+/// A value by form.
+type W(f: F) = match f {
+  a => Inner
+  b => Inner
+  c => Int
+}
+
+/// A row.
+record R {
+  /// Its form.
+  f: F
+  /// Its value.
+  w: W(f)?
+}
+
+/// Rows.
+let rs: table R = {
+  one { f: b, w: { k: num, v: "not a number" } }
+  two { f: c }
+}

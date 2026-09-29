@@ -1,0 +1,83 @@
+API.md N1, API.md N4, API.md N5: without @files, a table with an entry declared in its own
+file takes new entries as files too, at <package dir>/<value name>/<key>.canon; a keyed list's
+entry file leaves the key field out of the body (TYPES.md §9.3). API.md N3: an existing file at
+that path is ErrPathCollision (see refuse_collision).
+-- options --
+pkgs: shop
+-- edit.json --
+{"ops": [
+  {"op": "addEntry", "path": "offers", "key": "summer", "source": "{ price: 10 }"},
+  {"op": "add", "path": "levels", "source": "{ n: 3, xp: 900 }"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- shop/shop.canon --
+package shop
+
+/// An offer.
+record Offer {
+  /// Its price.
+  price: Int
+}
+
+/// A level.
+record Level {
+  /// Its number.
+  n: Int
+  /// Experience it takes.
+  xp: Int
+}
+
+/// Offers.
+let offers: table Offer = {
+  spring { price: 5 }
+}
+
+/// Levels.
+let levels: [Level] keyed by n = []
+-- shop/extra/autumn.canon --
+package shop
+
+/// Autumn.
+entry offers.autumn { price: 7 }
+-- shop/extra/level1.canon --
+package shop
+
+/// The first level.
+entry levels.1 { xp: 0 }
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "created",
+      "path": "shop/levels/3.canon"
+    },
+    {
+      "kind": "created",
+      "path": "shop/offers/summer.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "remove",
+      "path": "shop:levels[3]"
+    },
+    {
+      "op": "remove",
+      "path": "shop:offers.summer"
+    }
+  ],
+  "touched": [
+    "shop"
+  ]
+}
+-- after/shop/levels/3.canon --
+package shop
+
+entry levels.3 { xp: 900 }
+-- after/shop/offers/summer.canon --
+package shop
+
+entry offers.summer { price: 10 }

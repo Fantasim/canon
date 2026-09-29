@@ -1,0 +1,26 @@
+API.md E2: Reset of a required field is ErrBadOp; nothing is written.
+-- options --
+pkgs: p
+-- edit.json --
+{"ops": [{"op": "reset", "path": "rows.a.count"}]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// A row.
+record Row {
+  /// A count.
+  count: Int
+}
+
+/// Rows.
+let rows: table Row = {
+  a { count: 1 }
+}
+-- result.json --
+{
+  "error": "op 0: operation not valid here"
+}

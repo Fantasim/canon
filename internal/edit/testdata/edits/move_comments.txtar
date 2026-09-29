@@ -1,0 +1,88 @@
+API.md E23: Move's inverse moves the item back. Move is a Remove then an Insert of the item's
+text among the original items (API.md M4, M3: FORMATTER.md 13 defines no move), so the moved
+item's attached comments go with its removal: a gap reported to the orchestrator.
+-- options --
+pkgs: p
+-- edit.json --
+{"ops": [
+  {"op": "move", "path": "statuses.closed", "index": 0},
+  {"op": "move", "path": "weights[spring]", "index": 1}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// A season.
+enum Season { spring, summer }
+
+/// A status.
+record Status {
+  /// Its label.
+  label: String
+}
+
+/// Statuses.
+let statuses: table Status = {
+  /// The first one.
+  open { label: "Open" }
+  /// The last one.
+  closed { label: "Closed" } // closes the post
+}
+
+/// Weights.
+let weights: {Season: Int} = {
+  // spring first
+  spring: 1
+  summer: 2
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "p/p.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "move",
+      "path": "p:weights[spring]",
+      "index": 0
+    },
+    {
+      "op": "move",
+      "path": "p:statuses.closed",
+      "index": 1
+    }
+  ],
+  "touched": [
+    "p"
+  ]
+}
+-- after/p/p.canon --
+package p
+
+/// A season.
+enum Season { spring, summer }
+
+/// A status.
+record Status {
+  /// Its label.
+  label: String
+}
+
+/// Statuses.
+let statuses: table Status = {
+  closed { label: "Closed" }
+  /// The first one.
+  open { label: "Open" }
+}
+
+/// Weights.
+let weights: {Season: Int} = {
+  summer: 2
+  spring: 1
+}

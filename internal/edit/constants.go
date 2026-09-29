@@ -1,6 +1,12 @@
 package edit
 
-import "github.com/fantasim/canonlang/internal/diag"
+import (
+	"context"
+	"io/fs"
+
+	"github.com/fantasim/canonlang/internal/diag"
+	"github.com/fantasim/canonlang/internal/syntax"
+)
 
 // The segment forms of API.md §6.1.
 const (
@@ -208,6 +214,126 @@ const (
 	ChangeRemovedDir // a directory left empty, Path its display path, never a FileChange (API.md N6)
 )
 
+// refusals are the errors Apply returns as they are; any other is an internal failure.
+var refusals = [...]error{
+	ErrBadPath, ErrNoPath, ErrAmbiguousPath, ErrNoValue, ErrNotAnalyzed, ErrForeign, ErrBadValue, ErrBadOp,
+	ErrNoHost, ErrNotEditable, ErrKeyExists, ErrStableKey, ErrPathCollision, ErrNoProject, ErrInternal,
+	context.Canceled, context.DeadlineExceeded,
+}
+
+// reasonNames are the names of API.md §7.2's rows, which a NotEditableError prints.
+var reasonNames = [...]string{
+	ReasonNone: "none", ReasonComputed: "computed", ReasonLayered: "layered", ReasonFormat: "format",
+	ReasonInput: "input", ReasonKey: "key", ReasonPseudo: "pseudo", ReasonOrder: "order", ReasonLayer: "layer",
+}
+
+// handlers apply each operation of API.md §8.3 to the current state.
+var handlers = [...]func(*opCtx) error{
+	OpSet: setOp, OpReset: resetOp, OpAdd: addOp, OpInsert: insertOp, OpAddEntry: addEntryOp,
+	OpRemove: removeOp, OpMove: moveOp, OpRename: renameOp, OpRetire: retireOp,
+	OpUnretire: unretireOp, OpSetCase: setCaseOp,
+}
+
+// Texts an edit writes: Canon literals (API.md M7), new files (N5, W11), JSON sources (M8).
+const (
+	space        = " "
+	newline      = "\n"
+	blankLine    = "\n\n"
+	emptyBrace   = "{}"
+	braceOpenSp  = "{ "
+	braceCloseSp = " }"
+	colonSp      = ": "
+	dotSeg       = "."
+	pointerSep   = "/"
+	globMagic    = "*?[{"
+	globBraces   = "{"
+	tplOpen      = '{'
+	tplClose     = '}'
+)
+
+// Keywords an edit writes, as the lexer spells them (GRAMMAR.md).
+var (
+	retiredWord = syntax.KwRetired.String()
+	noneWord    = syntax.KwNone.String()
+	packageWord = syntax.KwPackage.String()
+	entryWord   = syntax.KwEntry.String()
+	layerWord   = syntax.KwLayer.String()
+	amendWord   = syntax.KwAmend.String()
+)
+
+// The one-field document an edit's value is encoded in to take its source wire (API.md M8).
+const (
+	wireSlot     = "v"
+	wireSchema   = "canon.edit@00000000"
+	wireValuePtr = "/value"
+)
+
+// holderBack is how far from a walk's end the cursor of the target's container is.
+const holderBack = 2
+
+// parentStepBack is how far from a path's end the step whose value holds the last one is.
+const parentStepBack = 2
+
+// regionKind is what a write may put in a region of the file before it (API.md M6).
+type regionKind uint8
+
+// What a region holds after a write: any text (a new file, a normalization), the text of one
+// node (an item printed again), nothing (an item removed), or one new item (an insertion point).
+const (
+	regionAny regionKind = iota
+	regionNode
+	regionGone
+	regionItem
+)
+
+// fitCodes are the findings at a field's exact path that say its value no longer fits its
+// type: type mismatches, refinements, `where`, assets, decoding (log-2026-09-29 M4 U4b-r3).
+var fitCodes = map[diag.Code]bool{
+	diag.E3802.Def().Code: true, diag.E3801.Def().Code: true, diag.E3002.Def().Code: true, diag.E3201.Def().Code: true,
+	diag.E3202.Def().Code: true, diag.E3311.Def().Code: true, diag.E3403.Def().Code: true, diag.E3301.Def().Code: true,
+	diag.E3302.Def().Code: true, diag.E3315.Def().Code: true, diag.E3204.Def().Code: true, diag.E3205.Def().Code: true,
+	diag.E3206.Def().Code: true, diag.E3701.Def().Code: true, diag.E3702.Def().Code: true, diag.E3703.Def().Code: true,
+	diag.E7110.Def().Code: true, diag.E7111.Def().Code: true, diag.E7112.Def().Code: true,
+}
+
+// fsErrors are the sentinels of a file system failure, which Apply returns as they are.
+var fsErrors = [...]error{fs.ErrInvalid, fs.ErrPermission, fs.ErrExist, fs.ErrNotExist, fs.ErrClosed}
+
+// A plain string literal's quote, escape and braces (GRAMMAR.md §2.6).
+const (
+	quoteMark  = jsonQuote
+	escapeMark = `\`
+	braceChars = emptyBrace
+)
+
+// Brackets and spaces the lines around a removed item are read by (FORMATTER.md §13 step 5).
+const (
+	openBrackets  = "{[("
+	closeBrackets = "}])"
+	spaceChars    = " \t"
+)
+
+// A file or a directory that exists only in an edit's memory.
+const (
+	opRead   = "read"
+	fileMode = 0o644
+	dirMode  = 0o755
+)
+
+// Texts of an edit's errors.
+const (
+	fmtNotEditable = "%v: reason %s"
+	fmtCollision   = "%v: %s"
+	fmtOpError     = "operation %d (%s): %v"
+	fmtFile        = "%w: %s"
+	fmtFileErr     = "%s: %w"
+	fmtWrapped     = "%w: %w"
+	fmtUnprinted   = "%w: %T"
+	pathSegment    = "a value a path segment can hold"
+	detailNotWord  = "a table key is a name"
+	detailNotUTF8  = "text that is not UTF-8"
+)
+
 // The members of an operation's JSON form as bits of a set; `value` and `source` are one (E24).
 const (
 	mOp members = 1 << iota
@@ -289,9 +415,6 @@ const (
 	lineEnd = "\n"
 	crlfEnd = "\r\n"
 )
-
-// fmtFileErr is an error about one file: its display path, then the cause.
-const fmtFileErr = "%s: %w"
 
 // The one line Recover logs (API.md O5): how many journals it rolled back, how many files and
 // directories it changed.

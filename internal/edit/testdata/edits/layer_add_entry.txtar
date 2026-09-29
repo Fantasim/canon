@@ -1,0 +1,77 @@
+API.md W11: with an edit layer, AddEntry adds an amendment line that creates the key (LAY-02);
+API.md W11a: into the amendment's literal when the layer already states the collection.
+-- options --
+pkgs: p
+layers: dev
+editLayer: dev
+-- edit.json --
+{"ops": [
+  {"op": "addEntry", "path": "statuses", "key": "blocked", "source": "{ label: \"Blocked\" }"},
+  {"op": "addEntry", "path": "conf.weights", "key": "c", "value": 3}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// A status.
+record Status {
+  /// Its label.
+  label: String
+}
+
+/// Statuses.
+let statuses: table Status = {
+  open { label: "Open" }
+}
+
+/// A configuration.
+record Conf {
+  /// Weights.
+  weights: {String: Int} = {}
+}
+
+/// Configuration.
+let conf: Conf = { weights: { "a": 1 } }
+-- p/dev.layer.canon --
+package p
+layer dev
+
+amend conf {
+  weights: { "a": 1, "b": 2 }
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "p/dev.layer.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "remove",
+      "path": "p:conf.weights[c]"
+    },
+    {
+      "op": "remove",
+      "path": "p:statuses.blocked"
+    }
+  ],
+  "touched": [
+    "p"
+  ]
+}
+-- after/p/dev.layer.canon --
+package p
+layer dev
+
+amend conf {
+  weights: { "a": 1, "b": 2, "c": 3 }
+}
+
+amend statuses {
+  blocked: { label: "Blocked" }
+}

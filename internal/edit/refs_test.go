@@ -11,6 +11,7 @@ import (
 
 	"github.com/fantasim/canonlang/internal/build"
 	"github.com/fantasim/canonlang/internal/edit"
+	"github.com/fantasim/canonlang/internal/source"
 )
 
 // refsR is a package naming the entry statuses.done, and the member Tone.loud, in every place
@@ -184,15 +185,16 @@ func TestRefsListEveryReference(t *testing.T) {
 			"r/r.canon:14 code r done",
 			"r/r.canon:16 check r done",
 			"r/r.canon:21 value r:statuses.open.next[0] done",
-			"r/r.canon:22 value r:pd done { tone: loud }", // converted from the entry: computed
-			"r/r.canon:22 value r:pds[0] done { tone: loud }",
 			"r/r.canon:26 key r:weights[done] done",
 			"r/r.canon:42 code r done",
 			"r/r.canon:45 check r done",
 			"r/r.canon:48 view r done",
-			"r/r.canon:65 value r:picked done", // computed in pick(): not editable, E12
 			"r/r.canon:65 code r done",
-			"r/r.canon:72 code r done", // the name pd is converted from, not hidden
+			// Computed values, at the name of the let holding them (log-2026-09-29 M4 U4a round 3).
+			"r/r.canon:69 value r:picked picked", // computed in pick(): not editable, E12
+			"r/r.canon:72 value r:pd pd",         // converted from the entry
+			"r/r.canon:72 code r done",           // the name pd is converted from, not hidden
+			"r/r.canon:75 value r:pds[0] pds",
 			"r/r.canon:75 code r done",
 			"r/r.canon:78 code r done",             // a test declaration
 			`r/s.json:1 value r:conf.first "done"`, // held in data dev amends
@@ -326,6 +328,81 @@ func TestRefsWalkIsLinear(t *testing.T) {
 	if large > small*6 {
 		t.Errorf("Refs visits %d values for 100 records, %d for 400: not linear", small, large)
 	}
+}
+
+// scaleHistory is what Refs hands History with n records replaced by a layer, and its visits.
+func scaleHistory(t *testing.T, n int) (visits, handed int) {
+	t.Helper()
+	recs := strings.TrimSuffix(strings.Repeat("{ s: done }, ", n), ", ")
+	layer := "package r\nlayer big\n\namend box {\n  recs: [" + strings.ReplaceAll(recs, "done", "open") + "]\n}\n"
+	fsys := mapFS{
+		"law/project.canon":     file("project acme {\n  canon: \"0.1\"\n}\n"),
+		"law/r/r.canon":         file(fmt.Sprintf(scaleR, recs)),
+		"law/r/big.layer.canon": file(layer),
+	}
+	p, err := build.Open(fsys, "/law", build.Options{Layers: []string{"big"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	f := analyze(t, p, []string{"r"}, true)
+	visits, handed, err = edit.RefHistory(context.Background(), f.Snapshot, resolve(t, f, "r:statuses.done"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return visits, handed
+}
+
+// log-2026-09-29 M4 U4a round 3, the History cost: Refs hands History one value per value it
+// visits, never the path above it, so the cost of History grows with the records, not their
+// square, whatever the visit count says.
+func TestRefsHistoryCostIsLinear(t *testing.T) {
+	smallVisits, small := scaleHistory(t, 100)
+	largeVisits, large := scaleHistory(t, 400)
+	if small > smallVisits || large > largeVisits {
+		t.Errorf("History was handed %d and %d values for %d and %d visits: more than one per visit", small, large, smallVisits, largeVisits)
+	}
+	if large > small*6 {
+		t.Errorf("History was handed %d values for 100 records, %d for 400: not linear", small, large)
+	}
+}
+
+// log-2026-09-29 M4 U4a round 3: a name inside a cover is covered even when a nested cover
+// starts between them (a selector and its name), and only then.
+func TestRefsNestedCovers(t *testing.T) {
+	sp := func(start, end int) source.Span {
+		return source.Span{File: 1, Start: source.Pos(start), End: source.Pos(end)}
+	}
+	covers := []source.Span{sp(0, 20), sp(5, 8), sp(30, 32)}
+	for _, c := range []struct {
+		at   source.Span
+		want bool
+	}{{sp(10, 12), true}, {sp(5, 8), true}, {sp(21, 23), false}, {sp(30, 31), true}, {sp(33, 34), false}} {
+		if got := edit.Covered(covers, c.at); got != c.want {
+			t.Errorf("Covered(%v) = %v, want %v", c.at, got, c.want)
+		}
+	}
+}
+
+// crossPkg has package b name a's entry through its import in code, a default and a view.
+var crossPkg = mapFS{
+	"law/project.canon": file("project acme {\n  canon: \"0.1\"\n}\n"),
+	"law/a/a.canon":     file("package a\n\n/// S.\nrecord S {\n  /// L.\n  l: String = \"\"\n}\n\n/// St.\nlet statuses: table S = {\n  open { l: \"o\" }\n}\n"),
+	"law/b/b.canon": file("package b\n\nimport a\n\n/// R.\nrecord R {\n  /// T.\n  t: ref a.statuses = a.statuses.open\n}\n\n" +
+		"/// F.\nfn f() -> ref a.statuses {\n  return a.statuses.open\n}\n\nview R {\n  title \"{a.statuses.open.l}\"\n}\n"),
+}
+
+// API.md R7: a qualified name of another package, `a.statuses.open` through an import, is a
+// reference in code, a default and a view (U5a's report).
+func TestRefsCrossPackageQualified(t *testing.T) {
+	p, err := build.Open(crossPkg, "/law", build.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	checkRefs(t, analyze(t, p, []string{"a", "b"}, true), []refsCase{{"a:statuses.open", []string{
+		"b/b.canon:8 code b open",
+		"b/b.canon:13 code b open",
+		"b/b.canon:17 view b open",
+	}}})
 }
 
 // API.md R7: a path that names no entry, keyed-list element or member is ErrBadOp.

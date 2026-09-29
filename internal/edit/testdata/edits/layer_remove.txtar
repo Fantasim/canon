@@ -1,0 +1,56 @@
+log-2026-09-29 M4 U4b-r, API.md W11: under an edit layer, Remove of an entry the layer itself
+added removes its amendment line, and the `amend` block it leaves empty with it (log-2026-09-29 M4
+U4b-r3); its inverse adds it again through the layer (API.md E23).
+-- options --
+pkgs: p
+layers: dev
+editLayer: dev
+-- edit.json --
+{"ops": [{"op": "remove", "path": "statuses.blocked"}]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// A status.
+record Status {
+  /// Its label.
+  label: String
+}
+
+/// Statuses.
+let statuses: table Status = {
+  open { label: "Open" }
+}
+-- p/dev.layer.canon --
+package p
+layer dev
+
+amend statuses {
+  blocked: { label: "Blocked" }
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "p/dev.layer.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "addEntry",
+      "path": "p:statuses",
+      "key": "blocked",
+      "source": "{ label: \"Blocked\" }"
+    }
+  ],
+  "touched": [
+    "p"
+  ]
+}
+-- after/p/dev.layer.canon --
+package p
+layer dev

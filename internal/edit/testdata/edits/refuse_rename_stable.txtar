@@ -1,0 +1,26 @@
+API.md E13, E4: Rename of an entry of a stable table is ErrStableKey.
+-- options --
+pkgs: a
+-- edit.json --
+{"ops": [{"op": "rename", "path": "statuses.open", "key": "opened"}]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+/// A status.
+record Status {
+  /// Its label.
+  label: String = ""
+}
+
+/// The statuses.
+let statuses: stable table Status = {
+  open { label: "Open" }
+}
+-- result.json --
+{
+  "error": "op 0: key of a stable table"
+}

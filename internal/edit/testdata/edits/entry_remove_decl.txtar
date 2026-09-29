@@ -1,0 +1,55 @@
+API.md N6: Remove of an entry declared in a file that declares other things removes the
+declaration alone (M4), its doc comment with it; the file stays.
+-- options --
+pkgs: shop
+undoUnordered: true
+-- edit.json --
+{"ops": [{"op": "remove", "path": "offers.autumn"}]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- shop/shop.canon --
+package shop
+
+/// An offer.
+record Offer {
+  /// Its price.
+  price: Int
+}
+
+/// Offers.
+let offers: table Offer = {}
+-- shop/extra/seasons.canon --
+package shop
+
+/// Autumn.
+entry offers.autumn { price: 7 }
+
+/// Winter.
+entry offers.winter { price: 9 }
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "shop/extra/seasons.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "addEntry",
+      "path": "shop:offers",
+      "key": "autumn",
+      "source": "{ price: 7 }"
+    }
+  ],
+  "touched": [
+    "shop"
+  ]
+}
+-- after/shop/extra/seasons.canon --
+package shop
+
+/// Winter.
+entry offers.winter { price: 9 }

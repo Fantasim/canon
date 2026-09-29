@@ -39,7 +39,7 @@ func (s *Snapshot) inAmendment(it item, res resolution, i int) Editability {
 		switch s.nodeForm(it.node) {
 		case shape.FormLiteral:
 		case shape.FormJSON:
-			return Editability{Mode: ModeJSON, File: loadDisplay(it.file, it.node)}
+			return jsonEditability(loadDisplay(it.file, it.node))
 		default:
 			return Editability{Reason: ReasonComputed}
 		}
@@ -50,6 +50,14 @@ func (s *Snapshot) inAmendment(it item, res resolution, i int) Editability {
 		it.node = n
 	}
 	return Editability{Mode: ModeCanon, File: it.file.Src.Path, Span: it.file.Span(it.node)}
+}
+
+// jsonEditability is an edit of the JSON source at display, whose name must be `.json` (API.md W4).
+func jsonEditability(display string) Editability {
+	if display != "" && !jsonFileName(display) {
+		return Editability{Reason: ReasonFormat}
+	}
+	return Editability{Mode: ModeJSON, File: display}
 }
 
 // missingChild is step i, absent from the amendment literal it: a record field is inserted into

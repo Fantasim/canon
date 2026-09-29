@@ -1,0 +1,101 @@
+A table loaded with load.dir is keyed by each file's stem (WIRE.md §6.5): API.md E11, N8,
+Rename of an entry renames its file and keeps its content; API.md E10, Retire writes
+`"$retired": true` first in the entry's object, the file's top-level object. API.md N1, N4:
+AddEntry creates `<key>.json` in the glob's directory.
+-- options --
+pkgs: guild
+-- edit.json --
+{"ops": [
+  {"op": "rename", "path": "ranks.rookie", "key": "novice"},
+  {"op": "retire", "path": "rights.invite"},
+  {"op": "addEntry", "path": "rights", "key": "promote", "value": {"code": 4}}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- guild/guild.canon --
+package guild
+
+/// A guild right.
+record Right {
+  /// Its code.
+  code: Int
+  /// Whether officers hold it.
+  officers: Bool = false
+}
+
+/// One file per right.
+let rights: stable table Right = load.dir("rights/*.json")
+
+/// A guild rank.
+record Rank {
+  /// Its order.
+  order: Int
+}
+
+/// One file per rank.
+let ranks: table Rank = load.dir("ranks/*.json")
+-- guild/rights/invite.json --
+{
+  "code": 1,
+  "officers": true
+}
+-- guild/rights/kick.json --
+{
+  "code": 2
+}
+-- guild/ranks/master.json --
+{
+  "order": 1
+}
+-- guild/ranks/rookie.json --
+{
+  "order": 5
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "renamed",
+      "path": "guild/ranks/novice.json",
+      "oldPath": "guild/ranks/rookie.json"
+    },
+    {
+      "kind": "modified",
+      "path": "guild/rights/invite.json"
+    },
+    {
+      "kind": "created",
+      "path": "guild/rights/promote.json"
+    }
+  ],
+  "undo": [
+    {
+      "op": "remove",
+      "path": "guild:rights.promote"
+    },
+    {
+      "op": "rename",
+      "path": "guild:ranks.novice",
+      "key": "rookie"
+    }
+  ],
+  "touched": [
+    "guild"
+  ]
+}
+-- after/guild/ranks/novice.json --
+{
+  "order": 5
+}
+-- after/guild/rights/invite.json --
+{
+  "$retired": true,
+  "code": 1,
+  "officers": true
+}
+-- after/guild/rights/promote.json --
+{
+  "code": 4
+}

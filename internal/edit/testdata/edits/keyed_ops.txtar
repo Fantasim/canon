@@ -1,0 +1,138 @@
+API.md §8.3 on a keyed list, a table and a map: Add takes its key from the value, AddEntry
+adds an entry at the end of the literal (M3), Remove removes an entry (M4) and a map entry,
+Move moves an entry; API.md E23: Remove's inverse is AddEntry then Move back, Insert for a list.
+-- options --
+pkgs: p
+-- edit.json --
+{"ops": [
+  {"op": "add", "path": "models", "source": "{ typeId: 9, name: \"nine\" }"},
+  {"op": "addEntry", "path": "statuses", "key": "blocked", "source": "{ label: \"Blocked\" }"},
+  {"op": "addEntry", "path": "weights", "key": "autumn", "value": 3},
+  {"op": "remove", "path": "statuses.open"},
+  {"op": "remove", "path": "weights[spring]"},
+  {"op": "move", "path": "models[4]", "index": 0}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// A season.
+enum Season { spring, summer, autumn }
+
+/// A model.
+record Model {
+  /// Its id.
+  typeId: Int
+  /// Its name.
+  name: String
+}
+
+/// A status.
+record Status {
+  /// Its label.
+  label: String
+}
+
+/// Models.
+let models: [Model] keyed by typeId = [{ typeId: 3, name: "three" }, { typeId: 4, name: "four" }]
+
+/// Statuses.
+let statuses: table Status = {
+  /// The first one.
+  open { label: "Open" }
+  closed { label: "Closed" }
+}
+
+/// Weights.
+let weights: {Season: Int} = { spring: 1, summer: 2 }
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "p/p.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "move",
+      "path": "p:models[4]",
+      "index": 1
+    },
+    {
+      "op": "addEntry",
+      "path": "p:weights",
+      "key": "spring",
+      "source": "1"
+    },
+    {
+      "op": "move",
+      "path": "p:weights[spring]",
+      "index": 0
+    },
+    {
+      "op": "addEntry",
+      "path": "p:statuses",
+      "key": "open",
+      "source": "{ label: \"Open\" }"
+    },
+    {
+      "op": "move",
+      "path": "p:statuses.open",
+      "index": 0
+    },
+    {
+      "op": "remove",
+      "path": "p:weights[autumn]"
+    },
+    {
+      "op": "remove",
+      "path": "p:statuses.blocked"
+    },
+    {
+      "op": "remove",
+      "path": "p:models[9]"
+    }
+  ],
+  "touched": [
+    "p"
+  ]
+}
+-- after/p/p.canon --
+package p
+
+/// A season.
+enum Season { spring, summer, autumn }
+
+/// A model.
+record Model {
+  /// Its id.
+  typeId: Int
+  /// Its name.
+  name: String
+}
+
+/// A status.
+record Status {
+  /// Its label.
+  label: String
+}
+
+/// Models.
+let models: [Model] keyed by typeId = [
+  { typeId: 4, name: "four" },
+  { typeId: 3, name: "three" },
+  { typeId: 9, name: "nine" },
+]
+
+/// Statuses.
+let statuses: table Status = {
+  closed { label: "Closed" }
+  blocked { label: "Blocked" }
+}
+
+/// Weights.
+let weights: {Season: Int} = { summer: 2, autumn: 3 }

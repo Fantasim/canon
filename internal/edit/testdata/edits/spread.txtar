@@ -1,0 +1,70 @@
+API.md W9: a field present after a spread is edited in place; a field the spread supplies is
+edited by inserting an override into the spreading literal, after the spread; the base is not
+changed through the derived value.
+-- options --
+pkgs: p
+-- edit.json --
+{"ops": [
+  {"op": "set", "path": "derived.label", "value": "Other"},
+  {"op": "set", "path": "derived.x", "value": 7}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// A base.
+record Base {
+  /// X.
+  x: Int = 1
+  /// A label.
+  label: String = ""
+}
+
+/// The base.
+let base: Base = { x: 5, label: "Base" }
+
+/// A value derived from the base.
+let derived: Base = { ...base, label: "Derived" }
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "p/p.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "set",
+      "path": "p:derived.x",
+      "source": "5"
+    },
+    {
+      "op": "set",
+      "path": "p:derived.label",
+      "source": "\"Derived\""
+    }
+  ],
+  "touched": [
+    "p"
+  ]
+}
+-- after/p/p.canon --
+package p
+
+/// A base.
+record Base {
+  /// X.
+  x: Int = 1
+  /// A label.
+  label: String = ""
+}
+
+/// The base.
+let base: Base = { x: 5, label: "Base" }
+
+/// A value derived from the base.
+let derived: Base = { ...base, x: 7, label: "Other" }

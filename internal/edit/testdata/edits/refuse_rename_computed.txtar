@@ -1,0 +1,35 @@
+API.md E12: a reference of kind value that is not editable, here a ref a function computes,
+refuses the whole rename with ErrNotEditable; the refusal lists every such reference.
+-- options --
+pkgs: a
+-- edit.json --
+{"ops": [{"op": "rename", "path": "statuses.open", "key": "opened"}]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+/// A status.
+record Status {
+  /// Its label.
+  label: String = ""
+}
+
+/// The statuses.
+let statuses: table Status = {
+  open { label: "Open" }
+}
+
+/// Picks one.
+fn pick() -> ref statuses {
+  return statuses.open
+}
+
+/// The picked status.
+let picked: ref statuses = pick()
+-- result.json --
+{
+  "error": "op 0: value not editable: reason computed refs a:picked"
+}

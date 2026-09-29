@@ -1,0 +1,88 @@
+API.md §8.3 Add, Insert, Remove, Move on a plain list: API.md M3 inserts on the list's one
+line while it fits, and API.md M5 breaks the list when it no longer does; API.md M4 removes an
+element with its comment; Move counts the new position after the removal. API.md E23: each
+inverse, in reverse order of the operations.
+-- options --
+pkgs: p
+-- edit.json --
+{"ops": [
+  {"op": "add", "path": "short", "value": 4},
+  {"op": "insert", "path": "short", "index": 0, "value": 0},
+  {"op": "add", "path": "long", "value": "a string long enough to push the list past the width"},
+  {"op": "remove", "path": "broken[1]"},
+  {"op": "move", "path": "short[4]", "index": 1}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// Short.
+let short: [Int] = [1, 2, 3]
+
+/// Long.
+let long: [String] = ["one", "two", "three", "four"]
+
+/// Broken.
+let broken: [Int] = [
+  10,
+  // twenty goes
+  20,
+  30,
+]
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "p/p.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "move",
+      "path": "p:short[1]",
+      "index": 4
+    },
+    {
+      "op": "insert",
+      "path": "p:broken",
+      "index": 1,
+      "source": "20"
+    },
+    {
+      "op": "remove",
+      "path": "p:long[4]"
+    },
+    {
+      "op": "remove",
+      "path": "p:short[0]"
+    },
+    {
+      "op": "remove",
+      "path": "p:short[3]"
+    }
+  ],
+  "touched": [
+    "p"
+  ]
+}
+-- after/p/p.canon --
+package p
+
+/// Short.
+let short: [Int] = [0, 4, 1, 2, 3]
+
+/// Long.
+let long: [String] = [
+  "one",
+  "two",
+  "three",
+  "four",
+  "a string long enough to push the list past the width",
+]
+
+/// Broken.
+let broken: [Int] = [10, 30]

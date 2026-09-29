@@ -1,0 +1,55 @@
+API.md E14: SetCase keeps the old case's fields the new case has with the same type,
+refinements aside, whose values fit the new refinements; the given fields override; every
+other old field is reported in Dropped, in its wire form. SetCase to the current case only
+applies the fields. API.md E23: its inverse is Set of the old whole variant value.
+-- options --
+pkgs: ev
+-- edit.json --
+{"ops": [
+  {"op": "setCase", "path": "events.rain.kind", "case": "drop", "source": "{ item: \"II_MOON\" }"},
+  {"op": "setCase", "path": "events.fair.kind", "case": "spawn", "source": "{ count: 5 }"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- ev/ev.canon --
+package ev
+
+/// What an event does.
+variant Kind {
+  /// Spawns in a region.
+  spawn {
+    /// The region.
+    region: Int
+    /// How many.
+    count: Int(1..=10) = 1
+    /// A note.
+    note: String = ""
+  }
+  /// Drops an item.
+  drop {
+    /// The item.
+    item: String
+    /// How many.
+    count: Int(1..=3) = 1
+    /// A note.
+    note: String = ""
+  }
+}
+
+/// An event.
+record Event {
+  /// What it does.
+  kind: Kind
+}
+
+/// The events.
+let events: table Event = {
+  rain { kind: spawn { region: 1, count: 4, note: "wet" } }
+  fair { kind: spawn { region: 2 } }
+}
+-- result.json --
+{
+  "error": "op 1: value not computed at segment -1"
+}

@@ -1,0 +1,110 @@
+API.md W11a with an edit layer that is not active: its amendment of an ancestor of the path
+is read from its text and edited inside its literal (a Set, a Reset leaving the field out, an
+AddEntry, a Remove of an entry the layer states); a path it does not amend gets its own line.
+API.md E23: each inverse restores the value the layer held, or removes the new line (Reset).
+-- options --
+pkgs: p
+editLayer: dev
+-- edit.json --
+{"ops": [
+  {"op": "set", "path": "holder.data.n", "value": 4},
+  {"op": "reset", "path": "holder.data.id"},
+  {"op": "addEntry", "path": "conf.weights", "key": "c", "value": 3},
+  {"op": "remove", "path": "conf.weights[b]"},
+  {"op": "set", "path": "conf.limit", "value": 7}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// An item.
+record Item {
+  /// Its id.
+  id: String = "i"
+  /// A count.
+  n: Int = 0
+}
+
+/// Holds an item.
+record Holder {
+  /// The item.
+  data: Item
+}
+
+/// A configuration.
+record Conf {
+  /// Weights.
+  weights: {String: Int} = {}
+  /// A limit.
+  limit: Int = 1
+}
+
+/// A holder.
+let holder: Holder = { data: { id: "h" } }
+
+/// Configuration.
+let conf: Conf = { weights: { "a": 1, "b": 2 } }
+-- p/dev.layer.canon --
+package p
+layer dev
+
+amend holder {
+  data: { id: "hd", n: 1 }
+}
+
+amend conf {
+  weights: { "a": 1, "b": 2 }
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "p/dev.layer.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "reset",
+      "path": "p:conf.limit"
+    },
+    {
+      "op": "set",
+      "path": "p:conf.weights",
+      "source": "{ \"a\": 1, \"b\": 2, \"c\": 3 }"
+    },
+    {
+      "op": "set",
+      "path": "p:conf.weights",
+      "source": "{ \"a\": 1, \"b\": 2 }"
+    },
+    {
+      "op": "set",
+      "path": "p:holder.data.id",
+      "source": "\"hd\""
+    },
+    {
+      "op": "set",
+      "path": "p:holder.data.n",
+      "source": "1"
+    }
+  ],
+  "touched": [
+    "p"
+  ]
+}
+-- after/p/dev.layer.canon --
+package p
+layer dev
+
+amend holder {
+  data: { n: 4 }
+}
+
+amend conf {
+  weights: { "a": 1, "c": 3 }
+  limit: 7
+}

@@ -1,0 +1,36 @@
+API.md W11: under an edit layer, Remove of an entry of the base, which the layer does not state,
+is ErrNotEditable with reason layer.
+-- options --
+pkgs: p
+layers: dev
+editLayer: dev
+-- edit.json --
+{"ops": [{"op": "remove", "path": "statuses.open"}]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// A status.
+record Status {
+  /// Its label.
+  label: String
+}
+
+/// Statuses.
+let statuses: table Status = {
+  open { label: "Open" }
+}
+-- p/dev.layer.canon --
+package p
+layer dev
+
+amend statuses {
+  blocked: { label: "Blocked" }
+}
+-- result.json --
+{
+  "error": "op 0: value not editable: reason layer"
+}

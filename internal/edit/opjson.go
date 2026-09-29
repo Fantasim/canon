@@ -9,7 +9,6 @@ import (
 	"strconv"
 
 	"github.com/fantasim/canonlang/internal/diag"
-	"github.com/fantasim/canonlang/internal/value"
 )
 
 // members is a set of the members of an operation's JSON form.
@@ -111,21 +110,21 @@ func keyJSON(k Lit) ([]byte, error) {
 	return nil, fmt.Errorf(fmtOpJSON, ErrOpJSON, jsonMembers[iKey].name)
 }
 
-// valueJSON is a value's member and text (E26): a FromJSON compacted, a Source as given, None.
+// valueJSON is a value's member and text (E26): a FromJSON compacted as `value`, any other
+// value as `source`, its Canon literal laid out by format.Flat.
 func valueJSON(v Lit) (int, []byte, error) {
-	switch x := v.(type) {
-	case FromJSON:
+	if x, ok := v.(FromJSON); ok {
 		var b bytes.Buffer
 		if err := json.Compact(&b, x); err != nil {
 			return 0, nil, fmt.Errorf(fmtOpJSONErr, ErrOpJSON, jsonMembers[iValue].name, err)
 		}
 		return iValue, b.Bytes(), nil
-	case Source:
-		return iSource, diag.AppendJSONString(nil, string(x)), nil
-	case None:
-		return iSource, diag.AppendJSONString(nil, (&value.None{}).CanonText()), nil
 	}
-	return 0, nil, fmt.Errorf(fmtOpJSON, ErrNoText, describe(v))
+	text, err := sourceText(v)
+	if err != nil {
+		return 0, nil, fmt.Errorf(fmtOpJSON, ErrNoText, describe(v))
+	}
+	return iSource, diag.AppendJSONString(nil, text), nil
 }
 
 // UnmarshalJSON reads the JSON form of API.md E24-E26, refusing unknown, repeated and misplaced members.

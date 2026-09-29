@@ -1,0 +1,83 @@
+API.md W8: Set below a record that exists only through its default materializes it: the
+inserted literal is its current value with the change applied, printed without the fields
+equal to their own defaults. API.md E23: the inverse is Reset of the path.
+-- options --
+pkgs: svc
+-- edit.json --
+{"ops": [{"op": "set", "path": "config.server.port", "value": 9000}]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- svc/svc.canon --
+package svc
+
+/// A server.
+record Server {
+  /// Host.
+  host: String = "localhost"
+  /// Port.
+  port: Int = 8080
+}
+
+/// Paths.
+record Paths {
+  /// Root.
+  root: String = "."
+}
+
+/// The configuration.
+record Config {
+  /// The server.
+  server: Server = {}
+  /// The paths.
+  paths: Paths = {}
+}
+
+/// The service's configuration.
+let config: Config = {}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "svc/svc.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "reset",
+      "path": "svc:config.server.port"
+    }
+  ],
+  "touched": [
+    "svc"
+  ]
+}
+-- after/svc/svc.canon --
+package svc
+
+/// A server.
+record Server {
+  /// Host.
+  host: String = "localhost"
+  /// Port.
+  port: Int = 8080
+}
+
+/// Paths.
+record Paths {
+  /// Root.
+  root: String = "."
+}
+
+/// The configuration.
+record Config {
+  /// The server.
+  server: Server = {}
+  /// The paths.
+  paths: Paths = {}
+}
+
+/// The service's configuration.
+let config: Config = { server: { port: 9000 } }

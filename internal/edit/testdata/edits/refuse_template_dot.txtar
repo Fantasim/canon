@@ -1,0 +1,26 @@
+API.md N2 (log-2026-09-29 U4c final): a template value starting with "." would name a hidden
+file, which the scan skips: ErrBadValue; nothing is written.
+-- options --
+pkgs: shop
+-- edit.json --
+{"ops": [{"op": "addEntry", "path": "offers", "key": "summer", "source": "{ group: \".hidden\" }"}]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- shop/shop.canon --
+package shop
+
+/// An offer.
+record Offer {
+  /// Its group.
+  group: String
+}
+
+/// Offers, each in its own file.
+@files("offers/{group}/{id}.canon")
+let offers: table Offer = {}
+-- result.json --
+{
+  "error": "op 0: value does not fit the type: expected a value a path segment can hold, got .hidden: template value not usable in a path"
+}

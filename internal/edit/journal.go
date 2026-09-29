@@ -55,8 +55,8 @@ type fault struct {
 
 func (f *fault) Error() string { return f.reason + detailSep + f.name }
 
-// refusal is err under sentinel when it is a fault; any other error stays as it is.
-func refusal(sentinel, err error) error {
+// journalRefusal is err under sentinel when it is a fault; any other error stays as it is.
+func journalRefusal(sentinel, err error) error {
 	var f *fault
 	if errors.As(err, &f) {
 		return fmt.Errorf(fmtBadMember, sentinel, err)

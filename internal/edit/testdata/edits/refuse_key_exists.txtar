@@ -1,0 +1,26 @@
+API.md E3: Add of a keyed-list element whose key exists is ErrKeyExists; nothing is written.
+-- options --
+pkgs: p
+-- edit.json --
+{"ops": [{"op": "add", "path": "models", "source": "{ typeId: 3, name: \"again\" }"}]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// A model.
+record Model {
+  /// Its id.
+  typeId: Int
+  /// Its name.
+  name: String
+}
+
+/// Models.
+let models: [Model] keyed by typeId = [{ typeId: 3, name: "three" }]
+-- result.json --
+{
+  "error": "op 0: key already exists"
+}

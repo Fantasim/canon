@@ -1,0 +1,26 @@
+API.md E2: an operation on a container kind it does not support is ErrBadOp: Add on a table.
+-- options --
+pkgs: p
+-- edit.json --
+{"ops": [{"op": "add", "path": "statuses", "source": "{ label: \"New\" }"}]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// A status.
+record Status {
+  /// Its label.
+  label: String
+}
+
+/// Statuses.
+let statuses: table Status = {
+  open { label: "Open" }
+}
+-- result.json --
+{
+  "error": "op 0: operation not valid here"
+}

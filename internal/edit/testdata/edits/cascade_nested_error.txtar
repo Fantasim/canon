@@ -1,0 +1,108 @@
+API.md E15 (log-2026-09-29 M4 U4b-r3): a value whose new concrete type is the same keeps its
+field even when a finding is already reported below it (E3802 at w.v); only a finding of its fit
+at its exact path drops it.
+-- options --
+pkgs: dep
+-- edit.json --
+{"ops": [
+  {"op": "set", "path": "things.a.f", "value": false}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- dep/dep.canon --
+package dep
+
+/// A kind.
+enum K { a, b }
+
+/// By kind.
+type T(k: K) = match k {
+  a => Int
+  b => String
+}
+
+/// Inner.
+record Inner {
+  /// Kind.
+  k: K
+  /// Val.
+  v: T(k)
+}
+
+/// By flag.
+type W(f: Bool) = match f {
+  true => Inner
+  false => Inner
+}
+
+/// A thing.
+record Thing {
+  /// Flag.
+  f: Bool
+  /// Wrapped.
+  w: W(f)?
+}
+
+/// Things.
+let things: table Thing = {
+  a { f: true, w: { k: a, v: "oops" } }
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "dep/dep.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "set",
+      "path": "dep:things.a.f",
+      "source": "true"
+    }
+  ],
+  "touched": [
+    "dep"
+  ]
+}
+-- after/dep/dep.canon --
+package dep
+
+/// A kind.
+enum K { a, b }
+
+/// By kind.
+type T(k: K) = match k {
+  a => Int
+  b => String
+}
+
+/// Inner.
+record Inner {
+  /// Kind.
+  k: K
+  /// Val.
+  v: T(k)
+}
+
+/// By flag.
+type W(f: Bool) = match f {
+  true => Inner
+  false => Inner
+}
+
+/// A thing.
+record Thing {
+  /// Flag.
+  f: Bool
+  /// Wrapped.
+  w: W(f)?
+}
+
+/// Things.
+let things: table Thing = {
+  a { f: false, w: { k: a, v: "oops" } }
+}

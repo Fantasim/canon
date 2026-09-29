@@ -45,7 +45,7 @@ func Recover(s Site, logger *slog.Logger) error {
 			changes += n
 		}
 		if err != nil {
-			errs = append(errs, fmt.Errorf(fmtFileErr, path.Base(name), refusal(ErrJournal, err)))
+			errs = append(errs, fmt.Errorf(fmtFileErr, path.Base(name), journalRefusal(ErrJournal, err)))
 		}
 	}
 	if rolled > 0 && logger != nil {

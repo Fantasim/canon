@@ -1,0 +1,108 @@
+API.md E6: Set of a field to its default removes it from its literal, as Reset would, even
+when the default is computed from an earlier field (TYP-15). API.md E7: Set of none to a field
+whose default is none removes it; to a field with another default, it writes `none`. API.md
+M4: a removed field goes with its line and its comments.
+-- options --
+pkgs: p
+-- edit.json --
+{"ops": [
+  {"op": "set", "path": "rows.a.terminal", "value": false},
+  {"op": "set", "path": "rows.a.by", "value": null},
+  {"op": "set", "path": "rows.b.hint", "value": null},
+  {"op": "set", "path": "rows.b.limit", "value": 11}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// Who.
+enum Actor { reporter, triager }
+
+/// A row.
+record Row {
+  /// A count.
+  count: Int
+  /// Terminal.
+  terminal: Bool = false
+  /// Who.
+  by: Actor? = none
+  /// A hint.
+  hint: String? = "none yet"
+  /// A limit: one more than the count by default.
+  limit: Int = count + 1
+}
+
+/// Rows.
+let rows: table Row = {
+  a {
+    count: 1
+    terminal: false
+    // who set it
+    by: triager
+  }
+  b { count: 10, hint: "set", limit: 20 }
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "p/p.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "set",
+      "path": "p:rows.b.limit",
+      "source": "20"
+    },
+    {
+      "op": "set",
+      "path": "p:rows.b.hint",
+      "source": "\"set\""
+    },
+    {
+      "op": "set",
+      "path": "p:rows.a.by",
+      "source": "triager"
+    },
+    {
+      "op": "set",
+      "path": "p:rows.a.terminal",
+      "source": "false"
+    }
+  ],
+  "touched": [
+    "p"
+  ]
+}
+-- after/p/p.canon --
+package p
+
+/// Who.
+enum Actor { reporter, triager }
+
+/// A row.
+record Row {
+  /// A count.
+  count: Int
+  /// Terminal.
+  terminal: Bool = false
+  /// Who.
+  by: Actor? = none
+  /// A hint.
+  hint: String? = "none yet"
+  /// A limit: one more than the count by default.
+  limit: Int = count + 1
+}
+
+/// Rows.
+let rows: table Row = {
+  a {
+    count: 1
+  }
+  b { count: 10, hint: none }
+}

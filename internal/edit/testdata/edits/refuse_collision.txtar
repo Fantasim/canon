@@ -1,0 +1,34 @@
+API.md N3: a new entry file whose path is taken is ErrPathCollision; nothing is written.
+-- options --
+pkgs: shop
+-- edit.json --
+{"ops": [{"op": "addEntry", "path": "offers", "key": "summer", "source": "{ price: 10 }"}]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- shop/shop.canon --
+package shop
+
+/// An offer.
+record Offer {
+  /// Its price.
+  price: Int
+}
+
+/// Offers.
+let offers: table Offer = {}
+-- shop/extra/autumn.canon --
+package shop
+
+/// Autumn.
+entry offers.autumn { price: 7 }
+-- shop/offers/summer.canon --
+package shop
+
+/// Not an entry of offers, but the file is taken.
+let other: Int = 1
+-- result.json --
+{
+  "error": "op 0: file already exists: shop/offers/summer.canon"
+}

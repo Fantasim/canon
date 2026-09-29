@@ -1,0 +1,57 @@
+API.md E7, third bullet (log-2026-09-29 M4 U4b-r): a record-level Set whose value gives none to
+a field with a @json(none: X) marker and the default none writes the marker X in the JSON
+source; the field is not removed. Other fields are compared one by one (M1).
+-- options --
+pkgs: pipe
+-- edit.json --
+{"ops": [{"op": "set", "path": "potion", "source": "{ id: \"II_POT\", heal: 500, parent: none }"}]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- pipe/pipe.canon --
+package pipe
+
+/// A healing potion.
+record Potion {
+  /// The item define.
+  id: String @json("dwID")
+  /// Hit points restored.
+  heal: Int @json("nHeal")
+  /// The potion it upgrades, if any.
+  parent: String? = none @json("dwParent", none: "")
+}
+
+/// One potion.
+let potion: Potion = load("potion.json")
+-- pipe/potion.json --
+{
+  "dwID": "II_POT",
+  "nHeal": 400,
+  "dwParent": "II_BASE"
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "pipe/potion.json"
+    }
+  ],
+  "undo": [
+    {
+      "op": "set",
+      "path": "pipe:potion",
+      "source": "{ id: \"II_POT\", heal: 400, parent: \"II_BASE\" }"
+    }
+  ],
+  "touched": [
+    "pipe"
+  ]
+}
+-- after/pipe/potion.json --
+{
+  "dwID": "II_POT",
+  "nHeal": 500,
+  "dwParent": ""
+}

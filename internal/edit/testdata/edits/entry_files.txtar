@@ -1,0 +1,134 @@
+API.md N1, API.md N2, API.md N3, API.md N5: AddEntry on a table whose let has @files creates the file its template
+names with the new entry's values (an enum by its wire value, a variant by its case's wire
+name), relative to the package directory: the package line, a blank line, and the entry
+printed canonically. API.md N6: Remove of an entry alone in its file deletes the file and the
+directories it leaves empty, up to the package directory. API.md E11, N8: Rename of an entry
+whose file the template names renames the file, keeping its content but the key. API.md E1: a
+later operation edits the file an earlier one created, in a new directory.
+-- options --
+pkgs: game.items
+-- edit.json --
+{"ops": [
+  {"op": "addEntry", "path": "items", "key": "II_WEA_SWORD", "source": "{ level: 3, kind: weapon { hands: 2 } }"},
+  {"op": "remove", "path": "items.II_GEN_MAT_MOONSTONE"},
+  {"op": "rename", "path": "items.II_WEA_AXE", "key": "II_WEA_AXE_ANGEL"},
+  {"op": "addEntry", "path": "items", "key": "II_ARM_VEST", "source": "{ kind: armor }"},
+  {"op": "set", "path": "items.II_ARM_VEST.level", "value": 12}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- game/items/item.canon --
+package game.items
+
+/// What an item is.
+variant Kind {
+  /// A material.
+  general @json("IK1_GENERAL")
+  /// A weapon.
+  weapon @json("IK1_WEAPON") {
+    /// Hands it takes.
+    hands: Int = 1
+  }
+  /// An armor.
+  armor @json("IK1_ARMOR")
+}
+
+/// An item.
+record Item {
+  /// Its level.
+  level: Int = 1
+  /// What it is.
+  kind: Kind
+}
+
+/// Items, each in its own file.
+@files("entries/{kind}/{id}.canon")
+let items: table Item = {}
+-- game/items/entries/IK1_GENERAL/II_GEN_MAT_MOONSTONE.canon --
+package game.items
+
+/// Moonstone.
+entry items.II_GEN_MAT_MOONSTONE { level: 4, kind: general }
+-- game/items/entries/IK1_WEAPON/II_WEA_AXE.canon --
+package game.items
+
+/// An axe.
+entry items.II_WEA_AXE {
+  level: 30
+  kind: weapon { hands: 2 }
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "created",
+      "path": "game/items/entries/IK1_ARMOR/II_ARM_VEST.canon"
+    },
+    {
+      "kind": "deleted",
+      "path": "game/items/entries/IK1_GENERAL/II_GEN_MAT_MOONSTONE.canon"
+    },
+    {
+      "kind": "renamed",
+      "path": "game/items/entries/IK1_WEAPON/II_WEA_AXE_ANGEL.canon",
+      "oldPath": "game/items/entries/IK1_WEAPON/II_WEA_AXE.canon"
+    },
+    {
+      "kind": "created",
+      "path": "game/items/entries/IK1_WEAPON/II_WEA_SWORD.canon"
+    },
+    {
+      "kind": "dirRemoved",
+      "path": "game/items/entries/IK1_GENERAL"
+    }
+  ],
+  "undo": [
+    {
+      "op": "reset",
+      "path": "game.items:items.II_ARM_VEST.level"
+    },
+    {
+      "op": "remove",
+      "path": "game.items:items.II_ARM_VEST"
+    },
+    {
+      "op": "rename",
+      "path": "game.items:items.II_WEA_AXE_ANGEL",
+      "key": "II_WEA_AXE"
+    },
+    {
+      "op": "addEntry",
+      "path": "game.items:items",
+      "key": "II_GEN_MAT_MOONSTONE",
+      "source": "{ level: 4, kind: general }"
+    },
+    {
+      "op": "remove",
+      "path": "game.items:items.II_WEA_SWORD"
+    }
+  ],
+  "touched": [
+    "game.items"
+  ]
+}
+-- after/game/items/entries/IK1_ARMOR/II_ARM_VEST.canon --
+package game.items
+
+entry items.II_ARM_VEST { level: 12, kind: armor }
+-- after/game/items/entries/IK1_WEAPON/II_WEA_AXE_ANGEL.canon --
+package game.items
+
+/// An axe.
+entry items.II_WEA_AXE_ANGEL {
+  level: 30
+  kind: weapon { hands: 2 }
+}
+-- after/game/items/entries/IK1_WEAPON/II_WEA_SWORD.canon --
+package game.items
+
+entry items.II_WEA_SWORD {
+  level: 3
+  kind: weapon { hands: 2 }
+}

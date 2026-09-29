@@ -1,0 +1,85 @@
+API.md E15 by re-typing (log-2026-09-29 M4 U4b-r) in a JSON source: goal kill -> collect makes
+target's type Int; "wolf" no longer decodes (E7110 at its exact pointer), so the field, optional,
+is set to none (E7: its member removed) and Dropped. API.md E22: Undo restores the driver first,
+then the dropped value as FromJSON, typed at that state.
+-- options --
+pkgs: dep
+-- edit.json --
+{"ops": [{"op": "set", "path": "objectives.slay.goal", "source": "collect"}]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- dep/dep.canon --
+package dep
+
+/// What an objective counts.
+enum Goal { kill, collect }
+
+/// What an objective aims at, by goal.
+type Target(g: Goal) = match g {
+  kill => String(1..)
+  collect => Int(1..)
+}
+
+/// A daily objective.
+record Objective {
+  /// What it counts.
+  goal: Goal
+  /// What it aims at.
+  target: Target(goal)?
+}
+
+/// The daily objectives.
+let objectives: table Objective = load("objectives.json")
+-- dep/objectives.json --
+{
+  "slay": {
+    "goal": "kill",
+    "target": "wolf"
+  },
+  "gather": {
+    "goal": "collect",
+    "target": 10
+  }
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "dep/objectives.json"
+    }
+  ],
+  "dropped": [
+    {
+      "path": "dep:objectives.slay.target",
+      "value": "wolf"
+    }
+  ],
+  "undo": [
+    {
+      "op": "set",
+      "path": "dep:objectives.slay.goal",
+      "source": "kill"
+    },
+    {
+      "op": "set",
+      "path": "dep:objectives.slay.target",
+      "value": "wolf"
+    }
+  ],
+  "touched": [
+    "dep"
+  ]
+}
+-- after/dep/objectives.json --
+{
+  "slay": {
+    "goal": "collect"
+  },
+  "gather": {
+    "goal": "collect",
+    "target": 10
+  }
+}

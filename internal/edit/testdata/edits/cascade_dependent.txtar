@@ -1,0 +1,120 @@
+API.md E15: once the operations are applied, in a record an operation touched, an optional
+field whose type a changed field computes and whose value no longer matches it is set to none
+(E7) and reported in Dropped; API.md E16: nothing else is touched, and a required field that
+no longer matches is left for the re-check (E3802). API.md E22: Undo restores the cascade too.
+-- options --
+pkgs: dep
+-- edit.json --
+{"ops": [
+  {"op": "set", "path": "objectives.slay.goal", "source": "collect"},
+  {"op": "set", "path": "objectives.gather.itemRewards", "value": false}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- dep/dep.canon --
+package dep
+
+/// What an objective counts.
+enum Goal { kill, collect }
+
+/// What an objective aims at, by goal.
+type Target(g: Goal) = match g {
+  kill => String(1..)
+  collect => Int(1..)
+}
+
+/// A reward: gold, or an item.
+type Reward(item: Bool) = match item {
+  false => Int(1..)
+  true => String(1..)
+}
+
+/// A daily objective.
+record Objective {
+  /// What it counts.
+  goal: Goal
+  /// What it aims at.
+  target: Target(goal)?
+  /// Whether its rewards are items rather than gold.
+  itemRewards: Bool
+  /// What completing it gives.
+  rewards: [Reward(itemRewards)]
+}
+
+/// The daily objectives.
+let objectives: table Objective = {
+  slay { goal: kill, target: "wolf", itemRewards: false, rewards: [100, 50] }
+  gather { goal: collect, target: 10, itemRewards: true, rewards: ["potion"] }
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "dep/dep.canon"
+    }
+  ],
+  "dropped": [
+    {
+      "path": "dep:objectives.slay.target",
+      "value": "wolf"
+    }
+  ],
+  "undo": [
+    {
+      "op": "set",
+      "path": "dep:objectives.gather.itemRewards",
+      "source": "true"
+    },
+    {
+      "op": "set",
+      "path": "dep:objectives.slay.goal",
+      "source": "kill"
+    },
+    {
+      "op": "set",
+      "path": "dep:objectives.slay.target",
+      "value": "wolf"
+    }
+  ],
+  "touched": [
+    "dep"
+  ]
+}
+-- after/dep/dep.canon --
+package dep
+
+/// What an objective counts.
+enum Goal { kill, collect }
+
+/// What an objective aims at, by goal.
+type Target(g: Goal) = match g {
+  kill => String(1..)
+  collect => Int(1..)
+}
+
+/// A reward: gold, or an item.
+type Reward(item: Bool) = match item {
+  false => Int(1..)
+  true => String(1..)
+}
+
+/// A daily objective.
+record Objective {
+  /// What it counts.
+  goal: Goal
+  /// What it aims at.
+  target: Target(goal)?
+  /// Whether its rewards are items rather than gold.
+  itemRewards: Bool
+  /// What completing it gives.
+  rewards: [Reward(itemRewards)]
+}
+
+/// The daily objectives.
+let objectives: table Objective = {
+  slay { goal: collect, itemRewards: false, rewards: [100, 50] }
+  gather { goal: collect, target: 10, itemRewards: false, rewards: ["potion"] }
+}

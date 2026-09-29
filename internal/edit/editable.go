@@ -1,6 +1,7 @@
 package edit
 
 import (
+	"path"
 	"strings"
 
 	"github.com/fantasim/canonlang/internal/check"
@@ -96,7 +97,7 @@ type judge struct {
 
 func (s *Snapshot) judge(res resolution, op Op, editLayer string) *judge {
 	j := &judge{s: s, res: res, op: op, layer: editLayer, special: specialRow(res)}
-	c := s.rootCursor(res)
+	c := s.jsonSource(s.rootCursor(res))
 	j.cur = append(j.cur, c)
 	walked := len(res.Steps)
 	if j.special != ReasonNone {
@@ -108,9 +109,29 @@ func (s *Snapshot) judge(res resolution, op Op, editLayer string) *judge {
 		} else {
 			c = steppers[c.state](j, c, i)
 		}
+		c = s.jsonSource(c)
 		j.cur = append(j.cur, c)
 	}
 	return j
+}
+
+// jsonSource is c, or the format row for a JSON source whose file is not named `.json`: no
+// edit writes it, since a crashed edit's journal keeps only .canon, .json and .lock files (API.md
+// W4, log-2026-09-29 U4c final).
+func (s *Snapshot) jsonSource(c cursor) cursor {
+	if c.mode != ModeJSON || c.state != stTree || c.span.End == 0 || s.files[c.span.File] != nil {
+		return c
+	}
+	if d := s.display(c.span.File); d != "" && !jsonFileName(d) {
+		return c.to(stFormat)
+	}
+	return c
+}
+
+// jsonFileName reports a file named `.json`, its extension in lower case.
+func jsonFileName(name string) bool {
+	ext := path.Ext(name)
+	return types.FormatOfPath(name) == types.FormatJSON && ext == strings.ToLower(ext)
 }
 
 func (j *judge) last() cursor { return j.cur[len(j.cur)-1] }
@@ -236,12 +257,23 @@ func orderRow(j *judge) Reason {
 	return ReasonNone
 }
 
+// layerStates reports a value the edit layer itself states, which a Remove takes out of it
+// (log-2026-09-29 M4 U4b-r): through its active amendment, or in one of its lines.
+func (j *judge) layerStates() bool {
+	c := j.last()
+	if c.state == stTree && c.layer == j.layer {
+		return true
+	}
+	_, line, _ := j.s.layerLine(j.res, j.layer)
+	return line != nil
+}
+
 // layerRow refuses, under an edit layer, all but Set, Reset and AddEntry below a let (EVALUATION.md §9.2).
 func layerRow(j *judge) Reason {
 	if j.layer == "" {
 		return ReasonNone
 	}
-	amendable := j.op == OpSet || j.op == OpReset || j.op == OpAddEntry
+	amendable := j.op == OpSet || j.op == OpReset || j.op == OpAddEntry || j.op == OpRemove && j.layerStates()
 	rootValue := len(j.res.Steps) == 0 && j.op != OpAddEntry // an entry added to a root table or map is an amendment (EVALUATION.md §9.3)
 	if !amendable || rootValue || j.res.root.obj.Kind() != check.ObjLet {
 		return ReasonLayer

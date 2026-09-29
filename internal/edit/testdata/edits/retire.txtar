@@ -1,0 +1,65 @@
+API.md N7: Retire writes `retired ` before the entry's key in a table literal and before the
+member's name in an @codes enum; API.md E23: Retire has no inverse, so Undo is empty.
+-- options --
+pkgs: a
+-- edit.json --
+{"ops": [
+  {"op": "retire", "path": "statuses.open"},
+  {"op": "retire", "path": "Right.kick"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+/// A guild right.
+enum Right @codes(UInt8) {
+  invite = 1
+  kick = 2
+}
+
+/// A status.
+record Status {
+  /// Its label.
+  label: String = ""
+}
+
+/// The statuses.
+let statuses: stable table Status = {
+  open { label: "Open" }
+  done {}
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "a/a.canon"
+    }
+  ],
+  "touched": [
+    "a"
+  ]
+}
+-- after/a/a.canon --
+package a
+
+/// A guild right.
+enum Right @codes(UInt8) {
+  invite = 1
+  retired kick = 2
+}
+
+/// A status.
+record Status {
+  /// Its label.
+  label: String = ""
+}
+
+/// The statuses.
+let statuses: stable table Status = {
+  retired open { label: "Open" }
+  done {}
+}

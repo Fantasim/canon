@@ -1,0 +1,66 @@
+API.md M6 (log-2026-09-29 M4 U4b-r): removing every member of a JSON source's root object writes
+the empty object; each write stays inside the items it removed and the brackets around them.
+-- options --
+pkgs: tb
+-- edit.json --
+{"ops": [
+  {"op": "remove", "path": "statuses.open"},
+  {"op": "remove", "path": "statuses.done"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- tb/tb.canon --
+package tb
+
+/// A status.
+record Status {
+  /// Its label.
+  label: String = ""
+}
+
+/// The statuses.
+let statuses: table Status = load("statuses.json")
+-- tb/statuses.json --
+{
+  "open": {
+    "label": "Open"
+  },
+  "done": {
+    "label": "Done"
+  }
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "tb/statuses.json"
+    }
+  ],
+  "undo": [
+    {
+      "op": "addEntry",
+      "path": "tb:statuses",
+      "key": "done",
+      "source": "{ label: \"Done\" }"
+    },
+    {
+      "op": "addEntry",
+      "path": "tb:statuses",
+      "key": "open",
+      "source": "{ label: \"Open\" }"
+    },
+    {
+      "op": "move",
+      "path": "tb:statuses.open",
+      "index": 0
+    }
+  ],
+  "touched": [
+    "tb"
+  ]
+}
+-- after/tb/statuses.json --
+{}

@@ -1,0 +1,144 @@
+API.md W7, M3: Set of a field its literal leaves to its default inserts it after the nearest
+present field declared before it, on the entry's one line while it fits; API.md M5: past the
+width the entry is re-printed broken, one field per line. API.md E1: the second operation sees
+the first. API.md E23: the inverse of a Set of an absent field is Reset.
+-- options --
+pkgs: tb
+-- edit.json --
+{"ops": [
+  {"op": "set", "path": "statuses.open.requires", "source": "[assignee]"},
+  {"op": "set", "path": "statuses.wont_do.by", "source": "reporter_or_triager"},
+  {"op": "set", "path": "statuses.taken.optional", "source": "[fixed_in]"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- tb/tb.canon --
+package tb
+
+/// Colour of a badge.
+enum Tone { neutral, info, warning }
+
+/// Inputs a status transition may collect.
+enum PostField { assignee, fixed_in, reason }
+
+/// Who may make a transition.
+enum Actor { reporter, triager, reporter_or_triager }
+
+/// One point of the post lifecycle.
+record Status {
+  /// Colour of the status badge.
+  tone: Tone
+  /// Name of the status.
+  label: String(1..)
+  /// A terminal status closes the post.
+  terminal: Bool
+  /// The statuses a post may move to from here.
+  next: [ref Status]
+  /// Inputs a transition into this status must collect.
+  requires: [PostField] = []
+  /// Inputs a transition into this status may collect.
+  optional: [PostField] = []
+  /// Who, besides a triager, may make the transition.
+  by: Actor? = none
+}
+
+/// The post lifecycle.
+let statuses: table Status = {
+  open { tone: warning, label: "Open", terminal: false, next: [taken, wont_do] }
+  taken {
+    tone: info
+    label: "Taken"
+    terminal: false
+    next: [open, wont_do]
+    requires: [assignee]
+    // who may take it
+    by: triager
+  }
+  wont_do { tone: neutral, label: "Won't do", terminal: true, next: [open], requires: [reason] }
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "tb/tb.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "reset",
+      "path": "tb:statuses.taken.optional"
+    },
+    {
+      "op": "reset",
+      "path": "tb:statuses.wont_do.by"
+    },
+    {
+      "op": "reset",
+      "path": "tb:statuses.open.requires"
+    }
+  ],
+  "touched": [
+    "tb"
+  ]
+}
+-- after/tb/tb.canon --
+package tb
+
+/// Colour of a badge.
+enum Tone { neutral, info, warning }
+
+/// Inputs a status transition may collect.
+enum PostField { assignee, fixed_in, reason }
+
+/// Who may make a transition.
+enum Actor { reporter, triager, reporter_or_triager }
+
+/// One point of the post lifecycle.
+record Status {
+  /// Colour of the status badge.
+  tone: Tone
+  /// Name of the status.
+  label: String(1..)
+  /// A terminal status closes the post.
+  terminal: Bool
+  /// The statuses a post may move to from here.
+  next: [ref Status]
+  /// Inputs a transition into this status must collect.
+  requires: [PostField] = []
+  /// Inputs a transition into this status may collect.
+  optional: [PostField] = []
+  /// Who, besides a triager, may make the transition.
+  by: Actor? = none
+}
+
+/// The post lifecycle.
+let statuses: table Status = {
+  open {
+    tone: warning
+    label: "Open"
+    terminal: false
+    next: [taken, wont_do]
+    requires: [assignee]
+  }
+  taken {
+    tone: info
+    label: "Taken"
+    terminal: false
+    next: [open, wont_do]
+    requires: [assignee]
+    optional: [fixed_in]
+    // who may take it
+    by: triager
+  }
+  wont_do {
+    tone: neutral
+    label: "Won't do"
+    terminal: true
+    next: [open]
+    requires: [reason]
+    by: reporter_or_triager
+  }
+}

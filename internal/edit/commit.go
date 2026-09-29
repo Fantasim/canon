@@ -181,7 +181,7 @@ func (c *commit) vet() error {
 	if err == nil {
 		err = straight(c.fsys, u.spots())
 	}
-	return refusal(ErrChanges, err)
+	return journalRefusal(ErrChanges, err)
 }
 
 // idle refuses a commit while any journal is there: an edit unfinished, or still running, whose
@@ -475,7 +475,7 @@ func (c *commit) rollback(cause error) error {
 		}
 	}
 	if _, err := u.run(c.fsys); err != nil {
-		return errors.Join(cause, refusal(ErrJournal, err))
+		return errors.Join(cause, journalRefusal(ErrJournal, err))
 	}
 	if err := c.fsys.Remove(c.name); err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return errors.Join(cause, err)

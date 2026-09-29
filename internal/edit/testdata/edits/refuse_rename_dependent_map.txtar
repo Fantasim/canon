@@ -1,0 +1,31 @@
+API.md E13: Rename of a key of a dependent map is ErrNotEditable with reason key: its keys
+follow the collection they range over (MOCKUP-GAPS 17).
+-- options --
+pkgs: a
+-- edit.json --
+{"ops": [{"op": "rename", "path": "perStatus[open]", "key": "done"}]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+/// A status.
+record Status {
+  /// Its label.
+  label: String = ""
+}
+
+/// The statuses.
+let statuses: table Status = {
+  open { label: "Open" }
+  done {}
+}
+
+/// One count per status.
+let perStatus: {s in statuses: Int} = { open: 1, done: 2 }
+-- result.json --
+{
+  "error": "op 0: value not editable: reason key"
+}

@@ -1,0 +1,30 @@
+API.md V1: a value that does not fit the type expected at the path is ErrBadValue, before
+anything is written; API.md E21: a later operation's refusal leaves the earlier ones unwritten.
+-- options --
+pkgs: p
+-- edit.json --
+{"ops": [
+  {"op": "set", "path": "rows.a.count", "value": 3},
+  {"op": "set", "path": "rows.a.count", "value": "three"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// A row.
+record Row {
+  /// A count.
+  count: Int
+}
+
+/// Rows.
+let rows: table Row = {
+  a { count: 1 }
+}
+-- result.json --
+{
+  "error": "op 1: value does not fit the type: expected Int, got FromJSON: expected a number for Int, found a string"
+}

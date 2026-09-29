@@ -1,0 +1,22 @@
+API.md W5: an edit of a value whose path leaves the source tree is ErrNotEditable with reason
+computed; its origin is the canonical path of its own source when that source is structural.
+-- options --
+pkgs: p
+-- edit.json --
+{"ops": [{"op": "set", "path": "mixed[0]", "value": 4}]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// Shared.
+let shared: Int = 1
+
+/// A list with a name in it.
+let mixed: [Int] = [shared, 2]
+-- result.json --
+{
+  "error": "op 0: value not editable: reason computed"
+}

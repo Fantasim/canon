@@ -1,0 +1,111 @@
+An inline variant writes its tag and its case's fields in its parent object (WIRE.md 5.6): a
+field of the case is one member, set alone (API.md M1); a change of case writes the parent
+object again whole (API.md M1: a different case is a replacement), its tag first.
+-- options --
+pkgs: ev
+-- edit.json --
+{"ops": [
+  {"op": "set", "path": "events[sample].kind.itemCount", "value": 3},
+  {"op": "setCase", "path": "events[other].kind", "case": "gold", "source": "{ amount: 50 }"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- ev/ev.canon --
+package ev
+
+/// What an event does.
+variant EventKind @json(tag: "type") {
+  /// Injects an item into drops.
+  monster_drop_inject {
+    /// The item.
+    itemId: String
+    /// How many.
+    itemCount: Int = 1
+  }
+  /// Gives gold.
+  gold {
+    /// How much.
+    amount: Int
+  }
+}
+
+/// An event.
+record Event {
+  /// Its id.
+  id: String
+  /// Its world.
+  worldId: Int
+  /// What it does.
+  kind: EventKind @json(inline)
+}
+
+/// The events.
+let events: [Event] keyed by id = load("events.json")
+-- ev/events.json --
+[
+  {
+    "id": "sample",
+    "worldId": 1,
+    "type": "monster_drop_inject",
+    "itemId": "II_DEFAULT",
+    "itemCount": 2
+  },
+  {
+    "id": "other",
+    "worldId": 2,
+    "type": "monster_drop_inject",
+    "itemId": "II_X"
+  }
+]
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "ev/events.json"
+    }
+  ],
+  "dropped": [
+    {
+      "path": "ev:events[other].kind.itemCount",
+      "value": 1
+    },
+    {
+      "path": "ev:events[other].kind.itemId",
+      "value": "II_X"
+    }
+  ],
+  "undo": [
+    {
+      "op": "set",
+      "path": "ev:events[other].kind",
+      "source": "monster_drop_inject { itemId: \"II_X\" }"
+    },
+    {
+      "op": "set",
+      "path": "ev:events[sample].kind.itemCount",
+      "source": "2"
+    }
+  ],
+  "touched": [
+    "ev"
+  ]
+}
+-- after/ev/events.json --
+[
+  {
+    "id": "sample",
+    "worldId": 1,
+    "type": "monster_drop_inject",
+    "itemId": "II_DEFAULT",
+    "itemCount": 3
+  },
+  {
+    "id": "other",
+    "worldId": 2,
+    "type": "gold",
+    "amount": 50
+  }
+]

@@ -15,14 +15,22 @@ func TestOpJSONReads(t *testing.T) {
 		in   string
 		want edit.Operation
 	}{
-		{`{"op": "set", "path": "farm.modelTypes[3].maxLevel", "value": 10}`,
-			edit.Operation{Kind: edit.OpSet, Path: "farm.modelTypes[3].maxLevel", Value: edit.FromJSON("10")}},
-		{`{"op": "add", "path": "levels", "value": {"level": 10, "modelName": "obj"}}`,
-			edit.Operation{Kind: edit.OpAdd, Path: "levels", Value: edit.FromJSON(`{"level": 10, "modelName": "obj"}`)}},
-		{`{"op": "addEntry", "path": "statuses", "key": "blocked", "source": "{ tone: danger }"}`,
-			edit.Operation{Kind: edit.OpAddEntry, Path: "statuses", Key: edit.PathKey("blocked"), Value: edit.Source("{ tone: danger }")}},
-		{`{"op": "setCase", "path": "e.kind", "case": "spawn_item", "source": "{ left: 0 }"}`,
-			edit.Operation{Kind: edit.OpSetCase, Path: "e.kind", Case: "spawn_item", Value: edit.Source("{ left: 0 }")}},
+		{
+			`{"op": "set", "path": "farm.modelTypes[3].maxLevel", "value": 10}`,
+			edit.Operation{Kind: edit.OpSet, Path: "farm.modelTypes[3].maxLevel", Value: edit.FromJSON("10")},
+		},
+		{
+			`{"op": "add", "path": "levels", "value": {"level": 10, "modelName": "obj"}}`,
+			edit.Operation{Kind: edit.OpAdd, Path: "levels", Value: edit.FromJSON(`{"level": 10, "modelName": "obj"}`)},
+		},
+		{
+			`{"op": "addEntry", "path": "statuses", "key": "blocked", "source": "{ tone: danger }"}`,
+			edit.Operation{Kind: edit.OpAddEntry, Path: "statuses", Key: edit.PathKey("blocked"), Value: edit.Source("{ tone: danger }")},
+		},
+		{
+			`{"op": "setCase", "path": "e.kind", "case": "spawn_item", "source": "{ left: 0 }"}`,
+			edit.Operation{Kind: edit.OpSetCase, Path: "e.kind", Case: "spawn_item", Value: edit.Source("{ left: 0 }")},
+		},
 		{`{"op": "setCase", "path": "e.kind", "case": "nothing"}`, edit.Operation{Kind: edit.OpSetCase, Path: "e.kind", Case: "nothing"}},
 		{`{"op": "move", "path": "levels[2]", "index": 0}`, edit.Operation{Kind: edit.OpMove, Path: "levels[2]"}},
 		{`{"op": "insert", "path": "xs", "index": 2, "source": "7"}`, edit.Operation{Kind: edit.OpInsert, Path: "xs", Index: 2, Value: edit.Source("7")}},
@@ -86,8 +94,10 @@ func TestOpJSONWrites(t *testing.T) {
 		want string
 	}{
 		{edit.Operation{Kind: edit.OpSet, Path: "a.b", Value: edit.FromJSON(`{ "x" : [1, 2] }`)}, `{"op":"set","path":"a.b","value":{"x":[1,2]}}`},
-		{edit.Operation{Kind: edit.OpAddEntry, Path: "s", Key: edit.Key("k"), Value: edit.Source("{ tone: danger }")},
-			`{"op":"addEntry","path":"s","key":"k","source":"{ tone: danger }"}`},
+		{
+			edit.Operation{Kind: edit.OpAddEntry, Path: "s", Key: edit.Key("k"), Value: edit.Source("{ tone: danger }")},
+			`{"op":"addEntry","path":"s","key":"k","source":"{ tone: danger }"}`,
+		},
 		{edit.Operation{Kind: edit.OpAddEntry, Path: "m", Key: edit.Member("red"), Value: edit.None{}}, `{"op":"addEntry","path":"m","key":"red","source":"none"}`},
 		{edit.Operation{Kind: edit.OpRename, Path: "r[7]", Key: edit.IntKey(8)}, `{"op":"rename","path":"r[7]","key":8}`},
 		{edit.Operation{Kind: edit.OpMove, Path: "xs[1]"}, `{"op":"move","path":"xs[1]","index":0}`},
@@ -105,7 +115,6 @@ func TestOpJSONWrites(t *testing.T) {
 // not take, are refused rather than written wrong.
 func TestOpJSONWriteRefusals(t *testing.T) {
 	for _, op := range []edit.Operation{
-		{Kind: edit.OpSet, Path: "a", Value: edit.Int(3)},
 		{Kind: edit.OpSet, Path: "a"},
 		{Kind: edit.OpRemove, Path: "a", Index: 2},
 		{Kind: edit.OpRename, Path: "a", Key: edit.List{}},
@@ -115,9 +124,9 @@ func TestOpJSONWriteRefusals(t *testing.T) {
 			t.Errorf("%#v = %s, want an error", op, b)
 		}
 	}
-	_, err := json.Marshal(edit.Operation{Kind: edit.OpSet, Path: "a", Value: edit.Obj{}})
+	_, err := json.Marshal(edit.Operation{Kind: edit.OpSet, Path: "a", Value: edit.List{edit.FromJSON("1")}})
 	if !errors.Is(err, edit.ErrNoText) {
-		t.Errorf("an Obj value: %v, want ErrNoText", err)
+		t.Errorf("a FromJSON inside a List: %v, want ErrNoText", err)
 	}
 }
 

@@ -1,0 +1,137 @@
+API.md M1, M2: Set of a whole record compares it field by field: only the changed field is
+re-printed, a field the new value leaves out goes (V3), comments of the unchanged fields stay.
+API.md E5: Set of a keyed-list element keeps its key; the new value may leave the key out.
+API.md M1: a map compared key by key, a plain list of equal length position by position.
+-- options --
+pkgs: farm
+-- edit.json --
+{"ops": [
+  {"op": "set", "path": "farm.config", "source": "{ name: \"Farm\", levels: [1, 5, 3], hint: \"h\" }"},
+  {"op": "set", "path": "farm.models[3]", "source": "{ name: \"obj_UC018\", weights: { spring: 1, summer: 4 } }"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- farm/farm.canon --
+package farm
+
+/// A season.
+enum Season { spring, summer, autumn }
+
+/// A model.
+record Model {
+  /// Its id.
+  typeId: Int
+  /// Its name.
+  name: String
+  /// Weights per season.
+  weights: {Season: Int} = {}
+}
+
+/// The farm's configuration.
+record Config {
+  /// Its name.
+  name: String
+  /// Its levels.
+  levels: [Int]
+  /// A hint.
+  hint: String = ""
+  /// A note.
+  note: String = ""
+}
+
+/// The farm.
+record Farm {
+  /// Configuration.
+  config: Config
+  /// Models.
+  models: [Model] keyed by typeId
+}
+
+/// The farm.
+let farm: Farm = {
+  config: {
+    // the display name
+    name: "Farm"
+    levels: [1, 2, 3]
+    note: "old"
+  }
+  models: [
+    { typeId: 3, name: "obj_UC017", weights: { spring: 1, summer: 2, autumn: 3 } },
+    { typeId: 4, name: "obj_UC020" },
+  ]
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "farm/farm.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "set",
+      "path": "farm:farm.models[3]",
+      "source": "{ typeId: 3, name: \"obj_UC017\", weights: { spring: 1, summer: 2, autumn: 3 } }"
+    },
+    {
+      "op": "set",
+      "path": "farm:farm.config",
+      "source": "{ name: \"Farm\", levels: [1, 2, 3], note: \"old\" }"
+    }
+  ],
+  "touched": [
+    "farm"
+  ]
+}
+-- after/farm/farm.canon --
+package farm
+
+/// A season.
+enum Season { spring, summer, autumn }
+
+/// A model.
+record Model {
+  /// Its id.
+  typeId: Int
+  /// Its name.
+  name: String
+  /// Weights per season.
+  weights: {Season: Int} = {}
+}
+
+/// The farm's configuration.
+record Config {
+  /// Its name.
+  name: String
+  /// Its levels.
+  levels: [Int]
+  /// A hint.
+  hint: String = ""
+  /// A note.
+  note: String = ""
+}
+
+/// The farm.
+record Farm {
+  /// Configuration.
+  config: Config
+  /// Models.
+  models: [Model] keyed by typeId
+}
+
+/// The farm.
+let farm: Farm = {
+  config: {
+    // the display name
+    name: "Farm"
+    levels: [1, 5, 3]
+    hint: "h"
+  }
+  models: [
+    { typeId: 3, name: "obj_UC018", weights: { spring: 1, summer: 4 } },
+    { typeId: 4, name: "obj_UC020" },
+  ]
+}

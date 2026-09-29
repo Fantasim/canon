@@ -6,6 +6,7 @@ import (
 
 	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/source"
+	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/value"
 )
 
@@ -26,6 +27,7 @@ type refScan struct {
 	tokens  map[source.FileID]map[source.Span]bool
 	seen    map[value.Value]bool
 	visits  int
+	history func(path ...value.Value) []value.Value // the analysis's, which a test counts
 	found   []found
 }
 
@@ -52,7 +54,7 @@ func (s *Snapshot) valueRefs(ctx context.Context, tg *target) ([]Ref, []source.S
 func (s *Snapshot) newScan(tg *target) *refScan {
 	sc := &refScan{
 		s: s, tg: tg, amended: map[check.Object]bool{},
-		tokens: map[source.FileID]map[source.Span]bool{}, seen: map[value.Value]bool{},
+		tokens: map[source.FileID]map[source.Span]bool{}, seen: map[value.Value]bool{}, history: s.a.History,
 	}
 	for _, pkg := range s.pkgs {
 		for _, blocks := range pkg.Layers { //canon:unordered builds a set
@@ -127,7 +129,7 @@ func (sc *refScan) visit(at walkAt, v value.Value, segs []Seg) {
 
 // replaced walks the values amendments replaced v with, at v's place.
 func (sc *refScan) replaced(at walkAt, v value.Value, segs []Seg) {
-	hist := sc.s.a.History(v)
+	hist := sc.history(v)
 	if len(hist) <= 1 {
 		return
 	}
@@ -160,7 +162,19 @@ func (sc *refScan) note(root rootRef, kind RefKind, v value.Value, segs []Seg) {
 	}
 	path := Path{Root: root.obj.Name(), Segs: segs}
 	ref := Ref{Kind: kind, Package: root.pkg.Path, Path: path.String(), Span: p.Span}
+	if computed {
+		ref.Span = nameSpan(root, p.Span) // where the reference is written (log-2026-09-29 M4 U4a round 3)
+	}
 	sc.found = append(sc.found, found{ref: ref, root: root, segs: segs, computed: computed})
+}
+
+// nameSpan is the span of the name of the let root declares, orElse when it has none.
+func nameSpan(root rootRef, orElse source.Span) source.Span {
+	d, ok := root.obj.Decl().(*syntax.LetDecl)
+	if f := root.obj.File(); ok && f != nil && d.Name != nil {
+		return f.Span(d.Name)
+	}
+	return orElse
 }
 
 // foundKey groups the paths of one reference: its span, and for a computed one its let, which

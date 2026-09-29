@@ -1,0 +1,126 @@
+API.md W11: with an edit layer, Set writes the path's amendment line in that layer's file of
+the root's package: into the root's block, or a new block after the last one (FORMATTER.md §13,
+log-2026-09-29 M4 G1); Reset removes a line. API.md W11a: a path inside an amendment's literal
+is edited there; a Set of an ancestor of amended paths replaces their lines with its own.
+-- options --
+pkgs: p
+layers: dev
+editLayer: dev
+-- edit.json --
+{"ops": [
+  {"op": "set", "path": "conf.limit", "value": 7},
+  {"op": "set", "path": "holder.data.n", "value": 4},
+  {"op": "set", "path": "other.data", "source": "{ id: \"o2\", n: 2 }"},
+  {"op": "reset", "path": "conf.name"},
+  {"op": "set", "path": "extra.id", "value": "e2"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// An item.
+record Item {
+  /// Its id.
+  id: String
+  /// A count.
+  n: Int = 0
+}
+
+/// Holds an item.
+record Holder {
+  /// The item.
+  data: Item
+}
+
+/// A configuration.
+record Conf {
+  /// A limit.
+  limit: Int = 1
+  /// A name.
+  name: String = ""
+}
+
+/// Configuration.
+let conf: Conf = { limit: 2 }
+
+/// A holder.
+let holder: Holder = { data: { id: "h" } }
+
+/// Another holder.
+let other: Holder = { data: { id: "o" } }
+
+/// An extra item.
+let extra: Item = { id: "e" }
+-- p/dev.layer.canon --
+package p
+layer dev
+
+amend conf {
+  name: "dev"
+}
+
+amend holder {
+  data: { id: "hd", n: 1 }
+}
+
+amend other {
+  data.n: 3
+  data.id: "od"
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "p/dev.layer.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "reset",
+      "path": "p:extra.id"
+    },
+    {
+      "op": "set",
+      "path": "p:conf.name",
+      "source": "\"dev\""
+    },
+    {
+      "op": "set",
+      "path": "p:other.data",
+      "source": "{ id: \"od\", n: 3 }"
+    },
+    {
+      "op": "set",
+      "path": "p:holder.data.n",
+      "source": "1"
+    },
+    {
+      "op": "reset",
+      "path": "p:conf.limit"
+    }
+  ],
+  "touched": [
+    "p"
+  ]
+}
+-- after/p/dev.layer.canon --
+package p
+layer dev
+
+amend conf {
+  limit: 7
+}
+
+amend holder {
+  data: { id: "hd", n: 4 }
+}
+
+amend other {
+  data: { id: "o2", n: 2 }
+}
+
+amend extra { id: "e2" }

@@ -3,6 +3,8 @@ package edit
 import (
 	"errors"
 	"fmt"
+	"io/fs"
+	"slices"
 	"strings"
 
 	"github.com/fantasim/canonlang/internal/eval"
@@ -79,6 +81,83 @@ func (e *ValueError) Error() string {
 }
 
 func (e *ValueError) Unwrap() error { return ErrBadValue }
+
+// Refusals of an edit's operations (API.md §8.3-§10); the API wraps each as its own (§15).
+var (
+	ErrNotEditable   = errors.New("value not editable")
+	ErrKeyExists     = errors.New("key already exists")
+	ErrStableKey     = errors.New("key of a stable table")
+	ErrPathCollision = errors.New("file already exists")
+	ErrNoProject     = errors.New("edit environment without a project")
+	ErrInternal      = errors.New("edit failed inside the compiler")
+
+	errUnprinted = errors.New("value has no literal form")
+	errNoTree    = errors.New("file not in the snapshot")
+	errTemplate  = errors.New("template value not usable in a path")
+	errNoWire    = errors.New("value has no source wire here")
+	errNoMember  = errors.New("no such member in the JSON source")
+)
+
+// NotEditableError is an operation on a value it cannot edit (API.md W5, E5, E12): the reason,
+// the computed value's structural origin, the layer that sets it, and for a rename every
+// reference that is not editable, by path.
+type NotEditableError struct {
+	Reason Reason
+	Origin string
+	Layer  string
+	Refs   []string
+}
+
+func (e *NotEditableError) Error() string {
+	return fmt.Sprintf(fmtNotEditable, ErrNotEditable, reasonNames[e.Reason])
+}
+
+func (e *NotEditableError) Unwrap() error { return ErrNotEditable }
+
+// CollisionError is a new or renamed file whose path is taken (API.md N3), by display path.
+type CollisionError struct {
+	Paths []string
+}
+
+func (e *CollisionError) Error() string {
+	return fmt.Sprintf(fmtCollision, ErrPathCollision, strings.Join(e.Paths, listSep))
+}
+
+func (e *CollisionError) Unwrap() error { return ErrPathCollision }
+
+// ioError is a failure of the file system, which is no compiler bug: Apply returns it as it
+// is (log-2026-09-29 M4 U4b-r3).
+type ioError struct {
+	err error
+}
+
+func (e *ioError) Error() string { return e.err.Error() }
+
+func (e *ioError) Unwrap() error { return e.err }
+
+// asIO is err as an *ioError when the file system reported it (an *fs.PathError or an fs
+// sentinel), else err, which Apply reports as an internal failure.
+func asIO(err error) error {
+	var pe *fs.PathError
+	if errors.As(err, &pe) || slices.ContainsFunc(fsErrors[:], func(s error) bool { return errors.Is(err, s) }) {
+		return &ioError{err: err}
+	}
+	return err
+}
+
+// OpError is the refusal of operation Index of an edit, whose path was Path as given; Err is
+// what refused it (a *PathError, *ValueError, *NotEditableError or a sentinel of this package).
+type OpError struct {
+	Index int
+	Path  string
+	Err   error
+}
+
+func (e *OpError) Error() string {
+	return fmt.Sprintf(fmtOpError, e.Index, e.Path, e.Err)
+}
+
+func (e *OpError) Unwrap() error { return e.Err }
 
 // The JSON form of an operation (API.md §8.8).
 var (

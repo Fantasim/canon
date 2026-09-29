@@ -1,0 +1,45 @@
+API.md W11: with an edit layer the package has no file for, the file is created as
+<package dir>/<layer>.layer.canon, holding the one amendment; the base source is untouched.
+-- options --
+pkgs: p
+editLayer: dev
+-- edit.json --
+{"ops": [{"op": "set", "path": "conf.limit", "value": 7}]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// A configuration.
+record Conf {
+  /// A limit.
+  limit: Int = 1
+}
+
+/// Configuration.
+let conf: Conf = { limit: 2 }
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "created",
+      "path": "p/dev.layer.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "reset",
+      "path": "p:conf.limit"
+    }
+  ],
+  "touched": [
+    "p"
+  ]
+}
+-- after/p/dev.layer.canon --
+package p
+layer dev
+
+amend conf { limit: 7 }

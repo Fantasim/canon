@@ -1,0 +1,27 @@
+API.md E4: Unretire is always ErrStableKey: retirement is one-way.
+-- options --
+pkgs: a
+-- edit.json --
+{"ops": [{"op": "unretire", "path": "statuses.open"}]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+/// A status.
+record Status {
+  /// Its label.
+  label: String = ""
+}
+
+/// The statuses.
+let statuses: stable table Status = {
+  retired open { label: "Open" }
+  done {}
+}
+-- result.json --
+{
+  "error": "op 0: key of a stable table"
+}

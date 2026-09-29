@@ -1,0 +1,105 @@
+API.md E14 by re-typing (log-2026-09-29 M4 U4b-r): a kept field is judged against the new
+case's refinements, `where` included, by the final analysis at its exact path: rain's count 4
+satisfies `where it > 2` and is kept; fair's count 1 does not, and is Dropped (left to its
+default). API.md E23: the inverse is Set of the old whole variant value.
+-- options --
+pkgs: ev
+-- edit.json --
+{"ops": [
+  {"op": "setCase", "path": "events.rain.kind", "case": "drop", "source": "{ item: \"II_MOON\" }"},
+  {"op": "setCase", "path": "events.fair.kind", "case": "drop", "source": "{ item: \"II_SUN\" }"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- ev/ev.canon --
+package ev
+
+/// What an event does.
+variant Kind {
+  /// Spawns in a region.
+  spawn {
+    /// How many.
+    count: Int = 1
+  }
+  /// Drops an item.
+  drop {
+    /// The item.
+    item: String
+    /// How many.
+    count: Int where it > 2 = 3
+  }
+}
+
+/// An event.
+record Event {
+  /// What it does.
+  kind: Kind
+}
+
+/// The events.
+let events: table Event = {
+  rain { kind: spawn { count: 4 } }
+  fair { kind: spawn { count: 1 } }
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "ev/ev.canon"
+    }
+  ],
+  "dropped": [
+    {
+      "path": "ev:events.fair.kind.count",
+      "value": 1
+    }
+  ],
+  "undo": [
+    {
+      "op": "set",
+      "path": "ev:events.fair.kind",
+      "source": "spawn"
+    },
+    {
+      "op": "set",
+      "path": "ev:events.rain.kind",
+      "source": "spawn { count: 4 }"
+    }
+  ],
+  "touched": [
+    "ev"
+  ]
+}
+-- after/ev/ev.canon --
+package ev
+
+/// What an event does.
+variant Kind {
+  /// Spawns in a region.
+  spawn {
+    /// How many.
+    count: Int = 1
+  }
+  /// Drops an item.
+  drop {
+    /// The item.
+    item: String
+    /// How many.
+    count: Int where it > 2 = 3
+  }
+}
+
+/// An event.
+record Event {
+  /// What it does.
+  kind: Kind
+}
+
+/// The events.
+let events: table Event = {
+  rain { kind: drop { item: "II_MOON", count: 4 } }
+  fair { kind: drop { item: "II_SUN" } }
+}

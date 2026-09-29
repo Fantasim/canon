@@ -1,0 +1,53 @@
+API.md M9: a JSON source not in the canonical source layout (FORMATTER.md §14.1), here
+written on one line, is normalized entirely first and listed in NotCanonical.
+-- options --
+pkgs: p
+oneLine: true
+-- edit.json --
+{"ops": [{"op": "set", "path": "conf.limit", "value": 9}]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// A configuration.
+record Conf {
+  /// A limit.
+  limit: Int
+  /// A name.
+  name: String
+}
+
+/// Loaded.
+let conf: Conf = load("conf.json")
+-- p/conf.json --
+{"limit": 5, "name": "n"}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "p/conf.json"
+    }
+  ],
+  "undo": [
+    {
+      "op": "set",
+      "path": "p:conf.limit",
+      "source": "5"
+    }
+  ],
+  "touched": [
+    "p"
+  ],
+  "notCanonical": [
+    "p/conf.json"
+  ]
+}
+-- after/p/conf.json --
+{
+  "limit": 9,
+  "name": "n"
+}

@@ -1,0 +1,149 @@
+API.md E11: Rename changes the key and every reference: the entry's name, refs stated in lists
+and lets, map keys (kind key), the key and a ref value in a JSON source, names in code of the
+package and of an importing package (a qualified `a.statuses.open`, R7), in a check and in a
+view. API.md E23: its inverse is Rename back. API.md N8 does not apply: no @files. (A ref a
+let converts from the entry, `statuses.open` as a whole value, is computed: E12 refuses it.)
+-- options --
+pkgs: a b
+-- edit.json --
+{"ops": [{"op": "rename", "path": "a:statuses.open", "key": "opened"}]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+/// A status.
+record Status {
+  /// Its label.
+  label: String = ""
+  /// The statuses it may move to.
+  next: [ref Status] = []
+}
+
+/// The statuses.
+let statuses: table Status = {
+  open { label: "Open", next: [done] }
+  done { next: [open] }
+}
+
+/// A weight per status.
+let weights: {ref statuses: Int} = { open: 1, done: 2 }
+
+/// A configuration.
+record Conf {
+  /// Its first status.
+  first: ref statuses
+  /// Weights.
+  weights: {ref statuses: Int} = {}
+}
+
+/// Loaded.
+let conf: Conf = load("conf.json")
+
+check statuses.open.label != "" else "open has a label"
+
+view Status {
+  title "{label}"
+  show "First" "{statuses.open.label}"
+}
+-- a/conf.json --
+{
+  "first": "open",
+  "weights": {
+    "open": 3,
+    "done": 4
+  }
+}
+-- b/b.canon --
+package b
+
+import a
+
+/// The status a post starts in.
+fn start() -> ref a.statuses {
+  return a.statuses.open
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "a/a.canon"
+    },
+    {
+      "kind": "modified",
+      "path": "a/conf.json"
+    },
+    {
+      "kind": "modified",
+      "path": "b/b.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "rename",
+      "path": "a:statuses.opened",
+      "key": "open"
+    }
+  ],
+  "touched": [
+    "a",
+    "b"
+  ]
+}
+-- after/a/a.canon --
+package a
+
+/// A status.
+record Status {
+  /// Its label.
+  label: String = ""
+  /// The statuses it may move to.
+  next: [ref Status] = []
+}
+
+/// The statuses.
+let statuses: table Status = {
+  opened { label: "Open", next: [done] }
+  done { next: [opened] }
+}
+
+/// A weight per status.
+let weights: {ref statuses: Int} = { opened: 1, done: 2 }
+
+/// A configuration.
+record Conf {
+  /// Its first status.
+  first: ref statuses
+  /// Weights.
+  weights: {ref statuses: Int} = {}
+}
+
+/// Loaded.
+let conf: Conf = load("conf.json")
+
+check statuses.opened.label != "" else "open has a label"
+
+view Status {
+  title "{label}"
+  show "First" "{statuses.opened.label}"
+}
+-- after/a/conf.json --
+{
+  "first": "opened",
+  "weights": {
+    "opened": 3,
+    "done": 4
+  }
+}
+-- after/b/b.canon --
+package b
+
+import a
+
+/// The status a post starts in.
+fn start() -> ref a.statuses {
+  return a.statuses.opened
+}

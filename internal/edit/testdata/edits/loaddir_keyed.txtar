@@ -1,0 +1,100 @@
+API.md N1, API.md N4, API.md N5: Add on a keyed list loaded with load.dir creates a file in
+the glob's directory, `<key>.json`, holding the element's wire form in canonical source layout;
+API.md M7: fields equal to their defaults are left out. API.md N6: Remove of an element deletes
+its file. A Set inside an element edits its file alone (M1, M8). API.md E23: Add's inverse is
+Remove; Remove's, into a collection its files order, is Add.
+-- options --
+pkgs: pipe
+-- edit.json --
+{"ops": [
+  {"op": "add", "path": "potions", "value": {"dwID": "II_POT_MANA", "szName": "IDS_MANA", "nHeal": 50, "dwCooldownMs": 2000, "nStack": 99}},
+  {"op": "remove", "path": "potions[II_POT_HEAL_L]"},
+  {"op": "set", "path": "potions[II_POT_HEAL_S].heal", "value": 600}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- pipe/potion.canon --
+package pipe
+
+/// A healing potion; each one is a file under data/.
+record Potion {
+  /// The item define.
+  id: String @json("dwID")
+  /// Text key of the name.
+  name: String @json("szName")
+  /// Hit points restored.
+  heal: Int @json("nHeal")
+  /// Time before it can be drunk again.
+  cooldown: Duration @json("dwCooldownMs", unit: ms)
+  /// How many fit in a slot.
+  stack: Int = 99 @json("nStack")
+}
+
+/// One JSON file per potion.
+let potions: [Potion] keyed by id = load.dir("data/*.json")
+-- pipe/data/II_POT_HEAL_L.json --
+{
+  "dwID": "II_POT_HEAL_L",
+  "szName": "IDS_PROPITEM_TXT_POT_L",
+  "nHeal": 2500,
+  "dwCooldownMs": 8000
+}
+-- pipe/data/II_POT_HEAL_S.json --
+{
+  "dwID": "II_POT_HEAL_S",
+  "szName": "IDS_PROPITEM_TXT_POT_S",
+  "nHeal": 500,
+  "dwCooldownMs": 3000
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "deleted",
+      "path": "pipe/data/II_POT_HEAL_L.json"
+    },
+    {
+      "kind": "modified",
+      "path": "pipe/data/II_POT_HEAL_S.json"
+    },
+    {
+      "kind": "created",
+      "path": "pipe/data/II_POT_MANA.json"
+    }
+  ],
+  "undo": [
+    {
+      "op": "set",
+      "path": "pipe:potions[II_POT_HEAL_S].heal",
+      "source": "500"
+    },
+    {
+      "op": "add",
+      "path": "pipe:potions",
+      "source": "{ id: \"II_POT_HEAL_L\", name: \"IDS_PROPITEM_TXT_POT_L\", heal: 2500, cooldown: 8s }"
+    },
+    {
+      "op": "remove",
+      "path": "pipe:potions[II_POT_MANA]"
+    }
+  ],
+  "touched": [
+    "pipe"
+  ]
+}
+-- after/pipe/data/II_POT_HEAL_S.json --
+{
+  "dwID": "II_POT_HEAL_S",
+  "szName": "IDS_PROPITEM_TXT_POT_S",
+  "nHeal": 600,
+  "dwCooldownMs": 3000
+}
+-- after/pipe/data/II_POT_MANA.json --
+{
+  "dwID": "II_POT_MANA",
+  "szName": "IDS_MANA",
+  "nHeal": 50,
+  "dwCooldownMs": 2000
+}
