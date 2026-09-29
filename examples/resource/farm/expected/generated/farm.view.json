@@ -1,0 +1,1581 @@
+{
+  "$schema": "canon-vm/1",
+  "package": "resource.farm",
+  "language": "0.1",
+  "requires": [
+    "resource.vocab",
+    "studio"
+  ],
+  "types": {
+    "resource.farm.Bonus": {
+      "kind": "record",
+      "name": "Bonus",
+      "help": "resource.farm:Bonus.help",
+      "fields": [
+        {
+          "name": "attribute",
+          "type": {
+            "kind": "ref",
+            "collection": "resource.farm:attributes",
+            "element": "$define",
+            "keyType": "string",
+            "count": 8,
+            "active": 8
+          },
+          "required": true,
+          "help": "resource.farm:Bonus.attribute.help",
+          "wire": {
+            "name": "dst"
+          }
+        },
+        {
+          "name": "value",
+          "type": {
+            "kind": "int",
+            "bits": 64,
+            "signed": true
+          },
+          "default": 0,
+          "help": "resource.farm:Bonus.value.help",
+          "wire": {
+            "name": "value"
+          }
+        }
+      ]
+    },
+    "resource.farm.FarmConfig": {
+      "kind": "record",
+      "name": "FarmConfig",
+      "help": "resource.farm:FarmConfig.help",
+      "fields": [
+        {
+          "name": "global",
+          "type": {
+            "kind": "record",
+            "ref": "resource.farm.Global"
+          },
+          "required": true,
+          "help": "resource.farm:FarmConfig.global.help",
+          "wire": {
+            "name": "global"
+          }
+        },
+        {
+          "name": "modelTypes",
+          "type": {
+            "kind": "list",
+            "of": {
+              "kind": "record",
+              "ref": "resource.farm.ModelType"
+            },
+            "max": 100,
+            "keyedBy": "typeId"
+          },
+          "required": true,
+          "help": "resource.farm:FarmConfig.modelTypes.help",
+          "wire": {
+            "name": "modelTypes"
+          }
+        }
+      ]
+    },
+    "resource.farm.Global": {
+      "kind": "record",
+      "name": "Global",
+      "help": "resource.farm:Global.help",
+      "fields": [
+        {
+          "name": "farmPurchasePrice",
+          "type": {
+            "kind": "int",
+            "bits": 64,
+            "signed": true,
+            "min": 0
+          },
+          "default": 50000000,
+          "help": "resource.farm:Global.farmPurchasePrice.help",
+          "wire": {
+            "name": "farmPurchasePrice"
+          }
+        },
+        {
+          "name": "visitCost",
+          "type": {
+            "kind": "int",
+            "bits": 64,
+            "signed": true,
+            "min": 0
+          },
+          "default": 100000,
+          "help": "resource.farm:Global.visitCost.help",
+          "wire": {
+            "name": "visitCost"
+          }
+        },
+        {
+          "name": "worldLevelMinRequired",
+          "type": {
+            "kind": "int",
+            "bits": 64,
+            "signed": true,
+            "min": 0
+          },
+          "default": 5,
+          "help": "resource.farm:Global.worldLevelMinRequired.help",
+          "wire": {
+            "name": "worldLevelMinRequired"
+          }
+        },
+        {
+          "name": "activityPointsMinRequired",
+          "type": {
+            "kind": "int",
+            "bits": 64,
+            "signed": true,
+            "min": 0
+          },
+          "default": 1000,
+          "help": "resource.farm:Global.activityPointsMinRequired.help",
+          "wire": {
+            "name": "activityPointsMinRequired"
+          }
+        },
+        {
+          "name": "productionTick",
+          "type": {
+            "kind": "duration",
+            "min": 1000
+          },
+          "default": 3600000,
+          "help": "resource.farm:Global.productionTick.help",
+          "wire": {
+            "name": "productionTickIntervalSec",
+            "unit": "s"
+          }
+        },
+        {
+          "name": "maxModels",
+          "type": {
+            "kind": "optional",
+            "of": {
+              "kind": "int",
+              "bits": 64,
+              "signed": true
+            }
+          },
+          "default": null,
+          "help": "resource.farm:Global.maxModels.help",
+          "deprecated": "resource.farm:Global.maxModels.deprecated",
+          "wire": {
+            "name": "maxModels"
+          }
+        }
+      ]
+    },
+    "resource.farm.ItemCost": {
+      "kind": "record",
+      "name": "ItemCost",
+      "help": "resource.farm:ItemCost.help",
+      "fields": [
+        {
+          "name": "item",
+          "type": {
+            "kind": "ref",
+            "collection": "resource.vocab:items",
+            "element": "resource.vocab.Item",
+            "keyType": "string",
+            "count": 16,
+            "active": 16
+          },
+          "required": true,
+          "help": "resource.farm:ItemCost.item.help",
+          "wire": {
+            "name": "itemDefine"
+          }
+        },
+        {
+          "name": "count",
+          "type": {
+            "kind": "int",
+            "bits": 64,
+            "signed": true,
+            "min": 1
+          },
+          "default": 1,
+          "help": "resource.farm:ItemCost.count.help",
+          "wire": {
+            "name": "count"
+          }
+        }
+      ]
+    },
+    "resource.farm.Level": {
+      "kind": "record",
+      "name": "Level",
+      "help": "resource.farm:Level.help",
+      "fields": [
+        {
+          "name": "level",
+          "type": {
+            "kind": "int",
+            "bits": 64,
+            "signed": true,
+            "min": 1
+          },
+          "required": true,
+          "help": "resource.farm:Level.level.help",
+          "wire": {
+            "name": "level"
+          }
+        },
+        {
+          "name": "modelName",
+          "type": {
+            "kind": "string",
+            "minLen": 1
+          },
+          "required": true,
+          "help": "resource.farm:Level.modelName.help",
+          "wire": {
+            "name": "modelName"
+          }
+        },
+        {
+          "name": "productionItem",
+          "type": {
+            "kind": "optional",
+            "of": {
+              "kind": "ref",
+              "collection": "resource.vocab:items",
+              "element": "resource.vocab.Item",
+              "keyType": "string",
+              "count": 16,
+              "active": 16
+            }
+          },
+          "default": null,
+          "help": "resource.farm:Level.productionItem.help",
+          "wire": {
+            "name": "productionItemDefine"
+          }
+        },
+        {
+          "name": "productionPerHour",
+          "type": {
+            "kind": "optional",
+            "of": {
+              "kind": "int",
+              "bits": 64,
+              "signed": true,
+              "min": 0
+            }
+          },
+          "default": null,
+          "help": "resource.farm:Level.productionPerHour.help",
+          "wire": {
+            "name": "productionPerHour"
+          }
+        },
+        {
+          "name": "maxStorage",
+          "type": {
+            "kind": "optional",
+            "of": {
+              "kind": "int",
+              "bits": 64,
+              "signed": true,
+              "min": 0
+            }
+          },
+          "default": null,
+          "help": "resource.farm:Level.maxStorage.help",
+          "wire": {
+            "name": "maxStorage"
+          }
+        },
+        {
+          "name": "bonuses",
+          "type": {
+            "kind": "list",
+            "of": {
+              "kind": "record",
+              "ref": "resource.farm.Bonus"
+            }
+          },
+          "default": [],
+          "help": "resource.farm:Level.bonuses.help",
+          "wire": {
+            "name": "bonuses"
+          }
+        },
+        {
+          "name": "levelUpRequirements",
+          "type": {
+            "kind": "list",
+            "of": {
+              "kind": "record",
+              "ref": "resource.farm.ItemCost"
+            }
+          },
+          "default": [],
+          "help": "resource.farm:Level.levelUpRequirements.help",
+          "wire": {
+            "name": "levelUpRequirements"
+          }
+        }
+      ]
+    },
+    "resource.farm.ModelType": {
+      "kind": "record",
+      "name": "ModelType",
+      "help": "resource.farm:ModelType.help",
+      "fields": [
+        {
+          "name": "typeId",
+          "type": {
+            "kind": "int",
+            "bits": 64,
+            "signed": true,
+            "min": 0
+          },
+          "required": true,
+          "help": "resource.farm:ModelType.typeId.help",
+          "wire": {
+            "name": "typeId"
+          }
+        },
+        {
+          "name": "typeName",
+          "type": {
+            "kind": "string"
+          },
+          "required": true,
+          "help": "resource.farm:ModelType.typeName.help",
+          "wire": {
+            "name": "typeName"
+          }
+        },
+        {
+          "name": "nameText",
+          "type": {
+            "kind": "optional",
+            "of": {
+              "kind": "ref",
+              "collection": "resource.farm:texts",
+              "element": "$define",
+              "keyType": "string",
+              "count": 3,
+              "active": 3
+            }
+          },
+          "default": null,
+          "help": "resource.farm:ModelType.nameText.help",
+          "wire": {
+            "name": "nameTextDefine"
+          }
+        },
+        {
+          "name": "unlockPrice",
+          "type": {
+            "kind": "int",
+            "bits": 64,
+            "signed": true,
+            "min": 0
+          },
+          "default": 0,
+          "help": "resource.farm:ModelType.unlockPrice.help",
+          "wire": {
+            "name": "unlockPrice"
+          }
+        },
+        {
+          "name": "unlockItems",
+          "type": {
+            "kind": "list",
+            "of": {
+              "kind": "record",
+              "ref": "resource.farm.ItemCost"
+            }
+          },
+          "default": [],
+          "help": "resource.farm:ModelType.unlockItems.help",
+          "wire": {
+            "name": "unlockItems"
+          }
+        },
+        {
+          "name": "maxBuyCount",
+          "type": {
+            "kind": "int",
+            "bits": 64,
+            "signed": true,
+            "min": 1
+          },
+          "default": 1,
+          "help": "resource.farm:ModelType.maxBuyCount.help",
+          "wire": {
+            "name": "maxBuyCount"
+          }
+        },
+        {
+          "name": "maxLevel",
+          "type": {
+            "kind": "int",
+            "bits": 64,
+            "signed": true,
+            "min": 1
+          },
+          "default": 1,
+          "help": "resource.farm:ModelType.maxLevel.help",
+          "wire": {
+            "name": "maxLevel"
+          }
+        },
+        {
+          "name": "levels",
+          "type": {
+            "kind": "list",
+            "of": {
+              "kind": "record",
+              "ref": "resource.farm.Level"
+            }
+          },
+          "required": true,
+          "help": "resource.farm:ModelType.levels.help",
+          "wire": {
+            "name": "levels"
+          }
+        }
+      ]
+    }
+  },
+  "views": {
+    "resource.farm.Bonus": {
+      "kind": "record",
+      "declared": true,
+      "title": {
+        "template": "{attribute} ({value})"
+      },
+      "singular": "resource.farm:Bonus.singular",
+      "sections": [
+        {
+          "kind": "other",
+          "fields": [
+            "attribute",
+            "value"
+          ]
+        },
+        {
+          "kind": "more"
+        },
+        {
+          "kind": "unused"
+        }
+      ],
+      "fields": {
+        "attribute": {
+          "label": "resource.farm:Bonus.attribute",
+          "help": "resource.farm:Bonus.attribute.help",
+          "control": {
+            "kind": "select",
+            "source": {
+              "collection": "resource.farm:attributes"
+            }
+          }
+        },
+        "value": {
+          "label": "resource.farm:Bonus.value",
+          "help": "resource.farm:Bonus.value.help",
+          "control": {
+            "kind": "number"
+          }
+        }
+      }
+    },
+    "resource.farm.FarmConfig": {
+      "kind": "record",
+      "declared": true,
+      "title": {
+        "template": "Farm",
+        "text": "resource.farm:FarmConfig.title"
+      },
+      "menu": {
+        "menu": "economy",
+        "icon": "farm"
+      },
+      "sections": [
+        {
+          "kind": "group",
+          "id": "settings",
+          "label": "resource.farm:FarmConfig.group.settings",
+          "flatten": true,
+          "entries": [
+            {
+              "field": "global"
+            }
+          ]
+        },
+        {
+          "kind": "group",
+          "id": "models",
+          "label": "resource.farm:FarmConfig.group.models",
+          "intro": "resource.farm:FarmConfig.group.models.intro",
+          "entries": [
+            {
+              "field": "modelTypes"
+            }
+          ]
+        },
+        {
+          "kind": "other",
+          "fields": []
+        },
+        {
+          "kind": "more"
+        },
+        {
+          "kind": "unused"
+        }
+      ],
+      "fields": {
+        "global": {
+          "label": "resource.farm:FarmConfig.global",
+          "help": "resource.farm:FarmConfig.global.help",
+          "control": {
+            "kind": "section",
+            "of": "resource.farm.Global"
+          }
+        },
+        "modelTypes": {
+          "label": "resource.farm:FarmConfig.modelTypes",
+          "help": "resource.farm:FarmConfig.modelTypes.help",
+          "control": {
+            "kind": "table",
+            "of": "resource.farm.ModelType",
+            "key": "typeId",
+            "orderable": true,
+            "columns": [
+              {
+                "field": "$entry",
+                "width": 70,
+                "mode": "entry"
+              },
+              {
+                "field": "typeName",
+                "width": 150,
+                "mode": "edit",
+                "cell": {
+                  "kind": "input"
+                }
+              },
+              {
+                "field": "nameText",
+                "mode": "edit",
+                "cell": {
+                  "kind": "select",
+                  "source": {
+                    "collection": "resource.farm:texts"
+                  },
+                  "optional": {
+                    "unset": "clear"
+                  }
+                }
+              },
+              {
+                "field": "unlockPrice",
+                "width": 130,
+                "mode": "edit",
+                "cell": {
+                  "kind": "number",
+                  "min": 0,
+                  "unit": "penya"
+                }
+              },
+              {
+                "field": "maxBuyCount",
+                "width": 110,
+                "mode": "edit",
+                "cell": {
+                  "kind": "number",
+                  "min": 1
+                }
+              },
+              {
+                "field": "maxLevel",
+                "width": 100,
+                "mode": "edit",
+                "cell": {
+                  "kind": "number",
+                  "min": 1
+                }
+              },
+              {
+                "field": "levels",
+                "width": 110,
+                "mode": "count"
+              }
+            ],
+            "singular": "resource.farm:ModelType.singular"
+          }
+        }
+      }
+    },
+    "resource.farm.Global": {
+      "kind": "record",
+      "declared": true,
+      "title": {
+        "template": "General settings",
+        "text": "resource.farm:Global.title"
+      },
+      "sections": [
+        {
+          "kind": "group",
+          "id": "prices",
+          "label": "resource.farm:Global.group.prices",
+          "entries": [
+            {
+              "field": "farmPurchasePrice"
+            },
+            {
+              "field": "visitCost"
+            }
+          ]
+        },
+        {
+          "kind": "group",
+          "id": "access",
+          "label": "resource.farm:Global.group.access",
+          "entries": [
+            {
+              "field": "worldLevelMinRequired"
+            },
+            {
+              "field": "activityPointsMinRequired"
+            }
+          ]
+        },
+        {
+          "kind": "group",
+          "id": "production",
+          "label": "resource.farm:Global.group.production",
+          "entries": [
+            {
+              "field": "productionTick"
+            }
+          ]
+        },
+        {
+          "kind": "other",
+          "fields": []
+        },
+        {
+          "kind": "more"
+        },
+        {
+          "kind": "unused",
+          "fields": [
+            "maxModels"
+          ]
+        }
+      ],
+      "fields": {
+        "activityPointsMinRequired": {
+          "label": "resource.farm:Global.activityPointsMinRequired",
+          "help": "resource.farm:Global.activityPointsMinRequired.help",
+          "control": {
+            "kind": "number",
+            "min": 0
+          }
+        },
+        "farmPurchasePrice": {
+          "label": "resource.farm:Global.farmPurchasePrice",
+          "help": "resource.farm:Global.farmPurchasePrice.help",
+          "control": {
+            "kind": "number",
+            "min": 0,
+            "unit": "penya"
+          }
+        },
+        "maxModels": {
+          "label": "resource.farm:Global.maxModels",
+          "help": "resource.farm:Global.maxModels.help",
+          "control": {
+            "kind": "number",
+            "optional": {
+              "unset": "clear"
+            }
+          },
+          "readonly": "deprecated"
+        },
+        "productionTick": {
+          "label": "resource.farm:Global.productionTick",
+          "help": "resource.farm:Global.productionTick.help",
+          "control": {
+            "kind": "duration",
+            "min": 1000,
+            "units": [
+              "s",
+              "m",
+              "h",
+              "d"
+            ]
+          }
+        },
+        "visitCost": {
+          "label": "resource.farm:Global.visitCost",
+          "help": "resource.farm:Global.visitCost.help",
+          "control": {
+            "kind": "number",
+            "min": 0,
+            "unit": "penya"
+          }
+        },
+        "worldLevelMinRequired": {
+          "label": "resource.farm:Global.worldLevelMinRequired",
+          "help": "resource.farm:Global.worldLevelMinRequired.help",
+          "control": {
+            "kind": "number",
+            "min": 0
+          }
+        }
+      }
+    },
+    "resource.farm.ItemCost": {
+      "kind": "record",
+      "declared": true,
+      "title": {
+        "template": "{count} × {item}"
+      },
+      "singular": "resource.farm:ItemCost.singular",
+      "sections": [
+        {
+          "kind": "other",
+          "fields": [
+            "item",
+            "count"
+          ]
+        },
+        {
+          "kind": "more"
+        },
+        {
+          "kind": "unused"
+        }
+      ],
+      "fields": {
+        "count": {
+          "label": "resource.farm:ItemCost.count",
+          "help": "resource.farm:ItemCost.count.help",
+          "control": {
+            "kind": "number",
+            "min": 1
+          }
+        },
+        "item": {
+          "label": "resource.farm:ItemCost.item",
+          "help": "resource.farm:ItemCost.item.help",
+          "control": {
+            "kind": "search",
+            "source": {
+              "collection": "resource.vocab:items"
+            }
+          }
+        }
+      }
+    },
+    "resource.farm.Level": {
+      "kind": "record",
+      "declared": true,
+      "title": {
+        "template": "Level {level}",
+        "text": "resource.farm:Level.title"
+      },
+      "singular": "resource.farm:Level.singular",
+      "sections": [
+        {
+          "kind": "group",
+          "id": "production",
+          "label": "resource.farm:Level.group.production",
+          "entries": [
+            {
+              "field": "modelName"
+            },
+            {
+              "field": "productionItem"
+            },
+            {
+              "field": "productionPerHour"
+            },
+            {
+              "field": "maxStorage"
+            }
+          ]
+        },
+        {
+          "kind": "group",
+          "id": "bonuses",
+          "label": "resource.farm:Level.group.bonuses",
+          "entries": [
+            {
+              "field": "bonuses"
+            }
+          ]
+        },
+        {
+          "kind": "group",
+          "id": "cost",
+          "label": "resource.farm:Level.group.cost",
+          "entries": [
+            {
+              "field": "levelUpRequirements"
+            }
+          ]
+        },
+        {
+          "kind": "other",
+          "fields": [
+            "level"
+          ]
+        },
+        {
+          "kind": "more"
+        },
+        {
+          "kind": "unused"
+        }
+      ],
+      "fields": {
+        "bonuses": {
+          "label": "resource.farm:Level.bonuses",
+          "help": "resource.farm:Level.bonuses.help",
+          "control": {
+            "kind": "table",
+            "of": "resource.farm.Bonus",
+            "orderable": true,
+            "columns": [
+              {
+                "field": "$entry",
+                "mode": "entry"
+              },
+              {
+                "field": "attribute",
+                "mode": "edit",
+                "cell": {
+                  "kind": "select",
+                  "source": {
+                    "collection": "resource.farm:attributes"
+                  }
+                }
+              },
+              {
+                "field": "value",
+                "mode": "edit",
+                "cell": {
+                  "kind": "number"
+                }
+              }
+            ],
+            "singular": "resource.farm:Bonus.singular"
+          }
+        },
+        "level": {
+          "label": "resource.farm:Level.level",
+          "help": "resource.farm:Level.level.help",
+          "control": {
+            "kind": "number",
+            "min": 1
+          }
+        },
+        "levelUpRequirements": {
+          "label": "resource.farm:Level.levelUpRequirements",
+          "help": "resource.farm:Level.levelUpRequirements.help",
+          "control": {
+            "kind": "table",
+            "of": "resource.farm.ItemCost",
+            "orderable": true,
+            "columns": [
+              {
+                "field": "$entry",
+                "mode": "entry"
+              },
+              {
+                "field": "item",
+                "mode": "edit",
+                "cell": {
+                  "kind": "search",
+                  "source": {
+                    "collection": "resource.vocab:items"
+                  }
+                }
+              },
+              {
+                "field": "count",
+                "mode": "edit",
+                "cell": {
+                  "kind": "number",
+                  "min": 1
+                }
+              }
+            ],
+            "singular": "resource.farm:ItemCost.singular"
+          }
+        },
+        "maxStorage": {
+          "label": "resource.farm:Level.maxStorage",
+          "help": "resource.farm:Level.maxStorage.help",
+          "control": {
+            "kind": "number",
+            "optional": {
+              "unset": "clear"
+            },
+            "min": 0
+          }
+        },
+        "modelName": {
+          "label": "resource.farm:Level.modelName",
+          "help": "resource.farm:Level.modelName.help",
+          "control": {
+            "kind": "input",
+            "minLen": 1
+          }
+        },
+        "productionItem": {
+          "label": "resource.farm:Level.productionItem",
+          "help": "resource.farm:Level.productionItem.help",
+          "control": {
+            "kind": "search",
+            "source": {
+              "collection": "resource.vocab:items"
+            },
+            "optional": {
+              "unset": "clear"
+            }
+          },
+          "placeholder": "resource.farm:Level.productionItem.placeholder"
+        },
+        "productionPerHour": {
+          "label": "resource.farm:Level.productionPerHour",
+          "help": "resource.farm:Level.productionPerHour.help",
+          "control": {
+            "kind": "number",
+            "optional": {
+              "unset": "clear"
+            },
+            "min": 0
+          }
+        }
+      }
+    },
+    "resource.farm.ModelType": {
+      "kind": "record",
+      "declared": true,
+      "title": {
+        "template": "{typeName}"
+      },
+      "singular": "resource.farm:ModelType.singular",
+      "sections": [
+        {
+          "kind": "group",
+          "id": "identity",
+          "label": "resource.farm:ModelType.group.identity",
+          "entries": [
+            {
+              "field": "typeId"
+            },
+            {
+              "field": "typeName"
+            },
+            {
+              "field": "nameText"
+            }
+          ]
+        },
+        {
+          "kind": "group",
+          "id": "unlock",
+          "label": "resource.farm:ModelType.group.unlock",
+          "intro": "resource.farm:ModelType.group.unlock.intro",
+          "entries": [
+            {
+              "field": "unlockPrice"
+            },
+            {
+              "field": "unlockItems"
+            },
+            {
+              "field": "maxBuyCount"
+            }
+          ]
+        },
+        {
+          "kind": "group",
+          "id": "levels",
+          "label": "resource.farm:ModelType.group.levels",
+          "intro": "resource.farm:ModelType.group.levels.intro",
+          "entries": [
+            {
+              "field": "maxLevel"
+            },
+            {
+              "field": "levels"
+            }
+          ]
+        },
+        {
+          "kind": "other",
+          "fields": []
+        },
+        {
+          "kind": "more"
+        },
+        {
+          "kind": "unused"
+        }
+      ],
+      "fields": {
+        "levels": {
+          "label": "resource.farm:ModelType.levels",
+          "help": "resource.farm:ModelType.levels.help",
+          "control": {
+            "kind": "widget",
+            "widget": "ordered_steps",
+            "fallback": {
+              "kind": "table",
+              "of": "resource.farm.Level",
+              "orderable": true,
+              "columns": [
+                {
+                  "field": "$entry",
+                  "mode": "entry"
+                },
+                {
+                  "field": "level",
+                  "width": 70,
+                  "mode": "edit",
+                  "cell": {
+                    "kind": "number",
+                    "min": 1
+                  }
+                },
+                {
+                  "field": "productionItem",
+                  "mode": "edit",
+                  "cell": {
+                    "kind": "search",
+                    "source": {
+                      "collection": "resource.vocab:items"
+                    },
+                    "optional": {
+                      "unset": "clear"
+                    }
+                  }
+                },
+                {
+                  "field": "productionPerHour",
+                  "width": 120,
+                  "mode": "edit",
+                  "cell": {
+                    "kind": "number",
+                    "optional": {
+                      "unset": "clear"
+                    },
+                    "min": 0
+                  }
+                },
+                {
+                  "field": "maxStorage",
+                  "width": 120,
+                  "mode": "edit",
+                  "cell": {
+                    "kind": "number",
+                    "optional": {
+                      "unset": "clear"
+                    },
+                    "min": 0
+                  }
+                }
+              ],
+              "singular": "resource.farm:Level.singular"
+            }
+          }
+        },
+        "maxBuyCount": {
+          "label": "resource.farm:ModelType.maxBuyCount",
+          "help": "resource.farm:ModelType.maxBuyCount.help",
+          "control": {
+            "kind": "number",
+            "min": 1
+          }
+        },
+        "maxLevel": {
+          "label": "resource.farm:ModelType.maxLevel",
+          "help": "resource.farm:ModelType.maxLevel.help",
+          "control": {
+            "kind": "number",
+            "min": 1
+          }
+        },
+        "nameText": {
+          "label": "resource.farm:ModelType.nameText",
+          "help": "resource.farm:ModelType.nameText.help",
+          "control": {
+            "kind": "select",
+            "source": {
+              "collection": "resource.farm:texts"
+            },
+            "optional": {
+              "unset": "clear"
+            }
+          }
+        },
+        "typeId": {
+          "label": "resource.farm:ModelType.typeId",
+          "help": "resource.farm:ModelType.typeId.help",
+          "control": {
+            "kind": "number",
+            "min": 0
+          }
+        },
+        "typeName": {
+          "label": "resource.farm:ModelType.typeName",
+          "help": "resource.farm:ModelType.typeName.help",
+          "control": {
+            "kind": "input"
+          }
+        },
+        "unlockItems": {
+          "label": "resource.farm:ModelType.unlockItems",
+          "help": "resource.farm:ModelType.unlockItems.help",
+          "control": {
+            "kind": "table",
+            "of": "resource.farm.ItemCost",
+            "orderable": true,
+            "columns": [
+              {
+                "field": "$entry",
+                "mode": "entry"
+              },
+              {
+                "field": "item",
+                "mode": "edit",
+                "cell": {
+                  "kind": "search",
+                  "source": {
+                    "collection": "resource.vocab:items"
+                  }
+                }
+              },
+              {
+                "field": "count",
+                "mode": "edit",
+                "cell": {
+                  "kind": "number",
+                  "min": 1
+                }
+              }
+            ],
+            "singular": "resource.farm:ItemCost.singular"
+          }
+        },
+        "unlockPrice": {
+          "label": "resource.farm:ModelType.unlockPrice",
+          "help": "resource.farm:ModelType.unlockPrice.help",
+          "control": {
+            "kind": "number",
+            "min": 0,
+            "unit": "penya"
+          }
+        }
+      }
+    }
+  },
+  "values": {
+    "resource.farm:farm": {
+      "name": "farm",
+      "order": 0,
+      "type": {
+        "kind": "record",
+        "ref": "resource.farm.FarmConfig"
+      },
+      "label": "resource.farm:farm",
+      "help": "resource.farm:farm.help",
+      "menu": {
+        "menu": "economy",
+        "icon": "farm"
+      },
+      "control": {
+        "kind": "section",
+        "of": "resource.farm.FarmConfig"
+      },
+      "editable": "json",
+      "sources": {
+        "files": [
+          "resource/farm/farm.canon",
+          "@resource/Server/System/farm_config.json"
+        ]
+      }
+    }
+  },
+  "usage": {
+    "resource.farm.Bonus": {
+      "shapes": {
+        "": {
+          "count": 1,
+          "fields": {
+            "attribute": 1,
+            "value": 1
+          },
+          "main": [
+            "attribute",
+            "value"
+          ]
+        }
+      }
+    },
+    "resource.farm.FarmConfig": {
+      "shapes": {
+        "": {
+          "count": 1,
+          "fields": {
+            "global": 1,
+            "modelTypes": 1
+          },
+          "main": []
+        }
+      }
+    },
+    "resource.farm.Global": {
+      "shapes": {
+        "": {
+          "count": 1,
+          "fields": {
+            "activityPointsMinRequired": 1,
+            "farmPurchasePrice": 1,
+            "maxModels": 1,
+            "productionTick": 1,
+            "visitCost": 1,
+            "worldLevelMinRequired": 1
+          },
+          "main": []
+        }
+      }
+    },
+    "resource.farm.ItemCost": {
+      "shapes": {
+        "": {
+          "count": 5,
+          "fields": {
+            "count": 5,
+            "item": 5
+          },
+          "main": [
+            "item",
+            "count"
+          ]
+        }
+      }
+    },
+    "resource.farm.Level": {
+      "shapes": {
+        "": {
+          "count": 3,
+          "fields": {
+            "bonuses": 1,
+            "level": 3,
+            "levelUpRequirements": 2,
+            "maxStorage": 2,
+            "modelName": 3,
+            "productionItem": 2,
+            "productionPerHour": 2
+          },
+          "main": [
+            "level"
+          ]
+        }
+      }
+    },
+    "resource.farm.ModelType": {
+      "shapes": {
+        "": {
+          "count": 2,
+          "fields": {
+            "levels": 2,
+            "maxBuyCount": 2,
+            "maxLevel": 2,
+            "nameText": 2,
+            "typeId": 2,
+            "typeName": 2,
+            "unlockItems": 1,
+            "unlockPrice": 1
+          },
+          "main": []
+        }
+      }
+    }
+  },
+  "search": {
+    "resource.farm:attributes": {
+      "type": "$define",
+      "keyType": "string",
+      "count": 8,
+      "active": 8,
+      "rows": [
+        {
+          "key": "DST_STR"
+        },
+        {
+          "key": "DST_CHR_CHANCECRITICAL"
+        },
+        {
+          "key": "DST_ATTACKSPEED"
+        },
+        {
+          "key": "DST_HP"
+        },
+        {
+          "key": "DST_MP"
+        },
+        {
+          "key": "DST_ATKPOWER_RATE"
+        },
+        {
+          "key": "DST_CRITICAL_BONUS"
+        },
+        {
+          "key": "DST_FARM_PRODUCTION_RATE"
+        }
+      ]
+    },
+    "resource.farm:texts": {
+      "type": "$define",
+      "keyType": "string",
+      "count": 3,
+      "active": 3,
+      "rows": [
+        {
+          "key": "TID_BLANK"
+        },
+        {
+          "key": "TID_FARM_PRODUCTION_BLE"
+        },
+        {
+          "key": "TID_FARM_PRODUCTION_WINDMILL"
+        }
+      ]
+    }
+  },
+  "assets": {},
+  "units": {
+    "penya": {
+      "suffix": "studio:units.penya.suffix",
+      "scale": 1,
+      "thousands": true,
+      "decimals": 0
+    }
+  },
+  "widgets": {
+    "ordered_steps": {
+      "value": {
+        "kind": "list",
+        "of": {
+          "kind": "any"
+        }
+      },
+      "help": "An ordered list where position has meaning (level 1, 2, 3...): numbered steps,\ndrag to reorder, with the position shown as the step's name (`step:` renames it)."
+    }
+  },
+  "i18n": {
+    "source": "en",
+    "languages": {
+      "en": {
+        "texts": {
+          "Bonus.attribute": "Attribute",
+          "Bonus.attribute.help": "The attribute raised (a DST_* define).",
+          "Bonus.help": "An attribute bonus granted while a model is planted.",
+          "Bonus.singular": "a bonus",
+          "Bonus.value": "Value",
+          "Bonus.value.help": "How much it is raised.",
+          "FarmConfig.global": "Global",
+          "FarmConfig.global.help": "Settings that apply to every farm.",
+          "FarmConfig.group.models": "Plantable models",
+          "FarmConfig.group.models.intro": "A model = an unlock price, a number of copies players can buy, and a ladder of levels.",
+          "FarmConfig.group.settings": "General settings",
+          "FarmConfig.help": "The whole file.",
+          "FarmConfig.modelTypes": "Model types",
+          "FarmConfig.modelTypes.help": "The models players can plant.",
+          "FarmConfig.title": "Farm",
+          "Global.activityPointsMinRequired": "Minimum activity points",
+          "Global.activityPointsMinRequired.help": "Minimum activity points required to own a farm.",
+          "Global.farmPurchasePrice": "Farm purchase price",
+          "Global.farmPurchasePrice.help": "Paid once to own a farm.",
+          "Global.group.access": "Access conditions",
+          "Global.group.prices": "Prices",
+          "Global.group.production": "Production",
+          "Global.help": "Settings that apply to every farm.",
+          "Global.maxModels": "Max models",
+          "Global.maxModels.deprecated": "never read by LoadFromFile: the real cap is FARM_MAX_MODELS = 100. Kept as is; changing it changes nothing in game.",
+          "Global.maxModels.help": "A cap on planted models that nothing enforces.",
+          "Global.productionTick": "Production tick",
+          "Global.productionTick.help": "How often every planted model produces.",
+          "Global.title": "General settings",
+          "Global.visitCost": "Cost of a visit",
+          "Global.visitCost.help": "Paid by a player who visits someone else's farm.",
+          "Global.worldLevelMinRequired": "Minimum faery rank",
+          "Global.worldLevelMinRequired.help": "Minimum faery rank required to own a farm.",
+          "ItemCost.count": "Quantity",
+          "ItemCost.count.help": "How many are consumed.",
+          "ItemCost.help": "An item and how many of it.",
+          "ItemCost.item": "Item",
+          "ItemCost.item.help": "An item that does not resolve on the WorldServer prevents the whole farm from loading.",
+          "ItemCost.singular": "an item",
+          "Level.bonuses": "Bonuses",
+          "Level.bonuses.help": "Bonuses granted while a model of this level is planted.",
+          "Level.check.production_together": "productionItem, productionPerHour and maxStorage go together: set all three, or none on a decorative level",
+          "Level.group.bonuses": "Bonuses",
+          "Level.group.cost": "Cost to level up",
+          "Level.group.production": "Production",
+          "Level.help": "One level of a model: what it produces, what it grants, and what the next level costs.\n\nA Premium model (typeId 7 to 14 in farm_config.json) is decorative: its single level\nproduces nothing and only carries bonuses, so its three production fields are left\nout. The loader then falls back to productionPerHour 1 and maxStorage 100, which no\nproduction ever uses since there is no production item.",
+          "Level.level": "Level",
+          "Level.level.help": "Not used for indexing: GetLevel(n) takes element n-1, so the ORDER of the levels\nis what counts. Kept consistent by the `warn` on ModelType.",
+          "Level.levelUpRequirements": "Level up requirements",
+          "Level.levelUpRequirements.help": "Items consumed to move TO the next level.",
+          "Level.maxStorage": "Maximum storage",
+          "Level.maxStorage.help": "Items the level holds before production stops; `none` on a decorative level.",
+          "Level.modelName": "3D model",
+          "Level.modelName.help": "A MODELELEM of OT_OBJ (obj_UC017, KaillunPlants04...). An unknown name is only a\nwarning in C++; it is resolved again at runtime.",
+          "Level.productionItem": "Produced item",
+          "Level.productionItem.help": "The item produced; `none` on a decorative level.",
+          "Level.productionItem.placeholder": "Decorative: produces nothing",
+          "Level.productionPerHour": "Production per hour",
+          "Level.productionPerHour.help": "Items produced per hour; `none` on a decorative level.",
+          "Level.singular": "a level",
+          "Level.title": "Level {level}",
+          "ModelType.check.level_mismatch": "a `level` value does not match its position; the loader uses the position",
+          "ModelType.check.unreachable_levels": "maxLevel is {maxLevel} but only {levels.len()} levels exist: level {levels.len() + 1} and above are unreachable (GetLevel returns nullptr)",
+          "ModelType.group.identity": "Identity",
+          "ModelType.group.levels": "Levels",
+          "ModelType.group.levels.intro": "One level per step, in order: production, storage, bonuses and the cost to level up.",
+          "ModelType.group.unlock": "Unlock",
+          "ModelType.group.unlock.intro": "What the player pays to unlock this model.",
+          "ModelType.help": "A plantable model and its ladder of levels.",
+          "ModelType.levels": "Levels",
+          "ModelType.levels.help": "The ORDER is the level: the first element is level 1.",
+          "ModelType.maxBuyCount": "Copies players can buy",
+          "ModelType.maxBuyCount.help": "How many of this model one player may buy.",
+          "ModelType.maxLevel": "Maximum level",
+          "ModelType.maxLevel.help": "Highest level a model can reach.",
+          "ModelType.nameText": "Displayed name",
+          "ModelType.nameText.help": "Text shown to players as the model's name.",
+          "ModelType.singular": "a model",
+          "ModelType.typeId": "Id",
+          "ModelType.typeId.help": "Stored on players' farms: changing it breaks models already planted.",
+          "ModelType.typeName": "Internal name",
+          "ModelType.typeName.help": "Logging label. The name shown to players is `nameText`.",
+          "ModelType.unlockItems": "Unlock items",
+          "ModelType.unlockItems.help": "Paid in addition to the gold. Only read when it is an array.",
+          "ModelType.unlockPrice": "Unlock price",
+          "ModelType.unlockPrice.help": "Paid to unlock the model.",
+          "farm": "Farm",
+          "farm.help": "Server/System/farm_config.json, read in place."
+        }
+      },
+      "fr": {
+        "files": [
+          "resource/farm/farm.fr.canon"
+        ],
+        "missing": 39,
+        "texts": {
+          "Bonus.attribute": "Attribut",
+          "Bonus.singular": "un bonus",
+          "Bonus.value": "Valeur",
+          "FarmConfig.group.models": "Modèles plantables",
+          "FarmConfig.group.models.intro": "Un modèle = un prix de déblocage, un nombre d'exemplaires achetables et une échelle de paliers.",
+          "FarmConfig.group.settings": "Réglages généraux",
+          "FarmConfig.title": "Ferme",
+          "Global.activityPointsMinRequired": "Points d'activité minimum",
+          "Global.farmPurchasePrice": "Prix d'achat de la ferme",
+          "Global.group.access": "Conditions d'accès",
+          "Global.group.prices": "Prix",
+          "Global.group.production": "Production",
+          "Global.maxModels.deprecated": "Jamais lu par LoadFromFile : la vraie limite est FARM_MAX_MODELS = 100. Conservé tel quel ; le modifier ne change rien en jeu.",
+          "Global.productionTick": "Cadence de production",
+          "Global.title": "Réglages généraux",
+          "Global.visitCost": "Coût d'une visite",
+          "Global.worldLevelMinRequired": "Rang de féerie minimum",
+          "ItemCost.count": "Quantité",
+          "ItemCost.item": "Objet",
+          "ItemCost.singular": "un objet",
+          "Level.check.production_together": "productionItem, productionPerHour et maxStorage vont ensemble : les trois, ou aucun sur un palier décoratif",
+          "Level.group.bonuses": "Bonus",
+          "Level.group.cost": "Coût de montée",
+          "Level.group.production": "Production",
+          "Level.maxStorage": "Stockage maximum",
+          "Level.modelName": "Modèle 3D",
+          "Level.productionItem": "Objet produit",
+          "Level.productionItem.placeholder": "Décoratif : ne produit rien",
+          "Level.productionPerHour": "Production / heure",
+          "Level.singular": "un palier",
+          "Level.title": "Palier {level}",
+          "ModelType.check.level_mismatch": "une valeur `level` ne correspond pas à sa position ; le chargeur utilise la position",
+          "ModelType.check.unreachable_levels": "maxLevel vaut {maxLevel} mais seuls {levels.len()} paliers existent : le niveau {levels.len() + 1} et au-delà sont inatteignables (GetLevel renvoie nullptr)",
+          "ModelType.group.identity": "Identité",
+          "ModelType.group.levels": "Paliers",
+          "ModelType.group.levels.intro": "Un palier par niveau, dans l'ordre : production, stockage, bonus et coût de montée.",
+          "ModelType.group.unlock": "Déblocage",
+          "ModelType.group.unlock.intro": "Ce que le joueur paie pour débloquer ce modèle.",
+          "ModelType.levels": "Paliers",
+          "ModelType.levels.help": "L'ORDRE fait le niveau : le premier élément est le niveau 1.",
+          "ModelType.maxBuyCount": "Exemplaires achetables",
+          "ModelType.maxLevel": "Niveau maximum",
+          "ModelType.nameText": "Nom affiché",
+          "ModelType.singular": "un modèle",
+          "ModelType.typeId": "Identifiant",
+          "ModelType.typeId.help": "Stocké sur les fermes des joueurs : le changer casse les modèles déjà plantés.",
+          "ModelType.typeName": "Nom interne",
+          "ModelType.unlockItems": "Objets de déblocage",
+          "ModelType.unlockPrice": "Prix de déblocage"
+        }
+      }
+    }
+  },
+  "findings": [
+    {
+      "severity": "warning",
+      "code": "W5001",
+      "file": "@resource/Server/System/farm_config.json",
+      "line": 17,
+      "col": 19,
+      "endLine": 17,
+      "endCol": 20,
+      "pointer": "/modelTypes/0/maxLevel",
+      "package": "resource.farm",
+      "path": "farm.modelTypes[1].maxLevel",
+      "message": "maxLevel is 3 but only 2 levels exist: level 3 and above are unreachable (GetLevel returns nullptr)",
+      "check": "unreachable_levels",
+      "related": [
+        {
+          "file": "resource/farm/farm.canon",
+          "line": 109,
+          "col": 3,
+          "endLine": 110,
+          "endCol": 150,
+          "note": "check unreachable_levels"
+        }
+      ],
+      "messages": {
+        "fr": "maxLevel vaut 3 mais seuls 2 paliers existent : le niveau 3 et au-delà sont inatteignables (GetLevel renvoie nullptr)"
+      }
+    },
+    {
+      "severity": "warning",
+      "code": "W1701",
+      "file": "resource/farm/farm.fr.canon",
+      "line": 14,
+      "col": 1,
+      "endLine": 14,
+      "endCol": 15,
+      "package": "resource.farm",
+      "message": "39 texts of package resource.farm have no fr translation (canon i18n status resource.farm --lang fr --list)"
+    }
+  ]
+}

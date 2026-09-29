@@ -6,4 +6,5 @@ pipeline/out/go/rt/rt.go go/rt/rt.go
 pipeline/out/pipeline.gen.cpp pipeline.gen.cpp
 pipeline/out/pipeline.gen.h pipeline.gen.h
 pipeline/out/pipeline_conformance.gen.cpp pipeline_conformance.gen.cpp
+pipeline/out/potion.view.json potion.view.json
 pipeline/out/potions.json potions.json

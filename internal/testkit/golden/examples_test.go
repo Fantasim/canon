@@ -29,23 +29,6 @@ const (
 	fixturesDir = "_fixtures"
 )
 
-// defaultTargets are the targets an example without its own row in exampleTargets is built for.
-var defaultTargets = []canon.Target{canon.TargetGo, canon.TargetJSON}
-
-// exampleTargets overrides defaultTargets for the examples with a MANIFEST whose cpp emit gen/cpp writes: pipeline and features.dependent, both in data mode.
-var exampleTargets = map[string][]canon.Target{
-	"pipeline":           {canon.TargetGo, canon.TargetCpp, canon.TargetJSON},
-	"features.dependent": {canon.TargetGo, canon.TargetCpp, canon.TargetJSON},
-}
-
-// targetsFor is exampleTargets[name], or defaultTargets without a row.
-func targetsFor(name string) []canon.Target {
-	if t, ok := exampleTargets[name]; ok {
-		return t
-	}
-	return defaultTargets
-}
-
 // exampleExtra are extra selectors an example's Build needs beyond its own package (M1
 // acceptance item 3: sovcommon.ui and sovcommon.roles must also be emitted, not just imported).
 var exampleExtra = map[string][]string{"teamboard": {"sovcommon..."}}
@@ -70,6 +53,7 @@ func TestExamples(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	manifests = withTargetManifests(t, root, manifests)
 	if len(manifests) == 0 {
 		t.Fatal("no example has expected/MANIFEST")
 	}
@@ -116,17 +100,7 @@ func manifestName(root, expected string) string {
 // into it, and compares findings.txt and every file expected/MANIFEST lists.
 func runExample(t *testing.T, root, name, expected string) {
 	t.Helper()
-	tmp := t.TempDir()
-	proj := filepath.Join(tmp, "proj")
-	if err := copyProject(proj, root); err != nil {
-		t.Fatal(err)
-	}
-	roots := exampleRoots(proj, tmp)
-	p, err := canon.Open(filepath.ToSlash(proj), canon.Options{Roots: roots, Cache: "off"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() { _ = p.Close() }()
+	proj, roots, p := openExamples(t, root)
 	// findings.txt is `canon check <example>` alone (API.md R2); Build's own selection also
 	// carries exampleExtra[name], the sibling packages M1 acceptance item 3 also emits.
 	checked, err := p.Check(context.Background(), name)
@@ -144,6 +118,25 @@ func runExample(t *testing.T, root, name, expected string) {
 	listed := compareManifest(t, expected, proj, roots, res)
 	checkNothingUnlisted(t, res, listed)
 	checkNothingUnwritten(t, res, listed)
+	checkViewGoldens(t, expected, res)
+}
+
+// openExamples copies root (examples/) into a temporary project and opens it with every outside
+// root redirected (exampleRoots); the project is closed when t ends.
+func openExamples(t *testing.T, root string) (proj string, roots map[string]string, p *canon.Project) {
+	t.Helper()
+	tmp := t.TempDir()
+	proj = filepath.Join(tmp, "proj")
+	if err := copyProject(proj, root); err != nil {
+		t.Fatal(err)
+	}
+	roots = exampleRoots(proj, tmp)
+	p, err := canon.Open(filepath.ToSlash(proj), canon.Options{Roots: roots, Cache: "off"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = p.Close() })
+	return proj, roots, p
 }
 
 // copyProject copies root into proj, skipping every out/ directory: a fixture's own out/, if

@@ -1,0 +1,1355 @@
+{
+  "$schema": "canon-vm/1",
+  "package": "resource.events",
+  "language": "0.1",
+  "requires": [
+    "resource.vocab",
+    "sovcommon.time",
+    "studio"
+  ],
+  "types": {
+    "resource.events.Event": {
+      "kind": "record",
+      "name": "Event",
+      "help": "resource.events:Event.help",
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "string",
+            "pattern": "^[A-Za-z0-9_]{1,64}$"
+          },
+          "required": true,
+          "help": "resource.events:Event.id.help",
+          "wire": {
+            "name": "id"
+          }
+        },
+        {
+          "name": "worldId",
+          "type": {
+            "kind": "int",
+            "bits": 32,
+            "signed": false,
+            "min": 1,
+            "max": 4294967295
+          },
+          "required": true,
+          "help": "resource.events:Event.worldId.help",
+          "wire": {
+            "name": "worldId"
+          }
+        },
+        {
+          "name": "targetCount",
+          "type": {
+            "kind": "int",
+            "bits": 64,
+            "signed": true,
+            "min": 1,
+            "max": 1000000
+          },
+          "required": true,
+          "help": "resource.events:Event.targetCount.help",
+          "wire": {
+            "name": "targetCount"
+          }
+        },
+        {
+          "name": "kind",
+          "type": {
+            "kind": "variant",
+            "ref": "resource.events.EventKind"
+          },
+          "required": true,
+          "help": "resource.events:Event.kind.help",
+          "wire": {
+            "name": "kind",
+            "inline": true
+          }
+        },
+        {
+          "name": "schedule",
+          "type": {
+            "kind": "list",
+            "of": {
+              "kind": "record",
+              "ref": "sovcommon.time.Window"
+            },
+            "min": 1,
+            "max": 64
+          },
+          "required": true,
+          "help": "resource.events:Event.schedule.help",
+          "wire": {
+            "name": "schedule"
+          }
+        },
+        {
+          "name": "rollMode",
+          "type": {
+            "kind": "enum",
+            "ref": "resource.events.RollMode"
+          },
+          "default": "local_budget",
+          "help": "resource.events:Event.rollMode.help",
+          "wire": {
+            "name": "rollMode"
+          }
+        }
+      ]
+    },
+    "resource.events.EventConfig": {
+      "kind": "record",
+      "name": "EventConfig",
+      "help": "resource.events:EventConfig.help",
+      "fields": [
+        {
+          "name": "version",
+          "type": {
+            "kind": "int",
+            "bits": 64,
+            "signed": true,
+            "predicate": "it == 1"
+          },
+          "required": true,
+          "help": "resource.events:EventConfig.version.help",
+          "wire": {
+            "name": "version"
+          }
+        },
+        {
+          "name": "events",
+          "type": {
+            "kind": "list",
+            "of": {
+              "kind": "record",
+              "ref": "resource.events.Event"
+            },
+            "max": 256,
+            "keyedBy": "id"
+          },
+          "required": true,
+          "help": "resource.events:EventConfig.events.help",
+          "wire": {
+            "name": "events"
+          }
+        }
+      ]
+    },
+    "resource.events.EventKind": {
+      "kind": "variant",
+      "name": "EventKind",
+      "help": "resource.events:EventKind.help",
+      "tag": "type",
+      "cases": [
+        {
+          "name": "spawn_monster",
+          "wire": "spawn_monster",
+          "label": "resource.events:EventKind.spawn_monster",
+          "help": "resource.events:EventKind.spawn_monster.help",
+          "fields": [
+            {
+              "name": "monsterId",
+              "type": {
+                "kind": "ref",
+                "collection": "resource.events:monsters",
+                "element": "$define",
+                "keyType": "string",
+                "count": 6,
+                "active": 6
+              },
+              "required": true,
+              "help": "resource.events:EventKind.spawn_monster.monsterId.help",
+              "wire": {
+                "name": "monsterId"
+              }
+            },
+            {
+              "name": "spawnRegion",
+              "type": {
+                "kind": "record",
+                "ref": "resource.events.Rect"
+              },
+              "required": true,
+              "help": "resource.events:EventKind.spawn_monster.spawnRegion.help",
+              "wire": {
+                "name": "spawnRegion"
+              }
+            },
+            {
+              "name": "monsterLifetime",
+              "type": {
+                "kind": "optional",
+                "of": {
+                  "kind": "duration",
+                  "min": 1000,
+                  "max": 86400000
+                }
+              },
+              "default": null,
+              "help": "resource.events:EventKind.spawn_monster.monsterLifetime.help",
+              "wire": {
+                "name": "monsterLifetimeSec",
+                "unit": "s"
+              }
+            }
+          ]
+        },
+        {
+          "name": "spawn_item",
+          "wire": "spawn_item",
+          "label": "resource.events:EventKind.spawn_item",
+          "help": "resource.events:EventKind.spawn_item.help",
+          "fields": [
+            {
+              "name": "itemId",
+              "type": {
+                "kind": "ref",
+                "collection": "resource.vocab:items",
+                "element": "resource.vocab.Item",
+                "keyType": "string",
+                "count": 16,
+                "active": 16
+              },
+              "required": true,
+              "help": "resource.events:EventKind.spawn_item.itemId.help",
+              "wire": {
+                "name": "itemId"
+              }
+            },
+            {
+              "name": "itemCount",
+              "type": {
+                "kind": "list",
+                "of": {
+                  "kind": "int",
+                  "bits": 64,
+                  "signed": true,
+                  "min": 1,
+                  "max": 100000
+                },
+                "predicate": "it.len() == 2 and it[0] <= it[1]"
+              },
+              "default": [
+                1,
+                1
+              ],
+              "help": "resource.events:EventKind.spawn_item.itemCount.help",
+              "wire": {
+                "name": "itemCount"
+              }
+            },
+            {
+              "name": "spawnRegion",
+              "type": {
+                "kind": "record",
+                "ref": "resource.events.Rect"
+              },
+              "required": true,
+              "help": "resource.events:EventKind.spawn_item.spawnRegion.help",
+              "wire": {
+                "name": "spawnRegion"
+              }
+            },
+            {
+              "name": "groundLifetime",
+              "type": {
+                "kind": "optional",
+                "of": {
+                  "kind": "duration",
+                  "min": 60000,
+                  "max": 86400000
+                }
+              },
+              "default": null,
+              "help": "resource.events:EventKind.spawn_item.groundLifetime.help",
+              "wire": {
+                "name": "groundLifetimeSec",
+                "unit": "s"
+              }
+            }
+          ]
+        },
+        {
+          "name": "monster_drop_inject",
+          "wire": "monster_drop_inject",
+          "label": "resource.events:EventKind.monster_drop_inject",
+          "help": "resource.events:EventKind.monster_drop_inject.help",
+          "fields": [
+            {
+              "name": "itemId",
+              "type": {
+                "kind": "ref",
+                "collection": "resource.vocab:items",
+                "element": "resource.vocab.Item",
+                "keyType": "string",
+                "count": 16,
+                "active": 16
+              },
+              "required": true,
+              "help": "resource.events:EventKind.monster_drop_inject.itemId.help",
+              "wire": {
+                "name": "itemId"
+              }
+            },
+            {
+              "name": "itemCount",
+              "type": {
+                "kind": "list",
+                "of": {
+                  "kind": "int",
+                  "bits": 64,
+                  "signed": true,
+                  "min": 1,
+                  "max": 100000
+                },
+                "predicate": "it.len() == 2 and it[0] <= it[1]"
+              },
+              "default": [
+                1,
+                1
+              ],
+              "help": "resource.events:EventKind.monster_drop_inject.itemCount.help",
+              "wire": {
+                "name": "itemCount"
+              }
+            },
+            {
+              "name": "levelMin",
+              "type": {
+                "kind": "int",
+                "bits": 64,
+                "signed": true,
+                "min": 0,
+                "max": 1000
+              },
+              "default": 0,
+              "help": "resource.events:EventKind.monster_drop_inject.levelMin.help",
+              "wire": {
+                "name": "levelMin"
+              }
+            },
+            {
+              "name": "levelMax",
+              "type": {
+                "kind": "int",
+                "bits": 64,
+                "signed": true,
+                "min": 0,
+                "max": 1000
+              },
+              "default": 0,
+              "help": "resource.events:EventKind.monster_drop_inject.levelMax.help",
+              "wire": {
+                "name": "levelMax"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "resource.events.Rect": {
+      "kind": "record",
+      "name": "Rect",
+      "help": "resource.events:Rect.help",
+      "fields": [
+        {
+          "name": "left",
+          "type": {
+            "kind": "float",
+            "bits": 64
+          },
+          "required": true,
+          "help": "resource.events:Rect.left.help",
+          "wire": {
+            "name": "left"
+          }
+        },
+        {
+          "name": "top",
+          "type": {
+            "kind": "float",
+            "bits": 64
+          },
+          "required": true,
+          "help": "resource.events:Rect.top.help",
+          "wire": {
+            "name": "top"
+          }
+        },
+        {
+          "name": "right",
+          "type": {
+            "kind": "float",
+            "bits": 64
+          },
+          "required": true,
+          "help": "resource.events:Rect.right.help",
+          "wire": {
+            "name": "right"
+          }
+        },
+        {
+          "name": "bottom",
+          "type": {
+            "kind": "float",
+            "bits": 64
+          },
+          "required": true,
+          "help": "resource.events:Rect.bottom.help",
+          "wire": {
+            "name": "bottom"
+          }
+        }
+      ]
+    },
+    "resource.events.RollMode": {
+      "kind": "enum",
+      "name": "RollMode",
+      "help": "resource.events:RollMode.help",
+      "members": [
+        {
+          "name": "authoritative",
+          "wire": "authoritative",
+          "index": 0,
+          "label": "resource.events:RollMode.authoritative"
+        },
+        {
+          "name": "local_budget",
+          "wire": "local_budget",
+          "index": 1,
+          "label": "resource.events:RollMode.local_budget"
+        }
+      ]
+    }
+  },
+  "views": {
+    "resource.events.Event": {
+      "kind": "record",
+      "declared": true,
+      "title": {
+        "template": "{id}"
+      },
+      "singular": "resource.events:Event.singular",
+      "sections": [
+        {
+          "kind": "group",
+          "id": "event",
+          "label": "resource.events:Event.group.event",
+          "entries": [
+            {
+              "field": "id"
+            },
+            {
+              "field": "kind"
+            },
+            {
+              "field": "worldId"
+            },
+            {
+              "field": "targetCount"
+            }
+          ]
+        },
+        {
+          "kind": "group",
+          "id": "schedule",
+          "label": "resource.events:Event.group.schedule",
+          "intro": "resource.events:Event.group.schedule.intro",
+          "entries": [
+            {
+              "field": "schedule"
+            }
+          ]
+        },
+        {
+          "kind": "group",
+          "id": "advanced",
+          "label": "resource.events:Event.group.advanced",
+          "advanced": true,
+          "entries": [
+            {
+              "field": "rollMode"
+            }
+          ]
+        },
+        {
+          "kind": "other",
+          "fields": [
+            "kind.spawn_monster.monsterId",
+            "kind.spawn_monster.spawnRegion",
+            "kind.spawn_monster.monsterLifetime",
+            "kind.spawn_item.itemId",
+            "kind.spawn_item.itemCount",
+            "kind.spawn_item.spawnRegion",
+            "kind.spawn_item.groundLifetime",
+            "kind.monster_drop_inject.itemId",
+            "kind.monster_drop_inject.itemCount",
+            "kind.monster_drop_inject.levelMin",
+            "kind.monster_drop_inject.levelMax"
+          ]
+        },
+        {
+          "kind": "more"
+        },
+        {
+          "kind": "unused"
+        }
+      ],
+      "fields": {
+        "id": {
+          "label": "resource.events:Event.id",
+          "help": "resource.events:Event.id.help",
+          "control": {
+            "kind": "input",
+            "pattern": "^[A-Za-z0-9_]{1,64}$"
+          }
+        },
+        "kind": {
+          "label": "resource.events:Event.kind",
+          "help": "resource.events:Event.kind.help",
+          "control": {
+            "kind": "variant",
+            "of": "resource.events.EventKind",
+            "inline": true,
+            "selector": {
+              "kind": "segmented",
+              "source": {
+                "cases": "resource.events.EventKind"
+              }
+            }
+          }
+        },
+        "kind.monster_drop_inject.itemCount": {
+          "label": "resource.events:EventKind.monster_drop_inject.itemCount",
+          "help": "resource.events:EventKind.monster_drop_inject.itemCount.help",
+          "control": {
+            "kind": "range",
+            "element": {
+              "kind": "number",
+              "min": 1,
+              "max": 100000
+            }
+          },
+          "case": "kind=monster_drop_inject",
+          "path": "kind.itemCount"
+        },
+        "kind.monster_drop_inject.itemId": {
+          "label": "resource.events:EventKind.monster_drop_inject.itemId",
+          "help": "resource.events:EventKind.monster_drop_inject.itemId.help",
+          "control": {
+            "kind": "search",
+            "source": {
+              "collection": "resource.vocab:items"
+            }
+          },
+          "case": "kind=monster_drop_inject",
+          "path": "kind.itemId"
+        },
+        "kind.monster_drop_inject.levelMax": {
+          "label": "resource.events:EventKind.monster_drop_inject.levelMax",
+          "help": "resource.events:EventKind.monster_drop_inject.levelMax.help",
+          "control": {
+            "kind": "number",
+            "min": 0,
+            "max": 1000
+          },
+          "case": "kind=monster_drop_inject",
+          "path": "kind.levelMax"
+        },
+        "kind.monster_drop_inject.levelMin": {
+          "label": "resource.events:EventKind.monster_drop_inject.levelMin",
+          "help": "resource.events:EventKind.monster_drop_inject.levelMin.help",
+          "control": {
+            "kind": "number",
+            "min": 0,
+            "max": 1000
+          },
+          "case": "kind=monster_drop_inject",
+          "path": "kind.levelMin"
+        },
+        "kind.spawn_item.groundLifetime": {
+          "label": "resource.events:EventKind.spawn_item.groundLifetime",
+          "help": "resource.events:EventKind.spawn_item.groundLifetime.help",
+          "control": {
+            "kind": "duration",
+            "optional": {
+              "unset": "clear"
+            },
+            "min": 60000,
+            "max": 86400000,
+            "units": [
+              "s",
+              "m",
+              "h",
+              "d"
+            ]
+          },
+          "case": "kind=spawn_item",
+          "path": "kind.groundLifetime"
+        },
+        "kind.spawn_item.itemCount": {
+          "label": "resource.events:EventKind.spawn_item.itemCount",
+          "help": "resource.events:EventKind.spawn_item.itemCount.help",
+          "control": {
+            "kind": "range",
+            "element": {
+              "kind": "number",
+              "min": 1,
+              "max": 100000
+            }
+          },
+          "case": "kind=spawn_item",
+          "path": "kind.itemCount"
+        },
+        "kind.spawn_item.itemId": {
+          "label": "resource.events:EventKind.spawn_item.itemId",
+          "help": "resource.events:EventKind.spawn_item.itemId.help",
+          "control": {
+            "kind": "search",
+            "source": {
+              "collection": "resource.vocab:items"
+            }
+          },
+          "case": "kind=spawn_item",
+          "path": "kind.itemId"
+        },
+        "kind.spawn_item.spawnRegion": {
+          "label": "resource.events:EventKind.spawn_item.spawnRegion",
+          "help": "resource.events:EventKind.spawn_item.spawnRegion.help",
+          "control": {
+            "kind": "section",
+            "of": "resource.events.Rect"
+          },
+          "case": "kind=spawn_item",
+          "path": "kind.spawnRegion"
+        },
+        "kind.spawn_monster.monsterId": {
+          "label": "resource.events:EventKind.spawn_monster.monsterId",
+          "help": "resource.events:EventKind.spawn_monster.monsterId.help",
+          "control": {
+            "kind": "select",
+            "source": {
+              "collection": "resource.events:monsters"
+            }
+          },
+          "case": "kind=spawn_monster",
+          "path": "kind.monsterId"
+        },
+        "kind.spawn_monster.monsterLifetime": {
+          "label": "resource.events:EventKind.spawn_monster.monsterLifetime",
+          "help": "resource.events:EventKind.spawn_monster.monsterLifetime.help",
+          "control": {
+            "kind": "duration",
+            "optional": {
+              "unset": "clear"
+            },
+            "min": 1000,
+            "max": 86400000,
+            "units": [
+              "s",
+              "m",
+              "h",
+              "d"
+            ]
+          },
+          "case": "kind=spawn_monster",
+          "path": "kind.monsterLifetime"
+        },
+        "kind.spawn_monster.spawnRegion": {
+          "label": "resource.events:EventKind.spawn_monster.spawnRegion",
+          "help": "resource.events:EventKind.spawn_monster.spawnRegion.help",
+          "control": {
+            "kind": "section",
+            "of": "resource.events.Rect"
+          },
+          "case": "kind=spawn_monster",
+          "path": "kind.spawnRegion"
+        },
+        "rollMode": {
+          "label": "resource.events:Event.rollMode",
+          "help": "resource.events:Event.rollMode.help",
+          "control": {
+            "kind": "segmented",
+            "source": {
+              "enum": "resource.events.RollMode"
+            }
+          }
+        },
+        "schedule": {
+          "label": "resource.events:Event.schedule",
+          "help": "resource.events:Event.schedule.help",
+          "control": {
+            "kind": "widget",
+            "widget": "weekly_timeline",
+            "fallback": {
+              "kind": "table",
+              "of": "sovcommon.time.Window",
+              "orderable": true,
+              "columns": [
+                {
+                  "field": "day",
+                  "mode": "edit",
+                  "cell": {
+                    "kind": "select",
+                    "source": {
+                      "enum": "sovcommon.time.Weekday"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "targetCount": {
+          "label": "resource.events:Event.targetCount",
+          "help": "resource.events:Event.targetCount.help",
+          "control": {
+            "kind": "number",
+            "min": 1,
+            "max": 1000000,
+            "unit": "count"
+          }
+        },
+        "worldId": {
+          "label": "resource.events:Event.worldId",
+          "help": "resource.events:Event.worldId.help",
+          "control": {
+            "kind": "number",
+            "min": 1,
+            "max": 4294967295
+          }
+        }
+      }
+    },
+    "resource.events.EventConfig": {
+      "kind": "record",
+      "declared": true,
+      "title": {
+        "template": "Scheduled events",
+        "text": "resource.events:EventConfig.title"
+      },
+      "menu": {
+        "menu": "events",
+        "icon": "event"
+      },
+      "sections": [
+        {
+          "kind": "group",
+          "id": "events",
+          "label": "resource.events:EventConfig.group.events",
+          "entries": [
+            {
+              "field": "events"
+            }
+          ]
+        },
+        {
+          "kind": "other",
+          "fields": [
+            "version"
+          ]
+        },
+        {
+          "kind": "more"
+        },
+        {
+          "kind": "unused"
+        }
+      ],
+      "fields": {
+        "events": {
+          "label": "resource.events:EventConfig.events",
+          "help": "resource.events:EventConfig.events.help",
+          "control": {
+            "kind": "table",
+            "of": "resource.events.Event",
+            "key": "id",
+            "orderable": true,
+            "columns": [
+              {
+                "field": "$entry",
+                "width": 200,
+                "mode": "entry"
+              },
+              {
+                "field": "kind",
+                "width": 170,
+                "mode": "case"
+              },
+              {
+                "field": "worldId",
+                "width": 90,
+                "mode": "edit",
+                "cell": {
+                  "kind": "number",
+                  "min": 1,
+                  "max": 4294967295
+                }
+              },
+              {
+                "field": "targetCount",
+                "width": 110,
+                "mode": "edit",
+                "cell": {
+                  "kind": "number",
+                  "min": 1,
+                  "max": 1000000,
+                  "unit": "count"
+                }
+              },
+              {
+                "field": "schedule",
+                "mode": "count"
+              }
+            ],
+            "singular": "resource.events:Event.singular"
+          }
+        },
+        "version": {
+          "label": "resource.events:EventConfig.version",
+          "help": "resource.events:EventConfig.version.help",
+          "control": {
+            "kind": "number"
+          },
+          "readonly": "single",
+          "single": 1
+        }
+      }
+    },
+    "resource.events.EventKind": {
+      "kind": "variant",
+      "selector": {
+        "kind": "segmented",
+        "source": {
+          "cases": "resource.events.EventKind"
+        }
+      },
+      "cases": {
+        "monster_drop_inject": {
+          "kind": "case",
+          "sections": [
+            {
+              "kind": "other",
+              "fields": [
+                "itemId",
+                "itemCount",
+                "levelMin",
+                "levelMax"
+              ]
+            },
+            {
+              "kind": "more"
+            },
+            {
+              "kind": "unused"
+            }
+          ],
+          "fields": {
+            "itemCount": {
+              "label": "resource.events:EventKind.monster_drop_inject.itemCount",
+              "help": "resource.events:EventKind.monster_drop_inject.itemCount.help",
+              "control": {
+                "kind": "range",
+                "element": {
+                  "kind": "number",
+                  "min": 1,
+                  "max": 100000
+                }
+              }
+            },
+            "itemId": {
+              "label": "resource.events:EventKind.monster_drop_inject.itemId",
+              "help": "resource.events:EventKind.monster_drop_inject.itemId.help",
+              "control": {
+                "kind": "search",
+                "source": {
+                  "collection": "resource.vocab:items"
+                }
+              }
+            },
+            "levelMax": {
+              "label": "resource.events:EventKind.monster_drop_inject.levelMax",
+              "help": "resource.events:EventKind.monster_drop_inject.levelMax.help",
+              "control": {
+                "kind": "number",
+                "min": 0,
+                "max": 1000
+              }
+            },
+            "levelMin": {
+              "label": "resource.events:EventKind.monster_drop_inject.levelMin",
+              "help": "resource.events:EventKind.monster_drop_inject.levelMin.help",
+              "control": {
+                "kind": "number",
+                "min": 0,
+                "max": 1000
+              }
+            }
+          }
+        },
+        "spawn_item": {
+          "kind": "case",
+          "sections": [
+            {
+              "kind": "other",
+              "fields": [
+                "itemId",
+                "itemCount",
+                "spawnRegion",
+                "groundLifetime"
+              ]
+            },
+            {
+              "kind": "more"
+            },
+            {
+              "kind": "unused"
+            }
+          ],
+          "fields": {
+            "groundLifetime": {
+              "label": "resource.events:EventKind.spawn_item.groundLifetime",
+              "help": "resource.events:EventKind.spawn_item.groundLifetime.help",
+              "control": {
+                "kind": "duration",
+                "optional": {
+                  "unset": "clear"
+                },
+                "min": 60000,
+                "max": 86400000,
+                "units": [
+                  "s",
+                  "m",
+                  "h",
+                  "d"
+                ]
+              }
+            },
+            "itemCount": {
+              "label": "resource.events:EventKind.spawn_item.itemCount",
+              "help": "resource.events:EventKind.spawn_item.itemCount.help",
+              "control": {
+                "kind": "range",
+                "element": {
+                  "kind": "number",
+                  "min": 1,
+                  "max": 100000
+                }
+              }
+            },
+            "itemId": {
+              "label": "resource.events:EventKind.spawn_item.itemId",
+              "help": "resource.events:EventKind.spawn_item.itemId.help",
+              "control": {
+                "kind": "search",
+                "source": {
+                  "collection": "resource.vocab:items"
+                }
+              }
+            },
+            "spawnRegion": {
+              "label": "resource.events:EventKind.spawn_item.spawnRegion",
+              "help": "resource.events:EventKind.spawn_item.spawnRegion.help",
+              "control": {
+                "kind": "section",
+                "of": "resource.events.Rect"
+              }
+            }
+          }
+        },
+        "spawn_monster": {
+          "kind": "case",
+          "sections": [
+            {
+              "kind": "other",
+              "fields": [
+                "monsterId",
+                "spawnRegion",
+                "monsterLifetime"
+              ]
+            },
+            {
+              "kind": "more"
+            },
+            {
+              "kind": "unused"
+            }
+          ],
+          "fields": {
+            "monsterId": {
+              "label": "resource.events:EventKind.spawn_monster.monsterId",
+              "help": "resource.events:EventKind.spawn_monster.monsterId.help",
+              "control": {
+                "kind": "select",
+                "source": {
+                  "collection": "resource.events:monsters"
+                }
+              }
+            },
+            "monsterLifetime": {
+              "label": "resource.events:EventKind.spawn_monster.monsterLifetime",
+              "help": "resource.events:EventKind.spawn_monster.monsterLifetime.help",
+              "control": {
+                "kind": "duration",
+                "optional": {
+                  "unset": "clear"
+                },
+                "min": 1000,
+                "max": 86400000,
+                "units": [
+                  "s",
+                  "m",
+                  "h",
+                  "d"
+                ]
+              }
+            },
+            "spawnRegion": {
+              "label": "resource.events:EventKind.spawn_monster.spawnRegion",
+              "help": "resource.events:EventKind.spawn_monster.spawnRegion.help",
+              "control": {
+                "kind": "section",
+                "of": "resource.events.Rect"
+              }
+            }
+          }
+        }
+      }
+    },
+    "resource.events.Rect": {
+      "kind": "record",
+      "sections": [
+        {
+          "kind": "other",
+          "fields": [
+            "left",
+            "top",
+            "right",
+            "bottom"
+          ]
+        },
+        {
+          "kind": "more"
+        },
+        {
+          "kind": "unused"
+        }
+      ],
+      "fields": {
+        "bottom": {
+          "label": "resource.events:Rect.bottom",
+          "help": "resource.events:Rect.bottom.help",
+          "control": {
+            "kind": "number"
+          }
+        },
+        "left": {
+          "label": "resource.events:Rect.left",
+          "help": "resource.events:Rect.left.help",
+          "control": {
+            "kind": "number"
+          }
+        },
+        "right": {
+          "label": "resource.events:Rect.right",
+          "help": "resource.events:Rect.right.help",
+          "control": {
+            "kind": "number"
+          }
+        },
+        "top": {
+          "label": "resource.events:Rect.top",
+          "help": "resource.events:Rect.top.help",
+          "control": {
+            "kind": "number"
+          }
+        }
+      }
+    }
+  },
+  "values": {
+    "resource.events:eventConfig": {
+      "name": "eventConfig",
+      "order": 0,
+      "type": {
+        "kind": "record",
+        "ref": "resource.events.EventConfig"
+      },
+      "label": "resource.events:eventConfig",
+      "help": "resource.events:eventConfig.help",
+      "menu": {
+        "menu": "events",
+        "icon": "event"
+      },
+      "control": {
+        "kind": "section",
+        "of": "resource.events.EventConfig"
+      },
+      "editable": "json",
+      "sources": {
+        "files": [
+          "resource/events/event.canon",
+          "@resource/Server/Event/EventConfig.json"
+        ]
+      }
+    }
+  },
+  "usage": {
+    "resource.events.Event": {
+      "shapes": {
+        "kind=monster_drop_inject": {
+          "count": 1,
+          "fields": {
+            "id": 1,
+            "kind": 1,
+            "kind.monster_drop_inject.itemCount": 1,
+            "kind.monster_drop_inject.itemId": 1,
+            "kind.monster_drop_inject.levelMax": 1,
+            "kind.monster_drop_inject.levelMin": 1,
+            "rollMode": 1,
+            "schedule": 1,
+            "targetCount": 1,
+            "worldId": 1
+          },
+          "main": [
+            "kind.monster_drop_inject.itemId",
+            "kind.monster_drop_inject.itemCount",
+            "kind.monster_drop_inject.levelMin",
+            "kind.monster_drop_inject.levelMax"
+          ]
+        },
+        "kind=spawn_monster": {
+          "count": 1,
+          "fields": {
+            "id": 1,
+            "kind": 1,
+            "kind.spawn_monster.monsterId": 1,
+            "kind.spawn_monster.monsterLifetime": 1,
+            "kind.spawn_monster.spawnRegion": 1,
+            "rollMode": 0,
+            "schedule": 1,
+            "targetCount": 1,
+            "worldId": 1
+          },
+          "main": [
+            "kind.spawn_monster.monsterId",
+            "kind.spawn_monster.spawnRegion",
+            "kind.spawn_monster.monsterLifetime"
+          ]
+        }
+      }
+    },
+    "resource.events.EventConfig": {
+      "shapes": {
+        "": {
+          "count": 1,
+          "fields": {
+            "events": 1,
+            "version": 1
+          },
+          "main": [
+            "version"
+          ]
+        }
+      }
+    },
+    "resource.events.Rect": {
+      "shapes": {
+        "": {
+          "count": 1,
+          "fields": {
+            "bottom": 1,
+            "left": 1,
+            "right": 1,
+            "top": 1
+          },
+          "main": [
+            "left",
+            "top",
+            "right",
+            "bottom"
+          ]
+        }
+      }
+    },
+    "sovcommon.time.TimeOfDay": {
+      "shapes": {
+        "": {
+          "count": 6,
+          "fields": {
+            "hour": 6,
+            "minute": 6
+          },
+          "main": [
+            "hour",
+            "minute"
+          ]
+        }
+      }
+    },
+    "sovcommon.time.Window": {
+      "shapes": {
+        "": {
+          "count": 3,
+          "fields": {
+            "day": 3,
+            "endUtc": 3,
+            "startUtc": 3
+          },
+          "main": [
+            "day",
+            "startUtc",
+            "endUtc"
+          ]
+        }
+      }
+    }
+  },
+  "search": {
+    "resource.events:monsters": {
+      "type": "$define",
+      "keyType": "string",
+      "count": 6,
+      "active": 6,
+      "rows": [
+        {
+          "key": "MI_AIBATT1"
+        },
+        {
+          "key": "MI_BANG1"
+        },
+        {
+          "key": "MI_MUSHPANG1"
+        },
+        {
+          "key": "MI_RUSTIACRASHGATE01"
+        },
+        {
+          "key": "MI_RUSTIACRASHGATE01_DPS"
+        },
+        {
+          "key": "MI_RUSTIACRASHGATE01_PVP"
+        }
+      ]
+    }
+  },
+  "assets": {},
+  "units": {
+    "count": {
+      "scale": 1,
+      "thousands": true,
+      "decimals": 0
+    }
+  },
+  "widgets": {
+    "weekly_timeline": {
+      "value": {
+        "kind": "list",
+        "of": {
+          "kind": "record",
+          "ref": "sovcommon.time.Window"
+        }
+      },
+      "help": "A week-long timeline; windows are bars, dragged to move or resize. Wrapping windows\nare drawn across midnight and across the week boundary."
+    }
+  },
+  "i18n": {
+    "source": "en",
+    "languages": {
+      "en": {
+        "texts": {
+          "Event.group.advanced": "Advanced",
+          "Event.group.event": "Event",
+          "Event.group.schedule": "Schedule",
+          "Event.group.schedule.intro": "Weekly windows in UTC. A window that ends before it starts crosses midnight.",
+          "Event.help": "One scripted event and its weekly windows.",
+          "Event.id": "Id",
+          "Event.id.help": "Used by the GM /eventinfo2 scanner, which splits on '-' and '.'.",
+          "Event.kind": "Type",
+          "Event.kind.help": "What the event does; its fields sit directly in the event's object.",
+          "Event.rollMode": "Roll mode",
+          "Event.rollMode.help": "Who rolls a drop: each world server against its granted budget (local_budget), or\nthe core server, asked per kill (authoritative).",
+          "Event.schedule": "Schedule",
+          "Event.schedule.help": "When the event runs, each week.",
+          "Event.singular": "an event",
+          "Event.targetCount": "Amount",
+          "Event.targetCount.help": "How many kills or pickups complete the event.",
+          "Event.worldId": "World",
+          "Event.worldId.help": "The world the event runs in.",
+          "EventConfig.events": "Events",
+          "EventConfig.events.help": "Every event; ids are unique.",
+          "EventConfig.group.events": "Events",
+          "EventConfig.help": "The whole file.",
+          "EventConfig.title": "Scheduled events",
+          "EventConfig.version": "Version",
+          "EventConfig.version.help": "Must equal Config::kConfigSchemaVersion.",
+          "EventKind.help": "What the event does. The type decides which fields exist, so the schema's\n\"require monsterId when type == spawn_monster\" rules are simply the shape.\n\nStricter than the loader on purpose: a field that means nothing for this type\n(a monsterId on a spawn_item) is refused instead of silently ignored.",
+          "EventKind.monster_drop_inject": "monster_drop_inject",
+          "EventKind.monster_drop_inject.check.itemcount_le_packmax": "{itemCount[1]} {itemId.id} per drop, but a slot holds {itemId.stackMax}",
+          "EventKind.monster_drop_inject.help": "Adds an item to the loot of monsters in a level band.",
+          "EventKind.monster_drop_inject.itemCount": "Item count",
+          "EventKind.monster_drop_inject.itemCount.help": "How many per drop.",
+          "EventKind.monster_drop_inject.itemId": "Item id",
+          "EventKind.monster_drop_inject.itemId.help": "The item added to the loot.",
+          "EventKind.monster_drop_inject.levelMax": "Level max",
+          "EventKind.monster_drop_inject.levelMax.help": "Highest monster level that drops it; 0 means \"no bound\".",
+          "EventKind.monster_drop_inject.levelMin": "Level min",
+          "EventKind.monster_drop_inject.levelMin.help": "Lowest monster level that drops it; 0 means \"no bound\".",
+          "EventKind.spawn_item": "spawn_item",
+          "EventKind.spawn_item.check.itemcount_le_packmax": "{itemCount[1]} {itemId.id} per drop, but a slot holds {itemId.stackMax}",
+          "EventKind.spawn_item.groundLifetime": "Ground lifetime",
+          "EventKind.spawn_item.groundLifetime.help": "How long a dropped item stays; `none` means the game's default.",
+          "EventKind.spawn_item.help": "Drops items on the ground in a region until enough are picked up.",
+          "EventKind.spawn_item.itemCount": "Item count",
+          "EventKind.spawn_item.itemCount.help": "How many per drop.",
+          "EventKind.spawn_item.itemId": "Item id",
+          "EventKind.spawn_item.itemId.help": "The item dropped.",
+          "EventKind.spawn_item.spawnRegion": "Spawn region",
+          "EventKind.spawn_item.spawnRegion.help": "Where the items appear.",
+          "EventKind.spawn_monster": "spawn_monster",
+          "EventKind.spawn_monster.help": "Spawns monsters in a region until enough are killed.",
+          "EventKind.spawn_monster.monsterId": "Monster id",
+          "EventKind.spawn_monster.monsterId.help": "The monster spawned.",
+          "EventKind.spawn_monster.monsterLifetime": "Monster lifetime",
+          "EventKind.spawn_monster.monsterLifetime.help": "How long a spawned monster lives; `none` means until killed.",
+          "EventKind.spawn_monster.spawnRegion": "Spawn region",
+          "EventKind.spawn_monster.spawnRegion.help": "Where the monsters appear.",
+          "Rect.bottom": "Bottom",
+          "Rect.bottom.help": "South edge.",
+          "Rect.help": "A rectangle of world coordinates (Rect2D).",
+          "Rect.left": "Left",
+          "Rect.left.help": "West edge.",
+          "Rect.right": "Right",
+          "Rect.right.help": "East edge.",
+          "Rect.top": "Top",
+          "Rect.top.help": "North edge.",
+          "RollMode.authoritative": "authoritative",
+          "RollMode.help": "Only these two are meaningful. The loader silently falls back to local_budget on\nany other string; here a typo is an error instead.",
+          "RollMode.local_budget": "local_budget",
+          "eventConfig": "Event config",
+          "eventConfig.help": "Server/Event/EventConfig.json, read in place."
+        }
+      },
+      "fr": {
+        "files": [],
+        "missing": 70,
+        "texts": {}
+      }
+    }
+  },
+  "findings": [
+    {
+      "severity": "warning",
+      "code": "W1701",
+      "file": "resource/events/event.canon",
+      "line": 10,
+      "col": 1,
+      "endLine": 10,
+      "endCol": 24,
+      "package": "resource.events",
+      "message": "70 texts of package resource.events have no fr translation (canon i18n status resource.events --lang fr --list)"
+    }
+  ]
+}

@@ -58,12 +58,10 @@ goldens-vet:
 	done
 
 # Every expected/MANIFEST line names a golden that exists, and every file of that expected/ is
-# listed (findings.txt, MANIFEST and go.mod excepted; also examples/pipeline/expected/potion.
-# view.json by its exact path, held until M3 wires gen/view, VIEWMODEL.md's golden link and
-# GEN-01, DECISIONS 190). internal/testkit/golden's TestExamples then rebuilds every buildable
-# example into a temporary copy of examples/ with every outside root redirected and diffs it,
-# failing also when the build wrote an output the MANIFEST does not list (IMPLEMENTATION-PLAN.md
-# §7.1, DECISIONS 201).
+# listed (findings.txt, MANIFEST and go.mod excepted). internal/testkit/golden's TestExamples
+# then rebuilds every buildable example into a temporary copy of examples/ with every outside
+# root redirected and diffs it, failing also when the build wrote an output the MANIFEST does
+# not list (IMPLEMENTATION-PLAN.md §7.1, DECISIONS 201).
 goldens-check:
 	@status=0; for m in $$(find examples -path '*/expected/MANIFEST' | sort); do \
 	  d=$$(dirname $$m); \
@@ -71,7 +69,6 @@ goldens-check:
 	    if [ ! -f "$$d/$$g" ]; then echo "goldens-check: $$m names $$g, which does not exist"; status=1; fi; \
 	  done; \
 	  for f in $$(cd $$d && find . -type f ! -name findings.txt ! -name MANIFEST ! -name go.mod | sed 's|^\./||' | sort); do \
-	    if [ "$$d/$$f" = "examples/pipeline/expected/potion.view.json" ]; then continue; fi; \
 	    if ! awk '{ print $$2 }' $$m | grep -qx "$$f"; then echo "goldens-check: $$d/$$f is not listed in $$m"; status=1; fi; \
 	  done; \
 	done; \

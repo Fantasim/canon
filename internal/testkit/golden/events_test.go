@@ -35,17 +35,7 @@ func buildCpp(t *testing.T, packages ...string) (proj string, roots map[string]s
 	if err != nil {
 		t.Fatal(err)
 	}
-	tmp := t.TempDir()
-	proj = filepath.Join(tmp, "proj")
-	if err := copyProject(proj, root); err != nil {
-		t.Fatal(err)
-	}
-	roots = exampleRoots(proj, tmp)
-	p, err := canon.Open(filepath.ToSlash(proj), canon.Options{Roots: roots, Cache: "off"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() { _ = p.Close() }()
+	proj, roots, p := openExamples(t, root)
 	res, err := p.Build(context.Background(), canon.BuildOptions{Packages: packages, Targets: []canon.Target{canon.TargetCpp}})
 	if err != nil || res.Check.Summary.Errors > 0 {
 		t.Fatalf("build: %v, %+v", err, res.Check.Findings)
