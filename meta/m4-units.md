@@ -46,6 +46,8 @@ entries · B1 Recheck folds on the program's Info. Memo architecture: ADR-0011. 
 - U7a API.md rule-coverage test and its gaps (acceptance 2) [sonnet]
 - U7b stress 8/1/1 (2 s in check, 60 s `make stress`), minimal-write fuzz on every example and the
       benchmark (`make fuzz-edit`), `make bench-edit` NFR-01 gate (acceptance 3, 4, 6) [opus]
+- B3 E14 `SetCase` keeps only fields that satisfy the new case whole; edit golden harness fails on an
+      unexpected error; M6 one-line form not opt-in (found by U7a) [opus]
 
 ## Wave 3c (after 3b)
 
