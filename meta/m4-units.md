@@ -27,13 +27,13 @@ the last wave.
 
 - [ ] U1 `format` + `jsonsrc`: gap audit vs FORMATTER §1–§12, §15; JSON printer §14.1; §13/§14.2
       primitives (`format.Node`, `format.Expr`) for `edit` [opus]
-- [ ] U2 `cli`: `canon fmt` (`--check`, `--diff`, `--json-sources` static interim) [sonnet] — in review
+- [ ] U2 `cli`: `canon fmt` (`--check`, `--diff`, `--json-sources` static interim) [sonnet] — PASS, wt commit 24c5e71
 - [ ] U3 `workspace` core + `api` rewire (S1–S11, O6, O7, overlays) [opus]
 - [ ] U4a `edit` foundations: Operation, Lit, V1–V4, codec E24–E26, Refs R7/R8 [opus]
-- [ ] U9 `views/live`: Evaluate content V5–V12 [opus]
+- [ ] U9 `views/live`: Evaluate content V5–V12 [opus] — in review (show/methods behind a seam → U9b)
 - [ ] U10 `check.Session`/`Recheck` [opus]
 - [ ] U11 `eval.Memo` [opus]
-- [ ] U12 `project` parse reuse [sonnet]
+- [ ] U12 `project` parse reuse [sonnet] — PASS, wt commit a2c3bbc
 
 ## Wave 2
 
@@ -44,6 +44,8 @@ the last wave.
 - U8 `build` memo integration: `build.Cache`, load memo, LockUpdates, LockCheck (B4), atomic
   fsynced OS WriteFile; incremental ≡ cold property test [opus]
 - U13 `rules` record-check memo [opus]
+- U9b `views/render` + `eval` + `build` adapter: render `show` templates and view-named methods
+      (fills U9's `live.Lines` seam), export `table.ModeText` etc., delete U9's six copies [opus]
 - U2b `--json-sources` from build/load's loaded-file list with Canon types (number canonicalization) [sonnet]
 
 ## Wave 3
