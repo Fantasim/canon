@@ -15,13 +15,13 @@ GO_FILES     = $(shell find . -name '*.go' -not -path './examples/*/expected/*' 
                  -not -path './examples/_fixtures/*' -not -path '*/testdata/*' \
                  -not -path './.claude/*' -not -name '*.gen.go')
 
-.PHONY: check fmt-check vet test goldens-vet goldens-check diag-check vm-check audit-self audit-check audit audit-tighten scope
+.PHONY: check fmt-check vet test stress-short goldens-vet goldens-check diag-check vm-check audit-self audit-check audit audit-tighten scope
 
 # CANON_REQUIRE_CXX turns a missing C++ compiler or nlohmann/json header (internal/testkit/cxx)
 # from a silent test skip into a failure, and is inherited by every prerequisite below: make
 # check must not pass green having skipped every C++ compile test for want of a toolchain.
 check: export CANON_REQUIRE_CXX=1
-check: fmt-check vet test goldens-vet goldens-check diag-check vm-check audit-self audit-check
+check: fmt-check vet test stress-short goldens-vet goldens-check diag-check vm-check audit-self audit-check
 
 fmt-check:
 	@out="$$(gofmt -l $(GO_FILES))"; if [ -n "$$out" ]; then echo "gofmt -l: not formatted:"; echo "$$out"; exit 1; fi
@@ -31,6 +31,11 @@ vet:
 
 test:
 	go test -timeout 30m ./...
+
+# IMPLEMENTATION-PLAN.md §6 M4 item 6: 8 readers, 1 editor and 1 watcher on one project on the
+# OS's file system, under -race, 2 s here; `make stress` runs it for STRESS_TIME (60 s).
+stress-short:
+	TMPDIR=/var/tmp go test -race -count=1 -run '^TestStress$$' ./api
 
 # A golden module with a smoke test (internal/testkit/golden/testdata/smoke/<example>/, DECISIONS
 # 201) is copied to a temporary directory with the smoke test added, so expected/ keeps holding
@@ -144,3 +149,41 @@ bench:
 # Project-size report: git-tracked code lines, blanks and comments excluded (tools/scope.sh).
 scope:
 	@bash tools/scope.sh
+
+# IMPLEMENTATION-PLAN.md §6 M4 item 6 at its stated length: the stress test for STRESS_TIME,
+# capped like `bench`.
+STRESS_TIME ?= 60s
+.PHONY: stress
+stress:
+	systemd-run --user --scope -q -p MemoryMax=3G env GOTOOLCHAIN=local TMPDIR=/var/tmp go test -race -count=1 -timeout 0 \
+	  -run '^TestStress$$' -v ./api -stress.duration $(STRESS_TIME)
+
+# IMPLEMENTATION-PLAN.md §6 M4 item 3, §7.7: the minimal-write fuzz (API.md M6) for
+# FUZZ_EDIT_TIME on every example and on a benchmark project of FUZZ_EDIT_BENCH_N entries
+# (0: the examples alone), its JSON sources normalized first (DECISIONS 12). Opt-in; the whole
+# run (benchgen, fmt, the fuzz and its FUZZ_EDIT_WORKERS workers) under one 6G cap.
+FUZZ_EDIT_TIME    ?= 10m
+FUZZ_EDIT_BENCH_N ?= 7000
+FUZZ_EDIT_WORKERS ?= 2
+.PHONY: fuzz-edit
+fuzz-edit:
+	systemd-run --user --scope -q -p MemoryMax=6G env GOTOOLCHAIN=local TMPDIR=/var/tmp \
+	  N=$(FUZZ_EDIT_BENCH_N) T=$(FUZZ_EDIT_TIME) W=$(FUZZ_EDIT_WORKERS) bash -c '\
+	  dir=$$(mktemp -d /var/tmp/canon-fuzz-edit-XXXXXX); trap "rm -rf \"$$dir\"" EXIT; bench=""; \
+	  if [ "$$N" != 0 ]; then \
+	    go run ./internal/testkit/cmd/benchgen -seed 1 -n "$$N" -out "$$dir/bench" && \
+	    go run ./cmd/canon fmt --json-sources -q -project "$$dir/bench" || exit 1; \
+	    bench="-edit.bench=$$dir/bench"; \
+	  fi; \
+	  go test -count=1 -timeout 0 -run "^$$" -fuzz "^FuzzMinimalWriteAll$$" -fuzztime "$$T" -parallel "$$W" \
+	    ./internal/edit $$bench'
+
+# IMPLEMENTATION-PLAN.md §6 M4 item 4, §7.6: NFR-01 on a benchmark project of BENCH_EDIT_N
+# entries and on the examples, printed with the machine. Gated: cold check and its RSS per
+# project, Edit and Evaluate p95, view model size; the warm check is reported, not gated (log
+# M4 U7b). Opt-in, not part of `check`.
+BENCH_EDIT_N ?= 7000
+.PHONY: bench-edit
+bench-edit:
+	systemd-run --user --scope -q -p MemoryMax=6G env GOTOOLCHAIN=local TMPDIR=/var/tmp go test -count=1 -timeout 0 \
+	  -run '^TestBenchEdit$$' -v ./internal/testkit/cmd/benchgen -benchgen.edit $(BENCH_EDIT_N)

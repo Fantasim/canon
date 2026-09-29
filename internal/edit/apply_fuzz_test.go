@@ -3,7 +3,6 @@ package edit_test
 import (
 	"context"
 	"errors"
-	"path/filepath"
 	"strconv"
 	"testing"
 
@@ -53,16 +52,8 @@ type draw struct {
 // exampleEdits opens the examples as the fuzz edits them, and lists every value of their lets.
 func exampleEdits(t testing.TB) (*build.Project, *build.Analysis, []candidate) {
 	t.Helper()
-	dir, err := filepath.Abs("../../examples")
-	if err != nil {
-		t.Fatal(err)
-	}
-	roots := map[string]string{"resource": "_fixtures/resource", "client": "_fixtures/client"}
-	out := t.TempDir()
-	for _, name := range []string{"source", "services", "sovcommon", "web", "parity", "generated"} {
-		roots[name] = filepath.ToSlash(filepath.Join(out, name))
-	}
-	p, err := build.Open(project.OS(), filepath.ToSlash(dir), build.Options{Roots: roots})
+	dir, roots := exampleRoots(t)
+	p, err := build.Open(project.OS(), dir, build.Options{Roots: roots})
 	if err != nil {
 		t.Fatal(err)
 	}
