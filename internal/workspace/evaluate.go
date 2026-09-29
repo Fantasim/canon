@@ -14,9 +14,7 @@ import (
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/edit"
 	"github.com/fantasim/canonlang/internal/eval"
-	"github.com/fantasim/canonlang/internal/i18n"
 	"github.com/fantasim/canonlang/internal/project"
-	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
 	"github.com/fantasim/canonlang/internal/views/encode"
@@ -163,10 +161,7 @@ func evaluate(ctx context.Context, s *Snapshot, e Eval) (*Evaluation, error) {
 	if err != nil {
 		return nil, err
 	}
-	in, err := liveInput(s, e.Analysis)
-	if err != nil {
-		return nil, err
-	}
+	in := liveInput(e.Analysis)
 	target, err := targetOf(e, at)
 	if err != nil {
 		return nil, err
@@ -190,38 +185,15 @@ func evaluate(ctx context.Context, s *Snapshot, e Eval) (*Evaluation, error) {
 	return out, nil
 }
 
-// liveInput is what live reads of a: its program, settled values, layout and view evaluator,
-// with project.canon's studio and languages and phase 2's catalogues, rebuilt aside.
-func liveInput(s *Snapshot, a *build.Analysis) (live.Input, error) {
-	proj, err := projectOf(s)
-	if err != nil {
-		return live.Input{}, err
-	}
-	prog := a.Program()
-	aside := check.Bags{}
-	for _, pkg := range prog.Packages {
-		aside[pkg.Path] = diag.NewBag(a.Files(), pkg.Path)
-	}
+// liveInput is what live reads of a: its program, settled values, layout, view evaluator and
+// methods, bound arguments, and the studio, languages and catalogues Analyze holds.
+func liveInput(a *build.Analysis) live.Input {
+	in := a.LiveInputs()
 	var force encode.Force = func(pkg, name string) (value.Value, bool) { return a.Force(eval.Root{Pkg: pkg, Name: name}) }
 	return live.Input{
-		Program: prog, Studio: proj.Studio.Path, I18N: i18n.Check(prog, proj, aside, nil), Force: force,
-		Layout: a.Layout(), Eval: a.ViewEvaluator(), Languages: proj.Languages,
-	}, nil
-}
-
-// projectOf is project.canon as s holds it (API.md O2); the analysis read the same bytes.
-func projectOf(s *Snapshot) (*project.Project, error) {
-	abs := path.Join(s.b.Dir(), project.FileName)
-	data, err := s.b.FS().ReadFile(abs)
-	if err != nil {
-		return nil, err
+		Program: a.Program(), Studio: in.Studio, I18N: in.I18N, Force: force, Layout: a.Layout(),
+		Eval: a.ViewEvaluator(), Methods: a.ViewMethods(), Bound: a.ViewBound(), Languages: in.Languages,
 	}
-	set := &source.FileSet{}
-	src, err := set.Add(project.FileName, abs, data)
-	if err != nil {
-		return nil, err
-	}
-	return project.Load(src, diag.NewBag(set, ""))
 }
 
 // targetOf is the value e resolved and what names it without a view (V7): a top-level value's

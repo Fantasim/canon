@@ -158,6 +158,9 @@ func (r *run) newHost(bags check.Bags) {
 // indexes is the verification and check indexes of the run's program, built once per run: the
 // one place the cache's per-file index caches plug in.
 func (r *run) indexes() (*verify.Index, *rules.Index) {
+	if g := r.s.gen; g != nil {
+		return g.vix.Index(r.prog), g.rix.Index(r.prog)
+	}
 	return verify.NewIndex(r.prog), rules.NewIndex(r.prog)
 }
 

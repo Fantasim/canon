@@ -231,7 +231,7 @@ func (p *Project) Refs(ctx context.Context, path string) (res *RefsResult, err e
 	if err != nil {
 		return nil, err
 	}
-	s := &snapshot{a: a, s: edit.NewSnapshot(a)}
+	s := &snapshot{a: a, s: edit.NewSnapshot(a), ctx: ctx}
 	r, err := edit.Resolve(s.s, parsed)
 	if err != nil {
 		return nil, s.resolveError(path, parsed, err)
@@ -262,7 +262,11 @@ func (s *snapshot) refsError(ctx context.Context, path string, err error) error 
 		return &PathError{Op: -1, Path: path, Err: ErrBadOp}
 	case errors.Is(err, edit.ErrNoValue) && errors.As(err, &pe):
 		root := edit.Path{Package: pe.Root.Pkg, Root: pe.Root.Name}
-		return &PathError{Op: -1, Path: path, Err: ErrNoValue, Detail: fmt.Sprintf(fmtRoot, root), Findings: s.cause(pe.Root)}
+		why, cerr := s.cause(pe.Root)
+		if cerr != nil {
+			return cerr
+		}
+		return &PathError{Op: -1, Path: path, Err: ErrNoValue, Detail: fmt.Sprintf(fmtRoot, root), Findings: why}
 	}
 	return internalError(err)
 }

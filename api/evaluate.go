@@ -123,7 +123,7 @@ func (p *Project) Evaluate(ctx context.Context, r EvalRequest) (res *EvalResult,
 	if err != nil {
 		return nil, err
 	}
-	snap := &snapshot{a: a, s: edit.NewSnapshot(a)}
+	snap := &snapshot{a: a, s: edit.NewSnapshot(a), ctx: ctx}
 	at, err := snap.evalTarget(r.Path, parsed)
 	if err != nil {
 		return nil, err
