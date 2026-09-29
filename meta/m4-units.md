@@ -44,6 +44,7 @@ memo wiring · U13 rules/verify caches + P9 · U9b show templates and methods ·
 - P3 perf: load memo, one lineage per selection, rare compaction; target [items,twin] ≤300 ms p95 [opus]
 - B1 correctness: a Recheck re-spends journaled folds' steps (E4401 ≡ cold; DECISIONS 104
       evidence) [opus] — in flight, parallel to P12's fix round
+- B2 one budget counter per invocation (DECISIONS 104; log M4 B1) [opus] — after wave 3 lands
 - Later: cleanup unit (duplicates, P9 leftovers, E1903 for a variant case declaring an input
       field; a neighbour's 216 kept-comma line dropped by the M5 settle, described in M6; U5b nits:
       `unwritable` gives absolute names their own reason, `lockStable` tests the table first) — after P12/P3 land.
