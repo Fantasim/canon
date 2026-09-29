@@ -36,6 +36,7 @@ type run struct {
 	mv         *moves           // what the amendments of this root copied, until settled (settle.go)
 	dep        *depCtx          // what a type argument names in the value being built (params.go)
 	emitted    *[]*diag.Builder // a stage-B run's findings, kept for replay (stageb.go)
+	magic      *Magic           // a view run's magic names (viewexpr.go)
 }
 
 // frame is one call frame, or a root's own frame (fn empty).

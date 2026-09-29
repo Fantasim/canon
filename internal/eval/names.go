@@ -83,6 +83,9 @@ func (r *run) local(obj check.Object, at syntax.Expr) value.Value {
 	if v, ok := r.fr.vars[obj]; ok {
 		return r.read(v)
 	}
+	if v, ok := r.magicValue(obj); ok {
+		return v
+	}
 	if obj.Name() == itWord && r.fr.it != nil {
 		return r.read(r.fr.it)
 	}

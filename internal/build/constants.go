@@ -75,7 +75,7 @@ var (
 	viewMarker   = regexp.MustCompile(`^canon-vm/[1-9][0-9]*$`)
 	// runtimeFiles are the runtime helper files, by their path in an emit's directory.
 	runtimeFiles = [...]string{"rt/rt.go", "canon_runtime.h", "canon_runtime_json.h"}
-	// generators are the code generators by target; a missing one is not written yet.
+	// generators are the code generators by target; a missing one is not written yet (view: viewmodel.go).
 	generators = [...]ir.Generator{ir.TargetGo: gogen.Generate, ir.TargetCpp: cppgen.Generate, ir.TargetJSON: jsongen.Generate, ir.TargetView: nil}
 	// limits maps the evaluator's limits onto conform's (ADR-0003).
 	limits = [...]conform.Limit{eval.NoLimit: conform.NoLimit, eval.StepLimit: conform.StepLimit, eval.DepthLimit: conform.DepthLimit}

@@ -84,6 +84,7 @@ const (
 	memberWire    = "wire"
 	memberIndex   = "index"
 	memberStart   = "start"
+	keyMagic      = "key"
 )
 
 // Numbers: the parts of a float literal, two names bound to a pair, the size from which a

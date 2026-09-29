@@ -48,11 +48,27 @@ func (b *builder) i18n() {
 }
 
 // findings is the `findings` section (12.11, J15): the package's findings of phases 1-7 in F2
-// order, each as API.md 4.2's object.
+// order, each as API.md 4.2's object, a named check's translated messages with it.
 func (b *builder) findings() {
-	for _, l := range diag.Locate(b.in.Files, b.in.Findings) {
-		b.m.Findings = append(b.m.Findings, finding(l))
+	langs := b.otherLanguages()
+	for i, l := range diag.Locate(b.in.Files, b.in.Findings) {
+		f := finding(l)
+		f.Messages = b.messages(b.in.Findings[i], langs)
+		b.m.Findings = append(b.m.Findings, f)
 	}
+}
+
+// messages are f's message in each of langs its check translates (J15, I18N.md B5); none for a
+// finding of no named one-line check.
+func (b *builder) messages(f diag.Finding, langs []string) map[string]string {
+	if f.Check == "" || b.in.CheckRun == nil || len(langs) == 0 {
+		return nil
+	}
+	c, self, ok := b.in.CheckRun(f)
+	if !ok {
+		return nil
+	}
+	return b.render.Messages(b.pkg.Path, c, self, langs)
 }
 
 // finding is one finding as the model writes it (API.md F5).

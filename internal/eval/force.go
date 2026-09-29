@@ -34,17 +34,30 @@ func (e *Evaluator) force(ctx context.Context, st *rootState, reader *run, at sy
 	v, ok := e.evalRoot(ctx, st)
 	e.stack = e.stack[:len(e.stack)-1]
 	clear(e.clean) // its temporaries are not kept alive past the root (DECISIONS 199)
-	if ok && st.status == forcing {
+	switch {
+	case ok && st.status == forcing:
 		st.status, st.v = done, v
 		e.completed = append(e.completed, st)
 		if e.verifying {
 			e.queue = append(e.queue, st)
 		}
-	} else {
+	case e.late.free && ctx.Err() != nil: // phase 8: a cancelled call leaves it to a later one
+		st.status = idle
+		return nil, false
+	default:
 		st.status = poisoned
 	}
-	e.flush(ctx)
+	e.flush(e.flushContext(ctx))
 	return st.v, st.status == done
+}
+
+// flushContext is ctx, which phase 8 does not let cut a verification short: a value verified
+// in part would differ from the one a later call reads (VIEWMODEL.md J5).
+func (e *Evaluator) flushContext(ctx context.Context) context.Context {
+	if e.late.free {
+		return context.WithoutCancel(ctx)
+	}
+	return ctx
 }
 
 // broken reports a declaration with a static error: it is never evaluated (TYPES.md §1).
@@ -58,7 +71,7 @@ func (e *Evaluator) evalRoot(ctx context.Context, st *rootState) (value.Value, b
 		e.index.pkg[st.obj.File()] = st.obj.Pkg()
 	}
 	r := e.newRun(ctx, charge{pkg: st.root.Pkg, name: st.root.Name}, st.obj.File())
-	r.root = st
+	r.root, r.free = st, e.late.free
 	loading := e.loading // a root forced while a load decodes is not part of it (Savepoint)
 	e.loading = nil
 	defer func() { e.loading = loading }()

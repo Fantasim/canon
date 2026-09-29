@@ -45,9 +45,10 @@ func (t *traversal) report(c *syntax.CheckDecl, run Run, rec *value.Record, at *
 	}
 	bag, file := t.bag, t.files[c]
 	if run.Failed {
-		v, p := value.Value(rec), at
-		if f, ok := field(rec, c.At); ok {
-			v, p = f, at.Field(c.At.Name)
+		v, onField := Placed(c, rec)
+		p := at
+		if onField {
+			p = at.Field(c.At.Name)
 		}
 		site := verify.SiteOf(v)
 		b := t.decorate(oneLine(c, site.Span, run.Message), file, c)
@@ -111,17 +112,17 @@ func keyword(file *syntax.File, c *syntax.CheckDecl) source.Span {
 	return file.Span(c)
 }
 
-// field is the value of the field `at` names in an instance; false without `at` or that value.
-func field(rec *value.Record, at *syntax.Ident) (value.Value, bool) {
-	if at == nil {
-		return nil, false
+// Placed is where a false check c of rec is reported: its `at` field's value (true), else rec (EVALUATION.md §8.3).
+func Placed(c *syntax.CheckDecl, rec *value.Record) (value.Value, bool) {
+	if c.At == nil {
+		return rec, false
 	}
 	for i, f := range verify.Fields(rec.T) {
-		if f.Name == at.Name && i < len(rec.Fields) && rec.Fields[i] != nil {
+		if f.Name == c.At.Name && i < len(rec.Fields) && rec.Fields[i] != nil {
 			return rec.Fields[i], true
 		}
 	}
-	return nil, false
+	return rec, false
 }
 
 // reads is the fields a one-line check's condition reads, identifiers and self.f resolving to

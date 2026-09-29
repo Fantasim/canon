@@ -69,7 +69,7 @@ func (p *Project) Build(ctx context.Context, opt BuildOptions) (*BuildResult, er
 	}
 	out := &BuildResult{Result: *r.result()}
 	failed := out.Summary.Errors
-	outputs, err := r.emit(opt, failed > 0)
+	outputs, err := r.emit(ctx, opt, failed > 0)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +97,7 @@ func (r *run) refuseTargets(targets []ir.Target) error {
 	for _, u := range r.selected {
 		for _, ed := range emitDecls(u) {
 			t, known := targetOf(ed.Target.Name)
-			if known && generators[t] == nil && (len(targets) == 0 || slices.Contains(targets, t)) {
+			if known && !written(t) && (len(targets) == 0 || slices.Contains(targets, t)) {
 				return fmt.Errorf(fmtNoGenerator, u.Name, ed.Target.Name, ErrNoGenerator)
 			}
 		}
@@ -116,6 +116,11 @@ func emitDecls(u *project.Unit) []*syntax.EmitDecl {
 		}
 	}
 	return out
+}
+
+// written reports a target the build writes: a generator's, or the view model (log-2026-09-28 item 4).
+func written(t ir.Target) bool {
+	return t == ir.TargetView || generators[t] != nil
 }
 
 // targetOf is the target an emit's word names.
@@ -138,14 +143,14 @@ type output struct {
 
 // emit runs the generator of every emit of the selected packages whose target opt selects, in
 // package then source order; after an error, only the views run.
-func (r *run) emit(opt BuildOptions, failed bool) ([]*output, error) {
+func (r *run) emit(ctx context.Context, opt BuildOptions, failed bool) ([]*output, error) {
 	var out []*output
 	for _, p := range r.ir {
 		for _, e := range p.Emits {
 			if skipped(e, opt.Targets, failed) {
 				continue
 			}
-			placed, err := r.emitOne(p, e)
+			placed, err := r.emitOne(ctx, p, e)
 			if err != nil {
 				return nil, err
 			}
@@ -162,13 +167,14 @@ func skipped(e *ir.Emit, targets []ir.Target, failed bool) bool {
 }
 
 // emitOne generates one emit and places its files; a view runs even after errors (API.md B1).
-func (r *run) emitOne(p *ir.Package, e *ir.Emit) ([]*output, error) {
-	if e.Target != ir.TargetView {
-		if err := complete(p); err != nil {
-			return nil, err
-		}
+func (r *run) emitOne(ctx context.Context, p *ir.Package, e *ir.Emit) ([]*output, error) {
+	var files []ir.File
+	var err error
+	if e.Target == ir.TargetView {
+		files, err = r.viewFiles(ctx, p, e)
+	} else if err = complete(p); err == nil {
+		files, err = generate(p, e)
 	}
-	files, err := generate(p, e)
 	if err != nil {
 		return nil, err
 	}

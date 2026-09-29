@@ -11,6 +11,7 @@ import (
 	"github.com/fantasim/canonlang/internal/eval"
 	"github.com/fantasim/canonlang/internal/i18n"
 	"github.com/fantasim/canonlang/internal/project"
+	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/value"
 	"github.com/fantasim/canonlang/internal/views/control"
 	"github.com/fantasim/canonlang/internal/views/encode"
@@ -27,7 +28,7 @@ type Input struct {
 	Language  string                              // project.canon's `canon` version, "0.1"
 	Studio    string                              // project.studio's package, "" for none
 	Languages []string                            // project.languages, the source language first
-	Force     func(eval.Root) (value.Value, bool) // a settled value (build.Analysis.Force); nil: none
+	Force     func(eval.Root) (value.Value, bool) // a value the model reads, evaluated on demand if need be; nil: none
 	Fold      check.Folder                        // folds constant field defaults; nil writes none
 	I18N      map[string]*i18n.Result             // every package's catalogue and translations (i18n.Check)
 	Layout    *project.Layout                     // places loads and asset roots; nil: none written
@@ -36,7 +37,12 @@ type Input struct {
 	Files     diag.Files                          // locates Findings
 	Errors    []diag.Finding                      // every package's error findings: views they break render nowhere (J4)
 	Eval      render.Evaluator                    // evaluates view expressions; nil: nothing rendered
+	CheckRun  CheckRun                            // the check run behind a finding, for its translated messages (J15); nil: none
 }
+
+// CheckRun is the named one-line check that reported f and the instance it ran on (nil for a
+// package check); false when f reports no such run.
+type CheckRun func(f diag.Finding) (*syntax.CheckDecl, value.Value, bool)
 
 // Build is the view model of in.Package (VIEWMODEL.md 12), section by section.
 func Build(ctx context.Context, in Input) (*vm.ViewModel, error) {

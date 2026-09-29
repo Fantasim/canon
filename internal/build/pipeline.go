@@ -39,7 +39,9 @@ type run struct {
 	order    []eval.Root   // the forced set, in order (EVALUATION.md §2.1)
 	locks    []*lockState
 	ir       []*ir.Package
-	causes   bool // Analyze: the evaluator logs what poisons each root (Analysis.Cause)
+	causes   bool                    // Analyze: the evaluator logs what poisons each root (Analysis.Cause)
+	texts    map[string]*i18n.Result // phase 2's catalogues and translations, every package's
+	failed   checkRuns               // stages C and D's failed named checks (VIEWMODEL.md J15)
 }
 
 // prepare is phase 1: the snapshot parsed, the selection with its imports, the layers checked.
@@ -106,7 +108,7 @@ func (r *run) checkViews(ctx context.Context) {
 	ev := r.emitsView()
 	studio := r.s.proj.Studio.Path
 	viewrules.Check(ctx, r.prog, r.bags, studio, ev)
-	i18n.Check(r.prog, r.s.proj, r.bags, ev)
+	r.texts = i18n.Check(r.prog, r.s.proj, r.bags, ev)
 }
 
 // emitsView is the selected packages that declare `emit view` (I18N.md W1, VIEWMODEL.md N4).
@@ -198,7 +200,8 @@ func (r *run) verifyCodes() error {
 
 // stagesCD runs the instance checks, then the package checks (EVALUATION.md §8).
 func (r *run) stagesCD(ctx context.Context) error {
-	runner := rules.NewShared(r.rix, checks{r.ev}, r.bags)
+	r.failed.prog = r.prog
+	runner := rules.NewShared(r.rix, checks{Evaluator: r.ev, failed: &r.failed}, r.bags)
 	for _, root := range r.order {
 		if v, ok := r.ev.Force(ctx, root); ok {
 			if err := runner.Instances(ctx, root, v); err != nil {

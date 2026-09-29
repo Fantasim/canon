@@ -2,19 +2,23 @@ package build
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
+	"github.com/fantasim/canonlang/api/vm"
 	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/eval"
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// Analysis is one run's checked program and evaluator, frozen once Analyze returns: no later call evaluates, spends budget or adds a finding.
+// Analysis is one run's checked program and evaluator, frozen once Analyze returns: no later
+// call spends budget or adds a finding; ViewModel alone evaluates, as phase 8 does.
 type Analysis struct {
-	mu  sync.Mutex
-	r   *run
-	res *Result
+	mu      sync.Mutex
+	r       *run
+	res     *Result
+	settled map[eval.Root]value.Value // the selected packages' values settled when Analyze returned
 }
 
 // Analyze runs phases 1 to 7, writes nothing, and freezes the result (CLI.md §3.3).
@@ -27,7 +31,24 @@ func (p *Project) Analyze(ctx context.Context, selectors []string) (*Analysis, e
 	if err := r.analyze(ctx); err != nil {
 		return nil, err
 	}
-	return &Analysis{r: r, res: r.result()}, nil
+	return &Analysis{r: r, res: r.result(), settled: r.settledRoots()}, nil
+}
+
+// settledRoots is every const and let of the selected packages that phases 3-7 settled.
+func (r *run) settledRoots() map[eval.Root]value.Value {
+	out := map[eval.Root]value.Value{}
+	for _, cp := range r.prog.Packages {
+		if !r.selects(cp.Path) {
+			continue
+		}
+		for _, obj := range cp.Decls {
+			root := eval.Root{Pkg: cp.Path, Name: obj.Name()}
+			if v, ok := r.ev.Settled(root); ok && (obj.Kind() == check.ObjConst || obj.Kind() == check.ObjLet) {
+				out[root] = v
+			}
+		}
+	}
+	return out
 }
 
 // Result is the findings this Analyze reported (API.md R2).
@@ -47,14 +68,20 @@ func (a *Analysis) Bag(pkg string) *diag.Bag {
 // Files locates every span Bag or Result reports.
 func (a *Analysis) Files() diag.Files { return a.r.s.set }
 
-// Force is root's value if stage A settled it, (nil, false) for any other; it never evaluates (EVALUATION.md §2.1).
+// Force is root's value if Analyze settled it, (nil, false) for any other, whatever ViewModel evaluated since (EVALUATION.md §2.1).
 func (a *Analysis) Force(root eval.Root) (value.Value, bool) {
-	if !a.r.selects(root.Pkg) {
-		return nil, false
+	v, ok := a.settled[root]
+	return v, ok
+}
+
+// ViewModel is selected pkg's view model as `emit view` writes it, what it reads evaluated aside (API.md R9, VIEWMODEL.md §12).
+func (a *Analysis) ViewModel(ctx context.Context, pkg string) (*vm.ViewModel, error) {
+	if !a.r.selects(pkg) {
+		return nil, fmt.Errorf(fmtPackage, pkg, ErrNotSelected)
 	}
 	a.mu.Lock()
 	defer a.mu.Unlock()
-	return a.r.ev.Settled(root)
+	return a.r.viewModel(ctx, pkg)
 }
 
 // Cause is the errors that poisoned root: its own, or the first poisoned value's it read, in any package (API.md R6, EVALUATION.md §7.2).

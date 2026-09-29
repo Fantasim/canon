@@ -225,13 +225,18 @@ func (e *LoadError) Error() string {
 
 func (e *LoadError) Unwrap() error { return ErrLoad }
 
-// checks is the evaluator as rules.Evaluator: eval.CheckRun copied into rules.Run (DECISIONS 186).
+// checks is the evaluator as rules.Evaluator: eval.CheckRun copied into rules.Run (DECISIONS
+// 186); stage C and D's runner keeps the failed runs a view model's J15 messages need.
 type checks struct {
 	*eval.Evaluator
+	failed *checkRuns
 }
 
 func (c checks) Run(ctx context.Context, d *syntax.CheckDecl, self value.Value) rules.Run {
 	x := c.Evaluator.Run(ctx, d, self)
+	if x.Failed {
+		c.failed.note(d, self, x.Message)
+	}
 	out := rules.Run{Aborted: x.Aborted, Failed: x.Failed, Message: x.Message}
 	for _, r := range x.Reports {
 		out.Reports = append(out.Reports, rules.Report{Warn: r.Warn, At: r.At, Message: r.Message})

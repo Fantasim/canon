@@ -9,7 +9,8 @@ var (
 	// ErrLoad is a load form or option the load package does not read yet (DECISIONS 196).
 	ErrLoad = errors.New("load is not supported by this compiler yet")
 	// ErrInternal is a compiler bug met by a build: the evaluator's, a stage's or a placement's.
-	ErrInternal = errors.New("internal compiler error")
+	ErrInternal    = errors.New("internal compiler error")
+	ErrNotSelected = errors.New("a view model of a package the analysis did not select")
 	// ErrReadOnly is a build that must write through a file system without WriteFS's methods.
 	ErrReadOnly = errors.New("the project's file system cannot be written")
 

@@ -78,6 +78,7 @@ type Evaluator struct {
 	causes    map[*rootState]*diag.Bag  // the hard error that poisoned a value forced while tests run
 	via       map[*rootState]*rootState // a value poisoned by reading another poisoned one
 	stageB    *diag.Bag                 // a stage-B where predicate's hard errors, until Poison makes them the cause
+	late      late                      // the view model's reads after stage E (viewexpr.go)
 }
 
 // status is where a top-level value is in its evaluation.

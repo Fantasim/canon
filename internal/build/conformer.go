@@ -101,7 +101,7 @@ func (s subjects) Build(ctx context.Context, v value.Value, capture *diag.Bag) {
 	if res.Poisoned { // a poisoned value is not instance-checked, as in stage C (EVALUATION.md §7.2)
 		return
 	}
-	if err := rules.NewShared(s.r.rix, checks{s.ev}, bags).Instances(ctx, root, v); err != nil {
+	if err := rules.NewShared(s.r.rix, checks{Evaluator: s.ev}, bags).Instances(ctx, root, v); err != nil {
 		s.host.errs = append(s.host.errs, internal(err))
 	}
 }
