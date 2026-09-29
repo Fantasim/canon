@@ -1181,6 +1181,10 @@ EVALUATION.md §11 gives the declaration rules and their codes (`E19xx`). For ty
 - In **Canon source**, giving a deprecated field a value in a literal, using a deprecated enum
   member, referencing a deprecated entry, or reading a deprecated field in an expression is
   `W3301` at that use. Loaded data never triggers it (legacy files are full of such fields).
+  Naming a deprecated field or member in a view item (a field line, group entry, column or
+  filter: VIEWMODEL.md W1642 covers the group case) or in a translation key (I18N.md K9) is not a
+  use; an expression inside a view (a template, `when`, `hidden`) is. A studio member named by
+  `icon:`, `tone:`, `unit:` or `@menu` is a use.
 - `W3301` replaces the `W1003` proposed in TYP-22, because FMT-03 also claims `W1003`.
 
 ---
