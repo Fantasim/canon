@@ -43,7 +43,7 @@ the last wave.
 - U5a api reads: Evaluate (no draft), Refs, Format/FormatJSONSource (T1, T2) [opus]
 - U8 `build` memo integration: `build.Cache`, load memo, LockUpdates, LockCheck (B4), atomic
   fsynced OS WriteFile; incremental ≡ cold property test [opus]
-- U13 `rules` record-check memo [opus]
+- U13 `rules` record-check memo; per-file caching of `rules.NewIndex` and `verify.NewIndex` walks [opus]
 - U9b `views/render` + `eval` + `build` adapter: render `show` templates and view-named methods
       (fills U9's `live.Lines` and `Input.Bound` seams), `index` magic name on search rows, export
       `table.ModeText`/layout showIDs etc., delete U9's copies (+ third `armIndex`) [opus]
