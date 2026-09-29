@@ -24,4 +24,8 @@ the narration.
 | [0003](0003-eval-conformance-api.md) | The evaluator's conformance API: test calls, vectors, TS mode |
 | [0004](0004-api-testresult-check.md) | `api.TestResult` carries the static check findings |
 | [0005](0005-wire-host-dependent-decoding.md) | `wire.Decoder`/`wire.Host` grow for dependent types in loaded data |
+| [0006](0006-vm-structs.md) | `api/vm`: view-model structs generated from the schema |
+| [0007](0007-api-origin-chain.md) | `api.Origin` gains the amendment chain, its text and cut frames; `ErrInputField` |
+| [0008](0008-ir-field-patterns.md) | `ir.Field.Patterns`: every pattern of an input's alias chain |
+| [0009](0009-check-info-broken-views.md) | `check.Info.BrokenViews`: which views hold an error |
 | [0010](0010-edit-journal-recovery.md) | The edit journal: crash recovery and its threat model |
