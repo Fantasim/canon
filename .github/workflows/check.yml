@@ -94,6 +94,7 @@ jobs:
           $inc = Join-Path $env:RUNNER_TEMP "nlohmann-include"
           New-Item -ItemType Directory -Force -Path (Join-Path $inc "nlohmann") | Out-Null
           Invoke-WebRequest -Uri "https://raw.githubusercontent.com/nlohmann/json/v3.11.3/single_include/nlohmann/json.hpp" -OutFile (Join-Path $inc "nlohmann\json.hpp")
+          Invoke-WebRequest -Uri "https://raw.githubusercontent.com/nlohmann/json/v3.11.3/single_include/nlohmann/json_fwd.hpp" -OutFile (Join-Path $inc "nlohmann\json_fwd.hpp")
           "CANON_NLOHMANN_INCLUDE=$inc" >> $env:GITHUB_ENV
       - name: locate the Developer Command Prompt
         if: success() || failure()
