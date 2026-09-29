@@ -47,7 +47,7 @@ func (p *Project) Test(ctx context.Context, selectors []string, match *regexp.Re
 	if err != nil {
 		return nil, err
 	}
-	if err := r.check(ctx); err != nil {
+	if err := interrupted(ctx, r.check(ctx)); err != nil {
 		return nil, err
 	}
 	res := &TestResult{Files: r.s.set, Static: r.staticErrors(), Revision: r.s.revision()}

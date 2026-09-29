@@ -15,8 +15,8 @@ import (
 type Bags map[string]*diag.Bag
 
 // Check runs phase 2 over the loaded packages' files into their bags (a package without one gets
-// a new bag, added to bags), folding constants through fold (eval.NewFolder in a build). A nil
-// bags or fold is API misuse: Check then returns nil. The result is safe for concurrent reads.
+// a new bag, added to bags), folding constants through fold (a build's eval.NewFolder, its evaluator
+// joined by UseFolder). A nil bags or fold is API misuse: Check returns nil. Safe for concurrent reads.
 func Check(ctx context.Context, proj *project.Project, files []*syntax.File, bags Bags, fold Folder) *Program {
 	if bags == nil || fold == nil {
 		return nil

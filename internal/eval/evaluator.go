@@ -17,9 +17,8 @@ type Options struct {
 	Layers []string // the active layers, in stack order (EVALUATION.md §9.1)
 }
 
-// Evaluator is Canon's one evaluator over a checked program: it forces top-level values, runs
-// checks, tests and precomputations, and spends one step budget. It serves one goroutine at a
-// time; its findings go to the package bags.
+// Evaluator is Canon's one evaluator over a checked program: it forces top-level values, runs checks,
+// tests and precomputations on one step counter, one goroutine at a time; findings go to the package bags.
 type Evaluator struct {
 	prog  *check.Program
 	info  *check.Info
@@ -28,14 +27,11 @@ type Evaluator struct {
 	opt   Options
 	index *index
 
-	budget    int64
-	steps     int64
-	spent     map[charge]int64
-	order     []charge
-	exhausted bool
-	depth     int  // the live frames of every root, implicit ones included (EVALUATION.md §3.3, DECISIONS 195, 210)
-	implicit  int  // the live implicit frames among depth: field defaults and where runs (DECISIONS 210)
-	constant  bool // a folder's: it evaluates constant expressions only (TYPES.md §15)
+	*counter
+	folding  *foldCall
+	depth    int  // the live frames of every root, implicit ones included (EVALUATION.md §3.3, DECISIONS 195, 210)
+	implicit int  // the live implicit frames among depth: field defaults and where runs (DECISIONS 210)
+	constant bool // a folder's: it evaluates constant expressions only (TYPES.md §15)
 
 	states    map[check.Object]*rootState
 	roots     map[Root]*rootState
@@ -124,13 +120,8 @@ func New(prog *check.Program, host Host, bags check.Bags, opt Options) *Evaluato
 }
 
 func newEvaluator(bags check.Bags, opt Options) *Evaluator {
-	budget := opt.Budget
-	if budget <= 0 {
-		budget = DefaultBudget
-	}
 	return &Evaluator{
-		bags: bags, opt: opt, budget: budget, index: emptyIndex(),
-		spent:   map[charge]int64{},
+		bags: bags, opt: opt, counter: newCounter(opt), index: emptyIndex(),
 		states:  map[check.Object]*rootState{},
 		roots:   map[Root]*rootState{},
 		invalid: map[value.Value]bool{},

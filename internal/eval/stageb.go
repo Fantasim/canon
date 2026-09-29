@@ -23,6 +23,7 @@ func (e *Evaluator) Verifying(ctx context.Context, root Root, bag *diag.Bag) *St
 	s := &StageB{e: e, root: root}
 	s.r = e.newRun(ctx, charge{pkg: root.Pkg, name: root.Name}, nil)
 	s.r.fr.pkg, s.r.sink, s.r.emitted = root.Pkg, bag, &s.emitted
+	s.r.free = e.late.free // phase 8's verifications spend no budget (EVALUATION.md §2.1)
 	return s
 }
 

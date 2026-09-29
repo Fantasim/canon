@@ -62,6 +62,9 @@ func (e *Evaluator) flushContext(ctx context.Context) context.Context {
 
 // broken reports a declaration with a static error: it is never evaluated (TYPES.md §1).
 func (e *Evaluator) broken(obj check.Object) bool {
+	if e.folding != nil {
+		return e.folding.brokenAt(e.info, obj)
+	}
 	return e.info != nil && e.info.Broken[obj]
 }
 

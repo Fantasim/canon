@@ -92,6 +92,9 @@ func (r *run) addTable(ctx context.Context, s *lock.Sources, obj check.Object, n
 		s.Skip(lock.KindTable, name)
 		return nil
 	}
+	if obj.Type() == nil { // defence: only a check cut short leaves a let untyped, and analyze stops first
+		return nil
+	}
 	if t, ok := obj.Type().Base().(*types.TableType); !ok || !t.Stable {
 		return nil
 	}

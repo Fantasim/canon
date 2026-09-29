@@ -1,0 +1,36 @@
+DECISIONS 104, EVALUATION.md §12.2, TYPES.md §15 (log-2026-09-29 M4 B2-r2): the evaluation spends
+the counter the check's folds started. The fold of the bound and stage A each evaluate LIMIT when
+they first need it, charged to it twice (2 × 27); `small` spends the last step, and the heaviest
+root is taken over everything charged, the folds included.
+-- budget --
+100
+-- a/a.canon --
+/// A.
+package a
+
+/// One.
+const ONE = 1
+
+/// The highest price.
+const LIMIT = ONE + ONE + ONE + ONE + ONE + ONE + ONE + ONE + ONE + ONE + ONE + ONE + ONE + ONE
+
+/// A thing sold.
+record Item {
+  /// Its price.
+  price: Int(0..=LIMIT)
+}
+
+local fn loop(n: Int) -> Int {
+  var i = 0
+  while i < n { i += 1 }
+  return i
+}
+
+local let small: Int = loop(30)
+-- findings.txt --
+error[E4401]  a/a.canon:18:17
+  evaluation budget of 100 steps exhausted
+  heaviest: LIMIT (54 steps)
+  in loop (a/a.canon:22)
+
+1 error, 0 warnings in 1 package (…)

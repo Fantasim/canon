@@ -1,0 +1,42 @@
+DECISIONS 104, EVALUATION.md §12.2, API.md R6 (log-2026-09-29 M4 B2-r): stage E folds `Item`'s
+default with the folder phase 2 filled, its constants cached, then precomputes `readsB`, which first
+forces b's poisoned `x`. A memoized analysis's cause re-run makes phase 2's folds again on a fresh
+counter, so its stage E charges what cold's does and reaches `x` at the same budgets.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+import b
+
+/// One.
+const ONE = 1
+
+/// The highest price.
+const LIMIT = ONE + ONE + ONE + ONE + ONE + ONE + ONE + ONE + ONE + ONE + ONE + ONE
+
+/// A thing sold.
+record Item {
+  /// Its price.
+  price: Int(0..=LIMIT) = LIMIT
+}
+
+/// The items.
+let items: [Item] = [{}]
+
+/// Reads b's poisoned value.
+export fn readsB() -> Int { return b.x }
+
+emit cpp { out: "out/", namespace: "acme::gen", mode: baked }
+-- b/b.canon --
+/// B.
+package b
+
+/// Zero.
+const ZERO = 0
+
+/// A division by zero.
+let x: Int = 1 / ZERO

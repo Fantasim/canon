@@ -25,7 +25,7 @@ func (served) Load(context.Context, *syntax.LoadExpr, types.Type) (value.Value, 
 func (served) Verify(context.Context, eval.Root, value.Value) bool { return true }
 
 // A build checks with eval's folder, then forces each top-level value; the refinement bound
-// FARM_MAX_MODELS is folded by the same evaluator.
+// FARM_MAX_MODELS is folded by the same evaluator, on the one step counter of the invocation.
 func Example() {
 	ctx := context.Background()
 	fs := &source.FileSet{}
@@ -42,8 +42,10 @@ let squares: [Int] = [n * n for n in 1..=4]
 `))
 	files := []*syntax.File{syntax.Parse(src, syntax.FileSource, diag.NewBag(fs, ""))}
 	bags := check.Bags{}
-	prog := check.Check(ctx, project.New("demo", project.Version{Minor: 1}), files, bags, eval.NewFolder(bags, eval.Options{}))
+	fold := eval.NewFolder(bags, eval.Options{})
+	prog := check.Check(ctx, project.New("demo", project.Version{Minor: 1}), files, bags, fold)
 	ev := eval.New(prog, served{}, bags, eval.Options{})
+	ev.UseFolder(fold)
 	for _, name := range []string{"FARM_MAX_MODELS", "maxModels", "squares"} {
 		v, _ := ev.Force(ctx, eval.Root{Pkg: "farm", Name: name})
 		fmt.Print(name, " = ", v.CanonText(), "; ")

@@ -1,6 +1,7 @@
 package eval
 
 import (
+	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
 )
@@ -13,6 +14,11 @@ func (e *Evaluator) InstanceOf(rec *value.Record) *value.Record {
 // StepsSpent is the steps charged so far, for the tests of eval_test.
 func (e *Evaluator) StepsSpent() int64 {
 	return e.steps
+}
+
+// FoldSteps is the steps charged to f's counter so far, for the tests of eval_test.
+func FoldSteps(f check.Folder) int64 {
+	return f.(*folder).steps.steps
 }
 
 // MemoCounts is the entries e replayed, kept in its memo and evaluated without keeping them.

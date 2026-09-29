@@ -17,6 +17,7 @@ var (
 	errNoProgram  = errors.New("the checker returned no program")
 	errLinkLoop   = errors.New("too many levels of symbolic links")
 	errNoLoadSite = errors.New("a forced load expression is in no file of the program")
+	errTwoCounts  = errors.New("the evaluator cannot spend the folder's step counter")
 )
 
 // internalError is a build's ErrInternal, its text the cause's alone (API.md §15 X1).

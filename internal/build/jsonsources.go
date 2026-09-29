@@ -56,10 +56,13 @@ func (p *Project) JSONSources(ctx context.Context, sources []string) ([]JSONSour
 	}
 	loaded := withStudio(s.units, imported(s.units, selected), s.proj.Studio.Path)
 	r := &run{p: p, s: s, selected: selected, loaded: loaded, bags: s.bagsOf(loaded)}
-	if err := r.check(ctx); err != nil {
+	if err := interrupted(ctx, r.check(ctx)); err != nil {
 		return nil, err
 	}
-	rec := r.recordLoads()
+	rec, err := r.recordLoads()
+	if err != nil {
+		return nil, err
+	}
 	r.forceLoads(ctx, want)
 	if err := ctx.Err(); err != nil {
 		return nil, err
@@ -85,13 +88,16 @@ func (h *loadRecorder) Load(ctx context.Context, e *syntax.LoadExpr, expected ty
 }
 
 // recordLoads makes the run's host and evaluator, the evaluator loading through a recorder.
-func (r *run) recordLoads() *loadRecorder {
+func (r *run) recordLoads() (*loadRecorder, error) {
 	r.newHost(r.bags)
 	rec := &loadRecorder{evalHost: r.host}
 	r.ev = eval.New(r.prog, rec, r.bags, r.opt)
+	if !r.ev.UseFolder(r.fold) { // DECISIONS 104
+		return nil, internal(errTwoCounts)
+	}
 	r.host.ev = r.ev
 	r.host.verifier = verify.NewShared(r.vix, r.ev, r.bags, r.assets)
-	return rec
+	return rec, nil
 }
 
 // forceLoads forces each const and let of want's files whose declaration holds a load.

@@ -29,6 +29,7 @@ type run struct {
 	cps       []*check.Package // the selected packages, in package order
 	bags      check.Bags
 	fold      check.Folder
+	folds     eval.Folds // phase 2's folds, which Analyze's cause re-run makes again (cause.go)
 	prog      *check.Program
 	opt       eval.Options // the evaluator's: the project budget, the active layers
 	ev        *eval.Evaluator
@@ -72,11 +73,27 @@ func (r *run) analyze(ctx context.Context) error {
 	if err := r.check(ctx); err != nil {
 		return err
 	}
+	if err := ctx.Err(); err != nil { // a program checked in part is never evaluated
+		return err
+	}
 	return r.evaluate(ctx)
+}
+
+// interrupted is ctx's error once cancelled, else err: the interrupt is reported (IMPLEMENTATION-PLAN §4.8).
+func interrupted(ctx context.Context, err error) error {
+	if cerr := ctx.Err(); cerr != nil {
+		return cerr
+	}
+	return err
 }
 
 // evaluate runs phases 3 to 7 over the checked program: stages A to E (EVALUATION.md §1).
 func (r *run) evaluate(ctx context.Context) error {
+	return interrupted(ctx, r.stages(ctx))
+}
+
+// stages is evaluate's work, stage by stage.
+func (r *run) stages(ctx context.Context) error {
 	r.stageA(ctx)
 	if err := r.stageB(ctx); err != nil {
 		return err
@@ -109,6 +126,7 @@ func (r *run) check(ctx context.Context) error {
 // phase2 resolves and type-checks the loaded packages into r.bags, through the Checker seam if set.
 func (r *run) phase2(ctx context.Context) error {
 	r.fold = eval.NewFolder(r.bags, r.opt)
+	defer func() { r.folds = eval.FoldsOf(r.fold) }()
 	files := filesOf(r.loaded)
 	switch {
 	case r.p.opt.Checker != nil:
@@ -150,6 +168,9 @@ func (r *run) newHost(bags check.Bags) {
 	r.host = &evalHost{prog: r.prog, bags: bags, index: r.vix, fold: r.fold, sites: r.loadSites()}
 	r.host.loader = &load.Loader{FS: r.p.fs, Layout: r.s.layout, Set: r.s.set}
 	r.ev = eval.New(r.prog, r.host, bags, r.opt)
+	if !r.ev.UseFolder(r.fold) { // one counter per invocation, phase 2's folds on it (DECISIONS 104)
+		r.host.errs = append(r.host.errs, internal(errTwoCounts))
+	}
 	r.host.ev = r.ev
 	r.assets = &assets{fs: r.p.fs, layout: r.s.layout, host: r.host, dirs: map[string]dirListing{}}
 	r.host.assets = r.assets

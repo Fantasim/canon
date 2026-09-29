@@ -1,0 +1,29 @@
+DECISIONS 104, EVALUATION.md §12.2, API.md R6 (log-2026-09-29 M4 B1): the check's fold of the
+bound spends from the invocation's one counter before stage A, so under a small budget `half`
+is never evaluated; a memoized analysis's cause re-run starts where phase 2 left the counter
+and finds the cold analysis's causes, none for `half` then.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// One.
+const ONE = 1
+
+/// Zero.
+const ZERO = 0
+
+/// The highest price.
+const LIMIT = ONE + ONE + ONE + ONE + ONE + ONE + ONE + ONE + ONE + ONE + ONE + ONE
+
+/// A thing sold.
+record Item {
+  /// Its price.
+  price: Int(0..=LIMIT)
+}
+
+/// Half of nothing: a division by zero.
+let half: Int = ONE / ZERO

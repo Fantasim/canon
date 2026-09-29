@@ -70,7 +70,7 @@ func (p *Project) Build(ctx context.Context, opt BuildOptions) (*BuildResult, er
 	out := &BuildResult{Result: *r.result()}
 	failed := out.Summary.Errors
 	outputs, err := r.emit(ctx, opt, failed > 0)
-	if err != nil {
+	if err = interrupted(ctx, err); err != nil {
 		return nil, err
 	}
 	if outputs, err = r.place(outputs, opt.Adopt); err != nil {

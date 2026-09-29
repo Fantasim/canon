@@ -1,0 +1,72 @@
+IMPLEMENTATION-PLAN §4.8, §8.5 (log-2026-09-29 M4 B2-r, B2-r2): an errorless project with folds,
+a stable table and its lock, a JSON load, a translated fn whose vectors run its tests, and a heavy
+local let: cancelled at any point, a check, build, test, analysis and its causes, or a reading of
+its JSON sources reports the interrupt, never an internal error.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    out: "out"
+  }
+  go_module {
+    out: "example.com/out"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// One.
+const ONE = 1
+
+/// The highest code.
+const LIMIT = ONE + ONE + ONE + ONE + ONE + ONE + ONE + ONE + ONE + ONE
+
+/// A status.
+record Status {
+  /// Its code, kept forever.
+  code: Int(0..=LIMIT) @stable
+  /// Weight.
+  weight: Int = LIMIT - ONE
+}
+
+/// Statuses.
+let statuses: stable table Status = {
+  open { code: 1 }
+  done { code: 2 }
+}
+
+/// Doubles n.
+export fn double(n: Int) -> Int { return n * 2 }
+
+local fn spin(n: Int) -> Int {
+  var i = 0
+  while i < n { i += 1 }
+  return i
+}
+
+local let heavy: Int = spin(20000)
+
+/// A size.
+record Size {
+  /// Its width.
+  w: Int
+}
+
+/// The size, from JSON.
+let size: Size = load("size.json")
+
+test "doubles" {
+  expect double(2) == 4
+  expect double(statuses.open.code) == 2
+}
+
+emit go { out: "@out/g", package: "g", mode: baked }
+-- a/canon.lock --
+# canon.lock v1
+field  a.statuses.code  1  open
+field  a.statuses.code  2  done
+table  a.statuses  done
+table  a.statuses  open
+-- a/size.json --
+{"w": 7}

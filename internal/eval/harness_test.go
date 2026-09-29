@@ -175,7 +175,7 @@ func runBuildWith(t testing.TB, p *program, opt eval.Options, load loader, selec
 	b := &build{prog: p, bags: check.Bags{}, values: map[eval.Root]value.Value{}}
 	fold := eval.NewFolder(b.bags, opt)
 	b.checked = check.Check(ctx, exampleProject(), p.files, b.bags, fold)
-	b.evaluate(ctx, &host{load: load}, opt, selected, nil)
+	b.evaluate(ctx, &host{load: load}, opt, selected, func(ev *eval.Evaluator) { ev.UseFolder(fold) }) // as a build (DECISIONS 104)
 	if err := errors.Join(b.ev.Err(), eval.FoldErr(fold)); err != nil {
 		t.Errorf("internal error: %v", err)
 	}

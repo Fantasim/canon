@@ -1,0 +1,38 @@
+DECISIONS 104, 150, EVALUATION.md §12.2 (log-2026-09-29 M4 B2-r): the check's folds and the
+evaluation spend one counter. The fold of `price`'s bound spends the last step: E4401, once. The
+bound of `stock`, folded after it, fails without a finding and is E3015, as any such fold is (no
+declaration breaks silently); nothing is evaluated after E4401.
+-- budget --
+5
+-- a/a.canon --
+/// A.
+package a
+
+/// The base price.
+const BASE = 100
+
+/// The highest price.
+const LIMIT = BASE + 1 + 1 + 1
+
+/// A thing sold.
+record Item {
+  /// Its price.
+  price: Int(0..=LIMIT)
+  /// Its stock.
+  stock: Int(0..=LIMIT - 1)
+}
+
+/// One item.
+let one: Item = { price: 1, stock: 1 }
+-- findings.txt --
+error[E4401]  a/a.canon:8:15
+  evaluation budget of 5 steps exhausted
+  heaviest: LIMIT (3 steps)
+
+error[E3015]  a/a.canon:15:14
+  this refinement bound must be a constant expression
+
+error[E3015]  a/a.canon:15:18
+  this refinement bound must be a constant expression
+
+3 errors, 0 warnings in 1 package (…)

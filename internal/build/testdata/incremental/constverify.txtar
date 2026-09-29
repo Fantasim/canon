@@ -1,0 +1,53 @@
+TYPES.md §15, EVALUATION.md §1, §5 (log-2026-09-29 M4 B2-r2): each evaluator evaluates a constant
+when it first needs it. `a.X` is folded for `P`'s bound, then forced again in stage A, which forces
+b's `N` and `L` and verifies them: the orphan ref of the imported `L` is E3505, a selected too.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- b/b.canon --
+/// B.
+package b
+
+/// Node.
+record Node {
+  /// Name.
+  name: String
+}
+
+/// Link.
+record Link {
+  /// To.
+  to: ref Node
+}
+
+/// Tree.
+record Tree {
+  /// Nodes.
+  nodes: [Node] keyed by name
+  /// Links.
+  links: [Link]
+}
+
+/// An orphan link.
+const L = Link { to: "x" }
+
+/// How many.
+const N = [L, L].len()
+-- a/a.canon --
+/// A.
+package a
+
+import b
+
+/// Past N.
+const X = b.N + 1
+
+/// A thing.
+record P {
+  /// Its x.
+  x: Int(0..=X)
+}
+
+/// Things.
+let ps: [P] = [{ x: 1 }]

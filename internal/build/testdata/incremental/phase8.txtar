@@ -1,0 +1,75 @@
+EVALUATION.md §2.1, VIEWMODEL.md X7, J5 (log-2026-09-29 M4 B2-r): stage A runs out at `heavy`, so
+each view model forces its package's `things` in phase 8, whose verification applies the type
+function P: phase 8 spends nothing of the invocation's counter, in either order of the models.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- c/c.canon --
+/// C.
+package c
+
+/// K.
+enum K { num, many }
+
+/// P.
+type P(k: K) = match k {
+  num => Int
+  many => [Int]
+}
+
+/// Heavy, first: stage A runs out here.
+let heavy: Int = [i for i in 0..100000].sum()
+
+/// A thing.
+record Thing {
+  /// K.
+  k: K
+  /// Payload.
+  p: P(k)
+}
+
+/// Things.
+let things: table Thing = {
+  one { k: num, p: 3 }
+}
+
+view Thing {
+  title "{id} {p}"
+}
+
+emit view { out: "c.view.json" }
+-- d/d.canon --
+/// D.
+package d
+
+/// K.
+enum K { num, many }
+
+/// P.
+type P(k: K) = match k {
+  num => Int
+  many => [Int]
+}
+
+/// Heavy, first: stage A runs out here.
+let heavy: Int = [i for i in 0..100000].sum()
+
+/// A thing.
+record Thing {
+  /// K.
+  k: K
+  /// Payload.
+  p: P(k)
+}
+
+/// Things.
+let things: table Thing = {
+  two { k: many, p: [1, 2] }
+}
+
+view Thing {
+  title "{id}"
+}
+
+emit view { out: "d.view.json" }

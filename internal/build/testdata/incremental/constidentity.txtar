@@ -1,0 +1,46 @@
+TYPES.md §15, EVALUATION.md §2.3 (log-2026-09-29 M4 B2-r2): each evaluator evaluates a constant
+when it first needs it, so the SWORD record a stage E fold builds for `held`'s default is never the
+one stage A settled, and the fold's identity for it stays the folder's: `same()` precomputes true.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    out: "out"
+  }
+  go_module {
+    out: "example.com/out"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// An item.
+record Item {
+  /// Its name.
+  name: String
+  /// Its power.
+  power: Int = 1
+}
+
+/// The sword.
+local const SWORD = Item { name: "sword", power: 3 }
+
+/// A potion.
+record Potion {
+  /// Boost.
+  boost: Int(0..=SWORD.power) = 1
+  /// Held.
+  held: [Item] keyed by name = [SWORD]
+}
+
+/// The sword as a value.
+local let sw: Item = SWORD
+
+/// Swords, keyed.
+local let k: [Item] keyed by name = [Item { name: "sword", power: 3 }]
+
+/// Whether the keyed sword is the sword.
+export fn same() -> Bool { return k["sword"] == sw }
+
+emit go { out: "@out/g", package: "g", mode: baked }
