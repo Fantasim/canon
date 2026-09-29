@@ -1,6 +1,6 @@
 # ADR-0010 — The edit journal: crash recovery and its threat model
 
-Date: 2026-09-29. Status: accepted.
+Date: 2026-09-29. Status: accepted (own-process liveness refined with U5b).
 
 ## Context
 
@@ -28,7 +28,8 @@ also declare roots anywhere (SPEC §4).
   component (dangling included; `removeAll` removes a link, never descends it), file extensions
   `.canon`, `.json`, `.lock` only, file modes read/write bits only. A journal from another host is
   kept, never applied. A journal whose writer is alive on this host is left alone (liveness
-  injected by the caller).
+  injected by the caller); for this very process, only while one of its commits runs in that
+  directory (an in-process registry), so `Close` + `Open` recovers a journal a failed rollback left.
 - **Durability.** An optional `SyncDir(dir) error` FS capability (the OS FS has it): the journal's
   directory before the first rename; every touched directory before the journal is removed. The OS
   `WriteFile` is temp file + fsync + rename + directory sync, its temp names hidden and containing
