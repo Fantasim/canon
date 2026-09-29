@@ -17,6 +17,7 @@ commands:
   fmt [paths...]        rewrite sources in the canonical layout
   init                  create project.canon in the current directory
   new <package>         create a package directory with a first file
+  refs <path>           list every place that references an entry or member
   test [packages...]    run the test blocks of packages
   version               print the compiler, language and format versions
 
@@ -34,3 +35,5 @@ flags:
     	print errors only
   -root name=dir
     	use name=dir for a declared root; repeatable
+  -watch
+    	run again after every change, printing what changed

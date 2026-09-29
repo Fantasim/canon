@@ -1,0 +1,82 @@
+CLI.md §3.8, API.md R7, R8: every kind of reference to a table entry (a value, a map key, code,
+a view, a check and a layer amendment), in the API's order, `<file>:<line>  <kind>  <what>`,
+with `<package>:<path>` for a value or key and the package alone for the others.
+-- args --
+refs
+statuses.done
+--layer
+dev
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- r/r.canon --
+/// R.
+package r
+
+/// A tone.
+enum Tone { calm, loud = "LOUD" }
+
+/// A status.
+record Status {
+  /// Its tone.
+  tone: Tone = calm
+  /// Where it goes.
+  next: [ref statuses] = []
+  /// A fallback.
+  fallback: ref statuses = done
+
+  check not (tone == loud and next.contains(done)) else "done follows a loud status"
+}
+
+/// Statuses.
+let statuses: table Status = {
+  open { next: [done] }
+  done { tone: loud }
+}
+
+/// Weights.
+let weights: {ref statuses: Int} = { open: 1, done: 2 }
+
+/// Chosen.
+let chosen: Status = { tone: calm }
+
+/// Whether a status is done.
+fn isDone(s: ref statuses) -> Bool {
+  return s == done
+}
+
+check statuses.done.tone == loud else "done is loud"
+
+view Status {
+  show "Done" "{statuses.done.tone}"
+}
+-- r/dev.layer.canon --
+package r
+layer dev
+
+amend chosen {
+  fallback: done
+}
+-- q/q.canon --
+/// Q.
+package q
+
+import r { statuses }
+
+/// Elsewhere.
+let far: [ref statuses] = [done]
+-- want --
+[exit 0]
+[stdout]
+r:statuses.done is referenced 9 times
+  q/q.canon:7  value  q:far[0]
+  r/dev.layer.canon:5  layer  r
+  r/r.canon:14  code  r
+  r/r.canon:16  check  r
+  r/r.canon:21  value  r:statuses.open.next[0]
+  r/r.canon:26  key  r:weights[done]
+  r/r.canon:33  code  r
+  r/r.canon:36  check  r
+  r/r.canon:39  view  r
+[stderr]

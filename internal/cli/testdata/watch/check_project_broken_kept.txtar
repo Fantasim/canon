@@ -1,0 +1,41 @@
+meta/decisions/log-2026-09-29.md "M4 U6-r": a failed re-check proves nothing about the findings from
+before it. The finding of package a is held through the break of project.canon, and after the
+repair only the finding of the break is reported fixed: a's is not added again.
+-- args --
+check
+--watch
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+const = 1
+-- step1/project.canon --
+project acme {
+  canon:
+}
+-- step2/project.canon --
+project acme {
+  canon: "0.1"
+}
+-- want --
+[exit 130]
+[stdout]
+error[E1116]  a/a.canon:4:7
+  expected IDENT; found =
+
+1 error, 0 warnings in 1 package (…)
+-- 1 files changed, 0 packages re-checked
+error[E1116]  project.canon:3:1
+  expected pValue; found }
+
+1 error, 0 warnings in 0 packages (…)
+-- 1 files changed, 1 packages re-checked
+fixed: error[E1116]  project.canon:3:1
+
+1 error, 0 warnings in 1 package (…)
+[stderr]
+canon: interrupted

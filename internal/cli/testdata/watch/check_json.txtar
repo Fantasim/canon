@@ -1,0 +1,40 @@
+CLI.md §3.3, §2.4, IMPLEMENTATION-PLAN.md §8.1: in JSON each cycle is a `cycle` line, each finding
+that appeared as its own line with `"change":"added"`, each one that disappeared with
+`"change":"removed"`, then the summary.
+-- args --
+check
+--watch
+--format
+json
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+const X = 1
+-- step1/a/a.canon --
+/// A.
+package a
+
+const = 1
+const X = 1
+-- step2/a/a.canon --
+/// A.
+package a
+
+const X = 1
+-- want --
+[exit 130]
+[stdout]
+{"summary":{"errors":0,"warnings":0,"packages":1,"ms":0}}
+{"cycle":{"revision":"r1:408aa7ef4581e562bb0a58d0ea55370136efdb6d4b1028105f90e8c1fb72df35","files":["a/a.canon"],"packages":["a"]}}
+{"severity":"error","code":"E1116","file":"a/a.canon","line":4,"col":7,"endLine":4,"endCol":8,"package":"a","message":"expected IDENT; found =","change":"added"}
+{"summary":{"errors":1,"warnings":0,"packages":1,"ms":0}}
+{"cycle":{"revision":"r1:7ff5bb987dff4712f437501a425ebbf2a11afc46d4dc54636225c84e7d4d6c1d","files":["a/a.canon"],"packages":["a"]}}
+{"severity":"error","code":"E1116","file":"a/a.canon","line":4,"col":7,"endLine":4,"endCol":8,"package":"a","message":"expected IDENT; found =","change":"removed"}
+{"summary":{"errors":0,"warnings":0,"packages":1,"ms":0}}
+[stderr]
+canon: interrupted

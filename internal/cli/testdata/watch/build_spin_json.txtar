@@ -1,0 +1,54 @@
+IMPLEMENTATION-PLAN.md §8.1, meta/decisions/log-2026-09-29.md "M4 U6-r": in JSON the build that
+is not answered again ends with a `cycle` line whose `settled` is false.
+-- args --
+build
+--watch
+--format
+json
+-- cycles --
+3
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    out: "out"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Cfg.
+record Cfg {
+  /// Weight.
+  weight: Int = 1
+}
+
+/// Prev.
+let prev: Cfg = load("@out/cfg.json", at: "value")
+
+/// Config.
+let cfg: Cfg = { weight: prev.weight + 1 }
+
+emit json { out: "@out/" }
+-- out/cfg.json --
+{
+  "$schema": "a.Cfg@0df3c93b",
+  "value": {
+    "weight": 1
+  }
+}
+-- want --
+[exit 130]
+[stdout]
+{"output":{"path":"@out/cfg.json","target":"json","package":"a","status":"written"}}
+{"output":{"path":"@out/prev.json","target":"json","package":"a","status":"written"}}
+{"summary":{"errors":0,"warnings":0,"packages":1,"ms":0,"written":2,"stale":0}}
+{"cycle":{"revision":"r1:9c302545a3631df571d32bbb804200f651d7a91d93eee2c3ce2e77df9a5356fc","files":["@out/cfg.json"],"packages":["a"]}}
+{"output":{"path":"@out/cfg.json","target":"json","package":"a","status":"written"}}
+{"output":{"path":"@out/prev.json","target":"json","package":"a","status":"written"}}
+{"summary":{"errors":0,"warnings":0,"packages":1,"ms":0,"written":2,"stale":0}}
+{"cycle":{"revision":"r1:9c302545a3631df571d32bbb804200f651d7a91d93eee2c3ce2e77df9a5356fc","files":["@out/cfg.json"],"packages":["a"],"settled":false}}
+{"summary":{"errors":0,"warnings":0,"packages":1,"ms":0,"written":2,"stale":0}}
+[stderr]
+canon: interrupted

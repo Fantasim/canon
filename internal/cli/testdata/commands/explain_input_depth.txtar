@@ -1,0 +1,40 @@
+CLI.md §3.7: --depth counts an input field as a part: at depth 1 the input of the top record is
+listed, and the one of its part is not.
+-- args --
+explain
+outer
+--depth
+1
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Inner.
+record Inner {
+  /// A key.
+  key: input String? from env "A_KEY"
+}
+
+/// Outer.
+record Outer {
+  /// A key.
+  top: input String? from env "A_TOP"
+  /// Inside.
+  inner: Inner = {}
+}
+
+/// The value.
+let outer: Outer = {}
+-- want --
+[exit 0]
+[stdout]
+outer = Outer{inner: Inner{}}  a.Outer
+  literal  a/a.canon:19
+outer.top = input from env A_TOP
+outer.inner = Inner{}  a.Inner
+  default  a/a.canon:15  Inner{}
+[stderr]

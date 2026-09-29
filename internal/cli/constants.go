@@ -26,6 +26,7 @@ const (
 	cmdTest    = "test"
 	cmdExplain = "explain"
 	cmdFmt     = "fmt"
+	cmdRefs    = "refs"
 )
 
 // Flags (CLI.md §2.3, §3.1, §3.4).
@@ -46,6 +47,7 @@ const (
 	flagDepth       = "depth"
 	flagDiff        = "diff"
 	flagJSONSources = "json-sources"
+	flagWatch       = "watch"
 	formatText      = "text"
 	formatJSON      = "json"
 	rootAssign      = "="
@@ -69,6 +71,7 @@ const (
 	usageDepth       = "print parts `n` levels deep (default: every part)"
 	usageFmtCheck    = "write nothing; list the files that are not formatted and exit 1"
 	usageDiff        = "print the changes instead of writing"
+	usageWatch       = "run again after every change, printing what changed"
 	usageJSONSources = "also normalize the JSON files read by load to the canonical JSON layout"
 )
 
@@ -82,6 +85,7 @@ commands:
   fmt [paths...]        rewrite sources in the canonical layout
   init                  create project.canon in the current directory
   new <package>         create a package directory with a first file
+  refs <path>           list every place that references an entry or member
   test [packages...]    run the test blocks of packages
   version               print the compiler, language and format versions
 
@@ -155,11 +159,37 @@ const (
 	pointerMark    = "#"
 	rowWord        = "row "
 
+	vmRecord   = "record" // the view model's kinds of a type expression (VIEWMODEL.md §12.3)
+	vmVariant  = "variant"
+	vmOptional = "optional"
+
 	pkgMark       = ':'
 	fieldMark     = '.'
 	lineBreakRune = '\n'
 	escapeByte    = '\\'
 	newlineLetter = 'n' // a line break written `\n` in a one-line detail
+)
+
+// canon refs' text (CLI.md §3.8): the count line and one line per reference.
+const (
+	fmtRefsHead  = "%s is referenced %d %s"
+	fmtRefLine   = "%s:%d  %s  %s"
+	fmtQualified = "%s:%s"
+	wordTime     = "time"
+	wordTimes    = "times"
+)
+
+// --watch (CLI.md §3.3, §3.4, IMPLEMENTATION-PLAN.md §8.1): the cycle header, the fixed line, the JSON `change` member, the events kept waiting.
+const (
+	fmtWatchHead   = "-- %d files changed, %d packages re-checked"
+	fmtWatchFixed  = "fixed: %s[%s]"
+	fmtWatchAt     = "%s:%d:%d"
+	fmtWatchChange = ",\"change\":%q}"
+	watchAdded     = "added"
+	watchRemoved   = "removed"
+	watchBlank     = ""
+	watchUnsettled = "-- outputs did not settle; waiting for a change"
+	watchQueue     = 16
 )
 
 // originLabels are the origins CLI.md §3.7 names otherwise than API.md's OriginKind.

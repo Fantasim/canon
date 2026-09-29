@@ -1,0 +1,46 @@
+CLI.md §3.3, IMPLEMENTATION-PLAN.md §8.1, API.md W14: `check --watch` prints the whole check first;
+after a change, a header, the findings that appeared, then (after the next change) one `fixed:`
+line per finding gone, and the summary each time. The interrupt ends it with exit 130.
+-- args --
+check
+--watch
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+const X = 1
+-- b/b.canon --
+/// B.
+package b
+
+const Y = 2
+-- step1/a/a.canon --
+/// A.
+package a
+
+const = 1
+const X = 1
+-- step2/a/a.canon --
+/// A.
+package a
+
+const X = 1
+-- want --
+[exit 130]
+[stdout]
+0 errors, 0 warnings in 2 packages (…)
+-- 1 files changed, 1 packages re-checked
+error[E1116]  a/a.canon:4:7
+  expected IDENT; found =
+
+1 error, 0 warnings in 2 packages (…)
+-- 1 files changed, 1 packages re-checked
+fixed: error[E1116]  a/a.canon:4:7
+
+0 errors, 0 warnings in 2 packages (…)
+[stderr]
+canon: interrupted

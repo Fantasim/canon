@@ -1,0 +1,28 @@
+CLI.md §3.8: an entry nothing references prints the count line alone, and exits 0.
+-- args --
+refs
+statuses.done
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- r/r.canon --
+/// R.
+package r
+
+/// A status.
+record Status {
+  /// Where it goes.
+  next: [ref statuses] = []
+}
+
+/// Statuses.
+let statuses: table Status = {
+  open {}
+  done {}
+}
+-- want --
+[exit 0]
+[stdout]
+r:statuses.done is referenced 0 times
+[stderr]

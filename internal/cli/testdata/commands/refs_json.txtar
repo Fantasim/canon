@@ -1,0 +1,42 @@
+CLI.md §3.8, IMPLEMENTATION-PLAN.md §8.1, API.md R8: one `ref` line per reference, `path` only for
+a value or a key, then `{"summary":{"target","count"}}`.
+-- args --
+refs
+statuses.done
+--format
+json
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- r/r.canon --
+/// R.
+package r
+
+/// A status.
+record Status {
+  /// Where it goes.
+  next: [ref statuses] = []
+}
+
+/// Statuses.
+let statuses: table Status = {
+  open { next: [done] }
+  done {}
+}
+
+/// Weights.
+let weights: {ref statuses: Int} = { open: 1, done: 2 }
+
+/// Whether a status is done.
+fn isDone(s: ref statuses) -> Bool {
+  return s == done
+}
+-- want --
+[exit 0]
+[stdout]
+{"ref":{"kind":"value","package":"r","path":"statuses.open.next[0]","file":"r/r.canon","line":12,"col":17}}
+{"ref":{"kind":"key","package":"r","path":"weights[done]","file":"r/r.canon","line":17,"col":47}}
+{"ref":{"kind":"code","package":"r","file":"r/r.canon","line":21,"col":15}}
+{"summary":{"target":"r:statuses.done","count":3}}
+[stderr]

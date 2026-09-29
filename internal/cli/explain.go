@@ -29,15 +29,27 @@ func runExplain(inv *invocation) int {
 	if err != nil {
 		return inv.fail(err)
 	}
+	parts := newPartSource(inv.ctx, p)
 	if inv.opt.format == formatJSON {
-		if err := inv.writeJSONLine(explainLine{Explain: objectOf(v, inv.opt.depth)}); err != nil {
-			return inv.fail(err)
-		}
-		return exitOK
+		return inv.explainJSON(parts, v)
 	}
-	x := &explainer{w: inv.env.Stdout, qualifier: qualifier(v.Path, inv.args[0])}
+	x := &explainer{w: inv.env.Stdout, qualifier: qualifier(v.Path, inv.args[0]), parts: parts}
 	x.src = &sources{fs: fsys, root: p.Root(), files: map[string]*syntax.File{}}
-	x.text(v, inv.opt.depth)
+	if err := x.text(v, inv.opt.depth); err != nil {
+		return inv.fail(err)
+	}
+	return exitOK
+}
+
+// explainJSON writes v's JSON line, its parts down to --depth.
+func (inv *invocation) explainJSON(parts *partSource, v *canon.Value) int {
+	obj, err := parts.object(v, inv.opt.depth)
+	if err != nil {
+		return inv.fail(err)
+	}
+	if err := inv.writeJSONLine(explainLine{Explain: obj}); err != nil {
+		return inv.fail(err)
+	}
 	return exitOK
 }
 
@@ -63,15 +75,20 @@ func (inv *invocation) explainInput(p *canon.Project, env string) int {
 		return inv.fail(err)
 	}
 	path := container.Path + arg[dot:]
-	text := fmt.Sprintf(fmtInputFrom, env)
 	if inv.opt.format == formatJSON {
-		if err := inv.writeJSONLine(explainLine{Explain: explainObject{Path: path, Text: text, Origin: &originObject{}}}); err != nil {
+		if err := inv.writeJSONLine(explainLine{Explain: inputObject(path, env)}); err != nil {
 			return inv.fail(err)
 		}
 		return exitOK
 	}
-	writeLine(inv.env.Stdout, fmt.Sprintf(fmtExplainHead, strings.TrimPrefix(path, qualifier(path, arg)), text))
+	writeLine(inv.env.Stdout, inputHead(path, env, qualifier(path, arg)))
 	return exitOK
+}
+
+// inputHead is an input field's line: its path less the qualifier the argument did not write, and
+// where its value comes from.
+func inputHead(path, env, qualifier string) string {
+	return fmt.Sprintf(fmtExplainHead, strings.TrimPrefix(path, qualifier), fmt.Sprintf(fmtInputFrom, env))
 }
 
 // explainer writes one explanation, quoting expressions from the sources the analysis read.
@@ -79,10 +96,11 @@ type explainer struct {
 	w         io.Writer
 	qualifier string
 	src       *sources
+	parts     *partSource
 }
 
 // text writes v's block, then each part's, depth-first, down to depth levels (-1: every part).
-func (x *explainer) text(v *canon.Value, depth int) {
+func (x *explainer) text(v *canon.Value, depth int) error {
 	head := fmt.Sprintf(fmtExplainHead, strings.TrimPrefix(v.Path, x.qualifier), oneLine(v.Text))
 	if v.Type.Expr != "" {
 		head += outputIndent + v.Type.Expr
@@ -92,11 +110,27 @@ func (x *explainer) text(v *canon.Value, depth int) {
 		x.originLines(*o)
 	}
 	if depth == 0 {
-		return
+		return nil
 	}
-	for _, c := range v.Children() {
-		x.text(c, depth-1)
+	ps, err := x.parts.parts(v)
+	if err != nil {
+		return err
 	}
+	for _, c := range ps {
+		if err := x.part(c, depth-1); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// part writes one part: a value's block, or an input field's line (EVALUATION.md §11.2).
+func (x *explainer) part(c part, depth int) error {
+	if c.value != nil {
+		return x.text(c.value, depth)
+	}
+	writeLine(x.w, inputHead(c.path, c.env, x.qualifier))
+	return nil
 }
 
 // originLines writes `<origin>  <file>:<line>  <detail>`, columns never padded, then one

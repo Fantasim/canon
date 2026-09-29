@@ -1,0 +1,29 @@
+CLI.md §3.8, API.md R7: an enum member is a target too, named with its package qualifier.
+-- args --
+refs
+r:Tone.loud
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- r/r.canon --
+/// R.
+package r
+
+/// A tone.
+enum Tone { calm, loud }
+
+/// A message.
+record Msg {
+  /// Its tone.
+  tone: Tone = calm
+}
+
+/// The alarm.
+let alarm: Msg = { tone: loud }
+-- want --
+[exit 0]
+[stdout]
+r:Tone.loud is referenced 1 time
+  r/r.canon:14  value  r:alarm.tone
+[stderr]

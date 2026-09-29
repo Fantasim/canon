@@ -1,0 +1,34 @@
+EVALUATION.md §11.2, CLI.md §3.7: explain of the whole studio configuration ends with the input
+field of Gen, which has no value: `input from env NAME`, under the path of its record.
+-- args --
+explain
+config
+-- want --
+[exit 0]
+[stdout]
+config = Config{paths: Paths{resourceRoot: "../../Resource", clientRoot: "../../Client", iconDir: none, cacheDir: ".cache"}, server: Server{host: "127.0.0.1", port: 8765, openBrowser: true, readOnly: false}, gen: Gen{}}  service.resourcestudio.Config
+  literal  service/resourcestudio/resourcestudio.canon:56
+config.paths = Paths{resourceRoot: "../../Resource", clientRoot: "../../Client", iconDir: none, cacheDir: ".cache"}  service.resourcestudio.Paths
+  default  service/resourcestudio/resourcestudio.canon:48  Paths{resourceRoot: "../../Resource", clientRoot: "../../Client", iconDir: none, cacheDir: ".cache"}
+config.paths.resourceRoot = ../../Resource  service.resourcestudio.Path
+  default  service/resourcestudio/resourcestudio.canon:15  ../../Resource
+config.paths.clientRoot = ../../Client  service.resourcestudio.Path
+  default  service/resourcestudio/resourcestudio.canon:17  ../../Client
+config.paths.iconDir = none  service.resourcestudio.Path?
+  default  service/resourcestudio/resourcestudio.canon:19  none
+config.paths.cacheDir = .cache  service.resourcestudio.Path
+  default  service/resourcestudio/resourcestudio.canon:21  .cache
+config.server = Server{host: "127.0.0.1", port: 8765, openBrowser: true, readOnly: false}  service.resourcestudio.Server
+  default  service/resourcestudio/resourcestudio.canon:50  Server{host: "127.0.0.1", port: 8765, openBrowser: true, readOnly: false}
+config.server.host = 127.0.0.1  String
+  default  service/resourcestudio/resourcestudio.canon:27  127.0.0.1
+config.server.port = 8765  Int(1024..=65535)
+  default  service/resourcestudio/resourcestudio.canon:29  8765
+config.server.openBrowser = true  Bool
+  default  service/resourcestudio/resourcestudio.canon:31  true
+config.server.readOnly = false  Bool
+  default  service/resourcestudio/resourcestudio.canon:33  false
+config.gen = Gen{}  service.resourcestudio.Gen
+  default  service/resourcestudio/resourcestudio.canon:52  Gen{}
+config.gen.apiKey = input from env RESOURCESTUDIO_GEMINI_KEY
+[stderr]

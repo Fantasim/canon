@@ -1,0 +1,20 @@
+API.md R7, CLI.md §2.5: a path that names no table entry, keyed-list element or enum member is
+refused (usage error, exit 2).
+-- args --
+refs
+cfg
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// The settings.
+let cfg: Int = 1
+-- want --
+[exit 2]
+[stdout]
+[stderr]
+canon: cfg: operation not valid here

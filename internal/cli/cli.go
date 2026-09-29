@@ -25,11 +25,12 @@ type command struct {
 func commands() map[string]command {
 	return map[string]command{
 		cmdBuild:   {flags: buildFlags, run: runBuild},
-		cmdCheck:   {run: runCheck},
+		cmdCheck:   {flags: checkFlags, run: runCheck},
 		cmdExplain: {flags: explainFlags, run: runExplain},
 		cmdFmt:     {flags: fmtFlags, run: runFmt},
 		cmdInit:    {flags: initFlags, run: runInit},
 		cmdNew:     {run: runNew},
+		cmdRefs:    {run: runRefs},
 		cmdTest:    {flags: testFlags, run: runTest},
 		cmdVersion: {run: runVersion},
 	}

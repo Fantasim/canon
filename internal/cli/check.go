@@ -12,35 +12,65 @@ import (
 	"github.com/fantasim/canonlang/internal/project"
 )
 
-// runCheck is `canon check [packages…]` (CLI.md §3.3): every finding, then the summary.
+// runCheck is `canon check [packages…] [--watch]` (CLI.md §3.3): every finding, then the summary; with --watch, then what changed after each change.
 func runCheck(inv *invocation) int {
 	p, err := inv.openProject()
 	if err != nil {
 		return inv.fail(err)
 	}
 	defer func() { _ = p.Close() }()
+	events, stop, err := inv.startWatch(p)
+	if err != nil {
+		return inv.fail(err)
+	}
+	defer stop()
 	selectors := inv.selectors(p.Root())
+	res, err := inv.check(p, selectors)
+	if err != nil {
+		return inv.fail(err)
+	}
+	if err := inv.writeFindings(inv.shown(res.Findings), res.Summary, res.Duration); err != nil {
+		return inv.fail(err)
+	}
+	if events != nil {
+		rerun := func() (*cycleState, error) {
+			next, err := inv.check(p, selectors)
+			if err != nil {
+				return nil, err
+			}
+			return inv.checkState(next), nil
+		}
+		return inv.watchLoop(events, inv.checkState(res), rerun)
+	}
+	return inv.checkExit(res.Summary)
+}
+
+// check is one run of Check over the selected packages, an unknown selector reported as typed.
+func (inv *invocation) check(p *canon.Project, selectors []string) (*canon.CheckResult, error) {
 	res, err := p.Check(inv.ctx, selectors...)
 	if errors.Is(err, canon.ErrUnknownPackage) {
 		err = inv.asTyped(p, selectors, err)
 	}
-	if err != nil {
-		return inv.fail(err)
-	}
-	shown := res.Findings
-	if inv.opt.quiet {
-		shown = slices.DeleteFunc(slices.Clone(shown), func(f canon.Finding) bool { return f.Severity != canon.SeverityError })
-	}
-	if err := inv.writeFindings(shown, res.Summary, res.Duration); err != nil {
-		return inv.fail(err)
-	}
+	return res, err
+}
+
+// checkExit is check's exit code for its summary (CLI.md §3.3).
+func (inv *invocation) checkExit(s canon.Summary) int {
 	switch {
-	case res.Summary.Errors > 0:
+	case s.Errors > 0:
 		return exitErrors
-	case inv.opt.maxWarnings != unlimited && res.Summary.Warnings > inv.opt.maxWarnings:
+	case inv.opt.maxWarnings != unlimited && s.Warnings > inv.opt.maxWarnings:
 		return exitWarnings
 	}
 	return exitOK
+}
+
+// shown is findings less the warnings under -q, which prints errors only (CLI.md §2.3).
+func (inv *invocation) shown(findings []canon.Finding) []canon.Finding {
+	if !inv.opt.quiet {
+		return findings
+	}
+	return slices.DeleteFunc(slices.Clone(findings), func(f canon.Finding) bool { return f.Severity != canon.SeverityError })
 }
 
 // writeFindings prints findings and the summary through the API's one writer (API.md F16).

@@ -2,6 +2,7 @@ package cli
 
 import (
 	"encoding/json"
+	"fmt"
 
 	canon "github.com/fantasim/canonlang/api"
 )
@@ -35,16 +36,33 @@ type originObject struct {
 	MoreFrames int           `json:"moreFrames,omitempty"`
 }
 
-// objectOf is v's JSON object with its parts down to depth levels (-1: every part).
-func objectOf(v *canon.Value, depth int) explainObject {
+// object is v's JSON object with its parts down to depth levels (-1: every part), an input field among them as its own object (EVALUATION.md §11.2).
+func (s *partSource) object(v *canon.Value, depth int) (explainObject, error) {
 	out := explainObject{Path: v.Path, Type: v.Type.Expr, Text: v.Text, Value: v.JSON(), Origin: originJSON(&v.Origin)}
 	if depth == 0 {
-		return out
+		return out, nil
 	}
-	for _, c := range v.Children() {
-		out.Parts = append(out.Parts, objectOf(c, depth-1))
+	ps, err := s.parts(v)
+	if err != nil {
+		return out, err
 	}
-	return out
+	for _, c := range ps {
+		if c.value == nil {
+			out.Parts = append(out.Parts, inputObject(c.path, c.env))
+			continue
+		}
+		o, err := s.object(c.value, depth-1)
+		if err != nil {
+			return out, err
+		}
+		out.Parts = append(out.Parts, o)
+	}
+	return out, nil
+}
+
+// inputObject is an input field's object: it has no type, value or origin (EVALUATION.md §11.2).
+func inputObject(path, env string) explainObject {
+	return explainObject{Path: path, Text: fmt.Sprintf(fmtInputFrom, env), Origin: &originObject{}}
 }
 
 // originJSON is o's object; the zero Origin of a value without provenance is `{}`.

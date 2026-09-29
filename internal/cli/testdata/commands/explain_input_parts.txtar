@@ -1,0 +1,39 @@
+EVALUATION.md §11.2, CLI.md §3.7: the input fields of a record are among its parts, each where the
+record declares it, as `input from env NAME`; the fields that have a value print as usual.
+-- args --
+explain
+srv
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A server.
+record Srv {
+  /// Where it listens.
+  host: String = "localhost"
+  /// A key.
+  key: input String? from env "A_KEY"
+  /// The port.
+  port: Int = 80
+  /// A second input.
+  token: input String? from env "A_TOKEN"
+}
+
+/// The server.
+let srv: Srv = {}
+-- want --
+[exit 0]
+[stdout]
+srv = Srv{host: "localhost", port: 80}  a.Srv
+  literal  a/a.canon:17
+srv.host = localhost  String
+  default  a/a.canon:7  localhost
+srv.key = input from env A_KEY
+srv.port = 80  Int
+  default  a/a.canon:11  80
+srv.token = input from env A_TOKEN
+[stderr]

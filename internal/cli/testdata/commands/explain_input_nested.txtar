@@ -1,0 +1,40 @@
+EVALUATION.md §11.2, CLI.md §3.7: parts are found at every level: the input of a record inside a
+record prints under its own path.
+-- args --
+explain
+outer
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Inner.
+record Inner {
+  /// A key.
+  key: input String? from env "A_KEY"
+  /// A label.
+  label: String = "none"
+}
+
+/// Outer.
+record Outer {
+  /// Inside.
+  inner: Inner = {}
+}
+
+/// The value.
+let outer: Outer = {}
+-- want --
+[exit 0]
+[stdout]
+outer = Outer{inner: Inner{label: "none"}}  a.Outer
+  literal  a/a.canon:19
+outer.inner = Inner{label: "none"}  a.Inner
+  default  a/a.canon:15  Inner{label: "none"}
+outer.inner.key = input from env A_KEY
+outer.inner.label = none  String
+  default  a/a.canon:9  none
+[stderr]

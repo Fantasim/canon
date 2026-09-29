@@ -1,0 +1,12 @@
+CLI.md §3.8, §2.5: refs takes exactly one path.
+-- args --
+refs
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- want --
+[exit 2]
+[stdout]
+[stderr]
+canon: refs: takes exactly one argument

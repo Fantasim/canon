@@ -4,31 +4,56 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"slices"
 
 	canon "github.com/fantasim/canonlang/api"
 )
 
-// runBuild is `canon build [packages…]` (CLI.md §3.4): check, then write outputs and locks.
+// runBuild is `canon build [packages…] [--watch]` (CLI.md §3.4): check, then write outputs and locks; with --watch, then the same after each change.
 func runBuild(inv *invocation) int {
 	p, err := inv.openProject()
 	if err != nil {
 		return inv.fail(err)
 	}
 	defer func() { _ = p.Close() }()
-	selectors := inv.selectors(p.Root())
-	res, err := p.Build(inv.ctx, canon.BuildOptions{
-		Packages: selectors, Targets: inv.opt.targets, Check: inv.opt.checkFlag, Adopt: inv.opt.adopt,
-	})
-	if errors.Is(err, canon.ErrUnknownPackage) {
-		err = inv.asTyped(p, selectors, err)
+	events, stop, err := inv.startWatch(p)
+	if err != nil {
+		return inv.fail(err)
 	}
+	defer stop()
+	selectors := inv.selectors(p.Root())
+	res, err := inv.build(p, selectors)
 	if err != nil {
 		return inv.fail(err)
 	}
 	if err := inv.writeBuild(res); err != nil {
 		return inv.fail(err)
 	}
+	if events != nil {
+		rerun := func() (*cycleState, error) {
+			next, err := inv.build(p, selectors)
+			if err != nil {
+				return nil, err
+			}
+			return inv.buildState(next), nil
+		}
+		return inv.watchLoop(events, inv.buildState(res), rerun)
+	}
+	return inv.buildExit(res)
+}
+
+// build is one run of Build over the selected packages, an unknown selector reported as typed.
+func (inv *invocation) build(p *canon.Project, selectors []string) (*canon.BuildResult, error) {
+	res, err := p.Build(inv.ctx, canon.BuildOptions{
+		Packages: selectors, Targets: inv.opt.targets, Check: inv.opt.checkFlag, Adopt: inv.opt.adopt,
+	})
+	if errors.Is(err, canon.ErrUnknownPackage) {
+		err = inv.asTyped(p, selectors, err)
+	}
+	return res, err
+}
+
+// buildExit is build's exit code: errors, or stale outputs under --check, then too many warnings.
+func (inv *invocation) buildExit(res *canon.BuildResult) int {
 	switch {
 	case res.Check.Summary.Errors > 0, res.Stale:
 		return exitErrors
@@ -40,10 +65,7 @@ func runBuild(inv *invocation) int {
 
 // writeBuild prints the check's findings, then the build's own report; -q drops the report too, the error findings and the summary kept (DECISIONS 201, CLI.md §2.3; meta/decisions/log-2026-09-24.md "Chosen while resuming").
 func (inv *invocation) writeBuild(res *canon.BuildResult) error {
-	shown := res.Check.Findings
-	if inv.opt.quiet {
-		shown = slices.DeleteFunc(slices.Clone(shown), func(f canon.Finding) bool { return f.Severity != canon.SeverityError })
-	}
+	shown := inv.shown(res.Check.Findings)
 	if inv.opt.format == formatJSON {
 		return inv.writeBuildJSON(shown, res)
 	}

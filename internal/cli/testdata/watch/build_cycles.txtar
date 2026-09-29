@@ -1,0 +1,52 @@
+CLI.md §3.4, IMPLEMENTATION-PLAN.md §8.1: `build --watch` builds first, as build does; after a change
+it builds again and prints the cycle: header, findings, summary, then the outputs that changed.
+-- args --
+build
+--watch
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    out: "out"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Tier.
+record Tier {
+  /// Weight.
+  weight: Int = 1
+}
+
+/// Tiers.
+let tiers: table Tier = { low {}, high { weight: 2 } }
+
+emit json { out: "@out/" }
+-- step1/a/a.canon --
+/// A.
+package a
+
+/// Tier.
+record Tier {
+  /// Weight.
+  weight: Int = 1
+}
+
+/// Tiers.
+let tiers: table Tier = { low {}, high { weight: 3 } }
+
+emit json { out: "@out/" }
+-- want --
+[exit 130]
+[stdout]
+0 errors, 0 warnings in 1 package (…)
+json:
+  @out/tiers.json
+-- 1 files changed, 1 packages re-checked
+0 errors, 0 warnings in 1 package (…)
+json:
+  @out/tiers.json
+[stderr]
+canon: interrupted

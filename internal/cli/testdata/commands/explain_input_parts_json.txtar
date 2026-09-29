@@ -1,0 +1,30 @@
+EVALUATION.md §11.2, CLI.md §3.7, API.md P10: in JSON the input fields are objects of `parts`,
+with their canonical path, no type, value null and an empty origin, among the other parts.
+-- args --
+explain
+srv
+--format
+json
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A server.
+record Srv {
+  /// Where it listens.
+  host: String = "localhost"
+  /// A key.
+  key: input String? from env "A_KEY"
+}
+
+/// The server.
+let srv: Srv = {}
+-- want --
+[exit 0]
+[stdout]
+{"explain":{"path":"a:srv","type":"a.Srv","text":"Srv{host: \"localhost\"}","value":{"host":"localhost"},"origin":{"kind":"literal","file":"a/a.canon","line":13,"col":16,"endLine":13,"endCol":18,"text":"Srv{host: \"localhost\"}"},"parts":[{"path":"a:srv.host","type":"String","text":"localhost","value":"localhost","origin":{"kind":"default","file":"a/a.canon","line":7,"col":18,"endLine":7,"endCol":29,"via":{"kind":"literal","file":"a/a.canon","line":13,"col":16,"endLine":13,"endCol":18},"text":"localhost"}},{"path":"a:srv.key","type":"","text":"input from env A_KEY","value":null,"origin":{}}]}}
+[stderr]

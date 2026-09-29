@@ -29,6 +29,7 @@ type options struct {
 	run         string
 	verbose     bool
 	depth       int
+	watch       bool
 }
 
 func newOptions() *options {
@@ -57,8 +58,14 @@ func initFlags(fs *flag.FlagSet, o *options) {
 	fs.StringVar(&o.name, flagName, o.name, usageName)
 }
 
+// checkFlags are canon check's own flags (CLI.md §3.3), on top of the global ones.
+func checkFlags(fs *flag.FlagSet, o *options) {
+	fs.BoolVar(&o.watch, flagWatch, o.watch, usageWatch)
+}
+
 // buildFlags are canon build's own flags (CLI.md §3.4), on top of the global ones.
 func buildFlags(fs *flag.FlagSet, o *options) {
+	fs.BoolVar(&o.watch, flagWatch, o.watch, usageWatch)
 	fs.Func(flagTarget, usageTarget, o.addTarget)
 	fs.BoolVar(&o.checkFlag, flagCheck, o.checkFlag, usageCheck)
 	fs.Func(flagAdopt, usageAdopt, o.addAdopt)

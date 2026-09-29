@@ -1,0 +1,52 @@
+CLI.md §3.4, IMPLEMENTATION-PLAN.md §8.1: in JSON a build cycle is the `cycle` line, the changed
+findings, one `output` line per output, then build's summary with `written` and `stale`.
+-- args --
+build
+--watch
+--format
+json
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    out: "out"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Tier.
+record Tier {
+  /// Weight.
+  weight: Int = 1
+}
+
+/// Tiers.
+let tiers: table Tier = { low {}, high { weight: 2 } }
+
+emit json { out: "@out/" }
+-- step1/a/a.canon --
+/// A.
+package a
+
+/// Tier.
+record Tier {
+  /// Weight.
+  weight: Int = 1
+}
+
+/// Tiers.
+let tiers: table Tier = { low {}, high { weight: 3 } }
+
+emit json { out: "@out/" }
+-- want --
+[exit 130]
+[stdout]
+{"output":{"path":"@out/tiers.json","target":"json","package":"a","status":"written"}}
+{"summary":{"errors":0,"warnings":0,"packages":1,"ms":0,"written":1,"stale":0}}
+{"cycle":{"revision":"r1:c8d22730c4a38487ecd565851ae64c5ca4cec250df5d85e7db55b3c81c8335f5","files":["a/a.canon"],"packages":["a"]}}
+{"output":{"path":"@out/tiers.json","target":"json","package":"a","status":"written"}}
+{"summary":{"errors":0,"warnings":0,"packages":1,"ms":0,"written":1,"stale":0}}
+[stderr]
+canon: interrupted

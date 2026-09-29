@@ -1,0 +1,54 @@
+CLI.md §3.4, meta/decisions/log-2026-09-29.md "M4 U6-r": package a computes its output from its own
+previous output, so every build changes what it reads. The rebuild answering the first build's
+writes runs once; the writes of that one are not answered: one line, then the watch waits.
+-- args --
+build
+--watch
+-- cycles --
+3
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    out: "out"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Cfg.
+record Cfg {
+  /// Weight.
+  weight: Int = 1
+}
+
+/// Prev.
+let prev: Cfg = load("@out/cfg.json", at: "value")
+
+/// Config.
+let cfg: Cfg = { weight: prev.weight + 1 }
+
+emit json { out: "@out/" }
+-- out/cfg.json --
+{
+  "$schema": "a.Cfg@0df3c93b",
+  "value": {
+    "weight": 1
+  }
+}
+-- want --
+[exit 130]
+[stdout]
+0 errors, 0 warnings in 1 package (…)
+json:
+  @out/cfg.json
+  @out/prev.json
+-- 1 files changed, 1 packages re-checked
+0 errors, 0 warnings in 1 package (…)
+json:
+  @out/cfg.json
+  @out/prev.json
+-- outputs did not settle; waiting for a change
+[stderr]
+canon: interrupted

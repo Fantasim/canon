@@ -1,0 +1,70 @@
+CLI.md §3.4, meta/decisions/log-2026-09-29.md "M4 U6-r": package b reads the output of package a. The
+rebuild a change causes writes that output, which wakes the watch once more: one rebuild answers
+it (a cycle listing no change), and then the watch is quiet: exactly three summaries in all.
+-- args --
+build
+--watch
+-- cycles --
+3
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    out: "out"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Cfg.
+record Cfg {
+  /// Weight.
+  weight: Int = 1
+}
+
+/// Config.
+let cfg: Cfg = { weight: 3 }
+
+emit json { out: "@out/" }
+-- b/b.canon --
+/// B.
+package b
+
+import a { Cfg }
+
+/// Copy.
+let copy: Cfg = load("@out/cfg.json", at: "value")
+-- out/cfg.json --
+{
+  "$schema": "a.Cfg@0df3c93b",
+  "value": {
+    "weight": 3
+  }
+}
+-- step1/a/a.canon --
+/// A.
+package a
+
+/// Cfg.
+record Cfg {
+  /// Weight.
+  weight: Int = 1
+}
+
+/// Config.
+let cfg: Cfg = { weight: 4 }
+
+emit json { out: "@out/" }
+-- want --
+[exit 130]
+[stdout]
+0 errors, 0 warnings in 2 packages (…)
+-- 1 files changed, 2 packages re-checked
+0 errors, 0 warnings in 2 packages (…)
+json:
+  @out/cfg.json
+-- 1 files changed, 1 packages re-checked
+0 errors, 0 warnings in 2 packages (…)
+[stderr]
+canon: interrupted

@@ -1,0 +1,30 @@
+CLI.md §3.8: the first line says `time` when there is exactly one reference, `times` otherwise
+(none: `0 times`).
+-- args --
+refs
+statuses.open
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- r/r.canon --
+/// R.
+package r
+
+/// A status.
+record Status {
+  /// Where it goes.
+  next: [ref statuses] = []
+}
+
+/// Statuses.
+let statuses: table Status = {
+  open {}
+  done { next: [open] }
+}
+-- want --
+[exit 0]
+[stdout]
+r:statuses.open is referenced 1 time
+  r/r.canon:13  value  r:statuses.done.next[0]
+[stderr]

@@ -1,0 +1,36 @@
+CLI.md §3.3, meta/decisions/log-2026-09-29.md "M4 U6-r": in JSON a failed re-check is a cycle too:
+its `cycle` line, its findings `added`, the summary; the repair reports them `removed`.
+-- args --
+check
+--watch
+--format
+json
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+const X = 1
+-- step1/project.canon --
+project acme {
+  canon:
+}
+-- step2/project.canon --
+project acme {
+  canon: "0.1"
+}
+-- want --
+[exit 130]
+[stdout]
+{"summary":{"errors":0,"warnings":0,"packages":1,"ms":0}}
+{"cycle":{"revision":"r1:c7c2edf27246bbb8126f9fdf9ad4a3b409260784c09dc8fd2d720ba3d85f513d","files":["project.canon"],"packages":[]}}
+{"severity":"error","code":"E1116","file":"project.canon","line":3,"col":1,"endLine":3,"endCol":2,"package":"","message":"expected pValue; found }","change":"added"}
+{"summary":{"errors":1,"warnings":0,"packages":0,"ms":0}}
+{"cycle":{"revision":"r1:7ff5bb987dff4712f437501a425ebbf2a11afc46d4dc54636225c84e7d4d6c1d","files":["project.canon"],"packages":["a"]}}
+{"severity":"error","code":"E1116","file":"project.canon","line":3,"col":1,"endLine":3,"endCol":2,"package":"","message":"expected pValue; found }","change":"removed"}
+{"summary":{"errors":0,"warnings":0,"packages":1,"ms":0}}
+[stderr]
+canon: interrupted

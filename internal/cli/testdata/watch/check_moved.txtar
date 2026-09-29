@@ -1,0 +1,31 @@
+IMPLEMENTATION-PLAN.md §8.1: findings are matched between cycles by code, file, path and message,
+not by position: a finding that only moved down a line is neither added nor fixed.
+-- args --
+check
+--watch
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+const = 1
+-- step1/a/a.canon --
+/// A.
+package a
+
+// A comment that moves the line below.
+const = 1
+-- want --
+[exit 130]
+[stdout]
+error[E1116]  a/a.canon:4:7
+  expected IDENT; found =
+
+1 error, 0 warnings in 1 package (…)
+-- 1 files changed, 1 packages re-checked
+1 error, 0 warnings in 1 package (…)
+[stderr]
+canon: interrupted

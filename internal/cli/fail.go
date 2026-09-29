@@ -23,14 +23,27 @@ func (inv *invocation) fail(err error) int {
 		}
 		return exitUsage
 	case errors.Is(err, canon.ErrInternal):
-		writeLine(inv.env.Stderr, msgPrefix+err.Error())
-		writeLine(inv.env.Stderr, msgReportBug)
+		inv.reportError(err)
 		return exitInternal
 	case errors.Is(err, canon.ErrNoValue):
 		return inv.poisoned(err)
 	}
 	writeLine(inv.env.Stderr, msgPrefix+err.Error())
 	return exitUsage
+}
+
+// reportError writes err's message to stderr, the bug-report line after an internal error; the findings of a project error are not its message, and an interrupt is Main's to report.
+func (inv *invocation) reportError(err error) {
+	var perr *canon.ProjectError
+	switch {
+	case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded), errors.As(err, &perr):
+		return
+	case errors.Is(err, canon.ErrInternal):
+		writeLine(inv.env.Stderr, msgPrefix+err.Error())
+		writeLine(inv.env.Stderr, msgReportBug)
+	default:
+		writeLine(inv.env.Stderr, msgPrefix+err.Error())
+	}
 }
 
 // poisoned reports a value with none: its findings, no summary, the error, exit 1 (API.md R6).
