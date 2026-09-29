@@ -117,6 +117,9 @@ from IR fixtures" and M2's `embedded` example were accepted without these genera
   TS goldens pass `tsc --strict` and `node --test`; `E8101` tested.
 - [ ] **M7 Migration** (MIG, `convert`; VM for `i18n stub|status`; `infer` dropped, DECISIONS
   188): convert proof; `i18n stub fr` golden.
+- [ ] **Multi-destination emits** (DECISIONS 229; CG with GO/CPP/TS, after M4, before M7's
+  integration): spec sync first (CODEGEN §2.1/§2.3/§2.8, ERRORS, GRAMMAR), then `check`
+  (E8009/E8004), `build` and each generator; a feature example with two copies and an import.
 - [ ] **Resource migration plan** (owed before or with M7; Louis, log-2026-09-24): how dirty
   `Resource/` data is brought to the Canon types (types win over data), built from the
   real-data findings lists of M3 onward.

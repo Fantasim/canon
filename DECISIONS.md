@@ -1951,6 +1951,19 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      catalogue depend on the findings limit (API F7). `Info.BrokenTranslations` does the same for
      translation entries holding an error, which are not rendered (I18N T2).
 
+229. **An emit may write the same output to several places (`out` is a string or a list).**
+     Louis, 2026-09-29: each consumer service is its own repository pinning a shared library
+     version (`sovcommon`), so a data change costs a library release and one version bump per
+     service; generating straight into each service (decision 1) removes both. E8002 stays (one
+     emit per target per package); `go`, `cpp`, `ts` and `json` accept `out: [<path>, …]` (`view`
+     keeps one path). The list is non-empty, and two entries may not share an owning root (the
+     closest declared root, CODEGEN §2.8) (`E8009`). Every copy has the same mode and options;
+     copies differ only in the import paths or includes of imported packages. A copy of package
+     P under root R uses the copy of an imported package Q under R, or Q's only copy when Q has
+     one; otherwise `E8004`. Every copy is an output (collisions `E8152`, lock, markers). A named
+     group of destinations in `project.canon` is deferred until the repetition shows. Spec to
+     sync: CODEGEN §2.1, §2.3, §2.8; ERRORS E8004/E8009 rows; GRAMMAR's emit option schema.
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.
