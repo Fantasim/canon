@@ -15,7 +15,9 @@ with the limit (API F7). `Info.Broken` is keyed by objects; a view is not one.
 ## Decision
 
 - `check.Info` gains `BrokenViews map[*syntax.ViewDecl]bool` (additive): check marks a view when it
-  reports an error while resolving or typing it (its items, properties, templates, translations'
+  reports an error while resolving or typing it, when a syntax error (lexical ones included) lies
+  inside it, or when one of its expressions has the error type (it names a broken declaration,
+  TYPES §1) (its items, properties, templates, translations'
   interpolations are separate files and not included). Views-owned findings (E16xx, reported later by
   views/rules) do not mark it; rules skip what check marked.
 - One predicate, exported by `check` (e.g. `check.ViewBroken(info, d)`: the mark, or a parser
