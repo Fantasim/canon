@@ -4,10 +4,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"maps"
 	"path"
 	"path/filepath"
-	"regexp"
 	"slices"
 	"strings"
 	"sync"
@@ -39,29 +37,7 @@ const (
 	marksCase         = "testdata/incremental/marks.txtar"
 	marksLast         = "a/d/last.canon"
 	marksWeight       = 300
-	pinnedLow         = 4
-	pinnedHigh        = 7
-	digitsMark        = "N"
 )
-
-// pinnedLines are the lines, trimmed and each number digitsMark, that the pinned divergence adds,
-// removes or changes: stage E's E4401 as text, as JSON, in the view model, and the summaries.
-var pinnedLines = []string{
-	"", "{", "},",
-	`"code": "EN",`, `"col": N,`, `"endCol": N,`, `"endLine": N,`, `"line": N,`,
-	`"file": "a/a.canon",`, `"package": "a",`, `"severity": "error",`,
-	`"message": "evaluation budget of N steps exhausted\nheaviest: Item (N steps)"`,
-	`"message": "evaluation budget of N steps exhausted\nheaviest: Part (N steps)"`,
-	"error[EN]  a/a.canon:N:N", "evaluation budget of N steps exhausted",
-	"heaviest: Item (N steps)", "heaviest: Part (N steps)",
-	"N error, N warnings in N package (…)", "N errors, N warnings in N package (…)",
-	`{"summary":{"errors":N,"warnings":N,"packages":N,"ms":N}}`,
-	`{"severity":"error","code":"EN","file":"a/a.canon","line":N,"col":N,"endLine":N,"endCol":N,"package":"a","message":"evaluation budget of N steps exhausted\nheaviest: Item (N steps)"}`,
-	`{"severity":"error","code":"EN","file":"a/a.canon","line":N,"col":N,"endLine":N,"endCol":N,"package":"a","message":"evaluation budget of N steps exhausted\nheaviest: Part (N steps)"}`,
-}
-
-// digits are the numbers pinnedLines abstract.
-var digits = regexp.MustCompile(`[0-9]+`)
 
 // memoCorpora are the archives whose projects stages B to D are checked on, cold ≡ recorded ≡ replayed.
 var memoCorpora = []string{
@@ -250,8 +226,7 @@ func TestMemoBudgetCuts(t *testing.T) {
 	}
 }
 
-// budgetSteps analyzes z along edits of one entry, each warm analysis as cold but for the one
-// divergence pinned (pinnedBudget).
+// budgetSteps analyzes z along edits of one entry, each warm analysis as cold (log-2026-09-29 M4 B1).
 func budgetSteps(t *testing.T, n int, z *analyzer) {
 	t.Helper()
 	one := path.Join(archiveRoot, memoFirst)
@@ -265,47 +240,10 @@ func budgetSteps(t *testing.T, n int, z *analyzer) {
 		}
 		warm, cold := z.pair(t)
 		w, c := dumpAnalysis(t, warm), dumpAnalysis(t, cold)
-		if w != c && !pinnedBudget(n, w, c) {
+		if w != c {
 			same(t, fmt.Sprintf("budget %d, step %d", n, i), warm, cold)
 		}
 	}
-}
-
-// pinnedBudget reports the one known divergence of a warm analysis from cold: along a Recheck
-// lineage, stage E's fold runs out of steps elsewhere, memo.txtar at budgets 4 to 7 (log-2026-09-29
-// M4 P12-r; unit B1 removes it, and this pin with it).
-func pinnedBudget(n int, warm, cold string) bool {
-	if n < pinnedLow || n > pinnedHigh {
-		return false
-	}
-	for _, line := range unmatched(warm, cold) {
-		if !slices.Contains(pinnedLines, digits.ReplaceAllString(strings.TrimSpace(line), digitsMark)) {
-			return false
-		}
-	}
-	return true
-}
-
-// unmatched is the lines of each of a and b the other lacks, counted as a multiset.
-func unmatched(a, b string) []string {
-	left := map[string]int{}
-	for _, l := range strings.Split(b, "\n") {
-		left[l]++
-	}
-	var out []string
-	for _, l := range strings.Split(a, "\n") {
-		if left[l] > 0 {
-			left[l]--
-		} else {
-			out = append(out, l)
-		}
-	}
-	for _, l := range slices.Sorted(maps.Keys(left)) {
-		for range left[l] {
-			out = append(out, l)
-		}
-	}
-	return out
 }
 
 // IMPLEMENTATION-PLAN §7.6 NFR-02, API.md S7-S8: snapshots share the stage B and C memos.
