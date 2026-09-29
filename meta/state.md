@@ -1,6 +1,6 @@
 # State — Canon compiler
 
-Updated: 2026-09-29. **M3 accepted** (main, HEAD `ea3d7e2`). Session stops at the M4 boundary.
+Updated: 2026-09-29. **M3 accepted** (`ea3d7e2`); **M4 in progress** (local session, orchestrated in waves).
 Full report: [handoff/2026-09-29-m3-complete.md](handoff/2026-09-29-m3-complete.md). Unit ledger:
 [m3-units.md](m3-units.md). Calls of the final wave:
 [decisions/log-2026-09-28.md](decisions/log-2026-09-28.md),
@@ -20,16 +20,16 @@ each proved by a test:
 7. real-data job, not gating — `make check-real`, findings refreshed in
    [handoff/2026-09-28-realdata-findings.md](handoff/2026-09-28-realdata-findings.md).
 
-**Next milestone: M4** (formatter and the edit API, `plan.md` "M4 — Formatter and the edit API",
-IMPLEMENTATION-PLAN §6 M4). Not started; no unit scoped yet.
+**M4 in progress** (formatter and the edit API, `plan.md` "M4 — Formatter and the edit API",
+IMPLEMENTATION-PLAN §6 M4), run locally, started 2026-09-29. Unit ledger: [m4-units.md](m4-units.md).
 
 Landed after M3's acceptance list closed but before the stop, all on `main`:
 - libc++ joins the C++ test matrix (`clang++ -stdlib=libc++`, header-detected, gated under
   `CANON_REQUIRE_CXX`).
 - `check.yml` gains `windows-latest` (MSVC: `go test` without `CANON_REQUIRE_CXX`, plus
   `TestGoldensCompileMSVC` compiling every committed C++ golden with `cl.exe`) and
-  `macos-latest` (Apple clang/libc++, `CANON_REQUIRE_CXX` on). **Neither has run**: both fire only
-  once Louis pushes, e.g. `git push origin main:refs/heads/claude/m3-ci`.
+  `macos-latest` (Apple clang/libc++, `CANON_REQUIRE_CXX` on). Both ran green at the end
+  of M3 (run 36563862341, branch `claude/m3-ci`).
 - Long fuzz/progen campaigns are deferred by Louis ("not now… I need this language to be ready
   soon"): a milestone runs only its own stated acceptance criteria, never a multi-hour nightly
   campaign — [decisions/log-2026-09-29.md](decisions/log-2026-09-29.md) "Platforms and fuzzing".
@@ -37,7 +37,7 @@ Landed after M3's acceptance list closed but before the stop, all on `main`:
 ## Milestones
 
 M0, M1, M2, **M3** accepted. M1.5 foundation committed (`f498713`), still open (second wave:
-type-directed + metamorphic progen suites; see `plan.md`). M4 next.
+type-directed + metamorphic progen suites; see `plan.md`), parked. M4 in progress.
 
 ## What exists (committed)
 
@@ -67,8 +67,7 @@ None open. `handoff/2026-09-24-questions.md` does not exist.
 
 ## What could not be verified
 
-Windows and macOS real CI runs (MSVC `cl.exe`, Apple clang) — the jobs exist in `check.yml` but
-have not executed; only local g++ 15.2 and clang++ 21.1 (now also `-stdlib=libc++`) ran. Long
+Windows/macOS CI ran green on M3's `main` (run 36563862341); M4 code has not run there yet. Long
 fuzz/progen campaigns beyond default size, deferred by Louis. NFR-01 performance targets (§7.6)
 are M4's own gate, not measured against M3 code. `canon explain`'s input fields among its parts,
 deferred to M4 (log-2026-09-29 "U15 api.ViewModel").
