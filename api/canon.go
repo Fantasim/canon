@@ -48,7 +48,8 @@ type Project struct {
 	b         *build.Project
 	mu        sync.Mutex
 	ws        *workspace.Project // made over b on first use
-	rev       Revision           // the last revision a call read, what Revision returns after Close
+	rev       Revision           // the revision of the newest snapshot a call read, what Revision returns after Close
+	revAt     uint64             // that snapshot's place among those published: rev only advances (S10)
 	layers    []string           // Options.Layers, the active layers
 	editLayer string             // Options.EditLayer, which Value's Editable is judged with (API.md §7.5)
 	lang      string             // Options.Lang, the language of Evaluate's texts unless a request names one (§11)
@@ -160,22 +161,28 @@ func (p *Project) Packages(ctx context.Context) (infos []PackageInfo, err error)
 type Revision string
 
 // Revision returns the revision of the current snapshot, after a refresh (rule S1), a broken
-// project.canon included; after Close, or a panic, the last revision read.
+// project.canon included: never one older than a writer had published when it was called (S10);
+// after Close, or a panic, the revision of the newest snapshot a call read.
 func (p *Project) Revision() Revision {
-	p.refresh()
+	if rev, ok := p.refresh(); ok {
+		return rev // its own snapshot's: a read ending meanwhile on an older one cannot replace it
+	}
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	return p.rev
 }
 
-// refresh reads the revision of the current snapshot, refreshed (rules S1, S3); a panic keeps
-// the last one, since Revision has no error to carry it (rule X2).
-func (p *Project) refresh() {
+// refresh is the revision of the current snapshot, refreshed (rules S1, S3), false after Close;
+// a panic is false too, since Revision has no error to carry it (rule X2).
+func (p *Project) refresh() (rev Revision, ok bool) {
 	defer func() { _ = recover() }()
 	ctx := context.Background()
-	if s, err := p.read(ctx); err == nil {
-		_, _ = p.revision(ctx, s) // no ctx to cancel it: it cannot fail
+	s, err := p.read(ctx)
+	if err != nil {
+		return "", false
 	}
+	rev, err = p.revision(ctx, s) // no ctx to cancel it: it cannot fail
+	return rev, err == nil
 }
 
 // SetOverlay replaces a display or absolute path's content in memory, a writer (API.md §3.4).

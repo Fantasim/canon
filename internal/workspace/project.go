@@ -31,6 +31,7 @@ type Project struct {
 
 	mu      sync.Mutex
 	cur     *Snapshot
+	seq     uint64 // snapshots published, the number of the current one (S10)
 	closed  bool
 	writing bool // a writer runs: readers take the current snapshot as it is (S9)
 	begun   int  // refreshes started, each numbered
@@ -157,10 +158,12 @@ func (p *Project) refresh(ctx context.Context, s *Snapshot, cause Cause) (*Snaps
 	return ns, nil
 }
 
-// publish makes s current, then tells every subscriber (API.md S10).
+// publish numbers s after every snapshot published before it and makes it current, then tells
+// every subscriber (API.md S10).
 func (p *Project) publish(s *Snapshot, cause Cause, files []string) {
 	p.mu.Lock()
-	p.cur = s
+	p.seq++
+	s.seq, p.cur = p.seq, s
 	subs := slices.Clone(p.subs)
 	p.mu.Unlock()
 	for _, sub := range subs {

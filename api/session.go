@@ -62,17 +62,21 @@ func analyze(ctx context.Context, s *workspace.Snapshot, selectors []string) (*b
 	})
 }
 
-// revision is s's revision once a call has read what it needed (rule S3), kept as the last
-// revision read.
+// revision is s's revision once a call read what it needed (S3), kept unless a snapshot published
+// later was read (S10); in one snapshot the last read to end wins, maybe a smaller read set: its
+// revisions only grow as loads join (DECISIONS 143) and S5 compares file by file (log M4 B6-r).
 func (p *Project) revision(ctx context.Context, s *workspace.Snapshot) (Revision, error) {
 	rev, err := s.Revision(ctx)
 	if err != nil {
 		return "", err
 	}
+	at := s.Published()
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	p.rev = Revision(rev)
-	return p.rev, nil
+	if at >= p.revAt {
+		p.rev, p.revAt = Revision(rev), at
+	}
+	return Revision(rev), nil
 }
 
 // apiError is an error of build as the API reports it (rules O1-O4, R1, R3, S5, X2):

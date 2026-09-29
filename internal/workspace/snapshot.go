@@ -15,10 +15,20 @@ type Snapshot struct {
 	b     *build.Project
 	mu    sync.Mutex
 	calls map[string]*call // the computations running now, by key (S8)
+	seq   uint64           // its place among the snapshots published, under p.mu; 0 for none
 }
 
 // Build is the build pipeline over this snapshot's files.
 func (s *Snapshot) Build() *build.Project { return s.b }
+
+// Published is the snapshot's place in the order its project published snapshots, one after
+// another (API.md S10): a snapshot published later has a greater number; the first snapshot, and
+// one never published, 0. Revisions are hashes; this is what orders them.
+func (s *Snapshot) Published() uint64 {
+	s.p.mu.Lock()
+	defer s.p.mu.Unlock()
+	return s.seq
+}
 
 // Revision is the snapshot's revision (API.md S3): the listing of project.canon, every source
 // and existing canon.lock, and every file a load of this project has read, with their content
