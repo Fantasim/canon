@@ -1205,8 +1205,8 @@ Titles in rows are already disambiguated (S9).
 - `languages` has one member per project language. The source language has `texts`: every key of
   the package's catalogue (I18N.md §3) with its source text. Every other language has `files`
   (always present: the package's translation files for it, display paths, byte order), `missing`
-  (always present: catalogue keys without a non-empty translation) and `texts` (always present:
-  the translated keys, non-empty only).
+  (always present: catalogue keys without a non-empty translation free of errors) and `texts`
+  (always present: the translated keys, non-empty and error-free only, I18N.md T2).
 
 ### 12.11 `findings`
 
