@@ -38,8 +38,8 @@ func (a *Analysis) LocksWith(ids []LockID) ([]Lock, error) {
 	return out, nil
 }
 
-// with is st's lock as read with the current facts of each whole id of ids added; nil when that
-// changes nothing or the lock does not parse whole.
+// with is st's lock as read with the current facts of each whole, conflict-free id of ids added;
+// nil when that changes nothing or the lock does not parse whole.
 func (st *lockState) with(ids []LockID, stable func(string) int) (*Lock, error) {
 	if !st.whole {
 		return nil, nil
@@ -50,7 +50,7 @@ func (st *lockState) with(ids []LockID, stable func(string) int) (*Lock, error) 
 	}
 	file := st.fresh()
 	before := lineSet(file.Format())
-	if err := addClear(file, candidates(current.Facts(), ids, stable, file.Facts())); err != nil {
+	if err := addAll(file, candidates(current.Facts(), ids, stable, file.Facts())); err != nil {
 		return nil, fmt.Errorf(fmtPackage, st.pkg, err)
 	}
 	content := file.Format()
@@ -66,25 +66,22 @@ func (st *lockState) with(ids []LockID, stable func(string) int) (*Lock, error) 
 	return out, nil
 }
 
-// candidates are the facts among current of each id of ids that is whole, its entry's or
-// member's and one per @stable field, and conflicts with nothing held (log-2026-09-29 M4 U5b-r3).
+// candidates: whole ids, each new fact unique (LOCK.md §1 E3102, §4.4; log-2026-09-29 M4 U5b-r3, U7b, B8-r).
 func candidates(current []lock.Fact, ids []LockID, stable func(string) int, held []lock.Fact) [][]lock.Fact {
 	var out [][]lock.Fact
+	clash := func(f lock.Fact) bool { return conflicts(held, f) || !holds(held, f) && conflicts(current, f) }
 	for _, id := range ids {
 		own := slices.DeleteFunc(slices.Clone(current), func(f lock.Fact) bool { return f.Name != id.Name || f.Holder != id.Key })
-		if whole(own, stable(id.Name)) && !slices.ContainsFunc(own, func(f lock.Fact) bool { return conflicts(held, f) }) {
+		if whole(own, stable(id.Name)) && !slices.ContainsFunc(own, clash) {
 			out = append(out, own)
 		}
 	}
 	return out
 }
 
-// addClear adds to file the facts of each candidate that clashes with no other.
-func addClear(file *lock.File, cands [][]lock.Fact) error {
-	for i, own := range cands {
-		if clashes(cands, i) {
-			continue
-		}
+// addAll adds to file the facts of each candidate.
+func addAll(file *lock.File, cands [][]lock.Fact) error {
+	for _, own := range cands {
 		for _, f := range own {
 			if _, err := file.Add(f); err != nil {
 				return err
@@ -94,25 +91,22 @@ func addClear(file *lock.File, cands [][]lock.Fact) error {
 	return nil
 }
 
-// clashes reports candidate i conflicting with another id the same edit adds: then neither is
-// written, no winner chosen (log-2026-09-29 M4 U5b-r3 addendum).
-func clashes(cands [][]lock.Fact, i int) bool {
-	for j, other := range cands {
-		if j != i && slices.ContainsFunc(cands[i], func(f lock.Fact) bool { return conflicts(other, f) }) {
-			return true
-		}
-	}
-	return false
-}
-
-// conflicts reports a fact the lock refuses, which a tool never writes: in its collection, its
-// holder locked with another value, or its value locked for another holder (E6002).
+// conflicts reports a fact a tool never writes beside facts: in its collection, its holder with
+// another value there, or its value with another holder (E6002 against a lock, E3102 against the
+// sources).
 func conflicts(held []lock.Fact, f lock.Fact) bool {
 	if f.Kind == lock.KindTable {
 		return false
 	}
 	return slices.ContainsFunc(held, func(h lock.Fact) bool {
 		return h.Kind == f.Kind && h.Name == f.Name && h.Field == f.Field && (h.Holder == f.Holder) != (h.Value == f.Value)
+	})
+}
+
+// holds reports held already having f's value for f's holder, retired or not.
+func holds(held []lock.Fact, f lock.Fact) bool {
+	return slices.ContainsFunc(held, func(h lock.Fact) bool {
+		return h.Kind == f.Kind && h.Name == f.Name && h.Field == f.Field && h.Holder == f.Holder && h.Value == f.Value
 	})
 }
 

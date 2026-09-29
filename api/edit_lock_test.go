@@ -3,7 +3,6 @@ package canon_test
 import (
 	"context"
 	"errors"
-	"io/fs"
 	"slices"
 	"strings"
 	"sync/atomic"
@@ -49,11 +48,7 @@ func TestEditLockLines(t *testing.T) {
 			t.Errorf("%s: %v", c.name, err)
 			continue
 		}
-		got, err := m.ReadFile("/law/a/canon.lock")
-		if errors.Is(err, fs.ErrNotExist) {
-			got = []byte(lockNone)
-		}
-		if string(got) != c.want {
+		if got := lockOf(t, m, "a/canon.lock"); got != c.want {
 			t.Errorf("API.md E20, %s: lock %q, want %q", c.name, got, c.want)
 		}
 	}
@@ -191,7 +186,7 @@ func TestEditLockConflicts(t *testing.T) {
 		p, m := openEdit(t, c.law)
 		before := read(t, m, c.lock)
 		res, err := p.Edit(context.Background(), canon.Edit{Ops: []canon.Op{c.op}, AllowErrors: true})
-		if err != nil || !res.Applied || !slices.ContainsFunc(res.Findings, func(f canon.Finding) bool { return f.Code == string(c.code) }) {
+		if err != nil || !res.Applied || !slices.ContainsFunc(res.Findings, isCode(c.code)) {
 			t.Errorf("%s %s: %+v, %v", c.op.Kind, c.op.Path, res, err)
 			continue
 		}
