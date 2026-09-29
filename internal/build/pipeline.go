@@ -130,7 +130,7 @@ func (r *run) checkViews(ctx context.Context) {
 	ev := r.emitsView()
 	studio := r.s.proj.Studio.Path
 	viewrules.Check(ctx, r.prog, r.bags, studio, ev)
-	r.texts = i18n.Check(r.prog, r.s.proj, r.bags, ev)
+	r.texts = i18n.CheckWith(r.prog, r.s.proj, r.bags, ev, r.badCache())
 }
 
 // emitsView is the selected packages that declare `emit view` (I18N.md W1, VIEWMODEL.md N4).

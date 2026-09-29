@@ -100,19 +100,27 @@ func TestIndexCacheEqualsCold(t *testing.T) {
 		t.Fatalf("index holds %d types, %d declarations, %d asset roots", len(ix.src.types), len(ix.src.decls), len(ix.src.assetDirs))
 	}
 	sameIndex(t, ix, NewIndex(first))
-	if len(cache.cache().files) != len(files) {
-		t.Fatalf("cache holds %d files, want %d", len(cache.cache().files), len(files))
+	for name, f := range files {
+		if !cached(cache, f) {
+			t.Errorf("%s was not cached", name)
+		}
 	}
-	kept := cache.cache().files[files[cacheKept]]
+	kept := cache.cache().Of(files[cacheKept], func(*syntax.File) *fileSyntax { return nil })
 	second, next := checkedFiles(t, map[string]string{cacheEdited: editedAfter}, map[string]*syntax.File{cacheKept: files[cacheKept]})
 	sameIndex(t, cache.Index(second), NewIndex(second))
-	c := cache.cache()
-	if c.files[next[cacheKept]] != kept {
+	if cache.cache().Of(next[cacheKept], func(*syntax.File) *fileSyntax { return nil }) != kept {
 		t.Error("the kept file was scanned again")
 	}
-	if _, stale := c.files[files[cacheEdited]]; stale || len(c.files) != len(next) {
-		t.Errorf("cache holds %d files, the replaced tree %t; want %d, false", len(c.files), stale, len(next))
+	if cached(cache, files[cacheEdited]) {
+		t.Error("the replaced tree was kept")
 	}
+}
+
+// cached reports f already scanned in c; a file c lacked is now held as an empty scan.
+func cached(c *IndexCache, f *syntax.File) bool {
+	hit := true
+	c.cache().Of(f, func(*syntax.File) *fileSyntax { hit = false; return nil })
+	return hit
 }
 
 // IMPLEMENTATION-PLAN §7.6: one cache serves concurrent index builds (run with -race).

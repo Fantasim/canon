@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/fantasim/canonlang/internal/eval"
+	"github.com/fantasim/canonlang/internal/i18n"
 	"github.com/fantasim/canonlang/internal/project"
 	"github.com/fantasim/canonlang/internal/rules"
 	"github.com/fantasim/canonlang/internal/source"
@@ -37,6 +38,7 @@ type cacheGen struct {
 	base     source.FileID // the last file of set when that snapshot began
 	vix      verify.IndexCache
 	rix      rules.IndexCache
+	bad      i18n.BadCache // which files hold a Bad node, for phase 2's i18n check
 }
 
 // fileName is a file the cache keeps by name: its display path and absolute name.
@@ -144,4 +146,12 @@ func (g *cacheGen) file(display, abs string, content []byte) (*source.File, erro
 	defer g.mu.Unlock()
 	g.files[name] = keptFile{sum: sum, src: src}
 	return src, nil
+}
+
+// badCache is the run's per-file Bad-node cache: the generation's, nil for a run without a cache.
+func (r *run) badCache() *i18n.BadCache {
+	if g := r.s.gen; g != nil {
+		return &g.bad
+	}
+	return nil
 }

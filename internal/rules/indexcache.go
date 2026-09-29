@@ -7,9 +7,9 @@ import (
 	"github.com/fantasim/canonlang/internal/verify"
 )
 
-// IndexCache keeps each file's checks for the next programs of one lineage, one cache per lineage (IMPLEMENTATION-PLAN §7.6).
+// IndexCache keeps each file's checks for the next programs, shared by a generation's lineages (IMPLEMENTATION-PLAN §7.6).
 type IndexCache struct {
-	files verify.FileCache[[]*syntax.CheckDecl]
+	files check.FileCache[[]*syntax.CheckDecl]
 }
 
 // Index is NewIndex, walking only the files c lacks; c forgets the files prog no longer holds.
@@ -33,7 +33,7 @@ func (c *IndexCache) Index(prog *check.Program) *Index {
 }
 
 // cache is c's file cache, nil for a nil c.
-func (c *IndexCache) cache() *verify.FileCache[[]*syntax.CheckDecl] {
+func (c *IndexCache) cache() *check.FileCache[[]*syntax.CheckDecl] {
 	if c == nil {
 		return nil
 	}

@@ -5,9 +5,9 @@ import (
 	"github.com/fantasim/canonlang/internal/syntax"
 )
 
-// IndexCache keeps each file's scan for the next programs of one lineage, one cache per lineage (IMPLEMENTATION-PLAN §7.6).
+// IndexCache keeps each file's scan for the next programs, shared by a generation's lineages (IMPLEMENTATION-PLAN §7.6).
 type IndexCache struct {
-	files FileCache[*fileSyntax]
+	files check.FileCache[*fileSyntax]
 }
 
 // Index is NewIndex, scanning only the files c lacks; c forgets the files prog no longer holds.
@@ -20,7 +20,7 @@ func (c *IndexCache) scanned(f *syntax.File) *fileSyntax {
 	return c.cache().Of(f, scanFile)
 }
 
-func (c *IndexCache) cache() *FileCache[*fileSyntax] {
+func (c *IndexCache) cache() *check.FileCache[*fileSyntax] {
 	if c == nil {
 		return nil
 	}

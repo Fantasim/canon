@@ -1,13 +1,12 @@
-package verify
+package check
 
 import (
 	"sync"
 
-	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/syntax"
 )
 
-// FileCache keeps a scan of each file's tree for the next programs of one lineage, one cache per lineage (IMPLEMENTATION-PLAN §7.6).
+// FileCache keeps a scan per file for the next programs; the lineages of one build cache share one, so alternating selections evict each other's entries, a speed cost only (IMPLEMENTATION-PLAN §7.6).
 type FileCache[T any] struct {
 	mu    sync.Mutex
 	files map[*syntax.File]T
@@ -35,7 +34,7 @@ func (c *FileCache[T]) Of(f *syntax.File, scan func(*syntax.File) T) T {
 }
 
 // KeepOnly forgets the files prog does not hold, so the cache keeps no tree it will not see again.
-func (c *FileCache[T]) KeepOnly(prog *check.Program) {
+func (c *FileCache[T]) KeepOnly(prog *Program) {
 	if c == nil {
 		return
 	}

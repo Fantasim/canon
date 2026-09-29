@@ -25,12 +25,18 @@ type Language struct {
 
 // Check builds every package's catalogue and checks its translation files (I18N.md §4, §5).
 func Check(prog *check.Program, proj *project.Project, bags check.Bags, emitsView map[string]bool) map[string]*Result {
+	return CheckWith(prog, proj, bags, emitsView, nil)
+}
+
+// CheckWith is Check with bad, trimmed to prog's files, keeping Bad-node scans (IMPLEMENTATION-PLAN §7.6).
+func CheckWith(prog *check.Program, proj *project.Project, bags check.Bags, emitsView map[string]bool, bad *BadCache) map[string]*Result {
 	if prog == nil || proj == nil || bags == nil || len(proj.Languages) == 0 {
 		return nil
 	}
 	out := make(map[string]*Result, len(prog.Packages))
+	bad.files().KeepOnly(prog)
 	for _, pkg := range prog.Packages {
-		ctx := pkgCtx{info: prog.Info, proj: proj, bag: bags[pkg.Path], studioPath: proj.Studio.Path, emitsView: emitsView[pkg.Path]}
+		ctx := pkgCtx{info: prog.Info, proj: proj, bag: bags[pkg.Path], studioPath: proj.Studio.Path, emitsView: emitsView[pkg.Path], bad: bad}
 		out[pkg.Path] = checkPackage(pkg, ctx)
 	}
 	return out
@@ -43,11 +49,12 @@ type pkgCtx struct {
 	bag        *diag.Bag
 	studioPath string
 	emitsView  bool
+	bad        *BadCache
 }
 
 // checkPackage builds pkg's catalogue and checks its translation files.
 func checkPackage(pkg *check.Package, ctx pkgCtx) *Result {
-	r := &Result{Catalogue: build(pkg, ctx.info, ctx.studioPath), Languages: map[string]*Language{}}
+	r := &Result{Catalogue: build(pkg, ctx.info, ctx.studioPath, ctx.bad), Languages: map[string]*Language{}}
 	for _, lang := range ctx.proj.Languages[1:] {
 		r.Languages[lang] = &Language{Texts: map[string]string{}}
 	}

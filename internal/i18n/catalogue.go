@@ -90,8 +90,8 @@ type builder struct {
 
 // build is pkg's key catalogue (I18N.md K1, K3): read as if every view were intact, then a
 // broken one's own keys are dropped.
-func build(pkg *check.Package, info *check.Info, studioPath string) *Catalogue {
-	b := newBuilder(pkg, info)
+func build(pkg *check.Package, info *check.Info, studioPath string, bad *BadCache) *Catalogue {
+	b := newBuilder(pkg, info, bad)
 	if pkg.Path == studioPath {
 		b.studioMenu()
 		b.studioUnits()
@@ -104,14 +104,14 @@ func build(pkg *check.Package, info *check.Info, studioPath string) *Catalogue {
 }
 
 // newBuilder indexes pkg's first views by target and by type.
-func newBuilder(pkg *check.Package, info *check.Info) *builder {
+func newBuilder(pkg *check.Package, info *check.Info, bad *BadCache) *builder {
 	views := firstViews(pkg, info)
 	names, broken := topLevelState(pkg, info)
 	return &builder{
 		pkg: pkg, info: info, views: views, byT: viewsByType(views), files: typeFiles(pkg),
 		cat: &Catalogue{
 			Package: pkg.Path, shadow: map[string]bool{}, form: map[string]string{},
-			names: names, broken: broken, brokenViews: map[string]bool{}, unparsed: hasBadNode(pkg),
+			names: names, broken: broken, brokenViews: map[string]bool{}, unparsed: bad.hasBadNode(pkg),
 		},
 	}
 }
@@ -132,12 +132,10 @@ func topLevelState(pkg *check.Package, info *check.Info) (names, broken map[stri
 	return names, broken
 }
 
-// hasBadNode reports a source file of pkg holding a node the parser recovered from (I18N.md F4:
-// a file that lost part of its syntax), read from the AST itself: bag.Findings() is sorted, deduplicated
-// and truncated (API.md F2, F7) and could drop the one finding this decides on.
-func hasBadNode(pkg *check.Package) bool {
+// hasBadNode reports a source file of pkg holding a Bad node, read from the tree, not the bag (API.md F7: truncated); I18N.md F4.
+func (c *BadCache) hasBadNode(pkg *check.Package) bool {
 	for _, f := range pkg.Files {
-		if f.FileKind == syntax.FileSource && badNodeIn(f) {
+		if f.FileKind == syntax.FileSource && c.files().Of(f, badNodeIn) {
 			return true
 		}
 	}
