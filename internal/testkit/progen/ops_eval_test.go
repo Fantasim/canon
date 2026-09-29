@@ -49,29 +49,68 @@ func evalOperators() []operator {
 	}
 }
 
+// deprecatedFieldUse deprecates a field used once in its package, templates included (TYPES.md §16).
 func deprecatedFieldUse(tg target) []progen.Site {
 	if !isSource(tg) {
 		return nil
 	}
-	uses := map[string][]syntax.Node{}
-	syntax.Inspect(tg.file, func(n syntax.Node) bool {
-		switch n := n.(type) {
-		case *syntax.FieldItem:
-			uses[n.Name.Name] = append(uses[n.Name.Name], n.Name)
-		case *syntax.SelectorExpr:
-			uses[n.Name.Name] = append(uses[n.Name.Name], n.Name)
-		case *syntax.IdentExpr:
-			uses[n.Name] = append(uses[n.Name], n)
+	uses := fieldUses(tg)
+	var pkg []map[string][]syntax.Node
+	grouped := map[string]bool{} // also views' W1642 (VIEWMODEL.md L6)
+	for _, p := range peers(tg) {
+		pkg = append(pkg, fieldUses(p))
+		groupedFields(p, grouped)
+	}
+	once := func(name string) bool {
+		n := 0
+		for _, u := range pkg {
+			n += len(u[name])
 		}
-		return true
-	})
+		return n == 1 && len(uses[name]) == 1 && !grouped[name]
+	}
 	return sitesOf(tg, func(f *syntax.FieldDecl) bool {
-		return isSource(tg) && len(f.Annotations) == 0 && len(uses[f.Name.Name]) == 1 && len(fieldDecls(tg)[f.Name.Name]) == 1
+		return len(f.Annotations) == 0 && once(f.Name.Name) && len(fieldDecls(tg)[f.Name.Name]) == 1
 	}, func(f *syntax.FieldDecl) progen.Site {
 		_, e := span(tg, f)
 		us, ue := span(tg, uses[f.Name.Name][0])
 		return seq(1, insert(e, " @deprecated"), mark(tg, us, ue))
 	})
+}
+
+// groupedFields adds to into the names tg's view groups list.
+func groupedFields(tg target, into map[string]bool) {
+	for _, g := range nodes[*syntax.ViewGroup](tg) {
+		for _, m := range g.Members {
+			if f, ok := m.(*syntax.ViewField); ok && f.Name != nil {
+				into[f.Name.Name] = true
+			}
+		}
+	}
+}
+
+// fieldUses are the names tg's file gives a value in a literal, selects or reads, by name.
+func fieldUses(tg target) map[string][]syntax.Node {
+	uses := map[string][]syntax.Node{}
+	if tg.file == nil {
+		return uses
+	}
+	add := func(id *syntax.Ident) {
+		if id != nil {
+			uses[id.Name] = append(uses[id.Name], id)
+		}
+	}
+	syntax.Inspect(tg.file, func(n syntax.Node) bool {
+		switch n := n.(type) {
+		case *syntax.FieldItem:
+			add(n.Name)
+		case *syntax.SelectorExpr:
+			add(n.Name)
+		case *syntax.IdentExpr:
+			uses[n.Name] = append(uses[n.Name], n)
+		}
+		return true
+	})
+	return uses
 }
 
 // negateCheck turns the == of every package-level one-line check into !=.

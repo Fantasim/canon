@@ -552,6 +552,7 @@ func refWithoutCollection(tg target) []progen.Site {
 	return out
 }
 
+// fieldAndMethod adds a method named as a field; before the first field when the last item has own-line annotations (GRAMMAR.md §3.1 rule 4).
 func fieldAndMethod(tg target) []progen.Site {
 	var out []progen.Site
 	for _, r := range nodes[*syntax.RecordDecl](tg) {
@@ -562,11 +563,34 @@ func fieldAndMethod(tg target) []progen.Site {
 		if !ok {
 			continue
 		}
-		_, e := span(tg, r.Body.Items[len(r.Body.Items)-1])
-		ind := indent(tg, e)
-		out = append(out, seq(1, insert(e, "\n\n"+ind+"fn "), insert(e, f.Name.Name), insert(e, "(self) -> Int { return 1 }")))
+		method := "(self) -> Int { return 1 }"
+		last := r.Body.Items[len(r.Body.Items)-1]
+		if !ownLineAnnotated(tg, last) {
+			_, e := span(tg, last)
+			out = append(out, seq(1, insert(e, "\n\n"+indent(tg, e)+"fn "), insert(e, f.Name.Name), insert(e, method)))
+			continue
+		}
+		if startsLine(tg, f) {
+			s, _ := span(tg, f)
+			at := lineStart(tg, s)
+			if f.Doc != nil {
+				at = lineStart(tg, int(f.Doc.Start))
+			}
+			out = append(out, seq(1, insert(at, indent(tg, s)+"fn "), insert(at, f.Name.Name), insert(at, method+"\n\n")))
+		}
 	}
 	return out
+}
+
+// ownLineAnnotated tells a field whose annotations begin on a line after its name's.
+func ownLineAnnotated(tg target, it syntax.Node) bool {
+	f, ok := it.(*syntax.FieldDecl)
+	if !ok || len(f.Annotations) == 0 {
+		return false
+	}
+	_, ne := span(tg, f.Name)
+	as, _ := span(tg, f.Annotations[0])
+	return strings.Contains(string(tg.src[ne:as]), "\n")
 }
 
 // tableElements are the record names of tg's package held by a table let.

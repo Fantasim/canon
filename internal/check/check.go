@@ -95,6 +95,7 @@ type checker struct {
 	boundSpans   map[*types.Bound]source.Span
 	wheres       []whereJob
 	unions       []unionJob
+	optionals    []optionalJob
 	records      int                         // records and variants being completed, innermost last
 	funcDepth    map[*object]int             // records being completed when a type function began
 	syntaxHeld   map[syntax.Node]bool        // declarations holding a syntax error (DECISIONS 214)

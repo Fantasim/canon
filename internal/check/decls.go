@@ -22,6 +22,7 @@ func (c *checker) resolvePackage(p *pkgState) {
 		}
 	}
 	c.resolvePending(p)
+	c.checkOptionals(p)
 	c.checkUnions(p)
 	c.checkSelfContaining(p)
 	c.checkExposure(p)

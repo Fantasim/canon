@@ -1,6 +1,8 @@
 package check
 
 import (
+	"slices"
+
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
@@ -312,16 +314,57 @@ func (c *checker) tableElement(tc *typeCtx, t *syntax.TableType) (*types.RecordT
 	return rec, elem
 }
 
+// optionalJob is a `T??` whose E3401 is judged once the refs T holds have their targets.
+type optionalJob struct {
+	env  *env
+	at   *syntax.OptionalType
+	elem types.Type
+}
+
 // resolveOptional is `T?`; `T??` is E3401 and recovers to `T?`, the evident intent (TYPES.md §2).
 func (c *checker) resolveOptional(tc *typeCtx, t *syntax.OptionalType) types.Type {
 	elem := c.resolveType(tc.inner(), t.Elem)
-	if elem.Base().Kind() == types.Optional {
-		if !holdsError(elem) { // TYPES.md §1: `Nope??` has only Nope's finding
-			c.report(tc.env, diag.E3401.At(tc.env.span(t), elem))
-		}
-		return elem
+	if elem.Base().Kind() != types.Optional {
+		return &types.OptionalType{Elem: elem}
 	}
-	return &types.OptionalType{Elem: elem}
+	j := optionalJob{env: tc.env, at: t, elem: elem}
+	if c.pendingIn(elem) { // a pending ref reads as the error type until its target is found
+		c.optionals = append(c.optionals, j)
+	} else {
+		c.doubleOptional(j)
+	}
+	return elem
+}
+
+// doubleOptional is E3401 for a `T??`, unless T holds an error: `Nope??` has only Nope's finding (TYPES.md §1).
+func (c *checker) doubleOptional(j optionalJob) {
+	if !holdsError(j.elem) {
+		c.report(j.env, diag.E3401.At(j.env.span(j.at), j.elem))
+	}
+}
+
+// checkOptionals judges the `T??` written in p's types, its refs now resolved.
+func (c *checker) checkOptionals(p *pkgState) {
+	var rest []optionalJob
+	for _, j := range c.optionals {
+		if j.env.pkg != p {
+			rest = append(rest, j)
+			continue
+		}
+		c.doubleOptional(j)
+	}
+	c.optionals = rest
+}
+
+// pendingIn reports a ref in t whose target is not found yet (TYPES.md §10.2).
+func (c *checker) pendingIn(t types.Type) bool {
+	if t == nil {
+		return false
+	}
+	if r, ok := t.Base().(*types.RefType); ok && c.pending[r] != nil {
+		return true
+	}
+	return slices.ContainsFunc(typeParts(t.Base()), c.pendingIn)
 }
 
 // resolveFnType is `fn(T, …) -> R`, allowed only for a parameter or a local let or var; elsewhere E3306 and the error type (TYPES.md §1).

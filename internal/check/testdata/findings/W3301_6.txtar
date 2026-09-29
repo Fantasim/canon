@@ -1,0 +1,59 @@
+TYPES.md §16, VIEWMODEL.md L6 (W1642 is views'), I18N.md K9, T1, T2: naming a deprecated field or member in a view item (a field line, a group entry, a column, a filter, an enum view's member line) or in a translation key is not a use and draws no W3301; an expression inside a view (a template, `when`, `hidden`) reads it, and so does a translated template's interpolation, each W3301 at that use.
+-- a/a.canon --
+package a
+
+/// A grade.
+local enum Grade {
+  /// Low.
+  low
+  /// Gone.
+  gone @deprecated("use low")
+}
+
+/// A level.
+local record Level {
+  /// Its number.
+  level: Int
+  /// Its old number.
+  old: Int = 0 @deprecated("use level")
+  /// Its grade.
+  grade: Grade = low
+}
+
+view Grade {
+  gone "Gone"
+}
+
+view Level {
+  title "Level {old}"
+  columns { old 70, level }
+  filters { old, grade }
+  old "Old"
+  level { when: old > 0, hidden: old == 0 }
+  group main "Main" {
+    old
+    grade
+  }
+}
+-- a/a.fr.canon --
+package a
+translation fr
+
+Level.old "Ancien"
+Level.old.deprecated "utiliser level"
+Grade.gone "Disparu"
+Level.title "Palier {old}"
+-- findings.txt --
+warning[W3301]  a/a.canon:26:17
+  old is deprecated: use level
+
+warning[W3301]  a/a.canon:30:17
+  old is deprecated: use level
+
+warning[W3301]  a/a.canon:30:34
+  old is deprecated: use level
+
+warning[W3301]  a/a.fr.canon:7:22
+  old is deprecated: use level
+
+0 errors, 4 warnings in 1 package (…)

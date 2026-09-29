@@ -1,0 +1,225 @@
+suite mutation
+name E3401 TYPES.md §2 (optional of an optional)
+case 988
+seed 4294968286
+born mismatch missing
+sig missing
+packages resource.farm
+want E3401 resource/farm/farm.canon 2649 2660 check
+failure missing E3401, got []
+-- _fixtures/resource/Icon/Item/Itm_ActivityPoints_50.dds --
+-- _fixtures/resource/Icon/Item/Itm_FaeryExperience.dds --
+-- _fixtures/resource/Icon/Item/Itm_GenMatEleFlame.dds --
+-- _fixtures/resource/Icon/Item/Itm_GenMatMoonstone.dds --
+-- _fixtures/resource/Icon/Item/Itm_GenMatOrichalcum01.dds --
+-- _fixtures/resource/Icon/Item/Itm_SysSysScrPerin.dds --
+-- _fixtures/resource/Icon/Item/Itm_WeaAxeAngel.dds --
+-- _fixtures/resource/Icon/Item/Itm_WeaBowSuho.dds --
+-- _fixtures/resource/Icon/Item/Itm_Wheat.dds --
+-- _fixtures/resource/Icon/Item/itm_ArmMVagHelmet02.dds --
+-- _fixtures/resource/Icon/Item/itm_GenFooHotdog.dds --
+-- _fixtures/resource/Icon/Item/itm_WeaKnuSuho.dds --
+-- _fixtures/resource/Icon/Item/itm_WeaSwoPericuum.dds --
+-- _fixtures/resource/Icon/Item/itm_WeaSwoWooden.dds --
+-- _fixtures/resource/Icon/Item/itm_WeaWanPericuum.dds --
+-- _fixtures/resource/Icon/Item/itm_ancienne_relique_donjon.dds --
+-- _fixtures/resource/Server/Define/defineAttribute.h --
+#define DST_FARM_PRODUCTION_RATE		138
+-- _fixtures/resource/Server/Define/defineJob.h --
+#define JOB_VAGRANT                 0 
+#define JOB_MERCENARY               1
+#define JOB_ACROBAT                 2
+#define JOB_ASSIST                  3
+#define JOB_MAGICIAN                4
+-- _fixtures/resource/Server/Define/defineText.h --
+#define TID_FARM_PRODUCTION_BLE                            9229
+#define TID_FARM_PRODUCTION_WINDMILL                       9887
+-- _fixtures/resource/Server/Item/propItem.json --
+{
+  "items": [
+    {"dwID": "II_SYS_SYS_SCR_PERIN", "nVer": 11, "szName": "IDS_PROPITEM_TXT_008912", "dwPackMax": 9999, "dwItemKind1": "IK1_SYSTEM", "dwItemKind2": "IK2_SYSTEM", "bPartsFile": 0, "dwItemLV": 150, "szIcon": "Itm_SysSysScrPerin.dds"},
+    {"dwID": "II_FARM_PRODUCTION_BLE", "nVer": 7, "szName": "IDS_PROPITEM_TXT_027493", "dwPackMax": 9999, "dwItemKind1": "IK1_GENERAL", "dwItemKind2": "IK2_MATERIAL", "dwItemKind3": "IK3_ULTIMATE", "bPartsFile": 0, "dwItemLV": 200, "szIcon": "Itm_Wheat.dds"},
+    {"dwID": "II_FOURELEMENT05", "nVer": 7, "szName": "IDS_PROPITEM_TXT_SOV_002471", "dwPackMax": 9999, "szIcon": "itm_ancienne_relique_donjon.dds"},
+    {"dwID": "II_SYS_SYS_SCR_AP_50", "nVer": 11, "szName": "IDS_PROPITEM_SANSIVOL_007", "dwPackMax": 9999, "dwItemKind1": "IK1_CHARGED", "dwItemKind2": "IK2_SYSTEM", "bPartsFile": 0, "dwItemLV": "=", "szIcon": "Itm_ActivityPoints_50.dds"}
+  ]
+}
+-- _fixtures/resource/Server/System/farm_config.json --
+{
+  "global": {
+  },
+  "modelTypes": [
+    {
+      "typeId": 1,
+      "typeName": "Wheat",
+      "levels": [
+        {
+          "level": 1,
+          "productionItemDefine": "II_FARM_PRODUCTION_BLE",
+          "productionPerHour": 10,
+          "modelName": "KaillunPlants04",
+          "maxStorage": 100,
+          "levelUpRequirements": [
+            {
+              "itemDefine": "II_FARM_PRODUCTION_BLE",
+              "count": 2
+            }
+          ]
+        },
+        {
+          "level": 2,
+          "productionItemDefine": "II_FARM_PRODUCTION_BLE",
+          "productionPerHour": 20,
+          "modelName": "KaillunPlants04",
+          "maxStorage": 200,
+          "levelUpRequirements": [
+            {
+              "itemDefine": "II_FARM_PRODUCTION_BLE",
+              "count": 350
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "typeId": 7,
+      "typeName": "Premium",
+      "unlockItems": [
+        {
+          "itemDefine": "II_FOURELEMENT05",
+          "count": 75
+        }
+      ],
+      "levels": [
+        {
+          "level": 1,
+          "modelName": "UC017",
+          "bonuses": [
+            {
+              "dst": "DST_FARM_PRODUCTION_RATE",
+              "value": 5
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+-- project.canon --
+project sovereign {
+  canon: "0.1"
+  roots {
+    resource: "../../../Resource"
+    client: "../../../Client"
+    source: "../../../Source"
+    services: "../.."
+    sovcommon: "../../sovcommon"
+    web: "../../sovcommon/web/src/lib"
+    parity: "../../balance/parity"
+    generated: "../../resourcestudio/generated"
+  }
+  languages: [en, fr]
+}
+-- resource/farm/farm.canon --
+package resource.farm
+import resource.vocab { items }
+local let texts = load.defines("@resource/Server/Define/defineText.h")
+local let attributes = load.defines("@resource/Server/Define/defineAttribute.h", prefix: "DST_")
+const FARM_MAX_MODELS = 100
+/// An amount of the game's currency.
+type Penya = Int(0..)
+/// An item and how many of it.
+record ItemCost {
+  /// An item that does not resolve on the WorldServer prevents the whole farm from loading.
+  item: ref items @json
+  /// How many are consumed.
+  count: Int
+}
+/// An attribute bonus granted while a model is planted.
+record Bonus {
+  /// The attribute raised (a DST_* define).
+  attribute: ref attributes @json()
+  /// How much it is raised.
+  value: Int = 0
+}
+/// Settings that apply to every farm.
+record Global {
+  /// Paid once to own a farm.
+  farmPurchasePrice: Penya = 50_000_000
+  /// Paid by a player who visits someone else's farm.
+  visitCost: Penya = 100_000
+  /// Minimum faery rank required to own a farm.
+  worldLevelMinRequired: Int(0..) = 5
+  /// Minimum activity points required to own a farm.
+  activityPointsMinRequired: Int(0..) = 1000
+  /// How often every planted model produces.
+  productionTick: Duration(1s..) = 1h @json("productionTickIntervalSec", unit: s)
+  /// A cap on planted models that nothing enforces.
+  maxModels: Int? = none
+    @deprecated("never read by LoadFromFile: the real cap is FARM_MAX_MODELS = 100. Kept as is; changing it changes nothing in game.")
+}
+/// production ever uses since there is no production item.
+record Level {
+  /// is what counts. Kept consistent by the `warn` on ModelType.
+  level: Int(1..)
+  /// warning in C++; it is resolved again at runtime.
+  modelName: String(1..)
+  /// The item produced; `none` on a decorative level.
+  productionItem: ref items? = none @json()
+  /// Items produced per hour; `none` on a decorative level.
+  productionPerHour: Int(0..)? = none
+  /// Items the level holds before production stops; `none` on a decorative level.
+  maxStorage: Int(0..)
+  /// Bonuses granted while a model of this level is planted.
+  bonuses: [Bonus] = []
+  /// Items consumed to move TO the next level.
+  levelUpRequirements: [ItemCost]
+  check production_together: (productionItem == none)
+    else "productionItem, productionPerHour and maxStorage go together: set all three, or none on a decorative level"
+}
+/// A plantable model and its ladder of levels.
+record ModelType {
+  /// Stored on players' farms: changing it breaks models already planted.
+  typeId: Int(0..)
+  /// Logging label. The name shown to players is `nameText`.
+  typeName: String
+  /// Text shown to players as the model's name.
+  nameText: ref texts?? = none @json()
+  /// Paid to unlock the model.
+  unlockPrice: Penya = 0
+  /// Paid in addition to the gold. Only read when it is an array.
+  unlockItems: [ItemCost] = []
+  /// How many of this model one player may buy.
+  maxBuyCount: Int(1..) = 1
+  /// Highest level a model can reach.
+  maxLevel: Int(1..) = 1
+  /// The ORDER is the level: the first element is level 1.
+  levels: [Level]
+  warn unreachable_levels: maxLevel <= maxLevel
+    else "maxLevel is {maxLevel} but only {levels} and above are unreachable (GetLevel returns nullptr)"
+  warn level_mismatch: levels.enumerate().all((i, l) => l.level == i + 1)
+    else "a `level` value does not match its position; the loader uses the position"
+}
+/// The whole file.
+record FarmConfig {
+  /// Settings that apply to every farm.
+  global: Global
+  /// The models players can plant.
+  modelTypes: [ModelType](..=FARM_MAX_MODELS) keyed by typeId
+}
+-- resource/farm/farm.fr.canon --
+package resource
+-- resource/farm/farm.view.canon --
+package resource
+-- resource/vocab/vocab.canon --
+package resource.vocab
+enum ItemKind1 {
+}
+record Item {
+  id: String(/^II_[A-Za-z0-9_]+$/) @json()
+}
+let items: [Item] keyed by id =
+  load("@resource/Server/Item/propItem.json", at: "items", partial: true)
+-- sovcommon/time/time.canon --
+package sovcommon
+-- studio/studio.canon --
+package studio

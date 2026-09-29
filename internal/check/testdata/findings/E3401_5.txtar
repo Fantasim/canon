@@ -1,0 +1,44 @@
+TYPES.md §2, §1, §10.2 (log-2026-09-29 "progen operators for view/i18n codes", E3401 at doubleOptional): a `ref X??` field is E3401 once the ref's target is found at the end of the package's step 2, whether X is inferred (`load.defines`) or annotated, alone or inside a list; a ref whose target resolves to nothing has only its own finding (one defect, one finding).
+-- a/a.canon --
+package a
+
+local let texts = load.defines("@resource/defs.h", prefix: "TID_")
+
+/// An item.
+local record Item {
+  /// Its key.
+  id: String
+}
+
+local let items: [Item] keyed by id = []
+
+/// A model.
+local record Model {
+  /// Its name text.
+  nameText: ref texts?? = none
+  /// Its item.
+  item: ref items?? = none
+  /// Its texts.
+  more: [ref texts]?? = none
+  /// Nothing.
+  nope: ref nothing?? = none
+  /// A count.
+  n: Int?? = none
+}
+-- findings.txt --
+error[E3401]  a/a.canon:16:13
+  ref a.texts?? is not a type: ref a.texts? is already optional
+
+error[E3401]  a/a.canon:18:9
+  ref a.items?? is not a type: ref a.items? is already optional
+
+error[E3401]  a/a.canon:20:9
+  [ref a.texts]?? is not a type: [ref a.texts]? is already optional
+
+error[E2102]  a/a.canon:22:13
+  unknown name nothing
+
+error[E3401]  a/a.canon:24:6
+  Int?? is not a type: Int? is already optional
+
+5 errors, 0 warnings in 1 package (…)
