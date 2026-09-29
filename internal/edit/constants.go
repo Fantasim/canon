@@ -205,6 +205,7 @@ const (
 	ChangeCreated
 	ChangeDeleted
 	ChangeRenamed
+	ChangeRemovedDir // a directory left empty, Path its display path, never a FileChange (API.md N6)
 )
 
 // The members of an operation's JSON form as bits of a set; `value` and `source` are one (E24).
@@ -267,4 +268,72 @@ var jsonMembers = [...]jsonMember{
 var recheckCodes = map[diag.Code]bool{
 	diag.E3302.Def().Code: true, diag.E3201.Def().Code: true, diag.E3202.Def().Code: true, diag.E3102.Def().Code: true,
 	diag.E3317.Def().Code: true,
+}
+
+// The journal of a commit: .canon/journal/<hex of the new revision>.json under the project
+// directory, the revision's scheme cut at revisionSep, no Windows name (API.md N10, S3).
+const (
+	revisionSep    = ':'
+	journalDir     = ".canon/journal"
+	journalVersion = 1
+)
+
+// A file a commit stages beside its target before the rename: hidden, never a source (API.md N10).
+const (
+	stagePrefix = "."
+	stageSuffix = ".canon-edit"
+)
+
+// Line ends of a written file (API.md N12).
+const (
+	lineEnd = "\n"
+	crlfEnd = "\r\n"
+)
+
+// fmtFileErr is an error about one file: its display path, then the cause.
+const fmtFileErr = "%s: %w"
+
+// The one line Recover logs (API.md O5): how many journals it rolled back, how many files and
+// directories it changed.
+const (
+	msgRecovered = "rolled back an unfinished edit"
+	attrJournals = "journals"
+	attrChanges  = "changes"
+)
+
+// newAbsent is a journal file's New when the commit removes it.
+const newAbsent = "absent"
+
+// Why a journal, or the commit that would write it, is refused (log-2026-09-29 M4 U4c-r, U4c-r3).
+const (
+	reasonVersion = "unknown version"
+	reasonPlace   = "path outside the project and its roots"
+	reasonMode    = "mode beyond read and write bits"
+	reasonDigest  = "invalid digest"
+	reasonAbsent  = "old content for an absent file"
+	reasonChanged = "changed since the edit"
+	reasonKind    = "not a file the edit API writes"
+	reasonLink    = "reached through a symbolic link"
+	reasonForeign = "written on another machine"
+	reasonStray   = "not the edit's"
+	reasonHidden  = "hidden path"
+	reasonTwice   = "path named twice"
+	reasonOrphan  = "created directory above no new file"
+)
+
+// What a journal may name (log-2026-09-29 M4 U4c-r3): no hidden segment, the lock beside
+// sources and JSON files (API.md E20), read and write bits only for a file.
+const (
+	hiddenMark        = '.'
+	lockExt           = ".lock"
+	rwBits     uint32 = 0o666
+)
+
+// expanders turn a Change into the files a commit writes or removes, by kind (API.md §8.1, N8).
+var expanders = [...]func(Change) []commitFile{
+	ChangeModified:   modifiedFiles,
+	ChangeCreated:    createdFiles,
+	ChangeDeleted:    deletedFiles,
+	ChangeRenamed:    renamedFiles,
+	ChangeRemovedDir: removedDirFiles,
 }

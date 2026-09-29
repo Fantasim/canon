@@ -4,4 +4,6 @@
 // A Typer types an operation's value into a value.Value whose records hold only the fields
 // the value writes: an unwritten field is nil with Set false, whatever its default, and applying
 // the edit gives it its default (API.md V3). Nothing else in a typed value is nil.
+//
+// Journals are untrusted input; recovery and its threat model: meta/decisions/0010-edit-journal-recovery.md.
 package edit

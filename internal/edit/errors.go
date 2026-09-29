@@ -3,6 +3,7 @@ package edit
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/fantasim/canonlang/internal/eval"
 )
@@ -89,3 +90,24 @@ var (
 	errNotInteger = errors.New("not an integer")
 	errEmptyCase  = errors.New("empty case name")
 )
+
+// The commit of an edit's files and its recovery (API.md §10.3, O5).
+var (
+	ErrStale    = errors.New("sources changed since the base revision")
+	ErrRevision = errors.New("invalid revision")
+	ErrJournal  = errors.New("unfinished edit journal")
+	ErrChanges  = errors.New("invalid file changes")
+)
+
+// StaleError is a commit refused because files changed on disk since the snapshot the edit was
+// planned on: their display paths, in byte order (API.md N9).
+type StaleError struct {
+	Files []string
+}
+
+func (e *StaleError) Error() string {
+	return ErrStale.Error() + detailSep + strings.Join(e.Files, listSep)
+}
+
+// Unwrap is ErrStale.
+func (e *StaleError) Unwrap() error { return ErrStale }
