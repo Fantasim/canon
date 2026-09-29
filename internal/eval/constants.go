@@ -136,6 +136,13 @@ const (
 	layerSep      = ","
 )
 
+// A memo's stores (one per epoch, so per lineage), their bytes together, the forgotten epochs kept.
+const (
+	memoEpochs    = 4
+	memoAllBytes  = 2 * memoBytes
+	memoForgotten = 1024
+)
+
 // The outcomes of a replay's step, then the tags a fingerprint writes (memo_replay.go, memo_fp.go).
 const (
 	replayOn replayOutcome = iota

@@ -120,6 +120,7 @@ type host struct {
 	verifier *verify.Verifier
 	ev       *eval.Evaluator
 	load     loader
+	as       eval.Host // what the evaluator is given, when not the host itself (memo_load_test.go)
 }
 
 // loader serves a load expression, decoded through ev (DECISIONS 173); nil when the build loads nothing.
@@ -184,7 +185,11 @@ func runBuildWith(t testing.TB, p *program, opt eval.Options, load loader, selec
 // evaluate runs stages A to D over the checked program with a new evaluator, which use may
 // set up first; the roots of b.order, if any, are forced before the forced set.
 func (b *build) evaluate(ctx context.Context, h *host, opt eval.Options, selected []string, use func(*eval.Evaluator)) {
-	b.ev = eval.New(b.checked, h, b.bags, opt)
+	var given eval.Host = h
+	if h.as != nil {
+		given = h.as
+	}
+	b.ev = eval.New(b.checked, given, b.bags, opt)
 	if use != nil {
 		use(b.ev)
 	}

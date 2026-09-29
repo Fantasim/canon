@@ -1,7 +1,6 @@
 package load
 
 import (
-	"errors"
 	"io/fs"
 	"path"
 	"slices"
@@ -30,7 +29,7 @@ func (l *Loader) globMatches(base project.Path, rest string, req Request) ([]mat
 	if rest == "" {
 		return l.literalMatch(base, real)
 	}
-	info, err := l.FS.Stat(real)
+	info, err := l.stat(real)
 	switch {
 	case err != nil:
 		return nil, err
@@ -54,7 +53,7 @@ func (l *Loader) globMatches(base project.Path, rest string, req Request) ([]mat
 
 // literalMatch is a glob with no magic character: base itself at its resolved path real, or nothing for a directory (WIRE.md §6.5).
 func (l *Loader) literalMatch(base project.Path, real string) ([]matchFile, error) {
-	info, err := l.FS.Stat(real)
+	info, err := l.stat(real)
 	switch {
 	case err != nil:
 		return nil, err
@@ -194,15 +193,6 @@ func (w *walker) allFiles(rel, real string) ([]hit, error) {
 		out = append(out, sub...)
 	}
 	return out, nil
-}
-
-// readDir is dir's entries, empty (not an error) when dir does not exist (WIRE.md §6.5).
-func (l *Loader) readDir(dir string) ([]fs.DirEntry, error) {
-	entries, err := l.FS.ReadDir(dir)
-	if errors.Is(err, fs.ErrNotExist) {
-		return nil, nil
-	}
-	return entries, err
 }
 
 // segMatches is whether name matches seg: a dotfile only for a segment itself starting with '.' (WIRE.md §6.5).

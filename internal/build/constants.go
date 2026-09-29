@@ -29,6 +29,9 @@ const (
 	compactRatio = 4
 )
 
+// lineageCap is the Recheck lineages a cache generation keeps, one per set of packages checked.
+const lineageCap = 3
+
 // Paths: a root's mark, separators, the lock's name (LOCK.md §2.1), text line ends.
 const (
 	rootMark       = "@"

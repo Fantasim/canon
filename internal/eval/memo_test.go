@@ -38,6 +38,7 @@ type memoed struct {
 	opt   eval.Options
 	load  loader
 	first []eval.Root
+	as    func(*host) eval.Host // the host the evaluator is given, when not the fixture's (memo_load_test.go)
 }
 
 // outcome is what one evaluation produced: each value's text, the findings, the steps spent,
@@ -46,6 +47,7 @@ type outcome struct {
 	dump, deep, findings string
 	steps                int64
 	hits, stored, unkept int
+	loads                struct{ hits, stored, unkept int } // the same counts for loads
 }
 
 // checkOnce checks p for evaluations with opt.
@@ -64,7 +66,11 @@ func (m *memoed) evaluate(t testing.TB, memo *eval.Memo, epoch uint64) outcome {
 	for _, name := range m.bags {
 		b.bags[name] = diag.NewBag(m.p.fs, name)
 	}
-	b.evaluate(context.Background(), &host{load: m.load}, m.opt, nil, func(ev *eval.Evaluator) {
+	h := &host{load: m.load}
+	if m.as != nil {
+		h.as = m.as(h)
+	}
+	b.evaluate(context.Background(), h, m.opt, nil, func(ev *eval.Evaluator) {
 		if memo != nil {
 			ev.UseMemo(memo, epoch)
 		}
@@ -74,6 +80,7 @@ func (m *memoed) evaluate(t testing.TB, memo *eval.Memo, epoch uint64) outcome {
 	}
 	out := outcome{dump: b.dump(), deep: deep(b), findings: b.findings(t), steps: b.ev.StepsSpent()}
 	out.hits, out.stored, out.unkept = b.ev.MemoCounts()
+	out.loads.hits, out.loads.stored, out.loads.unkept = b.ev.LoadMemoCounts()
 	return out
 }
 

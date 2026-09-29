@@ -1,0 +1,65 @@
+IMPLEMENTATION-PLAN §7.6 (NFR-02), WIRE.md §6, EVALUATION.md §12.2, §13: a load replayed while its
+file is the same: the steps and reads of its defaults and dependent fields (a constant, a loaded
+table's entry), its bound arguments, written marks and provenance; entries reading the value.
+-- a/a.canon --
+/// A.
+package a
+
+/// Factor.
+const FACTOR = 3
+
+/// Ev.
+record Ev {
+  /// On.
+  on: Bool
+}
+
+/// Evs.
+let evs: table Ev = load("@resource/evs.json")
+
+/// P.
+type P(e: Ev) = match e.on {
+  true => String
+  false => Int
+}
+
+/// Row.
+record Row {
+  /// Base.
+  base: Int
+  /// Twice the base.
+  twice: Int = base * FACTOR
+  /// Ev.
+  ev: ref evs
+  /// P.
+  p: P(ev)
+  /// Tags.
+  tags: [String] = ["t"]
+}
+
+/// Rows.
+let rows: [Row] = load("@resource/rows.json")
+
+/// An item.
+record Item {
+  /// Cost.
+  cost: Int = 5
+}
+
+/// Items.
+let items: table Item = {}
+-- a/e1.canon --
+package a
+
+entry items.one { cost: rows[0].twice + 1 }
+-- a/e2.canon --
+package a
+
+entry items.two { cost: rows[1].base }
+-- resource/evs.json --
+{"yes": {"on": true}, "no": {"on": false}}
+-- resource/rows.json --
+[
+  {"base": 1, "ev": "no", "p": 4},
+  {"base": 3, "twice": 5, "ev": "yes", "p": "x"}
+]

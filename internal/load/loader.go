@@ -21,9 +21,12 @@ type Loader struct {
 	Layout *project.Layout
 	Set    *source.FileSet
 	Reused func(abs string) // when set, told each file a call takes from the Loader's cache, not FS
+	// Add, when set, puts a file read into Set in place of Set.Add: a cache keeping unchanged files.
+	Add func(display, abs string, data []byte) (*source.File, error)
 
 	mu      sync.Mutex
 	headers map[string]*headerFile // by resolved absolute path
+	rec     *Inputs                // the inputs of the load being recorded (Recorded), nil for none
 }
 
 // Request is a load forced from one file: package, directory, site, bag, decoding host (DECISIONS 173).
@@ -36,6 +39,7 @@ type Request struct {
 	Coll    *types.Collection // the let collection the load is the whole value of (wire.Decoder.Coll)
 	Outer   wire.Outer        // what the loaded type's arguments name around the load
 	Scratch bool              // Bag is thrown away (a test call's, a vector's): the Loader caches nothing for it
+	found   *[]*diag.Builder  // where a recorded load keeps its own findings (Recorded)
 }
 
 // decoder is the wire decoder of req's load.
@@ -45,6 +49,14 @@ func (req Request) decoder(partial bool) *wire.Decoder {
 
 // Load reads e against t; false after a finding, poisoning the value (EVALUATION.md §7).
 func (l *Loader) Load(ctx context.Context, req Request, e *syntax.LoadExpr, t types.Type) (value.Value, bool, error) {
+	outer := l.rec
+	l.rec = nil // a load a recorded one forces, through a value it reads, is not part of it
+	defer func() { l.rec = outer }()
+	return l.load(ctx, req, e, t)
+}
+
+// load runs e's form.
+func (l *Loader) load(ctx context.Context, req Request, e *syntax.LoadExpr, t types.Type) (value.Value, bool, error) {
 	form := loadForm
 	if e.Method != nil {
 		form = e.Method.Name

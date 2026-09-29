@@ -1,0 +1,91 @@
+IMPLEMENTATION-PLAN §7.6 (NFR-02), WIRE.md §6: every load form, their files edited, added and
+removed, replayed while unchanged; two packages, so two selections and two lineages.
+-- project.canon --
+project acme {
+  canon: "0.1"
+
+  roots {
+    resource: "resource"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+local let codes = load.defines("@resource/codes.h", prefix: "C_")
+
+/// A bonus every item gets.
+const BONUS = 3
+
+/// An item.
+record Item {
+  /// Stock keeping unit.
+  sku: String
+  /// Code.
+  code: ref codes
+  /// Cost.
+  cost: Int = BONUS * 2
+  /// Weight.
+  weight: Int = cost + 1
+}
+
+/// Items, one per file.
+let items: [Item] keyed by sku = load.dir("@resource/items/*.json")
+
+/// A row.
+record Row {
+  /// Name.
+  name: String
+  /// Size.
+  size: Int = 1
+}
+
+/// Rows.
+let rows: [Row] = load.csv("@resource/rows.csv", header: true)
+
+/// A note.
+let note: String = load.text("@resource/note.txt")
+
+/// Settings.
+record Cfg {
+  /// Level.
+  level: Int = BONUS + 1
+}
+
+/// The settings.
+let cfg: Cfg = load("@resource/cfg.json")
+
+/// Extra items, one entry each.
+let extra: table Item = {}
+-- a/e1.canon --
+package a
+
+entry extra.one {
+  sku: "one"
+  code: C_ONE
+  cost: 4
+}
+-- b/b.canon --
+/// B.
+package b
+
+import a { Item }
+
+/// The same items, loaded again.
+let twins: [Item] keyed by sku = load.dir("@resource/items/*.json")
+-- resource/codes.h --
+#define C_ONE 1
+#define C_TWO 2
+#define C_BAD "x"
+-- resource/items/i1.json --
+{"sku": "i1", "code": "C_ONE", "cost": 5}
+-- resource/items/i2.json --
+{"sku": "i2", "code": "C_TWO"}
+-- resource/rows.csv --
+name,size
+x,2
+y,
+-- resource/note.txt --
+hello
+-- resource/cfg.json --
+{}

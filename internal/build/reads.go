@@ -2,7 +2,6 @@ package build
 
 import (
 	"cmp"
-	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"io/fs"
@@ -218,9 +217,7 @@ type readLog struct {
 	by      map[string]map[touch]bool
 	pending []string          // files read since they were last told to the file system (API.md S3)
 	read    map[string]bool   // every file read
-	known   map[string]string // each file this run's loads added to the set, by its least display
-	depth   int               // the loads running, one inside another
-	last    source.FileID     // the set's last file the log has looked at
+	known   map[string]string // each file this run's loads added to the set, by its least display (added)
 	dir     string            // the project directory, which displays a file the file set lacks
 }
 
@@ -259,61 +256,13 @@ func (l *readLog) note(t touch, read bool) {
 	}
 }
 
-// loadSem is held by one run's loads at a time, by every run adding to one file set.
-type loadSem chan struct{}
-
-// loading starts a load of this run and returns what ends it, or ctx.Err() while waiting. The
-// outermost load holds sem, so the files the set gains meanwhile that the log read are this
-// run's; each keeps its least display (log-2026-09-29 M4 U8-r).
-func (l *readLog) loading(ctx context.Context, set *source.FileSet, sem loadSem) (func(), error) {
-	if l == nil {
-		return func() {}, nil
-	}
+// added notes the display a load of this run gave a file it read, kept when least (S3).
+func (l *readLog) added(src *source.File) {
 	l.mu.Lock()
-	l.depth++
-	outer := l.depth == 1
-	l.mu.Unlock()
-	if outer {
-		select {
-		case sem <- struct{}{}:
-		case <-ctx.Done():
-			l.mu.Lock()
-			l.depth--
-			l.mu.Unlock()
-			return nil, ctx.Err()
-		}
-		l.mu.Lock()
-		l.last = lastFile(set, l.last) // what other runs added is not this run's
-		l.mu.Unlock()
+	defer l.mu.Unlock()
+	if d, ok := l.known[src.Abs]; !ok || src.Path < d {
+		l.known[src.Abs] = src.Path
 	}
-	return l.loaded(set, sem, outer), nil
-}
-
-// loaded ends a load: the outermost records the files the set gained, then frees sem.
-func (l *readLog) loaded(set *source.FileSet, sem loadSem, outer bool) func() {
-	return func() {
-		l.mu.Lock()
-		defer l.mu.Unlock()
-		l.depth--
-		if !outer {
-			return
-		}
-		defer func() { <-sem }()
-		for f := set.File(l.last + 1); f != nil; f = set.File(l.last + 1) {
-			l.last = f.ID
-			if d, ok := l.known[f.Abs]; l.read[f.Abs] && (!ok || f.Path < d) {
-				l.known[f.Abs] = f.Path
-			}
-		}
-	}
-}
-
-// lastFile is the id of the set's last file, looking from id on.
-func lastFile(set *source.FileSet, id source.FileID) source.FileID {
-	for set.File(id+1) != nil {
-		id++
-	}
-	return id
 }
 
 // enter charges what is read next to pkg and returns whom it charged before.
@@ -372,12 +321,13 @@ func (h *evalHost) track(pkg string) func() {
 	}
 	l := h.log()
 	if l == nil {
-		l = &readLog{fs: h.loader.FS, by: map[string]map[touch]bool{}, read: map[string]bool{}, known: map[string]string{}, last: h.base}
+		l = &readLog{fs: h.loader.FS, by: map[string]map[touch]bool{}, read: map[string]bool{}, known: map[string]string{}}
 		if h.loader.Layout != nil {
 			l.dir = h.loader.Layout.Dir
 		}
 		h.loader.FS = l
 		h.loader.Reused = func(abs string) { l.note(touch{abs: abs}, false) } // a cached header counts too (S5)
+		h.loader.Add = h.adder(l)
 		if h.assets != nil {
 			h.assets.fs = l
 		}

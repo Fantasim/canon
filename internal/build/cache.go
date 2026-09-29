@@ -13,8 +13,8 @@ import (
 )
 
 // Cache is what the builds of one project's snapshots share (NFR-02): a file set holding the
-// parses of unchanged files, the latest checked program's session and the evaluation memo, a
-// new epoch for each full check, one along a Recheck lineage. It is safe for concurrent use.
+// parses of unchanged files, the latest session of a few Recheck lineages and the evaluation memo,
+// a new epoch for each full check, one along a lineage. It is safe for concurrent use.
 type Cache struct {
 	mu    sync.Mutex
 	gen   *cacheGen
@@ -28,14 +28,13 @@ type cacheGen struct {
 	set      *source.FileSet
 	reuse    *project.Reuse
 	mu       sync.Mutex
-	files    map[fileName]keptFile // project.canon and each canon.lock, by name
-	head     *head
+	files    map[fileName]keptFile // project.canon, each canon.lock and each file a load read, by name
+	heads    []*head               // the lineages' latest checked programs, the latest checked first
 	sites    map[*syntax.File][]loadAt
 	measured source.FileID // the files the byte total counts
 	total    int           // the bytes of every file of set
 	live     int           // the bytes the latest snapshot parsed, project.canon and locks included
 	base     source.FileID // the last file of set when that snapshot began
-	loads    loadSem       // held by one run's loads at a time (readLog.loading)
 	vix      verify.IndexCache
 	rix      rules.IndexCache
 }
@@ -58,7 +57,7 @@ func NewCache() *Cache {
 
 func newCacheGen() *cacheGen {
 	set := &source.FileSet{}
-	return &cacheGen{set: set, reuse: project.NewReuse(set), files: map[fileName]keptFile{}, sites: map[*syntax.File][]loadAt{}, loads: make(loadSem, 1)}
+	return &cacheGen{set: set, reuse: project.NewReuse(set), files: map[fileName]keptFile{}, sites: map[*syntax.File][]loadAt{}}
 }
 
 // WithCache is p sharing c with every project Over makes of it; a nil c runs every call cold.
@@ -69,12 +68,14 @@ func (p *Project) WithCache(c *Cache) *Project {
 }
 
 // begin is the generation a new snapshot reads into, a new one when the file set holds more
-// than compactRatio times what the latest snapshot used: snapshots begun earlier keep theirs.
+// than compactRatio times what the latest snapshot used: snapshots begun earlier keep theirs,
+// and the memo forgets the old one's epochs (log-2026-09-29 M4 P3-r).
 func (c *Cache) begin() (*cacheGen, source.FileID) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	g := c.gen
 	if g.grown() {
+		c.forget(g.epochs())
 		g = newCacheGen()
 		c.gen = g
 	}

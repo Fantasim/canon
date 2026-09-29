@@ -38,9 +38,7 @@ type evalHost struct {
 	causes    map[eval.Root][]diag.Finding // ...and a value it poisons keeps their errors
 	fold      check.Folder                 // phase 2's folder, whose internal errors failure reports (DECISIONS 195)
 	scratch   bool                         // bags is throwaway: load keeps nothing it reads (a test call's host)
-	base      source.FileID                // the file set's last file when the snapshot began
 	sites     *loadSites                   // where the program's load expressions are
-	loadLock  loadSem                      // held by one run's loads at a time, every run adding to the set
 }
 
 // Load runs e's form against expected; an unsupported form, option or default is ErrLoad,
@@ -54,12 +52,46 @@ func (h *evalHost) LoadInto(ctx context.Context, ev *eval.Evaluator, e *syntax.L
 	return h.loadInto(ctx, e, expected, loadTarget{ev: ev, bags: bags, scratch: true})
 }
 
+// the memo replays the build's loads (IMPLEMENTATION-PLAN §7.6)
+var _ eval.LoadMemo = (*evalHost)(nil)
+
+// LoadRecorded is Load, and what the memo needs to replay it (IMPLEMENTATION-PLAN §7.6 NFR-02).
+func (h *evalHost) LoadRecorded(ctx context.Context, e *syntax.LoadExpr, expected types.Type) (value.Value, bool, eval.LoadInputs) {
+	var in *load.Inputs
+	v, ok := h.loadInto(ctx, e, expected, loadTarget{ev: h.ev, bags: h.bags, scratch: h.scratch, inputs: &in})
+	if !ok || in == nil {
+		return v, ok, nil
+	}
+	return v, ok, in
+}
+
+// LoadReplay reads what a recorded load e read again, charged to its package as its reads were
+// (API.md S3, S5); done reports the findings the load reported itself into the bag it used.
+func (h *evalHost) LoadReplay(ctx context.Context, e *syntax.LoadExpr, in eval.LoadInputs) (func(), bool) {
+	li, ok := in.(*load.Inputs)
+	if !ok || h.scratch || h.loader == nil {
+		return nil, false
+	}
+	site, ok := h.siteIn(h.prog, e)
+	if !ok {
+		return nil, false
+	}
+	defer h.track(site.pkg)()
+	if ctx.Err() != nil || !h.loader.Replay(li) {
+		return nil, false
+	}
+	bag := h.bags[site.pkg]
+	return func() { li.Report(bag) }, true
+}
+
 // loadTarget is where a load goes: the evaluator decoding it (defaults, discriminants), the
-// bags its findings go to, and whether they are throwaway (load.Request.Scratch).
+// bags its findings go to, whether they are throwaway (load.Request.Scratch), and where a load
+// recorded for the memo keeps its inputs (nil: not recorded).
 type loadTarget struct {
 	ev      *eval.Evaluator
 	bags    check.Bags
 	scratch bool
+	inputs  **load.Inputs
 }
 
 // loadInto is Load into to's bags, decoded through to's evaluator.
@@ -73,7 +105,7 @@ func (h *evalHost) loadInto(ctx context.Context, e *syntax.LoadExpr, expected ty
 	req := load.Request{
 		Pkg: site.pkg, From: path.Dir(site.file.Src.Path), Span: site.span, Bag: to.bags[site.pkg], Scratch: to.scratch,
 	}.Through(to.ev)
-	v, ok, err := h.locked(ctx, func() (value.Value, bool, error) { return h.loader.Load(ctx, req, e, expected) })
+	v, ok, err := h.run(ctx, req, e, expected, to.inputs)
 	switch {
 	case ctx.Err() != nil:
 		return nil, false // the run returns ctx.Err()
@@ -91,15 +123,14 @@ func (h *evalHost) loadInto(ctx context.Context, e *syntax.LoadExpr, expected ty
 	}
 }
 
-// locked runs load holding the run's load semaphore, freed even when load panics (API.md X2);
-// waiting for it ends with ctx (S11).
-func (h *evalHost) locked(ctx context.Context, load func() (value.Value, bool, error)) (value.Value, bool, error) {
-	done, err := h.log().loading(ctx, h.loader.Set, h.loadLock)
-	if err != nil {
-		return nil, false, err
+// run is the loader's Load of e, or with inputs set Recorded, keeping its inputs there.
+func (h *evalHost) run(ctx context.Context, req load.Request, e *syntax.LoadExpr, t types.Type, inputs **load.Inputs) (value.Value, bool, error) {
+	if inputs == nil {
+		return h.loader.Load(ctx, req, e, t)
 	}
-	defer done()
-	return load()
+	out, err := h.loader.Recorded(ctx, req, e, t)
+	*inputs = out.Inputs
+	return out.Value, out.OK, err
 }
 
 // unsupportedCause is a load.UnsupportedError's own cause, "" for a bare ErrUnsupported.
@@ -269,8 +300,8 @@ type assets struct {
 
 // dirListing is one directory's own file and subdirectory names, listed once.
 type dirListing struct {
-	files []string
-	subs  []string
+	files map[string]bool
+	subs  map[string]bool
 }
 
 // Exists resolves root, then walks name under it one folder at a time (WIRE.md §2.2, TYPES.md §13.4).
@@ -282,12 +313,12 @@ func (a *assets) Exists(root, from, name string) (string, bool) {
 	segs := strings.Split(name, pathSep)
 	abs := dir.Abs
 	for _, seg := range segs[:len(segs)-1] {
-		if !slices.Contains(a.list(abs).subs, seg) {
+		if !a.list(abs).subs[seg] {
 			return dir.Display, false
 		}
 		abs = path.Join(abs, seg)
 	}
-	return dir.Display, slices.Contains(a.list(abs).files, segs[len(segs)-1])
+	return dir.Display, a.list(abs).files[segs[len(segs)-1]]
 }
 
 // list is the file and subdirectory names of dir, listed once; neither when it does not exist.
@@ -302,13 +333,13 @@ func (a *assets) list(dir string) dirListing {
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		a.host.errs = append(a.host.errs, displayErrorIn(a.layout.Dir, err))
 	}
-	l := dirListing{files: []string{}, subs: []string{}}
+	l := dirListing{files: map[string]bool{}, subs: map[string]bool{}}
 	for _, e := range entries {
 		if isDir, ok := a.kind(dir, e); ok {
 			if isDir {
-				l.subs = append(l.subs, e.Name())
+				l.subs[e.Name()] = true
 			} else {
-				l.files = append(l.files, e.Name())
+				l.files[e.Name()] = true
 			}
 		}
 	}

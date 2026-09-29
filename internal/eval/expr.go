@@ -148,17 +148,9 @@ func evalLoad(r *run, e syntax.Expr, at *vpath) value.Value {
 		r.bug(e)
 		return nil
 	}
-	r.voidTrace() // what a load reads is not a value a memo can compare
-	t, outer, cx := r.typeOf(e), r.ev.loading, r.depAt(e)
-	r.ev.loading = &loadSite{r: r, at: e, coll: r.hint(at), cx: cx}
-	v, ok := r.ev.host.Load(r.ctx, e.(*syntax.LoadExpr), t)
-	r.ev.loading = outer
-	if !ok || r.failed {
-		r.stop()
-		return nil
-	}
-	r.ev.markLoaded(v, t)
-	return v
+	r.voidTrace() // what a load reads is not a value an entry's memo can compare
+	site := &loadSite{r: r, at: e, coll: r.hint(at), cx: r.depAt(e)}
+	return r.load(e.(*syntax.LoadExpr), r.typeOf(e), site)
 }
 
 // truth is the Bool a condition evaluates to; false with the root aborted.

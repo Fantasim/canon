@@ -146,7 +146,7 @@ func (r *run) emitsView() map[string]bool {
 // newHost is the run's host and evaluator, reporting into bags: stage A's, or canon test's.
 func (r *run) newHost(bags check.Bags) {
 	r.vix, r.rix = r.indexes()
-	r.host = &evalHost{prog: r.prog, bags: bags, index: r.vix, fold: r.fold, base: r.s.base, sites: r.loadSites(), loadLock: r.s.loadLock()}
+	r.host = &evalHost{prog: r.prog, bags: bags, index: r.vix, fold: r.fold, sites: r.loadSites()}
 	r.host.loader = &load.Loader{FS: r.p.fs, Layout: r.s.layout, Set: r.s.set}
 	r.ev = eval.New(r.prog, r.host, bags, r.opt)
 	r.host.ev = r.ev

@@ -18,8 +18,7 @@ type walker struct {
 	bounds []string
 	onPath map[string]bool
 	from   string
-	span   source.Span
-	bag    *diag.Bag
+	req    Request
 }
 
 // hit is one matched file: its path relative to the walk's base, and its resolved path (WIRE.md §2.3).
@@ -31,7 +30,7 @@ type hit struct {
 func (l *Loader) newWalker(base project.Path, bounds []string, req Request) *walker {
 	return &walker{
 		l: l, bounds: bounds, onPath: map[string]bool{},
-		from: base.Display, span: req.Span, bag: req.Bag,
+		from: base.Display, req: req,
 	}
 }
 
@@ -48,7 +47,7 @@ func (l *Loader) walkBounds() []string {
 // realOr is name resolved through the project's FS, or name itself when that FS cannot resolve
 // it: a bound or base that does not exist holds no link target, and one without links is itself.
 func (l *Loader) realOr(name string) string {
-	if real, err := project.EvalSymlinks(l.FS, name); err == nil {
+	if real, err := l.evalSymlinks(name); err == nil {
 		return real
 	}
 	return name
@@ -67,7 +66,7 @@ func within(real string, bounds []string) bool {
 // reportSkipped is W7115 for link name in directory rel, its variant chosen by the caller
 // (log "load.dir round 3").
 func (w *walker) reportSkipped(rel, name string, at func(source.Span, string) *diag.Builder) {
-	at(w.span, path.Join(w.from, rel, name)).Report(w.bag)
+	w.req.report(at(w.req.Span, path.Join(w.from, rel, name)))
 }
 
 // linkCause is W7115's variant for err, project.EvalSymlinks's own result, chosen by errors.Is, never OS text; anything else, an unresolvable FS included, falls to statFailed.
@@ -84,12 +83,12 @@ func linkCause(err error) func(source.Span, string) *diag.Builder {
 
 // resolveBase is base's directory, base.Abs itself when no link changed it: outside every bound it is W7115 with an empty match; a dangling or looping link is an error instead, E7004 at the caller.
 func (l *Loader) resolveBase(base project.Path, bounds []string, req Request) (real string, matched bool, err error) {
-	real, evalErr := project.EvalSymlinks(l.FS, base.Abs)
+	real, evalErr := l.evalSymlinks(base.Abs)
 	switch {
 	case evalErr == nil && (real == base.Abs || within(real, bounds)):
 		return real, true, nil
 	case evalErr == nil:
-		diag.W7115.AtOutsideRoots(req.Span, l.firstLinkedSegment(base)).Report(req.Bag)
+		req.report(diag.W7115.AtOutsideRoots(req.Span, l.firstLinkedSegment(base)))
 		return "", false, nil
 	case errors.Is(evalErr, fs.ErrNotExist), errors.Is(evalErr, project.ErrSymlinkLoop):
 		return "", false, evalErr
@@ -151,7 +150,7 @@ func (w *walker) classify(rel, real string, e fs.DirEntry) entryKind {
 	if e.Type()&fs.ModeSymlink == 0 {
 		return entryKind{isFile: e.Type().IsRegular(), isDir: e.IsDir(), real: child, ok: true}
 	}
-	target, err := project.EvalSymlinks(w.l.FS, child)
+	target, err := w.l.evalSymlinks(child)
 	switch {
 	case err != nil:
 		w.reportSkipped(rel, e.Name(), linkCause(err))
@@ -160,7 +159,7 @@ func (w *walker) classify(rel, real string, e fs.DirEntry) entryKind {
 		w.reportSkipped(rel, e.Name(), diag.W7115.AtOutsideRoots)
 		return entryKind{}
 	}
-	info, err := w.l.FS.Stat(target)
+	info, err := w.l.stat(target)
 	if err != nil {
 		w.reportSkipped(rel, e.Name(), diag.W7115.AtStatFailed)
 		return entryKind{}

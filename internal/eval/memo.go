@@ -1,6 +1,7 @@
 package eval
 
 import (
+	"slices"
 	"strings"
 	"sync"
 
@@ -10,19 +11,22 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// Memo keeps each `entry` declaration's evaluation for the evaluators of later snapshots, which
-// replay it: its steps, findings, marks and record. It is safe for concurrent use.
+// Memo keeps each `entry` declaration's evaluation, and each load's, for the evaluators of later
+// snapshots, which replay it: its steps, findings, marks and value. It keeps the stores of the
+// last few epochs, one per Recheck lineage. It is safe for concurrent use.
 type Memo struct {
-	mu  sync.Mutex
-	gen *memoGen
+	mu        sync.Mutex
+	gens      []*memoGen // the latest epoch used first
+	forgotten []uint64   // the latest epochs forgotten, whose stores are never made again
 }
 
-// memoGen is what a Memo keeps for one type-check epoch: the entries, the collections an
-// evaluator makes itself, shared so that the entries replayed name the same ones, and what
+// memoGen is what a Memo keeps for one type-check epoch: the entries and loads, the collections
+// an evaluator makes itself, shared so that the entries replayed name the same ones, and what
 // each file adds to an evaluator's indexes.
 type memoGen struct {
 	epoch   uint64
 	entries map[memoKey]*memoEntry
+	loads   map[loadKey]*loadEntry
 	colls   map[collKey]*types.Collection
 	indexed map[*syntax.File]fileIndex
 	refined map[*syntax.File][]typeAt
@@ -85,6 +89,7 @@ type memoUse struct {
 	trace  *entryTrace
 	reads  map[value.Value]*readInfo
 	stats  memoStats
+	loaded memoStats // the same counts for loads
 }
 
 // memoStats counts, for tests, the entries replayed, recorded and evaluated without a record.
@@ -97,9 +102,9 @@ func NewMemo() *Memo {
 	return &Memo{}
 }
 
-// UseMemo makes e, before it evaluates, replay and record its entries in m. Epoch rule: a new
-// epoch for every full check.Check, the same one only along one Session.Recheck lineage. A new
-// epoch drops all m kept; each call drops what the program no longer declares.
+// UseMemo makes e replay and record its entries and loads in m's store of epoch, dropping what the
+// program no longer declares; a forgotten epoch runs without. Epoch rule: a new epoch for every
+// full check.Check, the same one only along one Session.Recheck lineage.
 func (e *Evaluator) UseMemo(m *Memo, epoch uint64) {
 	if m == nil || e.prog == nil {
 		return
@@ -109,34 +114,66 @@ func (e *Evaluator) UseMemo(m *Memo, epoch uint64) {
 		decl: func(d *syntax.EntryDecl) bool { return x.decls[d] != nil },
 		file: func(f *syntax.File) bool { _, ok := x.pkg[f]; return ok },
 	}
+	g := m.begin(epoch, alive)
+	if g == nil {
+		return
+	}
 	e.memo = &memoUse{
-		m: m, gen: m.begin(epoch, alive),
+		m: m, gen: g,
 		layers: strings.Join(e.opt.Layers, layerSep),
 		reads:  map[value.Value]*readInfo{},
 	}
 	x.written.memo = e.memo
 }
 
-// begin is the store of epoch, emptied of what belongs to declarations and files gone.
+// begin is the store of epoch, made the most recent, emptied of what belongs to declarations and
+// files gone; nil for an epoch forgotten (a stale Recheck, a late UseMemo).
 func (m *Memo) begin(epoch uint64, alive liveness) *memoGen {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	if m.gen == nil || m.gen.epoch != epoch {
-		m.gen = &memoGen{
-			epoch: epoch, entries: map[memoKey]*memoEntry{}, colls: map[collKey]*types.Collection{},
+	if slices.Contains(m.forgotten, epoch) {
+		return nil
+	}
+	i := slices.IndexFunc(m.gens, func(g *memoGen) bool { return g.epoch == epoch })
+	if i < 0 {
+		g := &memoGen{
+			epoch: epoch, entries: map[memoKey]*memoEntry{}, loads: map[loadKey]*loadEntry{},
+			colls:   map[collKey]*types.Collection{},
 			indexed: map[*syntax.File]fileIndex{}, refined: map[*syntax.File][]typeAt{},
 		}
-		return m.gen
+		m.gens = append([]*memoGen{g}, m.gens[:min(len(m.gens), memoEpochs-1)]...)
+		return g
 	}
-	for k, en := range m.gen.entries { //canon:unordered deleting the dead ones, in any order
+	g := m.gens[i]
+	m.gens = slices.Insert(slices.Delete(m.gens, i, i+1), 0, g)
+	for k, en := range g.entries { //canon:unordered deleting the dead ones, in any order
 		if !alive.decl(k.decl) {
-			m.gen.bytes -= en.size
-			delete(m.gen.entries, k)
+			g.bytes -= en.size
+			delete(g.entries, k)
 		}
 	}
-	dropFiles(m.gen.indexed, alive.file)
-	dropFiles(m.gen.refined, alive.file)
-	return m.gen
+	g.dropLoads(alive.file)
+	dropFiles(g.indexed, alive.file)
+	dropFiles(g.refined, alive.file)
+	return g
+}
+
+// Forget drops the store of epoch, which no lineage continues, and makes none for it again; an
+// evaluator using it keeps it (log-2026-09-29 M4 P3-r).
+func (m *Memo) Forget(epoch uint64) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.gens = slices.DeleteFunc(m.gens, func(g *memoGen) bool { return g.epoch == epoch })
+	if !slices.Contains(m.forgotten, epoch) {
+		m.forgotten = append(m.forgotten[max(len(m.forgotten)-memoForgotten+1, 0):], epoch)
+	}
+}
+
+// Kept reports that m holds a store for epoch.
+func (m *Memo) Kept(epoch uint64) bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return slices.ContainsFunc(m.gens, func(g *memoGen) bool { return g.epoch == epoch })
 }
 
 // dropFiles deletes the files of cache no longer alive.
@@ -191,9 +228,11 @@ func (u *memoUse) store(k memoKey, en *memoEntry) {
 	g := u.gen
 	if old := g.entries[k]; old != nil {
 		g.bytes -= old.size
+		delete(g.entries, k)
 	}
-	if len(g.entries) >= memoCap || g.bytes+en.size > memoBytes {
-		g.entries, g.bytes = map[memoKey]*memoEntry{}, 0
+	if !u.m.admit(g, en.size, len(g.entries) >= memoCap) {
+		u.stats.unkept++
+		return
 	}
 	g.entries[k] = en
 	g.bytes += en.size

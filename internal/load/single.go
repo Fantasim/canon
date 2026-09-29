@@ -35,7 +35,7 @@ func (l *Loader) resolvePath(path string, req Request) (project.Path, bool) {
 
 // statFile is p's existence check: a directory or non-regular file (a FIFO could hang) refuses too (WIRE.md §6.1).
 func (l *Loader) statFile(p project.Path, req Request) bool {
-	info, err := l.FS.Stat(p.Abs)
+	info, err := l.stat(p.Abs)
 	switch {
 	case err != nil:
 		diag.E7004.At(req.Span, p.Display, causeOf(err)).Report(req.Bag)
@@ -57,16 +57,6 @@ func (l *Loader) resolveFile(path string, req Request) (project.Path, bool) {
 		return project.Path{}, false
 	}
 	return p, true
-}
-
-// readBytes reads p's file, already resolved and stat'd by resolveFile.
-func (l *Loader) readBytes(p project.Path, req Request) ([]byte, bool) {
-	data, err := l.FS.ReadFile(p.Abs)
-	if err != nil {
-		diag.E7004.At(req.Span, p.Display, causeOf(err)).Report(req.Bag)
-		return nil, false
-	}
-	return data, true
 }
 
 // bare runs the plain `load(path)` form, decoded per its own format, path resolved first so E7007 names it (WIRE.md §6.1).
@@ -105,13 +95,8 @@ func (l *Loader) bare(ctx context.Context, req Request, e *syntax.LoadExpr, t ty
 
 // bareJSON decodes p as JSON against t, applying `at:` first when given (WIRE.md §6.3).
 func (l *Loader) bareJSON(ctx context.Context, req Request, c parsedCall, p project.Path, t types.Type) (value.Value, bool, error) {
-	data, ok := l.readBytes(p, req)
+	src, data, ok := l.readSource(p.Display, p.Abs, req)
 	if !ok {
-		return nil, false, nil
-	}
-	src, err := l.Set.Add(p.Display, p.Abs, data)
-	if err != nil {
-		diag.E7004.At(req.Span, p.Display, causeOf(err)).Report(req.Bag)
 		return nil, false, nil
 	}
 	root, err := jsonsrc.Parse(src, req.Bag)
@@ -167,13 +152,8 @@ func (l *Loader) text(_ context.Context, req Request, e *syntax.LoadExpr, t type
 
 // readText reads p's bytes as a String, a BOM removed, nothing else trimmed (WIRE.md §6.7).
 func (l *Loader) readText(p project.Path, req Request) (string, source.Span, bool) {
-	data, ok := l.readBytes(p, req)
+	src, data, ok := l.readSource(p.Display, p.Abs, req)
 	if !ok {
-		return "", source.Span{}, false
-	}
-	src, err := l.Set.Add(p.Display, p.Abs, data)
-	if err != nil {
-		diag.E7004.At(req.Span, p.Display, causeOf(err)).Report(req.Bag)
 		return "", source.Span{}, false
 	}
 	start, ok := checkUTF8(src, data, p.Display, req)
@@ -233,13 +213,8 @@ func decodeCSV(ctx context.Context, req Request, c parsedCall, res csvRows, t ty
 
 // readCSV reads p's raw bytes as RFC 4180 records, every cell located in the file (WIRE.md §6.6).
 func (l *Loader) readCSV(p project.Path, req Request) (csvRows, bool) {
-	data, ok := l.readBytes(p, req)
+	src, data, ok := l.readSource(p.Display, p.Abs, req)
 	if !ok {
-		return csvRows{}, false
-	}
-	src, err := l.Set.Add(p.Display, p.Abs, data)
-	if err != nil {
-		diag.E7004.At(req.Span, p.Display, causeOf(err)).Report(req.Bag)
 		return csvRows{}, false
 	}
 	start, ok := checkUTF8(src, data, p.Display, req)

@@ -35,7 +35,7 @@ func (l *Loader) dir(ctx context.Context, req Request, e *syntax.LoadExpr, t typ
 		return nil, false, nil
 	}
 	if len(matches) == 0 {
-		diag.W7107.At(req.Span, c.path).Report(req.Bag)
+		req.report(diag.W7107.At(req.Span, c.path))
 	}
 	if ok, err := l.checkFormats(matches, forcedJSON, req); err != nil || !ok {
 		return nil, false, err
@@ -146,14 +146,8 @@ func (l *Loader) readFiles(matches []matchFile, at *string, req Request) ([]wire
 
 // readFile reads, then parses one matched file into wire's per-file selection.
 func (l *Loader) readFile(m matchFile, at *string, req Request) (*wire.File, bool) {
-	data, err := l.FS.ReadFile(m.Abs)
-	if err != nil {
-		diag.E7004.At(req.Span, m.Display, causeOf(err)).Report(req.Bag)
-		return nil, false
-	}
-	src, err := l.Set.Add(m.Display, m.Abs, data)
-	if err != nil {
-		diag.E7004.At(req.Span, m.Display, causeOf(err)).Report(req.Bag)
+	src, data, ok := l.readSource(m.Display, m.Abs, req)
+	if !ok {
 		return nil, false
 	}
 	root, err := jsonsrc.Parse(src, req.Bag)
@@ -162,7 +156,6 @@ func (l *Loader) readFile(m matchFile, at *string, req Request) (*wire.File, boo
 	}
 	sel := wire.Selection{Node: root}
 	if at != nil {
-		var ok bool
 		if sel, ok = applyAt(root, *at, req); !ok {
 			return nil, false
 		}

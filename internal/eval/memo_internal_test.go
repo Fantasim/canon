@@ -36,10 +36,10 @@ func TestMemoNotesCode(t *testing.T) {
 	ev := New(prog, nil, bags, Options{})
 	m := NewMemo()
 	ev.UseMemo(m, 1)
-	if _, ok := ev.Force(ctx, Root{Pkg: "a", Name: "items"}); !ok || len(m.gen.entries) != 1 {
-		t.Fatalf("items: forced %t, %d entries kept", ok, len(m.gen.entries))
+	if _, ok := ev.Force(ctx, Root{Pkg: "a", Name: "items"}); !ok || len(m.gens[0].entries) != 1 {
+		t.Fatalf("items: forced %t, %d entries kept", ok, len(m.gens[0].entries))
 	}
-	for _, en := range m.gen.entries { //canon:unordered one entry
+	for _, en := range m.gens[0].entries { //canon:unordered one entry
 		for _, f := range files[:2] {
 			if !slices.Contains(en.files, f) {
 				t.Errorf("%s: not noted", f.Src.Path)
@@ -48,7 +48,7 @@ func TestMemoNotesCode(t *testing.T) {
 	}
 }
 
-// IMPLEMENTATION-PLAN §7.6: a memo keeps one epoch, less the declarations and files gone.
+// IMPLEMENTATION-PLAN §7.6: a memo keeps each epoch's store apart, less the declarations and files gone.
 func TestMemoBegin(t *testing.T) {
 	live, gone := &syntax.EntryDecl{}, &syntax.EntryDecl{}
 	kept, dropped := &syntax.File{}, &syntax.File{}
@@ -71,6 +71,56 @@ func TestMemoBegin(t *testing.T) {
 	}
 	if u.gen = m.begin(2, alive); u.lookup(memoKey{decl: live}) != nil || len(u.gen.indexed) != 0 {
 		t.Errorf("new epoch: want nothing kept")
+	}
+	if u.gen = m.begin(1, alive); u.lookup(memoKey{decl: live}) == nil {
+		t.Errorf("first epoch again: want its store kept beside the second's")
+	}
+	for epoch := uint64(3); epoch < 3+memoEpochs; epoch++ {
+		m.begin(epoch, alive)
+	}
+	if u.gen = m.begin(1, alive); u.lookup(memoKey{decl: live}) != nil || len(m.gens) != memoEpochs {
+		t.Errorf("past memoEpochs newer epochs: want the first one's store dropped, %d kept", len(m.gens))
+	}
+	u.store(memoKey{decl: live}, &memoEntry{size: memoNodeBytes})
+	if m.Forget(1); m.begin(1, alive) != nil || len(m.gens) != memoEpochs-1 {
+		t.Errorf("forgotten epoch (log-2026-09-29 M4 P3-r): want its store dropped and never made again")
+	}
+}
+
+// IMPLEMENTATION-PLAN §7.6: the stores together stay within memoAllBytes, the least recent emptied first.
+func TestMemoBoundAllEpochs(t *testing.T) {
+	m := NewMemo()
+	var uses []*memoUse
+	for epoch := range uint64(memoAllBytes/memoBytes + 1) {
+		u := &memoUse{m: m, gen: m.begin(epoch, liveness{})}
+		u.store(memoKey{decl: &syntax.EntryDecl{}}, &memoEntry{size: memoBytes})
+		uses = append(uses, u)
+	}
+	if uses[0].gen.bytes != 0 || uses[len(uses)-1].gen.bytes != memoBytes || uses[1].gen.bytes != memoBytes {
+		t.Errorf("past memoAllBytes: want the least recent store emptied, the others kept")
+	}
+}
+
+// IMPLEMENTATION-PLAN §7.6 (log-2026-09-29 M4 P3-r): after a store is emptied the memo stays within memoAllBytes.
+func TestMemoBoundAfterForget(t *testing.T) {
+	m := NewMemo()
+	sizes := []int{memoBytes, memoBytes - memoNodeBytes, memoNodeBytes}
+	uses := make([]*memoUse, len(sizes))
+	for i, size := range sizes {
+		uses[i] = &memoUse{m: m, gen: m.begin(uint64(i), liveness{})}
+		uses[i].store(memoKey{decl: &syntax.EntryDecl{}}, &memoEntry{size: size})
+	}
+	last := uses[len(uses)-1]
+	last.store(memoKey{decl: &syntax.EntryDecl{}}, &memoEntry{size: memoBytes})
+	total := 0
+	for _, g := range m.gens {
+		total += g.bytes
+	}
+	if total > memoAllBytes || uses[0].gen.bytes != 0 || last.gen.bytes != memoBytes {
+		t.Errorf("%d bytes kept, %d in the least recent store: want at most %d, it emptied", total, uses[0].gen.bytes, memoAllBytes)
+	}
+	if last.store(memoKey{decl: &syntax.EntryDecl{}}, &memoEntry{size: memoBytes + 1}); last.stats.unkept != 1 || last.gen.bytes != memoBytes {
+		t.Errorf("an entry past memoBytes: want it not kept, the store unchanged")
 	}
 }
 

@@ -48,15 +48,6 @@ type snapshot struct {
 	base   source.FileID     // the set's last file when the snapshot began
 }
 
-// loadLock is what one run's loads hold while they add to the set: the cache generation's, which
-// every snapshot sharing the set takes, else one of the run's own.
-func (s *snapshot) loadLock() loadSem {
-	if s.gen == nil {
-		return make(loadSem, 1)
-	}
-	return s.gen.loads
-}
-
 // add is a file of the snapshot's set: the cache's when it holds that content, else added.
 func (s *snapshot) add(display, abs string, content []byte) (*source.File, error) {
 	if s.gen == nil {

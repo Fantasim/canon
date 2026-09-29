@@ -31,6 +31,16 @@ const (
 	optionPrefix = "prefix"
 )
 
+// callKind is a file-system call a recorded load makes (memo.go).
+type callKind uint8
+
+const (
+	callStat callKind = iota
+	callList
+	callLink
+	callSource
+)
+
 // magicChars start a glob's pattern part; the segments before it are a literal path (WIRE.md §6.5).
 const magicChars = "*?[{"
 
