@@ -142,9 +142,12 @@ func (r *run) intKey(s site, key string, kt types.Type) (int64, bool) {
 		return 0, false
 	}
 	i, err := strconv.ParseInt(key, decimalBase, float64Bits)
-	if err != nil || !fits(i, kt) {
+	switch {
+	case err != nil:
 		r.report(diag.E3201.At(s.span, literal(key), kt), s.node)
 		return 0, false
+	case !fits(i, kt):
+		return i, r.soft(diag.E3201.At(s.span, literal(key), kt), s.node)
 	}
 	return i, true
 }

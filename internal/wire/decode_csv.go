@@ -161,12 +161,11 @@ func (r *run) required(fields []*types.Field, elem types.Type, c columns, table 
 	ok := true
 	for i, f := range fields {
 		if c.of[i] < 0 && !c.refused[i] && f.Input == nil && f.Pairs == nil && f.Default == nil && f.Type.Kind() != types.Optional {
-			r.report(diag.E3302.At(c.span, elem, f.Name), nil)
-			ok = false
+			ok = r.soft(diag.E3302.At(c.span, elem, f.Name), nil) && ok
 		}
 	}
 	if table && c.id < 0 {
-		r.report(diag.E3302.At(c.span, elem, KeyID), nil)
+		r.report(diag.E3302.At(c.span, elem, KeyID), nil) // no `$id` column: no key to keep
 		ok = false
 	}
 	return ok
@@ -226,10 +225,13 @@ func (r *run) csvField(row []Cell, j int, f *types.Field, i int, fr *frame) bool
 	}
 	if j < 0 || j >= len(row) || row[j].Text == "" {
 		v, required := r.fill(f, rv, fr, rv.P)
-		if required && j >= 0 && j < len(row) {
-			r.report(diag.E3302.At(row[j].Span, rv.T, f.Name), nil)
-		}
 		rv.Fields[i] = v
+		switch {
+		case required && j >= 0 && j < len(row):
+			return r.soft(diag.E3302.At(row[j].Span, rv.T, f.Name), nil)
+		case required:
+			return r.d.Keep // reported once, at the header
+		}
 		return v != nil
 	}
 	cell := row[j]
@@ -330,8 +332,11 @@ func (r *run) cellInt(c Cell, t types.Type, _ wscope) value.Value {
 		return r.unparsed(c, t)
 	}
 	i, err := strconv.ParseInt(text, decimalBase, float64Bits)
-	if err != nil || !fits(i, t) {
+	switch {
+	case err != nil:
 		r.report(diag.E3201.At(c.Span, literal(c.Text), t), nil)
+		return nil
+	case !fits(i, t) && !r.soft(diag.E3201.At(c.Span, literal(c.Text), t), nil):
 		return nil
 	}
 	return &value.Int{V: i, T: t, P: cellAt(c).prov()}

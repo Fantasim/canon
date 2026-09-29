@@ -212,7 +212,7 @@ func (r *run) stem(f File, first map[string]source.Span) bool {
 	case !isWord(f.Stem):
 		r.report(diag.E7114.At(f.At, f.Stem), nil)
 	case dup:
-		r.report(diag.E3102.AtKey(f.At, literal(f.Stem), at), nil)
+		return r.soft(diag.E3102.AtKey(f.At, literal(f.Stem), at), nil) // kept: both entries stay
 	default:
 		first[f.Stem] = f.At
 		return true
@@ -275,8 +275,7 @@ func (r *run) distinct(seen map[string]string, k value.Value, m *jsonsrc.Member)
 		return true
 	}
 	if first, dup := seen[text]; dup {
-		r.report(diag.E3317.At(m.KeySpan, literal(first), literal(m.Key), text), m.Value)
-		return false
+		return r.soft(diag.E3317.At(m.KeySpan, literal(first), literal(m.Key), text), m.Value) // kept: both keys stay
 	}
 	seen[text] = m.Key
 	return true

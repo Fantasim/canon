@@ -50,9 +50,12 @@ func (r *run) intToken(n *jsonsrc.Node, t types.Type) (int64, bool) {
 		return 0, false
 	}
 	i, err := strconv.ParseInt(n.Text, decimalBase, float64Bits)
-	if err != nil || !fits(i, t) {
+	switch {
+	case err != nil:
 		r.report(diag.E3201.At(n.Span, literal(n.Text), t), n)
 		return 0, false
+	case !fits(i, t):
+		return i, r.soft(diag.E3201.At(n.Span, literal(n.Text), t), n)
 	}
 	return i, true
 }
@@ -85,6 +88,9 @@ func (r *run) floatOf(s site, text string, t types.Type) (float64, bool) {
 	bits := floatBits(t)
 	x, _ := strconv.ParseFloat(text, bits)
 	if math.IsInf(x, 0) {
+		if wide, _ := strconv.ParseFloat(text, float64Bits); r.d.Keep && !math.IsInf(wide, 0) {
+			return wide, r.soft(overflowFinding(s, text, bits), s.node) // a Float32 overflow, kept whole
+		}
 		r.overflow(s, text, bits)
 		return 0, false
 	}
@@ -96,11 +102,15 @@ func (r *run) floatOf(s site, text string, t types.Type) (float64, bool) {
 
 // overflow is E3202 for a number beyond the largest finite Float or Float32.
 func (r *run) overflow(s site, text string, bits int) {
-	b := diag.E3202.AtNonFinite(s.span, literal(text))
+	r.report(overflowFinding(s, text, bits), s.node)
+}
+
+// overflowFinding is E3202 for a number beyond the largest finite float of bits.
+func overflowFinding(s site, text string, bits int) *diag.Builder {
 	if bits == float32Bits {
-		b = diag.E3202.AtFloat32(s.span, literal(text))
+		return diag.E3202.AtFloat32(s.span, literal(text))
 	}
-	r.report(b, s.node)
+	return diag.E3202.AtNonFinite(s.span, literal(text))
 }
 
 func (r *run) str(sel Selection, t types.Type, _ wscope) value.Value {

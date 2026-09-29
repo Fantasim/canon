@@ -40,6 +40,7 @@ type Decoder struct {
 	Pkg     string            // whose names findings print unqualified
 	Host    Host              // nil: a default or a dereference is ErrNoHost
 	Partial bool              // WIRE.md §6.4
+	Keep    bool              // report E3302, E3201, E3202, E3102 and E3317 but keep the value (API.md V2)
 	Coll    *types.Collection // what a whole decoded table or keyed list is (TYPES.md §6.3)
 	Outer   Outer             // what the decoded value's type arguments name around it
 }
@@ -183,6 +184,20 @@ func (r *run) report(b *diag.Builder, n *jsonsrc.Node) {
 	}
 	b.Report(r.d.Bag)
 	r.failed = true
+}
+
+// soft reports a finding about the value that the re-check owns: with Decoder.Keep the decode
+// goes on and keeps the value, which soft reports; without, it is report.
+func (r *run) soft(b *diag.Builder, n *jsonsrc.Node) bool {
+	if !r.d.Keep {
+		r.report(b, n)
+		return false
+	}
+	if n != nil {
+		b.Pointer(n.Pointer())
+	}
+	b.Report(r.d.Bag)
+	return true
 }
 
 // mismatch is E7110: n is not of the JSON kind t needs (WIRE.md §5).

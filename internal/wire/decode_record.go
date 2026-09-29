@@ -213,8 +213,7 @@ func (r *run) present(n *jsonsrc.Node, f *types.Field, fr *frame) value.Value {
 func (r *run) absent(n *jsonsrc.Node, f *types.Field, i int, rv *value.Record, fr *frame) bool {
 	v, required := r.fill(f, rv, fr, prov(n))
 	if required {
-		r.report(diag.E3302.At(n.Span, rv.T, f.Name), n)
-		return false
+		return r.soft(diag.E3302.At(n.Span, rv.T, f.Name), n) // kept: the field stays nil, not Set
 	}
 	rv.Fields[i] = v
 	return v != nil

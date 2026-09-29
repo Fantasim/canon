@@ -53,3 +53,39 @@ func (e *PathError) Error() string {
 }
 
 func (e *PathError) Unwrap() error { return e.Err }
+
+// Refusals of operations and their values; the API wraps each as its own (API.md §15).
+var (
+	ErrBadValue = errors.New("value does not fit the type")
+	ErrBadOp    = errors.New("operation not valid here")
+	ErrNoHost   = errors.New("typer without a host")
+)
+
+// ValueError is an operation value that does not fit the type expected where it goes
+// (API.md V1); it wraps ErrBadValue, and the API adds the op and the path.
+type ValueError struct {
+	Expected string // canonical type text
+	Got      string // what was given
+	Detail   string
+}
+
+func (e *ValueError) Error() string {
+	text := fmt.Sprintf(fmtValueError, ErrBadValue, e.Expected, e.Got)
+	if e.Detail != "" {
+		text += detailSep + e.Detail
+	}
+	return text
+}
+
+func (e *ValueError) Unwrap() error { return ErrBadValue }
+
+// The JSON form of an operation (API.md §8.8).
+var (
+	ErrOpJSON = errors.New("invalid operation JSON")
+	ErrNoText = errors.New("value has no source text")
+
+	errUnknownOp  = errors.New("unknown operation")
+	errNotString  = errors.New("not a JSON string")
+	errNotInteger = errors.New("not an integer")
+	errEmptyCase  = errors.New("empty case name")
+)
