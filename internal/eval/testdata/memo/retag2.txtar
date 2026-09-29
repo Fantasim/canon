@@ -1,0 +1,32 @@
+EVALUATION.md §4.2, DECISIONS 79, 195: as retag.txtar, the value read forced by the entry and read
+again after it: the identities the entry set in place stay on its nodes (reviewer's probe).
+-- memo --
+stored 0 unkept 1
+-- a/a.canon --
+/// A.
+package a
+
+/// A tag.
+record Tag {
+  /// Name.
+  name: String
+}
+
+/// An item.
+record Item {
+  /// Tags.
+  tags: [Tag] keyed by name = []
+}
+
+/// Items.
+let items: table Item = {}
+
+/// Base tags.
+let base: [Tag] = [{ name: "x" }, { name: "y" }]
+
+/// Reads base after.
+let names: [Tag] = base
+-- a/e1.canon --
+package a
+
+entry items.one { tags: base }

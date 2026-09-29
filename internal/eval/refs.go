@@ -75,7 +75,7 @@ func (r *run) collValue(ref *value.Ref, c *types.Collection, at, loc syntax.Node
 			r.bug(at)
 			return nil
 		}
-		v, ok := r.ev.force(r.ctx, st, r, at)
+		v, ok := r.forceRead(st, at)
 		if !ok {
 			r.readPoisoned(c.Pkg, c.Name, at)
 			return nil

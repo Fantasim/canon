@@ -124,7 +124,7 @@ func (e *Evaluator) markLoaded(v value.Value, t types.Type) {
 			continue
 		}
 		if std.IsDependent(branchBase(p.t)) {
-			e.written[p.v] = true
+			e.written[p.v], e.gens.written = true, e.gens.written+1
 			continue
 		}
 		stack = append(stack, loadedParts(p.v, p.t)...)
@@ -220,7 +220,7 @@ func (r *run) bare(rec *value.Record) (*types.Field, bool) {
 // literal marks v, a literal token evaluated for a dependent field, kept as written (TYPES.md §11.4).
 func (r *run) literal(v value.Value) value.Value {
 	if v != nil && r.dep != nil && r.ev.dependent(r.dep.field) {
-		r.ev.written[v] = true
+		r.ev.written[v], r.ev.gens.written = true, r.ev.gens.written+1
 	}
 	return v
 }

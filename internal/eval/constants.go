@@ -125,3 +125,26 @@ const vectorCap int64 = 1_000_000
 
 // maxSafeInt is the largest integer TypeScript holds exactly, ±(2^53 − 1) (CONFORMANCE.md §4).
 const maxSafeInt = 1<<53 - 1
+
+// A memo's bounds on one epoch's entries and their approximate bytes (the peak RSS target); the
+// bytes counted per value, read or finding an entry keeps, as retained on the benchmark project;
+// the separator of the layers in its keys.
+const (
+	memoCap       = 1 << 20
+	memoBytes     = 256 << 20
+	memoNodeBytes = 170
+	layerSep      = ","
+)
+
+// The outcomes of a replay's step, then the tags a fingerprint writes (memo_replay.go, memo_fp.go).
+const (
+	replayOn replayOutcome = iota
+	replayStop
+	replayMiss
+)
+
+const (
+	fpNil = iota
+	fpBack
+	fpNone
+)

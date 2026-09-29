@@ -109,11 +109,19 @@ type writtenIndex struct {
 	prog  *check.Program
 	built bool
 	at    map[*types.Refined]written
+	memo  *memoUse // keeps each file's types across the evaluators of an epoch
 }
 
 type written struct {
 	decl, arg source.Span
 	has       bool
+}
+
+// typeAt is a type a file writes, where it is declared and what E3204 quotes; syntax only, so
+// a memo may keep it across programs.
+type typeAt struct {
+	t         syntax.Type
+	decl, arg source.Span
 }
 
 func (w *writtenIndex) of(x *types.Refined) written {
@@ -126,18 +134,30 @@ func (w *writtenIndex) of(x *types.Refined) written {
 	return w.at[x]
 }
 
+// build indexes each refinement at its first place in the program.
 func (w *writtenIndex) build() {
 	w.built, w.at = true, map[*types.Refined]written{}
 	for _, pkg := range w.prog.Packages {
 		for _, f := range pkg.Files {
-			w.file(f)
+			w.merge(cachedFile(w.memo, filesRefined, f, typesIn))
 		}
 	}
 }
 
-// file indexes the refinements written in f, each at its first place.
-func (w *writtenIndex) file(f *syntax.File) {
+// merge indexes the refinements of one file's types not written in an earlier place.
+func (w *writtenIndex) merge(ts []typeAt) {
+	for _, ta := range ts {
+		x, ok := w.prog.Info.TypeExprs[ta.t].(*types.Refined)
+		if _, seen := w.at[x]; ok && !seen {
+			w.at[x] = written{decl: ta.decl, arg: ta.arg, has: true}
+		}
+	}
+}
+
+// typesIn is the types f writes, in order, each with the field or let declaring it, else itself.
+func typesIn(f *syntax.File) []typeAt {
 	owner := map[syntax.Type]source.Span{}
+	var out []typeAt
 	syntax.Inspect(f, func(n syntax.Node) bool {
 		switch d := n.(type) {
 		case *syntax.FieldDecl:
@@ -147,22 +167,15 @@ func (w *writtenIndex) file(f *syntax.File) {
 				owner[d.Type] = f.Span(d.Name).Cover(f.Span(d.Type))
 			}
 		case syntax.Type:
-			w.add(f, d, owner)
+			decl, named := owner[d]
+			if !named {
+				decl = f.Span(d)
+			}
+			out = append(out, typeAt{t: d, decl: decl, arg: f.Span(refinementArg(d))})
 		}
 		return true
 	})
-}
-
-func (w *writtenIndex) add(f *syntax.File, t syntax.Type, owner map[syntax.Type]source.Span) {
-	x, ok := w.prog.Info.TypeExprs[t].(*types.Refined)
-	if _, seen := w.at[x]; !ok || seen {
-		return
-	}
-	decl, named := owner[t]
-	if !named {
-		decl = f.Span(t)
-	}
-	w.at[x] = written{decl: decl, arg: f.Span(refinementArg(t)), has: true}
+	return out
 }
 
 // refinementArg is what E3204 and E3206 quote: the predicate of a where, else the first

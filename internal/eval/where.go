@@ -13,7 +13,7 @@ func (e *Evaluator) Where(ctx context.Context, p *types.Predicate, it value.Valu
 	if p == nil || p.Expr == nil || e.info == nil {
 		return false, false
 	}
-	file := e.index.file[p.Expr]
+	file := e.fileOf(p.Expr)
 	r := e.newRun(ctx, charge{pkg: e.index.pkg[file]}, file)
 	r.free = true
 	r.fr.it = it
@@ -27,7 +27,8 @@ func (e *Evaluator) Where(ctx context.Context, p *types.Predicate, it value.Valu
 
 // where runs a refinement's predicate at a storage point in its implicit frame (EVALUATION.md §12.1, DECISIONS 210).
 func (r *run) where(p *types.Predicate, v value.Value) (bool, bool) {
-	file := r.ev.index.file[p.Expr]
+	file := r.ev.fileOf(p.Expr)
+	r.noteCode(file)
 	saved := r.fr
 	r.fr = (&frame{vars: map[check.Object]value.Value{}, it: v, file: file, pkg: r.ev.index.pkg[file], decl: true}).under(saved)
 	defer func() { r.fr = saved }()

@@ -148,6 +148,7 @@ func evalLoad(r *run, e syntax.Expr, at *vpath) value.Value {
 		r.bug(e)
 		return nil
 	}
+	r.voidTrace() // what a load reads is not a value a memo can compare
 	t, outer, cx := r.typeOf(e), r.ev.loading, r.depAt(e)
 	r.ev.loading = &loadSite{r: r, at: e, coll: r.hint(at), cx: cx}
 	v, ok := r.ev.host.Load(r.ctx, e.(*syntax.LoadExpr), t)

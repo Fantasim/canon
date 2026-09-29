@@ -36,6 +36,7 @@ func evalTyped(r *run, e syntax.Expr, at *vpath) value.Value {
 // recordLit builds a record or case instance, an application R(args) binding its arguments (TYPES.md §11.1).
 func (r *run) recordLit(lit *syntax.BraceLit, loc syntax.Node, t types.Type, ident *value.Identity, at *vpath) value.Value {
 	fields := fieldsOf(t)
+	r.noteType(t)
 	rec := &value.Record{
 		T: t.Base(), Fields: make([]value.Value, len(fields)), Set: make([]bool, len(fields)),
 		Ident: ident, P: r.prov(loc, value.ProvLiteral),
@@ -206,6 +207,7 @@ func (r *run) defaultValue(rec *value.Record, f *types.Field, at *vpath, via *va
 	saved, dep := r.fr, r.dep
 	r.fr = (&frame{vars: map[check.Object]value.Value{}, self: rec, file: r.ev.declFile(rec.T), decl: true}).under(saved)
 	r.fr.pkg = r.ev.index.pkg[r.fr.file]
+	r.noteCode(r.fr.file)
 	r.dep = &depCtx{rec: rec, params: r.ev.boundParams(rec), field: f.Type, at: f.Default}
 	defer func() { r.fr, r.dep = saved, dep }()
 	if !r.nest(r.span(f.Default)) {
@@ -229,11 +231,11 @@ func (r *run) bareCase(ct *types.CaseType, at syntax.Expr) value.Value {
 func (e *Evaluator) declFile(t types.Type) *syntax.File {
 	switch x := t.Base().(type) {
 	case *types.RecordType:
-		return e.index.file[x.Decl]
+		return e.fileOf(x.Decl)
 	case *types.AppliedRecord:
-		return e.index.file[x.Rec.Decl]
+		return e.fileOf(x.Rec.Decl)
 	case *types.CaseType:
-		return e.index.file[x.Variant.Decl]
+		return e.fileOf(x.Variant.Decl)
 	}
 	return nil
 }

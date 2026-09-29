@@ -174,10 +174,26 @@ func runBuildWith(t testing.TB, p *program, opt eval.Options, load loader, selec
 	b := &build{prog: p, bags: check.Bags{}, values: map[eval.Root]value.Value{}}
 	fold := eval.NewFolder(b.bags, opt)
 	b.checked = check.Check(ctx, exampleProject(), p.files, b.bags, fold)
-	h := &host{load: load}
+	b.evaluate(ctx, &host{load: load}, opt, selected, nil)
+	if err := errors.Join(b.ev.Err(), eval.FoldErr(fold)); err != nil {
+		t.Errorf("internal error: %v", err)
+	}
+	return b
+}
+
+// evaluate runs stages A to D over the checked program with a new evaluator, which use may
+// set up first; the roots of b.order, if any, are forced before the forced set.
+func (b *build) evaluate(ctx context.Context, h *host, opt eval.Options, selected []string, use func(*eval.Evaluator)) {
 	b.ev = eval.New(b.checked, h, b.bags, opt)
+	if use != nil {
+		use(b.ev)
+	}
 	h.ev = b.ev
 	h.verifier = verify.New(b.ev, b.checked, b.bags, nil)
+	for _, root := range b.order {
+		b.ev.Force(ctx, root)
+	}
+	b.order = nil
 	pkgs := b.selected(selected)
 	for _, pkg := range pkgs {
 		for _, obj := range pkg.Decls {
@@ -190,10 +206,6 @@ func runBuildWith(t testing.TB, p *program, opt eval.Options, load loader, selec
 	}
 	b.ev.BeginVerification(ctx)
 	b.stagesCD(ctx, pkgs)
-	if err := errors.Join(b.ev.Err(), eval.FoldErr(fold)); err != nil {
-		t.Errorf("internal error: %v", err)
-	}
-	return b
 }
 
 func (b *build) selected(names []string) []*check.Package {

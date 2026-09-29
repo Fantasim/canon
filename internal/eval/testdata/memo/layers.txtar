@@ -1,0 +1,49 @@
+EVALUATION.md §9.3 (LAY-02), §13; IMPLEMENTATION-PLAN §7.6: the active layers are part of an
+entry's memo key; the entries replayed are amended after, on copies, as evaluated ones are. With
+dev active, `one` reads an amended value, whose history a replay does not compare: it is not kept.
+-- memo --
+stored 1 unkept 1
+-- layers --
+dev
+-- a/a.canon --
+/// A.
+package a
+
+/// A configuration.
+record Conf {
+  /// K.
+  k: Int = 3
+}
+
+/// The configuration.
+let conf: Conf = {}
+
+/// An item.
+record Item {
+  /// Cost.
+  cost: Int = 5
+  /// Twice the cost.
+  twice: Int = cost * 2
+}
+
+/// Items.
+let items: table Item = {}
+-- a/e1.canon --
+package a
+
+entry items.one { cost: conf.k * 2 }
+-- a/e2.canon --
+package a
+
+entry items.two { cost: 7 }
+-- a/dev.canon --
+package a
+layer dev
+
+amend conf {
+  k: 4
+}
+
+amend items {
+  two.cost: 8
+}

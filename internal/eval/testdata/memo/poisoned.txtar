@@ -1,0 +1,30 @@
+EVALUATION.md §7.1, §7.2 (EVL-05), §12.2 (EVL-03); IMPLEMENTATION-PLAN §7.6: an entry that stops on
+a hard error (E4002) is kept with its finding; its replay reports it and poisons the table again.
+-- memo --
+stored 2 unkept 0
+-- a/a.canon --
+/// A.
+package a
+
+/// Costs.
+local let costs: [Int] = [1, 2]
+
+/// An item.
+record Item {
+  /// Cost.
+  cost: Int = 5
+}
+
+/// Items.
+let items: table Item = {}
+
+/// Reads the items.
+let first: Int = items.good.cost
+-- a/e1.canon --
+package a
+
+entry items.good { cost: costs[0] }
+-- a/e2.canon --
+package a
+
+entry items.bad { cost: costs[5] }

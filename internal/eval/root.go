@@ -51,15 +51,30 @@ func (r *run) addEntries(st *rootState, v value.Value, coll *types.Collection, a
 	return appendEntries(v, added)
 }
 
-// entryDecl builds one declared entry, in its own file; a keyed list's key field is its key.
+// entryDecl builds one declared entry in its own file, or replays it (IMPLEMENTATION-PLAN §7.6).
 func (r *run) entryDecl(d *syntax.EntryDecl, file *syntax.File, t types.Type, coll *types.Collection, at *vpath) *value.Record {
-	elem, keyed, _ := collectionOf(t)
 	saved := r.fr
 	r.fr = r.ev.rootFrame(file).under(saved.caller)
 	defer func() { r.fr = saved }()
 	if !r.step(d.Value) {
 		return nil
 	}
+	key, memo := r.memoKey(d, t, coll, saved)
+	if !memo {
+		return r.buildEntry(d, t, coll, at)
+	}
+	if rec, hit := r.replayEntry(key); hit {
+		return rec
+	}
+	tr := r.startTrace(key)
+	rec := r.buildEntry(d, t, coll, at)
+	r.finishTrace(tr, rec)
+	return rec
+}
+
+// buildEntry evaluates an entry's record; a keyed list's key field is its key.
+func (r *run) buildEntry(d *syntax.EntryDecl, t types.Type, coll *types.Collection, at *vpath) *value.Record {
+	elem, keyed, _ := collectionOf(t)
 	k := entryKey(d.Key)
 	ident := &value.Identity{Coll: coll, Key: k, Retired: d.Mods != nil && d.Mods.Retired.Valid()}
 	rec, ok := r.recordLit(d.Value, d, elem, ident, at.entry(k)).(*value.Record)

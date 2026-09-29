@@ -60,7 +60,7 @@ var codeShape = regexp.MustCompile(codePattern)
 
 // Test runs a test block (EVALUATION.md §10).
 func (e *Evaluator) Test(ctx context.Context, t *syntax.TestDecl, b Builder) TestRun {
-	file := e.index.file[t]
+	file := e.fileOf(t)
 	if file == nil || e.info == nil || e.broken(e.index.decls[t]) {
 		return TestRun{Failed: true, Broken: true}
 	}

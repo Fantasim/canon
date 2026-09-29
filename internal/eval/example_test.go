@@ -143,3 +143,42 @@ let price: Price = { unit: 3 }
 	// TS false 13510798882111488
 	// TS true E8303
 }
+
+// A workspace keeps one memo for its evaluators: the second evaluator replays the entry the
+// first evaluated, charging the same steps.
+func ExampleEvaluator_UseMemo() {
+	ctx := context.Background()
+	fs := &source.FileSet{}
+	srcs := map[string]string{"zoo/zoo.canon": `/// Zoos.
+package zoo
+
+/// An animal.
+record Animal {
+  /// Legs.
+  legs: Int = 4
+}
+
+/// The animals.
+let animals: table Animal = {}
+`, "zoo/owl.canon": `package zoo
+
+entry animals.owl { legs: 1 + 1 }
+`}
+	var files []*syntax.File
+	for _, name := range []string{"zoo/zoo.canon", "zoo/owl.canon"} {
+		src, _ := fs.Add(name, "/"+name, []byte(srcs[name]))
+		files = append(files, syntax.Parse(src, syntax.FileSource, diag.NewBag(fs, "")))
+	}
+	bags := check.Bags{}
+	prog := check.Check(ctx, project.New("demo", project.Version{Minor: 1}), files, bags, eval.NewFolder(bags, eval.Options{}))
+	memo := eval.NewMemo()
+	for range 2 {
+		ev := eval.New(prog, served{}, bags, eval.Options{})
+		ev.UseMemo(memo, 1)
+		v, _ := ev.Force(ctx, eval.Root{Pkg: "zoo", Name: "animals"})
+		fmt.Println(v.CanonText())
+	}
+	// Output:
+	// {owl: Animal{legs: 2}}
+	// {owl: Animal{legs: 2}}
+}

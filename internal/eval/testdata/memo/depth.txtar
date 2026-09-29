@@ -1,0 +1,37 @@
+EVALUATION.md §3.3, DECISIONS 195: an entry kept while its table was forced at the top is not
+replayed where its calls would pass 10,000 frames; evaluated there, it reports E4402.
+-- memo --
+stored 1 unkept 1
+-- a/a.canon --
+/// A.
+package a
+
+/// Sums to n.
+local fn sum(n: Int) -> Int {
+  return if n == 0 { 0 } else { n + sum(n - 1) }
+}
+
+/// Reads the items n frames down.
+local fn down(n: Int) -> Int {
+  return if n == 0 { items.a.v } else { down(n - 1) }
+}
+
+/// An item.
+record Item {
+  /// V.
+  v: Int = 0
+}
+
+/// Deep.
+let deep: Int = down(9960)
+
+/// Items.
+let items: table Item = {}
+-- a/e1.canon --
+package a
+
+entry items.b { v: 1 }
+-- a/e2.canon --
+package a
+
+entry items.a { v: sum(60) }

@@ -1,0 +1,38 @@
+EVALUATION.md §12.2 (EVL-03), §7.2 (EVL-05): an entry reports a soft finding (E3204), then reads a
+value it forces; a replay that stops there, the value poisoned by the budget (E4401), still reports
+the finding, as evaluating does (reviewer's probe, log-2026-09-29 M4 U11).
+-- memo --
+stored 1 unkept 0
+-- a/a.canon --
+/// A.
+package a
+
+/// No label.
+local fn blank() -> String {
+  return ""
+}
+
+/// Counts to n.
+local fn loop(n: Int) -> Int {
+  var i = 0
+  while i < n { i += 1 }
+  return i
+}
+
+/// An item.
+record Item {
+  /// Label.
+  label: String(1..)
+  /// Cost.
+  cost: Int = 5
+}
+
+/// Items.
+let items: table Item = {}
+
+/// Late.
+let late: Int = loop(50)
+-- a/e1.canon --
+package a
+
+entry items.one { label: blank(), cost: late }

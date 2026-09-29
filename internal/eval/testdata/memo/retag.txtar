@@ -1,0 +1,29 @@
+EVALUATION.md §4.2, DECISIONS 79, 195: an entry puts records it read into a keyed list, which gives
+them their identity in place; a replay would not, so the entry is not kept (reviewer's probe).
+-- memo --
+stored 0 unkept 1
+-- a/a.canon --
+/// A.
+package a
+
+/// A tag.
+record Tag {
+  /// Name.
+  name: String
+}
+
+/// Base tags.
+let base: [Tag] = [{ name: "x" }, { name: "y" }]
+
+/// An item.
+record Item {
+  /// Tags.
+  tags: [Tag] keyed by name = []
+}
+
+/// Items.
+let items: table Item = {}
+-- a/e1.canon --
+package a
+
+entry items.one { tags: base }

@@ -1,0 +1,159 @@
+EVALUATION.md §12.2 (EVL-03), §7.1, §7.3, §3.4, §4.2, §13, TYPES.md §9.3, §11.1; IMPLEMENTATION-PLAN
+§7.6 (NFR-02): a table's entries replayed from the memo give a cold evaluation's values, findings
+and steps. They read a const, lets and a let through a function of another file, bind refs to their
+own instance's table, apply a record to a ref argument, and one gets a soft finding (E3204).
+-- memo --
+stored 6 unkept 0
+-- a/a.canon --
+/// A.
+package a
+
+/// The base cost.
+const BASE = 10
+
+/// Costs.
+local let costs: [Int] = [1, 2]
+
+/// Scale.
+let scale: Int = BASE * 3
+
+/// A tag.
+record Tag {
+  /// Name.
+  name: String(1..)
+}
+
+/// A shape.
+variant Shape {
+  circle {
+    /// Radius.
+    r: Float
+  }
+  square {
+    /// Side.
+    side: Int = 2
+  }
+}
+
+/// A tier.
+record Tier {
+  /// Weight.
+  weight: Int = 1
+}
+
+/// An event.
+record Ev {
+  /// Max.
+  max: Int = 5
+}
+
+/// Events.
+let evs: table Ev = { a {}, b { max: 7 } }
+
+/// A limit.
+record L(e: Ev) {
+  /// Limit.
+  lim: Int = e.max
+}
+
+/// An item.
+record Item {
+  /// Label.
+  label: String(1..)
+  /// Cost.
+  cost: Int = 5
+  /// Twice the cost.
+  twice: Int = cost * 2
+  /// Tags.
+  tags: [Tag] = []
+  /// Shape.
+  shape: Shape
+  /// Tiers.
+  tiers: table Tier = { low { weight: 3 } }
+  /// Pick.
+  pick: ref Tier = low
+  /// Event.
+  ev: ref evs = b
+  /// Limit.
+  l: L(ev) = {}
+  /// Next.
+  next: ref items?
+
+  check cost <= 900 else "cost {cost} above 900"
+}
+
+/// Items.
+let items: table Item = {}
+
+/// The second item's weight.
+let weight: Int = items.two.pick.weight
+
+/// The first item's tags by name: its records take the list's identity in place.
+let tagged: [Tag] keyed by name = items.one.tags
+
+/// Forced by an entry, after the items.
+let late: Int = price(2) + 1
+-- a/fns.canon --
+package a
+
+/// A price.
+local fn price(n: Int) -> Int {
+  return n * scale
+}
+
+/// No label.
+local fn blank() -> String {
+  return ""
+}
+-- a/items/one.canon --
+package a
+
+entry items.one {
+  label: "One"
+  shape: circle { r: 1.5 }
+  tags: [{ name: "x" }, { name: "y" }]
+}
+-- a/items/two.canon --
+package a
+
+entry items.two {
+  label: "Two"
+  cost: price(3)
+  shape: square {}
+  tiers: { low { weight: 4 }, high { weight: 9 } }
+  pick: high
+  next: one
+}
+-- a/items/three.canon --
+package a
+
+entry items.three {
+  label: "Three"
+  cost: BASE + costs[1]
+  shape: square { side: 4 }
+  ev: a
+  l: { lim: 9 }
+}
+-- a/items/thin.canon --
+package a
+
+entry items.thin {
+  label: blank()
+  shape: circle { r: 0.5 }
+}
+-- a/items/dear.canon --
+package a
+
+entry items.dear {
+  label: "Dear"
+  cost: price(40)
+  shape: circle { r: 2.0 }
+}
+-- a/items/plain.canon --
+package a
+
+entry items.plain {
+  label: "Plain"
+  cost: late
+  shape: square {}
+}

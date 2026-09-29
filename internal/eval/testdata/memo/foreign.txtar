@@ -1,0 +1,27 @@
+EVALUATION.md §4.2, §7.3: an entry's field is the value of `base` it read, the same node; a value
+converted later marks that node invalid (E3204), in `base` too. A replay puts back the node of the
+`base` it forced, so the later mark reaches both as evaluating does (log-2026-09-29 M4 U11).
+-- memo --
+stored 1 unkept 0
+-- a/a.canon --
+/// A.
+package a
+
+/// The base cost.
+let base: Int = 5
+
+/// An item.
+record Item {
+  /// Cost.
+  cost: Int = 1
+}
+
+/// Items.
+let items: table Item = {}
+
+/// A small cost, converted after the items.
+let small: Int(0..=3) = items.one.cost
+-- a/e1.canon --
+package a
+
+entry items.one { cost: base }

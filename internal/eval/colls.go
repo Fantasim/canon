@@ -92,7 +92,7 @@ func (e *Evaluator) letColl(obj check.Object) *types.Collection {
 			return c
 		}
 	}
-	c := &types.Collection{Kind: types.CollLet, Pkg: obj.Pkg(), Name: obj.Name(), Elem: elem, KeyedBy: keyed}
+	c := e.collection(&types.Collection{Kind: types.CollLet, Pkg: obj.Pkg(), Name: obj.Name(), Elem: elem, KeyedBy: keyed})
 	e.colls[keyOf(c)] = c
 	return c
 }
@@ -114,10 +114,10 @@ func (e *Evaluator) fieldColl(rt *types.RecordType, f *types.Field) *types.Colle
 		}
 	}
 	if c == nil {
-		c = &types.Collection{
+		c = e.collection(&types.Collection{
 			Kind: types.CollField, Pkg: rt.Pkg, Name: f.Name, Owner: rt,
 			FieldPath: []string{f.Name}, Elem: elem, KeyedBy: keyed,
-		}
+		})
 	}
 	e.fieldColls[f] = c
 	return c
@@ -222,6 +222,7 @@ func (e *Evaluator) adoptEntry(en *value.Record, c *types.Collection, owner *val
 func (e *Evaluator) withIdentity(rec *value.Record, id *value.Identity) *value.Record {
 	if rec.Ident == nil {
 		rec.Ident = id
+		e.gens.retagged++
 		return rec
 	}
 	cp := *rec

@@ -97,6 +97,7 @@ func (r *run) invoke(fn value.Value, args []value.Value, site source.Span) value
 		short: c.short, file: c.file, pkg: c.pkg, call: site,
 	}
 	fr.under(r.fr)
+	r.noteCode(c.file)
 	maps.Copy(fr.vars, c.vars)
 	body := r.bindLambda(c, fr, args)
 	if body == nil {

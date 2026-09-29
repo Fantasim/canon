@@ -1,0 +1,39 @@
+EVALUATION.md §7.2 (EVL-05): an entry reports a soft finding (E3204), then reads a loaded value;
+once that file no longer decodes, the value is poisoned and the replay stops at the read, still
+reporting the finding (TestMemoPoisonedRead swaps the file).
+-- memo --
+stored 1 unkept 0
+-- a/a.canon --
+/// A.
+package a
+
+/// No label.
+local fn blank() -> String {
+  return ""
+}
+
+/// A configuration.
+record Cfg {
+  /// Bonus.
+  bonus: Int
+}
+
+/// An item.
+record Item {
+  /// Label.
+  label: String(1..)
+  /// Cost.
+  cost: Int = 5
+}
+
+/// Items.
+let items: table Item = {}
+
+/// The configuration, forced by the entry.
+let cfg: Cfg = load("@resource/cfg.json")
+-- a/e1.canon --
+package a
+
+entry items.one { label: blank(), cost: cfg.bonus }
+-- resource/cfg.json --
+{"bonus": 4}

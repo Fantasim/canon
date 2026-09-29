@@ -59,7 +59,7 @@ func (r *run) amendBlock(obj check.Object, blk *syntax.AmendBlock, layer string,
 	if r.ev.info.NameUses[blk.Target] != obj {
 		return v
 	}
-	file := r.ev.index.file[blk]
+	file := r.ev.fileOf(blk)
 	if file == nil {
 		r.bug(blk)
 		return nil
@@ -82,7 +82,7 @@ func (r *run) amend(obj check.Object, blk *syntax.AmendBlock, a *syntax.Amendmen
 		return nil
 	}
 	saved := r.fr
-	r.fr = r.ev.rootFrame(r.ev.index.file[blk])
+	r.fr = r.ev.rootFrame(r.ev.fileOf(blk))
 	defer func() { r.fr = saved }()
 	m := &amending{layer: layer, a: a, root: obj, path: r.pathText(a), keys: map[*syntax.AmendSegment]value.Value{}}
 	m.dep = &depCtx{field: obj.Type(), at: a.Value}

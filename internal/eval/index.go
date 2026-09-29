@@ -16,6 +16,8 @@ type index struct {
 	decls   map[syntax.Node]check.Object
 	broken  map[syntax.Node]bool
 	written *writtenIndex
+	files   []*syntax.File // walked for file and owner on the first lookup (fileOf)
+	walked  bool
 }
 
 func emptyIndex() *index {
@@ -34,7 +36,7 @@ func buildIndex(prog *check.Program) *index {
 	for _, pkg := range prog.Packages {
 		for _, f := range pkg.Files {
 			x.pkg[f] = pkg.Path
-			x.addFile(f)
+			x.files = append(x.files, f)
 		}
 		x.addDecls(pkg, prog.Info)
 	}
@@ -69,15 +71,24 @@ func (x *index) addDecls(pkg *check.Package, info *check.Info) {
 	}
 }
 
-// addFile records the declarations of f that later lookups start from.
-func (x *index) addFile(f *syntax.File) {
+// fileIndex is what one file adds to the index: the declarations and where predicates later
+// lookups start from, and the record or variant declaring each check.
+type fileIndex struct {
+	decls  []syntax.Node
+	checks []*syntax.CheckDecl
+	owners []syntax.Node
+}
+
+// indexFile walks f for its fileIndex.
+func indexFile(f *syntax.File) fileIndex {
+	var fi fileIndex
 	syntax.Inspect(f, func(n syntax.Node) bool {
 		switch d := n.(type) {
 		case *syntax.RecordDecl, *syntax.VariantDecl, *syntax.CheckDecl, *syntax.FnDecl,
 			*syntax.TestDecl, *syntax.AmendBlock:
-			x.file[d] = f
+			fi.decls = append(fi.decls, d)
 		case *syntax.WhereType:
-			x.file[d.Pred] = f
+			fi.decls = append(fi.decls, d.Pred)
 		}
 		return true
 	})
@@ -86,10 +97,42 @@ func (x *index) addFile(f *syntax.File) {
 		case *syntax.RecordDecl, *syntax.VariantDecl:
 			syntax.Inspect(d, func(n syntax.Node) bool {
 				if c, ok := n.(*syntax.CheckDecl); ok {
-					x.owner[c] = d
+					fi.checks, fi.owners = append(fi.checks, c), append(fi.owners, d)
 				}
 				return true
 			})
 		}
 	}
+	return fi
+}
+
+// walkFiles fills the index's file and owner once, from each file's fileIndex, which a memo
+// keeps across the evaluators of its epoch.
+func (e *Evaluator) walkFiles() {
+	x := e.index
+	if x.walked {
+		return
+	}
+	x.walked = true
+	for _, f := range x.files {
+		fi := cachedFile(e.memo, filesIndexed, f, indexFile)
+		for _, n := range fi.decls {
+			x.file[n] = f
+		}
+		for i, c := range fi.checks {
+			x.owner[c] = fi.owners[i]
+		}
+	}
+}
+
+// fileOf is the file declaring n: a record, variant, check, function, test, amend block or where predicate.
+func (e *Evaluator) fileOf(n syntax.Node) *syntax.File {
+	e.walkFiles()
+	return e.index.file[n]
+}
+
+// ownerOf is the record or variant declaring check c.
+func (e *Evaluator) ownerOf(c *syntax.CheckDecl) syntax.Node {
+	e.walkFiles()
+	return e.index.owner[c]
 }

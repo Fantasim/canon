@@ -183,6 +183,7 @@ func (r *run) abort(b *diag.Builder) {
 		return
 	}
 	r.failed = true
+	r.noteAbort()
 	if !r.tainted || r.sink != nil || r.ev.vec != nil {
 		r.noteStop(b)
 		r.emit(b)
@@ -204,6 +205,7 @@ func (r *run) emit(b *diag.Builder) {
 		b.Report(r.sink)
 		return
 	}
+	r.noteFinding(b)
 	r.ev.report(r.fr.pkg, b)
 }
 

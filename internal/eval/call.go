@@ -169,6 +169,7 @@ func (r *run) calleeFrame(c fnCall) *frame {
 	}
 	fr := &frame{vars: map[check.Object]value.Value{}, self: c.self, file: c.obj.File(), pkg: c.obj.Pkg(), fn: name, call: c.site}
 	fr.ts = r.fr.ts && runtimeInput(c.obj)
+	r.noteCode(fr.file)
 	return fr.under(r.fr)
 }
 
@@ -180,8 +181,10 @@ func (r *run) enter(site source.Span) bool {
 // within is E4402 at site once the live frames reach the limit; more frames omit implicit ones (DECISIONS 195, 197, 210).
 func (r *run) within(site source.Span) bool {
 	if r.ev.depth < maxDepth {
+		r.noteDepth()
 		return true
 	}
+	r.voidTrace()
 	if r.ev.vec != nil {
 		r.ev.cut(DepthLimit)
 	}

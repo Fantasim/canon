@@ -1,0 +1,42 @@
+EVALUATION.md §3.1, §13; IMPLEMENTATION-PLAN §7.6 (NFR-02): an entry reading a loaded value is
+replayed while that value is the same, provenance included, and evaluated again once it changes;
+an entry that loads is never kept.
+-- memo --
+stored 2 unkept 1
+-- a/a.canon --
+/// A.
+package a
+
+/// A configuration.
+record Cfg {
+  /// Bonus.
+  bonus: Int
+}
+
+/// The configuration.
+let cfg: Cfg = load("@resource/cfg.json")
+
+/// An item.
+record Item {
+  /// Cost.
+  cost: Int = 5
+}
+
+/// Items.
+let items: table Item = {}
+-- a/e1.canon --
+package a
+
+entry items.one { cost: cfg.bonus * 2 }
+-- a/e2.canon --
+package a
+
+entry items.two { cost: 3 }
+-- a/e3.canon --
+package a
+
+entry items.three { cost: load("@resource/n.json") }
+-- resource/cfg.json --
+{"bonus": 4}
+-- resource/n.json --
+7

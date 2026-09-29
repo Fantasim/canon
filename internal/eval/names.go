@@ -115,7 +115,7 @@ func (r *run) global(obj check.Object, at syntax.Expr) value.Value {
 	if obj.Kind() == check.ObjLet && r.nonConstant() {
 		return nil
 	}
-	v, ok := r.ev.force(r.ctx, r.ev.state(obj), r, at)
+	v, ok := r.forceRead(r.ev.state(obj), at)
 	if !ok {
 		r.readPoisoned(obj.Pkg(), obj.Name(), at)
 		return nil

@@ -24,7 +24,7 @@ type CheckReport struct {
 
 // Run evaluates check c on self, nil at package level (EVALUATION.md §8, DECISIONS 148).
 func (e *Evaluator) Run(ctx context.Context, c *syntax.CheckDecl, self value.Value) CheckRun {
-	file := e.index.file[c]
+	file := e.fileOf(c)
 	if file == nil || e.exhausted || e.brokenCheck(c) {
 		return CheckRun{Aborted: true}
 	}
@@ -57,7 +57,7 @@ func (e *Evaluator) brokenCheck(c *syntax.CheckDecl) bool {
 	if e.info == nil || e.index.broken[c] {
 		return true
 	}
-	owner := e.index.owner[c]
+	owner := e.ownerOf(c)
 	if owner == nil {
 		return e.broken(e.index.decls[c])
 	}
@@ -73,7 +73,7 @@ func (e *Evaluator) brokenCheck(c *syntax.CheckDecl) bool {
 // checkCharge names a check for the budget (EVALUATION.md §12.2, DECISIONS 185).
 func (e *Evaluator) checkCharge(c *syntax.CheckDecl, file *syntax.File) charge {
 	ch := charge{pkg: e.index.pkg[file], name: checkKeyword}
-	switch d := e.index.owner[c].(type) {
+	switch d := e.ownerOf(c).(type) {
 	case *syntax.RecordDecl:
 		ch.name = d.Name.Name
 	case *syntax.VariantDecl:

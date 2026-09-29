@@ -1,0 +1,33 @@
+EVALUATION.md §12.2 (EVL-03): an entry that spends the last step (E4401) is not kept: its replay
+could not stop at the same expression; the entry before it is.
+-- memo --
+stored 1 unkept 1
+-- budget --
+300
+-- a/a.canon --
+/// A.
+package a
+
+/// Counts to n.
+local fn loop(n: Int) -> Int {
+  var i = 0
+  while i < n { i += 1 }
+  return i
+}
+
+/// An item.
+record Item {
+  /// N.
+  n: Int = 0
+}
+
+/// Items.
+let items: table Item = {}
+-- a/e1.canon --
+package a
+
+entry items.small { n: loop(3) }
+-- a/e2.canon --
+package a
+
+entry items.big { n: loop(1000) }
