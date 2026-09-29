@@ -62,7 +62,9 @@ the last wave.
 
 - U2b `--json-sources` from build/load's loaded files with their Canon types (number
       canonicalization); `fmt --diff` through `go-udiff` (§11), deleting cli's own LCS [sonnet]
-- U5b api edit surface: Edit, Op JSON, LockCheck, Open → Recover, drafts; S12, E17–E21, W5, X2 [opus]
+- U5b api edit surface: Edit, Op JSON, LockCheck, Open → Recover (+ OS `Alive`, ErrJournal fails
+      Open), drafts (in the shared key); S12, E17–E21, W5, X2; one exported element naming in `live`
+      used by `workspace` (plain-list copies → `#<n>`); unify edit/workspace stale sentinels [opus]
 - U6 `cli`: explain input fields, `canon refs`, `--watch` [sonnet]
 
 - Cleanup: P9 literal-union keys in `eval`'s paths (`path.go` keyText) and live `colls.go`
