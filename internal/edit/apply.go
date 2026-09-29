@@ -69,10 +69,12 @@ func Apply(ctx context.Context, env Env, base *Snapshot, req Request) (*Plan, er
 	}
 	a := newApplier(ctx, env, base)
 	for i, op := range req.Ops {
+		a.step = i
 		if err := a.operation(op); err != nil {
 			return nil, &OpError{Index: i, Path: op.Path, Err: refusal(err)}
 		}
 	}
+	a.step = cascadeStep
 	if err := a.cascade(); err != nil {
 		return nil, refusal(err)
 	}
@@ -107,11 +109,14 @@ type applier struct {
 	undo     [][]Operation         // each operation's inverses, in the order of the operations
 	dropped  []Dropped
 	owners   map[string]string // the package owning each file written, by display path (E17)
-	records  []touched         // E14, E15
+	records  []touched         // E15
 	// cascadeUndo are the cascades' inverses, which follow every other one (log-2026-09-29 M4 U4b-r)
 	cascadeUndo []Operation
 	emptied     map[string]string // a directory a file left, to the package directory it stops below (N6)
 	locked      []Locked
+	kept        keptCase // the fields the last SetCase kept for its refinements to judge (E14)
+	omit        []string // the fields a SetCase leaves out: its refinements refuse them (E14)
+	step        int      // the operation being applied, cascadeStep for the cascades (M6 tests)
 }
 
 func newApplier(ctx context.Context, env Env, base *Snapshot) *applier {
@@ -130,8 +135,12 @@ func (a *applier) typer(pkg string) Typer {
 }
 
 // operation applies op to the current state: its changes are planned, the files they write
-// checked for canonical layout (normalized, then planned again, when one is not), then made.
+// checked for canonical layout (normalized, then planned again, when one is not), then made;
+// a SetCase's kept fields are then judged (API.md E14).
 func (a *applier) operation(op Operation) error {
+	if op.Kind == OpSetCase {
+		return a.setCase(op)
+	}
 	return a.run(op, nil)
 }
 

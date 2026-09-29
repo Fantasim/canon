@@ -182,7 +182,7 @@ func applyChecked(t *testing.T, env edit.Env, a *build.Analysis, ops []edit.Oper
 		t.Fatalf("%+v: an error that is no refusal: %v", ops, err)
 	}
 	for _, ch := range plan.Changes {
-		checkWritten(t, plan, ch, false)
+		checkWritten(t, plan, ch)
 		if scalar && len(plan.Dropped) == 0 {
 			checkOneRun(t, plan, ch)
 		}

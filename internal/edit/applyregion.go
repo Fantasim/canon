@@ -15,11 +15,36 @@ type region struct {
 	comma          int // regionMoved: the offset past its last token, where its comma may change
 }
 
-// writeStep is one write of a file: its bytes before and after, and the regions of before its
-// changes write; outside them every byte is kept (API.md M6).
+// writeStep is one write of a file: its bytes before and after, the regions of before its
+// changes write, outside which every byte is kept (API.md M6), whether it only printed existing
+// nodes again (M1, M2), and the operation that made it, cascadeStep for a cascade, once stamped.
 type writeStep struct {
 	before, after []byte
 	regions       []region
+	reprint       bool
+	op            int
+	stamped       bool
+}
+
+// reprinted notes whether s's last write only printed existing nodes again (API.md M6 tests).
+func (s *fileState) reprinted(only func() bool) {
+	if recordWrites && len(s.steps) > 0 {
+		s.steps[len(s.steps)-1].reprint = only()
+	}
+}
+
+// stamp marks each write not yet marked with the operation being applied (API.md M6 tests).
+func (a *applier) stamp() {
+	if !recordWrites {
+		return
+	}
+	for _, s := range a.files { //canon:unordered marks each file's own writes, in place
+		for i := range s.steps {
+			if !s.steps[i].stamped {
+				s.steps[i].op, s.steps[i].stamped = a.step, true
+			}
+		}
+	}
 }
 
 // recordWrites keeps each file's write steps, for the package's tests of API.md M6 only.

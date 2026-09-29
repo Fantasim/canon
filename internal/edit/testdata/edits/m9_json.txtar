@@ -2,7 +2,6 @@ API.md M9: a JSON source not in the canonical source layout (FORMATTER.md §14.1
 written on one line, is normalized entirely first and listed in NotCanonical.
 -- options --
 pkgs: p
-oneLine: true
 -- edit.json --
 {"ops": [{"op": "set", "path": "conf.limit", "value": 9}]}
 -- project.canon --

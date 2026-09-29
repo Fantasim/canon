@@ -2,7 +2,6 @@ API.md M9: a .canon file not a fixed point of the formatter is normalized entire
 (API M9 governs FORMATTER.md §13 there, log-2026-09-29 M4) and listed in NotCanonical.
 -- options --
 pkgs: p
-oneLine: true
 -- edit.json --
 {"ops": [{"op": "set", "path": "limit", "value": 9}]}
 -- project.canon --

@@ -1,0 +1,65 @@
+API.md M6, M5: a one-value Set of a scalar changes one line; when the new value pushes the
+entry's one-line literal past the formatter's width, M5 breaks that literal, its one line
+becoming several, and nothing else changes.
+-- options --
+pkgs: p
+-- edit.json --
+{"ops": [{"op": "set", "path": "rows.a.note", "value": "a note long enough to push this entry past the width of the formatter and then some more"}]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// A row.
+record Row {
+  /// Its count.
+  count: Int = 0
+  /// Its note.
+  note: String = ""
+}
+
+/// The rows.
+let rows: table Row = {
+  a { count: 1, note: "short" }
+  b { count: 2 }
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "p/p.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "set",
+      "path": "p:rows.a.note",
+      "source": "\"short\""
+    }
+  ],
+  "touched": [
+    "p"
+  ]
+}
+-- after/p/p.canon --
+package p
+
+/// A row.
+record Row {
+  /// Its count.
+  count: Int = 0
+  /// Its note.
+  note: String = ""
+}
+
+/// The rows.
+let rows: table Row = {
+  a {
+    count: 1
+    note: "a note long enough to push this entry past the width of the formatter and then some more"
+  }
+  b { count: 2 }
+}

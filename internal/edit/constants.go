@@ -293,8 +293,15 @@ const (
 	regionComma
 )
 
-// fitCodes are the findings at a field's exact path that say its value no longer fits its
-// type: type mismatches, refinements, `where`, assets, decoding (log-2026-09-29 M4 U4b-r3).
+// cascadeStep is the operation index of the writes a cascade makes once every operation is
+// applied (API.md E15).
+const cascadeStep = -1
+
+// pathMarks start a step inside a value in a finding's path (API.md §6.1).
+const pathMarks = string(fieldMark) + string(bracketOpen)
+
+// fitCodes are the findings at a field, or for E14 inside its value, that say the value does
+// not fit its type: mismatches, refinements, `where`, assets, decoding (log-2026-09-29 M4 U4b-r3).
 var fitCodes = map[diag.Code]bool{
 	diag.E3802.Def().Code: true, diag.E3801.Def().Code: true, diag.E3002.Def().Code: true, diag.E3201.Def().Code: true,
 	diag.E3202.Def().Code: true, diag.E3311.Def().Code: true, diag.E3403.Def().Code: true, diag.E3301.Def().Code: true,

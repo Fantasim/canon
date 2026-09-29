@@ -3,7 +3,6 @@ escaped as `\{` or `\}` (GRAMMAR.md §2.6), never as an interpolation; API.md E2
 a Set of a String that held braces gives them back, escaped the same way.
 -- options --
 pkgs: p
-oneLine: true
 -- edit.json --
 {"ops": [
   {"op": "set", "path": "greeting", "value": "Hello {name}"},

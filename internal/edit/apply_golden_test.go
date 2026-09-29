@@ -10,7 +10,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"slices"
 	"strings"
 	"testing"
 
@@ -29,6 +28,10 @@ const (
 	afterDir   = "after/"
 )
 
+// refusePrefix starts the name of every golden whose edit Apply refuses, and of no other: a
+// golden records an error only when it expects one.
+const refusePrefix = "refuse_"
+
 // goldenCase is one golden: the project before, the edit, and how the project is opened.
 type goldenCase struct {
 	comment   []byte
@@ -39,14 +42,14 @@ type goldenCase struct {
 	pkgs      []string
 	layers    []string
 	editLayer string
-	oneLine   bool     // API.md M6: a one-value Set of a scalar changes exactly one line
 	crlf      []string // files the test writes with CRLF line ends, which a txtar cannot hold
 
 	undoUnordered bool // E22: entries whose order their files' paths give are compared as a set
 }
 
-// API.md M5, M6, N12, IMPLEMENTATION-PLAN 7.4: every edit golden
-// applies, writes what its archive holds, and keeps the minimal-write invariant M6.
+// API.md M5, M6, N12, IMPLEMENTATION-PLAN 7.4: every edit golden applies, or is refused exactly
+// when its name says so, writes what its archive holds, and keeps the minimal-write invariant M6,
+// its one line for each Set of a scalar included.
 func TestEditGoldens(t *testing.T) {
 	paths, err := filepath.Glob(filepath.Join("testdata", "edits", "*.txtar"))
 	if err != nil || len(paths) == 0 {
@@ -100,8 +103,11 @@ func runGolden(t *testing.T, path string) {
 	}
 	s := open(t, c.fsys, c.layers, c.editLayer, c.pkgs...)
 	plan, err := edit.Apply(context.Background(), s.env, s.snap, edit.Request{Ops: req.Ops})
+	if refuses := strings.HasPrefix(filepath.Base(path), refusePrefix); refuses != (err != nil) {
+		t.Fatalf("Apply returns error %v; a golden records one exactly when its name starts with %s", err, refusePrefix)
+	}
 	if err == nil {
-		checkPlan(t, c, plan)
+		checkPlan(t, c, plan, req.Ops)
 		checkUndo(t, c, req.Ops, plan)
 	}
 	got := c.archive(t, plan, err)
@@ -140,7 +146,8 @@ func readCase(t *testing.T, ar *txtar.Archive) goldenCase {
 	return c
 }
 
-// readOptions reads `key: value` lines: pkgs, layers (space-separated), editLayer, oneLine.
+// readOptions reads `key: value` lines: pkgs, layers (space-separated), editLayer, crlf,
+// undoUnordered.
 func (c *goldenCase) readOptions(t *testing.T, data []byte) {
 	for _, line := range strings.Split(strings.TrimSpace(string(data)), "\n") {
 		key, val, ok := strings.Cut(line, ":")
@@ -154,12 +161,12 @@ func (c *goldenCase) readOptions(t *testing.T, data []byte) {
 			c.layers = strings.Fields(val)
 		case key == "editLayer":
 			c.editLayer = val
-		case key == "oneLine":
-			c.oneLine = val == "true"
 		case key == "crlf":
 			c.crlf = strings.Fields(val)
 		case key == "undoUnordered":
 			c.undoUnordered = val == "true"
+		default:
+			t.Fatalf("options: unknown key %q", key)
 		}
 	}
 }
@@ -252,8 +259,10 @@ func errorText(err error) string {
 	return text
 }
 
-// checkPlan checks N12 and M6 on every file the plan writes, with the before bytes Apply read.
-func checkPlan(t *testing.T, c goldenCase, plan *edit.Plan) {
+// checkPlan checks N12 and M6 on every file the plan writes, with the before bytes Apply read;
+// each write re-printing the item of a Set of a scalar among ops (M1, M2) changes one line, and
+// an insertion (W7, M3, M5) or removal (E6, E7, M4) has the regions of those rules instead.
+func checkPlan(t *testing.T, c goldenCase, plan *edit.Plan, ops []edit.Operation) {
 	t.Helper()
 	before := map[string][]byte{}
 	for name, f := range c.fsys { //canon:unordered fills a map by name
@@ -267,16 +276,19 @@ func checkPlan(t *testing.T, c goldenCase, plan *edit.Plan) {
 		if ch.Before != nil && !bytes.Equal(ch.Before, before[old]) {
 			t.Errorf("%s: Before is not the bytes read (API.md N9)", ch.Path)
 		}
-		checkWritten(t, plan, ch, c.oneLine && ch.Kind == edit.ChangeModified)
-	}
-	if !slices.ContainsFunc(plan.Changes, func(ch edit.Change) bool { return ch.Kind == edit.ChangeModified }) && c.oneLine {
-		t.Errorf("oneLine case modified no file")
+		checkWrittenBy(t, plan, ch, func(w edit.Write) bool { return scalarSet(ops, w.Op) && w.Reprint })
 	}
 }
 
 // checkWritten checks N12 and M6 on a change of any kind: After a fixed point, and each write
 // of the file inside the items it rewrote (a normalization of M9 is a write of the whole file).
-func checkWritten(t *testing.T, plan *edit.Plan, ch edit.Change, oneLine bool) {
+func checkWritten(t *testing.T, plan *edit.Plan, ch edit.Change) {
+	t.Helper()
+	checkWrittenBy(t, plan, ch, func(edit.Write) bool { return false })
+}
+
+// checkWrittenBy is checkWritten, each write for which oneLine holds changing one line.
+func checkWrittenBy(t *testing.T, plan *edit.Plan, ch edit.Change, oneLine func(edit.Write) bool) {
 	t.Helper()
 	if ch.Kind == edit.ChangeRemovedDir {
 		return

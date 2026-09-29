@@ -3,7 +3,6 @@ changes exactly one line; the teamboard's single-line entry keeps its layout. AP
 inverse is Set(old), carried as a Source literal.
 -- options --
 pkgs: tb
-oneLine: true
 -- edit.json --
 {"ops": [{"op": "set", "path": "statuses.wont_do.label", "value": "Will not do"}]}
 -- project.canon --

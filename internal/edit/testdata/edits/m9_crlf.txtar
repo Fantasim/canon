@@ -4,7 +4,6 @@ listed in NotCanonical, which the caller refuses without Normalize. N12: `\n` li
 test writes p/p.canon with CRLF line ends (option crlf).
 -- options --
 pkgs: p
-oneLine: true
 crlf: p/p.canon
 -- edit.json --
 {"ops": [{"op": "set", "path": "limit", "value": 9}]}

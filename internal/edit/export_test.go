@@ -75,13 +75,15 @@ type Region struct {
 type Write struct {
 	Before, After []byte
 	Regions       []Region
+	Op            int  // the index of the operation that made it, -1 for a cascade
+	Reprint       bool // it only printed existing nodes again (API.md M1, M2)
 }
 
 // Writes are the writes the plan made of the file it reports at display, in order.
 func Writes(p *Plan, display string) []Write {
 	var out []Write
 	for _, s := range p.writes[display] {
-		w := Write{Before: s.before, After: s.after}
+		w := Write{Before: s.before, After: s.after, Op: s.op, Reprint: s.reprint}
 		for _, r := range s.regions {
 			w.Regions = append(w.Regions, Region{Lo: r.lo, Hi: r.hi, Kind: int(r.kind), FromLo: r.fromLo, FromHi: r.fromHi, Comma: r.comma})
 		}

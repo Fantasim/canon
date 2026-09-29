@@ -30,6 +30,7 @@ type work struct {
 	dropped []Dropped
 	records []touched
 	locked  []Locked
+	kept    keptCase
 }
 
 // jsonEdit is an edit of a JSON source and the offset it applies at in the current text: the
@@ -112,6 +113,7 @@ func (a *applier) normalize(files map[string]bool) (bool, error) {
 			s.normalized, a.dirty, again = true, true, true
 		}
 	}
+	a.stamp()
 	return again, nil
 }
 
@@ -204,7 +206,9 @@ func (a *applier) commit(w *work) error {
 	a.dropped = append(a.dropped, w.dropped...)
 	a.records = append(a.records, w.records...)
 	a.locked = append(a.locked, w.locked...)
+	a.kept = w.kept
 	a.dirty = true
+	a.stamp()
 	return nil
 }
 
@@ -219,6 +223,9 @@ func (a *applier) rewriteCanon(display string, changes []format.Change) error {
 		return fmt.Errorf(fmtFileErr, display, err)
 	}
 	s.wrote(out, func() []region { return canonRegions(f, changes) })
+	s.reprinted(func() bool {
+		return !slices.ContainsFunc(changes, func(c format.Change) bool { return c.Kind != format.Replace })
+	})
 	return nil
 }
 
@@ -245,6 +252,9 @@ func (a *applier) rewriteJSON(display string, edits []jsonEdit) error {
 		return fmt.Errorf(fmtFileErr, display, err)
 	}
 	s.wrote(out, func() []region { return jsonRegions(before, order) })
+	s.reprinted(func() bool {
+		return !slices.ContainsFunc(order, func(e jsonEdit) bool { return e.rename != nil || e.e.Kind != jsonsrc.Set })
+	})
 	return nil
 }
 

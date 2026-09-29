@@ -1,7 +1,7 @@
-API.md E14 by re-typing (log-2026-09-29 M4 U4b-r): a kept field is judged against the new
-case's refinements, `where` included, by the final analysis at its exact path: rain's count 4
-satisfies `where it > 2` and is kept; fair's count 1 does not, and is Dropped (left to its
-default). API.md E23: the inverse is Set of the old whole variant value.
+API.md E14 (log-2026-09-29 M4 B3-r): a kept field is judged against the whole new field type,
+`where` included, by the analysis of the state the SetCase leaves, at or inside its place:
+rain's count 4 satisfies `where it > 2` and is kept; fair's count 1 does not, and is Dropped
+(left to its default). API.md E23: the inverse is Set of the old whole variant value.
 -- options --
 pkgs: ev
 -- edit.json --

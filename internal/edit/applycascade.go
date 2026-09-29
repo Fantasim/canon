@@ -10,22 +10,22 @@ import (
 
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/jsonsrc"
+	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
 )
 
 // fieldCheck is a field a cascade judges once every operation is applied: an optional field
-// whose type a changed field computes (E15), or a field a SetCase kept (E14).
+// whose type a changed field computes (E15).
 type fieldCheck struct {
-	t   touched
-	f   *types.Field
-	e14 bool
+	t touched
+	f *types.Field
 }
 
-// cascade applies E14 and E15 once every operation is applied, by re-typing (log-2026-09-29 M4
-// U4b-r): a field whose value does not fit the type its record's fields now compute, or that the
-// final analysis refuses at its exact path, is dropped; nothing but the touched records (E16).
+// cascade applies E15 once every operation is applied, by re-typing (log-2026-09-29 M4 U4b-r):
+// a field whose value does not fit the type its record's fields now compute, or that the final
+// analysis refuses at its exact path, is dropped; nothing but the touched records (E16).
 func (a *applier) cascade() error {
 	checks := a.fieldChecks()
 	if len(checks) == 0 {
@@ -39,14 +39,13 @@ func (a *applier) cascade() error {
 	return nil
 }
 
-// fieldChecks are the fields E14 and E15 judge, in path order, each once.
+// fieldChecks are the fields E15 judges, in path order, each once.
 func (a *applier) fieldChecks() []fieldCheck {
 	var out []fieldCheck
 	for _, t := range a.records {
 		for _, f := range t.decl {
-			e15 := isOptional(f.Type) && dependsOnAny(f, t.decl, t.fields)
-			if e15 || slices.Contains(t.kept, f.Name) {
-				out = append(out, fieldCheck{t: t, f: f, e14: !e15})
+			if isOptional(f.Type) && dependsOnAny(f, t.decl, t.fields) {
+				out = append(out, fieldCheck{t: t, f: f})
 			}
 		}
 	}
@@ -123,24 +122,55 @@ func (a *applier) fits(c fieldCheck, res resolution) bool {
 // refusedAt reports a finding of fitCodes the current analysis reports exactly at c's field: by
 // path, or in a JSON source by its file and pointer.
 func (a *applier) refusedAt(c fieldCheck) bool {
+	pl, ok := a.placeOf(c)
+	return ok && len(a.snap.refusals(pl, false)) > 0
+}
+
+// fitPlace is where an analysis reports that a field's value does not fit its type: its
+// package and path relative to it, in a JSON source its file and member pointer, and in a
+// .canon literal its item, where a static error has no path.
+type fitPlace struct {
+	pkg, rel, file, ptr string
+	item                source.Span
+}
+
+// placeOf is c's field's place in the current state; false for a path that does not parse.
+func (a *applier) placeOf(c fieldCheck) (fitPlace, bool) {
 	p, err := Parse(c.path())
 	if err != nil {
-		return false
+		return fitPlace{}, false
 	}
-	rel := Path{Root: p.Root, Segs: p.Segs}.String()
-	ptr := ""
+	pl := fitPlace{pkg: p.Package, rel: Path{Root: p.Root, Segs: p.Segs}.String(), file: c.t.file}
 	if n := a.memberNode(c); n != nil {
-		ptr = n.Pointer()
+		pl.ptr = n.Pointer()
 	}
-	for _, f := range a.snap.a.Result().List {
-		if f.Severity != diag.Error || !fitCodes[f.Code] {
+	return pl, true
+}
+
+// refusals are the error findings of fitCodes s reports at pl: exactly at it, or with under at
+// a value inside it too (a list's element, a map's value) and inside its item.
+func (s *Snapshot) refusals(pl fitPlace, under bool) []diag.Finding {
+	var out []diag.Finding
+	for _, f := range s.a.Result().List {
+		if !fitError(f) {
 			continue
 		}
-		if f.Package == p.Package && f.Path == rel || ptr != "" && f.Pointer == ptr && a.snap.display(f.Span.File) == c.t.file {
-			return true
+		atPath := f.Package == pl.pkg && within(f.Path, pl.rel, pathMarks, under)
+		atMember := pl.ptr != "" && within(f.Pointer, pl.ptr, pointerSep, under) && s.display(f.Span.File) == pl.file
+		inItem := under && pl.item.End > pl.item.Start && f.Span.File == pl.item.File && pl.item.Cover(f.Span) == pl.item
+		if atPath || atMember || inItem {
+			out = append(out, f)
 		}
 	}
-	return false
+	return out
+}
+
+// within reports s at place, or with under inside it: past place, one of marks starts a step.
+func within(s, place, marks string, under bool) bool {
+	if s == place {
+		return true
+	}
+	return under && place != "" && len(s) > len(place) && strings.HasPrefix(s, place) && strings.ContainsRune(marks, rune(s[len(place)]))
 }
 
 // memberNode is c's field in the JSON source that states its record, as edited so far; nil for
@@ -161,19 +191,14 @@ func (a *applier) memberNode(c fieldCheck) *jsonsrc.Node {
 	return n
 }
 
-// dropResolved drops a field the final state resolves: E15 sets it to none (E7 rules), E14
-// leaves it to its default; E15's inverse sets it back as FromJSON after the driver (U4b-r).
+// dropResolved drops a field the final state resolves: E15 sets it to none (E7 rules); its
+// inverse sets it back as FromJSON after the driver (U4b-r).
 func (a *applier) dropResolved(c fieldCheck, res resolution) error {
 	raw, err := a.dropText(res.Target, c.f)
 	if err != nil {
 		return err
 	}
-	op := Operation{Kind: OpSet, Path: c.path(), Value: None{}}
-	h := setOp
-	if c.e14 {
-		op, h = Operation{Kind: OpReset, Path: c.path()}, unsetOp
-	}
-	if err := a.run(op, h); err != nil {
+	if err := a.run(Operation{Kind: OpSet, Path: c.path(), Value: None{}}, setOp); err != nil {
 		if errors.Is(err, ErrNotEditable) {
 			return nil // a value no edit can reach is left to the re-check
 		}
@@ -183,24 +208,14 @@ func (a *applier) dropResolved(c fieldCheck, res resolution) error {
 	return nil
 }
 
-// unsetOp leaves the path's field to its default, required or not: a field E14 does not keep.
-func unsetOp(x *opCtx) error {
-	if x.a.env.EditLayer != "" {
-		return x.layerReset()
-	}
-	return x.change(nil)
-}
-
-// reportDrop reports c's value as Dropped; for E15, the inverse follows the driver's (E22, E23).
+// reportDrop reports c's value as Dropped; its inverse follows the driver's (E22, E23).
 func (a *applier) reportDrop(c fieldCheck, raw json.RawMessage) {
 	a.dropped = append(a.dropped, Dropped{Path: c.path(), Value: raw})
-	if !c.e14 {
-		a.cascadeUndo = append(a.cascadeUndo, Operation{Kind: OpSet, Path: c.path(), Value: FromJSON(raw)})
-	}
+	a.cascadeUndo = append(a.cascadeUndo, Operation{Kind: OpSet, Path: c.path(), Value: FromJSON(raw)})
 }
 
 // dropJSON drops a field of a JSON source whose value no longer decodes, which no path reaches:
-// the member at its pointer is edited as E7 says for E15, removed for E14.
+// the member at its pointer is edited as E7 says (E15).
 func (a *applier) dropJSON(c fieldCheck) error {
 	n := a.memberNode(c)
 	if n == nil {
@@ -211,7 +226,7 @@ func (a *applier) dropJSON(c fieldCheck) error {
 		return fmt.Errorf(fmtWrapped, errNoWire, err)
 	}
 	d := &jsonDiff{a: a}
-	if c.e14 || c.f.NoneWire == nil && noneDefault(c.f) {
+	if c.f.NoneWire == nil && noneDefault(c.f) {
 		d.remove(n, int(n.Span.Start))
 	} else if err := d.set(&value.None{T: c.f.Type}, n, c.f); err != nil {
 		return err
