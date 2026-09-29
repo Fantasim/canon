@@ -29,3 +29,76 @@ jobs:
       - run: sudo apt-get update && sudo apt-get install -y nlohmann-json3-dev
       - run: make check
       - run: go test -race ./...
+
+  # Widened C++ platform coverage (CODEGEN.md §9, IMPLEMENTATION-PLAN.md §7.8's GCC/Clang/MSVC
+  # floors): make check itself needs bash and systemd-run, Linux-only, so these two run go vet
+  # and go test directly. macOS's Apple clang takes the same gcc-style flags as Linux, so it
+  # keeps CANON_REQUIRE_CXX (a missing toolchain fails loudly there). Windows has neither g++
+  # nor clang++, so its general steps run without CANON_REQUIRE_CXX (the C++ harness skips
+  # cleanly, by design, never turning the job red); a dedicated step alone requires MSVC.
+  check-macos:
+    runs-on: macos-latest
+    env:
+      GOTOOLCHAIN: local
+      CANON_REQUIRE_CXX: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+          cache-dependency-path: |
+            go.sum
+            tools/audit/go.sum
+            tools/audit/toolchain/go.sum
+      # Apple clang links against libc++ by default: internal/testkit/cxx's clang++ row and its
+      # -stdlib=libc++ probe both run here for real.
+      - run: brew install nlohmann-json
+      - run: echo "CANON_NLOHMANN_INCLUDE=$(brew --prefix nlohmann-json)/include" >> "$GITHUB_ENV"
+      - run: go vet ./...
+      - run: go test ./...
+
+  check-windows:
+    runs-on: windows-latest
+    env:
+      GOTOOLCHAIN: local
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+          cache-dependency-path: |
+            go.sum
+            tools/audit/go.sum
+            tools/audit/toolchain/go.sum
+      # No g++ or clang++ here, and CANON_REQUIRE_CXX is unset: internal/testkit/cxx's harness
+      # skips every C++ compile-and-run test cleanly instead of failing the job.
+      - run: go vet ./...
+      - run: go test ./...
+      # A single pinned header, not vcpkg: nlohmann/json needs no build step and this avoids a
+      # new CI-only dependency; internal/testkit/cxx.config.NlohmannInclude is the override.
+      - name: fetch nlohmann/json single header
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path vendor\include\nlohmann | Out-Null
+          Invoke-WebRequest -Uri "https://raw.githubusercontent.com/nlohmann/json/v3.11.3/single_include/nlohmann/json.hpp" -OutFile vendor\include\nlohmann\json.hpp
+          "CANON_NLOHMANN_INCLUDE=$PWD\vendor\include" >> $env:GITHUB_ENV
+      - name: locate the Developer Command Prompt
+        shell: pwsh
+        run: |
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $vsPath = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          "VSDEVCMD=$vsPath\Common7\Tools\VsDevCmd.bat" >> $env:GITHUB_ENV
+      # CANON_REQUIRE_MSVC only on this step: TestGoldensCompileMSVC (testkit/golden) must fail,
+      # not skip, if cl.exe or nlohmann/json is missing here; cl.exe's PATH only exists inside
+      # VsDevCmd.bat's own shell, so the test runs in the same cmd invocation as it.
+      - name: compile every C++ golden with cl.exe
+        shell: cmd
+        env:
+          CANON_REQUIRE_MSVC: "1"
+        run: |
+          call "%VSDEVCMD%" -arch=x64
+          go test -run TestGoldensCompileMSVC -v ./internal/testkit/golden/... || exit /b 1
