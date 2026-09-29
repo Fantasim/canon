@@ -12,6 +12,7 @@ import (
 func (b *builder) file() *doc {
 	f := b.f
 	if f.FileKind == syntax.FileProject {
+		b.idx.top([]syntax.Node{f.Project})
 		return cat(b.item(f.Project), b.eof(false))
 	}
 	head := cat(b.keyword(b.before(f.Package.First()), true), spaceDoc, b.node(f.Package))
@@ -22,7 +23,9 @@ func (b *builder) file() *doc {
 		head = cat(head, hardlineDoc, b.keyword(b.before(f.Lang.First()), false), spaceDoc, b.node(f.Lang))
 	}
 	imports := b.imports()
+	b.idx = newIndex() // the header holds no item §13 edits (log-2026-09-29 M4 U1r)
 	items := slices.Concat(entries(b, f.Decls), entries(b, f.Amends), entries(b, f.Entries))
+	b.idx.top(nodesOf(items))
 	return cat(head, imports, b.topItems(items), b.eof(len(items) == 0))
 }
 
@@ -77,7 +80,7 @@ func (b *builder) importDecl(n *syntax.Import) *doc {
 		slices.SortStableFunc(names, func(x, y *syntax.Ident) int { return strings.Compare(x.Name, y.Name) })
 		items := make([]entry, len(names))
 		for i, id := range names {
-			items[i] = entry{d: b.node(id)}
+			items[i] = entry{n: id, d: b.node(id)}
 		}
 		ds = append(ds, spaceDoc, b.braceList(n.Braces.Open, n.Braces.Close, items))
 	}

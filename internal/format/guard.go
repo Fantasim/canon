@@ -11,8 +11,15 @@ import (
 // hosts marks the first token of every node that carries a doc block (GRAMMAR.md §9.1).
 func hosts(f *syntax.File) []bool {
 	out := make([]bool, len(f.Tokens))
+	var known, docs [syntax.NodeKindCount]bool // a kind's answer, read once per file
 	syntax.Inspect(f, func(n syntax.Node) bool {
-		if n != nil && documented(n) {
+		if n == nil {
+			return true
+		}
+		if k := n.Kind(); !known[k] {
+			known[k], docs[k] = true, documented(n)
+		}
+		if docs[n.Kind()] {
 			out[n.First()] = true
 		}
 		return true

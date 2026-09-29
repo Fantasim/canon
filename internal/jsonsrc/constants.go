@@ -70,3 +70,14 @@ var literalWords = [...]struct {
 
 // ForeignBOMs are the UTF-32 and UTF-16 byte order marks, longest first (WIRE.md §3.1).
 var ForeignBOMs = [...]string{"\x00\x00\xfe\xff", "\xff\xfe\x00\x00", "\xfe\xff", "\xff\xfe"}
+
+// The kinds of an Edit (FORMATTER.md §14.2).
+const (
+	Set EditKind = iota
+	Insert
+	Remove
+	editKindCount
+)
+
+// editPath names the text Rewrite reads again after each edit.
+const editPath = "edit.json"

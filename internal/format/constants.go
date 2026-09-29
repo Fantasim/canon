@@ -92,3 +92,21 @@ const (
 	eolComment
 	eolSuffix
 )
+
+// restFill stands for the columns that follow a node printed alone (Place.Rest).
+const restFill = "_"
+
+// The kinds of a Change (FORMATTER.md §13).
+const (
+	Replace ChangeKind = iota
+	Insert
+	Remove
+	Retire
+	changeKindCount
+)
+
+// fragmentPath names the text of a new item while the lexer reads its edges (DECISIONS 211).
+const fragmentPath = "fragment.canon"
+
+// carriageReturn and tab are what Rewrite refuses in its input (log-2026-09-29 M4 U1r).
+const carriageReturn, tab = "\r", "\t"

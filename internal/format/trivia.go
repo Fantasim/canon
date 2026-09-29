@@ -10,6 +10,7 @@ import (
 // note is one comment as the printer places it (FORMATTER.md §8).
 type note struct {
 	text     string
+	src      span // the comment's bytes, which the token it is attached to owns
 	blank    bool // a blank line precedes it in the input
 	sameLine bool // it follows another comment on that comment's line
 	joined   bool // the token it leads follows it on its line
@@ -94,7 +95,7 @@ func leading(f *syntax.File, tr []syntax.Trivia) ([]note, bool) {
 		case syntax.TriviaNewline:
 			breaks++
 		case syntax.TriviaLineComment, syntax.TriviaDocComment, syntax.TriviaBlockComment:
-			n := note{text: commentText(f, t), blank: breaks >= blankRun, doc: t.Kind == syntax.TriviaDocComment}
+			n := note{text: commentText(f, t), src: spanOf(t), blank: breaks >= blankRun, doc: t.Kind == syntax.TriviaDocComment}
 			n.sameLine = breaks == 0 && len(notes) > 0
 			notes = append(notes, n)
 			breaks = 0
@@ -114,18 +115,22 @@ func trailing(f *syntax.File, tr []syntax.Trivia) (kept, moved []note) {
 		if t.Kind != syntax.TriviaLineComment && t.Kind != syntax.TriviaBlockComment {
 			continue
 		}
-		s := commentText(f, t)
+		n := note{text: commentText(f, t), src: spanOf(t)}
 		switch {
 		case len(moved) > 0:
-			moved = append(moved, note{text: s, sameLine: true})
-		case strings.Contains(s, newlineText):
-			moved = append(moved, note{text: s})
+			n.sameLine = true
+			moved = append(moved, n)
+		case strings.Contains(n.text, newlineText):
+			moved = append(moved, n)
 		default:
-			kept = append(kept, note{text: s})
+			kept = append(kept, n)
 		}
 	}
 	return kept, moved
 }
+
+// spanOf is the bytes of a trivia.
+func spanOf(t syntax.Trivia) span { return span{int(t.Start), int(t.End)} }
 
 // commentText is a comment without trailing whitespace on any of its lines, a doc line as
 // "/// text".

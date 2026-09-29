@@ -14,10 +14,11 @@ var (
 	ErrDuplicateKey = errors.New("jsonsrc: duplicate key")
 	// ErrEncoding is a source whose text is not UTF-8.
 	ErrEncoding = errors.New("jsonsrc: not valid UTF-8")
+	// ErrEdit is an Edit that does not apply to its source.
+	ErrEdit = errors.New("jsonsrc: the edit does not apply")
 )
 
-// EncodingError locates an ErrEncoding for load's E7105 (DECISIONS 163) in the normalized
-// content; Surrogate is the unpaired surrogate of the \u escape at Span, else 0.
+// EncodingError locates load's E7105 (DECISIONS 163); Surrogate is a lone \u surrogate, else 0.
 type EncodingError struct {
 	Span      source.Span
 	Surrogate rune

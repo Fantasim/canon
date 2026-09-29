@@ -1,6 +1,8 @@
 package format
 
 import (
+	"slices"
+
 	"github.com/fantasim/canonlang/internal/syntax"
 )
 
@@ -8,9 +10,12 @@ import (
 // precedes it in the input, whether its first token is in joinsLine, and whether its last token
 // is in cannotEndItem (DECISIONS 211).
 type entry struct {
+	n                         syntax.Node
 	d, trail                  *doc
 	gap, joins, endJoin, kept bool
 }
+
+func (e entry) node() syntax.Node { return e.n }
 
 // entries are the nodes of a brace list as its items (§4, §8).
 func entries[N syntax.Node](b *builder, ns []N) []entry {
@@ -19,20 +24,46 @@ func entries[N syntax.Node](b *builder, ns []N) []entry {
 		joins := joinsLine[b.f.Tokens[n.First()].Kind]
 		endJoin := cannotEndItem[b.f.Tokens[n.Last()].Kind]
 		body, trail := b.parts(n, true)
-		out[i] = entry{d: body, trail: trail, gap: b.gap(n.First()), joins: joins, endJoin: endJoin, kept: b.keeps(n.Last())}
+		out[i] = entry{n: n, d: body, trail: trail, gap: b.gap(n.First()), joins: joins, endJoin: endJoin, kept: b.keeps(n.Last())}
 	}
 	return out
 }
 
 // braceList is BL(items) of FORMATTER.md §7.2: single-line by §6.1, an empty one always so.
 func (b *builder) braceList(open, close syntax.Tok, items []entry) *doc {
-	inner := b.inner(open, close)
-	single := !inner && (len(items) == 0 || b.oneLine(open, close))
-	return listGroup(single, b.braceParts(open, close, items))
+	return listGroup(b.single(open, close, items), b.braceParts(open, close, items))
+}
+
+// single is a brace list's single-line bit: written on one line without a comment, or, created
+// by the edit API, holding no list in its items.
+func (b *builder) single(open, close syntax.Tok, items []entry) bool {
+	// FORMATTER.md §6.1, §6.3
+	switch {
+	case b.inner(open, close):
+		return false
+	case b.fresh(open):
+		return !slices.ContainsFunc(items, func(e entry) bool { return holdsList(e.n) })
+	default:
+		return len(items) == 0 || b.oneLine(open, close)
+	}
+}
+
+// holdsList reports a brace literal or a list literal, comprehensions included, in n.
+func holdsList(n syntax.Node) bool {
+	// FORMATTER.md §6.3, log-2026-09-29 M4 U1r
+	found := false
+	syntax.Inspect(n, func(c syntax.Node) bool {
+		if c != nil && (c.Kind() == syntax.KindBraceLit || c.Kind() == syntax.KindListLit || c.Kind() == syntax.KindListComp) {
+			found = true
+		}
+		return !found
+	})
+	return found
 }
 
 // braceParts is a brace list without its group, for an if chain whose blocks share one (§7.2).
 func (b *builder) braceParts(open, close syntax.Tok, items []entry) *doc {
+	b.idx.record(open, close, nodesOf(items))
 	body := b.listBody(close, items)
 	if body == nil && !b.inner(open, close) {
 		return cat(b.tok(open), b.closer(close))
@@ -87,14 +118,18 @@ func (b *builder) closing(close syntax.Tok, items bool) *doc {
 // part is an item of a parenthesized list: its text with its leading comments, apart its
 // trailing comments, which follow the comma after it, and whether that comma is kept.
 type part struct {
+	n           syntax.Node
 	body, trail *doc
 	kept        bool
 }
+
+func (p part) node() syntax.Node { return p.n }
 
 // partsOf are the nodes of a parenthesized list as its items.
 func partsOf[N syntax.Node](b *builder, ns []N) []part {
 	out := make([]part, len(ns))
 	for i, n := range ns {
+		out[i].n = n
 		out[i].body, out[i].trail = b.parts(n, false)
 		out[i].kept = b.keeps(n.Last())
 	}
@@ -111,6 +146,7 @@ func separator(kept bool) *doc {
 
 // parenList is PL(open, items, close) of FORMATTER.md §7.2; trailing comments follow the comma.
 func (b *builder) parenList(open, close syntax.Tok, items []part) *doc {
+	b.idx.record(open, close, nodesOf(items))
 	var ds []*doc
 	for i, it := range items {
 		sep, trail := separator(it.kept), it.trail
@@ -131,6 +167,7 @@ func (b *builder) parenList(open, close syntax.Tok, items []part) *doc {
 // flatList is a parenthesized or bracketed list that never breaks: type and annotation
 // arguments.
 func (b *builder) flatList(open, close syntax.Tok, items []part) *doc {
+	b.idx.record(open, close, nodesOf(items))
 	var ds []*doc
 	for i, it := range items {
 		if i < len(items)-1 {

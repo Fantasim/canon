@@ -19,6 +19,9 @@ type builder struct {
 	drop      []bool
 	leadSum   []int
 	trailSum  []int
+	idx       *index
+	fresh     func(syntax.Tok) bool
+	comments  []span // every comment of the file, by offset, once cuts needs them
 }
 
 func newBuilder(f *syntax.File) *builder {
@@ -36,6 +39,7 @@ func newBuilder(f *syntax.File) *builder {
 		f: f, notes: attach(f, drop), glued: map[*syntax.FieldDecl]bool{}, drop: drop,
 		heldLead: make([]bool, len(f.Tokens)), heldTrail: make([]bool, len(f.Tokens)),
 		leadSum: make([]int, len(f.Tokens)+1), trailSum: make([]int, len(f.Tokens)+1),
+		idx: newIndex(), fresh: func(syntax.Tok) bool { return false },
 	}
 	for i, a := range b.notes {
 		b.leadSum[i+1], b.trailSum[i+1] = b.leadSum[i]+len(a.lead), b.trailSum[i]+len(a.trail)
@@ -50,9 +54,12 @@ func (b *builder) inner(open, close syntax.Tok) bool {
 
 // commented reports a comment in a token's trivia.
 func commented(t syntax.Token) bool {
-	return slices.ContainsFunc(slices.Concat(t.Leading, t.Trailing), func(tr syntax.Trivia) bool {
-		return tr.Kind == syntax.TriviaLineComment || tr.Kind == syntax.TriviaBlockComment || tr.Kind == syntax.TriviaDocComment
-	})
+	return slices.ContainsFunc(slices.Concat(t.Leading, t.Trailing), isComment)
+}
+
+// isComment reports a comment trivia: a line, block or doc comment.
+func isComment(tr syntax.Trivia) bool {
+	return tr.Kind == syntax.TriviaLineComment || tr.Kind == syntax.TriviaBlockComment || tr.Kind == syntax.TriviaDocComment
 }
 
 // raw is the text of token t as written.
@@ -149,11 +156,17 @@ func (b *builder) item(n syntax.Node) *doc {
 func (b *builder) parts(n syntax.Node, blanks bool) (body, trail *doc) {
 	first, last := n.First(), n.Last()
 	lead, trail := b.lead(first, blanks), b.trailOf(last, blanks)
+	return cat(lead, b.bare(n)), trail
+}
+
+// bare is n without the comments at its edges, which stay put when n is re-printed alone.
+func (b *builder) bare(n syntax.Node) *doc {
+	first, last := n.First(), n.Last()
 	wasLead, wasTrail := b.heldLead[first], b.heldTrail[last]
 	b.heldLead[first], b.heldTrail[last] = true, true
-	body = buildTable[n.Kind()](b, n)
+	body := buildTable[n.Kind()](b, n)
 	b.heldLead[first], b.heldTrail[last] = wasLead, wasTrail
-	return cat(lead, body), trail
+	return body
 }
 
 // after is the first token after t that is not a separator NL; before, the last one before.

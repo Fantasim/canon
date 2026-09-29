@@ -53,15 +53,29 @@ func init() {
 // render prints root, ending with exactly one line break (FORMATTER.md §2).
 func render(root *doc) []byte {
 	p := &printer{atStart: true, empties: 1}
-	p.push(cmd{0, breakMode, root})
+	p.run(cmd{0, breakMode, root})
+	p.out = bytes.TrimRight(p.out, space+newlineText)
+	return append(p.out, newlineText...)
+}
+
+// renderAt prints d alone from column col of a line indented ind, rest following it on its
+// last line for fits to count.
+func renderAt(d *doc, ind, col int, rest string) string {
+	// FORMATTER.md §13 step 1
+	p := &printer{col: col, lineInd: ind, pendInd: ind}
+	p.run(cmd{ind, breakMode, cat(d, text(rest))})
+	return strings.TrimSuffix(string(p.out), rest)
+}
+
+// run prints the command c and everything it pushes.
+func (p *printer) run(c cmd) {
+	p.push(c)
 	for len(p.stack) > 0 {
 		c := p.stack[len(p.stack)-1]
 		p.stack = p.stack[:len(p.stack)-1]
 		printTable[c.d.kind](p, c)
 	}
 	p.flushSuffixes()
-	p.out = bytes.TrimRight(p.out, space+newlineText)
-	return append(p.out, newlineText...)
 }
 
 func (p *printer) push(cs ...cmd) {

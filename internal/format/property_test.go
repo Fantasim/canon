@@ -11,8 +11,9 @@ import (
 )
 
 // sampleEvery keeps the property tests fast: one position in so many is tried, the offset
-// turning with the file so that every offset is tried.
-const sampleEvery = 13
+// turning with the file so that every offset is tried; the corpus, dense in comments, is
+// sampled more thinly (-format.full tries every position).
+const sampleEvery, corpusEvery = 13, 97
 
 // edit inserts text at a byte offset.
 type edit struct {
@@ -88,10 +89,15 @@ func blockable(toks []syntax.Token, i int) bool {
 
 // FORMATTER.md §8: a comment added anywhere it can stand keeps every guarantee.
 func TestInjectedComments(t *testing.T) {
-	for k, ex := range exampleFiles(t) {
+	examples := exampleFiles(t)
+	for k, ex := range append(examples, corpusWants(t)...) {
 		base := parse(t, ex.path, ex.data)
+		step := every(sampleEvery)
+		if k >= len(examples) {
+			step = every(corpusEvery)
+		}
 		for i, e := range injections(base.file) {
-			if (i+k)%sampleEvery != 0 {
+			if (i+k)%step != 0 {
 				continue
 			}
 			in := parse(t, ex.path, apply(ex.data, []edit{e}))
@@ -103,8 +109,8 @@ func TestInjectedComments(t *testing.T) {
 }
 
 // relaid is src with more spaces between tokens, and line breaks after every "(", "[" and ","
-// inside brackets but outside braces, where they neither matter nor change the single-line
-// bit of a brace list.
+// inside brackets but outside braces that does not end its line, where they neither matter nor
+// change the single-line bit of a brace list (a blank line there may part two doc blocks).
 func relaid(f *syntax.File) []byte {
 	src, toks, inner := f.Src.Content, f.Tokens, inString(f.Tokens)
 	var edits []edit
@@ -121,7 +127,8 @@ func relaid(f *syntax.File) []byte {
 		stack = track(stack, t.Kind)
 		loose := len(stack) > 0 && !slices.Contains(stack, syntax.TokLBrace)
 		opens := t.Kind == syntax.TokLParen || t.Kind == syntax.TokLBrack || t.Kind == syntax.TokComma
-		if loose && opens && !hasComment(t.Trailing) {
+		endsLine := bytes.HasPrefix(bytes.TrimLeft(src[t.End:], " \t"), []byte("\n"))
+		if loose && opens && !hasComment(t.Trailing) && !endsLine {
 			edits = append(edits, edit{int(t.End), "\n\t "})
 		}
 	}
@@ -147,7 +154,7 @@ func track(stack []syntax.TokenKind, k syntax.TokenKind) []syntax.TokenKind {
 
 // FORMATTER.md §12: spaces, line breaks and indentation where they do not matter change nothing.
 func TestRelaidExamples(t *testing.T) {
-	for _, ex := range exampleFiles(t) {
+	for _, ex := range append(exampleFiles(t), corpusWants(t)...) {
 		base := parse(t, ex.path, ex.data)
 		src := relaid(base.file)
 		in := parse(t, ex.path, src)

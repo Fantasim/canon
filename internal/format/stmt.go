@@ -22,7 +22,7 @@ type branch struct {
 // breaks reports a block that is not single-line: several statements, a comment, or items
 // written on several lines; an empty block is "{}".
 func (b *builder) breaks(br branch) bool {
-	return br.many || b.inner(br.open, br.close) || len(br.items) > 0 && !b.oneLine(br.open, br.close)
+	return br.many || !b.single(br.open, br.close, br.items)
 }
 
 // ifChain is an if chain as one group: every block breaks when one does not qualify for a

@@ -162,6 +162,7 @@ func (b *builder) selector(n *syntax.SelectorExpr) *doc {
 // args is a call's argument list; a lone literal argument hugs the parentheses (§6.2).
 func (b *builder) args(parens syntax.Delims, args []*syntax.Arg) *doc {
 	if b.hugs(parens, args) {
+		b.idx.record(parens.Open, parens.Close, nodes(args))
 		return cat(b.tok(parens.Open), b.node(args[0]), b.closer(parens.Close))
 	}
 	return b.parenList(parens.Open, parens.Close, partsOf(b, args))

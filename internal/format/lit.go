@@ -61,11 +61,13 @@ func (b *builder) braceLit(n *syntax.BraceLit) *doc {
 	}
 	var ds []*doc
 	ds = append(ds, lineDoc, b.node(n.Items[0]))
+	parts := []entry{{n: n.Items[0]}}
 	for _, c := range n.Clauses {
 		ds = append(ds, lineDoc, b.node(c))
+		parts = append(parts, entry{n: c})
 	}
 	ds = append(ds, b.closing(n.Last(), true))
-	single := b.oneLine(n.First(), n.Last()) && !b.inner(n.First(), n.Last())
+	single := b.single(n.First(), n.Last(), parts)
 	return listGroup(single, b.tok(n.First()), indent(ds...), lineDoc, b.closer(n.Last()))
 }
 

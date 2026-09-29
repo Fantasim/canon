@@ -38,3 +38,25 @@ func FuzzFormat(f *testing.F) {
 		}
 	})
 }
+
+// FuzzRewrite checks API.md M5 and M6 (IMPLEMENTATION-PLAN §7.7) on one node of a formatted input.
+func FuzzRewrite(f *testing.F) {
+	for i, ex := range exampleFiles(f) {
+		f.Add(ex.data, uint16(i))
+	}
+	f.Fuzz(func(t *testing.T, data []byte, pick uint16) {
+		out, err := formatText(t, "a/a.canon", data)
+		if err != nil {
+			return
+		}
+		ex := example{path: "a/a.canon", data: out}
+		tree := parse(t, ex.path, out).file
+		all := items(tree)
+		if len(all) == 0 {
+			return
+		}
+		n := all[int(pick)%len(all)]
+		checkNode(t, ex, tree, n)
+		insertCopies(t, ex, tree, n)
+	})
+}
