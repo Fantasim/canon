@@ -33,7 +33,7 @@ views/live · U10 check.Session · U11 eval.Memo · U12 parse reuse.
 U4b edit.Apply · U4c Commit/Recover (ADR-0010) · U5 Watch · U5a Evaluate/Refs/Format · U8 build
 memo wiring · U13 rules/verify caches + P9 · U9b show templates and methods · two wiring fixups.
 
-## Wave 3 (in flight)
+## Wave 3 (in flight; staged on `m4-wave3`: U1b, U6, U2b, P3, U5b — reviews passed)
 
 - U5b api edit surface: Edit transaction (E17–E21, S12, W5, W15, X2), Open → Recover (O5), drafts
       (V13/V14), Op JSON, LockCheck (B4), live element naming, wire.Host factory; acceptance 5 via api [opus]
@@ -42,8 +42,13 @@ memo wiring · U13 rules/verify caches + P9 · U9b show templates and methods ·
 - U1b `format` Move kind; edit's Move keeps comments [opus]
 - P12 perf: verify + rules memos, allocation cut; target [items] warm ≤150 ms p95 [opus]
 - P3 perf: load memo, one lineage per selection, rare compaction; target [items,twin] ≤300 ms p95 [opus]
+- B1 correctness: a Recheck re-spends journaled folds' steps (E4401 ≡ cold; DECISIONS 104
+      evidence) [opus] — in flight, parallel to P12's fix round
 - Later: cleanup unit (duplicates, P9 leftovers, E1903 for a variant case declaring an input
-      field; a neighbour's 216 kept-comma line dropped by the M5 settle, described in M6) — after P12/P3 land.
+      field; a neighbour's 216 kept-comma line dropped by the M5 settle, described in M6; U5b nits:
+      `unwritable` gives absolute names their own reason, `lockStable` tests the table first) — after P12/P3 land.
+- P13 perf (after wave 3): `build/hosts.go` listings as maps, `lock` merge, `i18n` bad-node cache,
+      `check` `Info.cloned` [sonnet/opus by package]
 
 ## Wave 4 (gates, written now, run long once at the end)
 
