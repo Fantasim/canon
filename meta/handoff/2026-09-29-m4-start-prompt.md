@@ -31,17 +31,35 @@ Starting point: `internal/format` is substantial (printer, fuzz, idempotence tes
 audit it against FORMATTER.md before assuming work; `internal/workspace` is a doc stub;
 `internal/edit` has Snapshot/Resolve/editability (M3 U4b).
 
-Suggested units (scope them yourself, one package per go-dev, spec-reviewer on each):
- U1 format: gap audit vs FORMATTER §1–§12, §15; JSON source printer §14; examples fixed points.
- U2 cli: `canon fmt` (+ --check, --json-sources) — CLI.md.
- U3 workspace: per-file parse/type-check cache, per-entry eval memo (§7.6 NFR-02).
- U4 edit: Set/Add/Remove, minimal re-printing (FORMATTER §13, API M6), atomic writes, crash
-    safety (acceptance 5).
- U5 api: the rest of API.md — revisions, concurrency, overlays, Evaluate, Refs, Watch.
- U6 cli: explain (input fields, deferred from M3), refs, --watch.
- U7 gates: API.md rule-coverage test (§7.4), minimal-write fuzz, 60 s race stress
-    (8 readers/1 editor/1 watcher), NFR-01 bench on benchgen's 7,000-entry project.
+Parallelize (Louis, 2026-09-29): spawn as many agents as the dependency graph allows, each
+independent unit in its own worktree, all launched in one message. Suggested waves (refine them):
+ Wave 1 (parallel):
+  U1 format: gap audit vs FORMATTER §1–§12, §15; JSON source printer §14; examples fixed points.
+  U2 cli: `canon fmt` (+ --check, --json-sources) — CLI.md (against format's public API).
+  U3 workspace: per-file parse/type-check cache, per-entry eval memo (§7.6 NFR-02).
+  U5 api: revisions, concurrency, overlays, Refs, Watch (API.md §2–§5) — the parts not
+     needing edit.
+ Wave 2 (parallel, after wave 1 lands):
+  U4 edit: Set/Add/Remove, minimal re-printing (FORMATTER §13, API M6), atomic writes, crash
+     safety (acceptance 5).
+  U5b api: Evaluate and the edit surface on top of U3/U4.
+  U6 cli: explain (input fields, deferred from M3), refs, --watch.
+ Wave 3 (parallel): U7 gates — API.md rule-coverage test (§7.4), minimal-write fuzz target,
+  race stress test (8 readers/1 editor/1 watcher), NFR-01 bench target on benchgen's
+  7,000-entry project. Write them; do not run them long yet.
 Tiers: opus for workspace, edit, api, memo, stress; sonnet for cli and gate plumbing.
+A spec-reviewer per unit, run in parallel too.
+
+Checks — cheap during, long ONCE at the very end (Louis, 2026-09-29):
+- During the waves: builders run only their packages' tests (`go test -race ./<pkg>/...`, short
+  fuzz seeds only). The orchestrator runs `GOTOOLCHAIN=local make check` once per wave, after
+  cherry-picking the whole wave, then commits (granular commits, one green check per wave).
+- Never during the waves: CI pushes, check-real, the 10-minute fuzz runs, the 60 s stress, the
+  NFR-01 bench, C++ matrix beyond what make check already does, progen campaigns.
+- Final acceptance pass, once, after wave 3: all of the above in one go (independent long runs in
+  parallel where memory allows — each under its 3G cap), then fix wave(s) for whatever fails,
+  then rerun only the failed gates. Then ask Louis to push a claude/m4-ci branch for the
+  Linux/macOS/Windows CI, and wait for green before declaring M4 accepted.
 
 Every go test runs under `systemd-run --user --scope -p MemoryMax=3G`; temp dirs in /var/tmp.
 Commit granularly after green `GOTOOLCHAIN=local make check`. At the end: meta/state.md,
