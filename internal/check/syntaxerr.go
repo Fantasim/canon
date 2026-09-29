@@ -13,20 +13,25 @@ import (
 // (newObject), before anything is folded or evaluated, and marks each literal token holding a
 // lexer error.
 func (c *checker) syntaxErrors() {
-	found := c.syntaxSpans()
+	found := c.syntaxSpans(c.sorted)
 	for _, p := range c.sorted {
 		for _, f := range p.files {
-			if errs := found.all[f.Src.ID]; len(errs) > 0 {
-				c.holdErrors(f, errs)
-				c.holdTranslationErrors(f, errs)
-			}
-			if errs := found.inLiterals[f.Src.ID]; len(errs) > 0 {
-				c.markBadLiterals(f, errs)
-			}
-			if errs := found.dataWords[f.Src.ID]; len(errs) > 0 {
-				c.markUnmatchable(f, errs)
-			}
+			c.syntaxErrorsIn(f, found)
 		}
+	}
+}
+
+// syntaxErrorsIn is syntaxErrors for one file.
+func (c *checker) syntaxErrorsIn(f *syntax.File, found syntaxFound) {
+	if errs := found.all[f.Src.ID]; len(errs) > 0 {
+		c.holdErrors(f, errs)
+		c.holdTranslationErrors(f, errs)
+	}
+	if errs := found.inLiterals[f.Src.ID]; len(errs) > 0 {
+		c.markBadLiterals(f, errs)
+	}
+	if errs := found.dataWords[f.Src.ID]; len(errs) > 0 {
+		c.markUnmatchable(f, errs)
 	}
 }
 
@@ -36,8 +41,8 @@ type syntaxFound struct {
 	all, inLiterals, dataWords map[source.FileID][]source.Span
 }
 
-// syntaxSpans sorts the packages' parse findings into a syntaxFound.
-func (c *checker) syntaxSpans() syntaxFound {
+// syntaxSpans sorts the parse findings of pkgs into a syntaxFound.
+func (c *checker) syntaxSpans(pkgs []*pkgState) syntaxFound {
 	codes := map[diag.Code]bool{}
 	for _, d := range diag.Registry {
 		codes[d.Code] = d.Package == syntaxOwner && d.Severity == diag.Error
@@ -47,7 +52,7 @@ func (c *checker) syntaxSpans() syntaxFound {
 		inLiteral[d.Def().Code] = true
 	}
 	found := syntaxFound{all: map[source.FileID][]source.Span{}, inLiterals: map[source.FileID][]source.Span{}, dataWords: map[source.FileID][]source.Span{}}
-	for _, p := range c.sorted {
+	for _, p := range pkgs {
 		for _, f := range parseFindings(p) {
 			if codes[f.Code] {
 				found.all[f.Span.File] = append(found.all[f.Span.File], f.Span)

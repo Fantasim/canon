@@ -43,7 +43,7 @@ func (c *checker) collectDecl(p *pkgState, f *syntax.File, d syntax.Decl) {
 		return
 	}
 	if first, dup := p.names[name.Name]; dup {
-		diag.E2106.At(f.Span(name), name.Name, declSpan(first)).Report(p.bag)
+		c.deliver(p, origin{decl: o}, diag.E2106.At(f.Span(name), name.Name, declSpan(first)).Report)
 		c.breakObj(o)
 		return
 	}

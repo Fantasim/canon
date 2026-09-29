@@ -58,7 +58,7 @@ func (c *checker) resolveAlias(o *object, td *syntax.TypeDecl) types.Type {
 	switch o.state {
 	case stateResolving:
 		p := c.pkgs[o.pkg]
-		diag.E3021.At(o.file.Span(td.Name), o.name).Report(p.bag)
+		c.deliver(p, origin{decl: o}, diag.E3021.At(o.file.Span(td.Name), o.name).Report)
 		c.breakObj(o)
 		o.state = stateDone
 		o.typ = types.ErrorType
@@ -329,11 +329,11 @@ func (c *checker) sharedName(env *env, v *types.VariantType, fn *syntax.FnDecl) 
 			c.breakObj(f)
 		}
 		if m := body.methods[name]; m != nil {
-			first, second := declSpan(m), at
-			if compareSpans(first, second) > 0 {
+			first, second := fileSpan{m.file, declSpan(m)}, fileSpan{env.file, at}
+			if compareFileSpans(first, second) > 0 {
 				first, second = second, first
 			}
-			c.report(env, diag.E2106.At(second, name, first))
+			c.report(env, diag.E2106.At(second.span, name, first.span))
 		}
 	}
 }

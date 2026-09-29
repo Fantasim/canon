@@ -49,7 +49,7 @@ func (c *checker) resolveTypeFunc(o *object, td *syntax.TypeDecl) types.Type {
 
 // typeFuncCycle is E3021 for a type function reaching itself with no record on the way (TYPES.md §13.1).
 func (c *checker) typeFuncCycle(o *object, td *syntax.TypeDecl) types.Type {
-	diag.E3021.At(o.file.Span(td.Name), o.name).Report(c.pkgs[o.pkg].bag)
+	c.deliver(c.pkgs[o.pkg], origin{decl: o}, diag.E3021.At(o.file.Span(td.Name), o.name).Report)
 	c.breakObj(o)
 	o.state = stateDone
 	o.typ = types.ErrorType

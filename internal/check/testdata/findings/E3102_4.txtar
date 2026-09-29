@@ -1,0 +1,28 @@
+TYPES.md §9.3, EVALUATION.md §2.1: a keyed list's key written in its literal and by entries of several files is first in the literal, then in (file path, position) order, whatever order the files were read in.
+-- a/c.canon --
+package a
+
+entry tags.2 { label: "c" }
+-- a/b.canon --
+package a
+
+entry tags.2 { label: "b" }
+
+entry tags.1 { label: "one again" }
+-- a/a.canon --
+package a
+
+local record Tag {
+  code: Int
+  label: String
+}
+
+local let tags: [Tag] keyed by code = [{ code: 1, label: "one" }]
+-- findings.txt --
+error[E3102]  a/b.canon:5:12
+  key 1 is used twice (first at a/a.canon:8)
+
+error[E3102]  a/c.canon:3:12
+  key 2 is used twice (first at a/b.canon:3)
+
+2 errors, 0 warnings in 1 package (…)

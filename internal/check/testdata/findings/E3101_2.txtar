@@ -1,0 +1,29 @@
+TYPES.md §9.3, EVALUATION.md §2.1: of an entry key given in two files, the first is the one in (file path, position) order, whatever order the files were read in: x first in a/a.canon, y first in a/a/z.canon, which sorts before a/b.canon.
+-- a/b.canon --
+package a
+
+entry rows.y { n: 3 }
+-- a/a/z.canon --
+package a
+
+entry rows.y { n: 4 }
+
+entry rows.x { n: 2 }
+-- a/a.canon --
+package a
+
+local record Row {
+  n: Int
+}
+
+local let rows: table Row = {}
+
+entry rows.x { n: 1 }
+-- findings.txt --
+error[E3101]  a/a/z.canon:5:12
+  duplicate key x in rows (first at a/a.canon:9)
+
+error[E3101]  a/b.canon:3:12
+  duplicate key y in rows (first at a/a/z.canon:3)
+
+2 errors, 0 warnings in 1 package (…)

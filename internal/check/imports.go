@@ -19,11 +19,16 @@ type importEdge struct {
 // bindImports binds the names each file of p imports (TYPES.md §3.1), E2003 to E2005.
 func (c *checker) bindImports(p *pkgState) {
 	for _, f := range p.files {
-		fs := &fileScope{names: map[string]*object{}, first: map[string]source.Span{}}
-		p.scopes[f] = fs
-		for _, imp := range f.Imports {
-			c.bindImport(p, f, fs, imp)
-		}
+		c.bindFileImports(p, f)
+	}
+}
+
+// bindFileImports binds the names one file of p imports.
+func (c *checker) bindFileImports(p *pkgState, f *syntax.File) {
+	fs := &fileScope{names: map[string]*object{}, first: map[string]source.Span{}}
+	p.scopes[f] = fs
+	for _, imp := range f.Imports {
+		c.bindImport(p, f, fs, imp)
 	}
 }
 
@@ -31,7 +36,7 @@ func (c *checker) bindImport(p *pkgState, f *syntax.File, fs *fileScope, imp *sy
 	last := imp.Path.Parts[len(imp.Path.Parts)-1]
 	target, ok := c.pkgs[qualified(imp.Path)]
 	if !ok {
-		diag.E2003.At(f.Span(imp.Path), qualified(imp.Path)).Report(p.bag)
+		c.deliver(p, origin{file: f}, diag.E2003.At(f.Span(imp.Path), qualified(imp.Path)).Report)
 		return
 	}
 	pkgObj := c.newObject(ObjPackage, last.Name, p, imp, f)
@@ -61,7 +66,7 @@ func (c *checker) bindImport(p *pkgState, f *syntax.File, fs *fileScope, imp *sy
 func (c *checker) bindSelective(p *pkgState, f *syntax.File, fs *fileScope, target *pkgState, n *syntax.Ident) {
 	o, ok := target.names[n.Name]
 	if !ok || o.local {
-		diag.E2004.At(f.Span(n), target.path, n.Name).Report(p.bag)
+		c.deliver(p, origin{file: f}, diag.E2004.At(f.Span(n), target.path, n.Name).Report)
 		return
 	}
 	c.info.NameUses[n] = o
@@ -71,11 +76,11 @@ func (c *checker) bindSelective(p *pkgState, f *syntax.File, fs *fileScope, targ
 // bindName is E2005: a name bound twice in one file, or bound by an import and declared.
 func (c *checker) bindName(p *pkgState, f *syntax.File, fs *fileScope, n *syntax.Ident, o *object) {
 	if first, ok := fs.first[n.Name]; ok {
-		diag.E2005.At(f.Span(n), n.Name, first).Report(p.bag)
+		c.deliver(p, origin{file: f}, diag.E2005.At(f.Span(n), n.Name, first).Report)
 		return
 	}
 	if decl, ok := p.names[n.Name]; ok {
-		diag.E2005.At(f.Span(n), n.Name, declSpan(decl)).Report(p.bag)
+		c.deliver(p, origin{file: f}, diag.E2005.At(f.Span(n), n.Name, declSpan(decl)).Report)
 		return
 	}
 	fs.first[n.Name] = f.Span(n)
@@ -155,7 +160,7 @@ func (c *checker) reportCycle(stack []*pkgState, e importEdge) {
 	}
 	names = append(names, e.to.path)
 	owner := stack[len(stack)-1]
-	diag.E2002.At(e.file.Span(e.imp.Path), names).Report(owner.bag)
+	c.deliver(owner, origin{}, diag.E2002.At(e.file.Span(e.imp.Path), names).Report)
 }
 
 // visit is the state of a package in the cycle walk.

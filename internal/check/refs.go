@@ -25,9 +25,16 @@ type pendingRef struct {
 	node *syntax.RefType
 }
 
-// compareSpans orders two spans of the checked files: by file, then by start.
-func compareSpans(a, b source.Span) int {
-	return cmp.Or(cmp.Compare(a.File, b.File), cmp.Compare(a.Start, b.Start))
+// fileSpan is a span with the checked file holding it.
+type fileSpan struct {
+	file *syntax.File
+	span source.Span
+}
+
+// compareFileSpans orders two spans by their file's path, then by start: a FileID, new for each
+// edited file of a persistent file set, never orders.
+func compareFileSpans(a, b fileSpan) int {
+	return cmp.Or(cmp.Compare(a.file.Src.Path, b.file.Src.Path), cmp.Compare(a.span.Start, b.span.Start))
 }
 
 // isDefines reports a let initialized by `load.defines(…)`, a collection of Define.
@@ -70,7 +77,7 @@ func (c *checker) resolvePending(p *pkgState) {
 	}
 	slices.SortFunc(refs, func(a, b *types.RefType) int {
 		x, y := c.pending[a], c.pending[b]
-		return compareSpans(x.tc.env.span(x.node), y.tc.env.span(y.node))
+		return compareFileSpans(fileSpan{x.tc.env.file, x.tc.env.span(x.node)}, fileSpan{y.tc.env.file, y.tc.env.span(y.node)})
 	})
 	for _, r := range refs {
 		c.refTarget(r)
@@ -156,7 +163,7 @@ func (c *checker) inferenceCycleFound(lets []*object) {
 		o.typ = types.ErrorType
 		c.cycled[o] = true
 		env := c.declEnv(o)
-		diag.E3008.At(env.span(o.decl.(*syntax.LetDecl).Name)).Report(env.pkg.bag)
+		c.deliver(env.pkg, origin{decl: o}, diag.E3008.At(env.span(o.decl.(*syntax.LetDecl).Name)).Report)
 		c.counted(env)
 		c.settle(o)
 	}
@@ -176,9 +183,9 @@ func (c *checker) settle(o *object) {
 	if c.cycled[o] {
 		return
 	}
-	bag := c.declEnv(o).pkg.bag
+	p := c.pkgs[o.pkg]
 	for _, put := range buf {
-		put(bag)
+		c.deliver(p, origin{decl: o}, put)
 	}
 }
 

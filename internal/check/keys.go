@@ -45,27 +45,50 @@ func (c *checker) addKey(p *pkgState, table *object, it *syntax.EntryItem, f *sy
 	table.keys.add(o)
 }
 
-// collectEntryDecl makes the object of `entry t.k` and, when t has static keys, adds k.
+// collectEntryDecl makes the object of `entry t.k` and, when t has static keys, adds k: a key
+// given twice is E3101, kept in entryDups for Recheck to report again.
 func (c *checker) collectEntryDecl(p *pkgState, at entryAt) {
-	e, f, o := at.decl, at.file, at.obj
+	table := c.registerEntry(p, at)
+	if table == nil {
+		return
+	}
+	if first, fresh := table.keys.add(at.obj); !fresh {
+		dup := entryDup{entry: at.obj, table: table, first: first}
+		c.entryDups[p] = append(c.entryDups[p], dup)
+		c.duplicateEntry(p, dup)
+	}
+}
+
+// registerEntry records what `entry t.k` names; the result is t when it has static keys and k
+// is a word, else nil.
+func (c *checker) registerEntry(p *pkgState, at entryAt) *object {
+	e, o := at.decl, at.obj
 	key, isIdent := e.Key.(*syntax.Ident)
-	name := o.name
 	if isIdent {
 		c.info.Defs[key] = o
 	}
 	table, ok := p.names[e.Table.Name]
 	if !ok || table.kind != ObjLet {
-		return
+		return nil
 	}
 	o.parent = table
 	c.info.NameUses[e.Table] = table
 	if table.keys == nil || !isIdent {
-		return
+		return nil
 	}
-	if first, fresh := table.keys.add(o); !fresh {
-		diag.E3101.At(f.Span(key), name, table.name, declSpan(first)).Report(p.bag)
-		c.breakObj(o)
-	}
+	return table
+}
+
+// entryDup is an `entry` declaration whose key its table already has (E3101).
+type entryDup struct {
+	entry, table, first *object
+}
+
+// duplicateEntry is E3101 at the second key; it breaks the entry.
+func (c *checker) duplicateEntry(p *pkgState, d entryDup) {
+	key := d.entry.file.Span(d.entry.decl.(*syntax.EntryDecl).Key)
+	c.deliver(p, origin{keys: p}, diag.E3101.At(key, d.entry.name, d.table.name, declSpan(d.first)).Report)
+	c.breakObj(d.entry)
 }
 
 // entryKeyText is an entry key as written: a word, or an integer in decimal.

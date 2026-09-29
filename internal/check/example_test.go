@@ -84,3 +84,21 @@ local let first = statuses.active().first()
 	fmt.Println(decls[1].Name(), decls[1].Type(), decls[2].Name(), decls[2].Type(), len(bag.Findings()))
 	// Output: statuses table board.Status first board.Status? 0
 }
+
+// An edit of an entry's value re-checks its file alone; the findings are Check's.
+func ExampleSession_Recheck() {
+	fs := &source.FileSet{}
+	parse := func(path, text string) *syntax.File {
+		src, _ := fs.Add(path, "/"+path, []byte(text))
+		return syntax.Parse(src, syntax.FileSource, diag.NewBag(fs, ""))
+	}
+	shop := parse("shop/shop.canon", "package shop\n\nlocal record Item {\n  price: Int\n}\n\nlocal let items: table Item = {}\n")
+	apple := parse("shop/apple.canon", "package shop\n\nentry items.apple { price: 3 }\n")
+	proj := project.New("demo", project.Version{Minor: 1})
+	_, s := check.CheckSession(context.Background(), proj, []*syntax.File{shop, apple}, check.Bags{}, literalFolder{})
+	edited := parse("shop/apple.canon", "package shop\n\nentry items.apple { price: \"three\" }\n")
+	bags := check.Bags{}
+	prog, _, ok := s.Recheck(context.Background(), []*syntax.File{edited}, bags, literalFolder{})
+	fmt.Println(ok, prog.Packages[0].Files[0] == edited, bags["shop"].Findings()[0].Code)
+	// Output: true true E3002
+}

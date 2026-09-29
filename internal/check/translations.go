@@ -72,7 +72,7 @@ func (c *checker) stepTranslation(p *pkgState, f *syntax.File, e *syntax.Transla
 		}
 		at := f.Span(in)
 		c.reported++
-		diag.E1703.AtStep(at, qualified(e.Key), at).Report(p.bag)
+		c.deliver(p, origin{}, diag.E1703.AtStep(at, qualified(e.Key), at).Report)
 		c.info.BrokenTranslations[e] = true
 	}
 }

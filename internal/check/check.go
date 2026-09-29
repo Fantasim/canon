@@ -2,6 +2,7 @@ package check
 
 import (
 	"context"
+	"maps"
 
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/project"
@@ -21,6 +22,12 @@ func Check(ctx context.Context, proj *project.Project, files []*syntax.File, bag
 		return nil
 	}
 	c := newChecker(ctx, proj, bags, fold)
+	c.run(files)
+	return c.program()
+}
+
+// run is phase 2: steps 1 to 3 of TYPES.md §1, then views and translations.
+func (c *checker) run(files []*syntax.File) {
 	c.loadPackages(files)
 	c.syntaxErrors()
 	for _, p := range c.sorted {
@@ -31,22 +38,33 @@ func Check(ctx context.Context, proj *project.Project, files []*syntax.File, bag
 	}
 	c.orderPackages()
 	for _, p := range c.order {
-		if ctx.Err() != nil {
+		if c.ctx.Err() != nil {
 			break
 		}
 		c.resolvePackage(p)
 	}
 	c.markBodyTables()
 	for _, p := range c.order {
-		if ctx.Err() != nil {
+		if c.ctx.Err() != nil {
 			break
 		}
 		c.checkPackage(p)
 	}
 	c.checkPresentation()
+	c.finish()
+}
+
+// finish breaks the readers of broken declarations, then marks the views naming one; a session
+// keeps both sets as they stood before, for Recheck to redo the step.
+func (c *checker) finish() {
+	if c.journal != nil {
+		c.journal.direct = maps.Clone(c.info.Broken)
+	}
 	c.propagateBroken()
+	if c.journal != nil {
+		c.journal.views = maps.Clone(c.info.BrokenViews)
+	}
 	c.checkErrorTypedViews()
-	return c.program()
 }
 
 // checker holds the state of one Check.
@@ -113,6 +131,12 @@ type checker struct {
 	lost        map[*pkgState]*position    // by package, the positions collections in error may have given
 	steps       map[*object]bool           // the fields a view gives a `step` text (I18N.md §3.3)
 	curView     *syntax.ViewDecl           // the view being checked, for BrokenViews (ADR-0009)
+
+	keyedWrites map[*object]*keyWrites // by keyed-list let, the keys its `entry` declarations write (TYPES.md §9.3)
+	entryDups   map[*pkgState][]entryDup
+	journal     *journal       // a session's record of its findings and folds, nil for Check (IMPLEMENTATION-PLAN §7.6)
+	inputs      []*syntax.File // a session's input files, each swapped one replaced: its fallback bags' index
+	override    *origin        // the origin of the findings a regenerable pass reports, instead of their declaration
 }
 
 func newChecker(ctx context.Context, proj *project.Project, bags Bags, fold Folder) *checker {
@@ -158,6 +182,8 @@ func newChecker(ctx context.Context, proj *project.Project, bags Bags, fold Fold
 		messageEnvs:  map[*syntax.CheckDecl]*env{},
 		lost:         map[*pkgState]*position{},
 		steps:        map[*object]bool{},
+		keyedWrites:  map[*object]*keyWrites{},
+		entryDups:    map[*pkgState][]entryDup{},
 	}
 	c.universe = c.newUniverse()
 	return c
@@ -188,7 +214,7 @@ func newInfo() *Info {
 func (c *checker) report(env *env, b *diag.Builder) {
 	c.reported++
 	if env.trans != nil {
-		diag.E1703.AtType(env.trans.at, env.trans.key, b.Message()).Report(env.pkg.bag)
+		c.deliver(env.pkg, c.originOf(env), diag.E1703.AtType(env.trans.at, env.trans.key, b.Message()).Report)
 		c.info.BrokenTranslations[env.trans.entry] = true
 		return
 	}
@@ -210,7 +236,7 @@ func (c *checker) emit(env *env, put func(*diag.Bag)) {
 		c.buffered[env.owner] = append(buf, put)
 		return
 	}
-	put(env.pkg.bag)
+	c.deliver(env.pkg, c.originOf(env), put)
 }
 
 // warn adds a warning; a warning breaks nothing.
@@ -225,8 +251,12 @@ func (c *checker) counted(env *env) {
 }
 
 func (c *checker) breakObj(o *object) {
-	if o != nil {
-		c.info.Broken[o] = true
+	if o == nil || c.info.Broken[o] {
+		return
+	}
+	c.info.Broken[o] = true
+	if c.journal != nil {
+		c.journal.breaks = append(c.journal.breaks, o)
 	}
 }
 

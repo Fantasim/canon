@@ -46,8 +46,7 @@ func (env *env) literalText(n syntax.Node) sourceText {
 
 // written is a node's source text, whole.
 func (env *env) written(n syntax.Node) string {
-	sp := env.span(n)
-	return string(env.file.Src.Content[sp.Start:sp.End])
+	return writtenIn(env.file, n)
 }
 
 // joinable is a branch a join types: `none`, `[]`, `{}`, an if or a match (TYPES.md §6.4).

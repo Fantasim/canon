@@ -1,6 +1,7 @@
 package diag
 
 import (
+	"bytes"
 	"cmp"
 	"slices"
 	"sync"
@@ -65,7 +66,9 @@ func (b *Bag) view() ([]Finding, Truncation) {
 	for i, f := range all {
 		keyed[i] = keyedFinding{f: f, l: locate(b.files, f)}
 	}
-	slices.SortFunc(keyed, compareKeyed)
+	// Two findings in files b.files does not know (Path "") at equal offsets tie: the Span.File
+	// kept varies with report order, and no output reads it.
+	slices.SortFunc(keyed, b.compareKeyed)
 	var out []Finding
 	for i := range keyed {
 		if i == 0 || !duplicate(&keyed[i-1].l, &keyed[i].l) {
@@ -97,15 +100,19 @@ type keyedFinding struct {
 	l Located
 }
 
-// compareKeyed is compareLocated, then the finding's own span: two findings that resolve
-// alike but differ in their offsets still sort one way.
-func compareKeyed(a, b keyedFinding) int {
-	return cmp.Or(
-		compareLocated(&a.l, &b.l),
-		cmp.Compare(a.f.Span.File, b.f.Span.File),
-		cmp.Compare(a.f.Span.Start, b.f.Span.Start),
-		cmp.Compare(a.f.Span.End, b.f.Span.End),
+// compareKeyed is compareLocated, then the finding's own offsets, then its file's content,
+// read only on a tie: two findings that resolve alike still sort one way, and never by FileID,
+// which a persistent file set gives an edited file anew.
+func (b *Bag) compareKeyed(x, y keyedFinding) int {
+	c := cmp.Or(
+		compareLocated(&x.l, &y.l),
+		cmp.Compare(x.f.Span.Start, y.f.Span.Start),
+		cmp.Compare(x.f.Span.End, y.f.Span.End),
 	)
+	if c != 0 {
+		return c
+	}
+	return bytes.Compare(b.files.Content(x.f.Span.File), b.files.Content(y.f.Span.File))
 }
 
 // Summary counts findings, dropped ones included (API.md §4.3).

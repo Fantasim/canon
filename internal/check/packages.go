@@ -97,17 +97,22 @@ func fileDir(f *syntax.File) string {
 
 // checkDirs is E2006: a file declares its own directory's package or an ancestor's.
 func (c *checker) checkDirs(p *pkgState) {
-	want := packageDir(p.path)
 	for _, f := range p.files {
-		dir := fileDir(f)
-		if dir == want || strings.HasPrefix(dir, want+slash) {
-			continue
-		}
-		if dir == "" {
-			dir = rootDir
-		}
-		diag.E2006.At(f.Span(f.Package), dir, p.path).Report(p.bag)
+		c.checkDir(p, f)
 	}
+}
+
+// checkDir is E2006 for one file of p.
+func (c *checker) checkDir(p *pkgState, f *syntax.File) {
+	want := packageDir(p.path)
+	dir := fileDir(f)
+	if dir == want || strings.HasPrefix(dir, want+slash) {
+		return
+	}
+	if dir == "" {
+		dir = rootDir
+	}
+	c.deliver(p, origin{file: f}, diag.E2006.At(f.Span(f.Package), dir, p.path).Report)
 }
 
 // fileIndex resolves the spans of the checked files, for a bag the caller did not give.

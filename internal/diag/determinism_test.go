@@ -111,6 +111,21 @@ func TestBagKeepsTheLeastDuplicate(t *testing.T) {
 	}
 }
 
+// DOCTRINE §5: of duplicates in two versions of one path, the one kept never hangs on FileIDs.
+func TestBagKeepsADuplicateWhateverItsFileID(t *testing.T) {
+	older, newer := diag.MemFile{Path: "a.canon", Content: "one\n"}, diag.MemFile{Path: "a.canon", Content: "one two\n"}
+	for _, files := range []diag.MemFiles{{older, newer}, {newer, older}} {
+		bag := diag.NewBag(files, "p")
+		for _, id := range []source.FileID{2, 1} {
+			diag.E5001.At(source.Span{File: id, Start: 0, End: 3}, "m").Report(bag)
+		}
+		fs := bag.Findings()
+		if len(fs) != 1 || string(files.Content(fs[0].Span.File)) != older.Content {
+			t.Fatalf("files %v: kept %+v", files, fs)
+		}
+	}
+}
+
 // API.md F2: Write sorts findings of several packages the same whatever their order.
 func TestWriteIsOrderIndependent(t *testing.T) {
 	a, b := fill(reports(), []int{0, 3, 5, 11}, 1), fill(reports(), []int{1, 4, 12, 13}, 1)

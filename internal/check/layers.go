@@ -19,7 +19,7 @@ func (c *checker) checkLayers(p *pkgState) {
 		o := c.newObject(ObjLayer, f.Layer.Name, p, f.Layer, f)
 		c.info.Defs[f.Layer] = o
 		if at, dup := first[f.Layer.Name]; dup {
-			diag.E1906.At(f.Span(f.Layer), p.path, f.Layer.Name, at).Report(p.bag)
+			c.deliver(p, origin{file: f}, diag.E1906.At(f.Span(f.Layer), p.path, f.Layer.Name, at).Report)
 		} else {
 			first[f.Layer.Name] = f.Span(f.Layer)
 		}

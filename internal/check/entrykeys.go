@@ -1,6 +1,9 @@
 package check
 
 import (
+	"maps"
+	"slices"
+
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/syntax"
@@ -8,18 +11,57 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// keyedEntryKey types `entry t.k`'s k as the key field and reports it written twice (TYPES.md §9.3).
+// keyedEntryKey types `entry t.k`'s k as the key field and records it for writtenTwice (TYPES.md §9.3).
 func (c *checker) keyedEntryKey(env *env, d *syntax.EntryDecl, table *object, key *types.Field) {
 	v := c.entryKeyValue(env, d.Key, key.Type)
 	if v == nil {
 		return
 	}
-	written := c.writtenKeys(table, key)
-	if first, dup := written[v.CanonText()]; dup {
-		c.report(env, diag.E3102.AtKey(env.span(d.Key), v, first))
+	w := c.keyedWrites[table]
+	if w == nil {
+		w = &keyWrites{field: key}
+		c.keyedWrites[table] = w
+	}
+	w.writes = append(w.writes, keyWrite{entry: env.owner, key: v})
+}
+
+// keyWrites are the keys the `entry` declarations of a keyed list write, and its key field.
+type keyWrites struct {
+	field  *types.Field
+	writes []keyWrite
+}
+
+// keyWrite is the key one `entry` declaration writes.
+type keyWrite struct {
+	entry *object
+	key   value.Value
+}
+
+// writtenTwice is E3102 at each entry key its list's literal or an earlier entry wrote, in
+// (file path, position) order; Recheck runs it again for the list's package.
+func (c *checker) writtenTwice(table *object) {
+	w := c.keyedWrites[table]
+	if w == nil {
 		return
 	}
-	written[v.CanonText()] = env.span(d.Key)
+	slices.SortStableFunc(w.writes, func(a, b keyWrite) int { return compareFileSpans(declPlace(a.entry), declPlace(b.entry)) })
+	seen := maps.Clone(c.writtenKeys(table, w.field))
+	c.override = &origin{keyed: table}
+	defer func() { c.override = nil }()
+	for _, kw := range w.writes {
+		env := c.declEnv(kw.entry)
+		at := env.span(kw.entry.decl.(*syntax.EntryDecl).Key)
+		if first, dup := seen[kw.key.CanonText()]; dup {
+			c.report(env, diag.E3102.AtKey(at, kw.key, first))
+			continue
+		}
+		seen[kw.key.CanonText()] = at
+	}
+}
+
+// declPlace is where a declaration stands.
+func declPlace(o *object) fileSpan {
+	return fileSpan{file: o.file, span: o.file.Span(o.decl)}
 }
 
 // entryKeyValue is an entry key as a value of the key type, nil when it has none statically.
@@ -64,6 +106,9 @@ func (c *checker) checkListKeys(p *pkgState) {
 		if _, keyed, ok := collectionElem(c.letType(o)); ok && keyed != nil {
 			c.writtenKeys(o, keyed)
 		}
+	}
+	for _, o := range p.all {
+		c.writtenTwice(o)
 	}
 }
 
