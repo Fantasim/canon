@@ -4,7 +4,6 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
-	"strings"
 	"testing"
 
 	"github.com/fantasim/canonlang/internal/diag"
@@ -138,9 +137,7 @@ func TestIncrementalLoadLinks(t *testing.T) {
 		var warm, cold *Analysis
 		n := grown(z, func() { warm, cold = z.pair(t) })
 		same(t, st.name, warm, cold)
-		if strings.HasPrefix(st.name, "unchanged") && n != 0 {
-			t.Errorf("%s: the file set gained %d files", st.name, n)
-		}
+		unchangedReplays(t, st.name, warm, n)
 		for _, code := range st.want {
 			if !slices.ContainsFunc(warm.Result().List, func(f diag.Finding) bool { return f.Code == code }) {
 				t.Errorf("%s: no %s", st.name, code)

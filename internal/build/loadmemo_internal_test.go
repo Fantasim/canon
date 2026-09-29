@@ -84,9 +84,15 @@ func TestIncrementalLoadForms(t *testing.T) {
 		st.do(m)
 		n := grown(z, func() { warm, cold = z.pair(t) })
 		same(t, st.name, warm, cold)
-		if strings.HasPrefix(st.name, "unchanged") && n != 0 {
-			t.Errorf("%s: the file set gained %d files", st.name, n)
-		}
+		unchangedReplays(t, st.name, warm, n)
+	}
+}
+
+// unchangedReplays fails an unchanged step whose loads grew the file set or were not replayed.
+func unchangedReplays(t *testing.T, name string, warm *Analysis, grew source.FileID) {
+	t.Helper()
+	if n := warm.r.ev.LoadsReplayed(); strings.HasPrefix(name, "unchanged") && (grew != 0 || n == 0) {
+		t.Errorf("%s: the file set gained %d files, %d loads replayed", name, grew, n)
 	}
 }
 
@@ -194,6 +200,34 @@ func TestCacheCompactionForgetsEpochs(t *testing.T) {
 	if z.cache.memo.Kept(epoch) {
 		t.Errorf("epoch %d: the old generation's store is kept, or made again", epoch)
 	}
+}
+
+// IMPLEMENTATION-PLAN §7.6 NFR-02 (log-2026-09-29 M4 P3-r): a full check in a generation compacted meanwhile keeps no store.
+func TestCacheCheckInDeadGeneration(t *testing.T) {
+	ctx := context.Background()
+	z := archiveAnalyzer(t, loadFormsCase)
+	p, err := Open(z.fs, z.dir, z.opt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r, err := p.WithCache(z.cache).prepare(ctx, nil) // begun on the first generation, not checked yet
+	if err != nil {
+		t.Fatal(err)
+	}
+	old := z.cache.gen
+	old.mu.Lock()
+	old.total, old.live = compactFloor+1, 0
+	old.mu.Unlock()
+	z.pair(t) // compacts
+	r.causes = true
+	if err := r.analyze(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if r.s.gen != old || z.cache.gen == old || r.epoch == 0 || z.cache.memo.Kept(r.epoch) {
+		t.Fatalf("epoch %d checked in the dead generation: want its store forgotten", r.epoch)
+	}
+	_, cold := z.pair(t)
+	same(t, "checked in the dead generation", &Analysis{r: r, res: r.result(), settled: r.settledRoots()}, cold)
 }
 
 // IMPLEMENTATION-PLAN §7.6 NFR-02: lineageCap lineages, the least recently checked dropped, no stale Recheck kept.

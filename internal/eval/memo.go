@@ -169,11 +169,19 @@ func (m *Memo) Forget(epoch uint64) {
 	}
 }
 
-// Kept reports that m holds a store for epoch.
+// Kept reports that m holds a store for epoch: a hook for tests.
 func (m *Memo) Kept(epoch uint64) bool {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	return slices.ContainsFunc(m.gens, func(g *memoGen) bool { return g.epoch == epoch })
+}
+
+// LoadsReplayed is the loads e replayed from its memo: a hook for tests.
+func (e *Evaluator) LoadsReplayed() int {
+	if e.memo == nil {
+		return 0
+	}
+	return e.memo.loaded.hits
 }
 
 // dropFiles deletes the files of cache no longer alive.

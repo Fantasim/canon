@@ -62,7 +62,19 @@ func (g *cacheGen) check(ctx context.Context, c *Cache, in checkInput) (*check.P
 	}
 	epoch := c.nextEpoch()
 	c.forget(g.advance(nil, &head{sess: sess, epoch: epoch, key: key, files: in.files}))
+	c.retire(g, epoch)
 	return prog, epoch
+}
+
+// retire forgets epoch when g, the generation its lineage advanced in, was replaced meanwhile:
+// the compaction's forgetting missed it (log-2026-09-29 M4 P3-r).
+func (c *Cache) retire(g *cacheGen, epoch uint64) {
+	c.mu.Lock()
+	dead := c.gen != g
+	c.mu.Unlock()
+	if dead {
+		c.memo.Forget(epoch)
+	}
 }
 
 // forget drops the memo's stores of epochs no lineage continues (log-2026-09-29 M4 P3-r).
