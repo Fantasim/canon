@@ -24,10 +24,12 @@ type Unit struct {
 	Layers  []string       // the names of its layer files, sorted, each once
 }
 
+type sha256Sum = [sha256.Size]byte
+
 // FileSum is the SHA-256 of a file as read, by display path (API.md S3).
 type FileSum struct {
 	Path string
-	Sum  [sha256.Size]byte
+	Sum  sha256Sum
 }
 
 // Reader parses the source files of the project in Dir into Set, each file's findings going to
@@ -38,40 +40,44 @@ type Reader struct {
 	Dir   string
 	Set   *source.FileSet
 	BagOf func(pkg string) *diag.Bag
+	Reuse *Reuse    // nil: parse every file; else unchanged files return their tree (NFR-02); its set is Set
 	Sums  []FileSum // every file read, in reading order
 }
 
 // Parse reads and parses the files names (Scan's) and groups them by package, in name order.
 func (r *Reader) Parse(ctx context.Context, names []string) ([]*Unit, error) {
+	if r.Reuse != nil && r.Reuse.set != r.Set {
+		return nil, ErrReuseSet
+	}
 	units := map[string]*Unit{}
-	var orphans []*source.File
+	var orphans []parsedFile
 	for _, name := range names {
 		if err := ctx.Err(); err != nil {
 			return nil, err
 		}
-		src, err := r.read(name)
+		p, err := r.file(name)
 		if err != nil {
 			return nil, err
 		}
-		f, pkg := r.parse(src)
-		if pkg == "" {
-			orphans = append(orphans, src)
+		if p.pkg == "" {
+			orphans = append(orphans, p)
 			continue
 		}
-		u := units[pkg]
+		u := units[p.pkg]
 		if u == nil {
-			u = &Unit{Name: pkg, Dir: strings.ReplaceAll(pkg, nameSep, sep)}
-			units[pkg] = u
+			u = &Unit{Name: p.pkg, Dir: strings.ReplaceAll(p.pkg, nameSep, sep)}
+			units[p.pkg] = u
 		}
-		u.add(f)
+		u.add(p.file)
 	}
-	for _, src := range orphans {
-		pkg := dirPackage(src.Path)
+	for _, p := range orphans {
+		pkg := dirPackage(p.src.Path)
 		if units[pkg] == nil {
 			pkg = ""
 		}
-		syntax.Parse(src, syntax.FileSource, r.BagOf(pkg))
+		r.report(p, pkg)
 	}
+	r.Reuse.retain(names)
 	out := slices.SortedFunc(maps.Values(units), func(a, b *Unit) int { return cmp.Compare(a.Name, b.Name) })
 	for _, u := range out {
 		slices.Sort(u.Imports)
@@ -82,31 +88,56 @@ func (r *Reader) Parse(ctx context.Context, names []string) ([]*Unit, error) {
 	return out, nil
 }
 
-// read reads one file into the set.
-func (r *Reader) read(name string) (*source.File, error) {
+// file reads one file and parses it into the set, unless Reuse holds the parse of that content.
+func (r *Reader) file(name string) (parsedFile, error) {
 	abs := path.Join(r.Dir, name)
 	data, err := r.FS.ReadFile(abs)
 	if err != nil {
-		return nil, fmt.Errorf(fmtWrap, err)
+		return parsedFile{}, fmt.Errorf(fmtWrap, err)
 	}
-	r.Sums = append(r.Sums, FileSum{Path: name, Sum: sha256.Sum256(data)})
+	sum := sha256.Sum256(data)
+	r.Sums = append(r.Sums, FileSum{Path: name, Sum: sum})
+	if p, ok := r.Reuse.lookup(name, sum); ok {
+		r.replay(p)
+		return p, nil
+	}
 	src, err := r.Set.Add(name, abs, data)
 	if err != nil {
-		return nil, fmt.Errorf(fmtWrap, err)
+		return parsedFile{}, fmt.Errorf(fmtWrap, err)
 	}
-	return src, nil
+	p := r.parse(src)
+	r.Reuse.store(name, sum, p)
+	return p, nil
 }
 
 // parse parses src with a bag of its own and, when it has findings and a package line, again
 // into its package's bag; a file without a package line is left to Parse.
-func (r *Reader) parse(src *source.File) (*syntax.File, string) {
+func (r *Reader) parse(src *source.File) parsedFile {
 	own := diag.NewBag(r.Set, "")
 	f := syntax.Parse(src, syntax.FileSource, own)
-	pkg := qualified(f.Package)
-	if pkg != "" && len(own.Findings()) > 0 {
-		f = syntax.Parse(src, syntax.FileSource, r.BagOf(pkg))
+	p := parsedFile{src: src, file: f, pkg: qualified(f.Package), findings: len(own.Findings()) > 0}
+	if p.pkg != "" && p.findings {
+		p.file = syntax.Parse(src, syntax.FileSource, r.BagOf(p.pkg))
 	}
-	return f, pkg
+	return p
+}
+
+// replay gives the package's bag the findings of a file taken from Reuse: parsing it again
+// reports them as a fresh parse does, at the same spans, and its tree is dropped for the
+// stored one. A file without findings, or without a package line, has nothing to replay here.
+func (r *Reader) replay(p parsedFile) {
+	if p.pkg != "" && p.findings {
+		syntax.Parse(p.src, syntax.FileSource, r.BagOf(p.pkg))
+	}
+}
+
+// report parses a file without a package line into the bag of pkg, which takes its findings; a
+// file taken from Reuse is parsed again only when it has findings.
+func (r *Reader) report(p parsedFile, pkg string) {
+	bag := r.BagOf(pkg)
+	if !p.reused || p.findings {
+		syntax.Parse(p.src, syntax.FileSource, bag)
+	}
 }
 
 // dirPackage is the package named by the directory of a project-relative file (SPEC §3.2).

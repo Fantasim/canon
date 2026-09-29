@@ -9,6 +9,7 @@ var (
 	ErrUnsupportedVersion = errors.New("unsupported language version")
 	ErrUnknownPackage     = errors.New("unknown package")
 	ErrMixedDirectory     = errors.New("its files declare several packages")
+	ErrReuseSet           = errors.New("the reuse store belongs to another file set")
 )
 
 // errNoLinks is EvalSymlinks on an FS that resolves no symbolic link (WIRE.md §6.5).
