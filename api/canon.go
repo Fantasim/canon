@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/fs"
 	"log/slog"
+	"maps"
 	"slices"
 	"sync"
 
@@ -50,6 +51,9 @@ type Project struct {
 	layers    []string           // Options.Layers, the active layers
 	editLayer string             // Options.EditLayer, which Value's Editable is judged with (API.md §7.5)
 	lang      string             // Options.Lang, the language of Evaluate's texts unless a request names one (§11)
+	logger    *slog.Logger       // Options.Logger, nil to discard
+	osFiles   bool               // no Options.FS: a Watch follows the OS's notifications (W12)
+	roots     map[string]string  // Options.Roots, which a Watch lays load globs out by (W12)
 }
 
 // FindProject returns the directory holding project.canon in dir or a parent (rule O1).
@@ -87,7 +91,10 @@ func Open(root string, opts Options) (p *Project, err error) {
 	if err != nil {
 		return nil, apiError(err)
 	}
-	return &Project{root: dir, b: b, editLayer: opts.EditLayer, layers: slices.Clone(opts.Layers), lang: opts.Lang}, nil
+	return &Project{
+		root: dir, b: b, editLayer: opts.EditLayer, layers: slices.Clone(opts.Layers), lang: opts.Lang,
+		logger: opts.Logger, osFiles: opts.FS == nil, roots: maps.Clone(opts.Roots),
+	}, nil
 }
 
 // Close releases the project and stops every Watch (rule O6).

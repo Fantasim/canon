@@ -38,6 +38,7 @@ type Project struct {
 	subs    []*subscriber
 	calls   map[*call]bool // the shared computations running, which Close cancels
 	hist    history
+	watches watchSet // the watches running and the watcher they share (API.md W16)
 }
 
 type subscriber struct {
@@ -100,7 +101,7 @@ func (p *Project) running(c *call, on bool) {
 }
 
 // Read is the snapshot a call runs against from start to end: the current one, refreshed from
-// the disk first unless a writer is running (API.md S1, S9, S11).
+// the disk first unless a writer is running or a watch keeps it fresh (API.md S1, S9, S11).
 func (p *Project) Read(ctx context.Context) (*Snapshot, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
@@ -123,14 +124,15 @@ func (p *Project) Read(ctx context.Context) (*Snapshot, error) {
 	return p.refresh(ctx, s, CauseExternal)
 }
 
-// current is the current snapshot and whether a writer runs, or ErrClosed.
+// current is the current snapshot and whether a reader must take it as it is, a writer running
+// or a watch keeping it fresh (S1, S9), or ErrClosed.
 func (p *Project) current() (*Snapshot, bool, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if p.closed {
 		return nil, false, ErrClosed
 	}
-	return p.cur, p.writing, nil
+	return p.cur, p.writing || p.watches.running(), nil
 }
 
 // refresh publishes s's successor when the disk changed under it, and returns the snapshot
@@ -169,14 +171,21 @@ func (p *Project) publish(s *Snapshot, cause Cause, files []string) {
 // Subscribe calls fn with every snapshot published until the returned function runs or the
 // project closes, on the publishing goroutine, which holds the refresh: fn must not call p.
 func (p *Project) Subscribe(fn func(Event)) func() {
+	_, stop := p.subscribe(fn)
+	return stop
+}
+
+// subscribe is Subscribe, with the snapshot current when fn joined, the one its first event
+// follows; nil after Close.
+func (p *Project) subscribe(fn func(Event)) (*Snapshot, func()) {
 	sub := &subscriber{fn: fn}
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if p.closed {
-		return func() {}
+		return nil, func() {}
 	}
 	p.subs = append(p.subs, sub)
-	return func() {
+	return p.cur, func() {
 		p.mu.Lock()
 		defer p.mu.Unlock()
 		p.subs = slices.DeleteFunc(p.subs, func(s *subscriber) bool { return s == sub })

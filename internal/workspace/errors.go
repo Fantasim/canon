@@ -12,6 +12,7 @@ var (
 	ErrBadPath = errors.New("invalid path")
 	// ErrStale is a base revision that is not remembered, or whose read set changed (API.md S4, S5).
 	ErrStale = errors.New("sources changed since the base revision")
+	errWatch = errors.New("cannot watch the project's files")
 )
 
 // StaleError is ErrStale with the display paths of the files that changed, in byte order; none

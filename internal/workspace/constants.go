@@ -62,6 +62,7 @@ const (
 // Error texts (API.md X1).
 const (
 	fmtBadPath = "%w: %s"
+	fmtWrap    = "%w: %w"
 	textSep    = ": "
 	listSep    = ", "
 )
@@ -72,4 +73,18 @@ const (
 	fieldMark   = "."
 	keyMark     = "["
 	positionTag = "#"
+)
+
+// A watch's timing (API.md W14) and how often it polls, or resyncs an OS watcher.
+const (
+	quietFor    = 100 * time.Millisecond
+	capFor      = time.Second
+	pollEvery   = 50 * time.Millisecond
+	resyncEvery = time.Second
+)
+
+// The Warn line of a watcher whose OS notifications failed, and its error's key.
+const (
+	msgPolling = "the OS cannot watch the project's files: polling them instead"
+	logError   = "error"
 )
