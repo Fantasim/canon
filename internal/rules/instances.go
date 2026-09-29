@@ -55,7 +55,11 @@ func (t *traversal) visit(v value.Value, dt types.Type) {
 		t.entries(tv)
 		return
 	}
-	eachPart(v, dt, func(p part) bool {
+	var late func(*value.Record) bool
+	if _, isList := v.(*value.List); isList {
+		late = t.lateFrom() // an element's name is its identity's when the list was met (API.md P8)
+	}
+	namedParts(v, dt, late, func(p part) bool {
 		t.segs = append(t.segs, p.s)
 		t.visit(p.v, p.t)
 		t.segs = t.segs[:len(t.segs)-1]

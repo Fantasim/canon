@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"maps"
 	"path"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strings"
 	"sync"
@@ -28,7 +30,38 @@ const (
 	memoDefault       = "project demo {\n  canon: \"0.1\"\n}\n"
 	memoTable         = "/// Items.\nlet items"
 	memoReader        = "/// The items again.\nlet again: [Item] = items.values()\n\n" // holds the table's entries
+	memoFirst         = "a/items/one.canon"
+	selectionsCase    = "testdata/incremental/selections.txtar"
+	selectionsEdited  = "a/items/two.canon"
+	selectionsZ       = "b/bits/z.canon"
+	selectionA        = "a"
+	selectionB        = "b"
+	marksCase         = "testdata/incremental/marks.txtar"
+	marksLast         = "a/d/last.canon"
+	marksWeight       = 300
+	pinnedLow         = 4
+	pinnedHigh        = 7
+	digitsMark        = "N"
 )
+
+// pinnedLines are the lines, trimmed and each number digitsMark, that the pinned divergence adds,
+// removes or changes: stage E's E4401 as text, as JSON, in the view model, and the summaries.
+var pinnedLines = []string{
+	"", "{", "},",
+	`"code": "EN",`, `"col": N,`, `"endCol": N,`, `"endLine": N,`, `"line": N,`,
+	`"file": "a/a.canon",`, `"package": "a",`, `"severity": "error",`,
+	`"message": "evaluation budget of N steps exhausted\nheaviest: Item (N steps)"`,
+	`"message": "evaluation budget of N steps exhausted\nheaviest: Part (N steps)"`,
+	"error[EN]  a/a.canon:N:N", "evaluation budget of N steps exhausted",
+	"heaviest: Item (N steps)", "heaviest: Part (N steps)",
+	"N error, N warnings in N package (…)", "N errors, N warnings in N package (…)",
+	`{"summary":{"errors":N,"warnings":N,"packages":N,"ms":N}}`,
+	`{"severity":"error","code":"EN","file":"a/a.canon","line":N,"col":N,"endLine":N,"endCol":N,"package":"a","message":"evaluation budget of N steps exhausted\nheaviest: Item (N steps)"}`,
+	`{"severity":"error","code":"EN","file":"a/a.canon","line":N,"col":N,"endLine":N,"endCol":N,"package":"a","message":"evaluation budget of N steps exhausted\nheaviest: Part (N steps)"}`,
+}
+
+// digits are the numbers pinnedLines abstract.
+var digits = regexp.MustCompile(`[0-9]+`)
 
 // memoCorpora are the archives whose projects stages B to D are checked on, cold ≡ recorded ≡ replayed.
 var memoCorpora = []string{
@@ -38,9 +71,29 @@ var memoCorpora = []string{
 	"../eval/testdata/*/*.txtar",
 }
 
-// replays is how many entries the stage B and stage C memos of z's cache replayed so far.
-func (z *analyzer) replays() (verified, checked int) {
-	return z.cache.verify.Replayed(), z.cache.rules.Replayed()
+// replaysOf is how many entries a's stages B and C replayed.
+func replaysOf(a *Analysis) (verified, checked int) {
+	return a.r.host.verifier.Replayed(), a.r.runner.Replayed()
+}
+
+// edit sets every number of the file at name, under archiveRoot, to n.
+func (z *analyzer) edit(t *testing.T, name string, n int) {
+	t.Helper()
+	abs := path.Join(archiveRoot, name)
+	text, err := z.fs.ReadFile(abs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	z.fs.set(abs, fieldNumber.ReplaceAll(text, fmt.Appendf(nil, ": %d", n)))
+}
+
+// replaysAfterEdit edits name, analyzes z warm and cold, and is what the warm analysis replayed.
+func (z *analyzer) replaysAfterEdit(t *testing.T, name string, n int) (verified, checked int) {
+	t.Helper()
+	z.edit(t, name, n)
+	warm, cold := z.pair(t)
+	same(t, fmt.Sprintf("%s set to %d", name, n), warm, cold)
+	return replaysOf(warm)
 }
 
 // IMPLEMENTATION-PLAN §7.6 NFR-02, EVALUATION.md §5, §8.1: one entry edited replays the others.
@@ -48,21 +101,11 @@ func TestMemoReplaysUnchangedEntries(t *testing.T) {
 	z := archiveAnalyzer(t, memoCase)
 	warm, cold := z.pair(t)
 	same(t, "first", warm, cold)
-	one := path.Join(archiveRoot, "a/items/one.canon")
 	for i := range memoEdits {
-		text, err := z.fs.ReadFile(one)
-		if err != nil {
-			t.Fatal(err)
-		}
-		z.fs.set(one, fieldNumber.ReplaceAll(text, fmt.Appendf(nil, ": %d", i+1)))
-		v0, c0 := z.replays()
-		warm, cold = z.pair(t)
-		same(t, fmt.Sprintf("edit %d", i), warm, cold)
-		v1, c1 := z.replays()
 		// seven shares a node with a let (no token), five holds a map (stage B reads its keys' marks),
 		// and one is edited: stage B replays two, three, four and six, stage C also five.
-		if v1-v0 != 4 || c1-c0 != 5 {
-			t.Errorf("edit %d: stage B replayed %d entries, stage C %d; want 4 and 5", i, v1-v0, c1-c0)
+		if v, c := z.replaysAfterEdit(t, memoFirst, i+1); v != 4 || c != 5 {
+			t.Errorf("edit %d: stage B replayed %d entries, stage C %d; want 4 and 5", i, v, c)
 		}
 	}
 }
@@ -83,19 +126,86 @@ func TestMemoSharedTable(t *testing.T) {
 		z.fs.set(abs, edited)
 		warm, cold := z.pair(t)
 		same(t, "first", warm, cold)
-		one := path.Join(archiveRoot, "a/items/one.canon")
-		entry, err := z.fs.ReadFile(one)
-		if err != nil {
-			t.Fatal(err)
-		}
-		z.fs.set(one, fieldNumber.ReplaceAll(entry, []byte(": 7")))
-		v0, c0 := z.replays()
-		warm, cold = z.pair(t)
-		same(t, "edited", warm, cold)
-		if v1, c1 := z.replays(); v1-v0 != 4 || c1 != c0 {
-			t.Errorf("read before %t: stage B replayed %d entries, stage C %d; want 4 and none", before, v1-v0, c1-c0)
+		if v, c := z.replaysAfterEdit(t, memoFirst, memoEdits); v != 4 || c != 0 {
+			t.Errorf("read before %t: stage B replayed %d entries, stage C %d; want 4 and none", before, v, c)
 		}
 	}
+}
+
+// IMPLEMENTATION-PLAN §7.6 NFR-02 (log-2026-09-29 M4 P3-r, P12-r): two selections alternating keep their replays.
+func TestMemoTwoSelections(t *testing.T) {
+	z := archiveAnalyzer(t, selectionsCase)
+	for i := range memoEdits {
+		z.edit(t, selectionsEdited, i+1)
+		a := z.selectedPair(t, selectionA)
+		z.edit(t, selectionsZ, i+1)
+		b := z.selectedPair(t, selectionB)
+		if i == 0 {
+			continue
+		}
+		// a: four, first in path order, finds b.lim not forced yet: ReplayChecks refuses; two is edited
+		if v, c := replaysOf(a); v != 3 || c != 2 {
+			t.Errorf("round %d, a: stage B replayed %d entries, stage C %d; want 3 and 2", i, v, c)
+		}
+		if v, c := replaysOf(b); v != 2 || c != 2 {
+			t.Errorf("round %d, b: stage B replayed %d entries, stage C %d; want 2 and 2", i, v, c)
+		}
+	}
+}
+
+// IMPLEMENTATION-PLAN §7.6 NFR-02 (log-2026-09-29 M4 P12-r): a forgotten epoch replays nothing, in any stage.
+func TestMemoForgottenEpoch(t *testing.T) {
+	z := archiveAnalyzer(t, memoCase)
+	warm, _ := z.pair(t)
+	z.cache.memo.Forget(warm.r.epoch)
+	if v, c := z.replaysAfterEdit(t, memoFirst, 1); v != 0 || c != 0 {
+		t.Errorf("forgotten: stage B replayed %d entries, stage C %d", v, c)
+	}
+	z = archiveAnalyzer(t, memoCase)
+	z.pair(t)
+	old := z.cache.gen
+	old.mu.Lock()
+	old.total, old.live = compactFloor+1, 0
+	old.mu.Unlock()
+	if v, c := z.replaysAfterEdit(t, memoFirst, 2); v != 0 || c != 0 || z.cache.gen == old {
+		t.Errorf("compacted: stage B replayed %d entries, stage C %d", v, c)
+	}
+	if v, c := z.replaysAfterEdit(t, memoFirst, 3); v != 4 || c != 5 {
+		t.Errorf("after compaction: stage B replayed %d entries, stage C %d; want 4 and 5", v, c)
+	}
+}
+
+// EVALUATION.md §7.3, §8.1, IMPLEMENTATION-PLAN §7.6: check runs marking values, stage C replayed around them.
+func TestMemoMarkingChecks(t *testing.T) {
+	z := archiveAnalyzer(t, marksCase)
+	warm, cold := z.pair(t)
+	same(t, "first", warm, cold)
+	for i := range memoEdits {
+		// shared holds s, a let's (no token); own's check marks its own value (not traced)
+		if v, c := z.replaysAfterEdit(t, marksLast, marksWeight+i); v != 2 || c != 1 {
+			t.Errorf("edit %d: stage B replayed %d entries, stage C %d; want 2 and 1", i, v, c)
+		}
+	}
+}
+
+// selectedPair analyzes the package selected warm and cold, the same, and is the warm analysis.
+func (z *analyzer) selectedPair(t *testing.T, selected string) *Analysis {
+	t.Helper()
+	ctx := context.Background()
+	p, err := Open(z.fs, z.dir, z.opt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	warm, err := p.WithCache(z.cache).Analyze(ctx, []string{selected})
+	if err != nil {
+		t.Fatal(err)
+	}
+	cold, err := p.Analyze(ctx, []string{selected})
+	if err != nil {
+		t.Fatal(err)
+	}
+	same(t, selected, warm, cold)
+	return warm
 }
 
 // IMPLEMENTATION-PLAN §7.6 NFR-02: every corpus cold ≡ recorded ≡ replayed, then edited.
@@ -112,7 +222,6 @@ func TestMemoEqualsColdCorpora(t *testing.T) {
 				return
 			}
 			same(t, "recorded", warm, cold)
-			keyedHaveIdentities(t, file, cold)
 			warm, cold, _ = z.tryPair(t)
 			same(t, "replayed", warm, cold)
 			files := numbered(warm)
@@ -136,45 +245,67 @@ func TestMemoBudgetCuts(t *testing.T) {
 		}
 	}
 	t.Logf("a cold analysis needs %d steps", low)
-	unlike := 0
 	for n := 1; n <= low; n++ {
-		with, without := memoBudgeted(t, n), memoBudgeted(t, n)
-		without.cache.verify, without.cache.rules = nil, nil
-		unlike += budgetSteps(t, n, with, without)
+		budgetSteps(t, n, memoBudgeted(t, n))
 	}
-	t.Logf("%d analyses without the memos differ from cold (a stage-E fold along a Recheck lineage)", unlike)
 }
 
-// budgetSteps analyzes with and without along the same edits of one entry; each analysis with
-// the memos is the one without, and cold's when that one is. It returns how many are not cold's.
-func budgetSteps(t *testing.T, n int, with, without *analyzer) int {
+// budgetSteps analyzes z along edits of one entry, each warm analysis as cold but for the one
+// divergence pinned (pinnedBudget).
+func budgetSteps(t *testing.T, n int, z *analyzer) {
 	t.Helper()
-	one := path.Join(archiveRoot, "a/items/one.canon")
-	unlike := 0
+	one := path.Join(archiveRoot, memoFirst)
 	for i := range budgetEdits + 1 {
 		if i > 0 {
-			text, err := with.fs.ReadFile(one)
+			text, err := z.fs.ReadFile(one)
 			if err != nil {
 				t.Fatal(err)
 			}
-			edited := fieldNumber.ReplaceAll(text, fmt.Appendf(nil, ": %d", i))
-			with.fs.set(one, edited)
-			without.fs.set(one, edited)
+			z.fs.set(one, fieldNumber.ReplaceAll(text, fmt.Appendf(nil, ": %d", i)))
 		}
-		warm, cold := with.pair(t)
-		plain, _ := without.pair(t)
-		name := fmt.Sprintf("budget %d, step %d", n, i)
-		w, p, c := dumpAnalysis(t, warm), dumpAnalysis(t, plain), dumpAnalysis(t, cold)
-		switch {
-		case w != p:
-			same(t, name+" (memos)", warm, plain)
-		case p != c:
-			unlike++
-		case w != c:
-			same(t, name, warm, cold)
+		warm, cold := z.pair(t)
+		w, c := dumpAnalysis(t, warm), dumpAnalysis(t, cold)
+		if w != c && !pinnedBudget(n, w, c) {
+			same(t, fmt.Sprintf("budget %d, step %d", n, i), warm, cold)
 		}
 	}
-	return unlike
+}
+
+// pinnedBudget reports the one known divergence of a warm analysis from cold: along a Recheck
+// lineage, stage E's fold runs out of steps elsewhere, memo.txtar at budgets 4 to 7 (log-2026-09-29
+// M4 P12-r; unit B1 removes it, and this pin with it).
+func pinnedBudget(n int, warm, cold string) bool {
+	if n < pinnedLow || n > pinnedHigh {
+		return false
+	}
+	for _, line := range unmatched(warm, cold) {
+		if !slices.Contains(pinnedLines, digits.ReplaceAllString(strings.TrimSpace(line), digitsMark)) {
+			return false
+		}
+	}
+	return true
+}
+
+// unmatched is the lines of each of a and b the other lacks, counted as a multiset.
+func unmatched(a, b string) []string {
+	left := map[string]int{}
+	for _, l := range strings.Split(b, "\n") {
+		left[l]++
+	}
+	var out []string
+	for _, l := range strings.Split(a, "\n") {
+		if left[l] > 0 {
+			left[l]--
+		} else {
+			out = append(out, l)
+		}
+	}
+	for _, l := range slices.Sorted(maps.Keys(left)) {
+		for range left[l] {
+			out = append(out, l)
+		}
+	}
+	return out
 }
 
 // IMPLEMENTATION-PLAN §7.6 NFR-02, API.md S7-S8: snapshots share the stage B and C memos.

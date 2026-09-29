@@ -1,0 +1,82 @@
+IMPLEMENTATION-PLAN §7.6 (NFR-02), log-2026-09-29 M4 P3-r, P12-r: two selections, each its own
+lineage, both replaying stages B and C; a's checks read b.lim, which only they force, so the replay
+of the first entry's checks (four, in path order) finds it not forced yet and runs them.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- b/b.canon --
+/// B.
+package b
+
+/// The limit, read only by a's checks.
+let lim: Int = 50
+
+/// A bit.
+record Bit {
+  /// Size.
+  size: Int
+
+  check size < 100 else "size {size}"
+}
+
+/// Bits.
+let bits: table Bit = {}
+-- b/bits/x.canon --
+package b
+
+entry bits.x {
+  size: 1
+}
+-- b/bits/y.canon --
+package b
+
+entry bits.y {
+  size: 200
+}
+-- b/bits/z.canon --
+package b
+
+entry bits.z {
+  size: 3
+}
+-- a/a.canon --
+/// A.
+package a
+
+import b
+
+/// An item.
+record Item {
+  /// Weight.
+  weight: Int
+
+  check weight <= b.lim else "weight {weight} above {b.lim}"
+}
+
+/// Items.
+let items: table Item = {}
+-- a/items/one.canon --
+package a
+
+entry items.one {
+  weight: 1
+}
+-- a/items/two.canon --
+package a
+
+entry items.two {
+  weight: 70
+}
+-- a/items/three.canon --
+package a
+
+entry items.three {
+  weight: 3
+}
+-- a/items/four.canon --
+package a
+
+entry items.four {
+  weight: 4
+}

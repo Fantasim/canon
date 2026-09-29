@@ -50,7 +50,8 @@ type Runner struct {
 	seen    map[*value.Record]bool
 	asking  asking
 	paths   map[value.Value]*verify.Path
-	pending []rootAt // traversed, not in paths yet
+	pending []rootAt
+	retags  retags
 	memo    *memoUse
 
 	declared map[eval.Root]types.Type // each top-level value's declared type
@@ -79,11 +80,13 @@ func New(ev Evaluator, prog *check.Program, bags map[string]*diag.Bag) *Runner {
 // NewShared is New over an index built once, for a runner made per call with bags of its own.
 func NewShared(ix *Index, ev Evaluator, bags map[string]*diag.Bag) *Runner {
 	m, _ := ev.(marks)
+	log, _ := ev.(retags)
 	return &Runner{
 		ev: ev, bags: bags, info: ix.info, files: ix.files, broken: ix.broken, shared: ix.shared, declared: ix.declared,
 		seen:   map[*value.Record]bool{},
 		asking: asking{marks: m, below: map[value.Value]bool{}},
 		paths:  map[value.Value]*verify.Path{},
+		retags: log,
 	}
 }
 

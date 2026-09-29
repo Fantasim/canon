@@ -69,6 +69,3 @@ const fmtNoBag = "%w: %q"
 
 // codesAnnotation is the annotation E3102's code variant relates (TYPES.md §8.1).
 const codesAnnotation = "codes"
-
-// memoEntries bounds the entries a Memo keeps: past it, it forgets them all (as eval's memo does).
-const memoEntries = 1 << 20

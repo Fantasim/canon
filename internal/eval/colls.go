@@ -223,6 +223,7 @@ func (e *Evaluator) withIdentity(rec *value.Record, id *value.Identity) *value.R
 	if rec.Ident == nil {
 		rec.Ident = id
 		e.gens.retagged++
+		e.retags.note(rec)
 		return rec
 	}
 	cp := *rec

@@ -54,13 +54,15 @@ type memoKey struct {
 // frames and code it needed, its findings, and its record with its marks (no root when it
 // failed).
 type memoEntry struct {
-	reads []memoRead
-	tail  int64
-	need  int
-	files []*syntax.File
-	found []memoFinding
-	kept  memoGraph
-	size  int
+	reads  []memoRead
+	tail   int64
+	need   int
+	files  []*syntax.File
+	found  []memoFinding
+	kept   memoGraph
+	size   int
+	key    memoKey               // where the store keeps it
+	stages [stageCount]stageSlot // what stages B and C made of its record (memo_stage.go)
 }
 
 // memoRead is a top-level value an entry read: the steps charged before it, the frames above
@@ -243,6 +245,7 @@ func (u *memoUse) store(k memoKey, en *memoEntry) {
 		u.stats.unkept++
 		return
 	}
+	en.key = k
 	g.entries[k] = en
 	g.bytes += en.size
 	u.stats.stored++

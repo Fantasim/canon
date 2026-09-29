@@ -45,13 +45,19 @@ func (s seg) on(p *verify.Path) *verify.Path {
 	return p
 }
 
-// eachPart calls fn on each part of v declared dt, in order, until fn is false (EVALUATION.md §8.1).
-func eachPart(v value.Value, dt types.Type, fn func(part) bool) {
+// eachPart calls fn on each part of v, in order, until fn is false (EVALUATION.md §8.1).
+func eachPart(v value.Value, fn func(part) bool) {
+	namedParts(v, nil, nil, fn)
+}
+
+// namedParts is eachPart, a keyed list's element for which late is true named as one without an
+// identity: it had none when its list was first met (API.md P8, log-2026-09-29 M4 P12-r).
+func namedParts(v value.Value, dt types.Type, late func(*value.Record) bool, fn func(part) bool) {
 	switch x := v.(type) {
 	case *value.Record:
 		recordParts(x, fn)
 	case *value.List:
-		listParts(x, dt, fn)
+		listParts(x, dt, late, fn)
 	case *value.Map:
 		mapParts(x, dt, fn)
 	case *value.Table:
@@ -75,7 +81,7 @@ func recordParts(r *value.Record, fn func(part) bool) {
 }
 
 // listParts are a list's elements; a keyed list's, declared or else stored so, are named by key (API.md P8).
-func listParts(l *value.List, dt types.Type, fn func(part) bool) {
+func listParts(l *value.List, dt types.Type, late func(*value.Record) bool, fn func(part) bool) {
 	lt, declared := verify.Declared(dt).(*types.ListType)
 	var et types.Type
 	if declared {
@@ -86,7 +92,7 @@ func listParts(l *value.List, dt types.Type, fn func(part) bool) {
 	keyed := lt != nil && lt.KeyedBy != nil
 	for i, e := range l.Elems {
 		s := seg{form: segIndex, i: i}
-		if r, ok := e.(*value.Record); ok && keyed && r.Ident != nil {
+		if r, ok := e.(*value.Record); ok && keyed && r.Ident != nil && (late == nil || !late(r)) {
 			s = seg{form: segKey, key: r.Ident.Key}
 		}
 		if !fn(part{v: e, t: et, s: s}) {

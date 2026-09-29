@@ -16,6 +16,3 @@ const (
 	segMapKey
 	segEntry
 )
-
-// memoEntries bounds the entries a Memo keeps: past it, it forgets them all (as eval's memo does).
-const memoEntries = 1 << 20

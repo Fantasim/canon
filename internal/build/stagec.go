@@ -20,9 +20,7 @@ func (c memoChecks) Ran(d *syntax.CheckDecl, self value.Value, run rules.Run) {
 	}
 }
 
-// alone is the top-level values of r.order that no other value of r.order can hold a part of:
-// none that completed after it is of its package or of one importing it. Stage C replays their
-// tables' entries through the rules memo.
+// alone is the values of r.order no other one of it can hold a part of (log-2026-09-29 M4 P12-r).
 func (r *run) alone() func(eval.Root) bool {
 	at := map[eval.Root]int{}
 	for i, root := range r.ev.Completed() {

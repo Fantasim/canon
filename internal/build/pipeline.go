@@ -47,6 +47,7 @@ type run struct {
 	cached    bool                    // phase 2 goes through the project's cache: the run's own program
 	epoch     uint64                  // the cache's epoch of the program, 0 for none (IMPLEMENTATION-PLAN §7.6)
 	memoized  bool                    // the evaluator replays the cache's memo, and so logs no cause
+	runner    *rules.Runner           // stages C and D's
 }
 
 // prepare is phase 1: the snapshot parsed, the selection with its imports, the layers checked.
@@ -169,7 +170,7 @@ func (r *run) stageA(ctx context.Context) {
 	r.newHost(r.bags)
 	if r.epoch != 0 {
 		r.ev.UseMemo(r.p.cache.memo, r.epoch) // IMPLEMENTATION-PLAN §7.6 NFR-02
-		r.host.verifier.UseMemo(r.p.cache.verify, r.epoch)
+		r.host.verifier.UseMemo()
 		r.memoized = true
 	}
 	if r.causes && !r.memoized {
@@ -247,8 +248,9 @@ func (r *run) stagesCD(ctx context.Context) error {
 	r.failed.prog = r.prog
 	runner := rules.NewShared(r.rix, memoChecks{checks{Evaluator: r.ev, failed: &r.failed}}, r.bags)
 	if r.memoized {
-		runner.UseMemo(r.p.cache.rules, r.epoch, r.alone()) // IMPLEMENTATION-PLAN §7.6 NFR-02
+		runner.UseMemo(r.alone()) // IMPLEMENTATION-PLAN §7.6 NFR-02
 	}
+	r.runner = runner
 	for _, root := range r.order {
 		if v, ok := r.ev.Force(ctx, root); ok {
 			if err := runner.Instances(ctx, root, v); err != nil {

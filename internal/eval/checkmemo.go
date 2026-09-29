@@ -25,6 +25,11 @@ func (t *CheckTrace) Outcome() CheckRun {
 	return t.out
 }
 
+// Nodes is about how many values, reads and findings t keeps, for a memo's byte count.
+func (t *CheckTrace) Nodes() int {
+	return 1 + len(t.reads) + len(t.found) + len(t.out.Reports)
+}
+
 // RunTraced is Run, with the run's trace when a replay reproduces everything it did: it made no
 // block report, marked no value and set no identity, read no marked or poisoned value, was not
 // tainted, loaded nothing and did not run out of steps. Nil: no trace.

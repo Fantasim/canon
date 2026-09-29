@@ -80,8 +80,9 @@ type Evaluator struct {
 	stageB    *diag.Bag                 // a stage-B where predicate's hard errors, until Poison makes them the cause
 	late      late                      // the view model's reads after stage E (viewexpr.go)
 
-	memo *memoUse
-	gens memoGens
+	memo   *memoUse
+	gens   memoGens
+	retags retagLog
 }
 
 // status is where a top-level value is in its evaluation.

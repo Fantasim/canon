@@ -1,0 +1,74 @@
+EVALUATION.md §7.3, §8.1; IMPLEMENTATION-PLAN §7.6 (NFR-02): verify's E5001_9 shape among table
+entries. A check converting its field at a parameter marks it (E3204): in one, the value a let
+shares with its sibling, which was asked about first and so still runs its check (E5001); in
+another, its own value. The other entries' stage C is replayed around those runs.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Pos.
+fn pos(x: Int(0..)) -> Bool {
+  return true
+}
+
+/// Leaf.
+record Leaf {
+  /// Size.
+  size: Int
+
+  check pos(size) else "never"
+}
+
+/// Holder.
+record Holder {
+  /// V.
+  v: Int
+
+  check v > 100 else "small"
+}
+
+/// Pair.
+record Duo {
+  /// A.
+  a: Leaf
+  /// B.
+  b: Holder
+}
+
+/// S.
+let s: Int = 0 - 1
+
+/// Duos.
+let duos: table Duo = {}
+-- a/d/shared.canon --
+package a
+
+entry duos.shared {
+  a: { size: s }
+  b: { v: s }
+}
+-- a/d/own.canon --
+package a
+
+entry duos.own {
+  a: { size: 0 - 5 }
+  b: { v: 1 }
+}
+-- a/d/plain.canon --
+package a
+
+entry duos.plain {
+  a: { size: 2 }
+  b: { v: 1 }
+}
+-- a/d/last.canon --
+package a
+
+entry duos.last {
+  a: { size: 3 }
+  b: { v: 300 }
+}

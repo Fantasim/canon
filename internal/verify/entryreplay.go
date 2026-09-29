@@ -20,31 +20,29 @@ func (w *walker) entryAt(at *Path, e *value.Record, t types.Type, p *Path, sc sc
 // entry verifies e, an entry of a top-level table, at t: replayed when the memo keeps its
 // verification and what that read is unchanged, else walked, and kept when a replay can be.
 func (w *walker) entry(e *value.Record, t types.Type, at *Path, sc scope) value.Value {
-	key, ok := w.entryKey(e, t, sc)
+	token, ok := w.token(e, sc)
 	if !ok {
 		return w.walk(e, t, at, sc)
 	}
-	if kept := w.memo.lookup(key); kept != nil && w.replayEntry(e, kept) {
-		w.memo.hit()
+	key := entryKey{root: w.root, elem: t, retired: sc.retired}
+	if kept, _ := w.memo.Attached(token, eval.Verified).(*entryKept); kept != nil && kept.key == key && w.replayEntry(e, kept) {
+		w.hit()
 		return e
 	}
-	return w.recordEntry(key, e, t, at, sc)
+	return w.recordEntry(token, key, e, at, sc)
 }
 
-// entryKey is the memo key of e verified at t in sc, for an entry of a top-level table only.
-func (w *walker) entryKey(e *value.Record, t types.Type, sc scope) (entryKey, bool) {
+// token is the evaluation e replays, for an entry of a top-level table only.
+func (w *walker) token(e *value.Record, sc scope) (any, bool) {
 	if w.memo == nil || w.rec != nil || len(w.recording) > 0 || sc.env != nil || sc.dep != nil || w.stopped() {
-		return entryKey{}, false
+		return nil, false
 	}
-	token, ok := w.memo.tokens.EntryToken(e)
-	if !ok {
-		return entryKey{}, false
-	}
-	return entryKey{token: token, root: w.root, elem: t, retired: sc.retired}, true
+	return w.memo.EntryToken(e)
 }
 
-// recordEntry walks e as walk does, keeping what it read and reported when a replay can.
-func (w *walker) recordEntry(key entryKey, e *value.Record, t types.Type, at *Path, sc scope) value.Value {
+// recordEntry walks e as walk does, keeping what it read and reported on token when a replay can.
+func (w *walker) recordEntry(token any, key entryKey, e *value.Record, at *Path, sc scope) value.Value {
+	t := key.elem
 	rec := &entryRec{}
 	charged, unbound := w.charged, len(w.res.Unbound)
 	w.rec = rec
@@ -53,9 +51,9 @@ func (w *walker) recordEntry(key entryKey, e *value.Record, t types.Type, at *Pa
 	if rec.void || nv != e || w.stopped() || w.charged != charged || len(w.res.Unbound) != unbound {
 		return nv
 	}
-	marks, ok := positions(e, rec.marked)
-	if ok {
-		w.memo.store(key, &entryKept{reads: rec.reads, found: rec.found, marks: marks})
+	if marks, ok := positions(e, rec.marked); ok {
+		kept := &entryKept{key: key, reads: rec.reads, found: rec.found, marks: marks}
+		w.memo.Attach(token, eval.Verified, kept, kept.nodes())
 	}
 	return nv
 }

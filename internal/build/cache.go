@@ -16,12 +16,10 @@ import (
 // parses of unchanged files, the latest session of a few Recheck lineages and the memos of stages
 // A to C, a new epoch for each full check, one along a lineage. It is safe for concurrent use.
 type Cache struct {
-	mu     sync.Mutex
-	gen    *cacheGen
-	memo   *eval.Memo
-	verify *verify.Memo
-	rules  *rules.Memo
-	epoch  uint64 // the last epoch given
+	mu    sync.Mutex
+	gen   *cacheGen
+	memo  *eval.Memo
+	epoch uint64 // the last epoch given
 }
 
 // cacheGen is the cache over one file set; compacting the set starts a new generation, and a
@@ -54,7 +52,7 @@ type keptFile struct {
 
 // NewCache is an empty cache.
 func NewCache() *Cache {
-	return &Cache{gen: newCacheGen(), memo: eval.NewMemo(), verify: verify.NewMemo(), rules: rules.NewMemo()}
+	return &Cache{gen: newCacheGen(), memo: eval.NewMemo()}
 }
 
 func newCacheGen() *cacheGen {

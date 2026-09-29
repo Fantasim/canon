@@ -27,16 +27,15 @@ func (t *traversal) entry(e *value.Record) {
 		t.visit(e, nil)
 		return
 	}
-	key := entryKey{token: token, root: t.rootOf}
-	if kept := t.memo.lookup(key); kept != nil && t.replayEntry(e, kept) {
-		t.memo.hit()
+	if kept, _ := t.memo.ev.Attached(token, eval.Checked).(*entryKept); kept != nil && kept.root == t.rootOf && t.replayEntry(e, kept) {
+		t.memo.replayed++
 		return
 	}
-	t.recordEntry(key, e)
+	t.recordEntry(token, e)
 }
 
-// recordEntry visits e, keeping each check run and the entry's invalid values.
-func (t *traversal) recordEntry(key entryKey, e *value.Record) {
+// recordEntry visits e, keeping each check run and the entry's invalid values on token.
+func (t *traversal) recordEntry(token any, e *value.Record) {
 	marks, count := t.signature(e), t.memo.ev.InvalidCount()
 	rec := &entryRec{}
 	t.rec = rec
@@ -45,8 +44,8 @@ func (t *traversal) recordEntry(key entryKey, e *value.Record) {
 	if rec.void || t.ctx.Err() != nil || t.memo.ev.InvalidCount() != count {
 		return
 	}
-	rec.kept.marks = marks
-	t.memo.store(key, &rec.kept)
+	rec.kept.root, rec.kept.marks = t.rootOf, marks
+	t.memo.ev.Attach(token, eval.Checked, &rec.kept, rec.kept.nodes())
 }
 
 // replayEntry replays stage C in e when its invalid values are the kept ones and its check runs
@@ -107,7 +106,7 @@ func (s *signing) walk(v value.Value) {
 		s.marks = append(s.marks, s.n)
 	}
 	s.n++
-	eachPart(v, nil, func(p part) bool {
+	eachPart(v, func(p part) bool {
 		s.walk(p.v)
 		return true
 	})
@@ -134,7 +133,7 @@ func (c *collecting) walk(v value.Value) {
 		c.seen[rec] = true
 		c.out = append(c.out, rec)
 	}
-	eachPart(v, nil, func(p part) bool {
+	eachPart(v, func(p part) bool {
 		c.walk(p.v)
 		return true
 	})

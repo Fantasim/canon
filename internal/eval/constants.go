@@ -136,6 +136,13 @@ const (
 	layerSep      = ","
 )
 
+// The later stages keeping what they made of an entry on its evaluation: B and C (memo_stage.go).
+const (
+	Verified Stage = iota
+	Checked
+	stageCount int = iota
+)
+
 // A memo's stores (one per epoch, so per lineage), their bytes together, the forgotten epochs kept.
 const (
 	memoEpochs    = 4

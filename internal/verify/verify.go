@@ -48,7 +48,8 @@ type Verifier struct {
 	mu      sync.Mutex
 	indexes map[value.Value]map[value.Key]*value.Record
 
-	memo *memoUse // the entries kept across snapshots, nil for none (entrymemo.go)
+	memo     entryMemo // the entries kept across snapshots, nil for none (entrymemo.go)
+	replayed int
 }
 
 // Index is what verification reads of a checked program, built once; the verifiers of one run share it.
