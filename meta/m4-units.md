@@ -29,15 +29,17 @@ the last wave.
       primitives (`format.Node`, `format.Expr`) for `edit` [opus]
 - [ ] U2 `cli`: `canon fmt` (`--check`, `--diff`, `--json-sources` static interim) [sonnet] — PASS, wt commit 24c5e71
 - [ ] U3 `workspace` core + `api` rewire (S1–S11, O6, O7, overlays) [opus]
-- [ ] U4a `edit` foundations: Operation, Lit, V1–V4, codec E24–E26, Refs R7/R8 [opus]
-- [ ] U9 `views/live`: Evaluate content V5–V12 [opus] — in review (show/methods behind a seam → U9b)
+- [ ] U4a `edit` foundations: Operation, Lit, V1–V4, codec E24–E26, Refs R7/R8 [opus] — PASS r3
+- [ ] U9 `views/live`: Evaluate content V5–V12 [opus] — PASS r4, wt commit 6255868
 - [ ] U10 `check.Session`/`Recheck` [opus]
 - [ ] U11 `eval.Memo` [opus]
 - [ ] U12 `project` parse reuse [sonnet] — PASS, wt commit a2c3bbc
 
 ## Wave 2
 
-- U4b `edit` apply: E1–E16, E22–E23, M1–M9, N1–N8, edit txtar goldens (M6 on every case) [opus]
+- U4b `edit` apply: E1–E16, E22–E23, M1–M9, N1–N8, edit txtar goldens (M6 on every case); wire
+      `format.Flat` into the codec (E26); U4a leftovers (computed-ref span, cover guard, History-cost
+      test, a default reading a field Keep left nil) [opus]
 - U4c `edit` commit/journal/recover: N9–N12, O5, crash test (acceptance 5) [opus]
 - U5 watch: `workspace/watch*.go`, api/watch.go, W12–W16 [opus]
 - U5a api reads: Evaluate (no draft), Refs, Format/FormatJSONSource (T1, T2) [opus]
