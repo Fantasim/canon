@@ -67,7 +67,7 @@ the last wave.
 
 - Cleanup: P9 literal-union keys in `eval`'s paths (`path.go` keyText) and live `colls.go`
       (`verify.MapKey`); one `value.ArmIndex` for live/verify/wire; live's dependent-type resolution vs
-      verify's `substitute`; live's `layoutOf`/`keyed`/`fieldOf` vs layout/render/encode [sonnet]
+      verify's `substitute` (+ DepMapType, AppliedRecord args); live's `layoutOf`/`keyed`/`fieldOf` vs layout/render/encode [sonnet]
 
 ## Wave 4 (gates, written now, run long once at the end)
 
