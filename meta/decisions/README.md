@@ -29,3 +29,4 @@ the narration.
 | [0008](0008-ir-field-patterns.md) | `ir.Field.Patterns`: every pattern of an input's alias chain |
 | [0009](0009-check-info-broken-views.md) | `check.Info.BrokenViews`: which views hold an error |
 | [0010](0010-edit-journal-recovery.md) | The edit journal: crash recovery and its threat model |
+| [0011](0011-incremental-memo.md) | The incremental memo: one store, epochs, lineages |
