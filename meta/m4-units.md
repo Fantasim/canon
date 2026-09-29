@@ -51,7 +51,8 @@ entries · B1 Recheck folds on the program's Info. Memo architecture: ADR-0011. 
 - B6 S10: `Project.Revision()` never rolls back [opus] · B7 edit JSON printer writes a dependent
       symbol [opus] · B8 AllowErrors lock ids unique among the post-edit sources' facts [opus]
 - B10 (after B3, B7): M6 regions on a JSON last-member modify plus insert; JSON Remove ErrInternal;
-      B9 a Duration not whole in its `@json(unit:)` is a ValueError, not ErrInternal [opus]
+      B9 a Duration not whole in its `@json(unit:)` is a ValueError, not ErrInternal; the E15 inverse on a
+      ref discriminant; literal keys of dependent types (TYPES §11.4) [opus]
 
 ## Wave 3c (after 3b)
 
