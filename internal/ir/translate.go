@@ -64,7 +64,7 @@ func (t *translator) scan(stmts []syntax.Stmt) {
 	for _, st := range stmts {
 		switch x := st.(type) {
 		case *syntax.LetStmt:
-			t.letOf[unparen(x.Value)] = x
+			t.letOf[syntax.Unparen(x.Value)] = x
 			t.expr(x.Value)
 			t.typedLet(x)
 		case *syntax.IfStmt:
@@ -155,7 +155,7 @@ func storeChecks(ty types.Type) bool {
 func (t *translator) body(stmts []syntax.Stmt) PExpr {
 	if len(stmts) == 1 {
 		if r, ok := stmts[0].(*syntax.ReturnStmt); ok {
-			return t.exprs[unparen(r.Value)]
+			return t.exprs[syntax.Unparen(r.Value)]
 		}
 	}
 	return t.block(stmts)
@@ -167,7 +167,7 @@ func (t *translator) block(stmts []syntax.Stmt) *Block {
 	for _, st := range stmts {
 		switch x := st.(type) {
 		case *syntax.LetStmt:
-			b.Stmts = append(b.Stmts, &LetStmt{Name: x.Name.Name, Value: t.exprs[unparen(x.Value)]})
+			b.Stmts = append(b.Stmts, &LetStmt{Name: x.Name.Name, Value: t.exprs[syntax.Unparen(x.Value)]})
 		case *syntax.IfStmt:
 			s := t.ifStmt(x)
 			b.Stmts = append(b.Stmts, s)
@@ -175,7 +175,7 @@ func (t *translator) block(stmts []syntax.Stmt) *Block {
 				return b
 			}
 		case *syntax.ReturnStmt:
-			b.Stmts = append(b.Stmts, &ReturnStmt{X: t.exprs[unparen(x.Value)]})
+			b.Stmts = append(b.Stmts, &ReturnStmt{X: t.exprs[syntax.Unparen(x.Value)]})
 			return b
 		}
 	}
@@ -203,7 +203,7 @@ func blockReturns(b *Block) bool {
 
 // ifStmt is an `if` statement; an `else if` is an Else block holding the next IfStmt.
 func (t *translator) ifStmt(x *syntax.IfStmt) *IfStmt {
-	out := &IfStmt{Cond: t.exprs[unparen(x.Cond)], Then: &Block{T: t.site.fn.Result}}
+	out := &IfStmt{Cond: t.exprs[syntax.Unparen(x.Cond)], Then: &Block{T: t.site.fn.Result}}
 	if x.Then != nil {
 		out.Then = t.block(x.Then.Stmts)
 	}
@@ -254,15 +254,4 @@ func (t *translator) headSpan(n syntax.Node) source.Span {
 		sp.End = t.file.Span(tail).End
 	}
 	return sp
-}
-
-// unparen is e without its parentheses, which the checker's maps do not key.
-func unparen(e syntax.Expr) syntax.Expr {
-	for {
-		p, ok := e.(*syntax.ParenExpr)
-		if !ok {
-			return e
-		}
-		e = p.X
-	}
 }

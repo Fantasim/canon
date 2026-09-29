@@ -27,7 +27,7 @@ func (s *Snapshot) amends(f *syntax.File, b *syntax.AmendBlock, res resolution) 
 	}
 	for _, a := range b.Items {
 		if n, ok := s.prefixOf(a.Path, res); ok {
-			return s.inAmendment(item{unparen(a.Value), f}, res, n), true
+			return s.inAmendment(item{syntax.Unparen(a.Value), f}, res, n), true
 		}
 	}
 	return Editability{}, false
@@ -118,7 +118,7 @@ func (s *Snapshot) segMatches(a *syntax.AmendSegment, res resolution, i int) boo
 	case a.Position != nil:
 		return a.Position.Value.IsInt64() && int64(position(parent, st.Value)) == a.Position.Value.Int64()
 	case a.Key != nil:
-		return s.keyMatches(unparen(a.Key), parent, st)
+		return s.keyMatches(syntax.Unparen(a.Key), parent, st)
 	}
 	return false
 }

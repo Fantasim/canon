@@ -18,7 +18,7 @@ func items(n syntax.Node, f *syntax.File) []item {
 	if l, ok := n.(*syntax.ListLit); ok {
 		out := make([]item, len(l.Elems))
 		for i, e := range l.Elems {
-			out[i] = item{unparen(e), f}
+			out[i] = item{syntax.Unparen(e), f}
 		}
 		return out
 	}
@@ -30,9 +30,9 @@ func items(n syntax.Node, f *syntax.File) []item {
 	for _, it := range lit.Items {
 		switch x := it.(type) {
 		case *syntax.FieldItem:
-			out = append(out, item{unparen(x.Value), f})
+			out = append(out, item{syntax.Unparen(x.Value), f})
 		case *syntax.MapItem:
-			out = append(out, item{unparen(x.Value), f})
+			out = append(out, item{syntax.Unparen(x.Value), f})
 		case *syntax.EntryItem:
 			out = append(out, item{x, f})
 		}

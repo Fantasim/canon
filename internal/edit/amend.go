@@ -52,7 +52,7 @@ func (s *Snapshot) amendment(r rootRef, p *value.Prov) (item, bool) {
 func amendedAt(f *syntax.File, b *syntax.AmendBlock, p *value.Prov) (item, bool) {
 	for _, a := range b.Items {
 		if f.Span(a.Value) == p.Span {
-			return item{unparen(a.Value), f}, true
+			return item{syntax.Unparen(a.Value), f}, true
 		}
 	}
 	return item{}, false

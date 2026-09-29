@@ -68,5 +68,5 @@ var literalWords = [...]struct {
 	kind Kind
 }{{"null", Null}, {"true", Bool}, {"false", Bool}}
 
-// foreignBOMs are the UTF-32 and UTF-16 byte order marks (WIRE.md §3.1), longest first.
-var foreignBOMs = [...]string{"\x00\x00\xfe\xff", "\xff\xfe\x00\x00", "\xfe\xff", "\xff\xfe"}
+// ForeignBOMs are the UTF-32 and UTF-16 byte order marks, longest first (WIRE.md §3.1).
+var ForeignBOMs = [...]string{"\x00\x00\xfe\xff", "\xff\xfe\x00\x00", "\xfe\xff", "\xff\xfe"}

@@ -4,7 +4,6 @@ import (
 	"maps"
 	"path/filepath"
 	"slices"
-	"sort"
 	"strings"
 	"testing"
 
@@ -48,6 +47,6 @@ func withTargetManifests(t *testing.T, root string, manifests []string) []string
 		}
 		manifests = append(manifests, m)
 	}
-	sort.Strings(manifests)
+	slices.Sort(manifests)
 	return manifests
 }

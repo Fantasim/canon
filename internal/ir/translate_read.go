@@ -78,7 +78,7 @@ func (t *translator) selfPath(e syntax.Expr) ([]string, bool) {
 				return nil, false
 			}
 			names = append(names, x.Name.Name)
-			e = unparen(x.X)
+			e = syntax.Unparen(x.X)
 		default:
 			return nil, false
 		}
@@ -167,7 +167,7 @@ func onSelf(x *syntax.CallExpr) bool {
 	case *syntax.IdentExpr:
 		return true
 	case *syntax.SelectorExpr:
-		_, self := unparen(f.X).(*syntax.SelfExpr)
+		_, self := syntax.Unparen(f.X).(*syntax.SelfExpr)
 		return self
 	}
 	return false

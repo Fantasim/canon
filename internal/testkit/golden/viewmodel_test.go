@@ -5,9 +5,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"maps"
 	"os"
 	"path/filepath"
-	"sort"
+	"slices"
 	"sync"
 	"testing"
 
@@ -19,8 +20,20 @@ import (
 var viewSchemaPath = filepath.Join("..", "..", "..", "spec", "viewmodel.schema.json")
 
 // acceptedViews are the packages whose view models M3 acceptance 2 names: each must be written
-// by the whole-project view build, and each has a view golden (exampleTargets).
-var acceptedViews = []string{"pipeline", "resource.events", "resource.farm"}
+// by the whole-project view build, and each has a view golden — every exampleTargets row that
+// builds TargetView, no package name repeated.
+var acceptedViews = viewTargetPackages()
+
+// viewTargetPackages is exampleTargets' packages that build canon.TargetView, sorted.
+func viewTargetPackages() []string {
+	var out []string
+	for _, name := range slices.Sorted(maps.Keys(exampleTargets)) {
+		if slices.Contains(exampleTargets[name], canon.TargetView) {
+			out = append(out, name)
+		}
+	}
+	return out
+}
 
 // viewBreaks are schema-violating edits of a valid view model, each of which the schema must
 // refuse (V1: a $schema other than canon-vm/1; V2: strict, no unknown member; 12.1: every
@@ -150,12 +163,7 @@ func checkAcceptedViews(t *testing.T, models map[string][]byte) {
 	t.Helper()
 	for _, pkg := range acceptedViews {
 		if models[pkg] == nil {
-			written := make([]string, 0, len(models))
-			for p := range models {
-				written = append(written, p)
-			}
-			sort.Strings(written)
-			t.Errorf("no view model written for %s (written: %v)", pkg, written)
+			t.Errorf("no view model written for %s (written: %v)", pkg, slices.Sorted(maps.Keys(models)))
 		}
 	}
 }

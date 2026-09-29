@@ -5,7 +5,6 @@ import (
 	"context"
 	"math"
 	"strings"
-	"unicode/utf8"
 
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/jsonsrc"
@@ -262,13 +261,12 @@ type utf8Source struct {
 // checkUTF8 is src's UTF-8 validity, a leading UTF-8 BOM skipped, else E7105 (WIRE.md §3.1).
 func checkUTF8(src *source.File, data []byte, path string, req Request) (int, bool) {
 	fs := utf8Source{src: src, data: data, path: path}
-	content := string(src.Content)
-	for _, bom := range foreignBOMs {
-		if strings.HasPrefix(content, bom) {
+	for _, bom := range jsonsrc.ForeignBOMs {
+		if bytes.HasPrefix(src.Content, []byte(bom)) {
 			return reportUTF8(fs, req, 0, len(bom))
 		}
 	}
-	if i := invalidUTF8At(src.Content); i >= 0 {
+	if i := jsonsrc.InvalidUTF8At(src.Content); i >= 0 {
 		return reportUTF8(fs, req, i, i+1)
 	}
 	if bytes.HasPrefix(src.Content, []byte(jsonsrc.UTF8BOM)) {
@@ -282,21 +280,6 @@ func reportUTF8(fs utf8Source, req Request, start, end int) (int, bool) {
 	sp := source.Span{File: fs.src.ID, Start: posOf(start), End: posOf(end)}
 	diag.E7105.AtFile(sp, fs.path, rawOffset(fs.data, start)).Report(req.Bag)
 	return 0, false
-}
-
-// invalidUTF8At is the first invalid byte's offset in content, -1 when it is valid UTF-8.
-func invalidUTF8At(content []byte) int {
-	if utf8.Valid(content) {
-		return -1
-	}
-	for i := 0; i < len(content); {
-		r, width := utf8.DecodeRune(content[i:])
-		if r == utf8.RuneError && width == 1 {
-			return i
-		}
-		i += width
-	}
-	return -1
 }
 
 // csvScanner reads one file's raw RFC 4180 bytes into cells, a quoted cell's CR LF kept verbatim (WIRE.md §6.6).

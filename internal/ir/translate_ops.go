@@ -93,7 +93,7 @@ func (t *translator) ordered(e syntax.Expr) bool {
 
 // coalesce is `x ?? y` on an optional path of self (CONFORMANCE.md §2.2); an optional parameter there is E9003's.
 func (t *translator) coalesce(x *syntax.BinaryExpr) PExpr {
-	left := unparen(x.X)
+	left := syntax.Unparen(x.X)
 	if id, ok := left.(*syntax.IdentExpr); ok {
 		if o := t.s.info.Uses[id]; o != nil && o.Kind() == check.ObjParam && o.Type().Base().Kind() == types.Optional {
 			t.broken = true
@@ -120,7 +120,7 @@ func (t *translator) isExpr(e syntax.Expr) PExpr {
 		t.refuseScan(x, x.X)
 		return nil
 	}
-	read, isRead := t.selfRead(unparen(x.X), ctxIs)
+	read, isRead := t.selfRead(syntax.Unparen(x.X), ctxIs)
 	if !isRead {
 		t.refuseScan(x, x.X)
 		return nil

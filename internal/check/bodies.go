@@ -20,15 +20,7 @@ func (c *checker) checkPackage(p *pkgState) {
 	c.checkLayers(p)
 	c.checkDocs(p)
 	c.checkInputs(p)
-	var rest []whereJob
-	for _, j := range c.wheres {
-		if j.env.pkg == p {
-			c.checkWhere(j)
-		} else {
-			rest = append(rest, j)
-		}
-	}
-	c.wheres = rest
+	drainPkgJobs(&c.wheres, p, func(j whereJob) *pkgState { return j.env.pkg }, c.checkWhere)
 }
 
 // markBodyTables records the elements of tables written in bodies first, so E2105 is order-free (TYPES.md §3.6).

@@ -11,7 +11,7 @@ func childNode(n syntax.Node, st Step) (syntax.Node, bool) {
 	switch st.Seg.Kind {
 	case SegField:
 		if fi := fieldItem(n, st.Seg.Name); fi != nil {
-			return unparen(fi.Value), true
+			return syntax.Unparen(fi.Value), true
 		}
 		if ei := entryItem(n, st.Seg.Name); ei != nil {
 			return ei, true
@@ -34,11 +34,11 @@ func listChild(l *syntax.ListLit, st Step) (syntax.Node, bool) {
 		if st.Seg.Key.Kind != KeyInt || i < 0 || i >= int64(len(l.Elems)) {
 			return nil, false
 		}
-		return unparen(l.Elems[i]), true
+		return syntax.Unparen(l.Elems[i]), true
 	}
 	for _, e := range l.Elems { // a Canon literal writes an enum key as its member name, never its wire value
-		el := unparen(e)
-		if fi := fieldItem(el, lt.KeyedBy.Name); fi != nil && keyExprIs(unparen(fi.Value), st.Seg) {
+		el := syntax.Unparen(e)
+		if fi := fieldItem(el, lt.KeyedBy.Name); fi != nil && keyExprIs(syntax.Unparen(fi.Value), st.Seg) {
 			return el, true
 		}
 	}
@@ -54,12 +54,12 @@ func mapChild(n syntax.Node, s Seg) (syntax.Node, bool) {
 	for _, it := range lit.Items {
 		switch x := it.(type) {
 		case *syntax.MapItem:
-			if keyExprIs(unparen(x.Key), s) {
-				return unparen(x.Value), true
+			if keyExprIs(syntax.Unparen(x.Key), s) {
+				return syntax.Unparen(x.Value), true
 			}
 		case *syntax.FieldItem:
 			if nameIs(s, x.Name.Name) {
-				return unparen(x.Value), true
+				return syntax.Unparen(x.Value), true
 			}
 		}
 	}

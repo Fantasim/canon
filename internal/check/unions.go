@@ -41,23 +41,7 @@ func (c *checker) resolveUnion(tc *typeCtx, t *syntax.UnionType) types.Type {
 
 // checkUnions judges the literal unions written in p's types, its refs now resolved; judging one may resolve more.
 func (c *checker) checkUnions(p *pkgState) {
-	for {
-		var mine, rest []unionJob
-		for _, j := range c.unions {
-			if j.env.pkg == p {
-				mine = append(mine, j)
-			} else {
-				rest = append(rest, j)
-			}
-		}
-		if len(mine) == 0 {
-			return
-		}
-		c.unions = rest
-		for _, j := range mine {
-			c.unionWire(j)
-		}
-	}
+	drainPkgJobs(&c.unions, p, func(j unionJob) *pkgState { return j.env.pkg }, c.unionWire)
 }
 
 // unionWire is E3002 for a union's alternative, or a branch of it, without a string wire form.

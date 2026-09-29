@@ -155,6 +155,17 @@ func (*ParenExpr) exprNode()      {}
 
 func (n *ParenExpr) children(yield func(Node) bool) bool { return visit(yield, n.X) }
 
+// Unparen is e without its enclosing parentheses, which are not nodes of their own.
+func Unparen(e Expr) Expr {
+	for {
+		p, ok := e.(*ParenExpr)
+		if !ok {
+			return e
+		}
+		e = p.X
+	}
+}
+
 // UnaryExpr is "-x" or "not x"; Op is the first token's kind.
 type UnaryExpr struct {
 	Bounds

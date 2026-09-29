@@ -27,7 +27,7 @@ func init() {
 
 // expr translates e once, then its conversion; the result is kept for fold.
 func (t *translator) expr(e syntax.Expr) PExpr {
-	e = unparen(e)
+	e = syntax.Unparen(e)
 	if n, done := t.exprs[e]; done {
 		return n
 	}
@@ -82,7 +82,7 @@ func (t *translator) bad(syntax.Expr) PExpr {
 
 // checked is e's type after its conversion; nil, marking the fn broken, when the checker left none.
 func (t *translator) checked(e syntax.Expr) types.Type {
-	e = unparen(e)
+	e = syntax.Unparen(e)
 	var ty types.Type
 	if conv := t.s.info.Conv[e]; conv != nil {
 		ty = conv.To
@@ -106,7 +106,7 @@ func (t *translator) kind(e syntax.Expr) types.Kind {
 
 // typ is e's type as IR, before its conversion (convert retypes a literal).
 func (t *translator) typ(e syntax.Expr) TypeRef {
-	ty := t.s.info.Types[unparen(e)]
+	ty := t.s.info.Types[syntax.Unparen(e)]
 	if ty == nil || ty.Kind() == types.Error {
 		t.broken = true
 		return TypeRef{Kind: types.Error}
@@ -285,7 +285,7 @@ func (t *translator) refuseScan(n syntax.Node, operands ...syntax.Expr) {
 // selfRooted reports a chain of `.f` rooted at self or at a field named bare.
 func (t *translator) selfRooted(e syntax.Expr) bool {
 	for {
-		switch x := unparen(e).(type) {
+		switch x := syntax.Unparen(e).(type) {
 		case *syntax.SelfExpr:
 			return true
 		case *syntax.IdentExpr:

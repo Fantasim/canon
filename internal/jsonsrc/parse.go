@@ -80,22 +80,30 @@ func Parse(f *source.File, bag *diag.Bag) (*Node, error) {
 
 // checkEncoding refuses UTF-16 and UTF-32 byte order marks and non-UTF-8 bytes (WIRE.md §3.1).
 func checkEncoding(f *source.File) error {
-	for _, bom := range foreignBOMs {
+	for _, bom := range ForeignBOMs {
 		if bytes.HasPrefix(f.Content, []byte(bom)) {
 			return &EncodingError{Span: spanOf(f.ID, 0, len(bom))}
 		}
 	}
-	if utf8.Valid(f.Content) {
-		return nil
+	if i := InvalidUTF8At(f.Content); i >= 0 {
+		return &EncodingError{Span: spanOf(f.ID, i, i+1)}
 	}
-	for i := 0; i < len(f.Content); {
-		r, width := utf8.DecodeRune(f.Content[i:])
+	return nil
+}
+
+// InvalidUTF8At is the offset of content's first invalid byte, -1 when it is all valid UTF-8 (WIRE.md §3.1).
+func InvalidUTF8At(content []byte) int {
+	if utf8.Valid(content) {
+		return -1
+	}
+	for i := 0; i < len(content); {
+		r, width := utf8.DecodeRune(content[i:])
 		if r == utf8.RuneError && width == 1 {
-			return &EncodingError{Span: spanOf(f.ID, i, i+1)}
+			return i
 		}
 		i += width
 	}
-	return nil
+	return -1
 }
 
 func (p *parser) span(start, end int) source.Span {

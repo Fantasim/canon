@@ -157,7 +157,7 @@ func comparisonOf(x *syntax.ExpectStmt) *comparison {
 	if x.Outcome != nil {
 		return nil
 	}
-	if c, ok := unparen(x.X).(*syntax.BinaryExpr); ok && comparisons[c.Op] {
+	if c, ok := syntax.Unparen(x.X).(*syntax.BinaryExpr); ok && comparisons[c.Op] {
 		return &comparison{at: c, op: c.Op}
 	}
 	return nil

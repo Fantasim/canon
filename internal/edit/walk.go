@@ -11,7 +11,7 @@ import (
 // reads, a load of another format, or an expression.
 func (s *Snapshot) rootCursor(res resolution) cursor {
 	obj := res.root.obj
-	e := unparen(initializer(obj.Decl()))
+	e := syntax.Unparen(initializer(obj.Decl()))
 	entries := s.entryDecls(res.root)
 	files := len(entries) > 0 || filesLet(obj.Decl())
 	switch shape.SourceForm(s.info, e) {
@@ -79,7 +79,7 @@ func (j *judge) canonStep(c cursor, i int) cursor {
 		fi := fieldItem(c.node, st.Seg.Name)
 		switch {
 		case fi != nil:
-			return j.itemCursor(c, item{unparen(fi.Value), c.file}, st.Value)
+			return j.itemCursor(c, item{syntax.Unparen(fi.Value), c.file}, st.Value)
 		case hasSpread(c.node):
 			return c.to(stSpread)
 		}

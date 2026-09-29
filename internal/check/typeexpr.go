@@ -345,15 +345,7 @@ func (c *checker) doubleOptional(j optionalJob) {
 
 // checkOptionals judges the `T??` written in p's types, its refs now resolved.
 func (c *checker) checkOptionals(p *pkgState) {
-	var rest []optionalJob
-	for _, j := range c.optionals {
-		if j.env.pkg != p {
-			rest = append(rest, j)
-			continue
-		}
-		c.doubleOptional(j)
-	}
-	c.optionals = rest
+	drainPkgJobs(&c.optionals, p, func(j optionalJob) *pkgState { return j.env.pkg }, c.doubleOptional)
 }
 
 // pendingIn reports a ref in t whose target is not found yet (TYPES.md §10.2).

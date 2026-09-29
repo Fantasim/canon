@@ -12,17 +12,6 @@ func isLoadDir(info *check.Info, e syntax.Expr) bool {
 	return ok && x.Method != nil && shape.SourceForm(info, x) == shape.FormJSON
 }
 
-// unparen is e without its enclosing parentheses.
-func unparen(e syntax.Expr) syntax.Expr {
-	for {
-		p, ok := e.(*syntax.ParenExpr)
-		if !ok {
-			return e
-		}
-		e = p.X
-	}
-}
-
 // initializer is the expression of a top-level let or const.
 func initializer(n syntax.Node) syntax.Expr {
 	switch d := n.(type) {

@@ -129,7 +129,7 @@ func (e *Evaluator) readsOf(d *syntax.FnDecl) []syntax.Expr {
 		syntax.Inspect(d.Body, func(n syntax.Node) bool {
 			x, isExpr := n.(syntax.Expr)
 			if isExpr && e.selfPath(x) {
-				xs = append(xs, unparen(x))
+				xs = append(xs, syntax.Unparen(x))
 				return false
 			}
 			return true
@@ -141,7 +141,7 @@ func (e *Evaluator) readsOf(d *syntax.FnDecl) []syntax.Expr {
 
 // selfPath reports self, a field path of self, or a parameterless method on one (CONFORMANCE.md §2.2).
 func (e *Evaluator) selfPath(x syntax.Expr) bool {
-	switch n := unparen(x).(type) {
+	switch n := syntax.Unparen(x).(type) {
 	case *syntax.SelfExpr:
 		return true
 	case *syntax.IdentExpr:

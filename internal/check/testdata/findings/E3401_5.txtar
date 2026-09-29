@@ -25,6 +25,28 @@ local record Model {
   /// A count.
   n: Int?? = none
 }
+
+/// A tree node, ref to its own kind (level 1: Tree.nodes).
+local record Node {
+  /// Its parent.
+  parent: ref Node?? = none
+}
+
+/// A tree of nodes.
+local record Tree {
+  /// Its nodes.
+  nodes: table Node
+}
+
+/// A parameter typed as a doubly-optional ref.
+local fn g(r: ref items??) -> Int {
+  return 1
+}
+
+/// A parameter typed as a function whose own parameter is a doubly-optional ref.
+local fn byRef(f: fn(ref items??) -> Int) -> Int {
+  return 1
+}
 -- findings.txt --
 error[E3401]  a/a.canon:16:13
   ref a.texts?? is not a type: ref a.texts? is already optional
@@ -41,4 +63,13 @@ error[E2102]  a/a.canon:22:13
 error[E3401]  a/a.canon:24:6
   Int?? is not a type: Int? is already optional
 
-5 errors, 0 warnings in 1 package (…)
+error[E3401]  a/a.canon:30:11
+  ref a.Node?? is not a type: ref a.Node? is already optional
+
+error[E3401]  a/a.canon:40:15
+  ref a.items?? is not a type: ref a.items? is already optional
+
+error[E3401]  a/a.canon:45:22
+  ref a.items?? is not a type: ref a.items? is already optional
+
+8 errors, 0 warnings in 1 package (…)
