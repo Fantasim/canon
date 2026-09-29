@@ -39,7 +39,7 @@ the last wave.
 
 - U4b `edit` apply: E1–E16, E22–E23, M1–M9, N1–N8, edit txtar goldens (M6 on every case); wire
       `format.Flat` into the codec (E26); U4a leftovers (computed-ref span, cover guard, History-cost
-      test, a default reading a field Keep left nil) [opus]
+      test, a default reading a field Keep left nil); M9 fixed-point check on RAW bytes (CRLF) [opus]
 - U4c `edit` commit/journal/recover: N9–N12, O5, crash test (acceptance 5) [opus]
 - U5 watch: `workspace/watch*.go`, api/watch.go, W12–W16 [opus]
 - U5a api reads: Evaluate (no draft), Refs, Format/FormatJSONSource (T1, T2) [opus]
