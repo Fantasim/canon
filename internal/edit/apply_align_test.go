@@ -29,13 +29,30 @@ func checkRegions(t *testing.T, name string, w edit.Write) {
 // each as its kind allows.
 func keptOutside(t *testing.T, name string, w edit.Write) bool {
 	t.Helper()
-	a := aligner{w: w, rs: merged(w.Regions), shape: shapeOf(t, name, w.After)}
+	if !movesLeave(w) {
+		return false
+	}
+	a := aligner{w: w, rs: merged(w), shape: shapeOf(t, name, w.After)}
 	return a.from(0, 0)
 }
 
-// area is a run of merged regions: its bounds, what it may hold after, and how many new items.
+// movesLeave reports every moved item's lines inside a region it leaves: a RegionMoved with no
+// RegionGone there is refused outright (log-2026-09-29 M4 U1b-r).
+func movesLeave(w edit.Write) bool {
+	for _, m := range w.Regions {
+		leaves := func(r edit.Region) bool { return r.Kind == edit.RegionGone && r.Lo <= m.FromLo && m.FromHi <= r.Hi }
+		if m.Kind == edit.RegionMoved && (m.FromHi <= m.FromLo || !slices.ContainsFunc(w.Regions, leaves)) {
+			return false
+		}
+	}
+	return true
+}
+
+// area is a run of merged regions: its bounds, what it may hold after, how many new items, and
+// for a moved item or a neighbour's comma alone, the only texts it may hold.
 type area struct {
 	lo, hi, kind, items int
+	texts               [][]byte
 }
 
 // aligner matches a write's after against its before: after is seg0 X0 seg1 X1 ... segN,
@@ -79,6 +96,15 @@ func (a *aligner) from(i, at int) bool {
 // ends are the offsets where area r's text, starting at at, may end: nothing for a removal,
 // a node's end for an item printed again, exactly r.items items for new items, any for any.
 func (a *aligner) ends(r area, at int, next []byte, last bool) []int {
+	if r.texts != nil {
+		var out []int
+		for _, s := range r.texts {
+			if bytes.HasPrefix(a.w.After[at:], s) {
+				out = append(out, at+len(s))
+			}
+		}
+		return out
+	}
 	switch r.kind {
 	case edit.RegionGone:
 		return []int{at}
@@ -105,18 +131,40 @@ func (a *aligner) ends(r area, at int, next []byte, last bool) []int {
 	return out
 }
 
-// merged are regions sorted, those that overlap or touch joined.
-func merged(rs []edit.Region) []area {
-	rs = slices.Clone(rs)
-	slices.SortFunc(rs, func(x, y edit.Region) int { return x.Lo - y.Lo })
-	var out []area
-	for _, r := range rs {
+// movedTexts are what a moved item's arrival may hold: exactly its own lines, or them with the
+// comma right after its last token removed or added (DECISIONS 211); no blank line comes with
+// them (log-2026-09-29 M4 U1b-r).
+func movedTexts(w edit.Write, r edit.Region) [][]byte {
+	lines, c := w.Before[r.FromLo:r.FromHi], r.Comma-r.FromLo
+	switch {
+	case c < 0 || c > len(lines):
+		return [][]byte{}
+	case c < len(lines) && lines[c] == ',':
+		return [][]byte{lines, slices.Concat(lines[:c], lines[c+1:])}
+	}
+	return [][]byte{lines, slices.Concat(lines[:c], []byte(","), lines[c:])}
+}
+
+// merged are w's regions sorted, those that overlap or touch joined (API.md M6).
+func merged(w edit.Write) []area {
+	var rs []area
+	for _, r := range w.Regions {
 		ar := area{lo: r.Lo, hi: r.Hi, kind: r.Kind}
-		if r.Kind == edit.RegionItem {
+		switch r.Kind {
+		case edit.RegionItem:
 			ar.items = 1
+		case edit.RegionMoved:
+			ar.items, ar.texts = 1, movedTexts(w, r)
+		case edit.RegionComma:
+			ar.texts = [][]byte{w.Before[r.Lo:r.Hi], []byte(","), {}}
 		}
+		rs = append(rs, ar)
+	}
+	slices.SortStableFunc(rs, func(x, y area) int { return x.lo - y.lo })
+	var out []area
+	for _, ar := range rs {
 		n := len(out) - 1
-		if n < 0 || r.Lo > out[n].hi {
+		if n < 0 || ar.lo > out[n].hi {
 			out = append(out, ar)
 			continue
 		}
@@ -128,8 +176,14 @@ func merged(rs []edit.Region) []area {
 // join is two touching areas as one: any text if either is, removals and insertions the new
 // items alone, a node holding the other that node printed again, else one node printed again.
 func join(x, y area) area {
+	switch {
+	case y.kind == edit.RegionComma:
+		return widen(x, y)
+	case x.kind == edit.RegionComma:
+		return widen(y, x)
+	}
 	u := area{lo: min(x.lo, y.lo), hi: max(x.hi, y.hi), kind: edit.RegionNode, items: x.items + y.items}
-	edits := func(k int) bool { return k == edit.RegionGone || k == edit.RegionItem }
+	edits := func(k int) bool { return k == edit.RegionGone || k == edit.RegionItem || k == edit.RegionMoved }
 	switch {
 	case x.kind == edit.RegionAny || y.kind == edit.RegionAny:
 		u.kind = edit.RegionAny
@@ -139,6 +193,19 @@ func join(x, y area) area {
 		u.kind = edit.RegionGone
 	}
 	return u
+}
+
+// widen is area x holding a neighbour's comma region c too: x as it is when it covers c, else
+// what x may hold is no longer exact: one node printed again.
+func widen(x, c area) area {
+	if x.lo <= c.lo && c.hi <= x.hi {
+		return x
+	}
+	x.lo, x.hi = min(x.lo, c.lo), max(x.hi, c.hi)
+	if x.texts != nil {
+		x.kind, x.texts = edit.RegionNode, nil
+	}
+	return x
 }
 
 // shape is what the after text is made of: the ends of its nodes by start, and the extents of

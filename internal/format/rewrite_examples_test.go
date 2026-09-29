@@ -153,17 +153,18 @@ func every(step int) int {
 }
 
 // The sampling steps of TestRewriteExamples, and the least it must rewrite with them: a Remove
-// of every item sampled, a Replace of every sampled node an item holds, an Insert in every
-// sampled list literal (log-2026-09-29 M4 U1r).
+// of every item sampled, a Replace of every sampled node an item holds, an Insert and two Moves
+// in every sampled list literal, Moves needing minMoved items (log-2026-09-29 M4 U1r, U1b).
 const (
 	removeEvery, insertEvery                   = 43, 9
 	floorRemoved, floorReplaced, floorInserted = 55, 250, 80
+	floorMoved, minMoved                       = 60, 2
 )
 
 // rewrites counts the Rewrites TestRewriteExamples checked.
-type rewrites struct{ removed, replaced, inserted int }
+type rewrites struct{ removed, replaced, inserted, moved int }
 
-// FORMATTER.md §13, API.md M5 and M6 on the examples and the corpus: checkNode, insertCopies.
+// FORMATTER.md §13, API.md M5, M6 on the examples and the corpus: checkNode, insert/moveCopies.
 func TestRewriteExamples(t *testing.T) {
 	var got rewrites
 	for k, ex := range append(exampleFiles(t), corpusWants(t)...) {
@@ -171,6 +172,7 @@ func TestRewriteExamples(t *testing.T) {
 		for i, n := range items(f) {
 			if (i+k)%every(insertEvery) == 0 {
 				got.inserted += insertCopies(t, ex, f, n)
+				got.moved += moveCopies(t, ex, f, n)
 			}
 			if (i+k)%every(removeEvery) != 0 {
 				continue
@@ -181,8 +183,9 @@ func TestRewriteExamples(t *testing.T) {
 		}
 	}
 	t.Logf("%+v", got)
-	if !*full && (got.removed < floorRemoved || got.replaced < floorReplaced || got.inserted < floorInserted) {
-		t.Errorf("%+v: fewer rewrites than %d removed, %d replaced, %d inserted", got, floorRemoved, floorReplaced, floorInserted)
+	floor := rewrites{floorRemoved, floorReplaced, floorInserted, floorMoved}
+	if !*full && (got.removed < floor.removed || got.replaced < floor.replaced || got.inserted < floor.inserted || got.moved < floor.moved) {
+		t.Errorf("%+v: fewer rewrites than %+v", got, floor)
 	}
 }
 
@@ -240,6 +243,35 @@ func insertCopies(t *testing.T, ex example, f *syntax.File, n syntax.Node) int {
 		}
 	}
 	return len(positions)
+}
+
+// moveCopies moves the first item of list literal n last and its last item first, and reports
+// how many of these Rewrites were checked, every comment kept on its token (log-2026-09-29 M4
+// U1b); each must be.
+func moveCopies(t *testing.T, ex example, f *syntax.File, n syntax.Node) int {
+	t.Helper()
+	var ns []syntax.Node
+	switch l := n.(type) {
+	case *syntax.BraceLit:
+		if len(l.Clauses) == 0 {
+			ns = nodes(l.Items)
+		}
+	case *syntax.ListLit:
+		ns = nodes(l.Elems)
+	}
+	if len(ns) < minMoved {
+		return 0
+	}
+	moves := []format.Change{
+		{Kind: format.Move, Node: ns[0], List: n.First(), At: len(ns)},
+		{Kind: format.Move, Node: ns[len(ns)-1], List: n.First(), At: 0},
+	}
+	for _, c := range moves {
+		if err := checkRewrite(t, ex, f, n, c); err != nil {
+			t.Fatalf("%s: a Move in the list at %v was refused: %v", ex.path, f.Span(n), err)
+		}
+	}
+	return len(moves)
 }
 
 // corpusWants are the expected outputs of the corpus, fixed points (FORMATTER.md §12).

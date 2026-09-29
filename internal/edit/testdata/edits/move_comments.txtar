@@ -1,6 +1,6 @@
-API.md E23: Move's inverse moves the item back. Move is a Remove then an Insert of the item's
-text among the original items (API.md M4, M3: FORMATTER.md 13 defines no move), so the moved
-item's attached comments go with its removal: a gap reported to the orchestrator.
+API.md E23: Move's inverse moves the item back. API.md M4, M6: a moved item's lines leave with
+the comments attached to it (leading, doc, trailing) and arrive with them at the insertion point,
+every other byte kept (format.Move, log-2026-09-29 M4 U1b).
 -- options --
 pkgs: p
 -- edit.json --
@@ -76,7 +76,8 @@ record Status {
 
 /// Statuses.
 let statuses: table Status = {
-  closed { label: "Closed" }
+  /// The last one.
+  closed { label: "Closed" } // closes the post
   /// The first one.
   open { label: "Open" }
 }
@@ -84,5 +85,6 @@ let statuses: table Status = {
 /// Weights.
 let weights: {Season: Int} = {
   summer: 2
+  // spring first
   spring: 1
 }

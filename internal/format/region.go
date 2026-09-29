@@ -9,14 +9,17 @@ import (
 // planInline is g's edits in a list not laid out one item per line: each region between two
 // kept items, or between a bracket and the kept item next to it, where an item goes or comes,
 // is written again; a comment goes only with the item the formatter attaches it to.
-func (b *builder) planInline(g *batch) []edit {
-	// FORMATTER.md §8.1, §13 steps 4 and 5, log-2026-09-29 M4 U1r
+func (b *builder) planInline(g *batch) ([]edit, error) {
+	// FORMATTER.md §8.1, §13 steps 4 and 5, log-2026-09-29 M4 U1r, U1b
+	if err := b.inlineMoves(g); err != nil {
+		return nil, err
+	}
 	var out []edit
-	var news []string
+	var news []slot
 	left := -1
 	for _, s := range b.final(g) {
 		if s.item < 0 {
-			news = append(news, s.text)
+			news = append(news, s)
 			continue
 		}
 		if len(news) > 0 || s.item != left+1 {
@@ -27,7 +30,7 @@ func (b *builder) planInline(g *batch) []edit {
 	if len(news) > 0 || left != len(g.l.items)-1 {
 		out = append(out, b.region(g, left, len(g.l.items), news))
 	}
-	return out
+	return out, nil
 }
 
 // regionWriter writes a region again: the parts that stay with their bytes, the text between
@@ -46,7 +49,7 @@ type regionWriter struct {
 
 // region is the edit of the bytes between kept item left (-1: the opening bracket) and kept
 // item right (the item count: the closing bracket), news coming between them.
-func (b *builder) region(g *batch, left, right int, news []string) edit {
+func (b *builder) region(g *batch, left, right int, news []slot) edit {
 	w := &regionWriter{b: b, g: g, closed: right == len(g.l.items)}
 	if b.f.Tokens[g.l.open].Kind == syntax.TokLBrace {
 		w.edge = space
@@ -101,7 +104,7 @@ func (w *regionWriter) keep(a atom) {
 
 // insert writes the new items, with a comma after the left item when none stays there
 // (lead) and one before a right item; nothing when there is nothing to write.
-func (w *regionWriter) insert(lead bool, news []string) {
+func (w *regionWriter) insert(lead bool, news []slot) {
 	if !lead && len(news) == 0 {
 		return
 	}
@@ -119,12 +122,14 @@ func (w *regionWriter) insert(lead bool, news []string) {
 		w.text += syntax.TokComma.String()
 		sep = space
 	}
-	for i, t := range news {
+	for i, s := range news {
 		if i > 0 {
 			sep = listSep
 		}
 		w.text += sep
-		w.marks = append(w.marks, mark{lo: len(w.text), hi: len(w.text) + len(t), unit: true, fresh: true, want: w.g.want()})
+		t, m := w.b.piece(w.g, s)
+		m.lo, m.hi = m.lo+len(w.text), m.hi+len(w.text)
+		w.marks = append(w.marks, m)
 		w.text += t
 	}
 	if len(news) > 0 && !w.closed {

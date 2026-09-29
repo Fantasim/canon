@@ -45,6 +45,17 @@ func ExampleRewrite() {
 	// Output: "package a\n\nlet c: C = {\n  a: 2 // one\n  b: [1, 2]\n  d: { x: 1 }\n}\n" <nil>
 }
 
+// A Move carries an item with its comments to where an Insert at At would put a text.
+func ExampleRewrite_move() {
+	var fs source.FileSet
+	src, _ := fs.Add("a/a.canon", "/p/a/a.canon", []byte("package a\n\nlet c: C = {\n  /// A.\n  a: 1 // one\n  b: 2\n}\n"))
+	f := syntax.Parse(src, syntax.FileSource, diag.NewBag(&fs, "a"))
+	c := f.Decls[0].(*syntax.LetDecl).Value.(*syntax.BraceLit)
+	out, err := format.Rewrite(f, []format.Change{{Kind: format.Move, Node: c.Items[0], List: c.First(), At: 2}})
+	fmt.Printf("%q %v\n", out, err)
+	// Output: "package a\n\nlet c: C = {\n  b: 2\n  /// A.\n  a: 1 // one\n}\n" <nil>
+}
+
 // Node prints one node from a column; Flat prints it on one line.
 func ExampleNode() {
 	var fs source.FileSet

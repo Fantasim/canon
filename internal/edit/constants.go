@@ -278,12 +278,15 @@ const parentStepBack = 2
 type regionKind uint8
 
 // What a region holds after a write: any text (a new file, a normalization), the text of one
-// node (an item printed again), nothing (an item removed), or one new item (an insertion point).
+// node (an item printed again), nothing (an item removed), one new item (an insertion point),
+// a moved item's own lines (fromLo to fromHi), or a comma or none (after a kept neighbour).
 const (
 	regionAny regionKind = iota
 	regionNode
 	regionGone
 	regionItem
+	regionMoved
+	regionComma
 )
 
 // fitCodes are the findings at a field's exact path that say its value no longer fits its

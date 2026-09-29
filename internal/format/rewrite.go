@@ -13,8 +13,8 @@ import (
 type ChangeKind uint8
 
 // Change is one change on Rewrite's tree: Replace writes Text over Node, Insert makes Text item
-// At of the list List opens (with no List, a declaration appended to the file, At the count of
-// its declarations), Remove deletes item Node, Retire marks Node retired.
+// At of the list List opens (no List: a declaration appended, At their count), Remove deletes
+// item Node, Retire marks Node retired, Move carries item Node of List with its comments to At.
 type Change struct {
 	Kind ChangeKind
 	Node syntax.Node
@@ -71,8 +71,8 @@ func Rewrite(f *syntax.File, changes []Change) ([]byte, error) {
 	return settle(f, content)
 }
 
-// edits are the text changes of changes: Replace and Retire alone, Insert and Remove grouped by
-// list, each list planned once over its final items (log-2026-09-29 M4 U1r).
+// edits are the text changes of changes: Replace and Retire alone, Insert, Remove and Move
+// grouped by list, each list planned once over its final items (log-2026-09-29 M4 U1r, U1b).
 func (b *builder) edits(changes []Change) ([]edit, error) {
 	var out []edit
 	gs := &batches{byList: map[syntax.Tok]*batch{}}

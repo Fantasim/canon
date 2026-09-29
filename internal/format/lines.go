@@ -55,7 +55,7 @@ func (b *builder) layout(g *batch) (lines, bool) {
 }
 
 // planLines is g's edits in a list laid out one item per line, or at the top level: removed
-// items go with their lines, new ones take lines of their own after the item before them,
+// and moved items go with their lines, new and moved ones take lines after the item before them,
 // then commas and blank lines follow the final items.
 func (b *builder) planLines(g *batch) ([]edit, error) {
 	// FORMATTER.md §4, §13 steps 4 and 5, DECISIONS 211, log-2026-09-29 M4 U1r
@@ -81,7 +81,8 @@ func (b *builder) planLines(g *batch) ([]edit, error) {
 }
 
 // lineNews writes the new items at each position on lines of their own: at the list's item
-// indentation with the comma they need, or after one blank line at the top level.
+// indentation with the comma they need, or after one blank line at the top level; a moved item
+// brings its lines, its comments in them (log-2026-09-29 M4 U1b).
 func (b *builder) lineNews(g *batch, ly lines, fin []slot) []edit {
 	var out []edit
 	brace := g.top || b.f.Tokens[g.l.open].Kind == syntax.TokLBrace
@@ -98,6 +99,10 @@ func (b *builder) lineNews(g *batch, ly lines, fin []slot) []edit {
 			out = append(out, edit{lo: pos, hi: pos})
 		}
 		e := &out[len(out)-1]
+		if s.from >= 0 {
+			e.text += b.movedLines(ly.regions[s.from], g.l.items[s.from], needsComma(brace, fin, k))
+			continue
+		}
 		lead, tail := ind, newlineText
 		if g.top {
 			lead = newlineText
@@ -129,15 +134,8 @@ func (b *builder) lineCommas(g *batch, fin []slot) []edit {
 		if s.item < 0 {
 			continue
 		}
-		last := g.l.items[s.item].Last()
-		c := b.after(last)
-		has, need := b.f.Tokens[c].Kind == syntax.TokComma, needsComma(brace, fin, k)
-		switch {
-		case need && !has:
-			end := int(b.f.Tokens[last].End)
-			out = append(out, edit{lo: end, hi: end, text: syntax.TokComma.String()})
-		case !need && has && b.oneLine(last, c):
-			out = append(out, edit{lo: int(b.f.Tokens[c].Start), hi: int(b.f.Tokens[c].End)})
+		if e, ok := b.commaEdit(g.l.items[s.item], needsComma(brace, fin, k)); ok {
+			out = append(out, e)
 		}
 	}
 	return out

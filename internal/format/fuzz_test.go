@@ -44,6 +44,11 @@ func FuzzRewrite(f *testing.F) {
 	for i, ex := range exampleFiles(f) {
 		f.Add(ex.data, uint16(i))
 	}
+	for _, c := range moveCases { // every node of each Move case's commented lists (log-2026-09-29 M4 U1b)
+		for i := range items(parse(f, "a/a.canon", []byte(c.src)).file) {
+			f.Add([]byte(c.src), uint16(i))
+		}
+	}
 	f.Fuzz(func(t *testing.T, data []byte, pick uint16) {
 		out, err := formatText(t, "a/a.canon", data)
 		if err != nil {
@@ -58,5 +63,6 @@ func FuzzRewrite(f *testing.F) {
 		n := all[int(pick)%len(all)]
 		checkNode(t, ex, tree, n)
 		insertCopies(t, ex, tree, n)
+		moveCopies(t, ex, tree, n)
 	})
 }

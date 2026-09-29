@@ -52,17 +52,22 @@ func RefVisits(ctx context.Context, s *Snapshot, r Resolved) (int, error) {
 // The package's tests keep every write's steps (API.md M6); production Apply does not.
 func init() { recordWrites = true }
 
-// What a Region of a Write holds after it: any text, one node's text, nothing, one new item.
+// What a Region of a Write holds after it: any text, one node's text, nothing, one new item,
+// a moved item's own lines, a comma or none.
 const (
-	RegionAny  = int(regionAny)
-	RegionNode = int(regionNode)
-	RegionGone = int(regionGone)
-	RegionItem = int(regionItem)
+	RegionAny   = int(regionAny)
+	RegionNode  = int(regionNode)
+	RegionGone  = int(regionGone)
+	RegionItem  = int(regionItem)
+	RegionMoved = int(regionMoved)
+	RegionComma = int(regionComma)
 )
 
-// Region is a byte range of a Write's before, and what the write may put there.
+// Region is a byte range of a Write's before, and what the write may put there; a RegionMoved
+// region carries the moved lines FromLo to FromHi, whose comma may change at Comma.
 type Region struct {
-	Lo, Hi, Kind int
+	Lo, Hi, Kind          int
+	FromLo, FromHi, Comma int
 }
 
 // Write is one write Apply made of a file: its bytes before and after, and the regions of
@@ -78,7 +83,7 @@ func Writes(p *Plan, display string) []Write {
 	for _, s := range p.writes[display] {
 		w := Write{Before: s.before, After: s.after}
 		for _, r := range s.regions {
-			w.Regions = append(w.Regions, Region{Lo: r.lo, Hi: r.hi, Kind: int(r.kind)})
+			w.Regions = append(w.Regions, Region{Lo: r.lo, Hi: r.hi, Kind: int(r.kind), FromLo: r.fromLo, FromHi: r.fromHi, Comma: r.comma})
 		}
 		out = append(out, w)
 	}

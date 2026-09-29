@@ -694,7 +694,7 @@ func TestRewriteRefuses(t *testing.T) {
 		changes []format.Change
 		want    error
 	}{
-		{"kind", []format.Change{{Kind: format.Retire + 1, Node: lit}}, format.ErrChange},
+		{"kind", []format.Change{{Kind: format.Move + 1, Node: lit}}, format.ErrChange},
 		{"no list", []format.Change{{Kind: format.Insert, List: lit.First(), Text: "x"}}, format.ErrChange},
 		{"bad position", []format.Change{{Kind: format.Insert, List: listOf(t, f, syntax.KindListLit, "[open]"), At: 2, Text: "x"}}, format.ErrChange},
 		{"not an item", []format.Change{{Kind: format.Remove, Node: lit}}, format.ErrChange},

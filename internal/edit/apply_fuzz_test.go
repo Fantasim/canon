@@ -20,8 +20,10 @@ import (
 // tables, entry files, JSON sources loaded one by one and by load.dir.
 var examplePkgs = []string{"teamboard", "pipeline", "resource.farm", "game.items", "features.dependent"}
 
-// mutations is how many kinds of operation the fuzz draws: Set, Add, Remove, Rename.
-const mutations = 4
+// mutations is how many kinds of operation a kind byte draws modulo it: Set, Add, Rename,
+// Remove; the kind byte moveKind alone draws a Move among moveSpan positions, so the committed
+// regressions keep their operations (log-2026-09-29 M4 U1b-r).
+const mutations, moveKind, moveSpan = 4, 4, 3
 
 // opBytes is how many bytes of the fuzz's input draw one operation: two for the value it
 // edits, one for the kind; maxOps is how many operations one input draws at most.
@@ -106,8 +108,11 @@ func collect(out []candidate, path string, v value.Value) []candidate {
 }
 
 // mutation is an operation on candidate c: a Set of a scalar, an Add to a list of scalars, a
-// Remove, a Rename of an entry; false when c takes none of them.
+// Remove, a Rename of an entry, a Move; false when c takes none of them.
 func mutation(c candidate, kind uint8, d draw) (edit.Operation, bool) {
+	if kind == moveKind {
+		return edit.Operation{Kind: edit.OpMove, Path: c.path, Index: int(uint64(d.n) % moveSpan)}, true
+	}
 	switch kind % mutations {
 	case 0:
 		lit, ok := scalar(c.v, d)
@@ -201,7 +206,7 @@ func checkOneRun(t *testing.T, plan *edit.Plan, ch edit.Change) {
 	}
 }
 
-// API.md M6 on every example: each Set of a scalar, Add to a list of scalars, Remove and
+// API.md M6 on every example: each Set of a scalar, Add to a list of scalars, Remove, Move and
 // Rename is refused with a refusal Apply documents or writes files that are fixed points,
 // N12-clean, and equal to the files before outside the items the plan rewrote.
 func TestMinimalWriteOnExamples(t *testing.T) {
@@ -209,14 +214,14 @@ func TestMinimalWriteOnExamples(t *testing.T) {
 	env := edit.Env{Project: p, Host: hostOf}
 	applied := map[edit.Op]int{}
 	for _, c := range cands {
-		for kind := range uint8(mutations) {
+		for kind := range uint8(moveKind + 1) {
 			op, ok := mutation(c, kind, sweepDraw(c.v))
 			if ok && applyChecked(t, env, a, []edit.Operation{op}, op.Kind == edit.OpSet) {
 				applied[op.Kind]++
 			}
 		}
 	}
-	for _, k := range []edit.Op{edit.OpSet, edit.OpAdd, edit.OpRemove, edit.OpRename} {
+	for _, k := range []edit.Op{edit.OpSet, edit.OpAdd, edit.OpRemove, edit.OpRename, edit.OpMove} {
 		if applied[k] == 0 {
 			t.Errorf("no operation %d applied on the examples", k)
 		}
@@ -235,21 +240,53 @@ func FuzzMinimalWrite(f *testing.F) {
 		{[]byte{0, 3, 0}, 7, "x"}, {[]byte{0, 17, 0}, -1, ""}, {[]byte{0, 40, 3}, 0, "a b"},
 		{[]byte{0, 61, 1}, 1 << 40, "é"}, {[]byte{0, 90, 0, 0, 91, 0}, 42, "open"},
 		{[]byte{0, 130, 3, 0, 131, 2}, 3, "fresh"}, {[]byte{0, 211, 1, 0, 212, 0, 1, 44, 2}, 9, "k"},
+		{[]byte{0, 91, 4, 0, 130, 4}, 0, "m"}, {[]byte{0, 212, 4, 0, 213, 3, 1, 45, 4}, 2, "n"},
 	} {
 		f.Add(seed.ops, seed.n, seed.s)
+	}
+	for _, r := range fuzzRegressions {
+		f.Add(r.raw, r.n, r.s)
 	}
 	p, a, cands := exampleEdits(f)
 	env := edit.Env{Project: p, Host: hostOf}
 	f.Fuzz(func(t *testing.T, raw []byte, n int64, s string) {
-		var ops []edit.Operation
-		for i := 0; i+opBytes <= len(raw) && len(ops) < maxOps; i += opBytes {
-			at := int(raw[i])<<8 | int(raw[i+1])
-			if op, ok := mutation(cands[at%len(cands)], raw[i+2], draw{n: n + int64(len(ops)), s: s}); ok {
-				ops = append(ops, op)
-			}
-		}
-		if len(ops) > 0 {
+		if ops := drawOps(cands, raw, n, s); len(ops) > 0 {
 			applyChecked(t, env, a, ops, false)
 		}
 	})
+}
+
+// drawOps are the operations FuzzMinimalWrite's input draws, opBytes bytes each.
+func drawOps(cands []candidate, raw []byte, n int64, s string) []edit.Operation {
+	var ops []edit.Operation
+	for i := 0; i+opBytes <= len(raw) && len(ops) < maxOps; i += opBytes {
+		at := int(raw[i])<<8 | int(raw[i+1])
+		if op, ok := mutation(cands[at%len(cands)], raw[i+2], draw{n: n + int64(len(ops)), s: s}); ok {
+			ops = append(ops, op)
+		}
+	}
+	return ops
+}
+
+// fuzzRegressions are FuzzMinimalWrite's committed failures under testdata/fuzz: a Set of a
+// string holding braces and one of invalid UTF-8 (log-2026-09-29 M4 U4b-r2, U4b-r3).
+var fuzzRegressions = []struct {
+	raw []byte
+	n   int64
+	s   string
+}{{[]byte("270"), 64, "0{0"}, {[]byte("a20"), 7, "\xb9"}}
+
+// log-2026-09-29 M4 U1b-r: each committed regression still draws the Set of its string that
+// once failed, so no change to the draw orphans it, and is still refused or written minimally.
+func TestFuzzRegressionsDrawTheirSet(t *testing.T) {
+	p, a, cands := exampleEdits(t)
+	env := edit.Env{Project: p, Host: hostOf}
+	for _, r := range fuzzRegressions {
+		ops := drawOps(cands, r.raw, r.n, r.s)
+		if len(ops) != 1 || ops[0].Kind != edit.OpSet || ops[0].Value != edit.Str(r.s) {
+			t.Errorf("%q draws %+v, want one Set of %q", r.raw, ops, r.s)
+			continue
+		}
+		applyChecked(t, env, a, ops, false)
+	}
 }

@@ -8,13 +8,20 @@ import (
 	"github.com/fantasim/canonlang/internal/syntax"
 )
 
-// group is the Insert and Remove changes of one list, or of the file's top level: which items
-// go and, per position 0 to the item count, the new texts, in the order of the changes.
+// batch is the Insert, Remove and Move changes of one list, or of the file's top level: which
+// items leave their place, which a change names already, and per position 0 to the item count
+// what arrives there, in the order of the changes.
 type batch struct {
-	l       list
-	top     bool
-	removed []bool
-	news    [][]string
+	l                list
+	top              bool
+	removed, claimed []bool
+	news             [][]arrival
+}
+
+// arrival is what an Insert or a Move puts at a position: a new text, or item from moved there.
+type arrival struct {
+	text string
+	from int
 }
 
 // batches are the batches of an edit, by opening bracket, in the order they first appear.
@@ -23,12 +30,12 @@ type batches struct {
 	order  []syntax.Tok
 }
 
-// slot is one item of a list once its group applies: item at, kept, or a new text placed at
-// position at; first and last are the kinds of its edge tokens (DECISIONS 211).
+// slot is one item of a list once its group applies: item at, kept, or a new text or item
+// from placed at position at; first and last are the kinds of its edge tokens (DECISIONS 211).
 type slot struct {
-	at, item    int
-	text        string
-	first, last syntax.TokenKind
+	at, item, from int
+	text           string
+	first, last    syntax.TokenKind
 }
 
 // batchOf is the group of the list open opens, syntax.NoTok for the top level.
@@ -44,42 +51,57 @@ func (b *builder) batchOf(gs *batches, open syntax.Tok) (*batch, error) {
 	} else {
 		g.l = list{items: b.tops()}
 	}
-	g.removed, g.news = make([]bool, len(g.l.items)), make([][]string, len(g.l.items)+1)
+	g.removed, g.claimed = make([]bool, len(g.l.items)), make([]bool, len(g.l.items))
+	g.news = make([][]arrival, len(g.l.items)+1)
 	gs.byList[open] = g
 	gs.order = append(gs.order, open)
 	return g, nil
 }
 
-// collect adds an Insert or a Remove to its group; a declaration is only appended.
+// collect adds an Insert, a Remove or a Move to its group; a declaration is only appended, an
+// item moves only within its list.
 func (b *builder) collect(gs *batches, c Change) error {
-	open := c.List
-	if c.Kind == Remove {
-		i, known := b.idx.owner[c.Node]
-		if !known {
-			return fmt.Errorf("%w: not an item", ErrChange)
-		}
-		open = syntax.NoTok
-		if i >= 0 {
-			open = b.idx.lists[i].open
-		}
+	if c.Kind == Insert {
+		return b.collectInsert(gs, c)
+	}
+	i, known := b.idx.owner[c.Node]
+	if !known {
+		return fmt.Errorf("%w: not an item", ErrChange)
+	}
+	open := syntax.NoTok
+	if i >= 0 {
+		open = b.idx.lists[i].open
+	}
+	if c.Kind == Move && (i < 0 || c.List != open) {
+		return fmt.Errorf("%w: an item moves only within its list", ErrChange)
 	}
 	g, err := b.batchOf(gs, open)
 	if err != nil {
 		return err
 	}
+	at := slices.Index(g.l.items, c.Node)
+	if g.claimed[at] {
+		return fmt.Errorf("%w: removed or moved twice", ErrChange)
+	}
+	g.claimed[at] = true
 	if c.Kind == Remove {
-		at := slices.Index(g.l.items, c.Node)
-		if g.removed[at] {
-			return fmt.Errorf("%w: removed twice", ErrChange)
-		}
 		g.removed[at] = true
 		return nil
+	}
+	return g.move(at, c.At)
+}
+
+// collectInsert adds an Insert to its group.
+func (b *builder) collectInsert(gs *batches, c Change) error {
+	g, err := b.batchOf(gs, c.List)
+	if err != nil {
+		return err
 	}
 	t, n := trimmed(c.Text), len(g.l.items)
 	if t == "" || c.At < 0 || c.At > n || g.top && c.At != n {
 		return fmt.Errorf("%w: no position %d to insert at", ErrChange, c.At)
 	}
-	g.news[c.At] = append(g.news[c.At], t)
+	g.news[c.At] = append(g.news[c.At], arrival{text: t, from: -1})
 	return nil
 }
 
@@ -87,16 +109,27 @@ func (b *builder) collect(gs *batches, c Change) error {
 func (b *builder) final(g *batch) []slot {
 	var out []slot
 	for p, news := range g.news {
-		for _, t := range news {
-			first, last := edges(t)
-			out = append(out, slot{at: p, item: -1, text: t, first: first, last: last})
+		for _, e := range news {
+			out = append(out, b.arriving(g, p, e))
 		}
 		if p < len(g.removed) && !g.removed[p] {
 			n := g.l.items[p]
-			out = append(out, slot{at: p, item: p, first: b.f.Tokens[n.First()].Kind, last: b.f.Tokens[n.Last()].Kind})
+			out = append(out, slot{at: p, item: p, from: -1, first: b.f.Tokens[n.First()].Kind, last: b.f.Tokens[n.Last()].Kind})
 		}
 	}
 	return out
+}
+
+// arriving is the slot of e at position p: a new text, read by the lexer, or a moved item.
+func (b *builder) arriving(g *batch, p int, e arrival) slot {
+	s := slot{at: p, item: -1, from: e.from, text: e.text}
+	if e.from < 0 {
+		s.first, s.last = edges(e.text)
+		return s
+	}
+	n := g.l.items[e.from]
+	s.first, s.last = b.f.Tokens[n.First()].Kind, b.f.Tokens[n.Last()].Kind
+	return s
 }
 
 // needsComma reports a comma after slot k of a list laid out one item per line: after every
@@ -123,7 +156,7 @@ func (b *builder) plan(g *batch) ([]edit, error) {
 	if g.top || b.broken(g.l) {
 		return b.planLines(g)
 	}
-	return b.planInline(g), nil
+	return b.planInline(g)
 }
 
 // tops are the file's top-level items in source order.

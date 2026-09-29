@@ -102,6 +102,7 @@ const (
 	Insert
 	Remove
 	Retire
+	Move
 	changeKindCount
 )
 

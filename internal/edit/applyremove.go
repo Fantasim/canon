@@ -210,23 +210,19 @@ func (x *opCtx) movedPath(parent value.Value) string {
 	return x.res.Canonical
 }
 
-// moveCanon removes the item and inserts its text again among the original items: before the
-// item at i, or i+1 past its own place (API-03).
+// moveCanon moves the item, with its comments, among the original items: before the item at i,
+// or i+1 past its own place (API-03, M4; log-2026-09-29 M4 U1b).
 func (x *opCtx) moveCanon(c, pc cursor, from, to int) error {
 	item := itemOf(pc.node, c.node)
 	list, ok := listToken(pc.node)
 	if item == nil || !ok || itemCount(pc.node) != siblingCountOf(x) {
 		return &NotEditableError{Reason: ReasonOrder}
 	}
-	f := pc.file
-	text := string(f.Src.Content[f.Tokens[item.First()].Start:f.Tokens[item.Last()].End])
 	at := to
 	if to > from {
 		at = to + 1
 	}
-	x.w.addCanon(f.Src.Path, x.res.root.pkg.Path, []format.Change{
-		{Kind: format.Remove, Node: item}, {Kind: format.Insert, List: list, At: at, Text: text},
-	})
+	x.w.addCanon(pc.file.Src.Path, x.res.root.pkg.Path, []format.Change{{Kind: format.Move, Node: item, List: list, At: at}})
 	return nil
 }
 

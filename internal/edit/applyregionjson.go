@@ -28,7 +28,7 @@ type slot struct {
 func jsonRegions(src []byte, order []jsonEdit) []region {
 	content, root, err := parseJSONText(src)
 	if err != nil {
-		return []region{{0, len(src), regionAny}}
+		return []region{{lo: 0, hi: len(src), kind: regionAny}}
 	}
 	t := &jsonTree{src: content, root: root, removed: map[string][]int{}, slots: map[string][]slot{}}
 	for _, e := range order {
@@ -45,7 +45,7 @@ func jsonRegions(src []byte, order []jsonEdit) []region {
 }
 
 func (t *jsonTree) region(e jsonEdit) region {
-	whole := region{0, len(t.src), regionAny}
+	whole := region{lo: 0, hi: len(t.src), kind: regionAny}
 	switch {
 	case e.rename != nil:
 		return keyRegion(t.root, e.rename, whole)
@@ -97,10 +97,10 @@ func (t *jsonTree) drop(ptr string, holder *jsonsrc.Node, at int) {
 func (t *jsonTree) removeRegion(ptr string, items []region, at int) region {
 	for k := at + 1; k < len(items); k++ {
 		if !slices.Contains(t.removed[ptr], k) {
-			return region{items[at].lo, items[at+1].lo, regionGone}
+			return region{lo: items[at].lo, hi: items[at+1].lo, kind: regionGone}
 		}
 	}
-	return region{items[at-1].hi, items[at].hi, regionGone}
+	return region{lo: items[at-1].hi, hi: items[at].hi, kind: regionGone}
 }
 
 // insertRegion is the point an item inserted at at, among the items the edits so far left,
@@ -111,7 +111,7 @@ func (t *jsonTree) insertRegion(ptr string, holder *jsonsrc.Node, at int) region
 	var point int
 	switch {
 	case len(s) == 0:
-		return nodeRegion(holder, region{0, len(t.src), regionAny})
+		return nodeRegion(holder, region{lo: 0, hi: len(t.src), kind: regionAny})
 	case at < len(s):
 		point = s[at].point
 	case s[len(s)-1].orig < 0:
@@ -120,7 +120,7 @@ func (t *jsonTree) insertRegion(ptr string, holder *jsonsrc.Node, at int) region
 		point = items[s[len(s)-1].orig].hi
 	}
 	t.slots[ptr] = slices.Insert(s, min(at, len(s)), slot{orig: -1, point: point})
-	return region{point, point, regionItem}
+	return region{lo: point, hi: point, kind: regionItem}
 }
 
 // keyRegion is the key a rename writes again.
@@ -131,7 +131,7 @@ func keyRegion(root *jsonsrc.Node, rn *keyRename, whole region) region {
 	}
 	for _, m := range holder.Members {
 		if m.Key == rn.from {
-			return region{int(m.KeySpan.Start), int(m.KeySpan.End), regionNode}
+			return region{lo: int(m.KeySpan.Start), hi: int(m.KeySpan.End), kind: regionNode}
 		}
 	}
 	return whole
@@ -141,17 +141,17 @@ func nodeRegion(n *jsonsrc.Node, whole region) region {
 	if n == nil {
 		return whole
 	}
-	return region{int(n.Span.Start), int(n.Span.End), regionNode}
+	return region{lo: int(n.Span.Start), hi: int(n.Span.End), kind: regionNode}
 }
 
 // jsonItems are a container's members or elements.
 func jsonItems(n *jsonsrc.Node) []region {
 	var out []region
 	for _, m := range n.Members {
-		out = append(out, region{int(m.KeySpan.Start), int(m.Value.Span.End), regionGone})
+		out = append(out, region{lo: int(m.KeySpan.Start), hi: int(m.Value.Span.End), kind: regionGone})
 	}
 	for _, e := range n.Elems {
-		out = append(out, region{int(e.Span.Start), int(e.Span.End), regionGone})
+		out = append(out, region{lo: int(e.Span.Start), hi: int(e.Span.End), kind: regionGone})
 	}
 	return out
 }

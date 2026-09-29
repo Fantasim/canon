@@ -9,8 +9,10 @@ import (
 
 // region is a byte range of a file before a write, and what the write may put there (API.md M6).
 type region struct {
-	lo, hi int
-	kind   regionKind
+	lo, hi         int
+	kind           regionKind
+	fromLo, fromHi int // regionMoved: the moved item's own lines in the file before
+	comma          int // regionMoved: the offset past its last token, where its comma may change
 }
 
 // writeStep is one write of a file: its bytes before and after, and the regions of before its
@@ -27,7 +29,7 @@ var recordWrites bool
 // whole file (a normalization, a creation).
 func (s *fileState) wrote(after []byte, regions func() []region) {
 	if recordWrites {
-		rs := []region{{0, len(s.cur), regionAny}}
+		rs := []region{{lo: 0, hi: len(s.cur), kind: regionAny}}
 		if regions != nil {
 			rs = regions()
 		}
@@ -39,15 +41,16 @@ func (s *fileState) wrote(after []byte, regions func() []region) {
 // canonTree indexes a .canon tree for its regions: each node's parent, in a walk's order, and
 // how many items each list gets and loses in the write.
 type canonTree struct {
-	f      *syntax.File
-	parent map[syntax.Node]syntax.Node
-	nodes  []syntax.Node
-	lists  map[format.ChangeKind]map[syntax.Node]int // Insert and Remove changes, by list
+	f       *syntax.File
+	parent  map[syntax.Node]syntax.Node
+	nodes   []syntax.Node
+	lists   map[format.ChangeKind]map[syntax.Node]int // Insert and Remove changes, by list
+	leaving map[syntax.Node]bool                      // items removed or moved
 }
 
 func newCanonTree(f *syntax.File) *canonTree {
 	lists := map[format.ChangeKind]map[syntax.Node]int{format.Insert: {}, format.Remove: {}}
-	t := &canonTree{f: f, parent: map[syntax.Node]syntax.Node{}, lists: lists}
+	t := &canonTree{f: f, parent: map[syntax.Node]syntax.Node{}, lists: lists, leaving: map[syntax.Node]bool{}}
 	var visit func(n syntax.Node)
 	visit = func(n syntax.Node) {
 		for c := range syntax.Children(n) {
@@ -69,6 +72,9 @@ func canonRegions(f *syntax.File, changes []format.Change) []region {
 		if byList, ok := t.lists[c.Kind]; ok {
 			byList[t.listOf(c)]++
 		}
+		if c.Kind == format.Remove || c.Kind == format.Move {
+			t.leaving[c.Node] = true
+		}
 	}
 	out := make([]region, 0, len(changes))
 	for _, c := range changes {
@@ -77,9 +83,12 @@ func canonRegions(f *syntax.File, changes []format.Change) []region {
 			out = append(out, t.insertRegion(c))
 		case format.Remove:
 			out = append(out, t.removeRegion(c.Node))
+		case format.Move:
+			out = append(out, t.moveRegions(c)...)
 		default:
 			out = append(out, t.reprint(c.Node))
 		}
+		out = append(out, t.neighbours(c)...)
 	}
 	return out
 }
@@ -99,7 +108,7 @@ func (t *canonTree) listOf(c format.Change) syntax.Node {
 // around it; what it holds after is that node's text.
 func (t *canonTree) reprint(n syntax.Node) region {
 	n = t.climb(n)
-	return region{int(t.f.Tokens[n.First()].Start), int(t.f.Tokens[n.Last()].End), regionNode}
+	return region{lo: int(t.f.Tokens[n.First()].Start), hi: int(t.f.Tokens[n.Last()].End), kind: regionNode}
 }
 
 // climb is n, or the largest node on one line around it.
@@ -137,7 +146,7 @@ func (t *canonTree) removeRegion(n syntax.Node) region {
 	if list := t.parent[n]; t.relaid(list) {
 		return t.reprint(list)
 	}
-	return t.itemLines(t.span(n))
+	return t.itemLines(t.owned(n))
 }
 
 // insertRegion is where an Insert writes: the end of the file for a declaration, the list
@@ -145,25 +154,25 @@ func (t *canonTree) removeRegion(n syntax.Node) region {
 func (t *canonTree) insertRegion(c format.Change) region {
 	src := t.f.Src.Content
 	if c.List == syntax.NoTok {
-		return region{len(src), len(src), regionItem}
+		return region{lo: len(src), hi: len(src), kind: regionItem}
 	}
 	list := t.around(c.List)
 	switch {
 	case list == nil:
-		return region{0, len(src), regionAny}
+		return region{lo: 0, hi: len(src), kind: regionAny}
 	case t.relaid(list):
 		return t.reprint(list)
 	}
 	items := t.items(list)
 	lo := endOfLine(src, int(t.f.Tokens[c.List].End))
 	if c.At > 0 && c.At <= len(items) {
-		lo = endOfLine(src, t.span(items[c.At-1]).hi)
+		lo = endOfLine(src, t.owned(items[c.At-1]).hi)
 	}
 	hi := lineStart(src, int(t.f.Tokens[list.Last()].Start))
 	if c.At < len(items) {
 		hi = lineStart(src, t.span(items[c.At]).lo)
 	}
-	return region{lo, max(lo, hi), regionItem}
+	return region{lo: lo, hi: max(lo, hi), kind: regionItem}
 }
 
 // around is the smallest node holding token open.
@@ -177,12 +186,17 @@ func (t *canonTree) around(open syntax.Tok) syntax.Node {
 	return best
 }
 
+// open is a list's opening bracket.
+func (t *canonTree) open(list syntax.Node) syntax.Tok {
+	if b, ok := list.(*syntax.AmendBlock); ok {
+		return b.Braces.Open
+	}
+	return list.First()
+}
+
 // items are a list's items: its children after its opening bracket.
 func (t *canonTree) items(list syntax.Node) []syntax.Node {
-	open := list.First()
-	if b, ok := list.(*syntax.AmendBlock); ok {
-		open = b.Braces.Open
-	}
+	open := t.open(list)
 	var out []syntax.Node
 	for c := range syntax.Children(list) {
 		if c != nil && c.First() > open {
