@@ -172,6 +172,10 @@ func TestNoBag(t *testing.T) {
 // API.md §6.5 (P8, P9): map entries and keyed-list elements by key, plain lists by index.
 func TestPaths(t *testing.T) {
 	root := verify.Root("farm")
+	slot := &types.LitUnionType{Of: types.StringType, Literals: []string{"none"}}
+	nested := &types.LitUnionType{Of: slot, Literals: []string{"all"}}
+	kind := &types.EnumType{Name: "Kind", Members: []*types.Member{{Name: "none"}, {Name: "red", Index: 1}}}
+	none, other := &value.Str{V: "none"}, &value.Str{V: "other"}
 	for _, c := range []struct {
 		got  *verify.Path
 		want string
@@ -183,6 +187,17 @@ func TestPaths(t *testing.T) {
 		{root.Entry(value.Key{S: "9lives"}), `farm["9lives"]`},
 		{root.Entry(value.Key{S: "_"}), `farm["_"]`},
 		{(*verify.Path)(nil).Field("x"), ""},
+		// API.md P9 (log-2026-09-29 M4 U13-r): the key type declared at the map decides the quoting.
+		{root.MapKey(none, slot), `farm["none"]`},
+		{root.MapKey(other, slot), "farm[other]"},
+		{root.MapKey(none, types.StringType), "farm[none]"},
+		{root.MapKey(none, &types.Alias{Name: "Slot", Def: slot}), `farm["none"]`},
+		{root.MapKey(none, &types.Refined{Of: slot, Range: &types.Bound{Hi: types.Limit{I: 9}, HasHi: true}}), `farm["none"]`},
+		{root.MapKey(&value.Str{V: "all"}, nested), `farm["all"]`},
+		{root.MapKey(none, nested), `farm["none"]`},
+		{root.MapKey(&value.Member{Enum: kind}, &types.LitUnionType{Of: kind, Literals: []string{"none"}}), "farm[none]"},
+		{root.MapKey(&value.Str{V: "two words"}, slot), `farm["two words"]`},
+		{root.MapKey(&value.Int{V: 7}, &types.LitUnionType{Of: types.IntType, Literals: []string{"7"}}), "farm[7]"},
 	} {
 		if s := c.got.String(); s != c.want {
 			t.Errorf("path %q, want %q", s, c.want)

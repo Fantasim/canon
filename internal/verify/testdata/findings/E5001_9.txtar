@@ -1,0 +1,56 @@
+EVALUATION.md §7.3, §8.1 (log-2026-09-29 M4 U13-r): stage C asks whether an instance holds an
+invalid value at every instance, in traversal order, keeping each answer from its first asking.
+`duo` was asked before `Leaf`'s check converted `s` at `pos`'s parameter (E3204, marking `s`), so
+`duo.b`, holding the same `s`, still runs its check (E5001). Locks the order the asking has.
+-- a/a.canon --
+/// A.
+package a
+
+/// Pos.
+fn pos(x: Int(0..)) -> Bool {
+  return true
+}
+
+/// Leaf.
+record Leaf {
+  /// Size.
+  size: Int
+
+  check pos(size) else "never"
+}
+
+/// Holder.
+record Holder {
+  /// V.
+  v: Int
+
+  check v > 100 else "small"
+}
+
+/// Pair.
+record Duo {
+  /// A.
+  a: Leaf
+  /// B.
+  b: Holder
+}
+
+/// S.
+let s: Int = 0 - 1
+
+/// Duo.
+let duo: Duo = { a: { size: s }, b: { v: s } }
+-- project.canon --
+project demo {
+  canon: "0.1"
+}
+-- findings.txt --
+error[E3204]  a/a.canon:34:14
+  -1 is outside 0..
+  expected by a/a.canon:5 (Int(0..))
+
+error[E5001]  a/a.canon:37:37
+  duo.b: small
+  expected by a/a.canon:22 (check)
+
+2 errors, 0 warnings in 1 package (…)

@@ -5,13 +5,15 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// substitute is t with each application it holds replaced by the type it computes in e (TYPES.md §11.6).
+// substitute is t, each application replaced by what it computes in e, refinements kept (TYPES.md §11.2, §11.6).
 func (w *walker) substitute(t types.Type, e *env) types.Type {
 	switch x := t.(type) {
 	case *types.TypeAppType:
 		if bt, inner, ok := w.branch(x, e); ok {
 			return w.substitute(bt, inner)
 		}
+	case *types.Refined:
+		return w.substituteRefined(x, e)
 	case *types.OptionalType:
 		if elem := w.substitute(x.Elem, e); elem != x.Elem {
 			return &types.OptionalType{Elem: elem}
@@ -30,6 +32,17 @@ func (w *walker) substitute(t types.Type, e *env) types.Type {
 	return t
 }
 
+// substituteRefined is r around its type computed in e; the refinement reads no parameter (TYPES.md §11.2).
+func (w *walker) substituteRefined(r *types.Refined, e *env) types.Type {
+	of := w.substitute(r.Of, e)
+	if of == r.Of {
+		return r
+	}
+	out := *r
+	out.Of = of
+	return &out
+}
+
 func (w *walker) substituteMap(m *types.MapType, e *env) types.Type {
 	k, v := w.substitute(m.Key, e), w.substitute(m.Value, e)
 	if k == m.Key && v == m.Value {
@@ -43,6 +56,8 @@ func holdsApp(t types.Type) bool {
 	switch x := t.(type) {
 	case *types.TypeAppType:
 		return true
+	case *types.Refined:
+		return holdsApp(x.Of)
 	case *types.OptionalType:
 		return holdsApp(x.Elem)
 	case *types.LitUnionType:

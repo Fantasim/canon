@@ -17,6 +17,19 @@ const (
 
 const decimalBase = 10
 
+// The forms of a path segment: a root's name, a field or table entry, a key or index.
+const (
+	segRoot segForm = iota
+	segField
+	segKey
+)
+
+// segOpen and segClose are the punctuation around a segment of each form (API.md P8).
+var (
+	segOpen  = [...]string{segField: dot, segKey: keyOpen}
+	segClose = [...]string{segKey: keyClose}
+)
+
 // The punctuation of an application's computed type, the record and its argument values.
 const (
 	argsOpen  = "("

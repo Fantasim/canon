@@ -6,6 +6,7 @@ import (
 
 	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/diag"
+	"github.com/fantasim/canonlang/internal/eval"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
@@ -49,6 +50,8 @@ type Runner struct {
 	seen   map[*value.Record]bool
 	below  map[value.Value]bool
 	paths  map[value.Value]*verify.Path
+
+	declared map[eval.Root]types.Type // each top-level value's declared type
 }
 
 // Index is what the checks read of a checked program, built once; the runners of one run share it.
@@ -57,27 +60,13 @@ type Index struct {
 	files  map[*syntax.CheckDecl]*syntax.File
 	broken map[types.Type]bool
 	shared map[*types.VariantType][]*syntax.CheckDecl
+
+	declared map[eval.Root]types.Type
 }
 
 // NewIndex indexes a checked program for its check runners: each check's file, the broken types, each variant's variant-level checks.
 func NewIndex(prog *check.Program) *Index {
-	ix := &Index{files: map[*syntax.CheckDecl]*syntax.File{}, broken: map[types.Type]bool{}, shared: map[*types.VariantType][]*syntax.CheckDecl{}}
-	if prog == nil {
-		return ix
-	}
-	ix.info = prog.Info
-	for _, pkg := range prog.Packages {
-		ix.indexTypes(pkg)
-		for _, f := range pkg.Files {
-			syntax.Inspect(f, func(n syntax.Node) bool {
-				if c, ok := n.(*syntax.CheckDecl); ok {
-					ix.files[c] = f
-				}
-				return true
-			})
-		}
-	}
-	return ix
+	return (*IndexCache)(nil).Index(prog)
 }
 
 // New is the check runner of a checked program; bags holds a bag per selected package.
@@ -88,7 +77,7 @@ func New(ev Evaluator, prog *check.Program, bags map[string]*diag.Bag) *Runner {
 // NewShared is New over an index built once, for a runner made per call with bags of its own.
 func NewShared(ix *Index, ev Evaluator, bags map[string]*diag.Bag) *Runner {
 	return &Runner{
-		ev: ev, bags: bags, info: ix.info, files: ix.files, broken: ix.broken, shared: ix.shared,
+		ev: ev, bags: bags, info: ix.info, files: ix.files, broken: ix.broken, shared: ix.shared, declared: ix.declared,
 		seen:  map[*value.Record]bool{},
 		below: map[value.Value]bool{},
 		paths: map[value.Value]*verify.Path{},

@@ -1,0 +1,60 @@
+API.md P9, LOCK.md §4.3 (log-2026-09-29 M4 U13-r): the judgement re-run under `tc`'s entry path
+names a map entry by the key type declared for the field, `{String | "none": ref tags}`, not by
+the `{String: ref tags}` of the value assigned to it: `ta.a.ts["none"]` and `tc.a.ts["none"]`.
+-- a/a.canon --
+/// A.
+package a
+
+/// K.
+enum K { col, num }
+
+/// Color.
+enum Color { red, blue }
+
+/// P.
+type P(k: K) = match k {
+  col => Color
+  num => Int
+}
+
+/// Tag.
+record Tag {
+  /// Label.
+  label: String
+}
+
+/// Tags.
+let tags: table Tag = { retired old { label: "o" }, cur { label: "c" } }
+
+/// X.
+record X {
+  /// K.
+  k: K
+  /// Payload.
+  p: P(k)
+  /// Tags by slot.
+  ts: {String | "none": ref tags}
+}
+
+/// Slots.
+let slots: {String: ref tags} = { "none": old, "other": cur }
+
+/// Ta.
+let ta: table X = { a { k: col, p: red, ts: slots } }
+
+/// Tc, the same instances.
+let tc: table X = ta
+-- project.canon --
+project demo {
+  canon: "0.1"
+}
+-- findings.txt --
+error[E3502]  a/a.canon:36:43
+  ta.a.ts["none"]: old is retired; live ta.a cannot reference it
+  expected by a/a.canon:32 (ref tags)
+
+error[E3502]  a/a.canon:36:43
+  tc.a.ts["none"]: old is retired; live tc.a cannot reference it
+  expected by a/a.canon:32 (ref tags)
+
+2 errors, 0 warnings in 1 package (…)

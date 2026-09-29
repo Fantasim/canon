@@ -57,7 +57,7 @@ type Index struct {
 
 // NewIndex indexes a checked program for its verifiers.
 func NewIndex(prog *check.Program) *Index {
-	return &Index{src: indexSources(prog), declared: declaredTypes(prog)}
+	return (*IndexCache)(nil).Index(prog)
 }
 
 // New is the verifier of a checked program, with a bag per package; nil assets finds no file.

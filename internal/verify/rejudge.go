@@ -6,8 +6,8 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// rejudge runs on v, a copy verified in another scope, only E3506 and E3502, which read it (LOCK.md §4.3).
-func (w *walker) rejudge(v value.Value, at *Path, sc scope) {
+// rejudge runs on v, a copy verified in another scope and declared t there, only E3506 and E3502, which read it (LOCK.md §4.3).
+func (w *walker) rejudge(v value.Value, t types.Type, at *Path, sc scope) {
 	switch x := v.(type) {
 	case *value.Member:
 		w.member(x, at, sc)
@@ -16,21 +16,18 @@ func (w *walker) rejudge(v value.Value, at *Path, sc scope) {
 	case *value.Record:
 		w.rejudgeRecord(x, at, sc)
 	case *value.List:
-		keyed := listOf(nil, x.T) != nil && listOf(nil, x.T).KeyedBy != nil
-		for i, e := range x.Elems {
-			p := at.Index(i)
-			if r, ok := e.(*value.Record); ok && keyed && r.Ident != nil {
-				p = at.Key(r.Ident.Key)
-			}
-			w.rejudge(e, p, sc)
-		}
+		w.rejudgeList(x, t, at, sc)
 	case *value.Map:
-		w.rejudgeMap(x, at, sc)
+		w.rejudgeMap(x, t, at, sc)
 	case *value.Table:
 		w.rejudgeTable(x, at, sc)
 	case *value.Pair:
-		w.rejudge(x.A, at, sc)
-		w.rejudge(x.B, at, sc)
+		var a, b types.Type
+		if pt, ok := Declared(t).(*types.PairType); ok {
+			a, b = pt.A, pt.B
+		}
+		w.rejudge(x.A, a, at, sc)
+		w.rejudge(x.B, b, at, sc)
 	}
 }
 
@@ -40,17 +37,37 @@ func (w *walker) rejudgeRecord(r *value.Record, at *Path, sc scope) {
 	}
 	for i, f := range Fields(r.T) {
 		if i < len(r.Fields) {
-			w.rejudge(r.Fields[i], at.Field(f.Name), sc)
+			w.rejudge(r.Fields[i], f.Type, at.Field(f.Name), sc)
 		}
 	}
 }
 
-func (w *walker) rejudgeMap(m *value.Map, at *Path, sc scope) {
+func (w *walker) rejudgeList(l *value.List, t types.Type, at *Path, sc scope) {
+	keyed := listOf(nil, l.T) != nil && listOf(nil, l.T).KeyedBy != nil
+	var et types.Type
+	if lt, ok := Declared(t).(*types.ListType); ok {
+		et = lt.Elem
+	}
+	for i, e := range l.Elems {
+		p := at.Index(i)
+		if r, ok := e.(*value.Record); ok && keyed && r.Ident != nil {
+			p = at.Key(r.Ident.Key)
+		}
+		w.rejudge(e, et, p, sc)
+	}
+}
+
+// rejudgeMap names each entry by the key type declared where the map is (API.md P9, log-2026-09-29 M4 U13-r).
+func (w *walker) rejudgeMap(m *value.Map, t types.Type, at *Path, sc scope) {
+	kt, vt := KeyTypeAt(t, m), types.Type(nil)
+	if mt, ok := declaredMap(t); ok {
+		vt = mt.Value
+	}
 	for i, k := range m.Keys {
-		p := at.Key(KeyOf(k))
-		w.rejudge(k, p, sc)
+		p := at.MapKey(k, kt)
+		w.rejudge(k, nil, p, sc)
 		if i < len(m.Vals) {
-			w.rejudge(m.Vals[i], p, sc)
+			w.rejudge(m.Vals[i], vt, p, sc)
 		}
 	}
 }
@@ -64,7 +81,7 @@ func (w *walker) rejudgeTable(tv *value.Table, at *Path, sc scope) {
 		p := at.Entry(e.Ident.Key)
 		esc := sc
 		esc.entry, esc.retired = p.String(), sc.retired || e.Ident.Retired
-		w.rejudge(e, p, esc)
+		w.rejudge(e, nil, p, esc)
 	}
 }
 

@@ -24,6 +24,7 @@ var cases = map[string]func(fx *fixture){
 	"E5003_1": namesCase,
 	"E5001_2": variantLevelCase,
 	"E5003_2": variantNamesCase,
+	"E5001_3": literalKeyCase,
 }
 
 // IMPLEMENTATION-PLAN.md §7.2: each case prints the findings of stages C and D over its values.
@@ -190,4 +191,23 @@ func variantLevelCase(fx *fixture) {
 func variantNamesCase(fx *fixture) {
 	_, cs := rewardVariant(fx, map[string][]*types.Field{"item": {field("count", types.IntType)}, "gold": {field("amount", types.IntType)}}, "item", "gold")
 	cs["item"].Checks = []*syntax.CheckDecl{fx.check("check positive: count"), fx.check("check wide: count")}
+}
+
+// literalKeyCase is API.md P9: the literal of a literal-union map key is a JSON string in a path.
+func literalKeyCase(fx *fixture) {
+	fits := fx.check("check fits")
+	slot := record("Slot", field("size", types.IntType))
+	slot.Checks = []*syntax.CheckDecl{fits}
+	fx.typeName(slot)
+	keyType := &types.LitUnionType{Of: types.StringType, Literals: []string{"none"}}
+	slotOf := func(key, line string, size int64, text string) (value.Value, value.Value) {
+		k := str(key, fx.lit(key, "let slots", line))
+		n := &value.Int{V: size, T: types.IntType, P: fx.lit(text, "let slots", line)}
+		return k, &value.Record{T: slot, Fields: []value.Value{n}, P: fx.lit("{", "let slots", line)}
+	}
+	noneKey, noneSlot := slotOf("none", `"none": {`, 12, "12")
+	otherKey, otherSlot := slotOf("other", "other: {", 14, "14")
+	fx.ev.scripts[fits] = fails("the slot is too big")
+	m := &value.Map{T: &types.MapType{Key: keyType, Value: slot}, Keys: []value.Value{noneKey, otherKey}, Vals: []value.Value{noneSlot, otherSlot}, P: fx.lit("{", "let slots")}
+	fx.let("slots", m)
 }

@@ -19,9 +19,9 @@ func (r *Runner) Instances(ctx context.Context, root eval.Root, v value.Value) e
 		return err
 	}
 	t := &traversal{Runner: r, ctx: ctx, bag: bag}
-	at := verify.Root(root.Name)
-	t.index(v, at)
-	t.visit(v, at)
+	at, dt := verify.Root(root.Name), r.declared[root]
+	r.index(v, dt, at)
+	t.visit(v, dt, at)
 	return nil
 }
 
@@ -34,7 +34,7 @@ type traversal struct {
 
 // visit walks v depth-first, pre-order: an instance's checks run before its parts are visited.
 // It follows fields, elements, map keys then values, and entries, never refs.
-func (t *traversal) visit(v value.Value, at *verify.Path) {
+func (t *traversal) visit(v value.Value, dt types.Type, at *verify.Path) {
 	if v == nil || t.ctx.Err() != nil {
 		return
 	}
@@ -44,96 +44,29 @@ func (t *traversal) visit(v value.Value, at *verify.Path) {
 			return
 		}
 		t.seen[rec] = true
-		if !t.invalidBelow(rec) && !t.brokenType(rec.T) {
-			t.runChecks(rec, at)
-		}
+		t.runChecks(rec, at)
 	}
-	for _, p := range parts(v, at) {
-		t.visit(p.v, p.at)
+	for _, p := range parts(v, dt, at) {
+		t.visit(p.v, p.t, p.at)
 	}
 }
 
-// index records where each value of the subtree is first reached, the path of its findings.
-func (t *traversal) index(v value.Value, at *verify.Path) {
-	if _, known := t.paths[v]; known || v == nil {
+// index records where each value of the subtree is first reached, the path of its findings,
+// as its top-level value is first traversed, before its checks can give a record an identity
+// (verify's E5002_9 case).
+func (r *Runner) index(v value.Value, dt types.Type, at *verify.Path) {
+	if _, known := r.paths[v]; known || v == nil {
 		return
 	}
-	t.paths[v] = at
-	for _, p := range parts(v, at) {
-		t.index(p.v, p.at)
+	r.paths[v] = at
+	for _, p := range parts(v, dt, at) {
+		r.index(p.v, p.t, p.at)
 	}
 }
 
-// part is a value inside another, with its path.
-type part struct {
-	v  value.Value
-	at *verify.Path
-}
-
-// parts is what the traversal and the invalid test follow, in the order of EVALUATION.md §8.1.
-func parts(v value.Value, at *verify.Path) []part {
-	switch x := v.(type) {
-	case *value.Record:
-		return recordParts(x, at)
-	case *value.List:
-		return listParts(x, at)
-	case *value.Map:
-		return mapParts(x, at)
-	case *value.Table:
-		return tableParts(x, at)
-	case *value.Pair:
-		return []part{{x.A, at}, {x.B, at}}
-	}
-	return nil
-}
-
-func recordParts(r *value.Record, at *verify.Path) []part {
-	var out []part
-	for i, f := range verify.Fields(r.T) {
-		if i < len(r.Fields) {
-			out = append(out, part{r.Fields[i], at.Field(f.Name)})
-		}
-	}
-	return out
-}
-
-// listParts are a list's elements; a keyed list's are named by key.
-func listParts(l *value.List, at *verify.Path) []part {
-	out := make([]part, 0, len(l.Elems))
-	for i, e := range l.Elems {
-		p := at.Index(i)
-		if r, ok := e.(*value.Record); ok && r.Ident != nil {
-			p = at.Key(r.Ident.Key)
-		}
-		out = append(out, part{e, p})
-	}
-	return out
-}
-
-// mapParts are each key, then its value.
-func mapParts(m *value.Map, at *verify.Path) []part {
-	var out []part
-	for i, k := range m.Keys {
-		p := at.Key(verify.KeyOf(k))
-		out = append(out, part{k, p})
-		if i < len(m.Vals) {
-			out = append(out, part{m.Vals[i], p})
-		}
-	}
-	return out
-}
-
-func tableParts(t *value.Table, at *verify.Path) []part {
-	var out []part
-	for _, e := range t.Entries {
-		if e != nil && e.Ident != nil {
-			out = append(out, part{e, at.Entry(e.Ident.Key)})
-		}
-	}
-	return out
-}
-
-// invalidBelow: v or a value under it, refs not followed, is invalid (EVALUATION.md §7.3).
+// invalidBelow: v or a value under it, refs not followed, is invalid, asked at every instance and
+// kept from the first asking, since a check run's soft finding can mark a value a later instance
+// holds (verify's E5001_9 case, log-2026-09-29 M4 U13-r).
 func (t *traversal) invalidBelow(v value.Value) bool {
 	if v == nil {
 		return false
@@ -142,7 +75,7 @@ func (t *traversal) invalidBelow(v value.Value) bool {
 		return known
 	}
 	bad := t.ev.Invalid(v)
-	for _, p := range parts(v, nil) {
+	for _, p := range parts(v, nil, nil) {
 		if bad {
 			break
 		}
@@ -152,8 +85,11 @@ func (t *traversal) invalidBelow(v value.Value) bool {
 	return bad
 }
 
-// runChecks runs the checks of an instance's record or case, in declaration order; a case value's variant-level checks first (EVALUATION.md §8.1).
+// runChecks runs an instance's checks unless invalid below or broken, variant-level first (EVALUATION.md §7.3, §8.1).
 func (t *traversal) runChecks(rec *value.Record, at *verify.Path) {
+	if t.invalidBelow(rec) || t.brokenType(rec.T) {
+		return
+	}
 	for _, c := range t.checksOf(rec.T) {
 		if t.ctx.Err() != nil {
 			return

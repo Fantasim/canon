@@ -1,0 +1,36 @@
+API.md P8, EVALUATION.md §8.3 (log-2026-09-29 M4 U13-r): a block check converting its plain list
+to a keyed one gives the list's records an identity; its `fail` still names the element by the
+path it had when its top-level value was traversed, `box.xs[0]`.
+-- a/a.canon --
+/// A.
+package a
+
+/// Rec.
+record Rec {
+  /// Name.
+  name: String
+}
+
+/// Box.
+record Box {
+  /// Xs.
+  xs: [Rec]
+
+  check {
+    let k: [Rec] keyed by name = xs
+    fail(xs[0], "first")
+  }
+}
+
+/// Box value.
+let box: Box = { xs: [{ name: "a" }, { name: "b" }] }
+-- project.canon --
+project demo {
+  canon: "0.1"
+}
+-- findings.txt --
+error[E5002]  a/a.canon:22:23
+  box.xs[0]: first
+  expected by a/a.canon:15 (check)
+
+1 error, 0 warnings in 1 package (…)

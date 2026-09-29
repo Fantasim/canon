@@ -1,0 +1,59 @@
+TYPES.md §11.2, §11.6: an arm's result may be refined (`[Target(g)](..=2)`): verification computes
+the applications under the refinement and keeps it, so each element converts to its computed
+type and `canon build` writes the converted values.
+-- a/a.canon --
+/// A.
+package a
+
+/// Goal.
+enum Goal { kill, collect }
+
+/// Color.
+enum Color { red, blue }
+
+/// Target.
+type Target(g: Goal) = match g {
+  kill => Color
+  collect => Int
+}
+
+/// Wrap.
+type Wrap(g: Goal) = match g {
+  kill => [Target(g)](..=2)
+  collect => Target(g)
+}
+
+/// Thing.
+record Thing {
+  /// Goal.
+  g: Goal
+  /// Payload.
+  p: Wrap(g)
+}
+
+/// Things.
+let things: [Thing] = [
+  { g: kill, p: [red, blue] },
+  { g: collect, p: 3 },
+  { g: kill, p: [blue] },
+]
+
+emit json { out: "@out/" }
+-- project.canon --
+project demo {
+  canon: "0.1"
+  roots {
+    out: "out"
+  }
+}
+-- outputs.txt --
+0 errors, 0 warnings in 1 package (…)
+-- @out/things.json
+{
+  "$schema": "a.Thing@63d062c3",
+  "rows": [
+    {"g": "kill", "p": ["red", "blue"]},
+    {"g": "collect", "p": 3},
+    {"g": "kill", "p": ["blue"]}
+  ]
+}

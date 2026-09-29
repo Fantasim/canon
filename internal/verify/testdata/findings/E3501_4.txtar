@@ -1,0 +1,61 @@
+API.md P8, P9, TYPES.md §10.3: a ref held as the value of a map entry and naming no entry is
+E3501 at the path `[key]`; with a literal-union key type (`String | "none"`), the key that is the
+literal is written as a JSON string (P2 reads a bare `none` as a String), any other word bare.
+The record checks of a map's values report at the same paths.
+-- a/a.canon --
+/// A.
+package a
+
+/// Tag.
+record Tag {
+  /// Label.
+  label: String
+}
+
+/// Tags.
+let tags: table Tag = {
+  red { label: "red" }
+}
+
+/// Slot.
+record Slot {
+  /// Size.
+  size: Int
+
+  check size < 10 else "the slot is too big"
+}
+
+/// Picks.
+let picks: {String | "none": ref tags} = {
+  "none": "blue",
+  "other": "green",
+  "any key": red,
+}
+
+/// Slots.
+let slots: {String | "none": Slot} = {
+  "none": { size: 12 },
+  "other": { size: 14 },
+}
+-- project.canon --
+project demo {
+  canon: "0.1"
+}
+-- findings.txt --
+error[E3501]  a/a.canon:25:11
+  picks["none"]: unknown key blue in tags
+  expected by a/a.canon:24 (ref tags)
+
+error[E3501]  a/a.canon:26:12
+  picks[other]: unknown key green in tags
+  expected by a/a.canon:24 (ref tags)
+
+error[E5001]  a/a.canon:32:11
+  slots["none"]: the slot is too big
+  expected by a/a.canon:20 (check)
+
+error[E5001]  a/a.canon:33:12
+  slots[other]: the slot is too big
+  expected by a/a.canon:20 (check)
+
+4 errors, 0 warnings in 1 package (…)

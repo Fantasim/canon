@@ -98,14 +98,14 @@ func (w *walker) remembered(r *value.Record, t types.Type, at *Path, sc scope) v
 }
 
 // replay is a remembered instance's copy, judged in a new scope, its findings again in another bag (EVALUATION.md §10.2).
-func (w *walker) replay(m *memo, at *Path, sc scope) value.Value {
+func (w *walker) replay(m *memo, t types.Type, at *Path, sc scope) value.Value {
 	w.res.Valid = w.res.Valid && !m.invalid
 	here, key := at.String(), memoScope(sc)
 	s, judged := m.scoped[key]
 	if !judged {
 		rec := &recorder{}
 		w.recording = append(w.recording, rec)
-		w.rejudge(m.rec, at, sc)
+		w.rejudge(m.rec, t, at, sc)
 		w.recording = w.recording[:len(w.recording)-1]
 		m.scoped[key] = &scopedFound{prefix: here, found: rec.scoped}
 	}

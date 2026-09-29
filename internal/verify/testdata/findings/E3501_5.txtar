@@ -1,0 +1,79 @@
+API.md P9, TYPES.md §11.4, §11.5 (log-2026-09-29 M4 U13-r): a map key type declared as an
+application (`SK(k)` = `P(k) | "none"`) is computed for the instance before its entries are
+named, so the literal `none` is `m["none"]` in verification's findings (E3501) and in the
+record checks' (E5001) alike; the other keys stay bare.
+-- a/a.canon --
+/// A.
+package a
+
+/// Kind.
+enum Kind { color, other }
+
+/// Color.
+enum Color { red, blue }
+
+/// P.
+type P(k: Kind) = match k {
+  color => Color
+  other => String
+}
+
+/// SK.
+type SK(k: Kind) = P(k) | "none"
+
+/// Tag.
+record Tag {
+  /// Label.
+  label: String
+}
+
+/// Tags.
+let tags: table Tag = {
+  red { label: "red" }
+}
+
+/// Slot.
+record Slot {
+  /// Size.
+  size: Int
+  /// Tag.
+  tag: ref tags
+
+  check size < 5 else "big"
+}
+
+/// Holder.
+record Holder {
+  /// K.
+  k: Kind
+  /// M.
+  m: {SK(k): Slot}
+}
+
+/// Hs.
+let hs: [Holder] = [
+  { k: color, m: { "none": { size: 1, tag: "green" }, red: { size: 7, tag: red } } },
+  { k: color, m: { "none": { size: 7, tag: red }, blue: { size: 1, tag: "green" } } },
+]
+-- project.canon --
+project demo {
+  canon: "0.1"
+}
+-- findings.txt --
+error[E3501]  a/a.canon:50:44
+  hs[0].m["none"].tag: unknown key green in tags
+  expected by a/a.canon:35 (tag: ref tags)
+
+error[E5001]  a/a.canon:50:60
+  hs[0].m[red]: big
+  expected by a/a.canon:37 (check)
+
+error[E5001]  a/a.canon:51:28
+  hs[1].m["none"]: big
+  expected by a/a.canon:37 (check)
+
+error[E3501]  a/a.canon:51:73
+  hs[1].m[blue].tag: unknown key green in tags
+  expected by a/a.canon:35 (tag: ref tags)
+
+4 errors, 0 warnings in 1 package (…)

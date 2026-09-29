@@ -1,0 +1,26 @@
+API.md P8, P9, EVALUATION.md §8.1, §8.3: an instance reached as the value of a map entry is
+reported at the path `[key]`; with a literal-union key type (`String | "none"`), the key that is
+the literal is written as a JSON string (P2 reads a bare `none` as a String), any other word bare.
+-- teamboard/slots.canon --
+package teamboard
+
+record Slot {
+  size: Int
+
+  check fits: size < 10 else "the slot is too big"
+}
+
+let slots: {String | "none": Slot} = {
+  "none": { size: 12 },
+  other: { size: 14 },
+}
+-- findings.txt --
+error[E5001]  teamboard/slots.canon:10:11
+  slots["none"]: the slot is too big
+  expected by teamboard/slots.canon:6 (check fits)
+
+error[E5001]  teamboard/slots.canon:11:10
+  slots[other]: the slot is too big
+  expected by teamboard/slots.canon:6 (check fits)
+
+2 errors, 0 warnings in 1 package (…)

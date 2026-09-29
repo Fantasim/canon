@@ -1,0 +1,39 @@
+API.md P8, EVALUATION.md §8.1 (log-2026-09-29 M4 U13-r): a table's entries held by a plain list
+are its elements `[n]` there, for the record checks (E5001) as for verification (E3501): an
+entry's identity names it by key only in a keyed list or a table.
+-- a/a.canon --
+/// A.
+package a
+
+/// Tag.
+record Tag {
+  /// Label.
+  label: String
+  /// Target.
+  to: ref tags
+
+  check label != "a" else "label a"
+}
+
+/// Plain.
+let plain: [Tag] = tags.values()
+
+/// Tags.
+let tags: table Tag = {
+  x { label: "a", to: x }
+  y { label: "b", to: "gone" }
+}
+-- project.canon --
+project demo {
+  canon: "0.1"
+}
+-- findings.txt --
+error[E5001]  a/a.canon:19:3
+  plain[0]: label a
+  expected by a/a.canon:11 (check)
+
+error[E3501]  a/a.canon:20:23
+  plain[1].to: unknown key gone in tags
+  expected by a/a.canon:9 (to: ref tags)
+
+2 errors, 0 warnings in 1 package (…)

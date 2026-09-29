@@ -1,0 +1,59 @@
+TYPES.md §11.2, §11.6: a refined arm result (`[Target(g)](..=2)`) is computed under its
+refinement: an element that fits no computed type is E3802 naming `[Color](..=2)`, a value that
+is no list is E3802 too, and the kept refinement bounds the length (E3204).
+-- a/a.canon --
+/// A.
+package a
+
+/// Goal.
+enum Goal { kill, collect }
+
+/// Color.
+enum Color { red, blue }
+
+/// Target.
+type Target(g: Goal) = match g {
+  kill => Color
+  collect => Int
+}
+
+/// Wrap.
+type Wrap(g: Goal) = match g {
+  kill => [Target(g)](..=2)
+  collect => Target(g)
+}
+
+/// Thing.
+record Thing {
+  /// Goal.
+  g: Goal
+  /// Payload.
+  p: Wrap(g)
+}
+
+/// Things.
+let things: [Thing] = [
+  { g: kill, p: [red, blue] },
+  { g: collect, p: 3 },
+  { g: kill, p: [red, blue, red] },
+  { g: kill, p: [red, 4] },
+  { g: kill, p: 5 },
+]
+-- project.canon --
+project demo {
+  canon: "0.1"
+}
+-- findings.txt --
+error[E3204]  a/a.canon:34:17
+  things[2].p: [red, blue, red] is outside ..=2
+  expected by a/a.canon:18 ([Target(g)](..=2))
+
+error[E3802]  a/a.canon:35:23
+  things[3].p[1]: value does not match Wrap(g) = [a.Color](..=2)
+  expected by a/a.canon:27 (p: Wrap(g))
+
+error[E3802]  a/a.canon:36:17
+  things[4].p: value does not match Wrap(g) = [a.Color](..=2)
+  expected by a/a.canon:27 (p: Wrap(g))
+
+3 errors, 0 warnings in 1 package (…)

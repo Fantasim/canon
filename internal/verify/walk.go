@@ -95,7 +95,7 @@ func (w *walker) record(r *value.Record, t types.Type, at *Path, sc scope) value
 	}
 	w.appliedArgs(r, t, at, sc)
 	if m, ok := w.stage.Verified(r); ok {
-		return w.replay(m.(*memo), at, sc) // the seam keeps verify's memo opaque; only remembered puts one there
+		return w.replay(m.(*memo), t, at, sc) // the seam keeps verify's memo opaque; only remembered puts one there
 	}
 	return w.remembered(r, t, at, sc)
 }
@@ -171,7 +171,7 @@ func (w *walker) mapping(m *value.Map, t types.Type, at *Path, sc scope) value.V
 	keys, vals := parts{from: m.Keys}, parts{from: m.Vals}
 	ksc := sc.part()
 	for i, k := range m.Keys {
-		p := at.Key(KeyOf(k))
+		p := w.keyPath(at, k, kt, sc.env)
 		keys.set(i, w.walk(k, kt, p, ksc))
 		if i < len(m.Vals) {
 			vsc := ksc
