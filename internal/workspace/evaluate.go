@@ -47,7 +47,7 @@ type Evaluation struct {
 func Evaluate(ctx context.Context, s *Snapshot, e Eval) (*Evaluation, error) {
 	// A draft must join this key when drafts land (API.md V13).
 	key := Key(opEvaluate, nil, e.At.Canonical, e.Lang)
-	return Share(ctx, s, key, func(ctx context.Context) (*Evaluation, error) { return evaluate(ctx, s, e) })
+	return Share(ctx, s, key, func(ctx context.Context) (*Evaluation, error) { return evaluate(ctx, e) })
 }
 
 // EvalStale is a *StaleError when, since base, a file read by a package e touches changed (the
@@ -156,7 +156,7 @@ func (s *Snapshot) changedDirs(was map[name]sum, names []string) []string {
 	return out
 }
 
-func evaluate(ctx context.Context, s *Snapshot, e Eval) (*Evaluation, error) {
+func evaluate(ctx context.Context, e Eval) (*Evaluation, error) {
 	at, err := edit.Parse(e.At.Canonical)
 	if err != nil {
 		return nil, err

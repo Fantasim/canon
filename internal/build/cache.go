@@ -31,13 +31,13 @@ type cacheGen struct {
 	files    map[fileName]keptFile // project.canon and each canon.lock, by name
 	head     *head
 	sites    map[*syntax.File][]loadAt
-	measured source.FileID     // the files the byte total counts
-	total    int               // the bytes of every file of set
-	live     int               // the bytes the latest snapshot parsed, project.canon and locks included
-	base     source.FileID     // the last file of set when that snapshot began
-	loads    loadSem           // held by one run's loads at a time (readLog.loading)
-	vix      verify.IndexCache // verify's per-file index walks, by tree (NFR-02)
-	rix      rules.IndexCache  // rules' per-file index walks, by tree (NFR-02)
+	measured source.FileID // the files the byte total counts
+	total    int           // the bytes of every file of set
+	live     int           // the bytes the latest snapshot parsed, project.canon and locks included
+	base     source.FileID // the last file of set when that snapshot began
+	loads    loadSem       // held by one run's loads at a time (readLog.loading)
+	vix      verify.IndexCache
+	rix      rules.IndexCache
 }
 
 // fileName is a file the cache keeps by name: its display path and absolute name.
