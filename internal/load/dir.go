@@ -158,7 +158,7 @@ func (l *Loader) readFile(m matchFile, at *string, req Request) (*wire.File, boo
 	}
 	root, err := jsonsrc.Parse(src, req.Bag)
 	if err != nil {
-		return nil, reportEncoding(req.Bag, m.Display, data, err)
+		return nil, ReportEncoding(req.Bag, m.Display, data, err)
 	}
 	sel := wire.Selection{Node: root}
 	if at != nil {
@@ -170,9 +170,9 @@ func (l *Loader) readFile(m matchFile, at *string, req Request) (*wire.File, boo
 	return &wire.File{Sel: sel, Stem: stem(m.Display), At: root.Span}, true
 }
 
-// reportEncoding is E7105 for a jsonsrc encoding error, data's raw bytes giving the file
+// ReportEncoding is E7105 for a jsonsrc encoding error, data's raw bytes giving the file
 // variant's {offset} a byte of the file as written, not of the folded content its span is in.
-func reportEncoding(bag *diag.Bag, path string, data []byte, err error) bool {
+func ReportEncoding(bag *diag.Bag, path string, data []byte, err error) bool {
 	var enc *jsonsrc.EncodingError
 	if errors.As(err, &enc) {
 		if enc.Surrogate != 0 {

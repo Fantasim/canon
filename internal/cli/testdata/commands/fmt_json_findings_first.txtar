@@ -1,0 +1,25 @@
+IMPLEMENTATION-PLAN.md §8.1: findings come first, then the unformatted files, then the summary.
+-- args --
+fmt
+--check
+--format
+json
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+const = 1
+-- b/b.canon --
+package b
+let  x:Int=1
+const   Y = 60s
+-- want --
+[exit 1]
+[stdout]
+{"severity":"error","code":"E1116","file":"a/a.canon","line":3,"col":7,"endLine":3,"endCol":8,"package":"","message":"expected IDENT; found ="}
+{"file":"b/b.canon","formatted":false}
+{"summary":{"files":3,"unformatted":1}}
+[stderr]

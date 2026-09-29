@@ -1,0 +1,31 @@
+CLI.md §3.6: without --json-sources JSON files are never touched.
+-- args --
+fmt
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+let x: Int = load("../data/x.json", at: "a")
+let ys: [Int] = load.dir("../more/*.json")
+let z: Int = load("../data/other.dat", format: json)
+-- data/x.json --
+{"a":1,   "b":[1,2],"c":{}}
+-- data/other.dat --
+[ 1 ,2 ]
+-- data/unread.json --
+{"u":1}
+-- more/one.json --
+{"k": "v"}
+-- more/two.json --
+{
+    "k":"w"
+}
+-- more/deep/three.json --
+[ 1 ]
+-- want --
+[exit 0]
+[stdout]
+[stderr]

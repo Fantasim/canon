@@ -1,0 +1,19 @@
+FORMATTER.md §2: a file with CRLF line endings is rewritten with LF.
+-- args --
+fmt
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+let x: Int = 1
+-- want --
+[exit 0]
+[stdout]
+[stderr]
+[file a/a.canon]
+package a
+
+let x: Int = 1

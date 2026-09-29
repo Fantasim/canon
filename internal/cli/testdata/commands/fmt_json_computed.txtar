@@ -1,0 +1,20 @@
+CLI.md §3.6: fmt evaluates nothing, so a load whose path is not a plain string is not followed.
+-- args --
+fmt
+--json-sources
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+const P = "../data/x.json"
+let x: Int = load(P)
+let y: Int = load("../data/${P}.json")
+-- data/x.json --
+{"a":1}
+-- want --
+[exit 0]
+[stdout]
+[stderr]

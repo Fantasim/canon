@@ -9,6 +9,8 @@
 
 # Findings cases whose bytes are the test: they carry CR (a CRLF or a lone CR) or other
 # control bytes on purpose and must never be normalised.
+internal/cli/testdata/commands/fmt_crlf.txtar -text
+internal/cli/testdata/commands/fmt_json_encoding_crlf.txtar -text
 internal/load/testdata/findings/E7105_2.txtar -text
 internal/load/testdata/findings/E7113_5.txtar -text
 internal/load/testdata/findings/E7113_7.txtar -text

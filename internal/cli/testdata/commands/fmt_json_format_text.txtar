@@ -1,0 +1,18 @@
+WIRE.md §6.1, §6.2: `format: text` on a .json file reads it as text, so --json-sources leaves it alone.
+-- args --
+fmt
+--json-sources
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+let t: String = load("../data/x.json", format: text)
+-- data/x.json --
+{"k":1}
+-- want --
+[exit 0]
+[stdout]
+[stderr]

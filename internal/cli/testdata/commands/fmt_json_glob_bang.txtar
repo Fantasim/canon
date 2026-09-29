@@ -1,0 +1,24 @@
+WIRE.md §6.5: [!a] negates: b1.json is read, a1.json is not.
+-- args --
+fmt
+--json-sources
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+let x: [Int] = load.dir("../d/[!a]*.json")
+-- d/a1.json --
+{"k":1}
+-- d/b1.json --
+{"k":1}
+-- want --
+[exit 0]
+[stdout]
+[stderr]
+[file d/b1.json]
+{
+  "k": 1
+}

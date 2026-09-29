@@ -1,0 +1,24 @@
+CLI.md §2.4, §3.6: --check with --format json prints one line per unformatted path.
+-- args --
+fmt
+--check
+--format
+json
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+let  x:Int=1
+const   Y = 60s
+-- b/b.canon --
+package b
+
+let x: Int = 1
+-- want --
+[exit 1]
+[stdout]
+{"file":"a/a.canon","formatted":false}
+{"summary":{"files":3,"unformatted":1}}
+[stderr]

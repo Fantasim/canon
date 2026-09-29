@@ -1,0 +1,49 @@
+CLI.md §3.6: a flag fmt does not have is a usage error, exit 2.
+-- args --
+fmt
+--fix
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+let x: Int = 1
+-- want --
+[exit 2]
+[stdout]
+[stderr]
+canon: flag provided but not defined: -fix
+usage: canon <command> [arguments] [flags]
+
+commands:
+  build [packages...]   check, then write the outputs of packages
+  check [packages...]   parse and check packages, print findings
+  explain <path>        print a value, its type and where each part was set
+  fmt [paths...]        rewrite sources in the canonical layout
+  init                  create project.canon in the current directory
+  new <package>         create a package directory with a first file
+  test [packages...]    run the test blocks of packages
+  version               print the compiler, language and format versions
+
+flags:
+  -check
+    	write nothing; list the files that are not formatted and exit 1
+  -diff
+    	print the changes instead of writing
+  -format format
+    	output format: text or json (default "text")
+  -json-sources
+    	also normalize the JSON files read by load to the canonical JSON layout
+  -layer name
+    	apply the layer name; repeatable, applied in order
+  -max-warnings n
+    	exit with code 4 when there are more than n warnings
+  -project string
+    	project root (default: search upward from the current directory)
+  -q	print errors only
+  -quiet
+    	print errors only
+  -root name=dir
+    	use name=dir for a declared root; repeatable

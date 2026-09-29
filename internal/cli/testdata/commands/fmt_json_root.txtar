@@ -1,0 +1,29 @@
+CLI.md §3.6, WIRE.md §2: a JSON source under a declared root is named @root/... and --root redirects it.
+-- args --
+fmt
+--json-sources
+--root
+res=elsewhere
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    res: "res"
+  }
+}
+-- a/a.canon --
+package a
+
+let x: Int = load("@res/x.json")
+-- res/x.json --
+{"in":"res"}
+-- elsewhere/x.json --
+{"in":"elsewhere"}
+-- want --
+[exit 0]
+[stdout]
+[stderr]
+[file elsewhere/x.json]
+{
+  "in": "elsewhere"
+}

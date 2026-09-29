@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"strings"
 
 	canon "github.com/fantasim/canonlang/api"
@@ -53,15 +52,17 @@ func (inv *invocation) writeFindingsOnly(findings []canon.Finding) error {
 	if err := canon.WriteFindings(&b, findings, canon.WriteOptions{JSON: inv.opt.format == formatJSON}); err != nil {
 		return fmt.Errorf(fmtWrap, err)
 	}
-	out := strings.TrimSuffix(b.String(), lineBreak)
+	return writeText(inv.env.Stdout, inv.withoutSummary(b.String()))
+}
+
+// withoutSummary is rendered findings less their summary line and, in text, the blank line before it (API.md F14).
+func (inv *invocation) withoutSummary(rendered string) string {
+	out := strings.TrimSuffix(rendered, lineBreak)
 	out = out[:strings.LastIndex(out, lineBreak)+1]
 	if inv.opt.format != formatJSON {
 		out = strings.TrimSuffix(out, lineBreak)
 	}
-	if _, err := io.WriteString(inv.env.Stdout, out); err != nil {
-		return fmt.Errorf(fmtWrap, err)
-	}
-	return nil
+	return out
 }
 
 // summaryOf counts findings that belong to no package.
@@ -84,13 +85,17 @@ func (inv *invocation) openProject() (*canon.Project, error) {
 
 // openProjectFS is openProject reading through fsys, the OS's when nil.
 func (inv *invocation) openProjectFS(fsys canon.FS) (*canon.Project, error) {
-	root := inv.abs(inv.opt.project)
-	if inv.opt.project == "" {
-		found, err := canon.FindProject(inv.env.Dir)
-		if err != nil {
-			return nil, err
-		}
-		root = found
+	root, err := inv.projectRoot()
+	if err != nil {
+		return nil, err
 	}
 	return canon.Open(root, canon.Options{Roots: inv.opt.roots, Layers: inv.opt.layers, FS: fsys})
+}
+
+// projectRoot is --project, else the directory holding project.canon at or above the current one (CLI.md §2.1).
+func (inv *invocation) projectRoot() (string, error) {
+	if inv.opt.project != "" {
+		return inv.abs(inv.opt.project), nil
+	}
+	return canon.FindProject(inv.env.Dir)
 }

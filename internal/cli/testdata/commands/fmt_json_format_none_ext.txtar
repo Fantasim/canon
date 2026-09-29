@@ -1,0 +1,18 @@
+WIRE.md §6.2: without format:, the extension decides: a .dat file is not JSON, so the load is not followed.
+-- args --
+fmt
+--json-sources
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+let t: Int = load("../data/x.dat")
+-- data/x.dat --
+{"k":1}
+-- want --
+[exit 0]
+[stdout]
+[stderr]

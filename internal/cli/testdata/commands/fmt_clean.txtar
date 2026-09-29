@@ -1,0 +1,15 @@
+CLI.md §3.6: a file already in the canonical layout is left untouched; nothing is printed.
+-- args --
+fmt
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+let x: Int = 1
+-- want --
+[exit 0]
+[stdout]
+[stderr]

@@ -1,0 +1,19 @@
+CLI.md §2.4, FORMATTER.md §16: the findings of a file that does not parse, as JSON lines.
+-- args --
+fmt
+--format
+json
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+const = 1
+-- want --
+[exit 1]
+[stdout]
+{"severity":"error","code":"E1116","file":"a/a.canon","line":3,"col":7,"endLine":3,"endCol":8,"package":"","message":"expected IDENT; found ="}
+{"summary":{"files":2,"unformatted":0}}
+[stderr]

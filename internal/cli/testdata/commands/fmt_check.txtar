@@ -1,0 +1,26 @@
+CLI.md §3.6, §2.5: --check writes nothing, lists the unformatted paths and exits 1.
+-- args --
+fmt
+--check
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+let  x:Int=1
+const   Y = 60s
+-- b/b.canon --
+package b
+
+let x: Int = 1
+-- c/c.canon --
+package c
+let  x:Int=1
+const   Y = 60s
+-- want --
+[exit 1]
+[stdout]
+a/a.canon
+c/c.canon
+[stderr]

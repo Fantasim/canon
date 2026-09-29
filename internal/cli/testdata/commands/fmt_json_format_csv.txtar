@@ -1,0 +1,18 @@
+WIRE.md §6.5: load.dir with a format other than json reads nothing as JSON, whatever the extension.
+-- args --
+fmt
+--json-sources
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+let t: [Int] = load.dir("../data/*.json", format: csv)
+-- data/x.json --
+{"k":1}
+-- want --
+[exit 0]
+[stdout]
+[stderr]

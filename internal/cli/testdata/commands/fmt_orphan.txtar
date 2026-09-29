@@ -1,0 +1,25 @@
+CLI.md §2.2, §3.6: a file with no package line is selected by its path, so its syntax error is reported.
+-- args --
+fmt
+a/orphan.canon
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/orphan.canon --
+let x: Int = 
+-- a/a.canon --
+package a
+
+let x: Int = 1
+-- want --
+[exit 1]
+[stdout]
+error[E1127]  a/orphan.canon:1:1
+  a file must start with "package"
+
+error[E1116]  a/orphan.canon:2:1
+  expected expr; found the end of the file
+
+2 errors, 0 warnings in 0 packages (…)
+[stderr]

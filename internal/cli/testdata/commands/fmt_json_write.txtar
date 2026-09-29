@@ -1,0 +1,28 @@
+IMPLEMENTATION-PLAN.md §8.1: --format json in write mode still lists each file that was not formatted, then the summary.
+-- args --
+fmt
+--format
+json
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+let  x:Int=1
+const   Y = 60s
+-- b/b.canon --
+package b
+
+let x: Int = 1
+-- want --
+[exit 0]
+[stdout]
+{"file":"a/a.canon","formatted":false}
+{"summary":{"files":3,"unformatted":1}}
+[stderr]
+[file a/a.canon]
+package a
+
+let x: Int = 1
+const Y = 1m

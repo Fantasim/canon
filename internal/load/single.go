@@ -116,7 +116,7 @@ func (l *Loader) bareJSON(ctx context.Context, req Request, c parsedCall, p proj
 	}
 	root, err := jsonsrc.Parse(src, req.Bag)
 	if err != nil {
-		return nil, reportEncoding(req.Bag, p.Display, data, err), nil
+		return nil, ReportEncoding(req.Bag, p.Display, data, err), nil
 	}
 	sel := wire.Selection{Node: root}
 	if c.at != nil {

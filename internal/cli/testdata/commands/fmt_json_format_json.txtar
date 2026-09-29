@@ -1,0 +1,29 @@
+WIRE.md §6.2: `format: json` reads a file of any extension as JSON, so --json-sources normalizes it; load.dir too.
+-- args --
+fmt
+--json-sources
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+let t: Int = load("../data/x.dat", format: json)
+let u: [Int] = load.dir("../more/*.txt", format: json)
+-- data/x.dat --
+{"k":1}
+-- more/y.txt --
+{"k":1}
+-- want --
+[exit 0]
+[stdout]
+[stderr]
+[file data/x.dat]
+{
+  "k": 1
+}
+[file more/y.txt]
+{
+  "k": 1
+}

@@ -1,0 +1,34 @@
+CLI.md §2.2, §3.6: name... selects a package and every one below it.
+-- args --
+fmt
+game...
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- game/game.canon --
+package game
+let  x:Int=1
+const   Y = 60s
+-- game/items/items.canon --
+package game.items
+let  x:Int=1
+const   Y = 60s
+-- other/o.canon --
+package other
+let  x:Int=1
+const   Y = 60s
+-- want --
+[exit 0]
+[stdout]
+[stderr]
+[file game/game.canon]
+package game
+
+let x: Int = 1
+const Y = 1m
+[file game/items/items.canon]
+package game.items
+
+let x: Int = 1
+const Y = 1m

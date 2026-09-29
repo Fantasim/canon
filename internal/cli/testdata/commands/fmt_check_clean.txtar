@@ -1,0 +1,16 @@
+CLI.md §3.6, §2.5: --check on formatted files prints nothing and exits 0.
+-- args --
+fmt
+--check
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+let x: Int = 1
+-- want --
+[exit 0]
+[stdout]
+[stderr]

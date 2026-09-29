@@ -1,0 +1,32 @@
+CLI.md §3.6: --diff --json-sources prints the JSON changes too.
+-- args --
+fmt
+--diff
+--json-sources
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+let x: Int = load("../data/x.json")
+-- data/x.json --
+{"a":1,"b":[1,{"c":null}]}
+-- want --
+[exit 0]
+[stdout]
+--- data/x.json
++++ data/x.json
+@@ -1 +1,9 @@
+-{"a":1,"b":[1,{"c":null}]}
++{
++  "a": 1,
++  "b": [
++    1,
++    {
++      "c": null
++    }
++  ]
++}
+[stderr]

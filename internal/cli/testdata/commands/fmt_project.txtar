@@ -1,0 +1,19 @@
+CLI.md §3.6, FORMATTER.md §10: project.canon is formatted with the sources.
+-- args --
+fmt
+-- project.canon --
+project acme {
+  canon:  "0.1"
+}
+-- a/a.canon --
+package a
+
+let x: Int = 1
+-- want --
+[exit 0]
+[stdout]
+[stderr]
+[file project.canon]
+project acme {
+  canon: "0.1"
+}

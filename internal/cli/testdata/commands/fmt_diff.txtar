@@ -1,0 +1,29 @@
+CLI.md §3.6: --diff prints the changes as a unified diff and writes nothing; exit 0.
+-- args --
+fmt
+--diff
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+let  x:Int=1
+const   Y = 60s
+-- b/b.canon --
+package b
+
+let x: Int = 1
+-- want --
+[exit 0]
+[stdout]
+--- a/a.canon
++++ a/a.canon
+@@ -1,3 +1,4 @@
+ package a
+-let  x:Int=1
+-const   Y = 60s
++
++let x: Int = 1
++const Y = 1m
+[stderr]

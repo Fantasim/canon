@@ -1,0 +1,25 @@
+CLI.md §2.2, §3.6: a package name selects its files only.
+-- args --
+fmt
+a
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+let  x:Int=1
+const   Y = 60s
+-- b/b.canon --
+package b
+let  x:Int=1
+const   Y = 60s
+-- want --
+[exit 0]
+[stdout]
+[stderr]
+[file a/a.canon]
+package a
+
+let x: Int = 1
+const Y = 1m

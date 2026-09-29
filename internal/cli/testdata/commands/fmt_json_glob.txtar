@@ -1,0 +1,34 @@
+WIRE.md §6.5: load.dir globs (**, classes, braces, dotfiles) name the files --json-sources normalizes.
+-- args --
+fmt
+--json-sources
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+let x: [Int] = load.dir("../d/**/\{p,q\}[0-9].json")
+-- d/p1.json --
+{"x":1}
+-- d/sub/q2.json --
+{"x":2}
+-- d/sub/r3.json --
+{"x":3}
+-- d/.hidden/p4.json --
+{"x":4}
+-- d/p5.txt --
+{"x":5}
+-- want --
+[exit 0]
+[stdout]
+[stderr]
+[file d/p1.json]
+{
+  "x": 1
+}
+[file d/sub/q2.json]
+{
+  "x": 2
+}

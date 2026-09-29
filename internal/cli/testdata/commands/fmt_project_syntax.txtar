@@ -1,0 +1,19 @@
+CLI.md §3.6, FORMATTER.md §1: a project.canon with a syntax error is reported, exit 1, and nothing at all is written.
+-- args --
+fmt
+-- project.canon --
+project acme {
+  canon = "0.1"
+}
+-- a/a.canon --
+package a
+let  x:Int=1
+const   Y = 60s
+-- want --
+[exit 1]
+[stdout]
+error[E1116]  project.canon:2:9
+  expected ":"; found =
+
+1 error, 0 warnings in 0 packages (…)
+[stderr]

@@ -1,0 +1,27 @@
+CLI.md §2.2, §3.6: ./dir selects the package of a directory, relative to the current directory.
+-- args --
+fmt
+./items
+-- dir --
+game
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- game/items/items.canon --
+package game.items
+let  x:Int=1
+const   Y = 60s
+-- game/other.canon --
+package game
+let  x:Int=1
+const   Y = 60s
+-- want --
+[exit 0]
+[stdout]
+[stderr]
+[file game/items/items.canon]
+package game.items
+
+let x: Int = 1
+const Y = 1m

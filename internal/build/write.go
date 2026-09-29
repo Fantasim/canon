@@ -151,6 +151,22 @@ func writeAll(fsys WriteFS, changes []change) error {
 	return nil
 }
 
+// WriteAtomic replaces the existing file abs with data through a temporary file beside it, the file's permissions kept; after a failure the file is as it was and no temporary file is left.
+func WriteAtomic(fsys WriteFS, abs string, data []byte) error {
+	c := change{abs: abs, data: data, existed: true}
+	w := &writer{fsys: fsys}
+	if err := w.stage(c); err != nil {
+		removeTemps(fsys, []change{c})
+		w.removeDirs()
+		return err
+	}
+	if err := fsys.Rename(tempOf(abs), abs); err != nil {
+		removeTemps(fsys, []change{c})
+		return err
+	}
+	return nil
+}
+
 // displayErr prints a display path, op and cause in place of an OS error's absolute path, and
 // unwraps to the whole original error, so errors.Is and errors.As see all it wrapped.
 type displayErr struct {

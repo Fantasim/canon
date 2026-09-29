@@ -1,0 +1,29 @@
+CLI.md §2.2, §3.6: --json-sources follows the loads of the selected packages only.
+-- args --
+fmt
+--json-sources
+a
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+let x: Int = load("../data/a.json")
+-- b/b.canon --
+package b
+
+let x: Int = load("../data/b.json")
+-- data/a.json --
+{"a":1}
+-- data/b.json --
+{"b":1}
+-- want --
+[exit 0]
+[stdout]
+[stderr]
+[file data/a.json]
+{
+  "a": 1
+}

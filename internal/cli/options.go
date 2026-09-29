@@ -22,6 +22,8 @@ type options struct {
 	name        string
 	targets     []canon.Target
 	checkFlag   bool
+	diff        bool
+	jsonSources bool
 	adopt       []string
 	layers      []string
 	run         string
@@ -71,6 +73,13 @@ func testFlags(fs *flag.FlagSet, o *options) {
 // explainFlags are canon explain's own flags (CLI.md §3.7), on top of the global ones.
 func explainFlags(fs *flag.FlagSet, o *options) {
 	fs.Func(flagDepth, usageDepth, o.setDepth)
+}
+
+// fmtFlags are canon fmt's own flags (CLI.md §3.6), on top of the global ones.
+func fmtFlags(fs *flag.FlagSet, o *options) {
+	fs.BoolVar(&o.checkFlag, flagCheck, o.checkFlag, usageFmtCheck)
+	fs.BoolVar(&o.diff, flagDiff, o.diff, usageDiff)
+	fs.BoolVar(&o.jsonSources, flagJSONSources, o.jsonSources, usageJSONSources)
 }
 
 // setDepth records --depth, a count of levels of parts, 0 or more.

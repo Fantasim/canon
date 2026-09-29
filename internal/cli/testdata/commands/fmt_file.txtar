@@ -1,0 +1,34 @@
+CLI.md §2.2, §3.6: a path selects the package of a file.
+-- args --
+fmt
+a/one.canon
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/one.canon --
+package a
+let  x:Int=1
+const   Y = 60s
+-- a/two.canon --
+package a
+let  x:Int=1
+const   Y = 60s
+-- b/b.canon --
+package b
+let  x:Int=1
+const   Y = 60s
+-- want --
+[exit 0]
+[stdout]
+[stderr]
+[file a/one.canon]
+package a
+
+let x: Int = 1
+const Y = 1m
+[file a/two.canon]
+package a
+
+let x: Int = 1
+const Y = 1m

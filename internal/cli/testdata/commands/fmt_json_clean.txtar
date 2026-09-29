@@ -1,0 +1,18 @@
+IMPLEMENTATION-PLAN.md §8.1: --format json on formatted files prints the summary alone.
+-- args --
+fmt
+--format
+json
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+let x: Int = 1
+-- want --
+[exit 0]
+[stdout]
+{"summary":{"files":2,"unformatted":0}}
+[stderr]

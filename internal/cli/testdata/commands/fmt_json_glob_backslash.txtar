@@ -1,0 +1,18 @@
+WIRE.md §6.1, §6.5: a backslash in a path is E7001: the load reads no file.
+-- args --
+fmt
+--json-sources
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+let x: [Int] = load.dir("../d/\\x.json")
+-- d/x.json --
+{"k":1}
+-- want --
+[exit 0]
+[stdout]
+[stderr]

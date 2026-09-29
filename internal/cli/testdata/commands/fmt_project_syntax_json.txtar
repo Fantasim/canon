@@ -1,0 +1,19 @@
+CLI.md §3.6, IMPLEMENTATION-PLAN.md §8.1: the same as JSON lines.
+-- args --
+fmt
+--format
+json
+-- project.canon --
+project acme {
+  canon = "0.1"
+}
+-- a/a.canon --
+package a
+let  x:Int=1
+const   Y = 60s
+-- want --
+[exit 1]
+[stdout]
+{"severity":"error","code":"E1116","file":"project.canon","line":2,"col":9,"endLine":2,"endCol":10,"package":"","message":"expected \":\"; found ="}
+{"summary":{"files":1,"unformatted":0}}
+[stderr]

@@ -1,0 +1,20 @@
+CLI.md §2.4, §3.6: --diff with --format json prints one line per changed file.
+-- args --
+fmt
+--diff
+--format
+json
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+let  x:Int=1
+const   Y = 60s
+-- want --
+[exit 0]
+[stdout]
+{"file":"a/a.canon","formatted":false,"diff":"--- a/a.canon\n+++ a/a.canon\n@@ -1,3 +1,4 @@\n package a\n-let  x:Int=1\n-const   Y = 60s\n+\n+let x: Int = 1\n+const Y = 1m\n"}
+{"summary":{"files":2,"unformatted":1}}
+[stderr]

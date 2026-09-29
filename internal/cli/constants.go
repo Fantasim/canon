@@ -25,6 +25,7 @@ const (
 	cmdVersion = "version"
 	cmdTest    = "test"
 	cmdExplain = "explain"
+	cmdFmt     = "fmt"
 )
 
 // Flags (CLI.md §2.3, §3.1, §3.4).
@@ -43,6 +44,8 @@ const (
 	flagRun         = "run"
 	flagVerbose     = "v"
 	flagDepth       = "depth"
+	flagDiff        = "diff"
+	flagJSONSources = "json-sources"
 	formatText      = "text"
 	formatJSON      = "json"
 	rootAssign      = "="
@@ -64,6 +67,9 @@ const (
 	usageRun         = "run only the tests whose name matches the RE2 `regex`"
 	usageVerbose     = "also print each passing test"
 	usageDepth       = "print parts `n` levels deep (default: every part)"
+	usageFmtCheck    = "write nothing; list the files that are not formatted and exit 1"
+	usageDiff        = "print the changes instead of writing"
+	usageJSONSources = "also normalize the JSON files read by load to the canonical JSON layout"
 )
 
 // usageText lists the commands; the flags follow it (CLI.md §1).
@@ -73,6 +79,7 @@ commands:
   build [packages...]   check, then write the outputs of packages
   check [packages...]   parse and check packages, print findings
   explain <path>        print a value, its type and where each part was set
+  fmt [paths...]        rewrite sources in the canonical layout
   init                  create project.canon in the current directory
   new <package>         create a package directory with a first file
   test [packages...]    run the test blocks of packages
@@ -179,4 +186,19 @@ const (
 	fmtWrap        = "%w"
 	msgInterrupted = "interrupted"
 	msgReportBug   = "this is a bug in canon; please report it at https://github.com/fantasim/canonlang/issues"
+)
+
+// canon fmt's unified diff (CLI.md §3.6).
+const (
+	fmtDiffOld    = "--- %s"
+	fmtDiffNew    = "+++ %s"
+	fmtHunkHead   = "@@ -%s +%s @@"
+	fmtRangeMany  = "%d,%d"
+	fmtRangeOne   = "%d"
+	noNewlineMark = "\\ No newline at end of file"
+	keepMark      = ' '
+	dropMark      = '-'
+	addMark       = '+'
+	diffContext   = 3
+	maxDiffCells  = 4_000_000
 )

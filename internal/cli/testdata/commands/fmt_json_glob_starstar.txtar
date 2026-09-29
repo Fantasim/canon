@@ -1,0 +1,20 @@
+WIRE.md §6.5: `**` that is not a whole segment is E7005: the load reads no file.
+-- args --
+fmt
+--json-sources
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+let x: [Int] = load.dir("../d/**x.json")
+-- d/x.json --
+{"k":1}
+-- d/sub/x.json --
+{"k":1}
+-- want --
+[exit 0]
+[stdout]
+[stderr]

@@ -1,0 +1,41 @@
+FORMATTER.md §14.1, §16: a JSON source that is not JSON (E7109), has a repeated key (E7104) or is not UTF-8 (E7105) is left unchanged, its findings printed, exit 1.
+-- args --
+fmt
+--json-sources
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+let a: Int = load("../data/bad.json")
+let b: Int = load("../data/dup.json")
+let c: Int = load("../data/latin.json")
+let d: Int = load("../data/good.json")
+-- data/bad.json --
+{ "a": 
+-- data/dup.json --
+{"a":1,"a":2}
+-- data/latin.json --
+{"a":"�"}
+-- data/good.json --
+{"g":1}
+-- want --
+[exit 1]
+[stdout]
+error[E7109]  data/bad.json:2:1
+  JSON syntax error: unexpected end of input
+
+error[E7104]  data/dup.json:1:8
+  duplicate key "a" (first at data/dup.json:1)
+
+error[E7105]  data/latin.json:1:7
+  data/latin.json is not valid UTF-8 at byte 6
+
+3 errors, 0 warnings in 0 packages (…)
+[stderr]
+[file data/good.json]
+{
+  "g": 1
+}

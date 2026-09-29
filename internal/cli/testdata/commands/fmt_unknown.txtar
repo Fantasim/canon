@@ -1,0 +1,17 @@
+CLI.md §2.2, §2.5: a package that does not exist is a usage error, exit 2.
+-- args --
+fmt
+nope
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+let  x:Int=1
+const   Y = 60s
+-- want --
+[exit 2]
+[stdout]
+[stderr]
+canon: unknown package: nope

@@ -1,0 +1,24 @@
+CLI.md §3.6: an unformatted file is rewritten in the canonical layout (FORMATTER.md §1); a formatted one is not.
+-- args --
+fmt
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+let  x:Int=1
+const   Y = 60s
+-- b/b.canon --
+package b
+
+let x: Int = 1
+-- want --
+[exit 0]
+[stdout]
+[stderr]
+[file a/a.canon]
+package a
+
+let x: Int = 1
+const Y = 1m

@@ -1,0 +1,18 @@
+WIRE.md §6.5: an unclosed [ is E7005: the load reads no file.
+-- args --
+fmt
+--json-sources
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+let x: [Int] = load.dir("../d/[a.json")
+-- d/a.json --
+{"k":1}
+-- want --
+[exit 0]
+[stdout]
+[stderr]

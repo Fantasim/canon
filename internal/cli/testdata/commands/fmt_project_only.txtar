@@ -1,0 +1,20 @@
+CLI.md §2.2, §3.6: project.canon is a file a path can name.
+-- args --
+fmt
+project.canon
+-- project.canon --
+project acme {
+  canon:  "0.1"
+}
+-- a/a.canon --
+package a
+let  x:Int=1
+const   Y = 60s
+-- want --
+[exit 0]
+[stdout]
+[stderr]
+[file project.canon]
+project acme {
+  canon: "0.1"
+}
