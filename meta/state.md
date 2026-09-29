@@ -22,6 +22,8 @@ each proved by a test:
 
 **M4 in progress** (formatter and the edit API, `plan.md` "M4 — Formatter and the edit API",
 IMPLEMENTATION-PLAN §6 M4), run locally, started 2026-09-29. Unit ledger: [m4-units.md](m4-units.md).
+Wave 1 (8 units) landed on `main` after one green `make check` (`0c80424`); wave 2 (7 units) next.
+Calls: [decisions/log-2026-09-29.md](decisions/log-2026-09-29.md) "M4".
 
 Landed after M3's acceptance list closed but before the stop, all on `main`:
 - libc++ joins the C++ test matrix (`clang++ -stdlib=libc++`, header-detected, gated under
@@ -41,16 +43,17 @@ type-directed + metamorphic progen suites; see `plan.md`), parked. M4 in progres
 
 ## What exists (committed)
 
-spec + DECISIONS 1–228; `syntax`, `format` (stub), `jsonsrc`, `wire`, `load` (every WIRE §6 form),
+spec + DECISIONS 1–228; `syntax`, `format` (+ §13 `Rewrite`), `jsonsrc` (+ §14.2 edits), `wire`, `load` (every WIRE §6 form),
 `check`/`types` (dependent types, views, translations, broken-view/-translation tracking),
 `eval`/`eval/std` + `value` (layers, provenance, variant-level methods, drivers across the
 project), `verify`, `lock`, `rules`, `ir` (stage E, fingerprint, Go/C++/`types`-mode name plans,
 pattern automaton, alias-chain patterns), `gen/json`, `gen/go` (baked, data, stores, translated
 fns, conformance, runtime inputs, unions, define refs), `gen/cpp` (data mode, `types` mode,
 stores, runtime, conformance, strict loaders, define refs), `views`, `i18n`, `gen/view`,
-`conform`, `build` (writes the `view` target in phase 8), `project`, `api` (Check/Build/Test,
-`Value`+`Origin`, `ViewModel`, `edit.Snapshot`/`Resolve`), `cli` (version/init/new/check/build/
-test/explain), `internal/testkit` (+ `cxx`, `progen`, `jsonschema`, `benchgen`); `tools/audit`.
+`conform`, `build` (writes the `view` target in phase 8), `project` (+ parse reuse), `check.Session`,
+`eval.Memo`, `workspace` (snapshots, revisions, overlays, one writer), `views/live`, `edit` (+ ops,
+typing, codec, Refs), `api` over workspace (Check/Build/Test, `Value`+`Origin`, `ViewModel`,
+overlays), `cli` (version/init/new/check/build/test/explain/fmt), `internal/testkit` (+ `cxx`, `progen`, `jsonschema`, `benchgen`); `tools/audit`.
 
 ## Open Louis-calls
 
