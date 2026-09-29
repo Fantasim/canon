@@ -1,0 +1,52 @@
+FORMATTER.md §14.1, WIRE.md §5.2, §5.3, §5.9, §7.2: `-0` read into an `@json(bits)` list, an `@json(codes)` enum or a ref to an integer key is written `0`.
+-- args --
+fmt
+--json-sources
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+enum Flag @codes(UInt8) { tradable = 1, soulbound = 4 }
+
+enum Element @codes(UInt8) @json(codes) { nothing = 0, fire = 1 }
+
+record Node {
+  id: Int
+}
+
+record Item {
+  flags: [Flag] @json(bits)
+  element: Element
+  node: ref Node
+  on: Bool @json(int)
+}
+
+let nodes: [Node] keyed by id = load("../data/nodes.json")
+let item: Item = load("../data/item.json")
+-- data/nodes.json --
+[{"id": -0}, {"id": 5}]
+-- data/item.json --
+{"flags": -0, "element": -0, "node": -0, "on": 0}
+-- want --
+[exit 0]
+[stdout]
+[stderr]
+[file data/item.json]
+{
+  "flags": 0,
+  "element": 0,
+  "node": 0,
+  "on": 0
+}
+[file data/nodes.json]
+[
+  {
+    "id": 0
+  },
+  {
+    "id": 5
+  }
+]

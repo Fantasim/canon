@@ -1,0 +1,30 @@
+CLI.md §3.6 (log-2026-09-29 M4 U2b-r): --json-sources evaluates a let holding a load to learn what it reads, and reports nothing about it: a failing call beside the load prints no finding, exit 0, and the JSON is still normalized, its numbers canonical.
+-- args --
+fmt
+--json-sources
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+local fn boom(n: Int) -> Int { return 10 / n }
+
+record Box {
+  size: Float
+  extra: Int
+}
+
+let box: Box = { size: load("../data/x.json", at: "size"), extra: boom(0) }
+-- data/x.json --
+{"size": 2.50, "other": 1.0}
+-- want --
+[exit 0]
+[stdout]
+[stderr]
+[file data/x.json]
+{
+  "size": 2.5,
+  "other": 1.0
+}

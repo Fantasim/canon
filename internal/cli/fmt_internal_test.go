@@ -3,7 +3,6 @@ package cli
 import (
 	"bytes"
 	"context"
-	"math/rand"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -11,7 +10,7 @@ import (
 	"testing"
 )
 
-// unifiedDiff: CLI.md §3.6, `--diff` prints the changes as a unified diff.
+// unifiedDiff: CLI.md §3.6, `--diff` prints the changes as a unified diff, through go-udiff (IMPLEMENTATION-PLAN §11).
 func TestUnifiedDiff(t *testing.T) {
 	long := func(n int, from string) string {
 		var sb strings.Builder
@@ -39,51 +38,10 @@ func TestUnifiedDiff(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := unifiedDiff("f", []byte(tt.old), []byte(tt.updated)); got != tt.want {
-				t.Errorf("--- want\n%s--- got\n%s", tt.want, got)
+			if got, err := unifiedDiff("f", []byte(tt.old), []byte(tt.updated)); err != nil || got != tt.want {
+				t.Errorf("--- want\n%s--- got (%v)\n%s", tt.want, err, got)
 			}
 		})
-	}
-}
-
-// lineEdits: the edit script turns the old lines into the new ones, whatever the table's size.
-func TestLineEditsReplay(t *testing.T) {
-	rng := rand.New(rand.NewSource(1))
-	words := []string{"a\n", "b\n", "c\n", "d\n"}
-	random := func() []string {
-		out := make([]string, rng.Intn(12))
-		for i := range out {
-			out[i] = words[rng.Intn(len(words))]
-		}
-		return out
-	}
-	for range 200 {
-		a, b := random(), random()
-		var gotOld, gotNew []string
-		for _, e := range lineEdits(a, b) {
-			if e.mark != addMark {
-				gotOld = append(gotOld, e.text)
-			}
-			if e.mark != dropMark {
-				gotNew = append(gotNew, e.text)
-			}
-		}
-		if strings.Join(gotOld, "") != strings.Join(a, "") || strings.Join(gotNew, "") != strings.Join(b, "") {
-			t.Fatalf("%q -> %q: replay gave %q -> %q", a, b, gotOld, gotNew)
-		}
-	}
-}
-
-// A middle too large for the table is replaced whole: still a valid script.
-func TestMiddleEditsTooLarge(t *testing.T) {
-	a := make([]string, 2100)
-	b := make([]string, 2100)
-	for i := range a {
-		a[i], b[i] = "a\n", "b\n"
-	}
-	edits := middleEdits(a, b)
-	if len(edits) != len(a)+len(b) || edits[0].mark != dropMark || edits[len(edits)-1].mark != addMark {
-		t.Errorf("%d edits, first %q last %q", len(edits), edits[0].mark, edits[len(edits)-1].mark)
 	}
 }
 

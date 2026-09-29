@@ -1,0 +1,26 @@
+FORMATTER.md §14.1, WIRE.md §7.2: a number two fields read with different canonical texts (a Float and a Float32) is kept as written; one they agree on is canonical.
+-- args --
+fmt
+--json-sources
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+let wide: Float = load("../data/x.json", at: "x")
+let narrow: Float32 = load("../data/x.json", at: "x")
+let same: Float = load("../data/x.json", at: "y")
+let again: Float32 = load("../data/x.json", at: "y")
+-- data/x.json --
+{"x": 0.10000000149011612, "y": 2.500}
+-- want --
+[exit 0]
+[stdout]
+[stderr]
+[file data/x.json]
+{
+  "x": 0.10000000149011612,
+  "y": 2.5
+}

@@ -1,0 +1,71 @@
+FORMATTER.md §14.1, WIRE.md §7.2, CLI.md §3.6: --json-sources writes each number a Canon field reads in its canonical text (an integer exact, `-0` as `0`; a Float or Float32 shortest round trip; a Duration count as an integer), key order kept; a number no field reads (an unknown key under `partial: true`, a member `at:` does not select, a load that does not decode) and a Duration count that is not whole stay as written; an `@json(int)` Bool, an `@json(bits)` list and an `@json(codes)` enum are already canonical.
+-- args --
+fmt
+--json-sources
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+enum Flag @codes(UInt8) { tradable = 1, soulbound = 4 }
+
+enum Element @codes(UInt8) @json(codes) { fire = 1, water = 2 }
+
+record Item {
+  count: Int
+  zero: Int
+  rate: Float
+  ratio: Float
+  small: Float32
+  cooldown: Duration @json("cooldownMs", unit: ms)
+  delay: Duration @json("delaySec", unit: s)
+  wait: Duration @json("waitMin", unit: m)
+  twoHanded: Bool @json(int)
+  flags: [Flag] @json(bits)
+  element: Element
+}
+
+let item: Item = load("../data/item.json", partial: true)
+let picked: Float = load("../data/picked.json", at: "read")
+let broken: Int = load("../data/broken.json", at: "a")
+-- data/item.json --
+{"zero": -0, "count": 42, "extra": 1.0, "rate": 1e2, "ratio": 0.10000000000000000555, "small": 0.100000001490116119384765625,
+ "cooldownMs": 8e3, "delaySec": 1.50e1, "waitMin": 1.5, "twoHanded": 1, "flags": 5, "element": 2, "more": {"x": 2.50}}
+-- data/picked.json --
+{"read": 2.50, "unread": 3.0}
+-- data/broken.json --
+{"a": 1.0, "b": 2.0}
+-- want --
+[exit 0]
+[stdout]
+[stderr]
+[file data/broken.json]
+{
+  "a": 1.0,
+  "b": 2.0
+}
+[file data/item.json]
+{
+  "zero": 0,
+  "count": 42,
+  "extra": 1.0,
+  "rate": 100,
+  "ratio": 0.1,
+  "small": 0.1,
+  "cooldownMs": 8000,
+  "delaySec": 15,
+  "waitMin": 1.5,
+  "twoHanded": 1,
+  "flags": 5,
+  "element": 2,
+  "more": {
+    "x": 2.50
+  }
+}
+[file data/picked.json]
+{
+  "read": 2.5,
+  "unread": 3.0
+}

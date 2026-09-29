@@ -6,6 +6,8 @@ import (
 	"io"
 	"time"
 
+	udiff "github.com/aymanbagabas/go-udiff"
+
 	"github.com/fantasim/canonlang/internal/diag"
 )
 
@@ -31,9 +33,9 @@ func (r *fmtRun) report(start time.Time) error {
 	}
 	if r.inv.opt.diff || r.inv.opt.checkFlag {
 		for _, c := range r.changes {
-			text := c.display + lineBreak
-			if r.inv.opt.diff {
-				text = unifiedDiff(c.display, c.old, c.updated)
+			text, err := r.changeText(c)
+			if err != nil {
+				return err
 			}
 			if err := writeText(r.inv.env.Stdout, text); err != nil {
 				return err
@@ -41,6 +43,14 @@ func (r *fmtRun) report(start time.Time) error {
 		}
 	}
 	return r.writeFindings(time.Since(start))
+}
+
+// changeText is a change as the text report prints it: its diff under --diff, else its path.
+func (r *fmtRun) changeText(c fmtChange) (string, error) {
+	if r.inv.opt.diff {
+		return unifiedDiff(c.display, c.old, c.updated)
+	}
+	return c.display + lineBreak, nil
 }
 
 // reportJSON prints the findings, a line per file not formatted, whatever the mode, and the summary.
@@ -51,7 +61,10 @@ func (r *fmtRun) reportJSON() error {
 	for _, c := range r.changes {
 		line := fileLine{File: c.display}
 		if r.inv.opt.diff {
-			line.Diff = unifiedDiff(c.display, c.old, c.updated)
+			var err error
+			if line.Diff, err = unifiedDiff(c.display, c.old, c.updated); err != nil {
+				return err
+			}
 		}
 		if err := r.inv.writeJSONLine(line); err != nil {
 			return err
@@ -60,6 +73,16 @@ func (r *fmtRun) reportJSON() error {
 	var sum fmtSummary
 	sum.Summary.Files, sum.Summary.Unformatted = r.visited, len(r.changes)
 	return r.inv.writeJSONLine(sum)
+}
+
+// unifiedDiff is old to updated as a unified diff of the file name, "" when equal. CLI.md §3.6
+func unifiedDiff(name string, old, updated []byte) (string, error) {
+	before := string(old)
+	d, err := udiff.ToUnified(name, name, before, udiff.Lines(before, string(updated)), udiff.DefaultContextLines)
+	if err != nil {
+		return "", fmt.Errorf(fmtWrap, err)
+	}
+	return d, nil
 }
 
 func writeText(w io.Writer, s string) error {

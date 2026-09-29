@@ -217,18 +217,3 @@ const (
 	msgInterrupted = "interrupted"
 	msgReportBug   = "this is a bug in canon; please report it at https://github.com/fantasim/canonlang/issues"
 )
-
-// canon fmt's unified diff (CLI.md §3.6).
-const (
-	fmtDiffOld    = "--- %s"
-	fmtDiffNew    = "+++ %s"
-	fmtHunkHead   = "@@ -%s +%s @@"
-	fmtRangeMany  = "%d,%d"
-	fmtRangeOne   = "%d"
-	noNewlineMark = "\\ No newline at end of file"
-	keepMark      = ' '
-	dropMark      = '-'
-	addMark       = '+'
-	diffContext   = 3
-	maxDiffCells  = 4_000_000
-)

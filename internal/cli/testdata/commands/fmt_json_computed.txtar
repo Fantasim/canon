@@ -1,4 +1,4 @@
-CLI.md §3.6: fmt evaluates nothing, so a load whose path is not a plain string is not followed.
+CLI.md §3.6, WIRE.md §6.1: a load whose path is not a plain string is not read, so --json-sources does not follow it.
 -- args --
 fmt
 --json-sources

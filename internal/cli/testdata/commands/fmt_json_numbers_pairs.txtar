@@ -1,0 +1,36 @@
+FORMATTER.md §14.1, WIRE.md §5.14, §7.2 (log-2026-09-29 M4 U2b-r): the numbers of an `@json(pairs:)` list are canonical in every slot, the first key's included.
+-- args --
+fmt
+--json-sources
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+record Bonus {
+  mult: Float
+  add: Float
+}
+
+record Item {
+  id: Int
+  bonus: [Bonus](..=2) = [] @json(pairs: ["m{i}", "a{i}"])
+}
+
+let item: Item = load("../data/item.json")
+-- data/item.json --
+{"id": 1, "m0": 1.50, "a0": 2.50, "m1": 3e0, "a1": 4.0}
+-- want --
+[exit 0]
+[stdout]
+[stderr]
+[file data/item.json]
+{
+  "id": 1,
+  "m0": 1.5,
+  "a0": 2.5,
+  "m1": 3,
+  "a1": 4
+}

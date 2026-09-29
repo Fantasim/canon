@@ -45,7 +45,7 @@ type fmtRun struct {
 	visited  int
 	seen     map[string]bool // the resolved paths already visited: a link and its target are one file
 	changes  []fmtChange
-	sources  []*source.File // the .canon sources that parsed: --json-sources reads their loads
+	sources  []string // the .canon sources that parsed, by display path: --json-sources reads their loads
 }
 
 // runFmt is `canon fmt [paths…] [--check] [--diff] [--json-sources]` (CLI.md §3.6).
@@ -261,7 +261,7 @@ func (r *fmtRun) formatCanon(f fmtFile) error {
 		return fmt.Errorf(fmtWrap, err)
 	default:
 		if f.kind == syntax.FileSource {
-			r.sources = append(r.sources, src)
+			r.sources = append(r.sources, f.display)
 		}
 		r.record(f.display, abs, data, out)
 	}
