@@ -1948,7 +1948,8 @@ Choices made while Louis was away are listed here, each with its reason, so he c
 228. **Which views are broken is recorded by check (`Info.BrokenViews`, frozen-contract addition
      under IMPLEMENTATION-PLAN §4's review rule; ADR-0009).** VIEWMODEL J4 and I18N F4 act on a
      view holding an error; deciding it from the bag's findings made the view model and the
-     catalogue depend on the findings limit (API F7).
+     catalogue depend on the findings limit (API F7). `Info.BrokenTranslations` does the same for
+     translation entries holding an error, which are not rendered (I18N T2).
 
 ## Still open
 

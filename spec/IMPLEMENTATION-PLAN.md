@@ -602,6 +602,7 @@ type Info struct {
     Matches    map[syntax.Node]*MatchInfo           // each `match` expression or statement (TYPES.md §12.6)
     Broken     map[Object]bool                      // declarations with a static error, or naming one (TYPES.md §1)
     BrokenViews map[*syntax.ViewDecl]bool           // views holding an error (VIEWMODEL.md J4; ADR-0009, DECISIONS 228)
+    BrokenTranslations map[*syntax.TranslationEntry]bool // translation entries holding an error (I18N T2; ADR-0009)
 }
 
 func (i *Info) ObjectOf(n syntax.Node) Object   // an *Ident in Defs or NameUses, an *IdentExpr in Uses; else nil
