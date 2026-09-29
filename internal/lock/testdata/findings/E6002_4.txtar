@@ -1,0 +1,25 @@
+LOCK.md §4.2: three lock lines share one code; the third is reported against the first line, not the second.
+-- resource/vocab/canon.lock --
+# canon.lock v1
+enum   resource.vocab.Element  7  WIND
+enum   resource.vocab.Element  7  FIRE
+enum   resource.vocab.Element  7  STORM
+-- resource/vocab/vocab.canon --
+package resource.vocab
+
+/// Elements of attacks and defenses.
+enum Element @codes(UInt8) { WIND = 7, FIRE = 1, STORM = 2 }
+-- findings.txt --
+error[E6002]  resource/vocab/canon.lock:3:1
+  canon.lock holds two facts for resource.vocab.Element: enum   resource.vocab.Element  7  WIND and enum   resource.vocab.Element  7  FIRE
+
+error[E6002]  resource/vocab/canon.lock:4:1
+  canon.lock holds two facts for resource.vocab.Element: enum   resource.vocab.Element  7  WIND and enum   resource.vocab.Element  7  STORM
+
+error[E6002]  resource/vocab/vocab.canon:4:40
+  FIRE renumbered: code 7 is locked
+
+error[E6002]  resource/vocab/vocab.canon:4:50
+  STORM renumbered: code 7 is locked
+
+4 errors, 0 warnings in 1 package (…)

@@ -16,6 +16,7 @@ type reader struct {
 	id        source.FileID
 	bag       *diag.Bag
 	file      *File
+	batch     []Fact
 	pkgSegs   []string
 	sawHeader bool
 	stop      bool
@@ -54,6 +55,7 @@ func Parse(id source.FileID, data []byte, pkg string, bag *diag.Bag) (*File, boo
 	if !r.sawHeader {
 		r.report(diag.E6005.AtHeader(source.Span{File: id}))
 	}
+	r.file.mergeAll(r.batch)
 	return r.file, r.ok
 }
 
@@ -123,7 +125,7 @@ func (r *reader) fact(span source.Span, text string) {
 		r.report(diag.E6005.AtPackage(span, fields[1].text, r.file.Package))
 	case problemNone:
 		fact.Span = span
-		r.file.merge(fact)
+		r.batch = append(r.batch, fact)
 	}
 }
 

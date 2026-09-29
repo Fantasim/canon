@@ -7,16 +7,16 @@ import (
 
 // Update adds the new facts and retirements a build with no error records (LOCK.md §5).
 func (f *File) Update(s *Sources) (bool, error) {
-	changed := false
+	batch := make([]Fact, 0, len(s.facts.facts))
+	var err error
 	for _, fact := range s.facts.facts {
-		fact.Span = source.Span{}
-		c, err := f.Add(fact)
-		if err != nil {
-			return changed, err
+		if err = f.valid(fact); err != nil {
+			break
 		}
-		changed = changed || c
+		fact.Span = source.Span{}
+		batch = append(batch, fact)
 	}
-	return changed, nil
+	return f.mergeAll(batch), err
 }
 
 // Pending reports W6006 for the values the lock lacks and returns their count; retirements

@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"slices"
 	"strconv"
+	"strings"
 
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/source"
@@ -70,11 +71,56 @@ func (f *File) merge(fact Fact) bool {
 		f.facts = slices.Insert(f.facts, i, fact)
 		return true
 	}
-	if fact.Retired && !f.facts[i].Retired {
-		f.facts[i].Retired = true
+	return f.facts[i].retire(fact)
+}
+
+// retire lets a later fact of the same key retire fact; it reports whether fact changed.
+func (fact *Fact) retire(later Fact) bool {
+	if later.Retired && !fact.Retired {
+		fact.Retired = true
 		return true
 	}
 	return false
+}
+
+// mergeAll merges checked facts in one sort and one linear pass, as merge would one by one; a duplicate keeps its earliest line (log-2026-09-29 M4 P13b-r).
+func (f *File) mergeAll(batch []Fact) bool {
+	if len(batch) == 0 {
+		return false
+	}
+	order := sortedOrder(batch)
+	out := make([]Fact, 0, len(f.facts)+len(batch))
+	changed, old := false, f.facts
+	for len(old) > 0 || len(order) > 0 {
+		fromOld := len(order) == 0 || (len(old) > 0 && compareFactPtrs(&old[0], &batch[order[0]]) <= 0)
+		var next Fact
+		if fromOld {
+			next, old = old[0], old[1:]
+		} else {
+			next, order = batch[order[0]], order[1:]
+		}
+		if n := len(out); n > 0 && compareFactPtrs(&out[n-1], &next) == 0 {
+			changed = out[n-1].retire(next) || changed
+			continue
+		}
+		out = append(out, next)
+		changed = changed || !fromOld
+	}
+	f.facts = out
+	return changed
+}
+
+// sortedOrder is the indexes of batch in canonical order, equal facts in batch order; it sorts
+// the indexes, not the facts, which are wide.
+func sortedOrder(batch []Fact) []int {
+	order := make([]int, len(batch))
+	for i := range order {
+		order[i] = i
+	}
+	slices.SortFunc(order, func(i, j int) int {
+		return cmp.Or(compareFactPtrs(&batch[i], &batch[j]), cmp.Compare(i, j))
+	})
+	return order
 }
 
 // Format is the canonical text of the lock: the header, then one line per fact (LOCK.md §2.3).
@@ -125,16 +171,41 @@ func (v Value) appendText(out []byte) []byte {
 
 // compareFacts is the canonical order: kind, name, value, holder (LOCK.md §2.3).
 func compareFacts(a, b Fact) int {
-	return cmp.Or(
-		cmp.Compare(a.Kind.String(), b.Kind.String()),
-		cmp.Compare(a.writtenName(), b.writtenName()),
-		compareValues(a.Value, b.Value),
-		cmp.Compare(a.Holder, b.Holder),
-	)
+	return compareFactPtrs(&a, &b)
+}
+
+// compareFactPtrs is compareFacts for a sort's inner loop, where copying two wide facts a
+// compare would dominate.
+func compareFactPtrs(a, b *Fact) int {
+	if c := strings.Compare(a.Kind.String(), b.Kind.String()); c != 0 {
+		return c
+	}
+	if c := compareWrittenNames(a, b); c != 0 {
+		return c
+	}
+	if c := compareValues(&a.Value, &b.Value); c != 0 {
+		return c
+	}
+	return strings.Compare(a.Holder, b.Holder)
+}
+
+// compareWrittenNames orders the names as the lines write them, without building a field
+// fact's `<name>.<field>` unless one name is the start of the other.
+func compareWrittenNames(a, b *Fact) int {
+	if a.Kind != KindField {
+		return strings.Compare(a.Name, b.Name)
+	}
+	switch {
+	case a.Name == b.Name:
+		return strings.Compare(a.Field, b.Field)
+	case !strings.HasPrefix(a.Name, b.Name) && !strings.HasPrefix(b.Name, a.Name):
+		return strings.Compare(a.Name, b.Name)
+	}
+	return strings.Compare(a.writtenName(), b.writtenName())
 }
 
 // compareValues orders integers by value and strings by bytes, integers first.
-func compareValues(a, b Value) int {
+func compareValues(a, b *Value) int {
 	return cmp.Or(cmp.Compare(a.rank(), b.rank()), cmp.Compare(a.Int, b.Int), cmp.Compare(a.Str, b.Str))
 }
 

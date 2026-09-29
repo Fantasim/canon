@@ -66,15 +66,30 @@ func conflicts(facts []Fact, bag *diag.Bag) {
 		return
 	}
 	lines := slices.SortedFunc(slices.Values(facts), byLine)
-	for i, b := range lines {
-		earlier := lines[:i]
-		if j := slices.IndexFunc(earlier, func(a Fact) bool { return a.Value == b.Value }); j >= 0 {
-			diag.E6002.AtConflict(b.Span, b.writtenName(), earlier[j].line(), b.line()).Report(bag)
+	byValue, byHolder := map[Value]Fact{}, map[string]Fact{}
+	for _, b := range lines {
+		a, sameValue := byValue[b.Value]
+		if sameValue {
+			diag.E6002.AtConflict(b.Span, b.writtenName(), a.line(), b.line()).Report(bag)
+		} else {
+			byValue[b.Value] = b
 		}
-		if j := slices.IndexFunc(earlier, func(a Fact) bool { return a.Holder == b.Holder }); j >= 0 {
-			diag.E6002.AtConflict(b.Span, b.qualified(), earlier[j].line(), b.line()).Report(bag)
+		a, sameHolder := byHolder[b.Holder]
+		if sameHolder {
+			diag.E6002.AtConflict(b.Span, b.qualified(), a.line(), b.line()).Report(bag)
+		} else {
+			byHolder[b.Holder] = b
 		}
 	}
+}
+
+// valueIndex groups facts by value, each group in the facts' order.
+func valueIndex(facts []Fact) map[Value][]Fact {
+	out := map[Value][]Fact{}
+	for _, f := range facts {
+		out[f.Value] = append(out[f.Value], f)
+	}
+	return out
 }
 
 // holders indexes facts by holder, the first of each.
@@ -172,7 +187,7 @@ func newHolder(l Fact, key string, cur []Fact, locked map[string]Fact) (Fact, bo
 // enumRules: a member keeps its code (E6002 renumber), is never removed (E6001, held when its
 // code now belongs to a new member), never un-retired, and its code is no other's (E6002).
 func enumRules(c *comparison) {
-	locked, now, known := holders(c.lock), holders(c.cur), pairs(c.lock)
+	locked, now, known, curValues := holders(c.lock), holders(c.cur), pairs(c.lock), valueIndex(c.cur)
 	for _, l := range c.lock {
 		f, present := now[l.Holder]
 		if !present {
@@ -185,8 +200,8 @@ func enumRules(c *comparison) {
 		if f.Value != l.Value && !known[pair{f.Value, l.Holder}] {
 			diag.E6002.AtRenumber(f.Span, l.Holder, l.Value.Int).Report(c.bag)
 		}
-		for _, other := range c.cur {
-			if other.Holder != l.Holder && other.Value == l.Value && !known[pair{other.Value, other.Holder}] {
+		for _, other := range curValues[l.Value] {
+			if other.Holder != l.Holder && !known[pair{other.Value, other.Holder}] {
 				diag.E6002.AtCodeTaken(other.Span, l.Value.Int, l.Holder).Report(c.bag)
 			}
 		}
@@ -196,7 +211,7 @@ func enumRules(c *comparison) {
 // fieldRules: a @stable value never changes and belongs to its entry only (E6002); an entry
 // that is gone is the table fact's E6001.
 func fieldRules(c *comparison) {
-	now, known := holders(c.cur), pairs(c.lock)
+	now, known, curValues := holders(c.cur), pairs(c.lock), valueIndex(c.cur)
 	for _, l := range c.lock {
 		f, present := now[l.Holder]
 		if !present {
@@ -205,8 +220,8 @@ func fieldRules(c *comparison) {
 		if f.Value != l.Value && !known[pair{f.Value, l.Holder}] {
 			diag.E6002.AtChanged(f.Span, l.Field, l.Holder, l.Value.arg(), f.Value.arg()).Report(c.bag)
 		}
-		for _, other := range c.cur {
-			if other.Holder != l.Holder && other.Value == l.Value && !known[pair{other.Value, other.Holder}] {
+		for _, other := range curValues[l.Value] {
+			if other.Holder != l.Holder && !known[pair{other.Value, other.Holder}] {
 				diag.E6002.AtValueTaken(other.Span, l.Value.arg(), l.Field, l.Holder).Report(c.bag)
 			}
 		}

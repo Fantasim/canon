@@ -21,6 +21,7 @@ type coll struct {
 // Sources are the current facts of one package (LOCK.md §3), each located in the sources.
 type Sources struct {
 	facts *File
+	batch []Fact // checked facts not yet merged into facts
 	colls map[coll]bool
 	skip  map[coll]bool
 }
@@ -46,6 +47,21 @@ func (s *Sources) skipped(c coll) bool {
 	return c.kind == KindField && i >= 0 && s.skip[coll{kind: KindTable, name: c.name[:i]}]
 }
 
+// add checks a fact and queues it for flush, which merges the queue in one pass.
+func (s *Sources) add(fact Fact) error {
+	if err := s.facts.valid(fact); err != nil {
+		return err
+	}
+	s.batch = append(s.batch, fact)
+	return nil
+}
+
+// flush merges the queued facts into the set; the facts queued before an error stay added.
+func (s *Sources) flush() {
+	s.facts.mergeAll(s.batch)
+	s.batch = nil
+}
+
 // AddTable adds a stable table's facts: a table fact per entry, live or retired, and a field
 // fact per entry and @stable field of its element; name is the table's qualified let.
 func (s *Sources) AddTable(name string, t *value.Table) error {
@@ -53,6 +69,7 @@ func (s *Sources) AddTable(name string, t *value.Table) error {
 	if !ok || !tt.Stable {
 		return fmt.Errorf(fmtNotStable, ErrNotLocked, name)
 	}
+	defer s.flush()
 	s.colls[coll{kind: KindTable, name: name}] = true
 	stable := stableFields(tt.Elem)
 	for _, f := range stable {
@@ -72,7 +89,7 @@ func (s *Sources) AddTable(name string, t *value.Table) error {
 func (s *Sources) addEntry(name string, e *value.Record, stable []*types.Field) error {
 	key := e.Ident.Key.Text()
 	fact := Fact{Kind: KindTable, Name: name, Holder: key, Retired: e.Ident.Retired, Span: verify.SiteOf(e).Span}
-	if _, err := s.facts.Add(fact); err != nil {
+	if err := s.add(fact); err != nil {
 		return err
 	}
 	for _, f := range stable {
@@ -84,7 +101,7 @@ func (s *Sources) addEntry(name string, e *value.Record, stable []*types.Field) 
 			continue
 		}
 		fact := Fact{Kind: KindField, Name: name, Field: f.Name, Value: v, Holder: key, Span: verify.SiteOf(e.Fields[f.Index]).Span}
-		if _, err := s.facts.Add(fact); err != nil {
+		if err := s.add(fact); err != nil {
 			return err
 		}
 	}
@@ -122,12 +139,13 @@ func (s *Sources) AddEnum(enum check.Object) error {
 	if !ok || e.Codes == nil {
 		return nil
 	}
+	defer s.flush()
 	name := enum.Pkg() + nameSep + e.Name
 	s.colls[coll{kind: KindEnum, name: name}] = true
 	spans := memberSpans(enum.File(), e)
 	for i, m := range e.Members {
 		fact := Fact{Kind: KindEnum, Name: name, Value: Value{Int: m.Code}, Holder: m.Name, Retired: m.Retired, Span: spans[i]}
-		if _, err := s.facts.Add(fact); err != nil {
+		if err := s.add(fact); err != nil {
 			return err
 		}
 	}
