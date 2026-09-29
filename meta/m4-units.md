@@ -33,20 +33,16 @@ views/live · U10 check.Session · U11 eval.Memo · U12 parse reuse.
 U4b edit.Apply · U4c Commit/Recover (ADR-0010) · U5 Watch · U5a Evaluate/Refs/Format · U8 build
 memo wiring · U13 rules/verify caches + P9 · U9b show templates and methods · two wiring fixups.
 
-## Wave 3
+## Wave 3 (in flight)
 
-- U1b `format`: a Move change kind that keeps the moved item's comments (FORMATTER §13 has none) [opus]
-- U2b `--json-sources` from build/load's loaded files with their Canon types (number
-      canonicalization); `fmt --diff` through `go-udiff` (§11), deleting cli's own LCS [sonnet]
-- U5b api edit surface: Edit, Op JSON, LockCheck, Open → Recover (+ OS `Alive`, ErrJournal fails
-      Open), drafts (in the shared key); S12, E17–E21, W5, X2; one exported element naming in `live`
-      used by `workspace` (plain-list copies → `#<n>`); unify edit/workspace stale sentinels; `build` exports a `wire.Host` factory
-      for `edit.Env.Host` [opus]
+- U5b api edit surface: Edit transaction (E17–E21, S12, W5, W15, X2), Open → Recover (O5), drafts
+      (V13/V14), Op JSON, LockCheck (B4), live element naming, wire.Host factory; acceptance 5 via api [opus]
 - U6 `cli`: explain input fields, `canon refs`, `--watch` [sonnet]
-
-- Cleanup: P9 literal-union keys in `eval`'s paths (`path.go` keyText) and live `colls.go`
-      (`verify.MapKey`); one `value.ArmIndex` for live/verify/wire; live's dependent-type resolution vs
-      verify's `substitute` (+ DepMapType, AppliedRecord args); live's `layoutOf`/`keyed`/`fieldOf` vs layout/render/encode [sonnet]
+- U2b `fmt --json-sources` typed number canonicalization (FORMATTER §14.1); `--diff` via go-udiff [opus]
+- U1b `format` Move kind; edit's Move keeps comments [opus]
+- P12 perf: verify + rules memos, allocation cut; target [items] warm ≤150 ms p95 [opus]
+- P3 perf: load memo, one lineage per selection, rare compaction; target [items,twin] ≤300 ms p95 [opus]
+- Later: cleanup unit (duplicates, P9 leftovers) — after P12/P3 land.
 
 ## Wave 4 (gates, written now, run long once at the end)
 
