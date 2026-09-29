@@ -26,7 +26,7 @@ Tick with the landing SHA.
 - [x] U9 (dfba53b) `gen/view`: bytes from `*vm.ViewModel` (J1–J3, J10, WIRE §7) [sonnet]
 - [x] ★U10 (a1663da) `views` V2: `types` and controls (VIEWMODEL §4, §6, §12.3, §12.5) [sonnet→opus]
 - [x] ★U11 (d06484d) `views` V3: the rest of the model (§5, §7–§10, §12.4, §12.6–§12.11) [sonnet]
-- [ ] ★U12 `build` writes the `view` target in phase 8, even with errors [sonnet]
+- [x] ★U12 (c7ae4e2) `build` writes the `view` target in phase 8, even with errors [sonnet]
 - [ ] ★U13 view goldens (pipeline, farm, events) + schema validation; GEN-01 view diff [sonnet]
 - [x] U14 (d20ec40) `api.Value` + `Origin.Replaced` (ADR-0007) + `cli explain` golden [opus]
 - [ ] U15 `api.ViewModel` (JSON equals the emit bytes) [opus]
