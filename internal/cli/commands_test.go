@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"slices"
 	"strings"
 	"testing"
@@ -23,6 +24,14 @@ const (
 	wantFile = "want"
 	tmpMark  = "$TMP"
 )
+
+// windowsOS is runtime.GOOS on Windows.
+const windowsOS = "windows"
+
+// unixTextCases print the operating system's own error text, which their goldens hold as Unix
+// spells it (build_blocked: "open: not a directory"; Windows fails there at mkdir, in its own
+// words): they run everywhere but Windows.
+var unixTextCases = []string{"build_blocked.txtar"}
 
 var (
 	durations = regexp.MustCompile(`\((\d+ ms|\d+\.\d s)\)`)
@@ -109,6 +118,9 @@ func written(t *testing.T, a *txtar.Archive, tmp string) string {
 func TestCommands(t *testing.T) {
 	golden.Run(t, "testdata/commands/*.txtar", func(t *testing.T, c golden.Case) []byte {
 		t.Helper()
+		if runtime.GOOS == windowsOS && slices.Contains(unixTextCases, filepath.Base(c.Path)) {
+			t.Skip("the golden holds Unix's error text")
+		}
 		r := run(t, c.Archive)
 		got := fmt.Sprintf("[exit %d]\n[stdout]\n%s[stderr]\n%s%s", r.code, r.stdout, r.stderr, written(t, c.Archive, r.tmp))
 		return []byte(normalize(got, r.tmp))

@@ -15,6 +15,10 @@ import (
 	"time"
 )
 
+// goroutineSamples is true here: a hung child is sampled (SIGUSR1) and dumps its goroutines
+// (SIGQUIT), so its verdict can name the loop it hangs in.
+const goroutineSamples = true
+
 // stopHung asks a silent child for hangSamples goroutine samples (SIGUSR1), then for its dump
 // (SIGQUIT), and kills it if it still runs a limit later; it returns once the child ended.
 func stopHung(cmd *exec.Cmd, exited <-chan struct{}, limit time.Duration) {

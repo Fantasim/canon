@@ -143,7 +143,7 @@ func runMatcher(t *testing.T, bin, stdin string) string {
 	if err != nil {
 		t.Fatalf("%s: %v", bin, err)
 	}
-	return string(out)
+	return textOut(string(out))
 }
 
 // compareRows reports every pattern and text where the matcher and regexp disagree.

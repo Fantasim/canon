@@ -6,6 +6,7 @@ import (
 	"maps"
 	"os"
 	"path"
+	"path/filepath"
 	"slices"
 	"sync"
 	"testing"
@@ -67,6 +68,12 @@ func newMemFS(files map[string][]byte) *memFS {
 	return m
 }
 
+// dropVolume is name without its volume: memFS holds one, and on Windows Open makes a rooted
+// "/law" absolute on the current drive, "D:/law".
+func dropVolume(name string) string {
+	return name[len(filepath.VolumeName(name)):]
+}
+
 func (m *memFS) addParents(name string) {
 	for d := path.Dir(name); !m.dirs[d]; d = path.Dir(d) {
 		m.dirs[d] = true
@@ -74,6 +81,7 @@ func (m *memFS) addParents(name string) {
 }
 
 func (m *memFS) ReadFile(name string) ([]byte, error) {
+	name = dropVolume(name)
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	data, ok := m.files[name]
@@ -84,6 +92,7 @@ func (m *memFS) ReadFile(name string) ([]byte, error) {
 }
 
 func (m *memFS) Stat(name string) (fs.FileInfo, error) {
+	name = dropVolume(name)
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	return m.stat(name)
@@ -101,6 +110,7 @@ func (m *memFS) stat(name string) (fs.FileInfo, error) {
 
 // ReadDir lists the children of a directory, sorted by name.
 func (m *memFS) ReadDir(name string) ([]fs.DirEntry, error) {
+	name = dropVolume(name)
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if !m.dirs[name] {
@@ -137,6 +147,7 @@ func fileSet(files map[string][]byte) map[string]bool {
 }
 
 func (m *memFS) WriteFile(name string, data []byte) error {
+	name = dropVolume(name)
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.files[name] = slices.Clone(data)
@@ -145,6 +156,7 @@ func (m *memFS) WriteFile(name string, data []byte) error {
 }
 
 func (m *memFS) Rename(oldname, newname string) error {
+	oldname, newname = dropVolume(oldname), dropVolume(newname)
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	data, ok := m.files[oldname]
@@ -158,6 +170,7 @@ func (m *memFS) Rename(oldname, newname string) error {
 }
 
 func (m *memFS) Remove(name string) error {
+	name = dropVolume(name)
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if _, ok := m.files[name]; !ok {
@@ -168,6 +181,7 @@ func (m *memFS) Remove(name string) error {
 }
 
 func (m *memFS) MkdirAll(name string) error {
+	name = dropVolume(name)
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if _, ok := m.files[name]; ok {

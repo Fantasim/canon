@@ -96,12 +96,12 @@ func TestConformanceReportsAFailure(t *testing.T) {
 		if err := run.Run(); err != nil {
 			t.Fatal(err)
 		}
-		if stdout.String() != "failures: 2\n" {
+		if textOut(stdout.String()) != "failures: 2\n" {
 			t.Errorf("%s: %q", cc, stdout.String())
 		}
 		want := "pipeline: Potion.healFor(heal=500, missingHp=200) = 200 [], canon says 201 []\n" +
 			"pipeline: Potion.healFor(heal=500, missingHp=-9223372036854775808) = 0 [], canon says 0 [" + string(codeOverflow) + "]\n"
-		if stderr.String() != want {
+		if textOut(stderr.String()) != want {
 			t.Errorf("%s: stderr\n%s\nwant\n%s", cc, stderr.String(), want)
 		}
 	}

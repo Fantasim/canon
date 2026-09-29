@@ -5,6 +5,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -18,8 +19,8 @@ const writeFailPackage = "/// A.\npackage a\n\nlet x: Int = 1\n\nemit json { out
 // (internal/build/write.go). A read-only output directory lets place() see the output as new
 // (ReadFile there is ENOENT, not a hard error) while the later write still fails.
 func TestBuildWriteErrorNamesDisplayPath(t *testing.T) {
-	if os.Geteuid() == 0 {
-		t.Skip("root ignores file permissions")
+	if runtime.GOOS == windowsOS || os.Geteuid() == 0 {
+		t.Skip("Unix permission bits are not enforced here (Windows ignores a directory's read-only bit; root ignores them)")
 	}
 	dir := t.TempDir()
 	write(t, filepath.Join(dir, "project.canon"), writeFailProject)

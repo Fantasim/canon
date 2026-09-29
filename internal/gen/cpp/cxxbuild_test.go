@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
 	"sync"
@@ -139,7 +140,22 @@ func buildOne(b build, args []string) (string, error) {
 	if err := run.Run(); err != nil {
 		return "", fmt.Errorf("%s %s: run: %w\n%s%s", filepath.Base(cc), strings.Join(mode, " "), err, stdout.String(), stderr.String())
 	}
-	return stdout.String(), nil
+	return textOut(stdout.String()), nil
+}
+
+// textOut is a test driver's output with the "\r\n" line ends of Windows' text-mode stdout
+// made "\n", as every other platform prints them.
+func textOut(s string) string {
+	return strings.ReplaceAll(s, "\r\n", "\n")
+}
+
+// exe is name as an executable's file name here: Windows runs only a name ending ".exe",
+// which go build -o does not add.
+func exe(name string) string {
+	if runtime.GOOS == "windows" {
+		return name + ".exe"
+	}
+	return name
 }
 
 func joinErrs(errs []error) error {

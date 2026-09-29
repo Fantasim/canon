@@ -13,8 +13,9 @@ import (
 
 var update = flag.Bool(updateFlag, false, updateUsage)
 
-// Case is one golden case: a txtar archive, the path it was read from and the name of the
-// archive file that holds its expected output.
+// Case is one golden case: a txtar archive, the path it was read from ('/'-separated on every
+// OS, so path.Base and path.Ext read it) and the name of the archive file that holds its
+// expected output.
 type Case struct {
 	Path     string
 	Archive  *txtar.Archive
@@ -55,7 +56,7 @@ func Load(glob string, opts ...Option) ([]Case, error) {
 		if err != nil {
 			return nil, fmt.Errorf("golden: %w", err)
 		}
-		cases = append(cases, Case{Path: p, Archive: a, Expected: cfg.expected})
+		cases = append(cases, Case{Path: filepath.ToSlash(p), Archive: a, Expected: cfg.expected})
 	}
 	return cases, nil
 }

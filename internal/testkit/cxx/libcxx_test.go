@@ -25,10 +25,14 @@ int main() {
 // original string, including one holding a single quote: the wrapper script libcxxWrapper
 // writes depends on it to carry clang++'s own path unchanged (GOAL 1, libcxx.go).
 func TestShellQuote(t *testing.T) {
+	const posixShell = "/bin/sh"
+	if _, err := os.Stat(posixShell); err != nil {
+		t.Skip("no POSIX shell here (Windows): the libc++ wrapper is written only where one is")
+	}
 	cases := []string{"/usr/bin/clang++", "/opt/llvm 21/bin/clang++", "it's/clang++"}
 	for _, in := range cases {
 		script := "printf '%s' " + shellQuote(in)
-		out, err := exec.Command("/bin/sh", "-c", script).Output()
+		out, err := exec.Command(posixShell, "-c", script).Output()
 		if err != nil {
 			t.Fatalf("shellQuote(%q): %v", in, err)
 		}

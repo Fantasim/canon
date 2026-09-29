@@ -141,13 +141,17 @@ func TestHangChild(t *testing.T) {
 	time.Sleep(time.Hour)
 }
 
-// A silent child gets SIGQUIT, dumps its goroutines and is reported hung; one that ends within
+// A silent child is reported hung (on Unix it is sampled first, gets SIGQUIT and dumps its
+// goroutines; elsewhere it is killed); one that ends within
 // its limit (a generous one: a -race binary starts slowly) is not.
 func TestRunWatched(t *testing.T) {
 	const limit = 300 * time.Millisecond
 	out, hung, err := runWatched(exec.Command(os.Args[0], "-test.run=^TestHangChild$", "-progen.hangchild"), limit)
-	if !hung || err == nil || !bytes.Contains(out, []byte(quitMark)) || len(samples(string(out))) == 0 {
+	if !hung || err == nil {
 		t.Errorf("hung %v, err %v, output:\n%s", hung, err, out)
+	}
+	if goroutineSamples && (!bytes.Contains(out, []byte(quitMark)) || len(samples(string(out))) == 0) {
+		t.Errorf("no goroutine dump or sample, output:\n%s", out)
 	}
 	if v := hangVerdict(out, limit); v.Sig != kindHang {
 		t.Errorf("a hang in the harness is named %q, want %q", v.Sig, kindHang)
@@ -191,6 +195,9 @@ func TestLoopChild(t *testing.T) {
 // A live loop gets one signature, wherever each sample catches it: its loop, not the call it
 // makes and leaves. The dumps name the loop as a compiler package's, which the harness is not.
 func TestHangSignature(t *testing.T) {
+	if !goroutineSamples {
+		t.Skip("no goroutine samples here (SIGUSR1 and SIGQUIT are Unix signals): a hang is not located")
+	}
 	const limit = 500 * time.Millisecond
 	sigs := make([]string, hangRuns)
 	var wg sync.WaitGroup

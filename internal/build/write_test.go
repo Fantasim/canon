@@ -7,6 +7,7 @@ import (
 	"maps"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -201,9 +202,7 @@ func TestOSWrites(t *testing.T) {
 // DECISIONS 201: a write error names the display path, its op and cause kept; the absolute
 // temporary path never appears.
 func TestOSWriteErrorNamesDisplayPath(t *testing.T) {
-	if os.Geteuid() == 0 {
-		t.Skip("root ignores file permissions")
-	}
+	skipWithoutPermissions(t)
 	dir := t.TempDir()
 	writeTree(t, dir, map[string]string{"project.canon": outProject, "a/a.canon": jsonSource})
 	out := filepath.Join(dir, "out")
@@ -226,15 +225,14 @@ func TestOSWriteErrorNamesDisplayPath(t *testing.T) {
 
 // DECISIONS 201, CLI.md §3.4: an unreadable source or canon.lock names its project-relative display path, never the absolute one, for both Build and Check.
 func TestUnreadableFileNamesDisplayPath(t *testing.T) {
-	if os.Geteuid() == 0 {
-		t.Skip("root ignores file permissions")
-	}
+	skipWithoutPermissions(t)
 	for _, c := range []struct {
 		name, display string
 		unready       func(t *testing.T, dir string)
 	}{
 		{"source", "a/a.canon", func(t *testing.T, dir string) {
 			t.Helper()
+			skipWithoutPermissions(t)
 			path := filepath.Join(dir, "a", "a.canon")
 			if err := os.Chmod(path, 0o000); err != nil {
 				t.Fatal(err)
@@ -279,9 +277,7 @@ func TestUnreadableFileNamesDisplayPath(t *testing.T) {
 
 // DECISIONS 201, CLI.md §2.1: an unreadable project directory is named ".", by Build and Check.
 func TestUnreadableProjectDirNamesDot(t *testing.T) {
-	if os.Geteuid() == 0 {
-		t.Skip("root ignores file permissions")
-	}
+	skipWithoutPermissions(t)
 	dir := t.TempDir()
 	writeTree(t, dir, map[string]string{"project.canon": outProject, "a/a.canon": jsonSource})
 	p, err := build.Open(build.OS(), filepath.ToSlash(dir), build.Options{})
@@ -358,7 +354,25 @@ func TestOSRollbackAndModes(t *testing.T) {
 	}
 	info, err := os.Stat(out)
 	lock, lerr := os.Stat(filepath.Join(dir, "a", "canon.lock"))
-	if err != nil || info.Mode().Perm() != 0o644 || lerr != nil || lock.Mode().Perm() != 0o600 {
-		t.Errorf("modes: %v %v, %v %v", info, err, lock, lerr)
+	if err != nil || lerr != nil {
+		t.Fatalf("stat: %v, %v", err, lerr)
+	}
+	if unixModes() && (info.Mode().Perm() != 0o644 || lock.Mode().Perm() != 0o600) {
+		t.Errorf("modes: %v, %v", info.Mode(), lock.Mode())
+	}
+}
+
+// unixModes reports whether files carry Unix permission bits: Windows keeps only a read-only
+// attribute (ignored on a directory, and a read-only file stays readable).
+func unixModes() bool {
+	return runtime.GOOS != "windows"
+}
+
+// skipWithoutPermissions skips a test that needs an unreadable or unwritable path: where the
+// bits are not Unix's, or where root ignores them.
+func skipWithoutPermissions(t *testing.T) {
+	t.Helper()
+	if !unixModes() || os.Geteuid() == 0 {
+		t.Skip("Unix permission bits are not enforced here (Windows, or root)")
 	}
 }

@@ -48,7 +48,8 @@ func buildAndRun(t *testing.T, dir string, sources []string, args ...string) []s
 			if err != nil {
 				t.Fatalf("%s: run: %v\n%s%s", filepath.Base(cc), err, stdout.String(), stderr.String())
 			}
-			outs = append(outs, stdout.String())
+			// Windows' text-mode stdout ends lines "\r\n"; every other platform, and the wants, "\n".
+			outs = append(outs, strings.ReplaceAll(stdout.String(), "\r\n", "\n"))
 		}
 	}
 	return outs

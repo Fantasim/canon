@@ -51,8 +51,8 @@ func ExampleOpen() {
 		return
 	}
 	defer p.Close()
-	fmt.Println(p.Root())
-	// Output: /examples
+	fmt.Println(filepath.Base(p.Root()))
+	// Output: examples
 }
 
 func ExampleProject_Packages() {

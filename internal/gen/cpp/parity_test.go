@@ -109,7 +109,7 @@ func runGo(t *testing.T, units []parityUnit, driver string, args []string) strin
 		}
 	}
 	copyFile(t, filepath.Join("testdata", "main", driver), filepath.Join(dir, "main.go"), same)
-	bin := filepath.Join(dir, "driver")
+	bin := filepath.Join(dir, exe("driver"))
 	build := exec.Command("go", "build", "-o", bin, ".")
 	build.Dir = dir
 	if out, err := build.CombinedOutput(); err != nil {

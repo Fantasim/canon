@@ -1,0 +1,16 @@
+# Every text file is LF in the index and in every checkout, on every OS: the goldens, the
+# sources and the fixtures are byte-exact (DOCTRINE §4, §5), so a CRLF checkout on Windows
+# would fail them all on invisible carriage returns.
+* text=auto eol=lf
+
+# Binary fixtures.
+*.png binary
+*.dds binary
+
+# Findings cases whose bytes are the test: they carry CR (a CRLF or a lone CR) or other
+# control bytes on purpose and must never be normalised.
+internal/load/testdata/findings/E7105_2.txtar -text
+internal/load/testdata/findings/E7113_5.txtar -text
+internal/load/testdata/findings/E7113_7.txtar -text
+internal/lock/testdata/findings/E6005_7.txtar -text
+internal/syntax/testdata/findings/E1124_1.txtar -text

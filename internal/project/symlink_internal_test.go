@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io/fs"
 	"os"
+	"path"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -182,5 +183,35 @@ func TestEvalSymlinksOSNotDir(t *testing.T) {
 	write(t, dir, "plain.txt", "")
 	if _, err := evalSymlinksOS(dir + "/plain.txt/x"); err == nil {
 		t.Error("err = nil, want a non-directory error")
+	}
+}
+
+// API.md §2.2, CLI.md §2.1: Find climbs to a volume's top "C:/", never the drive-relative "C:".
+func TestParent(t *testing.T) {
+	cases := []struct{ in, want string }{
+		{"/p/data", "/p"},
+		{"/p", "/"},
+		{"/", "/"},
+		{"C:/p/data", "C:/p"},
+		{"C:/p", "C:/"},
+		{"C:/", "C:/"},
+		{"//server/share/x", "//server/share/"},
+		{"//server/share/", "//server/share/"},
+	}
+	for _, c := range cases {
+		if got := parent(c.in); got != c.want {
+			t.Errorf("parent(%q) = %q, want %q", c.in, got, c.want)
+		}
+	}
+	cleaned := []struct{ in, want string }{
+		{"/p/./q", "/p/q"},
+		{"C:/", "C:/"},
+		{"C:/p/", "C:/p"},
+		{"//server/share/x/..", "//server/share/"},
+	}
+	for _, c := range cleaned {
+		if got := onVolume(path.Clean, c.in); got != c.want {
+			t.Errorf("onVolume(path.Clean, %q) = %q, want %q", c.in, got, c.want)
+		}
 	}
 }

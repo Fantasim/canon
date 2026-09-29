@@ -84,7 +84,7 @@ func TestTeamboard(t *testing.T) {
 	var paths []string
 	for _, o := range res.Outputs {
 		paths = append(paths, o.Path)
-		if o.Package != "teamboard" || o.Status != build.StatusStale || !strings.HasPrefix(o.Abs, "/") {
+		if o.Package != "teamboard" || o.Status != build.StatusStale || !filepath.IsAbs(o.Abs) || strings.Contains(o.Abs, `\`) {
 			t.Errorf("output %+v", o)
 		}
 	}
