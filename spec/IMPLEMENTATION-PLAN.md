@@ -601,9 +601,11 @@ type Info struct {
     Literals   map[*syntax.BraceLit]LitKind         // brace-literal classification (TYPES.md §5.2)
     Matches    map[syntax.Node]*MatchInfo           // each `match` expression or statement (TYPES.md §12.6)
     Broken     map[Object]bool                      // declarations with a static error, or naming one (TYPES.md §1)
+    BrokenViews map[*syntax.ViewDecl]bool           // views holding an error (VIEWMODEL.md J4; ADR-0009, DECISIONS 228)
 }
 
 func (i *Info) ObjectOf(n syntax.Node) Object   // an *Ident in Defs or NameUses, an *IdentExpr in Uses; else nil
+func ViewBroken(info *Info, d *syntax.ViewDecl) bool   // BrokenViews[d], or a parser recovery node in d (J4)
 
 type ObjKind uint8   // Const Let Fn Method Param Local Field Member Case Entry Builtin TypeName Package Layer Check Test Widget
 type Object interface {   // implementations are pointers, one per declaration, so == is identity
