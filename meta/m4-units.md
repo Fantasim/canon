@@ -61,7 +61,7 @@ the last wave.
 ## Wave 3
 
 - U2b `--json-sources` from build/load's loaded files with their Canon types (number
-      canonicalization) [sonnet]
+      canonicalization); `fmt --diff` through `go-udiff` (§11), deleting cli's own LCS [sonnet]
 - U5b api edit surface: Edit, Op JSON, LockCheck, Open → Recover, drafts; S12, E17–E21, W5, X2 [opus]
 - U6 `cli`: explain input fields, `canon refs`, `--watch` [sonnet]
 
