@@ -8,12 +8,6 @@ import (
 	"github.com/fantasim/canonlang/internal/views/render"
 )
 
-// Lines renders self's `show` templates in lang (VIEWMODEL.md X6) and methods (L21); false fails (V11).
-type Lines interface {
-	Show(l Line, self *value.Record, lang string) (string, bool)
-	Method(self *value.Record, name, lang string) (string, bool)
-}
-
 // Target is the value at the request's path (API.md 11); Field holds it, nil for a top-level
 // value or an element, and is read only with the record or case Decl declaring it.
 type Target struct {

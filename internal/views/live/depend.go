@@ -155,7 +155,8 @@ func (s *session) record(v value.Value) *value.Record {
 		return x
 	case *value.Ref:
 		if rt, ok := x.T.Base().(*types.RefType); ok {
-			return s.entry(rt.Target, x.Key)
+			e, _ := s.shown.Target(rt.Target, x.Key)
+			return e
 		}
 	}
 	return nil

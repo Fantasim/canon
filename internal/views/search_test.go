@@ -107,6 +107,44 @@ func TestSearchIndex(t *testing.T) {
 	 {"key":"c","title":"Item Axe","subtitle":"Rare","terms":["Axe","rare"],"retired":true,"tr":{"fr":{"title":"Objet Axe"}}}]}`)
 }
 
+// positioned is a keyed list whose view title reads the `index` magic name.
+var positioned = map[string]string{
+	"a/a.canon": `package a
+
+record Lv {
+  level: Int
+}
+
+view Lv {
+  title "Level {index}"
+  subtitle "{level}"
+}
+
+let lvs: [Lv] keyed by level = [{ level: 5 }, { level: 7 }]
+
+record Pick {
+  lv: ref lvs
+}
+
+view Pick {
+  title "Pick {lv}"
+}
+
+let picks: table Pick = {
+  p { lv: 7 }
+}
+`,
+}
+
+// VIEWMODEL.md 3.4, S2, S8, 12.8 (log-2026-09-29 M4 U9, U9b-r): a keyed list's rows render with
+// the `index` magic name, its 1-based position, as Evaluate gives it (API.md 11); a ref to one of
+// them renders its title in that position, as its own row does.
+func TestSearchIndexPosition(t *testing.T) {
+	m := tree(t, "", positioned, build.Options{}).model(t, demoPkg)
+	expect(t, "3.4 S2 index", m.Search["a:lvs"].Rows, `[{"key":5,"title":"Level 1","subtitle":"5"},{"key":7,"title":"Level 2","subtitle":"7"}]`)
+	expect(t, "S8 3.4 target place", m.Search["a:picks"].Rows, `[{"key":"p","title":"Pick Level 2"}]`)
+}
+
 // keysOf are a map's keys, for a failure message.
 func keysOf[V any](m map[string]V) []string {
 	var out []string

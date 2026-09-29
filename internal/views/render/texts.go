@@ -51,10 +51,10 @@ func (t translations) file(pkg string, f *syntax.File) {
 	}
 }
 
-// translated is the translation of the key segs of pkg in lang, false for the source language
+// Translated is the translation of the key segs of pkg in lang, false for the source language
 // (lang ""), a missing one, or one check marked BrokenTranslations (I18N.md T2): it renders as
-// though missing, so the caller falls back to the source template (VIEWMODEL.md X3).
-func (r *Renderer) translated(pkg, lang string, segs []string) (syntax.StrLit, bool) {
+// though missing, so the caller falls back to the source template (VIEWMODEL.md X3, X6).
+func (r *Renderer) Translated(pkg, lang string, segs []string) (syntax.StrLit, bool) {
 	if lang == "" {
 		return nil, false
 	}
@@ -84,7 +84,7 @@ func empty(s syntax.StrLit) bool {
 // plainText is the plain text keyed segs of pkg in lang: its translation, else its source text
 // (I18N.md B1); false when neither exists.
 func (r *Renderer) plainText(pkg, lang string, segs []string) (string, bool) {
-	if s, ok := r.translated(pkg, lang, segs); ok {
+	if s, ok := r.Translated(pkg, lang, segs); ok {
 		if t, isPlain := encode.PlainText(s); isPlain {
 			return t, true
 		}
@@ -103,18 +103,49 @@ func (r *Renderer) memberLabel(m *value.Member, lang string) string {
 }
 
 // noneLabel is the `none` text of the field x reads, a field of self (`{note}`) or of what a
-// selector reads (`{self.note}`, `{a.b}`), in lang (VIEWMODEL.md X4, C38).
+// selector reads (`{self.note}`, `{a.b}`), in lang (VIEWMODEL.md X4, C38): catalogued, else as
+// written (a text without a letter, I18N.md L7).
 func (r *Renderer) noneLabel(x syntax.Expr, self value.Value, lang string) (string, bool) {
+	decl, f := r.fieldRead(x, self)
+	if f == nil {
+		return "", false // not a field: `none` (X4)
+	}
+	pkg, segs := noneKey(decl, f)
+	if t, ok := r.plainText(pkg, lang, segs); ok {
+		return t, true
+	}
+	return r.in.Index.Field(f).TextIn(syntax.PropNone, pkg)
+}
+
+// NoneKey is the key of the `none` text of the field x reads, of self or of what a selector
+// reads (VIEWMODEL.md X4, I18N.md 3.3 `T.f.none`); false when x reads no field.
+func (r *Renderer) NoneKey(x syntax.Expr, self value.Value) (string, []string, bool) {
+	decl, f := r.fieldRead(x, self)
+	if f == nil {
+		return "", nil, false
+	}
+	pkg, segs := noneKey(decl, f)
+	return pkg, segs, true
+}
+
+// noneKey is the key of the `none` text of the field f of decl (I18N.md 3.3 `T.f.none`).
+func noneKey(decl types.Type, f *types.Field) (string, []string) {
+	pkg, segs := i18n.FieldKey(decl, f)
+	return pkg, append(segs, syntax.PropNone)
+}
+
+// fieldRead is the field x reads and the record or case type declaring it; nil for none.
+func (r *Renderer) fieldRead(x syntax.Expr, self value.Value) (types.Type, *types.Field) {
 	decl, name := r.readField(x, self)
 	if decl == nil {
-		return "", false // not a field: `none` (X4)
+		return nil, nil
 	}
 	for _, f := range encode.FieldsOf(decl) {
 		if f.Name == name {
-			return r.fieldNone(decl.Base(), f, lang)
+			return decl.Base(), f
 		}
 	}
-	return "", false
+	return nil, nil
 }
 
 // readField is the record or case type and the field name x reads, nil when x reads no field.
@@ -135,14 +166,4 @@ func (r *Renderer) readField(x syntax.Expr, self value.Value) (types.Type, strin
 		}
 	}
 	return nil, ""
-}
-
-// fieldNone is the `none` text a view gives f in lang: catalogued, else as written (a text
-// without a letter, I18N.md L7).
-func (r *Renderer) fieldNone(decl types.Type, f *types.Field, lang string) (string, bool) {
-	pkg, segs := i18n.FieldKey(decl, f)
-	if t, ok := r.plainText(pkg, lang, append(segs, syntax.PropNone)); ok {
-		return t, true
-	}
-	return r.in.Index.Field(f).TextIn(syntax.PropNone, pkg)
 }

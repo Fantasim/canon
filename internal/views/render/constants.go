@@ -11,3 +11,6 @@ const (
 	keyOpen  = " ("
 	keyClose = ")"
 )
+
+// SharedTitle is how many entries of one collection share a title that S9 disambiguates.
+const SharedTitle = 2

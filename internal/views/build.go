@@ -108,7 +108,7 @@ func newBuilder(ctx context.Context, in Input) (*builder, error) {
 	if pkg == nil {
 		return nil, fmt.Errorf(fmtPackage, ErrNoPackage, in.Package)
 	}
-	b := &builder{ctx: ctx, in: in, pkg: pkg, colls: encode.NewColls(force(in.Force)), texts: encode.NewTexts(catalogues(in.I18N))}
+	b := &builder{ctx: ctx, in: in, pkg: pkg, colls: encode.NewColls(force(in.Force)), texts: encode.NewTexts(encode.Catalogues(in.I18N))}
 	b.index = control.NewIndex(in.Program, in.Studio)
 	b.roots = encode.NewAssets(in.Program, in.Layout)
 	tables := table.New(b.index, b.texts)
@@ -134,18 +134,6 @@ func newBuilder(ctx context.Context, in Input) (*builder, error) {
 func (b *builder) types() {
 	b.m.Types = b.defs.Section()
 	b.err = b.defs.Err()
-}
-
-// catalogues are the key catalogues of results, by package.
-func catalogues(results map[string]*i18n.Result) map[string]*i18n.Catalogue {
-	out := make(map[string]*i18n.Catalogue, len(results))
-	//canon:unordered a map copied into a map
-	for pkg, r := range results {
-		if r != nil {
-			out[pkg] = r.Catalogue
-		}
-	}
-	return out
 }
 
 // world is f as typedef resolves it, nil for none.

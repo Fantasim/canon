@@ -9,13 +9,13 @@ import (
 // decimal, enum members and cases by Canon name, refs by key, assets by file name, lists
 // flattened, `none` and a failed term omitted.
 func (r *Renderer) Terms(e *value.Record) []string {
-	h, ok := r.head(e, syntax.KindViewSearch)
+	d, ok := r.Head(e, syntax.KindViewSearch)
 	if !ok {
 		return nil
 	}
 	var out []string
-	for _, x := range h.item.(*syntax.ViewSearch).Items {
-		if v, ok := r.Value(x, e, Magic{ID: id(e)}); ok {
+	for _, x := range d.View.Item(syntax.KindViewSearch).(*syntax.ViewSearch).Items {
+		if v, ok := r.Value(x, e, r.magicOf(e)); ok {
 			out = appendTerm(out, v)
 		}
 	}
@@ -42,11 +42,11 @@ func appendTerm(out []string, v value.Value) []string {
 
 // Preview is the asset file name e's view `preview` gives (S2); false for none.
 func (r *Renderer) Preview(e *value.Record) (string, bool) {
-	h, ok := r.head(e, syntax.KindViewPreview)
+	d, ok := r.Head(e, syntax.KindViewPreview)
 	if !ok {
 		return "", false
 	}
-	v, ok := r.Value(h.item.(*syntax.ViewPreview).X, e, Magic{ID: id(e)})
+	v, ok := r.Value(d.View.Item(syntax.KindViewPreview).(*syntax.ViewPreview).X, e, r.magicOf(e))
 	if s, isStr := v.(*value.Str); ok && isStr && s.V != "" {
 		return s.V, true
 	}

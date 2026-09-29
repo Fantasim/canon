@@ -22,7 +22,7 @@ func (r *Renderer) Messages(pkg string, c *syntax.CheckDecl, self value.Value, l
 	}
 	var out map[string]string
 	for _, lang := range langs {
-		tpl, found := r.translated(kpkg, lang, segs)
+		tpl, found := r.Translated(kpkg, lang, segs)
 		if !found {
 			continue
 		}

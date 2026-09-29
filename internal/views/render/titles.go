@@ -12,57 +12,53 @@ import (
 	"github.com/fantasim/canonlang/internal/views/shape"
 )
 
-// head is a view item that describes an entry, with its view's package and key prefix.
-type head struct {
-	item   syntax.ViewItem
-	pkg    string
-	prefix []string
+// Described is a view describing a value and its key prefix (I18N.md 3.3).
+type Described struct {
+	View   control.View
+	Prefix []string
 }
 
-// described is a view describing an entry and its key prefix (I18N.md 3.3).
-type described struct {
-	view   control.View
-	prefix []string
-}
-
-// Head is the item of kind k of the views describing e: its case's view first, then its
-// variant's or record's, or its define table's (VIEWMODEL.md 3.2, G7); false for none.
-func (r *Renderer) head(e *value.Record, k syntax.NodeKind) (head, bool) {
+// Head is the first view describing e that holds an item of kind k: its case's view first, then
+// its variant's or record's, or its define table's (VIEWMODEL.md 3.2, G7); false for none.
+func (r *Renderer) Head(e *value.Record, k syntax.NodeKind) (Described, bool) {
 	for _, d := range r.views(e) {
-		if it := d.view.Item(k); it != nil {
-			return head{item: it, pkg: d.view.Pkg, prefix: d.prefix}, true
+		if d.View.Item(k) != nil {
+			return d, true
 		}
 	}
-	return head{}, false
+	return Described{}, false
 }
 
 // views are the views describing e, most specific first.
-func (r *Renderer) views(e *value.Record) []described {
-	var out []described
-	add := func(t types.Type) {
+func (r *Renderer) views(e *value.Record) []Described {
+	if e.T.Base().Kind() == types.Define {
+		return r.defineView(e)
+	}
+	var out []Described
+	for _, t := range Viewed(e.T) {
 		if v, ok := r.in.Index.ViewOf(t); ok {
 			_, prefix := i18n.TypeKey(t)
-			out = append(out, described{view: v, prefix: prefix})
+			out = append(out, Described{View: v, Prefix: prefix})
 		}
-	}
-	switch t := e.T.Base().(type) {
-	case *types.CaseType:
-		add(t)
-		add(t.Variant)
-	case *types.AppliedRecord:
-		add(t.Rec)
-	default:
-		if t.Kind() == types.Define {
-			return r.defineView(e)
-		}
-		add(t)
 	}
 	return out
 }
 
+// Viewed are the targets whose views describe a value of type t, most specific first: a case
+// then its variant, a record (an applied one's declaration).
+func Viewed(t types.Type) []types.Type {
+	switch x := t.Base().(type) {
+	case *types.CaseType:
+		return []types.Type{x, x.Variant}
+	case *types.AppliedRecord:
+		return []types.Type{x.Rec}
+	}
+	return []types.Type{t.Base()}
+}
+
 // defineView is the view of the define table holding e (VIEWMODEL.md G7).
-func (r *Renderer) defineView(e *value.Record) []described {
-	if e.Ident == nil || r.in.Program == nil {
+func (r *Renderer) defineView(e *value.Record) []Described {
+	if e.Ident == nil || e.Ident.Coll == nil || r.in.Program == nil {
 		return nil
 	}
 	c, p := e.Ident.Coll, shape.Package(r.in.Program, e.Ident.Coll.Pkg)
@@ -74,7 +70,7 @@ func (r *Renderer) defineView(e *value.Record) []described {
 			continue
 		}
 		if v, ok := r.in.Index.LetView(o); ok {
-			return []described{{view: v, prefix: []string{o.Name()}}}
+			return []Described{{View: v, Prefix: []string{o.Name()}}}
 		}
 	}
 	return nil
@@ -94,15 +90,12 @@ func (r *Renderer) Subtitle(e *value.Record, lang string) (string, bool) {
 // headText renders e's title or subtitle: the translated template in lang when there is one,
 // else the source template (X6).
 func (r *Renderer) headText(e *value.Record, k syntax.NodeKind, word, lang string) (string, bool) {
-	h, ok := r.head(e, k)
+	d, ok := r.Head(e, k)
 	if !ok {
 		return "", false
 	}
-	tpl := headTemplate(h.item)
-	if s, found := r.translated(h.pkg, lang, append(slices.Clip(h.prefix), word)); found {
-		tpl = s
-	}
-	return r.template(tpl, e, Magic{ID: id(e)}, lang)
+	t := Template{Pkg: d.View.Pkg, Key: append(slices.Clip(d.Prefix), word), Source: headTemplate(d.View.Item(k))}
+	return r.Template(t, e, lang)
 }
 
 // headTemplate is the template of a title or subtitle item.
@@ -113,10 +106,10 @@ func headTemplate(it syntax.ViewItem) syntax.StrLit {
 	return it.(*syntax.ViewSubtitle).Text
 }
 
-// id is the magic name `id` of a table or define-table entry: its key (VIEWMODEL.md 3.4); nil
+// ID is the magic name `id` of a table or define-table entry: its key (VIEWMODEL.md 3.4); nil
 // for another value.
-func id(e *value.Record) value.Value {
-	if e.Ident == nil || e.Ident.Coll == nil || e.Ident.Coll.KeyedBy != nil {
+func ID(e *value.Record) value.Value {
+	if e == nil || e.Ident == nil || e.Ident.Coll == nil || e.Ident.Coll.KeyedBy != nil {
 		return nil
 	}
 	return keyValue(e.Ident.Key)
@@ -130,16 +123,17 @@ func keyValue(k value.Key) value.Value {
 	return &value.Str{V: k.S, T: types.StringType}
 }
 
-// refText is a ref as a view renders it (S8): its target's title when it has one, else its key;
-// inside that title a ref renders its key (one level), and a title that fails renders the key.
+// refText is a ref as a view renders it (S8): its target's title when it has one, in the target's
+// own place (log-2026-09-29 M4 U9b-r), else its key; inside that title a ref renders its key (one
+// level), and a title that fails renders the key.
 func (r *Renderer) refText(ref *value.Ref, lang string) string {
 	rt, ok := ref.T.Base().(*types.RefType)
 	if !ok || r.inTarget {
 		return ref.Key.Text()
 	}
-	if e := r.entry(rt.Target, ref.Key); e != nil {
+	if e, at := r.Target(rt.Target, ref.Key); e != nil {
 		r.inTarget = true
-		t, ok := r.Title(e, lang)
+		t, ok := r.At(e, at).Title(e, lang)
 		r.inTarget = false
 		if ok {
 			return t
@@ -148,22 +142,34 @@ func (r *Renderer) refText(ref *value.Ref, lang string) string {
 	return ref.Key.Text()
 }
 
-// entry is the entry of coll keyed k in this build, nil for none.
-func (r *Renderer) entry(coll *types.Collection, k value.Key) *value.Record {
-	if r.keys == nil {
-		r.keys = map[*types.Collection]map[value.Key]*value.Record{}
-	}
+// Target is the entry of coll keyed k in this build and the magic names of its own position
+// (Position); nil for none (a field of an enclosing record).
+func (r *Renderer) Target(coll *types.Collection, k value.Key) (*value.Record, Magic) {
+	es := r.in.Colls.Entries(coll)
 	byKey, ok := r.keys[coll]
 	if !ok {
-		byKey = map[value.Key]*value.Record{}
-		for _, e := range r.in.Colls.Entries(coll) {
+		byKey = map[value.Key]int{}
+		for i, e := range es {
 			if e.Ident != nil {
-				byKey[e.Ident.Key] = e
+				byKey[e.Ident.Key] = i
 			}
 		}
 		r.keys[coll] = byKey
 	}
-	return byKey[k]
+	i, ok := byKey[k]
+	if !ok {
+		return nil, Magic{}
+	}
+	return es[i], Position(coll, i)
+}
+
+// Position are the magic names of the entry i of coll besides its `id` (VIEWMODEL.md 3.4): a
+// keyed list's element has its 1-based `index`.
+func Position(coll *types.Collection, i int) Magic {
+	if coll.KeyedBy == nil {
+		return Magic{}
+	}
+	return Magic{Index: &value.Int{V: int64(i + 1), T: types.IntType}}
 }
 
 // Disambiguated is a title two entries of one collection share, shown with the entry's key's

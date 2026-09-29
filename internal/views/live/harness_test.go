@@ -145,11 +145,19 @@ func examples(t *testing.T) *analyzed {
 	return analyze(t, setup{fsys: project.OS(), dir: filepath.ToSlash(dir), studio: studioPkg, opt: build.Options{Roots: roots}})
 }
 
-// input is what Evaluate reads of p, its view expressions evaluated by standIn.
+// input is what Evaluate reads of p, its view expressions and methods evaluated by stand-ins.
 func (p *analyzed) input() live.Input {
 	force := func(pkg, name string) (value.Value, bool) { return p.a.Force(eval.Root{Pkg: pkg, Name: name}) }
 	ev := standIn{info: p.a.Program().Info}
-	return live.Input{Program: p.a.Program(), Studio: p.studio, I18N: p.texts, Force: force, Eval: ev, Lines: lines{}, Languages: p.langs}
+	return live.Input{Program: p.a.Program(), Studio: p.studio, I18N: p.texts, Force: force, Eval: ev, Methods: methods{}, Languages: p.langs}
+}
+
+// real is input with the analysis's own evaluator, methods and bound arguments (build's
+// adapters), as the api wires them.
+func (p *analyzed) real() live.Input {
+	in := p.input()
+	in.Eval, in.Methods, in.Bound = p.a.ViewEvaluator(), p.a.ViewMethods(), p.a.ViewBound()
+	return in
 }
 
 // let is the settled value of pkg's let name.
@@ -258,32 +266,11 @@ func fieldOf(self value.Value, name string) (value.Value, bool) {
 	return nil, false
 }
 
-// lines renders a show line's source template through its Eval, each value in its canonical
-// text, and a method as `<name>()` but the method `broken`, which fails.
-type lines struct{}
+// methods evaluates a method as the string `<name>()`, but the method `broken`, which fails.
+type methods struct{}
 
-func (l lines) Show(line live.Line, self *value.Record, _ string) (string, bool) {
-	sl, ok := line.Template.(*syntax.StringLit)
-	if !ok {
-		return "", false
-	}
-	var b strings.Builder
-	for _, p := range sl.Parts {
-		if p.Interp == nil {
-			b.WriteString(p.Text)
-			continue
-		}
-		v, ok := line.Eval.Eval(context.Background(), p.Interp.X, self, line.Magic)
-		if !ok {
-			return "", false
-		}
-		b.WriteString(v.CanonText())
-	}
-	return b.String(), true
-}
-
-func (l lines) Method(_ *value.Record, name, _ string) (string, bool) {
-	return name + "()", name != "broken"
+func (methods) Method(_ context.Context, name *syntax.Ident, _ *value.Record) (value.Value, bool) {
+	return &value.Str{V: name.Name + "()", T: types.StringType}, name.Name != "broken"
 }
 
 // jsonOf is v as indented-free JSON, for comparisons.

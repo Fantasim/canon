@@ -29,9 +29,6 @@ const loadDirMethod = "dir"
 // usageShare is L7's threshold: a field is in `main` when 4 × set(f) ≥ count (25 %).
 const usageShare = 4
 
-// sharedTitle is how many entries share a title that S9 disambiguates.
-const sharedTitle = 2
-
 // The fields of an entry of the studio package's `units` table (VIEWMODEL.md 12.9).
 const (
 	unitSuffix    = "suffix"

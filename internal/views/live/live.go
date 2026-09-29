@@ -23,7 +23,7 @@ type Input struct {
 	Force   encode.Force            // the settled lets: ref targets and entry counts; nil: none
 	Layout  *project.Layout         // places the asset roots of resolved types; nil: as written
 	Eval    render.Evaluator        // evaluates view expressions; nil: every one fails (X7)
-	Lines   Lines                   // renders `show` lines and methods; nil: every one fails (X7)
+	Methods render.MethodEvaluator  // evaluates view-named methods; nil: every one fails (X7)
 	Bound   Bound                   // the arguments of applied records; nil: read in the form only
 	// Languages are project.languages, the source first: a Lang naming the source is the source
 	Languages []string
@@ -48,7 +48,7 @@ func Evaluate(ctx context.Context, in Input, at Target) (*Result, error) {
 	if rec, ok := at.Value.(*value.Record); ok {
 		m := at.Magic
 		if m.ID == nil {
-			m.ID = idOf(rec)
+			m.ID = render.ID(rec)
 		}
 		h := s.heads(rec, m, at.Name)
 		s.out.Title, s.out.Subtitle, s.out.Preview = h.title, h.subtitle, h.preview

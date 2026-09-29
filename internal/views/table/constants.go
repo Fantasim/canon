@@ -8,8 +8,10 @@ const (
 	modeValue   = "value"
 	modeCount   = "count"
 	modeCase    = "case"
-	modeText    = "text"
 )
+
+// ModeText is the mode of a column whose cells the compiler renders (VIEWMODEL.md T8, API.md V6a).
+const ModeText = "text"
 
 // autoColumns is T7's count; dot joins T6a's `<case>.<field>`.
 const (

@@ -19,10 +19,30 @@ type Evaluator interface {
 	Eval(ctx context.Context, e syntax.Expr, self value.Value, magic Magic) (value.Value, bool)
 }
 
+// MethodEvaluator evaluates, on the record shown, the method a view's member item name names
+// (VIEWMODEL.md 3.3, L21); false when the evaluation fails (X7).
+type MethodEvaluator interface {
+	Method(ctx context.Context, name *syntax.Ident, self *value.Record) (value.Value, bool)
+}
+
 // Magic are the values of the magic names of a position (VIEWMODEL.md 3.4): `id` of a table or
 // define-table entry, `key` of a map value, `index` of a list element; nil where it has none (G12).
 type Magic struct {
 	ID, Key, Index value.Value
+}
+
+// With is m with each magic name it lacks taken from more.
+func (m Magic) With(more Magic) Magic {
+	if m.ID == nil {
+		m.ID = more.ID
+	}
+	if m.Key == nil {
+		m.Key = more.Key
+	}
+	if m.Index == nil {
+		m.Index = more.Index
+	}
+	return m
 }
 
 // Input is what templates are rendered with.
@@ -40,14 +60,34 @@ type Renderer struct {
 	ctx  context.Context
 	in   Input
 	tr   translations
-	keys map[*types.Collection]map[value.Key]*value.Record
+	keys map[*types.Collection]map[value.Key]int // each entry's place in Entries, shared by the renderers At makes
 	// inTarget is set while a ref's target title renders: a ref inside it renders its key (S8)
 	inTarget bool
+	at       *value.Record // the value At placed, its expressions given place's magic names
+	place    Magic
 }
 
 // New renders with in; the translations are read from in.Program's translation files.
 func New(ctx context.Context, in Input) *Renderer {
-	return &Renderer{ctx: ctx, in: in, tr: readTranslations(in.Program)}
+	return &Renderer{ctx: ctx, in: in, tr: readTranslations(in.Program), keys: map[*types.Collection]map[value.Key]int{}}
+}
+
+// At is r rendering e's own expressions with the magic names of e's position m too
+// (VIEWMODEL.md 3.4): a list element's `index`, a map value's `key`; e's `id` is its own. A ref's
+// target renders in its own position (Target); any other value with its `id` alone.
+func (r *Renderer) At(e *value.Record, m Magic) *Renderer {
+	c := *r
+	c.at, c.place = e, m
+	return &c
+}
+
+// magicOf are the magic names e's expressions render with: its `id`, and its place's (At).
+func (r *Renderer) magicOf(e *value.Record) Magic {
+	m := Magic{ID: ID(e)}
+	if e != nil && e == r.at {
+		m = m.With(r.place)
+	}
+	return m
 }
 
 // template renders s for self with the magic names m in lang (X4, X5); false when an
@@ -95,6 +135,11 @@ func (r *Renderer) interp(in *syntax.Interp, self value.Value, m Magic, lang str
 	}
 	return r.text(v, in.X, self, lang), true
 }
+
+// Text is v as a view renders a value no field read gives, a method's (VIEWMODEL.md X4, L21):
+// a ref by its target's title (S8), an enum member by its label in lang, `none` as `none`, any
+// other value in its canonical text.
+func (r *Renderer) Text(v value.Value, lang string) string { return r.text(v, nil, nil, lang) }
 
 // text is a value as a view renders it (X4): a ref by its target's title (S8), an enum member by
 // its label, `none` by the field's `none` text; any other value in its canonical text.

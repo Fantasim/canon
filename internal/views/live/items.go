@@ -2,7 +2,6 @@ package live
 
 import (
 	"slices"
-	"strconv"
 	"strings"
 
 	"github.com/fantasim/canonlang/internal/check"
@@ -11,6 +10,8 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 	"github.com/fantasim/canonlang/internal/verify"
 	"github.com/fantasim/canonlang/internal/views/encode"
+	"github.com/fantasim/canonlang/internal/views/layout"
+	"github.com/fantasim/canonlang/internal/views/render"
 )
 
 // item is an item of a view, or a member of one of its groups.
@@ -19,32 +20,40 @@ type item struct {
 	grouped bool
 }
 
-// layoutOf is the view laying out rec's fields (VIEWMODEL.md D5: a case's own view) and its
-// items and group members in view order, each group before its members; nil for none.
-func (s *session) layoutOf(rec *value.Record) (string, []string, []item) {
-	t := viewed(rec.T)[0]
+// laidOut is the view laying out a record's fields (VIEWMODEL.md D5: a case's own view): its
+// key, its items and group members in view order, each group before its members, and the id of
+// each of its `show` lines (G17).
+type laidOut struct {
+	pkg    string
+	prefix []string
+	items  []item
+	shows  map[*syntax.ViewShow]string
+}
+
+// layoutOf is the view laying out rec's fields; empty for none.
+func (s *session) layoutOf(rec *value.Record) laidOut {
+	t := render.Viewed(rec.T)[0]
 	v, ok := s.index.ViewOf(t)
 	if !ok || v.Decl == nil {
-		return "", nil, nil
+		return laidOut{}
 	}
-	var out []item
+	out := laidOut{shows: layout.ShowIDs(v)}
 	for _, it := range v.Decl.Items {
-		out = append(out, item{n: it})
+		out.items = append(out.items, item{n: it})
 		if g, isGroup := it.(*syntax.ViewGroup); isGroup {
 			for _, m := range g.Members {
-				out = append(out, item{n: m, grouped: true})
+				out.items = append(out.items, item{n: m, grouped: true})
 			}
 		}
 	}
-	pkg, prefix := i18n.TypeKey(t)
-	return pkg, prefix, out
+	out.pkg, out.prefix = i18n.TypeKey(t)
+	return out
 }
 
 // when evaluates the `when` of every field, method and group of the view of fr's record
 // (API.md V9, V12): false only when the condition evaluates to false.
 func (s *session) when(fr *frame, at *verify.Path) {
-	_, _, items := s.layoutOf(fr.rec)
-	for _, it := range items {
+	for _, it := range s.layoutOf(fr.rec).items {
 		switch x := it.n.(type) {
 		case *syntax.ViewGroup:
 			if x.When != nil && x.ID != nil {
@@ -123,24 +132,17 @@ func fieldPaths(rec *value.Record, at *verify.Path, name string) []*verify.Path 
 // shows evaluates the `show` lines and view-named methods of the view of fr's record, in view
 // order, a method once: in its group when a group names it (API.md V10, VIEWMODEL.md Q1, L22).
 func (s *session) shows(fr *frame, at *verify.Path) {
-	pkg, prefix, items := s.layoutOf(fr.rec)
-	unnamed := 0
-	grouped, done := s.groupedMethods(items), map[string]bool{}
-	for _, it := range items {
+	lo := s.layoutOf(fr.rec)
+	grouped, done := s.groupedMethods(lo.items), map[string]bool{}
+	for _, it := range lo.items {
 		switch x := it.n.(type) {
 		case *syntax.ViewShow:
-			id := unnamedShow + strconv.Itoa(unnamed)
-			if x.ID != nil {
-				id = x.ID.Name
-			} else {
-				unnamed++
-			}
-			s.showLine(fr, rel(at), pkg, slices.Concat(prefix, []string{syntax.WordShow, id}), x)
+			s.showLine(fr, rel(at), lo.pkg, slices.Concat(lo.prefix, []string{syntax.WordShow, lo.shows[x]}), x)
 		case *syntax.ViewField:
 			name := s.methodOf(x)
 			if name != "" && !done[name] && grouped[name] == it.grouped {
 				done[name] = true
-				s.methodLine(fr, rel(at), pkg, slices.Concat(prefix, []string{i18n.MethodSeg(name)}), name)
+				s.methodLine(fr, rel(at), lo.pkg, slices.Concat(lo.prefix, []string{i18n.MethodSeg(name)}), x)
 			}
 		}
 	}
@@ -173,33 +175,40 @@ func (s *session) nameOf(f *syntax.ViewField) check.Object {
 	return s.in.Program.Info.NameUses[f.Name]
 }
 
-// showLine is a `show` line of the view keyed segs: its label and its template rendered in the
-// session's language (V8, V11; I18N.md 3.3 `T.show.s`, `T.show.s.text`).
+// showLine is a `show` line of the view keyed segs: its label, and its template rendered in the
+// session's language through the memo, fr's record in its place (V8, V11; VIEWMODEL.md X6, L21;
+// I18N.md 3.3 `T.show.s`, `T.show.s.text`).
 func (s *session) showLine(fr *frame, owner, pkg string, segs []string, x *syntax.ViewShow) {
 	src, _ := encode.PlainText(x.Label)
 	line := ShowLine{Owner: owner, Key: strings.Join(segs, dot), Label: s.label(pkg, segs, src)}
-	textKey := slices.Concat(segs, []string{syntax.WordText})
-	if s.in.Lines != nil {
-		v, ok := s.in.Lines.Show(Line{Pkg: pkg, Key: textKey, Template: x.Template, Magic: fr.magic, Eval: s.memo}, fr.rec, s.lang)
-		if ok {
-			defer s.place(fr.rec, fr.magic)()
-			line.Text = Text{Value: v, OK: true, Fallback: s.fallbackIn(pkg, textKey, x.Template, fr.rec, true)}
-		}
+	tpl := render.Template{Pkg: pkg, Key: slices.Concat(segs, []string{syntax.WordText}), Source: x.Template}
+	defer s.unplace()
+	if v, ok := s.place(fr.rec, fr.magic).Template(tpl, fr.rec, s.lang); ok {
+		line.Text = Text{Value: v, OK: true, Fallback: s.fallbackIn(pkg, tpl.Key, x.Template, fr.rec, true)}
 	}
 	s.out.Show = append(s.out.Show, line)
 }
 
-// methodLine is a view-named method keyed segs: its label and value (V10, VIEWMODEL.md L23).
-func (s *session) methodLine(fr *frame, owner, pkg string, segs []string, name string) {
-	src, ok := s.index.ItemLabel(viewed(fr.rec.T)[0], name)
+// methodLine is the view-named method x keyed segs: its label and its value as a view renders it
+// (V8, V10, V11; VIEWMODEL.md X4, L21, L23).
+func (s *session) methodLine(fr *frame, owner, pkg string, segs []string, x *syntax.ViewField) {
+	src, ok := s.index.ItemLabel(render.Viewed(fr.rec.T)[0], x.Name.Name)
 	if !ok {
-		src = i18n.Humanize(name)
+		src = i18n.Humanize(x.Name.Name)
 	}
 	line := ShowLine{Owner: owner, Key: strings.Join(segs, dot), Label: s.label(pkg, segs, src)}
-	if s.in.Lines != nil {
-		if v, ok := s.in.Lines.Method(fr.rec, name, s.lang); ok {
-			line.Text = Text{Value: v, OK: true}
-		}
+	if v, ok := s.method(x.Name, fr.rec); ok {
+		line.Text = Text{Value: s.shown.Text(v, s.lang), OK: true, Fallback: s.fellBackValue(v, nil, fr.rec, true)}
 	}
 	s.out.Show = append(s.out.Show, line)
+}
+
+// method is the value on self of the method name names (L21); false when it fails, or without
+// Input.Methods (X7).
+func (s *session) method(name *syntax.Ident, self *value.Record) (value.Value, bool) {
+	if s.in.Methods == nil {
+		return nil, false
+	}
+	v, ok := s.in.Methods.Method(s.ctx, name, self)
+	return v, ok && v != nil
 }

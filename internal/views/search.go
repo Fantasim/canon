@@ -1,8 +1,6 @@
 package views
 
 import (
-	"slices"
-
 	"github.com/fantasim/canonlang/api/vm"
 	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/syntax"
@@ -133,35 +131,40 @@ func (b *builder) searchIndex(o check.Object) vm.SearchIndex {
 	count, active := b.colls.Counts(coll)
 	idx := vm.SearchIndex{Type: encode.Element(coll), KeyType: encode.KeyType(coll), Count: count, Active: active, Rows: []vm.Row{}}
 	idx.Preview = b.previewAsset(o, coll)
-	entries := slices.DeleteFunc(slices.Clone(b.colls.Entries(coll)), func(e *value.Record) bool { return e.Ident == nil })
-	for _, e := range entries {
+	var entries []*value.Record
+	for i, e := range b.colls.Entries(coll) {
 		if b.ctx.Err() != nil {
 			break
 		}
-		idx.Rows = append(idx.Rows, b.row(e))
+		if e.Ident != nil {
+			entries = append(entries, e)
+			// VIEWMODEL.md 3.4: a keyed list's element with its `index`, as Evaluate gives it (API.md 11)
+			idx.Rows = append(idx.Rows, b.row(e, b.render.At(e, render.Position(coll, i))))
+		}
 	}
 	disambiguate(idx.Rows, entries)
 	return idx
 }
 
-// row is an entry's row (S2): its key, rendered title, subtitle and terms, preview file, retired
-// flag, and the title and subtitle in each other language where they render differently.
-func (b *builder) row(e *value.Record) vm.Row {
-	r := vm.Row{Key: keyScalar(e.Ident.Key), Retired: e.Ident.Retired, Terms: b.render.Terms(e)}
-	r.Title = rendered(b.render.Title(e, ""))
-	r.Subtitle = rendered(b.render.Subtitle(e, ""))
-	r.Preview, _ = b.render.Preview(e)
+// row is an entry's row (S2), rendered by r: its key, rendered title, subtitle and terms, preview
+// file, retired flag, and the title and subtitle in each other language where they render
+// differently.
+func (b *builder) row(e *value.Record, r *render.Renderer) vm.Row {
+	out := vm.Row{Key: keyScalar(e.Ident.Key), Retired: e.Ident.Retired, Terms: r.Terms(e)}
+	out.Title = rendered(r.Title(e, ""))
+	out.Subtitle = rendered(r.Subtitle(e, ""))
+	out.Preview, _ = r.Preview(e)
 	for _, lang := range b.otherLanguages() {
-		t := vm.RowText{Title: differs(r.Title, rendered(b.render.Title(e, lang))), Subtitle: differs(r.Subtitle, rendered(b.render.Subtitle(e, lang)))}
+		t := vm.RowText{Title: differs(out.Title, rendered(r.Title(e, lang))), Subtitle: differs(out.Subtitle, rendered(r.Subtitle(e, lang)))}
 		if t.Title == nil && t.Subtitle == nil {
 			continue
 		}
-		if r.Tr == nil {
-			r.Tr = map[string]vm.RowText{}
+		if out.Tr == nil {
+			out.Tr = map[string]vm.RowText{}
 		}
-		r.Tr[lang] = t
+		out.Tr[lang] = t
 	}
-	return r
+	return out
 }
 
 // rendered is a rendering's text, nil when it failed or there is none.
@@ -198,7 +201,7 @@ func disambiguate(rows []vm.Row, entries []*value.Record) {
 		}
 	}
 	for i := range rows {
-		if rows[i].Title == nil || seen[*rows[i].Title] < sharedTitle {
+		if rows[i].Title == nil || seen[*rows[i].Title] < render.SharedTitle {
 			continue
 		}
 		key := entries[i].Ident.Key.Text()

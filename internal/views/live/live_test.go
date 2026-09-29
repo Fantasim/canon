@@ -190,12 +190,12 @@ func TestCancelled(t *testing.T) {
 	}
 }
 
-// API.md V11, V12: without an Evaluator and Lines, every rendering fails, every condition holds,
+// API.md V11, V12: without an Evaluator and Methods, every rendering fails, every condition holds,
 // and nothing panics.
 func TestNoEvaluator(t *testing.T) {
 	p := shopProject(t)
 	in := p.input()
-	in.Eval, in.Lines = nil, nil
+	in.Eval, in.Methods = nil, nil
 	res := at(t, in, live.Target{Value: p.item(t, "sword")})
 	if res.Title.OK || res.Show[0].Text.OK || !res.When["count"] {
 		t.Errorf("API.md V11 API.md V12: title %v, show %v, when %v", res.Title, res.Show[0], res.When)

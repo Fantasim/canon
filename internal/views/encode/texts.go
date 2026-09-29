@@ -18,6 +18,18 @@ type Texts struct {
 // NewTexts reads text references from cats, by package; a package without one has no key.
 func NewTexts(cats map[string]*i18n.Catalogue) *Texts { return &Texts{cats: cats} }
 
+// Catalogues are the key catalogues of results, by package: what NewTexts reads.
+func Catalogues(results map[string]*i18n.Result) map[string]*i18n.Catalogue {
+	out := make(map[string]*i18n.Catalogue, len(results))
+	//canon:unordered a map copied into a map
+	for pkg, r := range results {
+		if r != nil {
+			out[pkg] = r.Catalogue
+		}
+	}
+	return out
+}
+
 // Text is the reference of the text keyed segs in pkg: its key when catalogued; the neutral
 // text when the catalogue holds it without a letter (I18N.md L7); absent otherwise.
 func (t *Texts) Text(pkg, text string, segs ...string) vm.TextRef {

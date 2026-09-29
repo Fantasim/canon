@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/fantasim/canonlang/internal/i18n"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
@@ -28,22 +27,20 @@ type session struct {
 	res    *control.Resolver
 	defs   *typedef.Types
 	memo   *memo            // every view expression evaluated, once
-	at     *placed          // the value the shown renderer renders, with its magic names
-	shown  *render.Renderer // renders heads in the value's place
+	at     placed           // the value rendered in its place, whose magic names the memo is read with
+	shown  *render.Renderer // renders through the memo; At a value's place for that value
 	target *render.Renderer // renders a ref's target title, refs in it as keys (S8)
-	keys   map[*types.Collection]map[value.Key]*value.Record
 	out    *Result
 	err    error // the context's, or a resolved type that did not encode
 }
 
 // newSession reads prog's views, collections and texts as the view model does (VIEWMODEL.md 12).
 func newSession(ctx context.Context, in Input, lang string) *session {
-	s := &session{ctx: ctx, in: in, lang: lang, keys: map[*types.Collection]map[value.Key]*value.Record{}}
+	s := &session{ctx: ctx, in: in, lang: lang}
 	s.memo = &memo{eval: in.Eval, seen: map[memoKey]memoVal{}}
-	s.at = &placed{memo: s.memo}
 	s.index = control.NewIndex(in.Program, in.Studio)
 	s.colls = encode.NewColls(in.Force)
-	texts := encode.NewTexts(catalogues(in.I18N))
+	texts := encode.NewTexts(encode.Catalogues(in.I18N))
 	assets := encode.NewAssets(in.Program, in.Layout)
 	tables := table.New(s.index, texts)
 	s.res = control.NewResolver(s.index, control.Env{
@@ -53,22 +50,10 @@ func newSession(ctx context.Context, in Input, lang string) *session {
 	s.defs = typedef.New(ctx, typedef.Input{Program: in.Program, Index: s.index, Colls: s.colls, Texts: texts, Assets: assets}, "")
 	base := render.Input{Program: in.Program, Index: s.index, Texts: texts, Colls: s.colls}
 	shown, target := base, base
-	shown.Eval, target.Eval = s.at, keyed{memo: s.memo}
+	shown.Eval, target.Eval = s.memo, keyed{memo: s.memo}
 	s.shown, s.target = render.New(ctx, shown), render.New(ctx, target)
 	s.out = &Result{When: map[string]bool{}, Show: []ShowLine{}, Headings: map[string]Heading{}, Types: map[string]json.RawMessage{}}
 	return s
-}
-
-// catalogues are the key catalogues of results, by package.
-func catalogues(results map[string]*i18n.Result) map[string]*i18n.Catalogue {
-	out := make(map[string]*i18n.Catalogue, len(results))
-	//canon:unordered a map copied into a map
-	for pkg, r := range results {
-		if r != nil {
-			out[pkg] = r.Catalogue
-		}
-	}
-	return out
 }
 
 // frame is a record of the form and the record whose field holds it (TYPES.md 11.1).
@@ -130,16 +115,4 @@ func fieldOf(rec *value.Record, name string) value.Value {
 		}
 	}
 	return nil
-}
-
-// idOf is the magic name `id` of a table or define-table entry: its key (VIEWMODEL.md 3.4); nil
-// for another value.
-func idOf(e *value.Record) value.Value {
-	switch {
-	case e.Ident == nil || e.Ident.Coll == nil || e.Ident.Coll.KeyedBy != nil:
-		return nil
-	case e.Ident.Key.IsInt:
-		return &value.Int{V: e.Ident.Key.I, T: types.IntType}
-	}
-	return &value.Str{V: e.Ident.Key.S, T: types.StringType}
 }

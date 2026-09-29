@@ -87,29 +87,39 @@ func (in Input) lay(t types.Type) *lay {
 	}
 	v, _ := in.Index.ViewOf(viewed)
 	pkg, prefix := i18n.TypeKey(t)
-	l := &lay{in: in, t: t, view: v, pkg: pkg, prefix: prefix, keys: encode.Keys(t), showIDs: map[*syntax.ViewShow]string{}}
+	return &lay{in: in, t: t, view: v, pkg: pkg, prefix: prefix, keys: encode.Keys(t), showIDs: ShowIDs(v)}
+}
+
+// ShowIDs are the ids of the `show` lines of v, `_<n>` for the n-th unnamed one in view order
+// from 0, across groups (VIEWMODEL.md G17, API.md V10).
+func ShowIDs(v control.View) map[*syntax.ViewShow]string {
+	out := map[*syntax.ViewShow]string{}
 	unnamed := 0
-	l.each(func(it syntax.Node, _ *syntax.ViewGroup) {
+	each(v, func(it syntax.Node, _ *syntax.ViewGroup) {
 		s, ok := it.(*syntax.ViewShow)
 		switch {
 		case !ok:
 		case s.ID != nil:
-			l.showIDs[s] = s.ID.Name
+			out[s] = s.ID.Name
 		default:
-			l.showIDs[s] = unnamedShow + strconv.Itoa(unnamed)
+			out[s] = unnamedShow + strconv.Itoa(unnamed)
 			unnamed++
 		}
 	})
-	return l
+	return out
 }
 
 // each calls fn on every item of the view and every member of its groups, in view order, with
 // the group holding it (nil at view level).
-func (l *lay) each(fn func(syntax.Node, *syntax.ViewGroup)) {
-	if l.view.Decl == nil {
+func (l *lay) each(fn func(syntax.Node, *syntax.ViewGroup)) { each(l.view, fn) }
+
+// each calls fn on every item of v and every member of its groups, in view order, with the
+// group holding it (nil at view level).
+func each(v control.View, fn func(syntax.Node, *syntax.ViewGroup)) {
+	if v.Decl == nil {
 		return
 	}
-	for _, it := range l.view.Decl.Items {
+	for _, it := range v.Decl.Items {
 		fn(it, nil)
 		if g, ok := it.(*syntax.ViewGroup); ok {
 			for _, m := range g.Members {

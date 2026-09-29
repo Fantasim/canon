@@ -92,7 +92,7 @@ func mode(ft types.Type, readonly string) string {
 	case shape.KindIn(t, types.Variant): // a fixed case `V.c` is a record: text (T8)
 		return modeCase
 	case !scalar(t) || shape.KindIn(t, types.LitUnion):
-		return modeText
+		return ModeText
 	case readonly != "":
 		return modeValue
 	}

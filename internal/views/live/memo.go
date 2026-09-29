@@ -74,33 +74,11 @@ func (c *memo) read(e syntax.Expr, self value.Value, m render.Magic) (value.Valu
 	return r.v, ok && r.ok
 }
 
-// placed evaluates for a renderer: the magic names of the value it renders are given to that
-// value's expressions only (VIEWMODEL.md 3.4); render itself gives `id` alone.
+// placed is the value rendered in its place and its magic names (VIEWMODEL.md 3.4), as the
+// renderer At it gives them to that value's expressions only.
 type placed struct {
-	memo  *memo
 	self  *value.Record
 	magic render.Magic
-}
-
-func (p *placed) Eval(ctx context.Context, e syntax.Expr, self value.Value, m render.Magic) (value.Value, bool) {
-	if r, ok := self.(*value.Record); ok && r == p.self {
-		m = withMagic(m, p.magic)
-	}
-	return p.memo.Eval(ctx, e, self, m)
-}
-
-// withMagic is m with each magic name it lacks taken from more.
-func withMagic(m, more render.Magic) render.Magic {
-	if m.ID == nil {
-		m.ID = more.ID
-	}
-	if m.Key == nil {
-		m.Key = more.Key
-	}
-	if m.Index == nil {
-		m.Index = more.Index
-	}
-	return m
 }
 
 // keyed evaluates for a ref's target title: a ref it reads renders as its key (S8, one level).

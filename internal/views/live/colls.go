@@ -11,6 +11,7 @@ import (
 	"github.com/fantasim/canonlang/internal/views/control"
 	"github.com/fantasim/canonlang/internal/views/encode"
 	"github.com/fantasim/canonlang/internal/views/render"
+	"github.com/fantasim/canonlang/internal/views/table"
 )
 
 // element is an element of a collection: its value, path, magic names and its title without a
@@ -49,7 +50,7 @@ func (s *session) collection(v value.Value, at *verify.Path, ctl vm.Control) {
 		}
 	}
 	for i, e := range els {
-		if out[i].Title.OK && seen[sources[i]] >= sharedTitle {
+		if out[i].Title.OK && seen[sources[i]] >= render.SharedTitle {
 			out[i].Title.Value = render.Disambiguated(out[i].Title.Value, e.name)
 		}
 		s.out.Headings[rel(e.path)] = out[i]
@@ -120,7 +121,7 @@ func textColumns(ctl vm.Control) []string {
 	}
 	var out []string
 	for _, c := range ctl.Columns {
-		if c.Mode == columnText {
+		if c.Mode == table.ModeText {
 			out = append(out, c.Field)
 		}
 	}
@@ -177,42 +178,29 @@ func caseOf(rec *value.Record) string {
 func (s *session) cell(v value.Value) Text {
 	switch x := v.(type) {
 	case *value.Record:
-		return s.headText(s.shown, x, titleItem, x.CanonText())
+		return s.headText(s.shown, x, titleItem, x.CanonText(), true)
 	case *value.Ref:
 		return s.refTitle(x)
 	}
 	return Text{Value: v.CanonText(), OK: true}
 }
 
-// refTitle is a ref's target title, refs in it rendered as keys; its key when the target has no
-// view title, is not in this build, or its title fails (VIEWMODEL.md S8).
+// refTitle is a ref's target title in the target's own place, refs in it rendered as keys; its
+// key when the target has no view title, is not in this build, or its title fails (VIEWMODEL.md
+// S8; log-2026-09-29 M4 U9b-r).
 func (s *session) refTitle(r *value.Ref) Text {
 	key := Text{Value: r.Key.Text(), OK: true}
 	rt, ok := r.T.Base().(*types.RefType)
 	if !ok {
 		return key
 	}
-	e := s.entry(rt.Target, r.Key)
+	e, at := s.shown.Target(rt.Target, r.Key)
 	if e == nil {
 		return key
 	}
-	if t := s.headText(s.target, e, titleItem, key.Value); t.OK {
+	defer s.asTarget(e, at)()
+	if t := s.headText(s.target.At(e, at), e, titleItem, key.Value, false); t.OK {
 		return t
 	}
 	return key
-}
-
-// entry is the entry of coll keyed k in this build, nil for none (a field of an enclosing record).
-func (s *session) entry(coll *types.Collection, k value.Key) *value.Record {
-	byKey, ok := s.keys[coll]
-	if !ok {
-		byKey = map[value.Key]*value.Record{}
-		for _, e := range s.colls.Entries(coll) {
-			if e.Ident != nil {
-				byKey[e.Ident.Key] = e
-			}
-		}
-		s.keys[coll] = byKey
-	}
-	return byKey[k]
 }
