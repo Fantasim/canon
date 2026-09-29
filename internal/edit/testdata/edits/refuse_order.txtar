@@ -1,5 +1,5 @@
 API.md E9 (§7.2 order): Move inside a collection whose order comes from file paths is
-ErrNotEditable with reason order (rules_refuse_order_insert.txtar holds the Insert).
+ErrNotEditable with reason order (refuse_order_insert.txtar holds the Insert).
 -- options --
 pkgs: pipe
 -- edit.json --
