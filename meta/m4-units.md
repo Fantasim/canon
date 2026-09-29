@@ -47,7 +47,7 @@ the last wave.
 - U9b `views/render` + `eval` + `build` adapter: render `show` templates and view-named methods
       (fills U9's `live.Lines` and `Input.Bound` seams), `index` magic name on search rows, export
       `table.ModeText`/layout showIDs etc., delete U9's copies (+ third `armIndex`) [opus]
-- U14 `verify.KeyOf`: literal-union word keys quoted per API.md P9 [sonnet]
+- U14 `verify`: `KeyOf` quotes literal-union word keys (API.md P9); `substitute` handles `*types.Refined` arm results (TYPES §11.2) [sonnet]
 - U2b `--json-sources` from build/load's loaded-file list with Canon types (number canonicalization) [sonnet]
 
 ## Wave 3
