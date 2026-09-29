@@ -2,6 +2,7 @@ package layout
 
 import (
 	"github.com/fantasim/canonlang/api/vm"
+	"github.com/fantasim/canonlang/internal/i18n"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/views/encode"
 	"github.com/fantasim/canonlang/internal/views/shape"
@@ -36,7 +37,7 @@ func (l *lay) template(s syntax.StrLit, segs ...string) *vm.Template {
 	if s == nil {
 		return nil
 	}
-	return &vm.Template{Template: encode.TemplateSource(l.view.File, s), Text: l.in.Texts.Key(l.pkg, l.key(segs...)...)}
+	return &vm.Template{Template: i18n.SourceText(l.view.File, s), Text: l.in.Texts.Key(l.pkg, l.key(segs...)...)}
 }
 
 // plain is a plain text item's reference (J9).

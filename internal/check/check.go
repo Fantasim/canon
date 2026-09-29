@@ -45,6 +45,7 @@ func Check(ctx context.Context, proj *project.Project, files []*syntax.File, bag
 	}
 	c.checkPresentation()
 	c.propagateBroken()
+	c.checkErrorTypedViews()
 	return c.program()
 }
 
@@ -111,6 +112,7 @@ type checker struct {
 	positions   map[types.Type]*position   // where a view target's values occur (VIEWMODEL.md §3.4)
 	lost        map[*pkgState]*position    // by package, the positions collections in error may have given
 	steps       map[*object]bool           // the fields a view gives a `step` text (I18N.md §3.3)
+	curView     *syntax.ViewDecl           // the view being checked, for BrokenViews (ADR-0009)
 }
 
 func newChecker(ctx context.Context, proj *project.Project, bags Bags, fold Folder) *checker {
@@ -163,19 +165,22 @@ func newChecker(ctx context.Context, proj *project.Project, bags Bags, fold Fold
 
 func newInfo() *Info {
 	return &Info{
-		Types:      map[syntax.Expr]types.Type{},
-		TypeExprs:  map[syntax.Type]types.Type{},
-		Defs:       map[*syntax.Ident]Object{},
-		Uses:       map[*syntax.IdentExpr]Object{},
-		NameUses:   map[*syntax.Ident]Object{},
-		Selections: map[*syntax.SelectorExpr]*Selection{},
-		Conv:       map[syntax.Expr]*Conversion{},
-		Keys:       map[syntax.Expr]*types.Collection{},
-		Symbols:    map[*syntax.IdentExpr]bool{},
-		Calls:      map[*syntax.CallExpr]*Callee{},
-		Literals:   map[*syntax.BraceLit]LitKind{},
-		Matches:    map[syntax.Node]*MatchInfo{},
-		Broken:     map[Object]bool{},
+		Types:       map[syntax.Expr]types.Type{},
+		TypeExprs:   map[syntax.Type]types.Type{},
+		Defs:        map[*syntax.Ident]Object{},
+		Uses:        map[*syntax.IdentExpr]Object{},
+		NameUses:    map[*syntax.Ident]Object{},
+		Selections:  map[*syntax.SelectorExpr]*Selection{},
+		Conv:        map[syntax.Expr]*Conversion{},
+		Keys:        map[syntax.Expr]*types.Collection{},
+		Symbols:     map[*syntax.IdentExpr]bool{},
+		Calls:       map[*syntax.CallExpr]*Callee{},
+		Literals:    map[*syntax.BraceLit]LitKind{},
+		Matches:     map[syntax.Node]*MatchInfo{},
+		Broken:      map[Object]bool{},
+		BrokenViews: map[*syntax.ViewDecl]bool{},
+
+		BrokenTranslations: map[*syntax.TranslationEntry]bool{},
 	}
 }
 
@@ -184,10 +189,19 @@ func (c *checker) report(env *env, b *diag.Builder) {
 	c.reported++
 	if env.trans != nil {
 		diag.E1703.AtType(env.trans.at, env.trans.key, b.Message()).Report(env.pkg.bag)
+		c.info.BrokenTranslations[env.trans.entry] = true
 		return
 	}
 	c.emit(env, b.Report)
 	c.breakObj(env.owner)
+	c.breakView()
+}
+
+// breakView marks the view being checked broken (VIEWMODEL.md J4, ADR-0009).
+func (c *checker) breakView() {
+	if c.curView != nil {
+		c.info.BrokenViews[c.curView] = true
+	}
 }
 
 // emit puts a finding in env's bag, or holds it while env's let may be E3008 (TYPES.md §10.2).

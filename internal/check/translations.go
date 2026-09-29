@@ -7,11 +7,12 @@ import (
 	"github.com/fantasim/canonlang/internal/types"
 )
 
-// transCtx is a translated template being checked: its key as written and the interpolation
-// every error is reported at, as E1703 (I18N.md T2).
+// transCtx is a translated template being checked: its entry, its key as written and the
+// interpolation every error is reported at, as E1703 (I18N.md T2).
 type transCtx struct {
-	key string
-	at  source.Span
+	entry *syntax.TranslationEntry
+	key   string
+	at    source.Span
 }
 
 // checkTranslations checks the entries of p's translation files (I18N.md §4, §7).
@@ -48,7 +49,7 @@ func (c *checker) translation(p *pkgState, f *syntax.File, e *syntax.Translation
 		}
 		env := scope.push()
 		env.pkg, env.owner, env.scopeFile, env.file = p, nil, scope.scoped(), f
-		env.trans = &transCtx{key: qualified(e.Key), at: f.Span(part.Interp)}
+		env.trans = &transCtx{entry: e, key: qualified(e.Key), at: f.Span(part.Interp)}
 		c.interpolation(env, part.Interp)
 	}
 }
@@ -72,5 +73,6 @@ func (c *checker) stepTranslation(p *pkgState, f *syntax.File, e *syntax.Transla
 		at := f.Span(in)
 		c.reported++
 		diag.E1703.AtStep(at, qualified(e.Key), at).Report(p.bag)
+		c.info.BrokenTranslations[e] = true
 	}
 }

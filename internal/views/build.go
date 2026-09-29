@@ -3,7 +3,6 @@ package views
 import (
 	"context"
 	"fmt"
-	"slices"
 
 	"github.com/fantasim/canonlang/api/vm"
 	"github.com/fantasim/canonlang/internal/check"
@@ -35,7 +34,6 @@ type Input struct {
 	Layers    []string                            // the active layers, in application order
 	Findings  []diag.Finding                      // the package's findings of phases 1-7, F2 order (J15)
 	Files     diag.Files                          // locates Findings
-	Errors    []diag.Finding                      // every package's error findings: views they break render nowhere (J4)
 	Eval      render.Evaluator                    // evaluates view expressions; nil: nothing rendered
 	CheckRun  CheckRun                            // the check run behind a finding, for its translated messages (J15); nil: none
 }
@@ -99,7 +97,7 @@ func newBuilder(ctx context.Context, in Input) (*builder, error) {
 		return nil, fmt.Errorf(fmtPackage, ErrNoPackage, in.Package)
 	}
 	b := &builder{ctx: ctx, in: in, pkg: pkg, colls: encode.NewColls(force(in.Force)), texts: encode.NewTexts(catalogues(in.I18N))}
-	b.index = control.NewIndex(in.Program, in.Studio, shape.Errors(slices.Concat(in.Errors, in.Findings)))
+	b.index = control.NewIndex(in.Program, in.Studio)
 	b.roots = encode.NewAssets(in.Program, in.Layout)
 	tables := table.New(b.index, b.texts)
 	b.res = control.NewResolver(b.index, control.Env{

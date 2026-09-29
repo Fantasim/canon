@@ -34,7 +34,10 @@ func (b *builder) values() {
 // root (API.md 7), `@reload`, the layers amending it, whether it failed (J4) and its sources.
 func (b *builder) value(o check.Object, d *syntax.LetDecl, order int) vm.Value {
 	name, pkg := o.Name(), b.pkg.Path
-	label, ok := menuLabel(d)
+	label, ok := "", false
+	if s := i18n.MenuLabel(d); s != nil {
+		label, ok = encode.PlainText(s)
+	}
 	if !ok {
 		label = i18n.Humanize(name)
 	}
@@ -128,20 +131,4 @@ func annotationMenu(a *syntax.Annotation) *vm.MenuRef {
 		return nil
 	}
 	return out
-}
-
-// menuLabel is `@menu(label: "…")` (G23, N3).
-func menuLabel(d *syntax.LetDecl) (string, bool) {
-	a := shape.Annotation(d, syntax.AnnMenu)
-	if a == nil {
-		return "", false
-	}
-	for _, arg := range a.Args {
-		if arg.Name != nil && arg.Name.Name == syntax.ArgLabel {
-			if s, ok := arg.Value.(syntax.StrLit); ok {
-				return encode.PlainText(s)
-			}
-		}
-	}
-	return "", false
 }

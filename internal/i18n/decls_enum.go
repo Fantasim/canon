@@ -16,6 +16,6 @@ func (b *builder) enumType(prefix, doc string, members []*types.Member, view vie
 	}
 	for _, m := range members {
 		key, alt := namedForm(prefix, m.Name, syntax.WordMember)
-		b.memberLabel(labelInfo{key: key, alt: alt, def: m.Name, doc: m.Doc, vf: scannedField(sc, m.Name), file: view.file})
+		b.memberLabel(labelInfo{key: key, alt: alt, def: m.Name, doc: m.Doc, vf: scannedField(sc, m.Name), file: view.file, view: view.decl})
 	}
 }

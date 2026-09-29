@@ -30,6 +30,3 @@ var forms = map[syntax.NodeKind]func(*check.Info, syntax.Expr) Form{
 	syntax.KindSelectorExpr: selectorForm,
 	syntax.KindLoadExpr:     loadForm,
 }
-
-// viewsPackage is the views in ERRORS.md's Package column: their own codes break no view.
-const viewsPackage = "views"

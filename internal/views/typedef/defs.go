@@ -4,10 +4,10 @@ import (
 	"slices"
 
 	"github.com/fantasim/canonlang/api/vm"
+	"github.com/fantasim/canonlang/internal/i18n"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/views/control"
-	"github.com/fantasim/canonlang/internal/views/encode"
 )
 
 // record is a record definition: its help, parameters, fields in declaration order and the
@@ -28,7 +28,7 @@ func (s *Types) variant(v *types.VariantType) vm.TypeDef {
 	def := vm.TypeDef{Kind: defVariant, Name: v.Name, Help: s.help(v.Doc, nil, v.Name), Tag: v.Tag}
 	for _, c := range v.Cases {
 		p := s.in.Index.Item(v, c.Name)
-		seg := encode.CaseSeg(c.Name)
+		seg := i18n.CaseSeg(c.Name)
 		def.Cases = append(def.Cases, vm.Case{
 			Name: c.Name, Wire: c.Wire, Retired: c.Retired,
 			Label: s.label(v, c.Name, v.Name, seg), Help: s.help(c.Doc, p, v.Name, seg),
@@ -48,7 +48,7 @@ func (s *Types) enum(e *types.EnumType) vm.TypeDef {
 	}
 	for _, m := range e.Members {
 		p := s.in.Index.Item(e, m.Name)
-		seg := encode.MemberSeg(m.Name)
+		seg := i18n.MemberSeg(m.Name)
 		mem := vm.Member{
 			Name: m.Name, Wire: vm.Scalar{Text: m.Wire, Quoted: true}, Index: m.Index, Retired: m.Retired,
 			Label: s.label(e, m.Name, e.Name, seg), Help: s.help(m.Doc, p, e.Name, seg),
@@ -72,7 +72,7 @@ func (s *Types) fields(decl types.Type, fields []*types.Field, key ...string) []
 		if f.Type == nil || f.Type.Kind() == types.Error {
 			continue
 		}
-		out = append(out, s.field(decl, f, append(slices.Clip(key), encode.FieldSeg(f.Name))))
+		out = append(out, s.field(decl, f, append(slices.Clip(key), i18n.FieldSeg(f.Name))))
 	}
 	return out
 }

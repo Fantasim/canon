@@ -54,7 +54,7 @@ func checkPackage(pkg *check.Package, ctx pkgCtx) *Result {
 	seen := map[string]map[string]source.Span{}
 	for _, f := range pkg.Files {
 		if f.FileKind == syntax.FileTranslation {
-			checkFile(f, ctx.proj, r, ctx.bag, seen)
+			checkFile(f, ctx, r, seen)
 		}
 	}
 	reportMissing(pkg, ctx.proj.Languages[1:], r, ctx.bag, ctx.emitsView)
@@ -62,7 +62,8 @@ func checkPackage(pkg *check.Package, ctx pkgCtx) *Result {
 }
 
 // checkFile validates f's language (E1704, E1706) and, when valid, its entries.
-func checkFile(f *syntax.File, proj *project.Project, r *Result, bag *diag.Bag, seen map[string]map[string]source.Span) {
+func checkFile(f *syntax.File, pc pkgCtx, r *Result, seen map[string]map[string]source.Span) {
+	proj, bag := pc.proj, pc.bag
 	if f.Lang == nil {
 		return // a syntax error already reported the missing language
 	}
@@ -80,7 +81,7 @@ func checkFile(f *syntax.File, proj *project.Project, r *Result, bag *diag.Bag, 
 	if seen[lang] == nil {
 		seen[lang] = map[string]source.Span{}
 	}
-	ctx := entryCtx{f: f, cat: r.Catalogue, lang: l, bag: bag, seen: seen[lang]}
+	ctx := entryCtx{f: f, cat: r.Catalogue, lang: l, bag: bag, info: pc.info, seen: seen[lang]}
 	for _, e := range f.Entries {
 		checkEntry(ctx, e)
 	}
@@ -92,6 +93,7 @@ type entryCtx struct {
 	cat  *Catalogue
 	lang *Language
 	bag  *diag.Bag
+	info *check.Info
 	seen map[string]source.Span
 }
 
@@ -122,14 +124,14 @@ func checkEntry(ctx entryCtx, e *syntax.TranslationEntry) {
 	}
 }
 
-// checkText applies F5 (empty counts as missing) and F6 (a plain translation cannot interpolate).
+// checkText applies F5 (empty counts as missing), F6 (no interpolation in Plain) and T2 (an error).
 func checkText(ctx entryCtx, e *syntax.TranslationEntry, key string, entry Entry) {
-	if literalRuns(e.Text) == "" && !hasInterp(e.Text) {
+	if literalRuns(e.Text) == "" && !hasInterp(e.Text) || ctx.info.BrokenTranslations[e] {
 		return
 	}
 	if entry.Kind == Plain && hasInterp(e.Text) {
 		diag.E1707.At(ctx.f.Span(firstInterp(e.Text)), key).Report(ctx.bag)
 		return
 	}
-	ctx.lang.Texts[key] = sourceText(ctx.f, e.Text)
+	ctx.lang.Texts[key] = SourceText(ctx.f, e.Text)
 }

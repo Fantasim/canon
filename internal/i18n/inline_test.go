@@ -40,6 +40,47 @@ view Item {
 	}
 }
 
+// K7, I18N.md L8, VIEWMODEL.md J4: a broken parent view supplies no inline case-field label
+// either; the field falls back to its own default (the Canon name, humanized).
+func TestCatalogueInlineParentViewBrokenFallsBack(t *testing.T) {
+	cat := catalogue(t, map[string]string{"k7b/k7b.canon": `package k7b
+
+/// Kind.
+variant Kind {
+  /// Sword.
+  sword {
+    /// Damage.
+    damage: Int
+  }
+  /// Shield.
+  shield {
+    /// Armor.
+    armor: Int
+  }
+}
+
+/// Item.
+record Item {
+  /// Name.
+  name: String
+  /// Kind.
+  kind: Kind @json(inline)
+}
+
+view Item {
+  title "Item {missing}"
+  damage "Dégâts infligés"
+}
+`}, "k7b")
+	e, ok := cat.Lookup("Kind.sword.damage")
+	if !ok {
+		t.Fatalf("missing Kind.sword.damage in %v", keys(cat))
+	}
+	if e.Text != "Damage" {
+		t.Errorf("Kind.sword.damage: Text = %q, want %q (Item's broken view supplies nothing, K7)", e.Text, "Damage")
+	}
+}
+
 // K7: a parent view in another package supplies nothing; kind's own catalogue keeps its
 // default labels even though item's view (in a different package) names "name" too.
 func TestCatalogueInlineOnlySamePackage(t *testing.T) {

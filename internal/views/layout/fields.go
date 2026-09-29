@@ -25,7 +25,7 @@ func (l *lay) fields() map[string]vm.FieldView {
 // its environment variable. A case field's texts are its case's keys (I18N.md K7).
 func (l *lay) field(k encode.Keyed) vm.FieldView {
 	f, p := k.Field, l.in.Index.Field(k.Field)
-	pkg, segs := encode.FieldKey(k.Decl, f)
+	pkg, segs := i18n.FieldKey(k.Decl, f)
 	label, ok := l.in.Index.FieldLabel(f)
 	if !ok {
 		label = i18n.Humanize(f.Name)
@@ -110,7 +110,7 @@ func (l *lay) method(o check.Object) vm.MethodView {
 	if fn, isFn := o.Decl().(*syntax.FnDecl); !ok && isFn && fn.Doc != nil {
 		help = fn.Doc.Text
 	}
-	segs := l.key(encode.MethodSeg(name))
+	segs := l.key(i18n.MethodSeg(name))
 	return vm.MethodView{
 		Label:  l.in.Texts.Label(l.pkg, label, name, segs...),
 		Help:   l.in.Texts.Text(l.pkg, help, append(segs, syntax.PropHelp)...),
@@ -135,7 +135,7 @@ func (l *lay) shows() map[string]vm.ShowView {
 		segs := l.key(syntax.WordShow, id)
 		out[id] = vm.ShowView{
 			Label: l.in.Texts.Label(l.pkg, label, label, segs...),
-			Text:  vm.Template{Template: encode.TemplateSource(l.view.File, s.Template), Text: l.in.Texts.Key(l.pkg, append(segs, syntax.WordText)...)},
+			Text:  vm.Template{Template: i18n.SourceText(l.view.File, s.Template), Text: l.in.Texts.Key(l.pkg, append(segs, syntax.WordText)...)},
 		}
 	})
 	return out

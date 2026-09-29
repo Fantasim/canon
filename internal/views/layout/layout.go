@@ -6,6 +6,7 @@ import (
 
 	"github.com/fantasim/canonlang/api/vm"
 	"github.com/fantasim/canonlang/internal/check"
+	"github.com/fantasim/canonlang/internal/i18n"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/views/control"
@@ -85,7 +86,7 @@ func (in Input) lay(t types.Type) *lay {
 		viewed = a.Rec
 	}
 	v, _ := in.Index.ViewOf(viewed)
-	pkg, prefix := encode.TypeKey(t)
+	pkg, prefix := i18n.TypeKey(t)
 	l := &lay{in: in, t: t, view: v, pkg: pkg, prefix: prefix, keys: encode.Keys(t), showIDs: map[*syntax.ViewShow]string{}}
 	unnamed := 0
 	l.each(func(it syntax.Node, _ *syntax.ViewGroup) {

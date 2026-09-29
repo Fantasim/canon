@@ -298,3 +298,46 @@ func TestViewModelWithErrors(t *testing.T) {
 		t.Errorf("titles %v", got)
 	}
 }
+
+const (
+	viewTransBad = `package d
+
+/// A thing.
+record Thing {
+  /// Its name.
+  name: String
+}
+
+view Thing {
+  title "T {name}"
+}
+
+/// Things.
+let things: table Thing = {
+  one { name: "x" }
+}
+
+emit view { out: "@out/d.view.json" }
+`
+	viewTransBadFr = "package d\ntranslation fr\n\nThing.title \"Chose {missing}\"\n"
+)
+
+// I18N.md T2, X3: a translated title whose interpolation the checker rejected does not crash
+// phase 8; that language falls back to the source template instead of the broken one.
+func TestViewModelTranslationErrorFallsBackToSource(t *testing.T) {
+	fsys := mapFS{"p/project.canon": file(viewProject), "p/d/d.canon": file(viewTransBad), "p/d/d.fr.canon": file(viewTransBadFr)}
+	res := buildTree(t, fsys, build.BuildOptions{})
+	code := diag.E1703.Def().Code
+	if !slices.ContainsFunc(res.List, func(f diag.Finding) bool { return f.Code == code }) {
+		t.Fatalf("findings %+v lack %s", res.List, code)
+	}
+	o := viewOutput(t, res, "@out/d.view.json")
+	m := decodeModel(t, o.Content)
+	if got := titles(m.Search["d:things"]); !maps.Equal(got, map[string]string{"one": "T x"}) {
+		t.Errorf("titles %v, want the source template's rendering (X3)", got)
+	}
+	row := m.Search["d:things"].Rows[0]
+	if _, ok := row.Tr["fr"]; ok {
+		t.Errorf("row.Tr %+v: want no fr entry (fr did not actually render, it fell back)", row.Tr)
+	}
+}

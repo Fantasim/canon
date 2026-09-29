@@ -16,7 +16,7 @@ import (
 func Example() {
 	id := &types.Field{Name: "id", Type: types.StringType}
 	potion := &types.RecordType{Pkg: "a", Name: "Potion", Fields: []*types.Field{id, {Name: "heal", Index: 1, Type: types.IntType}}}
-	index := control.NewIndex(&check.Program{Info: &check.Info{}}, "", nil)
+	index := control.NewIndex(&check.Program{Info: &check.Info{}}, "")
 	tables := table.New(index, encode.NewTexts(nil))
 	res := control.NewResolver(index, control.Env{Table: tables.Complete})
 	tables.Bind(res)

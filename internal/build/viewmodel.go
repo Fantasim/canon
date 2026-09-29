@@ -6,7 +6,6 @@ import (
 
 	"github.com/fantasim/canonlang/api/vm"
 	"github.com/fantasim/canonlang/internal/check"
-	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/eval"
 	viewgen "github.com/fantasim/canonlang/internal/gen/view"
 	"github.com/fantasim/canonlang/internal/ir"
@@ -52,15 +51,14 @@ func (r *run) viewModel(ctx context.Context, pkg string) (m *vm.ViewModel, err e
 }
 
 // viewInput is what pkg's model is built from: phase 2's program and catalogues, a folder into
-// throwaway bags, the values it reads, the package's findings of phases 1-7 (J15) and every
-// loaded package's errors (J4).
+// throwaway bags, the values it reads, and the package's findings of phases 1-7 (J15).
 func (r *run) viewInput(ctx context.Context, pkg string, scratch check.Bags, fold check.Folder) views.Input {
 	proj := r.s.proj
 	return views.Input{
 		Program: r.prog, Package: pkg, Language: proj.Canon.String(), Studio: proj.Studio.Path,
 		Languages: proj.Languages, Force: r.forceAside(ctx, scratch), Fold: fold,
 		I18N: r.texts, Layout: r.s.layout, Layers: r.p.opt.Layers, Findings: r.bags[pkg].Findings(),
-		Files: r.s.set, Errors: r.loadedErrors(), Eval: viewEval{r.ev}, CheckRun: r.failed.find,
+		Files: r.s.set, Eval: viewEval{r.ev}, CheckRun: r.failed.find,
 	}
 }
 
@@ -68,15 +66,6 @@ func (r *run) viewInput(ctx context.Context, pkg string, scratch check.Bags, fol
 // when it fails (VIEWMODEL.md C3, J12).
 func (r *run) forceAside(ctx context.Context, scratch check.Bags) func(eval.Root) (value.Value, bool) {
 	return func(root eval.Root) (value.Value, bool) { return r.ev.ForceAside(ctx, root, scratch) }
-}
-
-// loadedErrors is the error findings of every loaded package, in package order (VIEWMODEL.md J4).
-func (r *run) loadedErrors() []diag.Finding {
-	var out []diag.Finding
-	for _, cp := range r.prog.Packages {
-		out = append(out, errorsOf(r.bags[cp.Path])...)
-	}
-	return out
 }
 
 // hostAside points the host's loads and verification at scratch, keeping nothing a load reads,

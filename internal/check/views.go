@@ -24,6 +24,76 @@ type viewCtx struct {
 	unnamed int                // the unnamed show lines so far (VIEWMODEL.md G17)
 }
 
+// ViewBroken reports whether d holds an error: the mark, or a parser recovery node (ADR-0009).
+func ViewBroken(info *Info, d *syntax.ViewDecl) bool {
+	if info.BrokenViews[d] {
+		return true
+	}
+	bad := false
+	syntax.Inspect(d, func(n syntax.Node) bool {
+		switch n.(type) {
+		case *syntax.BadExpr, *syntax.BadDecl, *syntax.BadType, *syntax.BadStmt:
+			bad = true
+		}
+		return !bad
+	})
+	return bad
+}
+
+// checkErrorTypedViews marks a view broken when one of its expressions names a broken object.
+func (c *checker) checkErrorTypedViews() {
+	for _, p := range c.sorted {
+		for _, f := range p.files {
+			c.checkErrorTypedViewsIn(f)
+		}
+	}
+}
+
+// checkErrorTypedViewsIn is checkErrorTypedViews for one file's own view declarations.
+func (c *checker) checkErrorTypedViewsIn(f *syntax.File) {
+	if f.FileKind != syntax.FileSource {
+		return
+	}
+	for _, d := range f.Decls {
+		if vd, ok := d.(*syntax.ViewDecl); ok {
+			c.markIfErrorTyped(vd)
+		}
+	}
+}
+
+// markIfErrorTyped marks d once, on its first error-typed expression or reference to a broken one.
+func (c *checker) markIfErrorTyped(d *syntax.ViewDecl) {
+	if c.info.BrokenViews[d] {
+		return
+	}
+	syntax.Inspect(d, func(n syntax.Node) bool {
+		if c.namesBroken(n) {
+			c.info.BrokenViews[d] = true
+		}
+		return !c.info.BrokenViews[d]
+	})
+}
+
+// namesBroken reports n as error-typed, or naming a broken declaration bare, qualified or called.
+func (c *checker) namesBroken(n syntax.Node) bool {
+	if e, ok := n.(syntax.Expr); ok && isErrorTyped(c.info.Types[e]) {
+		return true
+	}
+	switch x := n.(type) {
+	case *syntax.IdentExpr:
+		return c.info.Broken[c.info.Uses[x]]
+	case *syntax.SelectorExpr:
+		return c.info.Broken[c.info.ObjectOf(x.Name)]
+	case *syntax.CallExpr:
+		callee := c.info.Calls[x]
+		return callee != nil && c.info.Broken[callee.Obj]
+	}
+	return false
+}
+
+// isErrorTyped reports the error type (TYPES.md §1).
+func isErrorTyped(t types.Type) bool { return t != nil && t.Kind() == types.Error }
+
 // checkPresentation resolves and types every view, then every translation file (DECISIONS 221).
 func (c *checker) checkPresentation() {
 	if c.ctx.Err() != nil {
@@ -56,6 +126,12 @@ func (c *checker) checkViews(p *pkgState) {
 
 // checkView resolves a view's target and checks its items; E2102, E2110 stop it (VIEWMODEL.md §3.2).
 func (c *checker) checkView(p *pkgState, f *syntax.File, d *syntax.ViewDecl) {
+	prev := c.curView
+	c.curView = d
+	defer func() { c.curView = prev }()
+	if c.holdsSyntaxError(d) {
+		c.info.BrokenViews[d] = true
+	}
 	env := c.fileEnv(p, f, nil)
 	o := c.lookupGlobal(env, d.Type.Name)
 	if o == nil {

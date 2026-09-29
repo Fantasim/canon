@@ -3,16 +3,16 @@ package encode_test
 import (
 	"fmt"
 
+	"github.com/fantasim/canonlang/internal/i18n"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
 	"github.com/fantasim/canonlang/internal/views/encode"
 )
 
-// Reserved names take their kind word (I18N.md K4), uncatalogued labels are neutral (J9), big
-// integers are strings (J10).
+// Uncatalogued labels are neutral (VIEWMODEL.md J9); big integers are strings (J10).
 func Example() {
-	label := encode.NewTexts(nil).Label("a", "Title", "title", "Quest", encode.FieldSeg("title"))
-	fmt.Println(encode.FieldSeg("title"), *label.Text)
+	label := encode.NewTexts(nil).Label("a", "Title", "title", "Quest", i18n.FieldSeg("title"))
+	fmt.Println(i18n.FieldSeg("title"), *label.Text)
 	fmt.Println(string(encode.Value(&value.List{Elems: []value.Value{
 		&value.Int{V: 1 << 60, T: types.IntType}, &value.Str{V: "x", T: types.StringType},
 	}})))

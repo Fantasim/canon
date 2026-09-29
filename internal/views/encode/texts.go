@@ -6,7 +6,6 @@ import (
 	"github.com/fantasim/canonlang/api/vm"
 	"github.com/fantasim/canonlang/internal/i18n"
 	"github.com/fantasim/canonlang/internal/syntax"
-	"github.com/fantasim/canonlang/internal/types"
 )
 
 // Texts writes text references from the key catalogues of the program's packages (VIEWMODEL.md
@@ -71,18 +70,6 @@ func (t *Texts) catalogue(pkg string) *i18n.Catalogue {
 	return t.cats[pkg]
 }
 
-// FieldSeg is a field's name as a key segment, behind `field.` when reserved (I18N.md K4).
-func FieldSeg(name string) string { return segment(syntax.WordField, name) }
-
-// MethodSeg is a method's name as a key segment, behind `method.` when reserved (I18N.md K4).
-func MethodSeg(name string) string { return segment(syntax.WordMethod, name) }
-
-// CaseSeg is a case's name as a key segment, behind `case.` when reserved (I18N.md K4).
-func CaseSeg(name string) string { return segment(syntax.ArgCase, name) }
-
-// MemberSeg is a member's name as a key segment, behind `member.` when reserved (I18N.md K4).
-func MemberSeg(name string) string { return segment(syntax.WordMember, name) }
-
 // PlainText is a string literal without interpolation, unescaped; false for another expression.
 func PlainText(e syntax.Expr) (string, bool) {
 	switch x := e.(type) {
@@ -99,36 +86,4 @@ func PlainText(e syntax.Expr) (string, bool) {
 		return b.String(), true
 	}
 	return "", false
-}
-
-// TypeKey is the package and key prefix of a record, enum, variant or case (I18N.md 3.3): `T`,
-// or `V.c` for a case; none for another type.
-func TypeKey(t types.Type) (pkg string, segs []string) {
-	switch x := t.Base().(type) {
-	case *types.RecordType:
-		return x.Pkg, []string{x.Name}
-	case *types.AppliedRecord:
-		return x.Rec.Pkg, []string{x.Rec.Name}
-	case *types.VariantType:
-		return x.Pkg, []string{x.Name}
-	case *types.EnumType:
-		return x.Pkg, []string{x.Name}
-	case *types.CaseType:
-		return x.Variant.Pkg, []string{x.Variant.Name, CaseSeg(x.Name)}
-	}
-	return "", nil
-}
-
-// FieldKey is the package and key of field f of the record or case decl (I18N.md 3.3): `T.f`
-// or `V.c.f`.
-func FieldKey(decl types.Type, f *types.Field) (pkg string, segs []string) {
-	pkg, segs = TypeKey(decl)
-	return pkg, append(segs, FieldSeg(f.Name))
-}
-
-func segment(kind, name string) string {
-	if syntax.IsReservedSegment(name) {
-		return kind + dot + name
-	}
-	return name
 }

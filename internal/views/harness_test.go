@@ -5,9 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"io/fs"
-	"maps"
 	"path/filepath"
-	"slices"
 	"strings"
 	"testing"
 	"testing/fstest"
@@ -204,7 +202,7 @@ func (p *analyzed) modelWith(t *testing.T, pkg string, ev render.Evaluator) *vm.
 	m, err := views.Build(context.Background(), views.Input{
 		Program: p.a.Program(), Package: pkg, Language: language, Studio: p.studio, Languages: p.proj.Languages,
 		Force: p.a.Force, Fold: eval.NewFolder(p.bags, eval.Options{}), I18N: p.texts, Layout: p.layout, Layers: p.layers,
-		Findings: found, Files: p.a.Files(), Errors: p.allFindings(), Eval: ev,
+		Findings: found, Files: p.a.Files(), Eval: ev,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -218,7 +216,7 @@ func (p *analyzed) resolver() *control.Resolver {
 		return p.a.Force(eval.Root{Pkg: pkg, Name: name})
 	})
 	fold := control.FoldWith(context.Background(), p.a.Program(), eval.NewFolder(p.bags, eval.Options{}))
-	return control.NewResolver(control.NewIndex(p.a.Program(), p.studio, nil), control.Env{
+	return control.NewResolver(control.NewIndex(p.a.Program(), p.studio), control.Env{
 		Counts: colls.Counts, Fold: fold, Assets: encode.NewAssets(p.a.Program(), p.layout),
 	})
 }
@@ -288,13 +286,4 @@ func decode(t *testing.T, b []byte) any {
 func text(v any) string {
 	b, _ := json.Marshal(v)
 	return string(b)
-}
-
-// allFindings are every package's findings, packages in path order (VIEWMODEL.md J4).
-func (p *analyzed) allFindings() []diag.Finding {
-	var out []diag.Finding
-	for _, name := range slices.Sorted(maps.Keys(p.bags)) {
-		out = append(out, p.bags[name].Findings()...)
-	}
-	return out
 }

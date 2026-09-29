@@ -223,3 +223,106 @@ func probeTruncated(t *testing.T, limit int) (*diag.Bag, bool) {
 	i18n.Check(prog, proj, bags, emitsView(prog))
 	return bag, hasE1702(bag)
 }
+
+// I18N.md F4: a key that exists only through a broken view is silent too, not E1702.
+func TestBrokenViewKeySilencedNotCascaded(t *testing.T) {
+	cat := catalogue(t, map[string]string{"j4f/j4f.canon": `package j4f
+
+/// A quest.
+record Quest {
+  /// Its name.
+  name: String
+}
+
+view Quest {
+  title "Quest {missing}"
+}
+`}, "j4f")
+	if res := cat.Resolve("Quest.title"); !res.Silent {
+		t.Errorf("Quest.title (only through the broken view): want Silent, got %+v", res)
+	}
+	if res := cat.Resolve("Quest.name"); !res.Found {
+		t.Errorf("Quest.name (a field label, unconditional): want Found, got %+v", res)
+	}
+	if res := cat.Resolve("Quest.nmae"); res.Found || res.Silent {
+		t.Errorf("Quest.nmae (a typo, not a key the view supplies): want a plain miss, got %+v", res)
+	}
+}
+
+// VIEWMODEL.md J4 D5, I18N.md F4: a broken case view silences only its own prefix; the variant's
+// own keys and an intact sibling case's stay ordinary (found, or a genuine E1702 miss).
+func TestBrokenCaseViewKeySilencedAloneNotCascaded(t *testing.T) {
+	cat := catalogue(t, map[string]string{"j4g/j4g.canon": `package j4g
+
+/// An event.
+variant Beast {
+  dead {
+    /// A trophy.
+    trophy: String
+  }
+  alive {
+    /// Its name.
+    name: String
+  }
+}
+
+view Beast.dead {
+  title "Dead {missing}"
+}
+
+view Beast.alive {
+  title "Alive: {name}"
+}
+`}, "j4g")
+	if res := cat.Resolve("Beast.dead.title"); !res.Silent {
+		t.Errorf("Beast.dead.title (only through the broken case view): want Silent, got %+v", res)
+	}
+	if res := cat.Resolve("Beast.alive.title"); !res.Found {
+		t.Errorf("Beast.alive.title (the intact sibling case's own title): want Found, got %+v", res)
+	}
+	if res := cat.Resolve("Beast.alive.bogus"); res.Found || res.Silent {
+		t.Errorf("Beast.alive.bogus (a wrong key on the intact case): want a plain miss, got %+v", res)
+	}
+	if res := cat.Resolve("Beast.help"); !res.Found {
+		t.Errorf("Beast.help (the variant's own doc, unconditional): want Found, got %+v", res)
+	}
+}
+
+// I18N.md F4, K4: exact-key silence reaches a reserved case name's own K4-qualified prefix
+// ("Beast.case.help", three segments); an unrelated typo on the same record stays a plain miss.
+func TestBrokenViewExactKeyNotPrefix(t *testing.T) {
+	cat := catalogue(t, map[string]string{"j4h/j4h.canon": `package j4h
+
+/// A thing.
+record Thing {
+  /// Name.
+  name: String
+}
+
+view Thing {
+  title "T {missing}"
+}
+
+/// Beast.
+variant Beast {
+  /// Help case.
+  help {
+    /// Trophy.
+    trophy: String
+  }
+}
+
+view Beast.help {
+  title "H {missing}"
+}
+`}, "j4h")
+	if res := cat.Resolve("Thing.nmae"); res.Found || res.Silent {
+		t.Errorf("Thing.nmae (a typo, not a key Thing's view supplies): want a plain miss, got %+v", res)
+	}
+	if res := cat.Resolve("Beast.case.help.title"); !res.Silent {
+		t.Errorf("Beast.case.help.title (K4-qualified, only through the broken case view): want Silent, got %+v", res)
+	}
+	if res := cat.Resolve("Beast.case.help"); !res.Found {
+		t.Errorf("Beast.case.help (the case's own label, unconditional, K4-qualified): want Found, got %+v", res)
+	}
+}

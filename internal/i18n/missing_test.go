@@ -137,3 +137,35 @@ Thing.name ""
 		t.Errorf("Missing = %d, want %d (the empty entry still counts as missing)", got, want)
 	}
 }
+
+// I18N.md T2: a translation entry holding an error is left out of texts and counts as missing.
+func TestBrokenTranslationLeftOutOfTextsAndCountsMissing(t *testing.T) {
+	src := map[string]string{
+		"th/th.canon": `package th
+
+/// Three.
+record Three {
+  /// Note.
+  note: String?
+}
+
+view Three {
+  title "Three {note}"
+}
+
+emit view { out: "out/th.view.json" }
+`,
+		"th/th.fr.canon": `package th
+translation fr
+
+Three.title "Trois {note:+}"
+`,
+	}
+	res := checkFiles(t, src).res["th"]
+	if _, ok := res.Languages["fr"].Texts["Three.title"]; ok {
+		t.Error("Three.title's fr entry holds an error: want it left out of texts (T2)")
+	}
+	if got, want := res.Languages["fr"].Missing, len(res.Catalogue.Entries); got != want {
+		t.Errorf("Missing = %d, want %d (the errored entry still counts as missing)", got, want)
+	}
+}

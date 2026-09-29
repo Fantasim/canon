@@ -30,19 +30,22 @@ type Package struct {
 
 // Info is every conclusion of the checker, recorded once by node (IMPLEMENTATION-PLAN §4.7).
 type Info struct {
-	Types      map[syntax.Expr]types.Type // after narrowing, before Conv
-	TypeExprs  map[syntax.Type]types.Type
-	Defs       map[*syntax.Ident]Object
-	Uses       map[*syntax.IdentExpr]Object
-	NameUses   map[*syntax.Ident]Object // every other identifier naming an object, `.name` included
-	Selections map[*syntax.SelectorExpr]*Selection
-	Conv       map[syntax.Expr]*Conversion
-	Keys       map[syntax.Expr]*types.Collection
-	Symbols    map[*syntax.IdentExpr]bool // identifiers kept as symbols, not names
-	Calls      map[*syntax.CallExpr]*Callee
-	Literals   map[*syntax.BraceLit]LitKind
-	Matches    map[syntax.Node]*MatchInfo
-	Broken     map[Object]bool
+	Types       map[syntax.Expr]types.Type // after narrowing, before Conv
+	TypeExprs   map[syntax.Type]types.Type
+	Defs        map[*syntax.Ident]Object
+	Uses        map[*syntax.IdentExpr]Object
+	NameUses    map[*syntax.Ident]Object // every other identifier naming an object, `.name` included
+	Selections  map[*syntax.SelectorExpr]*Selection
+	Conv        map[syntax.Expr]*Conversion
+	Keys        map[syntax.Expr]*types.Collection
+	Symbols     map[*syntax.IdentExpr]bool // identifiers kept as symbols, not names
+	Calls       map[*syntax.CallExpr]*Callee
+	Literals    map[*syntax.BraceLit]LitKind
+	Matches     map[syntax.Node]*MatchInfo
+	Broken      map[Object]bool
+	BrokenViews map[*syntax.ViewDecl]bool // a view holding an error (VIEWMODEL.md J4, ADR-0009)
+
+	BrokenTranslations map[*syntax.TranslationEntry]bool // a translation entry holding an error (I18N.md T2, ADR-0009)
 }
 
 // ObjectOf is the object an *Ident declares or names, or an *IdentExpr names; else nil.

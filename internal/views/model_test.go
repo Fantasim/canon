@@ -218,6 +218,65 @@ let hs: table H = {
 	expect(t, "J4 S8", m.Search["b:hs"].Rows, `[{"key":"h1","title":"H t1"}]`)
 }
 
+// A view whose only error is the views package's own (an unknown menu) still renders (ADR-0009).
+func TestE16xxAloneDoesNotBreakView(t *testing.T) {
+	files := map[string]string{
+		"studio/studio.canon": `/// The studio.
+package studio
+
+/// Menus.
+enum Menu { items }
+
+/// Icons.
+enum Icon { gem }
+
+/// Tones.
+enum Tone { info }
+`,
+		"a/a.canon": `package a
+
+/// An item.
+record Item {
+  /// Its label.
+  label: String
+}
+
+view Item {
+  menu store icon gem
+}
+
+let items: table Item = {
+  one { label: "x" }
+}
+`,
+	}
+	x := broken(t, "", files, build.Options{})
+	m := x.model(t, "a")
+	view, ok := m.Views["a.Item"]
+	if !ok {
+		t.Fatal("a.Item: want it still in views (the unknown menu alone does not break it)")
+	}
+	if _, ok := view.Fields["label"]; !ok {
+		t.Error("a.Item.label: want it still rendered")
+	}
+	if code := diag.E1610.Def().Code; !hasFindingCode(x.bags["a"], code) {
+		t.Errorf("want %s reported for the unknown menu (its own error, not swallowed)", code)
+	}
+}
+
+// hasFindingCode reports bag holding a finding of code.
+func hasFindingCode(bag *diag.Bag, code diag.Code) bool {
+	if bag == nil {
+		return false
+	}
+	for _, f := range bag.Findings() {
+		if f.Code == code {
+			return true
+		}
+	}
+	return false
+}
+
 // VIEWMODEL.md 12.3 `asset.root`, 12.9 `assets`, WIRE.md 2.3: an unrooted root is resolved from
 // the file declaring its type and keyed by its display path, so one root written in two
 // directories is two roots.

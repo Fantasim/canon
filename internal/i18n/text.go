@@ -57,9 +57,10 @@ func translatable(text string) bool {
 	return false
 }
 
-// sourceText reconstructs s in the one translation-file form (I18N.md F6): literal braces
-// doubled, interpolations as written, whatever s's string kind (plain, raw, multiline).
-func sourceText(f *syntax.File, s syntax.StrLit) string {
+// SourceText reconstructs s in the one translation-file form (I18N.md F6): literal braces
+// doubled, interpolations as written, whatever s's string kind (plain, raw, multiline). A
+// caller rendering a template outside a translation file (`views`) uses the same form (T1).
+func SourceText(f *syntax.File, s syntax.StrLit) string {
 	switch x := s.(type) {
 	case *syntax.RawStringLit:
 		var b strings.Builder

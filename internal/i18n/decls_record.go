@@ -43,7 +43,7 @@ func (b *builder) typeBody(prefix string, body bodyInfo) {
 		sc = walkItems(body.view.decl)
 	}
 	for _, f := range body.fields {
-		b.fieldEntries(prefix, f, sc, body.view.file)
+		b.fieldEntries(prefix, f, sc, body.view)
 	}
 	b.checkEntries(prefix, body.checks, body.file)
 	if body.view.decl == nil {
@@ -51,21 +51,21 @@ func (b *builder) typeBody(prefix string, body bodyInfo) {
 	}
 	b.viewTopEntries(prefix, body.view)
 	b.groupsAndShows(prefix, body.view, sc)
-	b.methodEntries(prefix, body.methods, sc, body.view.file, body.docs)
+	b.methodEntries(prefix, body.methods, sc, body.view, body.docs)
 }
 
-// fieldEntries adds a field's label, help, deprecation and view-only props (I18N.md K1); a case
-// field with no view item of its own falls back to the label its parent record's view gives it
-// through inlining (K7).
-func (b *builder) fieldEntries(prefix string, f *types.Field, sc *scanned, file *syntax.File) {
+// fieldEntries adds a field's label, help and deprecation (unconditional, I18N.md L8), and its
+// view-only props (placeholder, none, step); a case field with no view item of its own falls
+// back to the label its parent record's view gives it through inlining (K7).
+func (b *builder) fieldEntries(prefix string, f *types.Field, sc *scanned, view viewEntry) {
 	key, alt := namedForm(prefix, f.Name, syntax.WordField)
-	vf, vfFile := scannedField(sc, f.Name), file
+	vf, vfFile, vfDecl := scannedField(sc, f.Name), view.file, view.decl
 	if vf == nil {
 		if src, ok := b.inline[f]; ok {
-			vf, vfFile = src.vf, src.file
+			vf, vfFile, vfDecl = src.vf, src.file, nil // K7: another view's field, not tracked here
 		}
 	}
-	b.memberLabel(labelInfo{key: key, alt: alt, def: Humanize(f.Name), doc: f.Doc, vf: vf, file: vfFile})
+	b.memberLabel(labelInfo{key: key, alt: alt, def: Humanize(f.Name), doc: f.Doc, vf: vf, file: vfFile, view: vfDecl})
 	if f.Deprecated != nil {
 		b.addPlain(join(key, syntax.AnnDeprecated), "", f.Deprecated.Why)
 	}
@@ -73,13 +73,13 @@ func (b *builder) fieldEntries(prefix string, f *types.Field, sc *scanned, file 
 		return
 	}
 	if s := fieldProp(vf, syntax.PropPlaceholder); s != nil {
-		b.addText(join(key, syntax.PropPlaceholder), "", vfFile, s, Plain)
+		b.addViewText(join(key, syntax.PropPlaceholder), vfFile, s, Plain, vfDecl)
 	}
 	if s := fieldProp(vf, syntax.PropNone); s != nil {
-		b.addText(join(key, syntax.PropNone), "", vfFile, s, Plain)
+		b.addViewText(join(key, syntax.PropNone), vfFile, s, Plain, vfDecl)
 	}
 	if s := fieldProp(vf, syntax.PropStep); s != nil {
-		b.addText(join(key, syntax.PropStep), "", vfFile, s, Template)
+		b.addViewText(join(key, syntax.PropStep), vfFile, s, Template, vfDecl)
 	}
 }
 
@@ -101,9 +101,10 @@ func (b *builder) checkEntries(prefix string, checks []*syntax.CheckDecl, file *
 	}
 }
 
-// methodEntries adds a method's label and help, only for a method a view names (I18N.md K2):
-// help is the view's help prop, else the method's own doc comment (K "T.m.help").
-func (b *builder) methodEntries(prefix string, methods []*types.Method, sc *scanned, file *syntax.File, docs map[string]string) {
+// methodEntries adds a method's label and help, only for a method a view names (I18N.md K2,
+// view-only, VIEWMODEL.md J4): help is the view's help prop, else the method's own doc comment
+// (K "T.m.help").
+func (b *builder) methodEntries(prefix string, methods []*types.Method, sc *scanned, view viewEntry, docs map[string]string) {
 	if sc == nil {
 		return
 	}
@@ -113,7 +114,7 @@ func (b *builder) methodEntries(prefix string, methods []*types.Method, sc *scan
 			continue
 		}
 		key, alt := namedForm(prefix, m.Name, syntax.WordMethod)
-		b.memberLabel(labelInfo{key: key, alt: alt, def: Humanize(m.Name), doc: docs[m.Name], vf: vf, file: file})
+		b.memberLabel(labelInfo{key: key, alt: alt, def: Humanize(m.Name), doc: docs[m.Name], vf: vf, file: view.file, view: view.decl, methodLike: true})
 	}
 }
 

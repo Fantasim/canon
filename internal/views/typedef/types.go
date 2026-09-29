@@ -35,7 +35,7 @@ type Types struct {
 // read, without Colls every collection is empty.
 func New(ctx context.Context, in Input, pkg string) *Types {
 	if in.Index == nil {
-		in.Index = control.NewIndex(&check.Program{Info: in.Program.Info}, "", nil)
+		in.Index = control.NewIndex(&check.Program{Info: in.Program.Info}, "")
 	}
 	if in.Colls == nil {
 		in.Colls = encode.NewColls(nil)

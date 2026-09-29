@@ -13,13 +13,14 @@ type inlineLabel struct {
 	file *syntax.File
 }
 
-// inlineLabels finds every case field's label found only via inlining (I18N.md K7).
+// inlineLabels finds every case field's label found only via inlining (I18N.md K7): a broken
+// parent view supplies none (VIEWMODEL.md J4), the field falling back to its own (I18N.md L8).
 func inlineLabels(pkgTypes []types.Type, byT map[types.Type]viewEntry, info *check.Info) map[*types.Field]inlineLabel {
 	out := map[*types.Field]inlineLabel{}
 	for _, t := range pkgTypes {
 		rec, ok := t.(*types.RecordType)
 		view := byT[t]
-		if !ok || view.decl == nil {
+		if !ok || view.decl == nil || check.ViewBroken(info, view.decl) {
 			continue
 		}
 		addRecordInlineLabels(rec, view, info, out)

@@ -4,7 +4,6 @@ import (
 	"slices"
 
 	"github.com/fantasim/canonlang/internal/check"
-	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/views/encode"
@@ -22,7 +21,6 @@ type Index struct {
 	viewed   map[types.Type]View
 	lets     map[check.Object]View // define-table views
 	broken   map[any]bool          // targets whose view holds an error (J4)
-	errs     []source.Span
 	defaults []defaultWidget
 }
 
@@ -61,7 +59,7 @@ type item struct {
 
 // NewIndex reads every view of prog's source files, in package and file order (the first line
 // giving a property wins, E1613 being the checker's), and project.studio's default widgets.
-func NewIndex(prog *check.Program, studio string, errs []source.Span) *Index {
+func NewIndex(prog *check.Program, studio string) *Index {
 	x := &Index{
 		info:   prog.Info,
 		fields: map[*types.Field]Props{},
@@ -71,7 +69,6 @@ func NewIndex(prog *check.Program, studio string, errs []source.Span) *Index {
 		viewed: map[types.Type]View{},
 		lets:   map[check.Object]View{},
 		broken: map[any]bool{},
-		errs:   errs,
 	}
 	for _, p := range prog.Packages {
 		x.files(p.Path, p.Files)
@@ -142,7 +139,7 @@ func (x *Index) view(v View) {
 	if _, seen := x.viewed[t]; t == nil || seen || x.broken[t] || ownerPkg(t) != v.Pkg {
 		return
 	}
-	if shape.ViewBroken(x.info, v.File, v.Decl, x.errs) {
+	if check.ViewBroken(x.info, v.Decl) {
 		x.broken[t] = true // J4: left out, gives nothing
 		return
 	}
@@ -164,7 +161,7 @@ func (x *Index) defineView(v View) bool {
 		return false
 	}
 	if _, seen := x.lets[o]; !seen && !x.broken[o] && o.Pkg() == v.Pkg {
-		if shape.ViewBroken(x.info, v.File, v.Decl, x.errs) {
+		if check.ViewBroken(x.info, v.Decl) {
 			x.broken[o] = true
 			return true
 		}

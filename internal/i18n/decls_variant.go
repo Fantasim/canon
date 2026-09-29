@@ -17,14 +17,15 @@ func (b *builder) variantType(v *types.VariantType, file *syntax.File) {
 		b.viewTopEntries(v.Name, view)
 	}
 	for _, c := range v.Cases {
-		b.caseType(v.Name, c, file, sc)
+		b.caseType(v.Name, c, file, sc, view.decl)
 	}
 }
 
-// caseType adds one case's keys (I18N.md K "T.c", "T.c.<part>", "T.c.f").
-func (b *builder) caseType(variantName string, c *types.CaseType, file *syntax.File, variantSc *scanned) {
+// caseType adds one case's keys (I18N.md K "T.c", "T.c.<part>", "T.c.f"): the case's own label
+// comes from the variant's view (variantSc, variantDecl), else its Canon name (I18N.md L8).
+func (b *builder) caseType(variantName string, c *types.CaseType, file *syntax.File, variantSc *scanned, variantDecl *syntax.ViewDecl) {
 	key, alt := namedForm(variantName, c.Name, syntax.ArgCase)
-	b.memberLabel(labelInfo{key: key, alt: alt, def: c.Name, doc: c.Doc, vf: scannedField(variantSc, c.Name), file: file})
+	b.memberLabel(labelInfo{key: key, alt: alt, def: c.Name, doc: c.Doc, vf: scannedField(variantSc, c.Name), file: file, view: variantDecl})
 	body := bodyInfo{fields: c.Fields, methods: c.Methods, checks: c.Checks, view: b.byT[c], file: file, docs: methodDocs(caseBodyItems(c.Variant, c.Name))}
 	b.typeBody(key, body)
 }

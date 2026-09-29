@@ -4,6 +4,7 @@ import (
 	"slices"
 
 	"github.com/fantasim/canonlang/api/vm"
+	"github.com/fantasim/canonlang/internal/i18n"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/views/control"
@@ -114,6 +115,6 @@ func (t *Tables) singular(elem types.Type, v control.View) vm.TextRef {
 		return vm.TextRef{}
 	}
 	text, _ := encode.PlainText(it.Text)
-	pkg, segs := encode.TypeKey(elem)
+	pkg, segs := i18n.TypeKey(elem)
 	return t.texts.Text(pkg, text, append(segs, syntax.WordSingular)...)
 }

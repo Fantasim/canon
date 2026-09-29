@@ -21,12 +21,13 @@ type Catalogue struct {
 	Package string
 	Entries []Entry
 
-	byKey    map[string]int
-	shadow   map[string]bool   // keys that exist but whose source text has no letter (F4 noLetter)
-	form     map[string]string // a K4-wrong key -> the key its writer meant (F4 form)
-	names    map[string]bool   // every top-level declaration's name, broken or not (F4 silent)
-	broken   map[string]bool   // top-level declarations left out of the catalogue because they are broken (F4 silent)
-	unparsed bool              // a source file of the package did not fully parse (F4 silent)
+	byKey       map[string]int
+	shadow      map[string]bool   // keys that exist but whose source text has no letter (F4 noLetter)
+	form        map[string]string // a K4-wrong key -> the key its writer meant (F4 form)
+	names       map[string]bool   // every top-level declaration's name, broken or not (F4 silent)
+	broken      map[string]bool   // top-level declarations left out of the catalogue because they are broken (F4 silent)
+	brokenViews map[string]bool   // exact keys a broken view alone supplied (VIEWMODEL.md J4, F4 silent)
+	unparsed    bool              // a source file of the package did not fully parse (F4 silent)
 }
 
 // Lookup is the entry named key, when key is in the catalogue.
@@ -64,11 +65,12 @@ func (c *Catalogue) Resolve(key string) Resolution {
 	return Resolution{}
 }
 
-// silent is F4's cascade carve-out: a broken or, with an unparsed file, an unknown first segment
-// (a check.<n> key counts as unknown then too, F4).
+// silent is F4's cascade carve-out: a broken declaration, a key only a broken view would supply,
+// or, with an unparsed file, an unknown first segment (a check.<n> key counts as unknown then
+// too, F4).
 func (c *Catalogue) silent(key string) bool {
 	first, _, _ := strings.Cut(key, dot)
-	if c.broken[first] {
+	if c.broken[first] || c.brokenViews[key] {
 		return true
 	}
 	return c.unparsed && !c.names[first]
@@ -82,10 +84,12 @@ type builder struct {
 	byT    map[types.Type]viewEntry   // record, variant, case and enum targets
 	files  map[types.Type]*syntax.File
 	inline map[*types.Field]inlineLabel // a case field reached by inlining (I18N.md K7)
+	viewOf map[string]*syntax.ViewDecl  // keys added only because a view supplies them (VIEWMODEL.md J4)
 	cat    *Catalogue
 }
 
-// build is pkg's key catalogue (I18N.md K1, K3).
+// build is pkg's key catalogue (I18N.md K1, K3): read as if every view were intact, then a
+// broken one's own keys are dropped.
 func build(pkg *check.Package, info *check.Info, studioPath string) *Catalogue {
 	b := newBuilder(pkg, info)
 	if pkg.Path == studioPath {
@@ -94,12 +98,12 @@ func build(pkg *check.Package, info *check.Info, studioPath string) *Catalogue {
 	} else {
 		b.packageEntries()
 	}
+	b.stripBrokenViewKeys()
 	b.finish()
 	return b.cat
 }
 
-// newBuilder indexes pkg's first views by target object and by type, and its type objects' own
-// files, before any entry is added.
+// newBuilder indexes pkg's first views by target and by type.
 func newBuilder(pkg *check.Package, info *check.Info) *builder {
 	views := firstViews(pkg, info)
 	names, broken := topLevelState(pkg, info)
@@ -107,7 +111,7 @@ func newBuilder(pkg *check.Package, info *check.Info) *builder {
 		pkg: pkg, info: info, views: views, byT: viewsByType(views), files: typeFiles(pkg),
 		cat: &Catalogue{
 			Package: pkg.Path, shadow: map[string]bool{}, form: map[string]string{},
-			names: names, broken: broken, unparsed: hasBadNode(pkg),
+			names: names, broken: broken, brokenViews: map[string]bool{}, unparsed: hasBadNode(pkg),
 		},
 	}
 }
@@ -233,7 +237,7 @@ func (b *builder) addText(realKey, altKey string, f *syntax.File, s syntax.StrLi
 	if s == nil {
 		return
 	}
-	b.add(realKey, altKey, sourceText(f, s), kind, translatable(literalRuns(s)))
+	b.add(realKey, altKey, SourceText(f, s), kind, translatable(literalRuns(s)))
 }
 
 // addPlain adds an already-normalized plain text (a doc comment, a deprecation reason).
@@ -242,4 +246,41 @@ func (b *builder) addPlain(realKey, altKey, text string) {
 		return
 	}
 	b.add(realKey, altKey, text, Plain, translatable(text))
+}
+
+// addViewText is addText with no K4-wrong form, remembering that view alone supplies realKey
+// (nil view: as addText); every view-only key is written bare (title, a group or show id, …).
+func (b *builder) addViewText(realKey string, f *syntax.File, s syntax.StrLit, kind Kind, view *syntax.ViewDecl) {
+	if s != nil {
+		b.tagView(realKey, view)
+	}
+	b.addText(realKey, "", f, s, kind)
+}
+
+// tagView records that view alone supplies key, judged once every entry is built (VIEWMODEL.md
+// J4, I18N.md F4): a no-op for view nil.
+func (b *builder) tagView(key string, view *syntax.ViewDecl) {
+	if view == nil {
+		return
+	}
+	if b.viewOf == nil {
+		b.viewOf = map[string]*syntax.ViewDecl{}
+	}
+	b.viewOf[key] = view
+}
+
+// stripBrokenViewKeys drops every key tagView recorded whose view check.ViewBroken now judges
+// broken (VIEWMODEL.md J4): the key leaves the catalogue and, unlike a broken declaration's,
+// stays remembered by its own key so a stale translation of it stays silent, not E1702 (F4).
+func (b *builder) stripBrokenViewKeys() {
+	for key, d := range b.viewOf { //canon:unordered each key judged on its own recorded view, order-free
+		if check.ViewBroken(b.info, d) {
+			b.cat.brokenViews[key] = true
+			delete(b.cat.shadow, key)
+		}
+	}
+	if len(b.cat.brokenViews) == 0 {
+		return
+	}
+	b.cat.Entries = slices.DeleteFunc(b.cat.Entries, func(e Entry) bool { return b.cat.brokenViews[e.Key] })
 }

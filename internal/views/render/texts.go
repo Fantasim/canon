@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/fantasim/canonlang/internal/check"
+	"github.com/fantasim/canonlang/internal/i18n"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
@@ -11,9 +12,9 @@ import (
 	"github.com/fantasim/canonlang/internal/views/shape"
 )
 
-// translations are the non-empty translated texts of each package, by language and key (I18N.md
-// 4): the first of a key given twice (E1705), files in path order.
-type translations map[string]map[string]map[string]syntax.StrLit
+// translations are the non-empty translation entries of each package, by language and key
+// (I18N.md 4): the first of a key given twice (E1705), files in path order.
+type translations map[string]map[string]map[string]*syntax.TranslationEntry
 
 func readTranslations(prog *check.Program) translations {
 	out := translations{}
@@ -33,11 +34,11 @@ func readTranslations(prog *check.Program) translations {
 // file adds the entries of the translation file f of pkg; an empty text is missing (I18N.md F5).
 func (t translations) file(pkg string, f *syntax.File) {
 	if t[pkg] == nil {
-		t[pkg] = map[string]map[string]syntax.StrLit{}
+		t[pkg] = map[string]map[string]*syntax.TranslationEntry{}
 	}
 	byKey := t[pkg][f.Lang.Name]
 	if byKey == nil {
-		byKey = map[string]syntax.StrLit{}
+		byKey = map[string]*syntax.TranslationEntry{}
 		t[pkg][f.Lang.Name] = byKey
 	}
 	for _, e := range f.Entries {
@@ -45,19 +46,23 @@ func (t translations) file(pkg string, f *syntax.File) {
 			continue
 		}
 		if key := syntax.Qualified(e.Key); byKey[key] == nil {
-			byKey[key] = e.Text
+			byKey[key] = e
 		}
 	}
 }
 
-// translated is the translation of the key segs of pkg in lang; false for the source language
-// (lang "") or a missing one.
+// translated is the translation of the key segs of pkg in lang, false for the source language
+// (lang ""), a missing one, or one check marked BrokenTranslations (I18N.md T2): it renders as
+// though missing, so the caller falls back to the source template (VIEWMODEL.md X3).
 func (r *Renderer) translated(pkg, lang string, segs []string) (syntax.StrLit, bool) {
 	if lang == "" {
 		return nil, false
 	}
-	s, ok := r.tr[pkg][lang][strings.Join(segs, dot)]
-	return s, ok
+	e, ok := r.tr[pkg][lang][strings.Join(segs, dot)]
+	if !ok || r.in.Program != nil && r.in.Program.Info.BrokenTranslations[e] {
+		return nil, false
+	}
+	return e.Text, true
 }
 
 // empty reports a text with nothing in it (I18N.md F5).
@@ -91,7 +96,7 @@ func (r *Renderer) plainText(pkg, lang string, segs []string) (string, bool) {
 // memberLabel is an enum member's label in lang, its Canon name without one (VIEWMODEL.md X4).
 func (r *Renderer) memberLabel(m *value.Member, lang string) string {
 	name := m.CanonText()
-	if t, ok := r.plainText(m.Enum.Pkg, lang, []string{m.Enum.Name, encode.MemberSeg(name)}); ok {
+	if t, ok := r.plainText(m.Enum.Pkg, lang, []string{m.Enum.Name, i18n.MemberSeg(name)}); ok {
 		return t
 	}
 	return name
@@ -135,7 +140,7 @@ func (r *Renderer) readField(x syntax.Expr, self value.Value) (types.Type, strin
 // fieldNone is the `none` text a view gives f in lang: catalogued, else as written (a text
 // without a letter, I18N.md L7).
 func (r *Renderer) fieldNone(decl types.Type, f *types.Field, lang string) (string, bool) {
-	pkg, segs := encode.FieldKey(decl, f)
+	pkg, segs := i18n.FieldKey(decl, f)
 	if t, ok := r.plainText(pkg, lang, append(segs, syntax.PropNone)); ok {
 		return t, true
 	}

@@ -1,6 +1,7 @@
 package control
 
 import (
+	"github.com/fantasim/canonlang/internal/i18n"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/views/encode"
 	"github.com/fantasim/canonlang/internal/views/shape"
@@ -87,7 +88,7 @@ func (p Props) TemplateIn(key, pkg string) (string, bool) {
 	if !ok || p[key].pkg != pkg || p[key].file == nil {
 		return "", false
 	}
-	return encode.TemplateSource(p[key].file, s), true
+	return i18n.SourceText(p[key].file, s), true
 }
 
 // Source is the source text of a property's value (VIEWMODEL.md 12.4 `when`); false when not given.

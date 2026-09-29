@@ -27,7 +27,7 @@ func (b *builder) letLabel(o check.Object) {
 		return
 	}
 	name := o.Name()
-	if s := menuLabel(d); s != nil {
+	if s := MenuLabel(d); s != nil {
 		b.addText(name, "", o.File(), s, Plain)
 	} else {
 		b.addPlain(name, "", Humanize(name))
@@ -39,8 +39,9 @@ func (b *builder) letLabel(o check.Object) {
 	b.addPlain(join(name, syntax.PropHelp), "", doc)
 }
 
-// menuLabel is `@menu(…, label: "…")`'s text, nil without one.
-func menuLabel(d *syntax.LetDecl) syntax.StrLit {
+// MenuLabel is `@menu(…, label: "…")`'s text, nil without one (VIEWMODEL.md N3): a value's own
+// label (`views`) and its key's source text (I18N.md K "v") are the same node.
+func MenuLabel(d *syntax.LetDecl) syntax.StrLit {
 	for _, a := range d.Annotations {
 		if a.Name == nil || a.Name.Name != syntax.AnnMenu {
 			continue

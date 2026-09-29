@@ -18,6 +18,7 @@ func (c *checker) syntaxErrors() {
 		for _, f := range p.files {
 			if errs := found.all[f.Src.ID]; len(errs) > 0 {
 				c.holdErrors(f, errs)
+				c.holdTranslationErrors(f, errs)
 			}
 			if errs := found.inLiterals[f.Src.ID]; len(errs) > 0 {
 				c.markBadLiterals(f, errs)
@@ -104,6 +105,21 @@ func (c *checker) lexError(n syntax.Node) bool {
 	return c.badLits[n]
 }
 
+// holdsSyntaxError reports a syntax or lexical error inside d, truncation-proof (syntaxHeld, badLits).
+func (c *checker) holdsSyntaxError(d *syntax.ViewDecl) bool {
+	if c.syntaxHeld[d] {
+		return true
+	}
+	found := false
+	syntax.Inspect(d, func(n syntax.Node) bool {
+		if leafLiteral(n) && c.badLits[n] {
+			found = true
+		}
+		return !found
+	})
+	return found
+}
+
 // parseFindings are the parse findings a build put in p's bag, or p's files parsed again when
 // the bag dropped some (API.md F7).
 func parseFindings(p *pkgState) []diag.Finding {
@@ -130,6 +146,18 @@ func (c *checker) holdErrors(f *syntax.File, errs []source.Span) {
 		for _, e := range errs {
 			if encloses(at, e) {
 				c.syntaxHeld[innermost(f, d, e)] = true
+			}
+		}
+	}
+}
+
+// holdTranslationErrors marks each translation entry of f holding one of errs (ADR-0009).
+func (c *checker) holdTranslationErrors(f *syntax.File, errs []source.Span) {
+	for _, e := range f.Entries {
+		at := f.Span(e)
+		for _, err := range errs {
+			if encloses(at, err) {
+				c.info.BrokenTranslations[e] = true
 			}
 		}
 	}

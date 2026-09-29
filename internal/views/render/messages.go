@@ -3,10 +3,10 @@ package render
 import (
 	"slices"
 
+	"github.com/fantasim/canonlang/internal/i18n"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
-	"github.com/fantasim/canonlang/internal/views/encode"
 )
 
 // Messages are the messages of check c, a named one-line check that failed on self (nil for a
@@ -54,7 +54,7 @@ func checkKey(pkg string, c *syntax.CheckDecl, self value.Value) (string, []stri
 	if owner == nil {
 		return "", nil, false
 	}
-	kpkg, prefix := encode.TypeKey(owner)
+	kpkg, prefix := i18n.TypeKey(owner)
 	return kpkg, append(prefix, name...), true
 }
 

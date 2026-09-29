@@ -2,8 +2,6 @@ package rules
 
 import (
 	"context"
-	"maps"
-	"slices"
 
 	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/diag"
@@ -11,7 +9,6 @@ import (
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/views/control"
-	"github.com/fantasim/canonlang/internal/views/shape"
 )
 
 // Check reports the static view findings of prog into its bags after check (DECISIONS 221):
@@ -50,7 +47,7 @@ func newChecker(prog *check.Program, bags check.Bags, studio string) *checker {
 	return &checker{
 		info:     prog.Info,
 		studio:   studioOf(prog, bags, studio),
-		controls: control.NewResolver(control.NewIndex(prog, studio, allErrors(bags)), control.Env{}),
+		controls: control.NewResolver(control.NewIndex(prog, studio), control.Env{}),
 		first:    map[any]source.Span{},
 		labels:   map[any]source.Span{},
 		given:    map[propKey]source.Span{},
@@ -60,7 +57,6 @@ func newChecker(prog *check.Program, bags check.Bags, studio string) *checker {
 // eachView runs fn on each checkable view of p's source files, in path and source order;
 // report says whether the target's own findings (E1603, E1607, E1626) are reported.
 func (c *checker) eachView(p *check.Package, bag *diag.Bag, report bool, fn func(*view)) {
-	errs := shape.Errors(bag.Findings())
 	for _, f := range p.Files {
 		if f.FileKind == syntax.FileSource {
 			fileViews(f, func(d *syntax.ViewDecl) {
@@ -68,7 +64,7 @@ func (c *checker) eachView(p *check.Package, bag *diag.Bag, report bool, fn func
 				if b != nil && report {
 					b.Report(bag)
 				}
-				if v != nil && !c.broken(v, errs) {
+				if v != nil && !c.broken(v) {
 					v.bag = bag
 					fn(v)
 				}
@@ -131,15 +127,4 @@ func (v *view) check() {
 	for _, it := range v.decl.Items {
 		v.item(it)
 	}
-}
-
-// allErrors are the errors of every package's bag that break a view (J4), packages in path
-// order.
-func allErrors(bags check.Bags) []source.Span {
-	names := slices.Sorted(maps.Keys(bags))
-	var out []source.Span
-	for _, name := range names {
-		out = append(out, shape.Errors(bags[name].Findings())...)
-	}
-	return out
 }

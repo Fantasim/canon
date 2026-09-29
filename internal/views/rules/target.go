@@ -87,9 +87,9 @@ func definesTable(t types.Type) bool {
 	return ok && tt.Elem == types.DefineType
 }
 
-// broken reports a view holding an error, or on a broken target (TYPES.md §1, VIEWMODEL.md J4).
-func (c *checker) broken(v *view, errs []source.Span) bool {
-	return c.info.Broken[v.target] || shape.ViewBroken(c.info, v.file, v.decl, errs)
+// broken reports a view holding an error, or on a broken target (VIEWMODEL.md J4, ADR-0009).
+func (c *checker) broken(v *view) bool {
+	return c.info.Broken[v.target] || check.ViewBroken(c.info, v.decl)
 }
 
 func isError(t types.Type) bool { return shape.IsError(t) }

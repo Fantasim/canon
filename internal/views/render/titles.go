@@ -4,11 +4,11 @@ import (
 	"slices"
 
 	"github.com/fantasim/canonlang/internal/check"
+	"github.com/fantasim/canonlang/internal/i18n"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
 	"github.com/fantasim/canonlang/internal/views/control"
-	"github.com/fantasim/canonlang/internal/views/encode"
 	"github.com/fantasim/canonlang/internal/views/shape"
 )
 
@@ -41,7 +41,7 @@ func (r *Renderer) views(e *value.Record) []described {
 	var out []described
 	add := func(t types.Type) {
 		if v, ok := r.in.Index.ViewOf(t); ok {
-			_, prefix := encode.TypeKey(t)
+			_, prefix := i18n.TypeKey(t)
 			out = append(out, described{view: v, prefix: prefix})
 		}
 	}
