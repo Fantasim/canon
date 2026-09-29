@@ -22,7 +22,7 @@ each proved by a test:
 
 **M4 in progress** (formatter and the edit API, `plan.md` "M4 — Formatter and the edit API",
 IMPLEMENTATION-PLAN §6 M4), run locally, started 2026-09-29. Unit ledger: [m4-units.md](m4-units.md).
-Waves 1 and 2 (15 units) on `main` (`18e5202`), each after one green `make check`; wave 3 next.
+Waves 1–3 (22 units) on `main` (`bd9da09`), each after one green `make check`; wave 3b next.
 Calls: [decisions/log-2026-09-29.md](decisions/log-2026-09-29.md) "M4".
 
 Landed after M3's acceptance list closed but before the stop, all on `main`:

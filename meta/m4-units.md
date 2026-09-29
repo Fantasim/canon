@@ -33,30 +33,30 @@ views/live · U10 check.Session · U11 eval.Memo · U12 parse reuse.
 U4b edit.Apply · U4c Commit/Recover (ADR-0010) · U5 Watch · U5a Evaluate/Refs/Format · U8 build
 memo wiring · U13 rules/verify caches + P9 · U9b show templates and methods · two wiring fixups.
 
-## Wave 3 (in flight; staged on `m4-wave3`: U1b, U6, U2b, P3, U5b — reviews passed)
+## Wave 3 — on `main` (`9d06725`..`bd9da09`)
 
-- U5b api edit surface: Edit transaction (E17–E21, S12, W5, W15, X2), Open → Recover (O5), drafts
-      (V13/V14), Op JSON, LockCheck (B4), live element naming, wire.Host factory; acceptance 5 via api [opus]
-- U6 `cli`: explain input fields, `canon refs`, `--watch` [sonnet]
-- U2b `fmt --json-sources` typed number canonicalization (FORMATTER §14.1); `--diff` via go-udiff [opus]
-- U1b `format` Move kind; edit's Move keeps comments [opus]
-- P12 perf: verify + rules memos, allocation cut; target [items] warm ≤150 ms p95 [opus]
-- P3 perf: load memo, one lineage per selection, rare compaction; target [items,twin] ≤300 ms p95 [opus]
-- B1 correctness: a Recheck re-spends journaled folds' steps (E4401 ≡ cold; DECISIONS 104
-      evidence) [opus] — in flight, parallel to P12's fix round
-- B2 one budget counter per invocation (DECISIONS 104; log M4 B1) [opus] — after wave 3 lands
-- Later: cleanup unit (duplicates, P9 leftovers, E1903 for a variant case declaring an input
-      field; a neighbour's 216 kept-comma line dropped by the M5 settle, described in M6; U5b nits:
-      `unwritable` gives absolute names their own reason, `lockStable` tests the table first; B1 nits:
-      `replayFolds` comment cites the real invariant (no fold reads an object broken at its time),
-      a free guard ending the lineage when swapped decls fold, `holdsCode` reuses `hasCode`) — after P12/P3 land.
-- P13 perf (after wave 3): `build/hosts.go` listings as maps, `lock` merge, `i18n` bad-node cache,
-      `check` `Info.cloned` [sonnet/opus by package]
+U1b format Move · U6 cli refs/--watch/explain inputs · U2b fmt --json-sources numbers · P3 load memo and
+lineages · U5b api edit surface (E17–E21, O5, drafts, Op JSON, LockCheck) · P12 stage B/C memos on eval
+entries · B1 Recheck folds on the program's Info. Memo architecture: ADR-0011. [items] warm p95 275 ms.
 
-## Wave 4 (gates, written now, run long once at the end)
+## Wave 3b (in flight, launched 2026-09-30)
 
-- U7a API.md rule-coverage test (`API.md <ID>` citations) [sonnet]
-- U7b stress (8 readers/1 editor/1 watcher; 2 s in make check, 60 s opt-in), minimal-write fuzz,
-  `make bench-edit` (NFR-01 p95s, CPU model printed) [opus]
+- B2 one budget counter per invocation (DECISIONS 104; log M4 B1) [opus]
+- P13b `lock` merge sorted once [sonnet] · P13c `i18n` bad-node walk not repeated per run [sonnet]
+- U7a API.md rule-coverage test and its gaps (acceptance 2) [sonnet]
+- U7b stress 8/1/1 (2 s in check, 60 s `make stress`), minimal-write fuzz on every example and the
+      benchmark (`make fuzz-edit`), `make bench-edit` NFR-01 gate (acceptance 3, 4, 6) [opus]
+
+## Wave 3c (after 3b)
+
+- P13a `build/hosts.go` listings as maps · P13d `check` `Info.cloned` allocation [opus]
+- Cleanup unit: duplicates, P9 leftovers, E1903 for a variant case declaring an input field; a
+      neighbour's 216 kept-comma line dropped by the M5 settle (M6); U5b nits (`unwritable` gives
+      absolute names their own reason, `lockStable` tests the table first); B1 nits (`replayFolds`
+      comment cites the real invariant, a free guard ending the lineage when swapped decls fold,
+      `holdsCode` reuses `hasCode`)
+
+## Final pass
+
 - Final pass (orchestrator, once): 10-min `FuzzFormat`/`FuzzFormatJSONSource`/`FuzzRewrite`, minimal-write
   fuzz, 60 s stress, NFR-01 bench, `-format.full`, `check-real`, then CI on `claude/m4-ci`.
