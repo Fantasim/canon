@@ -126,7 +126,7 @@ func TestBagKeepsADuplicateWhateverItsFileID(t *testing.T) {
 	}
 }
 
-// API.md F2: Write sorts findings of several packages the same whatever their order.
+// API.md F2, F16: Write sorts findings of several packages the same whatever their order.
 func TestWriteIsOrderIndependent(t *testing.T) {
 	a, b := fill(reports(), []int{0, 3, 5, 11}, 1), fill(reports(), []int{1, 4, 12, 13}, 1)
 	located := diag.Locate(orderFiles, append(a.Findings(), b.Findings()...))

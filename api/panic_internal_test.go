@@ -15,7 +15,7 @@ import (
 	"github.com/fantasim/canonlang/internal/syntax"
 )
 
-// Rule X2: a panic inside the compiler is an *InternalError, and the project stays usable.
+// API.md X2: a panic inside the compiler is an *InternalError, and the project stays usable.
 func TestPanicIsInternalError(t *testing.T) {
 	m := map[string][]byte{
 		"/law/project.canon": []byte("project a {\n  canon: \"0.1\"\n}\n"),
@@ -60,7 +60,7 @@ func (f mapFS) ReadDir(name string) ([]fs.DirEntry, error) {
 	return f.m.ReadDir(strings.TrimPrefix(name, "/"))
 }
 
-// Rules R3, X1, X2: a compiler bug a build reports as build.ErrInternal is an *InternalError, from
+// API.md R3, X1, X2: a compiler bug a build reports as build.ErrInternal is an *InternalError, from
 // Build as from Check, its text naming the sentinel once.
 func TestBuildInternalError(t *testing.T) {
 	fsys := newMapFS(map[string][]byte{

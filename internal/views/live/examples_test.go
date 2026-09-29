@@ -7,7 +7,7 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// API.md V6-V9 over examples/resource/farm, in French: the farm's translated title; its models
+// API.md V6, V8, V9 over examples/resource/farm, in French: the farm's translated title; its models
 // headed by `modelTypes[<typeId>]`, `{typeName}` having no key; a model's levels by `levels[<n>]`
 // with the French template `Palier {level}`.
 func TestExampleFarm(t *testing.T) {

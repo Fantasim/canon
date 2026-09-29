@@ -1,0 +1,12 @@
+package x
+
+import "testing"
+
+// API.md F9-F15: a range is not a citation.
+func TestRange(t *testing.T) {}
+
+// API.md E1, E2-E5.
+func TestOtherRange(t *testing.T) {}
+
+// API.md M1..M9 and API.md N1…N8.
+func TestDots(t *testing.T) {}

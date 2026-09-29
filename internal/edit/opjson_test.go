@@ -130,7 +130,7 @@ func TestOpJSONWriteRefusals(t *testing.T) {
 	}
 }
 
-// API.md E24-E26: decode(encode(op)) == op for the forms the JSON form carries.
+// API.md E24, E25, E26: decode(encode(op)) == op for the forms the JSON form carries.
 func TestOpJSONRoundTrip(t *testing.T) {
 	for _, op := range roundTripOps {
 		b, err := json.Marshal(op)
@@ -155,7 +155,7 @@ var roundTripOps = []edit.Operation{
 	{Kind: edit.OpRetire, Path: "t.x"},
 }
 
-// API.md E24-E26, fuzzed (IMPLEMENTATION-PLAN.md §7.7): decode(encode(op)) == op, stable bytes.
+// API.md E24, E25, E26, fuzzed (IMPLEMENTATION-PLAN.md §7.7): decode(encode(op)) == op, stable bytes.
 func FuzzOpJSON(f *testing.F) {
 	for _, op := range roundTripOps {
 		b, err := json.Marshal(op)

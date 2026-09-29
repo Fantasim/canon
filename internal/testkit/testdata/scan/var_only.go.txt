@@ -1,0 +1,15 @@
+package x
+
+import "testing"
+
+// API.md E1: on a helper, which proves nothing.
+func helper() {}
+
+// API.md E2: on a var.
+var citedVar = "API.md E3"
+
+const citedConst = "API.md E4"
+
+type citedType struct{}
+
+func TestNothing(t *testing.T) { helper() }

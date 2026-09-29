@@ -1,9 +1,9 @@
-API.md E9 (§7.2 order): Move inside a collection whose order comes from file paths is
-ErrNotEditable with reason order (rules_refuse_order_insert.txtar holds the Insert).
+API.md E9 (§7.2 order): Insert into a collection whose order comes from file paths is
+ErrNotEditable with reason order (refuse_order.txtar holds the Move).
 -- options --
 pkgs: pipe
 -- edit.json --
-{"ops": [{"op": "move", "path": "potions[II_POT_B]", "index": 0}]}
+{"ops": [{"op": "insert", "path": "potions", "index": 0, "source": "{ id: \"II_POT_C\" }"}]}
 -- project.canon --
 project acme {
   canon: "0.1"

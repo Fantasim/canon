@@ -10,7 +10,7 @@ import (
 
 const parallelSnapshots = 8
 
-// IMPLEMENTATION-PLAN §7.6 NFR-02, API.md S7-S8: snapshots analyzed at once through one cache.
+// IMPLEMENTATION-PLAN §7.6 NFR-02, API.md S7, S8: snapshots analyzed at once through one cache.
 func TestCacheConcurrentSnapshots(t *testing.T) {
 	base := archiveAnalyzer(t, entriesCase)
 	two := path.Join(archiveRoot, "a/items/two.canon")

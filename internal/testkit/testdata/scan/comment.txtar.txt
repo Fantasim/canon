@@ -1,0 +1,3 @@
+API.md E1, E2: the comment of a golden.
+-- API.md E3 --
+API.md E4 in a file section is not the comment.

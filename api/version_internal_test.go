@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// API.md §14: Commit is the compiler's revision, not the embedding program's; "" when unknown.
+// API.md T3: Commit is the compiler's revision, not the embedding program's; "" when unknown.
 func TestCommitOf(t *testing.T) {
 	stamped := func(modified string) []debug.BuildSetting {
 		return []debug.BuildSetting{{Key: "vcs.revision", Value: "0123456789abcdef0123456789abcdef01234567"}, {Key: "vcs.modified", Value: modified}}

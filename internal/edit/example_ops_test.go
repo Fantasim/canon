@@ -10,7 +10,7 @@ import (
 	"github.com/fantasim/canonlang/internal/types"
 )
 
-// An operation reads and writes the JSON form of an edit (API.md E24-E26).
+// An operation reads and writes the JSON form of an edit (API.md E24, E25, E26).
 func ExampleOperation_UnmarshalJSON() {
 	var op edit.Operation
 	err := json.Unmarshal([]byte(`{"op": "addEntry", "path": "statuses", "key": "blocked", "source": "{ terminal: false }"}`), &op)

@@ -1,0 +1,8 @@
+//go:build !knownbug
+
+package x
+
+import "testing"
+
+// API.md E1: the file runs whenever knownbug is off.
+func TestRuns(t *testing.T) {}

@@ -19,7 +19,7 @@ func project(files map[string]string) canon.Options {
 	return canon.Options{FS: newMemFS(m)}
 }
 
-// Rule O1: no project.canon above the directory is ErrNoProject, with its E1003 finding.
+// API.md O1: no project.canon above the directory is ErrNoProject, with its E1003 finding.
 func TestFindProjectNone(t *testing.T) {
 	_, err := canon.FindProject(t.TempDir())
 	var perr *canon.ProjectError
@@ -29,7 +29,7 @@ func TestFindProjectNone(t *testing.T) {
 	}
 }
 
-// Rules O2, O3, API.md §2.1: Open's errors, each with the sentinel of API.md §15.
+// API.md O2, O3, §2.1: Open's errors, each with the sentinel of API.md §15.
 func TestOpenErrors(t *testing.T) {
 	for _, c := range []struct {
 		files map[string]string
@@ -56,7 +56,7 @@ func TestOpenErrors(t *testing.T) {
 	}
 }
 
-// Rules R1, R3, O4, O6, S3: selector and layer errors, the revision, and Close.
+// API.md R1, R3, O4, O6, S3: selector and layer errors, the revision, and Close.
 func TestCheckErrors(t *testing.T) {
 	opts := project(map[string]string{
 		"project.canon": "project a {\n  canon: \"0.1\"\n}\n",
@@ -100,7 +100,7 @@ func TestCheckErrors(t *testing.T) {
 	}
 }
 
-// Rules R2, F2: a check's findings, located and sorted.
+// API.md R2, F2: a check's findings, located and sorted.
 func TestCheckFindings(t *testing.T) {
 	p, err := canon.Open("/law", project(map[string]string{
 		"project.canon": "project a {\n  canon: \"0.1\"\n}\n",
@@ -116,7 +116,7 @@ func TestCheckFindings(t *testing.T) {
 	}
 }
 
-// Rules S1, S3, O3: Revision refreshes, and a call after project.canon broke fails like Open.
+// API.md S1, S3, O3: Revision refreshes, and a call after project.canon broke fails like Open.
 func TestRefresh(t *testing.T) {
 	opts := project(map[string]string{"project.canon": "project a {\n  canon: \"0.1\"\n}\n", "x/x.canon": "package x\n"})
 	p, err := canon.Open("/law", opts)

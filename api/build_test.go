@@ -29,7 +29,7 @@ func openTierProject(t *testing.T, fsys canon.FS) *canon.Project {
 	return p
 }
 
-// DECISIONS 201: an unknown Target is refused with *ValueError, never dropped, and a list that
+// API.md B1b, DECISIONS 201: an unknown Target is refused with *ValueError, never dropped, and a list that
 // is entirely unknown must not widen to every target (a build of every emit would be a lie).
 func TestBuildUnknownTarget(t *testing.T) {
 	fsys := newMemFS(map[string][]byte{"/law/project.canon": []byte(buildTestProject), "/law/a/a.canon": tierPackage("a")})
@@ -44,7 +44,7 @@ func TestBuildUnknownTarget(t *testing.T) {
 	}
 }
 
-// S10: a writer publishes its new snapshot atomically; the revision in its result, and in
+// API.md B1b, S10: a writer publishes its new snapshot atomically; the revision in its result, and in
 // Project.Revision after it returns, is that snapshot's (canon.lock just changed).
 func TestBuildRevisionAfterWrite(t *testing.T) {
 	fsys := newMemFS(map[string][]byte{"/law/project.canon": []byte(buildTestProject), "/law/a/a.canon": tierPackage("a")})
@@ -91,7 +91,7 @@ func (w *writeProbe) WriteFile(name string, data []byte) error {
 	return err
 }
 
-// S7, S9: a Project is safe for concurrent use; a writing Build never overlaps another one, and
+// API.md S7, S8, S9: a Project is safe for concurrent use; a writing Build never overlaps another one, and
 // a Check (a read, S8) runs alongside a writer without error. Run with -race.
 func TestBuildSerializesWrites(t *testing.T) {
 	files := map[string][]byte{"/law/project.canon": []byte(buildTestProject)}

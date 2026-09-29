@@ -246,7 +246,7 @@ func budgetSteps(t *testing.T, n int, z *analyzer) {
 	}
 }
 
-// IMPLEMENTATION-PLAN §7.6 NFR-02, API.md S7-S8: snapshots share the stage B and C memos.
+// IMPLEMENTATION-PLAN §7.6 NFR-02, API.md S7, S8: snapshots share the stage B and C memos.
 func TestMemoConcurrentSnapshots(t *testing.T) {
 	base := archiveAnalyzer(t, memoCase)
 	two := path.Join(archiveRoot, "a/items/two.canon")

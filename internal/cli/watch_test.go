@@ -138,7 +138,7 @@ func watched(t *testing.T, a *txtar.Archive) string {
 	return normalize(fmt.Sprintf("[exit %d]\n[stdout]\n%s[stderr]\n%s", code, out.String(), errs.String()), tmp)
 }
 
-// CLI.md §3.3, §3.4, §2.5, IMPLEMENTATION-PLAN.md §8.1, API.md W12-W14: each case runs --watch, applies its `step<n>/<path>` files one by one, waits for each cycle, interrupts (exit 130).
+// CLI.md §3.3, §3.4, §2.5, IMPLEMENTATION-PLAN.md §8.1, API.md W12, W13: each case runs --watch, applies its `step<n>/<path>` files one by one, waits for each cycle, interrupts (exit 130).
 func TestWatch(t *testing.T) {
 	golden.Run(t, "testdata/watch/*.txtar", func(t *testing.T, c golden.Case) []byte {
 		t.Helper()

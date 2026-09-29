@@ -45,7 +45,7 @@ type goldenCase struct {
 	undoUnordered bool // E22: entries whose order their files' paths give are compared as a set
 }
 
-// API.md E1-E16, E22, E23, M1-M9, N1-N8, IMPLEMENTATION-PLAN 7.4: every edit golden
+// API.md M5, M6, N12, IMPLEMENTATION-PLAN 7.4: every edit golden
 // applies, writes what its archive holds, and keeps the minimal-write invariant M6.
 func TestEditGoldens(t *testing.T) {
 	paths, err := filepath.Glob(filepath.Join("testdata", "edits", "*.txtar"))

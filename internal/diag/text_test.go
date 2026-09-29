@@ -45,7 +45,7 @@ func render(t *testing.T, files diag.Files, bag *diag.Bag, opt diag.RenderOption
 	return buf.Bytes()
 }
 
-// API.md F9-F15: the heistia and farm examples' findings.txt, byte for byte.
+// API.md F9, F10, F11, F12, F13, F14, F15: the heistia and farm examples' findings.txt, byte for byte.
 func TestTextFormEqualsExampleFindings(t *testing.T) {
 	heistia := diag.MemFiles{
 		{Path: "@resource/Server/System/heistia_config.json", Content: "{}\n"},
@@ -144,7 +144,7 @@ func truncated(files diag.MemFiles, format diag.Format) (*diag.Bag, diag.RenderO
 	return bag, diag.RenderOptions{Format: format, Summary: other.Summary(), Duration: 12 * time.Millisecond}
 }
 
-// API.md F5, F9-F15: the text and JSON forms of testdata/render, as goldens.
+// API.md F5, F9, F10, F11, F12, F13, F14, F15: the text and JSON forms of testdata/render, as goldens.
 func TestRenderGoldens(t *testing.T) {
 	golden.Run(t, "testdata/render/*.txtar", func(t *testing.T, c golden.Case) []byte {
 		t.Helper()

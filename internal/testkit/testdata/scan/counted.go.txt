@@ -1,0 +1,20 @@
+package x
+
+import "testing"
+
+// API.md E1, E2 and E3: the doc comment of a test.
+func TestDoc(t *testing.T) {}
+
+func TestBody(t *testing.T) {
+	// API.md M6 in the body.
+	_ = 1
+}
+
+// API.md V4a.
+func FuzzIt(f *testing.F) {}
+
+// API.md N1, §3.2 N2.
+func ExampleIt() {}
+
+// API.md W1: a method is not a test function.
+func (r T) TestMethod() {}

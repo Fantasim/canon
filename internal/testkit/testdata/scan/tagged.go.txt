@@ -1,0 +1,8 @@
+//go:build knownbug
+
+package x
+
+import "testing"
+
+// API.md E1: a known bug, which does not run.
+func TestKnown(t *testing.T) {}

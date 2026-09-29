@@ -171,7 +171,7 @@ func mustValue(t *testing.T, p *canon.Project, path string) *canon.Value {
 	return v
 }
 
-// Rules P6-P10, P7a: roots are found as P6 and P7 say, and every path comes back canonical,
+// API.md P6, P7, P7a, P8, P9, P10: roots are found as P6 and P7 say, and every path comes back canonical,
 // package-qualified.
 func TestValueCanonicalPaths(t *testing.T) {
 	p := openValueLaw(t)
@@ -197,7 +197,7 @@ func TestValueCanonicalPaths(t *testing.T) {
 	}
 }
 
-// Rules R5, R6, P5, P6, X1, API.md §15: each refusal is a *PathError wrapping its sentinel.
+// API.md R5, R6, P5, P6, X1, §15: each refusal is a *PathError wrapping its sentinel.
 func TestValueErrors(t *testing.T) {
 	p := openValueLaw(t)
 	for _, c := range []struct {
@@ -334,7 +334,7 @@ func TestValueAccessors(t *testing.T) {
 	}
 }
 
-// API.md §5.2, rule R4: Children and Child read the value's own snapshot; JSON is the wire form.
+// API.md §5.2, R4: Children and Child read the value's own snapshot; JSON is the wire form.
 func TestValueChildren(t *testing.T) {
 	p := openValueLaw(t)
 	cfg := mustValue(t, p, "config")
@@ -379,7 +379,7 @@ func TestValueChildren(t *testing.T) {
 	}
 }
 
-// Rule R4: a Value holds its snapshot: a later change to the files leaves it and its children as
+// API.md R4: a Value holds its snapshot: a later change to the files leaves it and its children as
 // they were, while a new read sees the change.
 func TestValueHoldsSnapshot(t *testing.T) {
 	opts := project(valueLaw)
@@ -415,7 +415,7 @@ func TestValueEditLayer(t *testing.T) {
 	}
 }
 
-// Rule R6, EVALUATION.md §7.2: ErrNoValue wraps the recorded cause, the root's own or upstream.
+// API.md R6, EVALUATION.md §7.2: ErrNoValue wraps the recorded cause, the root's own or upstream.
 func TestValueNoValueCauses(t *testing.T) {
 	p, err := canon.Open("/law", project(map[string]string{
 		"project.canon": "project acme {\n  canon: \"0.1\"\n}\n",

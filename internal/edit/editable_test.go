@@ -211,7 +211,7 @@ func TestReasonKey(t *testing.T) {
 	})
 }
 
-// API.md §7.2 pseudo: `.id`, `.retired`, `.kind` (P3).
+// API.md P3, §7.2: the pseudo-fields `.id`, `.retired` and `.kind` are never editable.
 func TestReasonPseudo(t *testing.T) {
 	checkEdits(t, examples(t, nil, "teamboard"), []editCase{
 		{in: "teamboard:statuses.open.id", reason: edit.ReasonPseudo},

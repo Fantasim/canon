@@ -89,7 +89,7 @@ func TestFindingJSONRoundTrip(t *testing.T) {
 	}
 }
 
-// API.md F5: a key F5 does not list, or a severity other than error and warning, is refused.
+// API.md F5, F6: a key F5 does not list, or a severity other than error and warning, is refused.
 func TestFindingJSONRefuses(t *testing.T) {
 	for _, in := range []string{
 		`{"severity":"error","code":"X","package":"p","message":"m","extra":1}`,

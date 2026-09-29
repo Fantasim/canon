@@ -1,0 +1,65 @@
+API.md E5: Set of the whole value of a keyed-list element whose key field differs from the
+current key is ErrNotEditable with reason key; the same key is accepted (set_record.txtar).
+-- options --
+pkgs: farm
+-- edit.json --
+{"ops": [
+  {"op": "set", "path": "farm.models[3]", "source": "{ typeId: 4, name: \"obj_UC018\" }"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- farm/farm.canon --
+package farm
+
+/// A season.
+enum Season { spring, summer, autumn }
+
+/// A model.
+record Model {
+  /// Its id.
+  typeId: Int
+  /// Its name.
+  name: String
+  /// Weights per season.
+  weights: {Season: Int} = {}
+}
+
+/// The farm's configuration.
+record Config {
+  /// Its name.
+  name: String
+  /// Its levels.
+  levels: [Int]
+  /// A hint.
+  hint: String = ""
+  /// A note.
+  note: String = ""
+}
+
+/// The farm.
+record Farm {
+  /// Configuration.
+  config: Config
+  /// Models.
+  models: [Model] keyed by typeId
+}
+
+/// The farm.
+let farm: Farm = {
+  config: {
+    // the display name
+    name: "Farm"
+    levels: [1, 2, 3]
+    note: "old"
+  }
+  models: [
+    { typeId: 3, name: "obj_UC017", weights: { spring: 1, summer: 2, autumn: 3 } },
+    { typeId: 4, name: "obj_UC020" },
+  ]
+}
+-- result.json --
+{
+  "error": "op 0: value not editable: reason key"
+}

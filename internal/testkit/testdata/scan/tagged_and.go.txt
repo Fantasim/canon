@@ -1,0 +1,8 @@
+//go:build linux && knownbug
+
+package x
+
+import "testing"
+
+// API.md E1: the tag is required among others.
+func TestKnown(t *testing.T) {}
