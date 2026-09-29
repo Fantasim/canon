@@ -17,6 +17,9 @@ func retireOp(x *opCtx) error {
 	case isRetired(rec):
 		return nil
 	}
+	if len(x.res.Steps) == 1 && rec.Ident != nil {
+		x.w.locked = append(x.w.locked, Locked{Name: x.res.root.lockName(), Key: rec.Ident.Key.Text()})
+	}
 	c := x.j.last()
 	if c.mode == ModeJSON {
 		n, display, err := x.jsonAt(rec)
@@ -56,6 +59,7 @@ func (a *applier) retireMember(res resolution) (*work, error) {
 		return newWork(), nil
 	}
 	w := newWork()
+	w.locked = append(w.locked, Locked{Name: res.root.lockName(), Key: res.root.enum.Members[m.Index].Name})
 	f := res.root.obj.File()
 	w.addCanon(f.Src.Path, res.root.pkg.Path, []format.Change{{Kind: format.Retire, Node: d.Members[m.Index]}})
 	return w, nil

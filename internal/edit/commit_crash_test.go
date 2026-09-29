@@ -1,6 +1,7 @@
 package edit_test
 
 import (
+	"encoding/json"
 	"errors"
 	"testing"
 
@@ -55,9 +56,9 @@ func TestCommitCrashDeathAfterRename(t *testing.T) {
 	}
 }
 
-// API.md O5, N6, N10, N11: the process dies at any write of a commit, or of the rollback of any
-// failed rename, a WriteFile it dies in left half written (the journal's included); Recover
-// puts every file and directory back, logging one Warn line exactly when it changed something.
+// API.md O5, N6, N10, N11: the process dies at any write of a commit or of a failed rename's
+// rollback, a WriteFile it dies in half written; Recover puts everything back, with one Warn line
+// exactly when it removed a whole journal, a torn one silently (log-2026-09-29 M4 U5b).
 func TestCommitCrashDeathAnywhere(t *testing.T) {
 	renames, _ := counts(t, 0)
 	for fail := 0; fail <= renames; fail++ {
@@ -68,10 +69,10 @@ func TestCommitCrashDeathAnywhere(t *testing.T) {
 			if err := commitIn(&faultFS{diskFS: d, failRename: fail, dieAtOp: die}, changes); err == nil {
 				t.Fatalf("fail %d die %d: a dead commit returned nil", fail, die)
 			}
-			dirty := d.settled() != before
+			dirty, whole := d.settled() != before, json.Valid(d.files[journalFile])
 			lines, err := warnings(t, d)
-			if err != nil || (len(lines) == 1) != dirty || len(lines) > 1 {
-				t.Fatalf("fail %d die %d: dirty %v, Recover logged %v, err %v", fail, die, dirty, lines, err)
+			if err != nil || (len(lines) == 1) != whole || len(lines) > 1 || dirty && !whole {
+				t.Fatalf("fail %d die %d: dirty %v, journal whole %v, Recover logged %v, err %v", fail, die, dirty, whole, lines, err)
 			}
 			mustState(t, d.state(), before)
 		}

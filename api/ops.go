@@ -3,6 +3,8 @@ package canon
 import (
 	"encoding/json"
 	"time"
+
+	"github.com/fantasim/canonlang/internal/edit"
 )
 
 // Lit is a value given to an edit operation; the set is closed (API.md §8.2).
@@ -65,7 +67,8 @@ func Int(n int64) Lit {
 	return intLit{n}
 }
 
-// Float is a Float or Float32 value. NaN and infinities are refused (E3202).
+// Float is a Float or Float32 value. NaN and the infinities fit no type: an edit refuses them
+// with a *ValueError (rule V1).
 func Float(f float64) Lit {
 	return floatLit{f}
 }
@@ -189,12 +192,58 @@ func SetCase(path, caseName string, fields Obj) Op {
 	return op
 }
 
-// MarshalJSON writes the JSON form of rules E24-E26.
+// MarshalJSON writes the JSON form of rules E24-E26: a FromJSON value as `value`, any other as
+// `source`, canonical and single-line; a value with no Canon literal (a NaN Float) fails.
 func (o Op) MarshalJSON() ([]byte, error) {
-	return nil, errUnimplemented()
+	op, err := o.opJSON()
+	if err != nil {
+		return nil, err
+	}
+	return op.MarshalJSON()
 }
 
-// UnmarshalJSON reads the JSON form of rules E24-E26.
+// UnmarshalJSON reads the JSON form of rules E24-E26, a `key` string read later as a path key
+// (E25); an unknown, repeated or misplaced member is a *PathError wrapping ErrBadOp.
 func (o *Op) UnmarshalJSON(data []byte) error {
-	return errUnimplemented()
+	op, err := decodeOp(data, -1)
+	if err != nil {
+		return err
+	}
+	*o = op
+	return nil
+}
+
+// UnmarshalJSON reads the JSON form of API.md 8.8; what does not decode is a *PathError wrapping
+// ErrBadOp, its Detail the reason, its Op the index of the op at fault (log-2026-09-29 M4 U5b-r).
+func (e *Edit) UnmarshalJSON(data []byte) error {
+	type plain Edit
+	var in struct {
+		plain
+		Ops []json.RawMessage `json:"ops"`
+	}
+	if err := json.Unmarshal(data, &in); err != nil {
+		return &PathError{Op: -1, Err: ErrBadOp, Detail: err.Error()}
+	}
+	out := Edit(in.plain)
+	out.Ops = nil
+	if in.Ops != nil {
+		out.Ops = make([]Op, len(in.Ops))
+	}
+	for i, raw := range in.Ops {
+		var err error
+		if out.Ops[i], err = decodeOp(raw, i); err != nil {
+			return err
+		}
+	}
+	*e = out
+	return nil
+}
+
+// decodeOp is the op of JSON data, index i of its edit (-1 for none), or ErrBadOp (rule E24).
+func decodeOp(data []byte, i int) (Op, error) {
+	var op edit.Operation
+	if err := op.UnmarshalJSON(data); err != nil {
+		return Op{}, &PathError{Op: i, Err: ErrBadOp, Detail: err.Error()}
+	}
+	return opOf(op), nil
 }

@@ -12,6 +12,7 @@ import (
 
 	"github.com/fantasim/canonlang/internal/build"
 	"github.com/fantasim/canonlang/internal/diag"
+	"github.com/fantasim/canonlang/internal/edit"
 	"github.com/fantasim/canonlang/internal/project"
 	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/workspace"
@@ -91,10 +92,23 @@ func Open(root string, opts Options) (p *Project, err error) {
 	if err != nil {
 		return nil, apiError(err)
 	}
+	if err := workspace.Recover(b, opts.Logger); err != nil {
+		return nil, journalError(err)
+	}
 	return &Project{
 		root: dir, b: b, editLayer: opts.EditLayer, layers: slices.Clone(opts.Layers), lang: opts.Lang,
 		logger: opts.Logger, osFiles: opts.FS == nil, roots: maps.Clone(opts.Roots),
 	}, nil
+}
+
+// journalError is a project state that forbids writing, ErrProject with edit's reason, journal
+// and files, for the user to resolve (rule O5, log-2026-09-29 M4 U5b-r): an unfinished edit Open
+// or a commit met, a path hidden or through a symbolic link; any other error as it is.
+func journalError(err error) error {
+	if errors.Is(err, edit.ErrJournal) || errors.Is(err, edit.ErrUnwritable) {
+		return fmt.Errorf(fmtWrap, ErrProject, err)
+	}
+	return err
 }
 
 // Close releases the project and stops every Watch (rule O6).

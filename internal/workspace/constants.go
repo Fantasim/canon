@@ -50,7 +50,9 @@ const (
 	OpViewModel Op = "viewmodel"
 	OpTest      Op = "test"
 	OpBuild     Op = "build"
+	OpLockCheck Op = "lockcheck"
 	opEvaluate  Op = "evaluate"
+	opDraft     Op = "draft"
 )
 
 // listingDisplay stands for a scan that failed in a revision (API.md S3); pathSep separates names.
@@ -67,12 +69,10 @@ const (
 	listSep    = ", "
 )
 
-// A path inside another starts with one of these (API.md P8); a plain-list element with no view
-// is named `#<n>`, from 1 (VIEWMODEL.md S9).
+// A path inside another starts with one of these (API.md P8).
 const (
-	fieldMark   = "."
-	keyMark     = "["
-	positionTag = "#"
+	fieldMark = "."
+	keyMark   = "["
 )
 
 // A watch's timing (API.md W14) and how often it polls, or resyncs an OS watcher.

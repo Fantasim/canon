@@ -154,14 +154,14 @@ func TestRemoveAllKeepsLinkTargets(t *testing.T) {
 	}
 }
 
-// log-2026-09-29 M4 U4c-r3: a commit whose files lie through a symbolic link below the project
-// is refused as ErrChanges before anything is written: its rollback could not follow them.
+// log-2026-09-29 M4 U4c-r3, U5b-r: a commit whose files lie through a symbolic link below the
+// project is refused as ErrUnwritable before anything is written: its rollback could not follow them.
 func TestCommitThroughLink(t *testing.T) {
 	d := newDiskFS(map[string]string{"/p/real/a.canon": "a old\n"})
 	d.link("/p/items", "/p/real")
 	before := d.state()
 	changes := []edit.Change{{Kind: edit.ChangeModified, Path: "items/a.canon", Before: []byte("a old\n"), After: []byte("a new\n")}}
-	if err := commitIn(d, changes); !errors.Is(err, edit.ErrChanges) || errors.Is(err, edit.ErrJournal) {
+	if err := commitIn(d, changes); !errors.Is(err, edit.ErrUnwritable) || errors.Is(err, edit.ErrJournal) {
 		t.Fatalf("err = %v", err)
 	}
 	mustState(t, d.state(), before)

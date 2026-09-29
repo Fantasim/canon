@@ -115,8 +115,8 @@ func ExampleProject_LockCheck() {
 	if err != nil {
 		return
 	}
-	fmt.Println(res.Revision, res.Packages, res.HasErrors())
-	// Output:
+	fmt.Println(res.Revision == p.Revision(), len(res.Packages) > 0, res.HasErrors(), res.Summary.Warnings > 0)
+	// Output: true true false true
 }
 
 func ExampleFinding_MarshalJSON() {

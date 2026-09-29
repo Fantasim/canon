@@ -3,6 +3,7 @@ package edit
 import (
 	"slices"
 
+	"github.com/fantasim/canonlang/internal/build"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
 )
@@ -23,6 +24,7 @@ func setOp(x *opCtx) error {
 	if err := x.undoSet(); err != nil {
 		return err
 	}
+	x.lockStable()
 	x.nw = v
 	if x.setsDefault(v) {
 		return x.change(nil)
@@ -45,7 +47,22 @@ func resetOp(x *opCtx) error {
 	if err := x.undoSet(); err != nil {
 		return err
 	}
+	x.lockStable()
 	return x.change(nil)
+}
+
+// lockStable records the entry of a root stable table whose @stable field the operation sets, one
+// the lock does not hold yet, for its lock lines (API.md E20; log-2026-09-29 M4 U5b-r2, U5b-r3).
+func (x *opCtx) lockStable() {
+	rec, f, ok := x.field()
+	if !ok || !f.Stable || len(x.res.Steps) != stableDepth || rec.Ident == nil {
+		return
+	}
+	id := Locked{Name: x.res.root.lockName(), Key: rec.Ident.Key.Text()}
+	held := x.a.snap.a.LockHolds(build.LockID{Name: id.Name, Key: id.Key})
+	if tt, ok := baseOf(x.res.Steps[0].Container).(*types.TableType); ok && tt.Stable && !held {
+		x.w.locked = append(x.w.locked, id)
+	}
 }
 
 // field is the record the path's last step reads a field of, and that field.

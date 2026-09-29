@@ -44,6 +44,11 @@ type rootRef struct {
 	enum *types.EnumType
 }
 
+// lockName is the root as canon.lock names a collection, `package.name` (API.md E20).
+func (r rootRef) lockName() string {
+	return r.pkg.Path + dotSeg + r.obj.Name()
+}
+
 // qualified is the root in path form, `package:name`.
 func (r rootRef) qualified() string {
 	return r.pkg.Path + packageMark + r.obj.Name()
@@ -118,7 +123,7 @@ func (s *Snapshot) force(r rootRef) (value.Value, error) {
 	if s.a.Bag(r.pkg.Path) == nil {
 		return nil, &PathError{Seg: rootSeg, Err: ErrNotAnalyzed}
 	}
-	return nil, &PathError{Seg: rootSeg, Err: ErrNoValue, Root: eval.Root{Pkg: r.pkg.Path, Name: r.obj.Name()}}
+	return nil, &PathError{Seg: rootSeg, Err: ErrNoValue, Root: eval.Root{Pkg: r.pkg.Path, Name: r.obj.Name()}, At: s.a}
 }
 
 // display is the display path of a file of the snapshot, "" for none.

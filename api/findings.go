@@ -12,6 +12,7 @@ import (
 	"github.com/fantasim/canonlang/internal/build"
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/source"
+	"github.com/fantasim/canonlang/internal/workspace"
 )
 
 // Span is a range in a file: 1-based, UTF-8 byte columns, exclusive end (API.md §1.3).
@@ -194,7 +195,25 @@ func checkResultOf(r build.Result, d time.Duration) *CheckResult {
 	}
 }
 
-// LockCheck verifies canon.lock of the selected packages (rule B4).
-func (p *Project) LockCheck(ctx context.Context, packages ...string) (*CheckResult, error) {
-	return nil, errUnimplemented()
+// LockCheck verifies canon.lock of the selected packages, evaluating only the stable collections
+// and what they depend on (rule B4): a shared read of the snapshot (S8), W6006 where the sources
+// hold values the lock lacks.
+func (p *Project) LockCheck(ctx context.Context, packages ...string) (res *CheckResult, err error) {
+	defer recoverInternal(&err)
+	start := time.Now()
+	s, err := p.read(ctx)
+	if err != nil {
+		return nil, err
+	}
+	r, err := share(ctx, s, workspace.Key(workspace.OpLockCheck, packages), func(ctx context.Context) (*build.Result, error) {
+		return s.Build().LockCheck(ctx, packages)
+	})
+	if err != nil {
+		return nil, err
+	}
+	res = checkResultOf(*r, time.Since(start))
+	if res.Revision, err = p.revision(ctx, s); err != nil {
+		return nil, err
+	}
+	return res, nil
 }

@@ -30,16 +30,19 @@ func ExampleProject_Evaluate() {
 	if err != nil {
 		return
 	}
-	fmt.Println(res.Path, res.Title.Value, res.Title.OK, res.Title.Fallback, res.Subtitle.Value, res.Preview)
+	fmt.Printf("%s %q %v %v %q %q\n", res.Path, res.Title.Value, res.Title.OK, res.Title.Fallback, res.Subtitle.Value, res.Preview)
+	var lines []string
 	for _, line := range res.Show {
-		fmt.Println(line.Owner, line.Key, line.Label, line.Text.Value)
+		lines = append(lines, line.Label+": "+line.Text.Value)
 	}
 	for _, key := range slices.Sorted(maps.Keys(res.Headings)) {
-		h := res.Headings[key]
-		fmt.Println(key, h.Title.Value, h.Subtitle.Value, h.Preview, h.Retired, len(h.Cells))
+		lines = append(lines, key+" "+res.Headings[key].Title.Value)
 	}
-	fmt.Println(res.Revision, len(res.When), len(res.Types), len(res.Findings), res.Summary.Errors, len(res.Dropped))
-	// Output:
+	fmt.Println(lines)
+	fmt.Println(res.Revision == p.Revision(), len(res.When), len(res.Types), len(res.Findings), res.Summary.Errors, len(res.Dropped))
+	// Output: teamboard:statuses.open "open" true false "" ""
+	// [next[0] #1 next[1] #2 next[2] #3]
+	// true 0 0 0 0 0
 }
 
 func ExampleProject_Watch() {

@@ -40,7 +40,7 @@ func Recover(s Site, logger *slog.Logger) error {
 	rolled, changes := 0, 0
 	for _, name := range names {
 		n, err := recoverOne(s, name)
-		if n > 0 {
+		if n > 0 || n == 0 && err == nil { // a decodable journal removed is an edit rolled back
 			rolled++
 			changes += n
 		}
@@ -56,13 +56,13 @@ func Recover(s Site, logger *slog.Logger) error {
 
 // journals are the journal files under dir, in byte order; none when there is no journal directory.
 func journals(fsys build.WriteFS, dir string) ([]string, error) {
-	jdir := path.Join(dir, journalDir)
+	jdir := path.Join(dir, JournalDir)
 	entries, err := fsys.ReadDir(jdir)
 	if errors.Is(err, fs.ErrNotExist) {
 		return nil, nil
 	}
 	if err != nil {
-		return nil, fmt.Errorf(fmtFileErr, journalDir, err)
+		return nil, fmt.Errorf(fmtFileErr, JournalDir, err)
 	}
 	var out []string
 	for _, e := range entries {
@@ -75,7 +75,8 @@ func journals(fsys build.WriteFS, dir string) ([]string, error) {
 }
 
 // recoverOne rolls back the edit of the journal file name and removes it, unless its writer
-// still runs or it was written on another machine; it returns how many entries it changed.
+// still runs or it was written on another machine; it returns how many entries it changed, -1
+// when it rolled nothing back: a torn journal, a running writer (log-2026-09-29 M4 U5b).
 func recoverOne(s Site, name string) (int, error) {
 	data, err := s.FS.ReadFile(name)
 	if err != nil {
@@ -83,10 +84,10 @@ func recoverOne(s Site, name string) (int, error) {
 	}
 	var j journal
 	if json.Unmarshal(data, &j) != nil {
-		return 0, removeJournal(s.FS, name) // cut short before any file changed: WriteFile is atomic
+		return -1, removeJournal(s.FS, name) // cut short before any file changed: WriteFile is atomic
 	}
 	if s.Self.running(&j) {
-		return 0, nil
+		return -1, nil
 	}
 	if j.Host != s.Self.Host {
 		return 0, &fault{reasonForeign, j.Host}

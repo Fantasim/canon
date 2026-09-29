@@ -7,6 +7,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/fantasim/canonlang/internal/build"
 	"github.com/fantasim/canonlang/internal/eval"
 )
 
@@ -43,11 +44,13 @@ func (e *SyntaxError) Unwrap() []error {
 }
 
 // PathError is a path Resolve refuses: Err at segment Seg, -1 for the root; Candidates are the
-// roots an ambiguous path matches, sorted; Root is the poisoned root of ErrNoValue.
+// roots an ambiguous path matches, sorted; Root is the poisoned root of ErrNoValue, and At the
+// analysis it was read in, whose findings explain it (API.md R6; log-2026-09-29 M4 U5b-r).
 type PathError struct {
 	Seg        int
 	Candidates []string
 	Root       eval.Root
+	At         *build.Analysis
 	Err        error
 }
 
@@ -99,13 +102,14 @@ var (
 )
 
 // NotEditableError is an operation on a value it cannot edit (API.md W5, E5, E12): the reason,
-// the computed value's structural origin, the layer that sets it, and for a rename every
-// reference that is not editable, by path.
+// the computed value's structural origin, the layer that sets it, for a rename every reference
+// that is not editable, by path, and the hidden path that holds a value no edit writes.
 type NotEditableError struct {
 	Reason Reason
 	Origin string
 	Layer  string
 	Refs   []string
+	File   string
 }
 
 func (e *NotEditableError) Error() string {
@@ -176,6 +180,8 @@ var (
 	ErrRevision = errors.New("invalid revision")
 	ErrJournal  = errors.New("unfinished edit journal")
 	ErrChanges  = errors.New("invalid file changes")
+	// ErrUnwritable is a change through a symbolic link or a hidden path (log-2026-09-29 M4 U5b-r).
+	ErrUnwritable = errors.New("file cannot be written by an edit")
 )
 
 // StaleError is a commit refused because files changed on disk since the snapshot the edit was

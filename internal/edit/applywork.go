@@ -29,6 +29,7 @@ type work struct {
 	owners  map[string]string // the package owning each file written, by display path
 	dropped []Dropped
 	records []touched
+	locked  []Locked
 }
 
 // jsonEdit is an edit of a JSON source and the offset it applies at in the current text: the
@@ -146,8 +147,31 @@ func parseKind(f *syntax.File) syntax.FileKind {
 	return syntax.FileSource
 }
 
+// unwritable refuses work that writes a file on a hidden path, as a commit would, so Apply,
+// DryRun and Edit refuse alike (API.md N10; log-2026-09-29 M4 U5b-r3).
+func (w *work) unwritable() error {
+	names := slices.Concat(slices.Collect(maps.Keys(w.canon)), slices.Collect(maps.Keys(w.json)))
+	for _, nf := range w.creates {
+		names = append(names, nf.display)
+	}
+	for _, m := range w.moves {
+		names = append(names, m.from, m.to)
+	}
+	for _, r := range w.removes {
+		names = append(names, r.display)
+	}
+	slices.Sort(names)
+	if i := slices.IndexFunc(names, func(d string) bool { return !visible(d) }); i >= 0 {
+		return journalRefusal(ErrUnwritable, &fault{reasonHidden, names[i]})
+	}
+	return nil
+}
+
 // commit makes w's changes in memory: edits, then renames, deletions and creations.
 func (a *applier) commit(w *work) error {
+	if err := w.unwritable(); err != nil {
+		return err
+	}
 	for _, d := range slices.Sorted(maps.Keys(w.canon)) {
 		if err := a.rewriteCanon(d, w.canon[d]); err != nil {
 			return err
@@ -179,6 +203,7 @@ func (a *applier) commit(w *work) error {
 	maps.Copy(a.owners, w.owners)
 	a.dropped = append(a.dropped, w.dropped...)
 	a.records = append(a.records, w.records...)
+	a.locked = append(a.locked, w.locked...)
 	a.dirty = true
 	return nil
 }

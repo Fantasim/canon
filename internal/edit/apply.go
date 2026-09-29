@@ -1,6 +1,7 @@
 package edit
 
 import (
+	"cmp"
 	"context"
 	"encoding/json"
 	"errors"
@@ -30,14 +31,24 @@ type Request struct {
 
 // Plan is an edit computed in memory: its files by path then the directories left empty, deepest
 // first (N6); the values cascades dropped; its Undo; the packages owning a written file (E17);
-// the files not in canonical layout before it (M9). Nothing is written, locked or published.
+// the files not in canonical layout before it (M9); the ids it adds or retires (E20).
 type Plan struct {
 	Changes      []Change
 	Dropped      []Dropped
 	Undo         []Operation
 	Touched      []string
 	NotCanonical []string
+	Locked       []Locked
 	writes       map[string][]writeStep // each changed file's writes, for tests of M6
+}
+
+// Locked is an id an edit adds or retires, as canon.lock names its collection (API.md E20).
+type Locked struct {
+	Name, Key string
+}
+
+func compareLocked(a, b Locked) int {
+	return cmp.Or(cmp.Compare(a.Name, b.Name), cmp.Compare(a.Key, b.Key))
 }
 
 // Dropped is a value a cascade removed: its canonical path with its package, its wire form.
@@ -100,6 +111,7 @@ type applier struct {
 	// cascadeUndo are the cascades' inverses, which follow every other one (log-2026-09-29 M4 U4b-r)
 	cascadeUndo []Operation
 	emptied     map[string]string // a directory a file left, to the package directory it stops below (N6)
+	locked      []Locked
 }
 
 func newApplier(ctx context.Context, env Env, base *Snapshot) *applier {
@@ -187,6 +199,8 @@ func (a *applier) editable(j *judge) error {
 		return &NotEditableError{Reason: reason, Origin: a.snap.origin(j.res.Target)}
 	case ReasonLayered:
 		return &NotEditableError{Reason: reason, Layer: j.last().layer}
+	case ReasonFormat:
+		return &NotEditableError{Reason: reason, File: j.hiddenFile()}
 	default:
 		return &NotEditableError{Reason: reason}
 	}
@@ -243,6 +257,7 @@ func (a *applier) finish() *Plan {
 		}
 	}
 	p.Touched = slices.Sorted(maps.Keys(touched))
+	p.Locked = slices.Compact(slices.SortedFunc(slices.Values(a.locked), compareLocked))
 	slices.SortStableFunc(p.Dropped, func(x, y Dropped) int { return strings.Compare(x.Path, y.Path) })
 	return p
 }

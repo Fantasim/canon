@@ -166,6 +166,23 @@ var (
 	}
 )
 
+// opKinds names each of edit's operations as the API does, indexed by edit's (rule E24).
+var opKinds = [...]OpKind{
+	edit.OpSet: OpSet, edit.OpReset: OpReset, edit.OpAdd: OpAdd, edit.OpInsert: OpInsert,
+	edit.OpAddEntry: OpAddEntry, edit.OpRemove: OpRemove, edit.OpMove: OpMove, edit.OpRename: OpRename,
+	edit.OpRetire: OpRetire, edit.OpUnretire: OpUnretire, edit.OpSetCase: OpSetCase,
+}
+
+// opUnknown is an Op kind the API does not name, which edit refuses (rule E2).
+const opUnknown = edit.OpSetCase + 1
+
+// changeKinds names each kind of file change as the API does, indexed by edit's; a removed
+// directory is no FileChange (rule N6).
+var changeKinds = [...]ChangeKind{
+	edit.ChangeModified: Modified, edit.ChangeCreated: Created, edit.ChangeDeleted: Deleted,
+	edit.ChangeRenamed: Renamed, edit.ChangeRemovedDir: "",
+}
+
 // refKinds names each of edit's reference kinds as the API does, indexed by edit's (rule R7).
 var refKinds = [...]RefKind{
 	edit.RefValue: RefValue, edit.RefKey: RefKey, edit.RefCode: RefCode,
@@ -231,7 +248,6 @@ const (
 	fmtTypeVM        = "type %s: %w"
 	fmtDecodeFinding = "finding: %w"
 	fmtSeverity      = "%w %q"
-	msgUnimplemented = "unimplemented"
 	fmtWrap          = "%w: %w"
 	fmtEncodeJSON    = "%s: %w"
 	typeEvalResult   = "EvalResult"

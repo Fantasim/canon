@@ -174,12 +174,16 @@ func textEnds(data []byte) []byte {
 	return append(text, lineEnd...)
 }
 
-// vet refuses, as ErrChanges, a commit whose journal Recover would refuse: its places must be
-// confined, visible, editable and reached through no symbolic link (log-2026-09-29 M4 U4c-r3).
+// vet refuses a commit whose journal Recover would refuse: a place through a symbolic link or
+// hidden is ErrUnwritable, the project's state (log-2026-09-29 M4 U5b-r); any other is ErrChanges.
 func (c *commit) vet() error {
 	u, err := c.j.resolve(c.at)
 	if err == nil {
 		err = straight(c.fsys, u.spots())
+	}
+	var f *fault
+	if errors.As(err, &f) && (f.reason == reasonLink || f.reason == reasonHidden) {
+		return journalRefusal(ErrUnwritable, err)
 	}
 	return journalRefusal(ErrChanges, err)
 }

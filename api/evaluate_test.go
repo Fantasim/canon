@@ -239,7 +239,8 @@ func summaryEqual(a, b canon.Summary) bool {
 	return a.Errors == b.Errors && a.Warnings == b.Warnings && a.Packages == b.Packages && len(a.Truncated) == len(b.Truncated)
 }
 
-// API.md R5, API.md R6, API.md P7a, API.md S4, API.md S11, API.md O6: each refusal is its sentinel.
+// API.md R5, API.md R6, API.md P7a, API.md S4, API.md S11, API.md O6, API.md V13: each refusal is
+// its sentinel, a draft's by the rules of Edit.
 func TestEvaluateErrors(t *testing.T) {
 	p := openValueLaw(t)
 	for _, c := range []struct {
@@ -253,7 +254,8 @@ func TestEvaluateErrors(t *testing.T) {
 		{canon.EvalRequest{Path: "gen.key"}, canon.ErrInputField},
 		{canon.EvalRequest{Path: "a:Color.green"}, canon.ErrBadOp},
 		{canon.EvalRequest{Path: "config", Base: "r1:00"}, canon.ErrStale},
-		{canon.EvalRequest{Path: "config", Draft: []canon.Op{canon.Reset("a:config.rate")}}, canon.ErrInternal},
+		{canon.EvalRequest{Path: "config", Draft: []canon.Op{canon.Set("a:config.rate", canon.Str("x"))}}, canon.ErrBadValue},
+		{canon.EvalRequest{Path: "config", Draft: []canon.Op{canon.Set("a:config..rate", canon.Int(1))}}, canon.ErrBadPath},
 	} {
 		if _, err := p.Evaluate(context.Background(), c.req); !errors.Is(err, c.want) {
 			t.Errorf("%+v: %v, want %v", c.req, err, c.want)

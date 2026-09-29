@@ -69,6 +69,9 @@ type snapFS struct {
 	inputs map[string]string      // every file a load read, by absolute name, to its display path (S3)
 	gen    int                    // bumped at each new entry, so an unchanged snapshot is not recorded twice
 	older  []weak.Pointer[snapFS] // the snapshots this one descends from, while a caller holds them
+
+	plansMu sync.Mutex             // plans grows after the snapFS exists; mu may be held around it
+	plans   []weak.Pointer[snapFS] // this snapshot with an edit applied in memory, while held
 }
 
 func newSnapFS(base project.FS, over map[string][]byte, now func() time.Time) *snapFS {
@@ -145,7 +148,8 @@ func (s *snapFS) resolve(abs string) *entry {
 	return e
 }
 
-// lineage is s and every snapshot it descends from that is still in use, which a writer pins.
+// lineage is s, then every snapshot it descends from and every edit planned in memory on one of
+// them (API.md E18, V13) that is still in use, which a writer pins, each once.
 func (s *snapFS) lineage() []*snapFS {
 	out := []*snapFS{s}
 	for _, w := range s.older {
@@ -153,12 +157,49 @@ func (s *snapFS) lineage() []*snapFS {
 			out = append(out, o)
 		}
 	}
+	seen := map[*snapFS]bool{}
+	for _, o := range out {
+		seen[o] = true
+	}
+	for _, o := range slices.Clone(out) {
+		for _, p := range o.planned() {
+			if !seen[p] {
+				seen[p] = true
+				out = append(out, p)
+			}
+		}
+	}
 	return out
+}
+
+// planned is every edit planned in memory on s still in use.
+func (s *snapFS) planned() []*snapFS {
+	s.plansMu.Lock()
+	defer s.plansMu.Unlock()
+	var out []*snapFS
+	for _, w := range s.plans {
+		if p := w.Value(); p != nil {
+			out = append(out, p)
+		}
+	}
+	return out
+}
+
+// plan records next, s with an edit applied in memory, as read while a writer writes (S9); the
+// plans no longer in use are forgotten.
+func (s *snapFS) plan(next *snapFS) {
+	s.plansMu.Lock()
+	defer s.plansMu.Unlock()
+	live := slices.DeleteFunc(s.plans, func(w weak.Pointer[snapFS]) bool { return w.Value() == nil })
+	s.plans = append(live, weak.Make(next))
 }
 
 // readFile reads abs now: stat first, so a change during the read shows at the next refresh.
 func (s *snapFS) readFile(abs string) *entry {
 	if data, ok := s.over[abs]; ok {
+		if data == nil {
+			return gone(abs)
+		}
 		return &entry{sum: sum{class: classOK, hash: sha256.Sum256(data)}, data: data, over: true}
 	}
 	at := s.now()
@@ -172,6 +213,9 @@ func (s *snapFS) readFile(abs string) *entry {
 }
 
 func (s *snapFS) stat(abs string) *entry {
+	if data, ok := s.over[abs]; ok && data == nil {
+		return gone(abs)
+	}
 	if info, ok := s.overlayStat(abs); ok {
 		return &entry{info: info, sum: statSum(info, nil), over: true}
 	}

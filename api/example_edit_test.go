@@ -16,22 +16,16 @@ func ExampleProject_Edit() {
 		return
 	}
 	defer p.Close()
+	// A new status of a stable table: its lock line is written with it (API.md E20).
 	res, err := p.Edit(context.Background(), canon.Edit{
 		Base: p.Revision(),
 		Ops: []canon.Op{
-			canon.Set("farm.modelTypes[3].maxLevel", canon.Int(10)),
-			canon.Add("farm.modelTypes[3].levels", canon.Obj{
-				"level":             canon.Int(10),
-				"modelName":         canon.Str("obj_UC017"),
-				"productionItem":    canon.Key("II_GEN_MAT_MOONSTONE"),
-				"productionPerHour": canon.Int(5),
-			}),
-			canon.AddEntry("statuses", canon.Key("blocked"),
+			canon.Set("teamboard:statuses.open.label", canon.Str("Opened")),
+			canon.AddEntry("teamboard:statuses", canon.Key("blocked"),
 				canon.Source(`{ tone: danger, label: "Blocked", terminal: false, next: [open] }`)),
-			canon.Move("farm.modelTypes[3].levels[2]", 0),
-			canon.Rename("statuses.blocked", canon.Key("on_hold")),
-			canon.Reset("config.server.port"),
-			canon.Set("config.paths.iconDir", canon.None),
+			canon.Set("teamboard:statuses.open.next", canon.List(canon.Key("taken"), canon.Key("blocked"))),
+			canon.Set("teamboard:columns.taken.statuses", canon.List(canon.Key("taken"), canon.Key("blocked"))),
+			canon.Set("teamboard:flags.blocking.hint", canon.Str("Someone waits on it")),
 		},
 		DryRun:   true,
 		Evaluate: []string{"teamboard:statuses.open"},
@@ -40,17 +34,17 @@ func ExampleProject_Edit() {
 		explainEditError(err)
 		return
 	}
+	var changes, undo []string
 	for _, c := range res.Changes {
-		describeChange(c)
-	}
-	for _, d := range res.Dropped {
-		fmt.Println("dropped", d.Path, string(d.Value))
+		changes = append(changes, describeChange(c))
 	}
 	for _, u := range res.Undo {
-		fmt.Println(undoLabel(u), u.Path)
+		undo = append(undo, undoLabel(u)+" "+u.Path)
 	}
-	fmt.Println(res.Applied, res.Revision, res.Summary.Errors, len(res.Findings), len(res.Eval))
-	// Output:
+	fmt.Println(changes, len(res.Dropped), res.Applied, res.Revision == p.Revision(), res.Summary.Errors, len(res.Eval))
+	fmt.Println(undo)
+	// Output: [+teamboard/canon.lock ~teamboard/taxonomy.canon] 0 false true 0 1
+	// [restore teamboard:flags.blocking.hint restore teamboard:columns.taken.statuses restore teamboard:statuses.open.next remove teamboard:statuses.blocked restore teamboard:statuses.open.label]
 }
 
 // ExampleSet builds operations with every kind of value (API.md §8.2).
@@ -63,7 +57,10 @@ func ExampleSet() {
 		canon.Set("quests.first.reward", canon.Case("item", canon.Obj{"item": canon.Key("II_GEN_GOLD")})),
 		canon.Set("farm.modelTypes[3].unlocks", canon.List(canon.IntKey(4), canon.IntKey(5))),
 		canon.Set("styles.weights", canon.Map(canon.KV{Key: canon.Member("kill"), Value: canon.Int(3)})),
+		canon.Set("config.paths.iconDir", canon.None),
+		canon.Reset("config.server.port"),
 		canon.Insert("farm.modelTypes[3].levels", 0, canon.FromJSON([]byte(`{"level":1}`))),
+		canon.Move("farm.modelTypes[3].levels[2]", 0),
 		canon.Remove("farm.modelTypes[3].levels[1]"),
 		canon.Retire("items.II_OLD_SWORD"),
 		canon.SetCase("events[rain].kind", "spawn_item", nil),
@@ -73,7 +70,7 @@ func ExampleSet() {
 		kinds = append(kinds, op.Kind)
 	}
 	fmt.Println(kinds)
-	// Output: [set set set set set set set insert remove retire setCase]
+	// Output: [set set set set set set set set reset insert move remove retire setCase]
 }
 
 func ExampleSetCase() {
@@ -89,11 +86,11 @@ func ExampleUnretire() {
 		return
 	}
 	defer p.Close()
-	_, err = p.Edit(context.Background(), canon.Edit{Ops: []canon.Op{canon.Unretire("items.II_OLD_SWORD")}})
+	_, err = p.Edit(context.Background(), canon.Edit{Ops: []canon.Op{canon.Unretire("teamboard:statuses.open")}})
 	if errors.Is(err, canon.ErrStableKey) {
 		fmt.Println("refused: a stable id is never un-retired")
 	}
-	// Output:
+	// Output: refused: a stable id is never un-retired
 }
 
 // ExampleEdit reads an edit in the JSON form a web client sends (API.md §8.8).
@@ -108,7 +105,7 @@ func ExampleEdit() {
 		return
 	}
 	fmt.Println(string(out))
-	// Output:
+	// Output: {"base":"r1:5f0c","ops":[{"op":"set","path":"farm.modelTypes[3].maxLevel","value":10}]}
 }
 
 // undoLabel names the button a studio shows for one op of EditResult.Undo (rule E23).
@@ -130,16 +127,18 @@ func undoLabel(op canon.Op) string {
 	return string(op.Kind)
 }
 
-// describeChange prints one file an edit wrote.
-func describeChange(c canon.FileChange) {
+// describeChange names one file an edit wrote as a diff tool does: + created, - deleted, a
+// renamed one by its two paths, ~ modified.
+func describeChange(c canon.FileChange) string {
 	switch c.Kind {
-	case canon.Modified, canon.Created:
-		fmt.Println(c.Kind, c.Path, len(c.After))
+	case canon.Created:
+		return "+" + c.Path
 	case canon.Deleted:
-		fmt.Println(c.Kind, c.Path, len(c.Before))
+		return "-" + c.Path
 	case canon.Renamed:
-		fmt.Println(c.Kind, c.OldPath, "->", c.Path)
+		return c.OldPath + " -> " + c.Path
 	}
+	return "~" + c.Path
 }
 
 // explainEditError prints why an edit was refused, one case per error type of API.md §15.

@@ -14,14 +14,75 @@ import (
 	"github.com/fantasim/canonlang/internal/views/table"
 )
 
-// element is an element of a collection: its value, path, magic names and its title without a
-// view (API.md V7): its key's canonical text, or `#<n>` in a plain list (VIEWMODEL.md S9).
+// element is an element of a collection, named, and its path.
 type element struct {
-	v     value.Value
-	path  *verify.Path
-	magic render.Magic
-	name  string
+	Element
+	path *verify.Path
 }
+
+// Element is a collection's element as the studio names it (API.md P8, V7; VIEWMODEL.md S9):
+// Name is its key's text in a table, keyed list or map, else `#<n>` from 1, even for a copy of a
+// table entry in a plain list; Magic holds its `index` in a list, its `key` in a map.
+type Element struct {
+	v      value.Value
+	Name   string
+	Magic  render.Magic
+	form   elemForm
+	index  int
+	key    value.Key   // an entry's or a keyed element's
+	mapKey value.Value // a map entry's
+}
+
+// elemForm is how an element's path segment is written (API.md P8).
+type elemForm uint8
+
+// ElementAt is element i of the collection c, in collection order; false when c is no list,
+// table or map, i is out of range, or the entry has no key.
+func ElementAt(c value.Value, i int) (Element, bool) {
+	if i < 0 || i >= collLen(c) {
+		return Element{}, false
+	}
+	switch x := c.(type) {
+	case *value.Table:
+		e := x.Entries[i]
+		if e.Ident == nil {
+			return Element{}, false
+		}
+		return Element{v: e, Name: e.Ident.Key.Text(), form: formEntry, key: e.Ident.Key}, true
+	case *value.Map:
+		k := x.Keys[i]
+		return Element{v: x.Vals[i], Name: k.CanonText(), Magic: render.Magic{Key: k}, form: formMap, mapKey: k}, true
+	case *value.List:
+		return listElement(x, i), true
+	}
+	return Element{}, false
+}
+
+// collLen is the number of elements of a list, table or map; 0 for another value.
+func collLen(c value.Value) int {
+	switch x := c.(type) {
+	case *value.Table:
+		return len(x.Entries)
+	case *value.List:
+		return len(x.Elems)
+	case *value.Map:
+		return len(x.Keys)
+	}
+	return 0
+}
+
+// path is e's path in its collection's, at (API.md P8).
+func (e Element) path(at *verify.Path) *verify.Path {
+	return elemPaths[e.form](e, at)
+}
+
+func plainPath(e Element, at *verify.Path) *verify.Path { return at.Index(e.index) }
+
+func entryPath(e Element, at *verify.Path) *verify.Path { return at.Entry(e.key) }
+
+func keyedPath(e Element, at *verify.Path) *verify.Path { return at.Key(e.key) }
+
+func mapPath(e Element, at *verify.Path) *verify.Path { return at.Key(verify.KeyOf(e.mapKey)) }
 
 // isCollection reports a list, table or map value.
 func isCollection(v value.Value) bool {
@@ -51,7 +112,7 @@ func (s *session) collection(v value.Value, at *verify.Path, ctl vm.Control) {
 	}
 	for i, e := range els {
 		if out[i].Title.OK && seen[sources[i]] >= render.SharedTitle {
-			out[i].Title.Value = render.Disambiguated(out[i].Title.Value, e.name)
+			out[i].Title.Value = render.Disambiguated(out[i].Title.Value, e.Name)
 		}
 		s.out.Headings[rel(e.path)] = out[i]
 	}
@@ -61,9 +122,9 @@ func (s *session) collection(v value.Value, at *verify.Path, ctl vm.Control) {
 func (s *session) heading(e element, cols []string) (Heading, string) {
 	rec, ok := e.v.(*value.Record)
 	if !ok {
-		return Heading{Title: Text{Value: e.name, OK: true}, Subtitle: Text{OK: true}, Cells: map[string]Text{}}, ""
+		return Heading{Title: Text{Value: e.Name, OK: true}, Subtitle: Text{OK: true}, Cells: map[string]Text{}}, ""
 	}
-	h := s.heads(rec, e.magic, e.name)
+	h := s.heads(rec, e.Magic, e.Name)
 	out := Heading{Title: h.title, Subtitle: h.subtitle, Preview: h.preview, Cells: map[string]Text{}}
 	out.Retired = rec.Ident != nil && rec.Ident.Retired
 	for _, key := range cols {
@@ -74,40 +135,39 @@ func (s *session) heading(e element, cols []string) (Heading, string) {
 	if !h.title.OK {
 		return out, ""
 	}
-	return out, s.sourceTitle(rec, e.magic)
+	return out, s.sourceTitle(rec, e.Magic)
 }
 
 // elements are the elements of a list, table or map in collection order (API.md P8).
 func elements(v value.Value, at *verify.Path) []element {
 	var out []element
-	switch x := v.(type) {
-	case *value.Table:
-		for _, e := range x.Entries {
-			if e.Ident != nil {
-				out = append(out, element{v: e, path: at.Entry(e.Ident.Key), name: e.Ident.Key.Text()})
-			}
-		}
-	case *value.List:
-		for i, el := range x.Elems {
-			out = append(out, listElement(el, i, at))
-		}
-	case *value.Map:
-		for i, k := range x.Keys {
-			out = append(out, element{v: x.Vals[i], path: at.Key(verify.KeyOf(k)), magic: render.Magic{Key: k}, name: k.CanonText()})
+	for i := range collLen(v) {
+		if e, ok := ElementAt(v, i); ok {
+			out = append(out, element{Element: e, path: e.path(at)})
 		}
 	}
 	return out
 }
 
 // listElement is the element i of a list: a keyed list's by its key, a plain list's by its
-// index, `index` counting from 1 (VIEWMODEL.md 3.4).
-func listElement(el value.Value, i int, at *verify.Path) element {
+// index, `index` counting from 1 (VIEWMODEL.md 3.4); only a keyed list names by key (P8).
+func listElement(l *value.List, i int) Element {
 	pos := i + 1
-	e := element{v: el, path: at.Index(i), magic: render.Magic{Index: &value.Int{V: int64(pos), T: types.IntType}}, name: positionTag + strconv.Itoa(pos)}
-	if r, ok := el.(*value.Record); ok && r.Ident != nil {
-		e.path, e.name = at.Key(r.Ident.Key), r.Ident.Key.Text()
+	e := Element{v: l.Elems[i], Name: positionTag + strconv.Itoa(pos), index: i, form: formPlain}
+	e.Magic = render.Magic{Index: &value.Int{V: int64(pos), T: types.IntType}}
+	if r, ok := e.v.(*value.Record); ok && r.Ident != nil && keyedList(l) {
+		e.Name, e.key, e.form = r.Ident.Key.Text(), r.Ident.Key, formKeyed
 	}
 	return e
+}
+
+// keyedList reports a list whose type is keyed by a field (API.md P1).
+func keyedList(l *value.List) bool {
+	if l.T == nil {
+		return false
+	}
+	lt, ok := l.T.Base().(*types.ListType)
+	return ok && lt.KeyedBy != nil
 }
 
 // textColumns are the field keys of the `text` columns of a table control (VIEWMODEL.md T8),

@@ -185,10 +185,22 @@ func (m *memFS) Remove(name string) error {
 	name = dropVolume(name)
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	if _, ok := m.files[name]; !ok {
+	if _, ok := m.files[name]; ok {
+		delete(m.files, name)
+		return nil
+	}
+	if !m.dirs[name] {
 		return &fs.PathError{Op: "remove", Path: name, Err: fs.ErrNotExist}
 	}
-	delete(m.files, name)
+	for _, all := range []map[string]bool{m.dirs, fileSet(m.files)} {
+		//canon:unordered a membership test
+		for child := range all {
+			if path.Dir(child) == name && child != name {
+				return &fs.PathError{Op: "remove", Path: name, Err: fs.ErrExist}
+			}
+		}
+	}
+	delete(m.dirs, name)
 	return nil
 }
 

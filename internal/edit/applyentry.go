@@ -66,6 +66,9 @@ func (x *opCtx) addTableEntry(t *value.Table) error {
 	}
 	rec := e.v.(*value.Record)
 	x.inverse(Operation{Kind: OpRemove, Path: childPath(x.res.Canonical, e.seg)})
+	if tt, ok := t.T.Base().(*types.TableType); ok && tt.Stable && len(x.res.Steps) == 0 {
+		x.w.locked = append(x.w.locked, Locked{Name: x.res.root.lockName(), Key: rec.Ident.Key.Text()})
+	}
 	if x.j.last().files {
 		return x.newEntryFile(rec, e.key)
 	}

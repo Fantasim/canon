@@ -86,8 +86,8 @@ func TestRecoverIdempotent(t *testing.T) {
 	mustState(t, d.state(), before)
 }
 
-// API.md O5 (log-2026-09-29 M4 U4c-r): a journal whose files are all as they were is removed,
-// and nothing is logged: nothing was rolled back.
+// API.md O5 (log-2026-09-29 M4 U5b): a journal whose files are all as they were is removed with
+// the one Warn line of an unfinished edit rolled back, no file changed.
 func TestRecoverUnchanged(t *testing.T) {
 	d, changes := commitFixture()
 	before := d.state()
@@ -98,7 +98,7 @@ func TestRecoverUnchanged(t *testing.T) {
 		t.Fatal("no journal left")
 	}
 	lines, err := warnings(t, d)
-	if err != nil || len(lines) != 0 || len(journalsIn(d)) != 0 {
+	if err != nil || len(lines) != 1 || !strings.Contains(lines[0], "changes=0") || len(journalsIn(d)) != 0 {
 		t.Fatalf("logged %v, err %v", lines, err)
 	}
 	mustState(t, d.state(), before)

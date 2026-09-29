@@ -24,6 +24,17 @@ func (s *Snapshot) Build() *build.Project { return s.b }
 // and existing canon.lock, and every file a load of this project has read, with their content
 // in this snapshot, overlays included. The project remembers it (S4).
 func (s *Snapshot) Revision(ctx context.Context) (string, error) {
+	rev, err := s.revision(ctx)
+	if err != nil {
+		return "", err
+	}
+	s.p.remember(rev, s.fs)
+	return rev, nil
+}
+
+// revision is the snapshot's revision, not remembered: an edit applied in memory names its
+// journal by it (API.md N10) and is no snapshot a client read.
+func (s *Snapshot) revision(ctx context.Context) (string, error) {
 	reads, scanErr := s.b.Inputs()
 	reads = append(reads, s.fs.recorded()...)
 	lines := make([]build.Listed, 0, len(reads))
@@ -48,9 +59,7 @@ func (s *Snapshot) Revision(ctx context.Context) (string, error) {
 	if scanErr != nil {
 		lines = append(lines, build.Listed{Display: listingDisplay, Unreadable: true})
 	}
-	rev := build.RevisionOf(lines)
-	s.p.remember(rev, s.fs)
-	return rev, nil
+	return build.RevisionOf(lines), nil
 }
 
 // Stale is a *StaleError naming each of reads that differs now from revision base, nil for none

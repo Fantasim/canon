@@ -94,7 +94,11 @@ const (
 )
 
 // keyDepth is how many steps a key field lies below its keyed list: the element, then the field.
-const keyDepth = 2
+// stableDepth is how many a root stable table's @stable field lies below it: the entry, the field.
+const (
+	keyDepth    = 2
+	stableDepth = 2
+)
 
 // layerFileSuffix names a layer file W11 creates: <package dir>/<layer>.layer.canon.
 const layerFileSuffix = ".layer.canon"
@@ -217,7 +221,7 @@ const (
 // refusals are the errors Apply returns as they are; any other is an internal failure.
 var refusals = [...]error{
 	ErrBadPath, ErrNoPath, ErrAmbiguousPath, ErrNoValue, ErrNotAnalyzed, ErrForeign, ErrBadValue, ErrBadOp,
-	ErrNoHost, ErrNotEditable, ErrKeyExists, ErrStableKey, ErrPathCollision, ErrNoProject, ErrInternal,
+	ErrNoHost, ErrNotEditable, ErrKeyExists, ErrStableKey, ErrPathCollision, ErrNoProject, ErrInternal, ErrUnwritable,
 	context.Canceled, context.DeadlineExceeded,
 }
 
@@ -403,7 +407,7 @@ var recheckCodes = map[diag.Code]bool{
 // directory, the revision's scheme cut at revisionSep, no Windows name (API.md N10, S3).
 const (
 	revisionSep    = ':'
-	journalDir     = ".canon/journal"
+	JournalDir     = ".canon/journal"
 	journalVersion = 1
 )
 

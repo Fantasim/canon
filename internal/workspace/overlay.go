@@ -17,7 +17,7 @@ func (p *Project) SetOverlay(file string, content []byte) error {
 		if old, ok := over[abs]; ok && slices.Equal(old, content) {
 			return false
 		}
-		over[abs] = slices.Clone(content)
+		over[abs] = append(make([]byte, 0, len(content)), content...) // never nil: nil is a file gone
 		return true
 	})
 }
@@ -55,17 +55,30 @@ func (p *Project) overlay(file string, change func(map[string][]byte, string) bo
 	if !change(over, abs) {
 		return nil
 	}
-	dropped := map[name]*entry{{kind: kindFile, abs: abs}: nil}
+	dropped := map[name]*entry{}
+	dropAt(dropped, abs)
+	next := p.snapshot(s.fs.fork(over, dropped))
+	p.publish(next, CauseOverlay, []string{next.display(abs)})
+	return nil
+}
+
+// dropAt marks for a fork the entries an overlay at abs changes: abs's content, and the stat and
+// listing of abs and of each directory above it.
+func dropAt(dropped map[name]*entry, abs string) {
+	dropped[name{kind: kindFile, abs: abs}] = nil
 	for d := abs; ; d = path.Dir(d) {
 		dropped[name{kind: kindStat, abs: d}] = nil
 		dropped[name{kind: kindDir, abs: path.Dir(d)}] = nil
 		if path.Dir(d) == d {
-			break
+			return
 		}
 	}
-	next := p.snapshot(s.fs.fork(over, dropped))
-	p.publish(next, CauseOverlay, []string{next.display(abs)})
-	return nil
+}
+
+// gone is the entry of a file an overlay deletes, for a snapshot with an edit applied in memory.
+func gone(abs string) *entry {
+	err := fmt.Errorf(fmtBadPath, fs.ErrNotExist, abs)
+	return &entry{err: err, sum: sum{class: classMissing}, over: true}
 }
 
 // overlayStat is abs's stat when an overlay makes it: the overlay itself, or a directory above
@@ -83,25 +96,28 @@ func (s *snapFS) overlayStat(abs string) (fs.FileInfo, bool) {
 	return overlayInfo{name: path.Base(abs), dir: true}, true
 }
 
-// holdsOverlay reports an overlay below dir.
+// holdsOverlay reports a file an overlay makes below dir.
 func (s *snapFS) holdsOverlay(dir string) bool {
 	prefix := strings.TrimSuffix(dir, pathSep) + pathSep
-	for abs := range s.over {
-		if strings.HasPrefix(abs, prefix) {
+	for abs, data := range s.over {
+		if data != nil && strings.HasPrefix(abs, prefix) {
 			return true
 		}
 	}
 	return false
 }
 
-// withOverlays is list and, for every overlay below dir, the entry of dir that leads to it,
-// when list does not hold one of that name.
+// withOverlays is list less the files an overlay deletes and, for every other overlay below
+// dir, the entry of dir that leads to it, when list does not hold one of that name.
 func (s *snapFS) withOverlays(dir string, list []fs.DirEntry) []fs.DirEntry {
-	out := slices.Clone(list)
 	prefix := strings.TrimSuffix(dir, pathSep) + pathSep
+	out := slices.DeleteFunc(slices.Clone(list), func(e fs.DirEntry) bool {
+		data, ok := s.over[prefix+e.Name()]
+		return ok && data == nil
+	})
 	for _, abs := range slices.Sorted(maps.Keys(s.over)) {
 		rel, ok := strings.CutPrefix(abs, prefix)
-		if !ok {
+		if !ok || s.over[abs] == nil {
 			continue
 		}
 		child, _, deeper := strings.Cut(rel, pathSep)

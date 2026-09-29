@@ -11,6 +11,7 @@ import (
 
 	"github.com/fantasim/canonlang/internal/build"
 	"github.com/fantasim/canonlang/internal/diag"
+	"github.com/fantasim/canonlang/internal/edit"
 	"github.com/fantasim/canonlang/internal/project"
 	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/workspace"
@@ -91,17 +92,22 @@ func apiError(err error) error {
 		return internalError(err)
 	case errors.Is(err, workspace.ErrClosed):
 		return ErrClosed
-	case errors.Is(err, workspace.ErrStale):
+	case errors.Is(err, workspace.ErrStale), errors.Is(err, edit.ErrStale):
 		return staleError(err)
 	}
 	return panicError(err)
 }
 
-// staleError is workspace's staleness as the API reports it, the same files (rules S4, S5).
+// staleError is a stale base revision (workspace's) or a file changed while an edit ran (edit's)
+// as the API reports both, the same files (rules S4, S5, N9).
 func staleError(err error) error {
-	var se *workspace.StaleError
-	if errors.As(err, &se) {
-		return &StaleError{Files: slices.Clone(se.Files)}
+	var ws *workspace.StaleError
+	var es *edit.StaleError
+	switch {
+	case errors.As(err, &ws):
+		return &StaleError{Files: slices.Clone(ws.Files)}
+	case errors.As(err, &es):
+		return &StaleError{Files: slices.Clone(es.Files)}
 	}
 	return err
 }

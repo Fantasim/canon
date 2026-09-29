@@ -49,6 +49,8 @@ func (s *Snapshot) Editable(r Resolved, op Op, editLayer string) (Editability, e
 		return Editability{Reason: reason, Origin: s.origin(r.Target)}, nil
 	case ReasonLayered:
 		return Editability{Reason: reason, Layer: j.last().layer}, nil
+	case ReasonFormat:
+		return Editability{Reason: reason, File: j.hiddenFile()}, nil
 	default:
 		return Editability{Reason: reason}, nil
 	}
@@ -97,7 +99,7 @@ type judge struct {
 
 func (s *Snapshot) judge(res resolution, op Op, editLayer string) *judge {
 	j := &judge{s: s, res: res, op: op, layer: editLayer, special: specialRow(res)}
-	c := s.jsonSource(s.rootCursor(res))
+	c := s.source(s.rootCursor(res))
 	j.cur = append(j.cur, c)
 	walked := len(res.Steps)
 	if j.special != ReasonNone {
@@ -109,23 +111,49 @@ func (s *Snapshot) judge(res resolution, op Op, editLayer string) *judge {
 		} else {
 			c = steppers[c.state](j, c, i)
 		}
-		c = s.jsonSource(c)
+		c = s.source(c)
 		j.cur = append(j.cur, c)
 	}
 	return j
 }
 
-// jsonSource is c, or the format row for a JSON source whose file is not named `.json`: no
-// edit writes it, since a crashed edit's journal keeps only .canon, .json and .lock files (API.md
-// W4, log-2026-09-29 U4c final).
-func (s *Snapshot) jsonSource(c cursor) cursor {
-	if c.mode != ModeJSON || c.state != stTree || c.span.End == 0 || s.files[c.span.File] != nil {
+// source is c, or the format row for a source no edit writes, which a crashed edit's journal
+// could not name: a file on a hidden path, a JSON source not named `.json` (API.md W4;
+// log-2026-09-29 U4c final, M4 U5b-r, U5b-r3).
+func (s *Snapshot) source(c cursor) cursor {
+	if c.state != stTree {
 		return c
 	}
-	if d := s.display(c.span.File); d != "" && !jsonFileName(d) {
+	d := s.sourcePath(c)
+	switch {
+	case d == "":
+		return c
+	case !visible(d):
+		return c.to(stFormat)
+	case c.mode == ModeJSON && s.files[c.span.File] == nil && !jsonFileName(d):
 		return c.to(stFormat)
 	}
 	return c
+}
+
+// sourcePath is the display path of the file stating c's value, "" when none is known.
+func (s *Snapshot) sourcePath(c cursor) string {
+	switch {
+	case c.mode == ModeCanon && c.file != nil:
+		return c.file.Src.Path
+	case c.span.End == 0:
+		return ""
+	}
+	return s.display(c.span.File)
+}
+
+// hiddenFile is the hidden path that makes j's value not editable, "" for none (log-2026-09-29
+// M4 U5b-r3).
+func (j *judge) hiddenFile() string {
+	if d := j.s.sourcePath(j.last()); d != "" && !visible(d) {
+		return d
+	}
+	return ""
 }
 
 // jsonFileName reports a file named `.json`, its extension in lower case.

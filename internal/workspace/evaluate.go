@@ -6,7 +6,6 @@ import (
 	"maps"
 	"path"
 	"slices"
-	"strconv"
 	"strings"
 
 	"github.com/fantasim/canonlang/internal/build"
@@ -21,14 +20,15 @@ import (
 	"github.com/fantasim/canonlang/internal/views/live"
 )
 
-// Eval is one Evaluate without a draft (API.md 11): the snapshot's analysis of every package
-// (calls sharing a key share one), the edit snapshot At was resolved in, and the language of
-// its texts ("" for the source language).
+// Eval is one Evaluate (API.md 11): the analysis of every package of the snapshot it reads, a
+// draft applied or not; the edit snapshot At was resolved in; its texts' language ("" for the
+// source's); the packages owning a file the draft changes (E17).
 type Eval struct {
 	Analysis *build.Analysis
 	Edit     *edit.Snapshot
 	At       edit.Resolved
 	Lang     string
+	Touched  []string
 }
 
 // Evaluation is the live view state of a value (V5-V12), its package's findings at the value or
@@ -42,28 +42,36 @@ type Evaluation struct {
 }
 
 // Evaluate is e's live view state on s, shared by identical concurrent calls (S8), writing
-// nothing (V13); the view evaluator's compiler failure, Analysis.ViewErr, is returned (X2).
-// liveInput alone builds live's input; its method and bound-argument seams stay unset for now.
+// nothing (V13); a draft's s is its own, shared by the draft's key (Draft). The view evaluator's
+// compiler failure, Analysis.ViewErr, is returned (X2).
 func Evaluate(ctx context.Context, s *Snapshot, e Eval) (*Evaluation, error) {
-	// A draft must join this key when drafts land (API.md V13).
-	key := Key(opEvaluate, nil, e.At.Canonical, e.Lang)
+	key := Key(opEvaluate, e.Touched, e.At.Canonical, e.Lang)
 	return Share(ctx, s, key, func(ctx context.Context) (*Evaluation, error) { return evaluate(ctx, e) })
 }
 
-// EvalStale is a *StaleError when, since base, a file read by a package e touches changed (the
-// path's package and its importers, API.md S5, E17), or any source or project.canon did: each
-// can change the import graph (log-2026-09-29 M4 U5a-r2).
+// EvalStale is a *StaleError when, since base, a file read by a package e touches changed on s
+// (the path's package, a draft's packages and their importers, API.md S5, E17), or any source
+// or project.canon did: each can change the import graph (log-2026-09-29 M4 U5a-r2).
 func EvalStale(s *Snapshot, base string, e Eval) error {
 	at, err := edit.Parse(e.At.Canonical)
 	if err != nil {
 		return err
 	}
+	return s.staleFor(base, e.Analysis, append([]string{at.Package}, e.Touched...))
+}
+
+// staleFor is a *StaleError when, since base, a file a's pkgs or their importers read changed
+// (API.md S5, E17), or any source or project.canon did (log-2026-09-29 M4 U5a-r2); nil for "".
+func (s *Snapshot) staleFor(base string, a *build.Analysis, pkgs []string) error {
 	var reads []build.Read
-	for _, pkg := range affected(e.Analysis.Program(), at.Package) {
-		reads = append(reads, e.Analysis.Reads(pkg)...)
+	for _, pkg := range affected(a.Program(), pkgs...) {
+		reads = append(reads, a.Reads(pkg)...)
 	}
-	read := s.Stale(base, reads)
-	sources := s.sourcesStale(base)
+	return bothStale(s.Stale(base, reads), s.sourcesStale(base))
+}
+
+// bothStale is the two staleness verdicts as one: a failure first, else their files together.
+func bothStale(read, sources error) error {
 	var a, b *StaleError
 	switch {
 	case read != nil && !errors.As(read, &a):
@@ -177,7 +185,7 @@ func evaluate(ctx context.Context, e Eval) (*Evaluation, error) {
 	if bag := e.Analysis.Bag(at.Package); bag != nil {
 		out.Findings = below(bag.Findings(), edit.Path{Root: at.Root, Segs: at.Segs}.String())
 	}
-	for _, pkg := range affected(e.Analysis.Program(), at.Package) {
+	for _, pkg := range affected(e.Analysis.Program(), append([]string{at.Package}, e.Touched...)...) {
 		if bag := e.Analysis.Bag(pkg); bag != nil {
 			out.Summary = out.Summary.Merge(bag.Summary())
 		}
@@ -210,23 +218,34 @@ func targetOf(e Eval, at edit.Path) (live.Target, error) {
 		return out, err
 	}
 	last := at.Segs[n-1]
-	switch c := parent.Target.(type) {
-	case *value.Record:
+	if c, ok := parent.Target.(*value.Record); ok {
 		out.Name, out.Decl = last.Name, c.T
 		out.Field = fieldNamed(c.T, last.Name)
-	case *value.Table:
-		out.Name = keyText(e.At.Target, out.Name)
-	case *value.List:
-		if i := elemIndex(e, at, c.Elems, plainIndex(c, last)); i >= 0 {
-			out.Magic.Index = &value.Int{V: int64(i + 1), T: types.IntType}
-			out.Name = keyText(e.At.Target, positionTag+strconv.Itoa(i+1))
-		}
-	case *value.Map:
-		if i := elemIndex(e, at, c.Vals, -1); i >= 0 {
-			out.Magic.Key, out.Name = c.Keys[i], c.Keys[i].CanonText()
+		return out, nil
+	}
+	if i := elemIndex(e, at, members(parent.Target), plainIndex(parent.Target, last)); i >= 0 {
+		if el, ok := live.ElementAt(parent.Target, i); ok {
+			out.Name, out.Magic = el.Name, el.Magic
 		}
 	}
 	return out, nil
+}
+
+// members are the elements of a list, table or map, in collection order; none for another value.
+func members(c value.Value) []value.Value {
+	switch x := c.(type) {
+	case *value.List:
+		return x.Elems
+	case *value.Map:
+		return x.Vals
+	case *value.Table:
+		out := make([]value.Value, len(x.Entries))
+		for i, en := range x.Entries {
+			out[i] = en
+		}
+		return out
+	}
+	return nil
 }
 
 // fieldNamed is t's field name, nil for a pseudo-field (API.md P3).
@@ -239,17 +258,14 @@ func fieldNamed(t types.Type, name string) *types.Field {
 	return nil
 }
 
-// keyText is the canonical text of v's key when v is an entry or a keyed element, else def.
-func keyText(v value.Value, def string) string {
-	if r, ok := v.(*value.Record); ok && r.Ident != nil {
-		return r.Ident.Key.Text()
+// plainIndex is the index a plain list's canonical segment names (API.md P8), -1 for a keyed
+// list or another collection.
+func plainIndex(c value.Value, last edit.Seg) int {
+	l, ok := c.(*value.List)
+	if !ok || last.Kind != edit.SegKey {
+		return -1
 	}
-	return def
-}
-
-// plainIndex is the index a plain list's canonical segment names (API.md P8), -1 in a keyed list.
-func plainIndex(l *value.List, last edit.Seg) int {
-	if lt, ok := l.T.Base().(*types.ListType); !ok || lt.KeyedBy != nil || last.Kind != edit.SegKey {
+	if lt, ok := l.T.Base().(*types.ListType); !ok || lt.KeyedBy != nil {
 		return -1
 	}
 	return int(last.Key.Int)
@@ -294,9 +310,12 @@ func below(list []diag.Finding, rel string) []diag.Finding {
 	return out
 }
 
-// affected is pkg and every package importing it, directly or not (API.md E17), in name order.
-func affected(prog *check.Program, pkg string) []string {
-	in := map[string]bool{pkg: true}
+// affected is pkgs and every package importing one, directly or not (API.md E17), in name order.
+func affected(prog *check.Program, pkgs ...string) []string {
+	in := map[string]bool{}
+	for _, pkg := range pkgs {
+		in[pkg] = true
+	}
 	for grown := true; grown; {
 		grown = false
 		for _, p := range prog.Packages {

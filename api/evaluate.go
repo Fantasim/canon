@@ -1,6 +1,7 @@
 package canon
 
 import (
+	"cmp"
 	"context"
 	"encoding/json"
 	"errors"
@@ -104,46 +105,74 @@ func orNone[E any](s []E) []E {
 }
 
 // Evaluate computes the view state of r.Path with r.Draft applied in memory (rules V4a-V14):
-// a shared read of the snapshot (S8) that never writes (V13). A draft is not applied yet: a
-// request holding one fails with an *InternalError until drafts are implemented (rule X2).
+// a shared read of the snapshot (S8) that never writes and keeps its revision (V13); a draft
+// is applied by the rules of Edit (E1-E21) and shared by identical concurrent drafts.
 func (p *Project) Evaluate(ctx context.Context, r EvalRequest) (res *EvalResult, err error) {
 	defer recoverInternal(&err)
 	s, err := p.read(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if len(r.Draft) > 0 {
-		return nil, errUnimplemented()
-	}
-	parsed, err := edit.Parse(r.Path)
-	if err != nil {
+	if _, err := edit.Parse(r.Path); err != nil {
 		return nil, syntaxError(r.Path, err, 0)
 	}
 	a, err := analyze(ctx, s, nil) // every package, as Value: one analysis serves both (S8)
 	if err != nil {
 		return nil, err
 	}
-	snap := &snapshot{a: a, s: edit.NewSnapshot(a), ctx: ctx}
-	at, err := snap.evalTarget(r.Path, parsed)
-	if err != nil {
+	on := evalOn{s: s, a: a, lang: cmp.Or(r.Lang, p.lang), from: s, base: string(r.Base)}
+	if len(r.Draft) > 0 {
+		d, err := workspace.Draft(ctx, s, a, workspace.Changes{Ops: operations(r.Draft), EditLayer: p.editLayer, Host: editHost})
+		if err != nil {
+			return nil, p.editError(ctx, err)
+		}
+		on.s, on.a, on.touched, on.dropped = d.Snapshot, d.Analysis, d.Plan.Touched, d.Plan.Dropped
+	}
+	if res, err = p.evaluateOn(ctx, on, r.Path); err != nil {
 		return nil, err
 	}
-	lang := r.Lang
-	if lang == "" {
-		lang = p.lang
-	}
-	e := workspace.Eval{Analysis: a, Edit: snap.s, At: at, Lang: lang}
-	if err := workspace.EvalStale(s, string(r.Base), e); err != nil {
-		return nil, evalError(ctx, err)
-	}
-	ev, err := workspace.Evaluate(ctx, s, e)
-	if err != nil {
-		return nil, evalError(ctx, err)
-	}
-	res = evalResultOf(at.Canonical, ev)
 	if res.Revision, err = p.revision(ctx, s); err != nil {
 		return nil, err
 	}
+	return res, nil
+}
+
+// evalOn is what an evaluation reads: a snapshot, a draft applied or not, its analysis of every
+// package, the language of its texts, the draft's touched packages and dropped values (E17, E14),
+// and, when base is set, the snapshot staleness is judged on (S5).
+type evalOn struct {
+	s       *workspace.Snapshot
+	a       *build.Analysis
+	lang    string
+	touched []string
+	dropped []edit.Dropped
+	from    *workspace.Snapshot
+	base    string
+}
+
+// evaluateOn is the view state of path on on, its revision left to the caller (rules V5-V13).
+func (p *Project) evaluateOn(ctx context.Context, on evalOn, path string) (*EvalResult, error) {
+	parsed, err := edit.Parse(path)
+	if err != nil {
+		return nil, syntaxError(path, err, 0)
+	}
+	snap := &snapshot{a: on.a, s: edit.NewSnapshot(on.a), editLayer: p.editLayer, layers: p.layers, ctx: ctx}
+	at, err := snap.evalTarget(path, parsed)
+	if err != nil {
+		return nil, err
+	}
+	e := workspace.Eval{Analysis: on.a, Edit: snap.s, At: at, Lang: on.lang, Touched: on.touched}
+	if on.base != "" {
+		if err := workspace.EvalStale(on.from, on.base, e); err != nil {
+			return nil, evalError(ctx, err)
+		}
+	}
+	ev, err := workspace.Evaluate(ctx, on.s, e)
+	if err != nil {
+		return nil, evalError(ctx, err)
+	}
+	res := evalResultOf(at.Canonical, ev)
+	res.Dropped = droppedOf(on.dropped)
 	return res, nil
 }
 

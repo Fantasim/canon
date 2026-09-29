@@ -71,7 +71,7 @@ func journalName(dir, rev string) (string, error) {
 	if i < 1 || !isLowerHex(rev[i+1:]) {
 		return "", fmt.Errorf(fmtFileErr, rev, ErrRevision)
 	}
-	return path.Join(dir, journalDir, rev[i+1:]+ir.JSONExt), nil
+	return path.Join(dir, JournalDir, rev[i+1:]+ir.JSONExt), nil
 }
 
 // isJournal says whether a name in the journal directory is a journal, not a file the FS's own

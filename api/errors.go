@@ -35,6 +35,7 @@ var (
 	ErrInternal           = errors.New("internal compiler error")
 
 	errSeverity   = errors.New("unknown severity")
+	errOpKind     = errors.New("unknown operation")
 	errDecodeNull = errors.New("null where the view model admits none")
 	errDecodeCase = errors.New("member name matches a field only by case")
 )
@@ -52,9 +53,6 @@ var pathSentinels = [...]sentinelMap{
 	{from: edit.ErrAmbiguousPath, to: ErrAmbiguousPath},
 	{from: edit.ErrNoValue, to: ErrNoValue},
 }
-
-// errUnimplemented is what a stub with an error result returns until M4 (rule X2).
-func errUnimplemented() error { return &InternalError{Msg: msgUnimplemented} }
 
 func opPrefix(op int) string {
 	if op < 0 {

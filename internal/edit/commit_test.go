@@ -284,7 +284,7 @@ func TestCommitRefused(t *testing.T) {
 		{"unknown kind", testRev, []edit.Change{{Kind: edit.ChangeRemovedDir + 1, Path: "a.canon"}}, edit.ErrChanges},
 		{"no place", testRev, []edit.Change{mod("@nowhere/a.json")}, edit.ErrChanges},
 		{"twice", testRev, []edit.Change{mod("a.canon"), mod("./a.canon")}, edit.ErrChanges},
-		{"hidden", testRev, []edit.Change{{Kind: edit.ChangeCreated, Path: ".git/x.canon", After: []byte("x")}}, edit.ErrChanges},
+		{"hidden", testRev, []edit.Change{{Kind: edit.ChangeCreated, Path: ".git/x.canon", After: []byte("x")}}, edit.ErrUnwritable},
 		{"not written by edits", testRev, []edit.Change{{Kind: edit.ChangeCreated, Path: "x.sh", After: []byte("x")}}, edit.ErrChanges},
 	}
 	for _, tc := range cases {
