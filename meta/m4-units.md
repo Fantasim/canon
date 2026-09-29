@@ -44,7 +44,7 @@ the last wave.
 - U5 watch: `workspace/watch*.go`, api/watch.go, W12–W16 [opus]
 - U5a api reads: Evaluate (no draft), Refs, Format/FormatJSONSource (T1, T2) [opus]
 - U8 `build` memo integration (+ `diag` `Builder.Detached()` for the memo, U11 item 7): `build.Cache`, load memo, LockUpdates, LockCheck (B4), atomic
-  fsynced OS WriteFile; incremental ≡ cold property test [opus]
+  fsynced OS WriteFile; bound the pin cost of a writing Build over older snapshots (U3 N1); incremental ≡ cold property test [opus]
 - U13 `rules` record-check memo; per-file caching of `rules.NewIndex` and `verify.NewIndex` walks [opus]
 - U9b `views/render` + `eval` + `build` adapter: render `show` templates and view-named methods
       (fills U9's `live.Lines` and `Input.Bound` seams), `index` magic name on search rows, export
