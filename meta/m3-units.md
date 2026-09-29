@@ -29,7 +29,7 @@ Tick with the landing SHA.
 - [x] ★U12 (c7ae4e2) `build` writes the `view` target in phase 8, even with errors [sonnet]
 - [x] ★U13 (e7f2e74) view goldens (pipeline, farm, events) + schema validation; GEN-01 view diff [sonnet]
 - [x] U14 (d20ec40) `api.Value` + `Origin.Replaced` (ADR-0007) + `cli explain` golden [opus]
-- [ ] U15 `api.ViewModel` (JSON equals the emit bytes) [opus]
+- [x] U15 (fc86348) `api.ViewModel` (JSON equals the emit bytes) [opus]
 - [x] U16 (c368908) `gen/cpp` `types` mode; events compiles, Decode accepts EventConfig.json [sonnet]
 - [x] U17 (c368908) `ir` `types` mode rules mirroring U16's refusals [opus]
 - [x] U18 (bb2b756) `make check-real` (not gating) + realdata findings list [sonnet]
