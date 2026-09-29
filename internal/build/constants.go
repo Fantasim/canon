@@ -21,6 +21,14 @@ const (
 	listingMark    = "."          // the project directory: its listing, and path.Dir's top
 )
 
+// The cache: the layers of a check key are joined by layerSep; a file set past compactFloor
+// bytes holding compactRatio times what the latest snapshot used starts anew.
+const (
+	layerSep     = listingSep
+	compactFloor = 64 << 20
+	compactRatio = 4
+)
+
 // Paths: a root's mark, separators, the lock's name (LOCK.md §2.1), text line ends.
 const (
 	rootMark       = "@"
@@ -39,10 +47,14 @@ const (
 
 // Written files: a temporary file's name around its target's, and the modes of what is created.
 const (
-	tempPrefix = "."
-	tempSuffix = ".canon-tmp"
-	fileMode   = 0o600
-	dirMode    = 0o750
+	tempPrefix    = "."
+	tempSep       = "."
+	tempSuffix    = ".canon-tmp"
+	tempRandBytes = 8  // the random part of the OS WriteFile's temporary name
+	maxLinks      = 40 // the symbolic links the OS WriteFile follows to the file it writes
+	linkOp        = "readlink"
+	fileMode      = 0o600
+	dirMode       = 0o750
 )
 
 // The statuses of an output: Written is new or changed content, which the build writes.

@@ -38,6 +38,9 @@ type evalHost struct {
 	causes    map[eval.Root][]diag.Finding // ...and a value it poisons keeps their errors
 	fold      check.Folder                 // phase 2's folder, whose internal errors failure reports (DECISIONS 195)
 	scratch   bool                         // bags is throwaway: load keeps nothing it reads (a test call's host)
+	base      source.FileID                // the file set's last file when the snapshot began
+	sites     *loadSites                   // where the program's load expressions are
+	loadLock  loadSem                      // held by one run's loads at a time, every run adding to the set
 }
 
 // Load runs e's form against expected; an unsupported form, option or default is ErrLoad,
@@ -61,7 +64,7 @@ type loadTarget struct {
 
 // loadInto is Load into to's bags, decoded through to's evaluator.
 func (h *evalHost) loadInto(ctx context.Context, e *syntax.LoadExpr, expected types.Type, to loadTarget) (value.Value, bool) {
-	site, ok := findLoad(h.prog, e)
+	site, ok := h.siteIn(h.prog, e)
 	if !ok {
 		h.loads = append(h.loads, e)
 		return nil, false
@@ -70,8 +73,10 @@ func (h *evalHost) loadInto(ctx context.Context, e *syntax.LoadExpr, expected ty
 	req := load.Request{
 		Pkg: site.pkg, From: path.Dir(site.file.Src.Path), Span: site.span, Bag: to.bags[site.pkg], Scratch: to.scratch,
 	}.Through(to.ev)
-	v, ok, err := h.loader.Load(ctx, req, e, expected)
+	v, ok, err := h.locked(ctx, func() (value.Value, bool, error) { return h.loader.Load(ctx, req, e, expected) })
 	switch {
+	case ctx.Err() != nil:
+		return nil, false // the run returns ctx.Err()
 	case errors.Is(err, load.ErrUnsupported):
 		if len(h.loads) == 0 {
 			h.loadCause = unsupportedCause(err)
@@ -84,6 +89,17 @@ func (h *evalHost) loadInto(ctx context.Context, e *syntax.LoadExpr, expected ty
 	default:
 		return v, ok
 	}
+}
+
+// locked runs load holding the run's load semaphore, freed even when load panics (API.md X2);
+// waiting for it ends with ctx (S11).
+func (h *evalHost) locked(ctx context.Context, load func() (value.Value, bool, error)) (value.Value, bool, error) {
+	done, err := h.log().loading(ctx, h.loader.Set, h.loadLock)
+	if err != nil {
+		return nil, false, err
+	}
+	defer done()
+	return load()
 }
 
 // unsupportedCause is a load.UnsupportedError's own cause, "" for a bare ErrUnsupported.
@@ -165,11 +181,11 @@ func (h *evalHost) settle(ev *eval.Evaluator, root eval.Root, res verify.Result,
 // the evaluator; nil when there is none.
 func (h *evalHost) failure(set *source.FileSet, prog *check.Program) error {
 	if len(h.loads) > 0 {
-		span, ok := loadSpan(prog, h.loads[0])
+		site, ok := h.siteIn(prog, h.loads[0])
 		if !ok {
 			return internal(errNoLoadSite)
 		}
-		return &LoadError{Span: span, Site: set.Locate(span), Cause: h.loadCause}
+		return &LoadError{Span: site.span, Site: set.Locate(site.span), Cause: h.loadCause}
 	}
 	return h.internalErrs()
 }
@@ -187,34 +203,11 @@ func (h *evalHost) internalErrs() error {
 	return errors.Join(errs...)
 }
 
-// loadSpan is the span of a load expression, found in the program's files.
-func loadSpan(prog *check.Program, e *syntax.LoadExpr) (source.Span, bool) {
-	site, ok := findLoad(prog, e)
-	return site.span, ok
-}
-
 // loadSite is where a load expression was written: its package, file and span.
 type loadSite struct {
 	pkg  string
 	file *syntax.File
 	span source.Span
-}
-
-// findLoad is e's site, found by walking the program's files.
-func findLoad(prog *check.Program, e *syntax.LoadExpr) (loadSite, bool) {
-	for _, cp := range prog.Packages {
-		for _, f := range cp.Files {
-			found := false
-			syntax.Inspect(f, func(n syntax.Node) bool {
-				found = found || n == syntax.Node(e)
-				return !found
-			})
-			if found {
-				return loadSite{pkg: cp.Path, file: f, span: f.Span(e)}, true
-			}
-		}
-	}
-	return loadSite{}, false
 }
 
 // LoadError is a load form or option the load package does not read yet (ErrLoad), the cause

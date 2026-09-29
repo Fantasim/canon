@@ -23,41 +23,6 @@ type WriteFS interface {
 	MkdirAll(name string) error
 }
 
-// OS is the operating system's file system, writable.
-func OS() WriteFS { return osFS{FS: project.OS()} }
-
-type osFS struct {
-	project.FS
-}
-
-func (osFS) WriteFile(name string, data []byte) error {
-	return wrapIO(os.WriteFile(filepath.FromSlash(name), data, fileMode))
-}
-
-func (osFS) Rename(oldname, newname string) error {
-	return wrapIO(os.Rename(filepath.FromSlash(oldname), filepath.FromSlash(newname)))
-}
-
-func (osFS) Remove(name string) error { return wrapIO(os.Remove(filepath.FromSlash(name))) }
-
-func (osFS) Chmod(name string, mode fs.FileMode) error {
-	return wrapIO(os.Chmod(filepath.FromSlash(name), mode))
-}
-
-func (osFS) MkdirAll(name string) error {
-	return wrapIO(os.MkdirAll(filepath.FromSlash(name), dirMode))
-}
-
-// EvalSymlinks lets load.dir follow links through the OS file system a build reads (WIRE.md §6.5).
-func (f osFS) EvalSymlinks(name string) (string, error) { return project.EvalSymlinks(f.FS, name) }
-
-func wrapIO(err error) error {
-	if err != nil {
-		return fmt.Errorf(fmtWrap, err)
-	}
-	return nil
-}
-
 // lockOut is a lock to write, with the content it replaces (nil: no file).
 type lockOut struct {
 	Lock
@@ -235,7 +200,7 @@ func (w *writer) stage(c change) error {
 		return err
 	}
 	tmp := tempOf(c.abs)
-	if err := w.fsys.WriteFile(tmp, c.data); err != nil {
+	if err := writeTemp(w.fsys, tmp, c.data); err != nil {
 		return err
 	}
 	chmod, ok := w.fsys.(ModeFS)
@@ -298,8 +263,16 @@ func restoreOne(fsys WriteFS, c change) error {
 	if !c.existed {
 		return fsys.Remove(c.abs)
 	}
-	if err := fsys.WriteFile(tempOf(c.abs), c.old); err != nil {
+	if err := writeTemp(fsys, tempOf(c.abs), c.old); err != nil {
 		return err
 	}
 	return fsys.Rename(tempOf(c.abs), c.abs)
+}
+
+// writeTemp removes whatever sits at a fixed temporary name, never writing through it (ADR-0010).
+func writeTemp(fsys WriteFS, tmp string, data []byte) error {
+	if err := fsys.Remove(tmp); err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return err
+	}
+	return fsys.WriteFile(tmp, data)
 }

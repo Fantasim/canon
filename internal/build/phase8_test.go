@@ -166,9 +166,9 @@ func TestViewModelKeepsCauses(t *testing.T) {
 		t.Fatal(err)
 	}
 	root := eval.Root{Pkg: "b", Name: "unread"}
-	before := a.Cause(root)
+	before := causeOf(t, a, root)
 	modelBytes(t, a, context.Background(), "a")
-	if after := a.Cause(root); !reflect.DeepEqual(before, after) {
+	if after := causeOf(t, a, root); !reflect.DeepEqual(before, after) {
 		t.Errorf("Cause(b.unread) was %v, is %v after the view model", before, after)
 	}
 }

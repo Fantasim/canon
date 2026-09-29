@@ -1,0 +1,56 @@
+IMPLEMENTATION-PLAN §7.6 (NFR-02), log-2026-09-29 M4 "U12 review PASS (a)": only the entry file of
+the earlier path is edited, so it gets a file id above the later one's; a key both files hold
+(E3101, first by path), failed checks in both and a poison's cause must come out as a cold check's.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+/// An item.
+record Item {
+  /// Cost.
+  cost: Int = 1
+
+  check cost <= 100 else "cost {cost} above 100"
+}
+
+/// Items.
+let items: table Item = {}
+
+/// Items both files name.
+let dups: table Item = {}
+
+/// The total cost.
+let total: Int = items.one.cost + items.three.cost
+
+/// A ratio, poisoned while the first item costs 5 (a cause, API.md R6).
+let ratio: Int = total / (items.one.cost - 5)
+
+/// Read from the poisoned ratio.
+let half: Int = ratio / 2
+-- a/items/a.canon --
+package a
+
+entry items.one {
+  cost: 5
+}
+
+entry items.two {
+  cost: 200
+}
+
+entry dups.x {
+  cost: 3
+}
+-- a/items/b.canon --
+package a
+
+entry items.three {
+  cost: 300
+}
+
+entry dups.x {
+  cost: 4
+}

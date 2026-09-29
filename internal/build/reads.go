@@ -2,6 +2,7 @@ package build
 
 import (
 	"cmp"
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"io/fs"
@@ -54,7 +55,7 @@ func RevisionOf(lines []Listed) string {
 // Over is p reading and writing through fsys, its directory and options kept: the project as a
 // workspace snapshot sees it (API.md S1).
 func (p *Project) Over(fsys project.FS) *Project {
-	return &Project{fs: fsys, dir: p.dir, opt: p.opt}
+	return &Project{fs: fsys, dir: p.dir, opt: p.opt, cache: p.cache}
 }
 
 // FS is the file system p was opened on.
@@ -163,7 +164,7 @@ func (a *Analysis) Reads(pkg string) []Read {
 		out = append(out, r.p.unitReads(u)...)
 	}
 	if l := r.host.log(); l != nil {
-		out = append(out, l.reads(names, displays(r.s.set, 0))...)
+		out = append(out, l.reads(names)...)
 	}
 	slices.SortFunc(out, compareReads)
 	return slices.Compact(out)
@@ -200,19 +201,6 @@ func boolOrder(a, b bool) int {
 	return 1
 }
 
-// displays is the display path of every file set's file added after id from, by absolute
-// name, the first one kept: a file keeps its first reference's form.
-func displays(set *source.FileSet, from source.FileID) map[string]string {
-	out := map[string]string{}
-	for id := from + 1; set.File(id) != nil; id++ {
-		f := set.File(id)
-		if _, seen := out[f.Abs]; !seen {
-			out[f.Abs] = f.Path
-		}
-	}
-	return out
-}
-
 // touch is one name a run's loads or asset checks consulted: a file read or stat'd, a
 // directory listed, or a path whose links were resolved.
 type touch struct {
@@ -228,9 +216,12 @@ type readLog struct {
 	mu      sync.Mutex
 	pkg     string
 	by      map[string]map[touch]bool
-	pending []string // files read since they were last told to the file system (API.md S3)
-	seen    source.FileID
-	dir     string // the project directory, which displays a file the file set lacks
+	pending []string          // files read since they were last told to the file system (API.md S3)
+	read    map[string]bool   // every file read
+	known   map[string]string // each file this run's loads added to the set, by its least display
+	depth   int               // the loads running, one inside another
+	last    source.FileID     // the set's last file the log has looked at
+	dir     string            // the project directory, which displays a file the file set lacks
 }
 
 func (l *readLog) ReadFile(name string) ([]byte, error) {
@@ -264,7 +255,65 @@ func (l *readLog) note(t touch, read bool) {
 	l.by[l.pkg][t] = true
 	if read {
 		l.pending = append(l.pending, t.abs)
+		l.read[t.abs] = true
 	}
+}
+
+// loadSem is held by one run's loads at a time, by every run adding to one file set.
+type loadSem chan struct{}
+
+// loading starts a load of this run and returns what ends it, or ctx.Err() while waiting. The
+// outermost load holds sem, so the files the set gains meanwhile that the log read are this
+// run's; each keeps its least display (log-2026-09-29 M4 U8-r).
+func (l *readLog) loading(ctx context.Context, set *source.FileSet, sem loadSem) (func(), error) {
+	if l == nil {
+		return func() {}, nil
+	}
+	l.mu.Lock()
+	l.depth++
+	outer := l.depth == 1
+	l.mu.Unlock()
+	if outer {
+		select {
+		case sem <- struct{}{}:
+		case <-ctx.Done():
+			l.mu.Lock()
+			l.depth--
+			l.mu.Unlock()
+			return nil, ctx.Err()
+		}
+		l.mu.Lock()
+		l.last = lastFile(set, l.last) // what other runs added is not this run's
+		l.mu.Unlock()
+	}
+	return l.loaded(set, sem, outer), nil
+}
+
+// loaded ends a load: the outermost records the files the set gained, then frees sem.
+func (l *readLog) loaded(set *source.FileSet, sem loadSem, outer bool) func() {
+	return func() {
+		l.mu.Lock()
+		defer l.mu.Unlock()
+		l.depth--
+		if !outer {
+			return
+		}
+		defer func() { <-sem }()
+		for f := set.File(l.last + 1); f != nil; f = set.File(l.last + 1) {
+			l.last = f.ID
+			if d, ok := l.known[f.Abs]; l.read[f.Abs] && (!ok || f.Path < d) {
+				l.known[f.Abs] = f.Path
+			}
+		}
+	}
+}
+
+// lastFile is the id of the set's last file, looking from id on.
+func lastFile(set *source.FileSet, id source.FileID) source.FileID {
+	for set.File(id+1) != nil {
+		id++
+	}
+	return id
 }
 
 // enter charges what is read next to pkg and returns whom it charged before.
@@ -277,44 +326,39 @@ func (l *readLog) enter(pkg string) string {
 }
 
 // flush tells the file system under the log, if it records reads, each file read since the
-// last flush, by the display path the file set gives it or else by display (API.md S3).
-func (l *readLog) flush(set *source.FileSet) {
-	l.mu.Lock()
-	pending, from := l.pending, l.seen
-	l.pending = nil
-	for set.File(l.seen+1) != nil {
-		l.seen++
-	}
-	l.mu.Unlock()
+// last flush, by the least display this run's loads gave it or else by display (API.md S3).
+func (l *readLog) flush() {
 	rec, ok := l.fs.(ReadRecorder)
-	if !ok || len(pending) == 0 {
-		return
-	}
-	known := displays(set, from)
+	l.mu.Lock()
+	pending := l.pending
+	l.pending = nil
 	out := make([]Read, 0, len(pending))
 	for _, abs := range pending {
-		out = append(out, Read{Display: l.displayOf(known, abs), Abs: abs})
+		out = append(out, Read{Display: l.displayOf(abs), Abs: abs})
 	}
-	rec.RecordReads(out)
+	l.mu.Unlock()
+	if ok && len(out) > 0 {
+		rec.RecordReads(out)
+	}
 }
 
 // reads is every name the packages names consulted.
-func (l *readLog) reads(names []string, known map[string]string) []Read {
+func (l *readLog) reads(names []string) []Read {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	var out []Read
 	for _, name := range names {
 		//canon:unordered the caller sorts the reads
 		for t := range l.by[name] {
-			out = append(out, Read{Display: l.displayOf(known, t.abs), Abs: t.abs, Dir: t.dir, Link: t.link})
+			out = append(out, Read{Display: l.displayOf(t.abs), Abs: t.abs, Dir: t.dir, Link: t.link})
 		}
 	}
 	return out
 }
 
-// displayOf is abs as the file set displays it, else relative to the project directory.
-func (l *readLog) displayOf(known map[string]string, abs string) string {
-	if d, ok := known[abs]; ok {
+// displayOf is abs as this run's loads displayed it, else relative to the project directory.
+func (l *readLog) displayOf(abs string) string {
+	if d, ok := l.known[abs]; ok {
 		return d
 	}
 	return relativeTo(l.dir, abs, filepath.Separator)
@@ -328,7 +372,7 @@ func (h *evalHost) track(pkg string) func() {
 	}
 	l := h.log()
 	if l == nil {
-		l = &readLog{fs: h.loader.FS, by: map[string]map[touch]bool{}}
+		l = &readLog{fs: h.loader.FS, by: map[string]map[touch]bool{}, read: map[string]bool{}, known: map[string]string{}, last: h.base}
 		if h.loader.Layout != nil {
 			l.dir = h.loader.Layout.Dir
 		}
@@ -341,7 +385,7 @@ func (h *evalHost) track(pkg string) func() {
 	prev := l.enter(pkg)
 	return func() {
 		l.enter(prev)
-		l.flush(h.loader.Set)
+		l.flush()
 	}
 }
 

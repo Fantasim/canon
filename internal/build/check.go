@@ -43,6 +43,26 @@ type snapshot struct {
 	units  []*project.Unit
 	sums   []project.FileSum
 	locks  map[string][]byte // every package directory's canon.lock read, by project-relative path
+	canon  [sha256.Size]byte // project.canon's SHA-256
+	gen    *cacheGen         // the cache generation whose set this is; nil without a cache
+	base   source.FileID     // the set's last file when the snapshot began
+}
+
+// loadLock is what one run's loads hold while they add to the set: the cache generation's, which
+// every snapshot sharing the set takes, else one of the run's own.
+func (s *snapshot) loadLock() loadSem {
+	if s.gen == nil {
+		return make(loadSem, 1)
+	}
+	return s.gen.loads
+}
+
+// add is a file of the snapshot's set: the cache's when it holds that content, else added.
+func (s *snapshot) add(display, abs string, content []byte) (*source.File, error) {
+	if s.gen == nil {
+		return s.set.Add(display, abs, content)
+	}
+	return s.gen.file(display, abs, content)
 }
 
 // Packages scans and parses the project and lists its packages (API.md §5.5, O4).
@@ -145,6 +165,9 @@ func (p *Project) load(ctx context.Context) (*snapshot, error) {
 		return nil, err
 	}
 	r := &project.Reader{FS: p.fs, Dir: p.dir, Set: s.set, BagOf: s.bag}
+	if s.gen != nil {
+		r.Reuse = s.gen.reuse
+	}
 	if s.units, err = r.Parse(ctx, s.names); err != nil {
 		return nil, displayErrorIn(p.dir, err)
 	}
@@ -153,7 +176,26 @@ func (p *Project) load(ctx context.Context) (*snapshot, error) {
 		return nil, err
 	}
 	project.CheckStudio(s.proj, s.units, s.own)
+	s.noteParsed()
 	return s, nil
+}
+
+// noteParsed tells the cache how many bytes of its set this snapshot uses, which decides when
+// it is compacted.
+func (s *snapshot) noteParsed() {
+	if s.gen == nil {
+		return
+	}
+	n := 0
+	for _, u := range s.units {
+		for _, f := range u.Files {
+			n += len(f.Src.Content)
+		}
+	}
+	for _, data := range s.locks { //canon:unordered a sum
+		n += len(data)
+	}
+	s.gen.parsed(s.base, n)
 }
 
 // bag is the bag of package pkg; "" is the project's own.

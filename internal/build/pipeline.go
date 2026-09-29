@@ -44,6 +44,9 @@ type run struct {
 	failed    checkRuns               // stages C and D's failed named checks (VIEWMODEL.md J15)
 	ownReads  *driverReads            // drivers read over the run's own program, once a model needs it
 	wideReads *driverReads            // drivers read over the drivers-only program, idem
+	cached    bool                    // phase 2 goes through the project's cache: the run's own program
+	epoch     uint64                  // the cache's epoch of the program, 0 for none (IMPLEMENTATION-PLAN §7.6)
+	memoized  bool                    // the evaluator replays the cache's memo, and so logs no cause
 }
 
 // prepare is phase 1: the snapshot parsed, the selection with its imports, the layers checked.
@@ -60,7 +63,7 @@ func (p *Project) prepare(ctx context.Context, selectors []string) (*run, error)
 	if err := p.checkLayers(s, loaded); err != nil {
 		return nil, err
 	}
-	return &run{p: p, s: s, selected: selected, loaded: loaded, bags: s.bagsOf(loaded)}, nil
+	return &run{p: p, s: s, selected: selected, loaded: loaded, bags: s.bagsOf(loaded), cached: true}, nil
 }
 
 // analyze runs phases 2 to 7: check, then stages A to E (EVALUATION.md §1).
@@ -68,6 +71,11 @@ func (r *run) analyze(ctx context.Context) error {
 	if err := r.check(ctx); err != nil {
 		return err
 	}
+	return r.evaluate(ctx)
+}
+
+// evaluate runs phases 3 to 7 over the checked program: stages A to E (EVALUATION.md §1).
+func (r *run) evaluate(ctx context.Context) error {
 	r.stageA(ctx)
 	if err := r.stageB(ctx); err != nil {
 		return err
@@ -101,9 +109,13 @@ func (r *run) check(ctx context.Context) error {
 func (r *run) phase2(ctx context.Context) error {
 	r.fold = eval.NewFolder(r.bags, r.opt)
 	files := filesOf(r.loaded)
-	if r.p.opt.Checker != nil {
+	switch {
+	case r.p.opt.Checker != nil:
 		r.prog = r.p.opt.Checker(ctx, r.s.proj, files, r.bags)
-	} else {
+	case r.cached && r.s.gen != nil:
+		in := checkInput{proj: r.s.proj, key: keyOf(r.s, r.opt.Layers), files: files, bags: r.bags, fold: r.fold}
+		r.prog, r.epoch = r.s.gen.check(ctx, r.p.cache, in)
+	default:
 		r.prog = check.Check(ctx, r.s.proj, files, r.bags, r.fold)
 	}
 	if r.prog == nil {
@@ -133,8 +145,8 @@ func (r *run) emitsView() map[string]bool {
 
 // newHost is the run's host and evaluator, reporting into bags: stage A's, or canon test's.
 func (r *run) newHost(bags check.Bags) {
-	r.vix, r.rix = verify.NewIndex(r.prog), rules.NewIndex(r.prog)
-	r.host = &evalHost{prog: r.prog, bags: bags, index: r.vix, fold: r.fold}
+	r.vix, r.rix = r.indexes()
+	r.host = &evalHost{prog: r.prog, bags: bags, index: r.vix, fold: r.fold, base: r.s.base, sites: r.loadSites(), loadLock: r.s.loadLock()}
 	r.host.loader = &load.Loader{FS: r.p.fs, Layout: r.s.layout, Set: r.s.set}
 	r.ev = eval.New(r.prog, r.host, bags, r.opt)
 	r.host.ev = r.ev
@@ -143,11 +155,21 @@ func (r *run) newHost(bags check.Bags) {
 	r.host.verifier = verify.NewShared(r.vix, r.ev, bags, r.assets)
 }
 
+// indexes is the verification and check indexes of the run's program, built once per run: the
+// one place the cache's per-file index caches plug in.
+func (r *run) indexes() (*verify.Index, *rules.Index) {
+	return verify.NewIndex(r.prog), rules.NewIndex(r.prog)
+}
+
 // stageA forces every const and let of the selected packages in order (EVALUATION.md §2.1).
 func (r *run) stageA(ctx context.Context) {
 	r.newHost(r.bags)
-	if r.causes {
-		r.ev.LogCauses() // API.md R6
+	if r.epoch != 0 {
+		r.ev.UseMemo(r.p.cache.memo, r.epoch) // IMPLEMENTATION-PLAN §7.6 NFR-02
+		r.memoized = true
+	}
+	if r.causes && !r.memoized {
+		r.ev.LogCauses() // API.md R6; a memoized run's causes are logged apart (cause.go)
 	}
 	for _, cp := range r.prog.Packages {
 		if !r.selects(cp.Path) {

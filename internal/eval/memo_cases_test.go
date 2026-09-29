@@ -181,8 +181,3 @@ func TestMemoSameEpochRecheck(t *testing.T) {
 	cold := again.evaluate(t, nil, 0)
 	same(t, "checked again", again.evaluate(t, memo.memo, memo.epoch), cold)
 }
-
-// IMPLEMENTATION-PLAN §7.6: one entry edited, the others replayed in one epoch, needs check.Session.
-func TestMemoRecheckLineage(t *testing.T) {
-	t.Skip("incremental ≡ cold across check.Session.Recheck and the memo is U8's property test (log-2026-09-29 M4 U11)")
-}

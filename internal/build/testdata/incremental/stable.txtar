@@ -1,0 +1,42 @@
+IMPLEMENTATION-PLAN §7.6 (NFR-02), LOCK.md §4, §5, API.md E20: a stable table whose entries are
+edited, added and removed, and whose canon.lock is edited, along one cache (log-2026-09-29 M4 U8-r).
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+/// A status.
+record Status {
+  /// Its code, kept forever.
+  code: Int @stable
+  /// Weight.
+  weight: Int = 1
+}
+
+/// Statuses.
+let statuses: stable table Status = {}
+
+/// The heaviest weight.
+let heaviest: Int = statuses.open.weight + statuses.done.weight
+-- a/s/open.canon --
+package a
+
+entry statuses.open {
+  code: 1
+  weight: 3
+}
+-- a/s/done.canon --
+package a
+
+entry statuses.done {
+  code: 2
+  weight: 5
+}
+-- a/canon.lock --
+# canon.lock v1
+field  a.statuses.code  1  open
+field  a.statuses.code  2  done
+table  a.statuses  done
+table  a.statuses  open

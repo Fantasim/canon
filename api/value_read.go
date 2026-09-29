@@ -21,6 +21,7 @@ type snapshot struct {
 	editLayer string
 	layers    []string // Options.Layers, whose amendments may explain a root the checker broke
 	types     *typeEncoder
+	ctx       context.Context // the Value call's: a cause still to compute runs under it (API.md S11)
 }
 
 // Value returns the final value at path (rules R4-R6, API.md §6).
@@ -42,8 +43,10 @@ func (p *Project) Value(ctx context.Context, path string) (v *Value, err error) 
 	if _, err := p.revision(ctx, ws); err != nil {
 		return nil, err
 	}
-	s := &snapshot{a: a, s: edit.NewSnapshot(a), editLayer: p.editLayer, layers: p.layers, types: newTypeEncoder(ctx, a)}
-	return s.resolve(path, parsed)
+	s := &snapshot{a: a, s: edit.NewSnapshot(a), editLayer: p.editLayer, layers: p.layers, types: newTypeEncoder(ctx, a), ctx: ctx}
+	v, err = s.resolve(path, parsed)
+	s.ctx = context.WithoutCancel(ctx) // a later Child never inherits this call's cancellation
+	return v, err
 }
 
 // resolve reads parsed in the snapshot; an input field has nothing at its path (EVALUATION.md §11.2).
@@ -106,7 +109,10 @@ func (s *snapshot) resolveError(path string, parsed edit.Path, err error) error 
 		out.Candidates, out.Detail = pe.Candidates, strings.Join(pe.Candidates, textListSep)
 	}
 	if errors.Is(out.Err, ErrNoValue) {
-		out.Findings = s.cause(pe.Root)
+		var err error
+		if out.Findings, err = s.cause(pe.Root); err != nil {
+			return err
+		}
 	}
 	return out
 }

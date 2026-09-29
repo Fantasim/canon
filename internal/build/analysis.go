@@ -21,6 +21,7 @@ type Analysis struct {
 	res     *Result
 	settled map[eval.Root]value.Value // the selected packages' values settled when Analyze returned
 	viewErr error                     // what ViewEvaluator's evaluations failed with, but a template's own failure
+	causes  *eval.Evaluator           // a memoized run's causes, logged on first use (cause.go)
 }
 
 // Analyze runs phases 1 to 7, writes nothing, and freezes the result (CLI.md §3.3).
@@ -87,13 +88,6 @@ func (a *Analysis) ViewModel(ctx context.Context, pkg string) (*vm.ViewModel, er
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	return a.r.viewModel(ctx, pkg)
-}
-
-// Cause is the errors that poisoned root: its own, or the first poisoned value's it read, in any package (API.md R6, EVALUATION.md §7.2).
-func (a *Analysis) Cause(root eval.Root) []diag.Finding {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	return a.r.ev.PoisonCause(root).Findings
 }
 
 // Produced is v as its origin produced it, before later amendments of its descendants copied it (CLI.md §3.7).

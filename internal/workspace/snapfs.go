@@ -194,12 +194,13 @@ func (s *snapFS) readDir(abs string) *entry {
 	return &entry{list: list, err: err, stamp: st, at: at, sum: listSum(list, err, nil), src: listSum(list, err, s.isSource(abs))}
 }
 
-// RecordReads keeps the files a load read, each by its first display path (build.ReadRecorder).
+// RecordReads keeps the files a load read, each by its least display path, whatever the order
+// of the runs that read it (build.ReadRecorder; log-2026-09-29 M4 U8-r).
 func (s *snapFS) RecordReads(reads []build.Read) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	for _, r := range reads {
-		if _, ok := s.inputs[r.Abs]; !ok {
+		if d, ok := s.inputs[r.Abs]; !ok || r.Display < d {
 			s.inputs[r.Abs] = r.Display
 		}
 	}

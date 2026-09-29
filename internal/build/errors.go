@@ -15,6 +15,7 @@ var (
 	ErrReadOnly = errors.New("the project's file system cannot be written")
 
 	errNoProgram  = errors.New("the checker returned no program")
+	errLinkLoop   = errors.New("too many levels of symbolic links")
 	errNoLoadSite = errors.New("a forced load expression is in no file of the program")
 )
 

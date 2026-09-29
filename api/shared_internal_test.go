@@ -51,7 +51,7 @@ func TestValueAndViewModelShareAnAnalysis(t *testing.T) {
 		wg.Add(3)
 		go func() {
 			defer wg.Done()
-			snap := &snapshot{a: a, s: edit.NewSnapshot(a), types: newTypeEncoder(ctx, a)}
+			snap := &snapshot{a: a, s: edit.NewSnapshot(a), types: newTypeEncoder(ctx, a), ctx: ctx}
 			v, err := snap.resolve("a:uses", parsed)
 			if err != nil || len(v.Children()) != 2 || v.Type.VM == nil || v.Origin.Kind == "" {
 				t.Errorf("Value on the shared analysis: %v, %+v", err, v)

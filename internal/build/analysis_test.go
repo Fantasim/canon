@@ -305,11 +305,21 @@ func TestAnalysisCause(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, root := range []eval.Root{{Pkg: "a", Name: "total"}, {Pkg: "b", Name: "bad"}} {
-		if c := a.Cause(root); len(c) != 1 || c[0].Package != "b" {
+		if c := causeOf(t, a, root); len(c) != 1 || c[0].Package != "b" {
 			t.Errorf("Cause(%v) = %v, want b's one error", root, c)
 		}
 	}
-	if c := a.Cause(eval.Root{Pkg: "a", Name: "fine"}); len(c) != 0 {
+	if c := causeOf(t, a, eval.Root{Pkg: "a", Name: "fine"}); len(c) != 0 {
 		t.Errorf("Cause(fine) = %v", c)
 	}
+}
+
+// causeOf is a.Cause(root) under a context that stays live (API.md R6).
+func causeOf(t *testing.T, a *build.Analysis, root eval.Root) []diag.Finding {
+	t.Helper()
+	c, err := a.Cause(context.Background(), root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return c
 }

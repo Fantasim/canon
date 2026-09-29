@@ -1,0 +1,48 @@
+IMPLEMENTATION-PLAN §7.6 (NFR-02), EVALUATION.md §9.3: the memo's layers case as a project, run
+with the layer dev active (log-2026-09-29 M4 U8-r).
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A configuration.
+record Conf {
+  /// K.
+  k: Int = 3
+}
+
+/// The configuration.
+let conf: Conf = {}
+
+/// An item.
+record Item {
+  /// Cost.
+  cost: Int = 5
+  /// Twice the cost.
+  twice: Int = cost * 2
+}
+
+/// Items.
+let items: table Item = {}
+-- a/e1.canon --
+package a
+
+entry items.one { cost: conf.k * 2 }
+-- a/e2.canon --
+package a
+
+entry items.two { cost: 7 }
+-- a/dev.canon --
+package a
+layer dev
+
+amend conf {
+  k: 4
+}
+
+amend items {
+  two.cost: 8
+}

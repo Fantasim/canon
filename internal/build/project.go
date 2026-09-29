@@ -31,9 +31,10 @@ type Checker func(ctx context.Context, proj *project.Project, files []*syntax.Fi
 // Project is an opened project: its directory, file system and options (API.md O2). Every call
 // reads project.canon and the file set anew (API.md S1).
 type Project struct {
-	fs  project.FS
-	dir string
-	opt Options
+	fs    project.FS
+	dir   string
+	opt   Options
+	cache *Cache // nil: every call cold
 }
 
 // Findings are findings with the files that locate them, and their counts (API.md §4.3).
@@ -67,12 +68,16 @@ func Open(fsys project.FS, dir string, opt Options) (*Project, error) {
 // open starts a snapshot: project.canon read and checked into the project's own bag (package
 // "", no package, never truncated), the roots placed, the file set scanned.
 func (p *Project) open() (*snapshot, error) {
-	set := &source.FileSet{}
-	s := &snapshot{p: p, set: set, own: diag.NewBag(set, ""), bags: map[string]*diag.Bag{}}
+	s := &snapshot{p: p, set: &source.FileSet{}, bags: map[string]*diag.Bag{}}
+	if p.cache != nil {
+		s.gen, s.base = p.cache.begin()
+		s.set = s.gen.set
+	}
+	s.own = diag.NewBag(s.set, "")
 	if err := p.readProject(s); err != nil {
 		var oe *OpenError
 		if errors.As(err, &oe) {
-			oe.Findings = collect(set, s.own)
+			oe.Findings = collect(s.set, s.own)
 		}
 		return nil, err
 	}
@@ -97,8 +102,9 @@ func (p *Project) readProject(s *snapshot) error {
 	if err != nil {
 		return displayError(project.FileName, err)
 	}
-	s.sums = append(s.sums, project.FileSum{Path: project.FileName, Sum: sha256.Sum256(content)})
-	src, err := s.set.Add(project.FileName, file, content)
+	s.canon = sha256.Sum256(content)
+	s.sums = append(s.sums, project.FileSum{Path: project.FileName, Sum: s.canon})
+	src, err := s.add(project.FileName, file, content)
 	if err != nil {
 		return fmt.Errorf(fmtWrap, err)
 	}

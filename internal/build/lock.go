@@ -8,8 +8,10 @@ import (
 	"strings"
 
 	"github.com/fantasim/canonlang/internal/check"
+	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/eval"
 	"github.com/fantasim/canonlang/internal/lock"
+	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
 )
@@ -20,6 +22,7 @@ type lockState struct {
 	path    string // display path: the package directory, then canon.lock
 	abs     string
 	raw     []byte // the bytes on disk; nil when there is no file
+	id      source.FileID
 	file    *lock.File
 	sources *lock.Sources
 	whole   bool // read without E6005, so compared and updated (LOCK.md §4.5)
@@ -53,10 +56,11 @@ func (r *run) readLock(ctx context.Context, cp *check.Package) (*lockState, erro
 		return st, nil
 	}
 	st.raw = data
-	src, err := r.s.set.Add(rel, st.abs, data)
+	src, err := r.s.add(rel, st.abs, data)
 	if err != nil {
 		return nil, fmt.Errorf(fmtWrap, err)
 	}
+	st.id = src.ID
 	st.file, st.whole = lock.Parse(src.ID, src.Content, cp.Path, r.bags[cp.Path])
 	return st, nil
 }
@@ -100,16 +104,18 @@ func (r *run) addTable(ctx context.Context, s *lock.Sources, obj check.Object, n
 	return s.AddTable(name, table)
 }
 
-// update records the facts of a build without errors (LOCK.md §5); an empty lock is not created.
+// update is the lock after recording the facts of a build without errors, the one compared
+// left as it was; an empty lock is not created.
 func (st *lockState) update() (*Lock, error) {
-	before := lineSet(st.file.Format())
-	if _, err := st.file.Update(st.sources); err != nil {
+	file := st.fresh()
+	before := lineSet(file.Format())
+	if _, err := file.Update(st.sources); err != nil {
 		return nil, fmt.Errorf(fmtPackage, st.pkg, err)
 	}
-	if st.raw == nil && len(st.file.Facts()) == 0 {
+	if st.raw == nil && len(file.Facts()) == 0 {
 		return nil, nil
 	}
-	out := &Lock{Package: st.pkg, Path: st.path, Abs: st.abs, Content: st.file.Format(), Status: StatusWritten}
+	out := &Lock{Package: st.pkg, Path: st.path, Abs: st.abs, Content: file.Format(), Status: StatusWritten}
 	if bytes.Equal(out.Content, st.raw) {
 		out.Status = StatusUnchanged
 	}
@@ -119,6 +125,15 @@ func (st *lockState) update() (*Lock, error) {
 		}
 	}
 	return out, nil
+}
+
+// fresh is the lock as read again, which an update may change: the compared one never does.
+func (st *lockState) fresh() *lock.File {
+	if st.raw == nil {
+		return lock.New(st.pkg)
+	}
+	f, _ := lock.Parse(source.NoFile, st.raw, st.pkg, diag.NewBag(&source.FileSet{}, st.pkg)) // read whole before
+	return f
 }
 
 // lineSet is the set of lines of a lock's text, each with its line end.

@@ -45,8 +45,9 @@ type subscriber struct {
 }
 
 // New is a project over b, the build Open returned; its first snapshot has read nothing yet.
+// Its snapshots' builds share one build.Cache, the NFR-02 memo.
 func New(b *build.Project) *Project {
-	p := &Project{tmpl: b, now: time.Now, closing: make(chan struct{}), write: make(chan struct{}, 1), calls: map[*call]bool{}}
+	p := &Project{tmpl: b.WithCache(build.NewCache()), now: time.Now, closing: make(chan struct{}), write: make(chan struct{}, 1), calls: map[*call]bool{}}
 	fs := newSnapFS(b.FS(), nil, p.now)
 	fs.root = b.Dir()
 	p.cur = p.snapshot(fs)

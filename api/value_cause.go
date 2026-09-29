@@ -11,15 +11,16 @@ import (
 )
 
 // cause explains why root has no value, from evaluation, else from the checker that broke it (rule R6).
-func (s *snapshot) cause(root eval.Root) []Finding {
-	if c := s.a.Cause(root); len(c) > 0 {
-		return fromDiag(s.a.Files(), c)
+func (s *snapshot) cause(root eval.Root) ([]Finding, error) {
+	c, err := s.a.Cause(s.ctx, root)
+	if err != nil || len(c) > 0 {
+		return fromDiag(s.a.Files(), c), err
 	}
 	obj := s.object(root)
 	if obj == nil {
-		return nil
+		return nil, nil
 	}
-	return fromDiag(s.a.Files(), s.brokenBy(obj, map[check.Object]bool{}))
+	return fromDiag(s.a.Files(), s.brokenBy(obj, map[check.Object]bool{})), nil
 }
 
 // object is the let or const root names.

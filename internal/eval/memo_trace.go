@@ -161,7 +161,8 @@ func (tr *entryTrace) read(e *Evaluator, rd memoRead, v value.Value, ok bool) {
 	tr.reads, tr.infos = append(tr.reads, rd), append(tr.infos, in)
 }
 
-// noteFinding keeps a finding the recorded entry reports; another run's voids the recording.
+// noteFinding keeps a finding the recorded entry reports, detached from the values it names;
+// another run's voids the recording.
 func (r *run) noteFinding(b *diag.Builder) {
 	u := r.ev.memo
 	if u == nil || u.trace == nil {
@@ -171,7 +172,7 @@ func (r *run) noteFinding(b *diag.Builder) {
 		u.trace.void = true
 		return
 	}
-	u.trace.found = append(u.trace.found, memoFinding{pkg: r.fr.pkg, b: b, read: len(u.trace.reads)})
+	u.trace.found = append(u.trace.found, memoFinding{pkg: r.fr.pkg, b: b.Detached(), read: len(u.trace.reads)})
 }
 
 // noteAbort notes that the recorded entry stops on a hard error (EVALUATION.md §7.1).

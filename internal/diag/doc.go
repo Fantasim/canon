@@ -4,3 +4,5 @@
 // cmd/diaggen and never edited by hand. A finding is built only by its code's typed
 // constructor, diag.E3501.At(span, key, coll), whose arguments follow ERRORS.md.
 package diag
+
+// Builder.Detached: a strictly additive change (IMPLEMENTATION-PLAN §4.4; log-2026-09-29).
