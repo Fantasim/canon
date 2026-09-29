@@ -91,9 +91,10 @@ jobs:
         if: success() || failure()
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force -Path vendor\include\nlohmann | Out-Null
-          Invoke-WebRequest -Uri "https://raw.githubusercontent.com/nlohmann/json/v3.11.3/single_include/nlohmann/json.hpp" -OutFile vendor\include\nlohmann\json.hpp
-          "CANON_NLOHMANN_INCLUDE=$PWD\vendor\include" >> $env:GITHUB_ENV
+          $inc = Join-Path $env:RUNNER_TEMP "nlohmann-include"
+          New-Item -ItemType Directory -Force -Path (Join-Path $inc "nlohmann") | Out-Null
+          Invoke-WebRequest -Uri "https://raw.githubusercontent.com/nlohmann/json/v3.11.3/single_include/nlohmann/json.hpp" -OutFile (Join-Path $inc "nlohmann\json.hpp")
+          "CANON_NLOHMANN_INCLUDE=$inc" >> $env:GITHUB_ENV
       - name: locate the Developer Command Prompt
         if: success() || failure()
         shell: pwsh
