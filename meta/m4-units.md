@@ -57,7 +57,8 @@ entries · B1 Recheck folds on the program's Info. Memo architecture: ADR-0011. 
       absolute names their own reason, `lockStable` tests the table first); B1 nits (`replayFolds`
       comment cites the real invariant, a free guard ending the lineage when swapped decls fold,
       `holdsCode` reuses `hasCode`); TestDependencyRule also enforces each package's §3 Consumes row
-      (log M4 P13c-r), violations fixed or reported
+      (log M4 P13c-r: listed or reachable through the row), violations fixed or reported; a table
+      test for `check.FileCache` (`Of`, `KeepOnly`)
 
 ## Final pass
 
