@@ -52,6 +52,8 @@ entries · B1 Recheck folds on the program's Info. Memo architecture: ADR-0011. 
 ## Wave 3c (after 3b)
 
 - P13a `build/hosts.go` listings as maps · P13d `check` `Info.cloned` allocation [opus]
+- B4 F1 Path for a finding in a top-level `let` initializer (knownbug test from U7a) [sonnet]
+- B5 build manifest (WIRE §10, LOD-11) and `.canon/cache/` (CLI §2.7); O7's manifest half [opus]
 - Cleanup unit: duplicates, P9 leftovers, E1903 for a variant case declaring an input field; a
       neighbour's 216 kept-comma line dropped by the M5 settle (M6); U5b nits (`unwritable` gives
       absolute names their own reason, `lockStable` tests the table first); B1 nits (`replayFolds`
