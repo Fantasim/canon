@@ -65,7 +65,8 @@ the last wave.
 - U5b api edit surface: Edit, Op JSON, LockCheck, Open → Recover, drafts; S12, E17–E21, W5, X2 [opus]
 - U6 `cli`: explain input fields, `canon refs`, `--watch` [sonnet]
 
-- Cleanup: one `value.ArmIndex` for live/verify/wire; live's dependent-type resolution vs
+- Cleanup: P9 literal-union keys in `eval`'s paths (`path.go` keyText) and live `colls.go`
+      (`verify.MapKey`); one `value.ArmIndex` for live/verify/wire; live's dependent-type resolution vs
       verify's `substitute`; live's `layoutOf`/`keyed`/`fieldOf` vs layout/render/encode [sonnet]
 
 ## Wave 4 (gates, written now, run long once at the end)
