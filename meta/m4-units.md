@@ -43,7 +43,7 @@ the last wave.
 - U4c `edit` commit/journal/recover: N9–N12, O5, crash test (acceptance 5) [opus]
 - U5 watch: `workspace/watch*.go`, api/watch.go, W12–W16 [opus]
 - U5a api reads: Evaluate (no draft), Refs, Format/FormatJSONSource (T1, T2) [opus]
-- U8 `build` memo integration: `build.Cache`, load memo, LockUpdates, LockCheck (B4), atomic
+- U8 `build` memo integration (+ `diag` `Builder.Detached()` for the memo, U11 item 7): `build.Cache`, load memo, LockUpdates, LockCheck (B4), atomic
   fsynced OS WriteFile; incremental ≡ cold property test [opus]
 - U13 `rules` record-check memo; per-file caching of `rules.NewIndex` and `verify.NewIndex` walks [opus]
 - U9b `views/render` + `eval` + `build` adapter: render `show` templates and view-named methods
