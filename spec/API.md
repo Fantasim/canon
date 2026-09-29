@@ -492,6 +492,9 @@ func (vm *ViewModel) JSON() []byte
 func (vm *ViewModel) Decode(v any) error
 ```
 
+- `pkg` is a package name, not a selector (R1): anything else is `ErrUnknownPackage`. `Decode` is
+  strict: a member that matches a field of `v` only by letter case, or a `null` where `v` holds no
+  `json.RawMessage` or interface, is an error; members `v` does not read are skipped (VIEWMODEL J6).
 - **R9.** `JSON()` returns exactly the bytes `emit view` would write for `pkg` in this snapshot
   (VIEWMODEL.md), whether or not the package declares `emit view`. It is produced even when the
   package has errors (VM-07).
