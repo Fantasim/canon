@@ -47,7 +47,9 @@ memo wiring · U13 rules/verify caches + P9 · U9b show templates and methods ·
 - B2 one budget counter per invocation (DECISIONS 104; log M4 B1) [opus] — after wave 3 lands
 - Later: cleanup unit (duplicates, P9 leftovers, E1903 for a variant case declaring an input
       field; a neighbour's 216 kept-comma line dropped by the M5 settle, described in M6; U5b nits:
-      `unwritable` gives absolute names their own reason, `lockStable` tests the table first) — after P12/P3 land.
+      `unwritable` gives absolute names their own reason, `lockStable` tests the table first; B1 nits:
+      `replayFolds` comment cites the real invariant (no fold reads an object broken at its time),
+      a free guard ending the lineage when swapped decls fold, `holdsCode` reuses `hasCode`) — after P12/P3 land.
 - P13 perf (after wave 3): `build/hosts.go` listings as maps, `lock` merge, `i18n` bad-node cache,
       `check` `Info.cloned` [sonnet/opus by package]
 
