@@ -193,6 +193,21 @@ func TestDefinesScratchReadIsNotCached(t *testing.T) {
 	}
 }
 
+// API.md S5: a header read once serves the next call from the cache, which Reused is told of.
+func TestDefinesCacheHitIsReported(t *testing.T) {
+	l, req := loaderFor(t, map[string]string{"a.h": "#define A 1\n"})
+	var reused []string
+	l.Reused = func(abs string) { reused = append(reused, abs) }
+	for range 2 {
+		if _, _, err := l.Load(context.Background(), req, definesExpr("a.h", ""), definesTableType()); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if len(reused) != 1 || reused[0] != projectDir+"/a.h" {
+		t.Errorf("reused %v, want the header once", reused)
+	}
+}
+
 // WIRE.md §6.8: two load.defines calls of one file aggregate their skips into one W7101.
 func TestDefinesW7101AggregatesAcrossPrefixedCalls(t *testing.T) {
 	content := "#define FOO(x) x\n#define A_ONE 1\n#define B_BAD \"s\"\n#define A_BAD \"t\"\n"

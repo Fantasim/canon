@@ -13,6 +13,7 @@ import (
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/project"
 	"github.com/fantasim/canonlang/internal/source"
+	"github.com/fantasim/canonlang/internal/workspace"
 )
 
 // Options configures a Project; the zero value is valid (API.md §2.1).
@@ -39,16 +40,15 @@ type FS interface {
 	MkdirAll(name string) error
 }
 
-// Project is an opened Canon project, safe for concurrent use (API.md §3).
+// Project is an opened Canon project, safe for concurrent use, over its workspace (API.md §3).
 type Project struct {
 	root      string
 	b         *build.Project
 	mu        sync.Mutex
-	writeSem  chan struct{} // a writing Build's 1-slot lock, cancellable, made lazily (S9, S11)
-	rev       Revision
-	closed    bool
-	layers    []string // Options.Layers, the active layers
-	editLayer string   // Options.EditLayer, which Value's Editable is judged with (API.md §7.5)
+	ws        *workspace.Project // made over b on first use
+	rev       Revision           // the last revision a call read, what Revision returns after Close
+	layers    []string           // Options.Layers, the active layers
+	editLayer string             // Options.EditLayer, which Value's Editable is judged with (API.md §7.5)
 }
 
 // FindProject returns the directory holding project.canon in dir or a parent (rule O1).
@@ -91,9 +91,7 @@ func Open(root string, opts Options) (p *Project, err error) {
 
 // Close releases the project and stops every Watch (rule O6).
 func (p *Project) Close() error {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	p.closed = true
+	p.workspace().Close()
 	return nil
 }
 
@@ -114,17 +112,20 @@ type PackageInfo struct {
 // Packages lists every package of the project, sorted by name.
 func (p *Project) Packages(ctx context.Context) (infos []PackageInfo, err error) {
 	defer recoverInternal(&err)
-	b, err := p.open()
+	s, err := p.read(ctx)
 	if err != nil {
 		return nil, err
 	}
-	units, err := b.Packages(ctx)
+	units, err := share(ctx, s, workspace.Key(workspace.OpPackages, nil), s.Build().Packages)
 	if err != nil {
-		return nil, apiError(err)
+		return nil, err
 	}
-	p.setRevision(units.Revision)
+	if _, err := p.revision(ctx, s); err != nil {
+		return nil, err
+	}
 	for _, u := range units.Units {
-		info := PackageInfo{Name: u.Name, Dir: u.Dir, Imports: u.Imports, Layers: u.Layers}
+		// The units may be shared with another call (S8): the result holds its own slices.
+		info := PackageInfo{Name: u.Name, Dir: u.Dir, Imports: slices.Clone(u.Imports), Layers: slices.Clone(u.Layers)}
 		for _, f := range u.Files {
 			info.Files = append(info.Files, f.Src.Path)
 		}
@@ -139,29 +140,38 @@ type Revision string
 // Revision returns the revision of the current snapshot, after a refresh (rule S1), a broken
 // project.canon included; after Close, or a panic, the last revision read.
 func (p *Project) Revision() Revision {
-	if b, err := p.open(); err == nil {
-		p.refresh(b)
-	}
+	p.refresh()
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	return p.rev
 }
 
-// refresh reads the revision of the current snapshot (rule S3); a panic keeps the last one,
-// since Revision has no error to carry it (rule X2).
-func (p *Project) refresh(b *build.Project) {
+// refresh reads the revision of the current snapshot, refreshed (rules S1, S3); a panic keeps
+// the last one, since Revision has no error to carry it (rule X2).
+func (p *Project) refresh() {
 	defer func() { _ = recover() }()
-	if rev, err := b.Revision(context.Background()); err == nil {
-		p.setRevision(rev)
+	ctx := context.Background()
+	if s, err := p.read(ctx); err == nil {
+		_, _ = p.revision(ctx, s) // no ctx to cancel it: it cannot fail
 	}
 }
 
-// SetOverlay replaces a file's content in memory without writing it (API.md §3.4).
-func (p *Project) SetOverlay(file string, content []byte) error {
-	return errUnimplemented()
+// SetOverlay replaces a display or absolute path's content in memory, a writer (API.md §3.4).
+func (p *Project) SetOverlay(file string, content []byte) (err error) {
+	defer recoverInternal(&err)
+	return overlayError(file, p.workspace().SetOverlay(file, content))
 }
 
-// ClearOverlay removes the overlay of file, if any.
-func (p *Project) ClearOverlay(file string) error {
-	return errUnimplemented()
+// ClearOverlay removes the overlay of file, if any (API.md §3.4).
+func (p *Project) ClearOverlay(file string) (err error) {
+	defer recoverInternal(&err)
+	return overlayError(file, p.workspace().ClearOverlay(file))
+}
+
+// overlayError is an overlay's failure as the API reports it, a bad file ErrBadPath (API.md §15).
+func overlayError(file string, err error) error {
+	if errors.Is(err, workspace.ErrBadPath) {
+		return &PathError{Op: -1, Path: file, Err: ErrBadPath}
+	}
+	return apiError(err)
 }

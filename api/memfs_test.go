@@ -11,6 +11,7 @@ import (
 	"sync"
 	"testing"
 	"testing/fstest"
+	"time"
 
 	canon "github.com/fantasim/canonlang/api"
 )
@@ -52,18 +53,21 @@ var committedExamples = sync.OnceValue(func() map[string][]byte {
 	return files
 })
 
-// memFS is a canon.FS held in memory; names are absolute and `/`-separated (API.md §2.2).
+// memFS is a canon.FS held in memory, absolute `/`-separated names, later mtimes (API.md §2.2, S1).
 type memFS struct {
-	mu    sync.Mutex
-	files map[string][]byte
-	dirs  map[string]bool
+	mu     sync.Mutex
+	files  map[string][]byte
+	dirs   map[string]bool
+	mtimes map[string]time.Time
+	clock  int64
 }
 
 func newMemFS(files map[string][]byte) *memFS {
-	m := &memFS{files: maps.Clone(files), dirs: map[string]bool{"/": true}}
-	//canon:unordered each file only adds its own parent directories to a set
+	m := &memFS{files: maps.Clone(files), dirs: map[string]bool{"/": true}, mtimes: map[string]time.Time{}, clock: 1}
+	//canon:unordered each file only adds its own parent directories to a set and gets the first time
 	for name := range files {
 		m.addParents(name)
+		m.mtimes[name] = time.Unix(m.clock, 0)
 	}
 	return m
 }
@@ -72,6 +76,12 @@ func newMemFS(files map[string][]byte) *memFS {
 // "/law" absolute on the current drive, "D:/law".
 func dropVolume(name string) string {
 	return name[len(filepath.VolumeName(name)):]
+}
+
+// stamp gives name a modification time later than any before.
+func (m *memFS) stamp(name string) {
+	m.clock++
+	m.mtimes[name] = time.Unix(m.clock, 0)
 }
 
 func (m *memFS) addParents(name string) {
@@ -100,7 +110,7 @@ func (m *memFS) Stat(name string) (fs.FileInfo, error) {
 
 func (m *memFS) stat(name string) (fs.FileInfo, error) {
 	if data, ok := m.files[name]; ok {
-		return fstest.MapFS{path.Base(name): {Data: data}}.Stat(path.Base(name))
+		return fstest.MapFS{path.Base(name): {Data: data, ModTime: m.mtimes[name]}}.Stat(path.Base(name))
 	}
 	if m.dirs[name] {
 		return fstest.MapFS{path.Base(name): {Mode: fs.ModeDir}}.Stat(path.Base(name))
@@ -151,6 +161,7 @@ func (m *memFS) WriteFile(name string, data []byte) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.files[name] = slices.Clone(data)
+	m.stamp(name)
 	m.addParents(name)
 	return nil
 }
@@ -165,6 +176,7 @@ func (m *memFS) Rename(oldname, newname string) error {
 	}
 	delete(m.files, oldname)
 	m.files[newname] = data
+	m.stamp(newname)
 	m.addParents(newname)
 	return nil
 }

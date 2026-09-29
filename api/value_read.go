@@ -26,7 +26,7 @@ type snapshot struct {
 // Value returns the final value at path (rules R4-R6, API.md §6).
 func (p *Project) Value(ctx context.Context, path string) (v *Value, err error) {
 	defer recoverInternal(&err)
-	b, err := p.open()
+	ws, err := p.read(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -35,11 +35,13 @@ func (p *Project) Value(ctx context.Context, path string) (v *Value, err error) 
 		return nil, syntaxError(path, err, 0)
 	}
 	// Every package, so P6 and Origin never depend on a selection (log-2026-09-28, edit U4b).
-	a, err := b.Analyze(ctx, nil)
+	a, err := analyze(ctx, ws, nil)
 	if err != nil {
-		return nil, apiError(err)
+		return nil, err
 	}
-	p.setRevision(a.Result().Revision)
+	if _, err := p.revision(ctx, ws); err != nil {
+		return nil, err
+	}
 	s := &snapshot{a: a, s: edit.NewSnapshot(a), editLayer: p.editLayer, layers: p.layers, types: newTypeEncoder(ctx, a)}
 	return s.resolve(path, parsed)
 }

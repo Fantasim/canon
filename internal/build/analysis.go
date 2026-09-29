@@ -20,6 +20,7 @@ type Analysis struct {
 	r       *run
 	res     *Result
 	settled map[eval.Root]value.Value // the selected packages' values settled when Analyze returned
+	viewErr error                     // what ViewEvaluator's evaluations failed with, but a template's own failure
 }
 
 // Analyze runs phases 1 to 7, writes nothing, and freezes the result (CLI.md §3.3).

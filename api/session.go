@@ -2,6 +2,7 @@ package canon
 
 import (
 	"cmp"
+	"context"
 	"errors"
 	"fmt"
 	"path/filepath"
@@ -12,6 +13,8 @@ import (
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/project"
 	"github.com/fantasim/canonlang/internal/source"
+	"github.com/fantasim/canonlang/internal/workspace"
+	"github.com/fantasim/canonlang/internal/workspace/safego"
 )
 
 // absolute is dir made absolute and '/'-separated, the form of FS names (API.md §2.2).
@@ -23,20 +26,52 @@ func absolute(dir string) (string, error) {
 	return filepath.ToSlash(abs), nil
 }
 
-// open is the project's build, or ErrClosed after Close (rule O6).
-func (p *Project) open() (*build.Project, error) {
+// workspace is the project's snapshots, made over its build on first use (API.md §3).
+func (p *Project) workspace() *workspace.Project {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	if p.closed {
-		return nil, ErrClosed
+	if p.ws == nil {
+		p.ws = workspace.New(p.b)
 	}
-	return p.b, nil
+	return p.ws
 }
 
-func (p *Project) setRevision(rev string) {
+// read is the snapshot a call runs against, refreshed (rule S1), or ErrClosed after Close (O6).
+func (p *Project) read(ctx context.Context) (*workspace.Snapshot, error) {
+	s, err := p.workspace().Read(ctx)
+	if err != nil {
+		return nil, apiError(err)
+	}
+	return s, nil
+}
+
+// share is fn's result on s, one computation for identical concurrent calls (rule S8).
+func share[T any](ctx context.Context, s *workspace.Snapshot, key string, fn func(context.Context) (T, error)) (T, error) {
+	v, err := workspace.Share(ctx, s, key, fn)
+	if err != nil {
+		return v, apiError(err)
+	}
+	return v, nil
+}
+
+// analyze is the analysis of the selected packages on snapshot s, shared (rule S8).
+func analyze(ctx context.Context, s *workspace.Snapshot, selectors []string) (*build.Analysis, error) {
+	return share(ctx, s, workspace.Key(workspace.OpAnalyze, selectors), func(ctx context.Context) (*build.Analysis, error) {
+		return s.Build().Analyze(ctx, selectors)
+	})
+}
+
+// revision is s's revision once a call has read what it needed (rule S3), kept as the last
+// revision read.
+func (p *Project) revision(ctx context.Context, s *workspace.Snapshot) (Revision, error) {
+	rev, err := s.Revision(ctx)
+	if err != nil {
+		return "", err
+	}
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.rev = Revision(rev)
+	return p.rev, nil
 }
 
 // apiError is an error of build as the API reports it (rules O1-O4, R1, R3, X2): project.canon's
@@ -54,6 +89,18 @@ func apiError(err error) error {
 		return fmt.Errorf(fmtUnknown, ErrUnknownPackage, ue.Name)
 	case errors.Is(err, build.ErrInternal):
 		return internalError(err)
+	case errors.Is(err, workspace.ErrClosed):
+		return ErrClosed
+	}
+	return panicError(err)
+}
+
+// panicError is a panic recovered on a shared computation's goroutine as the *InternalError
+// the call would have returned had it panicked itself (rule X2).
+func panicError(err error) error {
+	var pe *safego.PanicError
+	if errors.As(err, &pe) {
+		return &InternalError{Msg: fmt.Sprint(pe.Value), Stack: pe.Stack}
 	}
 	return err
 }

@@ -34,9 +34,15 @@ func scanDir(fsys FS, root, rel string, out *[]string) error {
 			if err := scanDir(fsys, root, name, out); err != nil {
 				return err
 			}
-		case !e.IsDir() && path.Ext(name) == SourceExt && name != FileName:
+		case IsSource(name, e):
 			*out = append(*out, name)
 		}
 	}
 	return nil
+}
+
+// IsSource reports the entry e, at the project-relative name, as a source the scan reads: a
+// .canon file other than the top project.canon (API.md O2).
+func IsSource(name string, e fs.DirEntry) bool {
+	return !e.IsDir() && path.Ext(name) == SourceExt && name != FileName
 }

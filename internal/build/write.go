@@ -117,8 +117,8 @@ func markStale(out *BuildResult) {
 	}
 }
 
-// modeFS is a file system that sets a file's permissions; a replaced file keeps its own.
-type modeFS interface {
+// ModeFS is a file system that sets a file's permissions; a replaced file keeps its own.
+type ModeFS interface {
 	Chmod(name string, mode fs.FileMode) error
 }
 
@@ -238,7 +238,7 @@ func (w *writer) stage(c change) error {
 	if err := w.fsys.WriteFile(tmp, c.data); err != nil {
 		return err
 	}
-	chmod, ok := w.fsys.(modeFS)
+	chmod, ok := w.fsys.(ModeFS)
 	if !c.existed || !ok {
 		return nil
 	}

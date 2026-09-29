@@ -263,7 +263,7 @@ func ExampleProject_SetOverlay() {
 	}
 	defer func() { _ = p.ClearOverlay("teamboard/taxonomy.canon") }()
 	fmt.Println(before != p.Revision())
-	// Output:
+	// Output: true
 }
 
 func ExampleWriteFindings() {

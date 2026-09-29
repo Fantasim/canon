@@ -20,6 +20,7 @@ type Loader struct {
 	FS     project.FS
 	Layout *project.Layout
 	Set    *source.FileSet
+	Reused func(abs string) // when set, told each file a call takes from the Loader's cache, not FS
 
 	mu      sync.Mutex
 	headers map[string]*headerFile // by resolved absolute path

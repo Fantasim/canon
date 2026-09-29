@@ -62,6 +62,9 @@ func (l *Loader) headerFileAt(p project.Path, req Request) (*headerFile, bool) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	if hf, ok := l.headers[p.Abs]; ok {
+		if l.Reused != nil {
+			l.Reused(p.Abs)
+		}
 		return hf, true
 	}
 	hf, ok := l.readHeader(p, req)

@@ -66,6 +66,7 @@ func (h *evalHost) loadInto(ctx context.Context, e *syntax.LoadExpr, expected ty
 		h.loads = append(h.loads, e)
 		return nil, false
 	}
+	defer h.track(site.pkg)()
 	req := load.Request{
 		Pkg: site.pkg, From: path.Dir(site.file.Src.Path), Span: site.span, Bag: to.bags[site.pkg], Scratch: to.scratch,
 	}.Through(to.ev)
@@ -96,6 +97,7 @@ func unsupportedCause(err error) string {
 
 // Verify runs stage B on one top-level value, then poisons it or reports E3505 (EVALUATION.md §5).
 func (h *evalHost) Verify(ctx context.Context, root eval.Root, v value.Value) bool {
+	defer h.track(root.Pkg)()
 	if h.logBags != nil {
 		return h.verifyLogged(ctx, root, v)
 	}
@@ -138,6 +140,7 @@ func errorsOf(b *diag.Bag) []diag.Finding {
 
 // VerifyInto verifies a value first forced in a vector through ev, the vector's evaluator, into its throwaway bags (ADR-0003, EVALUATION.md §1).
 func (h *evalHost) VerifyInto(ctx context.Context, ev *eval.Evaluator, root eval.Root, v value.Value, bags check.Bags) bool {
+	defer h.track(root.Pkg)()
 	res, err := verify.NewShared(h.index, ev, bags, h.assets).Check(ctx, root, v)
 	return h.settle(ev, root, res, err)
 }
@@ -297,6 +300,9 @@ func (a *assets) Exists(root, from, name string) (string, bool) {
 // list is the file and subdirectory names of dir, listed once; neither when it does not exist.
 func (a *assets) list(dir string) dirListing {
 	if l, ok := a.dirs[dir]; ok {
+		if log, ok := a.fs.(*readLog); ok { // a listing read once still counts for each package (API.md S5)
+			log.note(touch{abs: dir, dir: true}, false)
+		}
 		return l
 	}
 	entries, err := a.fs.ReadDir(dir)

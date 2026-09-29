@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"regexp"
 	"runtime/debug"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -12,6 +13,7 @@ import (
 	"github.com/fantasim/canonlang/internal/build"
 	"github.com/fantasim/canonlang/internal/ir"
 	"github.com/fantasim/canonlang/internal/views"
+	"github.com/fantasim/canonlang/internal/workspace"
 )
 
 // BuildOptions selects what Build does (API.md §13.1).
@@ -46,76 +48,64 @@ type BuildResult struct {
 }
 
 // Build checks the selected packages and, without errors, writes their outputs (rules B1, B2).
-// A writing Build (Check false) holds the project's write lock (S9) and returns the revision
-// read after its writes (S10); Build with Check true is a read (S8) and takes no lock.
+// A writing Build (Check false) is the project's one writer (S9) and returns the revision of
+// the snapshot it publishes (S10); Build with Check true is a read (S8) and takes no lock.
 func (p *Project) Build(ctx context.Context, o BuildOptions) (res *BuildResult, err error) {
 	defer recoverInternal(&err)
-	b, err := p.open()
-	if err != nil {
-		return nil, err
-	}
 	targets, err := irTargets(o.Targets)
 	if err != nil {
+		if _, rerr := p.read(ctx); rerr != nil { // O6 first
+			return nil, rerr
+		}
 		return nil, err
 	}
-	if !o.Check {
-		if err := p.acquireWrite(ctx); err != nil {
-			return nil, err
-		}
-		defer p.releaseWrite()
-	}
+	opts := build.BuildOptions{Packages: o.Packages, Targets: targets, Adopt: o.Adopt, Check: o.Check}
 	start := time.Now()
-	r, err := b.Build(ctx, build.BuildOptions{
-		Packages: o.Packages, Targets: targets, Adopt: o.Adopt, Check: o.Check,
+	s, r, err := p.runBuild(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+	rev, err := p.revision(context.WithoutCancel(ctx), s) // a done ctx never drops a write's result (S10)
+	if err != nil {
+		return nil, err
+	}
+	out := buildResultOf(r, time.Since(start))
+	out.Check.Revision = rev
+	return out, nil
+}
+
+// runBuild runs a build: a shared read on the current snapshot with Check, else the project's
+// writer, and returns the snapshot the result belongs to (rules S8-S10).
+func (p *Project) runBuild(ctx context.Context, opts build.BuildOptions) (*workspace.Snapshot, *build.BuildResult, error) {
+	if opts.Check {
+		s, err := p.read(ctx)
+		if err != nil {
+			return nil, nil, err
+		}
+		key := workspace.Key(workspace.OpBuild, opts.Packages, append([]string{targetKey(opts.Targets)}, opts.Adopt...)...)
+		r, err := share(ctx, s, key, func(ctx context.Context) (*build.BuildResult, error) { return s.Build().Build(ctx, opts) })
+		return s, r, err
+	}
+	var r *build.BuildResult
+	next, err := p.workspace().Write(ctx, workspace.CauseEdit, func(ctx context.Context, s *workspace.Snapshot) error {
+		var err error
+		r, err = s.Build().Build(ctx, opts)
+		return err
 	})
 	if err != nil {
-		return nil, apiError(err)
+		return nil, nil, apiError(err)
 	}
-	rev := r.Revision
-	if !o.Check {
-		rev = revisionAfterWrite(ctx, b, rev)
-	}
-	p.setRevision(rev)
-	r.Revision = rev
-	return buildResultOf(r, time.Since(start)), nil
+	return next, r, nil
 }
 
-// acquireWrite takes the project's one-writer lock, returning ctx.Err() promptly if ctx is done first instead of blocking on it (S9, S11); a Project not opened through Open makes its own lock.
-func (p *Project) acquireWrite(ctx context.Context) error {
-	select {
-	case p.writeSemaphore() <- struct{}{}:
-		return nil
-	case <-ctx.Done():
-		return ctx.Err()
+// targetKey is the selected targets as one part of a shared build's key.
+func targetKey(targets []ir.Target) string {
+	var b strings.Builder
+	for _, t := range targets {
+		b.WriteString(string(apiTarget(t)))
+		b.WriteString(textSep)
 	}
-}
-
-// releaseWrite frees the lock a matching acquireWrite took.
-func (p *Project) releaseWrite() {
-	<-p.writeSemaphore()
-}
-
-// writeSemaphore is the project's 1-slot write-lock channel, made on first use.
-func (p *Project) writeSemaphore() chan struct{} {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	if p.writeSem == nil {
-		p.writeSem = make(chan struct{}, 1)
-	}
-	return p.writeSem
-}
-
-// revisionAfterWrite is the revision a writing Build returns: a fresh read, retried with ctx's
-// values but not its cancellation so a cancelled re-read does not drop an otherwise successful
-// write, else the revision the write itself already read (rule S10).
-func revisionAfterWrite(ctx context.Context, b *build.Project, fallback string) string {
-	if rev, err := b.Revision(ctx); err == nil {
-		return rev
-	}
-	if rev, err := b.Revision(context.WithoutCancel(ctx)); err == nil {
-		return rev
-	}
-	return fallback
+	return b.String()
 }
 
 // buildResultOf converts a build's result into the API's form (rule B1); a lock is listed only
@@ -129,7 +119,7 @@ func buildResultOf(r *build.BuildResult, d time.Duration) *BuildResult {
 		if len(l.Lines) == 0 {
 			continue
 		}
-		out.Lock = append(out.Lock, LockChange{Package: l.Package, File: l.Path, Lines: l.Lines})
+		out.Lock = append(out.Lock, LockChange{Package: l.Package, File: l.Path, Lines: slices.Clone(l.Lines)})
 	}
 	return out
 }
@@ -227,7 +217,7 @@ type TestResult struct {
 // Test runs the selected packages' tests o.Run matches, in (package, file, line) order; a bad Run is *ValueError (rule B3, EVALUATION.md §10).
 func (p *Project) Test(ctx context.Context, o TestOptions) (res *TestResult, err error) {
 	defer recoverInternal(&err)
-	b, err := p.open()
+	s, err := p.read(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -236,12 +226,16 @@ func (p *Project) Test(ctx context.Context, o TestOptions) (res *TestResult, err
 		return nil, err
 	}
 	start := time.Now()
-	r, err := b.Test(ctx, o.Packages, match)
+	key := workspace.Key(workspace.OpTest, o.Packages, o.Run)
+	r, err := share(ctx, s, key, func(ctx context.Context) (*build.TestResult, error) { return s.Build().Test(ctx, o.Packages, match) })
 	if err != nil {
-		return nil, apiError(err)
+		return nil, err
 	}
-	p.setRevision(r.Revision)
-	return testResultOf(r, time.Since(start)), nil
+	res = testResultOf(r, time.Since(start))
+	if res.Check.Revision, err = p.revision(ctx, s); err != nil {
+		return nil, err
+	}
+	return res, nil
 }
 
 // runPattern is Run compiled, nil when empty; an invalid one is *ValueError (log-2026-09-24 "canon test review calls").
