@@ -49,15 +49,24 @@ func memoScope(sc scope) string {
 // report reports a finding at s and keeps it for each instance being verified around it.
 func (w *walker) report(s Site, b *diag.Builder, at *Path) {
 	s.Report(b, at, w.bag)
+	w.noteFound(b)
 	w.keep(b, at.String())
 }
 
 // flagScoped is flag for a judgement that reads the scope (E3506, E3502): kept per scope.
 func (w *walker) flagScoped(s Site, b *diag.Builder, v value.Value, at *Path) {
 	s.Report(b, at, w.bag)
+	w.noteFound(b)
 	w.invalid(v)
 	for _, r := range w.recording {
 		r.scoped = append(r.scoped, reported{b: b, path: at.String()})
+	}
+}
+
+// noteFound keeps a finding the recorded entry reported, apart from the values it names.
+func (w *walker) noteFound(b *diag.Builder) {
+	if w.rec != nil {
+		w.rec.found = append(w.rec.found, b.Detached())
 	}
 }
 

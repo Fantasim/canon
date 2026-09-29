@@ -12,6 +12,9 @@ import (
 func (w *walker) appliedArgs(rec *value.Record, t types.Type, at *Path, sc scope) {
 	app, ok := appliedOf(t)
 	bound := w.stage.Params(rec)
+	if len(bound) > 0 {
+		w.voidRec()
+	}
 	if !ok || len(bound) == 0 || len(app.Args) != len(app.Rec.Params) {
 		return
 	}

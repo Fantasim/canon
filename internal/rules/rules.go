@@ -41,15 +41,17 @@ type Report struct {
 // Runner runs stages C and D over one build's values. It remembers the instances it checked,
 // so one goroutine uses it.
 type Runner struct {
-	ev     Evaluator
-	info   *check.Info
-	shared map[*types.VariantType][]*syntax.CheckDecl // the variant-level checks, by variant (TYPES.md §12.1)
-	bags   map[string]*diag.Bag
-	files  map[*syntax.CheckDecl]*syntax.File
-	broken map[types.Type]bool
-	seen   map[*value.Record]bool
-	below  map[value.Value]bool
-	paths  map[value.Value]*verify.Path
+	ev      Evaluator
+	info    *check.Info
+	shared  map[*types.VariantType][]*syntax.CheckDecl // the variant-level checks, by variant (TYPES.md §12.1)
+	bags    map[string]*diag.Bag
+	files   map[*syntax.CheckDecl]*syntax.File
+	broken  map[types.Type]bool
+	seen    map[*value.Record]bool
+	asking  asking
+	paths   map[value.Value]*verify.Path
+	pending []rootAt // traversed, not in paths yet
+	memo    *memoUse
 
 	declared map[eval.Root]types.Type // each top-level value's declared type
 }
@@ -76,11 +78,12 @@ func New(ev Evaluator, prog *check.Program, bags map[string]*diag.Bag) *Runner {
 
 // NewShared is New over an index built once, for a runner made per call with bags of its own.
 func NewShared(ix *Index, ev Evaluator, bags map[string]*diag.Bag) *Runner {
+	m, _ := ev.(marks)
 	return &Runner{
 		ev: ev, bags: bags, info: ix.info, files: ix.files, broken: ix.broken, shared: ix.shared, declared: ix.declared,
-		seen:  map[*value.Record]bool{},
-		below: map[value.Value]bool{},
-		paths: map[value.Value]*verify.Path{},
+		seen:   map[*value.Record]bool{},
+		asking: asking{marks: m, below: map[value.Value]bool{}},
+		paths:  map[value.Value]*verify.Path{},
 	}
 }
 

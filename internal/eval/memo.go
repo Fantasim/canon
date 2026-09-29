@@ -89,7 +89,8 @@ type memoUse struct {
 	trace  *entryTrace
 	reads  map[value.Value]*readInfo
 	stats  memoStats
-	loaded memoStats // the same counts for loads
+	loaded memoStats                    // the same counts for loads
+	tokens map[*value.Record]*memoEntry // each entry's record by the evaluation it replays (memo_token.go)
 }
 
 // memoStats counts, for tests, the entries replayed, recorded and evaluated without a record.

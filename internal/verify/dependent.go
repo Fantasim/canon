@@ -31,6 +31,7 @@ type branchOut struct {
 
 // dependent judges v against the type app computes in sc's env (TYPES.md §11.6).
 func (w *walker) dependent(v value.Value, app *types.TypeAppType, optional bool, at *Path, sc scope) value.Value {
+	w.voidRec()
 	t, inner, ok := w.branch(app, sc.env)
 	if !ok {
 		return v

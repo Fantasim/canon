@@ -20,6 +20,7 @@ func (w *walker) ref(r *value.Ref, t types.Type, sc scope, at *Path) {
 		return
 	}
 	entries, how := w.collection(r, rt.Target)
+	w.noteRef(rt.Target, r.Key, how, entries[r.Key])
 	switch how {
 	case poisoned:
 		w.invalid(r)

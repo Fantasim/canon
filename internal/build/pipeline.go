@@ -169,6 +169,7 @@ func (r *run) stageA(ctx context.Context) {
 	r.newHost(r.bags)
 	if r.epoch != 0 {
 		r.ev.UseMemo(r.p.cache.memo, r.epoch) // IMPLEMENTATION-PLAN §7.6 NFR-02
+		r.host.verifier.UseMemo(r.p.cache.verify, r.epoch)
 		r.memoized = true
 	}
 	if r.causes && !r.memoized {
@@ -244,7 +245,10 @@ func (r *run) verifyCodes() error {
 // stagesCD runs the instance checks, then the package checks (EVALUATION.md §8).
 func (r *run) stagesCD(ctx context.Context) error {
 	r.failed.prog = r.prog
-	runner := rules.NewShared(r.rix, checks{Evaluator: r.ev, failed: &r.failed}, r.bags)
+	runner := rules.NewShared(r.rix, memoChecks{checks{Evaluator: r.ev, failed: &r.failed}}, r.bags)
+	if r.memoized {
+		runner.UseMemo(r.p.cache.rules, r.epoch, r.alone()) // IMPLEMENTATION-PLAN §7.6 NFR-02
+	}
 	for _, root := range r.order {
 		if v, ok := r.ev.Force(ctx, root); ok {
 			if err := runner.Instances(ctx, root, v); err != nil {

@@ -207,8 +207,14 @@ func (fx *fixture) entry(coll *types.Collection, key string, t types.Type, field
 // run is a build's stages B, C and D over the fixture's values.
 func (fx *fixture) run() {
 	fx.t.Helper()
+	fx.runWith(fx.ev)
+}
+
+// runWith is run with ev running stages C and D.
+func (fx *fixture) runWith(ev rules.Evaluator) {
+	fx.t.Helper()
 	bags := map[string]*diag.Bag{pkg: fx.bag}
-	v, r := verify.New(fx.ev, fx.prog, bags, nil), rules.New(fx.ev, fx.prog, bags)
+	v, r := verify.New(fx.ev, fx.prog, bags, nil), rules.New(ev, fx.prog, bags)
 	ctx := context.Background()
 	errs := []error{r.Names(fx.prog.Packages[0])}
 	for i, root := range fx.roots {

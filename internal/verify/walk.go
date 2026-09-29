@@ -95,6 +95,7 @@ func (w *walker) record(r *value.Record, t types.Type, at *Path, sc scope) value
 	}
 	w.appliedArgs(r, t, at, sc)
 	if m, ok := w.stage.Verified(r); ok {
+		w.voidRec()
 		return w.replay(m.(*memo), t, at, sc) // the seam keeps verify's memo opaque; only remembered puts one there
 	}
 	return w.remembered(r, t, at, sc)
@@ -109,6 +110,7 @@ func (w *walker) fields(r *value.Record, t types.Type, at *Path, sc scope) value
 	fsc.env, fsc.dep = sc.env.within(r, t), nil
 	if w.stage != nil {
 		if bound := w.stage.Params(r); len(bound) > 0 {
+			w.voidRec()
 			fsc.env.params = maps.Clone(bound) // the instance's own arguments (TYPES.md §11.1)
 		}
 	}
@@ -208,7 +210,7 @@ func (w *walker) table(tv *value.Table, t types.Type, at *Path, sc scope) value.
 		}
 		p := at.Entry(e.Ident.Key)
 		esc.entry, esc.retired = p.String(), sc.retired || e.Ident.Retired
-		ne, isRec := w.walk(e, tt.Elem, p, esc).(*value.Record)
+		ne, isRec := w.entryAt(at, e, tt.Elem, p, esc).(*value.Record)
 		if isRec && ne != e && entries == nil {
 			entries = slices.Clone(tv.Entries)
 		}

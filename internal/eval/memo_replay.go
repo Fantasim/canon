@@ -40,7 +40,9 @@ func (r *run) replayEntry(k memoKey) (rec *value.Record, hit bool) {
 		r.failed = true
 		return nil, true
 	}
-	return e.thaw(en.kept, done), true
+	rec = e.thaw(en.kept, done)
+	e.memo.noteToken(rec, en)
+	return rec, true
 }
 
 // replayReads charges each step segment and forces each value read, then the last segment:

@@ -53,6 +53,7 @@ func sameKey(a, b value.Value) (bool, bool) { return value.Equal(a, b), true }
 func (w *walker) uniqueWire(m *value.Map, at *Path) {
 	seen := map[string]value.Value{}
 	for _, k := range m.Keys {
+		w.voidRec() // a key's mark is read
 		if w.ev.Invalid(k) {
 			continue // its own finding says it is no key of the type (TYPES.md §1)
 		}

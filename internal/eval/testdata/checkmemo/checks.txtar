@@ -1,0 +1,36 @@
+EVALUATION.md §8.1, §8.4, §12.2; IMPLEMENTATION-PLAN §7.6 (NFR-02): record checks reading a
+loaded let, one failing, one warning whose message raises a hard error: their runs are traced,
+then replayed by another evaluator while what they read is the same.
+-- a/a.canon --
+/// A.
+package a
+
+/// A configuration.
+record Cfg {
+  /// Limit.
+  lim: Int
+}
+
+/// The configuration.
+let cfg: Cfg = load("@resource/cfg.json")
+
+/// Zero.
+let zero: Int = 0
+
+/// A row.
+record Row {
+  /// N.
+  n: Int
+
+  check n < cfg.lim else "n {n} over {cfg.lim}"
+  warn n != 3 else "three is {n / zero}"
+}
+
+/// Rows.
+let rows: table Row = {
+  a { n: 1 }
+  b { n: 9 }
+  c { n: 3 }
+}
+-- resource/cfg.json --
+{"lim": 5}

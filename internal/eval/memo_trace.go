@@ -70,6 +70,7 @@ func (r *run) finishTrace(tr *entryTrace, rec *value.Record) {
 		return
 	}
 	u.store(tr.key, en)
+	u.noteToken(rec, en)
 }
 
 // entry is what tr recorded, false when a replay could not reproduce it: a stop without a

@@ -24,12 +24,26 @@ type CheckReport struct {
 
 // Run evaluates check c on self, nil at package level (EVALUATION.md §8, DECISIONS 148).
 func (e *Evaluator) Run(ctx context.Context, c *syntax.CheckDecl, self value.Value) CheckRun {
+	r := e.checkRun(ctx, c, self)
+	if r == nil {
+		return CheckRun{Aborted: true}
+	}
+	return r.check(c)
+}
+
+// checkRun is the run of c on self, nil when c is not run: the budget is spent, or c is broken.
+func (e *Evaluator) checkRun(ctx context.Context, c *syntax.CheckDecl, self value.Value) *run {
 	file := e.fileOf(c)
 	if file == nil || e.exhausted || e.brokenCheck(c) {
-		return CheckRun{Aborted: true}
+		return nil
 	}
 	r := e.newRun(ctx, e.checkCharge(c, file), file)
 	r.fr.self = self
+	return r
+}
+
+// check evaluates check c in r (EVALUATION.md §8.4).
+func (r *run) check(c *syntax.CheckDecl) CheckRun {
 	if c.Body != nil {
 		var reports []CheckReport
 		r.reports = &reports
@@ -49,7 +63,7 @@ func (e *Evaluator) Run(ctx context.Context, c *syntax.CheckDecl, self value.Val
 	if text, isStr := msg.(*value.Str); isStr && !r.failed {
 		return CheckRun{Failed: true, Message: text.V}
 	}
-	return CheckRun{Failed: true, Message: templateText(file, c.Message)}
+	return CheckRun{Failed: true, Message: templateText(r.ev.fileOf(c), c.Message)}
 }
 
 // brokenCheck reports a check which is broken (one naming a broken fn included), or whose record or variant is (TYPES.md §1).

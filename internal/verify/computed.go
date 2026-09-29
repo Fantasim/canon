@@ -97,6 +97,9 @@ func (w *walker) retyped(v value.Value, t types.Type) value.Value {
 
 // moved is to, the copy verification built of from, carrying its marks and a record's collections.
 func (w *walker) moved(from, to value.Value) value.Value {
+	if from != to {
+		w.voidRec()
+	}
 	if w.stage != nil && from != to {
 		w.stage.Moved(from, to)
 	}

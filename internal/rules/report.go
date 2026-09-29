@@ -38,7 +38,7 @@ func (r *Runner) Package(ctx context.Context, pkg *check.Package) error {
 	return nil
 }
 
-// report places the findings of one run of an instance check (EVALUATION.md §8.3).
+// report places an instance check run's findings at at, nil: the value visited (EVALUATION.md §8.3).
 func (t *traversal) report(c *syntax.CheckDecl, run Run, rec *value.Record, at *verify.Path) {
 	if run.Aborted {
 		return
@@ -47,8 +47,11 @@ func (t *traversal) report(c *syntax.CheckDecl, run Run, rec *value.Record, at *
 	if run.Failed {
 		v, onField := Placed(c, rec)
 		p := at
+		if p == nil {
+			p = t.here()
+		}
 		if onField {
-			p = at.Field(c.At.Name)
+			p = p.Field(c.At.Name)
 		}
 		site := verify.SiteOf(v)
 		b := t.decorate(oneLine(c, site.Span, run.Message), file, c)
@@ -71,7 +74,7 @@ func (r *Runner) blockReports(c *syntax.CheckDecl, file *syntax.File, reports []
 		if rep.Warn {
 			b = diag.W5002.At(site.Span, rep.Message)
 		}
-		site.Report(r.decorate(b, file, c), r.paths[rep.At], bag)
+		site.Report(r.decorate(b, file, c), r.pathOf(rep.At), bag)
 	}
 }
 

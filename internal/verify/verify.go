@@ -47,6 +47,8 @@ type Verifier struct {
 
 	mu      sync.Mutex
 	indexes map[value.Value]map[value.Key]*value.Record
+
+	memo *memoUse // the entries kept across snapshots, nil for none (entrymemo.go)
 }
 
 // Index is what verification reads of a checked program, built once; the verifiers of one run share it.
@@ -129,6 +131,7 @@ type walker struct {
 	charged int  // applications charged so far
 
 	recording []*recorder // the instances being verified, innermost last
+	rec       *entryRec   // the table entry being recorded for the memo, nil for none
 
 	branches map[branchKey]branchOut
 }
@@ -152,6 +155,9 @@ func (w *walker) flag(s Site, b *diag.Builder, v value.Value, at *Path) {
 func (w *walker) invalid(v value.Value) {
 	w.ev.MarkInvalid(v)
 	w.res.Valid = false
+	if w.rec != nil {
+		w.rec.marked = append(w.rec.marked, v)
+	}
 }
 
 func (w *walker) stopped() bool {

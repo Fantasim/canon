@@ -1,0 +1,184 @@
+IMPLEMENTATION-PLAN §7.6 (NFR-02), EVALUATION.md §5, §7.3, §8.1, §12.2, VIEWMODEL.md J15: the
+stage B and C memos over one table: refs found, dangling (E3501) and retired (E3502), assets found
+and missing (E3701), a keyed list with a repeated key (E3102), values out of range (E3204), one
+a function computes in the entry and one shared with a let, which keep their records' checks from running,
+record, case and variant-level checks reading a const and a ref's target, one failing by name
+(E5001, translated), one warning (W5001), and a map entry.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    icons: "icons"
+    out: "out"
+  }
+  languages: [en, fr]
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// The top weight.
+const TOP = 50
+
+/// A count computed at evaluation, past what a part holds.
+let many: Int = TOP / 4
+
+/// A kind.
+enum Kind { small, big }
+
+/// A category.
+record Cat {
+  /// Label.
+  label: String
+}
+
+/// Categories.
+let cats: table Cat = {
+  red { label: "Red" }
+  blue { label: "Blue" }
+  retired old { label: "Old" }
+}
+
+/// A part.
+record Part {
+  /// Name.
+  name: String
+  /// Count.
+  n: Int(0..9)
+}
+
+/// A shape.
+variant Shape {
+  circle {
+    /// Radius.
+    r: Int
+
+    warn wide: r < 10 else "radius {r}"
+  }
+  dot
+
+  check round: self.kind != dot or TOP > 0 else "a dot"
+}
+
+/// An item.
+record Item {
+  /// Label.
+  label: String(1..)
+  /// Weight.
+  weight: Int = 1
+  /// Category.
+  cat: ref cats
+  /// Icon.
+  icon: asset("@icons", ext: [png])
+  /// Shape.
+  shape: Shape
+  /// Parts, by name.
+  parts: [Part] keyed by name = []
+  /// Tags.
+  tags: {String: Int} = {}
+  /// Kind.
+  kind: Kind = small
+
+  check heavy: weight <= TOP else "weight {weight} above {TOP}"
+  check cat.label != "" else "no label"
+}
+
+/// Items.
+let items: table Item = {}
+
+view Item {
+  title "{label}"
+}
+
+emit view { out: "@out/a.view.json" }
+
+/// Twelve, computed at evaluation.
+fn twelve() -> Int {
+  return 12
+}
+-- a/a.fr.canon --
+package a
+translation fr
+
+Item.check.heavy "poids {weight}"
+Shape.circle.check.wide "rayon {r}"
+Shape.check.round "pas un point"
+-- a/items/one.canon --
+package a
+
+entry items.one {
+  label: "One"
+  weight: 3
+  cat: red
+  icon: "one.png"
+  shape: circle { r: 5 }
+}
+-- a/items/two.canon --
+package a
+
+entry items.two {
+  label: "Two"
+  weight: 70
+  cat: blue
+  icon: "two.png"
+  shape: dot
+}
+-- a/items/three.canon --
+package a
+
+entry items.three {
+  label: "Three"
+  weight: 4
+  cat: "gone"
+  icon: "missing.png"
+  shape: circle { r: 20 }
+}
+-- a/items/four.canon --
+package a
+
+entry items.four {
+  label: "Four"
+  weight: 6
+  cat: old
+  icon: "four.png"
+  shape: circle { r: 1 }
+  parts: [{ name: "x", n: 1 }, { name: "x", n: 2 }]
+}
+-- a/items/six.canon --
+package a
+
+entry items.six {
+  label: "Six"
+  weight: 2
+  cat: blue
+  icon: "one.png"
+  shape: circle { r: 3 }
+  parts: [{ name: "y", n: twelve() }]
+}
+-- a/items/seven.canon --
+package a
+
+entry items.seven {
+  label: "Seven"
+  weight: 90
+  cat: red
+  icon: "two.png"
+  shape: dot
+  parts: [{ name: "z", n: many }]
+}
+-- a/items/five.canon --
+package a
+
+entry items.five {
+  label: "Five"
+  weight: 8
+  cat: red
+  icon: "five.png"
+  shape: dot
+  tags: { "a": 1, "b": 2 }
+  kind: big
+}
+-- icons/one.png --
+-- icons/two.png --
+-- icons/four.png --
+-- icons/five.png --

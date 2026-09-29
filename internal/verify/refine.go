@@ -97,6 +97,7 @@ func (s size) within(b *types.Bound) bool {
 
 // where re-runs the predicate; a hard error aborts the root (EVALUATION.md §7.1).
 func (w *walker) where(v value.Value, r *types.Refined, src written, at *Path) {
+	w.voidRec()
 	holds, ok := w.ev.Where(w.ctx, r.Where, v)
 	switch {
 	case !ok:
@@ -133,10 +134,12 @@ func (w *walker) asset(v value.Value, r *types.Refined, at *Path) {
 
 // findAsset looks name up under a's root, from the file declaring it (WIRE.md §2.2 rule 1, §2.3).
 func (w *walker) findAsset(a *types.AssetSpec, name string) (display string, found bool) {
-	if w.assets == nil {
-		return a.Root, false
+	display, found = a.Root, false
+	if w.assets != nil {
+		display, found = w.assets.Exists(a.Root, w.src.assetDirs[a], name)
 	}
-	return w.assets.Exists(a.Root, w.src.assetDirs[a], name)
+	w.noteAsset(a, name, display, found)
+	return display, found
 }
 
 // cleanPath: `/` separators, no empty, `.` or `..` segment, no leading `/`, no `\`.
