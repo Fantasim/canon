@@ -48,17 +48,20 @@ entries · B1 Recheck folds on the program's Info. Memo architecture: ADR-0011. 
       benchmark (`make fuzz-edit`), `make bench-edit` NFR-01 gate (acceptance 3, 4, 6) [opus]
 - B3 E14 `SetCase` keeps only fields that satisfy the new case whole; edit golden harness fails on an
       unexpected error; M6 one-line form not opt-in (found by U7a) [opus]
+- B6 S10: `Project.Revision()` never rolls back [opus] · B7 edit JSON printer writes a dependent
+      symbol [opus] · B8 AllowErrors lock ids unique among the post-edit sources' facts [opus]
 
 ## Wave 3c (after 3b)
 
 - P13a `build/hosts.go` listings as maps · P13d `check` `Info.cloned` allocation [opus]
 - B4 F1 Path for a finding in a top-level `let` initializer (knownbug test from U7a) [sonnet]
-- B5 build manifest (WIRE §10, LOD-11) and `.canon/cache/` (CLI §2.7); O7's manifest half [opus]
+- B5 build manifest computed (WIRE §10, LOD-11; O7's manifest half); the cache stays inert [opus]
 - Cleanup unit: duplicates, P9 leftovers, E1903 for a variant case declaring an input field; a
       neighbour's 216 kept-comma line dropped by the M5 settle (M6); U5b nits (`unwritable` gives
       absolute names their own reason, `lockStable` tests the table first); B1 nits (`replayFolds`
       comment cites the real invariant, a free guard ending the lineage when swapped decls fold,
-      `holdsCode` reuses `hasCode`); TestDependencyRule also enforces each package's §3 Consumes row
+      `holdsCode` reuses `hasCode`); benchgen writes canonical JSON (then drop the fmt step in
+      `fuzz-edit`/`bench-edit`); TestDependencyRule also enforces each package's §3 Consumes row
       (log M4 P13c-r: listed or reachable through the row), violations fixed or reported; a table
       test for `check.FileCache` (`Of`, `KeepOnly`)
 
