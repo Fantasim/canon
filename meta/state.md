@@ -1,69 +1,74 @@
 # State — Canon compiler
 
-Updated: 2026-09-25 (cloud run 2, on `claude/m3-run-2`, which stands in for `main`; the first
-cloud run's `claude/m3-run` is merged into `origin/main`). The overnight run resumed in a Claude
-Code cloud session on branch `claude/m3-run` (Louis fast-forwards `main` from these branches). Resume plan:
-[handoff/2026-09-25-pause.md](handoff/2026-09-25-pause.md); calls of the cloud run:
-[decisions/log-2026-09-25.md](decisions/log-2026-09-25.md); earlier calls:
-[decisions/log-2026-09-24.md](decisions/log-2026-09-24.md) "Overnight run". Stopped on budget;
-report and remaining lists: [handoff/2026-09-25-cloud-run-2.md](handoff/2026-09-25-cloud-run-2.md)
-(run 1: [handoff/2026-09-25-cloud-run.md](handoff/2026-09-25-cloud-run.md)).
+Updated: 2026-09-29. **M3 accepted** (main, HEAD `ea3d7e2`). Session stops at the M4 boundary.
+Full report: [handoff/2026-09-29-m3-complete.md](handoff/2026-09-29-m3-complete.md). Unit ledger:
+[m3-units.md](m3-units.md). Calls of the final wave:
+[decisions/log-2026-09-28.md](decisions/log-2026-09-28.md),
+[decisions/log-2026-09-29.md](decisions/log-2026-09-29.md).
 
-## Current focus — overnight run tracker (resume from here)
+## Current focus
 
-Ticked means committed on `claude/m3-run-2`, `claude/m3-run` or `main`. Unfinished units sit as unreviewed `wip:` commits on their
-worktree branches. They are listed in the pause report with what each still needs.
-- [x] A1 loader parity (2eb3294, c9a44cb) · [x] A2 demo bugs (428fbad, 6534f56) · [x] A3 M1.5
-  bug-fix wave · [x] A4 M2 accepted (94ddb96).
-- [ ] A5: consumer units landed (d5de44d, 5d8232a). ERRORS.md pass: ir group landed (e1eaa0a); check group + check follow-up landed (7d35a39,
-  154aa30, a1aa811); load group + symlink resolver + load on types' format rules landed
-  (db15f7e, run 2). Spec syncs of the logged calls landed (68ffb95, d44a17f, 438f828, 5b21388);
-  ADR-0005 + DECISIONS 220. Cleanups queued.
-- [x] A6 M1.5 second wave: progen suites 3–4 landed (3616a6c, run 2).
-- [x] W0 gap map (1b0a332).
-- [ ] W1: landed: eval layers/provenance (bc99b99, 02f203c), load forms (1a77900), dependent
-  types in check (3e46ab3, b2f063c). Gate lift + load into an applied type landed on
-  `claude/m3-run` (d5062a3).
-- [ ] W2: gen/go inputs + unions landed (8e816d3). Run 2 landed: ir name plans (ad23ae8),
-  ir pattern translator (f47e51c), gen/cpp inputs + dependent types + plan switch (4d165ff),
-  gen/go plan switch + dependent types in data mode (4a8852e), ir E8019 lift per generator
-  (1512297), check E1904 whitelist/E3806/E8009 (adce4a0). Open: remaining dependent shapes in
-  both generators; pattern automaton (C++ `std::regex` recursion); verify dependent
-  (E3801/E3802); view/translation checking; ir `types` mode. Queue: report
-  [handoff/2026-09-25-cloud-run-2.md](handoff/2026-09-25-cloud-run-2.md) "Owed".
-- [ ] W3 · [ ] W4 (see [plan.md](plan.md) "M3 execution").
+M3 (plan.md "M3 — Load and the view model") is accepted, 2026-09-29, all 7 acceptance items,
+each proved by a test:
+1. every example prints its `findings.txt` — `TestExampleFindings` (`internal/cli`).
+2. view models validate against the schema and equal goldens — `TestExamples` +
+   `TestExamplesViewModelsValidate` (`internal/testkit/golden`).
+3. `balance.parity` golden — `TestExamples/balance.parity`.
+4. `canon explain` golden — `TestExplainExamples` (`internal/cli`).
+5. `api.ViewModel` (JSON equals the emit bytes) — `TestViewModelEqualsEmitView` (`api`).
+6. C++ `types` mode decode — `TestEventsTypesDecode` (`internal/testkit/golden`).
+7. real-data job, not gating — `make check-real`, findings refreshed in
+   [handoff/2026-09-28-realdata-findings.md](handoff/2026-09-28-realdata-findings.md).
 
-Milestones: M0, M1, M2 accepted (M1 item 6 deferred to after M7). M1.5 foundation committed
-(f498713), not ticked.
+**Next milestone: M4** (formatter and the edit API, `plan.md` "M4 — Formatter and the edit API",
+IMPLEMENTATION-PLAN §6 M4). Not started; no unit scoped yet.
+
+Landed after M3's acceptance list closed but before the stop, all on `main`:
+- libc++ joins the C++ test matrix (`clang++ -stdlib=libc++`, header-detected, gated under
+  `CANON_REQUIRE_CXX`).
+- `check.yml` gains `windows-latest` (MSVC: `go test` without `CANON_REQUIRE_CXX`, plus
+  `TestGoldensCompileMSVC` compiling every committed C++ golden with `cl.exe`) and
+  `macos-latest` (Apple clang/libc++, `CANON_REQUIRE_CXX` on). **Neither has run**: both fire only
+  once Louis pushes, e.g. `git push origin main:refs/heads/claude/m3-ci`.
+- Long fuzz/progen campaigns are deferred by Louis ("not now… I need this language to be ready
+  soon"): a milestone runs only its own stated acceptance criteria, never a multi-hour nightly
+  campaign — [decisions/log-2026-09-29.md](decisions/log-2026-09-29.md) "Platforms and fuzzing".
+
+## Milestones
+
+M0, M1, M2, **M3** accepted. M1.5 foundation committed (`f498713`), still open (second wave:
+type-directed + metamorphic progen suites; see `plan.md`). M4 next.
 
 ## What exists (committed)
 
-spec + DECISIONS 1–219; `syntax`, `format`, `jsonsrc`, `wire`, `load` (every WIRE §6 form),
-`check`/`types` (dependent types), `eval`/`eval/std` + `value` (layers, provenance), `verify`,
-`lock`, `rules`, `ir` (stage E, fingerprint, Go and C++ name plans), `gen/json`, `gen/go` (baked,
-data, stores, translated fns, conformance, runtime inputs, unions), `gen/cpp` (data mode, stores,
-runtime, conformance, strict loaders), `conform`, `build`, `project`, `api` (Check/Build/Test),
-`cli` (version/init/new/check/build/test), `internal/testkit` (+ `cxx`, `progen`);
-`tools/audit`.
+spec + DECISIONS 1–228; `syntax`, `format` (stub), `jsonsrc`, `wire`, `load` (every WIRE §6 form),
+`check`/`types` (dependent types, views, translations, broken-view/-translation tracking),
+`eval`/`eval/std` + `value` (layers, provenance, variant-level methods, drivers across the
+project), `verify`, `lock`, `rules`, `ir` (stage E, fingerprint, Go/C++/`types`-mode name plans,
+pattern automaton, alias-chain patterns), `gen/json`, `gen/go` (baked, data, stores, translated
+fns, conformance, runtime inputs, unions, define refs), `gen/cpp` (data mode, `types` mode,
+stores, runtime, conformance, strict loaders, define refs), `views`, `i18n`, `gen/view`,
+`conform`, `build` (writes the `view` target in phase 8), `project`, `api` (Check/Build/Test,
+`Value`+`Origin`, `ViewModel`, `edit.Snapshot`/`Resolve`), `cli` (version/init/new/check/build/
+test/explain), `internal/testkit` (+ `cxx`, `progen`, `jsonschema`, `benchgen`); `tools/audit`.
 
 ## Open Louis-calls
 
-None. There are no direction questions (`handoff/2026-09-24-questions.md` does not exist).
+None open. `handoff/2026-09-24-questions.md` does not exist.
 
 ## Operating notes
 
-- Every agent test runs under `systemd-run --user --scope -p MemoryMax=3G` (an uncapped eval
-  probe took 24 GB twice). Temp dirs go to `/var/tmp`, never `/tmp` (a 15 GB tmpfs that filled
-  twice).
-- Agents share one working tree, so **never `git stash`**. Parallel units run in worktrees:
-  commit there, cherry-pick, and run `make check` before every continue. A worktree whose base
-  is old is rebased onto main by the orchestrator before its review.
-- `GOLANGCI_LINT_CACHE` is private per worktree. The audit now fails on an unmeasured lane
-  (5b37369).
-- Sonnet units that failed review twice moved to opus. Review catches real defects: plan on
-  2–3 rounds per unit.
+- Every agent test runs under `systemd-run --user --scope -p MemoryMax=3G`. Temp dirs go to
+  `/var/tmp`, never `/tmp`.
+- Agents share one working tree: never `git stash`. Parallel units run in worktrees; commit
+  there, cherry-pick, `make check` before every continue.
+- `GOLANGCI_LINT_CACHE` is private per worktree. The audit fails on an unmeasured lane.
+- Sonnet units that failed review twice moved to opus (`.claude/rules/orchestration.md`).
 
 ## What could not be verified
 
-Windows and macOS real runs; MSVC 19.2x; GCC 9; Clang 10; nlohmann/json 3.9; CI on a runner.
-Only local g++ 15.2 and clang++ 21.1 were used.
+Windows and macOS real CI runs (MSVC `cl.exe`, Apple clang) — the jobs exist in `check.yml` but
+have not executed; only local g++ 15.2 and clang++ 21.1 (now also `-stdlib=libc++`) ran. Long
+fuzz/progen campaigns beyond default size, deferred by Louis. NFR-01 performance targets (§7.6)
+are M4's own gate, not measured against M3 code. `canon explain`'s input fields among its parts,
+deferred to M4 (log-2026-09-29 "U15 api.ViewModel").

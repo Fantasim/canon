@@ -9,6 +9,10 @@ what is needed, why, the exact acceptance, and the paths involved. It is deleted
 M2 pipeline-regeneration diff Louis may want to read); the orchestrator already reviewed it and
 continued M2. No action is needed from Louis; it is not deleted so the diff stays easy to find.
 
+`2026-09-29-m3-complete.md` is the M3-acceptance report to Louis (outcome, what landed, the
+decisions worth knowing, what was not verified, what M4 starts with). Informational, like the
+GEN-01 diff above; kept so the record of the milestone stays easy to find.
+
 ## To Louis (`L-*`)
 
 For anything on CLAUDE.md's "Forbidden without asking Louis" list: a spec change (DECISIONS.md,
