@@ -134,8 +134,8 @@ func ExampleFormat() {
 	if err != nil {
 		return
 	}
-	fmt.Print(string(out))
-	// Output:
+	fmt.Printf("%q\n", out)
+	// Output: "package teamboard\n\nconst VERSION = 7\n"
 }
 
 func ExampleFormatJSONSource() {
@@ -147,8 +147,8 @@ func ExampleFormatJSONSource() {
 	if err != nil {
 		return
 	}
-	fmt.Print(string(out))
-	// Output:
+	fmt.Printf("%q\n", out)
+	// Output: "{\n  \"b\": 1,\n  \"a\": [\n    1,\n    2\n  ]\n}\n"
 }
 
 func ExampleVersion() {

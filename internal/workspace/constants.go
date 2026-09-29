@@ -50,6 +50,7 @@ const (
 	OpViewModel Op = "viewmodel"
 	OpTest      Op = "test"
 	OpBuild     Op = "build"
+	opEvaluate  Op = "evaluate"
 )
 
 // listingDisplay stands for a scan that failed in a revision (API.md S3); pathSep separates names.
@@ -63,4 +64,12 @@ const (
 	fmtBadPath = "%w: %s"
 	textSep    = ": "
 	listSep    = ", "
+)
+
+// A path inside another starts with one of these (API.md P8); a plain-list element with no view
+// is named `#<n>`, from 1 (VIEWMODEL.md S9).
+const (
+	fieldMark   = "."
+	keyMark     = "["
+	positionTag = "#"
 )

@@ -74,9 +74,9 @@ func (p *Project) revision(ctx context.Context, s *workspace.Snapshot) (Revision
 	return p.rev, nil
 }
 
-// apiError is an error of build as the API reports it (rules O1-O4, R1, R3, X2): project.canon's
-// errors as a *ProjectError with their findings, whether Open or a later call met them, and a
-// compiler bug as an *InternalError.
+// apiError is an error of build as the API reports it (rules O1-O4, R1, R3, S5, X2):
+// project.canon's errors as a *ProjectError with their findings, whether Open or a later call
+// met them, a stale base as a *StaleError, and a compiler bug as an *InternalError.
 func apiError(err error) error {
 	var oe *build.OpenError
 	var ue *project.UnknownError
@@ -91,8 +91,19 @@ func apiError(err error) error {
 		return internalError(err)
 	case errors.Is(err, workspace.ErrClosed):
 		return ErrClosed
+	case errors.Is(err, workspace.ErrStale):
+		return staleError(err)
 	}
 	return panicError(err)
+}
+
+// staleError is workspace's staleness as the API reports it, the same files (rules S4, S5).
+func staleError(err error) error {
+	var se *workspace.StaleError
+	if errors.As(err, &se) {
+		return &StaleError{Files: slices.Clone(se.Files)}
+	}
+	return err
 }
 
 // panicError is a panic recovered on a shared computation's goroutine as the *InternalError

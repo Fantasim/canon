@@ -166,6 +166,12 @@ var (
 	}
 )
 
+// refKinds names each of edit's reference kinds as the API does, indexed by edit's (rule R7).
+var refKinds = [...]RefKind{
+	edit.RefValue: RefValue, edit.RefKey: RefKey, edit.RefCode: RefCode,
+	edit.RefView: RefView, edit.RefCheck: RefCheck, edit.RefLayer: RefLayer,
+}
+
 // Paths as Value reads them: a lone segment's root, a segment's first bytes, error details (API.md §6.1).
 const (
 	segmentRoot       = "v"
@@ -227,6 +233,9 @@ const (
 	fmtSeverity      = "%w %q"
 	msgUnimplemented = "unimplemented"
 	fmtWrap          = "%w: %w"
+	fmtEncodeJSON    = "%s: %w"
+	typeEvalResult   = "EvalResult"
+	typeHeading      = "Heading"
 	fmtUnknown       = "%w: %s"
 	fmtMixed         = "%w: %s: %w"
 	fmtQuoted        = "%q"

@@ -215,15 +215,20 @@ func ExampleProject_Refs() {
 	if err != nil {
 		return
 	}
+	var where []string
 	for _, r := range res.Refs {
 		switch r.Kind {
 		case canon.RefValue, canon.RefKey:
-			fmt.Println(r.Kind, r.Package, r.Path)
+			where = append(where, r.Package+":"+r.Path)
 		case canon.RefCode, canon.RefView, canon.RefCheck, canon.RefLayer:
-			fmt.Printf("%s %s:%d\n", r.Kind, r.File, r.Line)
+			where = append(where, fmt.Sprintf("%s:%d", r.File, r.Line))
 		}
 	}
+	fmt.Println(res.Target, len(where))
+	fmt.Println(where[0])
 	// Output:
+	// teamboard:statuses.open 6
+	// teamboard:statuses.taken.next[0]
 }
 
 func ExampleProject_ViewModel() {

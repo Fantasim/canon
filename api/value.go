@@ -3,6 +3,7 @@ package canon
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -214,9 +215,56 @@ type RefsResult struct {
 	Refs   []Ref
 }
 
-// Refs lists every place that references the entry, element or member at path (rules R7, R8).
-func (p *Project) Refs(ctx context.Context, path string) (*RefsResult, error) {
-	return nil, errUnimplemented()
+// Refs lists every place that references the entry, element or member at path (rules R7, R8),
+// searching every package of the project: the analysis Value reads (S8).
+func (p *Project) Refs(ctx context.Context, path string) (res *RefsResult, err error) {
+	defer recoverInternal(&err)
+	ws, err := p.read(ctx)
+	if err != nil {
+		return nil, err
+	}
+	parsed, err := edit.Parse(path)
+	if err != nil {
+		return nil, syntaxError(path, err, 0)
+	}
+	a, err := analyze(ctx, ws, nil)
+	if err != nil {
+		return nil, err
+	}
+	s := &snapshot{a: a, s: edit.NewSnapshot(a)}
+	r, err := edit.Resolve(s.s, parsed)
+	if err != nil {
+		return nil, s.resolveError(path, parsed, err)
+	}
+	refs, err := s.s.Refs(ctx, r)
+	if err != nil {
+		return nil, s.refsError(ctx, path, err)
+	}
+	if _, err := p.revision(ctx, ws); err != nil {
+		return nil, err
+	}
+	res = &RefsResult{Target: r.Canonical, Refs: make([]Ref, 0, len(refs))}
+	for _, x := range refs {
+		res.Refs = append(res.Refs, Ref{Kind: refKinds[x.Kind], Package: x.Package, Path: x.Path, Span: locate(a.Files(), x.Span)})
+	}
+	return res, nil
+}
+
+// refsError is edit's refusal of Refs as the API's error (rule R7): a target that is no entry,
+// keyed element or member; a value that could hold a ref but was not computed, named with the
+// findings that explain it (R6), for a partial list never looks complete.
+func (s *snapshot) refsError(ctx context.Context, path string, err error) error {
+	var pe *edit.PathError
+	switch {
+	case ctx.Err() != nil:
+		return ctx.Err()
+	case errors.Is(err, edit.ErrBadOp):
+		return &PathError{Op: -1, Path: path, Err: ErrBadOp}
+	case errors.Is(err, edit.ErrNoValue) && errors.As(err, &pe):
+		root := edit.Path{Package: pe.Root.Pkg, Root: pe.Root.Name}
+		return &PathError{Op: -1, Path: path, Err: ErrNoValue, Detail: fmt.Sprintf(fmtRoot, root), Findings: s.cause(pe.Root)}
+	}
+	return internalError(err)
 }
 
 // ViewModel is the view model of one package (VIEWMODEL.md).

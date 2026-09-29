@@ -49,6 +49,7 @@ type Project struct {
 	rev       Revision           // the last revision a call read, what Revision returns after Close
 	layers    []string           // Options.Layers, the active layers
 	editLayer string             // Options.EditLayer, which Value's Editable is judged with (API.md §7.5)
+	lang      string             // Options.Lang, the language of Evaluate's texts unless a request names one (§11)
 }
 
 // FindProject returns the directory holding project.canon in dir or a parent (rule O1).
@@ -86,7 +87,7 @@ func Open(root string, opts Options) (p *Project, err error) {
 	if err != nil {
 		return nil, apiError(err)
 	}
-	return &Project{root: dir, b: b, editLayer: opts.EditLayer, layers: slices.Clone(opts.Layers)}, nil
+	return &Project{root: dir, b: b, editLayer: opts.EditLayer, layers: slices.Clone(opts.Layers), lang: opts.Lang}, nil
 }
 
 // Close releases the project and stops every Watch (rule O6).

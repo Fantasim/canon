@@ -2,7 +2,10 @@ package canon
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"path"
+	"path/filepath"
 	"regexp"
 	"runtime/debug"
 	"slices"
@@ -11,7 +14,14 @@ import (
 	"time"
 
 	"github.com/fantasim/canonlang/internal/build"
+	"github.com/fantasim/canonlang/internal/diag"
+	"github.com/fantasim/canonlang/internal/format"
 	"github.com/fantasim/canonlang/internal/ir"
+	"github.com/fantasim/canonlang/internal/jsonsrc"
+	"github.com/fantasim/canonlang/internal/load"
+	"github.com/fantasim/canonlang/internal/project"
+	"github.com/fantasim/canonlang/internal/source"
+	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/views"
 	"github.com/fantasim/canonlang/internal/workspace"
 )
@@ -271,14 +281,48 @@ func testResultOf(r *build.TestResult, d time.Duration) *TestResult {
 	return out
 }
 
-// Format returns the canonical layout of one .canon file (rule T1).
-func Format(filename string, src []byte) ([]byte, error) {
-	return nil, errUnimplemented()
+// Format returns the canonical layout of one .canon file, project.canon's when filename's base
+// names it (rule T1); a file that does not parse is a *SyntaxError with its findings.
+func Format(filename string, src []byte) (out []byte, err error) {
+	defer recoverInternal(&err)
+	set := &source.FileSet{}
+	f, err := set.Add(filename, filename, src)
+	if err != nil {
+		return nil, err
+	}
+	kind := syntax.FileSource
+	if path.Base(filepath.ToSlash(filename)) == project.FileName {
+		kind = syntax.FileProject
+	}
+	bag := diag.NewBag(set, "")
+	out, err = format.Source(f, kind, bag)
+	if errors.Is(err, format.ErrSyntax) {
+		return nil, &SyntaxError{Findings: fromDiag(set, bag.Findings())}
+	}
+	return out, err
 }
 
-// FormatJSONSource returns the canonical source layout of a JSON file (rule T2).
-func FormatJSONSource(src []byte) ([]byte, error) {
-	return nil, errUnimplemented()
+// FormatJSONSource returns the canonical source layout of a JSON file, keys in their order
+// (rule T2, FORMATTER.md 14.1); input that is not JSON, not UTF-8 or repeats a key is a
+// *SyntaxError with its finding.
+func FormatJSONSource(src []byte) (out []byte, err error) {
+	defer recoverInternal(&err)
+	set := &source.FileSet{}
+	f, err := set.Add("", "", src)
+	if err != nil {
+		return nil, err
+	}
+	bag := diag.NewBag(set, "")
+	root, err := jsonsrc.Parse(f, bag)
+	switch {
+	case err == nil:
+		return jsonsrc.Format(root), nil
+	case errors.Is(err, jsonsrc.ErrEncoding):
+		load.ReportEncoding(bag, "", src, err)
+	case !errors.Is(err, jsonsrc.ErrSyntax) && !errors.Is(err, jsonsrc.ErrDuplicateKey):
+		return nil, internalError(err)
+	}
+	return nil, &SyntaxError{Findings: fromDiag(set, bag.Findings())}
 }
 
 // VersionInfo describes the compiler and the formats it produces (API.md §14).
