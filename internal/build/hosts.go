@@ -168,6 +168,12 @@ func (h *evalHost) failure(set *source.FileSet, prog *check.Program) error {
 		}
 		return &LoadError{Span: span, Site: set.Locate(span), Cause: h.loadCause}
 	}
+	return h.internalErrs()
+}
+
+// internalErrs is the internal errors of stage B, of the fold and of the evaluator (DECISIONS
+// 195); nil when there is none.
+func (h *evalHost) internalErrs() error {
 	errs := slices.Clone(h.errs)
 	if err := eval.FoldErr(h.fold); err != nil {
 		errs = append(errs, internal(err))

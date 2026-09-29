@@ -1,8 +1,14 @@
 package views_test
 
 import (
+	"context"
+	"errors"
 	"reflect"
 	"testing"
+
+	"github.com/fantasim/canonlang/internal/check"
+	"github.com/fantasim/canonlang/internal/views"
+	"github.com/fantasim/canonlang/internal/views/typedef"
 )
 
 // routes reaches each `match` function through one route only: a function without a `match`,
@@ -102,5 +108,19 @@ func TestDependentMapCardsOf(t *testing.T) {
 	got := x.resolver().Field(holder, field(t, holder, "per"))
 	if got.Of != "" || got.Source == nil || got.Source.Collection != "a:kinds" || !got.KeyFixed {
 		t.Errorf("per control = %s, want cards over a:kinds without of", text(got))
+	}
+}
+
+// VIEWMODEL.md 12.3, log-2026-09-29 "Drivers review": a drivers' program lacking a `match`
+// function the model describes fails Build with typedef.ErrNoTypeFunc, a compiler bug.
+func TestDriversProgramLackingFunction(t *testing.T) {
+	x := demo(t, routes, "")
+	prog := x.a.Program()
+	_, err := views.Build(context.Background(), views.Input{
+		Program: prog, Package: demoPkg, Language: language, Languages: x.proj.Languages,
+		Drivers: func() (*views.World, error) { return &views.World{Program: &check.Program{Info: prog.Info}}, nil },
+	})
+	if !errors.Is(err, typedef.ErrNoTypeFunc) {
+		t.Errorf("Build = %v, want ErrNoTypeFunc", err)
 	}
 }

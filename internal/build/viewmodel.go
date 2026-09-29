@@ -32,15 +32,26 @@ func (r *run) viewFiles(ctx context.Context, p *ir.Package, e *ir.Emit) ([]ir.Fi
 
 // viewModel is pkg's view model, what phases 3-7 left alone evaluated on demand, aside (EVALUATION.md §1 phase 8).
 func (r *run) viewModel(ctx context.Context, pkg string) (m *vm.ViewModel, err error) {
+	var reads *driverReads
+	drivers := func() (*views.World, error) { // VIEWMODEL.md 12.3: asked only by a type function
+		d, err := r.driverReads(ctx, pkg)
+		if err != nil {
+			return nil, err
+		}
+		reads = d
+		return d.world(ctx), nil
+	}
 	scratch := r.throwawayBags()
 	fold := eval.NewFolder(scratch, r.opt)
 	restore := r.hostAside(scratch)
 	defer func() {
-		if failed := errors.Join(restore(), eval.FoldErr(fold)); err == nil && failed != nil {
+		if failed := errors.Join(restore(), eval.FoldErr(fold), reads.errs()); err == nil && failed != nil {
 			m, err = nil, failed
 		}
 	}()
-	m, err = views.Build(ctx, r.viewInput(ctx, pkg, scratch, fold))
+	in := r.viewInput(ctx, pkg, scratch, fold)
+	in.Drivers = drivers
+	m, err = views.Build(ctx, in)
 	if cerr := ctx.Err(); cerr != nil {
 		return nil, cerr
 	}

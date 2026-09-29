@@ -36,12 +36,17 @@ func openViewExamples(t *testing.T) (*canon.Project, *memFS) {
 	return p, fsys
 }
 
-// API.md R9: JSON() is the emit view file and golden, the package built alone or with M3 item 2's.
+// API.md R9, VIEWMODEL.md J5: JSON() is the emit view file and golden, the package built alone,
+// with M3 item 2's, vocab with heistia, or all nine: `drivers` cover every package (12.3).
 func TestViewModelEqualsEmitView(t *testing.T) {
-	for _, c := range viewPackages {
+	all := make([]string, len(viewPackages))
+	for i, c := range viewPackages {
 		sameAsEmitView(t, []string{c.pkg})
+		all[i] = c.pkg
 	}
 	sameAsEmitView(t, []string{"pipeline", "resource.farm", "resource.events"})
+	sameAsEmitView(t, []string{"resource.vocab", "resource.heistia"})
+	sameAsEmitView(t, all)
 }
 
 // sameAsEmitView builds sel's view models, then compares each with its package's ViewModel.

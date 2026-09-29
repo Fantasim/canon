@@ -19,7 +19,11 @@ type Input struct {
 	Texts   *encode.Texts
 	Assets  *encode.Assets // asset roots by display path; nil writes them as written
 	Fold    check.Folder   // folds constant field defaults (TYPES.md §15); nil writes none
+	Drivers Resolve        // the program `drivers` are read over (12.3), on first need; nil: Program and Colls
 }
+
+// Resolve is the World drivers are read over, asked only when a type function needs drivers.
+type Resolve func() (*World, error)
 
 // Types writes the type definitions and type expressions of one package's view model.
 type Types struct {
@@ -29,6 +33,8 @@ type Types struct {
 	objects   map[any]check.Object // each declared record, variant, enum or type function
 	applied   map[*types.TypeFunc][]*types.Collection
 	described []types.Type
+	world     *World // in.Drivers resolved, once needed
+	err       error  // what resolving it met, or a type function it lacks (Err)
 }
 
 // New writes the types of the package pkg of in.Program; without an Index no view property is
@@ -39,6 +45,10 @@ func New(ctx context.Context, in Input, pkg string) *Types {
 	}
 	if in.Colls == nil {
 		in.Colls = encode.NewColls(nil)
+	}
+	if in.Drivers == nil {
+		own := &World{Program: in.Program, Colls: in.Colls}
+		in.Drivers = func() (*World, error) { return own, nil }
 	}
 	return &Types{in: in, ctx: ctx, pkg: pkg, objects: map[any]check.Object{}}
 }

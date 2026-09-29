@@ -13,7 +13,7 @@ import (
 
 // typeFunc is a `match`-bodied type function (VIEWMODEL.md 12.3 typeFunction): its parameters, the
 // path its `match` reads below its parameter, its branches in `match` order, and the discriminant
-// of every entry of each collection whose entries the loaded program passes to it (J14).
+// of every entry of each collection whose entries the drivers' program passes to it (J14).
 func (s *Types) typeFunc(fn *types.TypeFunc) vm.TypeDef {
 	def := vm.TypeDef{Kind: defTypeFunc, Name: fn.Name, Drivers: map[string]map[string]string{}}
 	for _, p := range fn.Params {
@@ -28,8 +28,16 @@ func (s *Types) typeFunc(fn *types.TypeFunc) vm.TypeDef {
 	for _, a := range fn.Arms {
 		def.Branches = append(def.Branches, vm.Branch{Match: armMatch(fn.Scrutinee.Type, a), Type: s.Expr(nil, a.Result)})
 	}
-	for _, coll := range s.passed(fn) {
-		if d := discriminants(s.in.Colls.Entries(coll), fn.Scrutinee); len(d) > 0 {
+	w := s.drivers()
+	if w == nil {
+		return def
+	}
+	wfn := s.inWorld(w, fn)
+	if wfn == nil {
+		return def
+	}
+	for _, coll := range s.passed(w.Program, wfn) {
+		if d := discriminants(w.Colls.Entries(coll), wfn.Scrutinee); len(d) > 0 {
 			def.Drivers[encode.CollectionID(coll)] = d
 		}
 	}

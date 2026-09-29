@@ -22,26 +22,28 @@ import (
 
 // run is one pass of phases 1 to 7 over a snapshot (EVALUATION.md §1).
 type run struct {
-	p        *Project
-	s        *snapshot
-	selected []*project.Unit
-	loaded   []*project.Unit  // the selected packages and their imports
-	cps      []*check.Package // the selected packages, in package order
-	bags     check.Bags
-	fold     check.Folder
-	prog     *check.Program
-	opt      eval.Options // the evaluator's: the project budget, the active layers
-	ev       *eval.Evaluator
-	host     *evalHost
-	assets   *assets
-	vix      *verify.Index // built once, shared by every verifier of the run
-	rix      *rules.Index  // idem, for the check runners
-	order    []eval.Root   // the forced set, in order (EVALUATION.md §2.1)
-	locks    []*lockState
-	ir       []*ir.Package
-	causes   bool                    // Analyze: the evaluator logs what poisons each root (Analysis.Cause)
-	texts    map[string]*i18n.Result // phase 2's catalogues and translations, every package's
-	failed   checkRuns               // stages C and D's failed named checks (VIEWMODEL.md J15)
+	p         *Project
+	s         *snapshot
+	selected  []*project.Unit
+	loaded    []*project.Unit  // the selected packages and their imports
+	cps       []*check.Package // the selected packages, in package order
+	bags      check.Bags
+	fold      check.Folder
+	prog      *check.Program
+	opt       eval.Options // the evaluator's: the project budget, the active layers
+	ev        *eval.Evaluator
+	host      *evalHost
+	assets    *assets
+	vix       *verify.Index // built once, shared by every verifier of the run
+	rix       *rules.Index  // idem, for the check runners
+	order     []eval.Root   // the forced set, in order (EVALUATION.md §2.1)
+	locks     []*lockState
+	ir        []*ir.Package
+	causes    bool                    // Analyze: the evaluator logs what poisons each root (Analysis.Cause)
+	texts     map[string]*i18n.Result // phase 2's catalogues and translations, every package's
+	failed    checkRuns               // stages C and D's failed named checks (VIEWMODEL.md J15)
+	ownReads  *driverReads            // drivers read over the run's own program, once a model needs it
+	wideReads *driverReads            // drivers read over the drivers-only program, idem
 }
 
 // prepare is phase 1: the snapshot parsed, the selection with its imports, the layers checked.
@@ -86,8 +88,18 @@ func (r *run) analyze(ctx context.Context) error {
 
 // check is phase 2: resolve and type-check the loaded packages (EVALUATION.md §1).
 func (r *run) check(ctx context.Context) error {
-	opt := eval.Options{Budget: r.s.proj.Budget, Layers: r.p.opt.Layers}
-	r.fold = eval.NewFolder(r.bags, opt)
+	r.opt = eval.Options{Budget: r.s.proj.Budget, Layers: r.p.opt.Layers}
+	if err := r.phase2(ctx); err != nil {
+		return err
+	}
+	r.dirConflicts()
+	r.checkViews(ctx)
+	return nil
+}
+
+// phase2 resolves and type-checks the loaded packages into r.bags, through the Checker seam if set.
+func (r *run) phase2(ctx context.Context) error {
+	r.fold = eval.NewFolder(r.bags, r.opt)
 	files := filesOf(r.loaded)
 	if r.p.opt.Checker != nil {
 		r.prog = r.p.opt.Checker(ctx, r.s.proj, files, r.bags)
@@ -97,9 +109,6 @@ func (r *run) check(ctx context.Context) error {
 	if r.prog == nil {
 		return internal(errNoProgram)
 	}
-	r.opt = opt
-	r.dirConflicts()
-	r.checkViews(ctx)
 	return nil
 }
 
@@ -153,6 +162,15 @@ func (r *run) stageA(ctx context.Context) {
 			}
 		}
 	}
+}
+
+// selectedNames are the selected packages' names, in name order.
+func (r *run) selectedNames() []string {
+	names := make([]string, len(r.selected))
+	for i, u := range r.selected {
+		names[i] = u.Name
+	}
+	return names
 }
 
 // selects reports a selected package.
@@ -222,12 +240,8 @@ func (r *run) stagesCD(ctx context.Context) error {
 
 // stageE precomputes the export fns, validates the emits, then computes the vectors, in check and build alike (EVALUATION.md §1, §2.3, DECISIONS 37).
 func (r *run) stageE(ctx context.Context) error {
-	names := make([]string, len(r.selected))
-	for i, u := range r.selected {
-		names[i] = u.Name
-	}
 	r.ir = ir.Build(ctx, ir.Input{
-		Program: r.prog, Project: r.s.proj, Selected: names, Bags: r.bags, Host: irHost{r.ev}, Fold: r.fold,
+		Program: r.prog, Project: r.s.proj, Selected: r.selectedNames(), Bags: r.bags, Host: irHost{r.ev}, Fold: r.fold,
 	})
 	if err := untranslated(r.ir); err != nil {
 		return err

@@ -38,3 +38,6 @@ const computedDefault = `{"computed":true}`
 
 // fmtArgKey is an argument of an applied record's walk key.
 const fmtArgKey = "%d:%p:%p/"
+
+// fmtNoTypeFunc is ErrNoTypeFunc naming the type function.
+const fmtNoTypeFunc = "%w: %s"

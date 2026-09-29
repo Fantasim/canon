@@ -36,6 +36,14 @@ type Input struct {
 	Files     diag.Files                          // locates Findings
 	Eval      render.Evaluator                    // evaluates view expressions; nil: nothing rendered
 	CheckRun  CheckRun                            // the check run behind a finding, for its translated messages (J15); nil: none
+	Drivers   func() (*World, error)              // the program typeFunction drivers are read over (12.3, J5), asked on first need; nil: Program and Force
+}
+
+// World is a program wider than Input.Program, every package that may pass a collection to the
+// package's type functions, and its values, evaluated on demand (VIEWMODEL.md 12.3, J5).
+type World struct {
+	Program *check.Program
+	Force   func(eval.Root) (value.Value, bool)
 }
 
 // CheckRun is the named one-line check that reported f and the instance it ran on (nil for a
@@ -55,6 +63,9 @@ func Build(ctx context.Context, in Input) (*vm.ViewModel, error) {
 		step(b)
 		if err := ctx.Err(); err != nil {
 			return nil, fmt.Errorf(fmtWrap, err)
+		}
+		if b.err != nil {
+			return nil, fmt.Errorf(fmtWrap, b.err)
 		}
 	}
 	return b.m, nil
@@ -88,6 +99,7 @@ type builder struct {
 	render  *render.Renderer
 	targets map[string]bool // the lets a ref type of the package targets (S1), once asked
 	roots   *encode.Assets  // asset roots by display path (12.3, 12.9)
+	err     error           // a section's failure: the drivers' program (12.3)
 }
 
 // newBuilder starts the model: every member but `studio` present and empty (J3).
@@ -105,7 +117,9 @@ func newBuilder(ctx context.Context, in Input) (*builder, error) {
 		Singular: tables.Singular, Assets: b.roots,
 	})
 	tables.Bind(b.res)
-	b.defs = typedef.New(ctx, typedef.Input{Program: in.Program, Index: b.index, Colls: b.colls, Texts: b.texts, Assets: b.roots, Fold: in.Fold}, in.Package)
+	b.defs = typedef.New(ctx, typedef.Input{
+		Program: in.Program, Index: b.index, Colls: b.colls, Texts: b.texts, Assets: b.roots, Fold: in.Fold, Drivers: world(in.Drivers),
+	}, in.Package)
 	b.render = render.New(ctx, render.Input{Program: in.Program, Index: b.index, Texts: b.texts, Colls: b.colls, Eval: in.Eval})
 	b.m = &vm.ViewModel{
 		Schema: SchemaVersion, Package: in.Package, Language: in.Language, Requires: []string{},
@@ -117,7 +131,10 @@ func newBuilder(ctx context.Context, in Input) (*builder, error) {
 }
 
 // types is the `types` section (12.3).
-func (b *builder) types() { b.m.Types = b.defs.Section() }
+func (b *builder) types() {
+	b.m.Types = b.defs.Section()
+	b.err = b.defs.Err()
+}
 
 // catalogues are the key catalogues of results, by package.
 func catalogues(results map[string]*i18n.Result) map[string]*i18n.Catalogue {
@@ -129,6 +146,20 @@ func catalogues(results map[string]*i18n.Result) map[string]*i18n.Catalogue {
 		}
 	}
 	return out
+}
+
+// world is f as typedef resolves it, nil for none.
+func world(f func() (*World, error)) typedef.Resolve {
+	if f == nil {
+		return nil
+	}
+	return func() (*typedef.World, error) {
+		w, err := f()
+		if err != nil {
+			return nil, err
+		}
+		return &typedef.World{Program: w.Program, Colls: encode.NewColls(force(w.Force))}, nil
+	}
 }
 
 // force reads a settled let through f, none when f is nil.

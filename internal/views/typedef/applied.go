@@ -13,15 +13,15 @@ import (
 	"github.com/fantasim/canonlang/internal/views/shape"
 )
 
-// passed are the collections, in the order met, whose entries the loaded program passes to fn's
+// passed are the collections, in the order met, whose entries prog, the drivers', passes to fn's
 // discriminating parameter: the target of the ref an argument reads (VIEWMODEL.md J14).
-func (s *Types) passed(fn *types.TypeFunc) []*types.Collection {
+func (s *Types) passed(prog *check.Program, fn *types.TypeFunc) []*types.Collection {
 	if s.applied == nil {
 		sc := &scanner{
 			ctx: s.ctx, applied: map[*types.TypeFunc][]*types.Collection{}, seen: map[recordKey]bool{},
 			keys: map[*types.Collection]*types.Param{},
 		}
-		for _, p := range s.in.Program.Packages {
+		for _, p := range prog.Packages {
 			for _, o := range p.Decls {
 				sc.decl(o)
 			}
