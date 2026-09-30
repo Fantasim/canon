@@ -52,7 +52,8 @@ entries · B1 Recheck folds on the program's Info. Memo architecture: ADR-0011. 
       symbol [opus] · B8 AllowErrors lock ids unique among the post-edit sources' facts [opus]
 - B10 (after B3, B7): M6 regions on a JSON last-member modify plus insert; JSON Remove ErrInternal;
       B9 a Duration not whole in its `@json(unit:)` is a ValueError, not ErrInternal; the E15 inverse on a
-      ref discriminant; literal keys of dependent types (TYPES §11.4) [opus]
+      ref discriminant; literal keys of dependent types (TYPES §11.4); E15 on dependent-keyed maps; Undo of an
+      AddEntry into a defaulted container is a Reset [opus]
 
 ## Wave 3c (P13a, P13d, B4, B5 launched on `m4-wave3b`; cleanup unit after 3b lands)
 
