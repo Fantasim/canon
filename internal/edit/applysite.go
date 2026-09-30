@@ -32,8 +32,11 @@ func (x *opCtx) diffAt(k int, old, nw value.Value) error {
 	if nw, err = fr.symbolsIn(nw, old, x.declaredAt(k)); err != nil {
 		return err
 	}
-	x.w.given = append(x.w.given, givenValue{path: x.pathAt(k), v: nw, held: fr.kept, changed: !sameValue(old, nw)})
-	d := &jsonDiff{a: x.a}
+	x.w.given = append(x.w.given, givenValue{path: x.pathAt(k), v: nw, was: old, held: fr.kept, changed: !sameValue(old, nw)})
+	d, err := x.jsonDiffAt(k, display)
+	if err != nil {
+		return err
+	}
 	if err := d.value(old, nw, n, x.fieldAt(k)); err != nil {
 		return err
 	}

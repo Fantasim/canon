@@ -1,6 +1,7 @@
 package edit
 
 import (
+	"cmp"
 	"slices"
 
 	"github.com/fantasim/canonlang/internal/jsonsrc"
@@ -14,8 +15,9 @@ type jkept struct {
 	id   string
 	v    value.Value
 	pos  int
-	node *jsonsrc.Node
-	at   int // the offset of its member's key, or of the element
+	node *jsonsrc.Node // the node stating its value
+	item *jsonsrc.Node // the member's value or element holding node, nil for node itself
+	at   int           // the offset of its member's key, or of the element
 }
 
 // jfresh is an item of the new value: its identity, its key in an object, its value.
@@ -40,7 +42,7 @@ func (d *jsonDiff) keyed(c *jsonsrc.Node, olds []jkept, news []jfresh, f *types.
 	}
 	for _, o := range olds {
 		if _, ok := newAt[o.id]; !ok {
-			d.remove(o.node, o.at)
+			d.remove(cmp.Or(o.item, o.node), o.at)
 		}
 	}
 	at := 0
@@ -121,15 +123,18 @@ func (a *applier) entryNode(e *value.Record) (*jsonsrc.Node, error) {
 	return n, nil
 }
 
-// mapIn compares a map's object key by key, each by its wire key (WIRE.md §5.8).
+// mapIn compares a map's object key by key, each by its wire key (WIRE.md 5.8); under an `at:`
+// `*`, each member's value holds the entry's value as the path's next steps lead (6.3).
 func (d *jsonDiff) mapIn(old, nw *value.Map, n *jsonsrc.Node, f *types.Field) (bool, error) {
+	after, star := d.starOf(n)
 	var olds []jkept
 	for pos, m := range n.Members {
 		i := slices.IndexFunc(old.Keys, func(k value.Value) bool { t, err := wire.KeyText(k); return err == nil && t == m.Key })
-		if i < 0 {
+		node := descend(m.Value, restOf(after))
+		if i < 0 || node == nil {
 			return false, nil
 		}
-		olds = append(olds, jkept{id: m.Key, v: old.Vals[i], pos: pos, node: m.Value, at: int(m.KeySpan.Start)})
+		olds = append(olds, jkept{id: m.Key, v: old.Vals[i], pos: pos, node: node, item: m.Value, at: int(m.KeySpan.Start)})
 	}
 	news := make([]jfresh, len(nw.Keys))
 	for i, k := range nw.Keys {
@@ -137,23 +142,37 @@ func (d *jsonDiff) mapIn(old, nw *value.Map, n *jsonsrc.Node, f *types.Field) (b
 		if err != nil {
 			return true, err
 		}
-		v := nw.Vals[i]
-		news[i] = jfresh{id: key, key: key, v: v, node: func() (*jsonsrc.Node, error) { return d.a.wireNode(v, f) }}
+		news[i] = jfresh{id: key, key: key, v: nw.Vals[i], node: d.freshNode(nw.Vals[i], f, after, star)}
 	}
 	return d.keyed(n, olds, news, f)
+}
+
+// freshNode prints v as a new item: its source wire, or under an `at:` `*` its star item.
+func (d *jsonDiff) freshNode(v value.Value, f *types.Field, after []atStep, star bool) func() (*jsonsrc.Node, error) {
+	if star {
+		return func() (*jsonsrc.Node, error) { return d.starItem(v, f, after) }
+	}
+	return func() (*jsonsrc.Node, error) { return d.a.wireNode(v, f) }
 }
 
 // listIn compares a keyed list element by key, a plain one position by position (M1).
 func (d *jsonDiff) listIn(old, nw *value.List, n *jsonsrc.Node, f *types.Field) (bool, error) {
 	lt, _ := old.T.Base().(*types.ListType)
+	after, star := d.starOf(n)
+	nodes := make([]*jsonsrc.Node, len(n.Elems))
+	for i, e := range n.Elems {
+		if nodes[i] = descend(e, restOf(after)); nodes[i] == nil {
+			return false, nil
+		}
+	}
 	if lt != nil && lt.KeyedBy != nil {
 		olds := make([]jkept, len(old.Elems))
 		for i, e := range old.Elems {
-			olds[i] = jkept{id: elemID(e, lt.KeyedBy, i), v: e, pos: i, node: n.Elems[i], at: int(n.Elems[i].Span.Start)}
+			olds[i] = jkept{id: elemID(e, lt.KeyedBy, i), v: e, pos: i, node: nodes[i], item: n.Elems[i], at: int(n.Elems[i].Span.Start)}
 		}
 		news := make([]jfresh, len(nw.Elems))
 		for i, e := range nw.Elems {
-			news[i] = jfresh{id: elemID(e, lt.KeyedBy, -1-i), v: e, node: func() (*jsonsrc.Node, error) { return d.a.wireNode(e, f) }}
+			news[i] = jfresh{id: elemID(e, lt.KeyedBy, -1-i), v: e, node: d.freshNode(e, f, after, star)}
 		}
 		return d.keyed(n, olds, news, f)
 	}
@@ -161,7 +180,7 @@ func (d *jsonDiff) listIn(old, nw *value.List, n *jsonsrc.Node, f *types.Field) 
 		return false, nil
 	}
 	for i, e := range old.Elems {
-		if err := d.value(e, nw.Elems[i], n.Elems[i], f); err != nil {
+		if err := d.value(e, nw.Elems[i], nodes[i], f); err != nil {
 			return true, err
 		}
 	}

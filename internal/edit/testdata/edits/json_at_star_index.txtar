@@ -1,0 +1,66 @@
+API.md M3, M4, E22 on a map an `at:` path reads past a `*` then `[0]` (WIRE.md 6.3,
+log-2026-09-29 M4 B10-r2): each item holds its value alone, as the first element of an array;
+AddEntry adds an array holding the value, Remove removes the item, and the Undo gives them back.
+-- options --
+pkgs: p
+-- edit.json --
+{"ops": [
+  {"op": "addEntry", "path": "firsts", "key": "c", "value": "w"},
+  {"op": "remove", "path": "firsts[a]"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// The first of each pair.
+let firsts: {String: String} = load("data/pairs.json", at: "*[0]")
+-- p/data/pairs.json --
+{
+  "a": [
+    "x"
+  ],
+  "b": [
+    "z"
+  ]
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "p/data/pairs.json"
+    }
+  ],
+  "undo": [
+    {
+      "op": "addEntry",
+      "path": "p:firsts",
+      "key": "a",
+      "source": "\"x\""
+    },
+    {
+      "op": "move",
+      "path": "p:firsts[a]",
+      "index": 0
+    },
+    {
+      "op": "remove",
+      "path": "p:firsts[c]"
+    }
+  ],
+  "touched": [
+    "p"
+  ]
+}
+-- after/p/data/pairs.json --
+{
+  "b": [
+    "z"
+  ],
+  "c": [
+    "w"
+  ]
+}

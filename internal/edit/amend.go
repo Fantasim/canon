@@ -30,6 +30,7 @@ func (j *judge) rhsCursor(it item, layer string) cursor {
 	case shape.FormLiteral:
 	case shape.FormJSON:
 		c.mode = ModeJSON
+		c.load, _ = syntax.Unparen(e).(*syntax.LoadExpr)
 	default:
 		c.state = stOpaque
 	}

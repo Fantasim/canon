@@ -34,7 +34,8 @@ func loadCursor(info *check.Info, e syntax.Expr, v value.Value) cursor {
 	if shape.SourceForm(info, e) == shape.FormFormat {
 		return cursor{state: stFormat}
 	}
-	c := cursor{state: stTree, mode: ModeJSON, files: isLoadDir(info, e)}
+	load, _ := e.(*syntax.LoadExpr)
+	c := cursor{state: stTree, mode: ModeJSON, files: isLoadDir(info, e), load: load}
 	if p := provOf(v); p != nil && p.Kind == value.ProvJSON {
 		c.span = p.Span
 	}
@@ -57,7 +58,7 @@ func (j *judge) jsonStep(c cursor, v value.Value) cursor {
 	}
 	switch p.Kind {
 	case value.ProvJSON:
-		return cursor{state: stTree, mode: ModeJSON, span: p.Span, layer: c.layer}
+		return cursor{state: stTree, mode: ModeJSON, span: p.Span, layer: c.layer, load: c.load}
 	case value.ProvDefault:
 		return c.to(stAbsent)
 	case value.ProvLiteral:

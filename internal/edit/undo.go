@@ -1,11 +1,15 @@
 package edit
 
-import "github.com/fantasim/canonlang/internal/value"
+import (
+	"github.com/fantasim/canonlang/internal/types"
+	"github.com/fantasim/canonlang/internal/value"
+)
 
 // sourceLit is v as the literal Undo carries (API.md E23): Source, canonical and single-line
-// (E26); FromJSON of its wire when a JSON source states it with a decoded symbol (M4 B7-r).
-func (a *applier) sourceLit(v value.Value) (Lit, error) {
-	raw, ok, err := a.readWire(v)
+// (E26); FromJSON of its wire, in scope's rules that the inverse reads it in, when a JSON source
+// states it with a decoded symbol (M4 B7-r, B10-r2).
+func (a *applier) sourceLit(v value.Value, scope *types.Field) (Lit, error) {
+	raw, ok, err := a.readWire(v, scope)
 	switch {
 	case err != nil:
 		return nil, err
@@ -26,7 +30,7 @@ func (x *opCtx) undoSet() error {
 		x.inverse(Operation{Kind: OpReset, Path: x.res.Canonical})
 		return nil
 	}
-	lit, err := x.a.sourceLit(x.res.Target)
+	lit, err := x.a.sourceLit(x.res.Target, x.scopeAt(len(x.res.Steps), true))
 	if err != nil {
 		return err
 	}
@@ -37,6 +41,28 @@ func (x *opCtx) undoSet() error {
 // inverse records an operation that undoes part of this one (E22).
 func (x *opCtx) inverse(op Operation) {
 	x.w.undo = append(x.w.undo, op)
+}
+
+// addInverse is the inverse of adding item seg to the target collection (E23): Remove of the
+// item, or Reset of the collection when its default supplied it, which the operation wrote
+// (W8), so Undo leaves it absent again (E22; log-2026-09-29 M4 B7-r4).
+func (x *opCtx) addInverse(seg Seg) {
+	if _, f, ok := x.field(); ok && hasDefault(f) && x.j.last().state == stAbsent {
+		x.inverse(Operation{Kind: OpReset, Path: x.res.Canonical})
+		return
+	}
+	x.inverse(Operation{Kind: OpRemove, Path: childPath(x.res.Canonical, seg)})
+}
+
+// wholeInverse is the inverse of adding an item to a collection its JSON source writes whole,
+// which keeps no position: Set of the collection as it was (E23; WIRE.md 5.3).
+func (x *opCtx) wholeInverse() error {
+	lit, err := x.a.sourceLit(x.res.Target, x.scopeAt(len(x.res.Steps), true))
+	if err != nil {
+		return err
+	}
+	x.w.undo = []Operation{{Kind: OpSet, Path: x.res.Canonical, Value: lit}}
+	return nil
 }
 
 // keyLit is a key value as an operation's key: an integer as IntKey, any other as the path key

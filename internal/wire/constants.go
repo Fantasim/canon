@@ -134,3 +134,24 @@ const (
 	entryRunning
 	entryDone
 )
+
+// The steps of an `at:` path (WIRE.md §6.3).
+const (
+	AtName AtKind = iota
+	AtIndex
+	AtStar
+)
+
+// The characters of WIRE.md 6.3's `at:` grammar: atStopChars end a name segment, atEscapable is
+// what `\` may escape inside one.
+const (
+	atStopChars  = ".*[]"
+	atEscapable  = `.*[]\`
+	atEscape     = '\\'
+	atEscapeLen  = 2
+	atDot        = '.'
+	atStarMark   = '*'
+	atOpenIndex  = '['
+	atCloseIndex = ']'
+	digitNine    = '9'
+)

@@ -1,0 +1,69 @@
+API.md E22, M3, M4 (log-2026-09-29 M4 B10): removing every entry of a map an `at:` path reads
+past a `*` leaves its object empty; the Undo adds each back under the path's steps after the
+`*`, which the path itself gives when no entry is left to show them (WIRE.md §6.3).
+-- options --
+pkgs: p
+-- edit.json --
+{"ops": [
+  {"op": "remove", "path": "weapons[#0]"},
+  {"op": "remove", "path": "weapons[#0]"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// The weapon of each build.
+let weapons: {String: String} = load("data/presets.json", at: "builds.*.gear.weapon")
+-- p/data/presets.json --
+{
+  "builds": {
+    "knight": {
+      "gear": {
+        "weapon": "sword"
+      }
+    },
+    "ranger": {
+      "gear": {
+        "weapon": "bow"
+      }
+    }
+  }
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "p/data/presets.json"
+    }
+  ],
+  "undo": [
+    {
+      "op": "addEntry",
+      "path": "p:weapons",
+      "key": "ranger",
+      "source": "\"bow\""
+    },
+    {
+      "op": "addEntry",
+      "path": "p:weapons",
+      "key": "knight",
+      "source": "\"sword\""
+    },
+    {
+      "op": "move",
+      "path": "p:weapons[knight]",
+      "index": 0
+    }
+  ],
+  "touched": [
+    "p"
+  ]
+}
+-- after/p/data/presets.json --
+{
+  "builds": {}
+}

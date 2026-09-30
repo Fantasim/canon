@@ -67,7 +67,7 @@ func (x *opCtx) addTableEntry(t *value.Table) error {
 		return err
 	}
 	rec := e.v.(*value.Record)
-	x.inverse(Operation{Kind: OpRemove, Path: childPath(x.res.Canonical, e.seg)})
+	x.addInverse(e.seg)
 	if tt, ok := t.T.Base().(*types.TableType); ok && tt.Stable && len(x.res.Steps) == 0 {
 		x.w.locked = append(x.w.locked, Locked{Name: x.res.root.lockName(), Key: rec.Ident.Key.Text()})
 	}
@@ -120,7 +120,7 @@ func (x *opCtx) addMapEntry(m *value.Map) error {
 	if err != nil && x.j.last().mode == ModeJSON {
 		return &ValueError{Expected: e.key.Type().String(), Got: e.key.CanonText(), Detail: err.Error()}
 	}
-	x.inverse(Operation{Kind: OpRemove, Path: childPath(x.res.Canonical, e.seg)})
+	x.addInverse(e.seg)
 	grown := &value.Map{T: m.T, Keys: append(slices.Clone(m.Keys), e.key), Vals: append(slices.Clone(m.Vals), e.v), P: m.P}
 	count := len(m.Keys)
 	return x.insertItem(newItem{

@@ -1,0 +1,30 @@
+API.md W5, §7.2 (log-2026-09-29 M4 B10): an item of a map an `at:` path reads past a `*` that
+holds data beside the selection (here "fr") is not removed, moved, renamed or added to: the edit
+would touch that data. It is not editable, reason format, the data named.
+-- options --
+pkgs: p
+-- edit.json --
+{"ops": [{"op": "remove", "path": "names[B]"}]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// Names, in English.
+let names: {String: String} = load("data/etc.json", at: "*.us")
+-- p/data/etc.json --
+{
+  "A": {
+    "us": "Ay"
+  },
+  "B": {
+    "us": "Bee",
+    "fr": "Be"
+  }
+}
+-- result.json --
+{
+  "error": "op 0: value not editable: reason format"
+}

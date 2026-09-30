@@ -130,7 +130,46 @@ func (x *opCtx) typed(lit Lit, t types.Type) (value.Value, error) {
 	if err := utf8Text(lit, t); err != nil {
 		return nil, err
 	}
-	return x.a.typer(x.res.root.pkg.Path).Value(x.a.ctx, lit, t)
+	ty := x.a.typer(x.res.root.pkg.Path)
+	ty.scope, ty.json = x.wireScope(), x.j.editable().Mode == ModeJSON
+	return ty.Value(x.a.ctx, lit, t)
+}
+
+// wireScope is the field whose wire rules the operation's value takes (WIRE.md 4.1): the path's
+// field for a Set of it (or a SetCase); for an element or entry below it, or added to it, its
+// unit and encoding.
+func (x *opCtx) wireScope() *types.Field {
+	return x.scopeAt(len(x.res.Steps), x.op.Kind == OpSet || x.op.Kind == OpSetCase)
+}
+
+// scopeAt is the field whose wire rules the value at cursor k takes: its own field's, none marker
+// included, when whole; else, as an element or entry below the nearest field, that field's unit
+// and encoding (WIRE.md 4.1). The Undo carries values in the scope its inverse reads them in.
+func (x *opCtx) scopeAt(k int, whole bool) *types.Field {
+	for i := k; i > 0; i-- {
+		f := x.fieldAt(i)
+		switch {
+		case f == nil:
+			continue
+		case i == k && whole:
+			return fieldRules(f)
+		}
+		return &types.Field{Unit: f.Unit, Enc: f.Enc}
+	}
+	return nil
+}
+
+// fieldRules are f's wire rules for its whole value: its unit, encoding and none marker.
+func fieldRules(f *types.Field) *types.Field {
+	return &types.Field{Unit: f.Unit, Enc: f.Enc, NoneWire: f.NoneWire}
+}
+
+// unitOf is the wire unit scope gives Durations outside any record, ms for no field.
+func unitOf(scope *types.Field) types.Unit {
+	if scope == nil {
+		return types.UnitMs
+	}
+	return scope.Unit
 }
 
 // keepKey is v with the key of the keyed-list element it replaces (API.md E5): a key written

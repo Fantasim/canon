@@ -1,0 +1,91 @@
+API.md M3, M4, E9, E11, E22, E23 on a map an `at:` path reads past a `*` (WIRE.md §6.3,
+log-2026-09-29 M4 B10): the item of an entry is the member the `*` reads, whose value holds the
+entry's value under the path's next steps and nothing else. Move, Rename and Remove act on that
+member; AddEntry adds a member holding the value under those steps; Set changes the value in place.
+-- options --
+pkgs: p
+-- edit.json --
+{"ops": [
+  {"op": "move", "path": "names[#2]", "index": 0},
+  {"op": "rename", "path": "names[A]", "key": "Z"},
+  {"op": "set", "path": "names[B]", "value": "Bea"},
+  {"op": "addEntry", "path": "names", "key": "D", "value": "Dee"},
+  {"op": "remove", "path": "names[Z]"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// Names, in English.
+let names: {String: String} = load("data/etc.json", at: "*.us")
+-- p/data/etc.json --
+{
+  "A": {
+    "us": "Ay"
+  },
+  "B": {
+    "us": "Bee"
+  },
+  "C": {
+    "us": "See"
+  }
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "p/data/etc.json"
+    }
+  ],
+  "undo": [
+    {
+      "op": "addEntry",
+      "path": "p:names",
+      "key": "Z",
+      "source": "\"Ay\""
+    },
+    {
+      "op": "move",
+      "path": "p:names[Z]",
+      "index": 1
+    },
+    {
+      "op": "remove",
+      "path": "p:names[D]"
+    },
+    {
+      "op": "set",
+      "path": "p:names[B]",
+      "source": "\"Bee\""
+    },
+    {
+      "op": "rename",
+      "path": "p:names[Z]",
+      "key": "A"
+    },
+    {
+      "op": "move",
+      "path": "p:names[C]",
+      "index": 2
+    }
+  ],
+  "touched": [
+    "p"
+  ]
+}
+-- after/p/data/etc.json --
+{
+  "C": {
+    "us": "See"
+  },
+  "B": {
+    "us": "Bea"
+  },
+  "D": {
+    "us": "Dee"
+  }
+}

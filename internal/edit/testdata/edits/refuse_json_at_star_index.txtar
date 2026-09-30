@@ -1,0 +1,26 @@
+API.md W5 (log-2026-09-29 M4 B10-r2): an item of a map read `at: "*[0]"` that holds a second element
+beside the selected first is not removed: the edit would touch that element. Reason format.
+-- options --
+pkgs: p
+-- edit.json --
+{"ops": [{"op": "remove", "path": "firsts[a]"}]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// The first of each pair.
+let firsts: {String: String} = load("data/pairs.json", at: "*[0]")
+-- p/data/pairs.json --
+{
+  "a": [
+    "x",
+    "y"
+  ]
+}
+-- result.json --
+{
+  "error": "op 0: value not editable: reason format"
+}

@@ -66,7 +66,7 @@ let objectives: table Objective = load("objectives.json")
     {
       "op": "set",
       "path": "dep:objectives.slay.target",
-      "value": "wolf"
+      "source": "\"wolf\""
     }
   ],
   "touched": [

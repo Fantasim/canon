@@ -87,10 +87,7 @@ let rs: table R = {
     {
       "op": "set",
       "path": "p:rs.two.w",
-      "value": {
-        "k": "num",
-        "v": 1
-      }
+      "source": "{ k: num, v: 1 }"
     }
   ],
   "touched": [

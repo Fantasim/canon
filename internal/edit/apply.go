@@ -102,9 +102,11 @@ type applier struct {
 	ctx      context.Context
 	env      Env
 	snap     *Snapshot
+	base     *Snapshot // the state the edit started from
 	selected []string
 	files    map[string]*fileState // by display path
 	host     wire.Host             // the host of snap's analysis
+	baseHost wire.Host             // the host of base's analysis
 	dirty    bool                  // files changed since snap was analyzed
 	undo     [][]Operation         // each operation's inverses, in the order of the operations
 	dropped  []Dropped
@@ -123,7 +125,8 @@ type applier struct {
 }
 
 func newApplier(ctx context.Context, env Env, base *Snapshot) *applier {
-	a := &applier{ctx: ctx, env: env, snap: base, host: env.Host(base.a), files: map[string]*fileState{}, owners: map[string]string{}, emptied: map[string]string{}, marks: newSymMarks()}
+	h := env.Host(base.a)
+	a := &applier{ctx: ctx, env: env, snap: base, base: base, host: h, baseHost: h, files: map[string]*fileState{}, owners: map[string]string{}, emptied: map[string]string{}, marks: newSymMarks()}
 	for _, pkg := range base.pkgs {
 		if base.a.Bag(pkg.Path) != nil {
 			a.selected = append(a.selected, pkg.Path)
@@ -193,7 +196,7 @@ func (a *applier) plan(op Operation, h func(*opCtx) error) (*work, error) {
 	a.outer = x.frameAt(len(res.Steps)).outer()
 	if h != nil {
 		err := h(x)
-		x.w.undo = nil
+		x.w.undo, x.w.given = nil, nil // a cascade's write gives no field held data (E15)
 		return x.w, err
 	}
 	if err := handlers[op.Kind](x); err != nil {
@@ -205,7 +208,11 @@ func (a *applier) plan(op Operation, h func(*opCtx) error) (*work, error) {
 
 // editable is the refusal W5 names when j's value is not editable.
 func (a *applier) editable(j *judge) error {
-	switch reason := j.reason(); reason {
+	reason := j.reason()
+	if j.starErr != nil {
+		return j.starErr
+	}
+	switch reason {
 	case ReasonNone:
 		return nil
 	case ReasonComputed:
@@ -213,7 +220,7 @@ func (a *applier) editable(j *judge) error {
 	case ReasonLayered:
 		return &NotEditableError{Reason: reason, Layer: j.last().layer}
 	case ReasonFormat:
-		return &NotEditableError{Reason: reason, File: j.hiddenFile()}
+		return &NotEditableError{Reason: reason, File: j.formatFile()}
 	default:
 		return &NotEditableError{Reason: reason}
 	}

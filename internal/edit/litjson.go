@@ -9,8 +9,9 @@ import (
 	"github.com/fantasim/canonlang/internal/wire"
 )
 
-// fromJSON decodes raw by WIRE.md's rules for t, keeping what only the re-check reports (V2, V3),
-// a failing finding being the refusal's detail; fields left to their defaults are left out.
+// fromJSON decodes raw by WIRE.md's rules for t in the destination field's scope (its unit, int,
+// bits, none marker), keeping what only the re-check reports (V2, V3), a failing finding being
+// the refusal's detail; fields left to their defaults are left out.
 func (tc *typing) fromJSON(raw FromJSON, t types.Type) (value.Value, error) {
 	var fs source.FileSet
 	f, err := fs.Add(jsonName, jsonName, raw)
@@ -22,7 +23,7 @@ func (tc *typing) fromJSON(raw FromJSON, t types.Type) (value.Value, error) {
 	if err != nil {
 		return nil, tc.refuse(t, describe(raw), firstFinding(&fs, bag, err.Error()))
 	}
-	dec := wire.Decoder{Bag: bag, Pkg: tc.ty.Pkg, Host: tc.ty.Host, Keep: true, Outer: tc.ty.Outer}
+	dec := wire.Decoder{Bag: bag, Pkg: tc.ty.Pkg, Host: tc.ty.Host, Keep: true, Outer: tc.ty.Outer, Field: tc.ty.scope}
 	v, ok, err := dec.Decode(tc.ctx, wire.Selection{Node: root}, t)
 	switch {
 	case tc.ctx.Err() != nil:

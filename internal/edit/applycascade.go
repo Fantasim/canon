@@ -17,10 +17,11 @@ import (
 )
 
 // fieldCheck is a field a cascade judges once every operation is applied: an optional field
-// whose type a changed field computes (E15).
+// whose type a changed field computes, or a map whose keys' type it computes (E15).
 type fieldCheck struct {
-	t touched
-	f *types.Field
+	t     touched
+	f     *types.Field
+	keyed bool // a map judged by its keys (keyedMap)
 }
 
 // cascade applies E15 once every operation is applied, by re-typing (log-2026-09-29 M4 U4b-r):
@@ -44,8 +45,8 @@ func (a *applier) fieldChecks() []fieldCheck {
 	var out []fieldCheck
 	for _, t := range a.records {
 		for _, f := range t.decl {
-			if isOptional(f.Type) && dependsOnAny(f, t.decl, t.fields) {
-				out = append(out, fieldCheck{t: t, f: f})
+			if (isOptional(f.Type) || keyedMap(f)) && dependsOnAny(f, t.decl, t.fields) {
+				out = append(out, fieldCheck{t: t, f: f, keyed: keyedMap(f)})
 			}
 		}
 	}
@@ -80,11 +81,11 @@ func (a *applier) judge(c fieldCheck) error {
 	res, err := a.resolve(c.path())
 	if err == nil {
 		if res.Target == nil || isNoneValue(res.Target) || a.fits(c, res) {
-			return nil
+			return a.keepHeld(c)
 		}
 		return a.dropResolved(c, res)
 	}
-	if c.t.file == "" || !a.refusedAt(c) {
+	if c.t.file == "" || !a.refused(c) {
 		return nil
 	}
 	return a.dropJSON(c)
@@ -106,11 +107,11 @@ func isNoneValue(v value.Value) bool {
 
 // fits reports c's value assignable to its type as its record computes it, refused nowhere (TYPES.md §6.2).
 func (a *applier) fits(c fieldCheck, res resolution) bool {
-	if a.refusedAt(c) {
+	if a.refused(c) {
 		return false
 	}
 	rec, ok := res.parent(len(res.Steps) - 1).(*value.Record)
-	if !ok {
+	if !ok || c.keyed {
 		return true
 	}
 	fields := fieldsOf(rec.T) // this state's declaration: each analysis has its own types
@@ -120,13 +121,6 @@ func (a *applier) fits(c fieldCheck, res resolution) bool {
 	}
 	ct, computed := concreteType(fields[k].Type, rec)
 	return !computed || types.Assignable(res.Target.Type(), ct)
-}
-
-// refusedAt reports a finding of fitCodes the current analysis reports exactly at c's field: by
-// path, or in a JSON source by its file and pointer.
-func (a *applier) refusedAt(c fieldCheck) bool {
-	pl, ok := a.placeOf(c)
-	return ok && len(a.snap.refusals(pl, false)) > 0
 }
 
 // fitPlace is where an analysis reports that a field's value does not fit its type: its
@@ -194,27 +188,32 @@ func (a *applier) memberNode(c fieldCheck) *jsonsrc.Node {
 	return n
 }
 
-// dropResolved drops a field the final state resolves: E15 sets it to none (E7 rules); its
-// inverse sets it back as FromJSON after the driver (U4b-r).
+// dropResolved drops a field the final state resolves: E15 sets it to none (E7 rules), a keyed
+// map to its default; its inverse sets it back as FromJSON after the driver (U4b-r).
 func (a *applier) dropResolved(c fieldCheck, res resolution) error {
 	raw, err := a.dropText(res.Target, c.f)
 	if err != nil {
 		return err
 	}
-	if err := a.run(Operation{Kind: OpSet, Path: c.path(), Value: None{}}, setOp); err != nil {
+	back, err := a.sourceLit(res.Target, fieldRules(c.f)) // as E23 carries it, in the scope the inverse reads
+	if err != nil {
+		return err
+	}
+	if err := a.run(dropOp(c)); err != nil {
 		if errors.Is(err, ErrNotEditable) {
 			return nil // a value no edit can reach is left to the re-check
 		}
 		return err
 	}
-	a.reportDrop(c, raw)
+	a.reportDrop(c, raw, back)
 	return nil
 }
 
-// reportDrop reports c's value as Dropped; its inverse follows the driver's (E22, E23).
-func (a *applier) reportDrop(c fieldCheck, raw json.RawMessage) {
+// reportDrop reports c's value as Dropped, raw its wire; its inverse gives back, after the
+// driver's (E22, E23).
+func (a *applier) reportDrop(c fieldCheck, raw json.RawMessage, back Lit) {
 	a.dropped = append(a.dropped, Dropped{Path: c.path(), Value: raw})
-	a.cascadeUndo = append(a.cascadeUndo, Operation{Kind: OpSet, Path: c.path(), Value: FromJSON(raw)})
+	a.cascadeUndo = append(a.cascadeUndo, Operation{Kind: OpSet, Path: c.path(), Value: back})
 }
 
 // dropJSON drops a field of a JSON source whose value no longer decodes, which no path reaches:
@@ -228,9 +227,13 @@ func (a *applier) dropJSON(c fieldCheck) error {
 	if err := json.Compact(&b, jsonsrc.Format(detached(n))); err != nil {
 		return fmt.Errorf(fmtWrapped, errNoWire, err)
 	}
+	back, err := a.dropBack(c, b.Bytes())
+	if err != nil {
+		return err
+	}
 	d := &jsonDiff{a: a}
-	if c.f.NoneWire == nil && noneDefault(c.f) {
-		d.remove(n, int(n.Span.Start))
+	if !isOptional(c.f.Type) || c.f.NoneWire == nil && noneDefault(c.f) {
+		d.remove(n, int(n.Span.Start)) // none by omission, or a keyed map's default (keyedMap)
 	} else if err := d.set(&value.None{T: c.f.Type}, n, c.f); err != nil {
 		return err
 	}
@@ -240,7 +243,7 @@ func (a *applier) dropJSON(c fieldCheck) error {
 	if err := a.commit(w); err != nil {
 		return err
 	}
-	a.reportDrop(c, b.Bytes())
+	a.reportDrop(c, b.Bytes(), back)
 	return nil
 }
 

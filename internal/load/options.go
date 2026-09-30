@@ -1,9 +1,6 @@
 package load
 
 import (
-	"strconv"
-	"strings"
-
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/jsonsrc"
 	"github.com/fantasim/canonlang/internal/syntax"
@@ -170,123 +167,9 @@ func resolveCallFormat(c parsedCall, display string, req Request) (types.LoadFor
 	return detectFormat(display, req)
 }
 
-// atStep is one step of a parsed `at:` path: a member name, an array index, or `*` (WIRE.md §6.3).
-type atStep struct {
-	kind  atStepKind
-	name  string
-	index int
-}
-
-// parseAt reads path per WIRE.md §6.3's grammar; ok is false for an empty or malformed path.
-func parseAt(path string) ([]atStep, bool) {
-	if path == "" {
-		return nil, false
-	}
-	step, rest, ok := atFirst(path)
-	if !ok {
-		return nil, false
-	}
-	steps := []atStep{step}
-	for rest != "" {
-		next, tail, ok := atStepAfter(rest)
-		if !ok {
-			return nil, false
-		}
-		steps, rest = append(steps, next), tail
-	}
-	return steps, true
-}
-
-func atFirst(s string) (atStep, string, bool) {
-	switch s[0] {
-	case '*':
-		return atStep{kind: atStar}, s[1:], true
-	case atOpenIndex:
-		return atIndexOf(s)
-	default:
-		return atNameOf(s)
-	}
-}
-
-// atStepAfter is one "next" step: "." (name|"*"), or "[n]" directly (WIRE.md §6.3).
-func atStepAfter(s string) (atStep, string, bool) {
-	switch s[0] {
-	case '.':
-		return atDotted(s[1:])
-	case atOpenIndex:
-		return atIndexOf(s)
-	default:
-		return atStep{}, "", false
-	}
-}
-
-func atDotted(s string) (atStep, string, bool) {
-	if s == "" {
-		return atStep{}, "", false
-	}
-	if s[0] == '*' {
-		return atStep{kind: atStar}, s[1:], true
-	}
-	return atNameOf(s)
-}
-
-// atIndexOf reads a leading "[0]" or "[nonzero digits]" (WIRE.md §6.3); s[0] is "[".
-func atIndexOf(s string) (atStep, string, bool) {
-	end, ok := atIndexEnd(s)
-	if !ok {
-		return atStep{}, "", false
-	}
-	n, err := strconv.Atoi(s[1:end])
-	if err != nil {
-		return atStep{}, "", false
-	}
-	return atStep{kind: atIndex, index: n}, s[end+1:], true
-}
-
-// atIndexEnd is the index of "]" closing s's leading digits, or false when malformed.
-func atIndexEnd(s string) (int, bool) {
-	i := 1
-	switch {
-	case i >= len(s) || !isDigit(s[i]):
-		return 0, false
-	case s[i] == atZeroDigit:
-		i++
-	default:
-		for i < len(s) && isDigit(s[i]) {
-			i++
-		}
-	}
-	if i >= len(s) || s[i] != atCloseIndex {
-		return 0, false
-	}
-	return i, true
-}
-
-// atNameOf reads a leading name, `\` escaping one of ". * [ ] \" (WIRE.md §6.3).
-func atNameOf(s string) (atStep, string, bool) {
-	var b strings.Builder
-	i := 0
-	for i < len(s) && !strings.ContainsRune(atStopChars, rune(s[i])) {
-		if s[i] != '\\' {
-			b.WriteByte(s[i])
-			i++
-			continue
-		}
-		if i+1 >= len(s) || !strings.ContainsRune(atEscapable, rune(s[i+1])) {
-			return atStep{}, "", false
-		}
-		b.WriteByte(s[i+1])
-		i += twoBytes
-	}
-	if b.Len() == 0 {
-		return atStep{}, "", false
-	}
-	return atStep{kind: atName, name: b.String()}, s[i:], true
-}
-
 // applyAt selects path's value from root, E7106 at the JSON value where it failed (WIRE.md §6.3).
 func applyAt(root *jsonsrc.Node, path string, req Request) (wire.Selection, bool) {
-	steps, ok := parseAt(path)
+	steps, ok := wire.ParseAt(path)
 	if !ok {
 		diag.E7106.AtSyntax(req.Span, path).Report(req.Bag)
 		return wire.Selection{}, false
@@ -294,22 +177,22 @@ func applyAt(root *jsonsrc.Node, path string, req Request) (wire.Selection, bool
 	return atApply(wire.Selection{Node: root}, steps, path, req)
 }
 
-func atApply(sel wire.Selection, steps []atStep, path string, req Request) (wire.Selection, bool) {
+func atApply(sel wire.Selection, steps []wire.AtStep, path string, req Request) (wire.Selection, bool) {
 	if len(steps) == 0 {
 		return sel, true
 	}
 	step := steps[0]
-	switch step.kind {
-	case atName:
-		return atApplyName(sel, step.name, steps[1:], path, req)
-	case atIndex:
-		return atApplyIndex(sel, step.index, steps[1:], path, req)
+	switch step.Kind {
+	case wire.AtName:
+		return atApplyName(sel, step.Name, steps[1:], path, req)
+	case wire.AtIndex:
+		return atApplyIndex(sel, step.Index, steps[1:], path, req)
 	default:
 		return atApplyStar(sel, steps[1:], path, req)
 	}
 }
 
-func atApplyName(sel wire.Selection, name string, rest []atStep, path string, req Request) (wire.Selection, bool) {
+func atApplyName(sel wire.Selection, name string, rest []wire.AtStep, path string, req Request) (wire.Selection, bool) {
 	n := sel.Node
 	if n.Kind != jsonsrc.Object {
 		diag.E7106.AtNotObject(n.Span, path, n.Pointer()).Report(req.Bag)
@@ -324,7 +207,7 @@ func atApplyName(sel wire.Selection, name string, rest []atStep, path string, re
 	return wire.Selection{}, false
 }
 
-func atApplyIndex(sel wire.Selection, index int, rest []atStep, path string, req Request) (wire.Selection, bool) {
+func atApplyIndex(sel wire.Selection, index int, rest []wire.AtStep, path string, req Request) (wire.Selection, bool) {
 	n := sel.Node
 	if n.Kind != jsonsrc.Array {
 		diag.E7106.AtNotArray(n.Span, path, n.Pointer()).Report(req.Bag)
@@ -337,7 +220,7 @@ func atApplyIndex(sel wire.Selection, index int, rest []atStep, path string, req
 	return atApply(wire.Selection{Node: n.Elems[index]}, rest, path, req)
 }
 
-func atApplyStar(sel wire.Selection, rest []atStep, path string, req Request) (wire.Selection, bool) {
+func atApplyStar(sel wire.Selection, rest []wire.AtStep, path string, req Request) (wire.Selection, bool) {
 	n := sel.Node
 	switch n.Kind {
 	case jsonsrc.Object:
@@ -353,7 +236,7 @@ func atApplyStar(sel wire.Selection, rest []atStep, path string, req Request) (w
 }
 
 // atStarItems applies rest to every one of n items, every one even after a failure (WIRE.md §6.3).
-func atStarItems(n int, at func(int) *jsonsrc.Node, rest []atStep, path string, req Request) ([]wire.Selection, bool) {
+func atStarItems(n int, at func(int) *jsonsrc.Node, rest []wire.AtStep, path string, req Request) ([]wire.Selection, bool) {
 	items, ok := make([]wire.Selection, n), true
 	for i := range items {
 		item, itemOK := atApply(wire.Selection{Node: at(i)}, rest, path, req)

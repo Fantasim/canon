@@ -44,7 +44,7 @@ func setCaseOp(x *opCtx) error {
 			x.keptFields = slices.DeleteFunc(x.keptFields, func(name string) bool { return name == nc.Fields[j].Name })
 		}
 	}
-	lit, err := x.a.sourceLit(old)
+	lit, err := x.a.sourceLit(old, x.scopeAt(len(x.res.Steps), true))
 	if err != nil {
 		return err
 	}

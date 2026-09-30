@@ -15,10 +15,12 @@ import (
 // a typed record holds only the fields the value writes (Set), the others nil (V3). A typed
 // value's provenance is nil or points into a file of its own, never into the project.
 type Typer struct {
-	Host  wire.Host  // FromJSON's defaults and dereferences: required
-	Pkg   string     // the package whose names FromJSON's messages print unqualified
-	Outer wire.Outer // what the value's type arguments name around it (WIRE.md 5.9)
-	marks *symMarks  // what the applier keeps of the symbols typed, nil for none
+	Host  wire.Host    // FromJSON's defaults and dereferences: required
+	Pkg   string       // the package whose names FromJSON's messages print unqualified
+	Outer wire.Outer   // what the value's type arguments name around it (WIRE.md 5.9)
+	marks *symMarks    // what the applier keeps of the symbols typed, nil for none
+	json  bool         // the value goes into a JSON source, its Durations in whole units
+	scope *types.Field // the field whose wire rules FromJSON and those units follow, nil for none
 }
 
 // Value is lit typed as a value of t; a value that does not fit is a *ValueError (V1).
@@ -27,7 +29,14 @@ func (ty Typer) Value(ctx context.Context, lit Lit, t types.Type) (value.Value, 
 		return nil, ErrNoHost
 	}
 	tc := &typing{ctx: ctx, ty: ty}
-	return tc.value(lit, t)
+	v, err := tc.value(lit, t)
+	if err != nil || !ty.json {
+		return v, err
+	}
+	if err := tc.wholeUnits(lit, t, v, unitOf(ty.scope)); err != nil {
+		return nil, err
+	}
+	return v, nil
 }
 
 // Key is lit typed as a key of type kt: a map key, a table entry's key (String) or a new key

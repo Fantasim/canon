@@ -1,6 +1,7 @@
 package edit
 
 import (
+	"slices"
 	"strings"
 
 	"github.com/fantasim/canonlang/internal/format"
@@ -31,10 +32,25 @@ func removeOp(x *opCtx) error {
 		return x.removeFile(x.jsonFileOf(), packageDir(x.res.root.pkg))
 	case c.state != stTree:
 		return x.change(without(parent, pos))
+	case c.mode == ModeJSON && x.writtenWhole(parent):
+		return x.diffAt(len(x.res.Steps)-1, parent, without(parent, pos))
 	case c.mode == ModeJSON:
 		return x.removeJSON()
 	}
 	return x.removeCanon(c, pc)
+}
+
+// writtenWhole reports a collection its JSON source writes as one value, not item by item: a
+// bits list is one number (WIRE.md 5.3); an operation on an item writes it again whole (M1).
+func (x *opCtx) writtenWhole(c value.Value) bool {
+	n, _, err := x.jsonAt(c)
+	return err == nil && n.Kind != jsonsrc.Array && n.Kind != jsonsrc.Object
+}
+
+// moved is l with its element at from moved to position to, counted after its removal.
+func moved(l *value.List, from, to int) *value.List {
+	elems := deleted(l.Elems, from)
+	return &value.List{T: l.T, Elems: slices.Insert(elems, to, l.Elems[from]), P: l.P}
 }
 
 // without is collection c without its item at pos.
@@ -111,9 +127,9 @@ func itemValue(it syntax.BraceItem) syntax.Node {
 	return nil
 }
 
-// removeJSON removes the target's member or element from its object or array (§14.2).
+// removeJSON removes the member or element holding the target from its object or array (§14.2).
 func (x *opCtx) removeJSON() error {
-	n, display, err := x.jsonAt(x.res.Target)
+	n, display, err := x.jsonItem()
 	if err != nil {
 		return err
 	}
@@ -148,7 +164,7 @@ func (x *opCtx) removeFile(display, stop string) error {
 // undoRemove is the inverse of a Remove (E23): Insert at the old position, or AddEntry then
 // Move back; into a collection its files order, Add or AddEntry alone, placed by N1.
 func (x *opCtx) undoRemove(parent value.Value, pos int) error {
-	lit, err := x.a.sourceLit(x.res.Target)
+	lit, err := x.a.sourceLit(x.res.Target, x.scopeAt(len(x.res.Steps), false)) // read back as an item
 	if err != nil {
 		return err
 	}
@@ -194,6 +210,9 @@ func moveOp(x *opCtx) error {
 		return &NotEditableError{Reason: ReasonOrder}
 	}
 	x.inverse(Operation{Kind: OpMove, Path: x.movedPath(parent), Index: pos})
+	if l, isList := parent.(*value.List); isList && c.mode == ModeJSON && x.writtenWhole(parent) {
+		return x.diffAt(len(x.res.Steps)-1, parent, moved(l, pos, x.op.Index))
+	}
 	if c.mode == ModeJSON {
 		return x.moveJSON(pos, x.op.Index)
 	}
@@ -234,7 +253,7 @@ func siblingCountOf(x *opCtx) int {
 // moveJSON removes the member or element, then inserts it at its new place counted after the
 // removal, as Move counts it (FMT-02): the removal applies first, whatever the offsets.
 func (x *opCtx) moveJSON(from, to int) error {
-	n, display, err := x.jsonAt(x.res.Target)
+	n, display, err := x.jsonItem()
 	if err != nil {
 		return err
 	}

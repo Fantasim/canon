@@ -99,15 +99,15 @@ func (x *opCtx) staticEdit(at staticSite, upto int, mutate func(value.Value) (va
 // the edited path, or at the collection for a Remove or an AddEntry, whose keys only the layer
 // may hold; Reset when the line left the field out.
 func (x *opCtx) undoStatic(cur value.Value, upto int) error {
-	path := x.res.Canonical
+	path, k := x.res.Canonical, len(x.res.Steps)
 	if upto < len(x.res.Steps) {
-		path = x.parentPath()
+		path, k = x.parentPath(), k-1
 	}
 	if cur == nil {
 		x.inverse(Operation{Kind: OpReset, Path: path})
 		return nil
 	}
-	lit, err := x.a.sourceLit(cur)
+	lit, err := x.a.sourceLit(cur, x.scopeAt(k, true))
 	if err != nil {
 		return err
 	}

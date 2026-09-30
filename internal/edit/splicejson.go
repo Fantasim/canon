@@ -11,8 +11,9 @@ import (
 // jsonDiff finds the smallest set of members and elements whose value changed in a JSON source
 // (API.md M1, FMT-02) and edits them in the source wire (M8).
 type jsonDiff struct {
-	a   *applier
-	out []jsonEdit
+	a     *applier
+	out   []jsonEdit
+	stars map[string][]atStep // the containers an `at:` `*` reads, by pointer (WIRE.md 6.3)
 }
 
 // value turns n, stating old at field f's place (nil for none), into nw's source wire.
@@ -52,8 +53,11 @@ func (d *jsonDiff) structural(old, nw value.Value, n *jsonsrc.Node, f *types.Fie
 	return false, nil
 }
 
-// set writes nw's source wire over n.
+// set writes nw's source wire over n, item by item where an `at:` `*` reads n (WIRE.md 6.3).
 func (d *jsonDiff) set(nw value.Value, n *jsonsrc.Node, f *types.Field) error {
+	if after, star := d.starOf(n); star {
+		return d.starSet(nw, n, f, after)
+	}
 	node, err := d.a.wireNode(nw, f)
 	if err != nil {
 		return err

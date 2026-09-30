@@ -3,6 +3,7 @@ package edit
 import (
 	"slices"
 
+	"github.com/fantasim/canonlang/internal/jsonsrc"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
@@ -56,7 +57,7 @@ func (x *opCtx) addElem(l *value.List, at int) error {
 			return x.newEntryFile(rec, key)
 		}
 	}
-	x.inverse(Operation{Kind: OpRemove, Path: childPath(x.res.Canonical, seg)})
+	x.addInverse(seg)
 	grown := &value.List{T: l.T, Elems: slices.Insert(slices.Clone(l.Elems), at, v), P: l.P}
 	return x.insertItem(newItem{v: v, grown: grown, at: at, count: len(l.Elems), text: func() (string, error) { return x.a.canonText(v) }})
 }
@@ -99,6 +100,12 @@ func (x *opCtx) insertItem(it newItem) error {
 	if err != nil {
 		return err
 	}
+	if n.Kind != jsonsrc.Array && n.Kind != jsonsrc.Object {
+		if err := x.wholeInverse(); err != nil {
+			return err
+		}
+		return x.diffAt(len(x.res.Steps), x.res.Target, it.grown) // written whole (writtenWhole)
+	}
 	fr := x.frameAt(len(x.j.cur))
 	if it.fr != nil {
 		fr = *it.fr
@@ -107,11 +114,15 @@ func (x *opCtx) insertItem(it newItem) error {
 	if err != nil {
 		return err
 	}
-	node, err := x.a.wireNode(v, itemScope(x.fieldAt(len(x.j.cur)-1)))
+	d, err := x.jsonDiffAt(len(x.j.cur)-1, display)
 	if err != nil {
 		return err
 	}
-	d := &jsonDiff{a: x.a}
+	after, star := d.starOf(n)
+	node, err := d.freshNode(v, itemScope(x.fieldAt(len(x.j.cur)-1)), after, star)()
+	if err != nil {
+		return err
+	}
 	d.insert(n, it.at, it.key, node)
 	x.w.addJSON(display, x.res.root.pkg.Path, d.out)
 	return nil

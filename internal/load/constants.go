@@ -82,24 +82,6 @@ var formOptions = map[string]map[string]bool{
 	formDefines: {optionPrefix: true},
 }
 
-// atStepKind is one step of an `at:` path (WIRE.md §6.3).
-type atStepKind int
-
-const (
-	atName atStepKind = iota
-	atIndex
-	atStar
-)
-
-// atStopChars end an at: name segment; atEscapable is what `\` may escape inside one (WIRE.md §6.3).
-const (
-	atStopChars  = ".*[]"
-	atEscapable  = `.*[]\`
-	atZeroDigit  = '0'
-	atOpenIndex  = '['
-	atCloseIndex = ']'
-)
-
 // defineLineRe is a #define line: NAME and the classifying rest of the line captured.
 var defineLineRe = regexp.MustCompile(`^([ \t]*)#[ \t]*define[ \t]+([A-Za-z_][A-Za-z0-9_]*)(.*)$`)
 

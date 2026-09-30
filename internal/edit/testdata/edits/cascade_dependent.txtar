@@ -76,7 +76,7 @@ let objectives: table Objective = {
     {
       "op": "set",
       "path": "dep:objectives.slay.target",
-      "value": "wolf"
+      "source": "\"wolf\""
     }
   ],
   "touched": [

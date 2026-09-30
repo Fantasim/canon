@@ -127,7 +127,10 @@ var steppers = [...]func(*judge, cursor, int) cursor{
 }
 
 // rows are API.md §7.2's rows in table order: the first that applies names the reason.
-var rows = [...]func(*judge) Reason{computedRow, layeredRow, formatRow, inputRow, keyRow, pseudoRow, orderRow, layerRow}
+var rows = [...]func(*judge) Reason{computedRow, layeredRow, formatRow, starRow, inputRow, keyRow, pseudoRow, orderRow, layerRow}
+
+// itemOps take out, move or rename an item of their target's collection (starRow).
+var itemOps = map[Op]bool{OpRemove: true, OpMove: true, OpRename: true}
 
 // The constructors a ValueError names what was given by (API.md §8.2).
 const (
@@ -178,8 +181,9 @@ const (
 	detailAt            = "at "
 	detailSep           = ": "
 	detailFraction      = "holds a fraction of a millisecond"
+	detailUnit          = "its JSON source counts it in whole "
 	detailNotFinite     = "not a finite number"
-	detailDependent     = "a type computed from a value takes a name only"
+	detailDependent     = "a type computed from a value takes a name, or a string or integer one of its branches takes"
 	detailNotNamed      = "names nothing in the type its record computes here"
 	detailField         = "no such field: "
 	detailTwice         = "field given twice: "
@@ -254,6 +258,13 @@ const (
 	globBraces   = "{"
 	tplOpen      = '{'
 	tplClose     = '}'
+)
+
+// A load's `at:` option (WIRE.md 6.3, its grammar wire's); pointerFragment joins a file and a
+// JSON pointer in it (RFC 6901 section 6).
+const (
+	loadAtOption    = "at"
+	pointerFragment = "#"
 )
 
 // Keywords an edit writes, as the lexer spells them (GRAMMAR.md).

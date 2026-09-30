@@ -3,17 +3,19 @@ package edit
 import (
 	"encoding/json"
 
+	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// readWire is v's wire, re-encoded with each symbol as the token it was read from, when a JSON
-// source states v and v holds a symbol the decoder read there (DECISIONS 175); false otherwise.
-func (a *applier) readWire(v value.Value) (json.RawMessage, bool, error) {
+// readWire is v's wire in scope's rules (nil for none), re-encoded with each symbol as the token
+// it was read from, when a JSON source states v and v holds a symbol the decoder read there
+// (DECISIONS 175); false otherwise.
+func (a *applier) readWire(v value.Value, scope *types.Field) (json.RawMessage, bool, error) {
 	p := provOf(v)
 	if p == nil || p.Kind != value.ProvJSON || !holdsDecoded(v) {
 		return nil, false, nil
 	}
-	raw, err := a.wireText(v, nil)
+	raw, err := a.wireText(v, scope)
 	if err != nil {
 		return nil, false, err
 	}

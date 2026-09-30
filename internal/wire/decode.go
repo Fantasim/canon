@@ -43,6 +43,7 @@ type Decoder struct {
 	Keep    bool              // report E3302, E3201, E3202, E3102 and E3317 but keep the value (API.md V2)
 	Coll    *types.Collection // what a whole decoded table or keyed list is (TYPES.md §6.3)
 	Outer   Outer             // what the decoded value's type arguments name around it
+	Field   *types.Field      // the field the decoded whole is the value of: its unit, int, bits and none marker (§4.1)
 }
 
 // Outer is what a loaded value's type arguments may name around it: the record whose field the
@@ -63,8 +64,22 @@ type Selection struct {
 // Decode reads sel as t: not ok after a finding (WIRE.md §3.4); err is the caller's misuse.
 func (d *Decoder) Decode(ctx context.Context, sel Selection, t types.Type) (value.Value, bool, error) {
 	r := d.start(ctx, t)
-	v := r.value(sel, t, wscope{root: true, fr: r.rootFrame()})
-	return r.result(v)
+	return r.result(r.whole(sel, t))
+}
+
+// whole decodes the decoded whole: in the scope of Decoder.Field when it names one, its none
+// marker none as for a member (WIRE.md 4.1, 5.4).
+func (r *run) whole(sel Selection, t types.Type) value.Value {
+	sc := wscope{root: true, fr: r.rootFrame()}
+	f := r.d.Field
+	if f == nil {
+		return r.value(sel, t, sc)
+	}
+	sc.unit, sc.asInt, sc.bits = f.Unit, f.Enc == types.EncInt, f.Enc == types.EncBits
+	if n := sel.Node; !sel.Star && t.Kind() == types.Optional && f.NoneWire != nil && isMarker(n, f.NoneWire) {
+		return &value.None{T: t, P: prov(n)}
+	}
+	return r.value(sel, t, sc)
 }
 
 // run is one call of the decoder: where it is, and whether it reported or failed; the records

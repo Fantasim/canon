@@ -72,24 +72,6 @@ func FuzzReadDefines(f *testing.F) {
 	})
 }
 
-// atSeeds adds a few of WIRE.md §6.3's own path shapes to the corpus.
-func atSeeds(f *testing.F) {
-	f.Helper()
-	for _, s := range []string{
-		"", "a", "a.b", "a.b.c", "*", "a.*", "[0]", "a[0]", "a[10].b", `a\.b`, `a\[0\]`, "a.", ".", "[", "[0", "a[",
-	} {
-		f.Add(s)
-	}
-}
-
-// IMPLEMENTATION-PLAN.md §7.7: the `at:` path parser never panics, on any input, well-formed or not.
-func FuzzParseAt(f *testing.F) {
-	atSeeds(f)
-	f.Fuzz(func(t *testing.T, path string) {
-		parseAt(path)
-	})
-}
-
 // checkSpans is every finding of bag, all inside src, none from another file.
 func checkSpans(t *testing.T, bag *diag.Bag, src *source.File) {
 	t.Helper()

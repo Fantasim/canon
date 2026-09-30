@@ -1,0 +1,21 @@
+API.md W5 (log-2026-09-29 M4 B10-r2): a map read `at: "*[1]"` takes no new entry, even empty: no item
+can hold an element past the first alone, so the collection is not editable, reason format.
+-- options --
+pkgs: p
+-- edit.json --
+{"ops": [{"op": "addEntry", "path": "seconds", "key": "a", "value": "w"}]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// The second of each pair.
+let seconds: {String: String} = load("data/pairs.json", at: "*[1]")
+-- p/data/pairs.json --
+{}
+-- result.json --
+{
+  "error": "op 0: value not editable: reason format"
+}

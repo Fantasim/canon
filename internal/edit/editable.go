@@ -1,6 +1,7 @@
 package edit
 
 import (
+	"fmt"
 	"path"
 	"strings"
 
@@ -42,7 +43,11 @@ func (s *Snapshot) Editable(r Resolved, op Op, editLayer string) (Editability, e
 		return s.memberEditability(res), nil
 	}
 	j := s.judge(res, op, editLayer)
-	switch reason := j.reason(); reason {
+	reason := j.reason()
+	if j.starErr != nil {
+		return Editability{}, fmt.Errorf(fmtWrapped, ErrInternal, j.starErr)
+	}
+	switch reason {
 	case ReasonNone:
 		return j.editable(), nil
 	case ReasonComputed:
@@ -50,7 +55,7 @@ func (s *Snapshot) Editable(r Resolved, op Op, editLayer string) (Editability, e
 	case ReasonLayered:
 		return Editability{Reason: reason, Layer: j.last().layer}, nil
 	case ReasonFormat:
-		return Editability{Reason: reason, File: j.hiddenFile()}, nil
+		return Editability{Reason: reason, File: j.formatFile()}, nil
 	default:
 		return Editability{Reason: reason}, nil
 	}
@@ -77,13 +82,14 @@ type cursor struct {
 	node    syntax.Node // canon: the literal stating the value
 	file    *syntax.File
 	span    source.Span
-	layer   string // layered: the amending layer; tree: the edit layer whose amendment holds the value
-	files   bool   // a collection ordered by file paths: load.dir, entry declarations
-	entries []item // the root collection's entry declarations (W2)
+	layer   string           // layered: the amending layer; tree: the edit layer whose amendment holds the value
+	files   bool             // a collection ordered by file paths: load.dir, entry declarations
+	entries []item           // the root collection's entry declarations (W2)
+	load    *syntax.LoadExpr // json: the load whose `at:` path reads the value (WIRE.md 6.3)
 }
 
 func (c cursor) to(st state) cursor {
-	return cursor{state: st, mode: c.mode, file: c.file, span: c.span, layer: c.layer}
+	return cursor{state: st, mode: c.mode, file: c.file, span: c.span, layer: c.layer, load: c.load}
 }
 
 // judge is one editability question: a resolution, an op, the edit layer, and the cursor
@@ -95,6 +101,10 @@ type judge struct {
 	layer   string
 	cur     []cursor
 	special Reason // the last step's own row: input, key or pseudo
+	// starAt and starErr cache besideData once starDone
+	starDone bool
+	starAt   string
+	starErr  error
 }
 
 func (s *Snapshot) judge(res resolution, op Op, editLayer string) *judge {

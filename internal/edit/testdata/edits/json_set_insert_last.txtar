@@ -1,0 +1,59 @@
+API.md M1, M2, M3, M6, M8 (log-2026-09-29 M4 B10): a Set of a record in a JSON source that
+changes its object's last member and adds a member after it re-prints that member's value and
+inserts the new member, the comma of the changed line coming with the insertion (FORMATTER.md
+§14.2); every other byte is kept.
+-- options --
+pkgs: p
+-- edit.json --
+{"ops": [{"op": "set", "path": "xs[0]", "source": "{ a: 2, b: 1 }"}]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// A row.
+record R {
+  /// A.
+  a: Int
+  /// B.
+  b: Int = 0
+  /// C.
+  c: Int = 0
+}
+
+/// The rows.
+let xs: [R] = load("data/xs.json")
+-- p/data/xs.json --
+[
+  {
+    "a": 1
+  }
+]
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "p/data/xs.json"
+    }
+  ],
+  "undo": [
+    {
+      "op": "set",
+      "path": "p:xs[0]",
+      "source": "{ a: 1 }"
+    }
+  ],
+  "touched": [
+    "p"
+  ]
+}
+-- after/p/data/xs.json --
+[
+  {
+    "a": 2,
+    "b": 1
+  }
+]

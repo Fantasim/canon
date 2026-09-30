@@ -190,7 +190,11 @@ func (r *renaming) jsonKey(parent value.Value) error {
 		x.w.addJSON(display, x.res.root.pkg.Path, d.out)
 		return nil
 	}
-	return r.renameMember(display, n)
+	item, display, err := x.jsonItem()
+	if err != nil {
+		return err
+	}
+	return r.renameMember(display, item)
 }
 
 // renameMember gives the member holding n the new key, at its place (FORMATTER.md §14.2).

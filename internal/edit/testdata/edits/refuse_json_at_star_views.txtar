@@ -1,0 +1,30 @@
+API.md W5, §7.2 (log-2026-09-29 M4 B10): two loads read one file past a `*`, at `*.x` and `*.y`:
+an entry added to one would miss the other's key, so the edit is refused, reason format, as
+touching the other load's view.
+-- options --
+pkgs: p
+-- edit.json --
+{"ops": [{"op": "addEntry", "path": "xs", "key": "c", "value": 3}]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// The x of each point.
+let xs: {String: Int} = load("data/points.json", at: "*.x")
+
+/// The y of each point.
+let ys: {String: Int} = load("data/points.json", at: "*.y")
+-- p/data/points.json --
+{
+  "a": {
+    "x": 1,
+    "y": 2
+  }
+}
+-- result.json --
+{
+  "error": "op 0: value not editable: reason format"
+}

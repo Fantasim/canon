@@ -164,13 +164,26 @@ func merged(w edit.Write) []area {
 	var out []area
 	for _, ar := range rs {
 		n := len(out) - 1
-		if n < 0 || ar.lo > out[n].hi {
+		if n < 0 || ar.lo > out[n].hi || beside(out[n], ar) {
 			out = append(out, ar)
 			continue
 		}
 		out[n] = join(out[n], ar)
 	}
 	return out
+}
+
+// beside reports a node printed again and an item inserted at one of its ends: two changes side
+// by side, each matched alone, not one node (API.md M6; log-2026-09-29 M4 B10).
+func beside(x, y area) bool {
+	point := func(r area) bool { return r.kind == edit.RegionItem && r.lo == r.hi }
+	switch {
+	case x.kind == edit.RegionNode && point(y):
+		return y.lo == x.hi || y.lo == x.lo
+	case y.kind == edit.RegionNode && point(x):
+		return x.lo == y.lo || x.lo == y.hi
+	}
+	return false
 }
 
 // join is two touching areas as one: any text if either is, removals and insertions the new

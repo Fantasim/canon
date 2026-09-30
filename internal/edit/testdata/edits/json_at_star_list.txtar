@@ -1,0 +1,120 @@
+API.md M1, M3, M4, E22 (log-2026-09-29 M4 B10): a list an `at:` path reads past a `*` over an
+array (WIRE.md §6.3): Insert adds an element holding the value under the path's next steps,
+Remove removes the element; a map of maps read past two `*`s gets a new entry whose inner map
+states each value under the steps after the second `*`; a Set of a whole such map that reorders
+it writes its items again, every other byte of the file kept.
+-- options --
+pkgs: p
+-- edit.json --
+{"ops": [
+  {"op": "insert", "path": "names", "index": 1, "value": "mid"},
+  {"op": "remove", "path": "names[#0]"},
+  {"op": "addEntry", "path": "grid", "key": "c", "source": "{ \"x\": 5 }"},
+  {"op": "set", "path": "grid[a]", "source": "{ \"y\": 2, \"x\": 1 }"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// The names of the items.
+let names: [String] = load("data/items.json", at: "*.name")
+
+/// Cells by row and column.
+let grid: {String: {String: Int}} = load("data/grid.json", at: "*.cols.*.v")
+-- p/data/items.json --
+[
+  {
+    "name": "first"
+  },
+  {
+    "name": "last"
+  }
+]
+-- p/data/grid.json --
+{
+  "a": {
+    "cols": {
+      "x": {
+        "v": 1
+      },
+      "y": {
+        "v": 2
+      }
+    }
+  },
+  "b": {
+    "cols": {}
+  }
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "p/data/grid.json"
+    },
+    {
+      "kind": "modified",
+      "path": "p/data/items.json"
+    }
+  ],
+  "undo": [
+    {
+      "op": "set",
+      "path": "p:grid[a]",
+      "source": "{ \"x\": 1, \"y\": 2 }"
+    },
+    {
+      "op": "remove",
+      "path": "p:grid[c]"
+    },
+    {
+      "op": "insert",
+      "path": "p:names",
+      "index": 0,
+      "source": "\"first\""
+    },
+    {
+      "op": "remove",
+      "path": "p:names[1]"
+    }
+  ],
+  "touched": [
+    "p"
+  ]
+}
+-- after/p/data/grid.json --
+{
+  "a": {
+    "cols": {
+      "y": {
+        "v": 2
+      },
+      "x": {
+        "v": 1
+      }
+    }
+  },
+  "b": {
+    "cols": {}
+  },
+  "c": {
+    "cols": {
+      "x": {
+        "v": 5
+      }
+    }
+  }
+}
+-- after/p/data/items.json --
+[
+  {
+    "name": "mid"
+  },
+  {
+    "name": "last"
+  }
+]

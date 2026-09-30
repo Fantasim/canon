@@ -1,0 +1,36 @@
+API.md V1 (log-2026-09-29 M4 U7b-r2, B9): a Duration going into a JSON source that is not a whole
+number of its field's wire unit has no source wire (WIRE.md §5.1, E8102): a record added to a
+JSON list whose field is in seconds is refused before anything is written, the detail naming the
+field inside the value.
+-- options --
+pkgs: p
+-- edit.json --
+{"ops": [{"op": "add", "path": "buffs", "source": "{ name: \"haste\", duration: 1500ms }"}]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// A buff.
+record Buff {
+  /// Its name.
+  name: String
+  /// How long it lasts.
+  duration: Duration @json("durationSec", unit: s)
+}
+
+/// The buffs, as the server reads them.
+let buffs: [Buff] = load("data/buffs.json")
+-- p/data/buffs.json --
+[
+  {
+    "name": "shield",
+    "durationSec": 30
+  }
+]
+-- result.json --
+{
+  "error": "op 0: value does not fit the type: expected p.Buff, got Source: at .duration: its JSON source counts it in whole s"
+}
