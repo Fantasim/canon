@@ -22,8 +22,8 @@ each proved by a test:
 
 **M4 in progress** (formatter and the edit API, `plan.md` "M4 — Formatter and the edit API",
 IMPLEMENTATION-PLAN §6 M4), run locally, started 2026-09-29. Unit ledger: [m4-units.md](m4-units.md).
-Waves 1–4 (41 units and the spec sync, DECISIONS 230–251) on `main` (`b86648c`), each after one green
-`make check`; CI green on Linux, macOS and Windows; B13 (UNC) then the final pass next.
+Waves 1–5 (42 units and the spec sync, DECISIONS 230–251) on `main` (`fb2cc35`), each after one green
+`make check`; CI green on Linux, macOS and Windows; the final pass (long gates, NFR-01 bench) next.
 Calls: [decisions/log-2026-09-29.md](decisions/log-2026-09-29.md) "M4".
 
 Landed after M3's acceptance list closed but before the stop, all on `main`:

@@ -55,9 +55,11 @@ keyed applied records, one P9 rule, per-instance key refs, the 216 comma region)
 enforced, B1 guard, canonical benchgen) · the spec sync (DECISIONS 230–251). One green `make check`;
 CI 36674605430 green on all three platforms (wave-4 subset); `claude/m4-ci2` pushed.
 
-## Wave 5 (in flight)
+## Wave 5 — on `main` (`7ec4bea`..`fb2cc35`)
 
-- B13 UNC completion in workspace, load, edit, cli [sonnet]
+B13 UNC completion (workspace, load, edit, cli), host volumes in `/` form, one Windows test model
+(`testkit/winpaths`, a port of Go's volumeNameLen), `Paths.RootsFromAPI`. CI 36692101649 green on Windows
+and macOS; `make check` green.
 
 ## Final pass
 
