@@ -44,7 +44,10 @@ and each reuse is a place where incremental and cold can drift apart.
 - **Generation memos (amended by PA2).** A memo of data derived only from a `*source.File`'s
   bytes (P14's JSON trees, PA2's defines classifications) lives in the file set's generation,
   keyed by name, holds one entry per name the generation read, and is dropped at compaction. It
-  sits outside the byte bound, like the file set whose bytes it mirrors.
+  sits outside the byte bound, like the file set whose bytes it mirrors. A generation may also
+  keep a *hint* derived from evaluated facts (PB2's per-table lock order), one entry per table, if
+  it is reused only after the new facts compare equal to the ones it was made from, so it can
+  save work but never change a result.
 - **Derived syntax memos (amended by P17).** A memo of data derived only from one immutable
   `*syntax.File` (log-2026-09-29 P13c-r) may be process-wide, outside the project cache and its
   byte bound, if it is keyed by a weak pointer, dropped when its file is collected, never ranged
