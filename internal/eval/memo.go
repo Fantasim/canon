@@ -51,9 +51,8 @@ type memoKey struct {
 	tainted bool
 }
 
-// memoEntry is one entry's evaluation: the steps it charged around each value it read, the
-// frames and code it needed, its findings, and its record with its marks (no root when it
-// failed).
+// memoEntry is one entry's evaluation: the steps charged around each value it read, the frames
+// and code it needed, its findings, and its record with its marks (no root when it failed).
 type memoEntry struct {
 	reads  []memoRead
 	tail   int64
@@ -98,6 +97,7 @@ type memoUse struct {
 	parted memoStats                    // and for load.dir elements (memo_parts.go)
 	served int                          // the loads run again whose every element was served
 	tokens map[*value.Record]*memoEntry // each entry's record by the evaluation it replays (memo_token.go)
+	edges  map[readEdge]bool            // the reads noted, each once (memo_token.go)
 }
 
 // memoStats counts, for tests, the entries replayed, recorded and evaluated without a record.

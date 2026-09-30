@@ -84,12 +84,13 @@ type Evaluator struct {
 // status is where a top-level value is in its evaluation.
 type status uint8
 
-// rootState is a top-level value: its declaration, status and value.
+// rootState is a top-level value: its declaration, status, value and, with a memo, its readers (memo_token.go).
 type rootState struct {
 	root   Root
 	obj    check.Object
 	status status
 	v      value.Value
+	readBy []*rootState
 }
 
 // charge is what steps are charged to, named in its package (EVALUATION.md §12.2).

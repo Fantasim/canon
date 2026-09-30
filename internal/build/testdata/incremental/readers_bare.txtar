@@ -1,0 +1,87 @@
+EVALUATION.md §8.1, TYPES.md §8.2, §11.6, IMPLEMENTATION-PLAN §7.6 (NFR-02), log-2026-09-29 M4
+P12-r, P18: b's dependent field names a case written bare, which verification fills with its
+defaults (stage B, no value being evaluated); the default reads a.items, so b.things holds its
+entries through a read charged to b.things. a.items is not alone, and stage C meets its entries
+as a cold run does.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A part.
+record Part {
+  /// Size.
+  size: Int
+
+  check size < 50 else "size {size}"
+}
+
+/// An item.
+record Item {
+  /// Weight.
+  weight: Int
+  /// Its part.
+  part: Part
+
+  check weight < 50 else "weight {weight}"
+}
+
+/// Items.
+let items: table Item = {}
+-- a/items/one.canon --
+package a
+
+entry items.one {
+  weight: 1
+  part: { size: 60 }
+}
+-- a/items/two.canon --
+package a
+
+entry items.two {
+  weight: 70
+  part: { size: 2 }
+}
+-- a/items/three.canon --
+package a
+
+entry items.three {
+  weight: 3
+  part: { size: 3 }
+}
+-- b/b.canon --
+/// B.
+package b
+
+import a
+
+/// A kind of payload.
+enum K { pick }
+
+/// A shape.
+variant Shape {
+  /// A dot, holding every item unless given.
+  dot {
+    /// The items held.
+    held: [a.Item] = a.items.values()
+  }
+}
+
+/// The payload type of a kind.
+type P(k: K) = match k {
+  pick => Shape
+}
+
+/// A thing.
+record Thing {
+  /// Its kind.
+  k: K
+  /// Its payload, of its kind's type.
+  p: P(k)
+}
+
+/// Things.
+let things: [Thing] = [{ k: pick, p: dot }]

@@ -1,0 +1,71 @@
+EVALUATION.md §8.1, IMPLEMENTATION-PLAN §7.6 (NFR-02), log-2026-09-29 M4 P12-r, P18: b imports a
+and completes after it, but its evaluation never reads a.items: its own table of a's type, and a
+map keyed by refs into a.items (stage C never follows a ref). a.items is alone, so its unchanged
+entries replay stage C with b in the selection.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A part.
+record Part {
+  /// Size.
+  size: Int
+
+  check size < 50 else "size {size}"
+}
+
+/// An item.
+record Item {
+  /// Weight.
+  weight: Int
+  /// Its part.
+  part: Part
+
+  check weight < 50 else "weight {weight}"
+}
+
+/// Items.
+let items: table Item = {}
+-- a/items/one.canon --
+package a
+
+entry items.one {
+  weight: 1
+  part: { size: 60 }
+}
+-- a/items/two.canon --
+package a
+
+entry items.two {
+  weight: 70
+  part: { size: 2 }
+}
+-- a/items/three.canon --
+package a
+
+entry items.three {
+  weight: 3
+  part: { size: 3 }
+}
+-- b/b.canon --
+/// B.
+package b
+
+import a
+
+/// Its own items, of a's type.
+let mine: table a.Item = {}
+
+/// Weights by item, keyed by refs into a.items.
+let weights: {ref a.items: Int} = { one: 1, three: 3 }
+-- b/mine/x.canon --
+package b
+
+entry mine.x {
+  weight: 80
+  part: { size: 4 }
+}

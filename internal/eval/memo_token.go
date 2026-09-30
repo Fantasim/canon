@@ -42,3 +42,66 @@ func (u *memoUse) noteToken(rec *value.Record, en *memoEntry) {
 	}
 	u.tokens[rec] = en
 }
+
+// readEdge is a value read and a value whose evaluation read it (log-2026-09-29 M4 P18).
+type readEdge struct {
+	read, by *rootState
+}
+
+// ReadBy is the top-level values whose evaluation read root, directly, in first-read order;
+// false when the evaluator uses no memo, so no read was noted. A value holds a part of another
+// only if its evaluation read it, directly or through values read (log-2026-09-29 M4 P18).
+func (e *Evaluator) ReadBy(root Root) ([]Root, bool) {
+	if e.memo == nil {
+		return nil, false
+	}
+	st := e.roots[root]
+	if st == nil {
+		return nil, true
+	}
+	out := make([]Root, len(st.readBy))
+	for i, by := range st.readBy {
+		out[i] = by.root
+	}
+	return out, true
+}
+
+// noteRead notes that st is read by the value being evaluated and by the one reader's run is
+// charged to (stage B's conversions), when either is a top-level value.
+func (e *Evaluator) noteRead(st *rootState, reader *run) {
+	u := e.memo
+	if u == nil {
+		return
+	}
+	var top *rootState
+	if n := len(e.stack); n > 0 {
+		top = e.stack[n-1]
+		u.readBy(st, top)
+	}
+	if reader == nil {
+		return
+	}
+	charged := Root{Pkg: reader.charge.pkg, Name: reader.charge.name}
+	if top != nil && top.root == charged {
+		return
+	}
+	if by := e.roots[charged]; by != nil {
+		u.readBy(st, by)
+	}
+}
+
+// readBy notes that by's evaluation read st, once.
+func (u *memoUse) readBy(st, by *rootState) {
+	if st == by || len(st.readBy) > 0 && st.readBy[len(st.readBy)-1] == by {
+		return
+	}
+	edge := readEdge{read: st, by: by}
+	if u.edges[edge] {
+		return
+	}
+	if u.edges == nil {
+		u.edges = map[readEdge]bool{}
+	}
+	u.edges[edge] = true
+	st.readBy = append(st.readBy, by)
+}

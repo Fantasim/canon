@@ -20,41 +20,44 @@ func (c memoChecks) Ran(d *syntax.CheckDecl, self value.Value, run rules.Run) {
 	}
 }
 
-// alone is the values of r.order no other one of it can hold a part of (log-2026-09-29 M4 P12-r).
+// alone is the values of r.order no other one of it can hold a part of. A value holds a part of
+// another only if its evaluation read it, directly or through values read, as the evaluator noted
+// (log-2026-09-29 M4 P12-r, amended by P18); one never completed is traversed by no stage C.
 func (r *run) alone() func(eval.Root) bool {
-	at := map[eval.Root]int{}
-	for i, root := range r.ev.Completed() {
-		at[root] = i
+	done := map[eval.Root]bool{}
+	for _, root := range r.ev.Completed() {
+		done[root] = true
 	}
-	readers := map[string]map[string]bool{}
+	order := make(map[eval.Root]bool, len(r.order))
+	for _, root := range r.order {
+		order[root] = true
+	}
 	out := map[eval.Root]bool{}
 	for _, root := range r.order {
-		i, done := at[root]
-		if !done {
-			continue
-		}
-		if readers[root.Pkg] == nil {
-			readers[root.Pkg] = r.readersOf(root.Pkg)
-		}
-		out[root] = !r.heldBy(root, i, at, readers[root.Pkg])
+		out[root] = done[root] && !r.heldBy(root, order)
 	}
 	return func(root eval.Root) bool { return out[root] }
 }
 
-// readersOf is pkg and every loaded package importing it, directly or not.
-func (r *run) readersOf(pkg string) map[string]bool {
-	out := map[string]bool{pkg: true}
-	for _, u := range dependents(r.loaded, []string{pkg}) {
-		out[u.Name] = true
-	}
-	return out
-}
-
-// heldBy reports a value of r.order, of a package in readers, that completed after root, the i-th.
-func (r *run) heldBy(root eval.Root, i int, at map[eval.Root]int, readers map[string]bool) bool {
-	for _, other := range r.order {
-		if j, done := at[other]; done && j > i && other != root && readers[other.Pkg] {
+// heldBy reports another value of order whose evaluation read root, directly or through the
+// values read: each value reading root, then each reading one of those, and so on; true when the
+// evaluator noted no read.
+func (r *run) heldBy(root eval.Root, order map[eval.Root]bool) bool {
+	seen := map[eval.Root]bool{root: true}
+	for queue := []eval.Root{root}; len(queue) > 0; queue = queue[1:] {
+		readers, noted := r.ev.ReadBy(queue[0])
+		if !noted {
 			return true
+		}
+		for _, by := range readers {
+			if seen[by] {
+				continue
+			}
+			if order[by] {
+				return true
+			}
+			seen[by] = true
+			queue = append(queue, by)
 		}
 	}
 	return false

@@ -74,7 +74,7 @@ let mid: Int = 1
 /// Forced by the first extra's default, before mid.
 const LATE = 3
 
-/// Items, one per file; completed last, so no value traversed after holds a part of it.
+/// Items, one per file; no value reads it, so none traversed holds a part of it (P18).
 let items: [Item] keyed by sku = load.dir("@resource/items/*.json")
 -- c/c.canon --
 /// C.

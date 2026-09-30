@@ -187,19 +187,25 @@ func TestIncrementalEqualsColdBench(t *testing.T) {
 	if testing.Short() {
 		t.Skip("writes a benchmark project with go run")
 	}
-	dir := filepath.Join(t.TempDir(), "bench")
-	cmd := exec.Command("go", "run", "./internal/testkit/cmd/benchgen", "-seed", "1", "-n", benchEntries, "-out", dir)
-	cmd.Dir = "../.."
-	if out, err := cmd.CombinedOutput(); err != nil {
-		t.Fatalf("benchgen: %v\n%s", err, out)
-	}
-	z := &analyzer{fs: newEditFS(project.OS()), dir: filepath.ToSlash(dir), cache: NewCache()}
+	z := benchAnalyzer(t)
 	entries := entryFiles(t, z)
 	e := newEditor(t, z, append(slices.Clone(entries[:len(entries)/4]), sourcesWithNumbers(t, z)...), entries)
 	e.run(t, editSteps)
 	if e.lineage == 0 {
 		t.Error("no edit was re-checked along the lineage")
 	}
+}
+
+// benchAnalyzer opens a 200-entry benchmark project that benchgen writes (IMPLEMENTATION-PLAN §7.6).
+func benchAnalyzer(t *testing.T) *analyzer {
+	t.Helper()
+	dir := filepath.Join(t.TempDir(), "bench")
+	cmd := exec.Command("go", "run", "./internal/testkit/cmd/benchgen", "-seed", "1", "-n", benchEntries, "-out", dir)
+	cmd.Dir = "../.."
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("benchgen: %v\n%s", err, out)
+	}
+	return &analyzer{fs: newEditFS(project.OS()), dir: filepath.ToSlash(dir), cache: NewCache()}
 }
 
 // examplesAnalyzer opens examples/ with its roots redirected (examples/_fixtures/README.md).

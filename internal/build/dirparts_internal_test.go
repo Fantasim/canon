@@ -61,30 +61,30 @@ func (d dirFiles) edit(n, old, new string) func(roFS) {
 }
 
 // dirSteps are TestDirPartsEqualsCold's steps. Unchanged, the elements of items, rows and dots
-// are served (8), stage B replays them and caps.main (9), stage C those of items and dots, each
-// the last value of its package to complete (6).
+// are served (8), stages B and C replay them and caps.main (9): no value's evaluation reads one
+// of them (log-2026-09-29 M4 P18).
 func dirSteps(d dirFiles) []dirStep {
 	i2 := string(d.m[d.name(dirI2)].Data)
 	return []dirStep{
-		{"unchanged", func(roFS) {}, 8, 9, 6},
+		{"unchanged", func(roFS) {}, 8, 9, 9},
 		// the lims wait for the second pass: decoded again, none served
-		{"lim edited", d.edit(dirL1, `"lim": 2`, `"lim": 3`), 8, 9, 6},
+		{"lim edited", d.edit(dirL1, `"lim": 2`, `"lim": 3`), 8, 9, 9},
 		// the extras replay their whole record until a file changes: e2 is then served, e1 decoded
-		{"extra edited", d.edit(dirE1, `"e1"`, `"e1b"`), 9, 10, 6},
-		{"json edited", d.edit(dirI2, `"cost": 3`, `"cost": 5`), 7, 8, 5},
-		{"json added", d.put(dirI4, `{"sku": "i4", "cost": 1, "cat": "blue"}`), 8, 9, 6},
-		{"json removed", d.remove(dirI1), 8, 9, 6},
-		{"json renamed", d.rename(dirI3, dirI5), 7, 8, 5},
-		{"row renamed", d.rename(dirR1, dirR9), 7, 8, 6},
-		{"json broken", d.edit(dirI2, `"cost": 5`, `"cost": }`), 7, 6, 3}, // items poisoned: none verified
-		{"json put back", d.put(dirI2, i2), 7, 8, 5},
-		{"check fails", d.edit(dirI4, `"cost": 1`, `"cost": 9`), 7, 8, 5},
-		{"value out of range", d.edit(dirI4, `"cost": 9`, `"cost": 120`), 7, 8, 5},
+		{"extra edited", d.edit(dirE1, `"e1"`, `"e1b"`), 9, 10, 10},
+		{"json edited", d.edit(dirI2, `"cost": 3`, `"cost": 5`), 7, 8, 8},
+		{"json added", d.put(dirI4, `{"sku": "i4", "cost": 1, "cat": "blue"}`), 8, 9, 9},
+		{"json removed", d.remove(dirI1), 8, 9, 9},
+		{"json renamed", d.rename(dirI3, dirI5), 7, 8, 8},
+		{"row renamed", d.rename(dirR1, dirR9), 7, 8, 8},
+		{"json broken", d.edit(dirI2, `"cost": 5`, `"cost": }`), 7, 6, 6}, // items poisoned: none verified
+		{"json put back", d.put(dirI2, i2), 7, 8, 8},
+		{"check fails", d.edit(dirI4, `"cost": 1`, `"cost": 9`), 7, 8, 8},
+		{"value out of range", d.edit(dirI4, `"cost": 9`, `"cost": 120`), 7, 8, 8},
 		// caps.main and each check reading caps run again; i4, out of range, runs none (EVALUATION.md §7.3)
 		{"cap lowered", d.edit(dirCap, "most: 6", "most: 2"), 8, 8, 4},
 		// the dots' indexes move: their paths, so stages B and C, change (API.md P8)
-		{"dot added first", d.put(dirD0, `{"n": 2}`), 8, 6, 3},
-		{"unchanged again", func(roFS) {}, 9, 10, 7},
+		{"dot added first", d.put(dirD0, `{"n": 2}`), 8, 6, 6},
+		{"unchanged again", func(roFS) {}, 9, 10, 10},
 	}
 }
 

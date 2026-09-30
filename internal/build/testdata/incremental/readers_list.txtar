@@ -1,0 +1,66 @@
+EVALUATION.md §8.1, IMPLEMENTATION-PLAN §7.6 (NFR-02), log-2026-09-29 M4 P12-r, P18: b holds a's
+records: a list built from two entries, a map whose value is the third, and one entry's part.
+a.items is not alone, and stage C meets each shared record once, as a cold run does.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A part.
+record Part {
+  /// Size.
+  size: Int
+
+  check size < 50 else "size {size}"
+}
+
+/// An item.
+record Item {
+  /// Weight.
+  weight: Int
+  /// Its part.
+  part: Part
+
+  check weight < 50 else "weight {weight}"
+}
+
+/// Items.
+let items: table Item = {}
+-- a/items/one.canon --
+package a
+
+entry items.one {
+  weight: 1
+  part: { size: 60 }
+}
+-- a/items/two.canon --
+package a
+
+entry items.two {
+  weight: 70
+  part: { size: 2 }
+}
+-- a/items/three.canon --
+package a
+
+entry items.three {
+  weight: 3
+  part: { size: 3 }
+}
+-- b/b.canon --
+/// B.
+package b
+
+import a
+
+/// Two items, in a list.
+let held: [a.Item] = [a.items.two, a.items.one]
+
+/// The third, by name.
+let named: {String: a.Item} = { "third": a.items.three }
+
+/// One item's part.
+let part: a.Part = a.items.one.part

@@ -11,6 +11,7 @@ import (
 
 // force evaluates a const or let once, read by reader at node at (EVALUATION.md §3.1).
 func (e *Evaluator) force(ctx context.Context, st *rootState, reader *run, at syntax.Node) (value.Value, bool) {
+	e.noteRead(st, reader)
 	switch st.status {
 	case done:
 		return st.v, true

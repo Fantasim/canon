@@ -1,0 +1,74 @@
+EVALUATION.md §8.1, IMPLEMENTATION-PLAN §7.6 (NFR-02), WIRE.md §6, log-2026-09-29 M4 P12-r, P18:
+b loads rows whose default reads an entry of a.items, so the loaded value holds that entry, read
+while b's load decodes. a.items is not alone, and stage C meets the entry once, as cold.
+-- project.canon --
+project acme {
+  canon: "0.1"
+
+  roots {
+    resource: "resource"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A part.
+record Part {
+  /// Size.
+  size: Int
+
+  check size < 50 else "size {size}"
+}
+
+/// An item.
+record Item {
+  /// Weight.
+  weight: Int
+  /// Its part.
+  part: Part
+
+  check weight < 50 else "weight {weight}"
+}
+
+/// Items.
+let items: table Item = {}
+-- a/items/one.canon --
+package a
+
+entry items.one {
+  weight: 1
+  part: { size: 60 }
+}
+-- a/items/two.canon --
+package a
+
+entry items.two {
+  weight: 70
+  part: { size: 2 }
+}
+-- a/items/three.canon --
+package a
+
+entry items.three {
+  weight: 3
+  part: { size: 3 }
+}
+-- b/b.canon --
+/// B.
+package b
+
+import a
+
+/// A row.
+record Row {
+  /// Count.
+  n: Int
+  /// Its item, the first one unless the file says.
+  item: a.Item = a.items.one
+}
+
+/// Rows, loaded.
+let rows: [Row] = load("@resource/rows.json")
+-- resource/rows.json --
+[{ "n": 1 }, { "n": 2 }]
