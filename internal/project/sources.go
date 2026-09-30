@@ -106,6 +106,9 @@ func (r *Reader) file(name string) (parsedFile, error) {
 		return parsedFile{}, fmt.Errorf(fmtWrap, err)
 	}
 	p := r.parse(src)
+	if old, ok := r.Reuse.previous(name); ok && !p.findings {
+		graft(old, p.file) // NFR-02: the declarations an edit left before it keep their nodes
+	}
 	r.Reuse.store(name, sum, p)
 	return p, nil
 }

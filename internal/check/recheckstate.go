@@ -10,21 +10,21 @@ import (
 	"github.com/fantasim/canonlang/internal/syntax"
 )
 
-// kept is the journal Recheck starts from: the findings and folds it keeps as they were, and
-// Broken and BrokenViews before propagation less the swapped files' declarations. It holds
-// findings back until Recheck succeeds.
+// kept is the journal Recheck starts from, findings held back until it succeeds: the findings and
+// folds it keeps (a let checked again keeps its signature's), and Broken and BrokenViews before
+// propagation less the declarations checked again.
 func (j *journal) kept(pl *recheckPlan) *journal {
 	out := &journal{hold: true, views: maps.Clone(j.views)}
 	out.direct = maps.Clone(j.direct)
 	maps.DeleteFunc(out.direct, func(o Object, _ bool) bool { return pl.dropped(o) })
 	for _, f := range j.findings {
-		if !pl.redoes(f.from) {
+		if !pl.redoes(f) {
 			out.findings = append(out.findings, f)
 		}
 	}
 	at := j.keptBreaks(pl, out)
 	for _, fc := range j.folds {
-		if !pl.dropped(fc.owner) {
+		if !pl.dropped(fc.owner) || pl.sig[fc.e] != nil {
 			fc.breaks = at[fc.breaks]
 			out.folds = append(out.folds, fc)
 		}
@@ -64,12 +64,15 @@ func (c *checker) replayFolds(ctx context.Context, fold Folder, folds []foldCall
 	}
 }
 
-// swapFiles puts each new file in place of the old one: the old nodes leave Info, the new
-// header and entries are bound, and every reference to an old entry moves to its new object;
-// the result maps each old entry object to its new one.
+// swapFiles puts each new file in place of the old one: the old nodes it does not share leave
+// Info, the new header, entries and lets are bound, and every reference moves to its renewed
+// object; the result maps each renewed object to its new one.
 func (c *checker) swapFiles(pl *recheckPlan) map[*object]*object {
-	for _, sw := range pl.swaps {
-		c.forget(sw.old)
+	c.moveSignatures(pl)
+	imported := make([][]*object, len(pl.swaps))
+	for i, sw := range pl.swaps {
+		imported[i] = c.importObjects(sw)
+		c.forget(sw.old, sw.shared)
 		sw.pkg.files[slices.Index(sw.pkg.files, sw.old)] = sw.new
 		if i := slices.Index(c.inputs, sw.old); i >= 0 {
 			c.inputs[i] = sw.new
@@ -77,24 +80,49 @@ func (c *checker) swapFiles(pl *recheckPlan) map[*object]*object {
 	}
 	c.useBags()
 	renew := map[*object]*object{}
-	for _, sw := range pl.swaps {
-		c.bindFile(sw, renew)
+	for i, sw := range pl.swaps {
+		c.bindFile(sw, imported[i], renew)
 	}
-	c.renew(pl, renew)
+	if pl.wide {
+		c.renewWide(pl, renew)
+	} else {
+		c.renew(pl, renew)
+	}
 	return renew
 }
 
-// forget drops what the checker recorded about the nodes of f.
-func (c *checker) forget(f *syntax.File) {
+// forget drops what the checker recorded about the nodes of f but those the new version shares.
+func (c *checker) forget(f *syntax.File, shared map[syntax.Node]bool) {
 	syntax.Inspect(f, func(n syntax.Node) bool {
-		if n != nil {
-			c.info.forget(n)
-			delete(c.syntaxHeld, n)
-			delete(c.badLits, n)
-			delete(c.unmatchable, n)
+		if n == nil || shared[n] {
+			return false
 		}
+		c.info.forget(n)
+		delete(c.syntaxHeld, n)
+		delete(c.badLits, n)
+		delete(c.unmatchable, n)
+		delete(c.unrefined, n)
 		return true
 	})
+}
+
+// moveSignatures gives the new nodes of each let checked again the facts of its signature's old
+// ones: Recheck keeps its resolved type, so no type or ref is made again (NFR-02).
+func (c *checker) moveSignatures(pl *recheckPlan) {
+	for old, n := range pl.sig { //canon:unordered each node's facts move on their own
+		c.info.move(old, n)
+		moveMark(c.syntaxHeld, old, n)
+		moveMark(c.badLits, old, n)
+		moveMark(c.unmatchable, old, n)
+		moveMark(c.unrefined, old, n)
+	}
+}
+
+// moveMark copies a node's mark to its new node.
+func moveMark(m map[syntax.Node]bool, old, n syntax.Node) {
+	if v, ok := m[old]; ok {
+		m[n] = v
+	}
 }
 
 // useBags points each package at its bag in c.bags, a new one added for a package without.
@@ -123,24 +151,84 @@ func (c *checker) rebindImports(p *pkgState, sw swap) {
 	}
 }
 
-// bindFile binds a new file's syntax errors, imports, directory and entries, each entry's
-// object taking its old one's place.
-func (c *checker) bindFile(sw swap, renew map[*object]*object) {
+// bindFile binds a new file's syntax errors, imports, directory, entries and lets checked
+// again, each new object taking its old one's place; a shared declaration keeps its facts.
+func (c *checker) bindFile(sw swap, imported []*object, renew map[*object]*object) {
 	p, nf := sw.pkg, sw.new
 	c.syntaxErrorsIn(nf, c.syntaxSpans([]*pkgState{p}))
 	c.rebindImports(p, sw)
+	c.renewImports(sw, imported, renew)
 	c.checkDir(p, nf)
-	for i, d := range nf.Decls {
-		e, old := d.(*syntax.EntryDecl), sw.objs[i]
-		o := c.newObject(ObjEntry, entryKeyText(e.Key), p, e, nf)
-		renew[old] = o
-		p.all[slices.Index(p.all, old)] = o
-		k := slices.IndexFunc(p.entries, func(at entryAt) bool { return at.obj == old })
-		p.entries[k] = entryAt{decl: e, file: nf, obj: o}
-		if table := c.registerEntry(p, p.entries[k]); table != nil {
-			table.keys.replace(old, o)
+	for _, d := range sw.pairs {
+		switch x := d.new.(type) {
+		case *syntax.EntryDecl:
+			if !d.shared() {
+				c.bindEntry(p, nf, x, d.obj, renew)
+			}
+		case *syntax.LetDecl:
+			if !d.shared() {
+				c.bindLet(p, nf, x, d, renew)
+			}
 		}
 	}
+}
+
+// bindEntry makes the object of an `entry` declaration checked again, in old's place.
+func (c *checker) bindEntry(p *pkgState, nf *syntax.File, e *syntax.EntryDecl, old *object, renew map[*object]*object) {
+	o := c.newObject(ObjEntry, entryKeyText(e.Key), p, e, nf)
+	renew[old] = o
+	p.all[slices.Index(p.all, old)] = o
+	k := slices.IndexFunc(p.entries, func(at entryAt) bool { return at.obj == old })
+	p.entries[k] = entryAt{decl: e, file: nf, obj: o}
+	if table := c.registerEntry(p, p.entries[k]); table != nil {
+		table.keys.replace(old, o)
+	}
+}
+
+// bindLet makes the object of a let checked again, with its old one's resolved type and keys,
+// and the objects of its table literal's rows, each in its old one's place.
+func (c *checker) bindLet(p *pkgState, nf *syntax.File, d *syntax.LetDecl, pair declPair, renew map[*object]*object) {
+	old := pair.obj
+	o := c.newObject(ObjLet, old.name, p, d, nf)
+	o.local, o.mutable, o.typ, o.state, o.keys = old.local, old.mutable, old.typ, stateDone, old.keys
+	renew[old] = o
+	lit, ok := d.Value.(*syntax.BraceLit)
+	if !ok || len(pair.rows) == 0 {
+		return
+	}
+	for i, it := range lit.Items {
+		e := it.(*syntax.EntryItem)
+		row := c.newObject(ObjEntry, e.Key.Name, p, e, nf)
+		row.parent = o
+		c.info.Defs[e.Key] = row
+		renew[pair.rows[i]] = row
+	}
+}
+
+// importObjects are the package objects the old version's imports bound, by index: read before
+// forget, which drops an unshared header's.
+func (c *checker) importObjects(sw swap) []*object {
+	out := make([]*object, len(sw.old.Imports))
+	for i, imp := range sw.old.Imports {
+		out[i], _ = c.info.NameUses[lastPart(imp)].(*object)
+	}
+	return out
+}
+
+// renewImports maps the package object each old import bound to the one its new import, written
+// alike at the same index (sameHeader), binds.
+func (c *checker) renewImports(sw swap, imported []*object, renew map[*object]*object) {
+	for i, imp := range sw.new.Imports {
+		n, ok := c.info.NameUses[lastPart(imp)].(*object)
+		if old := imported[i]; ok && old != nil && n != old {
+			renew[old] = n
+		}
+	}
+}
+
+// lastPart is the identifier an import's package object is bound at: its path's last part.
+func lastPart(imp *syntax.Import) *syntax.Ident {
+	return imp.Path.Parts[len(imp.Path.Parts)-1]
 }
 
 // renew moves every reference to an old entry object to its new one: dependencies, E3101's
@@ -167,18 +255,7 @@ func (c *checker) renew(pl *recheckPlan, renew map[*object]*object) {
 			}
 		}
 	}
-	c.info.renew(renew)
-}
-
-// objectsOf are the entry objects of a swap's new file, in order.
-func (c *checker) objectsOf(sw swap) []*object {
-	var out []*object
-	for _, at := range sw.pkg.entries {
-		if at.file == sw.new {
-			out = append(out, at.obj)
-		}
-	}
-	return out
+	c.info.renew(byMap(renew))
 }
 
 // redoKeys reports again E3101 and E3102 in the swapped files' packages (TYPES.md §9.3).
@@ -197,12 +274,12 @@ func (c *checker) redoKeys(pl *recheckPlan) {
 }
 
 // renewPackages gives every package a new Package of its files and declarations, each old
-// entry object replaced by its new one: the old program's stay as they were.
-func (c *checker) renewPackages(renew map[*object]*object) {
+// object replaced by its new one: the old program's stay as they were.
+func (c *checker) renewPackages(to renewal) {
 	for _, p := range c.sorted {
 		decls := slices.Clone(p.pkg.Decls)
 		for i, o := range decls {
-			if n := renewed(renew, o); n != nil {
+			if n := renewed(to, o); n != nil {
 				decls[i] = n
 			}
 		}

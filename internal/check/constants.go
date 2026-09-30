@@ -474,3 +474,11 @@ const (
 var literalCodes = []interface{ Def() *diag.Def }{
 	diag.E1101, diag.E1102, diag.E1107, diag.E1109, diag.E1110, diag.E1111, diag.E1112, diag.E1113, diag.E1114, diag.E1122, diag.E1124,
 }
+
+// The forms of a let's value that the checker reads as written (TYPES.md §4.1, §9.3, §10.2).
+const (
+	formOther = iota
+	formTable
+	formList
+	formDefines
+)

@@ -1,0 +1,119 @@
+IMPLEMENTATION-PLAN §7.6 (NFR-02), log-2026-09-30 M4 P15: a file declaring a record, an inline
+table of it and lets after it, as the benchmark's monster.canon. An edit of a row, or of a let's
+value, leaves the declarations before it shared by the new parse and re-checks the file along its
+lineage; b's entries, which ref the table and read its rows, replay under the same epoch. A method
+of the shared record called from a let checked again, a function and a let before the table that
+read a row, a bounded let after it, a row read from another package, and a `where`-typed let.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// The highest level.
+const TOP = 9
+
+/// A monster.
+record Monster {
+  /// Its name.
+  name: String(1..)
+  /// Its level.
+  level: Int(1..=TOP)
+  /// Its hit points.
+  hp: Int(1..=50) = 10
+
+  /// Twice its level.
+  export fn power(self) -> Int { return level * 2 }
+
+  check hp >= level else "hp {hp} below level {level}"
+}
+
+/// A slot.
+record Slot {
+  /// Its code.
+  code: Int
+  /// Its size.
+  size: Int(1..=9)
+}
+
+/// The rat's hit points.
+export fn first() -> Int { return monsters.rat.hp }
+
+/// The rat's level.
+let early: Int = monsters.rat.level
+
+/// The monsters.
+let monsters: table Monster = {
+  rat { name: "Rat", level: 1, hp: 3 }
+  bat { name: "Bat", level: 2 }
+  imp { name: "Imp", level: 3, hp: 12 }
+}
+
+/// The slots, by code.
+let slots: [Slot] keyed by code = [{ code: 1, size: 2 }, { code: 2, size: 4 }]
+
+/// A bonus.
+let bonus: Int = 4 + monsters.imp.level + monsters.imp.power()
+
+/// A cap.
+let cap: Int(0..=50) = 5
+-- a/w.canon --
+package a
+
+/// A positive number.
+let w: Int where it > 0 = 5
+-- b/b.canon --
+/// B.
+package b
+
+import a { monsters, bonus, first, early }
+
+/// An item.
+record Item {
+  /// Its name.
+  name: String(1..)
+  /// What drops it.
+  from: ref monsters
+  /// Its tier.
+  tier: Int(1..=20)
+
+  check tier >= from.level else "tier {tier} below the level of its monster"
+}
+
+/// The items.
+let items: table Item = {}
+
+/// Twice the bonus.
+let twice: Int = bonus * 2
+
+/// The rat's level, read from here.
+let lv: Int = monsters.rat.level
+
+/// What the rat reads.
+let n: Int = first() + early
+-- b/items/sword.canon --
+package b
+
+entry items.sword {
+  name: "Sword"
+  from: imp
+  tier: 3
+}
+-- b/items/shield.canon --
+package b
+
+entry items.shield {
+  name: "Shield"
+  from: rat
+  tier: 1
+}
+-- b/items/cap.canon --
+package b
+
+entry items.cap {
+  name: "Cap"
+  from: bat
+  tier: 2
+}

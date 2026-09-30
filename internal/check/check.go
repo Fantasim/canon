@@ -111,7 +111,7 @@ type checker struct {
 	fnParams     map[*object][]*object
 	fieldJobs    map[*types.Field]func()
 	initDone     map[*object]bool
-	boundSpans   map[*types.Bound]source.Span
+	boundSpans   map[*types.Bound]boundAt // where each bound is written, for E3204
 	wheres       []whereJob
 	unions       []unionJob
 	optionals    []optionalJob
@@ -171,7 +171,7 @@ func newChecker(ctx context.Context, proj *project.Project, bags Bags, fold Fold
 		fnParams:     map[*object][]*object{},
 		fieldJobs:    map[*types.Field]func(){},
 		initDone:     map[*object]bool{},
-		boundSpans:   map[*types.Bound]source.Span{},
+		boundSpans:   map[*types.Bound]boundAt{},
 		syntaxHeld:   map[syntax.Node]bool{},
 		badLits:      map[syntax.Node]bool{},
 		unrefined:    map[syntax.Node]bool{},

@@ -70,7 +70,7 @@ func (c *checker) refineRange(env *env, base types.Type, r *syntax.RangeExpr) (t
 		c.report(env, diag.E3023.AtEmpty(env.span(r), env.span(r)))
 		return base, false
 	}
-	c.boundSpans[b] = env.span(r)
+	c.boundSpans[b] = boundAt{file: env.file, node: r}
 	return &types.Refined{Of: base, Range: b}, true
 }
 

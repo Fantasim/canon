@@ -55,7 +55,7 @@ func (s *Session) Recheck(ctx context.Context, changed []*syntax.File, bags Bags
 	if s.lineage.latest != s || ctx.Err() != nil {
 		return nil, nil, false
 	}
-	pl, ok := s.c.plan(changed)
+	pl, ok := s.c.plan(changed, bags)
 	if !ok {
 		return nil, nil, false
 	}
@@ -79,18 +79,14 @@ func (s *Session) apply(ctx context.Context, pl *recheckPlan, bags Bags, fold Fo
 	c.info = c.info.cloned(j.direct, j.views)
 	renew := c.swapFiles(pl)
 	j.probing = true // a swapped file must not fold: none is asked, so an abort charges and reports nothing
-	for _, sw := range pl.swaps {
-		for _, o := range c.objectsOf(sw) {
-			c.checkDecl(o)
-		}
-	}
+	c.recheckDecls(pl, renew)
 	j.probing = false
 	if len(j.folds) != len(folds) {
 		return nil // a swapped file folded: the kept folds' order is not cold's, so the caller runs Check
 	}
 	c.redoKeys(pl)
 	c.finish()
-	c.renewPackages(renew)
+	c.renewPackages(byMap(renew))
 	prog := c.program()
 	if ctx.Err() != nil {
 		return nil

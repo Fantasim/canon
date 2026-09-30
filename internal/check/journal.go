@@ -38,6 +38,7 @@ type journaled struct {
 	pkg   *pkgState
 	put   func(*diag.Bag)
 	reads []source.FileID
+	body  bool // reported once step 3 began (TYPES.md §1): a declaration checked again reports it again
 }
 
 // foldCall is one Fold the checker asked for, when breaks had that many objects.
@@ -53,7 +54,7 @@ func (c *checker) deliver(p *pkgState, from origin, put func(*diag.Bag)) {
 		put(p.bag)
 		return
 	}
-	c.journal.findings = append(c.journal.findings, journaled{from: from, pkg: p, put: put, reads: readsOf(p.path, put)})
+	c.journal.findings = append(c.journal.findings, journaled{from: from, pkg: p, put: put, reads: readsOf(p.path, put), body: c.bodies})
 	if !c.journal.hold {
 		put(p.bag)
 	}

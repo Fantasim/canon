@@ -118,7 +118,7 @@ func (c *checker) literalRefinement(env *env, lit syntax.Expr, r *types.Refined)
 	if !ok || inBound(v, r.Range, r.Of.Base().Kind()) {
 		return true
 	}
-	c.report(env, c.related(env, diag.E3204.At(env.span(lit), rawValue(text), c.boundSpans[r.Range])))
+	c.report(env, c.related(env, diag.E3204.At(env.span(lit), rawValue(text), c.boundSpans[r.Range].span())))
 	return false
 }
 

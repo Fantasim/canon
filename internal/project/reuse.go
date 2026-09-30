@@ -52,6 +52,21 @@ func (u *Reuse) lookup(name string, sum sha256Sum) (parsedFile, bool) {
 	return e.parsedFile, true
 }
 
+// previous is the finding-free parse of name kept for an older content, which a new parse of it
+// may share nodes with (graft); false for none.
+func (u *Reuse) previous(name string) (*syntax.File, bool) {
+	if u == nil {
+		return nil, false
+	}
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	e, ok := u.files[name]
+	if !ok || e.findings {
+		return nil, false
+	}
+	return e.file, true
+}
+
 // store records the parse of a file, replacing the one of an older content.
 func (u *Reuse) store(name string, sum sha256Sum, p parsedFile) {
 	if u == nil {

@@ -60,31 +60,36 @@ func (i *Info) forget(n syntax.Node) {
 	delete(i.Matches, n)
 }
 
-// renew points the names, selections and calls naming an old object of renew at its new one;
-// a Selection or Callee is copied, never changed, as the old program holds it.
-func (i *Info) renew(renew map[*object]*object) {
-	if len(renew) == 0 {
-		return
-	}
+// renewal is the new object of an old one, nil or itself when it keeps its place.
+type renewal func(*object) *object
+
+// byMap is the renewal renew lists.
+func byMap(renew map[*object]*object) renewal {
+	return func(o *object) *object { return renew[o] }
+}
+
+// renew points the names, selections and calls naming an old object at its new one; a
+// Selection or Callee is copied, never changed, as the old program holds it.
+func (i *Info) renew(to renewal) {
 	for k, o := range i.Uses { //canon:unordered each entry is renewed in place
-		if n := renewed(renew, o); n != nil {
+		if n := renewed(to, o); n != nil {
 			i.Uses[k] = n
 		}
 	}
 	for k, o := range i.NameUses { //canon:unordered each entry is renewed in place
-		if n := renewed(renew, o); n != nil {
+		if n := renewed(to, o); n != nil {
 			i.NameUses[k] = n
 		}
 	}
 	for k, s := range i.Selections { //canon:unordered each entry is renewed in place
-		if n := renewed(renew, s.Obj); n != nil {
+		if n := renewed(to, s.Obj); n != nil {
 			moved := *s
 			moved.Obj = n
 			i.Selections[k] = &moved
 		}
 	}
 	for k, cl := range i.Calls { //canon:unordered each entry is renewed in place
-		if n := renewed(renew, cl.Obj); n != nil {
+		if n := renewed(to, cl.Obj); n != nil {
 			moved := *cl
 			moved.Obj = n
 			i.Calls[k] = &moved
@@ -92,11 +97,49 @@ func (i *Info) renew(renew map[*object]*object) {
 	}
 }
 
-// renewed is the new object of o, nil when o has none.
-func renewed(renew map[*object]*object, o Object) *object {
+// renewed is the new object of o, nil when o keeps its place.
+func renewed(to renewal, o Object) *object {
 	x, ok := o.(*object)
-	if !ok {
+	if !ok || x == nil {
 		return nil
 	}
-	return renew[x]
+	if n := to(x); n != x {
+		return n
+	}
+	return nil
+}
+
+// move gives node n the facts Info holds about old, a node of the same kind (a let's signature
+// checked again, NFR-02).
+func (i *Info) move(old, n syntax.Node) {
+	if e, ok := old.(syntax.Expr); ok {
+		moveFact(i.Types, e, n.(syntax.Expr))
+		moveFact(i.Conv, e, n.(syntax.Expr))
+		moveFact(i.Keys, e, n.(syntax.Expr))
+	}
+	if t, ok := old.(syntax.Type); ok {
+		moveFact(i.TypeExprs, t, n.(syntax.Type))
+	}
+	switch x := old.(type) {
+	case *syntax.Ident:
+		moveFact(i.Defs, x, n.(*syntax.Ident))
+		moveFact(i.NameUses, x, n.(*syntax.Ident))
+	case *syntax.IdentExpr:
+		moveFact(i.Uses, x, n.(*syntax.IdentExpr))
+		moveFact(i.Symbols, x, n.(*syntax.IdentExpr))
+	case *syntax.SelectorExpr:
+		moveFact(i.Selections, x, n.(*syntax.SelectorExpr))
+	case *syntax.CallExpr:
+		moveFact(i.Calls, x, n.(*syntax.CallExpr))
+	case *syntax.BraceLit:
+		moveFact(i.Literals, x, n.(*syntax.BraceLit))
+	}
+	moveFact(i.Matches, old, n)
+}
+
+// moveFact copies m's fact about old to n.
+func moveFact[K comparable, V any](m map[K]V, old, n K) {
+	if v, ok := m[old]; ok {
+		m[n] = v
+	}
 }
