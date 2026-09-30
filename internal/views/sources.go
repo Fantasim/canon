@@ -6,10 +6,10 @@ import (
 	"github.com/fantasim/canonlang/api/vm"
 	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/diag"
+	"github.com/fantasim/canonlang/internal/eval/std"
 	"github.com/fantasim/canonlang/internal/project"
 	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/syntax"
-	"github.com/fantasim/canonlang/internal/value"
 	"github.com/fantasim/canonlang/internal/views/shape"
 )
 
@@ -65,27 +65,12 @@ func (b *builder) filesMatched(o check.Object) (int, bool) {
 		return 0, false
 	}
 	files := map[source.FileID]bool{}
-	for _, e := range elements(v) {
+	for _, e := range std.Elems(v) {
 		if p := e.Prov(); p != nil {
 			files[p.Span.File] = true
 		}
 	}
 	return len(files), true
-}
-
-// elements are a list's elements, or a table's entries.
-func elements(v value.Value) []value.Value {
-	switch x := v.(type) {
-	case *value.List:
-		return x.Elems
-	case *value.Table:
-		out := make([]value.Value, len(x.Entries))
-		for i, e := range x.Entries {
-			out[i] = e
-		}
-		return out
-	}
-	return nil
 }
 
 // entriesOf counts the `entry` declarations of o in files other than its own (API.md W2).

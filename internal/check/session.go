@@ -68,7 +68,8 @@ func (s *Session) Recheck(ctx context.Context, changed []*syntax.File, bags Bags
 }
 
 // apply moves the lineage's checker onto the new files, then reports every finding of the new
-// program into bags; nil when ctx was cancelled on the way, which ends the lineage.
+// program into bags; nil when ctx was cancelled on the way, or a swapped file folded (the replay's
+// order would not be cold's), which ends the lineage.
 func (s *Session) apply(ctx context.Context, pl *recheckPlan, bags Bags, fold Folder) *Session {
 	c := s.c
 	j := s.journal.kept(pl)
@@ -77,10 +78,15 @@ func (s *Session) apply(ctx context.Context, pl *recheckPlan, bags Bags, fold Fo
 	c.fold = &foldJournal{inner: fold, journal: j}
 	c.info = c.info.cloned(j.direct, j.views)
 	renew := c.swapFiles(pl)
+	j.probing = true // a swapped file must not fold: none is asked, so an abort charges and reports nothing
 	for _, sw := range pl.swaps {
 		for _, o := range c.objectsOf(sw) {
 			c.checkDecl(o)
 		}
+	}
+	j.probing = false
+	if len(j.folds) != len(folds) {
+		return nil // a swapped file folded: the kept folds' order is not cold's, so the caller runs Check
 	}
 	c.redoKeys(pl)
 	c.finish()

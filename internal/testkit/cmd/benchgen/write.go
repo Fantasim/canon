@@ -6,13 +6,21 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/fantasim/canonlang/internal/ir"
 	"github.com/fantasim/canonlang/internal/project"
 )
 
-// writeFile writes rel (project-relative) under out, canonicalising a `.canon` file first.
+// writeFile writes rel (project-relative) under out, a `.canon` or `.json` file canonical first.
 func writeFile(out, rel string, content []byte) error {
 	if strings.HasSuffix(rel, project.SourceExt) {
 		formatted, err := formatCanon(rel, content)
+		if err != nil {
+			return err
+		}
+		content = formatted
+	}
+	if strings.HasSuffix(rel, ir.JSONExt) {
+		formatted, err := formatJSON(rel, content)
 		if err != nil {
 			return err
 		}

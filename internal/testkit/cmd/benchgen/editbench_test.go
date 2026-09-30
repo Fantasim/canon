@@ -49,6 +49,8 @@ type benchTarget struct {
 	dir     string
 	roots   map[string]string
 	guarded bool // the benchmark: shares and skipped kinds fail it; the examples report them
+	// canonical: its JSON sources are written canonical (FMT-02), so no fmt pass runs first.
+	canonical bool
 }
 
 // NFR-01 (M4 acceptance item 4): cold canon check and its peak RSS per project, the p95s of an
@@ -64,11 +66,13 @@ func TestBenchEdit(t *testing.T) {
 	if err := generate(benchSeed, bench, *flagEdit); err != nil {
 		t.Fatalf("generate: %v", err)
 	}
-	for _, target := range []benchTarget{{name: "bench (n=" + strconv.Itoa(*flagEdit) + ")", dir: bench, guarded: true}, examplesCopy(t)} {
+	for _, target := range []benchTarget{{name: "bench (n=" + strconv.Itoa(*flagEdit) + ")", dir: bench, guarded: true, canonical: true}, examplesCopy(t)} {
 		t.Run(target.name, func(t *testing.T) {
 			var r report
 			defer r.print(t)
-			normalize(t, bin, target)
+			if !target.canonical {
+				normalize(t, bin, target)
+			}
 			p := openClean(t, target)
 			coldChecks(t, bin, target, units(t, p, target), &r)
 			editTimes(t, p, &r, target)

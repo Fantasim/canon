@@ -101,8 +101,8 @@ func examplesCopy(t *testing.T) benchTarget {
 }
 
 // normalize runs `canon fmt --json-sources` in the target, as a project migrates once before
-// its JSON sources are edited (API.md M9, DECISIONS 12): benchgen and six examples do not
-// write them in the canonical layout.
+// its JSON sources are edited (API.md M9, DECISIONS 12): six examples do not write them in the
+// canonical layout (benchgen's project does).
 func normalize(t *testing.T, bin string, target benchTarget) {
 	t.Helper()
 	if out, err := canonIn(bin, target, "fmt", "--json-sources").CombinedOutput(); err != nil {

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/fantasim/canonlang/internal/ir"
 	"github.com/fantasim/canonlang/internal/testkit/progen"
 )
 
@@ -66,5 +67,5 @@ func writeEntryFiles(out string, it *itemData) error {
 	if err := writeFile(out, "items/icons/"+it.code+iconExt, nil); err != nil {
 		return err
 	}
-	return writeFile(out, "twin/data/"+it.code+".json", itemJSON(it))
+	return writeFile(out, "twin/data/"+it.code+ir.JSONExt, itemJSON(it))
 }

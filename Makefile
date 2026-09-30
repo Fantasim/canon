@@ -160,8 +160,8 @@ stress:
 
 # IMPLEMENTATION-PLAN.md §6 M4 item 3, §7.7: the minimal-write fuzz (API.md M6) for
 # FUZZ_EDIT_TIME on every example and on a benchmark project of FUZZ_EDIT_BENCH_N entries
-# (0: the examples alone), its JSON sources normalized first (DECISIONS 12). Opt-in; the whole
-# run (benchgen, fmt, the fuzz and its FUZZ_EDIT_WORKERS workers) under one 6G cap.
+# (0: the examples alone); benchgen writes canonical JSON sources (FMT-02, DECISIONS 12). Opt-in;
+# the whole run (benchgen, the fuzz and its FUZZ_EDIT_WORKERS workers) under one 6G cap.
 FUZZ_EDIT_TIME    ?= 10m
 FUZZ_EDIT_BENCH_N ?= 7000
 FUZZ_EDIT_WORKERS ?= 2
@@ -171,8 +171,7 @@ fuzz-edit:
 	  N=$(FUZZ_EDIT_BENCH_N) T=$(FUZZ_EDIT_TIME) W=$(FUZZ_EDIT_WORKERS) bash -c '\
 	  dir=$$(mktemp -d /var/tmp/canon-fuzz-edit-XXXXXX); trap "rm -rf \"$$dir\"" EXIT; bench=""; \
 	  if [ "$$N" != 0 ]; then \
-	    go run ./internal/testkit/cmd/benchgen -seed 1 -n "$$N" -out "$$dir/bench" && \
-	    go run ./cmd/canon fmt --json-sources -q -project "$$dir/bench" || exit 1; \
+	    go run ./internal/testkit/cmd/benchgen -seed 1 -n "$$N" -out "$$dir/bench" || exit 1; \
 	    bench="-edit.bench=$$dir/bench"; \
 	  fi; \
 	  go test -count=1 -timeout 0 -run "^$$" -fuzz "^FuzzMinimalWriteAll$$" -fuzztime "$$T" -parallel "$$W" \

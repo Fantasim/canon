@@ -29,6 +29,7 @@ type journal struct {
 	direct   map[Object]bool
 	views    map[*syntax.ViewDecl]bool
 	hold     bool // Recheck: journal findings without reporting them until it succeeds
+	probing  bool // Recheck: journal a fold without asking the Folder, its answer being discarded
 }
 
 // journaled is one finding: put reports it again into any bag of its package.
@@ -105,5 +106,8 @@ type foldJournal struct {
 
 func (f *foldJournal) Fold(ctx context.Context, owner Object, e syntax.Expr, info *Info) (value.Value, bool) {
 	f.journal.folds = append(f.journal.folds, foldCall{owner: owner, e: e, breaks: len(f.journal.breaks)})
+	if f.journal.probing {
+		return nil, false
+	}
 	return f.inner.Fold(ctx, owner, e, info)
 }

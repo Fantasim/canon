@@ -71,6 +71,7 @@ const (
 	hexBase           = 16
 	floatSteps        = 100
 	floatPrecision    = 2
+	floatBits         = 64
 	hpBound           = 100_000
 )
 

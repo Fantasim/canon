@@ -11,6 +11,12 @@ import (
 // formatFloat renders v with the field's fixed decimal precision, the same text on both wires.
 func formatFloat(v float64) string { return strconv.FormatFloat(v, 'f', floatPrecision, 64) }
 
+// jsonFloat is text in the canonical Float text of JSON sources (DECISIONS 165, STD-06).
+func jsonFloat(text string) string {
+	v, _ := strconv.ParseFloat(text, floatBits) // text is formatFloat's own output, always a decimal
+	return types.FloatText(v, floatBits)
+}
+
 // floatField is a `Float(min..=max)` field, drawn at a fixed resolution then rounded.
 func floatField(name, doc string, min, max float64) fieldSpec {
 	return fieldSpec{
@@ -19,7 +25,7 @@ func floatField(name, doc string, min, max float64) fieldSpec {
 		gen: func(r *progen.Rand, _ *pools) rendered {
 			frac := float64(r.Intn(floatSteps+1)) / float64(floatSteps)
 			text := formatFloat(min + (max-min)*frac)
-			return rendered{text, text}
+			return rendered{text, jsonFloat(text)}
 		},
 	}
 }

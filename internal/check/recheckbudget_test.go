@@ -2,7 +2,6 @@ package check_test
 
 import (
 	"context"
-	"slices"
 	"strconv"
 	"testing"
 
@@ -189,7 +188,7 @@ func foldRecord(fold check.Folder, info *check.Info, o check.Object) {
 // holdsCode reports a finding of code in any bag.
 func holdsCode(bags check.Bags, code diag.Code) bool {
 	for _, b := range bags { //canon:unordered a membership test
-		if slices.ContainsFunc(b.Findings(), func(f diag.Finding) bool { return f.Code == code }) {
+		if hasCode(b, code) {
 			return true
 		}
 	}
