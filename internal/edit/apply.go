@@ -17,11 +17,12 @@ import (
 
 // Env is what Apply needs: the project base was analyzed from (M9, E1), the edit layer (W11), and
 // Host, an analysis's host (V1, E6), called for base, then after each operation that changed files
-// and before its cascades, on analyses Apply made; each host is used on Apply's goroutine only.
+// and before its cascades, on analyses Apply made, each on Apply's goroutine only; Verdicts is M9's memo.
 type Env struct {
 	Project   *build.Project
 	EditLayer string
 	Host      func(*build.Analysis) wire.Host
+	Verdicts  Verdicts
 }
 
 // Request is an edit's operations, applied in order to the state the previous ones left (API.md E1).

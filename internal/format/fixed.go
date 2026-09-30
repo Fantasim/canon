@@ -34,6 +34,12 @@ func Canonical(f *syntax.File) (bool, error) {
 	return l.canonical, l.err
 }
 
+// Adopt gives f the layout of a usable, canonical tree; one already held is left as it is. The caller
+// has seen a tree of the same bytes and parse kind judged fixed by Canonical (API.md M9).
+func Adopt(f *syntax.File) {
+	layouts.keep(f, weak.Make(f), layout{canonical: true})
+}
+
 // of is f's layout, judged on the first ask only.
 func (c *layoutCache) of(f *syntax.File) layout {
 	key := weak.Make(f)
@@ -43,7 +49,11 @@ func (c *layoutCache) of(f *syntax.File) layout {
 	if ok {
 		return found
 	}
-	found = judgeLayout(f)
+	return c.keep(f, key, judgeLayout(f))
+}
+
+// keep records found as f's layout unless one is held, and returns the one held.
+func (c *layoutCache) keep(f *syntax.File, key weak.Pointer[syntax.File], found layout) layout {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if kept, ok := c.files[key]; ok {

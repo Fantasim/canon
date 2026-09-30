@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/fantasim/canonlang/internal/source"
+	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/value"
 )
 
@@ -121,6 +122,12 @@ func CanonicalSource(s *Snapshot, display string, raw []byte) ([]byte, error) {
 	return a.canonical(display, raw, false)
 }
 
+// CanonicalSourceWith is CanonicalSource with v as the memo of fixed points Env carries.
+func CanonicalSourceWith(s *Snapshot, v Verdicts, display string, raw []byte) ([]byte, error) {
+	a := &applier{snap: s, env: Env{Verdicts: v}}
+	return a.canonical(display, raw, false)
+}
+
 // JSONSources are the JSON sources the roots of s read, display path to the content read.
 func JSONSources(s *Snapshot) map[string][]byte {
 	out := map[string][]byte{}
@@ -143,3 +150,6 @@ func JSONSources(s *Snapshot) map[string][]byte {
 	}
 	return out
 }
+
+// TreeOf is the tree of the file at display in s, nil for none.
+func TreeOf(s *Snapshot, display string) *syntax.File { return s.tree(display) }

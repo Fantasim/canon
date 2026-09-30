@@ -5,6 +5,9 @@ import "time"
 // racyWindow: a file hashed this soon after its mtime is hashed again (API.md S1).
 const racyWindow = 2 * time.Second
 
+// verdictLimit is how many M9 verdicts a project keeps, the least recently used dropped (API.md M9).
+const verdictLimit = 256
+
 // The revisions remembered, as deltas with a full copy every fullEvery (API.md S4).
 const (
 	historyLen = 64

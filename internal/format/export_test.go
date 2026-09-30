@@ -2,6 +2,7 @@ package format
 
 import (
 	"bytes"
+	"reflect"
 	"weak"
 
 	"github.com/fantasim/canonlang/internal/syntax"
@@ -73,3 +74,6 @@ func CommentHosts(f *syntax.File) map[int]syntax.Tok {
 	}
 	return out
 }
+
+// LayoutFields is how many things a file's layout holds: what Adopt must reproduce.
+func LayoutFields() int { return reflect.TypeFor[layout]().NumField() }

@@ -42,6 +42,8 @@ type Project struct {
 	calls   map[*call]bool // the shared computations running, which Close cancels
 	hist    history
 	watches watchSet // the watches running and the watcher they share (API.md W16)
+
+	verdicts verdictMemo // the fixed points M9 found, by content (log-2026-09-29 P19, PB4)
 }
 
 type subscriber struct {

@@ -77,7 +77,7 @@ func (s *Snapshot) draft(ctx context.Context, base *build.Analysis, c Changes) (
 
 // apply is c computed in memory against s, whose analysis is base (API.md E1).
 func (s *Snapshot) apply(ctx context.Context, base *build.Analysis, c Changes) (*edit.Plan, error) {
-	env := edit.Env{Project: s.b, EditLayer: c.EditLayer, Host: c.Host}
+	env := edit.Env{Project: s.b, EditLayer: c.EditLayer, Host: c.Host, Verdicts: &s.p.verdicts}
 	return edit.Apply(ctx, env, edit.NewSnapshot(base), edit.Request{Ops: c.Ops})
 }
 
