@@ -68,6 +68,8 @@ entries · B1 Recheck folds on the program's Info. Memo architecture: ADR-0011. 
       `fuzz-edit`/`bench-edit`); TestDependencyRule also enforces each package's §3 Consumes row
       (log M4 P13c-r: listed or reachable through the row), violations fixed or reported; a table
       test for `check.FileCache` (`Of`, `KeepOnly`)
+      ; check against TYPES whether `[L(ev)] keyed by id` (a keyed list of an applied record) should be
+      E3012 (B4 review); the `"dir"` load-form constant duplicated in load and views
 
 ## Final pass
 
