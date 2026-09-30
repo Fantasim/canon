@@ -61,6 +61,11 @@ B13 UNC completion (workspace, load, edit, cli), host volumes in `/` form, one W
 (`testkit/winpaths`, a port of Go's volumeNameLen), `Paths.RootsFromAPI`. CI 36692101649 green on Windows
 and macOS; `make check` green.
 
+## Final-pass fixes (in flight)
+
+- P14 NFR-01: profile and fix the Edit (6.25 s p95) and Evaluate (1.5 s p95) paths at 7,000 entries [opus]
+- B14 formatter fuzz bugs: an import-block trailing comment dropped; Rewrite touching bytes outside its region [opus]
+
 ## Final pass
 
 - Final pass (orchestrator, once): 10-min `FuzzFormat`/`FuzzFormatJSONSource`/`FuzzRewrite`, minimal-write
