@@ -65,7 +65,8 @@ and macOS; `make check` green.
 
 - P14 NFR-01 [opus]: analyses kept and reused across Edit and Evaluate; `1e5febc` in its worktree, in review.
   Evaluate p95 1.25 s -> ~150 ms, Edit p95 6.0 -> 3.3 s (under load 16-20)
-- P15 monster edits: type-check reuse when declaration signatures are unchanged (NFR-02) [opus]
+- P15 monster edits [opus]: shared parse prefix and an inline-table Recheck; review PASS after one round;
+  worktree HEAD (monster Edit p95 2.7 -> 0.74 s under load)
 - P16 twin [opus]: load.dir elements kept apart, stage B/C per element; review PASS after one round;
   worktree HEAD (twin Edit p95 1.7 -> 0.43 s under load)
 - P17 views: the asset walk per Evaluate [sonnet]; review PASS after one round; `b32433b` in its worktree

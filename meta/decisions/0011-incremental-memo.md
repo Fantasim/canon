@@ -29,6 +29,11 @@ and each reuse is a place where incremental and cold can drift apart.
   node with a value it read. E4401 always comes from a real run.
 - **Kept check-time folds replay on the program's own `Info`**, so the folder's evaluator, its
   counter and const cache continue as in a cold run (B1).
+- **Shared parse prefix (amended by P15).** A changed clean file shares the old parse's declarations
+  lying wholly before its first changed byte (entries excepted), and Recheck accepts it when every
+  let keeps its signature (row keys, modifiers and annotations included), renewing every object of
+  the file. Renewals nothing reads stale today (`listKeys` file ids, `typeObjects`, bound files)
+  are kept and commented "by construction".
 - **Parts (amended by P16).** A `load.dir` element whose decoding was pure is a part: an entry of
   the same store keyed by (load, parsed-tree node), counted, pruned and forgotten like any entry,
   served at its cold charge or decoded for real. List elements replay stages B and C like table
