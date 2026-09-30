@@ -28,7 +28,6 @@ var (
 
 // Why an import is allowed though §3's Consumes column does not license it.
 const (
-	reasonVM    = "api/vm sits above views in §3 but the Consumes cells of views and gen/view omit it: spec sync"
 	reasonLock  = "lock/sources.go reads check and verify; §3 gives lock value and project only"
 	reasonLoad  = "load.Request.Through and evalHost bind wire.Host to *eval.Evaluator: move to build, eval's tests use it"
 	reasonLive  = "views/live reads verify; §3 gives views check, eval and i18n"
@@ -37,14 +36,6 @@ const (
 
 // consumesAllowlist is shrink-only (log M4 P13c-r): "importer -> imported" and why; a stale entry fails.
 var consumesAllowlist = map[string]string{
-	"internal/gen/view -> api/vm":            reasonVM,
-	"internal/views -> api/vm":               reasonVM,
-	"internal/views/control -> api/vm":       reasonVM,
-	"internal/views/encode -> api/vm":        reasonVM,
-	"internal/views/layout -> api/vm":        reasonVM,
-	"internal/views/live -> api/vm":          reasonVM,
-	"internal/views/table -> api/vm":         reasonVM,
-	"internal/views/typedef -> api/vm":       reasonVM,
 	"internal/views/live -> internal/verify": reasonLive,
 	"internal/views/table -> internal/wire":  reasonTable,
 	"internal/load -> internal/eval":         reasonLoad,
