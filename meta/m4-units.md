@@ -55,6 +55,10 @@ entries · B1 Recheck folds on the program's Info. Memo architecture: ADR-0011. 
       ref discriminant; literal keys of dependent types (TYPES §11.4); E15 on dependent-keyed maps; Undo of an
       AddEntry into a defaulted container is a Reset [opus]
 
+## B11 (after waves 3b/3c land)
+
+- B11 `@json(pairs:)` lists edited whole; nested dependent-keyed map symbol keys in Undo [opus]
+
 ## Wave 3c (P13a, P13d, B4, B5 launched on `m4-wave3b`; cleanup unit after 3b lands)
 
 - P13a `build/hosts.go` listings as maps · P13d `check` `Info.cloned` allocation [opus]
