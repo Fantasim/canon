@@ -39,6 +39,7 @@ type cacheGen struct {
 	vix      verify.IndexCache
 	rix      rules.IndexCache
 	bad      i18n.BadCache // which files hold a Bad node, for phase 2's i18n check
+	json     jsonTrees
 }
 
 // fileName is a file the cache keeps by name: its display path and absolute name.
@@ -131,14 +132,18 @@ func (g *cacheGen) parsed(base source.FileID, bytes int) {
 // file is the source file of display's content, the one kept when it did not change, so a
 // new snapshot adds no copy of it to the set.
 func (g *cacheGen) file(display, abs string, content []byte) (*source.File, error) {
-	name, sum := fileName{display: display, abs: abs}, sha256.Sum256(content)
+	return g.fileSum(fileName{display: display, abs: abs}, content, sha256.Sum256(content))
+}
+
+// fileSum is file of a content whose SHA-256 is sum.
+func (g *cacheGen) fileSum(name fileName, content []byte, sum [sha256.Size]byte) (*source.File, error) {
 	g.mu.Lock()
 	kept, ok := g.files[name]
 	g.mu.Unlock()
 	if ok && kept.sum == sum {
 		return kept.src, nil
 	}
-	src, err := g.set.Add(display, abs, content)
+	src, err := g.set.Add(name.display, name.abs, content)
 	if err != nil {
 		return nil, err
 	}

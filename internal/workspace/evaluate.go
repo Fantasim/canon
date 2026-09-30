@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/fantasim/canonlang/internal/build"
-	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/edit"
 	"github.com/fantasim/canonlang/internal/eval"
@@ -20,9 +19,9 @@ import (
 	"github.com/fantasim/canonlang/internal/views/live"
 )
 
-// Eval is one Evaluate (API.md 11): the analysis of every package of the snapshot it reads, a
-// draft applied or not; the edit snapshot At was resolved in; its texts' language ("" for the
-// source's); the packages owning a file the draft changes (E17).
+// Eval is one Evaluate (API.md 11): its analysis (every package's with a draft, else Touching's,
+// V13); the edit snapshot At was resolved in; its texts' language ("" for the source's); the
+// packages owning a file the draft changes (E17).
 type Eval struct {
 	Analysis *build.Analysis
 	Edit     *edit.Snapshot
@@ -46,7 +45,11 @@ type Evaluation struct {
 // compiler failure, Analysis.ViewErr, is returned (X2).
 func Evaluate(ctx context.Context, s *Snapshot, e Eval) (*Evaluation, error) {
 	key := Key(opEvaluate, e.Touched, e.At.Canonical, e.Lang)
-	return Share(ctx, s, key, func(ctx context.Context) (*Evaluation, error) { return evaluate(ctx, e) })
+	ev, err := Share(ctx, s, key, func(ctx context.Context) (*Evaluation, error) { return evaluate(ctx, e) })
+	if e.Analysis.ViewErr() != nil {
+		s.unkeep(e.Analysis) // the failure is this evaluation's, not every later one's
+	}
+	return ev, err
 }
 
 // EvalStale is a *StaleError when, since base, a file read by a package e touches changed on s
@@ -63,8 +66,11 @@ func EvalStale(s *Snapshot, base string, e Eval) error {
 // staleFor is a *StaleError when, since base, a file a's pkgs or their importers read changed
 // (API.md S5, E17), or any source or project.canon did (log-2026-09-29 M4 U5a-r2); nil for "".
 func (s *Snapshot) staleFor(base string, a *build.Analysis, pkgs []string) error {
+	if s.current(base) {
+		return nil
+	}
 	var reads []build.Read
-	for _, pkg := range affected(a.Program(), pkgs...) {
+	for _, pkg := range importing(a.Units(), pkgs...) {
 		reads = append(reads, a.Reads(pkg)...)
 	}
 	return bothStale(s.Stale(base, reads), s.sourcesStale(base))
@@ -169,7 +175,7 @@ func evaluate(ctx context.Context, e Eval) (*Evaluation, error) {
 	if err != nil {
 		return nil, err
 	}
-	in := liveInput(e.Analysis)
+	in := liveInput(ctx, e.Analysis)
 	target, err := targetOf(e, at)
 	if err != nil {
 		return nil, err
@@ -185,7 +191,7 @@ func evaluate(ctx context.Context, e Eval) (*Evaluation, error) {
 	if bag := e.Analysis.Bag(at.Package); bag != nil {
 		out.Findings = below(bag.Findings(), edit.Path{Root: at.Root, Segs: at.Segs}.String())
 	}
-	for _, pkg := range affected(e.Analysis.Program(), append([]string{at.Package}, e.Touched...)...) {
+	for _, pkg := range importing(e.Analysis.Units(), append([]string{at.Package}, e.Touched...)...) {
 		if bag := e.Analysis.Bag(pkg); bag != nil {
 			out.Summary = out.Summary.Merge(bag.Summary())
 		}
@@ -193,11 +199,14 @@ func evaluate(ctx context.Context, e Eval) (*Evaluation, error) {
 	return out, nil
 }
 
-// liveInput is what live reads of a: its program, settled values, layout, view evaluator and
+// liveInput is what live reads of a: its program, the values it settled or, for a package it
+// loaded without selecting it, forces aside (build.Analysis.Loaded), layout, view evaluator and
 // methods, bound arguments, and the studio, languages and catalogues Analyze holds.
-func liveInput(a *build.Analysis) live.Input {
+func liveInput(ctx context.Context, a *build.Analysis) live.Input {
 	in := a.LiveInputs()
-	var force encode.Force = func(pkg, name string) (value.Value, bool) { return a.Force(eval.Root{Pkg: pkg, Name: name}) }
+	var force encode.Force = func(pkg, name string) (value.Value, bool) {
+		return a.Loaded(ctx, eval.Root{Pkg: pkg, Name: name})
+	}
 	return live.Input{
 		Program: a.Program(), Studio: in.Studio, I18N: in.I18N, Force: force, Layout: a.Layout(),
 		Eval: a.ViewEvaluator(), Methods: a.ViewMethods(), Bound: a.ViewBound(), Languages: in.Languages,
@@ -307,29 +316,5 @@ func below(list []diag.Finding, rel string) []diag.Finding {
 			out = append(out, f)
 		}
 	}
-	return out
-}
-
-// affected is pkgs and every package importing one, directly or not (API.md E17), in name order.
-func affected(prog *check.Program, pkgs ...string) []string {
-	in := map[string]bool{}
-	for _, pkg := range pkgs {
-		in[pkg] = true
-	}
-	for grown := true; grown; {
-		grown = false
-		for _, p := range prog.Packages {
-			if !in[p.Path] && slices.ContainsFunc(p.Imports, func(i *check.Package) bool { return in[i.Path] }) {
-				in[p.Path], grown = true, true
-			}
-		}
-	}
-	out := make([]string, 0, len(in))
-	for _, p := range prog.Packages {
-		if in[p.Path] {
-			out = append(out, p.Path)
-		}
-	}
-	slices.Sort(out)
 	return out
 }

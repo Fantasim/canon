@@ -144,13 +144,16 @@ func (p *Project) editEval(ctx context.Context, out *workspace.EditOutcome, path
 	if len(paths) == 0 {
 		return evals, nil
 	}
-	a, err := analyze(ctx, out.After, nil)
-	if err != nil {
-		return evals, err
-	}
-	on := evalOn{s: out.After, a: a, lang: p.lang}
 	for _, path := range paths {
-		r, err := p.evaluateOn(ctx, on, path)
+		parsed, err := edit.Parse(path)
+		if err != nil {
+			return evals, syntaxError(path, err, 0)
+		}
+		a, err := evalAnalysis(ctx, out.After, parsed.Package, false)
+		if err != nil {
+			return evals, err
+		}
+		r, err := p.evaluateOn(ctx, evalOn{s: out.After, a: a, lang: p.lang}, path)
 		if err != nil {
 			return evals, err
 		}

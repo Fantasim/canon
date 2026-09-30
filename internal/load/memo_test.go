@@ -3,6 +3,7 @@ package load_test
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"path"
 	"slices"
 	"strings"
@@ -89,11 +90,14 @@ func TestReplayRefusesOtherPlaces(t *testing.T) {
 	}
 }
 
-// IMPLEMENTATION-PLAN §7.6, API.md S3: a replay adds each file it reads under the load's display.
+// IMPLEMENTATION-PLAN §7.6, API.md S3: a replay adds each file it reads as the load, SHA-256 too.
 func TestReplayAddsAsTheLoad(t *testing.T) {
 	var added, again []string
 	l, req := loaderFor(t, memoTree)
-	l.Add = func(display, abs string, data []byte) (*source.File, error) {
+	l.Add = func(display, abs string, data []byte, sum [sha256.Size]byte) (*source.File, error) {
+		if sum != sha256.Sum256(data) {
+			t.Errorf("%s added with the SHA-256 of other bytes", display)
+		}
 		added = append(added, display)
 		return l.Set.Add(display, abs, data)
 	}

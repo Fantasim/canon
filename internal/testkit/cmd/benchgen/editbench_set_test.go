@@ -45,16 +45,7 @@ type setter struct {
 // editTimes measures the view models, then benchEdits accepted Sets, each an Edit (re-check and
 // write) then an Evaluate of its entry; rejected and refused Sets are counted apart.
 func editTimes(t *testing.T, p *canon.Project, r *report, target benchTarget) {
-	facts := viewModels(t, p, r)
-	rng := rand.New(rand.NewPCG(benchSeed, benchSeed))
-	s := &setter{
-		p: p, base: p.Revision(), rng: rng, roots: facts.roots, guarded: target.guarded,
-		fresh: &freshValues{
-			p: p, rng: rng, dir: target.dir, enums: facts.enums, assets: facts.assets,
-			keys: map[string][]string{}, files: map[string][]string{}, held: map[string]map[any]bool{},
-		},
-		present: map[string]bool{}, drawn: map[string]bool{}, accepted: map[string]int{},
-	}
+	s := newSetter(t, p, r, target)
 	s.run(t)
 	all := len(s.edits) + len(s.rejects) + s.notEditable
 	r.add(fmt.Sprintf("Edit one field, p95 of %d accepted Sets", len(s.edits)), seconds(p95(s.edits), targetEdit, true))
@@ -65,6 +56,20 @@ func editTimes(t *testing.T, p *canon.Project, r *report, target benchTarget) {
 	r.add("Evaluate one entry after an edit, p95", seconds(p95(s.evals), targetEval, true))
 	t.Logf("accepted Sets by kind %v", s.accepted)
 	s.checkKinds(t)
+}
+
+// newSetter is a setter of target's project, its facts from the view models r measures.
+func newSetter(t *testing.T, p *canon.Project, r *report, target benchTarget) *setter {
+	facts := viewModels(t, p, r)
+	rng := rand.New(rand.NewPCG(benchSeed, benchSeed))
+	return &setter{
+		p: p, base: p.Revision(), rng: rng, roots: facts.roots, guarded: target.guarded,
+		fresh: &freshValues{
+			p: p, rng: rng, dir: target.dir, enums: facts.enums, assets: facts.assets,
+			keys: map[string][]string{}, files: map[string][]string{}, held: map[string]map[any]bool{},
+		},
+		present: map[string]bool{}, drawn: map[string]bool{}, accepted: map[string]int{},
+	}
 }
 
 // checkKinds is the guard that makes a skipped kind visible: every kind present in the entries

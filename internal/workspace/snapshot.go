@@ -15,6 +15,7 @@ type Snapshot struct {
 	b     *build.Project
 	mu    sync.Mutex
 	calls map[string]*call // the computations running now, by key (S8)
+	kept  kept             // what was computed on it, under mu
 	seq   uint64           // its place among the snapshots published, under p.mu; 0 for none
 }
 
@@ -45,6 +46,20 @@ func (s *Snapshot) Revision(ctx context.Context) (string, error) {
 // revision is the snapshot's revision, not remembered: an edit applied in memory names its
 // journal by it (API.md N10) and is no snapshot a client read.
 func (s *Snapshot) revision(ctx context.Context) (string, error) {
+	was, ok := s.fs.revised()
+	if ok {
+		return was, nil
+	}
+	at := s.fs.inputsSeen()
+	rev, err := s.list(ctx)
+	if err == nil {
+		s.fs.revise(rev, at)
+	}
+	return rev, err
+}
+
+// list is the revision of s's read set as it holds it now (S3).
+func (s *Snapshot) list(ctx context.Context) (string, error) {
 	reads, scanErr := s.b.Inputs()
 	reads = append(reads, s.fs.recorded()...)
 	lines := make([]build.Listed, 0, len(reads))
@@ -70,6 +85,15 @@ func (s *Snapshot) revision(ctx context.Context) (string, error) {
 		lines = append(lines, build.Listed{Display: listingDisplay, Unreadable: true})
 	}
 	return build.RevisionOf(lines), nil
+}
+
+// current reports that base is the revision the project last produced, from this snapshot's
+// entries alone: whatever a staleness check reads gives what base held, or is first read now,
+// so nothing is stale (API.md S5).
+func (s *Snapshot) current(base string) bool {
+	s.p.mu.Lock()
+	defer s.p.mu.Unlock()
+	return s.p.hist.from(base, s.fs)
 }
 
 // Stale is a *StaleError naming each of reads that differs now from revision base, nil for none

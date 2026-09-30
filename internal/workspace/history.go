@@ -25,20 +25,31 @@ type history struct {
 	tip  map[name]sum // the newest record, whole
 	fs   *snapFS      // the snapshot, and its entry count, the newest record was taken from
 	gen  int
+	own  bool // the newest record holds only entries fs holds: none merged from another snapshot
 }
 
 // add remembers rev with the entries of fs; the same revision again only gains fs's new entries.
 func (h *history) add(rev string, fs *snapFS) {
+	if h.from(rev, fs) && h.gen == fs.generation() {
+		return
+	}
 	sums, gen := fs.sums()
 	if n := len(h.recs); n > 0 && h.recs[n-1].rev == rev {
-		if h.fs == fs && h.gen == gen {
-			return
-		}
+		h.own = h.own && h.fs == fs
 		h.merge(sums)
 	} else {
 		h.push(rev, sums)
+		h.own = true
 	}
 	h.fs, h.gen = fs, gen
+}
+
+// from reports that rev is the newest record and holds only what fs held when it was taken or
+// read since: an entry fs holds never changes, so each one the record holds is fs's now, and a
+// name fs reads later is one no record holds (at, API.md S5).
+func (h *history) from(rev string, fs *snapFS) bool {
+	n := len(h.recs)
+	return n > 0 && h.recs[n-1].rev == rev && h.fs == fs && h.own
 }
 
 // merge adds the entries the newest record lacks or holds differently.

@@ -22,7 +22,7 @@ func (o *EditOutcome) ownLocks(after *build.Analysis) (bool, error) {
 		return false, err
 	}
 	for _, l := range locks {
-		if err := o.lockChange(l); err != nil {
+		if err := o.lockChange(after, l); err != nil {
 			return false, err
 		}
 	}
@@ -30,7 +30,7 @@ func (o *EditOutcome) ownLocks(after *build.Analysis) (bool, error) {
 }
 
 // lockChange writes l's content over the lock as it is, refused where it has an overlay (S12).
-func (o *EditOutcome) lockChange(l build.Lock) error {
+func (o *EditOutcome) lockChange(after *build.Analysis, l build.Lock) error {
 	raw, err := o.Before.fs.ReadFile(l.Abs)
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return err
@@ -39,7 +39,7 @@ func (o *EditOutcome) lockChange(l build.Lock) error {
 	if raw == nil {
 		c.Kind = edit.ChangeCreated
 	}
-	if err := o.Before.noOverlay([]edit.Change{c}); err != nil {
+	if err := o.Before.noOverlay(after, []edit.Change{c}); err != nil {
 		return err
 	}
 	if i := slices.IndexFunc(o.Changes, func(x edit.Change) bool { return x.Path == c.Path }); i >= 0 {

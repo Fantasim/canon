@@ -13,7 +13,9 @@ import (
 // Cause is why a project has a new snapshot (API.md §12).
 type Cause string
 
-// Event is a snapshot published, why, and the files whose content changed, in byte order.
+// Event is a snapshot published, why, and the files whose content changed, in byte order: an
+// edit's names the files it wrote, not the other names they are read by, which api.Watch finds by
+// comparing snapshots (log-2026-09-29 M4 P14-r4).
 type Event struct {
 	Snapshot *Snapshot
 	Cause    Cause
@@ -139,23 +141,33 @@ func (p *Project) current() (*Snapshot, bool, error) {
 // refresh publishes s's successor when the disk changed under it, and returns the snapshot
 // now current; the caller holds refreshMu.
 func (p *Project) refresh(ctx context.Context, s *Snapshot, cause Cause) (*Snapshot, error) {
-	p.mu.Lock()
-	p.begun++
-	n := p.begun
-	p.mu.Unlock()
-	next, changed, err := s.fs.refresh(ctx)
+	next, changed, err := p.recheck(ctx, s.fs)
 	if err != nil {
 		return s, err
 	}
-	p.mu.Lock()
-	p.done = n
-	p.mu.Unlock()
 	if next == nil {
 		return s, nil
 	}
 	ns := p.snapshot(next)
 	p.publish(ns, cause, ns.displays(changed))
 	return ns, nil
+}
+
+// recheck is fs compared with the disk (snapFS.refresh), a refresh numbered so that a call that
+// took its ticket before it need not refresh again (S1); the caller holds refreshMu.
+func (p *Project) recheck(ctx context.Context, fs *snapFS) (*snapFS, []name, error) {
+	p.mu.Lock()
+	p.begun++
+	n := p.begun
+	p.mu.Unlock()
+	next, changed, err := fs.refresh(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	p.mu.Lock()
+	p.done = n
+	p.mu.Unlock()
+	return next, changed, nil
 }
 
 // publish numbers s after every snapshot published before it and makes it current, then tells

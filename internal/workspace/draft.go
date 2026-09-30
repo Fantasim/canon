@@ -18,10 +18,12 @@ type Changes struct {
 	Host      func(*build.Analysis) wire.Host
 }
 
-// Drafted is a draft applied in memory (API.md V13): its plan, and the snapshot of the sources
-// it gives with its analysis of every package; that snapshot is never published.
+// Drafted is a draft applied in memory (API.md V13): its plan, the packages owning what it
+// writes (E17), and the snapshot of the sources it gives with its analysis of every package;
+// that snapshot is never published.
 type Drafted struct {
 	Plan     *edit.Plan
+	Owners   []string
 	Snapshot *Snapshot
 	Analysis *build.Analysis
 }
@@ -61,12 +63,16 @@ func (s *Snapshot) draft(ctx context.Context, base *build.Analysis, c Changes) (
 	if err != nil {
 		return nil, err
 	}
-	after := s.planned(plan.Changes)
+	if err := s.noOverlay(base, plan.Changes); err != nil { // the rules of Edit (API.md V13, S12)
+		return nil, err
+	}
+	owners, aliases := s.owners(base, plan)
+	after := s.planned(plan.Changes, aliases)
 	a, err := after.analyze(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
-	return &Drafted{Plan: plan, Snapshot: after, Analysis: a}, nil
+	return &Drafted{Plan: plan, Owners: owners, Snapshot: after, Analysis: a}, nil
 }
 
 // apply is c computed in memory against s, whose analysis is base (API.md E1).
@@ -75,24 +81,24 @@ func (s *Snapshot) apply(ctx context.Context, base *build.Analysis, c Changes) (
 	return edit.Apply(ctx, env, edit.NewSnapshot(base), edit.Request{Ops: c.Ops})
 }
 
-// analyze is the analysis of the packages selectors name on s, shared (S8).
+// analyze is the analysis of the packages selectors name on s (Analyze).
 func (s *Snapshot) analyze(ctx context.Context, selectors []string) (*build.Analysis, error) {
-	return Share(ctx, s, Key(OpAnalyze, selectors), func(ctx context.Context) (*build.Analysis, error) {
-		return s.b.Analyze(ctx, selectors)
-	})
+	return Analyze(ctx, s, selectors)
 }
 
 // planned is s with changes made in memory (API.md E18, V13): new contents as overlays, deleted
-// and renamed-away files absent. It is never published; a writer keeps what it reads, as for s.
-func (s *Snapshot) planned(changes []edit.Change) *Snapshot {
+// and renamed-away files absent, at each alias too, another name a file written is read by. It is
+// never published; a writer keeps what it reads, as for s.
+func (s *Snapshot) planned(changes []edit.Change, aliases map[string]string) *Snapshot {
 	over := maps.Clone(s.fs.over)
 	if over == nil {
 		over = map[string][]byte{}
 	}
 	dropped := map[name]*entry{}
+	mine := map[string]bool{}
 	put := func(display string, data []byte) {
 		if abs, ok := s.b.Abs(display); ok {
-			over[abs] = data
+			over[abs], mine[abs] = data, true
 			dropAt(dropped, abs)
 		}
 	}
@@ -108,7 +114,15 @@ func (s *Snapshot) planned(changes []edit.Change) *Snapshot {
 		case edit.ChangeRemovedDir: // an empty directory holds no source
 		}
 	}
+	//canon:unordered each alias is stored under its own name
+	for alias, abs := range aliases {
+		if data, ok := over[abs]; ok {
+			over[alias], mine[alias] = data, true
+			dropAt(dropped, alias)
+		}
+	}
 	next := s.fs.fork(over, dropped)
+	next.mine = mine
 	s.fs.plan(next)
 	return s.p.snapshot(next)
 }

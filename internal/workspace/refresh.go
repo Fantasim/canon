@@ -5,6 +5,8 @@ import (
 	"context"
 	"maps"
 	"slices"
+
+	"github.com/fantasim/canonlang/internal/workspace/safego"
 )
 
 // recheck is one kind of entry compared with the disk: the entry read again, or nil when its
@@ -35,31 +37,60 @@ func (s *snapFS) ifStale(n name, e *entry, read func(string) *entry) *entry {
 // read again with the same content replaces its old one here, so it is not read again next time.
 func (s *snapFS) refresh(ctx context.Context) (*snapFS, []name, error) {
 	s.mu.Lock()
-	ents := maps.Clone(s.ents)
+	names := make([]name, 0, len(s.ents))
+	olds := make([]*entry, 0, len(s.ents))
+	//canon:unordered each entry is compared on its own; the changed names are sorted
+	for n, e := range s.ents {
+		if !e.over {
+			names, olds = append(names, n), append(olds, e)
+		}
+	}
 	s.mu.Unlock()
-	names := slices.SortedFunc(maps.Keys(ents), compareNames)
+	fresh := make([]*entry, len(names))
+	err := inParallel(ctx, len(names), func(i int) { fresh[i] = rechecks[names[i].kind](s, names[i], olds[i]) })
+	if err != nil {
+		return nil, nil, err
+	}
 	changed := map[name]*entry{}
-	for _, n := range names {
-		if err := ctx.Err(); err != nil {
-			return nil, nil, err
-		}
-		e := ents[n]
-		if e.over {
-			continue
-		}
-		fresh := rechecks[n.kind](s, n, e)
-		switch {
-		case fresh == nil:
-		case fresh.sum != e.sum:
-			changed[n] = fresh
+	for i, n := range names {
+		switch f := fresh[i]; {
+		case f == nil:
+		case f.sum != olds[i].sum:
+			changed[n] = f
 		default:
-			s.renew(n, e, fresh)
+			s.renew(n, olds[i], f)
 		}
 	}
 	if len(changed) == 0 {
 		return nil, nil, nil
 	}
 	return s.fork(s.over, changed), slices.SortedFunc(maps.Keys(changed), compareNames), nil
+}
+
+// inParallel runs fn for each index below n on refreshWorkers goroutines, each over one run of
+// indexes: ctx's error once it is done, or a panic in fn as a *safego.PanicError (X2).
+func inParallel(ctx context.Context, n int, fn func(int)) error {
+	workers := min(refreshWorkers, n)
+	errs := make(chan error, workers)
+	for w := range workers {
+		from, to := n*w/workers, n*(w+1)/workers
+		safego.Go(func() error {
+			for i := from; i < to && ctx.Err() == nil; i++ {
+				fn(i)
+			}
+			return nil
+		}, func(err error) { errs <- err })
+	}
+	var first error
+	for range workers {
+		if err := <-errs; first == nil {
+			first = err
+		}
+	}
+	if first != nil {
+		return first
+	}
+	return ctx.Err()
 }
 
 // renew stores fresh, read again with e's content, in e's place.

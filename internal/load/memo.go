@@ -184,10 +184,14 @@ func (l *Loader) evalSymlinks(name string) (string, error) {
 // readSource reads abs into the set as display, recorded; E7004 when it cannot (WIRE.md §6.1).
 func (l *Loader) readSource(display, abs string, req Request) (*source.File, []byte, bool) {
 	data, err := l.FS.ReadFile(abs)
-	l.note(callSource, abs, display, func() answer { return contentAnswer(data, err) })
+	var sum [sha256.Size]byte
+	if err == nil && (l.rec != nil || l.Add != nil) { // hashed once, for the record and the cache
+		sum = sha256.Sum256(data)
+	}
+	l.note(callSource, abs, display, func() answer { return sumAnswer(sum, err) })
 	var src *source.File
 	if err == nil {
-		src, err = l.add(display, abs, data)
+		src, err = l.add(display, abs, data, sum)
 	}
 	if err != nil {
 		req.report(diag.E7004.At(req.Span, display, causeOf(err)))
@@ -196,10 +200,10 @@ func (l *Loader) readSource(display, abs string, req Request) (*source.File, []b
 	return src, data, true
 }
 
-// add is the file set's file of data, through Add when set.
-func (l *Loader) add(display, abs string, data []byte) (*source.File, error) {
+// add is the file set's file of data, whose SHA-256 is sum when Add is set, through Add.
+func (l *Loader) add(display, abs string, data []byte, sum [sha256.Size]byte) (*source.File, error) {
 	if l.Add != nil {
-		return l.Add(display, abs, data)
+		return l.Add(display, abs, data, sum)
 	}
 	return l.Set.Add(display, abs, data)
 }
@@ -222,13 +226,14 @@ func (l *Loader) linkAgain(c fsCall) bool {
 // sourceAgain reads the file again; the same content enters the set as the load's did.
 func (l *Loader) sourceAgain(c fsCall) bool {
 	data, err := l.FS.ReadFile(c.name)
-	if contentAnswer(data, err) != c.answer {
+	if err != nil {
+		return failure(err) == c.answer
+	}
+	sum := sha256.Sum256(data)
+	if sumAnswer(sum, nil) != c.answer {
 		return false
 	}
-	if err != nil {
-		return true
-	}
-	_, err = l.add(c.display, c.name, data)
+	_, err = l.add(c.display, c.name, data, sum)
 	return err == nil
 }
 
@@ -268,4 +273,12 @@ func contentAnswer(data []byte, err error) answer {
 		return failure(err)
 	}
 	return answer{sum: sha256.Sum256(data)}
+}
+
+// sumAnswer is contentAnswer of a content whose SHA-256 is sum.
+func sumAnswer(sum [sha256.Size]byte, err error) answer {
+	if err != nil {
+		return failure(err)
+	}
+	return answer{sum: sum}
 }

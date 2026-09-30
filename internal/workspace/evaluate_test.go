@@ -101,3 +101,33 @@ func TestEvaluateTargetNames(t *testing.T) {
 		}
 	}
 }
+
+// API.md X2 (log-2026-09-29 M4 P14-r): a failure a view meets on a kept analysis is that
+// evaluation's: the snapshot keeps the analysis no longer, so the next evaluation succeeds.
+func TestEvaluateViewErrNotKept(t *testing.T) {
+	s := read(t, open(t, newMemFS(viewLaw)))
+	ctx := context.Background()
+	kept := func(path string) error {
+		a, err := workspace.Analyze(ctx, s, []string{"a"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		es := edit.NewSnapshot(a)
+		parsed, err := edit.Parse(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		at, err := edit.Resolve(es, parsed)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = workspace.Evaluate(ctx, s, workspace.Eval{Analysis: a, Edit: es, At: at})
+		return err
+	}
+	if err := kept("a:uses[0]"); !errors.Is(err, build.ErrLoad) {
+		t.Fatalf("Evaluate over a view reading an unsupported load: %v, want ErrLoad", err)
+	}
+	if err := kept("a:tags"); err != nil {
+		t.Errorf("the next evaluation fails with the last one's view failure: %v", err)
+	}
+}

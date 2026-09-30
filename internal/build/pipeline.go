@@ -167,6 +167,9 @@ func (r *run) newHost(bags check.Bags) {
 	r.vix, r.rix = r.indexes()
 	r.host = &evalHost{prog: r.prog, bags: bags, index: r.vix, fold: r.fold, sites: r.loadSites()}
 	r.host.loader = &load.Loader{FS: r.p.fs, Layout: r.s.layout, Set: r.s.set}
+	if g := r.s.gen; g != nil {
+		r.host.loader.Parse = g.json.parse
+	}
 	r.ev = eval.New(r.prog, r.host, bags, r.opt)
 	if !r.ev.UseFolder(r.fold) { // one counter per invocation, phase 2's folds on it (DECISIONS 104)
 		r.host.errs = append(r.host.errs, internal(errTwoCounts))
@@ -224,6 +227,11 @@ func (r *run) selectedNames() []string {
 // selects reports a selected package.
 func (r *run) selects(pkg string) bool {
 	return slices.ContainsFunc(r.selected, func(u *project.Unit) bool { return u.Name == pkg })
+}
+
+// loads reports a package the run loaded: a selected one, an import of one, or the studio's.
+func (r *run) loads(pkg string) bool {
+	return slices.ContainsFunc(r.loaded, func(u *project.Unit) bool { return u.Name == pkg })
 }
 
 // stageB verifies what stage A evaluated, then the codes, then compares the locks (LOCK.md §4.5).

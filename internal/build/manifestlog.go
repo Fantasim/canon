@@ -60,14 +60,14 @@ func (h *evalHost) trackLoad(site loadSite) func() {
 	}
 }
 
-// keep notes a file handed to the file set: its first bytes' SHA-256, its first site's resolved display (WIRE.md §10).
-func (l *readLog) keep(display, abs string, data []byte) {
+// keep notes a file handed to the file set: its first bytes' SHA-256, sum, and its first site's resolved display (WIRE.md §10).
+func (l *readLog) keep(display, abs string, sum [sha256.Size]byte) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	had, ok := l.kept[abs]
 	switch {
 	case !ok:
-		l.kept[abs] = loadedFile{sum: sha256.Sum256(data), site: l.site, display: display}
+		l.kept[abs] = loadedFile{sum: sum, site: l.site, display: display}
 	case l.site.before(had.site):
 		l.kept[abs] = loadedFile{sum: had.sum, site: l.site, display: display}
 	}

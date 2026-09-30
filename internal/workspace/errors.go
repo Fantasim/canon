@@ -18,6 +18,7 @@ var (
 	errNotCanonical = errors.New("file is not in canonical layout")
 	errWatch        = errors.New("cannot watch the project's files")
 	errUnowned      = errors.New("changed files that no package owns")
+	errNoLinks      = errors.New("the file system under the snapshot reads no link")
 )
 
 // StaleError is ErrStale with the display paths of the files that changed, in byte order; none

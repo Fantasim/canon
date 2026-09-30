@@ -41,7 +41,7 @@ func TestPlannedSnapshot(t *testing.T) {
 		{Kind: edit.ChangeDeleted, Path: "x/x.canon"},
 		{Kind: edit.ChangeRenamed, Path: "x/z.canon", OldPath: "x/y.canon", After: []byte("package x\n")},
 		{Kind: edit.ChangeRemovedDir, Path: "x/gone"},
-	})
+	}, nil)
 	if _, err := after.fs.ReadFile("/law/x/x.canon"); !errors.Is(err, fs.ErrNotExist) {
 		t.Errorf("a deleted file reads: %v", err)
 	}
@@ -157,7 +157,7 @@ func TestEditUnseenWrite(t *testing.T) {
 	}
 	var events []Event
 	defer p.Subscribe(func(e Event) { events = append(events, e) })()
-	after := func() (Cause, []string) { return CauseEdit, []string{"/law/x/x.canon"} }
+	after := func() wrote { return wrote{cause: CauseEdit, files: []string{"/law/x/x.canon"}} }
 	next, err := p.writeAs(context.Background(), after, func(context.Context, *Snapshot) error {
 		return fsys.WriteFile("/law/x/x.canon", []byte("package y\n"))
 	})
@@ -185,7 +185,7 @@ func TestRecheckUnowned(t *testing.T) {
 		t.Fatal(err)
 	}
 	o := &EditOutcome{Plan: &edit.Plan{}, Changes: []edit.Change{{Kind: edit.ChangeModified, Path: "x/x.canon"}}, Before: s}
-	if err := o.recheck(context.Background(), a); !errors.Is(err, edit.ErrInternal) {
+	if err := o.recheck(context.Background(), a, o.Plan.Touched); !errors.Is(err, edit.ErrInternal) {
 		t.Errorf("recheck: %v", err)
 	}
 }

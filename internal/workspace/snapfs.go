@@ -61,13 +61,17 @@ type entry struct {
 // use, overlays in place of files; writes go through (API.md S1).
 type snapFS struct {
 	base   project.FS
-	over   map[string][]byte // overlays by absolute name, never changed once the snapFS exists
+	over   map[string][]byte // overlays by absolute name, never changed once the snapFS is read by a call
+	mine   map[string]bool   // the overlays an edit planned in memory, not a user's (settle)
 	now    func() time.Time
 	root   string // the project directory, which names an entry as the scan does
 	mu     sync.Mutex
 	ents   map[name]*entry
-	inputs map[string]string      // every file a load read, by absolute name, to its display path (S3)
-	gen    int                    // bumped at each new entry, so an unchanged snapshot is not recorded twice
+	inputs map[string]string // every file a load read, by absolute name, to its display path (S3)
+	gen    int               // bumped at each new entry, so an unchanged snapshot is not recorded twice
+	ingen  int               // bumped at each change to inputs
+	rev    string            // the revision last computed, while ingen is revAt
+	revAt  int
 	older  []weak.Pointer[snapFS] // the snapshots this one descends from, while a caller holds them
 
 	plansMu sync.Mutex             // plans grows after the snapFS exists; mu may be held around it
@@ -246,6 +250,7 @@ func (s *snapFS) RecordReads(reads []build.Read) {
 	for _, r := range reads {
 		if d, ok := s.inputs[r.Abs]; !ok || r.Display < d {
 			s.inputs[r.Abs] = r.Display
+			s.ingen++
 		}
 	}
 }

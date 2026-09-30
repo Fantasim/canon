@@ -113,10 +113,11 @@ func (p *Project) Evaluate(ctx context.Context, r EvalRequest) (res *EvalResult,
 	if err != nil {
 		return nil, err
 	}
-	if _, err := edit.Parse(r.Path); err != nil {
+	parsed, err := edit.Parse(r.Path)
+	if err != nil {
 		return nil, syntaxError(r.Path, err, 0)
 	}
-	a, err := analyze(ctx, s, nil) // every package, as Value: one analysis serves both (S8)
+	a, err := evalAnalysis(ctx, s, parsed.Package, len(r.Draft) > 0)
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +127,7 @@ func (p *Project) Evaluate(ctx context.Context, r EvalRequest) (res *EvalResult,
 		if err != nil {
 			return nil, p.editError(ctx, err)
 		}
-		on.s, on.a, on.touched, on.dropped = d.Snapshot, d.Analysis, d.Plan.Touched, d.Plan.Dropped
+		on.s, on.a, on.touched, on.dropped = d.Snapshot, d.Analysis, d.Owners, d.Plan.Dropped
 	}
 	if res, err = p.evaluateOn(ctx, on, r.Path); err != nil {
 		return nil, err
@@ -137,8 +138,25 @@ func (p *Project) Evaluate(ctx context.Context, r EvalRequest) (res *EvalResult,
 	return res, nil
 }
 
-// evalOn is what an evaluation reads: a snapshot, a draft applied or not, its analysis of every
-// package, the language of its texts, the draft's touched packages and dropped values (E17, E14),
+// evalAnalysis is what an evaluation of a value of pkg ("" unqualified) reads on s: every
+// package's (V13), or the analysis of the packages it touches that an edit kept on s once it gave
+// the same values (E17, log-2026-09-29 M4 P14-r).
+func evalAnalysis(ctx context.Context, s *workspace.Snapshot, pkg string, draft bool) (*build.Analysis, error) {
+	if draft || pkg == "" {
+		return analyze(ctx, s, nil)
+	}
+	touched, err := workspace.Touching(ctx, s, pkg)
+	if err != nil {
+		return nil, apiError(err)
+	}
+	if len(touched) == 0 || !workspace.Covered(s, touched) {
+		return analyze(ctx, s, nil)
+	}
+	return analyze(ctx, s, touched)
+}
+
+// evalOn is what an evaluation reads: a snapshot, a draft applied or not, its analysis
+// (evalAnalysis), the language of its texts, the draft's touched packages and dropped values (E17, E14),
 // and, when base is set, the snapshot staleness is judged on (S5).
 type evalOn struct {
 	s       *workspace.Snapshot

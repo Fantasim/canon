@@ -99,7 +99,7 @@ func (l *Loader) bareJSON(ctx context.Context, req Request, c parsedCall, p proj
 	if !ok {
 		return nil, false, nil
 	}
-	root, err := jsonsrc.Parse(src, req.Bag)
+	root, err := l.parse(src, req.Bag)
 	if err != nil {
 		return nil, ReportEncoding(req.Bag, p.Display, data, err), nil
 	}

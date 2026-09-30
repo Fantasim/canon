@@ -151,7 +151,7 @@ func (l *Loader) readFile(m matchFile, at *string, req Request) (*wire.File, boo
 	if !ok {
 		return nil, false
 	}
-	root, err := jsonsrc.Parse(src, req.Bag)
+	root, err := l.parse(src, req.Bag)
 	if err != nil {
 		return nil, ReportEncoding(req.Bag, m.Display, data, err)
 	}

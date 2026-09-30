@@ -99,6 +99,29 @@ func (a *Analysis) Force(root eval.Root) (value.Value, bool) {
 	return v, ok
 }
 
+// Loaded is root's value as a view reads it (VIEWMODEL.md C3, DECISIONS 148): Force's, else, for a
+// package loaded but not selected, forced aside at no step cost, its findings set aside; (nil,
+// false) for any other root or a failed evaluation.
+func (a *Analysis) Loaded(ctx context.Context, root eval.Root) (value.Value, bool) {
+	if v, ok := a.settled[root]; ok || a.r.selects(root.Pkg) || !a.r.loads(root.Pkg) {
+		return v, ok
+	}
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	r := a.r
+	scratch := r.throwawayBags()
+	restore := r.hostAside(scratch)
+	v, ok := r.ev.ForceAside(ctx, root, scratch)
+	if err := restore(); err != nil { // the run's failure so far: kept, never swallowed
+		a.viewErr = err
+		return nil, false
+	}
+	return v, ok
+}
+
+// Units are the packages of the snapshot Analyze read, every one, selected or not, read-only.
+func (a *Analysis) Units() []*project.Unit { return a.r.s.units }
+
 // ViewModel is selected pkg's view model as `emit view` writes it, what it reads evaluated aside (API.md R9, VIEWMODEL.md §12).
 func (a *Analysis) ViewModel(ctx context.Context, pkg string) (*vm.ViewModel, error) {
 	if !a.r.selects(pkg) {

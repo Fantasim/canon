@@ -55,6 +55,9 @@ const (
 	opDraft     Op = "draft"
 )
 
+// refreshWorkers is how many goroutines stat a snapshot's entries at a refresh (API.md S1).
+const refreshWorkers = 8
+
 // listingDisplay stands for a scan that failed in a revision (API.md S3); pathSep separates names.
 const (
 	listingDisplay = "."

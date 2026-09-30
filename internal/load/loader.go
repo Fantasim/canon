@@ -2,11 +2,13 @@ package load
 
 import (
 	"context"
+	"crypto/sha256"
 	"maps"
 	"slices"
 	"sync"
 
 	"github.com/fantasim/canonlang/internal/diag"
+	"github.com/fantasim/canonlang/internal/jsonsrc"
 	"github.com/fantasim/canonlang/internal/project"
 	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/syntax"
@@ -21,10 +23,12 @@ type Loader struct {
 	Layout *project.Layout
 	Set    *source.FileSet
 	Reused func(abs string) // when set, told each file a call takes from the Loader's cache, not FS
-	// Add, when set, puts a file read into Set in place of Set.Add: a cache keeping unchanged files.
-	Add func(display, abs string, data []byte) (*source.File, error)
+	// Add, when set, puts a file read, of SHA-256 sum, into Set in place of Set.Add: a cache keeping unchanged files.
+	Add func(display, abs string, data []byte, sum [sha256.Size]byte) (*source.File, error)
 	// Globbed, when set, is told each load.dir pattern and its matches' displays, in match order (WIRE.md §10).
 	Globbed func(pattern string, matched []string)
+	// Parse, when set, parses a JSON source in place of jsonsrc.Parse: a cache of unchanged files' trees.
+	Parse func(src *source.File, bag *diag.Bag) (*jsonsrc.Node, error)
 
 	mu      sync.Mutex
 	headers map[string]*headerFile // by resolved absolute path
@@ -77,6 +81,14 @@ func (l *Loader) load(ctx context.Context, req Request, e *syntax.LoadExpr, t ty
 	default:
 		return nil, false, unsupported(causeUnknownForm)
 	}
+}
+
+// parse is src's JSON tree, through Parse when set (WIRE.md §3).
+func (l *Loader) parse(src *source.File, bag *diag.Bag) (*jsonsrc.Node, error) {
+	if l.Parse != nil {
+		return l.Parse(src, bag)
+	}
+	return jsonsrc.Parse(src, bag)
 }
 
 // FinishDefines reports each header's W7101 once every load of the build is forced (WIRE.md §6.8).

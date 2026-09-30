@@ -123,3 +123,32 @@ func (s *snapFS) Chmod(abs string, mode fs.FileMode) error {
 	}
 	return nil
 }
+
+// Readlink is the text of the link abs on the disk under the snapshot (build.LinkReader), read
+// now: only a dangling link's real path is asked of it, never a content.
+func (s *snapFS) Readlink(abs string) (string, error) {
+	if r, ok := s.base.(build.LinkReader); ok {
+		return r.Readlink(abs)
+	}
+	return "", errNoLinks
+}
+
+// settle makes s, an edit planned in memory (API.md E18), the snapshot of what the writer wrote
+// (S10), before any call reads it: planned files keep their content, compared with the disk at
+// the next refresh (S1); their stats are read again; user are the only overlays left (S12).
+func (s *snapFS) settle(user map[string][]byte) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	//canon:unordered each entry is settled on its own
+	for n, e := range s.ents {
+		switch {
+		case !e.over || n.kind == kindFile && !s.mine[n.abs]:
+		case n.kind == kindFile:
+			s.ents[n] = &entry{sum: e.sum, data: e.data, err: e.err} // no stamp: read again at the next refresh
+		default:
+			delete(s.ents, n)
+		}
+	}
+	s.over, s.mine = user, nil
+	s.gen++
+}

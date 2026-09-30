@@ -55,11 +55,13 @@ func share[T any](ctx context.Context, s *workspace.Snapshot, key string, fn fun
 	return v, nil
 }
 
-// analyze is the analysis of the selected packages on snapshot s, shared (rule S8).
+// analyze is the analysis of the selected packages on snapshot s, shared (rule S8) and kept.
 func analyze(ctx context.Context, s *workspace.Snapshot, selectors []string) (*build.Analysis, error) {
-	return share(ctx, s, workspace.Key(workspace.OpAnalyze, selectors), func(ctx context.Context) (*build.Analysis, error) {
-		return s.Build().Analyze(ctx, selectors)
-	})
+	a, err := workspace.Analyze(ctx, s, selectors)
+	if err != nil {
+		return nil, apiError(err)
+	}
+	return a, nil
 }
 
 // revision is s's revision once a call read what it needed (S3), kept unless a snapshot published

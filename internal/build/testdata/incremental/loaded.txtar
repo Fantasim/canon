@@ -1,0 +1,44 @@
+API.md V13, VIEWMODEL.md C3 (log-2026-09-29 M4 P14): b imports a; an analysis of b alone forces
+a.things, which b.some's ref reads, and never a.lonely, which no value of b reads.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A thing.
+record Thing {
+  /// Its weight.
+  weight: Int
+}
+
+/// The things.
+let things: table Thing = {
+  sword { weight: 3 }
+  shield { weight: 5 }
+}
+
+/// Unread by b.
+let lonely: Int = 7
+
+/// Most of the budget, unread by b.
+let heavy: Int = [i * 2 for i in 0..40].len()
+-- b/b.canon --
+/// B.
+package b
+
+import a { things }
+
+/// A box.
+record Box {
+  /// What it holds.
+  held: ref things?
+}
+
+/// A box holding nothing.
+let empty: Box = { held: none }
+
+/// A box holding a sword.
+let some: Box = { held: sword }

@@ -57,6 +57,21 @@ func (osFS) SyncDir(dir string) error { return wrapIO(syncDir(filepath.FromSlash
 // EvalSymlinks lets load.dir follow links through the OS file system a build reads (WIRE.md §6.5).
 func (f osFS) EvalSymlinks(name string) (string, error) { return project.EvalSymlinks(f.FS, name) }
 
+// LinkReader is a file system that reads a symbolic link's own text, even where the link leads
+// to a name that does not exist.
+type LinkReader interface {
+	Readlink(name string) (string, error)
+}
+
+// Readlink is the text of the symbolic link name, '/'-separated.
+func (osFS) Readlink(name string) (string, error) {
+	target, err := os.Readlink(filepath.FromSlash(name))
+	if err != nil {
+		return "", wrapIO(err)
+	}
+	return filepath.ToSlash(target), nil
+}
+
 func wrapIO(err error) error {
 	if err != nil {
 		return fmt.Errorf(fmtWrap, err)

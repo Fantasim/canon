@@ -13,7 +13,6 @@ import (
 	"slices"
 	"strconv"
 	"strings"
-	"syscall"
 	"testing"
 	"time"
 )
@@ -141,23 +140,16 @@ func coldChecks(t *testing.T, bin string, target benchTarget, units []string, r 
 }
 
 // runCheck is one `canon check` of a unit, which must exit 0 (a project with errors is not
-// measured): its wall time and peak resident set in bytes.
+// measured): its wall time and its own peak resident set in bytes, through the RSS helper.
 func runCheck(t *testing.T, bin string, target benchTarget, unit string) (time.Duration, int64) {
 	t.Helper()
 	args := []string{"-q"}
 	if unit != "" {
 		args = append(args, unit)
 	}
-	cmd := canonIn(bin, target, "check", args...)
-	start := time.Now()
-	out, err := cmd.CombinedOutput()
-	wall := time.Since(start)
+	out, m, err := measured(t, canonIn(bin, target, "check", args...))
 	if err != nil {
 		t.Fatalf("canon check %s: %v; a project with errors is not measured\n%s", unit, err, out)
 	}
-	usage, ok := cmd.ProcessState.SysUsage().(*syscall.Rusage)
-	if !ok {
-		t.Fatal("no resource usage for canon check")
-	}
-	return wall, usage.Maxrss * rssUnit
+	return m.wall, m.rss
 }

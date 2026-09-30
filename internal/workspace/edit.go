@@ -3,10 +3,12 @@ package workspace
 import (
 	"context"
 	"fmt"
+	"maps"
 	"slices"
 
 	"github.com/fantasim/canonlang/internal/build"
 	"github.com/fantasim/canonlang/internal/edit"
+	"github.com/fantasim/canonlang/internal/project"
 )
 
 // EditRequest is an edit (API.md E17-E21): its changes, the revision its client read, whether it
@@ -29,6 +31,7 @@ type EditOutcome struct {
 	Applied bool
 	Before  *Snapshot
 	After   *Snapshot
+	aliases map[string]string // the other names packages read a written file by (owners)
 }
 
 // Edit is the edit transaction, the one writer (API.md E17-E21, S9-S12, N10, W15): the
@@ -36,11 +39,11 @@ type EditOutcome struct {
 // one edit event. An outcome refused for its errors comes with ErrRejected (E19).
 func (p *Project) Edit(ctx context.Context, req EditRequest) (*EditOutcome, error) {
 	var out *EditOutcome
-	after := func() (Cause, []string) {
+	after := func() wrote {
 		if out == nil || !out.Applied {
-			return CauseExternal, nil
+			return wrote{cause: CauseExternal}
 		}
-		return CauseEdit, out.written()
+		return wrote{cause: CauseEdit, files: out.written(), planned: out.After}
 	}
 	next, err := p.writeAs(ctx, after, func(ctx context.Context, s *Snapshot) error {
 		var err error
@@ -62,11 +65,12 @@ func (s *Snapshot) edit(ctx context.Context, req EditRequest) (*EditOutcome, err
 	if err != nil {
 		return nil, err
 	}
-	if err := s.refuse(req, a, plan); err != nil {
+	owners, aliases := s.owners(a, plan)
+	if err := s.refuse(req, a, plan, owners); err != nil {
 		return nil, err
 	}
-	out := &EditOutcome{Plan: plan, Changes: slices.Clone(plan.Changes), Before: s, After: s.planned(plan.Changes)}
-	if err := out.recheck(ctx, a); err != nil {
+	out := &EditOutcome{Plan: plan, Changes: slices.Clone(plan.Changes), Before: s, After: s.planned(plan.Changes, aliases), aliases: aliases}
+	if err := out.recheck(ctx, a, owners); err != nil {
 		return nil, err
 	}
 	switch {
@@ -95,13 +99,47 @@ func (o *EditOutcome) written() []string {
 	return out
 }
 
+// owners are the packages that own what the edit writes (API.md E17, log-2026-09-29 M4 P14-r2):
+// those its plan touches, and each whose read set in a holds a file it writes or removes, or lists
+// a directory whose names it changes; with the other names they read a file it writes by.
+func (s *Snapshot) owners(a *build.Analysis, plan *edit.Plan) ([]string, map[string]string) {
+	var files, dirs []string
+	for _, c := range plan.Changes {
+		for _, display := range []string{c.Path, c.OldPath} {
+			abs, ok := s.b.Abs(display)
+			if !ok || display == "" {
+				continue
+			}
+			files = append(files, abs)
+			if c.Kind != edit.ChangeModified {
+				dirs = append(dirs, s.listings(abs)...)
+			}
+		}
+	}
+	readers, aliases := a.Readers(files, dirs)
+	return append(slices.Clone(plan.Touched), readers...), aliases
+}
+
+// listings are the directories whose listing gains or loses abs, a name created or removed: abs
+// itself, then each directory above it up to the first that existed before the edit, as pinDirs
+// finds them (log-2026-09-29 M4 P14-r3).
+func (s *Snapshot) listings(abs string) []string {
+	out := []string{abs}
+	for d := project.DirOf(abs); ; d = project.DirOf(d) {
+		out = append(out, d)
+		if _, err := s.fs.Stat(d); err == nil || project.DirOf(d) == d {
+			return out
+		}
+	}
+}
+
 // refuse is the first refusal of a plan after its operations (API.md E21): a file with an
 // overlay (S12), a stale base (S5), then files not in canonical layout without Normalize (M9).
-func (s *Snapshot) refuse(req EditRequest, a *build.Analysis, plan *edit.Plan) error {
-	if err := s.noOverlay(plan.Changes); err != nil {
+func (s *Snapshot) refuse(req EditRequest, a *build.Analysis, plan *edit.Plan, owners []string) error {
+	if err := s.noOverlay(a, plan.Changes); err != nil {
 		return err
 	}
-	if err := s.staleFor(req.Base, a, plan.Touched); err != nil {
+	if err := s.staleFor(req.Base, a, owners); err != nil {
 		return err
 	}
 	if len(plan.NotCanonical) > 0 && !req.Normalize {
@@ -110,13 +148,28 @@ func (s *Snapshot) refuse(req EditRequest, a *build.Analysis, plan *edit.Plan) e
 	return nil
 }
 
-// noOverlay is an *OverlayError for the first file changes write that has an overlay (API.md S12).
-func (s *Snapshot) noOverlay(changes []edit.Change) error {
+// noOverlay is an *OverlayError for the first file changes write whose real path an overlay
+// covers, under its own name or another (API.md S12; log-2026-09-29 M4 P14-r4).
+func (s *Snapshot) noOverlay(a *build.Analysis, changes []edit.Change) error {
+	var displays, names []string
 	for _, c := range changes {
 		for _, display := range []string{c.Path, c.OldPath} {
-			if abs, ok := s.b.Abs(display); ok && display != "" && s.fs.over[abs] != nil {
-				return &OverlayError{File: display}
+			if abs, ok := s.b.Abs(display); ok && display != "" {
+				displays, names = append(displays, display), append(names, abs)
 			}
+		}
+	}
+	over := slices.Sorted(maps.Keys(s.fs.over))
+	if len(names) == 0 || len(over) == 0 {
+		return nil
+	}
+	covered := map[string]bool{}
+	for _, real := range a.RealPaths(over...) {
+		covered[real] = true
+	}
+	for i, real := range a.RealPaths(names...) {
+		if s.fs.over[names[i]] != nil || covered[real] {
+			return &OverlayError{File: displays[i]}
 		}
 	}
 	return nil
@@ -124,8 +177,8 @@ func (s *Snapshot) noOverlay(changes []edit.Change) error {
 
 // recheck re-checks, on After, the packages owning a file the edit writes and their importers
 // (API.md E17, E18), and adds the lock lines the edit requires (E20).
-func (o *EditOutcome) recheck(ctx context.Context, a *build.Analysis) error {
-	pkgs := affected(a.Program(), o.Plan.Touched...)
+func (o *EditOutcome) recheck(ctx context.Context, a *build.Analysis, owners []string) error {
+	pkgs := importing(a.Units(), owners...)
 	switch {
 	case len(pkgs) == 0 && len(o.Changes) > 0: // a file no package owns is never written unchecked
 		return fmt.Errorf(fmtWrap, edit.ErrInternal, errUnowned)
@@ -133,14 +186,17 @@ func (o *EditOutcome) recheck(ctx context.Context, a *build.Analysis) error {
 		o.Checked = &build.Result{Findings: build.Findings{Files: a.Files()}}
 		return nil
 	}
-	checked, err := o.After.b.Analyze(ctx, pkgs)
+	checked, err := Analyze(ctx, o.After, pkgs)
 	if err != nil {
 		return err
 	}
 	o.Checked = checked.Result()
+	if build.Covers(a, checked) { // the packages outside pkgs read none of the files written (owners)
+		o.After.cover(pkgs)
+	}
 	locked, err := o.ownLocks(checked)
 	if locked {
-		o.After = o.Before.planned(o.Changes) // the sources after the edit hold its lock lines
+		o.After = o.Before.planned(o.Changes, o.aliases) // the sources after the edit hold its lock lines
 	}
 	return err
 }
