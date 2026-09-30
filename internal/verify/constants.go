@@ -2,10 +2,9 @@ package verify
 
 // The punctuation of a canonical value path (API.md §6.1); dot also starts an extension.
 const (
-	dot        = "."
-	keyOpen    = "["
-	keyClose   = "]"
-	underscore = "_"
+	dot      = "."
+	keyOpen  = "["
+	keyClose = "]"
 )
 
 // The separators and relative segments of an asset path (TYPES.md §13.4).
@@ -14,8 +13,6 @@ const (
 	backslash = `\`
 	parentDir = ".."
 )
-
-const decimalBase = 10
 
 // The forms of a path segment: a root's name, a field or table entry, a key or index.
 const (

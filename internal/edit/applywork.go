@@ -150,8 +150,9 @@ func parseKind(f *syntax.File) syntax.FileKind {
 	return syntax.FileSource
 }
 
-// unwritable refuses work that writes a file on a hidden path, as a commit would, so Apply,
-// DryRun and Edit refuse alike (API.md N10; log-2026-09-29 M4 U5b-r3).
+// unwritable refuses work that writes a file on a hidden path, or outside the project and its
+// roots (an absolute display path), as a commit would and with the same reason and sentinel, so
+// Apply, DryRun and Edit refuse alike (API.md N10; log-2026-09-29 M4 U5b-r, U5b-r3).
 func (w *work) unwritable() error {
 	names := slices.Concat(slices.Collect(maps.Keys(w.canon)), slices.Collect(maps.Keys(w.json)))
 	for _, nf := range w.creates {
@@ -164,10 +165,14 @@ func (w *work) unwritable() error {
 		names = append(names, r.display)
 	}
 	slices.Sort(names)
-	if i := slices.IndexFunc(names, func(d string) bool { return !visible(d) }); i >= 0 {
-		return journalRefusal(ErrUnwritable, &fault{reasonHidden, names[i]})
+	i := slices.IndexFunc(names, func(d string) bool { return isAbsName(d) || !visible(d) })
+	switch {
+	case i < 0:
+		return nil
+	case isAbsName(names[i]):
+		return journalRefusal(ErrChanges, &fault{reasonPlace, names[i]})
 	}
-	return nil
+	return journalRefusal(ErrUnwritable, &fault{reasonHidden, names[i]})
 }
 
 // commit makes w's changes in memory: edits, then renames, deletions and creations.

@@ -45,9 +45,47 @@ func (s seg) on(p *verify.Path) *verify.Path {
 	return p
 }
 
-// eachPart calls fn on each part of v, in order, until fn is false (EVALUATION.md §8.1).
-func eachPart(v value.Value, fn func(part) bool) {
-	namedParts(v, nil, nil, fn)
+// eachPart calls fn on each part of v in namedParts' order until fn is false, naming none (EVALUATION.md §8.1).
+func eachPart(v value.Value, fn func(value.Value) bool) {
+	switch x := v.(type) {
+	case *value.Record:
+		eachValue(x.Fields[:min(len(verify.Fields(x.T)), len(x.Fields))], fn)
+	case *value.List:
+		eachValue(x.Elems, fn)
+	case *value.Map:
+		mapValues(x, fn)
+	case *value.Table:
+		tableValues(x, fn)
+	case *value.Pair:
+		_ = fn(x.A) && fn(x.B)
+	}
+}
+
+// eachValue calls fn on each of vs, in order, until fn is false.
+func eachValue(vs []value.Value, fn func(value.Value) bool) {
+	for _, v := range vs {
+		if !fn(v) {
+			return
+		}
+	}
+}
+
+// mapValues is eachPart for a map: each key, then its value.
+func mapValues(m *value.Map, fn func(value.Value) bool) {
+	for i, k := range m.Keys {
+		if !fn(k) || i < len(m.Vals) && !fn(m.Vals[i]) {
+			return
+		}
+	}
+}
+
+// tableValues is eachPart for a table: its entries that have an identity, as tableParts names.
+func tableValues(t *value.Table, fn func(value.Value) bool) {
+	for _, e := range t.Entries {
+		if e != nil && e.Ident != nil && !fn(e) {
+			return
+		}
+	}
 }
 
 // namedParts is eachPart, a keyed list's element for which late is true named as one without an
@@ -82,13 +120,7 @@ func recordParts(r *value.Record, fn func(part) bool) {
 
 // listParts are a list's elements; a keyed list's, declared or else stored so, are named by key (API.md P8).
 func listParts(l *value.List, dt types.Type, late func(*value.Record) bool, fn func(part) bool) {
-	lt, declared := verify.Declared(dt).(*types.ListType)
-	var et types.Type
-	if declared {
-		et = lt.Elem
-	} else {
-		lt, _ = verify.Declared(l.T).(*types.ListType)
-	}
+	lt, et := verify.ListAt(dt, l)
 	keyed := lt != nil && lt.KeyedBy != nil
 	for i, e := range l.Elems {
 		s := seg{form: segIndex, i: i}

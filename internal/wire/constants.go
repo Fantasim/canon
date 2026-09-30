@@ -102,9 +102,6 @@ var radixPrefixes = [...]struct {
 	base   int
 }{{"0x", hexBase}, {"0b", binBase}}
 
-// wordPattern is an identifier or a reserved word: a table key (WIRE.md §5.7, GRAMMAR §2.3).
-var wordPattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
-
 // slotPattern is the slot index a @json(pairs:) key holds (WIRE.md §5.14).
 var slotPattern = regexp.MustCompile(`^(0|[1-9][0-9]*)$`)
 

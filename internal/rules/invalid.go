@@ -49,8 +49,8 @@ func (t *traversal) kept(v value.Value, invalid func(value.Value) bool) bool {
 		return known
 	}
 	bad := invalid(v)
-	eachPart(v, func(p part) bool {
-		bad = t.kept(p.v, invalid)
+	eachPart(v, func(p value.Value) bool {
+		bad = t.kept(p, invalid)
 		return !bad
 	})
 	t.asking.below[v] = bad
@@ -68,8 +68,8 @@ func (t *traversal) current(v value.Value) bool {
 	}
 	bad := t.ev.Invalid(v)
 	if !bad {
-		eachPart(v, func(p part) bool {
-			bad = t.current(p.v)
+		eachPart(v, func(p value.Value) bool {
+			bad = t.current(p)
 			return !bad
 		})
 	}

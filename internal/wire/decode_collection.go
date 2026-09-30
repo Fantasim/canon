@@ -138,7 +138,7 @@ func (r *run) table(sel Selection, t types.Type, sc wscope) value.Value {
 		if root && m.Key == KeySchema {
 			continue
 		}
-		if !isWord(m.Key) {
+		if !value.IsWord(m.Key) {
 			r.report(diag.E7114.At(m.KeySpan, m.Key), m.Value)
 			ok = false
 		}
@@ -209,7 +209,7 @@ func (r *run) dirTable(files []File, t types.Type, tt *types.TableType) value.Va
 func (r *run) stem(f File, first map[string]source.Span) bool {
 	at, dup := first[f.Stem]
 	switch {
-	case !isWord(f.Stem):
+	case !value.IsWord(f.Stem):
 		r.report(diag.E7114.At(f.At, f.Stem), nil)
 	case dup:
 		return r.soft(diag.E3102.AtKey(f.At, literal(f.Stem), at), nil) // kept: both entries stay
@@ -413,9 +413,4 @@ func branches(fn *types.TypeFunc) []types.Type {
 		out = append(out, a.Result)
 	}
 	return out
-}
-
-// isWord is a table key: an identifier or a reserved word, never a lone `_` (GRAMMAR §2.3).
-func isWord(s string) bool {
-	return s != underscore && wordPattern.MatchString(s)
 }

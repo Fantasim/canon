@@ -145,6 +145,16 @@ func movedTexts(w edit.Write, r edit.Region) [][]byte {
 	return [][]byte{lines, slices.Concat(lines[:c], []byte(","), lines[c:])}
 }
 
+// commaless is a comma region's text without its comma and the spaces after it: a 216 comma line
+// whose trailing comment the settle keeps alone (log-2026-09-29 M4 Cleanup-A-r).
+func commaless(text []byte) []byte {
+	i := bytes.IndexByte(text, ',')
+	if i < 0 {
+		return text
+	}
+	return slices.Concat(text[:i], bytes.TrimLeft(text[i+1:], " "))
+}
+
 // merged are w's regions sorted, those that overlap or touch joined (API.md M6).
 func merged(w edit.Write) []area {
 	var rs []area
@@ -156,7 +166,7 @@ func merged(w edit.Write) []area {
 		case edit.RegionMoved:
 			ar.items, ar.texts = 1, movedTexts(w, r)
 		case edit.RegionComma:
-			ar.texts = [][]byte{w.Before[r.Lo:r.Hi], []byte(","), {}}
+			ar.texts = [][]byte{w.Before[r.Lo:r.Hi], []byte(","), {}, commaless(w.Before[r.Lo:r.Hi])}
 		}
 		rs = append(rs, ar)
 	}
@@ -173,11 +183,15 @@ func merged(w edit.Write) []area {
 	return out
 }
 
-// beside reports a node printed again and an item inserted at one of its ends: two changes side
-// by side, each matched alone, not one node (API.md M6; log-2026-09-29 M4 B10).
+// beside reports two changes side by side, each matched alone, not one node: a node printed
+// again and an item inserted at one of its ends, or a comma area that only touches another
+// (API.md M6; log-2026-09-29 M4 B10, Cleanup-A-r).
 func beside(x, y area) bool {
 	point := func(r area) bool { return r.kind == edit.RegionItem && r.lo == r.hi }
+	touch := x.hi == y.lo || y.hi == x.lo
 	switch {
+	case touch && (x.kind == edit.RegionComma || y.kind == edit.RegionComma):
+		return true
 	case x.kind == edit.RegionNode && point(y):
 		return y.lo == x.hi || y.lo == x.lo
 	case y.kind == edit.RegionNode && point(x):

@@ -43,11 +43,8 @@ func (w *walker) rejudgeRecord(r *value.Record, at *Path, sc scope) {
 }
 
 func (w *walker) rejudgeList(l *value.List, t types.Type, at *Path, sc scope) {
-	keyed := listOf(nil, l.T) != nil && listOf(nil, l.T).KeyedBy != nil
-	var et types.Type
-	if lt, ok := Declared(t).(*types.ListType); ok {
-		et = lt.Elem
-	}
+	lt, et := ListAt(t, l)
+	keyed := lt != nil && lt.KeyedBy != nil
 	for i, e := range l.Elems {
 		p := at.Index(i)
 		if r, ok := e.(*value.Record); ok && keyed && r.Ident != nil {

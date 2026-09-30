@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/eval/std"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
@@ -37,15 +36,22 @@ func (p *vpath) index(i int) *vpath {
 	return p.add(keyOpen + strconv.Itoa(i) + keyClose)
 }
 
-// key is the path of a keyed-list element or map entry: a word bare, an integer in decimal,
-// any other key as a JSON string (API.md P8, P9).
+// key is the path of a keyed-list element: a word bare, an integer in decimal, any other key
+// as a JSON string (API.md P8, P9).
 func (p *vpath) key(k value.Key) *vpath {
-	return p.add(keyOpen + keyText(k) + keyClose)
+	return p.add(keyOpen + k.PathText() + keyClose)
+}
+
+// mapKey is the path of the entry of key k of a map whose key type declared there is kt: a
+// literal of a literal-union key type is a JSON string, as verification writes it (API.md P9,
+// log-2026-09-29 "P9 quoting rule").
+func (p *vpath) mapKey(k value.Value, kt types.Type) *vpath {
+	return p.add(keyOpen + value.PathKey(k, kt) + keyClose)
 }
 
 // entry is a table entry: `.key`, or `["key"]` when the key is not a word.
 func (p *vpath) entry(k value.Key) *vpath {
-	if !k.IsInt && word(k.S) {
+	if !k.IsInt && value.IsWord(k.S) {
 		return p.field(k.S)
 	}
 	return p.key(k)
@@ -66,7 +72,7 @@ func (p *vpath) learn(f *types.Field, v value.Value) {
 		return
 	}
 	if k, ok := std.KeyOf(v); ok {
-		p.seg = keyOpen + keyText(k) + keyClose
+		p.seg = keyOpen + k.PathText() + keyClose
 	}
 }
 
@@ -90,39 +96,4 @@ func (p *vpath) String() string {
 	}
 	slices.Reverse(segs)
 	return strings.Join(segs, "")
-}
-
-func keyText(k value.Key) string {
-	switch {
-	case k.IsInt:
-		return strconv.FormatInt(k.I, decimalBase)
-	case word(k.S):
-		return k.S
-	}
-	return string(diag.AppendJSONString(nil, k.S))
-}
-
-// word is an identifier of SPEC §2.4, `_` alone excepted.
-func word(s string) bool {
-	if s == "" || s == underscore {
-		return false
-	}
-	for i, c := range s {
-		letter := c == '_' || c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z'
-		if !letter && (i == 0 || c < '0' || c > '9') {
-			return false
-		}
-	}
-	return true
-}
-
-// mapKey is the key a map key value is written with in a path.
-func mapKey(v value.Value) value.Key {
-	switch k := v.(type) {
-	case *value.Int:
-		return value.Key{I: k.V, IsInt: true}
-	case *value.Ref:
-		return k.Key
-	}
-	return value.Key{S: v.CanonText()}
 }

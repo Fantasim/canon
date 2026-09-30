@@ -208,6 +208,32 @@ func TestPaths(t *testing.T) {
 	}
 }
 
+// API.md P8 (log-2026-09-29 M4 U13-r2): a list's elements are named by key when the list type
+// declared at their place is keyed, else when the list is stored keyed; walk, rejudge and rules
+// read it alike.
+func TestListAt(t *testing.T) {
+	row := &types.RecordType{Name: "Row", Fields: []*types.Field{{Name: "id", Type: types.StringType}}}
+	plain, keyed := &types.ListType{Elem: row}, &types.ListType{Elem: row, KeyedBy: row.Fields[0]}
+	for _, c := range []struct {
+		name          string
+		declared      types.Type
+		stored        types.Type
+		want          *types.ListType
+		wantDeclElems bool
+	}{
+		{"declared keyed", &types.OptionalType{Elem: keyed}, plain, keyed, true},
+		{"declared plain wins", plain, keyed, plain, true},
+		{"declared under an alias", &types.Alias{Name: "Rows", Def: keyed}, plain, keyed, true},
+		{"none declared", nil, keyed, keyed, false},
+		{"no list declared", types.StringType, keyed, keyed, false},
+	} {
+		lt, et := verify.ListAt(c.declared, &value.List{T: c.stored})
+		if lt != c.want || (et != nil) != c.wantDeclElems {
+			t.Errorf("%s: ListAt = %v, %v", c.name, lt, et)
+		}
+	}
+}
+
 // EVALUATION.md §13: a spread copy is reported at the value it was copied from.
 func TestSiteOfSpread(t *testing.T) {
 	orig := &value.Prov{Kind: value.ProvJSON, Pointer: "/a/0", Layer: "dev"}

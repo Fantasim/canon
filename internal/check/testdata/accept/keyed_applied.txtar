@@ -1,0 +1,31 @@
+TYPES.md §9.1, §2 (the Record kind is written `R(args)`), §11.1: a keyed list of an applied record, keyed by a field whose type mentions no parameter; the list looks up by key, `.b` a key of the field's collection (Info.Keys, IMPLEMENTATION-PLAN §4.7).
+-- a/a.canon --
+package a
+
+local enum K { num, text }
+
+local record Ev {
+  k: K
+}
+
+local type P(e: Ev) = match e.k {
+  num => Int
+  text => String
+}
+
+local record L(e: Ev) {
+  id: String
+  v: P(e)
+}
+
+local record R {
+  ev: Ev
+  ls: [L(ev)] keyed by id = []
+}
+
+local let rs: [R] = [
+  { ev: { k: num }, ls: [{ id: "a", v: 1 }, { id: "b", v: 2 }] },
+  { ev: { k: text }, ls: [{ id: "a", v: "x" }] },
+]
+
+local let b: Int = rs[0].ls["b"].id.len() + rs[0].ls.b.id.len()

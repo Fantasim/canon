@@ -58,9 +58,11 @@ func (x *opCtx) lockStable() {
 	if !ok || !f.Stable || len(x.res.Steps) != stableDepth || rec.Ident == nil {
 		return
 	}
+	if tt, ok := baseOf(x.res.Steps[0].Container).(*types.TableType); !ok || !tt.Stable {
+		return
+	}
 	id := Locked{Name: x.res.root.lockName(), Key: rec.Ident.Key.Text()}
-	held := x.a.snap.a.LockHolds(build.LockID{Name: id.Name, Key: id.Key})
-	if tt, ok := baseOf(x.res.Steps[0].Container).(*types.TableType); ok && tt.Stable && !held {
+	if !x.a.snap.a.LockHolds(build.LockID{Name: id.Name, Key: id.Key}) {
 		x.w.locked = append(x.w.locked, id)
 	}
 }

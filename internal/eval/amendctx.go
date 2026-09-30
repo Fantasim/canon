@@ -63,7 +63,7 @@ func (r *run) locField(rec *value.Record, seg *syntax.AmendSegment, m *amending)
 func (r *run) locMapKey(mp *value.Map, t types.Type, seg *syntax.AmendSegment, m *amending) (value.Value, types.Type, bool) {
 	j, key, ok := r.mapSlot(mp, seg, m)
 	if ok {
-		m.step(m.located().key(mapKey(key)))
+		m.step(m.located().mapKey(key, mapKeyType(t)))
 	}
 	if ok && binderOf(t) != "" {
 		m.dep = m.dep.withBinder(binderOf(t), key, m.a.Value)

@@ -47,7 +47,7 @@ func (r *run) walkMap(v value.Value, mt *types.MapType, s site, at *vpath) value
 	out := &value.Map{T: m.T, Keys: make([]value.Value, len(m.Keys)), Vals: make([]value.Value, len(m.Vals)), P: m.P}
 	for i, k := range m.Keys {
 		out.Keys[i] = r.walk(k, mt.Key, s, at)
-		out.Vals[i] = r.walk(m.Vals[i], mt.Value, s, at.key(mapKey(k)))
+		out.Vals[i] = r.walk(m.Vals[i], mt.Value, s, at.mapKey(k, mt.Key))
 		if out.Keys[i] == nil || out.Vals[i] == nil {
 			return nil
 		}

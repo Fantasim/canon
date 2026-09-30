@@ -25,6 +25,7 @@ const (
 	outputsFile     = "outputs.txt"
 	budgetFile      = "budget.txt"
 	testsFile       = "tests.txt"
+	thresholdFile   = "threshold.txt"
 	projectFile     = "project.canon"
 	outputHeader    = "-- "
 	budgetLine      = "  budget: "
@@ -36,7 +37,7 @@ func writeArchive(t *testing.T, a *txtar.Archive) string {
 	t.Helper()
 	dir := t.TempDir()
 	for _, f := range a.Files {
-		if f.Name == findingsFile || f.Name == outputsFile || f.Name == budgetFile || f.Name == testsFile {
+		if slices.Contains([]string{findingsFile, outputsFile, budgetFile, testsFile, thresholdFile}, f.Name) {
 			continue
 		}
 		p := filepath.Join(dir, filepath.FromSlash(f.Name))
@@ -121,6 +122,14 @@ func TestDependentStepsAreCharged(t *testing.T) {
 		f, _ := withBudget(t, c.Archive, threshold(t, c.Archive))
 		return rendered(t, f)
 	}, golden.Expected(budgetFile))
+}
+
+// EVALUATION.md §12.1 (log-2026-09-29 M4 Cleanup-A-r): retyping a computed container charges no application of its own.
+func TestComputedTypesChargeNothing(t *testing.T) {
+	golden.Run(t, "testdata/dependent/charges_*.txtar", func(t *testing.T, c golden.Case) []byte {
+		t.Helper()
+		return []byte(fmt.Sprintf("threshold %d\n", threshold(t, c.Archive)))
+	}, golden.Expected(thresholdFile))
 }
 
 // EVALUATION.md §4.2, §8.1: shared instances share their stage-B copies, so stage C checks each once.

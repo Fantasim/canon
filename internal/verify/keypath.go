@@ -15,6 +15,17 @@ func KeyTypeAt(t types.Type, m *value.Map) types.Type {
 	return mapKeyType(m)
 }
 
+// ListAt is the list type API.md P8 names l's elements by where t is declared: t's, else the
+// type l is stored with; et is the element type t declares, nil when t declares no list. The
+// walk, rejudge and rules decide "keyed" by it alike (log-2026-09-29 M4 U13-r2).
+func ListAt(t types.Type, l *value.List) (lt *types.ListType, et types.Type) {
+	if lt, ok := Declared(t).(*types.ListType); ok {
+		return lt, lt.Elem
+	}
+	lt, _ = Declared(l.T).(*types.ListType)
+	return lt, nil
+}
+
 // declaredMap is the map type t declares, if any.
 func declaredMap(t types.Type) (*types.MapType, bool) {
 	mt, ok := Declared(t).(*types.MapType)
@@ -44,7 +55,7 @@ func (w *walker) keyPath(at *Path, k value.Value, kt types.Type, e *env) *Path {
 	if s, ok := k.(*value.Str); ok && w.literalIn(s.V, kt, e) {
 		return at.quoted(s.V)
 	}
-	return at.Key(KeyOf(k))
+	return at.MapKey(k, nil)
 }
 
 // literalIn reports s a literal of t computed in e, meeting in order the applications walking the key meets (TYPES.md §11.6).

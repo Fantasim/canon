@@ -110,7 +110,7 @@ func (c *checker) memberOf(env *env, s *syntax.SelectorExpr, t types.Type) types
 	}
 	if sel.Kind == SelEntry && s.X != nil {
 		sel.Obj = c.staticEntry(s.X, name)
-		if coll := c.receiverColl(s.X); sel.Obj == nil && coll != nil {
+		if coll := c.keyedReceiver(s.X); sel.Obj == nil && coll != nil {
 			c.info.Keys[s] = coll
 		}
 	}
@@ -120,6 +120,25 @@ func (c *checker) memberOf(env *env, s *syntax.SelectorExpr, t types.Type) types
 		c.memberUse(env, s, o)
 	}
 	return typ
+}
+
+// keyedReceiver is the collection x holds, where `.name` is a key: a let's, else a record field's (TYPES.md §9.1).
+func (c *checker) keyedReceiver(x syntax.Expr) *types.Collection {
+	if coll := c.receiverColl(x); coll != nil {
+		return coll
+	}
+	s, ok := x.(*syntax.SelectorExpr)
+	if !ok || c.info.Selections[s] == nil || c.info.Selections[s].Kind != SelField {
+		return nil
+	}
+	owner := requiredRecord(c.deref(c.info.Selections[s].Recv))
+	if owner == nil {
+		return nil
+	}
+	if f := fieldNamed(owner.Fields, s.Name.Name); f != nil {
+		return c.fieldCollection(owner, f)
+	}
+	return nil
 }
 
 // reservedRead reports a table element's field named id or retired (E2105) read where it may be

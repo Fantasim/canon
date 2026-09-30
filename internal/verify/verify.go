@@ -134,7 +134,8 @@ type walker struct {
 	recording []*recorder // the instances being verified, innermost last
 	rec       *entryRec   // the table entry being recorded for the memo, nil for none
 
-	branches map[branchKey]branchOut
+	branches   map[branchKey]branchOut
+	cachedOnly bool
 }
 
 // scope is where a value sits: its table entry, the env its type arguments read, its field.

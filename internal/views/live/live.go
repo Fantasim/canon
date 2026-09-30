@@ -57,13 +57,22 @@ func Evaluate(ctx context.Context, in Input, at Target) (*Result, error) {
 	} else {
 		s.out.Title, s.out.Subtitle = Text{Value: at.Name, OK: true}, Text{OK: true}
 		if at.Value != nil && isCollection(at.Value) && at.Value.Type() != nil {
-			s.collection(at.Value, root, s.control(at))
+			s.collection(at.Value, declared(at), root, s.control(at))
 		}
 	}
 	if s.err != nil {
 		return nil, fmt.Errorf(fmtWrap, s.err)
 	}
 	return s.out, nil
+}
+
+// declared is the type the target's field declares, nil when the target is no field (its stored
+// type then decides, API.md P9).
+func declared(at Target) types.Type {
+	if at.Field == nil {
+		return nil
+	}
+	return at.Field.Type
 }
 
 // control is the control of the collection at the path: its field's (VIEWMODEL.md C1), else its type's.

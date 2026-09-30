@@ -1,0 +1,54 @@
+TYPES.md §9.1, §11.1 (log-2026-09-29 M4 Cleanup-A): a keyed list of an applied record keeps its keys unique and judges each element against its own arguments; its elements are named by key (API.md P8, P9).
+-- a/a.canon --
+/// A.
+package a
+
+/// K.
+enum K { num, text }
+
+/// Ev.
+record Ev {
+  /// K.
+  k: K
+}
+
+/// P.
+type P(e: Ev) = match e.k {
+  num => Int
+  text => String
+}
+
+/// L.
+record L(e: Ev) {
+  /// Id.
+  id: String
+  /// V.
+  v: P(e)
+}
+
+/// R.
+record R {
+  /// Ev.
+  ev: Ev
+  /// Ls.
+  ls: [L(ev)] keyed by id = []
+}
+
+/// Rs.
+let rs: [R] = [
+  { ev: { k: num }, ls: [{ id: "a", v: 1 }, { id: "b", v: 2 }] },
+  { ev: { k: text }, ls: [{ id: "a", v: "x" }, { id: "a", v: 3 }] },
+]
+-- project.canon --
+project demo {
+  canon: "0.1"
+}
+-- findings.txt --
+error[E3102]  a/a.canon:38:54
+  rs[1].ls[a].id: key a is used twice (first at a/a.canon:38)
+
+error[E3802]  a/a.canon:38:62
+  rs[1].ls[a].v: value does not match P(e) = String
+  expected by a/a.canon:24 (v: P(e))
+
+2 errors, 0 warnings in 1 package (…)

@@ -54,6 +54,9 @@ func (w *walker) branch(app *types.TypeAppType, e *env) (types.Type, *env, bool)
 	if out, ok := w.branches[key]; ok {
 		return out.t, out.inner, true
 	}
+	if w.cachedOnly {
+		return nil, nil, false
+	}
 	fn := app.Fn
 	switch {
 	case len(fn.Params) != len(app.Args):
@@ -89,7 +92,7 @@ func (w *walker) selected(fn *types.TypeFunc, inner *env) (types.Type, bool) {
 	if !w.settled(r, nil) {
 		return nil, false
 	}
-	i, ok := armIndex(v)
+	i, ok := value.ArmIndex(v)
 	if !ok || fn.Arm(i) == nil {
 		_, _, ok = w.unjudged(reasonArm, nil)
 		return nil, ok
@@ -139,22 +142,6 @@ func (w *walker) charge(app *types.TypeAppType) bool {
 	return false
 }
 
-// armIndex is what a type-level match selects on: a member's index, false 0 and true 1.
-func armIndex(v value.Value) (int, bool) {
-	switch x := v.(type) {
-	case *value.Member:
-		return x.Index, true
-	case *value.CaseKind:
-		return x.Index, true
-	case *value.Bool:
-		if x.V {
-			return 1, true
-		}
-		return 0, true
-	}
-	return 0, false
-}
-
 // judge converts v to the computed type t, then verifies it as any value of t (TYPES.md §11.6).
 func (w *walker) judge(v value.Value, t types.Type, at *Path, sc scope) value.Value {
 	base, optional, ok := layers(v, t, nil)
@@ -188,7 +175,7 @@ func (w *walker) judge(v value.Value, t types.Type, at *Path, sc scope) value.Va
 }
 
 // stored is nv, v converted, stored at t as any storage point stores it, then verified; a
-// container is retyped to t and its parts judged one by one.
+// container is retyped to t, its parts judged one by one, then retyped to t as they computed it.
 func (w *walker) stored(v, nv value.Value, t types.Type, at *Path, sc scope) value.Value {
 	if eval.IsContainer(nv) {
 		nv = w.retyped(nv, t)
@@ -199,7 +186,7 @@ func (w *walker) stored(v, nv value.Value, t types.Type, at *Path, sc scope) val
 			return v
 		}
 		if base, _, ok := layers(nv, t, nil); ok {
-			return w.dispatch(nv, base, at, sc.part())
+			return w.retyped(w.dispatch(nv, base, at, sc.part()), w.computed(t, sc.env))
 		}
 		return nv
 	}

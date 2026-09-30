@@ -1,4 +1,4 @@
-TYPES.md §9: keyed lists, tables, maps and their methods.
+TYPES.md §9: keyed lists, tables, maps and their methods; `.a` on a keyed-list field of any record value is a key (Info.Keys).
 -- a/a.canon --
 package a
 
@@ -21,6 +21,14 @@ local let named: [Named] keyed by name = [
 ]
 
 local let byName: {String: [Row]} = rows.groupBy(.name)
+
+local record Shelf {
+  named: [Named] keyed by name = []
+}
+
+local let shelves: [Shelf] = [{ named: [{ name: "a", n: 1 }] }]
+
+local let fromField: Int = shelves[0].named.a.n
 
 local fn find(id: Int) -> Row? {
   return rows.get(id)

@@ -136,7 +136,7 @@ func (r *run) mapLit(lit *syntax.BraceLit, at *vpath) value.Value {
 		if binder != "" {
 			r.dep = outer.withBinder(binder, k, x)
 		}
-		v := r.evalAt(x, at.key(mapKey(k)))
+		v := r.evalAt(x, at.mapKey(k, mapKeyType(m.T)))
 		r.dep = outer
 		if v == nil {
 			return nil

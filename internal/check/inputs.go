@@ -25,6 +25,23 @@ func (c *checker) checkInputs(p *pkgState) {
 			c.report(env, diag.E1903.At(env.span(r.Decl.Name), o.name))
 		}
 	}
+	c.inputCases(p)
+}
+
+// inputCases is E1903 at each variant case that declares an input field itself (EVALUATION.md §11.1).
+func (c *checker) inputCases(p *pkgState) {
+	for _, o := range p.all {
+		v, ok := o.typ.(*types.VariantType)
+		if o.kind != ObjTypeName || !ok {
+			continue
+		}
+		for _, ct := range v.Cases {
+			if vc := c.caseDecls[ct]; vc != nil && fieldsHaveInput(ct.Fields) {
+				env := c.declEnv(o)
+				c.report(env, diag.E1903.At(env.span(vc.Name), o.name+dot+ct.Name))
+			}
+		}
+	}
 }
 
 // portable is E1904 for each pattern of an input's alias chain (EVALUATION.md §11.3, TYPES.md §7.4).
@@ -55,12 +72,11 @@ func (c *checker) portablePattern(env *env, r *types.Refined, at syntax.Node) {
 }
 
 func hasInput(r *types.RecordType) bool {
-	for _, f := range r.Fields {
-		if f.Input != nil {
-			return true
-		}
-	}
-	return false
+	return fieldsHaveInput(r.Fields)
+}
+
+func fieldsHaveInput(fields []*types.Field) bool {
+	return slices.ContainsFunc(fields, func(f *types.Field) bool { return f.Input != nil })
 }
 
 // inputPaths counts the ways public lets of p reach r through record fields and optionals,

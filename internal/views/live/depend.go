@@ -80,8 +80,9 @@ func (s *session) branch(fr *frame, app *types.TypeAppType) (types.Type, *frame,
 	if fn.Scrutinee == nil {
 		return fn.Body, inner, fn.Body != nil
 	}
-	i, ok := armIndex(s.follow(inner.params[fn.Scrutinee.Param], fn.Scrutinee.Path))
-	if !ok || fn.Arm(i) == nil {
+	v, read := s.follow(inner.params[fn.Scrutinee.Param], fn.Scrutinee.Path)
+	i, ok := value.ArmIndex(v)
+	if !read || !ok || fn.Arm(i) == nil {
 		return nil, nil, false
 	}
 	return fn.Arm(i).Result, inner, true
@@ -160,21 +161,4 @@ func (s *session) record(v value.Value) *value.Record {
 		}
 	}
 	return nil
-}
-
-// armIndex is what a type-level match selects on: a member's or a case's index, false 0 and
-// true 1 (TYPES.md 11.2); false for another value, or when read is false.
-func armIndex(v value.Value, read bool) (int, bool) {
-	switch x := v.(type) {
-	case *value.Member:
-		return x.Index, read
-	case *value.CaseKind:
-		return x.Index, read
-	case *value.Bool:
-		if x.V {
-			return 1, read
-		}
-		return 0, read
-	}
-	return 0, false
 }

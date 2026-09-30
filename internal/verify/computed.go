@@ -51,6 +51,16 @@ func (w *walker) substituteMap(m *types.MapType, e *env) types.Type {
 	return &types.MapType{Key: k, Value: v}
 }
 
+// computed is t with the applications its walk computed in e put in, charging none (EVALUATION.md §12.1).
+func (w *walker) computed(t types.Type, e *env) types.Type {
+	if !holdsApp(t) {
+		return t
+	}
+	w.cachedOnly = true
+	defer func() { w.cachedOnly = false }()
+	return w.substitute(t, e)
+}
+
 // holdsApp reports a list or map type whose elements, keys or values are applications.
 func holdsApp(t types.Type) bool {
 	switch x := t.(type) {

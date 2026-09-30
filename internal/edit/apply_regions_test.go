@@ -120,9 +120,19 @@ func TestMoveRegions(t *testing.T) {
 // keywordMap is a map whose key "in" makes DECISIONS 211 keep a comma after the item before it.
 const keywordMap = "package p\n\n/// E.\nenum E { a, in, b }\n\n/// W.\nlet w: {E: Int} = {\n  a: 1\n  b: 2,\n  in: 3\n}\n"
 
-// API.md M5, M6 (log-2026-09-29 M4 U1b-r): the 211 comma a kept neighbour gains or loses when
-// the item after it changes is a re-print M5 requires, which the check accepts for a Move, a
-// Remove and an Insert alike.
+// docComma is a table whose first entry keeps a comma on its own line so that `/// d1` documents
+// nothing after it (DECISIONS 216).
+const docComma = "package p\n\n/// Row.\nrecord Row {\n  /// A.\n  a: Int\n}\n\n/// Rows.\nlet rows: table Row = {\n  one { a: 1 }\n  /// d1\n  ,\n  two { a: 2 }\n}\n"
+
+// docCommaThree is docComma with a third entry, so the comma still keeps `/// d1` off it when two goes.
+var docCommaThree = strings.Replace(docComma, "  two { a: 2 }\n", "  two { a: 2 }\n  three { a: 3 }\n", 1)
+
+// docCommaNote is docComma whose comma carries a comment, which stays when the settle drops it.
+var docCommaNote = strings.Replace(docComma, "  ,\n", "  , // c\n", 1)
+
+// API.md M5, M6 (log-2026-09-29 M4 U1b-r, G2 refined): the comma a kept neighbour gains or loses
+// when the item after it changes, a 216 comma on its own line included, is a re-print M5
+// requires, which the check accepts for a Move, a Remove and an Insert alike.
 func TestNeighbourCommaRegions(t *testing.T) {
 	withoutIn := strings.Replace(keywordMap, "  b: 2,\n  in: 3\n", "  b: 2\n", 1)
 	for _, c := range []struct {
@@ -133,6 +143,9 @@ func TestNeighbourCommaRegions(t *testing.T) {
 		{"move in first", keywordMap, edit.Operation{Kind: edit.OpMove, Path: "w[in]", Index: 0}, "  in: 3\n  a: 1\n  b: 2\n}"},
 		{"remove in", keywordMap, edit.Operation{Kind: edit.OpRemove, Path: "w[in]"}, "  a: 1\n  b: 2\n}"},
 		{"add in", withoutIn, edit.Operation{Kind: edit.OpAddEntry, Path: "w", Key: edit.Member("in"), Value: edit.Int(4)}, "  a: 1\n  b: 2,\n  in: 4\n}"},
+		{"remove after a 216 comma line", docComma, edit.Operation{Kind: edit.OpRemove, Path: "rows.two"}, "  one { a: 1 }\n  /// d1\n}"},
+		{"remove after a kept 216 comma line", docCommaThree, edit.Operation{Kind: edit.OpRemove, Path: "rows.two"}, "  one { a: 1 }\n  /// d1\n  ,\n  three { a: 3 }\n}"},
+		{"remove after a 216 comma line with a comment", docCommaNote, edit.Operation{Kind: edit.OpRemove, Path: "rows.two"}, "  one { a: 1 }\n  /// d1\n  // c\n}"},
 	} {
 		fsys := mapFS{"law/project.canon": file(projectCanon), "law/p/p.canon": file(c.src)}
 		s := open(t, fsys, nil, "", "p")

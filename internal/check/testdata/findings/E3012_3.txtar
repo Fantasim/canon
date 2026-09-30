@@ -1,0 +1,31 @@
+TYPES.md §9.1, §11.3, §11.4: a keyed list of an applied record keyed by a field whose type mentions a parameter; its static type is the DepUnion P(*), which cannot be a key.
+-- a/a.canon --
+package a
+
+local enum K { num, text }
+
+local record Ev {
+  k: K
+}
+
+local type P(e: Ev) = match e.k {
+  num => Int
+  text => String
+}
+
+local record L(e: Ev) {
+  id: P(e)
+}
+
+local record R {
+  ev: Ev
+  ls: [L(ev)] keyed by id = []
+}
+
+/// The value.
+let r: R = { ev: { k: num } }
+-- findings.txt --
+error[E3012]  a/a.canon:20:24
+  keyed by id: type a.P(e) cannot be a key
+
+1 error, 0 warnings in 1 package (…)

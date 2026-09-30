@@ -86,7 +86,7 @@ func (s *session) form(fr *frame, at *verify.Path) {
 			continue
 		}
 		if isCollection(rec.Fields[i]) {
-			s.collection(rec.Fields[i], p, s.res.Field(rec.T, f))
+			s.collection(rec.Fields[i], f.Type, p, s.res.Field(rec.T, f))
 		}
 	}
 }

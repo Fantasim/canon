@@ -58,3 +58,6 @@ const indexStripes = 64
 
 // pairLen is the length a pair folds into a hash.
 const pairLen = 2
+
+// underscore alone is no word (SPEC §2.4).
+const underscore = "_"

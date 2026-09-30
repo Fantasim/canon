@@ -1,0 +1,53 @@
+EVALUATION.md §12.1 (log-2026-09-29 M4 Cleanup-A-r): a list of one element a dependent map's binder site computes (`T(e)` = `[Q(e)]`) is retyped to its computed type with no charge of its own; the threshold is the base's.
+-- a/a.canon --
+/// A.
+package a
+
+/// K.
+enum K { x, y }
+
+/// Item.
+record Item {
+  /// K.
+  k: K
+}
+
+/// Items.
+let items: table Item = {
+  i1 { k: x }
+  i2 { k: y }
+}
+
+/// Q.
+type Q(e: ref items) = match e.k {
+  x => Int
+  y => String
+}
+
+/// T.
+type T(e: ref items) = match e.k {
+  x => [Q(e)]
+  y => Int
+}
+
+/// Mode.
+enum Mode { dep, flat }
+
+/// W.
+type W(m: Mode) = match m {
+  dep => {e in items: T(e)}
+  flat => Int
+}
+
+/// H.
+record H {
+  /// Mode.
+  m: Mode
+  /// V.
+  v: W(m)
+}
+
+/// Hs.
+let h: H = { m: dep, v: { i1: [1] } }
+-- threshold.txt --
+threshold 22

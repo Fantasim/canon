@@ -116,14 +116,34 @@ func (t *canonTree) changePoints(c format.Change) (syntax.Node, []int) {
 	return nil, nil
 }
 
-// commaRegion is where the comma right after item n's last token may come or go.
+// commaRegion is where the comma after item n may come or go: right after its last token, or
+// the whole line of a comma kept alone on it, a comment after it included (DECISIONS 216).
 func (t *canonTree) commaRegion(n syntax.Node) region {
+	src := t.f.Src.Content
 	lo := int(t.f.Tokens[n.Last()].End)
 	r := region{lo: lo, hi: lo, kind: regionComma}
-	if c, ok := t.comma(n); ok && int(t.f.Tokens[c].Start) == lo {
-		r.hi = int(t.f.Tokens[c].End)
+	c, ok := t.comma(n)
+	if !ok {
+		return r
+	}
+	start, end := int(t.f.Tokens[c].Start), int(t.f.Tokens[c].End)
+	switch {
+	case start == lo:
+		r.hi = end
+	case t.alone(c):
+		r.lo, r.hi = lineStart(src, start), endOfLine(src, end)
 	}
 	return r
+}
+
+// alone reports token c the only one on its line but for spaces before it and comments after it.
+func (t *canonTree) alone(c syntax.Tok) bool {
+	src, toks := t.f.Src.Content, t.f.Tokens
+	start, next := int(toks[c].Start), int(c)+1
+	if len(bytes.TrimSpace(src[lineStart(src, start):start])) != 0 {
+		return false
+	}
+	return next >= len(toks) || toks[next].Kind == syntax.TokNL || int(toks[next].Start) >= endOfLine(src, int(toks[c].End))
 }
 
 // comment reports tr a comment of any kind.

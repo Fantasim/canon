@@ -106,8 +106,8 @@ func (s *signing) walk(v value.Value) {
 		s.marks = append(s.marks, s.n)
 	}
 	s.n++
-	eachPart(v, func(p part) bool {
-		s.walk(p.v)
+	eachPart(v, func(p value.Value) bool {
+		s.walk(p)
 		return true
 	})
 }
@@ -133,8 +133,8 @@ func (c *collecting) walk(v value.Value) {
 		c.seen[rec] = true
 		c.out = append(c.out, rec)
 	}
-	eachPart(v, func(p part) bool {
-		c.walk(p.v)
+	eachPart(v, func(p value.Value) bool {
+		c.walk(p)
 		return true
 	})
 }

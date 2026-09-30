@@ -1,0 +1,32 @@
+EVALUATION.md §6.3, API.md F1, P9 (log-2026-09-29 "P9 quoting rule"): a hard error inside a map entry carries the entry's path, its key quoted by the key type declared at the map, as verification writes it: a literal of a literal-union key type is a JSON string, any other word bare; a literal of a type function's expansion (TYPES.md §11.4) too.
+-- a/a.canon --
+/// A.
+package a
+
+local let long: Duration = 9223372036854ms
+
+local let m: {String | "none": Duration} = { "none": long * 2000000 }
+
+local let n: {String | "none": Duration} = { "other": long * 2000000 }
+
+local enum Kind { one, two }
+
+local type Slot(k: Kind) = String | "none"
+
+local record R {
+  k: Kind
+  d: {Slot(k): Duration} = {}
+}
+
+local let r: R = { k: one, d: { "none": long * 2000000 } }
+-- findings.txt --
+error[E4101]  a/a.canon:6:54
+  m["none"]: duration overflow in long * 2000000
+
+error[E4101]  a/a.canon:8:55
+  n[other]: duration overflow in long * 2000000
+
+error[E4101]  a/a.canon:19:41
+  r.d["none"]: duration overflow in long * 2000000
+
+3 errors, 0 warnings in 1 package (…)

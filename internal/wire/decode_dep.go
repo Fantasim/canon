@@ -55,7 +55,7 @@ func (r *run) branch(app *types.TypeAppType, fr *frame) (types.Type, *frame, boo
 	if !ok {
 		return nil, nil, false
 	}
-	if i, ok := armIndex(v); ok && fn.Arm(i) != nil {
+	if i, ok := value.ArmIndex(v); ok && fn.Arm(i) != nil {
 		return fn.Arm(i).Result, inner, true
 	}
 	r.misuse(ErrShape, app)
@@ -151,22 +151,6 @@ func (r *run) silent() (value.Value, bool) {
 		r.misuse(ErrShape, nil)
 	}
 	return nil, false
-}
-
-// armIndex is what a type-level match selects on: a member's index, false 0 and true 1.
-func armIndex(v value.Value) (int, bool) {
-	switch x := v.(type) {
-	case *value.Member:
-		return x.Index, true
-	case *value.CaseKind:
-		return x.Index, true
-	case *value.Bool:
-		if x.V {
-			return 1, true
-		}
-		return 0, true
-	}
-	return 0, false
 }
 
 // symbolText is a JSON value as a symbol: a string's text, else its compact JSON.

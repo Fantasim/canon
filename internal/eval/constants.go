@@ -41,7 +41,6 @@ const (
 	callOpen     = "("
 	callClose    = ")"
 	argSep       = ", "
-	underscore   = "_"
 	quote        = `"`
 	tripleQuote  = `"""`
 	rawPrefix    = "r"

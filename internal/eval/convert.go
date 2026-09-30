@@ -65,7 +65,7 @@ func (r *run) convertElements(v value.Value, c *check.Conversion, e syntax.Expr,
 		out := &value.Map{T: c.To, Keys: make([]value.Value, len(x.Keys)), Vals: make([]value.Value, len(x.Vals)), P: x.P}
 		for i, k := range x.Keys {
 			out.Keys[i] = r.convert(k, c.Key, e, at)
-			out.Vals[i] = r.convert(x.Vals[i], c.Inner, e, at.key(mapKey(k)))
+			out.Vals[i] = r.convert(x.Vals[i], c.Inner, e, at.mapKey(k, mapKeyType(c.To)))
 			if out.Keys[i] == nil || out.Vals[i] == nil {
 				return nil
 			}

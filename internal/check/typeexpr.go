@@ -182,15 +182,15 @@ func (c *checker) resolveList(tc *typeCtx, t *syntax.ListType) types.Type {
 	return c.refine(tc, l, t.Args)
 }
 
-// resolveKeyed is `[T] keyed by f`, f a key-typed field of the record T (TYPES.md §9.1).
+// resolveKeyed is `[T] keyed by f`, f a key-typed field of the record T, `R(args)` included (TYPES.md §2, §9.1).
 func (c *checker) resolveKeyed(tc *typeCtx, t *syntax.KeyedType) types.Type {
 	inner := c.resolveType(tc, t.List)
 	l, ok := listOf(inner)
 	if !ok || l.Elem.Base().Kind() == types.Error {
 		return inner
 	}
-	rec, ok := l.Elem.Base().(*types.RecordType)
-	if !ok {
+	rec := requiredRecord(l.Elem)
+	if rec == nil {
 		c.report(tc.env, diag.E3012.AtField(tc.env.span(t.Key), t.Key.Name))
 		return inner
 	}

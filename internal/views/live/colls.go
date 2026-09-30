@@ -24,13 +24,14 @@ type element struct {
 // Name is its key's text in a table, keyed list or map, else `#<n>` from 1, even for a copy of a
 // table entry in a plain list; Magic holds its `index` in a list, its `key` in a map.
 type Element struct {
-	v      value.Value
-	Name   string
-	Magic  render.Magic
-	form   elemForm
-	index  int
-	key    value.Key   // an entry's or a keyed element's
-	mapKey value.Value // a map entry's
+	v       value.Value
+	Name    string
+	Magic   render.Magic
+	form    elemForm
+	index   int
+	key     value.Key   // an entry's or a keyed element's
+	mapKey  value.Value // a map entry's
+	keyType types.Type  // the key type API.md P9 quotes a map entry's key by, nil for none
 }
 
 // elemForm is how an element's path segment is written (API.md P8).
@@ -82,7 +83,7 @@ func entryPath(e Element, at *verify.Path) *verify.Path { return at.Entry(e.key)
 
 func keyedPath(e Element, at *verify.Path) *verify.Path { return at.Key(e.key) }
 
-func mapPath(e Element, at *verify.Path) *verify.Path { return at.Key(verify.KeyOf(e.mapKey)) }
+func mapPath(e Element, at *verify.Path) *verify.Path { return at.MapKey(e.mapKey, e.keyType) }
 
 // isCollection reports a list, table or map value.
 func isCollection(v value.Value) bool {
@@ -93,13 +94,13 @@ func isCollection(v value.Value) bool {
 	return false
 }
 
-// collection heads each element of the collection v at at (API.md V6), with the cells of the
-// `text` columns of its table control ctl (V6a), equal titles disambiguated (S9).
-func (s *session) collection(v value.Value, at *verify.Path, ctl vm.Control) {
+// collection heads each element of the collection v declared dt at at (API.md V6), with the
+// cells of the `text` columns of its table control ctl (V6a), equal titles disambiguated (S9).
+func (s *session) collection(v value.Value, dt types.Type, at *verify.Path, ctl vm.Control) {
 	if s.stopped() {
 		return
 	}
-	els := elements(v, at)
+	els := elements(v, dt, at)
 	cols := textColumns(ctl)
 	out := make([]Heading, len(els))
 	seen := map[string]int{}
@@ -138,11 +139,18 @@ func (s *session) heading(e element, cols []string) (Heading, string) {
 	return out, s.sourceTitle(rec, e.Magic)
 }
 
-// elements are the elements of a list, table or map in collection order (API.md P8).
-func elements(v value.Value, at *verify.Path) []element {
+// elements are the elements of a list, table or map declared dt, in collection order; a map's
+// keys are quoted by the key type declared there, as verification and the rules quote them
+// (API.md P8, P9; log-2026-09-29 "P9 quoting rule").
+func elements(v value.Value, dt types.Type, at *verify.Path) []element {
+	var kt types.Type
+	if m, ok := v.(*value.Map); ok {
+		kt = verify.KeyTypeAt(dt, m)
+	}
 	var out []element
 	for i := range collLen(v) {
 		if e, ok := ElementAt(v, i); ok {
+			e.keyType = kt
 			out = append(out, element{Element: e, path: e.path(at)})
 		}
 	}

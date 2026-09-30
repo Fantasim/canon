@@ -399,13 +399,22 @@ func (c *checker) enclosingCandidates(tc *typeCtx, rec *types.RecordType) []*typ
 			continue
 		}
 		for _, f := range owner.Fields {
-			if elem, keyed, isColl := collectionElem(c.fieldType(f)); isColl && types.Identical(elem, rec) {
-				k := collKey{kind: types.CollField, owner: owner, path: f.Name}
-				out = append(out, c.intern(k, &types.Collection{Kind: types.CollField, Pkg: owner.Pkg, Owner: owner, FieldPath: []string{f.Name}, Elem: elem, KeyedBy: keyed}))
+			if coll := c.fieldCollection(owner, f); coll != nil && types.Identical(coll.Elem, rec) {
+				out = append(out, coll)
 			}
 		}
 	}
 	return out
+}
+
+// fieldCollection is the collection field f of owner holds, a table or keyed list; nil for none (TYPES.md §9.4).
+func (c *checker) fieldCollection(owner *types.RecordType, f *types.Field) *types.Collection {
+	elem, keyed, isColl := collectionElem(c.fieldType(f))
+	if !isColl {
+		return nil
+	}
+	k := collKey{kind: types.CollField, owner: owner, path: f.Name}
+	return c.intern(k, &types.Collection{Kind: types.CollField, Pkg: owner.Pkg, Owner: owner, FieldPath: []string{f.Name}, Elem: elem, KeyedBy: keyed})
 }
 
 // contains reports that a value of type r holds a d, itself included: through fields, lists,

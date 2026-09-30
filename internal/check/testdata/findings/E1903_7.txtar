@@ -1,0 +1,20 @@
+EVALUATION.md §11.1 (log-2026-09-29 M4 U6-r): a variant case that itself declares an input field; one environment variable must map to one field of one value, and a case is never reached through record fields alone.
+-- a/a.canon --
+package a
+
+local variant Source {
+  env {
+    key: input String? from env "KEY"
+  }
+  fixed {
+    key: String
+  }
+}
+
+/// The config.
+let src: Source = fixed { key: "k" }
+-- findings.txt --
+error[E1903]  a/a.canon:4:3
+  Source.env has input fields, so it must be reached from exactly one public value through record fields
+
+1 error, 0 warnings in 1 package (…)
