@@ -14,7 +14,6 @@ import (
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
-	"github.com/fantasim/canonlang/internal/wire"
 )
 
 // Loader reads every load form against a project's files, one per build run (WIRE.md §6).
@@ -25,6 +24,8 @@ type Loader struct {
 	Reused func(abs string) // when set, told each file a call takes from the Loader's cache, not FS
 	// Add, when set, puts a file read, of SHA-256 sum, into Set in place of Set.Add: a cache keeping unchanged files.
 	Add func(display, abs string, data []byte, sum [sha256.Size]byte) (*source.File, error)
+	// Kept, when set, is Add unread: sum is FS's, fixed per snapshot (project.SumFile); it notes a file as Add does.
+	Kept func(display, abs string, sum [sha256.Size]byte) (*source.File, bool)
 	// Globbed, when set, is told each load.dir pattern and its matches' displays, in match order (WIRE.md §10).
 	Globbed func(pattern string, matched []string)
 	// Parse, when set, parses a JSON source in place of jsonsrc.Parse: a cache of unchanged files' trees.
@@ -35,24 +36,6 @@ type Loader struct {
 	mu      sync.Mutex
 	headers map[string]*headerFile // by resolved absolute path
 	rec     *Inputs                // the inputs of the load being recorded (Recorded), nil for none
-}
-
-// Request is a load forced from one file: package, directory, site, bag, decoding host (DECISIONS 173).
-type Request struct {
-	Pkg     string
-	From    string
-	Span    source.Span
-	Bag     *diag.Bag
-	Host    wire.Host
-	Coll    *types.Collection // the let collection the load is the whole value of (wire.Decoder.Coll)
-	Outer   wire.Outer        // what the loaded type's arguments name around the load
-	Scratch bool              // Bag is thrown away (a test call's, a vector's): the Loader caches nothing for it
-	found   *[]*diag.Builder  // where a recorded load keeps its own findings (Recorded)
-}
-
-// decoder is the wire decoder of req's load.
-func (req Request) decoder(partial bool) *wire.Decoder {
-	return &wire.Decoder{Bag: req.Bag, Pkg: req.Pkg, Host: req.Host, Partial: partial, Coll: req.Coll, Outer: req.Outer}
 }
 
 // Load reads e against t; false after a finding, poisoning the value (EVALUATION.md §7).

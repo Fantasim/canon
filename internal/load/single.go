@@ -95,13 +95,13 @@ func (l *Loader) bare(ctx context.Context, req Request, e *syntax.LoadExpr, t ty
 
 // bareJSON decodes p as JSON against t, applying `at:` first when given (WIRE.md §6.3).
 func (l *Loader) bareJSON(ctx context.Context, req Request, c parsedCall, p project.Path, t types.Type) (value.Value, bool, error) {
-	src, data, ok := l.readSource(p.Display, p.Abs, req)
+	src, took, ok := l.takeSource(p.Display, p.Abs, req)
 	if !ok {
 		return nil, false, nil
 	}
 	root, err := l.parse(src, req.Bag)
 	if err != nil {
-		return nil, ReportEncoding(req.Bag, p.Display, data, err), nil
+		return nil, ReportEncoding(req.Bag, p.Display, took.raw(), err), nil
 	}
 	sel := wire.Selection{Node: root}
 	if c.at != nil {

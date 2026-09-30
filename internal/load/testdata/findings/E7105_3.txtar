@@ -1,0 +1,13 @@
+DECISIONS 163, WIRE.md §3: a bare load reports the raw-byte E7105 at a byte of the file as written, its
+\r\n line ends counted, not at a byte of the folded content.
+-- call --
+load("data/a.json")
+-- data/a.json --
+{"label":
+
+�}
+-- findings.txt --
+error[E7105]  data/a.json:3:1
+  data/a.json is not valid UTF-8 at byte 13
+
+1 error, 0 warnings in 1 package (…)

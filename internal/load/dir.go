@@ -148,13 +148,13 @@ func (l *Loader) readFiles(matches []matchFile, at *string, req Request) ([]wire
 
 // readFile reads, then parses one matched file into wire's per-file selection.
 func (l *Loader) readFile(m matchFile, at *string, req Request) (*wire.File, bool) {
-	src, data, ok := l.readSource(m.Display, m.Abs, req)
+	src, took, ok := l.takeSource(m.Display, m.Abs, req)
 	if !ok {
 		return nil, false
 	}
 	root, err := l.parse(src, req.Bag)
 	if err != nil {
-		return nil, ReportEncoding(req.Bag, m.Display, data, err)
+		return nil, ReportEncoding(req.Bag, m.Display, took.raw(), err)
 	}
 	sel := wire.Selection{Node: root}
 	if at != nil {

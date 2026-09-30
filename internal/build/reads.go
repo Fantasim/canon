@@ -268,6 +268,16 @@ func (l *readLog) EvalSymlinks(name string) (string, error) {
 	return project.EvalSymlinks(l.fs, name)
 }
 
+// SumFile is the SHA-256 the file system under the log knows of name, charged as ReadFile charges
+// it, so a load that takes the content unread reads as a cold one (project.SumFile, API.md S3, S5).
+func (l *readLog) SumFile(name string) (sha256Sum, bool, error) {
+	sum, ok, err := project.SumFile(l.fs, name)
+	if ok {
+		l.note(touch{abs: name}, true)
+	}
+	return sum, ok, err
+}
+
 func (l *readLog) note(t touch, read bool) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -300,15 +310,20 @@ func (l *readLog) enter(pkg string) string {
 }
 
 // flush tells the file system under the log, if it records reads, each file read since the
-// last flush, by the least display this run's loads gave it or else by display (API.md S3).
+// last flush, once, by the least display this run's loads gave it or else by display (API.md
+// S3): a file whose sum was known and that was read after all is told as one read (P18).
 func (l *readLog) flush() {
 	rec, ok := l.fs.(ReadRecorder)
 	l.mu.Lock()
 	pending := l.pending
 	l.pending = nil
 	out := make([]Read, 0, len(pending))
+	told := make(map[string]bool, len(pending))
 	for _, abs := range pending {
-		out = append(out, Read{Display: l.displayOf(abs), Abs: abs})
+		if !told[abs] {
+			told[abs] = true
+			out = append(out, Read{Display: l.displayOf(abs), Abs: abs})
+		}
 	}
 	l.mu.Unlock()
 	if ok && len(out) > 0 {
@@ -355,7 +370,7 @@ func (h *evalHost) track(pkg string) func() {
 		}
 		h.loader.FS = l
 		h.loader.Reused = func(abs string) { l.note(touch{abs: abs}, false) } // a cached header counts too (S5)
-		h.loader.Add = h.adder(l)
+		h.loader.Add, h.loader.Kept = h.adder(l), h.keeper(l)
 		h.loader.Globbed = l.globbed
 		if h.assets != nil {
 			h.assets.fs = l

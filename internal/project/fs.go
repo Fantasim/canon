@@ -30,6 +30,23 @@ func EvalSymlinks(fsys FS, name string) (string, error) {
 	return r.EvalSymlinks(name)
 }
 
+// summer is the optional FS capability of a file system that fixes each file's content while it
+// is read, as a workspace snapshot does (API.md S1): it knows the SHA-256 of a file without
+// handing out a copy of it (log-2026-09-29 P18).
+type summer interface {
+	SumFile(name string) (sha256Sum, bool, error)
+}
+
+// SumFile is the SHA-256 of what fsys.ReadFile(name) gives and that read's error, when fsys has a
+// method SumFile(name string) ([32]byte, bool, error) that knows it; false: read the file instead.
+func SumFile(fsys FS, name string) (sha256Sum, bool, error) {
+	s, ok := fsys.(summer)
+	if !ok {
+		return sha256Sum{}, false, nil
+	}
+	return s.SumFile(name)
+}
+
 // OS is the operating system's file system.
 func OS() FS { return osFS{} }
 

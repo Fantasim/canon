@@ -91,15 +91,19 @@ func (r *Reader) Parse(ctx context.Context, names []string) ([]*Unit, error) {
 // file reads one file and parses it into the set, unless Reuse holds the parse of that content.
 func (r *Reader) file(name string) (parsedFile, error) {
 	abs := Join(r.Dir, name)
-	data, err := r.FS.ReadFile(abs)
+	sum, data, err := r.content(abs)
 	if err != nil {
 		return parsedFile{}, fmt.Errorf(fmtWrap, err)
 	}
-	sum := sha256.Sum256(data)
 	r.Sums = append(r.Sums, FileSum{Path: name, Sum: sum})
 	if p, ok := r.Reuse.lookup(name, sum); ok {
 		r.replay(p)
 		return p, nil
+	}
+	if data == nil { // its sum was known: read it now
+		if data, err = r.FS.ReadFile(abs); err != nil {
+			return parsedFile{}, fmt.Errorf(fmtWrap, err)
+		}
 	}
 	src, err := r.Set.Add(name, abs, data)
 	if err != nil {
@@ -111,6 +115,24 @@ func (r *Reader) file(name string) (parsedFile, error) {
 	}
 	r.Reuse.store(name, sum, p)
 	return p, nil
+}
+
+// content is abs's SHA-256 and bytes; with Reuse, when the file system knows the sum, the bytes
+// are nil and not read, as Reuse may hold the parse of that content (log-2026-09-29 P18).
+func (r *Reader) content(abs string) (sha256Sum, []byte, error) {
+	if r.Reuse != nil {
+		if sum, ok, err := SumFile(r.FS, abs); ok && err == nil {
+			return sum, nil, nil
+		}
+	}
+	data, err := r.FS.ReadFile(abs)
+	if err != nil {
+		return sha256Sum{}, nil, err
+	}
+	if data == nil {
+		data = []byte{}
+	}
+	return sha256.Sum256(data), data, nil
 }
 
 // parse parses src with a bag of its own and, when it has findings and a package line, again

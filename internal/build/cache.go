@@ -140,11 +140,8 @@ func (g *cacheGen) file(display, abs string, content []byte) (*source.File, erro
 
 // fileSum is file of a content whose SHA-256 is sum.
 func (g *cacheGen) fileSum(name fileName, content []byte, sum [sha256.Size]byte) (*source.File, error) {
-	g.mu.Lock()
-	kept, ok := g.files[name]
-	g.mu.Unlock()
-	if ok && kept.sum == sum {
-		return kept.src, nil
+	if src, ok := g.keptOf(name, sum); ok {
+		return src, nil
 	}
 	src, err := g.set.Add(name.display, name.abs, content)
 	if err != nil {
@@ -154,6 +151,17 @@ func (g *cacheGen) fileSum(name fileName, content []byte, sum [sha256.Size]byte)
 	defer g.mu.Unlock()
 	g.files[name] = keptFile{sum: sum, src: src}
 	return src, nil
+}
+
+// keptOf is the generation's file of name when it holds content of SHA-256 sum, false for none.
+func (g *cacheGen) keptOf(name fileName, sum [sha256.Size]byte) (*source.File, bool) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	kept, ok := g.files[name]
+	if !ok || kept.sum != sum {
+		return nil, false
+	}
+	return kept.src, true
 }
 
 // badCache is the run's per-file Bad-node cache: the generation's, nil for a run without a cache.

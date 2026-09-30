@@ -141,6 +141,13 @@ func (s *snapFS) ReadFile(abs string) ([]byte, error) {
 	return slices.Clone(e.data), e.err
 }
 
+// SumFile is the SHA-256 of what ReadFile(abs) gives and its error: the same entry, fixed for the
+// snapshot, read on first use, without copying it (project.SumFile; log-2026-09-29 P18).
+func (s *snapFS) SumFile(abs string) ([sha256.Size]byte, bool, error) {
+	e := s.get(name{kind: kindFile, abs: abs}, s.readFile)
+	return e.sum.hash, true, e.err
+}
+
 func (s *snapFS) Stat(abs string) (fs.FileInfo, error) {
 	e := s.get(name{kind: kindStat, abs: abs}, s.stat)
 	return e.info, e.err

@@ -223,8 +223,17 @@ func (l *Loader) linkAgain(c fsCall) bool {
 	return textAnswer(real, err) == c.answer
 }
 
-// sourceAgain reads the file again; the same content enters the set as the load's did.
+// sourceAgain takes the file again, unread when the FS knows its SHA-256 and Kept keeps that
+// content (log-2026-09-29 P18), else read; the same content enters the set as the load's did.
 func (l *Loader) sourceAgain(c fsCall) bool {
+	if sum, known := l.fixedSum(c.name); known {
+		if sumAnswer(sum, nil) != c.answer {
+			return false
+		}
+		if _, ok := l.Kept(c.display, c.name, sum); ok {
+			return true
+		}
+	}
 	data, err := l.FS.ReadFile(c.name)
 	if err != nil {
 		return failure(err) == c.answer

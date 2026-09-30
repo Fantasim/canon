@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"maps"
-	"os"
-	"path/filepath"
 	"slices"
 	"strings"
 	"sync"
@@ -53,18 +51,7 @@ func (r *recFS) listing() string {
 // API.md S3, S5 (log-2026-09-29 M4 U8-r): one file reached through two displays is told and read
 // by the least display this run's loads used, whatever other runs load meanwhile.
 func TestLeastDisplayAcrossRuns(t *testing.T) {
-	dir := t.TempDir()
-	for _, name := range slices.Sorted(maps.Keys(twoDisplays)) {
-		if err := os.MkdirAll(filepath.Join(dir, filepath.Dir(name)), dirMode); err != nil {
-			t.Fatal(err)
-		}
-		if err := os.WriteFile(filepath.Join(dir, name), []byte(twoDisplays[name]), fileMode); err != nil {
-			t.Fatal(err)
-		}
-	}
-	if os.Symlink("data", filepath.Join(dir, "link")) != nil {
-		t.Skip("no symbolic links here")
-	}
+	dir := twoDisplaysDir(t)
 	base, cache := newEditFS(project.OS()), NewCache()
 	sels := [][]string{{"a"}, {"b"}, {"c"}, {"d"}, nil}
 	var wg sync.WaitGroup
@@ -74,7 +61,7 @@ func TestLeastDisplayAcrossRuns(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			for j, c := range []*Cache{cache, nil} {
-				got[i][j] = displaysOf(t, base, filepath.ToSlash(dir), c, sels[i%len(sels)])
+				got[i][j] = displaysOf(t, base, dir, c, sels[i%len(sels)])
 			}
 		}()
 	}

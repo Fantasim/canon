@@ -80,7 +80,7 @@ func (l *Loader) headerFileAt(p project.Path, req Request) (*headerFile, bool) {
 
 // readHeader reads and classifies p's #defines, reporting into req's bag (WIRE.md §6.8).
 func (l *Loader) readHeader(p project.Path, req Request) (*headerFile, bool) {
-	src, _, ok := l.readSource(p.Display, p.Abs, req) // Latin-1 bytes decode as themselves
+	src, _, ok := l.takeSource(p.Display, p.Abs, req) // Latin-1 bytes decode as themselves
 	if !ok {
 		return nil, false
 	}
