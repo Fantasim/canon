@@ -39,7 +39,7 @@ U1b format Move · U6 cli refs/--watch/explain inputs · U2b fmt --json-sources 
 lineages · U5b api edit surface (E17–E21, O5, drafts, Op JSON, LockCheck) · P12 stage B/C memos on eval
 entries · B1 Recheck folds on the program's Info. Memo architecture: ADR-0011. [items] warm p95 275 ms.
 
-## Wave 3b (in flight, launched 2026-09-30)
+## Wave 3b (staging on `m4-wave3b`: P13b, P13c, U7a, B8, B3, U7b, B6, B2 passed; B7 in fix round; B10 next)
 
 - B2 one budget counter per invocation (DECISIONS 104; log M4 B1) [opus]
 - P13b `lock` merge sorted once [sonnet] · P13c `i18n` bad-node walk not repeated per run [sonnet]
@@ -54,7 +54,7 @@ entries · B1 Recheck folds on the program's Info. Memo architecture: ADR-0011. 
       B9 a Duration not whole in its `@json(unit:)` is a ValueError, not ErrInternal; the E15 inverse on a
       ref discriminant; literal keys of dependent types (TYPES §11.4) [opus]
 
-## Wave 3c (after 3b)
+## Wave 3c (P13a, P13d, B4, B5 launched on `m4-wave3b`; cleanup unit after 3b lands)
 
 - P13a `build/hosts.go` listings as maps · P13d `check` `Info.cloned` allocation [opus]
 - B4 F1 Path for a finding in a top-level `let` initializer (knownbug test from U7a) [sonnet]
