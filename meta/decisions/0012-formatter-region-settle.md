@@ -22,12 +22,16 @@ bytes: a Rewrite equals what the whole-file path prints.
 - **Why one section suffices.** FORMATTER §6.1's single-line bit comes from source newlines, so in
   canonical text every broken brace list is forced. Forced and hard propagate up through `cat`,
   `indent`, `group`, `rhs` and `ifBreak`, so each ancestor of a broken list's item prints broken
-  without measuring. Such a section therefore lies between BREAK-mode line breaks that no `fits`
-  look-ahead crosses, and a newline resets the column. Items the focus skips only remove flags,
+  without measuring. Such a section, like a top-level declaration between hard lines, therefore lies
+  between BREAK-mode line breaks that no `fits` look-ahead crosses, and a newline resets the
+  column; a section a joined comment follows is excluded. Items the focus skips only remove flags,
   which is conservative. The formatter never aligns columns (DECISIONS 18).
 - **Run-time guards.** Each settle turn checks that the old section renders to exactly its own
   bytes and that tokens, dropped commas (DECISIONS 211) and comments are equal outside the item.
-  Any doubt falls back to the whole-file step for that turn.
+  Any doubt falls back to the whole-file step for that turn. By the argument above, the
+  f-section, alignment and line checks never reject on reachable input (Rewrite judges only a
+  canonical file): they are a safety net, pinned by tests on non-canonical files at the `judge`
+  level and by `TestSectionsPrintAlone` over every section of the examples, corpus and table.
 - **Differential tests.** `checkRewrite`, `FuzzRewrite` and `FuzzRewriteAround` compare the region
   path with `RewriteWhole` byte for byte, and mutants of every guard fail a committed test.
 
