@@ -33,7 +33,14 @@
       "Bash(make test*)",
       "Bash(make vet*)",
       "Bash(GOTOOLCHAIN=local make *)",
-      "Bash(GOTOOLCHAIN=local go *)"
+      "Bash(GOTOOLCHAIN=local go *)",
+      "Bash(git merge *)",
+      "Bash(git push -u origin claude/*)",
+      "Bash(git push origin claude/*)",
+      "Bash(git fetch origin*)",
+      "Bash(gh run list*)",
+      "Bash(gh run view*)",
+      "Bash(gh run watch*)"
     ],
     "deny": [
       "Edit(/../../Resource/**)",
