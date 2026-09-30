@@ -157,7 +157,9 @@ On Windows, every path given to the API (`Open`'s root, `Options.Roots`, overlay
 follows one rule: `\` is a separator like `/`; a rooted path without a volume (`/law/a.canon`)
 takes the project directory's volume; cleaning keeps the volume and never climbs above it; the
 drive letter is written upper-case (the OS ignores its case; letter case stays significant in
-every name, WIRE.md §2.1). UNC project directories (`//server/share/…`) are supported.
+every name, WIRE.md §2.1). UNC project directories (`//server/share/…`) are supported; device
+paths (`//?/…`, `//./…`) and a bare `//server` with no share are not volumes: they are rooted names
+on the project directory's volume.
 
 The OS `WriteFile` stages the content in a temporary file of the target's directory (a hidden
 name holding the target's base name, so `Recover` can clear leftovers, §10.3), syncs it and

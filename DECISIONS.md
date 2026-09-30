@@ -2107,10 +2107,11 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      in every path given to the API (`Open`, `Options.Roots`, overlays); a rooted path without a
      volume takes the project's volume; cleaning keeps the volume and never climbs above it; the
      drive letter is upper-cased (the OS ignores its case; WIRE §2.1's case rule is about names);
-     UNC project directories are supported; overlays are keyed by the display form. The project
+     UNC project directories are supported (device paths `//?/`, `//./` and a bare `//server` are
+     not volumes, only rooted names); overlays are keyed by the display form. The project
      root's own ancestors never count as links (macOS's `/var` → `/private/var`). Reason:
      log-2026-09-29 M4 CI 36669002215, B12, B12-r, B12-r2 (one implementation, `project.Paths`;
-     UNC completed by B13).
+     UNC completed by B13; B13-r).
 
 242. **`Watch`: what is watched and what makes an event (API.md §12).** Starting checks every
      package once to learn the read sets. The watcher follows OS notifications (the OS FS, or an FS
