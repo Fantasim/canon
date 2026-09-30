@@ -29,6 +29,11 @@ and each reuse is a place where incremental and cold can drift apart.
   node with a value it read. E4401 always comes from a real run.
 - **Kept check-time folds replay on the program's own `Info`**, so the folder's evaluator, its
   counter and const cache continue as in a cold run (B1).
+- **Derived syntax memos (amended by P17).** A memo of data derived only from one immutable
+  `*syntax.File` (log-2026-09-29 P13c-r) may be process-wide, outside the project cache and its
+  byte bound, if it is keyed by a weak pointer, dropped when its file is collected, never ranged
+  over and never holds analysis state (`Info`, types, values). Its size then follows the live
+  files; precedent `gen/view`'s field cache.
 - **Gate.** Every incremental test compares the full dump (findings, JSON, view model, budget
   charges) with a cold analysis, over the corpora and over every budget from 1 to the cold need.
 
