@@ -61,6 +61,7 @@ and each reuse is a place where incremental and cold can drift apart.
 The warm `[items]` re-check of the 7,000-entry benchmark went from 522 to 275 ms p95 (this
 machine); the rest lies outside the memo (asset listing, lock merge, i18n, the Recheck clone). The
 invariants the replay rests on are rulings, not spec text (log-2026-09-29 M4 U10, P3-r, P12-r, B1):
-completion order for stage C's `alone()`, the token rule, the retag log for the lazy path index.
+read edges for stage C's `alone()` (a value holds part of another only if its evaluation or its
+stage-B run read it, directly or through untraversed values; P18, which replaced completion order), the token rule, the retag log for the lazy path index.
 A change to evaluation order or identity tagging must re-examine them; the ≡-cold gates are what
 catches a miss.
