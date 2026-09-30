@@ -297,6 +297,7 @@ type assets struct {
 	host   *evalHost
 	dirs   map[string]dirListing
 	shown  map[string][]listRef // each directory listed, by the ways asset roots reached it (listAt)
+	places assetPlaces          // each root and folder placed, once per run (assetplaces.go)
 }
 
 // dirListing is one directory's own file and subdirectory names, listed once.
@@ -305,21 +306,24 @@ type dirListing struct {
 	subs  map[string]bool
 }
 
-// Exists resolves root, then walks name under it one folder at a time (WIRE.md §2.2, TYPES.md §13.4).
+// Exists walks name under root one listed folder at a time (WIRE.md §2.2, TYPES.md §13.4).
 func (a *assets) Exists(root, from, name string) (string, bool) {
-	dir, ok := a.layout.Resolve(root, from, source.Span{}, diag.NewBag(nil, ""))
+	dir, ok := a.places.root(a.layout, root, from)
 	if !ok {
 		return root, false
 	}
-	segs := strings.Split(name, pathSep)
-	at := dir
-	for _, seg := range segs[:len(segs)-1] {
-		if !a.listAt(at, root, from).subs[seg] {
+	at, rest := dir, name
+	for {
+		seg, more, nested := strings.Cut(rest, pathSep)
+		l := a.listAt(at, root, from)
+		if !nested {
+			return dir.Display, l.files[seg]
+		}
+		if !l.subs[seg] {
 			return dir.Display, false
 		}
-		at = project.Path{Display: path.Join(at.Display, seg), Abs: project.Join(at.Abs, seg)}
+		at, rest = a.places.folder(at, seg), more
 	}
-	return dir.Display, a.listAt(at, root, from).files[segs[len(segs)-1]]
 }
 
 // list is the file and subdirectory names of dir, listed once; neither when it does not exist.

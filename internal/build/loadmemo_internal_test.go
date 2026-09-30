@@ -19,6 +19,8 @@ const (
 	loadEntryFile = "a/e1.canon"
 	loadItemFile  = "resource/items/i1.json"
 	loadSteps     = 4
+	loadHeader    = "resource/codes.h"
+	loadDuplicate = "#define C_ONE 1\n#define C_ONE 2\n"
 	budgetFormat  = "project acme {\n  canon: \"0.1\"\n  budget: %d\n\n  roots {\n    resource: \"resource\"\n  }\n}\n"
 )
 
@@ -252,5 +254,37 @@ func TestCacheLineagesBounded(t *testing.T) {
 	full := g.advance(nil, &head{key: heads[1].key, epoch: uint64(len(heads) + 1)})
 	if !slices.Equal(gone, []uint64{heads[0].epoch}) || !slices.Equal(full, []uint64{next.epoch}) {
 		t.Errorf("epochs no head keeps: %v evicted, %v replaced", gone, full)
+	}
+}
+
+// IMPLEMENTATION-PLAN §7.6, WIRE.md §6.8: a header is classified again only once edited, warm as cold.
+func TestIncrementalHeaderKept(t *testing.T) {
+	z := archiveAnalyzer(t, loadFormsCase)
+	m := z.fs.base.(roFS)
+	header := strings.TrimPrefix(path.Join(archiveRoot, loadHeader), "/")
+	for _, st := range []struct {
+		name  string
+		text  string
+		made  int
+		dupes int // the E7102 each run reports: never kept, so reported again on every run
+	}{
+		{"first", "", 1, 0},
+		{"unchanged", "", 1, 0},
+		{"header edited", "#define C_ONE 1\n#define C_TWO 2\n#define C_THREE 3\n", 2, 0},
+		{"unchanged again", "", 2, 0},
+		{"duplicate", loadDuplicate, 2, 1},
+		{"duplicate again", loadDuplicate, 2, 1},
+	} {
+		if st.text != "" {
+			m[header] = srcFile(st.text)
+		}
+		warm, cold := z.pair(t)
+		same(t, st.name, warm, cold)
+		if made := z.cache.gen.headers.Made(); made != st.made {
+			t.Errorf("%s: %d header classifications kept, want %d", st.name, made, st.made)
+		}
+		if code := diag.E7102.Def().Code; countCode(warm, code) != st.dupes {
+			t.Errorf("%s: warm reports %d %s, want %d", st.name, countCode(warm, code), code, st.dupes)
+		}
 	}
 }

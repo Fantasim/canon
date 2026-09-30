@@ -84,8 +84,8 @@ func (l *Loader) readHeader(p project.Path, req Request) (*headerFile, bool) {
 	if !ok {
 		return nil, false
 	}
-	defs, skipped, defOK := readDefines(src, req)
-	return &headerFile{defs: defs, skipped: skipped, ok: defOK, path: src.Path, req: req, prefixes: map[string]bool{}}, true
+	c := l.Headers.classify(src, req)
+	return &headerFile{defs: c.defs, skipped: c.skipped, ok: c.ok, path: src.Path, req: req, prefixes: map[string]bool{}}, true
 }
 
 // reportHeaderSkips is W7101, counting every skip matching a call's prefix given (WIRE.md §6.8).

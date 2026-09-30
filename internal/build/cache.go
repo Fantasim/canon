@@ -6,6 +6,7 @@ import (
 
 	"github.com/fantasim/canonlang/internal/eval"
 	"github.com/fantasim/canonlang/internal/i18n"
+	"github.com/fantasim/canonlang/internal/load"
 	"github.com/fantasim/canonlang/internal/project"
 	"github.com/fantasim/canonlang/internal/rules"
 	"github.com/fantasim/canonlang/internal/source"
@@ -40,6 +41,7 @@ type cacheGen struct {
 	rix      rules.IndexCache
 	bad      i18n.BadCache // which files hold a Bad node, for phase 2's i18n check
 	json     jsonTrees
+	headers  load.Headers
 }
 
 // fileName is a file the cache keeps by name: its display path and absolute name.

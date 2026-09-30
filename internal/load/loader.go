@@ -29,6 +29,8 @@ type Loader struct {
 	Globbed func(pattern string, matched []string)
 	// Parse, when set, parses a JSON source in place of jsonsrc.Parse: a cache of unchanged files' trees.
 	Parse func(src *source.File, bag *diag.Bag) (*jsonsrc.Node, error)
+	// Headers, when set, keeps each load.defines header's classification while its file is the same.
+	Headers *Headers
 
 	mu      sync.Mutex
 	headers map[string]*headerFile // by resolved absolute path

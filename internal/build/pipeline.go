@@ -168,7 +168,7 @@ func (r *run) newHost(bags check.Bags) {
 	r.host = &evalHost{prog: r.prog, bags: bags, index: r.vix, fold: r.fold, sites: r.loadSites()}
 	r.host.loader = &load.Loader{FS: r.p.fs, Layout: r.s.layout, Set: r.s.set}
 	if g := r.s.gen; g != nil {
-		r.host.loader.Parse = g.json.parse
+		r.host.loader.Parse, r.host.loader.Headers = g.json.parse, &g.headers
 	}
 	r.ev = eval.New(r.prog, r.host, bags, r.opt)
 	if !r.ev.UseFolder(r.fold) { // one counter per invocation, phase 2's folds on it (DECISIONS 104)
