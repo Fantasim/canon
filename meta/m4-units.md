@@ -47,13 +47,17 @@ dependent symbols in JSON edits · B8 lock uniqueness · B4 F1 finding paths · 
 gate-found edit bugs · P13a, P13d guard tests. One green `make check`; CI run 36669002215 on
 `claude/m4-ci`.
 
-## Wave 4 (in flight)
+## Wave 4 — on `main` (`9776183`..`b86648c`)
 
-- B11 `@json(pairs:)` lists edited whole; nested dependent-keyed map symbol keys in Undo [opus]
-- Cleanup-A (semantic: E1903, keyed applied records, P9, the 216 neighbour, U13 leftovers, U5b nits) [opus]
-- Cleanup-B (mechanical: Consumes enforcement, FileCache test, B1 nits, "dir", benchgen canonical, dups) [sonnet]
-- B12 CI portability: macOS symlinked root, Windows memFS roots, symlink skip, overlay keys [opus]
-- B13 UNC completion: project.Join/DirOf in workspace, load, edit, cli (after the edit units) [sonnet]
+B11 pairs lists written whole, items in their field's wire units, M9 typed numbers per real file (readings on
+`build.Analysis`) · B12 Windows/macOS portability, one path rule (`project.Paths`) · Cleanup-A (E1903 cases,
+keyed applied records, one P9 rule, per-instance key refs, the 216 comma region) · Cleanup-B (Consumes
+enforced, B1 guard, canonical benchgen) · the spec sync (DECISIONS 230–251). One green `make check`;
+CI 36674605430 green on all three platforms (wave-4 subset); `claude/m4-ci2` pushed.
+
+## Wave 5 (in flight)
+
+- B13 UNC completion in workspace, load, edit, cli [sonnet]
 
 ## Final pass
 
