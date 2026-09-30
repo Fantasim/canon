@@ -3,6 +3,7 @@ package format_test
 import (
 	"errors"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/fantasim/canonlang/internal/format"
@@ -36,6 +37,35 @@ func FuzzFormat(f *testing.F) {
 			}
 			checkFormatted(t, filepath.ToSlash(name), in, out)
 		}
+	})
+}
+
+// aroundTexts are new texts FuzzRewriteAround starts from: a number, strings short and wide, a
+// record written loosely, a list, a comment that ends its line, reserved words and a plain one.
+var aroundTexts = append([]string{"7", `"x"`, `"` + strings.Repeat("w", format.Width) + `"`, "{a:1,b:[2,3]}", "[1, 2]", "1 // c"}, wordTexts...)
+
+// FuzzRewriteAround checks that Rewrite, judged around the bytes it changes, is byte for byte
+// Rewrite judged on the whole file, for any text of any node.
+func FuzzRewriteAround(f *testing.F) {
+	// FORMATTER.md §13, IMPLEMENTATION-PLAN §7.7
+	inputs := append(exampleFiles(f), example{path: "monster/monster.canon", data: monsterText(f)})
+	for i, ex := range inputs {
+		for j, text := range aroundTexts {
+			f.Add(ex.data, uint16(i*len(aroundTexts)+j), text)
+		}
+	}
+	f.Fuzz(func(t *testing.T, data []byte, pick uint16, text string) {
+		out, err := formatText(t, "a/a.canon", data)
+		if err != nil {
+			return
+		}
+		tree := parse(t, "a/a.canon", out).file
+		all := items(tree)
+		if len(all) == 0 {
+			return
+		}
+		changes := []format.Change{{Kind: format.Replace, Node: all[int(pick)%len(all)], Text: text}}
+		rewriteChecked(t, "a/a.canon", tree, changes)
 	})
 }
 

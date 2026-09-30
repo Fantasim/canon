@@ -68,6 +68,20 @@ func ExampleNode() {
 	// Output: "{\n    a: 1\n  }" "{ a: 1 }"
 }
 
+// Canonical tells a tree already in the canonical layout, judged once per tree.
+func ExampleCanonical() {
+	var fs source.FileSet
+	good, _ := fs.Add("a/a.canon", "/p/a/a.canon", []byte("package a\n\nconst A = 1\n"))
+	loose, _ := fs.Add("a/b.canon", "/p/a/b.canon", []byte("package a\nconst A=1\n"))
+	for _, src := range []*source.File{good, loose} {
+		fixed, err := format.Canonical(syntax.Parse(src, syntax.FileSource, diag.NewBag(&fs, "a")))
+		fmt.Println(src.Path, fixed, err)
+	}
+	// Output:
+	// a/a.canon true <nil>
+	// a/b.canon false <nil>
+}
+
 // Fresh prints a file the edit API creates.
 func ExampleFresh() {
 	var fs source.FileSet

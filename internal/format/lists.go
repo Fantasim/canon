@@ -23,8 +23,10 @@ func entries[N syntax.Node](b *builder, ns []N) []entry {
 	for i, n := range ns {
 		joins := joinsLine[b.f.Tokens[n.First()].Kind]
 		endJoin := cannotEndItem[b.f.Tokens[n.Last()].Kind]
-		body, trail := b.parts(n, true)
-		out[i] = entry{n: n, d: body, trail: trail, gap: b.gap(n.First()), joins: joins, endJoin: endJoin, kept: b.keeps(n.Last())}
+		out[i] = entry{n: n, gap: b.gap(n.First()), joins: joins, endJoin: endJoin, kept: b.keeps(n.Last())}
+		if !b.skips(n) {
+			out[i].d, out[i].trail = b.parts(n, true)
+		}
 	}
 	return out
 }
@@ -75,27 +77,40 @@ func (b *builder) braceParts(open, close syntax.Tok, items []entry) *doc {
 // the list is empty and holds no comment.
 func (b *builder) listBody(close syntax.Tok, items []entry) *doc {
 	var ds []*doc
-	comma := text(syntax.TokComma.String())
-	for i, e := range items {
-		ds = append(ds, lineDoc)
-		if e.gap && i > 0 {
-			ds = append(ds, blankDoc)
-		}
-		switch {
-		case i == len(items)-1 || e.kept:
-			ds = append(ds, e.d, e.trail)
-		case e.endJoin || items[i+1].joins:
-			ds = append(ds, e.d, comma, e.trail)
-		default:
-			ds = append(ds, e.d, e.trail, ifBreak(emptyDoc, comma))
-		}
-	}
 	ends := b.closing(close, len(items) > 0)
+	for i, e := range items {
+		if e.d == nil { // left unbuilt by a focus
+			continue
+		}
+		part := itemPart(items, i)
+		ds = append(ds, lineDoc, part)
+		b.notePart(e.n, part, i == len(items)-1 && joinedAfter(ends))
+	}
 	if len(ds) == 0 && ends == nil {
 		return nil
 	}
 	return indent(append(ds, ends)...)
 }
+
+// itemPart is item i of a brace list after the line break before it: a blank line kept, its
+// text, its comments and the comma DECISIONS 211 wants after it when the list breaks.
+func itemPart(items []entry, i int) *doc {
+	e := items[i]
+	var gap *doc
+	if e.gap && i > 0 {
+		gap = blankDoc
+	}
+	switch {
+	case i == len(items)-1 || e.kept:
+		return cat(gap, e.d, e.trail)
+	case e.endJoin || items[i+1].joins:
+		return cat(gap, e.d, commaDoc, e.trail)
+	}
+	return cat(gap, e.d, e.trail, ifBreak(emptyDoc, commaDoc))
+}
+
+// commaDoc is the comma a list writes between two of its items; documents are never changed.
+var commaDoc = text(syntax.TokComma.String())
 
 // closing is the own-line comments before a closing bracket, printed with the list's items;
 // the first keeps the blank line before it when items precede it.

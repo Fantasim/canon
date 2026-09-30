@@ -114,6 +114,13 @@ func CanonicalJSON(s *Snapshot, display string, raw []byte) ([]byte, error) {
 	return a.canonical(display, raw, true)
 }
 
+// CanonicalSource is raw, the .canon source at display, in the canonical layout M9 judges it
+// against in s (API.md M9).
+func CanonicalSource(s *Snapshot, display string, raw []byte) ([]byte, error) {
+	a := &applier{snap: s}
+	return a.canonical(display, raw, false)
+}
+
 // JSONSources are the JSON sources the roots of s read, display path to the content read.
 func JSONSources(s *Snapshot) map[string][]byte {
 	out := map[string][]byte{}

@@ -26,7 +26,8 @@ func (b *builder) file() *doc {
 	b.idx = newIndex() // the header holds no item §13 edits (log-2026-09-29 M4 U1r)
 	items := slices.Concat(entries(b, f.Decls), entries(b, f.Amends), entries(b, f.Entries))
 	b.idx.top(nodesOf(items))
-	return cat(head, imports, b.topItems(items), b.eof(len(items) == 0))
+	eof := b.eof(len(items) == 0)
+	return cat(head, imports, b.topItems(items, joinedAfter(eof)), eof)
 }
 
 // keyword is a keyword token that starts a line of its own, its own-line comments before it.
@@ -88,15 +89,20 @@ func (b *builder) importDecl(n *syntax.Import) *doc {
 }
 
 // topItems are the declarations of a file, one per line, after a blank line; a blank line
-// between two of them is kept.
-func (b *builder) topItems(items []entry) *doc {
+// between two of them is kept. joined: the file's closing comments start on the last one's line.
+func (b *builder) topItems(items []entry, joined bool) *doc {
 	var ds []*doc
 	for i, e := range items {
-		ds = append(ds, hardlineDoc)
-		if e.gap || i == 0 {
-			ds = append(ds, blankDoc)
+		if e.d == nil { // left unbuilt by a focus
+			continue
 		}
-		ds = append(ds, e.d, e.trail)
+		var gap *doc
+		if e.gap || i == 0 {
+			gap = blankDoc
+		}
+		part := cat(gap, e.d, e.trail)
+		ds = append(ds, hardlineDoc, part)
+		b.notePart(e.n, part, i == len(items)-1 && joined)
 	}
 	return cat(ds...)
 }

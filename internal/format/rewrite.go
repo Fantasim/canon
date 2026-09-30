@@ -1,7 +1,6 @@
 package format
 
 import (
-	"bytes"
 	"cmp"
 	"fmt"
 	"slices"
@@ -52,23 +51,52 @@ type span struct{ lo, hi int }
 // wrap ErrSyntax, ErrLayout, ErrChange, ErrText or ErrUnsettled.
 func Rewrite(f *syntax.File, changes []Change) ([]byte, error) {
 	// FORMATTER.md §13, API.md M5
-	if err := usable(f); err != nil {
-		return nil, err
+	l := layouts.of(f)
+	if l.err != nil {
+		return nil, l.err
 	}
 	b := newBuilder(f)
-	canonical := bytes.Equal(render(b.file()), f.Src.Content)
+	hull, around := replaced(f, changes)
+	if around = around && l.canonical; around {
+		b.focusOn(hull)
+	}
+	b.file()
+	return rewriteWith(b, changes, l.canonical, around)
+}
+
+// rewriteWith is Rewrite on b's file, whose items b has built, all of them or, around, the ones
+// the changes touch; canonical, the file is a fixed point before them.
+func rewriteWith(b *builder, changes []Change, canonical, around bool) ([]byte, error) {
 	edits, err := b.edits(changes)
 	if err != nil {
 		return nil, err
 	}
-	content, marks, err := apply(f.Src.Content, edits)
+	content, marks, err := apply(b.f.Src.Content, edits)
 	if err != nil {
 		return nil, err
 	}
-	if content, err = reprintUnits(f, content, marks); err != nil || !canonical {
+	var gb *builder
+	if content, gb, err = reprintUnits(b.f, content, marks, around); err != nil || !canonical {
 		return content, err
 	}
-	return settle(f, content)
+	if around {
+		return settleLoop(b.f, content, gb.f, (&aroundOf{f: b.f, fb: b, gb: gb}).step)
+	}
+	return settleLoop(b.f, content, nil, settleStep)
+}
+
+// replaced is the bytes every change holds, true when each is a Replace of a node of f, a file
+// with declarations: Rewrite then builds only the items around them.
+func replaced(f *syntax.File, changes []Change) (span, bool) {
+	hull := span{len(f.Src.Content), 0}
+	for _, c := range changes {
+		if c.Kind != Replace || !holds(f, c.Node) {
+			return hull, false
+		}
+		hull.lo = min(hull.lo, int(f.Tokens[c.Node.First()].Start))
+		hull.hi = max(hull.hi, int(f.Tokens[c.Node.Last()].End))
+	}
+	return hull, len(changes) > 0 && f.FileKind != syntax.FileProject
 }
 
 // edits are the text changes of changes: Replace and Retire alone, Insert, Remove and Move
@@ -126,21 +154,25 @@ func apply(src []byte, edits []edit) ([]byte, []mark, error) {
 
 // reprintUnits checks that each new text parses as the node it stands for, then re-prints the
 // item holding each unit (steps 1 to 3); an item inside another re-printed one is left to it.
-func reprintUnits(f *syntax.File, content []byte, marks []mark) ([]byte, error) {
+// Around, only the items holding a mark are built. The builder returned is content's, before.
+func reprintUnits(f *syntax.File, content []byte, marks []mark, around bool) ([]byte, *builder, error) {
 	g, err := reparse(f, content)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	b := newBuilder(g)
 	b.fresh = func(t syntax.Tok) bool {
 		at := int(g.Tokens[t].Start)
 		return slices.ContainsFunc(marks, func(m mark) bool { return m.fresh && m.lo <= at && at < m.hi })
 	}
+	if around && len(marks) > 0 {
+		b.focusOn(hullOf(marks))
+	}
 	b.file()
 	var out []splice
 	for _, m := range marks {
 		if m.want.check && !b.stands(m) {
-			return nil, fmt.Errorf("%w: at offset %d", ErrText, m.lo)
+			return nil, nil, fmt.Errorf("%w: at offset %d", ErrText, m.lo)
 		}
 		if n := b.unitAt(m.lo, m.hi); m.unit && n != nil {
 			out = append(out, b.unit(n))
@@ -156,7 +188,16 @@ func reprintUnits(f *syntax.File, content []byte, marks []mark) ([]byte, error) 
 		buf = append(append(buf, content[last:s.lo]...), s.text...)
 		last = s.hi
 	}
-	return append(buf, content[last:]...), nil
+	return append(buf, content[last:]...), b, nil
+}
+
+// hullOf is the bytes from the first mark to the end of the last.
+func hullOf(marks []mark) span {
+	h := span{marks[0].lo, marks[0].hi}
+	for _, m := range marks[1:] {
+		h.lo, h.hi = min(h.lo, m.lo), max(h.hi, m.hi)
+	}
+	return h
 }
 
 // replaceEdit writes Text over Node, which an item must hold: only items are edited.

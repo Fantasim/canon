@@ -92,7 +92,10 @@ type splice struct {
 
 // reprint lays item n out from its current column, the rest of its last line counted by fits.
 func (b *builder) reprint(n syntax.Node) splice {
-	// FORMATTER.md §13 steps 1 and 2
+	// FORMATTER.md §13 steps 1 and 2; every item of n is built, whatever the focus
+	focus := b.focus
+	b.focus = nil
+	defer func() { b.focus = focus }()
 	src := b.f.Src.Content
 	lo, hi := b.span(n)
 	start := lineStart(src, lo)

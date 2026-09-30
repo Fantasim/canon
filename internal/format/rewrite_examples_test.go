@@ -71,7 +71,7 @@ func nodes[N syntax.Node](ns []N) []syntax.Node {
 // ErrText, which the caller judges; any other error fails the test.
 func checkRewrite(t *testing.T, ex example, f *syntax.File, n syntax.Node, c format.Change) error {
 	t.Helper()
-	out, err := format.Rewrite(f, []format.Change{c})
+	out, err := rewriteChecked(t, ex.path, f, []format.Change{c})
 	if errors.Is(err, format.ErrChange) || errors.Is(err, format.ErrText) {
 		return err
 	}

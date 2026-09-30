@@ -22,6 +22,7 @@ type builder struct {
 	idx       *index
 	fresh     func(syntax.Tok) bool
 	comments  []span // every comment of the file, by offset, once cuts needs them
+	focus     *focus // set: the items wholly outside its bytes are left unbuilt
 }
 
 func newBuilder(f *syntax.File) *builder {

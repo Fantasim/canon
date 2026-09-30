@@ -119,7 +119,8 @@ func (a *applier) normalize(files map[string]bool) (bool, error) {
 }
 
 // canonical is raw in canonical layout, judged on the raw bytes: FileSet folds CRLF, so a raw
-// carriage return is itself a layout to normalize (log-2026-09-29 M4, M9 on raw bytes).
+// carriage return is itself a layout to normalize (log-2026-09-29 M4, M9 on raw bytes). A .canon
+// file whose tree holds raw exactly takes the formatter's verdict kept for that tree.
 func (a *applier) canonical(display string, raw []byte, isJSON bool) ([]byte, error) {
 	var fs source.FileSet
 	src, err := fs.Add(display, display, raw)
@@ -138,6 +139,11 @@ func (a *applier) canonical(display string, raw []byte, isJSON bool) ([]byte, er
 	f := a.snap.tree(display)
 	if f == nil {
 		return nil, errNoTree
+	}
+	if bytes.Equal(f.Src.Content, raw) {
+		if fixed, err := format.Canonical(f); err == nil && fixed {
+			return raw, nil
+		}
 	}
 	return format.Source(src, parseKind(f), bag)
 }

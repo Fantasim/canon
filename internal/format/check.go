@@ -94,49 +94,6 @@ func (b *builder) meets(n syntax.Node, want expect) bool {
 	return want.like.Kind() == n.Kind()
 }
 
-// settle re-prints the item holding the first byte that differs from the formatter's layout,
-// or the item holding the last one re-printed when that did not help, until content is a fixed
-// point (API.md M5).
-func settle(f *syntax.File, content []byte) ([]byte, error) {
-	last, tries := span{-1, -1}, len(f.Tokens)
-	for ; tries >= 0; tries-- {
-		g, err := reparse(f, content)
-		if err != nil {
-			return nil, err
-		}
-		b := newBuilder(g)
-		want := render(b.file())
-		if bytes.Equal(want, content) {
-			return content, nil
-		}
-		at := commonPrefix(content, want)
-		n := b.unitAt(at, at)
-		for n != nil && within(b.span(n))(last) {
-			n = b.outer(n)
-		}
-		if n == nil {
-			return nil, fmt.Errorf("%w: offset %d", ErrUnsettled, at)
-		}
-		s := b.reprint(n)
-		content = slices.Concat(content[:s.lo], []byte(s.text), content[s.hi:])
-		last = span{s.lo, s.lo + len(s.text)}
-	}
-	return nil, ErrUnsettled
-}
-
-// within reports, for a node's span, whether a span holds it.
-func within(lo, hi int) func(span) bool {
-	return func(s span) bool { return s.lo <= lo && hi <= s.hi }
-}
-
-func commonPrefix(a, b []byte) int {
-	n := 0
-	for n < len(a) && n < len(b) && a[n] == b[n] {
-		n++
-	}
-	return n
-}
-
 // holds reports a node whose tokens are tokens of f.
 func holds(f *syntax.File, n syntax.Node) bool {
 	return !absent(n) && n.First() > syntax.NoTok && n.First() <= n.Last() && int(n.Last()) < len(f.Tokens)
