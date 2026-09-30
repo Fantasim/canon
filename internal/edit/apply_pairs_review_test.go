@@ -127,7 +127,7 @@ func TestPairsSlotValues(t *testing.T) {
 	}
 }
 
-// API.md M1-M4, M6 (log-2026-09-29 M4 B11-r): only new, changed or removed slot members are
+// API.md M1, M3, M4, M6 (log-2026-09-29 M4 B11-r): only new, changed or removed slot members are
 // written: an Add inserts two members, a Remove rewrites the slot values that moved and drops
 // the last slot, a multi-op writes only what each op changes.
 func TestPairsMinimalWrites(t *testing.T) {

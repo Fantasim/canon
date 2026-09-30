@@ -78,7 +78,7 @@ func stat(attr string, val int64) edit.Lit {
 	return edit.Obj{"attr": edit.Str(attr), "val": edit.Int(val)}
 }
 
-// WIRE.md 5.14, API.md M1-M6, E22, X2 (log-2026-09-29 M4 B10-r3): every operation on a pairs list
+// WIRE.md 5.14, API.md M1, M6, E22, X2 (log-2026-09-29 M4 B10-r3): every operation on a pairs list
 // rewrites its slot keys in slot order and removes the slots past the new length, as expected;
 // its Undo brings every file back byte for byte.
 func TestPairsWrittenWhole(t *testing.T) {
