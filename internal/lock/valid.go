@@ -2,7 +2,6 @@ package lock
 
 import (
 	"fmt"
-	"slices"
 	"strings"
 	"unicode/utf8"
 )
@@ -13,9 +12,8 @@ func (f *File) valid(fact Fact) error {
 	if int(fact.Kind) >= len(kindNames) {
 		return fmt.Errorf(fmtBadFact, ErrBadFact, errKind)
 	}
-	own := strings.Split(f.Package, nameSep)
 	for _, check := range factChecks {
-		if reason := check(own, fact); reason != nil {
+		if reason := check(f.Package, fact); reason != nil {
 			return fmt.Errorf(fmtBadFactLine, ErrBadFact, reason, fact.line())
 		}
 	}
@@ -23,7 +21,7 @@ func (f *File) valid(fact Fact) error {
 }
 
 // factChecks are what valid checks, in order; each returns the reason a fact fails, or nil.
-var factChecks = []func(own []string, fact Fact) error{
+var factChecks = []func(pkg string, fact Fact) error{
 	checkName,
 	checkField,
 	checkValue,
@@ -31,18 +29,33 @@ var factChecks = []func(own []string, fact Fact) error{
 	checkRetired,
 }
 
-// checkName: the table's let or the enum, `<package>.<identifier>`; own is the lock's package.
-func checkName(own []string, fact Fact) error {
-	segs := strings.Split(fact.Name, nameSep)
-	if len(segs) != len(own)+1 || !slices.Equal(segs[:len(own)], own) ||
-		slices.ContainsFunc(segs, func(s string) bool { return !isIdentifier(s) }) {
+// checkName: the table's let or the enum, `<package>.<identifier>`, pkg being the lock's package
+// and each of its segments an identifier.
+func checkName(pkg string, fact Fact) error {
+	rest, inPkg := strings.CutPrefix(fact.Name, pkg)
+	rest, dotted := strings.CutPrefix(rest, nameSep)
+	if !inPkg || !dotted || !isIdentifier(rest) || !isQualified(pkg) {
 		return errName
 	}
 	return nil
 }
 
+// isQualified reports a name whose every dot-separated segment is an identifier.
+func isQualified(name string) bool {
+	for {
+		seg, rest, more := strings.Cut(name, nameSep)
+		if !isIdentifier(seg) {
+			return false
+		}
+		if !more {
+			return true
+		}
+		name = rest
+	}
+}
+
 // checkField: a field fact names its field, the other kinds none.
-func checkField(_ []string, fact Fact) error {
+func checkField(_ string, fact Fact) error {
 	if (fact.Kind == KindField) != (fact.Field != "") || fact.Field != "" && !isIdentifier(fact.Field) {
 		return errField
 	}
@@ -51,7 +64,7 @@ func checkField(_ []string, fact Fact) error {
 
 // checkValue: a table fact has no value, an enum fact an integer, a field fact an integer or
 // a string of valid UTF-8; the part of Value the kind does not write is zero.
-func checkValue(_ []string, fact Fact) error {
+func checkValue(_ string, fact Fact) error {
 	v := fact.Value
 	switch {
 	case fact.Kind == KindTable && v != Value{}:
@@ -66,7 +79,7 @@ func checkValue(_ []string, fact Fact) error {
 	return nil
 }
 
-func checkHolder(_ []string, fact Fact) error {
+func checkHolder(_ string, fact Fact) error {
 	if !isIdentifier(fact.Holder) {
 		return errHolder
 	}
@@ -74,7 +87,7 @@ func checkHolder(_ []string, fact Fact) error {
 }
 
 // checkRetired: a field fact has no retirement of its own (LOCK.md §2.2).
-func checkRetired(_ []string, fact Fact) error {
+func checkRetired(_ string, fact Fact) error {
 	if fact.Kind == KindField && fact.Retired {
 		return errFieldRetired
 	}

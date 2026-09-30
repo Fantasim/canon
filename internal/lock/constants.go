@@ -43,7 +43,11 @@ const (
 	identChars       = "_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ" + digitChars
 	decimalBase      = 10
 	int64Bits        = 64
+	byteValues       = 1 << 8
 )
+
+// identBytes marks the bytes an identifier may hold (SPEC §2.4).
+var identBytes = byteSet(identChars)
 
 // Why a line of a known kind is refused.
 const (

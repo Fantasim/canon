@@ -226,7 +226,21 @@ func isIdentifier(s string) bool {
 	if s == "" || s == underscore || strings.IndexByte(digitChars, s[0]) >= 0 {
 		return false
 	}
-	return strings.Trim(s, identChars) == ""
+	for i := range len(s) {
+		if !identBytes[s[i]] {
+			return false
+		}
+	}
+	return true
+}
+
+// byteSet marks the bytes of chars.
+func byteSet(chars string) *[byteValues]bool {
+	var set [byteValues]bool
+	for i := range len(chars) {
+		set[chars[i]] = true
+	}
+	return &set
 }
 
 // isNumeral is decimal digits with no leading zero but "0" itself.

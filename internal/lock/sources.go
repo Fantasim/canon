@@ -21,7 +21,6 @@ type coll struct {
 // Sources are the current facts of one package (LOCK.md §3), each located in the sources.
 type Sources struct {
 	facts *File
-	batch []Fact // checked facts not yet merged into facts
 	colls map[coll]bool
 	skip  map[coll]bool
 }
@@ -47,65 +46,46 @@ func (s *Sources) skipped(c coll) bool {
 	return c.kind == KindField && i >= 0 && s.skip[coll{kind: KindTable, name: c.name[:i]}]
 }
 
-// add checks a fact and queues it for flush, which merges the queue in one pass.
-func (s *Sources) add(fact Fact) error {
-	if err := s.facts.valid(fact); err != nil {
-		return err
-	}
-	s.batch = append(s.batch, fact)
-	return nil
-}
-
-// flush merges the queued facts into the set; the facts queued before an error stay added.
-func (s *Sources) flush() {
-	s.facts.mergeAll(s.batch)
-	s.batch = nil
-}
-
-// AddTable adds a stable table's facts: a table fact per entry, live or retired, and a field
-// fact per entry and @stable field of its element; name is the table's qualified let.
-func (s *Sources) AddTable(name string, t *value.Table) error {
+// AddTable adds a stable table's facts (a table fact per entry, a field fact per @stable value)
+// under its qualified let name, reusing prev, an earlier AddTable's Order or nil, and returns
+// its own Order, nil when a fact was refused.
+func (s *Sources) AddTable(name string, t *value.Table, prev *Order) (*Order, error) {
 	tt, ok := t.T.Base().(*types.TableType)
 	if !ok || !tt.Stable {
-		return fmt.Errorf(fmtNotStable, ErrNotLocked, name)
+		return nil, fmt.Errorf(fmtNotStable, ErrNotLocked, name)
 	}
-	defer s.flush()
 	s.colls[coll{kind: KindTable, name: name}] = true
 	stable := stableFields(tt.Elem)
 	for _, f := range stable {
 		s.colls[coll{kind: KindField, name: name + nameSep + f.Name}] = true
 	}
+	batch := make([]Fact, 0, len(t.Entries)*(len(stable)+1))
 	for _, e := range t.Entries {
-		if e == nil || e.Ident == nil {
-			continue
-		}
-		if err := s.addEntry(name, e, stable); err != nil {
-			return err
+		if e != nil && e.Ident != nil {
+			batch = appendEntry(batch, name, e, stable)
 		}
 	}
-	return nil
+	if prev.orders(s.facts.Package, batch) {
+		s.facts.mergeRun(prev.run(batch))
+		return &Order{pkg: prev.pkg, facts: batch, kept: prev.kept, retired: prev.retired}, nil
+	}
+	return s.merge(batch)
 }
 
-func (s *Sources) addEntry(name string, e *value.Record, stable []*types.Field) error {
+// appendEntry appends an entry's table fact, then a field fact per @stable field it holds a
+// lockable value in.
+func appendEntry(batch []Fact, name string, e *value.Record, stable []*types.Field) []Fact {
 	key := e.Ident.Key.Text()
-	fact := Fact{Kind: KindTable, Name: name, Holder: key, Retired: e.Ident.Retired, Span: verify.SiteOf(e).Span}
-	if err := s.add(fact); err != nil {
-		return err
-	}
+	batch = append(batch, Fact{Kind: KindTable, Name: name, Holder: key, Retired: e.Ident.Retired, Span: verify.SiteOf(e).Span})
 	for _, f := range stable {
 		if f.Index >= len(e.Fields) || e.Fields[f.Index] == nil {
 			continue
 		}
-		v, ok := lockValue(e.Fields[f.Index])
-		if !ok {
-			continue
-		}
-		fact := Fact{Kind: KindField, Name: name, Field: f.Name, Value: v, Holder: key, Span: verify.SiteOf(e.Fields[f.Index]).Span}
-		if err := s.add(fact); err != nil {
-			return err
+		if v, ok := lockValue(e.Fields[f.Index]); ok {
+			batch = append(batch, Fact{Kind: KindField, Name: name, Field: f.Name, Value: v, Holder: key, Span: verify.SiteOf(e.Fields[f.Index]).Span})
 		}
 	}
-	return nil
+	return batch
 }
 
 // stableFields is the @stable fields of a table's element record.
@@ -139,17 +119,15 @@ func (s *Sources) AddEnum(enum check.Object) error {
 	if !ok || e.Codes == nil {
 		return nil
 	}
-	defer s.flush()
 	name := enum.Pkg() + nameSep + e.Name
 	s.colls[coll{kind: KindEnum, name: name}] = true
 	spans := memberSpans(enum.File(), e)
+	batch := make([]Fact, len(e.Members))
 	for i, m := range e.Members {
-		fact := Fact{Kind: KindEnum, Name: name, Value: Value{Int: m.Code}, Holder: m.Name, Retired: m.Retired, Span: spans[i]}
-		if err := s.add(fact); err != nil {
-			return err
-		}
+		batch[i] = Fact{Kind: KindEnum, Name: name, Value: Value{Int: m.Code}, Holder: m.Name, Retired: m.Retired, Span: spans[i]}
 	}
-	return nil
+	_, err := s.merge(batch)
+	return err
 }
 
 // memberSpans locates each member of an enum declared in file, by name.

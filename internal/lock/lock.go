@@ -85,10 +85,14 @@ func (fact *Fact) retire(later Fact) bool {
 
 // mergeAll merges checked facts in one sort and one linear pass, as merge would one by one; a duplicate keeps its earliest line (log-2026-09-29 M4 P13b-r).
 func (f *File) mergeAll(batch []Fact) bool {
+	return f.mergeOrdered(batch, sortedOrder(batch))
+}
+
+// mergeOrdered is mergeAll of a batch whose sortedOrder is order.
+func (f *File) mergeOrdered(batch []Fact, order []int) bool {
 	if len(batch) == 0 {
 		return false
 	}
-	order := sortedOrder(batch)
 	out := make([]Fact, 0, len(f.facts)+len(batch))
 	changed, old := false, f.facts
 	for len(old) > 0 || len(order) > 0 {
@@ -108,6 +112,24 @@ func (f *File) mergeAll(batch []Fact) bool {
 	}
 	f.facts = out
 	return changed
+}
+
+// mergeRun merges facts in canonical order, no two identical, as mergeAll would merge them: a
+// run that sorts after every fact held is appended.
+func (f *File) mergeRun(run []Fact) {
+	switch n := len(f.facts); {
+	case len(run) == 0:
+	case n == 0:
+		f.facts = run
+	case compareFactPtrs(&f.facts[n-1], &run[0]) < 0:
+		f.facts = append(f.facts, run...)
+	default:
+		order := make([]int, len(run))
+		for i := range order {
+			order[i] = i
+		}
+		f.mergeOrdered(run, order)
+	}
 }
 
 // sortedOrder is the indexes of batch in canonical order, equal facts in batch order; it sorts

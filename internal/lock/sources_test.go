@@ -105,7 +105,8 @@ func addTable(s *lock.Sources, pkg string, f *syntax.File, d *syntax.LetDecl, re
 		}
 		table.Entries = append(table.Entries, rec)
 	}
-	return s.AddTable(pkg+"."+d.Name.Name, table)
+	_, err := s.AddTable(pkg+"."+d.Name.Name, table, nil)
+	return err
 }
 
 // setField stores an integer or plain string literal given to a field.

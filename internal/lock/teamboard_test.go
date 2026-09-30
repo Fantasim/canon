@@ -141,13 +141,13 @@ func TestTeamboardAdd(t *testing.T) {
 func TestSourcesRefuse(t *testing.T) {
 	row := &types.RecordType{Pkg: "p", Name: "Row"}
 	plain := &value.Table{T: &types.TableType{Elem: row}}
-	if err := lock.NewSources("p").AddTable("p.t", plain); !errors.Is(err, lock.ErrNotLocked) {
+	if _, err := lock.NewSources("p").AddTable("p.t", plain, nil); !errors.Is(err, lock.ErrNotLocked) {
 		t.Errorf("a plain table: %v", err)
 	}
 	bad := &value.Table{T: &types.TableType{Elem: row, Stable: true}, Entries: []*value.Record{
 		{T: row, Ident: &value.Identity{Key: value.Key{I: 3, IsInt: true}}},
 	}}
-	if err := lock.NewSources("p").AddTable("p.t", bad); !errors.Is(err, lock.ErrBadFact) {
+	if _, err := lock.NewSources("p").AddTable("p.t", bad, nil); !errors.Is(err, lock.ErrBadFact) {
 		t.Errorf("an integer key: %v", err)
 	}
 }

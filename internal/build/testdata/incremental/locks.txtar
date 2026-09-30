@@ -1,0 +1,71 @@
+IMPLEMENTATION-PLAN §7.6 (NFR-02), LOCK.md §4, §4.5, §5: two packages' stable tables and locks, their
+entries added, removed, renamed, retired and unretired, and their locks edited on disk, along one
+cache (log-2026-09-29 M4 P18 C5).
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+/// A status.
+record Status {
+  /// Its code, kept forever.
+  code: Int @stable
+  /// Weight.
+  weight: Int = 1
+}
+
+/// Statuses.
+let statuses: stable table Status = {}
+
+/// A tone.
+enum Tone @codes(UInt8) { warm = 1, cold = 2 }
+-- a/s/open.canon --
+package a
+
+entry statuses.open {
+  code: 1
+  weight: 3
+}
+-- a/s/done.canon --
+package a
+
+entry statuses.done {
+  code: 2
+  weight: 5
+}
+-- a/s/old.canon --
+package a
+
+retired entry statuses.old {
+  code: 3
+}
+-- a/canon.lock --
+# canon.lock v1
+enum   a.Tone  1  warm
+enum   a.Tone  2  cold
+field  a.statuses.code  1  open
+field  a.statuses.code  2  done
+field  a.statuses.code  3  old
+table  a.statuses  done
+table  a.statuses  old  retired
+table  a.statuses  open
+-- b/b.canon --
+package b
+
+/// A flag.
+record Flag {
+  /// Label.
+  label: String
+}
+
+/// Flags.
+let flags: stable table Flag = {
+  blocking { label: "Blocking" }
+  sensitive { label: "Sensitive" }
+}
+-- b/canon.lock --
+# canon.lock v1
+table  b.flags  blocking
+table  b.flags  sensitive

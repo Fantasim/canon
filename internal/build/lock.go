@@ -62,7 +62,7 @@ func (r *run) readLock(ctx context.Context, cp *check.Package) (*lockState, erro
 		return nil, fmt.Errorf(fmtWrap, err)
 	}
 	st.id = src.ID
-	st.file, st.whole = lock.Parse(src.ID, src.Content, cp.Path, r.bags[cp.Path])
+	st.file, st.whole = r.parseLock(rel, src, cp.Path)
 	return st, nil
 }
 
@@ -70,15 +70,14 @@ func (r *run) readLock(ctx context.Context, cp *check.Package) (*lockState, erro
 func (r *run) sourcesOf(ctx context.Context, cp *check.Package) (*lock.Sources, error) {
 	s := lock.NewSources(cp.Path)
 	for _, obj := range cp.Decls {
-		name := cp.Path + qnameSep + obj.Name()
 		var err error
 		switch {
 		case obj.Kind() == check.ObjTypeName && r.prog.Info.Broken[obj]:
-			s.Skip(lock.KindEnum, name)
+			s.Skip(lock.KindEnum, cp.Path+qnameSep+obj.Name())
 		case obj.Kind() == check.ObjTypeName:
 			err = s.AddEnum(obj)
 		case obj.Kind() == check.ObjLet:
-			err = r.addTable(ctx, s, obj, name)
+			err = r.addTable(ctx, s, obj, cp.Path)
 		}
 		if err != nil {
 			return nil, fmt.Errorf(fmtPackage, cp.Path, err)
@@ -88,9 +87,9 @@ func (r *run) sourcesOf(ctx context.Context, cp *check.Package) (*lock.Sources, 
 }
 
 // addTable adds a stable table's facts, or skips it when it is broken or poisoned.
-func (r *run) addTable(ctx context.Context, s *lock.Sources, obj check.Object, name string) error {
+func (r *run) addTable(ctx context.Context, s *lock.Sources, obj check.Object, pkg string) error {
 	if r.prog.Info.Broken[obj] {
-		s.Skip(lock.KindTable, name)
+		s.Skip(lock.KindTable, pkg+qnameSep+obj.Name())
 		return nil
 	}
 	if obj.Type() == nil { // defence: only a check cut short leaves a let untyped, and analyze stops first
@@ -99,13 +98,14 @@ func (r *run) addTable(ctx context.Context, s *lock.Sources, obj check.Object, n
 	if t, ok := obj.Type().Base().(*types.TableType); !ok || !t.Stable {
 		return nil
 	}
+	name := pkg + qnameSep + obj.Name()
 	v, ok := r.ev.Force(ctx, eval.Root{Pkg: obj.Pkg(), Name: obj.Name()})
 	table, isTable := v.(*value.Table)
 	if !ok || !isTable {
 		s.Skip(lock.KindTable, name)
 		return nil
 	}
-	return s.AddTable(name, table)
+	return r.addTableFacts(s, name, table)
 }
 
 // update is the lock after recording the facts of a build without errors, the one compared

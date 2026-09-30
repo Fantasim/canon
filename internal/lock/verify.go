@@ -38,14 +38,26 @@ func (f *File) Verify(s *Sources, bag *diag.Bag) {
 	}
 }
 
-// byColl groups the facts by collection, each group in canonical order.
+// byColl groups the facts by collection, each group in canonical order: a run of the facts,
+// which the canonical order keeps together, shared and capped so that nothing appends to it.
 func (f *File) byColl() map[coll][]Fact {
 	out := map[coll][]Fact{}
-	for _, fact := range f.facts {
-		c := coll{kind: fact.Kind, name: fact.writtenName()}
-		out[c] = append(out[c], fact)
+	for start := 0; start < len(f.facts); {
+		end := start + 1
+		for end < len(f.facts) && sameColl(&f.facts[start], &f.facts[end]) {
+			end++
+		}
+		first := &f.facts[start]
+		out[coll{kind: first.Kind, name: first.writtenName()}] = f.facts[start:end:end]
+		start = end
 	}
 	return out
+}
+
+// sameColl reports two facts of one collection: a field fact's written name is its table's
+// name and its field, which neither holds a dot of.
+func sameColl(a, b *Fact) bool {
+	return a.Kind == b.Kind && a.Name == b.Name && a.Field == b.Field
 }
 
 // sortedColls is the collections in canonical order (LOCK.md §2.3).
@@ -121,26 +133,53 @@ func pairs(facts []Fact) map[pair]bool {
 // tableRules: a locked key is never removed (E6001: held when a new key holds one of its @stable
 // values, renamed when exactly one key went and one came), and a retired key never comes back.
 func tableRules(c *comparison) {
-	locked, now := holders(c.lock), holders(c.cur)
-	var gone, added []Fact
-	for _, l := range c.lock {
-		if _, ok := now[l.Holder]; !ok {
-			gone = append(gone, l)
+	keys := joinKeys(c.lock, c.cur)
+	if len(keys.gone) > 0 {
+		locked := holders(c.lock)
+		for _, l := range keys.gone {
+			c.gone(l, locked, len(keys.gone) == 1 && len(keys.added) == 1, keys.added)
 		}
 	}
-	for _, f := range c.cur {
-		if _, ok := locked[f.Holder]; !ok {
-			added = append(added, f)
+	for _, back := range keys.back {
+		diag.E6002.AtUnretire(back.Span, diag.KindEntry, back.Holder).Report(c.bag)
+	}
+}
+
+// keyJoin is a table's locked keys against its current ones: the keys gone, those added, and
+// the current facts of keys the lock retired that are live again, each in canonical order.
+type keyJoin struct {
+	gone, added, back []Fact
+}
+
+// joinKeys joins a table's locked and current facts, each listing a key once, ordered by key.
+func joinKeys(lock, cur []Fact) keyJoin {
+	var out keyJoin
+	for len(lock) > 0 || len(cur) > 0 {
+		c := keyOrder(lock, cur)
+		switch {
+		case c < 0:
+			out.gone, lock = append(out.gone, lock[0]), lock[1:]
+		case c > 0:
+			out.added, cur = append(out.added, cur[0]), cur[1:]
+		default:
+			if lock[0].Retired && !cur[0].Retired {
+				out.back = append(out.back, cur[0])
+			}
+			lock, cur = lock[1:], cur[1:]
 		}
 	}
-	for _, l := range gone {
-		c.gone(l, locked, len(gone) == 1 && len(added) == 1, added)
+	return out
+}
+
+// keyOrder compares the first keys of lock and cur, an exhausted side coming last.
+func keyOrder(lock, cur []Fact) int {
+	switch {
+	case len(cur) == 0:
+		return -1
+	case len(lock) == 0:
+		return 1
 	}
-	for _, l := range c.lock {
-		if f, ok := now[l.Holder]; ok && l.Retired && !f.Retired {
-			diag.E6002.AtUnretire(f.Span, diag.KindEntry, l.Holder).Report(c.bag)
-		}
-	}
+	return strings.Compare(lock[0].Holder, cur[0].Holder)
 }
 
 // gone reports a locked key gone from the sources (LOCK.md §4.1).

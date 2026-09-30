@@ -42,6 +42,7 @@ type cacheGen struct {
 	bad      i18n.BadCache // which files hold a Bad node, for phase 2's i18n check
 	json     jsonTrees
 	headers  load.Headers
+	locks    lockMemo
 }
 
 // fileName is a file the cache keeps by name: its display path and absolute name.
