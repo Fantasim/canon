@@ -25,10 +25,10 @@ and each reuse is a place where incremental and cold can drift apart.
   least recent emptied first) covers everything.
 - **Replay re-asks, never assumes** (amended by P18, PB3: a load, a replay or prepare may take a
   file by the sum its snapshot fixed instead of re-reading it, and read the bytes only on a miss or
-  for a finding; the read is still noted exactly as a read). A replay re-reads every ref target, asset and load in its
-  recorded order, charges the recorded steps against the live budget, and refuses (runs cold)
-  whenever a read changed, a read is not yet forced, the budget cannot fit, or the entry shares a
-  node with a value it read. E4401 always comes from a real run.
+  for a finding; the read is still noted exactly as a read). A replay re-reads every ref target,
+  asset and load in its recorded order, charges the recorded steps against the live budget, and
+  refuses (runs cold) whenever a read changed, a read is not yet forced, the budget cannot fit, or
+  the entry shares a node with a value it read. E4401 always comes from a real run.
 - **Kept check-time folds replay on the program's own `Info`**, so the folder's evaluator, its
   counter and const cache continue as in a cold run (B1).
 - **Shared parse prefix (amended by P15).** A changed clean file shares the old parse's declarations
