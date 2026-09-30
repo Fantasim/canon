@@ -39,41 +39,19 @@ U1b format Move · U6 cli refs/--watch/explain inputs · U2b fmt --json-sources 
 lineages · U5b api edit surface (E17–E21, O5, drafts, Op JSON, LockCheck) · P12 stage B/C memos on eval
 entries · B1 Recheck folds on the program's Info. Memo architecture: ADR-0011. [items] warm p95 275 ms.
 
-## Wave 3b (staging on `m4-wave3b`: P13b, P13c, U7a, B8, B3, U7b, B6, B2 passed; B7 in fix round; B10 next)
+## Waves 3b and 3c — on `main` (`79bcc3b`..`aadf1c5`)
 
-- B2 one budget counter per invocation (DECISIONS 104; log M4 B1) [opus]
-- P13b `lock` merge sorted once [sonnet] · P13c `i18n` bad-node walk not repeated per run [sonnet]
-- U7a API.md rule-coverage test and its gaps (acceptance 2) [sonnet]
-- U7b stress 8/1/1 (2 s in check, 60 s `make stress`), minimal-write fuzz on every example and the
-      benchmark (`make fuzz-edit`), `make bench-edit` NFR-01 gate (acceptance 3, 4, 6) [opus]
-- B3 E14 `SetCase` keeps only fields that satisfy the new case whole; edit golden harness fails on an
-      unexpected error; M6 one-line form not opt-in (found by U7a) [opus]
-- B6 S10: `Project.Revision()` never rolls back [opus] · B7 edit JSON printer writes a dependent
-      symbol [opus] · B8 AllowErrors lock ids unique among the post-edit sources' facts [opus]
-- B10 (after B3, B7): M6 regions on a JSON last-member modify plus insert; JSON Remove ErrInternal;
-      B9 a Duration not whole in its `@json(unit:)` is a ValueError, not ErrInternal; the E15 inverse on a
-      ref discriminant; literal keys of dependent types (TYPES §11.4); E15 on dependent-keyed maps; Undo of an
-      AddEntry into a defaulted container is a Reset [opus]
+P13b lock merge · P13c i18n cache (FileCache in check) · U7a API rule coverage (148 rules) · U7b
+stress/fuzz/bench gates · B2 one budget counter · B3 E14 SetCase · B6 Revision never rolls back · B7
+dependent symbols in JSON edits · B8 lock uniqueness · B4 F1 finding paths · B5 build manifest · B10 the
+gate-found edit bugs · P13a, P13d guard tests. One green `make check`; CI run 36669002215 on
+`claude/m4-ci`.
 
-## B11 (after waves 3b/3c land)
+## Wave 4 (in flight)
 
 - B11 `@json(pairs:)` lists edited whole; nested dependent-keyed map symbol keys in Undo [opus]
-
-## Wave 3c (P13a, P13d, B4, B5 launched on `m4-wave3b`; cleanup unit after 3b lands)
-
-- P13a `build/hosts.go` listings as maps · P13d `check` `Info.cloned` allocation [opus]
-- B4 F1 Path for a finding in a top-level `let` initializer (knownbug test from U7a) [sonnet]
-- B5 build manifest computed (WIRE §10, LOD-11; O7's manifest half); the cache stays inert [opus]
-- Cleanup unit: duplicates, P9 leftovers, E1903 for a variant case declaring an input field; a
-      neighbour's 216 kept-comma line dropped by the M5 settle (M6); U5b nits (`unwritable` gives
-      absolute names their own reason, `lockStable` tests the table first); B1 nits (`replayFolds`
-      comment cites the real invariant, a free guard ending the lineage when swapped decls fold,
-      `holdsCode` reuses `hasCode`); benchgen writes canonical JSON (then drop the fmt step in
-      `fuzz-edit`/`bench-edit`); TestDependencyRule also enforces each package's §3 Consumes row
-      (log M4 P13c-r: listed or reachable through the row), violations fixed or reported; a table
-      test for `check.FileCache` (`Of`, `KeepOnly`)
-      ; check against TYPES whether `[L(ev)] keyed by id` (a keyed list of an applied record) should be
-      E3012 (B4 review); the `"dir"` load-form constant duplicated in load and views
+- Cleanup-A (semantic: E1903, keyed applied records, P9, the 216 neighbour, U13 leftovers, U5b nits) [opus]
+- Cleanup-B (mechanical: Consumes enforcement, FileCache test, B1 nits, "dir", benchgen canonical, dups) [sonnet]
 
 ## Final pass
 
