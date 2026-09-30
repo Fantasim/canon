@@ -32,7 +32,7 @@ func (x *opCtx) diffAt(k int, old, nw value.Value) error {
 	if nw, err = fr.symbolsIn(nw, old, x.declaredAt(k)); err != nil {
 		return err
 	}
-	x.w.given = append(x.w.given, givenValue{path: x.pathAt(k), v: nw, held: fr.kept})
+	x.w.given = append(x.w.given, givenValue{path: x.pathAt(k), v: nw, held: fr.kept, changed: !sameValue(old, nw)})
 	d := &jsonDiff{a: x.a}
 	if err := d.value(old, nw, n, x.fieldAt(k)); err != nil {
 		return err
@@ -116,7 +116,7 @@ func (w *work) addJSON(display, pkg string, edits []jsonEdit) {
 func (x *opCtx) frameAt(k int) depFrame {
 	fr := depFrame{a: x.a, kept: map[*value.Symbol]bool{}}
 	for j := 0; j < k && j < len(x.res.Steps); j++ {
-		fr = fr.into(x.valueAt(j), x.declaredAt(j), x.res.Steps[j].Value)
+		fr = fr.into(x.valueAt(j), x.declaredAt(j), x.res.Steps[j].Seg)
 	}
 	return fr
 }

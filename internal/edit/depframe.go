@@ -6,6 +6,7 @@ import (
 
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
+	"github.com/fantasim/canonlang/internal/wire"
 )
 
 // depFrame is what a dependent type's arguments name (DEP-02): the record's fields, parameters and
@@ -79,7 +80,7 @@ func (fr depFrame) field(f *types.Field) value.Value {
 	if v := fr.rec.Fields[f.Index]; v != nil || fr.a == nil {
 		return v
 	}
-	v, ok := fr.a.defaultOf(fr.rec, f.Index)
+	v, ok := fr.a.defaultIn(fr.rec, f.Index, fr.params)
 	if !ok {
 		return nil
 	}
@@ -143,18 +144,40 @@ func (fr depFrame) bind(binder string, key value.Value) depFrame {
 	return depFrame{rec: fr.rec, params: fr.params, binders: b, a: fr.a, kept: fr.kept}
 }
 
-// into is fr inside c, of declared type t or nil, reading its item child: a record's fields, a
-// dependent map's value.
-func (fr depFrame) into(c value.Value, t types.Type, child value.Value) depFrame {
+// into is fr inside c, of declared type t or nil, reading its item at seg: a record's fields, a
+// dependent map's value, its binder bound to the key seg names.
+func (fr depFrame) into(c value.Value, t types.Type, seg Seg) depFrame {
 	switch x := c.(type) {
 	case *value.Record:
 		return fr.enter(x, t)
 	case *value.Map:
 		dm, ok := declaredBase(t, x.T).(*types.DepMapType)
-		i := slices.IndexFunc(x.Vals, func(v value.Value) bool { return v == child })
-		if ok && i >= 0 {
+		if !ok {
+			return fr
+		}
+		if i := keyIndex(x, &types.RefType{Target: dm.Coll}, seg); i >= 0 {
 			return fr.bind(dm.Binder, x.Keys[i])
 		}
 	}
 	return fr
+}
+
+// keyIndex is the index of the key of m, of type kt, that seg names; -1 for none.
+func keyIndex(m *value.Map, kt types.Type, seg Seg) int {
+	if seg.Kind == SegPos {
+		if seg.Pos < len(m.Keys) {
+			return seg.Pos
+		}
+		return -1
+	}
+	match, err := segKey(seg, kt)
+	if err != nil {
+		return -1
+	}
+	return slices.IndexFunc(m.Keys, match)
+}
+
+// outer is fr as what a decoded value's type arguments name around it (WIRE.md 5.9).
+func (fr depFrame) outer() wire.Outer {
+	return wire.Outer{Record: fr.rec, Params: fr.params, Binders: fr.binders}
 }

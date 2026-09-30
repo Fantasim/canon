@@ -16,7 +16,7 @@ func (fr depFrame) symbolsIn(v, was value.Value, t types.Type) (value.Value, err
 		if t == nil {
 			t = x.T
 		}
-		return fr.symbolIn(x, t, fr.isHeld(x, was), 0)
+		return fr.symbol(x, was, t)
 	case *value.Record:
 		r, err := fr.recordSymbols(x, was, t)
 		if err != nil {
@@ -33,46 +33,78 @@ func (fr depFrame) symbolsIn(v, was value.Value, t types.Type) (value.Value, err
 	return v, nil
 }
 
-// isHeld reports s as data rather than a name the edit introduces: any symbol outside a strict
-// frame, one read from a JSON value (DECISIONS 175), or the symbol the path held before the edit.
-func (fr depFrame) isHeld(s *value.Symbol, was value.Value) bool {
-	w, same := was.(*value.Symbol)
-	return fr.kept == nil || s.P != nil || same && w.Name == s.Name
+// symbol is s, of type t, in fr (log-2026-09-29 M4 B7-r3): one carried from was is left to E15;
+// data a JSON source wrote, the path's symbol restated or a path key is kept where its branch is
+// opaque (noted held by a strict frame); any other is resolved.
+func (fr depFrame) symbol(s *value.Symbol, was value.Value, t types.Type) (value.Value, error) {
+	w, isSymbol := was.(*value.Symbol)
+	switch {
+	case isSymbol && w == s:
+		return s, nil
+	case s.P != nil:
+		return fr.keepData(s, t), nil
+	case isSymbol && w.Name == s.Name && fr.kept != nil && fr.opaque(t):
+		return fr.keepData(w, t), nil
+	case fr.a != nil && fr.a.marks.pathKey(s) && fr.opaque(t):
+		return s, nil // a path key read as the wire key the decoder keeps as a symbol (E25)
+	}
+	return fr.symbolIn(s, t)
 }
 
-// keep is s, kept as written: noted in a strict frame when held (log-2026-09-29 M4 B7-r2).
-func (fr depFrame) keep(s *value.Symbol, held bool) *value.Symbol {
-	if held && fr.kept != nil {
+// keepData is s, data as a JSON source wrote it, noted held where its branch is opaque.
+func (fr depFrame) keepData(s *value.Symbol, t types.Type) *value.Symbol {
+	if fr.kept != nil && fr.opaque(t) {
 		fr.kept[s] = true
 	}
 	return s
 }
 
-// symbolIn is s as what it names in the branch t computes in fr; s, written as the decoder reads
-// it (DECISIONS 175), when that branch is unknown here or is Never and s held; else a *ValueError
-// (V1), as a Set of the field alone refuses a name its computed type lacks.
-func (fr depFrame) symbolIn(s *value.Symbol, t types.Type, held bool, depth int) (value.Value, error) {
-	if t == nil || depth > maxLitDepth {
-		return s, nil
-	}
-	switch b := present(t).Base().(type) {
-	case *types.TypeAppType:
-		br, inner, ok := fr.branch(b)
-		if !ok {
-			return fr.keep(s, held), nil
+// opaque reports t's branch Never or not computable here: where the decoder keeps a symbol.
+func (fr depFrame) opaque(t types.Type) bool {
+	et, ok := fr.branchFor(t)
+	return !ok || et.Base().Kind() == types.Never
+}
+
+// branchFor is the type t computes in fr, through type applications and literal unions; false
+// when it cannot be computed here, as the decoder cannot either.
+func (fr depFrame) branchFor(t types.Type) (types.Type, bool) {
+	for range maxLitDepth {
+		switch b := present(t).Base().(type) {
+		case *types.TypeAppType:
+			br, inner, ok := fr.branch(b)
+			if !ok {
+				return nil, false
+			}
+			t, fr = br, inner
+		case *types.LitUnionType:
+			t = b.Of
+		case *types.DepUnionType:
+			return nil, false
+		default:
+			return present(t), true
 		}
-		return inner.symbolIn(s, br, held, depth+1)
-	case *types.LitUnionType:
-		return fr.symbolIn(s, b.Of, held, depth+1)
-	case *types.DepUnionType:
-		return fr.keep(s, held), nil
 	}
-	et := present(t)
-	if et.Base().Kind() == types.Never && held {
-		return fr.keep(s, held), nil
+	return nil, false
+}
+
+// symbolIn is s, a name the edit gives, as what it names in the branch t computes in fr: a
+// member, case or key by its Canon name, a path key's also by its wire value (E25); s where the
+// branch cannot be computed; else a *ValueError (V1), as a Set of the field alone refuses it.
+func (fr depFrame) symbolIn(s *value.Symbol, t types.Type) (value.Value, error) {
+	et, ok := fr.branchFor(t)
+	switch {
+	case !ok:
+		return s, nil
+	case et.Base().Kind() == types.Never:
+		return nil, &ValueError{Expected: et.String(), Got: s.Name, Detail: detailNotNamed}
 	}
-	if v, ok := nameValue(s.Name, et); ok {
+	if v, found := nameValue(s.Name, et); found {
 		return v, nil
+	}
+	if fr.a != nil && fr.a.marks.pathKey(s) {
+		if v := textKeyValue(s.Name, et, true); v != nil {
+			return v, nil
+		}
 	}
 	return nil, &ValueError{Expected: et.String(), Got: s.Name, Detail: detailNotNamed}
 }
@@ -99,9 +131,16 @@ func (fr depFrame) recordSymbols(r *value.Record, was value.Value, t types.Type)
 	return &value.Record{T: r.T, Fields: out, Set: r.Set, Ident: r.Ident, P: r.P}, nil
 }
 
-// fieldBefore is field i of w, a record of r's shape, before the edit; nil for none.
+// fieldBefore is field i of r before the edit, in w: by index in a record of r's shape, else by
+// name (a case a SetCase leaves); nil for none.
 func fieldBefore(w, r *value.Record, i int) value.Value {
-	if w == nil || !sameShape(w.T, r.T) || i >= len(w.Fields) {
+	if w == nil {
+		return nil
+	}
+	if !sameShape(w.T, r.T) {
+		i = fieldIndex(fieldsOf(w.T), fieldsOf(r.T)[i].Name)
+	}
+	if i < 0 || i >= len(w.Fields) {
 		return nil
 	}
 	return w.Fields[i]

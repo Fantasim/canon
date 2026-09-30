@@ -17,6 +17,11 @@ func hasDefault(f *types.Field) bool {
 // taking its own default first (TYP-15); false when the field has none or the host cannot
 // compute it (a default reading a field no value was given).
 func (a *applier) defaultOf(rec *value.Record, i int) (value.Value, bool) {
+	return a.defaultIn(rec, i, nil)
+}
+
+// defaultIn is defaultOf in a record bound to params, as the decoder computes it (TYPES.md 11.1).
+func (a *applier) defaultIn(rec *value.Record, i int, params map[*types.Param]value.Value) (value.Value, bool) {
 	fields := fieldsOf(rec.T)
 	if i >= len(fields) || !hasDefault(fields[i]) {
 		return nil, false
@@ -24,10 +29,10 @@ func (a *applier) defaultOf(rec *value.Record, i int) (value.Value, bool) {
 	full := &value.Record{T: rec.T, Fields: slices.Clone(rec.Fields), Set: slices.Clone(rec.Set), Ident: rec.Ident, P: rec.P}
 	for j := range i {
 		if full.Fields[j] == nil && hasDefault(fields[j]) {
-			full.Fields[j], _ = a.host.Default(a.ctx, fields[j], wire.Instance{Record: full}, nil)
+			full.Fields[j], _ = a.host.Default(a.ctx, fields[j], wire.Instance{Record: full, Params: params}, nil)
 		}
 	}
-	return a.host.Default(a.ctx, fields[i], wire.Instance{Record: full}, nil)
+	return a.host.Default(a.ctx, fields[i], wire.Instance{Record: full, Params: params}, nil)
 }
 
 // isDefault reports field i of rec holding its default (TYPES.md §7.5, API.md E6).

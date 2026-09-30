@@ -111,6 +111,8 @@ type applier struct {
 	owners   map[string]string // the package owning each file written, by display path (E17)
 	records  []touched         // E15
 	given    []givenValue      // what the operations wrote in JSON sources, for E15's held data
+	outer    wire.Outer        // around the value the operation types (WIRE.md 5.9)
+	marks    *symMarks         // what the typer knew of the symbols it made
 	// cascadeUndo are the cascades' inverses, which follow every other one (log-2026-09-29 M4 U4b-r)
 	cascadeUndo []Operation
 	emptied     map[string]string // a directory a file left, to the package directory it stops below (N6)
@@ -121,7 +123,7 @@ type applier struct {
 }
 
 func newApplier(ctx context.Context, env Env, base *Snapshot) *applier {
-	a := &applier{ctx: ctx, env: env, snap: base, host: env.Host(base.a), files: map[string]*fileState{}, owners: map[string]string{}, emptied: map[string]string{}}
+	a := &applier{ctx: ctx, env: env, snap: base, host: env.Host(base.a), files: map[string]*fileState{}, owners: map[string]string{}, emptied: map[string]string{}, marks: newSymMarks()}
 	for _, pkg := range base.pkgs {
 		if base.a.Bag(pkg.Path) != nil {
 			a.selected = append(a.selected, pkg.Path)
@@ -132,7 +134,7 @@ func newApplier(ctx context.Context, env Env, base *Snapshot) *applier {
 
 // typer types an operation's values against the current state (API.md V1).
 func (a *applier) typer(pkg string) Typer {
-	return Typer{Host: a.host, Pkg: pkg}
+	return Typer{Host: a.host, Pkg: pkg, Outer: a.outer, marks: a.marks}
 }
 
 // operation applies op to the current state: its changes are planned, the files they write
@@ -188,6 +190,7 @@ func (a *applier) plan(op Operation, h func(*opCtx) error) (*work, error) {
 		return nil, err
 	}
 	x := &opCtx{a: a, op: op, res: res, j: j, w: newWork()}
+	a.outer = x.frameAt(len(res.Steps)).outer()
 	if h != nil {
 		err := h(x)
 		x.w.undo = nil

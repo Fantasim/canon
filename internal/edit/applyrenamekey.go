@@ -280,10 +280,13 @@ func memberKeyAt(n *jsonsrc.Node, sp source.Span) (*jsonsrc.Node, *jsonsrc.Node)
 	return nil, nil
 }
 
-// wireKey is a key as a JSON member name (WIRE.md §5.7, §5.8).
+// wireKey is a key as a JSON member name, a symbol's the text it was read as (WIRE.md §5.8).
 func wireKey(k value.Value) (string, error) {
-	if s, ok := k.(*value.Str); ok {
-		return s.V, nil
+	switch x := k.(type) {
+	case *value.Str:
+		return x.V, nil
+	case *value.Symbol:
+		return x.Name, nil
 	}
 	return wire.KeyText(k)
 }

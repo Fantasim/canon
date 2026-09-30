@@ -22,7 +22,7 @@ func (tc *typing) fromJSON(raw FromJSON, t types.Type) (value.Value, error) {
 	if err != nil {
 		return nil, tc.refuse(t, describe(raw), firstFinding(&fs, bag, err.Error()))
 	}
-	dec := wire.Decoder{Bag: bag, Pkg: tc.ty.Pkg, Host: tc.ty.Host, Keep: true}
+	dec := wire.Decoder{Bag: bag, Pkg: tc.ty.Pkg, Host: tc.ty.Host, Keep: true, Outer: tc.ty.Outer}
 	v, ok, err := dec.Decode(tc.ctx, wire.Selection{Node: root}, t)
 	switch {
 	case tc.ctx.Err() != nil:
@@ -33,6 +33,7 @@ func (tc *typing) fromJSON(raw FromJSON, t types.Type) (value.Value, error) {
 		return nil, tc.undecoded(raw, t, &fs, bag)
 	}
 	written(v)
+	tc.ty.marks.noteTokens(v, f)
 	return v, nil
 }
 

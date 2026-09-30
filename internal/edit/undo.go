@@ -5,7 +5,11 @@ import "github.com/fantasim/canonlang/internal/value"
 // sourceLit is v as the literal Undo carries (API.md E23): Source, canonical and single-line
 // (E26); FromJSON of its wire when a JSON source states it with a decoded symbol (M4 B7-r).
 func (a *applier) sourceLit(v value.Value) (Lit, error) {
-	if raw, ok := a.readWire(v); ok {
+	raw, ok, err := a.readWire(v)
+	switch {
+	case err != nil:
+		return nil, err
+	case ok:
 		return FromJSON(raw), nil
 	}
 	text, err := a.canonText(v)

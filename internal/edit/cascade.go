@@ -115,6 +115,9 @@ type touched struct {
 // noteTouched records the records on the path whose field it goes through, and the target
 // itself when it is a record whose fields the new value changed.
 func (x *opCtx) noteTouched() {
+	if x.nw != nil && sameValue(x.res.Target, x.nw) {
+		return // a Set to an equal value changes no field (API.md E15; log-2026-09-29 M4 B7-r3)
+	}
 	p := Path{Package: x.res.root.pkg.Path, Root: x.res.root.obj.Name()}
 	for i, st := range x.res.Steps {
 		if rec, isRec := x.res.parent(i).(*value.Record); isRec && st.Seg.Kind == SegField {

@@ -78,6 +78,8 @@ type newItem struct {
 	key       string
 	at, count int
 	text      func() (string, error)
+	fr        *depFrame  // the frame its symbols are read in, nil for the collection's (DEP-02)
+	t         types.Type // its declared type, nil for its own
 }
 
 // insertItem inserts a new item into the literal or JSON container stating the target
@@ -97,7 +99,11 @@ func (x *opCtx) insertItem(it newItem) error {
 	if err != nil {
 		return err
 	}
-	v, err := x.frameAt(len(x.j.cur)).symbolsIn(it.v, nil, nil)
+	fr := x.frameAt(len(x.j.cur))
+	if it.fr != nil {
+		fr = *it.fr
+	}
+	v, err := fr.symbolsIn(it.v, nil, it.t)
 	if err != nil {
 		return err
 	}

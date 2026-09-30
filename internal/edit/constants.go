@@ -271,6 +271,8 @@ const (
 	wireSlot     = "v"
 	wireSchema   = "canon.edit@00000000"
 	wireValuePtr = "/value"
+	// symPlaceholder starts the string a decoded symbol's token takes in the encoder (DECISIONS 175).
+	symPlaceholder = "\x00canon symbol "
 )
 
 // holderBack is how far from a walk's end the cursor of the target's container is.

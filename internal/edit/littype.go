@@ -15,8 +15,10 @@ import (
 // a typed record holds only the fields the value writes (Set), the others nil (V3). A typed
 // value's provenance is nil or points into a file of its own, never into the project.
 type Typer struct {
-	Host wire.Host // FromJSON's defaults and dereferences: required
-	Pkg  string    // the package whose names FromJSON's messages print unqualified
+	Host  wire.Host  // FromJSON's defaults and dereferences: required
+	Pkg   string     // the package whose names FromJSON's messages print unqualified
+	Outer wire.Outer // what the value's type arguments name around it (WIRE.md 5.9)
+	marks *symMarks  // what the applier keeps of the symbols typed, nil for none
 }
 
 // Value is lit typed as a value of t; a value that does not fit is a *ValueError (V1).
@@ -83,8 +85,8 @@ func (tc *typing) value(lit Lit, t types.Type) (value.Value, error) {
 
 // key is lit as a key of kt: Key, IntKey and PathKey are keys; any other form is a value of kt.
 func (tc *typing) key(lit Lit, kt types.Type) (value.Value, error) {
-	if k, ok := lit.(Key); ok && dependent(kt) {
-		return &value.Symbol{Name: string(k), T: kt}, nil // a dependent key type's name (TYPES.md §11.5)
+	if s, ok := tc.dependentKey(lit, kt); ok {
+		return s, nil
 	}
 	var v value.Value
 	switch x := lit.(type) {

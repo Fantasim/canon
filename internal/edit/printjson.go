@@ -21,11 +21,16 @@ func (a *applier) wireNode(v value.Value, f *types.Field) (*jsonsrc.Node, error)
 	if err != nil {
 		return nil, err
 	}
-	rv, err := a.restrict(sv)
+	w := &wiring{a: a, raws: map[string]*jsonsrc.Node{}}
+	rv, err := w.restrict(sv)
 	if err != nil {
 		return nil, err
 	}
-	return encodeWire(rv, f)
+	n, err := encodeWire(rv, f)
+	if err != nil {
+		return nil, err
+	}
+	return w.substitute(n), nil
 }
 
 // encodeWire is v, whose records hold only what they write, in the source wire at f's place.
@@ -99,72 +104,6 @@ func (a *applier) wireText(v value.Value, f *types.Field) (json.RawMessage, erro
 		return nil, fmt.Errorf(fmtWrapped, errNoWire, err)
 	}
 	return b.Bytes(), nil
-}
-
-// restrict is a copy of v whose records keep only the fields a literal writes (M7), for the data
-// wire's encoder; a symbol left is the string the decoder reads a symbol from (DECISIONS 175).
-func (a *applier) restrict(v value.Value) (value.Value, error) {
-	switch x := v.(type) {
-	case *value.Record:
-		return a.restrictRecord(x)
-	case *value.List:
-		elems, err := a.restrictAll(x.Elems)
-		return &value.List{T: x.T, Elems: elems, P: x.P}, err
-	case *value.Map:
-		keys, err := a.restrictAll(x.Keys)
-		if err != nil {
-			return nil, err
-		}
-		vals, err := a.restrictAll(x.Vals)
-		return &value.Map{T: x.T, Keys: keys, Vals: vals, P: x.P}, err
-	case *value.Table:
-		out := &value.Table{T: x.T, P: x.P}
-		for _, e := range x.Entries {
-			r, err := a.restrictRecord(e)
-			if err != nil {
-				return nil, err
-			}
-			out.Entries = append(out.Entries, r)
-		}
-		return out, nil
-	case *value.Symbol:
-		return &value.Str{V: x.Name, T: types.StringType, P: x.P}, nil
-	}
-	return v, nil
-}
-
-func (a *applier) restrictAll(vs []value.Value) ([]value.Value, error) {
-	out := make([]value.Value, len(vs))
-	for i, v := range vs {
-		r, err := a.restrict(v)
-		if err != nil {
-			return nil, err
-		}
-		out[i] = r
-	}
-	return out, nil
-}
-
-// restrictRecord is r with only its printed fields, under a copy of its type holding those.
-func (a *applier) restrictRecord(r *value.Record) (*value.Record, error) {
-	fields := fieldsOf(r.T)
-	var keep []*types.Field
-	var vals []value.Value
-	for i, f := range fields {
-		if !a.printed(r, i) {
-			continue
-		}
-		v, err := a.restrict(r.Fields[i])
-		if err != nil {
-			return nil, err
-		}
-		keep, vals = append(keep, f), append(vals, v)
-	}
-	set := make([]bool, len(keep))
-	for i := range set {
-		set[i] = true
-	}
-	return &value.Record{T: restrictedType(r.T, keep), Fields: vals, Set: set, Ident: r.Ident, P: r.P}, nil
 }
 
 // restrictedType is a copy of a record or case type declaring only fields.

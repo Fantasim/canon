@@ -5,7 +5,6 @@ import (
 
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
-	"github.com/fantasim/canonlang/internal/wire"
 )
 
 // addEntryOp adds an entry to a table or a map: a key that exists is
@@ -23,11 +22,14 @@ func addEntryOp(x *opCtx) error {
 	return ErrBadOp
 }
 
-// entryParts is a new entry: its canonical segment, its key, its value.
+// entryParts is a new entry: its canonical segment, its key, its value, and for a map entry the
+// frame its value's type arguments are read in (TYPES.md 11.5) and its declared type.
 type entryParts struct {
 	seg Seg
 	key value.Value
 	v   value.Value
+	fr  *depFrame
+	t   types.Type
 }
 
 // newTableEntry types AddEntry's key, a word (TYPES.md §9.3), and value for table t.
@@ -94,11 +96,16 @@ func (x *opCtx) newMapEntry(m *value.Map) (entryParts, error) {
 	if slices.ContainsFunc(m.Keys, func(o value.Value) bool { return sameValue(o, k) }) {
 		return entryParts{}, ErrKeyExists
 	}
+	fr := x.frameAt(len(x.j.cur))
+	if dm, isDep := present(x.targetType()).Base().(*types.DepMapType); isDep {
+		fr = fr.bind(dm.Binder, k) // the new key's binder (log-2026-09-29 M4 B7-r3)
+	}
+	x.a.outer = fr.outer()
 	v, err := x.typed(x.op.Value, vt)
 	if err != nil {
 		return entryParts{}, err
 	}
-	return entryParts{seg: keySeg(k, kt), key: k, v: v}, nil
+	return entryParts{seg: keySeg(k, kt), key: k, v: v, fr: &fr, t: vt}, nil
 }
 
 func (x *opCtx) addMapEntry(m *value.Map) error {
@@ -109,7 +116,7 @@ func (x *opCtx) addMapEntry(m *value.Map) error {
 	if e.key, err = x.jsonKey(m, e.key); err != nil {
 		return err
 	}
-	wkey, err := wire.KeyText(e.key)
+	wkey, err := wireKey(e.key)
 	if err != nil && x.j.last().mode == ModeJSON {
 		return &ValueError{Expected: e.key.Type().String(), Got: e.key.CanonText(), Detail: err.Error()}
 	}
@@ -117,7 +124,7 @@ func (x *opCtx) addMapEntry(m *value.Map) error {
 	grown := &value.Map{T: m.T, Keys: append(slices.Clone(m.Keys), e.key), Vals: append(slices.Clone(m.Vals), e.v), P: m.P}
 	count := len(m.Keys)
 	return x.insertItem(newItem{
-		v: e.v, grown: grown, key: wkey, at: count, count: count,
+		v: e.v, grown: grown, key: wkey, at: count, count: count, fr: e.fr, t: e.t,
 		text: func() (string, error) { return x.a.mapItemText(e.key, e.v) },
 	})
 }
