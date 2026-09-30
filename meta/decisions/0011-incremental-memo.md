@@ -23,7 +23,9 @@ and each reuse is a place where incremental and cold can drift apart.
   them; stage B (verify) and C (rules) results are slots on the same entries (`Attach`), counted in
   their bytes and evicted, pruned and forgotten with them. One byte bound (≤ 512 MB across stores,
   least recent emptied first) covers everything.
-- **Replay re-asks, never assumes.** A replay re-reads every ref target, asset and load in its
+- **Replay re-asks, never assumes** (amended by P18, PB3: a load, a replay or prepare may take a
+  file by the sum its snapshot fixed instead of re-reading it, and read the bytes only on a miss or
+  for a finding; the read is still noted exactly as a read). A replay re-reads every ref target, asset and load in its
   recorded order, charges the recorded steps against the live budget, and refuses (runs cold)
   whenever a read changed, a read is not yet forced, the budget cannot fit, or the entry shares a
   node with a value it read. E4401 always comes from a real run.
