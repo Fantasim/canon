@@ -215,7 +215,8 @@ func filesRefined(g *memoGen) map[*syntax.File][]typeAt {
 }
 
 // cachedFile is build(f), kept by u's epoch in the cache of's: an unchanged file is the same
-// tree, and build reads nothing else. Without a memo, build(f).
+// tree, and build reads nothing else. Without a memo, build(f), which the per-file memo serves
+// (filememo.go); an epoch's plain map is the faster way to a file its evaluators met.
 func cachedFile[T any](u *memoUse, of func(*memoGen) map[*syntax.File]T, f *syntax.File, build func(*syntax.File) T) T {
 	if u == nil {
 		return build(f)

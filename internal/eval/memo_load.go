@@ -31,13 +31,12 @@ type loadKey struct {
 	tainted bool
 }
 
-// loadEntry is one load's evaluation: what the host recorded, the file holding the load, the
-// steps, reads, code, findings and marked value as an entry's, and the value's own copy in it.
+// loadEntry is one load's evaluation: what the host recorded, the file holding the load, and the
+// steps, reads, code, findings and marked value as an entry's, the value at its graph's root.
 type loadEntry struct {
 	in   LoadInputs
 	file *syntax.File
 	en   memoEntry
-	root value.Value
 }
 
 // load forces the load e as t: replayed while what it reads is unchanged, else run and recorded.
@@ -103,9 +102,9 @@ func (r *run) replayLoad(lm LoadMemo, k loadKey, site *loadSite) (value.Value, b
 	e.loading = site
 	infos, out, said := r.replayReads(&le.en)
 	e.loading = nil
-	var copies map[value.Value]value.Value
+	var tab []value.Value
 	if out == replayOn {
-		copies, same = le.en.kept.seed(infos)
+		tab, same = le.en.kept.seed(infos)
 	}
 	if out != replayOn || !same { // a value read now poisoned fails the load, which loading reports
 		r.failed = failed
@@ -115,8 +114,7 @@ func (r *run) replayLoad(lm LoadMemo, k loadKey, site *loadSite) (value.Value, b
 	e.memo.loaded.hits++
 	done()
 	r.reportKept(le.en.found, said)
-	e.thaw(le.en.kept, copies)
-	return get(copies, le.root), true
+	return e.thaw(&le.en.kept, tab), true
 }
 
 // recordLoad runs the load through the host, recorded as an entry is.
@@ -150,32 +148,26 @@ func (tr *entryTrace) loadEntry(e *Evaluator, v value.Value, in LoadInputs) (*lo
 	if v == nil || in == nil || tr.void || e.exhausted || len(e.bugs) != tr.bugs || tr.run.tainted != tr.key.tainted || !tr.unchanged(e) {
 		return nil, false
 	}
-	kept, root, ok := e.freezeValue(v, tr.infos)
+	kept, ok := e.freezeValue(v, tr.infos)
 	if !ok {
 		return nil, false
 	}
 	en := memoEntry{reads: tr.reads, tail: tr.steps(e), need: tr.need, files: tr.files, found: tr.found, kept: kept}
 	en.size = memoNodeBytes * (1 + len(en.reads) + len(en.found) + kept.size)
-	return &loadEntry{in: in, en: en, root: root}, true
+	return &loadEntry{in: in, en: en}, true
 }
 
-// freezeValue is v kept apart as an entry's record is, with v's own copy in it (v itself when
-// shared as it is); false when v holds a function value or is a value read.
-func (e *Evaluator) freezeValue(v value.Value, reads []*readInfo) (memoGraph, value.Value, bool) {
-	f := &freezer{e: e, reads: reads, seen: map[value.Value]bool{}, stack: []value.Value{v}, foreign: map[value.Value]foreignAt{}, ok: true}
-	for len(f.stack) > 0 && f.ok {
-		n := f.stack[len(f.stack)-1]
-		f.stack = f.stack[:len(f.stack)-1]
-		f.visit(n)
+// freezeValue is v kept apart as an entry's record is, v's copy (v itself when shared as it is)
+// at its root; false when v holds a function value or is a value read.
+func (e *Evaluator) freezeValue(v value.Value, reads []*readInfo) (memoGraph, bool) {
+	f := e.newFreezer(v, reads)
+	if !f.walk() {
+		return memoGraph{}, false
 	}
-	if _, read := f.foreign[v]; !f.ok || read {
-		return memoGraph{}, nil, false
+	if _, read := f.foreign[v]; read {
+		return memoGraph{}, false
 	}
-	g := f.kept(nil)
-	if shell(v) == nil {
-		return g, v, true
-	}
-	return g, g.nodes[0], true
+	return f.kept(v), true
 }
 
 // lookupLoad is the load kept under k, nil for none.

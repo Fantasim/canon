@@ -161,3 +161,20 @@ const (
 	fpBack
 	fpNone
 )
+
+// The kinds of node a kept graph copies, each kind allocated at once on a replay (memo_copy.go).
+const (
+	kindRecord nodeKind = iota
+	kindList
+	kindMap
+	kindTable
+	kindPair
+	kindRef
+	kindCount int = iota
+)
+
+// nilSlot is the slot of no value, which every table of copies holds first (memo_graph.go).
+const nilSlot slot = 0
+
+// pairParts is how many parts a pair has in a kept graph: A, then B.
+const pairParts = 2

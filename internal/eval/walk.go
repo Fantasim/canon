@@ -139,7 +139,7 @@ func (w *writtenIndex) build() {
 	w.built, w.at = true, map[*types.Refined]written{}
 	for _, pkg := range w.prog.Packages {
 		for _, f := range pkg.Files {
-			w.merge(cachedFile(w.memo, filesRefined, f, typesIn))
+			w.merge(cachedFile(w.memo, filesRefined, f, refinedFiles.of))
 		}
 	}
 }

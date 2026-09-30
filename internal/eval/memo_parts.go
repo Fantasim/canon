@@ -90,7 +90,7 @@ func (p *Parts) Kept(src any) (*value.Record, bool, bool) {
 		p.tr.code(f)
 	}
 	p.tr.need = max(p.tr.need, en.need)
-	rec := e.thaw(en.kept, map[value.Value]value.Value{})
+	rec, _ := e.thaw(&en.kept, nil).(*value.Record)
 	p.now[src] = en
 	e.memo.noteToken(rec, en)
 	e.memo.parted.hits++

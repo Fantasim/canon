@@ -19,9 +19,9 @@ func (r *run) replayEntry(k memoKey) (rec *value.Record, hit bool) {
 	}
 	start := e.spent[r.charge]
 	infos, out, said := r.replayReads(en)
-	var done map[value.Value]value.Value
+	var tab []value.Value
 	if out == replayOn {
-		if done, hit = en.kept.seed(infos); !hit {
+		if tab, hit = en.kept.seed(infos); !hit {
 			out = replayMiss
 		}
 	}
@@ -36,11 +36,11 @@ func (r *run) replayEntry(k memoKey) (rec *value.Record, hit bool) {
 	}
 	e.memo.stats.hits++
 	r.reportKept(en.found, said)
-	if en.kept.root == nil {
+	if en.kept.root == nilSlot {
 		r.failed = true
 		return nil, true
 	}
-	rec = e.thaw(en.kept, done)
+	rec, _ = e.thaw(&en.kept, tab).(*value.Record)
 	e.memo.noteToken(rec, en)
 	return rec, true
 }

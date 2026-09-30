@@ -107,7 +107,7 @@ func indexFile(f *syntax.File) fileIndex {
 }
 
 // walkFiles fills the index's file and owner once, from each file's fileIndex, which a memo
-// keeps across the evaluators of its epoch.
+// keeps across the evaluators of its epoch, and the per-file memo across all (an edit's host).
 func (e *Evaluator) walkFiles() {
 	x := e.index
 	if x.walked {
@@ -115,7 +115,7 @@ func (e *Evaluator) walkFiles() {
 	}
 	x.walked = true
 	for _, f := range x.files {
-		fi := cachedFile(e.memo, filesIndexed, f, indexFile)
+		fi := cachedFile(e.memo, filesIndexed, f, indexedFiles.of)
 		for _, n := range fi.decls {
 			x.file[n] = f
 		}
