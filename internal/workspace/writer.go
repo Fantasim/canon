@@ -2,6 +2,10 @@ package workspace
 
 import (
 	"context"
+	"slices"
+
+	"github.com/fantasim/canonlang/internal/edit"
+	"github.com/fantasim/canonlang/internal/project"
 )
 
 // Write runs fn as the one writer on a refreshed snapshot while readers keep the current one;
@@ -88,8 +92,9 @@ func (p *Project) end(ctx context.Context, s *Snapshot, w wrote) *Snapshot {
 	p.mu.Lock()
 	p.writing = false
 	p.mu.Unlock()
+	written := s.fs.takeWritten()
 	if w.planned != nil && len(w.files) > 0 {
-		return p.endPlanned(ctx, s, w)
+		return p.endPlanned(ctx, s, w, written)
 	}
 	next, err := p.refresh(ctx, s, w.cause)
 	switch {
@@ -104,10 +109,9 @@ func (p *Project) end(ctx context.Context, s *Snapshot, w wrote) *Snapshot {
 // endPlanned publishes the snapshot the re-check read (API.md E18), so what it computed serves
 // the calls after it (NFR-02), once the disk holds what was written; another change the refresh
 // reads is folded into the event in a later snapshot (W15).
-func (p *Project) endPlanned(ctx context.Context, s *Snapshot, w wrote) *Snapshot {
+func (p *Project) endPlanned(ctx context.Context, s *Snapshot, w wrote, written []string) *Snapshot {
 	n := w.planned
-	n.fs.settle(s.fs.over)
-	next, changed, err := p.recheck(ctx, n.fs)
+	next, changed, err := p.afterWrite(ctx, n.fs, n.fs.settle(s.fs.over), written)
 	if err != nil {
 		return p.reread(s, w)
 	}
@@ -120,6 +124,35 @@ func (p *Project) endPlanned(ctx context.Context, s *Snapshot, w wrote) *Snapsho
 	}
 	p.publish(n, w.cause, n.displays(append(names, changed...)))
 	return n
+}
+
+// afterWrite compares fs, an edit's planned snapshot settled, with the disk: all of it while a
+// watch runs, so an external change joins the edit's event (W15); else what the edit changed, no
+// refresh counted done, the next call's reading any other (S1; log-2026-09-29 M4 P18, PA3-r).
+func (p *Project) afterWrite(ctx context.Context, fs *snapFS, planned []name, written []string) (*snapFS, []name, error) {
+	if p.watches.running() {
+		return p.recheck(ctx, fs)
+	}
+	return fs.refreshNames(ctx, fs.wrote(planned, written))
+}
+
+// wrote is every entry an edit's commit may have changed: the files planned, and each name it
+// wrote, renamed, removed or created (N6) and the journal's directory (N10), with whatever s read
+// at each of them and at every directory above, so s is then what a fresh read gives.
+func (s *snapFS) wrote(planned []name, written []string) []name {
+	out := slices.Clone(planned)
+	for _, abs := range append(written, project.Join(s.root, edit.JournalDir)) {
+		for d := abs; ; d = project.DirOf(d) {
+			for _, k := range [...]kind{kindFile, kindDir, kindStat, kindLink} {
+				out = append(out, name{kind: k, abs: d})
+			}
+			if project.DirOf(d) == d {
+				break
+			}
+		}
+	}
+	slices.SortFunc(out, compareNames)
+	return slices.Compact(out)
 }
 
 // reread publishes s with the files w wrote read again from the disk.

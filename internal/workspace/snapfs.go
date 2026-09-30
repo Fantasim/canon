@@ -60,43 +60,58 @@ type entry struct {
 // snapFS is one snapshot's file system: each name read from the one under it once, on first
 // use, overlays in place of files; writes go through (API.md S1).
 type snapFS struct {
-	base   project.FS
-	over   map[string][]byte // overlays by absolute name, never changed once the snapFS is read by a call
-	mine   map[string]bool   // the overlays an edit planned in memory, not a user's (settle)
-	now    func() time.Time
-	root   string // the project directory, which names an entry as the scan does
-	mu     sync.Mutex
-	ents   map[name]*entry
-	inputs map[string]string // every file a load read, by absolute name, to its display path (S3)
-	gen    int               // bumped at each new entry, so an unchanged snapshot is not recorded twice
-	ingen  int               // bumped at each change to inputs
-	rev    string            // the revision last computed, while ingen is revAt
-	revAt  int
-	older  []weak.Pointer[snapFS] // the snapshots this one descends from, while a caller holds them
+	base     project.FS
+	over     map[string][]byte // overlays by absolute name, never changed once the snapFS is read by a call
+	mine     map[string]bool   // the overlays an edit planned in memory, not a user's (settle)
+	now      func() time.Time
+	root     string // the project directory, which names an entry as the scan does
+	mu       sync.Mutex
+	ents     map[name]*entry
+	log      []name               // each name whose entry was stored or dropped here, in order (history)
+	up       weak.Pointer[snapFS] // the snapshot this one was forked from, whose log was upAt long then
+	upAt     int
+	inputs   *inputSet // every file a load read (S3), shared with a fork or a listing until changed
+	inShared bool
+	gen      int    // bumped at each new entry, so a watch follows what it reads
+	ingen    int    // bumped at each change to inputs
+	rev      string // the revision last computed, while ingen is revAt
+	revAt    int
+	lst      *listing               // the listing last computed here, or where this one was forked
+	written  []string               // each name a writer pinned since it last ended (API.md S9)
+	older    []weak.Pointer[snapFS] // the snapshots this one descends from, while a caller holds them
 
 	plansMu sync.Mutex             // plans grows after the snapFS exists; mu may be held around it
 	plans   []weak.Pointer[snapFS] // this snapshot with an edit applied in memory, while held
 }
 
+// inputSet is every file a load read, by absolute name, to its display path (API.md S3); once
+// shared it never changes, so a listing knows it by identity.
+type inputSet struct {
+	byAbs map[string]string
+}
+
 func newSnapFS(base project.FS, over map[string][]byte, now func() time.Time) *snapFS {
-	return &snapFS{base: base, over: over, now: now, ents: map[name]*entry{}, inputs: map[string]string{}}
+	return &snapFS{base: base, over: over, now: now, ents: map[name]*entry{}, inputs: &inputSet{byAbs: map[string]string{}}}
 }
 
 // fork is a new snapshot's file system: s's entries and inputs kept, except those replaced.
 func (s *snapFS) fork(over map[string][]byte, replaced map[name]*entry) *snapFS {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	next := &snapFS{base: s.base, over: over, now: s.now, root: s.root, ents: maps.Clone(s.ents), inputs: maps.Clone(s.inputs)}
+	next := &snapFS{base: s.base, over: over, now: s.now, root: s.root, ents: maps.Clone(s.ents), inputs: s.inputs, lst: s.lst}
+	next.up, next.upAt = weak.Make(s), len(s.log)
+	next.inShared, s.inShared = true, true
 	for _, o := range s.lineage() {
 		next.older = append(next.older, weak.Make(o))
 	}
-	//canon:unordered each replaced entry is stored under its own name
+	//canon:unordered each replaced entry is stored under its own name; the log's order is not read
 	for n, e := range replaced {
 		if e == nil {
 			delete(next.ents, n)
 		} else {
 			next.ents[n] = e
 		}
+		next.log = append(next.log, n)
 	}
 	return next
 }
@@ -116,6 +131,7 @@ func (s *snapFS) get(n name, load func(string) *entry) *entry {
 		return e
 	}
 	s.ents[n] = fresh
+	s.log = append(s.log, n)
 	s.gen++
 	return fresh
 }
@@ -248,10 +264,14 @@ func (s *snapFS) RecordReads(reads []build.Read) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	for _, r := range reads {
-		if d, ok := s.inputs[r.Abs]; !ok || r.Display < d {
-			s.inputs[r.Abs] = r.Display
-			s.ingen++
+		if d, ok := s.inputs.byAbs[r.Abs]; ok && r.Display >= d {
+			continue
 		}
+		if s.inShared {
+			s.inputs, s.inShared = &inputSet{byAbs: maps.Clone(s.inputs.byAbs)}, false
+		}
+		s.inputs.byAbs[r.Abs] = r.Display
+		s.ingen++
 	}
 }
 
@@ -259,14 +279,19 @@ func (s *snapFS) RecordReads(reads []build.Read) {
 func (s *snapFS) recorded() []build.Read {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	out := make([]build.Read, 0, len(s.inputs))
-	for _, abs := range slices.Sorted(maps.Keys(s.inputs)) {
-		out = append(out, build.Read{Display: s.inputs[abs], Abs: abs})
+	return s.inputs.reads()
+}
+
+// reads is every file of the set, by absolute name.
+func (in *inputSet) reads() []build.Read {
+	out := make([]build.Read, 0, len(in.byAbs))
+	for _, abs := range slices.Sorted(maps.Keys(in.byAbs)) {
+		out = append(out, build.Read{Display: in.byAbs[abs], Abs: abs})
 	}
 	return out
 }
 
-// sums is the content key of every entry, for the history (API.md S4).
+// sums is the content key of every entry, for the history (API.md S4), and the log's length.
 func (s *snapFS) sums() (map[name]sum, int) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -278,7 +303,7 @@ func (s *snapFS) sums() (map[name]sum, int) {
 			out[name{kind: kindSources, abs: n.abs}] = e.src
 		}
 	}
-	return out, s.gen
+	return out, len(s.log)
 }
 
 func classOf(err error) class {

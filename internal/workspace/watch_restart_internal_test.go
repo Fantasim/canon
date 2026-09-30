@@ -104,6 +104,50 @@ func TestWatchHubStorm(t *testing.T) {
 	}
 }
 
+// API.md S1, W15 (log-2026-09-29 M4 PA3-r): a hub replaced after a panic counts as running
+// throughout its replacement, so an edit ending meanwhile still folds an external change into its
+// event.
+func TestWatchReplacedHubRuns(t *testing.T) {
+	_, p := osLaw(t)
+	notify := func() (notifier, error) {
+		return &fakeNotifier{ev: make(chan fsnotify.Event), er: make(chan error)}, nil
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	w, err := p.Watch(ctx, func(context.Context, Change) {}, WatchOptions{OS: true, notify: notify})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { cancel(); <-w.Done() }()
+	// A timing window: a regression is caught often, not always (the spinner must run inside it);
+	// the fixed code never reads false, so this never fails spuriously.
+	var idle atomic.Int64
+	stop, spun := make(chan struct{}), make(chan struct{})
+	go func() {
+		defer close(spun)
+		for {
+			select {
+			case <-stop:
+				return
+			default:
+			}
+			if !p.watches.running() {
+				idle.Add(1)
+			}
+		}
+	}()
+	for range replacements {
+		p.hubEnded(p.watches.hub.Load(), safego.ErrPanic)
+	}
+	close(stop)
+	<-spun
+	if idle.Load() > 0 {
+		t.Errorf("no hub ran %d times while one replaced another", idle.Load())
+	}
+}
+
+// replacements is how many hubs TestWatchReplacedHubRuns replaces.
+const replacements = 50
+
 // stormFor is how long the storm lasts, stormSettle how long its last failure takes to arrive.
 const (
 	stormFor    = 2500 * time.Millisecond

@@ -9,7 +9,6 @@ import (
 	"io/fs"
 	"path"
 	"slices"
-	"strings"
 
 	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/diag"
@@ -219,11 +218,23 @@ func (s *snapshot) revision() string {
 // revisionOf is "r1:" and the SHA-256 of the listing of the files read (API.md S3).
 func revisionOf(lines []digest) string {
 	sorted := slices.SortedFunc(slices.Values(lines), func(a, b digest) int { return cmp.Compare(a.path, b.path) })
-	var listing strings.Builder
-	for _, l := range sorted {
-		listing.WriteString(l.path + listingSep + l.text + listingEnd)
+	return revisionOfSorted(sorted, func(l digest) string { return l.path }, func(buf []byte, l digest) []byte {
+		return append(buf, l.text...)
+	})
+}
+
+// revisionOfSorted is "r1:" and the SHA-256 of the listing of lines in their order: per line its
+// display, NUL, the text text appends (a SHA-256 in hex or unreadMark) and LF (API.md S3).
+func revisionOfSorted[L any](lines []L, display func(L) string, text func([]byte, L) []byte) string {
+	size := 0
+	for _, l := range lines {
+		size += len(display(l)) + len(listingSep) + hex.EncodedLen(sha256.Size) + len(listingEnd)
 	}
-	sum := sha256.Sum256([]byte(listing.String()))
+	listing := make([]byte, 0, size)
+	for _, l := range lines {
+		listing = append(text(append(append(listing, display(l)...), listingSep...), l), listingEnd...)
+	}
+	sum := sha256.Sum256(listing)
 	return revisionPrefix + hex.EncodeToString(sum[:])
 }
 

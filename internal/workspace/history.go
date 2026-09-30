@@ -20,28 +20,40 @@ type record struct {
 
 // history is the last historyLen revisions a project produced, oldest first (API.md S4).
 type history struct {
-	recs []record
-	seq  int
-	tip  map[name]sum // the newest record, whole
-	fs   *snapFS      // the snapshot, and its entry count, the newest record was taken from
-	gen  int
-	own  bool // the newest record holds only entries fs holds: none merged from another snapshot
+	recs  []record
+	seq   int
+	tip   map[name]sum // the newest record, whole
+	fs    *snapFS      // the snapshot the newest record was taken from, when its log was logAt long
+	logAt int
+	own   bool // the newest record holds only entries fs holds: none merged from another snapshot
+	exact bool // tip is what fs held when its log was logAt long, no more
 }
 
 // add remembers rev with the entries of fs; the same revision again only gains fs's new entries.
 func (h *history) add(rev string, fs *snapFS) {
-	if h.from(rev, fs) && h.gen == fs.generation() {
+	if h.from(rev, fs) && h.logAt == fs.logLen() {
 		return
 	}
-	sums, gen := fs.sums()
-	if n := len(h.recs); n > 0 && h.recs[n-1].rev == rev {
+	d, at, ok := h.since(fs)
+	n := len(h.recs)
+	switch {
+	case n > 0 && h.recs[n-1].rev == rev && ok:
+		h.own = h.own && h.fs == fs
+		h.mergeDelta(d)
+	case n > 0 && h.recs[n-1].rev == rev:
+		var sums map[name]sum
+		sums, at = fs.sums()
 		h.own = h.own && h.fs == fs
 		h.merge(sums)
-	} else {
-		h.push(rev, sums)
-		h.own = true
+		h.exact = false
+	case ok:
+		h.push(rev, d)
+	default:
+		var sums map[name]sum
+		sums, at = fs.sums()
+		h.push(rev, delta(h.tip, sums))
 	}
-	h.fs, h.gen = fs, gen
+	h.fs, h.logAt = fs, at
 }
 
 // from reports that rev is the newest record and holds only what fs held when it was taken or
@@ -64,15 +76,41 @@ func (h *history) merge(sums map[name]sum) {
 	}
 }
 
-// push appends a record: whole every fullEvery, else the delta from the one before; past
-// historyLen the oldest is dropped, the next made whole when it was a delta.
-func (h *history) push(rev string, sums map[name]sum) {
-	h.seq++
-	r := record{rev: rev, seq: h.seq, full: h.seq%fullEvery == 0 || len(h.recs) == 0, sums: sums}
-	if !r.full {
-		r.sums = delta(h.tip, sums)
+// mergeDelta is merge of the entries d, a delta from the tip, holds: a name gone is kept, so the
+// tip is no longer exact.
+func (h *history) mergeDelta(d map[name]sum) {
+	last := &h.recs[len(h.recs)-1]
+	//canon:unordered each entry is merged under its own name
+	for n, v := range d {
+		if v.class == classGone {
+			h.exact = false
+			continue
+		}
+		last.sums[n] = v
+		h.tip[n] = v
 	}
-	h.tip = maps.Clone(sums)
+}
+
+// push appends a record of d, the delta from the newest: whole every fullEvery, else d; past
+// historyLen the oldest is dropped, the next made whole when it was a delta.
+func (h *history) push(rev string, d map[name]sum) {
+	h.seq++
+	if h.tip == nil {
+		h.tip = map[name]sum{}
+	}
+	//canon:unordered each entry is applied under its own name
+	for n, v := range d {
+		if v.class == classGone {
+			delete(h.tip, n)
+		} else {
+			h.tip[n] = v
+		}
+	}
+	h.exact, h.own = true, true
+	r := record{rev: rev, seq: h.seq, full: h.seq%fullEvery == 0 || len(h.recs) == 0, sums: d}
+	if r.full {
+		r.sums = maps.Clone(h.tip)
+	}
 	h.recs = append(h.recs, r)
 	if len(h.recs) > historyLen {
 		if !h.recs[1].full {
@@ -80,6 +118,20 @@ func (h *history) push(rev string, sums map[name]sum) {
 		}
 		h.recs = h.recs[1:]
 	}
+}
+
+// since is what differs in fs from the tip, told from the names stored or dropped since the tip
+// was taken, and fs's log length; false when the tip is not exact or fs does not descend from the
+// tip's snapshot by one fork at most (log-2026-09-29 M4 P18).
+func (h *history) since(fs *snapFS) (map[name]sum, int, bool) {
+	if !h.exact || h.fs == nil {
+		return nil, 0, false
+	}
+	names, at, ok := fs.changedSince(h.fs, h.logAt)
+	if !ok {
+		return nil, 0, false
+	}
+	return fs.deltaOf(h.tip, names), at, true
 }
 
 // whole is record i's entries, rebuilt from the full record before it and the deltas since.
@@ -173,6 +225,64 @@ func (h *history) named(i int, r build.Read, pr probe) []string {
 	}
 	if len(out) == 0 {
 		return []string{r.Display}
+	}
+	return out
+}
+
+// logLen is how many names s has stored or dropped so far.
+func (s *snapFS) logLen() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return len(s.log)
+}
+
+// changedSince is every name whose entry in s may differ from base's when its log was at long:
+// base's log between then and the fork, either first, and s's own; with s's log length, false
+// when s is neither base nor forked from it.
+func (s *snapFS) changedSince(base *snapFS, at int) ([]name, int, bool) {
+	var names []name
+	if s != base {
+		if s.up.Value() != base {
+			return nil, 0, false
+		}
+		base.mu.Lock()
+		log := base.log
+		base.mu.Unlock()
+		names = slices.Clone(log[min(at, s.upAt):max(at, s.upAt)])
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s == base {
+		return slices.Clone(s.log[at:]), len(s.log), true
+	}
+	return append(names, s.log...), len(s.log), true
+}
+
+// deltaOf is what differs in s from tip among names: a changed or new key, or gone for a name s
+// lacks; a listing's key over its sources goes with the listing (sums).
+func (s *snapFS) deltaOf(tip map[name]sum, names []name) map[name]sum {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	out := map[name]sum{}
+	note := func(n name, v sum, ok bool) {
+		old, had := tip[n]
+		switch {
+		case ok && (!had || old != v):
+			out[n] = v
+		case !ok && had:
+			out[n] = sum{class: classGone}
+		}
+	}
+	for _, n := range names {
+		e, ok := s.ents[n]
+		var v, src sum
+		if ok {
+			v, src = e.sum, e.src
+		}
+		note(n, v, ok)
+		if n.kind == kindDir {
+			note(name{kind: kindSources, abs: n.abs}, src, ok)
+		}
 	}
 	return out
 }

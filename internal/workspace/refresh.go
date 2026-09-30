@@ -46,6 +46,25 @@ func (s *snapFS) refresh(ctx context.Context) (*snapFS, []name, error) {
 		}
 	}
 	s.mu.Unlock()
+	return s.compare(ctx, names, olds)
+}
+
+// refreshNames is refresh over the entries of only (log-2026-09-29 M4 P18).
+func (s *snapFS) refreshNames(ctx context.Context, only []name) (*snapFS, []name, error) {
+	s.mu.Lock()
+	var names []name
+	var olds []*entry
+	for _, n := range only {
+		if e, ok := s.ents[n]; ok && !e.over {
+			names, olds = append(names, n), append(olds, e)
+		}
+	}
+	s.mu.Unlock()
+	return s.compare(ctx, names, olds)
+}
+
+// compare is refresh over names, whose entries are olds.
+func (s *snapFS) compare(ctx context.Context, names []name, olds []*entry) (*snapFS, []name, error) {
 	fresh := make([]*entry, len(names))
 	err := inParallel(ctx, len(names), func(i int) { fresh[i] = rechecks[names[i].kind](s, names[i], olds[i]) })
 	if err != nil {

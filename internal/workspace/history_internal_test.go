@@ -91,16 +91,11 @@ func TestHistoryRemovalAndRevert(t *testing.T) {
 		var h history
 		s := newSnapFS(nil, nil, time.Now)
 		for i := range pad { // moves the full copies against the records below
-			s.ents[name{kind: kindFile, abs: fmt.Sprint("/pad", i)}] = &entry{}
+			put(s, name{kind: kindFile, abs: fmt.Sprint("/pad", i)}, &entry{})
 			h.add(fmt.Sprint("pad", i), s)
 		}
 		set := func(rev string, e *entry) {
-			if e == nil {
-				delete(s.ents, n)
-			} else {
-				s.ents[n] = e
-			}
-			s.gen++
+			put(s, n, e)
 			h.add(rev, s)
 		}
 		set("A", &entry{sum: key("a")})
@@ -133,8 +128,7 @@ func TestHistoryDeltas(t *testing.T) {
 	var h history
 	s := newSnapFS(nil, nil, time.Now)
 	for i := range 100 {
-		s.ents[name{kind: kindFile, abs: fmt.Sprint("/f", i%7)}] = &entry{sum: sum{hash: sha256.Sum256([]byte(fmt.Sprint(i)))}}
-		s.gen++
+		put(s, name{kind: kindFile, abs: fmt.Sprint("/f", i%7)}, &entry{sum: sum{hash: sha256.Sum256([]byte(fmt.Sprint(i)))}})
 		h.add(fmt.Sprint("r", i), s)
 	}
 	if len(h.recs) != historyLen || !h.recs[0].full {
@@ -155,4 +149,16 @@ func TestHistoryDeltas(t *testing.T) {
 	if i, ok := h.find("r36"); !ok || i != 0 {
 		t.Errorf("r36 at %d, %v", i, ok)
 	}
+}
+
+// put stores e under n in s, or drops n for nil, as a snapshot's reads, forks and settle do: in
+// its log, which the history reads (log-2026-09-29 M4 P18).
+func put(s *snapFS, n name, e *entry) {
+	if e == nil {
+		delete(s.ents, n)
+	} else {
+		s.ents[n] = e
+	}
+	s.log = append(s.log, n)
+	s.gen++
 }

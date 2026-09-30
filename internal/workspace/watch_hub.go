@@ -125,11 +125,17 @@ func (p *Project) hubEnded(h *hub, err error) {
 	ws := &p.watches
 	ws.mu.Lock()
 	defer ws.mu.Unlock()
-	if !ws.hub.CompareAndSwap(h, nil) || !errors.Is(err, safego.ErrPanic) {
+	if ws.hub.Load() != h { // every store is under ws.mu
 		return
 	}
-	if ws.users > 0 && !isDone(p.closing) {
-		ws.hub.Store(p.newHub(h.ctx, h.opt, ws.restartDelay()))
+	failed := errors.Is(err, safego.ErrPanic)
+	var next *hub
+	if failed && ws.users > 0 && !isDone(p.closing) {
+		next = p.newHub(h.ctx, h.opt, ws.restartDelay())
+	}
+	ws.hub.Store(next) // one store: a hub being replaced counts as running throughout (S1, W15)
+	if !failed {
+		return
 	}
 	//canon:unordered each watch queues the failure on its own
 	for w := range ws.watchers {

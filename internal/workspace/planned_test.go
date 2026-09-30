@@ -136,9 +136,10 @@ func (c *changeFS) Rename(oldname, newname string) error {
 	return c.memFS.Rename(oldname, newname)
 }
 
-// API.md W15, API.md S10 (log-2026-09-29 M4 P14): an external change made during an edit's write
-// is folded into its one event, whose snapshot reads it and the file the edit wrote.
-func TestEditFoldsChangeDuringWrite(t *testing.T) {
+// changing is the law project over a changeFS that writes c.json during the first rename, read
+// and analyzed so that c.json is read before any edit.
+func changing(t *testing.T) (*changeFS, *workspace.Project) {
+	t.Helper()
 	fsys := &changeFS{memFS: newMemFS(lawFiles()), name: "/law/data/c.json", data: []byte("[9]\n")}
 	b, err := build.Open(fsys, "/law", build.Options{})
 	if err != nil {
@@ -146,15 +147,50 @@ func TestEditFoldsChangeDuringWrite(t *testing.T) {
 	}
 	p := workspace.New(b)
 	t.Cleanup(p.Close)
-	analyze(t, read(t, p)) // c.json is read before the edit
-	var events []workspace.Event
-	defer p.Subscribe(func(e workspace.Event) { events = append(events, e) })()
+	analyze(t, read(t, p))
+	return fsys, p
+}
+
+// API.md W15, API.md S10 (log-2026-09-29 M4 P14, P18): while a watch runs, an external change
+// made during an edit's write is folded into its one event, whose snapshot reads it and the file
+// the edit wrote.
+func TestEditFoldsChangeDuringWrite(t *testing.T) {
+	_, p := changing(t)
+	clk := newFakeClock()
+	startWatch(t, p, clk)
+	clk.idle(t)
+	pub := record(t, p)
 	out := commit(t, p, setB(2))
+	events := pub.all()
 	if len(events) != 1 || events[0].Cause != workspace.CauseEdit || !slices.Equal(events[0].Files, []string{"@data/c.json", "b/b.canon"}) {
 		t.Fatalf("API.md W15: events %+v", events)
 	}
 	data, _ := out.After.Build().FS().ReadFile("/law/data/c.json")
 	if events[0].Snapshot != out.After || string(data) != "[9]\n" {
 		t.Fatalf("API.md S10: the published snapshot reads %q", data)
+	}
+}
+
+// API.md S1, API.md W15 (log-2026-09-29 M4 P18): with no watch there is no event to fold an
+// external change into, so an edit reads again only what it wrote; the change made during its
+// write is read by the next call's refresh.
+func TestEditUnwatchedLeavesChangeToRefresh(t *testing.T) {
+	fsys, p := changing(t)
+	pub := record(t, p)
+	out := commit(t, p, setB(3))
+	events := pub.all()
+	if len(events) != 1 || events[0].Cause != workspace.CauseEdit || !slices.Equal(events[0].Files, []string{"b/b.canon"}) {
+		t.Fatalf("API.md W15: events %+v", events)
+	}
+	disk, _ := fsys.ReadFile("/law/b/b.canon")
+	if data, _ := out.After.Build().FS().ReadFile("/law/b/b.canon"); events[0].Snapshot != out.After || string(data) != string(disk) {
+		t.Fatalf("API.md S10: the published snapshot reads %q", data)
+	}
+	s := read(t, p)
+	if data, _ := s.Build().FS().ReadFile("/law/data/c.json"); s == out.After || string(data) != "[9]\n" {
+		t.Fatalf("API.md S1: the next call reads c.json as %q", data)
+	}
+	if events := pub.all(); len(events) != 2 || events[1].Cause != workspace.CauseExternal || !slices.Equal(events[1].Files, []string{"@data/c.json"}) {
+		t.Errorf("API.md S1: the refresh publishes %+v", events)
 	}
 }

@@ -58,35 +58,6 @@ func (s *Snapshot) revision(ctx context.Context) (string, error) {
 	return rev, err
 }
 
-// list is the revision of s's read set as it holds it now (S3).
-func (s *Snapshot) list(ctx context.Context) (string, error) {
-	reads, scanErr := s.b.Inputs()
-	reads = append(reads, s.fs.recorded()...)
-	lines := make([]build.Listed, 0, len(reads))
-	seen := map[string]bool{}
-	for _, r := range reads {
-		if err := ctx.Err(); err != nil {
-			return "", err
-		}
-		if seen[r.Abs] {
-			continue
-		}
-		seen[r.Abs] = true
-		e := s.fs.get(name{kind: kindFile, abs: r.Abs}, s.fs.readFile)
-		switch e.sum.class {
-		case classMissing, classGone:
-		case classUnreadable:
-			lines = append(lines, build.Listed{Display: r.Display, Unreadable: true})
-		case classOK:
-			lines = append(lines, build.Listed{Display: r.Display, Sum: e.sum.hash})
-		}
-	}
-	if scanErr != nil {
-		lines = append(lines, build.Listed{Display: listingDisplay, Unreadable: true})
-	}
-	return build.RevisionOf(lines), nil
-}
-
 // current reports that base is the revision the project last produced, from this snapshot's
 // entries alone: whatever a staleness check reads gives what base held, or is first read now,
 // so nothing is stale (API.md S5).
@@ -167,7 +138,7 @@ func (s *Snapshot) displays(names []name) []string {
 // display is abs as a load first displayed it, else as the project displays it (WIRE.md §2.3).
 func (s *Snapshot) display(abs string) string {
 	s.fs.mu.Lock()
-	d, ok := s.fs.inputs[abs]
+	d, ok := s.fs.inputs.byAbs[abs]
 	s.fs.mu.Unlock()
 	if ok {
 		return d

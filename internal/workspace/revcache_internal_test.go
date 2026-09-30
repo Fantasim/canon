@@ -41,13 +41,12 @@ func TestRevisionKept(t *testing.T) {
 func TestHistoryFrom(t *testing.T) {
 	var h history
 	one, two := newSnapFS(nil, nil, time.Now), newSnapFS(nil, nil, time.Now)
-	one.ents[name{kind: kindFile, abs: "/a"}] = &entry{}
+	put(one, name{kind: kindFile, abs: "/a"}, &entry{})
 	h.add("r", one)
 	if !h.from("r", one) || h.from("r", two) || h.from("q", one) {
 		t.Fatal("from after one record")
 	}
-	one.ents[name{kind: kindFile, abs: "/b"}] = &entry{}
-	one.gen++
+	put(one, name{kind: kindFile, abs: "/b"}, &entry{})
 	h.add("r", one)
 	if !h.from("r", one) {
 		t.Error("a record gaining its own snapshot's entries is not its own")

@@ -39,16 +39,32 @@ type Listed struct {
 	Unreadable bool
 }
 
-// RevisionOf is the revision of a read-set listing, "r1:" and its SHA-256 (API.md S3).
+// RevisionOf is the revision of a read-set listing, "r1:" and its SHA-256 (API.md S3). Lines
+// already in strictly ascending display order are taken as they are: no other order sorts so.
 func RevisionOf(lines []Listed) string {
-	ds := make([]digest, len(lines))
-	for i, l := range lines {
-		ds[i] = digest{path: l.Display, text: unreadMark}
-		if !l.Unreadable {
-			ds[i].text = hex.EncodeToString(l.Sum[:])
+	byDisplay := func(a, b Listed) int { return cmp.Compare(a.Display, b.Display) }
+	if !strictlySorted(lines) {
+		lines = slices.SortedFunc(slices.Values(lines), byDisplay) // as revisionOf sorts, ties included
+	}
+	return revisionOfSorted(lines, func(l Listed) string { return l.Display }, appendSum)
+}
+
+// appendSum is buf and l's text in a listing: its SHA-256 in hex, or unreadMark (API.md S3).
+func appendSum(buf []byte, l Listed) []byte {
+	if l.Unreadable {
+		return append(buf, unreadMark...)
+	}
+	return hex.AppendEncode(buf, l.Sum[:])
+}
+
+// strictlySorted reports each line's display greater than the one before.
+func strictlySorted(lines []Listed) bool {
+	for i := 1; i < len(lines); i++ {
+		if lines[i-1].Display >= lines[i].Display {
+			return false
 		}
 	}
-	return revisionOf(ds)
+	return true
 }
 
 // Over is p reading and writing through fsys, its directory and options kept: the project as a

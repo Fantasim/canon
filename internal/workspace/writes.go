@@ -20,6 +20,7 @@ func (s *snapFS) writable() (build.WriteFS, error) {
 // directory's listing before a writer changes them (API.md S9); each name is read once, by
 // this snapshot, and an older one that has not read it takes the same entry.
 func (s *snapFS) pin(abs string) {
+	s.noteWritten(abs)
 	older := s.lineage()[1:]
 	for _, p := range [...]pinned{
 		{n: name{kind: kindFile, abs: abs}, load: (*snapFS).readFile},
@@ -31,6 +32,22 @@ func (s *snapFS) pin(abs string) {
 			fs.adopt(p, e, s)
 		}
 	}
+}
+
+// noteWritten keeps abs among the names a writer changes through s (takeWritten).
+func (s *snapFS) noteWritten(abs string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.written = append(s.written, abs)
+}
+
+// takeWritten is every name a writer pinned through s since the last call, forgotten.
+func (s *snapFS) takeWritten() []string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	out := s.written
+	s.written = nil
+	return out
 }
 
 // pinned is a name a writer pins, with the method that reads it.
@@ -133,22 +150,27 @@ func (s *snapFS) Readlink(abs string) (string, error) {
 	return "", errNoLinks
 }
 
-// settle makes s, an edit planned in memory (API.md E18), the snapshot of what the writer wrote
-// (S10), before any call reads it: planned files keep their content, compared with the disk at
-// the next refresh (S1); their stats are read again; user are the only overlays left (S12).
-func (s *snapFS) settle(user map[string][]byte) {
+// settle makes s, an edit planned in memory (API.md E18), the snapshot of what was written (S10)
+// before any call reads it: planned files, returned, keep their content until compared with the
+// disk (S1); their stats are read again; user are the only overlays left (S12).
+func (s *snapFS) settle(user map[string][]byte) []name {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	//canon:unordered each entry is settled on its own
+	var files []name
+	//canon:unordered each entry is settled on its own; the caller sorts the files
 	for n, e := range s.ents {
 		switch {
 		case !e.over || n.kind == kindFile && !s.mine[n.abs]:
+			continue
 		case n.kind == kindFile:
 			s.ents[n] = &entry{sum: e.sum, data: e.data, err: e.err} // no stamp: read again at the next refresh
+			files = append(files, n)
 		default:
 			delete(s.ents, n)
 		}
+		s.log = append(s.log, n)
 	}
 	s.over, s.mine = user, nil
 	s.gen++
+	return files
 }
