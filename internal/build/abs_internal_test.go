@@ -1,32 +1,15 @@
 package build
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/fantasim/canonlang/internal/project"
+	"github.com/fantasim/canonlang/internal/testkit/winpaths"
 )
-
-// uncShares are the UNC shares winVolume knows.
-var uncShares = []string{"//server/share", "//wsl$/Ubuntu"}
-
-// winVolume reads a name's volume as Windows does, for the names below: a drive letter, or one
-// of uncShares.
-func winVolume(name string) string {
-	if i := strings.IndexByte(name, ':'); i == 1 {
-		return name[:i+1]
-	}
-	for _, share := range uncShares {
-		if name == share || strings.HasPrefix(name, share+pathSep) {
-			return share
-		}
-	}
-	return ""
-}
 
 // API.md §2.2, §3.4 (log M4 B12-r): Abs on Windows, drive and UNC project directories alike.
 func TestAbsOnWindows(t *testing.T) {
-	win := project.Paths{Sep: `\`, Volume: winVolume}
+	win := project.NewPaths(winpaths.Sep, winpaths.VolumeName)
 	cases := []struct {
 		dir, file, want string
 		ok              bool

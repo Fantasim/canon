@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/fantasim/canonlang/internal/build"
+	"github.com/fantasim/canonlang/internal/project"
 )
 
 // Process is who commits or recovers: the host and pid a journal records, and whether a pid of
@@ -56,7 +57,7 @@ func Recover(s Site, logger *slog.Logger) error {
 
 // journals are the journal files under dir, in byte order; none when there is no journal directory.
 func journals(fsys build.WriteFS, dir string) ([]string, error) {
-	jdir := path.Join(dir, JournalDir)
+	jdir := project.Join(dir, JournalDir)
 	entries, err := fsys.ReadDir(jdir)
 	if errors.Is(err, fs.ErrNotExist) {
 		return nil, nil
@@ -67,7 +68,7 @@ func journals(fsys build.WriteFS, dir string) ([]string, error) {
 	var out []string
 	for _, e := range entries {
 		if e.Type().IsRegular() && isJournal(e.Name()) {
-			out = append(out, path.Join(jdir, e.Name()))
+			out = append(out, project.Join(jdir, e.Name()))
 		}
 	}
 	slices.Sort(out)
@@ -216,7 +217,7 @@ func (u *undo) clearable(fsys build.WriteFS) error {
 			return fmt.Errorf(fmtFileErr, d.abs, err)
 		}
 		for _, e := range entries {
-			if name := path.Join(d.abs, e.Name()); !ownEntry(own, name, e) {
+			if name := project.Join(d.abs, e.Name()); !ownEntry(own, name, e) {
 				strays = append(strays, name)
 			}
 		}
@@ -257,7 +258,7 @@ func ownEntry(own map[string]bool, name string, e fs.DirEntry) bool {
 	case e.IsDir() || e.Name()[0] != hiddenMark:
 		return false
 	}
-	for _, stem := range stagesIn(own, path.Dir(name)) {
+	for _, stem := range stagesIn(own, project.DirOf(name)) {
 		if strings.Contains(e.Name(), stem) {
 			return true
 		}
@@ -269,7 +270,7 @@ func ownEntry(own map[string]bool, name string, e fs.DirEntry) bool {
 func stagesIn(own map[string]bool, dir string) []string {
 	var out []string
 	for _, name := range slices.Sorted(maps.Keys(own)) {
-		if path.Dir(name) == dir && strings.HasSuffix(name, stageSuffix) {
+		if project.DirOf(name) == dir && strings.HasSuffix(name, stageSuffix) {
 			out = append(out, path.Base(name))
 		}
 	}
@@ -317,7 +318,7 @@ func (r *undoer) restoreOne(f undoFile) error {
 		}
 		return nil
 	}
-	if err := r.fsys.MkdirAll(path.Dir(f.abs)); err != nil {
+	if err := r.fsys.MkdirAll(project.DirOf(f.abs)); err != nil {
 		return err
 	}
 	return replace(r.fsys, f.abs, f.Old, f.Mode)
@@ -355,7 +356,7 @@ func (r *undoer) exists(name string) (bool, error) {
 // touch counts a change to name and keeps its directory to sync.
 func (r *undoer) touch(name string) {
 	r.changed++
-	r.touched = append(r.touched, path.Dir(name))
+	r.touched = append(r.touched, project.DirOf(name))
 }
 
 // removeAll removes dir and everything in it, never descending a symbolic link: a link is
@@ -367,7 +368,7 @@ func removeAll(fsys build.WriteFS, dir string) error {
 	}
 	slices.SortFunc(entries, func(a, b fs.DirEntry) int { return cmp.Compare(a.Name(), b.Name()) })
 	for _, e := range entries {
-		child := path.Join(dir, e.Name())
+		child := project.Join(dir, e.Name())
 		if e.IsDir() && e.Type()&fs.ModeSymlink == 0 {
 			err = removeAll(fsys, child)
 		} else {

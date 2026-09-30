@@ -39,7 +39,7 @@ func evalSymlinksOS(name string) (string, error) {
 	return dest, nil
 }
 
-// volumeOf is name's leading volume, a drive letter or a UNC share, "" for neither: parsed as text, never through the OS, so it is the same on every GOOS.
+// volumeOf is name's leading volume, a drive letter or a UNC share, "" for neither (a device path `//?/…` or `//./…` is neither): parsed as text, never through the OS, so it is the same on every GOOS.
 func volumeOf(name string) string {
 	if drivePattern.MatchString(name) {
 		return name[:driveLen]
@@ -49,7 +49,7 @@ func volumeOf(name string) string {
 		return ""
 	}
 	host, tail, ok := strings.Cut(rest, sep)
-	if !ok || host == "" {
+	if !ok || host == "" || host == queryHost || host == dot {
 		return ""
 	}
 	share, _, _ := strings.Cut(tail, sep)

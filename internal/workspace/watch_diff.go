@@ -3,10 +3,10 @@ package workspace
 import (
 	"io/fs"
 	"maps"
-	"path"
 	"slices"
 
 	"github.com/fantasim/canonlang/internal/build"
+	"github.com/fantasim/canonlang/internal/project"
 )
 
 // loaders reads an entry of each kind from the file system under a snapshot, as on first use.
@@ -74,7 +74,7 @@ func (d *diff) gone(dir string, had, has []fs.DirEntry) {
 		if kept[listed{e.Name(), e.IsDir()}] {
 			continue
 		}
-		abs := path.Join(dir, e.Name())
+		abs := project.Join(dir, e.Name())
 		d.changed = append(d.changed, abs)
 		if !e.IsDir() {
 			d.files = append(d.files, abs)

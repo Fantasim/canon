@@ -55,10 +55,15 @@ func (e *OpenError) Error() string { return e.Err.Error() }
 
 func (e *OpenError) Unwrap() error { return e.Err }
 
-// Open checks project.canon in dir (absolute, '/'-separated), places the roots and scans the
-// file set; it parses no other file (API.md O2, O3).
+// Open checks project.canon in dir (absolute; '/'-separated, or as the system writes it), places
+// the roots and scans the file set; it parses no other file (API.md O2, O3).
 func Open(fsys project.FS, dir string, opt Options) (*Project, error) {
-	p := &Project{fs: fsys, dir: project.Clean(dir), opt: opt}
+	return openIn(project.HostPaths(), fsys, dir, opt)
+}
+
+// openIn is Open with dir read as sys writes names: an FS name, its volume kept and drive upper-cased (API.md §2.2).
+func openIn(sys project.Paths, fsys project.FS, dir string, opt Options) (*Project, error) {
+	p := &Project{fs: fsys, dir: sys.FromAPI(dir, ""), opt: opt}
 	if _, err := p.open(); err != nil {
 		return nil, err
 	}

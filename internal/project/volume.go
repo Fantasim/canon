@@ -12,9 +12,35 @@ type Paths struct {
 	Volume func(string) string
 }
 
-// HostPaths is the running system's: filepath.Separator and filepath.VolumeName.
+// HostPaths is the running system's: filepath.Separator and filepath.VolumeName (NewPaths).
 func HostPaths() Paths {
-	return Paths{Sep: string(filepath.Separator), Volume: filepath.VolumeName}
+	return NewPaths(string(filepath.Separator), filepath.VolumeName)
+}
+
+// NewPaths is the system writing sep between names and volumeName's volumes, read as '/' names:
+// only a drive or a UNC share is a volume, no device path ("//?/C:") or bare UNC host ("//host").
+func NewPaths(s string, volumeName func(string) string) Paths {
+	return Paths{Sep: s, Volume: func(name string) string {
+		vol := strings.ReplaceAll(volumeName(name), s, sep)
+		if vol != volumeOf(vol) {
+			return ""
+		}
+		return vol
+	}}
+}
+
+// RootsFromAPI is a copy of roots, each an FS name as FromAPI makes one against dir; a relative
+// one is left as it is, and nil stays nil.
+func (s Paths) RootsFromAPI(roots map[string]string, dir string) map[string]string {
+	if roots == nil {
+		return nil
+	}
+	out := make(map[string]string, len(roots))
+	//canon:unordered each root is converted on its own
+	for name, d := range roots {
+		out[name] = s.FromAPI(d, dir)
+	}
+	return out
 }
 
 // Clean is path.Clean after name's host volume (Paths.clean).

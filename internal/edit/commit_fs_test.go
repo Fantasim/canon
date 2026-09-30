@@ -12,6 +12,7 @@ import (
 
 	"github.com/fantasim/canonlang/internal/build"
 	"github.com/fantasim/canonlang/internal/edit"
+	"github.com/fantasim/canonlang/internal/project"
 )
 
 var (
@@ -220,11 +221,11 @@ func (l layout) Dir() string { return l.dir }
 func (l layout) Abs(file string) (string, bool) {
 	name, ok := strings.CutPrefix(file, "@")
 	if !ok {
-		return path.Join(l.dir, file), file != ""
+		return project.Join(l.dir, file), file != ""
 	}
 	root, rest, _ := strings.Cut(name, "/")
 	dir, ok := l.roots[root]
-	return path.Join(dir, rest), ok
+	return project.Join(dir, rest), ok
 }
 
 func (l layout) Display(abs string) string {

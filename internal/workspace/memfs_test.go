@@ -9,6 +9,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/fantasim/canonlang/internal/project"
 )
 
 // memFS is a writable FS in memory: later mtimes, shuffled listings (API.md §2.2).
@@ -36,10 +38,10 @@ func (m *memFS) put(name string, data []byte) {
 	m.clock++
 	m.files[name] = data
 	m.mtimes[name] = m.clock
-	for d := path.Dir(name); ; d = path.Dir(d) {
+	for d := project.DirOf(name); ; d = project.DirOf(d) {
 		m.dirs[d] = true
 		m.mtimes[d] = m.clock
-		if d == "/" {
+		if d == project.DirOf(d) {
 			return
 		}
 	}
@@ -91,7 +93,7 @@ func (m *memFS) ReadDir(name string) ([]fs.DirEntry, error) {
 	var out []fs.DirEntry
 	for _, all := range []map[string]bool{m.dirs, keySet(m.files)} {
 		for child := range all {
-			if child != name && path.Dir(child) == name {
+			if child != name && project.DirOf(child) == name {
 				info, _ := m.info(child)
 				out = append(out, fs.FileInfoToDirEntry(info))
 			}
@@ -136,17 +138,20 @@ func (m *memFS) Remove(name string) error {
 	}
 	delete(m.files, name)
 	m.clock++
-	m.mtimes[path.Dir(name)] = m.clock
+	m.mtimes[project.DirOf(name)] = m.clock
 	return nil
 }
 
 func (m *memFS) MkdirAll(name string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	for d := name; !m.dirs[d]; d = path.Dir(d) {
+	for d := name; !m.dirs[d]; d = project.DirOf(d) {
 		m.clock++
 		m.dirs[d] = true
 		m.mtimes[d] = m.clock
+		if d == project.DirOf(d) {
+			return nil
+		}
 	}
 	return nil
 }

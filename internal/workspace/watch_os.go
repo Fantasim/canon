@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/fs"
 	"maps"
-	"path"
 	"path/filepath"
 	"slices"
 	"time"
@@ -87,13 +86,13 @@ func (h *hub) closeOS() {
 // notified notes a change the OS reported; a directory removed or renamed lost its watch, which
 // the next resync adds again, and a missing directory under the one notified is tried again.
 func (h *hub) notified(ev fsnotify.Event) {
-	name := filepath.ToSlash(ev.Name)
+	name := project.Clean(filepath.ToSlash(ev.Name))
 	if ev.Has(fsnotify.Remove) || ev.Has(fsnotify.Rename) {
 		delete(h.dirs, name)
 	}
 	now := h.clk.Now()
 	h.note(now)
-	if !h.coveredBy(name) && !h.coveredBy(path.Dir(name)) {
+	if !h.coveredBy(name) && !h.coveredBy(project.DirOf(name)) {
 		return
 	}
 	if err := h.retry(now); err != nil {
@@ -181,7 +180,7 @@ func (h *hub) add(d string) (string, bool, error) {
 			h.dirs[d] = true
 			return d, true, nil
 		}
-		if up := path.Dir(d); errors.Is(err, fs.ErrNotExist) && up != d {
+		if up := project.DirOf(d); errors.Is(err, fs.ErrNotExist) && up != d {
 			d = up
 			continue
 		}
@@ -197,7 +196,7 @@ func (s *snapFS) watchDirs() []string {
 	dirs := map[string]bool{s.root: true}
 	//canon:unordered each entry adds its directory to a set, sorted below
 	for n, e := range s.ents {
-		d := path.Dir(n.abs)
+		d := project.DirOf(n.abs)
 		switch {
 		case e.err != nil:
 		case n.kind == kindDir:

@@ -11,6 +11,7 @@ import (
 	"slices"
 
 	"github.com/fantasim/canonlang/internal/build"
+	"github.com/fantasim/canonlang/internal/project"
 )
 
 // Layout places an edit's files: Dir is the project directory, which holds .canon/journal, Abs
@@ -266,7 +267,7 @@ func (c *commit) recordFile(t *commitFile) error {
 		return err
 	}
 	if !t.existed {
-		missing, err := c.missing(path.Dir(t.abs))
+		missing, err := c.missing(project.DirOf(t.abs))
 		if err != nil {
 			return fmt.Errorf(fmtFileErr, t.display, err)
 		}
@@ -311,7 +312,7 @@ func (c *commit) perm(abs, display string) (*uint32, error) {
 // missing is dir and each parent of it that does not exist.
 func (c *commit) missing(dir string) ([]string, error) {
 	var out []string
-	for d := dir; d != path.Dir(d); d = path.Dir(d) {
+	for d := dir; d != project.DirOf(d); d = project.DirOf(d) {
 		_, err := c.fsys.Stat(d)
 		if err == nil {
 			break
@@ -331,7 +332,7 @@ func (c *commit) writeJournal() error {
 	if err != nil {
 		return err
 	}
-	jdir := path.Dir(c.name)
+	jdir := project.DirOf(c.name)
 	made, err := c.missing(jdir)
 	if err != nil {
 		return err
@@ -345,7 +346,7 @@ func (c *commit) writeJournal() error {
 	}
 	syncs := []string{jdir}
 	for _, d := range made {
-		syncs = append(syncs, path.Dir(d))
+		syncs = append(syncs, project.DirOf(d))
 	}
 	if err := syncDirs(c.fsys, syncs); err != nil {
 		return c.rollback(err)
@@ -363,9 +364,9 @@ func (c *commit) stageAll(ctx context.Context) error {
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		fresh, err := c.missing(path.Dir(t.abs))
+		fresh, err := c.missing(project.DirOf(t.abs))
 		if err == nil {
-			err = c.fsys.MkdirAll(path.Dir(t.abs))
+			err = c.fsys.MkdirAll(project.DirOf(t.abs))
 		}
 		if err != nil {
 			return fmt.Errorf(fmtFileErr, t.display, err)
@@ -440,10 +441,10 @@ func (c *commit) dropDirs() error {
 func (c *commit) touched() []string {
 	var dirs []string
 	for _, t := range c.targets {
-		dirs = append(dirs, path.Dir(t.abs))
+		dirs = append(dirs, project.DirOf(t.abs))
 	}
 	for _, d := range c.created {
-		dirs = append(dirs, path.Dir(d))
+		dirs = append(dirs, project.DirOf(d))
 	}
 	return dirs
 }

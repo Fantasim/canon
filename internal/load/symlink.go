@@ -97,6 +97,22 @@ func (l *Loader) resolveBase(base project.Path, bounds []string, req Request) (r
 	}
 }
 
+// splitVolume is abs's volume, as volume parses it, and the '/'-separated segments of what follows.
+func splitVolume(abs string, volume func(string) string) (string, []string) {
+	vol := volume(abs)
+	return vol, strings.Split(strings.TrimSuffix(abs[len(vol):], sepStr), sepStr)
+}
+
+// realPrefix is the real path of the prefix vol and segs make, which is itself when it is a bare
+// volume: no directory to resolve, and "C:" alone names a drive's working directory.
+func (l *Loader) realPrefix(vol string, segs []string) string {
+	name := vol + strings.Join(segs, sepStr)
+	if vol != "" && name == vol {
+		return name
+	}
+	return l.realOr(name)
+}
+
 // firstLinkedSegment is base's own written prefix up to and including the first segment itself a link (its real prefix differs from its resolved parent's plus its own text, an aliased ancestor told apart that way), base.Display when the base itself is that link.
 func (l *Loader) firstLinkedSegment(base project.Path) string {
 	displaySegs := strings.Split(strings.TrimSuffix(base.Display, sepStr), sepStr)
@@ -105,14 +121,14 @@ func (l *Loader) firstLinkedSegment(base project.Path) string {
 		ownStart = 1
 	}
 	own := displaySegs[ownStart:]
-	absSegs := strings.Split(strings.TrimSuffix(base.Abs, sepStr), sepStr)
+	vol, absSegs := splitVolume(base.Abs, project.HostPaths().Volume)
 	if len(own) == 0 || len(own) > len(absSegs) {
 		return base.Display
 	}
 	head := len(absSegs) - len(own)
-	realParent := l.realOr(strings.Join(absSegs[:head], sepStr))
+	realParent := l.realPrefix(vol, absSegs[:head])
 	for i, seg := range own {
-		real := l.realOr(strings.Join(absSegs[:head+i+1], sepStr))
+		real := l.realPrefix(vol, absSegs[:head+i+1])
 		if real == realParent+sepStr+seg {
 			realParent = real
 			continue
@@ -146,7 +162,7 @@ type entryKind struct {
 // classify is entry e's kind in the directory rel resolved at real; a symlink is followed only
 // when the project's FS resolves it inside w's bounds, any other link skipped.
 func (w *walker) classify(rel, real string, e fs.DirEntry) entryKind {
-	child := path.Join(real, e.Name())
+	child := project.Join(real, e.Name())
 	if e.Type()&fs.ModeSymlink == 0 {
 		return entryKind{isFile: e.Type().IsRegular(), isDir: e.IsDir(), real: child, ok: true}
 	}

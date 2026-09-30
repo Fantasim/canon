@@ -1,9 +1,13 @@
 package project
 
-import "testing"
+import (
+	"testing"
 
-// winPaths is how Windows writes names, its volumes read as text (volumeOf).
-var winPaths = Paths{Sep: backslash, Volume: volumeOf}
+	"github.com/fantasim/canonlang/internal/testkit/winpaths"
+)
+
+// winPaths is how Windows writes names, its volumes as filepath.VolumeName returns them.
+var winPaths = NewPaths(winpaths.Sep, winpaths.VolumeName)
 
 // API.md §2.2 (log M4 B12-r): on Windows a drive or UNC volume is kept, a drive upper-cased.
 func TestPathsOnWindows(t *testing.T) {

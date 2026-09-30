@@ -88,7 +88,7 @@ func Open(root string, opts Options) (p *Project, err error) {
 	if opts.FS != nil {
 		fsys = opts.FS
 	}
-	roots := fromAPIRoots(opts.Roots, dir)
+	roots := project.HostPaths().RootsFromAPI(opts.Roots, dir)
 	b, err := build.Open(fsys, dir, build.Options{Roots: roots, Layers: opts.Layers, Lang: opts.Lang, MaxFindings: opts.MaxFindings})
 	if err != nil {
 		return nil, apiError(err)

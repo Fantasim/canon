@@ -72,6 +72,7 @@ const (
 const (
 	uncPrefix = "//"
 	driveLen  = 2
+	queryHost = "?" // `//?/` and `//./` start a device path, which is no volume
 )
 
 // Texts of Go errors.

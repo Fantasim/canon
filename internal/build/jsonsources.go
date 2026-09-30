@@ -161,12 +161,12 @@ func (r *run) jsonFiles(f *syntax.File) []JSONSource {
 	return out
 }
 
-// real is abs with its links resolved, abs itself when they leave the roots.
+// real is abs with its links resolved, abs itself when they leave the roots, as an FS name (API.md §2.2).
 func (r *run) real(abs string) string {
 	if real, ok := load.Inside(r.p.fs, r.s.layout, abs); ok {
-		return real
+		abs = real
 	}
-	return abs
+	return project.HostPaths().FromAPI(abs, "")
 }
 
 // numbers is, by resolved path, what the recorded loads read of each file.

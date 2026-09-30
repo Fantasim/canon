@@ -9,6 +9,7 @@ import (
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/jsonsrc"
 	"github.com/fantasim/canonlang/internal/load"
+	"github.com/fantasim/canonlang/internal/project"
 	"github.com/fantasim/canonlang/internal/source"
 )
 
@@ -17,7 +18,7 @@ func (r *fmtRun) formatJSONSources() error {
 	if len(r.sources) == 0 {
 		return nil
 	}
-	p, err := build.Open(r.fsys, r.root, build.Options{Roots: r.inv.opt.roots})
+	p, err := build.Open(r.fsys, r.root, build.Options{Roots: project.HostPaths().RootsFromAPI(r.inv.opt.roots, r.root)})
 	if err != nil {
 		return fmt.Errorf(fmtWrap, err)
 	}

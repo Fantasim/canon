@@ -158,7 +158,7 @@ func (o *overlayFS) ReadDir(name string) ([]fs.DirEntry, error) {
 	seen := map[string]bool{}
 	var out []fs.DirEntry
 	for _, e := range list {
-		full := path.Join(name, e.Name())
+		full := project.Join(name, e.Name())
 		if data, ok := o.files[full]; ok && data == nil {
 			continue
 		}
@@ -202,11 +202,11 @@ func (o *overlayFS) EvalSymlinks(name string) (string, error) {
 			return project.EvalSymlinks(o.base, name)
 		}
 	}
-	dir, err := o.EvalSymlinks(path.Dir(name))
+	dir, err := o.EvalSymlinks(project.DirOf(name))
 	if err != nil {
 		return "", err
 	}
-	return path.Join(dir, path.Base(name)), nil
+	return project.Join(dir, path.Base(name)), nil
 }
 
 func notExist(name string) error {

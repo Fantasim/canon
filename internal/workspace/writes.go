@@ -2,9 +2,9 @@ package workspace
 
 import (
 	"io/fs"
-	"path"
 
 	"github.com/fantasim/canonlang/internal/build"
+	"github.com/fantasim/canonlang/internal/project"
 )
 
 // writable is the file system under the snapshot, if it can be written.
@@ -24,7 +24,7 @@ func (s *snapFS) pin(abs string) {
 	for _, p := range [...]pinned{
 		{n: name{kind: kindFile, abs: abs}, load: (*snapFS).readFile},
 		{n: name{kind: kindStat, abs: abs}, load: (*snapFS).stat},
-		{n: name{kind: kindDir, abs: path.Dir(abs)}, load: (*snapFS).readDir},
+		{n: name{kind: kindDir, abs: project.DirOf(abs)}, load: (*snapFS).readDir},
 	} {
 		e := s.get(p.n, func(a string) *entry { return p.load(s, a) })
 		for _, fs := range older {
@@ -42,7 +42,7 @@ type pinned struct {
 // pinName pins abs's stat and its directory's listing, what a new directory changes.
 func (s *snapFS) pinName(abs string) {
 	s.get(name{kind: kindStat, abs: abs}, s.stat)
-	s.get(name{kind: kindDir, abs: path.Dir(abs)}, s.readDir)
+	s.get(name{kind: kindDir, abs: project.DirOf(abs)}, s.readDir)
 }
 
 // adopt stores the writer w's entry e for p, unless s has one; where overlays make the two
@@ -59,11 +59,11 @@ func (s *snapFS) adopt(p pinned, e *entry, w *snapFS) {
 // listing above it, up to the first that exists; never a file entry, which a refresh would
 // report as a changed file.
 func (s *snapFS) pinDirs(abs string) {
-	for d := abs; ; d = path.Dir(d) {
+	for d := abs; ; d = project.DirOf(d) {
 		for _, fs := range s.lineage() {
 			fs.pinName(d)
 		}
-		if _, err := s.Stat(d); err == nil || path.Dir(d) == d {
+		if _, err := s.Stat(d); err == nil || project.DirOf(d) == d {
 			return
 		}
 	}

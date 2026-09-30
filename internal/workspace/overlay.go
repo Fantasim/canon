@@ -9,6 +9,8 @@ import (
 	"slices"
 	"strings"
 	"time"
+
+	"github.com/fantasim/canonlang/internal/project"
 )
 
 // SetOverlay replaces file's content in every read and in the revision, a writer (API.md §3.4).
@@ -66,10 +68,10 @@ func (p *Project) overlay(file string, change func(map[string][]byte, string) bo
 // listing of abs and of each directory above it.
 func dropAt(dropped map[name]*entry, abs string) {
 	dropped[name{kind: kindFile, abs: abs}] = nil
-	for d := abs; ; d = path.Dir(d) {
+	for d := abs; ; d = project.DirOf(d) {
 		dropped[name{kind: kindStat, abs: d}] = nil
-		dropped[name{kind: kindDir, abs: path.Dir(d)}] = nil
-		if path.Dir(d) == d {
+		dropped[name{kind: kindDir, abs: project.DirOf(d)}] = nil
+		if project.DirOf(d) == d {
 			return
 		}
 	}

@@ -71,7 +71,7 @@ func journalName(dir, rev string) (string, error) {
 	if i < 1 || !isLowerHex(rev[i+1:]) {
 		return "", fmt.Errorf(fmtFileErr, rev, ErrRevision)
 	}
-	return path.Join(dir, JournalDir, rev[i+1:]+ir.JSONExt), nil
+	return project.Join(dir, JournalDir, rev[i+1:]+ir.JSONExt), nil
 }
 
 // isJournal says whether a name in the journal directory is a journal, not a file the FS's own
@@ -213,13 +213,13 @@ func confine(at Layout, name string) (spot, string) {
 // locate is the spot a journal path names and its path below the base: relative inside the project
 // directory, or absolute inside it or a declared root, strictly.
 func locate(at Layout, name string) (spot, string, bool) {
-	dir := path.Clean(at.Dir())
+	dir := project.Clean(at.Dir())
 	if !isAbsName(name) {
-		abs := path.Join(dir, name)
+		abs := project.Join(dir, name)
 		local := filepath.IsLocal(filepath.FromSlash(name)) && name == path.Clean(name) && abs != dir
 		return spot{abs, dir}, name, local
 	}
-	if name != path.Clean(name) {
+	if name != project.Clean(name) {
 		return spot{}, "", false
 	}
 	if rel, in := below(dir, name); in {
@@ -307,7 +307,7 @@ func noLinkListed(fsys build.WriteFS, listings map[string][]fs.DirEntry, s spot)
 		if entries[i].Type()&fs.ModeSymlink != 0 {
 			return &fault{reasonLink, s.abs}
 		}
-		dir = path.Join(dir, seg)
+		dir = project.Join(dir, seg)
 	}
 	return nil
 }
@@ -318,7 +318,7 @@ func straightOne(r linkResolver, s spot) error {
 		return fmt.Errorf(fmtFileErr, s.base, err)
 	}
 	rel, _ := below(s.base, s.abs)
-	for p := s.abs; p != s.base && p != path.Dir(p); p, rel = path.Dir(p), path.Dir(rel) {
+	for p := s.abs; p != s.base && p != project.DirOf(p); p, rel = project.DirOf(p), path.Dir(rel) {
 		got, err := r.EvalSymlinks(p)
 		if errors.Is(err, fs.ErrNotExist) {
 			continue
@@ -326,7 +326,7 @@ func straightOne(r linkResolver, s spot) error {
 		if err != nil {
 			return fmt.Errorf(fmtFileErr, p, err)
 		}
-		if got != path.Join(real, rel) {
+		if got != project.Join(real, rel) {
 			return &fault{reasonLink, s.abs}
 		}
 		return nil
@@ -367,7 +367,7 @@ func chmod(fsys build.WriteFS, name string, mode *uint32) error {
 
 // stageName is the file a commit writes abs's new content to before renaming it over abs.
 func stageName(abs string) string {
-	return path.Join(path.Dir(abs), stagePrefix+path.Base(abs)+stageSuffix)
+	return project.Join(project.DirOf(abs), stagePrefix+path.Base(abs)+stageSuffix)
 }
 
 // deepestFirst orders directories so each comes before its parents: longest first, then bytes.

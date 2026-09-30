@@ -352,7 +352,7 @@ func (s *snapFS) sources(dir string, list []fs.DirEntry) []string {
 	var out []string
 	for _, e := range list {
 		if keep(e) {
-			out = append(out, path.Join(dir, e.Name()))
+			out = append(out, project.Join(dir, e.Name()))
 		}
 	}
 	return out

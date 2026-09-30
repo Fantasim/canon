@@ -8,6 +8,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/fantasim/canonlang/internal/project"
 )
 
 // diskFS is a writable FS in memory with an atomic WriteFile and symbolic links (API.md §2.2).
@@ -25,7 +27,7 @@ func newDiskFS(files map[string]string) *diskFS {
 		dirs: map[string]bool{"/": true}, links: map[string]string{},
 	}
 	for _, name := range slices.Sorted(maps.Keys(files)) {
-		d.mkdirs(path.Dir(name))
+		d.mkdirs(project.DirOf(name))
 		d.files[name] = []byte(files[name])
 		d.modes[name] = 0o644
 	}
@@ -33,23 +35,27 @@ func newDiskFS(files map[string]string) *diskFS {
 }
 
 func (d *diskFS) mkdirs(name string) {
-	for p := name; !d.dirs[p]; p = path.Dir(p) {
+	for p := name; !d.dirs[p]; p = project.DirOf(p) {
 		d.dirs[p] = true
 		d.modes[p] = 0o755
+		if p == project.DirOf(p) {
+			return
+		}
 	}
 }
 
 // link makes name a symbolic link to target.
 func (d *diskFS) link(name, target string) {
-	d.mkdirs(path.Dir(name))
+	d.mkdirs(project.DirOf(name))
 	d.links[name] = target
 }
 
 // follow is name with every link along it followed.
 func (d *diskFS) follow(name string) string {
-	out := "/"
-	for _, seg := range strings.Split(strings.TrimPrefix(name, "/"), "/") {
-		out = path.Join(out, seg)
+	vol := project.HostPaths().Volume(name)
+	out := vol + "/"
+	for _, seg := range strings.Split(strings.TrimPrefix(name[len(vol):], "/"), "/") {
+		out = project.Join(out, seg)
 		if target, ok := d.links[out]; ok {
 			out = target
 		}
@@ -60,7 +66,7 @@ func (d *diskFS) follow(name string) string {
 // followDir is name with the links of its directory followed, not its own: what Remove and
 // Rename act on.
 func (d *diskFS) followDir(name string) string {
-	return path.Join(d.follow(path.Dir(name)), path.Base(name))
+	return project.Join(d.follow(project.DirOf(name)), path.Base(name))
 }
 
 // children are the files, directories and links right in dir, in byte order.
@@ -68,7 +74,7 @@ func (d *diskFS) children(dir string) []string {
 	var out []string
 	all := slices.Concat(slices.Collect(maps.Keys(d.dirs)), slices.Collect(maps.Keys(d.files)), slices.Collect(maps.Keys(d.links)))
 	for _, name := range all {
-		if name != dir && path.Dir(name) == dir {
+		if name != dir && project.DirOf(name) == dir {
 			out = append(out, name)
 		}
 	}
@@ -185,7 +191,7 @@ func (d *diskFS) WriteFile(name string, data []byte) error {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	real := d.follow(name)
-	if !d.dirs[path.Dir(real)] {
+	if !d.dirs[project.DirOf(real)] {
 		return notExist("open", name)
 	}
 	d.files[real] = slices.Clone(data)
@@ -200,7 +206,7 @@ func (d *diskFS) Rename(oldname, newname string) error {
 	defer d.mu.Unlock()
 	from, to := d.followDir(oldname), d.followDir(newname)
 	data, ok := d.files[from]
-	if !ok || !d.dirs[path.Dir(to)] {
+	if !ok || !d.dirs[project.DirOf(to)] {
 		return notExist("rename", oldname)
 	}
 	delete(d.links, to)

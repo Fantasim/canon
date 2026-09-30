@@ -2,7 +2,6 @@ package cli
 
 import (
 	"bytes"
-	"path"
 	"strings"
 	"sync"
 
@@ -64,7 +63,7 @@ func (s *sources) file(display string) *syntax.File {
 		return f
 	}
 	var f *syntax.File
-	abs := path.Join(s.root, display)
+	abs := project.Join(s.root, display)
 	if data := s.fs.content(abs); data != nil {
 		if src, err := s.set.Add(display, abs, data); err == nil {
 			f = syntax.Parse(src, syntax.FileSource, diag.NewBag(&s.set, ""))

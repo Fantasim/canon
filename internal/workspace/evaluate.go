@@ -122,7 +122,7 @@ func (s *Snapshot) sourcesStale(base string) error {
 func (s *Snapshot) changedFiles(was map[name]sum, names []string) []string {
 	var out []string
 	for _, rel := range names {
-		n := name{kind: kindFile, abs: path.Join(s.b.Dir(), rel)}
+		n := name{kind: kindFile, abs: project.Join(s.b.Dir(), rel)}
 		if old, held := was[n]; !held || old != s.fs.get(n, s.fs.readFile).sum {
 			out = append(out, rel)
 		}
@@ -135,7 +135,7 @@ func (s *Snapshot) changedFiles(was map[name]sum, names []string) []string {
 func (s *Snapshot) changedDirs(was map[name]sum, names []string) []string {
 	dirs := map[string]bool{}
 	for _, rel := range names {
-		dirs[path.Join(s.b.Dir(), path.Dir(rel))] = true
+		dirs[project.Join(s.b.Dir(), path.Dir(rel))] = true
 	}
 	empty := listSum(nil, nil, nil)
 	//canon:unordered each directory is added to a set

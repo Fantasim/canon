@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io/fs"
 	"path"
-	"path/filepath"
 	"slices"
 	"time"
 
@@ -55,7 +54,7 @@ func runFmt(inv *invocation) int {
 	if err != nil {
 		return inv.fail(err)
 	}
-	r := &fmtRun{inv: inv, fsys: build.OS(), root: filepath.ToSlash(root), seen: map[string]bool{}}
+	r := &fmtRun{inv: inv, fsys: build.OS(), root: project.HostPaths().FromAPI(root, ""), seen: map[string]bool{}}
 	if r.projectBroken() {
 		return r.finish(start)
 	}
@@ -84,7 +83,7 @@ func (r *fmtRun) finish(start time.Time) int {
 
 // projectBroken keeps the findings of a project.canon with a syntax error, exit 1, nothing written (CLI.md §3.6, §2.5).
 func (r *fmtRun) projectBroken() bool {
-	abs := path.Join(r.root, project.FileName)
+	abs := project.Join(r.root, project.FileName)
 	data, err := r.fsys.ReadFile(abs)
 	if err != nil {
 		return false
@@ -130,7 +129,7 @@ func (r *fmtRun) run(p *canon.Project) error {
 
 // place lays the roots on disk, --root applied; false after keeping the findings of a project.canon that does not load (WIRE.md §2.2).
 func (r *fmtRun) place() bool {
-	abs := path.Join(r.root, project.FileName)
+	abs := project.Join(r.root, project.FileName)
 	data, err := r.fsys.ReadFile(abs)
 	if err != nil {
 		r.failed = true
@@ -145,7 +144,7 @@ func (r *fmtRun) place() bool {
 	proj, err := project.Load(src, bag)
 	if err == nil {
 		var ok bool
-		if r.layout, ok = project.NewLayout(proj, r.root, r.inv.opt.roots, bag); ok {
+		if r.layout, ok = project.NewLayout(proj, r.root, project.HostPaths().RootsFromAPI(r.inv.opt.roots, r.root), bag); ok {
 			return true
 		}
 	}
@@ -240,7 +239,7 @@ func (r *fmtRun) formatCanon(f fmtFile) error {
 	if err := r.inv.ctx.Err(); err != nil {
 		return err
 	}
-	abs, ok := r.visit(path.Join(r.root, f.display))
+	abs, ok := r.visit(project.Join(r.root, f.display))
 	if !ok {
 		return nil
 	}

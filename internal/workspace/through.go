@@ -2,11 +2,11 @@ package workspace
 
 import (
 	"io/fs"
-	"path"
 	"strings"
 
 	"github.com/fantasim/canonlang/internal/build"
 	"github.com/fantasim/canonlang/internal/edit"
+	"github.com/fantasim/canonlang/internal/project"
 )
 
 // throughFS is the disk as an edit's commit sees it (API.md N9, N11, S9): it reads the disk
@@ -20,7 +20,7 @@ type throughFS struct {
 
 // through is s's writes over the disk w, reads from w.
 func through(s *snapFS, w build.WriteFS) throughFS {
-	return throughFS{snap: s, disk: w, journal: path.Join(s.root, edit.JournalDir)}
+	return throughFS{snap: s, disk: w, journal: project.Join(s.root, edit.JournalDir)}
 }
 
 // to is where a write of names goes: the disk for the journal's directory, else the snapshot.
