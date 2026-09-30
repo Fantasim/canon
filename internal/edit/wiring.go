@@ -2,6 +2,7 @@ package edit
 
 import (
 	"strconv"
+	"strings"
 
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/jsonsrc"
@@ -11,10 +12,11 @@ import (
 )
 
 // wiring is one value's source wire being built: the JSON token of each symbol a source wrote,
-// by the placeholder string the encoder writes in its place (log-2026-09-29 M4 B7-r3).
+// and the placeholder the encoder writes in its place (log-2026-09-29 M4 B7-r3, B7-r4).
 type wiring struct {
 	a    *applier
-	raws map[string]*jsonsrc.Node
+	raws []*jsonsrc.Node
+	phs  []*value.Str
 }
 
 // restrict is a copy of v whose records keep only the fields a literal writes (M7), for the data
@@ -101,24 +103,46 @@ func (w *wiring) token(s *value.Symbol) (value.Value, error) {
 	if err != nil {
 		return nil, err
 	}
-	ph := symPlaceholder + strconv.Itoa(len(w.raws))
-	w.raws[ph] = n
-	return &value.Str{V: ph, T: types.StringType}, nil
+	ph := &value.Str{V: symPlaceholder, T: types.StringType}
+	w.raws, w.phs = append(w.raws, n), append(w.phs, ph)
+	return ph, nil
 }
 
-// substitute is n with each placeholder string replaced by the token it stands for.
-func (w *wiring) substitute(n *jsonsrc.Node) *jsonsrc.Node {
-	if n == nil {
-		return nil
+// encode is rv, restricted, in the source wire at f's place, each placeholder replaced by its
+// token. The placeholders are found by identity: rv is encoded a second time with each of them
+// numbered, and only the strings that differ between the two encodings are theirs.
+func (w *wiring) encode(rv value.Value, f *types.Field) (*jsonsrc.Node, error) {
+	n, err := encodeWire(rv, f)
+	if err != nil || len(w.phs) == 0 {
+		return n, err
 	}
-	if raw, ok := w.raws[n.Text]; ok && n.Kind == jsonsrc.String {
-		return detached(raw)
+	for i, ph := range w.phs {
+		ph.V = symPlaceholder + strconv.Itoa(i)
 	}
-	for i, e := range n.Elems {
-		n.Elems[i] = w.substitute(e)
+	numbered, err := encodeWire(rv, f)
+	if err != nil {
+		return nil, err
 	}
-	for i, m := range n.Members {
-		n.Members[i].Value = w.substitute(m.Value)
+	return w.substitute(n, numbered), nil
+}
+
+// substitute is n with each placeholder, a string numbered differently in numbered, replaced
+// by the token it stands for.
+func (w *wiring) substitute(n, numbered *jsonsrc.Node) *jsonsrc.Node {
+	if n == nil || numbered == nil {
+		return n
+	}
+	if n.Kind == jsonsrc.String && n.Text != numbered.Text {
+		i, err := strconv.Atoi(strings.TrimPrefix(numbered.Text, symPlaceholder))
+		if err == nil && i >= 0 && i < len(w.raws) {
+			return detached(w.raws[i])
+		}
+	}
+	for i := range min(len(n.Elems), len(numbered.Elems)) {
+		n.Elems[i] = w.substitute(n.Elems[i], numbered.Elems[i])
+	}
+	for i := range min(len(n.Members), len(numbered.Members)) {
+		n.Members[i].Value = w.substitute(n.Members[i].Value, numbered.Members[i].Value)
 	}
 	return n
 }

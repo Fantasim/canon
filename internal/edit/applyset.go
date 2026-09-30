@@ -93,8 +93,19 @@ func (x *opCtx) targetType() types.Type {
 	if !dependent(present(t)) {
 		return t
 	}
-	if rec, f, ok := x.field(); ok {
-		if ct, computed := concreteType(f.Type, rec); computed {
+	rec, f, isField := x.field()
+	if isField {
+		t = f.Type
+	}
+	if _, fromJSON := x.op.Value.(FromJSON); fromJSON {
+		return t // the decoder computes the arm, a symbol on Never as reading the file (log-2026-09-29 M4 B7-r4)
+	}
+	if isField {
+		ct, computed := concreteType(f.Type, rec)
+		switch {
+		case computed && present(ct).Base().Kind() == types.Never:
+			return t // a name given a Never arm is refused where its symbol is resolved (V1)
+		case computed:
 			return ct // the arm the record's fields select now (log-2026-09-29 M4 U4b-r)
 		}
 	}

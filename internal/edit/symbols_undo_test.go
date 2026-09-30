@@ -109,6 +109,17 @@ func undoFS() mapFS {
 	return f
 }
 
+// visitFS is depSrc's project whose tag's plain discriminant selects the Never arm, its pick the
+// symbol the decoder reads from "p" (DECISIONS 175).
+func visitFS() mapFS {
+	return depFSWith(strings.Replace(depRoot, `  "tag": {
+    "pick": "red"
+  },`, `  "tag": {
+    "goal": "visit",
+    "pick": "p"
+  },`, 1))
+}
+
 func paramFS() mapFS {
 	return mapFS{"law/project.canon": file(projectCanon), "law/d/d.canon": file(paramSrc), "law/d/root.json": file(paramRoot)}
 }
@@ -142,6 +153,13 @@ func TestUndoDependentData(t *testing.T) {
 			{Kind: edit.OpSet, Path: "objectives.o2.def", Value: edit.Key("art")},
 		}},
 		{"parameter default", paramFS, []edit.Operation{{Kind: edit.OpSet, Path: "root.bp[art]", Value: src("{ pick: green }")}}},
+		{"Set field, plain discriminant", visitFS, []edit.Operation{{Kind: edit.OpSet, Path: "root.tag.pick", Value: edit.None{}}}},
+		{"Set field FromJSON, plain discriminant", visitFS, []edit.Operation{{Kind: edit.OpSet, Path: "root.tag.pick", Value: edit.FromJSON(`"q"`)}}},
+		{"Reset discriminant", visitFS, []edit.Operation{{Kind: edit.OpReset, Path: "root.tag.goal"}}},
+		{"multi-op, plain discriminant", visitFS, []edit.Operation{
+			{Kind: edit.OpSet, Path: "root.tag", Value: src("{ goal: visit, pick: p }")},
+			{Kind: edit.OpReset, Path: "root.tag.goal"},
+		}},
 	} {
 		roundTrip(t, c.name, c.fsys(), c.ops)
 	}

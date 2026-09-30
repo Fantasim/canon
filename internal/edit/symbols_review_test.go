@@ -88,6 +88,14 @@ func TestDroppedRawToken(t *testing.T) {
 	}
 }
 
+// DECISIONS 175, API.md M6 (log-2026-09-29 M4 B7-r4): a string written like the encoder's
+// placeholder for a symbol's token is written as itself; only the placeholders are replaced.
+func TestPlaceholderText(t *testing.T) {
+	op := edit.Operation{Kind: edit.OpAdd, Path: "root.objs", Value: edit.FromJSON(`{"def":"tour","target":5,"note":"\u0000canon symbol 0"}`)}
+	applyDep(t, symCase{"placeholder", op, "d/root.json", []string{`"target": 5`, `"note": "\u0000canon symbol 0"`}})
+	roundTrip(t, "placeholder", depFS(), []edit.Operation{op})
+}
+
 // API.md E25, E22 (log-2026-09-29 M4 B7-r3): the Undo of a Remove of a dependent key carries it as
 // a path key, a symbol matched by its Canon name, then its wire value, in .canon and in JSON.
 func TestUndoDependentPathKey(t *testing.T) {

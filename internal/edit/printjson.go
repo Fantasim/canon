@@ -21,16 +21,12 @@ func (a *applier) wireNode(v value.Value, f *types.Field) (*jsonsrc.Node, error)
 	if err != nil {
 		return nil, err
 	}
-	w := &wiring{a: a, raws: map[string]*jsonsrc.Node{}}
+	w := &wiring{a: a}
 	rv, err := w.restrict(sv)
 	if err != nil {
 		return nil, err
 	}
-	n, err := encodeWire(rv, f)
-	if err != nil {
-		return nil, err
-	}
-	return w.substitute(n), nil
+	return w.encode(rv, f)
 }
 
 // encodeWire is v, whose records hold only what they write, in the source wire at f's place.
