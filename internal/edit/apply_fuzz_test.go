@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/fantasim/canonlang/internal/build"
@@ -156,8 +157,9 @@ func sweepDraw(v value.Value) draw {
 	return d
 }
 
-// applyChecked applies ops and checks what it writes, and with scalar the one line a Set of a
-// scalar writes; a refusal outside allowed fails.
+// applyChecked applies ops and checks what it writes; with scalar, each write re-printing a
+// scalar Set's item changes one line (as the golden tests check) and the file one run. A
+// refusal outside allowed fails.
 func applyChecked(t *testing.T, env edit.Env, a *build.Analysis, ops []edit.Operation, scalar bool) bool {
 	t.Helper()
 	plan, err := edit.Apply(context.Background(), env, edit.NewSnapshot(a), edit.Request{Ops: ops})
@@ -173,8 +175,12 @@ func applyChecked(t *testing.T, env edit.Env, a *build.Analysis, ops []edit.Oper
 		t.Fatalf("%+v: an error that is no refusal: %v", ops, err)
 	}
 	for _, ch := range plan.Changes {
-		checkWritten(t, plan, ch)
-		if scalar && len(plan.Dropped) == 0 {
+		if !scalar {
+			checkWritten(t, plan, ch)
+			continue
+		}
+		checkWrittenBy(t, plan, ch, func(w edit.Write) bool { return w.Reprint && scalarSet(a, ops, w.Op) })
+		if len(plan.Dropped) == 0 {
 			checkOneRun(t, plan, ch)
 		}
 	}
@@ -192,9 +198,27 @@ func checkOneRun(t *testing.T, plan *edit.Plan, ch edit.Change) {
 		return
 	}
 	last := steps[len(steps)-1]
-	if h := lineHunks(lines(last.Before), lines(last.After)); len(h) != 1 || h[0].b1-h[0].b0 > 1 {
+	before, after := lines(last.Before), lines(last.After)
+	if h := lineHunks(before, after); len(h) != 1 || !oneRun(h[0], before, after) {
 		t.Errorf("%s: a Set of a scalar changed %+v, want one run from one line (API.md M6)", ch.Path, h)
 	}
+}
+
+// commaRun is a removal's run with the kept neighbour before it, whose comma the removed JSON
+// member needed.
+const commaRun = 2
+
+// oneRun is a scalar Set's run over the whole file: from at most one line, or from the member
+// removed at its default (E6) and the neighbour before it losing its comma (log-2026-09-29
+// P20-r: M6 extended to JSON commas).
+func oneRun(h hunk, before, after []string) bool {
+	switch h.b1 - h.b0 {
+	case 0, 1:
+		return true
+	case commaRun:
+		return h.a1-h.a0 == 1 && strings.TrimSuffix(before[h.b0], ",") == after[h.a0]
+	}
+	return false
 }
 
 // API.md M6 on every example: each Set of a scalar, Add to a list of scalars, Remove, Move and

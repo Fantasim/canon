@@ -1,0 +1,4 @@
+go test fuzz v1
+[]byte("\x00d33w\x8d\x8d\x8d\x8d\x8d\x8d\x8d\x8dW\x00")
+int64(72)
+string("\x00dw")

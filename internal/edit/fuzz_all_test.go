@@ -2,10 +2,7 @@ package edit_test
 
 import (
 	"context"
-	"flag"
-	"maps"
 	"path/filepath"
-	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -20,9 +17,6 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// benchProject is a benchgen project FuzzMinimalWriteAll edits too; make fuzz-edit sets it.
-var benchProject = flag.String("edit.bench", "", "a benchgen project FuzzMinimalWriteAll also edits (make fuzz-edit)")
-
 // allOpBytes is how many bytes of FuzzMinimalWriteAll's input draw one operation after its
 // first byte, which picks the project: three for the value it edits, one for the operation.
 const (
@@ -33,13 +27,25 @@ const (
 	seedS      = "new" // the seeds' string and key
 )
 
+// On the benchmark an input draws one operation, and copies no whole table: Go's fuzz worker
+// dies on an exec past 10 s, as a whole-table Set or a second operation may take (log-2026-09-29
+// M4 P20).
+const benchOps, benchCopies = 1, 1000
+
+// projExamples and projBench name the projects in the -edit.tally file make fuzz-edit counts.
+const projExamples, projBench = "examples", "bench"
+
 // fuzzProject is a project the fuzz edits: every value of its lets and consts, and every
-// member of its enums (API.md P7a), by positional path.
+// member of its enums (API.md P7a), by positional path; an input draws ops operations at most,
+// and a value it copies holds copies values at most (0: any).
 type fuzzProject struct {
 	env    edit.Env
 	a      *build.Analysis
 	cands  []candidate
 	byPath map[string]int
+	name   string
+	ops    int
+	copies int
 }
 
 // exampleRoots redirects every root of examples/project.canon: the loads to the fixtures, the
@@ -69,7 +75,7 @@ func openFuzzProject(t testing.TB, dir string, roots map[string]string) *fuzzPro
 	if err != nil {
 		t.Fatal(err)
 	}
-	fz := &fuzzProject{env: edit.Env{Project: p, Host: hostOf}, a: a, byPath: map[string]int{}}
+	fz := &fuzzProject{env: edit.Env{Project: p, Host: hostOf}, a: a, byPath: map[string]int{}, name: projExamples, ops: maxOps}
 	for _, pkg := range a.Program().Packages {
 		for _, obj := range pkg.Decls {
 			fz.cands = declValues(fz.cands, a, pkg.Path, obj)
@@ -258,13 +264,54 @@ func mapKey(k value.Value, d draw) (edit.Lit, bool) {
 	return nil, false
 }
 
-// lit is v as an operation's value: a drawn scalar, else v's own literal.
+// lit is v as an operation's value: a drawn scalar, else v's own literal, of at most fz.copies
+// values when set.
 func (fz *fuzzProject) lit(v value.Value, d draw) (edit.Lit, bool) {
 	if lit, ok := anyScalar(v, d); ok {
 		return lit, true
 	}
+	if fz.copies > 0 && rest(v, fz.copies) < 0 {
+		return nil, false
+	}
 	lit, err := edit.SourceOf(context.Background(), fz.env, edit.NewSnapshot(fz.a), v)
 	return lit, err == nil
+}
+
+// rest is n less the values v holds, itself included, counted until it falls below zero: every
+// field, element, entry, map key and value, and pair side; a scalar or range counts one.
+func rest(v value.Value, n int) int {
+	n--
+	switch x := v.(type) {
+	case *value.Record:
+		return restAll(x.Fields, n)
+	case *value.List:
+		return restAll(x.Elems, n)
+	case *value.Map:
+		return restAll(x.Vals, restAll(x.Keys, n))
+	case *value.Pair:
+		return restAll([]value.Value{x.A, x.B}, n)
+	case *value.Table:
+		for _, e := range x.Entries {
+			if n < 0 {
+				break
+			}
+			n = rest(e, n)
+		}
+	}
+	return n
+}
+
+// restAll is rest over each of vs in turn, nil fields skipped.
+func restAll(vs []value.Value, n int) int {
+	for _, v := range vs {
+		if n < 0 {
+			return n
+		}
+		if v != nil {
+			n = rest(v, n)
+		}
+	}
+	return n
 }
 
 func (fz *fuzzProject) litIf(ok bool, v value.Value, d draw) (edit.Lit, bool) {
@@ -294,10 +341,10 @@ func (fz *fuzzProject) sibling(c candidate) candidate {
 	return c
 }
 
-// draw is the operations an input draws on fz, allOpBytes bytes each, maxOps at most.
+// draw is the operations an input draws on fz, allOpBytes bytes each, fz.ops at most.
 func (fz *fuzzProject) draw(raw []byte, n int64, s string) []edit.Operation {
 	var ops []edit.Operation
-	for i := 0; i+allOpBytes <= len(raw) && len(ops) < maxOps; i += allOpBytes {
+	for i := 0; i+allOpBytes <= len(raw) && len(ops) < fz.ops; i += allOpBytes {
 		at := int(raw[i])<<16 | int(raw[i+1])<<8 | int(raw[i+2])
 		op := allOps[int(raw[i+3])%len(allOps)]
 		if o, ok := op.draw(fz, fz.cands[at%len(fz.cands)], draw{n: n + int64(len(ops)), s: s}); ok {
@@ -330,11 +377,11 @@ func (fz *fuzzProject) seeds(first byte) []fuzzSeed {
 			if seen && prev.editable {
 				continue
 			}
-			editable := !enumMember(c) && editableBy(snap, c.path, op.kind)
-			if seen && !editable {
+			if _, ok := op.draw(fz, c, draw{n: seedN, s: seedS}); !ok {
 				continue
 			}
-			if _, ok := op.draw(fz, c, draw{n: seedN, s: seedS}); !ok {
+			editable := !enumMember(c) && editableBy(snap, c.path, op.kind)
+			if seen && !editable {
 				continue
 			}
 			if !seen {
@@ -362,71 +409,6 @@ func editableBy(s *edit.Snapshot, path string, op edit.Op) bool {
 	}
 	e, err := s.Editable(r, op, "")
 	return err == nil && e.Mode != edit.ModeNone
-}
-
-// fuzzProjects are the examples, then the benchmark project when -edit.bench names one.
-func fuzzProjects(t testing.TB) []*fuzzProject {
-	t.Helper()
-	dir, roots := exampleRoots(t)
-	out := []*fuzzProject{openFuzzProject(t, dir, roots)}
-	if *benchProject != "" {
-		bench, err := filepath.Abs(*benchProject)
-		if err != nil {
-			t.Fatal(err)
-		}
-		out = append(out, openFuzzProject(t, filepath.ToSlash(bench), nil))
-	}
-	return out
-}
-
-// API.md E1, M6 (M4 acceptance item 3): up to three random operations of every kind on every
-// example, and with -edit.bench on the benchmark project, are refused as Apply documents or
-// write files that are fixed points, N12-clean and minimal.
-func FuzzMinimalWriteAll(f *testing.F) {
-	projects := fuzzProjects(f)
-	if len(projects) > 1 {
-		projects[1].coversBench(f)
-	}
-	for i, fz := range projects {
-		for _, seed := range fz.seeds(byte(i)) {
-			f.Add(seed.raw, int64(seedN), seedS)
-		}
-	}
-	f.Fuzz(func(t *testing.T, raw []byte, n int64, s string) {
-		if len(raw) == 0 {
-			return
-		}
-		fz := projects[int(raw[0])%len(projects)]
-		if ops := fz.draw(raw[1:], n, s); len(ops) > 0 {
-			applyChecked(t, fz.env, fz.a, ops, false)
-		}
-	})
-}
-
-// coversBench applies the benchmark's seeds once: every package of the benchmark gets an
-// operation applied, and so do Set, Add and Remove (log-2026-09-29 M4 U7b-r).
-func (fz *fuzzProject) coversBench(tb testing.TB) {
-	tb.Helper()
-	applied, pkgs := map[edit.Op]int{}, map[string]int{}
-	for _, seed := range fz.seeds(1) {
-		ops := fz.draw(seed.raw[1:], seedN, seedS)
-		pkgs[seed.pkg] += 0
-		if _, err := edit.Apply(context.Background(), fz.env, edit.NewSnapshot(fz.a), edit.Request{Ops: ops}); err == nil {
-			applied[ops[0].Kind]++
-			pkgs[seed.pkg]++
-		}
-	}
-	tb.Logf("benchmark seeds applied by operation %v; by package %v", applied, pkgs)
-	for _, k := range []edit.Op{edit.OpSet, edit.OpAdd, edit.OpRemove} {
-		if applied[k] == 0 {
-			tb.Fatalf("operation %d applied to nothing on the benchmark", k)
-		}
-	}
-	for _, pkg := range slices.Sorted(maps.Keys(pkgs)) {
-		if pkgs[pkg] == 0 {
-			tb.Fatalf("%s: no operation applied on the benchmark", pkg)
-		}
-	}
 }
 
 // API.md M6, E4 (M4 acceptance item 3): the seeds of FuzzMinimalWriteAll apply every operation

@@ -9,12 +9,14 @@ import (
 	"testing"
 	"unicode/utf8"
 
+	"github.com/fantasim/canonlang/internal/build"
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/edit"
 	"github.com/fantasim/canonlang/internal/format"
 	"github.com/fantasim/canonlang/internal/jsonsrc"
 	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/syntax"
+	"github.com/fantasim/canonlang/internal/value"
 )
 
 // checkFixedPoint is the first half of API.md M6: format(after) == after, for .canon files
@@ -246,9 +248,35 @@ func regionLines(w edit.Write) [][2]int {
 	return out
 }
 
-// scalarSet reports operation i of ops a one-value Set of a scalar (API.md M6): a Bool, number,
-// string, duration, member, key or none, as a Lit, a JSON scalar, or a Canon scalar literal.
-func scalarSet(ops []edit.Operation, i int) bool {
+// scalarSet reports operation i of ops a one-value Set of a scalar, none included, replacing an
+// item written on one line (API.md M6, M5): one of several lines is held to M6's regions only
+// (log-2026-09-29 P20-r2).
+func scalarSet(a *build.Analysis, ops []edit.Operation, i int) bool {
+	return scalarValue(ops, i) && replacedOneLine(a, ops[i])
+}
+
+// replacedOneLine reports the item op replaces holding no line end in a's sources: a value
+// written elsewhere (default, spread, layer) or an unreadable path is not one of several lines.
+func replacedOneLine(a *build.Analysis, op edit.Operation) bool {
+	path, err := edit.Parse(op.Path)
+	if err != nil {
+		return true
+	}
+	res, err := edit.Resolve(edit.NewSnapshot(a), path)
+	if err != nil || res.Target == nil {
+		return true
+	}
+	p := res.Target.Prov()
+	if p == nil || (p.Kind != value.ProvLiteral && p.Kind != value.ProvJSON) {
+		return true
+	}
+	src := a.Files().Content(p.Span.File)
+	return p.Span.Start > p.Span.End || int(p.Span.End) > len(src) ||
+		!bytes.Contains(src[p.Span.Start:p.Span.End], []byte("\n"))
+}
+
+// scalarValue reports operation i of ops a Set of one scalar value, whatever it replaces.
+func scalarValue(ops []edit.Operation, i int) bool {
 	if i < 0 || i >= len(ops) || ops[i].Kind != edit.OpSet {
 		return false
 	}

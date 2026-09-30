@@ -15,6 +15,7 @@ import (
 
 	"golang.org/x/tools/txtar"
 
+	"github.com/fantasim/canonlang/internal/build"
 	"github.com/fantasim/canonlang/internal/edit"
 )
 
@@ -107,7 +108,7 @@ func runGolden(t *testing.T, path string) {
 		t.Fatalf("Apply returns error %v; a golden records one exactly when its name starts with %s", err, refusePrefix)
 	}
 	if err == nil {
-		checkPlan(t, c, plan, req.Ops)
+		checkPlan(t, c, s.a, plan, req.Ops)
 		checkUndo(t, c, req.Ops, plan)
 	}
 	got := c.archive(t, plan, err)
@@ -260,9 +261,9 @@ func errorText(err error) string {
 }
 
 // checkPlan checks N12 and M6 on every file the plan writes, with the before bytes Apply read;
-// each write re-printing the item of a Set of a scalar among ops (M1, M2) changes one line, and
-// an insertion (W7, M3, M5) or removal (E6, E7, M4) has the regions of those rules instead.
-func checkPlan(t *testing.T, c goldenCase, plan *edit.Plan, ops []edit.Operation) {
+// a write re-printing a scalarSet item (M1, M2) changes one line, an insertion or removal (W7,
+// M3-M5, E6, E7) has its regions instead.
+func checkPlan(t *testing.T, c goldenCase, a *build.Analysis, plan *edit.Plan, ops []edit.Operation) {
 	t.Helper()
 	before := map[string][]byte{}
 	for name, f := range c.fsys { //canon:unordered fills a map by name
@@ -276,7 +277,7 @@ func checkPlan(t *testing.T, c goldenCase, plan *edit.Plan, ops []edit.Operation
 		if ch.Before != nil && !bytes.Equal(ch.Before, before[old]) {
 			t.Errorf("%s: Before is not the bytes read (API.md N9)", ch.Path)
 		}
-		checkWrittenBy(t, plan, ch, func(w edit.Write) bool { return scalarSet(ops, w.Op) && w.Reprint })
+		checkWrittenBy(t, plan, ch, func(w edit.Write) bool { return w.Reprint && scalarSet(a, ops, w.Op) })
 	}
 }
 

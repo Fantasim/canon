@@ -1,0 +1,4 @@
+go test fuzz v1
+[]byte("nN\x90\a\x01")
+int64(17)
+string("ne\x10")

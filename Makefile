@@ -162,20 +162,72 @@ stress:
 # FUZZ_EDIT_TIME on every example and on a benchmark project of FUZZ_EDIT_BENCH_N entries
 # (0: the examples alone); benchgen writes canonical JSON sources (FMT-02, DECISIONS 12). Opt-in;
 # the whole run (benchgen, the fuzz and its FUZZ_EDIT_WORKERS workers) under one 6G cap.
-FUZZ_EDIT_TIME    ?= 10m
-FUZZ_EDIT_BENCH_N ?= 7000
-FUZZ_EDIT_WORKERS ?= 2
-.PHONY: fuzz-edit
+# The corpus is the seeds and testdata/fuzz alone, in a fuzz cache of the run: the user cache
+# grows with every run and is all replayed as baseline first. No minimizing: past its time Go
+# kills and restarts the worker, which reopens the benchmark (log-2026-09-29 M4 P20).
+# §7.6, no silent pass: fuzz-edit-judge fails unless baseline coverage completes and the
+# coordinator seeded (and, with the benchmark, proved its seeds); then per minute fuzzed at least
+# FUZZ_EDIT_MIN_EXECS inputs must run past baseline and each project get FUZZ_EDIT_MIN_APPLIED
+# edits applied past its seeds (the -edit.tally file), Set, Add and Remove each at least once
+# on the benchmark. The floors are 11-14% of the execs and 15-19% of the benchmark's edits two
+# 10-minute runs gave on a 24-core host at load 7-24.
+FUZZ_EDIT_TIME        ?= 10m
+FUZZ_EDIT_BENCH_N     ?= 7000
+FUZZ_EDIT_WORKERS     ?= 2
+FUZZ_EDIT_MIN_EXECS   ?= 2000
+FUZZ_EDIT_MIN_APPLIED ?= 200
+.PHONY: fuzz-edit fuzz-edit-judge
 fuzz-edit:
 	systemd-run --user --scope -q -p MemoryMax=6G env GOTOOLCHAIN=local TMPDIR=/var/tmp \
 	  N=$(FUZZ_EDIT_BENCH_N) T=$(FUZZ_EDIT_TIME) W=$(FUZZ_EDIT_WORKERS) bash -c '\
+	  set -o pipefail; \
 	  dir=$$(mktemp -d /var/tmp/canon-fuzz-edit-XXXXXX); trap "rm -rf \"$$dir\"" EXIT; bench=""; \
 	  if [ "$$N" != 0 ]; then \
 	    go run ./internal/testkit/cmd/benchgen -seed 1 -n "$$N" -out "$$dir/bench" || exit 1; \
 	    bench="-edit.bench=$$dir/bench"; \
 	  fi; \
-	  go test -count=1 -timeout 0 -run "^$$" -fuzz "^FuzzMinimalWriteAll$$" -fuzztime "$$T" -parallel "$$W" \
-	    ./internal/edit $$bench'
+	  go test -v -count=1 -timeout 0 -run "^$$" -fuzz "^FuzzMinimalWriteAll$$" -fuzztime "$$T" -fuzzminimizetime 0 \
+	    -parallel "$$W" ./internal/edit $$bench -edit.tally="$$dir/tally" -test.fuzzcachedir="$$dir/cache" 2>&1 | tee "$$dir/log" || exit 1; \
+	  $(MAKE) --no-print-directory fuzz-edit-judge FUZZ_EDIT_LOG="$$dir/log" FUZZ_EDIT_TALLY="$$dir/tally"'
+
+# Judges a fuzz-edit run from its go test log and tally, both named: a run kept aside, or a mock.
+fuzz-edit-judge:
+	@N=$(FUZZ_EDIT_BENCH_N) LOG="$(FUZZ_EDIT_LOG)" TALLY="$(FUZZ_EDIT_TALLY)" \
+	  MIN_EXECS=$(FUZZ_EDIT_MIN_EXECS) MIN_APPLIED=$(FUZZ_EDIT_MIN_APPLIED) bash -c '\
+	  fail() { echo "fuzz-edit: FAIL: $$*"; exit 1; }; \
+	  projects=examples; [ "$$N" = 0 ] || projects="examples bench"; \
+	  base=$$(sed -n "s/^fuzz: .*: \([0-9]*\)\/[0-9]* completed, now fuzzing.*/\1/p" "$$LOG"); \
+	  [ -n "$$base" ] || fail "baseline coverage never completed"; \
+	  [ "$$N" = 0 ] || grep -q "benchmark seeds applied by operation" "$$LOG" || fail "the benchmark seeds were never proved"; \
+	  last=$$(grep "^fuzz: elapsed: .*, execs: " "$$LOG" | tail -n 1); \
+	  el=$$(echo "$$last" | sed -n "s/^fuzz: elapsed: \([^,]*\),.*/\1/p"); \
+	  echo "$$el" | grep -qx "\([0-9][0-9]*h\)\{0,1\}\([0-9][0-9]*m\)\{0,1\}[0-9][0-9]*\(\.[0-9]*\)\{0,1\}s" \
+	    || fail "cannot read the elapsed time \"$$el\""; \
+	  h=$$(echo "$$el" | sed -n "s/^\([0-9]*\)h.*/\1/p"); \
+	  m=$$(echo "$$el" | sed -n "s/^\([0-9]*h\)\{0,1\}\([0-9]*\)m.*/\2/p"); \
+	  s=$$(echo "$$el" | sed -n "s/^\(.*[hm]\)\{0,1\}\([0-9]*\)\(\.[0-9]*\)\{0,1\}s$$/\2/p"); \
+	  secs=$$(( $${h:-0} * 3600 + $${m:-0} * 60 + $${s:-0} )); \
+	  [ "$$secs" -gt 0 ] || fail "cannot read the elapsed time \"$$el\": no second fuzzed"; \
+	  execs=$$(echo "$$last" | sed -n "s/.*, execs: \([0-9]*\) .*/\1/p"); \
+	  new=$$(echo "$$last" | sed -n "s/.*new interesting: \([0-9]*\) .*/\1/p"); \
+	  floor() { local f=$$(( $$1 * secs / 60 )); echo $$(( f > 0 ? f : 1 )); }; \
+	  count() { local c; c=$$(grep -c -x "$$1" "$$TALLY" 2>/dev/null); echo "$${c:-0}"; }; \
+	  seeded=$$(count "[a-z]* seed [A-Za-z]*"); extra=$$(( base > seeded ? base - seeded : 0 )); \
+	  fuzzed() { echo $$(( $$(count "$$1 applied $$2") - $$(count "$$1 seed $$2") - extra )); }; \
+	  past=$$(( $${execs:-0} - base )); want=$$(floor "$$MIN_EXECS"); \
+	  echo "fuzz-edit: $$el fuzzed; baseline $$base inputs; $$past execs past it (floor $$want); $${new:-0} new interesting"; \
+	  [ "$$past" -ge "$$want" ] || fail "$$past execs past baseline, under $$want"; \
+	  want=$$(floor "$$MIN_APPLIED"); \
+	  for p in $$projects; do \
+	    [ "$$(count "$$p seed [A-Za-z]*")" -gt 0 ] || fail "$$p: no seed tallied, the coordinator did not seed"; \
+	    n=$$(fuzzed "$$p" "[A-Za-z]*"); \
+	    echo "fuzz-edit: $$p: $$n edits applied past the seeds (floor $$want)"; \
+	    [ "$$n" -ge "$$want" ] || fail "$$p: $$n edits applied past the seeds, under $$want"; \
+	  done; \
+	  [ "$$N" = 0 ] || for k in Set Add Remove; do \
+	    n=$$(fuzzed bench "$$k"); echo "fuzz-edit: bench: $$n $$k applied past the seeds"; \
+	    [ "$$n" -gt 0 ] || fail "bench: no $$k applied past the seeds"; \
+	  done'
 
 # IMPLEMENTATION-PLAN.md §6 M4 item 4, §7.6: NFR-01 on a benchmark project of BENCH_EDIT_N
 # entries and on the examples, printed with the machine. Gated: cold check and its RSS per
