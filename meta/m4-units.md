@@ -61,7 +61,10 @@ B13 UNC completion (workspace, load, edit, cli), host volumes in `/` form, one W
 (`testkit/winpaths`, a port of Go's volumeNameLen), `Paths.RootsFromAPI`. CI 36692101649 green on Windows
 and macOS; `make check` green.
 
-## Final-pass fixes (in flight)
+## Final-pass fixes
+
+On main (`0c59f40..b34ebac`): B14, P14, P15, P16, P17. In flight: P19 (monster rewrite), P20 (a real
+edit-fuzz gate); then P18's plan (log "P18").
 
 - P14 NFR-01 [opus]: analyses kept and reused across Edit and Evaluate; `1e5febc` in its worktree, in review.
   Evaluate p95 1.25 s -> ~150 ms, Edit p95 6.0 -> 3.3 s (under load 16-20)
