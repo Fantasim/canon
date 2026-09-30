@@ -53,6 +53,7 @@ gate-found edit bugs · P13a, P13d guard tests. One green `make check`; CI run 3
 - Cleanup-A (semantic: E1903, keyed applied records, P9, the 216 neighbour, U13 leftovers, U5b nits) [opus]
 - Cleanup-B (mechanical: Consumes enforcement, FileCache test, B1 nits, "dir", benchgen canonical, dups) [sonnet]
 - B12 CI portability: macOS symlinked root, Windows memFS roots, symlink skip, overlay keys [opus]
+- B13 UNC completion: project.Join/DirOf in workspace, load, edit, cli (after the edit units) [sonnet]
 
 ## Final pass
 
