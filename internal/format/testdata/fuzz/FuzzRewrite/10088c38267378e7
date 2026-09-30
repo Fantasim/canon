@@ -1,0 +1,3 @@
+go test fuzz v1
+[]byte(" //\npackage A.A00//\nenum A@codes(Int){A=0,A=0,retired A=0}\n //\nrecord A{  //\nA:A(0..)  //\nA:A(0 %10)  //\nA:A}//\nemit A{0:\"\",0:[0]}")
+uint16(75)

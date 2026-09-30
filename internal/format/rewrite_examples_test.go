@@ -25,7 +25,8 @@ func items(f *syntax.File) []syntax.Node {
 }
 
 // topOf is the byte range a change to n may touch: n's top-level declaration, with the blank
-// line and the comments before it, and the blank line after it (API.md M6).
+// line and the comments before it, the comment ending its last line, which a Remove takes with
+// it, and the blank line after it (API.md M4, M6).
 func topOf(f *syntax.File, n syntax.Node) (lo, hi int) {
 	tops := slices.Concat(nodes(f.Decls), nodes(f.Amends), nodes(f.Entries))
 	if f.Project != nil {
@@ -35,14 +36,26 @@ func topOf(f *syntax.File, n syntax.Node) (lo, hi int) {
 	for _, d := range tops {
 		s := f.Span(d)
 		if s.Start <= at && at < s.End {
-			lo, hi = int(s.Start), int(s.End)
+			lo = int(s.Start)
 			for _, tr := range f.Tokens[d.First()].Leading {
 				lo = min(lo, int(tr.Start))
 			}
-			return max(lo-1, 0), hi + len("\n\n")
+			return max(lo-1, 0), trailEnd(f, d.Last()) + len("\n\n")
 		}
 	}
 	return 0, len(f.Src.Content)
+}
+
+// trailEnd is the end of token t and of the comments trailing it.
+func trailEnd(f *syntax.File, t syntax.Tok) int {
+	// FORMATTER.md §13 step 5
+	hi := int(f.Tokens[t].End)
+	for _, tr := range f.Tokens[t].Trailing {
+		if _, ok := commentOf(f, tr); ok {
+			hi = max(hi, int(tr.End))
+		}
+	}
+	return hi
 }
 
 func nodes[N syntax.Node](ns []N) []syntax.Node {
@@ -78,8 +91,12 @@ func checkRewrite(t *testing.T, ex example, f *syntax.File, n syntax.Node, c for
 	if c.Kind == format.Remove {
 		gone = []syntax.Tok{n.First(), separatorOf(f, n)}
 	}
-	if lost := lostComments(f, parse(t, ex.path, out).file, gone); len(lost) > 0 {
+	g := parse(t, ex.path, out).file
+	if lost := lostComments(f, g, gone); len(lost) > 0 {
 		t.Fatalf("%s: change %d at %v lost comments, or moved them to another token: %q (API.md M6)", ex.path, c.Kind, f.Span(n), lost)
+	}
+	if extra := extraComments(f, g, gone); c.Kind != format.Insert && extra != 0 {
+		t.Fatalf("%s: change %d at %v left %d comments more than it kept (API.md M4):\n%s", ex.path, c.Kind, f.Span(n), extra, lineDiff(before, out))
 	}
 	return nil
 }
@@ -112,6 +129,13 @@ func lostComments(before, after *syntax.File, gone []syntax.Tok) []string {
 		have[c]--
 	}
 	return lost
+}
+
+// extraComments is how many more comments after holds than the ones of before lostComments
+// requires: a removed item's own comments leave with it, and no change adds one.
+func extraComments(before, after *syntax.File, gone []syntax.Tok) int {
+	// FORMATTER.md §13 step 5
+	return len(format.CommentHosts(after)) - len(hostedComments(before, gone, false))
 }
 
 // hostedComments are f's comments as "token => comment", but for those attached to gone[0]

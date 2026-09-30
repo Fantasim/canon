@@ -149,61 +149,99 @@ func samePointer(a, b reflect.Value, at string) error {
 }
 
 // comments are a file's comments with the token after it (commas, colons, separators aside): in
-// file order with that token's position, and the import block's sorted with the name they move with.
+// file order with that token's position, and the import block's sorted with the token they are
+// attached to, which moves when the imports and their names are sorted.
 func comments(f *syntax.File) (ordered, imports []string) {
 	lo, hi := importRange(f)
 	kept := format.KeptCommas(f)
 	for i, tok := range f.Tokens {
 		for _, tr := range tok.Leading {
-			ordered, imports = sort2(place(f, tr, i, kept[i]), lo, hi, ordered, imports)
+			ordered, imports = sort2(place(f, tr, i, leadOwner(f, i, kept[i])), lo, hi, ordered, imports)
 		}
 		for _, tr := range tok.Trailing {
-			ordered, imports = sort2(place(f, tr, i+1, kept[i]), lo, hi, ordered, imports)
+			ordered, imports = sort2(place(f, tr, i+1, trailOwner(f, i, kept[i])), lo, hi, ordered, imports)
 		}
 	}
-	slices.Sort(imports)
+	slices.SortStableFunc(imports, func(x, y string) int { return strings.Compare(ownerOf(x), ownerOf(y)) })
 	return ordered, imports
 }
 
-// placed is a comment with the kind of the token after it (a duration's text may change), that
-// token's index and its ordinal; in the import block, with the text of the name it moves with.
+// ownerSep ends the owner part of an import-block comment's text, which no name holds.
+const ownerSep = " | "
+
+// ownerOf is the owner part of an import-block comment: its comments keep their source order.
+func ownerOf(imp string) string {
+	owner, _, _ := strings.Cut(imp, ownerSep)
+	return owner
+}
+
+// leadOwner is the owner of an own-line comment before token i (FORMATTER.md §8.1).
+func leadOwner(f *syntax.File, i int, keptComma bool) int {
+	if keptComma { // DECISIONS 216: the name before it
+		return lastAnchored(f, i-1)
+	}
+	at, _ := anchor(f, i)
+	return at
+}
+
+// trailOwner is the owner of a comment trailing token i (FORMATTER.md §8.1, DECISIONS 168, 216).
+func trailOwner(f *syntax.File, i int, keptComma bool) int {
+	t := f.Tokens[i]
+	if anchored(t.Kind) {
+		return i
+	}
+	before := lastAnchored(f, i-1)
+	if t.Kind != syntax.TokComma || keptComma || !bytes.Contains(f.Src.Content[f.Tokens[before].End:t.Start], []byte("\n")) {
+		return before
+	}
+	at, _ := anchor(f, i+1)
+	return at
+}
+
+// placed is a comment with the kind of the token after it (a duration's text may change) and
+// that token's ordinal; in the import block, with its owner's import path and text.
 type placed struct {
 	text, imp string
-	at, n     int
+	owner, n  int
 	absent    bool
 }
 
-// sort2 files a placed comment as an import comment or an ordered one.
+// sort2 files a placed comment as an import comment or an ordered one, by its owner.
 func sort2(c placed, lo, hi int, ordered, imports []string) ([]string, []string) {
 	switch {
 	case c.absent:
 		return ordered, imports
-	case c.at >= lo && c.at <= hi:
+	case c.owner >= lo && c.owner <= hi:
 		return ordered, append(imports, c.imp)
 	default:
 		return append(ordered, fmt.Sprintf("%d %s", c.n, c.text)), imports
 	}
 }
 
-// place places a comment of the token before from, or of the token from; the comments of a kept
-// comma move with the name before it when imports are sorted (DECISIONS 216).
-func place(f *syntax.File, tr syntax.Trivia, from int, keptComma bool) placed {
+// place places a comment of the token before from, or of the token from, attached to owner.
+func place(f *syntax.File, tr syntax.Trivia, from, owner int) placed {
 	s, ok := commentOf(f, tr)
 	if !ok {
 		return placed{absent: true}
 	}
 	at, n := anchor(f, from)
 	own := ownLine(f, tr, from)
-	owner := at
-	if keptComma {
-		owner = lastAnchored(f, from-1)
-	}
 	tk := f.Tokens[owner]
 	return placed{
-		text: fmt.Sprintf("%s %s %v", f.Tokens[at].Kind, s, own),
-		imp:  fmt.Sprintf("%s %s %v", f.Src.Content[tk.Start:tk.End], s, own),
-		at:   at, n: n,
+		text:  fmt.Sprintf("%s %s %v", f.Tokens[at].Kind, s, own),
+		imp:   fmt.Sprintf("%s %s%s%s %v", importOf(f, owner), f.Src.Content[tk.Start:tk.End], ownerSep, s, own),
+		owner: owner, n: n,
 	}
+}
+
+// importOf is the path and alias of the import holding token t, or "" outside the imports.
+func importOf(f *syntax.File, t int) string {
+	for _, imp := range f.Imports {
+		if t >= int(imp.First()) && t <= int(imp.Last()) {
+			return dotted(imp.Path) + " " + alias(imp)
+		}
+	}
+	return ""
 }
 
 // lastAnchored is the last token at or before i that the layout never drops nor adds.
