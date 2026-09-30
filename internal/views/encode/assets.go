@@ -30,19 +30,17 @@ func NewAssets(prog *check.Program, layout *project.Layout) *Assets {
 	a.dir = layout.Dir
 	for _, p := range prog.Packages {
 		for _, f := range p.Files {
-			syntax.Inspect(f, func(n syntax.Node) bool {
-				a.declare(prog.Info, layout, f, n)
-				return true
-			})
+			for _, at := range assetTypesOf(f) {
+				a.declare(prog.Info, layout, f, at)
+			}
 		}
 	}
 	return a
 }
 
-// declare resolves the asset type n declares in f, if it is one.
-func (a *Assets) declare(info *check.Info, layout *project.Layout, f *syntax.File, n syntax.Node) {
-	at, ok := n.(*syntax.AssetType)
-	if !ok || info.TypeExprs[at] == nil {
+// declare resolves the asset type at declares in f, if the program resolved it.
+func (a *Assets) declare(info *check.Info, layout *project.Layout, f *syntax.File, at *syntax.AssetType) {
+	if info.TypeExprs[at] == nil {
 		return
 	}
 	spec := shape.LayersOf(info.TypeExprs[at]).Asset
