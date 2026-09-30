@@ -66,7 +66,8 @@ and macOS; `make check` green.
 - P14 NFR-01: profile and fix the Edit (6.25 s p95) and Evaluate (1.5 s p95) paths at 7,000 entries [opus]
 - B14 formatter fuzz findings [opus]: both oracle faults, not formatter faults (the import comment check paired by
   next token, not attachment, §8.1; the Rewrite region left out a removed item's trailing comment, §13 step 5).
-  Committed `4583b6d` in its worktree; both fuzzers 10 min clean; in review
+  Review PASS after one round (a symmetric comment check on Remove, Replace, Move). `bd6f82c` in its
+  worktree; lands with P14
 
 ## Final pass
 
