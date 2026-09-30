@@ -41,6 +41,10 @@ and each reuse is a place where incremental and cold can drift apart.
   whose evaluation made it (the owner rule, beside stage C's `alone()`). A replay marks nothing
   seen: an owned entry of an alone value is reached by no other value traversed, and occurs once in
   that value.
+- **Generation memos (amended by PA2).** A memo of data derived only from a `*source.File`'s
+  bytes (P14's JSON trees, PA2's defines classifications) lives in the file set's generation,
+  keyed by name, holds one entry per name the generation read, and is dropped at compaction. It
+  sits outside the byte bound, like the file set whose bytes it mirrors.
 - **Derived syntax memos (amended by P17).** A memo of data derived only from one immutable
   `*syntax.File` (log-2026-09-29 P13c-r) may be process-wide, outside the project cache and its
   byte bound, if it is keyed by a weak pointer, dropped when its file is collected, never ranged
