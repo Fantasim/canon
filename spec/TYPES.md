@@ -812,8 +812,10 @@ if reward is item { total += reward.count }        // reward narrowed to Reward.
   entry key; for a keyed list, `k` is the value of the key field, which the body must then omit
   (it is filled from `k`; giving it is `E3321`). Keys must be unique across the literal and every
   `entry` (`E3101` for tables, `E3102` for keyed lists, naming both locations; static when both
-  keys are written in source). `retired entry` is allowed only on tables (keyed lists have no
-  retirement, LOCK.md §1): elsewhere it is `E3103`.
+  keys are written in source). Of two duplicates in different files, the first is the earlier in
+  (file path bytes, position) order (EVALUATION.md §2.1), never the order files were read in.
+  `retired entry` is allowed only on tables (keyed lists have no retirement, LOCK.md §1): elsewhere
+  it is `E3103`.
 - The keys of a table literal are identifiers; any reserved word the grammar accepts as a name
   is allowed.
 
@@ -1165,7 +1167,9 @@ EVALUATION.md §11 gives the declaration rules and their codes (`E19xx`). For ty
 - Constant expressions are also required for refinement bounds, parameter defaults,
   `@codes` values and enum member values (`E3015`).
 - Constants are evaluated when first needed, including during type checking. A cycle between
-  constants is `E4301` (EVALUATION.md §3).
+  constants is `E4301` (EVALUATION.md §3). "First needed" is per evaluator: a constant folded
+  during checking and forced again in stage A is evaluated, and charged, twice, on the one counter
+  of the invocation (EVALUATION.md §12.2).
 - A public top-level `let` needs a type annotation (`E3001`). A `local let` without one is
   synthesized when first needed; a cycle among such inferences is `E3008`.
 - A field default (TYP-15) may use constants, **earlier** fields of the same record, record

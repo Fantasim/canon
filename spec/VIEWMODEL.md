@@ -527,7 +527,10 @@ optional stripped):
 - **L21.** A `show` line or a method named in a view is shown read-only as "Label: text", where the
   text is rendered by the compiler (`EvalResult.Show`, API.md §11). It is recomputed after each
   committed edit (§11). A rendering that fails shows "—" and produces no finding
-  (MOCKUP-GAPS 38).
+  (MOCKUP-GAPS 38). A method's value becomes text as an interpolation does (X4): a `ref` as its
+  target's title, an enum member as its label, `none` as `none`, anything else in canonical text.
+  A broken method (TYPES.md §1) is never run: its line shows "—", and the view naming it is not
+  itself broken.
 - **L22.** A `show` line or method written inside a group appears there, in order. One written at
   view level and named by no group appears at the top of `_other`, in view order; one a group
   names appears only there (the view-level line sets presentation, G9).
@@ -767,7 +770,10 @@ the selected row (SPEC §16.9).
 - **S8.** A `ref` interpolated in a template renders as its target's title when the target type has
   a view `title`, else as its key; `{r.id}` always renders the key (MOCKUP-GAPS 22, API.md V7).
   Inside that target title a `ref` renders as its key (one level), and a target title that fails
-  (X7) renders the key.
+  (X7) renders the key. The target title renders with the magic names of the target's own
+  position (§3.4: `id` for a table entry, `index` for a keyed-list element, `key` for a map
+  value), so a title agrees across its picker row, its `Evaluate` title and every ref that
+  interpolates it.
 - **S9.** When two entries of one collection render the same title, each of them is shown as
   `<title> (<key>)` (MOCKUP-GAPS 26), where `<key>` is the key's canonical text (API.md P9, without
   JSON quotes) or `#<n>` (1-based position) in a plain list. The compiler applies it in index rows

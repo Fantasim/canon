@@ -153,7 +153,8 @@ Argument lists, parameter lists, list literals, and `[ ]` comprehensions are lai
 ### 6.3 New lists
 
 A brace list created by the edit API (it has no input text) is single-line if it fits and none of
-its items contains a nested list (a brace literal or a list literal); otherwise it is broken.
+its items contains, at any depth, a brace or list literal (a comprehension's clauses count);
+otherwise it is broken.
 
 ---
 
@@ -580,15 +581,24 @@ changes annotation order, or reports naming-convention warnings.
 
 DECISIONS 12, API-03. The studio edits values; the compiler writes text. The contract:
 
-- **Untouched text is byte-identical.** Bytes outside the re-printed units never change, even if
-  they are not in canonical layout.
+- **Untouched text is byte-identical.** Bytes outside the re-printed units never change. This holds
+  for files in canonical layout: the edit API refuses any other file unless `Normalize` formats it
+  first (API.md M9, which governs, judged on the raw bytes), so input holding a CR or a tab
+  indentation is refused rather than folded outside the units.
 - **Item.** A top-level declaration, an item of a brace list (field, member, case, table entry,
   brace-literal item, statement, view item, amend item, project item), a translation entry, or an
-  element of a `( )`/`[ ]` list.
+  element of a `( )`/`[ ]` list. Edits change items only: a change to an import's path or name, to
+  the package clause or to the file as a whole is refused.
 - **Unit.** For each change, the unit is the smallest item whose text changes. For an insertion it
   is the new item; for a removal, the removed item.
+- **Comments.** A comment's owner, in any list, is the item the printer's own attachment gives it
+  (§8.1, DECISIONS 167, 168, 216). The re-printer uses that same attachment, so a comment is
+  removed only with its owner and keeps its owner across the settle (API.md M5). New text is placed
+  after the trivia at its point, never inside a comment.
 
-Algorithm for one edit (all operations of an atomic edit are applied, then units are re-printed):
+Algorithm for one edit (all operations of an atomic edit are applied, then units are re-printed;
+the changes touching one list are grouped, and its separators, the commas of DECISIONS 211 and
+step 5's blank-line collapse are computed once, over the final order):
 
 1. **Print the unit** with the printer of §7, starting at the unit's current column, with the text
    that follows the unit on its last line as the rest for `fits`. Brace lists that already exist
@@ -602,13 +612,29 @@ Algorithm for one edit (all operations of an atomic edit are applied, then units
 4. **Insert** into a broken brace list: a new line at the insertion point, at the list's item
    indentation, without blank lines. Into a single-line brace list: `, item` before ` }` (`{}`
    becomes `{ item }`). Into a broken `( )`/`[ ]` list: a new line `item,`. Into a single-line one:
-   `, item` before the closing bracket. Then step 3 applies.
+   `, item` before the closing bracket. An insertion in the middle of a single-line list writes
+   `item, ` before the item it precedes. A new top-level declaration (an `amend` block added to a
+   layer file, API.md W11) is appended after the file's last declaration and that declaration's
+   same-line trailing comment, one blank line before it, every later byte (end-of-file comments)
+   kept; in a file with no declaration, after the header. Then step 3 applies.
 5. **Remove** from a broken list: the item's lines, with its leading comments, doc comments and
    trailing comment; if this leaves two blank lines in a row, or a blank line after `{` or before
    `}`, one is removed. From a single-line list: the item and one adjacent `, `. A list left empty
-   becomes `{}` or `[]`.
+   becomes `{}` or `[]`. An item followed by a comma kept on its own line (DECISIONS 216) is removed
+   through that comma line, with the comments between them (a leading comma before the next item
+   could not parse); a comma DECISIONS 216 no longer needs afterwards is dropped by the settle
+   (API.md M5). A broken `( )`/`[ ]` list may be re-printed whole, since §6.2 lays it out by width;
+   a brace list or the top level loses the item's own lines plus at most one blank line.
 6. **Retire**: `retired ` is inserted before the key (LOCK.md).
 7. **New files** (a table entry added through `@files`): printed entirely in canonical layout.
+8. **Move** an item within its list: its target position counts the items before the changes (as
+   for an insertion); a move to its own place changes nothing. In a broken list, the item's lines,
+   with every comment the printer attaches to it, leave as in step 5 and arrive byte for byte at
+   the point of step 4, the commas of DECISIONS 211 recomputed over the final order. In a
+   single-line list, the item is re-printed as a unit (step 3, then the settle). A move combines
+   with the list's insertions and removals. Refused: moving a top-level declaration, moving into
+   another list, moving one item twice, moving and removing one item, replacing something inside
+   the moved item, and, in a single-line list, moving an item whose comment ends its line.
 
 Where an insertion goes (a defaulted field inserted in declaration order, API-02) and when a field
 is removed instead of set (API-06) are defined by API.md.
@@ -643,7 +669,9 @@ from then on edited by the same minimal re-printing. This layout is for **source
   `@json(unit:)`, a `@json(int)` Bool, a `@json(bits)` list, a `@codes` enum with `@json(codes)`)
   is written in the canonical number text of WIRE.md §7.2 for that field (integers exact, floats
   shortest round-trip). Any other number (an unknown key kept by `partial: true`, a value no Canon
-  type reads) is kept exactly as written, so nothing is lost.
+  type reads) is kept exactly as written, so nothing is lost. So is a number token that two loads
+  read as different base types, or to different canonical texts: `canon fmt --json-sources` and the
+  edit API's layout check (API.md M9) leave it as written alike.
 - `true`, `false`, `null` as usual.
 - **Key order is preserved.** Normalization never reorders members.
 - **Unknown keys are preserved** in place, with their values.
@@ -658,6 +686,8 @@ A file that is not valid JSON, or has duplicate keys (`E7104`), is not changed.
   end of the object.
 - `@json(path: "a.b")`: missing intermediate objects are created with the same placement rule,
   using the first field that uses the prefix (LOD-09).
+- `@json(pairs:)`: the first slot written into an empty pairs field is placed by its first slot
+  key among the declared keys.
 - The unit is the smallest member or element whose text changes; adding or removing the `,` of the
   neighbouring line is part of the change. A unit inside a container written on one line (a file
   never normalized) escalates to that container, which is re-printed in canonical layout.

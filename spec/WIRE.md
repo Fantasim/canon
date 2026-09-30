@@ -620,6 +620,8 @@ Pattern syntax, per `/`-separated segment:
   a `load.dir` base directory, and a literal `load.dir` path, that is or passes through a link: outside
   the roots and the project it is skipped with `W7115`, naming the first linked segment; a base
   or path whose link is dangling or part of a loop is `E7004` (`ReadMissing`, `ReadLinkLoop`).
+  The project root's own ancestors never count as links here: a link among them (macOS's `/var` →
+  `/private/var`) does not make a path "pass through a link".
 - **Order**: ascending byte order of the matched path relative to the base, with `/` separators.
 - Zero matches is `W7107` at the `load.dir`; the result is empty.
 
@@ -1098,6 +1100,7 @@ lang <code>                        the --lang value (source language if absent)
 command <check|build|test>
 target <go|cpp|ts|json|view>       one line per selected target, sorted; all when none selected
 package <qualified name>           one line per selected package, sorted
+root <name> <dir>                  one line per declared root, sorted by name
 file <sha256> <path>               every file read, sorted by path bytes
 glob <sha256> <pattern>            every glob evaluated, sorted by pattern bytes
 list <sha256> <directory>          every directory listing consulted, sorted by path bytes
@@ -1106,10 +1109,17 @@ list <sha256> <directory>          every directory listing consulted, sorted by 
 - `file` lines cover `project.canon`, every `.canon` source, layer and translation file parsed,
   every `canon.lock` read, and every file read by `load`, `load.*` and asset checks. `<path>` is the
   display form (§2.3). `<sha256>` is the lower-case hex SHA-256 of the file's bytes.
+- `root` gives the directory a declared root resolves to, `--root` applied (API.md O7:
+  `Options.Roots` changes the files read), relative to the project directory, `/`-separated
+  (`../../Resource`); a root with no relative form (another volume) is `root <name> sha256:<hex>`,
+  the hash of its absolute `/`-separated path, never the path itself.
 - `glob` hashes the list of matched paths (display form, one per line, each followed by LF, in match
-  order), so adding or removing a matching file changes the manifest.
+  order), so adding or removing a matching file changes the manifest. The matches are those the run
+  used, recorded as it loaded, never a later walk.
 - `list` hashes the sorted names (one per line, LF-terminated) of a directory whose listing was used
-  (asset existence, TYP-21).
+  (asset existence, TYP-21), files and subfolders alike, the kind known after following links; a
+  subfolder's name ends with `/` (kind matters, TYPES.md §13.4). A listed folder's display is that
+  of its asset spec's first reference by (package, file, offset), as for files (§2.3).
 - The cache format behind the key is opaque and versioned by the compiler. Deleting `.canon/` is
   always safe.
 

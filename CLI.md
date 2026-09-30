@@ -221,7 +221,7 @@ emit them (stage E), so `check` and `build` report the same findings, `E9008` an
 included. No file is written. Prints every finding, then the summary.
 
 - `--watch`: re-check on every change to a source, a loaded file or a layer, printing only what
-  changed since the previous run.
+  changed since the previous run (cycles as spec/IMPLEMENTATION-PLAN.md §8.1 says).
 
 Exit: 0, 1, 2, 3, 4.
 
@@ -354,14 +354,31 @@ canon fmt [paths…] [--check] [--diff] [--json-sources]
 
 Rewrites `.canon` files in the canonical layout defined by [spec/FORMATTER.md](spec/FORMATTER.md).
 Comments are kept. The layout never aligns columns, so a one-value edit is a one-line diff.
-`fmt` evaluates nothing. A file with a syntax error is left unchanged: its errors are printed and
-the exit code is 1. `fmt` does not report naming conventions; `canon check` does (`W1003`).
+`fmt` evaluates nothing, except what `--json-sources` needs (below). A file with a syntax error is
+left unchanged: its errors are printed and the exit code is 1; so is a `project.canon` with a
+syntax error, and then nothing is written (exit 2 stays for a missing file). `fmt` does not report
+naming conventions; `canon check` does (`W1003`).
 
 | Flag | Meaning |
 |---|---|
 | `--check` | write nothing; exit 1 if any file is not formatted |
 | `--diff` | print the changes instead of writing |
 | `--json-sources` | also normalize every JSON file read by `load` to the canonical JSON source layout of [spec/FORMATTER.md](spec/FORMATTER.md) §14 (done once, before the studio edits them: see §5.3): 2-space indent, one member or element per line, existing key order and unknown keys preserved, numbers read into Canon fields re-printed canonically. This is not the layout of emitted data files (SPEC §14.3) |
+
+- `--json-sources` learns which files are loaded, and the Canon field types of their numbers, by
+  running the check of the packages holding the formatted files and evaluating only the `const`s
+  and `let`s whose declaration holds a `load`; it reports nothing about them and writes nothing
+  else. A number some Canon field reads is re-printed in the canonical text of WIRE.md §7.2. Every
+  other number is kept as written: an unknown key's, a `none` marker, a `Duration` that is not a
+  whole count, a token several loads read with different types or canonical texts or only an
+  unforced reader reads, an `E7103` `1.0` in an `Int` field nothing reads. An explicit
+  `load(…, format:)` decides whether a file is JSON; globs match as `load`'s do. A JSON source that
+  is not UTF-8 is reported as `E7105`.
+- A symbolic link is never replaced: its target is written when it lies inside the project or a
+  root, else left alone.
+- `--diff` alone writes nothing and exits 0; a writing run prints nothing; `-q` keeps the
+  `--check` list and the diffs (they are the result, not findings). The JSON lines are in
+  spec/IMPLEMENTATION-PLAN.md §8.1.
 
 ### 3.7 `canon explain`
 

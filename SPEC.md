@@ -1272,11 +1272,11 @@ amended values record the layer. Findings, `canon explain` and the studio's edit
 ### 11.6 Step budget
 
 Evaluation runs under a step budget: `project.budget` steps (10⁸ if not set) for one `canon`
-invocation, or one re-check through the API, shared by values, verification, checks,
-precomputation and tests. Exceeding it is `E4401`, with the stack and the heaviest value (the
-top-level value charged the most steps). What costs a step, and to which value it is charged, is
-[spec/EVALUATION.md](spec/EVALUATION.md) §12; the cost of each standard function is in
-[spec/STDLIB.md](spec/STDLIB.md).
+invocation, or one re-check through the API, shared by constant folding during checking, values,
+verification, checks, precomputation and tests. Exceeding it is `E4401`, with the stack and the
+heaviest value (the top-level value charged the most steps). What costs a step, and to which value
+it is charged, is [spec/EVALUATION.md](spec/EVALUATION.md) §12; the cost of each standard function
+is in [spec/STDLIB.md](spec/STDLIB.md).
 
 Details: [spec/EVALUATION.md](spec/EVALUATION.md).
 

@@ -117,14 +117,14 @@ one position type; JSON sources get their own syntax tree (`jsonsrc`) because bo
 | `rules` | record and package checks, `fail`/`warn`, test blocks and `expect` | EVALUATION.md (checks, tests), SPEC §10, §18 | eval, verify |
 | `i18n` | key catalogue, translation files, fallback, `i18n stub`/`status` | I18N.md | check |
 | `api/vm` (package `vm`) | view-model Go structs, generated from `spec/viewmodel.schema.json`; `ViewModel.Decode` targets them (API.md §5.4) | VIEWMODEL.md, viewmodel.schema.json | — |
-| `views` | view resolution (groups, controls, labels, `when`/`show`, usage, search index) shared by `gen/view` and `Evaluate` | VIEWMODEL.md, MOCKUP-GAPS | check, eval, i18n |
+| `views` | view resolution (groups, controls, labels, `when`/`show`, usage, search index) shared by `gen/view` and `Evaluate` | VIEWMODEL.md, MOCKUP-GAPS | check, eval, i18n, api/vm |
 | `ir` | target-neutral emit IR (§4.5 of this plan), fingerprint, emit validation (stage E), portable-subset check (`E9xxx`) | §4.5, FINGERPRINT.md, CODEGEN.md (what the IR must carry) | check, verify, value, types, project |
 | `conform` | conformance vector selection and expected results | CONFORMANCE.md | ir, eval |
 | `gen/json` | `emit json` files | WIRE.md (emit layout) | ir, wire |
 | `gen/go` | Go code, `rt` package, Go conformance tests | CODEGEN.md (Go), CONFORMANCE.md | ir, conform |
 | `gen/cpp` | C++17 code, `canon_runtime.h`, legacy struct modes, C++ conformance | CODEGEN.md (C++), CONFORMANCE.md | ir, conform |
 | `gen/ts` | TypeScript code, TS conformance | CODEGEN.md (TS), CONFORMANCE.md | ir, conform |
-| `gen/view` | view-model JSON | VIEWMODEL.md, viewmodel.schema.json | views, ir |
+| `gen/view` | view-model JSON | VIEWMODEL.md, viewmodel.schema.json | views, ir, api/vm |
 | `build` | phase and stage orchestration, build manifest, cache, atomic output writes, GENERATED markers (`E8001`), `--adopt`; implements `eval.Host` with `load` and `verify` (§4.8) | EVALUATION.md §1, SPEC §14, CLI §3.4, LOD-11, GEN-05 | all of the above |
 | `edit` | paths, ops, editability, cascades, minimal writes, file placement, journal | API.md §6-§10 | format, jsonsrc, value, wire, lock, build (re-check) |
 | `workspace` | snapshots, revisions, refresh, overlays, watching, incremental invalidation | API.md §3, §12 | build, edit |
@@ -137,9 +137,13 @@ one position type; JSON sources get their own syntax tree (`jsonsrc`) because bo
 
 Dependency rule: an arrow may only point up this table (a package imports packages listed above
 it, except `testkit`, which may import anything). `go list -deps` is checked in CI against the
-allowed graph in `internal/testkit/deps_test.go`. Where a package must call one listed below it,
-it declares the interface it needs and receives an implementation at construction, from `build`
-or `workspace`. There are exactly two such seams: `check.Folder` (constant folding during
+allowed graph in `internal/testkit/deps_test.go`. The Consumes column binds as well: a package
+imports only the packages its row lists or packages reachable through them
+(`TestConsumesColumn`, whose allowlist of known deviations only shrinks). `testkit` is exempt from
+the Consumes column (its "may import anything" is the specific rule; the rank rule still binds),
+and `cli`'s prose cell means every package listed above it. Where a package must call one listed
+below it, it declares the interface it needs and receives an implementation at construction, from
+`build` or `workspace`. There are exactly two such seams: `check.Folder` (constant folding during
 checking, §4.7) and `eval.Host` (loading and verification during evaluation, §4.8).
 
 ---
@@ -379,6 +383,8 @@ var E3501 codeE3501   // func (codeE3501) At(span source.Span, key ValueArg, col
 
 // Hand-written.
 type Builder struct { /* a finding under construction: Path, Pointer, Related, Check, Layer, Stack, Report, Message */ }
+func (b *Builder) Detached() *Builder   // a copy holding every argument as the text it renders, so a memoized
+                                        // finding keeps no value or type alive (addition, DECISIONS 250)
 type Finding struct {
     Code     Code
     Severity Severity
@@ -658,8 +664,9 @@ const NoneIndex = -1
   §1) and nothing else is recorded for any of them; a top-level `BadDecl` declares nothing.
 - Constants needed during checking (refinement bounds, `..=FARM_MAX_MODELS`, TYPES.md §1 step 2
   and §15) are folded through `Folder` as soon as their expression is typed; a cycle between
-  constants is `E4301`. `build` passes `eval.NewFolder(bags, opt)`; tests of `check` pass a
-  fixture folder that knows only literals.
+  constants is `E4301`. `build` passes `eval.NewFolder(bags, opt)`, and its evaluator then spends
+  that folder's counter (`UseFolder`, §4.8: one counter per invocation, DECISIONS 104); tests of
+  `check` pass a fixture folder that knows only literals.
 - `Check` and `Bags` land with the checker in M1; the rest is written in M0 (DECISIONS 101).
 
 ### 4.8 The evaluator's host — `internal/eval/host.go`
@@ -695,6 +702,19 @@ func (e *Evaluator) BeginVerification(ctx context.Context)   // stage B: host.Ve
 func (e *Evaluator) MarkInvalid(v value.Value)               // verify's soft findings (EVALUATION.md §7.3, DECISIONS 79)
 func (e *Evaluator) Invalid(v value.Value) bool              // marked by a conversion or by verify; rules skips checks above it
 func (e *Evaluator) Call(ctx context.Context, fn check.Object, recv value.Value, args []value.Value) (value.Value, bool)
+
+// Additions (DECISIONS 250), each additive: New and NewFolder are unchanged.
+func (e *Evaluator) UseFolder(f check.Folder) bool   // e spends NewFolder's counter f: one per invocation (DECISIONS 104);
+                                                     // false, a no-op, once e has evaluated anything or for another Folder
+type Folds struct { /* the folds one NewFolder folder made up to a point, in order */ }
+func FoldsOf(f check.Folder) Folds                   // the zero Folds for another Folder
+func (fs Folds) Replay(ctx context.Context, bags check.Bags) check.Folder   // a folder on a counter of its own that made
+                                                     // fs's folds again, each seeing what it first saw (EVALUATION.md §12.2)
+type LoadMemo interface {                            // optional capability of a Host whose loads the memo replays (§7.6)
+    LoadRecorded(ctx context.Context, e *syntax.LoadExpr, expected types.Type) (value.Value, bool, LoadInputs)
+    LoadReplay(ctx context.Context, e *syntax.LoadExpr, in LoadInputs) (done func(), ok bool)
+}
+type LoadInputs any                                  // what a LoadMemo recorded of one load
 ```
 
 - `build` wires the seams at run time, never at import time: `prog := check.Check(…,
@@ -746,7 +766,7 @@ acceptance tests pass.
 | **M1.5** generated programs | — | — | — | — | — | — | — | — | — | — | program generator and the four suites of §7.7 (beside M2) |
 | **M2** pipeline | `jsonsrc` | export fns | `conform` | `rules` tests | `wire` decode, `load.dir` | fingerprint, reload IR, portable subset check | GO/CPP: data mode, stores, conformance | — | `cli` test | — | toolchain CI jobs |
 | **M3** load + view | `format` (start) | dependent types, views, i18n, layers | — | dependent verification, assets | `load` (all forms) | `types` mode | CPP: `types` mode | `views`, `gen/view`, `i18n`, `api/vm` | `Check`/`Value`/`ViewModel` in `api` | — | real-data job, benchmark generator |
-| **M4** fmt + edit | `format` done, JSON source printer | — | incremental memo | — | — | — | — | `Evaluate` support | `edit`, `workspace`, full `api`, fmt/explain/refs/watch | — | edit goldens, fuzzing, perf gates |
+| **M4** fmt + edit | `format` done, JSON source printer | `check.Session` (incremental re-check) | incremental memo | — | — | — | — | `Evaluate` support | `edit`, `workspace`, full `api`, fmt/explain/refs/watch | — | edit goldens, fuzzing, perf gates |
 | **M5** LSP | recovery hardening | completion queries | — | — | — | — | — | — | support | LSP: server, grammar, extension | LSP transcripts |
 | **M6** legacy C++ + TS | — | — | — | — | — | legacy IR | CPP: `fields`/`both`/`getters`; TS: data, then complete | — | — | — | feature examples |
 | **M7** migration | — | — | — | — | — | — | — | `i18n stub`/`status` | `cli` wiring | MIG: `convert` | real-data runs |
@@ -875,7 +895,9 @@ determinism job green (§7.5), and every new registry code tested (§7.2).
   5. Crash test: an FS that fails at each rename in turn leaves, after `Open`, every file as before
      the edit.
   6. Stress test under `-race`: 8 readers, 1 editor and 1 watcher for 60 s, no race, no stale read
-     after an edit returns.
+     after an edit returns. The duration is a minimum: the run goes on until its work floor is met
+     (at least 10 edits, every reader observing after an edit), failing only at a hard cap, and it
+     checks content, not only revisions, on every kind of read.
 - M4 has no studio integration spike: the current resourcestudio is not adapted, and a new
   studio is built on the Canon API (DECISIONS 191).
 
@@ -974,11 +996,16 @@ list goes to `meta/handoff/` as a list only.
 
 ### 7.4 API rule tests
 
-Every numbered rule of API.md (O1…X2) has at least one test whose name or comment cites it. Edit
-tests are txtar goldens in `internal/edit/testdata/edits/`: the files before, the `Edit` in its JSON
-form (API.md §8.8), the files after, and the `EditResult` as JSON (without `Revision`). The test
-also asserts the minimal-write invariant M6 on every case. A coverage test lists the rule ids found
-in API.md and fails when one has no test.
+Every numbered rule of API.md (O1…X2) has at least one test that cites it. A citation has one
+form, `API.md <id>` (a list, `API.md E1, E2`, is allowed; a range is not), and counts only in the
+doc comment or body of a `Test`, `Example` or `Fuzz` function or in the comment of a txtar archive a
+harness reads; it must prove its rule. Edit tests are txtar goldens in
+`internal/edit/testdata/edits/`: the files before, the `Edit` in its JSON form (API.md §8.8), the
+files after, and the `EditResult` through a JSON projection of the tests' own (without `Revision`:
+`EditResult` has no public JSON form). A golden records an error if and only if its name starts
+with `refuse_`; an unexpected error fails it. On every case that applies, the test asserts the
+minimal-write invariant M6 (its one-line clause wherever M6 applies it, never by opt-in), N12 and
+the `Undo`. A coverage test lists the rule ids found in API.md and fails when one has no test.
 
 ### 7.5 Determinism (NFR-05)
 
@@ -1017,13 +1044,28 @@ in API.md and fails when one has no test.
   | view model per package, without search index | ≤ 5 MB |
 
 - **Gates.** The full benchmark runs on every merge to the main branch and nightly; exceeding a
-  target fails the job. Pull requests run a 1,000-entry version, reported but not gating.
+  target fails the job. Pull requests run a 1,000-entry version, reported but not gating. The edit
+  benchmark (`bench-edit`) gates the `Edit` p95, the `Evaluate` p95, cold check, cold RSS and the
+  view-model size; warm `canon check` is reported, not gated, until the on-disk cache is turned on
+  (`Options.Cache` is accepted and inert in M4). A gate never passes silently:
+  - cold check and RSS are measured per project (the benchmark and each example), each against its
+    target; a project with errors is not measured;
+  - the 200 timed `Set`s draw every editable scalar field kind present (assets, as another existing
+    file of the type not held before, and `String`s of named or literal-union types included)
+    with fresh valid values, the fields the package's checks read included; rejected `Set`s are
+    reported apart and not counted, as are `ErrNotEditable` refusals, each bounded at 10% on the
+    benchmark (more fails the run), while on the examples, whose checks tie fields together on
+    purpose, the share is reported; on the benchmark, a kind present but never drawn fails the run;
+  - the edit fuzz run with `-edit.bench` fails if the benchmark gets no `Set`, `Add` or `Remove`
+    applied.
 - **Architecture it forces (NFR-02).** Package-level invalidation alone cannot re-check a
   7,000-entry package in 300 ms. From M4, `workspace` keeps: a per-file cache of parse and type-check
   results keyed by (file hash, hash of the package's declaration signatures); per-entry evaluation
   memoized by (entry source hash, hashes of the values it reads); record-check results memoized by
   value hash for checks that statically read no package value. The `value` store is designed for
-  this from M1 (values addressable by (root, key) and hash-consed provenance).
+  this from M1 (values addressable by (root, key) and hash-consed provenance). Incremental equals
+  cold in everything observable: values, findings, steps and budget charges, provenance (EVL-07),
+  identities, invalid and written marks, bound arguments.
 
 ### 7.7 Fuzzing and generated programs
 
@@ -1096,16 +1138,25 @@ order shown, and ends with one `summary` object:
 | `build` | findings, then `{"output":{"path":…,"target":"go","package":…,"status":"written"}}` per output, `unchanged` ones included, `{"lock":{"package":…,"file":…,"line":…}}` per appended line, then check's summary (`truncated` kept) followed by `"written"` and `"stale"`, the outputs and locks changed or, under `--check`, that would change; with `-q`, only the error findings and the summary (CLI.md §3.4) |
 | `test` | `{"test":{"package":…,"name":…,"file":…,"line":…,"status":"pass"\|"fail","failures":[{"file","line","col","expect","expected","got","findings":[…]}]}}` per test, then `{"summary":{"passed":12,"failed":1,"ms":300}}` |
 | `explain` | `{"explain":{"path":…,"type":…,"text":…,"value":<wire JSON>,"origin":{…},"parts":[…]}}` (parts recursive to `--depth`) |
-| `refs` | `{"ref":{"kind":…,"package":…,"path":…,"file":…,"line":…,"col":…}}` per ref, then `{"summary":{"target":…,"count":14}}` |
-| `fmt --check` | `{"file":…,"formatted":false}` per unformatted file, then `{"summary":{"files":n,"unformatted":k}}` |
+| `refs` | `{"ref":{"kind":…,"package":…,"path":…,"file":…,"line":…,"col":…}}` per ref (`path` omitted for `code`, `view`, `check` and `layer` refs, which have none), then `{"summary":{"target":…,"count":14}}` |
+| `fmt` | in every mode: findings, then `{"file":…,"formatted":false}` per unformatted file (with `"diff":…` under `--diff`), then `{"summary":{"files":n,"unformatted":k}}` |
 | `i18n status` | `{"i18n":{"package":…,"lang":…,"translated":…,"missing":…,"unknown":…}}` per pair |
 | `version` | `{"version":{"compiler":…,"languages":[…],"fingerprint":"canon-fp v1","viewModel":"canon-vm/1","lock":"canon.lock v1","commit":…}}` |
 | `convert` | `{"convert":{"written":[…],"adopted":[…],"delete":[…]}}` |
-| `--watch` (check, build) | per cycle: `{"cycle":{"revision":…,"files":[…],"packages":[…]}}`, then each finding that appeared with `"change":"added"` and each that disappeared with `"change":"removed"`, then the summary |
+| `--watch` (check, build) | per cycle: `{"cycle":{"revision":…,"files":[…],"packages":[…]}}`, then each finding that appeared with `"change":"added"` and each that disappeared with `"change":"removed"` (`change` the last key), then, for `build`, the outputs and locks as the one-shot build prints them, then the summary; outputs that did not settle: a `cycle` line with `"settled":false`, then the last build's summary |
 
-- In text mode, `--watch` prints per cycle a header `-- <n> files changed, <m> packages re-checked`,
-  the findings that appeared, one line `fixed: <severity>[<CODE>]  <file:line:col>` per finding that
-  disappeared, and the summary. Findings are matched between cycles by (code, file, path, message).
+- In text mode, `--watch` prints per cycle a header `-- <n> files changed, <m> packages re-checked`
+  (the count is not made singular: `1 files`), the findings that appeared, one line
+  `fixed: <severity>[<CODE>]  <file:line:col>` per finding that disappeared, and the summary.
+  Findings are matched between cycles by (code, file, path, message).
+- A watched re-check that fails (an error value, not findings) is a cycle too: its failure's
+  findings shown as added. It proves nothing about the findings before it: the state it leaves is
+  the last good state's findings plus the failure's, so the repair reports the failure's findings
+  removed and re-adds nothing that did not change. `cycle.revision` is the revision of the result
+  shown (a build's, after its writes).
+- A rebuild caused only by the previous build's own writes runs at most once in a row (chained
+  loads settle); if it changes outputs again, the watch prints that outputs did not settle and
+  waits for an outside change, so a self-feeding project cannot spin.
 - `ms` and durations are the only non-deterministic fields; golden tests replace them.
 
 ### 8.2 `canon infer` (dropped)

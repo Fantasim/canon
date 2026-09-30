@@ -100,7 +100,8 @@ Reading is tolerant, so that merges (§6.3) never lose information:
 - The first non-blank line must be exactly `# canon.lock v1` [`E6005`]; another version is
   refused with `E6005` (`canon.lock: version 2 is newer than this canon`).
 - Line order does not matter; the file is read as a **set of facts**. Identical facts are merged. A
-  fact with `retired` and the same fact without it mean "retired".
+  fact with `retired` and the same fact without it mean "retired". A merged fact keeps its earliest
+  line, which the findings about it cite.
 - A line that does not parse, a kind that is not `table`, `enum` or `field`, a name outside the
   lock's package, or a git conflict marker (`<<<<<<<`, `=======`, `>>>>>>>`) is `E6005`, at that
   line.
@@ -216,6 +217,8 @@ The lock is append-only for tools. People may edit it in a reviewed commit for t
 | edit API `Retire` | the fact gets `retired` in the same atomic edit |
 | edit API `Remove` on a stable entry | refused (`E6001`) |
 | edit API `Set` of a `@stable` field of an existing entry | refused (`E6002`) |
+| edit API `Set` or `Reset` on a root stable-table entry the lock does not hold yet | the entry's whole facts are written in the same atomic edit |
+| any other edit | never; an edit writes only the lines its own ops require (API.md E20) |
 | `canon fmt`, `canon convert` | never; `convert` moves entries without changing ids |
 
 A package whose lock would be empty has no lock file. A lock is never deleted by `canon`.
@@ -235,6 +238,15 @@ checks the same lock rules as a plain one.
 The edit API keeps the lock in step with the sources inside one atomic edit (§5), so a studio user
 never has to run `canon build` to lock a new entry. A `Retire` of an entry referenced by live
 entries fails with `E3502` like any other edit that breaks a check (unless `AllowErrors`).
+
+An edit with `AllowErrors` still locks: an id its ops add or retire gets its lines whenever its
+own entry evaluates, whatever errors the rest of the package holds. Its lines are written only
+whole, and only when none of its facts conflicts with the lock as read (§4.2, §4.4; §4.6's
+append-only rule) or duplicates another fact the post-edit sources would lock (a value locked for
+a duplicated holder would stay wrong for good); otherwise the id is skipped and its `E6002` or
+`E3102` finding stays. Ids one edit adds that conflict among themselves are all skipped. Facts the
+lock already holds are not tested again: a `Retire` of a locked id records `retired` even when an
+unlocked holder duplicates its value (§4.3: retirement is one-way). API.md E20 has the details.
 
 ### 6.3 Merges
 
@@ -277,10 +289,14 @@ canon lock check [packages…]
 1. Parse and type-check the selected packages and their imports (phases 1 and 2).
 2. Evaluate only what the current facts need: each stable table's entry keys and retired flags,
    each `@stable` field value of their entries, and whatever those depend on, `load`s included.
-   `@codes` enums need no evaluation. No other value is forced, no `check` runs.
+   `@codes` enums need no evaluation. A stable table is forced whole (every field of its entries:
+   evaluation cannot compute part of a table). No other `let` or table is forced, no `check` runs,
+   and nothing is verified beyond the facts themselves: this step wins over §4.5, which is about
+   `canon build`.
 3. Read each selected package's lock and apply §2.4 and §4.
 4. Report `W6006` per package when S has values that L lacks: "3 values are not locked yet: run
    `canon build`". Only `lock check` reports it (so a pre-commit hook catches a forgotten build).
+   For a package that has no `canon.lock` yet, `W6006` has no location.
 
 Findings: `E6001`, `E6002`, `E6003`, `E6004` (layers given with `--layer`), `E6005`, `W6006`, and
 any parse, type or evaluation error met while computing the facts. Exit codes as CLI.md §2.5.

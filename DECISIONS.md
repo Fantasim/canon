@@ -1964,6 +1964,259 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      group of destinations in `project.canon` is deferred until the repetition shows. Spec to
      sync: CODEGEN §2.1, §2.3, §2.8; ERRORS E8004/E8009 rows; GRAMMAR's emit option schema.
 
+230. **The edit journal is untrusted input (API.md §2.2, §10.3, O5; ADR-0010).** The journal is
+     `.canon/journal/<hex>.json`, the new revision without its scheme prefix (`r1:`; `:` is illegal
+     in Windows names). It records each file's previous content and mode, the SHA-256 of its new
+     content, the directories the edit creates and removes, and the writer's host and pid. `Open`
+     runs `Recover` and a cloned repository could ship a journal, so a rollback or recovery
+     restores only files still in the recorded new state (all or nothing), accepts only paths inside
+     the project or a current root with no `.` segment and a `.canon`, `.json` or `.lock`
+     extension, never traverses a symbolic link, applies only the rw permission bits (a setuid,
+     setgid or sticky bit refuses the journal), keeps another host's journal and leaves a live
+     writer's alone. While a journal is present every writing `Edit` is refused; a journal `Open`
+     must keep, and an edit through a symbolic link or into a hidden path, fail with an error
+     wrapping `ErrProject` that names the journal or the files. The OS `WriteFile` is durable
+     (temporary file, fsync, rename; optional `SyncDir`), writes a link's target and never replaces
+     the link; a writer staging to a fixed temporary name first removes whatever entry sits there.
+     `Recover` logs one Warn line whenever it removes a decodable journal. N11 lists the accepted
+     residual risks. Reason: log-2026-09-29 M4 (journal file name, U4c, U4c-r, U4c rounds 2 and 3,
+     "Journal threat model", U4c final, U5b, U5b-r, U8-r, U8 re-review): §10.3 and O5 were silent
+     on a foreign or hostile journal.
+
+231. **What the journal cannot recover is not editable (API.md §7.2, N2, N3).** Reason `format` also
+     covers a JSON source whose file extension is not `.json` and a value whose defining file has a
+     `.`-prefixed segment (`.canon` included); an N2 template value starting with `.` is
+     `ErrBadValue`, and an expanded path with a hidden segment is refused at apply with an error
+     wrapping `ErrProject`, so `Value`, `DryRun` and `Edit` agree. Below a `load` `at:` path past a
+     `*`, structural ops act on the `*`-level member and are allowed only when it holds nothing but
+     the selected remainder, at index 0; otherwise `format`, `Detail` naming the outside datum as
+     `<display>#<pointer>`. Reason: log-2026-09-29 M4 U4c final, U5b-r, U5b-r3, B10, B10-r, B10-r2.
+
+232. **An edit writes only its own, whole, conflict-free lock lines (API.md E20; LOCK.md §5,
+     §6.2).** The lines come from the ids the edit's ops add or retire, with the facts of the
+     post-edit analysis; a `Set` or `Reset` on a root stable-table entry the lock does not hold yet
+     records its id. An edit that adds or retires no id never touches a `canon.lock`. Under
+     `AllowErrors` an id is locked whenever its own entry evaluates (a studio never needs `canon
+     build` to lock), but only whole, and only when no fact conflicts with the lock as read or
+     duplicates another fact the post-edit sources would lock; ids conflicting among themselves are
+     all skipped; facts the lock already holds are not tested again, so a `Retire` of a held id
+     records `retired` even when an unlocked holder duplicates its value. Reason: log-2026-09-29 M4
+     U5b, U5b-r, U5b-r2, U5b-r3, U7b (B8), B8-r: "lines after minus lines before" lost lines when
+     the base had errors, and a duplicated value once locked would be wrong for good.
+
+233. **`canon lock check` forces stable tables whole and verifies nothing else; a merged lock fact
+     keeps its earliest line (LOCK.md §8, §2.4).** §8 step 2 ("no other value is forced, no check
+     runs") wins over §4.5, which is about `build`. Evaluation cannot compute part of a table, so
+     each stable table is forced whole, and "no other value" means no other `let` or table. Of
+     identical facts merged on reading, the earliest line is kept, and findings cite it. Reason:
+     log-2026-09-29 M4 U8-r, U8 round 2, P13b-r.
+
+234. **Minimal re-printing, completed (FORMATTER.md §13, §6.3, §14.2).** §13's byte identity holds
+     for canonical files; API M9 governs the others. Edits change items only (a change to an import,
+     the package clause or the file node is refused); the changes to one list are grouped, its
+     separators and 211 commas computed once over the final order. A new top-level declaration is
+     appended after the last one and its trailing comment, one blank line before it; removing an
+     item before a 216 comma line removes through that line. A comment's owner is the item the
+     printer's own attachment gives it (replacing an earlier before/after-the-comma rule that
+     drifted from the printer); new text goes after trivia, never inside a comment; §6.3's nested
+     list is any brace or list literal at any depth. Move is a §13 step of its own, so a moved item
+     keeps its comments, with its refusals. The first slot of an empty pairs field is placed by its
+     first slot key. Reason: log-2026-09-29 M4 U1 (G1, G2), "G2 refined", U1-r, U1 re-review,
+     "Comment ownership in edits, corrected", U4b, U4b round 3, U1b, U1b-r, B11-r.
+
+235. **Minimal writes: M5 over M6, neighbour commas, typed-canonical M9, escaped braces (API.md
+     §9).** A scalar `Set` may break its line only when the single-line form exceeds the width, and
+     then M5's re-print of the enclosing item wins over M6's "exactly one line". A 211 or 216 comma
+     added or removed on a kept neighbour counts as re-printing it. M9 judges the raw bytes, and a
+     JSON source against its typed-canonical layout (DECISIONS 165), not the layout printer alone; a
+     number token two loads read as different base types or canonical texts is left as written, by
+     M9 and `canon fmt --json-sources` alike (FORMATTER §14.1).
+     Edits write strings with `\{` and `\}` (GRAMMAR §2.6; `types.QuoteString` did not escape them,
+     so a String holding a brace could not be written). JSON writes: items take their field's unit
+     and int form, a dependent symbol its branch's wire form, a held `Never` value its original
+     token; bits and pairs lists are rewritten whole at the parent, changed members only. Reason:
+     log-2026-09-29 M4 U4b round 3, U1b-r, B3, B3-r2, Cleanup-A, Cleanup-A-r, B7-r3, B11, B11-r,
+     B11-r2, B11-r3, B11-r4.
+
+236. **Operation values: what is a `ValueError` (API.md §8.2, §8.8, E25).** Invalid UTF-8 is
+     `ErrBadValue`. For `FromJSON`, a wire value of the wrong shape or type (and invalid JSON,
+     `E7104` included) is a `ValueError`; `E3302`, `E3201`, `E3202`, `E3102` and `E3317` are the
+     re-check's, their values kept (`wire.Decoder`'s `Keep` option), except three failures `Keep`
+     cannot keep, which stay a `ValueError` at decode: a dependent field whose driver `Keep` left
+     nil, a CSV table missing its `$id` column, a Duration out of range; `FromJSON` decodes by the
+     destination field's `@json` forms (`wire.Decoder`'s `Field` option). Bound for a JSON source, a
+     value with no wire form (a Duration not whole in its unit, a pairs list past its slot bound or
+     with an element missing a required field) is V1 at typing; bound for `.canon`, the re-check's
+     (`E8102`, `E3302`). A dependent symbol the op's literal gives resolves in its record's branch,
+     computed exactly as the decoder computes it; introduced into `Never`, or naming nothing in a
+     computable branch, it is V1. Undecodable `Op` or `Edit` JSON is `ErrBadOp`
+     (`(*Edit).UnmarshalJSON`, additive under IMPLEMENTATION-PLAN §4's review rule). Reason:
+     log-2026-09-29 M4 U4a (G1), U4a-r, U4a round 1, U4b round 2, U5b-r, U5b-r2, B7, B7-r3, B7-r4,
+     B10, B10-r, B10-r2, B11, B11-r, "`wire.Decoder.Keep` limits accepted", sync-r.
+
+237. **Edit order, cascades and Undo (API.md E1, E5, E11, E14, E15, E19, E21–E23, W9, W11).** Each
+     op resolves and applies in turn against the re-analysed state (a path under a value that failed
+     to compute is `ErrNoValue`); overlays, staleness and M9 are checked after the ops, over the
+     files they write; `DryRun` applies E19. E14 is judged whole when the `SetCase` runs, by
+     re-analysis: any fit error at or inside a kept field drops it, in every state, a variant left
+     at its default included. E15 drops only on a fit finding at the exact path (a dangling ref does
+     not), covers dependent-keyed maps, and never drops a held value (E22 over E15) until a later op
+     changes what it depends on. Under `EditLayer` every write goes to the layer and `SetCase` is
+     refused; under a spread a default is written explicitly (W9). E23 gains the inverses for
+     layers, defaulted collections, bits and pairs lists and retyped fields; a decoded dependent
+     symbol is carried as `FromJSON`. A `load.dir` entry is renamed by its stem. Reason:
+     log-2026-09-29 M4 "E1 vs E21 order", U4b, U4b-r, U4b round 3, U5b, B3, B3-r, B3-r2, B7, B7-r,
+     B7-r2, B7-r3, B7-r4, B10, B10-r2, B11, B11-r.
+
+238. **What `Refs` lists (API.md R7).** A ref or member value is stated when its provenance is a key
+     or name token, else computed (EVALUATION §13 left it open): a computed value is a `value` ref
+     that is not editable (E12 refuses the rename), reported at the let's name when found in a let.
+     Defaults, constants and spreads give `code` refs only; translations `view`, tests `code`. Value
+     refs merge the base and layered evaluations by span. A value that could hold a ref but cannot
+     be computed fails `Refs` (never a partial list); an error-typed let holds none. A string
+     literal keys a ref only for a String key or a literal-union literal. A key lookup through a
+     per-instance collection is a `code` ref only when its receiver resolves statically. For an enum
+     member, the `value` and `key` refs are the values holding it and the map keys equal to it.
+     Reason: log-2026-09-29 M4 U4a (G3), U4a-r, U4a round 2, U4a round 3, Cleanup-A-r.
+
+239. **Canonical paths and the paths of findings (API.md P8, P9, F1, F12).** P9 quotes a key by the
+     key type declared at the path's location (computed per instance when dependent), never a stored
+     type, so a value has one path; verify, rules, eval and live share one rule (`value.PathKey`).
+     An integer-keyed table entry is `[n]`; a keyed-list element whose key is not known (not yet
+     computed, or failed) is named by the list's own path, never by a position (B4-r supersedes
+     P12-r's positional path). A finding carries the path of the value being
+     built: in a top-level `let` initializer the let's name, in a default the field's, in an
+     amendment the amended path, in a check run on an instance the instance's; inside a poisoned
+     root it keeps its sub-path. A related location without a file renders `  expected by
+     (<note>)`, and `E4401` shows its path (EVALUATION §12.2's example). Reason: log-2026-09-29 M4
+     "P9 quoting rule", "S5 and the import graph", U5a-r, P12-r, U7a-r, B4, B4-r, Cleanup-A.
+
+240. **Revisions, staleness and overlays (API.md O6, S3, S5, S10, §3.4).** The revision listing
+     names every scanned source and keeps earlier calls' loads; a file with several display paths
+     is listed by the smallest one this run's reads used, a load file with none by its
+     project-relative path. A package's read set holds its directory listing, restricted to the
+     scan's source predicate (so swap files never count); a file first read after `Base` is compared
+     with the first content read; and any change to a scanned source or `project.canon` makes an
+     edit or evaluation stale, since any source can reshape the import graph. `Revision()` is
+     monotonic (snapshots carry a publish number), returns the newest snapshot read after `Close`,
+     and may differ from `EditResult.Revision` as loads join the read set (harmless: those revisions
+     only grow). An overlay path outside the project is `ErrBadPath`. Reason: log-2026-09-29 M4 U3
+     gaps, U3-r, U3 re-review, "S5 refinement corrected", "S5 and the import graph", U8-r, B6, B6-r.
+
+241. **One path rule for the API on Windows (API.md §2.2, §3.4; WIRE.md §6.5).** `\` is a separator
+     in every path given to the API (`Open`, `Options.Roots`, overlays); a rooted path without a
+     volume takes the project's volume; cleaning keeps the volume and never climbs above it; the
+     drive letter is upper-cased (the OS ignores its case; WIRE §2.1's case rule is about names);
+     UNC project directories are supported; overlays are keyed by the display form. The project
+     root's own ancestors never count as links (macOS's `/var` → `/private/var`). Reason:
+     log-2026-09-29 M4 CI 36669002215, B12, B12-r, B12-r2 (one implementation, `project.Paths`;
+     UNC completed by B13).
+
+242. **`Watch`: what is watched and what makes an event (API.md §12).** Starting checks every
+     package once to learn the read sets. The watcher follows OS notifications (the OS FS, or an FS
+     whose `OSBacked()` is true), falls back to polling with one Warn line, and keeps a stat safety
+     net, so any read-set change is seen within the resync interval. Only read-set files and source
+     names make events or appear in `Files`; a listed directory counts only for a source or a
+     watching glob's match. An event is delivered when not external, when packages were re-checked
+     or removed, when the revision changed, or on an error; removed packages are listed without
+     findings; a broken `project.canon` gives a `*ProjectError`. The edit event is published inside
+     the write, so it may precede `Edit`'s return (W15 said "after"), folds external changes made
+     during the write, and edit and overlay events are always delivered; refused and `DryRun` edits
+     publish none. A panic in `fn` becomes an `*InternalError` in the next event's `Err`; a panic in
+     the watcher reaches every `Watch` as an `external` event with an `*InternalError`, and the
+     watcher restarts at most once per resync interval. Reason: log-2026-09-29 M4 U5, U5-r, U5
+     rounds 2 to 5, "U5 hub restart hardening", U5b.
+
+243. **`Evaluate`'s texts, budget and summary (API.md §11, §14; VIEWMODEL.md S8, L21; I18N.md B1).**
+     An undeclared title, subtitle or preview is not a failure (`OK` true): the title is V7's, the
+     subtitle and preview are empty (this corrects U9's `{"" OK:true}` wording, log M4 sync-r); a
+     plain-list element is titled `#<n>`; disambiguation is list-relative. `Fallback` is true for
+     every text of a package without a translation file for `Lang`, or in a language outside the
+     project, and a nested fallback sets the outer flag; detecting it spends no step. Each template,
+     condition and method is its own run capped at the budget, never sharing one, so no result
+     depends on evaluation order (VIEWMODEL X7 still governs the view model). `Types` omits a field
+     whose driver is `none` or unresolvable; of two `when`, the first wins. A ref's target title
+     renders with the magic names of the target's own position; a method's value becomes text as X4
+     says; a broken method is never run (its line fails, its view is not broken). Without a draft,
+     `Summary` and S5 cover the path's package and its importers. `Format` treats any
+     `project.canon` as a project file; `FormatJSONSource` names its input `<json>`. V4a is written
+     as a plain rule id. Reason: log-2026-09-29 M4 U9, U9 round 2, U9b, U9b-r, U5a, U5a-r, U7a-r,
+     sync-r.
+
+244. **One step counter per invocation, final form (EVALUATION.md §1, §2.1, §10.1, §12.2; TYPES.md
+     §15; SPEC §11.6; amends 104).** Phase 2's constant folding and stages A–E of one `check`,
+     `build` or `test` invocation, or of one API re-check, spend one counter (`UseFolder`);
+     `canon test`'s tests start where phase 2 left it; a re-check re-spends the folds it reuses, so
+     `E4401` lands where a cold run puts it. Not on it: the conformer's test runs (one budget per
+     package, §1), view-model rendering and phase 8's verification (no budget), and API R6's cause
+     re-run (a fresh counter, phase 2's folds replayed, findings discarded). `E4401` is reported
+     once, and a run of n steps needs a budget of n + 1. A constant folded in phase 2 and forced in
+     stage A is evaluated and charged twice: TYPES §15's "when first needed" is per evaluator, and
+     sharing the value hid stage B's verification of what it read and shared mutable records. A
+     fold that fails on the spent budget is still `E3015` (DECISIONS 150 outranks the withdrawn "no
+     E3015 after exhaustion"). The vectors equal `canon test`'s calls unless its counter runs out
+     first. Reason: log-2026-09-29 M4 P12-r, B1, B2, B2-r, B2-r2.
+
+245. **Order across files is by path, never by file id (TYPES.md §9.3; DOCTRINE §5; amends 105).**
+     Of two duplicate keys in different files (`E3101`, `E3102`), the first is the earlier in (file
+     path, position) order, EVALUATION §2.1's. No sort, tie-break or "first" across files uses a
+     `FileID`: the persistent file set gives an edited file a new id, so a warm run would differ
+     from a cold one. Amends 105: the raw span's file is compared by path, not by id. Reason:
+     log-2026-09-29 M4 U12-r, U10-r, sync-r.
+
+246. **The build manifest's `root` lines, and exact `glob` and `list` lines (WIRE.md §10).** One
+     `root <name> <dir>` line per declared root, sorted, after `package` (API O7 names the roots as
+     part of the manifest; WIRE §10 had no line), the directory relative to the project, or
+     `sha256:<hex>` where none exists, never an absolute path. `glob` hashes the matches the run
+     used; `list` hashes files and subfolders, kinds after following links, a folder with a trailing
+     `/`; a listed folder's display follows its first reference by (package, file, offset). Reason:
+     log-2026-09-29 M4 B5, B5-r.
+
+247. **`canon fmt` (CLI.md §3.6; IMPLEMENTATION-PLAN §8.1).** `--json-sources` evaluates the consts
+     and lets whose declaration holds a `load`, to learn the types of what they read, reporting
+     nothing about them and writing nothing else ("`fmt` evaluates nothing" is about formatting
+     `.canon`). A number some Canon field reads is re-printed canonically; any other (read as two
+     base types or to two canonical texts, read only by an unforced reader, an unknown key's, a
+     `none` marker, a non-whole duration) is kept as written. `--format json` follows §8.1 in every
+     mode; a `project.canon` with a syntax error writes nothing and exits 1; a symbolic link is
+     never replaced; `-q` keeps the list and the diffs. Reason: log-2026-09-29 M4 "`--json-sources`
+     vs evaluates nothing", U2 small calls, U2-r, U2b, U2b-r, B11-r3, B11-r4.
+
+248. **`--watch` cycles (IMPLEMENTATION-PLAN §8.1; CLI.md §3.3).** A failed re-check is a cycle that
+     shows only its own findings as added; the state after it is the last good findings plus the
+     failure's, so the repair removes exactly those. A rebuild caused only by the build's own writes
+     runs at most once in a row; if outputs change again the watch reports that they did not settle
+     (JSON: a `cycle` line with `"settled":false`, then the last summary) and waits for an outside
+     change. `cycle.revision` is the shown result's. Reason: log-2026-09-29 M4 U6-r, U6-r2.
+
+249. **A variant case may not declare an input field (`E1903`, EVALUATION.md §11.1).** §11.1's
+     intent, one environment variable for one field of one value, forbids it; the placement rule
+     named only records. ERRORS.md owes `E1903` a case-specific variant. Reason: log-2026-09-29 M4
+     U6-r (open language question), Cleanup-A.
+
+250. **M4's contract additions and the Consumes column (IMPLEMENTATION-PLAN §3, §4.4, §4.7, §4.8,
+     §5.2).** Additive, under §4's review rule: `diag.(*Builder).Detached` (a memoized finding keeps
+     no program data alive); `eval.(*Evaluator).UseFolder`, `eval.Folds`, `eval.FoldsOf` and
+     `Folds.Replay` (one counter per invocation, cold-equal cause re-runs; `New`, `NewFolder` and
+     the frozen `Folder` unchanged); `eval.LoadMemo`, an optional capability at the §4.8 host seam.
+     §3's Consumes column binds, not only the rank rule: a package imports only what its row lists
+     or what is reachable through it (`TestConsumesColumn`, shrink-only allowlist); `testkit` is
+     exempt, and `cli`'s prose cell means every package above it; `views` and `gen/view` consume
+     `api/vm` (an omission). §5.2's M4 row gives TYP `check.Session`. Reason: log-2026-09-29 M4
+     "Architecture accepted", U11 fixes, U8, P3-r, B2-r, P13c-r, Cleanup-B, Cleanup-B-r.
+
+251. **How API rules are cited and M4's gates are judged (IMPLEMENTATION-PLAN §7.4, §7.6, M4).** A
+     citation is `API.md <id>` (lists yes, ranges no), counted only in a `Test`, `Example` or `Fuzz`
+     function's doc comment or body or a harness-read txtar's comment, and it must prove its rule.
+     An edit golden records an error iff its name starts with `refuse_`; `EditResult` has a
+     test-only JSON projection. Gates never pass silently: cold check and RSS per project, projects
+     with errors unmeasured, the 200 `Set`s drawn over every editable scalar kind with fresh values
+     and rejections bounded at 10% on the benchmark, the stress test's duration a minimum with a
+     work floor, the benchmark fuzz required to apply ops; warm check is reported, not gated, while
+     the on-disk cache stays inert in M4. Incremental equals cold in everything observable. Reason:
+     log-2026-09-29 M4 "EditResult has no JSON form", "`Options.Cache` and `Options.Workers`",
+     U11-r, U7a, U7a-r, B3, U7b, U7b-r, U7b-r2, U7b-r3.
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.

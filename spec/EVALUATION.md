@@ -44,8 +44,9 @@ This replaces SPEC §11.2.
   to collect the calls the vectors need (CONFORMANCE.md §6.1). Each package's tests run as
   `canon test <pkg>` runs them (§10): values forced afresh, never reusing stage A's, one budget of
   `project.budget` steps shared by that package's tests only, in declaration order, not the
-  project's budget. So the calls collected, hence the vectors, are what `canon test` sees; none of
-  the tests' findings is reported, and the calls made before any stop are kept. No other part of
+  project's budget. So the calls collected, hence the vectors, are what `canon test` sees, unless
+  `canon test`'s counter, which also paid phase 2's constant folding (§12.2), runs out first; none
+  of the tests' findings is reported, and the calls made before any stop are kept. No other part of
   `check` or `build` runs tests.
 - A **broken** declaration (TYPES.md §1) is never evaluated. A value, check or test that is
   broken produces no evaluation finding. Other values are evaluated normally.
@@ -70,7 +71,8 @@ This replaces SPEC §11.2.
 
 Values of imported packages that nothing reads are not evaluated; phase 8 evaluates, on demand,
 the values a view model reads that phases 3–7 did not (their counts, VIEWMODEL.md C3/J12), and
-reports no finding from them; it spends no budget, so it runs after `E4401` too (§12.2 governs
+reports no finding from them; it spends no budget, its stage-B verification of them included
+(VIEWMODEL.md J5), so it runs after `E4401` too (§12.2 governs
 budgeted runs), and an internal error or an unsupported load met there still fails the build
 (DECISIONS 195, 196) — except an unsupported load met while reading a value only to fill a type
 function's `drivers` (VIEWMODEL.md §12.3), which contributes no entries, whatever the selection. `canon test` forces only what
@@ -501,7 +503,8 @@ rewrites the outputs each time. This is by design; the CI build runs without lay
 - Top-level values are forced on demand, verified (§5), and shared by all tests of the
   invocation. Instance checks and package checks do not run on them in `canon test`.
 - The body is a block. Its statements run in order; `expect` is allowed only in test blocks
-  (`E1130`, GRAMMAR.md). The budget is shared by all tests of the invocation.
+  (`E1130`, GRAMMAR.md). The budget is shared by all tests of the invocation: they start on the
+  counter phase 2's constant folding spent (§12.2).
 
 ### 10.2 Building a subject
 
@@ -565,7 +568,8 @@ apiKey: input String(1..)? from env "RESOURCESTUDIO_GEMINI_KEY"
 - **Placement** (`E1903`): a record with an input field must be reachable from exactly one
   public top-level `let` of its package, through record fields only (optionals allowed), and
   must not appear anywhere in the package as, or inside, a list, keyed list, map, table,
-  variant case or dependent type. One environment variable then maps to one field of one value.
+  variant case or dependent type. One environment variable then maps to one field of one value. A
+  variant case may not declare an input field itself either (`E1903`).
 
 ### 11.2 Build-time semantics
 
@@ -649,24 +653,34 @@ re-run is capped at the budget, and past it that re-run alone stops, its value i
 ### 12.2 Budget
 
 - The budget is `project.budget` (default 10⁸) for one `canon check`, `canon build` or `canon
-  test` invocation, or for one API re-check. Every stage (evaluation, verification, checks,
-  precomputation, tests) spends from the same counter. Cached results (CLI §2.7) are reused only
-  for an identical build manifest, so they reproduce the same verdict.
+  test` invocation, or for one API re-check. Every budgeted stage (evaluation, verification,
+  checks, precomputation, tests) spends from the same counter. Cached results (CLI §2.7) are reused
+  only for an identical build manifest, so they reproduce the same verdict.
+- One counter per invocation (DECISIONS 104): phase 2's constant folding spends from it first,
+  then stages A–E; `canon test`'s tests start on the counter phase 2 left. A constant folded in
+  phase 2 and forced again in stage A is evaluated, and charged, twice (TYPES.md §15). An API
+  re-check that reuses earlier folds re-spends their steps, so `E4401` lands where a cold run puts
+  it. Not on this counter: the tests run to compute conformance vectors (one budget per package,
+  §1); view-model rendering and phase 8's verification, which spend nothing (§2.1); and the
+  re-run that explains a poisoned value (API.md R6), which starts from a fresh counter, replays
+  phase 2's folds and discards its findings, so its causes are those of a cold run.
 - Steps are **charged** to the root being evaluated (§7.1). Forcing a top-level value from inside
   another root charges the forced value, not the forcer. All runs of one instance-check
   declaration are charged to that declaration.
 - Spending the last step is `E4401` at the expression being evaluated, with its stack and the
-  heaviest root (on a tie, the first charged):
+  heaviest root (on a tie, the first charged), so a run that costs n steps needs a budget of at
+  least n + 1. Its path is the value being evaluated (API.md F1):
 
 ```
 error[E4401]  balance/parity/sweep_plan.canon:265:15
-  evaluation budget of 100000000 steps exhausted
+  plan: evaluation budget of 100000000 steps exhausted
   heaviest: plan (98412330 steps)
 ```
 
 - After `E4401`, evaluation stops: no further root runs, and the build fails. Findings already
-  produced are kept. Because the order of evaluation (§2) is fixed, two implementations stop at
-  the same expression.
+  produced are kept. `E4401` is reported once per invocation; a constant fold that fails because
+  the budget is spent is still `E3015` (DECISIONS 150: no declaration breaks silently). Because the
+  order of evaluation (§2) is fixed, two implementations stop at the same expression.
 
 ---
 

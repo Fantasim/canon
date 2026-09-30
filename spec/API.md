@@ -108,9 +108,14 @@ func (p *Project) Close() error
   (LAY-01), so the first call that loads packages returns `ErrUnknownLayer` if no loaded package
   has a file for that layer.
 - **O5.** If `.canon/journal/` holds an unfinished edit (§10.3), `Open` rolls it back before
-  anything else and logs one line at level Warn.
-- **O6.** After `Close`, every method returns `ErrClosed`. `Close` stops every `Watch` and is
-  idempotent.
+  anything else and logs one line at level Warn, however many journals it rolled back, whenever
+  it removed a journal that decodes (even if no file needed restoring). A journal whose writer
+  still runs on this host is left alone. A journal it must keep (written on another host, a file
+  changed since the edit, a journal that fails N11's checks) makes `Open` fail with an error
+  wrapping `ErrProject` that names the journal and the files.
+- **O6.** After `Close`, every method returns `ErrClosed`, except `Revision()`, which has no
+  error and returns the revision of the newest snapshot read (S10). `Close` stops every `Watch`
+  and is idempotent.
 
 ### 2.1 Options
 
@@ -148,6 +153,21 @@ Names are absolute and use `/` (on Windows, `C:/...`). `ReadDir` order is not tr
 compiler sorts every listing by byte order (NFR-04), so an FS MAY return entries in any order.
 The determinism tests use an FS that shuffles listings on purpose.
 
+On Windows, every path given to the API (`Open`'s root, `Options.Roots`, overlay files, §3.4)
+follows one rule: `\` is a separator like `/`; a rooted path without a volume (`/law/a.canon`)
+takes the project directory's volume; cleaning keeps the volume and never climbs above it; the
+drive letter is written upper-case (the OS ignores its case; letter case stays significant in
+every name, WIRE.md §2.1). UNC project directories (`//server/share/…`) are supported.
+
+The OS `WriteFile` stages the content in a temporary file of the target's directory (a hidden
+name holding the target's base name, so `Recover` can clear leftovers, §10.3), syncs it and
+renames it over the target. When the target is a symbolic link, the link's target is written; the
+link is never replaced. A writer that stages to a fixed temporary name first removes whatever
+entry sits there (a link itself, never its target), so a planted link cannot redirect the bytes.
+On Windows it cannot replace a file another process holds open. Two optional FS capabilities:
+`SyncDir(dir string) error`, which makes an edit's renames durable (§10.3), and
+`OSBacked() bool`, through which an embedder's FS opts into OS change notifications (§12).
+
 ---
 
 ## 3. Snapshots, revisions and concurrency
@@ -180,12 +200,25 @@ func (p *Project) Revision() Revision
   packages loaded, the existing `canon.lock` of every directory below the project root that
   holds a source file or is an ancestor of one (every place a package's lock can be, LOCK.md §2.1):
   the revision cannot know the packages of files not yet parsed. Overlays (§3.4) replace file
-  contents in the listing.
+  contents in the listing. In practice the listing names every scanned source (a superset of the
+  packages loaded so far) and keeps the `load` files earlier calls read. A file reached through
+  several display paths is listed once, by the smallest display (bytes) among those the run's own
+  reads used; a `load` file no display path names is listed by its project-relative path. So one
+  unchanged snapshot can carry more than one revision as `load` files join its read set
+  (DECISIONS 143): those revisions only grow, and S5 compares file by file.
 - **S4.** The project remembers the per-file hashes of at least the last 64 revisions it has
-  produced. A revision it does not remember, or one from another `Project`, is stale.
+  produced. A revision it does not remember is stale. Revisions are content-addressed, so a
+  revision from another `Project` is stale only when its content differs.
 - **S5.** A revision is compared per package: an edit or an evaluation against `Base` is **stale**
   when a file in the read set of the packages it touches (§8.6) has a different hash now than at
-  `Base`. Changes to unrelated files do not make it stale.
+  `Base`. Changes to unrelated files do not make it stale. A package's read set includes its
+  directory listing, restricted to the names the scan takes as sources (O2): a source file added
+  to a touched package after `Base` makes the edit stale, an editor swap file never does. A file
+  first read after `Base` is compared with the first content the project read for it. Since any
+  source can reshape the import graph, the edit or evaluation is also stale when any scanned
+  source file or `project.canon` changed since `Base`; the unrelated files are non-source files
+  (other packages' loads, assets). An `Evaluate` without a draft touches the packages its
+  `Summary` covers (V13).
 - **S6.** `Base == ""` disables the staleness check. It is for scripts and tests; the studio MUST
   send the revision it last read.
 
@@ -199,7 +232,10 @@ func (p *Project) Revision() Revision
   `ClearOverlay` take the project's write lock. A writer never blocks readers; readers that
   started before the writer finished keep their snapshot.
 - **S10.** A writer publishes its new snapshot atomically when it returns. The revision in its
-  result is that snapshot's.
+  result is that snapshot's. `Revision()` is monotonic: it only moves to a snapshot at least as new
+  as the last one published, so a read that finishes late never rolls it back. After an `Edit`,
+  `Revision()` may differ from `EditResult.Revision` with nothing changed on disk, when later
+  reads added `load` files to the read set (S3).
 - **S11.** Every method takes a `context.Context`. Cancelling it makes the call return
   `ctx.Err()` promptly; a cancelled `Edit` writes nothing, or, if cancellation arrives after the
   first rename, completes (§10.3).
@@ -212,8 +248,10 @@ func (p *Project) ClearOverlay(file string) error
 ```
 
 An overlay replaces a file's content in memory without writing it; the language server uses it for
-unsaved buffers. `file` is a display path or an absolute path. Overlays take part in every read
-and in the revision.
+unsaved buffers. `file` is a display path or an absolute path (on Windows, §2.2's rule applies);
+a path outside the project is a `*PathError` wrapping `ErrBadPath`. Overlays are keyed by the
+file's `/` display form, so `SetOverlay` and `ClearOverlay` match however the path was written.
+Overlays take part in every read and in the revision.
 
 - **S12.** `Edit` refuses to write a file that has an overlay (`ErrOverlay`): the buffer and the
   disk would disagree.
@@ -248,7 +286,15 @@ type Frame   struct { Fn string; Span }
 - **F1.** `Path` is the full canonical path of the value the finding is about, starting at the
   public or local value name (`farm.modelTypes[3].levels[2].productionItem`), without the
   package qualifier (the package is in `Package`). `Package + ":" + Path` always resolves with
-  `Value`.
+  `Value`; inside a poisoned root, `Value` returning `ErrNoValue` counts as resolving, so such a
+  finding keeps its precise sub-path. A finding raised while evaluating a value is about the value
+  being built, down to the literal: a hard error, `E4401` (the value evaluated at the exhausting
+  step) and a constant cycle `E4301` take its path; a finding in a top-level `let` initializer
+  takes the let's name; in a default expression, the field's path; in an amendment's right-hand
+  side or a layered conversion, the amended path; in a `where` on a loaded value, the value's
+  path; in a check run on an instance, the instance's path, on replay too. An element of a keyed
+  list is named by its key once the key is known, before that by the list's own path. Every copy
+  of a finding carries its `Path`, the causes of R6 included.
 - **F2.** Findings are sorted by (`File` bytes, `Line`, `Col`, `Code`, `Message`) (EVL-09).
   Findings with no file sort first, by `Code` then `Message` (EVALUATION.md §14).
 - **F3.** Codes and messages come from [ERRORS.md](ERRORS.md), the single source of diagnostics
@@ -310,7 +356,8 @@ goldens (`expected/findings.txt`) and every tool agree byte for byte:
   (`  heaviest: plan (98412330 steps)`, EVALUATION.md §12.2).
 - **F11.** When `Layer` is set: `  set by layer <layer>`.
 - **F12.** One line per `Related` element, in order: `  expected by <file>:<line>`, then
-  ` (<note>)` when the note is not empty. For example:
+  ` (<note>)` when the note is not empty; a related element without a file is
+  `  expected by (<note>)`. For example:
 
   ```
     expected by resource/farm/farm.canon:41 (productionItem: ref items)
@@ -479,7 +526,26 @@ type Ref struct {
   else is `ErrBadOp`. `Refs` lists: `ref` values that hold its key (`value`), map keys of `ref` type
   (`key`), names in function bodies, defaults and constants (`code`), in views (`view`), in checks
   (`check`), and in amendments (`layer`). Every loaded package of the project is searched, not only
-  the target's importers.
+  the target's importers. For an enum member, the `value` refs are the values holding the member
+  and the `key` refs the map keys equal to it.
+  - A `ref` or member value is *stated* when its provenance span (EVALUATION.md §13) is a key or
+    name token: an identifier, a selector name, a string or integer literal, a JSON string or key.
+    Any other provenance (a function body, any other expression, a ref converted from an entry
+    record) is *computed*: the value is still a `value` ref, it is not editable (so `Rename`
+    refuses it, E12), and one found inside a `let` is reported at that let's name. The names that
+    compute it are `code` refs.
+  - Names in defaults, constants and spreads are `code` only (renaming the token fixes every
+    user); names in translations are `view`, names in `test` declarations `code`. A string literal
+    keys a ref only for a `String` key or a literal of a literal union (TYPES.md §4.1); a member
+    name keys an enum-keyed ref.
+  - A key lookup through a per-instance collection (a keyed-list or table field) is a `code` ref
+    of an element only when its receiver resolves statically to that element's instance (a `let`
+    root, literal indices and keys); a dynamic receiver is not a ref (the re-check, E18, catches
+    what a rename breaks).
+  - Value refs come from the base evaluation and the layered one, merged by span. A value whose
+    static type could hold a ref to the target but that cannot be computed makes `Refs` fail,
+    naming it, so a partial list never looks complete. A `let` whose type is the error type holds
+    no ref value; its written names are still `code` refs.
 - **R8.** Order: F2 order of the spans. `canon refs` prints them in this order (CLI.md §3.8).
 
 ### 5.4 ViewModel
@@ -590,13 +656,18 @@ When `Options.EditLayer` is set (§7.5), the edit path is translated into an `am
 Every path the API returns (`Value.Path`, `Finding.Path`, `Ref.Path`, keys of `EvalResult`) is
 canonical, so it can be compared as a string:
 
-- **P8.** Fields: `.name`. Table entries: `.key`. Keyed-list elements: `[key]`. Plain-list elements:
-  `[n]`. Map entries: `[key]`. Nothing uses `[#n]` in canonical form.
+- **P8.** Fields: `.name`. Table entries: `.key`, or `[n]` when the key is an integer. Keyed-list
+  elements: `[key]`. Plain-list elements: `[n]`, a plain list holding copies of table entries
+  included. Map entries: `[key]`. A keyed-list element whose key is not known (not computed yet,
+  or its computation failed) is named by the list's own path, never by a position. Nothing uses
+  `[#n]` in canonical form.
 - **P9.** A key is written as a word when it is one and the key type is not an integer type;
   integers are written in decimal; enum keys are written as the Canon member name; every other key
   is written as a JSON string, escaped as WIRE.md escapes strings. For a literal-union key type
   (`T | "lit"`), a key that is one of the literals is always written as a JSON string (P2 reads a
-  word as a `T`), so the canonical form resolves to itself.
+  word as a `T`), so the canonical form resolves to itself. The key type is the one declared at
+  the path's location, computed for the instance when it is dependent (TYPES.md §11.5), never the
+  stored type of a value assigned from elsewhere, so a value has exactly one path.
 - **P10.** `Value.Path` and `EvalResult.Path` carry the `package:` prefix; `Finding.Path` and
   `Ref.Path` do not (their package is a separate field).
 
@@ -641,7 +712,7 @@ source and where the edit goes.
 |---|---|
 | `computed` | the path leaves the source tree: a function call, comprehension, operator, `if`, `match`, identifier or method on the way (`Origin` gives the canonical path of the value's own source when that source is structural, else `""`) |
 | `layered` | an active layer amends this path or an ancestor, and `EditLayer` is not that layer (MOCKUP-GAPS 48) |
-| `format` | the source is `load.csv`, `load.defines` or `load.text` (not editable in v0) |
+| `format` | the source is `load.csv`, `load.defines` or `load.text` (not editable in v0); a JSON source whose file extension is not `.json` (`load(…, format: json)` of `x.cfg`), or a value whose defining file has a path segment starting with `.`, `.canon` files included (`Detail` names the path): the journal could not recover such writes (§10.3); below a `load` `at:` path past a `*` (whose `*`-level member is the item structural ops act on), an op when that member holds more than the selected remainder, or when the remainder's index is above 0: it would touch data outside the selection or another load's view of the file (`Detail` names the outside datum as `<display>#<pointer>`) |
 | `input` | an `input` field (it has no value at build time) |
 | `key` | the key field of a keyed-list element, or a key of a dependent map (MOCKUP-GAPS 17); keys change only with `Rename` |
 | `pseudo` | `.id`, `.retired`, `.kind` (P3) |
@@ -670,7 +741,8 @@ source and where the edit goes.
 - **W9.** In `{ ...base, label: "Other" }`, a field present after the spread is edited in place. A
   field that comes from `base` is edited by inserting an override field into the spreading literal
   (API-02); `base` itself is never changed through the derived value. Editing `base` directly edits
-  `base`.
+  `base`. Under a spread, `Reset`, a `Set` to the default and a field a record-level `Set` leaves
+  out write the default explicitly: removing the field would let the spread supply a value.
 
 ### 7.5 Layers (MOCKUP-GAPS 48)
 
@@ -681,7 +753,9 @@ source and where the edit goes.
   the package that declares the value's root: `Set` adds or replaces the amendment line for that
   path (`amend <root> { <path>: <expr> }`), `Reset` removes it, `AddEntry` adds an amendment that
   creates the key (LAY-02). If the package has no `x` layer file, it is created as
-  `<package dir>/<x>.layer.canon`. Every other op is `ErrNotEditable` with reason `layer`. A layer
+  `<package dir>/<x>.layer.canon`. Every write of these ops, defaults materialized by W8 included,
+  goes to the layer, never to the base. `Remove` of an entry the layer itself added removes that
+  amendment; every other op (`SetCase` included) is `ErrNotEditable` with reason `layer`. A layer
   cannot add entries to a stable table (LCK-04), which the re-check reports as a finding.
 - **W11a.** A layer may not hold a path and one of its prefixes (EVALUATION.md §9.2, `E1908`). So
   when the layer already amends an ancestor of the path, `Set` edits the value inside that
@@ -747,15 +821,29 @@ type expected at the path **before** anything is written (CLI.md §5.3 "values, 
 | `List(elems...)` | list | `[T]`, `[T] keyed by f` |
 | `Obj{...}` | record fields by Canon name | a record, a case's fields, a table entry |
 | `Map(KV{k, v}...)` | map, in the given order | `{K: V}` |
-| `FromJSON(raw)` | the wire form | any type: decoded by WIRE.md's rules for that type |
+| `FromJSON(raw)` | the wire form | any type: decoded by WIRE.md's rules for that type and the destination field's `@json` forms (`unit`, `int`, `bits`, `none`) |
 | `Source(text)` | a Canon literal | any type: parsed as a Canon expression that contains only literals (no names but contextual ones, SPEC §6.2), typed against the expected type |
 
 - **V1.** A value that does not fit the expected type is `*ValueError` (wraps `ErrBadValue`) naming
-  the op, the path, the expected type and what was given. Nothing is written.
+  the op, the path, the expected type and what was given. Nothing is written. So is a value holding
+  invalid UTF-8 (a `Str`, a key, a literal; GRAMMAR.md §1). Bound for a JSON source, a value with no
+  wire form is a `ValueError` too: a `Duration` that is not a whole number of its field's
+  `@json(unit:)`, an `@json(pairs:)` list past its slot bound or with an element missing a
+  required field (WIRE.md §5.14); bound for a `.canon` source, the same value is left to the
+  re-check (`E8102`, `E3302`). A dependent symbol the op's literal gives is resolved to what it
+  names in its record's computed branch, computed exactly as the decoder computes it (WIRE.md
+  §5.9, DEP-02; defaults from the record's parameters); a symbol it introduces into a `Never`
+  branch, or that names nothing in a branch that can be computed, is a `ValueError`.
 - **V2.** Only the static type is checked at this point. Refinements (`Int(1..=100)`), references
-  (`E3501`), keys and checks are verified by the re-check (§8.6), like any other value.
+  (`E3501`), keys and checks are verified by the re-check (§8.6), like any other value. For
+  `FromJSON`, a wire value whose shape or type does not fit is a `ValueError` (and invalid JSON,
+  an object repeating a key `E7104` included); a missing required field (`E3302`), a value out of
+  range (`E3201`), a `Float32` overflow (`E3202`), a duplicate key (`E3102`) and map keys that
+  encode alike (`E3317`) are findings of the re-check, their values kept. Three decode failures
+  cannot be kept and stay a `ValueError`: a dependent field whose driver was left unset by a kept
+  failure, a CSV table missing its `$id` column, and a `Duration` out of range.
 - **V3.** `Obj` omits fields to leave them at their defaults. A required field that is missing is a
-  finding of the re-check (`E3302`), not a `ValueError`.
+  finding of the re-check (`E3302`), not a `ValueError`; so is one a `FromJSON` object omits.
 - **V4.** Integer and ref key constructors never coerce: `Str("3")` is not accepted for an `Int`,
   `Key("warning")` is not accepted for an enum (use `Member`).
 
@@ -776,7 +864,9 @@ type expected at the path **before** anything is written (CLI.md §5.3 "values, 
 | `SetCase(path, case, fields)` | a variant | change the case, keeping compatible fields (§8.5) |
 
 - **E1.** Ops apply in order to the state left by the previous ops; paths in later ops see earlier
-  changes (a key added by op 0 can be addressed by op 1).
+  changes (a key added by op 0 can be addressed by op 1). Each op is resolved against, and applied
+  in memory to, the re-analysed state the previous ops left, so a path under an intermediate value
+  that failed to compute is `ErrNoValue`, even if the final state would be valid.
 - **E2.** An op on a container kind it does not support (for example `Add` on a table, `AddEntry`
   on a list, `Reset` on a required field) is `ErrBadOp`.
 - **E3.** `Add`, `Insert` and `AddEntry` with a key that already exists are `ErrKeyExists`.
@@ -786,7 +876,8 @@ type expected at the path **before** anything is written (CLI.md §5.3 "values, 
   `Unretire` is always `ErrStableKey`: retirement is one-way, and bringing an id back is a reviewed
   hand edit of `canon.lock` (LOCK.md §4.6), which the build would otherwise report as `E6002`.
 - **E5.** `Set` of the whole value of an entry, element or map entry keeps its key: a `v` whose
-  key field differs from the current key is `ErrNotEditable` with reason `key`.
+  key field differs from the current key is `ErrNotEditable` with reason `key`; one that leaves the
+  key field out keeps the current key.
 - **E6.** `Set(path, v)` where `v` equals the field's default removes the field from its literal or
   JSON object (API-06), exactly as `Reset(path)`. Equality is the value equality of TYPES.md §7.5;
   for a default that depends on earlier fields (TYP-15), the default is computed from the edited
@@ -818,7 +909,8 @@ type expected at the path **before** anything is written (CLI.md §5.3 "values, 
   - every reference of kind `code`, `view`, `check` or `layer`: the identifier token is replaced;
   - the entry's file, when the table has `@files` and the file's path equals the template
     instantiated for the old entry: the file is renamed to the template instantiated for the new
-    entry (§10.2).
+    entry (§10.2); the file of a `load.dir` table's entry, whose key is the file's stem (WIRE.md
+    §6.5), is renamed to the new key with the same extension, in its directory.
 - **E12.** If any reference of kind `value` or `key` is not editable (for example a ref computed by
   a function), the whole rename fails with `*NotEditableError` for that reference; `Detail` lists
   every such reference.
@@ -832,14 +924,30 @@ inside the same edit and reports it, so every client behaves the same.
 
 - **E14.** `SetCase(path, case, fields)` builds the new case value from: every field of the old
   case whose name exists in the new case with the same type after removing refinements (VIEW-07's
-  comparison) and whose value satisfies the new field's refinements; then `fields`, which override.
-  Every old field not kept is reported in `Dropped` (MOCKUP-GAPS 13). `SetCase` to the current case
-  only applies `fields`.
+  comparison) and whose value satisfies the new field's type whole; then `fields`, which override.
+  Every old field not kept is reported in `Dropped` (MOCKUP-GAPS 13), an old field written at its
+  default included. `SetCase` to the current case only applies `fields`. "Satisfies whole" is
+  judged when the `SetCase` runs, by re-analysis of the settled state after it (so op grouping
+  never changes it, E1): a kept field with any fit error (type, every refinement kind, `where`,
+  asset) at or inside its place is dropped, pre-existing or not, also when the new case value is
+  unreadable (a given field broke it, a required field is missing), so even an `AllowErrors`
+  `SetCase` never writes a kept value that breaks the new type. Kept fields are judged together;
+  only a field whose type differs by refinements (compared structurally) needs judging; a variant
+  left at its default is judged too, located from its nearest ancestor written in the source.
 - **E15.** After all ops are applied, for every record touched by an op, every field whose type is
   a dependent type (SPEC §5.11) computed from a field that changed is re-typed. If its value no
   longer matches the new type and the field is optional, it is set to `none` (E7 rules) and
   reported in `Dropped` (MOCKUP-GAPS 16). A required field that no longer matches is left as is,
-  and the re-check reports `E3802`.
+  and the re-check reports `E3802`. A field changed only when its value differs (a `Set` to an
+  equal value changes nothing). A value no longer matches when the re-typing, refinements
+  included, gives a type, refinement (range, length, pattern), `where`, asset, shape (`E3301`,
+  `E3302`, `E3315`) or decoding (`E7110`, `E7111`, `E7112`) finding at its exact path; a
+  pre-existing dangling ref (`E3501`) does not drop it. A dependent-keyed map whose keys no longer
+  fit the new branch is dropped to its default. A value **held** at that place, a decoded
+  dependent symbol "as the file wrote it" (DECISIONS 175), before the edit or given by the op as
+  `FromJSON`, is not dropped: it stays with its `E3802` as before, so `Undo` restores it (E22),
+  until a later op of the edit changes a field it depends on. Only the symbols the op's literal
+  gives are resolved by V1; kept and carried values are left to this rule.
 - **E16.** Cascades never apply to anything but the records touched by the ops.
 
 ### 8.6 Checking and refusal
@@ -851,32 +959,58 @@ inside the same edit and reports it, so every client behaves the same.
 - **E19.** If any finding is an error and `AllowErrors` is false, nothing is written, `Applied` is
   false, and `Edit` returns the result together with a `*RejectedError` (wraps `ErrRejected`).
   With `AllowErrors`, the files are written and the result has `Applied: true` and the error
-  findings (drafts in progress, MOCKUP-GAPS 47).
+  findings (drafts in progress, MOCKUP-GAPS 47). A `DryRun` applies this rule too.
 - **E20.** An edit that adds an id to a stable table, or a new value of a `@stable` field, appends
   the new lock lines to the package's `canon.lock` inside the same edit (LCK-04), and `Retire` adds
-  `retired` to its lock line, according to LOCK.md §5.
-- **E21.** Order of checks before writing: path syntax, path resolution, editability, op/container
-  kind, value types (V1), staleness (S5), apply and cascades, canonical-layout check (§9.4),
-  re-check (E18), write (§10). The first failing step decides the error.
+  `retired` to its lock line, according to LOCK.md §5. The lines come from the edit's plan, the ids
+  its ops add or retire, with the facts of the post-edit analysis; a `Set` or `Reset` on a root
+  stable-table entry the lock does not hold yet records that entry's id (on a held one, a changed
+  `@stable` value is `E6002`, LOCK.md §5). An edit that adds or retires no id writes no lock line
+  and never creates or touches a `canon.lock`. An id's lines are written only whole, and only when
+  none of its facts conflicts with the lock as read (LOCK.md §4.2) or duplicates another fact the
+  post-edit sources would lock; otherwise the id is skipped and its finding (`E6002`, `E3102`)
+  stays. Ids the edit adds that conflict among themselves are all skipped. The uniqueness test
+  applies only to facts the lock does not hold yet: a `Retire` of a held id records `retired` even
+  when an unlocked holder duplicates its value. Under `AllowErrors`, an id's lines are written
+  whenever its own entry evaluates (LOCK.md §6.2).
+- **E21.** Order of checks before writing: for each op in turn, path syntax, path resolution,
+  editability, op/container kind, value types (V1), then its application in memory (E1); then the
+  cascades (§8.5); then, over the files the ops write (known only now), overlays (S12), staleness
+  (S5) and the canonical-layout check (§9.4); then the re-check (E18, E19); then the write (§10).
+  The first failing step decides the error.
 
 ### 8.7 Undo
 
 - **E22.** `Undo` is a list of ops that, applied with `Base` set to the result's `Revision`,
   restores every value the edit changed (including cascades). It restores values, not text:
-  comments of removed items and a deleted entry file's doc comment are not restored, and a
-  recreated entry file is placed by the `@files` template.
+  comments of removed items and a deleted entry file's doc comment are not restored, a recreated
+  entry file is placed by the `@files` template, and a defaulted parent the Undo empties may
+  remain written as `{}`.
 - **E23.** Inverses: `Set` → `Set(old)`, or `Reset` if the field was absent; `Reset` → `Set(old)`;
   `Add`/`Insert`/`AddEntry` → `Remove`; `Remove` → `Insert(parent, oldPosition, old)` or
   `AddEntry(parent, key, old)` followed by a `Move` to the old position; `Move` → `Move` back;
   `Rename` → `Rename` back; `SetCase` → `Set(old whole variant value)`. `Retire` has no inverse
   (E4): `Undo` restores every other change of the edit, and the studio warns before retiring.
-  `Undo` lists the inverses in reverse order of the ops. Old values are carried as `Source` literals.
+  `Undo` lists the inverses in reverse order of the ops. Old values are carried as `Source`
+  literals, except a JSON-sourced value holding a decoded dependent symbol, carried as `FromJSON`
+  of its wire form, encoded with the scope it is decoded in (the field's unit, `int`, `bits`,
+  `none`), so it comes back as the file wrote it. Further inverses:
+  - a `Set` of a field a spread supplied → `Set(old)`, not `Reset` (W9); under `EditLayer`, a `Set`
+    on a path the layer had no line for → `Reset` (it removes the amendment), and an `AddEntry` or
+    `Remove` on a map inside an amendment → a `Set` of the whole map;
+  - `Add`, `Insert` or `AddEntry` into a collection that existed only through its default → a
+    `Reset` of that collection;
+  - any op on an `@json(pairs:)` list, and an element `Set` in an `@json(bits)` list →
+    `Set(old list)`, or `Reset` when the list was defaulted and unwritten;
+  - a dependent field E15 re-typed is restored after the field that drives it, typed at that
+    intermediate state; a held value (E15) a re-type leaves in place is restated from the base.
 
 ### 8.8 JSON form of an edit
 
 The studio's web client sends edits as JSON. `Edit` has this form through its struct tags
 (`base`, `ops`, then `allowErrors`, `dryRun`, `normalize` and `evaluate`, each omitted when
-false or empty), and `Op` implements `json.Marshaler` and `json.Unmarshaler` (E24–E26):
+false or empty), and `Op` implements `json.Marshaler` and `json.Unmarshaler` (E24–E26); `Edit`
+implements `json.Unmarshaler` too, and JSON of either that does not decode is `ErrBadOp` (§15):
 
 ```json
 {
@@ -899,7 +1033,9 @@ false or empty), and `Op` implements `json.Marshaler` and `json.Unmarshaler` (E2
   setCase`. A value is given either as `value` (wire form, decoded as `FromJSON`) or as `source`
   (Canon literal text, decoded as `Source`), never both. `"value": null` is `None`.
 - **E25.** `key` is a JSON string or integer; it is read as a path key (P1, P2), so for an enum
-  key a string is first matched as a Canon member name, then as a wire value.
+  key a string is first matched as a Canon member name, then as a wire value. A key of a dependent
+  key type is read against its computed branch (a bare name stays symbolic, TYPES.md §11.4,
+  §11.5); on a `Never` or uncomputable branch it is kept as data.
 - **E26.** Marshalling writes `source` for every `Lit` except `FromJSON`, which is written as
   `value`. `Source` text produced by the API is canonical (FORMATTER.md), single-line.
 
@@ -938,30 +1074,45 @@ comments, and a trailing comment on its last line.
   inserted on that line if the literal still fits the formatter's width and FORMATTER.md keeps it
   single-line; otherwise the enclosing item is re-printed (M5).
 - **M4.** A removed item is deleted together with its attached comments and its line; blank lines
-  around it are then collapsed as FORMATTER.md requires.
+  around it are then collapsed as FORMATTER.md requires. Removing from a broken `( )`/`[ ]` list may
+  re-print the whole list (FORMATTER.md §6.2 lays it out by width, so a removal can re-join it).
 - **M5.** After the splices, the file MUST be a fixed point of the formatter. If it is not (a line
   grew past the width, a single-line literal must now break), the smallest enclosing item that
   makes it a fixed point is re-printed instead, going up to the top-level declaration if needed.
 - **M6.** Invariant, checked by the edit golden tests: `format(after) == after`, and every byte of
   `after` outside the re-printed and inserted items equals the corresponding byte of `before`.
-  Because the formatter never aligns columns (DECISIONS 18), a one-value `Set` of a scalar changes
-  exactly one line.
+  Because the formatter never aligns columns (DECISIONS 18), a one-value `Set` of a scalar that
+  re-prints only its item changes exactly one line. M5 is the more specific rule: such a `Set` may
+  break its line only when the single-line form (the line before, with the new value in place)
+  exceeds the formatter's width, and then the enclosing item is re-printed. A comma DECISIONS 211
+  or 216 requires, added or removed on a kept neighbour, or a byte the M5 settle changes there,
+  counts as re-printing that neighbour (Insert, Remove and Move alike); a DECISIONS 216 comma line
+  with a trailing comment may be rewritten whole by the settle.
 
 ### 9.3 Printing values
 
 - **M7.** Values are printed with contextual names (SPEC §6.2): bare enum members, case names and
   keys. Durations use their canonical text (LEX-04). Fields equal to their defaults are omitted in
   newly printed records (E6 applied recursively to new values); fields of an existing literal are
-  kept unless the op sets them to their default.
+  kept unless the op sets them to their default. Strings are printed with `{` and `}` escaped as
+  `\{` and `\}` (GRAMMAR.md §2.6), so a string holding a brace is never read as interpolation.
 - **M8.** JSON sources are written with wire names and the wire form of WIRE.md. A new key is placed
   after the previous declared field's key in declaration order (FMT-02); unknown keys kept by
   `partial` are left in place. `@json(path: …)` fields create the intermediate objects LOD-09
-  describes.
+  describes. A list's or map's items take their field's unit and `int` form (WIRE.md §4.1). A
+  dependent symbol is written as the wire form of what it names in its record's computed branch,
+  at record level as at field level (WIRE.md §5.9); a held value on a `Never` branch (E15) is
+  written back as its original JSON token (DECISIONS 175). An `@json(bits)` or `@json(pairs:)`
+  list is written whole at its parent record, rewriting only the slot members or scalars whose
+  value changed (M1 compares them by value, never by bytes).
 
 ### 9.4 Files that are not in canonical layout
 
 - **M9.** Before writing a file, the edit checks that its current content is a fixed point of the
-  formatter (`canon fmt` for `.canon`, the canonical source layout of FMT-02 for JSON). If not, the
+  formatter (`canon fmt` for `.canon`, the canonical source layout of FMT-02 for JSON, its numbers
+  in their typed-canonical text, FORMATTER.md §14.1 and DECISIONS 165, a token two loads read as
+  different base types or canonical texts left as written), judged on the raw bytes (a CR or a tab
+  indentation is not canonical). This rule governs FORMATTER.md §13. If not, the
   edit fails with `*NotCanonicalError` (wraps `ErrNotCanonical`) listing the files, unless
   `Edit.Normalize` is true, in which case each such file is first normalized entirely, as part of
   the same edit. Migration normalizes JSON sources once with `canon fmt --json-sources`
@@ -980,10 +1131,12 @@ comments, and a trailing comment on its last line.
   entry's value: `{id}` is the key; `{f}` and `{f.g}` are fields (nested through records and the
   current case of variants). A value is written as: enum → wire value; ref → key; variant → case
   wire name; integer → decimal; `Bool` → `true`/`false`; `String` → itself. A `none` value, a
-  string that is empty or contains `/`, `\`, a control character, or is `.` or `..`, is
-  `ErrBadValue`.
+  string that is empty or contains `/`, `\`, a control character, or starts with `.` (it would name
+  a hidden path, which the journal refuses, §10.3), is `ErrBadValue`.
 - **N3.** The expanded path is relative to the directory of the package that declares the value.
-  Missing directories are created. An existing file at that path is `ErrPathCollision`.
+  Missing directories are created. An existing file at that path is `ErrPathCollision`, naming the
+  colliding files. An expanded path with a segment starting with `.` is refused, `DryRun`
+  included, with an error wrapping `ErrProject` (§10.3).
 - **N4.** Without `@files`: a `.canon` entry goes to `<package dir>/<value name>/<key>.canon`
   (SPEC §4.3); a `load.dir` element goes to the directory of the glob's first wildcard segment,
   named `<key>.json`, and a glob where that is not determined (`**` before the file name, several
@@ -992,8 +1145,10 @@ comments, and a trailing comment on its last line.
   `entry <value>.<key> { … }` declaration printed canonically, ending with one `\n`. A new JSON
   element file contains the element's wire form in canonical source layout.
 - **N6.** `Remove` of an entry declared in its own file deletes the file when the entry is the
-  file's only declaration, else removes the declaration (M4). Directories left empty are removed,
-  up to but not including the package directory.
+  file's only declaration, else removes the declaration (M4); a `load.dir` element's file likewise.
+  Directories left empty are removed, up to but not including the package directory, deepest
+  first, after the file deletions; they are journaled and recreated on rollback, and a directory
+  no longer empty at commit time is left.
 - **N7.** `Retire` inserts `retired ` before the `entry` keyword, before the entry's key in a
   table literal, or before the member's name in an `@codes` enum declaration.
 
@@ -1007,12 +1162,46 @@ comments, and a trailing comment on its last line.
 - **N9.** Before writing, every file to be written or deleted is re-read and its hash compared with
   the snapshot. A difference is `*StaleError` (wraps `ErrStale`) listing the files: someone changed
   them while the edit ran (API-05).
-- **N10.** The edit writes a journal `.canon/journal/<new revision>.json` listing, for each file,
-  its path and previous content (or its absence), and syncs it. It then writes every new content to
-  a temporary file in the same directory, renames each over its target, performs deletions, removes
-  the journal, and publishes the new snapshot.
+- **N10.** The edit writes a journal `.canon/journal/<hex>.json`, `<hex>` being the new revision
+  without its scheme prefix (`r1:`; `:` is not allowed in Windows file names), listing, for each
+  file, its path, its previous content (or its absence) and mode, and the SHA-256 of its new content
+  (or its absence); the directories the edit creates and removes (N6), with their modes; and the
+  writer's host and process id. It syncs it. It then writes every new content to a temporary file in
+  the same directory, renames each over its target, performs deletions, removes emptied directories,
+  removes the journal, and publishes the new snapshot. When the FS offers `SyncDir` (§2.2), the
+  directories are synced before the first rename and before the journal is removed.
 - **N11.** If a step after the journal fails, every file already changed is restored from the
   journal and the edit returns the error. If the process dies, the next `Open` restores them (O5).
+  A journal is untrusted input (`Open` runs `Recover`, and a cloned repository could ship one), so
+  every rollback and recovery holds to these checks:
+  - it restores or removes only files still in the new state the journal records (the digest of
+    their new content, or their absence), all or nothing: a file changed since keeps the journal,
+    and the error names the files, so no one overwrites or deletes a file through a journal
+    without knowing its exact bytes;
+  - it restores only what this edit changed and recreates the directories it removed; a directory
+    the edit created must lie above a file the edit created, and is removed with its contents only
+    when it holds nothing but the edit's new files, their staged copies and temporary leftovers;
+  - it accepts only paths inside the project directory or a current declared root (paths outside
+    the project stored absolute), with no segment starting with `.`, and with an extension an edit
+    writes (`.canon`, `.json`, `.lock`); it never traverses a symbolic link (every component it
+    resolves must equal the lexical path; a link is removed, never descended);
+  - it applies modes masked to the read and write permission bits (`mode & 0o666`), and refuses
+    whole a journal holding a setuid, setgid or sticky bit;
+  - it keeps, and never applies automatically, a journal written on another host (O5), and leaves
+    alone one whose writer still runs on this host; a journal written by this process counts as
+    running only while one of its commits runs there, so `Close` then `Open` recovers one a failed
+    rollback left;
+  - it keeps a journal that decodes but fails a check, writing nothing, and removes one that does
+    not decode (only a torn write makes one, before any file changed).
+
+  While any journal is present, every `Edit` that writes is refused with an error wrapping
+  `ErrProject` that names it. `Edit` also refuses, with an error wrapping `ErrProject` naming the
+  files, a change through a symbolic link below the project or a root (a symlinked package
+  directory cannot be edited through the API) and a change to a path with a segment starting with
+  `.`, so no commit is made whose rollback would be refused. A renamed file keeps its mode. Residual
+  risks, accepted: a reused process id keeps a dead writer's journal "running"; the cross-process
+  idle check is not atomic; a forged same-host journal can create new `.canon`, `.json` and `.lock`
+  files, but overwriting or deleting one still needs its exact content.
 - **N12.** Written files use `\n` line endings and end with exactly one `\n` (NFR-04).
 
 ---
@@ -1052,7 +1241,7 @@ type ShowLine  struct { Owner, Key, Label string; Text Text }
 type Heading   struct { Title, Subtitle Text; Preview string; Retired bool; Cells map[string]Text }
 ```
 
-- **V4a. JSON form.** `EvalRequest`, `EvalResult` and every type they hold have a JSON form, the
+- **V4a.** `EvalRequest`, `EvalResult` and every type they hold have a JSON form, the
   one the studio's web client exchanges (VIEWMODEL.md §13): the struct tags of `api/evaluate.go`
   (`Dropped` in `api/edit.go`, `Finding` and `Summary` in `api/findings.go`),
   lowerCamel keys (`revision`, `path`, `title`, `subtitle`, `preview`, `when`, `show`,
@@ -1068,7 +1257,9 @@ type Heading   struct { Title, Subtitle Text; Preview string; Retired bool; Cell
 - **V5.** The **form** of `Path` is the value at `Path` and every record or variant value reached
   from it through fields only (not through a list, table or map). Every view item of every value
   in the form is evaluated: `title`, `subtitle`, `preview`, `when` conditions on fields and groups,
-  `show` lines, and methods named in the view (MOCKUP-GAPS 24, as `show` lines).
+  `show` lines, and methods named in the view (MOCKUP-GAPS 24, as `show` lines). `Types` holds each
+  dependent field of the form whose type can be resolved: a field whose driver is `none` or cannot
+  be resolved has no entry.
 - **V6.** Every element of every collection that is a field of a value in the form gets a
   `Heading` (its view's `title`, `subtitle`, `preview`), so the studio can list rows. When `Path`
   itself names a collection, each of its elements gets a `Heading` too, so one `Evaluate` serves a
@@ -1078,12 +1269,19 @@ type Heading   struct { Title, Subtitle Text; Preview string; Retired bool; Cell
   (VIEWMODEL.md T8), keyed by field key, the rendered cell: a record's title, a ref's target
   title, a value's canonical text. `Heading.Title` is disambiguated as VIEWMODEL.md S9 says: when
   two elements of one collection render the same title, each becomes `<title> (<key>)`, or
-  `<title> (#<n>)` in a plain list.
+  `<title> (#<n>)` in a plain list. Disambiguation is relative to a list: the title of the one
+  element an `Evaluate` names (`EvalResult.Title`) is never disambiguated.
 - **V7.** A title of a ref in a template uses the target's `title` if its type has a view, else its
   key; `{x.id}` forces the key (MOCKUP-GAPS 22). A title with no view is the key (entries,
-  elements), or the value name (top-level values).
+  elements), or the value name (top-level values). A plain-list element has no key: its title with
+  no view is `#<n>`, its 1-based position (VIEWMODEL.md S9, T24), even when it holds a copy of a
+  table entry (only a keyed list names its elements by key).
 - **V8.** Texts are in `Lang`, falling back to the source language; `Fallback` is true when the
-  fallback was used (MOCKUP-GAPS 45).
+  fallback was used (MOCKUP-GAPS 45). It is true for every text when the package has no
+  translation file for `Lang`, or when `Lang` is neither the source language nor a project
+  language. A nested text that falls back (an enum label, a ref's target title, a field's `none`
+  text, a method's line) sets the flag of the text holding it. Detecting it spends no step: a text
+  costs the same steps in every language.
 
 ### 11.2 Keys and failures
 
@@ -1098,12 +1296,19 @@ type Heading   struct { Title, Subtitle Text; Preview string; Retired bool; Cell
 - **V10a.** `Findings` carry `Reads` (§4.1) like the findings of a build, so live findings
   highlight fields too (VIEWMODEL.md Q5).
 - **V11.** A `show` line, title, subtitle or preview whose evaluation fails has `OK: false` and an
-  empty `Value`; it produces **no finding** (MOCKUP-GAPS 38). The studio shows "—".
+  empty `Value`; it produces **no finding** (MOCKUP-GAPS 38). The studio shows "—". A title,
+  subtitle or preview the view does not declare is not a failure: `OK` is true, the title is V7's,
+  the others are empty (DECISIONS 243). A method that is broken (TYPES.md §1) is never run: its
+  line fails, and the view naming it is not itself broken.
 - **V12.** A `when` condition whose evaluation fails counts as **true** (the item is shown) and
   produces no finding, so a field with a finding is never hidden by a failing condition
-  (MOCKUP-GAPS 33).
+  (MOCKUP-GAPS 33). When an item is given `when` twice (`E1613`), the first written is used.
 - **V13.** `Evaluate` runs on the snapshot (plus the draft); it counts steps against the budget
-  like any evaluation (EVL-03). It never writes and never changes the revision.
+  like any evaluation (EVL-03): each template, `when` condition and method it runs is a run of its
+  own, capped at the project's budget, and a run past it fails that text (V11) or makes that
+  condition true (V12). Runs never share one budget, so no result depends on evaluation order.
+  It never writes and never changes the revision. Without a draft, `Summary` covers the path's
+  package and every package importing it, and those are the packages it touches (S5).
 - **V14.** The studio calls `Evaluate` after each committed edit, including edits written with
   `AllowErrors`, not on each keystroke (MOCKUP-GAPS 47). `Edit.Evaluate` saves the extra call.
 
@@ -1127,14 +1332,35 @@ type Event struct {
 
 - **W12.** `Watch` starts watching the read set of every loaded package, the package directories,
   the directories listed by globs, and `project.canon`, then returns. It returns an error only if
-  watching cannot start. Watching stops when `ctx` is cancelled or the project is closed.
+  watching cannot start. Watching stops when `ctx` is cancelled or the project is closed. Starting
+  runs one check of every package, so the read set of each is known (one package at a time when they
+  cannot be checked together). The watcher follows the OS's change notifications for the OS FS or an
+  FS whose `OSBacked()` is true (§2.2), and falls back to polling, with one Warn line, when they
+  cannot start or later fail. Whatever the notifications deliver, any change to the read set is seen
+  within the resync interval (at most 1 s): the watcher also stats the read set, watches the
+  directories of link targets and retries directories it could not watch.
 - **W13.** `fn` is called on one goroutine, never concurrently with itself, in revision order.
+  An event's `Files`, and what makes an event, are only read-set files and names the scan takes
+  as sources (the S5 predicate): editor swap files, `.canon/` and build outputs produce none; a
+  listed directory's change counts only when a name it gains or loses is a source or matches the
+  glob of a watching `load`. An event is delivered when its cause is not `external`, when a
+  package was re-checked or removed, when the revision changed, or when there is an error. The
+  event's revision is computed after its re-check. A package removed since the `Watch` started is
+  listed in `Packages` with no findings. A `project.canon` broken while watching gives an event
+  whose `Err` is a `*ProjectError`, its findings in `Findings`, and no packages; a load this
+  compiler cannot run gives that error in `Err`. A panic in `fn` is recovered and becomes an
+  `*InternalError` in the next event's `Err`; a panic in the watcher reaches every `Watch` as an
+  event with cause `external` and an `*InternalError`, and the watcher restarts (at most once per
+  resync interval).
 - **W14.** Changes are coalesced: after a change, the watcher waits until 100 ms pass without a new
   change (API-05), but never more than 1 s after the first change, then refreshes, re-checks the
   affected packages and calls `fn` once.
-- **W15.** An `Edit` that writes files produces exactly one event with cause `edit`, after the
-  edit returns; the watcher does not report the edit's own writes as `external`. Overlay changes
-  produce `overlay` events.
+- **W15.** An `Edit` that writes files produces exactly one event with cause `edit`; the watcher
+  does not report the edit's own writes as `external`. The event is published inside the write
+  (S10), so it may reach `fn` before `Edit` returns; its revision equals the result's. An external
+  change made during the write is folded into that event. Overlay changes produce `overlay`
+  events. Edit and overlay events are always delivered, even when they touch nothing the watch
+  follows; a refused or `DryRun` edit publishes no event.
 - **W16.** Several `Watch` calls may be active; each receives every event.
 
 ---
@@ -1208,9 +1434,11 @@ func FormatJSONSource(src []byte) ([]byte, error)
 ```
 
 - **T1.** `Format` returns the canonical layout of one `.canon` file (FORMATTER.md). A syntax error
-  returns a `*SyntaxError` with its findings. `Format(Format(x)) == Format(x)`.
+  returns a `*SyntaxError` with its findings. `Format(Format(x)) == Format(x)`. A file whose base
+  name is `project.canon` is formatted as a project file.
 - **T2.** `FormatJSONSource` returns the canonical source layout of a JSON file (FMT-02); key
-  order is preserved. Invalid JSON returns a `*SyntaxError`.
+  order is preserved. Invalid JSON returns a `*SyntaxError`; having no file name, its findings use
+  the display name `<json>`.
 
 ```go
 func Version() VersionInfo
@@ -1239,16 +1467,16 @@ Errors are Go errors, distinct from findings. Every error type wraps one sentine
 | Sentinel | Error type | When | CLI exit |
 |---|---|---|---|
 | `ErrNoProject` | | no `project.canon` found (O1) | 2 |
-| `ErrProject` | `*ProjectError` | `project.canon` has errors, bad `Roots` (O3) | 2 |
+| `ErrProject` | `*ProjectError` | `project.canon` has errors, bad `Roots` (O3); wrapped by the error of a journal `Open` must keep (O5), and of an edit refused because a journal exists or a path goes through a symbolic link or a hidden segment (N3, N11), which name the journal or the files | 2 |
 | `ErrUnsupportedVersion` | `*ProjectError` | `E1001` | 2 |
 | `ErrUnknownPackage` | | a selector matches no package (R1) | 2 |
 | `ErrUnknownLayer` | | a layer name matches no file (O4, LAY-01) | 2 |
-| `ErrBadPath` | `*PathError` | path syntax, unsupported segment (§6) | 2 |
+| `ErrBadPath` | `*PathError` | path syntax, unsupported segment (§6); an overlay path outside the project (§3.4) | 2 |
 | `ErrNoPath` | `*PathError` | nothing at that path | 2 |
 | `ErrAmbiguousPath` | `*PathError` | unqualified root matches several packages (P6) | 2 |
 | `ErrNoValue` | `*PathError` | the value is poisoned (R6) | 1 |
 | `ErrInputField` | `*PathError` | the path names an `input` field (R5); `Detail` is its environment variable | 2 |
-| `ErrBadOp` | `*PathError` | op not valid for that container (E2) | 2 |
+| `ErrBadOp` | `*PathError` | op not valid for that container (E2); `Op` or `Edit` JSON that does not decode (§8.8), with the reason | 2 |
 | `ErrBadValue` | `*ValueError` | value does not fit the type; bad template value (V1, N2); unknown build `Target` (B1b) | 2 |
 | `ErrKeyExists` | `*PathError` | E3 | 1 |
 | `ErrStableKey` | `*PathError` | E4 (`Remove`, `Rename`, `Unretire` of a stable id), E13 | 1 |
