@@ -84,12 +84,15 @@ func (r *run) convertElements(v value.Value, c *check.Conversion, e syntax.Expr,
 // convertList converts each element; a list converted to a keyed list takes its identities.
 func (r *run) convertList(x *value.List, c *check.Conversion, e syntax.Expr, at *vpath) value.Value {
 	elems := make([]value.Value, len(x.Elems))
+	lt, _ := c.To.Base().(*types.ListType)
 	for i, el := range x.Elems {
-		if elems[i] = r.convert(el, c.Inner, e, at.index(i)); elems[i] == nil {
+		eat := at.element(lt, i)
+		eat.learnFrom(el)
+		if elems[i] = r.convert(el, c.Inner, e, eat); elems[i] == nil {
 			return nil
 		}
 	}
-	if lt, ok := c.To.Base().(*types.ListType); ok && lt.KeyedBy != nil {
+	if lt != nil && lt.KeyedBy != nil {
 		return r.ev.carry(x, r.keyedList(elems, c.To, nil, x.P, at))
 	}
 	return r.ev.carry(x, &value.List{T: c.To, Elems: elems, P: x.P})

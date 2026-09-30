@@ -63,7 +63,7 @@ func TestVariantLevelChecks(t *testing.T) {
 		if !ok {
 			t.Fatalf("%s: not evaluated", c.value)
 		}
-		if got := describeRun(b.ev.Run(context.Background(), c.check, v)); got != c.want {
+		if got := describeRun(b.ev.Run(context.Background(), c.check, v, c.value)); got != c.want {
 			t.Errorf("%s: got %q, want %q", c.value, got, c.want)
 		}
 	}

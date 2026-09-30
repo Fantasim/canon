@@ -19,6 +19,6 @@ let deep: Node = {}
 let shallow: Node = { depth: 100 }
 -- findings.txt --
 error[E4402]  a/a.canon:9:18
-  call depth exceeds 10000
+  deep: call depth exceeds 10000
 
 1 error, 0 warnings in 1 package (…)

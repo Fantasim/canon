@@ -8,6 +8,6 @@ local let m: {String: Int} = { "a": 1 }
 local let y: Int = m["b"]
 -- findings.txt --
 error[E4002]  a/a.canon:6:20
-  no key b in m
+  y: no key b in m
 
 1 error, 0 warnings in 1 package (…)

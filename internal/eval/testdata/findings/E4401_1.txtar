@@ -16,7 +16,7 @@ local let small: Int = loop(3)
 local let big: Int = loop(1000)
 -- findings.txt --
 error[E4401]  a/a.canon:6:9
-  evaluation budget of 200 steps exhausted
+  big: evaluation budget of 200 steps exhausted
   heaviest: big (170 steps)
   in loop (a/a.canon:12)
 

@@ -33,8 +33,8 @@ func (t *CheckTrace) Nodes() int {
 // RunTraced is Run, with the run's trace when a replay reproduces everything it did: it made no
 // block report, marked no value and set no identity, read no marked or poisoned value, was not
 // tainted, loaded nothing and did not run out of steps. Nil: no trace.
-func (e *Evaluator) RunTraced(ctx context.Context, c *syntax.CheckDecl, self value.Value) (CheckRun, *CheckTrace) {
-	r := e.checkRun(ctx, c, self)
+func (e *Evaluator) RunTraced(ctx context.Context, c *syntax.CheckDecl, self value.Value, path string) (CheckRun, *CheckTrace) {
+	r := e.checkRun(ctx, c, self, path)
 	if r == nil {
 		return CheckRun{Aborted: true}, nil
 	}

@@ -8,6 +8,6 @@ local let long: Duration = 9223372036854ms
 local let y: Duration = long * 2000000
 -- findings.txt --
 error[E4101]  a/a.canon:6:25
-  duration overflow in long * 2000000
+  y: duration overflow in long * 2000000
 
 1 error, 0 warnings in 1 package (…)

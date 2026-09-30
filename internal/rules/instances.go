@@ -82,12 +82,16 @@ func (t *traversal) runChecks(rec *value.Record) {
 		return
 	}
 	shared, own := t.checksOf(rec.T)
+	if len(shared)+len(own) == 0 {
+		return
+	}
+	at := t.here()
 	for _, checks := range [...][]*syntax.CheckDecl{shared, own} {
 		for _, c := range checks {
 			if t.ctx.Err() != nil {
 				return
 			}
-			run := t.run(c, rec)
+			run := t.run(c, rec, at)
 			t.ran()
 			t.report(c, run, rec, nil)
 		}
@@ -95,11 +99,12 @@ func (t *traversal) runChecks(rec *value.Record) {
 }
 
 // run runs c on rec, traced for the memo while an entry is recorded.
-func (t *traversal) run(c *syntax.CheckDecl, rec *value.Record) Run {
+func (t *traversal) run(c *syntax.CheckDecl, rec *value.Record, at *verify.Path) Run {
+	path := at.String()
 	if t.rec == nil {
-		return t.ev.Run(t.ctx, c, rec)
+		return t.ev.Run(t.ctx, c, rec, path)
 	}
-	x, trace := t.memo.ev.RunTraced(t.ctx, c, rec)
+	x, trace := t.memo.ev.RunTraced(t.ctx, c, rec, path)
 	run := runOf(x)
 	t.memo.ev.Ran(c, rec, run)
 	kept := &t.rec.kept
@@ -107,7 +112,7 @@ func (t *traversal) run(c *syntax.CheckDecl, rec *value.Record) Run {
 	case trace == nil:
 		t.rec.void = true
 	case run.Failed:
-		kept.failed = append(kept.failed, failedRun{c: c, run: len(kept.runs), instance: t.rec.instance, at: t.here()})
+		kept.failed = append(kept.failed, failedRun{c: c, run: len(kept.runs), instance: t.rec.instance, at: at})
 	}
 	kept.runs = append(kept.runs, trace)
 	return run

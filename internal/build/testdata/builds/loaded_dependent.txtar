@@ -83,7 +83,7 @@ warning[W5001]  a/a.canon:37:14
   expected by a/a.canon:39 (check)
 
 error[E3501]  a/dangling.json:1:9
-  unknown key zz in evs
+  dangling: unknown key zz in evs
 
 warning[W5001]  a/tasks.json:2:20
   tasks[0].p: p 3

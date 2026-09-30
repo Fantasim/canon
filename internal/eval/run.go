@@ -23,6 +23,8 @@ type run struct {
 	site       source.Span
 	chainNone  bool
 	at         *vpath
+	cur        *vpath // the value path of the literal being built, for a hard error's Path (API.md F1)
+	instPath   string // a check run's instance path, for a hard error's Path (API.md F1)
 	coll       *collHint
 	reports    *[]CheckReport
 	poisonAt   string
@@ -165,7 +167,7 @@ func (r *run) budgetOut(at source.Span) {
 		e.cut(StepLimit)
 		return
 	}
-	b := r.withStack(diag.E4401.At(at, e.budget, r.qualified(heavy.pkg, heavy.name), e.spent[heavy]))
+	b := r.withStack(diag.E4401.At(at, e.budget, r.qualified(heavy.pkg, heavy.name), e.spent[heavy])).Path(r.findingPath())
 	if e.testStops != nil { // it stops the running test, from whichever root spent the step
 		b.Report(e.stopBag(r.fr.pkg))
 	}
@@ -179,15 +181,46 @@ func (r *run) fail(b *diag.Builder) {
 
 // abort reports a hard error and aborts the root; a tainted root aborts silently (§7.3).
 func (r *run) abort(b *diag.Builder) {
+	r.abortAt(b, r.findingPath())
+}
+
+// abortAt is abort with the finding about the value at path (API.md F1).
+func (r *run) abortAt(b *diag.Builder, path string) {
 	if r.failed {
 		return
 	}
 	r.failed = true
 	r.noteAbort()
 	if !r.tainted || r.sink != nil || r.ev.vec != nil {
+		b.Path(path)
 		r.noteStop(b)
 		r.emit(b)
 	}
+}
+
+// findingPath is the path of the value a hard error of this run is about: the innermost literal
+// being built, else the instance a check runs on, else the top-level value the run evaluates,
+// "" for a run of none (API.md F1).
+func (r *run) findingPath() string {
+	switch {
+	case r.cur != nil:
+		return r.cur.String()
+	case r.instPath != "":
+		return r.instPath
+	}
+	return r.wholePath()
+}
+
+// wholePath is the path of the whole value the run evaluates: the instance a check runs on, else
+// the top-level value, "" for a run of none. A finding about the call chain, not a part, takes it.
+func (r *run) wholePath() string {
+	switch {
+	case r.instPath != "":
+		return r.instPath
+	case r.root != nil:
+		return rootPath(r.root.obj.Name()).String()
+	}
+	return ""
 }
 
 // stop aborts the root without a finding: a poisoned read (EVALUATION.md §7.2).

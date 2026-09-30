@@ -3,6 +3,7 @@ package eval_test
 import (
 	"context"
 	"reflect"
+	"strings"
 	"sync"
 	"testing"
 
@@ -32,8 +33,9 @@ type rowRuns struct {
 
 // rowRun is one check to run on one row.
 type rowRun struct {
-	c   *syntax.CheckDecl
-	rec *value.Record
+	c    *syntax.CheckDecl
+	rec  *value.Record
+	path string // the row's canonical path, that of a hard error its check raises (API.md F1)
 }
 
 // rowsAfterB evaluates m's values and verifies them, with memo in the checks epoch when set.
@@ -66,7 +68,7 @@ func rowsAfterB(t *testing.T, m *memoed, memo *eval.Memo, opt eval.Options) *row
 	out := &rowRuns{b: b}
 	for _, rec := range rows.Entries {
 		for _, c := range rec.T.Base().(*types.RecordType).Checks {
-			out.runs = append(out.runs, rowRun{c: c, rec: rec})
+			out.runs = append(out.runs, rowRun{c: c, rec: rec, path: checksRows + "." + rec.Ident.Key.S})
 		}
 	}
 	return out
@@ -86,16 +88,19 @@ func TestCheckRunsReplay(t *testing.T) {
 	var want []eval.CheckRun
 	coldSteps := cold.spent(func() {
 		for _, x := range cold.runs {
-			want = append(want, cold.b.ev.Run(context.Background(), x.c, x.rec))
+			want = append(want, cold.b.ev.Run(context.Background(), x.c, x.rec, x.path))
 		}
 	})
+	if f := cold.b.findings(t); !strings.Contains(f, "rows.c: ") { // API.md F1: the hard error of c's message
+		t.Fatalf("no finding at rows.c:\n%s", f)
+	}
 	memo := eval.NewMemo()
 	traced := rowsAfterB(t, m, memo, m.opt)
 	var traces []*eval.CheckTrace
 	var got []eval.CheckRun
 	tracedSteps := traced.spent(func() {
 		for _, x := range traced.runs {
-			out, tr := traced.b.ev.RunTraced(context.Background(), x.c, x.rec)
+			out, tr := traced.b.ev.RunTraced(context.Background(), x.c, x.rec, x.path)
 			got, traces = append(got, out), append(traces, tr)
 		}
 	})

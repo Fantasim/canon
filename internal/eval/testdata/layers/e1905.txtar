@@ -78,12 +78,12 @@ warning[W1002]  a/a.canon:7:12
   field w has no doc comment
 
 error[E1905]  a/bad.canon:5:5
-  amend path xs[5]: index 5 out of range
+  index: amend path xs[5]: index 5 out of range
 
 error[E1905]  a/bad.canon:9:3
-  amend path inner.n: passes through none
+  hole: amend path inner.n: passes through none
 
 error[E1905]  a/bad.canon:13:8
-  amend path shape.w: case circle has no field w
+  case_: amend path shape.w: case circle has no field w
 
 3 errors, 2 warnings in 1 package (…)

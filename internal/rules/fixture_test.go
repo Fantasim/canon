@@ -49,6 +49,7 @@ type evaluator struct {
 	invalid map[value.Value]bool
 	values  map[eval.Root]value.Value
 	calls   []*syntax.CheckDecl
+	paths   []string // the path each run was given, in order (API.md F1)
 }
 
 func (e *evaluator) Invalid(v value.Value) bool { return e.invalid[v] }
@@ -60,12 +61,12 @@ func (e *evaluator) Force(_ context.Context, r eval.Root) (value.Value, bool) {
 	return v, ok
 }
 
-func (e *evaluator) Where(context.Context, *types.Predicate, value.Value) (bool, bool) {
+func (e *evaluator) Where(context.Context, *types.Predicate, value.Value, string) (bool, bool) {
 	return true, true
 }
 
-func (e *evaluator) Run(_ context.Context, c *syntax.CheckDecl, self value.Value) rules.Run {
-	e.calls = append(e.calls, c)
+func (e *evaluator) Run(_ context.Context, c *syntax.CheckDecl, self value.Value, path string) rules.Run {
+	e.calls, e.paths = append(e.calls, c), append(e.paths, path)
 	if s, ok := e.scripts[c]; ok {
 		return s(self)
 	}

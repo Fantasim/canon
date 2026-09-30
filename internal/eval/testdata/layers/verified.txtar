@@ -77,14 +77,14 @@ error[E5001]  a/a.canon:27:20
   expected by a/a.canon:11 (check)
 
 error[E4002]  a/a.canon:33:28
-  index 3 out of range for length 1
+  lost.port: index 3 out of range for length 1
 
 error[E3204]  a/louis.canon:5:9
-  80 is outside 1024..=65535
+  server.port: 80 is outside 1024..=65535
   set by layer louis
   expected by a/a.canon:9 (port: Int(1024..=65535))
 
 error[E1905]  a/louis.canon:17:8
-  amend path items[2]: key 2 does not exist
+  stock: amend path items[2]: key 2 does not exist
 
 4 errors, 0 warnings in 1 package (…)

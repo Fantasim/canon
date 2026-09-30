@@ -8,6 +8,6 @@ local let empty: String = ""
 local let s: String = "abc".replace(empty, "x")
 -- findings.txt --
 error[E4106]  a/a.canon:6:23
-  replace: the pattern is empty
+  s: replace: the pattern is empty
 
 1 error, 0 warnings in 1 package (…)

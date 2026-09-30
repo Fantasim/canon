@@ -22,9 +22,9 @@ type CheckReport struct {
 	Message string
 }
 
-// Run evaluates check c on self, nil at package level (EVALUATION.md §8, DECISIONS 148).
-func (e *Evaluator) Run(ctx context.Context, c *syntax.CheckDecl, self value.Value) CheckRun {
-	r := e.checkRun(ctx, c, self)
+// Run evaluates check c on self (nil at package level) under path, its canonical path, "" for none (API.md F1).
+func (e *Evaluator) Run(ctx context.Context, c *syntax.CheckDecl, self value.Value, path string) CheckRun {
+	r := e.checkRun(ctx, c, self, path)
 	if r == nil {
 		return CheckRun{Aborted: true}
 	}
@@ -32,13 +32,13 @@ func (e *Evaluator) Run(ctx context.Context, c *syntax.CheckDecl, self value.Val
 }
 
 // checkRun is the run of c on self, nil when c is not run: the budget is spent, or c is broken.
-func (e *Evaluator) checkRun(ctx context.Context, c *syntax.CheckDecl, self value.Value) *run {
+func (e *Evaluator) checkRun(ctx context.Context, c *syntax.CheckDecl, self value.Value, path string) *run {
 	file := e.fileOf(c)
 	if file == nil || e.exhausted || e.brokenCheck(c) {
 		return nil
 	}
 	r := e.newRun(ctx, e.checkCharge(c, file), file)
-	r.fr.self = self
+	r.fr.self, r.instPath = self, path
 	return r
 }
 

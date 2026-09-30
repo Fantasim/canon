@@ -48,6 +48,6 @@ a.config poisoned
 a.written poisoned
 
 error[E3505]  a/a.canon:17:23
-  ref Tier has no enclosing Config to resolve against
+  config.server.w: ref Tier has no enclosing Config to resolve against
 
 1 error, 0 warnings in 1 package (…)

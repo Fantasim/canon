@@ -83,6 +83,6 @@ error[E2102]  a/bad.canon:5:11
   unknown name legendary
 
 error[E1905]  a/first.canon:5:9
-  amend path limits["zz"][0]: key zz does not exist
+  three: amend path limits["zz"][0]: key zz does not exist
 
 2 errors, 0 warnings in 1 package (…)

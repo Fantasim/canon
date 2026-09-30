@@ -26,7 +26,7 @@ local let b: Int = fb(4000)
 local let c: Int = fc(4000)
 -- findings.txt --
 error[E4402]  a/a.canon:16:10
-  call depth exceeds 10000
+  c: call depth exceeds 10000
   in fc (a/a.canon:16)
   in fc (a/a.canon:16)
   in fc (a/a.canon:16)

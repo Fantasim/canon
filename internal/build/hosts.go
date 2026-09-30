@@ -265,8 +265,8 @@ type checks struct {
 	failed *checkRuns
 }
 
-func (c checks) Run(ctx context.Context, d *syntax.CheckDecl, self value.Value) rules.Run {
-	x := c.Evaluator.Run(ctx, d, self)
+func (c checks) Run(ctx context.Context, d *syntax.CheckDecl, self value.Value, path string) rules.Run {
+	x := c.Evaluator.Run(ctx, d, self, path)
 	if x.Failed {
 		c.failed.note(d, self, x.Message)
 	}

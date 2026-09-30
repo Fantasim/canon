@@ -10,6 +10,6 @@ local let b: Int = c
 local let c: Int = a
 -- findings.txt --
 error[E4301]  a/a.canon:8:20
-  cycle between values: a -> b -> c -> a
+  c: cycle between values: a -> b -> c -> a
 
 1 error, 0 warnings in 1 package (…)

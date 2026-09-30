@@ -60,12 +60,12 @@ a.both poisoned
 stable amendment: layer bad table "tiers" field ""
 
 error[E1905]  a/bad.canon:5:9
-  amend path limits["zz"][0]: key zz does not exist
+  other: amend path limits["zz"][0]: key zz does not exist
 
 error[E4301]  a/bad.canon:13:6
-  cycle between values: box -> box
+  box.n: cycle between values: box -> box
 
 error[E4301]  a/bad.canon:17:20
-  cycle between values: both -> both
+  both.limits[zz]: cycle between values: both -> both
 
 3 errors, 0 warnings in 1 package (…)

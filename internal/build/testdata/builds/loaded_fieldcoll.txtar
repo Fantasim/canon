@@ -93,10 +93,10 @@ let grove: Grove = load("grove.json")
 {"leaves": {"a": {"like": "b"}, "b": {"like": "a"}}}
 -- build.txt --
 error[E4301]  a/a.canon:65:10
-  cycle between values: Grove.leaves -> Grove.leaves
+  grove: cycle between values: Grove.leaves -> Grove.leaves
 
 error[E3501]  a/dangling.json:1:51
-  unknown key zz in Tree.kinds
+  dangling: unknown key zz in Tree.kinds
 
 warning[W5001]  a/tree.json:1:61
   tree.nodes.a.p: p red q 1

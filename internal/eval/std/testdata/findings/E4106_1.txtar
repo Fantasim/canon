@@ -8,6 +8,6 @@ local let empty: String = ""
 local let parts: [String] = "a,b".split(empty)
 -- findings.txt --
 error[E4106]  a/a.canon:6:29
-  split: the separator is empty
+  parts: split: the separator is empty
 
 1 error, 0 warnings in 1 package (…)

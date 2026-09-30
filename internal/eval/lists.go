@@ -14,13 +14,16 @@ func evalList(r *run, e syntax.Expr, at *vpath) value.Value {
 	x := e.(*syntax.ListLit)
 	t := r.typeOf(e)
 	elems := make([]value.Value, len(x.Elems))
+	lt, _ := t.Base().(*types.ListType)
 	for i, el := range x.Elems {
-		if elems[i] = r.evalAt(el, at.index(i)); elems[i] == nil {
+		eat := at.element(lt, i)
+		if elems[i] = r.evalAt(el, eat); elems[i] == nil {
 			return nil
 		}
+		eat.learnFrom(elems[i])
 	}
 	p := r.prov(e, value.ProvLiteral)
-	if lt, ok := t.Base().(*types.ListType); ok && lt.KeyedBy != nil {
+	if lt != nil && lt.KeyedBy != nil {
 		return r.keyedList(elems, t, r.hint(at), p, at)
 	}
 	return &value.List{T: t, Elems: elems, P: p}

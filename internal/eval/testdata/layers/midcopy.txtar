@@ -118,6 +118,6 @@ a.r2 = 7
 a.r2Written = 7
 
 error[E3505]  a/a.canon:25:23
-  ref Slot has no enclosing Mid to resolve against
+  cx.mid.inner.a: ref Slot has no enclosing Mid to resolve against
 
 1 error, 0 warnings in 1 package (…)

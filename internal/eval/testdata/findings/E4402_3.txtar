@@ -15,6 +15,6 @@ record Config {
 let config: Config = {}
 -- findings.txt --
 error[E4402]  a/a.canon:7:21
-  call depth exceeds 10000
+  config: call depth exceeds 10000
 
 1 error, 0 warnings in 1 package (…)

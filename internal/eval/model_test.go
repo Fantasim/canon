@@ -159,10 +159,10 @@ record R {
 		}
 	}
 	ctx, one := context.Background(), &value.Int{V: 1, T: types.IntType}
-	if _, ok := b.ev.Where(ctx, rt.Fields[0].Type.(*types.Refined).Where, one); ok {
+	if _, ok := b.ev.Where(ctx, rt.Fields[0].Type.(*types.Refined).Where, one, ""); ok {
 		t.Error("an endless predicate held")
 	}
-	if holds, ok := b.ev.Where(ctx, rt.Fields[1].Type.(*types.Refined).Where, one); !holds || !ok {
+	if holds, ok := b.ev.Where(ctx, rt.Fields[1].Type.(*types.Refined).Where, one, ""); !holds || !ok {
 		t.Errorf("evaluation stopped after the aborted re-run: %t %t", holds, ok)
 	}
 	if out := b.findings(t); strings.Contains(out, "["+codeOf(diag.E4401)+"]") {

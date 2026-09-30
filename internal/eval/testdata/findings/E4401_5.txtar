@@ -26,7 +26,7 @@ record Item {
 let one: Item = { price: 1, stock: 1 }
 -- findings.txt --
 error[E4401]  a/a.canon:8:15
-  evaluation budget of 5 steps exhausted
+  LIMIT: evaluation budget of 5 steps exhausted
   heaviest: LIMIT (3 steps)
 
 error[E3015]  a/a.canon:15:14

@@ -143,10 +143,10 @@ a.copying = Copying{tiers: {low: Tier{weight: 1}}, links: [Link{to: low}], x: 1,
 a.copyingWritten = Copying{tiers: {low: Tier{weight: 1}}, links: [Link{to: low}], x: 1, copy: Copying{tiers: {other: Tier{weight: 1}}, links: [Link{to: low}], x: 0, copy: none}}
 
 error[E3505]  a/a.canon:30:23
-  ref Tier has no enclosing Plan to resolve against
+  plan.w: ref Tier has no enclosing Plan to resolve against
 
 error[E3505]  a/a.canon:40:23
-  ref Tier has no enclosing Holder to resolve against
+  holder.served.w: ref Tier has no enclosing Holder to resolve against
 
 error[E3501]  a/a.canon:62:26
   copying.copy.links[0].to: unknown key low in Copying.tiers
@@ -165,7 +165,7 @@ error[E5001]  a/a.canon:82:27
   expected by a/a.canon:17 (check)
 
 error[E3204]  a/dev.canon:5:9
-  80 is outside 1024..=65535
+  port.port: 80 is outside 1024..=65535
   set by layer dev
   expected by a/a.canon:15 (port: Int(1024..=65535))
 

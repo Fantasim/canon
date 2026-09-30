@@ -75,7 +75,7 @@ func TestVerifierSurface(t *testing.T) {
 	b := runBuild(t, parseFiles(t, []string{"a/a.canon"}, [][]byte{[]byte(src)}), eval.Options{Budget: 10})
 	pred := object(t, b, "a", "x").Type().(*types.Refined).Where
 	for n, want := range map[int64]bool{2: false, 5: true} {
-		holds, ok := b.ev.Where(context.Background(), pred, &value.Int{V: n, T: types.IntType})
+		holds, ok := b.ev.Where(context.Background(), pred, &value.Int{V: n, T: types.IntType}, "")
 		if !ok || holds != want {
 			t.Errorf("where %d: holds %t ok %t", n, holds, ok)
 		}

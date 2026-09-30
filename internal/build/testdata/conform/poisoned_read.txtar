@@ -41,7 +41,7 @@ test "plus" {
 emit cpp { out: "out/", namespace: "acme::gen", mode: data }
 -- build.txt --
 error[E4002]  a/a.canon:8:26
-  index 0 out of range for length 0
+  initial: index 0 out of range for length 0
 
 error[E8019]  a/a.canon:19:13
   emit cpp in data mode cannot generate a read of self that is not a path of fields

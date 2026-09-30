@@ -42,7 +42,7 @@ type memoEvaluator interface {
 	EntryToken(rec *value.Record) (any, bool)
 	Attach(token any, stage eval.Stage, v any, nodes int) bool
 	Attached(token any, stage eval.Stage) any
-	RunTraced(ctx context.Context, c *syntax.CheckDecl, self value.Value) (eval.CheckRun, *eval.CheckTrace)
+	RunTraced(ctx context.Context, c *syntax.CheckDecl, self value.Value, path string) (eval.CheckRun, *eval.CheckTrace)
 	ReplayChecks(ctx context.Context, runs []*eval.CheckTrace) bool
 	Ran(c *syntax.CheckDecl, self value.Value, run Run)
 }

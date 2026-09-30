@@ -93,7 +93,7 @@ func (r *run) addEntry(cur value.Value, t types.Type, segs []*syntax.AmendSegmen
 	if tt.Stable {
 		return r.forbid(m, m.root.Name(), "")
 	}
-	rec, ok := r.store(m.rhs, tt.Elem, site{}, nil).(*value.Record)
+	rec, ok := r.store(m.rhs, tt.Elem, site{}, m.pathAfter(len(m.a.Path))).(*value.Record)
 	if !ok {
 		r.bug(segs[0])
 		return nil

@@ -133,7 +133,7 @@ func TestNoneAndLiteralsPass(t *testing.T) {
 	}
 }
 
-// EVALUATION.md §7.1: a hard error in `where` stops the walk and asks to poison the root.
+// EVALUATION.md §7.1, API.md F1: a hard error in `where` poisons the root, the re-run given its value's path.
 func TestWhereHardError(t *testing.T) {
 	fx := newFixture(t, "teamboard/taxonomy.canon", []byte(statusSource))
 	pos := &types.Refined{Of: types.IntType, Where: &types.Predicate{Text: "1 / it > 0"}}
@@ -143,6 +143,9 @@ func TestWhereHardError(t *testing.T) {
 	fx.ev.hard = true
 	if got := fx.verify("r"); got[0].Valid || !got[0].Poisoned || len(fx.bag.Findings()) != 0 {
 		t.Errorf("result %+v, findings %v", got[0], fx.bag.Findings())
+	}
+	if !slices.Equal(fx.ev.wheres, []string{"r.n"}) {
+		t.Errorf("where run at %q, want r.n", fx.ev.wheres)
 	}
 }
 

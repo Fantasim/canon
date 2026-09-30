@@ -34,7 +34,8 @@ type amending struct {
 	at    []*value.Record
 	dep   *depCtx
 	keys  map[*syntax.AmendSegment]value.Value
-	quiet bool // the path is being located: a missing segment is the replace's E1905
+	trail []*vpath // the path after each segment locate followed (API.md F1)
+	quiet bool     // the path is being located: a missing segment is the replace's E1905
 }
 
 // applyLayers applies a let's amendments, layer order then source order (EVALUATION.md §9.3).
@@ -99,7 +100,7 @@ func (r *run) amend(obj check.Object, blk *syntax.AmendBlock, a *syntax.Amendmen
 func (r *run) rhs(m *amending) value.Value {
 	outer := r.dep
 	r.dep = m.dep
-	v := r.eval(m.a.Value)
+	v := r.evalAt(m.a.Value, m.located())
 	r.dep = outer
 	if v == nil {
 		return nil
@@ -164,7 +165,7 @@ func (r *run) setField(rec *value.Record, segs []*syntax.AmendSegment, m *amendi
 	r.moved(rec, &cp)
 	r.ev.shareParams(rec, &cp) // its re-derived defaults read the same arguments (TYPES.md §11.1)
 	r.ev.unbindFrom(&cp, m.at, r.mv)
-	if !r.derive(&cp, i) {
+	if !r.derive(&cp, i, m.pathAfter(len(m.a.Path)-len(segs))) {
 		return nil
 	}
 	r.ev.bindTo(&cp, rec, r.mv) // EVALUATION.md §3.4: the copy is the instance its refs resolve against
@@ -183,7 +184,7 @@ func (r *run) noField(rec *value.Record, seg *syntax.AmendSegment, m *amending) 
 // when it is the last, else the rest of the path applied to the current value.
 func (r *run) next(cur value.Value, t types.Type, segs []*syntax.AmendSegment, m *amending, s site) value.Value {
 	if len(segs) == 1 {
-		nv := r.store(m.rhs, t, s, nil)
+		nv := r.store(m.rhs, t, s, m.pathAfter(len(m.a.Path)))
 		if field, table, found := stableChange(cur, nv, t); found {
 			return r.forbid(m, tableName(table, m), field)
 		}
@@ -206,12 +207,12 @@ func unwrapOptional(t types.Type) types.Type {
 
 // derive re-evaluates, in declaration order, the fields after field i that came from their
 // defaults (not written, not amended).
-func (r *run) derive(rec *value.Record, i int) bool {
+func (r *run) derive(rec *value.Record, i int, at *vpath) bool {
 	for j, f := range fieldsOf(rec.T) {
 		if j <= i || rec.Set[j] || f.Default == nil || f.Input != nil {
 			continue
 		}
-		v := r.defaultValue(rec, f, nil, rec.P)
+		v := r.defaultValue(rec, f, at.field(f.Name), rec.P)
 		if v == nil {
 			return false
 		}

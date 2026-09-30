@@ -91,7 +91,7 @@ warning[W1002]  a/a.canon:5:3
   field label has no doc comment
 
 error[E4102]  a/a.canon:12:25
-  division by zero
+  broken: division by zero
 
 error[E4102]  a/a.canon:34:11
   division by zero

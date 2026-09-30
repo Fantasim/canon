@@ -77,7 +77,14 @@ func (r *run) node(e syntax.Expr, at *vpath) value.Value {
 			return r.keyValue(e, k)
 		}
 	}
-	return fn(r, e, at)
+	if at == nil {
+		return fn(r, e, at)
+	}
+	outer := r.cur
+	r.cur = at
+	v := fn(r, e, at)
+	r.cur = outer
+	return v
 }
 
 // typeOf is the checker's type of e.

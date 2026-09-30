@@ -38,7 +38,7 @@ func (e *Evaluator) constCycle(obj check.Object) {
 		names = append(names, qualify(pkg, h.obj.Pkg(), h.obj.Name()))
 	}
 	if last.obj.File() != nil {
-		e.report(pkg, diag.E4301.At(last.obj.File().Span(last.use), names))
+		e.report(pkg, diag.E4301.At(last.obj.File().Span(last.use), names).Path(rootPath(last.obj.Name()).String()))
 	}
 }
 

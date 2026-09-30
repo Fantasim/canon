@@ -24,7 +24,7 @@ func (r *Runner) Package(ctx context.Context, pkg *check.Package) error {
 		if obj.Kind() != check.ObjCheck || !ok || r.isBroken(obj) || ctx.Err() != nil {
 			continue
 		}
-		run := r.ev.Run(ctx, c, nil)
+		run := r.ev.Run(ctx, c, nil, "")
 		if run.Aborted {
 			continue
 		}

@@ -25,7 +25,7 @@ local let s: String = "tree {grow(60)}"
 1000
 -- findings.txt --
 error[E4401]  a/a.canon:20:30
-  evaluation budget of 1000 steps exhausted
+  s: evaluation budget of 1000 steps exhausted
   heaviest: s (1000 steps)
 
 1 error, 0 warnings in 1 package (…)

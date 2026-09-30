@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"github.com/fantasim/canonlang/internal/diag"
+	"github.com/fantasim/canonlang/internal/eval/std"
+	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
 )
 
@@ -13,6 +15,7 @@ import (
 type vpath struct {
 	parent *vpath
 	seg    string
+	keyed  *types.Field // a keyed-list element still to be named: its key field (API.md P1, P8)
 }
 
 func rootPath(name string) *vpath {
@@ -48,9 +51,41 @@ func (p *vpath) entry(k value.Key) *vpath {
 	return p.key(k)
 }
 
+// element is the path of a list's element i: its key once known when the list is keyed (API.md
+// P1, P8), so until then, and for a key that never is, the list's own path.
+func (p *vpath) element(lt *types.ListType, i int) *vpath {
+	if p == nil || lt == nil || lt.KeyedBy == nil {
+		return p.index(i)
+	}
+	return &vpath{parent: p, keyed: lt.KeyedBy}
+}
+
+// learn names a pending keyed-list element by the key v, the value of field f, gives it.
+func (p *vpath) learn(f *types.Field, v value.Value) {
+	if p == nil || p.keyed == nil || p.keyed != f || p.seg != "" {
+		return
+	}
+	if k, ok := std.KeyOf(v); ok {
+		p.seg = keyOpen + keyText(k) + keyClose
+	}
+}
+
+// learnFrom is learn for an element built whole: its key field's value.
+func (p *vpath) learnFrom(el value.Value) {
+	if p == nil || p.keyed == nil {
+		return
+	}
+	if rec, ok := el.(*value.Record); ok && p.keyed.Index < len(rec.Fields) && rec.Fields[p.keyed.Index] != nil {
+		p.learn(p.keyed, rec.Fields[p.keyed.Index])
+	}
+}
+
 func (p *vpath) String() string {
 	var segs []string
 	for q := p; q != nil; q = q.parent {
+		if q.keyed != nil && q.seg == "" {
+			segs = segs[:0] // below an element whose key is not known: the list's own path
+		}
 		segs = append(segs, q.seg)
 	}
 	slices.Reverse(segs)

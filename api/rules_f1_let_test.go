@@ -1,5 +1,3 @@
-//go:build knownbug
-
 package canon_test
 
 import (
@@ -11,7 +9,7 @@ import (
 	"github.com/fantasim/canonlang/internal/diag"
 )
 
-// API.md F1: a finding of a `let` initializer has that let as its Path, which Value resolves; KNOWN BUG, Path is "".
+// API.md F1: a finding raised evaluating a `let` initializer has that let as its Path, which Value resolves.
 func TestFindingPathOfLetInitializer(t *testing.T) {
 	findings, p := checkProject(t)
 	code := diag.E4102.Def().Code

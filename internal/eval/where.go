@@ -8,15 +8,16 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// Where re-runs a where predicate for stage B at no step cost, as one implicit frame (DECISIONS 148, 186, 210).
-func (e *Evaluator) Where(ctx context.Context, p *types.Predicate, it value.Value) (bool, bool) {
+// Where re-runs a where predicate for stage B at no step cost, as one implicit frame (DECISIONS 148, 186, 210);
+// path is the canonical path of it, the Path of a hard error the predicate raises (API.md F1).
+func (e *Evaluator) Where(ctx context.Context, p *types.Predicate, it value.Value, path string) (bool, bool) {
 	if p == nil || p.Expr == nil || e.info == nil {
 		return false, false
 	}
 	file := e.fileOf(p.Expr)
 	r := e.newRun(ctx, charge{pkg: e.index.pkg[file]}, file)
 	r.free = true
-	r.fr.it = it
+	r.fr.it, r.instPath = it, path
 	if !r.nest(r.span(p.Expr)) {
 		return false, false
 	}

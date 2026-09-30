@@ -17,9 +17,10 @@ import (
 type Evaluator interface {
 	// Invalid reports a value a conversion or verification marked invalid (EVALUATION.md §7.3).
 	Invalid(v value.Value) bool
-	// Run evaluates check c on self, an instance, or nil at package level. A check of a broken
-	// record or case is aborted without a finding.
-	Run(ctx context.Context, c *syntax.CheckDecl, self value.Value) Run
+	// Run evaluates check c on self, an instance, or nil at package level; path is the instance's
+	// canonical path, "" at package level (API.md F1). A check of a broken record or case is
+	// aborted without a finding.
+	Run(ctx context.Context, c *syntax.CheckDecl, self value.Value, path string) Run
 }
 
 // Run is the outcome of one check run.

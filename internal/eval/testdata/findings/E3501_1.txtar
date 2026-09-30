@@ -27,6 +27,6 @@ error[E3501]  a/a.canon:16:17
   expected by a/a.canon:16 (p: ref rs)
 
 error[E3501]  a/a.canon:19:14
-  unknown key zz in rs
+  v: unknown key zz in rs
 
 2 errors, 0 warnings in 1 package (…)

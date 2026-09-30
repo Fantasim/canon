@@ -31,6 +31,6 @@ error[E3505]  a/a.canon:24:32
   orphan.to: ref Node has no enclosing Tree to resolve against
 
 error[E3505]  a/a.canon:26:23
-  ref Node has no enclosing Tree to resolve against
+  n: ref Node has no enclosing Tree to resolve against
 
 2 errors, 0 warnings in 1 package (…)

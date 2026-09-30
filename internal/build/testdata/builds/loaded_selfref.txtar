@@ -175,10 +175,10 @@ let cycs: table Cyc = load("cycs.json")
 {"a": {"like": "b", "l": 1}, "b": {"like": "a", "l": 2}}
 -- build.txt --
 error[E4301]  a/cycs.json:1:44
-  cycle between values: cycs -> cycs
+  cycs: cycle between values: cycs -> cycs
 
 error[E3501]  a/dangling.json:1:28
-  unknown key zz in dangling
+  dangling: unknown key zz in dangling
 
 warning[W5001]  a/keyed.json:1:40
   keyed[1].q: q blue

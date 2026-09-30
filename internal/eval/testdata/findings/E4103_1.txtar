@@ -8,6 +8,6 @@ local let huge: Float = 1e300
 local let y: Int = Int(huge)
 -- findings.txt --
 error[E4103]  a/a.canon:6:20
-  1e+300 does not fit an Int
+  y: 1e+300 does not fit an Int
 
 1 error, 0 warnings in 1 package (…)

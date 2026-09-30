@@ -189,7 +189,7 @@ func (r *run) within(site source.Span) bool {
 		r.ev.cut(DepthLimit)
 	}
 	stack, _ := r.frames()
-	r.abort(diag.E4402.At(site).Stack(stack).MoreFrames(r.ev.depth - r.ev.implicit - len(stack)))
+	r.abortAt(diag.E4402.At(site).Stack(stack).MoreFrames(r.ev.depth-r.ev.implicit-len(stack)), r.wholePath())
 	return false
 }
 

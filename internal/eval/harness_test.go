@@ -152,8 +152,8 @@ type checks struct {
 	*eval.Evaluator
 }
 
-func (c checks) Run(ctx context.Context, d *syntax.CheckDecl, self value.Value) rules.Run {
-	x := c.Evaluator.Run(ctx, d, self)
+func (c checks) Run(ctx context.Context, d *syntax.CheckDecl, self value.Value, path string) rules.Run {
+	x := c.Evaluator.Run(ctx, d, self, path)
 	out := rules.Run{Aborted: x.Aborted, Failed: x.Failed, Message: x.Message}
 	for _, r := range x.Reports {
 		out.Reports = append(out.Reports, rules.Report{Warn: r.Warn, At: r.At, Message: r.Message})

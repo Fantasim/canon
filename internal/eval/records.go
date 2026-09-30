@@ -129,6 +129,7 @@ func (r *run) fieldItem(b *building, i int, it *syntax.FieldItem) bool {
 		return false
 	}
 	rec.Fields[i], rec.Set[i], b.given[i] = r.ev.inField(v, rec, f), true, true
+	b.at.learn(f, v)
 	return true
 }
 
@@ -194,6 +195,7 @@ func (r *run) fill(rec *value.Record, i int, at *vpath) bool {
 		return false
 	}
 	rec.Fields[i] = r.ev.inField(v, rec, f)
+	at.learn(f, v)
 	return true
 }
 
@@ -213,7 +215,7 @@ func (r *run) defaultValue(rec *value.Record, f *types.Field, at *vpath, via *va
 	if !r.nest(r.span(f.Default)) {
 		return nil
 	}
-	v := r.eval(f.Default)
+	v := r.evalAt(f.Default, at)
 	r.unnest()
 	if v != nil {
 		p := &value.Prov{Kind: value.ProvDefault, Span: r.span(f.Default), Via: via}

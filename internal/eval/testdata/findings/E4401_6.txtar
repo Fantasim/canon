@@ -29,7 +29,7 @@ local fn loop(n: Int) -> Int {
 local let small: Int = loop(30)
 -- findings.txt --
 error[E4401]  a/a.canon:18:17
-  evaluation budget of 100 steps exhausted
+  small: evaluation budget of 100 steps exhausted
   heaviest: LIMIT (54 steps)
   in loop (a/a.canon:22)
 

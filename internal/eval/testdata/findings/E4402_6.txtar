@@ -21,7 +21,7 @@ local variant Loop {
 local let y: Int = Loop.step { n: 1 }.again()
 -- findings.txt --
 error[E4402]  a/a.canon:8:35
-  call depth exceeds 10000
+  y: call depth exceeds 10000
   in Loop.step.back (a/a.canon:13)
   in Loop.again (a/a.canon:8)
   in Loop.step.back (a/a.canon:13)

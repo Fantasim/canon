@@ -60,6 +60,6 @@ a.nodes = {a: Node{k: num, like: b, p: red}, b: Node{k: col, like: a, p: 3}}
 a.cyclic poisoned
 
 error[E4301]  a/a.canon:35:14
-  cycle between values: cyclic -> cyclic
+  cyclic.x.l.lim: cycle between values: cyclic -> cyclic
 
 1 error, 0 warnings in 1 package (…)

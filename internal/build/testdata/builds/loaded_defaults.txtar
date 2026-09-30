@@ -129,6 +129,6 @@ warning[W5001]  a/a.canon:22:3
   expected by a/a.canon:28 (check)
 
 error[E4002]  a/a.canon:36:15
-  index 5 out of range for length 1
+  broken: index 5 out of range for length 1
 
 1 error, 15 warnings in 1 package (…)

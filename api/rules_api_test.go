@@ -104,6 +104,13 @@ func TestFindingPathResolves(t *testing.T) {
 	seen := 0
 	for _, f := range findings {
 		if f.Path == "" {
+			if diag.Code(f.Code) != diag.W1002.Def().Code { // a missing doc comment is about no value
+				t.Errorf("%s at line %d has no Path", f.Code, f.Line)
+			}
+			continue
+		}
+		v, err := p.Value(context.Background(), f.Package+":"+f.Path)
+		if errors.Is(err, canon.ErrNoValue) { // a finding inside a value that failed: it still resolves
 			continue
 		}
 		text, ok := want[f.Path]
@@ -112,7 +119,6 @@ func TestFindingPathResolves(t *testing.T) {
 			continue
 		}
 		seen++
-		v, err := p.Value(context.Background(), f.Package+":"+f.Path)
 		if err != nil || v.String() != text {
 			t.Errorf("Value(%s:%s) = %v, %v; want %s", f.Package, f.Path, v, err, text)
 		}

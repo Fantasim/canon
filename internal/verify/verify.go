@@ -20,9 +20,9 @@ type Evaluator interface {
 	MarkInvalid(v value.Value)
 	// Invalid reports a value marked invalid, by a conversion or by a soft finding.
 	Invalid(v value.Value) bool
-	// Where re-runs a `where` predicate on it, in its package's scope, at no step cost. ok
-	// false: a hard error, which it reported.
-	Where(ctx context.Context, p *types.Predicate, it value.Value) (holds, ok bool)
+	// Where re-runs a `where` predicate on it, at path, in its package's scope, at no step cost. ok
+	// false: a hard error, which it reported with that path (API.md F1).
+	Where(ctx context.Context, p *types.Predicate, it value.Value, path string) (holds, ok bool)
 }
 
 // dependents is what an Evaluator also serves to verify dependent values, each root's steps charged to it (TYPES.md §11.6).
