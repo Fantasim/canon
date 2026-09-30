@@ -379,7 +379,7 @@ func fuzzProjects(t testing.TB) []*fuzzProject {
 	return out
 }
 
-// API.md E1, M1-M6 (M4 acceptance item 3): up to three random operations of every kind on every
+// API.md E1, M6 (M4 acceptance item 3): up to three random operations of every kind on every
 // example, and with -edit.bench on the benchmark project, are refused as Apply documents or
 // write files that are fixed points, N12-clean and minimal.
 func FuzzMinimalWriteAll(f *testing.F) {

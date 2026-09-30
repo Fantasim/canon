@@ -106,7 +106,7 @@ type observation struct {
 	labels []string
 }
 
-// API.md S1, S7-S10, R4, W13, W15 (M4 acceptance item 6): no read begun after an Edit returned
+// API.md S1, S10, R4, W13, W15 (M4 acceptance item 6): no read begun after an Edit returned
 // sees an older state, a reader never goes back, a held Value never changes, and the watcher
 // reports each edit once, as an edit, in revision order, with no gap.
 func TestStress(t *testing.T) {
