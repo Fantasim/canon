@@ -23,6 +23,8 @@ type Loader struct {
 	Reused func(abs string) // when set, told each file a call takes from the Loader's cache, not FS
 	// Add, when set, puts a file read into Set in place of Set.Add: a cache keeping unchanged files.
 	Add func(display, abs string, data []byte) (*source.File, error)
+	// Globbed, when set, is told each load.dir pattern and its matches' displays, in match order (WIRE.md §10).
+	Globbed func(pattern string, matched []string)
 
 	mu      sync.Mutex
 	headers map[string]*headerFile // by resolved absolute path

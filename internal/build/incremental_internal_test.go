@@ -108,6 +108,7 @@ func dumpAnalysis(t *testing.T, a *Analysis) string {
 		}
 	}
 	fmt.Fprintf(&sb, "revision %s\n", res.Revision)
+	sb.Write(a.Manifest())                             // WIRE.md §10: a warm run's inputs are a cold run's
 	fmt.Fprintf(&sb, "charged %v\n", a.r.ev.Charged()) // EVALUATION.md §12.2: every root's steps, in first-charged order
 	locks, err := a.LockUpdates()
 	if err != nil {

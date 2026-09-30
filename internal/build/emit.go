@@ -49,9 +49,10 @@ type Lock struct {
 // BuildResult is a build's findings, outputs by Path, locks, and Check mode's verdict (API.md §13.1).
 type BuildResult struct {
 	Result
-	Outputs []Output
-	Locks   []Lock
-	Stale   bool
+	Outputs  []Output
+	Locks    []Lock
+	Stale    bool
+	Manifest []byte // the build manifest of this build (WIRE.md §10)
 }
 
 // Build runs every phase, then writes the outputs and locks: all or nothing on a write error; a
@@ -67,6 +68,16 @@ func (p *Project) Build(ctx context.Context, opt BuildOptions) (*BuildResult, er
 	if err := r.analyze(ctx); err != nil {
 		return nil, err
 	}
+	out, err := r.build(ctx, opt)
+	if err != nil {
+		return nil, err
+	}
+	out.Manifest = r.manifest(r.inputs(), commandBuild, opt.Targets)
+	return out, nil
+}
+
+// build is Build's emit, placement and write, once the run is analyzed (CLI.md §3.4).
+func (r *run) build(ctx context.Context, opt BuildOptions) (*BuildResult, error) {
 	out := &BuildResult{Result: *r.result()}
 	failed := out.Summary.Errors
 	outputs, err := r.emit(ctx, opt, failed > 0)
@@ -80,7 +91,7 @@ func (p *Project) Build(ctx context.Context, opt BuildOptions) (*BuildResult, er
 		return out, nil
 	}
 	var locks []*lockOut
-	if failed == 0 && len(p.opt.Layers) == 0 {
+	if failed == 0 && len(r.p.opt.Layers) == 0 {
 		if locks, err = r.updateLocks(); err != nil {
 			return nil, err
 		}

@@ -18,6 +18,7 @@ type TestResult struct {
 	Static   Result     // phases 1-2's error findings of the loaded packages and project.canon (ADR-0004)
 	Tests    []TestCase
 	Revision string
+	Manifest []byte // the build manifest of this test run (WIRE.md §10)
 }
 
 // TestCase is one test block's outcome (API.md B3).
@@ -66,6 +67,7 @@ func (p *Project) Test(ctx context.Context, selectors []string, match *regexp.Re
 	if err := r.host.failure(r.s.set, r.prog); err != nil {
 		return nil, err
 	}
+	res.Manifest = r.manifest(r.inputs(), commandTest, nil)
 	return res, nil
 }
 

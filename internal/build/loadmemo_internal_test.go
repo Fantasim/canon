@@ -227,7 +227,7 @@ func TestCacheCheckInDeadGeneration(t *testing.T) {
 		t.Fatalf("epoch %d checked in the dead generation: want its store forgotten", r.epoch)
 	}
 	_, cold := z.pair(t)
-	same(t, "checked in the dead generation", &Analysis{r: r, res: r.result(), settled: r.settledRoots()}, cold)
+	same(t, "checked in the dead generation", r.analysis(), cold)
 }
 
 // IMPLEMENTATION-PLAN §7.6 NFR-02: lineageCap lineages, the least recently checked dropped, no stale Recheck kept.

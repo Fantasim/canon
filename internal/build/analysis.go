@@ -3,6 +3,7 @@ package build
 import (
 	"context"
 	"fmt"
+	"slices"
 	"sync"
 
 	"github.com/fantasim/canonlang/api/vm"
@@ -22,6 +23,8 @@ type Analysis struct {
 	settled map[eval.Root]value.Value // the selected packages' values settled when Analyze returned
 	viewErr error                     // what ViewEvaluator's evaluations failed with, but a template's own failure
 	causes  *eval.Evaluator           // a memoized run's causes, logged on first use (cause.go)
+	inputs  inputs                    // what Analyze's run read, which Manifest lists
+	listed  []byte                    // the manifest, made on first use
 }
 
 // Analyze runs phases 1 to 7, writes nothing, and freezes the result (CLI.md §3.3).
@@ -34,7 +37,12 @@ func (p *Project) Analyze(ctx context.Context, selectors []string) (*Analysis, e
 	if err := r.analyze(ctx); err != nil {
 		return nil, err
 	}
-	return &Analysis{r: r, res: r.result(), settled: r.settledRoots()}, nil
+	return r.analysis(), nil
+}
+
+// analysis is the analyzed run frozen: its findings, settled values and manifest.
+func (r *run) analysis() *Analysis {
+	return &Analysis{r: r, res: r.result(), settled: r.settledRoots(), inputs: r.inputs()}
 }
 
 // settledRoots is every const and let of the selected packages that phases 3-7 settled.
@@ -52,6 +60,16 @@ func (r *run) settledRoots() map[eval.Root]value.Value {
 		}
 	}
 	return out
+}
+
+// Manifest is the build manifest of what Analyze read, made on first call, its globs matched then (WIRE.md §10).
+func (a *Analysis) Manifest() []byte {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	if a.listed == nil {
+		a.listed = a.r.manifest(a.inputs, commandCheck, nil)
+	}
+	return slices.Clone(a.listed)
 }
 
 // Result is the findings this Analyze reported (API.md R2).

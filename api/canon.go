@@ -89,7 +89,7 @@ func Open(root string, opts Options) (p *Project, err error) {
 	if opts.FS != nil {
 		fsys = opts.FS
 	}
-	b, err := build.Open(fsys, dir, build.Options{Roots: opts.Roots, Layers: opts.Layers, MaxFindings: opts.MaxFindings})
+	b, err := build.Open(fsys, dir, build.Options{Roots: opts.Roots, Layers: opts.Layers, Lang: opts.Lang, MaxFindings: opts.MaxFindings})
 	if err != nil {
 		return nil, apiError(err)
 	}

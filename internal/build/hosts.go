@@ -76,7 +76,7 @@ func (h *evalHost) LoadReplay(ctx context.Context, e *syntax.LoadExpr, in eval.L
 	if !ok {
 		return nil, false
 	}
-	defer h.track(site.pkg)()
+	defer h.trackLoad(site)()
 	if ctx.Err() != nil || !h.loader.Replay(li) {
 		return nil, false
 	}
@@ -101,7 +101,7 @@ func (h *evalHost) loadInto(ctx context.Context, e *syntax.LoadExpr, expected ty
 		h.loads = append(h.loads, e)
 		return nil, false
 	}
-	defer h.track(site.pkg)()
+	defer h.trackLoad(site)()
 	req := load.Request{
 		Pkg: site.pkg, From: path.Dir(site.file.Src.Path), Span: site.span, Bag: to.bags[site.pkg], Scratch: to.scratch,
 	}.Through(to.ev)
@@ -296,6 +296,7 @@ type assets struct {
 	layout *project.Layout
 	host   *evalHost
 	dirs   map[string]dirListing
+	shown  map[string][]listRef // each directory listed, by the ways asset roots reached it (listAt)
 }
 
 // dirListing is one directory's own file and subdirectory names, listed once.
@@ -311,14 +312,14 @@ func (a *assets) Exists(root, from, name string) (string, bool) {
 		return root, false
 	}
 	segs := strings.Split(name, pathSep)
-	abs := dir.Abs
+	at := dir
 	for _, seg := range segs[:len(segs)-1] {
-		if !a.list(abs).subs[seg] {
+		if !a.listAt(at, root, from).subs[seg] {
 			return dir.Display, false
 		}
-		abs = path.Join(abs, seg)
+		at = project.Path{Display: path.Join(at.Display, seg), Abs: path.Join(at.Abs, seg)}
 	}
-	return dir.Display, a.list(abs).files[segs[len(segs)-1]]
+	return dir.Display, a.listAt(at, root, from).files[segs[len(segs)-1]]
 }
 
 // list is the file and subdirectory names of dir, listed once; neither when it does not exist.

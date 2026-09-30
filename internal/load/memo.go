@@ -21,6 +21,13 @@ type Inputs struct {
 	places []string
 	calls  []fsCall
 	found  []*diag.Builder
+	globs  []globMatch
+}
+
+// globMatch is a load.dir pattern's display and its matches' displays, in match order.
+type globMatch struct {
+	pattern string
+	matched []string
 }
 
 // fsCall is one file-system call of a load: its kind, its name, for a source the display it
@@ -90,7 +97,32 @@ func (l *Loader) Replay(in *Inputs) bool {
 			return false
 		}
 	}
+	for _, g := range in.globs {
+		l.tellGlob(g)
+	}
 	return true
+}
+
+// globbed tells Globbed a load.dir's matches, and keeps them when the load is recorded.
+func (l *Loader) globbed(pattern string, matches []matchFile) {
+	if l.Globbed == nil && l.rec == nil {
+		return
+	}
+	g := globMatch{pattern: pattern, matched: make([]string, len(matches))}
+	for i, m := range matches {
+		g.matched[i] = m.Display
+	}
+	if l.rec != nil {
+		l.rec.globs = append(l.rec.globs, g)
+	}
+	l.tellGlob(g)
+}
+
+// tellGlob is Globbed of g, when set.
+func (l *Loader) tellGlob(g globMatch) {
+	if l.Globbed != nil {
+		l.Globbed(g.pattern, slices.Clone(g.matched))
+	}
 }
 
 // Report reports into bag the findings the load reported itself.

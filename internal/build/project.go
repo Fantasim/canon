@@ -20,7 +20,8 @@ import (
 type Options struct {
 	Roots       map[string]string // --root overrides: name to directory, relative to the project's
 	Layers      []string
-	MaxFindings int // findings kept per package; 0 keeps diag.DefaultMaxFindings (API.md F7)
+	Lang        string // --lang, the language of translated texts; "" is the source language (API.md §2.1)
+	MaxFindings int    // findings kept per package; 0 keeps diag.DefaultMaxFindings (API.md F7)
 	Checker     Checker
 }
 

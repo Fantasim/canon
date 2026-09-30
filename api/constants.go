@@ -209,7 +209,6 @@ var severities = map[Severity]diag.Severity{
 
 // The versions Version reports (API.md §14, IMPLEMENTATION-PLAN.md §9).
 const (
-	compilerVersion   = "0.1.0"
 	languageVersion   = "0.1"
 	fingerprintFormat = "canon-fp v1"
 	lockFormat        = "canon.lock v1"

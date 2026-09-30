@@ -1,0 +1,148 @@
+WIRE.md §10 (LOD-11), §2.3: the manifests of check, build --target json and test, the
+layer dev active: every source parsed and lock read, the files the loads read under their written
+display (the root res lies inside the project), the load.dir glob, the asset directories listed,
+one line per declared root (out serves only an emit); res/unread.json, res/icons/unused/ and art/
+are never read and are not in it.
+-- layers --
+dev
+-- project.canon --
+project acme {
+  canon: "0.1"
+
+  roots {
+    out: "out"
+    res: "res"
+  }
+}
+-- items/items.canon --
+/// Items.
+package items
+
+/// An item.
+record Item {
+  /// Name.
+  name: String
+  /// Icon.
+  icon: asset("@res/icons", ext: [png])
+}
+
+/// Items, one per file.
+let items: [Item] = load.dir("@res/items/*.json")
+
+/// A configuration.
+record Conf {
+  /// Limit.
+  limit: Int = 3
+}
+
+/// The configuration.
+let conf: Conf = load("data/conf.json")
+
+test "two items" {
+  expect items.len() == 2
+}
+-- items/dev.canon --
+package items
+layer dev
+
+amend conf {
+  limit: 4
+}
+-- items/data/conf.json --
+{"limit": 2}
+-- other/other.canon --
+/// Other.
+package other
+
+/// N.
+let n: Int = 1
+
+emit json { out: "@out/" }
+-- other/canon.lock --
+# canon.lock v1
+-- res/items/a.json --
+{"name": "a", "icon": "a.png"}
+-- res/items/b.json --
+{"name": "b", "icon": "sub/b.png"}
+-- res/items/notes.txt --
+not matched
+-- res/unread.json --
+{}
+-- res/icons/a.png --
+-- res/icons/sub/b.png --
+-- res/icons/unused/c.png --
+-- art/d.png --
+-- manifest.txt --
+canon-manifest v1
+compiler 0.1.0
+language 0.1
+layer dev
+lang en
+command check
+target cpp
+target go
+target json
+target ts
+target view
+package items
+package other
+root out out
+root res res
+file fbf03794b975e9311fab8b9f6020e9ebdd966468e63fc9cf153bec2938847619 @res/items/a.json
+file 155cb7942207e0d9b354ef5620c9e0107beeb6a49dcdca5923375e934e5032c5 @res/items/b.json
+file 6e1c07c1fb68238b6887453bd3359c7edae148bb8edc002977da549a5b9a2267 items/data/conf.json
+file ded57ee8ae8722efdc24ad4cb4fcf92300c7923fda5d79d66ecdc08b32129eb3 items/dev.canon
+file 2289b9841f21a30671f152623c07ebef032e188ea5225cbcb8609d85555b864c items/items.canon
+file 235c92fd9d5c0b3aef70be7e1921daeebf2b32dd4e390b731654042d7f931778 other/canon.lock
+file 68ecda978dcc962e2e3906c2a4c23ca5a00b78e5f591eec613e1c4aaf2367587 other/other.canon
+file 0b219150228e92597d9a832d1e35c05bbe6e964551df2a161f4ef98189fcd810 project.canon
+glob 094d242ab837acaf1420f995c6bc0e4374e139c72721c9ebb235b8fe84e3effc @res/items/*.json
+list 29bfd02c81a5f76ba5efb30abf6df3d96d9d1e9b81337f0555dd81d57c265518 @res/icons
+list c0815d3dae18e75ef26bd952dd2c6cc1ff19962fd51adde4c53c8882a448fff0 @res/icons/sub
+canon-manifest v1
+compiler 0.1.0
+language 0.1
+layer dev
+lang en
+command build
+target json
+package items
+package other
+root out out
+root res res
+file fbf03794b975e9311fab8b9f6020e9ebdd966468e63fc9cf153bec2938847619 @res/items/a.json
+file 155cb7942207e0d9b354ef5620c9e0107beeb6a49dcdca5923375e934e5032c5 @res/items/b.json
+file 6e1c07c1fb68238b6887453bd3359c7edae148bb8edc002977da549a5b9a2267 items/data/conf.json
+file ded57ee8ae8722efdc24ad4cb4fcf92300c7923fda5d79d66ecdc08b32129eb3 items/dev.canon
+file 2289b9841f21a30671f152623c07ebef032e188ea5225cbcb8609d85555b864c items/items.canon
+file 235c92fd9d5c0b3aef70be7e1921daeebf2b32dd4e390b731654042d7f931778 other/canon.lock
+file 68ecda978dcc962e2e3906c2a4c23ca5a00b78e5f591eec613e1c4aaf2367587 other/other.canon
+file 0b219150228e92597d9a832d1e35c05bbe6e964551df2a161f4ef98189fcd810 project.canon
+glob 094d242ab837acaf1420f995c6bc0e4374e139c72721c9ebb235b8fe84e3effc @res/items/*.json
+list 29bfd02c81a5f76ba5efb30abf6df3d96d9d1e9b81337f0555dd81d57c265518 @res/icons
+list c0815d3dae18e75ef26bd952dd2c6cc1ff19962fd51adde4c53c8882a448fff0 @res/icons/sub
+canon-manifest v1
+compiler 0.1.0
+language 0.1
+layer dev
+lang en
+command test
+target cpp
+target go
+target json
+target ts
+target view
+package items
+package other
+root out out
+root res res
+file fbf03794b975e9311fab8b9f6020e9ebdd966468e63fc9cf153bec2938847619 @res/items/a.json
+file 155cb7942207e0d9b354ef5620c9e0107beeb6a49dcdca5923375e934e5032c5 @res/items/b.json
+file ded57ee8ae8722efdc24ad4cb4fcf92300c7923fda5d79d66ecdc08b32129eb3 items/dev.canon
+file 2289b9841f21a30671f152623c07ebef032e188ea5225cbcb8609d85555b864c items/items.canon
+file 235c92fd9d5c0b3aef70be7e1921daeebf2b32dd4e390b731654042d7f931778 other/canon.lock
+file 68ecda978dcc962e2e3906c2a4c23ca5a00b78e5f591eec613e1c4aaf2367587 other/other.canon
+file 0b219150228e92597d9a832d1e35c05bbe6e964551df2a161f4ef98189fcd810 project.canon
+glob 094d242ab837acaf1420f995c6bc0e4374e139c72721c9ebb235b8fe84e3effc @res/items/*.json
+list 29bfd02c81a5f76ba5efb30abf6df3d96d9d1e9b81337f0555dd81d57c265518 @res/icons
+list c0815d3dae18e75ef26bd952dd2c6cc1ff19962fd51adde4c53c8882a448fff0 @res/icons/sub

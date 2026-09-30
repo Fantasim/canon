@@ -14,6 +14,7 @@ func (h *evalHost) adder(l *readLog) func(display, abs string, data []byte) (*so
 		g = h.sites.gen
 	}
 	return func(display, abs string, data []byte) (*source.File, error) {
+		l.keep(display, abs, data)
 		src, err := g.loadFile(set, display, abs, data)
 		if err != nil {
 			return nil, err

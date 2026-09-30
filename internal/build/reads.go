@@ -215,10 +215,13 @@ type readLog struct {
 	mu      sync.Mutex
 	pkg     string
 	by      map[string]map[touch]bool
-	pending []string          // files read since they were last told to the file system (API.md S3)
-	read    map[string]bool   // every file read
-	known   map[string]string // each file this run's loads added to the set, by its least display (added)
-	dir     string            // the project directory, which displays a file the file set lacks
+	pending []string              // files read since they were last told to the file system (API.md S3)
+	read    map[string]bool       // every file read
+	known   map[string]string     // each file this run's loads added to the set, by its least display (added)
+	dir     string                // the project directory, which displays a file the file set lacks
+	kept    map[string]loadedFile // each file the loads handed the file set, by name (keep)
+	site    siteKey               // the load reading now, the zero key for none
+	globs   []globMatch           // each load.dir's matches as used, in order (globbed)
 }
 
 func (l *readLog) ReadFile(name string) ([]byte, error) {
@@ -321,13 +324,17 @@ func (h *evalHost) track(pkg string) func() {
 	}
 	l := h.log()
 	if l == nil {
-		l = &readLog{fs: h.loader.FS, by: map[string]map[touch]bool{}, read: map[string]bool{}, known: map[string]string{}}
+		l = &readLog{
+			fs: h.loader.FS, by: map[string]map[touch]bool{}, read: map[string]bool{}, known: map[string]string{},
+			kept: map[string]loadedFile{},
+		}
 		if h.loader.Layout != nil {
 			l.dir = h.loader.Layout.Dir
 		}
 		h.loader.FS = l
 		h.loader.Reused = func(abs string) { l.note(touch{abs: abs}, false) } // a cached header counts too (S5)
 		h.loader.Add = h.adder(l)
+		h.loader.Globbed = l.globbed
 		if h.assets != nil {
 			h.assets.fs = l
 		}

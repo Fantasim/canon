@@ -32,6 +32,30 @@ const (
 // lineageCap is the Recheck lineages a cache generation keeps, one per set of packages checked.
 const lineageCap = 3
 
+// CompilerVersion is the compiler's version, the manifest's compiler line (WIRE.md §10, API.md §14).
+const CompilerVersion = "0.1.0"
+
+// The build manifest's first line, line keywords, field separator, commands and hash mark (WIRE.md §10).
+const (
+	manifestHeader = "canon-manifest v1"
+	lineSep        = " "
+	kwCompiler     = "compiler"
+	kwLanguage     = "language"
+	kwLayer        = "layer"
+	kwLang         = "lang"
+	kwCommand      = "command"
+	kwTarget       = "target"
+	kwPackage      = "package"
+	kwRoot         = "root"
+	kwFile         = "file"
+	kwGlob         = "glob"
+	kwList         = "list"
+	commandCheck   = "check"
+	commandBuild   = "build"
+	commandTest    = "test"
+	hashPrefix     = "sha256:"
+)
+
 // Paths: a root's mark, separators, the lock's name (LOCK.md §2.1), text line ends.
 const (
 	rootMark       = "@"

@@ -79,14 +79,15 @@ func (l *Loader) match(pattern string, req Request) ([]matchFile, bool) {
 		diag.E7005.At(req.Span, pattern, chk.kind).Report(req.Bag)
 		return nil, false
 	}
-	if chk.dirOnly {
-		return nil, true
+	var matches []matchFile
+	if !chk.dirOnly {
+		var err error
+		if matches, err = l.globMatches(base, rest, req); err != nil {
+			diag.E7004.At(req.Span, base.Display, causeOf(err)).Report(req.Bag)
+			return nil, false
+		}
 	}
-	matches, err := l.globMatches(base, rest, req)
-	if err != nil {
-		diag.E7004.At(req.Span, base.Display, causeOf(err)).Report(req.Bag)
-		return nil, false
-	}
+	l.globbed(path.Join(base.Display, rest), matches)
 	return matches, true
 }
 

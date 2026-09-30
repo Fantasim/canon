@@ -192,3 +192,24 @@ func render(t *testing.T, set *source.FileSet, bag *diag.Bag) string {
 	}
 	return buf.String()
 }
+
+// WIRE.md §10: Globbed hears each load.dir's pattern and matches in match order, from the load and from its replay alike.
+func TestGlobbedHeardOnReplay(t *testing.T) {
+	l, _, in := recordedOver(t, dirExpr("data/*.json"), rowType())
+	var heard []string
+	l.Globbed = func(pattern string, matched []string) {
+		heard = append(heard, pattern+"="+strings.Join(matched, ","))
+	}
+	if !l.Replay(in) {
+		t.Fatal("an unchanged replay answered otherwise")
+	}
+	cold, req := loaderFor(t, memoTree)
+	cold.Globbed = l.Globbed
+	if _, ok, err := cold.Load(context.Background(), req, dirExpr("data/*.json"), rowType()); err != nil || !ok {
+		t.Fatalf("ok=%v err=%v", ok, err)
+	}
+	want := "data/*.json=data/a.json,data/b.json"
+	if !slices.Equal(heard, []string{want, want}) {
+		t.Errorf("heard %q, want %q from the replay then the load", heard, want)
+	}
+}
