@@ -11,16 +11,20 @@ import (
 // replays, and a slot on that evaluation for what verifying the record found.
 type entryMemo interface {
 	EntryToken(rec *value.Record) (any, bool)
+	TokenOwner(token any) (eval.Root, bool)
 	Attach(token any, stage eval.Stage, v any, nodes int) bool
 	Attached(token any, stage eval.Stage) any
 }
 
 // entryKey is what an entry's verification depends on besides its evaluation and its reads: its
-// top-level value, the type it is verified against and whether it is retired.
+// top-level value, the type it is verified against, whether it is retired, and the last segment
+// of its path, which a list element's findings carry (API.md P8).
 type entryKey struct {
 	root    eval.Root
 	elem    types.Type
 	retired bool
+	seg     string
+	form    segForm
 }
 
 // entryKept is an entry's verification: its key, what it read, in order, what it reported, and

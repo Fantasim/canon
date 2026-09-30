@@ -53,7 +53,13 @@ func (e *Evaluator) Attached(token any, stage Stage) any {
 	return en.stages[stage].v
 }
 
-// holds reports g a live store keeping en; m.mu is held.
+// holds reports g a live store keeping en, an entry's or a load.dir element's; m.mu is held.
 func (m *Memo) holds(g *memoGen, en *memoEntry) bool {
-	return slices.Contains(m.gens, g) && g.entries[en.key] == en
+	if !slices.Contains(m.gens, g) {
+		return false
+	}
+	if en.part != nil {
+		return g.holdsPart(en)
+	}
+	return g.entries[en.key] == en
 }

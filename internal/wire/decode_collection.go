@@ -22,6 +22,7 @@ type File struct {
 // Dir reads load.dir's files as a list or keyed list in file order, or a table (WIRE.md §6.5).
 func (d *Decoder) Dir(ctx context.Context, files []File, t types.Type) (value.Value, bool, error) {
 	r := d.start(ctx, t)
+	r.watch(d)
 	var v value.Value
 	switch x := t.Base().(type) {
 	case *types.ListType:
@@ -92,7 +93,7 @@ func (r *run) elements(sels []Selection, t types.Type, lt *types.ListType, sc ws
 	ok := true
 	for _, s := range sels {
 		r.entryKey = lt.KeyedBy
-		v := r.element(s, lt.Elem, sc.inner())
+		v := r.dirElement(s, lt.Elem, sc)
 		r.entryKey = nil
 		if v == nil {
 			ok = false
@@ -188,7 +189,7 @@ func (r *run) dirTable(files []File, t types.Type, tt *types.TableType) value.Va
 			return nil
 		}
 		stemOK := r.stem(f, first)
-		e, retired := r.row(f.Sel.Node, tt.Elem, r.rootFrame())
+		e, retired := r.dirRow(f.Sel, tt.Elem)
 		if e == nil || !stemOK {
 			ok = false
 			continue

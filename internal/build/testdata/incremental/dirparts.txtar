@@ -1,0 +1,151 @@
+IMPLEMENTATION-PLAN §7.6 (NFR-02), WIRE.md §6.5: load.dir's elements kept apart, one per file, as a
+keyed list and as a table (one entry retired); a default charging steps in each file that omits it,
+a ref verified (stage B), a record check reading only its record and one reading a package value
+that an entry file gives (stage C); and a load one of whose elements has a default forcing a
+constant declared after it, so it is decoded again at every load, never kept apart: served, it
+would leave that constant to be forced later, after mid, and charged in another order. Package c
+loads a plain list, whose elements' paths are indexes: a failing check and a value out of range.
+Package d loads records holding an applied record, given and defaulted, never kept apart.
+-- project.canon --
+project acme {
+  canon: "0.1"
+
+  roots {
+    resource: "resource"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A category.
+record Cat {
+  /// Label.
+  label: String
+}
+
+/// Categories.
+let cats: table Cat = {
+  red { label: "Red" }
+  blue { label: "Blue" }
+}
+
+/// A cap.
+record Cap {
+  /// Most.
+  most: Int
+}
+
+/// Caps, one entry file each.
+let caps: table Cap = {}
+
+/// An item.
+record Item {
+  /// Stock keeping unit.
+  sku: String
+  /// Cost.
+  cost: Int(0..99)
+  /// Weight.
+  weight: Int = cost * 2 + 1
+  /// Category.
+  cat: ref cats
+
+  check light: weight <= 15 else "weight {weight}"
+  check capped: cost <= caps.main.most else "cost {cost} over the cap"
+}
+
+/// Rows, one per file, keyed by its name.
+let rows: table Item = load.dir("@resource/rows/*.json")
+
+/// An extra: its most is twice LATE, unless its file says.
+record Extra {
+  /// Name.
+  name: String
+  /// Most.
+  most: Int = LATE * 2
+}
+
+/// Extras, one per file.
+let extras: [Extra] = load.dir("@resource/extras/*.json")
+
+/// Forced after the extras.
+let mid: Int = 1
+
+/// Forced by the first extra's default, before mid.
+const LATE = 3
+
+/// Items, one per file; completed last, so no value traversed after holds a part of it.
+let items: [Item] keyed by sku = load.dir("@resource/items/*.json")
+-- c/c.canon --
+/// C.
+package c
+
+/// A dot.
+record Dot {
+  /// Number.
+  n: Int(0..9)
+
+  check four: n != 4 else "a four"
+}
+
+/// Dots, one per file, a plain list: an element's path is its index.
+let dots: [Dot] = load.dir("@resource/dots/*.json")
+-- d/d.canon --
+/// D.
+package d
+
+/// Ev.
+record Ev {
+  /// Max.
+  max: Int = 5
+}
+
+/// Evs.
+let evs: table Ev = { a {}, b { max: 7 } }
+
+/// L.
+record L(e: Ev) {
+  /// Lim, the event's max unless given.
+  lim: Int = e.max
+}
+
+/// Lim.
+record Lim {
+  /// Ev.
+  ev: ref evs = b
+  /// L.
+  l: L(ev) = {}
+}
+
+/// Lims, one per file: an applied field waits for the second pass, so none is kept apart.
+let lims: [Lim] = load.dir("@resource/lims/*.json")
+-- a/caps/main.canon --
+package a
+
+entry caps.main {
+  most: 6
+}
+-- resource/items/i1.json --
+{"sku": "i1", "cost": 2, "cat": "red"}
+-- resource/items/i2.json --
+{"sku": "i2", "cost": 3, "cat": "blue"}
+-- resource/items/i3.json --
+{"sku": "i3", "cost": 4, "cat": "red", "weight": 1}
+-- resource/rows/r1.json --
+{"sku": "r1", "cost": 1, "cat": "red"}
+-- resource/rows/r2.json --
+{"$retired": true, "sku": "r2", "cost": 5, "cat": "blue"}
+-- resource/extras/e1.json --
+{"name": "e1"}
+-- resource/extras/e2.json --
+{"name": "e2", "most": 4}
+-- resource/lims/l1.json --
+{"ev": "a", "l": {"lim": 2}}
+-- resource/lims/l2.json --
+{}
+-- resource/dots/d1.json --
+{"n": 1}
+-- resource/dots/d2.json --
+{"n": 4}
+-- resource/dots/d3.json --
+{"n": 12}

@@ -4,6 +4,7 @@ import (
 	"slices"
 
 	"github.com/fantasim/canonlang/internal/eval"
+	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
 )
 
@@ -14,37 +15,60 @@ func (t *traversal) entries(tv *value.Table) {
 			continue
 		}
 		t.segs = append(t.segs, seg{form: segEntry, key: e.Ident.Key})
-		t.entry(e)
+		t.entry(e, nil)
 		t.segs = t.segs[:len(t.segs)-1]
 	}
 }
 
-// entry visits e, replayed when the memo keeps stage C in it and its marks and reads are the
-// same, else visited and kept when a replay can reproduce it.
-func (t *traversal) entry(e *value.Record) {
+// elements visits a top-level list's elements in order, a record through the memo (NFR-02).
+func (t *traversal) elements(l *value.List, dt types.Type) {
+	namedParts(l, dt, t.lateFrom(), func(p part) bool {
+		t.segs = append(t.segs, p.s)
+		if rec, ok := p.v.(*value.Record); ok {
+			t.entry(rec, p.t)
+		} else {
+			t.visit(p.v, p.t)
+		}
+		t.segs = t.segs[:len(t.segs)-1]
+		return true
+	})
+}
+
+// entry visits e, declared dt, replayed when the memo keeps stage C in it at the same segment
+// and its marks and reads are the same, else visited and kept when a replay can reproduce it.
+func (t *traversal) entry(e *value.Record, dt types.Type) {
 	token, ok := t.memo.ev.EntryToken(e)
-	if !ok || t.seen[e] || t.ctx.Err() != nil {
-		t.visit(e, nil)
+	if !ok || t.seen[e] || t.ctx.Err() != nil || !t.owns(token) {
+		t.visit(e, dt)
 		return
 	}
-	if kept, _ := t.memo.ev.Attached(token, eval.Checked).(*entryKept); kept != nil && kept.root == t.rootOf && t.replayEntry(e, kept) {
+	kept, _ := t.memo.ev.Attached(token, eval.Checked).(*entryKept)
+	if kept != nil && kept.root == t.rootOf && kept.seg == t.segs[len(t.segs)-1] && t.replayEntry(e, kept) {
+		// nothing marked seen: an owned entry of a value alone is reached by no other value traversed
 		t.memo.replayed++
 		return
 	}
-	t.recordEntry(token, e)
+	t.recordEntry(token, e, dt)
+}
+
+// owns reports token's record made by the evaluation of the value traversed: no value traversed
+// before holds it, since one made before could not (log-2026-09-29 M4 P12-r).
+func (t *traversal) owns(token any) bool {
+	owner, ok := t.memo.ev.TokenOwner(token)
+	return ok && owner == t.rootOf
 }
 
 // recordEntry visits e, keeping each check run and the entry's invalid values on token.
-func (t *traversal) recordEntry(token any, e *value.Record) {
+func (t *traversal) recordEntry(token any, e *value.Record, dt types.Type) {
 	marks, count := t.signature(e), t.memo.ev.InvalidCount()
 	rec := &entryRec{}
 	t.rec = rec
-	t.visit(e, nil)
+	t.visit(e, dt)
 	t.rec = nil
 	if rec.void || t.ctx.Err() != nil || t.memo.ev.InvalidCount() != count {
 		return
 	}
-	rec.kept.root, rec.kept.marks = t.rootOf, marks
+	rec.kept.root, rec.kept.seg, rec.kept.marks = t.rootOf, t.segs[len(t.segs)-1], marks
 	t.memo.ev.Attach(token, eval.Checked, &rec.kept, rec.kept.nodes())
 }
 

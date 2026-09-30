@@ -42,6 +42,7 @@ func (l *Loader) dir(ctx context.Context, req Request, e *syntax.LoadExpr, t typ
 	}
 	files, readOK := l.readFiles(matches, c.at, req)
 	dec := req.decoder(c.boolOpt(c.partial))
+	dec.Elems = dirElems(req, t)
 	v, decOK, err := dec.Dir(ctx, files, t)
 	if err != nil {
 		return nil, false, err

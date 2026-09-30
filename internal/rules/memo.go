@@ -9,10 +9,12 @@ import (
 	"github.com/fantasim/canonlang/internal/verify"
 )
 
-// entryKept is stage C in one entry of a top-level value: that value, the places of the entry's
-// invalid values, each check run in order, and those that failed.
+// entryKept is stage C in one entry of a top-level value: that value, the entry's segment of
+// its path (a list element's index or key), the places of the entry's invalid values, each check
+// run in order, and those that failed.
 type entryKept struct {
 	root   eval.Root
+	seg    seg
 	marks  []int
 	runs   []*eval.CheckTrace
 	failed []failedRun
@@ -40,6 +42,7 @@ type entryRec struct {
 type memoEvaluator interface {
 	marks
 	EntryToken(rec *value.Record) (any, bool)
+	TokenOwner(token any) (eval.Root, bool)
 	Attach(token any, stage eval.Stage, v any, nodes int) bool
 	Attached(token any, stage eval.Stage) any
 	RunTraced(ctx context.Context, c *syntax.CheckDecl, self value.Value, path string) (eval.CheckRun, *eval.CheckTrace)

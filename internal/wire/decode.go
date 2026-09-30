@@ -44,6 +44,7 @@ type Decoder struct {
 	Coll    *types.Collection // what a whole decoded table or keyed list is (TYPES.md §6.3)
 	Outer   Outer             // what the decoded value's type arguments name around it
 	Field   *types.Field      // the field the decoded whole is the value of: its unit, int, bits and none marker (§4.1)
+	Elems   Elems             // load.dir's elements kept apart, which Dir asks for (decode_elems.go)
 }
 
 // Outer is what a loaded value's type arguments may name around it: the record whose field the
@@ -100,6 +101,9 @@ type run struct {
 	needed   map[*pending]bool // the same, as a set; nil outside an attempt
 	apps     map[types.Type]bool
 	deps     map[types.Type]bool
+	elems    Elems // Decoder.Elems, asked by Dir only
+	reported int   // the findings reported, and the host calls an element decoded purely never makes
+	hosted   int
 }
 
 // rootFrame is what the decoded whole's type arguments name: the Decoder's Outer.
@@ -198,6 +202,7 @@ func (r *run) report(b *diag.Builder, n *jsonsrc.Node) {
 		b.Pointer(n.Pointer())
 	}
 	b.Report(r.d.Bag)
+	r.reported++
 	r.failed = true
 }
 
@@ -212,6 +217,7 @@ func (r *run) soft(b *diag.Builder, n *jsonsrc.Node) bool {
 		b.Pointer(n.Pointer())
 	}
 	b.Report(r.d.Bag)
+	r.reported++
 	return true
 }
 

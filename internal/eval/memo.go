@@ -11,22 +11,23 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// Memo keeps each `entry` declaration's evaluation, and each load's, for the evaluators of later
-// snapshots, which replay it: its steps, findings, marks and value. It keeps the stores of the
-// last few epochs, one per Recheck lineage. It is safe for concurrent use.
+// Memo keeps each `entry` declaration's evaluation, each load's and each load.dir element's, for
+// the evaluators of later snapshots, which replay it: its steps, findings, marks and value. It
+// keeps the stores of the last few epochs, one per Recheck lineage. It is safe for concurrent use.
 type Memo struct {
 	mu        sync.Mutex
 	gens      []*memoGen // the latest epoch used first
 	forgotten []uint64   // the latest epochs forgotten, whose stores are never made again
 }
 
-// memoGen is what a Memo keeps for one type-check epoch: the entries and loads, the collections
-// an evaluator makes itself, shared so that the entries replayed name the same ones, and what
-// each file adds to an evaluator's indexes.
+// memoGen is what a Memo keeps for one type-check epoch: the entries, loads and load.dir elements,
+// the collections an evaluator makes itself, shared so that the entries replayed name the same
+// ones, and what each file adds to an evaluator's indexes.
 type memoGen struct {
 	epoch   uint64
 	entries map[memoKey]*memoEntry
 	loads   map[loadKey]*loadEntry
+	parts   map[loadKey]*partSet
 	colls   map[collKey]*types.Collection
 	indexed map[*syntax.File]fileIndex
 	refined map[*syntax.File][]typeAt
@@ -63,6 +64,8 @@ type memoEntry struct {
 	size   int
 	key    memoKey               // where the store keeps it
 	stages [stageCount]stageSlot // what stages B and C made of its record (memo_stage.go)
+	part   *partHome             // where a load.dir element is kept instead (memo_parts.go)
+	owner  charge                // the top-level value whose evaluation made its record (memo_token.go)
 }
 
 // memoRead is a top-level value an entry read: the steps charged before it, the frames above
@@ -92,6 +95,8 @@ type memoUse struct {
 	reads  map[value.Value]*readInfo
 	stats  memoStats
 	loaded memoStats                    // the same counts for loads
+	parted memoStats                    // and for load.dir elements (memo_parts.go)
+	served int                          // the loads run again whose every element was served
 	tokens map[*value.Record]*memoEntry // each entry's record by the evaluation it replays (memo_token.go)
 }
 
@@ -141,6 +146,7 @@ func (m *Memo) begin(epoch uint64, alive liveness) *memoGen {
 	if i < 0 {
 		g := &memoGen{
 			epoch: epoch, entries: map[memoKey]*memoEntry{}, loads: map[loadKey]*loadEntry{},
+			parts:   map[loadKey]*partSet{},
 			colls:   map[collKey]*types.Collection{},
 			indexed: map[*syntax.File]fileIndex{}, refined: map[*syntax.File][]typeAt{},
 		}
@@ -156,6 +162,7 @@ func (m *Memo) begin(epoch uint64, alive liveness) *memoGen {
 		}
 	}
 	g.dropLoads(alive.file)
+	g.dropParts(alive.file)
 	dropFiles(g.indexed, alive.file)
 	dropFiles(g.refined, alive.file)
 	return g
@@ -179,7 +186,8 @@ func (m *Memo) Kept(epoch uint64) bool {
 	return slices.ContainsFunc(m.gens, func(g *memoGen) bool { return g.epoch == epoch })
 }
 
-// LoadsReplayed is the loads e replayed from its memo: a hook for tests.
+// LoadsReplayed is the loads e replayed whole from its memo, not those whose elements it served
+// (PartsReplayed): a hook for tests.
 func (e *Evaluator) LoadsReplayed() int {
 	if e.memo == nil {
 		return 0

@@ -14,11 +14,12 @@ import (
 // loadSite is the load being decoded: the run forcing it, its expression, the let collection
 // it is the whole value of (nil for none) and what its type arguments name.
 type loadSite struct {
-	r    *run
-	at   syntax.Expr
-	coll *types.Collection
-	cx   *depCtx
-	save *savepoint // the decoding attempt under way, nil for none
+	r     *run
+	at    syntax.Expr
+	coll  *types.Collection
+	cx    *depCtx
+	save  *savepoint // the decoding attempt under way, nil for none
+	parts *Parts     // the load.dir elements kept apart, while the load is recorded (memo_parts.go)
 }
 
 // savepoint is what a decoding attempt started from: the steps charged, the load's own, and

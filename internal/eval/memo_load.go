@@ -121,13 +121,19 @@ func (r *run) replayLoad(lm LoadMemo, k loadKey, site *loadSite) (value.Value, b
 
 // recordLoad runs the load through the host, recorded as an entry is.
 func (r *run) recordLoad(lm LoadMemo, k loadKey, site *loadSite) value.Value {
+	u := r.ev.memo
 	tr := r.startTrace(memoKey{tainted: k.tainted})
+	ps := u.partsOf(r, tr, k)
+	site.parts = ps
 	r.ev.loading = site
 	v, ok, in := lm.LoadRecorded(r.ctx, k.expr, k.t)
-	r.ev.loading = nil
+	r.ev.loading, site.parts = nil, nil
 	v = r.loaded(v, ok, k.t)
-	r.ev.memo.trace = nil
-	u := r.ev.memo
+	u.trace = nil
+	u.storeParts(ps, r.fr.file)
+	if ps.used && ps.whole { // its elements are kept apart: the next load serves them again
+		return v
+	}
 	le, kept := tr.loadEntry(r.ev, v, in)
 	if !kept {
 		u.loaded.unkept++
@@ -207,9 +213,9 @@ func (g *memoGen) dropLoads(alive func(*syntax.File) bool) {
 	}
 }
 
-// forget empties g of its entries and loads.
+// forget empties g of its entries, loads and load.dir elements.
 func (g *memoGen) forget() {
-	g.entries, g.loads, g.bytes = map[memoKey]*memoEntry{}, map[loadKey]*loadEntry{}, 0
+	g.entries, g.loads, g.parts, g.bytes = map[memoKey]*memoEntry{}, map[loadKey]*loadEntry{}, map[loadKey]*partSet{}, 0
 }
 
 // admit makes room in g for n more bytes: g emptied when full or past memoBytes, then the other

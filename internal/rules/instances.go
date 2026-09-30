@@ -51,9 +51,15 @@ func (t *traversal) visit(v value.Value, dt types.Type) {
 		}
 		t.runChecks(rec)
 	}
-	if tv, isTable := v.(*value.Table); isTable && t.alone && len(t.segs) == 0 {
-		t.entries(tv)
-		return
+	if top := t.alone && len(t.segs) == 0; top {
+		if tv, isTable := v.(*value.Table); isTable {
+			t.entries(tv)
+			return
+		}
+		if l, isList := v.(*value.List); isList {
+			t.elements(l, dt)
+			return
+		}
 	}
 	var late func(*value.Record) bool
 	if _, isList := v.(*value.List); isList {

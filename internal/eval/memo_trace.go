@@ -86,7 +86,7 @@ func (tr *entryTrace) entry(e *Evaluator, rec *value.Record) (*memoEntry, bool) 
 	if !tr.unchanged(e) {
 		return nil, false
 	}
-	en := &memoEntry{reads: tr.reads, tail: tr.steps(e), need: tr.need, files: tr.files, found: tr.found}
+	en := &memoEntry{reads: tr.reads, tail: tr.steps(e), need: tr.need, files: tr.files, found: tr.found, owner: r.charge}
 	if rec == nil {
 		en.size = memoNodeBytes * (1 + len(en.reads) + len(en.found))
 		return en, true

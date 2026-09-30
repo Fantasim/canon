@@ -137,10 +137,15 @@ func (w *walker) list(l *value.List, t types.Type, at *Path, sc scope) value.Val
 	esc := sc.part()
 	for i, e := range l.Elems {
 		p := at.Index(i)
-		if r, ok := e.(*value.Record); ok && lt.KeyedBy != nil && r.Ident != nil {
+		r, isRec := e.(*value.Record)
+		if isRec && lt.KeyedBy != nil && r.Ident != nil {
 			p = at.Key(r.Ident.Key)
 		}
-		elems.set(i, w.walk(e, lt.Elem, p, esc))
+		if isRec {
+			elems.set(i, w.entryAt(at, r, lt.Elem, p, esc))
+		} else {
+			elems.set(i, w.walk(e, lt.Elem, p, esc))
+		}
 	}
 	if lt.KeyedBy != nil {
 		w.uniqueKeys(l, lt, at)

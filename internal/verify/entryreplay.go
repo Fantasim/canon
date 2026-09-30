@@ -8,8 +8,8 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// entryAt verifies e, an entry at p of the table at at, through the memo when the table is a
-// top-level value.
+// entryAt verifies e, an entry or element at p of the table or list at at, through the memo when
+// the table or list is a top-level value.
 func (w *walker) entryAt(at *Path, e *value.Record, t types.Type, p *Path, sc scope) value.Value {
 	if at == nil || at.parent != nil {
 		return w.walk(e, t, p, sc)
@@ -17,14 +17,15 @@ func (w *walker) entryAt(at *Path, e *value.Record, t types.Type, p *Path, sc sc
 	return w.entry(e, t, p, sc)
 }
 
-// entry verifies e, an entry of a top-level table, at t: replayed when the memo keeps its
-// verification and what that read is unchanged, else walked, and kept when a replay can be.
+// entry verifies e, an entry of a top-level table or an element of a top-level list, at t:
+// replayed when the memo keeps its verification and what that read is unchanged, else walked,
+// and kept when a replay can be.
 func (w *walker) entry(e *value.Record, t types.Type, at *Path, sc scope) value.Value {
 	token, ok := w.token(e, sc)
 	if !ok {
 		return w.walk(e, t, at, sc)
 	}
-	key := entryKey{root: w.root, elem: t, retired: sc.retired}
+	key := entryKey{root: w.root, elem: t, retired: sc.retired, seg: at.seg, form: at.form}
 	if kept, _ := w.memo.Attached(token, eval.Verified).(*entryKept); kept != nil && kept.key == key && w.replayEntry(e, kept) {
 		w.hit()
 		return e
@@ -32,12 +33,18 @@ func (w *walker) entry(e *value.Record, t types.Type, at *Path, sc scope) value.
 	return w.recordEntry(token, key, e, at, sc)
 }
 
-// token is the evaluation e replays, for an entry of a top-level table only.
+// token is the evaluation e replays, for an entry of a top-level table or list that the value
+// being verified made itself.
 func (w *walker) token(e *value.Record, sc scope) (any, bool) {
 	if w.memo == nil || w.rec != nil || len(w.recording) > 0 || sc.env != nil || sc.dep != nil || w.stopped() {
 		return nil, false
 	}
-	return w.memo.EntryToken(e)
+	token, ok := w.memo.EntryToken(e)
+	if !ok {
+		return nil, false
+	}
+	owner, ok := w.memo.TokenOwner(token)
+	return token, ok && owner == w.root
 }
 
 // recordEntry walks e as walk does, keeping what it read and reported on token when a replay can.
