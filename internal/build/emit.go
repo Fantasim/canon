@@ -227,13 +227,13 @@ func (r *run) outputs(p *ir.Package, e *ir.Emit, files []ir.File) ([]*output, er
 	}
 	display, abs := strings.TrimSuffix(at.Display, pathSep), at.Abs
 	if e.FileName != "" {
-		display, abs = path.Dir(display), path.Dir(abs)
+		display, abs = path.Dir(display), project.DirOf(abs)
 	}
 	span := r.emitSpan(p.Name, e.Target)
 	out := make([]*output, len(files))
 	for i, f := range files {
 		out[i] = &output{at: span, Output: Output{
-			Path: path.Join(display, f.Path), Abs: path.Join(abs, f.Path), Target: e.Target, Package: p.Name, Content: f.Content,
+			Path: path.Join(display, f.Path), Abs: project.Join(abs, f.Path), Target: e.Target, Package: p.Name, Content: f.Content,
 		}}
 	}
 	return out, nil

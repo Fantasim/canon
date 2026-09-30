@@ -2,7 +2,6 @@ package project
 
 import (
 	"maps"
-	"path"
 	"slices"
 	"strings"
 
@@ -20,10 +19,10 @@ type Layout struct {
 // NewLayout resolves each root of p lexically against dir, or takes its override: an absolute
 // directory, or one relative to dir. An override of an undeclared root is E7003.
 func NewLayout(p *Project, dir string, overrides map[string]string, bag *diag.Bag) (*Layout, bool) {
-	l := &Layout{Dir: path.Clean(dir), dirs: map[string]string{}}
+	l := &Layout{Dir: Clean(dir), dirs: map[string]string{}}
 	for _, r := range p.Roots {
 		l.names = append(l.names, r.Name)
-		l.dirs[r.Name] = path.Join(l.Dir, r.Path)
+		l.dirs[r.Name] = Join(l.Dir, r.Path)
 	}
 	ok := true
 	for _, name := range slices.Sorted(maps.Keys(overrides)) {
@@ -46,9 +45,9 @@ func (l *Layout) RootDirs() []string {
 // abs is dir itself when absolute, else dir under the project directory.
 func (l *Layout) abs(dir string) string {
 	if isAbsolute(dir) {
-		return path.Clean(dir)
+		return Clean(dir)
 	}
-	return path.Join(l.Dir, dir)
+	return Join(l.Dir, dir)
 }
 
 // Path is a resolved path: its display form (WIRE.md §2.3) and the file on disk.
@@ -105,7 +104,7 @@ func (l *Layout) resolve(written, from string, span source.Span) (Path, *diag.Bu
 	if isDir {
 		display += sep
 	}
-	abs := path.Join(append([]string{base}, segs...)...)
+	abs := Join(base, segs...)
 	return Path{Display: display, Abs: abs, Root: name, Dir: isDir}, nil
 }
 

@@ -83,17 +83,23 @@ func (p *Project) Inputs() ([]Read, error) {
 
 // fileRead is the project-relative file name as a Read.
 func (p *Project) fileRead(name string) Read {
-	return Read{Display: name, Abs: path.Join(p.dir, name)}
+	return Read{Display: name, Abs: project.Join(p.dir, name)}
 }
 
 // Abs is file's name on disk, an absolute path or a display path resolved, false for no place.
 func (p *Project) Abs(file string) (string, bool) {
-	if path.IsAbs(file) || filepath.IsAbs(filepath.FromSlash(file)) {
-		return path.Clean(filepath.ToSlash(file)), true
+	return p.absIn(project.HostPaths(), file)
+}
+
+// absIn is Abs on a system that writes names as sys does (API.md §2.2, log M4 B12-r).
+func (p *Project) absIn(sys project.Paths, file string) (string, bool) {
+	file = sys.FromAPI(file, p.dir)
+	if path.IsAbs(file[len(sys.Volume(file)):]) {
+		return file, true
 	}
 	if !strings.HasPrefix(file, rootMark) {
 		rel := path.Clean(file)
-		return path.Join(p.dir, rel), filepath.IsLocal(filepath.FromSlash(rel))
+		return sys.Join(p.dir, rel), filepath.IsLocal(filepath.FromSlash(rel))
 	}
 	s, ok := p.roots()
 	if !ok {
@@ -176,7 +182,7 @@ func (p *Project) unitReads(u *project.Unit) []Read {
 	var files []string
 	for _, f := range u.Files {
 		dir := path.Dir(f.Src.Path)
-		out = append(out, Read{Display: f.Src.Path, Abs: f.Src.Abs}, Read{Display: dir, Abs: path.Join(p.dir, dir), Dir: true, Sources: true})
+		out = append(out, Read{Display: f.Src.Path, Abs: f.Src.Abs}, Read{Display: dir, Abs: project.Join(p.dir, dir), Dir: true, Sources: true})
 		files = append(files, f.Src.Path)
 	}
 	for _, name := range lockPaths(files) {

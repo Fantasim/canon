@@ -22,7 +22,7 @@ func Scan(fsys FS, dir string) ([]string, error) {
 
 // scanDir lists rel into out, sorting the listing, whose order is not trusted (API.md §2.2).
 func scanDir(fsys FS, root, rel string, out *[]string) error {
-	entries, err := fsys.ReadDir(path.Join(root, rel))
+	entries, err := fsys.ReadDir(Join(root, rel))
 	if err != nil {
 		return fmt.Errorf(fmtWrap, err)
 	}

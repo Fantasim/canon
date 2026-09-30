@@ -4,6 +4,7 @@ import (
 	"io/fs"
 	"maps"
 	"path"
+	"path/filepath"
 	"slices"
 	"strings"
 	"sync"
@@ -27,27 +28,32 @@ func newWriteFS(files map[string][]byte, renamed func()) *writeFS {
 	return w
 }
 
+// mapName is name without its volume (Open's "D:/law" on Windows, API.md §2.2) nor leading '/'.
+func mapName(name string) string {
+	return strings.TrimPrefix(name[len(filepath.VolumeName(name)):], "/")
+}
+
 func (w *writeFS) put(name string, data []byte) {
 	w.clock++
-	w.files[strings.TrimPrefix(name, "/")] = &fstest.MapFile{Data: slices.Clone(data), ModTime: time.Unix(w.clock, 0)}
+	w.files[mapName(name)] = &fstest.MapFile{Data: slices.Clone(data), ModTime: time.Unix(w.clock, 0)}
 }
 
 func (w *writeFS) ReadFile(name string) ([]byte, error) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	return w.files.ReadFile(strings.TrimPrefix(name, "/"))
+	return w.files.ReadFile(mapName(name))
 }
 
 func (w *writeFS) Stat(name string) (fs.FileInfo, error) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	return w.files.Stat(strings.TrimPrefix(name, "/"))
+	return w.files.Stat(mapName(name))
 }
 
 func (w *writeFS) ReadDir(name string) ([]fs.DirEntry, error) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	return w.files.ReadDir(strings.TrimPrefix(name, "/"))
+	return w.files.ReadDir(mapName(name))
 }
 
 func (w *writeFS) WriteFile(name string, data []byte) error {
@@ -59,7 +65,7 @@ func (w *writeFS) WriteFile(name string, data []byte) error {
 
 func (w *writeFS) Rename(oldname, newname string) error {
 	w.mu.Lock()
-	old := strings.TrimPrefix(oldname, "/")
+	old := mapName(oldname)
 	f, ok := w.files[old]
 	if ok {
 		delete(w.files, old)
@@ -78,14 +84,14 @@ func (w *writeFS) Rename(oldname, newname string) error {
 func (w *writeFS) Remove(name string) error {
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	delete(w.files, strings.TrimPrefix(name, "/"))
+	delete(w.files, mapName(name))
 	return nil
 }
 
 func (w *writeFS) MkdirAll(name string) error {
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	if name = strings.TrimPrefix(name, "/"); name != "" && path.Clean(name) != "." {
+	if name = mapName(name); name != "" && path.Clean(name) != "." {
 		w.files[name] = &fstest.MapFile{Mode: fs.ModeDir}
 	}
 	return nil

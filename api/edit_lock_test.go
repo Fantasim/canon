@@ -3,6 +3,7 @@ package canon_test
 import (
 	"context"
 	"errors"
+	"path/filepath"
 	"slices"
 	"strings"
 	"sync/atomic"
@@ -105,15 +106,15 @@ func TestEditJournalAtCommit(t *testing.T) {
 	}
 }
 
-// linkFS resolves the directory a to another place once armed, as a symbolic link would.
+// linkFS resolves the directory a to another place once armed, as a symbolic link would; a volume stays.
 type linkFS struct {
 	*memFS
 	armed atomic.Bool
 }
 
 func (l *linkFS) EvalSymlinks(name string) (string, error) {
-	if rest, ok := strings.CutPrefix(name, "/law/a/"); ok && l.armed.Load() {
-		return "/elsewhere/a/" + rest, nil
+	if rest, ok := strings.CutPrefix(dropVolume(name), "/law/a/"); ok && l.armed.Load() {
+		return filepath.VolumeName(name) + "/elsewhere/a/" + rest, nil
 	}
 	return name, nil
 }

@@ -61,7 +61,7 @@ func (w *watching) globs(s *workspace.Snapshot, units *build.Units) []string {
 // layoutOf lays out s's roots as a build does: its project.canon, the Options.Roots overrides.
 func layoutOf(s *workspace.Snapshot, roots map[string]string) (*project.Layout, bool) {
 	b := s.Build()
-	abs := path.Join(b.Dir(), project.FileName)
+	abs := project.Join(b.Dir(), project.FileName)
 	data, err := b.FS().ReadFile(abs)
 	if err != nil {
 		return nil, false

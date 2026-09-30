@@ -4,13 +4,13 @@ import (
 	"cmp"
 	"crypto/sha256"
 	"encoding/hex"
-	"path"
 	"path/filepath"
 	"slices"
 	"strings"
 
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/ir"
+	"github.com/fantasim/canonlang/internal/project"
 	"github.com/fantasim/canonlang/internal/source"
 )
 
@@ -139,7 +139,7 @@ func (r *run) fileLines(loaded map[string]loadedFile) []sumLine {
 	out := make([]sumLine, 0, len(r.s.sums)+len(loaded))
 	own := make(map[string]bool, len(r.s.sums))
 	for _, f := range r.s.sums {
-		own[path.Join(r.p.dir, f.Path)] = true
+		own[project.Join(r.p.dir, f.Path)] = true
 		out = append(out, sumLine{key: f.Path, sum: hex.EncodeToString(f.Sum[:])})
 	}
 	//canon:unordered writeSums sorts the lines

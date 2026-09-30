@@ -6,6 +6,8 @@ import (
 	"io"
 	"log/slog"
 	"reflect"
+	"runtime"
+	"strings"
 	"testing"
 
 	canon "github.com/fantasim/canonlang/api"
@@ -74,6 +76,31 @@ func TestOverlays(t *testing.T) {
 	_ = p.Close()
 	if err := p.SetOverlay("b/b.canon", nil); !errors.Is(err, canon.ErrClosed) {
 		t.Errorf("SetOverlay after Close: %v (O6)", err)
+	}
+}
+
+// API.md §2.2, §3.4 (log M4 B12-r): on Windows '\' and a drive's case key one overlay.
+func TestOverlayBackslash(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.Skip(`'\' is a name character outside Windows`)
+	}
+	p, _ := openLaw(t, loadLaw)
+	before := p.Revision()
+	if err := p.SetOverlay(`b\b.canon`, []byte("/// B.\npackage b\n\nconst = 1\n")); err != nil {
+		t.Fatal(err)
+	}
+	if res, err := p.Check(context.Background(), "b"); err != nil || !res.HasErrors() {
+		t.Errorf("Check with a backslash overlay: %v, %+v", err, res)
+	}
+	if err := p.ClearOverlay(`\law\b\b.canon`); err != nil || p.Revision() != before {
+		t.Errorf("ClearOverlay: %v, revision %s, want %s", err, p.Revision(), before)
+	}
+	lower := strings.ToLower(p.Root()[:1]) + p.Root()[1:] + "/b/b.canon" // "d:/law/b/b.canon"
+	if err := p.SetOverlay(lower, []byte("/// B.\npackage b\n\nconst = 1\n")); err != nil {
+		t.Fatal(err)
+	}
+	if err := p.ClearOverlay("b/b.canon"); err != nil || p.Revision() != before {
+		t.Errorf("ClearOverlay after a lower-case drive: %v, revision %s, want %s", err, p.Revision(), before)
 	}
 }
 

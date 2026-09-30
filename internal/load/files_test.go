@@ -2,6 +2,7 @@ package load_test
 
 import (
 	"errors"
+	"os"
 	"path/filepath"
 	"slices"
 	"testing"
@@ -37,7 +38,26 @@ func callOf(t *testing.T, text string) *syntax.LoadExpr {
 // WIRE.md §6.1, §6.2, §6.5: JSONFiles is the files a call reads as JSON, by the loader's own rules.
 func TestJSONFiles(t *testing.T) {
 	skipOnWindows(t)
-	root := filepath.ToSlash(t.TempDir())
+	checkJSONFiles(t, filepath.ToSlash(t.TempDir()))
+}
+
+// WIRE.md §6.5, "load.dir round 3": a project under a linked parent (macOS's /var) reads as without it.
+func TestJSONFilesUnderLinkedParent(t *testing.T) {
+	skipOnWindows(t)
+	top := t.TempDir()
+	if err := os.Mkdir(filepath.Join(top, "real"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(filepath.Join(top, "real"), filepath.Join(top, "alias")); err != nil {
+		t.Fatal(err)
+	}
+	checkJSONFiles(t, filepath.ToSlash(filepath.Join(top, "alias")))
+}
+
+// checkJSONFiles checks JSONFiles and Inside on a project and an outside directory made in root;
+// a resolved path is root's own, its links resolved.
+func checkJSONFiles(t *testing.T, root string) {
+	t.Helper()
 	mkTree(t, root, map[string]string{
 		"proj/d/a1.json": "{}", "proj/d/b1.json": "{}", "proj/d/sub/c.json": "{}", "proj/d/t.txt": "{}", "proj/d/.h.json": "{}",
 		"proj/real/x.json": "{}", "outside/o.json": "{}",
@@ -82,8 +102,15 @@ func TestJSONFiles(t *testing.T) {
 	if got := load.JSONFiles(brokenLinks{project.OS()}, layout, "a", callOf(t, `load("../d/a1.json")`), diag.NewBag(nil, "")); len(got) != 0 {
 		t.Errorf("link resolution fails, yet JSONFiles read %v", got)
 	}
-	if real, ok := load.Inside(project.OS(), layout, proj+"/d/in.json"); !ok || real != proj+"/real/x.json" {
-		t.Errorf("Inside a link in the project: %q, %v", real, ok)
+	resolved, err := filepath.EvalSymlinks(filepath.FromSlash(proj))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for file, want := range map[string]string{"/d/in.json": "/real/x.json", "/d/a1.json": "/d/a1.json"} {
+		want = filepath.ToSlash(resolved) + want
+		if real, ok := load.Inside(project.OS(), layout, proj+file); !ok || real != want {
+			t.Errorf("Inside %s in the project: %q, %v; want %q", file, real, ok, want)
+		}
 	}
 	if _, ok := load.Inside(project.OS(), layout, proj+"/d/out.json"); ok {
 		t.Error("Inside a link out of the project")

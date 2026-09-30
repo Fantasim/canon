@@ -6,7 +6,6 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
-	"path"
 	"slices"
 
 	"github.com/fantasim/canonlang/internal/check"
@@ -59,7 +58,7 @@ func (e *OpenError) Unwrap() error { return e.Err }
 // Open checks project.canon in dir (absolute, '/'-separated), places the roots and scans the
 // file set; it parses no other file (API.md O2, O3).
 func Open(fsys project.FS, dir string, opt Options) (*Project, error) {
-	p := &Project{fs: fsys, dir: path.Clean(dir), opt: opt}
+	p := &Project{fs: fsys, dir: project.Clean(dir), opt: opt}
 	if _, err := p.open(); err != nil {
 		return nil, err
 	}
@@ -98,7 +97,7 @@ func (p *Project) readProject(s *snapshot) error {
 		}
 		return displayErrorIn(p.dir, err)
 	}
-	file := path.Join(p.dir, project.FileName)
+	file := project.Join(p.dir, project.FileName)
 	content, err := p.fs.ReadFile(file)
 	if err != nil {
 		return displayError(project.FileName, err)

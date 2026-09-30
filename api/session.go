@@ -24,7 +24,20 @@ func absolute(dir string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf(fmtWrap, ErrNoProject, err)
 	}
-	return filepath.ToSlash(abs), nil
+	return project.Clean(filepath.ToSlash(abs)), nil
+}
+
+// fromAPIRoots is a copy of roots, each an FS name as Abs makes one (API.md §2.2, log M4 B12-r).
+func fromAPIRoots(roots map[string]string, dir string) map[string]string {
+	if roots == nil {
+		return nil
+	}
+	out := make(map[string]string, len(roots))
+	//canon:unordered each root is converted on its own
+	for name, d := range roots {
+		out[name] = project.HostPaths().FromAPI(d, dir)
+	}
+	return out
 }
 
 // workspace is the project's snapshots, made over its build on first use (API.md §3).

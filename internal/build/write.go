@@ -196,7 +196,7 @@ func relativeTo(dir, name string, sep rune) string {
 
 // stage writes a change's temporary file, its directory created, an existing file's mode kept.
 func (w *writer) stage(c change) error {
-	if err := w.mkdirs(path.Dir(c.abs)); err != nil {
+	if err := w.mkdirs(project.DirOf(c.abs)); err != nil {
 		return err
 	}
 	tmp := tempOf(c.abs)
@@ -217,7 +217,7 @@ func (w *writer) stage(c change) error {
 // mkdirs creates dir and records the directories that did not exist.
 func (w *writer) mkdirs(dir string) error {
 	var missing []string
-	for d := dir; d != path.Dir(d); d = path.Dir(d) {
+	for d := dir; d != project.DirOf(d); d = project.DirOf(d) {
 		if _, err := w.fsys.Stat(d); !errors.Is(err, fs.ErrNotExist) {
 			break
 		}
@@ -237,7 +237,7 @@ func (w *writer) removeDirs() {
 
 // tempOf is the temporary file a change is written to first: hidden, in the target's directory.
 func tempOf(abs string) string {
-	return path.Join(path.Dir(abs), tempPrefix+path.Base(abs)+tempSuffix)
+	return project.Join(project.DirOf(abs), tempPrefix+path.Base(abs)+tempSuffix)
 }
 
 func removeTemps(fsys WriteFS, changes []change) {

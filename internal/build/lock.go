@@ -11,6 +11,7 @@ import (
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/eval"
 	"github.com/fantasim/canonlang/internal/lock"
+	"github.com/fantasim/canonlang/internal/project"
 	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
@@ -45,7 +46,7 @@ func (r *run) compareLocks(ctx context.Context) error {
 
 func (r *run) readLock(ctx context.Context, cp *check.Package) (*lockState, error) {
 	rel := path.Join(strings.ReplaceAll(cp.Path, qnameSep, pathSep), lockName)
-	st := &lockState{pkg: cp.Path, path: rel, abs: path.Join(r.p.dir, rel), file: lock.New(cp.Path), whole: true}
+	st := &lockState{pkg: cp.Path, path: rel, abs: project.Join(r.p.dir, rel), file: lock.New(cp.Path), whole: true}
 	sources, err := r.sourcesOf(ctx, cp)
 	if err != nil {
 		return nil, err

@@ -2,7 +2,6 @@ package canon
 
 import (
 	"maps"
-	"path"
 	"slices"
 
 	"github.com/fantasim/canonlang/internal/build"
@@ -37,11 +36,11 @@ func readsOf(reads []build.Read) *pkgReads {
 
 // loadCovers reports name a load listed, or found below what it listed.
 func (r *pkgReads) loadCovers(name string) bool {
-	for d := name; len(r.loads) > 0; d = path.Dir(d) {
+	for d := name; len(r.loads) > 0; d = project.DirOf(d) {
 		if slices.Contains(r.loads, d) {
 			return true
 		}
-		if path.Dir(d) == d {
+		if project.DirOf(d) == d {
 			return false
 		}
 	}
@@ -50,7 +49,7 @@ func (r *pkgReads) loadCovers(name string) bool {
 
 // touches reports a package with these reads affected by name, a relevant change (S2).
 func (r *pkgReads) touches(name string) bool {
-	return r.files[name] || r.listings[name] || r.listings[path.Dir(name)] || r.loadCovers(name)
+	return r.files[name] || r.listings[name] || r.listings[project.DirOf(name)] || r.loadCovers(name)
 }
 
 // learn records what each package of names read in a.
@@ -198,11 +197,11 @@ func (w *watching) firstBelow(changed []string, listed map[string]string) []stri
 
 // below reports a directory above abs among changed, a sorted list.
 func below(abs string, changed []string) bool {
-	for d := path.Dir(abs); ; d = path.Dir(d) {
+	for d := project.DirOf(abs); ; d = project.DirOf(d) {
 		if _, found := slices.BinarySearch(changed, d); found {
 			return true
 		}
-		if path.Dir(d) == d {
+		if project.DirOf(d) == d {
 			return false
 		}
 	}
@@ -220,7 +219,7 @@ func readSet(s *workspace.Snapshot) (listed, sources map[string]string) {
 	b := s.Build()
 	names, _ := project.Scan(b.FS(), b.Dir())
 	for _, name := range names {
-		sources[path.Join(b.Dir(), name)] = name
+		sources[project.Join(b.Dir(), name)] = name
 	}
 	return listed, sources
 }

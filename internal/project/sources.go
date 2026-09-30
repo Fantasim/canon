@@ -90,7 +90,7 @@ func (r *Reader) Parse(ctx context.Context, names []string) ([]*Unit, error) {
 
 // file reads one file and parses it into the set, unless Reuse holds the parse of that content.
 func (r *Reader) file(name string) (parsedFile, error) {
-	abs := path.Join(r.Dir, name)
+	abs := Join(r.Dir, name)
 	data, err := r.FS.ReadFile(abs)
 	if err != nil {
 		return parsedFile{}, fmt.Errorf(fmtWrap, err)

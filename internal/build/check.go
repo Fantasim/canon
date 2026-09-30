@@ -84,7 +84,7 @@ func (p *Project) Revision(ctx context.Context) (string, error) {
 		lines = append(lines, p.digestOf(name))
 	}
 	for _, name := range lockPaths(names) {
-		data, err := p.fs.ReadFile(path.Join(p.dir, name))
+		data, err := p.fs.ReadFile(project.Join(p.dir, name))
 		if !errors.Is(err, fs.ErrNotExist) {
 			lines = append(lines, digestData(name, data, err))
 		}
@@ -108,7 +108,7 @@ func lockPaths(names []string) []string {
 func (s *snapshot) readLocks(fsys project.FS, dir string) error {
 	s.locks = map[string][]byte{}
 	for _, name := range lockPaths(s.names) {
-		data, err := fsys.ReadFile(path.Join(dir, name))
+		data, err := fsys.ReadFile(project.Join(dir, name))
 		switch {
 		case errors.Is(err, fs.ErrNotExist):
 			continue
@@ -127,7 +127,7 @@ type digest struct {
 }
 
 func (p *Project) digestOf(name string) digest {
-	data, err := p.fs.ReadFile(path.Join(p.dir, name))
+	data, err := p.fs.ReadFile(project.Join(p.dir, name))
 	return digestData(name, data, err)
 }
 

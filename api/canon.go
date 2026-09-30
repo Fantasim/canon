@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/fs"
 	"log/slog"
-	"maps"
 	"slices"
 	"sync"
 
@@ -89,7 +88,8 @@ func Open(root string, opts Options) (p *Project, err error) {
 	if opts.FS != nil {
 		fsys = opts.FS
 	}
-	b, err := build.Open(fsys, dir, build.Options{Roots: opts.Roots, Layers: opts.Layers, Lang: opts.Lang, MaxFindings: opts.MaxFindings})
+	roots := fromAPIRoots(opts.Roots, dir)
+	b, err := build.Open(fsys, dir, build.Options{Roots: roots, Layers: opts.Layers, Lang: opts.Lang, MaxFindings: opts.MaxFindings})
 	if err != nil {
 		return nil, apiError(err)
 	}
@@ -98,7 +98,7 @@ func Open(root string, opts Options) (p *Project, err error) {
 	}
 	return &Project{
 		root: dir, b: b, editLayer: opts.EditLayer, layers: slices.Clone(opts.Layers), lang: opts.Lang,
-		logger: opts.Logger, osFiles: opts.FS == nil, roots: maps.Clone(opts.Roots),
+		logger: opts.Logger, osFiles: opts.FS == nil, roots: roots,
 	}, nil
 }
 

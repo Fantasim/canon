@@ -317,7 +317,7 @@ func (a *assets) Exists(root, from, name string) (string, bool) {
 		if !a.listAt(at, root, from).subs[seg] {
 			return dir.Display, false
 		}
-		at = project.Path{Display: path.Join(at.Display, seg), Abs: path.Join(at.Abs, seg)}
+		at = project.Path{Display: path.Join(at.Display, seg), Abs: project.Join(at.Abs, seg)}
 	}
 	return dir.Display, a.listAt(at, root, from).files[segs[len(segs)-1]]
 }
@@ -355,7 +355,7 @@ func (a *assets) kind(dir string, e fs.DirEntry) (isDir, ok bool) {
 	if e.Type()&fs.ModeSymlink == 0 {
 		return e.IsDir(), true
 	}
-	info, err := a.fs.Stat(path.Join(dir, e.Name()))
+	info, err := a.fs.Stat(project.Join(dir, e.Name()))
 	if err != nil {
 		return false, false
 	}
