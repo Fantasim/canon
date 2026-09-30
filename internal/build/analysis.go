@@ -25,6 +25,7 @@ type Analysis struct {
 	causes  *eval.Evaluator           // a memoized run's causes, logged on first use (cause.go)
 	inputs  inputs                    // what Analyze's run read, which Manifest lists
 	listed  []byte                    // the manifest, made on first use
+	numbers numberIndex               // the typed number readings of each JSON source, made on first use
 }
 
 // Analyze runs phases 1 to 7, writes nothing, and freezes the result (CLI.md §3.3).

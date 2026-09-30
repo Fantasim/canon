@@ -91,3 +91,48 @@ func Writes(p *Plan, display string) []Write {
 	}
 	return out
 }
+
+// StarKeys are the keys starNode writes map m's items under, one `*` level with nothing after
+// it (WIRE.md 6.3, 5.8).
+func StarKeys(m *value.Map) ([]string, error) {
+	d := &jsonDiff{a: &applier{}}
+	n, err := d.starNode(m, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	var out []string
+	for _, mb := range n.Members {
+		out = append(out, mb.Key)
+	}
+	return out, nil
+}
+
+// CanonicalJSON is raw, the JSON source at display, in the canonical form M9 judges it against
+// in s (API.md M9: layout and typed numbers).
+func CanonicalJSON(s *Snapshot, display string, raw []byte) ([]byte, error) {
+	a := &applier{snap: s}
+	return a.canonical(display, raw, true)
+}
+
+// JSONSources are the JSON sources the roots of s read, display path to the content read.
+func JSONSources(s *Snapshot) map[string][]byte {
+	out := map[string][]byte{}
+	var scan func(v value.Value)
+	scan = func(v value.Value) {
+		if p := provOf(v); p != nil && p.Kind == value.ProvJSON {
+			out[s.display(p.Span.File)] = s.a.Files().Content(p.Span.File)
+			return
+		}
+		for _, c := range children(v) {
+			scan(c.v)
+		}
+	}
+	for _, pkg := range s.pkgs {
+		for _, obj := range pkg.Decls {
+			if v, err := s.force(rootRef{pkg: pkg, obj: obj}); err == nil && initializer(obj.Decl()) != nil {
+				scan(v)
+			}
+		}
+	}
+	return out
+}

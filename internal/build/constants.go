@@ -124,3 +124,6 @@ var (
 		ir.TargetJSON: check.TargetJSON, ir.TargetView: check.TargetView,
 	}
 )
+
+// readConflict marks a number token loads read as two types or texts: kept as written (M9).
+const readConflict = ""

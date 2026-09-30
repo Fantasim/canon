@@ -30,11 +30,16 @@ func (x *opCtx) undoSet() error {
 		x.inverse(Operation{Kind: OpReset, Path: x.res.Canonical})
 		return nil
 	}
-	lit, err := x.a.sourceLit(x.res.Target, x.scopeAt(len(x.res.Steps), true))
+	path, v, k := x.res.Canonical, x.res.Target, len(x.res.Steps)
+	if x.inWhole(k) {
+		k--
+		path, v = x.pathAt(k), x.valueAt(k) // an element of a bits list, which keeps no order: the list (WIRE.md 5.3)
+	}
+	lit, err := x.a.sourceLit(v, x.scopeAt(k, true))
 	if err != nil {
 		return err
 	}
-	x.inverse(Operation{Kind: OpSet, Path: x.res.Canonical, Value: lit})
+	x.inverse(Operation{Kind: OpSet, Path: path, Value: lit})
 	return nil
 }
 

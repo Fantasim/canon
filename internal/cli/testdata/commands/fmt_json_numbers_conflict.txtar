@@ -1,4 +1,4 @@
-FORMATTER.md §14.1, WIRE.md §7.2: a number two fields read with different canonical texts (a Float and a Float32) is kept as written; one they agree on is canonical.
+FORMATTER.md §14.1, WIRE.md §7.2 (log-2026-09-29 M4 B11-r3): a number two fields read as different base types (a Float and a Float32) is kept as written, whether their canonical texts differ (x) or agree (y).
 -- args --
 fmt
 --json-sources
@@ -22,5 +22,5 @@ let again: Float32 = load("../data/x.json", at: "y")
 [file data/x.json]
 {
   "x": 0.10000000149011612,
-  "y": 2.5
+  "y": 2.500
 }

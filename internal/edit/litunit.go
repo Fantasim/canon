@@ -30,13 +30,19 @@ func (tc *typing) wholeUnits(lit Lit, t types.Type, v value.Value, unit types.Un
 	return nil
 }
 
-// fieldUnits is wholeUnits on each field rec writes, in the unit of that field.
+// fieldUnits is wholeUnits on each field rec writes, in the unit of that field; a pairs list
+// that no slots write has no wire form either (WIRE.md 5.14; log-2026-09-29 M4 B11, B11-r).
 func (tc *typing) fieldUnits(lit Lit, t types.Type, rec *value.Record) error {
 	for i, f := range fieldsOf(rec.T) {
 		if i >= len(rec.Fields) || rec.Fields[i] == nil {
 			continue
 		}
-		if err := tc.unitsAt(Seg{Kind: SegField, Name: f.Name}, lit, t, rec.Fields[i], f.Unit); err != nil {
+		seg := Seg{Kind: SegField, Name: f.Name}
+		if why := slotsRefusal(f, rec.Fields[i]); why != "" {
+			_, err := tc.inside(seg, func() (value.Value, error) { return nil, tc.refuse(t, describe(lit), why) })
+			return err
+		}
+		if err := tc.unitsAt(seg, lit, t, rec.Fields[i], f.Unit); err != nil {
 			return err
 		}
 	}

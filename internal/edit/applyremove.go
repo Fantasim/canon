@@ -22,6 +22,8 @@ func removeOp(x *opCtx) error {
 		return ErrStableKey
 	case x.a.env.EditLayer != "":
 		return x.layerRemove(parent, pos)
+	case x.pairsAt(len(x.res.Steps) - 1):
+		return x.pairsOp(len(x.res.Steps)-1, without(parent, pos)) // slot keys renumbered (WIRE.md 5.14)
 	}
 	if err := x.undoRemove(parent, pos); err != nil {
 		return err
@@ -209,8 +211,12 @@ func moveOp(x *opCtx) error {
 	if c.state != stTree || pc.state != stTree || pc.files {
 		return &NotEditableError{Reason: ReasonOrder}
 	}
+	l, isList := parent.(*value.List)
+	if isList && x.pairsAt(len(x.res.Steps)-1) {
+		return x.pairsOp(len(x.res.Steps)-1, moved(l, pos, x.op.Index)) // slot keys (WIRE.md 5.14)
+	}
 	x.inverse(Operation{Kind: OpMove, Path: x.movedPath(parent), Index: pos})
-	if l, isList := parent.(*value.List); isList && c.mode == ModeJSON && x.writtenWhole(parent) {
+	if isList && c.mode == ModeJSON && x.writtenWhole(parent) {
 		return x.diffAt(len(x.res.Steps)-1, parent, moved(l, pos, x.op.Index))
 	}
 	if c.mode == ModeJSON {

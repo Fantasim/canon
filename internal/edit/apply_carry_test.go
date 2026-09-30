@@ -105,6 +105,13 @@ func TestUndoCarryScope(t *testing.T) {
 	// AddEntry inverse reads it in (log-2026-09-29 M4 B10-r2).
 	roundTrip(t, "remove, int element", itemCarryFS(), remove("tag.sets[0]"))
 	roundTrip(t, "remove, unit entry", itemCarryFS(), remove(`tag.waits["a"]`))
+	// A Set of an item holding a decoded symbol key below the field's own value: the key is
+	// written back as read, the values in the field's unit or int (log-2026-09-29 M4 B10-r3).
+	roundTrip(t, "set, unit entry", itemCarryFS(), set(`tag.waits["a"]`, "{}"))
+	roundTrip(t, "set, int element", itemCarryFS(), set("tag.sets[0]", "{}"))
+	roundTrip(t, "set, deeper unit entry", itemCarryFS(), set(`tag.deep["a"]["b"]`, "{}"))
+	roundTrip(t, "set, deep unit entry", itemCarryFS(), set(`tag.deep["a"]`, "{}"))
+	roundTrip(t, "remove, deeper unit entry", itemCarryFS(), remove(`tag.deep["a"]["b"]`))
 }
 
 // itemCarrySrc holds Never-branch data inside the items of collections whose field has a unit or int.
@@ -128,6 +135,8 @@ record Tag {
   sets: [{Pick(goal): Bool}] = [] @json(int)
   /// Wait sets.
   waits: {String: {Pick(goal): Duration}} = {} @json(unit: s)
+  /// Wait sets by group.
+  deep: {String: {String: {Pick(goal): Duration}}} = {} @json(unit: s)
 }
 
 /// Loaded.
@@ -143,6 +152,13 @@ const itemCarryJSON = `{
   "waits": {
     "a": {
       "zzz": 5
+    }
+  },
+  "deep": {
+    "a": {
+      "b": {
+        "zzz": 5
+      }
     }
   }
 }

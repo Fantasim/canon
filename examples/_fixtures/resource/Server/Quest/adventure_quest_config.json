@@ -60,7 +60,7 @@
       "default": 0.5,
       "overrides": {
         "COMBAT_KILL_MONSTER": 0.6,
-        "MISC_ACTIVE_PLAYTIME": 1.0
+        "MISC_ACTIVE_PLAYTIME": 1
       }
     },
     "3_tasks": {

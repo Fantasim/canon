@@ -1,0 +1,28 @@
+FORMATTER.md §14.1, API.md M9 (log-2026-09-29 M4 B11-r3): a number two loads read as different base types (Float and Float32 on `1.0`, Float and Int on `-0`) is kept as written, as M9 keeps it; one read as a single type is canonical.
+-- args --
+fmt
+--json-sources
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+let wide: Float = load("../data/x.json", at: "x")
+let narrow: Float32 = load("../data/x.json", at: "x")
+let real: Float = load("../data/x.json", at: "z")
+let whole: Int = load("../data/x.json", at: "z")
+let alone: Float = load("../data/x.json", at: "w")
+-- data/x.json --
+{"x": 1.0, "z": -0, "w": 1.0}
+-- want --
+[exit 0]
+[stdout]
+[stderr]
+[file data/x.json]
+{
+  "x": 1.0,
+  "z": -0,
+  "w": 1
+}

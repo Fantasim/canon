@@ -1,6 +1,8 @@
 package edit
 
 import (
+	"bytes"
+
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/format"
 	"github.com/fantasim/canonlang/internal/jsonsrc"
@@ -37,7 +39,7 @@ func (x *opCtx) diffAt(k int, old, nw value.Value) error {
 	if err != nil {
 		return err
 	}
-	if err := d.value(old, nw, n, x.fieldAt(k)); err != nil {
+	if err := d.value(old, nw, n, x.wireFieldAt(k)); err != nil {
 		return err
 	}
 	x.w.addJSON(display, x.res.root.pkg.Path, d.out)
@@ -67,18 +69,27 @@ func (x *opCtx) jsonAt(v value.Value) (*jsonsrc.Node, string, error) {
 	return n, display, nil
 }
 
-// jsonRoot is the document of the JSON source at display, as edited so far.
+// jsonRoot is the document of the JSON source at display, as edited so far: parsed once per
+// state of its bytes, and never changed by its readers.
 func (a *applier) jsonRoot(display string) (*jsonsrc.Node, error) {
 	s, err := a.state(display)
 	if err != nil {
 		return nil, err
+	}
+	if s.tree != nil && bytes.Equal(s.treeOf, s.cur) {
+		return s.tree, nil
 	}
 	var fs source.FileSet
 	src, err := fs.Add(display, display, s.cur)
 	if err != nil {
 		return nil, err
 	}
-	return jsonsrc.Parse(src, diag.NewBag(&fs, ""))
+	root, err := jsonsrc.Parse(src, diag.NewBag(&fs, ""))
+	if err != nil {
+		return nil, err
+	}
+	s.tree, s.treeOf = root, s.cur
+	return root, nil
 }
 
 // fieldAt is the field the value at cursor k is, nil when it is no record's field.
@@ -95,6 +106,15 @@ func (x *opCtx) fieldAt(k int) *types.Field {
 		return fields[i]
 	}
 	return nil
+}
+
+// wireFieldAt is the field whose wire rules the value at cursor k is written in: its own, else,
+// as an element or entry below the nearest field, that field's unit and encoding (WIRE.md 4.1).
+func (x *opCtx) wireFieldAt(k int) *types.Field {
+	if f := x.fieldAt(k); f != nil {
+		return f
+	}
+	return x.scopeAt(k, false)
 }
 
 // addCanon adds changes to a .canon file of package pkg.

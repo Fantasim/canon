@@ -18,6 +18,9 @@ func setOp(x *opCtx) error {
 	if err != nil {
 		return err
 	}
+	if err := x.slotsFit(len(x.res.Steps), v); err != nil {
+		return err
+	}
 	if v, err = x.keepKey(v); err != nil {
 		return err
 	}
@@ -224,6 +227,7 @@ func (x *opCtx) change(v value.Value) error {
 	case x.wiredInParent(k):
 		k = x.statedBelow(k - 1)
 	}
+	k = x.writtenAt(k)
 	old := x.valueAt(k)
 	nw := withChange(old, x.res.Steps[k:], v)
 	return x.diffAt(k, old, nw)

@@ -17,7 +17,6 @@ import (
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
 	"github.com/fantasim/canonlang/internal/verify"
-	"github.com/fantasim/canonlang/internal/wire"
 )
 
 // JSONSource is a JSON file the given sources load: Content is what loads decoded (CRLF normalized),
@@ -170,36 +169,6 @@ func (r *run) real(abs string) string {
 	return abs
 }
 
-// readFile is what the loads read of one file: its content, and the text each number a field
-// read takes, by its span in the file; mixed when two loads read different contents.
-type readFile struct {
-	content []byte
-	mixed   bool
-	texts   map[source.Span]string
-}
-
-// note keeps text for the number at span, its token when two fields want different texts.
-func (rf *readFile) note(span source.Span, text string) {
-	key := source.Span{Start: span.Start, End: span.End}
-	if old, ok := rf.texts[key]; ok && old != text {
-		text = string(rf.content[key.Start:key.End])
-	}
-	rf.texts[key] = text
-}
-
-// changed is the numbers whose text differs from their token, in content order.
-func (rf *readFile) changed() []Number {
-	var out []Number
-	//canon:unordered sorted below
-	for key, text := range rf.texts {
-		if text != string(rf.content[key.Start:key.End]) {
-			out = append(out, Number{Start: key.Start, End: key.End, Text: text})
-		}
-	}
-	slices.SortFunc(out, func(a, b Number) int { return cmp.Compare(a.Start, b.Start) })
-	return out
-}
-
 // numbers is, by resolved path, what the recorded loads read of each file.
 func (h *loadRecorder) numbers(r *run) map[string]*readFile {
 	byID := map[source.FileID]*readFile{}
@@ -217,11 +186,8 @@ func (h *loadRecorder) numbers(r *run) map[string]*readFile {
 			rf = fileRead(r, p.Span.File, byAbs)
 			byID[p.Span.File] = rf
 		}
-		if rf == nil || !isNumber(rf.content, p.Span) {
-			continue
-		}
-		if text, ok := wire.NumberText(v, string(rf.content[p.Span.Start:p.Span.End])); ok {
-			rf.note(p.Span, text)
+		if rf != nil {
+			rf.reading(v, p.Span)
 		}
 	}
 	return byAbs
@@ -237,39 +203,10 @@ func fileRead(r *run, id source.FileID, byAbs map[string]*readFile) *readFile {
 	rf := byAbs[abs]
 	switch {
 	case rf == nil:
-		rf = &readFile{content: f.Content, texts: map[source.Span]string{}}
+		rf = newReadFile(f.Content)
 		byAbs[abs] = rf
 	case string(rf.content) != string(f.Content):
 		rf.mixed = true
 	}
 	return rf
-}
-
-// parts is the values v holds; a ref's target and a record's identity are not parts.
-func parts(v value.Value) []value.Value {
-	var out []value.Value
-	switch x := v.(type) {
-	case *value.Record:
-		out = x.Fields
-	case *value.List:
-		out = x.Elems
-	case *value.Map:
-		out = x.Vals
-	case *value.Table:
-		for _, e := range x.Entries {
-			out = append(out, e)
-		}
-	case *value.Pair:
-		out = []value.Value{x.A, x.B}
-	}
-	return slices.DeleteFunc(slices.Clone(out), func(p value.Value) bool { return p == nil })
-}
-
-// isNumber reports a JSON number token at span of content.
-func isNumber(content []byte, span source.Span) bool {
-	if span.Start < 0 || span.End <= span.Start || int(span.End) > len(content) {
-		return false
-	}
-	c := content[span.Start]
-	return c == '-' || '0' <= c && c <= '9'
 }

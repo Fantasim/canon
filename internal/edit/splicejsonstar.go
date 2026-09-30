@@ -6,7 +6,6 @@ import (
 	"github.com/fantasim/canonlang/internal/jsonsrc"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
-	"github.com/fantasim/canonlang/internal/wire"
 )
 
 // jsonDiffAt is a diff of the JSON source at display that states the value at cursor k, knowing
@@ -56,7 +55,7 @@ func (d *jsonDiff) starNode(v value.Value, f *types.Field, after []atStep) (*jso
 	case *value.Map:
 		out := &jsonsrc.Node{Kind: jsonsrc.Object}
 		for i, k := range x.Keys {
-			key, err := wire.KeyText(k)
+			key, err := wireKey(k)
 			if err != nil {
 				return nil, err
 			}

@@ -91,6 +91,8 @@ func (x *opCtx) insertItem(it newItem) error {
 	switch {
 	case c.files:
 		return &NotEditableError{Reason: ReasonOrder}
+	case x.pairsAt(len(x.j.cur) - 1):
+		return x.pairsOp(len(x.j.cur)-1, it.grown) // slot keys, written whole (WIRE.md 5.14)
 	case c.state == stAbsent || c.state == stSpread:
 		return x.change(it.grown)
 	case c.mode == ModeCanon:
@@ -119,7 +121,7 @@ func (x *opCtx) insertItem(it newItem) error {
 		return err
 	}
 	after, star := d.starOf(n)
-	node, err := d.freshNode(v, itemScope(x.fieldAt(len(x.j.cur)-1)), after, star)()
+	node, err := d.freshNode(v, itemScope(x.wireFieldAt(len(x.j.cur)-1)), after, star)()
 	if err != nil {
 		return err
 	}

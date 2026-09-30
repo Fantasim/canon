@@ -132,6 +132,7 @@ func (a *applier) canonical(display string, raw []byte, isJSON bool) ([]byte, er
 		if err != nil {
 			return nil, err
 		}
+		a.snap.typedNumbers(display, src.Content, root) // typed-canonical numbers (FMT-02, FORMATTER.md 14.1)
 		return jsonsrc.Format(root), nil
 	}
 	f := a.snap.tree(display)

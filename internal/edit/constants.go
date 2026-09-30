@@ -194,6 +194,8 @@ const (
 	detailUndecoded     = "not decodable"
 	detailInput         = "an input field has no value to give: "
 	detailDeep          = "nested too deep"
+	detailSlots         = "its JSON source has parallel key slots for at most "
+	detailSlotField     = "a slot of its JSON source writes both fields; no value for "
 	maxLitDepth         = 512
 )
 
@@ -288,6 +290,10 @@ const (
 
 // holderBack is how far from a walk's end the cursor of the target's container is.
 const holderBack = 2
+
+// slotBack is how far from a pairs list element's cursor the record whose object writes its
+// slot keys is (WIRE.md 5.14).
+const slotBack = 2
 
 // parentStepBack is how far from a path's end the step whose value holds the last one is.
 const parentStepBack = 2

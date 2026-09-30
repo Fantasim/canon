@@ -8,10 +8,10 @@
       "targetCount": 200,
       "monsterId": "MI_BANG1",
       "spawnRegion": {
-        "left": 6800.0,
-        "top": 3200.0,
-        "right": 7100.0,
-        "bottom": 3500.0
+        "left": 6800,
+        "top": 3200,
+        "right": 7100,
+        "bottom": 3500
       },
       "monsterLifetimeSec": 1800,
       "schedule": [

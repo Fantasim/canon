@@ -1,0 +1,28 @@
+FORMATTER.md §14.1, API.md M9 (log-2026-09-29 M4 B11-r5): typed numbers are judged per file: two roots over one directory read one file, so a number read through them as Float and Float32 is kept as written, as M9 keeps it.
+-- args --
+fmt
+--json-sources
+-- project.canon --
+project acme {
+  canon: "0.1"
+
+  roots {
+    a: "data"
+    b: "data"
+  }
+}
+-- d/d.canon --
+package d
+
+let wide: Float = load("@a/x.json", at: "x")
+let narrow: Float32 = load("@b/x.json", at: "x")
+-- data/x.json --
+{"x": 1.0}
+-- want --
+[exit 0]
+[stdout]
+[stderr]
+[file data/x.json]
+{
+  "x": 1.0
+}

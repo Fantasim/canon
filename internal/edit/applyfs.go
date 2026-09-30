@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fantasim/canonlang/internal/jsonsrc"
 	"github.com/fantasim/canonlang/internal/project"
 )
 
@@ -25,6 +26,8 @@ type fileState struct {
 	checked      bool   // its layout was judged (M9)
 	normalized   bool   // it was not in canonical layout: normalized first (M9)
 	steps        []writeStep
+	tree         *jsonsrc.Node // its JSON document, parsed from treeOf
+	treeOf       []byte
 }
 
 // change is the file's Change, false when its bytes are the base's.

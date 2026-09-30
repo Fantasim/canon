@@ -68,6 +68,10 @@ func (w *wiring) restrictRecord(r *value.Record) (*value.Record, error) {
 		if !w.a.printed(r, i) {
 			continue
 		}
+		if l, ok := r.Fields[i].(*value.List); ok && f.Pairs != nil {
+			keep, vals = append(keep, f), append(vals, w.a.pairsWritten(l)) // both keys of each slot (WIRE.md 5.14)
+			continue
+		}
 		v, err := w.restrict(r.Fields[i])
 		if err != nil {
 			return nil, err

@@ -7,7 +7,6 @@ import (
 	"github.com/fantasim/canonlang/internal/jsonsrc"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
-	"github.com/fantasim/canonlang/internal/wire"
 )
 
 // jkept is a member or element of a JSON container: its identity, value, position and node.
@@ -129,7 +128,7 @@ func (d *jsonDiff) mapIn(old, nw *value.Map, n *jsonsrc.Node, f *types.Field) (b
 	after, star := d.starOf(n)
 	var olds []jkept
 	for pos, m := range n.Members {
-		i := slices.IndexFunc(old.Keys, func(k value.Value) bool { t, err := wire.KeyText(k); return err == nil && t == m.Key })
+		i := slices.IndexFunc(old.Keys, func(k value.Value) bool { t, err := wireKey(k); return err == nil && t == m.Key })
 		node := descend(m.Value, restOf(after))
 		if i < 0 || node == nil {
 			return false, nil
@@ -138,7 +137,7 @@ func (d *jsonDiff) mapIn(old, nw *value.Map, n *jsonsrc.Node, f *types.Field) (b
 	}
 	news := make([]jfresh, len(nw.Keys))
 	for i, k := range nw.Keys {
-		key, err := wire.KeyText(k)
+		key, err := wireKey(k)
 		if err != nil {
 			return true, err
 		}

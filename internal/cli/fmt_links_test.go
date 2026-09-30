@@ -131,3 +131,20 @@ func TestFmtLinkAndTargetOnce(t *testing.T) {
 		t.Errorf("exit %d, %q", code, out)
 	}
 }
+
+// FORMATTER.md 14.1, API.md M9 (log-2026-09-29 M4 B11-r5): a link and its target are one file for
+// typed numbers: read through them as Float and Float32, a number is kept as written.
+func TestFmtSymlinkedTwoTypes(t *testing.T) {
+	proj := t.TempDir()
+	linkTree(t, proj, map[string]string{
+		"project.canon": "project acme {\n  canon: \"0.1\"\n}\n",
+		"a/a.canon":     "package a\n\nlet wide: Float = load(\"../data/x.json\", at: \"x\")\nlet narrow: Float32 = load(\"../data/y.json\", at: \"x\")\n",
+		"data/x.json":   "{\n  \"x\": 1.0\n}\n",
+	}, map[string]string{"data/y.json": "x.json"})
+	if code, out := runFmtIn(t, proj, "--json-sources"); code != 0 || out != "" {
+		t.Fatalf("exit %d, %q", code, out)
+	}
+	if got := readText(t, filepath.Join(proj, "data", "x.json")); got != "{\n  \"x\": 1.0\n}\n" {
+		t.Errorf("x.json is %q, want the number kept", got)
+	}
+}

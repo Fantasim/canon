@@ -62,8 +62,13 @@ func (d *jsonDiff) set(nw value.Value, n *jsonsrc.Node, f *types.Field) error {
 	if err != nil {
 		return err
 	}
-	d.out = append(d.out, jsonEdit{e: jsonsrc.Edit{Kind: jsonsrc.Set, Pointer: n.Pointer(), Value: node}, anchor: int(n.Span.Start)})
+	d.setNode(n, node)
 	return nil
+}
+
+// setNode writes node over n.
+func (d *jsonDiff) setNode(n, node *jsonsrc.Node) {
+	d.out = append(d.out, jsonEdit{e: jsonsrc.Edit{Kind: jsonsrc.Set, Pointer: n.Pointer(), Value: node}, anchor: int(n.Span.Start)})
 }
 
 func (d *jsonDiff) remove(n *jsonsrc.Node, at int) {
@@ -87,43 +92,62 @@ func itemAnchor(c *jsonsrc.Node, at int) int {
 }
 
 // wiredApart reports a record one of whose changed fields its object does not hold in one
-// member (an inline variant, parallel keys): the record is written again whole.
+// member (an inline variant): the record is written again whole. Parallel keys are compared
+// slot key by slot key (WIRE.md 5.14; log-2026-09-29 M4 B10-r3).
 func wiredApart(o, r *value.Record) bool {
 	for i, f := range fieldsOf(r.T) {
-		if (f.Inline || f.Pairs != nil) && !sameValue(o.Fields[i], r.Fields[i]) {
+		if f.Inline && !sameValue(o.Fields[i], r.Fields[i]) {
 			return true
 		}
 	}
 	return false
 }
 
-// record compares field by field at each field's key path (M1, M8): a field left or set to its
-// default is removed (E6), a new one placed after the previous declared key (FMT-02).
+// record compares field by field at each field's key path (M1, M8), a pairs field slot key by
+// slot key (WIRE.md 5.14).
 func (d *jsonDiff) record(old, nw *value.Record, n *jsonsrc.Node) error {
 	fields := fieldsOf(nw.T)
 	for i, f := range fields {
-		if f.Input != nil || f.Inline || f.Pairs != nil {
-			continue
-		}
-		m, holder, depth := memberAt(n, f.WirePath)
-		written := nw.Set[i] && nw.Fields[i] != nil
 		var err error
 		switch {
-		case !written && m != nil:
-			d.remove(m, memberStart(holder, f.WirePath))
-		case !written:
-		case m != nil && !sameValue(old.Fields[i], nw.Fields[i]) && d.omits(nw, i, f):
-			d.remove(m, memberStart(holder, f.WirePath))
-		case m != nil:
-			err = d.value(old.Fields[i], nw.Fields[i], m, f)
-		case !d.omits(nw, i, f):
-			err = d.insertField(fields, i, nw.Fields[i], holder, depth)
+		case f.Pairs != nil:
+			err = d.pairs(old, nw, i, n)
+		case f.Input == nil && !f.Inline:
+			err = d.member(old, nw, fields, i, n)
 		}
 		if err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+// member compares field i at its key path in object n: a field left or set to its default is
+// removed (E6), a new one placed after the previous declared key (FMT-02).
+func (d *jsonDiff) member(old, nw *value.Record, fields []*types.Field, i int, n *jsonsrc.Node) error {
+	f := fields[i]
+	m, holder, depth := memberAt(n, f.WirePath)
+	written := nw.Set[i] && nw.Fields[i] != nil
+	switch {
+	case !written && m != nil:
+		d.remove(m, memberStart(holder, f.WirePath))
+	case !written:
+	case m != nil && !sameValue(old.Fields[i], nw.Fields[i]) && d.omits(nw, i, f):
+		d.remove(m, memberStart(holder, f.WirePath))
+	case m != nil:
+		return d.value(old.Fields[i], nw.Fields[i], m, f)
+	case !d.omits(nw, i, f):
+		return d.insertField(fields, i, nw.Fields[i], holder, depth)
+	}
+	return nil
+}
+
+// writtenValue is field i of rec as its source writes it, nil when left to its default.
+func writtenValue(rec *value.Record, i int) value.Value {
+	if !rec.Set[i] {
+		return nil
+	}
+	return rec.Fields[i]
 }
 
 // omits reports field i of nw left out of its object: it holds its default, and it is not none
