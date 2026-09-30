@@ -83,6 +83,9 @@ func (tc *typing) value(lit Lit, t types.Type) (value.Value, error) {
 
 // key is lit as a key of kt: Key, IntKey and PathKey are keys; any other form is a value of kt.
 func (tc *typing) key(lit Lit, kt types.Type) (value.Value, error) {
+	if k, ok := lit.(Key); ok && dependent(kt) {
+		return &value.Symbol{Name: string(k), T: kt}, nil // a dependent key type's name (TYPES.md §11.5)
+	}
 	var v value.Value
 	switch x := lit.(type) {
 	case Key:

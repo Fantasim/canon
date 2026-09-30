@@ -180,6 +180,7 @@ const (
 	detailFraction      = "holds a fraction of a millisecond"
 	detailNotFinite     = "not a finite number"
 	detailDependent     = "a type computed from a value takes a name only"
+	detailNotNamed      = "names nothing in the type its record computes here"
 	detailField         = "no such field: "
 	detailTwice         = "field given twice: "
 	detailNotLiteral    = "not a Canon literal"

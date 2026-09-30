@@ -28,6 +28,11 @@ func (x *opCtx) diffAt(k int, old, nw value.Value) error {
 	if err != nil {
 		return err
 	}
+	fr := x.frameAt(k)
+	if nw, err = fr.symbolsIn(nw, old, x.declaredAt(k)); err != nil {
+		return err
+	}
+	x.w.given = append(x.w.given, givenValue{path: x.pathAt(k), v: nw, held: fr.kept})
 	d := &jsonDiff{a: x.a}
 	if err := d.value(old, nw, n, x.fieldAt(k)); err != nil {
 		return err
@@ -105,4 +110,31 @@ func (w *work) addJSON(display, pkg string, edits []jsonEdit) {
 	}
 	w.json[display] = append(w.json[display], edits...)
 	w.own(display, pkg)
+}
+
+// frameAt is the strict frame of the value at cursor k: the records and dependent map keys above it.
+func (x *opCtx) frameAt(k int) depFrame {
+	fr := depFrame{a: x.a, kept: map[*value.Symbol]bool{}}
+	for j := 0; j < k && j < len(x.res.Steps); j++ {
+		fr = fr.into(x.valueAt(j), x.declaredAt(j), x.res.Steps[j].Value)
+	}
+	return fr
+}
+
+// declaredAt is the declared type of the value at cursor k, nil for the root.
+func (x *opCtx) declaredAt(k int) types.Type {
+	if k == 0 || k > len(x.res.Steps) {
+		return nil
+	}
+	if f := x.fieldAt(k); f != nil {
+		return f.Type
+	}
+	ct := x.res.Steps[k-1].Container
+	if ct == nil {
+		return nil
+	}
+	if _, vt, isMap := mapTypes(present(ct)); isMap {
+		return vt
+	}
+	return elemType(present(ct))
 }

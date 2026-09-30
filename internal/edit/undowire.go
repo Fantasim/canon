@@ -1,0 +1,48 @@
+package edit
+
+import (
+	"encoding/json"
+
+	"github.com/fantasim/canonlang/internal/value"
+)
+
+// readWire is v's wire, as the decoder read it, when a JSON source states v and v holds a symbol
+// the decoder read there (DECISIONS 175): re-encoded, its held symbols are the strings read.
+func (a *applier) readWire(v value.Value) (json.RawMessage, bool) {
+	p := provOf(v)
+	if p == nil || p.Kind != value.ProvJSON || !holdsDecoded(v) {
+		return nil, false
+	}
+	raw, err := a.wireText(v, nil)
+	return raw, err == nil
+}
+
+// holdsDecoded reports v holding a symbol read from a JSON source (a symbol with provenance).
+func holdsDecoded(v value.Value) bool {
+	switch x := v.(type) {
+	case *value.Symbol:
+		return x.P != nil
+	case *value.Record:
+		return anyDecoded(x.Fields)
+	case *value.List:
+		return anyDecoded(x.Elems)
+	case *value.Map:
+		return anyDecoded(x.Keys) || anyDecoded(x.Vals)
+	case *value.Table:
+		for _, e := range x.Entries {
+			if holdsDecoded(e) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func anyDecoded(vs []value.Value) bool {
+	for _, v := range vs {
+		if v != nil && holdsDecoded(v) {
+			return true
+		}
+	}
+	return false
+}

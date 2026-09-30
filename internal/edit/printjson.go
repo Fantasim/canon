@@ -13,11 +13,15 @@ import (
 	"github.com/fantasim/canonlang/internal/wire"
 )
 
-// wireNode is v in the source wire at field f's place, f nil for no field (API.md M8): its
-// none marker, unit and encodings, records without the fields a literal would leave
-// out (M7). An inline or pairs field gives the members it writes in its parent, as an object.
+// wireNode is v in the source wire at field f's place, f nil for no field (API.md M8): records
+// without the fields a literal leaves out (M7), symbols as their branch names them (DEP-02); an
+// inline or pairs field gives the members it writes in its parent, as an object.
 func (a *applier) wireNode(v value.Value, f *types.Field) (*jsonsrc.Node, error) {
-	rv, err := a.restrict(v)
+	sv, err := depFrame{a: a}.symbolsIn(v, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	rv, err := a.restrict(sv)
 	if err != nil {
 		return nil, err
 	}
@@ -97,8 +101,8 @@ func (a *applier) wireText(v value.Value, f *types.Field) (json.RawMessage, erro
 	return b.Bytes(), nil
 }
 
-// restrict is a copy of v whose records keep only the fields a literal writes (M7), so that
-// the data wire's encoder, which writes every field, writes the source wire of v.
+// restrict is a copy of v whose records keep only the fields a literal writes (M7), for the data
+// wire's encoder; a symbol left is the string the decoder reads a symbol from (DECISIONS 175).
 func (a *applier) restrict(v value.Value) (value.Value, error) {
 	switch x := v.(type) {
 	case *value.Record:
@@ -107,8 +111,12 @@ func (a *applier) restrict(v value.Value) (value.Value, error) {
 		elems, err := a.restrictAll(x.Elems)
 		return &value.List{T: x.T, Elems: elems, P: x.P}, err
 	case *value.Map:
+		keys, err := a.restrictAll(x.Keys)
+		if err != nil {
+			return nil, err
+		}
 		vals, err := a.restrictAll(x.Vals)
-		return &value.Map{T: x.T, Keys: x.Keys, Vals: vals, P: x.P}, err
+		return &value.Map{T: x.T, Keys: keys, Vals: vals, P: x.P}, err
 	case *value.Table:
 		out := &value.Table{T: x.T, P: x.P}
 		for _, e := range x.Entries {
@@ -120,7 +128,7 @@ func (a *applier) restrict(v value.Value) (value.Value, error) {
 		}
 		return out, nil
 	case *value.Symbol:
-		return nil, errNoWire
+		return &value.Str{V: x.Name, T: types.StringType, P: x.P}, nil
 	}
 	return v, nil
 }

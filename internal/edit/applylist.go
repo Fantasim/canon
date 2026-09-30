@@ -97,7 +97,11 @@ func (x *opCtx) insertItem(it newItem) error {
 	if err != nil {
 		return err
 	}
-	node, err := x.a.wireNode(it.v, itemScope(x.fieldAt(len(x.j.cur)-1)))
+	v, err := x.frameAt(len(x.j.cur)).symbolsIn(it.v, nil, nil)
+	if err != nil {
+		return err
+	}
+	node, err := x.a.wireNode(v, itemScope(x.fieldAt(len(x.j.cur)-1)))
 	if err != nil {
 		return err
 	}

@@ -31,6 +31,7 @@ type work struct {
 	records []touched
 	locked  []Locked
 	kept    keptCase
+	given   []givenValue
 }
 
 // jsonEdit is an edit of a JSON source and the offset it applies at in the current text: the
@@ -205,6 +206,7 @@ func (a *applier) commit(w *work) error {
 	maps.Copy(a.owners, w.owners)
 	a.dropped = append(a.dropped, w.dropped...)
 	a.records = append(a.records, w.records...)
+	a.given = append(a.given, w.given...)
 	a.locked = append(a.locked, w.locked...)
 	a.kept = w.kept
 	a.dirty = true

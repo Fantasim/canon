@@ -106,6 +106,9 @@ func (x *opCtx) addMapEntry(m *value.Map) error {
 	if err != nil {
 		return err
 	}
+	if e.key, err = x.jsonKey(m, e.key); err != nil {
+		return err
+	}
 	wkey, err := wire.KeyText(e.key)
 	if err != nil && x.j.last().mode == ModeJSON {
 		return &ValueError{Expected: e.key.Type().String(), Got: e.key.CanonText(), Detail: err.Error()}
@@ -117,6 +120,22 @@ func (x *opCtx) addMapEntry(m *value.Map) error {
 		v: e.v, grown: grown, key: wkey, at: count, count: count,
 		text: func() (string, error) { return x.a.mapItemText(e.key, e.v) },
 	})
+}
+
+// jsonKey is k, a new key of m, as a JSON source writes it: a symbol as what it names in its
+// record's branch (DEP-02); a key m holds under that name is ErrKeyExists (E3).
+func (x *opCtx) jsonKey(m *value.Map, k value.Value) (value.Value, error) {
+	if _, isSymbol := k.(*value.Symbol); !isSymbol || x.j.last().mode != ModeJSON {
+		return k, nil
+	}
+	rk, err := x.frameAt(len(x.j.cur)).symbolsIn(k, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	if slices.ContainsFunc(m.Keys, func(o value.Value) bool { return sameValue(o, rk) }) {
+		return nil, ErrKeyExists
+	}
+	return rk, nil
 }
 
 // sibling is the collection holding the path's target and the target's position there.

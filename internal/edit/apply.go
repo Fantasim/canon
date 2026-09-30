@@ -110,6 +110,7 @@ type applier struct {
 	dropped  []Dropped
 	owners   map[string]string // the package owning each file written, by display path (E17)
 	records  []touched         // E15
+	given    []givenValue      // what the operations wrote in JSON sources, for E15's held data
 	// cascadeUndo are the cascades' inverses, which follow every other one (log-2026-09-29 M4 U4b-r)
 	cascadeUndo []Operation
 	emptied     map[string]string // a directory a file left, to the package directory it stops below (N6)

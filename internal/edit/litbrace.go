@@ -113,10 +113,10 @@ func (st *srcTyping) mapKey(it syntax.BraceItem, kt types.Type, i int) (value.Va
 	return nil, nil, st.wrong(it, kt, detailNotLiteral)
 }
 
-// keyByName is a bare name as a map key: of an enum, a Kind or a ref key type only.
+// keyByName is a bare name as a map key: of an enum, a Kind, a ref or a dependent key type (DEP-02).
 func keyByName(name string, kt types.Type) (value.Value, bool) {
 	switch b := kt.Base().(type) {
-	case *types.EnumType, *types.VariantKindType, *types.RefType:
+	case *types.EnumType, *types.VariantKindType, *types.RefType, *types.TypeAppType, *types.DepUnionType:
 		return nameValue(name, kt)
 	case *types.LitUnionType:
 		return keyByName(name, b.Of)

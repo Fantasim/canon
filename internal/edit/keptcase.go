@@ -168,6 +168,7 @@ type checkpoint struct {
 	host                           wire.Host
 	dirty                          bool
 	undo, dropped, records, locked int
+	given                          int
 	owners, emptied                map[string]string
 }
 
@@ -175,6 +176,7 @@ func (a *applier) checkpoint() checkpoint {
 	cp := checkpoint{
 		files: make(map[string]fileState, len(a.files)), snap: a.snap, host: a.host, dirty: a.dirty,
 		undo: len(a.undo), dropped: len(a.dropped), records: len(a.records), locked: len(a.locked),
+		given:  len(a.given),
 		owners: maps.Clone(a.owners), emptied: maps.Clone(a.emptied),
 	}
 	for d, s := range a.files { //canon:unordered copies a map
@@ -193,5 +195,6 @@ func (a *applier) restore(cp checkpoint) {
 	}
 	a.snap, a.host, a.dirty = cp.snap, cp.host, cp.dirty
 	a.undo, a.dropped, a.records, a.locked = a.undo[:cp.undo], a.dropped[:cp.dropped], a.records[:cp.records], a.locked[:cp.locked]
+	a.given = a.given[:cp.given]
 	a.owners, a.emptied, a.kept = maps.Clone(cp.owners), maps.Clone(cp.emptied), keptCase{}
 }

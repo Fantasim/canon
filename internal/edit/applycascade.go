@@ -71,6 +71,9 @@ func dependsOnAny(f *types.Field, fields []*types.Field, names []string) bool {
 // its record's fields compute, or an error is reported at its exact place (a refinement, a
 // `where`, an asset rule; a JSON source's decoding).
 func (a *applier) judge(c fieldCheck) error {
+	if a.restores(c.path()) {
+		return nil
+	}
 	if err := a.settle(); err != nil {
 		return err
 	}
