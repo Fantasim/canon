@@ -4,6 +4,7 @@ import (
 	"slices"
 
 	"github.com/fantasim/canonlang/internal/format"
+	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
 )
 
@@ -11,7 +12,7 @@ import (
 // inside the amendment that sets the path or an ancestor, active or not, else as the path's own
 // amendment line, which replaces the lines amending its descendants.
 func (x *opCtx) layerSet() error {
-	v, err := x.typed(x.op.Value, x.targetType())
+	v, err := x.typed(x.op.Value, x.layerType())
 	if err != nil {
 		return err
 	}
@@ -33,6 +34,21 @@ func (x *opCtx) layerSet() error {
 		return err
 	}
 	return x.amendLine(x.res.Canonical, text)
+}
+
+// layerType is targetType, but the declared type where the edit layer is inactive: an arm the
+// analysis computes there is not the one the layer's lines select (W11a; log-2026-10-01 M4.1).
+func (x *opCtx) layerType() types.Type {
+	if !x.layerInactive() {
+		return x.targetType()
+	}
+	if _, f, ok := x.field(); ok {
+		return f.Type
+	}
+	if t, err := x.a.snap.Type(x.res.Resolved); err == nil && t != nil {
+		return t
+	}
+	return x.targetType()
 }
 
 // undoNewLine is the inverse of a new amendment line (E23, log-2026-09-29 M4 U4b-r): Reset,

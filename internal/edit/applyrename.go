@@ -42,7 +42,9 @@ func renameOp(x *opCtx) error {
 	if err != nil {
 		return err
 	}
-	x.inverse(Operation{Kind: OpRename, Path: childPath(x.parentPath(), keySegOf(parent, k, kt)), Key: keyLit(old)})
+	renamed := childPath(x.parentPath(), keySegOf(parent, k, kt))
+	x.inverse(Operation{Kind: OpRename, Path: renamed, Key: keyLit(old)})
+	x.w.rekey = &pathMove{from: x.res.Canonical, to: renamed}
 	r := &renaming{x: x, from: old, to: k, text: map[string][]format.Change{}, done: map[tokenPlace]bool{}, pkgs: map[string]string{}}
 	if err := r.key(parent); err != nil {
 		return err

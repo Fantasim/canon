@@ -147,6 +147,7 @@ func (r *renaming) move(file, dest, stop string) error {
 	}
 	r.x.w.moves = append(r.x.w.moves, fileMove{from: file, to: dest, stop: stop, json: r.x.a.snap.tree(file) == nil})
 	r.x.w.own(dest, r.x.res.root.pkg.Path)
+	r.x.w.own(file, r.x.res.root.pkg.Path)
 	return nil
 }
 

@@ -81,7 +81,15 @@ amend other {
   "undo": [
     {
       "op": "reset",
+      "path": "p:conf.limit"
+    },
+    {
+      "op": "reset",
       "path": "p:extra.id"
+    },
+    {
+      "op": "reset",
+      "path": "p:other.data"
     },
     {
       "op": "set",
@@ -90,17 +98,18 @@ amend other {
     },
     {
       "op": "set",
-      "path": "p:other.data",
-      "source": "{ id: \"od\", n: 3 }"
+      "path": "p:holder.data",
+      "source": "{ id: \"hd\", n: 1 }"
     },
     {
       "op": "set",
-      "path": "p:holder.data.n",
-      "source": "1"
+      "path": "p:other.data.id",
+      "source": "\"od\""
     },
     {
-      "op": "reset",
-      "path": "p:conf.limit"
+      "op": "set",
+      "path": "p:other.data.n",
+      "source": "3"
     }
   ],
   "touched": [

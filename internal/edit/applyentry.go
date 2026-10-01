@@ -101,7 +101,7 @@ func (x *opCtx) newMapEntry(m *value.Map) (entryParts, error) {
 		fr = fr.bind(dm.Binder, k) // the new key's binder (log-2026-09-29 M4 B7-r3)
 	}
 	x.a.outer = fr.outer()
-	v, err := x.typed(x.op.Value, vt)
+	v, err := x.typed(x.op.Value, x.itemType(vt, fr))
 	if err != nil {
 		return entryParts{}, err
 	}

@@ -184,7 +184,10 @@ func (x *opCtx) amendLine(canonical, text string) error {
 	f := files[0]
 	for _, b := range f.Amends {
 		if b.Target != nil && b.Target.Name == root {
-			changes := x.descendantLines(b)
+			var changes []format.Change
+			if canonical == x.res.Canonical {
+				changes = x.descendantLines(b) // an entry's new line has no descendant (log-2026-10-01 M4.1 ruling d)
+			}
 			changes = append(changes, format.Change{Kind: format.Insert, List: b.Braces.Open, At: len(b.Items), Text: item})
 			x.w.addCanon(f.Src.Path, x.res.root.pkg.Path, changes)
 			return nil

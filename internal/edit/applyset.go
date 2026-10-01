@@ -89,7 +89,8 @@ func (x *opCtx) field() (*value.Record, *types.Field, bool) {
 }
 
 // targetType is the type a value at the path must have: the declared one, or for a type a value
-// computes the arm its record's fields select, else the one verification found (U4a G2).
+// computes the arm the state the earlier operations left selects, else the one verification
+// found (U4a G2).
 func (x *opCtx) targetType() types.Type {
 	t, err := x.a.snap.Type(x.res.Resolved)
 	if err != nil || t == nil {
@@ -98,21 +99,11 @@ func (x *opCtx) targetType() types.Type {
 	if !dependent(present(t)) {
 		return t
 	}
-	rec, f, isField := x.field()
-	if isField {
+	if _, f, isField := x.field(); isField {
 		t = f.Type
 	}
-	if _, fromJSON := x.op.Value.(FromJSON); fromJSON {
-		return t // the decoder computes the arm, a symbol on Never as reading the file (log-2026-09-29 M4 B7-r4)
-	}
-	if isField {
-		ct, computed := concreteType(f.Type, rec)
-		switch {
-		case computed && present(ct).Base().Kind() == types.Never:
-			return t // a name given a Never arm is refused where its symbol is resolved (V1)
-		case computed:
-			return ct // the arm the record's fields select now (log-2026-09-29 M4 U4b-r)
-		}
+	if ct, computed := x.armOf(t, x.frameAt(len(x.res.Steps))); computed {
+		return ct
 	}
 	if x.res.Target == nil {
 		return t
@@ -125,6 +116,29 @@ func (x *opCtx) targetType() types.Type {
 		return &types.OptionalType{Elem: concrete}
 	}
 	return concrete
+}
+
+// armOf is t as the arm fr selects in the state the earlier operations left (E1; U-E1); t itself
+// for FromJSON, whose arm the decoder computes (B7-r4), and for a Never arm, a name given it
+// refused where its symbol is resolved (V1). False when the arm cannot be computed here.
+func (x *opCtx) armOf(t types.Type, fr depFrame) (types.Type, bool) {
+	if _, fromJSON := x.op.Value.(FromJSON); fromJSON {
+		return t, true
+	}
+	ct, computed := fr.computedType(t)
+	if computed && present(ct).Base().Kind() == types.Never {
+		return t, true
+	}
+	return ct, computed
+}
+
+// itemType is t, the declared type of an item the operation adds, as armOf computes it in fr;
+// t itself where the arm cannot be computed.
+func (x *opCtx) itemType(t types.Type, fr depFrame) types.Type {
+	if ct, computed := x.armOf(t, fr); computed {
+		return ct
+	}
+	return t
 }
 
 // typed is lit as a value of t (API.md V1): a *ValueError when it does not fit.

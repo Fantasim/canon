@@ -279,13 +279,17 @@ func dependent(t types.Type) bool {
 	return k == types.TypeApp || k == types.DepUnion
 }
 
-// symbol is a name given to a dependent type: kept as a symbol, resolved at verification (DEP-02).
+// symbol is a value given to a dependent type: a name kept as a symbol, resolved at
+// verification (DEP-02); a scalar a branch takes, as givenLit keeps it (TYPES.md 11.4).
 func (tc *typing) symbol(lit Lit, t types.Type) (value.Value, error) {
 	switch x := lit.(type) {
 	case Member:
 		return &value.Symbol{Name: string(x), T: t}, nil
 	case Key:
 		return &value.Symbol{Name: string(x), T: t}, nil
+	}
+	if v, ok := givenLit(lit, t); ok {
+		return v, nil
 	}
 	return nil, tc.mismatch(lit, t, detailDependent)
 }

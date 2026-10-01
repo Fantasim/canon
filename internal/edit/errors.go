@@ -99,6 +99,8 @@ var (
 	errTemplate  = errors.New("template value not usable in a path")
 	errNoWire    = errors.New("value has no source wire here")
 	errNoMember  = errors.New("no such member in the JSON source")
+
+	errUndoUnverified = errors.New("no Undo found that restores every value")
 )
 
 // NotEditableError is an operation on a value it cannot edit (API.md W5, E5, E12): the reason,

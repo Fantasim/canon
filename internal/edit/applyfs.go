@@ -14,15 +14,14 @@ import (
 	"github.com/fantasim/canonlang/internal/project"
 )
 
-// fileState is one file an edit reads or writes: its bytes at the base snapshot, as edited so
-// far (nil: absent), and how it got there.
+// fileState is one path an edit reads or writes: the file there at the base snapshot, the one
+// there as edited so far (nil: absent), and the base path its bytes descend from ("" for new ones).
 type fileState struct {
 	display, abs string
 	raw          []byte
 	existed      bool
 	cur          []byte
-	from         string // the display path it was renamed from (N8)
-	movedTo      string // renamed away: reported by the file it became
+	origin       string // the base path cur descends from, through edits and Renames (N8)
 	checked      bool   // its layout was judged (M9)
 	normalized   bool   // it was not in canonical layout: normalized first (M9)
 	steps        []writeStep
@@ -30,13 +29,10 @@ type fileState struct {
 	treeOf       []byte
 }
 
-// change is the file's Change, false when its bytes are the base's.
+// change is the path's net Change, its file at the base against its final one, whatever the
+// operations did between; false when they are the same (log-2026-10-01 M4.1 ruling, N3, N8).
 func (s *fileState) change() (Change, bool) {
 	switch {
-	case s.movedTo != "":
-		return Change{}, false
-	case s.from != "":
-		return Change{Kind: ChangeRenamed, Path: s.display, OldPath: s.from, Before: s.raw, After: s.cur}, true
 	case s.existed && s.cur == nil:
 		return Change{Kind: ChangeDeleted, Path: s.display, Before: s.raw}, true
 	case !s.existed && s.cur != nil:
@@ -60,7 +56,7 @@ func (a *applier) state(display string) (*fileState, error) {
 	data, err := a.env.Project.FS().ReadFile(abs)
 	switch {
 	case err == nil:
-		s.raw, s.cur, s.existed = data, slices.Clone(data), true
+		s.raw, s.cur, s.existed, s.origin = data, slices.Clone(data), true, display
 	case !errors.Is(err, fs.ErrNotExist):
 		return nil, asIO(err)
 	}
@@ -103,11 +99,12 @@ func (a *applier) settle() error {
 	return nil
 }
 
-// overlay is the project's file system with the files as edited so far.
+// overlay is the project's file system with the files as edited so far: each path's final state,
+// as the plan's Changes report it.
 func (a *applier) overlay() *overlayFS {
 	over := &overlayFS{base: a.env.Project.FS(), files: map[string][]byte{}}
 	for _, s := range a.files { //canon:unordered fills a map by name
-		if s.abs != "" && (s.cur != nil || s.existed || s.movedTo != "") {
+		if s.abs != "" && (s.cur != nil || s.existed) {
 			over.files[s.abs] = s.cur
 		}
 	}
@@ -231,4 +228,30 @@ func (m memInfo) Mode() fs.FileMode {
 		return fs.ModeDir | dirMode
 	}
 	return fileMode
+}
+
+// netChanges are the plan's file Changes, by path: each path's net change (fileState.change);
+// a path Created with the bytes of one Deleted, neither otherwise involved, is reported as one
+// Renamed (log-2026-10-01 M4.1 ruling, N8). Each change's writes go to writes, for M6's tests.
+func (a *applier) netChanges(writes map[string][]writeStep) []Change {
+	byPath := map[string]Change{}
+	for _, display := range slices.Sorted(maps.Keys(a.files)) {
+		if c, ok := a.files[display].change(); ok {
+			byPath[display] = c
+			writes[display] = a.files[display].steps
+		}
+	}
+	for _, display := range slices.Sorted(maps.Keys(byPath)) {
+		c, s := byPath[display], a.files[display]
+		gone, ok := byPath[s.origin]
+		if c.Kind != ChangeCreated || !ok || gone.Kind != ChangeDeleted {
+			continue
+		}
+		byPath[display] = Change{Kind: ChangeRenamed, Path: display, OldPath: s.origin, Before: gone.Before, After: c.After}
+		delete(byPath, s.origin)
+		delete(writes, s.origin)
+	}
+	out := slices.Collect(maps.Values(byPath))
+	slices.SortFunc(out, func(x, y Change) int { return strings.Compare(x.Path, y.Path) })
+	return out
 }

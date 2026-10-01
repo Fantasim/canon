@@ -1,0 +1,70 @@
+API.md W11, LAY-02 (log-2026-10-01 M4.1 ruling d): AddEntry through an edit layer that already
+amends the table adds one line to its amend block and keeps every other: the `slay.note` line
+and the `hunt` entry stay; the Undo removes the one line.
+-- options --
+pkgs: d
+layers: dev
+editLayer: dev
+-- edit.json --
+{"ops": [
+  {"op": "addEntry", "path": "quests", "key": "fresh", "source": "{ goal: kill, target: \"f\" }"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- d/d.canon --
+package d
+
+/// What a quest counts.
+enum Goal { kill, collect }
+
+/// A quest.
+record Quest {
+  /// What it counts.
+  goal: Goal
+  /// What it aims at.
+  target: String = ""
+  /// A note.
+  note: String = ""
+}
+
+/// The quests.
+let quests: table Quest = {
+  slay { goal: collect, target: "s" }
+}
+-- d/dev.layer.canon --
+package d
+layer dev
+
+amend quests {
+  slay.note: "x"
+  hunt: { goal: kill, target: "x" }
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "d/dev.layer.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "remove",
+      "path": "d:quests.fresh"
+    }
+  ],
+  "touched": [
+    "d"
+  ]
+}
+-- after/d/dev.layer.canon --
+package d
+layer dev
+
+amend quests {
+  slay.note: "x"
+  hunt: { goal: kill, target: "x" }
+  fresh: { goal: kill, target: "f" }
+}

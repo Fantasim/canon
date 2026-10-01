@@ -185,7 +185,7 @@ func (x *opCtx) undoRemove(parent value.Value, pos int) error {
 	case *value.Map:
 		x.inverse(Operation{Kind: OpAddEntry, Path: pp, Key: keyLit(p.Keys[pos]), Value: lit})
 	}
-	if !files && pos != siblingCount(parent)-1 {
+	if !files && pos != siblingCount(parent)-1 && x.a.env.EditLayer == "" { // a layer has no Move (W5 layer)
 		x.inverse(Operation{Kind: OpMove, Path: x.res.Canonical, Index: pos})
 	}
 	return nil

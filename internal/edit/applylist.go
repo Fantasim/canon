@@ -39,7 +39,7 @@ func (x *opCtx) addElem(l *value.List, at int) error {
 	if !ok {
 		return ErrBadOp
 	}
-	v, err := x.typed(x.op.Value, lt.Elem)
+	v, err := x.typed(x.op.Value, x.itemType(lt.Elem, x.frameAt(len(x.res.Steps))))
 	if err != nil {
 		return err
 	}

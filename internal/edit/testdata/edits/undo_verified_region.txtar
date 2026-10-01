@@ -1,0 +1,103 @@
+API.md E1, E22 over E23's literal order, E15 (log-2026-09-29 U-E22-r): slay's goal changes, then its
+target is written under the new branch; gather's target, then its goal, whose cascade drops the
+target. E23's order would set slay's target back under the new goal, which refuses "wolf", and
+would give gather's target the dropped 12 back after its 10 (the cascade's inverse comes last):
+the Undo is verified in memory and restores each quest, the smallest item enclosing the target
+and its goal, whole, in one Set.
+-- options --
+pkgs: d
+-- edit.json --
+{"ops": [
+  {"op": "set", "path": "quests.slay.goal", "source": "collect"},
+  {"op": "set", "path": "quests.slay.target", "value": 25},
+  {"op": "set", "path": "quests.gather.target", "source": "12"},
+  {"op": "set", "path": "quests.gather.goal", "source": "kill"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- d/d.canon --
+package d
+
+/// What a quest counts.
+enum Goal { kill, collect }
+
+/// What a quest aims at, by goal.
+type Target(g: Goal) = match g {
+  kill => String(1..)
+  collect => Int(1..)
+}
+
+/// A quest.
+record Quest {
+  /// What it counts.
+  goal: Goal
+  /// What it aims at.
+  target: Target(goal)?
+  /// A note.
+  note: String = ""
+}
+
+/// The quests.
+let quests: table Quest = {
+  slay { goal: kill, target: "wolf", note: "first" }
+  gather { goal: collect, target: 10 }
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "d/d.canon"
+    }
+  ],
+  "dropped": [
+    {
+      "path": "d:quests.gather.target",
+      "value": 12
+    }
+  ],
+  "undo": [
+    {
+      "op": "set",
+      "path": "d:quests.gather",
+      "source": "{ goal: collect, target: 10 }"
+    },
+    {
+      "op": "set",
+      "path": "d:quests.slay",
+      "source": "{ goal: kill, target: \"wolf\", note: \"first\" }"
+    }
+  ],
+  "touched": [
+    "d"
+  ]
+}
+-- after/d/d.canon --
+package d
+
+/// What a quest counts.
+enum Goal { kill, collect }
+
+/// What a quest aims at, by goal.
+type Target(g: Goal) = match g {
+  kill => String(1..)
+  collect => Int(1..)
+}
+
+/// A quest.
+record Quest {
+  /// What it counts.
+  goal: Goal
+  /// What it aims at.
+  target: Target(goal)?
+  /// A note.
+  note: String = ""
+}
+
+/// The quests.
+let quests: table Quest = {
+  slay { goal: collect, target: 25, note: "first" }
+  gather { goal: kill }
+}

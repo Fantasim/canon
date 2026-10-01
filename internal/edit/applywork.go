@@ -33,6 +33,12 @@ type work struct {
 	locked  []Locked
 	kept    keptCase
 	given   []givenValue
+	rekey   *pathMove // a Rename's item, which E15 follows to its new name
+}
+
+// pathMove is an item's canonical path before and after a Rename.
+type pathMove struct {
+	from, to string
 }
 
 // jsonEdit is an edit of a JSON source and the offset it applies at in the current text: the
@@ -225,8 +231,32 @@ func (a *applier) commit(w *work) error {
 			return err
 		}
 	}
+	if err := a.placeFiles(w); err != nil {
+		return err
+	}
+	if len(w.undo) > 0 {
+		a.undo = append(a.undo, w.undo)
+	}
+	maps.Copy(a.owners, w.owners)
+	a.dropped = append(a.dropped, w.dropped...)
+	a.records = append(a.records, w.records...)
+	a.given = append(a.given, w.given...)
+	if w.rekey != nil {
+		a.rekey(*w.rekey)
+	}
+	a.locked = append(a.locked, w.locked...)
+	a.kept = w.kept
+	a.dirty = true
+	a.stamp()
+	return nil
+}
+
+// placeFiles makes w's renames, deletions and creations, in that order.
+func (a *applier) placeFiles(w *work) error {
 	for _, m := range w.moves {
-		a.move(m)
+		if err := a.move(m); err != nil {
+			return err
+		}
 	}
 	for _, r := range w.removes {
 		a.files[r.display].wrote(nil, nil)
@@ -240,17 +270,6 @@ func (a *applier) commit(w *work) error {
 		s.wrote(nf.content, nil)
 		s.checked = true
 	}
-	if len(w.undo) > 0 {
-		a.undo = append(a.undo, w.undo)
-	}
-	maps.Copy(a.owners, w.owners)
-	a.dropped = append(a.dropped, w.dropped...)
-	a.records = append(a.records, w.records...)
-	a.given = append(a.given, w.given...)
-	a.locked = append(a.locked, w.locked...)
-	a.kept = w.kept
-	a.dirty = true
-	a.stamp()
 	return nil
 }
 
@@ -349,25 +368,24 @@ func renameKey(src []byte, rn *keyRename) ([]byte, error) {
 	return slices.Concat(content[:ks.Start], diag.AppendJSONString(nil, rn.to), content[ks.End:]), nil
 }
 
-// move renames a file: the new one reports the change, from the old one's base bytes (N8).
-func (a *applier) move(m fileMove) {
+// move renames a file: its bytes, their origin and their writes go to the new path, which the
+// request may have freed before (N3, N8); the old path keeps its own history, ending absent.
+func (a *applier) move(m fileMove) error {
 	old := a.files[m.from]
 	a.leaves(m.from, m.stop)
-	if back, ok := a.files[m.to]; ok && back.movedTo == m.from {
-		back.cur, back.movedTo, back.normalized = old.cur, "", old.normalized // renamed back: no change
-		back.steps = old.steps
-		delete(a.files, m.from)
-		return
+	dst, err := a.state(m.to)
+	if err != nil {
+		return err
 	}
-	nw := &fileState{display: m.to, from: m.from, raw: old.raw, cur: old.cur, checked: true, normalized: old.normalized, steps: old.steps}
-	if abs, ok := a.env.Project.Abs(m.to); ok {
-		nw.abs = abs
+	if dst.existed {
+		dst.wrote(old.cur, nil) // a path the request freed takes the file whole
+	} else {
+		dst.steps = slices.Clone(old.steps) // a path new to the edit starts with the file it gets
 	}
-	if old.from != "" {
-		nw.from = old.from
-	}
-	old.movedTo, old.cur, old.normalized, old.steps = m.to, nil, false, nil
-	a.files[m.to] = nw
+	dst.cur, dst.origin, dst.normalized, dst.checked = old.cur, old.origin, old.normalized, true
+	old.wrote(nil, nil)
+	old.normalized = false
+	return nil
 }
 
 // leaves notes the directories a file left, up to but not including the package directory stop (N6).
@@ -423,4 +441,21 @@ func boolRank(b bool) int {
 		return 1
 	}
 	return 0
+}
+
+// rekey moves the records the operations touched and the values they wrote from a Rename's item
+// to its new name, so E15 judges them there (E11, E15, E16).
+func (a *applier) rekey(m pathMove) {
+	move := func(p string) string {
+		if within(p, m.from, pathMarks, true) {
+			return m.to + strings.TrimPrefix(p, m.from)
+		}
+		return p
+	}
+	for i := range a.records {
+		a.records[i].path = move(a.records[i].path)
+	}
+	for i := range a.given {
+		a.given[i].path = move(a.given[i].path)
+	}
 }

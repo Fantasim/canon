@@ -69,6 +69,7 @@ func Apply(ctx context.Context, env Env, base *Snapshot, req Request) (*Plan, er
 		return nil, ErrNoHost
 	}
 	a := newApplier(ctx, env, base)
+	a.multi = len(req.Ops) > 1
 	for i, op := range req.Ops {
 		a.step = i
 		if err := a.operation(op); err != nil {
@@ -79,7 +80,13 @@ func Apply(ctx context.Context, env Env, base *Snapshot, req Request) (*Plan, er
 	if err := a.cascade(); err != nil {
 		return nil, refusal(err)
 	}
-	return a.finish(), nil
+	p := a.finish()
+	undo, err := a.verifiedUndo(p.Undo, p.Touched)
+	if err != nil {
+		return nil, refusal(err)
+	}
+	p.Undo = undo
+	return p, nil
 }
 
 // refusal is err as Apply returns it: a refusal this package names or a failure to read the
@@ -123,6 +130,9 @@ type applier struct {
 	kept        keptCase // the fields the last SetCase kept for its refinements to judge (E14)
 	omit        []string // the fields a SetCase leaves out: its refinements refuse them (E14)
 	step        int      // the operation being applied, cascadeStep for the cascades (M6 tests)
+
+	multi, dependent, renamed bool      // what verifiedUndo needs of the request (noteUndo)
+	named                     []rootRef // the roots its operations name
 }
 
 func newApplier(ctx context.Context, env Env, base *Snapshot) *applier {
@@ -204,6 +214,7 @@ func (a *applier) plan(op Operation, h func(*opCtx) error) (*work, error) {
 		return nil, err
 	}
 	x.noteTouched()
+	a.noteUndo(x)
 	return x.w, nil
 }
 
@@ -256,16 +267,11 @@ type opCtx struct {
 func (a *applier) finish() *Plan {
 	p := &Plan{Dropped: a.dropped, writes: map[string][]writeStep{}}
 	for _, display := range slices.Sorted(maps.Keys(a.files)) {
-		fs := a.files[display]
-		if fs.normalized {
+		if a.files[display].normalized {
 			p.NotCanonical = append(p.NotCanonical, display)
 		}
-		if c, ok := fs.change(); ok {
-			p.Changes = append(p.Changes, c)
-			p.writes[display] = fs.steps
-		}
 	}
-	slices.SortFunc(p.Changes, func(x, y Change) int { return strings.Compare(x.Path, y.Path) })
+	p.Changes = a.netChanges(p.writes)
 	for _, ops := range slices.Backward(a.undo) {
 		p.Undo = append(p.Undo, ops...)
 	}
@@ -273,12 +279,24 @@ func (a *applier) finish() *Plan {
 	p.Changes = append(p.Changes, a.removedDirs()...)
 	touched := map[string]bool{}
 	for _, c := range p.Changes {
-		if pkg, ok := a.owners[c.Path]; ok {
-			touched[pkg] = true
+		for _, path := range []string{c.Path, c.OldPath} {
+			if pkg, ok := a.owners[path]; ok {
+				touched[pkg] = true
+			}
 		}
 	}
 	p.Touched = slices.Sorted(maps.Keys(touched))
 	p.Locked = slices.Compact(slices.SortedFunc(slices.Values(a.locked), compareLocked))
 	slices.SortStableFunc(p.Dropped, func(x, y Dropped) int { return strings.Compare(x.Path, y.Path) })
 	return p
+}
+
+// noteUndo records what verifiedUndo needs of x: its root, a Rename, and, in a request of several
+// operations, whether it touches a dependent field or a driver (log-2026-09-29 U-E22-r).
+func (a *applier) noteUndo(x *opCtx) {
+	a.named = append(a.named, x.res.root)
+	a.renamed = a.renamed || x.op.Kind == OpRename
+	if a.multi && !a.dependent {
+		a.dependent = x.touchesDependent()
+	}
 }

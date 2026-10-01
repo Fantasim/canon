@@ -120,18 +120,35 @@ func decodedIn(v value.Value) bool {
 	return false
 }
 
-// retyped reports one of later changing a field c's type is computed from, or a part of one.
+// retyped reports one of later changing a field c's type is computed from, or a part of one:
+// written at it or inside it, or through the record holding it, a Set to its default
+// included, which leaves it out (API.md E6, E15; M4.1).
 func (a *applier) retyped(c fieldCheck, later []givenValue) bool {
 	for _, d := range c.f.DependsOn {
 		if d >= len(c.t.decl) {
 			continue
 		}
 		dep := childPath(c.t.path, Seg{Kind: SegField, Name: c.t.decl[d].Name})
-		if slices.ContainsFunc(later, func(g givenValue) bool { return g.changed && within(g.path, dep, pathMarks, true) }) {
+		if slices.ContainsFunc(later, func(g givenValue) bool { return g.changed && g.changes(dep) }) {
 			return true
 		}
 	}
 	return false
+}
+
+// changes reports g writing the value at path dep: at it or inside it, or as a part of what it
+// wrote around it whose value differs from the one it replaced.
+func (g givenValue) changes(dep string) bool {
+	if within(g.path, dep, pathMarks, true) {
+		return true
+	}
+	p, err := Parse(dep)
+	if err != nil || !within(dep, g.path, pathMarks, true) {
+		return false
+	}
+	v, _ := g.at(p, g.v)
+	was, _ := g.at(p, g.was)
+	return !sameValue(v, was)
 }
 
 // at is the value at p in v, stated at g's path, when p is g's path followed by field segments;

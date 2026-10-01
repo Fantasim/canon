@@ -61,6 +61,9 @@ func (s *fileState) wrote(after []byte, regions func() []region) {
 		s.steps = append(s.steps, writeStep{before: s.cur, after: after, regions: rs})
 	}
 	s.cur = after
+	if after == nil {
+		s.origin = ""
+	}
 }
 
 // canonTree indexes a .canon tree for its regions: each node's parent, in a walk's order, and

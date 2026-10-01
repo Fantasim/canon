@@ -118,14 +118,19 @@ func (st *srcTyping) intLit(e syntax.Expr, t types.Type) (value.Value, error) {
 
 // floatLit is a float, its exact decimal value rounded once (TYP-11).
 func (st *srcTyping) floatLit(e syntax.Expr, t types.Type) (value.Value, error) {
-	x := e.(*syntax.FloatLit)
+	v, ok := floatValue(floatOf(e.(*syntax.FloatLit)), t)
+	return st.fits(e, t, v, ok)
+}
+
+// floatOf is x's exact decimal value rounded once to a float64; out of range is ±Inf, which
+// floatValue refuses.
+func floatOf(x *syntax.FloatLit) float64 {
 	text := x.Coef.String() + exponentMark + strconv.FormatInt(x.Exp, decimalBase)
 	if x.Neg {
 		text = string(minus) + text
 	}
-	f, _ := strconv.ParseFloat(text, int64Bits) // out of range is ±Inf, which floatValue refuses
-	v, ok := floatValue(f, t)
-	return st.fits(e, t, v, ok)
+	f, _ := strconv.ParseFloat(text, int64Bits)
+	return f
 }
 
 func (st *srcTyping) durLit(e syntax.Expr, t types.Type) (value.Value, error) {
