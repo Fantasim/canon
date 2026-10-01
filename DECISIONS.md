@@ -2469,16 +2469,22 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      `Rename` inverse runs after the region restores of the item it renames, and verification
      compares the before path of entries that still exist or are renamed back (an entry the Undo
      recreates is accepted at any path its `@files` template gives for that key, whatever its
-     templated fields, N1–N4; an entry a request removes and re-adds counts as recreated). A value
-     the before state held in error (a dependent mismatch that is not held, `E3802`) cannot be
-     written by any op, so the Undo leaves it as the cascade drops it and verification excludes it.
-     When an edit's own result leaves a compared root uncomputable (only with `AllowErrors`), its
-     plain Undo is returned unverified. A request whose Undo would have to write back a computed
-     layer line, one whose text cannot be a `Source` (a spread included), is refused before anything
-     is written, `*NotEditableError` reason `computed`, as W5 gives for a `Reset` of that line.
-     Refinements stay the re-check's job (V2). Reason: log-2026-09-29 "M4.1 built", "M4.1 review
-     FAIL (2 CRITICAL), rulings", "M4.1 round 2", "M4.1, a computed amendment line", "M4.1 round 3
-     review", "Sync 2 review: the Undo verification gate", "M4.1 round 4".
+     templated fields, N1–N4; an entry a request removes and re-adds counts as recreated). A
+     request's file `Changes` are each path's net effect, base against final (N8 with E11 and N3): a
+     path that existed and exists with other bytes is Modified, one that existed only Deleted, one
+     that exists only Created; Renamed is only an optional pairing of a Deleted and a Created path
+     whose bytes came from it, when neither path is otherwise involved; so a swap, or a rename into
+     a path freed in the same request, is valid and commits, and the overlay and the commit derive
+     from the same per-path final state. A value the before state held in error (a dependent
+     mismatch that is not held, `E3802`) cannot be written by any op, so the Undo leaves it as the
+     cascade drops it and verification excludes it. When an edit's own result leaves a compared root
+     uncomputable (only with `AllowErrors`), its plain Undo is returned unverified. A request whose
+     Undo would have to write back a computed layer line, one whose text cannot be a `Source` (a
+     spread included), is refused before anything is written, `*NotEditableError` reason `computed`,
+     as W5 gives for a `Reset` of that line. Refinements stay the re-check's job (V2). Reason:
+     log-2026-09-29 "M4.1 built", "M4.1 review FAIL (2 CRITICAL), rulings", "M4.1 round 2", "M4.1, a
+     computed amendment line", "M4.1 round 3 review", "Sync 2 review: the Undo verification gate",
+     "M4.1 round 4", "M4.1 round 6".
 
 ## Still open
 

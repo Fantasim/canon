@@ -1208,7 +1208,13 @@ comments, and a trailing comment on its last line.
 ### 10.2 Renamed files
 
 - **N8.** A file renamed by `Rename` (E11) keeps its content except the changed key; its old path
-  is reported as `OldPath` of a `renamed` change.
+  is reported as `OldPath` of a `renamed` change. A request's `Changes` are each path's net effect,
+  its base state against its final one: a path that existed and exists with other bytes is
+  `modified`, one that existed only is `deleted`, one that exists only is `created`. `renamed` is
+  only an optional pairing of a `deleted` and a `created` path whose bytes came from it, when
+  neither path is otherwise involved. So a swap, or a rename into a path freed earlier in the same
+  request, is valid and commits: a path the request frees is not an existing file for N3
+  (DECISIONS 273).
 
 ### 10.3 Atomicity and crash safety
 
