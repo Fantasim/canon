@@ -474,10 +474,13 @@ never has the shape a hand-written loader of the legacy file expects.
    whose entries went to their own files).
 4. **`--adopt` keeps the old path.** For a single-file `load`, the package's `emit json` for the
    value is changed to write to the path of the converted source file, so deployments keep reading
-   the same path, now a generated data file. That file has no generated marker yet: the build
-   prints `adopting <path>` and takes it over. If that `emit json` writes several values,
-   `--adopt` is a usage error. It is, with `canon build --adopt` (§3.4), the only way to take over
-   a file (SPEC §15.1).
+   the same path, now a generated data file. That file has no generated marker yet: the build prints
+   `adopting <path>` and takes it over. If that `emit json` writes several values, `--adopt` is a
+   usage error. When that `emit json`'s `out` is a list (CODEGEN §2.1), the path is added as a
+   further entry, unless an entry already equals it as a resolved path (WIRE §2.2); adding it is a
+   usage error when it would share an owning root with another entry (`E8009` `outRoot`, CODEGEN
+   §2.8) or when the list's entries are directories (`E8009` `outForm`) (DECISIONS 269). It is, with
+   `canon build --adopt` (§3.4), the only way to take over a file (SPEC §15.1).
 5. **Proves the conversion lossless.** It builds the project before and after, in memory, and
    compares (a) the converted value and every value that depends on it (equal values, entry order
    and retired flags), and (b) every emitted output, byte for byte, except provenance in view
@@ -774,4 +777,5 @@ git rm -r ../Resource/Server/Item/Items
 
 Step 3 is required: `convert` refuses a value that its package's `emit json` does not write yet
 (§3.10). For a single-file source whose path deployments rely on, `canon convert --adopt` makes
-the `emit json` write the data file at that same path.
+the `emit json` write the data file at that same path: one `out` is changed to it, and a list of
+`out` entries gains it as a further entry, unless one already resolves to it (§3.10 step 4).

@@ -1961,8 +1961,9 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      copies differ only in the import paths or includes of imported packages. A copy of package
      P under root R uses the copy of an imported package Q under R, or Q's only copy when Q has
      one; otherwise `E8004`. Every copy is an output (collisions `E8152`, lock, markers). A named
-     group of destinations in `project.canon` is deferred until the repetition shows. Spec to
-     sync: CODEGEN §2.1, §2.3, §2.8; ERRORS E8004/E8009 rows; GRAMMAR's emit option schema.
+     group of destinations in `project.canon` is deferred until the repetition shows. CODEGEN
+     §2.1, §2.3, §2.8, ERRORS E8004/E8009 rows, GRAMMAR's emit option schema and WIRE §8.1
+     synced, with 269.
 
 230. **The edit journal is untrusted input (API.md §2.2, §10.3, O5; ADR-0010).** The journal is
      `.canon/journal/<hex>.json`, the new revision without its scheme prefix (`r1:`; `:` is illegal
@@ -2388,6 +2389,25 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      @json(unit: s)` is `5s`. Code owed: unit PS2 (the load host gives `wire.Decoder` its `Field`).
      Reason: log-2026-09-29 M4 B10-r2, "Spec sync (M4 sync)": the load decoded such a field's value
      without its rules, so a load and an edit read the same bytes differently.
+
+269. **Copies: the package name, an unowned entry, JSON forms, adopt (CODEGEN.md §2.1, §2.8; WIRE.md
+     §8.1; CLI.md §3.10; follows 229).** When `out` is a list and `package` is omitted, every
+     entry's last element must be the same, and that is the default `package`; otherwise `E8009`
+     (`outPackage`). An output under no declared root is owned by the project itself: two such
+     entries share it (`E8009` `outRoot`), copy resolution treats the project as that root, and
+     `{root}` in `E8009` `outRoot` and `E8004` `noCopy` is then written `project <name>` (`project
+     acme { … }` gives `project acme`). Of two declared roots with the same directory, the one
+     declared first in `roots` owns the output. All entries of an `emit json` list take one form,
+     all files or all directories; otherwise `E8009` (`outForm`). A list given to `emit view` stays
+     `E8009` `kind` (a constant string). `canon convert --adopt` makes the emit write to the
+     converted (legacy) file's path so deployments keep reading it: with a list `out`, that path is
+     added as a further entry unless an entry already equals it as a resolved path (WIRE.md §2.2);
+     adding it is a usage error, as when the emit writes several values, when it would share an
+     owning root with another entry (`E8009` `outRoot`) or when the list's entries are directories
+     (`E8009` `outForm`). 229's "copies differ only in the import paths or includes of imported
+     packages" is made precise: in Go, a copy also differs in the import path of its own `rt`
+     package (CODEGEN §2.1). Reason: log-2026-09-29 "Multi-destination emits, spec rulings" and
+     "review rulings".
 
 ## Still open
 

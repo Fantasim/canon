@@ -73,7 +73,7 @@ in [§12](#12-diagnostics).
 
 | Target | `out` | Modes | Default mode | Other options |
 |---|---|---|---|---|
-| `go` | directory (one Go package) | `baked`, `embedded`, `data`, `types` | `baked` | `package` (default: last element of `out`) |
+| `go` | directory (one Go package) | `baked`, `embedded`, `data`, `types` | `baked` | `package` (default: last element of `out`, the same for every entry of a list) |
 | `cpp` | directory | `baked`, `embedded`, `data`, `types` | `baked` | `namespace` (default: package path with `.` → `::`) |
 | `ts` | file ending in `.ts` | `baked`, `embedded`, `data`, `types` | `baked` | none |
 | `json` | WIRE.md | — | — | `values` |
@@ -86,11 +86,21 @@ in [§12](#12-diagnostics).
   `nlohmann` (reserved: the runtime's and the libraries' namespaces), a `ts` `out` not ending in
   `.ts`, a `values` item that is not a public top-level `let` of the package or is listed twice.
   `out` is required for every target (`E8009` `missing` without it).
+- **Copies** (DECISIONS 229). For `go`, `cpp`, `ts` and `json`, `out` is a string or a non-empty
+  list of strings; `view` takes one string. Each entry is a **copy** of the emit, written at that
+  place as if it were the emit's only `out`. Every copy has the emit's mode and options; copies
+  differ only in the import paths or includes of imported packages and, in Go, the import path of
+  its own `rt` package (§2.8). An empty list is `E8009` `outEmpty`, and two entries sharing an
+  owning root (§2.8) are `E8009` `outRoot`; each entry is checked as an `out` (a `ts` entry must end
+  in `.ts`). Without `package`, every entry of a Go list must end in the same element, the default
+  package name (`E8009` `outPackage` otherwise); the entries of a `json` list are all files or all
+  directories (`E8009` `outForm` otherwise, WIRE.md §8.1); a list given to `view` is `E8009` `kind`
+  (DECISIONS 269).
 - **Typing of the options.** The options of each target form a built-in schema, checked in
   phase 2 like `project.canon` (GRAMMAR.md §7): nothing in an `emit` is an expression, is
   evaluated, or is resolved in scope.
-  - `out`, `package` and `namespace` are constant strings (`E1132` for an interpolation, `E8009`
-    for another kind of value).
+  - `package` and `namespace` are constant strings, and `out` a constant string or, except for
+    `view`, a list of them (`E1132` for an interpolation, `E8009` for another kind of value).
   - `mode` is a bare word from the target's modes (`E8009` otherwise). It is never looked up in
     scope, so `mode: baked` is not an unknown name (`E2102`) and a `let baked` changes nothing.
   - `values` is a list of bare words, each the name of a public top-level `let` of the package;
@@ -148,6 +158,9 @@ The compiler writes, per emit:
   output, so it cannot go stale.
 - `.gen.cpp` is always written, even when it holds nothing but its header and includes.
 - The runtime files are identical in every output directory for a given runtime version.
+- **Copies.** Each copy of an emit (§2.1) writes this whole set at its own `out` and is an output
+  like any other: its files are compared for `E8152` and `E8008`, carry their generated markers
+  (§2.4, WIRE.md §8.4), and are written with the lock, or not at all (LOCK.md §5).
 
 ### 2.4 Header lines
 
@@ -287,7 +300,16 @@ on its kind-enum member (§5.5). Undocumented items get no comment (the build wa
 ### 2.8 Cross-package references
 
 A generated type may use a type of an imported package (EMT-06). The imported package must have
-an emit for the same target, else `E8004`. Nothing is ever duplicated across outputs.
+an emit for the same target, else `E8004`. An imported type is referenced, never re-emitted.
+
+- **Owning root and copies** (DECISIONS 229). An output's owning root is the declared root
+  (GRAMMAR.md §7.1 `roots`) whose directory is the output's directory (a file's directory, for a
+  `ts` or a `json` file) or its closest ancestor (of two roots with the same directory, the one
+  declared first in `roots`); an output under no declared root is owned by the project itself,
+  written `project <name>` in findings (`project acme { … }` gives `project acme`; DECISIONS 269).
+  Two entries of one emit's `out` may not share an owning root (`E8009`). A copy of package P owned
+  by R (a root, or the project) uses, for each imported package Q, Q's copy owned by R, or Q's only
+  copy when Q has one; otherwise `E8004`. The rules below then apply between the two copies.
 
 `project.canon`'s `go_module` key (GRAMMAR.md §7.1) maps a root name to the Go import path of
 the root's directory. From `examples/project.canon`:
@@ -3011,12 +3033,12 @@ source of diagnostics (DECISIONS 27); this table says when each code fires.
 | E8001 | error | the target file exists and its first line is not a canon marker (§2.4) |
 | E8002 | error | more than one `emit` per target per package |
 | E8003 | error | target or option not in §2.1 |
-| E8004 | error | cross-package type without an emit for the same target |
+| E8004 | error | cross-package type without an emit for the same target, or without a copy this copy can use (§2.8) |
 | E8005 | error | two generated names equal in one scope (§3.5) |
 | W8006 | warning | §3.5 list |
 | E8007 | error | Go emit outside every mapped root |
 | E8008 | error | two Go emits write into one directory (one Go package); two outputs with one path are WIRE.md's `E8152` |
-| E8009 | error | bad mode, package, namespace, out or values; an option value of the wrong kind (§2.1) |
+| E8009 | error | bad mode, package, namespace, out or values; an option value of the wrong kind; an invalid `out` list: empty, two entries sharing an owning root, different last elements without `package`, JSON files mixed with directories (§2.1, §2.8) |
 | E8010 | error | `ordered` + `@codes` out of order |
 | E8011 | error | override not an identifier, reserved, or (Go) not exported; a name derived without override that is not an identifier (§3.5) |
 | E8012 | error | `Range`, function type, `_`, non-optional `Never` in an emitted type or value; a `Define` record or define table in a `data` or `embedded` emit (§4.4) |

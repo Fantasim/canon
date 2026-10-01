@@ -842,7 +842,9 @@ emit json { out: "<path>", values: [v1, v2, …] }
 ```
 
 - Options: `out` (required) and `values` (optional). Any other option, including `mode`, is
-  `E8003`. One `emit json` per package (`E8002`, CODEGEN.md).
+  `E8003`. One `emit json` per package (`E8002`, CODEGEN.md). `out` may be a list: each entry is a
+  copy, written by the rules below as if it were `out` (CODEGEN.md §2.1, DECISIONS 229); its
+  entries are all in file mode or all in directory mode (`E8009` `outForm`, DECISIONS 269).
 - `values` lists public top-level `let`s of the package. Default: every public `let`, in
   declaration order (files in path byte order, then source order).
 - **File mode**: `out` ends in `.json` (case-sensitive). `values`, explicit or default, must then

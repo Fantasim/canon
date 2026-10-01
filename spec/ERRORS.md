@@ -153,6 +153,7 @@ wording is a variant, and a closed set of words is a `Kind`.
 | `Object` | an object | `E7110` |
 | `OptionalElementList` | a list of optional elements | `E8019` |
 | `OptionalMapValue` | a map with optional values | `E8019` |
+| `OutPaths` | a constant string or a list of constant strings | `E8009` |
 | `PackageSegment` | package segment | `W1003`, `E1125` |
 | `Parameter` | parameter | `W1003`, `E1125`, `E2101` |
 | `ParameterDefault` | parameter default | `E3015` |
@@ -352,7 +353,7 @@ func (codeE2103) AtSeveral(span source.Span, typ string, colls []string) *Builde
 
 ---
 
-The catalogue holds 301 codes: 280 errors, 18 warnings and 3 run-time codes, with 466 messages.
+The catalogue holds 301 codes: 280 errors, 18 warnings and 3 run-time codes, with 471 messages.
 
 ## E10xx, W10xx: Project file, doc comments and naming
 
@@ -1127,12 +1128,12 @@ Owner: CODEGEN.md, WIRE.md.
 | E8001 | error | build | CODEGEN.md §2.4 | refuses to overwrite a file that `canon` did not generate |
 | E8002 | error | check | CODEGEN.md §2.1 | two emits of one target in one package |
 | E8003 | error | check | CODEGEN.md §2.1 | unknown emit target or emit option |
-| E8004 | error | ir | CODEGEN.md §2.8 | a type of a package that has no emit for the same target |
+| E8004 | error | ir | CODEGEN.md §2.8 | a type of a package that has no emit for the same target, or no copy this copy can use |
 | E8005 | error | ir | CODEGEN.md §3.5 | two generated names collide in one scope |
 | W8006 | warning | ir | CODEGEN.md §3.5 | a generated C++ name is a common platform macro |
 | E8007 | error | ir | CODEGEN.md §2.8 | a Go output under no root mapped by `go_module` |
 | E8008 | error | ir | CODEGEN.md §2.3 | two Go emits write into one directory |
-| E8009 | error | check | CODEGEN.md §2.1 | invalid emit option value (mode, package, namespace, out, values) or option of the wrong kind |
+| E8009 | error | check | CODEGEN.md §2.1, §2.8 | invalid emit option value (mode, package, namespace, out, values), option of the wrong kind, or an invalid `out` list (empty, two entries sharing an owning root, different last elements without `package`, JSON files mixed with directories) |
 | E8010 | error | ir | CODEGEN.md §5.2 | an `ordered` enum whose codes do not increase |
 | E8011 | error | ir | CODEGEN.md §3.5 | an override or a derived name that is not a usable identifier in the target |
 | E8012 | error | ir | CODEGEN.md §4.4 | an emitted type or value with no representation in generated code |
@@ -1167,7 +1168,8 @@ Owner: CODEGEN.md, WIRE.md.
 | E8002 | - | pkg:Name, target:Name | `package {pkg} has two emits for target {target}` |
 | E8003 | target | target:Name | `unknown emit target {target}: expected go, cpp, ts, json or view` |
 | E8003 | option | option:Name, target:Name | `unknown option {option} for emit {target}` |
-| E8004 | - | typ:Name, pkg:Name, target:Name | `{typ} of package {pkg} is used by this {target} emit, but {pkg} has no {target} emit` |
+| E8004 | noEmit | typ:Name, pkg:Name, target:Name | `{typ} of package {pkg} is used by this {target} emit, but {pkg} has no {target} emit` |
+| E8004 | noCopy | typ:Name, pkg:Name, target:Name, root:Name | `{typ} of package {pkg} is used by this {target} copy under root {root}, but {pkg} has several {target} copies and none under {root}` |
 | E8005 | - | target:Name, name:Name, a:Name, b:Name | `{target}: {name} is generated for both {a} and {b}` |
 | W8006 | - | name:Name, item:Name | `C++ name {name} (from {item}) is a macro in common platform headers` |
 | E8007 | - | out:Path | `Go output {out} is under no root listed in go_module: map its root in project.canon go_module` |
@@ -1181,6 +1183,10 @@ Owner: CODEGEN.md, WIRE.md.
 | E8009 | kind | option:Name, target:Name, expected:Kind | `option {option} of emit {target} must be {expected}` |
 | E8009 | missing | option:Name, target:Name | `emit {target} is missing {option}` |
 | E8009 | reservedNamespace | value:Text | `invalid namespace "{value}" for emit cpp: canon, std and nlohmann are reserved` |
+| E8009 | outEmpty | target:Name | `out of emit {target} is an empty list: give at least one path` |
+| E8009 | outRoot | a:Path, b:Path, root:Name, target:Name | `{a} and {b} in out of emit {target} share the root {root}: each copy needs a root of its own` |
+| E8009 | outPackage | - | `entries of out of emit go end in different names: give package` |
+| E8009 | outForm | - | `entries of out of emit json mix .json files and directories: use one form for all` |
 | E8010 | - | enum:Name | `ordered enum {enum} has codes that do not increase in declaration order` |
 | E8011 | override | name:Text, target:Name | `{name} is not a valid {target} identifier for @{target}(name:)` |
 | E8011 | unexported | name:Text | `{name} is not exported: an @go(name:) override starts with an upper-case letter` |

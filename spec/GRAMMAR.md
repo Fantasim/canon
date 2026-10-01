@@ -590,7 +590,8 @@ widgetDecl      = "widget" IDENT "(" "value" ":" type [ "," "siblings" ":" type 
 - `emit` targets are words (`go`, `cpp`, `ts`, `json`, `view`); the options are a brace literal
   whose schema belongs to CODEGEN.md §2.1 / WIRE.md §8 (`package:` is a valid item name there,
   §4.3). Like `project.canon`, the options are a built-in schema: no option value is an
-  expression or is resolved in scope (CODEGEN.md §2.1, "Typing of the options").
+  expression or is resolved in scope (CODEGEN.md §2.1, "Typing of the options"). `out` is a string
+  or, for every target but `view`, a list literal of strings (DECISIONS 229).
 - A widget's parameter list is the words `value` and, optionally, `siblings` (MOCKUP-GAPS 28), in
   that order: they are contextual keywords there (§4.2). Any other name is `E1116` with the hint
   "a widget takes `value` and `siblings`". Which types are allowed belongs to VIEWMODEL.md
