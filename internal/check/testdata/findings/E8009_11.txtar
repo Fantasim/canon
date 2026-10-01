@@ -17,6 +17,6 @@ error[E8009]  a/a.canon:7:6
   emit view is missing out
 
 error[E8009]  a/a.canon:9:16
-  option out of emit ts must be a constant string
+  option out of emit ts must be a constant string or a list of constant strings
 
 3 errors, 0 warnings in 1 package (…)

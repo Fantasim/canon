@@ -152,8 +152,7 @@ type output struct {
 	existed bool
 }
 
-// emit runs the generator of every emit of the selected packages whose target opt selects, in
-// package then source order; after an error, only the views run.
+// emit runs the generator of every emit (each copy in list order, CODEGEN.md §2.8) of the selected packages whose target opt selects, in package then source order, always on p narrowed by ir.CopyOf; after an error, only the views run.
 func (r *run) emit(ctx context.Context, opt BuildOptions, failed bool) ([]*output, error) {
 	var out []*output
 	for _, p := range r.ir {
@@ -161,7 +160,7 @@ func (r *run) emit(ctx context.Context, opt BuildOptions, failed bool) ([]*outpu
 			if skipped(e, opt.Targets, failed) {
 				continue
 			}
-			placed, err := r.emitOne(ctx, p, e)
+			placed, err := r.emitOne(ctx, ir.CopyOf(r.s.proj, p, e), e)
 			if err != nil {
 				return nil, err
 			}
@@ -229,7 +228,7 @@ func (r *run) outputs(p *ir.Package, e *ir.Emit, files []ir.File) ([]*output, er
 	if e.FileName != "" {
 		display, abs = path.Dir(display), project.DirOf(abs)
 	}
-	span := r.emitSpan(p.Name, e.Target)
+	span := r.emitSpan(p, e)
 	out := make([]*output, len(files))
 	for i, f := range files {
 		out[i] = &output{at: span, Output: Output{
@@ -239,29 +238,49 @@ func (r *run) outputs(p *ir.Package, e *ir.Emit, files []ir.File) ([]*output, er
 	return out, nil
 }
 
-// emitSpan locates the out option of a package's first emit of target t, the one stage E
-// reads; no location when there is none.
-func (r *run) emitSpan(pkg string, t ir.Target) source.Span {
-	i := slices.IndexFunc(r.cps, func(cp *check.Package) bool { return cp.Path == pkg })
+// emitSpan locates the out entry e writes, in p's first emit of e's target, the one stage E
+// reads: the copy's own entry of a list out (DECISIONS 229); no location when there is none.
+func (r *run) emitSpan(p *ir.Package, e *ir.Emit) source.Span {
+	i := slices.IndexFunc(r.cps, func(cp *check.Package) bool { return cp.Path == p.Name })
 	if i < 0 {
 		return source.Span{}
 	}
 	for _, f := range r.cps[i].Files {
 		for _, d := range f.Decls {
-			if ed, ok := d.(*syntax.EmitDecl); ok && ed.Target != nil && ed.Target.Name == targetWords[t] && ed.Options != nil {
-				return f.Span(outOption(ed))
+			if ed, ok := d.(*syntax.EmitDecl); ok && ed.Target != nil && ed.Target.Name == targetWords[e.Target] && ed.Options != nil {
+				return f.Span(outOption(ed, copyIndex(p, e)))
 			}
 		}
 	}
 	return source.Span{}
 }
 
-// outOption is the value of an emit's out option, or the emit itself when it has none.
-func outOption(ed *syntax.EmitDecl) syntax.Node {
-	for _, it := range ed.Options.Items {
-		if fi, ok := it.(*syntax.FieldItem); ok && fi.Name != nil && fi.Name.Name == check.OptOut {
-			return fi.Value
+// copyIndex is the entry of its emit's out list e writes, its copies being p's emits of its target in list order (CODEGEN.md §2.1).
+func copyIndex(p *ir.Package, e *ir.Emit) int {
+	n := 0
+	for _, o := range p.Emits {
+		if o == e {
+			break
 		}
+		if o.Target == e.Target {
+			n++
+		}
+	}
+	return n
+}
+
+// outOption is the value of an emit's out option, entry k of a list, or the emit itself when it
+// has none.
+func outOption(ed *syntax.EmitDecl, k int) syntax.Node {
+	for _, it := range ed.Options.Items {
+		fi, ok := it.(*syntax.FieldItem)
+		if !ok || fi.Name == nil || fi.Name.Name != check.OptOut {
+			continue
+		}
+		if list, isList := fi.Value.(*syntax.ListLit); isList && k < len(list.Elems) {
+			return list.Elems[k]
+		}
+		return fi.Value
 	}
 	return ed
 }

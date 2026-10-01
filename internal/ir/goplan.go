@@ -75,8 +75,8 @@ func PlanGoNames(p *Package, e *Emit) *GoNamePlan {
 	}
 	for _, ref := range p.Imports {
 		for _, imp := range ref.Emits {
-			if imp.Target == TargetGo {
-				pl.imports[imp.GoPackage] = imp.GoImport
+			if _, seen := pl.imports[imp.GoPackage]; imp.Target == TargetGo && !seen {
+				pl.imports[imp.GoPackage] = imp.GoImport // the first copy: copies share the name (CODEGEN.md §2.1)
 			}
 		}
 	}

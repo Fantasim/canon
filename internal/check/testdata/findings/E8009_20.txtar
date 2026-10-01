@@ -1,0 +1,13 @@
+WIRE.md §8.1, DECISIONS 269: the entries of an emit json out list are all files or all directories (E8009 outForm).
+-- a/a.canon --
+package a
+
+/// One.
+let one: Int = 1
+
+emit json { out: ["@features/x/one.json", "@sovcommon/x/"] }
+-- findings.txt --
+error[E8009]  a/a.canon:6:18
+  entries of out of emit json mix .json files and directories: use one form for all
+
+1 error, 0 warnings in 1 package (…)

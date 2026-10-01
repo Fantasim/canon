@@ -1,0 +1,66 @@
+File: File FileKind=source @1:1-20:1
+  Doc: DocComment "The vocabulary of the copies example: a colour, written beside each consumer of\nfeatures.copies, so no shared library stands between them." @1:1-2:63
+  Package: QualifiedName features.copies.base @3:9-3:29
+  Decls[0]: EnumDecl @6:1-11:2
+    Doc: DocComment "A colour." @5:1-5:14
+    Name: Ident Tone @6:6-6:10
+    Members[0]: EnumMember @8:3-8:6
+      Doc: DocComment "Warm." @7:3-7:12
+      Name: Ident red @8:3-8:6
+    Members[1]: EnumMember @10:3-10:7
+      Doc: DocComment "Cold." @9:3-9:12
+      Name: Ident blue @10:3-10:7
+  Decls[1]: LetDecl @14:1-14:25
+    Doc: DocComment "The tone of a badge that names none." @13:1-13:41
+    Name: Ident fallback @14:5-14:13
+    Type: NamedType @14:15-14:19
+      Name: QualifiedName Tone @14:15-14:19
+    Value: IdentExpr red @14:22-14:25
+  Decls[2]: EmitDecl @16:1-16:67
+    Target: Ident go @16:6-16:8
+    Options: BraceLit @16:9-16:67
+      Items[0]: FieldItem @16:11-16:65
+        Name: Ident out @16:11-16:14
+        Value: ListLit @16:16-16:65
+          Elems[0]: StringLit @16:17-16:34
+            Parts[0]: text "../out/go/base/"
+          Elems[1]: StringLit @16:36-16:64
+            Parts[0]: text "@sovcommon/copies/go/base/"
+  Decls[3]: EmitDecl @17:1-17:83
+    Target: Ident cpp @17:6-17:9
+    Options: BraceLit @17:10-17:83
+      Items[0]: FieldItem @17:12-17:68
+        Name: Ident out @17:12-17:15
+        Value: ListLit @17:17-17:68
+          Elems[0]: StringLit @17:18-17:36
+            Parts[0]: text "../out/cpp/base/"
+          Elems[1]: StringLit @17:38-17:67
+            Parts[0]: text "@sovcommon/copies/cpp/base/"
+      Items[1]: FieldItem @17:70-17:81
+        Name: Ident mode @17:70-17:74
+        Value: IdentExpr types @17:76-17:81
+  Decls[4]: EmitDecl @18:1-18:84
+    Target: Ident ts @18:6-18:8
+    Options: BraceLit @18:9-18:84
+      Items[0]: FieldItem @18:11-18:69
+        Name: Ident out @18:11-18:14
+        Value: ListLit @18:16-18:69
+          Elems[0]: StringLit @18:17-18:36
+            Parts[0]: text "../out/ts/base.ts"
+          Elems[1]: StringLit @18:38-18:68
+            Parts[0]: text "@sovcommon/copies/ts/base.ts"
+      Items[1]: FieldItem @18:71-18:82
+        Name: Ident mode @18:71-18:75
+        Value: IdentExpr types @18:77-18:82
+  Decls[5]: EmitDecl @19:1-19:63
+    Target: Ident json @19:6-19:10
+    Options: BraceLit @19:11-19:63
+      Items[0]: FieldItem @19:13-19:61
+        Name: Ident out @19:13-19:16
+        Value: ListLit @19:18-19:61
+          Elems[0]: StringLit @19:19-19:33
+            Parts[0]: text "../out/data/"
+          Elems[1]: StringLit @19:35-19:60
+            Parts[0]: text "@sovcommon/copies/data/"
+== findings
+0 errors, 0 warnings in 1 package (…)

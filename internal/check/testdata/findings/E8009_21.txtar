@@ -1,0 +1,20 @@
+CODEGEN.md §2.1, DECISIONS 229, 269: out is a constant string or, but for view, a list of them: a list given to view is E8009 kind (a constant string), an element that is no string is E8009 kind, and each ts entry ends in .ts (E8009 tsOut).
+-- a/a.canon --
+package a
+
+emit view { out: ["@generated/a.view.json"] }
+
+emit go { out: ["@features/a/", 3], package: "a" }
+
+emit ts { out: ["@web/a.ts", "@features/a.js"] }
+-- findings.txt --
+error[E8009]  a/a.canon:3:18
+  option out of emit view must be a constant string
+
+error[E8009]  a/a.canon:5:33
+  option out of emit go must be a constant string or a list of constant strings
+
+error[E8009]  a/a.canon:7:30
+  invalid out "@features/a.js" for emit ts: it must end in .ts
+
+3 errors, 0 warnings in 1 package (…)

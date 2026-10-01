@@ -1,0 +1,10 @@
+CODEGEN.md §2.1, DECISIONS 269: without package, every entry of a go out list ends in the same element, the default package name (E8009 outPackage).
+-- a/a.canon --
+package a
+
+emit go { out: ["@features/x/one/", "@sovcommon/two/"] }
+-- findings.txt --
+error[E8009]  a/a.canon:3:16
+  entries of out of emit go end in different names: give package
+
+1 error, 0 warnings in 1 package (…)

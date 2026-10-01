@@ -1,0 +1,14 @@
+CODEGEN.md §2.1, §2.8, DECISIONS 229: out lists whose entries each have a root of their own: go entries sharing their last element, json entries all files, ts entries ending in .ts.
+-- a/a.canon --
+package a
+
+/// One.
+let one: Int = 1
+
+emit go { out: ["@features/a/", "@sovcommon/a/"] }
+
+emit cpp { out: ["@features/cpp/a/", "@sovcommon/cpp/a/"], namespace: "a" }
+
+emit ts { out: ["@web/a.ts", "@features/a.ts"] }
+
+emit json { out: ["@features/a/one.json", "@sovcommon/a/one.json"] }

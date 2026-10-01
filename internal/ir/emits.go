@@ -2,6 +2,7 @@ package ir
 
 import (
 	"path"
+	"slices"
 	"strings"
 
 	"github.com/fantasim/canonlang/internal/check"
@@ -16,11 +17,19 @@ type emitSite struct {
 	e        *Emit
 	decl     *syntax.EmitDecl
 	file     *syntax.File
-	outSpan  source.Span
-	display  string // the output as a display path (WIRE.md §2.3)
-	unmapped bool   // a go emit whose resolved directory is under no go_module root (E8007)
-	named    bool   // a go emit that writes its package, so none is defaulted from out
-	refused  bool   // a go emit whose package check refused (E8009, or E1132 for an interpolation), written, defaulted, or none for want of an out (decisions 213, 215)
+	outSpan  source.Span // the out entry this copy writes, or the out option
+	outs     []outText   // the out entries as written, one per copy (CODEGEN.md §2.1)
+	index    int         // which entry of outs this site writes: 0 for the first
+	display  string      // the output as a display path (WIRE.md §2.3)
+	unmapped bool        // a go emit whose resolved directory is under no go_module root (E8007)
+	named    bool        // a go emit that writes its package, so none is defaulted from out
+	refused  bool        // a go emit whose package check refused (E8009, or E1132 for an interpolation), written, defaulted, or none for want of an out (decisions 213, 215)
+}
+
+// outText is one entry of an emit's out: its text as written ("" for one check refused) and its span.
+type outText struct {
+	text string
+	span source.Span
 }
 
 func (es *emitSite) span() source.Span { return es.file.Span(es.decl.Target) }
@@ -48,12 +57,58 @@ func (s *stage) emit(u *unit, f *syntax.File, ed *syntax.EmitDecl, seen map[Targ
 		return
 	}
 	seen[t] = true
-	es := &emitSite{e: &Emit{Target: t}, decl: ed, file: f}
-	s.readOptions(u, es)
-	s.resolveOut(u, es, s.layout, bag)
-	es.refused = t == TargetGo && !goPackageName(es.e.GoPackage)
-	u.emits = append(u.emits, es)
-	u.p.Emits = append(u.p.Emits, es.e)
+	base := &emitSite{e: &Emit{Target: t}, decl: ed, file: f}
+	s.readOptions(u, base)
+	sites := copies(base)
+	for _, es := range sites {
+		s.resolveOut(u, es, s.layout, bag)
+	}
+	sharedGoPackage(sites)
+	for _, es := range sites {
+		es.refused = t == TargetGo && !goPackageName(es.e.GoPackage)
+		u.emits = append(u.emits, es)
+		u.p.Emits = append(u.p.Emits, es.e)
+	}
+}
+
+// copies is one site per entry of base's out, in list order, each with its own Emit; base itself for one out or none (CODEGEN.md §2.1).
+func copies(base *emitSite) []*emitSite {
+	if len(base.outs) == 1 {
+		base.e.Out, base.outSpan = base.outs[0].text, base.outs[0].span
+	}
+	if len(base.outs) < severalCopies {
+		return []*emitSite{base}
+	}
+	sites := make([]*emitSite, len(base.outs))
+	for i, o := range base.outs {
+		e := *base.e
+		e.Out, e.Values = o.text, slices.Clone(base.e.Values)
+		site := *base
+		site.e, site.outSpan, site.index = &e, o.span, i
+		sites[i] = &site
+	}
+	return sites
+}
+
+// sharedGoPackage refuses the defaulted package of go copies ending in different names, check's E8009 `outPackage` (DECISIONS 213, 269).
+func sharedGoPackage(sites []*emitSite) {
+	first := sites[0]
+	if first.e.Target != TargetGo || first.named {
+		return
+	}
+	name := ""
+	for _, es := range sites {
+		switch {
+		case es.e.Dir == "":
+		case name == "":
+			name = es.e.GoPackage
+		case es.e.GoPackage != name:
+			for _, c := range sites {
+				c.e.GoPackage = ""
+			}
+			return
+		}
+	}
 }
 
 // modeRefused reports a code emit whose mode check refused (E8009): its out, directory and package still count in every rule that does not depend on the mode, and no mode-dependent rule judges it (decision 213).
@@ -74,8 +129,7 @@ func (s *stage) readOptions(u *unit, es *emitSite) {
 		}
 		switch fi.Name.Name {
 		case check.OptOut:
-			e.Out = constString(fi.Value)
-			es.outSpan = es.file.Span(fi.Value)
+			es.outSpan, es.outs = es.file.Span(fi.Value), outTexts(es.file, fi.Value, e.Target)
 		case check.OptMode:
 			e.Mode = ModeNone
 			if id, isWord := fi.Value.(*syntax.IdentExpr); isWord {
@@ -111,6 +165,19 @@ func constString(x syntax.Node) string {
 		return b.String()
 	}
 	return ""
+}
+
+// outTexts are the entries of out: its one string, or each element of a list but for view (CODEGEN.md §2.1).
+func outTexts(f *syntax.File, x syntax.Expr, t Target) []outText {
+	list, ok := x.(*syntax.ListLit)
+	if !ok || t == TargetView {
+		return []outText{{text: constString(x), span: f.Span(x)}}
+	}
+	out := make([]outText, len(list.Elems))
+	for i, el := range list.Elems {
+		out[i] = outText{text: constString(el), span: f.Span(el)}
+	}
+	return out
 }
 
 // valueNames is an explicit `values` list's names, nil for an empty list too (decision 127).
@@ -155,7 +222,7 @@ func (s *stage) resolveOut(u *unit, es *emitSite, layout *project.Layout, bag *d
 		return
 	}
 	es.display = p.Display
-	file := e.Target == TargetTS || e.Target == TargetView || e.Target == TargetJSON && strings.HasSuffix(e.Out, JSONExt)
+	file := e.Target == TargetTS || e.Target == TargetView || e.Target == TargetJSON && check.JSONFile(e.Out)
 	if file {
 		e.Dir, e.FileName = path.Dir(p.Abs), path.Base(p.Abs)
 		return
@@ -191,7 +258,7 @@ func (s *stage) goImport(dir string) (string, bool) {
 			continue
 		}
 		rootDir := path.Clean(root.Path)
-		rel, under := below(dir, rootDir)
+		rel, under := check.Within(dir, rootDir)
 		if !under || len(rootDir) <= bestLen {
 			continue
 		}
@@ -201,21 +268,4 @@ func (s *stage) goImport(dir string) (string, bool) {
 		}
 	}
 	return best, found
-}
-
-// below is dir relative to root when root is dir or one of its ancestors, lexically.
-func below(dir, root string) (string, bool) {
-	switch {
-	case dir == root:
-		return "", true
-	case root == curDir:
-		return dir, notAbove(dir)
-	}
-	rel, ok := strings.CutPrefix(dir, root+pathSep)
-	return rel, ok && notAbove(rel)
-}
-
-// notAbove reports a relative path that does not walk back out of root through "..".
-func notAbove(rel string) bool {
-	return rel != parentDir && !strings.HasPrefix(rel, parentDir+pathSep)
 }

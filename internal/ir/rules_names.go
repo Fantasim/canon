@@ -39,9 +39,13 @@ func (s *stage) checkGoNames(u *unit) {
 func (s *stage) refusedImport(u *unit) func(GoNameProblem) bool {
 	refused := map[string]bool{}
 	for _, imp := range u.p.Imports {
-		if dep := s.units[imp.Name]; dep != nil {
-			if es := emitFor(dep, TargetGo); es != nil && es.refused {
-				refused[es.e.GoImport] = true
+		dep := s.units[imp.Name]
+		if dep == nil {
+			continue
+		}
+		for _, es := range dep.emits {
+			if es.e.Target == TargetGo && es.refused {
+				refused[es.e.GoImport] = true // every copy (DECISIONS 229)
 			}
 		}
 	}

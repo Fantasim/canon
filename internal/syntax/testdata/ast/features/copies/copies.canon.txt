@@ -1,0 +1,84 @@
+File: File FileKind=source @1:1-26:1
+  Doc: DocComment "Copies (CODEGEN §2.1, §2.8; DECISIONS 229, 269): an emit whose `out` is a list writes one\ncopy per entry, each with the same mode and options, so generated code can go straight into\nevery consumer. Each entry needs a root of its own: here the project's `features` root and\n`sovcommon`. A copy imports the copy of features.copies.base under its own root, and a Go\ncopy its own `rt`." @1:1-5:23
+  Package: QualifiedName features.copies @6:9-6:24
+  Imports[0]: Import @8:1-8:37
+    Path: QualifiedName features.copies.base @8:8-8:28
+    Names[0]: Ident Tone @8:31-8:35
+  Decls[0]: RecordDecl @11:1-14:2
+    Doc: DocComment "A badge." @10:1-10:13
+    Name: Ident Badge @11:8-11:13
+    Body: RecordBody @11:14-14:2
+      Items[0]: FieldDecl @13:3-13:13
+        Doc: DocComment "Its colour." @12:3-12:18
+        Name: Ident tone @13:3-13:7
+        Type: NamedType @13:9-13:13
+          Name: QualifiedName Tone @13:9-13:13
+  Decls[1]: LetDecl @17:1-20:2
+    Doc: DocComment "Every badge." @16:1-16:17
+    Name: Ident badges @17:5-17:11
+    Type: TableType @17:13-17:24
+      Name: QualifiedName Badge @17:19-17:24
+    Value: BraceLit @17:27-20:2
+      Items[0]: EntryItem @18:3-18:21
+        Key: Ident gold @18:3-18:7
+        Value: BraceLit @18:8-18:21
+          Items[0]: FieldItem @18:10-18:19
+            Name: Ident tone @18:10-18:14
+            Value: IdentExpr red @18:16-18:19
+      Items[1]: EntryItem @19:3-19:22
+        Key: Ident iron @19:3-19:7
+        Value: BraceLit @19:8-19:22
+          Items[0]: FieldItem @19:10-19:20
+            Name: Ident tone @19:10-19:14
+            Value: IdentExpr blue @19:16-19:20
+  Decls[2]: EmitDecl @22:1-22:80
+    Target: Ident go @22:6-22:8
+    Options: BraceLit @22:9-22:80
+      Items[0]: FieldItem @22:11-22:66
+        Name: Ident out @22:11-22:14
+        Value: ListLit @22:16-22:66
+          Elems[0]: StringLit @22:17-22:33
+            Parts[0]: text "out/go/copies/"
+          Elems[1]: StringLit @22:35-22:65
+            Parts[0]: text "@sovcommon/copies/go/copies/"
+      Items[1]: FieldItem @22:68-22:78
+        Name: Ident mode @22:68-22:72
+        Value: IdentExpr data @22:74-22:78
+  Decls[3]: EmitDecl @23:1-23:83
+    Target: Ident cpp @23:6-23:9
+    Options: BraceLit @23:10-23:83
+      Items[0]: FieldItem @23:12-23:69
+        Name: Ident out @23:12-23:15
+        Value: ListLit @23:17-23:69
+          Elems[0]: StringLit @23:18-23:35
+            Parts[0]: text "out/cpp/copies/"
+          Elems[1]: StringLit @23:37-23:68
+            Parts[0]: text "@sovcommon/copies/cpp/copies/"
+      Items[1]: FieldItem @23:71-23:81
+        Name: Ident mode @23:71-23:75
+        Value: IdentExpr data @23:77-23:81
+  Decls[4]: EmitDecl @24:1-24:84
+    Target: Ident ts @24:6-24:8
+    Options: BraceLit @24:9-24:84
+      Items[0]: FieldItem @24:11-24:70
+        Name: Ident out @24:11-24:14
+        Value: ListLit @24:16-24:70
+          Elems[0]: StringLit @24:17-24:35
+            Parts[0]: text "out/ts/copies.ts"
+          Elems[1]: StringLit @24:37-24:69
+            Parts[0]: text "@sovcommon/copies/ts/copies.ts"
+      Items[1]: FieldItem @24:72-24:82
+        Name: Ident mode @24:72-24:76
+        Value: IdentExpr data @24:78-24:82
+  Decls[5]: EmitDecl @25:1-25:60
+    Target: Ident json @25:6-25:10
+    Options: BraceLit @25:11-25:60
+      Items[0]: FieldItem @25:13-25:58
+        Name: Ident out @25:13-25:16
+        Value: ListLit @25:18-25:58
+          Elems[0]: StringLit @25:19-25:30
+            Parts[0]: text "out/data/"
+          Elems[1]: StringLit @25:32-25:57
+            Parts[0]: text "@sovcommon/copies/data/"
+== findings
+0 errors, 0 warnings in 1 package (…)

@@ -41,7 +41,7 @@ func (c *checker) checkEmit(env *env, e *syntax.EmitDecl, seen map[string]bool) 
 	}
 	seen[target] = true
 	values := -1
-	out := ""
+	var out outOption
 	c.emitRequired(env, e, target)
 	for _, it := range e.Options.Items {
 		fi, isField := it.(*syntax.FieldItem)
@@ -54,14 +54,14 @@ func (c *checker) checkEmit(env *env, e *syntax.EmitDecl, seen map[string]bool) 
 			c.emitMode(env, fi, target, spec.modes)
 		case OptValues:
 			values = c.emitValues(env, fi, target)
+		case OptOut:
+			out = c.emitOut(env, fi, target)
 		default:
-			s, isStr := c.emitString(env, fi, target)
-			if isStr && fi.Name.Name == OptOut {
-				out = s
-			}
+			c.emitString(env, fi, target)
 		}
 	}
 	c.emitFileMode(env, e, target, out, values)
+	c.emitRoots(env, target, out)
 	switch {
 	case target == TargetGo && !hasOption(e, OptPackage):
 		c.defaultGoPackage(env, e, out)
@@ -82,11 +82,20 @@ func hasOption(e *syntax.EmitDecl, name string) bool {
 	return slices.ContainsFunc(e.Options.Items, func(it syntax.BraceItem) bool { return itemName(it) == name })
 }
 
-// defaultGoPackage validates the last element of out as the package (CODEGEN.md §2.1, DECISIONS 213).
-func (c *checker) defaultGoPackage(env *env, e *syntax.EmitDecl, out string) {
-	name, known := c.lastElement(env, out)
-	if known && (!identRe.MatchString(name) || goKeywords[name]) {
-		c.report(env, diag.E8009.AtPackage(env.span(e.Target), name))
+// defaultGoPackage validates the last element of out, which every entry of a list shares, as the package (CODEGEN.md §2.1, DECISIONS 213, 269).
+func (c *checker) defaultGoPackage(env *env, e *syntax.EmitDecl, out outOption) {
+	var names []string
+	for _, en := range out.entries {
+		if name, known := c.lastElement(env, en.text); known {
+			names = append(names, name)
+		}
+	}
+	switch {
+	case len(names) == 0:
+	case slices.ContainsFunc(names, func(n string) bool { return n != names[0] }):
+		c.report(env, diag.E8009.AtOutPackage(env.span(out.list)))
+	case !identRe.MatchString(names[0]) || goKeywords[names[0]]:
+		c.report(env, diag.E8009.AtPackage(env.span(e.Target), names[0]))
 	}
 }
 
@@ -113,30 +122,33 @@ func itemName(it syntax.BraceItem) string {
 	return ""
 }
 
-// emitString is out, package or namespace: a constant string of a valid form (E8009).
-func (c *checker) emitString(env *env, fi *syntax.FieldItem, target string) (string, bool) {
-	s, ok := fi.Value.(syntax.StrLit)
-	if !ok {
-		c.report(env, diag.E8009.AtKind(env.span(fi.Value), fi.Name.Name, target, diag.KindConstantString))
-		return "", false
-	}
-	if c.lexError(fi.Value) {
-		return "", false // its text is made up (DECISIONS 215)
-	}
-	if !interpolationFree(fi.Value) {
-		c.report(env, diag.E1132.At(env.span(fi.Value)))
-		return "", false
-	}
-	text := constText(s)
+// emitString is package or namespace: a constant string of a valid form (E8009).
+func (c *checker) emitString(env *env, fi *syntax.FieldItem, target string) {
+	text, ok := c.constOption(env, fi.Value, fi.Name.Name, target, diag.KindConstantString)
 	switch {
+	case !ok:
 	case fi.Name.Name == OptPackage && (!identRe.MatchString(text) || goKeywords[text]):
 		c.report(env, diag.E8009.AtPackage(env.span(fi.Value), text))
 	case fi.Name.Name == OptNamespace:
 		c.namespaceFinding(env, fi.Value, text)
-	case fi.Name.Name == OptOut && target == TargetTS && !strings.HasSuffix(text, tsSuffix):
-		c.report(env, diag.E8009.AtTsOut(env.span(fi.Value), text))
 	}
-	return text, true
+}
+
+// constOption is x's text when the value of option is a constant string, else E8009 `kind` naming expected, or E1132 (CODEGEN.md §2.1).
+func (c *checker) constOption(env *env, x syntax.Expr, option, target string, expected diag.Kind) (string, bool) {
+	s, ok := x.(syntax.StrLit)
+	if !ok {
+		c.report(env, diag.E8009.AtKind(env.span(x), option, target, expected))
+		return "", false
+	}
+	if c.lexError(x) {
+		return "", false // its text is made up (DECISIONS 215)
+	}
+	if !interpolationFree(x) {
+		c.report(env, diag.E1132.At(env.span(x)))
+		return "", false
+	}
+	return constText(s), true
 }
 
 var identRe = regexp.MustCompile(identPattern)
@@ -209,17 +221,35 @@ func (c *checker) emitValues(env *env, fi *syntax.FieldItem, target string) int 
 	return len(list.Elems)
 }
 
-// emitFileMode is E8150: `emit json` whose out names a .json file writes exactly one value.
-func (c *checker) emitFileMode(env *env, e *syntax.EmitDecl, target, out string, values int) {
-	if target != TargetJSON || !strings.HasSuffix(out, dot+TargetJSON) {
+// emitFileMode is E8150, judged once by a list's first entry, and E8009 `outForm` for a list mixing files and directories (WIRE.md §8.1).
+func (c *checker) emitFileMode(env *env, e *syntax.EmitDecl, target string, out outOption, values int) {
+	if target != TargetJSON || len(out.entries) == 0 {
+		return
+	}
+	files := 0
+	for _, en := range out.entries {
+		if JSONFile(en.text) {
+			files++
+		}
+	}
+	switch {
+	case files == 0:
+		return
+	case files < len(out.entries):
+		c.report(env, diag.E8009.AtOutForm(env.span(out.list)))
 		return
 	}
 	if values < 0 {
 		values = c.publicLets(env.pkg)
 	}
 	if values != 1 {
-		c.report(env, diag.E8150.At(env.span(e.Target), out, int64(values)))
+		c.report(env, diag.E8150.At(env.span(e.Target), out.entries[0].text, int64(values)))
 	}
+}
+
+// JSONFile reports an `emit json` out in file mode: it ends in .json (WIRE.md §8.1).
+func JSONFile(out string) bool {
+	return strings.HasSuffix(out, dot+TargetJSON)
 }
 
 // publicLets counts the public top-level lets of p, the default values of `emit json`.

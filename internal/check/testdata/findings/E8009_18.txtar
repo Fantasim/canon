@@ -1,0 +1,13 @@
+CODEGEN.md §2.8, DECISIONS 269: an output under no declared root is owned by the project, so two such entries share it, named project <name> (E8009 outRoot).
+-- a/a.canon --
+package a
+
+/// One.
+let one: Int = 1
+
+emit json { out: ["out/", "gen/"] }
+-- findings.txt --
+error[E8009]  a/a.canon:6:27
+  a/out/ and a/gen/ in out of emit json share the root project sovereign: each copy needs a root of its own
+
+1 error, 0 warnings in 1 package (…)

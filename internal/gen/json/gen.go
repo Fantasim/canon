@@ -7,7 +7,7 @@ import (
 	"github.com/fantasim/canonlang/internal/wire"
 )
 
-// Generate is the json generator (ir.Generator): a file per value, `$fns` in the first (WIRE.md §8).
+// Generate is the json generator (ir.Generator): a file per value, `$fns` in the first (WIRE.md §8); p is narrowed by ir.CopyOf.
 func Generate(p *ir.Package, e *ir.Emit) ([]ir.File, error) {
 	if p == nil || e == nil || e.Target != ir.TargetJSON {
 		return nil, ErrEmit

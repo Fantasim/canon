@@ -3,7 +3,7 @@ name E1134 GRAMMAR.md §5.10 (break outside a loop)
 case 44
 seed 4294967341
 born internal internal evaluation met a state the checker excludes: FnDecl
-left E1116/token*3, E1117*3, E8004*2, E8009/missing, W1002*12
+left E1116/token*3, E1117*3, E8004/noEmit*2, E8009/missing, W1002*12
 sig internal evaluation met a state the checker excludes: FnDecl
 packages teamboard
 want E1134 teamboard/taxonomy.canon 708 713 check

@@ -147,13 +147,14 @@ const (
 
 // Paths, separators and names stage E composes.
 const (
-	curDir    = "."
-	parentDir = ".."
-	pathSep   = "/"
-	cppScope  = "::"
-	docSep    = "\n\n" // GRAMMAR.md §9.1: package docs of several files
-	boolFalse = "false"
-	boolTrue  = "true"
+	curDir = "."
+	// severalCopies is the fewest copies an emit with a list out writes (CODEGEN.md §2.1).
+	severalCopies = 2
+	pathSep       = "/"
+	cppScope      = "::"
+	docSep        = "\n\n" // GRAMMAR.md §9.1: package docs of several files
+	boolFalse     = "false"
+	boolTrue      = "true"
 )
 
 // maxCells is the largest lookup table (CODEGEN.md §5.10, E9002).

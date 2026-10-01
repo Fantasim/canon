@@ -1,0 +1,10 @@
+CODEGEN.md §2.1, DECISIONS 229: an out list is non-empty (E8009 outEmpty).
+-- a/a.canon --
+package a
+
+emit go { out: [], package: "a" }
+-- findings.txt --
+error[E8009]  a/a.canon:3:16
+  out of emit go is an empty list: give at least one path
+
+1 error, 0 warnings in 1 package (…)

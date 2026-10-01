@@ -50,7 +50,7 @@ type method struct {
 	fields []*ir.Field
 }
 
-// Generate is the C++ generator (ir.Generator): every file of CODEGEN.md §2.3 for one cpp emit.
+// Generate is the C++ generator (ir.Generator): every file of CODEGEN.md §2.3 for one cpp emit; p is narrowed by ir.CopyOf.
 func Generate(p *ir.Package, e *ir.Emit) ([]ir.File, error) {
 	if p == nil || e == nil || e.Target != ir.TargetCpp {
 		return nil, ErrTarget

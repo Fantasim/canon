@@ -39,7 +39,7 @@ type gen struct {
 	pkgNames  map[string]bool // package-level names a translated fn's locals avoid, built once
 }
 
-// Generate is the Go generator (ir.Generator): <gopkg>.gen.go, rt/rt.go verbatim, and <gopkg>_conformance_test.go when the package has a translated fn (§2.3, §6.3).
+// Generate is the Go generator (ir.Generator): <gopkg>.gen.go, rt/rt.go verbatim, and <gopkg>_conformance_test.go when the package has a translated fn (§2.3, §6.3); p is narrowed by ir.CopyOf.
 func Generate(p *ir.Package, e *ir.Emit) ([]ir.File, error) {
 	if e.Target != ir.TargetGo {
 		return nil, fmt.Errorf("%w: %s", ErrTarget, e.Out)

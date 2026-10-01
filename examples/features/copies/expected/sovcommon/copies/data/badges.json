@@ -1,0 +1,7 @@
+{
+  "$schema": "features.copies.Badge@e275e30d",
+  "rows": [
+    {"$id": "gold", "tone": "red"},
+    {"$id": "iron", "tone": "blue"}
+  ]
+}

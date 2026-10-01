@@ -36,6 +36,10 @@ func (s *stage) validate(u *unit) {
 		s.translateFns(u)
 	}
 	for _, es := range u.emits {
+		s.checkCopies(u, es)
+		if es.index > 0 {
+			continue // a further copy: the same options, judged once (CODEGEN.md §2.1)
+		}
 		for _, rule := range emitRules[es.e.Target] {
 			rule(s, u, es)
 		}
@@ -88,11 +92,11 @@ func emittedValues(u *unit) []*valueSite {
 
 func (v *valueSite) span() declSite { return declSite{file: v.obj.File(), node: v.decl.Name} }
 
-// checkImports is E8004: a package whose types this code emit uses has an emit of its target (CODEGEN.md §2.8).
+// checkImports is E8004 `noEmit`: a package whose types this code emit uses has an emit of its target (CODEGEN.md §2.8).
 func (s *stage) checkImports(u *unit, es *emitSite) {
 	for _, imp := range u.p.Imports {
-		if !slices.ContainsFunc(imp.Emits, func(e *Emit) bool { return e.Target == es.e.Target }) {
-			u.report(diag.E8004.At(es.span(), u.firstUse[imp.Name], imp.Name, targetWords[es.e.Target]))
+		if countTarget(imp.Emits, es.e.Target) == 0 {
+			u.report(diag.E8004.AtNoEmit(es.span(), u.firstUse[imp.Name], imp.Name, targetWords[es.e.Target]))
 		}
 	}
 	if es.e.Target == TargetGo {
@@ -239,10 +243,14 @@ func (s *stage) checkFingerprinted(u *unit, es *emitSite) {
 	}
 }
 
-// crossPackage is E8008, two Go emits of the build writing into one directory (CODEGEN.md §2.3), and E8005 for two packages declaring one name in a C++ namespace they share (§3.5).
+// crossPackage is E8008, two different Go emits of the build writing into one directory, two copies of one emit there being E8009 `outRoot` (CODEGEN.md §2.3), and E8005 for two packages declaring one name in a C++ namespace they share (§3.5).
 func (s *stage) crossPackage() {
 	s.sharedCppNames()
-	byDir := map[string]*unit{}
+	type placed struct {
+		u  *unit
+		es *emitSite
+	}
+	byDir := map[string]placed{}
 	for _, u := range s.order {
 		if !u.selected {
 			continue
@@ -251,11 +259,13 @@ func (s *stage) crossPackage() {
 			if es.e.Target != TargetGo || es.e.Dir == "" {
 				continue
 			}
-			if first := byDir[es.e.Dir]; first != nil {
-				u.report(diag.E8008.At(es.outSpan, es.display, first.p.Name, u.p.Name))
-				continue
+			first, taken := byDir[es.e.Dir]
+			switch {
+			case !taken:
+				byDir[es.e.Dir] = placed{u, es}
+			case first.es.decl != es.decl:
+				u.report(diag.E8008.At(es.outSpan, es.display, first.u.p.Name, u.p.Name))
 			}
-			byDir[es.e.Dir] = u
 		}
 	}
 }

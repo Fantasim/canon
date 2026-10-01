@@ -103,6 +103,9 @@ func writtenFiles(u *unit) map[string]string {
 			continue
 		}
 		for _, name := range selectedNames(u, es.e) {
+			if prev, ok := written[name]; ok && prev != name+JSONExt {
+				continue // a copy already misnames it (CODEGEN.md §2.1: each copy is judged as an out)
+			}
 			written[name] = name + JSONExt
 			if es.e.FileName != "" {
 				written[name] = es.e.FileName
@@ -136,7 +139,7 @@ func (s *stage) checkReload(u *unit) {
 			continue
 		}
 		for _, es := range u.emits {
-			if es.e.Target != TargetGo && es.e.Target != TargetCpp || es.e.Mode == ModeData || modeRefused(es.e) || !selects(u, es.e, v.v.Name) {
+			if es.index > 0 || es.e.Target != TargetGo && es.e.Target != TargetCpp || es.e.Mode == ModeData || modeRefused(es.e) || !selects(u, es.e, v.v.Name) {
 				continue
 			}
 			u.report(diag.E8202.At(v.span().span(), v.v.Name, targetWords[es.e.Target], modeWords[es.e.Mode]))

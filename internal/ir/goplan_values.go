@@ -1,6 +1,8 @@
 package ir
 
 import (
+	"slices"
+
 	"github.com/fantasim/canonlang/internal/types"
 )
 
@@ -94,7 +96,7 @@ func (pl *GoNamePlan) declareImports(top *nameScope) {
 	pl.declareUsed(top, pl.importUse())
 }
 
-// declareUsed declares, in sc, the standard packages u marks, then the imported Canon packages it marks, each once per import path.
+// declareUsed declares, in sc, the standard packages u marks, then the imported Canon packages it marks, each once per import path: of a package's copies, the first, since copies share their package name (CODEGEN.md §2.1, DECISIONS 229) and a generator sees only the copy it imports (CopyOf).
 func (pl *GoNamePlan) declareUsed(sc *nameScope, u *goImportUse) {
 	for _, std := range goStdImports {
 		if u.std[std] {
@@ -103,12 +105,12 @@ func (pl *GoNamePlan) declareUsed(sc *nameScope, u *goImportUse) {
 	}
 	seen := map[string]bool{}
 	for _, ref := range pl.p.Imports {
-		for _, e := range ref.Emits {
-			if e.Target != TargetGo || !u.pkgs[ref.Name] || seen[e.GoImport] {
-				continue
-			}
-			seen[e.GoImport] = true
-			pl.declare(sc, e.GoPackage, e.GoImport, nil)
+		i := slices.IndexFunc(ref.Emits, func(e *Emit) bool { return e.Target == TargetGo })
+		if i < 0 || !u.pkgs[ref.Name] || seen[ref.Emits[i].GoImport] {
+			continue
 		}
+		e := ref.Emits[i]
+		seen[e.GoImport] = true
+		pl.declare(sc, e.GoPackage, e.GoImport, nil)
 	}
 }

@@ -19,6 +19,7 @@ var defaultTargets = []canon.Target{canon.TargetGo, canon.TargetJSON}
 var exampleTargets = map[string][]canon.Target{
 	"pipeline":           {canon.TargetGo, canon.TargetCpp, canon.TargetJSON, canon.TargetView},
 	"features.dependent": {canon.TargetGo, canon.TargetCpp, canon.TargetJSON},
+	"features.copies":    {canon.TargetGo, canon.TargetCpp, canon.TargetJSON}, // DECISIONS 229: TS has no generator yet
 	"resource.farm":      {canon.TargetGo, canon.TargetJSON, canon.TargetView},
 	"resource.events":    {canon.TargetGo, canon.TargetJSON, canon.TargetView},
 }

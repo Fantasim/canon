@@ -1,0 +1,19 @@
+/// The vocabulary of the copies example: a colour, written beside each consumer of
+/// features.copies, so no shared library stands between them.
+package features.copies.base
+
+/// A colour.
+enum Tone {
+  /// Warm.
+  red
+  /// Cold.
+  blue
+}
+
+/// The tone of a badge that names none.
+let fallback: Tone = red
+
+emit go { out: ["../out/go/base/", "@sovcommon/copies/go/base/"] }
+emit cpp { out: ["../out/cpp/base/", "@sovcommon/copies/cpp/base/"], mode: types }
+emit ts { out: ["../out/ts/base.ts", "@sovcommon/copies/ts/base.ts"], mode: types }
+emit json { out: ["../out/data/", "@sovcommon/copies/data/"] }

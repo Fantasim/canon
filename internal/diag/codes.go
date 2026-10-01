@@ -120,6 +120,7 @@ const (
 	KindObject
 	KindOptionalElementList
 	KindOptionalMapValue
+	KindOutPaths
 	KindPackageSegment
 	KindParameter
 	KindParameterDefault
@@ -240,6 +241,7 @@ var kindNames = [...]string{
 	"Object",
 	"OptionalElementList",
 	"OptionalMapValue",
+	"OutPaths",
 	"PackageSegment",
 	"Parameter",
 	"ParameterDefault",
@@ -340,6 +342,7 @@ var kindWords = [...]string{
 	"an object",
 	"a list of optional elements",
 	"a map with optional values",
+	"a constant string or a list of constant strings",
 	"package segment",
 	"parameter",
 	"parameter default",
@@ -1997,7 +2000,8 @@ var Registry = []Def{
 	{
 		Code: "E8004", Severity: Error, Package: "ir",
 		Variants: []Variant{
-			{Args: []Arg{{Name: "typ", Type: ArgTypeName}, {Name: "pkg", Type: ArgTypeName}, {Name: "target", Type: ArgTypeName}}, Template: "{typ} of package {pkg} is used by this {target} emit, but {pkg} has no {target} emit"},
+			{Name: "noEmit", Args: []Arg{{Name: "typ", Type: ArgTypeName}, {Name: "pkg", Type: ArgTypeName}, {Name: "target", Type: ArgTypeName}}, Template: "{typ} of package {pkg} is used by this {target} emit, but {pkg} has no {target} emit"},
+			{Name: "noCopy", Args: []Arg{{Name: "typ", Type: ArgTypeName}, {Name: "pkg", Type: ArgTypeName}, {Name: "target", Type: ArgTypeName}, {Name: "root", Type: ArgTypeName}}, Template: "{typ} of package {pkg} is used by this {target} copy under root {root}, but {pkg} has several {target} copies and none under {root}"},
 		},
 	},
 	{
@@ -2030,6 +2034,10 @@ var Registry = []Def{
 			{Name: "kind", Args: []Arg{{Name: "option", Type: ArgTypeName}, {Name: "target", Type: ArgTypeName}, {Name: "expected", Type: ArgTypeKind}}, Template: "option {option} of emit {target} must be {expected}"},
 			{Name: "missing", Args: []Arg{{Name: "option", Type: ArgTypeName}, {Name: "target", Type: ArgTypeName}}, Template: "emit {target} is missing {option}"},
 			{Name: "reservedNamespace", Args: []Arg{{Name: "value", Type: ArgTypeText}}, Template: "invalid namespace \"{value}\" for emit cpp: canon, std and nlohmann are reserved"},
+			{Name: "outEmpty", Args: []Arg{{Name: "target", Type: ArgTypeName}}, Template: "out of emit {target} is an empty list: give at least one path"},
+			{Name: "outRoot", Args: []Arg{{Name: "a", Type: ArgTypePath}, {Name: "b", Type: ArgTypePath}, {Name: "root", Type: ArgTypeName}, {Name: "target", Type: ArgTypeName}}, Template: "{a} and {b} in out of emit {target} share the root {root}: each copy needs a root of its own"},
+			{Name: "outPackage", Template: "entries of out of emit go end in different names: give package"},
+			{Name: "outForm", Template: "entries of out of emit json mix .json files and directories: use one form for all"},
 		},
 	},
 	{
@@ -6205,7 +6213,7 @@ func (codeE8003) AtOption(span source.Span, option string, target string) *Build
 	return newBuilder(&Registry[241], 1, span, option, target)
 }
 
-// E8004: a type of a package that has no emit for the same target (CODEGEN.md §2.8).
+// E8004: a type of a package that has no emit for the same target, or no copy this copy can use (CODEGEN.md §2.8).
 var E8004 codeE8004
 
 type codeE8004 struct{}
@@ -6213,9 +6221,14 @@ type codeE8004 struct{}
 // Def is the registry entry of E8004.
 func (codeE8004) Def() *Def { return &Registry[242] }
 
-// At reports: {typ} of package {pkg} is used by this {target} emit, but {pkg} has no {target} emit
-func (codeE8004) At(span source.Span, typ string, pkg string, target string) *Builder {
+// AtNoEmit reports: {typ} of package {pkg} is used by this {target} emit, but {pkg} has no {target} emit
+func (codeE8004) AtNoEmit(span source.Span, typ string, pkg string, target string) *Builder {
 	return newBuilder(&Registry[242], 0, span, typ, pkg, target)
+}
+
+// AtNoCopy reports: {typ} of package {pkg} is used by this {target} copy under root {root}, but {pkg} has several {target} copies and none under {root}
+func (codeE8004) AtNoCopy(span source.Span, typ string, pkg string, target string, root string) *Builder {
+	return newBuilder(&Registry[242], 1, span, typ, pkg, target, root)
 }
 
 // E8005: two generated names collide in one scope (CODEGEN.md §3.5).
@@ -6257,7 +6270,7 @@ func (codeE8008) At(span source.Span, dir string, a string, b string) *Builder {
 	return newBuilder(&Registry[245], 0, span, dir, a, b)
 }
 
-// E8009: invalid emit option value (mode, package, namespace, out, values) or option of the wrong kind (CODEGEN.md §2.1).
+// E8009: invalid emit option value (mode, package, namespace, out, values), option of the wrong kind, or an invalid `out` list (empty, two entries sharing an owning root, different last elements without `package`, JSON files mixed with directories) (CODEGEN.md §2.1, §2.8).
 var E8009 codeE8009
 
 type codeE8009 struct{}
@@ -6308,6 +6321,26 @@ func (codeE8009) AtMissing(span source.Span, option string, target string) *Buil
 // AtReservedNamespace reports: invalid namespace "{value}" for emit cpp: canon, std and nlohmann are reserved
 func (codeE8009) AtReservedNamespace(span source.Span, value string) *Builder {
 	return newBuilder(&Registry[246], 8, span, value)
+}
+
+// AtOutEmpty reports: out of emit {target} is an empty list: give at least one path
+func (codeE8009) AtOutEmpty(span source.Span, target string) *Builder {
+	return newBuilder(&Registry[246], 9, span, target)
+}
+
+// AtOutRoot reports: {a} and {b} in out of emit {target} share the root {root}: each copy needs a root of its own
+func (codeE8009) AtOutRoot(span source.Span, a string, b string, root string, target string) *Builder {
+	return newBuilder(&Registry[246], 10, span, a, b, root, target)
+}
+
+// AtOutPackage reports: entries of out of emit go end in different names: give package
+func (codeE8009) AtOutPackage(span source.Span) *Builder {
+	return newBuilder(&Registry[246], 11, span)
+}
+
+// AtOutForm reports: entries of out of emit json mix .json files and directories: use one form for all
+func (codeE8009) AtOutForm(span source.Span) *Builder {
+	return newBuilder(&Registry[246], 12, span)
 }
 
 // E8010: an `ordered` enum whose codes do not increase (CODEGEN.md §5.2).

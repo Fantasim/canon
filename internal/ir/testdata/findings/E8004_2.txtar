@@ -1,0 +1,25 @@
+CODEGEN.md §2.8, DECISIONS 229: a copy of a uses b's copy under its own owning root, or b's only copy; b has several go copies and none under services, so a's copy under services has none to use (E8004 noCopy). Its copy under features uses b's.
+-- b/b.canon --
+package b
+
+/// A colour.
+enum Tone { red, blue }
+
+emit go { out: ["@features/b/", "@sovcommon/b/"] }
+-- a/a.canon --
+package a
+
+import b { Tone }
+
+/// A badge.
+record Badge {
+  /// Its colour.
+  tone: Tone
+}
+
+emit go { out: ["@features/a/", "@services/a/"] }
+-- findings.txt --
+error[E8004]  a/a.canon:11:33
+  b.Tone of package b is used by this go copy under root services, but b has several go copies and none under services
+
+1 error, 0 warnings in 2 packages (…)

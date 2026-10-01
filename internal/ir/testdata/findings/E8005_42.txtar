@@ -1,0 +1,56 @@
+CODEGEN.md §3.4, §3.5, decision 182: with two imported go packages named name_ (q and r) and one named name, data mode's loader local escapes to name_, which collides; its E8005 names the first import named name_, q, as the first one, and q and r collide with each other.
+-- p/p.canon --
+package p
+
+/// A role.
+enum Role { user, admin }
+
+emit go { out: "@features/p", package: "name", mode: baked }
+-- q/q.canon --
+package q
+
+/// A rank.
+enum Rank { low, high }
+
+emit go { out: "@features/q", package: "name_", mode: baked }
+-- r/r.canon --
+package r
+
+/// A size.
+enum Size { small, large }
+
+emit go { out: "@features/r", package: "name_", mode: baked }
+-- a/a.canon --
+package a
+
+import p { Role }
+import q { Rank }
+import r { Size }
+
+/// A thing.
+record Thing {
+  /// Its id.
+  a: Int
+  /// Its role.
+  role: Role
+  /// Its rank.
+  rank: Rank
+  /// Its size.
+  size: Size
+}
+
+/// The things.
+let things: [Thing] keyed by a = [{ a: 1, role: user, rank: low, size: small }]
+
+emit go { out: "@features/a", package: "a", mode: data }
+emit json { out: "out/" }
+-- a.things.json --
+[{ "a": 1, "role": "user", "rank": "low", "size": "small" }]
+-- findings.txt --
+error[E8005]  a/a.canon:22:6
+  go: name_ is generated for both example.com/features/q and a
+
+error[E8005]  a/a.canon:22:6
+  go: name_ is generated for both example.com/features/q and example.com/features/r
+
+2 errors, 0 warnings in 4 packages (…)

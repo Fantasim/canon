@@ -1,0 +1,25 @@
+/// Copies (CODEGEN §2.1, §2.8; DECISIONS 229, 269): an emit whose `out` is a list writes one
+/// copy per entry, each with the same mode and options, so generated code can go straight into
+/// every consumer. Each entry needs a root of its own: here the project's `features` root and
+/// `sovcommon`. A copy imports the copy of features.copies.base under its own root, and a Go
+/// copy its own `rt`.
+package features.copies
+
+import features.copies.base { Tone }
+
+/// A badge.
+record Badge {
+  /// Its colour.
+  tone: Tone
+}
+
+/// Every badge.
+let badges: table Badge = {
+  gold { tone: red }
+  iron { tone: blue }
+}
+
+emit go { out: ["out/go/copies/", "@sovcommon/copies/go/copies/"], mode: data }
+emit cpp { out: ["out/cpp/copies/", "@sovcommon/copies/cpp/copies/"], mode: data }
+emit ts { out: ["out/ts/copies.ts", "@sovcommon/copies/ts/copies.ts"], mode: data }
+emit json { out: ["out/data/", "@sovcommon/copies/data/"] }

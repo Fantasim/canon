@@ -1,0 +1,15 @@
+WIRE.md §8.1, CODEGEN.md §2.1 (DECISIONS 229): an emit json out list of files is in file mode, so it writes exactly one value; the list is judged once, by its first entry.
+-- a/a.canon --
+package a
+
+/// One.
+let one: Int = 1
+/// Two.
+let two: Int = 2
+
+emit json { out: ["@sovcommon/a.json", "@features/a.json"] }
+-- findings.txt --
+error[E8150]  a/a.canon:8:6
+  emit json out "@sovcommon/a.json" is a file but values has 2 elements
+
+1 error, 0 warnings in 1 package (…)

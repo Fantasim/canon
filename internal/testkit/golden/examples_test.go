@@ -30,8 +30,9 @@ const (
 )
 
 // exampleExtra are extra selectors an example's Build needs beyond its own package (M1
-// acceptance item 3: sovcommon.ui and sovcommon.roles must also be emitted, not just imported).
-var exampleExtra = map[string][]string{"teamboard": {"sovcommon..."}}
+// acceptance item 3: sovcommon.ui and sovcommon.roles must also be emitted, not just imported;
+// features.copies' copies import those of features.copies.base, DECISIONS 229).
+var exampleExtra = map[string][]string{"teamboard": {"sovcommon..."}, "features.copies": {"features.copies.base"}}
 
 // outDir is the directory name an emit's own out: option always writes under: copyProject skips
 // it so a fixture's own out/, if ever checked in by mistake, never looks "unchanged" on the

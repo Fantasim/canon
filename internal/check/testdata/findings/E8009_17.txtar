@@ -1,0 +1,10 @@
+CODEGEN.md §2.8, DECISIONS 229: two entries of an out list may not share an owning root, the declared root whose directory is the output's directory or its closest ancestor (E8009 outRoot), reported at the later entry.
+-- a/a.canon --
+package a
+
+emit cpp { out: ["@sovcommon/a/", "@web/a/", "@sovcommon/b/"] }
+-- findings.txt --
+error[E8009]  a/a.canon:3:46
+  @sovcommon/a/ and @sovcommon/b/ in out of emit cpp share the root sovcommon: each copy needs a root of its own
+
+1 error, 0 warnings in 1 package (…)
