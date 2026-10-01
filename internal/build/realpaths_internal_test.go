@@ -12,7 +12,11 @@ import (
 // too; a dangling link, the name its text leads to; a link in a cycle, itself; a name in a
 // directory not there yet, its name below the real path of the first directory that is.
 func TestRealPaths(t *testing.T) {
-	dir := t.TempDir()
+	// A Windows short (8.3) name is no link, so the resolver keeps it: start from the long one.
+	dir, err := filepath.EvalSymlinks(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
 	if err := os.MkdirAll(filepath.Join(dir, "a"), dirMode); err != nil {
 		t.Fatal(err)
 	}
