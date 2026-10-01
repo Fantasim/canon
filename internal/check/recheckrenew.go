@@ -1,6 +1,9 @@
 package check
 
 import (
+	"maps"
+	"slices"
+
 	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/syntax"
 )
@@ -61,6 +64,15 @@ func (r *renewer) of(o *object) *object {
 	return n
 }
 
+// settle maps each object bindFile replaced to its last renewal: an `entry` bound again hangs
+// from its table's old object, which a swapped file renews, so it is renewed once more; every
+// reference, Decls' and recheckDecls' too, then names one object, as cold (NFR-02).
+func (r *renewer) settle() {
+	for _, old := range slices.Collect(maps.Keys(r.to)) { // any order: a renewal reads only parents
+		r.to[old] = r.of(r.to[old])
+	}
+}
+
 // obj is of for an Object.
 func (r *renewer) obj(o Object) Object {
 	if x, ok := o.(*object); ok && x != nil {
@@ -74,6 +86,7 @@ func (r *renewer) obj(o Object) Object {
 // and the journal. What a declaration checked again recomputes is dropped instead.
 func (c *checker) renewWide(pl *recheckPlan, renew map[*object]*object) {
 	r := &renewer{pl: pl, to: renew}
+	r.settle()
 	c.info.renew(r.of)
 	for k, o := range c.info.Defs { //canon:unordered each entry is renewed in place
 		if n := renewed(r.of, o); n != nil {
