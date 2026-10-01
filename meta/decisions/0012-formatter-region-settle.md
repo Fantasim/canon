@@ -41,7 +41,7 @@ bytes: a Rewrite equals what the whole-file path prints.
 Monster apply went from 47 ms / 38.6 MB to 19 ms / 15.6 MB with a fresh tree, and to 5 ms once the
 verdict is known. The fresh parse each Edit's snapshot makes (14 ms) is removed by PB4: each
 workspace Project keeps a least-recently-used memo (256 entries) of fixed-point verdicts keyed by
-(content SHA-256, project kind), holding positives only, and only from a tree `Canonical` judged
+(content SHA-256, role: project or not; PS3), holding positives only, and only from a tree `Canonical` judged
 fixed. On a hit for a tree of the same bytes, `format.Adopt` records that tree's layout, which is
 then exactly what a fresh judgement gives. A change to the
 printer's measuring (`fits`, groups) or to §6.1's single-line rule must re-examine the section
