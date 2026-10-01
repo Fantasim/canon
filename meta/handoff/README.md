@@ -13,6 +13,10 @@ continued M2. No action is needed from Louis; it is not deleted so the diff stay
 decisions worth knowing, what was not verified, what M4 starts with). Informational, like the
 GEN-01 diff above; kept so the record of the milestone stays easy to find.
 
+`2026-10-01-m4-complete.md` is the M4-acceptance report to Louis (the acceptance table with proofs, the
+NFR-01 journey, three calls, the post-M4 spec sync owed, later units, what was not verified).
+Informational; the three calls are also in [../state.md](../state.md).
+
 ## To Louis (`L-*`)
 
 For anything on CLAUDE.md's "Forbidden without asking Louis" list: a spec change (DECISIONS.md,

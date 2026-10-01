@@ -61,25 +61,32 @@ B13 UNC completion (workspace, load, edit, cli), host volumes in `/` form, one W
 (`testkit/winpaths`, a port of Go's volumeNameLen), `Paths.RootsFromAPI`. CI 36692101649 green on Windows
 and macOS; `make check` green.
 
-## Final-pass fixes
+## Final-pass fixes (all on `main`)
 
-On main (`0c59f40..b34ebac`): B14, P14, P15, P16, P17. Then (`7f81490..779e1d7`): PA1, PA2, P19. Then PA3; then PB1, PB2, PB4. In flight: P19 (monster rewrite), P20 (a real
-edit-fuzz gate); then P18's plan (log "P18").
+Found by the final pass (NFR-01 bench 2026-09-30: Edit p95 6.25 s, Evaluate 1.50 s; the formatter
+fuzzes). Calls: log "Final pass", "P14".."P20", "PA3-r", "PB4-r".
 
-- P14 NFR-01 [opus]: analyses kept and reused across Edit and Evaluate; `1e5febc` in its worktree, in review.
-  Evaluate p95 1.25 s -> ~150 ms, Edit p95 6.0 -> 3.3 s (under load 16-20)
-- P15 monster edits [opus]: shared parse prefix and an inline-table Recheck; review PASS after one round;
-  worktree HEAD (monster Edit p95 2.7 -> 0.74 s under load)
-- P16 twin [opus]: load.dir elements kept apart, stage B/C per element; review PASS after one round;
-  worktree HEAD (twin Edit p95 1.7 -> 0.43 s under load)
-- P17 views: the asset walk per Evaluate [sonnet]; review PASS after one round; `b32433b` in its worktree
-  (Evaluate p50 115 -> 13 ms under load 12); lands with P14
-- B14 formatter fuzz findings [opus]: both oracle faults, not formatter faults (the import comment check paired by
-  next token, not attachment, §8.1; the Rewrite region left out a removed item's trailing comment, §13 step 5).
-  Review PASS after one round (a symmetric comment check on Remove, Replace, Move). `bd6f82c` in its
-  worktree; lands with P14
+- B14 formatter fuzz findings [opus] `0c59f40`: both were oracle faults (import comment paired by
+  attachment, §8.1; Rewrite region keeps a removed item's trailing comment, §13 step 5); review PASS.
+- P14 analyses kept across Edit and Evaluate `fb3db6d` · P15 shared parse prefix, inline-table Recheck
+  `d7cf6f7` · P16 `load.dir` elements kept apart `3597ca0` · P17 per-file asset-scan memo `b34ebac`
+  (the perf wave, `0c59f40..b34ebac`, each after its review PASS).
+- Wave A (`7f81490..779e1d7`): PA1 edit-host file index and slot-graph replay copy `7f81490` · PA2 asset
+  placements and defines headers `d06e11f` · P19 monster rewrite, region settle and M9 layout memo
+  `779e1d7` (ADR-0012). PA3 incremental revision and history, unwatched re-read `d60b09d`.
+- Wave B: PB1 stage C `alone()` by read edges `5abe84b` · PB2 lock facts kept per generation `042c953`
+  · PB4 M9 verdicts by content, `format.Adopt` `1b7a390` · PB3 files taken by the snapshot's sum
+  `d1234e3` (ADR-0011, amended).
+- P20 a real edit-fuzz gate `0d43de7` (four review rounds; the fuzz judge fails a vacuous run).
+- Fixups: `79e60ab` M6's one-line clause (P20-r2), `c5324f6` TestRealPaths on Windows.
 
-## Final pass
+## Final pass (done 2026-10-01)
 
-- Final pass (orchestrator, once): 10-min `FuzzFormat`/`FuzzFormatJSONSource`/`FuzzRewrite`, minimal-write
-  fuzz, 60 s stress, NFR-01 bench, `-format.full`, `check-real`, then CI on `claude/m4-ci`.
+All six acceptance items proved; see [handoff/2026-10-01-m4-complete.md](handoff/2026-10-01-m4-complete.md).
+NFR-01 bench PASS on `f53ba0c` (Edit p95 0.267 s); 10-min format fuzzes, `make stress`, `check-real` on
+`f4e4d48`; 10-min `make fuzz-edit` on `260e598`; CI on `claude/m4-ci6` (see the handoff).
+
+## Ledger closed
+
+M4 commit range `76f6158..c5324f6` on `main`. No M4 unit is open. Later units and the post-M4 spec
+sync are listed in the handoff, not here.

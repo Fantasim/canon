@@ -105,10 +105,15 @@ from IR fixtures" and M2's `embedded` example were accepted without these genera
 
 ## M4 — Formatter and the edit API
 
-- [ ] `format` (SYN), incremental memo (EVL, API), `edit`, `workspace`, full `api` (API).
-- [ ] Accept (§6 M4): examples are `fmt` fixed points, 10-minute fuzz clean; every API.md rule
+- [x] `format` (SYN), incremental memo (EVL, API), `edit`, `workspace`, full `api` (API).
+- [x] Accept (§6 M4): examples are `fmt` fixed points, 10-minute fuzz clean; every API.md rule
   tested; minimal-write invariant under fuzzing; NFR-01 targets (§7.6); crash and race stress
   tests; studio integration spike postponed (DECISIONS 191: a new studio will be built).
+  **Accepted 2026-10-01** (main, `c5324f6`), all six items proved: fixed points and the 10-min format
+  fuzzes; `TestEveryAPIRuleHasATest` (148 rules); `make fuzz-edit` (10 min); NFR-01 on the reference
+  machine (Edit p95 0.267 s, Evaluate p95 15 ms); `TestCommitCrash*`; `make stress` (60 s). Unit ledger
+  [m4-units.md](m4-units.md), report [handoff/2026-10-01-m4-complete.md](handoff/2026-10-01-m4-complete.md).
+  CI on `claude/m4-ci6` is recorded in the handoff.
 
 ## M5, M6, M7 — in parallel once M4 is accepted
 

@@ -1,50 +1,43 @@
 # State — Canon compiler
 
-Updated: 2026-09-29. **M3 accepted** (`ea3d7e2`); **M4 in progress** (local session, orchestrated in waves).
-Full report: [handoff/2026-09-29-m3-complete.md](handoff/2026-09-29-m3-complete.md). Unit ledger:
-[m3-units.md](m3-units.md). Calls of the final wave:
-[decisions/log-2026-09-28.md](decisions/log-2026-09-28.md),
-[decisions/log-2026-09-29.md](decisions/log-2026-09-29.md).
+Updated: 2026-10-01. **M4: all 6 acceptance items proved** (main `c5324f6`); closing on three items
+below. M3 accepted earlier (`ea3d7e2`).
+Full report: [handoff/2026-10-01-m4-complete.md](handoff/2026-10-01-m4-complete.md). Unit ledger:
+[m4-units.md](m4-units.md). Calls: [decisions/log-2026-09-29.md](decisions/log-2026-09-29.md) "M4".
+Design: [ADR-0011](decisions/0011-incremental-memo.md), [ADR-0012](decisions/0012-formatter-region-settle.md).
 
 ## Current focus
 
-M3 (plan.md "M3 — Load and the view model") is accepted, 2026-09-29, all 7 acceptance items,
-each proved by a test:
-1. every example prints its `findings.txt` — `TestExampleFindings` (`internal/cli`).
-2. view models validate against the schema and equal goldens — `TestExamples` +
-   `TestExamplesViewModelsValidate` (`internal/testkit/golden`).
-3. `balance.parity` golden — `TestExamples/balance.parity`.
-4. `canon explain` golden — `TestExplainExamples` (`internal/cli`).
-5. `api.ViewModel` (JSON equals the emit bytes) — `TestViewModelEqualsEmitView` (`api`).
-6. C++ `types` mode decode — `TestEventsTypesDecode` (`internal/testkit/golden`).
-7. real-data job, not gating — `make check-real`, findings refreshed in
-   [handoff/2026-09-28-realdata-findings.md](handoff/2026-09-28-realdata-findings.md).
+M4 (plan.md "M4 — Formatter and the edit API"): all 6 acceptance items proved, 2026-10-01. Before it is
+called accepted: the §7.9 feature examples `edits` and `entries` (being added), NFR-01 re-run on
+the final code on a quiet machine, and CI on all three platforms. The proofs:
+1. fixed points: gated in `make check`; `FuzzFormat`, `FuzzRewrite`, `FuzzRewriteAround` 10 min clean
+   on the final code, the `jsonsrc` fuzzes earlier.
+2. every API.md rule tested: `TestEveryAPIRuleHasATest` (`internal/testkit`), 148 rules.
+3. minimal writes under fuzzing: `make fuzz-edit`, 10 min, 84,242 execs past baseline, 19,538
+   example and 6,359 benchmark edits applied.
+4. NFR-01 on the quiet reference machine (AMD Ryzen AI 9 HX 370): Edit p95 0.267 s, Evaluate p95
+   15 ms, cold check 2.49 s, RSS 1.22 GB, view models <= 0.49 MB (`make bench-edit`).
+5. crash test: `TestCommitCrashFailedRename` and its siblings (`internal/edit`).
+6. `make stress`, 60 s, PASS.
 
-**M4 in progress** (formatter and the edit API, `plan.md` "M4 — Formatter and the edit API",
-IMPLEMENTATION-PLAN §6 M4), run locally, started 2026-09-29. Unit ledger: [m4-units.md](m4-units.md).
-Waves 1–5 (42 units and the spec sync, DECISIONS 230–251) on `main` (`fb2cc35`), each after one green
-`make check`; CI green on Linux, macOS and Windows; the final pass (long gates, NFR-01 bench) next.
-Calls: [decisions/log-2026-09-29.md](decisions/log-2026-09-29.md) "M4".
+**Next**: per [plan.md](plan.md): M5 (LSP), M6 (legacy C++/TS) and M7 (migration) run in parallel now
+that M4 is accepted; multi-destination emits (DECISIONS 229) are implemented after M4 (Louis's
+call), spec sync first. The post-M4 spec sync (DECISIONS 207) and the later units are listed in the
+handoff. M1.5's second wave (type-directed + metamorphic progen suites) stays parked.
 
-Landed after M3's acceptance list closed but before the stop, all on `main`:
-- libc++ joins the C++ test matrix (`clang++ -stdlib=libc++`, header-detected, gated under
-  `CANON_REQUIRE_CXX`).
-- `check.yml` gains `windows-latest` (MSVC: `go test` without `CANON_REQUIRE_CXX`, plus
-  `TestGoldensCompileMSVC` compiling every committed C++ golden with `cl.exe`) and
-  `macos-latest` (Apple clang/libc++, `CANON_REQUIRE_CXX` on). Both ran green at the end
-  of M3 (run 36563862341, branch `claude/m3-ci`).
-- Long fuzz/progen campaigns are deferred by Louis ("not now… I need this language to be ready
-  soon"): a milestone runs only its own stated acceptance criteria, never a multi-hour nightly
-  campaign — [decisions/log-2026-09-29.md](decisions/log-2026-09-29.md) "Platforms and fuzzing".
+CI on `claude/m4-ci6` and the merge to `main` (Louis merges on GitHub, or pushes `main`): see the
+handoff. Long fuzz/progen campaigns stay deferred by Louis ([decisions/log-2026-09-29.md](decisions/log-2026-09-29.md)
+"Platforms and fuzzing"): a milestone runs only its own stated acceptance criteria.
 
 ## Milestones
 
-M0, M1, M2, **M3** accepted. M1.5 foundation committed (`f498713`), still open (second wave:
-type-directed + metamorphic progen suites; see `plan.md`), parked. M4 in progress.
+M0, M1, M2, M3, **M4** accepted. M1.5 foundation committed (`f498713`), still open (second wave:
+type-directed + metamorphic progen suites; see `plan.md`), parked. M5, M6, M7 not started.
 
 ## What exists (committed)
 
-spec + DECISIONS 1–228; `syntax`, `format` (+ §13 `Rewrite`), `jsonsrc` (+ §14.2 edits), `wire`, `load` (every WIRE §6 form),
+spec + DECISIONS 1–251; `syntax`, `format` (+ §13 `Rewrite`), `jsonsrc` (+ §14.2 edits), `wire`, `load` (every WIRE §6 form),
 `check`/`types` (dependent types, views, translations, broken-view/-translation tracking),
 `eval`/`eval/std` + `value` (layers, provenance, variant-level methods, drivers across the
 project), `verify`, `lock`, `rules`, `ir` (stage E, fingerprint, Go/C++/`types`-mode name plans,
@@ -58,7 +51,9 @@ overlays), `cli` (version/init/new/check/build/test/explain/fmt), `internal/test
 
 ## Open Louis-calls
 
-None open. `handoff/2026-09-24-questions.md` does not exist.
+Three, none blocking, in [the M4 handoff](handoff/2026-10-01-m4-complete.md): (a) O2, should dot-files
+be skipped as sources; (b) optional frozen-contract change to `check.Info` (layered maps); (c) is a
+target wanted for the studio's view-model refresh after an edit (240-470 ms).
 
 ## Operating notes
 
@@ -71,7 +66,12 @@ None open. `handoff/2026-09-24-questions.md` does not exist.
 
 ## What could not be verified
 
-Windows/macOS CI ran green on M3's `main` (run 36563862341); M4 code has not run there yet. Long
-fuzz/progen campaigns beyond default size, deferred by Louis. NFR-01 performance targets (§7.6)
-are M4's own gate, not measured against M3 code. `canon explain`'s input fields among its parts,
-deferred to M4 (log-2026-09-29 "U15 api.ViewModel").
+NFR-01 measured on this local reference machine only, not a 4-core CI runner, and on `f53ba0c`
+(before PB3 landed). CI result of M4's `main` (`claude/m4-ci6`): not yet recorded here. The
+macOS/Windows link tests skip where links cannot be made. Long fuzz/progen campaigns beyond the
+stated acceptance, deferred by Louis.
+
+## Verify queue
+
+CI on `claude/m4-ci6` (all three platforms); then `main` merge. Re-run `make bench-edit` on a CI-class
+runner when one exists.
