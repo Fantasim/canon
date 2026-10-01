@@ -91,7 +91,7 @@ func TestRemoveDeclarationTakesItsTrailingComment(t *testing.T) {
 		if err := checkRewrite(t, ex, f, n, change); err != nil {
 			t.Fatalf("%s: %v", c.name, err)
 		}
-		got, err := format.Rewrite(f, []format.Change{change})
+		got, err := format.Rewrite(f, f.FileKind, []format.Change{change})
 		if err != nil || string(got) != c.want {
 			t.Fatalf("%s: got %q, %v; want %q", c.name, got, err, c.want)
 		}

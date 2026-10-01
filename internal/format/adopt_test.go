@@ -28,18 +28,18 @@ func TestAdopt(t *testing.T) {
 		}
 		adopted++
 		f := parse(t, in.path, in.data).file
-		format.Adopt(f)
-		if !format.Judged(f) {
+		format.Adopt(f, f.FileKind)
+		if !format.Judged(f, f.FileKind) {
 			t.Fatalf("%s: Adopt kept no layout", in.path)
 		}
-		format.Adopt(f) // one held is left alone
-		got, err := format.Canonical(f)
+		format.Adopt(f, f.FileKind) // one held is left alone
+		got, err := format.Canonical(f, f.FileKind)
 		if !got || err != nil {
 			t.Fatalf("%s: Canonical after Adopt %v, %v", in.path, got, err)
 		}
 		for _, change := range adoptChanges(in.path) {
-			out, err := format.Rewrite(f, change.on(f))
-			want, werr := format.RewriteWhole(fresh, change.on(fresh))
+			out, err := format.Rewrite(f, f.FileKind, change.on(f))
+			want, werr := format.RewriteWhole(fresh, fresh.FileKind, change.on(fresh))
 			if !sameOutcome(out, err, want, werr) {
 				t.Fatalf("%s: Rewrite after Adopt %q, %v; the whole-file Rewrite of a fresh tree %q, %v", in.path, out, err, want, werr)
 			}
@@ -53,11 +53,11 @@ func TestAdopt(t *testing.T) {
 // Adopt leaves a layout already judged as it is (API.md M9).
 func TestAdoptKeepsJudged(t *testing.T) {
 	f := parse(t, "a/loose.canon", []byte("package a\nconst   A=1\n")).file
-	if got, _ := format.Canonical(f); got {
+	if got, _ := format.Canonical(f, f.FileKind); got {
 		t.Fatal("a loose file is canonical")
 	}
-	format.Adopt(f)
-	if got, err := format.Canonical(f); got || err != nil {
+	format.Adopt(f, f.FileKind)
+	if got, err := format.Canonical(f, f.FileKind); got || err != nil {
 		t.Errorf("Adopt replaced a layout held: %v, %v", got, err)
 	}
 }

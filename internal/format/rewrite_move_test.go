@@ -222,7 +222,7 @@ func TestRewriteMoveEscalatesUnsettled(t *testing.T) {
 	c := moveCases[slices.IndexFunc(moveCases, func(c rewriteCase) bool { return c.name == "moveEscalates" })]
 	const outOfLayout = "\nconst   Z = 1\n"
 	f := parse(t, "a/a.canon", []byte(c.src+outOfLayout)).file
-	got, err := format.Rewrite(f, c.changes(t, f))
+	got, err := format.Rewrite(f, f.FileKind, c.changes(t, f))
 	if err != nil || string(got) != c.want+outOfLayout {
 		t.Errorf("%s: got %q, %v; want %q", c.rule, got, err, c.want+outOfLayout)
 	}
@@ -232,7 +232,7 @@ func TestRewriteMoveEscalatesUnsettled(t *testing.T) {
 func TestRewriteMoveInPlace(t *testing.T) {
 	for _, at := range []int{1, 2} {
 		f := parse(t, "a/a.canon", []byte(commented)).file
-		got, err := format.Rewrite(f, fieldMove("b", at)(t, f))
+		got, err := format.Rewrite(f, f.FileKind, fieldMove("b", at)(t, f))
 		if err != nil || !bytes.Equal(got, []byte(commented)) {
 			t.Errorf("a move of b to %d: got %q, %v; want the input", at, got, err)
 		}
@@ -275,7 +275,7 @@ func TestRewriteMoveRefuses(t *testing.T) {
 			argMove("a", 2), format.ErrChange},
 	} {
 		f := parse(t, "a/a.canon", []byte(c.src)).file
-		if out, err := format.Rewrite(f, c.changes(t, f)); !errors.Is(err, c.want) || out != nil {
+		if out, err := format.Rewrite(f, f.FileKind, c.changes(t, f)); !errors.Is(err, c.want) || out != nil {
 			t.Errorf("%s: got %q, %v; want %v", c.name, out, err, c.want)
 		}
 	}

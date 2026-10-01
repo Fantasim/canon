@@ -13,6 +13,7 @@ import (
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/format"
 	"github.com/fantasim/canonlang/internal/jsonsrc"
+	"github.com/fantasim/canonlang/internal/project"
 	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/syntax"
 )
@@ -141,42 +142,44 @@ func (a *applier) canonicalJSON(display string, raw []byte) ([]byte, error) {
 	return jsonsrc.Format(root), nil
 }
 
-// canonicalSource is a .canon raw in canonical layout; a fixed point kept by bytes and parse kind is one again.
+// canonicalSource is a .canon raw in canonical layout, judged in the file's role; a fixed point
+// kept by bytes and role is one again (API.md M9, DECISIONS 258).
 func (a *applier) canonicalSource(display string, raw []byte) ([]byte, error) {
 	f := a.snap.tree(display)
 	if f == nil {
 		return nil, errNoTree
 	}
-	key := verdictKey(raw, parseKind(f))
+	role := roleOf(display)
+	key := verdictKey(raw, role)
 	if a.fixed(key) {
 		if bytes.Equal(f.Src.Content, raw) {
-			format.Adopt(f)
+			format.Adopt(f, role)
 		}
 		return raw, nil
 	}
 	if bytes.Equal(f.Src.Content, raw) {
-		if fixed, err := format.Canonical(f); err == nil && fixed {
+		if fixed, err := format.Canonical(f, role); err == nil && fixed {
 			a.keep(key) // only a tree's own verdict is kept: the one Adopt gives another tree
 			return raw, nil
 		}
 	}
-	return formatted(f, display, raw)
+	return formatted(display, role, raw)
 }
 
-// formatted is raw, a .canon source, in the layout the formatter prints for it.
-func formatted(f *syntax.File, display string, raw []byte) ([]byte, error) {
+// formatted is raw, a .canon file in the role of kind, in the layout the formatter prints for it.
+func formatted(display string, kind syntax.FileKind, raw []byte) ([]byte, error) {
 	var fs source.FileSet
 	src, err := fs.Add(display, display, raw)
 	if err != nil {
 		return nil, err
 	}
-	return format.Source(src, parseKind(f), diag.NewBag(&fs, ""))
+	return format.Source(src, kind, diag.NewBag(&fs, ""))
 }
 
-// parseKind is the kind a file is parsed as: a project file, or a source whose header names
-// its kind (a layer, a translation), as the project reads it.
-func parseKind(f *syntax.File) syntax.FileKind {
-	if f.FileKind == syntax.FileProject {
+// roleOf is the role of the file at display, as canon fmt gives it: project.canon at the root is
+// the project file, any other file a source whatever its text opens with (DECISIONS 258).
+func roleOf(display string) syntax.FileKind {
+	if display == project.FileName {
 		return syntax.FileProject
 	}
 	return syntax.FileSource
@@ -257,7 +260,7 @@ func (a *applier) rewriteCanon(display string, changes []format.Change) error {
 	if f == nil || s == nil || !bytes.Equal(f.Src.Content, s.cur) {
 		return fmt.Errorf(fmtFile, errNoTree, display)
 	}
-	out, err := format.Rewrite(f, changes)
+	out, err := format.Rewrite(f, roleOf(display), changes)
 	if err != nil {
 		return fmt.Errorf(fmtFileErr, display, err)
 	}

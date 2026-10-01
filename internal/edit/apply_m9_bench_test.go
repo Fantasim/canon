@@ -64,7 +64,7 @@ func BenchmarkM9Rewrite(b *testing.B) {
 				if _, err := a.canonical(monsterDisplay, raw, false); err != nil {
 					b.Fatal(err)
 				}
-				if _, err := format.Rewrite(f, setLevel(f)); err != nil {
+				if _, err := format.Rewrite(f, f.FileKind, setLevel(f)); err != nil {
 					b.Fatal(err)
 				}
 			}

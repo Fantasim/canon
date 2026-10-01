@@ -47,11 +47,11 @@ type edit struct {
 type span struct{ lo, hi int }
 
 // Rewrite applies changes to f, a tree without syntax error, and re-prints the items they touch,
-// every other byte kept; from a fixed point of the formatter the result is one too. Its errors
-// wrap ErrSyntax, ErrLayout, ErrChange, ErrText or ErrUnsettled.
-func Rewrite(f *syntax.File, changes []Change) ([]byte, error) {
-	// FORMATTER.md §13, API.md M5
-	l := layouts.of(f)
+// every other byte kept; from a fixed point of the formatter the result is one too. kind is the
+// file's role. Its errors wrap ErrSyntax, ErrLayout, ErrChange, ErrText or ErrUnsettled.
+func Rewrite(f *syntax.File, kind syntax.FileKind, changes []Change) ([]byte, error) {
+	// FORMATTER.md §13, API.md M5, M9, DECISIONS 258
+	l := layouts.of(f, kind)
 	if l.err != nil {
 		return nil, l.err
 	}
@@ -61,12 +61,12 @@ func Rewrite(f *syntax.File, changes []Change) ([]byte, error) {
 		b.focusOn(hull)
 	}
 	b.file()
-	return rewriteWith(b, changes, l.canonical, around)
+	return rewriteWith(b, kind, changes, l.canonical, around)
 }
 
 // rewriteWith is Rewrite on b's file, whose items b has built, all of them or, around, the ones
-// the changes touch; canonical, the file is a fixed point before them.
-func rewriteWith(b *builder, changes []Change, canonical, around bool) ([]byte, error) {
+// the changes touch; canonical, the file is a fixed point before them, in the role of kind.
+func rewriteWith(b *builder, kind syntax.FileKind, changes []Change, canonical, around bool) ([]byte, error) {
 	edits, err := b.edits(changes)
 	if err != nil {
 		return nil, err
@@ -76,13 +76,13 @@ func rewriteWith(b *builder, changes []Change, canonical, around bool) ([]byte, 
 		return nil, err
 	}
 	var gb *builder
-	if content, gb, err = reprintUnits(b.f, content, marks, around); err != nil || !canonical {
+	if content, gb, err = reprintUnits(b.f, kind, content, marks, around); err != nil || !canonical {
 		return content, err
 	}
 	if around {
-		return settleLoop(b.f, content, gb.f, (&aroundOf{f: b.f, fb: b, gb: gb}).step)
+		return settleLoop(b.f, kind, content, gb.f, (&aroundOf{f: b.f, fb: b, gb: gb}).step)
 	}
-	return settleLoop(b.f, content, nil, settleStep)
+	return settleLoop(b.f, kind, content, nil, settleStep)
 }
 
 // replaced is the bytes every change holds, true when each is a Replace of a node of f, a file
@@ -155,8 +155,8 @@ func apply(src []byte, edits []edit) ([]byte, []mark, error) {
 // reprintUnits checks that each new text parses as the node it stands for, then re-prints the
 // item holding each unit (steps 1 to 3); an item inside another re-printed one is left to it.
 // Around, only the items holding a mark are built. The builder returned is content's, before.
-func reprintUnits(f *syntax.File, content []byte, marks []mark, around bool) ([]byte, *builder, error) {
-	g, err := reparse(f, content)
+func reprintUnits(f *syntax.File, kind syntax.FileKind, content []byte, marks []mark, around bool) ([]byte, *builder, error) {
+	g, err := reparse(f, kind, content)
 	if err != nil {
 		return nil, nil, err
 	}

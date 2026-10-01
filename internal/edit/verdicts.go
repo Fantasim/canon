@@ -6,7 +6,8 @@ import (
 	"github.com/fantasim/canonlang/internal/syntax"
 )
 
-// VerdictKey is a text's hash and whether it parses as a project file: all M9's verdict depends on.
+// VerdictKey is a text's hash and whether the file is judged as project.canon: all M9's verdict
+// depends on (DECISIONS 258).
 type VerdictKey struct {
 	Sum     [sha256.Size]byte
 	Project bool
@@ -18,12 +19,12 @@ type Verdicts interface {
 	Keep(VerdictKey)
 }
 
-// verdictKey is the key of raw parsed as kind.
+// verdictKey is the key of raw judged in the role of kind.
 func verdictKey(raw []byte, kind syntax.FileKind) VerdictKey {
 	return VerdictKey{Sum: sha256.Sum256(raw), Project: kind == syntax.FileProject}
 }
 
-// fixed reports a kept verdict that raw, parsed as kind, is a fixed point (API.md M9).
+// fixed reports a kept verdict for key, a fixed point in its role (API.md M9).
 func (a *applier) fixed(key VerdictKey) bool {
 	return a.env.Verdicts != nil && a.env.Verdicts.Fixed(key)
 }

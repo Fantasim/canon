@@ -112,7 +112,7 @@ func TestM9MemoAdoptsOnlyItsBytes(t *testing.T) {
 	if memo.asked != 2 || memo.told != 1 {
 		t.Fatalf("the second ask was not a hit: %d asks, %d kept", memo.asked, memo.told)
 	}
-	if fixed, err := format.Canonical(edit.TreeOf(loose.snap, "d/d.canon")); fixed || err != nil {
+	if fixed, err := format.Canonical(edit.TreeOf(loose.snap, "d/d.canon"), syntax.FileSource); fixed || err != nil {
 		t.Errorf("the tree of other bytes was given a fixed point's layout: %v, %v", fixed, err)
 	}
 }

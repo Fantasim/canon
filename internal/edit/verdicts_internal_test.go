@@ -26,3 +26,24 @@ func TestVerdictKey(t *testing.T) {
 		}
 	}
 }
+
+// API.md M9, DECISIONS 258: a file is judged in its role: project.canon at the root is the project
+// file, any other path is a source, in a subdirectory too.
+func TestRoleOf(t *testing.T) {
+	for _, c := range []struct {
+		display string
+		want    syntax.FileKind
+	}{
+		{"project.canon", syntax.FileProject},
+		{"sub/project.canon", syntax.FileSource},
+		{"d/d.canon", syntax.FileSource},
+		{"d/dev.layer.canon", syntax.FileSource},
+		{"d/d.fr.canon", syntax.FileSource},
+		{"@a/project.canon", syntax.FileSource},
+		{"project.canon/d.canon", syntax.FileSource},
+	} {
+		if got := roleOf(c.display); got != c.want {
+			t.Errorf("%s: role %v, want %v", c.display, got, c.want)
+		}
+	}
+}

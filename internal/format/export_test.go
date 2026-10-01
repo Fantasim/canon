@@ -3,21 +3,20 @@ package format
 import (
 	"bytes"
 	"reflect"
-	"weak"
 
 	"github.com/fantasim/canonlang/internal/syntax"
 )
 
 // RewriteWhole is Rewrite judged on the whole file at every step, its layout judged afresh:
 // what Rewrite around the changed bytes must equal byte for byte.
-func RewriteWhole(f *syntax.File, changes []Change) ([]byte, error) {
+func RewriteWhole(f *syntax.File, kind syntax.FileKind, changes []Change) ([]byte, error) {
 	// FORMATTER.md §13
-	if err := usable(f); err != nil {
+	if err := usable(f, kind); err != nil {
 		return nil, err
 	}
 	b := newBuilder(f)
 	canonical := bytes.Equal(render(b.file()), f.Src.Content)
-	return rewriteWith(b, changes, canonical, false)
+	return rewriteWith(b, kind, changes, canonical, false)
 }
 
 // SectionsAlone checks every section of f, a fixed point, that prints alone: printed alone it is
@@ -42,8 +41,8 @@ func SectionsAlone(f *syntax.File) (int, []int) {
 
 // SettledAround reports whether the settle judges content, f's text with changes made, on one
 // section rather than on the whole file.
-func SettledAround(f *syntax.File, content []byte) bool {
-	g, err := reparse(f, content)
+func SettledAround(f *syntax.File, kind syntax.FileKind, content []byte) bool {
+	g, err := reparse(f, kind, content)
 	if err != nil {
 		return false
 	}
@@ -51,11 +50,11 @@ func SettledAround(f *syntax.File, content []byte) bool {
 	return ok
 }
 
-// Judged reports whether f's layout is in the cache, judged by an earlier call.
-func Judged(f *syntax.File) bool {
+// Judged reports whether f's layout in the role of kind is in the cache, judged by an earlier call.
+func Judged(f *syntax.File, kind syntax.FileKind) bool {
 	layouts.mu.Lock()
 	defer layouts.mu.Unlock()
-	_, ok := layouts.files[weak.Make(f)]
+	_, ok := layouts.files[keyOf(f, kind)]
 	return ok
 }
 

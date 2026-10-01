@@ -14,13 +14,13 @@ type stepper func(g *syntax.File, content []byte, last span) (splice, bool, erro
 
 // settleLoop re-prints the item holding the first byte that differs from the formatter's layout,
 // or the item holding the last one re-printed when that did not help, until content is a fixed
-// point (API.md M5); g is content's tree when known.
-func settleLoop(f *syntax.File, content []byte, g *syntax.File, step stepper) ([]byte, error) {
+// point (API.md M5); g is content's tree when known, kind the role f is judged in.
+func settleLoop(f *syntax.File, kind syntax.FileKind, content []byte, g *syntax.File, step stepper) ([]byte, error) {
 	last := span{-1, -1}
 	for tries := len(f.Tokens); tries >= 0; tries-- {
 		if g == nil || !bytes.Equal(g.Src.Content, content) {
 			var err error
-			if g, err = reparse(f, content); err != nil {
+			if g, err = reparse(f, kind, content); err != nil {
 				return nil, err
 			}
 		}

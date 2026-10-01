@@ -72,7 +72,7 @@ func (c rewriteCase) run(t *testing.T) {
 			t.Fatalf("%s: the input has the error %s", c.rule, fd.Code)
 		}
 	}
-	got, err := format.Rewrite(in.file, c.changes(t, in.file))
+	got, err := format.Rewrite(in.file, in.file.FileKind, c.changes(t, in.file))
 	if err != nil {
 		t.Fatalf("%s: %v", c.rule, err)
 	}
@@ -532,7 +532,7 @@ func TestRewriteKeepsOtherBytes(t *testing.T) {
 		fi, ok := n.(*syntax.FieldItem)
 		return ok && fi.Name.Name == "y" && in.file.Tokens[fi.First()].Start > 30
 	})
-	got, err := format.Rewrite(in.file, []format.Change{{Kind: format.Replace, Node: y.(*syntax.FieldItem).Value, Text: "3"}})
+	got, err := format.Rewrite(in.file, in.file.FileKind, []format.Change{{Kind: format.Replace, Node: y.(*syntax.FieldItem).Value, Text: "3"}})
 	if err != nil || string(got) != want {
 		t.Fatalf("got %q, %v; want %q", got, err, want)
 	}
@@ -543,7 +543,7 @@ func TestRewriteKeepsOtherBytes(t *testing.T) {
 func TestRemoveAfterKeptCommaKeepsIt(t *testing.T) {
 	src := keptDoc + "\nconst   Z = 1\n"
 	in := parse(t, "a/a.canon", []byte(src))
-	got, err := format.Rewrite(in.file, []format.Change{{Kind: format.Remove, Node: named(t, in.file, syntax.KindEnumMember, "b")}})
+	got, err := format.Rewrite(in.file, in.file.FileKind, []format.Change{{Kind: format.Remove, Node: named(t, in.file, syntax.KindEnumMember, "b")}})
 	want := "package p\n\nenum E {\n  a\n  /// d1\n  ,\n}\n\nconst   Z = 1\n"
 	if err != nil || string(got) != want {
 		t.Fatalf("got %q, %v; want %q", got, err, want)
@@ -612,7 +612,7 @@ var refusals = []refusal{
 func TestRewriteRefusesU1r(t *testing.T) {
 	for _, c := range refusals {
 		f := parse(t, "a/a.canon", []byte(c.src)).file
-		if out, err := format.Rewrite(f, c.changes(t, f)); !errors.Is(err, c.want) || out != nil {
+		if out, err := format.Rewrite(f, f.FileKind, c.changes(t, f)); !errors.Is(err, c.want) || out != nil {
 			t.Errorf("%s: got %q, %v; want %v", c.name, out, err, c.want)
 		}
 	}
@@ -651,7 +651,7 @@ func TestRewriteAfterBlockComment(t *testing.T) {
 	}
 	for _, c := range cases {
 		f := parse(t, "a/a.canon", []byte(c.src)).file
-		if got, err := format.Rewrite(f, []format.Change{c.change(f)}); !errors.Is(err, format.ErrChange) {
+		if got, err := format.Rewrite(f, f.FileKind, []format.Change{c.change(f)}); !errors.Is(err, format.ErrChange) {
 			t.Errorf("got %q, %v; want ErrChange", got, err)
 		}
 	}
@@ -673,7 +673,7 @@ func TestRewriteKeepsInlineComments(t *testing.T) {
 		if got := owner(t, f, comment); got != host {
 			t.Errorf("%s: before, attached to %q, want %q", c.name, got, host)
 		}
-		got, err := format.Rewrite(f, c.changes(t, f))
+		got, err := format.Rewrite(f, f.FileKind, c.changes(t, f))
 		if err != nil || string(got) != c.want {
 			t.Errorf("%s: got %q, %v; want %q", c.rule, got, err, c.want)
 			continue
@@ -705,12 +705,12 @@ func TestRewriteRefuses(t *testing.T) {
 		{"nil node", []format.Change{{Kind: format.Retire, Node: (*syntax.EntryItem)(nil)}}, format.ErrChange},
 	}
 	for _, c := range cases {
-		if out, err := format.Rewrite(f, c.changes); !errors.Is(err, c.want) || out != nil {
+		if out, err := format.Rewrite(f, f.FileKind, c.changes); !errors.Is(err, c.want) || out != nil {
 			t.Errorf("%s: got %q, %v; want %v", c.name, out, err, c.want)
 		}
 	}
 	retired := parse(t, "a/a.canon", []byte("package p\n\nenum E { retired a }\n"))
-	if _, err := format.Rewrite(retired.file, []format.Change{{Kind: format.Retire, Node: named(t, retired.file, syntax.KindEnumMember, "retired")}}); !errors.Is(err, format.ErrChange) {
+	if _, err := format.Rewrite(retired.file, retired.file.FileKind, []format.Change{{Kind: format.Retire, Node: named(t, retired.file, syntax.KindEnumMember, "retired")}}); !errors.Is(err, format.ErrChange) {
 		t.Errorf("retiring twice: %v, want ErrChange", err)
 	}
 	top := parse(t, "a/a.canon", []byte("package p\n\nlet a = 1\n")).file
@@ -719,12 +719,12 @@ func TestRewriteRefuses(t *testing.T) {
 		f  *syntax.File
 		at int
 	}{{top, 0}, {top, 2}, {project, 1}} {
-		if _, err := format.Rewrite(c.f, []format.Change{{Kind: format.Insert, At: c.at, Text: "let b = 2"}}); !errors.Is(err, format.ErrChange) {
+		if _, err := format.Rewrite(c.f, c.f.FileKind, []format.Change{{Kind: format.Insert, At: c.at, Text: "let b = 2"}}); !errors.Is(err, format.ErrChange) {
 			t.Errorf("log-2026-09-29 M4 G1: a declaration at %d of %s: %v, want ErrChange", c.at, c.f.Src.Path, err)
 		}
 	}
 	bad := parse(t, "a/a.canon", []byte("package p\n\nconst = 1\n"))
-	if _, err := format.Rewrite(bad.file, nil); !errors.Is(err, format.ErrSyntax) {
+	if _, err := format.Rewrite(bad.file, bad.file.FileKind, nil); !errors.Is(err, format.ErrSyntax) {
 		t.Errorf("a tree with a syntax error: %v, want ErrSyntax", err)
 	}
 }

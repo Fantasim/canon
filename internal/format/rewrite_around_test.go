@@ -20,8 +20,8 @@ import (
 func rewriteChecked(t *testing.T, path string, f *syntax.File, changes []format.Change) ([]byte, error) {
 	// FORMATTER.md §13, API.md M5, M6
 	t.Helper()
-	out, err := format.Rewrite(f, changes)
-	want, werr := format.RewriteWhole(f, changes)
+	out, err := format.Rewrite(f, f.FileKind, changes)
+	want, werr := format.RewriteWhole(f, f.FileKind, changes)
 	if (err == nil) != (werr == nil) || err != nil && err.Error() != werr.Error() {
 		t.Fatalf("%s: Rewrite refused with %v, the whole-file Rewrite with %v", path, err, werr)
 	}
@@ -114,7 +114,7 @@ func TestRewriteAroundTable(t *testing.T) {
 		if again, err := formatText(t, "monster/monster.canon", out); err != nil || !bytes.Equal(again, out) {
 			t.Fatalf("not a fixed point (API.md M5): %v\n%s", err, lineDiff(out, again))
 		}
-		if format.SettledAround(f, out) {
+		if format.SettledAround(f, f.FileKind, out) {
 			around++
 		}
 	}
@@ -217,7 +217,7 @@ func TestAroundNeedsItsGround(t *testing.T) {
 		f := parse(t, "a/a.canon", []byte(src)).file
 		at := bytes.LastIndex(f.Src.Content, []byte("2"))
 		content := slices.Concat(f.Src.Content[:at], []byte("3"), f.Src.Content[at+1:])
-		if format.SettledAround(f, content) {
+		if format.SettledAround(f, f.FileKind, content) {
 			t.Errorf("%q: judged around a section of f that is not its own bytes", src)
 		}
 	}
@@ -239,11 +239,11 @@ func TestCanonicalKept(t *testing.T) {
 	for _, in := range inputs {
 		f := parse(t, in.path, in.data).file
 		want, wantErr := freshLayout(t, f)
-		got, err := format.Canonical(f)
-		if got != want || !errors.Is(err, wantErr) || (err == nil) != (wantErr == nil) || !format.Judged(f) {
+		got, err := format.Canonical(f, f.FileKind)
+		if got != want || !errors.Is(err, wantErr) || (err == nil) != (wantErr == nil) || !format.Judged(f, f.FileKind) {
 			t.Fatalf("%s: Canonical %v, %v; a fresh look %v, %v", in.path, got, err, want, wantErr)
 		}
-		if again, err := format.Canonical(f); again != got || !errors.Is(err, wantErr) {
+		if again, err := format.Canonical(f, f.FileKind); again != got || !errors.Is(err, wantErr) {
 			t.Fatalf("%s: judged %v then %v", in.path, got, again)
 		}
 	}
@@ -253,7 +253,7 @@ func TestCanonicalKept(t *testing.T) {
 // the text canon fmt prints for it being the text itself.
 func freshLayout(t *testing.T, f *syntax.File) (bool, error) {
 	t.Helper()
-	if _, err := format.RewriteWhole(f, nil); err != nil {
+	if _, err := format.RewriteWhole(f, f.FileKind, nil); err != nil {
 		return false, err
 	}
 	out, err := formatText(t, f.Src.Path, f.Src.Content)
@@ -283,10 +283,10 @@ func TestCanonicalConcurrent(t *testing.T) {
 	var wg sync.WaitGroup
 	for range tableGap {
 		wg.Go(func() {
-			if ok, err := format.Canonical(f); !ok || err != nil {
+			if ok, err := format.Canonical(f, f.FileKind); !ok || err != nil {
 				t.Errorf("Canonical: %v, %v", ok, err)
 			}
-			if _, err := format.Rewrite(f, []format.Change{{Kind: format.Replace, Node: n, Text: "MON_00001 { name: \"x\", level: 1, hp: 1 }"}}); err != nil {
+			if _, err := format.Rewrite(f, f.FileKind, []format.Change{{Kind: format.Replace, Node: n, Text: "MON_00001 { name: \"x\", level: 1, hp: 1 }"}}); err != nil {
 				t.Errorf("Rewrite: %v", err)
 			}
 		})
@@ -304,12 +304,12 @@ func BenchmarkRewriteTable(b *testing.B) {
 	changes := []format.Change{{Kind: format.Replace, Node: level, Text: "77"}}
 	for _, run := range []struct {
 		name    string
-		rewrite func(*syntax.File, []format.Change) ([]byte, error)
+		rewrite func(*syntax.File, syntax.FileKind, []format.Change) ([]byte, error)
 	}{{"around", format.Rewrite}, {"whole", format.RewriteWhole}} {
 		b.Run(run.name, func(b *testing.B) {
 			b.ReportAllocs()
 			for b.Loop() {
-				if _, err := run.rewrite(f, changes); err != nil {
+				if _, err := run.rewrite(f, f.FileKind, changes); err != nil {
 					b.Fatal(err)
 				}
 			}

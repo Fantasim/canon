@@ -14,15 +14,15 @@ import (
 
 // usable is ErrSyntax for a tree with a syntax error, the lexer's included, and ErrLayout for an
 // indentation tab or a lone carriage return; source.FileSet folds CRLF before format sees it,
-// so the raw-bytes check of API.md M9 is the edit layer's (log-2026-09-29 M4 U1r).
-func usable(f *syntax.File) error {
+// so the raw-bytes check of API.md M9 is the edit layer's. kind is the role (DECISIONS 258).
+func usable(f *syntax.File, kind syntax.FileKind) error {
 	if !sound(f) {
 		return ErrSyntax
 	}
 	if bytes.Contains(f.Src.Content, []byte(carriageReturn)) || tabbed(f) {
 		return ErrLayout
 	}
-	if _, err := reparse(f, f.Src.Content); err != nil {
+	if _, err := reparse(f, kind, f.Src.Content); err != nil {
 		return ErrSyntax // an error only the lexer reports leaves a whole tree (DECISIONS 166)
 	}
 	return nil
@@ -45,15 +45,16 @@ func tabbed(f *syntax.File) bool {
 	})
 }
 
-// reparse parses content as f's file; ErrText when it holds a syntax error.
-func reparse(f *syntax.File, content []byte) (*syntax.File, error) {
+// reparse parses content as f's file in the role of kind, not the tree's own kind: a source
+// opening with `project` holds E1011 (DECISIONS 258); ErrText when it holds a syntax error.
+func reparse(f *syntax.File, kind syntax.FileKind, content []byte) (*syntax.File, error) {
 	var fs source.FileSet
 	src, err := fs.Add(f.Src.Path, f.Src.Abs, content)
 	if err != nil {
 		return nil, fmt.Errorf("format: %w", err)
 	}
 	bag := diag.NewBag(&fs, "")
-	g := syntax.Parse(src, f.FileKind, bag)
+	g := syntax.Parse(src, kind, bag)
 	if failed(bag, src) || !sound(g) {
 		return nil, ErrText
 	}

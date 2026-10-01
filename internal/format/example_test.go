@@ -36,7 +36,7 @@ func ExampleRewrite() {
 	src, _ := fs.Add("a/a.canon", "/p/a/a.canon", []byte("package a\n\nlet c: C = {\n  a: 1 // one\n  b: [1]\n}\n"))
 	f := syntax.Parse(src, syntax.FileSource, diag.NewBag(&fs, "a"))
 	c := f.Decls[0].(*syntax.LetDecl).Value.(*syntax.BraceLit)
-	out, err := format.Rewrite(f, []format.Change{
+	out, err := format.Rewrite(f, f.FileKind, []format.Change{
 		{Kind: format.Replace, Node: c.Items[0].(*syntax.FieldItem).Value, Text: "2"},
 		{Kind: format.Insert, List: c.Items[1].(*syntax.FieldItem).Value.First(), At: 1, Text: "2"},
 		{Kind: format.Insert, List: c.First(), At: 2, Text: "d: { x: 1 }"},
@@ -51,7 +51,7 @@ func ExampleRewrite_move() {
 	src, _ := fs.Add("a/a.canon", "/p/a/a.canon", []byte("package a\n\nlet c: C = {\n  /// A.\n  a: 1 // one\n  b: 2\n}\n"))
 	f := syntax.Parse(src, syntax.FileSource, diag.NewBag(&fs, "a"))
 	c := f.Decls[0].(*syntax.LetDecl).Value.(*syntax.BraceLit)
-	out, err := format.Rewrite(f, []format.Change{{Kind: format.Move, Node: c.Items[0], List: c.First(), At: 2}})
+	out, err := format.Rewrite(f, f.FileKind, []format.Change{{Kind: format.Move, Node: c.Items[0], List: c.First(), At: 2}})
 	fmt.Printf("%q %v\n", out, err)
 	// Output: "package a\n\nlet c: C = {\n  b: 2\n  /// A.\n  a: 1 // one\n}\n" <nil>
 }
@@ -74,7 +74,7 @@ func ExampleCanonical() {
 	good, _ := fs.Add("a/a.canon", "/p/a/a.canon", []byte("package a\n\nconst A = 1\n"))
 	loose, _ := fs.Add("a/b.canon", "/p/a/b.canon", []byte("package a\nconst A=1\n"))
 	for _, src := range []*source.File{good, loose} {
-		fixed, err := format.Canonical(syntax.Parse(src, syntax.FileSource, diag.NewBag(&fs, "a")))
+		fixed, err := format.Canonical(syntax.Parse(src, syntax.FileSource, diag.NewBag(&fs, "a")), syntax.FileSource)
 		fmt.Println(src.Path, fixed, err)
 	}
 	// Output:
