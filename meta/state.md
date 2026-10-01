@@ -10,8 +10,8 @@ Ledger: [m4-units.md](m4-units.md). Calls: [decisions/log-2026-09-29.md](decisio
 
 Post-M4 is done (`f6114a2..37968e3`): spec syncs (DECISIONS 252-273), PS1-PS3, ME1, DV1, M4.1; units
 in [m4-units.md](m4-units.md). Gates on that code: `make check` green, race tests at GOMAXPROCS 2
-and 4 green, `make fuzz-edit` 2 min PASS after each M4.1 round. CI on `claude/post-m4-ci`: pushed,
-result in the handoff (the orchestrator fills it).
+and 4 green, `make fuzz-edit` 2 min PASS after each M4.1 round. CI on `claude/post-m4-ci` green
+on Linux, macOS and Windows (run 36854391166).
 
 **Next** (start prompt: [handoff/2026-10-01-next-start-prompt.md](handoff/2026-10-01-next-start-prompt.md)):
 M5 (`lsp`, `editors/vscode`), with M6 (legacy C++/TS) and M7 (migration) in parallel waves per
@@ -68,8 +68,7 @@ NFR-01 measured on this local reference machine only, not a 4-core CI runner, an
 `f53ba0c`. On the final code it was compared at equal load (no regression; Louis accepted it). The
 macOS/Windows link tests skip where links cannot be made. Long fuzz/progen campaigns beyond the
 stated acceptance, deferred by Louis. NFR-01 was not re-run after M4.1's Undo verification (it runs
-only for edit layers and multi-op dependent requests; the bench has neither). The CI result for the
-post-M4 code is not known to this update.
+only for edit layers and multi-op dependent requests; the bench has neither).
 
 ## Verify queue
 
