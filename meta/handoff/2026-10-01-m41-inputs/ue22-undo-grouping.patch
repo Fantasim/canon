@@ -1,0 +1,594 @@
+From 9411ae6a8c17d8324d49ebf872df2ebbe7c027a9 Mon Sep 17 00:00:00 2001
+From: Fantasim <siuol@gmx.com>
+Date: Thu, 1 Oct 2026 07:52:13 +0300
+Subject: [PATCH] fix(edit): an Undo restores each driver before the values it
+ types
+
+Symptom: the Undo of `[set goal collect, set target 25]` failed V1, because
+target was restored before its discriminant; with `[set target X, set goal
+collect]` the Undo applied but left X.
+Cause: inverses were listed in plain reverse op order with cascade inverses
+last, so an inverse could recreate an in-request state where a dependent
+value does not fit its new driver, and a cascade inverse ran after the
+field's own inverse.
+Fix: each op's inverses form a group with its path, reach and drivers; a
+group whose driver an earlier op changed after the group's value was last
+written is placed right after that op's inverses (API.md E22, E15, E16;
+log-2026-09-29 U-E22).
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ internal/edit/apply.go                        |  15 +-
+ internal/edit/apply_undo_order_test.go        | 168 ++++++++++++++++++
+ internal/edit/applycascade.go                 |   2 +-
+ internal/edit/applywork.go                    |   5 +-
+ internal/edit/cascadeheld.go                  |   2 +-
+ internal/edit/constants.go                    |   3 +
+ .../edit/testdata/edits/cascade_arms.txtar    |   8 +-
+ .../testdata/edits/cascade_undo_order.txtar   | 112 ++++++++++++
+ internal/edit/undoorder.go                    | 121 +++++++++++++
+ 9 files changed, 421 insertions(+), 15 deletions(-)
+ create mode 100644 internal/edit/apply_undo_order_test.go
+ create mode 100644 internal/edit/testdata/edits/cascade_undo_order.txtar
+ create mode 100644 internal/edit/undoorder.go
+
+diff --git a/internal/edit/apply.go b/internal/edit/apply.go
+index 738308a..c043e70 100644
+--- a/internal/edit/apply.go
++++ b/internal/edit/apply.go
+@@ -109,15 +109,15 @@ type applier struct {
+ 	host     wire.Host             // the host of snap's analysis
+ 	baseHost wire.Host             // the host of base's analysis
+ 	dirty    bool                  // files changed since snap was analyzed
+-	undo     [][]Operation         // each operation's inverses, in the order of the operations
++	undo     []undoGroup           // each operation's inverses, in the order of the operations
+ 	dropped  []Dropped
+ 	owners   map[string]string // the package owning each file written, by display path (E17)
+ 	records  []touched         // E15
+ 	given    []givenValue      // what the operations wrote in JSON sources, for E15's held data
+ 	outer    wire.Outer        // around the value the operation types (WIRE.md 5.9)
+ 	marks    *symMarks         // what the typer knew of the symbols it made
+-	// cascadeUndo are the cascades' inverses, which follow every other one (log-2026-09-29 M4 U4b-r)
+-	cascadeUndo []Operation
++	// cascadeUndo are the cascades' inverses, each after its driver's (log-2026-09-29 M4 U4b-r, U-E22)
++	cascadeUndo []undoGroup
+ 	emptied     map[string]string // a directory a file left, to the package directory it stops below (N6)
+ 	locked      []Locked
+ 	kept        keptCase // the fields the last SetCase kept for its refinements to judge (E14)
+@@ -203,6 +203,7 @@ func (a *applier) plan(op Operation, h func(*opCtx) error) (*work, error) {
+ 	if err := handlers[op.Kind](x); err != nil {
+ 		return nil, err
+ 	}
++	x.w.site = x.undoSite()
+ 	x.noteTouched()
+ 	return x.w, nil
+ }
+@@ -252,7 +253,8 @@ type opCtx struct {
+ 	keptFields []string // SetCase: the old case's fields kept whose new refinements differ (E14)
+ }
+ 
+-// finish is the plan: the files that changed, the inverses last operation first (E23).
++// finish is the plan: the files that changed, the inverses last operation first, drivers before
++// the values they type (E22, E23).
+ func (a *applier) finish() *Plan {
+ 	p := &Plan{Dropped: a.dropped, writes: map[string][]writeStep{}}
+ 	for _, display := range slices.Sorted(maps.Keys(a.files)) {
+@@ -266,10 +268,7 @@ func (a *applier) finish() *Plan {
+ 		}
+ 	}
+ 	slices.SortFunc(p.Changes, func(x, y Change) int { return strings.Compare(x.Path, y.Path) })
+-	for _, ops := range slices.Backward(a.undo) {
+-		p.Undo = append(p.Undo, ops...)
+-	}
+-	p.Undo = append(p.Undo, a.cascadeUndo...)
++	p.Undo = undoOrder(a.undo, a.cascadeUndo)
+ 	p.Changes = append(p.Changes, a.removedDirs()...)
+ 	touched := map[string]bool{}
+ 	for _, c := range p.Changes {
+diff --git a/internal/edit/apply_undo_order_test.go b/internal/edit/apply_undo_order_test.go
+new file mode 100644
+index 0000000..de7201a
+--- /dev/null
++++ b/internal/edit/apply_undo_order_test.go
+@@ -0,0 +1,168 @@
++package edit_test
++
++import (
++	"context"
++	"maps"
++	"slices"
++	"testing"
++
++	"github.com/fantasim/canonlang/internal/edit"
++)
++
++// questSrc holds fields typed by an earlier field: two of a record, one in a case, a list (SPEC §5.11).
++const questSrc = `package d
++
++/// What a quest counts.
++enum Goal { kill, collect }
++
++/// What a quest aims at, by goal.
++type Target(g: Goal) = match g {
++  kill => String(1..)
++  collect => Int(1..)
++}
++
++/// A reward: gold, or an item.
++type Reward(item: Bool) = match item {
++  false => Int(1..)
++  true => String(1..)
++}
++
++/// What a step does.
++variant Act {
++  /// Hunts.
++  hunt {
++    /// What it counts.
++    goal: Goal
++    /// What it aims at.
++    target: Target(goal)?
++  }
++  /// Waits.
++  wait {
++    /// How long.
++    turns: Int = 1
++  }
++}
++
++/// A quest.
++record Quest {
++  /// What it counts.
++  goal: Goal
++  /// What it aims at.
++  target: Target(goal)?
++  /// A second aim.
++  bonus: Target(goal)?
++  /// A note.
++  note: String = ""
++  /// What its first step does.
++  act: Act
++  /// Whether its rewards are items rather than gold.
++  items: Bool = false
++  /// What completing it gives.
++  rewards: [Reward(items)] = []
++}
++
++/// The quests.
++let quests: table Quest = {
++  slay { goal: kill, target: "wolf", bonus: "bear", act: wait { turns: 2 }, rewards: [100, 50] }
++  gather { goal: collect, target: 10, act: hunt { goal: kill, target: "boar" } }
++}
++`
++
++func questFS() mapFS {
++	return mapFS{"law/project.canon": file(projectCanon), "law/d/d.canon": file(questSrc)}
++}
++
++// API.md E22, E15, E16: the Undo of a request that changes a field's driver and then writes that
++// field, or lets a cascade drop it, restores the driver before the field, each value once, so it
++// applies and gives every value back; the Undo of that Undo gives the edited values back.
++func TestUndoRestoresDriversFirst(t *testing.T) {
++	set := func(path string, v edit.Lit) edit.Operation {
++		return edit.Operation{Kind: edit.OpSet, Path: path, Value: v}
++	}
++	collect, kill := edit.Member("collect"), edit.Member("kill")
++	for _, c := range []struct {
++		name string
++		ops  []edit.Operation
++	}{
++		{"driver then dependent", []edit.Operation{set("quests.slay.goal", collect), set("quests.slay.target", edit.Int(25))}},
++		{"two dependents", []edit.Operation{
++			set("quests.slay.goal", collect), set("quests.slay.target", edit.Int(25)), set("quests.slay.bonus", edit.Int(3)),
++		}},
++		{"dependent set twice", []edit.Operation{
++			set("quests.slay.goal", collect), set("quests.slay.target", edit.Int(25)), set("quests.slay.target", edit.Int(30)),
++		}},
++		{"dependent, then driver, then cascade", []edit.Operation{set("quests.slay.target", edit.Str("boar")), set("quests.slay.goal", collect)}},
++		{"driver changed twice", []edit.Operation{
++			set("quests.slay.goal", collect), set("quests.slay.target", edit.Int(25)),
++			set("quests.slay.goal", kill), set("quests.slay.target", edit.Str("boar")),
++		}},
++		{"cascade and an unrelated field", []edit.Operation{
++			set("quests.slay.goal", collect), set("quests.gather.note", edit.Str("n")), set("quests.slay.target", edit.Int(25)),
++		}},
++		{"an entry added between", []edit.Operation{
++			set("quests.slay.goal", collect),
++			{Kind: edit.OpAddEntry, Path: "quests", Key: edit.Key("hunt"), Value: edit.Source(`{ goal: kill, act: wait { turns: 1 } }`)},
++			set("quests.slay.target", edit.Int(25)),
++		}},
++		{"two cascades", []edit.Operation{set("quests.slay.goal", collect), set("quests.gather.goal", kill)}},
++		{"inside a case", []edit.Operation{set("quests.gather.act.goal", collect), set("quests.gather.act.target", edit.Int(5))}},
++		{"list, whole", []edit.Operation{set("quests.slay.items", edit.Bool(true)), set("quests.slay.rewards", edit.Source(`["potion"]`))}},
++		{"list, Remove", []edit.Operation{set("quests.slay.items", edit.Bool(true)), {Kind: edit.OpRemove, Path: "quests.slay.rewards[0]"}}},
++		{"SetCase, then a Set in the new case", []edit.Operation{
++			{Kind: edit.OpSetCase, Path: "quests.slay.act", Case: "hunt", Value: edit.Obj{"goal": collect}},
++			set("quests.slay.act.target", edit.Int(5)),
++		}},
++	} {
++		undoTwice(t, c.name, questFS(), c.ops)
++	}
++}
++
++// undoTwice applies ops to fsys, then their Undo, then the Undo of that Undo: the first gives
++// every value of fsys back (E22), the second every value ops wrote.
++func undoTwice(t *testing.T, name string, fsys mapFS, ops []edit.Operation) {
++	t.Helper()
++	edited, ok := applied(t, name, fsys, ops)
++	if !ok {
++		return
++	}
++	undone, ok := applied(t, name+", Undo", edited.fsys, edited.plan.Undo)
++	if !ok {
++		return
++	}
++	sameValues(t, name+", Undo", fsys, undone.fsys)
++	redone, ok := applied(t, name+", Undo of the Undo", undone.fsys, undone.plan.Undo)
++	if ok {
++		sameValues(t, name+", Undo of the Undo", edited.fsys, redone.fsys)
++	}
++}
++
++type appliedPlan struct {
++	plan *edit.Plan
++	fsys mapFS
++}
++
++// applied is ops applied to fsys: the plan and the files it writes; each write is minimal (M6).
++func applied(t *testing.T, name string, fsys mapFS, ops []edit.Operation) (appliedPlan, bool) {
++	t.Helper()
++	s := open(t, fsys, nil, "", "d")
++	plan, err := edit.Apply(context.Background(), s.env, s.snap, edit.Request{Ops: ops})
++	if err != nil {
++		t.Errorf("%s: %+v: %v", name, ops, err)
++		return appliedPlan{}, false
++	}
++	for _, ch := range plan.Changes {
++		checkWritten(t, plan, ch)
++	}
++	return appliedPlan{plan: plan, fsys: written(fsys, plan)}, true
++}
++
++// sameValues reports every value of want that got does not hold (API.md E22: values, not text).
++func sameValues(t *testing.T, name string, want, got mapFS) {
++	t.Helper()
++	w, g := values(open(t, want, nil, "", "d"), false), values(open(t, got, nil, "", "d"), false)
++	for _, k := range slices.Sorted(maps.Keys(w)) {
++		if g[k] != w[k] {
++			t.Errorf("%s: %s = %s, want %s", name, k, g[k], w[k])
++		}
++	}
++}
+diff --git a/internal/edit/applycascade.go b/internal/edit/applycascade.go
+index ff377f0..6c31972 100644
+--- a/internal/edit/applycascade.go
++++ b/internal/edit/applycascade.go
+@@ -213,7 +213,7 @@ func (a *applier) dropResolved(c fieldCheck, res resolution) error {
+ // driver's (E22, E23).
+ func (a *applier) reportDrop(c fieldCheck, raw json.RawMessage, back Lit) {
+ 	a.dropped = append(a.dropped, Dropped{Path: c.path(), Value: raw})
+-	a.cascadeUndo = append(a.cascadeUndo, Operation{Kind: OpSet, Path: c.path(), Value: back})
++	a.cascadeUndo = append(a.cascadeUndo, cascadeGroup(c, Operation{Kind: OpSet, Path: c.path(), Value: back}))
+ }
+ 
+ // dropJSON drops a field of a JSON source whose value no longer decodes, which no path reaches:
+diff --git a/internal/edit/applywork.go b/internal/edit/applywork.go
+index d280be9..b060358 100644
+--- a/internal/edit/applywork.go
++++ b/internal/edit/applywork.go
+@@ -26,6 +26,7 @@ type work struct {
+ 	removes []removal
+ 	moves   []fileMove
+ 	undo    []Operation
++	site    undoGroup         // where undo goes in the Undo, its operations aside
+ 	owners  map[string]string // the package owning each file written, by display path
+ 	dropped []Dropped
+ 	records []touched
+@@ -238,7 +239,9 @@ func (a *applier) commit(w *work) error {
+ 		s.checked = true
+ 	}
+ 	if len(w.undo) > 0 {
+-		a.undo = append(a.undo, w.undo)
++		g := w.site
++		g.ops = w.undo
++		a.undo = append(a.undo, g)
+ 	}
+ 	maps.Copy(a.owners, w.owners)
+ 	a.dropped = append(a.dropped, w.dropped...)
+diff --git a/internal/edit/cascadeheld.go b/internal/edit/cascadeheld.go
+index 4c5bd3f..6223a3a 100644
+--- a/internal/edit/cascadeheld.go
++++ b/internal/edit/cascadeheld.go
+@@ -71,7 +71,7 @@ func (a *applier) keepHeld(c fieldCheck) error {
+ 	if err != nil {
+ 		return err
+ 	}
+-	a.cascadeUndo = append(a.cascadeUndo, Operation{Kind: OpSet, Path: c.path(), Value: lit})
++	a.cascadeUndo = append(a.cascadeUndo, cascadeGroup(c, Operation{Kind: OpSet, Path: c.path(), Value: lit}))
+ 	return nil
+ }
+ 
+diff --git a/internal/edit/constants.go b/internal/edit/constants.go
+index d9605c7..99178b2 100644
+--- a/internal/edit/constants.go
++++ b/internal/edit/constants.go
+@@ -132,6 +132,9 @@ var rows = [...]func(*judge) Reason{computedRow, layeredRow, formatRow, starRow,
+ // itemOps take out, move or rename an item of their target's collection (starRow).
+ var itemOps = map[Op]bool{OpRemove: true, OpMove: true, OpRename: true}
+ 
++// appendOps add an item after every other of their target's collection, or by its key.
++var appendOps = map[Op]bool{OpAdd: true, OpAddEntry: true}
++
+ // The constructors a ValueError names what was given by (API.md §8.2).
+ const (
+ 	nameBool    = "Bool"
+diff --git a/internal/edit/testdata/edits/cascade_arms.txtar b/internal/edit/testdata/edits/cascade_arms.txtar
+index 5d5a329..ea7441c 100644
+--- a/internal/edit/testdata/edits/cascade_arms.txtar
++++ b/internal/edit/testdata/edits/cascade_arms.txtar
+@@ -81,13 +81,13 @@ let rs: table R = {
+     },
+     {
+       "op": "set",
+-      "path": "p:rs.one.f",
+-      "source": "a"
++      "path": "p:rs.two.w",
++      "source": "{ k: num, v: 1 }"
+     },
+     {
+       "op": "set",
+-      "path": "p:rs.two.w",
+-      "source": "{ k: num, v: 1 }"
++      "path": "p:rs.one.f",
++      "source": "a"
+     }
+   ],
+   "touched": [
+diff --git a/internal/edit/testdata/edits/cascade_undo_order.txtar b/internal/edit/testdata/edits/cascade_undo_order.txtar
+new file mode 100644
+index 0000000..f0a4b07
+--- /dev/null
++++ b/internal/edit/testdata/edits/cascade_undo_order.txtar
+@@ -0,0 +1,112 @@
++API.md E22, E23, E15: a request that changes a driver and then writes a field it types, or lets a
++cascade drop one it wrote before, has an Undo that restores each driver before the values it
++types, each inverse once: slay's goal before its target; gather's goal, then the target the
++cascade dropped, then its target as before the edit.
++-- options --
++pkgs: d
++-- edit.json --
++{"ops": [
++  {"op": "set", "path": "quests.slay.goal", "source": "collect"},
++  {"op": "set", "path": "quests.slay.target", "value": 25},
++  {"op": "set", "path": "quests.gather.target", "source": "12"},
++  {"op": "set", "path": "quests.gather.goal", "source": "kill"}
++]}
++-- project.canon --
++project acme {
++  canon: "0.1"
++}
++-- d/d.canon --
++package d
++
++/// What a quest counts.
++enum Goal { kill, collect }
++
++/// What a quest aims at, by goal.
++type Target(g: Goal) = match g {
++  kill => String(1..)
++  collect => Int(1..)
++}
++
++/// A quest.
++record Quest {
++  /// What it counts.
++  goal: Goal
++  /// What it aims at.
++  target: Target(goal)?
++}
++
++/// The quests.
++let quests: table Quest = {
++  slay { goal: kill, target: "wolf" }
++  gather { goal: collect, target: 10 }
++}
++-- result.json --
++{
++  "changes": [
++    {
++      "kind": "modified",
++      "path": "d/d.canon"
++    }
++  ],
++  "dropped": [
++    {
++      "path": "d:quests.gather.target",
++      "value": 12
++    }
++  ],
++  "undo": [
++    {
++      "op": "set",
++      "path": "d:quests.gather.goal",
++      "source": "collect"
++    },
++    {
++      "op": "set",
++      "path": "d:quests.gather.target",
++      "source": "12"
++    },
++    {
++      "op": "set",
++      "path": "d:quests.gather.target",
++      "source": "10"
++    },
++    {
++      "op": "set",
++      "path": "d:quests.slay.goal",
++      "source": "kill"
++    },
++    {
++      "op": "set",
++      "path": "d:quests.slay.target",
++      "source": "\"wolf\""
++    }
++  ],
++  "touched": [
++    "d"
++  ]
++}
++-- after/d/d.canon --
++package d
++
++/// What a quest counts.
++enum Goal { kill, collect }
++
++/// What a quest aims at, by goal.
++type Target(g: Goal) = match g {
++  kill => String(1..)
++  collect => Int(1..)
++}
++
++/// A quest.
++record Quest {
++  /// What it counts.
++  goal: Goal
++  /// What it aims at.
++  target: Target(goal)?
++}
++
++/// The quests.
++let quests: table Quest = {
++  slay { goal: collect, target: 25 }
++  gather { goal: kill }
++}
+diff --git a/internal/edit/undoorder.go b/internal/edit/undoorder.go
+new file mode 100644
+index 0000000..bd7d7fe
+--- /dev/null
++++ b/internal/edit/undoorder.go
+@@ -0,0 +1,121 @@
++package edit
++
++import (
++	"slices"
++
++	"github.com/fantasim/canonlang/internal/types"
++	"github.com/fantasim/canonlang/internal/value"
++)
++
++// undoGroup is one operation's or cascade's inverses, placed in the Undo by what it wrote
++// (API.md E22, E23); reach is its path, the item an Add or AddEntry adds, or the collection
++// whose items' paths an Insert, Remove, Move or Rename shifts.
++type undoGroup struct {
++	ops     []Operation
++	path    string   // the canonical path it wrote
++	reach   string   // the value it may change
++	drivers []string // the fields computing the types along path (TYPES.md 11)
++}
++
++// undoSite is the placing of x's inverses: its path, its reach, and its path's drivers.
++func (x *opCtx) undoSite() undoGroup {
++	g := undoGroup{path: x.res.Canonical, reach: x.res.Canonical}
++	n := len(x.res.Steps)
++	switch {
++	case itemOps[x.op.Kind] && n > 0:
++		g.reach = x.pathAt(n - 1)
++	case appendOps[x.op.Kind] && len(x.w.undo) == 1 && x.w.undo[0].Kind == OpRemove:
++		g.reach = x.w.undo[0].Path // the item added, which shifts no other
++	}
++	for i, st := range x.res.Steps {
++		if rec, ok := x.res.parent(i).(*value.Record); ok && st.Seg.Kind == SegField {
++			g.drivers = append(g.drivers, driversOf(x.pathAt(i), fieldsOf(rec.T), st.Seg.Name)...)
++		}
++	}
++	return g
++}
++
++// driversOf are the paths of the fields of the record at rec, declared by decl, that compute
++// the type of its field name.
++func driversOf(rec string, decl []*types.Field, name string) []string {
++	k := fieldIndex(decl, name)
++	if k < 0 {
++		return nil
++	}
++	var out []string
++	for _, d := range decl[k].DependsOn {
++		if d < len(decl) {
++			out = append(out, childPath(rec, Seg{Kind: SegField, Name: decl[d].Name}))
++		}
++	}
++	return out
++}
++
++// cascadeGroup is the placing of inverse, which gives back c's field (API.md E15).
++func cascadeGroup(c fieldCheck, inverse Operation) undoGroup {
++	p := c.path()
++	return undoGroup{ops: []Operation{inverse}, path: p, reach: p, drivers: driversOf(c.t.path, c.t.decl, c.f.Name)}
++}
++
++// undoOrder is the Undo, last operation first then the cascades (API.md E23), each group placed
++// right after the anchor that restores its drivers, so a driver comes back before the values it
++// types; each inverse is listed once (E22; log-2026-09-29 U-E22).
++func undoOrder(ops, cascades []undoGroup) []Operation {
++	groups := slices.Concat(ops, cascades)
++	after := make([][]int, len(groups))
++	moved := make([]bool, len(groups))
++	for j := range groups {
++		if i, ok := anchor(groups, j); ok {
++			after[i], moved[j] = append(after[i], j), true
++		}
++	}
++	u := undoList{groups: groups, after: after}
++	for k := range slices.Backward(ops) {
++		u.place(k, moved[k])
++	}
++	for k := len(ops); k < len(groups); k++ {
++		u.place(k, moved[k])
++	}
++	return u.out
++}
++
++// anchor is the earliest group before j that wrote one of j's drivers after the last group
++// reaching j's value: the inverses before it in the Undo leave j's value as it was then; false
++// for none.
++func anchor(groups []undoGroup, j int) (int, bool) {
++	g := groups[j]
++	at, found := 0, false
++	for k := j - 1; k >= 0; k-- {
++		h := groups[k]
++		if related(h.reach, g.reach) {
++			break
++		}
++		if slices.ContainsFunc(g.drivers, func(d string) bool { return within(h.path, d, pathMarks, true) }) {
++			at, found = k, true
++		}
++	}
++	return at, found
++}
++
++// related reports one of two canonical paths at or inside the other.
++func related(a, b string) bool {
++	return within(a, b, pathMarks, true) || within(b, a, pathMarks, true)
++}
++
++// undoList is the Undo being listed: each group, followed by the groups placed after it.
++type undoList struct {
++	groups []undoGroup
++	after  [][]int
++	out    []Operation
++}
++
++// place lists group k and the groups placed after it, unless it is itself placed after another.
++func (u *undoList) place(k int, moved bool) {
++	if moved {
++		return
++	}
++	u.out = append(u.out, u.groups[k].ops...)
++	for _, j := range u.after[k] {
++		u.place(j, false)
++	}
++}
+-- 
+2.53.0
+

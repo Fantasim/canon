@@ -20,8 +20,8 @@ M4 (plan.md "M4 — Formatter and the edit API") is accepted, 2026-10-01, all 6 
 5. crash test: `TestCommitCrashFailedRename` and its siblings (`internal/edit`).
 6. `make stress`, 60 s, PASS.
 
-**Next**: per [plan.md](plan.md): M5 (LSP), M6 (legacy C++/TS) and M7 (migration) run in parallel now
-that M4 is accepted; multi-destination emits (DECISIONS 229) are implemented after M4 (Louis's
+**Next** (start prompt: [handoff/2026-10-01-next-start-prompt.md](handoff/2026-10-01-next-start-prompt.md)):
+M4.1 first, then the spec sync; M5 (LSP), M6 (legacy C++/TS) and M7 (migration) run in parallel; multi-destination emits (DECISIONS 229) are implemented after M4 (Louis's
 call), spec sync first. The post-M4 spec sync (DECISIONS 207) and the later units are listed in the
 handoff. M1.5's second wave (type-directed + metamorphic progen suites) stays parked.
 

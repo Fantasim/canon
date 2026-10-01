@@ -17,6 +17,10 @@ GEN-01 diff above; kept so the record of the milestone stays easy to find.
 NFR-01 journey, three calls, the post-M4 spec sync owed, later units, what was not verified).
 Informational; the three calls are also in [../state.md](../state.md).
 
+`2026-10-01-next-start-prompt.md` is the prompt that starts the session after M4 (M4.1 first, then
+the spec sync, multi-destination emits, M5–M7), with M4's lessons. `2026-10-01-m41-inputs/` holds
+M4.1's two unlanded patches and the reviewer's probes (log-2026-09-29 "U-E22-r").
+
 ## To Louis (`L-*`)
 
 For anything on CLAUDE.md's "Forbidden without asking Louis" list: a spec change (DECISIONS.md,
