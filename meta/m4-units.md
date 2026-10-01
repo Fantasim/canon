@@ -86,6 +86,22 @@ All six acceptance items proved; see [handoff/2026-10-01-m4-complete.md](handoff
 NFR-01 bench PASS on `f53ba0c` (Edit p95 0.267 s); 10-min format fuzzes, `make stress`, `check-real` on
 `f4e4d48`; 10-min `make fuzz-edit` on `260e598`; CI green on `claude/m4-ci8` (see the handoff).
 
+## Post-M4 units (done, `f6114a2..37968e3` on `main`)
+
+Calls: log-2026-09-29 from "U-E22-r" to the end. Each unit landed after its review PASS.
+
+| Unit | What | Commit |
+|---|---|---|
+| PS1 | stage A forces the constants phase 2's folds read (264); `Folds.Reads` (§4.8) | `9b4fc33` |
+| PS2 | a `load` given to a field decodes in its scope (268) | `3786db7` |
+| PS3 | M9 and Rewrite judge a file in its role (258); ADR-0012 amended | `85d2fc9` |
+| ME1 | multi-destination emits (229, 269): `ir.CopyOf`, `check/emitout.go`, E8009/E8004, `examples/features/copies` | `051c3b7` |
+| DV1 | E1903 `variantCase`, E3015 `notConstant`/`budget` (263), `budget` for phase 2's folds only | `f61584d` |
+| M4.1 | multi-op typing per op state, verified Undo, every EditLayer edit verified, net-effect file changes (N8) | `5541eab` |
+
+Spec syncs with them: `26cd120` (252-268), `5c01635` (229, 269), `2dfa071` (270-273), `ff9e4ba` (263),
+`8d76935`, `ffb8a9e`, `37968e3`. Builder tiers are not recorded in the log, so none are listed.
+
 ## Ledger closed
 
 M4 commit range `76f6158..c5324f6` on `main`. No M4 unit is open. Later units and the post-M4 spec

@@ -114,6 +114,9 @@ from IR fixtures" and M2's `embedded` example were accepted without these genera
   machine (Edit p95 0.267 s, Evaluate p95 15 ms); `TestCommitCrash*`; `make stress` (60 s). Unit ledger
   [m4-units.md](m4-units.md), report [handoff/2026-10-01-m4-complete.md](handoff/2026-10-01-m4-complete.md).
   CI on `claude/m4-ci8` is green on all three platforms (handoff).
+- [x] **M4.1** (post-M4, API): dependent fields in multi-op edits and verified Undos (API.md E1, E22,
+  E23). Landed `5541eab` (spec `2dfa071`, DECISIONS 270-273), with the older edit bugs found by review
+  ([m4-units.md](m4-units.md), log-2026-09-29 "M4.1 round 6").
 
 ## M5, M6, M7 — in parallel once M4 is accepted
 
@@ -122,9 +125,11 @@ from IR fixtures" and M2's `embedded` example were accepted without these genera
   TS goldens pass `tsc --strict` and `node --test`; `E8101` tested.
 - [ ] **M7 Migration** (MIG, `convert`; VM for `i18n stub|status`; `infer` dropped, DECISIONS
   188): convert proof; `i18n stub fr` golden.
-- [ ] **Multi-destination emits** (DECISIONS 229; CG with GO/CPP/TS, after M4, before M7's
+- [x] **Multi-destination emits** (DECISIONS 229, 269; CG with GO/CPP/TS, after M4, before M7's
   integration): spec sync first (CODEGEN §2.1/§2.3/§2.8, ERRORS, GRAMMAR), then `check`
   (E8009/E8004), `build` and each generator; a feature example with two copies and an import.
+  **Landed** `051c3b7` (spec `5c01635`), `examples/features/copies`; ts copies are checked only until M6's
+  generator.
 - [ ] **Resource migration plan** (owed before or with M7; Louis, log-2026-09-24): how dirty
   `Resource/` data is brought to the Canon types (types win over data), built from the
   real-data findings lists of M3 onward.
