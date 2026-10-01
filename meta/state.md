@@ -72,5 +72,5 @@ stated acceptance, deferred by Louis.
 
 ## Verify queue
 
-Louis merges `claude/m4-complete` into `main` (CI green on its code, `claude/m4-ci8`). Re-run `make bench-edit` on a quiet machine or a
-CI-class runner when one exists.
+Louis merges `claude/m4-complete` into `main` (CI green on its code, `claude/m4-ci8`). Re-run
+`make bench-edit` on a quiet machine or a CI-class runner when one exists.
