@@ -1,0 +1,67 @@
+API.md N6, E3: over examples/features/entries, Remove of an entry alone in its file deletes the file
+and the directory it leaves empty (items/axe), up to the package directory; Remove of one of
+several declarations in a file removes only that declaration (extras.canon's zeta). API.md E22: Undo puts a removed entry back by the @files template, so
+the order its files' paths give is compared as a set.
+-- options --
+example: features/entries
+pkgs: features.entries
+undoUnordered: true
+-- edit.json --
+{"ops": [
+  {"op": "remove", "path": "items.hatchet"},
+  {"op": "remove", "path": "items.zeta"},
+  {"op": "remove", "path": "ranks.captain"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "features/entries/extras.canon"
+    },
+    {
+      "kind": "deleted",
+      "path": "features/entries/items/axe/hatchet.canon"
+    },
+    {
+      "kind": "deleted",
+      "path": "features/entries/ranks/captain.canon"
+    },
+    {
+      "kind": "dirRemoved",
+      "path": "features/entries/items/axe"
+    }
+  ],
+  "undo": [
+    {
+      "op": "add",
+      "path": "features.entries:ranks",
+      "source": "{ code: \"captain\", title: \"Captain\", invites: 5 }"
+    },
+    {
+      "op": "addEntry",
+      "path": "features.entries:items",
+      "key": "zeta",
+      "source": "{ name: \"Zeta stone\", kind: potion }"
+    },
+    {
+      "op": "addEntry",
+      "path": "features.entries:items",
+      "key": "hatchet",
+      "source": "{ name: \"Hatchet\", level: 5, kind: axe }"
+    }
+  ],
+  "touched": [
+    "features.entries"
+  ]
+}
+-- after/features/entries/extras.canon --
+// Two entries in one file: they keep their source order, zeta before alpha.
+package features.entries
+
+/// The first of its kind.
+entry items.alpha { name: "Alpha stone", level: 2, kind: potion }

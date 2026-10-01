@@ -59,7 +59,11 @@ func formatText(t testing.TB, path string, text []byte) ([]byte, error) {
 type example struct {
 	path string
 	data []byte
+	from string // the golden case file of a corpus input, whose path is not unique
 }
+
+// key names the input for sampling: its path, under the case file of a corpus input.
+func (e example) key() string { return e.from + e.path }
 
 // exampleFiles are the .canon files under examples/, in path order.
 func exampleFiles(t testing.TB) []example {

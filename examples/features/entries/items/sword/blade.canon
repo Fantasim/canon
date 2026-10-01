@@ -1,0 +1,8 @@
+package features.entries
+
+/// A plain blade.
+entry items.blade {
+  name: "Blade"
+  level: 3
+  kind: sword
+}

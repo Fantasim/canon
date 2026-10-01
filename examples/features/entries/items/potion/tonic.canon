@@ -1,0 +1,4 @@
+package features.entries
+
+/// A tonic.
+entry items.tonic { name: "Tonic", kind: potion }

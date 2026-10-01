@@ -1,0 +1,16 @@
+File: File FileKind=source @1:1-5:1
+  Package: QualifiedName features.entries @1:9-1:25
+  Decls[0]: EntryDecl @4:1-4:55
+    Doc: DocComment "The sergeant." @3:1-3:18
+    Table: Ident ranks @4:7-4:12
+    Key: Ident sergeant @4:13-4:21
+    Value: BraceLit @4:22-4:55
+      Items[0]: FieldItem @4:24-4:41
+        Name: Ident title @4:24-4:29
+        Value: StringLit @4:31-4:41
+          Parts[0]: text "Sergeant"
+      Items[1]: FieldItem @4:43-4:53
+        Name: Ident invites @4:43-4:50
+        Value: IntLit Value=2 @4:52-4:53
+== findings
+0 errors, 0 warnings in 1 package (…)

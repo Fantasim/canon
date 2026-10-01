@@ -1,0 +1,62 @@
+API.md E11, N8: over examples/features/entries, Rename of an entry whose file the @files template
+names renames the file (items/sword/blade.canon becomes sabre.canon) and keeps its content but the
+key; a keyed list with no @files (ranks) has no template to follow, so ranks/captain.canon
+stays where it is and holds entry ranks.colonel.
+-- options --
+example: features/entries
+pkgs: features.entries
+-- edit.json --
+{"ops": [
+  {"op": "rename", "path": "items.blade", "key": "sabre"},
+  {"op": "rename", "path": "ranks.captain", "key": "colonel"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "renamed",
+      "path": "features/entries/items/sword/sabre.canon",
+      "oldPath": "features/entries/items/sword/blade.canon"
+    },
+    {
+      "kind": "modified",
+      "path": "features/entries/ranks/captain.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "rename",
+      "path": "features.entries:ranks[colonel]",
+      "key": "captain"
+    },
+    {
+      "op": "rename",
+      "path": "features.entries:items.sabre",
+      "key": "blade"
+    }
+  ],
+  "touched": [
+    "features.entries"
+  ]
+}
+-- after/features/entries/items/sword/sabre.canon --
+package features.entries
+
+/// A plain blade.
+entry items.sabre {
+  name: "Blade"
+  level: 3
+  kind: sword
+}
+-- after/features/entries/ranks/captain.canon --
+package features.entries
+
+/// The captain.
+entry ranks.colonel {
+  title: "Captain"
+  invites: 5
+}

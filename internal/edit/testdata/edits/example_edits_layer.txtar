@@ -1,0 +1,56 @@
+API.md W11, E23: over examples/features/edits with the staging layer active and as the edit
+layer, Set replaces the amendment line of server.retries, adds one for server.open (a path the layer
+did not amend), and Reset of server.label removes its line; the base file is not written, and
+Undo restores the amendment (Set) or removes the new line (Reset).
+-- options --
+example: features/edits
+pkgs: features.edits
+layers: staging
+editLayer: staging
+-- edit.json --
+{"ops": [
+  {"op": "set", "path": "server.retries", "value": 4},
+  {"op": "set", "path": "server.open", "value": false},
+  {"op": "reset", "path": "server.label"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "features/edits/staging.layer.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "set",
+      "path": "features.edits:server.label",
+      "source": "\"Staging\""
+    },
+    {
+      "op": "reset",
+      "path": "features.edits:server.open"
+    },
+    {
+      "op": "set",
+      "path": "features.edits:server.retries",
+      "source": "1"
+    }
+  ],
+  "touched": [
+    "features.edits"
+  ]
+}
+-- after/features/edits/staging.layer.canon --
+// The staging deployment: fewer attempts, a visible label.
+package features.edits
+layer staging
+
+amend server {
+  retries: 4
+  open: false
+}

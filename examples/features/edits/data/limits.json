@@ -1,0 +1,6 @@
+{
+  "nPlayers": 200,
+  "dwTimeoutMs": 60000,
+  "szRegion": "us",
+  "szMotd": "Welcome"
+}

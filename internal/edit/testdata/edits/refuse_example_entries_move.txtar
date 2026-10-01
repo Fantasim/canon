@@ -1,0 +1,17 @@
+API.md E9, W5: over examples/features/entries, Move inside a collection whose order comes from
+file paths is ErrNotEditable with reason order.
+-- options --
+example: features/entries
+pkgs: features.entries
+-- edit.json --
+{"ops": [
+  {"op": "move", "path": "items.tonic", "index": 0}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- result.json --
+{
+  "error": "op 0: value not editable: reason order"
+}

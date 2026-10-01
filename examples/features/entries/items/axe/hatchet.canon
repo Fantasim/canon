@@ -1,0 +1,8 @@
+package features.entries
+
+/// A small axe.
+entry items.hatchet {
+  name: "Hatchet"
+  level: 5
+  kind: axe
+}

@@ -1,0 +1,121 @@
+API.md W10, W3: over examples/features/edits with the staging layer active and no edit layer,
+a path the layer does not amend (server.open) is edited in the base file as usual.
+-- options --
+example: features/edits
+pkgs: features.edits
+layers: staging
+-- edit.json --
+{"ops": [
+  {"op": "set", "path": "server.open", "value": false}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "features/edits/edits.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "reset",
+      "path": "features.edits:server.open"
+    }
+  ],
+  "touched": [
+    "features.edits"
+  ]
+}
+-- after/features/edits/edits.canon --
+/// A project used only by the edit tests (API.md §8, IMPLEMENTATION-PLAN §7.9): one small
+/// declaration for each thing an edit must handle. Defaults, one computed from another
+/// field, a spread, a layered value, a JSON source, a dependent field and a variant. Nothing
+/// here is emitted.
+package features.edits
+
+/// What a quest counts.
+enum Goal { kill, collect }
+
+/// What a quest aims at, by goal: a monster, or a number of items.
+type Target(g: Goal) = match g {
+  kill => String(1..)
+  collect => Int(1..)
+}
+
+/// What completing a quest gives.
+variant Reward {
+  /// Gold coins.
+  gold {
+    /// How many.
+    amount: Int(1..)
+  }
+  /// An item.
+  item {
+    /// Which one.
+    id: String(1..)
+    /// How many.
+    count: Int = 1
+  }
+}
+
+/// A quest.
+record Quest {
+  /// What it counts.
+  goal: Goal
+  /// What it aims at, chosen by the goal; none until chosen.
+  target: Target(goal)?
+  /// What it gives.
+  reward: Reward
+  /// Its level.
+  level: Int = 1
+  /// The lowest level that may take it: one below its level unless said otherwise.
+  minLevel: Int = level - 1
+  /// Whether it can be taken again.
+  repeatable: Bool = false
+}
+
+/// The quests.
+let quests: table Quest = {
+  slay { goal: kill, target: "wolf", reward: gold { amount: 100 }, level: 3, repeatable: true }
+  gather { goal: collect, target: 10, reward: item { id: "potion", count: 2 }, minLevel: 4 }
+}
+
+/// How a server behaves.
+record Rules {
+  /// Attempts before giving up.
+  retries: Int = 3
+  /// A label for logs.
+  label: String = ""
+  /// Whether new players are welcome.
+  open: Bool = true
+}
+
+/// The rules every server starts from.
+let base: Rules = { retries: 5, label: "Base" }
+
+/// A server's rules: the base, with its own label.
+let derived: Rules = { ...base, label: "Derived" }
+
+/// The production server's rules; the staging layer amends them.
+let server: Rules = { retries: 2, label: "Prod", open: false }
+
+/// Capacities, as the server reads them in `data/limits.json`.
+record Limits {
+  /// Players at once.
+  players: Int @json("nPlayers")
+  /// How many may wait to join.
+  queue: Int = 10 @json("nQueue")
+  /// How long a session lasts.
+  timeout: Duration @json("dwTimeoutMs", unit: ms)
+  /// Where the server runs.
+  region: String = "eu" @json("szRegion")
+  /// A welcome message; an empty string in the file means none.
+  motd: String? = none @json("szMotd", none: "")
+}
+
+/// The capacities.
+let limits: Limits = load("data/limits.json")

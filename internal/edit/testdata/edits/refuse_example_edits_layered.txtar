@@ -1,0 +1,18 @@
+API.md W10, W5: over examples/features/edits with the staging layer active and no edit layer,
+Set of server.retries, which the layer amends, is ErrNotEditable with reason layered.
+-- options --
+example: features/edits
+pkgs: features.edits
+layers: staging
+-- edit.json --
+{"ops": [
+  {"op": "set", "path": "server.retries", "value": 4}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- result.json --
+{
+  "error": "op 0: value not editable: reason layered"
+}

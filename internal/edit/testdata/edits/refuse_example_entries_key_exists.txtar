@@ -1,0 +1,19 @@
+API.md E3, E1: over examples/features/entries, AddEntry of a key an entry file already holds
+(blade) is ErrKeyExists, so the duplicate key a check reports as E3101 is never written; the
+refusal names the second op, after a first one that applied.
+-- options --
+example: features/entries
+pkgs: features.entries
+-- edit.json --
+{"ops": [
+  {"op": "addEntry", "path": "items", "key": "mace", "source": "{ name: \"Mace\", kind: sword }"},
+  {"op": "addEntry", "path": "items", "key": "blade", "source": "{ name: \"Another\", kind: sword }"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- result.json --
+{
+  "error": "op 1: key already exists"
+}

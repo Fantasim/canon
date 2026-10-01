@@ -1,0 +1,8 @@
+// Two entries in one file: they keep their source order, zeta before alpha.
+package features.entries
+
+/// The last of its kind.
+entry items.zeta { name: "Zeta stone", kind: potion }
+
+/// The first of its kind.
+entry items.alpha { name: "Alpha stone", level: 2, kind: potion }

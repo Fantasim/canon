@@ -1,0 +1,300 @@
+File: File FileKind=source @1:1-89:1
+  Doc: DocComment "A project used only by the edit tests (API.md §8, IMPLEMENTATION-PLAN §7.9): one small\ndeclaration for each thing an edit must handle. Defaults, one computed from another\nfield, a spread, a layered value, a JSON source, a dependent field and a variant. Nothing\nhere is emitted." @1:1-4:21
+  Package: QualifiedName features.edits @5:9-5:23
+  Decls[0]: EnumDecl @8:1-8:28
+    Doc: DocComment "What a quest counts." @7:1-7:25
+    Name: Ident Goal @8:6-8:10
+    Members[0]: EnumMember @8:13-8:17
+      Name: Ident kill @8:13-8:17
+    Members[1]: EnumMember @8:19-8:26
+      Name: Ident collect @8:19-8:26
+  Decls[1]: TypeDecl @11:1-14:2
+    Doc: DocComment "What a quest aims at, by goal: a monster, or a number of items." @10:1-10:68
+    Name: Ident Target @11:6-11:12
+    Params[0]: Param @11:13-11:20
+      Name: Ident g @11:13-11:14
+      Type: NamedType @11:16-11:20
+        Name: QualifiedName Goal @11:16-11:20
+    Type: MatchType @11:24-14:2
+      Scrutinee: IdentExpr g @11:30-11:31
+      Arms[0]: TypeArm @12:3-12:22
+        Patterns[0]: Pattern @12:3-12:7
+          Name: QualifiedName kill @12:3-12:7
+        Type: NamedType @12:11-12:22
+          Name: QualifiedName String @12:11-12:17
+          Args: TypeArgs @12:17-12:22
+            Args[0]: RangeExpr Op=.. @12:18-12:21
+              Lo: IntLit Value=1 @12:18-12:19
+      Arms[1]: TypeArm @13:3-13:22
+        Patterns[0]: Pattern @13:3-13:10
+          Name: QualifiedName collect @13:3-13:10
+        Type: NamedType @13:14-13:22
+          Name: QualifiedName Int @13:14-13:17
+          Args: TypeArgs @13:17-13:22
+            Args[0]: RangeExpr Op=.. @13:18-13:21
+              Lo: IntLit Value=1 @13:18-13:19
+  Decls[2]: VariantDecl @17:1-30:2
+    Doc: DocComment "What completing a quest gives." @16:1-16:35
+    Name: Ident Reward @17:9-17:15
+    Items[0]: VariantCase @19:3-22:4
+      Doc: DocComment "Gold coins." @18:3-18:18
+      Name: Ident gold @19:3-19:7
+      Body: RecordBody @19:8-22:4
+        Items[0]: FieldDecl @21:5-21:21
+          Doc: DocComment "How many." @20:5-20:18
+          Name: Ident amount @21:5-21:11
+          Type: NamedType @21:13-21:21
+            Name: QualifiedName Int @21:13-21:16
+            Args: TypeArgs @21:16-21:21
+              Args[0]: RangeExpr Op=.. @21:17-21:20
+                Lo: IntLit Value=1 @21:17-21:18
+    Items[1]: VariantCase @24:3-29:4
+      Doc: DocComment "An item." @23:3-23:15
+      Name: Ident item @24:3-24:7
+      Body: RecordBody @24:8-29:4
+        Items[0]: FieldDecl @26:5-26:20
+          Doc: DocComment "Which one." @25:5-25:19
+          Name: Ident id @26:5-26:7
+          Type: NamedType @26:9-26:20
+            Name: QualifiedName String @26:9-26:15
+            Args: TypeArgs @26:15-26:20
+              Args[0]: RangeExpr Op=.. @26:16-26:19
+                Lo: IntLit Value=1 @26:16-26:17
+        Items[1]: FieldDecl @28:5-28:19
+          Doc: DocComment "How many." @27:5-27:18
+          Name: Ident count @28:5-28:10
+          Type: NamedType @28:12-28:15
+            Name: QualifiedName Int @28:12-28:15
+          Default: IntLit Value=1 @28:18-28:19
+  Decls[3]: RecordDecl @33:1-46:2
+    Doc: DocComment "A quest." @32:1-32:13
+    Name: Ident Quest @33:8-33:13
+    Body: RecordBody @33:14-46:2
+      Items[0]: FieldDecl @35:3-35:13
+        Doc: DocComment "What it counts." @34:3-34:22
+        Name: Ident goal @35:3-35:7
+        Type: NamedType @35:9-35:13
+          Name: QualifiedName Goal @35:9-35:13
+      Items[1]: FieldDecl @37:3-37:24
+        Doc: DocComment "What it aims at, chosen by the goal; none until chosen." @36:3-36:62
+        Name: Ident target @37:3-37:9
+        Type: OptionalType @37:11-37:24
+          Elem: NamedType @37:11-37:23
+            Name: QualifiedName Target @37:11-37:17
+            Args: TypeArgs @37:17-37:23
+              Args[0]: IdentExpr goal @37:18-37:22
+      Items[2]: FieldDecl @39:3-39:17
+        Doc: DocComment "What it gives." @38:3-38:21
+        Name: Ident reward @39:3-39:9
+        Type: NamedType @39:11-39:17
+          Name: QualifiedName Reward @39:11-39:17
+      Items[3]: FieldDecl @41:3-41:17
+        Doc: DocComment "Its level." @40:3-40:17
+        Name: Ident level @41:3-41:8
+        Type: NamedType @41:10-41:13
+          Name: QualifiedName Int @41:10-41:13
+        Default: IntLit Value=1 @41:16-41:17
+      Items[4]: FieldDecl @43:3-43:28
+        Doc: DocComment "The lowest level that may take it: one below its level unless said otherwise." @42:3-42:84
+        Name: Ident minLevel @43:3-43:11
+        Type: NamedType @43:13-43:16
+          Name: QualifiedName Int @43:13-43:16
+        Default: BinaryExpr Op=- @43:19-43:28
+          X: IdentExpr level @43:19-43:24
+          Y: IntLit Value=1 @43:27-43:28
+      Items[5]: FieldDecl @45:3-45:27
+        Doc: DocComment "Whether it can be taken again." @44:3-44:37
+        Name: Ident repeatable @45:3-45:13
+        Type: NamedType @45:15-45:19
+          Name: QualifiedName Bool @45:15-45:19
+        Default: BoolLit @45:22-45:27
+  Decls[4]: LetDecl @49:1-52:2
+    Doc: DocComment "The quests." @48:1-48:16
+    Name: Ident quests @49:5-49:11
+    Type: TableType @49:13-49:24
+      Name: QualifiedName Quest @49:19-49:24
+    Value: BraceLit @49:27-52:2
+      Items[0]: EntryItem @50:3-50:96
+        Key: Ident slay @50:3-50:7
+        Value: BraceLit @50:8-50:96
+          Items[0]: FieldItem @50:10-50:20
+            Name: Ident goal @50:10-50:14
+            Value: IdentExpr kill @50:16-50:20
+          Items[1]: FieldItem @50:22-50:36
+            Name: Ident target @50:22-50:28
+            Value: StringLit @50:30-50:36
+              Parts[0]: text "wolf"
+          Items[2]: FieldItem @50:38-50:66
+            Name: Ident reward @50:38-50:44
+            Value: TypedLit @50:46-50:66
+              Type: QualifiedName gold @50:46-50:50
+              Lit: BraceLit @50:51-50:66
+                Items[0]: FieldItem @50:53-50:64
+                  Name: Ident amount @50:53-50:59
+                  Value: IntLit Value=100 @50:61-50:64
+          Items[3]: FieldItem @50:68-50:76
+            Name: Ident level @50:68-50:73
+            Value: IntLit Value=3 @50:75-50:76
+          Items[4]: FieldItem @50:78-50:94
+            Name: Ident repeatable @50:78-50:88
+            Value: BoolLit Value @50:90-50:94
+      Items[1]: EntryItem @51:3-51:93
+        Key: Ident gather @51:3-51:9
+        Value: BraceLit @51:10-51:93
+          Items[0]: FieldItem @51:12-51:25
+            Name: Ident goal @51:12-51:16
+            Value: IdentExpr collect @51:18-51:25
+          Items[1]: FieldItem @51:27-51:37
+            Name: Ident target @51:27-51:33
+            Value: IntLit Value=10 @51:35-51:37
+          Items[2]: FieldItem @51:39-51:78
+            Name: Ident reward @51:39-51:45
+            Value: TypedLit @51:47-51:78
+              Type: QualifiedName item @51:47-51:51
+              Lit: BraceLit @51:52-51:78
+                Items[0]: FieldItem @51:54-51:66
+                  Name: Ident id @51:54-51:56
+                  Value: StringLit @51:58-51:66
+                    Parts[0]: text "potion"
+                Items[1]: FieldItem @51:68-51:76
+                  Name: Ident count @51:68-51:73
+                  Value: IntLit Value=2 @51:75-51:76
+          Items[3]: FieldItem @51:80-51:91
+            Name: Ident minLevel @51:80-51:88
+            Value: IntLit Value=4 @51:90-51:91
+  Decls[5]: RecordDecl @55:1-62:2
+    Doc: DocComment "How a server behaves." @54:1-54:26
+    Name: Ident Rules @55:8-55:13
+    Body: RecordBody @55:14-62:2
+      Items[0]: FieldDecl @57:3-57:19
+        Doc: DocComment "Attempts before giving up." @56:3-56:33
+        Name: Ident retries @57:3-57:10
+        Type: NamedType @57:12-57:15
+          Name: QualifiedName Int @57:12-57:15
+        Default: IntLit Value=3 @57:18-57:19
+      Items[1]: FieldDecl @59:3-59:21
+        Doc: DocComment "A label for logs." @58:3-58:24
+        Name: Ident label @59:3-59:8
+        Type: NamedType @59:10-59:16
+          Name: QualifiedName String @59:10-59:16
+        Default: StringLit @59:19-59:21
+      Items[2]: FieldDecl @61:3-61:20
+        Doc: DocComment "Whether new players are welcome." @60:3-60:39
+        Name: Ident open @61:3-61:7
+        Type: NamedType @61:9-61:13
+          Name: QualifiedName Bool @61:9-61:13
+        Default: BoolLit Value @61:16-61:20
+  Decls[6]: LetDecl @65:1-65:48
+    Doc: DocComment "The rules every server starts from." @64:1-64:40
+    Name: Ident base @65:5-65:9
+    Type: NamedType @65:11-65:16
+      Name: QualifiedName Rules @65:11-65:16
+    Value: BraceLit @65:19-65:48
+      Items[0]: FieldItem @65:21-65:31
+        Name: Ident retries @65:21-65:28
+        Value: IntLit Value=5 @65:30-65:31
+      Items[1]: FieldItem @65:33-65:46
+        Name: Ident label @65:33-65:38
+        Value: StringLit @65:40-65:46
+          Parts[0]: text "Base"
+  Decls[7]: LetDecl @68:1-68:51
+    Doc: DocComment "A server's rules: the base, with its own label." @67:1-67:52
+    Name: Ident derived @68:5-68:12
+    Type: NamedType @68:14-68:19
+      Name: QualifiedName Rules @68:14-68:19
+    Value: BraceLit @68:22-68:51
+      Items[0]: SpreadItem @68:24-68:31
+        X: IdentExpr base @68:27-68:31
+      Items[1]: FieldItem @68:33-68:49
+        Name: Ident label @68:33-68:38
+        Value: StringLit @68:40-68:49
+          Parts[0]: text "Derived"
+  Decls[8]: LetDecl @71:1-71:50
+    Doc: DocComment "The production server's rules; the staging layer amends them." @70:1-70:66
+    Name: Ident server @71:5-71:11
+    Type: NamedType @71:13-71:18
+      Name: QualifiedName Rules @71:13-71:18
+    Value: BraceLit @71:21-71:50
+      Items[0]: FieldItem @71:23-71:33
+        Name: Ident retries @71:23-71:30
+        Value: IntLit Value=2 @71:32-71:33
+      Items[1]: FieldItem @71:35-71:48
+        Name: Ident label @71:35-71:40
+        Value: StringLit @71:42-71:48
+          Parts[0]: text "Prod"
+  Decls[9]: RecordDecl @74:1-85:2
+    Doc: DocComment "Capacities, as the server reads them in `data/limits.json`." @73:1-73:64
+    Name: Ident Limits @74:8-74:14
+    Body: RecordBody @74:15-85:2
+      Items[0]: FieldDecl @76:3-76:33
+        Doc: DocComment "Players at once." @75:3-75:23
+        Name: Ident players @76:3-76:10
+        Type: NamedType @76:12-76:15
+          Name: QualifiedName Int @76:12-76:15
+        Annotations[0]: Annotation @76:16-76:33
+          Name: Ident json @76:17-76:21
+          Args[0]: AnnotationArg @76:22-76:32
+            Value: StringLit @76:22-76:32
+              Parts[0]: text "nPlayers"
+      Items[1]: FieldDecl @78:3-78:34
+        Doc: DocComment "How many may wait to join." @77:3-77:33
+        Name: Ident queue @78:3-78:8
+        Type: NamedType @78:10-78:13
+          Name: QualifiedName Int @78:10-78:13
+        Default: IntLit Value=10 @78:16-78:18
+        Annotations[0]: Annotation @78:19-78:34
+          Name: Ident json @78:20-78:24
+          Args[0]: AnnotationArg @78:25-78:33
+            Value: StringLit @78:25-78:33
+              Parts[0]: text "nQueue"
+      Items[2]: FieldDecl @80:3-80:51
+        Doc: DocComment "How long a session lasts." @79:3-79:32
+        Name: Ident timeout @80:3-80:10
+        Type: NamedType @80:12-80:20
+          Name: QualifiedName Duration @80:12-80:20
+        Annotations[0]: Annotation @80:21-80:51
+          Name: Ident json @80:22-80:26
+          Args[0]: AnnotationArg @80:27-80:40
+            Value: StringLit @80:27-80:40
+              Parts[0]: text "dwTimeoutMs"
+          Args[1]: AnnotationArg @80:42-80:50
+            Name: Ident unit @80:42-80:46
+            Value: QualifiedName ms @80:48-80:50
+      Items[3]: FieldDecl @82:3-82:42
+        Doc: DocComment "Where the server runs." @81:3-81:29
+        Name: Ident region @82:3-82:9
+        Type: NamedType @82:11-82:17
+          Name: QualifiedName String @82:11-82:17
+        Default: StringLit @82:20-82:24
+          Parts[0]: text "eu"
+        Annotations[0]: Annotation @82:25-82:42
+          Name: Ident json @82:26-82:30
+          Args[0]: AnnotationArg @82:31-82:41
+            Value: StringLit @82:31-82:41
+              Parts[0]: text "szRegion"
+      Items[4]: FieldDecl @84:3-84:49
+        Doc: DocComment "A welcome message; an empty string in the file means none." @83:3-83:65
+        Name: Ident motd @84:3-84:7
+        Type: OptionalType @84:9-84:16
+          Elem: NamedType @84:9-84:15
+            Name: QualifiedName String @84:9-84:15
+        Default: NoneLit @84:19-84:23
+        Annotations[0]: Annotation @84:24-84:49
+          Name: Ident json @84:25-84:29
+          Args[0]: AnnotationArg @84:30-84:38
+            Value: StringLit @84:30-84:38
+              Parts[0]: text "szMotd"
+          Args[1]: AnnotationArg @84:40-84:48
+            Name: Ident none @84:40-84:44
+            Value: StringLit @84:46-84:48
+  Decls[10]: LetDecl @88:1-88:46
+    Doc: DocComment "The capacities." @87:1-87:20
+    Name: Ident limits @88:5-88:11
+    Type: NamedType @88:13-88:19
+      Name: QualifiedName Limits @88:13-88:19
+    Value: LoadExpr @88:22-88:46
+      Args[0]: Arg @88:27-88:45
+        Value: StringLit @88:27-88:45
+          Parts[0]: text "data/limits.json"
+== findings
+0 errors, 0 warnings in 1 package (…)

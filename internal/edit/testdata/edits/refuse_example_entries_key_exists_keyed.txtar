@@ -1,0 +1,17 @@
+API.md E3: over examples/features/entries, Add to a keyed list whose key field names an existing
+element, here one in an entry file, is ErrKeyExists: the duplicate a check reports as E3102.
+-- options --
+example: features/entries
+pkgs: features.entries
+-- edit.json --
+{"ops": [
+  {"op": "add", "path": "ranks", "source": "{ code: \"captain\", title: \"Again\" }"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- result.json --
+{
+  "error": "op 0: key already exists"
+}

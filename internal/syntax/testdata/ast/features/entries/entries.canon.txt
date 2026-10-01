@@ -1,0 +1,108 @@
+File: File FileKind=source @1:1-40:1
+  Doc: DocComment "`entry` files (SPEC §4.3): the entries of a table or a keyed list spread over files, one\nentry per file or several. `@files` says where a new entry's file goes. Entry order is the\nliteral's entries, then the entry files in path order, then source order inside a file.\nKeys are unique across the literal and every entry file: a duplicate is `E3101` for a table\nand `E3102` for a keyed list (TYPES §9.3), and an edit that would make one is `ErrKeyExists`.\nThe examples stay free of errors, so no file here repeats a key." @1:1-6:69
+  Package: QualifiedName features.entries @7:9-7:25
+  Decls[0]: EnumDecl @10:1-10:33
+    Doc: DocComment "What an item is." @9:1-9:21
+    Name: Ident Kind @10:6-10:10
+    Members[0]: EnumMember @10:13-10:18
+      Name: Ident sword @10:13-10:18
+    Members[1]: EnumMember @10:20-10:23
+      Name: Ident axe @10:20-10:23
+    Members[2]: EnumMember @10:25-10:31
+      Name: Ident potion @10:25-10:31
+  Decls[1]: RecordDecl @13:1-20:2
+    Doc: DocComment "An item." @12:1-12:13
+    Name: Ident Item @13:8-13:12
+    Body: RecordBody @13:13-20:2
+      Items[0]: FieldDecl @15:3-15:20
+        Doc: DocComment "Its name." @14:3-14:16
+        Name: Ident name @15:3-15:7
+        Type: NamedType @15:9-15:20
+          Name: QualifiedName String @15:9-15:15
+          Args: TypeArgs @15:15-15:20
+            Args[0]: RangeExpr Op=.. @15:16-15:19
+              Lo: IntLit Value=1 @15:16-15:17
+      Items[1]: FieldDecl @17:3-17:17
+        Doc: DocComment "Its level." @16:3-16:17
+        Name: Ident level @17:3-17:8
+        Type: NamedType @17:10-17:13
+          Name: QualifiedName Int @17:10-17:13
+        Default: IntLit Value=1 @17:16-17:17
+      Items[2]: FieldDecl @19:3-19:13
+        Doc: DocComment "What it is." @18:3-18:18
+        Name: Ident kind @19:3-19:7
+        Type: NamedType @19:9-19:13
+          Name: QualifiedName Kind @19:9-19:13
+  Decls[2]: LetDecl @23:1-26:2
+    Doc: DocComment "Items: the starter here, the others in their own files, placed by kind." @22:1-22:76
+    Annotations[0]: Annotation @23:1-23:34
+      Name: Ident files @23:2-23:7
+      Args[0]: AnnotationArg @23:8-23:33
+        Value: StringLit @23:8-23:33
+          Parts[0]: text "items/"
+          Parts[1]: Interp @23:16-23:20
+            X: IdentExpr kind @23:16-23:20
+          Parts[2]: text "/"
+          Parts[3]: Interp @23:23-23:25
+            X: IdentExpr id @23:23-23:25
+          Parts[4]: text ".canon"
+    Name: Ident items @24:5-24:10
+    Type: TableType @24:12-24:22
+      Name: QualifiedName Item @24:18-24:22
+    Value: BraceLit @24:25-26:2
+      Items[0]: EntryItem @25:3-25:49
+        Key: Ident starter @25:3-25:10
+        Value: BraceLit @25:11-25:49
+          Items[0]: FieldItem @25:13-25:34
+            Name: Ident name @25:13-25:17
+            Value: StringLit @25:19-25:34
+              Parts[0]: text "Starter sword"
+          Items[1]: FieldItem @25:36-25:47
+            Name: Ident kind @25:36-25:40
+            Value: IdentExpr sword @25:42-25:47
+  Decls[3]: RecordDecl @29:1-36:2
+    Doc: DocComment "A rank, keyed by its code." @28:1-28:31
+    Name: Ident Rank @29:8-29:12
+    Body: RecordBody @29:13-36:2
+      Items[0]: FieldDecl @31:3-31:20
+        Doc: DocComment "Its code." @30:3-30:16
+        Name: Ident code @31:3-31:7
+        Type: NamedType @31:9-31:20
+          Name: QualifiedName String @31:9-31:15
+          Args: TypeArgs @31:15-31:20
+            Args[0]: RangeExpr Op=.. @31:16-31:19
+              Lo: IntLit Value=1 @31:16-31:17
+      Items[1]: FieldDecl @33:3-33:21
+        Doc: DocComment "What it is called." @32:3-32:25
+        Name: Ident title @33:3-33:8
+        Type: NamedType @33:10-33:21
+          Name: QualifiedName String @33:10-33:16
+          Args: TypeArgs @33:16-33:21
+            Args[0]: RangeExpr Op=.. @33:17-33:20
+              Lo: IntLit Value=1 @33:17-33:18
+      Items[2]: FieldDecl @35:3-35:19
+        Doc: DocComment "Invitations per day." @34:3-34:27
+        Name: Ident invites @35:3-35:10
+        Type: NamedType @35:12-35:15
+          Name: QualifiedName Int @35:12-35:15
+        Default: IntLit Value=0 @35:18-35:19
+  Decls[4]: LetDecl @39:1-39:74
+    Doc: DocComment "Ranks, one file each: the key is in the entry's name, never in its body." @38:1-38:77
+    Name: Ident ranks @39:5-39:10
+    Type: KeyedType @39:12-39:32
+      List: ListType @39:12-39:18
+        Elem: NamedType @39:13-39:17
+          Name: QualifiedName Rank @39:13-39:17
+      Key: Ident code @39:28-39:32
+    Value: ListLit @39:35-39:74
+      Elems[0]: BraceLit @39:36-39:73
+        Items[0]: FieldItem @39:38-39:53
+          Name: Ident code @39:38-39:42
+          Value: StringLit @39:44-39:53
+            Parts[0]: text "private"
+        Items[1]: FieldItem @39:55-39:71
+          Name: Ident title @39:55-39:60
+          Value: StringLit @39:62-39:71
+            Parts[0]: text "Private"
+== findings
+0 errors, 0 warnings in 1 package (…)

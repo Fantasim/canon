@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"flag"
+	"hash/fnv"
 	"slices"
 	"testing"
 
@@ -176,11 +177,20 @@ func every(step int) int {
 	return step
 }
 
+// sampled is whether node i of the input named key is in the 1-in-step sample: the index, moved by
+// a stable hash of the key alone, is a multiple of step, so adding an example moves no sample.
+func sampled(key string, i, step int) bool {
+	step = every(step)
+	h := fnv.New32a()
+	h.Write([]byte(key))
+	return (uint32(i)+h.Sum32())%uint32(step) == 0
+}
+
 // The sampling steps of TestRewriteExamples, and the least it must rewrite with them: a Remove
 // of every item sampled, a Replace of every sampled node an item holds, an Insert and two Moves
 // in every sampled list literal, Moves needing minMoved items (log-2026-09-29 M4 U1r, U1b).
 const (
-	removeEvery, insertEvery                   = 43, 9
+	removeEvery, insertEvery                   = 43, 5
 	floorRemoved, floorReplaced, floorInserted = 55, 250, 80
 	floorMoved, minMoved                       = 60, 2
 )
@@ -191,14 +201,14 @@ type rewrites struct{ removed, replaced, inserted, moved int }
 // FORMATTER.md §13, API.md M5, M6 on the examples and the corpus: checkNode, insert/moveCopies.
 func TestRewriteExamples(t *testing.T) {
 	var got rewrites
-	for k, ex := range append(exampleFiles(t), corpusWants(t)...) {
+	for _, ex := range append(exampleFiles(t), corpusWants(t)...) {
 		f := parse(t, ex.path, ex.data).file
 		for i, n := range items(f) {
-			if (i+k)%every(insertEvery) == 0 {
+			if sampled(ex.key(), i, insertEvery) {
 				got.inserted += insertCopies(t, ex, f, n)
 				got.moved += moveCopies(t, ex, f, n)
 			}
-			if (i+k)%every(removeEvery) != 0 {
+			if !sampled(ex.key(), i, removeEvery) {
 				continue
 			}
 			removed, replaced := checkNode(t, ex, f, n)
@@ -311,7 +321,7 @@ func corpusWants(t testing.TB) []example {
 		if err != nil {
 			t.Fatal(err)
 		}
-		out = append(out, example{path: c.Archive.Files[0].Name, data: want})
+		out = append(out, example{path: c.Archive.Files[0].Name, data: want, from: c.Path})
 	}
 	return out
 }

@@ -1,0 +1,4 @@
+package features.entries
+
+/// A short blade.
+entry items.dagger { name: "Dagger", level: 2, kind: sword }

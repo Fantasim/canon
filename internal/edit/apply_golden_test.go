@@ -44,6 +44,7 @@ type goldenCase struct {
 	layers    []string
 	editLayer string
 	crlf      []string // files the test writes with CRLF line ends, which a txtar cannot hold
+	example   string   // an example the project is: its files are the files before, kept out of the archive
 
 	undoUnordered bool // E22: entries whose order their files' paths give are compared as a set
 }
@@ -139,6 +140,9 @@ func readCase(t *testing.T, ar *txtar.Archive) goldenCase {
 			c.fsys["law/"+f.Name] = file(string(f.Data))
 		}
 	}
+	if c.example != "" {
+		c.loadExample(t)
+	}
 	for _, name := range c.crlf {
 		if f, ok := c.fsys["law/"+name]; ok {
 			f.Data = bytes.ReplaceAll(f.Data, []byte("\n"), []byte("\r\n"))
@@ -148,7 +152,7 @@ func readCase(t *testing.T, ar *txtar.Archive) goldenCase {
 }
 
 // readOptions reads `key: value` lines: pkgs, layers (space-separated), editLayer, crlf,
-// undoUnordered.
+// undoUnordered, example.
 func (c *goldenCase) readOptions(t *testing.T, data []byte) {
 	for _, line := range strings.Split(strings.TrimSpace(string(data)), "\n") {
 		key, val, ok := strings.Cut(line, ":")
@@ -166,6 +170,8 @@ func (c *goldenCase) readOptions(t *testing.T, data []byte) {
 			c.crlf = strings.Fields(val)
 		case key == "undoUnordered":
 			c.undoUnordered = val == "true"
+		case key == "example":
+			c.example = val
 		default:
 			t.Fatalf("options: unknown key %q", key)
 		}

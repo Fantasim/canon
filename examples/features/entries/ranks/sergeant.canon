@@ -1,0 +1,4 @@
+package features.entries
+
+/// The sergeant.
+entry ranks.sergeant { title: "Sergeant", invites: 2 }

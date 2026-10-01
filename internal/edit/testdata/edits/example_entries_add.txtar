@@ -1,0 +1,50 @@
+API.md N1, N2, N3, N5, N4: over examples/features/entries, AddEntry on a table whose let has @files
+creates the file the template names, expanded with the new entry's kind (items/sword/mace.canon);
+Add on a keyed list with an entry in its own file creates ranks/major.canon, where the key is
+the entry's name and the body omits it.
+-- options --
+example: features/entries
+pkgs: features.entries
+-- edit.json --
+{"ops": [
+  {"op": "addEntry", "path": "items", "key": "mace", "source": "{ name: \"Mace\", level: 4, kind: sword }"},
+  {"op": "add", "path": "ranks", "source": "{ code: \"major\", title: \"Major\", invites: 3 }"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "created",
+      "path": "features/entries/items/sword/mace.canon"
+    },
+    {
+      "kind": "created",
+      "path": "features/entries/ranks/major.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "remove",
+      "path": "features.entries:ranks[major]"
+    },
+    {
+      "op": "remove",
+      "path": "features.entries:items.mace"
+    }
+  ],
+  "touched": [
+    "features.entries"
+  ]
+}
+-- after/features/entries/items/sword/mace.canon --
+package features.entries
+
+entry items.mace { name: "Mace", level: 4, kind: sword }
+-- after/features/entries/ranks/major.canon --
+package features.entries
+
+entry ranks.major { title: "Major", invites: 3 }

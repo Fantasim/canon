@@ -1,0 +1,145 @@
+API.md E6, W7, M4, E1: over examples/features/edits, Set of a field to its default removes it
+(quests.slay.repeatable, quests.slay.level). The default of quests.gather.minLevel is level - 1
+(TYP-15), computed from the edited record: after an earlier op sets level to 6 (an insertion in
+declaration order, W7) the default is 5, so a Set of minLevel to 5 removes it.
+-- options --
+example: features/edits
+pkgs: features.edits
+-- edit.json --
+{"ops": [
+  {"op": "set", "path": "quests.slay.repeatable", "value": false},
+  {"op": "set", "path": "quests.gather.level", "value": 6},
+  {"op": "set", "path": "quests.gather.minLevel", "value": 5},
+  {"op": "set", "path": "quests.slay.level", "value": 1}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "features/edits/edits.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "set",
+      "path": "features.edits:quests.slay.level",
+      "source": "3"
+    },
+    {
+      "op": "set",
+      "path": "features.edits:quests.gather.minLevel",
+      "source": "4"
+    },
+    {
+      "op": "reset",
+      "path": "features.edits:quests.gather.level"
+    },
+    {
+      "op": "set",
+      "path": "features.edits:quests.slay.repeatable",
+      "source": "true"
+    }
+  ],
+  "touched": [
+    "features.edits"
+  ]
+}
+-- after/features/edits/edits.canon --
+/// A project used only by the edit tests (API.md §8, IMPLEMENTATION-PLAN §7.9): one small
+/// declaration for each thing an edit must handle. Defaults, one computed from another
+/// field, a spread, a layered value, a JSON source, a dependent field and a variant. Nothing
+/// here is emitted.
+package features.edits
+
+/// What a quest counts.
+enum Goal { kill, collect }
+
+/// What a quest aims at, by goal: a monster, or a number of items.
+type Target(g: Goal) = match g {
+  kill => String(1..)
+  collect => Int(1..)
+}
+
+/// What completing a quest gives.
+variant Reward {
+  /// Gold coins.
+  gold {
+    /// How many.
+    amount: Int(1..)
+  }
+  /// An item.
+  item {
+    /// Which one.
+    id: String(1..)
+    /// How many.
+    count: Int = 1
+  }
+}
+
+/// A quest.
+record Quest {
+  /// What it counts.
+  goal: Goal
+  /// What it aims at, chosen by the goal; none until chosen.
+  target: Target(goal)?
+  /// What it gives.
+  reward: Reward
+  /// Its level.
+  level: Int = 1
+  /// The lowest level that may take it: one below its level unless said otherwise.
+  minLevel: Int = level - 1
+  /// Whether it can be taken again.
+  repeatable: Bool = false
+}
+
+/// The quests.
+let quests: table Quest = {
+  slay { goal: kill, target: "wolf", reward: gold { amount: 100 } }
+  gather {
+    goal: collect
+    target: 10
+    reward: item { id: "potion", count: 2 }
+    level: 6
+  }
+}
+
+/// How a server behaves.
+record Rules {
+  /// Attempts before giving up.
+  retries: Int = 3
+  /// A label for logs.
+  label: String = ""
+  /// Whether new players are welcome.
+  open: Bool = true
+}
+
+/// The rules every server starts from.
+let base: Rules = { retries: 5, label: "Base" }
+
+/// A server's rules: the base, with its own label.
+let derived: Rules = { ...base, label: "Derived" }
+
+/// The production server's rules; the staging layer amends them.
+let server: Rules = { retries: 2, label: "Prod" }
+
+/// Capacities, as the server reads them in `data/limits.json`.
+record Limits {
+  /// Players at once.
+  players: Int @json("nPlayers")
+  /// How many may wait to join.
+  queue: Int = 10 @json("nQueue")
+  /// How long a session lasts.
+  timeout: Duration @json("dwTimeoutMs", unit: ms)
+  /// Where the server runs.
+  region: String = "eu" @json("szRegion")
+  /// A welcome message; an empty string in the file means none.
+  motd: String? = none @json("szMotd", none: "")
+}
+
+/// The capacities.
+let limits: Limits = load("data/limits.json")

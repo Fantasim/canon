@@ -1,0 +1,16 @@
+File: File FileKind=source @1:1-5:1
+  Package: QualifiedName features.entries @1:9-1:25
+  Decls[0]: EntryDecl @4:1-4:50
+    Doc: DocComment "A tonic." @3:1-3:13
+    Table: Ident items @4:7-4:12
+    Key: Ident tonic @4:13-4:18
+    Value: BraceLit @4:19-4:50
+      Items[0]: FieldItem @4:21-4:34
+        Name: Ident name @4:21-4:25
+        Value: StringLit @4:27-4:34
+          Parts[0]: text "Tonic"
+      Items[1]: FieldItem @4:36-4:48
+        Name: Ident kind @4:36-4:40
+        Value: IdentExpr potion @4:42-4:48
+== findings
+0 errors, 0 warnings in 1 package (…)

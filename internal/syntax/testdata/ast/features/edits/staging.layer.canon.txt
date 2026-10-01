@@ -1,0 +1,16 @@
+File: File FileKind=layer @1:1-9:1
+  Package: QualifiedName features.edits @2:9-2:23
+  Layer: Ident staging @3:7-3:14
+  Amends[0]: AmendBlock @5:1-8:2
+    Target: Ident server @5:7-5:13
+    Items[0]: Amendment @6:3-6:13
+      Path[0]: AmendSegment @6:3-6:10
+        Name: Ident retries @6:3-6:10
+      Value: IntLit Value=1 @6:12-6:13
+    Items[1]: Amendment @7:3-7:19
+      Path[0]: AmendSegment @7:3-7:8
+        Name: Ident label @7:3-7:8
+      Value: StringLit @7:10-7:19
+        Parts[0]: text "Staging"
+== findings
+0 errors, 0 warnings in 1 package (…)

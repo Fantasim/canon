@@ -1,0 +1,80 @@
+API.md W2: over examples/features/entries, entry order is the literal's entries, then the
+entry files in path order, then source order inside a file: a positional path names the entry
+there, so items[#1] is zeta, the first entry of extras.canon (alpha, after it, is #2), and items[#3]
+is hatchet, the first of items/, though blade sorts before it by key.
+-- options --
+example: features/entries
+pkgs: features.entries
+-- edit.json --
+{"ops": [
+  {"op": "set", "path": "items[#1].level", "value": 9},
+  {"op": "set", "path": "items[#3].level", "value": 6},
+  {"op": "set", "path": "items[#5].level", "value": 4}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "features/entries/extras.canon"
+    },
+    {
+      "kind": "modified",
+      "path": "features/entries/items/axe/hatchet.canon"
+    },
+    {
+      "kind": "modified",
+      "path": "features/entries/items/sword/blade.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "set",
+      "path": "features.entries:items.blade.level",
+      "source": "3"
+    },
+    {
+      "op": "set",
+      "path": "features.entries:items.hatchet.level",
+      "source": "5"
+    },
+    {
+      "op": "reset",
+      "path": "features.entries:items.zeta.level"
+    }
+  ],
+  "touched": [
+    "features.entries"
+  ]
+}
+-- after/features/entries/extras.canon --
+// Two entries in one file: they keep their source order, zeta before alpha.
+package features.entries
+
+/// The last of its kind.
+entry items.zeta { name: "Zeta stone", level: 9, kind: potion }
+
+/// The first of its kind.
+entry items.alpha { name: "Alpha stone", level: 2, kind: potion }
+-- after/features/entries/items/axe/hatchet.canon --
+package features.entries
+
+/// A small axe.
+entry items.hatchet {
+  name: "Hatchet"
+  level: 6
+  kind: axe
+}
+-- after/features/entries/items/sword/blade.canon --
+package features.entries
+
+/// A plain blade.
+entry items.blade {
+  name: "Blade"
+  level: 4
+  kind: sword
+}

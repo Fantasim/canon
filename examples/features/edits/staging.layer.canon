@@ -1,0 +1,8 @@
+// The staging deployment: fewer attempts, a visible label.
+package features.edits
+layer staging
+
+amend server {
+  retries: 1
+  label: "Staging"
+}

@@ -1,0 +1,39 @@
+/// `entry` files (SPEC §4.3): the entries of a table or a keyed list spread over files, one
+/// entry per file or several. `@files` says where a new entry's file goes. Entry order is the
+/// literal's entries, then the entry files in path order, then source order inside a file.
+/// Keys are unique across the literal and every entry file: a duplicate is `E3101` for a table
+/// and `E3102` for a keyed list (TYPES §9.3), and an edit that would make one is `ErrKeyExists`.
+/// The examples stay free of errors, so no file here repeats a key.
+package features.entries
+
+/// What an item is.
+enum Kind { sword, axe, potion }
+
+/// An item.
+record Item {
+  /// Its name.
+  name: String(1..)
+  /// Its level.
+  level: Int = 1
+  /// What it is.
+  kind: Kind
+}
+
+/// Items: the starter here, the others in their own files, placed by kind.
+@files("items/{kind}/{id}.canon")
+let items: table Item = {
+  starter { name: "Starter sword", kind: sword }
+}
+
+/// A rank, keyed by its code.
+record Rank {
+  /// Its code.
+  code: String(1..)
+  /// What it is called.
+  title: String(1..)
+  /// Invitations per day.
+  invites: Int = 0
+}
+
+/// Ranks, one file each: the key is in the entry's name, never in its body.
+let ranks: [Rank] keyed by code = [{ code: "private", title: "Private" }]

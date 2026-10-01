@@ -1,0 +1,66 @@
+API.md M8, E6, E7, W7: over examples/features/edits, Set in a JSON source re-prints the one member
+(limits.players), writes a Duration in the milliseconds its field says (limits.timeout), and Set
+to the default removes the member (limits.region is "eu" by default, its szRegion goes). Set of
+a member the object lacks inserts its wire key after the nearest earlier declared key present
+(limits.queue, nQueue, after nPlayers, W7). Set of none on a field whose default is none and that
+has @json(none: "") writes the marker instead of removing the member (limits.motd, E7).
+-- options --
+example: features/edits
+pkgs: features.edits
+-- edit.json --
+{"ops": [
+  {"op": "set", "path": "limits.players", "value": 300},
+  {"op": "set", "path": "limits.timeout", "source": "90s"},
+  {"op": "set", "path": "limits.region", "value": "eu"},
+  {"op": "set", "path": "limits.queue", "value": 25},
+  {"op": "set", "path": "limits.motd", "value": null}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "features/edits/data/limits.json"
+    }
+  ],
+  "undo": [
+    {
+      "op": "set",
+      "path": "features.edits:limits.motd",
+      "source": "\"Welcome\""
+    },
+    {
+      "op": "reset",
+      "path": "features.edits:limits.queue"
+    },
+    {
+      "op": "set",
+      "path": "features.edits:limits.region",
+      "source": "\"us\""
+    },
+    {
+      "op": "set",
+      "path": "features.edits:limits.timeout",
+      "source": "1m"
+    },
+    {
+      "op": "set",
+      "path": "features.edits:limits.players",
+      "source": "200"
+    }
+  ],
+  "touched": [
+    "features.edits"
+  ]
+}
+-- after/features/edits/data/limits.json --
+{
+  "nPlayers": 300,
+  "nQueue": 25,
+  "dwTimeoutMs": 90000,
+  "szMotd": ""
+}
