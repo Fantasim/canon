@@ -945,13 +945,14 @@ Anything else (field access, arithmetic, passing it as a `ref items`) is `E3804`
 branch narrowing in this version: `match` on the discriminating field (`e.param`), not on the
 dependent value.
 
-**Literals.** When a literal gives a value to a dependent field, the value is checked against
-the union of the branches: a bare identifier stays **symbolic**, and string and integer
-literals are kept as written. The value is converted to the computed branch at evaluation
-(§11.6): only literals convert (§6.2; a loaded wire value counts as a literal), so a computed
-`Int` given to a `Float` branch, or a computed `String` given to a `ref` branch, is `E3802`.
-`none` given to a non-optional dependent field is accepted here when a branch is optional and
-judged at verification against the computed type (`E3801` for `Never`, else `E3802`).
+**Literals.** When a literal gives a value to a dependent field, the value is checked against the
+union of the branches: any scalar literal a branch takes is accepted, a bare identifier stays
+**symbolic**, and string and integer literals are kept as written; a float, `Bool` or `Duration`
+literal keeps its type and is judged at verification (DECISIONS 267). The value is converted to the
+computed branch at evaluation (§11.6): only literals convert (§6.2; a loaded wire value counts as a
+literal), so a computed `Int` given to a `Float` branch, or a computed `String` given to a `ref`
+branch, is `E3802`. `none` given to a non-optional dependent field is accepted here when a branch is
+optional and judged at verification against the computed type (`E3801` for `Never`, else `E3802`).
 
 **Symbols after verification.** A symbolic identifier kept as written (in a check, a function,
 a value of stage A) that meets a converted dependent value — as the other operand of `==`/`!=`,
@@ -970,7 +971,9 @@ type (`{SpecificKey(e): …}`) has `DepUnion` keys.
 ### 11.6 Evaluation of dependent types (DEP-02)
 
 - Type functions are evaluated at evaluation time, in verification (EVALUATION.md §5), once per
-  value, with the actual argument values. The steps count toward the budget.
+  value, with the actual argument values. The steps count toward the budget: a type written at a
+  field, an application inside its container type included, is computed once per record, whatever
+  its container holds; one a computed type nests, once per element (DECISIONS 265).
 - A value that does not fit the computed type is `E3802`: "value does not match
   `Param(COMBAT_KILL_FFA)` = `Never`". Symbolic identifiers are resolved against the computed
   type there (member, case or key), and fail with `E3802` if the computed type has no such

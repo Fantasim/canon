@@ -139,8 +139,8 @@ progen-nightly:
 
 # A zero-findings check of the benchmark project at its default 7,000-entry size
 # (IMPLEMENTATION-PLAN.md §7.6), too heavy for `make check` (`TestCheckClean` there runs at the
-# PR size, 1,000): opt-in only, capped like progen-nightly above. Not yet §7.6's merge gate,
-# which also measures the NFR-01 time and memory targets themselves.
+# PR size, 1,000): opt-in only, capped like progen-nightly above. The NFR-01 time and memory
+# targets are measured by `bench-edit` below (§7.6).
 .PHONY: bench
 bench:
 	systemd-run --user --scope -q -p MemoryMax=6G env GOTOOLCHAIN=local go test -count=1 -timeout 0 \

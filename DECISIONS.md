@@ -2218,6 +2218,180 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      log-2026-09-29 M4 "EditResult has no JSON form", "`Options.Cache` and `Options.Workers`",
      U11-r, U7a, U7a-r, B3, U7b, U7b-r, U7b-r2, U7b-r3.
 
+252. **What an edit affects: read sets by real path (API.md E17, E18, S5, V13).** A package owns
+     every file of its read set (S3, S5). The read set names each file by its real path, resolved
+     through the snapshot's links as WIRE.md §6.5 does, so a package reading a written file through
+     a link, or through a second root aliasing its directory, is affected. E17's affected packages
+     are those whose read set, taken from the base's every-package analysis, holds a file the edit
+     writes or removes, or a directory listing the edit changes, plus every package importing one of
+     them; a directory the edit creates or removes changes the listing of each ancestor up to the
+     first that existed. E18 re-checks them and S5 covers their read sets. Without a draft, an
+     `Evaluate`'s values are those of the snapshot's every-package analysis, the one `Value` reads
+     and a `canon check` of that snapshot gives; with one, those of that analysis with the draft
+     applied. Running only the touched packages is an optimisation, allowed only where it provably
+     gives the same values, budget exhaustion included. Reason: log-2026-09-29 M4 P14-r, P14-r2,
+     P14-r3: E17's "own a file" was undefined, so a package loading another's file
+     (`load("../b/b.json")`) or reading it through a link was not re-checked, and the Edit reported
+     nothing that `Check()` then reported.
+
+253. **Overlays are compared by real path; what an event names (API.md S12, §3.4, W13; completes
+     241).** S12 compares real paths: an `Edit` refuses (`ErrOverlay`) to write a file whose real
+     path an overlay covers under any display name, so no planned content ever meets an overlay; a
+     dangling link resolves through its link text. `SetOverlay` and `ClearOverlay` still key an
+     overlay by its display form (241). `Watch` events compare snapshots, so an event's `Files` may
+     name one written file under each display path that reaches it. An overlay is seen by reads of
+     its own display path; a read of the same real file under another name sees the file system, and
+     S12 still refuses writes through any name. This ratifies the code (`snapFS` looks an overlay up
+     by its display path's absolute form); no test pins the read side, `TestEditRefusesOverlaidLink`
+     pins the write refusal. Reason: log-2026-09-29 M4 P14-r4: planned content put under an alias
+     replaced a user's overlay on that alias, and the Edit reported a phantom finding; the post-M4
+     sync review (overlays through another name).
+
+254. **What an unwatched edit reads again (API.md S10, W15).** Without an active `Watch`, the
+     snapshot an `Edit` publishes reads again every name its commit changed or pinned: each file
+     written, renamed or removed; each directory it creates (N3) or removes (N6); every ancestor
+     listing of those, up to the file-system root; the journal's directory and its ancestors (N10).
+     It equals a fresh read of the disk the edit left, except external changes made during the
+     write, which the next call's refresh (S1) sees; no other file is read again, since W15's fold
+     of external changes serves only an event. A watcher being restarted counts as active. Reason:
+     log-2026-09-29 M4 P18 (W15), PA3-r: an edit removing a directory (N6) left its parent listing
+     stale, so the published snapshot had a wrong revision (S3, S10) and history record (S4), and
+     `Edit.Evaluate` failed after a successful write.
+
+255. **JSON commas and M6's one-line clause (API.md M4, M6; FORMATTER.md §14.2; extends 235).** A
+     comma JSON's grammar forces on a kept neighbour, dropped when the last member or element goes
+     and added when one is appended after it, counts as re-printing that neighbour, as 235 counts
+     the commas of 211 and 216; such a `Set` (E6 removing an object's last member) is not a one-line
+     case. M6's one-line clause covers a `Set` of a scalar or `none` whose replaced item is written
+     on one line; a `Set` replacing an item that spans several lines is held to M6's region rules
+     only. Reason: log-2026-09-29 M4 P20-r, P20-r2 (the edit fuzz had exempted every `Set` of
+     `none`, citing no ruling).
+
+256. **A defaulted field, a renamed entry's file, and the inverse of a Remove (API.md E6, E11,
+     E23).** A `Set` to the default removes the field (E6), which then tracks its default: a later
+     op of the same edit that changes what the default depends on changes the field's value too
+     (E1), so `Set(minLevel, 0)` followed by a change of its driver ends at the new default. E11
+     renames an entry's file when the value's `let` has `@files`, for a table and a keyed list
+     alike, and the file's path is the template for the old entry; a file placed by N4's default
+     path, with no `@files`, keeps its name. Where file paths fix the order (reason `order`: entry
+     files, `load.dir`), the inverse of `Remove` is an `Add` or `AddEntry` alone, with no `Move`
+     (`Insert` and `Move` are refused there): the entry comes back where its file places it (N1,
+     E22). Reason: log-2026-09-29 M4 "Examples review (M4)" and the `edits` and `entries` goldens.
+
+257. **An Undo restores the before state (API.md E1, E22, E23; amends 237).** E22 wins over E23's
+     order. The Undo's ops are the inverses as now: in reverse order of the ops, then every cascade's
+     inverse (E23). The Undo is verified by a dry apply against the after state; where that does
+     not give the before state back, the smallest enclosing item is restored whole instead. Forward,
+     each op is typed against the branch its driver has after the ops before it (E1). Status: this
+     is the M4.1 design, in progress; until it lands, a multi-op edit that changes a driver and then
+     its dependent values (a list element or map value, an `Add` or `Insert` into a dependent list,
+     nested type functions, a type through a ref, a record-parameter field, a JSON record an earlier
+     op left undecodable) can be refused, or its Undo can restore wrongly in some orders. Single-op
+     edits and their Undos are not affected. Reason: log-2026-09-29 M4 U-E22, U-E22-r (the
+     driver-first reordering U-E22 tried is withdrawn), "M4.1 inputs".
+
+258. **M9 judges a file in its role, on its raw bytes (API.md M9; FORMATTER.md §13).** M9's fixed
+     point is the one `canon fmt` gives for the file's role (GRAMMAR §5.2): a file other than
+     `project.canon` whose text opens with a `project` declaration holds `E1011` and is not one.
+     "Judged on the raw bytes" stays as written: a CR or an indentation tab is not canonical, the
+     same refusals Rewrite makes (FORMATTER §13), so a positive verdict comes only from a tree that
+     holds exactly those bytes. This closes PB4-r's question: Rewrite's refusals are part of M9's
+     fixed point. The edit layer's `format` re-parse takes the tree's file kind instead of the
+     file's role, so it judges such a file fixed: a defect predating M4. Code owed: unit PS3.
+     Reason: log-2026-09-29 M4 PB4-r.
+
+259. **Typed numbers are judged per real file (FORMATTER.md §14.1; API.md M9; amends 235, 247).**
+     The loads that decide whether a JSON number is re-printed or kept as written are grouped by
+     the file's real path (resolved as WIRE.md §6.5 resolves links), by M9 and `canon fmt
+     --json-sources` alike, so aliased roots or links reaching one file give one verdict. Reason:
+     log-2026-09-29 M4 B11-r5, CI 36684990159 (`TestM9Symlink`).
+
+260. **A dropped comma's comment, and the `, ///` carry (FORMATTER.md §8, §13; amends 168, 216).**
+     In a broken brace list, `b, /* c */ A` holds a dropped comma whose trailing comment follows the
+     token before (`b /* c */`, then `A` on its own line): 168's "a one-line block comment followed
+     on its line by code stays inline before it" yields to the comma's rule. 216's `, /// x` case,
+     in a list and inside import braces, is a comma that starts its line; after code on its line,
+     a comma's `/// x` follows 168 (it trails the token before and documents nothing). Reason:
+     log-2026-09-29 M4 B14-r: the formatter and its oracle take "the token before".
+
+261. **The reference machine, the edit fuzz gate, NFR-02's memo and recorded performance
+     (IMPLEMENTATION-PLAN §7.6, §7.7, M4; amends 251).** The NFR-01 reference machine is Louis's
+     local machine (Linux x86-64, AMD Ryzen AI 9 HX 370, 24 cores): the performance gate is an
+     opt-in make target there, never part of `make check`, and its numbers are recorded in `meta/`;
+     a 4-core CI runner may run the benchmark as a report that never gates. The edit benchmark calls
+     `Value` before each timed `Set`, as the studio refreshes its view model after a committed edit
+     (API.md V14); that refresh is outside NFR-01's gated measures. A recorded performance number
+     states its machine and the load average at the run's start (printed by the bench) and at its
+     end (recorded by hand), so runs compare only at equal load; M4's NFR-01 result is the
+     quiet-machine run (Louis, 2026-10-01). A fuzz run that never fuzzes is not a pass: the edit
+     fuzz (`make fuzz-edit`) fails when its baseline coverage never completes, when execs past the
+     baseline fall under 2,000 per minute, or when applied edits fall under 200 per minute per
+     project (about a fifth of the reference machine's rate). On the benchmark each input is one op
+     and copies at most 1,000 values; multi-op sequences and whole-collection copies are fuzzed on
+     the examples only; the other fuzz targets have no such judge yet. NFR-02's record-check memo is
+     met by a stronger rule: a check result is replayed while every value its run read keeps its
+     fingerprint, so checks that read package values are memoized too; NFR-02's "identities" include
+     `check.Info` object identity. Reason: Louis, 2026-09-29
+     (meta/handoff/2026-09-29-m4-start-prompt.md, "Calls already made"); log-2026-09-29 M4 "Preview
+     gates", P18, P20, P15-r, P16, "NFR-01 passes", "NFR-01 on the final code".
+
+262. **The feature examples by their directory names; `edits` and `entries` (IMPLEMENTATION-PLAN
+     §7.9).** §7.9 names each example by its directory: `retirement` and `matching`, not `retired`
+     and `match`. `edits` and `entries` are present. `entries` stays free of errors
+     (`examples/_fixtures/README.md`: a fixture produces no error; the check, ir and api tests read
+     an error-free examples tree), so duplicate keys are covered by `internal/check`'s `E3101` cases
+     (a table) and `E3102` cases (a keyed list) and, on the edit side, by `ErrKeyExists` refusals on
+     the example. Reason: log-2026-09-29 M4 "§7.9 feature examples"; the examples tree.
+
+263. **Two ERRORS.md variants are owed to a code unit (ERRORS.md E3015, E1903; follows 244, 249).**
+     `E3015` gains a variant for a fold the step budget stopped (244 keeps such a fold `E3015`), and
+     `E1903` a variant naming a variant case that declares an input field (249). Both are written
+     into ERRORS.md by the unit that regenerates `internal/diag` and makes the compiler use them,
+     together with their message text and txtar cases, never by a spec sync alone, since the
+     registry is generated from ERRORS.md (`make diag-check`). Reason: log-2026-09-29 M4 "Spec sync
+     (M4 sync)".
+
+264. **Constants a check-time fold read are verified (EVALUATION.md §2.1, §5).** Stage A also forces
+     every constant a phase-2 fold read, after §2.1's set, in fold order, charged again on the one
+     counter (244), so stage B verifies it and no selection hides its findings: a bound
+     `Int(0..=b.N)` whose `b.N` reads an orphan ref reports that ref's `E3505` under `canon check a`
+     as under `canon check`. Code owed: unit PS1. Reason: the post-M4 sync's open list
+     (log-2026-09-29 M4 B2-r2, "Spec sync (M4 sync)"): stage B verified only what stage A forced, so
+     the folder's values went unverified.
+
+265. **When a dependent application is charged (TYPES.md §11.6; EVALUATION.md §12.1).** An
+     application is charged when verification evaluates it: once per record for a type written at a
+     field, whatever its container holds, and once per element for one a computed type nests, so a
+     nested empty container charges nothing. An application inside a container type written at a
+     field (`xs: [Q(k)]`) counts as written at the field, so it is charged once per record:
+     measured, `[Q(k)]` costs 3 steps more than `[Int]` with the list empty and with two elements.
+     Ratifies the code (`TestComputedTypesChargeNothing` pins the nested case; no test pins the
+     field case yet). Reason: log-2026-09-29 M4 Cleanup-A-r,
+     "Spec sync (M4 sync)"; the post-M4 sync review.
+
+266. **When stage C judges an invalid subtree (EVALUATION.md §7.3).** Stage C asks §7.3's question
+     of each value the first time its traversal reaches it and keeps that answer; a mark a later
+     check run sets reaches only values not yet asked about. Ratifies the code
+     (`TestInvalidAskedFirst`; the `E5001_9` and `E5002_9` goldens). Reason: log-2026-09-29 M4 U13
+     round 2, "Spec sync (M4 sync)".
+
+267. **Which literals a dependent type takes (TYPES.md §11.4; API.md V1).** Any scalar literal a
+     branch takes is accepted, by the checker and the edit typer alike; only string and integer
+     literals are kept as written, since only they convert at verification (§11.6); a float, bool or
+     duration literal keeps its type and is judged there. Code owed: M4.1, the edit typer (it
+     refuses a float, bool or duration literal, and a typed scalar, that a branch takes). Reason:
+     log-2026-09-29 M4 B7-r, B10, B10-r2, "M4.1 inputs", "Spec sync (M4 sync)".
+
+268. **A `load` given to a field decodes in that field's scope (WIRE.md §4.1, §6.1).** A `load`
+     whose expected type comes from a field decodes with that field's `unit:`, `int`, `bits` and
+     `none:` forms, as inside a record and as `FromJSON` does (236): `5` loaded into `d: Duration
+     @json(unit: s)` is `5s`. Code owed: unit PS2 (the load host gives `wire.Decoder` its `Field`).
+     Reason: log-2026-09-29 M4 B10-r2, "Spec sync (M4 sync)": the load decoded such a field's value
+     without its rules, so a load and an edit read the same bytes differently.
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.
+
+A possible checker gap: `Target(sub.kind)` with `sub: Sub(goal)` gives `E3003` (TYPES §11.1;
+log-2026-09-29 M4 U-E22-r), to confirm or rule.

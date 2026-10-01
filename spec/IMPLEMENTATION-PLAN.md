@@ -890,7 +890,7 @@ determinism job green (§7.5), and every new registry code tested (§7.2).
      no non-idempotent input in 10 minutes.
   2. Every numbered rule of API.md has at least one test naming it (§7.4); all pass.
   3. The minimal-write invariant (API.md M6) holds under fuzzing: random `Set`/`Add`/`Remove` on
-     every example and on the benchmark project.
+     every example and on the benchmark project, under §7.6's fuzz gate.
   4. NFR-01 edit and evaluate targets hold on the benchmark (§7.6).
   5. Crash test: an FS that fails at each rename in turn leaves, after `Open`, every file as before
      the edit.
@@ -1031,8 +1031,10 @@ the `Undo`. A coverage test lists the rule ids found in API.md and fails when on
   500-entry monster table; an asset field with 7,000 icon files; a view with `title`, `search`,
   `filters`, `columns`; 3 record checks and 2 package checks (uniqueness, group-by). A twin package
   reads the same data as 7,000 JSON files with `load.dir`.
-- **Targets**, measured on the CI reference runner (Linux x86-64, 4 cores, 16 GB; the benchmark
-  prints the CPU model), for the benchmark project plus all examples:
+- **Targets**, measured on the reference machine, Louis's local machine (Linux x86-64, AMD Ryzen AI
+  9 HX 370, 24 cores; the benchmark prints the CPU model; a recorded number states its machine and
+  the load average at the run's start (printed by the bench) and at its end (recorded by hand), so
+  runs compare only at equal load, DECISIONS 261), for the benchmark project plus all examples:
 
   | Measure | Target |
   |---|---|
@@ -1043,11 +1045,15 @@ the `Undo`. A coverage test lists the rule ids found in API.md and fails when on
   | peak RSS during cold check | ≤ 1.5 GB |
   | view model per package, without search index | ≤ 5 MB |
 
-- **Gates.** The full benchmark runs on every merge to the main branch and nightly; exceeding a
-  target fails the job. Pull requests run a 1,000-entry version, reported but not gating. The edit
-  benchmark (`bench-edit`) gates the `Edit` p95, the `Evaluate` p95, cold check, cold RSS and the
-  view-model size; warm `canon check` is reported, not gated, until the on-disk cache is turned on
-  (`Options.Cache` is accepted and inert in M4). A gate never passes silently:
+- **Gates.** The full benchmark is an opt-in make target run on the reference machine, never part of
+  `make check`; exceeding a target fails it, and its numbers are recorded in `meta/`. A 4-core CI
+  runner (Linux x86-64, 4 cores, 16 GB) may run it, or a 1,000-entry version, as a report that never
+  gates (DECISIONS 261). The edit benchmark (`bench-edit`) gates the `Edit` p95, the `Evaluate` p95,
+  cold check, cold RSS and the view-model size. It calls `Value` before each timed `Set`, as the
+  studio refreshes its view model after a committed edit (API.md V14); that refresh is outside
+  NFR-01's gated measures (DECISIONS 261). Warm `canon check` is reported, not gated, until the
+  on-disk cache is turned on (`Options.Cache` is accepted and inert in M4). A gate never passes
+  silently:
   - cold check and RSS are measured per project (the benchmark and each example), each against its
     target; a project with errors is not measured;
   - the 200 timed `Set`s draw every editable scalar field kind present (assets, as another existing
@@ -1057,21 +1063,29 @@ the `Undo`. A coverage test lists the rule ids found in API.md and fails when on
     benchmark (more fails the run), while on the examples, whose checks tie fields together on
     purpose, the share is reported; on the benchmark, a kind present but never drawn fails the run;
   - the edit fuzz run with `-edit.bench` fails if the benchmark gets no `Set`, `Add` or `Remove`
-    applied.
+    applied, if its baseline coverage never completes, or if, past the baseline, execs fall under
+    2,000 per minute or applied edits under 200 per minute per project (about a fifth of the
+    reference machine's rate). On the benchmark each input is one op copying at most 1,000 values;
+    multi-op sequences and whole-collection copies are fuzzed on the examples only (DECISIONS 261).
 - **Architecture it forces (NFR-02).** Package-level invalidation alone cannot re-check a
   7,000-entry package in 300 ms. From M4, `workspace` keeps: a per-file cache of parse and type-check
   results keyed by (file hash, hash of the package's declaration signatures); per-entry evaluation
   memoized by (entry source hash, hashes of the values it reads); record-check results memoized by
-  value hash for checks that statically read no package value. The `value` store is designed for
+  value hash for checks that statically read no package value, a requirement met by replaying a
+  check result while every value its run read keeps its fingerprint, which memoizes checks
+  reading package values too (DECISIONS 261). The `value` store is designed for
   this from M1 (values addressable by (root, key) and hash-consed provenance). Incremental equals
   cold in everything observable: values, findings, steps and budget charges, provenance (EVL-07),
-  identities, invalid and written marks, bound arguments.
+  identities (`check.Info` object identity included), invalid and written marks, bound arguments.
 
 ### 7.7 Fuzzing and generated programs
 
 Native Go fuzz targets, run 10 minutes nightly each: the lexer and parser (no panic; every error
 has a span), `Format` idempotence, `FormatJSONSource` idempotence, wire round trip
 (`decode(encode(v)) == v`), path `Parse`/`String` round trip, and edit invariants (API.md M6).
+The edit fuzz (`make fuzz-edit`) fails when it never leaves its baseline or falls under its
+throughput floor (§7.6): a fuzz run that does not fuzz is not a pass. The other targets have no
+such judge yet (DECISIONS 261).
 
 A program generator in `internal/testkit` (M1.5, DECISIONS 200) drives four nightly property
 suites, each under a memory cap:
@@ -1097,12 +1111,12 @@ with `-ffp-contract=off` (CNF-03).
 ### 7.9 Missing feature examples (ORG-03)
 
 Before the module that implements each feature starts, QA makes sure a small example with goldens
-exists under `examples/features/<name>/`:
+exists under `examples/features/<name>/` (the directory names, DECISIONS 262):
 
 | Example | Feature | Needed by | State |
 |---|---|---|---|
-| `retired` | `retired` entries and `@codes` members, `E3502`, `.active()` | M1 | present |
-| `match` | value-level `match` on enums and variants, exhaustiveness | M1 | present |
+| `retirement` | `retired` entries and `@codes` members, `E3502`, `.active()` | M1 | present |
+| `matching` | value-level `match` on enums and variants, exhaustiveness | M1 | present |
 | `codes` | `@codes` enums with `@json(codes)` | M2 | present |
 | `embedded` | `embedded` mode in Go and TS | M2 | present |
 | `lookup` | finite-input export fns (lookup tables), including a table-keyed parameter | M2 | present |
@@ -1110,10 +1124,10 @@ exists under `examples/features/<name>/`:
 | `csv`, `text` | `load.csv` with and without header, `load.text` | M3 | present |
 | `dependent` | dependent types: enum, `Bool` and match-path discriminants, lists, baked Go literals, C++ data loader | M3 | present |
 | `legacycpp` | `@cpp(struct, access)` with the hand-written header fixture `ProjectCmn.h` | M6 | present |
-| `entries` | `entry` files, `@files`, entry order, duplicate keys, entries of a keyed list | M1 (build), M4 (edit) | to add |
+| `entries` | `entry` files, `@files`, entry order, entries of a keyed list; error-free, so duplicate keys are `internal/check` `E3101` (table) and `E3102` (keyed list) cases and `ErrKeyExists` refusals (DECISIONS 262) | M1 (build), M4 (edit) | present |
 | `pairs` | `@json(pairs:)`: slots, gaps (`E7117`), fingerprint | M2 | to add |
 | `ts` | TS goldens for data mode and translated functions | M6 | to add |
-| `edits` | a project used only by edit tests: defaults, spread, layered values, JSON sources, dependent fields, variants | M4 | to add |
+| `edits` | a project used only by edit tests: defaults, spread, layered values, JSON sources, dependent fields, variants | M4 | present |
 
 ---
 
@@ -1421,8 +1435,8 @@ they are checked for dead links (the `dead-link` rule).
 3. **Overlay imports.** DECISIONS 8 also mentions importing help texts from the studio overlays
    (`resourcestudio/internal/overlay/modules/*.json`); with `infer` dropped (DECISIONS 188), the
    agent writing a domain's first type reads them directly.
-4. **Reference machine.** The NFR-01 targets need a named CI runner. The project uses GitLab; the
-   runner class should be fixed before M4's gates are enforced.
+4. **Reference machine.** Settled (DECISIONS 261): Louis's local machine, the gate an opt-in make
+   target there; a CI runner only reports.
 5. **Legacy data that `@json(pairs:)` refuses.** In the real `propItem.json` (6,944 items), 6 items
    leave a gap between filled slots and 118 fill only one key of a slot (123 items in all); both
    are `E7117` (WIRE.md §5.14). Its `defaults` block also writes `"="` ("not set") in every slot.

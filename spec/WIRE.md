@@ -187,7 +187,9 @@ at the annotation:
 
 `unit:` and `int` apply to every `Duration` (resp. `Bool`) of the field's type that is not inside a
 named type. `none:` applies only to the field's own outer optional, never to optionals nested in
-lists or maps (those are always `null`).
+lists or maps (those are always `null`). A `load` whose expected type comes from a field decodes in
+that field's scope: its `unit:`, `int`, `bits` and `none:` forms apply as inside a record (DECISIONS
+268: code owed, PS2).
 
 ### 4.2 Wire names must not collide [`E3316`, `E3318`]
 
@@ -550,7 +552,8 @@ stats: [StatBonus](..=6) = [] @json(pairs: ["dwDestParam{i}", "nAdjParamVal{i}"]
 - An option not listed for the form, or not valid for the detected format (`at:` on csv or text,
   `header:` on json, `partial:` on text), is `E7006`.
 - `load` must receive its expected type directly from its context: an annotation, a field, an
-  argument, a return type (TYP-06). `load(…).filter(…)` has none [`E7002`].
+  argument, a return type (TYP-06). `load(…).filter(…)` has none [`E7002`]. From a field, it decodes
+  in that field's scope (§4.1; DECISIONS 268: code owed, PS2).
 - The path must exist and be a readable regular file [`E7004`].
 - The option values: `at` a string (§6.3), `partial` a Bool constant, `format` one of the symbols
   `json`, `csv`, `text`, `header` a Bool constant, `prefix` a string.

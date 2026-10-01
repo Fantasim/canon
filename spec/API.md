@@ -236,8 +236,13 @@ func (p *Project) Revision() Revision
 - **S10.** A writer publishes its new snapshot atomically when it returns. The revision in its
   result is that snapshot's. `Revision()` is monotonic: it only moves to a snapshot at least as new
   as the last one published, so a read that finishes late never rolls it back. After an `Edit`,
-  `Revision()` may differ from `EditResult.Revision` with nothing changed on disk, when later
-  reads added `load` files to the read set (S3).
+  `Revision()` may differ from `EditResult.Revision` with nothing changed on disk, when later reads
+  added `load` files to the read set (S3). Without an active `Watch`, the snapshot an `Edit`
+  publishes reads again every name its commit changed or pinned: each file written, renamed or
+  removed, each directory created (N3) or removed (N6), every ancestor listing of those up to the
+  file-system root, and the journal's directory with its ancestors (N10); it equals a fresh read of
+  the disk the edit left, except external changes made during the write, which the next refresh (S1)
+  sees; a watcher being restarted counts as active (DECISIONS 254).
 - **S11.** Every method takes a `context.Context`. Cancelling it makes the call return
   `ctx.Err()` promptly; a cancelled `Edit` writes nothing, or, if cancellation arrives after the
   first rename, completes (§10.3).
@@ -253,10 +258,13 @@ An overlay replaces a file's content in memory without writing it; the language 
 unsaved buffers. `file` is a display path or an absolute path (on Windows, §2.2's rule applies);
 a path outside the project is a `*PathError` wrapping `ErrBadPath`. Overlays are keyed by the
 file's `/` display form, so `SetOverlay` and `ClearOverlay` match however the path was written.
-Overlays take part in every read and in the revision.
+Overlays take part in every read of their own display path and in the revision; a read of the
+same real file under another name sees the file system (DECISIONS 253).
 
 - **S12.** `Edit` refuses to write a file that has an overlay (`ErrOverlay`): the buffer and the
-  disk would disagree.
+  disk would disagree. Files are compared by real path (resolved through the snapshot's links as
+  WIRE.md §6.5 does, a dangling link through its link text), so a file an overlay covers under any
+  display path is refused (DECISIONS 253).
 
 ---
 
@@ -830,12 +838,13 @@ type expected at the path **before** anything is written (CLI.md §5.3 "values, 
   the op, the path, the expected type and what was given. Nothing is written. So is a value holding
   invalid UTF-8 (a `Str`, a key, a literal; GRAMMAR.md §1). Bound for a JSON source, a value with no
   wire form is a `ValueError` too: a `Duration` that is not a whole number of its field's
-  `@json(unit:)`, an `@json(pairs:)` list past its slot bound or with an element missing a
-  required field (WIRE.md §5.14); bound for a `.canon` source, the same value is left to the
-  re-check (`E8102`, `E3302`). A dependent symbol the op's literal gives is resolved to what it
-  names in its record's computed branch, computed exactly as the decoder computes it (WIRE.md
-  §5.9, DEP-02; defaults from the record's parameters); a symbol it introduces into a `Never`
-  branch, or that names nothing in a branch that can be computed, is a `ValueError`.
+  `@json(unit:)`, an `@json(pairs:)` list past its slot bound or with an element missing a required
+  field (WIRE.md §5.14); bound for a `.canon` source, the same value is left to the re-check
+  (`E8102`, `E3302`). A dependent symbol the op's literal gives is resolved to what it names in its
+  record's computed branch, computed exactly as the decoder computes it (WIRE.md §5.9, DEP-02;
+  defaults from the record's parameters); a symbol it introduces into a `Never` branch, or that
+  names nothing in a branch that can be computed, is a `ValueError`. A scalar literal given to a
+  dependent type fits when a branch takes it (TYPES.md §11.4; DECISIONS 267: code owed, M4.1).
 - **V2.** Only the static type is checked at this point. Refinements (`Int(1..=100)`), references
   (`E3501`), keys and checks are verified by the re-check (§8.6), like any other value. For
   `FromJSON`, a wire value whose shape or type does not fit is a `ValueError` (and invalid JSON,
@@ -868,7 +877,9 @@ type expected at the path **before** anything is written (CLI.md §5.3 "values, 
 - **E1.** Ops apply in order to the state left by the previous ops; paths in later ops see earlier
   changes (a key added by op 0 can be addressed by op 1). Each op is resolved against, and applied
   in memory to, the re-analysed state the previous ops left, so a path under an intermediate value
-  that failed to compute is `ErrNoValue`, even if the final state would be valid.
+  that failed to compute is `ErrNoValue`, even if the final state would be valid. A value under a
+  dependent type is typed against the branch its driver has in that state (DECISIONS 257: code owed,
+  M4.1).
 - **E2.** An op on a container kind it does not support (for example `Add` on a table, `AddEntry`
   on a list, `Reset` on a required field) is `ErrBadOp`.
 - **E3.** `Add`, `Insert` and `AddEntry` with a key that already exists are `ErrKeyExists`.
@@ -883,7 +894,8 @@ type expected at the path **before** anything is written (CLI.md §5.3 "values, 
 - **E6.** `Set(path, v)` where `v` equals the field's default removes the field from its literal or
   JSON object (API-06), exactly as `Reset(path)`. Equality is the value equality of TYPES.md §7.5;
   for a default that depends on earlier fields (TYP-15), the default is computed from the edited
-  record.
+  record. The removed field then tracks its default: a later op of the same edit that changes
+  what the default depends on changes the field's value too (E1, DECISIONS 256).
 - **E7.** `Set(path, None)`:
   - if the field's default is `none`, it removes the field (E6);
   - otherwise it writes an explicit `none` (MOCKUP-GAPS 11: default, value and explicit `none`
@@ -909,10 +921,11 @@ type expected at the path **before** anything is written (CLI.md §5.3 "values, 
   - every reference that `Refs` returns with kind `value` or `key`: the `ref` value or map key is
     set to the new key, with the editing rules of this document;
   - every reference of kind `code`, `view`, `check` or `layer`: the identifier token is replaced;
-  - the entry's file, when the table has `@files` and the file's path equals the template
-    instantiated for the old entry: the file is renamed to the template instantiated for the new
-    entry (§10.2); the file of a `load.dir` table's entry, whose key is the file's stem (WIRE.md
-    §6.5), is renamed to the new key with the same extension, in its directory.
+  - the entry's file, when the value (a table or a keyed list) has `@files` and the file's path
+    equals the template instantiated for the old entry: the file is renamed to the template
+    instantiated for the new entry (§10.2); a file placed by N4's default path, without `@files`,
+    keeps its name (DECISIONS 256); the file of a `load.dir` table's entry, whose key is the file's
+    stem (WIRE.md §6.5), is renamed to the new key with the same extension, in its directory.
 - **E12.** If any reference of kind `value` or `key` is not editable (for example a ref computed by
   a function), the whole rename fails with `*NotEditableError` for that reference; `Detail` lists
   every such reference.
@@ -954,8 +967,13 @@ inside the same edit and reports it, so every client behaves the same.
 
 ### 8.6 Checking and refusal
 
-- **E17.** The **affected packages** of an edit are the packages that own a file the edit writes,
-  plus every package that imports one of them. The staleness check (S5) covers their read set.
+- **E17.** The **affected packages** of an edit are the packages whose read set (S3, S5), as the
+  base's every-package analysis has it, holds a file the edit writes or removes, or a directory
+  listing the edit changes, plus every package that imports one of them. Files are compared by real
+  path, resolved through the snapshot's links as WIRE.md §6.5 does, so a package reading a written
+  file through a link or another root is affected. A directory the edit creates or removes changes
+  the listing of each ancestor up to the first that existed. The staleness check (S5) covers their
+  read set (DECISIONS 252).
 - **E18.** After applying the ops in memory, the affected packages are re-checked (phases 1–7).
   `Findings` holds all their findings.
 - **E19.** If any finding is an error and `AllowErrors` is false, nothing is written, `Applied` is
@@ -984,19 +1002,22 @@ inside the same edit and reports it, so every client behaves the same.
 ### 8.7 Undo
 
 - **E22.** `Undo` is a list of ops that, applied with `Base` set to the result's `Revision`,
-  restores every value the edit changed (including cascades). It restores values, not text:
-  comments of removed items and a deleted entry file's doc comment are not restored, a recreated
-  entry file is placed by the `@files` template, and a defaulted parent the Undo empties may
-  remain written as `{}`.
+  restores every value the edit changed (including cascades), whatever E23's order would give
+  (DECISIONS 257: code owed, M4.1). It restores values, not text: comments of removed items and a
+  deleted entry file's doc comment are not restored, a recreated entry file is placed by the
+  `@files` template, and a defaulted parent the Undo empties may remain written as `{}`.
 - **E23.** Inverses: `Set` → `Set(old)`, or `Reset` if the field was absent; `Reset` → `Set(old)`;
   `Add`/`Insert`/`AddEntry` → `Remove`; `Remove` → `Insert(parent, oldPosition, old)` or
-  `AddEntry(parent, key, old)` followed by a `Move` to the old position; `Move` → `Move` back;
+  `AddEntry(parent, key, old)` followed by a `Move` to the old position (where file paths fix the
+  order, reason `order`, an `Add` or `AddEntry` alone, placed by N1–N4); `Move` → `Move` back;
   `Rename` → `Rename` back; `SetCase` → `Set(old whole variant value)`. `Retire` has no inverse
-  (E4): `Undo` restores every other change of the edit, and the studio warns before retiring.
-  `Undo` lists the inverses in reverse order of the ops. Old values are carried as `Source`
-  literals, except a JSON-sourced value holding a decoded dependent symbol, carried as `FromJSON`
-  of its wire form, encoded with the scope it is decoded in (the field's unit, `int`, `bits`,
-  `none`), so it comes back as the file wrote it. Further inverses:
+  (E4): `Undo` restores every other change of the edit, and the studio warns before retiring. `Undo`
+  lists the inverses in reverse order of the ops, then every cascade's inverse. The Undo is verified
+  by a dry apply against the after state; where that does not restore the before state, the smallest
+  enclosing item is restored whole instead (DECISIONS 257: code owed, M4.1). Old values are carried
+  as `Source` literals, except a JSON-sourced value holding a decoded dependent symbol, carried as
+  `FromJSON` of its wire form, encoded with the scope it is decoded in (the field's unit, `int`,
+  `bits`, `none`), so it comes back as the file wrote it. Further inverses:
   - a `Set` of a field a spread supplied → `Set(old)`, not `Reset` (W9); under `EditLayer`, a `Set`
     on a path the layer had no line for → `Reset` (it removes the amendment), and an `AddEntry` or
     `Remove` on a map inside an amendment → a `Set` of the whole map;
@@ -1078,6 +1099,8 @@ comments, and a trailing comment on its last line.
 - **M4.** A removed item is deleted together with its attached comments and its line; blank lines
   around it are then collapsed as FORMATTER.md requires. Removing from a broken `( )`/`[ ]` list may
   re-print the whole list (FORMATTER.md §6.2 lays it out by width, so a removal can re-join it).
+  Removing a JSON object's last member or an array's last element drops the comma on the kept item
+  before it, which M6 counts as re-printing that item (DECISIONS 255).
 - **M5.** After the splices, the file MUST be a fixed point of the formatter. If it is not (a line
   grew past the width, a single-line literal must now break), the smallest enclosing item that
   makes it a fixed point is re-printed instead, going up to the top-level declaration if needed.
@@ -1086,10 +1109,13 @@ comments, and a trailing comment on its last line.
   Because the formatter never aligns columns (DECISIONS 18), a one-value `Set` of a scalar that
   re-prints only its item changes exactly one line. M5 is the more specific rule: such a `Set` may
   break its line only when the single-line form (the line before, with the new value in place)
-  exceeds the formatter's width, and then the enclosing item is re-printed. A comma DECISIONS 211
-  or 216 requires, added or removed on a kept neighbour, or a byte the M5 settle changes there,
-  counts as re-printing that neighbour (Insert, Remove and Move alike); a DECISIONS 216 comma line
-  with a trailing comment may be rewritten whole by the settle.
+  exceeds the formatter's width, and then the enclosing item is re-printed. This one-line clause
+  covers a `Set` of a scalar or `none` whose replaced item is written on one line; a `Set` replacing
+  an item that spans several lines is held to the region rules only. A comma DECISIONS 211 or 216
+  requires, or JSON's grammar forces, added or removed on a kept neighbour, or a byte the M5 settle
+  changes there, counts as re-printing that neighbour (Insert, Remove, Move and a `Set` to the
+  default alike, which is then not a one-line case; DECISIONS 255); a DECISIONS 216 comma line with
+  a trailing comment may be rewritten whole by the settle.
 
 ### 9.3 Printing values
 
@@ -1111,13 +1137,15 @@ comments, and a trailing comment on its last line.
 ### 9.4 Files that are not in canonical layout
 
 - **M9.** Before writing a file, the edit checks that its current content is a fixed point of the
-  formatter (`canon fmt` for `.canon`, the canonical source layout of FMT-02 for JSON, its numbers
-  in their typed-canonical text, FORMATTER.md §14.1 and DECISIONS 165, a token two loads read as
-  different base types or canonical texts left as written), judged on the raw bytes (a CR or a tab
-  indentation is not canonical). This rule governs FORMATTER.md §13. If not, the
-  edit fails with `*NotCanonicalError` (wraps `ErrNotCanonical`) listing the files, unless
-  `Edit.Normalize` is true, in which case each such file is first normalized entirely, as part of
-  the same edit. Migration normalizes JSON sources once with `canon fmt --json-sources`
+  formatter (`canon fmt` for `.canon`; the canonical source layout of FMT-02 for JSON, its numbers
+  in their typed-canonical text, FORMATTER.md §14.1 and DECISIONS 165, a token two loads of the same
+  real file read as different base types or canonical texts left as written, DECISIONS 259), judged
+  on the raw bytes (a CR or a tab indentation is not canonical, DECISIONS 258). A `.canon` file is
+  judged in its role: one other than `project.canon` opening with a `project` declaration holds
+  `E1011` and is not a fixed point (DECISIONS 258: code owed, PS3). This rule governs FORMATTER.md
+  §13. If not, the edit fails with `*NotCanonicalError` (wraps `ErrNotCanonical`) listing the files,
+  unless `Edit.Normalize` is true, in which case each such file is first normalized entirely, as
+  part of the same edit. Migration normalizes JSON sources once with `canon fmt --json-sources`
   (DECISIONS 12), after which this never happens.
 
 ---
@@ -1305,12 +1333,16 @@ type Heading   struct { Title, Subtitle Text; Preview string; Retired bool; Cell
 - **V12.** A `when` condition whose evaluation fails counts as **true** (the item is shown) and
   produces no finding, so a field with a finding is never hidden by a failing condition
   (MOCKUP-GAPS 33). When an item is given `when` twice (`E1613`), the first written is used.
-- **V13.** `Evaluate` runs on the snapshot (plus the draft); it counts steps against the budget
-  like any evaluation (EVL-03): each template, `when` condition and method it runs is a run of its
-  own, capped at the project's budget, and a run past it fails that text (V11) or makes that
-  condition true (V12). Runs never share one budget, so no result depends on evaluation order.
-  It never writes and never changes the revision. Without a draft, `Summary` covers the path's
-  package and every package importing it, and those are the packages it touches (S5).
+- **V13.** `Evaluate` runs on the snapshot (plus the draft): without a draft, its values are those
+  of the snapshot's every-package analysis, the one `Value` reads and `Check` gives; with one, those
+  of that analysis with the draft applied. Running only the touched packages is allowed only where
+  it provably gives the same values, budget exhaustion included (DECISIONS 252). It counts steps
+  against the budget like any evaluation (EVL-03): each template, `when` condition and method it
+  runs is a run of its own, capped at the project's budget, and a run past it fails that text (V11)
+  or makes that condition true (V12). Runs never share one budget, so no result depends on
+  evaluation order. It never writes and never changes the revision. Without a draft, `Summary`
+  covers the path's package and every package importing it, and those are the packages it touches
+  (S5).
 - **V14.** The studio calls `Evaluate` after each committed edit, including edits written with
   `AllowErrors`, not on each keystroke (MOCKUP-GAPS 47). `Edit.Evaluate` saves the extra call.
 
@@ -1341,12 +1373,13 @@ type Event struct {
   cannot start or later fail. Whatever the notifications deliver, any change to the read set is seen
   within the resync interval (at most 1 s): the watcher also stats the read set, watches the
   directories of link targets and retries directories it could not watch.
-- **W13.** `fn` is called on one goroutine, never concurrently with itself, in revision order.
-  An event's `Files`, and what makes an event, are only read-set files and names the scan takes
-  as sources (the S5 predicate): editor swap files, `.canon/` and build outputs produce none; a
-  listed directory's change counts only when a name it gains or loses is a source or matches the
-  glob of a watching `load`. An event is delivered when its cause is not `external`, when a
-  package was re-checked or removed, when the revision changed, or when there is an error. The
+- **W13.** `fn` is called on one goroutine, never concurrently with itself, in revision order. An
+  event's `Files`, and what makes an event, are only read-set files and names the scan takes as
+  sources (the S5 predicate): editor swap files, `.canon/` and build outputs produce none; a listed
+  directory's change counts only when a name it gains or loses is a source or matches the glob of a
+  watching `load`. Events compare snapshots, so `Files` may name one written file under each display
+  path that reaches it (DECISIONS 253). An event is delivered when its cause is not `external`, when
+  a package was re-checked or removed, when the revision changed, or when there is an error. The
   event's revision is computed after its re-check. A package removed since the `Watch` started is
   listed in `Packages` with no findings. A `project.canon` broken while watching gives an event
   whose `Err` is a `*ProjectError`, its findings in `Findings`, and no packages; a load this

@@ -592,7 +592,7 @@ DECISIONS 12, API-03. The studio edits values; the compiler writes text. The con
 - **Unit.** For each change, the unit is the smallest item whose text changes. For an insertion it
   is the new item; for a removal, the removed item.
 - **Comments.** A comment's owner, in any list, is the item the printer's own attachment gives it
-  (§8.1, DECISIONS 167, 168, 216). The re-printer uses that same attachment, so a comment is
+  (§8.1, DECISIONS 167, 168, 216, 260). The re-printer uses that same attachment, so a comment is
   removed only with its owner and keeps its owner across the settle (API.md M5). New text is placed
   after the trivia at its point, never inside a comment.
 
@@ -671,7 +671,8 @@ from then on edited by the same minimal re-printing. This layout is for **source
   shortest round-trip). Any other number (an unknown key kept by `partial: true`, a value no Canon
   type reads) is kept exactly as written, so nothing is lost. So is a number token that two loads
   read as different base types, or to different canonical texts: `canon fmt --json-sources` and the
-  edit API's layout check (API.md M9) leave it as written alike.
+  edit API's layout check (API.md M9) leave it as written alike. Loads count per file by its real
+  path (WIRE.md §6.5), so two display paths of one file are one file (DECISIONS 259).
 - `true`, `false`, `null` as usual.
 - **Key order is preserved.** Normalization never reorders members.
 - **Unknown keys are preserved** in place, with their values.

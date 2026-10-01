@@ -67,7 +67,10 @@ This replaces SPEC §11.2.
 1. for each **selected** package, in package order (TYPES.md §3.1): every top-level `const`
    and every top-level `let`, public and `local`, in the order (file path bytes, source
    position);
-2. whatever these values read, lazily, including values of imported packages.
+2. whatever these values read, lazily, including values of imported packages;
+3. every constant a phase-2 fold read that 1 and 2 did not force, in fold order, charged again
+   on the one counter (§12.2), so stage B verifies it whatever the selection (DECISIONS 264: code
+   owed, PS1).
 
 Values of imported packages that nothing reads are not evaluated; phase 8 evaluates, on demand,
 the values a view model reads that phases 3–7 did not (their counts, VIEWMODEL.md C3/J12), and
@@ -225,9 +228,9 @@ call reports `E4201` and treats it as a compiler bug (exit code 3, CLI §2.5).
 
 ## 5. Verification (stage B)
 
-Each evaluated top-level value that is not poisoned is verified once, after its evaluation and
-layers, in the order its evaluation completed. Verification walks the value (not through refs)
-and checks:
+Each evaluated top-level value that is not poisoned (constants only a fold read included, §2.1;
+DECISIONS 264: code owed, PS1) is verified once, after its evaluation and layers, in the order its
+evaluation completed. Verification walks the value (not through refs) and checks:
 
 | Check | Code | Located at |
 |---|---|---|
@@ -323,7 +326,9 @@ A value marked invalid by a soft finding stays readable. To keep checks from rep
 consequences of an error already reported:
 
 - An instance check (§8.1) is **not run** on an instance whose subtree contains an invalid
-  value. The subtree follows fields, elements, keys and values, never refs.
+  value. The subtree follows fields, elements, keys and values, never refs. Each value is judged
+  the first time stage C's traversal reaches it, and that answer is kept: a mark a later check run
+  sets reaches only values not yet asked about (DECISIONS 266).
 - Every other root is **tainted** as soon as it reads an invalid value (a name, field, element,
   entry or dereference whose result is marked invalid). A hard error raised in a tainted root is
   **not reported**: the root is aborted silently, as if poisoned.
@@ -622,7 +627,7 @@ The following cost exactly one step each time they are evaluated or executed:
 | iteration | each entry into the body of `for` or `while`, and each iteration of a comprehension `for` clause |
 | invocation | each entry into the body of a user function, method or lambda (in addition to the call node) |
 | built-in | the cost listed in STDLIB.md, in addition to the call node and to the lambdas it invokes |
-| type function | each evaluation of a type application in verification (§5), plus its argument and scrutinee paths as nodes |
+| type function | each evaluation of a type application in verification (§5), plus its argument and scrutinee paths as nodes: once per record for a type written at a field (an application inside its container type included), whatever its container holds, once per element for one a computed type nests, so a nested empty container costs nothing (DECISIONS 265) |
 
 A shorthand lambda (`.f`, `.m(args)`, `.compared()[k]`) is one lambda-creation node; each
 invocation costs one step plus its body's nodes: one for the implicit parameter and one per
