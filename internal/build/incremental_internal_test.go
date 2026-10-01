@@ -59,9 +59,10 @@ type analyzer struct {
 	dir   string
 	opt   Options
 	cache *Cache
+	sel   []string // the packages pair selects; nil selects every one
 }
 
-// pair analyzes the project warm and cold; the warm analysis's epoch tells its lineage.
+// pair analyzes z.sel warm and cold; the warm analysis's epoch tells its lineage.
 func (z *analyzer) pair(t *testing.T) (warm, cold *Analysis) {
 	t.Helper()
 	ctx := context.Background()
@@ -69,10 +70,10 @@ func (z *analyzer) pair(t *testing.T) (warm, cold *Analysis) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if warm, err = p.WithCache(z.cache).Analyze(ctx, nil); err != nil {
+	if warm, err = p.WithCache(z.cache).Analyze(ctx, z.sel); err != nil {
 		t.Fatal(err)
 	}
-	if cold, err = p.Analyze(ctx, nil); err != nil {
+	if cold, err = p.Analyze(ctx, z.sel); err != nil {
 		t.Fatal(err)
 	}
 	return warm, cold

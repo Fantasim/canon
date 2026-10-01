@@ -1,0 +1,30 @@
+DECISIONS 264, 244, EVALUATION.md §2.1 item 3, API.md R6: `a` alone is selected and only P's bound,
+a phase-2 fold, reads b's `N`, a division by zero. Stage A forces `N` again, so it is poisoned with
+a cause; a memoized analysis's cause re-run forces it as cold's stage A does, at the same budgets.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- b/b.canon --
+/// B.
+package b
+
+/// Zero.
+const ZERO = 0
+
+/// A division by zero.
+const N = 10 / ZERO
+-- a/a.canon --
+/// A.
+package a
+
+import b
+
+/// A thing.
+record P {
+  /// Its x.
+  x: Int(0..=b.N)
+}
+
+/// Things.
+let ps: [P] = [{ x: 1 }]

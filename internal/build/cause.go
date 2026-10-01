@@ -41,6 +41,7 @@ func (r *run) causeRun(ctx context.Context) (*eval.Evaluator, error) {
 	s := *r.s
 	s.own, s.bags = diag.NewBag(s.set, ""), map[string]*diag.Bag{}
 	w := &run{p: r.p, s: &s, selected: r.selected, loaded: r.loaded, prog: r.prog, opt: r.opt, texts: r.texts, causes: true}
+	w.folds = r.folds // stage A forces what phase 2's folds read again (EVALUATION.md §2.1)
 	w.bags = s.bagsOf(w.loaded)
 	w.fold = r.folds.Replay(ctx, w.bags) // phase 2 again, on a counter of its own (log-2026-09-29 M4 B2-r)
 	err := w.evaluate(ctx)

@@ -112,6 +112,7 @@ type build struct {
 	ev      *eval.Evaluator
 	values  map[eval.Root]value.Value
 	order   []eval.Root
+	folded  []eval.Root // what phase 2's folds read, which stage A forces last (EVALUATION.md §2.1)
 }
 
 // host is the fixture eval.Host: no file is loaded, and stage B is verify's, its Result mapped
@@ -175,6 +176,7 @@ func runBuildWith(t testing.TB, p *program, opt eval.Options, load loader, selec
 	b := &build{prog: p, bags: check.Bags{}, values: map[eval.Root]value.Value{}}
 	fold := eval.NewFolder(b.bags, opt)
 	b.checked = check.Check(ctx, exampleProject(), p.files, b.bags, fold)
+	b.folded = eval.FoldsOf(fold).Reads()
 	b.evaluate(ctx, &host{load: load}, opt, selected, func(ev *eval.Evaluator) { ev.UseFolder(fold) }) // as a build (DECISIONS 104)
 	if err := errors.Join(b.ev.Err(), eval.FoldErr(fold)); err != nil {
 		t.Errorf("internal error: %v", err)
@@ -208,6 +210,9 @@ func (b *build) evaluate(ctx context.Context, h *host, opt eval.Options, selecte
 				b.ev.Force(ctx, root)
 			}
 		}
+	}
+	for _, root := range b.folded {
+		b.ev.Force(ctx, root)
 	}
 	b.ev.BeginVerification(ctx)
 	b.stagesCD(ctx, pkgs)

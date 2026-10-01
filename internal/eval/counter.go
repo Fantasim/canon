@@ -28,6 +28,7 @@ func newCounter(opt Options) *counter {
 // Folds is the folds one folder made up to a point, in order (FoldsOf).
 type Folds struct {
 	calls []foldCall
+	reads []Root
 	opt   Options
 }
 
@@ -37,7 +38,12 @@ func FoldsOf(f check.Folder) Folds {
 	if !ok {
 		return Folds{}
 	}
-	return Folds{calls: slices.Clip(x.calls), opt: x.opt}
+	return Folds{calls: slices.Clip(x.calls), reads: slices.Clip(x.reads.roots), opt: x.opt}
+}
+
+// Reads is every constant fs's folds read, once each, in fold order: stage A's item 3 (EVALUATION.md §2.1).
+func (fs Folds) Reads() []Root {
+	return slices.Clone(fs.reads)
 }
 
 // Replay is a new folder, on a counter of its own, that made fs's folds again into bags, each

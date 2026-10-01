@@ -11,14 +11,18 @@ import (
 	"github.com/fantasim/canonlang/internal/eval"
 )
 
-// causeCases are archives with a root poisoned by a division by zero, and the packages selected.
+// causeCases are archives with a root poisoned by a division by zero, the packages selected, and
+// whether stages A to D never force it: its cause is then empty at every budget.
 var causeCases = []struct {
-	file string
-	root eval.Root
-	sel  []string
+	file  string
+	root  eval.Root
+	sel   []string
+	never bool
 }{
-	{"testdata/incremental/cause.txtar", eval.Root{Pkg: "a", Name: "half"}, nil},
-	{"testdata/incremental/causestagee.txtar", eval.Root{Pkg: "b", Name: "x"}, []string{"a"}},
+	{"testdata/incremental/cause.txtar", eval.Root{Pkg: "a", Name: "half"}, nil, false},
+	{"testdata/incremental/causestagee.txtar", eval.Root{Pkg: "b", Name: "x"}, []string{"a"}, false},
+	{"testdata/incremental/causefold.txtar", eval.Root{Pkg: foldReadLib, Name: "N"}, []string{foldReadPkg}, false},
+	{"testdata/incremental/causestagefold.txtar", eval.Root{Pkg: foldReadLib, Name: "M"}, []string{foldReadPkg}, true},
 }
 
 // DECISIONS 104, EVALUATION.md §12.2: folds and stages A-E spend one counter, one E4401, needing their sum.
@@ -54,8 +58,8 @@ func TestCauseRunAfterFolds(t *testing.T) {
 			for n := 1; n <= need; n++ {
 				unreached += causeAt(t, withBudget(t, c.file, n), c.sel, c.root)
 			}
-			if unreached == 0 || unreached == need {
-				t.Errorf("%d budgets of %d leave %v unevaluated: want some, not all", unreached, need, c.root)
+			if c.never != (unreached == need) || unreached == 0 {
+				t.Errorf("%d budgets of %d leave %v unevaluated: want some, all when never forced", unreached, need, c.root)
 			}
 		})
 	}

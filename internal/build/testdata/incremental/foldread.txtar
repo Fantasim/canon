@@ -1,0 +1,67 @@
+DECISIONS 264, 244, EVALUATION.md §2.1 item 3, §5, §12.2: only P's bound, a phase-2 fold, reads
+`b.N`, which reads the orphan ref `b.L`. Stage A forces both again after the selected values, charged
+on the one counter, so stage B reports `L`'s E3505 under `canon check a` as under `canon check`;
+entry edits recheck along one lineage, which replays the fold and so its reads in cold's order.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- b/b.canon --
+/// B.
+package b
+
+/// Node.
+record Node {
+  /// Name.
+  name: String
+}
+
+/// Link.
+record Link {
+  /// To.
+  to: ref Node
+}
+
+/// Tree.
+record Tree {
+  /// Nodes.
+  nodes: [Node] keyed by name
+  /// Links.
+  links: [Link]
+}
+
+/// An orphan link.
+const L = Link { to: "x" }
+
+/// How many.
+const N = [L, L].len()
+-- a/a.canon --
+/// A.
+package a
+
+import b
+
+/// A thing.
+record P {
+  /// Its name.
+  name: String(1..)
+  /// Its x.
+  x: Int(0..=b.N)
+}
+
+/// Things.
+let ps: table P = {}
+-- a/ps/one.canon --
+package a
+
+entry ps.one {
+  name: "One"
+  x: 1
+}
+-- a/ps/two.canon --
+package a
+
+entry ps.two {
+  name: "Two"
+  x: 2
+}

@@ -17,6 +17,31 @@ type folder struct {
 	ev    *Evaluator
 	calls []foldCall // every fold made, in order, for FoldsOf
 	bugs  []error    // the internal errors of every fold so far, in the order met
+	reads readLog    // the constants the folds read, which stage A forces again (EVALUATION.md §2.1)
+}
+
+// readLog is the constants a folder's folds read, once each, in the order first read (EVALUATION.md §2.1).
+type readLog struct {
+	roots []Root
+	seen  map[Root]bool
+}
+
+// note logs st, read by the fold c, when it is a constant its folder's folds had not read; nil
+// outside a fold, it does nothing.
+func (c *foldCall) note(st *rootState) {
+	if c == nil || c.log == nil || st.obj.Kind() != check.ObjConst || c.log.seen[st.root] {
+		return
+	}
+	c.log.add(st.root)
+}
+
+// add logs root, read for the first time.
+func (l *readLog) add(root Root) {
+	if l.seen == nil {
+		l.seen = map[Root]bool{}
+	}
+	l.seen[root] = true
+	l.roots = append(l.roots, root)
 }
 
 // foldCall is one fold: its arguments, and what Broken answered it, recorded or replayed.
@@ -26,6 +51,7 @@ type foldCall struct {
 	info   *check.Info
 	broken map[check.Object]bool
 	replay bool
+	log    *readLog // its folder's, which notes each constant it reads
 }
 
 // NewFolder is the check.Folder a build gives check.Check: its findings go to the bag of the
@@ -50,6 +76,7 @@ func (f *folder) fold(ctx context.Context, call foldCall) (value.Value, bool) {
 	}
 	ev := f.ev
 	ev.index.pkg[call.owner.File()] = call.owner.Pkg()
+	call.log = &f.reads
 	ev.folding = &call
 	r := ev.newRun(ctx, charge{pkg: call.owner.Pkg(), name: call.owner.Name()}, call.owner.File())
 	v := r.eval(call.e)

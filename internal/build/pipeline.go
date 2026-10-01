@@ -189,7 +189,7 @@ func (r *run) indexes() (*verify.Index, *rules.Index) {
 	return verify.NewIndex(r.prog), rules.NewIndex(r.prog)
 }
 
-// stageA forces every const and let of the selected packages in order (EVALUATION.md §2.1).
+// stageA forces the selected packages' consts and lets, then what phase 2's folds read (EVALUATION.md §2.1).
 func (r *run) stageA(ctx context.Context) {
 	r.newHost(r.bags)
 	if r.epoch != 0 {
@@ -200,6 +200,14 @@ func (r *run) stageA(ctx context.Context) {
 	if r.causes && !r.memoized {
 		r.ev.LogCauses() // API.md R6; a memoized run's causes are logged apart (cause.go)
 	}
+	r.forceSelected(ctx)
+	for _, root := range r.folds.Reads() { // item 3: charged again, a value already forced is not (§12.2)
+		r.ev.Force(ctx, root)
+	}
+}
+
+// forceSelected is items 1 and 2 of EVALUATION.md §2.1, kept in r.order for stage C (§8.1).
+func (r *run) forceSelected(ctx context.Context) {
 	for _, cp := range r.prog.Packages {
 		if !r.selects(cp.Path) {
 			continue
