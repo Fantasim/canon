@@ -1,16 +1,15 @@
 # State — Canon compiler
 
-Updated: 2026-10-01. **M4: all 6 acceptance items proved** (main `c5324f6`); closing on three items
-below. M3 accepted earlier (`ea3d7e2`).
+Updated: 2026-10-01. **M4 accepted** (main `f6114a2`, CI green on all three platforms); M3 accepted
+earlier (`ea3d7e2`). First after M4: M4.1, dependent fields in multi-op edits (handoff).
 Full report: [handoff/2026-10-01-m4-complete.md](handoff/2026-10-01-m4-complete.md). Unit ledger:
 [m4-units.md](m4-units.md). Calls: [decisions/log-2026-09-29.md](decisions/log-2026-09-29.md) "M4".
 Design: [ADR-0011](decisions/0011-incremental-memo.md), [ADR-0012](decisions/0012-formatter-region-settle.md).
 
 ## Current focus
 
-M4 (plan.md "M4 — Formatter and the edit API"): all 6 acceptance items proved, 2026-10-01. Before it is
-called accepted: the §7.9 feature examples `edits` and `entries` (being added), NFR-01 re-run on
-the final code on a quiet machine, and CI on all three platforms. The proofs:
+M4 (plan.md "M4 — Formatter and the edit API") is accepted, 2026-10-01, all 6 acceptance items, the
+§7.9 feature examples `edits` and `entries` in, CI green (`claude/m4-ci8`). The proofs:
 1. fixed points: gated in `make check`; `FuzzFormat`, `FuzzRewrite`, `FuzzRewriteAround` 10 min clean
    on the final code, the `jsonsrc` fuzzes earlier.
 2. every API.md rule tested: `TestEveryAPIRuleHasATest` (`internal/testkit`), 148 rules.
@@ -73,5 +72,5 @@ stated acceptance, deferred by Louis.
 
 ## Verify queue
 
-CI on `claude/m4-ci6` (all three platforms); then `main` merge. Re-run `make bench-edit` on a CI-class
-runner when one exists.
+Louis merges `claude/m4-ci8` (CI green) into `main`. Re-run `make bench-edit` on a quiet machine or a
+CI-class runner when one exists.
