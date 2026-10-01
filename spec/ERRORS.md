@@ -353,7 +353,7 @@ func (codeE2103) AtSeveral(span source.Span, typ string, colls []string) *Builde
 
 ---
 
-The catalogue holds 301 codes: 280 errors, 18 warnings and 3 run-time codes, with 471 messages.
+The catalogue holds 301 codes: 280 errors, 18 warnings and 3 run-time codes, with 473 messages.
 
 ## E10xx, W10xx: Project file, doc comments and naming
 
@@ -640,7 +640,7 @@ Owner: EVALUATION.md.
 |---|---|---|---|---|
 | E1901 | error | build | EVALUATION.md §9.1 | `--layer` names a layer no loaded package declares (exit 2) |
 | E1902 | error | check | EVALUATION.md §9.2 | `amend` targets a `const`, function or type |
-| E1903 | error | check | EVALUATION.md §11.1 | a record with input fields is not reached from exactly one public value through record fields |
+| E1903 | error | check | EVALUATION.md §11.1 | a record with input fields is not reached from exactly one public value through record fields, or a variant case declares an input field |
 | E1904 | error | check | EVALUATION.md §11.3 | an input pattern outside the portable RE2 ∩ ECMAScript subset |
 | E1905 | error | check | EVALUATION.md §9.2 | an amend path that does not fit the type, or does not exist when applied |
 | E1906 | error | check | EVALUATION.md §9.1 | one package declares a layer name twice |
@@ -654,7 +654,8 @@ Owner: EVALUATION.md.
 |---|---|---|---|
 | E1901 | - | name:Name | `no loaded package declares layer {name}` |
 | E1902 | - | name:Name | `amend {name}: only a let can be amended` |
-| E1903 | - | record:Name | `{record} has input fields, so it must be reached from exactly one public value through record fields` |
+| E1903 | record | record:Name | `{record} has input fields, so it must be reached from exactly one public value through record fields` |
+| E1903 | variantCase | variantCase:Name | `variant case {variantCase} declares an input field: input fields are allowed only in records` |
 | E1904 | - | re:Text, construct:Text | `pattern /{re}/ is not in the portable subset: {construct}` |
 | E1905 | field | path:Name | `amend path {path}: no such field` |
 | E1905 | key | path:Name, key:Value | `amend path {path}: key {key} does not exist` |
@@ -735,7 +736,7 @@ Owner: TYPES.md, WIRE.md.
 | E3011 | error | check | TYPES.md §9.2 | a type that cannot be a map key |
 | E3012 | error | check | TYPES.md §9.1 | `keyed by` names no field, or a field whose type cannot be a key |
 | E3013 | error | check | TYPES.md §9.3 | a table of something that is not a record |
-| E3015 | error | check | TYPES.md §15 | a position that needs a constant expression gets something else |
+| E3015 | error | check | TYPES.md §15 | a position that needs a constant expression gets something else, or its fold stops on the spent step budget |
 | E3016 | error | check | TYPES.md §12.3 | a method or built-in used as a value |
 | E3017 | error | check | TYPES.md §12.7 | assignment to something that is not a `var` |
 | E3018 | error | check | TYPES.md §12.7 | `for a, b in` over something that is not a map or pairs |
@@ -822,7 +823,8 @@ Owner: TYPES.md, WIRE.md.
 | E3012 | field | field:Name | `keyed by {field}: no such field` |
 | E3012 | type | field:Name, typ:Type | `keyed by {field}: type {typ} cannot be a key` |
 | E3013 | - | typ:Type | `a table holds records; {typ} is not a record` |
-| E3015 | - | what:Kind | `this {what} must be a constant expression` |
+| E3015 | notConstant | what:Kind | `this {what} must be a constant expression` |
+| E3015 | budget | what:Kind | `this {what} could not be folded: the evaluation budget is exhausted` |
 | E3016 | - | kind:Kind, name:Name | `{kind} {name} cannot be used as a value; write a lambda` |
 | E3017 | - | name:Name | `cannot assign to {name}: it is not a var` |
 | E3018 | - | a:Name, b:Name, typ:Type | `for {a}, {b} in needs a map or pairs, found {typ}` |
