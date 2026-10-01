@@ -684,9 +684,11 @@ error[E4401]  balance/parity/sweep_plan.canon:265:15
 ```
 
 - After `E4401`, evaluation stops: no further root runs, and the build fails. Findings already
-  produced are kept. `E4401` is reported once per invocation; a constant fold that fails because
-  the budget is spent is still `E3015` (DECISIONS 150: no declaration breaks silently). Because the
-  order of evaluation (§2) is fixed, two implementations stop at the same expression.
+  produced are kept. `E4401` is reported once per invocation; a phase-2 constant fold that fails
+  because the budget is spent is still `E3015`, variant `budget` (DECISIONS 150: no declaration
+  breaks silently; 263). Stage E still runs after `E4401`, but a fold there that fails on the spent
+  counter adds no finding: `E4401` has already failed the build. Because the order of evaluation
+  (§2) is fixed, two implementations stop at the same expression.
 
 ---
 

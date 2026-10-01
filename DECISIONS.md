@@ -2348,17 +2348,20 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      `E3015` gains a variant for a fold the step budget stopped (244 keeps such a fold `E3015`), and
      `E1903` a variant naming a variant case that declares an input field (249). Both are written
      into ERRORS.md together, with the existing message of each code named as a variant: `E3015`
-     `notConstant` and `budget`, `E1903` `record` and `variantCase`. `budget` replaces `notConstant`
-     exactly where 150 reports `E3015` for a fold that failed without a finding in its owner's bag,
-     when the invocation's step counter is spent (EVALUATION §12.2: "a constant fold that fails
-     because the budget is spent is still `E3015`"), by that fold or an earlier one; the fold that
-     spent the last step reports `E4401` in the package of the expression it was evaluating, so it
-     gets `E3015` `budget` only when that package is not its owner's. `variantCase` is the
-     case-level report §11.1 already gives ("A variant case may not declare an input field itself
-     either (`E1903`)"), at the case's name, naming it `Variant.case`. Code owed: the unit that
-     regenerates `internal/diag`, moves every call site of the two codes to the named constructors
-     and adds their txtar cases; the registry is generated from ERRORS.md (`make diag-check`).
-     Reason: log-2026-09-29 M4 "Spec sync (M4 sync)", B2-r2.
+     `notConstant` and `budget`, `E1903` `record` and `variantCase`. `budget` is reported only for
+     phase 2's folds (check's, 150): stage E still runs after `E4401`, but a fold there that fails
+     on the spent counter adds no finding, since `E4401` has already failed the build. It replaces
+     `notConstant` exactly where 150 reports `E3015` for a fold that failed without a finding in its
+     owner's bag, when the invocation's step counter is spent (EVALUATION §12.2: "a phase-2 constant
+     fold that fails because the budget is spent is still `E3015`"), by that fold or an earlier one;
+     the fold that spent the last step reports `E4401` in the package of the expression it was
+     evaluating, so it gets `E3015` `budget` only when that package is not its owner's.
+     `variantCase` is the case-level report §11.1 already gives ("A variant case may not declare an
+     input field itself either (`E1903`)"), at the case's name, naming it `Variant.case`. Code owed:
+     the unit that regenerates `internal/diag`, moves every call site of the two codes to the named
+     constructors and adds their txtar cases; the registry is generated from ERRORS.md (`make
+     diag-check`). Reason: log-2026-09-29 M4 "Spec sync (M4 sync)", B2-r2, "DV1 review FAIL,
+     correction".
 
 264. **Constants a check-time fold read are verified (EVALUATION.md §2.1, §5).** Stage A also forces
      every constant a phase-2 fold read, after §2.1's set, in fold order, charged again on the one
