@@ -303,7 +303,7 @@ synthesize.
 | `fail(at, m)`, `warn(at, m)` | `at` synthesizes (any type); `m ⇐ String` |
 | amend path value | the static type at the path (EVALUATION.md §9) |
 | annotation arguments | per the annotation catalogue (GRAMMAR.md §8); `@json(none: x)` per WIRE.md; an `@json` form that does not apply to the field's type is `E3316` (WIRE.md §4.1) |
-| `load(…)` | the expected type of the `load` expression itself; none is `E7002` (WIRE.md) |
+| `load(…)` | the expected type of the `load` expression itself, given directly by its context; none is `E7002` (WIRE.md §6.1). A unary `-` does not pass one on to it: `-load(…)` is `E7002` (DECISIONS 272) |
 | unary `-e`, `(e)` | passes the expected type through |
 
 For a comparison or arithmetic operator, the operand that is **context-dependent** is the one

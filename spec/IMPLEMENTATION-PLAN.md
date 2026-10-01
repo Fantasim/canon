@@ -523,6 +523,10 @@ type Emit struct {
 
 Each code generator is a pure function `func Generate(p *ir.Package, e *ir.Emit) ([]File, error)`
 with `type File struct { Path string; Content []byte }`, `Path` relative to the emit's `Dir`.
+`Package.Emits` and `PackageRef.Emits` may hold several emits of one target, the copies of an
+`out` list (CODEGEN.md §2.1), and a generator is called with `ir.CopyOf(proj, p, e)`, the package
+as copy `e` sees it, each import's emits narrowed to the copy it uses (CODEGEN.md §2.8): a caller
+precondition, not a type change, added under §4's review rule (DECISIONS 270).
 Codegen agents start from hand-built `ir.Package` fixtures in `internal/gen/<t>/testdata/`,
 before the front end exists. **Generators never resolve roots** (DECISIONS 108): stage E fills
 every emit's `Dir`, `FileName` and `GoImport`, those of the imported packages' emits
@@ -710,6 +714,8 @@ type Folds struct { /* the folds one NewFolder folder made up to a point, in ord
 func FoldsOf(f check.Folder) Folds                   // the zero Folds for another Folder
 func (fs Folds) Replay(ctx context.Context, bags check.Bags) check.Folder   // a folder on a counter of its own that made
                                                      // fs's folds again, each seeing what it first saw (EVALUATION.md §12.2)
+func (fs Folds) Reads() []Root                       // every constant fs's folds read, once each, in fold order:
+                                                     // stage A's item 3 (EVALUATION.md §2.1; DECISIONS 271)
 type LoadMemo interface {                            // optional capability of a Host whose loads the memo replays (§7.6)
     LoadRecorded(ctx context.Context, e *syntax.LoadExpr, expected types.Type) (value.Value, bool, LoadInputs)
     LoadReplay(ctx context.Context, e *syntax.LoadExpr, in LoadInputs) (done func(), ok bool)

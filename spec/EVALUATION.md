@@ -68,9 +68,9 @@ This replaces SPEC §11.2.
    and every top-level `let`, public and `local`, in the order (file path bytes, source
    position);
 2. whatever these values read, lazily, including values of imported packages;
-3. every constant a phase-2 fold read that 1 and 2 did not force, in fold order, charged again
-   on the one counter (§12.2), so stage B verifies it whatever the selection (DECISIONS 264: code
-   owed, PS1).
+3. every constant a phase-2 fold read, directly or through other constants, that 1 and 2 did not
+   force, in fold order, charged again on the one counter (§12.2), so stage B verifies it whatever
+   the selection (DECISIONS 264, 271).
 
 Values of imported packages that nothing reads are not evaluated; phase 8 evaluates, on demand,
 the values a view model reads that phases 3–7 did not (their counts, VIEWMODEL.md C3/J12), and
@@ -229,7 +229,7 @@ call reports `E4201` and treats it as a compiler bug (exit code 3, CLI §2.5).
 ## 5. Verification (stage B)
 
 Each evaluated top-level value that is not poisoned (constants only a fold read included, §2.1;
-DECISIONS 264: code owed, PS1) is verified once, after its evaluation and layers, in the order its
+DECISIONS 264) is verified once, after its evaluation and layers, in the order its
 evaluation completed. Verification walks the value (not through refs) and checks:
 
 | Check | Code | Located at |
@@ -473,8 +473,9 @@ else reads `v`**:
    itself is `E4301`), convert it at the storage point of the path (§4.3), and replace the
    sub-value at the path.
    - Every intermediate segment must exist at application time: a missing key, an out-of-range
-     index, `none` on the way, or a variant whose current case lacks the field is `E1905`
-     (hard: `v` is poisoned).
+     index, `none` on the way, or a variant whose current case lacks the field is `E1905` (hard: `v`
+     is poisoned). The right-hand side is still evaluated, in no field scope (WIRE.md §6.1,
+     DECISIONS 272).
    - The **last** segment may name a new map key or a new table key: the entry is added at the
      end (a new table entry gets its identity). Adding to a `stable table` is `E6004`
      (LOCK.md). A keyed list or list never grows.

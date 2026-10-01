@@ -769,8 +769,9 @@ source and where the edit goes.
   cannot add entries to a stable table (LCK-04), which the re-check reports as a finding.
 - **W11a.** A layer may not hold a path and one of its prefixes (EVALUATION.md §9.2, `E1908`). So
   when the layer already amends an ancestor of the path, `Set` edits the value inside that
-  amendment's right-hand side (a structural edit of that literal, §9); when it amends descendants
-  of the path, `Set` replaces them all with the one new amendment line.
+  amendment's right-hand side (a structural edit of that literal, §9); when it amends descendants of
+  the path, `Set` replaces them all with the one new amendment line. An `AddEntry` into a table the
+  layer already amends adds one line and keeps the others (DECISIONS 273).
 
 ---
 
@@ -844,7 +845,9 @@ type expected at the path **before** anything is written (CLI.md §5.3 "values, 
   record's computed branch, computed exactly as the decoder computes it (WIRE.md §5.9, DEP-02;
   defaults from the record's parameters); a symbol it introduces into a `Never` branch, or that
   names nothing in a branch that can be computed, is a `ValueError`. A scalar literal given to a
-  dependent type fits when a branch takes it (TYPES.md §11.4; DECISIONS 267: code owed, M4.1).
+  dependent type fits when a branch takes it (TYPES.md §11.4; DECISIONS 267). Under an `EditLayer`
+  that is not active in the session, a layer `Set` is typed against the declared type at the path,
+  since the session cannot see the layer's own drivers (W11, DECISIONS 273).
 - **V2.** Only the static type is checked at this point. Refinements (`Int(1..=100)`), references
   (`E3501`), keys and checks are verified by the re-check (§8.6), like any other value. For
   `FromJSON`, a wire value whose shape or type does not fit is a `ValueError` (and invalid JSON,
@@ -878,8 +881,7 @@ type expected at the path **before** anything is written (CLI.md §5.3 "values, 
   changes (a key added by op 0 can be addressed by op 1). Each op is resolved against, and applied
   in memory to, the re-analysed state the previous ops left, so a path under an intermediate value
   that failed to compute is `ErrNoValue`, even if the final state would be valid. A value under a
-  dependent type is typed against the branch its driver has in that state (DECISIONS 257: code owed,
-  M4.1).
+  dependent type is typed against the branch its driver has in that state (DECISIONS 257).
 - **E2.** An op on a container kind it does not support (for example `Add` on a table, `AddEntry`
   on a list, `Reset` on a required field) is `ErrBadOp`.
 - **E3.** `Add`, `Insert` and `AddEntry` with a key that already exists are `ErrKeyExists`.
@@ -1003,24 +1005,42 @@ inside the same edit and reports it, so every client behaves the same.
 
 - **E22.** `Undo` is a list of ops that, applied with `Base` set to the result's `Revision`,
   restores every value the edit changed (including cascades), whatever E23's order would give
-  (DECISIONS 257: code owed, M4.1). It restores values, not text: comments of removed items and a
-  deleted entry file's doc comment are not restored, a recreated entry file is placed by the
-  `@files` template, and a defaulted parent the Undo empties may remain written as `{}`.
+  (DECISIONS 257, 273). It restores values, not text: comments of removed items and a deleted entry
+  file's doc comment are not restored, a recreated entry file is placed by the `@files` template,
+  and a defaulted parent the Undo empties may remain written as `{}`. For every edit with an
+  `EditLayer` (W11), active or not, the Undo restores that layer's own lines, each amendment line as
+  it was or a `Reset` where there was none, never merged values, and is always verified, in the
+  layer's own view (equality of its lines, whose order counts only for lines on overlapping paths)
+  and in the session's layers; a request whose Undo would have to write back a computed line (one
+  whose text cannot be a `Source`, a spread included) is refused before anything is written, with
+  `*NotEditableError` reason `computed`, as W5 gives for a `Reset` of that line. Off edit layers,
+  the Undo is verified when the request has more than one op and touches a dependent field or its
+  driver or fires a cascade (§8.5); a single op never pays for it (NFR-01). An entry's file path is part of the before state: a `Rename` inverse runs
+  after the region restores of the item it renames, and verification compares the before path of
+  entries that still exist or are renamed back; an entry the request removes and re-adds counts as
+  recreated, placed by N1–N4. A value the before state held in error (a dependent mismatch that is
+  not held, `E3802`, E15) cannot be written by any op: the Undo leaves it as the cascade drops it,
+  and verification excludes it. When the edit's own result leaves a compared root uncomputable (only
+  with `AllowErrors`), the plain Undo is returned unverified. When no verified Undo is found within
+  the repair rounds, `Edit` fails with an `*InternalError` (`ErrInternal`) and writes nothing
+  (DECISIONS 273).
 - **E23.** Inverses: `Set` → `Set(old)`, or `Reset` if the field was absent; `Reset` → `Set(old)`;
   `Add`/`Insert`/`AddEntry` → `Remove`; `Remove` → `Insert(parent, oldPosition, old)` or
   `AddEntry(parent, key, old)` followed by a `Move` to the old position (where file paths fix the
   order, reason `order`, an `Add` or `AddEntry` alone, placed by N1–N4); `Move` → `Move` back;
   `Rename` → `Rename` back; `SetCase` → `Set(old whole variant value)`. `Retire` has no inverse
   (E4): `Undo` restores every other change of the edit, and the studio warns before retiring. `Undo`
-  lists the inverses in reverse order of the ops, then every cascade's inverse. The Undo is verified
-  by a dry apply against the after state; where that does not restore the before state, the smallest
-  enclosing item is restored whole instead (DECISIONS 257: code owed, M4.1). Old values are carried
-  as `Source` literals, except a JSON-sourced value holding a decoded dependent symbol, carried as
-  `FromJSON` of its wire form, encoded with the scope it is decoded in (the field's unit, `int`,
-  `bits`, `none`), so it comes back as the file wrote it. Further inverses:
+  lists the inverses in reverse order of the ops, then every cascade's inverse. Where E22 requires
+  it, the Undo is verified by a dry apply against the after state; where that does not restore the
+  before state, the smallest enclosing item is restored whole instead (DECISIONS 257). Old values
+  are carried as `Source` literals, except a JSON-sourced value holding a decoded dependent symbol,
+  carried as `FromJSON` of its wire form, encoded with the scope it is decoded in (the field's unit,
+  `int`, `bits`, `none`), so it comes back as the file wrote it. Further inverses:
   - a `Set` of a field a spread supplied → `Set(old)`, not `Reset` (W9); under `EditLayer`, a `Set`
-    on a path the layer had no line for → `Reset` (it removes the amendment), and an `AddEntry` or
-    `Remove` on a map inside an amendment → a `Set` of the whole map;
+    on a path the layer had no line for → `Reset` (it removes the amendment), an `AddEntry` or
+    `Remove` on a map inside an amendment → a `Set` of the whole map, and a `Remove` of an entry the
+    layer added → an `AddEntry` that puts its line back at its place in the `amend` block, with no
+    `Move` (W5 `layer`; DECISIONS 273);
   - `Add`, `Insert` or `AddEntry` into a collection that existed only through its default → a
     `Reset` of that collection;
   - any op on an `@json(pairs:)` list, and an element `Set` in an `@json(bits)` list →
@@ -1142,7 +1162,7 @@ comments, and a trailing comment on its last line.
   real file read as different base types or canonical texts left as written, DECISIONS 259), judged
   on the raw bytes (a CR or a tab indentation is not canonical, DECISIONS 258). A `.canon` file is
   judged in its role: one other than `project.canon` opening with a `project` declaration holds
-  `E1011` and is not a fixed point (DECISIONS 258: code owed, PS3). This rule governs FORMATTER.md
+  `E1011` and is not a fixed point (DECISIONS 258). This rule governs FORMATTER.md
   §13. If not, the edit fails with `*NotCanonicalError` (wraps `ErrNotCanonical`) listing the files,
   unless `Edit.Normalize` is true, in which case each such file is first normalized entirely, as
   part of the same edit. Migration normalizes JSON sources once with `canon fmt --json-sources`

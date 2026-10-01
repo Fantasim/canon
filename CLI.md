@@ -479,7 +479,8 @@ never has the shape a hand-written loader of the legacy file expects.
    usage error. When that `emit json`'s `out` is a list (CODEGEN §2.1), the path is added as a
    further entry, unless an entry already equals it as a resolved path (WIRE §2.2); adding it is a
    usage error when it would share an owning root with another entry (`E8009` `outRoot`, CODEGEN
-   §2.8) or when the list's entries are directories (`E8009` `outForm`) (DECISIONS 269). It is, with
+   §2.8) or when the list's entries are directories (`E8009` `outForm`), checked in that order:
+   already an entry, then `outForm`, then `outRoot` (DECISIONS 269, 270). It is, with
    `canon build --adopt` (§3.4), the only way to take over a file (SPEC §15.1).
 5. **Proves the conversion lossless.** It builds the project before and after, in memory, and
    compares (a) the converted value and every value that depends on it (equal values, entry order

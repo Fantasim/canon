@@ -91,16 +91,19 @@ in [§12](#12-diagnostics).
   place as if it were the emit's only `out`. Every copy has the emit's mode and options; copies
   differ only in the import paths or includes of imported packages and, in Go, the import path of
   its own `rt` package (§2.8). An empty list is `E8009` `outEmpty`, and two entries sharing an
-  owning root (§2.8) are `E8009` `outRoot`; each entry is checked as an `out` (a `ts` entry must end
-  in `.ts`). Without `package`, every entry of a Go list must end in the same element, the default
-  package name (`E8009` `outPackage` otherwise); the entries of a `json` list are all files or all
-  directories (`E8009` `outForm` otherwise, WIRE.md §8.1); a list given to `view` is `E8009` `kind`
-  (DECISIONS 269).
+  owning root (§2.8) are `E8009` `outRoot`, reported at the later entry against the first one that
+  root owns; each entry is checked as an `out` (a `ts` entry must end in `.ts`). Without `package`,
+  every entry of a Go list must end in the same element once resolved, the default package name
+  (`E8009` `outPackage` otherwise); the entries of a `json` list are all files or all directories
+  (`E8009` `outForm` otherwise, WIRE.md §8.1); a list given to `view` is `E8009` `kind` (DECISIONS
+  269, 270).
 - **Typing of the options.** The options of each target form a built-in schema, checked in
   phase 2 like `project.canon` (GRAMMAR.md §7): nothing in an `emit` is an expression, is
   evaluated, or is resolved in scope.
   - `package` and `namespace` are constant strings, and `out` a constant string or, except for
-    `view`, a list of them (`E1132` for an interpolation, `E8009` for another kind of value).
+    `view`, a list of them (`E1132` for an interpolation, `E8009` for another kind of value; a
+    non-string element of an `out` list is `E8009` `kind` with `OutPaths`, at the element,
+    DECISIONS 270).
   - `mode` is a bare word from the target's modes (`E8009` otherwise). It is never looked up in
     scope, so `mode: baked` is not an unknown name (`E2102`) and a `let baked` changes nothing.
   - `values` is a list of bare words, each the name of a public top-level `let` of the package;
@@ -148,7 +151,8 @@ The compiler writes, per emit:
 - Two outputs with the same path, or with paths that differ only in letter case, are WIRE.md's
   `E8152` (WIRE.md §8.1), whatever their targets. The runtime files are the exception: identical
   content may be written by several emits. Two Go emits writing into the same directory, which is
-  one Go package, are `E8008` even when their file names differ.
+  one Go package, are `E8008` even when their file names differ; `E8008` compares different emits
+  only, and copies of one emit sharing a directory are `E8009` `outRoot` alone (DECISIONS 270).
 - **Embedded data.** In `embedded` mode each emitted value's data is the data-wire document of
   WIRE.md §8.2 for that value (the bytes `emit json` would write for it, `$schema` included),
   whether or not the package has an `emit json`. Go writes it to `<out>/<value>.json` and embeds it
@@ -304,12 +308,14 @@ an emit for the same target, else `E8004`. An imported type is referenced, never
 
 - **Owning root and copies** (DECISIONS 229). An output's owning root is the declared root
   (GRAMMAR.md §7.1 `roots`) whose directory is the output's directory (a file's directory, for a
-  `ts` or a `json` file) or its closest ancestor (of two roots with the same directory, the one
-  declared first in `roots`); an output under no declared root is owned by the project itself,
-  written `project <name>` in findings (`project acme { … }` gives `project acme`; DECISIONS 269).
-  Two entries of one emit's `out` may not share an owning root (`E8009`). A copy of package P owned
-  by R (a root, or the project) uses, for each imported package Q, Q's copy owned by R, or Q's only
-  copy when Q has one; otherwise `E8004`. The rules below then apply between the two copies.
+  `ts` or a `json` file) or its closest ancestor, judged lexically on project-relative paths as
+  `GoImport` and `E8007` are, so a root reached through `..` never owns an output inside the project
+  (of two roots with the same directory, the one declared first in `roots`); an output under no
+  declared root is owned by the project itself, written `project <name>` in findings
+  (`project acme { … }` gives `project acme`; DECISIONS 269, 270). Two entries of one emit's `out` may not share an
+  owning root (`E8009`). A copy of package P owned by R (a root, or the project) uses, for each
+  imported package Q, Q's copy owned by R, or Q's only copy when Q has one; otherwise `E8004`. The
+  rules below then apply between the two copies.
 
 `project.canon`'s `go_module` key (GRAMMAR.md §7.1) maps a root name to the Go import path of
 the root's directory. From `examples/project.canon`:

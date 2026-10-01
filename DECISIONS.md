@@ -2280,16 +2280,16 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      E22). Reason: log-2026-09-29 M4 "Examples review (M4)" and the `edits` and `entries` goldens.
 
 257. **An Undo restores the before state (API.md E1, E22, E23; amends 237).** E22 wins over E23's
-     order. The Undo's ops are the inverses as now: in reverse order of the ops, then every cascade's
-     inverse (E23). The Undo is verified by a dry apply against the after state; where that does
-     not give the before state back, the smallest enclosing item is restored whole instead. Forward,
-     each op is typed against the branch its driver has after the ops before it (E1). Status: this
-     is the M4.1 design, in progress; until it lands, a multi-op edit that changes a driver and then
-     its dependent values (a list element or map value, an `Add` or `Insert` into a dependent list,
-     nested type functions, a type through a ref, a record-parameter field, a JSON record an earlier
-     op left undecodable) can be refused, or its Undo can restore wrongly in some orders. Single-op
-     edits and their Undos are not affected. Reason: log-2026-09-29 M4 U-E22, U-E22-r (the
-     driver-first reordering U-E22 tried is withdrawn), "M4.1 inputs".
+     order. The Undo's ops are the inverses as now: in reverse order of the ops, then every
+     cascade's inverse (E23). The Undo is verified by a dry apply against the after state, for every
+     edit with an edit layer (273) and, off layers, for a request of more than one op that touches a
+     dependent field or its driver or fires a cascade; a single op never pays for it (NFR-01); where the dry apply does not give the before state
+     back, the smallest enclosing item is restored whole instead, and when no verified Undo is found
+     within the repair rounds, the edit fails with `ErrInternal`. Forward, each op is typed against
+     the branch its driver has after the ops before it (E1). Status: M4.1 implements it (273
+     completes it). An op after a JSON record an earlier op left undecodable stays refused
+     (`ErrNoValue`, E1). Reason: log-2026-09-29 M4 U-E22, U-E22-r (the driver-first reordering U-E22
+     tried is withdrawn), "M4.1 inputs", "Sync 2 review: the Undo verification gate".
 
 258. **M9 judges a file in its role, on its raw bytes (API.md M9; FORMATTER.md §13).** M9's fixed
      point is the one `canon fmt` gives for the file's role (GRAMMAR §5.2): a file other than
@@ -2298,8 +2298,8 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      same refusals Rewrite makes (FORMATTER §13), so a positive verdict comes only from a tree that
      holds exactly those bytes. This closes PB4-r's question: Rewrite's refusals are part of M9's
      fixed point. The edit layer's `format` re-parse takes the tree's file kind instead of the
-     file's role, so it judges such a file fixed: a defect predating M4. Code owed: unit PS3.
-     Reason: log-2026-09-29 M4 PB4-r.
+     file's role, so it judges such a file fixed: a defect predating M4, fixed by unit PS3. Reason:
+     log-2026-09-29 M4 PB4-r.
 
 259. **Typed numbers are judged per real file (FORMATTER.md §14.1; API.md M9; amends 235, 247).**
      The loads that decide whether a JSON number is re-printed or kept as written are grouped by
@@ -2356,7 +2356,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      every constant a phase-2 fold read, after §2.1's set, in fold order, charged again on the one
      counter (244), so stage B verifies it and no selection hides its findings: a bound
      `Int(0..=b.N)` whose `b.N` reads an orphan ref reports that ref's `E3505` under `canon check a`
-     as under `canon check`. Code owed: unit PS1. Reason: the post-M4 sync's open list
+     as under `canon check`. Implemented by unit PS1 (271). Reason: the post-M4 sync's open list
      (log-2026-09-29 M4 B2-r2, "Spec sync (M4 sync)"): stage B verified only what stage A forced, so
      the folder's values went unverified.
 
@@ -2379,16 +2379,16 @@ Choices made while Louis was away are listed here, each with its reason, so he c
 267. **Which literals a dependent type takes (TYPES.md §11.4; API.md V1).** Any scalar literal a
      branch takes is accepted, by the checker and the edit typer alike; only string and integer
      literals are kept as written, since only they convert at verification (§11.6); a float, bool or
-     duration literal keeps its type and is judged there. Code owed: M4.1, the edit typer (it
-     refuses a float, bool or duration literal, and a typed scalar, that a branch takes). Reason:
+     duration literal keeps its type and is judged there. The edit typer follows it with M4.1 (it
+     refused a float, bool or duration literal, and a typed scalar, that a branch takes). Reason:
      log-2026-09-29 M4 B7-r, B10, B10-r2, "M4.1 inputs", "Spec sync (M4 sync)".
 
 268. **A `load` given to a field decodes in that field's scope (WIRE.md §4.1, §6.1).** A `load`
      whose expected type comes from a field decodes with that field's `unit:`, `int`, `bits` and
      `none:` forms, as inside a record and as `FromJSON` does (236): `5` loaded into `d: Duration
-     @json(unit: s)` is `5s`. Code owed: unit PS2 (the load host gives `wire.Decoder` its `Field`).
-     Reason: log-2026-09-29 M4 B10-r2, "Spec sync (M4 sync)": the load decoded such a field's value
-     without its rules, so a load and an edit read the same bytes differently.
+     @json(unit: s)` is `5s`. Implemented by unit PS2, the load host giving `wire.Decoder` its
+     `Field` (272). Reason: log-2026-09-29 M4 B10-r2, "Spec sync (M4 sync)": the load decoded such a
+     field's value without its rules, so a load and an edit read the same bytes differently.
 
 269. **Copies: the package name, an unowned entry, JSON forms, adopt (CODEGEN.md §2.1, §2.8; WIRE.md
      §8.1; CLI.md §3.10; follows 229).** When `out` is a list and `package` is omitted, every
@@ -2409,9 +2409,80 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      package (CODEGEN §2.1). Reason: log-2026-09-29 "Multi-destination emits, spec rulings" and
      "review rulings".
 
+270. **Multi-destination emits as built (CODEGEN.md §2.1, §2.3, §2.8; WIRE.md §8.1; CLI.md §3.10;
+     IMPLEMENTATION-PLAN §4.5; follows 229, 269).** Owning-root ancestry is lexical on
+     project-relative paths, as `GoImport` and `E8007` already are, so a root reached through `..`
+     never owns an output inside the project. `E8150` on a list of files is reported once per list;
+     `outRoot` at the later entry, against the first one that root owns; `outPackage` compares
+     resolved last elements; `E8153` is judged per json copy; `E8008` compares different emits only,
+     copies of one emit sharing a directory being `E8009` `outRoot` alone. A non-string element of
+     an `out` list is `E8009` `kind` with `OutPaths`, at the element. `convert --adopt` checks
+     "already an entry", then `outForm`, then `outRoot`. Name-plan messages show the first copy's
+     import path; `ts` copies are checked only, until M6's generator. IMPLEMENTATION-PLAN §4.5:
+     `Package.Emits` and `PackageRef.Emits` may hold several emits of one target, and a generator is
+     called with `ir.CopyOf(proj, p, e)`, the package narrowed to the copy being generated: a caller
+     precondition, not a type change, accepted under §4's review rule as 250's additions were (the
+     review was the consumer review). Reason: log-2026-09-29 "ME1 rulings on its choices", "ME1
+     review".
+
+271. **`Folds.Reads` and what a fold read (IMPLEMENTATION-PLAN §4.8; EVALUATION.md §2.1; follows
+     250, 264).** `func (fs Folds) Reads() []Root`, every constant a folder's folds read, once each,
+     in fold order, is added at the §4.8 seam: additive, approved as §4's consumer review, like
+     250's additions. In §2.1's item 3, "read" includes constants reached through other constants,
+     which is observably the same under TYPES §15. Reason: log-2026-09-29 "PS1 review".
+
+272. **How far a field's scope reaches a `load` (WIRE.md §6.1; TYPES.md §5.1; EVALUATION.md §9.3;
+     follows 268).** "Comes from a field" is transitive along the positions that pass the expected
+     type on (TYPES §5.1): parentheses, `if` branches, `match` arms and both sides of `??` carry the
+     field's whole forms; list elements, comprehension elements and map values carry `unit:` and
+     `int` only, as the decoder's element scope does. A record or table literal starts a scope of
+     its own; a call argument, a lambda and a map key pass none. A `load` as an `amend` or layer
+     path value decodes in the scope of the field the path names, as an edit's `FromJSON` at that
+     path does; a path through `none` (`E1905`) gives no scope, and its value is still evaluated
+     (EVALUATION §9.3). TYPES §5.1 lets a unary `-e` pass its expected type, while WIRE §6.1 wants a
+     `load` typed directly from its context: the checker's reading stands, so `-load(…)` is `E7002`
+     and needs no scope rule. Reason: log-2026-09-29 "PS2 rulings on a field scope's reach", "PS2
+     review", "PS2 round 2".
+
+273. **Undo under edit layers, file placement and values held in error (API.md E22, V1, W11; amends
+     257).** For every edit with an `EditLayer`, active or not, the Undo restores that layer's own
+     lines and is verified: each amendment line as it was, or a `Reset` where there was none, never
+     merged values; verification compares the layer's lines, whose order counts only for lines on
+     overlapping paths, and the session's layers. Under an edit layer, the inverse of `Remove` is an
+     `AddEntry` that puts the line back at its place in the `amend` block, with no `Move` (W5
+     `layer`), and an `AddEntry` into a table the layer already amends adds one line and keeps the
+     others (W11a). Under an `EditLayer` that is not active in the session, a layer `Set` is typed
+     against the declared type, since the session cannot see the layer's own drivers. An entry's
+     file path is part of the before state: a `Rename` inverse runs after the region restores of the
+     item it renames, and verification compares the before path of entries that still exist or are
+     renamed back (a recreated entry may be placed by its `@files` template, E22; an entry a request
+     removes and re-adds counts as recreated). A value the before state held in error (a dependent
+     mismatch that is not held, `E3802`) cannot be written by any op, so the Undo leaves it as the
+     cascade drops it and verification excludes it. When an edit's own result leaves a compared root
+     uncomputable (only with `AllowErrors`), its plain Undo is returned unverified. A request whose
+     Undo would have to write back a computed layer line, one whose text cannot be a `Source` (a
+     spread included), is refused before anything is written, `*NotEditableError` reason `computed`,
+     as W5 gives for a `Reset` of that line. Refinements stay the re-check's job (V2). Reason:
+     log-2026-09-29 "M4.1 built", "M4.1 review FAIL (2 CRITICAL), rulings", "M4.1 round 2", "M4.1, a
+     computed amendment line", "M4.1 round 3 review", "Sync 2 review: the Undo verification gate".
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.
 
-A possible checker gap: `Target(sub.kind)` with `sub: Sub(goal)` gives `E3003` (TYPES §11.1;
-log-2026-09-29 M4 U-E22-r), to confirm or rule.
+Checker and edit gaps recorded for a later ruling (log-2026-09-29 M4 U-E22-r, "M4.1 built", "M4.1
+round 2", "PS1 review", "PS2 round 2"):
+
+- `Target(sub.kind)` with `sub: Sub(goal)` gives `E3003` (TYPES §11.1).
+- `E3806` on a dependent ref (TYPES §11.1): `aim: Aim(foe)` with `foe: Pick(goal)`, where `Pick` is
+  a ref chosen by the driver `goal`, from M4.1's builder report (log-2026-09-29 "Sync 2 review: the Undo verification gate"):
+  to confirm or rule.
+- An amend path into a dependent map (`dm["a"]`) gives `E1905`/`E2102`, although EVALUATION §9.2
+  allows `[k]` on a map and TYPES §11.5 types a dependent map as `{ref c: DepUnion}`.
+- A list or brace literal given straight to a dependent type with collection branches is refused
+  where the arm cannot be computed.
+- E15 drops a map with dependent values to its default.
+- An edit-layer amendment whose right-hand side is a `load(…)`: its JSON lies outside the layer
+  file.
+- API.md R6 gives no cause for a constant only a stage-E fold evaluated (the folder reports
+  `E4102`; a cold `Cause` is empty).

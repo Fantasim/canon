@@ -188,8 +188,8 @@ at the annotation:
 `unit:` and `int` apply to every `Duration` (resp. `Bool`) of the field's type that is not inside a
 named type. `none:` applies only to the field's own outer optional, never to optionals nested in
 lists or maps (those are always `null`). A `load` whose expected type comes from a field decodes in
-that field's scope: its `unit:`, `int`, `bits` and `none:` forms apply as inside a record (DECISIONS
-268: code owed, PS2).
+that field's scope: its `unit:`, `int`, `bits` and `none:` forms apply as inside a record (§6.1;
+DECISIONS 268, 272).
 
 ### 4.2 Wire names must not collide [`E3316`, `E3318`]
 
@@ -553,7 +553,13 @@ stats: [StatBonus](..=6) = [] @json(pairs: ["dwDestParam{i}", "nAdjParamVal{i}"]
   `header:` on json, `partial:` on text), is `E7006`.
 - `load` must receive its expected type directly from its context: an annotation, a field, an
   argument, a return type (TYP-06). `load(…).filter(…)` has none [`E7002`]. From a field, it decodes
-  in that field's scope (§4.1; DECISIONS 268: code owed, PS2).
+  in that field's scope (§4.1; DECISIONS 268), through the positions that pass the field's expected
+  type on (TYPES.md §5.1): parentheses, `if` branches, `match` arms and both sides of `??` carry the
+  field's whole forms; list elements, comprehension elements and map values carry `unit:` and `int`
+  only. A record or table literal starts a scope of its own; a call argument, a lambda and a map key
+  pass none, and a unary `-` gives `load` no expected type (`-load(…)` is `E7002`). A `load` as the
+  value of an `amend` or layer path decodes in the scope of the field the path names, as an edit's
+  `FromJSON` at that path does; a path through `none` (`E1905`) gives no scope (DECISIONS 272).
 - The path must exist and be a readable regular file [`E7004`].
 - The option values: `at` a string (§6.3), `partial` a Bool constant, `format` one of the symbols
   `json`, `csv`, `text`, `header` a Bool constant, `prefix` a string.
@@ -848,7 +854,8 @@ emit json { out: "<path>", values: [v1, v2, …] }
 - `values` lists public top-level `let`s of the package. Default: every public `let`, in
   declaration order (files in path byte order, then source order).
 - **File mode**: `out` ends in `.json` (case-sensitive). `values`, explicit or default, must then
-  have exactly one element [`E8150`]; the file is `out`.
+  have exactly one element [`E8150`]; the file is `out`. For a list of files, `E8150` is reported
+  once per list (DECISIONS 270).
 - **Directory mode**: any other `out` (with or without a trailing `/`). Each value `v` is written
   to `<out>/<v>.json`.
 - **No `bare` option** (GEN-06): every data file has the `$schema` wrapper of §8.2, so every one
@@ -865,9 +872,9 @@ emit json { out: "<path>", values: [v1, v2, …] }
 - **Data mode link** (EMT-03/05, RLD-01): every value emitted by a `data`-mode code target of the
   package, and each `@reload` value, must be written by the package's `emit json` to a file named
   `<value>.json`, all `@reload` values of the package in the same directory [`E8153`]. This code
-  also covers a `@reload` value that no `emit json` writes. The generated loaders read those
-  files (CODEGEN.md §5.9, §5.11). `embedded` mode embeds the same document (§8.2) in the
-  generated code (CODEGEN.md §2.3).
+  also covers a `@reload` value that no `emit json` writes. The generated loaders read those files
+  (CODEGEN.md §5.9, §5.11). `embedded` mode embeds the same document (§8.2) in the generated code
+  (CODEGEN.md §2.3). With an `out` list, `E8153` is judged per copy (DECISIONS 270).
 
 The pipeline example: `emit json { out: "out/potions.json", values: [potions] }` is file mode,
 file `pipeline/out/potions.json`; `potions` is `@reload`, and its file is named `potions.json`.
