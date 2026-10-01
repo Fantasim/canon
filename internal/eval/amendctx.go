@@ -15,7 +15,12 @@ func (r *run) locate(cur value.Value, t types.Type, m *amending) {
 	defer func() { m.quiet, m.at = false, nil }()
 	for i, seg := range m.a.Path {
 		var ok bool
-		if cur, t, ok = r.locStep(cur, t, seg, m); !ok || i == len(m.a.Path)-1 || cur == nil || isNone(cur) {
+		cur, t, ok = r.locStep(cur, t, seg, m)
+		switch {
+		case i == len(m.a.Path)-1:
+			return
+		case !ok || cur == nil || isNone(cur): // the path reaches no field: its value is in no field's scope
+			m.dep = m.dep.unscoped()
 			return
 		}
 		t = unwrapOptional(t)
@@ -36,6 +41,7 @@ func (r *run) locStep(cur value.Value, t types.Type, seg *syntax.AmendSegment, m
 	j, key, ok := r.slotOf(cur, seg, m)
 	if ok {
 		m.step(elementPath(m.located(), cur, j, key))
+		m.dep = m.dep.below()
 	}
 	if !ok || j < 0 {
 		return nil, nil, false
@@ -55,7 +61,7 @@ func (r *run) locField(rec *value.Record, seg *syntax.AmendSegment, m *amending)
 	f := fieldsOf(rec.T)[j]
 	m.step(m.located().field(f.Name))
 	m.at = append(m.at, rec)
-	m.dep = &depCtx{rec: rec, params: r.ev.boundParams(rec), field: f.Type, at: m.a.Value}
+	m.dep = &depCtx{rec: rec, params: r.ev.boundParams(rec), field: f.Type, scope: newFieldScope(f, m.a.Value), at: m.a.Value}
 	return rec.Fields[j], f.Type, true
 }
 
@@ -64,6 +70,7 @@ func (r *run) locMapKey(mp *value.Map, t types.Type, seg *syntax.AmendSegment, m
 	j, key, ok := r.mapSlot(mp, seg, m)
 	if ok {
 		m.step(m.located().mapKey(key, mapKeyType(t)))
+		m.dep = m.dep.below()
 	}
 	if ok && binderOf(t) != "" {
 		m.dep = m.dep.withBinder(binderOf(t), key, m.a.Value)

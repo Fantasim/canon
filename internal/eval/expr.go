@@ -156,8 +156,9 @@ func evalLoad(r *run, e syntax.Expr, at *vpath) value.Value {
 		return nil
 	}
 	r.voidTrace() // what a load reads is not a value an entry's memo can compare
-	site := &loadSite{r: r, at: e, coll: r.hint(at), cx: r.depAt(e)}
-	return r.load(e.(*syntax.LoadExpr), r.typeOf(e), site)
+	le, cx := e.(*syntax.LoadExpr), r.depAt(e)
+	site := &loadSite{r: r, at: e, coll: r.hint(at), cx: cx, field: cx.scope.of(r.ev.info, le)}
+	return r.load(le, r.typeOf(e), site)
 }
 
 // truth is the Bool a condition evaluates to; false with the root aborted.

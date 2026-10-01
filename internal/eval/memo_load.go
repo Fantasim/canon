@@ -20,15 +20,31 @@ type LoadMemo interface {
 // LoadInputs is what a LoadMemo recorded of one load, which the memo keeps for it.
 type LoadInputs any
 
-// loadKey is what a load's evaluation depends on besides the files it reads and the values it
-// forces: its expression (a changed file brings new nodes), its type, the let collection it is
-// the whole of, the active layers, and whether the root was already tainted.
+// loadKey is what a load's evaluation depends on besides the files it reads and the values it forces:
+// its expression (a changed file brings new nodes), its type, the let collection it is the whole of,
+// the field scope it decodes in, the active layers, and whether the root was already tainted.
 type loadKey struct {
 	expr    *syntax.LoadExpr
 	t       types.Type
 	coll    *types.Collection
+	scope   scopeKey
 	layers  string
 	tainted bool
+}
+
+// scopeKey is what a field scope changes in a decoding, zero for none (WIRE.md §4.1).
+type scopeKey struct {
+	unit types.Unit
+	enc  types.Enc
+	none string
+}
+
+// scopeKeyOf is f's scope key.
+func scopeKeyOf(f *types.Field) scopeKey {
+	if f == nil {
+		return scopeKey{}
+	}
+	return scopeKey{unit: f.Unit, enc: f.Enc, none: string(f.NoneWire)}
 }
 
 // loadEntry is one load's evaluation: what the host recorded, the file holding the load, and the
@@ -74,7 +90,7 @@ func (r *run) loadMemo(e *syntax.LoadExpr, t types.Type, site *loadSite) (LoadMe
 	if !ok || u == nil || u.trace != nil || !r.ev.plain() || !r.plainLoad(site.cx) {
 		return nil, loadKey{}, false
 	}
-	return lm, loadKey{expr: e, t: t, coll: site.coll, layers: u.layers, tainted: r.tainted}, true
+	return lm, loadKey{expr: e, t: t, coll: site.coll, scope: scopeKeyOf(site.field), layers: u.layers, tainted: r.tainted}, true
 }
 
 // plainLoad reports a run of a top-level value in its root frame, outside stage B, tests, views

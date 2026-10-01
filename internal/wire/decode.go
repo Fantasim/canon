@@ -43,7 +43,7 @@ type Decoder struct {
 	Keep    bool              // report E3302, E3201, E3202, E3102 and E3317 but keep the value (API.md V2)
 	Coll    *types.Collection // what a whole decoded table or keyed list is (TYPES.md §6.3)
 	Outer   Outer             // what the decoded value's type arguments name around it
-	Field   *types.Field      // the field the decoded whole is the value of: its unit, int, bits and none marker (§4.1)
+	Field   *types.Field      // the field the decoded whole is the value of: its unit, int, bits and none marker; Dir's elements its unit and int (§4.1)
 	Elems   Elems             // load.dir's elements kept apart, which Dir asks for (decode_elems.go)
 }
 

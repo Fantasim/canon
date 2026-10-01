@@ -1,0 +1,191 @@
+WIRE.md §4.1, §6.1, DECISIONS 268: a load whose expected type comes from a field decodes in that
+field's scope, as inside a record and as an edit's FromJSON does (DECISIONS 236): its unit, int,
+bits and none forms as the field's whole value (a literal's item, a default, through parentheses,
+if branches, match arms and both sides of `??`); its unit and int form as an element, a
+comprehension element or a map value below it, at any depth. The none marker tells the two apart:
+`0` is none as the whole value, 0s below it. A load whose expected type comes from an argument or a let annotation is not in a field's
+scope: `5` is 5ms there.
+-- paths --
+a:cfg.d
+a:cfg.b
+a:cfg.o
+a:cfg.mk
+a:cfg.ls
+a:cfg.lf
+a:cfg.br
+a:cfg.co
+a:cfg.w
+a:cfg.df
+a:cfg.arg
+a:cfg.ma
+a:cfg.nc
+a:cfg.cu
+a:cfg.nmc
+a:cfg.mu
+a:cfg.nl
+a:cfg.nw
+a:cfg.nn
+a:cfg.cl
+a:cfg.cr
+a:cfg.ei
+a:cfg.wi
+a:plain
+-- a/a.canon --
+/// A.
+package a
+
+/// A mark.
+enum Mark @codes(UInt8) { a = 1, b = 2, c = 4 }
+
+/// A pick.
+enum K { x, y }
+
+/// Picks x.
+let pick: K = x
+
+/// Nothing.
+let maybe: Duration? = none
+
+/// Passes a Duration along.
+fn id(x: Duration) -> Duration {
+  return x
+}
+
+/// Fields with wire forms, each given a load.
+record Cfg {
+  /// Whole, in seconds.
+  d: Duration @json(unit: s)
+  /// Whole, as 0 or 1.
+  b: Bool @json(int)
+  /// Whole, 0 for none.
+  o: Duration? @json(none: 0)
+  /// Whole, one bitmask.
+  mk: [Mark] @json(bits)
+  /// Elements, in seconds.
+  ls: [Duration] @json(unit: s)
+  /// Elements, as 0 or 1.
+  lf: [Bool] @json(int)
+  /// An if branch.
+  br: Duration @json(unit: s)
+  /// Both sides of ??.
+  co: Duration @json(unit: s)
+  /// A map value.
+  w: {String: Duration} @json(unit: s)
+  /// A default.
+  df: Duration = load("@resource/five.json") @json(unit: s)
+  /// An argument's load is not the field's.
+  arg: Duration @json(unit: s)
+  /// A match arm, the whole value.
+  ma: Duration? @json(none: 0)
+  /// Comprehension elements, below.
+  nc: [Duration?]? @json(none: 0)
+  /// Comprehension elements, in seconds.
+  cu: [Duration] @json(unit: s)
+  /// Map comprehension values, below.
+  nmc: {String: Duration?}? @json(none: 0)
+  /// Map comprehension values, in seconds.
+  mu: {String: Duration} @json(unit: s)
+  /// List elements, below.
+  nl: [Duration?]? @json(none: 0)
+  /// The whole list.
+  nw: [Duration?]? @json(none: 0)
+  /// Elements of elements, below.
+  nn: [[Duration?]]? @json(none: 0)
+  /// The left side of ??, the whole value.
+  cl: Duration? @json(none: 0)
+  /// The right side of ??, the whole value.
+  cr: Duration? @json(none: 0)
+  /// An else-if branch, the whole value.
+  ei: Duration? @json(none: 0)
+  /// A map value through parentheses and an if, below.
+  wi: {String: Duration?}? @json(none: 0)
+}
+
+/// Every field given a load.
+let cfg: Cfg = {
+  d: load("@resource/five.json")
+  b: load("@resource/one.json")
+  o: load("@resource/zero.json")
+  mk: load("@resource/five.json")
+  ls: [load("@resource/five.json"), (load("@resource/one.json"))]
+  lf: [load("@resource/one.json")]
+  br: if true { load("@resource/five.json") } else { 1s }
+  co: load("@resource/five.json") ?? 1s
+  w: { "a": load("@resource/five.json") }
+  arg: id(load("@resource/five.json"))
+  ma: match pick {
+    x => load("@resource/zero.json")
+    y => 1s
+  }
+  nc: [load("@resource/zero.json") for i in [1]]
+  cu: [load("@resource/five.json") for i in [1]]
+  nmc: { n: load("@resource/zero.json") for n in ["a"] }
+  mu: { n: load("@resource/five.json") for n in ["a"] }
+  nl: [load("@resource/zero.json")]
+  nw: load("@resource/zero.json")
+  nn: [[load("@resource/zero.json")]]
+  cl: load("@resource/zero.json") ?? 1s
+  cr: maybe ?? load("@resource/zero.json")
+  ei: if false { 1s } else if true { load("@resource/zero.json") } else { 2s }
+  wi: { "a": (if true { load("@resource/zero.json") } else { 1s }) }
+}
+
+/// No field: the default unit.
+let plain: Duration = load("@resource/five.json")
+-- resource/five.json --
+5
+-- resource/one.json --
+1
+-- resource/zero.json --
+0
+-- provenance.txt --
+a:cfg.d = 5s
+  json @resource/five.json:1:1-1:2
+a:cfg.b = true
+  json @resource/one.json:1:1-1:2
+a:cfg.o = none
+  json @resource/zero.json:1:1-1:2
+a:cfg.mk = [a, c]
+  json @resource/five.json:1:1-1:2
+a:cfg.ls = [5s, 1s]
+  literal a/a.canon:77:7-77:66
+a:cfg.lf = [true]
+  literal a/a.canon:78:7-78:35
+a:cfg.br = 5s
+  json @resource/five.json:1:1-1:2
+a:cfg.co = 5s
+  json @resource/five.json:1:1-1:2
+a:cfg.w = {"a": 5s}
+  literal a/a.canon:81:6-81:42
+a:cfg.df = 5s
+  default a/a.canon:42:18-42:45 via (literal a/a.canon:72:16-98:2)
+a:cfg.arg = 5ms
+  json @resource/five.json:1:1-1:2
+a:cfg.ma = none
+  json @resource/zero.json:1:1-1:2
+a:cfg.nc = [0s]
+  computed a/a.canon:87:7-87:49
+a:cfg.cu = [5s]
+  computed a/a.canon:88:7-88:49
+a:cfg.nmc = {"a": 0s}
+  computed a/a.canon:89:8-89:57
+a:cfg.mu = {"a": 5s}
+  computed a/a.canon:90:7-90:56
+a:cfg.nl = [0s]
+  literal a/a.canon:91:7-91:36
+a:cfg.nw = none
+  json @resource/zero.json:1:1-1:2
+a:cfg.nn = [[0s]]
+  literal a/a.canon:93:7-93:38
+a:cfg.cl = 1s
+  literal a/a.canon:94:38-94:40
+a:cfg.cr = none
+  json @resource/zero.json:1:1-1:2
+a:cfg.ei = none
+  json @resource/zero.json:1:1-1:2
+a:cfg.wi = {"a": 0s}
+  literal a/a.canon:97:7-97:69
+a:plain = 5ms
+  json @resource/five.json:1:1-1:2
+
+0 errors, 0 warnings in 1 package (…)

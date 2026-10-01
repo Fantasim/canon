@@ -191,7 +191,7 @@ func servedJSON(t testing.TB, p *program, files func(name string) []byte) loader
 			return nil, false
 		}
 		req := load.Request{Bag: bag}.Through(ev)
-		dec := &wire.Decoder{Bag: req.Bag, Host: req.Host, Coll: req.Coll, Outer: req.Outer}
+		dec := &wire.Decoder{Bag: req.Bag, Host: req.Host, Coll: req.Coll, Outer: req.Outer, Field: req.Field}
 		v, decoded, err := dec.Decode(context.Background(), wire.Selection{Node: root}, typ)
 		return v, decoded && err == nil
 	}

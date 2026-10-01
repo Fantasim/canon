@@ -1,0 +1,107 @@
+DECISIONS 268, WIRE.md §4.1, EVALUATION.md §9.3: a load given as an amendment's value decodes in
+the scope of the field its path names, as an edit's FromJSON at that path does: its unit, int and
+none forms at the field itself, its unit and int at an element or map value below it, at any
+depth (`0` is none at the field, 0s below it). A path
+naming no field (a top-level table's entry) gives no scope, and a field without forms keeps ms.
+-- layers --
+dev
+-- paths --
+a:cfg.d
+a:cfg.b
+a:cfg.o
+a:cfg.ls
+a:cfg.w
+a:cfg.nl
+a:cfg.nm
+a:cfg.nn
+a:tw.a
+a:tw.b
+-- a/a.canon --
+/// A.
+package a
+
+/// Fields with wire forms, each amended with a load.
+record Cfg {
+  /// Whole, in seconds.
+  d: Duration = 1s @json(unit: s)
+  /// Whole, as 0 or 1.
+  b: Bool = false @json(int)
+  /// Whole, 0 for none.
+  o: Duration? = 1s @json(none: 0)
+  /// Elements, in seconds.
+  ls: [Duration] = [1s, 2s] @json(unit: s)
+  /// Map values, in seconds.
+  w: {String: Duration} = { "a": 1s } @json(unit: s)
+  /// List elements, below.
+  nl: [Duration?]? = [1s] @json(none: 0)
+  /// Map values, below.
+  nm: {String: Duration?}? = { "a": 1s } @json(none: 0)
+  /// Elements of elements, below.
+  nn: [[Duration?]]? = [[1s]] @json(none: 0)
+}
+
+/// Every field amended by the layer.
+let cfg: Cfg = {}
+
+/// A wait.
+record Wait {
+  /// In ms.
+  t: Duration
+}
+
+/// No field above its entries.
+let tw: table Wait = { a { t: 1s }, b { t: 1s } }
+-- a/dev.canon --
+package a
+layer dev
+
+amend cfg {
+  d: load("@resource/five.json")
+  b: load("@resource/one.json")
+  o: load("@resource/zero.json")
+  ls[1]: load("@resource/five.json")
+  w["b"]: load("@resource/five.json")
+  nl[0]: load("@resource/zero.json")
+  nm["b"]: load("@resource/zero.json")
+  nn[0][0]: load("@resource/zero.json")
+}
+
+amend tw {
+  a: load("@resource/wait.json")
+  b.t: load("@resource/five.json")
+}
+-- resource/five.json --
+5
+-- resource/one.json --
+1
+-- resource/zero.json --
+0
+-- resource/wait.json --
+{"t": 5}
+-- provenance.txt --
+a:cfg.d = 5s
+  layer a/dev.canon:5:6-5:33 layer dev
+  default a/a.canon:7:17-7:19 via (literal a/a.canon:25:16-25:18)
+a:cfg.b = true
+  layer a/dev.canon:6:6-6:32 layer dev
+  default a/a.canon:9:13-9:18 via (literal a/a.canon:25:16-25:18)
+a:cfg.o = none
+  layer a/dev.canon:7:6-7:33 layer dev
+  default a/a.canon:11:18-11:20 via (literal a/a.canon:25:16-25:18)
+a:cfg.ls = [1s, 5s]
+  default a/a.canon:13:20-13:28 via (literal a/a.canon:25:16-25:18)
+a:cfg.w = {"a": 1s, "b": 5s}
+  default a/a.canon:15:27-15:38 via (literal a/a.canon:25:16-25:18)
+a:cfg.nl = [0s]
+  default a/a.canon:17:22-17:26 via (literal a/a.canon:25:16-25:18)
+a:cfg.nm = {"a": 1s, "b": 0s}
+  default a/a.canon:19:30-19:41 via (literal a/a.canon:25:16-25:18)
+a:cfg.nn = [[0s]]
+  default a/a.canon:21:24-21:30 via (literal a/a.canon:25:16-25:18)
+a:tw.a = Wait{t: 5ms}
+  layer a/dev.canon:16:6-16:33 layer dev
+  literal a/a.canon:34:24-34:35
+a:tw.b = Wait{t: 5ms}
+  literal a/a.canon:34:37-34:48
+
+0 errors, 0 warnings in 1 package (…)

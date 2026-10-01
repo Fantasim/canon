@@ -12,12 +12,14 @@ import (
 )
 
 // loadSite is the load being decoded: the run forcing it, its expression, the let collection
-// it is the whole value of (nil for none) and what its type arguments name.
+// it is the whole value of (nil for none), what its type arguments name and the field scope it
+// decodes in (nil for none, DECISIONS 268).
 type loadSite struct {
 	r     *run
 	at    syntax.Expr
 	coll  *types.Collection
 	cx    *depCtx
+	field *types.Field
 	save  *savepoint // the decoding attempt under way, nil for none
 	parts *Parts     // the load.dir elements kept apart, while the load is recorded (memo_parts.go)
 }
@@ -37,6 +39,7 @@ type LoadContext struct {
 	Record  *value.Record                // the record whose field the load gives, nil for none
 	Params  map[*types.Param]value.Value // that record's arguments
 	Binders map[string]value.Value       // the dependent map binders around the load
+	Field   *types.Field                 // the field scope it decodes in, nil for none (WIRE.md §4.1, DECISIONS 268)
 }
 
 // Loading is the context of the load being forced, zero outside one (TYPES.md §11.1).
@@ -44,7 +47,7 @@ func (e *Evaluator) Loading() LoadContext {
 	if e.loading == nil {
 		return LoadContext{}
 	}
-	lc := LoadContext{Coll: e.loading.coll}
+	lc := LoadContext{Coll: e.loading.coll, Field: e.loading.field}
 	if cx := e.loading.cx; cx != nil {
 		lc.Record, lc.Params, lc.Binders = cx.rec, cx.params, cx.binders
 	}
@@ -191,7 +194,7 @@ func (e *Evaluator) decoding(ctx context.Context, file *syntax.File, pkg string)
 func (r *run) depAt(at syntax.Node) *depCtx {
 	cx := &depCtx{at: at}
 	if r.dep != nil {
-		cx.rec, cx.params, cx.binders, cx.field = r.dep.rec, r.dep.params, r.dep.binders, r.dep.field
+		cx.rec, cx.params, cx.binders, cx.field, cx.scope = r.dep.rec, r.dep.params, r.dep.binders, r.dep.field, r.dep.scope
 	}
 	return cx
 }

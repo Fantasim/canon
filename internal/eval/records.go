@@ -121,7 +121,7 @@ func (r *run) fieldItem(b *building, i int, it *syntax.FieldItem) bool {
 		return false
 	}
 	fat, outer := b.at.field(f.Name), r.dep
-	r.dep = outer.forField(f.Type)
+	r.dep = outer.forField(f, it.Value)
 	v := r.evalAt(it.Value, fat)
 	r.dep = outer
 	v = r.store(v, f.Type, r.ev.fieldSite(f, rec.T), fat)
@@ -210,7 +210,7 @@ func (r *run) defaultValue(rec *value.Record, f *types.Field, at *vpath, via *va
 	r.fr = (&frame{vars: map[check.Object]value.Value{}, self: rec, file: r.ev.declFile(rec.T), decl: true}).under(saved)
 	r.fr.pkg = r.ev.index.pkg[r.fr.file]
 	r.noteCode(r.fr.file)
-	r.dep = &depCtx{rec: rec, params: r.ev.boundParams(rec), field: f.Type, at: f.Default}
+	r.dep = &depCtx{rec: rec, params: r.ev.boundParams(rec), field: f.Type, scope: newFieldScope(f, f.Default), at: f.Default}
 	defer func() { r.fr, r.dep = saved, dep }()
 	if !r.nest(r.span(f.Default)) {
 		return nil

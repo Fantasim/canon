@@ -93,7 +93,7 @@ func jsonLoader(t *testing.T, p *program, a *txtar.Archive) loader {
 			return nil, false
 		}
 		req := load.Request{Bag: bag}.Through(ev)
-		dec := &wire.Decoder{Bag: req.Bag, Host: req.Host, Coll: req.Coll, Outer: req.Outer}
+		dec := &wire.Decoder{Bag: req.Bag, Host: req.Host, Coll: req.Coll, Outer: req.Outer, Field: req.Field}
 		v, decoded, err := dec.Decode(context.Background(), wire.Selection{Node: root}, typ)
 		if err != nil || !decoded {
 			t.Errorf("%s: decoded %t, %v, %d findings", name, decoded, err, len(bag.Findings()))

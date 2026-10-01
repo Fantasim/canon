@@ -19,8 +19,9 @@ const (
 	evsFile   = "resource/evs.json"
 )
 
-// loadCases are the programs whose loads a memo replays: defaults, dependent fields, layers, provenance.
-var loadCases = []string{loadsCase, "testdata/memo/reads.txtar", "testdata/prov/loaded.txtar", "testdata/prov/origins.txtar", "testdata/prov/layered.txtar"}
+// loadCases are the programs whose loads a memo replays: defaults, dependent fields, layers, provenance,
+// loads in a field's scope beside one that is not (DECISIONS 268).
+var loadCases = []string{loadsCase, "testdata/memo/reads.txtar", "testdata/prov/loaded.txtar", "testdata/prov/origins.txtar", "testdata/prov/layered.txtar", "testdata/prov/fieldscope.txtar"}
 
 // loadMemoHost is the fixture host as a LoadMemo: a load's inputs are the bytes it was served.
 type loadMemoHost struct {

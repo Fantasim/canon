@@ -30,13 +30,22 @@ func (d *Decoder) Dir(ctx context.Context, files []File, t types.Type) (value.Va
 		for i, f := range files {
 			sels[i] = f.Sel
 		}
-		v = r.elements(sels, t, x, wscope{root: true, fr: r.rootFrame()}, nil)
+		v = r.elements(sels, t, x, r.dirScope(), nil)
 	case *types.TableType:
 		v = r.dirTable(files, t, x)
 	default:
 		r.misuse(ErrNoWireType, t)
 	}
 	return r.result(v)
+}
+
+// dirScope is load.dir's list scope: Decoder.Field's unit and int, which each file's element takes (§4.1).
+func (r *run) dirScope() wscope {
+	sc := wscope{root: true, fr: r.rootFrame()}
+	if f := r.d.Field; f != nil {
+		sc.unit, sc.asInt = f.Unit, f.Enc == types.EncInt
+	}
+	return sc
 }
 
 // step is one level of where the decoder is: a record instance, one of its fields, or an

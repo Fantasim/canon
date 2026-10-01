@@ -12,12 +12,13 @@ import (
 
 // depCtx is what a type argument names where a value sits: a record, its arguments, binders,
 // the declared type of the field given a value (fnArg), and where a dereference of an argument
-// is reported, never nil.
+// is reported, never nil; with the field's scope, which a load in its value decodes in (loadscope.go).
 type depCtx struct {
 	rec     *value.Record
 	params  map[*types.Param]value.Value
 	binders map[string]value.Value
 	field   types.Type
+	scope   *fieldScope
 	at      syntax.Node
 }
 
@@ -25,17 +26,37 @@ type depCtx struct {
 func (cx *depCtx) withBinder(name string, key value.Value, at syntax.Node) *depCtx {
 	out := &depCtx{binders: map[string]value.Value{}, at: at}
 	if cx != nil {
-		out.rec, out.params, out.field = cx.rec, cx.params, cx.field
+		out.rec, out.params, out.field, out.scope = cx.rec, cx.params, cx.field, cx.scope
 		maps.Copy(out.binders, cx.binders)
 	}
 	out.binders[name] = key
 	return out
 }
 
-// forField is cx giving a value to a field of declared type t.
-func (cx *depCtx) forField(t types.Type) *depCtx {
+// forField is cx giving field f its value, written as expr.
+func (cx *depCtx) forField(f *types.Field, expr syntax.Expr) *depCtx {
 	out := *cx
-	out.field = t
+	out.field, out.scope = f.Type, newFieldScope(f, expr)
+	return &out
+}
+
+// below is cx for an element or map value below its field, which takes the field's unit and int (loadscope.go).
+func (cx *depCtx) below() *depCtx {
+	if cx.scope == nil {
+		return cx
+	}
+	out := *cx
+	out.scope = &fieldScope{f: cx.scope.f, expr: cx.scope.expr, under: true}
+	return &out
+}
+
+// unscoped is cx in no field's scope.
+func (cx *depCtx) unscoped() *depCtx {
+	if cx.scope == nil {
+		return cx
+	}
+	out := *cx
+	out.scope = nil
 	return &out
 }
 
