@@ -12,9 +12,10 @@ bytes: a Rewrite equals what the whole-file path prints.
 
 ## Decision
 
-- **A layout verdict per tree.** `format.Canonical(f)` works out once per `*syntax.File` whether
-  the file is usable and whether its render equals its content. The memo is weak-keyed on the
-  immutable tree, as ADR-0011's derived syntax memos allow. M9 uses it only when the tree holds
+- **A layout verdict per tree and role.** `format.Canonical(f, kind)` works out once per
+  `*syntax.File` and role (project or not, from the display path as `canon fmt` decides; DECISIONS
+  258, unit PS3) whether the file is usable and whether its render equals its content. The memo is
+  weak-keyed on the immutable tree plus the role, as ADR-0011's derived syntax memos allow. M9 uses it only when the tree holds
   exactly the raw bytes; any error or mismatch runs `format.Source` as before.
 - **A region settle.** When every change is a Replace in a canonical, non-project file, Rewrite
   builds only the items that meet the changes and settles one section: the smallest item holding
