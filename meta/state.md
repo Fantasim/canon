@@ -25,8 +25,8 @@ that M4 is accepted; multi-destination emits (DECISIONS 229) are implemented aft
 call), spec sync first. The post-M4 spec sync (DECISIONS 207) and the later units are listed in the
 handoff. M1.5's second wave (type-directed + metamorphic progen suites) stays parked.
 
-CI on `claude/m4-ci6` and the merge to `main` (Louis merges on GitHub, or pushes `main`): see the
-handoff. Long fuzz/progen campaigns stay deferred by Louis ([decisions/log-2026-09-29.md](decisions/log-2026-09-29.md)
+CI on `claude/m4-ci8` is green on all three platforms; the merge to `main` is Louis's (on GitHub, or
+by pushing `main`). Long fuzz/progen campaigns stay deferred by Louis ([decisions/log-2026-09-29.md](decisions/log-2026-09-29.md)
 "Platforms and fuzzing"): a milestone runs only its own stated acceptance criteria.
 
 ## Milestones
@@ -65,8 +65,8 @@ target wanted for the studio's view-model refresh after an edit (240-470 ms).
 
 ## What could not be verified
 
-NFR-01 measured on this local reference machine only, not a 4-core CI runner, and on `f53ba0c`
-(before PB3 landed). CI result of M4's `main` (`claude/m4-ci6`): not yet recorded here. The
+NFR-01 measured on this local reference machine only, not a 4-core CI runner, and quiet only on
+`f53ba0c`. On the final code it was compared at equal load (no regression; Louis accepted it). The
 macOS/Windows link tests skip where links cannot be made. Long fuzz/progen campaigns beyond the
 stated acceptance, deferred by Louis.
 

@@ -113,7 +113,7 @@ from IR fixtures" and M2's `embedded` example were accepted without these genera
   fuzzes; `TestEveryAPIRuleHasATest` (148 rules); `make fuzz-edit` (10 min); NFR-01 on the reference
   machine (Edit p95 0.267 s, Evaluate p95 15 ms); `TestCommitCrash*`; `make stress` (60 s). Unit ledger
   [m4-units.md](m4-units.md), report [handoff/2026-10-01-m4-complete.md](handoff/2026-10-01-m4-complete.md).
-  CI on `claude/m4-ci6` is recorded in the handoff.
+  CI on `claude/m4-ci8` is green on all three platforms (handoff).
 
 ## M5, M6, M7 — in parallel once M4 is accepted
 

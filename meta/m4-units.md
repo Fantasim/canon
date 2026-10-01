@@ -84,7 +84,7 @@ fuzzes). Calls: log "Final pass", "P14".."P20", "PA3-r", "PB4-r".
 
 All six acceptance items proved; see [handoff/2026-10-01-m4-complete.md](handoff/2026-10-01-m4-complete.md).
 NFR-01 bench PASS on `f53ba0c` (Edit p95 0.267 s); 10-min format fuzzes, `make stress`, `check-real` on
-`f4e4d48`; 10-min `make fuzz-edit` on `260e598`; CI on `claude/m4-ci6` (see the handoff).
+`f4e4d48`; 10-min `make fuzz-edit` on `260e598`; CI green on `claude/m4-ci8` (see the handoff).
 
 ## Ledger closed
 
