@@ -1,7 +1,4 @@
-DECISIONS 104, 150, EVALUATION.md §12.2 (log-2026-09-29 M4 B2-r): the check's folds and the
-evaluation spend one counter. The fold of `price`'s bound spends the last step: E4401, once. The
-bound of `stock`, folded after it, fails without a finding and is E3015, as any such fold is (no
-declaration breaks silently); nothing is evaluated after E4401.
+DECISIONS 263, EVALUATION.md §12.2: the fold that spends the last step reports E4401 in the owner's own bag, so its bound gets no E3015; a bound folded after it, in a record of the same package, fails without a finding and is E3015 budget.
 -- budget --
 5
 -- a/a.canon --
@@ -18,21 +15,22 @@ const LIMIT = BASE + 1 + 1 + 1
 record Item {
   /// Its price.
   price: Int(0..=LIMIT)
-  /// Its stock.
-  stock: Int(0..=LIMIT - 1)
 }
 
-/// One item.
-let one: Item = { price: 1, stock: 1 }
+/// Another thing.
+record Other {
+  /// Its count.
+  count: Int(0..=9)
+}
 -- findings.txt --
 error[E4401]  a/a.canon:8:15
   LIMIT: evaluation budget of 5 steps exhausted
   heaviest: LIMIT (3 steps)
 
-error[E3015]  a/a.canon:15:14
+error[E3015]  a/a.canon:19:14
   this refinement bound could not be folded: the evaluation budget is exhausted
 
-error[E3015]  a/a.canon:15:18
+error[E3015]  a/a.canon:19:18
   this refinement bound could not be folded: the evaluation budget is exhausted
 
 3 errors, 0 warnings in 1 package (…)

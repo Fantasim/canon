@@ -22,7 +22,7 @@ func (c *checker) checkInputs(p *pkgState) {
 		pc := newPathCounter(r)
 		if c.inputPaths(p, pc) != 1 || c.containedIn(p, pc, written) {
 			env := c.declEnv(o)
-			c.report(env, diag.E1903.At(env.span(r.Decl.Name), o.name))
+			c.report(env, diag.E1903.AtRecord(env.span(r.Decl.Name), o.name))
 		}
 	}
 	c.inputCases(p)
@@ -38,7 +38,7 @@ func (c *checker) inputCases(p *pkgState) {
 		for _, ct := range v.Cases {
 			if vc := c.caseDecls[ct]; vc != nil && fieldsHaveInput(ct.Fields) {
 				env := c.declEnv(o)
-				c.report(env, diag.E1903.At(env.span(vc.Name), o.name+dot+ct.Name))
+				c.report(env, diag.E1903.AtVariantCase(env.span(vc.Name), o.name+dot+ct.Name))
 			}
 		}
 	}

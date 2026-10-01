@@ -15,6 +15,6 @@ local variant Source {
 let src: Source = fixed { key: "k" }
 -- findings.txt --
 error[E1903]  a/a.canon:4:3
-  Source.env has input fields, so it must be reached from exactly one public value through record fields
+  variant case Source.env declares an input field: input fields are allowed only in records
 
 1 error, 0 warnings in 1 package (…)

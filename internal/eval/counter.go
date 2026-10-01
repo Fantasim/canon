@@ -14,6 +14,7 @@ type counter struct {
 	spent     map[charge]int64
 	order     []charge
 	exhausted bool
+	stopPkg   string // the package E4401 went to, once the budget is spent
 }
 
 // newCounter is a counter of opt's budget, nothing spent.

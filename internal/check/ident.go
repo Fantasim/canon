@@ -266,7 +266,7 @@ func (c *checker) entryDeprecation(o *object) *types.Deprecation {
 func (c *checker) allowedIn(env *env, e syntax.Node, o *object) bool {
 	switch {
 	case env.what != noConstant && !constName(env, o):
-		c.report(env, diag.E3015.At(env.span(e), env.what))
+		c.report(env, diag.E3015.AtNotConstant(env.span(e), env.what))
 		return false
 	case env.fields >= 0 && !defaultName(env, o):
 		c.report(env, diag.E3010.At(env.span(e)))

@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/fantasim/canonlang/internal/check"
+	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/value"
 )
@@ -18,6 +19,7 @@ type folder struct {
 	calls []foldCall // every fold made, in order, for FoldsOf
 	bugs  []error    // the internal errors of every fold so far, in the order met
 	reads readLog    // the constants the folds read, which stage A forces again (EVALUATION.md §2.1)
+	given bool       // handed to an evaluator by UseFolder: the folds after it are not phase 2's
 }
 
 // readLog is the constants a folder's folds read, once each, in the order first read (EVALUATION.md §2.1).
@@ -55,12 +57,12 @@ type foldCall struct {
 }
 
 // NewFolder is the check.Folder a build gives check.Check: its findings go to the bag of the
-// declaration that owns the folded expression.
+// declaration that owns the folded expression, E3015 budget among them for phase 2's folds (DECISIONS 263).
 func NewFolder(bags check.Bags, opt Options) check.Folder {
 	return &folder{bags: bags, opt: opt, steps: newCounter(opt)}
 }
 
-// Fold evaluates e, a constant expression of owner that check has typed; a let, a user fn or a load in it fails the fold without a finding, which check reports (TYPES.md §15, DECISIONS 150).
+// Fold evaluates e, a constant expression of owner that check has typed; a let, a user fn or a load in it fails the fold without a finding, which check reports (TYPES.md §15, DECISIONS 150), except a spent budget, which the fold reports (DECISIONS 263).
 func (f *folder) Fold(ctx context.Context, owner check.Object, e syntax.Expr, info *check.Info) (value.Value, bool) {
 	return f.fold(ctx, foldCall{owner: owner, e: e, info: info})
 }
@@ -78,12 +80,30 @@ func (f *folder) fold(ctx context.Context, call foldCall) (value.Value, bool) {
 	ev.index.pkg[call.owner.File()] = call.owner.Pkg()
 	call.log = &f.reads
 	ev.folding = &call
+	was := f.spent()
 	r := ev.newRun(ctx, charge{pkg: call.owner.Pkg(), name: call.owner.Name()}, call.owner.File())
 	v := r.eval(call.e)
 	ev.folding = nil
+	if v == nil || r.failed {
+		f.budgetStopped(&call, was)
+	}
 	f.calls = append(f.calls, call)
 	f.bugs, ev.bugs = append(f.bugs, ev.bugs...), nil
 	return v, v != nil && !r.failed
+}
+
+// budgetStopped is E3015 budget for call, failed on a spent counter, was it spent before the fold; only phase 2's folds report it (DECISIONS 263).
+func (f *folder) budgetStopped(call *foldCall, was bool) {
+	pkg := call.owner.Pkg()
+	if f.given || !f.spent() || (!was && f.steps.stopPkg == pkg) {
+		return
+	}
+	f.ev.report(pkg, diag.E3015.AtBudget(call.owner.File().Span(call.e), diag.KindRefinementBound))
+}
+
+// spent is the step counter run out; a cancelled context is not it.
+func (f *folder) spent() bool {
+	return f.steps.steps >= f.steps.budget
 }
 
 // brokenAt is Broken[obj] as this fold sees it: the answer a replayed fold recorded, else info's.
@@ -108,7 +128,7 @@ func (e *Evaluator) UseFolder(f check.Folder) bool {
 	if !ok || !e.fresh() {
 		return false
 	}
-	e.counter = x.steps
+	e.counter, x.given = x.steps, true
 	return true
 }
 

@@ -988,7 +988,8 @@ var Registry = []Def{
 	{
 		Code: "E1903", Severity: Error, Package: "check",
 		Variants: []Variant{
-			{Args: []Arg{{Name: "record", Type: ArgTypeName}}, Template: "{record} has input fields, so it must be reached from exactly one public value through record fields"},
+			{Name: "record", Args: []Arg{{Name: "record", Type: ArgTypeName}}, Template: "{record} has input fields, so it must be reached from exactly one public value through record fields"},
+			{Name: "variantCase", Args: []Arg{{Name: "variantCase", Type: ArgTypeName}}, Template: "variant case {variantCase} declares an input field: input fields are allowed only in records"},
 		},
 	},
 	{
@@ -1229,7 +1230,8 @@ var Registry = []Def{
 	{
 		Code: "E3015", Severity: Error, Package: "check",
 		Variants: []Variant{
-			{Args: []Arg{{Name: "what", Type: ArgTypeKind}}, Template: "this {what} must be a constant expression"},
+			{Name: "notConstant", Args: []Arg{{Name: "what", Type: ArgTypeKind}}, Template: "this {what} must be a constant expression"},
+			{Name: "budget", Args: []Arg{{Name: "what", Type: ArgTypeKind}}, Template: "this {what} could not be folded: the evaluation budget is exhausted"},
 		},
 	},
 	{
@@ -3771,7 +3773,7 @@ func (codeE1902) At(span source.Span, name string) *Builder {
 	return newBuilder(&Registry[87], 0, span, name)
 }
 
-// E1903: a record with input fields is not reached from exactly one public value through record fields (EVALUATION.md §11.1).
+// E1903: a record with input fields is not reached from exactly one public value through record fields, or a variant case declares an input field (EVALUATION.md §11.1).
 var E1903 codeE1903
 
 type codeE1903 struct{}
@@ -3779,9 +3781,14 @@ type codeE1903 struct{}
 // Def is the registry entry of E1903.
 func (codeE1903) Def() *Def { return &Registry[88] }
 
-// At reports: {record} has input fields, so it must be reached from exactly one public value through record fields
-func (codeE1903) At(span source.Span, record string) *Builder {
+// AtRecord reports: {record} has input fields, so it must be reached from exactly one public value through record fields
+func (codeE1903) AtRecord(span source.Span, record string) *Builder {
 	return newBuilder(&Registry[88], 0, span, record)
+}
+
+// AtVariantCase reports: variant case {variantCase} declares an input field: input fields are allowed only in records
+func (codeE1903) AtVariantCase(span source.Span, variantCase string) *Builder {
+	return newBuilder(&Registry[88], 1, span, variantCase)
 }
 
 // E1904: an input pattern outside the portable RE2 ∩ ECMAScript subset (EVALUATION.md §11.3).
@@ -4330,7 +4337,7 @@ func (codeE3013) At(span source.Span, typ TypeArg) *Builder {
 	return newBuilder(&Registry[125], 0, span, typ)
 }
 
-// E3015: a position that needs a constant expression gets something else (TYPES.md §15).
+// E3015: a position that needs a constant expression gets something else, or its fold stops on the spent step budget (TYPES.md §15).
 var E3015 codeE3015
 
 type codeE3015 struct{}
@@ -4338,9 +4345,14 @@ type codeE3015 struct{}
 // Def is the registry entry of E3015.
 func (codeE3015) Def() *Def { return &Registry[126] }
 
-// At reports: this {what} must be a constant expression
-func (codeE3015) At(span source.Span, what Kind) *Builder {
+// AtNotConstant reports: this {what} must be a constant expression
+func (codeE3015) AtNotConstant(span source.Span, what Kind) *Builder {
 	return newBuilder(&Registry[126], 0, span, what)
+}
+
+// AtBudget reports: this {what} could not be folded: the evaluation budget is exhausted
+func (codeE3015) AtBudget(span source.Span, what Kind) *Builder {
+	return newBuilder(&Registry[126], 1, span, what)
 }
 
 // E3016: a method or built-in used as a value (TYPES.md §12.3).

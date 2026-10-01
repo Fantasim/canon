@@ -156,7 +156,7 @@ func (r *run) remaining() int {
 // budgetOut is E4401 with the heaviest charge; evaluation stops (EVALUATION.md §12.2).
 func (r *run) budgetOut(at source.Span) {
 	e := r.ev
-	e.exhausted, r.failed = true, true
+	e.exhausted, r.failed, e.stopPkg = true, true, r.fr.pkg
 	var heavy charge
 	for _, c := range e.order {
 		if e.spent[c] > e.spent[heavy] {

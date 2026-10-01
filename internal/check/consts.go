@@ -39,7 +39,7 @@ func (c *checker) constCycle(o *object) {
 	}
 }
 
-// foldConst folds through the Folder; a failure it did not report is E3015 (IMPLEMENTATION-PLAN §4.7).
+// foldConst folds through the Folder; a failure it did not report is E3015 (DECISIONS 150, 263).
 func (c *checker) foldConst(env *env, e syntax.Expr) (value.Value, bool) {
 	before := env.pkg.bag.Summary().Errors
 	v, ok := c.fold.Fold(c.ctx, env.owner, e, c.info)
@@ -47,7 +47,7 @@ func (c *checker) foldConst(env *env, e syntax.Expr) (value.Value, bool) {
 	case ok:
 		return v, true
 	case env.pkg.bag.Summary().Errors == before:
-		c.report(env, diag.E3015.At(env.span(e), env.what))
+		c.report(env, diag.E3015.AtNotConstant(env.span(e), env.what))
 	default:
 		c.breakObj(env.owner)
 	}
@@ -58,7 +58,7 @@ func (c *checker) foldConst(env *env, e syntax.Expr) (value.Value, bool) {
 func (c *checker) notConstant(env *env, e syntax.Expr) bool {
 	switch e.(type) {
 	case *syntax.LoadExpr, *syntax.SelfExpr, *syntax.IfExpr, *syntax.MatchExpr:
-		c.report(env, diag.E3015.At(env.span(e), env.what))
+		c.report(env, diag.E3015.AtNotConstant(env.span(e), env.what))
 		return true
 	}
 	return false

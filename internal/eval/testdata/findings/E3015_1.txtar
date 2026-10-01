@@ -1,0 +1,40 @@
+DECISIONS 263, 150, EVALUATION.md §12.2: the fold of a bound in a spends the last step while it evaluates a constant of b, so E4401 lands in b's bag and a's owner of the bound gets E3015 budget; the second bound, folded after the counter is spent, fails without a finding and gets E3015 budget too.
+-- budget --
+3
+-- a/a.canon --
+/// A.
+package a
+
+import b
+
+/// A thing sold.
+record Item {
+  /// Its price.
+  price: Int(0..=b.LIMIT)
+  /// Its stock.
+  stock: Int(0..=9)
+}
+-- b/b.canon --
+/// B.
+package b
+
+/// The base price.
+const BASE = 100
+
+/// The highest price.
+const LIMIT = BASE + 1 + 1 + 1
+-- findings.txt --
+error[E3015]  a/a.canon:9:18
+  this refinement bound could not be folded: the evaluation budget is exhausted
+
+error[E3015]  a/a.canon:11:14
+  this refinement bound could not be folded: the evaluation budget is exhausted
+
+error[E3015]  a/a.canon:11:18
+  this refinement bound could not be folded: the evaluation budget is exhausted
+
+error[E4401]  b/b.canon:8:15
+  LIMIT: evaluation budget of 3 steps exhausted
+  heaviest: a.Item (2 steps)
+
+4 errors, 0 warnings in 2 packages (…)

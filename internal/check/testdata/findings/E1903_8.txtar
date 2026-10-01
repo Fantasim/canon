@@ -1,0 +1,27 @@
+EVALUATION.md §11.1, DECISIONS 249, 263: E1903 variantCase at the name of each case that declares an input field, naming it Variant.case; a case without one, and a record that holds its input alone, are not reported.
+-- a/a.canon --
+package a
+
+local variant Source {
+  env {
+    key: input String? from env "KEY"
+  }
+  file {
+    path: input String? from env "PATH_ARG"
+    name: String
+  }
+  fixed {
+    key: String
+  }
+}
+
+/// The config.
+let src: Source = fixed { key: "k" }
+-- findings.txt --
+error[E1903]  a/a.canon:4:3
+  variant case Source.env declares an input field: input fields are allowed only in records
+
+error[E1903]  a/a.canon:7:3
+  variant case Source.file declares an input field: input fields are allowed only in records
+
+2 errors, 0 warnings in 1 package (…)

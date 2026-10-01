@@ -76,7 +76,7 @@ func isLambda(e syntax.Expr) bool {
 func (c *checker) callUser(env *env, x *syntax.CallExpr, o *object) types.Type {
 	switch {
 	case env.what != noConstant:
-		c.report(env, diag.E3015.At(env.span(x), env.what))
+		c.report(env, diag.E3015.AtNotConstant(env.span(x), env.what))
 	case env.fields >= 0:
 		c.report(env, diag.E3010.At(env.span(x)))
 	}

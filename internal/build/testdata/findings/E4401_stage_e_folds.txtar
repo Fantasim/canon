@@ -1,0 +1,44 @@
+DECISIONS 263, 150, 244, EVALUATION.md §12.2: the budget runs out in a's own evaluation, after phase 2's folds
+all passed; stage E's folds (the translated literals, the field default) then fail on the spent counter and
+report nothing: E4401 alone, no E3015 budget, since only phase 2's folds report it.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  budget: 10
+  roots {
+    out: "out"
+  }
+  go_module {
+    out: "example.com/out"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+emit go { out: "@out/g", package: "g", mode: baked }
+
+/// One.
+const ONE = 1
+
+/// Heavy.
+const H = ONE + ONE + ONE + ONE + ONE + ONE + ONE + ONE + ONE + ONE + ONE + ONE
+
+/// A thing sold.
+record Item {
+  /// Its name.
+  name: String
+  /// Its weight.
+  weight: Int = 2 * 3
+}
+
+/// Items.
+let items: table Item = {
+  one { name: "x" }
+}
+-- findings.txt --
+error[E4401]  a/a.canon:10:11
+  H: evaluation budget of 10 steps exhausted
+  heaviest: H (9 steps)
+
+1 error, 0 warnings in 1 package (…)

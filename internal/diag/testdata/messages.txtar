@@ -137,7 +137,8 @@ E1706 -: resource.vocab.items is the source language: its texts are the sources,
 E1707 -: resource.vocab.items is plain text: its translation cannot interpolate (write {{ for a brace)
 E1901 -: no loaded package declares layer resource.vocab.items
 E1902 -: amend resource.vocab.items: only a let can be amended
-E1903 -: resource.vocab.items has input fields, so it must be reached from exactly one public value through record fields
+E1903 record: resource.vocab.items has input fields, so it must be reached from exactly one public value through record fields
+E1903 variantCase: variant case resource.vocab.items declares an input field: input fields are allowed only in records
 E1904 -: pattern /0.9/ is not in the portable subset: 0.9
 E1905 field: amend path resource.vocab.items: no such field
 E1905 key: amend path resource.vocab.items: key "II_SYS_SYS_SCR_FARM3" does not exist
@@ -188,7 +189,8 @@ E3011 -: Int cannot be a map key
 E3012 field: keyed by resource.vocab.items: no such field
 E3012 type: keyed by resource.vocab.items: type Int cannot be a key
 E3013 -: a table holds records; Int is not a record
-E3015 -: this code must be a constant expression
+E3015 notConstant: this code must be a constant expression
+E3015 budget: this code could not be folded: the evaluation budget is exhausted
 E3016 -: built-in resource.vocab.items cannot be used as a value; write a lambda
 E3017 -: cannot assign to resource.vocab.items: it is not a var
 E3018 -: for resource.vocab.items, resource.vocab.items in needs a map or pairs, found Int
