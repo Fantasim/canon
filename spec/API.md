@@ -771,7 +771,9 @@ source and where the edit goes.
   when the layer already amends an ancestor of the path, `Set` edits the value inside that
   amendment's right-hand side (a structural edit of that literal, §9); when it amends descendants of
   the path, `Set` replaces them all with the one new amendment line. An `AddEntry` into a table the
-  layer already amends adds one line and keeps the others (DECISIONS 273).
+  layer already amends adds one line and keeps the others. Under an `EditLayer` that is not active
+  in the session, an `AddEntry` is refused as `ErrNotEditable` with reason `layer`: no path reaches
+  the new entry to undo it (DECISIONS 273).
 
 ---
 
@@ -1006,24 +1008,25 @@ inside the same edit and reports it, so every client behaves the same.
 - **E22.** `Undo` is a list of ops that, applied with `Base` set to the result's `Revision`,
   restores every value the edit changed (including cascades), whatever E23's order would give
   (DECISIONS 257, 273). It restores values, not text: comments of removed items and a deleted entry
-  file's doc comment are not restored, a recreated entry file is placed by the `@files` template,
-  and a defaulted parent the Undo empties may remain written as `{}`. For every edit with an
-  `EditLayer` (W11), active or not, the Undo restores that layer's own lines, each amendment line as
-  it was or a `Reset` where there was none, never merged values, and is always verified, in the
-  layer's own view (equality of its lines, whose order counts only for lines on overlapping paths)
-  and in the session's layers; a request whose Undo would have to write back a computed line (one
-  whose text cannot be a `Source`, a spread included) is refused before anything is written, with
-  `*NotEditableError` reason `computed`, as W5 gives for a `Reset` of that line. Off edit layers,
-  the Undo is verified when the request has more than one op and touches a dependent field or its
-  driver or fires a cascade (§8.5); a single op never pays for it (NFR-01). An entry's file path is part of the before state: a `Rename` inverse runs
-  after the region restores of the item it renames, and verification compares the before path of
-  entries that still exist or are renamed back; an entry the request removes and re-adds counts as
-  recreated, placed by N1–N4. A value the before state held in error (a dependent mismatch that is
-  not held, `E3802`, E15) cannot be written by any op: the Undo leaves it as the cascade drops it,
-  and verification excludes it. When the edit's own result leaves a compared root uncomputable (only
-  with `AllowErrors`), the plain Undo is returned unverified. When no verified Undo is found within
-  the repair rounds, `Edit` fails with an `*InternalError` (`ErrInternal`) and writes nothing
-  (DECISIONS 273).
+  file's doc comment are not restored, a recreated entry file may lie at any path its `@files`
+  template gives for its key, whatever its templated fields, and a defaulted parent the Undo empties
+  may remain written as `{}`. For every edit with an `EditLayer` (W11), active or not, the Undo
+  restores that layer's own lines, each amendment line as it was or a `Reset` where there was none,
+  never merged values, and is always verified, in the layer's own view (equality of its lines, whose
+  order counts only for lines on overlapping paths) and in the session's layers; a request whose
+  Undo would have to write back a computed line (one whose text cannot be a `Source`, a spread
+  included) is refused before anything is written, with `*NotEditableError` reason `computed`, as W5
+  gives for a `Reset` of that line. Off edit layers, the Undo is verified when the request has more
+  than one op and touches a dependent field or its driver or fires a cascade (§8.5); a single op
+  never pays for it (NFR-01). An entry's file path is part of the before state: a `Rename` inverse
+  runs after the region restores of the item it renames, and verification compares the before path
+  of entries that still exist or are renamed back; an entry the request removes and re-adds counts
+  as recreated (N1–N4; DECISIONS 273). A value the before state held in error (a dependent mismatch
+  that is not held, `E3802`, E15) cannot be written by any op: the Undo leaves it as the cascade
+  drops it, and verification excludes it. When the edit's own result leaves a compared root
+  uncomputable (only with `AllowErrors`), the plain Undo is returned unverified. When no verified
+  Undo is found within the repair rounds, `Edit` fails with an `*InternalError` (`ErrInternal`) and
+  writes nothing (DECISIONS 273).
 - **E23.** Inverses: `Set` → `Set(old)`, or `Reset` if the field was absent; `Reset` → `Set(old)`;
   `Add`/`Insert`/`AddEntry` → `Remove`; `Remove` → `Insert(parent, oldPosition, old)` or
   `AddEntry(parent, key, old)` followed by a `Move` to the old position (where file paths fix the

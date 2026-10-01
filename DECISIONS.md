@@ -2459,20 +2459,23 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      overlapping paths, and the session's layers. Under an edit layer, the inverse of `Remove` is an
      `AddEntry` that puts the line back at its place in the `amend` block, with no `Move` (W5
      `layer`), and an `AddEntry` into a table the layer already amends adds one line and keeps the
-     others (W11a). Under an `EditLayer` that is not active in the session, a layer `Set` is typed
-     against the declared type, since the session cannot see the layer's own drivers. An entry's
-     file path is part of the before state: a `Rename` inverse runs after the region restores of the
-     item it renames, and verification compares the before path of entries that still exist or are
-     renamed back (a recreated entry may be placed by its `@files` template, E22; an entry a request
-     removes and re-adds counts as recreated). A value the before state held in error (a dependent
-     mismatch that is not held, `E3802`) cannot be written by any op, so the Undo leaves it as the
-     cascade drops it and verification excludes it. When an edit's own result leaves a compared root
-     uncomputable (only with `AllowErrors`), its plain Undo is returned unverified. A request whose
-     Undo would have to write back a computed layer line, one whose text cannot be a `Source` (a
-     spread included), is refused before anything is written, `*NotEditableError` reason `computed`,
-     as W5 gives for a `Reset` of that line. Refinements stay the re-check's job (V2). Reason:
-     log-2026-09-29 "M4.1 built", "M4.1 review FAIL (2 CRITICAL), rulings", "M4.1 round 2", "M4.1, a
-     computed amendment line", "M4.1 round 3 review", "Sync 2 review: the Undo verification gate".
+     others (W11a); under an `EditLayer` that is not active, an `AddEntry` is refused as
+     NotEditable(`layer`), since no path reaches the entry to undo it. Under an `EditLayer` that is
+     not active in the session, a layer `Set` is typed against the declared type, since the session
+     cannot see the layer's own drivers. An entry's file path is part of the before state: a
+     `Rename` inverse runs after the region restores of the item it renames, and verification
+     compares the before path of entries that still exist or are renamed back (an entry the Undo
+     recreates is accepted at any path its `@files` template gives for that key, whatever its
+     templated fields, N1–N4; an entry a request removes and re-adds counts as recreated). A value
+     the before state held in error (a dependent mismatch that is not held, `E3802`) cannot be
+     written by any op, so the Undo leaves it as the cascade drops it and verification excludes it.
+     When an edit's own result leaves a compared root uncomputable (only with `AllowErrors`), its
+     plain Undo is returned unverified. A request whose Undo would have to write back a computed
+     layer line, one whose text cannot be a `Source` (a spread included), is refused before anything
+     is written, `*NotEditableError` reason `computed`, as W5 gives for a `Reset` of that line.
+     Refinements stay the re-check's job (V2). Reason: log-2026-09-29 "M4.1 built", "M4.1 review
+     FAIL (2 CRITICAL), rulings", "M4.1 round 2", "M4.1, a computed amendment line", "M4.1 round 3
+     review", "Sync 2 review: the Undo verification gate", "M4.1 round 4".
 
 ## Still open
 
