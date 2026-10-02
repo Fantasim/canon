@@ -2773,6 +2773,8 @@ applies).
   durations by their exact decimal. `decode` takes an already parsed value and cannot see those:
   a `@ts(bigint)` integer past 2^53 is refused, integer-like map keys come in JavaScript's order,
   and number tokens are judged by value (DECISIONS 278).
+- `types` mode exports `parse<T>(text)` beside `decode<T>(json)` for every type it decodes, with
+  the same exactness (DECISIONS 278).
 - Decoders use private helpers (`dec…`), written after the export fns, only those a file uses;
   §8.2's block is the shared runtime, and these are the decoders' own (DECISIONS 278).
 

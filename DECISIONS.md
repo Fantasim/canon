@@ -2563,7 +2563,9 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      plan, so a collision is `E8005` from `canon check` as for Go and C++, never a build crash, and
      every construct the TypeScript generator cannot produce (a dependent map's decoder, another
      package's dependent type, a record of another package not emitted in `types` mode) is `E8019`
-     at stage E. Reason: T1 review, log-2026-10-02.
+     at stage E. Every helper name of §8.2 and the decoders is reserved in every TypeScript file,
+     used or not, so adding a function never breaks a valid name; `types` mode gets `parse<T>` too.
+     Reason: T1 review, log-2026-10-02.
 
 ## Still open
 
