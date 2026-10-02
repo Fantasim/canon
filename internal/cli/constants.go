@@ -27,6 +27,7 @@ const (
 	cmdExplain = "explain"
 	cmdFmt     = "fmt"
 	cmdRefs    = "refs"
+	cmdEdit    = "edit"
 )
 
 // Flags (CLI.md §2.3, §3.1, §3.4).
@@ -48,6 +49,7 @@ const (
 	flagDiff        = "diff"
 	flagJSONSources = "json-sources"
 	flagWatch       = "watch"
+	flagEditLayer   = "edit-layer"
 	formatText      = "text"
 	formatJSON      = "json"
 	rootAssign      = "="
@@ -71,6 +73,7 @@ const (
 	usageDepth       = "print parts `n` levels deep (default: every part)"
 	usageFmtCheck    = "write nothing; list the files that are not formatted and exit 1"
 	usageDiff        = "print the changes instead of writing"
+	usageEditLayer   = "send edits to the layer `name` (Options.EditLayer)"
 	usageWatch       = "run again after every change, printing what changed"
 	usageJSONSources = "also normalize the JSON files read by load to the canonical JSON layout"
 )
@@ -81,6 +84,7 @@ const usageText = `usage: canon <command> [arguments] [flags]
 commands:
   build [packages...]   check, then write the outputs of packages
   check [packages...]   parse and check packages, print findings
+  edit [request.json]   apply an edit request (JSON) from the file or stdin
   explain <path>        print a value, its type and where each part was set
   fmt [paths...]        rewrite sources in the canonical layout
   init                  create project.canon in the current directory
@@ -217,3 +221,12 @@ const (
 	msgInterrupted = "interrupted"
 	msgReportBug   = "this is a bug in canon; please report it at https://github.com/fantasim/canonlang/issues"
 )
+
+// canon edit's request key read by the command itself (CLI.md §3.15).
+const keyEditLayer = "editLayer"
+
+// editRefusals are the errors of API.md §15 that Edit returns with CLI exit 1: understood, then refused.
+var editRefusals = [...]error{
+	canon.ErrKeyExists, canon.ErrStableKey, canon.ErrNotEditable, canon.ErrStale, canon.ErrRejected,
+	canon.ErrNotCanonical, canon.ErrPathCollision, canon.ErrOverlay,
+}

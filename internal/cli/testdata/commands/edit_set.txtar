@@ -1,0 +1,46 @@
+CLI.md §3.15, API.md E1, E5, E24: a request file is applied; the edit object, the summary, then the file written.
+-- args --
+edit req.json
+-- req.json --
+{"ops":[{"op":"set","path":"a:server.retries","value":7}]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A server.
+record Rules {
+  /// Attempts.
+  retries: Int(1..) = 3
+}
+
+/// The rules.
+let server: Rules = { retries: 2 }
+-- a/staging.layer.canon --
+package a
+layer staging
+
+amend server {
+  retries: 4
+}
+-- want --
+[exit 0]
+[stdout]
+{"edit":{"applied":true,"revision":"r1:4a7fdf91e35acf7c05b422912fa41ed4483c8f6520a8e6964d89ae5dadde0c16","changes":[{"kind":"modified","path":"a/a.canon"}],"dropped":[],"undo":{"base":"r1:4a7fdf91e35acf7c05b422912fa41ed4483c8f6520a8e6964d89ae5dadde0c16","ops":[{"op":"set","path":"a:server.retries","source":"2"}]}}}
+{"summary":{"errors":0,"warnings":0,"packages":1,"ms":0}}
+[stderr]
+[file a/a.canon]
+/// A.
+package a
+
+/// A server.
+record Rules {
+  /// Attempts.
+  retries: Int(1..) = 3
+}
+
+/// The rules.
+let server: Rules = { retries: 7 }

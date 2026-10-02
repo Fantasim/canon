@@ -102,7 +102,7 @@ func (inv *invocation) openProjectFS(fsys canon.FS) (*canon.Project, error) {
 	if err != nil {
 		return nil, err
 	}
-	return canon.Open(root, canon.Options{Roots: inv.opt.roots, Layers: inv.opt.layers, FS: fsys})
+	return canon.Open(root, canon.Options{Roots: inv.opt.roots, Layers: inv.opt.layers, EditLayer: inv.opt.editLayer, FS: fsys})
 }
 
 // projectRoot is --project, else the directory holding project.canon at or above the current one (CLI.md §2.1).

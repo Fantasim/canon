@@ -1,0 +1,67 @@
+CLI.md §3.15, API.md E14, E22: a driver change drops the dependent value; dropped lists it and undo carries it back.
+-- args --
+edit req.json
+-- req.json --
+{"ops":[{"op":"set","path":"a:quest.goal","value":"collect"}]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// What a quest counts.
+enum Goal { kill, collect }
+
+/// What a quest aims at, by goal.
+type Target(g: Goal) = match g {
+  kill => String(1..)
+  collect => Int(1..)
+}
+
+/// A quest.
+record Quest {
+  /// What it counts.
+  goal: Goal
+  /// What it aims at; none until chosen.
+  target: Target(goal)?
+}
+
+/// The quest.
+let quest: Quest = { goal: kill, target: "wolf" }
+
+/// Twice a number.
+let doubled: Int = 2 * 3
+-- want --
+[exit 0]
+[stdout]
+{"edit":{"applied":true,"revision":"r1:7abd9d47ff670b4cc756dd9aeefcfadd3c97cb51d4ee0d1f6ab7cd870c9cc1ed","changes":[{"kind":"modified","path":"a/a.canon"}],"dropped":[{"path":"a:quest.target","value":"wolf"}],"undo":{"base":"r1:7abd9d47ff670b4cc756dd9aeefcfadd3c97cb51d4ee0d1f6ab7cd870c9cc1ed","ops":[{"op":"set","path":"a:quest.goal","source":"kill"},{"op":"set","path":"a:quest.target","source":"\"wolf\""}]}}}
+{"summary":{"errors":0,"warnings":0,"packages":1,"ms":0}}
+[stderr]
+[file a/a.canon]
+/// A.
+package a
+
+/// What a quest counts.
+enum Goal { kill, collect }
+
+/// What a quest aims at, by goal.
+type Target(g: Goal) = match g {
+  kill => String(1..)
+  collect => Int(1..)
+}
+
+/// A quest.
+record Quest {
+  /// What it counts.
+  goal: Goal
+  /// What it aims at; none until chosen.
+  target: Target(goal)?
+}
+
+/// The quest.
+let quest: Quest = { goal: collect }
+
+/// Twice a number.
+let doubled: Int = 2 * 3

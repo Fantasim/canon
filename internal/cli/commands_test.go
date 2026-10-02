@@ -19,10 +19,11 @@ import (
 )
 
 const (
-	argsFile = "args" // one argument per line; $TMP is the case's directory
-	dirFile  = "dir"  // the directory to run in, under $TMP
-	wantFile = "want"
-	tmpMark  = "$TMP"
+	argsFile  = "args" // one argument per line; $TMP is the case's directory
+	dirFile   = "dir"  // the directory to run in, under $TMP
+	wantFile  = "want"
+	stdinFile = "stdin" // the command's standard input
+	tmpMark   = "$TMP"
 )
 
 // windowsOS is runtime.GOOS on Windows.
@@ -38,7 +39,9 @@ var (
 	jsonMs    = regexp.MustCompile(`"ms":\d+`)
 )
 
-func control(name string) bool { return name == argsFile || name == dirFile || name == wantFile }
+func control(name string) bool {
+	return name == argsFile || name == dirFile || name == wantFile || name == stdinFile
+}
 
 func archived(a *txtar.Archive, name string) (string, bool) {
 	for _, f := range a.Files {
@@ -88,8 +91,9 @@ func run(t *testing.T, a *txtar.Archive) result {
 	}
 	text, _ := archived(a, argsFile)
 	args := strings.Fields(strings.ReplaceAll(text, tmpMark, filepath.ToSlash(tmp)))
+	in, _ := archived(a, stdinFile)
 	var out, errs bytes.Buffer
-	code := cli.Main(context.Background(), args, cli.Env{Stdout: &out, Stderr: &errs, Dir: dir})
+	code := cli.Main(context.Background(), args, cli.Env{Stdin: strings.NewReader(in), Stdout: &out, Stderr: &errs, Dir: dir})
 	return result{tmp: tmp, code: code, stdout: out.String(), stderr: errs.String()}
 }
 

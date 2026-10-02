@@ -1,0 +1,24 @@
+CLI.md §3.15, API.md R6, §15: a poisoned value is ErrNoValue, exit 1: its findings and the summary as JSON lines, nothing on stderr.
+-- args --
+edit req.json
+-- req.json --
+{"ops":[{"op":"set","path":"a:m","value":2}]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Poisoned.
+let n: Int = 1 / 0
+
+/// Depends on n.
+let m: Int = n
+-- want --
+[exit 1]
+[stdout]
+{"severity":"error","code":"E4102","file":"a/a.canon","line":5,"col":14,"endLine":5,"endCol":19,"package":"a","path":"n","message":"division by zero"}
+{"summary":{"errors":1,"warnings":0,"packages":0,"ms":0}}
+[stderr]

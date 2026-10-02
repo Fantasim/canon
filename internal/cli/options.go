@@ -30,6 +30,7 @@ type options struct {
 	verbose     bool
 	depth       int
 	watch       bool
+	editLayer   string
 }
 
 func newOptions() *options {
@@ -87,6 +88,11 @@ func fmtFlags(fs *flag.FlagSet, o *options) {
 	fs.BoolVar(&o.checkFlag, flagCheck, o.checkFlag, usageFmtCheck)
 	fs.BoolVar(&o.diff, flagDiff, o.diff, usageDiff)
 	fs.BoolVar(&o.jsonSources, flagJSONSources, o.jsonSources, usageJSONSources)
+}
+
+// editFlags are canon edit's own flags (CLI.md §3.15), on top of the global ones.
+func editFlags(fs *flag.FlagSet, o *options) {
+	fs.StringVar(&o.editLayer, flagEditLayer, o.editLayer, usageEditLayer)
 }
 
 // setDepth records --depth, a count of levels of parts, 0 or more.

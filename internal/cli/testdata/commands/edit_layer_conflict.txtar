@@ -1,0 +1,14 @@
+CLI.md §3.15: the "editLayer" key and --edit-layer, different, are a usage error.
+-- args --
+edit req.json --edit-layer other
+-- req.json --
+{"editLayer":"staging","ops":[]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- want --
+[exit 2]
+[stdout]
+[stderr]
+canon: "staging": differs from --edit-layer

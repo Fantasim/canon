@@ -1,11 +1,11 @@
-CLI.md §1, §2.5: CLI.md lists no help command; `help` is a usage error.
+CLI.md §3.15: -h lists --edit-layer.
 -- args --
-help
+edit -h
 -- want --
 [exit 2]
 [stdout]
 [stderr]
-canon: "help": unknown command
+canon: flag: help requested
 usage: canon <command> [arguments] [flags]
 
 commands:
@@ -21,6 +21,8 @@ commands:
   version               print the compiler, language and format versions
 
 flags:
+  -edit-layer name
+    	send edits to the layer name (Options.EditLayer)
   -format format
     	output format: text or json (default "text")
   -layer name

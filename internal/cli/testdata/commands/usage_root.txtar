@@ -15,6 +15,7 @@ usage: canon <command> [arguments] [flags]
 commands:
   build [packages...]   check, then write the outputs of packages
   check [packages...]   parse and check packages, print findings
+  edit [request.json]   apply an edit request (JSON) from the file or stdin
   explain <path>        print a value, its type and where each part was set
   fmt [paths...]        rewrite sources in the canonical layout
   init                  create project.canon in the current directory

@@ -1,0 +1,15 @@
+CLI.md §3.15, API.md §15: a project.canon with errors prints its findings as JSON lines, exit 2.
+-- args --
+edit req.json
+-- req.json --
+{"ops":[]}
+-- project.canon --
+project acme {
+  canon: "9.9"
+}
+-- want --
+[exit 2]
+[stdout]
+{"severity":"error","code":"E1001","file":"project.canon","line":2,"col":10,"endLine":2,"endCol":15,"package":"","message":"project requires Canon 9.9; this compiler supports 0.1"}
+{"summary":{"errors":1,"warnings":0,"packages":0,"ms":0}}
+[stderr]

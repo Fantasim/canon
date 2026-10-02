@@ -1,0 +1,40 @@
+CLI.md §3.15, API.md §7.2, §15: editing a computed value is ErrNotEditable, exit 1, on stderr.
+-- args --
+edit req.json
+-- req.json --
+{"ops":[{"op":"set","path":"a:doubled","value":1}]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// What a quest counts.
+enum Goal { kill, collect }
+
+/// What a quest aims at, by goal.
+type Target(g: Goal) = match g {
+  kill => String(1..)
+  collect => Int(1..)
+}
+
+/// A quest.
+record Quest {
+  /// What it counts.
+  goal: Goal
+  /// What it aims at; none until chosen.
+  target: Target(goal)?
+}
+
+/// The quest.
+let quest: Quest = { goal: kill, target: "wolf" }
+
+/// Twice a number.
+let doubled: Int = 2 * 3
+-- want --
+[exit 1]
+[stdout]
+[stderr]
+canon: op 0: a:doubled: value is not editable: computed

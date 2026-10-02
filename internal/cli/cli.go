@@ -10,6 +10,7 @@ import (
 
 // Env is the process as a command sees it: its output streams and current directory.
 type Env struct {
+	Stdin  io.Reader // read by canon edit without a request file; nil is empty
 	Stdout io.Writer
 	Stderr io.Writer
 	Dir    string
@@ -26,6 +27,7 @@ func commands() map[string]command {
 	return map[string]command{
 		cmdBuild:   {flags: buildFlags, run: runBuild},
 		cmdCheck:   {flags: checkFlags, run: runCheck},
+		cmdEdit:    {flags: editFlags, run: runEdit},
 		cmdExplain: {flags: explainFlags, run: runExplain},
 		cmdFmt:     {flags: fmtFlags, run: runFmt},
 		cmdInit:    {flags: initFlags, run: runInit},

@@ -25,5 +25,5 @@ func run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 		_, _ = fmt.Fprintln(stderr, err)
 		return exitInternal
 	}
-	return cli.Main(ctx, args, cli.Env{Stdout: stdout, Stderr: stderr, Dir: dir})
+	return cli.Main(ctx, args, cli.Env{Stdin: os.Stdin, Stdout: stdout, Stderr: stderr, Dir: dir})
 }

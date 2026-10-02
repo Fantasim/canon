@@ -1,0 +1,14 @@
+CLI.md §3.15, API.md E24, §15: a request that is not a JSON object is ErrBadOp, exit 2.
+-- args --
+edit
+-- stdin --
+null
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- want --
+[exit 2]
+[stdout]
+[stderr]
+canon: operation not valid here: request is not a JSON object
