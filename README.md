@@ -1,149 +1,299 @@
-# Canon (working name)
+# Canon
 
-One language for every configuration: game data, service settings, taxonomies and the
-studio's presentation. It is written once, checked once at build time, and **translated**
-into typed code (Go, C++ and TypeScript), JSON data files and the studio's view model.
-Runtimes never run Canon. They receive values that are already correct.
+One configuration language, checked once at build time and translated into typed Go, C++17 and
+TypeScript, JSON data files and a studio view model. Runtimes never run Canon: they receive
+values that are already correct.
 
-**Status:** language v0.1 **being locked**. The v0.1 draft was reviewed for implementability
-([AUDIT.md](meta/spec-phase/AUDIT.md), 202 findings) and against a studio mockup ([MOCKUP-GAPS.md](meta/spec-phase/MOCKUP-GAPS.md),
-50 view gaps); the answers are settled in [DECISIONS.md](DECISIONS.md) (decisions 17–25) and
-[meta/spec-phase/review/ACCEPTED-CHOICES.md](meta/spec-phase/review/ACCEPTED-CHOICES.md), and are written into SPEC.md, CLI.md and
-the companion documents under [spec/](spec). Nothing is implemented. The examples are the test
-cases for the spec: each one rewrites a real file from this repository.
+`canon` is the compiler: one self-contained Go binary, no runtime dependencies, no network.
 
-## Files
+## A taste
 
-| File | What it is |
-|---|---|
-| [SPEC.md](SPEC.md) | the language: the normative overview, with a short summary of every subject and a pointer to the companion document that owns its details |
-| [CLI.md](CLI.md) | the `canon` command: flags, output formats, exit codes, value paths, and what the embedding API does |
-| [DECISIONS.md](DECISIONS.md) | why things are the way they are; wins over every other document |
-| [review/](meta/spec-phase/review) | the consistency pass that locks v0.1: [ACCEPTED-CHOICES.md](meta/spec-phase/review/ACCEPTED-CHOICES.md), the choices DECISIONS 24 accepts and which answer won where documents disagreed (it wins over every document but DECISIONS), and [CONSISTENCY-TODO.md](meta/spec-phase/review/CONSISTENCY-TODO.md), the work list |
-| [AUDIT.md](meta/spec-phase/AUDIT.md) | the pre-implementation review: 202 findings, each with a proposed answer (accepted unless DECISIONS overrides it) |
-| [MOCKUP-GAPS.md](meta/spec-phase/MOCKUP-GAPS.md) | the view behaviours found while mocking the studio, and the examples that contradicted the spec |
-| `meta/spec-phase/mockups/` | `studio.html`, a clickable mockup of the studio rendering the examples' views (git-ignored, local only) |
-| [go.mod](go.mod) | the compiler's Go module, `github.com/fantasim/canonlang` (DECISIONS 23); for now it holds only the API stub [api/canon.go](api/canon.go) |
-| [Makefile](Makefile), [tools/audit/](tools/audit) | the gate every change passes, and the code audit it runs (see Development below) |
-| [examples/](examples) | the test cases (next section), with their own module [examples/go.mod](examples/go.mod) so that generated goldens never break `go build ./...` at the root |
-| [examples/_fixtures/](examples/_fixtures) | trimmed copies of the real files the examples load; tests redirect every root to them or to a temporary directory (`--root`) |
-| `examples/*/expected/` | per example, `findings.txt` (what `canon check` reports); for the pipeline, every generated file, a `MANIFEST` and its own `go/go.mod`; for teamboard, the `canon.lock` of its first build |
-| [spec/GRAMMAR.md](spec/GRAMMAR.md) | the normative grammar, lexer modes, keyword-as-name rules, annotation catalogue, parse corpus |
-| [spec/FORMATTER.md](spec/FORMATTER.md) | the canonical layout (no column alignment) and canonical JSON for sources |
-| [spec/TYPES.md](spec/TYPES.md) | typing rules: strict optionals and narrowing, entries and refs, joins, refinements, dependent types |
-| [spec/EVALUATION.md](spec/EVALUATION.md) | what is evaluated and when, step costs, poisoning, copy-on-write, provenance, layers |
-| [spec/STDLIB.md](spec/STDLIB.md) | every standard function with its signature, costs and errors; the canonical text form |
-| [spec/WIRE.md](spec/WIRE.md) | JSON reading and writing, `load.*` formats, the `emit json` file layout, with byte-exact samples |
-| [spec/FINGERPRINT.md](spec/FINGERPRINT.md) | the schema fingerprint (`canon-fp v1`) and its test vectors |
-| [spec/LOCK.md](spec/LOCK.md) | `canon.lock`: format, what is locked, retire/rename/reuse, merges |
-| [spec/CODEGEN.md](spec/CODEGEN.md) | generated Go, C++17 and TypeScript: names, files, APIs, runtime helpers, legacy C++ structs |
-| [spec/CONFORMANCE.md](spec/CONFORMANCE.md) | conformance tests of translated functions: vectors, checked arithmetic, error signalling |
-| [spec/VIEWMODEL.md](spec/VIEWMODEL.md), [spec/viewmodel.schema.json](spec/viewmodel.schema.json) | the view model (`canon-vm/1`) and the studio behaviours it drives |
-| [spec/I18N.md](spec/I18N.md) | translation keys, templates in translations, reporting of missing keys |
-| [spec/API.md](spec/API.md) | the Go embedding API used by the studio: types, paths, edit operations, minimal writes |
-| [spec/IMPLEMENTATION-PLAN.md](spec/IMPLEMENTATION-PLAN.md) | module map, frozen interfaces, milestones, fixtures, performance targets |
-| [spec/ERRORS.md](spec/ERRORS.md) | the single source of every diagnostic (DECISIONS 27): severity, owning package and document, meaning, message templates with typed arguments; `internal/diag/codes.go` is generated from it |
+`board/board.canon`: a record with a rule, a table whose rows reference each other, and a
+package-level check.
 
-## Where the data lives
+```canon
+/// Statuses of a ticket board.
+package board
 
-A `.canon` file holds types, rules, and **optionally the data itself**. The data can live in
-one of two places, chosen per file:
+/// Colour of a badge.
+enum Tone { neutral, info, success, warning }
 
-| Data written in | Examples | Canon's job | What is generated |
-|---|---|---|---|
-| **`.canon`** | teamboard taxonomy, roles, service config, event types | Source of truth | Go/C++/TS code, and JSON data files |
-| **An existing JSON file**, read with `load` | farm, events, heistia, adventure quests | Validates the file, gives it types | Types plus a decoder (`mode: types`); the runtime keeps reading its JSON |
+/// One point of a ticket's lifecycle.
+record Status {
+  /// Name shown on the badge.
+  label: String(1..)
+  /// Colour of the badge.
+  tone: Tone = neutral
+  /// A terminal status closes the ticket.
+  terminal: Bool = false
+  /// The statuses a ticket may move to from here.
+  next: [ref Status]
 
-Computed data is a third case: [sweep_plan.canon](examples/balance/parity/sweep_plan.canon) reads
-Resource files and **writes** the bot's plan, replacing the Python generator.
+  check not next.contains(self) else "a status cannot move to itself"
+}
 
-Every source moves to `.canon` (DECISIONS 10 and 11). Until its domain is converted, legacy JSON
-is read with `load`.
-The server never reads sources, only what `canon build` emits, so converting changes nothing
-for it.
+/// Ids are stable: never renamed, never reused, retired instead of deleted.
+let statuses: stable table Status = {
+  open { label: "Open", tone: warning, next: [taken] }
+  taken { label: "Taken", tone: info, next: [open, done] }
+  done { label: "Done", tone: success, terminal: true, next: [open] }
+}
 
-For the full path from source files to the running server, with every generated file, see
-[examples/pipeline/](examples/pipeline). Its `expected/` files are illustrative until the v0
-compiler regenerates them.
+check statuses.active().count(.terminal) >= 1 else "at least one status closes a ticket"
 
-## Reading order
+emit json { out: "out/" }
+emit cpp { out: "out/", namespace: "board", mode: data }
+```
 
-1. [SPEC.md](SPEC.md) §1: the three laws (pure, build-time only, always finishes). The full
-   language is in SPEC.md and the companion documents it points to, the `canon` command in
-   [CLI.md](CLI.md), the studio's Go API in [spec/API.md](spec/API.md).
-2. [examples/teamboard/taxonomy.canon](examples/teamboard/taxonomy.canon): records, stable ids, references, checks.
-3. [examples/resource/events/event.canon](examples/resource/events/event.canon) and [sovcommon/time](examples/sovcommon/time/time.canon): functions, a variant, a view, tests.
-4. [examples/resource/farm/](examples/resource/farm): the studio question, with types and a view kept separate.
-5. The rest of the spec, then [DECISIONS.md](DECISIONS.md) for the reasons.
+Mistakes are build errors with a location, not runtime surprises:
 
-## What each example tests
+```
+$ canon check
+error[E2102]  board/board.canon:23:54          # next: [taken, missing]
+  unknown name missing
 
-| Example | Tests | Replaces today |
-|---|---|---|
-| [pipeline/](examples/pipeline) | the whole pipeline on a tiny object: per-item JSON in, data file + C++/Go loaders + view model out (`expected/`, illustrative) | the propItem merge, done by Canon |
-| [teamboard/taxonomy.canon](examples/teamboard/taxonomy.canon) | tables, `stable` ids, `ref`, derived values, package checks | taxonomy.json (85 lines) + its loading and validation Go (~650 lines) + the TS generator |
-| [resource/events/event.canon](examples/resource/events/event.canon) + [sovcommon/time](examples/sovcommon/time/time.canon) | functions, loops, a variant, `load` of legacy JSON, view, tests, a shared package | eventConfig.schema.json (215) + event.schedule-overlap.lua (96) + overlay event.json (279) |
-| [resource/vocab/vocab.canon](examples/resource/vocab/vocab.canon) | event types with the parameter kind they take, item pickers that search by name | Vocab/*.json + generated define headers + EventTypeDisplay.h's param column |
-| [resource/heistia/heistia.canon](examples/resource/heistia/heistia.canon) | a field whose type depends on another field | heistia_config.schema.json's nine if/then branches |
-| [resource/adventurequest/adventurequest.canon](examples/resource/adventurequest/adventurequest.canon) | records with a value parameter, maps whose value type depends on the key | adventureQuestConfig.schema.json + overlay |
-| [resource/rules/rules.canon](examples/resource/rules/rules.canon) | graph walk, group-by, set parity, range join | the other four Lua rules (230) |
-| [resource/farm/](examples/resource/farm) | the studio: types, a separate view, a French translation file | farm_config.schema.json (207) + overlay farm.json (348) |
-| [balance/parity/](examples/balance/parity) | data computed from data, layers as CLI flags | gen_sweep_plan.py (683) |
-| [service/resourcestudio/](examples/service/resourcestudio) | an ordinary service config, per-machine layer, secret input | config.example.toml + its loader and precedence rules |
-| [sovcommon/](examples/sovcommon) | shared enums, written once | roles.go's ladder and the tone/icon lists checked by scraping TS |
-| [studio/studio.canon](examples/studio/studio.canon) | the studio's vocabulary: menus, icons, tones, units, widgets, and the default editor of `TimeOfDay` | nothing (it is new) |
-| [game/items/](examples/game/items) | a domain after migration and `canon convert`: one `entry` file per item, nested kinds, `@json(pairs:)`, `@json(bits)`, a view and a translation | propItem.json's 6,944 rows and their loader, schema and overlay |
-| [features/](examples/features) | one small example per feature no other example covers: `@codes` on the wire (`codes`), `load.csv` (`csv`), `embedded` mode (`embedded`), legacy C++ structs (`legacycpp`), finite-input `export fn` (`lookup`), value `match` (`match`), `retired` ids (`retired`), `load.text` (`text`), `expect … warns` (`warns`) | |
+error[E5001]  board/board.canon:25:3           # done { ..., next: [done] }
+  statuses.done: a status cannot move to itself
+  expected by board/board.canon:18 (check)
+```
 
-Line counts are indicative. The bigger gain is that each subject is written in **one** place:
-today the event rules are spread across a JSON Schema, `x-` keywords, a Lua file, a C++ loader and
-a studio overlay.
+When everything holds, `canon build` writes the outputs and records the stable ids in
+`canon.lock`:
 
-## Main decisions
+```
+$ canon build
+0 errors, 0 warnings in 1 package (4 ms)
+cpp:
+  board/out/board.gen.cpp
+  board/out/board.gen.h
+  board/out/canon_runtime.h
+  board/out/canon_runtime_json.h
+json:
+  board/out/statuses.json
+lock:
+  board/canon.lock
+```
 
-- **Checks replace every validation layer.** JSON Schema, the `x-invariant` / `x-format`
-  vocabularies, the Lua rules (since ADR-0009 of 2026-09-19, the only implementation of the named
-  rules) and the Python enforcers all become `check`s written next to the data. There is no
-  keyword list to extend.
-- **Types remove the guard code.** A check only runs on well-typed data, so the
-  `type(x) == "table" and x ~= host.null` half of every Lua rule disappears. Unknown refs, enum
-  members and ids are type errors, with no code to write. Optionals are strict: code proves
-  presence with a `!= none` test, `??` or `!` (DECISIONS 17).
-- **Generated code is read-only and contains no hand-written logic.** Types, values, getters and
-  a schema fingerprint check on load; `export fn` methods are precomputed, or translated with a
-  generated conformance test. The evaluator exists once, in the compiler.
-- **Views are separate from types, but in the same language.** The studio becomes a generic
-  renderer. Types already give it most of the editor, and views only add French labels, groups,
-  units, columns and custom widgets. A view that names a missing field is a compile error.
+```json
+{
+  "$schema": "board.Status@f98f84e0",
+  "rows": [
+    {"$id": "open", "label": "Open", "tone": "warning", "terminal": false, "next": ["taken"]},
+    {"$id": "taken", "label": "Taken", "tone": "info", "terminal": false, "next": ["open", "done"]},
+    {"$id": "done", "label": "Done", "tone": "success", "terminal": true, "next": ["open"]}
+  ]
+}
+```
+
+The generated C++ gives each row typed getters (`GetLabel()`, `GetNext()` returning resolved
+`const Status*`), a `Statuses::Load(path, error)` that checks the schema fingerprint, and a
+`Find(id)` by binary search. A larger real example is
+[examples/teamboard/taxonomy.canon](examples/teamboard/taxonomy.canon).
+
+## Why
+
+Canon replaces the layers a configuration usually grows: a JSON Schema, a vocabulary of `x-`
+keywords, rule scripts (Lua, Python), a hand-written loader per language, and editor overlays.
+
+- **Checks sit next to the data.** A `check` is ordinary Canon code; there is no keyword list to
+  extend and no separate rules engine.
+- **Strict types remove guard code.** Unknown refs, enum members and ids are type errors.
+  Optionals are strict: presence is proved with `!= none`, `??` or `!`.
+- **Pure, build-time only, always finishes** ([SPEC.md](SPEC.md) §1). Evaluation has a step
+  budget; the same sources always give the same outputs.
+- **Generated code is read-only.** Types, values, getters and a fingerprint check on load; an
+  `export fn` is precomputed or translated with a generated conformance test. The evaluator
+  exists once, in the compiler.
+- **One canonical layout, no alignment.** `canon fmt`, the studio and agents print the same
+  layout, so a one-value edit is a one-line diff.
 - **`load` is the migration bridge.** Existing JSON, CSV and `#define` headers are read and
-  type-checked where they are. Files can move into Canon one at a time.
-- **One canonical layout, no alignment.** `canon fmt` and the studio's edits print the same
-  layout, and a one-value edit is a one-line diff (DECISIONS 18).
+  type-checked in place, so files move into Canon one at a time.
+
+## Install
+
+Linux amd64 and arm64, from the GitHub releases ([CLI.md](CLI.md) §7, DECISIONS 276):
+
+```sh
+# latest release
+curl -fsSL https://raw.githubusercontent.com/Fantasim/canon/main/tools/install.sh | sh
+
+# a pinned version
+curl -fsSL https://raw.githubusercontent.com/Fantasim/canon/main/tools/install.sh | sh -s -- v0.2.0
+```
+
+The script downloads `canon_<version>_linux_<arch>.tar.gz`, verifies it against
+`checksums.txt` and installs `canon` into `$CANON_INSTALL_DIR` (default `~/.local/bin`).
+Running it again updates; the compiler itself never touches the network, so there is no
+self-update command. Releases are tagged `v<semver>`.
+
+```
+$ canon version
+canon 0.1.0 (<commit>)
+language 0.1
+formats canon-fp v1, canon-vm/1, canon.lock v1
+```
+
+From source (Go 1.25):
+
+```sh
+git clone https://github.com/Fantasim/canon && cd canon
+go build ./cmd/canon
+```
+
+## Quick start
+
+```sh
+canon init --name demo     # project.canon, plus .canon/ in .gitignore
+canon new board            # board/board.canon with its package line
+$EDITOR board/board.canon  # write types, data, checks and emits
+canon check                # parse, type-check, evaluate, run every check
+canon build                # check, then write every emit output and canon.lock
+canon fmt                  # rewrite sources in the canonical layout
+```
+
+`canon test` runs the `test` blocks; `canon explain <path>` shows a value, its type and where
+each part was set. The global flag `--format json` gives machine-readable output.
+
+## Commands at a glance
+
+From [CLI.md](CLI.md) §1; each command has its own section in CLI.md §3.
+
+| Command | What it does |
+|---|---|
+| `canon init` | create `project.canon` in the current directory |
+| `canon new <package>` | create a package directory with a first file |
+| `canon check` | parse, type-check, evaluate and run every check; print findings |
+| `canon build` | `check`, then write every `emit` output and update `canon.lock` |
+| `canon test` | run `test` blocks |
+| `canon fmt` | rewrite sources in the canonical layout |
+| `canon explain <path>` | show a value, its type, and where each part of it comes from |
+| `canon refs <path>` | list everything that references an entry |
+| `canon edit` | apply one edit request (JSON) through the edit API |
+| `canon rename <name> <new>` | rename a Canon name everywhere it is used |
+| `canon lsp` | language server on stdio |
+| `canon version` | compiler and language versions |
+| `canon guide [topic]` | the agent guide, embedded in the binary |
+| `canon convert <value>` | turn a `load`ed JSON source into `.canon`, proven lossless (M7) |
+| `canon i18n stub \| status` | manage translation files (M7) |
+| `canon lock check` | verify `canon.lock` against the sources without building |
+
+`canon` with no argument lists what the installed binary implements; `guide`, `convert`, `i18n` and
+`lock check` are specified but not built yet.
+
+## Editor
+
+[editors/vscode](editors/vscode) is a VS Code extension: a TextMate grammar for highlighting,
+and a client that starts `canon lsp` over stdio (`canon` on the `PATH`, or set
+`canon.server.path`). The server is for reading code:
+
+| Feature | Behaviour |
+|---|---|
+| diagnostics | every finding as you type, including findings inside `load`ed JSON files, for files not open too |
+| hover | type, doc comment, default, and for values the computed value |
+| go to definition | from a use to its declaration; from a `ref` value to its entry, into JSON too |
+| find references | the same as `canon refs` |
+| formatting | `canon fmt` |
+
+Completion, code actions and rename are intentionally absent: values are edited in the studio,
+and by agents through `canon edit` and `canon rename` (DECISIONS 274).
+
+Package the extension:
+
+```sh
+cd editors/vscode
+npm install && npx vsce package   # produces canon-0.1.0.vsix
+```
+
+## For AI agents
+
+Run `canon guide` first, once it ships ([CLI.md](CLI.md) §3.17, DECISIONS 276): it prints an index of topics,
+and `canon guide <topic>` prints one, matched to the binary's version. Agents read with
+`canon check --format json`, `canon explain` and `canon refs`, and write through `canon edit`
+(value changes) and `canon rename` (names). Both take and print JSON, check the result before
+writing, write atomically and minimally, and print an `undo` request that reverts the change
+([CLI.md](CLI.md) §6.5).
+
+## Status
+
+Language v0.1. Milestones M0–M5 are built: parser, type checker, evaluator, build and emit (Go,
+C++17 data and types modes, JSON, view model), formatter, edit API, language server, `canon edit`
+and `canon rename`. Next: M6 (legacy C++ struct modes and the TypeScript target) and M7
+(migration: `canon convert`, `canon i18n`). Details in [meta/state.md](meta/state.md).
+
+## Documentation
+
+Precedence when documents disagree: DECISIONS.md, then
+[ACCEPTED-CHOICES.md](meta/spec-phase/review/ACCEPTED-CHOICES.md), then the owning companion
+document in `spec/`, then the summaries in SPEC.md and CLI.md.
+
+| Document | What it holds |
+|---|---|
+| [SPEC.md](SPEC.md) | the language: normative overview, pointing to the companion document that owns each subject |
+| [CLI.md](CLI.md) | the `canon` command: flags, output formats, exit codes, value paths, install, the embedding API |
+| [DECISIONS.md](DECISIONS.md) | every decision and its reason; wins over every other document |
+| [spec/GRAMMAR.md](spec/GRAMMAR.md) | grammar, lexer modes, keyword-as-name rules, annotation catalogue |
+| [spec/TYPES.md](spec/TYPES.md) | typing: strict optionals, entries and refs, joins, refinements, dependent types |
+| [spec/EVALUATION.md](spec/EVALUATION.md) | what is evaluated and when, step costs, poisoning, provenance, layers |
+| [spec/STDLIB.md](spec/STDLIB.md) | every standard function: signature, costs, errors |
+| [spec/FORMATTER.md](spec/FORMATTER.md) | the canonical layout, and canonical JSON for sources |
+| [spec/WIRE.md](spec/WIRE.md) | JSON reading and writing, `load.*` formats, `emit json` layout |
+| [spec/FINGERPRINT.md](spec/FINGERPRINT.md) | the schema fingerprint `canon-fp v1` and its test vectors |
+| [spec/LOCK.md](spec/LOCK.md) | `canon.lock`: format, retire/rename/reuse, merges |
+| [spec/CODEGEN.md](spec/CODEGEN.md) | generated Go, C++17 and TypeScript: names, files, APIs, legacy C++ structs |
+| [spec/CONFORMANCE.md](spec/CONFORMANCE.md) | conformance tests of translated functions |
+| [spec/VIEWMODEL.md](spec/VIEWMODEL.md), [viewmodel.schema.json](spec/viewmodel.schema.json) | the view model `canon-vm/1` and the studio behaviours it drives |
+| [spec/I18N.md](spec/I18N.md) | translation keys, templates, missing-key reports |
+| [spec/API.md](spec/API.md) | the Go embedding API: types, paths, edit operations, minimal writes |
+| [spec/ERRORS.md](spec/ERRORS.md) | every diagnostic code; `internal/diag` is generated from it |
+| [spec/IMPLEMENTATION-PLAN.md](spec/IMPLEMENTATION-PLAN.md) | module map, frozen interfaces, milestones, performance targets |
+| [DOCTRINE.md](DOCTRINE.md) | project law for the code and for contributors |
+| [tools/audit/DOCTRINE-code.md](tools/audit/DOCTRINE-code.md) | the code doctrine the audit enforces |
+| [meta/](meta/README.md) | state, plan, implementation ADRs and handoffs |
+| [meta/spec-phase/](meta/spec-phase) | the v0.1 spec reviews: [AUDIT.md](meta/spec-phase/AUDIT.md), [AUDIT-2.md](meta/spec-phase/AUDIT-2.md), [MOCKUP-GAPS.md](meta/spec-phase/MOCKUP-GAPS.md), [review/](meta/spec-phase/review) |
+| [editors/vscode/README.md](editors/vscode/README.md) | the VS Code extension: grammar subset, dependencies, tests |
+| [CLAUDE.md](CLAUDE.md) | entry point for coding agents working on the compiler |
+
+## Examples
+
+[examples/](examples) is one project (its [project.canon](examples/project.canon)) and the
+compiler's test suite: each directory's `expected/` holds what `canon check` and `canon build`
+produce, written by the compiler and diffed by `make check`. Most rewrite a real configuration
+file of Sovereign, the project Canon was first built for; loaded files are trimmed copies in
+[examples/_fixtures/](examples/_fixtures).
+
+| Example | Shows | Replaces |
+|---|---|---|
+| [pipeline/](examples/pipeline) | the whole path on a tiny object: per-item JSON in; data file, C++ and Go loaders, view model out | a hand-merged item table |
+| [teamboard/](examples/teamboard/taxonomy.canon) | tables, `stable` ids, `ref`, derived values, package checks | a JSON taxonomy plus ~650 lines of loading and validation Go |
+| [resource/events/](examples/resource/events) + [sovcommon/time](examples/sovcommon/time) | functions, loops, a variant, `load` of legacy JSON, a view, tests | a JSON Schema, a Lua rule and an editor overlay |
+| [resource/vocab/](examples/resource/vocab) | event types with the parameter kind they take, item pickers | vocabulary JSON and generated define headers |
+| [resource/heistia/](examples/resource/heistia) | a field whose type depends on another field | nine `if`/`then` schema branches |
+| [resource/adventurequest/](examples/resource/adventurequest) | records with a value parameter, maps whose value type depends on the key | a schema and an overlay |
+| [resource/rules/](examples/resource/rules) | graph walk, group-by, set parity, range join | four Lua rules |
+| [resource/farm/](examples/resource/farm) | the studio: types, a separate view, a French translation | a schema and an overlay |
+| [balance/parity/](examples/balance/parity) | data computed from data, layers as CLI flags | a Python generator |
+| [service/resourcestudio/](examples/service/resourcestudio) | a service config, a per-machine layer, a secret input | a TOML file and its loader |
+| [sovcommon/](examples/sovcommon) | shared enums, written once | hand-kept lists in Go and TS |
+| [studio/](examples/studio/studio.canon) | the studio's vocabulary: menus, icons, tones, units, widgets | (new) |
+| [game/items/](examples/game/items) | a migrated domain: one `entry` file per item, `@json(pairs:)`, `@json(bits)`, a view | a 6,944-row item table with its loader and schema |
+| [features/](examples/features) | one small project per feature: `codes`, `copies`, `csv`, `dependent`, `edits`, `embedded`, `entries`, `legacycpp`, `lookup`, `matching`, `renames`, `retirement`, `text`, `warns` | |
 
 ## Development
 
-- The compiler is one Go module, `github.com/fantasim/canonlang` (DECISIONS 23), written for Go
-  1.25. The embedding API is the package `canon` in `api/`; the examples and `tools/audit` are
-  separate modules.
-- `make check` is the gate every change passes (DECISIONS 25): `gofmt -l` empty, `go vet`,
-  `go test`, the generated goldens diff-clean, and the code audit `go run ./tools/audit check`
-  (the Makefile runs it from `tools/audit/`, which is its own module). The audit enforces the code
-  doctrine of [tools/audit/DOCTRINE-code.md](tools/audit/DOCTRINE-code.md): short functions and
-  files, no magic values, sentinel errors, a `doc.go` and an example test per package, and a
-  ratchet baseline in `.sovaudit/`.
-- The build order, packages and milestones are in
-  [spec/IMPLEMENTATION-PLAN.md](spec/IMPLEMENTATION-PLAN.md).
+- One Go module, `github.com/fantasim/canonlang`, Go 1.25. The embedding API is package `canon`
+  in [api/](api); the binary is [cmd/canon](cmd/canon); everything else is under `internal/`.
+  [examples/](examples) and [tools/audit](tools/audit) are separate modules.
+- `GOTOOLCHAIN=local make check` is the gate for every change: `gofmt`, `go vet`, tests, a
+  short race stress test, the generated goldens (vetted, tested and diff-clean), the diagnostics
+  registry, and the code audit on itself and on the repository. It needs a C++ compiler and
+  the nlohmann/json headers, for the generated-C++ tests.
+- The code audit ([tools/audit](tools/audit)) enforces
+  [DOCTRINE-code.md](tools/audit/DOCTRINE-code.md): short functions and files, no magic values,
+  sentinel errors, a `doc.go` and a running example per package, and a baseline in `.sovaudit/`
+  that only shrinks.
+- Goldens under `examples/**/expected/` are written by the compiler (`-update`), never by hand.
+  Diagnostics come only from the registry generated from [spec/ERRORS.md](spec/ERRORS.md).
+- Contributors start at [DOCTRINE.md](DOCTRINE.md); the build order and milestones are in
+  [spec/IMPLEMENTATION-PLAN.md](spec/IMPLEMENTATION-PLAN.md) and [meta/plan.md](meta/plan.md).
 
-## Next steps
-
-1. Finish locking v0.1: the consistency pass of [review/](meta/spec-phase/review) aligns SPEC.md, CLI.md, the
-   companion documents and the examples with DECISIONS 17–25; then answer the remaining open
-   questions (SPEC §23).
-2. Keep the examples complete: fixtures for every loaded path, an expected findings file per
-   example, and goldens regenerated by the v0 compiler (see spec/IMPLEMENTATION-PLAN.md).
-3. Compiler v0 in Go, following spec/IMPLEMENTATION-PLAN.md: parser, name resolution and type
-   checker, evaluator, checks, `json` and `go` emitters. Done when `taxonomy.canon` builds and its
-   generated Go replaces `sovcommon/teamboard`'s loader with the service tests still green.
-4. `load` + `cpp` (`data` and `types` modes) + `view`: `event.canon` and `farm.canon` validate the
-   real Resource files, and the studio renders the farm from the view model.
-5. `canon fmt` and the edit API, then `canon lsp` (diagnostics first).
+There is no license file yet.

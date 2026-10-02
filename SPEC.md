@@ -1,6 +1,6 @@
 # Canon language specification
 
-Version: **0.1 (being locked)**. Nothing is implemented yet. The files in `examples/` are the
+Version: **0.1**. The compiler implements milestones M0–M5 ([meta/state.md](meta/state.md)). The files in `examples/` are the
 test cases for this document: when an example and this text disagree, one of them is a bug. The
 generated files in `examples/pipeline/expected/` are **illustrative** until the v0 compiler
 regenerates them; until then tests compare them semantically (parsed JSON, Go/C++ ASTs modulo
