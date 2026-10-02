@@ -11,7 +11,8 @@ M5 units (plan.md): **A1 `canon edit` done** (`44d62c3`, 4 review rounds). **L1*
 (transport, UTF-16, overlay sync, diagnostics, p95 ~400 ms at N=7000) built, review FAIL, fixing
 plus `canon lsp` wiring. Next: L2 (hover, definition, references, formatting), L3
 (`editors/vscode`, TextMate grammar), A2 (`canon rename`: sync of name syntax and API form first).
-M6 and M7 not started; each needs its feature example first (`ts`, `pairs` still owed).
+After M5 (Louis, log-2026-10-02): hardening, then telemetry as first real use; M6, M7 later
+(each needs its feature example first: `ts`, `pairs` still owed).
 
 Long fuzz/progen campaigns stay deferred by Louis ([decisions/log-2026-09-29.md](decisions/log-2026-09-29.md)
 "Platforms and fuzzing"): a milestone runs only its own stated acceptance criteria.
