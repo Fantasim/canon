@@ -914,7 +914,8 @@ determinism job green (§7.5), and every new registry code tested (§7.2).
   feature of CLI.md §4; UTF-16 conversion tests with non-ASCII text pass; diagnostics for an edited
   entry file of the benchmark project are published within 500 ms of the last change; findings in
   JSON files are published without the file being open; `canon edit` applies a request and its
-  printed `undo` restores every file byte for byte, on every example of `examples/features/edits`;
+  printed `undo` restores every value (API.md E22), and every file byte for byte where the edit
+  kept the layout, on every example of `examples/features/edits`;
   `canon rename` has a golden per name kind (field on the wire, type, function, let, local) and a
   refused stable id.
 

@@ -559,11 +559,13 @@ the file or, without one, from stdin; `--edit-layer` sets `Options.EditLayer`. I
 object (DECISIONS 274):
 
 ```json
-{"edit":{"applied":true,"revision":"r2:…","changes":[{"kind":"modified","path":"resource/farm/farm.canon"}],"dropped":[],"undo":{"base":"r2:…","ops":[{"op":"set","path":"farm.modelTypes[3].maxLevel","value":9}]}}}
+{"edit":{"applied":true,"revision":"r1:…","changes":[{"kind":"modified","path":"resource/farm/farm.canon"}],"dropped":[],"undo":{"base":"r1:…","ops":[{"op":"set","path":"farm.modelTypes[3].maxLevel","value":9}]}}}
 ```
 
 then one line per finding (§2.4) and the summary line. `undo` is a complete request, `base`
-included, that reverts the edit when given back to `canon edit`. With `"dryRun": true` nothing is
+included, that reverts the edit's values when given back to `canon edit` (API.md E22: values,
+not layout). Before editing, the command checks every package, so its revision covers the whole
+project and a printed `base` is current for the next run. With `"dryRun": true` nothing is
 written and `applied` is false. An API error prints its text (API.md X1) on stderr and exits as
 API.md §15 says; an edit refused for its findings prints them and exits 1.
 
