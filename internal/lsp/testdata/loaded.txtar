@@ -1,0 +1,93 @@
+Findings in loaded files are published though the files are not open (IMPLEMENTATION-PLAN §8.4
+Sync, CLI.md §4, DECISIONS 274): a JSON file under a root outside the project directory, a JSON
+file beside its package, a CSV file, a C header. Columns after non-ASCII text are UTF-16 units (§8.4
+Positions): ["é中😀", 1] puts 1 at byte column 15, UTF-16 character 9. Fixing the files on the
+disk and notifying a watched-file change clears them with empty lists.
+-- proj/project.canon --
+project acme {
+  canon: "0.1"
+
+  roots {
+    data: "../data"
+  }
+}
+-- proj/a/a.canon --
+/// A.
+package a
+
+/// One row.
+record Row {
+  /// A count.
+  n: Int
+}
+
+/// Names.
+let names: [String] = load("@data/names.json")
+
+/// Counts.
+let counts: [Int] = load("counts.json")
+
+/// Rows.
+let rows: [Row] = load.csv("rows.csv", header: true)
+
+/// Kinds.
+local let kinds = load.defines("kinds.h")
+-- proj/a/counts.json --
+[1, "two", 3]
+-- proj/a/rows.csv --
+n
+1
+x
+-- proj/a/kinds.h --
+#define X 1
+#define X 2
+-- data/names.json --
+["é中😀", 1]
+-- fixed/names.json --
+["é中😀", "one"]
+-- fixed/counts.json --
+[1, 2, 3]
+-- fixed/rows.csv --
+n
+1
+2
+-- fixed/kinds.h --
+#define X 1
+#define Y 2
+-- script --
+initialize
+send {"jsonrpc":"2.0","method":"initialized","params":{}}
+open proj/a/a.canon
+wait
+write data/names.json fixed/names.json
+write proj/a/counts.json fixed/counts.json
+write proj/a/rows.csv fixed/rows.csv
+write proj/a/kinds.h fixed/kinds.h
+send {"jsonrpc":"2.0","method":"workspace/didChangeWatchedFiles","params":{"changes":[]}}
+wait
+send {"jsonrpc":"2.0","id":9,"method":"shutdown"}
+send {"jsonrpc":"2.0","method":"exit"}
+-- transcript --
+> initialize
+< {"jsonrpc":"2.0","id":0,"result":{"capabilities":{"positionEncoding":"utf-16","textDocumentSync":{"openClose":true,"change":1}},"serverInfo":{"name":"canon"}}}
+> send {"jsonrpc":"2.0","method":"initialized","params":{}}
+> open proj/a/a.canon
+> wait
+< {"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"$URI/data/names.json","diagnostics":[{"range":{"start":{"line":0,"character":9},"end":{"line":0,"character":10}},"severity":1,"code":"E7110","source":"canon","message":"expected a string for String, found a number"}]}}
+< {"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"$URI/proj/a/counts.json","diagnostics":[{"range":{"start":{"line":0,"character":4},"end":{"line":0,"character":9}},"severity":1,"code":"E7110","source":"canon","message":"expected a number for Int, found a string"}]}}
+< {"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"$URI/proj/a/kinds.h","diagnostics":[{"range":{"start":{"line":1,"character":0},"end":{"line":1,"character":1}},"severity":1,"code":"E7102","source":"canon","message":"X redefined with a different value (2, first 1 at a/kinds.h:1)"}]}}
+< {"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"$URI/proj/a/rows.csv","diagnostics":[{"range":{"start":{"line":2,"character":0},"end":{"line":2,"character":1}},"severity":1,"code":"E7108","source":"canon","message":"CSV cell \"x\" is not a valid Int"}]}}
+> write data/names.json fixed/names.json
+> write proj/a/counts.json fixed/counts.json
+> write proj/a/rows.csv fixed/rows.csv
+> write proj/a/kinds.h fixed/kinds.h
+> send {"jsonrpc":"2.0","method":"workspace/didChangeWatchedFiles","params":{"changes":[]}}
+> wait
+< {"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"$URI/data/names.json","diagnostics":[]}}
+< {"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"$URI/proj/a/counts.json","diagnostics":[]}}
+< {"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"$URI/proj/a/kinds.h","diagnostics":[]}}
+< {"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"$URI/proj/a/rows.csv","diagnostics":[]}}
+> send {"jsonrpc":"2.0","id":9,"method":"shutdown"}
+< {"jsonrpc":"2.0","id":9,"result":null}
+> send {"jsonrpc":"2.0","method":"exit"}
+= <nil>

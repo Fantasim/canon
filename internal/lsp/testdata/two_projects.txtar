@@ -1,0 +1,64 @@
+One project per project.canon found above an opened file (IMPLEMENTATION-PLAN §8.4 Transport).
+Both projects load one shared JSON file through a root: its diagnostics are the findings of
+both, merged in one publication; fixing one project's buffer leaves the other's finding.
+-- p1/project.canon --
+project one {
+  canon: "0.1"
+
+  roots {
+    shared: "../shared"
+  }
+}
+-- p1/a/a.canon --
+/// A.
+package a
+
+/// Xs.
+let xs: [Int] = load("@shared/x.json")
+-- p2/project.canon --
+project two {
+  canon: "0.1"
+
+  roots {
+    shared: "../shared"
+  }
+}
+-- p2/b/b.canon --
+/// B.
+package b
+
+/// Ys.
+let ys: [Bool] = load("@shared/x.json")
+-- shared/x.json --
+["s"]
+-- edits/a.canon --
+/// A.
+package a
+
+/// Xs.
+let xs: [String] = load("@shared/x.json")
+-- script --
+initialize
+send {"jsonrpc":"2.0","method":"initialized","params":{}}
+open p1/a/a.canon
+open p2/b/b.canon
+wait
+change p1/a/a.canon edits/a.canon
+wait
+send {"jsonrpc":"2.0","id":9,"method":"shutdown"}
+send {"jsonrpc":"2.0","method":"exit"}
+-- transcript --
+> initialize
+< {"jsonrpc":"2.0","id":0,"result":{"capabilities":{"positionEncoding":"utf-16","textDocumentSync":{"openClose":true,"change":1}},"serverInfo":{"name":"canon"}}}
+> send {"jsonrpc":"2.0","method":"initialized","params":{}}
+> open p1/a/a.canon
+> open p2/b/b.canon
+> wait
+< {"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"$URI/shared/x.json","diagnostics":[{"range":{"start":{"line":0,"character":1},"end":{"line":0,"character":4}},"severity":1,"code":"E7110","source":"canon","message":"expected a number for Int, found a string"},{"range":{"start":{"line":0,"character":1},"end":{"line":0,"character":4}},"severity":1,"code":"E7110","source":"canon","message":"expected true or false for Bool, found a string"}]}}
+> change p1/a/a.canon edits/a.canon
+> wait
+< {"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"$URI/shared/x.json","diagnostics":[{"range":{"start":{"line":0,"character":1},"end":{"line":0,"character":4}},"severity":1,"code":"E7110","source":"canon","message":"expected true or false for Bool, found a string"}]}}
+> send {"jsonrpc":"2.0","id":9,"method":"shutdown"}
+< {"jsonrpc":"2.0","id":9,"result":null}
+> send {"jsonrpc":"2.0","method":"exit"}
+= <nil>

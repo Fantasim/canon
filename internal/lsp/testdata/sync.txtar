@@ -1,0 +1,68 @@
+Full-document sync (IMPLEMENTATION-PLAN §8.4 Sync): each buffer is an overlay of its project;
+diagnostics follow the buffer, an empty list clears a file that no longer has findings, and a
+closed buffer is checked from the disk again. Changes inside the debounce give one publication.
+-- proj/project.canon --
+project acme {
+  canon: "0.1"
+}
+-- proj/a/a.canon --
+/// A.
+package a
+
+/// N.
+let n: Int = "x"
+-- proj/b/b.canon --
+/// B.
+package b
+
+/// M.
+let m: Int = 1
+-- edits/fixed.canon --
+/// A.
+package a
+
+/// N.
+let n: Int = 1
+-- edits/other.canon --
+/// A.
+package a
+
+/// N.
+let n: Bool = 2
+-- script --
+initialize
+send {"jsonrpc":"2.0","method":"initialized","params":{}}
+open proj/a/a.canon
+wait
+change proj/a/a.canon edits/fixed.canon
+wait
+change proj/a/a.canon edits/other.canon
+change proj/a/a.canon edits/fixed.canon
+change proj/a/a.canon edits/other.canon
+wait
+close proj/a/a.canon
+wait
+send {"jsonrpc":"2.0","id":9,"method":"shutdown"}
+send {"jsonrpc":"2.0","method":"exit"}
+-- transcript --
+> initialize
+< {"jsonrpc":"2.0","id":0,"result":{"capabilities":{"positionEncoding":"utf-16","textDocumentSync":{"openClose":true,"change":1}},"serverInfo":{"name":"canon"}}}
+> send {"jsonrpc":"2.0","method":"initialized","params":{}}
+> open proj/a/a.canon
+> wait
+< {"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"$URI/proj/a/a.canon","diagnostics":[{"range":{"start":{"line":4,"character":13},"end":{"line":4,"character":16}},"severity":1,"code":"E3002","source":"canon","message":"expected Int, found String"}]}}
+> change proj/a/a.canon edits/fixed.canon
+> wait
+< {"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"$URI/proj/a/a.canon","diagnostics":[]}}
+> change proj/a/a.canon edits/other.canon
+> change proj/a/a.canon edits/fixed.canon
+> change proj/a/a.canon edits/other.canon
+> wait
+< {"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"$URI/proj/a/a.canon","diagnostics":[{"range":{"start":{"line":4,"character":14},"end":{"line":4,"character":15}},"severity":1,"code":"E3002","source":"canon","message":"expected Bool, found Int"}]}}
+> close proj/a/a.canon
+> wait
+< {"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"$URI/proj/a/a.canon","diagnostics":[{"range":{"start":{"line":4,"character":13},"end":{"line":4,"character":16}},"severity":1,"code":"E3002","source":"canon","message":"expected Int, found String"}]}}
+> send {"jsonrpc":"2.0","id":9,"method":"shutdown"}
+< {"jsonrpc":"2.0","id":9,"result":null}
+> send {"jsonrpc":"2.0","method":"exit"}
+= <nil>

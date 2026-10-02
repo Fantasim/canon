@@ -6,11 +6,12 @@ import "runtime/debug"
 // *PanicError when fn panicked.
 func Go(fn func() error, done func(error)) {
 	go func() {
-		done(run(fn))
+		done(Run(fn))
 	}()
 }
 
-func run(fn func() error) (err error) {
+// Run is fn's error, or its panic as a *PanicError, on the calling goroutine.
+func Run(fn func() error) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = &PanicError{Value: r, Stack: string(debug.Stack())}

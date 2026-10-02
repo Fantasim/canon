@@ -1,0 +1,48 @@
+An edited project.canon is an overlay too (IMPLEMENTATION-PLAN §8.4 Sync): while it is in
+error, its own findings are the project's only ones, as a watch reports them, and the other
+files are cleared; fixed, they return.
+-- proj/project.canon --
+project acme {
+  canon: "0.1"
+}
+-- proj/a/a.canon --
+/// A.
+package a
+
+/// N.
+let n: Int = "x"
+-- edits/broken.canon --
+project acme {
+  canon: "0.1"
+  colour: 1
+}
+-- script --
+initialize
+send {"jsonrpc":"2.0","method":"initialized","params":{}}
+open proj/project.canon
+wait
+change proj/project.canon edits/broken.canon
+wait
+change proj/project.canon proj/project.canon
+wait
+send {"jsonrpc":"2.0","id":9,"method":"shutdown"}
+send {"jsonrpc":"2.0","method":"exit"}
+-- transcript --
+> initialize
+< {"jsonrpc":"2.0","id":0,"result":{"capabilities":{"positionEncoding":"utf-16","textDocumentSync":{"openClose":true,"change":1}},"serverInfo":{"name":"canon"}}}
+> send {"jsonrpc":"2.0","method":"initialized","params":{}}
+> open proj/project.canon
+> wait
+< {"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"$URI/proj/a/a.canon","diagnostics":[{"range":{"start":{"line":4,"character":13},"end":{"line":4,"character":16}},"severity":1,"code":"E3002","source":"canon","message":"expected Int, found String"}]}}
+> change proj/project.canon edits/broken.canon
+> wait
+< {"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"$URI/proj/a/a.canon","diagnostics":[]}}
+< {"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"$URI/proj/project.canon","diagnostics":[{"range":{"start":{"line":2,"character":2},"end":{"line":2,"character":8}},"severity":1,"code":"E1002","source":"canon","message":"unknown project key \"colour\""}]}}
+> change proj/project.canon proj/project.canon
+> wait
+< {"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"$URI/proj/a/a.canon","diagnostics":[{"range":{"start":{"line":4,"character":13},"end":{"line":4,"character":16}},"severity":1,"code":"E3002","source":"canon","message":"expected Int, found String"}]}}
+< {"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"$URI/proj/project.canon","diagnostics":[]}}
+> send {"jsonrpc":"2.0","id":9,"method":"shutdown"}
+< {"jsonrpc":"2.0","id":9,"result":null}
+> send {"jsonrpc":"2.0","method":"exit"}
+= <nil>

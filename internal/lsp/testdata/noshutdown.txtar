@@ -1,0 +1,9 @@
+LSP 3.17 lifecycle: exit without shutdown makes Serve return ErrNoShutdown (exit code 1).
+-- script --
+initialize
+send {"jsonrpc":"2.0","method":"exit"}
+-- transcript --
+> initialize
+< {"jsonrpc":"2.0","id":0,"result":{"capabilities":{"positionEncoding":"utf-16","textDocumentSync":{"openClose":true,"change":1}},"serverInfo":{"name":"canon"}}}
+> send {"jsonrpc":"2.0","method":"exit"}
+= lsp: exit before shutdown

@@ -1,0 +1,35 @@
+LSP 3.17 lifecycle (IMPLEMENTATION-PLAN §8.4 Transport): a request before initialize is refused,
+initialize offers UTF-16 positions and full sync only (DECISIONS 274), an unknown method and a
+body that is not JSON are errors, a client response (an id, no method) is ignored, shutdown then exit ends the session cleanly.
+-- script --
+send {"jsonrpc":"2.0","id":1,"method":"textDocument/hover","params":{}}
+initialize
+send {"jsonrpc":"2.0","method":"initialized","params":{}}
+send {"jsonrpc":"2.0","id":2,"method":"textDocument/completion","params":{}}
+send {"jsonrpc":"2.0","id":3,"method":"initialize","params":{}}
+raw {not json
+send {"jsonrpc":"2.0","method":"$/cancelRequest","params":{"id":2}}
+send {"jsonrpc":"2.0","id":7,"result":null}
+send {"jsonrpc":"2.0","id":"s","method":"shutdown"}
+send {"jsonrpc":"2.0","id":4,"method":"shutdown"}
+send {"jsonrpc":"2.0","method":"exit"}
+-- transcript --
+> send {"jsonrpc":"2.0","id":1,"method":"textDocument/hover","params":{}}
+< {"jsonrpc":"2.0","id":1,"error":{"code":-32002,"message":"server not initialized"}}
+> initialize
+< {"jsonrpc":"2.0","id":0,"result":{"capabilities":{"positionEncoding":"utf-16","textDocumentSync":{"openClose":true,"change":1}},"serverInfo":{"name":"canon"}}}
+> send {"jsonrpc":"2.0","method":"initialized","params":{}}
+> send {"jsonrpc":"2.0","id":2,"method":"textDocument/completion","params":{}}
+< {"jsonrpc":"2.0","id":2,"error":{"code":-32601,"message":"method not found: textDocument/completion"}}
+> send {"jsonrpc":"2.0","id":3,"method":"initialize","params":{}}
+< {"jsonrpc":"2.0","id":3,"error":{"code":-32600,"message":"invalid request"}}
+> raw {not json
+< {"jsonrpc":"2.0","id":null,"error":{"code":-32700,"message":"parse error: invalid character 'n' looking for beginning of object key string"}}
+> send {"jsonrpc":"2.0","method":"$/cancelRequest","params":{"id":2}}
+> send {"jsonrpc":"2.0","id":7,"result":null}
+> send {"jsonrpc":"2.0","id":"s","method":"shutdown"}
+< {"jsonrpc":"2.0","id":"s","result":null}
+> send {"jsonrpc":"2.0","id":4,"method":"shutdown"}
+< {"jsonrpc":"2.0","id":4,"error":{"code":-32600,"message":"invalid request"}}
+> send {"jsonrpc":"2.0","method":"exit"}
+= <nil>

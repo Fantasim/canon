@@ -1,0 +1,36 @@
+Positions are UTF-16 code units (IMPLEMENTATION-PLAN §8.4 Positions, CLI.md §2.4): the finding
+on 2 starts at byte column 33, after an accent (2 bytes, 1 unit), a CJK character (3 bytes,
+1 unit) and an emoji (4 bytes, a surrogate pair of 2 units), so at character 27.
+A related location after the same text converts as well: "b: UInt8" after "/* é中😀 */ let "
+starts at byte column 21, character 15.
+-- proj/project.canon --
+project acme {
+  canon: "0.1"
+}
+-- proj/a/a.canon --
+/// A.
+package a
+
+/// S.
+let s: [String] = ["é中😀", 2]
+
+/// Byte.
+/* é中😀 */ let b: UInt8 = 300
+-- script --
+initialize
+send {"jsonrpc":"2.0","method":"initialized","params":{}}
+open proj/a/a.canon
+wait
+send {"jsonrpc":"2.0","id":9,"method":"shutdown"}
+send {"jsonrpc":"2.0","method":"exit"}
+-- transcript --
+> initialize
+< {"jsonrpc":"2.0","id":0,"result":{"capabilities":{"positionEncoding":"utf-16","textDocumentSync":{"openClose":true,"change":1}},"serverInfo":{"name":"canon"}}}
+> send {"jsonrpc":"2.0","method":"initialized","params":{}}
+> open proj/a/a.canon
+> wait
+< {"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"$URI/proj/a/a.canon","diagnostics":[{"range":{"start":{"line":4,"character":27},"end":{"line":4,"character":28}},"severity":1,"code":"E3002","source":"canon","message":"expected String, found Int"},{"range":{"start":{"line":7,"character":26},"end":{"line":7,"character":29}},"severity":1,"code":"E3201","source":"canon","message":"300 does not fit UInt8","relatedInformation":[{"location":{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":7,"character":15},"end":{"line":7,"character":23}}},"message":"b: UInt8"}]}]}}
+> send {"jsonrpc":"2.0","id":9,"method":"shutdown"}
+< {"jsonrpc":"2.0","id":9,"result":null}
+> send {"jsonrpc":"2.0","method":"exit"}
+= <nil>

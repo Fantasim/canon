@@ -19,3 +19,10 @@ func Example() {
 	// true true
 	// <nil>
 }
+
+func ExampleRun() {
+	err := safego.Run(func() error { panic("bug") })
+	fmt.Println(errors.Is(err, safego.ErrPanic), safego.Run(func() error { return nil }))
+	// Output:
+	// true <nil>
+}
