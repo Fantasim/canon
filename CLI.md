@@ -80,10 +80,10 @@ formatted or tested.
 | `--root <name>=<dir>` | use `<dir>` for the declared root `<name>` instead of the path in `project.canon`; repeatable. Tests and fixtures use it to redirect every root (`examples/_fixtures/README.md`); a name the project does not declare is a usage error (exit 2) |
 | `--layer <name>` | apply a layer (SPEC §19); repeatable, applied in order; a name that matches no layer file of any loaded package is `E1901` (exit 2) |
 | `--format text\|json` | output format (default `text`) |
-| `--color auto\|always\|never` | colours in text output (default `auto`; `NO_COLOR` is respected) |
+| `--color auto\|always\|never` | colours the severity word and code of each finding header in text output (default `auto`: only on a terminal; a non-empty `NO_COLOR` turns `auto` off; `always` wins over it) |
 | `-q`, `--quiet` | print errors only |
 | `--max-warnings <n>` | exit with code 4 when there are more than `n` warnings (default: unlimited) |
-| `--lang <code>` | language of check messages that have translations (default: the source language) |
+| `--lang <code>` | language of check messages that have translations (default: the source language); a code with no translation file falls back to the source language |
 
 Environment variables change how `canon` **prints**, never what a program computes (the purity
 law applies to evaluation, SPEC §1.1).
