@@ -1,0 +1,32 @@
+CLI.md §3.12, LOCK.md §8 step 4: values not locked yet are one W6006 per package, a warning (exit 0).
+-- args --
+lock
+check
+
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Tier.
+record Tier {
+  /// Weight.
+  weight: Int = 1
+}
+
+/// Tiers.
+let tiers: stable table Tier = { low {}, high {} }
+-- a/canon.lock --
+# canon.lock v1
+table  a.tiers  low
+-- want --
+[exit 0]
+[stdout]
+warning[W6006]  a/canon.lock:1:1
+  1 stable value is not in canon.lock yet: run canon build
+
+0 errors, 1 warning in 1 package (…)
+[stderr]

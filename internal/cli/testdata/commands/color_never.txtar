@@ -1,0 +1,27 @@
+CLI.md §2.3: --color never prints plain text even on a terminal.
+-- args --
+check
+--color=never
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+/// Dangling.
+
+const = 1
+-- env --
+terminal
+-- want --
+[exit 1]
+[stdout]
+warning[W1001]  a/a.canon:3:1
+  doc comment is not attached to anything
+
+error[E1116]  a/a.canon:5:7
+  expected IDENT; found =
+
+1 error, 1 warning in 1 package (…)
+[stderr]

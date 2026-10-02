@@ -18,9 +18,14 @@ JSON Lines; `edit` and `rename` always do.
 | `canon refs <path>` | every reference to an entry or enum member |
 | `canon edit [request.json]` | apply one edit request (stdin without a file) |
 | `canon rename <name> <new-name>` | rename a Canon name everywhere |
+| `canon lock check [packages]` | verify `canon.lock` against the sources without building: `E6001`..`E6005`, and `W6006` for values not locked yet |
 | `canon lsp` | language server for editors (read-only) |
 | `canon version` | compiler, language and format versions |
 | `canon guide [topic]` | this guide |
+
+Global flags: `--color auto|always|never` colours the severity and code of text findings (auto: a
+terminal and no `NO_COLOR`; never in JSON); `--lang <code>` is the language of translated check
+messages, the source language otherwise (named-check messages are not translated yet).
 
 Packages: none (all), `shop.items`, `shop...` (and below), `./shop/items`, `shop/items/x.canon`.
 
@@ -151,7 +156,8 @@ Three output shapes:
 `changes[].kind`: `modified`, `created`, `deleted`, `renamed` (with `oldPath`). `dropped`:
 values removed by cascades, `{"path", "value"}`. `undo` is a complete request (with `editLayer`
 when the edit had one): save it, feed it to `canon edit` to revert the values. Exception: an
-entry added to a stable table is permanent, so that undo (a `remove`) is refused.
+entry added to a stable table is permanent, so its undo is a `retire` of the new key: the entry
+stays, retired, and its `canon.lock` line ends with `retired`.
 
 ## rename
 
@@ -186,7 +192,7 @@ Output `status`: `written`, `unchanged`, `stale`, `adopted`. `fmt` prints
 |---|---|
 | 0 | success |
 | 1 | an error finding; a failing test; `--check` found something out of date; an edit refused (`ErrRejected`, `ErrStale`, `ErrNotEditable`, `ErrStableKey`, `ErrKeyExists`, `ErrNotCanonical`, `ErrNameClash`) or a value that could not be computed (`ErrNoValue`) |
-| 2 | usage: bad flag or argument, unknown package or layer, no `project.canon`, a bad path or op (`ErrBadPath`, `ErrNoPath`, `ErrAmbiguousPath`, `ErrBadOp`, `ErrBadValue`), a target with no generator |
+| 2 | usage: bad flag or argument, unknown package or layer, no `project.canon`, a bad path or op (`ErrBadPath`, `ErrNoPath`, `ErrAmbiguousPath`, `ErrBadOp`, `ErrBadValue`) |
 | 3 | internal compiler error (`ErrInternal`): report it |
 | 4 | more warnings than `--max-warnings <n>` |
 | 130 | interrupted; writes finished or rolled back |

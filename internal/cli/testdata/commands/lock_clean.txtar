@@ -1,0 +1,30 @@
+CLI.md §3.12, LOCK.md §8: a lock that holds every stable value is clean, exit 0.
+-- args --
+lock
+check
+
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Tier.
+record Tier {
+  /// Weight.
+  weight: Int = 1
+}
+
+/// Tiers.
+let tiers: stable table Tier = { low {}, high {} }
+-- a/canon.lock --
+# canon.lock v1
+table  a.tiers  high
+table  a.tiers  low
+-- want --
+[exit 0]
+[stdout]
+0 errors, 0 warnings in 1 package (…)
+[stderr]

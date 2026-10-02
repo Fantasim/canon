@@ -1,0 +1,24 @@
+CLI.md §2.3: JSON output is never coloured.
+-- args --
+check
+--color
+always
+--format
+json
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+/// Dangling.
+
+const = 1
+-- want --
+[exit 1]
+[stdout]
+{"severity":"warning","code":"W1001","file":"a/a.canon","line":3,"col":1,"endLine":3,"endCol":14,"package":"a","message":"doc comment is not attached to anything"}
+{"severity":"error","code":"E1116","file":"a/a.canon","line":5,"col":7,"endLine":5,"endCol":8,"package":"a","message":"expected IDENT; found ="}
+{"summary":{"errors":1,"warnings":1,"packages":1,"ms":0}}
+[stderr]

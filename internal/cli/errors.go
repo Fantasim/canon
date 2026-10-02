@@ -15,6 +15,8 @@ var (
 	errBadRoot        = errors.New("want name=dir")
 	errRootTwice      = errors.New("a root is given twice")
 	errBadFormat      = errors.New("want --format text or json")
+	errBadColor       = errors.New("want --color auto, always or never")
+	errBadLock        = errors.New("want: canon lock check [packages...]")
 	errBadMax         = errors.New("want a count of 0 or more")
 	errBadTarget      = errors.New("want go, cpp, ts, json or view")
 	errBadName        = errors.New("not an identifier; give the project name with --name")

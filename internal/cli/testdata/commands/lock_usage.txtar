@@ -1,0 +1,13 @@
+CLI.md §3.12: lock takes the subcommand check; anything else is a usage error, exit 2.
+-- args --
+lock
+
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- want --
+[exit 2]
+[stdout]
+[stderr]
+canon: lock: want: canon lock check [packages...]

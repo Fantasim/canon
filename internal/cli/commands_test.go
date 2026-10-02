@@ -23,6 +23,7 @@ const (
 	dirFile   = "dir"  // the directory to run in, under $TMP
 	wantFile  = "want"
 	stdinFile = "stdin" // the command's standard input
+	envFile   = "env"   // injected Env values, one word per line: terminal, no_color
 	tmpMark   = "$TMP"
 )
 
@@ -40,7 +41,7 @@ var (
 )
 
 func control(name string) bool {
-	return name == argsFile || name == dirFile || name == wantFile || name == stdinFile
+	return name == argsFile || name == dirFile || name == wantFile || name == stdinFile || name == envFile
 }
 
 func archived(a *txtar.Archive, name string) (string, bool) {
@@ -93,7 +94,13 @@ func run(t *testing.T, a *txtar.Archive) result {
 	args := strings.Fields(strings.ReplaceAll(text, tmpMark, filepath.ToSlash(tmp)))
 	in, _ := archived(a, stdinFile)
 	var out, errs bytes.Buffer
-	code := cli.Main(context.Background(), args, cli.Env{Stdin: strings.NewReader(in), Stdout: &out, Stderr: &errs, Dir: dir})
+	envText, _ := archived(a, envFile)
+	words := strings.Fields(envText)
+	env := cli.Env{
+		Stdin: strings.NewReader(in), Stdout: &out, Stderr: &errs, Dir: dir,
+		Terminal: slices.Contains(words, "terminal"), NoColor: slices.Contains(words, "no_color"),
+	}
+	code := cli.Main(context.Background(), args, env)
 	return result{tmp: tmp, code: code, stdout: out.String(), stderr: errs.String()}
 }
 

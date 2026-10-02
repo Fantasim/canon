@@ -17,6 +17,8 @@ type options struct {
 	project     string
 	roots       map[string]string
 	format      string
+	color       string
+	lang        string
 	quiet       bool
 	maxWarnings int
 	name        string
@@ -35,7 +37,7 @@ type options struct {
 }
 
 func newOptions() *options {
-	return &options{roots: map[string]string{}, format: formatText, maxWarnings: unlimited, depth: unlimited}
+	return &options{roots: map[string]string{}, format: formatText, color: colorAuto, maxWarnings: unlimited, depth: unlimited}
 }
 
 // newFlagSet is the global flags of CLI.md §2.3, then the command's own.
@@ -46,6 +48,8 @@ func newFlagSet(o *options, own func(*flag.FlagSet, *options)) *flag.FlagSet {
 	fs.StringVar(&o.project, flagProject, o.project, usageProject)
 	fs.Func(flagRoot, usageRoot, o.addRoot)
 	fs.StringVar(&o.format, flagFormat, o.format, usageFormat)
+	fs.StringVar(&o.color, flagColor, o.color, usageColor)
+	fs.StringVar(&o.lang, flagLang, o.lang, usageLang)
 	fs.BoolVar(&o.quiet, flagQuiet, o.quiet, usageQuiet)
 	fs.BoolVar(&o.quiet, flagQuietShort, o.quiet, usageQuiet)
 	fs.Func(flagMaxWarnings, usageMaxWarnings, o.setMaxWarnings)
@@ -160,6 +164,9 @@ func (o *options) setMaxWarnings(v string) (err error) {
 func (o *options) check() error {
 	if o.format != formatText && o.format != formatJSON {
 		return fmt.Errorf(fmtQuoted, o.format, errBadFormat)
+	}
+	if !slices.Contains(colorModes[:], o.color) {
+		return fmt.Errorf(fmtQuoted, o.color, errBadColor)
 	}
 	return nil
 }

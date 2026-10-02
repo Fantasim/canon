@@ -1,0 +1,21 @@
+CLI.md §2.3, §2.5: the findings of a broken project.canon (the ProjectError path) are coloured.
+-- args --
+check
+--color
+always
+-- project.canon --
+project acme {
+  canon: "0.2"
+  colour: red
+}
+-- want --
+[exit 2]
+[stdout]
+[31merror[E1001][0m  project.canon:2:10
+  project requires Canon 0.2; this compiler supports 0.1
+
+[31merror[E1002][0m  project.canon:3:3
+  unknown project key "colour"
+
+2 errors, 0 warnings in 0 packages (…)
+[stderr]

@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"path/filepath"
@@ -76,7 +77,14 @@ func (inv *invocation) shown(findings []canon.Finding) []canon.Finding {
 // writeFindings prints findings and the summary through the API's one writer (API.md F16).
 func (inv *invocation) writeFindings(findings []canon.Finding, s canon.Summary, d time.Duration) error {
 	opts := canon.WriteOptions{JSON: inv.opt.format == formatJSON, Summary: s, Duration: d}
-	return canon.WriteFindings(inv.env.Stdout, findings, opts)
+	if !inv.colored() {
+		return canon.WriteFindings(inv.env.Stdout, findings, opts)
+	}
+	var b bytes.Buffer
+	if err := canon.WriteFindings(&b, findings, opts); err != nil {
+		return fmt.Errorf(fmtWrap, err)
+	}
+	return writeText(inv.env.Stdout, inv.paint(b.String()))
 }
 
 // selectors are the arguments, a path made relative to the project root (CLI.md §2.2).

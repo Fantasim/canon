@@ -1,0 +1,42 @@
+LOCK.md §6.1, §8: with --layer, a layer changing a stable collection is E6004, exit 1.
+-- args --
+lock
+check
+--layer
+knights
+
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Tier.
+record Tier {
+  /// Code.
+  code: Int @stable
+}
+
+/// Tiers.
+let tiers: stable table Tier = { low { code: 1 } }
+-- a/canon.lock --
+# canon.lock v1
+field  a.tiers.code  1  low
+table  a.tiers  low
+-- a/knights.layer.canon --
+package a
+layer knights
+
+amend tiers {
+  high: { code: 2 }
+}
+-- want --
+[exit 1]
+[stdout]
+error[E6004]  a/knights.layer.canon:5:3
+  layer knights cannot add an entry to stable table tiers
+
+1 error, 0 warnings in 1 package (…)
+[stderr]

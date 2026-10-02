@@ -10,10 +10,12 @@ import (
 
 // Env is the process as a command sees it: its output streams and current directory.
 type Env struct {
-	Stdin  io.Reader // read by canon edit without a request file and by canon lsp; nil is empty
-	Stdout io.Writer
-	Stderr io.Writer
-	Dir    string
+	Stdin    io.Reader // read by canon edit without a request file and by canon lsp; nil is empty
+	Stdout   io.Writer
+	Stderr   io.Writer
+	Dir      string
+	NoColor  bool // NO_COLOR is set and not empty, read by the caller (CLI.md §2.3)
+	Terminal bool // Stdout is a terminal, found by the caller
 }
 
 // command is one command of CLI.md §3: its own flags, then its run.
@@ -32,6 +34,7 @@ func commands() map[string]command {
 		cmdFmt:     {flags: fmtFlags, run: runFmt},
 		cmdGuide:   {run: runGuide},
 		cmdInit:    {flags: initFlags, run: runInit},
+		cmdLock:    {run: runLock},
 		cmdLSP:     {run: runLSP},
 		cmdNew:     {run: runNew},
 		cmdRefs:    {run: runRefs},

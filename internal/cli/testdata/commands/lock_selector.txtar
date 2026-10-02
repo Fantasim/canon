@@ -1,0 +1,27 @@
+CLI.md §2.2, §3.12: lock check takes packages; an unknown one is a usage error.
+-- args --
+lock
+check
+nope
+
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Tier.
+record Tier {
+  /// Weight.
+  weight: Int = 1
+}
+
+/// Tiers.
+let tiers: stable table Tier = { low {}, high {} }
+-- want --
+[exit 2]
+[stdout]
+[stderr]
+canon: unknown package: nope

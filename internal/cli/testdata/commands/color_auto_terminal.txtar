@@ -1,0 +1,26 @@
+CLI.md §2.3: --color auto (the default) colours when stdout is a terminal.
+-- args --
+check
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+/// Dangling.
+
+const = 1
+-- env --
+terminal
+-- want --
+[exit 1]
+[stdout]
+[33mwarning[W1001][0m  a/a.canon:3:1
+  doc comment is not attached to anything
+
+[31merror[E1116][0m  a/a.canon:5:7
+  expected IDENT; found =
+
+1 error, 1 warning in 1 package (…)
+[stderr]

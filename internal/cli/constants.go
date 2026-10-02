@@ -31,6 +31,7 @@ const (
 	cmdRename  = "rename"
 	cmdLSP     = "lsp"
 	cmdGuide   = "guide"
+	cmdLock    = "lock"
 )
 
 // Flags (CLI.md §2.3, §3.1, §3.4).
@@ -46,6 +47,8 @@ const (
 	flagCheck       = "check"
 	flagAdopt       = "adopt"
 	flagLayer       = "layer"
+	flagColor       = "color"
+	flagLang        = "lang"
 	flagRun         = "run"
 	flagVerbose     = "v"
 	flagDepth       = "depth"
@@ -72,6 +75,8 @@ const (
 	usageCheck       = "write nothing; exit 1 if any output or lock would change"
 	usageAdopt       = "take over the hand-written file at `path` (repeatable)"
 	usageLayer       = "apply the layer `name`; repeatable, applied in order"
+	usageColor       = "colour text output: `when` is auto, always or never (auto: a terminal, unless NO_COLOR is set)"
+	usageLang        = "`code` of the language of translated check messages (default: the source language)"
 	usageRun         = "run only the tests whose name matches the RE2 `regex`"
 	usageVerbose     = "also print each passing test"
 	usageDepth       = "print parts `n` levels deep (default: every part)"
@@ -94,6 +99,7 @@ commands:
   fmt [paths...]        rewrite sources in the canonical layout
   guide [topic]         print the agent guide: the index, or one topic
   init                  create project.canon in the current directory
+  lock check [pkgs...]  verify canon.lock against the sources, no build
   lsp                   run the language server on stdin and stdout
   new <package>         create a package directory with a first file
   refs <path>           list every place that references an entry or member
@@ -263,3 +269,21 @@ const (
 	hunkDefaultCount  = 1
 	decimalBase       = 10
 )
+
+// --color values (CLI.md §2.3) and the ANSI sequences of a finding's severity word and code.
+const (
+	colorAuto    = "auto"
+	colorAlways  = "always"
+	colorNever   = "never"
+	ansiReset    = "\x1b[0m"
+	ansiRed      = "\x1b[31m"
+	ansiYellow   = "\x1b[33m"
+	findingHead  = `(?m)^(error|warning)\[[A-Z][0-9]+\]`
+	severityWarn = "warning"
+)
+
+// canon lock check (CLI.md §3.12): its one subcommand.
+const subLockCheck = "check"
+
+// colorModes are the words --color accepts (CLI.md §2.3).
+var colorModes = [...]string{colorAuto, colorAlways, colorNever}

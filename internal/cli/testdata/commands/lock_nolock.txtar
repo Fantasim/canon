@@ -1,0 +1,29 @@
+LOCK.md §8 step 4: a package without canon.lock gets a W6006 without a location.
+-- args --
+lock
+check
+
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Tier.
+record Tier {
+  /// Weight.
+  weight: Int = 1
+}
+
+/// Tiers.
+let tiers: stable table Tier = { low {}, high {} }
+-- want --
+[exit 0]
+[stdout]
+warning[W6006]
+  2 stable values are not in canon.lock yet: run canon build
+
+0 errors, 1 warning in 1 package (…)
+[stderr]

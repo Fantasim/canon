@@ -177,8 +177,8 @@ From [CLI.md](CLI.md) §1; each command has its own section in CLI.md §3.
 | `canon i18n stub \| status` | manage translation files (M7) |
 | `canon lock check` | verify `canon.lock` against the sources without building |
 
-`canon` with no argument lists what the installed binary implements; `convert`, `i18n` (M7) and
-`lock check` are specified but not built yet.
+`canon` with no argument lists what the installed binary implements; `convert` and `i18n` (M7)
+are specified but not built yet.
 
 ## Editor
 

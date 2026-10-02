@@ -1,0 +1,32 @@
+CLI.md §3.12, IMPLEMENTATION-PLAN §8.1: --format json prints one finding per line, then the summary.
+-- args --
+lock
+check
+--format
+json
+
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Tier.
+record Tier {
+  /// Weight.
+  weight: Int = 1
+}
+
+/// Tiers.
+let tiers: stable table Tier = { low {}, high {} }
+-- a/canon.lock --
+# canon.lock v1
+table  a.tiers  low
+-- want --
+[exit 0]
+[stdout]
+{"severity":"warning","code":"W6006","file":"a/canon.lock","line":1,"col":1,"endLine":1,"endCol":1,"package":"a","message":"1 stable value is not in canon.lock yet: run canon build"}
+{"summary":{"errors":0,"warnings":1,"packages":1,"ms":0}}
+[stderr]

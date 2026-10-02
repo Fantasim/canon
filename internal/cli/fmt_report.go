@@ -106,10 +106,11 @@ func (r *fmtRun) writeFindings(d time.Duration) error {
 			opt.Summary.Warnings++
 		}
 	}
-	if err := diag.Write(r.inv.env.Stdout, diag.Locate(&r.set, r.findings), opt); err != nil {
+	var b bytes.Buffer
+	if err := diag.Write(&b, diag.Locate(&r.set, r.findings), opt); err != nil {
 		return fmt.Errorf(fmtWrap, err)
 	}
-	return nil
+	return writeText(r.inv.env.Stdout, r.inv.paint(b.String()))
 }
 
 // writeFindingLines prints the findings as JSON lines, diag's summary line left off: fmt has its own.

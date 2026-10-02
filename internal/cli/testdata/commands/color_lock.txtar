@@ -1,0 +1,31 @@
+CLI.md §2.3: lock check colours its findings like check.
+-- args --
+lock
+check
+--color
+always
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Tiers.
+let tiers: stable table Row = { low {} }
+
+/// Row.
+record Row {}
+-- a/canon.lock --
+# canon.lock v1
+table  a.tiers  gone
+table  a.tiers  low
+-- want --
+[exit 1]
+[stdout]
+[31merror[E6001][0m  a/canon.lock:2:1
+  a.tiers.gone was removed; retire it instead
+
+1 error, 0 warnings in 1 package (…)
+[stderr]

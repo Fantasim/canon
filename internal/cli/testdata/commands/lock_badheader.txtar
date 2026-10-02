@@ -1,0 +1,31 @@
+LOCK.md §2.4, CLI.md §2.5: a lock without its header is E6005, exit 1.
+-- args --
+lock
+check
+
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Tier.
+record Tier {
+  /// Weight.
+  weight: Int = 1
+}
+
+/// Tiers.
+let tiers: stable table Tier = { low {}, high {} }
+-- a/canon.lock --
+table  a.tiers  low
+-- want --
+[exit 1]
+[stdout]
+error[E6005]  a/canon.lock:1:1
+  canon.lock: missing header
+
+1 error, 0 warnings in 1 package (…)
+[stderr]

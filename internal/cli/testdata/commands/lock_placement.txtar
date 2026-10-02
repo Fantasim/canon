@@ -1,0 +1,27 @@
+LOCK.md §1, §8 step 1: lock check type-checks, so a misplaced stable table is E6003, exit 1.
+-- args --
+lock
+check
+
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+local record Row {
+  n: Int
+}
+
+local record Holder {
+  rows: stable table Row
+}
+-- want --
+[exit 1]
+[stdout]
+error[E6003]  a/a.canon:8:9
+  stable table must be the whole type of a top-level let
+
+1 error, 0 warnings in 1 package (…)
+[stderr]

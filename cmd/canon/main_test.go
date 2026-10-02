@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"os"
 	"strings"
 	"testing"
 )
@@ -15,5 +16,21 @@ func TestRun(t *testing.T) {
 	}
 	if code := run(context.Background(), []string{"frobnicate"}, &stdout, &stderr); code != 2 {
 		t.Errorf("unknown command: exit %d", code)
+	}
+}
+
+// CLI.md §2.3: a pipe is not a terminal, so --color auto does not colour into it.
+func TestIsTerminalPipe(t *testing.T) {
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer r.Close()
+	defer w.Close()
+	if isTerminal(w) {
+		t.Error("a pipe is a terminal")
+	}
+	if isTerminal(&strings.Builder{}) {
+		t.Error("a non-file writer is a terminal")
 	}
 }

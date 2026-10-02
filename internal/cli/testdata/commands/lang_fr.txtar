@@ -1,0 +1,25 @@
+CLI.md §2.3, I18N.md B5: --lang fr is accepted when the project has that language, and a message with no translation (compiler diagnostics have no key, K8) stays in the source language.
+-- args --
+check
+--lang
+fr
+-- project.canon --
+project acme {
+  canon: "0.1"
+  languages: [en, fr]
+}
+-- a/a.canon --
+package a
+
+const = 1
+-- a/a.fr.canon --
+package a
+translation fr
+-- want --
+[exit 1]
+[stdout]
+error[E1116]  a/a.canon:3:7
+  expected IDENT; found =
+
+1 error, 0 warnings in 1 package (…)
+[stderr]

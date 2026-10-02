@@ -1,0 +1,33 @@
+CLI.md §3.12, §2.3, §2.5: W6006 is a warning; more of them than --max-warnings is exit 4.
+-- args --
+lock
+check
+--max-warnings
+0
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Tier.
+record Tier {
+  /// Weight.
+  weight: Int = 1
+}
+
+/// Tiers.
+let tiers: stable table Tier = { low {}, high {} }
+-- a/canon.lock --
+# canon.lock v1
+table  a.tiers  low
+-- want --
+[exit 4]
+[stdout]
+warning[W6006]  a/canon.lock:1:1
+  1 stable value is not in canon.lock yet: run canon build
+
+0 errors, 1 warning in 1 package (…)
+[stderr]

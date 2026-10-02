@@ -1,7 +1,8 @@
-CLI.md §3.6: a flag fmt does not have is a usage error, exit 2.
+CLI.md §2.3, §2.5: a --color value other than auto, always or never is a usage error.
 -- args --
-fmt
---fix
+check
+--color
+red
 -- project.canon --
 project acme {
   canon: "0.1"
@@ -9,12 +10,14 @@ project acme {
 -- a/a.canon --
 package a
 
-let x: Int = 1
+/// Dangling.
+
+const = 1
 -- want --
 [exit 2]
 [stdout]
 [stderr]
-canon: flag provided but not defined: -fix
+canon: "red": want --color auto, always or never
 usage: canon <command> [arguments] [flags]
 
 commands:
@@ -34,16 +37,10 @@ commands:
   version               print the compiler, language and format versions
 
 flags:
-  -check
-    	write nothing; list the files that are not formatted and exit 1
   -color when
     	colour text output: when is auto, always or never (auto: a terminal, unless NO_COLOR is set) (default "auto")
-  -diff
-    	print the changes instead of writing
   -format format
     	output format: text or json (default "text")
-  -json-sources
-    	also normalize the JSON files read by load to the canonical JSON layout
   -lang code
     	code of the language of translated check messages (default: the source language)
   -layer name
@@ -57,3 +54,5 @@ flags:
     	print errors only
   -root name=dir
     	use name=dir for a declared root; repeatable
+  -watch
+    	run again after every change, printing what changed

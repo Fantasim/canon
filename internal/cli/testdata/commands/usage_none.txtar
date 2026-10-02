@@ -15,6 +15,7 @@ commands:
   fmt [paths...]        rewrite sources in the canonical layout
   guide [topic]         print the agent guide: the index, or one topic
   init                  create project.canon in the current directory
+  lock check [pkgs...]  verify canon.lock against the sources, no build
   lsp                   run the language server on stdin and stdout
   new <package>         create a package directory with a first file
   refs <path>           list every place that references an entry or member
@@ -23,8 +24,12 @@ commands:
   version               print the compiler, language and format versions
 
 flags:
+  -color when
+    	colour text output: when is auto, always or never (auto: a terminal, unless NO_COLOR is set) (default "auto")
   -format format
     	output format: text or json (default "text")
+  -lang code
+    	code of the language of translated check messages (default: the source language)
   -layer name
     	apply the layer name; repeatable, applied in order
   -max-warnings n

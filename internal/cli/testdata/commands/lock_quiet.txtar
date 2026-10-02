@@ -1,0 +1,30 @@
+CLI.md §2.3, §3.12: -q drops the W6006 warning, the summary stays.
+-- args --
+lock
+check
+-q
+
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Tier.
+record Tier {
+  /// Weight.
+  weight: Int = 1
+}
+
+/// Tiers.
+let tiers: stable table Tier = { low {}, high {} }
+-- a/canon.lock --
+# canon.lock v1
+table  a.tiers  low
+-- want --
+[exit 0]
+[stdout]
+0 errors, 1 warning in 1 package (…)
+[stderr]

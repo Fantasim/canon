@@ -65,7 +65,7 @@ func (inv *invocation) writeFindingsOnly(findings []canon.Finding) error {
 	if err := canon.WriteFindings(&b, findings, canon.WriteOptions{JSON: inv.opt.format == formatJSON}); err != nil {
 		return fmt.Errorf(fmtWrap, err)
 	}
-	return writeText(inv.env.Stdout, inv.withoutSummary(b.String()))
+	return writeText(inv.env.Stdout, inv.paint(inv.withoutSummary(b.String())))
 }
 
 // withoutSummary is rendered findings less their summary line and, in text, the blank line before it (API.md F14).
@@ -102,7 +102,7 @@ func (inv *invocation) openProjectFS(fsys canon.FS) (*canon.Project, error) {
 	if err != nil {
 		return nil, err
 	}
-	return canon.Open(root, canon.Options{Roots: inv.opt.roots, Layers: inv.opt.layers, EditLayer: inv.opt.editLayer, FS: fsys})
+	return canon.Open(root, canon.Options{Roots: inv.opt.roots, Layers: inv.opt.layers, Lang: inv.opt.lang, EditLayer: inv.opt.editLayer, FS: fsys})
 }
 
 // projectRoot is --project, else the directory holding project.canon at or above the current one (CLI.md §2.1).

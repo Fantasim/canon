@@ -1,0 +1,34 @@
+LOCK.md §4.1, CLI.md §2.5: a removed locked id is E6001, exit 1.
+-- args --
+lock
+check
+
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Tier.
+record Tier {
+  /// Weight.
+  weight: Int = 1
+}
+
+/// Tiers.
+let tiers: stable table Tier = { low {}, high {} }
+-- a/canon.lock --
+# canon.lock v1
+table  a.tiers  gone
+table  a.tiers  high
+table  a.tiers  low
+-- want --
+[exit 1]
+[stdout]
+error[E6001]  a/canon.lock:2:1
+  a.tiers.gone was removed; retire it instead
+
+1 error, 0 warnings in 1 package (…)
+[stderr]
