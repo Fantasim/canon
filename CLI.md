@@ -42,6 +42,8 @@ the network.
 | `canon i18n stub \| status` | manage translation files |
 | `canon lock check` | verify `canon.lock` against the sources without building |
 | `canon lsp` | language server on stdio |
+| `canon edit` | apply one edit request (JSON) through the edit API |
+| `canon rename <name> <new>` | rename a Canon name everywhere it is used |
 | `canon version` | compiler and language versions |
 
 ---
@@ -544,6 +546,45 @@ language 0.1
 formats canon-fp v1, canon-vm/1, canon.lock v1
 ```
 
+
+### 3.15 `canon edit`
+
+```
+canon edit [request.json] [--layer …] [--edit-layer <name>]
+```
+
+Applies one edit request through the edit API (§5.3, [spec/API.md](spec/API.md) §7 to §10), so
+the write is checked, atomic and minimal. The request is the JSON form of API.md §8.8, read from
+the file or, without one, from stdin; `--edit-layer` sets `Options.EditLayer`. It prints one JSON
+object (DECISIONS 274):
+
+```json
+{"edit":{"applied":true,"revision":"r2:…","changes":[{"kind":"modified","path":"resource/farm/farm.canon"}],"dropped":[],"undo":{"base":"r2:…","ops":[{"op":"set","path":"farm.modelTypes[3].maxLevel","value":9}]}}}
+```
+
+then one line per finding (§2.4) and the summary line. `undo` is a complete request, `base`
+included, that reverts the edit when given back to `canon edit`. With `"dryRun": true` nothing is
+written and `applied` is false. An API error prints its text (API.md X1) on stderr and exits as
+API.md §15 says; an edit refused for its findings prints them and exits 1.
+
+Exit: 0, 1, 2, 3.
+
+### 3.16 `canon rename`
+
+```
+canon rename <name> <new-name> [--dry-run]
+```
+
+Renames a Canon name (a field, type, function, let or local) and everything that names it, in
+one atomic, minimal edit: views, translation keys and layer amendment paths follow. A field
+without an explicit wire name that is reachable from a loaded or emitted value gains
+`@json("<old name>")`, so no data file changes (DECISIONS 3). Renaming a stable id is refused;
+`Retire` is the way out. Keys of data (entries, map keys) are renamed with `canon edit`'s `rename`
+op instead. The `<name>` syntax and the API form are ruled before the unit is built (DECISIONS
+274). Prints the changed files, then the summary.
+
+Exit: 0, 1, 2, 3.
+
 ---
 
 ## 4. Editor integration
@@ -557,12 +598,12 @@ findings are converted from their UTF-8 byte columns.
 |---|---|
 | diagnostics | every finding, as you type, including findings located in `load`ed JSON files, published even for files the editor has not opened |
 | hover | type, doc comment, default, and for values the computed value |
-| completion | fields, enum members, variant cases, table keys (with the target's `title`: typing `moon` in a `ref items` field offers "Moonstone · II_GEN_MAT_MOONSTONE") |
 | go to definition | from a use to its declaration; from a `ref` value to the entry, including into JSON |
 | find references | same as `canon refs` |
-| rename | for Canon names (fields, types, functions, lets, locals), with every view, translation key and layer path that names them. Renaming a field that has no explicit wire name and appears on the wire adds `@json("<old name>")`, so no data file changes (DECISIONS 3). Renaming a stable id is refused, with an action to retire it instead |
 | formatting | `canon fmt` |
-| code actions | add missing required fields; create a translation stub; add a doc comment placeholder |
+
+The server is for reading: completion, code actions and rename are not offered (DECISIONS 274).
+Values are edited in the studio or, by agents, with `canon edit` and `canon rename` (§6.5).
 
 ---
 
@@ -780,3 +821,17 @@ Step 3 is required: `convert` refuses a value that its package's `emit json` doe
 (§3.10). For a single-file source whose path deployments rely on, `canon convert --adopt` makes
 the `emit json` write the data file at that same path: one `out` is changed to it, and a list of
 `out` entries gains it as a further entry, unless one already resolves to it (§3.10 step 4).
+
+### 6.5 Agents editing the law
+
+An agent edits through the compiler rather than the text, so every write is checked and minimal
+(DECISIONS 274):
+
+```
+canon check --format json                 # what is wrong, with value paths and related locations
+canon explain <path> --format json        # a value, its type and where each part was set
+canon refs <path>                         # what uses an entry, before removing or retiring it
+canon edit fix.json                       # apply value changes; prints the Undo request
+canon rename <name> <new-name>            # rename a field, type or function everywhere
+canon fmt                                 # after any hand edit of the code itself
+```

@@ -2486,6 +2486,24 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      computed amendment line", "M4.1 round 3 review", "Sync 2 review: the Undo verification gate",
      "M4.1 round 4", "M4.1 round 6".
 
+## 2026-10-02 — Louis: M5 serves people reading and agents writing
+
+274. **The language server is a viewer; agents edit through the CLI (CLI.md §3.13, §3.15, §3.16,
+     §4, §6.5; IMPLEMENTATION-PLAN §6 M5, §8.4; amends the §4 feature table).** Nobody on the team
+     types Canon by hand: values are edited in the studio or by agents, and agents fix findings
+     themselves. So `canon lsp` keeps what helps a person read and navigate: highlighting,
+     diagnostics (JSON, CSV and header files included, open or not), hover, go to definition and
+     find references, and formatting. Completion, code actions and rename in the editor are
+     dropped from v0.1. What an agent needs instead is the CLI: `canon check --format json`,
+     `canon explain` and `canon refs` exist; `canon edit` is added, which applies one edit request
+     in the JSON form of API.md §8.8 through `Project.Edit` (checked, atomic, minimal writes,
+     with its Undo printed as a request that can be fed back); and `canon rename` is added, the
+     rename of a Canon name that §8.4 gave the language server (views, translation keys and
+     amendment paths follow, a field on the wire gains `@json("<old name>")`, a stable id is
+     refused). The rename's exact target syntax and its API form are ruled in their own sync
+     before its unit is built. CLI.md §6.5 gives the agent recipe. A browser view of values is
+     the studio's job (DECISIONS 191), not M5's. Reason: Louis, 2026-10-02.
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.

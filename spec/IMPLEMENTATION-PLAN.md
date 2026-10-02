@@ -773,7 +773,7 @@ acceptance tests pass.
 | **M2** pipeline | `jsonsrc` | export fns | `conform` | `rules` tests | `wire` decode, `load.dir` | fingerprint, reload IR, portable subset check | GO/CPP: data mode, stores, conformance | — | `cli` test | — | toolchain CI jobs |
 | **M3** load + view | `format` (start) | dependent types, views, i18n, layers | — | dependent verification, assets | `load` (all forms) | `types` mode | CPP: `types` mode | `views`, `gen/view`, `i18n`, `api/vm` | `Check`/`Value`/`ViewModel` in `api` | — | real-data job, benchmark generator |
 | **M4** fmt + edit | `format` done, JSON source printer | `check.Session` (incremental re-check) | incremental memo | — | — | — | — | `Evaluate` support | `edit`, `workspace`, full `api`, fmt/explain/refs/watch | — | edit goldens, fuzzing, perf gates |
-| **M5** LSP | recovery hardening | completion queries | — | — | — | — | — | — | support | LSP: server, grammar, extension | LSP transcripts |
+| **M5** LSP + agent CLI | recovery hardening | position queries; Canon-name rename | — | — | — | — | — | — | `cli` edit/rename | LSP: server, grammar, extension | LSP transcripts, edit/rename goldens |
 | **M6** legacy C++ + TS | — | — | — | — | — | legacy IR | CPP: `fields`/`both`/`getters`; TS: data, then complete | — | — | — | feature examples |
 | **M7** migration | — | — | — | — | — | — | — | `i18n stub`/`status` | `cli` wiring | MIG: `convert` | real-data runs |
 
@@ -907,13 +907,16 @@ determinism job green (§7.5), and every new registry code tested (§7.2).
 - M4 has no studio integration spike: the current resourcestudio is not adapted, and a new
   studio is built on the Canon API (DECISIONS 191).
 
-### M5 — Language server
+### M5 — Language server and agent CLI
 
-- Scope: §8.4.
+- Scope: §8.4; `canon edit` and `canon rename` (CLI.md §3.15, §3.16; DECISIONS 274).
 - Accepted when: scripted JSON-RPC transcripts (`internal/lsp/testdata/*.txtar`) pass for every
   feature of CLI.md §4; UTF-16 conversion tests with non-ASCII text pass; diagnostics for an edited
   entry file of the benchmark project are published within 500 ms of the last change; findings in
-  JSON files are published without the file being open.
+  JSON files are published without the file being open; `canon edit` applies a request and its
+  printed `undo` restores every file byte for byte, on every example of `examples/features/edits`;
+  `canon rename` has a golden per name kind (field on the wire, type, function, let, local) and a
+  refused stable id.
 
 ### M6 — Legacy C++ modes and TypeScript
 
@@ -1231,20 +1234,13 @@ Not part of v0.1 (DECISIONS 188).
 - **Features**, per CLI.md §4:
   - **hover:** canonical type text, doc comment, default, and for a value its canonical text
     truncated to 20 lines.
-  - **completion:** fields, members, cases and keys from the expected type. For a `ref`, each item
-    shows `<title> · <key>` and items are ranked as the studio's pickers (MOCKUP-GAPS 20: title
-    prefix, word prefix, title substring, key match, then shorter titles first), 60 items with
-    `isIncomplete`.
   - **definition:** declarations; from a `ref` value to the entry, including into JSON.
   - **references:** `Refs`.
-  - **rename:** Canon names (fields, types, functions, locals, lets). Renaming a field also
-    updates views, translation keys and amendment paths. If the field has no explicit wire name and
-    its type is reachable from a loaded or emitted value, the rename adds `@json("<old name>")` so
-    no data changes (DECISIONS 3). Renaming a stable id is refused, with a code action
-    to retire it.
   - **formatting:** `Format`.
-  - **code actions:** add missing required fields, create a translation stub, add a doc comment
-    placeholder.
+  - Completion, code actions and rename are not offered (DECISIONS 274). The rename of a Canon
+    name is `canon rename` (CLI.md §3.16): views, translation keys and amendment paths follow; a
+    field without an explicit wire name whose type is reachable from a loaded or emitted value
+    gains `@json("<old name>")` (DECISIONS 3); a stable id is refused.
 - **Highlighting.** A hand-written TextMate grammar (`editors/vscode/syntaxes/canon.tmLanguage.json`),
   tested against every example with a snapshot of scopes.
 

@@ -120,7 +120,13 @@ from IR fixtures" and M2's `embedded` example were accepted without these genera
 
 ## M5, M6, M7 — in parallel once M4 is accepted
 
-- [ ] **M5 LSP** (LSP, `lsp`, `editors/vscode`): txtar transcripts, UTF-16, 500 ms diagnostics.
+- [ ] **M5 LSP + agent CLI** (DECISIONS 274; LSP `lsp`, `editors/vscode`; CLI `cli`): a read-only
+  server (diagnostics incl. unopened JSON, hover, definition, references, formatting, highlighting;
+  no completion, code actions or editor rename): txtar transcripts, UTF-16, 500 ms diagnostics.
+  Agent CLI: `canon edit` (API.md §8.8 request, undo round trip), then `canon rename` after its
+  own sync (name syntax, API form). Units: L1 lsp core (transport, UTF-16, overlay sync,
+  diagnostics), L2 hover/definition/references/formatting, L3 `editors/vscode` + TextMate grammar,
+  A1 `canon edit`, A2 rename sync then build.
 - [ ] **M6 Legacy C++ and TypeScript** (CPP, TS; may start after M3): `legacycpp` in three modes;
   TS goldens pass `tsc --strict` and `node --test`; `E8101` tested.
 - [ ] **M7 Migration** (MIG, `convert`; VM for `i18n stub|status`; `infer` dropped, DECISIONS
