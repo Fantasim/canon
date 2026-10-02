@@ -572,8 +572,9 @@ complete request that reverts the edit's values when given back to `canon edit` 
 values, not layout); it carries `"editLayer"` when the edit had one. With `"dryRun": true`
 nothing is written and `applied` is false. An edit refused for its findings (`ErrRejected`)
 prints the object with `applied` false, empty `changes` and `dropped` and no `undo`, then the
-findings, and exits 1. Any other API error prints its text (API.md X1) on stderr and exits as
-API.md §15 says.
+findings, and exits 1. A `project.canon` with errors, or a poisoned value, prints its findings
+as JSON lines and the summary. Any other API error prints its text (API.md X1) on stderr and
+exits as API.md §15 says. A request whose top level is not a JSON object is `ErrBadOp`.
 
 Exit: 0, 1, 2, 3.
 
