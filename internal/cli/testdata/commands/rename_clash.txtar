@@ -1,0 +1,49 @@
+CLI.md §3.16, API.md E35: a rename that would change what another name refers to is ErrNameClash, exit 1.
+-- args --
+rename a:f.x y
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A server.
+record Rules {
+  /// Attempts.
+  retries: Int(1..) = 3
+}
+
+/// The rules.
+let server: Rules = { retries: 2 }
+
+/// Table.
+let items: table Rules = {
+  sword { retries: 1 }
+}
+
+/// A server.
+fn twice(n: Int) -> Int {
+  let m = n + 1
+  return m
+}
+
+/// A second.
+fn second(n: Int) -> Int {
+  let m = n + 2
+  return m
+}
+
+/// A capture.
+fn f(x: Int) -> Int {
+  return x
+}
+
+/// Called with a name that does not exist yet.
+let v: Int = f(y: 2)
+-- want --
+[exit 1]
+[stdout]
+[stderr]
+canon: op 0: a:f.x: rename would change what another name refers to: a/a.canon:36:16 would name a:y, declared at a/a.canon:31:6

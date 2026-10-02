@@ -28,23 +28,31 @@ func runEdit(inv *invocation) int {
 	if err != nil {
 		return inv.editFail(err, start)
 	}
+	return inv.applyEdit(req, start, wrapEdit)
+}
+
+// applyEdit checks every package, so the printed base is current for the next run (API.md S3), applies req and prints its object through wrap.
+func (inv *invocation) applyEdit(req canon.Edit, start time.Time, wrap func(editBody) any) int {
 	p, err := inv.openProject()
 	if err != nil {
 		return inv.editFail(err, start)
 	}
 	defer func() { _ = p.Close() }()
-	if _, err := p.Check(inv.ctx); err != nil { // load every package, so a revision means the same in the next process (API.md S3)
+	if _, err := p.Check(inv.ctx); err != nil {
 		return inv.editFail(err, start)
 	}
 	res, err := p.Edit(inv.ctx, req)
 	if res != nil && errors.Is(err, canon.ErrRejected) {
-		return inv.writeEdit(res, start, true)
+		return inv.writeEdit(res, start, true, wrap)
 	}
 	if err != nil {
 		return inv.editFail(err, start)
 	}
-	return inv.writeEdit(res, start, false)
+	return inv.writeEdit(res, start, false, wrap)
 }
+
+// wrapEdit is canon edit's line (CLI.md §3.15).
+func wrapEdit(b editBody) any { return editLine{Edit: b} }
 
 // decodeRequest reads the request and takes its "editLayer" key (CLI.md §3.15).
 func (inv *invocation) decodeRequest(data []byte) (canon.Edit, error) {
@@ -167,7 +175,7 @@ type editChange struct {
 }
 
 // writeEdit prints the edit object, then the findings and the summary as JSON lines; exit 1 when refused or when errors were written (allowErrors).
-func (inv *invocation) writeEdit(res *canon.EditResult, start time.Time, refused bool) int {
+func (inv *invocation) writeEdit(res *canon.EditResult, start time.Time, refused bool, wrap func(editBody) any) int {
 	body := editBody{
 		Applied: res.Applied, Revision: res.Revision, Dropped: res.Dropped,
 		Changes: make([]editChange, 0, len(res.Changes)),
@@ -180,7 +188,7 @@ func (inv *invocation) writeEdit(res *canon.EditResult, start time.Time, refused
 			body.Changes = append(body.Changes, editChange{Kind: c.Kind, Path: c.Path, OldPath: c.OldPath})
 		}
 	}
-	if err := inv.writeJSONLine(editLine{Edit: body}); err != nil {
+	if err := inv.writeJSONLine(wrap(body)); err != nil {
 		return inv.fail(err)
 	}
 	opts := canon.WriteOptions{JSON: true, Summary: res.Summary, Duration: time.Since(start)}

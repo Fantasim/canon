@@ -1,0 +1,75 @@
+CLI.md §3.16: a let renamed with its entry lines, ref types, emit values and @files in every package.
+-- args --
+features.renames:missions quests
+-- want --
+[exit 0]
+[stdout]
+{"rename":{"applied":true,"revision":"r1:70b98e26197fe959c5828ea95a7a5830243650f236db159d0699e4f5b99e0a42","changes":[{"kind":"modified","path":"features/renames/renames.canon"},{"kind":"modified","path":"features/renames/shop/shop.canon"},{"kind":"modified","path":"features/renames/store/rare/hunt.canon"}],"dropped":[],"undo":{"base":"r1:70b98e26197fe959c5828ea95a7a5830243650f236db159d0699e4f5b99e0a42","ops":[{"op":"renameName","path":"features.renames:quests","name":"missions"}]}}}
+{"summary":{"errors":0,"warnings":0,"packages":2,"ms":0}}
+[stderr]
+[diff features/renames/renames.canon]
+--- features/renames/renames.canon
++++ features/renames/renames.canon
+@@ -41,7 +41,7 @@
+   /// What it gives.
+   reward: Prize
+   /// The quest that follows it.
+-  next: ref missions? = none
++  next: ref quests? = none
+ 
+   /// What a list shows: the name and the level.
+   fn label(self) -> String { return "{name} ({level})" }
+@@ -49,7 +49,7 @@
+ 
+ /// The missions: the first here, the others in their own files, placed by rarity.
+ @files("store/{rarity}/{id}.canon")
+-let missions: table Mission = {
++let quests: table Mission = {
+   intro { name: "First steps", level: 1, rarity: common, reward: gold { amount: 10 }, next: hunt }
+ }
+ 
+@@ -125,4 +125,4 @@
+   expect xpFor(level: 12) == 122
+ }
+ 
+-emit json { out: "out/", values: [missions, capacity, setup, ladder] }
++emit json { out: "out/", values: [quests, capacity, setup, ladder] }
+[diff features/renames/shop/shop.canon]
+--- features/renames/shop/shop.canon
++++ features/renames/shop/shop.canon
+@@ -2,12 +2,12 @@
+ /// its `let`, its method and its export fn with named arguments.
+ package features.renames.shop
+ 
+-import features.renames { MAX_LEVEL, Mission, MissionLevel, Rarity, missions, xpFor }
++import features.renames { MAX_LEVEL, Mission, MissionLevel, Rarity, quests, xpFor }
+ 
+ /// An offer on a quest.
+ record Offer {
+   /// The quest offered.
+-  quest: ref missions
++  quest: ref quests
+   /// How hard it is to come by.
+   rarity: Rarity
+   /// The level asked.
+@@ -22,7 +18,7 @@
+ }
+ 
+ /// The label of the starter quest, as the shop prints it.
+-let starterLabel: String = missions.intro.label()
++let starterLabel: String = quests.intro.label()
+ 
+ /// The highest level of the shop.
+ let ceiling: Int = MAX_LEVEL
+[diff features/renames/store/rare/hunt.canon]
+--- features/renames/store/rare/hunt.canon
++++ features/renames/store/rare/hunt.canon
+@@ -1,7 +1,7 @@
+ package features.renames
+ 
+ /// The rare quest that follows the first one.
+-entry missions.hunt {
++entry quests.hunt {
+   name: "The long hunt"
+   level: 5
+   rarity: rare

@@ -1,0 +1,50 @@
+CLI.md §3.16: a function renamed with its calls in other packages and its tests.
+-- args --
+features.renames:xpFor experienceFor
+-- want --
+[exit 0]
+[stdout]
+{"rename":{"applied":true,"revision":"r1:251e071b605a2f72edca2676ef894e4a6317cc73373a0383ca8e53466c82b921","changes":[{"kind":"modified","path":"features/renames/renames.canon"},{"kind":"modified","path":"features/renames/shop/shop.canon"}],"dropped":[],"undo":{"base":"r1:251e071b605a2f72edca2676ef894e4a6317cc73373a0383ca8e53466c82b921","ops":[{"op":"renameName","path":"features.renames:experienceFor","name":"xpFor"}]}}}
+{"summary":{"errors":0,"warnings":0,"packages":2,"ms":0}}
+[stderr]
+[diff features/renames/renames.canon]
+--- features/renames/renames.canon
++++ features/renames/renames.canon
+@@ -116,13 +116,13 @@
+ }
+ 
+ /// The experience a level is worth, with an extra added.
+-export fn xpFor(level: Int, extra: Int = 0) -> Int {
++export fn experienceFor(level: Int, extra: Int = 0) -> Int {
+   return level * 10 + extra + bonus(level)
+ }
+ 
+ test "xp grows with the level" {
+-  expect xpFor(level: 2, extra: 5) == 26
+-  expect xpFor(level: 12) == 122
++  expect experienceFor(level: 2, extra: 5) == 26
++  expect experienceFor(level: 12) == 122
+ }
+ 
+ emit json { out: "out/", values: [missions, capacity, setup, ladder] }
+[diff features/renames/shop/shop.canon]
+--- features/renames/shop/shop.canon
++++ features/renames/shop/shop.canon
+@@ -2,7 +2,7 @@
+ /// its `let`, its method and its export fn with named arguments.
+ package features.renames.shop
+ 
+-import features.renames { MAX_LEVEL, Mission, MissionLevel, Rarity, missions, xpFor }
++import features.renames { MAX_LEVEL, Mission, MissionLevel, Rarity, experienceFor, missions }
+ 
+ /// An offer on a quest.
+ record Offer {
+@@ -18,7 +18,7 @@
+ 
+ /// The offers.
+ let offers: table Offer = {
+-  starter { quest: intro, rarity: common, level: 1, worth: xpFor(level: 1, extra: 5) }
++  starter { quest: intro, rarity: common, level: 1, worth: experienceFor(level: 1, extra: 5) }
+ }
+ 
+ /// The label of the starter quest, as the shop prints it.

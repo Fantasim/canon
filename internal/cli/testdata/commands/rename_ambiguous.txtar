@@ -1,0 +1,51 @@
+CLI.md §3.16, API.md E27: a local declared twice in its function is ErrAmbiguousPath, exit 2.
+-- args --
+rename a:shadow.m other
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A server.
+record Rules {
+  /// Attempts.
+  retries: Int(1..) = 3
+}
+
+/// The rules.
+let server: Rules = { retries: 2 }
+
+/// Table.
+let items: table Rules = {
+  sword { retries: 1 }
+}
+
+/// A server.
+fn twice(n: Int) -> Int {
+  let m = n + 1
+  return m
+}
+
+/// A second.
+fn second(n: Int) -> Int {
+  let m = n + 2
+  return m
+}
+
+/// Shadows.
+fn shadow(n: Int) -> Int {
+  let m = n
+  if n > 1 {
+    let m = n + 1
+    return m
+  }
+  return m
+}
+-- want --
+[exit 2]
+[stdout]
+[stderr]
+canon: op 0: a:shadow.m: ambiguous path: a/a.canon:32:7, a/a.canon:34:9

@@ -10,6 +10,7 @@ var (
 	errLayerConflict  = errors.New("differs from --edit-layer")
 	errNotObject      = errors.New("request is not a JSON object")
 	errAtMostOneArg   = errors.New("takes at most one argument")
+	errTwoArgs        = errors.New("takes exactly two arguments")
 	errOneArg         = errors.New("takes exactly one argument")
 	errBadRoot        = errors.New("want name=dir")
 	errRootTwice      = errors.New("a root is given twice")

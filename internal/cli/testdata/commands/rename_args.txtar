@@ -1,0 +1,46 @@
+CLI.md §3.16: the command takes exactly two arguments, exit 2.
+-- args --
+rename a:Rules.retries
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A server.
+record Rules {
+  /// Attempts.
+  retries: Int(1..) = 3
+}
+
+/// The rules.
+let server: Rules = { retries: 2 }
+
+/// Table.
+let items: table Rules = {
+  sword { retries: 1 }
+}
+
+/// A server.
+fn twice(n: Int) -> Int {
+  let m = n + 1
+  return m
+}
+
+/// A second.
+fn second(n: Int) -> Int {
+  let m = n + 2
+  return m
+}
+
+/// A clash.
+fn clash(x: Int, y: Int) -> Int {
+  return x + y
+}
+-- want --
+[exit 2]
+[stdout]
+[stderr]
+canon: rename: takes exactly two arguments

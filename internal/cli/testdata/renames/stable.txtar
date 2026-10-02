@@ -1,0 +1,8 @@
+CLI.md §3.16: a stable table's let is named by canon.lock; ErrStableKey, exit 1, nothing written.
+-- args --
+features.renames:ladder rungs
+-- want --
+[exit 1]
+[stdout]
+[stderr]
+canon: op 0: features.renames:ladder: stable id cannot be removed, renamed or un-retired: canon.lock names it

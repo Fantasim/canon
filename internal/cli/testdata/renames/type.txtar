@@ -1,0 +1,76 @@
+CLI.md §3.16: a type renamed in every package, import lists and translation keys included.
+-- args --
+features.renames:Mission Quest
+-- want --
+[exit 0]
+[stdout]
+{"rename":{"applied":true,"revision":"r1:94e623c843301100151fc1edb1e20d202808373a9c7e3c8decc65a458c376c74","changes":[{"kind":"modified","path":"features/renames/renames.canon"},{"kind":"modified","path":"features/renames/renames.fr.canon"},{"kind":"modified","path":"features/renames/renames.view.canon"},{"kind":"modified","path":"features/renames/shop/shop.canon"}],"dropped":[],"undo":{"base":"r1:94e623c843301100151fc1edb1e20d202808373a9c7e3c8decc65a458c376c74","ops":[{"op":"renameName","path":"features.renames:Quest","name":"Mission"}]}}}
+{"summary":{"errors":0,"warnings":0,"packages":2,"ms":0}}
+[stderr]
+[diff features/renames/renames.canon]
+--- features/renames/renames.canon
++++ features/renames/renames.canon
+@@ -31,7 +31,7 @@
+ }
+ 
+ /// A quest.
+-record Mission {
++record Quest {
+   /// What players read.
+   name: String(1..)
+   /// The level it asks for.
+@@ -49,7 +49,7 @@
+ 
+ /// The missions: the first here, the others in their own files, placed by rarity.
+ @files("store/{rarity}/{id}.canon")
+-let missions: table Mission = {
++let missions: table Quest = {
+   intro { name: "First steps", level: 1, rarity: common, reward: gold { amount: 10 }, next: hunt }
+ }
+ 
+[diff features/renames/renames.fr.canon]
+--- features/renames/renames.fr.canon
++++ features/renames/renames.fr.canon
+@@ -2,7 +2,7 @@
+ package features.renames
+ translation fr
+ 
+-Mission.help "Une quête."
+-Mission.name "Nom"
+-Mission.level "Niveau"
+-Mission.group.main "Principal"
++Quest.help "Une quête."
++Quest.name "Nom"
++Quest.level "Niveau"
++Quest.group.main "Principal"
+[diff features/renames/renames.view.canon]
+--- features/renames/renames.view.canon
++++ features/renames/renames.view.canon
+@@ -3,7 +3,7 @@
+ 
+ import studio
+ 
+-view Mission {
++view Quest {
+   title "{name}"
+   subtitle "{rarity}"
+   columns { level 80, rarity 100 }
+[diff features/renames/shop/shop.canon]
+--- features/renames/shop/shop.canon
++++ features/renames/shop/shop.canon
+@@ -2,7 +2,7 @@
+ /// its `let`, its method and its export fn with named arguments.
+ package features.renames.shop
+ 
+-import features.renames { MAX_LEVEL, Mission, MissionLevel, Rarity, missions, xpFor }
++import features.renames { MAX_LEVEL, MissionLevel, Quest, Rarity, missions, xpFor }
+ 
+ /// An offer on a quest.
+ record Offer {
+@@ -30,5 +30,5 @@
+ /// A quest, held to the shop's own cap.
+ record ShopListing {
+   /// The quest.
+-  quest: Mission
++  quest: Quest
+ }

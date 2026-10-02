@@ -1,0 +1,23 @@
+CLI.md §3.16: the local at a position of a function that declares it twice.
+-- args --
+features/renames/renames.canon:112:9 inner
+-- want --
+[exit 0]
+[stdout]
+{"rename":{"applied":true,"revision":"r1:cff4f10762ebaba578f508f2403aa1e48b0e17d0997e0b2e88b8f82f08994e01","changes":[{"kind":"modified","path":"features/renames/renames.canon"}],"dropped":[],"undo":{"base":"r1:cff4f10762ebaba578f508f2403aa1e48b0e17d0997e0b2e88b8f82f08994e01","ops":[{"op":"renameName","path":"features.renames:bonus.inner","name":"step"}]}}}
+{"summary":{"errors":0,"warnings":0,"packages":2,"ms":0}}
+[stderr]
+[diff features/renames/renames.canon]
+--- features/renames/renames.canon
++++ features/renames/renames.canon
+@@ -109,8 +109,8 @@
+ fn bonus(level: Int) -> Int {
+   let step = level - 1
+   if level > 10 {
+-    let step = level - 10
+-    return step
++    let inner = level - 10
++    return inner
+   }
+   return step
+ }

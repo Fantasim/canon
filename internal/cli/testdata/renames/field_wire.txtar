@@ -1,0 +1,41 @@
+CLI.md §3.16: a field on the wire renamed everywhere, gaining @json("players") so the data file is unchanged; the undo restores every byte.
+-- args --
+features.renames:Capacity.players members
+-- want --
+[exit 0]
+[stdout]
+{"rename":{"applied":true,"revision":"r1:e63ff971506b8def4665756c1de64bf428e408b1c73c6071c403113bf01188bd","changes":[{"kind":"modified","path":"features/renames/renames.canon"},{"kind":"modified","path":"features/renames/staging.layer.canon"}],"dropped":[],"undo":{"base":"r1:e63ff971506b8def4665756c1de64bf428e408b1c73c6071c403113bf01188bd","ops":[{"op":"renameName","path":"features.renames:Capacity.members","name":"players"}]}}}
+{"summary":{"errors":0,"warnings":0,"packages":2,"ms":0}}
+[stderr]
+[diff features/renames/renames.canon]
+--- features/renames/renames.canon
++++ features/renames/renames.canon
+@@ -56,7 +56,7 @@
+ /// What the server reads from `data/capacity.json`, key for key: no wire name is written.
+ record Capacity {
+   /// Players at once.
+-  players: Int(1..)
++  members: Int(1..) @json("players")
+   /// How many may wait to join.
+   queue: Int = 10
+ }
+@@ -82,7 +82,7 @@
+ }
+ 
+ /// The configuration the staging layer amends.
+-let deployment: Deployment = { capacity: { players: 100, queue: 5 } }
++let deployment: Deployment = { capacity: { members: 100, queue: 5 } }
+ 
+ /// Notes nobody emits: a field that is not on the wire.
+ record Scratch {
+[diff features/renames/staging.layer.canon]
+--- features/renames/staging.layer.canon
++++ features/renames/staging.layer.canon
+@@ -3,6 +3,6 @@
+ layer staging
+ 
+ amend deployment {
+-  capacity.players: 10
++  capacity.members: 10
+   capacity.queue: 2
+ }

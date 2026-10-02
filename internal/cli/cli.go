@@ -34,6 +34,7 @@ func commands() map[string]command {
 		cmdLSP:     {run: runLSP},
 		cmdNew:     {run: runNew},
 		cmdRefs:    {run: runRefs},
+		cmdRename:  {flags: renameFlags, run: runRename},
 		cmdTest:    {flags: testFlags, run: runTest},
 		cmdVersion: {run: runVersion},
 	}

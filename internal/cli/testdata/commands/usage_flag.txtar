@@ -19,6 +19,7 @@ commands:
   lsp                   run the language server on stdin and stdout
   new <package>         create a package directory with a first file
   refs <path>           list every place that references an entry or member
+  rename <name> <new>   rename a Canon name and everything that names it
   test [packages...]    run the test blocks of packages
   version               print the compiler, language and format versions
 

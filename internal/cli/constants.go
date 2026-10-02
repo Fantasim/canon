@@ -28,6 +28,7 @@ const (
 	cmdFmt     = "fmt"
 	cmdRefs    = "refs"
 	cmdEdit    = "edit"
+	cmdRename  = "rename"
 	cmdLSP     = "lsp"
 )
 
@@ -51,6 +52,7 @@ const (
 	flagJSONSources = "json-sources"
 	flagWatch       = "watch"
 	flagEditLayer   = "edit-layer"
+	flagDryRun      = "dry-run"
 	formatText      = "text"
 	formatJSON      = "json"
 	rootAssign      = "="
@@ -75,6 +77,7 @@ const (
 	usageFmtCheck    = "write nothing; list the files that are not formatted and exit 1"
 	usageDiff        = "print the changes instead of writing"
 	usageEditLayer   = "send edits to the layer `name` (Options.EditLayer)"
+	usageDryRun      = "write nothing; print what would change"
 	usageWatch       = "run again after every change, printing what changed"
 	usageJSONSources = "also normalize the JSON files read by load to the canonical JSON layout"
 )
@@ -92,6 +95,7 @@ commands:
   lsp                   run the language server on stdin and stdout
   new <package>         create a package directory with a first file
   refs <path>           list every place that references an entry or member
+  rename <name> <new>   rename a Canon name and everything that names it
   test [packages...]    run the test blocks of packages
   version               print the compiler, language and format versions
 
@@ -227,8 +231,11 @@ const (
 // canon edit's request key read by the command itself (CLI.md §3.15).
 const keyEditLayer = "editLayer"
 
+// renameArgs is the arguments canon rename takes: the name and the new name (CLI.md §3.16).
+const renameArgs = 2
+
 // editRefusals are the errors of API.md §15 that Edit returns with CLI exit 1: understood, then refused.
 var editRefusals = [...]error{
 	canon.ErrKeyExists, canon.ErrStableKey, canon.ErrNotEditable, canon.ErrStale, canon.ErrRejected,
-	canon.ErrNotCanonical, canon.ErrPathCollision, canon.ErrOverlay,
+	canon.ErrNotCanonical, canon.ErrPathCollision, canon.ErrOverlay, canon.ErrNameClash,
 }
