@@ -1,4 +1,4 @@
-API.md E4: Remove of an entry of a stable table is ErrStableKey (retire it instead).
+API.md E4: Remove of an entry of a stable table whose id the lock holds is ErrStableKey (retire it instead).
 -- options --
 pkgs: p
 -- edit.json --
@@ -20,6 +20,9 @@ record Status {
 let statuses: stable table Status = {
   open { label: "Open" }
 }
+-- p/canon.lock --
+# canon.lock v1
+table  p.statuses  open
 -- result.json --
 {
   "error": "op 0: key of a stable table"

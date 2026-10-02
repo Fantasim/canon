@@ -129,6 +129,7 @@ const (
 	detailLocked       = "canon.lock names it"
 	detailStableData   = "a stable id names data, which canon.lock keeps"
 	detailData         = "it names data: a key changes with Rename"
+	detailFixedData    = "it names data: an enum member or a variant case cannot be renamed"
 	detailAlone        = "a RenameName is alone in its request, without AllowErrors"
 	expectedName       = "a name"
 	fmtAmbiguous       = "%s:%d:%d may name a field of several cases"

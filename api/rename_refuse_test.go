@@ -185,3 +185,62 @@ func TestRenameNameBrokenBase(t *testing.T) {
 		t.Errorf("API.md E32: a parameter of a sound function: %v", err)
 	}
 }
+
+// renameData is a package of data names: an enum, a variant, a table, a keyed list and a map.
+const renameData = `/// C.
+package c
+
+/// A hue.
+enum Hue { red, blue }
+
+/// A shape.
+variant Shape {
+  /// A dot.
+  dot
+  /// A ring.
+  ring
+}
+
+/// A person.
+record Person {
+  /// The name.
+  name: String
+}
+
+/// The paints.
+let paints: table Person = {
+  wall { name: "w" }
+}
+
+/// The people.
+let people: [Person] keyed by name = [{ name: "ann" }]
+
+/// The limits.
+let limits: {String: Int} = { "x": 1 }
+`
+
+// API.md E28 (DECISIONS 277): data is ErrBadOp; an enum member's or a variant case's detail says
+// it cannot be renamed, an entry key's, a keyed-list key's and a map key's names Rename.
+func TestRenameNameDataDetail(t *testing.T) {
+	p, _ := openRename(t, map[string]string{"c/c.canon": renameData})
+	cases := []struct {
+		name, want, not string
+	}{
+		{"c:Hue.red", "an enum member or a variant case cannot be renamed", "Rename"},
+		{"c:Shape.dot", "an enum member or a variant case cannot be renamed", "Rename"},
+		{"c:paints.wall", "a key changes with Rename", "cannot be renamed"},
+		{"c:people.ann", "a key changes with Rename", "cannot be renamed"},
+		{"c:limits.x", "a key changes with Rename", "cannot be renamed"},
+	}
+	for _, c := range cases {
+		_, err := renameOnce(p, c.name, "other")
+		var pe *canon.PathError
+		if !errors.Is(err, canon.ErrBadOp) || !errors.As(err, &pe) {
+			t.Errorf("API.md E28, %s: %v, want ErrBadOp", c.name, err)
+			continue
+		}
+		if !strings.Contains(pe.Detail, c.want) || strings.Contains(pe.Detail, c.not) {
+			t.Errorf("API.md E28, %s: detail %q, want %q without %q", c.name, pe.Detail, c.want, c.not)
+		}
+	}
+}

@@ -170,9 +170,9 @@ func TestRenameNameResolution(t *testing.T) {
 	}
 }
 
-// API.md E28, API.md E29, API.md E30: data names are ErrBadOp naming Rename (ErrStableKey when
-// stable), what canon.lock names ErrStableKey, a new name not a word a *ValueError; the old name
-// again changes nothing.
+// API.md E28, API.md E29, API.md E30: data names are ErrBadOp (ErrStableKey when stable), an
+// entry key's naming Rename; what canon.lock names ErrStableKey, a new name not a word a
+// *ValueError; the old name again changes nothing.
 func TestRenameNameRefusals(t *testing.T) {
 	dir := copyRenames(t)
 	before := tree(t, dir)
@@ -198,9 +198,9 @@ func TestRenameNameRefusals(t *testing.T) {
 			t.Errorf("API.md %s, %s -> %s: %v, want %v", c.rule, c.name, c.newName, err, c.want)
 		}
 	}
-	_, err := renameOnce(p, "features.renames:Rarity.common", "usual")
+	_, err := renameOnce(p, "features.renames:missions.intro", "first")
 	if err == nil || !strings.Contains(err.Error(), "Rename") {
-		t.Errorf("API.md E28: the detail of a data name names Rename: %v", err)
+		t.Errorf("API.md E28: the detail of an entry key names Rename: %v", err)
 	}
 	var ve *canon.ValueError
 	if _, err := renameOnce(p, "features.renames:Mission", "check"); !errors.As(err, &ve) || ve.Expected != "a name" || ve.Op != 0 {

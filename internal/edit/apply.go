@@ -25,9 +25,11 @@ type Env struct {
 	Verdicts  Verdicts
 }
 
-// Request is an edit's operations, applied in order to the state the previous ones left (API.md E1).
+// Request is an edit's operations, applied in order to the state the previous ones left (API.md
+// E1), and whether its result may hold errors (E19), which can leave an id it adds unlocked (E20).
 type Request struct {
-	Ops []Operation
+	Ops         []Operation
+	AllowErrors bool
 }
 
 // Plan is an edit computed in memory: its files by path then the directories left empty, deepest
@@ -74,7 +76,7 @@ func Apply(ctx context.Context, env Env, base *Snapshot, req Request) (*Plan, er
 		return nil, err
 	}
 	a := newApplier(ctx, env, base)
-	a.multi = len(req.Ops) > 1
+	a.multi, a.allowErrors = len(req.Ops) > 1, req.AllowErrors
 	for i, op := range req.Ops {
 		a.step = i
 		if err := a.operation(op); err != nil {
@@ -86,7 +88,11 @@ func Apply(ctx context.Context, env Env, base *Snapshot, req Request) (*Plan, er
 		return nil, refusal(err)
 	}
 	p := a.finish()
-	undo, err := a.verifiedUndo(p.Undo, p.Touched)
+	kept, err := a.keepLocked(p.Undo, p.Locked)
+	if err != nil {
+		return nil, refusal(err)
+	}
+	undo, err := a.verifiedUndo(kept, p.Touched)
 	if err != nil {
 		return nil, refusal(err)
 	}
@@ -132,11 +138,13 @@ type applier struct {
 	cascadeUndo []Operation
 	emptied     map[string]string // a directory a file left, to the package directory it stops below (N6)
 	locked      []Locked
-	kept        keptCase // the fields the last SetCase kept for its refinements to judge (E14)
-	omit        []string // the fields a SetCase leaves out: its refinements refuse them (E14)
-	step        int      // the operation being applied, cascadeStep for the cascades (M6 tests)
+	facts       *lockFacts // the edit's lock facts its Undo keeps (API.md E23)
+	kept        keptCase   // the fields the last SetCase kept for its refinements to judge (E14)
+	omit        []string   // the fields a SetCase leaves out: its refinements refuse them (E14)
+	step        int        // the operation being applied, cascadeStep for the cascades (M6 tests)
 
 	multi, dependent, renamed bool      // what verifiedUndo needs of the request (noteUndo)
+	allowErrors               bool      // the request's AllowErrors: an id it adds may stay unlocked (E20)
 	named                     []rootRef // the roots its operations name
 	nameClash                 string    // Plan.NameClash
 	nameEdits                 map[string]NameEdit

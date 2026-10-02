@@ -2,6 +2,7 @@ package canon_test
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"path/filepath"
 	"slices"
@@ -219,4 +220,80 @@ func TestEditLockClash(t *testing.T) {
 	if got := read(t, m, "f/canon.lock"); got != before {
 		t.Errorf("API.md E20: lock %q, was %q (findings %v)", got, before, codes)
 	}
+}
+
+// API.md E23, E20, E4 (DECISIONS 277): the Undo of an AddEntry into a stable table is a Retire of
+// the new key; carried through its JSON form, as `canon edit` prints it, and applied at the
+// edit's revision, it leaves the entry retired and its lock line ending with `retired`.
+func TestEditUndoStableAddEntry(t *testing.T) {
+	p, m := openEdit(t, map[string]string{"a/canon.lock": lockFirst})
+	res, err := p.Edit(context.Background(), canon.Edit{Ops: []canon.Op{addSecond}})
+	if err != nil {
+		t.Fatalf("Edit: %v", err)
+	}
+	if want := []canon.Op{canon.Retire("a:codes.second")}; !slices.EqualFunc(res.Undo, want, sameOp) {
+		t.Fatalf("API.md E23: Undo %+v, want %+v", res.Undo, want)
+	}
+	if back := undoRetires(t, p, res); len(back.Undo) != 0 {
+		t.Errorf("API.md E23: a Retire has no inverse, got %+v", back.Undo)
+	}
+	if got, want := lockOf(t, m, "a/canon.lock"), lockFirst+"table  a.codes  second  retired\n"; got != want {
+		t.Errorf("API.md E20: lock after the Undo %q, want %q", got, want)
+	}
+}
+
+// undoRetires applies res's Undo through its JSON form, as `canon edit` prints it, at res's
+// revision, and returns its result: a:codes.second is retired after it (API.md E23).
+func undoRetires(t *testing.T, p *canon.Project, res *canon.EditResult) *canon.EditResult {
+	t.Helper()
+	ctx := context.Background()
+	data, err := json.Marshal(canon.Edit{Base: res.Revision, Ops: res.Undo})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var undo canon.Edit
+	if err := json.Unmarshal(data, &undo); err != nil {
+		t.Fatalf("API.md E24: %s: %v", data, err)
+	}
+	back, err := p.Edit(ctx, undo)
+	if err != nil {
+		t.Fatalf("API.md E22: the Undo %s: %v", data, err)
+	}
+	if v, err := p.Value(ctx, "a:codes.second.retired"); err != nil || v.Text != "true" {
+		t.Errorf("API.md E23: a:codes.second.retired after the Undo: %+v, %v", v, err)
+	}
+	return back
+}
+
+// API.md E23, E20, E4 (log-2026-10-02 "G2 review FAIL, ruling"): an AddEntry into a stable table,
+// then a Set of a @stable field of the new entry: the Undo is the Retire alone, since a Set back
+// would change a locked value (E6002), and it applies.
+func TestEditUndoStableAddEntryLockedField(t *testing.T) {
+	src := strings.Replace(editLaw["a/a.canon"], "record Code {\n  /// Its label.\n  label: String\n}",
+		"record Code {\n  /// Its label.\n  label: String\n  /// Its code, locked.\n  code: Int @stable\n}", 1)
+	src = strings.Replace(src, `first { label: "First" }`, `first { label: "First", code: 1 }`, 1)
+	lock := lockHeader + "field  a.codes.code  1  first\ntable  a.codes  first\n"
+	p, m := openEdit(t, map[string]string{"a/a.canon": src, "a/canon.lock": lock})
+	res, err := p.Edit(context.Background(), canon.Edit{Ops: []canon.Op{
+		canon.AddEntry("a:codes", canon.Key("second"), canon.Obj{"label": canon.Str("S"), "code": canon.Int(2)}),
+		canon.Set("a:codes.second.code", canon.Int(3)),
+	}})
+	if err != nil {
+		t.Fatalf("Edit: %v", err)
+	}
+	if want := []canon.Op{canon.Retire("a:codes.second")}; !slices.EqualFunc(res.Undo, want, sameOp) {
+		t.Fatalf("API.md E23: Undo %+v, want %+v", res.Undo, want)
+	}
+	if back := undoRetires(t, p, res); len(back.Undo) != 0 {
+		t.Errorf("API.md E23: a Retire has no inverse, got %+v", back.Undo)
+	}
+	want := lockHeader + "field  a.codes.code  1  first\nfield  a.codes.code  3  second\ntable  a.codes  first\ntable  a.codes  second  retired\n"
+	if got := lockOf(t, m, "a/canon.lock"); got != want {
+		t.Errorf("API.md E20: lock after the Undo %q, want %q", got, want)
+	}
+}
+
+// sameOp reports two ops with one kind and one path.
+func sameOp(x, y canon.Op) bool {
+	return x.Kind == y.Kind && x.Path == y.Path
 }

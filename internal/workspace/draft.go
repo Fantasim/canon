@@ -62,7 +62,7 @@ func (s *Snapshot) draft(ctx context.Context, base *build.Analysis, c Changes) (
 	if err := edit.RenameRequest(c.Ops, true, c.EditLayer); err != nil { // a draft is no lone request (API.md E31)
 		return nil, err
 	}
-	plan, err := s.apply(ctx, base, c)
+	plan, err := s.apply(ctx, base, c, false)
 	if err != nil {
 		return nil, err
 	}
@@ -79,9 +79,9 @@ func (s *Snapshot) draft(ctx context.Context, base *build.Analysis, c Changes) (
 }
 
 // apply is c computed in memory against s, whose analysis is base (API.md E1).
-func (s *Snapshot) apply(ctx context.Context, base *build.Analysis, c Changes) (*edit.Plan, error) {
+func (s *Snapshot) apply(ctx context.Context, base *build.Analysis, c Changes, allowErrors bool) (*edit.Plan, error) {
 	env := edit.Env{Project: s.b, EditLayer: c.EditLayer, Host: c.Host, Verdicts: &s.p.verdicts}
-	return edit.Apply(ctx, env, edit.NewSnapshot(base), edit.Request{Ops: c.Ops})
+	return edit.Apply(ctx, env, edit.NewSnapshot(base), edit.Request{Ops: c.Ops, AllowErrors: allowErrors})
 }
 
 // analyze is the analysis of the packages selectors name on s (Analyze).

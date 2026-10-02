@@ -39,7 +39,7 @@ type undoCheck struct {
 // verified Undo. Every edit under an edit layer is verified; off layers, only several operations
 // touching a dependent field or a driver, or with a cascade: a single Set never pays (NFR-01).
 func (a *applier) verifiedUndo(ops []Operation, touched []string) ([]Operation, error) {
-	needed := a.env.EditLayer != "" || a.multi && (a.dependent || len(a.cascadeUndo) > 0)
+	needed := a.env.EditLayer != "" || a.multi && (a.dependent || len(a.cascadeUndo) > 0 || a.facts != nil && len(a.facts.ids) > 0)
 	if !needed || len(ops) == 0 {
 		return ops, nil
 	}
@@ -52,6 +52,9 @@ func (a *applier) verifiedUndo(ops []Operation, touched []string) ([]Operation, 
 		return ops, nil // a root the edit leaves unreadable takes no inverse at all (E1): left to the re-check
 	}
 	c.inError = c.heldInError()
+	if err := a.overLocks(c.over); err != nil {
+		return nil, err
+	}
 	if a.env.EditLayer != "" {
 		return c.layerUndo()
 	}
@@ -68,8 +71,12 @@ func (c *undoCheck) regionUndo() ([]Operation, error) {
 			return nil, err
 		}
 		misses := c.misses()
-		if len(failed) == 0 && len(misses) == 0 {
+		done := len(failed) == 0 && len(misses) == 0
+		if done && !c.lockBroken() {
 			return cur, nil
+		}
+		if done {
+			break // a lock fact the Undo would undo, which no restore repairs (E23)
 		}
 		if !c.repair(cur, failed, misses) {
 			break
@@ -167,9 +174,11 @@ func (c *undoCheck) misses() []string {
 	return slices.DeleteFunc(d.out, c.excluded)
 }
 
-// excluded reports path at or inside a value the base holds in error.
+// excluded reports path at or inside a value the base holds in error, or one the Undo leaves as
+// the edit's result holds it, a lock fact (API.md E22, E23).
 func (c *undoCheck) excluded(path string) bool {
-	return slices.ContainsFunc(c.inError, func(e string) bool { return within(path, e, pathMarks, true) })
+	inside := func(e string) bool { return within(path, e, pathMarks, true) }
+	return slices.ContainsFunc(c.inError, inside) || c.a.facts.kept(path)
 }
 
 // heldInError are the paths of the compared roots' values the base holds in a dependent

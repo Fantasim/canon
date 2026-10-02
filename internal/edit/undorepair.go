@@ -152,12 +152,12 @@ func renamedTo(op Operation) (string, bool) {
 	return p.String(), true
 }
 
-// restore gives the item at path its value before the edit, carried as E23 carries it: one Set,
-// or for a record restored field by field each field that differs, drivers first (TYPES.md 11);
-// none for an item the base lacks, which its holder restores.
+// restore gives the item at path its value before the edit as E23 carries it, the edit's lock
+// facts kept: one Set, or each field that differs, drivers first (TYPES.md 11); none for an item
+// the base lacks, which its holder restores, or one the Undo leaves as the edit's result holds it.
 func (c *undoCheck) restore(path string) []Operation {
 	p, err := Parse(path)
-	if err != nil {
+	if err != nil || c.a.facts.kept(path) {
 		return nil
 	}
 	res, err := c.a.base.open(p)
@@ -165,10 +165,10 @@ func (c *undoCheck) restore(path string) []Operation {
 		return nil
 	}
 	if rec, ok := res.Target.(*value.Record); ok && c.fieldwise[path] {
-		return c.restoreFields(res, p, rec)
+		return slices.DeleteFunc(c.restoreFields(res, p, rec), func(op Operation) bool { return c.a.facts.kept(op.Path) })
 	}
 	x := &opCtx{a: c.a, res: res}
-	lit, err := c.a.baseLit(res.Target, x.scopeAt(len(res.Steps), true))
+	lit, err := c.a.baseLit(c.a.facts.form(c.a.base, res.Target, res.Canonical), x.scopeAt(len(res.Steps), true))
 	if err != nil {
 		return nil
 	}
@@ -201,7 +201,7 @@ func (c *undoCheck) restoreFields(res resolution, p Path, rec *value.Record) []O
 
 // repair leaves out the refused plain inverses, restoring their regions and those of the values
 // not given back, but values the base holds in error; a region that still misses goes field by
-// field, then grows to its holder. False when nothing changed.
+// field, then grows to its holder. False when nothing changed, or a Retire was refused.
 func (c *undoCheck) repair(cur []Operation, failed map[int]error, misses []string) bool {
 	grow := map[string]bool{}
 	var found []string
@@ -216,6 +216,8 @@ func (c *undoCheck) repair(cur []Operation, failed map[int]error, misses []strin
 	for _, i := range slices.Sorted(maps.Keys(failed)) {
 		o := c.origin[i]
 		switch {
+		case cur[i].Kind == OpRetire:
+			return false // a locked id the Undo cannot retire: no verified Undo (E22, E23)
 		case o < 0:
 			grow[c.regions[-1-o]] = true
 		case c.excluded(cur[i].Path):

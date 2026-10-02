@@ -67,7 +67,7 @@ func (s *Snapshot) edit(ctx context.Context, req EditRequest) (*EditOutcome, err
 	if err != nil {
 		return nil, err
 	}
-	plan, err := s.apply(ctx, a, req.Changes)
+	plan, err := s.apply(ctx, a, req.Changes, req.AllowErrors)
 	if err != nil {
 		return nil, err
 	}

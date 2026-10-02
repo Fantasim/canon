@@ -11,14 +11,14 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// removeOp removes a list element, a map entry or an entry of a table that is not stable
-// (API.md E4): its item with its comments (M4), or its own file (N6).
+// removeOp removes a list element, a map entry or a table entry whose id is not locked (API.md
+// E4): its item with its comments (M4), or its own file (N6).
 func removeOp(x *opCtx) error {
 	parent, pos, ok := x.sibling()
 	switch {
 	case !ok:
 		return ErrBadOp
-	case x.stableTable():
+	case x.lockedKey():
 		return ErrStableKey
 	case x.a.env.EditLayer != "":
 		return x.layerRemove(parent, pos)

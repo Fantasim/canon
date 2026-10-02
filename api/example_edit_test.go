@@ -44,7 +44,7 @@ func ExampleProject_Edit() {
 	fmt.Println(changes, len(res.Dropped), res.Applied, res.Revision == p.Revision(), res.Summary.Errors, len(res.Eval))
 	fmt.Println(undo)
 	// Output: [+teamboard/canon.lock ~teamboard/taxonomy.canon] 0 false true 0 1
-	// [restore teamboard:flags.blocking.hint restore teamboard:columns.taken.statuses restore teamboard:statuses.open.next remove teamboard:statuses.blocked restore teamboard:statuses.open.label]
+	// [restore teamboard:flags.blocking.hint restore teamboard:columns.taken.statuses restore teamboard:statuses.open.next restore teamboard:statuses.open.label retire teamboard:statuses.blocked]
 }
 
 // ExampleSet builds operations with every kind of value (API.md §8.2).
@@ -121,7 +121,9 @@ func undoLabel(op canon.Op) string {
 		return "move back"
 	case canon.OpRename:
 		return "rename back"
-	case canon.OpRetire, canon.OpUnretire:
+	case canon.OpRetire:
+		return "retire" // an id added to a stable table stays, retired (rule E23)
+	case canon.OpUnretire:
 		return "never produced: retirement is one-way"
 	}
 	return string(op.Kind)

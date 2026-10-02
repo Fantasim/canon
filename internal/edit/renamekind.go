@@ -63,11 +63,11 @@ func (s *Snapshot) renamable(t nameTarget) error {
 		return stableRefusal(f.Stable)
 	case check.ObjMember:
 		e, isEnum := t.obj.Type().(*types.EnumType)
-		return dataRefusal(isEnum && e.Codes != nil)
+		return dataRefusal(isEnum && e.Codes != nil, detailFixedData)
 	case check.ObjEntry:
-		return dataRefusal(stableTable(s.entryTable(t.obj)))
+		return dataRefusal(stableTable(s.entryTable(t.obj)), detailData)
 	case check.ObjCase:
-		return dataRefusal(false)
+		return dataRefusal(false, detailFixedData)
 	default:
 		return &NameError{Err: ErrBadOp, Detail: detailNotRenamable}
 	}
@@ -82,12 +82,13 @@ func stableRefusal(stable bool) error {
 }
 
 // dataRefusal is the refusal of a name that names data (API.md E28): ErrStableKey when stable
-// (E4), else ErrBadOp naming Rename.
-func dataRefusal(stable bool) error {
+// (E4), else ErrBadOp with detail, which names Rename for a key and says an enum member or a
+// variant case cannot be renamed (DECISIONS 277).
+func dataRefusal(stable bool, detail string) error {
 	if stable {
 		return &NameError{Err: ErrStableKey, Detail: detailStableData}
 	}
-	return &NameError{Err: ErrBadOp, Detail: detailData}
+	return &NameError{Err: ErrBadOp, Detail: detail}
 }
 
 // keyRefusal is the refusal of a key after a let or const: data when it is a table, a keyed
@@ -98,12 +99,12 @@ func keyRefusal(t types.Type) error {
 	}
 	switch b := t.Base().(type) {
 	case *types.TableType:
-		return dataRefusal(b.Stable)
+		return dataRefusal(b.Stable, detailData)
 	case *types.MapType:
-		return dataRefusal(false)
+		return dataRefusal(false, detailData)
 	case *types.ListType:
 		if b.KeyedBy != nil {
-			return dataRefusal(false)
+			return dataRefusal(false, detailData)
 		}
 	}
 	return &NameError{Err: ErrNoPath}

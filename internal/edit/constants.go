@@ -493,3 +493,6 @@ var expanders = [...]func(Change) []commitFile{
 	ChangeRenamed:    renamedFiles,
 	ChangeRemovedDir: removedDirFiles,
 }
+
+// findingSep joins the parts of a lock finding's identity, a byte no path or text holds (E23).
+const findingSep = "\x00"

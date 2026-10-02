@@ -35,12 +35,28 @@ func (x *opCtx) undoSet() error {
 		k--
 		path, v = x.pathAt(k), x.valueAt(k) // an element of a bits list, which keeps no order: the list (WIRE.md 5.3)
 	}
-	lit, err := x.a.sourceLit(v, x.scopeAt(k, true))
+	scope := x.scopeAt(k, true)
+	lit, err := x.a.sourceLit(v, scope)
 	if err != nil {
 		return err
 	}
+	if x.lockHeld(v, k) {
+		lit = heldValue{old: v, scope: scope, lit: lit} // the edit's lock facts are kept (E23)
+	}
 	x.inverse(Operation{Kind: OpSet, Path: path, Value: lit})
 	return nil
+}
+
+// lockHeld reports v, at step k of the path, a root stable table or one of its entries, whose
+// write back keeps the edit's lock facts (API.md E23).
+func (x *opCtx) lockHeld(v value.Value, k int) bool {
+	switch v.(type) {
+	case *value.Table:
+		return k == 0 && stableTable(v.Type())
+	case *value.Record:
+		return k == 1 && x.stableTable()
+	}
+	return false
 }
 
 // inverse records an operation that undoes part of this one (E22).

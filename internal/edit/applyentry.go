@@ -3,6 +3,8 @@ package edit
 import (
 	"slices"
 
+	"github.com/fantasim/canonlang/internal/build"
+
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
 )
@@ -67,8 +69,14 @@ func (x *opCtx) addTableEntry(t *value.Table) error {
 		return err
 	}
 	rec := e.v.(*value.Record)
-	x.addInverse(e.seg)
-	if tt, ok := t.T.Base().(*types.TableType); ok && tt.Stable && len(x.res.Steps) == 0 {
+	tt, isTable := t.T.Base().(*types.TableType)
+	stable := isTable && tt.Stable
+	if stable {
+		x.inverse(Operation{Kind: OpRetire, Path: childPath(x.res.Canonical, e.seg)}) // its locked id is never removed (API.md E4, E23)
+	} else {
+		x.addInverse(e.seg)
+	}
+	if stable && len(x.res.Steps) == 0 {
 		x.w.locked = append(x.w.locked, Locked{Name: x.res.root.lockName(), Key: rec.Ident.Key.Text()})
 	}
 	if x.j.last().files {
@@ -167,6 +175,17 @@ func (x *opCtx) stableTable() bool {
 	}
 	tt, ok := baseOf(x.res.Steps[n-1].Container).(*types.TableType)
 	return ok && tt.Stable
+}
+
+// lockedKey reports a target that is an entry of a stable table whose id the lock holds or the
+// request locks, or any under an edit layer (API.md E4, LOCK.md 6.1): one only pending is neither.
+func (x *opCtx) lockedKey() bool {
+	rec, ok := x.res.Target.(*value.Record)
+	if !x.stableTable() || !ok || rec.Ident == nil || len(x.res.Steps) != 1 || x.a.env.EditLayer != "" {
+		return x.stableTable()
+	}
+	id := Locked{Name: x.res.root.lockName(), Key: rec.Ident.Key.Text()}
+	return slices.Contains(x.a.locked, id) || x.a.snap.a.LockHolds(build.LockID{Name: id.Name, Key: id.Key})
 }
 
 // siblingCount is how many elements or entries a collection holds.

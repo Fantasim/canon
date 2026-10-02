@@ -261,3 +261,80 @@ func TestUndoBaseHeldInError(t *testing.T) {
 		sameIn(t, "Undo", srcFS(want)(), f2, nil)
 	}
 }
+
+// API.md E4, E22, E23 (DECISIONS 277): the Undo of an AddEntry into a stable table retires the
+// new key, alone or beside a driver and its dependent (the Undo then verified): the entry stays,
+// retired, and every other value comes back.
+func TestUndoStableAddEntry(t *testing.T) {
+	src := strings.Replace(questSrc, "let quests: table Quest", "let quests: stable table Quest", 1)
+	collect := edit.Member("collect")
+	add := edit.Operation{Kind: edit.OpAddEntry, Path: "quests", Key: edit.Key("hunt"), Value: edit.Source(`{ goal: kill, target: "elk", act: wait {} }`)}
+	for _, ops := range [][]edit.Operation{
+		{add},
+		{add, setAt("quests.hunt.goal", collect), setAt("quests.hunt.target", edit.Int(4))},
+		{setAt("quests.slay.goal", collect), add, setAt("quests.slay.target", edit.Int(25))},
+	} {
+		fs := srcFS(src)()
+		plan, f1, ok := applyIn(t, "stable AddEntry", fs, undoView{}, ops)
+		if !ok {
+			continue
+		}
+		if slices.ContainsFunc(plan.Undo, func(op edit.Operation) bool { return op.Kind == edit.OpRemove }) ||
+			!slices.ContainsFunc(plan.Undo, func(op edit.Operation) bool { return op.Kind == edit.OpRetire && op.Path == "d:quests.hunt" }) {
+			t.Errorf("API.md E23, %+v: Undo %+v, want a Retire of d:quests.hunt and no Remove", ops, plan.Undo)
+			continue
+		}
+		back, f2, ok := applyIn(t, "stable AddEntry, Undo", f1, undoView{}, plan.Undo)
+		if !ok {
+			continue
+		}
+		text := string(f2["law/d/d.canon"].Data)
+		at := strings.Index(text, "\n  retired hunt {")
+		if at < 0 {
+			t.Errorf("API.md E23, %+v: the entry is not retired:\n%s", ops, text)
+			continue
+		}
+		end := at + 1 + strings.IndexByte(text[at+1:], '\n')
+		without := maps.Clone(f2)
+		without["law/d/d.canon"] = file(text[:at] + text[end:])
+		sameIn(t, "stable AddEntry, Undo, but the retired entry", fs, without, nil)
+		if want := []edit.Locked{{Name: "d.quests", Key: "hunt"}}; !slices.Equal(back.Locked, want) {
+			t.Errorf("API.md E20, %+v: the Undo locks %+v, want %+v", ops, back.Locked, want)
+		}
+	}
+}
+
+// API.md E23, E20, E22 (log-2026-10-02, G2 round 3): an entry a request adds to a stable table
+// and drops with a later Set of the whole table was never locked: the Undo takes no Retire, its
+// Set back leaves the entry out, and the Undo gives the file back byte for byte.
+func TestUndoStableAddEntryDropped(t *testing.T) {
+	src := strings.Replace(questSrc, "let quests: table Quest", "let quests: stable table Quest", 1)
+	collect := edit.Member("collect")
+	add := edit.Operation{Kind: edit.OpAddEntry, Path: "d:quests", Key: edit.Key("hunt"), Value: edit.Source(`{ goal: kill, target: "elk", act: wait {} }`)}
+	whole := setAt("d:quests", edit.Source(`{ slay { goal: collect, target: 3, act: wait { turns: 2 } }, gather { goal: collect, target: 10, act: hunt { goal: kill, target: "boar" } } }`))
+	for _, ops := range [][]edit.Operation{
+		{setAt("d:quests.slay.goal", collect), add, setAt("d:quests.hunt.goal", collect), whole},
+		{setAt("d:quests.slay.goal", collect), add, whole},
+	} {
+		fs := srcFS(src)()
+		fs["law/d/canon.lock"] = file("# canon.lock v1\ntable  d.quests  gather\ntable  d.quests  slay\n")
+		plan, f1, ok := applyIn(t, "stable AddEntry dropped", fs, undoView{}, ops)
+		if !ok {
+			continue
+		}
+		if slices.ContainsFunc(plan.Undo, func(op edit.Operation) bool { return op.Kind == edit.OpRetire }) {
+			t.Errorf("API.md E23, %+v: Undo %+v retires an entry never locked", ops, plan.Undo)
+		}
+		back, f2, ok := applyIn(t, "stable AddEntry dropped, Undo", f1, undoView{}, plan.Undo)
+		if !ok {
+			continue
+		}
+		sameIn(t, "stable AddEntry dropped, Undo", fs, f2, nil)
+		if got := string(f2["law/d/d.canon"].Data); got != src {
+			t.Errorf("API.md E23, %+v: the file does not come back:\n%s", ops, got)
+		}
+		if len(back.Locked) != 0 {
+			t.Errorf("API.md E20, %+v: the Undo locks %+v", ops, back.Locked)
+		}
+	}
+}

@@ -17,7 +17,7 @@ func renameOp(x *opCtx) error {
 	switch {
 	case !ok:
 		return ErrBadOp
-	case x.stableTable():
+	case x.lockedKey():
 		return ErrStableKey
 	}
 	kt, ok := keyType(parent)
