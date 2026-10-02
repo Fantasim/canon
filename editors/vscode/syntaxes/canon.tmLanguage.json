@@ -1,0 +1,390 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Canon",
+  "scopeName": "source.canon",
+  "patterns": [
+    {
+      "include": "#comments"
+    },
+    {
+      "include": "#strings"
+    },
+    {
+      "include": "#expression"
+    },
+    {
+      "include": "#annotation"
+    }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.documentation.canon",
+          "match": "^\\s*///(?:$|[^/].*$)"
+        },
+        {
+          "name": "comment.block.canon",
+          "begin": "/\\*",
+          "end": "\\*/"
+        },
+        {
+          "name": "comment.line.double-slash.canon",
+          "match": "//.*$"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.triple.raw.canon",
+          "begin": "\\br\"\"\"",
+          "end": "\"\"\""
+        },
+        {
+          "name": "string.quoted.triple.canon",
+          "begin": "\"\"\"",
+          "end": "\"\"\"",
+          "patterns": [
+            {
+              "include": "#string-body"
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.double.raw.canon",
+          "match": "\\br\"[^\"]*(?:\"|$)"
+        },
+        {
+          "name": "string.quoted.double.canon",
+          "begin": "\"",
+          "end": "\"|$",
+          "patterns": [
+            {
+              "include": "#string-body"
+            }
+          ]
+        }
+      ]
+    },
+    "string-body": {
+      "patterns": [
+        {
+          "name": "constant.character.escape.canon",
+          "match": "\\\\(?:[ntr\\\\\"{}]|u\\{[0-9A-Fa-f]{1,6}\\})"
+        },
+        {
+          "name": "invalid.illegal.escape.canon",
+          "match": "\\\\."
+        },
+        {
+          "name": "constant.character.escape.brace.canon",
+          "match": "\\{\\{|\\}\\}"
+        },
+        {
+          "name": "meta.interpolation.canon",
+          "begin": "\\{",
+          "end": "(?:(:)([^}\\n]*))?(\\})|$",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.section.interpolation.begin.canon"
+            }
+          },
+          "endCaptures": {
+            "1": {
+              "name": "punctuation.separator.format.canon"
+            },
+            "2": {
+              "name": "constant.other.format-spec.canon"
+            },
+            "3": {
+              "name": "punctuation.section.interpolation.end.canon"
+            }
+          },
+          "patterns": [
+            {
+              "include": "#paren-group"
+            },
+            {
+              "include": "#brace-group"
+            },
+            {
+              "include": "#expression-core"
+            }
+          ]
+        }
+      ]
+    },
+    "paren-group": {
+      "begin": "(\\()(?:\\s*(/\\*(?:[^*]|\\*+[^*/])*\\*+/(?:\\s*/\\*(?:[^*]|\\*+[^*/])*\\*+/)*)?\\s*(/(?:\\\\.|\\[(?:\\\\.|[^\\]\\\\\\n])*\\]|[^/*\\\\\\[\\n])(?:\\\\.|\\[(?:\\\\.|[^\\]\\\\\\n])*\\]|[^/\\\\\\[\\n])*/))?",
+      "end": "\\)",
+      "beginCaptures": {
+        "2": {
+          "name": "comment.block.canon"
+        },
+        "3": {
+          "name": "string.regexp.canon"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#paren-group"
+        },
+        {
+          "include": "#brace-group"
+        },
+        {
+          "include": "#expression-core"
+        }
+      ]
+    },
+    "brace-group": {
+      "begin": "\\{",
+      "end": "\\}",
+      "patterns": [
+        {
+          "include": "#paren-group"
+        },
+        {
+          "include": "#brace-group"
+        },
+        {
+          "include": "#expression-core"
+        }
+      ]
+    },
+    "expression": {
+      "patterns": [
+        {
+          "match": "(\\()\\s*(/\\*(?:[^*]|\\*+[^*/])*\\*+/(?:\\s*/\\*(?:[^*]|\\*+[^*/])*\\*+/)*)?\\s*(/(?:\\\\.|\\[(?:\\\\.|[^\\]\\\\\\n])*\\]|[^/*\\\\\\[\\n])(?:\\\\.|\\[(?:\\\\.|[^\\]\\\\\\n])*\\]|[^/\\\\\\[\\n])*/)",
+          "captures": {
+            "2": {
+              "name": "comment.block.canon"
+            },
+            "3": {
+              "name": "string.regexp.canon"
+            }
+          }
+        },
+        {
+          "match": "\\b([A-Za-z_][A-Za-z0-9_]*)\\s*(:)",
+          "captures": {
+            "1": {
+              "name": "variable.other.property.canon"
+            },
+            "2": {
+              "name": "punctuation.separator.key.canon"
+            }
+          }
+        },
+        {
+          "include": "#expression-core"
+        }
+      ]
+    },
+    "expression-core": {
+      "patterns": [
+        {
+          "include": "#comments"
+        },
+        {
+          "include": "#strings"
+        },
+        {
+          "match": "(,)\\s*(/\\*(?:[^*]|\\*+[^*/])*\\*+/(?:\\s*/\\*(?:[^*]|\\*+[^*/])*\\*+/)*)?\\s*(/(?:\\\\.|\\[(?:\\\\.|[^\\]\\\\\\n])*\\]|[^/*\\\\\\[\\n])(?:\\\\.|\\[(?:\\\\.|[^\\]\\\\\\n])*\\]|[^/\\\\\\[\\n])*/)",
+          "captures": {
+            "2": {
+              "name": "comment.block.canon"
+            },
+            "3": {
+              "name": "string.regexp.canon"
+            }
+          }
+        },
+        {
+          "include": "#numbers"
+        },
+        {
+          "include": "#annotation"
+        },
+        {
+          "include": "#declarations"
+        },
+        {
+          "match": "(\\?\\.|\\.)([a-z_][A-Za-z0-9_]*)",
+          "captures": {
+            "1": {
+              "name": "punctuation.accessor.canon"
+            },
+            "2": {
+              "name": "variable.other.property.canon"
+            }
+          }
+        },
+        {
+          "include": "#keywords"
+        },
+        {
+          "name": "constant.other.canon",
+          "match": "\\b[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+\\b|\\b[A-Z][A-Z0-9]+\\b"
+        },
+        {
+          "name": "entity.name.type.canon",
+          "match": "\\b[A-Z][A-Za-z0-9]*\\b"
+        },
+        {
+          "name": "keyword.operator.canon",
+          "match": "\\.\\.\\.|\\.\\.=|\\.\\.|\\?\\?|=>|->|==|!=|<=|>=|\\+=|-=|\\*=|/=|[-+*/%<>=!?|]"
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.duration.canon",
+          "match": "\\b[0-9](?:_?[0-9])*(?:ms|[smhd])(?:[0-9](?:_?[0-9])*(?:ms|[smhd]))*\\b"
+        },
+        {
+          "name": "constant.numeric.hex.canon",
+          "match": "\\b0x[0-9A-Fa-f](?:_?[0-9A-Fa-f])*\\b"
+        },
+        {
+          "name": "constant.numeric.binary.canon",
+          "match": "\\b0b[01](?:_?[01])*\\b"
+        },
+        {
+          "name": "constant.numeric.float.canon",
+          "match": "\\b[0-9](?:_?[0-9])*\\.[0-9](?:_?[0-9])*(?:[eE][-+]?[0-9](?:_?[0-9])*)?\\b|\\b[0-9](?:_?[0-9])*[eE][-+]?[0-9](?:_?[0-9])*\\b"
+        },
+        {
+          "name": "constant.numeric.integer.canon",
+          "match": "\\b[0-9](?:_?[0-9])*\\b"
+        }
+      ]
+    },
+    "annotation": {
+      "patterns": [
+        {
+          "begin": "(@)([A-Za-z_][A-Za-z0-9_]*)(\\()",
+          "end": "\\)",
+          "beginCaptures": {
+            "1": {
+              "name": "punctuation.definition.annotation.canon"
+            },
+            "2": {
+              "name": "entity.name.function.decorator.canon"
+            }
+          },
+          "name": "meta.annotation.canon",
+          "patterns": [
+            {
+              "match": "\\b([A-Za-z_][A-Za-z0-9_]*)\\s*(:)",
+              "captures": {
+                "1": {
+                  "name": "variable.parameter.canon"
+                },
+                "2": {
+                  "name": "punctuation.separator.key.canon"
+                }
+              }
+            },
+            {
+              "include": "#strings"
+            },
+            {
+              "include": "#numbers"
+            },
+            {
+              "name": "constant.language.canon",
+              "match": "\\b(?:true|false)\\b"
+            },
+            {
+              "name": "keyword.operator.canon",
+              "match": "\\.\\.|[-+]"
+            }
+          ]
+        },
+        {
+          "match": "(@)([A-Za-z_][A-Za-z0-9_]*)",
+          "captures": {
+            "1": {
+              "name": "punctuation.definition.annotation.canon"
+            },
+            "2": {
+              "name": "entity.name.function.decorator.canon"
+            }
+          }
+        }
+      ]
+    },
+    "declarations": {
+      "patterns": [
+        {
+          "match": "\\b(record|enum|variant|type|table)(\\s+)([A-Za-z_][A-Za-z0-9_]*)",
+          "captures": {
+            "1": {
+              "name": "storage.type.canon"
+            },
+            "3": {
+              "name": "entity.name.type.canon"
+            }
+          }
+        },
+        {
+          "match": "\\b(fn)(\\s+)([A-Za-z_][A-Za-z0-9_]*)",
+          "captures": {
+            "1": {
+              "name": "storage.type.function.canon"
+            },
+            "3": {
+              "name": "entity.name.function.canon"
+            }
+          }
+        },
+        {
+          "match": "\\b(package)(\\s+)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)",
+          "captures": {
+            "1": {
+              "name": "keyword.other.canon"
+            },
+            "3": {
+              "name": "entity.name.namespace.canon"
+            }
+          }
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.canon",
+          "match": "\\b(?:if|else|for|while|match|return|break|continue|where)\\b"
+        },
+        {
+          "name": "keyword.operator.word.canon",
+          "match": "\\b(?:and|or|not|in|is|as)\\b"
+        },
+        {
+          "name": "storage.type.canon",
+          "match": "\\b(?:record|enum|variant|type|fn|let|const|var|table)\\b"
+        },
+        {
+          "name": "storage.modifier.canon",
+          "match": "\\b(?:local|stable|export|retired|ref|input|asset)\\b"
+        },
+        {
+          "name": "keyword.other.canon",
+          "match": "\\b(?:amend|check|emit|entry|expect|import|layer|load|package|project|test|translation|view|warn|widget)\\b"
+        },
+        {
+          "name": "constant.language.canon",
+          "match": "\\b(?:true|false|none)\\b"
+        },
+        {
+          "name": "variable.language.canon",
+          "match": "\\b(?:self)\\b"
+        }
+      ]
+    }
+  }
+}

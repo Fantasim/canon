@@ -1,0 +1,898 @@
+1:0-72 "/// The job x level x profile capture plan that drives parity_sweep.lua." comment.line.documentation.canon
+2:0-3 "///" comment.line.documentation.canon
+3:0-82 "/// Replaces gen_sweep_plan.py (683 lines). This is data computed from other data:" comment.line.documentation.canon
+4:0-83 "/// loops, conditions and helper functions, all at build time. The output is a JSON" comment.line.documentation.canon
+5:0-82 "/// data file; BotClient reads it and hands it to parity_sweep.lua as a table (see" comment.line.documentation.canon
+6:0-38 "/// the note at the end of this file)." comment.line.documentation.canon
+7:0-3 "///" comment.line.documentation.canon
+8:0-73 "/// Sketch: the input types are trimmed to the fields the plan reads, and" comment.line.documentation.canon
+9:0-73 "/// learned_roster's per-tier slot arithmetic is left out (see `roster`)." comment.line.documentation.canon
+10:0-7 "package" keyword.other.canon
+10:8-22 "balance.parity" entity.name.namespace.canon
+12:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+13:0-49 "// Inputs: the same files the Python script reads" comment.line.double-slash.canon
+14:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+16:0-5 "local" storage.modifier.canon
+16:6-9 "let" storage.type.canon
+16:15-16 "=" keyword.operator.canon
+16:17-21 "load" keyword.other.canon
+16:21-22 "." punctuation.accessor.canon
+16:22-29 "defines" variable.other.property.canon
+16:30-67 "\"@resource/Server/Define/defineJob.h\"" string.quoted.double.canon
+17:0-5 "local" storage.modifier.canon
+17:6-9 "let" storage.type.canon
+17:17-18 "=" keyword.operator.canon
+17:19-23 "load" keyword.other.canon
+17:23-24 "." punctuation.accessor.canon
+17:24-31 "defines" variable.other.property.canon
+17:32-71 "\"@resource/Server/Define/defineSkill.h\"" string.quoted.double.canon
+17:73-79 "prefix" variable.other.property.canon
+17:79-80 ":" punctuation.separator.key.canon
+17:81-86 "\"SI_\"" string.quoted.double.canon
+18:0-5 "local" storage.modifier.canon
+18:6-9 "let" storage.type.canon
+18:16-17 "=" keyword.operator.canon
+18:18-22 "load" keyword.other.canon
+18:22-23 "." punctuation.accessor.canon
+18:23-30 "defines" variable.other.property.canon
+18:31-69 "\"@resource/Server/Define/defineitem.h\"" string.quoted.double.canon
+18:71-77 "prefix" variable.other.property.canon
+18:77-78 ":" punctuation.separator.key.canon
+18:79-84 "\"II_\"" string.quoted.double.canon
+19:0-5 "local" storage.modifier.canon
+19:6-9 "let" storage.type.canon
+19:15-16 "=" keyword.operator.canon
+19:17-21 "load" keyword.other.canon
+19:21-22 "." punctuation.accessor.canon
+19:22-29 "defines" variable.other.property.canon
+19:30-67 "\"@resource/Server/Define/defineObj.h\"" string.quoted.double.canon
+19:69-75 "prefix" variable.other.property.canon
+19:75-76 ":" punctuation.separator.key.canon
+19:77-82 "\"MI_\"" string.quoted.double.canon
+21:0-47 "/// A row of skills.json, as the plan reads it." comment.line.documentation.canon
+22:0-5 "local" storage.modifier.canon
+22:6-12 "record" storage.type.canon
+22:13-21 "SkillRow" entity.name.type.canon
+23:2-8 "define" variable.other.property.canon
+23:8-9 ":" punctuation.separator.key.canon
+23:10-13 "ref" storage.modifier.canon
+24:2-10 "jobIndex" variable.other.property.canon
+24:10-11 ":" punctuation.separator.key.canon
+24:12-18 "String" entity.name.type.canon
+25:2-6 "tier" variable.other.property.canon
+25:6-7 ":" punctuation.separator.key.canon
+25:8-14 "String" entity.name.type.canon
+26:2-8 "weapon" variable.other.property.canon
+26:8-9 ":" punctuation.separator.key.canon
+26:10-16 "String" entity.name.type.canon
+26:16-17 "?" keyword.operator.canon
+26:18-19 "=" keyword.operator.canon
+26:20-24 "none" constant.language.canon
+26:25-63 "// dwLinkKind, an IK3_* kind or family" comment.line.double-slash.canon
+27:2-8 "handed" variable.other.property.canon
+27:8-9 ":" punctuation.separator.key.canon
+27:10-16 "String" entity.name.type.canon
+27:16-17 "?" keyword.operator.canon
+27:18-19 "=" keyword.operator.canon
+27:20-24 "none" constant.language.canon
+28:2-8 "target" variable.other.property.canon
+28:8-9 ":" punctuation.separator.key.canon
+28:10-16 "String" entity.name.type.canon
+29:2-13 "unlockLevel" variable.other.property.canon
+29:13-14 ":" punctuation.separator.key.canon
+29:15-18 "Int" entity.name.type.canon
+29:18-19 "?" keyword.operator.canon
+29:20-21 "=" keyword.operator.canon
+29:22-26 "none" constant.language.canon
+29:27-53 "// absent on common skills" comment.line.double-slash.canon
+30:2-7 "reqMp" variable.other.property.canon
+30:7-8 ":" punctuation.separator.key.canon
+30:9-12 "Int" entity.name.type.canon
+30:13-14 "=" keyword.operator.canon
+30:15-16 "0" constant.numeric.integer.canon
+30:17-18 "@" meta.annotation.canon punctuation.definition.annotation.canon
+30:18-22 "json" meta.annotation.canon entity.name.function.decorator.canon
+30:22-23 "(" meta.annotation.canon
+30:23-27 "path" meta.annotation.canon variable.parameter.canon
+30:27-28 ":" meta.annotation.canon punctuation.separator.key.canon
+30:28-29 " " meta.annotation.canon
+30:29-43 "\"legacy.reqMp\"" meta.annotation.canon string.quoted.double.canon
+30:43-44 ")" meta.annotation.canon
+33:0-85 "/// A row of propItem.json, as the plan reads it. Defaults copy the file's `defaults`" comment.line.documentation.canon
+34:0-83 "/// block, which the loader applies to a row that omits a key; \"=\" means \"not set\"." comment.line.documentation.canon
+35:0-5 "local" storage.modifier.canon
+35:6-12 "record" storage.type.canon
+35:13-19 "Weapon" entity.name.type.canon
+36:2-6 "item" variable.other.property.canon
+36:6-7 ":" punctuation.separator.key.canon
+36:8-11 "ref" storage.modifier.canon
+36:18-19 "@" meta.annotation.canon punctuation.definition.annotation.canon
+36:19-23 "json" meta.annotation.canon entity.name.function.decorator.canon
+36:23-24 "(" meta.annotation.canon
+36:24-30 "\"dwID\"" meta.annotation.canon string.quoted.double.canon
+36:30-31 ")" meta.annotation.canon
+37:2-7 "kind1" variable.other.property.canon
+37:7-8 ":" punctuation.separator.key.canon
+37:9-15 "String" entity.name.type.canon
+37:16-17 "=" keyword.operator.canon
+37:18-29 "\"IK1_ARMOR\"" string.quoted.double.canon
+37:30-31 "@" meta.annotation.canon punctuation.definition.annotation.canon
+37:31-35 "json" meta.annotation.canon entity.name.function.decorator.canon
+37:35-36 "(" meta.annotation.canon
+37:36-49 "\"dwItemKind1\"" meta.annotation.canon string.quoted.double.canon
+37:49-50 ")" meta.annotation.canon
+38:2-7 "kind3" variable.other.property.canon
+38:7-8 ":" punctuation.separator.key.canon
+38:9-15 "String" entity.name.type.canon
+38:16-17 "=" keyword.operator.canon
+38:18-30 "\"IK3_SCROLL\"" string.quoted.double.canon
+38:31-32 "@" meta.annotation.canon punctuation.definition.annotation.canon
+38:32-36 "json" meta.annotation.canon entity.name.function.decorator.canon
+38:36-37 "(" meta.annotation.canon
+38:37-50 "\"dwItemKind3\"" meta.annotation.canon string.quoted.double.canon
+38:50-51 ")" meta.annotation.canon
+39:2-8 "handed" variable.other.property.canon
+39:8-9 ":" punctuation.separator.key.canon
+39:10-16 "String" entity.name.type.canon
+39:17-18 "=" keyword.operator.canon
+39:19-22 "\"=\"" string.quoted.double.canon
+39:23-24 "@" meta.annotation.canon punctuation.definition.annotation.canon
+39:24-28 "json" meta.annotation.canon entity.name.function.decorator.canon
+39:28-29 "(" meta.annotation.canon
+39:29-39 "\"dwHanded\"" meta.annotation.canon string.quoted.double.canon
+39:39-40 ")" meta.annotation.canon
+40:2-5 "job" variable.other.property.canon
+40:5-6 ":" punctuation.separator.key.canon
+40:7-13 "String" entity.name.type.canon
+40:14-15 "=" keyword.operator.canon
+40:16-19 "\"=\"" string.quoted.double.canon
+40:20-21 "@" meta.annotation.canon punctuation.definition.annotation.canon
+40:21-25 "json" meta.annotation.canon entity.name.function.decorator.canon
+40:25-26 "(" meta.annotation.canon
+40:26-37 "\"dwItemJob\"" meta.annotation.canon string.quoted.double.canon
+40:37-38 ")" meta.annotation.canon
+41:2-5 "sex" variable.other.property.canon
+41:5-6 ":" punctuation.separator.key.canon
+41:7-13 "String" entity.name.type.canon
+41:14-15 "=" keyword.operator.canon
+41:16-19 "\"=\"" string.quoted.double.canon
+41:20-21 "@" meta.annotation.canon punctuation.definition.annotation.canon
+41:21-25 "json" meta.annotation.canon entity.name.function.decorator.canon
+41:25-26 "(" meta.annotation.canon
+41:26-37 "\"dwItemSex\"" meta.annotation.canon string.quoted.double.canon
+41:37-38 ")" meta.annotation.canon
+42:2-7 "limit" variable.other.property.canon
+42:7-8 ":" punctuation.separator.key.canon
+42:9-12 "Int" entity.name.type.canon
+42:12-13 "?" keyword.operator.canon
+42:14-15 "=" keyword.operator.canon
+42:16-17 "1" constant.numeric.integer.canon
+42:18-19 "@" meta.annotation.canon punctuation.definition.annotation.canon
+42:19-23 "json" meta.annotation.canon entity.name.function.decorator.canon
+42:23-24 "(" meta.annotation.canon
+42:24-39 "\"dwLimitLevel1\"" meta.annotation.canon string.quoted.double.canon
+42:39-41 ", " meta.annotation.canon
+42:41-45 "none" meta.annotation.canon variable.parameter.canon
+42:45-46 ":" meta.annotation.canon punctuation.separator.key.canon
+42:46-47 " " meta.annotation.canon
+42:47-50 "\"=\"" meta.annotation.canon string.quoted.double.canon
+42:50-51 ")" meta.annotation.canon
+45:0-31 "/// A row of etc.json's `jobs`." comment.line.documentation.canon
+46:0-5 "local" storage.modifier.canon
+46:6-12 "record" storage.type.canon
+46:13-19 "EtcJob" entity.name.type.canon
+46:22-24 "id" variable.other.property.canon
+46:24-25 ":" punctuation.separator.key.canon
+46:26-32 "String" entity.name.type.canon
+46:34-41 "jobBase" variable.other.property.canon
+46:41-42 ":" punctuation.separator.key.canon
+46:43-49 "String" entity.name.type.canon
+46:49-50 "?" keyword.operator.canon
+46:51-52 "=" keyword.operator.canon
+46:53-57 "none" constant.language.canon
+46:59-63 "name" variable.other.property.canon
+46:63-64 ":" punctuation.separator.key.canon
+46:65-71 "String" entity.name.type.canon
+48:0-5 "local" storage.modifier.canon
+48:6-9 "let" storage.type.canon
+48:10-16 "skills" variable.other.property.canon
+48:16-17 ":" punctuation.separator.key.canon
+48:19-27 "SkillRow" entity.name.type.canon
+48:29-30 "=" keyword.operator.canon
+49:2-6 "load" keyword.other.canon
+49:7-43 "\"@resource/Server/Skill/skills.json\"" string.quoted.double.canon
+49:45-47 "at" variable.other.property.canon
+49:47-48 ":" punctuation.separator.key.canon
+49:49-57 "\"skills\"" string.quoted.double.canon
+49:59-66 "partial" variable.other.property.canon
+49:66-67 ":" punctuation.separator.key.canon
+49:68-72 "true" constant.language.canon
+50:0-5 "local" storage.modifier.canon
+50:6-9 "let" storage.type.canon
+50:10-18 "itemRows" variable.other.property.canon
+50:18-19 ":" punctuation.separator.key.canon
+50:21-27 "Weapon" entity.name.type.canon
+50:29-30 "=" keyword.operator.canon
+51:2-6 "load" keyword.other.canon
+51:7-44 "\"@resource/Server/Item/propItem.json\"" string.quoted.double.canon
+51:46-48 "at" variable.other.property.canon
+51:48-49 ":" punctuation.separator.key.canon
+51:50-57 "\"items\"" string.quoted.double.canon
+51:59-66 "partial" variable.other.property.canon
+51:66-67 ":" punctuation.separator.key.canon
+51:68-72 "true" constant.language.canon
+52:0-5 "local" storage.modifier.canon
+52:6-9 "let" storage.type.canon
+52:10-17 "weapons" variable.other.property.canon
+52:17-18 ":" punctuation.separator.key.canon
+52:20-26 "Weapon" entity.name.type.canon
+52:28-29 "=" keyword.operator.canon
+52:38-39 "." punctuation.accessor.canon
+52:39-45 "filter" variable.other.property.canon
+52:48-50 "=>" keyword.operator.canon
+52:52-53 "." punctuation.accessor.canon
+52:53-58 "kind1" variable.other.property.canon
+52:59-61 "==" keyword.operator.canon
+52:62-74 "\"IK1_WEAPON\"" string.quoted.double.canon
+53:0-5 "local" storage.modifier.canon
+53:6-9 "let" storage.type.canon
+53:10-17 "etcJobs" variable.other.property.canon
+53:17-18 ":" punctuation.separator.key.canon
+53:20-26 "EtcJob" entity.name.type.canon
+53:28-29 "=" keyword.operator.canon
+53:30-34 "load" keyword.other.canon
+53:35-66 "\"@resource/Server/Npc/etc.json\"" string.quoted.double.canon
+53:68-70 "at" variable.other.property.canon
+53:70-71 ":" punctuation.separator.key.canon
+53:72-78 "\"jobs\"" string.quoted.double.canon
+53:80-87 "partial" variable.other.property.canon
+53:87-88 ":" punctuation.separator.key.canon
+53:89-93 "true" constant.language.canon
+54:0-5 "local" storage.modifier.canon
+54:6-9 "let" storage.type.canon
+54:10-18 "jobNames" variable.other.property.canon
+54:18-19 ":" punctuation.separator.key.canon
+54:21-27 "String" variable.other.property.canon
+54:27-28 ":" punctuation.separator.key.canon
+54:29-35 "String" entity.name.type.canon
+54:37-38 "=" keyword.operator.canon
+54:39-43 "load" keyword.other.canon
+54:44-74 "\"@client/Client/Text/etc.json\"" string.quoted.double.canon
+54:76-78 "at" variable.other.property.canon
+54:78-79 ":" punctuation.separator.key.canon
+54:80-86 "\"*.us\"" string.quoted.double.canon
+55:0-5 "local" storage.modifier.canon
+55:6-9 "let" storage.type.canon
+55:10-17 "presets" variable.other.property.canon
+55:17-18 ":" punctuation.separator.key.canon
+55:20-26 "String" variable.other.property.canon
+55:26-27 ":" punctuation.separator.key.canon
+55:28-34 "String" entity.name.type.canon
+55:36-37 "=" keyword.operator.canon
+56:2-6 "load" keyword.other.canon
+56:7-46 "\"@resource/Server/Balance/presets.json\"" string.quoted.double.canon
+56:48-50 "at" variable.other.property.canon
+56:50-51 ":" punctuation.separator.key.canon
+56:52-78 "\"canonicalBuilds.*.weapon\"" string.quoted.double.canon
+57:0-5 "local" storage.modifier.canon
+57:6-9 "let" storage.type.canon
+57:10-17 "anchors" variable.other.property.canon
+57:17-18 ":" punctuation.separator.key.canon
+57:20-23 "Int" entity.name.type.canon
+57:25-26 "=" keyword.operator.canon
+57:27-31 "load" keyword.other.canon
+57:32-71 "\"@resource/Server/Balance/targets.json\"" string.quoted.double.canon
+57:73-75 "at" variable.other.property.canon
+57:75-76 ":" punctuation.separator.key.canon
+57:77-94 "\"solver.kAnchors\"" string.quoted.double.canon
+59:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+60:0-91 "// Settings: the script's command-line flags. A layer overrides them (knights.layer.canon)." comment.line.double-slash.canon
+61:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+63:0-31 "/// Which totem the block hits." comment.line.documentation.canon
+64:0-4 "enum" storage.type.canon
+64:5-12 "Profile" entity.name.type.canon
+66:0-36 "/// The script's command-line flags." comment.line.documentation.canon
+67:0-6 "record" storage.type.canon
+67:7-15 "Settings" entity.name.type.canon
+68:0-44 "  /// The bot character that runs the sweep." comment.line.documentation.canon
+69:2-10 "charName" variable.other.property.canon
+69:10-11 ":" punctuation.separator.key.canon
+69:12-18 "String" entity.name.type.canon
+69:19-20 "1" constant.numeric.integer.canon
+69:20-22 ".." keyword.operator.canon
+69:24-25 "=" keyword.operator.canon
+69:26-38 "\"ClaudeBot1\"" string.quoted.double.canon
+70:0-43 "  /// Hits per (job, level, profile) block." comment.line.documentation.canon
+71:2-14 "hitsPerBlock" variable.other.property.canon
+71:14-15 ":" punctuation.separator.key.canon
+71:16-19 "Int" entity.name.type.canon
+71:20-21 "1" constant.numeric.integer.canon
+71:21-23 ".." keyword.operator.canon
+71:25-26 "=" keyword.operator.canon
+71:27-30 "120" constant.numeric.integer.canon
+72:0-35 "  /// Wait between two bot actions." comment.line.documentation.canon
+73:2-13 "actionDelay" variable.other.property.canon
+73:13-14 ":" punctuation.separator.key.canon
+73:15-23 "Duration" entity.name.type.canon
+73:24-25 "=" keyword.operator.canon
+73:26-31 "700ms" constant.numeric.duration.canon
+74:0-44 "  /// Totems each combo is measured against." comment.line.documentation.canon
+75:2-10 "profiles" variable.other.property.canon
+75:10-11 ":" punctuation.separator.key.canon
+75:13-20 "Profile" entity.name.type.canon
+75:22-23 "=" keyword.operator.canon
+76:0-50 "  /// Empty means every job the level bands allow." comment.line.documentation.canon
+77:2-10 "onlyJobs" variable.other.property.canon
+77:10-11 ":" punctuation.separator.key.canon
+77:13-19 "String" entity.name.type.canon
+77:21-22 "=" keyword.operator.canon
+78:0-47 "  /// Empty means solver.kAnchors plus level 1." comment.line.documentation.canon
+79:2-8 "levels" variable.other.property.canon
+79:8-9 ":" punctuation.separator.key.canon
+79:11-14 "Int" entity.name.type.canon
+79:15-16 "1" constant.numeric.integer.canon
+79:16-18 ".." keyword.operator.canon
+79:21-22 "=" keyword.operator.canon
+80:0-44 "  /// Adds the puppeteer to the expert band." comment.line.documentation.canon
+81:2-18 "includePuppeteer" variable.other.property.canon
+81:18-19 ":" punctuation.separator.key.canon
+81:20-24 "Bool" entity.name.type.canon
+81:25-26 "=" keyword.operator.canon
+81:27-32 "false" constant.language.canon
+84:0-70 "/// The flags of this build: the defaults, unless a layer amends them." comment.line.documentation.canon
+85:0-3 "let" storage.type.canon
+85:4-12 "settings" variable.other.property.canon
+85:12-13 ":" punctuation.separator.key.canon
+85:14-22 "Settings" entity.name.type.canon
+85:23-24 "=" keyword.operator.canon
+87:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+88:0-39 "// Server rules the plan must reproduce" comment.line.double-slash.canon
+89:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+91:0-70 "/// Only these reach CalcDamageCore, so only these can damage a totem." comment.line.documentation.canon
+92:0-5 "const" storage.type.canon
+92:6-20 "ATTACK_TARGETS" constant.other.canon
+92:21-22 "=" keyword.operator.canon
+92:24-38 "\"EXT_MELEEATK\"" string.quoted.double.canon
+92:40-54 "\"EXT_MAGICATK\"" string.quoted.double.canon
+92:56-74 "\"EXT_MAGICATKSHOT\"" string.quoted.double.canon
+94:0-95 "/// dwLinkKind values that accept a family of weapons (CMover::DoUseSkill, MoverSkill.cpp:676)." comment.line.documentation.canon
+95:0-5 "const" storage.type.canon
+95:6-19 "LINK_FAMILIES" constant.other.canon
+95:20-21 "=" keyword.operator.canon
+96:2-17 "\"IK3_MAGICBOTH\"" string.quoted.double.canon
+96:20-30 "\"IK3_WAND\"" string.quoted.double.canon
+96:32-43 "\"IK3_STAFF\"" string.quoted.double.canon
+97:2-12 "\"IK3_YOBO\"" string.quoted.double.canon
+97:15-25 "\"IK3_YOYO\"" string.quoted.double.canon
+97:27-36 "\"IK3_BOW\"" string.quoted.double.canon
+100:0-40 "/// Weapon kinds that attack from range." comment.line.documentation.canon
+101:0-5 "const" storage.type.canon
+101:6-18 "RANGED_KINDS" constant.other.canon
+101:19-20 "=" keyword.operator.canon
+101:22-31 "\"IK3_BOW\"" string.quoted.double.canon
+101:33-43 "\"IK3_YOYO\"" string.quoted.double.canon
+103:0-16 "/// Second jobs." comment.line.documentation.canon
+104:0-5 "const" storage.type.canon
+104:6-17 "EXPERT_JOBS" constant.other.canon
+104:18-19 "=" keyword.operator.canon
+104:21-36 "\"JOB_MERCENARY\"" string.quoted.double.canon
+104:38-51 "\"JOB_ACROBAT\"" string.quoted.double.canon
+104:53-65 "\"JOB_ASSIST\"" string.quoted.double.canon
+104:67-81 "\"JOB_MAGICIAN\"" string.quoted.double.canon
+105:0-15 "/// Third jobs." comment.line.documentation.canon
+106:0-5 "const" storage.type.canon
+106:6-14 "PRO_JOBS" constant.other.canon
+106:15-16 "=" keyword.operator.canon
+107:2-14 "\"JOB_KNIGHT\"" string.quoted.double.canon
+108:2-13 "\"JOB_BLADE\"" string.quoted.double.canon
+109:2-14 "\"JOB_JESTER\"" string.quoted.double.canon
+110:2-14 "\"JOB_RANGER\"" string.quoted.double.canon
+111:2-18 "\"JOB_RINGMASTER\"" string.quoted.double.canon
+112:2-18 "\"JOB_BILLPOSTER\"" string.quoted.double.canon
+113:2-20 "\"JOB_PSYCHIKEEPER\"" string.quoted.double.canon
+114:2-17 "\"JOB_ELEMENTOR\"" string.quoted.double.canon
+117:0-86 "/// Weapon kind for jobs presets.json does not cover: the lower tiers inherit from the" comment.line.documentation.canon
+118:0-25 "/// pro job they lead to." comment.line.documentation.canon
+119:0-5 "const" storage.type.canon
+119:6-19 "FALLBACK_KIND" constant.other.canon
+119:20-21 "=" keyword.operator.canon
+120:2-15 "\"JOB_VAGRANT\"" string.quoted.double.canon
+120:17-26 "\"IK3_SWD\"" string.quoted.double.canon
+121:2-17 "\"JOB_MERCENARY\"" string.quoted.double.canon
+121:19-28 "\"IK3_SWD\"" string.quoted.double.canon
+122:2-15 "\"JOB_ACROBAT\"" string.quoted.double.canon
+122:17-26 "\"IK3_BOW\"" string.quoted.double.canon
+123:2-14 "\"JOB_ASSIST\"" string.quoted.double.canon
+123:16-35 "\"IK3_KNUCKLEHAMMER\"" string.quoted.double.canon
+124:2-16 "\"JOB_MAGICIAN\"" string.quoted.double.canon
+124:18-28 "\"IK3_WAND\"" string.quoted.double.canon
+125:2-17 "\"JOB_PUPPETEER\"" string.quoted.double.canon
+125:19-28 "\"IK3_SWD\"" string.quoted.double.canon
+128:0-88 "/// Which jobs /setlevel accepts at a level (TextCmd_LevelPlayer, FuncTextCmd.cpp:4874)." comment.line.documentation.canon
+129:0-83 "/// Outside these bands the command silently does nothing. The bounds are read from" comment.line.documentation.canon
+130:0-96 "/// defineJob.h, so the old \"PRO_LEVELS_MAX below must match\" comment has nothing left to guard." comment.line.documentation.canon
+131:0-2 "fn" storage.type.function.canon
+131:3-9 "jobsAt" entity.name.function.canon
+131:10-15 "level" variable.other.property.canon
+131:15-16 ":" punctuation.separator.key.canon
+131:17-20 "Int" entity.name.type.canon
+131:22-24 "->" keyword.operator.canon
+131:26-32 "String" entity.name.type.canon
+132:2-5 "let" storage.type.canon
+132:17-18 "=" keyword.operator.canon
+132:24-37 "MAX_JOB_LEVEL" constant.other.canon
+132:37-38 "." punctuation.accessor.canon
+132:38-43 "value" variable.other.property.canon
+133:2-5 "let" storage.type.canon
+133:16-17 "=" keyword.operator.canon
+133:29-30 "+" keyword.operator.canon
+133:36-49 "MAX_EXP_LEVEL" constant.other.canon
+133:49-50 "." punctuation.accessor.canon
+133:50-55 "value" variable.other.property.canon
+134:2-4 "if" keyword.control.canon
+134:11-13 "<=" keyword.operator.canon
+134:27-33 "return" keyword.control.canon
+134:35-48 "\"JOB_VAGRANT\"" string.quoted.double.canon
+135:2-4 "if" keyword.control.canon
+135:11-13 "<=" keyword.operator.canon
+136:4-10 "return" keyword.control.canon
+136:11-22 "EXPERT_JOBS" constant.other.canon
+136:23-24 "+" keyword.operator.canon
+136:26-28 "if" keyword.control.canon
+136:37-38 "." punctuation.accessor.canon
+136:38-54 "includePuppeteer" variable.other.property.canon
+136:58-73 "\"JOB_PUPPETEER\"" string.quoted.double.canon
+136:77-81 "else" keyword.control.canon
+138:2-4 "if" keyword.control.canon
+138:11-13 "<=" keyword.operator.canon
+138:19-36 "MAX_GENERAL_LEVEL" constant.other.canon
+138:36-37 "." punctuation.accessor.canon
+138:37-42 "value" variable.other.property.canon
+138:45-51 "return" keyword.control.canon
+138:52-60 "PRO_JOBS" constant.other.canon
+139:2-8 "return" keyword.control.canon
+142:0-84 "/// The etc.json row of a job. Every job `jobsAt` names has one, so `!` cannot fail." comment.line.documentation.canon
+143:0-2 "fn" storage.type.function.canon
+143:3-9 "etcJob" entity.name.function.canon
+143:10-13 "job" variable.other.property.canon
+143:13-14 ":" punctuation.separator.key.canon
+143:15-21 "String" entity.name.type.canon
+143:23-25 "->" keyword.operator.canon
+143:26-32 "EtcJob" entity.name.type.canon
+143:35-41 "return" keyword.control.canon
+143:49-50 "." punctuation.accessor.canon
+143:50-55 "first" variable.other.property.canon
+143:58-60 "=>" keyword.operator.canon
+143:62-63 "." punctuation.accessor.canon
+143:63-65 "id" variable.other.property.canon
+143:66-68 "==" keyword.operator.canon
+143:73-74 "!" keyword.operator.canon
+145:0-83 "/// The job and every job it was promoted from, ending with vagrant. etc.json gives" comment.line.documentation.canon
+146:0-60 "/// JOB_VAGRANT itself as its own base, which ends the walk." comment.line.documentation.canon
+147:0-2 "fn" storage.type.function.canon
+147:3-10 "lineage" entity.name.function.canon
+147:11-14 "job" variable.other.property.canon
+147:14-15 ":" punctuation.separator.key.canon
+147:16-22 "String" entity.name.type.canon
+147:24-26 "->" keyword.operator.canon
+147:28-34 "String" entity.name.type.canon
+148:2-5 "let" storage.type.canon
+148:11-12 "=" keyword.operator.canon
+148:20-21 "." punctuation.accessor.canon
+148:21-26 "first" variable.other.property.canon
+148:29-31 "=>" keyword.operator.canon
+148:33-34 "." punctuation.accessor.canon
+148:34-36 "id" variable.other.property.canon
+148:37-39 "==" keyword.operator.canon
+148:44-46 "?." punctuation.accessor.canon
+148:46-53 "jobBase" variable.other.property.canon
+149:2-4 "if" keyword.control.canon
+149:10-12 "!=" keyword.operator.canon
+149:13-17 "none" constant.language.canon
+149:18-21 "and" keyword.operator.word.canon
+149:27-29 "!=" keyword.operator.canon
+149:36-42 "return" keyword.control.canon
+149:49-50 "+" keyword.operator.canon
+150:2-8 "return" keyword.control.canon
+150:15-28 "\"JOB_VAGRANT\"" string.quoted.double.canon
+150:29-30 "." punctuation.accessor.canon
+150:30-36 "unique" variable.other.property.canon
+153:0-92 "/// Best equippable weapon of `kind` at `level`: highest level requirement the level allows." comment.line.documentation.canon
+154:0-2 "fn" storage.type.function.canon
+154:3-13 "pickWeapon" entity.name.function.canon
+154:14-18 "kind" variable.other.property.canon
+154:18-19 ":" punctuation.separator.key.canon
+154:20-26 "String" entity.name.type.canon
+154:28-33 "level" variable.other.property.canon
+154:33-34 ":" punctuation.separator.key.canon
+154:35-38 "Int" entity.name.type.canon
+154:40-44 "jobs" variable.other.property.canon
+154:44-45 ":" punctuation.separator.key.canon
+154:47-53 "String" entity.name.type.canon
+154:56-58 "->" keyword.operator.canon
+154:59-65 "Weapon" entity.name.type.canon
+154:65-66 "?" keyword.operator.canon
+155:2-8 "return" keyword.control.canon
+156:4-5 "." punctuation.accessor.canon
+156:5-11 "filter" variable.other.property.canon
+157:8-10 "=>" keyword.operator.canon
+157:12-13 "." punctuation.accessor.canon
+157:13-18 "kind3" variable.other.property.canon
+157:19-21 "==" keyword.operator.canon
+157:27-30 "and" keyword.operator.word.canon
+158:9-10 "." punctuation.accessor.canon
+158:10-16 "handed" variable.other.property.canon
+158:17-19 "in" keyword.operator.word.canon
+158:21-29 "\"HD_ONE\"" string.quoted.double.canon
+158:31-39 "\"HD_TWO\"" string.quoted.double.canon
+158:41-44 "and" keyword.operator.word.canon
+159:9-10 "." punctuation.accessor.canon
+159:10-13 "job" variable.other.property.canon
+159:14-16 "in" keyword.operator.word.canon
+159:22-25 "and" keyword.operator.word.canon
+160:9-10 "." punctuation.accessor.canon
+160:10-13 "sex" variable.other.property.canon
+160:14-16 "in" keyword.operator.word.canon
+160:18-21 "\"=\"" string.quoted.double.canon
+160:23-32 "\"SEX_ANY\"" string.quoted.double.canon
+160:34-36 "\"\"" string.quoted.double.canon
+160:38-41 "and" keyword.operator.word.canon
+161:10-11 "." punctuation.accessor.canon
+161:11-16 "limit" variable.other.property.canon
+161:17-19 "??" keyword.operator.canon
+161:20-21 "1" constant.numeric.integer.canon
+161:23-25 "<=" keyword.operator.canon
+163:4-5 "." punctuation.accessor.canon
+163:5-10 "maxBy" variable.other.property.canon
+163:13-15 "=>" keyword.operator.canon
+163:17-18 "." punctuation.accessor.canon
+163:18-23 "limit" variable.other.property.canon
+163:24-26 "??" keyword.operator.canon
+163:27-28 "1" constant.numeric.integer.canon
+166:0-85 "/// Whether a skill's dwLinkKind accepts a weapon of `kind`: no link kind accepts any" comment.line.documentation.canon
+167:0-68 "/// weapon, a family accepts its members, anything else only itself." comment.line.documentation.canon
+168:0-2 "fn" storage.type.function.canon
+168:3-14 "linkAccepts" entity.name.function.canon
+168:15-19 "link" variable.other.property.canon
+168:19-20 ":" punctuation.separator.key.canon
+168:21-27 "String" entity.name.type.canon
+168:27-28 "?" keyword.operator.canon
+168:30-34 "kind" variable.other.property.canon
+168:34-35 ":" punctuation.separator.key.canon
+168:36-42 "String" entity.name.type.canon
+168:44-46 "->" keyword.operator.canon
+168:47-51 "Bool" entity.name.type.canon
+169:2-4 "if" keyword.control.canon
+169:10-12 "!=" keyword.operator.canon
+169:13-17 "none" constant.language.canon
+169:20-26 "return" keyword.control.canon
+169:32-34 "in" keyword.operator.word.canon
+169:36-49 "LINK_FAMILIES" constant.other.canon
+169:49-50 "." punctuation.accessor.canon
+169:50-53 "get" variable.other.property.canon
+169:60-62 "??" keyword.operator.canon
+170:2-8 "return" keyword.control.canon
+170:9-13 "true" constant.language.canon
+173:0-85 "/// Attack skills the character knows at `level` and can use with `weapon`, in unlock" comment.line.documentation.canon
+174:0-83 "/// order. (learned_roster maps each skill to its wire slot through the MAX_*_SKILL" comment.line.documentation.canon
+175:0-88 "/// buckets; that arithmetic would be one more function here. This sketch numbers them.)" comment.line.documentation.canon
+176:0-2 "fn" storage.type.function.canon
+176:3-9 "roster" entity.name.function.canon
+176:10-14 "jobs" variable.other.property.canon
+176:14-15 ":" punctuation.separator.key.canon
+176:17-23 "String" entity.name.type.canon
+176:26-31 "level" variable.other.property.canon
+176:31-32 ":" punctuation.separator.key.canon
+176:33-36 "Int" entity.name.type.canon
+176:38-42 "kind" variable.other.property.canon
+176:42-43 ":" punctuation.separator.key.canon
+176:44-50 "String" entity.name.type.canon
+176:52-58 "weapon" variable.other.property.canon
+176:58-59 ":" punctuation.separator.key.canon
+176:60-66 "Weapon" entity.name.type.canon
+176:66-67 "?" keyword.operator.canon
+176:69-71 "->" keyword.operator.canon
+176:73-85 "PlannedSkill" entity.name.type.canon
+177:2-5 "let" storage.type.canon
+177:12-13 "=" keyword.operator.canon
+179:4-7 "for" keyword.control.canon
+179:10-12 "in" keyword.operator.word.canon
+179:19-20 "." punctuation.accessor.canon
+179:20-26 "sortBy" variable.other.property.canon
+179:29-31 "=>" keyword.operator.canon
+179:33-34 "." punctuation.accessor.canon
+179:34-45 "unlockLevel" variable.other.property.canon
+179:46-48 "??" keyword.operator.canon
+179:49-50 "0" constant.numeric.integer.canon
+180:4-6 "if" keyword.control.canon
+180:8-9 "." punctuation.accessor.canon
+180:9-13 "tier" variable.other.property.canon
+180:14-16 "!=" keyword.operator.canon
+180:17-31 "\"JTYPE_COMMON\"" string.quoted.double.canon
+180:32-35 "and" keyword.operator.word.canon
+181:7-8 "." punctuation.accessor.canon
+181:8-16 "jobIndex" variable.other.property.canon
+181:17-19 "in" keyword.operator.word.canon
+181:25-28 "and" keyword.operator.word.canon
+182:8-9 "." punctuation.accessor.canon
+182:9-20 "unlockLevel" variable.other.property.canon
+182:21-23 "??" keyword.operator.canon
+182:24-25 "0" constant.numeric.integer.canon
+182:27-29 "<=" keyword.operator.canon
+182:36-39 "and" keyword.operator.word.canon
+183:7-8 "." punctuation.accessor.canon
+183:8-14 "target" variable.other.property.canon
+183:15-17 "in" keyword.operator.word.canon
+183:18-32 "ATTACK_TARGETS" constant.other.canon
+183:33-36 "and" keyword.operator.word.canon
+184:19-20 "." punctuation.accessor.canon
+184:20-26 "weapon" variable.other.property.canon
+184:34-37 "and" keyword.operator.word.canon
+185:8-9 "." punctuation.accessor.canon
+185:9-15 "handed" variable.other.property.canon
+185:16-18 "==" keyword.operator.canon
+185:19-23 "none" constant.language.canon
+185:24-26 "or" keyword.operator.word.canon
+185:28-29 "." punctuation.accessor.canon
+185:29-35 "handed" variable.other.property.canon
+185:36-38 "==" keyword.operator.canon
+185:45-47 "?." punctuation.accessor.canon
+185:47-53 "handed" variable.other.property.canon
+187:2-8 "return" keyword.control.canon
+187:12-16 "slot" variable.other.property.canon
+187:16-17 ":" punctuation.separator.key.canon
+187:21-23 "id" variable.other.property.canon
+187:23-24 ":" punctuation.separator.key.canon
+187:26-27 "." punctuation.accessor.canon
+187:27-33 "define" variable.other.property.canon
+187:33-34 "." punctuation.accessor.canon
+187:34-39 "value" variable.other.property.canon
+187:41-43 "mp" variable.other.property.canon
+187:43-44 ":" punctuation.separator.key.canon
+187:46-47 "." punctuation.accessor.canon
+187:47-52 "reqMp" variable.other.property.canon
+187:55-58 "for" keyword.control.canon
+187:64-66 "in" keyword.operator.word.canon
+187:72-73 "." punctuation.accessor.canon
+187:73-82 "enumerate" variable.other.property.canon
+190:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+191:0-11 "// The plan" comment.line.double-slash.canon
+192:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+194:0-43 "/// One skill the bot casts during a block." comment.line.documentation.canon
+195:0-6 "record" storage.type.canon
+195:7-19 "PlannedSkill" entity.name.type.canon
+196:0-71 "  /// Wire slot the bot presses (a sketch: the position in the roster)." comment.line.documentation.canon
+197:2-6 "slot" variable.other.property.canon
+197:6-7 ":" punctuation.separator.key.canon
+197:8-11 "Int" entity.name.type.canon
+198:0-41 "  /// Skill id (the SI_* define's value)." comment.line.documentation.canon
+199:2-4 "id" variable.other.property.canon
+199:4-5 ":" punctuation.separator.key.canon
+199:6-9 "Int" entity.name.type.canon
+200:0-25 "  /// MP the skill costs." comment.line.documentation.canon
+201:2-4 "mp" variable.other.property.canon
+201:4-5 ":" punctuation.separator.key.canon
+201:6-9 "Int" entity.name.type.canon
+204:0-40 "/// One (job, level) block of the sweep." comment.line.documentation.canon
+205:0-6 "record" storage.type.canon
+205:7-12 "Combo" entity.name.type.canon
+206:0-28 "  /// The job's define name." comment.line.documentation.canon
+207:2-5 "job" variable.other.property.canon
+207:5-6 ":" punctuation.separator.key.canon
+207:7-13 "String" entity.name.type.canon
+208:0-81 "  /// The RESOLVED job name /setlevel matches (\"Mercenary\"), not the IDS_* token." comment.line.documentation.canon
+209:2-10 "jobToken" variable.other.property.canon
+209:10-11 ":" punctuation.separator.key.canon
+209:12-18 "String" entity.name.type.canon
+210:0-40 "  /// The level the character is set to." comment.line.documentation.canon
+211:2-7 "level" variable.other.property.canon
+211:7-8 ":" punctuation.separator.key.canon
+211:9-12 "Int" entity.name.type.canon
+212:0-34 "  /// II_* name, for logging only." comment.line.documentation.canon
+213:2-8 "weapon" variable.other.property.canon
+213:8-9 ":" punctuation.separator.key.canon
+213:10-16 "String" entity.name.type.canon
+214:0-34 "  /// /ci only accepts the number." comment.line.documentation.canon
+215:2-10 "weaponId" variable.other.property.canon
+215:10-11 ":" punctuation.separator.key.canon
+215:12-15 "Int" entity.name.type.canon
+216:0-30 "  /// The weapon's IK3_* kind." comment.line.documentation.canon
+217:2-12 "weaponKind" variable.other.property.canon
+217:12-13 ":" punctuation.separator.key.canon
+217:14-20 "String" entity.name.type.canon
+218:0-42 "  /// Whether the kind attacks from range." comment.line.documentation.canon
+219:2-8 "ranged" variable.other.property.canon
+219:8-9 ":" punctuation.separator.key.canon
+219:10-14 "Bool" entity.name.type.canon
+220:0-22 "  /// Totems measured." comment.line.documentation.canon
+221:2-10 "profiles" variable.other.property.canon
+221:10-11 ":" punctuation.separator.key.canon
+221:13-20 "Profile" entity.name.type.canon
+222:0-18 "  /// Skills cast." comment.line.documentation.canon
+223:2-8 "skills" variable.other.property.canon
+223:8-9 ":" punctuation.separator.key.canon
+223:11-23 "PlannedSkill" entity.name.type.canon
+225:2-6 "warn" keyword.other.canon
+225:16-18 "!=" keyword.operator.canon
+225:19-20 "0" constant.numeric.integer.canon
+226:4-8 "else" keyword.control.canon
+226:9-13 "\"no " string.quoted.double.canon
+226:13-14 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+226:14-24 "weaponKind" string.quoted.double.canon meta.interpolation.canon
+226:24-25 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+226:25-53 " weapon equippable at level " string.quoted.double.canon
+226:53-54 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+226:54-59 "level" string.quoted.double.canon meta.interpolation.canon
+226:59-60 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+226:60-65 " for " string.quoted.double.canon
+226:65-66 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+226:66-69 "job" string.quoted.double.canon meta.interpolation.canon
+226:69-70 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+226:70-99 ": the block runs bare-handed\"" string.quoted.double.canon
+229:0-49 "/// The whole plan, as parity_sweep.lua reads it." comment.line.documentation.canon
+230:0-6 "record" storage.type.canon
+230:7-11 "Plan" entity.name.type.canon
+231:0-44 "  /// The bot character that runs the sweep." comment.line.documentation.canon
+232:2-10 "charName" variable.other.property.canon
+232:10-11 ":" punctuation.separator.key.canon
+232:12-18 "String" entity.name.type.canon
+233:0-21 "  /// Hits per block." comment.line.documentation.canon
+234:2-14 "hitsPerBlock" variable.other.property.canon
+234:14-15 ":" punctuation.separator.key.canon
+234:16-19 "Int" entity.name.type.canon
+235:0-35 "  /// Wait between two bot actions." comment.line.documentation.canon
+236:2-13 "actionDelay" variable.other.property.canon
+236:13-14 ":" punctuation.separator.key.canon
+236:15-23 "Duration" entity.name.type.canon
+236:24-25 "@" meta.annotation.canon punctuation.definition.annotation.canon
+236:25-29 "json" meta.annotation.canon entity.name.function.decorator.canon
+236:29-30 "(" meta.annotation.canon
+236:30-45 "\"actionDelayMs\"" meta.annotation.canon string.quoted.double.canon
+236:45-47 ", " meta.annotation.canon
+236:47-51 "unit" meta.annotation.canon variable.parameter.canon
+236:51-52 ":" meta.annotation.canon punctuation.separator.key.canon
+236:52-56 " ms)" meta.annotation.canon
+237:0-79 "  /// Prop index of the mover `/totem spawn <profile>` creates (TextCmd_Totem)." comment.line.documentation.canon
+238:2-12 "totemIndex" variable.other.property.canon
+238:12-13 ":" punctuation.separator.key.canon
+238:15-22 "Profile" variable.other.property.canon
+238:22-23 ":" punctuation.separator.key.canon
+238:24-27 "Int" entity.name.type.canon
+239:0-36 "  /// Every block, in capture order." comment.line.documentation.canon
+240:2-8 "combos" variable.other.property.canon
+240:8-9 ":" punctuation.separator.key.canon
+240:11-16 "Combo" entity.name.type.canon
+243:0-5 "local" storage.modifier.canon
+243:6-9 "let" storage.type.canon
+243:17-18 "=" keyword.operator.canon
+243:19-21 "if" keyword.control.canon
+243:30-31 "." punctuation.accessor.canon
+243:31-37 "levels" variable.other.property.canon
+243:37-38 "." punctuation.accessor.canon
+243:38-45 "isEmpty" variable.other.property.canon
+244:11-12 "+" keyword.operator.canon
+244:14-15 "1" constant.numeric.integer.canon
+244:17-18 "." punctuation.accessor.canon
+244:18-24 "unique" variable.other.property.canon
+244:26-27 "." punctuation.accessor.canon
+244:27-33 "sortBy" variable.other.property.canon
+244:36-38 "=>" keyword.operator.canon
+245:2-6 "else" keyword.control.canon
+246:10-11 "." punctuation.accessor.canon
+246:11-17 "levels" variable.other.property.canon
+249:0-40 "/// The plan written to sweep_plan.json." comment.line.documentation.canon
+250:0-3 "let" storage.type.canon
+250:4-8 "plan" variable.other.property.canon
+250:8-9 ":" punctuation.separator.key.canon
+250:10-14 "Plan" entity.name.type.canon
+250:15-16 "=" keyword.operator.canon
+251:2-10 "charName" variable.other.property.canon
+251:10-11 ":" punctuation.separator.key.canon
+251:20-21 "." punctuation.accessor.canon
+251:21-29 "charName" variable.other.property.canon
+252:2-14 "hitsPerBlock" variable.other.property.canon
+252:14-15 ":" punctuation.separator.key.canon
+252:24-25 "." punctuation.accessor.canon
+252:25-37 "hitsPerBlock" variable.other.property.canon
+253:2-13 "actionDelay" variable.other.property.canon
+253:13-14 ":" punctuation.separator.key.canon
+253:23-24 "." punctuation.accessor.canon
+253:24-35 "actionDelay" variable.other.property.canon
+254:2-12 "totemIndex" variable.other.property.canon
+254:12-13 ":" punctuation.separator.key.canon
+254:16-19 "pve" variable.other.property.canon
+254:19-20 ":" punctuation.separator.key.canon
+254:26-50 "MI_RUSTIACRASHGATE01_DPS" constant.other.canon
+254:50-51 "." punctuation.accessor.canon
+254:51-56 "value" variable.other.property.canon
+254:58-61 "pvp" variable.other.property.canon
+254:61-62 ":" punctuation.separator.key.canon
+254:68-92 "MI_RUSTIACRASHGATE01_PVP" constant.other.canon
+254:92-93 "." punctuation.accessor.canon
+254:93-98 "value" variable.other.property.canon
+255:2-8 "combos" variable.other.property.canon
+255:8-9 ":" punctuation.separator.key.canon
+257:6-9 "job" variable.other.property.canon
+257:9-10 ":" punctuation.separator.key.canon
+258:6-14 "jobToken" variable.other.property.canon
+258:14-15 ":" punctuation.separator.key.canon
+258:36-37 "." punctuation.accessor.canon
+258:37-41 "name" variable.other.property.canon
+259:6-11 "level" variable.other.property.canon
+259:11-12 ":" punctuation.separator.key.canon
+260:6-12 "weapon" variable.other.property.canon
+260:12-13 ":" punctuation.separator.key.canon
+260:15-17 "?." punctuation.accessor.canon
+260:17-21 "item" variable.other.property.canon
+260:21-22 "." punctuation.accessor.canon
+260:22-24 "id" variable.other.property.canon
+260:25-27 "??" keyword.operator.canon
+260:28-30 "\"\"" string.quoted.double.canon
+261:6-14 "weaponId" variable.other.property.canon
+261:14-15 ":" punctuation.separator.key.canon
+261:17-19 "?." punctuation.accessor.canon
+261:19-23 "item" variable.other.property.canon
+261:23-24 "." punctuation.accessor.canon
+261:24-29 "value" variable.other.property.canon
+261:30-32 "??" keyword.operator.canon
+261:33-34 "0" constant.numeric.integer.canon
+262:6-16 "weaponKind" variable.other.property.canon
+262:16-17 ":" punctuation.separator.key.canon
+263:6-12 "ranged" variable.other.property.canon
+263:12-13 ":" punctuation.separator.key.canon
+263:19-21 "in" keyword.operator.word.canon
+263:22-34 "RANGED_KINDS" constant.other.canon
+264:6-14 "profiles" variable.other.property.canon
+264:14-15 ":" punctuation.separator.key.canon
+264:24-25 "." punctuation.accessor.canon
+264:25-33 "profiles" variable.other.property.canon
+265:6-12 "skills" variable.other.property.canon
+265:12-13 ":" punctuation.separator.key.canon
+267:4-7 "for" keyword.control.canon
+267:14-16 "in" keyword.operator.word.canon
+268:4-7 "for" keyword.control.canon
+268:12-14 "in" keyword.operator.word.canon
+269:4-6 "if" keyword.control.canon
+269:15-16 "." punctuation.accessor.canon
+269:16-24 "onlyJobs" variable.other.property.canon
+269:24-25 "." punctuation.accessor.canon
+269:25-32 "isEmpty" variable.other.property.canon
+269:35-37 "or" keyword.operator.word.canon
+269:42-44 "in" keyword.operator.word.canon
+269:53-54 "." punctuation.accessor.canon
+269:54-62 "onlyJobs" variable.other.property.canon
+270:4-7 "let" storage.type.canon
+270:13-14 "=" keyword.operator.canon
+270:22-23 "." punctuation.accessor.canon
+270:23-26 "get" variable.other.property.canon
+270:32-34 "??" keyword.operator.canon
+270:35-48 "FALLBACK_KIND" constant.other.canon
+270:48-49 "." punctuation.accessor.canon
+270:49-52 "get" variable.other.property.canon
+270:58-60 "??" keyword.operator.canon
+270:61-70 "\"IK3_SWD\"" string.quoted.double.canon
+271:4-7 "let" storage.type.canon
+271:10-11 "=" keyword.operator.canon
+275:0-5 "check" keyword.other.canon
+276:2-5 "for" keyword.control.canon
+276:12-14 "in" keyword.operator.word.canon
+277:4-6 "if" keyword.control.canon
+277:20-21 "." punctuation.accessor.canon
+277:21-28 "isEmpty" variable.other.property.canon
+278:6-10 "warn" keyword.other.canon
+278:18-25 "\"level " string.quoted.double.canon
+278:25-26 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+278:26-31 "level" string.quoted.double.canon meta.interpolation.canon
+278:31-32 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+278:32-96 " is above MAX_GENERAL_LEVEL: unreachable via /setlevel, dropped\"" string.quoted.double.canon
+283:0-4 "emit" keyword.other.canon
+283:12-15 "out" variable.other.property.canon
+283:15-16 ":" punctuation.separator.key.canon
+283:17-42 "\"@parity/sweep_plan.json\"" string.quoted.double.canon
+283:44-50 "values" variable.other.property.canon
+283:50-51 ":" punctuation.separator.key.canon
+285:0-85 "// Canon generates Go, C++ and TypeScript, never Lua. The bot scripts are Lua, so the" comment.line.double-slash.canon
+286:0-75 "// plan reaches them through BotClient: a small binding (one function, e.g." comment.line.double-slash.canon
+287:0-86 "// bot:loadData(path)) reads the JSON with nlohmann and pushes its `value` object (the" comment.line.double-slash.canon
+288:0-85 "// record, SPEC §14.3) as a Lua table. Lua stays a consumer, never a target, and the" comment.line.double-slash.canon
+289:0-52 "// script's `plan.combos[...]` code does not change." comment.line.double-slash.canon

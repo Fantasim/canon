@@ -1,0 +1,88 @@
+1:0-93 "/// `entry` files (SPEC §4.3): the entries of a table or a keyed list spread over files, one" comment.line.documentation.canon
+2:0-94 "/// entry per file or several. `@files` says where a new entry's file goes. Entry order is the" comment.line.documentation.canon
+3:0-91 "/// literal's entries, then the entry files in path order, then source order inside a file." comment.line.documentation.canon
+4:0-95 "/// Keys are unique across the literal and every entry file: a duplicate is `E3101` for a table" comment.line.documentation.canon
+5:0-98 "/// and `E3102` for a keyed list (TYPES §9.3), and an edit that would make one is `ErrKeyExists`." comment.line.documentation.canon
+6:0-68 "/// The examples stay free of errors, so no file here repeats a key." comment.line.documentation.canon
+7:0-7 "package" keyword.other.canon
+7:8-24 "features.entries" entity.name.namespace.canon
+9:0-20 "/// What an item is." comment.line.documentation.canon
+10:0-4 "enum" storage.type.canon
+10:5-9 "Kind" entity.name.type.canon
+12:0-12 "/// An item." comment.line.documentation.canon
+13:0-6 "record" storage.type.canon
+13:7-11 "Item" entity.name.type.canon
+14:0-15 "  /// Its name." comment.line.documentation.canon
+15:2-6 "name" variable.other.property.canon
+15:6-7 ":" punctuation.separator.key.canon
+15:8-14 "String" entity.name.type.canon
+15:15-16 "1" constant.numeric.integer.canon
+15:16-18 ".." keyword.operator.canon
+16:0-16 "  /// Its level." comment.line.documentation.canon
+17:2-7 "level" variable.other.property.canon
+17:7-8 ":" punctuation.separator.key.canon
+17:9-12 "Int" entity.name.type.canon
+17:13-14 "=" keyword.operator.canon
+17:15-16 "1" constant.numeric.integer.canon
+18:0-17 "  /// What it is." comment.line.documentation.canon
+19:2-6 "kind" variable.other.property.canon
+19:6-7 ":" punctuation.separator.key.canon
+19:8-12 "Kind" entity.name.type.canon
+22:0-75 "/// Items: the starter here, the others in their own files, placed by kind." comment.line.documentation.canon
+23:0-1 "@" meta.annotation.canon punctuation.definition.annotation.canon
+23:1-6 "files" meta.annotation.canon entity.name.function.decorator.canon
+23:6-7 "(" meta.annotation.canon
+23:7-14 "\"items/" meta.annotation.canon string.quoted.double.canon
+23:14-15 "{" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+23:15-19 "kind" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon
+23:19-20 "}" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+23:20-21 "/" meta.annotation.canon string.quoted.double.canon
+23:21-22 "{" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+23:22-24 "id" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon
+23:24-25 "}" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+23:25-32 ".canon\"" meta.annotation.canon string.quoted.double.canon
+23:32-33 ")" meta.annotation.canon
+24:0-3 "let" storage.type.canon
+24:4-9 "items" variable.other.property.canon
+24:9-10 ":" punctuation.separator.key.canon
+24:11-16 "table" storage.type.canon
+24:17-21 "Item" entity.name.type.canon
+24:22-23 "=" keyword.operator.canon
+25:12-16 "name" variable.other.property.canon
+25:16-17 ":" punctuation.separator.key.canon
+25:18-33 "\"Starter sword\"" string.quoted.double.canon
+25:35-39 "kind" variable.other.property.canon
+25:39-40 ":" punctuation.separator.key.canon
+28:0-30 "/// A rank, keyed by its code." comment.line.documentation.canon
+29:0-6 "record" storage.type.canon
+29:7-11 "Rank" entity.name.type.canon
+30:0-15 "  /// Its code." comment.line.documentation.canon
+31:2-6 "code" variable.other.property.canon
+31:6-7 ":" punctuation.separator.key.canon
+31:8-14 "String" entity.name.type.canon
+31:15-16 "1" constant.numeric.integer.canon
+31:16-18 ".." keyword.operator.canon
+32:0-24 "  /// What it is called." comment.line.documentation.canon
+33:2-7 "title" variable.other.property.canon
+33:7-8 ":" punctuation.separator.key.canon
+33:9-15 "String" entity.name.type.canon
+33:16-17 "1" constant.numeric.integer.canon
+33:17-19 ".." keyword.operator.canon
+34:0-26 "  /// Invitations per day." comment.line.documentation.canon
+35:2-9 "invites" variable.other.property.canon
+35:9-10 ":" punctuation.separator.key.canon
+35:11-14 "Int" entity.name.type.canon
+35:15-16 "=" keyword.operator.canon
+35:17-18 "0" constant.numeric.integer.canon
+38:0-76 "/// Ranks, one file each: the key is in the entry's name, never in its body." comment.line.documentation.canon
+39:0-3 "let" storage.type.canon
+39:4-9 "ranks" variable.other.property.canon
+39:9-10 ":" punctuation.separator.key.canon
+39:12-16 "Rank" entity.name.type.canon
+39:32-33 "=" keyword.operator.canon
+39:37-41 "code" variable.other.property.canon
+39:41-42 ":" punctuation.separator.key.canon
+39:43-52 "\"private\"" string.quoted.double.canon
+39:54-59 "title" variable.other.property.canon
+39:59-60 ":" punctuation.separator.key.canon
+39:61-70 "\"Private\"" string.quoted.double.canon

@@ -1,0 +1,711 @@
+1:0-84 "/// Items, once converted: the domain as `canon infer` and `canon convert` leave it." comment.line.documentation.canon
+2:0-3 "///" comment.line.documentation.canon
+3:0-85 "/// Today the 6,944 items are rows of Server/Item/propItem.json (127 wire keys), read" comment.line.documentation.canon
+4:0-90 "/// in place by resource.vocab for pickers. Converting them takes three steps (CLI §6.4):" comment.line.documentation.canon
+5:0-89 "///   1. `canon infer --by dwItemKind1,dwItemKind2` writes the first version of the types" comment.line.documentation.canon
+6:0-84 "///      below: one case per kind, one nested case per sub-kind, each allowing every" comment.line.documentation.canon
+7:0-43 "///      field its items set (DECISIONS 7);" comment.line.documentation.canon
+8:0-57 "///   2. the types are tightened in small reviewed steps;" comment.line.documentation.canon
+9:0-87 "///   3. `canon convert items` writes one entry file per item under entries/ (placed by" comment.line.documentation.canon
+10:0-45 "///      `@files`) and proves the round trip." comment.line.documentation.canon
+11:0-3 "///" comment.line.documentation.canon
+12:0-88 "/// This sketch keeps two entries and the cases and fields they, the view and the checks" comment.line.documentation.canon
+13:0-85 "/// use. The inferred types cover all 29 (kind1, kind2) pairs found in propItem.json." comment.line.documentation.canon
+14:0-7 "package" keyword.other.canon
+14:8-18 "game.items" entity.name.namespace.canon
+16:0-6 "import" keyword.other.canon
+16:15-16 "." punctuation.accessor.canon
+16:16-21 "vocab" variable.other.property.canon
+16:24-32 "ItemIcon" entity.name.type.canon
+17:0-6 "import" keyword.other.canon
+19:0-5 "local" storage.modifier.canon
+19:6-9 "let" storage.type.canon
+19:15-16 "=" keyword.operator.canon
+19:17-21 "load" keyword.other.canon
+19:21-22 "." punctuation.accessor.canon
+19:22-29 "defines" variable.other.property.canon
+19:30-67 "\"@resource/Server/Define/defineJob.h\"" string.quoted.double.canon
+19:69-75 "prefix" variable.other.property.canon
+19:75-76 ":" punctuation.separator.key.canon
+19:77-83 "\"JOB_\"" string.quoted.double.canon
+20:0-5 "local" storage.modifier.canon
+20:6-9 "let" storage.type.canon
+20:21-22 "=" keyword.operator.canon
+20:23-27 "load" keyword.other.canon
+20:27-28 "." punctuation.accessor.canon
+20:28-35 "defines" variable.other.property.canon
+20:36-79 "\"@resource/Server/Define/defineAttribute.h\"" string.quoted.double.canon
+20:81-87 "prefix" variable.other.property.canon
+20:87-88 ":" punctuation.separator.key.canon
+20:89-95 "\"DST_\"" string.quoted.double.canon
+21:0-5 "local" storage.modifier.canon
+21:6-9 "let" storage.type.canon
+21:17-18 "=" keyword.operator.canon
+21:19-23 "load" keyword.other.canon
+21:23-24 "." punctuation.accessor.canon
+21:24-31 "defines" variable.other.property.canon
+21:32-71 "\"@resource/Server/Define/defineSound.h\"" string.quoted.double.canon
+21:73-79 "prefix" variable.other.property.canon
+21:79-80 ":" punctuation.separator.key.canon
+21:81-87 "\"SND_\"" string.quoted.double.canon
+22:0-81 "/// IDS_* key -> English display name (\"IDS_PROPITEM_TXT_003930\" -> \"Angel Axe\")." comment.line.documentation.canon
+23:0-5 "local" storage.modifier.canon
+23:6-9 "let" storage.type.canon
+23:10-15 "names" variable.other.property.canon
+23:15-16 ":" punctuation.separator.key.canon
+23:18-24 "String" variable.other.property.canon
+23:24-25 ":" punctuation.separator.key.canon
+23:26-32 "String" entity.name.type.canon
+23:34-35 "=" keyword.operator.canon
+23:36-40 "load" keyword.other.canon
+23:41-81 "\"@resource/Server/Text/serverNames.json\"" string.quoted.double.canon
+23:83-85 "at" variable.other.property.canon
+23:85-86 ":" punctuation.separator.key.canon
+23:87-96 "\"strings\"" string.quoted.double.canon
+25:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+26:0-75 "// Closed vocabularies (IK2_*, IK3_*, HD_*, AR_*, WT_* in defineItemkind.h)" comment.line.double-slash.canon
+27:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+29:0-20 "/// One hand or two." comment.line.documentation.canon
+30:0-4 "enum" storage.type.canon
+30:5-11 "Handed" entity.name.type.canon
+30:14-20 "HD_ONE" constant.other.canon
+30:22-28 "HD_TWO" constant.other.canon
+32:0-29 "/// How far a weapon reaches." comment.line.documentation.canon
+33:0-4 "enum" storage.type.canon
+33:5-16 "AttackRange" entity.name.type.canon
+33:19-27 "AR_SHORT" constant.other.canon
+33:29-37 "AR_RANGE" constant.other.canon
+33:39-48 "AR_HRANGE" constant.other.canon
+33:50-57 "AR_WAND" constant.other.canon
+35:0-85 "/// Damage family the combat formulas use. propItem.json also holds WI_WORLD_MADRIGAL" comment.line.documentation.canon
+36:0-83 "/// here on a few blink wings (a world define, not a weapon type): an inferred enum" comment.line.documentation.canon
+37:0-50 "/// would have made it legal, this one refuses it." comment.line.documentation.canon
+38:0-4 "enum" storage.type.canon
+38:5-15 "WeaponType" entity.name.type.canon
+39:2-10 "WT_MELEE" constant.other.canon
+40:2-14 "WT_MELEE_SWD" constant.other.canon
+41:2-14 "WT_MELEE_AXE" constant.other.canon
+42:2-16 "WT_MELEE_STAFF" constant.other.canon
+43:2-16 "WT_MELEE_STICK" constant.other.canon
+44:2-18 "WT_MELEE_KNUCKLE" constant.other.canon
+45:2-15 "WT_MELEE_YOYO" constant.other.canon
+46:2-15 "WT_MAGIC_WAND" constant.other.canon
+47:2-10 "WT_RANGE" constant.other.canon
+48:2-14 "WT_RANGE_BOW" constant.other.canon
+51:0-36 "/// A weapon's family (dwItemKind2)." comment.line.documentation.canon
+52:0-4 "enum" storage.type.canon
+52:5-16 "WeaponKind2" entity.name.type.canon
+52:19-36 "IK2_WEAPON_DIRECT" constant.other.canon
+52:38-54 "IK2_WEAPON_MAGIC" constant.other.canon
+52:56-71 "IK2_WEAPON_HAND" constant.other.canon
+52:73-80 "IK2_MOB" constant.other.canon
+54:0-84 "/// A weapon's type (dwItemKind3). IK3_VIRTUAL is the invisible weapon monsters use." comment.line.documentation.canon
+55:0-4 "enum" storage.type.canon
+55:5-16 "WeaponKind3" entity.name.type.canon
+56:2-9 "IK3_SWD" constant.other.canon
+57:2-9 "IK3_AXE" constant.other.canon
+58:2-11 "IK3_STAFF" constant.other.canon
+59:2-16 "IK3_CHEERSTICK" constant.other.canon
+60:2-19 "IK3_KNUCKLEHAMMER" constant.other.canon
+61:2-10 "IK3_WAND" constant.other.canon
+62:2-9 "IK3_BOW" constant.other.canon
+63:2-10 "IK3_YOYO" constant.other.canon
+64:2-10 "IK3_HAND" constant.other.canon
+65:2-13 "IK3_VIRTUAL" constant.other.canon
+68:0-46 "/// What a material is used for (dwItemKind3)." comment.line.documentation.canon
+69:0-4 "enum" storage.type.canon
+69:5-17 "MaterialKind" entity.name.type.canon
+70:2-14 "IK3_ULTIMATE" constant.other.canon
+71:2-16 "IK3_SOCKETCARD" constant.other.canon
+72:2-17 "IK3_SOCKETCARD2" constant.other.canon
+73:2-14 "IK3_SUPSTONE" constant.other.canon
+74:2-13 "IK3_ELECARD" constant.other.canon
+75:2-14 "IK3_PIERDICE" constant.other.canon
+76:2-13 "IK3_ENCHANT" constant.other.canon
+77:2-10 "IK3_DICE" constant.other.canon
+80:0-36 "/// What kind of food (dwItemKind3)." comment.line.documentation.canon
+81:0-4 "enum" storage.type.canon
+81:5-13 "FoodKind" entity.name.type.canon
+81:16-25 "IK3_BADGE" constant.other.canon
+81:27-38 "IK3_COOKING" constant.other.canon
+81:40-52 "IK3_ICECEARM" constant.other.canon
+81:54-65 "IK3_INSTANT" constant.other.canon
+81:67-75 "IK3_PILL" constant.other.canon
+81:77-86 "IK3_DRINK" constant.other.canon
+83:0-84 "/// The element of an elemental material. propItem.json spells it with a leading `_`" comment.line.documentation.canon
+84:0-79 "/// (eItemType), which no generated C++ name may start with (CODEGEN.md §3.4)." comment.line.documentation.canon
+85:0-4 "enum" storage.type.canon
+85:5-16 "ItemElement" entity.name.type.canon
+86:2-6 "NONE" constant.other.canon
+86:7-8 "=" keyword.operator.canon
+86:9-16 "\"_NONE\"" string.quoted.double.canon
+87:2-6 "FIRE" constant.other.canon
+87:7-8 "=" keyword.operator.canon
+87:9-16 "\"_FIRE\"" string.quoted.double.canon
+88:2-7 "WATER" constant.other.canon
+88:8-9 "=" keyword.operator.canon
+88:10-18 "\"_WATER\"" string.quoted.double.canon
+89:2-13 "ELECTRICITY" constant.other.canon
+89:14-15 "=" keyword.operator.canon
+89:16-30 "\"_ELECTRICITY\"" string.quoted.double.canon
+90:2-6 "WIND" constant.other.canon
+90:7-8 "=" keyword.operator.canon
+90:9-16 "\"_WIND\"" string.quoted.double.canon
+91:2-7 "EARTH" constant.other.canon
+91:8-9 "=" keyword.operator.canon
+91:10-18 "\"_EARTH\"" string.quoted.double.canon
+94:0-85 "/// Item property flags (IP_TYPE, ProjectCmn.h). On the wire, dwFlag is the OR of the" comment.line.documentation.canon
+95:0-86 "/// codes (`@json(bits)`). 48 items also set bit 8, which IP_TYPE does not name: those" comment.line.documentation.canon
+96:0-49 "/// are errors until the bit is named or cleared." comment.line.documentation.canon
+97:0-4 "enum" storage.type.canon
+97:5-13 "ItemFlag" entity.name.type.canon
+97:14-15 "@" meta.annotation.canon punctuation.definition.annotation.canon
+97:15-20 "codes" meta.annotation.canon entity.name.function.decorator.canon
+97:20-28 "(UInt32)" meta.annotation.canon
+98:2-15 "IP_FLAG_BINDS" constant.other.canon
+98:16-17 "=" keyword.operator.canon
+98:18-19 "1" constant.numeric.integer.canon
+99:2-24 "IP_FLAG_UNDESTRUCTABLE" constant.other.canon
+99:25-26 "=" keyword.operator.canon
+99:27-28 "2" constant.numeric.integer.canon
+100:2-20 "IP_FLAG_EQUIP_BIND" constant.other.canon
+100:21-22 "=" keyword.operator.canon
+100:23-24 "4" constant.numeric.integer.canon
+103:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+104:0-11 "// The item" comment.line.double-slash.canon
+105:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+107:0-43 "/// A stat an item raises, and by how much." comment.line.documentation.canon
+108:0-6 "record" storage.type.canon
+108:7-16 "StatBonus" entity.name.type.canon
+109:0-39 "  /// The stat raised (a DST_* define)." comment.line.documentation.canon
+110:2-11 "attribute" variable.other.property.canon
+110:11-12 ":" punctuation.separator.key.canon
+110:13-16 "ref" storage.modifier.canon
+111:0-28 "  /// How much it is raised." comment.line.documentation.canon
+112:2-7 "value" variable.other.property.canon
+112:7-8 ":" punctuation.separator.key.canon
+112:9-12 "Int" entity.name.type.canon
+115:0-85 "/// An item: what every kind has, plus its kind's own fields in `kind`. Defaults copy" comment.line.documentation.canon
+116:0-70 "/// propItem.json's `defaults` block; \"=\" on the wire means \"not set\"." comment.line.documentation.canon
+117:0-6 "record" storage.type.canon
+117:7-11 "Item" entity.name.type.canon
+118:0-62 "  /// Format version of the row (nVer). The loader ignores it." comment.line.documentation.canon
+119:2-9 "version" variable.other.property.canon
+119:9-10 ":" punctuation.separator.key.canon
+119:11-14 "Int" entity.name.type.canon
+119:15-16 "1" constant.numeric.integer.canon
+119:16-18 ".." keyword.operator.canon
+119:20-21 "@" meta.annotation.canon punctuation.definition.annotation.canon
+119:21-25 "json" meta.annotation.canon entity.name.function.decorator.canon
+119:25-26 "(" meta.annotation.canon
+119:26-32 "\"nVer\"" meta.annotation.canon string.quoted.double.canon
+119:32-33 ")" meta.annotation.canon
+120:0-51 "  /// Text key of the displayed name; see `name()`." comment.line.documentation.canon
+121:2-9 "nameKey" variable.other.property.canon
+121:9-10 ":" punctuation.separator.key.canon
+121:11-17 "String" entity.name.type.canon
+121:18-25 "/^IDS_/" string.regexp.canon
+121:27-28 "=" keyword.operator.canon
+121:29-54 "\"IDS_PROPITEM_TXT_030168\"" string.quoted.double.canon
+121:55-56 "@" meta.annotation.canon punctuation.definition.annotation.canon
+121:56-60 "json" meta.annotation.canon entity.name.function.decorator.canon
+121:60-61 "(" meta.annotation.canon
+121:61-69 "\"szName\"" meta.annotation.canon string.quoted.double.canon
+121:69-70 ")" meta.annotation.canon
+122:0-34 "  /// Text key of the description." comment.line.documentation.canon
+123:2-16 "descriptionKey" variable.other.property.canon
+123:16-17 ":" punctuation.separator.key.canon
+123:18-24 "String" entity.name.type.canon
+123:24-25 "?" keyword.operator.canon
+123:26-27 "=" keyword.operator.canon
+123:28-32 "none" constant.language.canon
+123:33-34 "@" meta.annotation.canon punctuation.definition.annotation.canon
+123:34-38 "json" meta.annotation.canon entity.name.function.decorator.canon
+123:38-39 "(" meta.annotation.canon
+123:39-50 "\"szCommand\"" meta.annotation.canon string.quoted.double.canon
+123:50-52 ", " meta.annotation.canon
+123:52-56 "none" meta.annotation.canon variable.parameter.canon
+123:56-57 ":" meta.annotation.canon punctuation.separator.key.canon
+123:57-58 " " meta.annotation.canon
+123:58-60 "\"\"" meta.annotation.canon string.quoted.double.canon
+123:60-61 ")" meta.annotation.canon
+124:0-53 "  /// Thumbnail in inventories, shops and the studio." comment.line.documentation.canon
+125:2-6 "icon" variable.other.property.canon
+125:6-7 ":" punctuation.separator.key.canon
+125:8-16 "ItemIcon" entity.name.type.canon
+125:17-18 "@" meta.annotation.canon punctuation.definition.annotation.canon
+125:18-22 "json" meta.annotation.canon entity.name.function.decorator.canon
+125:22-23 "(" meta.annotation.canon
+125:23-31 "\"szIcon\"" meta.annotation.canon string.quoted.double.canon
+125:31-32 ")" meta.annotation.canon
+126:0-21 "  /// Price in shops." comment.line.documentation.canon
+127:2-6 "cost" variable.other.property.canon
+127:6-7 ":" punctuation.separator.key.canon
+127:8-11 "Int" entity.name.type.canon
+127:12-13 "0" constant.numeric.integer.canon
+127:13-15 ".." keyword.operator.canon
+127:17-18 "=" keyword.operator.canon
+127:19-20 "4" constant.numeric.integer.canon
+127:21-22 "@" meta.annotation.canon punctuation.definition.annotation.canon
+127:22-26 "json" meta.annotation.canon entity.name.function.decorator.canon
+127:26-27 "(" meta.annotation.canon
+127:27-35 "\"dwCost\"" meta.annotation.canon string.quoted.double.canon
+127:35-36 ")" meta.annotation.canon
+128:0-62 "  /// Item level. Absent means 1; \"=\" means the item has none." comment.line.documentation.canon
+129:2-7 "level" variable.other.property.canon
+129:7-8 ":" punctuation.separator.key.canon
+129:9-12 "Int" entity.name.type.canon
+129:13-14 "0" constant.numeric.integer.canon
+129:14-16 ".." keyword.operator.canon
+129:17-18 "?" keyword.operator.canon
+129:19-20 "=" keyword.operator.canon
+129:21-22 "1" constant.numeric.integer.canon
+129:23-24 "@" meta.annotation.canon punctuation.definition.annotation.canon
+129:24-28 "json" meta.annotation.canon entity.name.function.decorator.canon
+129:28-29 "(" meta.annotation.canon
+129:29-39 "\"dwItemLV\"" meta.annotation.canon string.quoted.double.canon
+129:39-41 ", " meta.annotation.canon
+129:41-45 "none" meta.annotation.canon variable.parameter.canon
+129:45-46 ":" meta.annotation.canon punctuation.separator.key.canon
+129:46-47 " " meta.annotation.canon
+129:47-50 "\"=\"" meta.annotation.canon string.quoted.double.canon
+129:50-51 ")" meta.annotation.canon
+130:0-37 "  /// Rarity: the colour of the name." comment.line.documentation.canon
+131:2-8 "rarity" variable.other.property.canon
+131:8-9 ":" punctuation.separator.key.canon
+131:10-13 "Int" entity.name.type.canon
+131:14-15 "0" constant.numeric.integer.canon
+131:15-17 ".." keyword.operator.canon
+131:18-19 "?" keyword.operator.canon
+131:20-21 "=" keyword.operator.canon
+131:22-26 "none" constant.language.canon
+131:27-28 "@" meta.annotation.canon punctuation.definition.annotation.canon
+131:28-32 "json" meta.annotation.canon entity.name.function.decorator.canon
+131:32-33 "(" meta.annotation.canon
+131:33-45 "\"dwItemRare\"" meta.annotation.canon string.quoted.double.canon
+131:45-47 ", " meta.annotation.canon
+131:47-51 "none" meta.annotation.canon variable.parameter.canon
+131:51-52 ":" meta.annotation.canon punctuation.separator.key.canon
+131:52-53 " " meta.annotation.canon
+131:53-56 "\"=\"" meta.annotation.canon string.quoted.double.canon
+131:56-57 ")" meta.annotation.canon
+132:0-41 "  /// How many fit in one inventory slot." comment.line.documentation.canon
+133:2-10 "stackMax" variable.other.property.canon
+133:10-11 ":" punctuation.separator.key.canon
+133:12-15 "Int" entity.name.type.canon
+133:16-17 "1" constant.numeric.integer.canon
+133:17-19 ".." keyword.operator.canon
+133:21-22 "=" keyword.operator.canon
+133:23-24 "1" constant.numeric.integer.canon
+133:25-26 "@" meta.annotation.canon punctuation.definition.annotation.canon
+133:26-30 "json" meta.annotation.canon entity.name.function.decorator.canon
+133:30-31 "(" meta.annotation.canon
+133:31-42 "\"dwPackMax\"" meta.annotation.canon string.quoted.double.canon
+133:42-43 ")" meta.annotation.canon
+134:0-83 "  /// The model is a parts file (worn) rather than a whole object. 0/1 on the wire." comment.line.documentation.canon
+135:2-11 "partsFile" variable.other.property.canon
+135:11-12 ":" punctuation.separator.key.canon
+135:13-17 "Bool" entity.name.type.canon
+135:18-19 "=" keyword.operator.canon
+135:20-24 "true" constant.language.canon
+135:25-26 "@" meta.annotation.canon punctuation.definition.annotation.canon
+135:26-30 "json" meta.annotation.canon entity.name.function.decorator.canon
+135:30-31 "(" meta.annotation.canon
+135:31-43 "\"bPartsFile\"" meta.annotation.canon string.quoted.double.canon
+135:43-49 ", int)" meta.annotation.canon
+136:0-39 "  /// Sound played when the item drops." comment.line.documentation.canon
+137:2-11 "dropSound" variable.other.property.canon
+137:11-12 ":" punctuation.separator.key.canon
+137:13-16 "ref" storage.modifier.canon
+137:23-24 "?" keyword.operator.canon
+137:25-26 "=" keyword.operator.canon
+137:27-31 "none" constant.language.canon
+137:32-33 "@" meta.annotation.canon punctuation.definition.annotation.canon
+137:33-37 "json" meta.annotation.canon entity.name.function.decorator.canon
+137:37-38 "(" meta.annotation.canon
+137:38-51 "\"dwSubDefine\"" meta.annotation.canon string.quoted.double.canon
+137:51-53 ", " meta.annotation.canon
+137:53-57 "none" meta.annotation.canon variable.parameter.canon
+137:57-58 ":" meta.annotation.canon punctuation.separator.key.canon
+137:58-59 " " meta.annotation.canon
+137:59-62 "\"=\"" meta.annotation.canon string.quoted.double.canon
+137:62-63 ")" meta.annotation.canon
+138:0-77 "  /// What the item is. Its tag and fields sit directly in the item's object." comment.line.documentation.canon
+139:2-6 "kind" variable.other.property.canon
+139:6-7 ":" punctuation.separator.key.canon
+139:8-16 "ItemKind" entity.name.type.canon
+139:17-18 "@" meta.annotation.canon punctuation.definition.annotation.canon
+139:18-22 "json" meta.annotation.canon entity.name.function.decorator.canon
+139:22-30 "(inline)" meta.annotation.canon
+141:0-73 "  /// What people search for and read: \"Angel Axe\", not II_WEA_AXE_ANGEL." comment.line.documentation.canon
+142:2-4 "fn" storage.type.function.canon
+142:5-9 "name" entity.name.function.canon
+142:10-14 "self" variable.language.canon
+142:16-18 "->" keyword.operator.canon
+142:19-25 "String" entity.name.type.canon
+142:28-34 "return" keyword.control.canon
+142:40-41 "." punctuation.accessor.canon
+142:41-44 "get" variable.other.property.canon
+142:54-56 "??" keyword.operator.canon
+145:0-86 "/// The item's main kind (dwItemKind1). Each case holds the fields its items use, so a" comment.line.documentation.canon
+146:0-42 "/// material cannot carry an attack speed." comment.line.documentation.canon
+147:0-7 "variant" storage.type.canon
+147:8-16 "ItemKind" entity.name.type.canon
+147:17-18 "@" meta.annotation.canon punctuation.definition.annotation.canon
+147:18-22 "json" meta.annotation.canon entity.name.function.decorator.canon
+147:22-23 "(" meta.annotation.canon
+147:23-26 "tag" meta.annotation.canon variable.parameter.canon
+147:26-27 ":" meta.annotation.canon punctuation.separator.key.canon
+147:27-28 " " meta.annotation.canon
+147:28-41 "\"dwItemKind1\"" meta.annotation.canon string.quoted.double.canon
+147:41-42 ")" meta.annotation.canon
+148:0-53 "  /// Weapons, monsters' weapons included: 998 items." comment.line.documentation.canon
+149:2-12 "IK1_WEAPON" constant.other.canon
+150:0-22 "    /// Weapon family." comment.line.documentation.canon
+151:4-9 "kind2" variable.other.property.canon
+151:9-10 ":" punctuation.separator.key.canon
+151:11-22 "WeaponKind2" entity.name.type.canon
+151:23-24 "@" meta.annotation.canon punctuation.definition.annotation.canon
+151:24-28 "json" meta.annotation.canon entity.name.function.decorator.canon
+151:28-29 "(" meta.annotation.canon
+151:29-42 "\"dwItemKind2\"" meta.annotation.canon string.quoted.double.canon
+151:42-43 ")" meta.annotation.canon
+152:0-58 "    /// Weapon type: which skills and animations it takes." comment.line.documentation.canon
+153:4-9 "kind3" variable.other.property.canon
+153:9-10 ":" punctuation.separator.key.canon
+153:11-22 "WeaponKind3" entity.name.type.canon
+153:23-24 "@" meta.annotation.canon punctuation.definition.annotation.canon
+153:24-28 "json" meta.annotation.canon entity.name.function.decorator.canon
+153:28-29 "(" meta.annotation.canon
+153:29-42 "\"dwItemKind3\"" meta.annotation.canon string.quoted.double.canon
+153:42-43 ")" meta.annotation.canon
+154:0-61 "    /// The only job that may equip it; `none` means any job." comment.line.documentation.canon
+155:4-7 "job" variable.other.property.canon
+155:7-8 ":" punctuation.separator.key.canon
+155:9-12 "ref" storage.modifier.canon
+155:17-18 "?" keyword.operator.canon
+155:19-20 "=" keyword.operator.canon
+155:21-25 "none" constant.language.canon
+155:26-27 "@" meta.annotation.canon punctuation.definition.annotation.canon
+155:27-31 "json" meta.annotation.canon entity.name.function.decorator.canon
+155:31-32 "(" meta.annotation.canon
+155:32-43 "\"dwItemJob\"" meta.annotation.canon string.quoted.double.canon
+155:43-45 ", " meta.annotation.canon
+155:45-49 "none" meta.annotation.canon variable.parameter.canon
+155:49-50 ":" meta.annotation.canon punctuation.separator.key.canon
+155:50-51 " " meta.annotation.canon
+155:51-54 "\"=\"" meta.annotation.canon string.quoted.double.canon
+155:54-55 ")" meta.annotation.canon
+156:0-35 "    /// Level required to equip it." comment.line.documentation.canon
+157:4-17 "requiredLevel" variable.other.property.canon
+157:17-18 ":" punctuation.separator.key.canon
+157:19-22 "Int" entity.name.type.canon
+157:23-24 "1" constant.numeric.integer.canon
+157:24-26 ".." keyword.operator.canon
+157:28-29 "=" keyword.operator.canon
+157:30-31 "1" constant.numeric.integer.canon
+157:32-33 "@" meta.annotation.canon punctuation.definition.annotation.canon
+157:33-37 "json" meta.annotation.canon entity.name.function.decorator.canon
+157:37-38 "(" meta.annotation.canon
+157:38-53 "\"dwLimitLevel1\"" meta.annotation.canon string.quoted.double.canon
+157:53-54 ")" meta.annotation.canon
+158:0-24 "    /// One hand or two." comment.line.documentation.canon
+159:4-10 "handed" variable.other.property.canon
+159:10-11 ":" punctuation.separator.key.canon
+159:12-18 "Handed" entity.name.type.canon
+159:19-20 "@" meta.annotation.canon punctuation.definition.annotation.canon
+159:20-24 "json" meta.annotation.canon entity.name.function.decorator.canon
+159:24-25 "(" meta.annotation.canon
+159:25-35 "\"dwHanded\"" meta.annotation.canon string.quoted.double.canon
+159:35-36 ")" meta.annotation.canon
+160:0-27 "    /// Lowest base damage." comment.line.documentation.canon
+161:4-13 "attackMin" variable.other.property.canon
+161:13-14 ":" punctuation.separator.key.canon
+161:15-18 "Int" entity.name.type.canon
+161:19-20 "0" constant.numeric.integer.canon
+161:20-22 ".." keyword.operator.canon
+161:24-25 "=" keyword.operator.canon
+161:26-27 "1" constant.numeric.integer.canon
+161:28-29 "@" meta.annotation.canon punctuation.definition.annotation.canon
+161:29-33 "json" meta.annotation.canon entity.name.function.decorator.canon
+161:33-34 "(" meta.annotation.canon
+161:34-48 "\"dwAbilityMin\"" meta.annotation.canon string.quoted.double.canon
+161:48-49 ")" meta.annotation.canon
+162:0-28 "    /// Highest base damage." comment.line.documentation.canon
+163:4-13 "attackMax" variable.other.property.canon
+163:13-14 ":" punctuation.separator.key.canon
+163:15-18 "Int" entity.name.type.canon
+163:19-20 "0" constant.numeric.integer.canon
+163:20-22 ".." keyword.operator.canon
+163:24-25 "=" keyword.operator.canon
+163:26-27 "1" constant.numeric.integer.canon
+163:28-29 "@" meta.annotation.canon punctuation.definition.annotation.canon
+163:29-33 "json" meta.annotation.canon entity.name.function.decorator.canon
+163:33-34 "(" meta.annotation.canon
+163:34-48 "\"dwAbilityMax\"" meta.annotation.canon string.quoted.double.canon
+163:48-49 ")" meta.annotation.canon
+164:0-45 "    /// Speed factor of the attack animation." comment.line.documentation.canon
+165:4-15 "attackSpeed" variable.other.property.canon
+165:15-16 ":" punctuation.separator.key.canon
+165:17-22 "Float" entity.name.type.canon
+165:23-26 "0.0" constant.numeric.float.canon
+165:26-28 ".." keyword.operator.canon
+165:30-31 "@" meta.annotation.canon punctuation.definition.annotation.canon
+165:31-35 "json" meta.annotation.canon entity.name.function.decorator.canon
+165:35-36 "(" meta.annotation.canon
+165:36-50 "\"fAttackSpeed\"" meta.annotation.canon string.quoted.double.canon
+165:50-51 ")" meta.annotation.canon
+166:0-27 "    /// How far it reaches." comment.line.documentation.canon
+167:4-15 "attackRange" variable.other.property.canon
+167:15-16 ":" punctuation.separator.key.canon
+167:17-28 "AttackRange" entity.name.type.canon
+167:29-30 "@" meta.annotation.canon punctuation.definition.annotation.canon
+167:30-34 "json" meta.annotation.canon entity.name.function.decorator.canon
+167:34-35 "(" meta.annotation.canon
+167:35-50 "\"dwAttackRange\"" meta.annotation.canon string.quoted.double.canon
+167:50-51 ")" meta.annotation.canon
+168:0-22 "    /// Damage family." comment.line.documentation.canon
+169:4-14 "weaponType" variable.other.property.canon
+169:14-15 ":" punctuation.separator.key.canon
+169:16-26 "WeaponType" entity.name.type.canon
+169:27-28 "@" meta.annotation.canon punctuation.definition.annotation.canon
+169:28-32 "json" meta.annotation.canon entity.name.function.decorator.canon
+169:32-33 "(" meta.annotation.canon
+169:33-47 "\"dwWeaponType\"" meta.annotation.canon string.quoted.double.canon
+169:47-48 ")" meta.annotation.canon
+170:0-19 "    /// Durability." comment.line.documentation.canon
+171:4-13 "endurance" variable.other.property.canon
+171:13-14 ":" punctuation.separator.key.canon
+171:15-18 "Int" entity.name.type.canon
+171:19-20 "0" constant.numeric.integer.canon
+171:20-22 ".." keyword.operator.canon
+171:24-25 "@" meta.annotation.canon punctuation.definition.annotation.canon
+171:25-29 "json" meta.annotation.canon entity.name.function.decorator.canon
+171:29-30 "(" meta.annotation.canon
+171:30-43 "\"dwEndurance\"" meta.annotation.canon string.quoted.double.canon
+171:43-44 ")" meta.annotation.canon
+172:0-80 "    /// Up to six stat bonuses, written as the parallel keys dwDestParam0..5 and" comment.line.documentation.canon
+173:0-25 "    /// nAdjParamVal0..5." comment.line.documentation.canon
+174:4-9 "stats" variable.other.property.canon
+174:9-10 ":" punctuation.separator.key.canon
+174:12-21 "StatBonus" entity.name.type.canon
+174:23-26 "..=" keyword.operator.canon
+174:26-27 "6" constant.numeric.integer.canon
+174:29-30 "=" keyword.operator.canon
+174:34-35 "@" meta.annotation.canon punctuation.definition.annotation.canon
+174:35-39 "json" meta.annotation.canon entity.name.function.decorator.canon
+174:39-40 "(" meta.annotation.canon
+174:40-45 "pairs" meta.annotation.canon variable.parameter.canon
+174:45-46 ":" meta.annotation.canon punctuation.separator.key.canon
+174:46-48 " [" meta.annotation.canon
+174:48-60 "\"dwDestParam" meta.annotation.canon string.quoted.double.canon
+174:60-61 "{" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+174:61-62 "i" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon
+174:62-63 "}" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+174:63-64 "\"" meta.annotation.canon string.quoted.double.canon
+174:64-66 ", " meta.annotation.canon
+174:66-79 "\"nAdjParamVal" meta.annotation.canon string.quoted.double.canon
+174:79-80 "{" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+174:80-81 "i" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon
+174:81-82 "}" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+174:82-83 "\"" meta.annotation.canon string.quoted.double.canon
+174:83-85 "])" meta.annotation.canon
+175:0-46 "    /// Property flags; a bitmask on the wire." comment.line.documentation.canon
+176:4-9 "flags" variable.other.property.canon
+176:9-10 ":" punctuation.separator.key.canon
+176:12-20 "ItemFlag" entity.name.type.canon
+176:22-23 "=" keyword.operator.canon
+176:27-28 "@" meta.annotation.canon punctuation.definition.annotation.canon
+176:28-32 "json" meta.annotation.canon entity.name.function.decorator.canon
+176:32-33 "(" meta.annotation.canon
+176:33-41 "\"dwFlag\"" meta.annotation.canon string.quoted.double.canon
+176:41-48 ", bits)" meta.annotation.canon
+177:0-23 "    /// Sound of a hit." comment.line.documentation.canon
+178:4-15 "attackSound" variable.other.property.canon
+178:15-16 ":" punctuation.separator.key.canon
+178:17-20 "ref" storage.modifier.canon
+178:27-28 "?" keyword.operator.canon
+178:29-30 "=" keyword.operator.canon
+178:31-35 "none" constant.language.canon
+178:36-37 "@" meta.annotation.canon punctuation.definition.annotation.canon
+178:37-41 "json" meta.annotation.canon entity.name.function.decorator.canon
+178:41-42 "(" meta.annotation.canon
+178:42-56 "\"dwSndAttack1\"" meta.annotation.canon string.quoted.double.canon
+178:56-58 ", " meta.annotation.canon
+178:58-62 "none" meta.annotation.canon variable.parameter.canon
+178:62-63 ":" meta.annotation.canon punctuation.separator.key.canon
+178:63-64 " " meta.annotation.canon
+178:64-67 "\"=\"" meta.annotation.canon string.quoted.double.canon
+178:67-68 ")" meta.annotation.canon
+180:4-9 "check" keyword.other.canon
+180:20-22 "<=" keyword.operator.canon
+180:33-37 "else" keyword.control.canon
+180:38-50 "\"attackMin (" string.quoted.double.canon
+180:50-51 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+180:51-60 "attackMin" string.quoted.double.canon meta.interpolation.canon
+180:60-61 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+180:61-83 ") is above attackMax (" string.quoted.double.canon
+180:83-84 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+180:84-93 "attackMax" string.quoted.double.canon meta.interpolation.canon
+180:93-94 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+180:94-96 ")\"" string.quoted.double.canon
+182:0-84 "  /// What a player carries and uses up: materials, food, gems, jewels... 868 items." comment.line.documentation.canon
+183:2-13 "IK1_GENERAL" constant.other.canon
+184:0-42 "    /// The sub-kind, with its own fields." comment.line.documentation.canon
+185:4-9 "kind2" variable.other.property.canon
+185:9-10 ":" punctuation.separator.key.canon
+185:11-22 "GeneralKind" entity.name.type.canon
+185:23-24 "@" meta.annotation.canon punctuation.definition.annotation.canon
+185:24-28 "json" meta.annotation.canon entity.name.function.decorator.canon
+185:28-36 "(inline)" meta.annotation.canon
+187:2-86 "// Trimmed: IK1_ARMOR (3,698 items), IK1_SYSTEM, IK1_RIDE, IK1_CHARGED, IK1_GOLD and" comment.line.double-slash.canon
+188:2-49 "// IK1_HOUSING, each with its nested sub-kinds." comment.line.double-slash.canon
+191:0-85 "/// A general item's sub-kind (dwItemKind2). Usage is recorded per innermost case, so" comment.line.documentation.canon
+192:0-64 "/// the studio orders a material's fields by what materials set." comment.line.documentation.canon
+193:0-7 "variant" storage.type.canon
+193:8-19 "GeneralKind" entity.name.type.canon
+193:20-21 "@" meta.annotation.canon punctuation.definition.annotation.canon
+193:21-25 "json" meta.annotation.canon entity.name.function.decorator.canon
+193:25-26 "(" meta.annotation.canon
+193:26-29 "tag" meta.annotation.canon variable.parameter.canon
+193:29-30 ":" meta.annotation.canon punctuation.separator.key.canon
+193:30-31 " " meta.annotation.canon
+193:31-44 "\"dwItemKind2\"" meta.annotation.canon string.quoted.double.canon
+193:44-45 ")" meta.annotation.canon
+194:0-48 "  /// Crafting and upgrade materials: 129 items." comment.line.documentation.canon
+195:2-14 "IK2_MATERIAL" constant.other.canon
+196:0-38 "    /// What the material is used for." comment.line.documentation.canon
+197:4-9 "kind3" variable.other.property.canon
+197:9-10 ":" punctuation.separator.key.canon
+197:11-23 "MaterialKind" entity.name.type.canon
+197:24-25 "@" meta.annotation.canon punctuation.definition.annotation.canon
+197:25-29 "json" meta.annotation.canon entity.name.function.decorator.canon
+197:29-30 "(" meta.annotation.canon
+197:30-43 "\"dwItemKind3\"" meta.annotation.canon string.quoted.double.canon
+197:43-44 ")" meta.annotation.canon
+198:0-59 "    /// Element of an elemental stone; NONE for the others." comment.line.documentation.canon
+199:4-11 "element" variable.other.property.canon
+199:11-12 ":" punctuation.separator.key.canon
+199:13-24 "ItemElement" entity.name.type.canon
+199:25-26 "=" keyword.operator.canon
+199:27-31 "NONE" constant.other.canon
+199:32-33 "@" meta.annotation.canon punctuation.definition.annotation.canon
+199:33-37 "json" meta.annotation.canon entity.name.function.decorator.canon
+199:37-38 "(" meta.annotation.canon
+199:38-49 "\"eItemType\"" meta.annotation.canon string.quoted.double.canon
+199:49-50 ")" meta.annotation.canon
+200:0-40 "    /// The stat an upgrade card raises." comment.line.documentation.canon
+201:4-13 "referStat" variable.other.property.canon
+201:13-14 ":" punctuation.separator.key.canon
+201:15-18 "ref" storage.modifier.canon
+201:29-30 "?" keyword.operator.canon
+201:31-32 "=" keyword.operator.canon
+201:33-37 "none" constant.language.canon
+201:38-39 "@" meta.annotation.canon punctuation.definition.annotation.canon
+201:39-43 "json" meta.annotation.canon entity.name.function.decorator.canon
+201:43-44 "(" meta.annotation.canon
+201:44-58 "\"dwReferStat2\"" meta.annotation.canon string.quoted.double.canon
+201:58-60 ", " meta.annotation.canon
+201:60-64 "none" meta.annotation.canon variable.parameter.canon
+201:64-65 ":" meta.annotation.canon punctuation.separator.key.canon
+201:65-66 " " meta.annotation.canon
+201:66-69 "\"=\"" meta.annotation.canon string.quoted.double.canon
+201:69-70 ")" meta.annotation.canon
+203:0-48 "  /// Food, eaten from the inventory: 243 items." comment.line.documentation.canon
+204:2-10 "IK2_FOOD" constant.other.canon
+205:0-26 "    /// What kind of food." comment.line.documentation.canon
+206:4-9 "kind3" variable.other.property.canon
+206:9-10 ":" punctuation.separator.key.canon
+206:11-19 "FoodKind" entity.name.type.canon
+206:20-21 "@" meta.annotation.canon punctuation.definition.annotation.canon
+206:21-25 "json" meta.annotation.canon entity.name.function.decorator.canon
+206:25-26 "(" meta.annotation.canon
+206:26-39 "\"dwItemKind3\"" meta.annotation.canon string.quoted.double.canon
+206:39-40 ")" meta.annotation.canon
+207:0-32 "    /// What eating it restores." comment.line.documentation.canon
+208:4-12 "restores" variable.other.property.canon
+208:12-13 ":" punctuation.separator.key.canon
+208:15-24 "StatBonus" entity.name.type.canon
+208:26-29 "..=" keyword.operator.canon
+208:29-30 "6" constant.numeric.integer.canon
+208:32-33 "=" keyword.operator.canon
+208:37-38 "@" meta.annotation.canon punctuation.definition.annotation.canon
+208:38-42 "json" meta.annotation.canon entity.name.function.decorator.canon
+208:42-43 "(" meta.annotation.canon
+208:43-48 "pairs" meta.annotation.canon variable.parameter.canon
+208:48-49 ":" meta.annotation.canon punctuation.separator.key.canon
+208:49-51 " [" meta.annotation.canon
+208:51-63 "\"dwDestParam" meta.annotation.canon string.quoted.double.canon
+208:63-64 "{" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+208:64-65 "i" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon
+208:65-66 "}" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+208:66-67 "\"" meta.annotation.canon string.quoted.double.canon
+208:67-69 ", " meta.annotation.canon
+208:69-82 "\"nAdjParamVal" meta.annotation.canon string.quoted.double.canon
+208:82-83 "{" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+208:83-84 "i" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon
+208:84-85 "}" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+208:85-86 "\"" meta.annotation.canon string.quoted.double.canon
+208:86-88 "])" meta.annotation.canon
+209:0-46 "    /// Wait before the next one can be eaten." comment.line.documentation.canon
+210:4-12 "cooldown" variable.other.property.canon
+210:12-13 ":" punctuation.separator.key.canon
+210:14-22 "Duration" entity.name.type.canon
+210:22-23 "?" keyword.operator.canon
+210:24-25 "=" keyword.operator.canon
+210:26-30 "none" constant.language.canon
+210:31-32 "@" meta.annotation.canon punctuation.definition.annotation.canon
+210:32-36 "json" meta.annotation.canon entity.name.function.decorator.canon
+210:36-37 "(" meta.annotation.canon
+210:37-51 "\"dwSkillReady\"" meta.annotation.canon string.quoted.double.canon
+210:51-53 ", " meta.annotation.canon
+210:53-57 "unit" meta.annotation.canon variable.parameter.canon
+210:57-58 ":" meta.annotation.canon punctuation.separator.key.canon
+210:58-62 " ms)" meta.annotation.canon
+212:2-86 "// Trimmed: IK2_GEM, IK2_JEWELRY, IK2_GENERAL, IK2_POTION, IK2_REFRESHER, IK2_TOOLS," comment.line.double-slash.canon
+213:2-83 "// and IK2_WEAPON_DIRECT (a single general item: worth a look before tightening)." comment.line.double-slash.canon
+216:0-85 "/// Every converted item, keyed by its define. Item ids are stored in inventories, so" comment.line.documentation.canon
+217:0-87 "/// the table is stable: an item is retired, never removed or renamed. Each entry lives" comment.line.documentation.canon
+218:0-65 "/// in its own file; a new one goes to entries/<kind>/<id>.canon." comment.line.documentation.canon
+219:0-1 "@" meta.annotation.canon punctuation.definition.annotation.canon
+219:1-6 "files" meta.annotation.canon entity.name.function.decorator.canon
+219:6-7 "(" meta.annotation.canon
+219:7-16 "\"entries/" meta.annotation.canon string.quoted.double.canon
+219:16-17 "{" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+219:17-21 "kind" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon
+219:21-22 "}" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+219:22-23 "/" meta.annotation.canon string.quoted.double.canon
+219:23-24 "{" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+219:24-26 "id" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon
+219:26-27 "}" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+219:27-34 ".canon\"" meta.annotation.canon string.quoted.double.canon
+219:34-35 ")" meta.annotation.canon
+220:0-3 "let" storage.type.canon
+220:4-9 "items" variable.other.property.canon
+220:9-10 ":" punctuation.separator.key.canon
+220:11-17 "stable" storage.modifier.canon
+220:18-23 "table" storage.type.canon
+220:24-28 "Item" entity.name.type.canon
+220:29-30 "=" keyword.operator.canon
+222:0-83 "// Data mode: the server loads items.json at startup. The legacy ItemProp struct is" comment.line.double-slash.canon
+223:0-74 "// not targeted here: see examples/features/legacycpp for `@cpp(struct:)`." comment.line.double-slash.canon
+224:0-4 "emit" keyword.other.canon
+224:12-15 "out" variable.other.property.canon
+224:15-16 ":" punctuation.separator.key.canon
+224:17-51 "\"@resource/Server/Item/items.json\"" string.quoted.double.canon
+224:53-59 "values" variable.other.property.canon
+224:59-60 ":" punctuation.separator.key.canon
+225:0-4 "emit" keyword.other.canon
+225:11-14 "out" variable.other.property.canon
+225:14-15 ":" punctuation.separator.key.canon
+225:16-41 "\"@source/Generated/items\"" string.quoted.double.canon
+225:43-52 "namespace" variable.other.property.canon
+225:52-53 ":" punctuation.separator.key.canon
+225:54-64 "\"sov::gen\"" string.quoted.double.canon
+225:66-70 "mode" variable.other.property.canon
+225:70-71 ":" punctuation.separator.key.canon
+226:0-4 "emit" keyword.other.canon
+226:5-9 "view" keyword.other.canon
+226:12-15 "out" variable.other.property.canon
+226:15-16 ":" punctuation.separator.key.canon
+226:17-45 "\"@generated/items.view.json\"" string.quoted.double.canon

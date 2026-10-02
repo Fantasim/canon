@@ -1,0 +1,57 @@
+1:0-95 "/// Copies (CODEGEN §2.1, §2.8; DECISIONS 229, 269): an emit whose `out` is a list writes one" comment.line.documentation.canon
+2:0-95 "/// copy per entry, each with the same mode and options, so generated code can go straight into" comment.line.documentation.canon
+3:0-94 "/// every consumer. Each entry needs a root of its own: here the project's `features` root and" comment.line.documentation.canon
+4:0-93 "/// `sovcommon`. A copy imports the copy of features.copies.base under its own root, and a Go" comment.line.documentation.canon
+5:0-22 "/// copy its own `rt`." comment.line.documentation.canon
+6:0-7 "package" keyword.other.canon
+6:8-23 "features.copies" entity.name.namespace.canon
+8:0-6 "import" keyword.other.canon
+8:15-16 "." punctuation.accessor.canon
+8:16-22 "copies" variable.other.property.canon
+8:22-23 "." punctuation.accessor.canon
+8:23-27 "base" variable.other.property.canon
+8:30-34 "Tone" entity.name.type.canon
+10:0-12 "/// A badge." comment.line.documentation.canon
+11:0-6 "record" storage.type.canon
+11:7-12 "Badge" entity.name.type.canon
+12:0-17 "  /// Its colour." comment.line.documentation.canon
+13:2-6 "tone" variable.other.property.canon
+13:6-7 ":" punctuation.separator.key.canon
+13:8-12 "Tone" entity.name.type.canon
+16:0-16 "/// Every badge." comment.line.documentation.canon
+17:0-3 "let" storage.type.canon
+17:4-10 "badges" variable.other.property.canon
+17:10-11 ":" punctuation.separator.key.canon
+17:12-17 "table" storage.type.canon
+17:18-23 "Badge" entity.name.type.canon
+17:24-25 "=" keyword.operator.canon
+18:9-13 "tone" variable.other.property.canon
+18:13-14 ":" punctuation.separator.key.canon
+19:9-13 "tone" variable.other.property.canon
+19:13-14 ":" punctuation.separator.key.canon
+22:0-4 "emit" keyword.other.canon
+22:10-13 "out" variable.other.property.canon
+22:13-14 ":" punctuation.separator.key.canon
+22:16-32 "\"out/go/copies/\"" string.quoted.double.canon
+22:34-64 "\"@sovcommon/copies/go/copies/\"" string.quoted.double.canon
+22:67-71 "mode" variable.other.property.canon
+22:71-72 ":" punctuation.separator.key.canon
+23:0-4 "emit" keyword.other.canon
+23:11-14 "out" variable.other.property.canon
+23:14-15 ":" punctuation.separator.key.canon
+23:17-34 "\"out/cpp/copies/\"" string.quoted.double.canon
+23:36-67 "\"@sovcommon/copies/cpp/copies/\"" string.quoted.double.canon
+23:70-74 "mode" variable.other.property.canon
+23:74-75 ":" punctuation.separator.key.canon
+24:0-4 "emit" keyword.other.canon
+24:10-13 "out" variable.other.property.canon
+24:13-14 ":" punctuation.separator.key.canon
+24:16-34 "\"out/ts/copies.ts\"" string.quoted.double.canon
+24:36-68 "\"@sovcommon/copies/ts/copies.ts\"" string.quoted.double.canon
+24:71-75 "mode" variable.other.property.canon
+24:75-76 ":" punctuation.separator.key.canon
+25:0-4 "emit" keyword.other.canon
+25:12-15 "out" variable.other.property.canon
+25:15-16 ":" punctuation.separator.key.canon
+25:18-29 "\"out/data/\"" string.quoted.double.canon
+25:31-56 "\"@sovcommon/copies/data/\"" string.quoted.double.canon

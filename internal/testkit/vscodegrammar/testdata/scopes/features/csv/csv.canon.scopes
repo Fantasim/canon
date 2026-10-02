@@ -1,0 +1,97 @@
+1:0-87 "/// `load.csv` (SPEC §13): a spreadsheet export read in place. With `header: true` the" comment.line.documentation.canon
+2:0-88 "/// first row names the columns, matched to wire names; each cell is read as the field's" comment.line.documentation.canon
+3:0-54 "/// type, and an empty cell means the field's default." comment.line.documentation.canon
+4:0-3 "///" comment.line.documentation.canon
+5:0-88 "/// The table is made up (like pipeline's Potion): designers keep experience curves in a" comment.line.documentation.canon
+6:0-39 "/// spreadsheet and export them as CSV." comment.line.documentation.canon
+7:0-7 "package" keyword.other.canon
+7:8-20 "features.csv" entity.name.namespace.canon
+9:0-36 "/// One row of the experience curve." comment.line.documentation.canon
+10:0-6 "record" storage.type.canon
+10:7-15 "LevelRow" entity.name.type.canon
+11:0-22 "  /// Character level." comment.line.documentation.canon
+12:2-7 "level" variable.other.property.canon
+12:7-8 ":" punctuation.separator.key.canon
+12:9-12 "Int" entity.name.type.canon
+12:13-14 "1" constant.numeric.integer.canon
+12:14-17 "..=" keyword.operator.canon
+12:17-20 "150" constant.numeric.integer.canon
+13:0-58 "  /// Experience needed to go from this level to the next." comment.line.documentation.canon
+14:2-5 "exp" variable.other.property.canon
+14:5-6 ":" punctuation.separator.key.canon
+14:7-10 "Int" entity.name.type.canon
+14:11-12 "1" constant.numeric.integer.canon
+14:12-14 ".." keyword.operator.canon
+14:16-17 "@" meta.annotation.canon punctuation.definition.annotation.canon
+14:17-21 "json" meta.annotation.canon entity.name.function.decorator.canon
+14:21-22 "(" meta.annotation.canon
+14:22-35 "\"exp_to_next\"" meta.annotation.canon string.quoted.double.canon
+14:35-36 ")" meta.annotation.canon
+15:0-66 "  /// Share of the level's experience lost on death, in per mille." comment.line.documentation.canon
+16:2-14 "deathPenalty" variable.other.property.canon
+16:14-15 ":" punctuation.separator.key.canon
+16:16-19 "Int" entity.name.type.canon
+16:20-21 "0" constant.numeric.integer.canon
+16:21-24 "..=" keyword.operator.canon
+16:24-28 "1000" constant.numeric.integer.canon
+16:30-31 "=" keyword.operator.canon
+16:32-33 "0" constant.numeric.integer.canon
+16:34-35 "@" meta.annotation.canon punctuation.definition.annotation.canon
+16:35-39 "json" meta.annotation.canon entity.name.function.decorator.canon
+16:39-40 "(" meta.annotation.canon
+16:40-55 "\"death_penalty\"" meta.annotation.canon string.quoted.double.canon
+16:55-56 ")" meta.annotation.canon
+19:0-44 "/// The experience curve, one row per level." comment.line.documentation.canon
+20:0-3 "let" storage.type.canon
+20:4-10 "levels" variable.other.property.canon
+20:10-11 ":" punctuation.separator.key.canon
+20:13-21 "LevelRow" entity.name.type.canon
+20:38-39 "=" keyword.operator.canon
+20:40-44 "load" keyword.other.canon
+20:44-45 "." punctuation.accessor.canon
+20:45-48 "csv" variable.other.property.canon
+20:49-69 "\"data/exp_curve.csv\"" string.quoted.double.canon
+20:71-77 "header" variable.other.property.canon
+20:77-78 ":" punctuation.separator.key.canon
+20:79-83 "true" constant.language.canon
+22:0-5 "check" keyword.other.canon
+23:2-5 "for" keyword.control.canon
+23:13-15 "in" keyword.operator.word.canon
+23:22-23 "." punctuation.accessor.canon
+23:23-32 "enumerate" variable.other.property.canon
+24:4-6 "if" keyword.control.canon
+24:10-11 "." punctuation.accessor.canon
+24:11-16 "level" variable.other.property.canon
+24:17-19 "!=" keyword.operator.canon
+24:22-23 "+" keyword.operator.canon
+24:24-25 "1" constant.numeric.integer.canon
+25:16-23 "\"level " string.quoted.double.canon
+25:23-24 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+25:24-27 "row" string.quoted.double.canon meta.interpolation.canon
+25:27-28 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+25:28-33 "level" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+25:33-34 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+25:34-45 " is at row " string.quoted.double.canon
+25:45-46 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+25:46-48 "i " string.quoted.double.canon meta.interpolation.canon
+25:48-49 "+" string.quoted.double.canon meta.interpolation.canon keyword.operator.canon
+25:49-50 " " string.quoted.double.canon meta.interpolation.canon
+25:50-51 "1" string.quoted.double.canon meta.interpolation.canon constant.numeric.integer.canon
+25:51-52 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+25:52-92 ": levels must be 1, 2, 3... with no gap\"" string.quoted.double.canon
+30:0-4 "warn" keyword.other.canon
+30:11-12 "." punctuation.accessor.canon
+30:12-15 "all" variable.other.property.canon
+30:18-20 "=>" keyword.operator.canon
+30:22-23 "." punctuation.accessor.canon
+30:23-35 "deathPenalty" variable.other.property.canon
+30:36-38 "<=" keyword.operator.canon
+30:39-42 "100" constant.numeric.integer.canon
+31:2-6 "else" keyword.control.canon
+31:7-67 "\"a death penalty above 10 % is harsher than any live server\"" string.quoted.double.canon
+33:0-4 "emit" keyword.other.canon
+33:12-15 "out" variable.other.property.canon
+33:15-16 ":" punctuation.separator.key.canon
+33:17-37 "\"out/exp_curve.json\"" string.quoted.double.canon
+33:39-45 "values" variable.other.property.canon
+33:45-46 ":" punctuation.separator.key.canon

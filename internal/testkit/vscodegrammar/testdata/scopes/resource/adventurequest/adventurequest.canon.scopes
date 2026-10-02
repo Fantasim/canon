@@ -1,0 +1,570 @@
+1:0-82 "/// Adventure Quest V2: per-style timers, weights and rewards, target multipliers," comment.line.documentation.canon
+2:0-62 "/// hourly production rates, task filters and rate amplifiers." comment.line.documentation.canon
+3:0-107 "/// Loader: AdventureQuestTaskConfig::LoadFromJsonString (Game/Progression/Quest/AdventureQuestConfig.cpp)." comment.line.documentation.canon
+4:0-3 "///" comment.line.documentation.canon
+5:0-76 "/// What makes this file hard: five maps are keyed by event type, and inside" comment.line.documentation.canon
+6:0-83 "/// hourly_targets the keys of `rates_by_specific` are items for ECONOMY_DROP_ITEM," comment.line.documentation.canon
+7:0-83 "/// monsters for COMBAT_KILL_MONSTER, and so on. `HourlyTarget(e)` is a record that" comment.line.documentation.canon
+8:0-83 "/// takes the event as a parameter, so each entry is checked against its own event." comment.line.documentation.canon
+9:0-3 "///" comment.line.documentation.canon
+10:0-85 "/// The loader is tolerant (most mistakes are skipped with a LOG_WARN). The schema is" comment.line.documentation.canon
+11:0-72 "/// now the only owner of most checks (L-0094), so they are errors here." comment.line.documentation.canon
+12:0-7 "package" keyword.other.canon
+12:8-31 "resource.adventurequest" entity.name.namespace.canon
+14:0-6 "import" keyword.other.canon
+14:15-16 "." punctuation.accessor.canon
+14:16-21 "vocab" variable.other.property.canon
+14:24-33 "EventType" entity.name.type.canon
+14:35-40 "Param" entity.name.type.canon
+14:42-52 "QuestStyle" entity.name.type.canon
+14:54-64 "RewardType" entity.name.type.canon
+14:66-71 "Stage" entity.name.type.canon
+15:0-6 "import" keyword.other.canon
+17:0-49 "/// MAX_TASK_PER_QUEST: a quest has 1 to 3 tasks." comment.line.documentation.canon
+18:0-5 "const" storage.type.canon
+18:6-24 "MAX_TASK_PER_QUEST" constant.other.canon
+18:25-26 "=" keyword.operator.canon
+18:27-28 "3" constant.numeric.integer.canon
+20:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+21:0-9 "// Global" comment.line.double-slash.canon
+22:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+24:0-84 "/// Level gaps between a player and the monsters a task may target. camelCase on the" comment.line.documentation.canon
+25:0-38 "/// wire, unlike the rest of the file." comment.line.documentation.canon
+26:0-6 "record" storage.type.canon
+26:7-16 "LevelDiff" entity.name.type.canon
+27:0-43 "  /// Lowest level gap to a normal monster." comment.line.documentation.canon
+28:2-8 "minMob" variable.other.property.canon
+28:8-9 ":" punctuation.separator.key.canon
+28:10-13 "Int" entity.name.type.canon
+28:14-15 "0" constant.numeric.integer.canon
+28:15-17 ".." keyword.operator.canon
+29:0-44 "  /// Highest level gap to a normal monster." comment.line.documentation.canon
+30:2-8 "maxMob" variable.other.property.canon
+30:8-9 ":" punctuation.separator.key.canon
+30:10-13 "Int" entity.name.type.canon
+30:14-15 "0" constant.numeric.integer.canon
+30:15-17 ".." keyword.operator.canon
+31:0-34 "  /// Lowest level gap to a giant." comment.line.documentation.canon
+32:2-10 "minGiant" variable.other.property.canon
+32:10-11 ":" punctuation.separator.key.canon
+32:12-15 "Int" entity.name.type.canon
+32:16-17 "0" constant.numeric.integer.canon
+32:17-19 ".." keyword.operator.canon
+33:0-35 "  /// Highest level gap to a giant." comment.line.documentation.canon
+34:2-10 "maxGiant" variable.other.property.canon
+34:10-11 ":" punctuation.separator.key.canon
+34:12-15 "Int" entity.name.type.canon
+34:16-17 "0" constant.numeric.integer.canon
+34:17-19 ".." keyword.operator.canon
+37:0-35 "/// Settings shared by every style." comment.line.documentation.canon
+38:0-6 "record" storage.type.canon
+38:7-13 "Global" entity.name.type.canon
+38:14-15 "@" meta.annotation.canon punctuation.definition.annotation.canon
+38:15-19 "json" meta.annotation.canon entity.name.function.decorator.canon
+38:19-20 "(" meta.annotation.canon
+38:20-24 "case" meta.annotation.canon variable.parameter.canon
+38:24-25 ":" meta.annotation.canon punctuation.separator.key.canon
+38:25-32 " snake)" meta.annotation.canon
+39:0-35 "  /// The loader clamps it to >= 0." comment.line.documentation.canon
+40:2-10 "minLevel" variable.other.property.canon
+40:10-11 ":" punctuation.separator.key.canon
+40:12-15 "Int" entity.name.type.canon
+40:15-16 "?" keyword.operator.canon
+40:17-18 "=" keyword.operator.canon
+40:19-23 "none" constant.language.canon
+41:0-39 "  /// The loader clamps it to [1, 100]." comment.line.documentation.canon
+42:2-19 "maxQuestsPerStyle" variable.other.property.canon
+42:19-20 ":" punctuation.separator.key.canon
+42:21-24 "Int" entity.name.type.canon
+42:24-25 "?" keyword.operator.canon
+42:26-27 "=" keyword.operator.canon
+42:28-32 "none" constant.language.canon
+43:0-52 "  /// Wait before a completed quest can be rerolled." comment.line.documentation.canon
+44:2-26 "completionRerollCooldown" variable.other.property.canon
+44:26-27 ":" punctuation.separator.key.canon
+44:28-36 "Duration" entity.name.type.canon
+44:37-38 "@" meta.annotation.canon punctuation.definition.annotation.canon
+44:38-42 "json" meta.annotation.canon entity.name.function.decorator.canon
+44:42-43 "(" meta.annotation.canon
+44:43-75 "\"completion_reroll_cooldown_sec\"" meta.annotation.canon string.quoted.double.canon
+44:75-77 ", " meta.annotation.canon
+44:77-81 "unit" meta.annotation.canon variable.parameter.canon
+44:81-82 ":" meta.annotation.canon punctuation.separator.key.canon
+44:82-85 " s)" meta.annotation.canon
+45:0-55 "  /// Level gaps between players and targeted monsters." comment.line.documentation.canon
+46:2-11 "levelDiff" variable.other.property.canon
+46:11-12 ":" punctuation.separator.key.canon
+46:13-22 "LevelDiff" entity.name.type.canon
+46:23-24 "@" meta.annotation.canon punctuation.definition.annotation.canon
+46:24-28 "json" meta.annotation.canon entity.name.function.decorator.canon
+46:28-29 "(" meta.annotation.canon
+46:29-40 "\"levelDiff\"" meta.annotation.canon string.quoted.double.canon
+46:40-41 ")" meta.annotation.canon
+49:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+50:0-9 "// Styles" comment.line.double-slash.canon
+51:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+53:0-44 "/// What completing a quest of a style pays." comment.line.documentation.canon
+54:0-6 "record" storage.type.canon
+54:7-14 "Rewards" entity.name.type.canon
+55:0-19 "  /// What is paid." comment.line.documentation.canon
+56:2-6 "kind" variable.other.property.canon
+56:6-7 ":" punctuation.separator.key.canon
+56:8-18 "RewardType" entity.name.type.canon
+56:19-20 "@" meta.annotation.canon punctuation.definition.annotation.canon
+56:20-24 "json" meta.annotation.canon entity.name.function.decorator.canon
+56:24-25 "(" meta.annotation.canon
+56:25-31 "\"type\"" meta.annotation.canon string.quoted.double.canon
+56:31-32 ")" meta.annotation.canon
+57:0-81 "  /// A stage amount <= 0 made the loader drop the WHOLE map: silent non-payment." comment.line.documentation.canon
+58:2-9 "amounts" variable.other.property.canon
+58:9-10 ":" punctuation.separator.key.canon
+58:12-17 "Stage" variable.other.property.canon
+58:17-18 ":" punctuation.separator.key.canon
+58:19-22 "Int" entity.name.type.canon
+58:23-24 "1" constant.numeric.integer.canon
+58:24-26 ".." keyword.operator.canon
+61:0-56 "/// Timers, draw weights and rewards of one quest style." comment.line.documentation.canon
+62:0-6 "record" storage.type.canon
+62:7-12 "Style" entity.name.type.canon
+62:13-14 "@" meta.annotation.canon punctuation.definition.annotation.canon
+62:14-18 "json" meta.annotation.canon entity.name.function.decorator.canon
+62:18-19 "(" meta.annotation.canon
+62:19-23 "case" meta.annotation.canon variable.parameter.canon
+62:23-24 ":" meta.annotation.canon punctuation.separator.key.canon
+62:24-31 " snake)" meta.annotation.canon
+63:0-23 "  /// Absent for azure." comment.line.documentation.canon
+64:2-12 "rerollTime" variable.other.property.canon
+64:12-13 ":" punctuation.separator.key.canon
+64:14-22 "Duration" entity.name.type.canon
+64:22-23 "?" keyword.operator.canon
+64:24-25 "=" keyword.operator.canon
+64:26-30 "none" constant.language.canon
+64:31-32 "@" meta.annotation.canon punctuation.definition.annotation.canon
+64:32-36 "json" meta.annotation.canon entity.name.function.decorator.canon
+64:36-37 "(" meta.annotation.canon
+64:37-54 "\"reroll_time_sec\"" meta.annotation.canon string.quoted.double.canon
+64:54-56 ", " meta.annotation.canon
+64:56-60 "unit" meta.annotation.canon variable.parameter.canon
+64:60-61 ":" meta.annotation.canon punctuation.separator.key.canon
+64:61-64 " s)" meta.annotation.canon
+65:0-46 "  /// Time a quest of this style is sized for." comment.line.documentation.canon
+66:2-12 "targetTime" variable.other.property.canon
+66:12-13 ":" punctuation.separator.key.canon
+66:14-22 "Duration" entity.name.type.canon
+66:23-24 "@" meta.annotation.canon punctuation.definition.annotation.canon
+66:24-28 "json" meta.annotation.canon entity.name.function.decorator.canon
+66:28-29 "(" meta.annotation.canon
+66:29-46 "\"target_time_sec\"" meta.annotation.canon string.quoted.double.canon
+66:46-48 ", " meta.annotation.canon
+66:48-52 "unit" meta.annotation.canon variable.parameter.canon
+66:52-53 ":" meta.annotation.canon punctuation.separator.key.canon
+66:53-56 " s)" meta.annotation.canon
+67:0-44 "  /// Days a quest of this style stays open." comment.line.documentation.canon
+68:2-15 "maxTargetDays" variable.other.property.canon
+68:15-16 ":" punctuation.separator.key.canon
+68:17-20 "Int" entity.name.type.canon
+68:21-22 "1" constant.numeric.integer.canon
+68:22-24 ".." keyword.operator.canon
+69:0-59 "  /// Chance, in percent, that a quest has 1, 2 or 3 tasks." comment.line.documentation.canon
+70:2-17 "taskSlotWeights" variable.other.property.canon
+70:17-18 ":" punctuation.separator.key.canon
+70:20-23 "Int" entity.name.type.canon
+70:24-25 "0" constant.numeric.integer.canon
+70:25-27 ".." keyword.operator.canon
+70:30-31 "1" constant.numeric.integer.canon
+70:31-34 "..=" keyword.operator.canon
+70:34-52 "MAX_TASK_PER_QUEST" constant.other.canon
+71:0-58 "  /// Chance, in percent, that a task is about each event." comment.line.documentation.canon
+72:2-13 "taskWeights" variable.other.property.canon
+72:13-14 ":" punctuation.separator.key.canon
+72:16-19 "ref" storage.modifier.canon
+72:20-30 "eventTypes" variable.other.property.canon
+72:30-31 ":" punctuation.separator.key.canon
+72:32-35 "Int" entity.name.type.canon
+72:36-37 "0" constant.numeric.integer.canon
+72:37-39 ".." keyword.operator.canon
+73:0-67 "  /// What completing a quest pays; `{}` on the wire means nothing." comment.line.documentation.canon
+74:2-9 "rewards" variable.other.property.canon
+74:9-10 ":" punctuation.separator.key.canon
+74:11-18 "Rewards" entity.name.type.canon
+74:18-19 "?" keyword.operator.canon
+74:20-21 "=" keyword.operator.canon
+74:22-26 "none" constant.language.canon
+74:27-28 "@" meta.annotation.canon punctuation.definition.annotation.canon
+74:28-32 "json" meta.annotation.canon entity.name.function.decorator.canon
+74:32-33 "(" meta.annotation.canon
+74:33-37 "none" meta.annotation.canon variable.parameter.canon
+74:37-38 ":" meta.annotation.canon punctuation.separator.key.canon
+74:38-42 " {})" meta.annotation.canon
+76:2-7 "check" keyword.other.canon
+76:23-24 "." punctuation.accessor.canon
+76:24-27 "sum" variable.other.property.canon
+76:30-32 "==" keyword.operator.canon
+76:33-36 "100" constant.numeric.integer.canon
+77:4-8 "else" keyword.control.canon
+77:9-38 "\"task_slot_weights add up to " string.quoted.double.canon
+77:38-39 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+77:39-54 "taskSlotWeights" string.quoted.double.canon meta.interpolation.canon
+77:54-55 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+77:55-58 "sum" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+77:58-60 "()" string.quoted.double.canon meta.interpolation.canon
+77:60-61 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+77:61-71 ", not 100\"" string.quoted.double.canon
+78:2-7 "check" keyword.other.canon
+78:19-20 "." punctuation.accessor.canon
+78:20-26 "values" variable.other.property.canon
+78:28-29 "." punctuation.accessor.canon
+78:29-32 "sum" variable.other.property.canon
+78:35-37 "==" keyword.operator.canon
+78:38-41 "100" constant.numeric.integer.canon
+79:4-8 "else" keyword.control.canon
+79:9-33 "\"task_weights add up to " string.quoted.double.canon
+79:33-34 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+79:34-45 "taskWeights" string.quoted.double.canon meta.interpolation.canon
+79:45-46 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+79:46-52 "values" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+79:52-54 "()" string.quoted.double.canon meta.interpolation.canon
+79:54-55 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+79:55-58 "sum" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+79:58-60 "()" string.quoted.double.canon meta.interpolation.canon
+79:60-61 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+79:61-71 ", not 100\"" string.quoted.double.canon
+82:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+83:0-10 "// Targets" comment.line.double-slash.canon
+84:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+86:0-74 "/// \"How many tasks the quest has\" -> how much each task's target shrinks." comment.line.documentation.canon
+87:0-4 "enum" storage.type.canon
+87:5-14 "TaskCount" entity.name.type.canon
+87:21-22 "=" keyword.operator.canon
+87:23-32 "\"2_tasks\"" string.quoted.double.canon
+87:40-41 "=" keyword.operator.canon
+87:42-51 "\"3_tasks\"" string.quoted.double.canon
+89:0-71 "/// How much each task's target shrinks when a quest has several tasks." comment.line.documentation.canon
+90:0-6 "record" storage.type.canon
+90:7-17 "Multiplier" entity.name.type.canon
+91:0-42 "  /// For every event without an override." comment.line.documentation.canon
+92:2-9 "default" variable.other.property.canon
+92:9-10 ":" punctuation.separator.key.canon
+92:11-16 "Float" entity.name.type.canon
+93:0-16 "  /// Per event." comment.line.documentation.canon
+94:2-11 "overrides" variable.other.property.canon
+94:11-12 ":" punctuation.separator.key.canon
+94:14-17 "ref" storage.modifier.canon
+94:18-28 "eventTypes" variable.other.property.canon
+94:28-29 ":" punctuation.separator.key.canon
+94:30-35 "Float" entity.name.type.canon
+94:37-38 "=" keyword.operator.canon
+96:2-6 "warn" keyword.other.canon
+96:15-16 ">" keyword.operator.canon
+96:17-20 "0.0" constant.numeric.float.canon
+96:21-25 "else" keyword.control.canon
+96:26-86 "\"a default <= 0 is logged and clamped to 0.01 by the loader\"" string.quoted.double.canon
+99:0-89 "/// A key of rates_by_specific: one of the event's parameters, or \"default\" for the rest." comment.line.documentation.canon
+100:0-4 "type" storage.type.canon
+100:5-16 "SpecificKey" entity.name.type.canon
+100:17-18 "e" variable.other.property.canon
+100:18-19 ":" punctuation.separator.key.canon
+100:20-29 "EventType" entity.name.type.canon
+100:31-32 "=" keyword.operator.canon
+100:33-38 "Param" entity.name.type.canon
+100:42-43 "|" keyword.operator.canon
+100:44-53 "\"default\"" string.quoted.double.canon
+102:0-46 "/// Hourly production of event `e`, per stage." comment.line.documentation.canon
+103:0-6 "record" storage.type.canon
+103:7-19 "HourlyTarget" entity.name.type.canon
+103:20-21 "e" variable.other.property.canon
+103:21-22 ":" punctuation.separator.key.canon
+103:23-32 "EventType" entity.name.type.canon
+103:34-35 "@" meta.annotation.canon punctuation.definition.annotation.canon
+103:35-39 "json" meta.annotation.canon entity.name.function.decorator.canon
+103:39-40 "(" meta.annotation.canon
+103:40-44 "case" meta.annotation.canon variable.parameter.canon
+103:44-45 ":" meta.annotation.canon punctuation.separator.key.canon
+103:45-52 " snake)" meta.annotation.canon
+104:0-37 "  /// One rate for the whole event..." comment.line.documentation.canon
+105:2-7 "rates" variable.other.property.canon
+105:7-8 ":" punctuation.separator.key.canon
+105:10-15 "Stage" variable.other.property.canon
+105:15-16 ":" punctuation.separator.key.canon
+105:17-20 "Int" entity.name.type.canon
+105:21-22 "0" constant.numeric.integer.canon
+105:22-24 ".." keyword.operator.canon
+105:26-27 "?" keyword.operator.canon
+105:28-29 "=" keyword.operator.canon
+105:30-34 "none" constant.language.canon
+106:0-63 "  /// ...or one per item / monster / dungeon, depending on `e`." comment.line.documentation.canon
+107:2-17 "ratesBySpecific" variable.other.property.canon
+107:17-18 ":" punctuation.separator.key.canon
+107:20-31 "SpecificKey" entity.name.type.canon
+107:37-42 "Stage" variable.other.property.canon
+107:42-43 ":" punctuation.separator.key.canon
+107:44-47 "Int" entity.name.type.canon
+107:48-49 "0" constant.numeric.integer.canon
+107:49-51 ".." keyword.operator.canon
+107:54-55 "?" keyword.operator.canon
+107:56-57 "=" keyword.operator.canon
+107:58-62 "none" constant.language.canon
+108:0-47 "  /// A daily cap per item / monster / dungeon." comment.line.documentation.canon
+109:2-20 "dailyMaxBySpecific" variable.other.property.canon
+109:20-21 ":" punctuation.separator.key.canon
+109:23-34 "SpecificKey" entity.name.type.canon
+109:39-42 "Int" entity.name.type.canon
+109:43-44 "0" constant.numeric.integer.canon
+109:44-46 ".." keyword.operator.canon
+109:48-49 "?" keyword.operator.canon
+109:50-51 "=" keyword.operator.canon
+109:52-56 "none" constant.language.canon
+110:0-52 "  /// The rate is a daily count, not an hourly rate." comment.line.documentation.canon
+111:2-13 "isDailyFlat" variable.other.property.canon
+111:13-14 ":" punctuation.separator.key.canon
+111:15-19 "Bool" entity.name.type.canon
+111:20-21 "=" keyword.operator.canon
+111:22-27 "false" constant.language.canon
+114:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+115:0-25 "// Filters and amplifiers" comment.line.double-slash.canon
+116:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+118:0-40 "/// An inclusive range of player levels." comment.line.documentation.canon
+119:0-6 "record" storage.type.canon
+119:7-17 "LevelRange" entity.name.type.canon
+120:0-19 "  /// Lowest level." comment.line.documentation.canon
+121:2-5 "min" variable.other.property.canon
+121:5-6 ":" punctuation.separator.key.canon
+121:7-10 "Int" entity.name.type.canon
+121:11-12 "0" constant.numeric.integer.canon
+121:12-15 "..=" keyword.operator.canon
+121:15-18 "500" constant.numeric.integer.canon
+122:0-20 "  /// Highest level." comment.line.documentation.canon
+123:2-5 "max" variable.other.property.canon
+123:5-6 ":" punctuation.separator.key.canon
+123:7-10 "Int" entity.name.type.canon
+123:11-12 "0" constant.numeric.integer.canon
+123:12-15 "..=" keyword.operator.canon
+123:15-18 "500" constant.numeric.integer.canon
+125:2-7 "check" keyword.other.canon
+125:12-14 "<=" keyword.operator.canon
+125:19-23 "else" keyword.control.canon
+125:24-30 "\"min (" string.quoted.double.canon
+125:30-31 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+125:31-34 "min" string.quoted.double.canon meta.interpolation.canon
+125:34-35 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+125:35-51 ") is above max (" string.quoted.double.canon
+125:51-52 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+125:52-55 "max" string.quoted.double.canon meta.interpolation.canon
+125:55-56 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+125:56-58 ")\"" string.quoted.double.canon
+128:0-43 "/// Who may be given a task about an event." comment.line.documentation.canon
+129:0-6 "record" storage.type.canon
+129:7-17 "TaskFilter" entity.name.type.canon
+130:0-43 "  /// Player levels the task is offered to." comment.line.documentation.canon
+131:2-7 "level" variable.other.property.canon
+131:7-8 ":" punctuation.separator.key.canon
+131:9-19 "LevelRange" entity.name.type.canon
+134:0-45 "/// What an amplifier measures on the player." comment.line.documentation.canon
+135:0-4 "enum" storage.type.canon
+135:5-14 "Condition" entity.name.type.canon
+137:0-60 "/// A rate bonus for players whose measure falls in a range." comment.line.documentation.canon
+138:0-6 "record" storage.type.canon
+138:7-16 "Amplifier" entity.name.type.canon
+138:17-18 "@" meta.annotation.canon punctuation.definition.annotation.canon
+138:18-22 "json" meta.annotation.canon entity.name.function.decorator.canon
+138:22-23 "(" meta.annotation.canon
+138:23-27 "case" meta.annotation.canon variable.parameter.canon
+138:27-28 ":" meta.annotation.canon punctuation.separator.key.canon
+138:28-35 " snake)" meta.annotation.canon
+139:0-23 "  /// What is measured." comment.line.documentation.canon
+140:2-11 "condition" variable.other.property.canon
+140:11-12 ":" punctuation.separator.key.canon
+140:13-22 "Condition" entity.name.type.canon
+141:0-63 "  /// Order among the amplifiers of one event; unique when set." comment.line.documentation.canon
+142:2-10 "priority" variable.other.property.canon
+142:10-11 ":" punctuation.separator.key.canon
+142:12-15 "Int" entity.name.type.canon
+142:15-16 "?" keyword.operator.canon
+142:17-18 "=" keyword.operator.canon
+142:19-23 "none" constant.language.canon
+143:0-41 "  /// Lowest measure that gets the bonus." comment.line.documentation.canon
+144:2-10 "minValue" variable.other.property.canon
+144:10-11 ":" punctuation.separator.key.canon
+144:12-15 "Int" entity.name.type.canon
+144:16-17 "0" constant.numeric.integer.canon
+144:17-19 ".." keyword.operator.canon
+145:0-42 "  /// Highest measure that gets the bonus." comment.line.documentation.canon
+146:2-10 "maxValue" variable.other.property.canon
+146:10-11 ":" punctuation.separator.key.canon
+146:12-15 "Int" entity.name.type.canon
+146:16-17 "0" constant.numeric.integer.canon
+146:17-19 ".." keyword.operator.canon
+147:0-26 "  /// Bonus at `minValue`." comment.line.documentation.canon
+148:2-10 "bonusMin" variable.other.property.canon
+148:10-11 ":" punctuation.separator.key.canon
+148:12-17 "Float" entity.name.type.canon
+148:18-23 "where" keyword.control.canon
+148:27-28 ">" keyword.operator.canon
+148:29-32 "0.0" constant.numeric.float.canon
+149:0-26 "  /// Bonus at `maxValue`." comment.line.documentation.canon
+150:2-10 "bonusMax" variable.other.property.canon
+150:10-11 ":" punctuation.separator.key.canon
+150:12-17 "Float" entity.name.type.canon
+150:18-23 "where" keyword.control.canon
+150:27-28 ">" keyword.operator.canon
+150:29-32 "0.0" constant.numeric.float.canon
+152:0-70 "  /// Kept by the loader as a crash guard: ComputeAmplifierBonus casts" comment.line.documentation.canon
+153:0-44 "  /// (bonus_max - bonus_min) / 0.1f to int." comment.line.documentation.canon
+154:2-7 "check" keyword.other.canon
+154:17-19 "<=" keyword.operator.canon
+154:29-33 "else" keyword.control.canon
+154:34-64 "\"bonus_min is above bonus_max\"" string.quoted.double.canon
+155:2-7 "check" keyword.other.canon
+155:17-19 "<=" keyword.operator.canon
+155:29-33 "else" keyword.control.canon
+155:34-64 "\"min_value is above max_value\"" string.quoted.double.canon
+158:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+159:0-11 "// The file" comment.line.double-slash.canon
+160:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+162:0-19 "/// The whole file." comment.line.documentation.canon
+163:0-6 "record" storage.type.canon
+163:7-27 "AdventureQuestConfig" entity.name.type.canon
+163:28-29 "@" meta.annotation.canon punctuation.definition.annotation.canon
+163:29-33 "json" meta.annotation.canon entity.name.function.decorator.canon
+163:33-34 "(" meta.annotation.canon
+163:34-38 "case" meta.annotation.canon variable.parameter.canon
+163:38-39 ":" meta.annotation.canon punctuation.separator.key.canon
+163:39-46 " snake)" meta.annotation.canon
+164:0-53 "  /// Never read by the loader; kept as a convention." comment.line.documentation.canon
+165:2-9 "version" variable.other.property.canon
+165:9-10 ":" punctuation.separator.key.canon
+165:11-14 "Int" entity.name.type.canon
+165:15-16 "=" keyword.operator.canon
+165:17-18 "1" constant.numeric.integer.canon
+166:0-37 "  /// Settings shared by every style." comment.line.documentation.canon
+167:2-8 "global" variable.other.property.canon
+167:8-9 ":" punctuation.separator.key.canon
+167:10-16 "Global" entity.name.type.canon
+168:0-43 "  /// Events a batch may contain only once." comment.line.documentation.canon
+169:2-16 "uniquePerBatch" variable.other.property.canon
+169:16-17 ":" punctuation.separator.key.canon
+169:19-22 "ref" storage.modifier.canon
+169:35-36 "=" keyword.operator.canon
+170:0-47 "  /// azure is only read under __AZURE_UPGRADE." comment.line.documentation.canon
+171:2-8 "styles" variable.other.property.canon
+171:8-9 ":" punctuation.separator.key.canon
+171:11-21 "QuestStyle" variable.other.property.canon
+171:21-22 ":" punctuation.separator.key.canon
+171:23-28 "Style" entity.name.type.canon
+172:0-40 "  /// Target shrink per number of tasks." comment.line.documentation.canon
+173:2-19 "targetMultipliers" variable.other.property.canon
+173:19-20 ":" punctuation.separator.key.canon
+173:22-31 "TaskCount" variable.other.property.canon
+173:31-32 ":" punctuation.separator.key.canon
+173:33-43 "Multiplier" entity.name.type.canon
+173:45-46 "=" keyword.operator.canon
+174:0-64 "  /// Each value's type depends on its key: see HourlyTarget(e)." comment.line.documentation.canon
+175:2-15 "hourlyTargets" variable.other.property.canon
+175:15-16 ":" punctuation.separator.key.canon
+175:20-22 "in" keyword.operator.word.canon
+175:23-33 "eventTypes" variable.other.property.canon
+175:33-34 ":" punctuation.separator.key.canon
+175:35-47 "HourlyTarget" entity.name.type.canon
+175:52-53 "=" keyword.operator.canon
+176:0-29 "  /// Rate bonuses per event." comment.line.documentation.canon
+177:2-16 "rateAmplifiers" variable.other.property.canon
+177:16-17 ":" punctuation.separator.key.canon
+177:19-22 "ref" storage.modifier.canon
+177:23-33 "eventTypes" variable.other.property.canon
+177:33-34 ":" punctuation.separator.key.canon
+177:36-45 "Amplifier" entity.name.type.canon
+177:48-49 "=" keyword.operator.canon
+178:0-41 "  /// Who may be given a task, per event." comment.line.documentation.canon
+179:2-13 "taskFilters" variable.other.property.canon
+179:13-14 ":" punctuation.separator.key.canon
+179:16-19 "ref" storage.modifier.canon
+179:20-30 "eventTypes" variable.other.property.canon
+179:30-31 ":" punctuation.separator.key.canon
+179:32-42 "TaskFilter" entity.name.type.canon
+179:44-45 "=" keyword.operator.canon
+181:2-7 "check" keyword.other.canon
+182:4-7 "for" keyword.control.canon
+182:16-18 "in" keyword.operator.word.canon
+183:6-9 "let" storage.type.canon
+183:21-22 "=" keyword.operator.canon
+183:25-26 "." punctuation.accessor.canon
+183:26-34 "priority" variable.other.property.canon
+183:35-38 "for" keyword.control.canon
+183:41-43 "in" keyword.operator.word.canon
+183:49-51 "if" keyword.control.canon
+183:53-54 "." punctuation.accessor.canon
+183:54-62 "priority" variable.other.property.canon
+183:63-65 "!=" keyword.operator.canon
+183:66-70 "none" constant.language.canon
+184:6-8 "if" keyword.control.canon
+184:9-12 "not" keyword.operator.word.canon
+184:23-24 "." punctuation.accessor.canon
+184:24-32 "isUnique" variable.other.property.canon
+185:19-38 "\"two amplifiers of " string.quoted.double.canon
+185:38-39 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+185:39-40 "e" string.quoted.double.canon meta.interpolation.canon
+185:40-41 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+185:41-43 "id" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+185:43-44 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+185:44-95 " share a priority: the loader discards all of them\"" string.quoted.double.canon
+188:4-7 "for" keyword.control.canon
+188:10-12 "in" keyword.operator.word.canon
+189:6-8 "if" keyword.control.canon
+189:9-12 "not" keyword.operator.word.canon
+189:19-20 "." punctuation.accessor.canon
+189:20-26 "values" variable.other.property.canon
+189:28-29 "." punctuation.accessor.canon
+189:29-32 "any" variable.other.property.canon
+189:35-37 "=>" keyword.operator.canon
+189:39-40 "." punctuation.accessor.canon
+189:40-51 "taskWeights" variable.other.property.canon
+189:51-52 "." punctuation.accessor.canon
+189:52-60 "contains" variable.other.property.canon
+190:8-12 "warn" keyword.other.canon
+190:16-17 "\"" string.quoted.double.canon
+190:17-18 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+190:18-19 "e" string.quoted.double.canon meta.interpolation.canon
+190:19-20 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+190:20-22 "id" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+190:22-23 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+190:23-88 " is in no style's task_weights, so listing it here has no effect\"" string.quoted.double.canon
+196:0-60 "/// Server/Quest/adventure_quest_config.json, read in place." comment.line.documentation.canon
+197:0-3 "let" storage.type.canon
+197:4-19 "adventureQuests" variable.other.property.canon
+197:19-20 ":" punctuation.separator.key.canon
+197:21-41 "AdventureQuestConfig" entity.name.type.canon
+197:42-43 "=" keyword.operator.canon
+198:2-6 "load" keyword.other.canon
+198:7-59 "\"@resource/Server/Quest/adventure_quest_config.json\"" string.quoted.double.canon
+200:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+201:0-9 "// Studio" comment.line.double-slash.canon
+202:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+203:0-84 "// In hourlyTargets, pick ECONOMY_DROP_ITEM as the key and the rates_by_specific key" comment.line.double-slash.canon
+204:0-83 "// picker becomes an item search; pick COMBAT_KILL_MONSTER and it becomes a monster" comment.line.double-slash.canon
+205:0-78 "// search. Nothing to declare: the studio reads HourlyTarget(e)'s field types." comment.line.double-slash.canon
+207:0-4 "view" keyword.other.canon
+207:5-25 "AdventureQuestConfig" entity.name.type.canon
+208:8-26 "\"Adventure quests\"" string.quoted.double.canon
+210:16-25 "\"General\"" string.quoted.double.canon
+211:15-23 "\"Styles\"" string.quoted.double.canon
+212:16-25 "\"Targets\"" string.quoted.double.canon
+213:15-23 "\"Tuning\"" string.quoted.double.canon
+216:0-4 "view" keyword.other.canon
+216:5-10 "Style" entity.name.type.canon
+217:8-9 "\"" string.quoted.double.canon
+217:9-10 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+217:10-13 "key" string.quoted.double.canon meta.interpolation.canon
+217:13-14 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+217:14-15 "\"" string.quoted.double.canon
+218:15-23 "\"Timing\"" string.quoted.double.canon
+219:13-19 "\"Draw\"" string.quoted.double.canon
+219:40-44 "unit" variable.other.property.canon
+219:44-45 ":" punctuation.separator.key.canon
+219:67-71 "unit" variable.other.property.canon
+219:71-72 ":" punctuation.separator.key.canon
+220:16-25 "\"Rewards\"" string.quoted.double.canon
+223:0-4 "emit" keyword.other.canon
+223:5-9 "view" keyword.other.canon
+223:12-15 "out" variable.other.property.canon
+223:15-16 ":" punctuation.separator.key.canon
+223:17-54 "\"@generated/adventurequest.view.json\"" string.quoted.double.canon

@@ -1,0 +1,173 @@
+1:0-93 "/// Dependent types (TYPES §11, CODEGEN §5.6): a field whose type an earlier field chooses." comment.line.documentation.canon
+2:0-91 "/// Generated code holds the union of the branches with a branch enum; baked Go writes each" comment.line.documentation.canon
+3:0-88 "/// value in the branch its record selects, and the C++ loader picks the branch from the" comment.line.documentation.canon
+4:0-37 "/// discriminant it has already read." comment.line.documentation.canon
+5:0-7 "package" keyword.other.canon
+5:8-26 "features.dependent" entity.name.namespace.canon
+7:0-34 "/// What a daily objective counts." comment.line.documentation.canon
+8:0-4 "enum" storage.type.canon
+8:5-9 "Goal" entity.name.type.canon
+10:0-89 "/// What an objective aims at, by goal: a monster, a number of items, a level. Visiting a" comment.line.documentation.canon
+11:0-26 "/// place aims at nothing." comment.line.documentation.canon
+12:0-4 "type" storage.type.canon
+12:5-11 "Target" entity.name.type.canon
+12:12-13 "g" variable.other.property.canon
+12:13-14 ":" punctuation.separator.key.canon
+12:15-19 "Goal" entity.name.type.canon
+12:21-22 "=" keyword.operator.canon
+12:23-28 "match" keyword.control.canon
+13:7-9 "=>" keyword.operator.canon
+13:10-16 "String" entity.name.type.canon
+13:17-18 "1" constant.numeric.integer.canon
+13:18-20 ".." keyword.operator.canon
+14:10-12 "=>" keyword.operator.canon
+14:13-16 "Int" entity.name.type.canon
+14:17-18 "1" constant.numeric.integer.canon
+14:18-20 ".." keyword.operator.canon
+15:14-16 "=>" keyword.operator.canon
+15:17-20 "Int" entity.name.type.canon
+15:21-22 "1" constant.numeric.integer.canon
+15:22-25 "..=" keyword.operator.canon
+15:25-28 "300" constant.numeric.integer.canon
+16:8-10 "=>" keyword.operator.canon
+16:11-16 "Never" entity.name.type.canon
+19:0-31 "/// A reward: gold, or an item." comment.line.documentation.canon
+20:0-4 "type" storage.type.canon
+20:5-11 "Reward" entity.name.type.canon
+20:12-16 "item" variable.other.property.canon
+20:16-17 ":" punctuation.separator.key.canon
+20:18-22 "Bool" entity.name.type.canon
+20:24-25 "=" keyword.operator.canon
+20:26-31 "match" keyword.control.canon
+21:2-7 "false" constant.language.canon
+21:8-10 "=>" keyword.operator.canon
+21:11-14 "Int" entity.name.type.canon
+21:15-16 "1" constant.numeric.integer.canon
+21:16-18 ".." keyword.operator.canon
+22:2-6 "true" constant.language.canon
+22:7-9 "=>" keyword.operator.canon
+22:10-16 "String" entity.name.type.canon
+22:17-18 "1" constant.numeric.integer.canon
+22:18-20 ".." keyword.operator.canon
+25:0-40 "/// Where an objective sends the player." comment.line.documentation.canon
+26:0-6 "record" storage.type.canon
+26:7-12 "Place" entity.name.type.canon
+27:0-38 "  /// Whether rewards there are items." comment.line.documentation.canon
+28:2-7 "items" variable.other.property.canon
+28:7-8 ":" punctuation.separator.key.canon
+28:9-13 "Bool" entity.name.type.canon
+31:0-22 "/// A daily objective." comment.line.documentation.canon
+32:0-6 "record" storage.type.canon
+32:7-16 "Objective" entity.name.type.canon
+33:0-21 "  /// What it counts." comment.line.documentation.canon
+34:2-6 "goal" variable.other.property.canon
+34:6-7 ":" punctuation.separator.key.canon
+34:8-12 "Goal" entity.name.type.canon
+35:0-58 "  /// What it aims at; none when the goal aims at nothing." comment.line.documentation.canon
+36:2-8 "target" variable.other.property.canon
+36:8-9 ":" punctuation.separator.key.canon
+36:10-16 "Target" entity.name.type.canon
+36:22-23 "?" keyword.operator.canon
+37:0-53 "  /// Whether its rewards are items rather than gold." comment.line.documentation.canon
+38:2-13 "itemRewards" variable.other.property.canon
+38:13-14 ":" punctuation.separator.key.canon
+38:15-19 "Bool" entity.name.type.canon
+39:0-31 "  /// What completing it gives." comment.line.documentation.canon
+40:2-9 "rewards" variable.other.property.canon
+40:9-10 ":" punctuation.separator.key.canon
+40:12-18 "Reward" entity.name.type.canon
+41:0-32 "  /// Where it sends the player." comment.line.documentation.canon
+42:2-7 "place" variable.other.property.canon
+42:7-8 ":" punctuation.separator.key.canon
+42:9-14 "Place" entity.name.type.canon
+43:0-60 "  /// The reward for finding the place, chosen by the place." comment.line.documentation.canon
+44:2-7 "bonus" variable.other.property.canon
+44:7-8 ":" punctuation.separator.key.canon
+44:9-15 "Reward" entity.name.type.canon
+44:21-22 "." punctuation.accessor.canon
+44:22-27 "items" variable.other.property.canon
+47:0-25 "/// The daily objectives." comment.line.documentation.canon
+48:0-3 "let" storage.type.canon
+48:4-14 "objectives" variable.other.property.canon
+48:14-15 ":" punctuation.separator.key.canon
+48:16-21 "table" storage.type.canon
+48:22-31 "Objective" entity.name.type.canon
+48:32-33 "=" keyword.operator.canon
+50:4-8 "goal" variable.other.property.canon
+50:8-9 ":" punctuation.separator.key.canon
+51:4-10 "target" variable.other.property.canon
+51:10-11 ":" punctuation.separator.key.canon
+51:12-18 "\"wolf\"" string.quoted.double.canon
+52:4-15 "itemRewards" variable.other.property.canon
+52:15-16 ":" punctuation.separator.key.canon
+52:17-22 "false" constant.language.canon
+53:4-11 "rewards" variable.other.property.canon
+53:11-12 ":" punctuation.separator.key.canon
+53:14-17 "100" constant.numeric.integer.canon
+53:19-21 "50" constant.numeric.integer.canon
+54:4-9 "place" variable.other.property.canon
+54:9-10 ":" punctuation.separator.key.canon
+54:13-18 "items" variable.other.property.canon
+54:18-19 ":" punctuation.separator.key.canon
+54:20-24 "true" constant.language.canon
+55:4-9 "bonus" variable.other.property.canon
+55:9-10 ":" punctuation.separator.key.canon
+55:11-16 "\"map\"" string.quoted.double.canon
+58:4-8 "goal" variable.other.property.canon
+58:8-9 ":" punctuation.separator.key.canon
+59:4-10 "target" variable.other.property.canon
+59:10-11 ":" punctuation.separator.key.canon
+59:12-14 "10" constant.numeric.integer.canon
+60:4-15 "itemRewards" variable.other.property.canon
+60:15-16 ":" punctuation.separator.key.canon
+60:17-21 "true" constant.language.canon
+61:4-11 "rewards" variable.other.property.canon
+61:11-12 ":" punctuation.separator.key.canon
+61:14-22 "\"potion\"" string.quoted.double.canon
+62:4-9 "place" variable.other.property.canon
+62:9-10 ":" punctuation.separator.key.canon
+62:13-18 "items" variable.other.property.canon
+62:18-19 ":" punctuation.separator.key.canon
+62:20-25 "false" constant.language.canon
+63:4-9 "bonus" variable.other.property.canon
+63:9-10 ":" punctuation.separator.key.canon
+63:11-12 "5" constant.numeric.integer.canon
+65:12-16 "goal" variable.other.property.canon
+65:16-17 ":" punctuation.separator.key.canon
+65:25-36 "itemRewards" variable.other.property.canon
+65:36-37 ":" punctuation.separator.key.canon
+65:38-43 "false" constant.language.canon
+65:45-52 "rewards" variable.other.property.canon
+65:52-53 ":" punctuation.separator.key.canon
+65:58-63 "place" variable.other.property.canon
+65:63-64 ":" punctuation.separator.key.canon
+65:67-72 "items" variable.other.property.canon
+65:72-73 ":" punctuation.separator.key.canon
+65:74-79 "false" constant.language.canon
+65:83-88 "bonus" variable.other.property.canon
+65:88-89 ":" punctuation.separator.key.canon
+65:90-92 "20" constant.numeric.integer.canon
+68:0-4 "emit" keyword.other.canon
+68:10-13 "out" variable.other.property.canon
+68:13-14 ":" punctuation.separator.key.canon
+68:15-24 "\"out/go/\"" string.quoted.double.canon
+68:26-33 "package" variable.other.property.canon
+68:33-34 ":" punctuation.separator.key.canon
+68:35-46 "\"dependent\"" string.quoted.double.canon
+68:48-52 "mode" variable.other.property.canon
+68:52-53 ":" punctuation.separator.key.canon
+69:0-4 "emit" keyword.other.canon
+69:11-14 "out" variable.other.property.canon
+69:14-15 ":" punctuation.separator.key.canon
+69:16-26 "\"out/cpp/\"" string.quoted.double.canon
+69:28-37 "namespace" variable.other.property.canon
+69:37-38 ":" punctuation.separator.key.canon
+69:39-60 "\"features::dependent\"" string.quoted.double.canon
+69:62-66 "mode" variable.other.property.canon
+69:66-67 ":" punctuation.separator.key.canon
+70:0-4 "emit" keyword.other.canon
+70:12-15 "out" variable.other.property.canon
+70:15-16 ":" punctuation.separator.key.canon
+70:17-38 "\"out/objectives.json\"" string.quoted.double.canon
+70:40-46 "values" variable.other.property.canon
+70:46-47 ":" punctuation.separator.key.canon

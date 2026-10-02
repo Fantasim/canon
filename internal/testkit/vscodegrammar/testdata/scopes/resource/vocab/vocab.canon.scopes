@@ -1,0 +1,664 @@
+1:0-88 "/// Shared game vocabularies: event types, elements, stages, quest styles, and the items" comment.line.documentation.canon
+2:0-88 "/// other files pick from. Today: Server/Vocab/*.json, the define headers generated from" comment.line.documentation.canon
+3:0-61 "/// them, the xmacro .inc files, and propItem.json for items." comment.line.documentation.canon
+4:0-3 "///" comment.line.documentation.canon
+5:0-87 "/// The important field is `EventType.param`: which kind of parameter an event's filter" comment.line.documentation.canon
+6:0-88 "/// takes. Since Resource 4bb68225 (ADR-0005 d.4) it lives in Vocab/eventType.json as an" comment.line.documentation.canon
+7:0-87 "/// optional `param`, and heistia_config.schema.json checks each filterParam against it" comment.line.documentation.canon
+8:0-91 "/// through `x-ref-where`; the C++ EventParamHint column (EventTypeDisplay.h) still repeats" comment.line.documentation.canon
+9:0-90 "/// it until Phase B. Here it is one field of one table, and every file that filters on an" comment.line.documentation.canon
+10:0-89 "/// event (heistia, adventure quests, achievements...) gets the right parameter TYPE from" comment.line.documentation.canon
+11:0-68 "/// it, so a wrong parameter is a type error wherever it is written." comment.line.documentation.canon
+12:0-7 "package" keyword.other.canon
+12:8-22 "resource.vocab" entity.name.namespace.canon
+14:0-6 "import" keyword.other.canon
+16:0-5 "local" storage.modifier.canon
+16:6-9 "let" storage.type.canon
+16:19-20 "=" keyword.operator.canon
+16:21-25 "load" keyword.other.canon
+16:25-26 "." punctuation.accessor.canon
+16:26-33 "defines" variable.other.property.canon
+16:34-71 "\"@resource/Server/Define/defineObj.h\"" string.quoted.double.canon
+16:73-79 "prefix" variable.other.property.canon
+16:79-80 ":" punctuation.separator.key.canon
+16:81-86 "\"MI_\"" string.quoted.double.canon
+17:0-5 "local" storage.modifier.canon
+17:6-9 "let" storage.type.canon
+17:17-18 "=" keyword.operator.canon
+17:19-23 "load" keyword.other.canon
+17:23-24 "." punctuation.accessor.canon
+17:24-31 "defines" variable.other.property.canon
+17:32-71 "\"@resource/Server/Define/defineWorld.h\"" string.quoted.double.canon
+17:73-79 "prefix" variable.other.property.canon
+17:79-80 ":" punctuation.separator.key.canon
+17:81-86 "\"WI_\"" string.quoted.double.canon
+18:0-5 "local" storage.modifier.canon
+18:6-9 "let" storage.type.canon
+18:23-24 "=" keyword.operator.canon
+18:25-29 "load" keyword.other.canon
+18:29-30 "." punctuation.accessor.canon
+18:30-37 "defines" variable.other.property.canon
+18:38-83 "\"@resource/Server/Define/defineUpgradeType.h\"" string.quoted.double.canon
+19:0-5 "local" storage.modifier.canon
+19:6-9 "let" storage.type.canon
+19:15-16 "=" keyword.operator.canon
+19:17-21 "load" keyword.other.canon
+19:21-22 "." punctuation.accessor.canon
+19:22-29 "defines" variable.other.property.canon
+19:30-67 "\"@resource/Server/Define/defineJob.h\"" string.quoted.double.canon
+19:69-75 "prefix" variable.other.property.canon
+19:75-76 ":" punctuation.separator.key.canon
+19:77-83 "\"JOB_\"" string.quoted.double.canon
+20:0-81 "/// IDS_* key -> English display name (\"IDS_PROPITEM_TXT_003930\" -> \"Angel Axe\")." comment.line.documentation.canon
+21:0-5 "local" storage.modifier.canon
+21:6-9 "let" storage.type.canon
+21:10-15 "names" variable.other.property.canon
+21:15-16 ":" punctuation.separator.key.canon
+21:18-24 "String" variable.other.property.canon
+21:24-25 ":" punctuation.separator.key.canon
+21:26-32 "String" entity.name.type.canon
+21:34-35 "=" keyword.operator.canon
+21:36-40 "load" keyword.other.canon
+21:41-81 "\"@resource/Server/Text/serverNames.json\"" string.quoted.double.canon
+21:83-85 "at" variable.other.property.canon
+21:85-86 ":" punctuation.separator.key.canon
+21:87-96 "\"strings\"" string.quoted.double.canon
+23:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+24:0-28 "// Small closed vocabularies" comment.line.double-slash.canon
+25:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+27:0-85 "/// The five elements (Vocab/element.json). Codes are what the game stores and sends." comment.line.documentation.canon
+28:0-4 "enum" storage.type.canon
+28:5-12 "Element" entity.name.type.canon
+28:13-14 "@" meta.annotation.canon punctuation.definition.annotation.canon
+28:14-19 "codes" meta.annotation.canon entity.name.function.decorator.canon
+28:19-26 "(UInt8)" meta.annotation.canon
+28:29-33 "FIRE" constant.other.canon
+28:34-35 "=" keyword.operator.canon
+28:36-37 "1" constant.numeric.integer.canon
+28:39-44 "WATER" constant.other.canon
+28:45-46 "=" keyword.operator.canon
+28:47-48 "2" constant.numeric.integer.canon
+28:50-61 "ELECTRICITY" constant.other.canon
+28:62-63 "=" keyword.operator.canon
+28:64-65 "3" constant.numeric.integer.canon
+28:67-71 "WIND" constant.other.canon
+28:72-73 "=" keyword.operator.canon
+28:74-75 "4" constant.numeric.integer.canon
+28:77-82 "EARTH" constant.other.canon
+28:83-84 "=" keyword.operator.canon
+28:85-86 "5" constant.numeric.integer.canon
+30:0-4 "view" keyword.other.canon
+30:5-12 "Element" entity.name.type.canon
+31:2-6 "FIRE" constant.other.canon
+31:7-13 "\"Fire\"" string.quoted.double.canon
+31:16-20 "icon" variable.other.property.canon
+31:20-21 ":" punctuation.separator.key.canon
+31:29-33 "tone" variable.other.property.canon
+31:33-34 ":" punctuation.separator.key.canon
+32:2-7 "WATER" constant.other.canon
+32:8-15 "\"Water\"" string.quoted.double.canon
+32:18-22 "icon" variable.other.property.canon
+32:22-23 ":" punctuation.separator.key.canon
+32:33-37 "tone" variable.other.property.canon
+32:37-38 ":" punctuation.separator.key.canon
+33:2-13 "ELECTRICITY" constant.other.canon
+33:14-27 "\"Electricity\"" string.quoted.double.canon
+33:30-34 "icon" variable.other.property.canon
+33:34-35 ":" punctuation.separator.key.canon
+33:41-45 "tone" variable.other.property.canon
+33:45-46 ":" punctuation.separator.key.canon
+34:2-6 "WIND" constant.other.canon
+34:7-13 "\"Wind\"" string.quoted.double.canon
+34:16-20 "icon" variable.other.property.canon
+34:20-21 ":" punctuation.separator.key.canon
+34:28-32 "tone" variable.other.property.canon
+34:32-33 ":" punctuation.separator.key.canon
+35:2-7 "EARTH" constant.other.canon
+35:8-15 "\"Earth\"" string.quoted.double.canon
+35:18-22 "icon" variable.other.property.canon
+35:22-23 ":" punctuation.separator.key.canon
+35:34-38 "tone" variable.other.property.canon
+35:38-39 ":" punctuation.separator.key.canon
+38:0-46 "/// Progression stages (Vocab/gameStage.json)." comment.line.documentation.canon
+39:0-4 "enum" storage.type.canon
+39:5-10 "Stage" entity.name.type.canon
+39:11-12 "@" meta.annotation.canon punctuation.definition.annotation.canon
+39:12-17 "codes" meta.annotation.canon entity.name.function.decorator.canon
+39:17-25 "(UInt16)" meta.annotation.canon
+39:36-37 "=" keyword.operator.canon
+39:38-41 "100" constant.numeric.integer.canon
+39:51-52 "=" keyword.operator.canon
+39:53-56 "101" constant.numeric.integer.canon
+39:66-67 "=" keyword.operator.canon
+39:68-71 "102" constant.numeric.integer.canon
+41:0-55 "/// Adventure quest styles (Vocab/adventureQuest.json)." comment.line.documentation.canon
+42:0-4 "enum" storage.type.canon
+42:5-15 "QuestStyle" entity.name.type.canon
+42:16-17 "@" meta.annotation.canon punctuation.definition.annotation.canon
+42:17-22 "codes" meta.annotation.canon entity.name.function.decorator.canon
+42:22-29 "(UInt8)" meta.annotation.canon
+43:8-9 "=" keyword.operator.canon
+43:10-11 "1" constant.numeric.integer.canon
+44:9-10 "=" keyword.operator.canon
+44:11-12 "2" constant.numeric.integer.canon
+45:10-11 "=" keyword.operator.canon
+45:12-13 "3" constant.numeric.integer.canon
+46:14-15 "=" keyword.operator.canon
+46:16-17 "4" constant.numeric.integer.canon
+47:6-7 "=" keyword.operator.canon
+47:8-9 "5" constant.numeric.integer.canon
+48:8-9 "=" keyword.operator.canon
+48:10-11 "6" constant.numeric.integer.canon
+51:0-43 "/// What an adventure quest style pays out." comment.line.documentation.canon
+52:0-4 "enum" storage.type.canon
+52:5-15 "RewardType" entity.name.type.canon
+52:16-17 "@" meta.annotation.canon punctuation.definition.annotation.canon
+52:17-22 "codes" meta.annotation.canon entity.name.function.decorator.canon
+52:22-29 "(UInt8)" meta.annotation.canon
+52:48-49 "=" keyword.operator.canon
+52:50-51 "1" constant.numeric.integer.canon
+52:69-70 "=" keyword.operator.canon
+52:71-72 "2" constant.numeric.integer.canon
+54:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+55:0-30 "// Items, as pickers need them" comment.line.double-slash.canon
+56:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+58:0-84 "/// An item icon file; the file must exist under Resource/Icon/Item, with this exact" comment.line.documentation.canon
+59:0-31 "/// letter case (DECISIONS 19)." comment.line.documentation.canon
+60:0-4 "type" storage.type.canon
+60:5-13 "ItemIcon" entity.name.type.canon
+60:14-15 "=" keyword.operator.canon
+60:16-21 "asset" storage.modifier.canon
+60:22-43 "\"@resource/Icon/Item\"" string.quoted.double.canon
+60:45-48 "ext" variable.other.property.canon
+60:48-49 ":" punctuation.separator.key.canon
+62:0-88 "/// An item's main kind (dwItemKind1). Declared in defineItemkind.h's order, so `.index`" comment.line.documentation.canon
+63:0-27 "/// equals the IK1_* value." comment.line.documentation.canon
+64:0-4 "enum" storage.type.canon
+64:5-14 "ItemKind1" entity.name.type.canon
+65:2-10 "IK1_GOLD" constant.other.canon
+66:2-12 "IK1_WEAPON" constant.other.canon
+67:2-11 "IK1_ARMOR" constant.other.canon
+68:2-13 "IK1_GENERAL" constant.other.canon
+69:2-10 "IK1_RIDE" constant.other.canon
+70:2-12 "IK1_SYSTEM" constant.other.canon
+71:2-13 "IK1_CHARGED" constant.other.canon
+72:2-13 "IK1_HOUSING" constant.other.canon
+75:0-83 "/// An item as other files see it: what a picker shows and what `ref items` checks." comment.line.documentation.canon
+76:0-3 "///" comment.line.documentation.canon
+77:0-87 "/// Only the fields pickers, filters and checks read (`partial` load). The full record," comment.line.documentation.canon
+78:0-87 "/// with one variant case per kind, is game.items' Item; this one reads the 6,944 items" comment.line.documentation.canon
+79:0-89 "/// that are still in propItem.json. Defaults copy the file's own `defaults` block, which" comment.line.documentation.canon
+80:0-53 "/// the loader applies to every row that omits a key." comment.line.documentation.canon
+81:0-6 "record" storage.type.canon
+81:7-11 "Item" entity.name.type.canon
+82:0-56 "  /// \"II_GEN_MAT_MOONSTONE\": what a `ref items` stores." comment.line.documentation.canon
+83:2-4 "id" variable.other.property.canon
+83:4-5 ":" punctuation.separator.key.canon
+83:6-12 "String" entity.name.type.canon
+83:13-33 "/^II_[A-Za-z0-9_]+$/" string.regexp.canon
+83:35-36 "@" meta.annotation.canon punctuation.definition.annotation.canon
+83:36-40 "json" meta.annotation.canon entity.name.function.decorator.canon
+83:40-41 "(" meta.annotation.canon
+83:41-47 "\"dwID\"" meta.annotation.canon string.quoted.double.canon
+83:47-48 ")" meta.annotation.canon
+84:0-79 "  /// Text key of the displayed name (\"IDS_PROPITEM_TXT_008066\"); see `name()`." comment.line.documentation.canon
+85:2-9 "nameKey" variable.other.property.canon
+85:9-10 ":" punctuation.separator.key.canon
+85:11-17 "String" entity.name.type.canon
+85:18-19 "=" keyword.operator.canon
+85:20-45 "\"IDS_PROPITEM_TXT_030168\"" string.quoted.double.canon
+85:46-47 "@" meta.annotation.canon punctuation.definition.annotation.canon
+85:47-51 "json" meta.annotation.canon entity.name.function.decorator.canon
+85:51-52 "(" meta.annotation.canon
+85:52-60 "\"szName\"" meta.annotation.canon string.quoted.double.canon
+85:60-61 ")" meta.annotation.canon
+86:0-75 "  /// Main kind. A row without one is armour, as the `defaults` block says." comment.line.documentation.canon
+87:2-6 "kind" variable.other.property.canon
+87:6-7 ":" punctuation.separator.key.canon
+87:8-17 "ItemKind1" entity.name.type.canon
+87:18-19 "=" keyword.operator.canon
+87:20-29 "IK1_ARMOR" constant.other.canon
+87:30-31 "@" meta.annotation.canon punctuation.definition.annotation.canon
+87:31-35 "json" meta.annotation.canon entity.name.function.decorator.canon
+87:35-36 "(" meta.annotation.canon
+87:36-49 "\"dwItemKind1\"" meta.annotation.canon string.quoted.double.canon
+87:49-50 ")" meta.annotation.canon
+88:0-72 "  /// The only job that may use the item. \"=\" on the wire means any job." comment.line.documentation.canon
+89:2-5 "job" variable.other.property.canon
+89:5-6 ":" punctuation.separator.key.canon
+89:7-10 "ref" storage.modifier.canon
+89:15-16 "?" keyword.operator.canon
+89:17-18 "=" keyword.operator.canon
+89:19-23 "none" constant.language.canon
+89:24-25 "@" meta.annotation.canon punctuation.definition.annotation.canon
+89:25-29 "json" meta.annotation.canon entity.name.function.decorator.canon
+89:29-30 "(" meta.annotation.canon
+89:30-41 "\"dwItemJob\"" meta.annotation.canon string.quoted.double.canon
+89:41-43 ", " meta.annotation.canon
+89:43-47 "none" meta.annotation.canon variable.parameter.canon
+89:47-48 ":" meta.annotation.canon punctuation.separator.key.canon
+89:48-49 " " meta.annotation.canon
+89:49-52 "\"=\"" meta.annotation.canon string.quoted.double.canon
+89:52-53 ")" meta.annotation.canon
+90:0-66 "  /// Item level. Absent means 1; \"=\" means the item has no level." comment.line.documentation.canon
+91:2-7 "level" variable.other.property.canon
+91:7-8 ":" punctuation.separator.key.canon
+91:9-12 "Int" entity.name.type.canon
+91:13-14 "0" constant.numeric.integer.canon
+91:14-16 ".." keyword.operator.canon
+91:17-18 "?" keyword.operator.canon
+91:19-20 "=" keyword.operator.canon
+91:21-22 "1" constant.numeric.integer.canon
+91:23-24 "@" meta.annotation.canon punctuation.definition.annotation.canon
+91:24-28 "json" meta.annotation.canon entity.name.function.decorator.canon
+91:28-29 "(" meta.annotation.canon
+91:29-39 "\"dwItemLV\"" meta.annotation.canon string.quoted.double.canon
+91:39-41 ", " meta.annotation.canon
+91:41-45 "none" meta.annotation.canon variable.parameter.canon
+91:45-46 ":" meta.annotation.canon punctuation.separator.key.canon
+91:46-47 " " meta.annotation.canon
+91:47-50 "\"=\"" meta.annotation.canon string.quoted.double.canon
+91:50-51 ")" meta.annotation.canon
+92:0-41 "  /// How many fit in one inventory slot." comment.line.documentation.canon
+93:2-10 "stackMax" variable.other.property.canon
+93:10-11 ":" punctuation.separator.key.canon
+93:12-15 "Int" entity.name.type.canon
+93:16-17 "1" constant.numeric.integer.canon
+93:17-19 ".." keyword.operator.canon
+93:21-22 "=" keyword.operator.canon
+93:23-24 "1" constant.numeric.integer.canon
+93:25-26 "@" meta.annotation.canon punctuation.definition.annotation.canon
+93:26-30 "json" meta.annotation.canon entity.name.function.decorator.canon
+93:30-31 "(" meta.annotation.canon
+93:31-42 "\"dwPackMax\"" meta.annotation.canon string.quoted.double.canon
+93:42-43 ")" meta.annotation.canon
+94:0-65 "  /// Shown as a thumbnail next to the item in lists and pickers." comment.line.documentation.canon
+95:2-6 "icon" variable.other.property.canon
+95:6-7 ":" punctuation.separator.key.canon
+95:8-16 "ItemIcon" entity.name.type.canon
+95:17-18 "@" meta.annotation.canon punctuation.definition.annotation.canon
+95:18-22 "json" meta.annotation.canon entity.name.function.decorator.canon
+95:22-23 "(" meta.annotation.canon
+95:23-31 "\"szIcon\"" meta.annotation.canon string.quoted.double.canon
+95:31-32 ")" meta.annotation.canon
+97:0-77 "  /// What people search for and read: \"Moonstone\", not II_GEN_MAT_MOONSTONE." comment.line.documentation.canon
+98:2-4 "fn" storage.type.function.canon
+98:5-9 "name" entity.name.function.canon
+98:10-14 "self" variable.language.canon
+98:16-18 "->" keyword.operator.canon
+98:19-25 "String" entity.name.type.canon
+98:28-34 "return" keyword.control.canon
+98:40-41 "." punctuation.accessor.canon
+98:41-44 "get" variable.other.property.canon
+98:54-56 "??" keyword.operator.canon
+101:0-88 "/// Every item, keyed by its define. `ref items` stores the define and checks it exists." comment.line.documentation.canon
+102:0-3 "let" storage.type.canon
+102:4-9 "items" variable.other.property.canon
+102:9-10 ":" punctuation.separator.key.canon
+102:12-16 "Item" entity.name.type.canon
+102:30-31 "=" keyword.operator.canon
+103:2-6 "load" keyword.other.canon
+103:7-44 "\"@resource/Server/Item/propItem.json\"" string.quoted.double.canon
+103:46-48 "at" variable.other.property.canon
+103:48-49 ":" punctuation.separator.key.canon
+103:50-57 "\"items\"" string.quoted.double.canon
+103:59-66 "partial" variable.other.property.canon
+103:66-67 ":" punctuation.separator.key.canon
+103:68-72 "true" constant.language.canon
+105:0-81 "/// Every picker of `ref items` in the studio shows \"Moonstone\" with its icon and" comment.line.documentation.canon
+106:0-80 "/// II_GEN_MAT_MOONSTONE underneath. Typing \"moon\" or \"MOONST\" both find it. The" comment.line.documentation.canon
+107:0-33 "/// file still stores the define." comment.line.documentation.canon
+108:0-4 "view" keyword.other.canon
+108:5-9 "Item" entity.name.type.canon
+109:8-9 "\"" string.quoted.double.canon
+109:9-10 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+109:10-16 "name()" string.quoted.double.canon meta.interpolation.canon
+109:16-17 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+109:17-18 "\"" string.quoted.double.canon
+110:11-12 "\"" string.quoted.double.canon
+110:12-13 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+110:13-15 "id" string.quoted.double.canon meta.interpolation.canon
+110:15-16 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+110:16-17 "\"" string.quoted.double.canon
+115:17-20 "120" constant.numeric.integer.canon
+115:26-29 "140" constant.numeric.integer.canon
+115:37-39 "70" constant.numeric.integer.canon
+115:50-52 "90" constant.numeric.integer.canon
+118:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+119:0-14 "// Event types" comment.line.double-slash.canon
+120:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+122:0-87 "/// Which kind of parameter an event's filter takes (eventType.json's `param`; an entry" comment.line.documentation.canon
+123:0-28 "/// without one takes none)." comment.line.documentation.canon
+124:0-4 "enum" storage.type.canon
+124:5-14 "ParamKind" entity.name.type.canon
+131:15-16 "=" keyword.operator.canon
+131:17-30 "\"upgradeType\"" string.quoted.double.canon
+132:12-13 "=" keyword.operator.canon
+132:14-24 "\"gameMode\"" string.quoted.double.canon
+133:14-15 "=" keyword.operator.canon
+133:16-28 "\"questStyle\"" string.quoted.double.canon
+136:0-84 "/// One thing the game counts (a kill, a drop, a craft...). Quests, achievements and" comment.line.documentation.canon
+137:0-40 "/// heistia missions are built on these." comment.line.documentation.canon
+138:0-6 "record" storage.type.canon
+138:7-16 "EventType" entity.name.type.canon
+139:0-73 "  /// Stored in the database: never renumbered, never reused (`@stable`)." comment.line.documentation.canon
+140:2-6 "code" variable.other.property.canon
+140:6-7 ":" punctuation.separator.key.canon
+140:8-14 "UInt16" entity.name.type.canon
+140:15-16 "@" punctuation.definition.annotation.canon
+140:16-22 "stable" entity.name.function.decorator.canon
+141:0-35 "  /// Name shown in tools and logs." comment.line.documentation.canon
+142:2-9 "display" variable.other.property.canon
+142:9-10 ":" punctuation.separator.key.canon
+142:11-17 "String" entity.name.type.canon
+143:0-56 "  /// What the event's filter parameter is: see `Param`." comment.line.documentation.canon
+144:2-7 "param" variable.other.property.canon
+144:7-8 ":" punctuation.separator.key.canon
+144:9-18 "ParamKind" entity.name.type.canon
+144:19-20 "=" keyword.operator.canon
+145:0-47 "  /// Compile flag the event only exists under." comment.line.documentation.canon
+146:2-6 "flag" variable.other.property.canon
+146:6-7 ":" punctuation.separator.key.canon
+146:8-14 "String" entity.name.type.canon
+146:14-15 "?" keyword.operator.canon
+146:16-17 "=" keyword.operator.canon
+146:18-22 "none" constant.language.canon
+149:0-80 "/// What a filter parameter may be for event `e`. The type depends on the value." comment.line.documentation.canon
+150:0-4 "type" storage.type.canon
+150:5-10 "Param" entity.name.type.canon
+150:11-12 "e" variable.other.property.canon
+150:12-13 ":" punctuation.separator.key.canon
+150:14-23 "EventType" entity.name.type.canon
+150:25-26 "=" keyword.operator.canon
+150:27-32 "match" keyword.control.canon
+150:34-35 "." punctuation.accessor.canon
+150:35-40 "param" variable.other.property.canon
+151:10-12 "=>" keyword.operator.canon
+151:13-16 "ref" storage.modifier.canon
+152:7-9 "=>" keyword.operator.canon
+152:10-13 "ref" storage.modifier.canon
+153:10-12 "=>" keyword.operator.canon
+153:13-16 "ref" storage.modifier.canon
+154:10-12 "=>" keyword.operator.canon
+154:13-20 "Element" entity.name.type.canon
+155:14-16 "=>" keyword.operator.canon
+155:17-27 "QuestStyle" entity.name.type.canon
+156:15-17 "=>" keyword.operator.canon
+156:18-21 "ref" storage.modifier.canon
+157:12-14 "=>" keyword.operator.canon
+157:15-21 "String" entity.name.type.canon
+157:22-79 "// KeyToGameMode's keys are still C++ (EventParamTypes.h)" comment.line.double-slash.canon
+158:14-16 "=>" keyword.operator.canon
+158:17-22 "Never" entity.name.type.canon
+158:23-65 "// no parameter: only \"no filter\" is valid" comment.line.double-slash.canon
+161:0-44 "/// Every event type (Vocab/eventType.json)." comment.line.documentation.canon
+162:0-3 "let" storage.type.canon
+162:4-14 "eventTypes" variable.other.property.canon
+162:14-15 ":" punctuation.separator.key.canon
+162:16-22 "stable" storage.modifier.canon
+162:23-28 "table" storage.type.canon
+162:29-38 "EventType" entity.name.type.canon
+162:39-40 "=" keyword.operator.canon
+163:2-21 "COMBAT_KILL_MONSTER" constant.other.canon
+163:24-28 "code" variable.other.property.canon
+163:28-29 ":" punctuation.separator.key.canon
+163:30-31 "0" constant.numeric.integer.canon
+163:33-40 "display" variable.other.property.canon
+163:40-41 ":" punctuation.separator.key.canon
+163:42-56 "\"Monster Kill\"" string.quoted.double.canon
+163:58-63 "param" variable.other.property.canon
+163:63-64 ":" punctuation.separator.key.canon
+164:2-19 "COMBAT_KILL_GIANT" constant.other.canon
+164:22-26 "code" variable.other.property.canon
+164:26-27 ":" punctuation.separator.key.canon
+164:28-29 "1" constant.numeric.integer.canon
+164:31-38 "display" variable.other.property.canon
+164:38-39 ":" punctuation.separator.key.canon
+164:40-52 "\"Giant Kill\"" string.quoted.double.canon
+164:54-59 "param" variable.other.property.canon
+164:59-60 ":" punctuation.separator.key.canon
+165:2-18 "COMBAT_KILL_BOSS" constant.other.canon
+165:21-25 "code" variable.other.property.canon
+165:25-26 ":" punctuation.separator.key.canon
+165:27-28 "2" constant.numeric.integer.canon
+165:30-37 "display" variable.other.property.canon
+165:37-38 ":" punctuation.separator.key.canon
+165:39-50 "\"Boss Kill\"" string.quoted.double.canon
+165:52-57 "param" variable.other.property.canon
+165:57-58 ":" punctuation.separator.key.canon
+166:2-24 "COMBAT_KILL_WORLD_BOSS" constant.other.canon
+166:27-31 "code" variable.other.property.canon
+166:31-32 ":" punctuation.separator.key.canon
+166:33-34 "3" constant.numeric.integer.canon
+166:36-43 "display" variable.other.property.canon
+166:43-44 ":" punctuation.separator.key.canon
+166:45-62 "\"World Boss Kill\"" string.quoted.double.canon
+166:64-69 "param" variable.other.property.canon
+166:69-70 ":" punctuation.separator.key.canon
+167:2-24 "COMBAT_KILL_BY_ELEMENT" constant.other.canon
+167:27-31 "code" variable.other.property.canon
+167:31-32 ":" punctuation.separator.key.canon
+167:33-34 "5" constant.numeric.integer.canon
+167:36-43 "display" variable.other.property.canon
+167:43-44 ":" punctuation.separator.key.canon
+167:45-61 "\"Elemental Kill\"" string.quoted.double.canon
+167:63-68 "param" variable.other.property.canon
+167:68-69 ":" punctuation.separator.key.canon
+168:2-19 "COMBAT_DAMAGE_PVE" constant.other.canon
+168:22-26 "code" variable.other.property.canon
+168:26-27 ":" punctuation.separator.key.canon
+168:28-30 "10" constant.numeric.integer.canon
+168:32-39 "display" variable.other.property.canon
+168:39-40 ":" punctuation.separator.key.canon
+168:41-56 "\"PvE AA Damage\"" string.quoted.double.canon
+168:58-63 "param" variable.other.property.canon
+168:63-64 ":" punctuation.separator.key.canon
+169:2-25 "COMBAT_DAMAGE_PVP_EVENT" constant.other.canon
+169:28-32 "code" variable.other.property.canon
+169:32-33 ":" punctuation.separator.key.canon
+169:34-36 "12" constant.numeric.integer.canon
+169:38-45 "display" variable.other.property.canon
+169:45-46 ":" punctuation.separator.key.canon
+169:47-65 "\"PvP Event Damage\"" string.quoted.double.canon
+170:2-17 "COMBAT_KILL_FFA" constant.other.canon
+170:20-24 "code" variable.other.property.canon
+170:24-25 ":" punctuation.separator.key.canon
+170:26-28 "30" constant.numeric.integer.canon
+170:30-37 "display" variable.other.property.canon
+170:37-38 ":" punctuation.separator.key.canon
+170:39-49 "\"FFA Kill\"" string.quoted.double.canon
+171:2-25 "COMBAT_KILL_GUILD_SIEGE" constant.other.canon
+171:28-32 "code" variable.other.property.canon
+171:32-33 ":" punctuation.separator.key.canon
+171:34-36 "31" constant.numeric.integer.canon
+171:38-45 "display" variable.other.property.canon
+171:45-46 ":" punctuation.separator.key.canon
+171:47-65 "\"Guild Siege Kill\"" string.quoted.double.canon
+172:2-17 "COMBAT_KILL_TDM" constant.other.canon
+172:20-24 "code" variable.other.property.canon
+172:24-25 ":" punctuation.separator.key.canon
+172:26-28 "32" constant.numeric.integer.canon
+172:30-37 "display" variable.other.property.canon
+172:37-38 ":" punctuation.separator.key.canon
+172:39-49 "\"TDM Kill\"" string.quoted.double.canon
+173:2-24 "COMBAT_GAME_MODE_START" constant.other.canon
+173:27-31 "code" variable.other.property.canon
+173:31-32 ":" punctuation.separator.key.canon
+173:33-35 "50" constant.numeric.integer.canon
+173:37-44 "display" variable.other.property.canon
+173:44-45 ":" punctuation.separator.key.canon
+173:46-63 "\"Game Mode Start\"" string.quoted.double.canon
+173:65-70 "param" variable.other.property.canon
+173:70-71 ":" punctuation.separator.key.canon
+174:2-21 "ECONOMY_DROP_PENYAS" constant.other.canon
+174:24-28 "code" variable.other.property.canon
+174:28-29 ":" punctuation.separator.key.canon
+174:30-34 "1000" constant.numeric.integer.canon
+174:36-43 "display" variable.other.property.canon
+174:43-44 ":" punctuation.separator.key.canon
+174:45-57 "\"Penya Drop\"" string.quoted.double.canon
+174:59-64 "param" variable.other.property.canon
+174:64-65 ":" punctuation.separator.key.canon
+175:2-19 "ECONOMY_DROP_ITEM" constant.other.canon
+175:22-26 "code" variable.other.property.canon
+175:26-27 ":" punctuation.separator.key.canon
+175:28-32 "1001" constant.numeric.integer.canon
+175:34-41 "display" variable.other.property.canon
+175:41-42 ":" punctuation.separator.key.canon
+175:43-54 "\"Item Drop\"" string.quoted.double.canon
+175:56-61 "param" variable.other.property.canon
+175:61-62 ":" punctuation.separator.key.canon
+176:2-27 "ECONOMY_SPEND_VOTE_POINTS" constant.other.canon
+176:30-34 "code" variable.other.property.canon
+176:34-35 ":" punctuation.separator.key.canon
+176:36-40 "1031" constant.numeric.integer.canon
+176:42-49 "display" variable.other.property.canon
+176:49-50 ":" punctuation.separator.key.canon
+176:51-70 "\"Vote Points Spent\"" string.quoted.double.canon
+177:2-22 "ECONOMY_CONSUME_ITEM" constant.other.canon
+177:25-29 "code" variable.other.property.canon
+177:29-30 ":" punctuation.separator.key.canon
+177:31-35 "1050" constant.numeric.integer.canon
+177:37-44 "display" variable.other.property.canon
+177:44-45 ":" punctuation.separator.key.canon
+177:46-61 "\"Item Consumed\"" string.quoted.double.canon
+177:63-68 "param" variable.other.property.canon
+177:68-69 ":" punctuation.separator.key.canon
+178:2-29 "PROGRESSION_COLLECT_MONSTER" constant.other.canon
+178:32-36 "code" variable.other.property.canon
+178:36-37 ":" punctuation.separator.key.canon
+178:38-42 "2030" constant.numeric.integer.canon
+178:44-51 "display" variable.other.property.canon
+178:51-52 ":" punctuation.separator.key.canon
+178:53-72 "\"Monster Collected\"" string.quoted.double.canon
+178:74-79 "param" variable.other.property.canon
+178:79-80 ":" punctuation.separator.key.canon
+179:2-26 "PROGRESSION_COLLECT_ITEM" constant.other.canon
+179:29-33 "code" variable.other.property.canon
+179:33-34 ":" punctuation.separator.key.canon
+179:35-39 "2031" constant.numeric.integer.canon
+179:41-48 "display" variable.other.property.canon
+179:48-49 ":" punctuation.separator.key.canon
+179:50-66 "\"Item Collected\"" string.quoted.double.canon
+179:68-73 "param" variable.other.property.canon
+179:73-74 ":" punctuation.separator.key.canon
+180:2-24 "PROGRESSION_CARD_DRAWN" constant.other.canon
+180:27-31 "code" variable.other.property.canon
+180:31-32 ":" punctuation.separator.key.canon
+180:33-37 "2090" constant.numeric.integer.canon
+180:39-46 "display" variable.other.property.canon
+180:46-47 ":" punctuation.separator.key.canon
+180:48-61 "\"Cards Drawn\"" string.quoted.double.canon
+180:63-67 "flag" variable.other.property.canon
+180:67-68 ":" punctuation.separator.key.canon
+180:69-88 "\"__CARD_COLLECTION\"" string.quoted.double.canon
+181:2-26 "CONTENT_COMPLETE_DUNGEON" constant.other.canon
+181:29-33 "code" variable.other.property.canon
+181:33-34 ":" punctuation.separator.key.canon
+181:35-39 "4000" constant.numeric.integer.canon
+181:41-48 "display" variable.other.property.canon
+181:48-49 ":" punctuation.separator.key.canon
+181:50-65 "\"Dungeon Clear\"" string.quoted.double.canon
+181:67-72 "param" variable.other.property.canon
+181:72-73 ":" punctuation.separator.key.canon
+182:2-34 "CONTENT_COMPLETE_ADVENTURE_QUEST" constant.other.canon
+182:37-41 "code" variable.other.property.canon
+182:41-42 ":" punctuation.separator.key.canon
+182:43-47 "4010" constant.numeric.integer.canon
+182:49-56 "display" variable.other.property.canon
+182:56-57 ":" punctuation.separator.key.canon
+182:58-75 "\"Adventure Quest\"" string.quoted.double.canon
+182:77-82 "param" variable.other.property.canon
+182:82-83 ":" punctuation.separator.key.canon
+183:2-26 "CONTENT_WHEEL_OF_FORTUNE" constant.other.canon
+183:29-33 "code" variable.other.property.canon
+183:33-34 ":" punctuation.separator.key.canon
+183:35-39 "4050" constant.numeric.integer.canon
+183:41-48 "display" variable.other.property.canon
+183:48-49 ":" punctuation.separator.key.canon
+183:50-68 "\"Wheel of Fortune\"" string.quoted.double.canon
+184:2-29 "CONTENT_LOTTERY_BUY_TICKETS" constant.other.canon
+184:32-36 "code" variable.other.property.canon
+184:36-37 ":" punctuation.separator.key.canon
+184:38-42 "4080" constant.numeric.integer.canon
+184:44-51 "display" variable.other.property.canon
+184:51-52 ":" punctuation.separator.key.canon
+184:53-70 "\"Lottery Tickets\"" string.quoted.double.canon
+185:2-15 "ITEMS_CRAFTED" constant.other.canon
+185:18-22 "code" variable.other.property.canon
+185:22-23 ":" punctuation.separator.key.canon
+185:24-28 "5000" constant.numeric.integer.canon
+185:30-37 "display" variable.other.property.canon
+185:37-38 ":" punctuation.separator.key.canon
+185:39-53 "\"Item Crafted\"" string.quoted.double.canon
+185:55-60 "param" variable.other.property.canon
+185:60-61 ":" punctuation.separator.key.canon
+186:2-16 "ITEMS_RECYCLED" constant.other.canon
+186:19-23 "code" variable.other.property.canon
+186:23-24 ":" punctuation.separator.key.canon
+186:25-29 "5001" constant.numeric.integer.canon
+186:31-38 "display" variable.other.property.canon
+186:38-39 ":" punctuation.separator.key.canon
+186:40-55 "\"Item Recycled\"" string.quoted.double.canon
+186:57-62 "param" variable.other.property.canon
+186:62-63 ":" punctuation.separator.key.canon
+187:2-23 "ITEMS_PERFORM_UPGRADE" constant.other.canon
+187:26-30 "code" variable.other.property.canon
+187:30-31 ":" punctuation.separator.key.canon
+187:32-36 "5010" constant.numeric.integer.canon
+187:38-45 "display" variable.other.property.canon
+187:45-46 ":" punctuation.separator.key.canon
+187:47-61 "\"Item Upgrade\"" string.quoted.double.canon
+187:63-68 "param" variable.other.property.canon
+187:68-69 ":" punctuation.separator.key.canon
+188:2-22 "MISC_ACTIVE_PLAYTIME" constant.other.canon
+188:25-29 "code" variable.other.property.canon
+188:29-30 ":" punctuation.separator.key.canon
+188:31-35 "8000" constant.numeric.integer.canon
+188:37-44 "display" variable.other.property.canon
+188:44-45 ":" punctuation.separator.key.canon
+188:46-63 "\"Active Playtime\"" string.quoted.double.canon
+189:2-21 "MISC_STATS_SNAPSHOT" constant.other.canon
+189:24-28 "code" variable.other.property.canon
+189:28-29 ":" punctuation.separator.key.canon
+189:30-34 "8100" constant.numeric.integer.canon
+189:36-43 "display" variable.other.property.canon
+189:43-44 ":" punctuation.separator.key.canon
+189:45-61 "\"Stats Snapshot\"" string.quoted.double.canon
+189:63-68 "param" variable.other.property.canon
+189:68-69 ":" punctuation.separator.key.canon
+190:2-54 "// ... the other 130 entries of Vocab/eventType.json" comment.line.double-slash.canon
+193:0-4 "view" keyword.other.canon
+193:5-14 "EventType" entity.name.type.canon
+194:8-9 "\"" string.quoted.double.canon
+194:9-10 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+194:10-17 "display" string.quoted.double.canon meta.interpolation.canon
+194:17-18 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+194:18-19 "\"" string.quoted.double.canon
+195:11-12 "\"" string.quoted.double.canon
+195:12-13 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+195:13-15 "id" string.quoted.double.canon meta.interpolation.canon
+195:15-16 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+195:16-17 "\"" string.quoted.double.canon
+198:17-19 "80" constant.numeric.integer.canon
+198:27-30 "130" constant.numeric.integer.canon
+198:37-40 "180" constant.numeric.integer.canon
+201:0-84 "// The C++ side keeps its EVENT_LIST x-macro and EventParamHint table, now generated" comment.line.double-slash.canon
+202:0-84 "// from this one table, so the drift check between them has nothing left to compare." comment.line.double-slash.canon
+203:0-69 "// Items stay out of it: the server still loads propItem.json itself." comment.line.double-slash.canon
+204:0-4 "emit" keyword.other.canon
+205:2-5 "out" variable.other.property.canon
+205:5-6 ":" punctuation.separator.key.canon
+205:7-32 "\"@source/Generated/vocab\"" string.quoted.double.canon
+206:2-11 "namespace" variable.other.property.canon
+206:11-12 ":" punctuation.separator.key.canon
+206:13-25 "\"sov::vocab\"" string.quoted.double.canon
+207:2-6 "mode" variable.other.property.canon
+207:6-7 ":" punctuation.separator.key.canon
+208:2-8 "values" variable.other.property.canon
+208:8-9 ":" punctuation.separator.key.canon
+210:0-4 "emit" keyword.other.canon
+210:5-9 "view" keyword.other.canon
+210:12-15 "out" variable.other.property.canon
+210:15-16 ":" punctuation.separator.key.canon
+210:17-45 "\"@generated/vocab.view.json\"" string.quoted.double.canon

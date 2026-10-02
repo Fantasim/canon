@@ -1,0 +1,121 @@
+1:0-73 "// French for the items' studio texts. Keys are paths into item.canon and" comment.line.double-slash.canon
+2:0-31 "// item.view.canon (SPEC §17)." comment.line.double-slash.canon
+3:0-7 "package" keyword.other.canon
+3:8-18 "game.items" entity.name.namespace.canon
+4:0-11 "translation" keyword.other.canon
+6:0-4 "Item" entity.name.type.canon
+6:4-5 "." punctuation.accessor.canon
+6:5-13 "singular" variable.other.property.canon
+6:14-24 "\"un objet\"" string.quoted.double.canon
+7:0-4 "Item" entity.name.type.canon
+7:4-5 "." punctuation.accessor.canon
+7:5-10 "group" variable.other.property.canon
+7:10-11 "." punctuation.accessor.canon
+7:11-19 "identity" variable.other.property.canon
+7:20-31 "\"Identité\"" string.quoted.double.canon
+8:0-4 "Item" entity.name.type.canon
+8:4-5 "." punctuation.accessor.canon
+8:5-10 "group" variable.other.property.canon
+8:10-11 "." punctuation.accessor.canon
+8:11-17 "combat" variable.other.property.canon
+8:18-26 "\"Combat\"" string.quoted.double.canon
+9:0-4 "Item" entity.name.type.canon
+9:4-5 "." punctuation.accessor.canon
+9:5-10 "group" variable.other.property.canon
+9:10-11 "." punctuation.accessor.canon
+9:11-15 "shop" variable.other.property.canon
+9:16-26 "\"Boutique\"" string.quoted.double.canon
+10:0-4 "Item" entity.name.type.canon
+10:4-5 "." punctuation.accessor.canon
+10:5-10 "group" variable.other.property.canon
+10:10-11 "." punctuation.accessor.canon
+10:11-17 "legacy" variable.other.property.canon
+10:18-36 "\"Champs hérités\"" string.quoted.double.canon
+11:0-4 "Item" entity.name.type.canon
+11:4-5 "." punctuation.accessor.canon
+11:5-12 "nameKey" variable.other.property.canon
+11:13-26 "\"Clé du nom\"" string.quoted.double.canon
+12:0-4 "Item" entity.name.type.canon
+12:4-5 "." punctuation.accessor.canon
+12:5-9 "icon" variable.other.property.canon
+12:10-18 "\"Icône\"" string.quoted.double.canon
+13:0-4 "Item" entity.name.type.canon
+13:4-5 "." punctuation.accessor.canon
+13:5-9 "cost" variable.other.property.canon
+13:10-16 "\"Prix\"" string.quoted.double.canon
+14:0-4 "Item" entity.name.type.canon
+14:4-5 "." punctuation.accessor.canon
+14:5-10 "level" variable.other.property.canon
+14:11-19 "\"Niveau\"" string.quoted.double.canon
+15:0-4 "Item" entity.name.type.canon
+15:4-5 "." punctuation.accessor.canon
+15:5-11 "rarity" variable.other.property.canon
+15:12-21 "\"Rareté\"" string.quoted.double.canon
+16:0-4 "Item" entity.name.type.canon
+16:4-5 "." punctuation.accessor.canon
+16:5-13 "stackMax" variable.other.property.canon
+16:14-34 "\"Quantité par case\"" string.quoted.double.canon
+17:0-4 "Item" entity.name.type.canon
+17:4-5 "." punctuation.accessor.canon
+17:5-9 "kind" variable.other.property.canon
+17:10-16 "\"Type\"" string.quoted.double.canon
+19:0-8 "ItemKind" entity.name.type.canon
+19:9-19 "IK1_WEAPON" constant.other.canon
+19:20-26 "\"Arme\"" string.quoted.double.canon
+20:0-8 "ItemKind" entity.name.type.canon
+20:9-20 "IK1_GENERAL" constant.other.canon
+20:21-38 "\"Objet général\"" string.quoted.double.canon
+21:0-8 "ItemKind" entity.name.type.canon
+21:9-19 "IK1_WEAPON" constant.other.canon
+21:19-20 "." punctuation.accessor.canon
+21:20-29 "attackMin" variable.other.property.canon
+21:30-47 "\"Attaque minimum\"" string.quoted.double.canon
+22:0-8 "ItemKind" entity.name.type.canon
+22:9-19 "IK1_WEAPON" constant.other.canon
+22:19-20 "." punctuation.accessor.canon
+22:20-29 "attackMax" variable.other.property.canon
+22:30-47 "\"Attaque maximum\"" string.quoted.double.canon
+23:0-8 "ItemKind" entity.name.type.canon
+23:9-19 "IK1_WEAPON" constant.other.canon
+23:19-20 "." punctuation.accessor.canon
+23:20-31 "attackSpeed" variable.other.property.canon
+23:32-51 "\"Vitesse d'attaque\"" string.quoted.double.canon
+24:0-8 "ItemKind" entity.name.type.canon
+24:9-19 "IK1_WEAPON" constant.other.canon
+24:19-20 "." punctuation.accessor.canon
+24:20-31 "attackRange" variable.other.property.canon
+24:32-41 "\"Portée\"" string.quoted.double.canon
+25:0-8 "ItemKind" entity.name.type.canon
+25:9-19 "IK1_WEAPON" constant.other.canon
+25:19-20 "." punctuation.accessor.canon
+25:20-30 "weaponType" variable.other.property.canon
+25:31-52 "\"Famille de dégâts\"" string.quoted.double.canon
+26:0-8 "ItemKind" entity.name.type.canon
+26:9-19 "IK1_WEAPON" constant.other.canon
+26:19-20 "." punctuation.accessor.canon
+26:20-26 "handed" variable.other.property.canon
+26:27-42 "\"Prise en main\"" string.quoted.double.canon
+27:0-8 "ItemKind" entity.name.type.canon
+27:9-19 "IK1_WEAPON" constant.other.canon
+27:19-20 "." punctuation.accessor.canon
+27:20-25 "stats" variable.other.property.canon
+27:26-42 "\"Bonus de stats\"" string.quoted.double.canon
+28:0-8 "ItemKind" entity.name.type.canon
+28:9-19 "IK1_WEAPON" constant.other.canon
+28:19-20 "." punctuation.accessor.canon
+28:20-24 "show" variable.other.property.canon
+28:24-25 "." punctuation.accessor.canon
+28:25-27 "_0" variable.other.property.canon
+28:28-40 "\"Coup moyen\"" string.quoted.double.canon
+30:0-11 "GeneralKind" entity.name.type.canon
+30:12-24 "IK2_MATERIAL" constant.other.canon
+30:25-36 "\"Matériau\"" string.quoted.double.canon
+31:0-11 "GeneralKind" entity.name.type.canon
+31:12-20 "IK2_FOOD" constant.other.canon
+31:21-33 "\"Nourriture\"" string.quoted.double.canon
+33:0-6 "Handed" entity.name.type.canon
+33:7-13 "HD_ONE" constant.other.canon
+33:14-24 "\"Une main\"" string.quoted.double.canon
+34:0-6 "Handed" entity.name.type.canon
+34:7-13 "HD_TWO" constant.other.canon
+34:14-26 "\"Deux mains\"" string.quoted.double.canon

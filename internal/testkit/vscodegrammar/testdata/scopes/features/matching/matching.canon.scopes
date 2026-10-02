@@ -1,0 +1,153 @@
+1:0-89 "/// Value-level `match` (SPEC §7.8): over a variant, binding each case's value, and over" comment.line.documentation.canon
+2:0-87 "/// an enum, with several patterns per arm and `_`. Every case must be covered (E3601)." comment.line.documentation.canon
+3:0-7 "package" keyword.other.canon
+3:8-25 "features.matching" entity.name.namespace.canon
+5:0-31 "/// What a system mail carries." comment.line.documentation.canon
+6:0-7 "variant" storage.type.canon
+6:8-18 "Attachment" entity.name.type.canon
+6:19-20 "@" meta.annotation.canon punctuation.definition.annotation.canon
+6:20-24 "json" meta.annotation.canon entity.name.function.decorator.canon
+6:24-25 "(" meta.annotation.canon
+6:25-28 "tag" meta.annotation.canon variable.parameter.canon
+6:28-29 ":" meta.annotation.canon punctuation.separator.key.canon
+6:29-30 " " meta.annotation.canon
+6:30-36 "\"type\"" meta.annotation.canon string.quoted.double.canon
+6:36-37 ")" meta.annotation.canon
+7:0-12 "  /// Items." comment.line.documentation.canon
+9:0-24 "    /// The item define." comment.line.documentation.canon
+10:4-10 "define" variable.other.property.canon
+10:10-11 ":" punctuation.separator.key.canon
+10:12-18 "String" entity.name.type.canon
+10:19-25 "/^II_/" string.regexp.canon
+11:0-17 "    /// How many." comment.line.documentation.canon
+12:4-9 "count" variable.other.property.canon
+12:9-10 ":" punctuation.separator.key.canon
+12:11-14 "Int" entity.name.type.canon
+12:15-16 "1" constant.numeric.integer.canon
+12:16-18 ".." keyword.operator.canon
+12:20-21 "=" keyword.operator.canon
+12:22-23 "1" constant.numeric.integer.canon
+14:0-12 "  /// Penya." comment.line.documentation.canon
+16:0-17 "    /// How much." comment.line.documentation.canon
+17:4-10 "amount" variable.other.property.canon
+17:10-11 ":" punctuation.separator.key.canon
+17:12-15 "Int" entity.name.type.canon
+17:16-17 "1" constant.numeric.integer.canon
+17:17-19 ".." keyword.operator.canon
+19:0-37 "  /// A letter with nothing attached." comment.line.documentation.canon
+23:0-24 "/// When a mail is sent." comment.line.documentation.canon
+24:0-4 "enum" storage.type.canon
+24:5-11 "Season" entity.name.type.canon
+26:0-49 "/// A mail the server sends to every player once." comment.line.documentation.canon
+27:0-6 "record" storage.type.canon
+27:7-11 "Mail" entity.name.type.canon
+28:0-27 "  /// Title in the mailbox." comment.line.documentation.canon
+29:2-9 "subject" variable.other.property.canon
+29:9-10 ":" punctuation.separator.key.canon
+29:11-17 "String" entity.name.type.canon
+29:18-19 "1" constant.numeric.integer.canon
+29:19-21 ".." keyword.operator.canon
+30:0-22 "  /// When it is sent." comment.line.documentation.canon
+31:2-8 "season" variable.other.property.canon
+31:8-9 ":" punctuation.separator.key.canon
+31:10-16 "Season" entity.name.type.canon
+32:0-22 "  /// What it carries." comment.line.documentation.canon
+33:2-12 "attachment" variable.other.property.canon
+33:12-13 ":" punctuation.separator.key.canon
+33:14-24 "Attachment" entity.name.type.canon
+33:25-26 "=" keyword.operator.canon
+35:0-80 "  /// The number shown next to the mail: a count for items, an amount for penya." comment.line.documentation.canon
+36:0-73 "  /// No runtime input, so `canon build` computes it and ships the value." comment.line.documentation.canon
+37:2-8 "export" storage.modifier.canon
+37:9-11 "fn" storage.type.function.canon
+37:12-20 "quantity" entity.name.function.canon
+37:21-25 "self" variable.language.canon
+37:27-29 "->" keyword.operator.canon
+37:30-33 "Int" entity.name.type.canon
+38:4-10 "return" keyword.control.canon
+38:11-16 "match" keyword.control.canon
+39:14-16 "=>" keyword.operator.canon
+39:18-19 "." punctuation.accessor.canon
+39:19-24 "count" variable.other.property.canon
+40:14-16 "=>" keyword.operator.canon
+40:18-19 "." punctuation.accessor.canon
+40:19-25 "amount" variable.other.property.canon
+41:14-16 "=>" keyword.operator.canon
+41:17-18 "0" constant.numeric.integer.canon
+45:2-4 "fn" storage.type.function.canon
+45:5-14 "isHoliday" entity.name.function.canon
+45:15-19 "self" variable.language.canon
+45:21-23 "->" keyword.operator.canon
+45:24-28 "Bool" entity.name.type.canon
+46:4-10 "return" keyword.control.canon
+46:11-16 "match" keyword.control.canon
+47:21-23 "=>" keyword.operator.canon
+47:24-28 "true" constant.language.canon
+48:8-10 "=>" keyword.operator.canon
+48:11-16 "false" constant.language.canon
+52:2-6 "warn" keyword.other.canon
+52:7-10 "not" keyword.operator.word.canon
+52:23-25 "or" keyword.operator.word.canon
+52:37-39 "is" keyword.operator.word.canon
+52:45-49 "else" keyword.control.canon
+52:50-88 "\"a holiday mail usually carries penya\"" string.quoted.double.canon
+55:0-23 "/// The seasonal mails." comment.line.documentation.canon
+56:0-3 "let" storage.type.canon
+56:4-9 "mails" variable.other.property.canon
+56:9-10 ":" punctuation.separator.key.canon
+56:12-16 "Mail" entity.name.type.canon
+56:18-19 "=" keyword.operator.canon
+58:4-11 "subject" variable.other.property.canon
+58:11-12 ":" punctuation.separator.key.canon
+58:13-30 "\"Spring cleaning\"" string.quoted.double.canon
+59:4-10 "season" variable.other.property.canon
+59:10-11 ":" punctuation.separator.key.canon
+60:4-14 "attachment" variable.other.property.canon
+60:14-15 ":" punctuation.separator.key.canon
+60:23-29 "define" variable.other.property.canon
+60:29-30 ":" punctuation.separator.key.canon
+60:31-54 "\"II_GEN_FOO_INS_HOTDOG\"" string.quoted.double.canon
+60:56-61 "count" variable.other.property.canon
+60:61-62 ":" punctuation.separator.key.canon
+60:63-64 "5" constant.numeric.integer.canon
+62:4-11 "subject" variable.other.property.canon
+62:11-12 ":" punctuation.separator.key.canon
+62:13-30 "\"Summer festival\"" string.quoted.double.canon
+62:32-38 "season" variable.other.property.canon
+62:38-39 ":" punctuation.separator.key.canon
+62:48-58 "attachment" variable.other.property.canon
+62:58-59 ":" punctuation.separator.key.canon
+62:67-73 "amount" variable.other.property.canon
+62:73-74 ":" punctuation.separator.key.canon
+62:75-82 "100_000" constant.numeric.integer.canon
+63:4-11 "subject" variable.other.property.canon
+63:11-12 ":" punctuation.separator.key.canon
+63:13-26 "\"Autumn news\"" string.quoted.double.canon
+63:28-34 "season" variable.other.property.canon
+63:34-35 ":" punctuation.separator.key.canon
+66:0-4 "test" keyword.other.canon
+66:5-38 "\"quantity follows the attachment\"" string.quoted.double.canon
+67:2-8 "expect" keyword.other.canon
+67:15-16 "0" constant.numeric.integer.canon
+67:17-18 "." punctuation.accessor.canon
+67:18-26 "quantity" variable.other.property.canon
+67:29-31 "==" keyword.operator.canon
+67:32-33 "5" constant.numeric.integer.canon
+68:2-8 "expect" keyword.other.canon
+68:15-16 "1" constant.numeric.integer.canon
+68:17-18 "." punctuation.accessor.canon
+68:18-26 "quantity" variable.other.property.canon
+68:29-31 "==" keyword.operator.canon
+68:32-39 "100_000" constant.numeric.integer.canon
+69:2-8 "expect" keyword.other.canon
+69:15-16 "2" constant.numeric.integer.canon
+69:17-18 "." punctuation.accessor.canon
+69:18-26 "quantity" variable.other.property.canon
+69:29-31 "==" keyword.operator.canon
+69:32-33 "0" constant.numeric.integer.canon
+72:0-4 "emit" keyword.other.canon
+72:12-15 "out" variable.other.property.canon
+72:15-16 ":" punctuation.separator.key.canon
+72:17-33 "\"out/mails.json\"" string.quoted.double.canon
+72:35-41 "values" variable.other.property.canon
+72:41-42 ":" punctuation.separator.key.canon

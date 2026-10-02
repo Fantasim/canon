@@ -1,0 +1,460 @@
+1:0-66 "/// The four other Lua rules of Resource/Schema/rules/, rewritten." comment.line.documentation.canon
+2:0-3 "///" comment.line.documentation.canon
+3:0-83 "/// Each record below is trimmed to the fields its rule reads; the real types would" comment.line.documentation.canon
+4:0-85 "/// carry every field of their file, be public and documented. Here they are `local`:" comment.line.documentation.canon
+5:0-87 "/// the point is the rules. In Canon they are ordinary `check`s, next to the data, with" comment.line.documentation.canon
+6:0-86 "/// no keyword vocabulary to argue about (\"a keyword with one user, clause 2 refuses\")" comment.line.documentation.canon
+7:0-23 "/// and no type guards." comment.line.documentation.canon
+8:0-3 "///" comment.line.documentation.canon
+9:0-83 "/// Since ADR-0009 (resourcestudio, 2026-09-19) the Lua files are these rules' only" comment.line.documentation.canon
+10:0-87 "/// implementation: Resource Studio's Go copies (internal/rules/) were deleted, and the" comment.line.documentation.canon
+11:0-89 "/// studio asks validate.py. Here the rules also run on the files themselves: each record" comment.line.documentation.canon
+12:0-67 "/// is loaded below, so `canon check` reports what the Lua reports." comment.line.documentation.canon
+13:0-7 "package" keyword.other.canon
+13:8-22 "resource.rules" entity.name.namespace.canon
+15:0-5 "local" storage.modifier.canon
+15:6-9 "let" storage.type.canon
+15:15-16 "=" keyword.operator.canon
+15:17-21 "load" keyword.other.canon
+15:21-22 "." punctuation.accessor.canon
+15:22-29 "defines" variable.other.property.canon
+15:30-67 "\"@resource/Server/Define/defineJob.h\"" string.quoted.double.canon
+15:69-75 "prefix" variable.other.property.canon
+15:75-76 ":" punctuation.separator.key.canon
+15:77-83 "\"JOB_\"" string.quoted.double.canon
+17:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+18:0-41 "// guildtalenttree.cycle  (Lua: 54 lines)" comment.line.double-slash.canon
+19:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+20:0-87 "// The Lua walks the parent chain and first filters \"broken\" nodes (no id, self-parent," comment.line.double-slash.canon
+21:0-88 "// dangling parent) so they are not ALSO reported as cycles. Here a dangling parent is a" comment.line.double-slash.canon
+22:0-78 "// type error before any check runs, and a self-parent is a cycle of length 1." comment.line.double-slash.canon
+24:0-5 "local" storage.modifier.canon
+24:6-12 "record" storage.type.canon
+24:13-23 "TalentNode" entity.name.type.canon
+25:2-4 "id" variable.other.property.canon
+25:4-5 ":" punctuation.separator.key.canon
+25:6-9 "Int" entity.name.type.canon
+25:10-11 "0" constant.numeric.integer.canon
+25:11-13 ".." keyword.operator.canon
+26:0-34 "  /// -1 in the file means \"root\"." comment.line.documentation.canon
+27:2-8 "parent" variable.other.property.canon
+27:8-9 ":" punctuation.separator.key.canon
+27:10-13 "ref" storage.modifier.canon
+27:14-24 "TalentNode" entity.name.type.canon
+27:24-25 "?" keyword.operator.canon
+27:26-27 "@" meta.annotation.canon punctuation.definition.annotation.canon
+27:27-31 "json" meta.annotation.canon entity.name.function.decorator.canon
+27:31-32 "(" meta.annotation.canon
+27:32-36 "none" meta.annotation.canon variable.parameter.canon
+27:36-37 ":" meta.annotation.canon punctuation.separator.key.canon
+27:37-38 " " meta.annotation.canon
+27:38-39 "-" meta.annotation.canon keyword.operator.canon
+27:39-40 "1" meta.annotation.canon constant.numeric.integer.canon
+27:40-41 ")" meta.annotation.canon
+30:0-5 "local" storage.modifier.canon
+30:6-12 "record" storage.type.canon
+30:13-28 "GuildTalentTree" entity.name.type.canon
+31:2-7 "nodes" variable.other.property.canon
+31:7-8 ":" punctuation.separator.key.canon
+31:10-20 "TalentNode" entity.name.type.canon
+33:2-7 "check" keyword.other.canon
+33:13-14 "." punctuation.accessor.canon
+33:14-17 "any" variable.other.property.canon
+33:20-22 "=>" keyword.operator.canon
+33:24-25 "." punctuation.accessor.canon
+33:25-31 "parent" variable.other.property.canon
+33:32-34 "==" keyword.operator.canon
+33:35-39 "none" constant.language.canon
+33:41-45 "else" keyword.control.canon
+33:46-68 "\"the tree has no root\"" string.quoted.double.canon
+35:2-7 "check" keyword.other.canon
+36:4-7 "for" keyword.control.canon
+36:10-12 "in" keyword.operator.word.canon
+36:27-31 "next" variable.other.property.canon
+36:31-32 ":" punctuation.separator.key.canon
+36:33-34 "." punctuation.accessor.canon
+36:34-40 "parent" variable.other.property.canon
+38:9-10 "." punctuation.accessor.canon
+38:10-16 "parent" variable.other.property.canon
+39:8-14 "\"node " string.quoted.double.canon
+39:14-15 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+39:15-16 "n" string.quoted.double.canon meta.interpolation.canon
+39:16-17 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+39:17-19 "id" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+39:19-20 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+39:20-95 " belongs to a parent cycle: the branch would be permanently locked in game\"" string.quoted.double.canon
+45:0-90 "// `partial`: the rule reads only `id` and `parent`; the nodes' other keys (buffId, price," comment.line.double-slash.canon
+46:0-75 "// minGuildLevel, x, y) belong to the talent-tree domain, not to this rule." comment.line.double-slash.canon
+47:0-5 "local" storage.modifier.canon
+47:6-9 "let" storage.type.canon
+47:10-25 "guildTalentTree" variable.other.property.canon
+47:25-26 ":" punctuation.separator.key.canon
+47:27-42 "GuildTalentTree" entity.name.type.canon
+47:43-44 "=" keyword.operator.canon
+48:2-6 "load" keyword.other.canon
+48:7-53 "\"@resource/Server/System/GuildTalentTree.json\"" string.quoted.double.canon
+48:55-62 "partial" variable.other.property.canon
+48:62-63 ":" punctuation.separator.key.canon
+48:64-68 "true" constant.language.canon
+50:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+51:0-40 "// jobchange.set-parity  (Lua: 75 lines)" comment.line.double-slash.canon
+52:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+53:0-88 "// For the six categories JobChangeV4::ValidateSetIdParityGeneric compares, every set id" comment.line.double-slash.canon
+54:0-86 "// declared by ANY job must be declared by EVERY job. fashionSets is never read by the" comment.line.double-slash.canon
+55:0-30 "// loader and is not compared." comment.line.double-slash.canon
+57:0-5 "local" storage.modifier.canon
+57:6-12 "record" storage.type.canon
+57:13-19 "SetRow" entity.name.type.canon
+57:22-24 "id" variable.other.property.canon
+57:24-25 ":" punctuation.separator.key.canon
+57:26-29 "Int" entity.name.type.canon
+59:0-5 "local" storage.modifier.canon
+59:6-12 "record" storage.type.canon
+59:13-20 "JobSets" entity.name.type.canon
+60:2-12 "weaponSets" variable.other.property.canon
+60:12-13 ":" punctuation.separator.key.canon
+60:15-21 "SetRow" entity.name.type.canon
+61:2-11 "armorSets" variable.other.property.canon
+61:11-12 ":" punctuation.separator.key.canon
+61:14-20 "SetRow" entity.name.type.canon
+62:2-11 "jewelSets" variable.other.property.canon
+62:11-12 ":" punctuation.separator.key.canon
+62:14-20 "SetRow" entity.name.type.canon
+63:2-16 "weaponCardSets" variable.other.property.canon
+63:16-17 ":" punctuation.separator.key.canon
+63:19-25 "SetRow" entity.name.type.canon
+64:2-15 "armorCardSets" variable.other.property.canon
+64:15-16 ":" punctuation.separator.key.canon
+64:18-24 "SetRow" entity.name.type.canon
+65:2-17 "ultimateGemSets" variable.other.property.canon
+65:17-18 ":" punctuation.separator.key.canon
+65:20-26 "SetRow" entity.name.type.canon
+66:2-13 "fashionSets" variable.other.property.canon
+66:13-14 ":" punctuation.separator.key.canon
+66:16-22 "SetRow" entity.name.type.canon
+68:0-87 "  /// The categories the loader compares, in its order (JobChangeV4Config.cpp:530-535)." comment.line.documentation.canon
+69:2-4 "fn" storage.type.function.canon
+69:5-13 "compared" entity.name.function.canon
+69:14-18 "self" variable.language.canon
+69:20-22 "->" keyword.operator.canon
+69:24-30 "String" variable.other.property.canon
+69:30-31 ":" punctuation.separator.key.canon
+69:33-39 "SetRow" entity.name.type.canon
+70:4-10 "return" keyword.control.canon
+71:6-18 "\"weaponSets\"" string.quoted.double.canon
+72:6-17 "\"armorSets\"" string.quoted.double.canon
+73:6-17 "\"jewelSets\"" string.quoted.double.canon
+74:6-22 "\"weaponCardSets\"" string.quoted.double.canon
+75:6-21 "\"armorCardSets\"" string.quoted.double.canon
+76:6-23 "\"ultimateGemSets\"" string.quoted.double.canon
+81:0-5 "local" storage.modifier.canon
+81:6-12 "record" storage.type.canon
+81:13-22 "JobChange" entity.name.type.canon
+82:2-6 "jobs" variable.other.property.canon
+82:6-7 ":" punctuation.separator.key.canon
+82:9-15 "String" variable.other.property.canon
+82:15-16 ":" punctuation.separator.key.canon
+82:17-24 "JobSets" entity.name.type.canon
+84:2-7 "check" keyword.other.canon
+85:4-76 "// Every job lists the same categories, so the first one names them all." comment.line.double-slash.canon
+86:4-7 "let" storage.type.canon
+86:15-16 "=" keyword.operator.canon
+86:21-22 "." punctuation.accessor.canon
+86:22-28 "values" variable.other.property.canon
+86:30-31 "." punctuation.accessor.canon
+86:31-36 "first" variable.other.property.canon
+87:4-6 "if" keyword.control.canon
+87:14-16 "!=" keyword.operator.canon
+87:17-21 "none" constant.language.canon
+88:6-9 "for" keyword.control.canon
+88:19-21 "in" keyword.operator.word.canon
+88:28-29 "." punctuation.accessor.canon
+88:29-37 "compared" variable.other.property.canon
+88:39-40 "." punctuation.accessor.canon
+88:40-44 "keys" variable.other.property.canon
+89:8-11 "let" storage.type.canon
+89:18-19 "=" keyword.operator.canon
+89:22-26 "name" variable.other.property.canon
+89:26-27 ":" punctuation.separator.key.canon
+89:31-32 "." punctuation.accessor.canon
+89:32-40 "compared" variable.other.property.canon
+89:52-53 "." punctuation.accessor.canon
+89:53-56 "map" variable.other.property.canon
+89:57-58 "." punctuation.accessor.canon
+89:58-60 "id" variable.other.property.canon
+89:62-65 "for" keyword.control.canon
+89:76-78 "in" keyword.operator.word.canon
+90:8-11 "for" keyword.control.canon
+90:15-17 "in" keyword.operator.word.canon
+90:23-24 "." punctuation.accessor.canon
+90:24-30 "values" variable.other.property.canon
+90:32-33 "." punctuation.accessor.canon
+90:33-40 "flatten" variable.other.property.canon
+90:42-43 "." punctuation.accessor.canon
+90:43-49 "unique" variable.other.property.canon
+90:51-52 "." punctuation.accessor.canon
+90:52-58 "sortBy" variable.other.property.canon
+90:61-63 "=>" keyword.operator.canon
+91:10-13 "let" storage.type.canon
+91:22-23 "=" keyword.operator.canon
+91:30-33 "for" keyword.control.canon
+91:44-46 "in" keyword.operator.word.canon
+91:53-55 "if" keyword.control.canon
+91:56-59 "not" keyword.operator.word.canon
+91:63-64 "." punctuation.accessor.canon
+91:64-72 "contains" variable.other.property.canon
+92:10-12 "if" keyword.control.canon
+92:13-16 "not" keyword.operator.word.canon
+92:24-25 "." punctuation.accessor.canon
+92:25-32 "isEmpty" variable.other.property.canon
+94:27-28 "0" constant.numeric.integer.canon
+94:30-31 "." punctuation.accessor.canon
+94:31-39 "compared" variable.other.property.canon
+95:14-15 "\"" string.quoted.double.canon
+95:15-16 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+95:16-24 "category" string.quoted.double.canon meta.interpolation.canon
+95:24-25 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+95:25-34 ": set id " string.quoted.double.canon
+95:34-35 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+95:35-37 "id" string.quoted.double.canon meta.interpolation.canon
+95:37-38 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+95:38-55 " is missing from " string.quoted.double.canon
+95:55-56 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+95:56-63 "missing" string.quoted.double.canon meta.interpolation.canon
+95:63-64 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+95:64-68 "join" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+95:68-69 "(" string.quoted.double.canon meta.interpolation.canon
+95:69-73 "\", \"" string.quoted.double.canon meta.interpolation.canon string.quoted.double.canon
+95:73-74 ")" string.quoted.double.canon meta.interpolation.canon
+95:74-75 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+95:75-78 "; \"" string.quoted.double.canon
+95:79-80 "+" keyword.operator.canon
+96:16-89 "\"the loader refuses the whole file until every job declares the same ids\"" string.quoted.double.canon
+105:0-5 "local" storage.modifier.canon
+105:6-9 "let" storage.type.canon
+105:10-19 "jobChange" variable.other.property.canon
+105:19-20 ":" punctuation.separator.key.canon
+105:21-30 "JobChange" entity.name.type.canon
+105:31-32 "=" keyword.operator.canon
+105:33-37 "load" keyword.other.canon
+105:38-80 "\"@resource/Server/System/JobChangeV4.json\"" string.quoted.double.canon
+105:82-89 "partial" variable.other.property.canon
+105:89-90 ":" punctuation.separator.key.canon
+105:91-95 "true" constant.language.canon
+107:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+108:0-47 "// skills.per-job-bucket-width  (Lua: 46 lines)" comment.line.double-slash.canon
+109:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+110:0-57 "// At most 40 non-common skills per job: the row width of" comment.line.double-slash.canon
+111:0-72 "// `ItemProp* m_aJobSkill[MAX_JOB][40]` (Engine/Core/Project/Project.h)." comment.line.double-slash.canon
+112:0-2 "//" comment.line.double-slash.canon
+113:0-83 "// The Lua had to group by the jobIndex *as written*, so \"JOB_MERCENARY\" and 1 were" comment.line.double-slash.canon
+114:0-86 "// counted apart (a known gap, covered by an assert in C++). Here jobIndex is a ref to" comment.line.double-slash.canon
+115:0-72 "// the define, so both spellings are the same value and the gap is gone." comment.line.double-slash.canon
+117:0-33 "/// The row width of m_aJobSkill." comment.line.documentation.canon
+118:0-5 "const" storage.type.canon
+118:6-21 "JOB_SKILL_SLOTS" constant.other.canon
+118:22-23 "=" keyword.operator.canon
+118:24-26 "40" constant.numeric.integer.canon
+120:0-5 "local" storage.modifier.canon
+120:6-9 "let" storage.type.canon
+120:19-20 "=" keyword.operator.canon
+120:21-25 "load" keyword.other.canon
+120:25-26 "." punctuation.accessor.canon
+120:26-33 "defines" variable.other.property.canon
+120:34-71 "\"@resource/Server/Define/defineJob.h\"" string.quoted.double.canon
+120:73-79 "prefix" variable.other.property.canon
+120:79-80 ":" punctuation.separator.key.canon
+120:81-89 "\"JTYPE_\"" string.quoted.double.canon
+122:0-5 "local" storage.modifier.canon
+122:6-12 "record" storage.type.canon
+122:13-18 "Skill" entity.name.type.canon
+123:2-10 "jobIndex" variable.other.property.canon
+123:10-11 ":" punctuation.separator.key.canon
+123:12-15 "ref" storage.modifier.canon
+124:2-6 "tier" variable.other.property.canon
+124:6-7 ":" punctuation.separator.key.canon
+124:8-11 "ref" storage.modifier.canon
+127:0-5 "local" storage.modifier.canon
+127:6-12 "record" storage.type.canon
+127:13-19 "Skills" entity.name.type.canon
+128:2-8 "skills" variable.other.property.canon
+128:8-9 ":" punctuation.separator.key.canon
+128:11-16 "Skill" entity.name.type.canon
+130:2-7 "check" keyword.other.canon
+131:4-7 "for" keyword.control.canon
+131:18-20 "in" keyword.operator.word.canon
+131:27-28 "." punctuation.accessor.canon
+131:28-34 "filter" variable.other.property.canon
+131:37-39 "=>" keyword.operator.canon
+131:41-42 "." punctuation.accessor.canon
+131:42-46 "tier" variable.other.property.canon
+131:47-49 "!=" keyword.operator.canon
+131:59-71 "JTYPE_COMMON" constant.other.canon
+131:72-73 "." punctuation.accessor.canon
+131:73-80 "groupBy" variable.other.property.canon
+131:81-82 "." punctuation.accessor.canon
+131:82-90 "jobIndex" variable.other.property.canon
+132:6-8 "if" keyword.control.canon
+132:13-14 "." punctuation.accessor.canon
+132:14-17 "len" variable.other.property.canon
+132:20-21 ">" keyword.operator.canon
+132:22-37 "JOB_SKILL_SLOTS" constant.other.canon
+134:15-30 "JOB_SKILL_SLOTS" constant.other.canon
+134:31-32 "." punctuation.accessor.canon
+134:32-40 "jobIndex" variable.other.property.canon
+135:10-11 "\"" string.quoted.double.canon
+135:11-12 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+135:12-16 "rows" string.quoted.double.canon meta.interpolation.canon
+135:16-17 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+135:17-20 "len" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+135:20-22 "()" string.quoted.double.canon meta.interpolation.canon
+135:22-23 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+135:23-38 " skills target " string.quoted.double.canon
+135:38-39 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+135:39-42 "job" string.quoted.double.canon meta.interpolation.canon
+135:42-43 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+135:43-45 "id" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+135:45-46 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+135:46-66 "; m_aJobSkill holds " string.quoted.double.canon
+135:66-67 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+135:67-82 "JOB_SKILL_SLOTS" string.quoted.double.canon meta.interpolation.canon constant.other.canon
+135:82-83 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+135:83-94 " per job, \"" string.quoted.double.canon
+135:95-96 "+" keyword.operator.canon
+136:12-50 "\"so the loader refuses the whole file\"" string.quoted.double.canon
+143:0-5 "local" storage.modifier.canon
+143:6-9 "let" storage.type.canon
+143:10-16 "skills" variable.other.property.canon
+143:16-17 ":" punctuation.separator.key.canon
+143:18-24 "Skills" entity.name.type.canon
+143:25-26 "=" keyword.operator.canon
+143:27-31 "load" keyword.other.canon
+143:32-68 "\"@resource/Server/Skill/skills.json\"" string.quoted.double.canon
+143:70-77 "partial" variable.other.property.canon
+143:77-78 ":" punctuation.separator.key.canon
+143:79-83 "true" constant.language.canon
+145:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+146:0-36 "// tower.totem-tier  (Lua: 55 lines)" comment.line.double-slash.canon
+147:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+148:0-83 "// A wave may carry totems only if the tier whose [lo, hi] floor range contains the" comment.line.double-slash.canon
+149:0-68 "// floor has `totems: true` (TowerConfig.cpp:265, Tower::ParseWave)." comment.line.double-slash.canon
+151:0-5 "local" storage.modifier.canon
+151:6-12 "record" storage.type.canon
+151:13-17 "Tier" entity.name.type.canon
+152:2-8 "floors" variable.other.property.canon
+152:8-9 ":" punctuation.separator.key.canon
+152:11-14 "Int" entity.name.type.canon
+152:15-16 "1" constant.numeric.integer.canon
+152:16-18 ".." keyword.operator.canon
+152:21-26 "where" keyword.control.canon
+152:29-30 "." punctuation.accessor.canon
+152:30-33 "len" variable.other.property.canon
+152:36-38 "==" keyword.operator.canon
+152:39-40 "2" constant.numeric.integer.canon
+152:41-44 "and" keyword.operator.word.canon
+152:48-49 "0" constant.numeric.integer.canon
+152:51-53 "<=" keyword.operator.canon
+152:57-58 "1" constant.numeric.integer.canon
+153:2-8 "totems" variable.other.property.canon
+153:8-9 ":" punctuation.separator.key.canon
+153:10-14 "Bool" entity.name.type.canon
+153:15-16 "=" keyword.operator.canon
+153:17-22 "false" constant.language.canon
+155:2-4 "fn" storage.type.function.canon
+155:5-11 "covers" entity.name.function.canon
+155:12-16 "self" variable.language.canon
+155:18-23 "floor" variable.other.property.canon
+155:23-24 ":" punctuation.separator.key.canon
+155:25-28 "Int" entity.name.type.canon
+155:30-32 "->" keyword.operator.canon
+155:33-37 "Bool" entity.name.type.canon
+155:40-46 "return" keyword.control.canon
+155:54-55 "0" constant.numeric.integer.canon
+155:57-59 "<=" keyword.operator.canon
+155:66-69 "and" keyword.operator.word.canon
+155:76-78 "<=" keyword.operator.canon
+155:86-87 "1" constant.numeric.integer.canon
+158:0-5 "local" storage.modifier.canon
+158:6-12 "record" storage.type.canon
+158:13-17 "Wave" entity.name.type.canon
+158:20-26 "totems" variable.other.property.canon
+158:26-27 ":" punctuation.separator.key.canon
+158:29-35 "String" entity.name.type.canon
+158:37-38 "=" keyword.operator.canon
+159:0-5 "local" storage.modifier.canon
+159:6-12 "record" storage.type.canon
+159:13-18 "Floor" entity.name.type.canon
+159:21-26 "floor" variable.other.property.canon
+159:26-27 ":" punctuation.separator.key.canon
+159:28-31 "Int" entity.name.type.canon
+159:32-33 "1" constant.numeric.integer.canon
+159:33-35 ".." keyword.operator.canon
+159:38-43 "waves" variable.other.property.canon
+159:43-44 ":" punctuation.separator.key.canon
+159:46-50 "Wave" entity.name.type.canon
+161:0-5 "local" storage.modifier.canon
+161:6-12 "record" storage.type.canon
+161:13-18 "Tower" entity.name.type.canon
+162:2-7 "tiers" variable.other.property.canon
+162:7-8 ":" punctuation.separator.key.canon
+162:10-14 "Tier" entity.name.type.canon
+163:2-8 "floors" variable.other.property.canon
+163:8-9 ":" punctuation.separator.key.canon
+163:11-16 "Floor" entity.name.type.canon
+164:2-13 "guildFloors" variable.other.property.canon
+164:13-14 ":" punctuation.separator.key.canon
+164:16-21 "Floor" entity.name.type.canon
+166:2-7 "check" keyword.other.canon
+167:4-7 "for" keyword.control.canon
+167:12-14 "in" keyword.operator.word.canon
+167:22-23 "+" keyword.operator.canon
+168:6-9 "let" storage.type.canon
+168:15-16 "=" keyword.operator.canon
+168:22-23 "." punctuation.accessor.canon
+168:23-28 "first" variable.other.property.canon
+168:31-33 "=>" keyword.operator.canon
+168:35-36 "." punctuation.accessor.canon
+168:36-42 "covers" variable.other.property.canon
+168:46-47 "." punctuation.accessor.canon
+168:47-52 "floor" variable.other.property.canon
+169:6-79 "// No covering tier at all is the coverage check's finding, not this one." comment.line.double-slash.canon
+170:6-69 "// `tier != none` narrows `tier` for the rest of the condition." comment.line.double-slash.canon
+171:6-8 "if" keyword.control.canon
+171:14-16 "!=" keyword.operator.canon
+171:17-21 "none" constant.language.canon
+171:22-25 "and" keyword.operator.word.canon
+171:26-29 "not" keyword.operator.word.canon
+171:34-35 "." punctuation.accessor.canon
+171:35-41 "totems" variable.other.property.canon
+172:8-11 "for" keyword.control.canon
+172:14-16 "in" keyword.operator.word.canon
+172:20-21 "." punctuation.accessor.canon
+172:21-26 "waves" variable.other.property.canon
+173:10-12 "if" keyword.control.canon
+173:13-16 "not" keyword.operator.word.canon
+173:18-19 "." punctuation.accessor.canon
+173:19-25 "totems" variable.other.property.canon
+173:25-26 "." punctuation.accessor.canon
+173:26-33 "isEmpty" variable.other.property.canon
+175:15-16 "." punctuation.accessor.canon
+175:16-22 "totems" variable.other.property.canon
+176:14-21 "\"floor " string.quoted.double.canon
+176:21-22 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+176:22-25 "row" string.quoted.double.canon meta.interpolation.canon
+176:25-26 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+176:26-31 "floor" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+176:31-32 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+176:32-97 ": totems are configured but the covering tier has totems=false; \"" string.quoted.double.canon
+176:98-99 "+" keyword.operator.canon
+177:16-51 "\"the loader refuses the whole file\"" string.quoted.double.canon
+186:0-5 "local" storage.modifier.canon
+186:6-9 "let" storage.type.canon
+186:10-15 "tower" variable.other.property.canon
+186:15-16 ":" punctuation.separator.key.canon
+186:17-22 "Tower" entity.name.type.canon
+186:23-24 "=" keyword.operator.canon
+186:25-29 "load" keyword.other.canon
+186:30-73 "\"@resource/Server/System/tower_config.json\"" string.quoted.double.canon
+186:75-82 "partial" variable.other.property.canon
+186:82-83 ":" punctuation.separator.key.canon
+186:84-88 "true" constant.language.canon

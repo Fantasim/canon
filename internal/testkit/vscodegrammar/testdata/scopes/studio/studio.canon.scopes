@@ -1,0 +1,124 @@
+1:0-56 "/// The studio's presentation vocabulary (SPEC §16.11)." comment.line.documentation.canon
+2:0-3 "///" comment.line.documentation.canon
+3:0-88 "/// Resource Studio is a generic renderer. This package is its contract with every view:" comment.line.documentation.canon
+4:0-89 "/// navigation sections, UI icons and tones, units, and the custom widgets it implements." comment.line.documentation.canon
+5:0-80 "/// A view can only use what is declared here, and the compiler checks each use." comment.line.documentation.canon
+6:0-3 "///" comment.line.documentation.canon
+7:0-88 "/// Built-in controls (switch, segmented, select, search, checkboxes, slider...) are not" comment.line.documentation.canon
+8:0-87 "/// declared: they are part of the language (SPEC §16.2, §16.3). Adding a widget is a" comment.line.documentation.canon
+9:0-90 "/// two-part change: declare it here, and register a Svelte component under the same name." comment.line.documentation.canon
+10:0-7 "package" keyword.other.canon
+10:8-14 "studio" entity.name.namespace.canon
+12:0-6 "import" keyword.other.canon
+12:16-17 "." punctuation.accessor.canon
+12:17-21 "time" variable.other.property.canon
+12:24-33 "TimeOfDay" entity.name.type.canon
+12:35-41 "Window" entity.name.type.canon
+14:0-85 "/// Top-level sections of the studio navigation, in display order. A value whose view" comment.line.documentation.canon
+15:0-44 "/// names no menu is listed under \"No menu\"." comment.line.documentation.canon
+16:0-4 "enum" storage.type.canon
+16:5-9 "Menu" entity.name.type.canon
+18:0-63 "/// UI symbols, not game data: navigation, enum members, menus." comment.line.documentation.canon
+19:0-4 "enum" storage.type.canon
+19:5-9 "Icon" entity.name.type.canon
+36:0-58 "/// UI tones, mapped to the design system's colour tokens." comment.line.documentation.canon
+37:0-4 "enum" storage.type.canon
+37:5-9 "Tone" entity.name.type.canon
+39:0-80 "/// How numbers are shown. `scale` converts the stored value into the shown one." comment.line.documentation.canon
+40:0-6 "record" storage.type.canon
+40:7-15 "UnitSpec" entity.name.type.canon
+41:0-73 "  /// Appended to the number. Translatable, like every other studio text." comment.line.documentation.canon
+42:2-8 "suffix" variable.other.property.canon
+42:8-9 ":" punctuation.separator.key.canon
+42:10-16 "String" entity.name.type.canon
+42:17-18 "=" keyword.operator.canon
+42:19-21 "\"\"" string.quoted.double.canon
+43:0-42 "  /// Shown value = stored value × scale." comment.line.documentation.canon
+44:2-7 "scale" variable.other.property.canon
+44:7-8 ":" punctuation.separator.key.canon
+44:9-14 "Float" entity.name.type.canon
+44:15-16 "=" keyword.operator.canon
+44:17-20 "1.0" constant.numeric.float.canon
+45:0-32 "  /// Group digits by thousands." comment.line.documentation.canon
+46:2-11 "thousands" variable.other.property.canon
+46:11-12 ":" punctuation.separator.key.canon
+46:13-17 "Bool" entity.name.type.canon
+46:18-19 "=" keyword.operator.canon
+46:20-24 "true" constant.language.canon
+47:0-41 "  /// Digits after the decimal separator." comment.line.documentation.canon
+48:2-10 "decimals" variable.other.property.canon
+48:10-11 ":" punctuation.separator.key.canon
+48:12-15 "Int" entity.name.type.canon
+48:16-17 "0" constant.numeric.integer.canon
+48:17-20 "..=" keyword.operator.canon
+48:20-21 "6" constant.numeric.integer.canon
+48:23-24 "=" keyword.operator.canon
+48:25-26 "0" constant.numeric.integer.canon
+51:0-43 "/// The units a view may name with `unit:`." comment.line.documentation.canon
+52:0-3 "let" storage.type.canon
+52:4-9 "units" variable.other.property.canon
+52:9-10 ":" punctuation.separator.key.canon
+52:11-16 "table" storage.type.canon
+52:17-25 "UnitSpec" entity.name.type.canon
+52:26-27 "=" keyword.operator.canon
+53:10-16 "suffix" variable.other.property.canon
+53:16-17 ":" punctuation.separator.key.canon
+53:18-26 "\" penya\"" string.quoted.double.canon
+54:7-13 "suffix" variable.other.property.canon
+54:13-14 ":" punctuation.separator.key.canon
+54:15-20 "\" HP\"" string.quoted.double.canon
+55:8-14 "suffix" variable.other.property.canon
+55:14-15 ":" punctuation.separator.key.canon
+55:16-20 "\" %\"" string.quoted.double.canon
+56:0-77 "  /// Probabilities stored out of 1 000 000 000 (random options, drop rates)." comment.line.documentation.canon
+57:8-14 "suffix" variable.other.property.canon
+57:14-15 ":" punctuation.separator.key.canon
+57:16-20 "\" %\"" string.quoted.double.canon
+57:22-27 "scale" variable.other.property.canon
+57:27-28 ":" punctuation.separator.key.canon
+57:29-38 "0.0000001" constant.numeric.float.canon
+57:40-48 "decimals" variable.other.property.canon
+57:48-49 ":" punctuation.separator.key.canon
+57:50-51 "4" constant.numeric.integer.canon
+60:12-18 "suffix" variable.other.property.canon
+60:18-19 ":" punctuation.separator.key.canon
+60:20-24 "\" s\"" string.quoted.double.canon
+63:0-87 "/// A week-long timeline; windows are bars, dragged to move or resize. Wrapping windows" comment.line.documentation.canon
+64:0-59 "/// are drawn across midnight and across the week boundary." comment.line.documentation.canon
+65:0-6 "widget" keyword.other.canon
+65:23-28 "value" variable.other.property.canon
+65:28-29 ":" punctuation.separator.key.canon
+65:31-37 "Window" entity.name.type.canon
+67:0-82 "/// An ordered list where position has meaning (level 1, 2, 3...): numbered steps," comment.line.documentation.canon
+68:0-85 "/// drag to reorder, with the position shown as the step's name (`step:` renames it)." comment.line.documentation.canon
+69:0-6 "widget" keyword.other.canon
+69:21-26 "value" variable.other.property.canon
+69:26-27 ":" punctuation.separator.key.canon
+71:0-85 "/// A weight shown with its share of the list it belongs to (\"225 000 = 22.5 %\"). The" comment.line.documentation.canon
+72:0-86 "/// studio passes the same field of every element of the enclosing list as `siblings`." comment.line.documentation.canon
+73:0-6 "widget" keyword.other.canon
+73:20-25 "value" variable.other.property.canon
+73:25-26 ":" punctuation.separator.key.canon
+73:27-30 "Int" entity.name.type.canon
+73:32-40 "siblings" variable.other.property.canon
+73:40-41 ":" punctuation.separator.key.canon
+73:43-46 "Int" entity.name.type.canon
+75:0-82 "/// Grid editor for [magnitude, cumulative probability] pairs, showing the implied" comment.line.documentation.canon
+76:0-60 "/// per-step probability and the remainder to 1 000 000 000." comment.line.documentation.canon
+77:0-6 "widget" keyword.other.canon
+77:26-31 "value" variable.other.property.canon
+77:31-32 ":" punctuation.separator.key.canon
+77:35-38 "Int" entity.name.type.canon
+79:0-88 "/// One \"HH:MM\" input for a time of day, instead of two bare numbers. The default editor" comment.line.documentation.canon
+80:0-88 "/// of every TimeOfDay field, in every package; a view can still choose another control." comment.line.documentation.canon
+81:0-6 "widget" keyword.other.canon
+81:19-24 "value" variable.other.property.canon
+81:24-25 ":" punctuation.separator.key.canon
+81:26-35 "TimeOfDay" entity.name.type.canon
+83:0-84 "// Every package's view model refers to this vocabulary (menus, icons, tones, units," comment.line.double-slash.canon
+84:0-48 "// widgets); the studio reads it once from here." comment.line.double-slash.canon
+85:0-4 "emit" keyword.other.canon
+85:5-9 "view" keyword.other.canon
+85:12-15 "out" variable.other.property.canon
+85:15-16 ":" punctuation.separator.key.canon
+85:17-46 "\"@generated/studio.view.json\"" string.quoted.double.canon

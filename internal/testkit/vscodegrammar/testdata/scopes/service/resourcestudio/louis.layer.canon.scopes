@@ -1,0 +1,20 @@
+1:0-23 "// Louis's workstation." comment.line.double-slash.canon
+2:0-2 "//" comment.line.double-slash.canon
+3:0-30 "//   canon build --layer louis" comment.line.double-slash.canon
+4:0-80 "//   canon explain config.server.port --layer louis   (its output: CLI.md §3.7)" comment.line.double-slash.canon
+5:0-7 "package" keyword.other.canon
+5:8-30 "service.resourcestudio" entity.name.namespace.canon
+6:0-5 "layer" keyword.other.canon
+8:0-5 "amend" keyword.other.canon
+9:7-8 "." punctuation.accessor.canon
+9:8-20 "resourceRoot" variable.other.property.canon
+9:22-62 "\"/home/louis/Desktop/Sovereign/Resource\"" string.quoted.double.canon
+10:7-8 "." punctuation.accessor.canon
+10:8-15 "iconDir" variable.other.property.canon
+10:17-68 "\"/home/louis/Desktop/Sovereign/Client/Data/UI/Icon\"" string.quoted.double.canon
+11:8-9 "." punctuation.accessor.canon
+11:9-13 "port" variable.other.property.canon
+11:15-19 "9000" constant.numeric.integer.canon
+12:8-9 "." punctuation.accessor.canon
+12:9-20 "openBrowser" variable.other.property.canon
+12:22-27 "false" constant.language.canon

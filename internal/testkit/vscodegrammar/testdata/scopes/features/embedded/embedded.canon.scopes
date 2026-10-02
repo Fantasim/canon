@@ -1,0 +1,55 @@
+1:0-89 "/// `embedded` mode (SPEC §14.2): the data file is compiled into the binary (`go:embed`," comment.line.documentation.canon
+2:0-87 "/// or the TS bundle) with a generated decoder. For medium data a service needs without" comment.line.documentation.canon
+3:0-70 "/// shipping a file next to it, and that changes without code changes." comment.line.documentation.canon
+4:0-7 "package" keyword.other.canon
+4:8-25 "features.embedded" entity.name.namespace.canon
+6:0-32 "/// A country the shop sells in." comment.line.documentation.canon
+7:0-6 "record" storage.type.canon
+7:7-14 "Country" entity.name.type.canon
+8:0-30 "  /// ISO 3166-1 alpha-2 code." comment.line.documentation.canon
+9:2-6 "code" variable.other.property.canon
+9:6-7 ":" punctuation.separator.key.canon
+9:8-14 "String" entity.name.type.canon
+9:15-27 "/^[A-Z]{2}$/" string.regexp.canon
+10:0-19 "  /// English name." comment.line.documentation.canon
+11:2-6 "name" variable.other.property.canon
+11:6-7 ":" punctuation.separator.key.canon
+11:8-14 "String" entity.name.type.canon
+11:15-16 "1" constant.numeric.integer.canon
+11:16-18 ".." keyword.operator.canon
+12:0-48 "  /// VAT rate applied to donations, in percent." comment.line.documentation.canon
+13:2-5 "vat" variable.other.property.canon
+13:5-6 ":" punctuation.separator.key.canon
+13:7-12 "Float" entity.name.type.canon
+13:13-16 "0.0" constant.numeric.float.canon
+13:16-19 "..=" keyword.operator.canon
+13:19-23 "30.0" constant.numeric.float.canon
+14:0-40 "  /// Whether card payments are offered." comment.line.documentation.canon
+15:2-7 "cards" variable.other.property.canon
+15:7-8 ":" punctuation.separator.key.canon
+15:9-13 "Bool" entity.name.type.canon
+15:14-15 "=" keyword.operator.canon
+15:16-20 "true" constant.language.canon
+18:0-33 "/// Every country, keyed by code." comment.line.documentation.canon
+19:0-3 "let" storage.type.canon
+19:4-13 "countries" variable.other.property.canon
+19:13-14 ":" punctuation.separator.key.canon
+19:16-23 "Country" entity.name.type.canon
+19:39-40 "=" keyword.operator.canon
+19:41-45 "load" keyword.other.canon
+19:46-67 "\"data/countries.json\"" string.quoted.double.canon
+21:0-4 "emit" keyword.other.canon
+21:10-13 "out" variable.other.property.canon
+21:13-14 ":" punctuation.separator.key.canon
+21:15-24 "\"out/go/\"" string.quoted.double.canon
+21:26-33 "package" variable.other.property.canon
+21:33-34 ":" punctuation.separator.key.canon
+21:35-46 "\"countries\"" string.quoted.double.canon
+21:48-52 "mode" variable.other.property.canon
+21:52-53 ":" punctuation.separator.key.canon
+22:0-4 "emit" keyword.other.canon
+22:10-13 "out" variable.other.property.canon
+22:13-14 ":" punctuation.separator.key.canon
+22:15-43 "\"out/countries.generated.ts\"" string.quoted.double.canon
+22:45-49 "mode" variable.other.property.canon
+22:49-50 ":" punctuation.separator.key.canon

@@ -1,0 +1,73 @@
+1:0-86 "/// Finite-input `export fn` (SPEC §9.4): every input is an enum, a Bool or a ref, so" comment.line.documentation.canon
+2:0-85 "/// `canon build` computes every answer and generated code only looks it up. No logic" comment.line.documentation.canon
+3:0-75 "/// reaches the runtime. (teamboard/taxonomy.canon has the same with refs.)" comment.line.documentation.canon
+4:0-7 "package" keyword.other.canon
+4:8-23 "features.lookup" entity.name.namespace.canon
+6:0-45 "/// Upgrade grades of a weapon, lowest first." comment.line.documentation.canon
+7:0-4 "enum" storage.type.canon
+7:5-10 "Grade" entity.name.type.canon
+9:0-28 "/// Job tiers, lowest first." comment.line.documentation.canon
+10:0-4 "enum" storage.type.canon
+10:5-9 "Tier" entity.name.type.canon
+12:0-83 "/// Whether a character of `tier` may upgrade a weapon of `grade`: a 3 x 5 table in" comment.line.documentation.canon
+13:0-19 "/// generated code." comment.line.documentation.canon
+14:0-6 "export" storage.modifier.canon
+14:7-9 "fn" storage.type.function.canon
+14:10-20 "canUpgrade" entity.name.function.canon
+14:21-26 "grade" variable.other.property.canon
+14:26-27 ":" punctuation.separator.key.canon
+14:28-33 "Grade" entity.name.type.canon
+14:35-39 "tier" variable.other.property.canon
+14:39-40 ":" punctuation.separator.key.canon
+14:41-45 "Tier" entity.name.type.canon
+14:47-49 "->" keyword.operator.canon
+14:50-54 "Bool" entity.name.type.canon
+15:2-8 "return" keyword.control.canon
+15:9-14 "match" keyword.control.canon
+16:11-13 "=>" keyword.operator.canon
+16:14-18 "true" constant.language.canon
+17:11-13 "=>" keyword.operator.canon
+17:19-21 ">=" keyword.operator.canon
+18:13-15 "=>" keyword.operator.canon
+18:21-23 ">=" keyword.operator.canon
+22:0-44 "/// Penya an upgrade costs: a 3-entry table." comment.line.documentation.canon
+23:0-6 "export" storage.modifier.canon
+23:7-9 "fn" storage.type.function.canon
+23:10-21 "upgradeCost" entity.name.function.canon
+23:22-27 "grade" variable.other.property.canon
+23:27-28 ":" punctuation.separator.key.canon
+23:29-34 "Grade" entity.name.type.canon
+23:36-38 "->" keyword.operator.canon
+23:39-42 "Int" entity.name.type.canon
+24:2-8 "return" keyword.control.canon
+24:9-14 "match" keyword.control.canon
+25:11-13 "=>" keyword.operator.canon
+25:14-20 "10_000" constant.numeric.integer.canon
+26:11-13 "=>" keyword.operator.canon
+26:14-21 "500_000" constant.numeric.integer.canon
+27:13-15 "=>" keyword.operator.canon
+27:16-26 "20_000_000" constant.numeric.integer.canon
+31:0-4 "test" keyword.other.canon
+31:5-33 "\"masters upgrade everything\"" string.quoted.double.canon
+32:2-8 "expect" keyword.other.canon
+32:38-40 "==" keyword.operator.canon
+32:41-45 "true" constant.language.canon
+33:2-8 "expect" keyword.other.canon
+33:36-38 "==" keyword.operator.canon
+33:39-44 "false" constant.language.canon
+34:2-8 "expect" keyword.other.canon
+34:29-31 "==" keyword.operator.canon
+34:32-39 "500_000" constant.numeric.integer.canon
+37:0-4 "emit" keyword.other.canon
+37:10-13 "out" variable.other.property.canon
+37:13-14 ":" punctuation.separator.key.canon
+37:15-24 "\"out/go/\"" string.quoted.double.canon
+37:26-33 "package" variable.other.property.canon
+37:33-34 ":" punctuation.separator.key.canon
+37:35-43 "\"lookup\"" string.quoted.double.canon
+37:45-49 "mode" variable.other.property.canon
+37:49-50 ":" punctuation.separator.key.canon
+38:0-4 "emit" keyword.other.canon
+38:10-13 "out" variable.other.property.canon
+38:13-14 ":" punctuation.separator.key.canon
+38:15-40 "\"out/lookup.generated.ts\"" string.quoted.double.canon

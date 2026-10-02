@@ -1,0 +1,1051 @@
+1:0-53 "/// Taxonomy of the team board (internal.ragyra.com)." comment.line.documentation.canon
+2:0-3 "///" comment.line.documentation.canon
+3:0-80 "/// Rewrite of sovcommon/teamboard/taxonomy.json v7. The ~30 load-time checks in" comment.line.documentation.canon
+4:0-49 "/// load.go and refs.go become three things here:" comment.line.documentation.canon
+5:0-77 "///   - types: unknown refs, roles, tones, icons, setBy, fields, duplicate or" comment.line.documentation.canon
+6:0-76 "///     badly formed ids, required fields. There is no code for any of them." comment.line.documentation.canon
+7:0-79 "///   - stable tables: \"never renamed, never reused, retire instead of delete\"." comment.line.documentation.canon
+8:0-83 "///   - the eight `check`s at the bottom: the rules that are truly about this data." comment.line.documentation.canon
+9:0-3 "///" comment.line.documentation.canon
+10:0-82 "/// The reporter makes ONE classification: WHERE did you see it (area). Everything" comment.line.documentation.canon
+11:0-81 "/// finer is said in the text; routing to a technical area is the triager's move." comment.line.documentation.canon
+12:0-7 "package" keyword.other.canon
+12:8-17 "teamboard" entity.name.namespace.canon
+14:0-6 "import" keyword.other.canon
+14:16-17 "." punctuation.accessor.canon
+14:17-22 "roles" variable.other.property.canon
+14:25-29 "Role" entity.name.type.canon
+15:0-6 "import" keyword.other.canon
+15:16-17 "." punctuation.accessor.canon
+15:17-19 "ui" variable.other.property.canon
+15:22-26 "Icon" entity.name.type.canon
+15:28-32 "Tone" entity.name.type.canon
+17:0-63 "/// Format version of the taxonomy (taxonomy.json's `version`)." comment.line.documentation.canon
+18:0-5 "const" storage.type.canon
+18:6-13 "VERSION" constant.other.canon
+18:14-15 "=" keyword.operator.canon
+18:16-17 "7" constant.numeric.integer.canon
+20:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+21:0-8 "// Types" comment.line.double-slash.canon
+22:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+24:0-44 "/// Who may set a flag or make a transition." comment.line.documentation.canon
+25:0-4 "enum" storage.type.canon
+25:5-10 "Actor" entity.name.type.canon
+27:0-43 "/// Inputs a status transition may collect." comment.line.documentation.canon
+28:0-4 "enum" storage.type.canon
+28:5-14 "PostField" entity.name.type.canon
+30:0-51 "/// A deck arrangement, \"<columns per row>:<rows>\"." comment.line.documentation.canon
+31:0-4 "type" storage.type.canon
+31:5-11 "Layout" entity.name.type.canon
+31:12-13 "=" keyword.operator.canon
+31:14-20 "String" entity.name.type.canon
+31:21-36 "/^[1-9]:[1-9]$/" string.regexp.canon
+33:0-63 "/// What kind of post this is; `minRole` gates who may post it." comment.line.documentation.canon
+34:0-6 "record" storage.type.canon
+34:7-13 "Intent" entity.name.type.canon
+35:0-35 "  /// Colour of the intent's badge." comment.line.documentation.canon
+36:2-6 "tone" variable.other.property.canon
+36:6-7 ":" punctuation.separator.key.canon
+36:8-12 "Tone" entity.name.type.canon
+37:0-33 "  /// Icon of the intent's badge." comment.line.documentation.canon
+38:2-6 "icon" variable.other.property.canon
+38:6-7 ":" punctuation.separator.key.canon
+38:8-12 "Icon" entity.name.type.canon
+39:0-45 "  /// What the reporter picks, as a sentence." comment.line.documentation.canon
+40:2-7 "label" variable.other.property.canon
+40:7-8 ":" punctuation.separator.key.canon
+40:9-15 "String" entity.name.type.canon
+40:16-17 "1" constant.numeric.integer.canon
+40:17-19 ".." keyword.operator.canon
+41:0-53 "  /// The lowest role that may post with this intent." comment.line.documentation.canon
+42:2-9 "minRole" variable.other.property.canon
+42:9-10 ":" punctuation.separator.key.canon
+42:11-15 "Role" entity.name.type.canon
+45:0-35 "/// One of the reporter's booleans." comment.line.documentation.canon
+46:0-6 "record" storage.type.canon
+46:7-11 "Flag" entity.name.type.canon
+47:0-33 "  /// Colour of the flag's badge." comment.line.documentation.canon
+48:2-6 "tone" variable.other.property.canon
+48:6-7 ":" punctuation.separator.key.canon
+48:8-12 "Tone" entity.name.type.canon
+49:0-31 "  /// Icon of the flag's badge." comment.line.documentation.canon
+50:2-6 "icon" variable.other.property.canon
+50:6-7 ":" punctuation.separator.key.canon
+50:8-12 "Icon" entity.name.type.canon
+51:0-45 "  /// What the reporter ticks, as a sentence." comment.line.documentation.canon
+52:2-7 "label" variable.other.property.canon
+52:7-8 ":" punctuation.separator.key.canon
+52:9-15 "String" entity.name.type.canon
+52:16-17 "1" constant.numeric.integer.canon
+52:17-19 ".." keyword.operator.canon
+53:0-28 "  /// Shown under the label." comment.line.documentation.canon
+54:2-6 "hint" variable.other.property.canon
+54:6-7 ":" punctuation.separator.key.canon
+54:8-14 "String" entity.name.type.canon
+54:14-15 "?" keyword.operator.canon
+54:16-17 "=" keyword.operator.canon
+54:18-22 "none" constant.language.canon
+55:0-27 "  /// Who may set the flag." comment.line.documentation.canon
+56:2-7 "setBy" variable.other.property.canon
+56:7-8 ":" punctuation.separator.key.canon
+56:9-14 "Actor" entity.name.type.canon
+57:0-79 "  /// Who may see that the flag was set; `none` means whoever can see the post." comment.line.documentation.canon
+58:2-13 "viewMinRole" variable.other.property.canon
+58:13-14 ":" punctuation.separator.key.canon
+58:15-19 "Role" entity.name.type.canon
+58:19-20 "?" keyword.operator.canon
+58:21-22 "=" keyword.operator.canon
+58:23-27 "none" constant.language.canon
+61:0-36 "/// One point of the post lifecycle." comment.line.documentation.canon
+62:0-6 "record" storage.type.canon
+62:7-13 "Status" entity.name.type.canon
+63:0-33 "  /// Colour of the status badge." comment.line.documentation.canon
+64:2-6 "tone" variable.other.property.canon
+64:6-7 ":" punctuation.separator.key.canon
+64:8-12 "Tone" entity.name.type.canon
+65:0-25 "  /// Name of the status." comment.line.documentation.canon
+66:2-7 "label" variable.other.property.canon
+66:7-8 ":" punctuation.separator.key.canon
+66:9-15 "String" entity.name.type.canon
+66:16-17 "1" constant.numeric.integer.canon
+66:17-19 ".." keyword.operator.canon
+67:0-81 "  /// A terminal status closes the post. It can still be reopened through `next`." comment.line.documentation.canon
+68:2-10 "terminal" variable.other.property.canon
+68:10-11 ":" punctuation.separator.key.canon
+68:12-16 "Bool" entity.name.type.canon
+69:0-62 "  /// The closed set of statuses a post may move to from here." comment.line.documentation.canon
+70:2-6 "next" variable.other.property.canon
+70:6-7 ":" punctuation.separator.key.canon
+70:9-12 "ref" storage.modifier.canon
+70:13-19 "Status" entity.name.type.canon
+71:0-56 "  /// Inputs a transition INTO this status must collect." comment.line.documentation.canon
+72:2-10 "requires" variable.other.property.canon
+72:10-11 ":" punctuation.separator.key.canon
+72:13-22 "PostField" entity.name.type.canon
+72:24-25 "=" keyword.operator.canon
+73:0-55 "  /// Inputs a transition INTO this status may collect." comment.line.documentation.canon
+74:2-10 "optional" variable.other.property.canon
+74:10-11 ":" punctuation.separator.key.canon
+74:13-22 "PostField" entity.name.type.canon
+74:24-25 "=" keyword.operator.canon
+75:0-71 "  /// Who, besides a triager, may make the transition into this status." comment.line.documentation.canon
+76:2-4 "by" variable.other.property.canon
+76:4-5 ":" punctuation.separator.key.canon
+76:6-11 "Actor" entity.name.type.canon
+76:11-12 "?" keyword.operator.canon
+76:13-14 "=" keyword.operator.canon
+76:15-19 "none" constant.language.canon
+78:2-7 "check" keyword.other.canon
+78:12-13 "." punctuation.accessor.canon
+78:13-21 "isUnique" variable.other.property.canon
+78:24-28 "else" keyword.control.canon
+78:29-59 "\"a transition is listed twice\"" string.quoted.double.canon
+79:2-7 "check" keyword.other.canon
+79:8-11 "not" keyword.operator.word.canon
+79:16-17 "." punctuation.accessor.canon
+79:17-25 "contains" variable.other.property.canon
+79:26-30 "self" variable.language.canon
+79:32-36 "else" keyword.control.canon
+79:37-75 "\"a status cannot transition to itself\"" string.quoted.double.canon
+80:2-7 "check" keyword.other.canon
+80:16-17 "." punctuation.accessor.canon
+80:17-26 "intersect" variable.other.property.canon
+80:36-37 "." punctuation.accessor.canon
+80:37-44 "isEmpty" variable.other.property.canon
+80:47-51 "else" keyword.control.canon
+80:52-91 "\"a field is both required and optional\"" string.quoted.double.canon
+83:0-79 "/// Set by a triager only. The reporter's single signal is the `blocking` flag." comment.line.documentation.canon
+84:0-6 "record" storage.type.canon
+84:7-15 "Severity" entity.name.type.canon
+85:0-35 "  /// Colour of the severity badge." comment.line.documentation.canon
+86:2-6 "tone" variable.other.property.canon
+86:6-7 ":" punctuation.separator.key.canon
+86:8-12 "Tone" entity.name.type.canon
+87:0-27 "  /// Name of the severity." comment.line.documentation.canon
+88:2-7 "label" variable.other.property.canon
+88:7-8 ":" punctuation.separator.key.canon
+88:9-15 "String" entity.name.type.canon
+88:16-17 "1" constant.numeric.integer.canon
+88:17-19 ".." keyword.operator.canon
+89:0-72 "  /// The severity a triaged post gets unless the triager picks another." comment.line.documentation.canon
+90:2-9 "default" variable.other.property.canon
+90:9-10 ":" punctuation.separator.key.canon
+90:11-15 "Bool" entity.name.type.canon
+90:16-17 "=" keyword.operator.canon
+90:18-23 "false" constant.language.canon
+93:0-73 "/// A header the area picker and the move-to-area menu group areas under." comment.line.documentation.canon
+94:0-6 "record" storage.type.canon
+94:7-16 "AreaGroup" entity.name.type.canon
+95:0-18 "  /// Header text." comment.line.documentation.canon
+96:2-7 "label" variable.other.property.canon
+96:7-8 ":" punctuation.separator.key.canon
+96:9-15 "String" entity.name.type.canon
+96:16-17 "1" constant.numeric.integer.canon
+96:17-19 ".." keyword.operator.canon
+99:0-64 "/// Where the reporter stood, never which component is at fault." comment.line.documentation.canon
+100:0-6 "record" storage.type.canon
+100:7-11 "Area" entity.name.type.canon
+101:0-42 "  /// The header the area is listed under." comment.line.documentation.canon
+102:2-7 "group" variable.other.property.canon
+102:7-8 ":" punctuation.separator.key.canon
+102:9-12 "ref" storage.modifier.canon
+102:13-22 "AreaGroup" entity.name.type.canon
+103:0-79 "  /// Family: series_1 game, series_2 web, series_3 tooling, series_4 internal." comment.line.documentation.canon
+104:2-6 "tone" variable.other.property.canon
+104:6-7 ":" punctuation.separator.key.canon
+104:8-12 "Tone" entity.name.type.canon
+105:0-35 "  /// Icon next to the area's name." comment.line.documentation.canon
+106:2-6 "icon" variable.other.property.canon
+106:6-7 ":" punctuation.separator.key.canon
+106:8-12 "Icon" entity.name.type.canon
+107:0-23 "  /// Name of the area." comment.line.documentation.canon
+108:2-7 "label" variable.other.property.canon
+108:7-8 ":" punctuation.separator.key.canon
+108:9-15 "String" entity.name.type.canon
+108:16-17 "1" constant.numeric.integer.canon
+108:17-19 ".." keyword.operator.canon
+109:0-28 "  /// Shown under the label." comment.line.documentation.canon
+110:2-6 "hint" variable.other.property.canon
+110:6-7 ":" punctuation.separator.key.canon
+110:8-14 "String" entity.name.type.canon
+110:14-15 "?" keyword.operator.canon
+110:16-17 "=" keyword.operator.canon
+110:18-22 "none" constant.language.canon
+111:0-32 "  /// Gates posting AND viewing." comment.line.documentation.canon
+112:2-9 "minRole" variable.other.property.canon
+112:9-10 ":" punctuation.separator.key.canon
+112:11-15 "Role" entity.name.type.canon
+113:0-87 "  /// Technical areas a triager typically moves a post into. Orders the move menu only." comment.line.documentation.canon
+114:2-10 "routesTo" variable.other.property.canon
+114:10-11 ":" punctuation.separator.key.canon
+114:13-16 "ref" storage.modifier.canon
+114:17-21 "Area" entity.name.type.canon
+114:23-24 "=" keyword.operator.canon
+116:2-7 "check" keyword.other.canon
+116:16-17 "." punctuation.accessor.canon
+116:17-25 "isUnique" variable.other.property.canon
+116:28-32 "else" keyword.control.canon
+116:33-70 "\"an area is listed twice in routesTo\"" string.quoted.double.canon
+117:2-7 "check" keyword.other.canon
+117:8-11 "not" keyword.operator.word.canon
+117:20-21 "." punctuation.accessor.canon
+117:21-29 "contains" variable.other.property.canon
+117:30-34 "self" variable.language.canon
+117:36-40 "else" keyword.control.canon
+117:41-73 "\"an area cannot route to itself\"" string.quoted.double.canon
+120:0-58 "/// One fixed column of the deck: a named set of statuses." comment.line.documentation.canon
+121:0-6 "record" storage.type.canon
+121:7-13 "Column" entity.name.type.canon
+122:0-20 "  /// Column header." comment.line.documentation.canon
+123:2-7 "label" variable.other.property.canon
+123:7-8 ":" punctuation.separator.key.canon
+123:9-15 "String" entity.name.type.canon
+123:16-17 "1" constant.numeric.integer.canon
+123:17-19 ".." keyword.operator.canon
+124:0-32 "  /// Icon in the column header." comment.line.documentation.canon
+125:2-6 "icon" variable.other.property.canon
+125:6-7 ":" punctuation.separator.key.canon
+125:8-12 "Icon" entity.name.type.canon
+126:0-48 "  /// The statuses whose posts the column shows." comment.line.documentation.canon
+127:2-10 "statuses" variable.other.property.canon
+127:10-11 ":" punctuation.separator.key.canon
+127:13-16 "ref" storage.modifier.canon
+127:17-23 "Status" entity.name.type.canon
+128:0-64 "  /// Adds a multi-select of eligible members inside the column." comment.line.documentation.canon
+129:2-16 "assigneeFilter" variable.other.property.canon
+129:16-17 ":" punctuation.separator.key.canon
+129:18-22 "Bool" entity.name.type.canon
+129:23-24 "=" keyword.operator.canon
+129:25-30 "false" constant.language.canon
+130:0-81 "  /// Lets a viewer collapse the column to the rail (capped by `deck.maxHidden`)." comment.line.documentation.canon
+131:2-10 "hideable" variable.other.property.canon
+131:10-11 ":" punctuation.separator.key.canon
+131:12-16 "Bool" entity.name.type.canon
+131:17-18 "=" keyword.operator.canon
+131:19-23 "true" constant.language.canon
+133:2-7 "check" keyword.other.canon
+133:8-11 "not" keyword.operator.word.canon
+133:20-21 "." punctuation.accessor.canon
+133:21-28 "isEmpty" variable.other.property.canon
+133:31-35 "else" keyword.control.canon
+133:36-72 "\"a column holds at least one status\"" string.quoted.double.canon
+136:0-78 "/// The deck: fixed columns, in order. Nobody adds, removes or edits a column." comment.line.documentation.canon
+137:0-6 "record" storage.type.canon
+137:7-11 "Deck" entity.name.type.canon
+138:0-59 "  /// The only arrangements: all in one row, or a 2x2 grid." comment.line.documentation.canon
+139:2-9 "layouts" variable.other.property.canon
+139:9-10 ":" punctuation.separator.key.canon
+139:12-18 "Layout" entity.name.type.canon
+140:0-84 "  /// How many columns may be collapsed at once, so the deck never goes fully empty." comment.line.documentation.canon
+141:2-11 "maxHidden" variable.other.property.canon
+141:11-12 ":" punctuation.separator.key.canon
+141:13-16 "Int" entity.name.type.canon
+141:17-18 "1" constant.numeric.integer.canon
+141:18-20 ".." keyword.operator.canon
+143:2-7 "check" keyword.other.canon
+143:8-11 "not" keyword.operator.word.canon
+143:19-20 "." punctuation.accessor.canon
+143:20-27 "isEmpty" variable.other.property.canon
+143:30-34 "else" keyword.control.canon
+143:35-56 "\"at least one layout\"" string.quoted.double.canon
+144:2-7 "check" keyword.other.canon
+144:15-16 "." punctuation.accessor.canon
+144:16-24 "isUnique" variable.other.property.canon
+144:27-31 "else" keyword.control.canon
+144:32-60 "\"a layout is declared twice\"" string.quoted.double.canon
+147:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+148:0-9 "// Values" comment.line.double-slash.canon
+149:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+151:0-23 "/// What a post can be." comment.line.documentation.canon
+152:0-3 "let" storage.type.canon
+152:4-11 "intents" variable.other.property.canon
+152:11-12 ":" punctuation.separator.key.canon
+152:13-19 "stable" storage.modifier.canon
+152:20-25 "table" storage.type.canon
+152:26-32 "Intent" entity.name.type.canon
+152:33-34 "=" keyword.operator.canon
+153:10-14 "tone" variable.other.property.canon
+153:14-15 ":" punctuation.separator.key.canon
+153:25-29 "icon" variable.other.property.canon
+153:29-30 ":" punctuation.separator.key.canon
+153:47-52 "label" variable.other.property.canon
+153:52-53 ":" punctuation.separator.key.canon
+153:54-74 "\"Something is wrong\"" string.quoted.double.canon
+153:76-83 "minRole" variable.other.property.canon
+153:83-84 ":" punctuation.separator.key.canon
+154:9-13 "tone" variable.other.property.canon
+154:13-14 ":" punctuation.separator.key.canon
+154:23-27 "icon" variable.other.property.canon
+154:27-28 ":" punctuation.separator.key.canon
+154:40-45 "label" variable.other.property.canon
+154:45-46 ":" punctuation.separator.key.canon
+154:47-64 "\"Idea or request\"" string.quoted.double.canon
+154:66-73 "minRole" variable.other.property.canon
+154:73-74 ":" punctuation.separator.key.canon
+157:0-28 "/// The reporter's booleans." comment.line.documentation.canon
+158:0-3 "let" storage.type.canon
+158:4-9 "flags" variable.other.property.canon
+158:9-10 ":" punctuation.separator.key.canon
+158:11-17 "stable" storage.modifier.canon
+158:18-23 "table" storage.type.canon
+158:24-28 "Flag" entity.name.type.canon
+158:29-30 "=" keyword.operator.canon
+159:13-17 "tone" variable.other.property.canon
+159:17-18 ":" punctuation.separator.key.canon
+159:27-31 "icon" variable.other.property.canon
+159:31-32 ":" punctuation.separator.key.canon
+159:39-44 "label" variable.other.property.canon
+159:44-45 ":" punctuation.separator.key.canon
+159:46-67 "\"This blocks my work\"" string.quoted.double.canon
+159:69-74 "setBy" variable.other.property.canon
+159:74-75 ":" punctuation.separator.key.canon
+161:4-8 "tone" variable.other.property.canon
+161:8-9 ":" punctuation.separator.key.canon
+162:4-8 "icon" variable.other.property.canon
+162:8-9 ":" punctuation.separator.key.canon
+163:4-9 "label" variable.other.property.canon
+163:9-10 ":" punctuation.separator.key.canon
+163:11-41 "\"Only the dev team should see\"" string.quoted.double.canon
+164:4-9 "setBy" variable.other.property.canon
+164:9-10 ":" punctuation.separator.key.canon
+165:4-15 "viewMinRole" variable.other.property.canon
+165:15-16 ":" punctuation.separator.key.canon
+166:4-8 "hint" variable.other.property.canon
+166:8-9 ":" punctuation.separator.key.canon
+166:10-47 "\"Exploits, dupes, security problems.\"" string.quoted.double.canon
+170:0-23 "/// The post lifecycle." comment.line.documentation.canon
+171:0-3 "let" storage.type.canon
+171:4-12 "statuses" variable.other.property.canon
+171:12-13 ":" punctuation.separator.key.canon
+171:14-20 "stable" storage.modifier.canon
+171:21-26 "table" storage.type.canon
+171:27-33 "Status" entity.name.type.canon
+171:34-35 "=" keyword.operator.canon
+172:9-13 "tone" variable.other.property.canon
+172:13-14 ":" punctuation.separator.key.canon
+172:24-29 "label" variable.other.property.canon
+172:29-30 ":" punctuation.separator.key.canon
+172:31-37 "\"Open\"" string.quoted.double.canon
+172:39-47 "terminal" variable.other.property.canon
+172:47-48 ":" punctuation.separator.key.canon
+172:49-54 "false" constant.language.canon
+172:56-60 "next" variable.other.property.canon
+172:60-61 ":" punctuation.separator.key.canon
+174:4-8 "tone" variable.other.property.canon
+174:8-9 ":" punctuation.separator.key.canon
+175:4-9 "label" variable.other.property.canon
+175:9-10 ":" punctuation.separator.key.canon
+175:11-18 "\"Taken\"" string.quoted.double.canon
+176:4-12 "terminal" variable.other.property.canon
+176:12-13 ":" punctuation.separator.key.canon
+176:14-19 "false" constant.language.canon
+177:4-8 "next" variable.other.property.canon
+177:8-9 ":" punctuation.separator.key.canon
+178:4-12 "requires" variable.other.property.canon
+178:12-13 ":" punctuation.separator.key.canon
+181:4-8 "tone" variable.other.property.canon
+181:8-9 ":" punctuation.separator.key.canon
+182:4-9 "label" variable.other.property.canon
+182:9-10 ":" punctuation.separator.key.canon
+182:11-18 "\"Fixed\"" string.quoted.double.canon
+183:4-12 "terminal" variable.other.property.canon
+183:12-13 ":" punctuation.separator.key.canon
+183:14-19 "false" constant.language.canon
+184:4-8 "next" variable.other.property.canon
+184:8-9 ":" punctuation.separator.key.canon
+185:4-12 "optional" variable.other.property.canon
+185:12-13 ":" punctuation.separator.key.canon
+188:4-8 "tone" variable.other.property.canon
+188:8-9 ":" punctuation.separator.key.canon
+189:4-9 "label" variable.other.property.canon
+189:9-10 ":" punctuation.separator.key.canon
+189:11-21 "\"Verified\"" string.quoted.double.canon
+190:4-12 "terminal" variable.other.property.canon
+190:12-13 ":" punctuation.separator.key.canon
+190:14-18 "true" constant.language.canon
+191:4-8 "next" variable.other.property.canon
+191:8-9 ":" punctuation.separator.key.canon
+192:4-6 "by" variable.other.property.canon
+192:6-7 ":" punctuation.separator.key.canon
+194:12-16 "tone" variable.other.property.canon
+194:16-17 ":" punctuation.separator.key.canon
+194:27-32 "label" variable.other.property.canon
+194:32-33 ":" punctuation.separator.key.canon
+194:34-44 "\"Won't do\"" string.quoted.double.canon
+194:46-54 "terminal" variable.other.property.canon
+194:54-55 ":" punctuation.separator.key.canon
+194:56-60 "true" constant.language.canon
+194:62-66 "next" variable.other.property.canon
+194:66-67 ":" punctuation.separator.key.canon
+194:76-84 "requires" variable.other.property.canon
+194:84-85 ":" punctuation.separator.key.canon
+196:4-8 "tone" variable.other.property.canon
+196:8-9 ":" punctuation.separator.key.canon
+197:4-9 "label" variable.other.property.canon
+197:9-10 ":" punctuation.separator.key.canon
+197:11-22 "\"Duplicate\"" string.quoted.double.canon
+198:4-12 "terminal" variable.other.property.canon
+198:12-13 ":" punctuation.separator.key.canon
+198:14-18 "true" constant.language.canon
+199:4-8 "next" variable.other.property.canon
+199:8-9 ":" punctuation.separator.key.canon
+200:4-12 "requires" variable.other.property.canon
+200:12-13 ":" punctuation.separator.key.canon
+204:0-88 "/// A post is owned by exactly one person, and never by a GM. Take = assign to yourself;" comment.line.documentation.canon
+205:0-48 "/// a triager may assign to any eligible member." comment.line.documentation.canon
+206:0-3 "let" storage.type.canon
+206:4-19 "assigneeMinRole" variable.other.property.canon
+206:19-20 ":" punctuation.separator.key.canon
+206:21-25 "Role" entity.name.type.canon
+206:26-27 "=" keyword.operator.canon
+207:0-36 "/// The lowest role that may triage." comment.line.documentation.canon
+208:0-3 "let" storage.type.canon
+208:4-17 "triageMinRole" variable.other.property.canon
+208:17-18 ":" punctuation.separator.key.canon
+208:19-23 "Role" entity.name.type.canon
+208:24-25 "=" keyword.operator.canon
+210:0-28 "/// The deck's arrangements." comment.line.documentation.canon
+211:0-3 "let" storage.type.canon
+211:4-8 "deck" variable.other.property.canon
+211:8-9 ":" punctuation.separator.key.canon
+211:10-14 "Deck" entity.name.type.canon
+211:15-16 "=" keyword.operator.canon
+211:19-26 "layouts" variable.other.property.canon
+211:26-27 ":" punctuation.separator.key.canon
+211:29-34 "\"4:1\"" string.quoted.double.canon
+211:36-41 "\"2:2\"" string.quoted.double.canon
+211:44-53 "maxHidden" variable.other.property.canon
+211:53-54 ":" punctuation.separator.key.canon
+211:55-56 "2" constant.numeric.integer.canon
+213:0-38 "/// The deck's columns, left to right." comment.line.documentation.canon
+214:0-3 "let" storage.type.canon
+214:4-11 "columns" variable.other.property.canon
+214:11-12 ":" punctuation.separator.key.canon
+214:13-19 "stable" storage.modifier.canon
+214:20-25 "table" storage.type.canon
+214:26-32 "Column" entity.name.type.canon
+214:33-34 "=" keyword.operator.canon
+215:14-19 "label" variable.other.property.canon
+215:19-20 ":" punctuation.separator.key.canon
+215:21-32 "\"Unclaimed\"" string.quoted.double.canon
+215:34-38 "icon" variable.other.property.canon
+215:38-39 ":" punctuation.separator.key.canon
+215:47-55 "statuses" variable.other.property.canon
+215:55-56 ":" punctuation.separator.key.canon
+216:10-15 "label" variable.other.property.canon
+216:15-16 ":" punctuation.separator.key.canon
+216:17-24 "\"Taken\"" string.quoted.double.canon
+216:26-30 "icon" variable.other.property.canon
+216:30-31 ":" punctuation.separator.key.canon
+216:38-46 "statuses" variable.other.property.canon
+216:46-47 ":" punctuation.separator.key.canon
+216:57-71 "assigneeFilter" variable.other.property.canon
+216:71-72 ":" punctuation.separator.key.canon
+216:73-77 "true" constant.language.canon
+217:10-15 "label" variable.other.property.canon
+217:15-16 ":" punctuation.separator.key.canon
+217:17-35 "\"Fixed, to verify\"" string.quoted.double.canon
+217:37-41 "icon" variable.other.property.canon
+217:41-42 ":" punctuation.separator.key.canon
+217:43-48 "check" keyword.other.canon
+217:50-58 "statuses" variable.other.property.canon
+217:58-59 ":" punctuation.separator.key.canon
+218:9-14 "label" variable.other.property.canon
+218:14-15 ":" punctuation.separator.key.canon
+218:16-22 "\"Done\"" string.quoted.double.canon
+218:24-28 "icon" variable.other.property.canon
+218:28-29 ":" punctuation.separator.key.canon
+218:39-47 "statuses" variable.other.property.canon
+218:47-48 ":" punctuation.separator.key.canon
+221:0-30 "/// How bad a triaged post is." comment.line.documentation.canon
+222:0-3 "let" storage.type.canon
+222:4-14 "severities" variable.other.property.canon
+222:14-15 ":" punctuation.separator.key.canon
+222:16-22 "stable" storage.modifier.canon
+222:23-28 "table" storage.type.canon
+222:29-37 "Severity" entity.name.type.canon
+222:38-39 "=" keyword.operator.canon
+223:8-12 "tone" variable.other.property.canon
+223:12-13 ":" punctuation.separator.key.canon
+223:23-28 "label" variable.other.property.canon
+223:28-29 ":" punctuation.separator.key.canon
+223:30-35 "\"Low\"" string.quoted.double.canon
+224:11-15 "tone" variable.other.property.canon
+224:15-16 ":" punctuation.separator.key.canon
+224:23-28 "label" variable.other.property.canon
+224:28-29 ":" punctuation.separator.key.canon
+224:30-38 "\"Normal\"" string.quoted.double.canon
+224:40-47 "default" variable.other.property.canon
+224:47-48 ":" punctuation.separator.key.canon
+224:49-53 "true" constant.language.canon
+225:13-17 "tone" variable.other.property.canon
+225:17-18 ":" punctuation.separator.key.canon
+225:27-32 "label" variable.other.property.canon
+225:32-33 ":" punctuation.separator.key.canon
+225:34-44 "\"Critical\"" string.quoted.double.canon
+228:0-35 "/// The headers of the area picker." comment.line.documentation.canon
+229:0-3 "let" storage.type.canon
+229:4-14 "areaGroups" variable.other.property.canon
+229:14-15 ":" punctuation.separator.key.canon
+229:16-22 "stable" storage.modifier.canon
+229:23-28 "table" storage.type.canon
+229:29-38 "AreaGroup" entity.name.type.canon
+229:39-40 "=" keyword.operator.canon
+230:12-17 "label" variable.other.property.canon
+230:17-18 ":" punctuation.separator.key.canon
+230:19-28 "\"In game\"" string.quoted.double.canon
+231:13-18 "label" variable.other.property.canon
+231:18-19 ":" punctuation.separator.key.canon
+231:20-33 "\"Out of game\"" string.quoted.double.canon
+232:13-18 "label" variable.other.property.canon
+232:18-19 ":" punctuation.separator.key.canon
+232:20-30 "\"Internal\"" string.quoted.double.canon
+235:0-26 "/// Where a post was seen." comment.line.documentation.canon
+236:0-3 "let" storage.type.canon
+236:4-9 "areas" variable.other.property.canon
+236:9-10 ":" punctuation.separator.key.canon
+236:11-17 "stable" storage.modifier.canon
+236:18-23 "table" storage.type.canon
+236:24-28 "Area" entity.name.type.canon
+236:29-30 "=" keyword.operator.canon
+238:4-9 "group" variable.other.property.canon
+238:9-10 ":" punctuation.separator.key.canon
+239:4-8 "tone" variable.other.property.canon
+239:8-9 ":" punctuation.separator.key.canon
+240:4-8 "icon" variable.other.property.canon
+240:8-9 ":" punctuation.separator.key.canon
+241:4-9 "label" variable.other.property.canon
+241:9-10 ":" punctuation.separator.key.canon
+241:11-17 "\"Game\"" string.quoted.double.canon
+242:4-11 "minRole" variable.other.property.canon
+242:11-12 ":" punctuation.separator.key.canon
+243:4-8 "hint" variable.other.property.canon
+243:8-9 ":" punctuation.separator.key.canon
+243:10-43 "\"Anything you saw while playing.\"" string.quoted.double.canon
+244:4-12 "routesTo" variable.other.property.canon
+244:12-13 ":" punctuation.separator.key.canon
+247:4-9 "group" variable.other.property.canon
+247:9-10 ":" punctuation.separator.key.canon
+248:4-8 "tone" variable.other.property.canon
+248:8-9 ":" punctuation.separator.key.canon
+249:4-8 "icon" variable.other.property.canon
+249:8-9 ":" punctuation.separator.key.canon
+250:4-9 "label" variable.other.property.canon
+250:9-10 ":" punctuation.separator.key.canon
+250:11-20 "\"Balance\"" string.quoted.double.canon
+251:4-11 "minRole" variable.other.property.canon
+251:11-12 ":" punctuation.separator.key.canon
+252:4-8 "hint" variable.other.property.canon
+252:8-9 ":" punctuation.separator.key.canon
+252:10-54 "\"Nothing is broken, the numbers feel wrong.\"" string.quoted.double.canon
+255:4-9 "group" variable.other.property.canon
+255:9-10 ":" punctuation.separator.key.canon
+256:4-8 "tone" variable.other.property.canon
+256:8-9 ":" punctuation.separator.key.canon
+257:4-8 "icon" variable.other.property.canon
+257:8-9 ":" punctuation.separator.key.canon
+258:4-9 "label" variable.other.property.canon
+258:9-10 ":" punctuation.separator.key.canon
+258:11-20 "\"Website\"" string.quoted.double.canon
+259:4-11 "minRole" variable.other.property.canon
+259:11-12 ":" punctuation.separator.key.canon
+260:4-8 "hint" variable.other.property.canon
+260:8-9 ":" punctuation.separator.key.canon
+260:10-65 "\"The site, accounts, rankings, donations and payments.\"" string.quoted.double.canon
+263:4-9 "group" variable.other.property.canon
+263:9-10 ":" punctuation.separator.key.canon
+264:4-8 "tone" variable.other.property.canon
+264:8-9 ":" punctuation.separator.key.canon
+265:4-8 "icon" variable.other.property.canon
+265:8-9 ":" punctuation.separator.key.canon
+266:4-9 "label" variable.other.property.canon
+266:9-10 ":" punctuation.separator.key.canon
+266:11-28 "\"Resource Studio\"" string.quoted.double.canon
+267:4-11 "minRole" variable.other.property.canon
+267:11-12 ":" punctuation.separator.key.canon
+270:16-21 "group" variable.other.property.canon
+270:21-22 ":" punctuation.separator.key.canon
+270:32-36 "tone" variable.other.property.canon
+270:36-37 ":" punctuation.separator.key.canon
+270:48-52 "icon" variable.other.property.canon
+270:52-53 ":" punctuation.separator.key.canon
+270:62-67 "label" variable.other.property.canon
+270:67-68 ":" punctuation.separator.key.canon
+270:69-82 "\"Game server\"" string.quoted.double.canon
+270:84-91 "minRole" variable.other.property.canon
+270:91-92 ":" punctuation.separator.key.canon
+272:4-9 "group" variable.other.property.canon
+272:9-10 ":" punctuation.separator.key.canon
+273:4-8 "tone" variable.other.property.canon
+273:8-9 ":" punctuation.separator.key.canon
+274:4-8 "icon" variable.other.property.canon
+274:8-9 ":" punctuation.separator.key.canon
+275:4-9 "label" variable.other.property.canon
+275:9-10 ":" punctuation.separator.key.canon
+275:11-24 "\"Game client\"" string.quoted.double.canon
+276:4-11 "minRole" variable.other.property.canon
+276:11-12 ":" punctuation.separator.key.canon
+279:4-9 "group" variable.other.property.canon
+279:9-10 ":" punctuation.separator.key.canon
+280:4-8 "tone" variable.other.property.canon
+280:8-9 ":" punctuation.separator.key.canon
+281:4-8 "icon" variable.other.property.canon
+281:8-9 ":" punctuation.separator.key.canon
+282:4-9 "label" variable.other.property.canon
+282:9-10 ":" punctuation.separator.key.canon
+282:11-33 "\"Game data (Resource)\"" string.quoted.double.canon
+283:4-11 "minRole" variable.other.property.canon
+283:11-12 ":" punctuation.separator.key.canon
+285:14-19 "group" variable.other.property.canon
+285:19-20 ":" punctuation.separator.key.canon
+285:31-35 "tone" variable.other.property.canon
+285:35-36 ":" punctuation.separator.key.canon
+285:47-51 "icon" variable.other.property.canon
+285:51-52 ":" punctuation.separator.key.canon
+285:53-60 "package" keyword.other.canon
+285:62-67 "label" variable.other.property.canon
+285:67-68 ":" punctuation.separator.key.canon
+285:69-80 "\"sovcommon\"" string.quoted.double.canon
+285:82-89 "minRole" variable.other.property.canon
+285:89-90 ":" punctuation.separator.key.canon
+287:0-49 "  /// Tracks the panel's own gate (RequireAdmin)." comment.line.documentation.canon
+289:4-9 "group" variable.other.property.canon
+289:9-10 ":" punctuation.separator.key.canon
+290:4-8 "tone" variable.other.property.canon
+290:8-9 ":" punctuation.separator.key.canon
+291:4-8 "icon" variable.other.property.canon
+291:8-9 ":" punctuation.separator.key.canon
+292:4-9 "label" variable.other.property.canon
+292:9-10 ":" punctuation.separator.key.canon
+292:11-24 "\"Admin panel\"" string.quoted.double.canon
+293:4-11 "minRole" variable.other.property.canon
+293:11-12 ":" punctuation.separator.key.canon
+295:0-39 "  /// Tracks monitoring's AdminMinRole." comment.line.documentation.canon
+297:4-9 "group" variable.other.property.canon
+297:9-10 ":" punctuation.separator.key.canon
+298:4-8 "tone" variable.other.property.canon
+298:8-9 ":" punctuation.separator.key.canon
+299:4-8 "icon" variable.other.property.canon
+299:8-9 ":" punctuation.separator.key.canon
+300:4-9 "label" variable.other.property.canon
+300:9-10 ":" punctuation.separator.key.canon
+300:11-28 "\"Analytics panel\"" string.quoted.double.canon
+301:4-11 "minRole" variable.other.property.canon
+301:11-12 ":" punctuation.separator.key.canon
+304:4-9 "group" variable.other.property.canon
+304:9-10 ":" punctuation.separator.key.canon
+305:4-8 "tone" variable.other.property.canon
+305:8-9 ":" punctuation.separator.key.canon
+306:4-8 "icon" variable.other.property.canon
+306:8-9 ":" punctuation.separator.key.canon
+307:4-9 "label" variable.other.property.canon
+307:9-10 ":" punctuation.separator.key.canon
+307:11-23 "\"Team board\"" string.quoted.double.canon
+308:4-11 "minRole" variable.other.property.canon
+308:11-12 ":" punctuation.separator.key.canon
+309:4-8 "hint" variable.other.property.canon
+309:8-9 ":" punctuation.separator.key.canon
+309:10-64 "\"This board itself: something broken or missing here.\"" string.quoted.double.canon
+312:4-9 "group" variable.other.property.canon
+312:9-10 ":" punctuation.separator.key.canon
+313:4-8 "tone" variable.other.property.canon
+313:8-9 ":" punctuation.separator.key.canon
+314:4-8 "icon" variable.other.property.canon
+314:8-9 ":" punctuation.separator.key.canon
+315:4-9 "label" variable.other.property.canon
+315:9-10 ":" punctuation.separator.key.canon
+315:11-42 "\"Internal (sov, boxes, deploy)\"" string.quoted.double.canon
+316:4-11 "minRole" variable.other.property.canon
+316:11-12 ":" punctuation.separator.key.canon
+320:0-87 "// Derived values are emitted like any other: runtimes read `InitialStatus`, they never" comment.line.double-slash.canon
+321:0-16 "// recompute it." comment.line.double-slash.canon
+323:0-88 "/// A new post starts here: the single status of the first column. The deck has at least" comment.line.documentation.canon
+324:0-83 "/// two columns (`maxHidden` >= 1 is below their count), so `first()!` cannot fail." comment.line.documentation.canon
+325:0-3 "let" storage.type.canon
+325:4-17 "initialStatus" variable.other.property.canon
+325:17-18 ":" punctuation.separator.key.canon
+325:19-22 "ref" storage.modifier.canon
+325:23-29 "Status" entity.name.type.canon
+325:30-31 "=" keyword.operator.canon
+325:39-40 "." punctuation.accessor.canon
+325:40-46 "active" variable.other.property.canon
+325:48-49 "." punctuation.accessor.canon
+325:49-54 "first" variable.other.property.canon
+325:56-57 "!" keyword.operator.canon
+325:57-58 "." punctuation.accessor.canon
+325:58-66 "statuses" variable.other.property.canon
+325:67-68 "0" constant.numeric.integer.canon
+327:0-82 "/// The severity a triaged post gets unless the triager picks another. Exactly one" comment.line.documentation.canon
+328:0-42 "/// exists: see the `default` check below." comment.line.documentation.canon
+329:0-3 "let" storage.type.canon
+329:4-19 "defaultSeverity" variable.other.property.canon
+329:19-20 ":" punctuation.separator.key.canon
+329:21-24 "ref" storage.modifier.canon
+329:25-33 "Severity" entity.name.type.canon
+329:34-35 "=" keyword.operator.canon
+329:46-47 "." punctuation.accessor.canon
+329:47-53 "active" variable.other.property.canon
+329:55-56 "." punctuation.accessor.canon
+329:56-61 "first" variable.other.property.canon
+329:62-63 "." punctuation.accessor.canon
+329:63-70 "default" variable.other.property.canon
+329:71-72 "!" keyword.operator.canon
+331:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+332:0-24 "// Rules about this data" comment.line.double-slash.canon
+333:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+335:0-5 "check" keyword.other.canon
+336:2-5 "for" keyword.control.canon
+336:8-10 "in" keyword.operator.word.canon
+336:19-20 "." punctuation.accessor.canon
+336:20-26 "active" variable.other.property.canon
+337:4-7 "let" storage.type.canon
+337:15-16 "=" keyword.operator.canon
+337:24-25 "." punctuation.accessor.canon
+337:25-31 "active" variable.other.property.canon
+337:33-34 "." punctuation.accessor.canon
+337:34-40 "filter" variable.other.property.canon
+337:43-45 "=>" keyword.operator.canon
+337:47-48 "." punctuation.accessor.canon
+337:48-56 "statuses" variable.other.property.canon
+337:56-57 "." punctuation.accessor.canon
+337:57-65 "contains" variable.other.property.canon
+338:4-6 "if" keyword.control.canon
+338:13-14 "." punctuation.accessor.canon
+338:14-21 "isEmpty" variable.other.property.canon
+339:14-22 "\"status " string.quoted.double.canon
+339:22-23 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+339:23-24 "s" string.quoted.double.canon meta.interpolation.canon
+339:24-25 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+339:25-27 "id" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+339:27-28 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+339:28-58 " is not claimed by any column\"" string.quoted.double.canon
+340:6-10 "else" keyword.control.canon
+340:11-13 "if" keyword.control.canon
+340:20-21 "." punctuation.accessor.canon
+340:21-24 "len" variable.other.property.canon
+340:27-28 ">" keyword.operator.canon
+340:29-30 "1" constant.numeric.integer.canon
+341:14-22 "\"status " string.quoted.double.canon
+341:22-23 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+341:23-24 "s" string.quoted.double.canon meta.interpolation.canon
+341:24-25 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+341:25-27 "id" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+341:27-28 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+341:28-60 " is claimed by several columns: " string.quoted.double.canon
+341:60-61 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+341:61-67 "owners" string.quoted.double.canon meta.interpolation.canon
+341:67-68 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+341:68-71 "map" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+341:71-72 "(" string.quoted.double.canon meta.interpolation.canon
+341:72-73 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+341:73-75 "id" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+341:75-76 ")" string.quoted.double.canon meta.interpolation.canon
+341:76-77 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+341:77-81 "join" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+341:81-82 "(" string.quoted.double.canon meta.interpolation.canon
+341:82-86 "\", \"" string.quoted.double.canon meta.interpolation.canon string.quoted.double.canon
+341:86-87 ")" string.quoted.double.canon meta.interpolation.canon
+341:87-88 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+341:88-89 "\"" string.quoted.double.canon
+346:0-5 "check" keyword.other.canon
+346:13-14 "." punctuation.accessor.canon
+346:14-20 "active" variable.other.property.canon
+346:22-23 "." punctuation.accessor.canon
+346:23-28 "first" variable.other.property.canon
+346:30-31 "!" keyword.operator.canon
+346:31-32 "." punctuation.accessor.canon
+346:32-40 "statuses" variable.other.property.canon
+346:40-41 "." punctuation.accessor.canon
+346:41-44 "len" variable.other.property.canon
+346:47-49 "==" keyword.operator.canon
+346:50-51 "1" constant.numeric.integer.canon
+347:2-6 "else" keyword.control.canon
+347:7-80 "\"the first column must hold exactly one status: it is the initial status\"" string.quoted.double.canon
+349:0-5 "check" keyword.other.canon
+349:16-17 "." punctuation.accessor.canon
+349:17-23 "active" variable.other.property.canon
+349:25-26 "." punctuation.accessor.canon
+349:26-31 "count" variable.other.property.canon
+349:32-33 "." punctuation.accessor.canon
+349:33-40 "default" variable.other.property.canon
+349:42-44 "==" keyword.operator.canon
+349:45-46 "1" constant.numeric.integer.canon
+349:47-51 "else" keyword.control.canon
+349:52-94 "\"severities must have exactly one default\"" string.quoted.double.canon
+351:0-5 "check" keyword.other.canon
+351:10-11 "." punctuation.accessor.canon
+351:11-20 "maxHidden" variable.other.property.canon
+351:21-22 "<" keyword.operator.canon
+351:30-31 "." punctuation.accessor.canon
+351:31-37 "active" variable.other.property.canon
+351:39-40 "." punctuation.accessor.canon
+351:40-43 "len" variable.other.property.canon
+352:2-6 "else" keyword.control.canon
+352:7-19 "\"maxHidden (" string.quoted.double.canon
+352:19-20 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+352:20-24 "deck" string.quoted.double.canon meta.interpolation.canon
+352:24-25 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+352:25-34 "maxHidden" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+352:34-35 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+352:35-77 ") must be less than the number of columns\"" string.quoted.double.canon
+354:0-5 "check" keyword.other.canon
+355:2-5 "for" keyword.control.canon
+355:8-10 "in" keyword.operator.word.canon
+355:21-22 "." punctuation.accessor.canon
+355:22-28 "active" variable.other.property.canon
+356:4-6 "if" keyword.control.canon
+356:7-10 "not" keyword.operator.word.canon
+356:16-17 "." punctuation.accessor.canon
+356:17-23 "active" variable.other.property.canon
+356:25-26 "." punctuation.accessor.canon
+356:26-29 "any" variable.other.property.canon
+356:32-34 "=>" keyword.operator.canon
+356:36-37 "." punctuation.accessor.canon
+356:37-42 "group" variable.other.property.canon
+356:43-45 "==" keyword.operator.canon
+357:14-26 "\"area group " string.quoted.double.canon
+357:26-27 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+357:27-28 "g" string.quoted.double.canon meta.interpolation.canon
+357:28-29 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+357:29-31 "id" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+357:31-32 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+357:32-53 " is named by no area\"" string.quoted.double.canon
+362:0-55 "/// The service code branches on these two flags by id." comment.line.documentation.canon
+363:0-5 "check" keyword.other.canon
+363:6-9 "not" keyword.operator.word.canon
+363:15-16 "." punctuation.accessor.canon
+363:16-24 "blocking" variable.other.property.canon
+363:24-25 "." punctuation.accessor.canon
+363:25-32 "retired" variable.other.property.canon
+363:33-36 "and" keyword.operator.word.canon
+363:37-40 "not" keyword.operator.word.canon
+363:46-47 "." punctuation.accessor.canon
+363:47-56 "sensitive" variable.other.property.canon
+363:56-57 "." punctuation.accessor.canon
+363:57-64 "retired" variable.other.property.canon
+364:2-6 "else" keyword.control.canon
+364:7-87 "\"flags `blocking` and `sensitive` are used by the service and cannot be retired\"" string.quoted.double.canon
+366:0-49 "/// New: the Go loader does not check this today." comment.line.documentation.canon
+367:0-5 "check" keyword.other.canon
+368:2-5 "let" storage.type.canon
+368:11-12 "=" keyword.operator.canon
+368:23-27 "from" variable.other.property.canon
+368:27-28 ":" punctuation.separator.key.canon
+368:44-48 "next" variable.other.property.canon
+368:48-49 ":" punctuation.separator.key.canon
+368:50-51 "." punctuation.accessor.canon
+368:51-55 "next" variable.other.property.canon
+369:2-5 "for" keyword.control.canon
+369:8-10 "in" keyword.operator.word.canon
+369:19-20 "." punctuation.accessor.canon
+369:20-26 "active" variable.other.property.canon
+370:4-6 "if" keyword.control.canon
+370:7-10 "not" keyword.operator.word.canon
+370:15-16 "." punctuation.accessor.canon
+370:16-24 "contains" variable.other.property.canon
+371:14-22 "\"status " string.quoted.double.canon
+371:22-23 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+371:23-24 "s" string.quoted.double.canon meta.interpolation.canon
+371:24-25 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+371:25-27 "id" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+371:27-28 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+371:28-55 " can never be reached from " string.quoted.double.canon
+371:55-56 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+371:56-69 "initialStatus" string.quoted.double.canon meta.interpolation.canon
+371:69-70 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+371:70-72 "id" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+371:72-73 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+371:73-74 "\"" string.quoted.double.canon
+376:0-81 "/// New: a status without a way out, other than a terminal one, would trap posts." comment.line.documentation.canon
+377:0-5 "check" keyword.other.canon
+378:2-5 "for" keyword.control.canon
+378:8-10 "in" keyword.operator.word.canon
+378:19-20 "." punctuation.accessor.canon
+378:20-26 "active" variable.other.property.canon
+379:4-6 "if" keyword.control.canon
+379:7-10 "not" keyword.operator.word.canon
+379:12-13 "." punctuation.accessor.canon
+379:13-21 "terminal" variable.other.property.canon
+379:22-25 "and" keyword.operator.word.canon
+379:27-28 "." punctuation.accessor.canon
+379:28-32 "next" variable.other.property.canon
+379:32-33 "." punctuation.accessor.canon
+379:33-40 "isEmpty" variable.other.property.canon
+380:14-22 "\"status " string.quoted.double.canon
+380:22-23 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+380:23-24 "s" string.quoted.double.canon meta.interpolation.canon
+380:24-25 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+380:25-27 "id" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+380:27-28 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+380:28-68 " is not terminal but has no next status\"" string.quoted.double.canon
+385:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+386:0-79 "// Methods for the services (today: accessors.go and areas.go, written by hand)" comment.line.double-slash.canon
+387:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+388:0-85 "// Every input below is finite (a status, a role, an area), so `canon build` computes" comment.line.double-slash.canon
+389:0-83 "// every answer and the generated Go/TS just look them up: no logic in the runtime." comment.line.double-slash.canon
+391:0-30 "/// sovcommon's CanTransition." comment.line.documentation.canon
+392:0-6 "export" storage.modifier.canon
+392:7-9 "fn" storage.type.function.canon
+392:10-23 "canTransition" entity.name.function.canon
+392:24-28 "from" variable.other.property.canon
+392:28-29 ":" punctuation.separator.key.canon
+392:30-33 "ref" storage.modifier.canon
+392:34-40 "Status" entity.name.type.canon
+392:42-44 "to" variable.other.property.canon
+392:44-45 ":" punctuation.separator.key.canon
+392:46-49 "ref" storage.modifier.canon
+392:50-56 "Status" entity.name.type.canon
+392:58-60 "->" keyword.operator.canon
+392:61-65 "Bool" entity.name.type.canon
+392:68-74 "return" keyword.control.canon
+392:79-80 "." punctuation.accessor.canon
+392:80-84 "next" variable.other.property.canon
+392:84-85 "." punctuation.accessor.canon
+392:85-93 "contains" variable.other.property.canon
+394:0-85 "/// sovcommon's ColumnOf. `none` for a status no active column claims (only a retired" comment.line.documentation.canon
+395:0-71 "/// status can be in that case), like the `(Column, bool)` it replaces." comment.line.documentation.canon
+396:0-6 "export" storage.modifier.canon
+396:7-9 "fn" storage.type.function.canon
+396:10-18 "columnOf" entity.name.function.canon
+396:19-20 "s" variable.other.property.canon
+396:20-21 ":" punctuation.separator.key.canon
+396:22-25 "ref" storage.modifier.canon
+396:26-32 "Status" entity.name.type.canon
+396:34-36 "->" keyword.operator.canon
+396:37-40 "ref" storage.modifier.canon
+396:41-47 "Column" entity.name.type.canon
+396:47-48 "?" keyword.operator.canon
+397:2-8 "return" keyword.control.canon
+397:16-17 "." punctuation.accessor.canon
+397:17-23 "active" variable.other.property.canon
+397:25-26 "." punctuation.accessor.canon
+397:26-31 "first" variable.other.property.canon
+397:34-36 "=>" keyword.operator.canon
+397:38-39 "." punctuation.accessor.canon
+397:39-47 "statuses" variable.other.property.canon
+397:47-48 "." punctuation.accessor.canon
+397:48-56 "contains" variable.other.property.canon
+400:0-66 "/// sovcommon's AreasVisibleTo: minRole gates viewing and posting." comment.line.documentation.canon
+401:0-6 "export" storage.modifier.canon
+401:7-9 "fn" storage.type.function.canon
+401:10-24 "areasVisibleTo" entity.name.function.canon
+401:25-29 "role" variable.other.property.canon
+401:29-30 ":" punctuation.separator.key.canon
+401:31-35 "Role" entity.name.type.canon
+401:37-39 "->" keyword.operator.canon
+401:41-44 "ref" storage.modifier.canon
+401:45-49 "Area" entity.name.type.canon
+402:2-8 "return" keyword.control.canon
+402:12-15 "for" keyword.control.canon
+402:18-20 "in" keyword.operator.word.canon
+402:26-27 "." punctuation.accessor.canon
+402:27-33 "active" variable.other.property.canon
+402:36-38 "if" keyword.control.canon
+402:44-46 ">=" keyword.operator.canon
+402:48-49 "." punctuation.accessor.canon
+402:49-56 "minRole" variable.other.property.canon
+405:0-51 "/// One group header with the areas shown under it." comment.line.documentation.canon
+406:0-6 "record" storage.type.canon
+406:7-18 "AreaSection" entity.name.type.canon
+407:0-17 "  /// The header." comment.line.documentation.canon
+408:2-7 "group" variable.other.property.canon
+408:7-8 ":" punctuation.separator.key.canon
+408:9-12 "ref" storage.modifier.canon
+408:13-22 "AreaGroup" entity.name.type.canon
+409:0-47 "  /// The areas under it, in declaration order." comment.line.documentation.canon
+410:2-7 "areas" variable.other.property.canon
+410:7-8 ":" punctuation.separator.key.canon
+410:10-13 "ref" storage.modifier.canon
+410:14-18 "Area" entity.name.type.canon
+413:0-83 "/// sovcommon's GroupedAreasVisibleTo: headers only for groups with a visible area." comment.line.documentation.canon
+414:0-6 "export" storage.modifier.canon
+414:7-9 "fn" storage.type.function.canon
+414:10-31 "groupedAreasVisibleTo" entity.name.function.canon
+414:32-36 "role" variable.other.property.canon
+414:36-37 ":" punctuation.separator.key.canon
+414:38-42 "Role" entity.name.type.canon
+414:44-46 "->" keyword.operator.canon
+414:48-59 "AreaSection" entity.name.type.canon
+415:2-8 "return" keyword.control.canon
+416:6-11 "group" variable.other.property.canon
+416:11-12 ":" punctuation.separator.key.canon
+416:16-21 "areas" variable.other.property.canon
+416:21-22 ":" punctuation.separator.key.canon
+416:43-44 "." punctuation.accessor.canon
+416:44-50 "filter" variable.other.property.canon
+416:53-55 "=>" keyword.operator.canon
+416:57-58 "." punctuation.accessor.canon
+416:58-63 "group" variable.other.property.canon
+416:64-66 "==" keyword.operator.canon
+417:4-7 "for" keyword.control.canon
+417:10-12 "in" keyword.operator.word.canon
+417:23-24 "." punctuation.accessor.canon
+417:24-30 "active" variable.other.property.canon
+418:4-6 "if" keyword.control.canon
+418:27-28 "." punctuation.accessor.canon
+418:28-31 "any" variable.other.property.canon
+418:34-36 "=>" keyword.operator.canon
+418:38-39 "." punctuation.accessor.canon
+418:39-44 "group" variable.other.property.canon
+418:45-47 "==" keyword.operator.canon
+422:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+423:0-9 "// Output" comment.line.double-slash.canon
+424:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+426:0-4 "emit" keyword.other.canon
+426:10-13 "out" variable.other.property.canon
+426:13-14 ":" punctuation.separator.key.canon
+426:15-37 "\"@sovcommon/teamboard\"" string.quoted.double.canon
+426:39-46 "package" variable.other.property.canon
+426:46-47 ":" punctuation.separator.key.canon
+426:48-59 "\"teamboard\"" string.quoted.double.canon
+426:61-65 "mode" variable.other.property.canon
+426:65-66 ":" punctuation.separator.key.canon
+427:0-4 "emit" keyword.other.canon
+427:10-13 "out" variable.other.property.canon
+427:13-14 ":" punctuation.separator.key.canon
+427:15-44 "\"@web/teamboard/generated.ts\"" string.quoted.double.canon
+428:0-92 "// Every public value as a data file (<value>.json), for readers that are neither Go nor TS." comment.line.double-slash.canon
+429:0-4 "emit" keyword.other.canon
+429:12-15 "out" variable.other.property.canon
+429:15-16 ":" punctuation.separator.key.canon
+429:17-45 "\"@sovcommon/teamboard/data/\"" string.quoted.double.canon

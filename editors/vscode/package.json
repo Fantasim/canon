@@ -1,0 +1,57 @@
+{
+  "name": "canon",
+  "displayName": "Canon",
+  "description": "Canon configuration language: highlighting and the canon lsp language server.",
+  "version": "0.1.0",
+  "publisher": "fantasim",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "canon",
+        "aliases": [
+          "Canon",
+          "canon"
+        ],
+        "extensions": [
+          ".canon"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "canon",
+        "scopeName": "source.canon",
+        "path": "./syntaxes/canon.tmLanguage.json"
+      }
+    ],
+    "configuration": {
+      "title": "Canon",
+      "properties": {
+        "canon.server.path": {
+          "type": "string",
+          "default": "canon",
+          "description": "The canon executable started as `canon lsp` over stdio."
+        }
+      }
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Fantasim/canon.git",
+    "directory": "editors/vscode"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  },
+  "devDependencies": {
+    "@vscode/vsce": "^3"
+  }
+}

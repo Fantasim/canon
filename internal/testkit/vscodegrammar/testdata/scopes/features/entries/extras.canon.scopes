@@ -1,0 +1,24 @@
+1:0-76 "// Two entries in one file: they keep their source order, zeta before alpha." comment.line.double-slash.canon
+2:0-7 "package" keyword.other.canon
+2:8-24 "features.entries" entity.name.namespace.canon
+4:0-25 "/// The last of its kind." comment.line.documentation.canon
+5:0-5 "entry" keyword.other.canon
+5:11-12 "." punctuation.accessor.canon
+5:12-16 "zeta" variable.other.property.canon
+5:19-23 "name" variable.other.property.canon
+5:23-24 ":" punctuation.separator.key.canon
+5:25-37 "\"Zeta stone\"" string.quoted.double.canon
+5:39-43 "kind" variable.other.property.canon
+5:43-44 ":" punctuation.separator.key.canon
+7:0-26 "/// The first of its kind." comment.line.documentation.canon
+8:0-5 "entry" keyword.other.canon
+8:11-12 "." punctuation.accessor.canon
+8:12-17 "alpha" variable.other.property.canon
+8:20-24 "name" variable.other.property.canon
+8:24-25 ":" punctuation.separator.key.canon
+8:26-39 "\"Alpha stone\"" string.quoted.double.canon
+8:41-46 "level" variable.other.property.canon
+8:46-47 ":" punctuation.separator.key.canon
+8:48-49 "2" constant.numeric.integer.canon
+8:51-55 "kind" variable.other.property.canon
+8:55-56 ":" punctuation.separator.key.canon

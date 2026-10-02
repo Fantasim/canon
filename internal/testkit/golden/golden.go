@@ -13,6 +13,9 @@ import (
 
 var update = flag.Bool(updateFlag, false, updateUsage)
 
+// Updating reports whether -update was given, for the golden tests of other testkit packages.
+func Updating() bool { return *update }
+
 // Case is one golden case: a txtar archive, the path it was read from ('/'-separated on every
 // OS, so path.Base and path.Ext read it) and the name of the archive file that holds its
 // expected output.

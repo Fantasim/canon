@@ -1,0 +1,87 @@
+1:0-88 "/// `expect … warns` (SPEC §18): a test that a warning fires, matched by message text" comment.line.documentation.canon
+2:0-82 "/// or by the check's name. A warning never blocks a build, so without such a test" comment.line.documentation.canon
+3:0-42 "/// nothing notices when one stops firing." comment.line.documentation.canon
+4:0-7 "package" keyword.other.canon
+4:8-22 "features.warns" entity.name.namespace.canon
+6:0-24 "/// An NPC shop listing." comment.line.documentation.canon
+7:0-6 "record" storage.type.canon
+7:7-14 "Listing" entity.name.type.canon
+8:0-23 "  /// Item define sold." comment.line.documentation.canon
+9:2-6 "item" variable.other.property.canon
+9:6-7 ":" punctuation.separator.key.canon
+9:8-14 "String" entity.name.type.canon
+9:15-21 "/^II_/" string.regexp.canon
+10:0-21 "  /// Price in penya." comment.line.documentation.canon
+11:2-7 "price" variable.other.property.canon
+11:7-8 ":" punctuation.separator.key.canon
+11:9-12 "Int" entity.name.type.canon
+11:13-14 "0" constant.numeric.integer.canon
+11:14-16 ".." keyword.operator.canon
+12:0-40 "  /// Price the NPC pays to buy it back." comment.line.documentation.canon
+13:2-9 "buyback" variable.other.property.canon
+13:9-10 ":" punctuation.separator.key.canon
+13:11-14 "Int" entity.name.type.canon
+13:15-16 "0" constant.numeric.integer.canon
+13:16-18 ".." keyword.operator.canon
+13:20-21 "=" keyword.operator.canon
+13:22-23 "0" constant.numeric.integer.canon
+15:2-6 "warn" keyword.other.canon
+15:7-16 "free_item" variable.other.property.canon
+15:16-17 ":" punctuation.separator.key.canon
+15:24-25 ">" keyword.operator.canon
+15:26-27 "0" constant.numeric.integer.canon
+15:28-32 "else" keyword.control.canon
+15:33-34 "\"" string.quoted.double.canon
+15:34-35 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+15:35-39 "item" string.quoted.double.canon meta.interpolation.canon
+15:39-40 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+15:40-61 " is sold for 0 penya\"" string.quoted.double.canon
+16:2-6 "warn" keyword.other.canon
+16:7-21 "buyback_profit" variable.other.property.canon
+16:21-22 ":" punctuation.separator.key.canon
+16:31-33 "<=" keyword.operator.canon
+17:4-8 "else" keyword.control.canon
+17:9-17 "\"buying " string.quoted.double.canon
+17:17-18 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+17:18-22 "item" string.quoted.double.canon meta.interpolation.canon
+17:22-23 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+17:23-50 " and selling it back earns " string.quoted.double.canon
+17:50-51 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+17:51-59 "buyback " string.quoted.double.canon meta.interpolation.canon
+17:59-60 "-" string.quoted.double.canon meta.interpolation.canon keyword.operator.canon
+17:60-66 " price" string.quoted.double.canon meta.interpolation.canon
+17:66-67 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+17:67-84 " penya each time\"" string.quoted.double.canon
+20:0-4 "test" keyword.other.canon
+20:5-40 "\"free and profitable listings warn\"" string.quoted.double.canon
+21:2-8 "expect" keyword.other.canon
+21:9-16 "Listing" entity.name.type.canon
+21:19-23 "item" variable.other.property.canon
+21:23-24 ":" punctuation.separator.key.canon
+21:25-48 "\"II_GEN_FOO_INS_HOTDOG\"" string.quoted.double.canon
+21:50-55 "price" variable.other.property.canon
+21:55-56 ":" punctuation.separator.key.canon
+21:57-58 "0" constant.numeric.integer.canon
+22:2-8 "expect" keyword.other.canon
+22:9-16 "Listing" entity.name.type.canon
+22:19-23 "item" variable.other.property.canon
+22:23-24 ":" punctuation.separator.key.canon
+22:25-48 "\"II_GEN_FOO_INS_HOTDOG\"" string.quoted.double.canon
+22:50-55 "price" variable.other.property.canon
+22:55-56 ":" punctuation.separator.key.canon
+22:57-60 "110" constant.numeric.integer.canon
+22:62-69 "buyback" variable.other.property.canon
+22:69-70 ":" punctuation.separator.key.canon
+22:71-74 "200" constant.numeric.integer.canon
+22:83-99 "\"earns 90 penya\"" string.quoted.double.canon
+23:2-8 "expect" keyword.other.canon
+23:9-16 "Listing" entity.name.type.canon
+23:19-23 "item" variable.other.property.canon
+23:23-24 ":" punctuation.separator.key.canon
+23:25-48 "\"II_GEN_FOO_INS_HOTDOG\"" string.quoted.double.canon
+23:50-55 "price" variable.other.property.canon
+23:55-56 ":" punctuation.separator.key.canon
+23:57-60 "110" constant.numeric.integer.canon
+23:62-69 "buyback" variable.other.property.canon
+23:69-70 ":" punctuation.separator.key.canon
+23:71-73 "50" constant.numeric.integer.canon

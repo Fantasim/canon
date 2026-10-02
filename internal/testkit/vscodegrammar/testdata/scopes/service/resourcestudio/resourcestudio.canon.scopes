@@ -1,0 +1,127 @@
+1:0-78 "/// Resource Studio's own settings: an ordinary service config, not game data." comment.line.documentation.canon
+2:0-3 "///" comment.line.documentation.canon
+3:0-82 "/// Replaces config.example.toml, its hand-written loader and its precedence rules" comment.line.documentation.canon
+4:0-84 "/// (\"CLI flag > env > config.toml > derived default\"). Per-machine values move into" comment.line.documentation.canon
+5:0-81 "/// layers (louis.layer.canon); secrets are `input`s and never written in a file." comment.line.documentation.canon
+6:0-7 "package" keyword.other.canon
+6:8-30 "service.resourcestudio" entity.name.namespace.canon
+8:0-81 "/// Absolute, or relative to the resourcestudio directory. `~` and `$VAR` are NOT" comment.line.documentation.canon
+9:0-81 "/// expanded: Canon has no environment. Machine-specific paths belong in a layer." comment.line.documentation.canon
+10:0-4 "type" storage.type.canon
+10:5-9 "Path" entity.name.type.canon
+10:10-11 "=" keyword.operator.canon
+10:12-18 "String" entity.name.type.canon
+10:19-20 "1" constant.numeric.integer.canon
+10:20-22 ".." keyword.operator.canon
+12:0-44 "/// Where the studio reads and caches files." comment.line.documentation.canon
+13:0-6 "record" storage.type.canon
+13:7-12 "Paths" entity.name.type.canon
+14:0-73 "  /// The Resource checkout. Default: derived from the repository layout." comment.line.documentation.canon
+15:2-14 "resourceRoot" variable.other.property.canon
+15:14-15 ":" punctuation.separator.key.canon
+15:16-20 "Path" entity.name.type.canon
+15:21-22 "=" keyword.operator.canon
+15:23-39 "\"../../Resource\"" string.quoted.double.canon
+16:0-45 "  /// The Client checkout (icons and themes)." comment.line.documentation.canon
+17:2-12 "clientRoot" variable.other.property.canon
+17:12-13 ":" punctuation.separator.key.canon
+17:14-18 "Path" entity.name.type.canon
+17:19-20 "=" keyword.operator.canon
+17:21-35 "\"../../Client\"" string.quoted.double.canon
+18:0-78 "  /// The .dds icons; `none` probes <client>/Data/UI/Icon, then <client>/Icon." comment.line.documentation.canon
+19:2-9 "iconDir" variable.other.property.canon
+19:9-10 ":" punctuation.separator.key.canon
+19:11-15 "Path" entity.name.type.canon
+19:15-16 "?" keyword.operator.canon
+19:17-18 "=" keyword.operator.canon
+19:19-23 "none" constant.language.canon
+20:0-52 "  /// Thumbnails and indexes. Never inside Resource." comment.line.documentation.canon
+21:2-10 "cacheDir" variable.other.property.canon
+21:10-11 ":" punctuation.separator.key.canon
+21:12-16 "Path" entity.name.type.canon
+21:17-18 "=" keyword.operator.canon
+21:19-27 "\".cache\"" string.quoted.double.canon
+24:0-26 "/// The local HTTP server." comment.line.documentation.canon
+25:0-6 "record" storage.type.canon
+25:7-13 "Server" entity.name.type.canon
+26:0-49 "  /// The tool is local by design (ADR-0005 d.1)." comment.line.documentation.canon
+27:2-6 "host" variable.other.property.canon
+27:6-7 ":" punctuation.separator.key.canon
+27:8-14 "String" entity.name.type.canon
+27:15-16 "=" keyword.operator.canon
+27:17-28 "\"127.0.0.1\"" string.quoted.double.canon
+28:0-21 "  /// Listening port." comment.line.documentation.canon
+29:2-6 "port" variable.other.property.canon
+29:6-7 ":" punctuation.separator.key.canon
+29:8-11 "Int" entity.name.type.canon
+29:12-16 "1024" constant.numeric.integer.canon
+29:16-19 "..=" keyword.operator.canon
+29:19-24 "65535" constant.numeric.integer.canon
+29:26-27 "=" keyword.operator.canon
+29:28-32 "8765" constant.numeric.integer.canon
+30:0-37 "  /// Opens a browser tab at startup." comment.line.documentation.canon
+31:2-13 "openBrowser" variable.other.property.canon
+31:13-14 ":" punctuation.separator.key.canon
+31:15-19 "Bool" entity.name.type.canon
+31:20-21 "=" keyword.operator.canon
+31:22-26 "true" constant.language.canon
+32:0-39 "  /// Refuses every write: browse only." comment.line.documentation.canon
+33:2-10 "readOnly" variable.other.property.canon
+33:10-11 ":" punctuation.separator.key.canon
+33:12-16 "Bool" entity.name.type.canon
+33:17-18 "=" keyword.operator.canon
+33:19-24 "false" constant.language.canon
+35:2-7 "check" keyword.other.canon
+35:13-15 "==" keyword.operator.canon
+35:16-27 "\"127.0.0.1\"" string.quoted.double.canon
+35:28-30 "or" keyword.operator.word.canon
+35:36-38 "==" keyword.operator.canon
+35:39-50 "\"localhost\"" string.quoted.double.canon
+36:4-8 "else" keyword.control.canon
+36:9-65 "\"Resource Studio only listens on the loopback interface\"" string.quoted.double.canon
+39:0-24 "/// Generation features." comment.line.documentation.canon
+40:0-6 "record" storage.type.canon
+40:7-10 "Gen" entity.name.type.canon
+41:0-66 "  /// Entered right before the action and never stored (ADR-0005)." comment.line.documentation.canon
+42:2-8 "apiKey" variable.other.property.canon
+42:8-9 ":" punctuation.separator.key.canon
+42:10-15 "input" storage.modifier.canon
+42:16-22 "String" entity.name.type.canon
+42:23-24 "1" constant.numeric.integer.canon
+42:24-26 ".." keyword.operator.canon
+42:27-28 "?" keyword.operator.canon
+42:38-65 "\"RESOURCESTUDIO_GEMINI_KEY\"" string.quoted.double.canon
+45:0-32 "/// Every setting of the studio." comment.line.documentation.canon
+46:0-6 "record" storage.type.canon
+46:7-13 "Config" entity.name.type.canon
+47:0-22 "  /// Where files are." comment.line.documentation.canon
+48:2-7 "paths" variable.other.property.canon
+48:7-8 ":" punctuation.separator.key.canon
+48:9-14 "Paths" entity.name.type.canon
+48:15-16 "=" keyword.operator.canon
+49:0-22 "  /// The HTTP server." comment.line.documentation.canon
+50:2-8 "server" variable.other.property.canon
+50:8-9 ":" punctuation.separator.key.canon
+50:10-16 "Server" entity.name.type.canon
+50:17-18 "=" keyword.operator.canon
+51:0-79 "  /// Generation features. Its only field is an input, so the literal is empty." comment.line.documentation.canon
+52:2-5 "gen" variable.other.property.canon
+52:5-6 ":" punctuation.separator.key.canon
+52:7-10 "Gen" entity.name.type.canon
+52:11-12 "=" keyword.operator.canon
+55:0-73 "/// The settings of this build: the defaults, unless a layer amends them." comment.line.documentation.canon
+56:0-3 "let" storage.type.canon
+56:4-10 "config" variable.other.property.canon
+56:10-11 ":" punctuation.separator.key.canon
+56:12-18 "Config" entity.name.type.canon
+56:19-20 "=" keyword.operator.canon
+58:0-66 "// The Go binary embeds the defaults. A layer build replaces them." comment.line.double-slash.canon
+59:0-4 "emit" keyword.other.canon
+59:10-13 "out" variable.other.property.canon
+59:13-14 ":" punctuation.separator.key.canon
+59:15-57 "\"@services/resourcestudio/internal/config\"" string.quoted.double.canon
+59:59-66 "package" variable.other.property.canon
+59:66-67 ":" punctuation.separator.key.canon
+59:68-76 "\"config\"" string.quoted.double.canon
+59:78-82 "mode" variable.other.property.canon
+59:82-83 ":" punctuation.separator.key.canon

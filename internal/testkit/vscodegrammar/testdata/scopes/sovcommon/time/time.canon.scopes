@@ -1,0 +1,256 @@
+1:0-83 "/// Weekly schedule windows, shared by every file that schedules something (events," comment.line.documentation.canon
+2:0-73 "/// invasions, PvP events...) and by the studio's weekly_timeline widget." comment.line.documentation.canon
+3:0-3 "///" comment.line.documentation.canon
+4:0-74 "/// Canonical shape (Resource Schema README 13.8): a time of day is always" comment.line.documentation.canon
+5:0-63 "/// {hour, minute}, never an \"HH:MM\" string nor a minute count." comment.line.documentation.canon
+6:0-7 "package" keyword.other.canon
+6:8-22 "sovcommon.time" entity.name.namespace.canon
+8:0-21 "/// Minutes in a day." comment.line.documentation.canon
+9:0-5 "const" storage.type.canon
+9:6-9 "DAY" constant.other.canon
+9:10-11 "=" keyword.operator.canon
+9:12-16 "1440" constant.numeric.integer.canon
+10:0-22 "/// Minutes in a week." comment.line.documentation.canon
+11:0-5 "const" storage.type.canon
+11:6-10 "WEEK" constant.other.canon
+11:11-12 "=" keyword.operator.canon
+11:13-16 "DAY" constant.other.canon
+11:17-18 "*" keyword.operator.canon
+11:19-20 "7" constant.numeric.integer.canon
+13:0-62 "/// Declared Sunday first so that `.index` equals C's tm_wday." comment.line.documentation.canon
+14:0-4 "enum" storage.type.canon
+14:5-12 "Weekday" entity.name.type.canon
+14:15-18 "Sun" entity.name.type.canon
+14:20-23 "Mon" entity.name.type.canon
+14:25-28 "Tue" entity.name.type.canon
+14:30-33 "Wed" entity.name.type.canon
+14:35-38 "Thu" entity.name.type.canon
+14:40-43 "Fri" entity.name.type.canon
+14:45-48 "Sat" entity.name.type.canon
+16:0-46 "/// A time of day, in UTC wherever it is used." comment.line.documentation.canon
+17:0-6 "record" storage.type.canon
+17:7-16 "TimeOfDay" entity.name.type.canon
+18:0-14 "  /// 0 to 23." comment.line.documentation.canon
+19:2-6 "hour" variable.other.property.canon
+19:6-7 ":" punctuation.separator.key.canon
+19:8-11 "Int" entity.name.type.canon
+19:12-13 "0" constant.numeric.integer.canon
+19:13-16 "..=" keyword.operator.canon
+19:16-18 "23" constant.numeric.integer.canon
+20:0-14 "  /// 0 to 59." comment.line.documentation.canon
+21:2-8 "minute" variable.other.property.canon
+21:8-9 ":" punctuation.separator.key.canon
+21:10-13 "Int" entity.name.type.canon
+21:14-15 "0" constant.numeric.integer.canon
+21:15-18 "..=" keyword.operator.canon
+21:18-20 "59" constant.numeric.integer.canon
+23:2-4 "fn" storage.type.function.canon
+23:5-12 "minutes" entity.name.function.canon
+23:13-17 "self" variable.language.canon
+23:19-21 "->" keyword.operator.canon
+23:22-25 "Int" entity.name.type.canon
+23:28-34 "return" keyword.control.canon
+23:40-41 "*" keyword.operator.canon
+23:42-44 "60" constant.numeric.integer.canon
+23:45-46 "+" keyword.operator.canon
+26:0-80 "/// A half-open [start, end) span in UTC. `end` before `start` is a valid window" comment.line.documentation.canon
+27:0-44 "/// that crosses midnight into the next day." comment.line.documentation.canon
+28:0-6 "record" storage.type.canon
+28:7-13 "Window" entity.name.type.canon
+29:0-27 "  /// Day the window opens." comment.line.documentation.canon
+30:2-5 "day" variable.other.property.canon
+30:5-6 ":" punctuation.separator.key.canon
+30:7-14 "Weekday" entity.name.type.canon
+31:0-20 "  /// When it opens." comment.line.documentation.canon
+32:2-10 "startUtc" variable.other.property.canon
+32:10-11 ":" punctuation.separator.key.canon
+32:12-21 "TimeOfDay" entity.name.type.canon
+33:0-59 "  /// When it closes; before `startUtc` means the next day." comment.line.documentation.canon
+34:2-8 "endUtc" variable.other.property.canon
+34:8-9 ":" punctuation.separator.key.canon
+34:10-19 "TimeOfDay" entity.name.type.canon
+36:0-87 "  /// ScheduleWindow::IsValid() refuses it. 00:00 -> 00:00 is NOT a full-day shorthand." comment.line.documentation.canon
+37:2-7 "check" keyword.other.canon
+37:17-19 "!=" keyword.operator.canon
+38:4-8 "else" keyword.control.canon
+38:9-89 "\"zero-length window: the loader refuses it and nothing would fire for this slot\"" string.quoted.double.canon
+41:0-83 "/// The minutes of the week a window occupies: one range, or two when it wraps past" comment.line.documentation.canon
+42:0-24 "/// the end of the week." comment.line.documentation.canon
+43:0-2 "fn" storage.type.function.canon
+43:3-12 "occupancy" entity.name.function.canon
+43:13-14 "w" variable.other.property.canon
+43:14-15 ":" punctuation.separator.key.canon
+43:16-22 "Window" entity.name.type.canon
+43:24-26 "->" keyword.operator.canon
+43:28-33 "Range" entity.name.type.canon
+44:2-5 "let" storage.type.canon
+44:12-13 "=" keyword.operator.canon
+44:15-16 "." punctuation.accessor.canon
+44:16-19 "day" variable.other.property.canon
+44:19-20 "." punctuation.accessor.canon
+44:20-25 "index" variable.other.property.canon
+44:26-27 "*" keyword.operator.canon
+44:28-31 "DAY" constant.other.canon
+44:32-33 "+" keyword.operator.canon
+44:35-36 "." punctuation.accessor.canon
+44:36-44 "startUtc" variable.other.property.canon
+44:44-45 "." punctuation.accessor.canon
+44:45-52 "minutes" variable.other.property.canon
+45:2-5 "var" storage.type.canon
+45:13-14 "=" keyword.operator.canon
+45:16-17 "." punctuation.accessor.canon
+45:17-23 "endUtc" variable.other.property.canon
+45:23-24 "." punctuation.accessor.canon
+45:24-31 "minutes" variable.other.property.canon
+45:34-35 "-" keyword.operator.canon
+45:37-38 "." punctuation.accessor.canon
+45:38-46 "startUtc" variable.other.property.canon
+45:46-47 "." punctuation.accessor.canon
+45:47-54 "minutes" variable.other.property.canon
+46:2-4 "if" keyword.control.canon
+46:12-13 "<" keyword.operator.canon
+46:14-15 "0" constant.numeric.integer.canon
+46:25-27 "+=" keyword.operator.canon
+46:28-31 "DAY" constant.other.canon
+47:2-5 "let" storage.type.canon
+47:10-11 "=" keyword.operator.canon
+47:18-19 "+" keyword.operator.canon
+48:2-4 "if" keyword.control.canon
+48:9-11 "<=" keyword.operator.canon
+48:12-16 "WEEK" constant.other.canon
+48:19-25 "return" keyword.control.canon
+48:32-34 ".." keyword.operator.canon
+49:2-8 "return" keyword.control.canon
+49:15-17 ".." keyword.operator.canon
+49:17-21 "WEEK" constant.other.canon
+49:23-24 "0" constant.numeric.integer.canon
+49:24-26 ".." keyword.operator.canon
+49:30-31 "-" keyword.operator.canon
+49:32-36 "WEEK" constant.other.canon
+52:0-2 "fn" storage.type.function.canon
+52:3-11 "overlaps" entity.name.function.canon
+52:12-13 "a" variable.other.property.canon
+52:13-14 ":" punctuation.separator.key.canon
+52:15-21 "Window" entity.name.type.canon
+52:23-24 "b" variable.other.property.canon
+52:24-25 ":" punctuation.separator.key.canon
+52:26-32 "Window" entity.name.type.canon
+52:34-36 "->" keyword.operator.canon
+52:37-41 "Bool" entity.name.type.canon
+53:2-8 "return" keyword.control.canon
+53:21-22 "." punctuation.accessor.canon
+53:22-25 "any" variable.other.property.canon
+53:28-30 "=>" keyword.operator.canon
+53:43-44 "." punctuation.accessor.canon
+53:44-47 "any" variable.other.property.canon
+53:50-52 "=>" keyword.operator.canon
+53:54-55 "." punctuation.accessor.canon
+53:55-60 "start" variable.other.property.canon
+53:61-62 "<" keyword.operator.canon
+53:64-65 "." punctuation.accessor.canon
+53:65-68 "end" variable.other.property.canon
+53:69-72 "and" keyword.operator.word.canon
+53:74-75 "." punctuation.accessor.canon
+53:75-80 "start" variable.other.property.canon
+53:81-82 "<" keyword.operator.canon
+53:84-85 "." punctuation.accessor.canon
+53:85-88 "end" variable.other.property.canon
+56:0-89 "// Packages that use Window in their own C++ or view model need these types emitted once," comment.line.double-slash.canon
+57:0-67 "// here (AUDIT EMT-06, VM-03): they refer to them, never copy them." comment.line.double-slash.canon
+58:0-4 "emit" keyword.other.canon
+58:11-14 "out" variable.other.property.canon
+58:14-15 ":" punctuation.separator.key.canon
+58:16-40 "\"@source/Generated/time\"" string.quoted.double.canon
+58:42-51 "namespace" variable.other.property.canon
+58:51-52 ":" punctuation.separator.key.canon
+58:53-64 "\"sov::time\"" string.quoted.double.canon
+58:66-70 "mode" variable.other.property.canon
+58:70-71 ":" punctuation.separator.key.canon
+59:0-4 "emit" keyword.other.canon
+59:5-9 "view" keyword.other.canon
+59:12-15 "out" variable.other.property.canon
+59:15-16 ":" punctuation.separator.key.canon
+59:17-44 "\"@generated/time.view.json\"" string.quoted.double.canon
+61:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+62:0-8 "// Tests" comment.line.double-slash.canon
+63:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+65:0-5 "local" storage.modifier.canon
+65:6-8 "fn" storage.type.function.canon
+65:9-11 "at" entity.name.function.canon
+65:12-15 "day" variable.other.property.canon
+65:15-16 ":" punctuation.separator.key.canon
+65:17-24 "Weekday" entity.name.type.canon
+65:26-30 "from" variable.other.property.canon
+65:30-31 ":" punctuation.separator.key.canon
+65:32-35 "Int" entity.name.type.canon
+65:37-39 "to" variable.other.property.canon
+65:39-40 ":" punctuation.separator.key.canon
+65:41-44 "Int" entity.name.type.canon
+65:46-48 "->" keyword.operator.canon
+65:49-55 "Window" entity.name.type.canon
+66:2-8 "return" keyword.control.canon
+66:11-14 "day" variable.other.property.canon
+66:14-15 ":" punctuation.separator.key.canon
+66:21-29 "startUtc" variable.other.property.canon
+66:29-30 ":" punctuation.separator.key.canon
+66:33-37 "hour" variable.other.property.canon
+66:37-38 ":" punctuation.separator.key.canon
+66:45-51 "minute" variable.other.property.canon
+66:51-52 ":" punctuation.separator.key.canon
+66:53-54 "0" constant.numeric.integer.canon
+66:58-64 "endUtc" variable.other.property.canon
+66:64-65 ":" punctuation.separator.key.canon
+66:68-72 "hour" variable.other.property.canon
+66:72-73 ":" punctuation.separator.key.canon
+66:78-84 "minute" variable.other.property.canon
+66:84-85 ":" punctuation.separator.key.canon
+66:86-87 "0" constant.numeric.integer.canon
+69:0-4 "test" keyword.other.canon
+69:5-34 "\"a window may cross midnight\"" string.quoted.double.canon
+70:2-8 "expect" keyword.other.canon
+70:21-24 "Mon" entity.name.type.canon
+70:26-28 "22" constant.numeric.integer.canon
+70:30-31 "2" constant.numeric.integer.canon
+70:37-40 "Tue" entity.name.type.canon
+70:42-43 "3" constant.numeric.integer.canon
+70:45-46 "5" constant.numeric.integer.canon
+70:49-51 "==" keyword.operator.canon
+70:52-57 "false" constant.language.canon
+71:2-8 "expect" keyword.other.canon
+71:21-24 "Mon" entity.name.type.canon
+71:26-28 "22" constant.numeric.integer.canon
+71:30-31 "2" constant.numeric.integer.canon
+71:37-40 "Tue" entity.name.type.canon
+71:42-43 "1" constant.numeric.integer.canon
+71:45-46 "5" constant.numeric.integer.canon
+71:49-51 "==" keyword.operator.canon
+71:52-56 "true" constant.language.canon
+74:0-4 "test" keyword.other.canon
+74:5-45 "\"a window may cross the end of the week\"" string.quoted.double.canon
+75:2-8 "expect" keyword.other.canon
+75:21-24 "Sat" entity.name.type.canon
+75:26-28 "23" constant.numeric.integer.canon
+75:30-31 "1" constant.numeric.integer.canon
+75:37-40 "Sun" entity.name.type.canon
+75:42-43 "0" constant.numeric.integer.canon
+75:45-46 "2" constant.numeric.integer.canon
+75:49-51 "==" keyword.operator.canon
+75:52-56 "true" constant.language.canon
+78:0-4 "test" keyword.other.canon
+78:5-38 "\"touching windows do not overlap\"" string.quoted.double.canon
+79:2-8 "expect" keyword.other.canon
+79:21-24 "Mon" entity.name.type.canon
+79:26-28 "20" constant.numeric.integer.canon
+79:30-32 "22" constant.numeric.integer.canon
+79:38-41 "Mon" entity.name.type.canon
+79:43-45 "22" constant.numeric.integer.canon
+79:47-49 "23" constant.numeric.integer.canon
+79:52-54 "==" keyword.operator.canon
+79:55-60 "false" constant.language.canon
+82:0-4 "test" keyword.other.canon
+82:5-38 "\"zero-length windows are refused\"" string.quoted.double.canon
+83:2-8 "expect" keyword.other.canon
+83:12-15 "Wed" entity.name.type.canon
+83:17-19 "12" constant.numeric.integer.canon
+83:21-23 "12" constant.numeric.integer.canon
+83:31-51 "\"zero-length window\"" string.quoted.double.canon

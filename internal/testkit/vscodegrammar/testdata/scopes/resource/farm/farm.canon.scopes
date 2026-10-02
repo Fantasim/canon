@@ -1,0 +1,354 @@
+1:0-81 "/// Farm settings and the catalog of plantable models: prices, access conditions," comment.line.documentation.canon
+2:0-38 "/// production per level, and bonuses." comment.line.documentation.canon
+3:0-87 "/// Loader: FarmSystem::FarmConfig::LoadFromFile (Game/Content/Farm/FarmConfig.cpp:70)." comment.line.documentation.canon
+4:0-3 "///" comment.line.documentation.canon
+5:0-88 "/// What the resourcestudio overlay (farm.json) had to state by hand and is now derived:" comment.line.documentation.canon
+6:0-80 "///   - every field's type, key, container and field order: from the types below" comment.line.documentation.canon
+7:0-85 "///   - \"Absent = 50000000.\" in help texts: real defaults, which the loader also uses" comment.line.documentation.canon
+8:0-76 "///   - the two `warnings`: the two `warn`s, now reported on the exact entry" comment.line.documentation.canon
+9:0-70 "///   - `messages.unique`: `keyed by typeId` reports duplicates itself" comment.line.documentation.canon
+10:0-55 "/// What remains presentation lives in farm.view.canon." comment.line.documentation.canon
+11:0-7 "package" keyword.other.canon
+11:8-21 "resource.farm" entity.name.namespace.canon
+13:0-6 "import" keyword.other.canon
+13:15-16 "." punctuation.accessor.canon
+13:16-21 "vocab" variable.other.property.canon
+15:0-5 "local" storage.modifier.canon
+15:6-9 "let" storage.type.canon
+15:16-17 "=" keyword.operator.canon
+15:18-22 "load" keyword.other.canon
+15:22-23 "." punctuation.accessor.canon
+15:23-30 "defines" variable.other.property.canon
+15:31-69 "\"@resource/Server/Define/defineText.h\"" string.quoted.double.canon
+15:71-77 "prefix" variable.other.property.canon
+15:77-78 ":" punctuation.separator.key.canon
+15:79-85 "\"TID_\"" string.quoted.double.canon
+16:0-5 "local" storage.modifier.canon
+16:6-9 "let" storage.type.canon
+16:21-22 "=" keyword.operator.canon
+16:23-27 "load" keyword.other.canon
+16:27-28 "." punctuation.accessor.canon
+16:28-35 "defines" variable.other.property.canon
+16:36-79 "\"@resource/Server/Define/defineAttribute.h\"" string.quoted.double.canon
+16:81-87 "prefix" variable.other.property.canon
+16:87-88 ":" punctuation.separator.key.canon
+16:89-95 "\"DST_\"" string.quoted.double.canon
+18:0-57 "/// FARM_MAX_MODELS, a compiled constant (not a setting)." comment.line.documentation.canon
+19:0-5 "const" storage.type.canon
+19:6-21 "FARM_MAX_MODELS" constant.other.canon
+19:22-23 "=" keyword.operator.canon
+19:24-27 "100" constant.numeric.integer.canon
+21:0-37 "/// An amount of the game's currency." comment.line.documentation.canon
+22:0-4 "type" storage.type.canon
+22:5-10 "Penya" entity.name.type.canon
+22:11-12 "=" keyword.operator.canon
+22:13-16 "Int" entity.name.type.canon
+22:17-18 "0" constant.numeric.integer.canon
+22:18-20 ".." keyword.operator.canon
+24:0-31 "/// An item and how many of it." comment.line.documentation.canon
+25:0-6 "record" storage.type.canon
+25:7-15 "ItemCost" entity.name.type.canon
+26:0-92 "  /// An item that does not resolve on the WorldServer prevents the whole farm from loading." comment.line.documentation.canon
+27:2-6 "item" variable.other.property.canon
+27:6-7 ":" punctuation.separator.key.canon
+27:8-11 "ref" storage.modifier.canon
+27:18-19 "@" meta.annotation.canon punctuation.definition.annotation.canon
+27:19-23 "json" meta.annotation.canon entity.name.function.decorator.canon
+27:23-24 "(" meta.annotation.canon
+27:24-36 "\"itemDefine\"" meta.annotation.canon string.quoted.double.canon
+27:36-37 ")" meta.annotation.canon
+28:0-28 "  /// How many are consumed." comment.line.documentation.canon
+29:2-7 "count" variable.other.property.canon
+29:7-8 ":" punctuation.separator.key.canon
+29:9-12 "Int" entity.name.type.canon
+29:13-14 "1" constant.numeric.integer.canon
+29:14-16 ".." keyword.operator.canon
+29:18-19 "=" keyword.operator.canon
+29:20-21 "1" constant.numeric.integer.canon
+32:0-56 "/// An attribute bonus granted while a model is planted." comment.line.documentation.canon
+33:0-6 "record" storage.type.canon
+33:7-12 "Bonus" entity.name.type.canon
+34:0-44 "  /// The attribute raised (a DST_* define)." comment.line.documentation.canon
+35:2-11 "attribute" variable.other.property.canon
+35:11-12 ":" punctuation.separator.key.canon
+35:13-16 "ref" storage.modifier.canon
+35:28-29 "@" meta.annotation.canon punctuation.definition.annotation.canon
+35:29-33 "json" meta.annotation.canon entity.name.function.decorator.canon
+35:33-34 "(" meta.annotation.canon
+35:34-39 "\"dst\"" meta.annotation.canon string.quoted.double.canon
+35:39-40 ")" meta.annotation.canon
+36:0-28 "  /// How much it is raised." comment.line.documentation.canon
+37:2-7 "value" variable.other.property.canon
+37:7-8 ":" punctuation.separator.key.canon
+37:9-12 "Int" entity.name.type.canon
+37:13-14 "=" keyword.operator.canon
+37:15-16 "0" constant.numeric.integer.canon
+39:2-6 "warn" keyword.other.canon
+39:13-15 "!=" keyword.operator.canon
+39:16-17 "0" constant.numeric.integer.canon
+39:18-22 "else" keyword.control.canon
+39:23-51 "\"a bonus of 0 has no effect\"" string.quoted.double.canon
+42:0-38 "/// Settings that apply to every farm." comment.line.documentation.canon
+43:0-6 "record" storage.type.canon
+43:7-13 "Global" entity.name.type.canon
+44:0-30 "  /// Paid once to own a farm." comment.line.documentation.canon
+45:2-19 "farmPurchasePrice" variable.other.property.canon
+45:19-20 ":" punctuation.separator.key.canon
+45:21-26 "Penya" entity.name.type.canon
+45:27-28 "=" keyword.operator.canon
+45:29-39 "50_000_000" constant.numeric.integer.canon
+46:0-54 "  /// Paid by a player who visits someone else's farm." comment.line.documentation.canon
+47:2-11 "visitCost" variable.other.property.canon
+47:11-12 ":" punctuation.separator.key.canon
+47:13-18 "Penya" entity.name.type.canon
+47:19-20 "=" keyword.operator.canon
+47:21-28 "100_000" constant.numeric.integer.canon
+48:0-48 "  /// Minimum faery rank required to own a farm." comment.line.documentation.canon
+49:2-23 "worldLevelMinRequired" variable.other.property.canon
+49:23-24 ":" punctuation.separator.key.canon
+49:25-28 "Int" entity.name.type.canon
+49:29-30 "0" constant.numeric.integer.canon
+49:30-32 ".." keyword.operator.canon
+49:34-35 "=" keyword.operator.canon
+49:36-37 "5" constant.numeric.integer.canon
+50:0-53 "  /// Minimum activity points required to own a farm." comment.line.documentation.canon
+51:2-27 "activityPointsMinRequired" variable.other.property.canon
+51:27-28 ":" punctuation.separator.key.canon
+51:29-32 "Int" entity.name.type.canon
+51:33-34 "0" constant.numeric.integer.canon
+51:34-36 ".." keyword.operator.canon
+51:38-39 "=" keyword.operator.canon
+51:40-44 "1000" constant.numeric.integer.canon
+52:0-45 "  /// How often every planted model produces." comment.line.documentation.canon
+53:2-16 "productionTick" variable.other.property.canon
+53:16-17 ":" punctuation.separator.key.canon
+53:18-26 "Duration" entity.name.type.canon
+53:27-29 "1s" constant.numeric.duration.canon
+53:29-31 ".." keyword.operator.canon
+53:33-34 "=" keyword.operator.canon
+53:35-37 "1h" constant.numeric.duration.canon
+53:38-39 "@" meta.annotation.canon punctuation.definition.annotation.canon
+53:39-43 "json" meta.annotation.canon entity.name.function.decorator.canon
+53:43-44 "(" meta.annotation.canon
+53:44-71 "\"productionTickIntervalSec\"" meta.annotation.canon string.quoted.double.canon
+53:71-73 ", " meta.annotation.canon
+53:73-77 "unit" meta.annotation.canon variable.parameter.canon
+53:77-78 ":" meta.annotation.canon punctuation.separator.key.canon
+53:78-81 " s)" meta.annotation.canon
+55:0-52 "  /// A cap on planted models that nothing enforces." comment.line.documentation.canon
+56:2-11 "maxModels" variable.other.property.canon
+56:11-12 ":" punctuation.separator.key.canon
+56:13-16 "Int" entity.name.type.canon
+56:16-17 "?" keyword.operator.canon
+56:18-19 "=" keyword.operator.canon
+56:20-24 "none" constant.language.canon
+57:4-5 "@" meta.annotation.canon punctuation.definition.annotation.canon
+57:5-15 "deprecated" meta.annotation.canon entity.name.function.decorator.canon
+57:15-16 "(" meta.annotation.canon
+57:16-133 "\"never read by LoadFromFile: the real cap is FARM_MAX_MODELS = 100. Kept as is; changing it changes nothing in game.\"" meta.annotation.canon string.quoted.double.canon
+57:133-134 ")" meta.annotation.canon
+60:0-90 "/// One level of a model: what it produces, what it grants, and what the next level costs." comment.line.documentation.canon
+61:0-3 "///" comment.line.documentation.canon
+62:0-88 "/// A Premium model (typeId 7 to 14 in farm_config.json) is decorative: its single level" comment.line.documentation.canon
+63:0-86 "/// produces nothing and only carries bonuses, so its three production fields are left" comment.line.documentation.canon
+64:0-87 "/// out. The loader then falls back to productionPerHour 1 and maxStorage 100, which no" comment.line.documentation.canon
+65:0-59 "/// production ever uses since there is no production item." comment.line.documentation.canon
+66:0-6 "record" storage.type.canon
+66:7-12 "Level" entity.name.type.canon
+67:0-86 "  /// Not used for indexing: GetLevel(n) takes element n-1, so the ORDER of the levels" comment.line.documentation.canon
+68:0-65 "  /// is what counts. Kept consistent by the `warn` on ModelType." comment.line.documentation.canon
+69:2-7 "level" variable.other.property.canon
+69:7-8 ":" punctuation.separator.key.canon
+69:9-12 "Int" entity.name.type.canon
+69:13-14 "1" constant.numeric.integer.canon
+69:14-16 ".." keyword.operator.canon
+70:0-86 "  /// A MODELELEM of OT_OBJ (obj_UC017, KaillunPlants04...). An unknown name is only a" comment.line.documentation.canon
+71:0-54 "  /// warning in C++; it is resolved again at runtime." comment.line.documentation.canon
+72:2-11 "modelName" variable.other.property.canon
+72:11-12 ":" punctuation.separator.key.canon
+72:13-19 "String" entity.name.type.canon
+72:20-21 "1" constant.numeric.integer.canon
+72:21-23 ".." keyword.operator.canon
+73:0-54 "  /// The item produced; `none` on a decorative level." comment.line.documentation.canon
+74:2-16 "productionItem" variable.other.property.canon
+74:16-17 ":" punctuation.separator.key.canon
+74:18-21 "ref" storage.modifier.canon
+74:27-28 "?" keyword.operator.canon
+74:29-30 "=" keyword.operator.canon
+74:31-35 "none" constant.language.canon
+74:36-37 "@" meta.annotation.canon punctuation.definition.annotation.canon
+74:37-41 "json" meta.annotation.canon entity.name.function.decorator.canon
+74:41-42 "(" meta.annotation.canon
+74:42-64 "\"productionItemDefine\"" meta.annotation.canon string.quoted.double.canon
+74:64-65 ")" meta.annotation.canon
+75:0-60 "  /// Items produced per hour; `none` on a decorative level." comment.line.documentation.canon
+76:2-19 "productionPerHour" variable.other.property.canon
+76:19-20 ":" punctuation.separator.key.canon
+76:21-24 "Int" entity.name.type.canon
+76:25-26 "0" constant.numeric.integer.canon
+76:26-28 ".." keyword.operator.canon
+76:29-30 "?" keyword.operator.canon
+76:31-32 "=" keyword.operator.canon
+76:33-37 "none" constant.language.canon
+77:0-82 "  /// Items the level holds before production stops; `none` on a decorative level." comment.line.documentation.canon
+78:2-12 "maxStorage" variable.other.property.canon
+78:12-13 ":" punctuation.separator.key.canon
+78:14-17 "Int" entity.name.type.canon
+78:18-19 "0" constant.numeric.integer.canon
+78:19-21 ".." keyword.operator.canon
+78:22-23 "?" keyword.operator.canon
+78:24-25 "=" keyword.operator.canon
+78:26-30 "none" constant.language.canon
+79:0-61 "  /// Bonuses granted while a model of this level is planted." comment.line.documentation.canon
+80:2-9 "bonuses" variable.other.property.canon
+80:9-10 ":" punctuation.separator.key.canon
+80:12-17 "Bonus" entity.name.type.canon
+80:19-20 "=" keyword.operator.canon
+81:0-47 "  /// Items consumed to move TO the next level." comment.line.documentation.canon
+82:2-21 "levelUpRequirements" variable.other.property.canon
+82:21-22 ":" punctuation.separator.key.canon
+82:24-32 "ItemCost" entity.name.type.canon
+82:34-35 "=" keyword.operator.canon
+84:2-7 "check" keyword.other.canon
+84:8-27 "production_together" variable.other.property.canon
+84:27-28 ":" punctuation.separator.key.canon
+84:45-47 "==" keyword.operator.canon
+84:48-52 "none" constant.language.canon
+84:54-56 "==" keyword.operator.canon
+84:76-78 "==" keyword.operator.canon
+84:79-83 "none" constant.language.canon
+84:85-88 "and" keyword.operator.word.canon
+85:20-22 "==" keyword.operator.canon
+85:23-27 "none" constant.language.canon
+85:29-31 "==" keyword.operator.canon
+85:44-46 "==" keyword.operator.canon
+85:47-51 "none" constant.language.canon
+86:4-8 "else" keyword.control.canon
+86:9-117 "\"productionItem, productionPerHour and maxStorage go together: set all three, or none on a decorative level\"" string.quoted.double.canon
+89:0-47 "/// A plantable model and its ladder of levels." comment.line.documentation.canon
+90:0-6 "record" storage.type.canon
+90:7-16 "ModelType" entity.name.type.canon
+91:0-74 "  /// Stored on players' farms: changing it breaks models already planted." comment.line.documentation.canon
+92:2-8 "typeId" variable.other.property.canon
+92:8-9 ":" punctuation.separator.key.canon
+92:10-13 "Int" entity.name.type.canon
+92:14-15 "0" constant.numeric.integer.canon
+92:15-17 ".." keyword.operator.canon
+93:0-61 "  /// Logging label. The name shown to players is `nameText`." comment.line.documentation.canon
+94:2-10 "typeName" variable.other.property.canon
+94:10-11 ":" punctuation.separator.key.canon
+94:12-18 "String" entity.name.type.canon
+95:0-48 "  /// Text shown to players as the model's name." comment.line.documentation.canon
+96:2-10 "nameText" variable.other.property.canon
+96:10-11 ":" punctuation.separator.key.canon
+96:12-15 "ref" storage.modifier.canon
+96:21-22 "?" keyword.operator.canon
+96:23-24 "=" keyword.operator.canon
+96:25-29 "none" constant.language.canon
+96:30-31 "@" meta.annotation.canon punctuation.definition.annotation.canon
+96:31-35 "json" meta.annotation.canon entity.name.function.decorator.canon
+96:35-36 "(" meta.annotation.canon
+96:36-52 "\"nameTextDefine\"" meta.annotation.canon string.quoted.double.canon
+96:52-53 ")" meta.annotation.canon
+97:0-31 "  /// Paid to unlock the model." comment.line.documentation.canon
+98:2-13 "unlockPrice" variable.other.property.canon
+98:13-14 ":" punctuation.separator.key.canon
+98:15-20 "Penya" entity.name.type.canon
+98:21-22 "=" keyword.operator.canon
+98:23-24 "0" constant.numeric.integer.canon
+99:0-66 "  /// Paid in addition to the gold. Only read when it is an array." comment.line.documentation.canon
+100:2-13 "unlockItems" variable.other.property.canon
+100:13-14 ":" punctuation.separator.key.canon
+100:16-24 "ItemCost" entity.name.type.canon
+100:26-27 "=" keyword.operator.canon
+101:0-48 "  /// How many of this model one player may buy." comment.line.documentation.canon
+102:2-13 "maxBuyCount" variable.other.property.canon
+102:13-14 ":" punctuation.separator.key.canon
+102:15-18 "Int" entity.name.type.canon
+102:19-20 "1" constant.numeric.integer.canon
+102:20-22 ".." keyword.operator.canon
+102:24-25 "=" keyword.operator.canon
+102:26-27 "1" constant.numeric.integer.canon
+103:0-38 "  /// Highest level a model can reach." comment.line.documentation.canon
+104:2-10 "maxLevel" variable.other.property.canon
+104:10-11 ":" punctuation.separator.key.canon
+104:12-15 "Int" entity.name.type.canon
+104:16-17 "1" constant.numeric.integer.canon
+104:17-19 ".." keyword.operator.canon
+104:21-22 "=" keyword.operator.canon
+104:23-24 "1" constant.numeric.integer.canon
+105:0-59 "  /// The ORDER is the level: the first element is level 1." comment.line.documentation.canon
+106:2-8 "levels" variable.other.property.canon
+106:8-9 ":" punctuation.separator.key.canon
+106:11-16 "Level" entity.name.type.canon
+108:2-86 "// The loader does not check these; the six models shipped first trip the first one." comment.line.double-slash.canon
+109:2-6 "warn" keyword.other.canon
+109:7-25 "unreachable_levels" variable.other.property.canon
+109:25-26 ":" punctuation.separator.key.canon
+109:36-38 "<=" keyword.operator.canon
+109:45-46 "." punctuation.accessor.canon
+109:46-49 "len" variable.other.property.canon
+110:4-8 "else" keyword.control.canon
+110:9-22 "\"maxLevel is " string.quoted.double.canon
+110:22-23 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+110:23-31 "maxLevel" string.quoted.double.canon meta.interpolation.canon
+110:31-32 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+110:32-42 " but only " string.quoted.double.canon
+110:42-43 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+110:43-49 "levels" string.quoted.double.canon meta.interpolation.canon
+110:49-50 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+110:50-53 "len" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+110:53-55 "()" string.quoted.double.canon meta.interpolation.canon
+110:55-56 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+110:56-77 " levels exist: level " string.quoted.double.canon
+110:77-78 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+110:78-84 "levels" string.quoted.double.canon meta.interpolation.canon
+110:84-85 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+110:85-88 "len" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+110:88-91 "() " string.quoted.double.canon meta.interpolation.canon
+110:91-92 "+" string.quoted.double.canon meta.interpolation.canon keyword.operator.canon
+110:92-93 " " string.quoted.double.canon meta.interpolation.canon
+110:93-94 "1" string.quoted.double.canon meta.interpolation.canon constant.numeric.integer.canon
+110:94-95 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+110:95-149 " and above are unreachable (GetLevel returns nullptr)\"" string.quoted.double.canon
+111:2-6 "warn" keyword.other.canon
+111:7-21 "level_mismatch" variable.other.property.canon
+111:21-22 ":" punctuation.separator.key.canon
+111:29-30 "." punctuation.accessor.canon
+111:30-39 "enumerate" variable.other.property.canon
+111:41-42 "." punctuation.accessor.canon
+111:42-45 "all" variable.other.property.canon
+111:53-55 "=>" keyword.operator.canon
+111:57-58 "." punctuation.accessor.canon
+111:58-63 "level" variable.other.property.canon
+111:64-66 "==" keyword.operator.canon
+111:69-70 "+" keyword.operator.canon
+111:71-72 "1" constant.numeric.integer.canon
+112:4-8 "else" keyword.control.canon
+112:9-84 "\"a `level` value does not match its position; the loader uses the position\"" string.quoted.double.canon
+115:0-19 "/// The whole file." comment.line.documentation.canon
+116:0-6 "record" storage.type.canon
+116:7-17 "FarmConfig" entity.name.type.canon
+117:0-40 "  /// Settings that apply to every farm." comment.line.documentation.canon
+118:2-8 "global" variable.other.property.canon
+118:8-9 ":" punctuation.separator.key.canon
+118:10-16 "Global" entity.name.type.canon
+119:0-35 "  /// The models players can plant." comment.line.documentation.canon
+120:2-12 "modelTypes" variable.other.property.canon
+120:12-13 ":" punctuation.separator.key.canon
+120:15-24 "ModelType" entity.name.type.canon
+120:26-29 "..=" keyword.operator.canon
+120:29-44 "FARM_MAX_MODELS" constant.other.canon
+123:0-50 "/// Server/System/farm_config.json, read in place." comment.line.documentation.canon
+124:0-3 "let" storage.type.canon
+124:4-8 "farm" variable.other.property.canon
+124:8-9 ":" punctuation.separator.key.canon
+124:10-20 "FarmConfig" entity.name.type.canon
+124:21-22 "=" keyword.operator.canon
+124:23-27 "load" keyword.other.canon
+124:28-70 "\"@resource/Server/System/farm_config.json\"" string.quoted.double.canon
+126:0-4 "emit" keyword.other.canon
+126:5-9 "view" keyword.other.canon
+126:12-15 "out" variable.other.property.canon
+126:15-16 ":" punctuation.separator.key.canon
+126:17-44 "\"@generated/farm.view.json\"" string.quoted.double.canon

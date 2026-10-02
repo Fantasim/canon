@@ -1,0 +1,14 @@
+1:0-7 "package" keyword.other.canon
+1:8-24 "features.entries" entity.name.namespace.canon
+3:0-18 "/// A short blade." comment.line.documentation.canon
+4:0-5 "entry" keyword.other.canon
+4:11-12 "." punctuation.accessor.canon
+4:12-18 "dagger" variable.other.property.canon
+4:21-25 "name" variable.other.property.canon
+4:25-26 ":" punctuation.separator.key.canon
+4:27-35 "\"Dagger\"" string.quoted.double.canon
+4:37-42 "level" variable.other.property.canon
+4:42-43 ":" punctuation.separator.key.canon
+4:44-45 "2" constant.numeric.integer.canon
+4:47-51 "kind" variable.other.property.canon
+4:51-52 ":" punctuation.separator.key.canon

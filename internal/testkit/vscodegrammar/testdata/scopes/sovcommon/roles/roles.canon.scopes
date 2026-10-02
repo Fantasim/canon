@@ -1,0 +1,24 @@
+1:0-57 "/// Account roles of the website and every internal tool." comment.line.documentation.canon
+2:0-7 "package" keyword.other.canon
+2:8-23 "sovcommon.roles" entity.name.namespace.canon
+4:0-77 "/// The website.website_account.role literals. Declaration order IS the rank:" comment.line.documentation.canon
+5:0-78 "/// `gm_junior < maintainer` is true, and nothing else may hard-code a number." comment.line.documentation.canon
+6:0-3 "///" comment.line.documentation.canon
+7:0-82 "/// Today this ladder is written three times (roles.go, roles.ts and the SQL CHECK" comment.line.documentation.canon
+8:0-84 "/// constraint) and kept in sync by comments. Here it is written once, and Go and TS" comment.line.documentation.canon
+9:0-26 "/// are generated from it." comment.line.documentation.canon
+10:0-4 "enum" storage.type.canon
+10:5-9 "Role" entity.name.type.canon
+19:0-4 "emit" keyword.other.canon
+19:10-13 "out" variable.other.property.canon
+19:13-14 ":" punctuation.separator.key.canon
+19:15-33 "\"@sovcommon/roles\"" string.quoted.double.canon
+19:35-42 "package" variable.other.property.canon
+19:42-43 ":" punctuation.separator.key.canon
+19:44-51 "\"roles\"" string.quoted.double.canon
+19:53-57 "mode" variable.other.property.canon
+19:57-58 ":" punctuation.separator.key.canon
+20:0-4 "emit" keyword.other.canon
+20:10-13 "out" variable.other.property.canon
+20:13-14 ":" punctuation.separator.key.canon
+20:15-40 "\"@web/roles.generated.ts\"" string.quoted.double.canon

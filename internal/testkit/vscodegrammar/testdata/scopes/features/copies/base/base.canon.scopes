@@ -1,0 +1,39 @@
+1:0-83 "/// The vocabulary of the copies example: a colour, written beside each consumer of" comment.line.documentation.canon
+2:0-62 "/// features.copies, so no shared library stands between them." comment.line.documentation.canon
+3:0-7 "package" keyword.other.canon
+3:8-28 "features.copies.base" entity.name.namespace.canon
+5:0-13 "/// A colour." comment.line.documentation.canon
+6:0-4 "enum" storage.type.canon
+6:5-9 "Tone" entity.name.type.canon
+7:0-11 "  /// Warm." comment.line.documentation.canon
+9:0-11 "  /// Cold." comment.line.documentation.canon
+13:0-40 "/// The tone of a badge that names none." comment.line.documentation.canon
+14:0-3 "let" storage.type.canon
+14:4-12 "fallback" variable.other.property.canon
+14:12-13 ":" punctuation.separator.key.canon
+14:14-18 "Tone" entity.name.type.canon
+14:19-20 "=" keyword.operator.canon
+16:0-4 "emit" keyword.other.canon
+16:10-13 "out" variable.other.property.canon
+16:13-14 ":" punctuation.separator.key.canon
+16:16-33 "\"../out/go/base/\"" string.quoted.double.canon
+16:35-63 "\"@sovcommon/copies/go/base/\"" string.quoted.double.canon
+17:0-4 "emit" keyword.other.canon
+17:11-14 "out" variable.other.property.canon
+17:14-15 ":" punctuation.separator.key.canon
+17:17-35 "\"../out/cpp/base/\"" string.quoted.double.canon
+17:37-66 "\"@sovcommon/copies/cpp/base/\"" string.quoted.double.canon
+17:69-73 "mode" variable.other.property.canon
+17:73-74 ":" punctuation.separator.key.canon
+18:0-4 "emit" keyword.other.canon
+18:10-13 "out" variable.other.property.canon
+18:13-14 ":" punctuation.separator.key.canon
+18:16-35 "\"../out/ts/base.ts\"" string.quoted.double.canon
+18:37-67 "\"@sovcommon/copies/ts/base.ts\"" string.quoted.double.canon
+18:70-74 "mode" variable.other.property.canon
+18:74-75 ":" punctuation.separator.key.canon
+19:0-4 "emit" keyword.other.canon
+19:12-15 "out" variable.other.property.canon
+19:15-16 ":" punctuation.separator.key.canon
+19:18-32 "\"../out/data/\"" string.quoted.double.canon
+19:34-59 "\"@sovcommon/copies/data/\"" string.quoted.double.canon

@@ -1,0 +1,223 @@
+1:0-85 "/// Legacy C++ structs (DECISIONS 5, SPEC §15.3). The server's hand-written ItemProp" comment.line.documentation.canon
+2:0-79 "/// (Engine/Core/Project/ProjectCmn.h) is filled by generated code instead of a" comment.line.documentation.canon
+3:0-81 "/// generated class: in `access: fields` every existing `pProp->dwItemKind1` read" comment.line.documentation.canon
+4:0-83 "/// compiles, lookups return `const ItemProp*`, and every write is a compile error." comment.line.documentation.canon
+5:0-61 "/// Moving to `both`, then `getters`, is one word per struct." comment.line.documentation.canon
+6:0-3 "///" comment.line.documentation.canon
+7:0-82 "/// A keyed list is used so that the key is a field with a legacy member (`dwID`)." comment.line.documentation.canon
+8:0-7 "package" keyword.other.canon
+8:8-26 "features.legacycpp" entity.name.namespace.canon
+10:0-5 "local" storage.modifier.canon
+10:6-9 "let" storage.type.canon
+10:16-17 "=" keyword.operator.canon
+10:18-22 "load" keyword.other.canon
+10:22-23 "." punctuation.accessor.canon
+10:23-30 "defines" variable.other.property.canon
+10:31-69 "\"@resource/Server/Define/defineitem.h\"" string.quoted.double.canon
+10:71-77 "prefix" variable.other.property.canon
+10:77-78 ":" punctuation.separator.key.canon
+10:79-84 "\"II_\"" string.quoted.double.canon
+12:0-83 "/// The main kind. `@cpp(defines:)` also emits `#define IK1_WEAPON 1`... for legacy" comment.line.documentation.canon
+13:0-85 "/// code, so the IK1 block of defineItemkind.h can be deleted once this is generated." comment.line.documentation.canon
+14:0-4 "enum" storage.type.canon
+14:5-10 "Kind1" entity.name.type.canon
+14:11-12 "@" meta.annotation.canon punctuation.definition.annotation.canon
+14:12-17 "codes" meta.annotation.canon entity.name.function.decorator.canon
+14:17-24 "(UInt8)" meta.annotation.canon
+14:25-26 "@" meta.annotation.canon punctuation.definition.annotation.canon
+14:26-29 "cpp" meta.annotation.canon entity.name.function.decorator.canon
+14:29-30 "(" meta.annotation.canon
+14:30-37 "defines" meta.annotation.canon variable.parameter.canon
+14:37-38 ":" meta.annotation.canon punctuation.separator.key.canon
+14:38-39 " " meta.annotation.canon
+14:39-45 "\"IK1_\"" meta.annotation.canon string.quoted.double.canon
+14:45-46 ")" meta.annotation.canon
+15:2-10 "IK1_GOLD" constant.other.canon
+15:11-12 "=" keyword.operator.canon
+15:13-14 "0" constant.numeric.integer.canon
+16:2-12 "IK1_WEAPON" constant.other.canon
+16:13-14 "=" keyword.operator.canon
+16:15-16 "1" constant.numeric.integer.canon
+17:2-11 "IK1_ARMOR" constant.other.canon
+17:12-13 "=" keyword.operator.canon
+17:14-15 "2" constant.numeric.integer.canon
+18:2-13 "IK1_GENERAL" constant.other.canon
+18:14-15 "=" keyword.operator.canon
+18:16-17 "3" constant.numeric.integer.canon
+19:2-10 "IK1_RIDE" constant.other.canon
+19:11-12 "=" keyword.operator.canon
+19:13-14 "4" constant.numeric.integer.canon
+20:2-12 "IK1_SYSTEM" constant.other.canon
+20:13-14 "=" keyword.operator.canon
+20:15-16 "5" constant.numeric.integer.canon
+21:2-13 "IK1_CHARGED" constant.other.canon
+21:14-15 "=" keyword.operator.canon
+21:16-17 "6" constant.numeric.integer.canon
+22:2-13 "IK1_HOUSING" constant.other.canon
+22:14-15 "=" keyword.operator.canon
+22:16-17 "7" constant.numeric.integer.canon
+25:0-70 "/// The ItemProp members this sketch maps. Members it does not map are" comment.line.documentation.canon
+26:0-85 "/// value-initialised; `static_assert`s check that each mapped member exists with the" comment.line.documentation.canon
+27:0-16 "/// stated type." comment.line.documentation.canon
+28:0-6 "record" storage.type.canon
+28:7-11 "Prop" entity.name.type.canon
+28:12-13 "@" meta.annotation.canon punctuation.definition.annotation.canon
+28:13-16 "cpp" meta.annotation.canon entity.name.function.decorator.canon
+28:16-17 "(" meta.annotation.canon
+28:17-23 "struct" meta.annotation.canon variable.parameter.canon
+28:23-24 ":" meta.annotation.canon punctuation.separator.key.canon
+28:24-25 " " meta.annotation.canon
+28:25-35 "\"ItemProp\"" meta.annotation.canon string.quoted.double.canon
+28:35-37 ", " meta.annotation.canon
+28:37-43 "header" meta.annotation.canon variable.parameter.canon
+28:43-44 ":" meta.annotation.canon punctuation.separator.key.canon
+28:44-45 " " meta.annotation.canon
+28:45-59 "\"ProjectCmn.h\"" meta.annotation.canon string.quoted.double.canon
+28:59-61 ", " meta.annotation.canon
+28:61-67 "access" meta.annotation.canon variable.parameter.canon
+28:67-68 ":" meta.annotation.canon punctuation.separator.key.canon
+28:68-76 " fields)" meta.annotation.canon
+29:0-56 "  /// The item define. ItemProp keeps its numeric value." comment.line.documentation.canon
+30:2-4 "id" variable.other.property.canon
+30:4-5 ":" punctuation.separator.key.canon
+30:6-9 "ref" storage.modifier.canon
+30:16-17 "@" meta.annotation.canon punctuation.definition.annotation.canon
+30:17-21 "json" meta.annotation.canon entity.name.function.decorator.canon
+30:21-22 "(" meta.annotation.canon
+30:22-28 "\"dwID\"" meta.annotation.canon string.quoted.double.canon
+30:28-29 ")" meta.annotation.canon
+30:30-31 "@" meta.annotation.canon punctuation.definition.annotation.canon
+30:31-34 "cpp" meta.annotation.canon entity.name.function.decorator.canon
+30:34-35 "(" meta.annotation.canon
+30:35-40 "field" meta.annotation.canon variable.parameter.canon
+30:40-41 ":" meta.annotation.canon punctuation.separator.key.canon
+30:41-42 " " meta.annotation.canon
+30:42-48 "\"dwID\"" meta.annotation.canon string.quoted.double.canon
+30:48-50 ", " meta.annotation.canon
+30:50-54 "type" meta.annotation.canon variable.parameter.canon
+30:54-55 ":" meta.annotation.canon punctuation.separator.key.canon
+30:55-56 " " meta.annotation.canon
+30:56-71 "\"std::uint32_t\"" meta.annotation.canon string.quoted.double.canon
+30:71-72 ")" meta.annotation.canon
+31:0-16 "  /// Main kind." comment.line.documentation.canon
+32:2-7 "kind1" variable.other.property.canon
+32:7-8 ":" punctuation.separator.key.canon
+32:9-14 "Kind1" entity.name.type.canon
+32:15-16 "@" meta.annotation.canon punctuation.definition.annotation.canon
+32:16-20 "json" meta.annotation.canon entity.name.function.decorator.canon
+32:20-21 "(" meta.annotation.canon
+32:21-34 "\"dwItemKind1\"" meta.annotation.canon string.quoted.double.canon
+32:34-35 ")" meta.annotation.canon
+32:36-37 "@" meta.annotation.canon punctuation.definition.annotation.canon
+32:37-40 "cpp" meta.annotation.canon entity.name.function.decorator.canon
+32:40-41 "(" meta.annotation.canon
+32:41-46 "field" meta.annotation.canon variable.parameter.canon
+32:46-47 ":" meta.annotation.canon punctuation.separator.key.canon
+32:47-48 " " meta.annotation.canon
+32:48-61 "\"dwItemKind1\"" meta.annotation.canon string.quoted.double.canon
+32:61-63 ", " meta.annotation.canon
+32:63-67 "type" meta.annotation.canon variable.parameter.canon
+32:67-68 ":" meta.annotation.canon punctuation.separator.key.canon
+32:68-69 " " meta.annotation.canon
+32:69-84 "\"std::uint32_t\"" meta.annotation.canon string.quoted.double.canon
+32:84-85 ")" meta.annotation.canon
+33:0-17 "  /// Item level." comment.line.documentation.canon
+34:2-7 "level" variable.other.property.canon
+34:7-8 ":" punctuation.separator.key.canon
+34:9-12 "Int" entity.name.type.canon
+34:13-14 "0" constant.numeric.integer.canon
+34:14-16 ".." keyword.operator.canon
+34:18-19 "=" keyword.operator.canon
+34:20-21 "1" constant.numeric.integer.canon
+34:22-23 "@" meta.annotation.canon punctuation.definition.annotation.canon
+34:23-27 "json" meta.annotation.canon entity.name.function.decorator.canon
+34:27-28 "(" meta.annotation.canon
+34:28-38 "\"dwItemLV\"" meta.annotation.canon string.quoted.double.canon
+34:38-39 ")" meta.annotation.canon
+34:40-41 "@" meta.annotation.canon punctuation.definition.annotation.canon
+34:41-44 "cpp" meta.annotation.canon entity.name.function.decorator.canon
+34:44-45 "(" meta.annotation.canon
+34:45-50 "field" meta.annotation.canon variable.parameter.canon
+34:50-51 ":" meta.annotation.canon punctuation.separator.key.canon
+34:51-52 " " meta.annotation.canon
+34:52-62 "\"dwItemLV\"" meta.annotation.canon string.quoted.double.canon
+34:62-64 ", " meta.annotation.canon
+34:64-68 "type" meta.annotation.canon variable.parameter.canon
+34:68-69 ":" meta.annotation.canon punctuation.separator.key.canon
+34:69-70 " " meta.annotation.canon
+34:70-85 "\"std::uint32_t\"" meta.annotation.canon string.quoted.double.canon
+34:85-86 ")" meta.annotation.canon
+35:0-41 "  /// How many fit in one inventory slot." comment.line.documentation.canon
+36:2-10 "stackMax" variable.other.property.canon
+36:10-11 ":" punctuation.separator.key.canon
+36:12-15 "Int" entity.name.type.canon
+36:16-17 "1" constant.numeric.integer.canon
+36:17-19 ".." keyword.operator.canon
+36:21-22 "=" keyword.operator.canon
+36:23-24 "1" constant.numeric.integer.canon
+36:25-26 "@" meta.annotation.canon punctuation.definition.annotation.canon
+36:26-30 "json" meta.annotation.canon entity.name.function.decorator.canon
+36:30-31 "(" meta.annotation.canon
+36:31-42 "\"dwPackMax\"" meta.annotation.canon string.quoted.double.canon
+36:42-43 ")" meta.annotation.canon
+36:44-45 "@" meta.annotation.canon punctuation.definition.annotation.canon
+36:45-48 "cpp" meta.annotation.canon entity.name.function.decorator.canon
+36:48-49 "(" meta.annotation.canon
+36:49-54 "field" meta.annotation.canon variable.parameter.canon
+36:54-55 ":" meta.annotation.canon punctuation.separator.key.canon
+36:55-56 " " meta.annotation.canon
+36:56-67 "\"dwPackMax\"" meta.annotation.canon string.quoted.double.canon
+36:67-69 ", " meta.annotation.canon
+36:69-73 "type" meta.annotation.canon variable.parameter.canon
+36:73-74 ":" meta.annotation.canon punctuation.separator.key.canon
+36:74-75 " " meta.annotation.canon
+36:75-90 "\"std::uint32_t\"" meta.annotation.canon string.quoted.double.canon
+36:90-91 ")" meta.annotation.canon
+37:0-46 "  /// The item never expires. 0/1 on the wire." comment.line.documentation.canon
+38:2-11 "permanent" variable.other.property.canon
+38:11-12 ":" punctuation.separator.key.canon
+38:13-17 "Bool" entity.name.type.canon
+38:18-19 "=" keyword.operator.canon
+38:20-24 "true" constant.language.canon
+38:25-26 "@" meta.annotation.canon punctuation.definition.annotation.canon
+38:26-30 "json" meta.annotation.canon entity.name.function.decorator.canon
+38:30-31 "(" meta.annotation.canon
+38:31-44 "\"bPermanence\"" meta.annotation.canon string.quoted.double.canon
+38:44-50 ", int)" meta.annotation.canon
+38:51-52 "@" meta.annotation.canon punctuation.definition.annotation.canon
+38:52-55 "cpp" meta.annotation.canon entity.name.function.decorator.canon
+38:55-56 "(" meta.annotation.canon
+38:56-61 "field" meta.annotation.canon variable.parameter.canon
+38:61-62 ":" meta.annotation.canon punctuation.separator.key.canon
+38:62-63 " " meta.annotation.canon
+38:63-76 "\"bPermanence\"" meta.annotation.canon string.quoted.double.canon
+38:76-77 ")" meta.annotation.canon
+41:0-32 "/// A few rows of propItem.json." comment.line.documentation.canon
+42:0-3 "let" storage.type.canon
+42:4-9 "props" variable.other.property.canon
+42:9-10 ":" punctuation.separator.key.canon
+42:12-16 "Prop" entity.name.type.canon
+42:30-31 "=" keyword.operator.canon
+42:32-36 "load" keyword.other.canon
+42:37-54 "\"data/props.json\"" string.quoted.double.canon
+42:56-58 "at" variable.other.property.canon
+42:58-59 ":" punctuation.separator.key.canon
+42:60-67 "\"items\"" string.quoted.double.canon
+44:0-85 "// The generated ItemPropTable owns a std::vector<ItemProp>; Find(\"II_WEA_AXE_ANGEL\")" comment.line.double-slash.canon
+45:0-84 "// returns const ItemProp*. No @reload here: legacy code keeps raw ItemProp pointers" comment.line.double-slash.canon
+46:0-46 "// (E8201 until the struct reaches `getters`)." comment.line.double-slash.canon
+47:0-4 "emit" keyword.other.canon
+47:11-14 "out" variable.other.property.canon
+47:14-15 ":" punctuation.separator.key.canon
+47:16-22 "\"out/\"" string.quoted.double.canon
+47:24-33 "namespace" variable.other.property.canon
+47:33-34 ":" punctuation.separator.key.canon
+47:35-45 "\"sov::gen\"" string.quoted.double.canon
+47:47-51 "mode" variable.other.property.canon
+47:51-52 ":" punctuation.separator.key.canon
+48:0-4 "emit" keyword.other.canon
+48:12-15 "out" variable.other.property.canon
+48:15-16 ":" punctuation.separator.key.canon
+48:17-33 "\"out/props.json\"" string.quoted.double.canon
+48:35-41 "values" variable.other.property.canon
+48:41-42 ":" punctuation.separator.key.canon

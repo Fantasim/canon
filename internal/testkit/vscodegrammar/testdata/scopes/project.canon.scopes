@@ -1,0 +1,67 @@
+1:0-80 "/// The law repository of Sovereign. In the real setup this directory is its own" comment.line.documentation.canon
+2:0-59 "/// repository; here it is `services/configlang/examples/`." comment.line.documentation.canon
+3:0-3 "///" comment.line.documentation.canon
+4:0-86 "/// Tests do not read the real repositories: the harness opens this project with every" comment.line.documentation.canon
+5:0-46 "/// root redirected (see _fixtures/README.md)." comment.line.documentation.canon
+6:0-7 "project" keyword.other.canon
+7:2-7 "canon" variable.other.property.canon
+7:7-8 ":" punctuation.separator.key.canon
+7:9-14 "\"0.1\"" string.quoted.double.canon
+9:0-87 "  /// Named roots used by `load` and `emit` paths: \"@resource/Server/...\". A path never" comment.line.documentation.canon
+10:0-78 "  /// leaves its root (E7001), so every output location has a root of its own." comment.line.documentation.canon
+12:4-78 "// Read by `load` (game.items also writes its items.json under @resource)." comment.line.double-slash.canon
+13:4-12 "resource" variable.other.property.canon
+13:12-13 ":" punctuation.separator.key.canon
+13:14-33 "\"../../../Resource\"" string.quoted.double.canon
+14:4-10 "client" variable.other.property.canon
+14:10-11 ":" punctuation.separator.key.canon
+14:12-29 "\"../../../Client\"" string.quoted.double.canon
+15:4-30 "// Written by `emit` only." comment.line.double-slash.canon
+16:4-10 "source" variable.other.property.canon
+16:10-11 ":" punctuation.separator.key.canon
+16:12-29 "\"../../../Source\"" string.quoted.double.canon
+17:4-12 "services" variable.other.property.canon
+17:12-13 ":" punctuation.separator.key.canon
+17:14-21 "\"../..\"" string.quoted.double.canon
+18:4-13 "sovcommon" variable.other.property.canon
+18:13-14 ":" punctuation.separator.key.canon
+18:15-32 "\"../../sovcommon\"" string.quoted.double.canon
+19:4-7 "web" variable.other.property.canon
+19:7-8 ":" punctuation.separator.key.canon
+19:9-38 "\"../../sovcommon/web/src/lib\"" string.quoted.double.canon
+20:4-10 "parity" variable.other.property.canon
+20:10-11 ":" punctuation.separator.key.canon
+20:12-34 "\"../../balance/parity\"" string.quoted.double.canon
+21:4-13 "generated" variable.other.property.canon
+21:13-14 ":" punctuation.separator.key.canon
+21:15-47 "\"../../resourcestudio/generated\"" string.quoted.double.canon
+22:4-80 "// Go code written inside this project, by the pipeline and by two features." comment.line.double-slash.canon
+23:4-15 "pipeline_go" variable.other.property.canon
+23:15-16 ":" punctuation.separator.key.canon
+23:17-34 "\"pipeline/out/go\"" string.quoted.double.canon
+24:4-12 "features" variable.other.property.canon
+24:12-13 ":" punctuation.separator.key.canon
+24:14-24 "\"features\"" string.quoted.double.canon
+27:2-11 "languages" variable.other.property.canon
+27:11-12 ":" punctuation.separator.key.canon
+28:2-8 "studio" variable.other.property.canon
+28:8-9 ":" punctuation.separator.key.canon
+29:2-8 "budget" variable.other.property.canon
+29:8-9 ":" punctuation.separator.key.canon
+29:10-21 "100_000_000" constant.numeric.integer.canon
+31:0-93 "  /// Go module path of each root that receives Go code (CODEGEN §2.8). A Go output's import" comment.line.documentation.canon
+32:0-90 "  /// path is the module path of its closest mapped root plus the directories below it, so" comment.line.documentation.canon
+33:0-51 "  /// `@services/resourcestudio/internal/config` is" comment.line.documentation.canon
+34:0-91 "  /// gitlab.com/sovereign15/resourcestudio/internal/config, as in resourcestudio's go.mod." comment.line.documentation.canon
+36:4-12 "services" variable.other.property.canon
+36:12-13 ":" punctuation.separator.key.canon
+36:14-38 "\"gitlab.com/sovereign15\"" string.quoted.double.canon
+37:4-13 "sovcommon" variable.other.property.canon
+37:13-14 ":" punctuation.separator.key.canon
+37:15-49 "\"gitlab.com/sovereign15/sovcommon\"" string.quoted.double.canon
+38:4-15 "pipeline_go" variable.other.property.canon
+38:15-16 ":" punctuation.separator.key.canon
+38:17-38 "\"example.com/potions\"" string.quoted.double.canon
+39:4-12 "features" variable.other.property.canon
+39:12-13 ":" punctuation.separator.key.canon
+39:14-36 "\"example.com/features\"" string.quoted.double.canon

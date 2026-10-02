@@ -1,0 +1,149 @@
+1:0-85 "/// `retired` (SPEC §12): an id that was used once stays reserved forever. A retired" comment.line.documentation.canon
+2:0-89 "/// entry or member stays in the lock, in generated id enums and in data files (flagged)," comment.line.documentation.canon
+3:0-82 "/// so stored data still decodes; it is left out of `.active()`; a live entry that" comment.line.documentation.canon
+4:0-73 "/// refers to it is an error (E3502); its id can never be reused (E6002)." comment.line.documentation.canon
+5:0-7 "package" keyword.other.canon
+5:8-27 "features.retirement" entity.name.namespace.canon
+7:0-81 "/// Kinds of lottery ticket. Tickets are stored with their kind's code. The event" comment.line.documentation.canon
+8:0-73 "/// ticket went away with its event: its code 3 is retired, never reused." comment.line.documentation.canon
+9:0-4 "enum" storage.type.canon
+9:5-15 "TicketKind" entity.name.type.canon
+9:16-17 "@" meta.annotation.canon punctuation.definition.annotation.canon
+9:17-22 "codes" meta.annotation.canon entity.name.function.decorator.canon
+9:22-29 "(UInt8)" meta.annotation.canon
+9:41-42 "=" keyword.operator.canon
+9:43-44 "1" constant.numeric.integer.canon
+9:54-55 "=" keyword.operator.canon
+9:56-57 "2" constant.numeric.integer.canon
+9:59-66 "retired" storage.modifier.canon
+9:73-74 "=" keyword.operator.canon
+9:75-76 "3" constant.numeric.integer.canon
+11:0-84 "/// A prize tier of the lottery. Tickets store the tier they won, so ids are stable." comment.line.documentation.canon
+12:0-6 "record" storage.type.canon
+12:7-11 "Tier" entity.name.type.canon
+13:0-26 "  /// Shown on the ticket." comment.line.documentation.canon
+14:2-7 "label" variable.other.property.canon
+14:7-8 ":" punctuation.separator.key.canon
+14:9-15 "String" entity.name.type.canon
+14:16-17 "1" constant.numeric.integer.canon
+14:17-19 ".." keyword.operator.canon
+15:0-30 "  /// Chance out of 1 000 000." comment.line.documentation.canon
+16:2-8 "chance" variable.other.property.canon
+16:8-9 ":" punctuation.separator.key.canon
+16:10-13 "Int" entity.name.type.canon
+16:14-15 "1" constant.numeric.integer.canon
+16:15-18 "..=" keyword.operator.canon
+16:18-27 "1_000_000" constant.numeric.integer.canon
+17:0-53 "  /// The tier a re-roll moves the ticket to, if any." comment.line.documentation.canon
+18:2-12 "upgradesTo" variable.other.property.canon
+18:12-13 ":" punctuation.separator.key.canon
+18:14-17 "ref" storage.modifier.canon
+18:18-22 "Tier" entity.name.type.canon
+18:22-23 "?" keyword.operator.canon
+18:24-25 "=" keyword.operator.canon
+18:26-30 "none" constant.language.canon
+21:0-33 "/// Every tier, in display order." comment.line.documentation.canon
+22:0-3 "let" storage.type.canon
+22:4-9 "tiers" variable.other.property.canon
+22:9-10 ":" punctuation.separator.key.canon
+22:11-17 "stable" storage.modifier.canon
+22:18-23 "table" storage.type.canon
+22:24-28 "Tier" entity.name.type.canon
+22:29-30 "=" keyword.operator.canon
+23:11-16 "label" variable.other.property.canon
+23:16-17 ":" punctuation.separator.key.canon
+23:18-26 "\"Common\"" string.quoted.double.canon
+23:28-34 "chance" variable.other.property.canon
+23:34-35 ":" punctuation.separator.key.canon
+23:36-43 "800_000" constant.numeric.integer.canon
+23:45-55 "upgradesTo" variable.other.property.canon
+23:55-56 ":" punctuation.separator.key.canon
+24:9-14 "label" variable.other.property.canon
+24:14-15 ":" punctuation.separator.key.canon
+24:16-22 "\"Rare\"" string.quoted.double.canon
+24:24-30 "chance" variable.other.property.canon
+24:30-31 ":" punctuation.separator.key.canon
+24:32-39 "190_000" constant.numeric.integer.canon
+24:41-51 "upgradesTo" variable.other.property.canon
+24:51-52 ":" punctuation.separator.key.canon
+25:0-84 "  /// Merged into `rare` in September. Tickets that won it still decode; nothing new" comment.line.documentation.canon
+26:0-58 "  /// may point to it (`upgradesTo: epic` would be E3502)." comment.line.documentation.canon
+27:2-9 "retired" storage.modifier.canon
+27:17-22 "label" variable.other.property.canon
+27:22-23 ":" punctuation.separator.key.canon
+27:24-30 "\"Epic\"" string.quoted.double.canon
+27:32-38 "chance" variable.other.property.canon
+27:38-39 ":" punctuation.separator.key.canon
+27:40-45 "5_000" constant.numeric.integer.canon
+28:14-19 "label" variable.other.property.canon
+28:19-20 ":" punctuation.separator.key.canon
+28:21-32 "\"Legendary\"" string.quoted.double.canon
+28:34-40 "chance" variable.other.property.canon
+28:40-41 ":" punctuation.separator.key.canon
+28:42-48 "10_000" constant.numeric.integer.canon
+31:0-5 "check" keyword.other.canon
+31:11-12 "." punctuation.accessor.canon
+31:12-18 "active" variable.other.property.canon
+31:20-21 "." punctuation.accessor.canon
+31:21-24 "map" variable.other.property.canon
+31:25-26 "." punctuation.accessor.canon
+31:26-32 "chance" variable.other.property.canon
+31:33-34 "." punctuation.accessor.canon
+31:34-37 "sum" variable.other.property.canon
+31:40-42 "==" keyword.operator.canon
+31:43-52 "1_000_000" constant.numeric.integer.canon
+32:2-6 "else" keyword.control.canon
+32:7-50 "\"the chances of the active tiers add up to " string.quoted.double.canon
+32:50-51 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+32:51-56 "tiers" string.quoted.double.canon meta.interpolation.canon
+32:56-57 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+32:57-63 "active" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+32:63-65 "()" string.quoted.double.canon meta.interpolation.canon
+32:65-66 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+32:66-69 "map" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+32:69-70 "(" string.quoted.double.canon meta.interpolation.canon
+32:70-71 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+32:71-77 "chance" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+32:77-78 ")" string.quoted.double.canon meta.interpolation.canon
+32:78-79 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+32:79-82 "sum" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+32:82-84 "()" string.quoted.double.canon meta.interpolation.canon
+32:84-85 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+32:85-101 ", not 1 000 000\"" string.quoted.double.canon
+34:0-4 "test" keyword.other.canon
+34:5-42 "\"a retired tier is kept but inactive\"" string.quoted.double.canon
+35:2-8 "expect" keyword.other.canon
+35:14-15 "." punctuation.accessor.canon
+35:15-19 "epic" variable.other.property.canon
+35:19-20 "." punctuation.accessor.canon
+35:20-27 "retired" variable.other.property.canon
+35:28-30 "==" keyword.operator.canon
+35:31-35 "true" constant.language.canon
+36:2-8 "expect" keyword.other.canon
+36:14-15 "." punctuation.accessor.canon
+36:15-21 "active" variable.other.property.canon
+36:23-24 "." punctuation.accessor.canon
+36:24-27 "len" variable.other.property.canon
+36:30-32 "==" keyword.operator.canon
+36:33-34 "3" constant.numeric.integer.canon
+37:2-8 "expect" keyword.other.canon
+37:14-15 "." punctuation.accessor.canon
+37:15-18 "len" variable.other.property.canon
+37:21-23 "==" keyword.operator.canon
+37:24-25 "4" constant.numeric.integer.canon
+38:2-8 "expect" keyword.other.canon
+38:14-15 "." punctuation.accessor.canon
+38:15-21 "active" variable.other.property.canon
+38:23-24 "." punctuation.accessor.canon
+38:24-32 "contains" variable.other.property.canon
+38:38-39 "." punctuation.accessor.canon
+38:39-43 "epic" variable.other.property.canon
+38:45-47 "==" keyword.operator.canon
+38:48-53 "false" constant.language.canon
+41:0-88 "// The data file keeps the retired row, flagged: {\"$id\": \"epic\", \"$retired\": true, …}." comment.line.double-slash.canon
+42:0-4 "emit" keyword.other.canon
+42:12-15 "out" variable.other.property.canon
+42:15-16 ":" punctuation.separator.key.canon
+42:17-33 "\"out/tiers.json\"" string.quoted.double.canon
+42:35-41 "values" variable.other.property.canon
+42:41-42 ":" punctuation.separator.key.canon

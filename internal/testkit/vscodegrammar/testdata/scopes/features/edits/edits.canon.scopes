@@ -1,0 +1,248 @@
+1:0-92 "/// A project used only by the edit tests (API.md §8, IMPLEMENTATION-PLAN §7.9): one small" comment.line.documentation.canon
+2:0-87 "/// declaration for each thing an edit must handle. Defaults, one computed from another" comment.line.documentation.canon
+3:0-93 "/// field, a spread, a layered value, a JSON source, a dependent field and a variant. Nothing" comment.line.documentation.canon
+4:0-20 "/// here is emitted." comment.line.documentation.canon
+5:0-7 "package" keyword.other.canon
+5:8-22 "features.edits" entity.name.namespace.canon
+7:0-24 "/// What a quest counts." comment.line.documentation.canon
+8:0-4 "enum" storage.type.canon
+8:5-9 "Goal" entity.name.type.canon
+10:0-67 "/// What a quest aims at, by goal: a monster, or a number of items." comment.line.documentation.canon
+11:0-4 "type" storage.type.canon
+11:5-11 "Target" entity.name.type.canon
+11:12-13 "g" variable.other.property.canon
+11:13-14 ":" punctuation.separator.key.canon
+11:15-19 "Goal" entity.name.type.canon
+11:21-22 "=" keyword.operator.canon
+11:23-28 "match" keyword.control.canon
+12:7-9 "=>" keyword.operator.canon
+12:10-16 "String" entity.name.type.canon
+12:17-18 "1" constant.numeric.integer.canon
+12:18-20 ".." keyword.operator.canon
+13:10-12 "=>" keyword.operator.canon
+13:13-16 "Int" entity.name.type.canon
+13:17-18 "1" constant.numeric.integer.canon
+13:18-20 ".." keyword.operator.canon
+16:0-34 "/// What completing a quest gives." comment.line.documentation.canon
+17:0-7 "variant" storage.type.canon
+17:8-14 "Reward" entity.name.type.canon
+18:0-17 "  /// Gold coins." comment.line.documentation.canon
+20:0-17 "    /// How many." comment.line.documentation.canon
+21:4-10 "amount" variable.other.property.canon
+21:10-11 ":" punctuation.separator.key.canon
+21:12-15 "Int" entity.name.type.canon
+21:16-17 "1" constant.numeric.integer.canon
+21:17-19 ".." keyword.operator.canon
+23:0-14 "  /// An item." comment.line.documentation.canon
+25:0-18 "    /// Which one." comment.line.documentation.canon
+26:4-6 "id" variable.other.property.canon
+26:6-7 ":" punctuation.separator.key.canon
+26:8-14 "String" entity.name.type.canon
+26:15-16 "1" constant.numeric.integer.canon
+26:16-18 ".." keyword.operator.canon
+27:0-17 "    /// How many." comment.line.documentation.canon
+28:4-9 "count" variable.other.property.canon
+28:9-10 ":" punctuation.separator.key.canon
+28:11-14 "Int" entity.name.type.canon
+28:15-16 "=" keyword.operator.canon
+28:17-18 "1" constant.numeric.integer.canon
+32:0-12 "/// A quest." comment.line.documentation.canon
+33:0-6 "record" storage.type.canon
+33:7-12 "Quest" entity.name.type.canon
+34:0-21 "  /// What it counts." comment.line.documentation.canon
+35:2-6 "goal" variable.other.property.canon
+35:6-7 ":" punctuation.separator.key.canon
+35:8-12 "Goal" entity.name.type.canon
+36:0-61 "  /// What it aims at, chosen by the goal; none until chosen." comment.line.documentation.canon
+37:2-8 "target" variable.other.property.canon
+37:8-9 ":" punctuation.separator.key.canon
+37:10-16 "Target" entity.name.type.canon
+37:22-23 "?" keyword.operator.canon
+38:0-20 "  /// What it gives." comment.line.documentation.canon
+39:2-8 "reward" variable.other.property.canon
+39:8-9 ":" punctuation.separator.key.canon
+39:10-16 "Reward" entity.name.type.canon
+40:0-16 "  /// Its level." comment.line.documentation.canon
+41:2-7 "level" variable.other.property.canon
+41:7-8 ":" punctuation.separator.key.canon
+41:9-12 "Int" entity.name.type.canon
+41:13-14 "=" keyword.operator.canon
+41:15-16 "1" constant.numeric.integer.canon
+42:0-83 "  /// The lowest level that may take it: one below its level unless said otherwise." comment.line.documentation.canon
+43:2-10 "minLevel" variable.other.property.canon
+43:10-11 ":" punctuation.separator.key.canon
+43:12-15 "Int" entity.name.type.canon
+43:16-17 "=" keyword.operator.canon
+43:24-25 "-" keyword.operator.canon
+43:26-27 "1" constant.numeric.integer.canon
+44:0-36 "  /// Whether it can be taken again." comment.line.documentation.canon
+45:2-12 "repeatable" variable.other.property.canon
+45:12-13 ":" punctuation.separator.key.canon
+45:14-18 "Bool" entity.name.type.canon
+45:19-20 "=" keyword.operator.canon
+45:21-26 "false" constant.language.canon
+48:0-15 "/// The quests." comment.line.documentation.canon
+49:0-3 "let" storage.type.canon
+49:4-10 "quests" variable.other.property.canon
+49:10-11 ":" punctuation.separator.key.canon
+49:12-17 "table" storage.type.canon
+49:18-23 "Quest" entity.name.type.canon
+49:24-25 "=" keyword.operator.canon
+50:9-13 "goal" variable.other.property.canon
+50:13-14 ":" punctuation.separator.key.canon
+50:21-27 "target" variable.other.property.canon
+50:27-28 ":" punctuation.separator.key.canon
+50:29-35 "\"wolf\"" string.quoted.double.canon
+50:37-43 "reward" variable.other.property.canon
+50:43-44 ":" punctuation.separator.key.canon
+50:52-58 "amount" variable.other.property.canon
+50:58-59 ":" punctuation.separator.key.canon
+50:60-63 "100" constant.numeric.integer.canon
+50:67-72 "level" variable.other.property.canon
+50:72-73 ":" punctuation.separator.key.canon
+50:74-75 "3" constant.numeric.integer.canon
+50:77-87 "repeatable" variable.other.property.canon
+50:87-88 ":" punctuation.separator.key.canon
+50:89-93 "true" constant.language.canon
+51:11-15 "goal" variable.other.property.canon
+51:15-16 ":" punctuation.separator.key.canon
+51:26-32 "target" variable.other.property.canon
+51:32-33 ":" punctuation.separator.key.canon
+51:34-36 "10" constant.numeric.integer.canon
+51:38-44 "reward" variable.other.property.canon
+51:44-45 ":" punctuation.separator.key.canon
+51:53-55 "id" variable.other.property.canon
+51:55-56 ":" punctuation.separator.key.canon
+51:57-65 "\"potion\"" string.quoted.double.canon
+51:67-72 "count" variable.other.property.canon
+51:72-73 ":" punctuation.separator.key.canon
+51:74-75 "2" constant.numeric.integer.canon
+51:79-87 "minLevel" variable.other.property.canon
+51:87-88 ":" punctuation.separator.key.canon
+51:89-90 "4" constant.numeric.integer.canon
+54:0-25 "/// How a server behaves." comment.line.documentation.canon
+55:0-6 "record" storage.type.canon
+55:7-12 "Rules" entity.name.type.canon
+56:0-32 "  /// Attempts before giving up." comment.line.documentation.canon
+57:2-9 "retries" variable.other.property.canon
+57:9-10 ":" punctuation.separator.key.canon
+57:11-14 "Int" entity.name.type.canon
+57:15-16 "=" keyword.operator.canon
+57:17-18 "3" constant.numeric.integer.canon
+58:0-23 "  /// A label for logs." comment.line.documentation.canon
+59:2-7 "label" variable.other.property.canon
+59:7-8 ":" punctuation.separator.key.canon
+59:9-15 "String" entity.name.type.canon
+59:16-17 "=" keyword.operator.canon
+59:18-20 "\"\"" string.quoted.double.canon
+60:0-38 "  /// Whether new players are welcome." comment.line.documentation.canon
+61:2-6 "open" variable.other.property.canon
+61:6-7 ":" punctuation.separator.key.canon
+61:8-12 "Bool" entity.name.type.canon
+61:13-14 "=" keyword.operator.canon
+61:15-19 "true" constant.language.canon
+64:0-39 "/// The rules every server starts from." comment.line.documentation.canon
+65:0-3 "let" storage.type.canon
+65:4-8 "base" variable.other.property.canon
+65:8-9 ":" punctuation.separator.key.canon
+65:10-15 "Rules" entity.name.type.canon
+65:16-17 "=" keyword.operator.canon
+65:20-27 "retries" variable.other.property.canon
+65:27-28 ":" punctuation.separator.key.canon
+65:29-30 "5" constant.numeric.integer.canon
+65:32-37 "label" variable.other.property.canon
+65:37-38 ":" punctuation.separator.key.canon
+65:39-45 "\"Base\"" string.quoted.double.canon
+67:0-51 "/// A server's rules: the base, with its own label." comment.line.documentation.canon
+68:0-3 "let" storage.type.canon
+68:4-11 "derived" variable.other.property.canon
+68:11-12 ":" punctuation.separator.key.canon
+68:13-18 "Rules" entity.name.type.canon
+68:19-20 "=" keyword.operator.canon
+68:23-26 "..." keyword.operator.canon
+68:32-37 "label" variable.other.property.canon
+68:37-38 ":" punctuation.separator.key.canon
+68:39-48 "\"Derived\"" string.quoted.double.canon
+70:0-65 "/// The production server's rules; the staging layer amends them." comment.line.documentation.canon
+71:0-3 "let" storage.type.canon
+71:4-10 "server" variable.other.property.canon
+71:10-11 ":" punctuation.separator.key.canon
+71:12-17 "Rules" entity.name.type.canon
+71:18-19 "=" keyword.operator.canon
+71:22-29 "retries" variable.other.property.canon
+71:29-30 ":" punctuation.separator.key.canon
+71:31-32 "2" constant.numeric.integer.canon
+71:34-39 "label" variable.other.property.canon
+71:39-40 ":" punctuation.separator.key.canon
+71:41-47 "\"Prod\"" string.quoted.double.canon
+73:0-63 "/// Capacities, as the server reads them in `data/limits.json`." comment.line.documentation.canon
+74:0-6 "record" storage.type.canon
+74:7-13 "Limits" entity.name.type.canon
+75:0-22 "  /// Players at once." comment.line.documentation.canon
+76:2-9 "players" variable.other.property.canon
+76:9-10 ":" punctuation.separator.key.canon
+76:11-14 "Int" entity.name.type.canon
+76:15-16 "@" meta.annotation.canon punctuation.definition.annotation.canon
+76:16-20 "json" meta.annotation.canon entity.name.function.decorator.canon
+76:20-21 "(" meta.annotation.canon
+76:21-31 "\"nPlayers\"" meta.annotation.canon string.quoted.double.canon
+76:31-32 ")" meta.annotation.canon
+77:0-32 "  /// How many may wait to join." comment.line.documentation.canon
+78:2-7 "queue" variable.other.property.canon
+78:7-8 ":" punctuation.separator.key.canon
+78:9-12 "Int" entity.name.type.canon
+78:13-14 "=" keyword.operator.canon
+78:15-17 "10" constant.numeric.integer.canon
+78:18-19 "@" meta.annotation.canon punctuation.definition.annotation.canon
+78:19-23 "json" meta.annotation.canon entity.name.function.decorator.canon
+78:23-24 "(" meta.annotation.canon
+78:24-32 "\"nQueue\"" meta.annotation.canon string.quoted.double.canon
+78:32-33 ")" meta.annotation.canon
+79:0-31 "  /// How long a session lasts." comment.line.documentation.canon
+80:2-9 "timeout" variable.other.property.canon
+80:9-10 ":" punctuation.separator.key.canon
+80:11-19 "Duration" entity.name.type.canon
+80:20-21 "@" meta.annotation.canon punctuation.definition.annotation.canon
+80:21-25 "json" meta.annotation.canon entity.name.function.decorator.canon
+80:25-26 "(" meta.annotation.canon
+80:26-39 "\"dwTimeoutMs\"" meta.annotation.canon string.quoted.double.canon
+80:39-41 ", " meta.annotation.canon
+80:41-45 "unit" meta.annotation.canon variable.parameter.canon
+80:45-46 ":" meta.annotation.canon punctuation.separator.key.canon
+80:46-50 " ms)" meta.annotation.canon
+81:0-28 "  /// Where the server runs." comment.line.documentation.canon
+82:2-8 "region" variable.other.property.canon
+82:8-9 ":" punctuation.separator.key.canon
+82:10-16 "String" entity.name.type.canon
+82:17-18 "=" keyword.operator.canon
+82:19-23 "\"eu\"" string.quoted.double.canon
+82:24-25 "@" meta.annotation.canon punctuation.definition.annotation.canon
+82:25-29 "json" meta.annotation.canon entity.name.function.decorator.canon
+82:29-30 "(" meta.annotation.canon
+82:30-40 "\"szRegion\"" meta.annotation.canon string.quoted.double.canon
+82:40-41 ")" meta.annotation.canon
+83:0-64 "  /// A welcome message; an empty string in the file means none." comment.line.documentation.canon
+84:2-6 "motd" variable.other.property.canon
+84:6-7 ":" punctuation.separator.key.canon
+84:8-14 "String" entity.name.type.canon
+84:14-15 "?" keyword.operator.canon
+84:16-17 "=" keyword.operator.canon
+84:18-22 "none" constant.language.canon
+84:23-24 "@" meta.annotation.canon punctuation.definition.annotation.canon
+84:24-28 "json" meta.annotation.canon entity.name.function.decorator.canon
+84:28-29 "(" meta.annotation.canon
+84:29-37 "\"szMotd\"" meta.annotation.canon string.quoted.double.canon
+84:37-39 ", " meta.annotation.canon
+84:39-43 "none" meta.annotation.canon variable.parameter.canon
+84:43-44 ":" meta.annotation.canon punctuation.separator.key.canon
+84:44-45 " " meta.annotation.canon
+84:45-47 "\"\"" meta.annotation.canon string.quoted.double.canon
+84:47-48 ")" meta.annotation.canon
+87:0-19 "/// The capacities." comment.line.documentation.canon
+88:0-3 "let" storage.type.canon
+88:4-10 "limits" variable.other.property.canon
+88:10-11 ":" punctuation.separator.key.canon
+88:12-18 "Limits" entity.name.type.canon
+88:19-20 "=" keyword.operator.canon
+88:21-25 "load" keyword.other.canon
+88:26-44 "\"data/limits.json\"" string.quoted.double.canon

@@ -1,0 +1,117 @@
+1:0-73 "// Presentation of the farm in Resource Studio. Source language: English." comment.line.double-slash.canon
+2:0-70 "// French lives in farm.fr.canon, keyed by the same paths (SPEC §17)." comment.line.double-slash.canon
+3:0-2 "//" comment.line.double-slash.canon
+4:0-87 "// Compare with resourcestudio/internal/overlay/modules/farm.json (348 lines). Only the" comment.line.double-slash.canon
+5:0-86 "// things a type cannot know are written here: labels, grouping, units, column widths," comment.line.double-slash.canon
+6:0-82 "// previews. Everything else (types, defaults, choices, keys, order, help from doc" comment.line.double-slash.canon
+7:0-45 "// comments, findings) comes from farm.canon." comment.line.double-slash.canon
+8:0-2 "//" comment.line.double-slash.canon
+9:0-89 "// A label or field that does not exist is a compile error here, not a studio boot error." comment.line.double-slash.canon
+10:0-7 "package" keyword.other.canon
+10:8-21 "resource.farm" entity.name.namespace.canon
+12:0-6 "import" keyword.other.canon
+14:0-4 "view" keyword.other.canon
+14:5-15 "FarmConfig" entity.name.type.canon
+15:8-14 "\"Farm\"" string.quoted.double.canon
+17:17-35 "\"General settings\"" string.quoted.double.canon
+18:15-33 "\"Plantable models\"" string.quoted.double.canon
+18:34-122 "\"A model = an unlock price, a number of copies players can buy, and a ladder of levels.\"" string.quoted.double.canon
+23:0-4 "view" keyword.other.canon
+23:5-11 "Global" entity.name.type.canon
+24:8-26 "\"General settings\"" string.quoted.double.canon
+25:15-23 "\"Prices\"" string.quoted.double.canon
+26:22-43 "\"Farm purchase price\"" string.quoted.double.canon
+26:46-50 "unit" variable.other.property.canon
+26:50-51 ":" punctuation.separator.key.canon
+27:14-31 "\"Cost of a visit\"" string.quoted.double.canon
+27:34-38 "unit" variable.other.property.canon
+27:38-39 ":" punctuation.separator.key.canon
+29:15-34 "\"Access conditions\"" string.quoted.double.canon
+30:26-46 "\"Minimum faery rank\"" string.quoted.double.canon
+31:30-55 "\"Minimum activity points\"" string.quoted.double.canon
+33:19-31 "\"Production\"" string.quoted.double.canon
+34:19-36 "\"Production tick\"" string.quoted.double.canon
+36:2-75 "// maxModels is @deprecated: the studio shows it read-only in a collapsed" comment.line.double-slash.canon
+37:2-80 "// \"Unused fields\" group, with the deprecation text as help. Nothing to write." comment.line.double-slash.canon
+40:0-4 "view" keyword.other.canon
+40:5-14 "ModelType" entity.name.type.canon
+41:8-9 "\"" string.quoted.double.canon
+41:9-10 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+41:10-18 "typeName" string.quoted.double.canon meta.interpolation.canon
+41:18-19 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+41:19-20 "\"" string.quoted.double.canon
+42:11-20 "\"a model\"" string.quoted.double.canon
+44:11-13 "70" constant.numeric.integer.canon
+45:13-16 "150" constant.numeric.integer.canon
+47:16-19 "130" constant.numeric.integer.canon
+48:16-19 "110" constant.numeric.integer.canon
+49:13-16 "100" constant.numeric.integer.canon
+50:11-14 "110" constant.numeric.integer.canon
+53:17-27 "\"Identity\"" string.quoted.double.canon
+54:11-15 "\"Id\"" string.quoted.double.canon
+55:13-28 "\"Internal name\"" string.quoted.double.canon
+56:13-29 "\"Displayed name\"" string.quoted.double.canon
+58:15-23 "\"Unlock\"" string.quoted.double.canon
+58:24-68 "\"What the player pays to unlock this model.\"" string.quoted.double.canon
+59:16-30 "\"Unlock price\"" string.quoted.double.canon
+59:33-37 "unit" variable.other.property.canon
+59:37-38 ":" punctuation.separator.key.canon
+60:16-30 "\"Unlock items\"" string.quoted.double.canon
+61:16-40 "\"Copies players can buy\"" string.quoted.double.canon
+63:15-23 "\"Levels\"" string.quoted.double.canon
+63:24-110 "\"One level per step, in order: production, storage, bonuses and the cost to level up.\"" string.quoted.double.canon
+64:13-28 "\"Maximum level\"" string.quoted.double.canon
+65:11-19 "\"Levels\"" string.quoted.double.canon
+65:22-28 "widget" variable.other.property.canon
+65:28-29 ":" punctuation.separator.key.canon
+69:0-4 "view" keyword.other.canon
+69:5-10 "Level" entity.name.type.canon
+70:8-15 "\"Level " string.quoted.double.canon
+70:15-16 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+70:16-21 "level" string.quoted.double.canon meta.interpolation.canon
+70:21-22 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+70:22-23 "\"" string.quoted.double.canon
+71:11-20 "\"a level\"" string.quoted.double.canon
+72:18-20 "70" constant.numeric.integer.canon
+72:56-59 "120" constant.numeric.integer.canon
+72:72-75 "120" constant.numeric.integer.canon
+74:2-79 "// A decorative (Premium) level leaves the three production fields empty; the" comment.line.double-slash.canon
+75:2-58 "// placeholder says so instead of showing a blank input." comment.line.double-slash.canon
+76:19-31 "\"Production\"" string.quoted.double.canon
+77:14-24 "\"3D model\"" string.quoted.double.canon
+78:19-34 "\"Produced item\"" string.quoted.double.canon
+78:37-48 "placeholder" variable.other.property.canon
+78:48-49 ":" punctuation.separator.key.canon
+78:50-80 "\"Decorative: produces nothing\"" string.quoted.double.canon
+79:22-43 "\"Production per hour\"" string.quoted.double.canon
+80:15-32 "\"Maximum storage\"" string.quoted.double.canon
+82:16-25 "\"Bonuses\"" string.quoted.double.canon
+83:13-31 "\"Cost to level up\"" string.quoted.double.canon
+86:0-4 "view" keyword.other.canon
+86:5-13 "ItemCost" entity.name.type.canon
+87:8-9 "\"" string.quoted.double.canon
+87:9-10 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+87:10-15 "count" string.quoted.double.canon meta.interpolation.canon
+87:15-16 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+87:16-20 " × " string.quoted.double.canon
+87:20-21 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+87:21-25 "item" string.quoted.double.canon meta.interpolation.canon
+87:25-26 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+87:26-27 "\"" string.quoted.double.canon
+88:11-20 "\"an item\"" string.quoted.double.canon
+89:7-13 "\"Item\"" string.quoted.double.canon
+90:8-18 "\"Quantity\"" string.quoted.double.canon
+93:0-4 "view" keyword.other.canon
+93:5-10 "Bonus" entity.name.type.canon
+94:8-9 "\"" string.quoted.double.canon
+94:9-10 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+94:10-19 "attribute" string.quoted.double.canon meta.interpolation.canon
+94:19-20 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+94:20-22 " (" string.quoted.double.canon
+94:22-23 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+94:23-28 "value" string.quoted.double.canon meta.interpolation.canon
+94:28-29 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+94:29-31 ")\"" string.quoted.double.canon
+95:11-20 "\"a bonus\"" string.quoted.double.canon
+96:12-23 "\"Attribute\"" string.quoted.double.canon
+97:8-15 "\"Value\"" string.quoted.double.canon

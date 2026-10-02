@@ -1,0 +1,17 @@
+1:0-90 "// What used to be `python gen_sweep_plan.py --jobs JOB_KNIGHT,JOB_BLADE --levels 75,120`." comment.line.double-slash.canon
+2:0-2 "//" comment.line.double-slash.canon
+3:0-32 "//   canon build --layer knights" comment.line.double-slash.canon
+4:0-2 "//" comment.line.double-slash.canon
+5:0-78 "// The layer changes the settings; `plan` is derived from them, so it follows." comment.line.double-slash.canon
+6:0-7 "package" keyword.other.canon
+6:8-22 "balance.parity" entity.name.namespace.canon
+7:0-5 "layer" keyword.other.canon
+9:0-5 "amend" keyword.other.canon
+10:2-10 "onlyJobs" variable.other.property.canon
+10:10-11 ":" punctuation.separator.key.canon
+10:13-25 "\"JOB_KNIGHT\"" string.quoted.double.canon
+10:27-38 "\"JOB_BLADE\"" string.quoted.double.canon
+11:2-8 "levels" variable.other.property.canon
+11:8-9 ":" punctuation.separator.key.canon
+11:11-13 "75" constant.numeric.integer.canon
+11:15-18 "120" constant.numeric.integer.canon

@@ -1,0 +1,484 @@
+1:0-78 "/// NM Event Scheduler config: scripted world events and their weekly windows." comment.line.documentation.canon
+2:0-88 "/// Loaded by WorldServer and CoreServer (NMEvent::ConfigLoader, EventConfigLoader.cpp)." comment.line.documentation.canon
+3:0-3 "///" comment.line.documentation.canon
+4:0-87 "/// Replaces: eventConfig.schema.json (types, 8 x-invariants, x-define, x-ref, x-notes)" comment.line.documentation.canon
+5:0-84 "/// and Schema/rules/event.schedule-overlap.lua (96 lines). The window arithmetic is" comment.line.documentation.canon
+6:0-51 "/// shared with other schedules, in sovcommon.time." comment.line.documentation.canon
+7:0-3 "///" comment.line.documentation.canon
+8:0-78 "/// Any invalid event makes the loader clear EVERY event of the file, so every" comment.line.documentation.canon
+9:0-29 "/// finding here is an error." comment.line.documentation.canon
+10:0-7 "package" keyword.other.canon
+10:8-23 "resource.events" entity.name.namespace.canon
+12:0-6 "import" keyword.other.canon
+12:15-16 "." punctuation.accessor.canon
+12:16-21 "vocab" variable.other.property.canon
+13:0-6 "import" keyword.other.canon
+13:16-17 "." punctuation.accessor.canon
+13:17-21 "time" variable.other.property.canon
+13:24-31 "Weekday" entity.name.type.canon
+13:33-39 "Window" entity.name.type.canon
+14:0-6 "import" keyword.other.canon
+16:0-74 "/// Monster names the loader resolves through defineObj.h. Items come from" comment.line.documentation.canon
+17:0-57 "/// resource.vocab, so item pickers show names and icons." comment.line.documentation.canon
+18:0-5 "local" storage.modifier.canon
+18:6-9 "let" storage.type.canon
+18:19-20 "=" keyword.operator.canon
+18:21-25 "load" keyword.other.canon
+18:25-26 "." punctuation.accessor.canon
+18:26-33 "defines" variable.other.property.canon
+18:34-71 "\"@resource/Server/Define/defineObj.h\"" string.quoted.double.canon
+18:73-79 "prefix" variable.other.property.canon
+18:79-80 ":" punctuation.separator.key.canon
+18:81-86 "\"MI_\"" string.quoted.double.canon
+20:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+21:0-9 "// Events" comment.line.double-slash.canon
+22:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+24:0-46 "/// A rectangle of world coordinates (Rect2D)." comment.line.documentation.canon
+25:0-6 "record" storage.type.canon
+25:7-11 "Rect" entity.name.type.canon
+26:0-16 "  /// West edge." comment.line.documentation.canon
+27:2-6 "left" variable.other.property.canon
+27:6-7 ":" punctuation.separator.key.canon
+27:8-13 "Float" entity.name.type.canon
+28:0-17 "  /// North edge." comment.line.documentation.canon
+29:2-5 "top" variable.other.property.canon
+29:5-6 ":" punctuation.separator.key.canon
+29:7-12 "Float" entity.name.type.canon
+30:0-16 "  /// East edge." comment.line.documentation.canon
+31:2-7 "right" variable.other.property.canon
+31:7-8 ":" punctuation.separator.key.canon
+31:9-14 "Float" entity.name.type.canon
+32:0-17 "  /// South edge." comment.line.documentation.canon
+33:2-8 "bottom" variable.other.property.canon
+33:8-9 ":" punctuation.separator.key.canon
+33:10-15 "Float" entity.name.type.canon
+35:2-7 "check" keyword.other.canon
+35:13-14 "<" keyword.operator.canon
+35:21-24 "and" keyword.operator.word.canon
+35:29-30 "<" keyword.operator.canon
+35:38-42 "else" keyword.control.canon
+35:43-81 "\"empty spawn region (Rect2D::IsValid)\"" string.quoted.double.canon
+38:0-49 "/// [min, max] number of items per spawn or drop." comment.line.documentation.canon
+39:0-4 "type" storage.type.canon
+39:5-14 "ItemCount" entity.name.type.canon
+39:15-16 "=" keyword.operator.canon
+39:18-21 "Int" entity.name.type.canon
+39:22-23 "1" constant.numeric.integer.canon
+39:23-26 "..=" keyword.operator.canon
+39:26-33 "100_000" constant.numeric.integer.canon
+39:36-41 "where" keyword.control.canon
+39:44-45 "." punctuation.accessor.canon
+39:45-48 "len" variable.other.property.canon
+39:51-53 "==" keyword.operator.canon
+39:54-55 "2" constant.numeric.integer.canon
+39:56-59 "and" keyword.operator.word.canon
+39:63-64 "0" constant.numeric.integer.canon
+39:66-68 "<=" keyword.operator.canon
+39:72-73 "1" constant.numeric.integer.canon
+41:0-77 "/// What the event does. The type decides which fields exist, so the schema's" comment.line.documentation.canon
+42:0-78 "/// \"require monsterId when type == spawn_monster\" rules are simply the shape." comment.line.documentation.canon
+43:0-3 "///" comment.line.documentation.canon
+44:0-81 "/// Stricter than the loader on purpose: a field that means nothing for this type" comment.line.documentation.canon
+45:0-73 "/// (a monsterId on a spawn_item) is refused instead of silently ignored." comment.line.documentation.canon
+46:0-7 "variant" storage.type.canon
+46:8-17 "EventKind" entity.name.type.canon
+46:18-19 "@" meta.annotation.canon punctuation.definition.annotation.canon
+46:19-23 "json" meta.annotation.canon entity.name.function.decorator.canon
+46:23-24 "(" meta.annotation.canon
+46:24-27 "tag" meta.annotation.canon variable.parameter.canon
+46:27-28 ":" meta.annotation.canon punctuation.separator.key.canon
+46:28-29 " " meta.annotation.canon
+46:29-35 "\"type\"" meta.annotation.canon string.quoted.double.canon
+46:35-36 ")" meta.annotation.canon
+47:0-58 "  /// Spawns monsters in a region until enough are killed." comment.line.documentation.canon
+49:0-28 "    /// The monster spawned." comment.line.documentation.canon
+50:4-13 "monsterId" variable.other.property.canon
+50:13-14 ":" punctuation.separator.key.canon
+50:15-18 "ref" storage.modifier.canon
+51:0-34 "    /// Where the monsters appear." comment.line.documentation.canon
+52:4-15 "spawnRegion" variable.other.property.canon
+52:15-16 ":" punctuation.separator.key.canon
+52:17-21 "Rect" entity.name.type.canon
+53:0-68 "    /// How long a spawned monster lives; `none` means until killed." comment.line.documentation.canon
+54:4-19 "monsterLifetime" variable.other.property.canon
+54:19-20 ":" punctuation.separator.key.canon
+54:21-29 "Duration" entity.name.type.canon
+54:30-32 "1s" constant.numeric.duration.canon
+54:32-35 "..=" keyword.operator.canon
+54:35-37 "1d" constant.numeric.duration.canon
+54:38-39 "?" keyword.operator.canon
+54:40-41 "=" keyword.operator.canon
+54:42-46 "none" constant.language.canon
+54:47-48 "@" meta.annotation.canon punctuation.definition.annotation.canon
+54:48-52 "json" meta.annotation.canon entity.name.function.decorator.canon
+54:52-53 "(" meta.annotation.canon
+54:53-73 "\"monsterLifetimeSec\"" meta.annotation.canon string.quoted.double.canon
+54:73-75 ", " meta.annotation.canon
+54:75-79 "unit" meta.annotation.canon variable.parameter.canon
+54:79-80 ":" meta.annotation.canon punctuation.separator.key.canon
+54:80-83 " s)" meta.annotation.canon
+56:0-71 "  /// Drops items on the ground in a region until enough are picked up." comment.line.documentation.canon
+58:0-25 "    /// The item dropped." comment.line.documentation.canon
+59:4-10 "itemId" variable.other.property.canon
+59:10-11 ":" punctuation.separator.key.canon
+59:12-15 "ref" storage.modifier.canon
+60:0-26 "    /// How many per drop." comment.line.documentation.canon
+61:4-13 "itemCount" variable.other.property.canon
+61:13-14 ":" punctuation.separator.key.canon
+61:15-24 "ItemCount" entity.name.type.canon
+61:25-26 "=" keyword.operator.canon
+61:28-29 "1" constant.numeric.integer.canon
+61:31-32 "1" constant.numeric.integer.canon
+62:0-31 "    /// Where the items appear." comment.line.documentation.canon
+63:4-15 "spawnRegion" variable.other.property.canon
+63:15-16 ":" punctuation.separator.key.canon
+63:17-21 "Rect" entity.name.type.canon
+64:0-71 "    /// How long a dropped item stays; `none` means the game's default." comment.line.documentation.canon
+65:4-18 "groundLifetime" variable.other.property.canon
+65:18-19 ":" punctuation.separator.key.canon
+65:20-28 "Duration" entity.name.type.canon
+65:29-31 "1m" constant.numeric.duration.canon
+65:31-34 "..=" keyword.operator.canon
+65:34-36 "1d" constant.numeric.duration.canon
+65:37-38 "?" keyword.operator.canon
+65:39-40 "=" keyword.operator.canon
+65:41-45 "none" constant.language.canon
+65:46-47 "@" meta.annotation.canon punctuation.definition.annotation.canon
+65:47-51 "json" meta.annotation.canon entity.name.function.decorator.canon
+65:51-52 "(" meta.annotation.canon
+65:52-71 "\"groundLifetimeSec\"" meta.annotation.canon string.quoted.double.canon
+65:71-73 ", " meta.annotation.canon
+65:73-77 "unit" meta.annotation.canon variable.parameter.canon
+65:77-78 ":" meta.annotation.canon punctuation.separator.key.canon
+65:78-81 " s)" meta.annotation.canon
+67:4-9 "check" keyword.other.canon
+67:10-30 "itemcount_le_packmax" variable.other.property.canon
+67:30-31 ":" punctuation.separator.key.canon
+67:42-43 "1" constant.numeric.integer.canon
+67:45-47 "<=" keyword.operator.canon
+67:54-55 "." punctuation.accessor.canon
+67:55-63 "stackMax" variable.other.property.canon
+68:6-10 "else" keyword.control.canon
+68:11-12 "\"" string.quoted.double.canon
+68:12-13 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+68:13-23 "itemCount[" string.quoted.double.canon meta.interpolation.canon
+68:23-24 "1" string.quoted.double.canon meta.interpolation.canon constant.numeric.integer.canon
+68:24-25 "]" string.quoted.double.canon meta.interpolation.canon
+68:25-26 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+68:26-27 " " string.quoted.double.canon
+68:27-28 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+68:28-34 "itemId" string.quoted.double.canon meta.interpolation.canon
+68:34-35 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+68:35-37 "id" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+68:37-38 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+68:38-66 " per drop, but a slot holds " string.quoted.double.canon
+68:66-67 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+68:67-73 "itemId" string.quoted.double.canon meta.interpolation.canon
+68:73-74 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+68:74-82 "stackMax" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+68:82-83 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+68:83-84 "\"" string.quoted.double.canon
+70:0-59 "  /// Adds an item to the loot of monsters in a level band." comment.line.documentation.canon
+72:0-35 "    /// The item added to the loot." comment.line.documentation.canon
+73:4-10 "itemId" variable.other.property.canon
+73:10-11 ":" punctuation.separator.key.canon
+73:12-15 "ref" storage.modifier.canon
+74:0-26 "    /// How many per drop." comment.line.documentation.canon
+75:4-13 "itemCount" variable.other.property.canon
+75:13-14 ":" punctuation.separator.key.canon
+75:15-24 "ItemCount" entity.name.type.canon
+75:25-26 "=" keyword.operator.canon
+75:28-29 "1" constant.numeric.integer.canon
+75:31-32 "1" constant.numeric.integer.canon
+76:0-63 "    /// Lowest monster level that drops it; 0 means \"no bound\"." comment.line.documentation.canon
+77:4-12 "levelMin" variable.other.property.canon
+77:12-13 ":" punctuation.separator.key.canon
+77:14-17 "Int" entity.name.type.canon
+77:18-19 "0" constant.numeric.integer.canon
+77:19-22 "..=" keyword.operator.canon
+77:22-26 "1000" constant.numeric.integer.canon
+77:28-29 "=" keyword.operator.canon
+77:30-31 "0" constant.numeric.integer.canon
+78:0-64 "    /// Highest monster level that drops it; 0 means \"no bound\"." comment.line.documentation.canon
+79:4-12 "levelMax" variable.other.property.canon
+79:12-13 ":" punctuation.separator.key.canon
+79:14-17 "Int" entity.name.type.canon
+79:18-19 "0" constant.numeric.integer.canon
+79:19-22 "..=" keyword.operator.canon
+79:22-26 "1000" constant.numeric.integer.canon
+79:28-29 "=" keyword.operator.canon
+79:30-31 "0" constant.numeric.integer.canon
+81:4-9 "check" keyword.other.canon
+81:19-21 "==" keyword.operator.canon
+81:22-23 "0" constant.numeric.integer.canon
+81:24-26 "or" keyword.operator.word.canon
+81:36-38 "==" keyword.operator.canon
+81:39-40 "0" constant.numeric.integer.canon
+81:41-43 "or" keyword.operator.word.canon
+81:53-55 "<=" keyword.operator.canon
+82:6-10 "else" keyword.control.canon
+82:11-22 "\"levelMin (" string.quoted.double.canon
+82:22-23 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+82:23-31 "levelMin" string.quoted.double.canon meta.interpolation.canon
+82:31-32 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+82:32-53 ") is above levelMax (" string.quoted.double.canon
+82:53-54 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+82:54-62 "levelMax" string.quoted.double.canon meta.interpolation.canon
+82:62-63 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+82:63-65 ")\"" string.quoted.double.canon
+83:4-9 "check" keyword.other.canon
+83:10-30 "itemcount_le_packmax" variable.other.property.canon
+83:30-31 ":" punctuation.separator.key.canon
+83:42-43 "1" constant.numeric.integer.canon
+83:45-47 "<=" keyword.operator.canon
+83:54-55 "." punctuation.accessor.canon
+83:55-63 "stackMax" variable.other.property.canon
+84:6-10 "else" keyword.control.canon
+84:11-12 "\"" string.quoted.double.canon
+84:12-13 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+84:13-23 "itemCount[" string.quoted.double.canon meta.interpolation.canon
+84:23-24 "1" string.quoted.double.canon meta.interpolation.canon constant.numeric.integer.canon
+84:24-25 "]" string.quoted.double.canon meta.interpolation.canon
+84:25-26 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+84:26-27 " " string.quoted.double.canon
+84:27-28 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+84:28-34 "itemId" string.quoted.double.canon meta.interpolation.canon
+84:34-35 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+84:35-37 "id" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+84:37-38 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+84:38-66 " per drop, but a slot holds " string.quoted.double.canon
+84:66-67 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+84:67-73 "itemId" string.quoted.double.canon meta.interpolation.canon
+84:73-74 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+84:74-82 "stackMax" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+84:82-83 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+84:83-84 "\"" string.quoted.double.canon
+88:0-84 "/// Only these two are meaningful. The loader silently falls back to local_budget on" comment.line.documentation.canon
+89:0-54 "/// any other string; here a typo is an error instead." comment.line.documentation.canon
+90:0-4 "enum" storage.type.canon
+90:5-13 "RollMode" entity.name.type.canon
+92:0-46 "/// One scripted event and its weekly windows." comment.line.documentation.canon
+93:0-6 "record" storage.type.canon
+93:7-12 "Event" entity.name.type.canon
+94:0-70 "  /// Used by the GM /eventinfo2 scanner, which splits on '-' and '.'." comment.line.documentation.canon
+95:2-4 "id" variable.other.property.canon
+95:4-5 ":" punctuation.separator.key.canon
+95:6-12 "String" entity.name.type.canon
+95:13-35 "/^[A-Za-z0-9_]{1,64}$/" string.regexp.canon
+96:0-34 "  /// The world the event runs in." comment.line.documentation.canon
+97:2-9 "worldId" variable.other.property.canon
+97:9-10 ":" punctuation.separator.key.canon
+97:11-17 "UInt32" entity.name.type.canon
+97:18-19 "1" constant.numeric.integer.canon
+97:19-21 ".." keyword.operator.canon
+98:0-51 "  /// How many kills or pickups complete the event." comment.line.documentation.canon
+99:2-13 "targetCount" variable.other.property.canon
+99:13-14 ":" punctuation.separator.key.canon
+99:15-18 "Int" entity.name.type.canon
+99:19-20 "1" constant.numeric.integer.canon
+99:20-23 "..=" keyword.operator.canon
+99:23-32 "1_000_000" constant.numeric.integer.canon
+100:0-73 "  /// What the event does; its fields sit directly in the event's object." comment.line.documentation.canon
+101:2-6 "kind" variable.other.property.canon
+101:6-7 ":" punctuation.separator.key.canon
+101:8-17 "EventKind" entity.name.type.canon
+101:18-19 "@" meta.annotation.canon punctuation.definition.annotation.canon
+101:19-23 "json" meta.annotation.canon entity.name.function.decorator.canon
+101:23-31 "(inline)" meta.annotation.canon
+102:0-37 "  /// When the event runs, each week." comment.line.documentation.canon
+103:2-10 "schedule" variable.other.property.canon
+103:10-11 ":" punctuation.separator.key.canon
+103:13-19 "Window" entity.name.type.canon
+103:21-22 "1" constant.numeric.integer.canon
+103:22-25 "..=" keyword.operator.canon
+103:25-27 "64" constant.numeric.integer.canon
+104:0-87 "  /// Who rolls a drop: each world server against its granted budget (local_budget), or" comment.line.documentation.canon
+105:0-54 "  /// the core server, asked per kill (authoritative)." comment.line.documentation.canon
+106:2-10 "rollMode" variable.other.property.canon
+106:10-11 ":" punctuation.separator.key.canon
+106:12-20 "RollMode" entity.name.type.canon
+106:21-22 "=" keyword.operator.canon
+108:2-7 "check" keyword.other.canon
+109:4-7 "for" keyword.control.canon
+109:13-15 "in" keyword.operator.word.canon
+109:24-25 "." punctuation.accessor.canon
+109:25-34 "enumerate" variable.other.property.canon
+110:6-9 "for" keyword.control.canon
+110:12-14 "in" keyword.operator.word.canon
+110:26-27 "+" keyword.operator.canon
+110:28-29 "1" constant.numeric.integer.canon
+110:29-31 ".." keyword.operator.canon
+111:8-10 "if" keyword.control.canon
+114:12-103 "\"overlaps an earlier window of this event; the loader then rejects EVERY event of the file\"" string.quoted.double.canon
+122:0-19 "/// The whole file." comment.line.documentation.canon
+123:0-6 "record" storage.type.canon
+123:7-18 "EventConfig" entity.name.type.canon
+124:0-46 "  /// Must equal Config::kConfigSchemaVersion." comment.line.documentation.canon
+125:2-9 "version" variable.other.property.canon
+125:9-10 ":" punctuation.separator.key.canon
+125:11-14 "Int" entity.name.type.canon
+125:15-20 "where" keyword.control.canon
+125:24-26 "==" keyword.operator.canon
+125:27-28 "1" constant.numeric.integer.canon
+126:0-34 "  /// Every event; ids are unique." comment.line.documentation.canon
+127:2-8 "events" variable.other.property.canon
+127:8-9 ":" punctuation.separator.key.canon
+127:11-16 "Event" entity.name.type.canon
+127:18-21 "..=" keyword.operator.canon
+127:21-24 "256" constant.numeric.integer.canon
+130:0-49 "/// Server/Event/EventConfig.json, read in place." comment.line.documentation.canon
+131:0-3 "let" storage.type.canon
+131:4-15 "eventConfig" variable.other.property.canon
+131:15-16 ":" punctuation.separator.key.canon
+131:17-28 "EventConfig" entity.name.type.canon
+131:29-30 "=" keyword.operator.canon
+131:31-35 "load" keyword.other.canon
+131:36-77 "\"@resource/Server/Event/EventConfig.json\"" string.quoted.double.canon
+133:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+134:0-9 "// Studio" comment.line.double-slash.canon
+135:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+137:0-4 "view" keyword.other.canon
+137:5-16 "EventConfig" entity.name.type.canon
+138:8-26 "\"Scheduled events\"" string.quoted.double.canon
+140:15-23 "\"Events\"" string.quoted.double.canon
+143:0-4 "view" keyword.other.canon
+143:5-10 "Event" entity.name.type.canon
+144:8-9 "\"" string.quoted.double.canon
+144:9-10 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+144:10-12 "id" string.quoted.double.canon meta.interpolation.canon
+144:12-13 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+144:13-14 "\"" string.quoted.double.canon
+145:11-21 "\"an event\"" string.quoted.double.canon
+146:15-18 "200" constant.numeric.integer.canon
+146:25-28 "170" constant.numeric.integer.canon
+146:38-40 "90" constant.numeric.integer.canon
+146:54-57 "110" constant.numeric.integer.canon
+148:14-21 "\"Event\"" string.quoted.double.canon
+149:7-11 "\"Id\"" string.quoted.double.canon
+150:9-15 "\"Type\"" string.quoted.double.canon
+151:12-19 "\"World\"" string.quoted.double.canon
+152:16-24 "\"Amount\"" string.quoted.double.canon
+152:27-31 "unit" variable.other.property.canon
+152:31-32 ":" punctuation.separator.key.canon
+154:17-27 "\"Schedule\"" string.quoted.double.canon
+154:28-106 "\"Weekly windows in UTC. A window that ends before it starts crosses midnight.\"" string.quoted.double.canon
+155:15-21 "widget" variable.other.property.canon
+155:21-22 ":" punctuation.separator.key.canon
+157:17-27 "\"Advanced\"" string.quoted.double.canon
+157:48-59 "\"Roll mode\"" string.quoted.double.canon
+160:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+161:0-8 "// Tests" comment.line.double-slash.canon
+162:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+164:0-5 "local" storage.modifier.canon
+164:6-8 "fn" storage.type.function.canon
+164:9-11 "at" entity.name.function.canon
+164:12-15 "day" variable.other.property.canon
+164:15-16 ":" punctuation.separator.key.canon
+164:17-24 "Weekday" entity.name.type.canon
+164:26-30 "from" variable.other.property.canon
+164:30-31 ":" punctuation.separator.key.canon
+164:32-35 "Int" entity.name.type.canon
+164:37-39 "to" variable.other.property.canon
+164:39-40 ":" punctuation.separator.key.canon
+164:41-44 "Int" entity.name.type.canon
+164:46-48 "->" keyword.operator.canon
+164:49-55 "Window" entity.name.type.canon
+165:2-8 "return" keyword.control.canon
+165:11-14 "day" variable.other.property.canon
+165:14-15 ":" punctuation.separator.key.canon
+165:21-29 "startUtc" variable.other.property.canon
+165:29-30 ":" punctuation.separator.key.canon
+165:33-37 "hour" variable.other.property.canon
+165:37-38 ":" punctuation.separator.key.canon
+165:45-51 "minute" variable.other.property.canon
+165:51-52 ":" punctuation.separator.key.canon
+165:53-54 "0" constant.numeric.integer.canon
+165:58-64 "endUtc" variable.other.property.canon
+165:64-65 ":" punctuation.separator.key.canon
+165:68-72 "hour" variable.other.property.canon
+165:72-73 ":" punctuation.separator.key.canon
+165:78-84 "minute" variable.other.property.canon
+165:84-85 ":" punctuation.separator.key.canon
+165:86-87 "0" constant.numeric.integer.canon
+168:0-5 "local" storage.modifier.canon
+168:6-9 "let" storage.type.canon
+168:10-16 "sample" variable.other.property.canon
+168:16-17 ":" punctuation.separator.key.canon
+168:18-23 "Event" entity.name.type.canon
+168:24-25 "=" keyword.operator.canon
+169:2-4 "id" variable.other.property.canon
+169:4-5 ":" punctuation.separator.key.canon
+169:6-14 "\"sample\"" string.quoted.double.canon
+170:2-9 "worldId" variable.other.property.canon
+170:9-10 ":" punctuation.separator.key.canon
+170:11-12 "1" constant.numeric.integer.canon
+171:2-13 "targetCount" variable.other.property.canon
+171:13-14 ":" punctuation.separator.key.canon
+171:15-17 "10" constant.numeric.integer.canon
+172:2-6 "kind" variable.other.property.canon
+172:6-7 ":" punctuation.separator.key.canon
+172:30-36 "itemId" variable.other.property.canon
+172:36-37 ":" punctuation.separator.key.canon
+172:38-58 "II_GEN_MAT_MOONSTONE" constant.other.canon
+173:2-10 "schedule" variable.other.property.canon
+173:10-11 ":" punctuation.separator.key.canon
+173:16-19 "Mon" entity.name.type.canon
+173:21-23 "20" constant.numeric.integer.canon
+173:25-27 "22" constant.numeric.integer.canon
+176:0-4 "test" keyword.other.canon
+176:5-38 "\"overlapping windows are refused\"" string.quoted.double.canon
+177:2-8 "expect" keyword.other.canon
+178:4-7 "..." keyword.operator.canon
+179:4-12 "schedule" variable.other.property.canon
+179:12-13 ":" punctuation.separator.key.canon
+179:18-21 "Mon" entity.name.type.canon
+179:23-25 "20" constant.numeric.integer.canon
+179:27-29 "22" constant.numeric.integer.canon
+179:35-38 "Mon" entity.name.type.canon
+179:40-42 "21" constant.numeric.integer.canon
+179:44-46 "23" constant.numeric.integer.canon
+180:10-38 "\"overlaps an earlier window\"" string.quoted.double.canon
+181:2-8 "expect" keyword.other.canon
+181:11-14 "..." keyword.operator.canon
+181:22-30 "schedule" variable.other.property.canon
+181:30-31 ":" punctuation.separator.key.canon
+181:36-39 "Mon" entity.name.type.canon
+181:41-43 "20" constant.numeric.integer.canon
+181:45-47 "22" constant.numeric.integer.canon
+181:53-56 "Mon" entity.name.type.canon
+181:58-60 "22" constant.numeric.integer.canon
+181:62-64 "23" constant.numeric.integer.canon
+184:0-4 "test" keyword.other.canon
+184:5-47 "\"a drop cannot exceed what one slot holds\"" string.quoted.double.canon
+185:2-5 "let" storage.type.canon
+185:6-13 "tooMany" variable.other.property.canon
+185:13-14 ":" punctuation.separator.key.canon
+185:15-24 "EventKind" entity.name.type.canon
+185:25-26 "=" keyword.operator.canon
+186:4-10 "itemId" variable.other.property.canon
+186:10-11 ":" punctuation.separator.key.canon
+186:12-32 "II_GEN_MAT_MOONSTONE" constant.other.canon
+187:4-13 "itemCount" variable.other.property.canon
+187:13-14 ":" punctuation.separator.key.canon
+187:16-17 "1" constant.numeric.integer.canon
+187:19-25 "20_000" constant.numeric.integer.canon
+189:2-8 "expect" keyword.other.canon
+189:11-14 "..." keyword.operator.canon
+189:22-26 "kind" variable.other.property.canon
+189:26-27 ":" punctuation.separator.key.canon
+192:0-80 "// While EventConfig.json stays the source, Canon validates it and generates the" comment.line.double-slash.canon
+193:0-81 "// C++ structs. The loader keeps reading the file. The C++ checks can be deleted." comment.line.double-slash.canon
+194:0-4 "emit" keyword.other.canon
+194:11-14 "out" variable.other.property.canon
+194:14-15 ":" punctuation.separator.key.canon
+194:16-42 "\"@source/Generated/events\"" string.quoted.double.canon
+194:44-53 "namespace" variable.other.property.canon
+194:53-54 ":" punctuation.separator.key.canon
+194:55-69 "\"NMEvent::gen\"" string.quoted.double.canon
+194:71-75 "mode" variable.other.property.canon
+194:75-76 ":" punctuation.separator.key.canon
+195:0-4 "emit" keyword.other.canon
+195:5-9 "view" keyword.other.canon
+195:12-15 "out" variable.other.property.canon
+195:15-16 ":" punctuation.separator.key.canon
+195:17-46 "\"@generated/events.view.json\"" string.quoted.double.canon

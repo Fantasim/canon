@@ -1,0 +1,46 @@
+1:0-79 "/// UI vocabularies shared by every web front end: colour tones and icon names." comment.line.documentation.canon
+2:0-7 "package" keyword.other.canon
+2:8-20 "sovcommon.ui" entity.name.namespace.canon
+4:0-86 "/// A semantic or qualitative colour slot. Each one resolves to a --color-* token that" comment.line.documentation.canon
+5:0-85 "/// tokens.css defines for dark and light, with its -soft background. No colour value" comment.line.documentation.canon
+6:0-20 "/// lives in config." comment.line.documentation.canon
+7:0-3 "///" comment.line.documentation.canon
+8:0-78 "/// Semantic tones are reserved for meaning (status, severity, flags, intent)." comment.line.documentation.canon
+9:0-84 "/// Qualitative series slots tell families apart, always together with icon + label." comment.line.documentation.canon
+10:0-4 "enum" storage.type.canon
+10:5-9 "Tone" entity.name.type.canon
+17:11-12 "=" keyword.operator.canon
+17:13-23 "\"series-1\"" string.quoted.double.canon
+18:11-12 "=" keyword.operator.canon
+18:13-23 "\"series-2\"" string.quoted.double.canon
+19:11-12 "=" keyword.operator.canon
+19:13-23 "\"series-3\"" string.quoted.double.canon
+20:11-12 "=" keyword.operator.canon
+20:13-23 "\"series-4\"" string.quoted.double.canon
+21:11-12 "=" keyword.operator.canon
+21:13-23 "\"series-5\"" string.quoted.double.canon
+22:11-12 "=" keyword.operator.canon
+22:13-23 "\"series-6\"" string.quoted.double.canon
+25:0-81 "/// Icons sovcommon exports (icons.ts). An icon that is not listed here is a type" comment.line.documentation.canon
+26:0-82 "/// error wherever it is used, so `make check` no longer has to scrape TypeScript." comment.line.documentation.canon
+27:0-4 "enum" storage.type.canon
+27:5-9 "Icon" entity.name.type.canon
+28:17-18 "=" keyword.operator.canon
+28:19-35 "\"alert-triangle\"" string.quoted.double.canon
+30:12-13 "=" keyword.operator.canon
+30:14-25 "\"bar-chart\"" string.quoted.double.canon
+31:2-7 "check" keyword.other.canon
+42:2-9 "package" keyword.other.canon
+49:0-4 "emit" keyword.other.canon
+49:10-13 "out" variable.other.property.canon
+49:13-14 ":" punctuation.separator.key.canon
+49:15-30 "\"@sovcommon/ui\"" string.quoted.double.canon
+49:32-39 "package" variable.other.property.canon
+49:39-40 ":" punctuation.separator.key.canon
+49:41-45 "\"ui\"" string.quoted.double.canon
+49:47-51 "mode" variable.other.property.canon
+49:51-52 ":" punctuation.separator.key.canon
+50:0-4 "emit" keyword.other.canon
+50:10-13 "out" variable.other.property.canon
+50:13-14 ":" punctuation.separator.key.canon
+50:15-37 "\"@web/ui.generated.ts\"" string.quoted.double.canon

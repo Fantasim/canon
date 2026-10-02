@@ -1,0 +1,286 @@
+1:0-38 "// French for the farm's studio texts." comment.line.double-slash.canon
+2:0-2 "//" comment.line.double-slash.canon
+3:0-78 "// Keys are paths into farm.canon and farm.view.canon, never the English text:" comment.line.double-slash.canon
+4:0-84 "// rewording the English does not orphan the translation, and renaming a field makes" comment.line.double-slash.canon
+5:0-49 "// its key an error here instead of a silent gap." comment.line.double-slash.canon
+6:0-2 "//" comment.line.double-slash.canon
+7:0-81 "//   canon i18n stub fr     adds every missing key, with the English as a comment" comment.line.double-slash.canon
+8:0-90 "//   canon check            a missing key is a warning (the studio falls back to English);" comment.line.double-slash.canon
+9:0-67 "//                          a key that no longer exists is an error" comment.line.double-slash.canon
+10:0-2 "//" comment.line.double-slash.canon
+11:0-87 "// Same model as Resource/Schema/i18n/fr today (English in source, fr overlay, fallback" comment.line.double-slash.canon
+12:0-76 "// to English), with paths checked by the compiler instead of JSON pointers." comment.line.double-slash.canon
+13:0-7 "package" keyword.other.canon
+13:8-21 "resource.farm" entity.name.namespace.canon
+14:0-11 "translation" keyword.other.canon
+16:0-16 "// --- views ---" comment.line.double-slash.canon
+17:0-10 "FarmConfig" entity.name.type.canon
+17:10-11 "." punctuation.accessor.canon
+17:11-16 "title" variable.other.property.canon
+17:17-24 "\"Ferme\"" string.quoted.double.canon
+18:0-10 "FarmConfig" entity.name.type.canon
+18:10-11 "." punctuation.accessor.canon
+18:11-16 "group" variable.other.property.canon
+18:16-17 "." punctuation.accessor.canon
+18:17-25 "settings" variable.other.property.canon
+18:26-48 "\"Réglages généraux\"" string.quoted.double.canon
+19:0-10 "FarmConfig" entity.name.type.canon
+19:10-11 "." punctuation.accessor.canon
+19:11-16 "group" variable.other.property.canon
+19:16-17 "." punctuation.accessor.canon
+19:17-23 "models" variable.other.property.canon
+19:24-45 "\"Modèles plantables\"" string.quoted.double.canon
+20:0-10 "FarmConfig" entity.name.type.canon
+20:10-11 "." punctuation.accessor.canon
+20:11-16 "group" variable.other.property.canon
+20:16-17 "." punctuation.accessor.canon
+20:17-23 "models" variable.other.property.canon
+20:23-24 "." punctuation.accessor.canon
+20:24-29 "intro" variable.other.property.canon
+20:30-130 "\"Un modèle = un prix de déblocage, un nombre d'exemplaires achetables et une échelle de paliers.\"" string.quoted.double.canon
+22:0-6 "Global" entity.name.type.canon
+22:6-7 "." punctuation.accessor.canon
+22:7-12 "title" variable.other.property.canon
+22:13-35 "\"Réglages généraux\"" string.quoted.double.canon
+23:0-6 "Global" entity.name.type.canon
+23:6-7 "." punctuation.accessor.canon
+23:7-12 "group" variable.other.property.canon
+23:12-13 "." punctuation.accessor.canon
+23:13-19 "prices" variable.other.property.canon
+23:20-26 "\"Prix\"" string.quoted.double.canon
+24:0-6 "Global" entity.name.type.canon
+24:6-7 "." punctuation.accessor.canon
+24:7-12 "group" variable.other.property.canon
+24:12-13 "." punctuation.accessor.canon
+24:13-19 "access" variable.other.property.canon
+24:20-41 "\"Conditions d'accès\"" string.quoted.double.canon
+25:0-6 "Global" entity.name.type.canon
+25:6-7 "." punctuation.accessor.canon
+25:7-12 "group" variable.other.property.canon
+25:12-13 "." punctuation.accessor.canon
+25:13-23 "production" variable.other.property.canon
+25:24-36 "\"Production\"" string.quoted.double.canon
+26:0-6 "Global" entity.name.type.canon
+26:6-7 "." punctuation.accessor.canon
+26:7-24 "farmPurchasePrice" variable.other.property.canon
+26:25-51 "\"Prix d'achat de la ferme\"" string.quoted.double.canon
+27:0-6 "Global" entity.name.type.canon
+27:6-7 "." punctuation.accessor.canon
+27:7-16 "visitCost" variable.other.property.canon
+27:17-37 "\"Coût d'une visite\"" string.quoted.double.canon
+28:0-6 "Global" entity.name.type.canon
+28:6-7 "." punctuation.accessor.canon
+28:7-28 "worldLevelMinRequired" variable.other.property.canon
+28:29-54 "\"Rang de féerie minimum\"" string.quoted.double.canon
+29:0-6 "Global" entity.name.type.canon
+29:6-7 "." punctuation.accessor.canon
+29:7-32 "activityPointsMinRequired" variable.other.property.canon
+29:33-61 "\"Points d'activité minimum\"" string.quoted.double.canon
+30:0-6 "Global" entity.name.type.canon
+30:6-7 "." punctuation.accessor.canon
+30:7-21 "productionTick" variable.other.property.canon
+30:22-45 "\"Cadence de production\"" string.quoted.double.canon
+32:0-9 "ModelType" entity.name.type.canon
+32:9-10 "." punctuation.accessor.canon
+32:10-18 "singular" variable.other.property.canon
+32:19-31 "\"un modèle\"" string.quoted.double.canon
+33:0-9 "ModelType" entity.name.type.canon
+33:9-10 "." punctuation.accessor.canon
+33:10-15 "group" variable.other.property.canon
+33:15-16 "." punctuation.accessor.canon
+33:16-24 "identity" variable.other.property.canon
+33:25-36 "\"Identité\"" string.quoted.double.canon
+34:0-9 "ModelType" entity.name.type.canon
+34:9-10 "." punctuation.accessor.canon
+34:10-15 "group" variable.other.property.canon
+34:15-16 "." punctuation.accessor.canon
+34:16-22 "unlock" variable.other.property.canon
+34:23-35 "\"Déblocage\"" string.quoted.double.canon
+35:0-9 "ModelType" entity.name.type.canon
+35:9-10 "." punctuation.accessor.canon
+35:10-15 "group" variable.other.property.canon
+35:15-16 "." punctuation.accessor.canon
+35:16-22 "unlock" variable.other.property.canon
+35:22-23 "." punctuation.accessor.canon
+35:23-28 "intro" variable.other.property.canon
+35:29-80 "\"Ce que le joueur paie pour débloquer ce modèle.\"" string.quoted.double.canon
+36:0-9 "ModelType" entity.name.type.canon
+36:9-10 "." punctuation.accessor.canon
+36:10-15 "group" variable.other.property.canon
+36:15-16 "." punctuation.accessor.canon
+36:16-22 "levels" variable.other.property.canon
+36:23-32 "\"Paliers\"" string.quoted.double.canon
+37:0-9 "ModelType" entity.name.type.canon
+37:9-10 "." punctuation.accessor.canon
+37:10-15 "group" variable.other.property.canon
+37:15-16 "." punctuation.accessor.canon
+37:16-22 "levels" variable.other.property.canon
+37:22-23 "." punctuation.accessor.canon
+37:23-28 "intro" variable.other.property.canon
+37:29-116 "\"Un palier par niveau, dans l'ordre : production, stockage, bonus et coût de montée.\"" string.quoted.double.canon
+38:0-9 "ModelType" entity.name.type.canon
+38:9-10 "." punctuation.accessor.canon
+38:10-16 "typeId" variable.other.property.canon
+38:17-30 "\"Identifiant\"" string.quoted.double.canon
+39:0-9 "ModelType" entity.name.type.canon
+39:9-10 "." punctuation.accessor.canon
+39:10-18 "typeName" variable.other.property.canon
+39:19-32 "\"Nom interne\"" string.quoted.double.canon
+40:0-9 "ModelType" entity.name.type.canon
+40:9-10 "." punctuation.accessor.canon
+40:10-18 "nameText" variable.other.property.canon
+40:19-33 "\"Nom affiché\"" string.quoted.double.canon
+41:0-9 "ModelType" entity.name.type.canon
+41:9-10 "." punctuation.accessor.canon
+41:10-21 "unlockPrice" variable.other.property.canon
+41:22-42 "\"Prix de déblocage\"" string.quoted.double.canon
+42:0-9 "ModelType" entity.name.type.canon
+42:9-10 "." punctuation.accessor.canon
+42:10-21 "unlockItems" variable.other.property.canon
+42:22-44 "\"Objets de déblocage\"" string.quoted.double.canon
+43:0-9 "ModelType" entity.name.type.canon
+43:9-10 "." punctuation.accessor.canon
+43:10-21 "maxBuyCount" variable.other.property.canon
+43:22-46 "\"Exemplaires achetables\"" string.quoted.double.canon
+44:0-9 "ModelType" entity.name.type.canon
+44:9-10 "." punctuation.accessor.canon
+44:10-18 "maxLevel" variable.other.property.canon
+44:19-35 "\"Niveau maximum\"" string.quoted.double.canon
+45:0-9 "ModelType" entity.name.type.canon
+45:9-10 "." punctuation.accessor.canon
+45:10-16 "levels" variable.other.property.canon
+45:17-26 "\"Paliers\"" string.quoted.double.canon
+47:0-5 "Level" entity.name.type.canon
+47:5-6 "." punctuation.accessor.canon
+47:6-11 "title" variable.other.property.canon
+47:12-20 "\"Palier " string.quoted.double.canon
+47:20-21 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+47:21-26 "level" string.quoted.double.canon meta.interpolation.canon
+47:26-27 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+47:27-28 "\"" string.quoted.double.canon
+48:0-5 "Level" entity.name.type.canon
+48:5-6 "." punctuation.accessor.canon
+48:6-14 "singular" variable.other.property.canon
+48:15-26 "\"un palier\"" string.quoted.double.canon
+49:0-5 "Level" entity.name.type.canon
+49:5-6 "." punctuation.accessor.canon
+49:6-11 "group" variable.other.property.canon
+49:11-12 "." punctuation.accessor.canon
+49:12-22 "production" variable.other.property.canon
+49:23-35 "\"Production\"" string.quoted.double.canon
+50:0-5 "Level" entity.name.type.canon
+50:5-6 "." punctuation.accessor.canon
+50:6-11 "group" variable.other.property.canon
+50:11-12 "." punctuation.accessor.canon
+50:12-19 "bonuses" variable.other.property.canon
+50:20-27 "\"Bonus\"" string.quoted.double.canon
+51:0-5 "Level" entity.name.type.canon
+51:5-6 "." punctuation.accessor.canon
+51:6-11 "group" variable.other.property.canon
+51:11-12 "." punctuation.accessor.canon
+51:12-16 "cost" variable.other.property.canon
+51:17-35 "\"Coût de montée\"" string.quoted.double.canon
+52:0-5 "Level" entity.name.type.canon
+52:5-6 "." punctuation.accessor.canon
+52:6-15 "modelName" variable.other.property.canon
+52:16-28 "\"Modèle 3D\"" string.quoted.double.canon
+53:0-5 "Level" entity.name.type.canon
+53:5-6 "." punctuation.accessor.canon
+53:6-20 "productionItem" variable.other.property.canon
+53:21-36 "\"Objet produit\"" string.quoted.double.canon
+54:0-5 "Level" entity.name.type.canon
+54:5-6 "." punctuation.accessor.canon
+54:6-20 "productionItem" variable.other.property.canon
+54:20-21 "." punctuation.accessor.canon
+54:21-32 "placeholder" variable.other.property.canon
+54:33-63 "\"Décoratif : ne produit rien\"" string.quoted.double.canon
+55:0-5 "Level" entity.name.type.canon
+55:5-6 "." punctuation.accessor.canon
+55:6-23 "productionPerHour" variable.other.property.canon
+55:24-44 "\"Production / heure\"" string.quoted.double.canon
+56:0-5 "Level" entity.name.type.canon
+56:5-6 "." punctuation.accessor.canon
+56:6-16 "maxStorage" variable.other.property.canon
+56:17-35 "\"Stockage maximum\"" string.quoted.double.canon
+58:0-8 "ItemCost" entity.name.type.canon
+58:8-9 "." punctuation.accessor.canon
+58:9-17 "singular" variable.other.property.canon
+58:18-28 "\"un objet\"" string.quoted.double.canon
+59:0-8 "ItemCost" entity.name.type.canon
+59:8-9 "." punctuation.accessor.canon
+59:9-13 "item" variable.other.property.canon
+59:14-21 "\"Objet\"" string.quoted.double.canon
+60:0-8 "ItemCost" entity.name.type.canon
+60:8-9 "." punctuation.accessor.canon
+60:9-14 "count" variable.other.property.canon
+60:15-26 "\"Quantité\"" string.quoted.double.canon
+62:0-5 "Bonus" entity.name.type.canon
+62:5-6 "." punctuation.accessor.canon
+62:6-14 "singular" variable.other.property.canon
+62:15-25 "\"un bonus\"" string.quoted.double.canon
+63:0-5 "Bonus" entity.name.type.canon
+63:5-6 "." punctuation.accessor.canon
+63:6-15 "attribute" variable.other.property.canon
+63:16-26 "\"Attribut\"" string.quoted.double.canon
+64:0-5 "Bonus" entity.name.type.canon
+64:5-6 "." punctuation.accessor.canon
+64:6-11 "value" variable.other.property.canon
+64:12-20 "\"Valeur\"" string.quoted.double.canon
+66:0-49 "// --- doc comments (help texts) and findings ---" comment.line.double-slash.canon
+67:0-9 "ModelType" entity.name.type.canon
+67:9-10 "." punctuation.accessor.canon
+67:10-16 "typeId" variable.other.property.canon
+67:16-17 "." punctuation.accessor.canon
+67:17-21 "help" variable.other.property.canon
+67:22-107 "\"Stocké sur les fermes des joueurs : le changer casse les modèles déjà plantés.\"" string.quoted.double.canon
+68:0-9 "ModelType" entity.name.type.canon
+68:9-10 "." punctuation.accessor.canon
+68:10-16 "levels" variable.other.property.canon
+68:16-17 "." punctuation.accessor.canon
+68:17-21 "help" variable.other.property.canon
+68:22-86 "\"L'ORDRE fait le niveau : le premier élément est le niveau 1.\"" string.quoted.double.canon
+69:0-9 "ModelType" entity.name.type.canon
+69:9-10 "." punctuation.accessor.canon
+69:10-15 "check" variable.other.property.canon
+69:15-16 "." punctuation.accessor.canon
+69:16-34 "unreachable_levels" variable.other.property.canon
+69:35-50 "\"maxLevel vaut " string.quoted.double.canon
+69:50-51 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+69:51-59 "maxLevel" string.quoted.double.canon meta.interpolation.canon
+69:59-60 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+69:60-72 " mais seuls " string.quoted.double.canon
+69:72-73 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+69:73-79 "levels" string.quoted.double.canon meta.interpolation.canon
+69:79-80 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+69:80-83 "len" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+69:83-85 "()" string.quoted.double.canon meta.interpolation.canon
+69:85-86 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+69:86-116 " paliers existent : le niveau " string.quoted.double.canon
+69:116-117 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+69:117-123 "levels" string.quoted.double.canon meta.interpolation.canon
+69:123-124 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+69:124-127 "len" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+69:127-130 "() " string.quoted.double.canon meta.interpolation.canon
+69:130-131 "+" string.quoted.double.canon meta.interpolation.canon keyword.operator.canon
+69:131-132 " " string.quoted.double.canon meta.interpolation.canon
+69:132-133 "1" string.quoted.double.canon meta.interpolation.canon constant.numeric.integer.canon
+69:133-134 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+69:134-194 " et au-delà sont inatteignables (GetLevel renvoie nullptr)\"" string.quoted.double.canon
+70:0-9 "ModelType" entity.name.type.canon
+70:9-10 "." punctuation.accessor.canon
+70:10-15 "check" variable.other.property.canon
+70:15-16 "." punctuation.accessor.canon
+70:16-30 "level_mismatch" variable.other.property.canon
+70:31-118 "\"une valeur `level` ne correspond pas à sa position ; le chargeur utilise la position\"" string.quoted.double.canon
+71:0-5 "Level" entity.name.type.canon
+71:5-6 "." punctuation.accessor.canon
+71:6-11 "check" variable.other.property.canon
+71:11-12 "." punctuation.accessor.canon
+71:12-31 "production_together" variable.other.property.canon
+71:32-142 "\"productionItem, productionPerHour et maxStorage vont ensemble : les trois, ou aucun sur un palier décoratif\"" string.quoted.double.canon
+72:0-6 "Global" entity.name.type.canon
+72:6-7 "." punctuation.accessor.canon
+72:7-16 "maxModels" variable.other.property.canon
+72:16-17 "." punctuation.accessor.canon
+72:17-27 "deprecated" variable.other.property.canon
+72:28-157 "\"Jamais lu par LoadFromFile : la vraie limite est FARM_MAX_MODELS = 100. Conservé tel quel ; le modifier ne change rien en jeu.\"" string.quoted.double.canon

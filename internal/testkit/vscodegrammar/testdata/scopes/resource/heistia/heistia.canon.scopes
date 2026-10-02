@@ -1,0 +1,224 @@
+1:0-68 "/// Heistia: timed group missions, their reward pools and buff pool." comment.line.documentation.canon
+2:0-44 "/// Loader: HeistiaConfig (HeistiaConfig.h)." comment.line.documentation.canon
+3:0-3 "///" comment.line.documentation.canon
+4:0-81 "/// The hard part is `filterParam`: what it may contain depends on `eventType` (a" comment.line.documentation.canon
+5:0-79 "/// monster for COMBAT_KILL_MONSTER, an item for ECONOMY_DROP_ITEM, nothing for" comment.line.documentation.canon
+6:0-88 "/// COMBAT_KILL_FFA...). Since Resource 4bb68225 the schema pairs each filterParam shape" comment.line.documentation.canon
+7:0-88 "/// with the event's `param` from eventType.json through `x-ref-where`. Here the pairing" comment.line.documentation.canon
+8:0-69 "/// is the field's type, computed from the event: `Param(eventType)`." comment.line.documentation.canon
+9:0-7 "package" keyword.other.canon
+9:8-24 "resource.heistia" entity.name.namespace.canon
+11:0-6 "import" keyword.other.canon
+11:15-16 "." punctuation.accessor.canon
+11:16-21 "vocab" variable.other.property.canon
+11:24-29 "Param" entity.name.type.canon
+12:0-6 "import" keyword.other.canon
+14:0-90 "/// One mission: count an event, optionally filtered, until every player reaches a target." comment.line.documentation.canon
+15:0-6 "record" storage.type.canon
+15:7-11 "Task" entity.name.type.canon
+16:0-35 "  /// The event the mission counts." comment.line.documentation.canon
+17:2-11 "eventType" variable.other.property.canon
+17:11-12 ":" punctuation.separator.key.canon
+17:13-16 "ref" storage.modifier.canon
+18:0-75 "  /// Only this monster, item, dungeon... counts. `none` counts everything." comment.line.documentation.canon
+19:0-66 "  /// Its type depends on `eventType`: see resource.vocab's Param." comment.line.documentation.canon
+20:2-13 "filterParam" variable.other.property.canon
+20:13-14 ":" punctuation.separator.key.canon
+20:15-20 "Param" entity.name.type.canon
+20:31-32 "?" keyword.operator.canon
+20:33-34 "=" keyword.operator.canon
+20:35-39 "none" constant.language.canon
+20:40-41 "@" meta.annotation.canon punctuation.definition.annotation.canon
+20:41-45 "json" meta.annotation.canon entity.name.function.decorator.canon
+20:45-46 "(" meta.annotation.canon
+20:46-50 "none" meta.annotation.canon variable.parameter.canon
+20:50-51 ":" meta.annotation.canon punctuation.separator.key.canon
+20:51-52 " " meta.annotation.canon
+20:52-54 "\"\"" meta.annotation.canon string.quoted.double.canon
+20:54-55 ")" meta.annotation.canon
+21:0-38 "  /// How many each player must reach." comment.line.documentation.canon
+22:2-17 "targetPerPlayer" variable.other.property.canon
+22:17-18 ":" punctuation.separator.key.canon
+22:19-22 "Int" entity.name.type.canon
+22:23-24 "1" constant.numeric.integer.canon
+22:24-26 ".." keyword.operator.canon
+23:0-32 "  /// Time limit of the mission." comment.line.documentation.canon
+24:2-13 "maxDuration" variable.other.property.canon
+24:13-14 ":" punctuation.separator.key.canon
+24:15-23 "Duration" entity.name.type.canon
+24:24-26 "1m" constant.numeric.duration.canon
+24:26-28 ".." keyword.operator.canon
+24:30-31 "@" meta.annotation.canon punctuation.definition.annotation.canon
+24:31-35 "json" meta.annotation.canon entity.name.function.decorator.canon
+24:35-36 "(" meta.annotation.canon
+24:36-52 "\"maxDurationMin\"" meta.annotation.canon string.quoted.double.canon
+24:52-54 ", " meta.annotation.canon
+24:54-58 "unit" meta.annotation.canon variable.parameter.canon
+24:58-59 ":" meta.annotation.canon punctuation.separator.key.canon
+24:59-62 " m)" meta.annotation.canon
+25:0-28 "  /// Text shown to players." comment.line.documentation.canon
+26:2-13 "description" variable.other.property.canon
+26:13-14 ":" punctuation.separator.key.canon
+26:15-21 "String" entity.name.type.canon
+26:22-23 "1" constant.numeric.integer.canon
+26:23-25 ".." keyword.operator.canon
+29:0-34 "/// One possible reward of a pool." comment.line.documentation.canon
+30:0-6 "record" storage.type.canon
+30:7-13 "Reward" entity.name.type.canon
+31:0-21 "  /// The item given." comment.line.documentation.canon
+32:2-6 "item" variable.other.property.canon
+32:6-7 ":" punctuation.separator.key.canon
+32:8-11 "ref" storage.modifier.canon
+32:18-19 "@" meta.annotation.canon punctuation.definition.annotation.canon
+32:19-23 "json" meta.annotation.canon entity.name.function.decorator.canon
+32:23-24 "(" meta.annotation.canon
+32:24-32 "\"itemId\"" meta.annotation.canon string.quoted.double.canon
+32:32-33 ")" meta.annotation.canon
+33:0-25 "  /// How many are given." comment.line.documentation.canon
+34:2-10 "quantity" variable.other.property.canon
+34:10-11 ":" punctuation.separator.key.canon
+34:12-15 "Int" entity.name.type.canon
+34:16-17 "1" constant.numeric.integer.canon
+34:17-19 ".." keyword.operator.canon
+35:0-71 "  /// Chance of this reward, relative to the other rewards of its pool." comment.line.documentation.canon
+36:2-8 "weight" variable.other.property.canon
+36:8-9 ":" punctuation.separator.key.canon
+36:10-13 "Int" entity.name.type.canon
+36:14-15 "1" constant.numeric.integer.canon
+36:15-17 ".." keyword.operator.canon
+39:0-39 "/// One possible buff of the buff pool." comment.line.documentation.canon
+40:0-6 "record" storage.type.canon
+40:7-11 "Buff" entity.name.type.canon
+41:0-23 "  /// Buff resource id." comment.line.documentation.canon
+42:2-11 "buffResId" variable.other.property.canon
+42:11-12 ":" punctuation.separator.key.canon
+42:13-16 "Int" entity.name.type.canon
+42:17-18 "0" constant.numeric.integer.canon
+42:18-20 ".." keyword.operator.canon
+43:0-30 "  /// How long the buff lasts." comment.line.documentation.canon
+44:2-10 "duration" variable.other.property.canon
+44:10-11 ":" punctuation.separator.key.canon
+44:12-20 "Duration" entity.name.type.canon
+44:21-23 "1s" constant.numeric.duration.canon
+44:23-25 ".." keyword.operator.canon
+44:27-28 "@" meta.annotation.canon punctuation.definition.annotation.canon
+44:28-32 "json" meta.annotation.canon entity.name.function.decorator.canon
+44:32-33 "(" meta.annotation.canon
+44:33-46 "\"durationSec\"" meta.annotation.canon string.quoted.double.canon
+44:46-48 ", " meta.annotation.canon
+44:48-52 "unit" meta.annotation.canon variable.parameter.canon
+44:52-53 ":" meta.annotation.canon punctuation.separator.key.canon
+44:53-56 " s)" meta.annotation.canon
+45:0-55 "  /// Chance of this buff, relative to the other buffs." comment.line.documentation.canon
+46:2-8 "weight" variable.other.property.canon
+46:8-9 ":" punctuation.separator.key.canon
+46:10-13 "Int" entity.name.type.canon
+46:14-15 "1" constant.numeric.integer.canon
+46:15-17 ".." keyword.operator.canon
+49:0-19 "/// The whole file." comment.line.documentation.canon
+50:0-6 "record" storage.type.canon
+50:7-20 "HeistiaConfig" entity.name.type.canon
+51:0-33 "  /// Format version of the file." comment.line.documentation.canon
+52:2-9 "version" variable.other.property.canon
+52:9-10 ":" punctuation.separator.key.canon
+52:11-14 "Int" entity.name.type.canon
+52:15-20 "where" keyword.control.canon
+52:24-26 "==" keyword.operator.canon
+52:27-28 "2" constant.numeric.integer.canon
+53:0-36 "  /// The missions a run draws from." comment.line.documentation.canon
+54:2-7 "tasks" variable.other.property.canon
+54:7-8 ":" punctuation.separator.key.canon
+54:10-14 "Task" entity.name.type.canon
+54:16-17 "1" constant.numeric.integer.canon
+54:17-19 ".." keyword.operator.canon
+55:0-68 "  /// The number of pools is the number of winners (m_nWinnerCount)." comment.line.documentation.canon
+56:2-13 "rewardPools" variable.other.property.canon
+56:13-14 ":" punctuation.separator.key.canon
+56:17-23 "Reward" entity.name.type.canon
+56:25-26 "1" constant.numeric.integer.canon
+56:26-28 ".." keyword.operator.canon
+56:31-32 "=" keyword.operator.canon
+57:0-28 "  /// Buffs a run may grant." comment.line.documentation.canon
+58:2-10 "buffPool" variable.other.property.canon
+58:10-11 ":" punctuation.separator.key.canon
+58:13-17 "Buff" entity.name.type.canon
+58:19-20 "=" keyword.operator.canon
+60:2-88 "// Found while writing this example: two tasks share the description \"Drop moonstone\"," comment.line.double-slash.canon
+61:2-59 "// but the second one filters on II_GEN_MAT_ORICHALCUM01." comment.line.double-slash.canon
+62:2-6 "warn" keyword.other.canon
+62:12-13 "." punctuation.accessor.canon
+62:13-16 "map" variable.other.property.canon
+62:17-18 "." punctuation.accessor.canon
+62:18-29 "description" variable.other.property.canon
+62:30-31 "." punctuation.accessor.canon
+62:31-39 "isUnique" variable.other.property.canon
+62:42-46 "else" keyword.control.canon
+62:47-84 "\"two tasks have the same description\"" string.quoted.double.canon
+65:0-53 "/// Server/System/heistia_config.json, read in place." comment.line.documentation.canon
+66:0-3 "let" storage.type.canon
+66:4-11 "heistia" variable.other.property.canon
+66:11-12 ":" punctuation.separator.key.canon
+66:13-26 "HeistiaConfig" entity.name.type.canon
+66:27-28 "=" keyword.operator.canon
+66:29-33 "load" keyword.other.canon
+66:34-79 "\"@resource/Server/System/heistia_config.json\"" string.quoted.double.canon
+68:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+69:0-9 "// Studio" comment.line.double-slash.canon
+70:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+71:0-85 "// `filterParam` needs nothing here: the studio reads its type from the chosen event." comment.line.double-slash.canon
+72:0-84 "// Pick ECONOMY_DROP_ITEM and the field becomes an item picker (search \"moonstone\");" comment.line.double-slash.canon
+73:0-76 "// pick COMBAT_KILL_FFA and the field disappears, because its type is Never." comment.line.double-slash.canon
+75:0-4 "view" keyword.other.canon
+75:5-9 "Task" entity.name.type.canon
+76:8-9 "\"" string.quoted.double.canon
+76:9-10 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+76:10-21 "description" string.quoted.double.canon meta.interpolation.canon
+76:21-22 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+76:22-23 "\"" string.quoted.double.canon
+77:22-25 "240" constant.numeric.integer.canon
+77:39-42 "240" constant.numeric.integer.canon
+77:60-63 "120" constant.numeric.integer.canon
+77:77-80 "110" constant.numeric.integer.canon
+78:16-25 "\"Mission\"" string.quoted.double.canon
+79:14-21 "\"Event\"" string.quoted.double.canon
+80:16-22 "\"Only\"" string.quoted.double.canon
+81:20-39 "\"Target per player\"" string.quoted.double.canon
+82:16-28 "\"Time limit\"" string.quoted.double.canon
+84:13-19 "\"Text\"" string.quoted.double.canon
+87:0-4 "view" keyword.other.canon
+87:5-11 "Reward" entity.name.type.canon
+88:8-9 "\"" string.quoted.double.canon
+88:9-10 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+88:10-18 "quantity" string.quoted.double.canon meta.interpolation.canon
+88:18-19 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+88:19-23 " × " string.quoted.double.canon
+88:23-24 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+88:24-28 "item" string.quoted.double.canon meta.interpolation.canon
+88:28-29 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+88:29-30 "\"" string.quoted.double.canon
+89:7-13 "\"Item\"" string.quoted.double.canon
+89:14-65 "// picker shows the item's name and icon (its view)" comment.line.double-slash.canon
+90:11-17 "widget" variable.other.property.canon
+90:17-18 ":" punctuation.separator.key.canon
+90:34-73 "// shows each weight as a % of its pool" comment.line.double-slash.canon
+93:0-4 "view" keyword.other.canon
+93:5-18 "HeistiaConfig" entity.name.type.canon
+94:8-17 "\"Heistia\"" string.quoted.double.canon
+96:14-24 "\"Missions\"" string.quoted.double.canon
+97:16-25 "\"Rewards\"" string.quoted.double.canon
+97:26-48 "\"One pool per winner.\"" string.quoted.double.canon
+98:18-24 "widget" variable.other.property.canon
+98:24-25 ":" punctuation.separator.key.canon
+98:41-45 "step" variable.other.property.canon
+98:45-46 ":" punctuation.separator.key.canon
+98:47-55 "\"Winner " string.quoted.double.canon
+98:55-56 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+98:56-61 "index" string.quoted.double.canon meta.interpolation.canon
+98:61-62 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+98:62-63 "\"" string.quoted.double.canon
+100:14-21 "\"Buffs\"" string.quoted.double.canon
+103:0-4 "emit" keyword.other.canon
+103:5-9 "view" keyword.other.canon
+103:12-15 "out" variable.other.property.canon
+103:15-16 ":" punctuation.separator.key.canon
+103:17-47 "\"@generated/heistia.view.json\"" string.quoted.double.canon

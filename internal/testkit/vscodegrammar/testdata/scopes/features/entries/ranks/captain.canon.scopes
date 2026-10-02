@@ -1,0 +1,12 @@
+1:0-7 "package" keyword.other.canon
+1:8-24 "features.entries" entity.name.namespace.canon
+3:0-16 "/// The captain." comment.line.documentation.canon
+4:0-5 "entry" keyword.other.canon
+4:11-12 "." punctuation.accessor.canon
+4:12-19 "captain" variable.other.property.canon
+5:2-7 "title" variable.other.property.canon
+5:7-8 ":" punctuation.separator.key.canon
+5:9-18 "\"Captain\"" string.quoted.double.canon
+6:2-9 "invites" variable.other.property.canon
+6:9-10 ":" punctuation.separator.key.canon
+6:11-12 "5" constant.numeric.integer.canon
