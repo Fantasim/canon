@@ -2565,6 +2565,9 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      package's dependent type, a record of another package not emitted in `types` mode) is `E8019`
      at stage E. Every helper name of §8.2 and the decoders is reserved in every TypeScript file,
      used or not, so adding a function never breaks a valid name; `types` mode gets `parse<T>` too.
+     A TypeScript record that is both a table row and a plain value has optional `id`/`retired`
+     (CODEGEN §5.4). A `data`-mode reader's default for an absent field holding a record or case
+     with precomputed export fns takes their results precomputed at stage E, as `baked` does.
      Reason: T1 review, log-2026-10-02.
 
 ## Still open

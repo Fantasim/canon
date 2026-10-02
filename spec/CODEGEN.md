@@ -735,6 +735,11 @@ export interface Status {
 }
 ```
 
+In TypeScript, a record that is a table row and also a plain value elsewhere (a field, a list
+element, a `let`) declares `id` and `retired` optional (`readonly id?: StatusId`); they are present
+on table entries and absent elsewhere, and a decoder reads `$id` only in table position
+(DECISIONS 278).
+
 - Every field has exactly one getter (two for refs, [§5.8](#58-references)); there are no
   setters and no public members (DECISIONS 4).
 - C++ getters are defined inline in the class; they return scalars and enums by value and
