@@ -140,6 +140,14 @@ from IR fixtures" and M2's `embedded` example were accepted without these genera
   `Resource/` data is brought to the Canon types (types win over data), built from the
   real-data findings lists of M3 onward.
 
+## After M5 (Louis, log-2026-10-02)
+
+- [ ] **Hardening**: M1.5 second wave (type-directed + metamorphic progen suites) and acceptance;
+  the deferred long fuzz/progen campaigns, each under its memory cap.
+- [ ] **Telemetry, first real use**: `examples/telemetry` dry run (5-10 real events), then the port
+  through a handoff (`Source/` X-macros read Canon IDs/metadata; monitoring uses generated Go and
+  build-time DDL). M6 and M7 follow.
+
 ## Feature examples owed (§7.9, QA)
 
 `entries` (before M1), `pairs` (before M2), `edits` (before M4), `ts` (before M6).
