@@ -2,7 +2,7 @@
 
 Updated: 2026-10-02. **M5 built** (DECISIONS 274, 275): a read-only LSP plus an agent CLI
 (`canon edit`, `canon rename`), every unit reviewed PASS, `make check` green (HEAD `2edf068`). Left
-before acceptance: CI on three platforms. M4 accepted (`c5324f6`). Calls:
+before acceptance: CI on Linux for the final run (macOS, Windows green on `398d907`). M4 accepted (`c5324f6`). Calls:
 [decisions/log-2026-10-02.md](decisions/log-2026-10-02.md). Design: ADR-0013 (rename layout).
 
 ## Current focus
@@ -12,8 +12,9 @@ extension (`29a52e9`); L2 hover/definition/references/formatting (`8b26723`); R0
 `features/renames` (`e5819de`); R1 `check.Program.Occurrences` (`2055b8e`); R2 `RenameName` op
 (`b342dd4`); R3 `canon rename` (`2edf068`); emit `out:` base fix (`9d20ca4`). Acceptance: LSP
 transcripts per feature, UTF-16 tests, `make bench-lsp` p95 326 ms (gate 500), unopened JSON
-findings, `canon edit` undo round trips, `canon rename` goldens per kind. Running: `fmt --diff` hunk
-header bug (go-udiff). Later items: log-2026-10-02 (L2 rulings, module path vs remote, template
+findings, `canon edit` undo round trips, `canon rename` goldens per kind. Fixed since: `fmt --diff` hunk
+headers (`85175ed`), Windows test (`78bc8ed`). Also landed: README rewrite (`e917cd8`), `canon guide`
+(`3956568`), tagged releases + `tools/install.sh` (`ec46b91`; workflow unrun until a tag). Later items: log-2026-10-02 (L2 rulings, module path vs remote, template
 names not diagnosed, `convertCase` dup, rename test helper dup into testkit). Not verified: a real
 VS Code run, Windows/macOS URIs, E35 cost on a large project.
 M6 and M7 not started; each needs its feature example first (`ts`, `pairs` still owed).
