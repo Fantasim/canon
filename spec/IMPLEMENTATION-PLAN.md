@@ -1244,6 +1244,10 @@ Not part of v0.1 (DECISIONS 188).
     gains `@json("<old name>")` (DECISIONS 3); a stable id is refused.
 - **Highlighting.** A hand-written TextMate grammar (`editors/vscode/syntaxes/canon.tmLanguage.json`),
   tested against every example with a snapshot of scopes.
+- **Extension.** `editors/vscode` starts `canon lsp` (no extra argument) and watches
+  `**/*.{canon,json,csv,h,txt}` in the workspace folders for `workspace/didChangeWatchedFiles`. Files
+  read under another extension (`format:`), assets, and roots outside the workspace are not watched:
+  their changes show after the next edit of a buffer (DECISIONS 274).
 
 ### 8.5 Other command behaviour
 
