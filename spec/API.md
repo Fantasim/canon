@@ -1035,7 +1035,9 @@ inside the same edit and reports it, so every client behaves the same.
   `Add`/`Insert`/`AddEntry` → `Remove`, except an `AddEntry` into a stable table → `Retire` of the
   new key (its id is in `canon.lock` and is never removed, E4; DECISIONS 277); the inverses of
   the request's other ops on paths inside that entry are left out, and verification (E22) ignores
-  the retired entry's values: it did not exist before the edit; `Remove` → `Insert(parent, oldPosition, old)` or
+  the retired entry's values: it did not exist before the edit; an inverse that writes a whole stable table (a `Set`
+  back, or a region restore of the table) keeps every entry the request added to it, with the value
+  the edit left, so its `Retire` finds it and no locked id is dropped (LOCK.md §4.1); `Remove` → `Insert(parent, oldPosition, old)` or
   `AddEntry(parent, key, old)` followed by a `Move` to the old position (where file paths fix the
   order, reason `order`, an `Add` or `AddEntry` alone, placed by N1–N4); `Move` → `Move` back;
   `Rename` → `Rename` back; `RenameName` → `RenameName(<canonical new name>, <old name>)` (E37); `SetCase` → `Set(old whole variant value)`. `Retire` has no inverse
