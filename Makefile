@@ -238,3 +238,10 @@ BENCH_EDIT_N ?= 7000
 bench-edit:
 	systemd-run --user --scope -q -p MemoryMax=6G env GOTOOLCHAIN=local TMPDIR=/var/tmp go test -count=1 -timeout 0 \
 	  -run '^TestBenchEdit$$' -v ./internal/testkit/cmd/benchgen -benchgen.edit $(BENCH_EDIT_N)
+
+# IMPLEMENTATION-PLAN.md §6 M5: diagnostics for an edited entry file of the benchmark project
+# published within 500 ms of the last change (p95, debounce included). Opt-in, not part of `check`.
+.PHONY: bench-lsp
+bench-lsp:
+	systemd-run --user --scope -q -p MemoryMax=6G env GOTOOLCHAIN=local TMPDIR=/var/tmp go test -count=1 -timeout 0 \
+	  -run '^TestLatency$$' -v ./internal/lsp -lsp.bench $(BENCH_EDIT_N)

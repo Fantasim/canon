@@ -7,12 +7,13 @@ agent CLI (`canon edit`, `canon rename`). M4 accepted (`c5324f6`); report:
 
 ## Current focus
 
-M5 units (plan.md): **A1 `canon edit` done** (`44d62c3`, 4 review rounds). **L1** lsp core
-(transport, UTF-16, overlay sync, diagnostics, p95 ~400 ms at N=7000) built, review FAIL, fixing
-plus `canon lsp` wiring. Next: L2 (hover, definition, references, formatting), L3
-(`editors/vscode`, TextMate grammar), A2 (`canon rename`: sync of name syntax and API form first).
-After M5 (Louis, log-2026-10-02): hardening, then telemetry as first real use; M6, M7 later
-(each needs its feature example first: `ts`, `pairs` still owed).
+M5 units (plan.md): **A1 `canon edit`** (`44d62c3`), **L1** lsp core + `canon lsp` (`d6d9602`,
+`8175c2b`), **L3** VS Code extension + grammar (`29a52e9`), **L2** hover/definition/references/
+formatting (`8b26723`): all reviewed PASS, `make check` green. `make bench-lsp` (N=7000, load 2.8):
+p95 326 ms (gate 500), cold first pass 2.8 s. Left: **A2 `canon rename`** (spec draft in progress,
+then build). Later items: log-2026-10-02 "L2 rulings", module path vs remote. Not verified: a
+real VS Code run (needs `npm install` + `vsce`), Windows/macOS URIs.
+M6 and M7 not started; each needs its feature example first (`ts`, `pairs` still owed).
 
 Long fuzz/progen campaigns stay deferred by Louis ([decisions/log-2026-09-29.md](decisions/log-2026-09-29.md)
 "Platforms and fuzzing"): a milestone runs only its own stated acceptance criteria.
