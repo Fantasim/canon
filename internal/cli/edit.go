@@ -76,12 +76,17 @@ func (inv *invocation) decodeRequest(data []byte) (canon.Edit, error) {
 	return req, err
 }
 
+// stdin is the process's standard input, empty when it has none.
+func (inv *invocation) stdin() io.Reader {
+	if inv.env.Stdin != nil {
+		return inv.env.Stdin
+	}
+	return strings.NewReader("")
+}
+
 // readRequest is the request file's bytes, or stdin's when none is named (CLI.md §3.15).
 func (inv *invocation) readRequest() ([]byte, error) {
-	src := io.Reader(strings.NewReader(""))
-	if inv.env.Stdin != nil {
-		src = inv.env.Stdin
-	}
+	src := inv.stdin()
 	if len(inv.args) == 1 {
 		f, err := os.Open(inv.abs(inv.args[0]))
 		if err != nil {
@@ -103,9 +108,9 @@ func (inv *invocation) editFail(err error, start time.Time) int {
 	var path *canon.PathError
 	switch {
 	case errors.As(err, &perr):
-		return inv.failFindings(perr.Findings, start, exitUsage)
-	case errors.Is(err, canon.ErrNoValue) && errors.As(err, &path):
-		return inv.failFindings(path.Findings, start, exitErrors)
+		return inv.failFindings(perr.Findings, summaryOf(perr.Findings), start, exitUsage)
+	case errors.Is(err, canon.ErrNoValue) && errors.As(err, &path) && len(path.Findings) > 0:
+		return inv.failFindings(path.Findings, poisonedSummary(path.Findings), start, exitErrors)
 	}
 	code := inv.fail(err)
 	if code == exitUsage && slices.ContainsFunc(editRefusals[:], func(s error) bool { return errors.Is(err, s) }) {
@@ -115,11 +120,22 @@ func (inv *invocation) editFail(err error, start time.Time) int {
 }
 
 // failFindings prints findings and the summary, nothing on stderr, and returns code.
-func (inv *invocation) failFindings(findings []canon.Finding, start time.Time, code int) int {
-	if err := inv.writeFindings(findings, summaryOf(findings), time.Since(start)); err != nil {
+func (inv *invocation) failFindings(findings []canon.Finding, summary canon.Summary, start time.Time, code int) int {
+	if err := inv.writeFindings(findings, summary, time.Since(start)); err != nil {
 		return inv.fail(err)
 	}
 	return code
+}
+
+// poisonedSummary counts a poisoned value's findings and the distinct packages they belong to.
+func poisonedSummary(findings []canon.Finding) canon.Summary {
+	s := summaryOf(findings)
+	packages := map[string]bool{}
+	for _, f := range findings {
+		packages[f.Package] = true
+	}
+	s.Packages = len(packages)
+	return s
 }
 
 // editLine is the JSON object canon edit prints (CLI.md §3.15, DECISIONS 274).

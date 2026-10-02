@@ -20,5 +20,5 @@ let m: Int = n
 [exit 1]
 [stdout]
 {"severity":"error","code":"E4102","file":"a/a.canon","line":5,"col":14,"endLine":5,"endCol":19,"package":"a","path":"n","message":"division by zero"}
-{"summary":{"errors":1,"warnings":0,"packages":0,"ms":0}}
+{"summary":{"errors":1,"warnings":0,"packages":1,"ms":0}}
 [stderr]

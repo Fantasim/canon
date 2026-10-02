@@ -28,6 +28,7 @@ const (
 	cmdFmt     = "fmt"
 	cmdRefs    = "refs"
 	cmdEdit    = "edit"
+	cmdLSP     = "lsp"
 )
 
 // Flags (CLI.md §2.3, §3.1, §3.4).
@@ -88,6 +89,7 @@ commands:
   explain <path>        print a value, its type and where each part was set
   fmt [paths...]        rewrite sources in the canonical layout
   init                  create project.canon in the current directory
+  lsp                   run the language server on stdin and stdout
   new <package>         create a package directory with a first file
   refs <path>           list every place that references an entry or member
   test [packages...]    run the test blocks of packages
