@@ -555,19 +555,25 @@ canon edit [request.json] [--layer …] [--edit-layer <name>]
 
 Applies one edit request through the edit API (§5.3, [spec/API.md](spec/API.md) §7 to §10), so
 the write is checked, atomic and minimal. The request is the JSON form of API.md §8.8, read from
-the file or, without one, from stdin; `--edit-layer` sets `Options.EditLayer`. It prints one JSON
-object (DECISIONS 274):
+the file or, without one, from stdin, plus one optional top-level key read by the command itself:
+`"editLayer"`, which sets `Options.EditLayer` as `--edit-layer` does (both given and different is
+a usage error). Before editing, the command checks every package, so its revision covers the
+whole project and a printed `base` is current for the next run.
+
+`canon edit` is a command for agents: its output is always JSON lines, whatever `--format` says
+(DECISIONS 274). First one object:
 
 ```json
-{"edit":{"applied":true,"revision":"r1:…","changes":[{"kind":"modified","path":"resource/farm/farm.canon"}],"dropped":[],"undo":{"base":"r1:…","ops":[{"op":"set","path":"farm.modelTypes[3].maxLevel","value":9}]}}}
+{"edit":{"applied":true,"revision":"r1:…","changes":[{"kind":"modified","path":"resource/farm/farm.canon"}],"dropped":[],"undo":{"base":"r1:…","ops":[{"op":"set","path":"farm.modelTypes[3].maxLevel","source":"9"}]}}}
 ```
 
-then one line per finding (§2.4) and the summary line. `undo` is a complete request, `base`
-included, that reverts the edit's values when given back to `canon edit` (API.md E22: values,
-not layout). Before editing, the command checks every package, so its revision covers the whole
-project and a printed `base` is current for the next run. With `"dryRun": true` nothing is
-written and `applied` is false. An API error prints its text (API.md X1) on stderr and exits as
-API.md §15 says; an edit refused for its findings prints them and exits 1.
+then one JSON line per finding and the summary line (§2.4), with the elapsed time. `undo` is a
+complete request that reverts the edit's values when given back to `canon edit` (API.md E22:
+values, not layout); it carries `"editLayer"` when the edit had one. With `"dryRun": true`
+nothing is written and `applied` is false. An edit refused for its findings (`ErrRejected`)
+prints the object with `applied` false, empty `changes` and `dropped` and no `undo`, then the
+findings, and exits 1. Any other API error prints its text (API.md X1) on stderr and exits as
+API.md §15 says.
 
 Exit: 0, 1, 2, 3.
 
