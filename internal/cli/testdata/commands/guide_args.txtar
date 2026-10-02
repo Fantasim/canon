@@ -1,0 +1,10 @@
+CLI.md §3.17: guide takes at most one topic, exit 2.
+-- args --
+guide
+layers
+cli
+-- want --
+[exit 2]
+[stdout]
+[stderr]
+canon: guide: takes at most one argument

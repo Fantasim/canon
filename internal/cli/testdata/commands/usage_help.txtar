@@ -14,6 +14,7 @@ commands:
   edit [request.json]   apply an edit request (JSON) from the file or stdin
   explain <path>        print a value, its type and where each part was set
   fmt [paths...]        rewrite sources in the canonical layout
+  guide [topic]         print the agent guide: the index, or one topic
   init                  create project.canon in the current directory
   lsp                   run the language server on stdin and stdout
   new <package>         create a package directory with a first file

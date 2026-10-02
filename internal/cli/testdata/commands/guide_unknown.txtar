@@ -1,0 +1,9 @@
+CLI.md §3.17: an unknown topic is a usage error that lists the topics, exit 2.
+-- args --
+guide
+nope
+-- want --
+[exit 2]
+[stdout]
+[stderr]
+canon: guide: "nope": unknown topic; the topics are: cli, data, emit, errors, index, layers, logic, recipes, syntax, types, views-i18n

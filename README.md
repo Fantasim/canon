@@ -177,7 +177,7 @@ From [CLI.md](CLI.md) §1; each command has its own section in CLI.md §3.
 | `canon i18n stub \| status` | manage translation files (M7) |
 | `canon lock check` | verify `canon.lock` against the sources without building |
 
-`canon` with no argument lists what the installed binary implements; `guide`, `convert`, `i18n` and
+`canon` with no argument lists what the installed binary implements; `convert`, `i18n` (M7) and
 `lock check` are specified but not built yet.
 
 ## Editor
@@ -206,7 +206,7 @@ npm install && npx vsce package   # produces canon-0.1.0.vsix
 
 ## For AI agents
 
-Run `canon guide` first, once it ships ([CLI.md](CLI.md) §3.17, DECISIONS 276): it prints an index of topics,
+Run `canon guide` first ([CLI.md](CLI.md) §3.17, DECISIONS 276): it prints an index of topics,
 and `canon guide <topic>` prints one, matched to the binary's version. Agents read with
 `canon check --format json`, `canon explain` and `canon refs`, and write through `canon edit`
 (value changes) and `canon rename` (names). Both take and print JSON, check the result before

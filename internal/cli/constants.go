@@ -30,6 +30,7 @@ const (
 	cmdEdit    = "edit"
 	cmdRename  = "rename"
 	cmdLSP     = "lsp"
+	cmdGuide   = "guide"
 )
 
 // Flags (CLI.md §2.3, §3.1, §3.4).
@@ -91,6 +92,7 @@ commands:
   edit [request.json]   apply an edit request (JSON) from the file or stdin
   explain <path>        print a value, its type and where each part was set
   fmt [paths...]        rewrite sources in the canonical layout
+  guide [topic]         print the agent guide: the index, or one topic
   init                  create project.canon in the current directory
   lsp                   run the language server on stdin and stdout
   new <package>         create a package directory with a first file
@@ -226,6 +228,14 @@ const (
 	fmtWrap        = "%w"
 	msgInterrupted = "interrupted"
 	msgReportBug   = "this is a bug in canon; please report it at https://github.com/fantasim/canonlang/issues"
+)
+
+// canon guide (CLI.md §3.17): the embedded directory, a topic's file extension, the topic printed without one.
+const (
+	guideDir        = "guide"
+	guideExt        = ".md"
+	guideIndex      = "index"
+	fmtUnknownTopic = "%s: %q: %w: %s"
 )
 
 // canon edit's request key read by the command itself (CLI.md §3.15).

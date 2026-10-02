@@ -30,6 +30,7 @@ func commands() map[string]command {
 		cmdEdit:    {flags: editFlags, run: runEdit},
 		cmdExplain: {flags: explainFlags, run: runExplain},
 		cmdFmt:     {flags: fmtFlags, run: runFmt},
+		cmdGuide:   {run: runGuide},
 		cmdInit:    {flags: initFlags, run: runInit},
 		cmdLSP:     {run: runLSP},
 		cmdNew:     {run: runNew},

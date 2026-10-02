@@ -26,4 +26,5 @@ var (
 	errUnreadable     = errors.New("cannot be read")
 	errUnwritable     = errors.New("cannot be written")
 	errTooLarge       = errors.New("too large")
+	errUnknownTopic   = errors.New("unknown topic; the topics are")
 )
