@@ -16,10 +16,8 @@ headers (`85175ed`), Windows test (`78bc8ed`). Also landed: README rewrite (`e91
 (`3956568`), tagged releases + `tools/install.sh` (`ec46b91`; workflow unrun until a tag). Later items: log-2026-10-02 (L2 rulings, module path vs remote, template
 names not diagnosed, `convertCase` dup, rename test helper dup into testkit). Not verified: a real
 VS Code run, Windows/macOS URIs, E35 cost on a large project.
-Since M5 (log-2026-10-02 "Louis: after M5" onward): `features/ts` (`36ac686`, `c268b25`), stable-undo
-lock facts (`799c1f3`), `lock check`/`--color`/`--lang` (`5f4360a`). Running: T1 `gen/ts`
-(uncommitted, opus builder), M6 trailing-comment write bug, `@files` names. Queued: B5 check-message
-translation, wire self-cycle and stored-result bugs (after T1), convertCase/test-helper cleanup.
+**Paused 2026-10-02.** Resume with [handoff/2026-10-02-resume-prompt.md](handoff/2026-10-02-resume-prompt.md).
+Unreviewed work (T1 gen/ts, G3 @files names, M6 append bug) is on branch `wip/2026-10-02`; main is clean.
 M6 TS in progress, legacy C++ part and M7 not started (`pairs` example still owed).
 
 Long fuzz/progen campaigns stay deferred by Louis ([decisions/log-2026-09-29.md](decisions/log-2026-09-29.md)
