@@ -535,6 +535,10 @@ canon lsp
 
 Starts the language server on stdin/stdout (§4).
 
+Exit: 0 after `shutdown` then `exit`; 1 when `exit` or the end of input comes before
+`shutdown` (LSP 3.17), or when the input stream breaks (bad framing, a read error: its text on
+stderr); 2 for an argument; 130 when interrupted.
+
 ### 3.14 `canon version`
 
 Prints the compiler version and the build's commit, the language versions it supports (every
