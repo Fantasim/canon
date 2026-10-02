@@ -1310,6 +1310,8 @@ Every third-party dependency is listed here. Adding one needs an update of this 
 | file watching | `github.com/fsnotify/fsnotify` | Cross-platform; directories are watched one by one (it is not recursive), which the benchmark's ~20 directories allow. |
 | diffs (`fmt --diff`, convert) | `github.com/aymanbagabas/go-udiff` | Unified diffs; an exported copy of `golang.org/x/tools/internal/diff`. |
 | multi-file test cases | `golang.org/x/tools/txtar` | Standard format for Go test archives. |
+| VS Code LSP client (npm, `editors/vscode` only) | `vscode-languageclient` ^9 | The official client that starts `canon lsp` over stdio; not part of the Go module (Louis, 2026-10-02). |
+| VS Code packaging (npm dev, `editors/vscode` only) | `@vscode/vsce` ^3 | Builds the `.vsix`. Highlighting is tested by the pure-Go TextMate engine in `internal/testkit/vscodegrammar`, not by `vscode-textmate` (Louis, 2026-10-02). |
 | test comparisons | `github.com/google/go-cmp` | Readable diffs of results. |
 | terminal detection | `golang.org/x/term` | `--color auto`. |
 | regex | standard `regexp` (RE2) | SPEC §2.5; search semantics (STD-03). |

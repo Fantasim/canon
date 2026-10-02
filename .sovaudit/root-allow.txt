@@ -7,3 +7,5 @@ spec
 DOCTRINE.md
 # meta: the agents' external memory: state, plan, ADRs, handoffs (ADR-0001)
 meta
+# editors: editor extensions (editors/vscode, IMPLEMENTATION-PLAN §8.4); Louis 2026-10-02
+editors
