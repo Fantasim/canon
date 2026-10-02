@@ -130,9 +130,9 @@ one position type; JSON sources get their own syntax tree (`jsonsrc`) because bo
 | `workspace` | snapshots, revisions, refresh, overlays, watching, incremental invalidation | API.md §3, §12 | build, edit |
 | `api/` (package `canon`) | public API; thin adapter over `workspace` | API.md | workspace |
 | `convert` | `canon convert` | §8.3 | edit, build, format |
+| `lsp` | language server | §8.4 | workspace, check, format |
 | `cli` | command implementations, text/JSON output, exit codes | CLI.md, §8 | api, internal packages for fmt, convert, i18n, explain of functions |
 | `cmd/canon` (top level) | `main`: reads the working directory, wires signals, calls `cli` (standard `flag`, DECISIONS 139) | CLI.md | cli |
-| `lsp` | language server | §8.4 | workspace, check, format |
 | `testkit` | golden harness, fixture FS, shuffling FS, benchmark generator | §7 | api |
 
 Dependency rule: an arrow may only point up this table (a package imports packages listed above
@@ -1304,7 +1304,6 @@ Every third-party dependency is listed here. Adding one needs an update of this 
 |---|---|---|
 | parser | **hand-written** recursive descent, with a Pratt parser for expressions | The grammar is context-sensitive in ways generator libraries handle badly: regex vs division by the previous token (LEX-01), interpolation lexer modes (LEX-02), newlines decided by the innermost bracket and the previous token (GRM-02, GRM-03), no typed literal in `if`/`match`/`when` headers (GRM-01), keywords usable as names in some positions (LEX-08). The formatter and the edit API need a lossless tree with trivia (§4.1) and the language server needs error recovery. participle builds an AST from struct tags, drops trivia, and recovers poorly; tree-sitter needs cgo. A tree-sitter grammar may still be written from GRAMMAR.md for editors, as a separate artifact. |
 | CLI | standard `flag` (DECISIONS 139) | no third-party dependency; Louis ruled out cobra (2026-09-24). |
-| LSP | `github.com/tliron/glsp` | LSP types and server loop for 3.16/3.17. Fallback if its maintenance or 3.17 coverage is insufficient: `go.lsp.dev/protocol` + `go.lsp.dev/jsonrpc2`. |
 | JSON with positions | `github.com/go-json-experiment/json` (`jsontext`) | Token-level decoder with `InputOffset()` for spans and `StackPointer()` for RFC 6901 pointers, rejects duplicate names by default (LOD-02 `E7104`), raw number tokens for exact parsing. It is the upstream of Go's experimental `encoding/json/v2`; switch to the standard library when it is no longer behind `GOEXPERIMENT`. |
 | JSON number and float text | standard library (`strconv`, `math/big`) | Floats are formatted as ECMAScript `Number::toString` (WIR-01, STD-06) on top of `strconv.FormatFloat(f, 'e', -1, bits)`; exact decimal parsing uses `math/big`. |
 | globs | `github.com/bmatcuk/doublestar/v4` | `**` semantics of LOD-05; ordering is done by the compiler. |
