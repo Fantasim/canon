@@ -1237,7 +1237,9 @@ Not part of v0.1 (DECISIONS 188).
     canonical text truncated to 20 lines and 4,096 bytes, a cut ending with a `…` line.
   - **definition:** declarations; from a `ref` value to the entry, including into JSON.
   - **references:** `Refs`: entries, keyed elements and enum members (API.md R7). References of
-    Canon names come with `canon rename`'s name index (A2).
+    Canon names come with `canon rename`'s name index (A2). With `includeDeclaration`, the entry's own location comes
+    first. References start from a ref key naming the target. In a `*.layer.canon` file, hover shows
+    the base value, labelled as such.
   - **formatting:** `Format`.
   - Completion, code actions and rename are not offered (DECISIONS 274). The rename of a Canon
     name is `canon rename` (CLI.md §3.16): views, translation keys and amendment paths follow; a
