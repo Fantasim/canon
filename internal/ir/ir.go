@@ -163,6 +163,7 @@ type Value struct {
 type Emit struct {
 	Target    Target
 	Out       string // as written ("@sovcommon/teamboard"), for messages only
+	From      string
 	Dir       string // output directory (ts: its file's), project-relative by the declared roots
 	FileName  string // a ts emit's file name in Dir; "" for the other targets
 	GoImport  string // a go emit's import path of Dir; "" for the other targets

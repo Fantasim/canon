@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/fantasim/canonlang/internal/build"
@@ -142,5 +143,25 @@ func TestBuildErrors(t *testing.T) {
 	}
 	if _, err := layered.Analyze(ctx, nil); !errors.Is(err, build.ErrUnknownLayer) {
 		t.Errorf("unknown layer: %v", err)
+	}
+}
+
+// WIRE.md §2.2 rule 1: an unrooted out starts at the directory of the file holding the emit, not of the package's first file.
+func TestUnrootedOutFromEmitFile(t *testing.T) {
+	fsys := mapFS{
+		"p/project.canon": file(outProject),
+		"p/a/b/x.canon":   file("package a\n\n/// W.\nlet w: Int = 2\n"),
+		"p/a/z.canon":     file("/// A.\npackage a\n\n/// V.\nlet v: Int = 1\n\nemit json { out: \"out/\" }\n"),
+	}
+	res := buildTree(t, fsys, build.BuildOptions{})
+	if res.Summary.Errors != 0 {
+		t.Fatalf("errors: %v", codes(res.List))
+	}
+	var got []string
+	for _, o := range res.Outputs {
+		got = append(got, o.Abs)
+	}
+	if !slices.Contains(got, "/p/a/out/v.json") || slices.ContainsFunc(got, func(s string) bool { return strings.HasPrefix(s, "/p/a/b/") }) {
+		t.Fatalf("outputs %v", got)
 	}
 }

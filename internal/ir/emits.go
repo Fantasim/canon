@@ -217,7 +217,8 @@ func (s *stage) resolveOut(u *unit, es *emitSite, layout *project.Layout, bag *d
 	if e.Out == "" || layout == nil {
 		return
 	}
-	p, ok := layout.Resolve(e.Out, fileDir(es.file), es.outSpan, bag)
+	e.From = fileDir(es.file) // WIRE.md §2.2: an unrooted out starts at its own file's directory
+	p, ok := layout.Resolve(e.Out, e.From, es.outSpan, bag)
 	if !ok {
 		return
 	}

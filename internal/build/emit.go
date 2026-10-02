@@ -218,9 +218,9 @@ func generate(p *ir.Package, e *ir.Emit) ([]ir.File, error) {
 	return files, nil
 }
 
-// outputs places an emit's files: its out resolved from the package directory (WIRE.md §2).
+// outputs places an emit's files: its out resolved from the directory of the file holding it (WIRE.md §2.2).
 func (r *run) outputs(p *ir.Package, e *ir.Emit, files []ir.File) ([]*output, error) {
-	at, ok := r.s.layout.Resolve(e.Out, p.Dir, source.Span{}, diag.NewBag(nil, p.Name))
+	at, ok := r.s.layout.Resolve(e.Out, e.From, source.Span{}, diag.NewBag(nil, p.Name))
 	if !ok {
 		return nil, internal(fmt.Errorf(fmtUnplaced, p.Name, e.Out))
 	}
