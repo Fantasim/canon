@@ -2,8 +2,7 @@
 
 Updated: 2026-10-02. **M5 accepted** (CI green on Linux, macOS, Windows: run 36973712977 on `398d907`) (DECISIONS 274, 275): a read-only LSP plus an agent CLI
 (`canon edit`, `canon rename`), every unit reviewed PASS, `make check` green (HEAD `2edf068`). Now: M6's TypeScript
-part (T1, round 5) and the M5 gaps (DECISIONS 277, 278). M4 accepted (`c5324f6`). Calls:
-[decisions/log-2026-10-02.md](decisions/log-2026-10-02.md). Design: ADR-0013 (rename layout).
+part (T1, round 5) and the M5 gaps (DECISIONS 277, 278). Calls: [log-2026-10-02](decisions/log-2026-10-02.md).
 
 ## Current focus
 
@@ -21,7 +20,7 @@ Since M5 (log-2026-10-02 "Louis: after M5" onward): `features/ts` (`36ac686`, `c
 lock facts (`799c1f3`), `lock check`/`--color`/`--lang` (`5f4360a`). Running: T1 `gen/ts`
 (uncommitted, opus builder), M6 trailing-comment write bug, `@files` names. Queued: B5 check-message
 translation, wire self-cycle and stored-result bugs (after T1), convertCase/test-helper cleanup.
-M6 and M7 not started; each needs its feature example first (`ts`, `pairs` still owed).
+M6 TS in progress, legacy C++ part and M7 not started (`pairs` example still owed).
 
 Long fuzz/progen campaigns stay deferred by Louis ([decisions/log-2026-09-29.md](decisions/log-2026-09-29.md)
 "Platforms and fuzzing"): a milestone runs only its own stated acceptance criteria.
