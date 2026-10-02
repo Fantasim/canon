@@ -1,22 +1,17 @@
 # State — Canon compiler
 
-Updated: 2026-10-01. **M4 accepted** (`c5324f6`, CI green on three platforms) and **post-M4 work
-complete** on main (HEAD `37968e3`). Next: **M5 (LSP)**; M6 and M7 run in parallel (plan.md).
-M3 accepted earlier (`ea3d7e2`). M4 report: [handoff/2026-10-01-m4-complete.md](handoff/2026-10-01-m4-complete.md).
-Ledger: [m4-units.md](m4-units.md). Calls: [decisions/log-2026-09-29.md](decisions/log-2026-09-29.md)
-"M4" and "U-E22-r" onward. Design: [ADR-0011](decisions/0011-incremental-memo.md), [ADR-0012](decisions/0012-formatter-region-settle.md).
+Updated: 2026-10-02. **M5 in progress**, rescoped by Louis (DECISIONS 274): a read-only LSP plus an
+agent CLI (`canon edit`, `canon rename`). M4 accepted (`c5324f6`); report:
+[handoff/2026-10-01-m4-complete.md](handoff/2026-10-01-m4-complete.md). Calls:
+[decisions/log-2026-10-02.md](decisions/log-2026-10-02.md); earlier [decisions/log-2026-09-29.md](decisions/log-2026-09-29.md).
 
 ## Current focus
 
-Post-M4 is done (`f6114a2..37968e3`): spec syncs (DECISIONS 252-273), PS1-PS3, ME1, DV1, M4.1; units
-in [m4-units.md](m4-units.md). Gates on that code: `make check` green, race tests at GOMAXPROCS 2
-and 4 green, `make fuzz-edit` 2 min PASS after each M4.1 round. CI on `claude/post-m4-ci` green
-on Linux, macOS and Windows (run 36854391166).
-
-**Next** (start prompt: [handoff/2026-10-01-next-start-prompt.md](handoff/2026-10-01-next-start-prompt.md)):
-M5 (`lsp`, `editors/vscode`), with M6 (legacy C++/TS) and M7 (migration) in parallel waves per
-[plan.md](plan.md); each needs its feature example first (§7.9: `ts` before M6, `pairs` still owed).
-Logged later items (checker gaps, cleanups) are listed in the start prompt. M1.5's second wave stays parked.
+M5 units (plan.md): **A1 `canon edit` done** (`44d62c3`, 4 review rounds). **L1** lsp core
+(transport, UTF-16, overlay sync, diagnostics, p95 ~400 ms at N=7000) built, review FAIL, fixing
+plus `canon lsp` wiring. Next: L2 (hover, definition, references, formatting), L3
+(`editors/vscode`, TextMate grammar), A2 (`canon rename`: sync of name syntax and API form first).
+M6 and M7 not started; each needs its feature example first (`ts`, `pairs` still owed).
 
 Long fuzz/progen campaigns stay deferred by Louis ([decisions/log-2026-09-29.md](decisions/log-2026-09-29.md)
 "Platforms and fuzzing"): a milestone runs only its own stated acceptance criteria.
