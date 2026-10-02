@@ -139,7 +139,7 @@ every violation reported (the build never stops at the first).
 | L has `table t k`, S has no entry `k` in `t` | `E6001` at the lock line: entry removed or renamed; retire it instead |
 | L has `enum E c m`, S has no member `m` in `E` | `E6001`: member removed or renamed |
 | L names a table, enum or field that S no longer has at all (deleted, renamed, or no longer `stable` / `@codes` / `@stable`) | one `E6001` for the whole collection, at its first lock line (not one per value) |
-| an edit-API `Remove` on a stable entry | refused with `E6001` |
+| an edit-API `Remove` on a stable entry whose id the lock holds or the request locks | refused with `E6001`; a pending id (no lock line yet) may be removed or renamed, never under an edit layer (§6.1; API.md E4) |
 
 When the locked value is now held by a new holder (a table with exactly one new key; a code or a
 `@stable` value now held by a member or entry that is not in L), the message says so (variants
@@ -215,7 +215,7 @@ The lock is append-only for tools. People may edit it in a reviewed commit for t
 | `canon build --layer …` | never written (§6.1); the lock rules are checked as in a plain build |
 | edit API `Add` on a stable table | the new `table` (and `field`) facts are written in the same atomic edit as the source |
 | edit API `Retire` | the fact gets `retired` in the same atomic edit |
-| edit API `Remove` on a stable entry | refused (`E6001`) |
+| edit API `Remove` on a stable entry | refused (`E6001`) when the lock holds or the request locks its id; a pending id has no line to keep |
 | edit API `Set` of a `@stable` field of an existing entry | refused (`E6002`) |
 | edit API `Set` or `Reset` on a root stable-table entry the lock does not hold yet | the entry's whole facts are written in the same atomic edit |
 | any other edit | never; an edit writes only the lines its own ops require (API.md E20) |

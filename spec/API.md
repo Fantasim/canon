@@ -891,7 +891,8 @@ type expected at the path **before** anything is written (CLI.md §5.3 "values, 
 - **E3.** `Add`, `Insert` and `AddEntry` with a key that already exists are `ErrKeyExists`.
   `Set` on a map key or table entry that does not exist is `ErrNoPath` (use `AddEntry`).
 - **E4.** `Remove` on an entry of a stable table whose id the lock holds or the request locks, and
-  `Rename` of such an entry, are
+  `Rename` of such an entry, and either op on any stable entry under an `EditLayer` (LOCK.md §6.1),
+  are
   `ErrStableKey` (SPEC §12: retire it instead). `Remove` of an `@codes` enum member is not an op.
   `Unretire` is always `ErrStableKey`: retirement is one-way, and bringing an id back is a reviewed
   hand edit of `canon.lock` (LOCK.md §4.6), which the build would otherwise report as `E6002`.
@@ -1047,7 +1048,10 @@ inside the same edit and reports it, so every client behaves the same.
   wrote lock lines the Undo's verification (E22) checks the lock too; a before value whose restore
   would contradict a lock fact the edit made (a `@stable` value now locked to another id) keeps the
   result's form, and verification excludes it; an id the edit tried to lock but whose lines E20
-  skipped (an `AllowErrors` conflict) was never locked, and its inverse is a `Remove`; `Remove` → `Insert(parent, oldPosition, old)` or
+  skipped (an `AllowErrors` conflict) was never locked, and its inverse is a `Remove` when the
+  result still holds the entry, none when it does not; a before entry the edit removed or renamed
+  whose restore would contradict a lock fact stays as the result holds it, and verification excludes
+  it; an `AddEntry` that re-creates a pending entry locks it, as the next build would (LOCK.md §4.4); `Remove` → `Insert(parent, oldPosition, old)` or
   `AddEntry(parent, key, old)` followed by a `Move` to the old position (where file paths fix the
   order, reason `order`, an `Add` or `AddEntry` alone, placed by N1–N4); `Move` → `Move` back;
   `Rename` → `Rename` back; `RenameName` → `RenameName(<canonical new name>, <old name>)` (E37); `SetCase` → `Set(old whole variant value)`. `Retire` has no inverse
