@@ -585,16 +585,38 @@ Exit: 0, 1, 2, 3.
 ### 3.16 `canon rename`
 
 ```
-canon rename <name> <new-name> [--dry-run]
+canon rename <name> <new-name> [--dry-run] [--layer …]
 ```
 
-Renames a Canon name (a field, type, function, let or local) and everything that names it, in
-one atomic, minimal edit: views, translation keys and layer amendment paths follow. A field
-without an explicit wire name that is reachable from a loaded or emitted value gains
-`@json("<old name>")`, so no data file changes (DECISIONS 3). Renaming a stable id is refused;
-`Retire` is the way out. Keys of data (entries, map keys) are renamed with `canon edit`'s `rename`
-op instead. The `<name>` syntax and the API form are ruled before the unit is built (DECISIONS
-274). Prints the changed files, then the summary.
+Renames a Canon name and everything that names it, in one atomic, checked and minimal edit: the
+`RenameName` op of the edit API ([spec/API.md](spec/API.md) §8.9, DECISIONS 275). `<name>` is:
+
+```
+pipeline:Potion.heal                 // a field of a record
+features.renames:Reward.item.count   // a field of a variant case
+teamboard:Status                     // a type
+teamboard:canTransition              // a function; teamboard:TimeOfDay.minutes, a method
+resource.farm:farm                   // a let; FARM_MAX_MODELS, a const named by one package only
+balance.parity:sweep.total           // a parameter or local, declared once in its function
+balance/parity/sweep_plan.canon:42:9 // the identifier at that position
+```
+
+The declaration and every use follow in every package: qualified uses and `import` lists, record
+literals in data, `entry` lines, named arguments, views, translation keys (I18N.md K4), amendment
+paths in every layer file, `emit … values:` names and `@files` variables. A field on the wire
+without a positional wire name gains `@json("<old wire name>")`, so no data file changes
+(DECISIONS 3). Comments, texts, file paths, data files and `canon.lock` are never changed;
+generated code and emitted data follow at the next `canon build`.
+
+Refused: entry keys, enum members and variant cases, which are data (`ErrStableKey` when stable,
+else `ErrBadOp`; keys change with `canon edit`'s `rename` op); a stable table's `let`, a `@codes`
+enum or a `@stable` field (`ErrStableKey`, LOCK.md §4.6); a package holding a broken
+declaration; a collision; and a rename that would make another name refer to something else
+(`ErrNameClash`).
+
+Like `canon edit`, its output is always JSON lines: one `{"rename":{…}}` object with the keys of
+§3.15's `edit` object, whose `undo` is the reverse rename as a request for `canon edit`, then the
+findings and the summary. Errors print and exit as §3.15 says.
 
 Exit: 0, 1, 2, 3.
 
@@ -616,7 +638,7 @@ findings are converted from their UTF-8 byte columns.
 | formatting | `canon fmt` |
 
 The server is for reading: completion, code actions and rename are not offered (DECISIONS 274).
-Values are edited in the studio or, by agents, with `canon edit` and `canon rename` (§6.5).
+Values are edited in the studio or, by agents, with `canon edit`; names with `canon rename` (§6.5).
 
 ---
 
@@ -845,6 +867,6 @@ canon check --format json                 # what is wrong, with value paths and 
 canon explain <path> --format json        # a value, its type and where each part was set
 canon refs <path>                         # what uses an entry, before removing or retiring it
 canon edit fix.json                       # apply value changes; prints the Undo request
-canon rename <name> <new-name>            # rename a field, type or function everywhere
+canon rename <name> <new-name>            # rename a field, type, function, let or local everywhere
 canon fmt                                 # after any hand edit of the code itself
 ```

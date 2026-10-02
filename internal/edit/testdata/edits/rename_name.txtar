@@ -1,0 +1,100 @@
+API.md E33, API.md E34, API.md M5, API.md M6: RenameName replaces each occurrence of a field in
+place (its declaration, a literal field, selectors in its package and an importer) and gives the
+loaded field its old wire name; every byte outside the items holding a renamed token is kept,
+comments included. API.md E37: its Undo is the reverse RenameName.
+-- options --
+pkgs: a b
+-- edit.json --
+{"ops": [{"op": "renameName", "path": "a:Item.count", "name": "amount"}]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+/// An item.
+record Item {
+  /// How many.
+  count: Int // never negative
+  /// Its name.
+  label: String = ""
+}
+
+// Kept as written.
+/// Untouched.
+const LIMIT = 3
+
+/// The loaded items.
+let loaded: Item = load("item.json")
+
+/// The items.
+let items: [Item] = [{ count: 1, label: "a" }]
+
+/// Twice the first count.
+let twice: Int = items[0].count * 2
+-- a/item.json --
+{
+  "count": 2
+}
+-- b/b.canon --
+package b
+
+import a { LIMIT, items }
+
+/// The first count, capped.
+let first: Int = min(items[0].count, LIMIT)
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "a/a.canon"
+    },
+    {
+      "kind": "modified",
+      "path": "b/b.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "renameName",
+      "path": "a:Item.amount",
+      "name": "count"
+    }
+  ],
+  "touched": [
+    "a",
+    "b"
+  ]
+}
+-- after/a/a.canon --
+package a
+
+/// An item.
+record Item {
+  /// How many.
+  amount: Int @json("count") // never negative
+  /// Its name.
+  label: String = ""
+}
+
+// Kept as written.
+/// Untouched.
+const LIMIT = 3
+
+/// The loaded items.
+let loaded: Item = load("item.json")
+
+/// The items.
+let items: [Item] = [{ amount: 1, label: "a" }]
+
+/// Twice the first count.
+let twice: Int = items[0].amount * 2
+-- after/b/b.canon --
+package b
+
+import a { LIMIT, items }
+
+/// The first count, capped.
+let first: Int = min(items[0].amount, LIMIT)

@@ -23,6 +23,7 @@ import (
 type work struct {
 	canon   map[string][]format.Change
 	json    map[string][]jsonEdit
+	whole   map[string]wholeWrite // .canon files written whole: a RenameName's, laid out by the formatter (M5)
 	creates []newFile
 	removes []removal
 	moves   []fileMove
@@ -34,6 +35,13 @@ type work struct {
 	kept    keptCase
 	given   []givenValue
 	rekey   *pathMove // a Rename's item, which E15 follows to its new name
+}
+
+// wholeWrite is a file written whole and the regions of it before the write that may change:
+// the items holding a renamed token (API.md E33, M6).
+type wholeWrite struct {
+	out     []byte
+	regions []region
 }
 
 // pathMove is an item's canonical path before and after a Rename.
@@ -74,7 +82,7 @@ type removal struct {
 }
 
 func newWork() *work {
-	return &work{canon: map[string][]format.Change{}, json: map[string][]jsonEdit{}, owners: map[string]string{}}
+	return &work{canon: map[string][]format.Change{}, json: map[string][]jsonEdit{}, whole: map[string]wholeWrite{}, owners: map[string]string{}}
 }
 
 // own records the package owning a file the work writes (API.md E17).
@@ -90,6 +98,9 @@ func (w *work) written() map[string]bool {
 	}
 	for d := range w.json { //canon:unordered builds a set
 		out[d] = true
+	}
+	for d := range w.whole { //canon:unordered builds a set
+		out[d] = false
 	}
 	for _, m := range w.moves {
 		if _, ok := out[m.from]; !ok {
@@ -195,7 +206,7 @@ func roleOf(display string) syntax.FileKind {
 // roots (an absolute display path), as a commit would and with the same reason and sentinel, so
 // Apply, DryRun and Edit refuse alike (API.md N10; log-2026-09-29 M4 U5b-r, U5b-r3).
 func (w *work) unwritable() error {
-	names := slices.Concat(slices.Collect(maps.Keys(w.canon)), slices.Collect(maps.Keys(w.json)))
+	names := slices.Concat(slices.Collect(maps.Keys(w.canon)), slices.Collect(maps.Keys(w.json)), slices.Collect(maps.Keys(w.whole)))
 	for _, nf := range w.creates {
 		names = append(names, nf.display)
 	}
@@ -230,6 +241,10 @@ func (a *applier) commit(w *work) error {
 		if err := a.rewriteJSON(d, w.json[d]); err != nil {
 			return err
 		}
+	}
+	for _, d := range slices.Sorted(maps.Keys(w.whole)) {
+		ww := w.whole[d]
+		a.files[d].wrote(ww.out, func() []region { return ww.regions })
 	}
 	if err := a.placeFiles(w); err != nil {
 		return err

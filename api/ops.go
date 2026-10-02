@@ -131,6 +131,7 @@ type Op struct {
 	Key   Lit // AddEntry key; Rename new key
 	Index int // Insert, Move
 	Case  string
+	Name  string // RenameName's new name; Path is then the name renamed
 }
 
 // Set replaces the value at path (rules E5-E7).
@@ -190,6 +191,12 @@ func SetCase(path, caseName string, fields Obj) Op {
 		op.Value = fields
 	}
 	return op
+}
+
+// RenameName renames the Canon name name, `[package:]word{.word}` or `file:line:col`, to
+// newName, with every name naming it (rules E27-E37); it is alone in its Edit.
+func RenameName(name, newName string) Op {
+	return Op{Kind: OpRenameName, Path: name, Name: newName}
 }
 
 // MarshalJSON writes the JSON form of rules E24-E26: a FromJSON value as `value`, any other as

@@ -32,6 +32,9 @@ type EditOutcome struct {
 	Before  *Snapshot
 	After   *Snapshot
 	aliases map[string]string // the other names packages read a written file by (owners)
+
+	checked   *build.Analysis // the re-check's analysis, and the packages it re-checked (E18, E35)
+	rechecked []string
 }
 
 // Edit is the edit transaction, the one writer (API.md E17-E21, S9-S12, N10, W15): the
@@ -57,6 +60,9 @@ func (p *Project) Edit(ctx context.Context, req EditRequest) (*EditOutcome, erro
 }
 
 func (s *Snapshot) edit(ctx context.Context, req EditRequest) (*EditOutcome, error) {
+	if err := edit.RenameRequest(req.Ops, req.AllowErrors, req.EditLayer); err != nil {
+		return nil, err
+	}
 	a, err := s.analyze(ctx, nil)
 	if err != nil {
 		return nil, err
@@ -73,10 +79,13 @@ func (s *Snapshot) edit(ctx context.Context, req EditRequest) (*EditOutcome, err
 	if err := out.recheck(ctx, a, owners); err != nil {
 		return nil, err
 	}
-	switch {
-	case out.Checked.Summary.Errors > 0 && !req.AllowErrors:
+	if out.Checked.Summary.Errors > 0 && !req.AllowErrors {
 		return out, ErrRejected
-	case req.DryRun || len(out.Changes) == 0:
+	}
+	if err := out.preserved(req, a); err != nil {
+		return nil, err
+	}
+	if req.DryRun || len(out.Changes) == 0 {
 		return out, nil
 	}
 	if err := s.commit(ctx, out); err != nil {
@@ -190,7 +199,7 @@ func (o *EditOutcome) recheck(ctx context.Context, a *build.Analysis, owners []s
 	if err != nil {
 		return err
 	}
-	o.Checked = checked.Result()
+	o.Checked, o.checked, o.rechecked = checked.Result(), checked, pkgs
 	if build.Covers(a, checked) { // the packages outside pkgs read none of the files written (owners)
 		o.After.cover(pkgs)
 	}

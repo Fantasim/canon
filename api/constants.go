@@ -75,6 +75,7 @@ const (
 	ReasonPseudo   Reason = "pseudo"
 	ReasonOrder    Reason = "order"
 	ReasonLayer    Reason = "layer"
+	ReasonBroken   Reason = "broken"
 )
 
 // RefKind says how a reference names its target (rule R7).
@@ -104,6 +105,8 @@ const (
 	OpRetire   OpKind = "retire"
 	OpUnretire OpKind = "unretire"
 	OpSetCase  OpKind = "setCase"
+	// OpRenameName renames a Canon name (API.md §8.9).
+	OpRenameName OpKind = "renameName"
 )
 
 // None is the absent value of an optional (rule E7).
@@ -163,6 +166,7 @@ var (
 		edit.ReasonNone: ReasonNone, edit.ReasonComputed: ReasonComputed, edit.ReasonLayered: ReasonLayered,
 		edit.ReasonFormat: ReasonFormat, edit.ReasonInput: ReasonInput, edit.ReasonKey: ReasonKey,
 		edit.ReasonPseudo: ReasonPseudo, edit.ReasonOrder: ReasonOrder, edit.ReasonLayer: ReasonLayer,
+		edit.ReasonBroken: ReasonBroken,
 	}
 )
 
@@ -170,11 +174,11 @@ var (
 var opKinds = [...]OpKind{
 	edit.OpSet: OpSet, edit.OpReset: OpReset, edit.OpAdd: OpAdd, edit.OpInsert: OpInsert,
 	edit.OpAddEntry: OpAddEntry, edit.OpRemove: OpRemove, edit.OpMove: OpMove, edit.OpRename: OpRename,
-	edit.OpRetire: OpRetire, edit.OpUnretire: OpUnretire, edit.OpSetCase: OpSetCase,
+	edit.OpRetire: OpRetire, edit.OpUnretire: OpUnretire, edit.OpSetCase: OpSetCase, edit.OpRenameName: OpRenameName,
 }
 
 // opUnknown is an Op kind the API does not name, which edit refuses (rule E2).
-const opUnknown = edit.OpSetCase + 1
+const opUnknown = edit.OpRenameName + 1
 
 // changeKinds names each kind of file change as the API does, indexed by edit's; a removed
 // directory is no FileChange (rule N6).

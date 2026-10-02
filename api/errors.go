@@ -24,6 +24,7 @@ var (
 	ErrBadValue           = errors.New("value does not fit the type")
 	ErrKeyExists          = errors.New("key already exists")
 	ErrStableKey          = errors.New("stable id cannot be removed, renamed or un-retired")
+	ErrNameClash          = errors.New("rename would change what another name refers to")
 	ErrNotEditable        = errors.New("value is not editable")
 	ErrStale              = errors.New("sources changed since the base revision")
 	ErrRejected           = errors.New("edit rejected: it produces errors")
@@ -107,7 +108,7 @@ type PathError struct {
 	Err        error
 	Detail     string
 	Findings   []Finding // explain ErrNoValue
-	Candidates []string  // qualified roots, for ErrAmbiguousPath
+	Candidates []string  // qualified roots, or a rename's positions, for ErrAmbiguousPath
 }
 
 func (e *PathError) Error() string { return errText(e.Op, e.Path, e.Err, e.Detail) }

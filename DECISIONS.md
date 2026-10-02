@@ -2504,6 +2504,27 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      before its unit is built. CLI.md §6.5 gives the agent recipe. A browser view of values is
      the studio's job (DECISIONS 191), not M5's. Reason: Louis, 2026-10-02.
 
+275. **The rename of a Canon name (CLI.md §3.16; API.md §8.9, E21, E23, E24, §7.2, §15;
+     IMPLEMENTATION-PLAN §4.7, §6 M5, §8.4; I18N.md F4; follows 274).** `canon rename <name>
+     <new-name>` applies one `RenameName` op through `Project.Edit`: an additive op, alone in its
+     request, whose Undo is the reverse `RenameName`, so the studio and agents share it and
+     `canon edit` replays its undo. The name is §2.6's path of names only (`pkg:Type.field`,
+     `pkg:fn.x`) or a `<file>:<line>:<col>` position. Renamable: fields, methods, types, functions,
+     `let`s, `const`s, parameters and block locals ("local" in 274). Entry keys, enum members and
+     variant cases are data: `ErrStableKey` when stable, `ErrBadOp` otherwise (keys use `Rename`).
+     A stable table's `let`, a `@codes` enum or a `@stable` field is `ErrStableKey`: the lock stays
+     append-only for tools (LOCK.md §4.6). Every occurrence the checker records follows, in every
+     package and layer file, `emit values:` names and `@files` variables included (§4.7 records
+     them), translation keys respelled per I18N K4. A field on the wire with no positional wire
+     name gains its old *wire* name (`@json(case:)` applied, so 274's "old name" is corrected); a
+     positional wire name equal to the new default is dropped, so the reverse rename restores the
+     text. Refused: a base with broken declarations (reason `broken`), collisions (the re-check's
+     findings), and a silent capture of another name (`ErrNameClash`). Generated identifiers and
+     emitted `$fns` keys follow at the next `canon build`; the edit reports no list of them
+     (dropped from the draft: `build --check` and the consumers' compilers show them). The
+     command, like `canon edit`, prints JSON lines. The name index is `check.Program.Occurrences`,
+     which later serves LSP references of names. Reason: sync A2, 2026-10-02.
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.

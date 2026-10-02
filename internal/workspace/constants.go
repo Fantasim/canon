@@ -94,3 +94,16 @@ const (
 	msgPolling = "the OS cannot watch the project's files: polling them instead"
 	logError   = "error"
 )
+
+// What a RenameName's preservation check writes (API.md E35): a declaration's key, the place of
+// an identifier and what a captured one would name.
+const (
+	keySep         = "#"
+	useSep         = "&"
+	packageSep     = ":"
+	fmtPlace       = "%s:%d:%d"
+	fmtCaptured    = "%s would name %s"
+	textNothing    = "nothing"
+	textBuiltin    = "the built-in "
+	textDeclaredAt = ", declared at "
+)

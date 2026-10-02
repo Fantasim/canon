@@ -59,6 +59,9 @@ func draftKey(c Changes) (string, bool) {
 }
 
 func (s *Snapshot) draft(ctx context.Context, base *build.Analysis, c Changes) (*Drafted, error) {
+	if err := edit.RenameRequest(c.Ops, true, c.EditLayer); err != nil { // a draft is no lone request (API.md E31)
+		return nil, err
+	}
 	plan, err := s.apply(ctx, base, c)
 	if err != nil {
 		return nil, err

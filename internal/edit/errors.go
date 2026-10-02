@@ -103,9 +103,9 @@ var (
 	errUndoUnverified = errors.New("no Undo found that restores every value")
 )
 
-// NotEditableError is an operation on a value it cannot edit (API.md W5, E5, E12): the reason,
-// the computed value's structural origin, the layer that sets it, for a rename every reference
-// that is not editable, by path, and the hidden path that holds a value no edit writes.
+// NotEditableError is an operation on a value it cannot edit (API.md W5, E5, E12, E32): the reason,
+// the computed value's structural origin, the layer that sets it, what refuses a rename (its
+// references not editable, or its base's broken places), the hidden path no edit writes.
 type NotEditableError struct {
 	Reason Reason
 	Origin string
@@ -119,6 +119,37 @@ func (e *NotEditableError) Error() string {
 }
 
 func (e *NotEditableError) Unwrap() error { return ErrNotEditable }
+
+// ErrNameClash is a RenameName that would change what another name refers to (API.md E35).
+var ErrNameClash = errors.New("rename changes what another name refers to")
+
+// Texts of a RenameName's refusals (API.md E28-E31, E35).
+const (
+	detailNotRenamable = "not a declaration a rename changes"
+	detailLocked       = "canon.lock names it"
+	detailStableData   = "a stable id names data, which canon.lock keeps"
+	detailData         = "it names data: a key changes with Rename"
+	detailAlone        = "a RenameName is alone in its request, without AllowErrors"
+	expectedName       = "a name"
+	fmtAmbiguous       = "%s:%d:%d may name a field of several cases"
+)
+
+// NameError is a RenameName refused at its name or its request (API.md E27-E29, E31, E35): Err
+// its sentinel, Detail a sentence for people, Candidates what an ambiguous name matches.
+type NameError struct {
+	Err        error
+	Detail     string
+	Candidates []string
+}
+
+func (e *NameError) Error() string {
+	if e.Detail == "" {
+		return e.Err.Error()
+	}
+	return e.Err.Error() + detailSep + e.Detail
+}
+
+func (e *NameError) Unwrap() error { return e.Err }
 
 // CollisionError is a new or renamed file whose path is taken (API.md N3), by display path.
 type CollisionError struct {

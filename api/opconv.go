@@ -19,12 +19,12 @@ func (pathKeyLit) isLit() {}
 // turn as ErrBadOp (rules E1, E2).
 func (o Op) operation() edit.Operation {
 	kind := opUnknown
-	for k := edit.OpSet; k <= edit.OpSetCase; k++ {
+	for k := edit.OpSet; k <= edit.OpRenameName; k++ {
 		if opKinds[k] == o.Kind {
 			kind = k
 		}
 	}
-	return edit.Operation{Kind: kind, Path: o.Path, Value: editLit(o.Value), Key: editLit(o.Key), Index: o.Index, Case: o.Case}
+	return edit.Operation{Kind: kind, Path: o.Path, Value: editLit(o.Value), Key: editLit(o.Key), Index: o.Index, Case: o.Case, Name: o.Name}
 }
 
 // operations are ops as edit applies them.
@@ -47,7 +47,7 @@ func (o Op) opJSON() (edit.Operation, error) {
 
 // opOf is an operation edit gave back, an Undo's, in the API's form (rule E23).
 func opOf(o edit.Operation) Op {
-	return Op{Kind: opKinds[o.Kind], Path: o.Path, Value: apiLit(o.Value), Key: apiLit(o.Key), Index: o.Index, Case: o.Case}
+	return Op{Kind: opKinds[o.Kind], Path: o.Path, Value: apiLit(o.Value), Key: apiLit(o.Key), Index: o.Index, Case: o.Case, Name: o.Name}
 }
 
 // editLit is v as edit reads it; nil stays nil (API.md §8.2).

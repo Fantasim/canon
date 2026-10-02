@@ -40,6 +40,8 @@ type Plan struct {
 	Touched      []string
 	NotCanonical []string
 	Locked       []Locked
+	NameClash    string                 // a RenameName's ambiguous occurrence, which E35 refuses after the re-check
+	NameEdits    map[string]NameEdit    // a RenameName's identifiers inserted and removed, by file (E35)
 	writes       map[string][]writeStep // each changed file's writes, for tests of M6
 }
 
@@ -67,6 +69,9 @@ func Apply(ctx context.Context, env Env, base *Snapshot, req Request) (*Plan, er
 		return nil, ErrNoProject
 	case env.Host == nil:
 		return nil, ErrNoHost
+	}
+	if err := RenameRequest(req.Ops, false, env.EditLayer); err != nil {
+		return nil, err
 	}
 	a := newApplier(ctx, env, base)
 	a.multi = len(req.Ops) > 1
@@ -133,6 +138,14 @@ type applier struct {
 
 	multi, dependent, renamed bool      // what verifiedUndo needs of the request (noteUndo)
 	named                     []rootRef // the roots its operations name
+	nameClash                 string    // Plan.NameClash
+	nameEdits                 map[string]NameEdit
+}
+
+// NameEdit is what a RenameName adds to a file besides renaming: the places, among the file's
+// identifiers in source order, of those it removes (before) and inserts (after) (API.md E35).
+type NameEdit struct {
+	Removed, Added []int
 }
 
 func newApplier(ctx context.Context, env Env, base *Snapshot) *applier {
@@ -155,10 +168,14 @@ func (a *applier) typer(pkg string) Typer {
 // checked for canonical layout (normalized, then planned again, when one is not), then made;
 // a SetCase's kept fields are then judged (API.md E14).
 func (a *applier) operation(op Operation) error {
-	if op.Kind == OpSetCase {
+	switch op.Kind {
+	case OpSetCase:
 		return a.setCase(op)
+	case OpRenameName:
+		return a.renameName(op)
+	default:
+		return a.run(op, nil)
 	}
-	return a.run(op, nil)
 }
 
 // run applies op by its handler, or by h, a cascade's own change: its inverse and its touched
@@ -265,7 +282,7 @@ type opCtx struct {
 
 // finish is the plan: the files that changed, the inverses last operation first (E23).
 func (a *applier) finish() *Plan {
-	p := &Plan{Dropped: a.dropped, writes: map[string][]writeStep{}}
+	p := &Plan{Dropped: a.dropped, NameClash: a.nameClash, NameEdits: a.nameEdits, writes: map[string][]writeStep{}}
 	for _, display := range slices.Sorted(maps.Keys(a.files)) {
 		if a.files[display].normalized {
 			p.NotCanonical = append(p.NotCanonical, display)

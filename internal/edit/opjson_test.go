@@ -118,7 +118,7 @@ func TestOpJSONWriteRefusals(t *testing.T) {
 		{Kind: edit.OpSet, Path: "a"},
 		{Kind: edit.OpRemove, Path: "a", Index: 2},
 		{Kind: edit.OpRename, Path: "a", Key: edit.List{}},
-		{Kind: edit.OpSetCase + 1, Path: "a"},
+		{Kind: edit.OpRenameName + 1, Path: "a"},
 	} {
 		if b, err := json.Marshal(op); err == nil {
 			t.Errorf("%#v = %s, want an error", op, b)

@@ -15,6 +15,7 @@ import (
 // Snapshot is the checked program and settled roots of one frozen analysis (IMPLEMENTATION-PLAN §4.6).
 type Snapshot struct {
 	a      *build.Analysis
+	prog   *check.Program
 	info   *check.Info
 	pkgs   []*check.Package
 	byPath map[string]*check.Package
@@ -25,7 +26,7 @@ type Snapshot struct {
 func NewSnapshot(a *build.Analysis) *Snapshot {
 	prog := a.Program()
 	s := &Snapshot{
-		a: a, info: prog.Info, pkgs: prog.Packages,
+		a: a, prog: prog, info: prog.Info, pkgs: prog.Packages,
 		byPath: map[string]*check.Package{}, files: map[source.FileID]*syntax.File{},
 	}
 	for _, pkg := range prog.Packages {
@@ -100,7 +101,7 @@ func rootOf(pkg *check.Package, obj check.Object, name string) (rootRef, bool) {
 	return rootRef{}, false
 }
 
-// public reports a declaration without `local` (API.md P6).
+// public reports a declaration without `local` (API.md P6, E27).
 func public(obj check.Object) bool {
 	var mods *syntax.Modifiers
 	switch d := obj.Decl().(type) {
@@ -109,6 +110,14 @@ func public(obj check.Object) bool {
 	case *syntax.ConstDecl:
 		mods = d.Mods
 	case *syntax.EnumDecl:
+		mods = d.Mods
+	case *syntax.RecordDecl:
+		mods = d.Mods
+	case *syntax.VariantDecl:
+		mods = d.Mods
+	case *syntax.TypeDecl:
+		mods = d.Mods
+	case *syntax.FnDecl:
 		mods = d.Mods
 	}
 	return mods == nil || !mods.Local.Valid()

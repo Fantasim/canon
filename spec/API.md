@@ -728,6 +728,7 @@ source and where the edit goes.
 | `pseudo` | `.id`, `.retired`, `.kind` (P3) |
 | `order` | `Insert` or `Move` in a collection whose order comes from file paths (`load.dir`, entry files) |
 | `layer` | an operation that cannot be written as an amendment when `EditLayer` is set (§7.5) |
+| `broken` | a `RenameName` whose packages hold a broken declaration (E32) |
 
 - **W5.** An edit on a non-editable path fails with `*NotEditableError` (wraps `ErrNotEditable`)
   carrying the op index, the path, the reason and, for `computed`, `Origin`.
@@ -878,6 +879,7 @@ type expected at the path **before** anything is written (CLI.md §5.3 "values, 
 | `Retire(path)` | an entry of a stable table, a member of an `@codes` enum | mark it `retired` (SPEC §12) |
 | `Unretire(path)` | a retired entry or member | always refused: `ErrStableKey` (E4) |
 | `SetCase(path, case, fields)` | a variant | change the case, keeping compatible fields (§8.5) |
+| `RenameName(name, newName)` | a Canon name (§8.9) | rename its declaration and every name naming it |
 
 - **E1.** Ops apply in order to the state left by the previous ops; paths in later ops see earlier
   changes (a key added by op 0 can be addressed by op 1). Each op is resolved against, and applied
@@ -1001,7 +1003,9 @@ inside the same edit and reports it, so every client behaves the same.
   editability, op/container kind, value types (V1), then its application in memory (E1); then the
   cascades (§8.5); then, over the files the ops write (known only now), overlays (S12), staleness
   (S5) and the canonical-layout check (§9.4); then the re-check (E18, E19); then the write (§10).
-  The first failing step decides the error.
+  The first failing step decides the error. For `RenameName`: request (E31), name (E27), kind
+  (E28, E29), new name (E30), base (E32), application (E33, E34), overlays, staleness and layout,
+  re-check, preservation (E35), write.
 
 ### 8.7 Undo
 
@@ -1031,7 +1035,7 @@ inside the same edit and reports it, so every client behaves the same.
   `Add`/`Insert`/`AddEntry` → `Remove`; `Remove` → `Insert(parent, oldPosition, old)` or
   `AddEntry(parent, key, old)` followed by a `Move` to the old position (where file paths fix the
   order, reason `order`, an `Add` or `AddEntry` alone, placed by N1–N4); `Move` → `Move` back;
-  `Rename` → `Rename` back; `SetCase` → `Set(old whole variant value)`. `Retire` has no inverse
+  `Rename` → `Rename` back; `RenameName` → `RenameName(<canonical new name>, <old name>)` (E37); `SetCase` → `Set(old whole variant value)`. `Retire` has no inverse
   (E4): `Undo` restores every other change of the edit, and the studio warns before retiring. `Undo`
   lists the inverses in reverse order of the ops, then every cascade's inverse. Where E22 requires
   it, the Undo is verified by a dry apply against the after state; where that does not restore the
@@ -1076,7 +1080,8 @@ implements `json.Unmarshaler` too, and JSON of either that does not decode is `E
 ```
 
 - **E24.** `op` is one of `set reset add insert addEntry remove move rename retire unretire
-  setCase`. A value is given either as `value` (wire form, decoded as `FromJSON`) or as `source`
+  setCase renameName`; for `renameName`, `path` is the name and `name` the new name
+  (`{"op":"renameName","path":"pipeline:Potion.heal","name":"hp"}`). A value is given either as `value` (wire form, decoded as `FromJSON`) or as `source`
   (Canon literal text, decoded as `Source`), never both. `"value": null` is `None`.
 - **E25.** `key` is a JSON string or integer; it is read as a path key (P1, P2), so for an enum
   key a string is first matched as a Canon member name, then as a wire value. A key of a dependent
@@ -1084,6 +1089,69 @@ implements `json.Unmarshaler` too, and JSON of either that does not decode is `E
   §11.5); on a `Never` or uncomputable branch it is kept as data.
 - **E26.** Marshalling writes `source` for every `Lit` except `FromJSON`, which is written as
   `value`. `Source` text produced by the API is canonical (FORMATTER.md), single-line.
+
+### 8.9 Renaming a Canon name
+
+```go
+func RenameName(name, newName string) Op
+```
+
+- **E27.** `name` is `[package ":"] word {"." word}`, or `file ":" line ":" col` (a display path,
+  §1.3, and a byte column inside an identifier the checker resolved, declaring or using; it names
+  that identifier's declaration). The first word names a top-level type, function, `let` or
+  `const`: unprefixed, among the public top-level declarations of every package (several is
+  `ErrAmbiguousPath` listing the qualified candidates, none `ErrNoPath`); prefixed, any top-level
+  declaration of that package. Then, on a record, a field or method; on a variant, a case, then a
+  field or method of that case; on a function or method, a parameter or local, `ErrAmbiguousPath`
+  listing positions when the function declares that name more than once. Aliases are followed.
+- **E28.** Renamable: fields of records and cases, methods, types (records, variants, enums,
+  aliases, type functions), functions, `let`s, `const`s, parameters and block locals. A name
+  reaching an entry key, an enum member or a variant case names data: `ErrStableKey` for an entry
+  of a stable table or a `@codes` member (E4), else `ErrBadOp`, whose detail names `Rename` (§8.4).
+  Any other declaration is `ErrBadOp`.
+- **E29.** A stable table's `let`, a `@codes` enum and a `@stable` field are named by `canon.lock`
+  lines: renaming one is `ErrStableKey` (LOCK.md §4.6). `RenameName` never writes `canon.lock`.
+- **E30.** `newName` (in JSON, `name`, an empty string included) is a `word`, not `_`, not a reserved word that cannot name a declaration
+  (GRAMMAR.md §4); else `*ValueError` (`ErrBadValue`), `Expected` `a name`. The old name again
+  changes nothing.
+- **E31.** A `RenameName` op is alone in its request and `AllowErrors` is false (`ErrBadOp`
+  otherwise); with an `EditLayer` it is `*NotEditableError` reason `layer`.
+- **E32.** If the target's package, a package importing it, or (for a parameter or local) its
+  function holds a broken declaration, view or translation entry, the op is `*NotEditableError`
+  reason `broken`, `Detail` listing them as `<file>:<line>`.
+- **E33.** Every occurrence the checker records for the target is replaced in place (E11, M2–M6):
+  the declaration; uses in value and type position, qualified forms and `import` lists; selector
+  names, literal field names (in `let` values and entry files), named arguments, patterns,
+  `keyed by`, `ref` and `entry` lines; view items; `amend` targets and segments in every layer
+  file, active or not; translation key segments, which gain or lose their kind word when the
+  segment becomes or stops being reserved (I18N.md K4); `emit … values:` names; `{f}` variables of
+  `@files` templates. Comments, doc comments, string texts, file paths (an entry file stays in its
+  directory, as DECISIONS 256), data files, outputs and `canon.lock` are not changed. A field
+  declaration whose text changes is an item (§9.1), and so is any top-level declaration holding a
+  renamed token.
+- **E34.** A renamed field gets its old wire name (WIRE.md §5.5.2, `@json(case:)` applied) as
+  `@json`'s positional argument when it has no positional wire name, `path:`, `pairs:` or `inline`,
+  and its record or case is reachable (through fields, case fields, list, map and optional
+  elements and aliases, never `ref`) from the expected type of a `load`, `load.dir` or `load.csv`,
+  or from the declared type of a value an `emit json`, or a `go`/`cpp`/`ts` emit in mode
+  `embedded`, `data` or `types`, writes. The argument is merged first into an existing `@json(…)`,
+  else `@json("…")` is appended. Conversely a positional wire name equal to the new name's default
+  wire name is removed, with the annotation if nothing is left in it.
+- **E35.** The affected packages are re-checked (E18); an error refuses the op (E19), collisions
+  included (`E2106`, `E2107`, `E2104`, `E2105`, `E2005`, `E2101`, `E1705`). Then every identifier of
+  those packages must name the same declaration as before (the target's occurrences the renamed
+  one; a built-in compared by name), else `*PathError` wrapping `ErrNameClash`, `Detail` naming the
+  first captured identifier as `<file>:<line>:<col>` and what it would now name. An identifier
+  that named nothing before and names something after is a capture too. An occurrence
+  the index marks ambiguous (a `{f.g}` template variable or an amend segment that several cases'
+  fields named `g` could mean) is `ErrNameClash` too, `Detail` naming it: renaming one case's field
+  would leave the others' text meaning something else.
+- **E36.** Generated identifiers, emitted `$fns` and `$`-function keys and file names follow at
+  the next build; the op writes none of them (DECISIONS 275).
+- **E37.** `Undo` is the single op `RenameName(<canonical new name>, <old name>)`; with E34's
+  converse it restores every byte unless M5 re-printed an enclosing item, or the field carried a
+  positional wire name equal to its default wire name, which the reverse rename drops (E34; the
+  wire is unchanged) (E22).
 
 ---
 
@@ -1537,13 +1605,14 @@ Errors are Go errors, distinct from findings. Every error type wraps one sentine
 | `ErrUnknownLayer` | | a layer name matches no file (O4, LAY-01) | 2 |
 | `ErrBadPath` | `*PathError` | path syntax, unsupported segment (§6); an overlay path outside the project (§3.4) | 2 |
 | `ErrNoPath` | `*PathError` | nothing at that path | 2 |
-| `ErrAmbiguousPath` | `*PathError` | unqualified root matches several packages (P6) | 2 |
+| `ErrAmbiguousPath` | `*PathError` | unqualified root matches several packages (P6); a rename name (E27) | 2 |
 | `ErrNoValue` | `*PathError` | the value is poisoned (R6) | 1 |
 | `ErrInputField` | `*PathError` | the path names an `input` field (R5); `Detail` is its environment variable | 2 |
-| `ErrBadOp` | `*PathError` | op not valid for that container (E2); `Op` or `Edit` JSON that does not decode (§8.8), with the reason | 2 |
-| `ErrBadValue` | `*ValueError` | value does not fit the type; bad template value (V1, N2); unknown build `Target` (B1b) | 2 |
+| `ErrBadOp` | `*PathError` | op not valid for that container (E2); `Op` or `Edit` JSON that does not decode (§8.8), with the reason; E28, E31 | 2 |
+| `ErrBadValue` | `*ValueError` | value does not fit the type; bad template value (V1, N2); unknown build `Target` (B1b); a rename's new name (E30) | 2 |
 | `ErrKeyExists` | `*PathError` | E3 | 1 |
-| `ErrStableKey` | `*PathError` | E4 (`Remove`, `Rename`, `Unretire` of a stable id), E13 | 1 |
+| `ErrStableKey` | `*PathError` | E4 (`Remove`, `Rename`, `Unretire` of a stable id), E13, E28, E29 | 1 |
+| `ErrNameClash` | `*PathError` | E35: a rename would change what another name refers to | 1 |
 | `ErrNotEditable` | `*NotEditableError` | §7.2 | 1 |
 | `ErrStale` | `*StaleError` | S5, N9 | 1 |
 | `ErrRejected` | `*RejectedError` | the edit produced errors (E19) | 1 |

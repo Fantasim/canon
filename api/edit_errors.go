@@ -20,6 +20,7 @@ var opSentinels = [...]sentinelMap{
 	{from: edit.ErrNoPath, to: ErrNoPath},
 	{from: edit.ErrAmbiguousPath, to: ErrAmbiguousPath},
 	{from: edit.ErrNoValue, to: ErrNoValue},
+	{from: edit.ErrNameClash, to: ErrNameClash},
 }
 
 // internalSentinels are edit's failures that only a compiler bug gives (rule X2).
@@ -59,8 +60,11 @@ func (p *Project) opError(ctx context.Context, op int, path string, err error) e
 		ve *edit.ValueError
 		ne *edit.NotEditableError
 		ce *edit.CollisionError
+		me *edit.NameError
 	)
 	switch {
+	case errors.As(err, &me):
+		return nameError(op, path, me)
 	case errors.As(err, &pe):
 		return p.pathError(ctx, op, path, err, pe)
 	case errors.Is(err, edit.ErrBadPath):
@@ -73,6 +77,16 @@ func (p *Project) opError(ctx context.Context, op int, path string, err error) e
 		return &PathError{Op: op, Path: path, Err: ErrPathCollision, Detail: strings.Join(ce.Paths, textListSep)}
 	}
 	return sentinelError(op, path, err)
+}
+
+// nameError is a RenameName's refusal at its name or request (rules E27-E29, E31, E35).
+func nameError(op int, path string, me *edit.NameError) error {
+	out := &PathError{Op: op, Path: path, Detail: me.Detail, Candidates: slices.Clone(me.Candidates)}
+	if i := slices.IndexFunc(opSentinels[:], func(m sentinelMap) bool { return errors.Is(me.Err, m.from) }); i >= 0 {
+		out.Err = opSentinels[i].to
+		return out
+	}
+	return internalError(me)
 }
 
 // sentinelError is a refusal edit gave as a sentinel alone, as the API's error; any other error

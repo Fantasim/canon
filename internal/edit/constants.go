@@ -3,23 +3,21 @@ package edit
 import (
 	"context"
 	"io/fs"
+	"strings"
 
+	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/syntax"
 )
 
 // The segment forms of API.md §6.1.
 const (
-	SegField SegKind = iota
-	SegKey
-	SegPos
+	SegField, SegKey, SegPos SegKind = 0, 1, 2
 )
 
 // The key forms of API.md §6.1.
 const (
-	KeyWord KeyLitKind = iota
-	KeyInt
-	KeyString
+	KeyWord, KeyInt, KeyString KeyLitKind = 0, 1, 2
 )
 
 // Path syntax (API.md §6.1).
@@ -49,37 +47,19 @@ const (
 
 // The editing modes of API.md W4; ModeNone is a value no edit can reach.
 const (
-	ModeNone Mode = iota
-	ModeCanon
-	ModeJSON
+	ModeNone, ModeCanon, ModeJSON Mode = 0, 1, 2
 )
 
 // The rows of API.md §7.2, in table order: the first that applies names the reason.
 const (
-	ReasonNone Reason = iota
-	ReasonComputed
-	ReasonLayered
-	ReasonFormat
-	ReasonInput
-	ReasonKey
-	ReasonPseudo
-	ReasonOrder
-	ReasonLayer
+	ReasonNone, ReasonComputed, ReasonLayered, ReasonFormat, ReasonInput Reason = 0, 1, 2, 3, 4
+	ReasonKey, ReasonPseudo, ReasonOrder, ReasonLayer, ReasonBroken      Reason = 5, 6, 7, 8, 9
 )
 
 // The operations of API.md §8.3.
 const (
-	OpSet Op = iota
-	OpReset
-	OpAdd
-	OpInsert
-	OpAddEntry
-	OpRemove
-	OpMove
-	OpRename
-	OpRetire
-	OpUnretire
-	OpSetCase
+	OpSet, OpReset, OpAdd, OpInsert, OpAddEntry, OpRemove           Op = 0, 1, 2, 3, 4, 5
+	OpMove, OpRename, OpRetire, OpUnretire, OpSetCase, OpRenameName Op = 6, 7, 8, 9, 10, 11
 )
 
 // Where a value's source stands while a path is walked from its root (API.md W3).
@@ -233,13 +213,14 @@ const (
 var refusals = [...]error{
 	ErrBadPath, ErrNoPath, ErrAmbiguousPath, ErrNoValue, ErrNotAnalyzed, ErrForeign, ErrBadValue, ErrBadOp,
 	ErrNoHost, ErrNotEditable, ErrKeyExists, ErrStableKey, ErrPathCollision, ErrNoProject, ErrInternal, ErrUnwritable,
-	context.Canceled, context.DeadlineExceeded,
+	ErrNameClash, context.Canceled, context.DeadlineExceeded,
 }
 
 // reasonNames are the names of API.md §7.2's rows, which a NotEditableError prints.
 var reasonNames = [...]string{
 	ReasonNone: "none", ReasonComputed: "computed", ReasonLayered: "layered", ReasonFormat: "format",
 	ReasonInput: "input", ReasonKey: "key", ReasonPseudo: "pseudo", ReasonOrder: "order", ReasonLayer: "layer",
+	ReasonBroken: "broken",
 }
 
 // handlers apply each operation of API.md §8.3 to the current state.
@@ -271,6 +252,22 @@ const (
 const (
 	loadAtOption    = "at"
 	pointerFragment = "#"
+)
+
+// What a RenameName reads and writes (API.md E27, E33, E34; I18N.md K4; WIRE.md 5.5.2, 6.1).
+const (
+	fmtPosition, fmtLine, annotationMark     = "%s:%d:%d", "%s:%d", "@"
+	jsonArgPath, jsonArgPairs, jsonArgInline = "path", "pairs", "inline"
+)
+
+// kindWords are I18N.md K4's kind words of fields and methods; caseStyles WIRE.md 5.5.2's
+// styles; loadsData, codeTargets and dataModes what reads or writes data (API.md E34).
+var (
+	kindWords   = map[check.ObjKind]string{check.ObjField: syntax.WordField, check.ObjMethod: syntax.WordMethod}
+	caseStyles  = map[string]caseStyle{"snake": {underscore, strings.ToLower}, "kebab": {"-", strings.ToLower}, "upper_snake": {underscore, strings.ToUpper}}
+	loadsData   = map[string]bool{"dir": true, "csv": true}
+	codeTargets = map[string]bool{check.TargetGo: true, check.TargetCpp: true, check.TargetTS: true}
+	dataModes   = map[string]bool{check.ModeEmbedded: true, check.ModeData: true, check.ModeTypes: true}
 )
 
 // Keywords an edit writes, as the lexer spells them (GRAMMAR.md).
@@ -309,12 +306,7 @@ type regionKind uint8
 // node (an item printed again), nothing (an item removed), one new item (an insertion point),
 // a moved item's own lines (fromLo to fromHi), or a comma or none (after a kept neighbour).
 const (
-	regionAny regionKind = iota
-	regionNode
-	regionGone
-	regionItem
-	regionMoved
-	regionComma
+	regionAny, regionNode, regionGone, regionItem, regionMoved, regionComma regionKind = 0, 1, 2, 3, 4, 5
 )
 
 // cascadeStep is the operation index of the writes a cascade makes once every operation is
@@ -380,6 +372,7 @@ const (
 	mKey
 	mIndex
 	mCase
+	mName
 )
 
 // The entries of jsonMembers, in the order the JSON form writes them.
@@ -391,6 +384,7 @@ const (
 	iCase
 	iValue
 	iSource
+	iName
 )
 
 // Texts of the JSON form of an operation.
@@ -411,20 +405,21 @@ const (
 var opNames = [...]string{
 	OpSet: "set", OpReset: "reset", OpAdd: "add", OpInsert: "insert", OpAddEntry: "addEntry", OpRemove: "remove",
 	OpMove: "move", OpRename: "rename", OpRetire: "retire", OpUnretire: "unretire", OpSetCase: "setCase",
+	OpRenameName: "renameName",
 }
 
 // opShapes are the members each operation takes and needs (API.md §8.3): SetCase's fields are optional.
 var opShapes = [...]opShape{
 	OpSet: {mValue, mValue}, OpReset: {}, OpAdd: {mValue, mValue}, OpInsert: {mIndex | mValue, mIndex | mValue},
 	OpAddEntry: {mKey | mValue, mKey | mValue}, OpRemove: {}, OpMove: {mIndex, mIndex}, OpRename: {mKey, mKey},
-	OpRetire: {}, OpUnretire: {}, OpSetCase: {mCase | mValue, mCase},
+	OpRetire: {}, OpUnretire: {}, OpSetCase: {mCase | mValue, mCase}, OpRenameName: {mName, mName},
 }
 
 // jsonMembers are the members of an operation's JSON form (API.md §8.8), in writing order.
 var jsonMembers = [...]jsonMember{
 	iOp: {"op", mOp, readOp}, iPath: {"path", mPath, readPath}, iIndex: {"index", mIndex, readIndex},
 	iKey: {"key", mKey, readKey}, iCase: {"case", mCase, readCase}, iValue: {"value", mValue, readValue},
-	iSource: {"source", mValue, readSource},
+	iSource: {"source", mValue, readSource}, iName: {"name", mName, readName},
 }
 
 // recheckCodes are the wire findings about a value, not its static shape: the re-check reports

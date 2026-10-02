@@ -51,6 +51,9 @@ func (o Operation) MarshalJSON() ([]byte, error) {
 	if shape.takes&mCase != 0 {
 		b = appendMember(b, iCase, diag.AppendJSONString(nil, o.Case))
 	}
+	if shape.takes&mName != 0 {
+		b = appendMember(b, iName, diag.AppendJSONString(nil, o.Name))
+	}
 	if o.Value != nil {
 		i, text, err := valueJSON(o.Value)
 		if err != nil {
@@ -67,7 +70,7 @@ func (o Operation) fitsShape(shape opShape) error {
 	for _, m := range []struct {
 		bit members
 		set bool
-	}{{mValue, o.Value != nil}, {mKey, o.Key != nil}, {mCase, o.Case != ""}, {mIndex, o.Index != 0}} {
+	}{{mValue, o.Value != nil}, {mKey, o.Key != nil}, {mCase, o.Case != ""}, {mIndex, o.Index != 0}, {mName, o.Name != ""}} {
 		if m.set {
 			has |= m.bit
 		}
@@ -75,7 +78,7 @@ func (o Operation) fitsShape(shape opShape) error {
 	if extra := has &^ shape.takes; extra != 0 {
 		return fmt.Errorf(fmtOpJSON, ErrOpJSON, memberList(extra))
 	}
-	if missing := shape.needs &^ (has | mIndex); missing != 0 {
+	if missing := shape.needs &^ (has | mIndex | mName); missing != 0 {
 		return fmt.Errorf(fmtOpJSON, ErrOpJSON, memberList(missing))
 	}
 	return nil
@@ -221,7 +224,7 @@ func readOp(d *opDecode, raw json.RawMessage) error {
 	if err != nil {
 		return err
 	}
-	for k := OpSet; k <= OpSetCase; k++ {
+	for k := OpSet; k <= OpRenameName; k++ {
 		if opNames[k] == name {
 			d.op.Kind = k
 			return nil
@@ -241,6 +244,12 @@ func readCase(d *opDecode, raw json.RawMessage) (err error) {
 	if err == nil && d.op.Case == "" {
 		return errEmptyCase
 	}
+	return err
+}
+
+// readName is RenameName's new name, an empty one included: E30 judges it (E24).
+func readName(d *opDecode, raw json.RawMessage) (err error) {
+	d.op.Name, err = jsonString(raw)
 	return err
 }
 

@@ -662,7 +662,14 @@ const NoneIndex = -1
   finds no entry has found a checker bug. Maps are looked up, never iterated for output
   (`maprange`, §7.5). Every identifier is in `Defs`, `NameUses`, `Uses`, `Keys` or `Symbols`,
   unless it names no object (an annotation, a project key, an emit target, an option or a
-  built-in's parameter, an `expect` outcome or code).
+  built-in's parameter, an `expect` outcome or code); `emit … values:` names and the `{f}`
+  variables of `@files` templates are in `Uses` (the `.g` of `{f.g}` in `NameUses`; a `g` that
+  several cases of a variant `f` declare is an occurrence of each, marked ambiguous, as is an
+  amend segment through such a field; a field typed by one case is not a variant and is never
+  ambiguous; the names after an ambiguous segment are resolved in every candidate's type, plain when
+  they name one declaration across them, else ambiguous under each) (DECISIONS 275). `Occurrence` is `{File, Span, Kind, Site,
+  Ambiguous}`. `Program.Occurrences(Object)`
+  lists every recorded occurrence of an object, built lazily once (additive, DECISIONS 275).
 - A recovery node (`BadExpr`, `BadType`, `BadStmt`, `BadDecl`, GRAMMAR.md §10) makes the
   declaration holding it broken; a `BadExpr` or `BadType` is typed `types.ErrorType` (TYPES.md
   §1) and nothing else is recorded for any of them; a top-level `BadDecl` declares nothing.
@@ -917,7 +924,7 @@ determinism job green (§7.5), and every new registry code tested (§7.2).
   printed `undo` restores every value (API.md E22), and every file byte for byte where the edit
   kept the layout, on every example of `examples/features/edits`;
   `canon rename` has a golden per name kind (field on the wire, type, function, let, local) and a
-  refused stable id.
+  refused stable id, each undone by its printed undo byte for byte (DECISIONS 275).
 
 ### M6 — Legacy C++ modes and TypeScript
 
@@ -1242,9 +1249,7 @@ Not part of v0.1 (DECISIONS 188).
     the base value, labelled as such.
   - **formatting:** `Format`.
   - Completion, code actions and rename are not offered (DECISIONS 274). The rename of a Canon
-    name is `canon rename` (CLI.md §3.16): views, translation keys and amendment paths follow; a
-    field without an explicit wire name whose type is reachable from a loaded or emitted value
-    gains `@json("<old name>")` (DECISIONS 3); a stable id is refused.
+    name is `canon rename` (CLI.md §3.16, API.md §8.9, DECISIONS 275).
 - **Highlighting.** A hand-written TextMate grammar (`editors/vscode/syntaxes/canon.tmLanguage.json`),
   tested against every example with a snapshot of scopes.
 - **Extension.** `editors/vscode` starts `canon lsp` (no extra argument) and watches
