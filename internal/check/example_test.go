@@ -102,3 +102,31 @@ func ExampleSession_Recheck() {
 	fmt.Println(ok, prog.Packages[0].Files[0] == edited, bags["shop"].Findings()[0].Code)
 	// Output: true true E3002
 }
+
+// Occurrences is the name index a rename rewrites: here a field's declaration, a `@files`
+// template variable and a literal field.
+func ExampleProgram_Occurrences() {
+	fs := &source.FileSet{}
+	src, _ := fs.Add("shop/shop.canon", "/shop/shop.canon", []byte(`package shop
+
+local record Item {
+  price: Int
+}
+
+@files("{price}/{id}.canon")
+local let items: table Item = { pear { price: 2 } }
+`))
+	bag := diag.NewBag(fs, "shop")
+	file := syntax.Parse(src, syntax.FileSource, bag)
+	prog := check.Check(context.Background(), project.New("demo", project.Version{Minor: 1}), []*syntax.File{file}, check.Bags{"shop": bag}, literalFolder{})
+	item := prog.Packages[0].Decls[0].Decl().(*syntax.RecordDecl)
+	price := prog.Info.ObjectOf(item.Body.Items[0].(*syntax.FieldDecl).Name)
+	var at []string
+	var vars []bool
+	for _, occ := range prog.Occurrences(price) {
+		line, col := occ.File.Src.Position(occ.Span.Start)
+		at, vars = append(at, fmt.Sprintf("%d:%d", line, col)), append(vars, occ.Kind == check.OccFilesVar)
+	}
+	fmt.Println(at, vars)
+	// Output: [4:3 7:10 8:40] [false true false]
+}

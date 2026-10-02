@@ -59,6 +59,34 @@ const (
 	CalleeLambda
 )
 
+// How an occurrence names its object (API.md E33).
+const (
+	OccDecl OccKind = iota
+	OccUse
+	OccQualified
+	OccImport
+	OccSelector
+	OccLiteralField
+	OccNamedArg
+	OccPattern
+	OccKeyedBy
+	OccRef
+	OccEntry
+	OccViewItem
+	OccAmend
+	OccTranslationKey
+	OccEmitValues
+	OccFilesVar
+)
+
+// Where an occurrence stands: API.md R7's code, view, check and layer.
+const (
+	SiteCode OccSite = iota
+	SiteView
+	SiteCheck
+	SiteLayer
+)
+
 // The classifications of TYPES.md §5.2; LitError is a literal no row classifies.
 const (
 	LitRecord LitKind = iota
@@ -75,13 +103,15 @@ const (
 	nameFn      = "Fn"
 	nameBuiltin = "Builtin"
 	nameEntry   = "Entry"
+	nameCheck   = "Check"
+	nameLayer   = "Layer"
 )
 
 var objNames = [...]string{
 	ObjConst: "Const", ObjLet: "Let", ObjFn: nameFn, ObjMethod: nameMethod, ObjParam: "Param",
 	ObjLocal: "Local", ObjField: nameField, ObjMember: "Member", ObjCase: "Case", ObjEntry: nameEntry,
-	ObjBuiltin: nameBuiltin, ObjTypeName: "TypeName", ObjPackage: "Package", ObjLayer: "Layer",
-	ObjCheck: "Check", ObjTest: "Test", ObjWidget: "Widget",
+	ObjBuiltin: nameBuiltin, ObjTypeName: "TypeName", ObjPackage: "Package", ObjLayer: nameLayer,
+	ObjCheck: nameCheck, ObjTest: "Test", ObjWidget: "Widget",
 }
 
 var selNames = [...]string{
@@ -101,6 +131,15 @@ var calleeNames = [...]string{
 var litNames = [...]string{
 	LitRecord: "RecordLit", LitTable: "TableLit", LitMap: "MapLit", LitMapComp: "MapComp", LitError: "ErrorLit",
 }
+
+var occNames = [...]string{
+	OccDecl: "Decl", OccUse: "Use", OccQualified: "Qualified", OccImport: "Import", OccSelector: "Selector",
+	OccLiteralField: "LiteralField", OccNamedArg: "NamedArg", OccPattern: "Pattern", OccKeyedBy: "KeyedBy",
+	OccRef: "Ref", OccEntry: nameEntry, OccViewItem: "ViewItem", OccAmend: "Amend",
+	OccTranslationKey: "TranslationKey", OccEmitValues: "EmitValues", OccFilesVar: "FilesVar",
+}
+
+var siteNames = [...]string{SiteCode: "Code", SiteView: "View", SiteCheck: nameCheck, SiteLayer: nameLayer}
 
 // The resolution states of a top-level declaration.
 const (
@@ -299,45 +338,18 @@ var emitSpecs = map[string]emitSpec{
 
 // Load forms and options (WIRE.md §6.1).
 const (
-	loadName      = "load"
-	loadForm      = ""
-	loadDefines   = "defines"
-	loadText      = syntax.WordText
-	loadCSV       = "csv"
-	optionFormat  = "format"
-	optionPartial = "partial"
-	optionHeader  = "header"
+	loadName, loadForm, loadDefines, loadText, loadCSV = "load", "", "defines", syntax.WordText, "csv"
+	optionFormat, optionPartial, optionHeader          = "format", "partial", "header"
 )
 
 // Type parameter names of the built-in signatures.
-const (
-	nameT    = "T"
-	nameU    = "U"
-	nameK    = "K"
-	nameV    = "V"
-	nameKT   = "KT"
-	nameR    = "R"
-	nameRefT = "ref T"
-)
+const nameT, nameU, nameK, nameV, nameKT, nameR, nameRefT = "T", "U", "K", "V", "KT", "R", "ref T"
 
 // Built-in types (TYPES.md §3.3 step 6).
 const (
-	typeInt      = "Int"
-	typeInt8     = "Int8"
-	typeInt16    = "Int16"
-	typeInt32    = "Int32"
-	typeUInt8    = "UInt8"
-	typeUInt16   = "UInt16"
-	typeUInt32   = "UInt32"
-	typeUInt64   = "UInt64"
-	typeFloat    = "Float"
-	typeFloat32  = "Float32"
-	typeString   = "String"
-	typeBool     = "Bool"
-	typeDuration = "Duration"
-	typeRange    = "Range"
-	typeNever    = "Never"
-	typeDefine   = "Define"
+	typeInt, typeInt8, typeInt16, typeInt32, typeUInt8, typeUInt16 = "Int", "Int8", "Int16", "Int32", "UInt8", "UInt16"
+	typeUInt32, typeUInt64, typeFloat, typeFloat32, typeString     = "UInt32", "UInt64", "Float", "Float32", "String"
+	typeBool, typeDuration, typeRange, typeNever, typeDefine       = "Bool", "Duration", "Range", "Never", "Define"
 )
 
 // Built-in free functions (STDLIB.md §2, §10).
@@ -448,13 +460,6 @@ var (
 	plusOnly = map[syntax.TokenKind]bool{syntax.TokPlus: true}
 )
 
-// arithRow is a row of the operator table of TYPES.md §7.1 on scalars.
-type arithRow struct {
-	ka, kb types.Kind
-	ops    map[syntax.TokenKind]bool
-	result types.Type
-}
-
 var arithRows = []arithRow{
 	{ka: types.Int, kb: types.Int, ops: allArith, result: types.IntType},
 	{ka: types.Float, kb: types.Float, ops: fourOps, result: types.FloatType},
@@ -470,6 +475,7 @@ const (
 	closeBrace     = "}"
 	newline        = "\n"
 	manyPaths      = 2 // E1903 needs to know only "more than one"
+	manyCandidates = 2 // an ambiguous occurrence names more than one field
 	maxLiteralText = 40
 
 	elidedLiteral sourceText = "{ … }"

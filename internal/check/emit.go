@@ -210,6 +210,9 @@ func (c *checker) emitValues(env *env, fi *syntax.FieldItem, target string) int 
 			continue
 		}
 		o := env.pkg.names[id.Name]
+		if o != nil && o.kind == ObjLet {
+			c.info.Uses[id] = o // recorded for the name index even when E8009 fires (DECISIONS 275)
+		}
 		switch {
 		case o == nil || o.kind != ObjLet || o.local:
 			c.report(env, diag.E8009.AtValues(env.span(id), id.Name, target))

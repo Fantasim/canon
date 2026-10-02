@@ -8,6 +8,7 @@ import (
 
 	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/syntax"
+	"github.com/fantasim/canonlang/internal/types"
 )
 
 // gaps lists the nodes of f's imports, declarations, amends and translations Info misses (IMPLEMENTATION-PLAN §4.7).
@@ -36,7 +37,7 @@ func gaps(f *syntax.File, info *check.Info, broken func(syntax.Decl) bool) []str
 			return true
 		})
 	}
-	return out
+	return append(out, valueNameGaps(f, info, broken)...)
 }
 
 // roots are the subtrees the oracle walks: imports, checked declarations, a layer's name and
@@ -174,13 +175,14 @@ func argNames(args []*syntax.Arg) []*syntax.Ident {
 	return out
 }
 
-// exemptDecl is a declaration whose content names no object: an emit's options.
+// exemptDecl is an emit, whose options name no object; its `values:` names are valueNameGaps'.
 func exemptDecl(d syntax.Decl) bool {
 	_, ok := d.(*syntax.EmitDecl)
 	return ok
 }
 
-// exemptNode is a subtree naming no object: annotations and doc comments.
+// exemptNode is a subtree naming no object, but for `@files` templates (valueNameGaps): annotations,
+// doc comments and modifiers.
 func exemptNode(n syntax.Node) bool {
 	switch n.(type) {
 	case *syntax.Annotation, *syntax.DocComment, *syntax.Modifiers:
@@ -265,4 +267,148 @@ func TestInfoIsComplete(t *testing.T) {
 			t.Error(g)
 		}
 	}
+}
+
+// valueNameGaps lists the `emit … values:` names and `@files` template names Info misses: each in
+// Uses, each `.g` in NameUses, but `{id}` (the key) and a `g` several cases declare.
+func valueNameGaps(f *syntax.File, info *check.Info, broken func(syntax.Decl) bool) []string {
+	var out []string
+	for _, d := range f.Decls {
+		if broken(d) {
+			continue
+		}
+		var names []syntax.Node
+		switch d := d.(type) {
+		case *syntax.EmitDecl:
+			names = emitValueNames(info, d)
+		case *syntax.LetDecl:
+			names = templateNames(info, d)
+		}
+		for _, n := range names {
+			line, col := f.Src.Position(f.Span(n).Start)
+			out = append(out, fmt.Sprintf("%s:%d:%d %s not recorded", f.Src.Path, line, col, n.Kind()))
+		}
+	}
+	return out
+}
+
+// emitValueNames are the names of an emit's `values:` list that Uses lacks.
+func emitValueNames(info *check.Info, d *syntax.EmitDecl) []syntax.Node {
+	var out []syntax.Node
+	for _, it := range d.Options.Items {
+		fi, ok := it.(*syntax.FieldItem)
+		if !ok || fi.Name.Name != check.OptValues {
+			continue
+		}
+		list, _ := fi.Value.(*syntax.ListLit)
+		for i := 0; list != nil && i < len(list.Elems); i++ {
+			if x, isName := list.Elems[i].(*syntax.IdentExpr); !isName || info.Uses[x] == nil {
+				out = append(out, list.Elems[i])
+			}
+		}
+	}
+	return out
+}
+
+// templateNames are the names of a let's `@files` template Info lacks: a name naming one field
+// across the types its path may have must be recorded; one naming several, or `{id}`, need not.
+func templateNames(info *check.Info, d *syntax.LetDecl) []syntax.Node {
+	var out []syntax.Node
+	for _, a := range d.Annotations {
+		if a.Name.Name != syntax.AnnFiles || len(a.Args) == 0 {
+			continue
+		}
+		s, ok := a.Args[0].Value.(*syntax.StringLit)
+		for i := 0; ok && i < len(s.Parts); i++ {
+			if p := s.Parts[i]; p.Interp != nil {
+				out = append(out, pathGaps(info, elemTypes(info, d), tplNames(p.Interp.X))...)
+			}
+		}
+	}
+	return out
+}
+
+// elemTypes is the element type of the let d's table or keyed list.
+func elemTypes(info *check.Info, d *syntax.LetDecl) []types.Type {
+	switch x := info.Defs[d.Name].Type().Base().(type) {
+	case *types.TableType:
+		return []types.Type{x.Elem}
+	case *types.ListType:
+		return []types.Type{x.Elem}
+	}
+	return nil
+}
+
+// tplNames is a template name path: `f`, then each `.g`; nil for `{id}`.
+func tplNames(x syntax.Expr) []syntax.Node {
+	if id, ok := x.(*syntax.IdentExpr); ok && id.Name == "id" {
+		return nil
+	}
+	return namePathOf(x)
+}
+
+func namePathOf(x syntax.Expr) []syntax.Node {
+	if s, ok := x.(*syntax.SelectorExpr); ok {
+		return append(namePathOf(s.X), s.Name)
+	}
+	return []syntax.Node{x}
+}
+
+// pathGaps are the names of path naming one field across the types ts the path may have, unrecorded.
+func pathGaps(info *check.Info, ts []types.Type, path []syntax.Node) []syntax.Node {
+	var out []syntax.Node
+	for _, n := range path {
+		fields := fieldsNamed(ts, nameOf(n))
+		if len(fields) < 2 && info.ObjectOf(n) == nil {
+			out = append(out, n)
+		}
+		ts = ts[:0:0]
+		for _, f := range fields {
+			ts = append(ts, f.Type)
+		}
+	}
+	return out
+}
+
+// fieldsNamed are the distinct fields name names across ts.
+func fieldsNamed(ts []types.Type, name string) []*types.Field {
+	var out []*types.Field
+	for _, t := range ts {
+		for _, f := range fieldsOf(t) {
+			if f.Name == name && !slices.Contains(out, f) {
+				out = append(out, f)
+			}
+		}
+	}
+	return out
+}
+
+func nameOf(n syntax.Node) string {
+	switch n := n.(type) {
+	case *syntax.IdentExpr:
+		return n.Name
+	case *syntax.Ident:
+		return n.Name
+	}
+	return ""
+}
+
+// fieldsOf are the fields a value of type t may have: a record's, a case's, every case's of a variant.
+func fieldsOf(t types.Type) []*types.Field {
+	if opt, ok := t.Base().(*types.OptionalType); ok {
+		t = opt.Elem
+	}
+	switch x := t.Base().(type) {
+	case *types.RecordType:
+		return x.Fields
+	case *types.CaseType:
+		return x.Fields
+	case *types.VariantType:
+		var out []*types.Field
+		for _, c := range x.Cases {
+			out = append(out, c.Fields...)
+		}
+		return out
+	}
+	return nil
 }

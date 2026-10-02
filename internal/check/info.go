@@ -2,6 +2,7 @@ package check
 
 import (
 	"context"
+	"sync"
 
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
@@ -17,6 +18,9 @@ type Folder interface {
 type Program struct {
 	Packages []*Package
 	Info     *Info
+
+	occOnce sync.Once
+	occ     map[Object][]Occurrence
 }
 
 // Package is a checked package; Decls in (file path, position) order (EVALUATION.md §2.1).

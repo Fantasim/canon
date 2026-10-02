@@ -17,6 +17,7 @@ func (c *checker) checkPackage(p *pkgState) {
 	c.checkConstExposure(p)
 	c.checkListKeys(p)
 	c.checkEmits(p)
+	c.recordFilesVars(p)
 	c.checkLayers(p)
 	c.checkDocs(p)
 	c.checkInputs(p)

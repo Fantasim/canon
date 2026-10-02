@@ -6,6 +6,13 @@ import (
 	"github.com/fantasim/canonlang/internal/types"
 )
 
+// arithRow is a row of the operator table of TYPES.md §7.1 on scalars.
+type arithRow struct {
+	ka, kb types.Kind
+	ops    map[syntax.TokenKind]bool
+	result types.Type
+}
+
 // unary is `-e` (Int, Float, Duration; the expected type passes through) and `not e` (Bool).
 func (c *checker) unary(env *env, e *syntax.UnaryExpr, want types.Type) types.Type {
 	if e.Op == syntax.KwNot {
