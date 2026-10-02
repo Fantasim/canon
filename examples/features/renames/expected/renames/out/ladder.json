@@ -1,0 +1,7 @@
+{
+  "$schema": "features.renames.Rung@845886c0",
+  "rows": [
+    {"$id": "bronze", "label": "Bronze"},
+    {"$id": "silver", "label": "Silver"}
+  ]
+}

@@ -1,0 +1,375 @@
+File: File FileKind=source @1:1-129:1
+  Doc: DocComment "The project `canon rename` is tested on (API.md §8.9, DECISIONS 275, IMPLEMENTATION-PLAN §7.9):\none small declaration for each kind of occurrence a rename rewrites. Fields on the wire with\nno wire name of their own, a case under `@json(case: snake)`, a variant, an enum, an alias,\nfunctions, a method, a `let` read through `ref`, `entry` lines and `@files` templates, a\nstable table, a view, a translation, a layer and an `emit json`. The shop package imports it." @1:1-5:98
+  Package: QualifiedName features.renames @6:9-6:25
+  Decls[0]: ConstDecl @9:1-9:21
+    Doc: DocComment "The highest level a quest can ask for." @8:1-8:43
+    Name: Ident MAX_LEVEL @9:7-9:16
+    Value: IntLit Value=99 @9:19-9:21
+  Decls[1]: TypeDecl @12:1-12:32
+    Doc: DocComment "A quest level." @11:1-11:19
+    Name: Ident MissionLevel @12:6-12:18
+    Type: NamedType @12:21-12:32
+      Name: QualifiedName Int @12:21-12:24
+      Args: TypeArgs @12:24-12:32
+        Args[0]: RangeExpr Op=..= @12:25-12:31
+          Lo: IntLit Value=1 @12:25-12:26
+          Hi: IntLit Value=99 @12:29-12:31
+  Decls[2]: EnumDecl @15:1-15:29
+    Doc: DocComment "How hard to come by a quest is." @14:1-14:36
+    Name: Ident Rarity @15:6-15:12
+    Members[0]: EnumMember @15:15-15:21
+      Name: Ident common @15:15-15:21
+    Members[1]: EnumMember @15:23-15:27
+      Name: Ident rare @15:23-15:27
+  Decls[3]: VariantDecl @18:1-31:2
+    Doc: DocComment "What completing a quest gives." @17:1-17:35
+    Name: Ident Prize @18:9-18:14
+    Items[0]: VariantCase @20:3-23:4
+      Doc: DocComment "Gold coins." @19:3-19:18
+      Name: Ident gold @20:3-20:7
+      Body: RecordBody @20:8-23:4
+        Items[0]: FieldDecl @22:5-22:21
+          Doc: DocComment "How many." @21:5-21:18
+          Name: Ident amount @22:5-22:11
+          Type: NamedType @22:13-22:21
+            Name: QualifiedName Int @22:13-22:16
+            Args: TypeArgs @22:16-22:21
+              Args[0]: RangeExpr Op=.. @22:17-22:20
+                Lo: IntLit Value=1 @22:17-22:18
+    Items[1]: VariantCase @25:3-30:4
+      Doc: DocComment "An item." @24:3-24:15
+      Name: Ident item @25:3-25:7
+      Body: RecordBody @25:8-30:4
+        Items[0]: FieldDecl @27:5-27:24
+          Doc: DocComment "Which one." @26:5-26:19
+          Name: Ident itemId @27:5-27:11
+          Type: NamedType @27:13-27:24
+            Name: QualifiedName String @27:13-27:19
+            Args: TypeArgs @27:19-27:24
+              Args[0]: RangeExpr Op=.. @27:20-27:23
+                Lo: IntLit Value=1 @27:20-27:21
+        Items[1]: FieldDecl @29:5-29:19
+          Doc: DocComment "How many." @28:5-28:18
+          Name: Ident count @29:5-29:10
+          Type: NamedType @29:12-29:15
+            Name: QualifiedName Int @29:12-29:15
+          Default: IntLit Value=1 @29:18-29:19
+  Decls[4]: RecordDecl @34:1-48:2
+    Doc: DocComment "A quest." @33:1-33:13
+    Name: Ident Mission @34:8-34:15
+    Body: RecordBody @34:16-48:2
+      Items[0]: FieldDecl @36:3-36:20
+        Doc: DocComment "What players read." @35:3-35:25
+        Name: Ident name @36:3-36:7
+        Type: NamedType @36:9-36:20
+          Name: QualifiedName String @36:9-36:15
+          Args: TypeArgs @36:15-36:20
+            Args[0]: RangeExpr Op=.. @36:16-36:19
+              Lo: IntLit Value=1 @36:16-36:17
+      Items[1]: FieldDecl @38:3-38:22
+        Doc: DocComment "The level it asks for." @37:3-37:29
+        Name: Ident level @38:3-38:8
+        Type: NamedType @38:10-38:22
+          Name: QualifiedName MissionLevel @38:10-38:22
+      Items[2]: FieldDecl @40:3-40:17
+        Doc: DocComment "How hard it is to come by." @39:3-39:33
+        Name: Ident rarity @40:3-40:9
+        Type: NamedType @40:11-40:17
+          Name: QualifiedName Rarity @40:11-40:17
+      Items[3]: FieldDecl @42:3-42:16
+        Doc: DocComment "What it gives." @41:3-41:21
+        Name: Ident reward @42:3-42:9
+        Type: NamedType @42:11-42:16
+          Name: QualifiedName Prize @42:11-42:16
+      Items[4]: FieldDecl @44:3-44:29
+        Doc: DocComment "The quest that follows it." @43:3-43:33
+        Name: Ident next @44:3-44:7
+        Type: OptionalType @44:9-44:22
+          Elem: RefType @44:9-44:21
+            Name: QualifiedName missions @44:13-44:21
+        Default: NoneLit @44:25-44:29
+      Items[5]: FnDecl Self="self" @47:3-47:57
+        Doc: DocComment "What a list shows: the name and the level." @46:3-46:49
+        Name: Ident label @47:6-47:11
+        Result: NamedType @47:21-47:27
+          Name: QualifiedName String @47:21-47:27
+        Body: Block @47:28-47:57
+          Stmts[0]: ReturnStmt @47:30-47:55
+            Value: StringLit @47:37-47:55
+              Parts[0]: Interp @47:39-47:43
+                X: IdentExpr name @47:39-47:43
+              Parts[1]: text " ("
+              Parts[2]: Interp @47:47-47:52
+                X: IdentExpr level @47:47-47:52
+              Parts[3]: text ")"
+  Decls[5]: LetDecl @51:1-54:2
+    Doc: DocComment "The missions: the first here, the others in their own files, placed by rarity." @50:1-50:83
+    Annotations[0]: Annotation @51:1-51:36
+      Name: Ident files @51:2-51:7
+      Args[0]: AnnotationArg @51:8-51:35
+        Value: StringLit @51:8-51:35
+          Parts[0]: text "store/"
+          Parts[1]: Interp @51:16-51:22
+            X: IdentExpr rarity @51:16-51:22
+          Parts[2]: text "/"
+          Parts[3]: Interp @51:25-51:27
+            X: IdentExpr id @51:25-51:27
+          Parts[4]: text ".canon"
+    Name: Ident missions @52:5-52:13
+    Type: TableType @52:15-52:28
+      Name: QualifiedName Mission @52:21-52:28
+    Value: BraceLit @52:31-54:2
+      Items[0]: EntryItem @53:3-53:99
+        Key: Ident intro @53:3-53:8
+        Value: BraceLit @53:9-53:99
+          Items[0]: FieldItem @53:11-53:30
+            Name: Ident name @53:11-53:15
+            Value: StringLit @53:17-53:30
+              Parts[0]: text "First steps"
+          Items[1]: FieldItem @53:32-53:40
+            Name: Ident level @53:32-53:37
+            Value: IntLit Value=1 @53:39-53:40
+          Items[2]: FieldItem @53:42-53:56
+            Name: Ident rarity @53:42-53:48
+            Value: IdentExpr common @53:50-53:56
+          Items[3]: FieldItem @53:58-53:85
+            Name: Ident reward @53:58-53:64
+            Value: TypedLit @53:66-53:85
+              Type: QualifiedName gold @53:66-53:70
+              Lit: BraceLit @53:71-53:85
+                Items[0]: FieldItem @53:73-53:83
+                  Name: Ident amount @53:73-53:79
+                  Value: IntLit Value=10 @53:81-53:83
+          Items[4]: FieldItem @53:87-53:97
+            Name: Ident next @53:87-53:91
+            Value: IdentExpr hunt @53:93-53:97
+  Decls[6]: RecordDecl @57:1-62:2
+    Doc: DocComment "What the server reads from `data/capacity.json`, key for key: no wire name is written." @56:1-56:91
+    Name: Ident Capacity @57:8-57:16
+    Body: RecordBody @57:17-62:2
+      Items[0]: FieldDecl @59:3-59:20
+        Doc: DocComment "Players at once." @58:3-58:23
+        Name: Ident players @59:3-59:10
+        Type: NamedType @59:12-59:20
+          Name: QualifiedName Int @59:12-59:15
+          Args: TypeArgs @59:15-59:20
+            Args[0]: RangeExpr Op=.. @59:16-59:19
+              Lo: IntLit Value=1 @59:16-59:17
+      Items[1]: FieldDecl @61:3-61:18
+        Doc: DocComment "How many may wait to join." @60:3-60:33
+        Name: Ident queue @61:3-61:8
+        Type: NamedType @61:10-61:13
+          Name: QualifiedName Int @61:10-61:13
+        Default: IntLit Value=10 @61:16-61:18
+  Decls[7]: LetDecl @65:1-65:52
+    Doc: DocComment "The capacity." @64:1-64:18
+    Name: Ident capacity @65:5-65:13
+    Type: NamedType @65:15-65:23
+      Name: QualifiedName Capacity @65:15-65:23
+    Value: LoadExpr @65:26-65:52
+      Args[0]: Arg @65:31-65:51
+        Value: StringLit @65:31-65:51
+          Parts[0]: text "data/capacity.json"
+  Decls[8]: RecordDecl @68:1-73:2
+    Doc: DocComment "How the server is set up, read from `data/server.json` in snake case." @67:1-67:74
+    Name: Ident Setup @68:8-68:13
+    Annotations[0]: Annotation @68:14-68:32
+      Name: Ident json @68:15-68:19
+      Args[0]: AnnotationArg @68:20-68:31
+        Name: Ident case @68:20-68:24
+        Value: QualifiedName snake @68:26-68:31
+    Body: RecordBody @68:33-73:2
+      Items[0]: FieldDecl @70:3-70:23
+        Doc: DocComment "The most players one room takes." @69:3-69:39
+        Name: Ident maxPlayers @70:3-70:13
+        Type: NamedType @70:15-70:23
+          Name: QualifiedName Int @70:15-70:18
+          Args: TypeArgs @70:18-70:23
+            Args[0]: RangeExpr Op=.. @70:19-70:22
+              Lo: IntLit Value=1 @70:19-70:20
+      Items[1]: FieldDecl @72:3-72:27
+        Doc: DocComment "What a new player is told." @71:3-71:33
+        Name: Ident welcomeText @72:3-72:14
+        Type: NamedType @72:16-72:22
+          Name: QualifiedName String @72:16-72:22
+        Default: StringLit @72:25-72:27
+  Decls[9]: LetDecl @76:1-76:44
+    Doc: DocComment "The setup." @75:1-75:15
+    Name: Ident setup @76:5-76:10
+    Type: NamedType @76:12-76:17
+      Name: QualifiedName Setup @76:12-76:17
+    Value: LoadExpr @76:20-76:44
+      Args[0]: Arg @76:25-76:43
+        Value: StringLit @76:25-76:43
+          Parts[0]: text "data/server.json"
+  Decls[10]: RecordDecl @79:1-82:2
+    Doc: DocComment "A holder of capacity, so a layer reaches a field through a field." @78:1-78:70
+    Name: Ident Deployment @79:8-79:18
+    Body: RecordBody @79:19-82:2
+      Items[0]: FieldDecl @81:3-81:21
+        Doc: DocComment "The capacity in force." @80:3-80:29
+        Name: Ident capacity @81:3-81:11
+        Type: NamedType @81:13-81:21
+          Name: QualifiedName Capacity @81:13-81:21
+  Decls[11]: LetDecl @85:1-85:70
+    Doc: DocComment "The configuration the staging layer amends." @84:1-84:48
+    Name: Ident deployment @85:5-85:15
+    Type: NamedType @85:17-85:27
+      Name: QualifiedName Deployment @85:17-85:27
+    Value: BraceLit @85:30-85:70
+      Items[0]: FieldItem @85:32-85:68
+        Name: Ident capacity @85:32-85:40
+        Value: BraceLit @85:42-85:68
+          Items[0]: FieldItem @85:44-85:56
+            Name: Ident players @85:44-85:51
+            Value: IntLit Value=100 @85:53-85:56
+          Items[1]: FieldItem @85:58-85:66
+            Name: Ident queue @85:58-85:63
+            Value: IntLit Value=5 @85:65-85:66
+  Decls[12]: RecordDecl @88:1-91:2
+    Doc: DocComment "Notes nobody emits: a field that is not on the wire." @87:1-87:57
+    Name: Ident Scratch @88:8-88:15
+    Body: RecordBody @88:16-91:2
+      Items[0]: FieldDecl @90:3-90:20
+        Doc: DocComment "A private note." @89:3-89:22
+        Name: Ident memo @90:3-90:7
+        Type: NamedType @90:9-90:15
+          Name: QualifiedName String @90:9-90:15
+        Default: StringLit @90:18-90:20
+  Decls[13]: LetDecl @94:1-94:44
+    Doc: DocComment "The notes." @93:1-93:15
+    Name: Ident scratch @94:5-94:12
+    Type: NamedType @94:14-94:21
+      Name: QualifiedName Scratch @94:14-94:21
+    Value: BraceLit @94:24-94:44
+      Items[0]: FieldItem @94:26-94:42
+        Name: Ident memo @94:26-94:30
+        Value: StringLit @94:32-94:42
+          Parts[0]: text "none yet"
+  Decls[14]: RecordDecl @97:1-100:2
+    Doc: DocComment "A tier of the ladder." @96:1-96:26
+    Name: Ident Rung @97:8-97:12
+    Body: RecordBody @97:13-100:2
+      Items[0]: FieldDecl @99:3-99:21
+        Doc: DocComment "What players read." @98:3-98:25
+        Name: Ident label @99:3-99:8
+        Type: NamedType @99:10-99:21
+          Name: QualifiedName String @99:10-99:16
+          Args: TypeArgs @99:16-99:21
+            Args[0]: RangeExpr Op=.. @99:17-99:20
+              Lo: IntLit Value=1 @99:17-99:18
+  Decls[15]: LetDecl @103:1-106:2
+    Doc: DocComment "The ladder: never renamed, never reused (LOCK.md)." @102:1-102:55
+    Name: Ident ladder @103:5-103:11
+    Type: TableType Stable="stable" @103:13-103:30
+      Name: QualifiedName Rung @103:26-103:30
+    Value: BraceLit @103:33-106:2
+      Items[0]: EntryItem @104:3-104:29
+        Key: Ident bronze @104:3-104:9
+        Value: BraceLit @104:10-104:29
+          Items[0]: FieldItem @104:12-104:27
+            Name: Ident label @104:12-104:17
+            Value: StringLit @104:19-104:27
+              Parts[0]: text "Bronze"
+      Items[1]: EntryItem @105:3-105:29
+        Key: Ident silver @105:3-105:9
+        Value: BraceLit @105:10-105:29
+          Items[0]: FieldItem @105:12-105:27
+            Name: Ident label @105:12-105:17
+            Value: StringLit @105:19-105:27
+              Parts[0]: text "Silver"
+  Decls[16]: FnDecl @109:1-116:2
+    Doc: DocComment "A bonus that grows with the level; the inner `step` shadows the outer one." @108:1-108:79
+    Name: Ident bonus @109:4-109:9
+    Params[0]: Param @109:10-109:20
+      Name: Ident level @109:10-109:15
+      Type: NamedType @109:17-109:20
+        Name: QualifiedName Int @109:17-109:20
+    Result: NamedType @109:25-109:28
+      Name: QualifiedName Int @109:25-109:28
+    Body: Block @109:29-116:2
+      Stmts[0]: LetStmt @110:3-110:23
+        Name: Ident step @110:7-110:11
+        Value: BinaryExpr Op=- @110:14-110:23
+          X: IdentExpr level @110:14-110:19
+          Y: IntLit Value=1 @110:22-110:23
+      Stmts[1]: IfStmt @111:3-114:4
+        Cond: BinaryExpr Op=> @111:6-111:16
+          X: IdentExpr level @111:6-111:11
+          Y: IntLit Value=10 @111:14-111:16
+        Then: Block @111:17-114:4
+          Stmts[0]: LetStmt @112:5-112:26
+            Name: Ident step @112:9-112:13
+            Value: BinaryExpr Op=- @112:16-112:26
+              X: IdentExpr level @112:16-112:21
+              Y: IntLit Value=10 @112:24-112:26
+          Stmts[1]: ReturnStmt @113:5-113:16
+            Value: IdentExpr step @113:12-113:16
+      Stmts[2]: ReturnStmt @115:3-115:14
+        Value: IdentExpr step @115:10-115:14
+  Decls[17]: FnDecl @119:1-121:2
+    Doc: DocComment "The experience a level is worth, with an extra added." @118:1-118:58
+    Mods: Modifiers Export="export" @119:1-119:7
+    Name: Ident xpFor @119:11-119:16
+    Params[0]: Param @119:17-119:27
+      Name: Ident level @119:17-119:22
+      Type: NamedType @119:24-119:27
+        Name: QualifiedName Int @119:24-119:27
+    Params[1]: Param @119:29-119:43
+      Name: Ident extra @119:29-119:34
+      Type: NamedType @119:36-119:39
+        Name: QualifiedName Int @119:36-119:39
+      Default: IntLit Value=0 @119:42-119:43
+    Result: NamedType @119:48-119:51
+      Name: QualifiedName Int @119:48-119:51
+    Body: Block @119:52-121:2
+      Stmts[0]: ReturnStmt @120:3-120:43
+        Value: BinaryExpr Op=+ @120:10-120:43
+          X: BinaryExpr Op=+ @120:10-120:28
+            X: BinaryExpr Op=* @120:10-120:20
+              X: IdentExpr level @120:10-120:15
+              Y: IntLit Value=10 @120:18-120:20
+            Y: IdentExpr extra @120:23-120:28
+          Y: CallExpr @120:31-120:43
+            Fun: IdentExpr bonus @120:31-120:36
+            Args[0]: Arg @120:37-120:42
+              Value: IdentExpr level @120:37-120:42
+  Decls[18]: TestDecl @123:1-126:2
+    Name: StringLit @123:6-123:31
+      Parts[0]: text "xp grows with the level"
+    Body: Block @123:32-126:2
+      Stmts[0]: ExpectStmt @124:3-124:41
+        X: BinaryExpr Op=== @124:10-124:41
+          X: CallExpr @124:10-124:35
+            Fun: IdentExpr xpFor @124:10-124:15
+            Args[0]: Arg @124:16-124:24
+              Name: Ident level @124:16-124:21
+              Value: IntLit Value=2 @124:23-124:24
+            Args[1]: Arg @124:26-124:34
+              Name: Ident extra @124:26-124:31
+              Value: IntLit Value=5 @124:33-124:34
+          Y: IntLit Value=26 @124:39-124:41
+      Stmts[1]: ExpectStmt @125:3-125:33
+        X: BinaryExpr Op=== @125:10-125:33
+          X: CallExpr @125:10-125:26
+            Fun: IdentExpr xpFor @125:10-125:15
+            Args[0]: Arg @125:16-125:25
+              Name: Ident level @125:16-125:21
+              Value: IntLit Value=12 @125:23-125:25
+          Y: IntLit Value=122 @125:30-125:33
+  Decls[19]: EmitDecl @128:1-128:71
+    Target: Ident json @128:6-128:10
+    Options: BraceLit @128:11-128:71
+      Items[0]: FieldItem @128:13-128:24
+        Name: Ident out @128:13-128:16
+        Value: StringLit @128:18-128:24
+          Parts[0]: text "out/"
+      Items[1]: FieldItem @128:26-128:69
+        Name: Ident values @128:26-128:32
+        Value: ListLit @128:34-128:69
+          Elems[0]: IdentExpr missions @128:35-128:43
+          Elems[1]: IdentExpr capacity @128:45-128:53
+          Elems[2]: IdentExpr setup @128:55-128:60
+          Elems[3]: IdentExpr ladder @128:62-128:68
+== findings
+0 errors, 0 warnings in 1 package (…)

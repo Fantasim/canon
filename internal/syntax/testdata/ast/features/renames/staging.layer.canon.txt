@@ -1,0 +1,19 @@
+File: File FileKind=layer @1:1-9:1
+  Package: QualifiedName features.renames @2:9-2:25
+  Layer: Ident staging @3:7-3:14
+  Amends[0]: AmendBlock @5:1-8:2
+    Target: Ident deployment @5:7-5:17
+    Items[0]: Amendment @6:3-6:23
+      Path[0]: AmendSegment @6:3-6:11
+        Name: Ident capacity @6:3-6:11
+      Path[1]: AmendSegment @6:11-6:19
+        Name: Ident players @6:12-6:19
+      Value: IntLit Value=10 @6:21-6:23
+    Items[1]: Amendment @7:3-7:20
+      Path[0]: AmendSegment @7:3-7:11
+        Name: Ident capacity @7:3-7:11
+      Path[1]: AmendSegment @7:11-7:17
+        Name: Ident queue @7:12-7:17
+      Value: IntLit Value=2 @7:19-7:20
+== findings
+0 errors, 0 warnings in 1 package (…)

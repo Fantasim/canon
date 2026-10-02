@@ -1,0 +1,8 @@
+// French for the quest's studio texts.
+package features.renames
+translation fr
+
+Mission.help "Une quête."
+Mission.name "Nom"
+Mission.level "Niveau"
+Mission.group.main "Principal"

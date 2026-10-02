@@ -1,0 +1,37 @@
+File: File FileKind=source @1:1-12:1
+  Package: QualifiedName features.renames @2:9-2:25
+  Imports[0]: Import @4:1-4:14
+    Path: QualifiedName studio @4:8-4:14
+  Decls[0]: ViewDecl @6:1-11:2
+    Type: Ident Mission @6:6-6:13
+    Items[0]: ViewTitle @7:3-7:17
+      Text: StringLit @7:9-7:17
+        Parts[0]: Interp @7:11-7:15
+          X: IdentExpr name @7:11-7:15
+    Items[1]: ViewSubtitle @8:3-8:22
+      Text: StringLit @8:12-8:22
+        Parts[0]: Interp @8:14-8:20
+          X: IdentExpr rarity @8:14-8:20
+    Items[2]: ViewColumns @9:3-9:35
+      Items[0]: ViewColumn @9:13-9:21
+        Name: Ident level @9:13-9:18
+        Width: IntLit Value=80 @9:19-9:21
+      Items[1]: ViewColumn @9:23-9:33
+        Name: Ident rarity @9:23-9:29
+        Width: IntLit Value=100 @9:30-9:33
+    Items[3]: ViewGroup @10:3-10:58
+      ID: Ident main @10:9-10:13
+      Label: StringLit @10:14-10:20
+        Parts[0]: text "Main"
+      Members[0]: ViewField @10:23-10:27
+        Name: Ident name @10:23-10:27
+      Members[1]: ViewField @10:29-10:34
+        Name: Ident level @10:29-10:34
+      Members[2]: ViewField @10:36-10:42
+        Name: Ident rarity @10:36-10:42
+      Members[3]: ViewField @10:44-10:50
+        Name: Ident reward @10:44-10:50
+      Members[4]: ViewField @10:52-10:56
+        Name: Ident next @10:52-10:56
+== findings
+0 errors, 0 warnings in 1 package (…)

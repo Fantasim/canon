@@ -1,0 +1,9 @@
+package features.renames
+
+/// The rare quest that follows the first one.
+entry missions.hunt {
+  name: "The long hunt"
+  level: 5
+  rarity: rare
+  reward: item { itemId: "relic", count: 2 }
+}

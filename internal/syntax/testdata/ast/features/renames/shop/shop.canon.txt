@@ -1,0 +1,91 @@
+File: File FileKind=source @1:1-35:1
+  Doc: DocComment "The second package of the renames example: it imports the first one and uses its types,\nits `let`, its method and its export fn with named arguments." @1:1-2:66
+  Package: QualifiedName features.renames.shop @3:9-3:30
+  Imports[0]: Import @5:1-5:86
+    Path: QualifiedName features.renames @5:8-5:24
+    Names[0]: Ident MAX_LEVEL @5:27-5:36
+    Names[1]: Ident Mission @5:38-5:45
+    Names[2]: Ident MissionLevel @5:47-5:59
+    Names[3]: Ident Rarity @5:61-5:67
+    Names[4]: Ident missions @5:69-5:77
+    Names[5]: Ident xpFor @5:79-5:84
+  Decls[0]: RecordDecl @8:1-17:2
+    Doc: DocComment "An offer on a quest." @7:1-7:25
+    Name: Ident Offer @8:8-8:13
+    Body: RecordBody @8:14-17:2
+      Items[0]: FieldDecl @10:3-10:22
+        Doc: DocComment "The quest offered." @9:3-9:25
+        Name: Ident quest @10:3-10:8
+        Type: RefType @10:10-10:22
+          Name: QualifiedName missions @10:14-10:22
+      Items[1]: FieldDecl @12:3-12:17
+        Doc: DocComment "How hard it is to come by." @11:3-11:33
+        Name: Ident rarity @12:3-12:9
+        Type: NamedType @12:11-12:17
+          Name: QualifiedName Rarity @12:11-12:17
+      Items[2]: FieldDecl @14:3-14:22
+        Doc: DocComment "The level asked." @13:3-13:23
+        Name: Ident level @14:3-14:8
+        Type: NamedType @14:10-14:22
+          Name: QualifiedName MissionLevel @14:10-14:22
+      Items[3]: FieldDecl @16:3-16:13
+        Doc: DocComment "The experience it is worth." @15:3-15:34
+        Name: Ident worth @16:3-16:8
+        Type: NamedType @16:10-16:13
+          Name: QualifiedName Int @16:10-16:13
+  Decls[1]: LetDecl @20:1-22:2
+    Doc: DocComment "The offers." @19:1-19:16
+    Name: Ident offers @20:5-20:11
+    Type: TableType @20:13-20:24
+      Name: QualifiedName Offer @20:19-20:24
+    Value: BraceLit @20:27-22:2
+      Items[0]: EntryItem @21:3-21:87
+        Key: Ident starter @21:3-21:10
+        Value: BraceLit @21:11-21:87
+          Items[0]: FieldItem @21:13-21:25
+            Name: Ident quest @21:13-21:18
+            Value: IdentExpr intro @21:20-21:25
+          Items[1]: FieldItem @21:27-21:41
+            Name: Ident rarity @21:27-21:33
+            Value: IdentExpr common @21:35-21:41
+          Items[2]: FieldItem @21:43-21:51
+            Name: Ident level @21:43-21:48
+            Value: IntLit Value=1 @21:50-21:51
+          Items[3]: FieldItem @21:53-21:85
+            Name: Ident worth @21:53-21:58
+            Value: CallExpr @21:60-21:85
+              Fun: IdentExpr xpFor @21:60-21:65
+              Args[0]: Arg @21:66-21:74
+                Name: Ident level @21:66-21:71
+                Value: IntLit Value=1 @21:73-21:74
+              Args[1]: Arg @21:76-21:84
+                Name: Ident extra @21:76-21:81
+                Value: IntLit Value=5 @21:83-21:84
+  Decls[2]: LetDecl @25:1-25:50
+    Doc: DocComment "The label of the starter quest, as the shop prints it." @24:1-24:59
+    Name: Ident starterLabel @25:5-25:17
+    Type: NamedType @25:19-25:25
+      Name: QualifiedName String @25:19-25:25
+    Value: CallExpr @25:28-25:50
+      Fun: SelectorExpr @25:28-25:48
+        X: SelectorExpr @25:28-25:42
+          X: IdentExpr missions @25:28-25:36
+          Name: Ident intro @25:37-25:42
+        Name: Ident label @25:43-25:48
+  Decls[3]: LetDecl @28:1-28:29
+    Doc: DocComment "The highest level of the shop." @27:1-27:35
+    Name: Ident ceiling @28:5-28:12
+    Type: NamedType @28:14-28:17
+      Name: QualifiedName Int @28:14-28:17
+    Value: IdentExpr MAX_LEVEL @28:20-28:29
+  Decls[4]: RecordDecl @31:1-34:2
+    Doc: DocComment "A quest, held to the shop's own cap." @30:1-30:41
+    Name: Ident ShopListing @31:8-31:19
+    Body: RecordBody @31:20-34:2
+      Items[0]: FieldDecl @33:3-33:17
+        Doc: DocComment "The quest." @32:3-32:17
+        Name: Ident quest @33:3-33:8
+        Type: NamedType @33:10-33:17
+          Name: QualifiedName Mission @33:10-33:17
+== findings
+0 errors, 0 warnings in 1 package (…)

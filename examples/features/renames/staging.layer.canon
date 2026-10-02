@@ -1,0 +1,8 @@
+// The staging deployment: fewer players, a smaller queue.
+package features.renames
+layer staging
+
+amend deployment {
+  capacity.players: 10
+  capacity.queue: 2
+}

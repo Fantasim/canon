@@ -1,0 +1,22 @@
+1:0-39 "// French for the quest's studio texts." comment.line.double-slash.canon
+2:0-7 "package" keyword.other.canon
+2:8-24 "features.renames" entity.name.namespace.canon
+3:0-11 "translation" keyword.other.canon
+5:0-7 "Mission" entity.name.type.canon
+5:7-8 "." punctuation.accessor.canon
+5:8-12 "help" variable.other.property.canon
+5:13-26 "\"Une quête.\"" string.quoted.double.canon
+6:0-7 "Mission" entity.name.type.canon
+6:7-8 "." punctuation.accessor.canon
+6:8-12 "name" variable.other.property.canon
+6:13-18 "\"Nom\"" string.quoted.double.canon
+7:0-7 "Mission" entity.name.type.canon
+7:7-8 "." punctuation.accessor.canon
+7:8-13 "level" variable.other.property.canon
+7:14-22 "\"Niveau\"" string.quoted.double.canon
+8:0-7 "Mission" entity.name.type.canon
+8:7-8 "." punctuation.accessor.canon
+8:8-13 "group" variable.other.property.canon
+8:13-14 "." punctuation.accessor.canon
+8:14-18 "main" variable.other.property.canon
+8:19-30 "\"Principal\"" string.quoted.double.canon

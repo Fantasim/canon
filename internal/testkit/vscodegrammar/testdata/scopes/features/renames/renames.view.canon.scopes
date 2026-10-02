@@ -1,0 +1,19 @@
+1:0-66 "// How the studio shows a quest. French lives in renames.fr.canon." comment.line.double-slash.canon
+2:0-7 "package" keyword.other.canon
+2:8-24 "features.renames" entity.name.namespace.canon
+4:0-6 "import" keyword.other.canon
+6:0-4 "view" keyword.other.canon
+6:5-12 "Mission" entity.name.type.canon
+7:8-9 "\"" string.quoted.double.canon
+7:9-10 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+7:10-14 "name" string.quoted.double.canon meta.interpolation.canon
+7:14-15 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+7:15-16 "\"" string.quoted.double.canon
+8:11-12 "\"" string.quoted.double.canon
+8:12-13 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+8:13-19 "rarity" string.quoted.double.canon meta.interpolation.canon
+8:19-20 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+8:20-21 "\"" string.quoted.double.canon
+9:18-20 "80" constant.numeric.integer.canon
+9:29-32 "100" constant.numeric.integer.canon
+10:13-19 "\"Main\"" string.quoted.double.canon

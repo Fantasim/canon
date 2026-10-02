@@ -1,0 +1,128 @@
+/// The project `canon rename` is tested on (API.md §8.9, DECISIONS 275, IMPLEMENTATION-PLAN §7.9):
+/// one small declaration for each kind of occurrence a rename rewrites. Fields on the wire with
+/// no wire name of their own, a case under `@json(case: snake)`, a variant, an enum, an alias,
+/// functions, a method, a `let` read through `ref`, `entry` lines and `@files` templates, a
+/// stable table, a view, a translation, a layer and an `emit json`. The shop package imports it.
+package features.renames
+
+/// The highest level a quest can ask for.
+const MAX_LEVEL = 99
+
+/// A quest level.
+type MissionLevel = Int(1..=99)
+
+/// How hard to come by a quest is.
+enum Rarity { common, rare }
+
+/// What completing a quest gives.
+variant Prize {
+  /// Gold coins.
+  gold {
+    /// How many.
+    amount: Int(1..)
+  }
+  /// An item.
+  item {
+    /// Which one.
+    itemId: String(1..)
+    /// How many.
+    count: Int = 1
+  }
+}
+
+/// A quest.
+record Mission {
+  /// What players read.
+  name: String(1..)
+  /// The level it asks for.
+  level: MissionLevel
+  /// How hard it is to come by.
+  rarity: Rarity
+  /// What it gives.
+  reward: Prize
+  /// The quest that follows it.
+  next: ref missions? = none
+
+  /// What a list shows: the name and the level.
+  fn label(self) -> String { return "{name} ({level})" }
+}
+
+/// The missions: the first here, the others in their own files, placed by rarity.
+@files("store/{rarity}/{id}.canon")
+let missions: table Mission = {
+  intro { name: "First steps", level: 1, rarity: common, reward: gold { amount: 10 }, next: hunt }
+}
+
+/// What the server reads from `data/capacity.json`, key for key: no wire name is written.
+record Capacity {
+  /// Players at once.
+  players: Int(1..)
+  /// How many may wait to join.
+  queue: Int = 10
+}
+
+/// The capacity.
+let capacity: Capacity = load("data/capacity.json")
+
+/// How the server is set up, read from `data/server.json` in snake case.
+record Setup @json(case: snake) {
+  /// The most players one room takes.
+  maxPlayers: Int(1..)
+  /// What a new player is told.
+  welcomeText: String = ""
+}
+
+/// The setup.
+let setup: Setup = load("data/server.json")
+
+/// A holder of capacity, so a layer reaches a field through a field.
+record Deployment {
+  /// The capacity in force.
+  capacity: Capacity
+}
+
+/// The configuration the staging layer amends.
+let deployment: Deployment = { capacity: { players: 100, queue: 5 } }
+
+/// Notes nobody emits: a field that is not on the wire.
+record Scratch {
+  /// A private note.
+  memo: String = ""
+}
+
+/// The notes.
+let scratch: Scratch = { memo: "none yet" }
+
+/// A tier of the ladder.
+record Rung {
+  /// What players read.
+  label: String(1..)
+}
+
+/// The ladder: never renamed, never reused (LOCK.md).
+let ladder: stable table Rung = {
+  bronze { label: "Bronze" }
+  silver { label: "Silver" }
+}
+
+/// A bonus that grows with the level; the inner `step` shadows the outer one.
+fn bonus(level: Int) -> Int {
+  let step = level - 1
+  if level > 10 {
+    let step = level - 10
+    return step
+  }
+  return step
+}
+
+/// The experience a level is worth, with an extra added.
+export fn xpFor(level: Int, extra: Int = 0) -> Int {
+  return level * 10 + extra + bonus(level)
+}
+
+test "xp grows with the level" {
+  expect xpFor(level: 2, extra: 5) == 26
+  expect xpFor(level: 12) == 122
+}
+
+emit json { out: "out/", values: [missions, capacity, setup, ladder] }

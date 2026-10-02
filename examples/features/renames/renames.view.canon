@@ -1,0 +1,11 @@
+// How the studio shows a quest. French lives in renames.fr.canon.
+package features.renames
+
+import studio
+
+view Mission {
+  title "{name}"
+  subtitle "{rarity}"
+  columns { level 80, rarity 100 }
+  group main "Main" { name, level, rarity, reward, next }
+}

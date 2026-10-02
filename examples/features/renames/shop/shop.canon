@@ -1,0 +1,34 @@
+/// The second package of the renames example: it imports the first one and uses its types,
+/// its `let`, its method and its export fn with named arguments.
+package features.renames.shop
+
+import features.renames { MAX_LEVEL, Mission, MissionLevel, Rarity, missions, xpFor }
+
+/// An offer on a quest.
+record Offer {
+  /// The quest offered.
+  quest: ref missions
+  /// How hard it is to come by.
+  rarity: Rarity
+  /// The level asked.
+  level: MissionLevel
+  /// The experience it is worth.
+  worth: Int
+}
+
+/// The offers.
+let offers: table Offer = {
+  starter { quest: intro, rarity: common, level: 1, worth: xpFor(level: 1, extra: 5) }
+}
+
+/// The label of the starter quest, as the shop prints it.
+let starterLabel: String = missions.intro.label()
+
+/// The highest level of the shop.
+let ceiling: Int = MAX_LEVEL
+
+/// A quest, held to the shop's own cap.
+record ShopListing {
+  /// The quest.
+  quest: Mission
+}

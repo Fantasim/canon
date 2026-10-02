@@ -1,0 +1,7 @@
+{
+  "$schema": "features.renames.Mission@d6da7e13",
+  "rows": [
+    {"$id": "intro", "name": "First steps", "level": 1, "rarity": "common", "reward": {"kind": "gold", "amount": 10}, "next": "hunt"},
+    {"$id": "hunt", "name": "The long hunt", "level": 5, "rarity": "rare", "reward": {"kind": "item", "itemId": "relic", "count": 2}, "next": null}
+  ]
+}

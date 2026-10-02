@@ -1,0 +1,302 @@
+1:0-101 "/// The project `canon rename` is tested on (API.md §8.9, DECISIONS 275, IMPLEMENTATION-PLAN §7.9):" comment.line.documentation.canon
+2:0-96 "/// one small declaration for each kind of occurrence a rename rewrites. Fields on the wire with" comment.line.documentation.canon
+3:0-95 "/// no wire name of their own, a case under `@json(case: snake)`, a variant, an enum, an alias," comment.line.documentation.canon
+4:0-92 "/// functions, a method, a `let` read through `ref`, `entry` lines and `@files` templates, a" comment.line.documentation.canon
+5:0-97 "/// stable table, a view, a translation, a layer and an `emit json`. The shop package imports it." comment.line.documentation.canon
+6:0-7 "package" keyword.other.canon
+6:8-24 "features.renames" entity.name.namespace.canon
+8:0-42 "/// The highest level a quest can ask for." comment.line.documentation.canon
+9:0-5 "const" storage.type.canon
+9:6-15 "MAX_LEVEL" constant.other.canon
+9:16-17 "=" keyword.operator.canon
+9:18-20 "99" constant.numeric.integer.canon
+11:0-18 "/// A quest level." comment.line.documentation.canon
+12:0-4 "type" storage.type.canon
+12:5-17 "MissionLevel" entity.name.type.canon
+12:18-19 "=" keyword.operator.canon
+12:20-23 "Int" entity.name.type.canon
+12:24-25 "1" constant.numeric.integer.canon
+12:25-28 "..=" keyword.operator.canon
+12:28-30 "99" constant.numeric.integer.canon
+14:0-35 "/// How hard to come by a quest is." comment.line.documentation.canon
+15:0-4 "enum" storage.type.canon
+15:5-11 "Rarity" entity.name.type.canon
+17:0-34 "/// What completing a quest gives." comment.line.documentation.canon
+18:0-7 "variant" storage.type.canon
+18:8-13 "Prize" entity.name.type.canon
+19:0-17 "  /// Gold coins." comment.line.documentation.canon
+21:0-17 "    /// How many." comment.line.documentation.canon
+22:4-10 "amount" variable.other.property.canon
+22:10-11 ":" punctuation.separator.key.canon
+22:12-15 "Int" entity.name.type.canon
+22:16-17 "1" constant.numeric.integer.canon
+22:17-19 ".." keyword.operator.canon
+24:0-14 "  /// An item." comment.line.documentation.canon
+26:0-18 "    /// Which one." comment.line.documentation.canon
+27:4-10 "itemId" variable.other.property.canon
+27:10-11 ":" punctuation.separator.key.canon
+27:12-18 "String" entity.name.type.canon
+27:19-20 "1" constant.numeric.integer.canon
+27:20-22 ".." keyword.operator.canon
+28:0-17 "    /// How many." comment.line.documentation.canon
+29:4-9 "count" variable.other.property.canon
+29:9-10 ":" punctuation.separator.key.canon
+29:11-14 "Int" entity.name.type.canon
+29:15-16 "=" keyword.operator.canon
+29:17-18 "1" constant.numeric.integer.canon
+33:0-12 "/// A quest." comment.line.documentation.canon
+34:0-6 "record" storage.type.canon
+34:7-14 "Mission" entity.name.type.canon
+35:0-24 "  /// What players read." comment.line.documentation.canon
+36:2-6 "name" variable.other.property.canon
+36:6-7 ":" punctuation.separator.key.canon
+36:8-14 "String" entity.name.type.canon
+36:15-16 "1" constant.numeric.integer.canon
+36:16-18 ".." keyword.operator.canon
+37:0-28 "  /// The level it asks for." comment.line.documentation.canon
+38:2-7 "level" variable.other.property.canon
+38:7-8 ":" punctuation.separator.key.canon
+38:9-21 "MissionLevel" entity.name.type.canon
+39:0-32 "  /// How hard it is to come by." comment.line.documentation.canon
+40:2-8 "rarity" variable.other.property.canon
+40:8-9 ":" punctuation.separator.key.canon
+40:10-16 "Rarity" entity.name.type.canon
+41:0-20 "  /// What it gives." comment.line.documentation.canon
+42:2-8 "reward" variable.other.property.canon
+42:8-9 ":" punctuation.separator.key.canon
+42:10-15 "Prize" entity.name.type.canon
+43:0-32 "  /// The quest that follows it." comment.line.documentation.canon
+44:2-6 "next" variable.other.property.canon
+44:6-7 ":" punctuation.separator.key.canon
+44:8-11 "ref" storage.modifier.canon
+44:20-21 "?" keyword.operator.canon
+44:22-23 "=" keyword.operator.canon
+44:24-28 "none" constant.language.canon
+46:0-48 "  /// What a list shows: the name and the level." comment.line.documentation.canon
+47:2-4 "fn" storage.type.function.canon
+47:5-10 "label" entity.name.function.canon
+47:11-15 "self" variable.language.canon
+47:17-19 "->" keyword.operator.canon
+47:20-26 "String" entity.name.type.canon
+47:29-35 "return" keyword.control.canon
+47:36-37 "\"" string.quoted.double.canon
+47:37-38 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+47:38-42 "name" string.quoted.double.canon meta.interpolation.canon
+47:42-43 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+47:43-45 " (" string.quoted.double.canon
+47:45-46 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+47:46-51 "level" string.quoted.double.canon meta.interpolation.canon
+47:51-52 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+47:52-54 ")\"" string.quoted.double.canon
+50:0-82 "/// The missions: the first here, the others in their own files, placed by rarity." comment.line.documentation.canon
+51:0-1 "@" meta.annotation.canon punctuation.definition.annotation.canon
+51:1-6 "files" meta.annotation.canon entity.name.function.decorator.canon
+51:6-7 "(" meta.annotation.canon
+51:7-14 "\"store/" meta.annotation.canon string.quoted.double.canon
+51:14-15 "{" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+51:15-21 "rarity" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon
+51:21-22 "}" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+51:22-23 "/" meta.annotation.canon string.quoted.double.canon
+51:23-24 "{" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+51:24-26 "id" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon
+51:26-27 "}" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+51:27-34 ".canon\"" meta.annotation.canon string.quoted.double.canon
+51:34-35 ")" meta.annotation.canon
+52:0-3 "let" storage.type.canon
+52:4-12 "missions" variable.other.property.canon
+52:12-13 ":" punctuation.separator.key.canon
+52:14-19 "table" storage.type.canon
+52:20-27 "Mission" entity.name.type.canon
+52:28-29 "=" keyword.operator.canon
+53:10-14 "name" variable.other.property.canon
+53:14-15 ":" punctuation.separator.key.canon
+53:16-29 "\"First steps\"" string.quoted.double.canon
+53:31-36 "level" variable.other.property.canon
+53:36-37 ":" punctuation.separator.key.canon
+53:38-39 "1" constant.numeric.integer.canon
+53:41-47 "rarity" variable.other.property.canon
+53:47-48 ":" punctuation.separator.key.canon
+53:57-63 "reward" variable.other.property.canon
+53:63-64 ":" punctuation.separator.key.canon
+53:72-78 "amount" variable.other.property.canon
+53:78-79 ":" punctuation.separator.key.canon
+53:80-82 "10" constant.numeric.integer.canon
+53:86-90 "next" variable.other.property.canon
+53:90-91 ":" punctuation.separator.key.canon
+56:0-90 "/// What the server reads from `data/capacity.json`, key for key: no wire name is written." comment.line.documentation.canon
+57:0-6 "record" storage.type.canon
+57:7-15 "Capacity" entity.name.type.canon
+58:0-22 "  /// Players at once." comment.line.documentation.canon
+59:2-9 "players" variable.other.property.canon
+59:9-10 ":" punctuation.separator.key.canon
+59:11-14 "Int" entity.name.type.canon
+59:15-16 "1" constant.numeric.integer.canon
+59:16-18 ".." keyword.operator.canon
+60:0-32 "  /// How many may wait to join." comment.line.documentation.canon
+61:2-7 "queue" variable.other.property.canon
+61:7-8 ":" punctuation.separator.key.canon
+61:9-12 "Int" entity.name.type.canon
+61:13-14 "=" keyword.operator.canon
+61:15-17 "10" constant.numeric.integer.canon
+64:0-17 "/// The capacity." comment.line.documentation.canon
+65:0-3 "let" storage.type.canon
+65:4-12 "capacity" variable.other.property.canon
+65:12-13 ":" punctuation.separator.key.canon
+65:14-22 "Capacity" entity.name.type.canon
+65:23-24 "=" keyword.operator.canon
+65:25-29 "load" keyword.other.canon
+65:30-50 "\"data/capacity.json\"" string.quoted.double.canon
+67:0-73 "/// How the server is set up, read from `data/server.json` in snake case." comment.line.documentation.canon
+68:0-6 "record" storage.type.canon
+68:7-12 "Setup" entity.name.type.canon
+68:13-14 "@" meta.annotation.canon punctuation.definition.annotation.canon
+68:14-18 "json" meta.annotation.canon entity.name.function.decorator.canon
+68:18-19 "(" meta.annotation.canon
+68:19-23 "case" meta.annotation.canon variable.parameter.canon
+68:23-24 ":" meta.annotation.canon punctuation.separator.key.canon
+68:24-31 " snake)" meta.annotation.canon
+69:0-38 "  /// The most players one room takes." comment.line.documentation.canon
+70:2-12 "maxPlayers" variable.other.property.canon
+70:12-13 ":" punctuation.separator.key.canon
+70:14-17 "Int" entity.name.type.canon
+70:18-19 "1" constant.numeric.integer.canon
+70:19-21 ".." keyword.operator.canon
+71:0-32 "  /// What a new player is told." comment.line.documentation.canon
+72:2-13 "welcomeText" variable.other.property.canon
+72:13-14 ":" punctuation.separator.key.canon
+72:15-21 "String" entity.name.type.canon
+72:22-23 "=" keyword.operator.canon
+72:24-26 "\"\"" string.quoted.double.canon
+75:0-14 "/// The setup." comment.line.documentation.canon
+76:0-3 "let" storage.type.canon
+76:4-9 "setup" variable.other.property.canon
+76:9-10 ":" punctuation.separator.key.canon
+76:11-16 "Setup" entity.name.type.canon
+76:17-18 "=" keyword.operator.canon
+76:19-23 "load" keyword.other.canon
+76:24-42 "\"data/server.json\"" string.quoted.double.canon
+78:0-69 "/// A holder of capacity, so a layer reaches a field through a field." comment.line.documentation.canon
+79:0-6 "record" storage.type.canon
+79:7-17 "Deployment" entity.name.type.canon
+80:0-28 "  /// The capacity in force." comment.line.documentation.canon
+81:2-10 "capacity" variable.other.property.canon
+81:10-11 ":" punctuation.separator.key.canon
+81:12-20 "Capacity" entity.name.type.canon
+84:0-47 "/// The configuration the staging layer amends." comment.line.documentation.canon
+85:0-3 "let" storage.type.canon
+85:4-14 "deployment" variable.other.property.canon
+85:14-15 ":" punctuation.separator.key.canon
+85:16-26 "Deployment" entity.name.type.canon
+85:27-28 "=" keyword.operator.canon
+85:31-39 "capacity" variable.other.property.canon
+85:39-40 ":" punctuation.separator.key.canon
+85:43-50 "players" variable.other.property.canon
+85:50-51 ":" punctuation.separator.key.canon
+85:52-55 "100" constant.numeric.integer.canon
+85:57-62 "queue" variable.other.property.canon
+85:62-63 ":" punctuation.separator.key.canon
+85:64-65 "5" constant.numeric.integer.canon
+87:0-56 "/// Notes nobody emits: a field that is not on the wire." comment.line.documentation.canon
+88:0-6 "record" storage.type.canon
+88:7-14 "Scratch" entity.name.type.canon
+89:0-21 "  /// A private note." comment.line.documentation.canon
+90:2-6 "memo" variable.other.property.canon
+90:6-7 ":" punctuation.separator.key.canon
+90:8-14 "String" entity.name.type.canon
+90:15-16 "=" keyword.operator.canon
+90:17-19 "\"\"" string.quoted.double.canon
+93:0-14 "/// The notes." comment.line.documentation.canon
+94:0-3 "let" storage.type.canon
+94:4-11 "scratch" variable.other.property.canon
+94:11-12 ":" punctuation.separator.key.canon
+94:13-20 "Scratch" entity.name.type.canon
+94:21-22 "=" keyword.operator.canon
+94:25-29 "memo" variable.other.property.canon
+94:29-30 ":" punctuation.separator.key.canon
+94:31-41 "\"none yet\"" string.quoted.double.canon
+96:0-25 "/// A tier of the ladder." comment.line.documentation.canon
+97:0-6 "record" storage.type.canon
+97:7-11 "Rung" entity.name.type.canon
+98:0-24 "  /// What players read." comment.line.documentation.canon
+99:2-7 "label" variable.other.property.canon
+99:7-8 ":" punctuation.separator.key.canon
+99:9-15 "String" entity.name.type.canon
+99:16-17 "1" constant.numeric.integer.canon
+99:17-19 ".." keyword.operator.canon
+102:0-54 "/// The ladder: never renamed, never reused (LOCK.md)." comment.line.documentation.canon
+103:0-3 "let" storage.type.canon
+103:4-10 "ladder" variable.other.property.canon
+103:10-11 ":" punctuation.separator.key.canon
+103:12-18 "stable" storage.modifier.canon
+103:19-24 "table" storage.type.canon
+103:25-29 "Rung" entity.name.type.canon
+103:30-31 "=" keyword.operator.canon
+104:11-16 "label" variable.other.property.canon
+104:16-17 ":" punctuation.separator.key.canon
+104:18-26 "\"Bronze\"" string.quoted.double.canon
+105:11-16 "label" variable.other.property.canon
+105:16-17 ":" punctuation.separator.key.canon
+105:18-26 "\"Silver\"" string.quoted.double.canon
+108:0-78 "/// A bonus that grows with the level; the inner `step` shadows the outer one." comment.line.documentation.canon
+109:0-2 "fn" storage.type.function.canon
+109:3-8 "bonus" entity.name.function.canon
+109:9-14 "level" variable.other.property.canon
+109:14-15 ":" punctuation.separator.key.canon
+109:16-19 "Int" entity.name.type.canon
+109:21-23 "->" keyword.operator.canon
+109:24-27 "Int" entity.name.type.canon
+110:2-5 "let" storage.type.canon
+110:11-12 "=" keyword.operator.canon
+110:19-20 "-" keyword.operator.canon
+110:21-22 "1" constant.numeric.integer.canon
+111:2-4 "if" keyword.control.canon
+111:11-12 ">" keyword.operator.canon
+111:13-15 "10" constant.numeric.integer.canon
+112:4-7 "let" storage.type.canon
+112:13-14 "=" keyword.operator.canon
+112:21-22 "-" keyword.operator.canon
+112:23-25 "10" constant.numeric.integer.canon
+113:4-10 "return" keyword.control.canon
+115:2-8 "return" keyword.control.canon
+118:0-57 "/// The experience a level is worth, with an extra added." comment.line.documentation.canon
+119:0-6 "export" storage.modifier.canon
+119:7-9 "fn" storage.type.function.canon
+119:10-15 "xpFor" entity.name.function.canon
+119:16-21 "level" variable.other.property.canon
+119:21-22 ":" punctuation.separator.key.canon
+119:23-26 "Int" entity.name.type.canon
+119:28-33 "extra" variable.other.property.canon
+119:33-34 ":" punctuation.separator.key.canon
+119:35-38 "Int" entity.name.type.canon
+119:39-40 "=" keyword.operator.canon
+119:41-42 "0" constant.numeric.integer.canon
+119:44-46 "->" keyword.operator.canon
+119:47-50 "Int" entity.name.type.canon
+120:2-8 "return" keyword.control.canon
+120:15-16 "*" keyword.operator.canon
+120:17-19 "10" constant.numeric.integer.canon
+120:20-21 "+" keyword.operator.canon
+120:28-29 "+" keyword.operator.canon
+123:0-4 "test" keyword.other.canon
+123:5-30 "\"xp grows with the level\"" string.quoted.double.canon
+124:2-8 "expect" keyword.other.canon
+124:15-20 "level" variable.other.property.canon
+124:20-21 ":" punctuation.separator.key.canon
+124:22-23 "2" constant.numeric.integer.canon
+124:25-30 "extra" variable.other.property.canon
+124:30-31 ":" punctuation.separator.key.canon
+124:32-33 "5" constant.numeric.integer.canon
+124:35-37 "==" keyword.operator.canon
+124:38-40 "26" constant.numeric.integer.canon
+125:2-8 "expect" keyword.other.canon
+125:15-20 "level" variable.other.property.canon
+125:20-21 ":" punctuation.separator.key.canon
+125:22-24 "12" constant.numeric.integer.canon
+125:26-28 "==" keyword.operator.canon
+125:29-32 "122" constant.numeric.integer.canon
+128:0-4 "emit" keyword.other.canon
+128:12-15 "out" variable.other.property.canon
+128:15-16 ":" punctuation.separator.key.canon
+128:17-23 "\"out/\"" string.quoted.double.canon
+128:25-31 "values" variable.other.property.canon
+128:31-32 ":" punctuation.separator.key.canon

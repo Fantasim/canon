@@ -1,0 +1,7 @@
+{
+  "$schema": "features.renames.Capacity@3bcde219",
+  "value": {
+    "players": 200,
+    "queue": 20
+  }
+}

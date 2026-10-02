@@ -1,0 +1,22 @@
+1:0-7 "package" keyword.other.canon
+1:8-24 "features.renames" entity.name.namespace.canon
+3:0-46 "/// The rare quest that follows the first one." comment.line.documentation.canon
+4:0-5 "entry" keyword.other.canon
+4:14-15 "." punctuation.accessor.canon
+4:15-19 "hunt" variable.other.property.canon
+5:2-6 "name" variable.other.property.canon
+5:6-7 ":" punctuation.separator.key.canon
+5:8-23 "\"The long hunt\"" string.quoted.double.canon
+6:2-7 "level" variable.other.property.canon
+6:7-8 ":" punctuation.separator.key.canon
+6:9-10 "5" constant.numeric.integer.canon
+7:2-8 "rarity" variable.other.property.canon
+7:8-9 ":" punctuation.separator.key.canon
+8:2-8 "reward" variable.other.property.canon
+8:8-9 ":" punctuation.separator.key.canon
+8:17-23 "itemId" variable.other.property.canon
+8:23-24 ":" punctuation.separator.key.canon
+8:25-32 "\"relic\"" string.quoted.double.canon
+8:34-39 "count" variable.other.property.canon
+8:39-40 ":" punctuation.separator.key.canon
+8:41-42 "2" constant.numeric.integer.canon

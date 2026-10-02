@@ -1,0 +1,5 @@
+features/renames/out/capacity.json renames/out/capacity.json
+features/renames/out/ladder.json renames/out/ladder.json
+features/renames/out/missions.json renames/out/missions.json
+features/renames/out/setup.json renames/out/setup.json
+features/renames/canon.lock renames/canon.lock

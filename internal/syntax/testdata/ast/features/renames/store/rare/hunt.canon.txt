@@ -1,0 +1,31 @@
+File: File FileKind=source @1:1-10:1
+  Package: QualifiedName features.renames @1:9-1:25
+  Decls[0]: EntryDecl @4:1-9:2
+    Doc: DocComment "The rare quest that follows the first one." @3:1-3:47
+    Table: Ident missions @4:7-4:15
+    Key: Ident hunt @4:16-4:20
+    Value: BraceLit @4:21-9:2
+      Items[0]: FieldItem @5:3-5:24
+        Name: Ident name @5:3-5:7
+        Value: StringLit @5:9-5:24
+          Parts[0]: text "The long hunt"
+      Items[1]: FieldItem @6:3-6:11
+        Name: Ident level @6:3-6:8
+        Value: IntLit Value=5 @6:10-6:11
+      Items[2]: FieldItem @7:3-7:15
+        Name: Ident rarity @7:3-7:9
+        Value: IdentExpr rare @7:11-7:15
+      Items[3]: FieldItem @8:3-8:45
+        Name: Ident reward @8:3-8:9
+        Value: TypedLit @8:11-8:45
+          Type: QualifiedName item @8:11-8:15
+          Lit: BraceLit @8:16-8:45
+            Items[0]: FieldItem @8:18-8:33
+              Name: Ident itemId @8:18-8:24
+              Value: StringLit @8:26-8:33
+                Parts[0]: text "relic"
+            Items[1]: FieldItem @8:35-8:43
+              Name: Ident count @8:35-8:40
+              Value: IntLit Value=2 @8:42-8:43
+== findings
+0 errors, 0 warnings in 1 package (…)

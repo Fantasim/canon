@@ -1,0 +1,7 @@
+{
+  "$schema": "features.renames.Setup@9d3247a1",
+  "value": {
+    "max_players": 8,
+    "welcome_text": "Welcome"
+  }
+}

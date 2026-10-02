@@ -1,0 +1,76 @@
+1:0-91 "/// The second package of the renames example: it imports the first one and uses its types," comment.line.documentation.canon
+2:0-65 "/// its `let`, its method and its export fn with named arguments." comment.line.documentation.canon
+3:0-7 "package" keyword.other.canon
+3:8-29 "features.renames.shop" entity.name.namespace.canon
+5:0-6 "import" keyword.other.canon
+5:15-16 "." punctuation.accessor.canon
+5:16-23 "renames" variable.other.property.canon
+5:26-35 "MAX_LEVEL" constant.other.canon
+5:37-44 "Mission" entity.name.type.canon
+5:46-58 "MissionLevel" entity.name.type.canon
+5:60-66 "Rarity" entity.name.type.canon
+7:0-24 "/// An offer on a quest." comment.line.documentation.canon
+8:0-6 "record" storage.type.canon
+8:7-12 "Offer" entity.name.type.canon
+9:0-24 "  /// The quest offered." comment.line.documentation.canon
+10:2-7 "quest" variable.other.property.canon
+10:7-8 ":" punctuation.separator.key.canon
+10:9-12 "ref" storage.modifier.canon
+11:0-32 "  /// How hard it is to come by." comment.line.documentation.canon
+12:2-8 "rarity" variable.other.property.canon
+12:8-9 ":" punctuation.separator.key.canon
+12:10-16 "Rarity" entity.name.type.canon
+13:0-22 "  /// The level asked." comment.line.documentation.canon
+14:2-7 "level" variable.other.property.canon
+14:7-8 ":" punctuation.separator.key.canon
+14:9-21 "MissionLevel" entity.name.type.canon
+15:0-33 "  /// The experience it is worth." comment.line.documentation.canon
+16:2-7 "worth" variable.other.property.canon
+16:7-8 ":" punctuation.separator.key.canon
+16:9-12 "Int" entity.name.type.canon
+19:0-15 "/// The offers." comment.line.documentation.canon
+20:0-3 "let" storage.type.canon
+20:4-10 "offers" variable.other.property.canon
+20:10-11 ":" punctuation.separator.key.canon
+20:12-17 "table" storage.type.canon
+20:18-23 "Offer" entity.name.type.canon
+20:24-25 "=" keyword.operator.canon
+21:12-17 "quest" variable.other.property.canon
+21:17-18 ":" punctuation.separator.key.canon
+21:26-32 "rarity" variable.other.property.canon
+21:32-33 ":" punctuation.separator.key.canon
+21:42-47 "level" variable.other.property.canon
+21:47-48 ":" punctuation.separator.key.canon
+21:49-50 "1" constant.numeric.integer.canon
+21:52-57 "worth" variable.other.property.canon
+21:57-58 ":" punctuation.separator.key.canon
+21:65-70 "level" variable.other.property.canon
+21:70-71 ":" punctuation.separator.key.canon
+21:72-73 "1" constant.numeric.integer.canon
+21:75-80 "extra" variable.other.property.canon
+21:80-81 ":" punctuation.separator.key.canon
+21:82-83 "5" constant.numeric.integer.canon
+24:0-58 "/// The label of the starter quest, as the shop prints it." comment.line.documentation.canon
+25:0-3 "let" storage.type.canon
+25:4-16 "starterLabel" variable.other.property.canon
+25:16-17 ":" punctuation.separator.key.canon
+25:18-24 "String" entity.name.type.canon
+25:25-26 "=" keyword.operator.canon
+25:35-36 "." punctuation.accessor.canon
+25:36-41 "intro" variable.other.property.canon
+25:41-42 "." punctuation.accessor.canon
+25:42-47 "label" variable.other.property.canon
+27:0-34 "/// The highest level of the shop." comment.line.documentation.canon
+28:0-3 "let" storage.type.canon
+28:4-11 "ceiling" variable.other.property.canon
+28:11-12 ":" punctuation.separator.key.canon
+28:13-16 "Int" entity.name.type.canon
+28:17-18 "=" keyword.operator.canon
+28:19-28 "MAX_LEVEL" constant.other.canon
+30:0-40 "/// A quest, held to the shop's own cap." comment.line.documentation.canon
+31:0-6 "record" storage.type.canon
+31:7-18 "ShopListing" entity.name.type.canon
+32:0-16 "  /// The quest." comment.line.documentation.canon
+33:2-7 "quest" variable.other.property.canon
+33:7-8 ":" punctuation.separator.key.canon
+33:9-16 "Mission" entity.name.type.canon
