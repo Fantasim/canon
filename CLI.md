@@ -134,7 +134,8 @@ message, findings without a file first. After 1,000 findings in one package, the
 and counted in the summary.
 
 `test`, `explain`, `refs` and `--watch` print the text layouts shown in §3. With `--format json`
-every command prints one JSON object per line, then the summary line; the object of each command
+every command prints one JSON object per line, then the summary line (`explain` prints its one
+object and no summary, IMPLEMENTATION-PLAN §8.1); the object of each command
 is given with it in §3.
 
 ### 2.5 Exit codes

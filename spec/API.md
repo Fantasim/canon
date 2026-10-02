@@ -1032,7 +1032,8 @@ inside the same edit and reports it, so every client behaves the same.
   Undo is found within the repair rounds, `Edit` fails with an `*InternalError` (`ErrInternal`) and
   writes nothing (DECISIONS 273).
 - **E23.** Inverses: `Set` → `Set(old)`, or `Reset` if the field was absent; `Reset` → `Set(old)`;
-  `Add`/`Insert`/`AddEntry` → `Remove`; `Remove` → `Insert(parent, oldPosition, old)` or
+  `Add`/`Insert`/`AddEntry` → `Remove`, except an `AddEntry` into a stable table → `Retire` of the
+  new key (its id is in `canon.lock` and is never removed, E4; DECISIONS 277); `Remove` → `Insert(parent, oldPosition, old)` or
   `AddEntry(parent, key, old)` followed by a `Move` to the old position (where file paths fix the
   order, reason `order`, an `Add` or `AddEntry` alone, placed by N1–N4); `Move` → `Move` back;
   `Rename` → `Rename` back; `RenameName` → `RenameName(<canonical new name>, <old name>)` (E37); `SetCase` → `Set(old whole variant value)`. `Retire` has no inverse
@@ -1107,7 +1108,9 @@ func RenameName(name, newName string) Op
 - **E28.** Renamable: fields of records and cases, methods, types (records, variants, enums,
   aliases, type functions), functions, `let`s, `const`s, parameters and block locals. A name
   reaching an entry key, an enum member or a variant case names data: `ErrStableKey` for an entry
-  of a stable table or a `@codes` member (E4), else `ErrBadOp`, whose detail names `Rename` (§8.4).
+  of a stable table or a `@codes` member (E4), else `ErrBadOp`, whose detail names `Rename` (§8.4)
+  for an entry key, a keyed-list key or a map key, and says that an enum member or a variant case
+  cannot be renamed for any other (DECISIONS 277).
   Any other declaration is `ErrBadOp`.
 - **E29.** A stable table's `let`, a `@codes` enum and a `@stable` field are named by `canon.lock`
   lines: renaming one is `ErrStableKey` (LOCK.md §4.6). `RenameName` never writes `canon.lock`.

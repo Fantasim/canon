@@ -1167,7 +1167,7 @@ mutually exclusive arguments is `E1119`. An unknown annotation name or an unknow
 | `@deprecated` / `@deprecated("why")` | optional positional `string` | `FD`, `EM`, `VC`, `TE`, `TL` (`entry` only) | TYPES.md (TYP-22), VIEWMODEL.md |
 | `@since(n)` | positional `int` ≥ 1 | every position | documentation only |
 | `@reload` | none | `TL` (`let`) | CODEGEN.md (SPEC §15.5) |
-| `@files("tpl")` | positional `template`; scope: `id` (the key), the entry's fields `{f}` and nested paths `{f.g}` through records and the current case of variants (a variant-typed segment stands for its case's wire name) | `TL` (`let` of a table or keyed list) | API.md N2 (API-03) |
+| `@files("tpl")` | positional `template`; scope: `id` (the key), the entry's fields `{f}` and nested paths `{f.g}` through records and the current case of variants (a variant-typed segment stands for its case's wire name); a name outside that scope, or a field no case declares, is the checker's unknown-name finding at the variable (DECISIONS 277) | `TL` (`let` of a table or keyed list) | API.md N2 (API-03) |
 | `@menu(m, icon: i, label: "l")` | positional `studio{Menu}`, optional named `icon: studio{Icon}` and `label: string` | `TL` (`let`) | VIEWMODEL.md G23 (VIEW-03) |
 | `@cpp(defines: "P")` | `string` | `TH` (enum) | CODEGEN.md (CPP-03) |
 | `@cpp(struct: "S", header: "h", access: a)` | `string`, `string`, `symbol{fields, both, getters}` | `TH` (record) | CODEGEN.md (CPP-01) |

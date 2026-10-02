@@ -2540,6 +2540,20 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      agents (token-efficient, no prose a `--help` or an error message already gives). Reason:
      Louis, 2026-10-02.
 
+277. **After M5: TypeScript first, the module path stays, the gaps M5 surfaced (API.md E23, E28;
+     CLI.md §2.4; GRAMMAR.md §8 `@files`; IMPLEMENTATION-PLAN §11).** M6's TypeScript target is built
+     before its legacy C++ modes. Its conformance gate uses the TypeScript compiler from npm
+     (`typescript`, 5.0 and the current release) as a test toolchain, like `g++` for C++, never as a
+     dependency of the compiler (Louis, 2026-10-02). The Go module path stays
+     `github.com/fantasim/canonlang` although the repository is `Fantasim/canon`: releases ship
+     binaries, and `go install` by module path is not supported (Louis). The gaps M5 surfaced are
+     closed: `canon lock check`, `--color` and `--lang` (CLI.md §2.3, §3.12, earlier milestones'
+     scope) are built; the Undo of an `AddEntry` into a stable table is a `Retire` of the new key,
+     since its locked id is never removed (E23 amended); E28's detail no longer sends enum members
+     and variant cases to `Rename`; `explain`'s JSON form has no summary line (CLI.md §2.4 aligned
+     with IMPLEMENTATION-PLAN §8.1); a `@files` template name outside the template's scope is the
+     checker's unknown-name finding. Reason: Louis, 2026-10-02; log-2026-10-02.
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.
