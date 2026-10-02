@@ -1039,7 +1039,11 @@ inside the same edit and reports it, so every client behaves the same.
   back, or a region restore of the table) keeps every entry the request added to it, with the value
   the edit left, so its `Retire` finds it and no locked id is dropped (LOCK.md §4.1); an `AddEntry` whose entry the edit's
   result no longer holds (a later op of the request dropped it) was never locked (E20): it takes no
-  `Retire`, and every write back of that table leaves the entry out; `Remove` → `Insert(parent, oldPosition, old)` or
+  `Retire`, and every write back of that table leaves the entry out; in general, an Undo never undoes a lock
+  fact: every id and `@stable` value the edit locked (E20) keeps, in the Undo's target, the form the
+  edit's result holds (an id the before state lacked is retired), every write back of a stable
+  table or of a `@stable` field takes those values from the edit's result, and when the edit
+  wrote lock lines the Undo's verification (E22) checks the lock too; `Remove` → `Insert(parent, oldPosition, old)` or
   `AddEntry(parent, key, old)` followed by a `Move` to the old position (where file paths fix the
   order, reason `order`, an `Add` or `AddEntry` alone, placed by N1–N4); `Move` → `Move` back;
   `Rename` → `Rename` back; `RenameName` → `RenameName(<canonical new name>, <old name>)` (E37); `SetCase` → `Set(old whole variant value)`. `Retire` has no inverse
