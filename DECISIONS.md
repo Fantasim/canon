@@ -2568,7 +2568,10 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      A TypeScript record that is both a table row and a plain value has optional `id`/`retired`
      (CODEGEN §5.4). A `data`-mode reader's default for an absent field holding a record or case
      with precomputed export fns takes their results precomputed at stage E, as `baked` does.
-     Reason: T1 review, log-2026-10-02.
+     A ref, or a map key, into an `@ts(bigint)` key field is a `bigint` in TypeScript (type, literal,
+     decoder), and E8101 covers it as it covers the field. A plain use of another package's row record
+     is refused (its `id` is that package's), and a `data` value of another package's record decodes
+     through that package's `types`-mode decoder. Reason: T1 review, log-2026-10-02.
 
 ## Still open
 
