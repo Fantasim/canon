@@ -82,7 +82,7 @@ func unifiedDiff(name string, old, updated []byte) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf(fmtWrap, err)
 	}
-	return d, nil
+	return fixHunkStarts(d), nil
 }
 
 func writeText(w io.Writer, s string) error {

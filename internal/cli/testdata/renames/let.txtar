@@ -52,7 +52,7 @@ features.renames:missions quests
    /// How hard it is to come by.
    rarity: Rarity
    /// The level asked.
-@@ -22,7 +18,7 @@
+@@ -22,7 +22,7 @@
  }
  
  /// The label of the starter quest, as the shop prints it.

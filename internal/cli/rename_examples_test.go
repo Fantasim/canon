@@ -12,8 +12,6 @@ import (
 	"strings"
 	"testing"
 
-	udiff "github.com/aymanbagabas/go-udiff"
-
 	"github.com/fantasim/canonlang/internal/cli"
 	"github.com/fantasim/canonlang/internal/testkit/golden"
 )
@@ -90,7 +88,7 @@ func changedDiff(t *testing.T, before, after map[string]string) string {
 		if before[name] == after[name] {
 			continue
 		}
-		d, err := udiff.ToUnified(name, name, before[name], udiff.Lines(before[name], after[name]), udiff.DefaultContextLines)
+		d, err := cli.UnifiedDiff(name, []byte(before[name]), []byte(after[name]))
 		if err != nil {
 			t.Fatal(err)
 		}

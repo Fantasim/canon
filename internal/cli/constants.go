@@ -239,3 +239,17 @@ var editRefusals = [...]error{
 	canon.ErrKeyExists, canon.ErrStableKey, canon.ErrNotEditable, canon.ErrStale, canon.ErrRejected,
 	canon.ErrNotCanonical, canon.ErrPathCollision, canon.ErrOverlay, canon.ErrNameClash,
 }
+
+// Unified diff hunk header fixing (CLI.md §3.6): go-udiff v0.4.1 drops the joined context lines from the new-side start.
+const (
+	hunkHeaderPattern = `^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@(.*)$`
+	hunkMarker        = "@@"
+	hunkHeaderGroups  = 6
+	grpOldStart       = 1
+	grpOldCount       = 2
+	grpNewStart       = 3
+	grpNewCount       = 4
+	grpTail           = 5
+	hunkDefaultCount  = 1
+	decimalBase       = 10
+)
