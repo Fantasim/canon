@@ -1,8 +1,8 @@
 # State — Canon compiler
 
-Updated: 2026-10-02. **M5 built** (DECISIONS 274, 275): a read-only LSP plus an agent CLI
-(`canon edit`, `canon rename`), every unit reviewed PASS, `make check` green (HEAD `2edf068`). Left
-before acceptance: CI on Linux for the final run (macOS, Windows green on `398d907`). M4 accepted (`c5324f6`). Calls:
+Updated: 2026-10-02. **M5 accepted** (CI green on Linux, macOS, Windows: run 36973712977 on `398d907`) (DECISIONS 274, 275): a read-only LSP plus an agent CLI
+(`canon edit`, `canon rename`), every unit reviewed PASS, `make check` green (HEAD `2edf068`). Now: M6's TypeScript
+part and the M5 gaps (DECISIONS 277). M4 accepted (`c5324f6`). Calls:
 [decisions/log-2026-10-02.md](decisions/log-2026-10-02.md). Design: ADR-0013 (rename layout).
 
 ## Current focus
