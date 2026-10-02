@@ -45,6 +45,7 @@ the network.
 | `canon edit` | apply one edit request (JSON) through the edit API |
 | `canon rename <name> <new>` | rename a Canon name everywhere it is used |
 | `canon version` | compiler and language versions |
+| `canon guide [topic]` | the agent guide: the language and the workflow, for an AI agent |
 
 ---
 
@@ -562,7 +563,8 @@ the write is checked, atomic and minimal. The request is the JSON form of API.md
 the file or, without one, from stdin, plus one optional top-level key read by the command itself:
 `"editLayer"`, which sets `Options.EditLayer` as `--edit-layer` does (both given and different is
 a usage error). Before editing, the command checks every package, so its revision covers the
-whole project and a printed `base` is current for the next run.
+whole project and a printed `base` is current for the next run. A request with no ops (`{"ops":[]}`) writes nothing and
+prints the current `revision`: the way to get a `base` before a first edit.
 
 `canon edit` is a command for agents: its output is always JSON lines, whatever `--format` says
 (DECISIONS 274). First one object:
@@ -619,6 +621,17 @@ Like `canon edit`, its output is always JSON lines: one `{"rename":{…}}` objec
 findings and the summary. Errors print and exit as §3.15 says.
 
 Exit: 0, 1, 2, 3.
+
+
+### 3.17 `canon guide`
+
+```
+canon guide [topic]
+```
+
+Prints the agent guide embedded in the binary (DECISIONS 276): with no topic, the index, which
+lists the topics in one line each; with a topic, that topic. The text matches the binary's
+version. An unknown topic is a usage error that lists the topics. Exit: 0, 2.
 
 ---
 
@@ -870,3 +883,22 @@ canon edit fix.json                       # apply value changes; prints the Undo
 canon rename <name> <new-name>            # rename a field, type, function, let or local everywhere
 canon fmt                                 # after any hand edit of the code itself
 ```
+
+---
+
+## 7. Installing and updating
+
+Linux (amd64, arm64), from the GitHub releases (DECISIONS 276):
+
+```
+curl -fsSL https://raw.githubusercontent.com/Fantasim/canon/main/tools/install.sh | sh             # latest
+curl -fsSL https://raw.githubusercontent.com/Fantasim/canon/main/tools/install.sh | sh -s -- v0.2.0 # a version
+```
+
+The script downloads `canon_<version>_linux_<arch>.tar.gz`, checks it against `checksums.txt`, and
+installs `canon` into `$CANON_INSTALL_DIR` (default `~/.local/bin`). Running it again updates.
+The version can also come from `$CANON_VERSION`; `$CANON_RELEASE_BASE` replaces the release
+download URL (a mirror, or a local test release). A tag `vX.Y.Z-suffix` is a prerelease: it is
+published but never installed as the latest.
+`canon version` prints the installed version. A release is made by pushing a tag `v<semver>`.
+

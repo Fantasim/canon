@@ -2525,6 +2525,21 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      command, like `canon edit`, prints JSON lines. The name index is `check.Program.Occurrences`,
      which later serves LSP references of names. Reason: sync A2, 2026-10-02.
 
+276. **Releases, install and `canon guide` (CLI.md §3.14, §3.17, §7; IMPLEMENTATION-PLAN §11).**
+     A tag `v<semver>` pushed to the repository builds `canon` for linux/amd64 and linux/arm64 with
+     the tag without its `v` as its compiler version (`internal/build.CompilerVersion`, set at link
+     time; `0.1.0` otherwise; the commit comes from Go's VCS stamp, API.md T3, from a clean tree),
+     and publishes `canon_<version>_linux_<arch>.tar.gz` and
+     `checksums.txt` as a GitHub release. `tools/install.sh` installs the latest release, or the
+     version given (argument or `$CANON_VERSION`), into `$CANON_INSTALL_DIR` (default
+     `~/.local/bin`) after checking its sha256 (`$CANON_RELEASE_BASE` points it at a mirror or a test
+     release); a tag with a `-` suffix is published as a prerelease, never "latest";
+     running it again is the update. The compiler itself never touches the network (CLI.md §1), so
+     there is no self-update command. `canon guide [topic]` prints the agent guide embedded in the
+     binary, matched to its version: a short index, then one topic per subject, written for
+     agents (token-efficient, no prose a `--help` or an error message already gives). Reason:
+     Louis, 2026-10-02.
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.

@@ -32,8 +32,10 @@ const (
 // lineageCap is the Recheck lineages a cache generation keeps, one per set of packages checked.
 const lineageCap = 3
 
-// CompilerVersion is the compiler's version, the manifest's compiler line (WIRE.md §10, API.md §14).
-const CompilerVersion = "0.1.0"
+const defaultVersion = "0.1.0"
+
+// CompilerVersion is the compiler's version (WIRE.md §10, API.md §14); a var for -ldflags -X (decision 276).
+var CompilerVersion = defaultVersion
 
 // The build manifest's first line, line keywords, field separator, commands and hash mark (WIRE.md §10).
 const (

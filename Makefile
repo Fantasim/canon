@@ -5,6 +5,12 @@
 # examples/go.mod holds no package: it only keeps the goldens out of the compiler module, so
 # nothing vets it; each golden Go module has its own go.mod and is vetted by goldens-vet.
 
+# VERSION is untrusted (see the dist target): this guard runs before any $(shell) below, which
+# would otherwise expand a "$" in it through the environment make exports.
+ifneq ($(findstring $$,$(value VERSION)),)
+$(error VERSION must be vX.Y.Z[-suffix])
+endif
+
 AUDIT_DIR   := tools/audit
 AUDIT       := cd $(AUDIT_DIR) && go run .
 # Every Go module holding generated goldens: vetted and tested in place, never formatted or
@@ -245,3 +251,39 @@ bench-edit:
 bench-lsp:
 	systemd-run --user --scope -q -p MemoryMax=6G env GOTOOLCHAIN=local TMPDIR=/var/tmp go test -count=1 -timeout 0 \
 	  -run '^TestLatency$$' -v ./internal/lsp -lsp.bench $(BENCH_EDIT_N)
+
+# DECISIONS 276, CLI.md §7: `make dist VERSION=v0.2.0` builds the release archives of linux/amd64
+# and linux/arm64 into dist/ (git-ignored), with the version (the tag without its "v") set at link
+# time (the commit is the binary's VCS stamp, API.md T3, hence the clean-tree rule), and
+# dist/checksums.txt. The archives are reproducible: sorted, owner 0, fixed mode, the commit's
+# time, gzip -n. A LICENSE file joins README.md when one exists. `make tag VERSION=v0.2.0` makes
+# the annotated tag on a clean main and never pushes it. VERSION is untrusted text: recipes read
+# "$$VERSION" from the environment, never "$(VERSION)" (make would expand it), and a "$" in it is
+# refused before anything expands it, and it must be one line. (A VERSION:= on the command line is
+# expanded by make itself: the caller's own risk.)
+VERSION    ?=
+export VERSION
+VERSION_RE := ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$$
+DIST_ARCHS := amd64 arm64
+BUILD_PKG  := github.com/fantasim/canonlang/internal/build
+.PHONY: dist tag
+dist:
+	@[ "$$(printf '%s\n' "$$VERSION" | wc -l)" -eq 1 ] && printf '%s\n' "$$VERSION" | grep -Eq '$(VERSION_RE)' || { echo "dist: VERSION=vX.Y.Z[-suffix] is required"; exit 1; }
+	@[ -z "$$(git status --porcelain)" ] || { echo "dist: the working tree is not clean (untracked files included)"; exit 1; }
+	@set -e; v="$$VERSION"; v="$${v#v}"; when="$$(git log -1 --format=%ct)"; rm -rf dist; mkdir -p dist; \
+	for arch in $(DIST_ARCHS); do \
+	  name="canon_$${v}_linux_$${arch}"; stage="dist/$$name"; mkdir -p "$$stage"; \
+	  GOTOOLCHAIN=local CGO_ENABLED=0 GOOS=linux GOARCH=$$arch go build -trimpath \
+	    -ldflags "-s -w -X $(BUILD_PKG).CompilerVersion=$$v" -o "$$stage/canon" ./cmd/canon; \
+	  cp README.md "$$stage/"; if [ -f LICENSE ]; then cp LICENSE "$$stage/"; fi; \
+	  tar --sort=name --mtime="@$$when" --owner=0 --group=0 --numeric-owner --mode=u=rwX,go=rX \
+	    -cf - -C "$$stage" . | gzip -n > "dist/$$name.tar.gz"; rm -rf "$$stage"; \
+	done; \
+	cd dist && sha256sum ./*.tar.gz | sed 's| \./| |' > checksums.txt
+
+tag:
+	@[ "$$(printf '%s\n' "$$VERSION" | wc -l)" -eq 1 ] && printf '%s\n' "$$VERSION" | grep -Eq '$(VERSION_RE)' || { echo "tag: VERSION=vX.Y.Z[-suffix] is required"; exit 1; }
+	@[ "$$(git rev-parse --abbrev-ref HEAD)" = main ] || { echo "tag: not on main"; exit 1; }
+	@[ -z "$$(git status --porcelain)" ] || { echo "tag: the working tree is not clean"; exit 1; }
+	git tag -a "$$VERSION" -m "canon $$VERSION"
+	@echo "tagged $$VERSION; publish the release with: git push origin $$VERSION"

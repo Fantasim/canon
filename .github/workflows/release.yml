@@ -1,0 +1,44 @@
+# DECISIONS 276: a tag v<semver> checks the repository, builds the linux archives and publishes
+# them as a GitHub release (make dist, CLI.md §7). Setup is check.yml's.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      GOTOOLCHAIN: local
+      TAG: ${{ github.ref_name }}
+      VERSION: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+          cache-dependency-path: |
+            go.sum
+            tools/audit/go.sum
+            tools/audit/toolchain/go.sum
+      - run: sudo apt-get update && sudo apt-get install -y nlohmann-json3-dev libc++-dev libc++abi-dev
+      - name: refuse a tag that is not a semver
+        run: |
+          [ "$(printf '%s\n' "$TAG" | wc -l)" -eq 1 ] || { echo "bad tag: not one line"; exit 1; }
+          printf '%s\n' "$TAG" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$' || { echo "bad tag"; exit 1; }
+      - run: make check
+      - run: make dist
+      - name: publish the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          flags=""
+          case "$TAG" in *-*) flags="--prerelease" ;; esac
+          # shellcheck disable=SC2086
+          gh release create "$TAG" dist/*.tar.gz dist/checksums.txt --title "$TAG" --generate-notes --verify-tag $flags
