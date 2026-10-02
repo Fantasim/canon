@@ -2554,6 +2554,17 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      with IMPLEMENTATION-PLAN §8.1); a `@files` template name outside the template's scope is the
      checker's unknown-name finding. Reason: Louis, 2026-10-02; log-2026-10-02.
 
+278. **TypeScript decoding and refusals (CODEGEN.md §3.5, §8.1, §8.2; ERRORS.md E8005, E8019).**
+     `JSON.parse` cannot keep what WIRE.md writes (integers past 2^53, the order of integer-like map
+     keys, the token form of numbers), so a `data`-mode TypeScript file exports `parse<V>(text)`,
+     which reads the JSON text with the file's own small tokenizer and is exact, beside
+     `decode<V>(json)`, which takes a parsed value with the limits CODEGEN §8.1 lists. The decoders'
+     private `dec…` helpers are allowed beside §8.2's runtime block. Stage E gets a TypeScript name
+     plan, so a collision is `E8005` from `canon check` as for Go and C++, never a build crash, and
+     every construct the TypeScript generator cannot produce (a dependent map's decoder, another
+     package's dependent type, a record of another package not emitted in `types` mode) is `E8019`
+     at stage E. Reason: T1 review, log-2026-10-02.
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.

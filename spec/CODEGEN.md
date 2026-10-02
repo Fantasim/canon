@@ -2766,8 +2766,15 @@ applies).
   `CanonTable` values. `readonly` makes writes fail at compile time, freezing at run time (TS-01).
 - The file uses only erasable syntax (no `enum`, no `namespace`, no parameter properties), so it
   also runs under Node's type stripping.
-- `data` mode exports `decode<V>(json: unknown)` per value and performs no I/O (TS-01); it throws
-  on a `$schema` mismatch.
+- `data` mode exports, per value, `parse<V>(text: string)` and `decode<V>(json: unknown)`, and
+  performs no I/O (TS-01); both throw on a `$schema` mismatch. `parse` reads the JSON text with the
+  file's own tokenizer, so it reads exactly what WIRE.md writes: integers past 2^53 into
+  `@ts(bigint)` fields, map members in file order, `2.0` or `1e3` for an `Int` refused (`E7103`),
+  durations by their exact decimal. `decode` takes an already parsed value and cannot see those:
+  a `@ts(bigint)` integer past 2^53 is refused, integer-like map keys come in JavaScript's order,
+  and number tokens are judged by value (DECISIONS 278).
+- Decoders use private helpers (`dec…`), written after the export fns, only those a file uses;
+  §8.2's block is the shared runtime, and these are the decoders' own (DECISIONS 278).
 
 ### 8.2 Helper block
 
