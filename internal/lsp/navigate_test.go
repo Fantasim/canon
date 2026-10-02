@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
 	"testing"
@@ -68,11 +69,14 @@ func TestProjectAboveError(t *testing.T) {
 	dir := t.TempDir()
 	file := filepath.Join(dir, "file")
 	must(t, os.WriteFile(file, nil, 0o644))
-	root, err := projectAbove(filepath.ToSlash(filepath.Join(file, "x.canon")))
-	if root != "" || !errors.Is(err, errFind) {
-		t.Fatalf("projectAbove under a file = %q, %v; want errFind", root, err)
+	// Windows reports a path under a regular file as not found, not as ENOTDIR.
+	if runtime.GOOS != "windows" {
+		root, err := projectAbove(filepath.ToSlash(filepath.Join(file, "x.canon")))
+		if root != "" || !errors.Is(err, errFind) {
+			t.Fatalf("projectAbove under a file = %q, %v; want errFind", root, err)
+		}
 	}
-	root, err = projectAbove(filepath.ToSlash(filepath.Join(dir, "x.canon")))
+	root, err := projectAbove(filepath.ToSlash(filepath.Join(dir, "x.canon")))
 	if root != "" || err != nil {
 		t.Fatalf("projectAbove in no project = %q, %v; want none", root, err)
 	}
