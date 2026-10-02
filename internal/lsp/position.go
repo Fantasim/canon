@@ -67,6 +67,39 @@ func (l *lines) at(line, col int) position {
 	return position{Line: line - 1, Character: utf16Len(text[:bytesIn])}
 }
 
+// offset converts an LSP position to a byte offset of the text, the inverse of at: a character
+// past the line's end is the line's end, a line past the text the text's end, and a character
+// inside a surrogate pair the pair's first byte.
+func (l *lines) offset(p position) int {
+	if p.Line < 0 {
+		return 0
+	}
+	if p.Line >= len(l.starts) {
+		return len(l.text)
+	}
+	at := l.starts[p.Line]
+	text := l.text[at:]
+	if end := bytes.IndexByte(text, newline); end >= 0 {
+		text = text[:end]
+	}
+	units, i := 0, 0
+	for i < len(text) {
+		r, size := utf8.DecodeRune(text[i:])
+		units += max(utf16.RuneLen(r), 1)
+		if units > p.Character {
+			break
+		}
+		i += size
+	}
+	return at + i
+}
+
+// end is the position after the text's last character.
+func (l *lines) end() position {
+	last := len(l.starts) - 1
+	return position{Line: last, Character: utf16Len(l.text[l.starts[last]:])}
+}
+
 // span converts a finding's location; the end is exclusive in both forms.
 func (l *lines) span(loc source.Location) textRange {
 	return textRange{Start: l.at(loc.Line, loc.Col), End: l.at(loc.EndLine, loc.EndCol)}

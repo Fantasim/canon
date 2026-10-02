@@ -4,6 +4,6 @@ initialize
 send {"jsonrpc":"2.0","method":"exit"}
 -- transcript --
 > initialize
-< {"jsonrpc":"2.0","id":0,"result":{"capabilities":{"positionEncoding":"utf-16","textDocumentSync":{"openClose":true,"change":1}},"serverInfo":{"name":"canon"}}}
+< {"jsonrpc":"2.0","id":0,"result":{"capabilities":{"positionEncoding":"utf-16","textDocumentSync":{"openClose":true,"change":1},"hoverProvider":true,"definitionProvider":true,"referencesProvider":true,"documentFormattingProvider":true},"serverInfo":{"name":"canon"}}}
 > send {"jsonrpc":"2.0","method":"exit"}
 = lsp: exit before shutdown

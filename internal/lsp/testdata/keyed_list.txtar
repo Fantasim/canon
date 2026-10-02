@@ -1,0 +1,56 @@
+Definition and references through a keyed list, `[T] keyed by` (IMPLEMENTATION-PLAN §8.4
+Features, CLI.md §3.8, §4): from a ref's key, definition goes to the element and references
+list Refs' places of the element, after the element with includeDeclaration.
+-- proj/project.canon --
+project acme {
+  canon: "0.1"
+}
+-- proj/a/a.canon --
+/// A.
+package a
+
+/// An item.
+record Item {
+  /// Its id.
+  id: String
+  /// Its weight.
+  weight: Int = 1
+}
+
+/// Items, keyed by id.
+let items: [Item] keyed by id = [
+  { id: "sword" },
+  { id: "shield", weight: 3 },
+]
+
+/// Picks.
+let picks: [ref items] = ["shield", "sword"]
+
+/// One.
+let one: ref items = "shield"
+-- script --
+initialize
+send {"jsonrpc":"2.0","method":"initialized","params":{}}
+open proj/a/a.canon
+wait
+send {"jsonrpc":"2.0","id":1,"method":"textDocument/definition","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":18,"character":28}}}
+send {"jsonrpc":"2.0","id":2,"method":"textDocument/references","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":18,"character":28},"context":{"includeDeclaration":true}}}
+send {"jsonrpc":"2.0","id":3,"method":"textDocument/references","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":18,"character":38},"context":{"includeDeclaration":false}}}
+send {"jsonrpc":"2.0","id":4,"method":"shutdown"}
+send {"jsonrpc":"2.0","method":"exit"}
+-- transcript --
+> initialize
+< {"jsonrpc":"2.0","id":0,"result":{"capabilities":{"positionEncoding":"utf-16","textDocumentSync":{"openClose":true,"change":1},"hoverProvider":true,"definitionProvider":true,"referencesProvider":true,"documentFormattingProvider":true},"serverInfo":{"name":"canon"}}}
+> send {"jsonrpc":"2.0","method":"initialized","params":{}}
+> open proj/a/a.canon
+> wait
+> send {"jsonrpc":"2.0","id":1,"method":"textDocument/definition","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":18,"character":28}}}
+< {"jsonrpc":"2.0","id":1,"result":{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":14,"character":2},"end":{"line":14,"character":29}}}}
+> send {"jsonrpc":"2.0","id":2,"method":"textDocument/references","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":18,"character":28},"context":{"includeDeclaration":true}}}
+< {"jsonrpc":"2.0","id":2,"result":[{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":14,"character":2},"end":{"line":14,"character":29}}},{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":18,"character":26},"end":{"line":18,"character":34}}},{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":21,"character":21},"end":{"line":21,"character":29}}}]}
+> send {"jsonrpc":"2.0","id":3,"method":"textDocument/references","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":18,"character":38},"context":{"includeDeclaration":false}}}
+< {"jsonrpc":"2.0","id":3,"result":[{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":18,"character":36},"end":{"line":18,"character":43}}}]}
+> send {"jsonrpc":"2.0","id":4,"method":"shutdown"}
+< {"jsonrpc":"2.0","id":4,"result":null}
+> send {"jsonrpc":"2.0","method":"exit"}
+= <nil>

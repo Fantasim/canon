@@ -26,6 +26,6 @@ func Example() {
 	fmt.Println(initialized)
 	fmt.Println(shutdown, err)
 	// Output:
-	// {"jsonrpc":"2.0","id":1,"result":{"capabilities":{"positionEncoding":"utf-16","textDocumentSync":{"openClose":true,"change":1}},"serverInfo":{"name":"canon"}}}
+	// {"jsonrpc":"2.0","id":1,"result":{"capabilities":{"positionEncoding":"utf-16","textDocumentSync":{"openClose":true,"change":1},"hoverProvider":true,"definitionProvider":true,"referencesProvider":true,"documentFormattingProvider":true},"serverInfo":{"name":"canon"}}}
 	// {"jsonrpc":"2.0","id":2,"result":null} <nil>
 }

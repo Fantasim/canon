@@ -112,14 +112,18 @@ func (s *server) didChangeWatched(json.RawMessage) error {
 	return errors.Join(errs...)
 }
 
-// synced brings the project at root up to its buffers, then marks what abs's change made stale:
-// the project, or abs itself outside one, and restarts the debounce.
+// synced brings the project at root up to its buffers, the running pass cancelled first so the
+// sync never waits for it, then marks what abs's change made stale: the project, or abs itself
+// outside one, and restarts the debounce.
 func (s *server) synced(abs, root string) error {
 	key := abs
 	var err error
 	if root != "" {
 		key = root
 		s.mu.Lock()
+		if s.cancel != nil {
+			s.cancel()
+		}
 		p, docs := s.projects[root], s.buffers(root)
 		s.mu.Unlock()
 		err = p.sync(docs)

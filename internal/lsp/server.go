@@ -60,6 +60,10 @@ func init() {
 	requests = map[string]requestHandler{
 		methodInitialize: (*server).initialize,
 		methodShutdown:   (*server).shutdown,
+		methodHover:      (*server).hover,
+		methodDefinition: (*server).definition,
+		methodReferences: (*server).references,
+		methodFormatting: (*server).formatting,
 	}
 	notes = map[string]noteHandler{
 		methodInitialized: (*server).ignore,
@@ -139,6 +143,8 @@ func (s *server) dispatch(ctx context.Context, body []byte) (done bool, err erro
 	switch {
 	case m.Method == methodExit:
 		return true, s.ended(io.EOF)
+	case m.Method == "" && m.ID == nil:
+		return false, s.respond(nullID, nil, errInvalidRequest) // neither a request nor a response (JSON-RPC 2.0 §5)
 	case m.Method == "":
 		return false, nil // a response: the server sends no request
 	case m.ID == nil:
@@ -195,8 +201,12 @@ type initializeResult struct {
 }
 
 type capabilities struct {
-	PositionEncoding string      `json:"positionEncoding"`
-	TextDocumentSync syncOptions `json:"textDocumentSync"`
+	PositionEncoding           string      `json:"positionEncoding"`
+	TextDocumentSync           syncOptions `json:"textDocumentSync"`
+	HoverProvider              bool        `json:"hoverProvider"`
+	DefinitionProvider         bool        `json:"definitionProvider"`
+	ReferencesProvider         bool        `json:"referencesProvider"`
+	DocumentFormattingProvider bool        `json:"documentFormattingProvider"`
 }
 
 type syncOptions struct {
@@ -208,12 +218,16 @@ type serverInfo struct {
 	Name string `json:"name"`
 }
 
-// initialize offers UTF-16 positions and full-document sync, nothing else (DECISIONS 274).
+// initialize offers UTF-16 positions, full-document sync, hover, definition, references and
+// formatting; completion, code actions and rename are not offered (DECISIONS 274).
 func (s *server) initialize(context.Context, json.RawMessage) (any, error) {
 	s.phase = phaseRunning
 	return initializeResult{
-		Capabilities: capabilities{PositionEncoding: encodingUTF16, TextDocumentSync: syncOptions{OpenClose: true, Change: syncFull}},
-		ServerInfo:   serverInfo{Name: canonName},
+		Capabilities: capabilities{
+			PositionEncoding: encodingUTF16, TextDocumentSync: syncOptions{OpenClose: true, Change: syncFull},
+			HoverProvider: true, DefinitionProvider: true, ReferencesProvider: true, DocumentFormattingProvider: true,
+		},
+		ServerInfo: serverInfo{Name: canonName},
 	}, nil
 }
 

@@ -1,0 +1,46 @@
+A buffer with "\r\n" line ends (IMPLEMENTATION-PLAN §8.4 Positions, Features; GRAMMAR.md §1
+normalizes them): the formatting edit spans the whole buffer, its end after the last line
+break, and gives the canonical layout; hover finds the name at its UTF-16 position after
+non-ASCII text, unshifted by the "\r" of the lines before.
+-- proj/project.canon --
+project acme {
+  canon: "0.1"
+}
+-- proj/a/a.canon --
+/// A.
+package a
+
+/// N.
+let n: Int = 1
+-- edits/crlf.canon --
+/// A.
+package a
+/// N.
+/* é中😀 */ let   n: Int=1
+-- script --
+initialize
+send {"jsonrpc":"2.0","method":"initialized","params":{}}
+open proj/a/a.canon
+wait
+change proj/a/a.canon edits/crlf.canon crlf
+wait
+send {"jsonrpc":"2.0","id":1,"method":"textDocument/formatting","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"options":{"tabSize":2,"insertSpaces":true}}}
+send {"jsonrpc":"2.0","id":2,"method":"textDocument/hover","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":3,"character":17}}}
+send {"jsonrpc":"2.0","id":3,"method":"shutdown"}
+send {"jsonrpc":"2.0","method":"exit"}
+-- transcript --
+> initialize
+< {"jsonrpc":"2.0","id":0,"result":{"capabilities":{"positionEncoding":"utf-16","textDocumentSync":{"openClose":true,"change":1},"hoverProvider":true,"definitionProvider":true,"referencesProvider":true,"documentFormattingProvider":true},"serverInfo":{"name":"canon"}}}
+> send {"jsonrpc":"2.0","method":"initialized","params":{}}
+> open proj/a/a.canon
+> wait
+> change proj/a/a.canon edits/crlf.canon crlf
+> wait
+> send {"jsonrpc":"2.0","id":1,"method":"textDocument/formatting","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"options":{"tabSize":2,"insertSpaces":true}}}
+< {"jsonrpc":"2.0","id":1,"result":[{"range":{"start":{"line":0,"character":0},"end":{"line":4,"character":0}},"newText":"/// A.\npackage a\n\n/// N.\n/* é中😀 */ let n: Int = 1\n"}]}
+> send {"jsonrpc":"2.0","id":2,"method":"textDocument/hover","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":3,"character":17}}}
+< {"jsonrpc":"2.0","id":2,"result":{"contents":{"kind":"markdown","value":"```canon\nn: Int\n```\n\nN.\n\nValue:\n```canon\n1\n```"},"range":{"start":{"line":3,"character":17},"end":{"line":3,"character":18}}}}
+> send {"jsonrpc":"2.0","id":3,"method":"shutdown"}
+< {"jsonrpc":"2.0","id":3,"result":null}
+> send {"jsonrpc":"2.0","method":"exit"}
+= <nil>

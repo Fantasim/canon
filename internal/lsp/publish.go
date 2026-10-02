@@ -49,6 +49,10 @@ type converter struct {
 	root  string
 }
 
+func newConverter(set fileSet, root string) *converter {
+	return &converter{set: set, lines: map[source.FileID]*lines{}, root: root}
+}
+
 // diagnosticsOf is f's findings as diagnostics by absolute file name, each file's in F2 order;
 // a finding with no file goes to project.canon of root.
 func diagnosticsOf(f build.Findings, root string) (map[string][]diagnostic, error) {
@@ -60,7 +64,7 @@ func diagnosticsOf(f build.Findings, root string) (map[string][]diagnostic, erro
 	if !ok {
 		return nil, errFileSet
 	}
-	c := converter{set: set, lines: map[source.FileID]*lines{}, root: root}
+	c := newConverter(set, root)
 	located := diag.Locate(f.Files, f.List)
 	for i, raw := range f.List {
 		abs, d := c.diagnostic(raw, located[i])
@@ -106,6 +110,18 @@ func (c *converter) place(id source.FileID, loc source.Location) (string, textRa
 	return file.Abs, l.span(loc), true
 }
 
+// spanOf is the absolute name and UTF-16 range of a span, false for a span in no file.
+func (c *converter) spanOf(at source.Span) (string, textRange, bool) {
+	file := c.set.File(at.File)
+	if file == nil {
+		return "", textRange{}, false
+	}
+	var loc source.Location
+	loc.Line, loc.Col = file.Position(at.Start)
+	loc.EndLine, loc.EndCol = file.Position(at.End)
+	return c.place(at.File, loc)
+}
+
 // sortDiagnostics orders one file's diagnostics as API.md F2 orders findings.
 func sortDiagnostics(list []diagnostic) {
 	slices.SortStableFunc(list, func(a, b diagnostic) int {
@@ -125,17 +141,14 @@ func looseDiagnostics(lw looseWork) (map[string][]diagnostic, error) {
 	if err != nil {
 		return map[string][]diagnostic{}, err
 	}
-	kind := syntax.FileSource
-	if path.Base(lw.abs) == project.FileName {
-		kind = syntax.FileProject
-	}
 	bag := diag.NewBag(set, "")
-	syntax.Parse(f, kind, bag)
+	syntax.Parse(f, fileKind(lw.abs), bag)
 	return diagnosticsOf(build.Findings{Files: set, List: bag.Findings()}, project.DirOf(lw.abs))
 }
 
-// publish replaces each owner's diagnostics with its new lists, then sends every file whose
-// diagnostics changed, in name order: its findings from every owner, or an empty list.
+// publish replaces each owner's diagnostics with its new lists, then sends, in name order,
+// every file a recomputed owner had or has diagnostics in, changed or not: its findings from
+// every owner, or an empty list.
 func (s *server) publish(lists map[string]map[string][]diagnostic, uris map[string]string) {
 	changed := map[string]bool{}
 	for _, owner := range slices.Sorted(maps.Keys(lists)) {
@@ -153,7 +166,8 @@ func (s *server) publish(lists map[string]map[string][]diagnostic, uris map[stri
 	}
 }
 
-// replace makes files the owner's diagnostics, marking every file it had or has in changed.
+// replace makes files the owner's only diagnostics: its lists in files it no longer has any
+// in are dropped. Every file it had or has a list in is marked in changed, to be sent again.
 func (s *server) replace(owner string, files map[string][]diagnostic, changed map[string]bool) {
 	//canon:unordered every file is marked, sent in order by publish
 	for abs, owners := range s.published {

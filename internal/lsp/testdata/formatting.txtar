@@ -1,0 +1,72 @@
+Formatting is `canon fmt` (IMPLEMENTATION-PLAN §8.4 Features, CLI.md §3.6, §4, API.md §14): a
+buffer not in the canonical layout gets one edit replacing its whole text; project.canon is
+formatted as a project file; a JSON document is not formatted (null); a buffer with a syntax
+error is refused, as fmt leaves such a file unchanged (RequestFailed); a canonical one gets none.
+-- proj/project.canon --
+project acme {
+    canon: "0.1"
+}
+-- proj/a/a.canon --
+/// A.
+package a
+/// N.
+let   n: Int=1 // é中😀
+-- proj/a/n.json --
+[1,2]
+-- edits/broken.canon --
+/// A.
+package a
+
+let = 1
+-- edits/canonical.canon --
+/// A.
+package a
+
+/// N.
+let n: Int = 1 // é中😀
+-- script --
+initialize
+send {"jsonrpc":"2.0","method":"initialized","params":{}}
+open proj/a/a.canon
+open proj/project.canon
+open proj/a/n.json
+wait
+send {"jsonrpc":"2.0","id":1,"method":"textDocument/formatting","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"options":{"tabSize":4,"insertSpaces":true}}}
+send {"jsonrpc":"2.0","id":2,"method":"textDocument/formatting","params":{"textDocument":{"uri":"$URI/proj/project.canon"},"options":{"tabSize":4,"insertSpaces":true}}}
+send {"jsonrpc":"2.0","id":3,"method":"textDocument/formatting","params":{"textDocument":{"uri":"$URI/proj/a/n.json"},"options":{"tabSize":4,"insertSpaces":true}}}
+change proj/a/a.canon edits/broken.canon
+wait
+send {"jsonrpc":"2.0","id":4,"method":"textDocument/formatting","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"options":{"tabSize":4,"insertSpaces":true}}}
+change proj/a/a.canon edits/canonical.canon
+wait
+send {"jsonrpc":"2.0","id":5,"method":"textDocument/formatting","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"options":{"tabSize":4,"insertSpaces":true}}}
+send {"jsonrpc":"2.0","id":6,"method":"shutdown"}
+send {"jsonrpc":"2.0","method":"exit"}
+-- transcript --
+> initialize
+< {"jsonrpc":"2.0","id":0,"result":{"capabilities":{"positionEncoding":"utf-16","textDocumentSync":{"openClose":true,"change":1},"hoverProvider":true,"definitionProvider":true,"referencesProvider":true,"documentFormattingProvider":true},"serverInfo":{"name":"canon"}}}
+> send {"jsonrpc":"2.0","method":"initialized","params":{}}
+> open proj/a/a.canon
+> open proj/project.canon
+> open proj/a/n.json
+> wait
+> send {"jsonrpc":"2.0","id":1,"method":"textDocument/formatting","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"options":{"tabSize":4,"insertSpaces":true}}}
+< {"jsonrpc":"2.0","id":1,"result":[{"range":{"start":{"line":0,"character":0},"end":{"line":4,"character":0}},"newText":"/// A.\npackage a\n\n/// N.\nlet n: Int = 1 // é中😀\n"}]}
+> send {"jsonrpc":"2.0","id":2,"method":"textDocument/formatting","params":{"textDocument":{"uri":"$URI/proj/project.canon"},"options":{"tabSize":4,"insertSpaces":true}}}
+< {"jsonrpc":"2.0","id":2,"result":[{"range":{"start":{"line":0,"character":0},"end":{"line":3,"character":0}},"newText":"project acme {\n  canon: \"0.1\"\n}\n"}]}
+> send {"jsonrpc":"2.0","id":3,"method":"textDocument/formatting","params":{"textDocument":{"uri":"$URI/proj/a/n.json"},"options":{"tabSize":4,"insertSpaces":true}}}
+< {"jsonrpc":"2.0","id":3,"result":null}
+> change proj/a/a.canon edits/broken.canon
+> wait
+< {"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"$URI/proj/a/a.canon","diagnostics":[{"range":{"start":{"line":3,"character":4},"end":{"line":3,"character":5}},"severity":1,"code":"E1116","source":"canon","message":"expected IDENT; found ="}]}}
+> send {"jsonrpc":"2.0","id":4,"method":"textDocument/formatting","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"options":{"tabSize":4,"insertSpaces":true}}}
+< {"jsonrpc":"2.0","id":4,"error":{"code":-32803,"message":"lsp: not formatted: format: the file has syntax errors"}}
+> change proj/a/a.canon edits/canonical.canon
+> wait
+< {"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"$URI/proj/a/a.canon","diagnostics":[]}}
+> send {"jsonrpc":"2.0","id":5,"method":"textDocument/formatting","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"options":{"tabSize":4,"insertSpaces":true}}}
+< {"jsonrpc":"2.0","id":5,"result":[]}
+> send {"jsonrpc":"2.0","id":6,"method":"shutdown"}
+< {"jsonrpc":"2.0","id":6,"result":null}
+> send {"jsonrpc":"2.0","method":"exit"}
+= <nil>

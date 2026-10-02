@@ -184,9 +184,10 @@ func (s *session) request(m map[string]any) error {
 	return s.response(id)
 }
 
-// response blocks until the response with id is received.
+// response blocks until the response with id is received, among the messages not yet printed:
+// two answers with a null id are each waited for.
 func (s *session) response(id []byte) error {
-	return s.rec.await(func(msg []byte) bool {
+	return s.rec.await(s.seen, func(msg []byte) bool {
 		var r struct{ ID json.RawMessage }
 		return json.Unmarshal(msg, &r) == nil && bytes.Equal(r.ID, id)
 	})
@@ -206,10 +207,15 @@ func (s *session) open(args []string) error {
 	return s.note(methodDidOpen, map[string]any{"textDocument": item})
 }
 
-// change sends the archive file args[1] as the full text of the buffer args[0].
+// change sends the archive file args[1] as the full text of the buffer args[0], its line ends
+// "\r\n" when args[2] is "crlf".
 func (s *session) change(args []string) error {
+	text := string(s.files[args[1]])
+	if len(args) > 2 && args[2] == "crlf" {
+		text = strings.ReplaceAll(text, "\n", "\r\n")
+	}
 	doc := map[string]any{"uri": s.uri + "/" + args[0], "version": 2}
-	return s.note(methodDidChange, map[string]any{"textDocument": doc, "contentChanges": []any{map[string]any{"text": string(s.files[args[1]])}}})
+	return s.note(methodDidChange, map[string]any{"textDocument": doc, "contentChanges": []any{map[string]any{"text": text}}})
 }
 
 func (s *session) closeDoc(args []string) error {
@@ -256,14 +262,14 @@ func (r *recorder) since(n int) [][]byte {
 	return append([][]byte(nil), r.msgs[n:]...)
 }
 
-// await blocks until a message matches.
-func (r *recorder) await(match func([]byte) bool) error {
+// await blocks until a message from the from-th on matches.
+func (r *recorder) await(from int, match func([]byte) bool) error {
 	deadline := time.AfterFunc(patience, func() { r.mu.Lock(); r.cond.Broadcast(); r.mu.Unlock() })
 	defer deadline.Stop()
 	start := time.Now()
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	for i := 0; ; {
+	for i := from; ; {
 		for ; i < len(r.msgs); i++ {
 			if match(r.msgs[i]) {
 				return nil

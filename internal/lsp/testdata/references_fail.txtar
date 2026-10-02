@@ -1,0 +1,67 @@
+Find references fails as `canon refs` does when a value that could hold a ref to the target was
+not computed (API.md §5.3: a partial list never looks complete): RequestFailed, with what Refs
+reported. A document in no project has no analysis: hover, definition and references are null
+(IMPLEMENTATION-PLAN §8.4 Transport).
+-- proj/project.canon --
+project acme {
+  canon: "0.1"
+}
+-- proj/r/r.canon --
+/// R.
+package r
+
+/// A status.
+record Status {
+  /// Next.
+  next: [ref statuses] = []
+}
+
+/// Statuses.
+let statuses: table Status = {
+  open {}
+  done {}
+}
+
+/// Picks.
+let picks: [ref statuses] = [open, done]
+
+/// An index past the end.
+let bad: [ref statuses] = [picks[3]]
+-- loose/x.canon --
+/// X.
+package x
+
+/// X.
+let x = 1
+-- script --
+initialize
+send {"jsonrpc":"2.0","method":"initialized","params":{}}
+open proj/r/r.canon
+open loose/x.canon
+wait
+send {"jsonrpc":"2.0","id":1,"method":"textDocument/references","params":{"textDocument":{"uri":"$URI/proj/r/r.canon"},"position":{"line":12,"character":2},"context":{"includeDeclaration":false}}}
+send {"jsonrpc":"2.0","id":2,"method":"textDocument/hover","params":{"textDocument":{"uri":"$URI/loose/x.canon"},"position":{"line":4,"character":4}}}
+send {"jsonrpc":"2.0","id":3,"method":"textDocument/definition","params":{"textDocument":{"uri":"$URI/loose/x.canon"},"position":{"line":4,"character":4}}}
+send {"jsonrpc":"2.0","id":4,"method":"textDocument/references","params":{"textDocument":{"uri":"$URI/loose/x.canon"},"position":{"line":4,"character":4}}}
+send {"jsonrpc":"2.0","id":5,"method":"shutdown"}
+send {"jsonrpc":"2.0","method":"exit"}
+-- transcript --
+> initialize
+< {"jsonrpc":"2.0","id":0,"result":{"capabilities":{"positionEncoding":"utf-16","textDocumentSync":{"openClose":true,"change":1},"hoverProvider":true,"definitionProvider":true,"referencesProvider":true,"documentFormattingProvider":true},"serverInfo":{"name":"canon"}}}
+> send {"jsonrpc":"2.0","method":"initialized","params":{}}
+> open proj/r/r.canon
+> open loose/x.canon
+> wait
+< {"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"$URI/proj/r/r.canon","diagnostics":[{"range":{"start":{"line":19,"character":27},"end":{"line":19,"character":35}},"severity":1,"code":"E4002","source":"canon","message":"index 3 out of range for length 2"}]}}
+> send {"jsonrpc":"2.0","id":1,"method":"textDocument/references","params":{"textDocument":{"uri":"$URI/proj/r/r.canon"},"position":{"line":12,"character":2},"context":{"includeDeclaration":false}}}
+< {"jsonrpc":"2.0","id":1,"error":{"code":-32803,"message":"lsp: references: r:bad: value not computed"}}
+> send {"jsonrpc":"2.0","id":2,"method":"textDocument/hover","params":{"textDocument":{"uri":"$URI/loose/x.canon"},"position":{"line":4,"character":4}}}
+< {"jsonrpc":"2.0","id":2,"result":null}
+> send {"jsonrpc":"2.0","id":3,"method":"textDocument/definition","params":{"textDocument":{"uri":"$URI/loose/x.canon"},"position":{"line":4,"character":4}}}
+< {"jsonrpc":"2.0","id":3,"result":null}
+> send {"jsonrpc":"2.0","id":4,"method":"textDocument/references","params":{"textDocument":{"uri":"$URI/loose/x.canon"},"position":{"line":4,"character":4}}}
+< {"jsonrpc":"2.0","id":4,"result":null}
+> send {"jsonrpc":"2.0","id":5,"method":"shutdown"}
+< {"jsonrpc":"2.0","id":5,"result":null}
+> send {"jsonrpc":"2.0","method":"exit"}
+= <nil>

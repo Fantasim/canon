@@ -71,3 +71,35 @@ func TestURIs(t *testing.T) {
 		}
 	}
 }
+
+// IMPLEMENTATION-PLAN §8.4 Positions: UTF-16 positions to byte offsets, and a text's end.
+func TestUTF16Offsets(t *testing.T) {
+	text := []byte("ab\né = 1\n中文 x\n😀y\n\xffz\nend")
+	l := newLines(text)
+	cases := []struct {
+		name string
+		at   position
+		want int
+	}{
+		{"ASCII", position{0, 1}, 1},
+		{"after an accent (1 unit, 2 bytes)", position{1, 1}, 5},
+		{"after two CJK characters", position{2, 2}, 16},
+		{"after an emoji (2 units, 4 bytes)", position{3, 2}, 23},
+		{"inside the emoji's pair: its first byte", position{3, 1}, 19},
+		{"after an invalid byte", position{4, 1}, 26},
+		{"past the line end: the line end", position{1, 40}, 9},
+		{"negative line", position{-1, 0}, 0},
+		{"line past the end: the text end", position{9, 0}, len(text)},
+	}
+	for _, tc := range cases {
+		if got := l.offset(tc.at); got != tc.want {
+			t.Errorf("%s: offset(%+v) = %d, want %d", tc.name, tc.at, got, tc.want)
+		}
+	}
+	ends := map[string]position{"": {0, 0}, "a\n": {1, 0}, "a\né中😀": {1, 4}}
+	for text, want := range ends {
+		if got := newLines([]byte(text)).end(); got != want {
+			t.Errorf("end(%q) = %+v, want %+v", text, got, want)
+		}
+	}
+}

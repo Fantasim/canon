@@ -1,0 +1,100 @@
+Hover (IMPLEMENTATION-PLAN §8.4 Features, CLI.md §4): the canonical type text, the doc comment,
+the default, and for a value its canonical text cut to 20 lines. On a field (its default in the
+canonical layout), a type, a let, a computed let, a let longer than 20 lines (cut, a last line
+marks it), a use after non-ASCII text (UTF-16 characters, §8.4 Positions: "/* é中😀 */ let
+shown: Int = " is 28 units, 34 bytes), a parameter, an enum member; null where no name is. In a
+layer file the value is the base value, labelled so (§8.4 Features). TestHoverCap: 4,096 bytes.
+-- proj/project.canon --
+project acme {
+  canon: "0.1"
+}
+-- proj/a/a.canon --
+/// A.
+package a
+
+/// One row.
+record Row {
+  /// A count.
+  n: Int = 1+2
+}
+
+/// Rows.
+let rows: [Row] = [{ n: 3 }, {}]
+
+/// The total.
+let total: Int = rows.map(.n).sum()
+
+/// A poem, longer than a hover shows.
+let poem: String = "1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22"
+
+/// Shown.
+/* é中😀 */ let shown: Int = total
+
+/// A tone.
+enum Tone { calm, loud }
+
+/// Twice.
+fn twice(x: Int = 2) -> Int {
+  return x * 2
+}
+
+/// The first row.
+let first: Row = { n: 5 }
+-- proj/a/dev.layer.canon --
+package a
+layer dev
+
+amend first {
+  n: 9
+}
+-- script --
+initialize
+send {"jsonrpc":"2.0","method":"initialized","params":{}}
+open proj/a/a.canon
+wait
+send {"jsonrpc":"2.0","id":1,"method":"textDocument/hover","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":6,"character":2}}}
+send {"jsonrpc":"2.0","id":2,"method":"textDocument/hover","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":4,"character":9}}}
+send {"jsonrpc":"2.0","id":3,"method":"textDocument/hover","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":10,"character":4}}}
+send {"jsonrpc":"2.0","id":4,"method":"textDocument/hover","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":13,"character":6}}}
+send {"jsonrpc":"2.0","id":5,"method":"textDocument/hover","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":16,"character":4}}}
+send {"jsonrpc":"2.0","id":6,"method":"textDocument/hover","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":19,"character":28}}}
+send {"jsonrpc":"2.0","id":7,"method":"textDocument/hover","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":25,"character":9}}}
+send {"jsonrpc":"2.0","id":8,"method":"textDocument/hover","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":22,"character":19}}}
+send {"jsonrpc":"2.0","id":9,"method":"textDocument/hover","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":2,"character":0}}}
+open proj/a/dev.layer.canon
+wait
+send {"jsonrpc":"2.0","id":11,"method":"textDocument/hover","params":{"textDocument":{"uri":"$URI/proj/a/dev.layer.canon"},"position":{"line":3,"character":7}}}
+send {"jsonrpc":"2.0","id":10,"method":"shutdown"}
+send {"jsonrpc":"2.0","method":"exit"}
+-- transcript --
+> initialize
+< {"jsonrpc":"2.0","id":0,"result":{"capabilities":{"positionEncoding":"utf-16","textDocumentSync":{"openClose":true,"change":1},"hoverProvider":true,"definitionProvider":true,"referencesProvider":true,"documentFormattingProvider":true},"serverInfo":{"name":"canon"}}}
+> send {"jsonrpc":"2.0","method":"initialized","params":{}}
+> open proj/a/a.canon
+> wait
+> send {"jsonrpc":"2.0","id":1,"method":"textDocument/hover","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":6,"character":2}}}
+< {"jsonrpc":"2.0","id":1,"result":{"contents":{"kind":"markdown","value":"```canon\nn: Int\n```\n\nA count.\n\nDefault:\n```canon\n1 + 2\n```"},"range":{"start":{"line":6,"character":2},"end":{"line":6,"character":3}}}}
+> send {"jsonrpc":"2.0","id":2,"method":"textDocument/hover","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":4,"character":9}}}
+< {"jsonrpc":"2.0","id":2,"result":{"contents":{"kind":"markdown","value":"```canon\na.Row\n```\n\nOne row."},"range":{"start":{"line":4,"character":7},"end":{"line":4,"character":10}}}}
+> send {"jsonrpc":"2.0","id":3,"method":"textDocument/hover","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":10,"character":4}}}
+< {"jsonrpc":"2.0","id":3,"result":{"contents":{"kind":"markdown","value":"```canon\nrows: [a.Row]\n```\n\nRows.\n\nValue:\n```canon\n[Row{n: 3}, Row{n: 3}]\n```"},"range":{"start":{"line":10,"character":4},"end":{"line":10,"character":8}}}}
+> send {"jsonrpc":"2.0","id":4,"method":"textDocument/hover","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":13,"character":6}}}
+< {"jsonrpc":"2.0","id":4,"result":{"contents":{"kind":"markdown","value":"```canon\ntotal: Int\n```\n\nThe total.\n\nValue:\n```canon\n6\n```"},"range":{"start":{"line":13,"character":4},"end":{"line":13,"character":9}}}}
+> send {"jsonrpc":"2.0","id":5,"method":"textDocument/hover","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":16,"character":4}}}
+< {"jsonrpc":"2.0","id":5,"result":{"contents":{"kind":"markdown","value":"```canon\npoem: String\n```\n\nA poem, longer than a hover shows.\n\nValue:\n```canon\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n…\n```"},"range":{"start":{"line":16,"character":4},"end":{"line":16,"character":8}}}}
+> send {"jsonrpc":"2.0","id":6,"method":"textDocument/hover","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":19,"character":28}}}
+< {"jsonrpc":"2.0","id":6,"result":{"contents":{"kind":"markdown","value":"```canon\ntotal: Int\n```\n\nThe total.\n\nValue:\n```canon\n6\n```"},"range":{"start":{"line":19,"character":28},"end":{"line":19,"character":33}}}}
+> send {"jsonrpc":"2.0","id":7,"method":"textDocument/hover","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":25,"character":9}}}
+< {"jsonrpc":"2.0","id":7,"result":{"contents":{"kind":"markdown","value":"```canon\nx: Int\n```\n\nDefault:\n```canon\n2\n```"},"range":{"start":{"line":25,"character":9},"end":{"line":25,"character":10}}}}
+> send {"jsonrpc":"2.0","id":8,"method":"textDocument/hover","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":22,"character":19}}}
+< {"jsonrpc":"2.0","id":8,"result":{"contents":{"kind":"markdown","value":"```canon\nloud: a.Tone\n```"},"range":{"start":{"line":22,"character":18},"end":{"line":22,"character":22}}}}
+> send {"jsonrpc":"2.0","id":9,"method":"textDocument/hover","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":2,"character":0}}}
+< {"jsonrpc":"2.0","id":9,"result":null}
+> open proj/a/dev.layer.canon
+> wait
+> send {"jsonrpc":"2.0","id":11,"method":"textDocument/hover","params":{"textDocument":{"uri":"$URI/proj/a/dev.layer.canon"},"position":{"line":3,"character":7}}}
+< {"jsonrpc":"2.0","id":11,"result":{"contents":{"kind":"markdown","value":"```canon\nfirst: a.Row\n```\n\nThe first row.\n\nBase value (without layers):\n```canon\nRow{n: 5}\n```"},"range":{"start":{"line":3,"character":6},"end":{"line":3,"character":11}}}}
+> send {"jsonrpc":"2.0","id":10,"method":"shutdown"}
+< {"jsonrpc":"2.0","id":10,"result":null}
+> send {"jsonrpc":"2.0","method":"exit"}
+= <nil>
