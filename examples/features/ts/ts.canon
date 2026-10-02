@@ -46,8 +46,15 @@ record Skill @ts(name: "SkillEntry") {
 /// Every skill, a keyed list.
 let skills: [Skill] keyed by name = [
   { name: "slash", cost: 5, weights: { "fire": 2, "ice": 1 }, next: "cleave" },
-  { name: "cleave", rarity: rare, cost: 12, reward: gold { amount: 500 }, note: "area", serial: 9_007_199_254_740_993 },
-  { name: "storm", rarity: epic, cost: 40, reward: item { define: "II_STORM", count: 3 } }
+  {
+    name: "cleave"
+    rarity: rare
+    cost: 12
+    reward: gold { amount: 500 }
+    note: "area"
+    serial: 9_007_199_254_740_993
+  },
+  { name: "storm", rarity: epic, cost: 40, reward: item { define: "II_STORM", count: 3 } },
 ]
 
 /// Checked integer arithmetic, translated for TypeScript (canonAdd and friends).

@@ -1,4 +1,4 @@
-File: File FileKind=source @1:1-105:1
+File: File FileKind=source @1:1-112:1
   Doc: DocComment "TypeScript goldens: a `data` mode emit decoded from the emitted JSON (CODEGEN §8.1), and\ntranslated `export fn`s whose integer arithmetic is checked (CODEGEN §8.2, CONFORMANCE §4)." @1:1-2:98
   Package: QualifiedName features.ts @3:9-3:20
   Decls[0]: EnumDecl Ordered="ordered" @6:1-6:43
@@ -127,7 +127,7 @@ File: File FileKind=source @1:1-105:1
           Elem: RefType @43:9-43:19
             Name: QualifiedName skills @43:13-43:19
         Default: NoneLit @43:23-43:27
-  Decls[3]: LetDecl @47:1-51:2
+  Decls[3]: LetDecl @47:1-58:2
     Doc: DocComment "Every skill, a keyed list." @46:1-46:31
     Name: Ident skills @47:5-47:11
     Type: KeyedType @47:13-47:34
@@ -135,7 +135,7 @@ File: File FileKind=source @1:1-105:1
         Elem: NamedType @47:14-47:19
           Name: QualifiedName Skill @47:14-47:19
       Key: Ident name @47:30-47:34
-    Value: ListLit @47:37-51:2
+    Value: ListLit @47:37-58:2
       Elems[0]: BraceLit @48:3-48:79
         Items[0]: FieldItem @48:5-48:18
           Name: Ident name @48:5-48:9
@@ -159,377 +159,377 @@ File: File FileKind=source @1:1-105:1
           Name: Ident next @48:63-48:67
           Value: StringLit @48:69-48:77
             Parts[0]: text "cleave"
-      Elems[1]: BraceLit @49:3-49:120
-        Items[0]: FieldItem @49:5-49:19
-          Name: Ident name @49:5-49:9
-          Value: StringLit @49:11-49:19
-            Parts[0]: text "cleave"
-        Items[1]: FieldItem @49:21-49:33
-          Name: Ident rarity @49:21-49:27
-          Value: IdentExpr rare @49:29-49:33
-        Items[2]: FieldItem @49:35-49:43
-          Name: Ident cost @49:35-49:39
-          Value: IntLit Value=12 @49:41-49:43
-        Items[3]: FieldItem @49:45-49:73
-          Name: Ident reward @49:45-49:51
-          Value: TypedLit @49:53-49:73
-            Type: QualifiedName gold @49:53-49:57
-            Lit: BraceLit @49:58-49:73
-              Items[0]: FieldItem @49:60-49:71
-                Name: Ident amount @49:60-49:66
-                Value: IntLit Value=500 @49:68-49:71
-        Items[4]: FieldItem @49:75-49:87
-          Name: Ident note @49:75-49:79
-          Value: StringLit @49:81-49:87
-            Parts[0]: text "area"
-        Items[5]: FieldItem @49:89-49:118
-          Name: Ident serial @49:89-49:95
-          Value: IntLit Value=9007199254740993 @49:97-49:118
-      Elems[2]: BraceLit @50:3-50:91
-        Items[0]: FieldItem @50:5-50:18
+      Elems[1]: BraceLit @49:3-56:4
+        Items[0]: FieldItem @50:5-50:19
           Name: Ident name @50:5-50:9
-          Value: StringLit @50:11-50:18
+          Value: StringLit @50:11-50:19
+            Parts[0]: text "cleave"
+        Items[1]: FieldItem @51:5-51:17
+          Name: Ident rarity @51:5-51:11
+          Value: IdentExpr rare @51:13-51:17
+        Items[2]: FieldItem @52:5-52:13
+          Name: Ident cost @52:5-52:9
+          Value: IntLit Value=12 @52:11-52:13
+        Items[3]: FieldItem @53:5-53:33
+          Name: Ident reward @53:5-53:11
+          Value: TypedLit @53:13-53:33
+            Type: QualifiedName gold @53:13-53:17
+            Lit: BraceLit @53:18-53:33
+              Items[0]: FieldItem @53:20-53:31
+                Name: Ident amount @53:20-53:26
+                Value: IntLit Value=500 @53:28-53:31
+        Items[4]: FieldItem @54:5-54:17
+          Name: Ident note @54:5-54:9
+          Value: StringLit @54:11-54:17
+            Parts[0]: text "area"
+        Items[5]: FieldItem @55:5-55:34
+          Name: Ident serial @55:5-55:11
+          Value: IntLit Value=9007199254740993 @55:13-55:34
+      Elems[2]: BraceLit @57:3-57:91
+        Items[0]: FieldItem @57:5-57:18
+          Name: Ident name @57:5-57:9
+          Value: StringLit @57:11-57:18
             Parts[0]: text "storm"
-        Items[1]: FieldItem @50:20-50:32
-          Name: Ident rarity @50:20-50:26
-          Value: IdentExpr epic @50:28-50:32
-        Items[2]: FieldItem @50:34-50:42
-          Name: Ident cost @50:34-50:38
-          Value: IntLit Value=40 @50:40-50:42
-        Items[3]: FieldItem @50:44-50:89
-          Name: Ident reward @50:44-50:50
-          Value: TypedLit @50:52-50:89
-            Type: QualifiedName item @50:52-50:56
-            Lit: BraceLit @50:57-50:89
-              Items[0]: FieldItem @50:59-50:77
-                Name: Ident define @50:59-50:65
-                Value: StringLit @50:67-50:77
+        Items[1]: FieldItem @57:20-57:32
+          Name: Ident rarity @57:20-57:26
+          Value: IdentExpr epic @57:28-57:32
+        Items[2]: FieldItem @57:34-57:42
+          Name: Ident cost @57:34-57:38
+          Value: IntLit Value=40 @57:40-57:42
+        Items[3]: FieldItem @57:44-57:89
+          Name: Ident reward @57:44-57:50
+          Value: TypedLit @57:52-57:89
+            Type: QualifiedName item @57:52-57:56
+            Lit: BraceLit @57:57-57:89
+              Items[0]: FieldItem @57:59-57:77
+                Name: Ident define @57:59-57:65
+                Value: StringLit @57:67-57:77
                   Parts[0]: text "II_STORM"
-              Items[1]: FieldItem @50:79-50:87
-                Name: Ident count @50:79-50:84
-                Value: IntLit Value=3 @50:86-50:87
-  Decls[4]: FnDecl @54:1-54:57
-    Doc: DocComment "Checked integer arithmetic, translated for TypeScript (canonAdd and friends)." @53:1-53:82
-    Mods: Modifiers Export="export" @54:1-54:7
-    Name: Ident addInt @54:11-54:17
-    Params[0]: Param @54:18-54:24
-      Name: Ident a @54:18-54:19
-      Type: NamedType @54:21-54:24
-        Name: QualifiedName Int @54:21-54:24
-    Params[1]: Param @54:26-54:32
-      Name: Ident b @54:26-54:27
-      Type: NamedType @54:29-54:32
-        Name: QualifiedName Int @54:29-54:32
-    Result: NamedType @54:37-54:40
-      Name: QualifiedName Int @54:37-54:40
-    Body: Block @54:41-54:57
-      Stmts[0]: ReturnStmt @54:43-54:55
-        Value: BinaryExpr Op=+ @54:50-54:55
-          X: IdentExpr a @54:50-54:51
-          Y: IdentExpr b @54:54-54:55
-  Decls[5]: FnDecl @57:1-57:57
-    Doc: DocComment "Subtraction." @56:1-56:17
-    Mods: Modifiers Export="export" @57:1-57:7
-    Name: Ident subInt @57:11-57:17
-    Params[0]: Param @57:18-57:24
-      Name: Ident a @57:18-57:19
-      Type: NamedType @57:21-57:24
-        Name: QualifiedName Int @57:21-57:24
-    Params[1]: Param @57:26-57:32
-      Name: Ident b @57:26-57:27
-      Type: NamedType @57:29-57:32
-        Name: QualifiedName Int @57:29-57:32
-    Result: NamedType @57:37-57:40
-      Name: QualifiedName Int @57:37-57:40
-    Body: Block @57:41-57:57
-      Stmts[0]: ReturnStmt @57:43-57:55
-        Value: BinaryExpr Op=- @57:50-57:55
-          X: IdentExpr a @57:50-57:51
-          Y: IdentExpr b @57:54-57:55
-  Decls[6]: FnDecl @60:1-60:57
-    Doc: DocComment "Multiplication." @59:1-59:20
-    Mods: Modifiers Export="export" @60:1-60:7
-    Name: Ident mulInt @60:11-60:17
-    Params[0]: Param @60:18-60:24
-      Name: Ident a @60:18-60:19
-      Type: NamedType @60:21-60:24
-        Name: QualifiedName Int @60:21-60:24
-    Params[1]: Param @60:26-60:32
-      Name: Ident b @60:26-60:27
-      Type: NamedType @60:29-60:32
-        Name: QualifiedName Int @60:29-60:32
-    Result: NamedType @60:37-60:40
-      Name: QualifiedName Int @60:37-60:40
-    Body: Block @60:41-60:57
-      Stmts[0]: ReturnStmt @60:43-60:55
-        Value: BinaryExpr Op=* @60:50-60:55
-          X: IdentExpr a @60:50-60:51
-          Y: IdentExpr b @60:54-60:55
-  Decls[7]: FnDecl @63:1-63:57
-    Doc: DocComment "Integer division, truncating toward zero." @62:1-62:46
-    Mods: Modifiers Export="export" @63:1-63:7
-    Name: Ident divInt @63:11-63:17
-    Params[0]: Param @63:18-63:24
-      Name: Ident a @63:18-63:19
-      Type: NamedType @63:21-63:24
-        Name: QualifiedName Int @63:21-63:24
-    Params[1]: Param @63:26-63:32
-      Name: Ident b @63:26-63:27
-      Type: NamedType @63:29-63:32
-        Name: QualifiedName Int @63:29-63:32
-    Result: NamedType @63:37-63:40
-      Name: QualifiedName Int @63:37-63:40
-    Body: Block @63:41-63:57
-      Stmts[0]: ReturnStmt @63:43-63:55
-        Value: BinaryExpr Op=/ @63:50-63:55
-          X: IdentExpr a @63:50-63:51
-          Y: IdentExpr b @63:54-63:55
-  Decls[8]: FnDecl @66:1-66:57
-    Doc: DocComment "Remainder, with the sign of the dividend." @65:1-65:46
-    Mods: Modifiers Export="export" @66:1-66:7
-    Name: Ident modInt @66:11-66:17
-    Params[0]: Param @66:18-66:24
-      Name: Ident a @66:18-66:19
-      Type: NamedType @66:21-66:24
-        Name: QualifiedName Int @66:21-66:24
-    Params[1]: Param @66:26-66:32
-      Name: Ident b @66:26-66:27
-      Type: NamedType @66:29-66:32
-        Name: QualifiedName Int @66:29-66:32
-    Result: NamedType @66:37-66:40
-      Name: QualifiedName Int @66:37-66:40
-    Body: Block @66:41-66:57
-      Stmts[0]: ReturnStmt @66:43-66:55
-        Value: BinaryExpr Op=% @66:50-66:55
-          X: IdentExpr a @66:50-66:51
-          Y: IdentExpr b @66:54-66:55
-  Decls[9]: FnDecl @69:1-69:80
-    Doc: DocComment "`clamp` to an inclusive range." @68:1-68:35
-    Mods: Modifiers Export="export" @69:1-69:7
-    Name: Ident clampInt @69:11-69:19
-    Params[0]: Param @69:20-69:26
-      Name: Ident x @69:20-69:21
-      Type: NamedType @69:23-69:26
-        Name: QualifiedName Int @69:23-69:26
-    Params[1]: Param @69:28-69:35
-      Name: Ident lo @69:28-69:30
-      Type: NamedType @69:32-69:35
-        Name: QualifiedName Int @69:32-69:35
-    Params[2]: Param @69:37-69:44
-      Name: Ident hi @69:37-69:39
-      Type: NamedType @69:41-69:44
-        Name: QualifiedName Int @69:41-69:44
-    Result: NamedType @69:49-69:52
-      Name: QualifiedName Int @69:49-69:52
-    Body: Block @69:53-69:80
-      Stmts[0]: ReturnStmt @69:55-69:78
-        Value: CallExpr @69:62-69:78
-          Fun: IdentExpr clamp @69:62-69:67
-          Args[0]: Arg @69:68-69:69
-            Value: IdentExpr x @69:68-69:69
-          Args[1]: Arg @69:71-69:73
-            Value: IdentExpr lo @69:71-69:73
-          Args[2]: Arg @69:75-69:77
-            Value: IdentExpr hi @69:75-69:77
-  Decls[10]: FnDecl @72:1-72:55
-    Doc: DocComment "Int to Float." @71:1-71:18
-    Mods: Modifiers Export="export" @72:1-72:7
-    Name: Ident toFloat @72:11-72:18
-    Params[0]: Param @72:19-72:25
-      Name: Ident i @72:19-72:20
-      Type: NamedType @72:22-72:25
-        Name: QualifiedName Int @72:22-72:25
-    Result: NamedType @72:30-72:35
-      Name: QualifiedName Float @72:30-72:35
-    Body: Block @72:36-72:55
-      Stmts[0]: ReturnStmt @72:38-72:53
-        Value: CallExpr @72:45-72:53
-          Fun: IdentExpr Float @72:45-72:50
-          Args[0]: Arg @72:51-72:52
-            Value: IdentExpr i @72:51-72:52
-  Decls[11]: FnDecl @75:1-75:51
-    Doc: DocComment "Float to Int, truncating toward zero." @74:1-74:42
-    Mods: Modifiers Export="export" @75:1-75:7
-    Name: Ident toInt @75:11-75:16
-    Params[0]: Param @75:17-75:25
-      Name: Ident f @75:17-75:18
-      Type: NamedType @75:20-75:25
-        Name: QualifiedName Float @75:20-75:25
-    Result: NamedType @75:30-75:33
-      Name: QualifiedName Int @75:30-75:33
-    Body: Block @75:34-75:51
-      Stmts[0]: ReturnStmt @75:36-75:49
-        Value: CallExpr @75:43-75:49
-          Fun: IdentExpr Int @75:43-75:46
-          Args[0]: Arg @75:47-75:48
-            Value: IdentExpr f @75:47-75:48
-  Decls[12]: FnDecl @78:1-79:55
-    Doc: DocComment "Rounding to the nearest Int, half away from zero." @77:1-77:54
-    Annotations[0]: Annotation @78:1-78:23
-      Name: Ident ts @78:2-78:4
-      Args[0]: AnnotationArg @78:5-78:22
-        Name: Ident name @78:5-78:9
-        Value: StringLit @78:11-78:22
-          Parts[0]: text "roundHalf"
+              Items[1]: FieldItem @57:79-57:87
+                Name: Ident count @57:79-57:84
+                Value: IntLit Value=3 @57:86-57:87
+  Decls[4]: FnDecl @61:1-61:57
+    Doc: DocComment "Checked integer arithmetic, translated for TypeScript (canonAdd and friends)." @60:1-60:82
+    Mods: Modifiers Export="export" @61:1-61:7
+    Name: Ident addInt @61:11-61:17
+    Params[0]: Param @61:18-61:24
+      Name: Ident a @61:18-61:19
+      Type: NamedType @61:21-61:24
+        Name: QualifiedName Int @61:21-61:24
+    Params[1]: Param @61:26-61:32
+      Name: Ident b @61:26-61:27
+      Type: NamedType @61:29-61:32
+        Name: QualifiedName Int @61:29-61:32
+    Result: NamedType @61:37-61:40
+      Name: QualifiedName Int @61:37-61:40
+    Body: Block @61:41-61:57
+      Stmts[0]: ReturnStmt @61:43-61:55
+        Value: BinaryExpr Op=+ @61:50-61:55
+          X: IdentExpr a @61:50-61:51
+          Y: IdentExpr b @61:54-61:55
+  Decls[5]: FnDecl @64:1-64:57
+    Doc: DocComment "Subtraction." @63:1-63:17
+    Mods: Modifiers Export="export" @64:1-64:7
+    Name: Ident subInt @64:11-64:17
+    Params[0]: Param @64:18-64:24
+      Name: Ident a @64:18-64:19
+      Type: NamedType @64:21-64:24
+        Name: QualifiedName Int @64:21-64:24
+    Params[1]: Param @64:26-64:32
+      Name: Ident b @64:26-64:27
+      Type: NamedType @64:29-64:32
+        Name: QualifiedName Int @64:29-64:32
+    Result: NamedType @64:37-64:40
+      Name: QualifiedName Int @64:37-64:40
+    Body: Block @64:41-64:57
+      Stmts[0]: ReturnStmt @64:43-64:55
+        Value: BinaryExpr Op=- @64:50-64:55
+          X: IdentExpr a @64:50-64:51
+          Y: IdentExpr b @64:54-64:55
+  Decls[6]: FnDecl @67:1-67:57
+    Doc: DocComment "Multiplication." @66:1-66:20
+    Mods: Modifiers Export="export" @67:1-67:7
+    Name: Ident mulInt @67:11-67:17
+    Params[0]: Param @67:18-67:24
+      Name: Ident a @67:18-67:19
+      Type: NamedType @67:21-67:24
+        Name: QualifiedName Int @67:21-67:24
+    Params[1]: Param @67:26-67:32
+      Name: Ident b @67:26-67:27
+      Type: NamedType @67:29-67:32
+        Name: QualifiedName Int @67:29-67:32
+    Result: NamedType @67:37-67:40
+      Name: QualifiedName Int @67:37-67:40
+    Body: Block @67:41-67:57
+      Stmts[0]: ReturnStmt @67:43-67:55
+        Value: BinaryExpr Op=* @67:50-67:55
+          X: IdentExpr a @67:50-67:51
+          Y: IdentExpr b @67:54-67:55
+  Decls[7]: FnDecl @70:1-70:57
+    Doc: DocComment "Integer division, truncating toward zero." @69:1-69:46
+    Mods: Modifiers Export="export" @70:1-70:7
+    Name: Ident divInt @70:11-70:17
+    Params[0]: Param @70:18-70:24
+      Name: Ident a @70:18-70:19
+      Type: NamedType @70:21-70:24
+        Name: QualifiedName Int @70:21-70:24
+    Params[1]: Param @70:26-70:32
+      Name: Ident b @70:26-70:27
+      Type: NamedType @70:29-70:32
+        Name: QualifiedName Int @70:29-70:32
+    Result: NamedType @70:37-70:40
+      Name: QualifiedName Int @70:37-70:40
+    Body: Block @70:41-70:57
+      Stmts[0]: ReturnStmt @70:43-70:55
+        Value: BinaryExpr Op=/ @70:50-70:55
+          X: IdentExpr a @70:50-70:51
+          Y: IdentExpr b @70:54-70:55
+  Decls[8]: FnDecl @73:1-73:57
+    Doc: DocComment "Remainder, with the sign of the dividend." @72:1-72:46
+    Mods: Modifiers Export="export" @73:1-73:7
+    Name: Ident modInt @73:11-73:17
+    Params[0]: Param @73:18-73:24
+      Name: Ident a @73:18-73:19
+      Type: NamedType @73:21-73:24
+        Name: QualifiedName Int @73:21-73:24
+    Params[1]: Param @73:26-73:32
+      Name: Ident b @73:26-73:27
+      Type: NamedType @73:29-73:32
+        Name: QualifiedName Int @73:29-73:32
+    Result: NamedType @73:37-73:40
+      Name: QualifiedName Int @73:37-73:40
+    Body: Block @73:41-73:57
+      Stmts[0]: ReturnStmt @73:43-73:55
+        Value: BinaryExpr Op=% @73:50-73:55
+          X: IdentExpr a @73:50-73:51
+          Y: IdentExpr b @73:54-73:55
+  Decls[9]: FnDecl @76:1-76:80
+    Doc: DocComment "`clamp` to an inclusive range." @75:1-75:35
+    Mods: Modifiers Export="export" @76:1-76:7
+    Name: Ident clampInt @76:11-76:19
+    Params[0]: Param @76:20-76:26
+      Name: Ident x @76:20-76:21
+      Type: NamedType @76:23-76:26
+        Name: QualifiedName Int @76:23-76:26
+    Params[1]: Param @76:28-76:35
+      Name: Ident lo @76:28-76:30
+      Type: NamedType @76:32-76:35
+        Name: QualifiedName Int @76:32-76:35
+    Params[2]: Param @76:37-76:44
+      Name: Ident hi @76:37-76:39
+      Type: NamedType @76:41-76:44
+        Name: QualifiedName Int @76:41-76:44
+    Result: NamedType @76:49-76:52
+      Name: QualifiedName Int @76:49-76:52
+    Body: Block @76:53-76:80
+      Stmts[0]: ReturnStmt @76:55-76:78
+        Value: CallExpr @76:62-76:78
+          Fun: IdentExpr clamp @76:62-76:67
+          Args[0]: Arg @76:68-76:69
+            Value: IdentExpr x @76:68-76:69
+          Args[1]: Arg @76:71-76:73
+            Value: IdentExpr lo @76:71-76:73
+          Args[2]: Arg @76:75-76:77
+            Value: IdentExpr hi @76:75-76:77
+  Decls[10]: FnDecl @79:1-79:55
+    Doc: DocComment "Int to Float." @78:1-78:18
     Mods: Modifiers Export="export" @79:1-79:7
-    Name: Ident roundOf @79:11-79:18
-    Params[0]: Param @79:19-79:27
-      Name: Ident f @79:19-79:20
-      Type: NamedType @79:22-79:27
-        Name: QualifiedName Float @79:22-79:27
-    Result: NamedType @79:32-79:35
-      Name: QualifiedName Int @79:32-79:35
+    Name: Ident toFloat @79:11-79:18
+    Params[0]: Param @79:19-79:25
+      Name: Ident i @79:19-79:20
+      Type: NamedType @79:22-79:25
+        Name: QualifiedName Int @79:22-79:25
+    Result: NamedType @79:30-79:35
+      Name: QualifiedName Float @79:30-79:35
     Body: Block @79:36-79:55
       Stmts[0]: ReturnStmt @79:38-79:53
         Value: CallExpr @79:45-79:53
-          Fun: IdentExpr round @79:45-79:50
+          Fun: IdentExpr Float @79:45-79:50
           Args[0]: Arg @79:51-79:52
-            Value: IdentExpr f @79:51-79:52
-  Decls[13]: TestDecl @81:1-86:2
-    Name: StringLit @81:6-81:51
+            Value: IdentExpr i @79:51-79:52
+  Decls[11]: FnDecl @82:1-82:51
+    Doc: DocComment "Float to Int, truncating toward zero." @81:1-81:42
+    Mods: Modifiers Export="export" @82:1-82:7
+    Name: Ident toInt @82:11-82:16
+    Params[0]: Param @82:17-82:25
+      Name: Ident f @82:17-82:18
+      Type: NamedType @82:20-82:25
+        Name: QualifiedName Float @82:20-82:25
+    Result: NamedType @82:30-82:33
+      Name: QualifiedName Int @82:30-82:33
+    Body: Block @82:34-82:51
+      Stmts[0]: ReturnStmt @82:36-82:49
+        Value: CallExpr @82:43-82:49
+          Fun: IdentExpr Int @82:43-82:46
+          Args[0]: Arg @82:47-82:48
+            Value: IdentExpr f @82:47-82:48
+  Decls[12]: FnDecl @85:1-86:55
+    Doc: DocComment "Rounding to the nearest Int, half away from zero." @84:1-84:54
+    Annotations[0]: Annotation @85:1-85:23
+      Name: Ident ts @85:2-85:4
+      Args[0]: AnnotationArg @85:5-85:22
+        Name: Ident name @85:5-85:9
+        Value: StringLit @85:11-85:22
+          Parts[0]: text "roundHalf"
+    Mods: Modifiers Export="export" @86:1-86:7
+    Name: Ident roundOf @86:11-86:18
+    Params[0]: Param @86:19-86:27
+      Name: Ident f @86:19-86:20
+      Type: NamedType @86:22-86:27
+        Name: QualifiedName Float @86:22-86:27
+    Result: NamedType @86:32-86:35
+      Name: QualifiedName Int @86:32-86:35
+    Body: Block @86:36-86:55
+      Stmts[0]: ReturnStmt @86:38-86:53
+        Value: CallExpr @86:45-86:53
+          Fun: IdentExpr round @86:45-86:50
+          Args[0]: Arg @86:51-86:52
+            Value: IdentExpr f @86:51-86:52
+  Decls[13]: TestDecl @88:1-93:2
+    Name: StringLit @88:6-88:51
       Parts[0]: text "division and remainder truncate toward zero"
-    Body: Block @81:52-86:2
-      Stmts[0]: ExpectStmt @82:3-82:29
-        X: BinaryExpr Op=== @82:10-82:29
-          X: CallExpr @82:10-82:23
-            Fun: IdentExpr divInt @82:10-82:16
-            Args[0]: Arg @82:17-82:19
-              Value: IntLit Value=-7 @82:17-82:19
-            Args[1]: Arg @82:21-82:22
-              Value: IntLit Value=2 @82:21-82:22
-          Y: IntLit Value=-3 @82:27-82:29
-      Stmts[1]: ExpectStmt @83:3-83:29
-        X: BinaryExpr Op=== @83:10-83:29
-          X: CallExpr @83:10-83:23
-            Fun: IdentExpr divInt @83:10-83:16
-            Args[0]: Arg @83:17-83:18
-              Value: IntLit Value=7 @83:17-83:18
-            Args[1]: Arg @83:20-83:22
-              Value: IntLit Value=-2 @83:20-83:22
-          Y: IntLit Value=-3 @83:27-83:29
-      Stmts[2]: ExpectStmt @84:3-84:29
-        X: BinaryExpr Op=== @84:10-84:29
-          X: CallExpr @84:10-84:23
-            Fun: IdentExpr modInt @84:10-84:16
-            Args[0]: Arg @84:17-84:19
-              Value: IntLit Value=-7 @84:17-84:19
-            Args[1]: Arg @84:21-84:22
-              Value: IntLit Value=2 @84:21-84:22
-          Y: IntLit Value=-1 @84:27-84:29
-      Stmts[3]: ExpectStmt @85:3-85:28
-        X: BinaryExpr Op=== @85:10-85:28
-          X: CallExpr @85:10-85:23
-            Fun: IdentExpr modInt @85:10-85:16
-            Args[0]: Arg @85:17-85:18
-              Value: IntLit Value=7 @85:17-85:18
-            Args[1]: Arg @85:20-85:22
-              Value: IntLit Value=-2 @85:20-85:22
-          Y: IntLit Value=1 @85:27-85:28
-  Decls[14]: TestDecl @88:1-94:2
-    Name: StringLit @88:6-88:28
+    Body: Block @88:52-93:2
+      Stmts[0]: ExpectStmt @89:3-89:29
+        X: BinaryExpr Op=== @89:10-89:29
+          X: CallExpr @89:10-89:23
+            Fun: IdentExpr divInt @89:10-89:16
+            Args[0]: Arg @89:17-89:19
+              Value: IntLit Value=-7 @89:17-89:19
+            Args[1]: Arg @89:21-89:22
+              Value: IntLit Value=2 @89:21-89:22
+          Y: IntLit Value=-3 @89:27-89:29
+      Stmts[1]: ExpectStmt @90:3-90:29
+        X: BinaryExpr Op=== @90:10-90:29
+          X: CallExpr @90:10-90:23
+            Fun: IdentExpr divInt @90:10-90:16
+            Args[0]: Arg @90:17-90:18
+              Value: IntLit Value=7 @90:17-90:18
+            Args[1]: Arg @90:20-90:22
+              Value: IntLit Value=-2 @90:20-90:22
+          Y: IntLit Value=-3 @90:27-90:29
+      Stmts[2]: ExpectStmt @91:3-91:29
+        X: BinaryExpr Op=== @91:10-91:29
+          X: CallExpr @91:10-91:23
+            Fun: IdentExpr modInt @91:10-91:16
+            Args[0]: Arg @91:17-91:19
+              Value: IntLit Value=-7 @91:17-91:19
+            Args[1]: Arg @91:21-91:22
+              Value: IntLit Value=2 @91:21-91:22
+          Y: IntLit Value=-1 @91:27-91:29
+      Stmts[3]: ExpectStmt @92:3-92:28
+        X: BinaryExpr Op=== @92:10-92:28
+          X: CallExpr @92:10-92:23
+            Fun: IdentExpr modInt @92:10-92:16
+            Args[0]: Arg @92:17-92:18
+              Value: IntLit Value=7 @92:17-92:18
+            Args[1]: Arg @92:20-92:22
+              Value: IntLit Value=-2 @92:20-92:22
+          Y: IntLit Value=1 @92:27-92:28
+  Decls[14]: TestDecl @95:1-101:2
+    Name: StringLit @95:6-95:28
       Parts[0]: text "arithmetic near 2^53"
-    Body: Block @88:29-94:2
-      Stmts[0]: ExpectStmt @89:3-89:67
-        X: BinaryExpr Op=== @89:10-89:67
-          X: CallExpr @89:10-89:42
-            Fun: IdentExpr addInt @89:10-89:16
-            Args[0]: Arg @89:17-89:38
-              Value: IntLit Value=9007199254740990 @89:17-89:38
-            Args[1]: Arg @89:40-89:41
-              Value: IntLit Value=1 @89:40-89:41
-          Y: IntLit Value=9007199254740991 @89:46-89:67
-      Stmts[1]: ExpectStmt @90:3-90:69
-        X: BinaryExpr Op=== @90:10-90:69
-          X: CallExpr @90:10-90:43
-            Fun: IdentExpr subInt @90:10-90:16
-            Args[0]: Arg @90:17-90:39
-              Value: IntLit Value=-9007199254740990 @90:17-90:39
-            Args[1]: Arg @90:41-90:42
-              Value: IntLit Value=1 @90:41-90:42
-          Y: IntLit Value=-9007199254740991 @90:47-90:69
-      Stmts[2]: ExpectStmt @91:3-91:65
-        X: BinaryExpr Op=== @91:10-91:65
-          X: CallExpr @91:10-91:40
-            Fun: IdentExpr mulInt @91:10-91:16
-            Args[0]: Arg @91:17-91:27
-              Value: IntLit Value=94906265 @91:17-91:27
-            Args[1]: Arg @91:29-91:39
-              Value: IntLit Value=94906265 @91:29-91:39
-          Y: IntLit Value=9007199136250225 @91:44-91:65
-      Stmts[3]: ExpectStmt @92:3-92:34
-        X: BinaryExpr Op=== @92:10-92:34
-          X: CallExpr @92:10-92:29
-            Fun: IdentExpr clampInt @92:10-92:18
-            Args[0]: Arg @92:19-92:21
-              Value: IntLit Value=-5 @92:19-92:21
-            Args[1]: Arg @92:23-92:24
-              Value: IntLit Value=0 @92:23-92:24
-            Args[2]: Arg @92:26-92:28
-              Value: IntLit Value=10 @92:26-92:28
-          Y: IntLit Value=0 @92:33-92:34
-      Stmts[4]: ExpectStmt @93:3-93:35
-        X: BinaryExpr Op=== @93:10-93:35
-          X: CallExpr @93:10-93:29
-            Fun: IdentExpr clampInt @93:10-93:18
-            Args[0]: Arg @93:19-93:21
-              Value: IntLit Value=50 @93:19-93:21
-            Args[1]: Arg @93:23-93:24
-              Value: IntLit Value=0 @93:23-93:24
-            Args[2]: Arg @93:26-93:28
-              Value: IntLit Value=10 @93:26-93:28
-          Y: IntLit Value=10 @93:33-93:35
-  Decls[15]: TestDecl @96:1-101:2
-    Name: StringLit @96:6-96:33
+    Body: Block @95:29-101:2
+      Stmts[0]: ExpectStmt @96:3-96:67
+        X: BinaryExpr Op=== @96:10-96:67
+          X: CallExpr @96:10-96:42
+            Fun: IdentExpr addInt @96:10-96:16
+            Args[0]: Arg @96:17-96:38
+              Value: IntLit Value=9007199254740990 @96:17-96:38
+            Args[1]: Arg @96:40-96:41
+              Value: IntLit Value=1 @96:40-96:41
+          Y: IntLit Value=9007199254740991 @96:46-96:67
+      Stmts[1]: ExpectStmt @97:3-97:69
+        X: BinaryExpr Op=== @97:10-97:69
+          X: CallExpr @97:10-97:43
+            Fun: IdentExpr subInt @97:10-97:16
+            Args[0]: Arg @97:17-97:39
+              Value: IntLit Value=-9007199254740990 @97:17-97:39
+            Args[1]: Arg @97:41-97:42
+              Value: IntLit Value=1 @97:41-97:42
+          Y: IntLit Value=-9007199254740991 @97:47-97:69
+      Stmts[2]: ExpectStmt @98:3-98:65
+        X: BinaryExpr Op=== @98:10-98:65
+          X: CallExpr @98:10-98:40
+            Fun: IdentExpr mulInt @98:10-98:16
+            Args[0]: Arg @98:17-98:27
+              Value: IntLit Value=94906265 @98:17-98:27
+            Args[1]: Arg @98:29-98:39
+              Value: IntLit Value=94906265 @98:29-98:39
+          Y: IntLit Value=9007199136250225 @98:44-98:65
+      Stmts[3]: ExpectStmt @99:3-99:34
+        X: BinaryExpr Op=== @99:10-99:34
+          X: CallExpr @99:10-99:29
+            Fun: IdentExpr clampInt @99:10-99:18
+            Args[0]: Arg @99:19-99:21
+              Value: IntLit Value=-5 @99:19-99:21
+            Args[1]: Arg @99:23-99:24
+              Value: IntLit Value=0 @99:23-99:24
+            Args[2]: Arg @99:26-99:28
+              Value: IntLit Value=10 @99:26-99:28
+          Y: IntLit Value=0 @99:33-99:34
+      Stmts[4]: ExpectStmt @100:3-100:35
+        X: BinaryExpr Op=== @100:10-100:35
+          X: CallExpr @100:10-100:29
+            Fun: IdentExpr clampInt @100:10-100:18
+            Args[0]: Arg @100:19-100:21
+              Value: IntLit Value=50 @100:19-100:21
+            Args[1]: Arg @100:23-100:24
+              Value: IntLit Value=0 @100:23-100:24
+            Args[2]: Arg @100:26-100:28
+              Value: IntLit Value=10 @100:26-100:28
+          Y: IntLit Value=10 @100:33-100:35
+  Decls[15]: TestDecl @103:1-108:2
+    Name: StringLit @103:6-103:33
       Parts[0]: text "int and float conversions"
-    Body: Block @96:34-101:2
-      Stmts[0]: ExpectStmt @97:3-97:29
-        X: BinaryExpr Op=== @97:10-97:29
-          X: CallExpr @97:10-97:21
-            Fun: IdentExpr toFloat @97:10-97:17
-            Args[0]: Arg @97:18-97:20
-              Value: IntLit Value=-3 @97:18-97:20
-          Y: FloatLit Neg Coef=30 Exp=-1 @97:25-97:29
-      Stmts[1]: ExpectStmt @98:3-98:27
-        X: BinaryExpr Op=== @98:10-98:27
-          X: CallExpr @98:10-98:21
-            Fun: IdentExpr toInt @98:10-98:15
-            Args[0]: Arg @98:16-98:20
-              Value: FloatLit Neg Coef=29 Exp=-1 @98:16-98:20
-          Y: IntLit Value=-2 @98:25-98:27
-      Stmts[2]: ExpectStmt @99:3-99:29
-        X: BinaryExpr Op=== @99:10-99:29
-          X: CallExpr @99:10-99:23
-            Fun: IdentExpr roundOf @99:10-99:17
-            Args[0]: Arg @99:18-99:22
-              Value: FloatLit Neg Coef=25 Exp=-1 @99:18-99:22
-          Y: IntLit Value=-3 @99:27-99:29
-      Stmts[3]: ExpectStmt @100:3-100:27
-        X: BinaryExpr Op=== @100:10-100:27
-          X: CallExpr @100:10-100:22
-            Fun: IdentExpr roundOf @100:10-100:17
-            Args[0]: Arg @100:18-100:21
-              Value: FloatLit Coef=25 Exp=-1 @100:18-100:21
-          Y: IntLit Value=3 @100:26-100:27
-  Decls[16]: EmitDecl @103:1-103:55
-    Target: Ident json @103:6-103:10
-    Options: BraceLit @103:11-103:55
-      Items[0]: FieldItem @103:13-103:35
-        Name: Ident out @103:13-103:16
-        Value: StringLit @103:18-103:35
+    Body: Block @103:34-108:2
+      Stmts[0]: ExpectStmt @104:3-104:29
+        X: BinaryExpr Op=== @104:10-104:29
+          X: CallExpr @104:10-104:21
+            Fun: IdentExpr toFloat @104:10-104:17
+            Args[0]: Arg @104:18-104:20
+              Value: IntLit Value=-3 @104:18-104:20
+          Y: FloatLit Neg Coef=30 Exp=-1 @104:25-104:29
+      Stmts[1]: ExpectStmt @105:3-105:27
+        X: BinaryExpr Op=== @105:10-105:27
+          X: CallExpr @105:10-105:21
+            Fun: IdentExpr toInt @105:10-105:15
+            Args[0]: Arg @105:16-105:20
+              Value: FloatLit Neg Coef=29 Exp=-1 @105:16-105:20
+          Y: IntLit Value=-2 @105:25-105:27
+      Stmts[2]: ExpectStmt @106:3-106:29
+        X: BinaryExpr Op=== @106:10-106:29
+          X: CallExpr @106:10-106:23
+            Fun: IdentExpr roundOf @106:10-106:17
+            Args[0]: Arg @106:18-106:22
+              Value: FloatLit Neg Coef=25 Exp=-1 @106:18-106:22
+          Y: IntLit Value=-3 @106:27-106:29
+      Stmts[3]: ExpectStmt @107:3-107:27
+        X: BinaryExpr Op=== @107:10-107:27
+          X: CallExpr @107:10-107:22
+            Fun: IdentExpr roundOf @107:10-107:17
+            Args[0]: Arg @107:18-107:21
+              Value: FloatLit Coef=25 Exp=-1 @107:18-107:21
+          Y: IntLit Value=3 @107:26-107:27
+  Decls[16]: EmitDecl @110:1-110:55
+    Target: Ident json @110:6-110:10
+    Options: BraceLit @110:11-110:55
+      Items[0]: FieldItem @110:13-110:35
+        Name: Ident out @110:13-110:16
+        Value: StringLit @110:18-110:35
           Parts[0]: text "out/skills.json"
-      Items[1]: FieldItem @103:37-103:53
-        Name: Ident values @103:37-103:43
-        Value: ListLit @103:45-103:53
-          Elems[0]: IdentExpr skills @103:46-103:52
-  Decls[17]: EmitDecl @104:1-104:55
-    Target: Ident ts @104:6-104:8
-    Options: BraceLit @104:9-104:55
-      Items[0]: FieldItem @104:11-104:41
-        Name: Ident out @104:11-104:14
-        Value: StringLit @104:16-104:41
+      Items[1]: FieldItem @110:37-110:53
+        Name: Ident values @110:37-110:43
+        Value: ListLit @110:45-110:53
+          Elems[0]: IdentExpr skills @110:46-110:52
+  Decls[17]: EmitDecl @111:1-111:55
+    Target: Ident ts @111:6-111:8
+    Options: BraceLit @111:9-111:55
+      Items[0]: FieldItem @111:11-111:41
+        Name: Ident out @111:11-111:14
+        Value: StringLit @111:16-111:41
           Parts[0]: text "out/skills.generated.ts"
-      Items[1]: FieldItem @104:43-104:53
-        Name: Ident mode @104:43-104:47
-        Value: IdentExpr data @104:49-104:53
+      Items[1]: FieldItem @111:43-111:53
+        Name: Ident mode @111:43-111:47
+        Value: IdentExpr data @111:49-111:53
 == findings
 0 errors, 0 warnings in 1 package (…)
