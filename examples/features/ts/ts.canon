@@ -1,0 +1,104 @@
+/// TypeScript goldens: a `data` mode emit decoded from the emitted JSON (CODEGEN §8.1), and
+/// translated `export fn`s whose integer arithmetic is checked (CODEGEN §8.2, CONFORMANCE §4).
+package features.ts
+
+/// How rare a skill is, lowest first.
+enum Rarity ordered { common, rare, epic }
+
+/// What learning a skill gives back.
+variant Reward @json(tag: "type") {
+  /// An item.
+  item {
+    /// The item define.
+    define: String(1..)
+    /// How many.
+    count: Int(1..) = 1
+  }
+  /// Penya.
+  gold {
+    /// How much.
+    amount: Int(1..)
+  }
+  /// Nothing.
+  nothing
+}
+
+/// A skill. `@ts(name:)` renames only its TypeScript type.
+record Skill @ts(name: "SkillEntry") {
+  /// Unique name, the key of `skills`.
+  name: String(1..)
+  /// How rare it is.
+  rarity: Rarity = common
+  /// Mana cost.
+  cost: Int(0..) = 0
+  /// What learning it gives back.
+  reward: Reward = nothing
+  /// A free-text remark, or none.
+  note: String? = none
+  /// Weights by element, a map.
+  weights: {String: Int} = {}
+  /// Past 2^53, so it needs `@ts(bigint)` (E8101 without it).
+  serial: Int = 0 @ts(bigint)
+  /// The skill this one upgrades into, a ref.
+  next: ref skills? = none
+}
+
+/// Every skill, a keyed list.
+let skills: [Skill] keyed by name = [
+  { name: "slash", cost: 5, weights: { "fire": 2, "ice": 1 }, next: "cleave" },
+  { name: "cleave", rarity: rare, cost: 12, reward: gold { amount: 500 }, note: "area", serial: 9_007_199_254_740_993 },
+  { name: "storm", rarity: epic, cost: 40, reward: item { define: "II_STORM", count: 3 } }
+]
+
+/// Checked integer arithmetic, translated for TypeScript (canonAdd and friends).
+export fn addInt(a: Int, b: Int) -> Int { return a + b }
+
+/// Subtraction.
+export fn subInt(a: Int, b: Int) -> Int { return a - b }
+
+/// Multiplication.
+export fn mulInt(a: Int, b: Int) -> Int { return a * b }
+
+/// Integer division, truncating toward zero.
+export fn divInt(a: Int, b: Int) -> Int { return a / b }
+
+/// Remainder, with the sign of the dividend.
+export fn modInt(a: Int, b: Int) -> Int { return a % b }
+
+/// `clamp` to an inclusive range.
+export fn clampInt(x: Int, lo: Int, hi: Int) -> Int { return clamp(x, lo, hi) }
+
+/// Int to Float.
+export fn toFloat(i: Int) -> Float { return Float(i) }
+
+/// Float to Int, truncating toward zero.
+export fn toInt(f: Float) -> Int { return Int(f) }
+
+/// Rounding to the nearest Int, half away from zero.
+@ts(name: "roundHalf")
+export fn roundOf(f: Float) -> Int { return round(f) }
+
+test "division and remainder truncate toward zero" {
+  expect divInt(-7, 2) == -3
+  expect divInt(7, -2) == -3
+  expect modInt(-7, 2) == -1
+  expect modInt(7, -2) == 1
+}
+
+test "arithmetic near 2^53" {
+  expect addInt(9_007_199_254_740_990, 1) == 9_007_199_254_740_991
+  expect subInt(-9_007_199_254_740_990, 1) == -9_007_199_254_740_991
+  expect mulInt(94_906_265, 94_906_265) == 9_007_199_136_250_225
+  expect clampInt(-5, 0, 10) == 0
+  expect clampInt(50, 0, 10) == 10
+}
+
+test "int and float conversions" {
+  expect toFloat(-3) == -3.0
+  expect toInt(-2.9) == -2
+  expect roundOf(-2.5) == -3
+  expect roundOf(2.5) == 3
+}
+
+emit json { out: "out/skills.json", values: [skills] }
+emit ts { out: "out/skills.generated.ts", mode: data }

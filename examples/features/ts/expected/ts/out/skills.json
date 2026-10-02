@@ -1,0 +1,8 @@
+{
+  "$schema": "features.ts.Skill@1f1b519a",
+  "rows": [
+    {"name": "slash", "rarity": "common", "cost": 5, "reward": {"type": "nothing"}, "note": null, "weights": {"fire": 2, "ice": 1}, "serial": 0, "next": "cleave"},
+    {"name": "cleave", "rarity": "rare", "cost": 12, "reward": {"type": "gold", "amount": 500}, "note": "area", "weights": {}, "serial": 9007199254740993, "next": null},
+    {"name": "storm", "rarity": "epic", "cost": 40, "reward": {"type": "item", "define": "II_STORM", "count": 3}, "note": null, "weights": {}, "serial": 0, "next": null}
+  ]
+}

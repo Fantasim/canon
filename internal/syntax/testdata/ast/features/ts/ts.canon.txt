@@ -1,0 +1,535 @@
+File: File FileKind=source @1:1-105:1
+  Doc: DocComment "TypeScript goldens: a `data` mode emit decoded from the emitted JSON (CODEGEN §8.1), and\ntranslated `export fn`s whose integer arithmetic is checked (CODEGEN §8.2, CONFORMANCE §4)." @1:1-2:98
+  Package: QualifiedName features.ts @3:9-3:20
+  Decls[0]: EnumDecl Ordered="ordered" @6:1-6:43
+    Doc: DocComment "How rare a skill is, lowest first." @5:1-5:39
+    Name: Ident Rarity @6:6-6:12
+    Members[0]: EnumMember @6:23-6:29
+      Name: Ident common @6:23-6:29
+    Members[1]: EnumMember @6:31-6:35
+      Name: Ident rare @6:31-6:35
+    Members[2]: EnumMember @6:37-6:41
+      Name: Ident epic @6:37-6:41
+  Decls[1]: VariantDecl @9:1-24:2
+    Doc: DocComment "What learning a skill gives back." @8:1-8:38
+    Name: Ident Reward @9:9-9:15
+    Annotations[0]: Annotation @9:16-9:34
+      Name: Ident json @9:17-9:21
+      Args[0]: AnnotationArg @9:22-9:33
+        Name: Ident tag @9:22-9:25
+        Value: StringLit @9:27-9:33
+          Parts[0]: text "type"
+    Items[0]: VariantCase @11:3-16:4
+      Doc: DocComment "An item." @10:3-10:15
+      Name: Ident item @11:3-11:7
+      Body: RecordBody @11:8-16:4
+        Items[0]: FieldDecl @13:5-13:24
+          Doc: DocComment "The item define." @12:5-12:25
+          Name: Ident define @13:5-13:11
+          Type: NamedType @13:13-13:24
+            Name: QualifiedName String @13:13-13:19
+            Args: TypeArgs @13:19-13:24
+              Args[0]: RangeExpr Op=.. @13:20-13:23
+                Lo: IntLit Value=1 @13:20-13:21
+        Items[1]: FieldDecl @15:5-15:24
+          Doc: DocComment "How many." @14:5-14:18
+          Name: Ident count @15:5-15:10
+          Type: NamedType @15:12-15:20
+            Name: QualifiedName Int @15:12-15:15
+            Args: TypeArgs @15:15-15:20
+              Args[0]: RangeExpr Op=.. @15:16-15:19
+                Lo: IntLit Value=1 @15:16-15:17
+          Default: IntLit Value=1 @15:23-15:24
+    Items[1]: VariantCase @18:3-21:4
+      Doc: DocComment "Penya." @17:3-17:13
+      Name: Ident gold @18:3-18:7
+      Body: RecordBody @18:8-21:4
+        Items[0]: FieldDecl @20:5-20:21
+          Doc: DocComment "How much." @19:5-19:18
+          Name: Ident amount @20:5-20:11
+          Type: NamedType @20:13-20:21
+            Name: QualifiedName Int @20:13-20:16
+            Args: TypeArgs @20:16-20:21
+              Args[0]: RangeExpr Op=.. @20:17-20:20
+                Lo: IntLit Value=1 @20:17-20:18
+    Items[2]: VariantCase @23:3-23:10
+      Doc: DocComment "Nothing." @22:3-22:15
+      Name: Ident nothing @23:3-23:10
+  Decls[2]: RecordDecl @27:1-44:2
+    Doc: DocComment "A skill. `@ts(name:)` renames only its TypeScript type." @26:1-26:60
+    Name: Ident Skill @27:8-27:13
+    Annotations[0]: Annotation @27:14-27:37
+      Name: Ident ts @27:15-27:17
+      Args[0]: AnnotationArg @27:18-27:36
+        Name: Ident name @27:18-27:22
+        Value: StringLit @27:24-27:36
+          Parts[0]: text "SkillEntry"
+    Body: RecordBody @27:38-44:2
+      Items[0]: FieldDecl @29:3-29:20
+        Doc: DocComment "Unique name, the key of `skills`." @28:3-28:40
+        Name: Ident name @29:3-29:7
+        Type: NamedType @29:9-29:20
+          Name: QualifiedName String @29:9-29:15
+          Args: TypeArgs @29:15-29:20
+            Args[0]: RangeExpr Op=.. @29:16-29:19
+              Lo: IntLit Value=1 @29:16-29:17
+      Items[1]: FieldDecl @31:3-31:26
+        Doc: DocComment "How rare it is." @30:3-30:22
+        Name: Ident rarity @31:3-31:9
+        Type: NamedType @31:11-31:17
+          Name: QualifiedName Rarity @31:11-31:17
+        Default: IdentExpr common @31:20-31:26
+      Items[2]: FieldDecl @33:3-33:21
+        Doc: DocComment "Mana cost." @32:3-32:17
+        Name: Ident cost @33:3-33:7
+        Type: NamedType @33:9-33:17
+          Name: QualifiedName Int @33:9-33:12
+          Args: TypeArgs @33:12-33:17
+            Args[0]: RangeExpr Op=.. @33:13-33:16
+              Lo: IntLit Value=0 @33:13-33:14
+        Default: IntLit Value=0 @33:20-33:21
+      Items[3]: FieldDecl @35:3-35:27
+        Doc: DocComment "What learning it gives back." @34:3-34:35
+        Name: Ident reward @35:3-35:9
+        Type: NamedType @35:11-35:17
+          Name: QualifiedName Reward @35:11-35:17
+        Default: IdentExpr nothing @35:20-35:27
+      Items[4]: FieldDecl @37:3-37:23
+        Doc: DocComment "A free-text remark, or none." @36:3-36:35
+        Name: Ident note @37:3-37:7
+        Type: OptionalType @37:9-37:16
+          Elem: NamedType @37:9-37:15
+            Name: QualifiedName String @37:9-37:15
+        Default: NoneLit @37:19-37:23
+      Items[5]: FieldDecl @39:3-39:30
+        Doc: DocComment "Weights by element, a map." @38:3-38:33
+        Name: Ident weights @39:3-39:10
+        Type: MapType @39:12-39:25
+          Key: NamedType @39:13-39:19
+            Name: QualifiedName String @39:13-39:19
+          Value: NamedType @39:21-39:24
+            Name: QualifiedName Int @39:21-39:24
+        Default: BraceLit @39:28-39:30
+      Items[6]: FieldDecl @41:3-41:30
+        Doc: DocComment "Past 2^53, so it needs `@ts(bigint)` (E8101 without it)." @40:3-40:63
+        Name: Ident serial @41:3-41:9
+        Type: NamedType @41:11-41:14
+          Name: QualifiedName Int @41:11-41:14
+        Default: IntLit Value=0 @41:17-41:18
+        Annotations[0]: Annotation @41:19-41:30
+          Name: Ident ts @41:20-41:22
+          Args[0]: AnnotationArg @41:23-41:29
+            Value: QualifiedName bigint @41:23-41:29
+      Items[7]: FieldDecl @43:3-43:27
+        Doc: DocComment "The skill this one upgrades into, a ref." @42:3-42:47
+        Name: Ident next @43:3-43:7
+        Type: OptionalType @43:9-43:20
+          Elem: RefType @43:9-43:19
+            Name: QualifiedName skills @43:13-43:19
+        Default: NoneLit @43:23-43:27
+  Decls[3]: LetDecl @47:1-51:2
+    Doc: DocComment "Every skill, a keyed list." @46:1-46:31
+    Name: Ident skills @47:5-47:11
+    Type: KeyedType @47:13-47:34
+      List: ListType @47:13-47:20
+        Elem: NamedType @47:14-47:19
+          Name: QualifiedName Skill @47:14-47:19
+      Key: Ident name @47:30-47:34
+    Value: ListLit @47:37-51:2
+      Elems[0]: BraceLit @48:3-48:79
+        Items[0]: FieldItem @48:5-48:18
+          Name: Ident name @48:5-48:9
+          Value: StringLit @48:11-48:18
+            Parts[0]: text "slash"
+        Items[1]: FieldItem @48:20-48:27
+          Name: Ident cost @48:20-48:24
+          Value: IntLit Value=5 @48:26-48:27
+        Items[2]: FieldItem @48:29-48:61
+          Name: Ident weights @48:29-48:36
+          Value: BraceLit @48:38-48:61
+            Items[0]: MapItem @48:40-48:49
+              Key: StringLit @48:40-48:46
+                Parts[0]: text "fire"
+              Value: IntLit Value=2 @48:48-48:49
+            Items[1]: MapItem @48:51-48:59
+              Key: StringLit @48:51-48:56
+                Parts[0]: text "ice"
+              Value: IntLit Value=1 @48:58-48:59
+        Items[3]: FieldItem @48:63-48:77
+          Name: Ident next @48:63-48:67
+          Value: StringLit @48:69-48:77
+            Parts[0]: text "cleave"
+      Elems[1]: BraceLit @49:3-49:120
+        Items[0]: FieldItem @49:5-49:19
+          Name: Ident name @49:5-49:9
+          Value: StringLit @49:11-49:19
+            Parts[0]: text "cleave"
+        Items[1]: FieldItem @49:21-49:33
+          Name: Ident rarity @49:21-49:27
+          Value: IdentExpr rare @49:29-49:33
+        Items[2]: FieldItem @49:35-49:43
+          Name: Ident cost @49:35-49:39
+          Value: IntLit Value=12 @49:41-49:43
+        Items[3]: FieldItem @49:45-49:73
+          Name: Ident reward @49:45-49:51
+          Value: TypedLit @49:53-49:73
+            Type: QualifiedName gold @49:53-49:57
+            Lit: BraceLit @49:58-49:73
+              Items[0]: FieldItem @49:60-49:71
+                Name: Ident amount @49:60-49:66
+                Value: IntLit Value=500 @49:68-49:71
+        Items[4]: FieldItem @49:75-49:87
+          Name: Ident note @49:75-49:79
+          Value: StringLit @49:81-49:87
+            Parts[0]: text "area"
+        Items[5]: FieldItem @49:89-49:118
+          Name: Ident serial @49:89-49:95
+          Value: IntLit Value=9007199254740993 @49:97-49:118
+      Elems[2]: BraceLit @50:3-50:91
+        Items[0]: FieldItem @50:5-50:18
+          Name: Ident name @50:5-50:9
+          Value: StringLit @50:11-50:18
+            Parts[0]: text "storm"
+        Items[1]: FieldItem @50:20-50:32
+          Name: Ident rarity @50:20-50:26
+          Value: IdentExpr epic @50:28-50:32
+        Items[2]: FieldItem @50:34-50:42
+          Name: Ident cost @50:34-50:38
+          Value: IntLit Value=40 @50:40-50:42
+        Items[3]: FieldItem @50:44-50:89
+          Name: Ident reward @50:44-50:50
+          Value: TypedLit @50:52-50:89
+            Type: QualifiedName item @50:52-50:56
+            Lit: BraceLit @50:57-50:89
+              Items[0]: FieldItem @50:59-50:77
+                Name: Ident define @50:59-50:65
+                Value: StringLit @50:67-50:77
+                  Parts[0]: text "II_STORM"
+              Items[1]: FieldItem @50:79-50:87
+                Name: Ident count @50:79-50:84
+                Value: IntLit Value=3 @50:86-50:87
+  Decls[4]: FnDecl @54:1-54:57
+    Doc: DocComment "Checked integer arithmetic, translated for TypeScript (canonAdd and friends)." @53:1-53:82
+    Mods: Modifiers Export="export" @54:1-54:7
+    Name: Ident addInt @54:11-54:17
+    Params[0]: Param @54:18-54:24
+      Name: Ident a @54:18-54:19
+      Type: NamedType @54:21-54:24
+        Name: QualifiedName Int @54:21-54:24
+    Params[1]: Param @54:26-54:32
+      Name: Ident b @54:26-54:27
+      Type: NamedType @54:29-54:32
+        Name: QualifiedName Int @54:29-54:32
+    Result: NamedType @54:37-54:40
+      Name: QualifiedName Int @54:37-54:40
+    Body: Block @54:41-54:57
+      Stmts[0]: ReturnStmt @54:43-54:55
+        Value: BinaryExpr Op=+ @54:50-54:55
+          X: IdentExpr a @54:50-54:51
+          Y: IdentExpr b @54:54-54:55
+  Decls[5]: FnDecl @57:1-57:57
+    Doc: DocComment "Subtraction." @56:1-56:17
+    Mods: Modifiers Export="export" @57:1-57:7
+    Name: Ident subInt @57:11-57:17
+    Params[0]: Param @57:18-57:24
+      Name: Ident a @57:18-57:19
+      Type: NamedType @57:21-57:24
+        Name: QualifiedName Int @57:21-57:24
+    Params[1]: Param @57:26-57:32
+      Name: Ident b @57:26-57:27
+      Type: NamedType @57:29-57:32
+        Name: QualifiedName Int @57:29-57:32
+    Result: NamedType @57:37-57:40
+      Name: QualifiedName Int @57:37-57:40
+    Body: Block @57:41-57:57
+      Stmts[0]: ReturnStmt @57:43-57:55
+        Value: BinaryExpr Op=- @57:50-57:55
+          X: IdentExpr a @57:50-57:51
+          Y: IdentExpr b @57:54-57:55
+  Decls[6]: FnDecl @60:1-60:57
+    Doc: DocComment "Multiplication." @59:1-59:20
+    Mods: Modifiers Export="export" @60:1-60:7
+    Name: Ident mulInt @60:11-60:17
+    Params[0]: Param @60:18-60:24
+      Name: Ident a @60:18-60:19
+      Type: NamedType @60:21-60:24
+        Name: QualifiedName Int @60:21-60:24
+    Params[1]: Param @60:26-60:32
+      Name: Ident b @60:26-60:27
+      Type: NamedType @60:29-60:32
+        Name: QualifiedName Int @60:29-60:32
+    Result: NamedType @60:37-60:40
+      Name: QualifiedName Int @60:37-60:40
+    Body: Block @60:41-60:57
+      Stmts[0]: ReturnStmt @60:43-60:55
+        Value: BinaryExpr Op=* @60:50-60:55
+          X: IdentExpr a @60:50-60:51
+          Y: IdentExpr b @60:54-60:55
+  Decls[7]: FnDecl @63:1-63:57
+    Doc: DocComment "Integer division, truncating toward zero." @62:1-62:46
+    Mods: Modifiers Export="export" @63:1-63:7
+    Name: Ident divInt @63:11-63:17
+    Params[0]: Param @63:18-63:24
+      Name: Ident a @63:18-63:19
+      Type: NamedType @63:21-63:24
+        Name: QualifiedName Int @63:21-63:24
+    Params[1]: Param @63:26-63:32
+      Name: Ident b @63:26-63:27
+      Type: NamedType @63:29-63:32
+        Name: QualifiedName Int @63:29-63:32
+    Result: NamedType @63:37-63:40
+      Name: QualifiedName Int @63:37-63:40
+    Body: Block @63:41-63:57
+      Stmts[0]: ReturnStmt @63:43-63:55
+        Value: BinaryExpr Op=/ @63:50-63:55
+          X: IdentExpr a @63:50-63:51
+          Y: IdentExpr b @63:54-63:55
+  Decls[8]: FnDecl @66:1-66:57
+    Doc: DocComment "Remainder, with the sign of the dividend." @65:1-65:46
+    Mods: Modifiers Export="export" @66:1-66:7
+    Name: Ident modInt @66:11-66:17
+    Params[0]: Param @66:18-66:24
+      Name: Ident a @66:18-66:19
+      Type: NamedType @66:21-66:24
+        Name: QualifiedName Int @66:21-66:24
+    Params[1]: Param @66:26-66:32
+      Name: Ident b @66:26-66:27
+      Type: NamedType @66:29-66:32
+        Name: QualifiedName Int @66:29-66:32
+    Result: NamedType @66:37-66:40
+      Name: QualifiedName Int @66:37-66:40
+    Body: Block @66:41-66:57
+      Stmts[0]: ReturnStmt @66:43-66:55
+        Value: BinaryExpr Op=% @66:50-66:55
+          X: IdentExpr a @66:50-66:51
+          Y: IdentExpr b @66:54-66:55
+  Decls[9]: FnDecl @69:1-69:80
+    Doc: DocComment "`clamp` to an inclusive range." @68:1-68:35
+    Mods: Modifiers Export="export" @69:1-69:7
+    Name: Ident clampInt @69:11-69:19
+    Params[0]: Param @69:20-69:26
+      Name: Ident x @69:20-69:21
+      Type: NamedType @69:23-69:26
+        Name: QualifiedName Int @69:23-69:26
+    Params[1]: Param @69:28-69:35
+      Name: Ident lo @69:28-69:30
+      Type: NamedType @69:32-69:35
+        Name: QualifiedName Int @69:32-69:35
+    Params[2]: Param @69:37-69:44
+      Name: Ident hi @69:37-69:39
+      Type: NamedType @69:41-69:44
+        Name: QualifiedName Int @69:41-69:44
+    Result: NamedType @69:49-69:52
+      Name: QualifiedName Int @69:49-69:52
+    Body: Block @69:53-69:80
+      Stmts[0]: ReturnStmt @69:55-69:78
+        Value: CallExpr @69:62-69:78
+          Fun: IdentExpr clamp @69:62-69:67
+          Args[0]: Arg @69:68-69:69
+            Value: IdentExpr x @69:68-69:69
+          Args[1]: Arg @69:71-69:73
+            Value: IdentExpr lo @69:71-69:73
+          Args[2]: Arg @69:75-69:77
+            Value: IdentExpr hi @69:75-69:77
+  Decls[10]: FnDecl @72:1-72:55
+    Doc: DocComment "Int to Float." @71:1-71:18
+    Mods: Modifiers Export="export" @72:1-72:7
+    Name: Ident toFloat @72:11-72:18
+    Params[0]: Param @72:19-72:25
+      Name: Ident i @72:19-72:20
+      Type: NamedType @72:22-72:25
+        Name: QualifiedName Int @72:22-72:25
+    Result: NamedType @72:30-72:35
+      Name: QualifiedName Float @72:30-72:35
+    Body: Block @72:36-72:55
+      Stmts[0]: ReturnStmt @72:38-72:53
+        Value: CallExpr @72:45-72:53
+          Fun: IdentExpr Float @72:45-72:50
+          Args[0]: Arg @72:51-72:52
+            Value: IdentExpr i @72:51-72:52
+  Decls[11]: FnDecl @75:1-75:51
+    Doc: DocComment "Float to Int, truncating toward zero." @74:1-74:42
+    Mods: Modifiers Export="export" @75:1-75:7
+    Name: Ident toInt @75:11-75:16
+    Params[0]: Param @75:17-75:25
+      Name: Ident f @75:17-75:18
+      Type: NamedType @75:20-75:25
+        Name: QualifiedName Float @75:20-75:25
+    Result: NamedType @75:30-75:33
+      Name: QualifiedName Int @75:30-75:33
+    Body: Block @75:34-75:51
+      Stmts[0]: ReturnStmt @75:36-75:49
+        Value: CallExpr @75:43-75:49
+          Fun: IdentExpr Int @75:43-75:46
+          Args[0]: Arg @75:47-75:48
+            Value: IdentExpr f @75:47-75:48
+  Decls[12]: FnDecl @78:1-79:55
+    Doc: DocComment "Rounding to the nearest Int, half away from zero." @77:1-77:54
+    Annotations[0]: Annotation @78:1-78:23
+      Name: Ident ts @78:2-78:4
+      Args[0]: AnnotationArg @78:5-78:22
+        Name: Ident name @78:5-78:9
+        Value: StringLit @78:11-78:22
+          Parts[0]: text "roundHalf"
+    Mods: Modifiers Export="export" @79:1-79:7
+    Name: Ident roundOf @79:11-79:18
+    Params[0]: Param @79:19-79:27
+      Name: Ident f @79:19-79:20
+      Type: NamedType @79:22-79:27
+        Name: QualifiedName Float @79:22-79:27
+    Result: NamedType @79:32-79:35
+      Name: QualifiedName Int @79:32-79:35
+    Body: Block @79:36-79:55
+      Stmts[0]: ReturnStmt @79:38-79:53
+        Value: CallExpr @79:45-79:53
+          Fun: IdentExpr round @79:45-79:50
+          Args[0]: Arg @79:51-79:52
+            Value: IdentExpr f @79:51-79:52
+  Decls[13]: TestDecl @81:1-86:2
+    Name: StringLit @81:6-81:51
+      Parts[0]: text "division and remainder truncate toward zero"
+    Body: Block @81:52-86:2
+      Stmts[0]: ExpectStmt @82:3-82:29
+        X: BinaryExpr Op=== @82:10-82:29
+          X: CallExpr @82:10-82:23
+            Fun: IdentExpr divInt @82:10-82:16
+            Args[0]: Arg @82:17-82:19
+              Value: IntLit Value=-7 @82:17-82:19
+            Args[1]: Arg @82:21-82:22
+              Value: IntLit Value=2 @82:21-82:22
+          Y: IntLit Value=-3 @82:27-82:29
+      Stmts[1]: ExpectStmt @83:3-83:29
+        X: BinaryExpr Op=== @83:10-83:29
+          X: CallExpr @83:10-83:23
+            Fun: IdentExpr divInt @83:10-83:16
+            Args[0]: Arg @83:17-83:18
+              Value: IntLit Value=7 @83:17-83:18
+            Args[1]: Arg @83:20-83:22
+              Value: IntLit Value=-2 @83:20-83:22
+          Y: IntLit Value=-3 @83:27-83:29
+      Stmts[2]: ExpectStmt @84:3-84:29
+        X: BinaryExpr Op=== @84:10-84:29
+          X: CallExpr @84:10-84:23
+            Fun: IdentExpr modInt @84:10-84:16
+            Args[0]: Arg @84:17-84:19
+              Value: IntLit Value=-7 @84:17-84:19
+            Args[1]: Arg @84:21-84:22
+              Value: IntLit Value=2 @84:21-84:22
+          Y: IntLit Value=-1 @84:27-84:29
+      Stmts[3]: ExpectStmt @85:3-85:28
+        X: BinaryExpr Op=== @85:10-85:28
+          X: CallExpr @85:10-85:23
+            Fun: IdentExpr modInt @85:10-85:16
+            Args[0]: Arg @85:17-85:18
+              Value: IntLit Value=7 @85:17-85:18
+            Args[1]: Arg @85:20-85:22
+              Value: IntLit Value=-2 @85:20-85:22
+          Y: IntLit Value=1 @85:27-85:28
+  Decls[14]: TestDecl @88:1-94:2
+    Name: StringLit @88:6-88:28
+      Parts[0]: text "arithmetic near 2^53"
+    Body: Block @88:29-94:2
+      Stmts[0]: ExpectStmt @89:3-89:67
+        X: BinaryExpr Op=== @89:10-89:67
+          X: CallExpr @89:10-89:42
+            Fun: IdentExpr addInt @89:10-89:16
+            Args[0]: Arg @89:17-89:38
+              Value: IntLit Value=9007199254740990 @89:17-89:38
+            Args[1]: Arg @89:40-89:41
+              Value: IntLit Value=1 @89:40-89:41
+          Y: IntLit Value=9007199254740991 @89:46-89:67
+      Stmts[1]: ExpectStmt @90:3-90:69
+        X: BinaryExpr Op=== @90:10-90:69
+          X: CallExpr @90:10-90:43
+            Fun: IdentExpr subInt @90:10-90:16
+            Args[0]: Arg @90:17-90:39
+              Value: IntLit Value=-9007199254740990 @90:17-90:39
+            Args[1]: Arg @90:41-90:42
+              Value: IntLit Value=1 @90:41-90:42
+          Y: IntLit Value=-9007199254740991 @90:47-90:69
+      Stmts[2]: ExpectStmt @91:3-91:65
+        X: BinaryExpr Op=== @91:10-91:65
+          X: CallExpr @91:10-91:40
+            Fun: IdentExpr mulInt @91:10-91:16
+            Args[0]: Arg @91:17-91:27
+              Value: IntLit Value=94906265 @91:17-91:27
+            Args[1]: Arg @91:29-91:39
+              Value: IntLit Value=94906265 @91:29-91:39
+          Y: IntLit Value=9007199136250225 @91:44-91:65
+      Stmts[3]: ExpectStmt @92:3-92:34
+        X: BinaryExpr Op=== @92:10-92:34
+          X: CallExpr @92:10-92:29
+            Fun: IdentExpr clampInt @92:10-92:18
+            Args[0]: Arg @92:19-92:21
+              Value: IntLit Value=-5 @92:19-92:21
+            Args[1]: Arg @92:23-92:24
+              Value: IntLit Value=0 @92:23-92:24
+            Args[2]: Arg @92:26-92:28
+              Value: IntLit Value=10 @92:26-92:28
+          Y: IntLit Value=0 @92:33-92:34
+      Stmts[4]: ExpectStmt @93:3-93:35
+        X: BinaryExpr Op=== @93:10-93:35
+          X: CallExpr @93:10-93:29
+            Fun: IdentExpr clampInt @93:10-93:18
+            Args[0]: Arg @93:19-93:21
+              Value: IntLit Value=50 @93:19-93:21
+            Args[1]: Arg @93:23-93:24
+              Value: IntLit Value=0 @93:23-93:24
+            Args[2]: Arg @93:26-93:28
+              Value: IntLit Value=10 @93:26-93:28
+          Y: IntLit Value=10 @93:33-93:35
+  Decls[15]: TestDecl @96:1-101:2
+    Name: StringLit @96:6-96:33
+      Parts[0]: text "int and float conversions"
+    Body: Block @96:34-101:2
+      Stmts[0]: ExpectStmt @97:3-97:29
+        X: BinaryExpr Op=== @97:10-97:29
+          X: CallExpr @97:10-97:21
+            Fun: IdentExpr toFloat @97:10-97:17
+            Args[0]: Arg @97:18-97:20
+              Value: IntLit Value=-3 @97:18-97:20
+          Y: FloatLit Neg Coef=30 Exp=-1 @97:25-97:29
+      Stmts[1]: ExpectStmt @98:3-98:27
+        X: BinaryExpr Op=== @98:10-98:27
+          X: CallExpr @98:10-98:21
+            Fun: IdentExpr toInt @98:10-98:15
+            Args[0]: Arg @98:16-98:20
+              Value: FloatLit Neg Coef=29 Exp=-1 @98:16-98:20
+          Y: IntLit Value=-2 @98:25-98:27
+      Stmts[2]: ExpectStmt @99:3-99:29
+        X: BinaryExpr Op=== @99:10-99:29
+          X: CallExpr @99:10-99:23
+            Fun: IdentExpr roundOf @99:10-99:17
+            Args[0]: Arg @99:18-99:22
+              Value: FloatLit Neg Coef=25 Exp=-1 @99:18-99:22
+          Y: IntLit Value=-3 @99:27-99:29
+      Stmts[3]: ExpectStmt @100:3-100:27
+        X: BinaryExpr Op=== @100:10-100:27
+          X: CallExpr @100:10-100:22
+            Fun: IdentExpr roundOf @100:10-100:17
+            Args[0]: Arg @100:18-100:21
+              Value: FloatLit Coef=25 Exp=-1 @100:18-100:21
+          Y: IntLit Value=3 @100:26-100:27
+  Decls[16]: EmitDecl @103:1-103:55
+    Target: Ident json @103:6-103:10
+    Options: BraceLit @103:11-103:55
+      Items[0]: FieldItem @103:13-103:35
+        Name: Ident out @103:13-103:16
+        Value: StringLit @103:18-103:35
+          Parts[0]: text "out/skills.json"
+      Items[1]: FieldItem @103:37-103:53
+        Name: Ident values @103:37-103:43
+        Value: ListLit @103:45-103:53
+          Elems[0]: IdentExpr skills @103:46-103:52
+  Decls[17]: EmitDecl @104:1-104:55
+    Target: Ident ts @104:6-104:8
+    Options: BraceLit @104:9-104:55
+      Items[0]: FieldItem @104:11-104:41
+        Name: Ident out @104:11-104:14
+        Value: StringLit @104:16-104:41
+          Parts[0]: text "out/skills.generated.ts"
+      Items[1]: FieldItem @104:43-104:53
+        Name: Ident mode @104:43-104:47
+        Value: IdentExpr data @104:49-104:53
+== findings
+0 errors, 0 warnings in 1 package (…)

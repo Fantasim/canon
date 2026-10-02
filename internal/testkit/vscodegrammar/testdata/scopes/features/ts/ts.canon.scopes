@@ -1,0 +1,385 @@
+1:0-93 "/// TypeScript goldens: a `data` mode emit decoded from the emitted JSON (CODEGEN §8.1), and" comment.line.documentation.canon
+2:0-97 "/// translated `export fn`s whose integer arithmetic is checked (CODEGEN §8.2, CONFORMANCE §4)." comment.line.documentation.canon
+3:0-7 "package" keyword.other.canon
+3:8-19 "features.ts" entity.name.namespace.canon
+5:0-38 "/// How rare a skill is, lowest first." comment.line.documentation.canon
+6:0-4 "enum" storage.type.canon
+6:5-11 "Rarity" entity.name.type.canon
+8:0-37 "/// What learning a skill gives back." comment.line.documentation.canon
+9:0-7 "variant" storage.type.canon
+9:8-14 "Reward" entity.name.type.canon
+9:15-16 "@" meta.annotation.canon punctuation.definition.annotation.canon
+9:16-20 "json" meta.annotation.canon entity.name.function.decorator.canon
+9:20-21 "(" meta.annotation.canon
+9:21-24 "tag" meta.annotation.canon variable.parameter.canon
+9:24-25 ":" meta.annotation.canon punctuation.separator.key.canon
+9:25-26 " " meta.annotation.canon
+9:26-32 "\"type\"" meta.annotation.canon string.quoted.double.canon
+9:32-33 ")" meta.annotation.canon
+10:0-14 "  /// An item." comment.line.documentation.canon
+12:0-24 "    /// The item define." comment.line.documentation.canon
+13:4-10 "define" variable.other.property.canon
+13:10-11 ":" punctuation.separator.key.canon
+13:12-18 "String" entity.name.type.canon
+13:19-20 "1" constant.numeric.integer.canon
+13:20-22 ".." keyword.operator.canon
+14:0-17 "    /// How many." comment.line.documentation.canon
+15:4-9 "count" variable.other.property.canon
+15:9-10 ":" punctuation.separator.key.canon
+15:11-14 "Int" entity.name.type.canon
+15:15-16 "1" constant.numeric.integer.canon
+15:16-18 ".." keyword.operator.canon
+15:20-21 "=" keyword.operator.canon
+15:22-23 "1" constant.numeric.integer.canon
+17:0-12 "  /// Penya." comment.line.documentation.canon
+19:0-17 "    /// How much." comment.line.documentation.canon
+20:4-10 "amount" variable.other.property.canon
+20:10-11 ":" punctuation.separator.key.canon
+20:12-15 "Int" entity.name.type.canon
+20:16-17 "1" constant.numeric.integer.canon
+20:17-19 ".." keyword.operator.canon
+22:0-14 "  /// Nothing." comment.line.documentation.canon
+26:0-59 "/// A skill. `@ts(name:)` renames only its TypeScript type." comment.line.documentation.canon
+27:0-6 "record" storage.type.canon
+27:7-12 "Skill" entity.name.type.canon
+27:13-14 "@" meta.annotation.canon punctuation.definition.annotation.canon
+27:14-16 "ts" meta.annotation.canon entity.name.function.decorator.canon
+27:16-17 "(" meta.annotation.canon
+27:17-21 "name" meta.annotation.canon variable.parameter.canon
+27:21-22 ":" meta.annotation.canon punctuation.separator.key.canon
+27:22-23 " " meta.annotation.canon
+27:23-35 "\"SkillEntry\"" meta.annotation.canon string.quoted.double.canon
+27:35-36 ")" meta.annotation.canon
+28:0-39 "  /// Unique name, the key of `skills`." comment.line.documentation.canon
+29:2-6 "name" variable.other.property.canon
+29:6-7 ":" punctuation.separator.key.canon
+29:8-14 "String" entity.name.type.canon
+29:15-16 "1" constant.numeric.integer.canon
+29:16-18 ".." keyword.operator.canon
+30:0-21 "  /// How rare it is." comment.line.documentation.canon
+31:2-8 "rarity" variable.other.property.canon
+31:8-9 ":" punctuation.separator.key.canon
+31:10-16 "Rarity" entity.name.type.canon
+31:17-18 "=" keyword.operator.canon
+32:0-16 "  /// Mana cost." comment.line.documentation.canon
+33:2-6 "cost" variable.other.property.canon
+33:6-7 ":" punctuation.separator.key.canon
+33:8-11 "Int" entity.name.type.canon
+33:12-13 "0" constant.numeric.integer.canon
+33:13-15 ".." keyword.operator.canon
+33:17-18 "=" keyword.operator.canon
+33:19-20 "0" constant.numeric.integer.canon
+34:0-34 "  /// What learning it gives back." comment.line.documentation.canon
+35:2-8 "reward" variable.other.property.canon
+35:8-9 ":" punctuation.separator.key.canon
+35:10-16 "Reward" entity.name.type.canon
+35:17-18 "=" keyword.operator.canon
+36:0-34 "  /// A free-text remark, or none." comment.line.documentation.canon
+37:2-6 "note" variable.other.property.canon
+37:6-7 ":" punctuation.separator.key.canon
+37:8-14 "String" entity.name.type.canon
+37:14-15 "?" keyword.operator.canon
+37:16-17 "=" keyword.operator.canon
+37:18-22 "none" constant.language.canon
+38:0-32 "  /// Weights by element, a map." comment.line.documentation.canon
+39:2-9 "weights" variable.other.property.canon
+39:9-10 ":" punctuation.separator.key.canon
+39:12-18 "String" variable.other.property.canon
+39:18-19 ":" punctuation.separator.key.canon
+39:20-23 "Int" entity.name.type.canon
+39:25-26 "=" keyword.operator.canon
+40:0-62 "  /// Past 2^53, so it needs `@ts(bigint)` (E8101 without it)." comment.line.documentation.canon
+41:2-8 "serial" variable.other.property.canon
+41:8-9 ":" punctuation.separator.key.canon
+41:10-13 "Int" entity.name.type.canon
+41:14-15 "=" keyword.operator.canon
+41:16-17 "0" constant.numeric.integer.canon
+41:18-19 "@" meta.annotation.canon punctuation.definition.annotation.canon
+41:19-21 "ts" meta.annotation.canon entity.name.function.decorator.canon
+41:21-29 "(bigint)" meta.annotation.canon
+42:0-46 "  /// The skill this one upgrades into, a ref." comment.line.documentation.canon
+43:2-6 "next" variable.other.property.canon
+43:6-7 ":" punctuation.separator.key.canon
+43:8-11 "ref" storage.modifier.canon
+43:18-19 "?" keyword.operator.canon
+43:20-21 "=" keyword.operator.canon
+43:22-26 "none" constant.language.canon
+46:0-30 "/// Every skill, a keyed list." comment.line.documentation.canon
+47:0-3 "let" storage.type.canon
+47:4-10 "skills" variable.other.property.canon
+47:10-11 ":" punctuation.separator.key.canon
+47:13-18 "Skill" entity.name.type.canon
+47:34-35 "=" keyword.operator.canon
+48:4-8 "name" variable.other.property.canon
+48:8-9 ":" punctuation.separator.key.canon
+48:10-17 "\"slash\"" string.quoted.double.canon
+48:19-23 "cost" variable.other.property.canon
+48:23-24 ":" punctuation.separator.key.canon
+48:25-26 "5" constant.numeric.integer.canon
+48:28-35 "weights" variable.other.property.canon
+48:35-36 ":" punctuation.separator.key.canon
+48:39-45 "\"fire\"" string.quoted.double.canon
+48:47-48 "2" constant.numeric.integer.canon
+48:50-55 "\"ice\"" string.quoted.double.canon
+48:57-58 "1" constant.numeric.integer.canon
+48:62-66 "next" variable.other.property.canon
+48:66-67 ":" punctuation.separator.key.canon
+48:68-76 "\"cleave\"" string.quoted.double.canon
+49:4-8 "name" variable.other.property.canon
+49:8-9 ":" punctuation.separator.key.canon
+49:10-18 "\"cleave\"" string.quoted.double.canon
+49:20-26 "rarity" variable.other.property.canon
+49:26-27 ":" punctuation.separator.key.canon
+49:34-38 "cost" variable.other.property.canon
+49:38-39 ":" punctuation.separator.key.canon
+49:40-42 "12" constant.numeric.integer.canon
+49:44-50 "reward" variable.other.property.canon
+49:50-51 ":" punctuation.separator.key.canon
+49:59-65 "amount" variable.other.property.canon
+49:65-66 ":" punctuation.separator.key.canon
+49:67-70 "500" constant.numeric.integer.canon
+49:74-78 "note" variable.other.property.canon
+49:78-79 ":" punctuation.separator.key.canon
+49:80-86 "\"area\"" string.quoted.double.canon
+49:88-94 "serial" variable.other.property.canon
+49:94-95 ":" punctuation.separator.key.canon
+49:96-117 "9_007_199_254_740_993" constant.numeric.integer.canon
+50:4-8 "name" variable.other.property.canon
+50:8-9 ":" punctuation.separator.key.canon
+50:10-17 "\"storm\"" string.quoted.double.canon
+50:19-25 "rarity" variable.other.property.canon
+50:25-26 ":" punctuation.separator.key.canon
+50:33-37 "cost" variable.other.property.canon
+50:37-38 ":" punctuation.separator.key.canon
+50:39-41 "40" constant.numeric.integer.canon
+50:43-49 "reward" variable.other.property.canon
+50:49-50 ":" punctuation.separator.key.canon
+50:58-64 "define" variable.other.property.canon
+50:64-65 ":" punctuation.separator.key.canon
+50:66-76 "\"II_STORM\"" string.quoted.double.canon
+50:78-83 "count" variable.other.property.canon
+50:83-84 ":" punctuation.separator.key.canon
+50:85-86 "3" constant.numeric.integer.canon
+53:0-81 "/// Checked integer arithmetic, translated for TypeScript (canonAdd and friends)." comment.line.documentation.canon
+54:0-6 "export" storage.modifier.canon
+54:7-9 "fn" storage.type.function.canon
+54:10-16 "addInt" entity.name.function.canon
+54:17-18 "a" variable.other.property.canon
+54:18-19 ":" punctuation.separator.key.canon
+54:20-23 "Int" entity.name.type.canon
+54:25-26 "b" variable.other.property.canon
+54:26-27 ":" punctuation.separator.key.canon
+54:28-31 "Int" entity.name.type.canon
+54:33-35 "->" keyword.operator.canon
+54:36-39 "Int" entity.name.type.canon
+54:42-48 "return" keyword.control.canon
+54:51-52 "+" keyword.operator.canon
+56:0-16 "/// Subtraction." comment.line.documentation.canon
+57:0-6 "export" storage.modifier.canon
+57:7-9 "fn" storage.type.function.canon
+57:10-16 "subInt" entity.name.function.canon
+57:17-18 "a" variable.other.property.canon
+57:18-19 ":" punctuation.separator.key.canon
+57:20-23 "Int" entity.name.type.canon
+57:25-26 "b" variable.other.property.canon
+57:26-27 ":" punctuation.separator.key.canon
+57:28-31 "Int" entity.name.type.canon
+57:33-35 "->" keyword.operator.canon
+57:36-39 "Int" entity.name.type.canon
+57:42-48 "return" keyword.control.canon
+57:51-52 "-" keyword.operator.canon
+59:0-19 "/// Multiplication." comment.line.documentation.canon
+60:0-6 "export" storage.modifier.canon
+60:7-9 "fn" storage.type.function.canon
+60:10-16 "mulInt" entity.name.function.canon
+60:17-18 "a" variable.other.property.canon
+60:18-19 ":" punctuation.separator.key.canon
+60:20-23 "Int" entity.name.type.canon
+60:25-26 "b" variable.other.property.canon
+60:26-27 ":" punctuation.separator.key.canon
+60:28-31 "Int" entity.name.type.canon
+60:33-35 "->" keyword.operator.canon
+60:36-39 "Int" entity.name.type.canon
+60:42-48 "return" keyword.control.canon
+60:51-52 "*" keyword.operator.canon
+62:0-45 "/// Integer division, truncating toward zero." comment.line.documentation.canon
+63:0-6 "export" storage.modifier.canon
+63:7-9 "fn" storage.type.function.canon
+63:10-16 "divInt" entity.name.function.canon
+63:17-18 "a" variable.other.property.canon
+63:18-19 ":" punctuation.separator.key.canon
+63:20-23 "Int" entity.name.type.canon
+63:25-26 "b" variable.other.property.canon
+63:26-27 ":" punctuation.separator.key.canon
+63:28-31 "Int" entity.name.type.canon
+63:33-35 "->" keyword.operator.canon
+63:36-39 "Int" entity.name.type.canon
+63:42-48 "return" keyword.control.canon
+63:51-52 "/" keyword.operator.canon
+65:0-45 "/// Remainder, with the sign of the dividend." comment.line.documentation.canon
+66:0-6 "export" storage.modifier.canon
+66:7-9 "fn" storage.type.function.canon
+66:10-16 "modInt" entity.name.function.canon
+66:17-18 "a" variable.other.property.canon
+66:18-19 ":" punctuation.separator.key.canon
+66:20-23 "Int" entity.name.type.canon
+66:25-26 "b" variable.other.property.canon
+66:26-27 ":" punctuation.separator.key.canon
+66:28-31 "Int" entity.name.type.canon
+66:33-35 "->" keyword.operator.canon
+66:36-39 "Int" entity.name.type.canon
+66:42-48 "return" keyword.control.canon
+66:51-52 "%" keyword.operator.canon
+68:0-34 "/// `clamp` to an inclusive range." comment.line.documentation.canon
+69:0-6 "export" storage.modifier.canon
+69:7-9 "fn" storage.type.function.canon
+69:10-18 "clampInt" entity.name.function.canon
+69:19-20 "x" variable.other.property.canon
+69:20-21 ":" punctuation.separator.key.canon
+69:22-25 "Int" entity.name.type.canon
+69:27-29 "lo" variable.other.property.canon
+69:29-30 ":" punctuation.separator.key.canon
+69:31-34 "Int" entity.name.type.canon
+69:36-38 "hi" variable.other.property.canon
+69:38-39 ":" punctuation.separator.key.canon
+69:40-43 "Int" entity.name.type.canon
+69:45-47 "->" keyword.operator.canon
+69:48-51 "Int" entity.name.type.canon
+69:54-60 "return" keyword.control.canon
+71:0-17 "/// Int to Float." comment.line.documentation.canon
+72:0-6 "export" storage.modifier.canon
+72:7-9 "fn" storage.type.function.canon
+72:10-17 "toFloat" entity.name.function.canon
+72:18-19 "i" variable.other.property.canon
+72:19-20 ":" punctuation.separator.key.canon
+72:21-24 "Int" entity.name.type.canon
+72:26-28 "->" keyword.operator.canon
+72:29-34 "Float" entity.name.type.canon
+72:37-43 "return" keyword.control.canon
+72:44-49 "Float" entity.name.type.canon
+74:0-41 "/// Float to Int, truncating toward zero." comment.line.documentation.canon
+75:0-6 "export" storage.modifier.canon
+75:7-9 "fn" storage.type.function.canon
+75:10-15 "toInt" entity.name.function.canon
+75:16-17 "f" variable.other.property.canon
+75:17-18 ":" punctuation.separator.key.canon
+75:19-24 "Float" entity.name.type.canon
+75:26-28 "->" keyword.operator.canon
+75:29-32 "Int" entity.name.type.canon
+75:35-41 "return" keyword.control.canon
+75:42-45 "Int" entity.name.type.canon
+77:0-53 "/// Rounding to the nearest Int, half away from zero." comment.line.documentation.canon
+78:0-1 "@" meta.annotation.canon punctuation.definition.annotation.canon
+78:1-3 "ts" meta.annotation.canon entity.name.function.decorator.canon
+78:3-4 "(" meta.annotation.canon
+78:4-8 "name" meta.annotation.canon variable.parameter.canon
+78:8-9 ":" meta.annotation.canon punctuation.separator.key.canon
+78:9-10 " " meta.annotation.canon
+78:10-21 "\"roundHalf\"" meta.annotation.canon string.quoted.double.canon
+78:21-22 ")" meta.annotation.canon
+79:0-6 "export" storage.modifier.canon
+79:7-9 "fn" storage.type.function.canon
+79:10-17 "roundOf" entity.name.function.canon
+79:18-19 "f" variable.other.property.canon
+79:19-20 ":" punctuation.separator.key.canon
+79:21-26 "Float" entity.name.type.canon
+79:28-30 "->" keyword.operator.canon
+79:31-34 "Int" entity.name.type.canon
+79:37-43 "return" keyword.control.canon
+81:0-4 "test" keyword.other.canon
+81:5-50 "\"division and remainder truncate toward zero\"" string.quoted.double.canon
+82:2-8 "expect" keyword.other.canon
+82:16-17 "-" keyword.operator.canon
+82:17-18 "7" constant.numeric.integer.canon
+82:20-21 "2" constant.numeric.integer.canon
+82:23-25 "==" keyword.operator.canon
+82:26-27 "-" keyword.operator.canon
+82:27-28 "3" constant.numeric.integer.canon
+83:2-8 "expect" keyword.other.canon
+83:16-17 "7" constant.numeric.integer.canon
+83:19-20 "-" keyword.operator.canon
+83:20-21 "2" constant.numeric.integer.canon
+83:23-25 "==" keyword.operator.canon
+83:26-27 "-" keyword.operator.canon
+83:27-28 "3" constant.numeric.integer.canon
+84:2-8 "expect" keyword.other.canon
+84:16-17 "-" keyword.operator.canon
+84:17-18 "7" constant.numeric.integer.canon
+84:20-21 "2" constant.numeric.integer.canon
+84:23-25 "==" keyword.operator.canon
+84:26-27 "-" keyword.operator.canon
+84:27-28 "1" constant.numeric.integer.canon
+85:2-8 "expect" keyword.other.canon
+85:16-17 "7" constant.numeric.integer.canon
+85:19-20 "-" keyword.operator.canon
+85:20-21 "2" constant.numeric.integer.canon
+85:23-25 "==" keyword.operator.canon
+85:26-27 "1" constant.numeric.integer.canon
+88:0-4 "test" keyword.other.canon
+88:5-27 "\"arithmetic near 2^53\"" string.quoted.double.canon
+89:2-8 "expect" keyword.other.canon
+89:16-37 "9_007_199_254_740_990" constant.numeric.integer.canon
+89:39-40 "1" constant.numeric.integer.canon
+89:42-44 "==" keyword.operator.canon
+89:45-66 "9_007_199_254_740_991" constant.numeric.integer.canon
+90:2-8 "expect" keyword.other.canon
+90:16-17 "-" keyword.operator.canon
+90:17-38 "9_007_199_254_740_990" constant.numeric.integer.canon
+90:40-41 "1" constant.numeric.integer.canon
+90:43-45 "==" keyword.operator.canon
+90:46-47 "-" keyword.operator.canon
+90:47-68 "9_007_199_254_740_991" constant.numeric.integer.canon
+91:2-8 "expect" keyword.other.canon
+91:16-26 "94_906_265" constant.numeric.integer.canon
+91:28-38 "94_906_265" constant.numeric.integer.canon
+91:40-42 "==" keyword.operator.canon
+91:43-64 "9_007_199_136_250_225" constant.numeric.integer.canon
+92:2-8 "expect" keyword.other.canon
+92:18-19 "-" keyword.operator.canon
+92:19-20 "5" constant.numeric.integer.canon
+92:22-23 "0" constant.numeric.integer.canon
+92:25-27 "10" constant.numeric.integer.canon
+92:29-31 "==" keyword.operator.canon
+92:32-33 "0" constant.numeric.integer.canon
+93:2-8 "expect" keyword.other.canon
+93:18-20 "50" constant.numeric.integer.canon
+93:22-23 "0" constant.numeric.integer.canon
+93:25-27 "10" constant.numeric.integer.canon
+93:29-31 "==" keyword.operator.canon
+93:32-34 "10" constant.numeric.integer.canon
+96:0-4 "test" keyword.other.canon
+96:5-32 "\"int and float conversions\"" string.quoted.double.canon
+97:2-8 "expect" keyword.other.canon
+97:17-18 "-" keyword.operator.canon
+97:18-19 "3" constant.numeric.integer.canon
+97:21-23 "==" keyword.operator.canon
+97:24-25 "-" keyword.operator.canon
+97:25-28 "3.0" constant.numeric.float.canon
+98:2-8 "expect" keyword.other.canon
+98:15-16 "-" keyword.operator.canon
+98:16-19 "2.9" constant.numeric.float.canon
+98:21-23 "==" keyword.operator.canon
+98:24-25 "-" keyword.operator.canon
+98:25-26 "2" constant.numeric.integer.canon
+99:2-8 "expect" keyword.other.canon
+99:17-18 "-" keyword.operator.canon
+99:18-21 "2.5" constant.numeric.float.canon
+99:23-25 "==" keyword.operator.canon
+99:26-27 "-" keyword.operator.canon
+99:27-28 "3" constant.numeric.integer.canon
+100:2-8 "expect" keyword.other.canon
+100:17-20 "2.5" constant.numeric.float.canon
+100:22-24 "==" keyword.operator.canon
+100:25-26 "3" constant.numeric.integer.canon
+103:0-4 "emit" keyword.other.canon
+103:12-15 "out" variable.other.property.canon
+103:15-16 ":" punctuation.separator.key.canon
+103:17-34 "\"out/skills.json\"" string.quoted.double.canon
+103:36-42 "values" variable.other.property.canon
+103:42-43 ":" punctuation.separator.key.canon
+104:0-4 "emit" keyword.other.canon
+104:10-13 "out" variable.other.property.canon
+104:13-14 ":" punctuation.separator.key.canon
+104:15-40 "\"out/skills.generated.ts\"" string.quoted.double.canon
+104:42-46 "mode" variable.other.property.canon
+104:46-47 ":" punctuation.separator.key.canon
