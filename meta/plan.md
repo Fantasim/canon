@@ -120,7 +120,7 @@ from IR fixtures" and M2's `embedded` example were accepted without these genera
 
 ## M5, M6, M7 — in parallel once M4 is accepted
 
-- [ ] **M5 LSP + agent CLI** (DECISIONS 274; LSP `lsp`, `editors/vscode`; CLI `cli`): a read-only
+- [x] **M5 LSP + agent CLI** (built 2026-10-02, CI pending) (DECISIONS 274; LSP `lsp`, `editors/vscode`; CLI `cli`): a read-only
   server (diagnostics incl. unopened JSON, hover, definition, references, formatting, highlighting;
   no completion, code actions or editor rename): txtar transcripts, UTF-16, 500 ms diagnostics.
   Agent CLI: `canon edit` (API.md §8.8 request, undo round trip), then `canon rename` after its

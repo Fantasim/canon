@@ -1,18 +1,21 @@
 # State — Canon compiler
 
-Updated: 2026-10-02. **M5 in progress**, rescoped by Louis (DECISIONS 274): a read-only LSP plus an
-agent CLI (`canon edit`, `canon rename`). M4 accepted (`c5324f6`); report:
-[handoff/2026-10-01-m4-complete.md](handoff/2026-10-01-m4-complete.md). Calls:
-[decisions/log-2026-10-02.md](decisions/log-2026-10-02.md); earlier [decisions/log-2026-09-29.md](decisions/log-2026-09-29.md).
+Updated: 2026-10-02. **M5 built** (DECISIONS 274, 275): a read-only LSP plus an agent CLI
+(`canon edit`, `canon rename`), every unit reviewed PASS, `make check` green (HEAD `2edf068`). Left
+before acceptance: CI on three platforms. M4 accepted (`c5324f6`). Calls:
+[decisions/log-2026-10-02.md](decisions/log-2026-10-02.md). Design: ADR-0013 (rename layout).
 
 ## Current focus
 
-M5 units (plan.md): **A1 `canon edit`** (`44d62c3`), **L1** lsp core + `canon lsp` (`d6d9602`,
-`8175c2b`), **L3** VS Code extension + grammar (`29a52e9`), **L2** hover/definition/references/
-formatting (`8b26723`): all reviewed PASS, `make check` green. `make bench-lsp` (N=7000, load 2.8):
-p95 326 ms (gate 500), cold first pass 2.8 s. Left: **A2 `canon rename`** (spec draft in progress,
-then build). Later items: log-2026-10-02 "L2 rulings", module path vs remote. Not verified: a
-real VS Code run (needs `npm install` + `vsce`), Windows/macOS URIs.
+M5 units: A1 `canon edit` (`44d62c3`); L1 lsp core + `canon lsp` (`d6d9602`, `8175c2b`); L3 VS Code
+extension (`29a52e9`); L2 hover/definition/references/formatting (`8b26723`); R0 example
+`features/renames` (`e5819de`); R1 `check.Program.Occurrences` (`2055b8e`); R2 `RenameName` op
+(`b342dd4`); R3 `canon rename` (`2edf068`); emit `out:` base fix (`9d20ca4`). Acceptance: LSP
+transcripts per feature, UTF-16 tests, `make bench-lsp` p95 326 ms (gate 500), unopened JSON
+findings, `canon edit` undo round trips, `canon rename` goldens per kind. Running: `fmt --diff` hunk
+header bug (go-udiff). Later items: log-2026-10-02 (L2 rulings, module path vs remote, template
+names not diagnosed, `convertCase` dup, rename test helper dup into testkit). Not verified: a real
+VS Code run, Windows/macOS URIs, E35 cost on a large project.
 M6 and M7 not started; each needs its feature example first (`ts`, `pairs` still owed).
 
 Long fuzz/progen campaigns stay deferred by Louis ([decisions/log-2026-09-29.md](decisions/log-2026-09-29.md)
