@@ -1233,10 +1233,11 @@ Not part of v0.1 (DECISIONS 188).
   findings, including loaded JSON, CSV and header files that are not open; files that no longer
   have findings get an empty list.
 - **Features**, per CLI.md §4:
-  - **hover:** canonical type text, doc comment, default, and for a value its canonical text
-    truncated to 20 lines.
+  - **hover:** canonical type text, doc comment, default, and for a let, const or table entry its
+    canonical text truncated to 20 lines and 4,096 bytes, a cut ending with a `…` line.
   - **definition:** declarations; from a `ref` value to the entry, including into JSON.
-  - **references:** `Refs`.
+  - **references:** `Refs`: entries, keyed elements and enum members (API.md R7). References of
+    Canon names come with `canon rename`'s name index (A2).
   - **formatting:** `Format`.
   - Completion, code actions and rename are not offered (DECISIONS 274). The rename of a Canon
     name is `canon rename` (CLI.md §3.16): views, translation keys and amendment paths follow; a
