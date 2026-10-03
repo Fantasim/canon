@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"testing"
 
+	"github.com/fantasim/canonlang/internal/syntax"
+
 	"github.com/fantasim/canonlang/internal/testkit/progen"
 	"github.com/fantasim/canonlang/internal/testkit/progen/grammar"
 )
@@ -20,6 +22,44 @@ func TestGenerateParses(t *testing.T) {
 		if _, findings := grammar.Parse("gen/gen.canon", src); len(findings) > 0 {
 			t.Errorf("seed %d: %s %s\n%s", seed, findings[0].Code, findings[0].Message, src)
 		}
+	}
+}
+
+// GRAMMAR.md §5.2, §5.7, §7: a generated layer, translation or project file parses clean as its kind.
+func TestGenerateKinds(t *testing.T) {
+	for _, k := range grammar.Kinds() {
+		for seed := range uint64(seeds) {
+			src := grammar.GenerateKind(progen.NewRand(seed), progen.NewBudget(120, 6), k)
+			if again := grammar.GenerateKind(progen.NewRand(seed), progen.NewBudget(120, 6), k); !bytes.Equal(src, again) {
+				t.Fatalf("%s seed %d: two different files", k, seed)
+			}
+			tree, findings := grammar.ParseKind(k.File(), src, k)
+			if len(findings) > 0 {
+				t.Fatalf("%s seed %d: %s %s\n%s", k, seed, findings[0].Code, findings[0].Message, src)
+			}
+			if got := tree.FileKind; got != kindOf[k] {
+				t.Errorf("%s seed %d: parsed as file kind %d", k, seed, got)
+			}
+		}
+	}
+}
+
+var kindOf = map[grammar.Kind]syntax.FileKind{
+	grammar.Source: syntax.FileSource, grammar.Layer: syntax.FileLayer,
+	grammar.Translation: syntax.FileTranslation, grammar.Project: syntax.FileProject,
+}
+
+// GRAMMAR.md §5.2, I18N.md §4: each kind has its own path, and the kinds are all different.
+func TestKindFiles(t *testing.T) {
+	seen := map[string]bool{}
+	for _, k := range grammar.Kinds() {
+		if seen[k.File()] || k.String() == "" {
+			t.Errorf("%s: path %q or name repeated", k, k.File())
+		}
+		seen[k.File()] = true
+	}
+	if grammar.Layer.File() != "gen/gen.layer.canon" || grammar.Translation.File() != "gen/gen.en.canon" || grammar.Project.File() != "project.canon" {
+		t.Error("a kind's path changed")
 	}
 }
 
@@ -88,5 +128,27 @@ func TestCorrupt(t *testing.T) {
 	}
 	if changed < seeds/2 {
 		t.Errorf("only %d of %d corruptions changed the file", changed, seeds)
+	}
+}
+
+// FORMATTER.md §10: "key: { … }" and "key { … }" of project.canon have one shape.
+func TestShapeProjectSugar(t *testing.T) {
+	shape := func(src string) string {
+		tree, findings := grammar.ParseKind("project.canon", []byte(src), grammar.Project)
+		if len(findings) > 0 {
+			t.Fatalf("%q: %s", src, findings[0].Message)
+		}
+		return grammar.Shape(tree)
+	}
+	if shape("project p {\n  roots: { a: \"x\" }\n}\n") != shape("project p {\n  roots { a: \"x\" }\n}\n") {
+		t.Error("the sugar changed the shape")
+	}
+	for _, c := range []string{"/* c */", "// c\n"} {
+		if shape("project p {\n  roots: "+c+" { a: \"x\" }\n}\n") == shape("project p {\n  roots: { a: \"x\" }\n}\n") {
+			t.Errorf("the comment %q on the colon is no part of the shape", c)
+		}
+	}
+	if shape("project p {\n  roots { a: { b: 1 } }\n}\n") == shape("project p {\n  roots { a: [1] }\n}\n") {
+		t.Error("a nested map and a list have one shape")
 	}
 }

@@ -94,7 +94,10 @@ func (g *gen) enumMember() {
 }
 
 // body writes "{ … }" with up to maxItems items by f, one per line or on one line.
-func (g *gen) body(f func()) {
+func (g *gen) body(f func()) { g.bodyList(f, false) }
+
+// bodyList is body, a one-line list ending now and then with a separator when trailing.
+func (g *gen) bodyList(f func(), trailing bool) {
 	items := g.r.Intn(maxItems + 1)
 	if items == 0 || !g.b.Enter() {
 		g.w(emptyBraces)
@@ -107,6 +110,9 @@ func (g *gen) body(f func()) {
 		g.lines = false
 		g.w(braceSpaced)
 		g.with(0, func() { g.list(items, f) })
+		if trailing && g.r.OneIn(oneIn4) {
+			g.w(",")
+		}
 		g.w(spacedBrace)
 		return
 	}

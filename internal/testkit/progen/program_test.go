@@ -21,6 +21,8 @@ import (
 const (
 	genFile        = "gen/gen.canon"
 	genPackage     = "gen"
+	genEmpty       = "package gen\n"
+	bom            = "\xef\xbb\xbf"
 	genProject     = "project gen {\n  canon: \"0.1\"\n  budget: 200_000\n}\n"
 	genSize        = 160 // nodes per generated file (DECISIONS 200: a per-case size budget)
 	genDepth       = 7
@@ -41,9 +43,10 @@ func TestGrammar(t *testing.T) {
 	for i := from; i < to; i++ {
 		seed := caseSeed(suiteGrammar, i)
 		announce(suiteGrammar, propRoundTrip, i, seed)
-		src := generate(seed)
-		if v := roundTrip(src, false); v.Kind != "" {
-			reportProgram(t, programFailure{suiteGrammar, propRoundTrip, i, seed, src, v})
+		kind := caseKind(i)
+		src := generate(seed, kind)
+		if v := roundTrip(src, false, kind); v.Kind != "" {
+			reportProgram(t, programFailure{suiteGrammar, propRoundTrip, kind, i, seed, src, v})
 		}
 	}
 }
@@ -59,30 +62,38 @@ func TestCorruption(t *testing.T) {
 		seed := caseSeed(suiteCorrupt, i)
 		announce(suiteCorrupt, propCorruption, i, seed)
 		r := progen.NewRand(seed)
-		src := grammar.Corrupt(r, grammar.Generate(r, progen.NewBudget(genSize, genDepth)))
-		if v := corruption(src); v.Kind != "" {
-			reportProgram(t, programFailure{suiteCorrupt, propCorruption, i, seed, src, v})
+		kind := caseKind(i)
+		src := grammar.Corrupt(r, grammar.GenerateKind(r, progen.NewBudget(genSize, genDepth), kind))
+		if v := corruption(src, kind); v.Kind != "" {
+			reportProgram(t, programFailure{suiteCorrupt, propCorruption, kind, i, seed, src, v})
 		}
 	}
 }
 
-func generate(seed uint64) []byte {
-	return grammar.Generate(progen.NewRand(seed), progen.NewBudget(genSize, genDepth))
+// caseKind is the kind of file case k generates: the kinds in turn (the second wave of
+// DECISIONS 200: layer, translation and project files beside source files).
+func caseKind(k int) grammar.Kind {
+	kinds := grammar.Kinds()
+	return kinds[k%len(kinds)]
+}
+
+func generate(seed uint64, kind grammar.Kind) []byte {
+	return grammar.GenerateKind(progen.NewRand(seed), progen.NewBudget(genSize, genDepth), kind)
 }
 
 // roundTrip is "" for a file that parses clean (warnings aside, when allowed), formats, reparses
 // to its shape, is a fixed point of the formatter and checks without a crash; else the verdict.
-func roundTrip(src []byte, warnings bool) (v verdict) {
+func roundTrip(src []byte, warnings bool, kind grammar.Kind) (v verdict) {
 	defer recoverVerdict(&v)
-	tree, findings := grammar.Parse(genFile, src)
+	tree, findings := grammar.ParseKind(kind.File(), src, kind)
 	if len(findings) > 0 && (!warnings || hasError(findings)) {
 		return verdict{Kind: "unparsed", Sig: "unparsed " + diagShapes(findings), Text: "unparsed: a generated file has findings: " + located(findings)}
 	}
-	out, err := formatText(src)
+	out, err := formatText(src, kind)
 	if err != nil {
 		return verdict{Kind: "unformatted", Sig: "unformatted", Text: "unformatted: " + err.Error()}
 	}
-	again, reparsed := grammar.Parse(genFile, out)
+	again, reparsed := grammar.ParseKind(kind.File(), out, kind)
 	switch {
 	case hasError(reparsed) || len(reparsed) > len(findings):
 		where := nodeAt(again, int(reparsed[0].Span.Start))
@@ -90,38 +101,66 @@ func roundTrip(src []byte, warnings bool) (v verdict) {
 	case grammar.Shape(tree) != grammar.Shape(again):
 		return verdict{Kind: "shape", Sig: "shape " + shapeSig(firstDifference(grammar.Shape(tree), grammar.Shape(again))), Text: "shape: formatting changed the tree:\n" + string(out)}
 	}
-	if twice, err := formatText(out); err != nil || !bytes.Equal(twice, out) {
+	if twice, err := formatText(out, kind); err != nil || !bytes.Equal(twice, out) {
 		where := nodeAt(again, commonPrefix(out, twice))
 		return verdict{Kind: "idempotence", Sig: "idempotence in " + where, Text: "idempotence: formatting the formatted file changes it:\n" + string(twice)}
 	}
-	return checked(src)
+	return checked(src, kind)
 }
 
 // corruption is "" for a file that does not crash the parser, the formatter or the compiler,
 // and gets a located error when it does not parse; a file that parses must round-trip.
-func corruption(src []byte) (v verdict) {
+func corruption(src []byte, kind grammar.Kind) (v verdict) {
 	defer recoverVerdict(&v)
-	tree, findings := grammar.Parse(genFile, src)
+	tree, findings := grammar.ParseKind(kind.File(), src, kind)
 	if !hasError(findings) {
-		return roundTrip(src, true)
+		return roundTrip(src, true, kind)
 	}
 	for _, f := range findings {
 		if f.Span.File != tree.Src.ID || f.Span.Start > f.Span.End || int(f.Span.End) > len(tree.Src.Content) {
 			return verdict{Kind: "unlocated", Sig: "unlocated " + shapeOf(f.Code, f.Message), Text: fmt.Sprintf("unlocated: %s has span %+v outside the file", f.Code, f.Span)}
 		}
 	}
-	if _, err := formatText(src); !errors.Is(err, format.ErrSyntax) {
+	if onlyBOM(findings) {
+		return bomFormat(src, kind)
+	}
+	if _, err := formatText(src, kind); !errors.Is(err, format.ErrSyntax) {
 		return verdict{Kind: "formatted", Sig: "formatted", Text: fmt.Sprintf("formatted: a file with syntax errors formats: %v", err)}
 	}
-	return checked(src)
+	return checked(src, kind)
 }
 
-// checked runs the compiler on the file as the one package of a project: no panic, no internal
-// error, and every finding located.
-func checked(src []byte) verdict {
+// onlyBOM tells findings that are all E1123, a byte order mark at the start (GRAMMAR.md §1).
+func onlyBOM(fs []diag.Finding) bool {
+	for _, f := range fs {
+		if f.Code != diag.E1123.Def().Code && f.Severity == diag.Error {
+			return false
+		}
+	}
+	return true
+}
+
+// bomFormat is "" for a file with a BOM that formats as the file without it (FORMATTER.md §10).
+func bomFormat(src []byte, kind grammar.Kind) verdict {
+	out, err := formatText(src, kind)
+	want, werr := formatText(bytes.TrimPrefix(src, []byte(bom)), kind)
+	if err != nil || werr != nil || !bytes.Equal(out, want) {
+		return verdict{Kind: "formatted", Sig: "formatted bom", Text: fmt.Sprintf("formatted: a byte order mark changes the layout: %v %v", err, werr)}
+	}
+	if v := roundTrip(bytes.TrimPrefix(src, []byte(bom)), true, kind); v.Kind != "" {
+		return v
+	}
+	return checked(src, kind)
+}
+
+// checked runs the compiler on the file in a project of one package: no panic, no internal
+// error, and every finding located. A layer or translation file sits in a package of an empty
+// source file; project.canon, with one.
+func checked(src []byte, kind grammar.Kind) verdict {
 	p := progen.NewProject()
 	p.Set(projectFile, []byte(genProject))
-	p.Set(genFile, src)
+	p.Set(genFile, []byte(genEmpty))
+	p.Set(kind.File(), src)
 	out := progen.Run(context.Background(), p, progen.RunOptions{Packages: []string{genPackage}})
 	if v, bad := broken(out); bad {
 		return v
@@ -208,14 +247,14 @@ func located(fs []diag.Finding) string {
 	return strings.Join(parts, "; ")
 }
 
-// formatText is canon fmt's layout of a source file.
-func formatText(src []byte) ([]byte, error) {
+// formatText is canon fmt's layout of a file of kind.
+func formatText(src []byte, kind grammar.Kind) ([]byte, error) {
 	fs := &source.FileSet{}
-	f, err := fs.Add(genFile, "/"+genFile, src)
+	f, err := fs.Add(kind.File(), "/"+kind.File(), src)
 	if err != nil {
 		return nil, err
 	}
-	return format.Source(f, syntax.FileSource, diag.NewBag(fs, ""))
+	return format.Source(f, kind.Syntax(), diag.NewBag(fs, ""))
 }
 
 // recoverVerdict turns a panic of the parser or the formatter into a verdict.
@@ -230,6 +269,7 @@ func recoverVerdict(v *verdict) {
 // programFailure is a generated file that failed its suite's property.
 type programFailure struct {
 	suite, prop string
+	kind        grammar.Kind
 	k           int
 	seed        uint64
 	src         []byte
@@ -243,16 +283,16 @@ func reportProgram(t *testing.T, f programFailure) {
 	if reported(t, f.suite, f.prop, f.seed, f.v) {
 		return
 	}
-	check := func(src []byte) verdict { return roundTrip(src, false) }
+	check := func(src []byte) verdict { return roundTrip(src, false, f.kind) }
 	if f.suite == suiteCorrupt {
-		check = corruption
+		check = func(src []byte) verdict { return corruption(src, f.kind) }
 	}
 	src, _ := progen.ShrinkText(f.src, nil, func(text []byte, _ []progen.Region) bool {
 		heartbeat()
 		return check(text).Sig == f.v.Sig
 	}, shrinkTries)
 	files := progen.NewProject()
-	files.Set(genFile, src)
+	files.Set(f.kind.File(), src)
 	v := check(src)
 	c := &progen.Counterexample{Suite: f.suite, Name: f.prop, Case: f.k, Seed: f.seed, Sig: v.Sig, Want: f.prop, Note: v.Text, Files: files}
 	report(t, c, v)
@@ -260,9 +300,21 @@ func reportProgram(t *testing.T, f programFailure) {
 
 // replayProgram re-runs a kept grammar or corruption counterexample; Kind "" when it passes.
 func replayProgram(c *progen.Counterexample) verdict {
-	src, _ := c.Files.Get(genFile)
+	kind := archiveKind(c.Files)
+	src, _ := c.Files.Get(kind.File())
 	if c.Suite == suiteCorrupt {
-		return corruption(src)
+		return corruption(src, kind)
 	}
-	return roundTrip(src, false)
+	return roundTrip(src, false, kind)
+}
+
+// archiveKind is the kind of file an archive holds: the one of its files that is not the
+// source file, else the source file, else project.canon alone.
+func archiveKind(files *progen.Project) grammar.Kind {
+	for _, k := range []grammar.Kind{grammar.Layer, grammar.Translation, grammar.Source} {
+		if _, ok := files.Get(k.File()); ok {
+			return k
+		}
+	}
+	return grammar.Project
 }

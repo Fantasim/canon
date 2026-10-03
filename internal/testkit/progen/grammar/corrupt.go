@@ -27,7 +27,7 @@ func Corrupt(r Rand, src []byte) []byte {
 	return src
 }
 
-// lexed are the tokens of src that have text.
+// lexed are the tokens of src that have text; every kind lexes as a source file.
 func lexed(src []byte) []syntax.Token {
 	fs := &source.FileSet{}
 	f, err := fs.Add(corruptFile, rootPath+corruptFile, src)

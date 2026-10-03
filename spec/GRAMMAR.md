@@ -542,8 +542,8 @@ projectFile     = { DOC } "project" IDENT BraceList( projectItem ) { NL } EOF ; 
 sourceFile      = { DOC } packageClause NL
                   { importDecl NL }
                   { topDecl ( NL | EOF ) } EOF ;
-layerFile       = packageClause NL "layer" IDENT NL { amendDecl ( NL | EOF ) } EOF ;
-translationFile = packageClause NL "translation" IDENT NL
+layerFile       = packageClause NL "layer" IDENT ( NL | EOF ) { amendDecl ( NL | EOF ) } EOF ;
+translationFile = packageClause NL "translation" IDENT ( NL | EOF )
                   { translationEntry ( NL | EOF ) } EOF ;
 
 packageClause   = "package" qualifiedIdent ;

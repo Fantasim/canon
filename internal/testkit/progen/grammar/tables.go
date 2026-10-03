@@ -26,8 +26,21 @@ var declKinds []func(*gen)
 // viewItems are the items of a view body (GRAMMAR.md §5.6).
 var viewItems []func(*gen)
 
+// fileKinds write a whole file of each Kind.
+var fileKinds [kindCount]func(*gen)
+
+// projectValues write a pValue (GRAMMAR.md §7).
+var projectValues []func(*gen)
+
 // init fills the tables, whose writers reach back into them, which an initializer cannot.
 func init() {
+	fileKinds = [kindCount]func(*gen){
+		Source: (*gen).file, Layer: (*gen).layerFile, Translation: (*gen).translationFile, Project: (*gen).projectFile,
+	}
+	projectValues = []func(*gen){
+		(*gen).constStr, func(g *gen) { g.w(g.pick(ints)) }, func(g *gen) { g.w(g.pick(pkgNames)) },
+		(*gen).projectList, (*gen).projectMap,
+	}
 	for k := syntax.TokEllipsis; k < syntax.TokenKindCount; k++ {
 		fixedTokens = append(fixedTokens, k)
 	}

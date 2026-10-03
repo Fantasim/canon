@@ -12,13 +12,18 @@ import (
 
 // Parse parses src as the source file name and returns its tree and its findings.
 func Parse(name string, src []byte) (*syntax.File, []diag.Finding) {
+	return ParseKind(name, src, Source)
+}
+
+// ParseKind parses src as the file name of kind k and returns its tree and its findings.
+func ParseKind(name string, src []byte, k Kind) (*syntax.File, []diag.Finding) {
 	fs := &source.FileSet{}
 	f, err := fs.Add(name, rootPath+name, src)
 	if err != nil {
 		return nil, nil
 	}
 	bag := diag.NewBag(fs, "")
-	tree := syntax.Parse(f, syntax.FileSource, bag)
+	tree := syntax.Parse(f, k.Syntax(), bag)
 	return tree, bag.Findings()
 }
 
@@ -35,16 +40,35 @@ func Shape(f *syntax.File) string {
 		imports = append(imports, sh.importShape(imp))
 	}
 	slices.Sort(imports)
+	sugared := sugaredColons(f)
 	for i := range f.Tokens {
 		if len(f.Imports) > 0 && i == int(f.Imports[0].First()) {
 			sh.b.WriteString(strings.Join(imports, ""))
 		}
-		if !skip[i] {
+		switch {
+		case sugared[i]:
+			sh.comments(&sh.b, f.Tokens[i].Leading, leadingTag)
+			sh.comments(&sh.b, f.Tokens[i].Trailing, trailingTag)
+		case !skip[i]:
 			sh.token(&sh.b, i)
 		}
 	}
 	sh.b.WriteString(values(f))
 	return sh.b.String()
+}
+
+// sugaredColons are the colons of project.canon map items, written "key { … }" (FORMATTER.md §10).
+func sugaredColons(f *syntax.File) map[int]bool {
+	out := map[int]bool{}
+	if f.Project == nil {
+		return out
+	}
+	for _, e := range f.Project.Items {
+		if _, ok := e.Value.(*syntax.ProjectMap); ok && e.Colon != syntax.NoTok {
+			out[int(e.Colon)] = true
+		}
+	}
+	return out
 }
 
 // shaper writes a file's shape; docs are the byte ranges of its attached doc blocks.

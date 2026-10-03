@@ -2661,6 +2661,11 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      already put it; §2.6's "at the end of the line" for raw strings is aligned. Reason: H1 (progen
      counterexample), log-2026-10-03.
 
+287. **A layer or translation header may end the file (GRAMMAR.md §5.2).** `layer x` or
+     `translation fr` as the last line, with no final newline, is a valid empty layer or
+     translation file, as the parser already reads it and as every other line may end at EOF; the
+     EBNF says `( NL | EOF )` after the header. Reason: HW1 review, log-2026-10-03.
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.

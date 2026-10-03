@@ -14,6 +14,14 @@ const (
 	inClosed                 // followed by a word on its line: no open range "a..", which would read it
 )
 
+// The kinds of generated file: a source file, a layer file, a translation file and project.canon.
+const (
+	Source Kind = iota
+	Layer
+	Translation
+	Project
+)
+
 const (
 	indentUnit    = "  "
 	space         = " "
@@ -78,6 +86,12 @@ const (
 	anyType       = "_"
 	rootPath      = "/"
 	corruptFile   = "gen/gen.canon"
+	genDir        = "gen/"
+	genStem       = "gen"
+	layerExt      = ".layer"
+	sourceWord    = "source"
+	hashOpen      = "[#"
+	dotSep        = "."
 	decimalBase   = 10
 
 	// Sizes: how many of each list a generated file holds at most.
@@ -89,6 +103,10 @@ const (
 	maxParts     = 3
 	maxDocLines  = 2
 	maxMLLines   = 3
+	maxAmends    = 4
+	maxEntries   = 6
+	maxKeySegs   = 3
+	maxValues    = 3
 	levelCount   = 11 // precedence levels 0 (lambda) to 10 (postfix), GRAMMAR.md §5.11
 	levelCoal    = 1
 	levelOr      = 2
@@ -100,6 +118,7 @@ const (
 	levelMul     = 8
 	levelUnary   = 9
 	levelPostfix = 10
+	kindCount    = 4
 	oneIn2       = 2
 	oneIn3       = 3
 	oneIn4       = 4
@@ -129,6 +148,14 @@ var (
 	emitTarget = []string{"go", "cpp", "ts", "json", "view"}
 	emitModes  = []string{"baked", "data", "embedded", "types"}
 	viewTexts  = []string{syntax.WordTitle, syntax.WordSubtitle, syntax.WordSingular, syntax.WordPlural}
+	// langCodes are translation languages: plain, with script and region (GRAMMAR.md §7.1).
+	langCodes = []string{"en", "fr", "pt_BR", "zh_Hans_CN", "xx"}
+	// projectKeys are the built-in keys of GRAMMAR.md §7.1 and two unknown ones.
+	projectKeys = []string{"canon", "roots", "languages", "studio", "budget", "go_module", "extra", "_k1", "check", "emit", "for", "if"}
+	// positions are the n of an amend path's "[#n]".
+	positions = []string{"0", "1", "7", "12"}
+	// pathHeads are the first segment of an amend path: data words and reserved ones (§4.3).
+	pathHeads = append(append([]string{}, dataWords...), wordPool...)
 	// docOpeners start a doc line: canon fmt spaces the second.
 	docOpeners = []string{docPrefix, docSlashes}
 	// strayBytes are the bytes a corruption inserts (GRAMMAR.md §1, §2).

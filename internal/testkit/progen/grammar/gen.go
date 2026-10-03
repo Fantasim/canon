@@ -39,9 +39,12 @@ type gen struct {
 }
 
 // Generate is a source file that parses without a finding (GRAMMAR.md §5).
-func Generate(r Rand, b Budget) []byte {
+func Generate(r Rand, b Budget) []byte { return GenerateKind(r, b, Source) }
+
+// GenerateKind is a file of kind k that parses without a finding (GRAMMAR.md §5.2, §5.7, §7).
+func GenerateKind(r Rand, b Budget, k Kind) []byte {
 	g := &gen{r: r, b: b}
-	g.file()
+	fileKinds[k](g)
 	return []byte(g.out.String())
 }
 

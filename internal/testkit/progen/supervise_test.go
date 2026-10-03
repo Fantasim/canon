@@ -328,15 +328,18 @@ func replayArchive(t *testing.T, c *progen.Counterexample) verdict {
 // programCase is case k's generated (and, for the corruption suite, corrupted) file.
 func programCase(suite string, k int, seed uint64) crashCase {
 	r := progen.NewRand(seed)
-	src := grammar.Generate(r, progen.NewBudget(genSize, genDepth))
+	kind := caseKind(k)
+	src := grammar.GenerateKind(r, progen.NewBudget(genSize, genDepth), kind)
 	prop := propRoundTrip
 	if suite == suiteCorrupt {
 		src = grammar.Corrupt(r, src)
 		prop = propCorruption
 	}
 	files := progen.NewProject()
-	files.Set(projectFile, []byte(genProject))
-	files.Set(genFile, src)
+	if kind == grammar.Source {
+		files.Set(projectFile, []byte(genProject))
+	}
+	files.Set(kind.File(), src)
 	c := &progen.Counterexample{Suite: suite, Name: prop, Case: k, Seed: seed, Want: prop, Files: files}
 	always := func(*progen.Project, []progen.Place) bool { return true }
 	return crashCase{c: c, want: func(progen.Place) string { return prop }, placed: always}
