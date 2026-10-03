@@ -1,0 +1,20 @@
+GRAMMAR.md §8 `@files`, API.md N2, DECISIONS 277: a template variable names `id` (the key) or a field of the entry; `{nope}` names neither and is the checker's unknown-name finding at the variable, with the nearest name in scope (`id` or a field) as its hint; the let holding it is broken, and nothing else is reported.
+-- a/a.canon --
+package a
+
+local record Row {
+  name: String
+}
+
+@files("{nope}/{nmae}/{id}.canon")
+local let rows: table Row = {
+  first { name: "x" }
+}
+-- findings.txt --
+error[E2102]  a/a.canon:7:10
+  unknown name nope (did you mean name?)
+
+error[E2102]  a/a.canon:7:17
+  unknown name nmae (did you mean name?)
+
+2 errors, 0 warnings in 1 package (…)

@@ -1,0 +1,54 @@
+GRAMMAR.md §8 `@files`, IMPLEMENTATION-PLAN §4.7, DECISIONS 277, 280: a dependent field's branches are candidates in a template path, each branch's result type as the edit layer follows the entry's value: `{spot.x}` that both branches declare, `{spot.len}` that one branch declares, `{spot.at.y}` through a nested application, on a table and on a keyed list.
+-- a/a.canon --
+package a
+
+local enum Shape { pt, seg, off }
+
+local enum Size { small, large }
+
+local record Pos {
+  y: Int
+}
+
+local record Pt {
+  x: Int
+}
+
+local record Seg {
+  x: Int
+  len: Int
+}
+
+local record Far {
+  at: Pos
+}
+
+local type Deep(s: Size) = match s {
+  small => Int
+  large => Far
+}
+
+local type Where(s: Shape, z: Size) = match s {
+  pt => Pt
+  seg => Seg
+  off => Deep(z)
+}
+
+local record Spot {
+  shape: Shape
+  size: Size = small
+  spot: Where(shape, size)
+}
+
+@files("s/{spot.x}/{spot.len}/{spot.at.y}/{shape}/{id}.canon")
+local let spots: table Spot = {}
+
+local record Mark {
+  code: Int
+  shape: Shape
+  size: Size
+  spot: Where(shape, size)
+}
+
+@files("m/{spot.len}/{code}/{id}.canon")
+local let marks: [Mark] keyed by code = []

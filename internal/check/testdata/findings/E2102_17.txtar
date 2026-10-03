@@ -1,0 +1,15 @@
+GRAMMAR.md §8 `@files`, API.md N2, DECISIONS 280: `{id}` is the key and has no fields; in `{id.x}` the first name outside the scope is `x`, the unknown-name finding at `x`.
+-- a/a.canon --
+package a
+
+local record Row {
+  name: String
+}
+
+@files("{id.x}/{name}/{id}.canon")
+local let rows: table Row = {}
+-- findings.txt --
+error[E2102]  a/a.canon:7:13
+  unknown name x
+
+1 error, 0 warnings in 1 package (…)

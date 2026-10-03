@@ -2573,6 +2573,15 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      is refused (its `id` is that package's), and a `data` value of another package's record decodes
      through that package's `types`-mode decoder. Reason: T1 review, log-2026-10-02.
 
+280. **`@files` names through dependent fields (GRAMMAR.md §8 `@files`; API.md N2; follows 277).**
+     A `@files` path segment after a dependent field may name a field any of its branches declares
+     (each branch's result type, as `edit` follows it); the checker records it for rename, ambiguous
+     when several branches declare it. A branch whose result is broken makes the field unlisted (no
+     second finding, TYPES §1). A name outside the scope is the unknown-name finding at the first
+     such name (`x` in `{id.x}`). Amend paths through a dependent field stay E1905 and are not
+     indexed through branches until that amendment is ruled ("Still open"). Reason: G3 review,
+     log-2026-10-03.
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.

@@ -1,0 +1,41 @@
+GRAMMAR.md §8 `@files`, IMPLEMENTATION-PLAN §4.7, DECISIONS 277: every template name in scope checks clean: `{id}`, a field, an enum, a variant standing for its case's wire name, `{prize.count}` that both cases declare, `{prize.amount}` that one case declares, `{prize.at.x}` after an ambiguous segment, a field typed by one case, a path through an optional record, a ref written as its key, on a table and on a keyed list.
+-- a/a.canon --
+package a
+
+local enum Rarity { common, rare }
+
+local record Pos {
+  x: Int
+}
+
+local variant Prize {
+  gold {
+    amount: Int
+    count: Int
+    at: Pos
+  }
+  gem {
+    count: Int
+    at: Pos
+  }
+}
+
+local record Holder {
+  name: String
+  rarity: Rarity
+  prize: Prize
+  pg: Prize.gold
+  pos: Pos?
+  next: ref holders? = none
+}
+
+@files("h/{rarity}/{prize}/{prize.count}/{prize.amount}/{prize.at.x}/{pg.count}/{pos.x}/{next}/{name}/{id}.canon")
+local let holders: table Holder = {}
+
+local record Slot {
+  code: Int
+  at: Pos
+}
+
+@files("s/{at.x}/{code}/{id}.canon")
+local let slots: [Slot] keyed by code = []

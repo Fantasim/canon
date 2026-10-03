@@ -95,25 +95,25 @@ func TestRenameNameWritesNoOutput(t *testing.T) {
 	}
 }
 
-// API.md E35: a name that named nothing inside an annotation (a `@files` variable, alone, twice,
-// or beside the renamed one) or a translation key, and names the renamed field after, is the
-// identifier Detail names, at its own place.
+// API.md E35: a translation key naming the renamed field after is the capture Detail names.
+// API.md E32, DECISIONS 277: a `@files` variable naming nothing breaks its let; the rename refuses.
 func TestRenameNameCaptureInQuietPlaces(t *testing.T) {
 	src := func(tpl string) string {
 		return wireHead + "/// Kind.\nenum Kind { x, y }\n\n/// Item.\nrecord Item {\n  /// K.\n  kind: Kind\n}\n\n/// The items.\n" +
 			"@files(\"" + tpl + "\")\nlet items: table Item = {\n  a { kind: x }\n}\n"
 	}
-	const declared = ", declared at a/a.canon:10:3"
+	const declared, broken = ", declared at a/a.canon:10:3", "a/a.canon:14"
 	cases := []struct {
-		name  string
-		files map[string]string
-		want  string
+		name   string
+		files  map[string]string
+		reason canon.Reason
+		want   string
 	}{
-		{"template", map[string]string{"a/a.canon": src("items/{g}/{id}.canon")}, "a/a.canon:14:16 would name a:g" + declared},
-		{"twice", map[string]string{"a/a.canon": src("items/{g}/{g}/{id}.canon")}, "a/a.canon:14:16 would name a:g" + declared},
-		{"adjacent", map[string]string{"a/a.canon": src("items/{g}{g}/{id}.canon")}, "a/a.canon:14:16 would name a:g" + declared},
-		{"beside the renamed", map[string]string{"a/a.canon": src("items/{g}/{kind}/{id}.canon")}, "a/a.canon:14:16 would name a:g" + declared},
-		{"translation", map[string]string{"a/a.canon": src("items/{kind}/{id}.canon"), "a/a.fr.canon": "package a\ntranslation fr\n\nItem.g \"Genre\"\n"}, "a/a.fr.canon:4:6 would name a:g" + declared},
+		{"template", map[string]string{"a/a.canon": src("items/{g}/{id}.canon")}, canon.ReasonBroken, broken},
+		{"twice", map[string]string{"a/a.canon": src("items/{g}/{g}/{id}.canon")}, canon.ReasonBroken, broken},
+		{"adjacent", map[string]string{"a/a.canon": src("items/{g}{g}/{id}.canon")}, canon.ReasonBroken, broken},
+		{"beside the renamed", map[string]string{"a/a.canon": src("items/{g}/{kind}/{id}.canon")}, canon.ReasonBroken, broken},
+		{"translation", map[string]string{"a/a.canon": src("items/{kind}/{id}.canon"), "a/a.fr.canon": "package a\ntranslation fr\n\nItem.g \"Genre\"\n"}, "", "a/a.fr.canon:4:6 would name a:g" + declared},
 	}
 	for _, c := range cases {
 		c.files["project.canon"] = "project acme {\n  canon: \"0.1\"\n  languages: [en, fr]\n}\n"
@@ -122,10 +122,23 @@ func TestRenameNameCaptureInQuietPlaces(t *testing.T) {
 			t.Fatal(err)
 		}
 		_, err = renameOnce(p, "a:Item.kind", "g")
-		var pe *canon.PathError
-		if !errors.Is(err, canon.ErrNameClash) || !errors.As(err, &pe) || pe.Detail != c.want {
-			t.Errorf("API.md E35, %s: %v, want %q", c.name, err, c.want)
+		if got := refusal(err); got != string(c.reason)+" "+c.want {
+			t.Errorf("API.md E32, E35, %s: %v, want %s %q", c.name, err, c.reason, c.want)
 		}
 		_ = p.Close()
 	}
+}
+
+// refusal is a rename's refusal as `<reason> <detail>`: a NotEditableError's reason, none for a
+// name clash; "" for any other outcome.
+func refusal(err error) string {
+	var ne *canon.NotEditableError
+	if errors.As(err, &ne) {
+		return string(ne.Reason) + " " + ne.Detail
+	}
+	var pe *canon.PathError
+	if errors.Is(err, canon.ErrNameClash) && errors.As(err, &pe) {
+		return " " + pe.Detail
+	}
+	return ""
 }

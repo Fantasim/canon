@@ -1,0 +1,38 @@
+GRAMMAR.md §8 `@files`, API.md N2, IMPLEMENTATION-PLAN §4.7, DECISIONS 277: through a variant, a name is read in every case; `{prize.weight}` names a field no case declares and is the unknown-name finding, as is `{prize.at.y}` after the ambiguous segment `at`, which no candidate's type declares; `{pg.amount}` on a field typed by the case `gem` alone is unknown too.
+-- a/a.canon --
+package a
+
+local record Pos {
+  x: Int
+}
+
+local variant Prize {
+  gold {
+    amount: Int
+    count: Int
+    at: Pos
+  }
+  gem {
+    count: Int
+    at: Pos
+  }
+}
+
+local record Holder {
+  prize: Prize
+  pg: Prize.gem
+}
+
+@files("h/{prize.weight}/{prize.at.y}/{pg.amount}/{id}.canon")
+local let holders: table Holder = {}
+-- findings.txt --
+error[E2102]  a/a.canon:24:18
+  unknown name weight
+
+error[E2102]  a/a.canon:24:36
+  unknown name y
+
+error[E2102]  a/a.canon:24:43
+  unknown name amount (did you mean count?)
+
+3 errors, 0 warnings in 1 package (…)

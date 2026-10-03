@@ -185,15 +185,19 @@ func (c *checker) lookupType(env *env, name string) *object {
 
 // unknownName is E2102, with the closest spelling in scope as a hint.
 func (c *checker) unknownName(env *env, n syntax.Node, name string) {
-	if hint := c.closest(env, name); hint != "" {
+	c.unknownHinted(env, n, name, c.closest(env, name))
+}
+
+// unknownHinted is E2102 for name at n, naming hint when there is one.
+func (c *checker) unknownHinted(env *env, n syntax.Node, name, hint string) {
+	if hint != "" {
 		c.report(env, diag.E2102.AtHint(env.span(n), name, hint))
 		return
 	}
 	c.report(env, diag.E2102.AtPlain(env.span(n), name))
 }
 
-// closest is the name in scope nearest to name by edit distance, within hintDistance and
-// shorter than name; ties go to the smallest name in byte order.
+// closest is the name in scope nearest to name.
 func (c *checker) closest(env *env, name string) string {
 	var names []string
 	for s := env.scope; s != nil; s = s.parent {
@@ -202,7 +206,12 @@ func (c *checker) closest(env *env, name string) string {
 	if env.rec != nil {
 		names = appendKeys(appendKeys(names, env.rec.fields), env.rec.methods)
 	}
-	names = c.globalNames(env, appendKeys(names, env.magic))
+	return nearest(name, c.globalNames(env, appendKeys(names, env.magic)))
+}
+
+// nearest is the name of names nearest to name by edit distance, within hintDistance and
+// shorter than name; ties go to the smallest name in byte order.
+func nearest(name string, names []string) string {
 	slices.Sort(names)
 	best, bestD := "", hintDistance+1
 	for _, n := range names {

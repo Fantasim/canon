@@ -13,6 +13,7 @@ type pathJob struct {
 	kind  OccKind
 	start []types.Type
 	steps []pathStep
+	sets  func(types.Type) [][]*types.Field // an amend path's sets skip a dependent field's branches (DECISIONS 280)
 }
 
 // pathStep is one name of a path and the object Info records for it; no node: a `[key]` or
@@ -35,7 +36,7 @@ func (w *occWalk) amendPath(a *syntax.Amendment, ctx occCtx) {
 	if !ok {
 		return
 	}
-	j := pathJob{file: w.file, site: ctx.site, kind: OccAmend}
+	j := pathJob{file: w.file, site: ctx.site, kind: OccAmend, sets: caseFieldSets}
 	if target := w.info.NameUses[blk.Target]; target != nil && target.Type() != nil {
 		j.start = []types.Type{target.Type()}
 	}
@@ -67,7 +68,7 @@ func (w *occWalk) templatePaths(a *syntax.Annotation, ctx occCtx) {
 		if part.Interp == nil {
 			continue
 		}
-		j := pathJob{file: w.file, site: ctx.site, kind: OccFilesVar, start: start}
+		j := pathJob{file: w.file, site: ctx.site, kind: OccFilesVar, start: start, sets: fieldSets}
 		for _, n := range templatePath(part.Interp.X) {
 			j.steps = append(j.steps, pathStep{node: n, recorded: w.info.ObjectOf(n)})
 			w.handled[n] = true
@@ -86,7 +87,7 @@ func (b *occBuild) resolvePath(j pathJob) {
 			continue
 		}
 		occ := Occurrence{File: j.file, Span: j.file.Span(s.node), Kind: j.kind, Site: j.site}
-		fields := pathFields(ts, nameText(s.node))
+		fields := pathFields(ts, nameText(s.node), j.sets)
 		objs := b.fieldObjects(fields)
 		if s.recorded != nil && (onePlainType(ts) || len(objs) == 0) {
 			b.index[s.recorded] = append(b.index[s.recorded], occ)

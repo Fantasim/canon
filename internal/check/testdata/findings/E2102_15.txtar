@@ -1,0 +1,62 @@
+GRAMMAR.md §8 `@files`, API.md N2, DECISIONS 277, 280: through a dependent field, a name is read in each branch's result type; `{spot.zz}` names a field no branch declares, `{spot.lenn}` neither (the nearest field of any branch is the hint), `{spot.at.zz}` no field of the nested application's record, and `{tag.name}` reads through a ref branch (written as its key); each is the unknown-name finding at the first name out of scope.
+-- a/a.canon --
+package a
+
+local enum Shape { pt, seg, far }
+
+local record Pos {
+  y: Int
+}
+
+local record Pt {
+  x: Int
+}
+
+local record Seg {
+  x: Int
+  len: Int
+}
+
+local record Far {
+  at: Pos
+}
+
+local record Item {
+  name: String
+}
+
+local let items: table Item = {}
+
+local type Where(s: Shape) = match s {
+  pt => Pt
+  seg => Seg
+  far => Far
+}
+
+local type Tag(s: Shape) = match s {
+  pt => ref items
+  _ => Int
+}
+
+local record Spot {
+  shape: Shape
+  spot: Where(shape)
+  tag: Tag(shape)
+}
+
+@files("s/{spot.zz}/{spot.lenn}/{spot.at.zz}/{tag.name}/{spot.x}/{id}.canon")
+local let spots: table Spot = {}
+-- findings.txt --
+error[E2102]  a/a.canon:45:17
+  unknown name zz
+
+error[E2102]  a/a.canon:45:27
+  unknown name lenn (did you mean len?)
+
+error[E2102]  a/a.canon:45:42
+  unknown name zz
+
+error[E2102]  a/a.canon:45:51
+  unknown name name
+
+4 errors, 0 warnings in 1 package (…)

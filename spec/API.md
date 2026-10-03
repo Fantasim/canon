@@ -1164,8 +1164,8 @@ func RenameName(name, newName string) Op
   one; a built-in compared by name), else `*PathError` wrapping `ErrNameClash`, `Detail` naming the
   first captured identifier as `<file>:<line>:<col>` and what it would now name. An identifier
   that named nothing before and names something after is a capture too. An occurrence
-  the index marks ambiguous (a `{f.g}` template variable or an amend segment that several cases'
-  fields named `g` could mean) is `ErrNameClash` too, `Detail` naming it: renaming one case's field
+  the index marks ambiguous (a `{f.g}` template variable or an amend segment that several cases' or
+  branches' fields named `g` could mean) is `ErrNameClash` too, `Detail` naming it: renaming one case's field
   would leave the others' text meaning something else.
 - **E36.** Generated identifiers, emitted `$fns` and `$`-function keys and file names follow at
   the next build; the op writes none of them (DECISIONS 275).
@@ -1271,7 +1271,7 @@ comments, and a trailing comment on its last line.
   `entry` in its own file (or, for `load.dir`, always). Otherwise the entry is added to the literal.
 - **N2.** The template of `@files("items/{itemKind1}/{id}.canon")` is expanded with the new
   entry's value: `{id}` is the key; `{f}` and `{f.g}` are fields (nested through records and the
-  current case of variants). A value is written as: enum → wire value; ref → key; variant → case
+  current case of variants, and through a dependent field's current branch). A value is written as: enum → wire value; ref → key; variant → case
   wire name; integer → decimal; `Bool` → `true`/`false`; `String` → itself. A `none` value, a
   string that is empty or contains `/`, `\`, a control character, or starts with `.` (it would name
   a hidden path, which the journal refuses, §10.3), is `ErrBadValue`.

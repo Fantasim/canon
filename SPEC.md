@@ -443,7 +443,7 @@ entry items.II_WEA_AXE_ANGEL {
 - `@files("items/{itemKind1}/{id}.canon")` on the table's `let` says where a **new** entry's file
   goes (used by `canon convert` and by the studio's `Add`). The template is relative to the
   package directory and may use `{id}` and any field of the entry, including nested fields
-  (`{f.g}`, through records and the current case of variants): enums give their wire value, refs
+  (`{f.g}`, through records, the current case of variants and a dependent field's current branch): enums give their wire value, refs
   their key, variants their case's wire name. Without it, new entries go to
   `<table>/<id>.canon`. Moving a file never changes the entry. Details:
   [spec/API.md](spec/API.md) §10.1.

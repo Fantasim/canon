@@ -393,8 +393,13 @@ func nameOf(n syntax.Node) string {
 	return ""
 }
 
-// fieldsOf are the fields a value of type t may have: a record's, a case's, every case's of a variant.
+// fieldsOf are the fields a value of type t may have: a record's, a case's, every case's of a
+// variant, every branch's of a dependent type (DECISIONS 280).
 func fieldsOf(t types.Type) []*types.Field {
+	return fieldsThrough(t, map[*types.TypeFunc]bool{})
+}
+
+func fieldsThrough(t types.Type, seen map[*types.TypeFunc]bool) []*types.Field {
 	if opt, ok := t.Base().(*types.OptionalType); ok {
 		t = opt.Elem
 	}
@@ -409,6 +414,28 @@ func fieldsOf(t types.Type) []*types.Field {
 			out = append(out, c.Fields...)
 		}
 		return out
+	case *types.TypeAppType:
+		return branchFields(x.Fn, seen)
+	case *types.DepUnionType:
+		return branchFields(x.Fn, seen)
 	}
 	return nil
+}
+
+// branchFields are the fields of every branch of fn, read once.
+func branchFields(fn *types.TypeFunc, seen map[*types.TypeFunc]bool) []*types.Field {
+	if seen[fn] {
+		return nil
+	}
+	seen[fn] = true
+	if fn.Body != nil {
+		return fieldsThrough(fn.Body, seen)
+	}
+	var out []*types.Field
+	for _, a := range fn.Arms {
+		if a.Result != nil {
+			out = append(out, fieldsThrough(a.Result, seen)...)
+		}
+	}
+	return out
 }

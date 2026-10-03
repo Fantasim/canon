@@ -113,6 +113,7 @@ func (c *checker) recheckDecls(pl *recheckPlan, renew map[*object]*object) {
 			if o.kind != ObjLet {
 				continue
 			}
+			c.filesVars(o)
 			if keyed := letKeyed(o); keyed != nil && d.new.(*syntax.LetDecl).Value != nil {
 				c.writtenKeys(o, keyed)
 			}

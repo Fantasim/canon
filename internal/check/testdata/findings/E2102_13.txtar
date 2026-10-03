@@ -1,0 +1,38 @@
+GRAMMAR.md §8 `@files`, API.md N2, DECISIONS 277: `{f.g}` follows nested paths through records only; `{pos.zz}` names no field of the record `Pos`, `{name.zz}` reads a field of a `String`, `{next.name}` reads through a ref (written as its key, N2); each is the unknown-name finding at the first name out of scope, on a table and on a keyed list.
+-- a/a.canon --
+package a
+
+local record Pos {
+  x: Int
+}
+
+local record Row {
+  name: String
+  pos: Pos?
+  next: ref rows? = none
+}
+
+@files("{pos.zz}/{name.zz}/{next.name}/{pos.x}/{id}.canon")
+local let rows: table Row = {}
+
+local record Slot {
+  code: Int
+  pos: Pos
+}
+
+@files("{pos.y}/{id}.canon")
+local let slots: [Slot] keyed by code = []
+-- findings.txt --
+error[E2102]  a/a.canon:13:14
+  unknown name zz
+
+error[E2102]  a/a.canon:13:24
+  unknown name zz
+
+error[E2102]  a/a.canon:13:34
+  unknown name name
+
+error[E2102]  a/a.canon:21:14
+  unknown name y
+
+4 errors, 0 warnings in 1 package (…)

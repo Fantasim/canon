@@ -1,0 +1,33 @@
+GRAMMAR.md §8 `@files`, TYPES.md §1, DECISIONS 280: a dependent field one of whose branches is broken is unlisted: `{spot.y}` through it is no second finding; only the unknown type name `Nopee` in the branch is reported.
+-- a/a.canon --
+package a
+
+local enum Shape { pt, seg }
+
+local record Seg {
+  x: Int
+}
+
+local type Where(s: Shape) = match s {
+  pt => Nopee
+  seg => Seg
+}
+
+local type Outer(s: Shape) = match s {
+  pt => Where(s)
+  seg => Seg
+}
+
+local record Spot {
+  shape: Shape
+  spot: Where(shape)
+  deep: Outer(shape)
+}
+
+@files("s/{spot.y}/{deep.y}/{id}.canon")
+local let spots: table Spot = {}
+-- findings.txt --
+error[E2102]  a/a.canon:10:9
+  unknown name Nopee
+
+1 error, 0 warnings in 1 package (…)

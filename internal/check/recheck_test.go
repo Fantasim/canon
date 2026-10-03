@@ -153,6 +153,10 @@ func TestRecheckEqualsCold(t *testing.T) {
 		{"a fold of a const broken later", brokenLater, []step{
 			{"p/x.canon", "n: 1", "n: 2", true},
 		}},
+		{"a @files template out of scope (DECISIONS 277)", filesTpl, []step{
+			{"f/rows.canon", `name: "x"`, `name: "y"`, true},
+			{"f/rows.canon", `name: "y"`, `name: 7`, true},
+		}},
 		{"duplicate keys across files", dups, []step{
 			{"dup/a.canon", "n: 1", "n: 11\n\n\n", true},
 			{"dup/b.canon", "n: 2", "n: 22", true},
@@ -196,6 +200,12 @@ func (w *world) step(s *check.Session, st step) *check.Session {
 var brokenLater = map[string]string{
 	"p/p.canon": "package p\n\nlocal enum E { a, b }\n\n/// L.\nconst L = [E.a]\n\nlocal record R {\n  v: Int(0..=L.len() / 0)\n}\n\nlocal record Row {\n  n: Int\n}\n\nlocal let rows: table Row = {}\n",
 	"p/x.canon": "package p\n\nentry rows.x { n: 1 }\n",
+}
+
+// filesTpl is a `@files` let with an unknown name, checked again on a body edit (DECISIONS 277).
+var filesTpl = map[string]string{
+	"f/f.canon":    "package f\n\nlocal record Row {\n  name: String\n}\n",
+	"f/rows.canon": "package f\n\n@files(\"{nope}/{name}/{id}.canon\")\nlocal let rows: table Row = {\n  a { name: \"x\" }\n}\n",
 }
 
 // dups holds a key given twice across files, first in the earlier path (E3101), and a keyed
