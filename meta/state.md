@@ -16,7 +16,7 @@ headers (`85175ed`), Windows test (`78bc8ed`). Also landed: README rewrite (`e91
 (`3956568`), tagged releases + `tools/install.sh` (`ec46b91`; workflow unrun until a tag). Later items: log-2026-10-02 (L2 rulings, module path vs remote, template
 names not diagnosed, `convertCase` dup, rename test helper dup into testkit). Not verified: a real
 VS Code run, Windows/macOS URIs, E35 cost on a large project.
-**Paused 2026-10-02.** Resume with [handoff/2026-10-02-resume-prompt.md](handoff/2026-10-02-resume-prompt.md).
+**Paused 2026-10-02.** Resume with [handoff/2026-10-02-resume-prompt.md](handoff/2026-10-02-resume-prompt.md) (cloud: [handoff/2026-10-03-cloud-m6-prompt.md](handoff/2026-10-03-cloud-m6-prompt.md)).
 Unreviewed work (T1 gen/ts, G3 @files names, M6 append bug) is on branch `wip/2026-10-02`; main is clean.
 M6 TS in progress, legacy C++ part and M7 not started (`pairs` example still owed).
 
