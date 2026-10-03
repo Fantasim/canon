@@ -17,7 +17,7 @@ headers (`85175ed`), Windows test (`78bc8ed`). Also landed: README rewrite (`e91
 names not diagnosed, `convertCase` dup, rename test helper dup into testkit). Not verified: a real
 VS Code run, Windows/macOS URIs, E35 cost on a large project.
 **Cloud run 1 (2026-10-03)** on `claude/m6-run-1` (stands in for main; report [handoff/2026-10-03-cloud-m6-run-1.md](handoff/2026-10-03-cloud-m6-run-1.md)).
-Landed: M6 append bug (`06f35c0`), G3 (`1f571ee`), G4 (`f0a3dfa`), T1 (`b15485d`), G5 (`31de12e`), B1 (`916599f`). In flight: W1 r2 (`claude/wip-w1-1`), WB2 + DECISIONS 284 (`claude/wip-wb2-1`), LX lsp later items (`claude/wip-lx-1`). CI runners not starting since 05:10 (log-2026-10-03).
+Landed: M6 append bug (`06f35c0`), G3 (`1f571ee`), G4 (`f0a3dfa`), T1 (`b15485d`), G5 (`31de12e`), B1 (`916599f`), W1 (`44bb9ce`). In flight: WB2 r2 (`claude/wip-wb2-1`), LX r2 (`claude/wip-lx-1`), H1 (`claude/wip-h1-1`), H2 (`claude/wip-h2-1`). CI runners not starting since 05:10 (log-2026-10-03).
 M6 TS in progress, legacy C++ part and M7 not started (`pairs` example still owed).
 
 Long fuzz/progen campaigns stay deferred by Louis ([decisions/log-2026-09-29.md](decisions/log-2026-09-29.md)
