@@ -17,7 +17,7 @@ headers (`85175ed`), Windows test (`78bc8ed`). Also landed: README rewrite (`e91
 names not diagnosed, `convertCase` dup, rename test helper dup into testkit). Not verified: a real
 VS Code run, Windows/macOS URIs, E35 cost on a large project.
 **Cloud run 1 (2026-10-03)** on `claude/m6-run-1` (stands in for main; report [handoff/2026-10-03-cloud-m6-run-1.md](handoff/2026-10-03-cloud-m6-run-1.md)).
-Landed: M6 append bug (`06f35c0`), G3 (`1f571ee`), G4 (`f0a3dfa`), T1 (`b15485d`), G5 (`31de12e`), B1 (`916599f`), W1 (`44bb9ce`), H2 (`6303766`), H1 (`182eb81`), C1 (`b8c1443`). LX (`f5ffd7c`), WB2 (`2ed7c3d`). F1 (`4106f77`). HW1 (`e4cef64`). GG (`9999f8a`). N1 (`4c44b5f`). In flight: GC (cpp table fields, closes the last open archive); 3-seed nightly acceptance clean (cf5cf44); all on `claude/wip-<unit>-1`. CI runners not starting since 05:10 (log-2026-10-03).
+Landed: M6 append bug (`06f35c0`), G3 (`1f571ee`), G4 (`f0a3dfa`), T1 (`b15485d`), G5 (`31de12e`), B1 (`916599f`), W1 (`44bb9ce`), H2 (`6303766`), H1 (`182eb81`), C1 (`b8c1443`). LX (`f5ffd7c`), WB2 (`2ed7c3d`). F1 (`4106f77`). HW1 (`e4cef64`). GG (`9999f8a`). N1 (`4c44b5f`). GC (`b5c0d86`): no open progen archive. 3-seed nightly acceptance clean (cf5cf44). In flight: CX (cpp value of an imported record does not compile); all on `claude/wip-<unit>-1`. CI runners not starting since 05:10 (log-2026-10-03).
 M6 TS in progress, legacy C++ part and M7 not started (`pairs` example still owed).
 
 Long fuzz/progen campaigns stay deferred by Louis ([decisions/log-2026-09-29.md](decisions/log-2026-09-29.md)

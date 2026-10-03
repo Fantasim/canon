@@ -151,7 +151,7 @@ from IR fixtures" and M2's `embedded` example were accepted without these genera
   the grammar suite gains layer, translation and project files (HW1 `e4cef64`); the seed-1
   nightly's 4 archives were operator defects (N1 `4c44b5f`). Acceptance run clean on 3 seeds at
   N=10000 (cf5cf44, log-2026-10-03) under a 12 GB virtual cap (no systemd: the 3 GB MemoryMax cap
-  is unverified). One archive open (cpp table fields, unit GC). Long campaigns still deferred.
+  is unverified). No archive open since GC (`b5c0d86`). Long campaigns still deferred.
 - [ ] **Telemetry, first real use**: `examples/telemetry` dry run (5-10 real events), then the port
   through a handoff (`Source/` X-macros read Canon IDs/metadata; monitoring uses generated Go and
   build-time DDL). M6 and M7 follow.
