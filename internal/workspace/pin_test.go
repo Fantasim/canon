@@ -3,6 +3,7 @@ package workspace_test
 import (
 	"context"
 	"fmt"
+	"runtime"
 	"slices"
 	"sync"
 	"testing"
@@ -15,6 +16,7 @@ const (
 	pinnedOutputs = 40
 	olderInUse    = 6
 	oldOutput     = "old\n"
+	heldPinReads  = 3 // under overlays: the writer's pin, the held older snapshot's own, the refresh after
 )
 
 // outputName is the i-th file a build writes.
@@ -86,18 +88,23 @@ func TestWritePinsEachFileOnce(t *testing.T) {
 	readsOld(t, older)
 }
 
-// API.md S9, §3.4 (log-2026-09-29 M4 U8-r): under overlays an older snapshot pins its own reads.
+// API.md S9, §3.4 (log-2026-09-29 M4 U8-r): under overlays a held older snapshot pins its own reads.
 func TestWritePinsUnderOverlays(t *testing.T) {
 	fsys := outputsFS()
 	p := open(t, fsys)
-	if err := p.SetOverlay("/law/b/b.canon", []byte(srcB+"// overlay\n")); err != nil {
+	if err := p.SetOverlay("/law/a/a.canon", []byte(srcA+"// overlay\n")); err != nil {
 		t.Fatal(err)
 	}
 	older := read(t, p)
-	if _, err := p.Write(context.Background(), workspace.CauseEdit, editB(0)); err != nil {
+	next, err := p.Write(context.Background(), workspace.CauseEdit, editB(0))
+	if err != nil {
 		t.Fatal(err)
 	}
-	if n := writeOutputs(t, p, fsys); n <= 2*pinnedOutputs {
+	if next == older {
+		t.Fatal("the edit published no new snapshot: the held one is the writer's, not an older one")
+	}
+	runtime.GC() // only the snapshots held are older ones a writer pins for
+	if n := writeOutputs(t, p, fsys); n < heldPinReads*pinnedOutputs {
 		t.Errorf("under overlays the write read its %d files only %d times: the older snapshot shared its reads", pinnedOutputs, n)
 	}
 	readsOld(t, []*workspace.Snapshot{older})
