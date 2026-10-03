@@ -2609,6 +2609,14 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      template re-rendered with new arguments, every other field kept (additive, under IMPLEMENTATION-PLAN
      §4's review rule). A live `Evaluate` finding follows the request's `Lang`, else
      `Options.Lang`, as its other text does (§11). Reason: G5, log-2026-10-03.
+282. **A default that depends on the instance through its type's arguments is computed (CODEGEN.md
+     §5.13; TYPES.md §11.1, §11.4, §15; amends 80).** A field default whose type takes an argument
+     (a dependent type applied to a field, or to a dependent map's key) and that does not fold has no
+     value outside an instance: the stage-E fold stops on it silently (it is not a constant expression), and the IR
+     marks it `Computed`, as a default that reads other fields, so a `types`-mode reader never
+     treats the field as having no default (`E8014`). An internal error of the evaluator always
+     names its place, the value evaluated and the function that met it. Reason: B1 (sweep ICE),
+     log-2026-10-03.
 
 ## Still open
 

@@ -1,0 +1,60 @@
+DECISIONS 282, TYPES.md §11.1, §15: an emit folds every field default in stage E; one whose literal
+builds a record applied to an earlier field, through a type function's branch or directly, does not
+fold (no internal error) and the build writes its outputs.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    out: "out"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// K.
+enum K { num, rec }
+
+/// Ev.
+record Ev {
+  /// K.
+  k: K = num
+  /// Max.
+  max: Int = 5
+}
+
+/// Evs.
+let evs: table Ev = { a {}, b { max: 7, k: rec } }
+
+/// L.
+record L(e: Ev) {
+  /// The event's max.
+  lim: Int = e.max
+}
+
+/// P.
+type P(e: Ev) = match e.k {
+  num => Int
+  rec => L(e)
+}
+
+/// R.
+record R {
+  /// Ev.
+  ev: ref evs
+  /// L of ev.
+  l: L(ev) = {}
+  /// Through P's branch.
+  p: P(ev) = {}
+  /// In a list.
+  ls: [L(ev)] = [{}]
+}
+
+/// Rs.
+let rs: [R] = [{ ev: b }]
+
+emit json { out: "@out/" }
+-- build.txt --
+0 errors, 0 warnings in 1 package (…)
+output @out/evs.json 0
+output @out/rs.json 0

@@ -174,6 +174,13 @@ func (r *run) paramValue(obj check.Object, at syntax.Node) (value.Value, bool) {
 	return v, true
 }
 
+// ownParam reports obj a parameter of self's record; unbound in a fold, it is not constant (TYPES.md §11.1, §15).
+func (r *run) ownParam(obj check.Object) bool {
+	rec, ok := r.fr.self.(*value.Record)
+	decl, isParam := obj.Decl().(*syntax.Param)
+	return ok && isParam && recordParam(recordOf(rec.T), decl) != nil
+}
+
 // recordParam is the parameter of rt declared by decl, nil when decl is not one of rt's.
 func recordParam(rt *types.RecordType, decl *syntax.Param) *types.Param {
 	if rt == nil || rt.Decl == nil {

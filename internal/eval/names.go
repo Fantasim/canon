@@ -92,7 +92,10 @@ func (r *run) local(obj check.Object, at syntax.Expr) value.Value {
 	if v, ok := r.paramValue(obj, at); ok {
 		return r.read(v)
 	}
-	r.bug(nil)
+	if r.ownParam(obj) && r.nonConstant() {
+		return nil
+	}
+	r.bug(at)
 	return nil
 }
 

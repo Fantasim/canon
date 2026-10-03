@@ -1138,7 +1138,8 @@ export function decodeEventConfig(json: unknown): EventConfig;
   `nil` and an `error`; C++ `std::nullopt` with `error` set; TS throws an `Error`. It never returns
   a partly filled value. What it can represent it accepts without checking refinements, refs, keys
   or checks: the file is the one `canon check` validated (WIRE.md §5.13).
-- Defaults must be constant; a computed default in a type emitted in `types` mode is `E8014`, as
+- Defaults must be constant; a computed default (one that reads other fields, or the instance through
+  its type's arguments, DECISIONS 282) in a type emitted in `types` mode is `E8014`, as
   are precomputed export fns and finite-parameter methods (there is no precomputed data to read).
 - Refs are keys; table ids are strings.
 

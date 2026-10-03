@@ -236,6 +236,7 @@ func (w *world) findings(t *testing.T) string {
 }
 
 // folder folds the literals, constants, members and lists field defaults and bounds use.
+// It never folds a record or map literal; the real folder's side is eval's TestFoldInstanceDependentDefault.
 type folder struct{}
 
 func (folder) Fold(_ context.Context, _ check.Object, e syntax.Expr, info *check.Info) (value.Value, bool) {

@@ -81,7 +81,17 @@ func (s *stage) fieldDefault(fd *Field, f *types.Field, owner check.Object, para
 	}
 	if v, ok := s.in.Fold.Fold(s.ctx, owner, f.Default, s.info); ok {
 		fd.Default = v
+	} else {
+		fd.Computed = appliedArgs(&fd.Type)
 	}
+}
+
+// appliedArgs reports t, or a type it holds, applied to arguments: a field's, a parameter's or a key's (DECISIONS 282).
+func appliedArgs(t *TypeRef) bool {
+	if t == nil {
+		return false
+	}
+	return len(t.Args) > 0 || appliedArgs(t.Elem) || appliedArgs(t.Key)
 }
 
 // readsInstance reports an expression naming a field, or one of params (the owner record's own

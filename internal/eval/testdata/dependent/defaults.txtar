@@ -1,0 +1,51 @@
+DECISIONS 282, TYPES.md §11.1, §11.4: the defaults internal/build's dependent_default_emit case emits
+evaluate per instance: L applied to the instance's ev, directly, through P's branch and in a list.
+-- a/a.canon --
+/// A.
+package a
+
+/// K.
+enum K { num, rec }
+
+/// Ev.
+record Ev {
+  /// K.
+  k: K = num
+  /// Max.
+  max: Int = 5
+}
+
+/// Evs.
+let evs: table Ev = { a {}, b { max: 7, k: rec } }
+
+/// L.
+record L(e: Ev) {
+  /// The event's max.
+  lim: Int = e.max
+}
+
+/// P.
+type P(e: Ev) = match e.k {
+  num => Int
+  rec => L(e)
+}
+
+/// R.
+record R {
+  /// Ev.
+  ev: ref evs
+  /// L of ev.
+  l: L(ev) = {}
+  /// Through P's branch.
+  p: P(ev) = {}
+  /// In a list.
+  ls: [L(ev)] = [{}]
+}
+
+/// Rs.
+let rs: [R] = [{ ev: b }]
+-- dump.txt --
+a.evs = {a: Ev{k: num, max: 5}, b: Ev{k: rec, max: 7}}
+a.rs = [R{ev: b, l: L{lim: 7}, p: L{lim: 7}, ls: [L{lim: 7}]}]
+
+0 errors, 0 warnings in 1 package (…)

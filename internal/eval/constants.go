@@ -96,10 +96,13 @@ const (
 	indexFrom   = 16
 )
 
-// The text of an internal error, the node kind and its position, and of a named Go error.
+// The text of an internal error's parts, and of a named Go error.
 const (
-	fmtWrap  = "%w: %s"
-	fmtWhere = "%s at %s:%d:%d"
+	fmtWrap       = "%w: %s"
+	fmtWhere      = "%s at %s:%d:%d"
+	fmtEvaluating = "evaluating %s.%s"
+	fmtMetIn      = "met in %s"
+	pathSep       = "/"
 )
 
 // The limits that can cut a vector's evaluation short (CONFORMANCE.md §6.5).
