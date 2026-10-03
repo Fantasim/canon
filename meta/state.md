@@ -1,42 +1,40 @@
 # State — Canon compiler
 
-Updated: 2026-10-02. **M5 accepted** (CI green on Linux, macOS, Windows: run 36973712977 on `398d907`) (DECISIONS 274, 275): a read-only LSP plus an agent CLI
-(`canon edit`, `canon rename`), every unit reviewed PASS, `make check` green (HEAD `2edf068`). Now: M6's TypeScript
-part (T1, round 5) and the M5 gaps (DECISIONS 277, 278). Calls: [log-2026-10-02](decisions/log-2026-10-02.md).
+Updated: 2026-10-03 (cloud run 1). Integration branch **`claude/m6-run-1`** (stands in for main; not
+merged; report [handoff/2026-10-03-cloud-m6-run-1.md](handoff/2026-10-03-cloud-m6-run-1.md), calls
+[log-2026-10-03](decisions/log-2026-10-03.md), DECISIONS 279-292). M5 accepted (CI run 36973712977).
 
 ## Current focus
 
-M5 units: A1 `canon edit` (`44d62c3`); L1 lsp core + `canon lsp` (`d6d9602`, `8175c2b`); L3 VS Code
-extension (`29a52e9`); L2 hover/definition/references/formatting (`8b26723`); R0 example
-`features/renames` (`e5819de`); R1 `check.Program.Occurrences` (`2055b8e`); R2 `RenameName` op
-(`b342dd4`); R3 `canon rename` (`2edf068`); emit `out:` base fix (`9d20ca4`). Acceptance: LSP
-transcripts per feature, UTF-16 tests, `make bench-lsp` p95 326 ms (gate 500), unopened JSON
-findings, `canon edit` undo round trips, `canon rename` goldens per kind. Fixed since: `fmt --diff` hunk
-headers (`85175ed`), Windows test (`78bc8ed`). Also landed: README rewrite (`e917cd8`), `canon guide`
-(`3956568`), tagged releases + `tools/install.sh` (`ec46b91`; workflow unrun until a tag). Later items: log-2026-10-02 (L2 rulings, module path vs remote, template
-names not diagnosed, `convertCase` dup, rename test helper dup into testkit). Not verified: a real
-VS Code run, Windows/macOS URIs, E35 cost on a large project.
-**Cloud run 1 (2026-10-03)** on `claude/m6-run-1` (stands in for main; report [handoff/2026-10-03-cloud-m6-run-1.md](handoff/2026-10-03-cloud-m6-run-1.md)).
-Landed: M6 append bug (`06f35c0`), G3 (`1f571ee`), G4 (`f0a3dfa`), T1 (`b15485d`), G5 (`31de12e`), B1 (`916599f`), W1 (`44bb9ce`), H2 (`6303766`), H1 (`182eb81`), C1 (`b8c1443`). LX (`f5ffd7c`), WB2 (`2ed7c3d`). F1 (`4106f77`). HW1 (`e4cef64`). GG (`9999f8a`). N1 (`4c44b5f`). GC (`b5c0d86`): no open progen archive. 3-seed nightly acceptance clean (cf5cf44). CX (`6f687d7`), L2 (`e87e18b`). Nothing in flight; all on `claude/wip-<unit>-1`. CI runners not starting since 05:10 (log-2026-10-03).
-M6 TS in progress, legacy C++ part and M7 not started (`pairs` example still owed).
-
-Long fuzz/progen campaigns stay deferred by Louis ([decisions/log-2026-09-29.md](decisions/log-2026-09-29.md)
-"Platforms and fuzzing"): a milestone runs only its own stated acceptance criteria.
+Cloud run 1 landed 20 reviewed units, each green under local `make check`: M6 TypeScript target
+(T1 `b15485d`); M5 gaps G3 `1f571ee`, G4 `f0a3dfa`, G5 `31de12e`; bugs M6-append `06f35c0`, B1
+`916599f`, W1 `44bb9ce`, WB2 `2ed7c3d`, C1 `b8c1443`, CX `6f687d7`, L2 `e87e18b`; LSP later items LX
+`f5ffd7c`; workspace flake F1 `4106f77`; Hardening: H1 `182eb81`, H2 `6303766`, HW1 `e4cef64`, N1
+`4c44b5f`, Go/C++ table fields GG `9999f8a`, GC `b5c0d86`. No progen archive open; the M1.5
+acceptance run is clean on 3 seeds at N=10000 (only the 3 GB MemoryMax cap is unverified: no systemd).
+**Blocked:** CI. Every Actions job fails before a runner starts since ~05:10 UTC 2026-10-03 (likely
+the minutes/spending limit): Louis to check billing, then run CI on the branch head and merge.
+Next (needs a ruling or Louis): the later items in the run report (cross-package decoders §2.2 vs
+§2.8, `ordered_json` overload, generators writing kind constants, API S11 vs §3.4). Not started:
+M6's legacy C++ part, M7, telemetry. Long fuzz/progen campaigns stay deferred by Louis
+([log-2026-09-29](decisions/log-2026-09-29.md) "Platforms and fuzzing").
+Environment for a cloud session: `apt-get install libc++-18-dev libc++abi-18-dev`, `npm ci --prefix
+tools/tsc`; no systemd (run memory-capped targets by hand under `ulimit -v`).
 
 ## Milestones
 
-M0, M1, M2, M3, **M4** accepted; post-M4 done. M1.5 foundation committed (`f498713`), still open
-(second wave: type-directed + metamorphic progen suites; see `plan.md`), parked. M5, M6, M7 not started.
+M0-M5 accepted; post-M4 done. M1.5 second wave and acceptance done in cloud run 1 (box unticked only
+for the unverified 3 GB cap). M6: TypeScript done, legacy C++ not started. M7 not started.
 
 ## What exists (committed)
 
-spec + DECISIONS 1-273; `syntax`, `format` (+ §13 `Rewrite`; M9 and Rewrite judge a file in its role,
+spec + DECISIONS 1-292; `syntax`, `format` (+ §13 `Rewrite`; M9 and Rewrite judge a file in its role,
 258), `jsonsrc` (+ §14.2 edits), `wire`, `load` (every WIRE §6 form; a `load` given to a field decodes
 in its scope, 268), `check`/`types` (dependent types, views, translations, broken-view/-translation
 tracking; E1903 `variantCase`, E3015 `notConstant`/`budget` for phase 2's folds only, 263),
 `eval`/`eval/std` + `value` (layers, provenance, variant-level methods, drivers across the project;
 stage A forces the constants phase 2's folds read, 264), `verify`, `lock`, `rules`, `ir` (stage E,
-fingerprint, name plans, pattern automaton, `ir.CopyOf`), `gen/json`, `gen/go`, `gen/cpp` (data and
+fingerprint, name plans, pattern automaton, `ir.CopyOf`), `gen/json`, `gen/ts` (four modes), `gen/go`, `gen/cpp` (data and
 `types` modes), `views`, `i18n`, `gen/view`, `conform`, `build`, `project`, `check.Session`,
 `eval.Memo`, `workspace`, `views/live`, `edit` (+ ops, typing, codec, Refs), `api` over workspace,
 `cli` (version/init/new/check/build/test/explain/fmt), `internal/testkit`; `tools/audit`.
