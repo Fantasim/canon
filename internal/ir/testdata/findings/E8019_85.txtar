@@ -1,4 +1,4 @@
-CODEGEN.md §2.7: a stored result held by value orders classes like a field (gen/cpp visits First from X's `f`, then Second, whose `first` meets First still open), so the field cycle Second/First, First's field boxed, is refused at Second for cpp data although no method closes it; the fn edge only orders, it never closes a cycle (DECISIONS 284).
+CODEGEN.md §2.7: a stored result held by value orders classes like a field (gen/cpp visits First from X's `f`, then Second, whose `first` meets First still open), so the field cycle Second/First, First's field boxed, is refused at Second for cpp data although no method closes it; the fn edge only orders, it never closes a cycle (DECISIONS 284); its kind is RecordFieldCycle (DECISIONS 292).
 -- a/a.canon --
 package a
 
@@ -29,6 +29,6 @@ emit cpp { out: "@features/a", namespace: "a", mode: data }
 emit json { out: "out/" }
 -- findings.txt --
 error[E8019]  a/a.canon:12:8
-  emit cpp in data mode cannot generate a by-value cycle of records through a stored method result
+  emit cpp in data mode cannot generate a cycle of records through their fields
 
 1 error, 0 warnings in 1 package (…)

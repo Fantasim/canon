@@ -1,4 +1,4 @@
-CODEGEN.md §2.7: a cycle of records through fields only, its optional field boxed, still meets gen/cpp's class order when the record holding the box is declared first (gen/cpp: "a type that holds itself"), so refusedRecords stays reachable without a stored method (DECISIONS 284 moved those to cyclicFn); the kind is the only one ERRORS.md has for a record cycle.
+CODEGEN.md §2.7: a cycle of records through fields only, its optional field boxed, still meets gen/cpp's class order when the record holding the box is declared first (gen/cpp: "a type that holds itself"), so refusedRecords stays reachable without a stored method (DECISIONS 284 moved those to cyclicFn); its kind is RecordFieldCycle (DECISIONS 292).
 -- a/a.canon --
 package a
 
@@ -21,6 +21,6 @@ emit cpp { out: "@features/a", namespace: "a", mode: data }
 emit json { out: "out/" }
 -- findings.txt --
 error[E8019]  a/a.canon:10:8
-  emit cpp in data mode cannot generate a by-value cycle of records through a stored method result
+  emit cpp in data mode cannot generate a cycle of records through their fields
 
 1 error, 0 warnings in 1 package (…)

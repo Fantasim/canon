@@ -136,6 +136,7 @@ const (
 	KindRecord
 	KindRecordConstant
 	KindRecordCycleThroughMethod
+	KindRecordFieldCycle
 	KindRecursiveVariantCase
 	KindRefUnion
 	KindRefinementBound
@@ -161,6 +162,7 @@ const (
 	KindVariable
 	KindVariant
 	KindVariantCase
+	KindVariantKindConstant
 	KindVariantMethod
 	KindView
 	KindWidget
@@ -257,6 +259,7 @@ var kindNames = [...]string{
 	"Record",
 	"RecordConstant",
 	"RecordCycleThroughMethod",
+	"RecordFieldCycle",
 	"RecursiveVariantCase",
 	"RefUnion",
 	"RefinementBound",
@@ -282,6 +285,7 @@ var kindNames = [...]string{
 	"Variable",
 	"Variant",
 	"VariantCase",
+	"VariantKindConstant",
 	"VariantMethod",
 	"View",
 	"Widget",
@@ -358,6 +362,7 @@ var kindWords = [...]string{
 	"record",
 	"a constant of a record or variant type",
 	"a by-value cycle of records through a stored method result",
+	"a cycle of records through their fields",
 	"a variant that recurses through a case",
 	"a literal union over a ref",
 	"refinement bound",
@@ -383,6 +388,7 @@ var kindWords = [...]string{
 	"variable",
 	"variant",
 	"variant case",
+	"a constant of a variant's kind",
 	"a variant-level method a generator must write",
 	"view",
 	"widget",

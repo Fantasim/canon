@@ -84,7 +84,7 @@ func (s *stage) checkOrderedCodes(u *unit) {
 	}
 }
 
-// checkRepresentable is E8012: no emitted type, value, constant or stored fn holds a Range, a function type, `_` or a Never outside an optional field (CODEGEN.md §4.4); a value counts only where a code emit writes it (emittedValues); a define record or a table of one is added for a type or field when the package has a baked go emit or a ts emit, and for a value when one of them selects it, since neither baked go nor gen/ts can represent one (decisions 180, 194: per emit; DECISIONS 278 for ts), so check fails wherever build would (decision 37). Data and embedded modes refuse one through their values' fingerprints (checkFingerprinted).
+// checkRepresentable is E8012: no emitted type, value, constant or stored fn holds a Range, a Pair, a function type, `_` or a Never outside an optional field (CODEGEN.md §4.4; DECISIONS 292); a value counts only where a code emit writes it (emittedValues); a define record or a table of one is added for a type or field when the package has a baked go emit or a ts emit, and for a value when one of them selects it, since neither baked go nor gen/ts can represent one (decisions 180, 194: per emit; DECISIONS 278 for ts), so check fails wherever build would (decision 37). Data and embedded modes refuse one through their values' fingerprints (checkFingerprinted).
 func (s *stage) checkRepresentable(u *unit) {
 	defines := bakedFor(u, TargetGo) || hasTarget(u, TargetTS)
 	s.eachOwnField(u, func(owner string, f *Field) {
@@ -143,9 +143,9 @@ func unrepresentable(t types.Type, field, defines bool) types.Type {
 	return nil
 }
 
-// isUniversallyUnrepresentable is CODEGEN.md §4.4's fixed list: no target can hold these.
+// isUniversallyUnrepresentable is CODEGEN.md §4.4's fixed list: no target can hold these (a Pair: DECISIONS 292).
 func isUniversallyUnrepresentable(k types.Kind) bool {
-	return k == types.Range || k == types.Func || k == types.Any || k == types.Never
+	return k == types.Range || k == types.Pair || k == types.Func || k == types.Any || k == types.Never
 }
 
 // isDefineType is a define record, or a table of one (decision 180).

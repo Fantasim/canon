@@ -1,0 +1,30 @@
+CODEGEN.md §4.4, DECISIONS 292: a constant of type Pair (enumerate, zip) has no representation in generated code; a ts emit refuses it with E8012 at the constant, as a Range, instead of failing the build.
+-- a/a.canon --
+package a
+
+/// A reward.
+variant Reward {
+  /// Gold.
+  gold
+  /// An item.
+  item {
+    /// How many.
+    count: Int
+  }
+}
+
+/// Each number with its index.
+const P = [1, 2].enumerate()
+
+/// Numbers zipped with names.
+const Z = [1, 2].zip(["a", "b"])
+
+emit ts { out: "@features/a/a.ts" }
+-- findings.txt --
+error[E8012]  a/a.canon:15:7
+  P cannot be emitted: Pair(Int, Int) has no representation in generated code
+
+error[E8012]  a/a.canon:18:7
+  Z cannot be emitted: Pair(Int, String) has no representation in generated code
+
+2 errors, 0 warnings in 1 package (…)

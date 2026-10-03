@@ -1,0 +1,49 @@
+DECISIONS 278, 289; CODEGEN.md §2.8: a ts data emit holding, in a plain field, a record that another package emits rows of (b's table) in a baked ts emit has two causes: E8018 at a's emit (b's baked emit has no decoder) and E8019 ForeignDataRecord at the field (a decoder of b's row requires `$id`). Removing b's table clears only the E8019; moving b to types mode clears only the E8018.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    gen: "gen"
+  }
+}
+-- b/b.canon --
+/// B.
+package b
+
+/// An item.
+record Item {
+  /// Weight.
+  w: Int
+}
+
+/// Items.
+let items: table Item = {
+  sword { w: 1 }
+}
+
+emit ts { out: "@gen/ts/b.ts" }
+-- a/a.canon --
+/// A.
+package a
+
+import b { Item }
+
+/// A place.
+record Place {
+  /// Held.
+  held: Item
+}
+
+/// The place.
+let place: Place = { held: { w: 2 } }
+
+emit ts { out: "@gen/ts/a.ts", mode: data }
+emit json { out: "gen/json/" }
+-- build.txt --
+error[E8019]  a/a.canon:9:3
+  emit ts in data mode cannot generate a record or variant of another package read by a data loader
+
+error[E8018]  a/a.canon:15:6
+  b.Item is decoded from JSON by ts, but package b is emitted in baked mode
+
+2 errors, 0 warnings in 2 packages (…)

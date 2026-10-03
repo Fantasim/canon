@@ -1,0 +1,55 @@
+DECISIONS 292, CODEGEN.md §4.4: constants of type Pair and of a variant's kind check as E8012 and E8019 (VariantKindConstant) for every go, cpp and ts emit, and the build stops on those findings, never on a generator's internal error (decision 37: check and build agree).
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    gen: "gen"
+  }
+  go_module {
+    gen: "example.com/gen"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A reward.
+variant Reward {
+  /// Gold.
+  gold
+  /// An item.
+  item {
+    /// How many.
+    count: Int
+  }
+}
+
+/// The kind of gold.
+const K = Reward.gold.kind
+
+/// Each number with its index.
+const P = [1, 2].enumerate()
+
+/// Numbers zipped with names.
+const Z = [1, 2].zip(["a", "b"])
+
+emit go { out: "@gen/go", package: "a" }
+emit cpp { out: "@gen/cpp", namespace: "a", mode: data }
+emit ts { out: "@gen/ts/a.ts" }
+-- build.txt --
+error[E8019]  a/a.canon:16:7
+  emit cpp in data mode cannot generate a constant of a variant's kind
+
+error[E8019]  a/a.canon:16:7
+  emit go in baked mode cannot generate a constant of a variant's kind
+
+error[E8019]  a/a.canon:16:7
+  emit ts in baked mode cannot generate a constant of a variant's kind
+
+error[E8012]  a/a.canon:19:7
+  P cannot be emitted: Pair(Int, Int) has no representation in generated code
+
+error[E8012]  a/a.canon:22:7
+  Z cannot be emitted: Pair(Int, String) has no representation in generated code
+
+5 errors, 0 warnings in 1 package (…)

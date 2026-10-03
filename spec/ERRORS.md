@@ -169,6 +169,7 @@ wording is a variant, and a closed set of words is a `Kind`.
 | `Record` | record | `W1002`, `W1003`, `E1125`, `E1133`, `E3320` |
 | `RecordConstant` | a constant of a record or variant type | `E8019` |
 | `RecordCycleThroughMethod` | a by-value cycle of records through a stored method result | `E8019` |
+| `RecordFieldCycle` | a cycle of records through their fields | `E8019` |
 | `RecursiveVariantCase` | a variant that recurses through a case | `E8019` |
 | `RefUnion` | a literal union over a ref | `E8019` |
 | `RefinementBound` | refinement bound | `E3015` |
@@ -194,6 +195,7 @@ wording is a variant, and a closed set of words is a `Kind`.
 | `Variable` | variable | `W1003`, `E1125` |
 | `Variant` | variant | `W1002`, `W1003`, `E1125`, `E1133`, `E1627` |
 | `VariantCase` | variant case | `E1118` |
+| `VariantKindConstant` | a constant of a variant's kind | `E8019` |
 | `VariantMethod` | a variant-level method a generator must write | `E8019` |
 | `View` | view | `E1133` |
 | `Widget` | widget | `W1003`, `E1125`, `E1133`, `E1610` |

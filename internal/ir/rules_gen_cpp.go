@@ -114,7 +114,7 @@ func fieldPath(fields []*Field, path []string) bool {
 	return true
 }
 
-// checkClassCycles is E8019 where gen/cpp's class order meets a by-value cycle (CODEGEN.md §2.7, §7.2): `RecursiveVariantCase` through a variant, else `RecordCycleThroughMethod`.
+// checkClassCycles is E8019 where gen/cpp's class order meets a by-value cycle (CODEGEN.md §2.7, §7.2): `RecursiveVariantCase` through a variant, else `RecordFieldCycle` (DECISIONS 292).
 func (s *stage) checkClassCycles(u *unit, es *emitSite) {
 	g := newClassGraph(u.p)
 	for _, c := range g.classes {
@@ -126,6 +126,6 @@ func (s *stage) checkClassCycles(u *unit, es *emitSite) {
 		u.reportGenConstruct(es, s.itemSpan(c, source.Span{}), diag.KindRecursiveVariantCase)
 	}
 	for _, c := range g.refusedRecords {
-		u.reportGenConstruct(es, s.itemSpan(c, source.Span{}), diag.KindRecordCycleThroughMethod)
+		u.reportGenConstruct(es, s.itemSpan(c, source.Span{}), diag.KindRecordFieldCycle)
 	}
 }

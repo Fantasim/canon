@@ -1,0 +1,30 @@
+CODEGEN.md §4.4, DECISIONS 292: gen/go writes no constant of a variant kind (the kind enum member), itself or in a list: VariantKindConstant at each such constant, instead of a build failure.
+-- a/a.canon --
+package a
+
+/// A reward.
+variant Reward {
+  /// Gold.
+  gold
+  /// An item.
+  item {
+    /// How many.
+    count: Int
+  }
+}
+
+/// The kind of gold.
+const K = Reward.gold.kind
+
+/// A list of kinds.
+const KS = [Reward.gold.kind]
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+error[E8019]  a/a.canon:15:7
+  emit go in baked mode cannot generate a constant of a variant's kind
+
+error[E8019]  a/a.canon:18:7
+  emit go in baked mode cannot generate a constant of a variant's kind
+
+2 errors, 0 warnings in 1 package (…)

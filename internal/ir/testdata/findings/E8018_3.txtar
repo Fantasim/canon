@@ -1,0 +1,42 @@
+CODEGEN.md §2.8, DECISIONS 279 (one finding per cause): a ts data emit that decodes a record of a package whose ts emit is baked is E8018 alone, at the emit; gen/ts's own refusal (ForeignDataRecord, at the field and at the value) is not reported beside it, as for go (E8018_2).
+-- b/b.canon --
+package b
+
+/// A point.
+record Point {
+  /// Across.
+  x: Int
+}
+
+/// The origin.
+let origin: Point = { x: 0 }
+
+emit ts { out: "@features/b/b.ts" }
+-- a/a.canon --
+package a
+
+import b { Point }
+
+/// A place.
+record Place {
+  /// Where.
+  at: Point
+}
+
+/// The place.
+let place: Place = { at: { x: 1 } }
+
+/// A bare point.
+let spot: Point = { x: 2 }
+
+emit ts { out: "@features/a/a.ts", mode: data }
+emit json { out: "out/" }
+-- a.place.json --
+{ "at": { "x": 1 } }
+-- a.spot.json --
+{ "x": 2 }
+-- findings.txt --
+error[E8018]  a/a.canon:17:6
+  b.Point is decoded from JSON by ts, but package b is emitted in baked mode
+
+1 error, 0 warnings in 2 packages (…)

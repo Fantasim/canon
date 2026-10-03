@@ -602,8 +602,9 @@ a legacy struct in this version (`E8109`, [§7.8](#78-legacy-structs)).
 
 ### 4.4 Types that are not emitted
 
-`Range`, function types, `_` and a non-optional `Never` have no representation. An emitted type
-or value that contains one is `E8012`. An optional `Never?` field is not emitted at all. The
+`Range`, `Pair` (TYPES §12.5), function types, `_` and a non-optional `Never` have no
+representation. An emitted type or value that contains one is `E8012`. A constant of a
+variant's kind is `E8019` (DECISIONS 292). An optional `Never?` field is not emitted at all. The
 `Define` record of `load.defines`, and so a define table (`table Define`), has no `canon-fp` form
 (FINGERPRINT.md §8), so a `data` or `embedded` emit, whose loader checks the fingerprint, cannot
 carry one: a type or value of such an emit that contains one is `E8012` (for `emit json`, WIRE.md's
@@ -3078,7 +3079,7 @@ source of diagnostics (DECISIONS 27); this table says when each code fires.
 | E8009 | error | bad mode, package, namespace, out or values; an option value of the wrong kind; an invalid `out` list: empty, two entries sharing an owning root, different last elements without `package`, JSON files mixed with directories (§2.1, §2.8) |
 | E8010 | error | `ordered` + `@codes` out of order |
 | E8011 | error | override not an identifier, reserved, or (Go) not exported; a name derived without override that is not an identifier (§3.5) |
-| E8012 | error | `Range`, function type, `_`, non-optional `Never` in an emitted type or value; a `Define` record or define table in a `data` or `embedded` emit (§4.4) |
+| E8012 | error | `Range`, `Pair`, function type, `_`, non-optional `Never` in an emitted type or value; a `Define` record or define table in a `data` or `embedded` emit (§4.4) |
 | E8013 | error | package-level export fn, or a finite method with a `ref` parameter, in `data` mode |
 | E8014 | error | precomputed or finite export fn, or computed default, in `types` mode |
 | E8015 | error | other value types in `data`/`embedded` |

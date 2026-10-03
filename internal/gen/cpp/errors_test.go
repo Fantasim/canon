@@ -98,7 +98,7 @@ func refusals() []struct {
 		// unreachable: stage E refuses it first (E8019 TableField): CODEGEN.md §4.2 writes a table field of a record of the package alone.
 		{"a table field of no record", withField(field("t", "t", "", ir.TypeRef{Kind: types.Table, Elem: &tInt})), cppgen.ErrMalformed},
 		{"a table field of another package's record", withField(field("t", "t", "", ir.TypeRef{Kind: types.Table, Elem: &ir.TypeRef{Kind: types.Record, Named: &ir.Record{Pkg: "other", Name: "Far"}}})), cppgen.ErrMalformed},
-		// unreachable: stage E refuses it first (E8019 RecursiveVariantCase or RecordCycleThroughMethod).
+		// unreachable: stage E refuses it first (E8019 RecursiveVariantCase or RecordFieldCycle).
 		{"a type that holds itself", func(p *ir.Package, _ *ir.Emit) { selfHolding(p) }, cppgen.ErrMalformed},
 		{"a translated method without its file (T3)", func(p *ir.Package, _ *ir.Emit) {
 			fn := translated("f")

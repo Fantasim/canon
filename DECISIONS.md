@@ -2691,6 +2691,14 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      Lifting it is the later item with §2.2 vs §2.8 (log-2026-10-03 "GG rulings"). Reason: CX (a
      C++ value that checked clean and did not compile), log-2026-10-03.
 
+292. **Kind and Pair constants; record field cycles (CODEGEN.md §4.4; ERRORS.md §1.4).** A constant
+     of type `Pair` (`[1, 2].enumerate()`, `zip`) has no representation in generated code: `E8012`,
+     as `Range`. A constant of a variant's kind (`Reward.gold.kind`) is `E8019`
+     (`VariantKindConstant`) in every go, cpp and ts emit until the generators write the kind enum's
+     member. A by-value cycle of records through their fields that gen/cpp refuses is
+     `RecordFieldCycle`, no longer `RecordCycleThroughMethod`. Reason: L2 (consts that checked
+     clean and crashed every generator), log-2026-10-03.
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.

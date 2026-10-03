@@ -108,7 +108,7 @@ func (g *gen) sortClasses() {
 			switch {
 			case !ok, state[d.to] == visited:
 			case state[d.to] == visiting && d.strong:
-				g.malformed(recursiveTypes, c.canonName()) // E8019 RecursiveVariantCase, RecordCycleThroughMethod
+				g.malformed(recursiveTypes, c.canonName()) // E8019 RecursiveVariantCase, RecordFieldCycle
 			case state[d.to] != visiting:
 				visit(target)
 			}

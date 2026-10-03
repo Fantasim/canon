@@ -8,7 +8,7 @@ import (
 	"github.com/fantasim/canonlang/internal/types"
 )
 
-// checkTSDecoded is E8019 where gen/ts's decoders cannot read what a class they decode holds (CODEGEN.md §5.6, §5.13, DECISIONS 278): `DependentType` for a dependent map, a dependent value whose discriminant the reader does not hold (in a map, a literal union, a pairs slot or a fn result, or read through a ref or a record parameter), or a dependent type of another package; `ForeignDataRecord` for a record or variant of a package whose ts emit is not in types mode, the one that has public decoders; `CaseField` for a case used as a type; `DependentType` for a field default its reader cannot write (tsDefault). A data emit decodes the classes its values reach, a types emit every class; a data value whose rows or record are another package's decodes through that package's types-mode decoder, so it is `ForeignDataRecord` when there is none, or when that record is a row there (its decoder requires `$id`).
+// checkTSDecoded is E8019 where gen/ts's decoders cannot read what a class they decode holds (CODEGEN.md §5.6, §5.13, DECISIONS 278): `DependentType` for a dependent map, a dependent value whose discriminant the reader does not hold (in a map, a literal union, a pairs slot or a fn result, or read through a ref or a record parameter), or a dependent type of another package; `ForeignDataRecord` for a record or variant of a package whose ts emit is neither in types mode, the one that has public decoders, nor baked (E8018's); `CaseField` for a case used as a type; `DependentType` for a field default its reader cannot write (tsDefault). A data emit decodes the classes its values reach, a types emit every class; a data value whose rows or record are another package's decodes through that package's types-mode decoder, so it is `ForeignDataRecord` when there is none, or when that record is a row there (its decoder requires `$id`).
 func (s *stage) checkTSDecoded(u *unit, es *emitSite) {
 	decoded, strict := tsDecodedClasses(u, es.e), s.tsStrictRows(u)
 	for _, class := range tsClasses(u.p) {
@@ -79,13 +79,13 @@ func tsUnreadType(u *unit, t *TypeRef, noDisc bool) (diag.Kind, bool) {
 	return 0, false
 }
 
-// tsForeignClass reports a record or variant of another package whose ts emit is not in types mode (a table of one is checkTSForeignTables').
+// tsForeignClass reports a record or variant of another package whose ts emit is not in types mode (a table of one is checkTSForeignTables'); a package whose ts emit is baked is E8018 alone (CODEGEN.md §2.8; DECISIONS 279, one finding per cause), as in gen/go's foreign.
 func tsForeignClass(u *unit, t *TypeRef) bool {
 	if t.Kind != types.Record && t.Kind != types.Variant || pkgOf(t.Named) == u.p.Name {
 		return false
 	}
 	e := tsEmitOf(u.p, pkgOf(t.Named))
-	return e != nil && e.Mode != ModeTypes
+	return e != nil && e.Mode != ModeTypes && e.Mode != ModeBaked
 }
 
 // tsDecodedClasses are the classes gen/ts decodes: in types mode every one; in data mode those its selected values reach, through fields (a pairs field's pair record's fields), stored fn results, lists, optionals, maps and tables, a variant reaching its cases with an interface (CODEGEN.md §5.13; gen/ts need).

@@ -1,0 +1,46 @@
+DECISIONS 278 (plain-row refusal), CODEGEN.md §2.8, §5.4: a types-mode ts emit writes no rows (no table has a value there), so its record's public decoder needs no `$id`, and a ts data emit of another package holding that record in a plain field builds clean.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    gen: "gen"
+  }
+}
+-- b/b.canon --
+/// B.
+package b
+
+/// An item.
+record Item {
+  /// Weight.
+  w: Int
+}
+
+/// Items.
+let items: table Item = {
+  sword { w: 1 }
+}
+
+emit ts { out: "@gen/ts/b.ts", mode: types }
+-- a/a.canon --
+/// A.
+package a
+
+import b { Item }
+
+/// A place.
+record Place {
+  /// Held.
+  held: Item
+}
+
+/// The place.
+let place: Place = { held: { w: 2 } }
+
+emit ts { out: "@gen/ts/a.ts", mode: data }
+emit json { out: "gen/json/" }
+-- build.txt --
+0 errors, 0 warnings in 2 packages (…)
+output @gen/ts/a.ts 0
+output @gen/ts/b.ts 0
+output a/gen/json/place.json 0

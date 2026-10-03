@@ -19,7 +19,7 @@ var genRules [TargetView + 1][ModeTypes + 1][]genRule
 func init() {
 	common := []genRule{
 		(*stage).checkFieldlessCaseFns, (*stage).checkOptionalElements,
-		(*stage).checkOptionalMapValues, (*stage).checkTableFields, (*stage).checkCaseFields, (*stage).checkRecordConstants,
+		(*stage).checkOptionalMapValues, (*stage).checkTableFields, (*stage).checkCaseFields, (*stage).checkRecordConstants, (*stage).checkKindConstants,
 		(*stage).checkNeverDependents, (*stage).checkDefineBranches, (*stage).checkVariantMembers,
 	}
 	goCode := append(slices.Clone(common), (*stage).checkForeignTables, (*stage).checkConstLiterals, (*stage).checkNegativeZero)
@@ -30,7 +30,7 @@ func init() {
 	cppCode := append(slices.Clone(common), (*stage).checkCppDecoded, (*stage).checkCppDependents,
 		(*stage).checkForeignPairs, (*stage).checkCppForeignRoots, (*stage).checkClassCycles, (*stage).checkSelfReads, (*stage).checkRefUnions)
 	// ts takes the shared rules gen/ts needs (DECISIONS 278); it writes the other constructs: optional elements and map values, table fields, cases as types, record constants, a fieldless case's fns.
-	tsCode := []genRule{(*stage).checkNeverDependents, (*stage).checkDefineBranches, (*stage).checkVariantMembers, (*stage).checkTSForeignTables}
+	tsCode := []genRule{(*stage).checkKindConstants, (*stage).checkNeverDependents, (*stage).checkDefineBranches, (*stage).checkVariantMembers, (*stage).checkTSForeignTables}
 	tsBaked := append(slices.Clone(tsCode), (*stage).checkTSLiterals)
 	genRules[TargetTS][ModeBaked], genRules[TargetTS][ModeEmbedded] = tsBaked, tsBaked
 	tsDecode := append(slices.Clone(tsCode), (*stage).checkTSDecoded)
@@ -73,6 +73,21 @@ func (s *stage) checkRecordConstants(u *unit, es *emitSite) {
 			u.reportGenConstruct(es, c.span(), diag.KindRecordConstant)
 		}
 	}
+}
+
+// checkKindConstants is E8019 `VariantKindConstant` at each constant holding a variant's kind, itself or through its composites: no generator writes the kind enum's member as a constant yet (DECISIONS 292).
+func (s *stage) checkKindConstants(u *unit, es *emitSite) {
+	for _, c := range u.consts {
+		if holdsVariantKind(c.obj.Type()) {
+			u.reportGenConstruct(es, c.span(), diag.KindVariantKindConstant)
+		}
+	}
+}
+
+// holdsVariantKind reports a variant's kind type in t, itself or held by value (subTypes).
+func holdsVariantKind(t types.Type) bool {
+	b := t.Base()
+	return b.Kind() == types.VariantKind || slices.ContainsFunc(subTypes(b), holdsVariantKind)
 }
 
 // holdsRecordValue reports a record or case value in v, itself or among its elements, keys and map values.
