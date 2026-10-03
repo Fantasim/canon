@@ -919,7 +919,9 @@ that table (data built with a newer header than the binary) is a load error.
 For each emitted value `v` of type `X`, the **container** is:
 
 - a table or keyed list: a generated class `UpperCamel(v)` (`Potions`, `Statuses`);
-- a record or variant: the type itself (CG-04);
+- a record or variant: the type itself (CG-04); in a `data` emit of Go or C++, a value whose
+  record (or whose rows' record) belongs to another package has no container here and is `E8019`
+  ForeignDataRecord (DECISIONS 291);
 - anything else (`baked` only, [§2.2](#22-what-each-mode-contains)): no container; the accessor
   returns what a field getter of type `X` returns.
 

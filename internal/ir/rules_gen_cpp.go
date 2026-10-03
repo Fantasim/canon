@@ -22,6 +22,15 @@ func (s *stage) checkCppDecoded(u *unit, es *emitSite) {
 	}
 }
 
+// checkCppForeignRoots is E8019 `ForeignDataRecord` at a selected value whose record, or whose rows' record, is another package's: its static Load (CODEGEN.md §5.9) is a member of a class only that package's emit writes, and a row's id and retired getters likewise (§4.2), so no loader of this package can be its home.
+func (s *stage) checkCppForeignRoots(u *unit, es *emitSite) {
+	for _, v := range selectedValues(u, es.e) {
+		if root, ok := goRootClass(v.v).(Type); ok && pkgOf(root) != u.p.Name {
+			u.reportGenConstruct(es, v.span().span(), diag.KindForeignDataRecord)
+		}
+	}
+}
+
 // decodesClasses reports an emit whose generator decodes the package's classes from JSON: a data loader, or gen/cpp's types-mode decoders (CODEGEN.md §5.13).
 func decodesClasses(e *Emit) bool {
 	return e.Mode == ModeData || e.Target == TargetCpp && e.Mode == ModeTypes

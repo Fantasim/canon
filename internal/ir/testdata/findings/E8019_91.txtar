@@ -1,0 +1,28 @@
+CODEGEN.md §5.9, §2.8, §4.2: a data value of another package's record has no home in gen/cpp: its static Load is a member of a class only that package's emit writes, so ForeignDataRecord at the value (unit CX, GC review probe p8).
+-- b/b.canon --
+package b
+
+/// A shelf.
+record Shelf {
+  /// How many.
+  n: Int
+}
+
+emit cpp { out: "@features/b", namespace: "b", mode: data }
+-- a/a.canon --
+package a
+
+import b { Shelf }
+
+/// The shelf.
+let shelf: Shelf = { n: 1 }
+
+emit cpp { out: "@features/a", namespace: "a", mode: data }
+emit json { out: "out/" }
+-- a.shelf.json --
+{ "n": 1 }
+-- findings.txt --
+error[E8019]  a/a.canon:6:5
+  emit cpp in data mode cannot generate a record or variant of another package read by a data loader
+
+1 error, 0 warnings in 2 packages (…)

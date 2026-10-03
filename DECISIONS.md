@@ -2684,6 +2684,13 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      public signature keeps `nlohmann::json` (an `ordered_json` overload is a later item). Reason:
      GC, log-2026-10-03.
 
+291. **A data value of another package's record has no loader (CODEGEN.md §5.9, §2.8).** In a Go or
+     C++ `data` emit, a value whose record, or whose table or keyed list's row record, belongs to
+     another package is `E8019` ForeignDataRecord at the value: its loader is a member of a class
+     only the owning package's emit writes, and §2.8's cross-package decoders cover fields only.
+     Lifting it is the later item with §2.2 vs §2.8 (log-2026-10-03 "GG rulings"). Reason: CX (a
+     C++ value that checked clean and did not compile), log-2026-10-03.
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.
