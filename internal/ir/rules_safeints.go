@@ -31,7 +31,7 @@ func (s *stage) checkSafeInts(u *unit, es *emitSite) {
 	}
 }
 
-// safeInts finds the unsafe integers of one ts emit, reporting them at span, the value, constant or fn being checked; byRecv indexes each method's stored results by receiver; seen holds the records already checked, once each, since a stored result may hold its own receiver (E8019 RecordCycleThroughMethod).
+// safeInts finds the unsafe integers of one ts emit, reporting them at span, the value, constant or fn being checked; byRecv indexes each method's stored results by receiver; seen holds the records already checked, once each, since one record may be reached from several values or results.
 type safeInts struct {
 	s      *stage
 	u      *unit

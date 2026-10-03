@@ -2098,7 +2098,8 @@ var Registry = []Def{
 	{
 		Code: "E8019", Severity: Error, Package: "ir",
 		Variants: []Variant{
-			{Args: []Arg{{Name: "target", Type: ArgTypeName}, {Name: "mode", Type: ArgTypeName}, {Name: "what", Type: ArgTypeKind}}, Template: "emit {target} in {mode} mode cannot generate {what}"},
+			{Name: "mode", Args: []Arg{{Name: "target", Type: ArgTypeName}, {Name: "mode", Type: ArgTypeName}, {Name: "what", Type: ArgTypeKind}}, Template: "emit {target} in {mode} mode cannot generate {what}"},
+			{Name: "json", Args: []Arg{{Name: "what", Type: ArgTypeKind}}, Template: "emit json cannot generate {what}"},
 		},
 	},
 	{
@@ -6493,9 +6494,14 @@ type codeE8019 struct{}
 // Def is the registry entry of E8019.
 func (codeE8019) Def() *Def { return &Registry[255] }
 
-// At reports: emit {target} in {mode} mode cannot generate {what}
-func (codeE8019) At(span source.Span, target string, mode string, what Kind) *Builder {
+// AtMode reports: emit {target} in {mode} mode cannot generate {what}
+func (codeE8019) AtMode(span source.Span, target string, mode string, what Kind) *Builder {
 	return newBuilder(&Registry[255], 0, span, target, mode, what)
+}
+
+// AtJson reports: emit json cannot generate {what}
+func (codeE8019) AtJson(span source.Span, what Kind) *Builder {
+	return newBuilder(&Registry[255], 1, span, what)
 }
 
 // E8020: a Go constant of -0.0, which Go constants cannot hold (CODEGEN.md §5.1).

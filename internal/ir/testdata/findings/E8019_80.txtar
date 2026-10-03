@@ -1,0 +1,22 @@
+DECISIONS 284, WIRE.md §5.11: a stored method returning its own receiver has no finite wire for `emit json` (a stack overflow of the build before): the json variant, from check, at the fn.
+-- a/a.canon --
+package a
+
+/// A node.
+record Node {
+  /// Its key.
+  id: String
+
+  /// Itself.
+  export fn me(self) -> Node { return self }
+}
+
+/// The nodes.
+let nodes: [Node] keyed by id = [{ id: "x" }]
+
+emit json { out: "out/" }
+-- findings.txt --
+error[E8019]  a/a.canon:9:13
+  emit json cannot generate a by-value cycle of records through a stored method result
+
+1 error, 0 warnings in 1 package (…)

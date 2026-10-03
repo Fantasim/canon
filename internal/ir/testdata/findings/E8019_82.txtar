@@ -1,0 +1,43 @@
+DECISIONS 284: two records whose stored methods return each other reach their own receivers through the other's result: each fn refused, once per emit (json, then ts in data mode), at the fn.
+-- a/a.canon --
+package a
+
+/// A left.
+record Left {
+  /// Its key.
+  id: String
+  /// Its weight.
+  w: Int
+
+  /// Its right.
+  export fn right(self) -> Right { return { w: w } }
+}
+
+/// A right.
+record Right {
+  /// Its weight.
+  w: Int
+
+  /// Its left.
+  export fn left(self) -> Left { return { id: "l", w: w } }
+}
+
+/// The lefts.
+let lefts: [Left] keyed by id = [{ id: "x", w: 1 }]
+
+emit json { out: "out/" }
+emit ts { out: "@features/a/a.ts", mode: data }
+-- findings.txt --
+error[E8019]  a/a.canon:11:13
+  emit json cannot generate a by-value cycle of records through a stored method result
+
+error[E8019]  a/a.canon:11:13
+  emit ts in data mode cannot generate a by-value cycle of records through a stored method result
+
+error[E8019]  a/a.canon:20:13
+  emit json cannot generate a by-value cycle of records through a stored method result
+
+error[E8019]  a/a.canon:20:13
+  emit ts in data mode cannot generate a by-value cycle of records through a stored method result
+
+4 errors, 0 warnings in 1 package (…)

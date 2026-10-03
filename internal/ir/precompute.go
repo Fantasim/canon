@@ -7,9 +7,9 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// precompute evaluates every stored export fn of the assembled packages that have an emit other than view (EVALUATION.md §2.3): package fns once or per cell, methods per receiver reachable from the package's public values, then for a ts data emit from its field defaults (DECISIONS 278), in traversal order (§8.1), each receiver once.
+// precompute evaluates every stored export fn of the assembled packages that have an emit other than view (EVALUATION.md §2.3): package fns once or per cell, methods per receiver reachable from the package's public values, then for a ts data emit from its field defaults (DECISIONS 278), in traversal order (§8.1), each receiver once. A stored result is encoded with its own `$` keys (WIRE.md §5.11, decision 128), so the receivers it holds are precomputed too, after the root that produced it.
 func (s *stage) precompute() {
-	seen := map[*value.Record]bool{}
+	pc := &precomputer{s: s, seen: map[*value.Record]bool{}}
 	for _, u := range s.order {
 		if !u.selected || !hasDataEmit(u) {
 			continue
@@ -17,22 +17,100 @@ func (s *stage) precompute() {
 		for _, site := range u.fns {
 			if site.fn.Kind != FnTranslated && s.computable(site) {
 				site.fn.Value, site.fn.Table, _ = s.results(site, nil)
+				pc.walk(site.fn.Value)
+				pc.walk(site.fn.Table)
 			}
 		}
 		for _, v := range u.values {
-			walkInstances(v.v.V, seen, s.receiver)
+			pc.walk(v.v.V)
 		}
-		s.precomputeDefaults(u, seen)
+		pc.precomputeDefaults(u)
+	}
+}
+
+// precomputer is one stage-E precomputation: the receivers already computed, and the stored results whose receivers wait their turn, each with the chain of declarations whose results led to it, so a chain of results never deepens the Go stack.
+type precomputer struct {
+	s       *stage
+	seen    map[*value.Record]bool
+	pending []pendingResult
+	above   *declChain
+}
+
+// pendingResult is a stored result, or a lookup table, still to walk, and the receivers' declarations above it.
+type pendingResult struct {
+	v     any
+	above *declChain
+}
+
+// declChain is the declarations (record or case) of the receivers whose stored results hold a value, innermost first.
+type declChain struct {
+	decl any
+	up   *declChain
+}
+
+// holds reports d on the chain.
+func (c *declChain) holds(d any) bool {
+	for ; c != nil; c = c.up {
+		if c.decl == d {
+			return true
+		}
+	}
+	return false
+}
+
+// walk computes the receivers of a root v in traversal order (EVALUATION.md §8.1), then those of the stored results met, first produced first.
+func (pc *precomputer) walk(v any) {
+	pc.queue(v, nil)
+	for len(pc.pending) > 0 {
+		next := pc.pending[0]
+		pc.pending = pc.pending[1:]
+		pc.above = next.above
+		for _, x := range resultValues(next.v) {
+			walkInstances(x, pc.seen, pc.receiver)
+		}
+	}
+	pc.above = nil
+}
+
+// queue adds a stored result, or a lookup table, to the values still to walk.
+func (pc *precomputer) queue(v any, above *declChain) {
+	pc.pending = append(pc.pending, pendingResult{v: v, above: above})
+}
+
+// resultValues is a stored result alone, or each cell of a lookup table.
+func resultValues(v any) []value.Value {
+	switch x := v.(type) {
+	case value.Value:
+		return []value.Value{x}
+	case *LookupTable:
+		if x != nil {
+			return x.Cells
+		}
+	}
+	return nil
+}
+
+// receiver computes r's stored methods and queues their results. A receiver whose declaration already produced the result holding it is an internal error: cyclicFn refuses such a chain and its fns are never computed (DECISIONS 284).
+func (pc *precomputer) receiver(r *value.Record) {
+	decl := pc.s.declOf(r.T)
+	if pc.above.holds(decl) {
+		pc.s.endlessChain(decl)
+		return
+	}
+	above := &declChain{decl: decl, up: pc.above}
+	for _, in := range pc.s.receiver(r) {
+		pc.queue(in.Result, above)
+		pc.queue(in.Table, above)
 	}
 }
 
 // precomputeDefaults walks the receivers of a ts data emit's field defaults, after the values (DECISIONS 278).
-func (s *stage) precomputeDefaults(u *unit, seen map[*value.Record]bool) {
+func (pc *precomputer) precomputeDefaults(u *unit) {
 	if !tsData(u) {
 		return
 	}
 	for _, d := range ownDefaults(u.p) {
-		walkInstances(d, seen, s.receiver)
+		pc.walk(d)
 	}
 }
 
@@ -70,31 +148,37 @@ func hasDataEmit(u *unit) bool {
 	return false
 }
 
-// receiver computes the stored methods of one receiver: a record or case instance, of this package or an imported one, whose encoded `$` keys need them too (WIRE.md §5.11, decision 128). A failed call leaves out this receiver's Instance only: every other receiver is still evaluated, each failure reported by the host (decision 194).
-func (s *stage) receiver(r *value.Record) {
-	for _, m := range s.methodsOf(r.T) {
+// receiver computes the stored methods of one receiver: a record or case instance, of this package or an imported one, whose encoded `$` keys need them too (WIRE.md §5.11, decision 128), and returns the Instances it added. A cyclic method (DECISIONS 284) is not computed: E8019 refuses it. A failed call leaves out this receiver's Instance only: every other receiver is still evaluated, each failure reported by the host (decision 194).
+func (s *stage) receiver(r *value.Record) []*Instance {
+	var out []*Instance
+	decl := s.declOf(r.T)
+	_, methods := classBody(decl)
+	for _, m := range methods {
 		site := s.fnObjs[m]
-		if m.Kind == FnTranslated || site == nil || !s.computable(site) {
+		if m.Kind == FnTranslated || site == nil || !s.computable(site) || s.cyclicFn(m, decl) {
 			continue
 		}
 		if result, table, ok := s.results(site, r); ok {
-			m.Instances = append(m.Instances, &Instance{Recv: r, Result: result, Table: table})
+			in := &Instance{Recv: r, Result: result, Table: table}
+			m.Instances = append(m.Instances, in)
+			out = append(out, in)
 		}
 	}
+	return out
 }
 
-// methodsOf is the export methods of the declaration a record value's type names.
-func (s *stage) methodsOf(t types.Type) []*ExportFn {
+// declOf is the record, or the case of a variant, a record value's type names; nil for any other type.
+func (s *stage) declOf(t types.Type) any {
 	switch d := t.Base().(type) {
 	case *types.RecordType:
 		if r, ok := s.named[d].(*Record); ok {
-			return r.Methods
+			return r
 		}
 	case *types.AppliedRecord:
-		return s.methodsOf(d.Rec)
+		return s.declOf(d.Rec)
 	case *types.CaseType:
-		if v, ok := s.named[d.Variant].(*Variant); ok && d.Index < len(v.Cases) {
-			return v.Cases[d.Index].Methods
+		if v, ok := s.named[d.Variant].(*Variant); ok && d.Index >= 0 && d.Index < len(v.Cases) {
+			return v.Cases[d.Index]
 		}
 	}
 	return nil

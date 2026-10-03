@@ -107,7 +107,9 @@ For each selected package that has at least one `emit` other than `view`, every 
 without runtime inputs is evaluated as CODEGEN.md requires:
 
 - a method without parameters: once per receiver instance, for every instance of its record or
-  case reachable from the package's public values (§8.1 traversal order);
+  case reachable from the package's public values (§8.1 traversal order), and, transitively, from
+  the stored results already computed (each result after the receiver that produced it;
+  DECISIONS 284: a result type reaching its receiver's own declaration is E8019, never computed);
 - a function or method with only finite parameters: once per cell of its domain, in the domain
   order of CODEGEN.md §5.10 (for each receiver, as above);
 - a function without parameters: once.

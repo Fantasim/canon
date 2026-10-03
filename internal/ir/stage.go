@@ -50,6 +50,7 @@ func Build(ctx context.Context, in Input) []*Package {
 		if u.selected && len(u.emits) > 0 {
 			s.finish(u)
 			s.validate(u)
+			s.checkMethodCycles(u)
 		}
 	}
 	s.crossPackage()
@@ -60,23 +61,25 @@ func Build(ctx context.Context, in Input) []*Package {
 // VariantType or TypeFunc) to its IR type, shared by every package that reaches it; decls,
 // fieldSites, fnObjs and nodeSites locate the IR nodes findings point at; fnByObj is fnObjs reversed.
 type stage struct {
-	ctx         context.Context
-	in          Input
-	info        *check.Info
-	layout      *project.Layout
-	named       map[any]Type
-	units       map[string]*unit
-	order       []*unit
-	decls       map[Type]declSite
-	fnObjs      map[*ExportFn]*fnSite
-	fnByObj     map[check.Object]*fnSite
-	nodeSites   map[any]declSite // enum members, cases, parameters, constants and values
-	domainsOf   map[*ExportFn]*fnDomains
-	fieldSites  map[*Field]*fieldSite
-	depFns      map[*Dependent]*types.TypeFunc
-	branchTypes map[*Branch]types.Type
-	members     map[*Variant][]source.Span // a variant's export fns written outside its cases (TYPES.md §12.1)
-	variantFns  map[*syntax.FnDecl]bool    // every fn written in a variant body outside its cases
+	ctx           context.Context
+	in            Input
+	info          *check.Info
+	layout        *project.Layout
+	named         map[any]Type
+	units         map[string]*unit
+	order         []*unit
+	decls         map[Type]declSite
+	fnObjs        map[*ExportFn]*fnSite
+	fnByObj       map[check.Object]*fnSite
+	nodeSites     map[any]declSite // enum members, cases, parameters, constants and values
+	domainsOf     map[*ExportFn]*fnDomains
+	fieldSites    map[*Field]*fieldSite
+	depFns        map[*Dependent]*types.TypeFunc
+	branchTypes   map[*Branch]types.Type
+	members       map[*Variant][]source.Span // a variant's export fns written outside its cases (TYPES.md §12.1)
+	variantFns    map[*syntax.FnDecl]bool    // every fn written in a variant body outside its cases
+	cyclic        map[*ExportFn]bool         // cyclicFn's verdicts (DECISIONS 284)
+	cycleReported map[cycleReport]bool
 }
 
 // unit is one checked package on its way to IR; firstUse is the first type of each imported
@@ -138,7 +141,7 @@ func newStage(ctx context.Context, in Input) *stage {
 		decls: map[Type]declSite{}, fnObjs: map[*ExportFn]*fnSite{}, fnByObj: map[check.Object]*fnSite{}, nodeSites: map[any]declSite{},
 		domainsOf: map[*ExportFn]*fnDomains{}, fieldSites: map[*Field]*fieldSite{}, depFns: map[*Dependent]*types.TypeFunc{},
 		branchTypes: map[*Branch]types.Type{}, members: map[*Variant][]source.Span{},
-		variantFns: map[*syntax.FnDecl]bool{},
+		variantFns: map[*syntax.FnDecl]bool{}, cyclic: map[*ExportFn]bool{}, cycleReported: map[cycleReport]bool{},
 	}
 	// nil overrides (decision 108) never name an undeclared root, so NewLayout's ok is always true.
 	s.layout, _ = project.NewLayout(in.Project, curDir, nil, nil)

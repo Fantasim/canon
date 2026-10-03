@@ -26,7 +26,8 @@ func (s *stage) checkFnResultForms(u *unit, es *emitSite) {
 	}
 	done := map[*ExportFn]bool{}
 	for _, r := range recvs {
-		for _, m := range s.methodsOf(r.T) {
+		_, methods := classBody(s.declOf(r.T))
+		for _, m := range methods {
 			if !done[m] && s.fnObjs[m] != nil {
 				done[m] = true
 				rf.instances(s.fnObjs[m])

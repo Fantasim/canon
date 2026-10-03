@@ -1,0 +1,26 @@
+DECISIONS 284, EVALUATION.md §2.3, WIRE.md §5.11: a stored method whose result is a fresh receiver of its own record, `next` without end: E8019 from `canon check`, which ends.
+-- project.canon --
+project demo {
+  canon: "0.1"
+  roots {
+    gen: "gen"
+  }
+}
+-- q/q.canon --
+/// Q.
+package q
+
+/// A link.
+record Link {
+  /// Its id.
+  id: String
+  /// Its depth.
+  depth: Int
+  /// The next link, always a new one.
+  export fn next(self) -> Link { return Link { id: id, depth: depth + 1 } }
+}
+
+/// The links.
+let links: [Link] keyed by id = [ Link { id: "x", depth: 1 } ]
+
+emit json { out: "@gen/json/" }

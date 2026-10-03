@@ -438,9 +438,3 @@ const (
 	tsRetiredProp  = "retired"
 	tsKindProp     = "kind"
 )
-
-// The states of a record value in gen/ts's literal walk (literalCycles).
-const (
-	cycleOpen = 1 + iota
-	cycleDone
-)

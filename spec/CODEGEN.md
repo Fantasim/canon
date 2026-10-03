@@ -265,7 +265,8 @@ on its kind-enum member (§5.5). Undocumented items get no comment (the build wa
 - **Declaration order** means: files of the package in byte order of their path, then source
   order. Everything is emitted in declaration order, except C++ classes, which are topologically
   sorted so that a class comes before the first class holding it by value (depth-first, stable
-  with respect to declaration order).
+  with respect to declaration order). A stored result held by value orders classes like a field;
+  it never closes a cycle (a result type reaching its receiver is E8019, DECISIONS 284).
 - Within a file, the order of sections is fixed: constants, enums (declaration order, then kind
   enums of variants, branch enums of dependent types, id enums of tables), records and variants,
   containers, value accessors, export fns, snapshot and store, inputs, decoders (those of

@@ -1,16 +1,14 @@
 package ir
 
 import (
-	"slices"
-
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// checkTSLiterals is E8019 where a baked or embedded ts emit cannot write a literal (CODEGEN.md §5.6, §5.9, §5.10, DECISIONS 278): `DependentType` for a dependent value whose discriminant the literal does not read (in a map, a literal union, a fn result, or through a ref); `RecordCycleThroughMethod` for a value whose stored results hold their own receiver, a literal without end; `CrossPackageBakedValue` for a plain value of another package's record whose interface requires `id` (judge). Constants and stored fns are written too.
+// checkTSLiterals is E8019 where a baked or embedded ts emit cannot write a literal (CODEGEN.md §5.6, §5.9, §5.10, DECISIONS 278): `DependentType` for a dependent value whose discriminant the literal does not read (in a map, a literal union, a fn result, or through a ref); `CrossPackageBakedValue` for a plain value of another package's record whose interface requires `id` (judge). Constants and stored fns are written too.
 func (s *stage) checkTSLiterals(u *unit, es *emitSite) {
-	lit := &tsLit{own: u.p.Name, cycles: newLiteralCycles(s), strict: s.tsStrictRows(u)}
+	lit := &tsLit{own: u.p.Name, strict: s.tsStrictRows(u)}
 	for _, v := range selectedValues(u, es.e) {
 		if kind, bad := lit.judge(&v.v.Type, v.v.V); bad {
 			u.reportGenConstruct(es, v.span().span(), kind)
@@ -37,14 +35,13 @@ func (s *stage) checkTSLiterals(u *unit, es *emitSite) {
 // tsLit judges literals gen/ts writes for package own.
 type tsLit struct {
 	own    string
-	cycles *literalCycles
 	strict func(*Record) bool
 }
 
-// judge is tsLiteral, then `CrossPackageBakedValue` for a plain value of another package's record whose interface requires `id` (a row there, never a plain value: CODEGEN.md §5.4).
+// judge is `DependentType` for a dependent value the literal cannot place, then `CrossPackageBakedValue` for a plain value of another package's record whose interface requires `id` (a row there, never a plain value: CODEGEN.md §5.4).
 func (l *tsLit) judge(t *TypeRef, v value.Value) (diag.Kind, bool) {
-	if kind, bad := tsLiteral(l.own, t, v, l.cycles); bad {
-		return kind, true
+	if literalDependent(l.own, t, v, cppDiscRead) {
+		return diag.KindDependentType, true
 	}
 	plainRow := literalHolds(t, v, func(t *TypeRef, v value.Value) bool {
 		_, ok := v.(*value.Record)
@@ -76,83 +73,13 @@ func (s *stage) tsStrictRows(u *unit) func(*Record) bool {
 	}
 }
 
-// tsLiteral is what gen/ts cannot write of v, of type t, as a literal: a dependent value it cannot place, or a literal without end.
-func tsLiteral(own string, t *TypeRef, v value.Value, cycles *literalCycles) (diag.Kind, bool) {
-	switch {
-	case literalDependent(own, t, v, cppDiscRead):
-		return diag.KindDependentType, true
-	case cycles.endless(v):
-		return diag.KindRecordCycleThroughMethod, true
-	}
-	return 0, false
-}
-
-// literalCycles finds values whose literal never ends: gen/ts writes a record value with its stored results, so a result that holds the receiver being written repeats it forever.
-type literalCycles struct {
-	byRecv map[*value.Record][]*Instance
-	state  map[*value.Record]int
-}
-
-// newLiteralCycles indexes every stored result of every package by its receiver.
-func newLiteralCycles(s *stage) *literalCycles {
-	c := &literalCycles{byRecv: map[*value.Record][]*Instance{}, state: map[*value.Record]int{}}
-	for _, u := range s.order {
-		for _, class := range tsClasses(u.p) {
-			_, fns := classBody(class)
-			c.index(fns)
-		}
-	}
-	return c
-}
-
-// index adds the stored results of fns by receiver.
-func (c *literalCycles) index(fns []*ExportFn) {
-	for _, fn := range fns {
-		for _, in := range fn.Instances {
-			c.byRecv[in.Recv] = append(c.byRecv[in.Recv], in)
-		}
-	}
-}
-
-// endless reports a record value of v met again while its own literal, stored results included, is being written.
-func (c *literalCycles) endless(v value.Value) bool {
-	switch x := v.(type) {
-	case *value.Record:
-		return c.record(x)
-	case *value.List:
-		return slices.ContainsFunc(x.Elems, c.endless)
-	case *value.Map:
-		return slices.ContainsFunc(x.Keys, c.endless) || slices.ContainsFunc(x.Vals, c.endless)
-	case *value.Table:
-		return slices.ContainsFunc(x.Entries, c.record)
-	}
-	return false
-}
-
-func (c *literalCycles) record(r *value.Record) bool {
-	switch c.state[r] {
-	case cycleOpen:
-		return true
-	case cycleDone:
-		return false
-	}
-	c.state[r] = cycleOpen
-	found := slices.ContainsFunc(r.Fields, c.endless) || slices.ContainsFunc(c.byRecv[r], func(in *Instance) bool {
-		return c.endless(in.Result) || in.Table != nil && slices.ContainsFunc(in.Table.Cells, c.endless)
-	})
-	c.state[r] = cycleDone
-	return found
-}
-
-// tsDefault is what a ts reader cannot write of a field's constant default (DECISIONS 278): a dependent field's present default, whose branch an absent key's discriminant decides at run time (as gen/cpp, checkCppDefaults), or a default whose stored results hold their own receiver.
-func tsDefault(f *Field, cycles *literalCycles) (diag.Kind, bool) {
+// tsDefault is what a ts reader cannot write of a field's constant default (DECISIONS 278): a dependent field's present default, whose branch an absent key's discriminant decides at run time (as gen/cpp, checkCppDefaults); a default whose stored results hold their own receiver is a cyclic fn, refused at the fn (DECISIONS 284).
+func tsDefault(f *Field) (diag.Kind, bool) {
 	switch {
 	case f.Computed || !written(f.Default):
 		return 0, false
 	case typeHolds(&f.Type, isApp):
 		return diag.KindDependentType, true
-	case cycles.endless(f.Default):
-		return diag.KindRecordCycleThroughMethod, true
 	}
 	return 0, false
 }

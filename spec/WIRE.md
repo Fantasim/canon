@@ -455,7 +455,7 @@ decoding (TYPES.md).
 
 For every `export fn` of a record or variant case that is **not** translated (no parameter besides
 `self`, or only finite parameters, SPEC §9.4), each encoded value of that type carries one `$` key,
-data wire only:
+data wire only, a value inside a stored result included (DECISIONS 284):
 
 - key `"$<canonName>"` (`"$isStrong"`), regardless of `@json(case:)`;
 - no extra parameter: the result's wire form (a `Duration` result is in `ms`; `@json` annotations

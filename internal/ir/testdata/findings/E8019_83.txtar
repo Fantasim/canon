@@ -1,0 +1,34 @@
+DECISIONS 284, 194: a record of another package whose stored method returns itself, held by value in a value an `emit json` writes, is refused for that emit at the fn, in its own package, though that package has no emit.
+-- m/m.canon --
+package m
+
+/// A mark.
+record Mark {
+  /// Its level.
+  level: Int
+
+  /// The next mark.
+  export fn next(self) -> Mark { return { level: level + 1 } }
+}
+-- a/a.canon --
+package a
+
+import m { Mark }
+
+/// A holder.
+record Holder {
+  /// Its key.
+  id: String
+  /// Its mark.
+  mark: Mark
+}
+
+/// The holders.
+let holders: [Holder] keyed by id = [{ id: "h", mark: { level: 1 } }]
+
+emit json { out: "out/" }
+-- findings.txt --
+error[E8019]  m/m.canon:9:13
+  emit json cannot generate a by-value cycle of records through a stored method result
+
+1 error, 0 warnings in 2 packages (…)

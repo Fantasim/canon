@@ -1,4 +1,4 @@
-EVALUATION.md §1, CODEGEN.md §2.7: gen/cpp holds a stored method's result by value, so a record whose method returns that record holds itself: RecordCycleThroughMethod.
+EVALUATION.md §1, CODEGEN.md §2.7, DECISIONS 284: a record whose stored method returns that record (here optional) has no finite set of results: RecordCycleThroughMethod at the fn.
 -- a/a.canon --
 package a
 
@@ -13,7 +13,7 @@ record Node {
 
 emit cpp { out: "@features/a", namespace: "a", mode: data }
 -- findings.txt --
-error[E8019]  a/a.canon:4:8
+error[E8019]  a/a.canon:9:13
   emit cpp in data mode cannot generate a by-value cycle of records through a stored method result
 
 1 error, 0 warnings in 1 package (…)

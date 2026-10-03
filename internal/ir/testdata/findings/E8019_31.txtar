@@ -1,9 +1,15 @@
-EVALUATION.md §1, CODEGEN.md §5.8: gen/go's data resolver has no walk for a lookup method's cells holding a ref resolved at load.
+EVALUATION.md §1, CODEGEN.md §5.8: gen/go's data resolver has no walk for a lookup method's cells holding a ref resolved at load (here in another record, so no cycle: DECISIONS 284 has its own cases).
 -- a/a.canon --
 package a
 
 /// A tone.
 enum Tone { soft, loud }
+
+/// A link.
+record Link {
+  /// Its target.
+  to: ref things
+}
 
 /// A thing.
 record Thing {
@@ -12,8 +18,8 @@ record Thing {
   /// Its peer.
   peer: ref things
 
-  /// Itself per tone.
-  export fn me(self, t: Tone) -> Thing { return self }
+  /// Its peer per tone.
+  export fn link(self, t: Tone) -> Link { return { to: peer } }
 }
 
 /// The things.
@@ -24,7 +30,7 @@ emit json { out: "out/" }
 -- a.things.json --
 [{"a": 1, "peer": 1}]
 -- findings.txt --
-error[E8019]  a/a.canon:14:13
+error[E8019]  a/a.canon:20:13
   emit go in data mode cannot generate a lookup method whose result holds a ref resolved at load
 
 1 error, 0 warnings in 1 package (…)

@@ -4,7 +4,7 @@ case 224
 seed 4294967521
 open gen
 born mismatch extra E8019
-sig extra E8019
+sig extra E8019/mode
 packages pipeline
 want E8018 pipeline/potion.canon 954 956 check
 failure extra [E8019 pipeline/potion.canon:14:3 "emit go in data mode cannot generate a record or variant of another package read by a data loader"] besides [E8018 pipeline/potion.canon:26:6 "zzbaked.ZzPoint is decoded from JSON by go, but package zzbaked is emitted in baked mode"]

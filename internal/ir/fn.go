@@ -24,7 +24,7 @@ type ExportFn struct {
 	Body        PExpr
 	Reads       []*Read
 	Vectors     []*Vector
-	Err         error // ErrInternal: a translated fn stage E could not translate, with no error reported
+	Err         error // ErrInternal: a translated fn stage E could not translate, or a stored fn whose results met their receiver past DECISIONS 284, with no error reported
 	Go, Cpp, TS NameOptions
 }
 

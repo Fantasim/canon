@@ -2629,6 +2629,16 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      no value path (API.md F1) and sits at the literal, else the fn. Package `$fns` are checked
      whenever the package has a `json` emit, which writes them. A `none: {}` marker compares
      against what the encoder writes (`$` keys of stored fns only). Reason: W1, log-2026-10-03.
+284. **A stored result that reaches its own receiver's type is refused (EVALUATION.md §2.3;
+     WIRE.md §5.11; CODEGEN.md §2.7; ERRORS.md E8019).** Stage E precomputes the stored export fns of
+     every receiver a stored result holds, transitively (WIRE §5.11 writes their `$` keys). A stored
+     export fn whose result type reaches its receiver's own declaration by value (through records,
+     cases, lists, maps and optionals: `-> Self`, `-> N?`, `-> [N]`) has no finite set of results to
+     write, so it is `E8019` (a cycle through a method) at stage E for every emit that writes stored
+     results (`json`, and `go`, `cpp`, `ts` in the modes that carry them), judged on types, never a
+     build crash or an endless precompute. `E8019` gains a `json` variant, an `emit json` having no
+     mode. Reason: WB2 and the wire self-cycle bug, log-2026-10-03.
+
 285. **Language server queries over values (IMPLEMENTATION-PLAN §8.4; CLI.md §4; follows 274).**
      Definition and references start from a position inside a JSON buffer as from a Canon one. A
      ref stated once but evaluated per instance (a default of a field whose collection is per

@@ -13,15 +13,18 @@ type classGraph struct {
 	boxed   map[*Field]bool
 	state   map[any]int
 	stack   []any
+	// fnIn tells, for each class on stack, that the edge it was entered by is a stored fn's result.
+	fnIn    []bool
 	refused []any
-	// refusedRecords close a cycle of records only, through a stored method's result.
+	// refusedRecords close a cycle of records only, through fields: an optional field boxed on it, gen/cpp still refuses the order where the record holding the box comes first (E8019_84). A stored result orders classes like a field but never closes a cycle: one through it is cyclicFn's (CODEGEN.md §2.7, DECISIONS 284).
 	refusedRecords []any
 }
 
-// classDep is a class another one holds: strong when by value, weak through a list or a map.
+// classDep is a class another one holds: strong when by value, weak through a list or a map; fn when through a stored fn's result.
 type classDep struct {
 	to     any
 	strong bool
+	fn     bool
 }
 
 func newClassGraph(p *Package) *classGraph {
@@ -43,7 +46,7 @@ func newClassGraph(p *Package) *classGraph {
 	return g
 }
 
-// deps are the classes c holds: a variant its cases with fields, a record or case its fields' and stored fns' classes.
+// deps are the classes c holds: a variant its cases with fields, a record or case its fields' and stored fns' classes, as gen/cpp orders them (CODEGEN.md §2.7).
 func (g *classGraph) deps(c any) []classDep {
 	var out []classDep
 	if v, ok := c.(*Variant); ok {
@@ -58,7 +61,11 @@ func (g *classGraph) deps(c any) []classDep {
 	}
 	for _, fn := range fns {
 		if fn.Kind != FnTranslated {
+			held := len(out)
 			out = classDeps(fn.Result, true, out)
+			for i := held; i < len(out); i++ {
+				out[i].fn = true
+			}
 		}
 	}
 	return out
@@ -96,26 +103,32 @@ func (g *classGraph) reaches(from, to any, seen map[any]bool) bool {
 	return false
 }
 
-// visit orders c after the classes it holds, noting c where it holds by value one still being visited.
-func (g *classGraph) visit(c any) {
+// visit orders c, entered through a stored fn's result when viaFn, after the classes it holds, noting c where it holds by value one still being visited.
+func (g *classGraph) visit(c any, viaFn bool) {
 	g.state[c] = visiting
 	g.stack = append(g.stack, c)
+	g.fnIn = append(g.fnIn, viaFn)
 	for _, d := range g.deps(c) {
 		switch {
 		case !g.own[d.to], g.state[d.to] == visited:
 		case g.state[d.to] == visiting && d.strong:
-			g.closes(c, d.to)
+			g.closes(c, d)
 		case g.state[d.to] == unvisited:
-			g.visit(d.to)
+			g.visit(d.to, d.fn)
 		}
 	}
 	g.state[c] = visited
 	g.stack = g.stack[:len(g.stack)-1]
+	g.fnIn = g.fnIn[:len(g.fnIn)-1]
 }
 
-// closes notes c, whose by-value dep to closes a cycle, by whether the cycle goes through a variant.
-func (g *classGraph) closes(c, to any) {
-	cycle := g.stack[slices.Index(g.stack, to):]
+// closes notes c, whose by-value dep d closes a cycle, by whether the cycle goes through a variant; a cycle through a stored fn's result is cyclicFn's, one finding per cause (CODEGEN.md §2.7).
+func (g *classGraph) closes(c any, d classDep) {
+	at := slices.Index(g.stack, d.to)
+	if d.fn || slices.Contains(g.fnIn[at+1:], true) {
+		return
+	}
+	cycle := g.stack[at:]
 	list := &g.refusedRecords
 	if slices.ContainsFunc(cycle, func(x any) bool { _, ok := x.(*Variant); return ok }) {
 		list = &g.refused

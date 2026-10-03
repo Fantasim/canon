@@ -48,7 +48,7 @@ func (s *stage) checkGenSupport(u *unit, es *emitSite) {
 
 // reportGenConstruct is one E8019 finding, at the construct's own span, for the Kind an emit's generator cannot produce.
 func (u *unit) reportGenConstruct(es *emitSite, span source.Span, kind diag.Kind) {
-	u.report(diag.E8019.At(span, targetWords[es.e.Target], modeWords[es.e.Mode], kind))
+	u.report(diag.E8019.AtMode(span, targetWords[es.e.Target], modeWords[es.e.Mode], kind))
 }
 
 // checkFieldlessCaseFns is E8019 `FieldlessCaseExportFn`: a case without fields has no class for its export fns (CODEGEN.md §5.5).

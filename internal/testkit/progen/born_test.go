@@ -35,12 +35,32 @@ func bornSig(born string) string {
 }
 
 // standsFor tells a kept counterexample of suite and name that stands for a failure signed sig:
-// its current failure's or the one it was born with.
+// its current failure's, or the one it was born with, variants aside, so that an archive born
+// before a code's variants split stands for the split signature.
 func standsFor(c *progen.Counterexample, suite, name, sig string) bool {
 	if c.Suite != suite || c.Name != name {
 		return false
 	}
-	return sigKey(c.Sig) == sigKey(sig) || sigKey(bornSig(c.Born)) == sigKey(sig)
+	return sigKey(c.Sig) == sigKey(sig) || unvaried(bornSig(c.Born)) == unvaried(sig)
+}
+
+// mismatchKinds are the signature kinds whose list is of finding shapes.
+var mismatchKinds = []string{kindExtra, kindMissing, kindRepeated}
+
+// unvaried is the key of sig with every shape's variant removed, each code once; a signature of
+// another kind is its key unchanged.
+func unvaried(sig string) string {
+	kind, list, _ := strings.Cut(sigKey(sig), " ")
+	if !slices.Contains(mismatchKinds, kind) {
+		return sigKey(sig)
+	}
+	var codes []string
+	for _, shape := range strings.Split(list, shapeSep) {
+		code, _, _ := strings.Cut(shape, variantSep)
+		codes = append(codes, code)
+	}
+	slices.Sort(codes)
+	return kind + " " + strings.Join(slices.Compact(codes), shapeSep)
 }
 
 // findingSet counts a run's findings by code and message, the places messages name cut.
@@ -260,5 +280,36 @@ func TestBornOfAndCovers(t *testing.T) {
 	}
 	if base.covers([]progen.Finding{moved, moved}) {
 		t.Error("covers must count: a second finding of one message is a leftover")
+	}
+}
+
+// An archive stands for its current signature, or its born one variants aside (born "extra
+// E8019" for "extra E8019/mode", "extra E3002/a" for "extra E3002/c", as bornGone); never for
+// another code, kind, suite or name; a non-mismatch signature is compared whole.
+func TestStandsFor(t *testing.T) {
+	code := string(diag.E8019.Def().Code)
+	split := kindExtra + " " + code + variantSep + "mode"
+	born := &progen.Counterexample{Suite: suiteMutation, Name: "m", Born: classMismatch + " " + kindExtra + " " + code}
+	other := string(diag.E3002.Def().Code)
+	varied := &progen.Counterexample{Suite: suiteMutation, Name: "m", Born: classMismatch + " " + kindExtra + " " + other + variantSep + "a"}
+	prop := &progen.Counterexample{Suite: suiteCorrupt, Name: "m", Born: classProperty + " idempotence in File/FnDecl"}
+	for _, tc := range []struct {
+		name       string
+		c          *progen.Counterexample
+		suite, sig string
+		stands     bool
+	}{
+		{"born before the split", born, suiteMutation, split, true},
+		{"born signature itself", born, suiteMutation, kindExtra + " " + code, true},
+		{"born in one variant, now in another", varied, suiteMutation, kindExtra + " " + other + variantSep + "c", true},
+		{"another code", born, suiteMutation, kindExtra + " " + other, false},
+		{"another kind", born, suiteMutation, kindMissing + " " + code, false},
+		{"another suite", born, suiteGrammar, split, false},
+		{"property, whole", prop, suiteCorrupt, "idempotence in File/FnDecl", true},
+		{"property, a slash is no variant", prop, suiteCorrupt, "idempotence in File/Other", false},
+	} {
+		if got := standsFor(tc.c, tc.suite, "m", tc.sig); got != tc.stands {
+			t.Errorf("%s: standsFor = %v, want %v", tc.name, got, tc.stands)
+		}
 	}
 }

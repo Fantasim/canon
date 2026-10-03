@@ -8,12 +8,12 @@ import (
 	"github.com/fantasim/canonlang/internal/types"
 )
 
-// checkTSDecoded is E8019 where gen/ts's decoders cannot read what a class they decode holds (CODEGEN.md §5.6, §5.13, DECISIONS 278): `DependentType` for a dependent map, a dependent value whose discriminant the reader does not hold (in a map, a literal union, a pairs slot or a fn result, or read through a ref or a record parameter), or a dependent type of another package; `ForeignDataRecord` for a record or variant of a package whose ts emit is not in types mode, the one that has public decoders; `CaseField` for a case used as a type; `DependentType` or `RecordCycleThroughMethod` for a field default its reader cannot write (tsDefault). A data emit decodes the classes its values reach, a types emit every class; a data value whose rows or record are another package's decodes through that package's types-mode decoder, so it is `ForeignDataRecord` when there is none, or when that record is a row there (its decoder requires `$id`).
+// checkTSDecoded is E8019 where gen/ts's decoders cannot read what a class they decode holds (CODEGEN.md §5.6, §5.13, DECISIONS 278): `DependentType` for a dependent map, a dependent value whose discriminant the reader does not hold (in a map, a literal union, a pairs slot or a fn result, or read through a ref or a record parameter), or a dependent type of another package; `ForeignDataRecord` for a record or variant of a package whose ts emit is not in types mode, the one that has public decoders; `CaseField` for a case used as a type; `DependentType` for a field default its reader cannot write (tsDefault). A data emit decodes the classes its values reach, a types emit every class; a data value whose rows or record are another package's decodes through that package's types-mode decoder, so it is `ForeignDataRecord` when there is none, or when that record is a row there (its decoder requires `$id`).
 func (s *stage) checkTSDecoded(u *unit, es *emitSite) {
-	decoded, cycles, strict := tsDecodedClasses(u, es.e), newLiteralCycles(s), s.tsStrictRows(u)
+	decoded, strict := tsDecodedClasses(u, es.e), s.tsStrictRows(u)
 	for _, class := range tsClasses(u.p) {
 		if decoded[class] {
-			s.checkTSClass(u, es, class, cycles, strict)
+			s.checkTSClass(u, es, class, strict)
 		}
 	}
 	for _, v := range selectedValues(u, es.e) {
@@ -29,13 +29,13 @@ func (s *stage) checkTSDecoded(u *unit, es *emitSite) {
 }
 
 // checkTSClass reports each field and stored fn of a decoded class that gen/ts cannot read, and each field default its reader cannot write.
-func (s *stage) checkTSClass(u *unit, es *emitSite, class any, cycles *literalCycles, strict func(*Record) bool) {
+func (s *stage) checkTSClass(u *unit, es *emitSite, class any, strict func(*Record) bool) {
 	fields, fns := classBody(class)
 	for _, f := range fields {
 		if f.Input != nil || f.Optional && f.Type.Kind == types.Never {
 			continue
 		}
-		if kind, bad := tsField(u, fields, f, cycles, strict); bad {
+		if kind, bad := tsField(u, fields, f, strict); bad {
 			u.reportGenConstruct(es, s.itemSpan(f, source.Span{}), kind)
 		}
 	}
@@ -179,12 +179,12 @@ func tsPlainRow(t *TypeRef, strict func(*Record) bool) bool {
 }
 
 // tsField is what a ts reader cannot read or write of field f: tsUnread, a plain foreign row (tsPlainRow), then its default (tsDefault).
-func tsField(u *unit, fields []*Field, f *Field, cycles *literalCycles, strict func(*Record) bool) (diag.Kind, bool) {
+func tsField(u *unit, fields []*Field, f *Field, strict func(*Record) bool) (diag.Kind, bool) {
 	if kind, bad := tsUnread(u, fields, f); bad {
 		return kind, true
 	}
 	if typeHolds(&f.Type, func(t *TypeRef) bool { return tsPlainRow(t, strict) }) {
 		return diag.KindForeignDataRecord, true
 	}
-	return tsDefault(f, cycles)
+	return tsDefault(f)
 }

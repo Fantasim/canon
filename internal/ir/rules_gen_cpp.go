@@ -110,7 +110,7 @@ func (s *stage) checkClassCycles(u *unit, es *emitSite) {
 	g := newClassGraph(u.p)
 	for _, c := range g.classes {
 		if g.state[c] == unvisited {
-			g.visit(c)
+			g.visit(c, false)
 		}
 	}
 	for _, c := range g.refused {

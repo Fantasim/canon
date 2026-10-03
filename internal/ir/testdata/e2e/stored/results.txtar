@@ -1,0 +1,203 @@
+WIRE.md §5.11 (WIR-09), decision 128, EVALUATION.md §2.3: a stored export fn whose result is a record or case with stored export fns of its own carries their `$` keys, so stage E precomputes them on the result: a precomputed method, a lookup method, a package fn, a case's method, and in `f`, json only, a result of another package's record (decision 194). Package `a` is baked for json, Go and ts, `d` is data for json, Go, C++ and ts, `e` embedded for json and ts; each builds with no finding and its code compiles. json.golden is every emitted json file, path first.
+-- project.canon --
+project demo {
+  canon: "0.1"
+  roots {
+    gen: "gen"
+  }
+  go_module {
+    gen: "example.com/gen"
+  }
+}
+-- m/m.canon --
+/// M.
+package m
+
+/// A mark.
+record Mark {
+  /// Its level.
+  level: Int
+  /// Twice the level.
+  export fn twice(self) -> Int { return level * 2 }
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A role.
+enum Role { reader, writer }
+
+/// A grade.
+record Grade {
+  /// Its points.
+  points: Int
+  /// One more.
+  export fn next(self) -> Int { return points + 1 }
+}
+
+/// A shape.
+variant Shape {
+  /// A box.
+  box {
+    /// Its side.
+    side: Int
+    /// Its grade.
+    export fn grade(self) -> Grade { return Grade { points: side } }
+  }
+}
+
+/// An item.
+record Item {
+  /// Its id.
+  id: String
+  /// Its weight.
+  weight: Int
+  /// Its shape.
+  shape: Shape
+  /// Its grade.
+  export fn graded(self) -> Grade { return Grade { points: weight } }
+  /// Its grade for a role.
+  export fn gradeFor(self, r: Role) -> Grade {
+    return match r { reader => Grade { points: 0 }, writer => Grade { points: weight } }
+  }
+}
+
+/// The items.
+let items: [Item] keyed by id = [
+  Item { id: "x", weight: 3, shape: Shape.box { side: 4 } },
+  Item { id: "y", weight: 5, shape: Shape.box { side: 6 } },
+]
+
+/// The best grade.
+export fn best() -> Grade { return Grade { points: 9 } }
+
+/// The grade of a role.
+export fn roleGrade(r: Role) -> Grade {
+  return match r { reader => Grade { points: 1 }, writer => Grade { points: 2 } }
+}
+
+emit json { out: "@gen/a/json/" }
+emit go { out: "@gen/a/go/", package: "a", mode: baked }
+emit ts { out: "@gen/a/ts/a.ts", mode: baked }
+-- f/f.canon --
+/// F.
+package f
+
+import m { Mark }
+
+/// A holder.
+record Holder {
+  /// Its id.
+  id: String
+  /// Its level.
+  level: Int
+  /// Its mark.
+  export fn mark(self) -> Mark { return Mark { level: level } }
+}
+
+/// The holders.
+let holders: [Holder] keyed by id = [ Holder { id: "h", level: 7 } ]
+
+emit json { out: "@gen/f/json/" }
+-- d/d.canon --
+/// D.
+package d
+
+/// A grade.
+record Grade {
+  /// Its points.
+  points: Int
+  /// One more.
+  export fn next(self) -> Int { return points + 1 }
+}
+
+/// An item.
+record Item {
+  /// Its id.
+  id: String
+  /// Its weight.
+  weight: Int
+  /// Its grade.
+  export fn graded(self) -> Grade { return Grade { points: weight } }
+}
+
+/// The items.
+let items: [Item] keyed by id = [ Item { id: "x", weight: 3 } ]
+
+emit json { out: "@gen/d/json/" }
+emit go { out: "@gen/d/go/", package: "d", mode: data }
+emit cpp { out: "@gen/d/cpp/", namespace: "d", mode: data }
+emit ts { out: "@gen/d/ts/d.ts", mode: data }
+-- e/e.canon --
+/// E.
+package e
+
+/// A grade.
+record Grade {
+  /// Its points.
+  points: Int
+  /// One more.
+  export fn next(self) -> Int { return points + 1 }
+}
+
+/// An item.
+record Item {
+  /// Its id.
+  id: String
+  /// Its weight.
+  weight: Int
+  /// Its grade.
+  export fn graded(self) -> Grade { return Grade { points: weight } }
+}
+
+/// The items.
+let items: [Item] keyed by id = [ Item { id: "x", weight: 3 } ]
+
+emit json { out: "@gen/e/json/" }
+emit ts { out: "@gen/e/ts/e.ts", mode: embedded }
+-- json.golden --
+== a/json/items.json
+{
+  "$schema": "a.Item@c4709932",
+  "rows": [
+    {"id": "x", "weight": 3, "shape": {"kind": "box", "side": 4, "$grade": {"points": 4, "$next": 5}}, "$graded": {"points": 3, "$next": 4}, "$gradeFor": {"reader": {"points": 0, "$next": 1}, "writer": {"points": 3, "$next": 4}}},
+    {"id": "y", "weight": 5, "shape": {"kind": "box", "side": 6, "$grade": {"points": 6, "$next": 7}}, "$graded": {"points": 5, "$next": 6}, "$gradeFor": {"reader": {"points": 0, "$next": 1}, "writer": {"points": 5, "$next": 6}}}
+  ],
+  "$fns": {
+    "best": {
+      "points": 9,
+      "$next": 10
+    },
+    "roleGrade": {
+      "reader": {
+        "points": 1,
+        "$next": 2
+      },
+      "writer": {
+        "points": 2,
+        "$next": 3
+      }
+    }
+  }
+}
+== d/json/items.json
+{
+  "$schema": "d.Item@a725d402",
+  "rows": [
+    {"id": "x", "weight": 3, "$graded": {"points": 3, "$next": 4}}
+  ]
+}
+== e/json/items.json
+{
+  "$schema": "e.Item@a725d402",
+  "rows": [
+    {"id": "x", "weight": 3, "$graded": {"points": 3, "$next": 4}}
+  ]
+}
+== f/json/holders.json
+{
+  "$schema": "f.Holder@7242c0ad",
+  "rows": [
+    {"id": "h", "level": 7, "$mark": {"level": 7, "$twice": 14}}
+  ]
+}

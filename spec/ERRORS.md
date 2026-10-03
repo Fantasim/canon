@@ -353,7 +353,7 @@ func (codeE2103) AtSeveral(span source.Span, typ string, colls []string) *Builde
 
 ---
 
-The catalogue holds 301 codes: 280 errors, 18 warnings and 3 run-time codes, with 474 messages.
+The catalogue holds 301 codes: 280 errors, 18 warnings and 3 run-time codes, with 475 messages.
 
 ## E10xx, W10xx: Project file, doc comments and naming
 
@@ -1202,7 +1202,8 @@ Owner: CODEGEN.md, WIRE.md.
 | E8015 | - | value:Name, typ:Type | `{value} has type {typ}: data and embedded modes emit tables, keyed lists and records` |
 | E8017 | - | branch:Name, alias:Name, typ:Type | `branch {branch} of {alias} has type {typ}: dependent types may only have scalar, String, enum or ref branches` |
 | E8018 | - | typ:Name, emit:Name, pkg:Name | `{typ} is decoded from JSON by {emit}, but package {pkg} is emitted in baked mode` |
-| E8019 | - | target:Name, mode:Name, what:Kind | `emit {target} in {mode} mode cannot generate {what}` |
+| E8019 | mode | target:Name, mode:Name, what:Kind | `emit {target} in {mode} mode cannot generate {what}` |
+| E8019 | json | what:Kind | `emit json cannot generate {what}` |
 | E8020 | - | name:Name | `constant {name} is -0.0, which a Go constant cannot hold: make it a let` |
 | E8101 | field | value:Value, field:Name | `{value} does not fit a TypeScript number; add @ts(bigint) to {field}` |
 | E8101 | result | value:Value, fn:Name | `{value} does not fit a TypeScript number; {fn} is precomputed for TypeScript and cannot be bigint` |

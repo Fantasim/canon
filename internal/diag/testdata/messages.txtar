@@ -414,7 +414,8 @@ E8014 -: types mode cannot emit the computed default of resource.vocab.items: th
 E8015 -: resource.vocab.items has type Int: data and embedded modes emit tables, keyed lists and records
 E8017 -: branch resource.vocab.items of resource.vocab.items has type Int: dependent types may only have scalar, String, enum or ref branches
 E8018 -: resource.vocab.items is decoded from JSON by resource.vocab.items, but package resource.vocab.items is emitted in baked mode
-E8019 -: emit resource.vocab.items in resource.vocab.items mode cannot generate a case used as a type
+E8019 mode: emit resource.vocab.items in resource.vocab.items mode cannot generate a case used as a type
+E8019 json: emit json cannot generate a case used as a type
 E8020 -: constant resource.vocab.items is -0.0, which a Go constant cannot hold: make it a let
 E8101 field: "II_SYS_SYS_SCR_FARM3" does not fit a TypeScript number; add @ts(bigint) to resource.vocab.items
 E8101 result: "II_SYS_SYS_SCR_FARM3" does not fit a TypeScript number; resource.vocab.items is precomputed for TypeScript and cannot be bigint
