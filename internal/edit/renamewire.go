@@ -23,7 +23,7 @@ type splice struct {
 func (s *Snapshot) wireSplice(f *syntax.File, fd *syntax.FieldDecl, field *types.Field, newName string) (splice, bool) {
 	ann := annotationNamed(fd.Annotations, syntax.AnnJSON)
 	if arg := positionalArg(ann); arg != nil {
-		if stringText(arg.Value) != wireName(newName, s.wireCase(f, fd)) {
+		if stringText(arg.Value) != check.ConvertCase(newName, s.wireCase(f, fd)) {
 			return splice{}, false
 		}
 		return dropArg(f, ann, arg), true
@@ -142,65 +142,6 @@ func caseArg(ann *syntax.Annotation) string {
 	}
 	return ""
 }
-
-// wireName is a field's default wire name under the case style (WIRE.md 5.5.2): its words
-// joined by the style's separator, in its letter case; the name itself for camel or none.
-func wireName(name, style string) string {
-	st, ok := caseStyles[style]
-	if !ok {
-		return name
-	}
-	words := nameWords(name)
-	for i, w := range words {
-		words[i] = st.letters(w)
-	}
-	return strings.Join(words, st.sep)
-}
-
-// caseStyle is how a case style writes a name's words: their separator and letter case.
-type caseStyle struct {
-	sep     string
-	letters func(string) string
-}
-
-// nameWords splits a Canon name into words (WIRE.md 5.5.2 rules 1-3).
-func nameWords(name string) []string {
-	var words []string
-	start := 0
-	for i := range len(name) {
-		switch {
-		case name[i] == underscore[0]:
-			words, start = appendNonEmpty(words, name[start:i]), i+1
-		case i > start && wordStarts(name, i):
-			words, start = appendNonEmpty(words, name[start:i]), i
-		}
-	}
-	return appendNonEmpty(words, name[start:])
-}
-
-func appendNonEmpty(words []string, w string) []string {
-	if w == "" {
-		return words
-	}
-	return append(words, w)
-}
-
-// wordStarts is WIRE.md 5.5.2 rule 2 at name[i]: an upper-case letter after a lower-case
-// letter or a digit, or the last of upper-case letters before a lower-case one.
-func wordStarts(name string, i int) bool {
-	prev, c := name[i-1], name[i]
-	if !isUpperASCII(c) {
-		return false
-	}
-	if isLowerASCII(prev) || isDigit(prev) {
-		return true
-	}
-	return isUpperASCII(prev) && i+1 < len(name) && isLowerASCII(name[i+1])
-}
-
-func isUpperASCII(c byte) bool { return 'A' <= c && c <= 'Z' }
-
-func isLowerASCII(c byte) bool { return 'a' <= c && c <= 'z' }
 
 // onWire reports a field whose record or case is reachable, never through a ref, from the
 // expected type of a load or the declared type of a value an emit writes as data (API.md E34).

@@ -5,64 +5,21 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/fs"
-	"os"
-	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
 
 	"github.com/fantasim/canonlang/internal/cli"
+	"github.com/fantasim/canonlang/internal/testkit/fixture"
 	"github.com/fantasim/canonlang/internal/testkit/golden"
 )
-
-// renamesProject is the project file of a copy of examples/features/renames, its roots inside the copy.
-const renamesProject = `project renames {
-  canon: "0.1"
-
-  roots {
-    source: "out/source"
-    generated: "out/generated"
-  }
-
-  languages: [en, fr]
-  studio: studio
-}
-`
-
-// renamesSources are the example trees the copy takes, by directory under examples/.
-var renamesSources = []string{"features/renames", "studio", "sovcommon/time"}
 
 // copyRenames is a temporary copy of the renames example with what it imports; expected/ stays behind.
 func copyRenames(t *testing.T) string {
 	t.Helper()
 	dir := t.TempDir()
-	if err := os.WriteFile(filepath.Join(dir, "project.canon"), []byte(renamesProject), 0o600); err != nil {
+	if err := fixture.CopyRenames(dir, examplesDir); err != nil {
 		t.Fatal(err)
-	}
-	for _, src := range renamesSources {
-		err := fs.WalkDir(os.DirFS(examplesDir), src, func(p string, d fs.DirEntry, err error) error {
-			if err != nil {
-				return err
-			}
-			if d.IsDir() {
-				if d.Name() == "expected" {
-					return fs.SkipDir
-				}
-				return os.MkdirAll(filepath.Join(dir, filepath.FromSlash(p)), 0o750)
-			}
-			if !strings.HasSuffix(p, ".canon") && !strings.HasSuffix(p, ".json") {
-				return nil
-			}
-			data, err := os.ReadFile(filepath.Join(examplesDir, filepath.FromSlash(p)))
-			if err != nil {
-				return err
-			}
-			return os.WriteFile(filepath.Join(dir, filepath.FromSlash(p)), data, 0o600)
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
 	}
 	return dir
 }

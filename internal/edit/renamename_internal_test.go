@@ -5,6 +5,8 @@ import (
 	"errors"
 	"slices"
 	"testing"
+
+	"github.com/fantasim/canonlang/internal/check"
 )
 
 // API.md E34 (WIRE.md 5.5.2): the default wire name a renamed field's converse compares with,
@@ -23,11 +25,11 @@ func TestRenameWireName(t *testing.T) {
 		{"__max__players", "max_players", "max-players", "MAX_PLAYERS"},
 	}
 	for _, c := range cases {
-		got := []string{wireName(c.name, "snake"), wireName(c.name, "kebab"), wireName(c.name, "upper_snake")}
+		got := []string{check.ConvertCase(c.name, "snake"), check.ConvertCase(c.name, "kebab"), check.ConvertCase(c.name, "upper_snake")}
 		if want := []string{c.snake, c.kebab, c.upper}; !slices.Equal(got, want) {
 			t.Errorf("WIRE.md §5.5.2, %s: %v, want %v", c.name, got, want)
 		}
-		if wireName(c.name, "camel") != c.name || wireName(c.name, "") != c.name {
+		if check.ConvertCase(c.name, "camel") != c.name || check.ConvertCase(c.name, "") != c.name {
 			t.Errorf("WIRE.md §5.5.2, %s: camel or no case changes the name", c.name)
 		}
 	}

@@ -16,7 +16,7 @@ func (c *checker) fieldAnnotations(env *env, f *types.Field, fd *syntax.FieldDec
 		f.Deprecated = &types.Deprecation{Why: why}
 	}
 	f.Stable = annotation(fd.Annotations, annotStable) != nil
-	f.Wire = convertCase(f.Name, wireCase)
+	f.Wire = ConvertCase(f.Name, wireCase)
 	f.WirePath = []string{f.Wire}
 	j := annotation(fd.Annotations, annotJSON)
 	if j == nil {
@@ -304,8 +304,8 @@ func pairSlots(t types.Type) (int, bool) {
 	return int(n), n >= 0
 }
 
-// convertCase is a field's default wire name under `@json(case:)` (WIRE.md §5.5.2).
-func convertCase(name, wireCase string) string {
+// ConvertCase is a field's default wire name under `@json(case:)` (WIRE.md §5.5.2).
+func ConvertCase(name, wireCase string) string {
 	var join string
 	upper := false
 	switch wireCase {
@@ -343,7 +343,7 @@ func splitWords(name string) []string {
 		if i > 0 && boundary(name, i) {
 			words, cur = appendWord(words, cur), ""
 		}
-		cur += string(ch)
+		cur += name[i : i+1]
 	}
 	return appendWord(words, cur)
 }

@@ -3,7 +3,6 @@ package edit
 import (
 	"context"
 	"io/fs"
-	"strings"
 
 	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/diag"
@@ -260,11 +259,10 @@ const (
 	jsonArgPath, jsonArgPairs, jsonArgInline = "path", "pairs", "inline"
 )
 
-// kindWords are I18N.md K4's kind words of fields and methods; caseStyles WIRE.md 5.5.2's
-// styles; loadsData, codeTargets and dataModes what reads or writes data (API.md E34).
+// kindWords are I18N.md K4's kind words of fields and methods; loadsData, codeTargets and
+// dataModes what reads or writes data (API.md E34).
 var (
 	kindWords   = map[check.ObjKind]string{check.ObjField: syntax.WordField, check.ObjMethod: syntax.WordMethod}
-	caseStyles  = map[string]caseStyle{"snake": {underscore, strings.ToLower}, "kebab": {"-", strings.ToLower}, "upper_snake": {underscore, strings.ToUpper}}
 	loadsData   = map[string]bool{"dir": true, "csv": true}
 	codeTargets = map[string]bool{check.TargetGo: true, check.TargetCpp: true, check.TargetTS: true}
 	dataModes   = map[string]bool{check.ModeEmbedded: true, check.ModeData: true, check.ModeTypes: true}
