@@ -129,6 +129,8 @@ from IR fixtures" and M2's `embedded` example were accepted without these genera
   A1 `canon edit`, A2 rename sync then build.
 - [ ] **M6 Legacy C++ and TypeScript** (CPP, TS; may start after M3): `legacycpp` in three modes;
   TS goldens pass `tsc --strict` and `node --test`; `E8101` tested.
+  **TypeScript part done** (cloud run 1, 2026-10-03: T1 `b15485d` on `claude/m6-run-1`, DECISIONS
+  278, 279; tsc 5.0 and current, node). Legacy C++ part not started.
 - [ ] **M7 Migration** (MIG, `convert`; VM for `i18n stub|status`; `infer` dropped, DECISIONS
   188): convert proof; `i18n stub fr` golden.
 - [x] **Multi-destination emits** (DECISIONS 229, 269; CG with GO/CPP/TS, after M4, before M7's
@@ -144,6 +146,10 @@ from IR fixtures" and M2's `embedded` example were accepted without these genera
 
 - [ ] **Hardening**: M1.5 second wave (type-directed + metamorphic progen suites) and acceptance;
   the deferred long fuzz/progen campaigns, each under its memory cap.
+  Cloud run 1 (2026-10-03): 85 kept archives triaged, 83 closed (H1 `182eb81`, H2 `6303766`); the
+  last two wait on gen/go table fields and cross-package decoders (unit GG). Suites 3-4 exist (A6);
+  the grammar suite gains layer, translation and project files (HW1). Still owed: the nightly
+  acceptance run (3 seeds, N=10000, 3 GB cap).
 - [ ] **Telemetry, first real use**: `examples/telemetry` dry run (5-10 real events), then the port
   through a handoff (`Source/` X-macros read Canon IDs/metadata; monitoring uses generated Go and
   build-time DDL). M6 and M7 follow.
