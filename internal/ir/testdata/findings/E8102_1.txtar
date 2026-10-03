@@ -1,0 +1,37 @@
+WIRE.md §5.1, §5.11, decision 283: a method's precomputed result is written as a `$` key, so a record it returns whose field has no wire form (1.5 s read as 1500ms, no whole number of seconds) is E8102 at stage E, at the value; a result in whole units is fine.
+-- a/a.canon --
+package a
+
+/// Inner.
+record Inner {
+  /// Wait.
+  wait: Duration @json(unit: s)
+}
+
+/// Box.
+record Box {
+  /// N.
+  n: Int
+
+  /// Inner.
+  export fn inner(self) -> Inner { return { wait: 1500ms } }
+
+  /// Whole.
+  export fn whole(self) -> Inner { return { wait: 2s } }
+}
+
+/// Box.
+let box: Box = { n: 1 }
+
+emit json { out: "out/" }
+-- a.box.json --
+{ "n": 1 }
+-- a.inner.calls.json --
+{ "": { "wait": 1.5 } }
+-- a.whole.calls.json --
+{ "": { "wait": 2 } }
+-- findings.txt --
+error[E8102]  a.inner.calls.json:1:17
+  1s500ms has no wire form for wait: not a whole number of s
+
+1 error, 0 warnings in 1 package (…)

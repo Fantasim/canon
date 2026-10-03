@@ -6,6 +6,7 @@ import (
 	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
+	"github.com/fantasim/canonlang/internal/wire"
 )
 
 // fnSite is an export fn with what stage E needs to compute and judge it.
@@ -122,25 +123,13 @@ func bodyFns(items []syntax.RecordItem) []*syntax.FnDecl {
 	return out
 }
 
-// kindOf is how an export fn is emitted (SPEC §9.4): no parameter, only finite ones, else translated. Finite is as check's `$` keys read it (WIRE.md §5.11): Bool, an enum, a ref into a collection that is not a keyed list.
+// kindOf is how an export fn is emitted (SPEC §9.4): no parameter, only finite ones (wire.Stored, WIRE.md §5.11), else translated.
 func kindOf(sig *types.FuncType) FnKind {
-	if len(sig.Params) == 0 {
+	switch {
+	case len(sig.Params) == 0:
 		return FnPrecomputed
+	case wire.Stored(sig):
+		return FnLookup
 	}
-	for _, p := range sig.Params {
-		if !finite(p) {
-			return FnTranslated
-		}
-	}
-	return FnLookup
-}
-
-func finite(t types.Type) bool {
-	switch x := t.Base().(type) {
-	case *types.RefType:
-		return x.Target != nil && x.Target.KeyedBy == nil
-	default:
-		k := t.Base().Kind()
-		return k == types.Bool || k == types.Enum
-	}
+	return FnTranslated
 }

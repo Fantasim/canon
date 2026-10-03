@@ -1,0 +1,28 @@
+WIRE.md §5.3: a `@json(bits)` list holding the same member twice has no encoding, E8102 at the repeated member, checked in verification; a list of distinct members and the empty list are fine.
+-- a/a.canon --
+/// A.
+package a
+
+/// Flag.
+enum Flag @codes(UInt32) { tradable = 1, droppable = 2, soulbound = 4 }
+
+/// Box.
+record Box {
+  /// Flags.
+  flags: [Flag] @json(bits)
+}
+
+/// Box.
+let box: Box = { flags: [tradable, soulbound, tradable] }
+
+/// Fine.
+let fine: [Box] = [{ flags: [soulbound, tradable] }, { flags: [] }]
+-- project.canon --
+project demo {
+  canon: "0.1"
+}
+-- findings.txt --
+error[E8102]  a/a.canon:14:47
+  box.flags: [tradable, soulbound, tradable] has no wire form for flags: tradable appears twice in a bits set
+
+1 error, 0 warnings in 1 package (…)

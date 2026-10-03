@@ -1,0 +1,50 @@
+WIRE.md §5.1: a Duration whose field writes it in a unit (`@json(unit: s)`) has a wire form only when it is a whole number of that unit, and verification reports E8102 for every evaluated value, so `canon check` finds it before `canon build` would write it: 1500ms in seconds, alone, in a list, in an optional and as a map value (WIRE.md §4.1: the unit reaches every Duration of the field's type outside a named type) and in a list of lists is E8102 at the value and at its own path (API.md F1, DECISIONS 283); whole seconds and none are fine.
+-- a/a.canon --
+/// A.
+package a
+
+/// Box.
+record Box {
+  /// Wait.
+  wait: Duration @json(unit: s)
+  /// Steps.
+  steps: [Duration] = [] @json(unit: s)
+  /// Maybe.
+  maybe: Duration? = none @json(unit: s)
+  /// By name.
+  byName: {String: Duration} = {} @json(unit: s)
+  /// Nested.
+  nested: [[Duration]] = [] @json(unit: s)
+}
+
+/// Box.
+let box: Box = { wait: 1500ms, steps: [2s, 2500ms], maybe: 1500ms, byName: { "a": 1s, "b": 1001ms }, nested: [[1s, 1500ms]] }
+
+/// Fine.
+let fine: Box = { wait: 2s, steps: [1m], byName: { "a": 3s } }
+
+emit json { out: "@web/json/" }
+-- project.canon --
+project demo {
+  canon: "0.1"
+  roots {
+    web: "web"
+  }
+}
+-- findings.txt --
+error[E8102]  a/a.canon:19:24
+  box.wait: 1s500ms has no wire form for wait: not a whole number of s
+
+error[E8102]  a/a.canon:19:44
+  box.steps[1]: 2s500ms has no wire form for steps: not a whole number of s
+
+error[E8102]  a/a.canon:19:60
+  box.maybe: 1s500ms has no wire form for maybe: not a whole number of s
+
+error[E8102]  a/a.canon:19:92
+  box.byName[b]: 1s1ms has no wire form for byName: not a whole number of s
+
+error[E8102]  a/a.canon:19:116
+  box.nested[0][1]: 1s500ms has no wire form for nested: not a whole number of s
+
+5 errors, 0 warnings in 1 package (…)

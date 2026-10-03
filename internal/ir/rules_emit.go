@@ -17,7 +17,7 @@ func init() {
 	code := []func(*stage, *unit, *emitSite){(*stage).checkImports, (*stage).checkMode, (*stage).checkGenSupport}
 	emitRules[TargetGo], emitRules[TargetCpp] = code, code
 	emitRules[TargetTS] = append(slices.Clone(code), (*stage).checkSafeInts, (*stage).checkNoInputs)
-	emitRules[TargetJSON] = []func(*stage, *unit, *emitSite){(*stage).checkWireForms}
+	emitRules[TargetJSON] = []func(*stage, *unit, *emitSite){(*stage).checkWireForms, (*stage).checkFnResultForms}
 	modeRules[ModeEmbedded] = []func(*stage, *unit, *emitSite){(*stage).checkContainers, (*stage).checkDecoders, (*stage).checkFingerprinted}
 	modeRules[ModeData] = []func(*stage, *unit, *emitSite){(*stage).checkContainers, (*stage).checkDecoders, (*stage).checkDataFns, (*stage).checkFingerprinted}
 	modeRules[ModeTypes] = []func(*stage, *unit, *emitSite){(*stage).checkDecoders, (*stage).checkTypesMode}

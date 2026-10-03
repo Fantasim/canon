@@ -4,7 +4,7 @@ bits and none forms as the field's whole value (a literal's item, a default, thr
 if branches, match arms and both sides of `??`); its unit and int form as an element, a
 comprehension element or a map value below it, at any depth. The none marker tells the two apart:
 `0` is none as the whole value, 0s below it. A load whose expected type comes from an argument or a let annotation is not in a field's
-scope: `5` is 5ms there.
+scope: `5` is 5ms there, which then has no wire form in seconds for `arg` (E8102, WIRE.md §5.1).
 -- paths --
 a:cfg.d
 a:cfg.b
@@ -188,4 +188,7 @@ a:cfg.wi = {"a": 0s}
 a:plain = 5ms
   json @resource/five.json:1:1-1:2
 
-0 errors, 0 warnings in 1 package (…)
+error[E8102]  @resource/five.json:1:1
+  cfg.arg: 5ms has no wire form for arg: not a whole number of s
+
+1 error, 0 warnings in 1 package (…)

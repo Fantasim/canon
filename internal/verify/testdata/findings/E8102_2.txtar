@@ -1,0 +1,60 @@
+WIRE.md §5.4: a non-`none` value whose encoding equals its field's `@json(none:)` marker (JSON equality: numbers by exact value) has no wire form, E8102 at the value, checked in verification: -1 under `none: -1`, a `@json(codes)` member whose code is the marker, an empty bits list under `none: 0`, a record whose only export fn is translated (no `$` key, so `{}`) under `none: {}`; none itself, other values and a record with a stored fn's `$` key are fine.
+-- a/a.canon --
+/// A.
+package a
+
+/// Element.
+enum Element @codes(UInt8) @json(codes) { FIRE = 1, WATER = 2 }
+
+/// Flag.
+enum Flag @codes(UInt32) { tradable = 1, soulbound = 4 }
+
+/// Empty: its translated fn writes no `$` key.
+record Empty {
+  /// Twice.
+  export fn twice(self, n: Int) -> Int { return n * 2 }
+}
+
+/// Stored: its stored fn writes a `$` key.
+record Stored {
+  /// One.
+  export fn one(self) -> Int { return 1 }
+}
+
+/// Box.
+record Box {
+  /// Parent.
+  parent: Int? @json(none: -1)
+  /// Element.
+  element: Element? = none @json(none: 1.0)
+  /// Flags.
+  flags: [Flag]? = none @json(bits, none: 0)
+  /// Empty.
+  empty: Empty? = none @json(none: {})
+  /// Stored.
+  stored: Stored? = none @json(none: {})
+}
+
+/// Box.
+let box: Box = { parent: -1, element: FIRE, flags: [], empty: {}, stored: {} }
+
+/// Fine.
+let fine: Box = { parent: none, element: WATER, flags: [soulbound] }
+-- project.canon --
+project demo {
+  canon: "0.1"
+}
+-- findings.txt --
+error[E8102]  a/a.canon:37:26
+  box.parent: -1 has no wire form for parent: it equals the none marker -1
+
+error[E8102]  a/a.canon:37:39
+  box.element: FIRE has no wire form for element: it equals the none marker 1
+
+error[E8102]  a/a.canon:37:52
+  box.flags: [] has no wire form for flags: it equals the none marker 0
+
+error[E8102]  a/a.canon:37:63
+  box.empty: Empty{} has no wire form for empty: it equals the none marker {}
+
+4 errors, 0 warnings in 1 package (…)

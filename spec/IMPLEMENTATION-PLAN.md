@@ -112,13 +112,13 @@ one position type; JSON sources get their own syntax tree (`jsonsrc`) because bo
 | `eval` | interpreter, budget, freezing / copy-on-write, poisoning, layer application; `eval/std` stdlib; the `Host` interface through which it reaches `load` and `verify` (§4.8) | EVALUATION.md, STDLIB.md | check, value |
 | `wire` | wire decode (JSON, CSV cells) into values; canonical JSON encode | WIRE.md | value, types, jsonsrc |
 | `load` | `load`, `load.dir`, `load.defines`, `load.csv`, `load.text`, `at:`, globs, assets listing cache | SPEC §13, LOD-01..11, TYP-21 | wire, project, value |
-| `verify` | refinements, refs, keys, dependent types, assets (EVALUATION.md §1: stage B, verify) | TYPES.md (verification), EVALUATION.md §5 | eval, value, load |
+| `verify` | refinements, refs, keys, dependent types, assets (EVALUATION.md §1: stage B, verify) | TYPES.md (verification), EVALUATION.md §5 | eval, value, load, wire (E8102, DECISIONS 283) |
 | `lock` | `canon.lock` parse, print, append, rules `E6xxx` | LOCK.md | value, project |
 | `rules` | record and package checks, `fail`/`warn`, test blocks and `expect` | EVALUATION.md (checks, tests), SPEC §10, §18 | eval, verify |
 | `i18n` | key catalogue, translation files, fallback, `i18n stub`/`status` | I18N.md | check |
 | `api/vm` (package `vm`) | view-model Go structs, generated from `spec/viewmodel.schema.json`; `ViewModel.Decode` targets them (API.md §5.4) | VIEWMODEL.md, viewmodel.schema.json | — |
 | `views` | view resolution (groups, controls, labels, `when`/`show`, usage, search index) shared by `gen/view` and `Evaluate` | VIEWMODEL.md, MOCKUP-GAPS | check, eval, i18n, api/vm |
-| `ir` | target-neutral emit IR (§4.5 of this plan), fingerprint, emit validation (stage E), portable-subset check (`E9xxx`) | §4.5, FINGERPRINT.md, CODEGEN.md (what the IR must carry) | check, verify, value, types, project |
+| `ir` | target-neutral emit IR (§4.5 of this plan), fingerprint, emit validation (stage E), portable-subset check (`E9xxx`) | §4.5, FINGERPRINT.md, CODEGEN.md (what the IR must carry) | check, verify, value, types, project, wire (E8102, DECISIONS 283) |
 | `conform` | conformance vector selection and expected results | CONFORMANCE.md | ir, eval |
 | `gen/json` | `emit json` files | WIRE.md (emit layout) | ir, wire |
 | `gen/go` | Go code, `rt` package, Go conformance tests | CODEGEN.md (Go), CONFORMANCE.md | ir, conform |

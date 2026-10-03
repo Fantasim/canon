@@ -1,0 +1,42 @@
+WIRE.md §5.1, API.md P9, DECISIONS 283: an E8102 map value sits at its entry's path, its key written by the key type computed for the instance (TYPES.md §11.5): under `Mode | "all"` the literal "all" is a JSON string and a member a word; under `String` "all" is a word.
+-- a/a.canon --
+/// A.
+package a
+
+/// Mode.
+enum Mode { each, flat }
+
+/// Key.
+type Key(m: Mode) = match m {
+  each => Mode | "all"
+  flat => String
+}
+
+/// Box.
+record Box {
+  /// Mode.
+  mode: Mode
+  /// Waits.
+  waits: {Key(mode): Duration} @json(unit: s)
+}
+
+/// Boxes.
+let boxes: [Box] = [
+  { mode: each, waits: { "all": 1500ms, each: 2500ms, flat: 2s } },
+  { mode: flat, waits: { "all": 500ms } },
+]
+-- project.canon --
+project demo {
+  canon: "0.1"
+}
+-- findings.txt --
+error[E8102]  a/a.canon:23:33
+  boxes[0].waits["all"]: 1s500ms has no wire form for waits: not a whole number of s
+
+error[E8102]  a/a.canon:23:47
+  boxes[0].waits[each]: 2s500ms has no wire form for waits: not a whole number of s
+
+error[E8102]  a/a.canon:24:33
+  boxes[1].waits[all]: 500ms has no wire form for waits: not a whole number of s
+
+3 errors, 0 warnings in 1 package (…)

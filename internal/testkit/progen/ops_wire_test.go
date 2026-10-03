@@ -17,6 +17,10 @@ func wireOperators() []operator {
 	return []operator{
 		op(diag.E3203.Def().Code, "WIRE.md §5.1 (Duration with a fraction of a ms)", onMembers(ofType(durationType), editValue(".0000001"))),
 		op(diag.E3315.Def().Code, "WIRE.md §5.4 (null for a field not optional)", onMembers(notOptional, setValue("null"))),
+		op(diag.E8102.Def().Code, "WIRE.md §5.1 (Duration finer than its field's unit)", addField(newField{
+			field: `zzWait: ZzSeconds? @json("zzWait", unit: s)`, decl: "/// Seconds.\ntype ZzSeconds = Duration",
+			before: `"zzWait": `, focus: `1.5`,
+		})),
 		op(diag.E7103.Def().Code, "WIRE.md §5.1 (fraction for an integer)", onMembers(ofType(integerType), editValue(".0"))),
 		op(diag.E7104.Def().Code, "WIRE.md §3.2 (duplicate key)", onMembers(anyMember, duplicateMember)),
 		op(diag.E7105.Def().Code, "WIRE.md §3.1 (not UTF-8)", onMembers(stringValue, insertInString("\xff"))),

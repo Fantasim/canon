@@ -1,0 +1,12 @@
+WIRE.md §5.1: decoding reads any number of the field's unit whose value is a whole number of milliseconds, so `"cast_time": 1.5` under `@json(unit: s)` decodes to 1s500ms, which has no wire form in seconds: E8102 at the value, reported by verification (`FieldForms`) before writing; `2` seconds is fine.
+-- type --
+fpdemo.Skill
+-- skills/SI_FIREBALL.json --
+{"dwID": "SI_FIREBALL", "legacy": {"reqMp": 0, "reqFp": 0}, "flags": 0, "bTwoHanded": 0, "side": "both", "cast_time": 1.5, "weights": {}}
+-- skills/SI_ICE.json --
+{"dwID": "SI_ICE", "legacy": {"reqMp": 0, "reqFp": 0}, "flags": 0, "bTwoHanded": 0, "side": "both", "cast_time": 2, "weights": {}}
+-- findings.txt --
+error[E8102]  skills/SI_FIREBALL.json:1:119
+  1s500ms has no wire form for castTime: not a whole number of s
+
+1 error, 0 warnings in 1 package (…)

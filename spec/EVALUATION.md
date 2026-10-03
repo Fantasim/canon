@@ -241,6 +241,7 @@ evaluation completed. Verification walks the value (not through refs) and checks
 | dependent types: each dependent value fits the type computed from its arguments; symbolic identifiers resolve | `E3802`, `E3801`, `E3501` | the value |
 | assets exist, with an allowed extension and a clean path | `E3701`–`E3703` | the value |
 | stable ids, `@codes`, `@stable` values | `E6xxx`, `E3102` | per LOCK.md |
+| every value has a wire form for its field (WIRE §5.1, §5.3, §5.4; DECISIONS 283) | `E8102` | the value without one (a list or map element at its own path); a repeated bits member at its second occurrence |
 
 Verification findings are soft. The offending sub-value is marked invalid. Type functions
 evaluated here cost steps (§12); an evaluation error inside one is a hard error charged to the

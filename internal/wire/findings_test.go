@@ -12,6 +12,7 @@ import (
 	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/testkit/golden"
 	"github.com/fantasim/canonlang/internal/types"
+	"github.com/fantasim/canonlang/internal/value"
 	"github.com/fantasim/canonlang/internal/wire"
 )
 
@@ -88,16 +89,62 @@ func (c caseRun) decode(t *testing.T, name string, data []byte) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	var v value.Value
 	var derr error
 	if ext == ".csv" {
 		rows := cells(f)
-		_, _, derr = c.dec.CSV(context.Background(), rows[0], rows[1:], c.typ)
+		v, _, derr = c.dec.CSV(context.Background(), rows[0], rows[1:], c.typ)
 	} else if root, err := jsonsrc.Parse(f, c.dec.Bag); err == nil {
-		_, _, derr = c.dec.Decode(context.Background(), wire.Selection{Node: root}, c.typ)
+		v, _, derr = c.dec.Decode(context.Background(), wire.Selection{Node: root}, c.typ)
 	}
 	if derr != nil {
 		t.Fatalf("%s: %v", name, derr)
 	}
+	reportForms(c.dec.Bag, v)
+}
+
+// reportForms reports, as verify does, each part of a decoded value Encode refuses (WIRE.md §5.1, E8102).
+func reportForms(bag *diag.Bag, v value.Value) {
+	switch x := v.(type) {
+	case *value.Record:
+		for i, f := range recordFields(x.T) {
+			for _, form := range wire.FieldForms(f, x.Fields[i]) {
+				form.At(spanOf(form.Site), f.Name).Report(bag)
+			}
+			reportForms(bag, x.Fields[i])
+		}
+	case *value.List:
+		for _, e := range x.Elems {
+			reportForms(bag, e)
+		}
+	case *value.Map:
+		for _, e := range x.Vals {
+			reportForms(bag, e)
+		}
+	case *value.Table:
+		for _, e := range x.Entries {
+			reportForms(bag, e)
+		}
+	}
+}
+
+// spanOf is where a decoded value was read, none without provenance.
+func spanOf(v value.Value) source.Span {
+	if p := v.Prov(); p != nil {
+		return p.Span
+	}
+	return source.Span{}
+}
+
+// recordFields is the fields of a record or case type.
+func recordFields(t types.Type) []*types.Field {
+	switch d := t.Base().(type) {
+	case *types.RecordType:
+		return d.Fields
+	case *types.CaseType:
+		return d.Fields
+	}
+	return nil
 }
 
 // filterFixture is `record Filter { eventType: ref eventTypes  v: Param(eventType) | "all" }`.

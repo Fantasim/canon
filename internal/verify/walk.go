@@ -119,6 +119,7 @@ func (w *walker) fields(r *value.Record, t types.Type, at *Path, sc scope) value
 		if i < len(r.Fields) {
 			fsc.field = f.Name
 			fields.set(i, w.walk(r.Fields[i], f.Type, at.Field(f.Name), fsc))
+			w.wireForm(f, fields.at(i), at.Field(f.Name), fsc.env)
 		}
 	}
 	if !fields.changed() {

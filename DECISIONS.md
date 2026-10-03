@@ -2618,6 +2618,18 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      names its place, the value evaluated and the function that met it. Reason: B1 (sweep ICE),
      log-2026-10-03.
 
+283. **E8102 is a verification finding, export fn results included (WIRE.md §5.1, §5.3, §5.4;
+     IMPLEMENTATION-PLAN §3).** A value with no wire form for its field (not a whole number of its
+     unit, equal to its none marker, a bits member twice) is E8102 from `canon check`, never a build
+     error: `wire` lists the parts its encoder refuses (one rule for both), `verify` reports them on
+     every field of every evaluated value, and stage E reports them on precomputed export fn results
+     (`$` keys and package `$fns`), which `verify` does not walk. `verify` and `ir` may import `wire`
+     for that rule (amends 115, where `wire` owned the pass). A finding on an element sits at the
+     element's own path; a repeated bits member at its second occurrence; a fn result's finding has
+     no value path (API.md F1) and sits at the literal, else the fn. Package `$fns` are checked
+     whenever the package has a `json` emit, which writes them. A `none: {}` marker compares
+     against what the encoder writes (`$` keys of stored fns only). Reason: W1, log-2026-10-03.
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.

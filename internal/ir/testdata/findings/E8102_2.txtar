@@ -1,0 +1,39 @@
+WIRE.md §5.1, §5.11, decision 283: a package export fn's precomputed result is written under `$fns`, once or per cell of its finite parameters, so a record it returns whose field has no wire form is E8102 at stage E, once per cell holding it; whole units, in a list too, are fine.
+-- a/a.canon --
+package a
+
+/// Inner.
+record Inner {
+  /// Wait.
+  wait: Duration @json(unit: s)
+}
+
+/// Once.
+export fn once() -> Inner { return { wait: 1500ms } }
+
+/// Per cell.
+export fn pick(slow: Bool) -> Inner { return if slow { { wait: 3s } } else { { wait: 500ms } } }
+
+/// Fine.
+export fn fine() -> [Inner] { return [{ wait: 1m }] }
+
+/// One.
+let one: Int = 1
+
+emit json { out: "out/" }
+-- a.one.json --
+1
+-- a.once.calls.json --
+{ "": { "wait": 1.5 } }
+-- a.pick.calls.json --
+{ "false": { "wait": 0.5 }, "true": { "wait": 3 } }
+-- a.fine.calls.json --
+{ "": [{ "wait": 60 }] }
+-- findings.txt --
+error[E8102]  a.once.calls.json:1:17
+  1s500ms has no wire form for wait: not a whole number of s
+
+error[E8102]  a.pick.calls.json:1:22
+  500ms has no wire form for wait: not a whole number of s
+
+2 errors, 0 warnings in 1 package (…)
