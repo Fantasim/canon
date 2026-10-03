@@ -188,6 +188,10 @@ func (g *gen) walkValue(b *strings.Builder, t ir.TypeRef, expr string, loc locat
 		b.WriteString(closeBrace)
 		return
 	}
+	if t.Kind == types.Table {
+		g.walkTable(b, t, expr, loc)
+		return
+	}
 	prefix := g.locExpr(loc.dot())
 	if inline {
 		prefix = lc.Path

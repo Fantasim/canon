@@ -120,6 +120,7 @@ func (g *gen) idEnums() {
 		}
 		g.writeEnum(s)
 	}
+	g.nestedIDs()
 }
 
 // writeEnum writes the type, its constants and its methods.

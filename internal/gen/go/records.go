@@ -138,7 +138,7 @@ func (g *gen) bodyOf(r *ir.Record) *body {
 	}
 	b := g.recordBody(r, r.QName(), g.goName(r), r.Fields, r.Methods)
 	b.canon = r.Name
-	if tv := g.tableOf[r]; tv != nil {
+	if g.tableOf[r] != nil || g.names.NestedRow(r) {
 		b.idType = g.idType(r)
 	}
 	g.bodies[r] = b

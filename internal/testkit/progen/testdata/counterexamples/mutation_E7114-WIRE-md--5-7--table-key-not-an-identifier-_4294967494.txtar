@@ -1,0 +1,69 @@
+suite mutation
+name E7114 WIRE.md §5.7 (table key not an identifier)
+case 197
+seed 4294967494
+open gen
+born mismatch extra E8019/mode
+sig extra E8019/mode
+packages pipeline
+want E7114 pipeline/data/II_POT_HEAL_S.json 12 17 check
+failure extra [E8019 pipeline/potion.canon:19:3 "emit cpp in data mode cannot generate a table field"] besides [E7114 pipeline/data/II_POT_HEAL_S.json:1:13 "\"a b\" is not a valid table key (an identifier)"]
+-- pipeline/data/II_POT_HEAL_S.json --
+{"zzSubs": {"a b": {"n": 1}},
+  "dwID": "II_POT_HEAL_S",
+  "szName": "IDS_PROPITEM_TXT_POT_S",
+  "nHeal": 500,
+  "dwCooldownMs": 3000
+}
+-- pipeline/potion.canon --
+/// A deliberately small object to show the whole pipeline, end to end.
+/// "Potion" is made up; the real item record has ~50 fields, but the pipeline is the same.
+///
+///   data/*.json      one file per potion, edited by hand or by the studio (like Items/**)
+///   potion.canon     this file: the type, the rules, the view, what to emit
+///   canon build      checks everything, then writes out/ (compare with expected/)
+package pipeline
+/// A healing potion. Each one is a file under data/.
+record Potion {
+  /// The item define. Stored in inventories: never renamed.
+  id: String(/^II_[A-Z0-9_]+$/) @json("dwID")
+  /// Text key of the displayed name.
+  name: String(/^IDS_/) @json("szName")
+  /// Hit points restored.
+  heal: Int(..=100_000) @json("nHeal")
+  /// Time before the same potion can be drunk again.
+  cooldown: Duration(..=10m) @json("dwCooldownMs")
+  /// Zz.
+  zzSubs: (table ZzSub)? @json("zzSubs")
+}
+let potions: [Potion] keyed by id = load.dir("data/*.json")
+view Potion {
+  menu items icon gem
+}
+emit json { out: "out/potions.json", values: [potions] }
+emit cpp { out: "sov::gen", mode: data }
+emit view { out: "out/potion.view.json" }
+
+/// Sub.
+record ZzSub {
+  /// N.
+  n: Int
+}
+-- project.canon --
+project sovereign {
+  canon: "0.1"
+  roots {
+    resource: "../../../Resource"
+    client: "../../../Client"
+    source: "../../../Source"
+    services: "../.."
+    sovcommon: "../../sovcommon"
+    web: "../../sovcommon/web/src/lib"
+    parity: "../../balance/parity"
+    generated: "../../resourcestudio/generated"
+  }
+}
+-- sovcommon/time/time.canon --
+package sovcommon
+-- studio/studio.canon --
+package studio

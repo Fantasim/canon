@@ -2,7 +2,6 @@ suite mutation
 name E8018 CODEGEN.md §2.8 (data mode decodes a type of a baked package)
 case 224
 seed 4294967521
-open gen
 born mismatch extra E8019
 sig extra E8019/mode
 packages pipeline

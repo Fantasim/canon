@@ -357,3 +357,46 @@ func jsonRowID({{.L.Name}}, {{.L.Path}} string, {{.L.Raw}} {{.JSON}}.RawMessage)
 }
 
 {{end}}
+{{define "jsonTable"}}// jsonTable reads the nested table at path: an object whose keys, in file order, are identifiers
+// (the file reader has refused a repeated one); a row is a key's value, retired when its
+// $retired, which must be true, is present (WIRE.md §5.7).
+func jsonTable({{.L.Name}}, {{.L.Path}} string, {{.L.Raw}} {{.JSON}}.RawMessage) ([]string, []{{.JSON}}.RawMessage, []bool, error) {
+	if _, {{.L.Err}} := jsonObject({{.L.Name}}, {{.L.Path}}, {{.L.Raw}}); {{.L.Err}} != nil {
+		return nil, nil, nil, {{.L.Err}}
+	}
+	{{.L.Obj}} := {{.JSON}}.NewDecoder({{.Strings}}.NewReader(string({{.L.Raw}})))
+	if _, {{.L.Err}} := {{.L.Obj}}.Token(); {{.L.Err}} != nil {
+		return nil, nil, nil, {{.FMT}}.Errorf("%s: %s: expected an object", {{.L.Name}}, {{.Strings}}.TrimSuffix({{.L.Path}}, "."))
+	}
+	var {{.L.Keys}} []string
+	var {{.L.Rows}} []{{.JSON}}.RawMessage
+	var {{.L.Retired}} []bool
+	for {{.L.Obj}}.More() {
+		{{.L.K}}, {{.L.Err}} := {{.L.Obj}}.Token()
+		{{.L.Key}}, _ := {{.L.K}}.(string)
+		{{.L.OK}} := {{.L.Err}} == nil && {{.L.Key}} != "" && {{.L.Key}} != "_"
+		for {{.L.I}}, {{.L.C}} := range {{.L.Key}} {
+			if {{.L.C}} != '_' && ({{.L.C}} < 'a' || {{.L.C}} > 'z') && ({{.L.C}} < 'A' || {{.L.C}} > 'Z') && ({{.L.I}} == 0 || {{.L.C}} < '0' || {{.L.C}} > '9') {
+				{{.L.OK}} = false
+			}
+		}
+		if !{{.L.OK}} {
+			return nil, nil, nil, {{.FMT}}.Errorf("%s: %s: \"%s\" is not a valid table key (an identifier)", {{.L.Name}}, {{.Strings}}.TrimSuffix({{.L.Path}}, "."), {{.L.Key}})
+		}
+		var {{.L.R}} {{.JSON}}.RawMessage
+		if {{.L.Err}} := {{.L.Obj}}.Decode(&{{.L.R}}); {{.L.Err}} != nil {
+			return nil, nil, nil, {{.FMT}}.Errorf("%s: %s%s: expected an object", {{.L.Name}}, {{.L.Path}}, {{.L.Key}})
+		}
+		var {{.L.A}} map[string]{{.JSON}}.RawMessage
+		// a row that is no object is refused by its decoder, which the caller runs next
+		_ = {{.JSON}}.Unmarshal({{.L.R}}, &{{.L.A}})
+		{{.L.M}}, {{.L.HasK}} := {{.L.A}}["$retired"]
+		if {{.L.HasK}} && string({{.L.M}}) != "true" {
+			return nil, nil, nil, {{.FMT}}.Errorf("%s: %s%s.$retired: expected true", {{.L.Name}}, {{.L.Path}}, {{.L.Key}})
+		}
+		{{.L.Keys}}, {{.L.Rows}}, {{.L.Retired}} = append({{.L.Keys}}, {{.L.Key}}), append({{.L.Rows}}, {{.L.R}}), append({{.L.Retired}}, {{.L.HasK}})
+	}
+	return {{.L.Keys}}, {{.L.Rows}}, {{.L.Retired}}, nil
+}
+
+{{end}}

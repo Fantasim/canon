@@ -33,6 +33,8 @@ func (g *gen) goType(t ir.TypeRef) string {
 		return g.listType(t)
 	case types.Map, types.DepMap:
 		return g.rt() + mapType + lbracket + g.goType(g.sub(t.Key)) + listSep + g.goType(g.sub(t.Elem)) + rbracket
+	case types.Table:
+		return g.tableType(t)
 	case types.Ref:
 		return g.keyType(t)
 	default:
@@ -120,7 +122,7 @@ func (g *gen) sub(t *ir.TypeRef) ir.TypeRef {
 
 // keyType is a ref's key: a table's id type, else the IR's key type, a define's name (§5.8).
 func (g *gen) keyType(t ir.TypeRef) string {
-	if isTableRef(t.Ref) {
+	if isTableRef(t.Ref) || isFieldRef(t.Ref) {
 		return g.qualify(t.Ref.Pkg, g.idType(t.Ref.Elem))
 	}
 	if t.Key == nil {
@@ -133,6 +135,15 @@ func (g *gen) keyType(t ir.TypeRef) string {
 // isTableRef reports a ref into a public table value: its key is that table's id enum (§5.3).
 func isTableRef(r *ir.RefTarget) bool {
 	return r != nil && r.Coll == types.CollLet && !r.Local && !r.Keyed
+}
+
+// isFieldRef reports a ref into a table field: its key is that field's id type (§4.2, §5.8, DECISIONS 288).
+func isFieldRef(r *ir.RefTarget) bool {
+	if r == nil || r.Coll != types.CollField || r.Keyed {
+		return false
+	}
+	_, ok := r.Elem.(*ir.Record)
+	return ok
 }
 
 // typeName is the Go name of a named type, qualified when another package declares it.

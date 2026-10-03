@@ -345,6 +345,7 @@ const (
 	goSnapshotSuffix   = "Snapshot"
 	goStoreSuffix      = "Store" // also the store variable
 	goJSONRowID        = "jsonRowID"
+	goJSONTable        = "jsonTable"
 	goScopeLocals      = "locals"
 	goScopeConformance = "conformance imports"
 	goInt64Bits        = 64

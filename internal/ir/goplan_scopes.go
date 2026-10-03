@@ -137,6 +137,7 @@ func (pl *GoNamePlan) declareAll() {
 	pl.declareEnums(top)
 	pl.declareKindEnums(top)
 	pl.declareIDEnums(top)
+	pl.declareNestedIDs(top)
 	for _, t := range pl.p.Types {
 		pl.declareType(top, t)
 	}
@@ -371,14 +372,9 @@ func asMembers(origin string, item any, names []string) []bodyMember {
 	return out
 }
 
-// isTableRecord reports a record some public table value holds: its entries have an id (CODEGEN.md §5.3).
+// isTableRecord reports a record some public table value or table field holds: its entries have an id (CODEGEN.md §4.2, §5.3).
 func (pl *GoNamePlan) isTableRecord(rec *Record) bool {
-	for _, v := range pl.p.Values {
-		if tableRecord(v) == rec {
-			return true
-		}
-	}
-	return false
+	return pl.isTableValueRecord(rec) || pl.NestedRow(rec)
 }
 
 // declareParams declares a table-read function's receiver or table, its parameters' locals, escaped like the imports (decision 182), and their index locals (decision 122).

@@ -1,0 +1,32 @@
+CODEGEN.md §4.2, §5.3 (log-2026-10-03 "GG"): a table field is an rt.KeyedList of rows by id; the record only a table field holds gets a string id type, id and retired, and a data loader reads the nested table through jsonTable.
+-- b/b.canon --
+/// Shelves.
+package b
+
+/// A slot.
+record Slot {
+  /// How many.
+  n: Int
+}
+
+/// A shelf.
+record Shelf {
+  /// Its slots by id.
+  slots: table Slot
+  /// Spare slots.
+  spare: (table Slot)?
+}
+
+/// The shelf.
+let shelf: Shelf = { slots: { a { n: 1 } }, spare: none }
+
+emit go { out: "@features/b", package: "b" }
+emit json { out: "out/" }
+-- b.shelf.json --
+{ "slots": { "a": { "n": 1 } } }
+-- plan.txt --
+Shelf: Slots Spare slots spare spare_ok
+Slot: ID N Retired id n retired
+bData: shelf
+package: GetShelf Shelf Slot SlotID bData bValues buildB rt sync
+0 errors, 0 warnings in 1 package (…)

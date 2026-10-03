@@ -125,6 +125,9 @@ func (pl *GoNamePlan) declareDecoders(top *nameScope) {
 	if pl.emitsTable() {
 		pl.declare(top, goJSONRowID, pl.p.Name, nil)
 	}
+	if pl.HasNestedTables() {
+		pl.declare(top, goJSONTable, pl.p.Name, nil)
+	}
 	for _, class := range pl.classes() {
 		if pl.Decoded(class) {
 			pl.declare(top, pl.DecodeFunc(class), pl.goNameOf[class], class)

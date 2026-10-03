@@ -50,22 +50,27 @@ func (s *stage) checkGoDecoded(u *unit, es *emitSite) {
 		fields, fns := classBody(class)
 		for _, site := range s.decodedSites(fields, fns) {
 			s.checkDecodedType(u, es, site)
-			if decodedHolds(site.t, func(t *TypeRef) bool { return foreignClass(own, t) }) {
+			if decodedHolds(site.t, func(t *TypeRef) bool { return s.foreignClass(own, t) }) {
 				u.reportGenConstruct(es, site.span, diag.KindForeignDataRecord)
 			}
 		}
 		s.checkInlineFolds(u, es, class, shape)
 	}
 	for _, v := range selectedValues(u, es.e) {
-		if root, ok := goRootClass(v.v).(Type); ok && !foreignTable(own, v.v.Type) && pkgOf(root) != own {
+		if root, ok := goRootClass(v.v).(Type); ok && !foreignTable(own, v.v.Type) && s.foreign(own, pkgOf(root)) {
 			u.reportGenConstruct(es, v.span().span(), diag.KindForeignDataRecord)
 		}
 	}
 }
 
-// foreignClass reports a record or variant of a package other than own, which a data loader decodes with that package's unexported decoder.
-func foreignClass(own string, t *TypeRef) bool {
-	return (t.Kind == types.Record || t.Kind == types.Variant) && t.Named != nil && pkgOf(t.Named) != own
+// foreignClass reports a record or variant of a package other than own whose package does not answer for it: a data loader decodes it with that package's unexported decoder.
+func (s *stage) foreignClass(own string, t *TypeRef) bool {
+	return (t.Kind == types.Record || t.Kind == types.Variant) && t.Named != nil && s.foreign(own, pkgOf(t.Named))
+}
+
+// foreign reports pkg, another package than own, that E8018 does not already judge: a package whose go emit is baked is E8018 `decoders across packages` alone (CODEGEN.md §2.8).
+func (s *stage) foreign(own, pkg string) bool {
+	return pkg != own && (s.units[pkg] == nil || !bakedFor(s.units[pkg], TargetGo))
 }
 
 // checkResolvedLookups is E8019 `ResolvedLookupResult`: gen/go's data resolver has no walk for a lookup's cells holding a ref resolved at load (CODEGEN.md §5.8).

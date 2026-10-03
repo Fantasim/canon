@@ -878,8 +878,8 @@ Go `*T` (nil), C++ `const T*`; for `[ref T]`, Go `rt.List[*T]`, C++ `const std::
 Refs inside maps (keys or values) and inside nested lists are keys only.
 
 The **key type** is the target collection's id type in the target package's emit for the same
-target ([§5.3](#53-table-ids)), the key field's type for a keyed list, and `String` for `local`
-and define tables. Key getters return: Go `K`, `(K, bool)` for `ref T?`, `rt.List[K]` for
+target ([§5.3](#53-table-ids)), the key field's type for a keyed list, the field's `<id type>` for a
+table field ([§4.2](#42-composite-types), DECISIONS 288), and `String` for `local` and define tables. Key getters return: Go `K`, `(K, bool)` for `ref T?`, `rt.List[K]` for
 `[ref T]`; C++ `K` by value when it is an enum, `const std::string&` / `const std::string*` /
 `const std::vector<K>&` otherwise. TypeScript properties hold the key only; resolution is
 `container.find(key)`.

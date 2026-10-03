@@ -1,0 +1,43 @@
+CODEGEN.md §4.2, §5.3: baked Go gives the record of a public table value an id enum whose members are that table's keys; a nested table's keys are not among them, so a table field of such a record is TableField in baked mode (data mode, whose ids are strings, writes it), and a record only a table field holds is written in baked mode.
+-- a/a.canon --
+package a
+
+/// A cell.
+record Cell {
+  /// Its value.
+  v: Int
+}
+
+/// A lone row.
+record Lone {
+  /// Its value.
+  v: Int
+}
+
+/// A row.
+record Row {
+  /// The cells, ids shared with the table of cells.
+  cells: table Cell
+  /// The lone rows.
+  lone: table Lone
+}
+
+/// The cells.
+let cells: table Cell = {
+  c1 { v: 1 }
+}
+
+/// The row.
+let row: Row = { cells: { c1 { v: 1 } }, lone: { l1 { v: 2 } } }
+
+emit go { out: "@features/a", package: "a" }
+emit json { out: "out/" }
+-- a.cells.json --
+{"c1": {"v": 1}}
+-- a.row.json --
+{ "cells": { "c1": { "v": 1 } }, "lone": { "l1": { "v": 2 } } }
+-- findings.txt --
+error[E8019]  a/a.canon:18:3
+  emit go in baked mode cannot generate a table field
+
+1 error, 0 warnings in 1 package (…)

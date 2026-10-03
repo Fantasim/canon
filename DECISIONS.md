@@ -2665,6 +2665,11 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      `translation fr` as the last line, with no final newline, is a valid empty layer or
      translation file, as the parser already reads it and as every other line may end at EOF; the
      EBNF says `( NL | EOF )` after the header. Reason: HW1 review, log-2026-10-03.
+288. **Table fields in Go (CODEGEN.md §4.2, §5.8; WIRE.md §5.7).** A ref into a table field (a
+     collection-typed field, RES-03) has the field's `<id type>` as its key type, so `Find(ref)`
+     needs no conversion. A nested table's loader reports the top-level table texts where a rule
+     exists (key not an identifier, `$retired` not `true`), quoting keys as E7114 does; any text it
+     must add is listed in §5.8 so C++ reports the same. Reason: GG review, log-2026-10-03.
 
 ## Still open
 

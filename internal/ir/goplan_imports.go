@@ -70,6 +70,7 @@ func (u *goImportUse) body(fields []*Field, fns []*ExportFn) {
 	for _, f := range fields {
 		if !f.Optional || f.Type.Kind != types.Never {
 			u.ref(&f.Type)
+			walkTypeRef(f.Type, func(t TypeRef) { u.std[goRT] = u.std[goRT] || t.Kind == types.Table }) // a table field is an rt.KeyedList (CODEGEN.md §4.2)
 		}
 	}
 	for _, fn := range fns {

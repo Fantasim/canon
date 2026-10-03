@@ -1,0 +1,42 @@
+CODEGEN.md §4.2: gen/go writes a table field of its own package's record in data mode (no finding for `slots`), but a table field of another package's record has rows with `id` and `retired` that record does not declare there: TableField at that field.
+-- b/b.canon --
+package b
+
+/// A point.
+record Point {
+  /// Across.
+  x: Int
+}
+
+emit go { out: "@features/b", package: "b", mode: data }
+-- a/a.canon --
+package a
+
+import b { Point }
+
+/// A slot.
+record Slot {
+  /// How many.
+  n: Int
+}
+
+/// A shelf.
+record Shelf {
+  /// Its slots.
+  slots: table Slot
+  /// Points by name.
+  points: table Point
+}
+
+/// The shelf.
+let shelf: Shelf = { slots: { a { n: 1 } }, points: { p { x: 1 } } }
+
+emit go { out: "@features/a", package: "a", mode: data }
+emit json { out: "out/" }
+-- a.shelf.json --
+{ "slots": { "a": { "n": 1 } }, "points": { "p": { "x": 1 } } }
+-- findings.txt --
+error[E8019]  a/a.canon:16:3
+  emit go in data mode cannot generate a table field
+
+1 error, 0 warnings in 2 packages (…)

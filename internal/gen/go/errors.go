@@ -78,8 +78,8 @@ const (
 
 // The kinds stage E refuses (E8019) where gen/go writes a type, a value literal, a value it reads or a constant: meeting one there is ErrMalformed (CODEGEN.md §5.6).
 var (
-	typeRefused  = map[types.Kind]bool{types.Optional: true, types.Table: true}
-	readRefused  = map[types.Kind]bool{types.Optional: true, types.Table: true, types.Map: true, types.DepMap: true, types.Case: true}
+	typeRefused  = map[types.Kind]bool{types.Optional: true}
+	readRefused  = map[types.Kind]bool{types.Optional: true, types.Map: true, types.DepMap: true, types.Case: true}
 	constRefused = map[types.Kind]bool{types.Record: true, types.Variant: true, types.Case: true}
 )
 
@@ -90,6 +90,9 @@ const (
 	unknownMode  = "an unknown mode"
 	noKeyType    = "a ref without a key type"
 	noEnumFormat = "an enum type without its enum at %s"
+
+	tableEntryFormat = "an entry of a table field without its key at %s"
+	tableFieldFormat = "%s: a table field of a record of another package, or of a baked table value's record"
 )
 
 // modeNames name the modes in messages (CODEGEN.md §2.1).

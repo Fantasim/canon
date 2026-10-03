@@ -33,6 +33,8 @@ func (g *gen) expr(t ir.TypeRef, v value.Value) string {
 		return g.variantExpr(t, as[value.Record](g, v))
 	case types.List:
 		return g.listExpr(t, as[value.List](g, v))
+	case types.Table:
+		return g.tableExpr(t, as[value.Table](g, v))
 	case types.Map, types.DepMap:
 		return g.mapExpr(t, as[value.Map](g, v))
 	case types.Ref:
@@ -97,6 +99,8 @@ func (g *gen) keyLit(t ir.TypeRef, k value.Key) string {
 		return g.qualify(t.Ref.Pkg, g.idMember(t.Ref.Elem, k.S))
 	}
 	switch {
+	case isFieldRef(t.Ref):
+		return strconv.Quote(k.S)
 	case t.Key == nil:
 		g.failf(ErrMalformed, noKeyType)
 	case t.Key.Kind == types.Enum:

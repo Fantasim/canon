@@ -26,6 +26,9 @@ func (g *gen) helpers() {
 	if len(ir.OwnDefines(g.p)) > 0 {
 		g.exec(helperDefine, view)
 	}
+	if g.names.HasNestedTables() {
+		g.exec(helperTable, view)
+	}
 	for _, v := range g.emitted {
 		if v.Type.Kind == types.Table {
 			g.exec(helperRowID, view)

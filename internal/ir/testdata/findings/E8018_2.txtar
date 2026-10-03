@@ -1,0 +1,36 @@
+CODEGEN.md §2.8: a go data emit that decodes a record of a package emitted in baked mode is E8018 alone: the baked package cannot provide the decoder, and gen/go's own refusal (ForeignDataRecord) is not reported beside it.
+-- b/b.canon --
+package b
+
+/// A point.
+record Point {
+  /// Across.
+  x: Int
+}
+
+emit go { out: "@features/b", package: "b" }
+-- a/a.canon --
+package a
+
+import b { Point }
+
+/// A place.
+record Place {
+  /// Where.
+  at: Point
+  /// Its point, computed.
+  export fn point(self) -> Point { return { x: 1 } }
+}
+
+/// The place.
+let place: Place = { at: { x: 1 } }
+
+emit go { out: "@features/a", package: "a", mode: data }
+emit json { out: "out/" }
+-- a.place.json --
+{ "at": { "x": 1 } }
+-- findings.txt --
+error[E8018]  a/a.canon:16:6
+  b.Point is decoded from JSON by go, but package b is emitted in baked mode
+
+1 error, 0 warnings in 2 packages (…)

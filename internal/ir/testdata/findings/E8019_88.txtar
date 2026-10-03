@@ -1,0 +1,28 @@
+CODEGEN.md §4.2: only gen/go writes a table field; gen/cpp refuses it in data mode (TableField), as before.
+-- a/a.canon --
+package a
+
+/// A slot.
+record Slot {
+  /// How many.
+  n: Int
+}
+
+/// A shelf.
+record Shelf {
+  /// Its slots.
+  slots: table Slot
+}
+
+/// The shelf.
+let shelf: Shelf = { slots: { a { n: 1 } } }
+
+emit cpp { out: "@features/a", namespace: "a", mode: data }
+emit json { out: "out/" }
+-- a.shelf.json --
+{ "slots": { "a": { "n": 1 } } }
+-- findings.txt --
+error[E8019]  a/a.canon:12:3
+  emit cpp in data mode cannot generate a table field
+
+1 error, 0 warnings in 1 package (…)

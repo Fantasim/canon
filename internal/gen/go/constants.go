@@ -323,6 +323,7 @@ const (
 	defineListElemFormat = "%[1]s[%[2]s] = %[3]s\n}\n"
 	helperSame           = "jsonSame"
 	helperRowID          = "jsonRowID"
+	helperTable          = "jsonTable"
 	funcScopeSuffix      = "()"
 	tempEmpty            = "empty"
 	tempInt              = "n"
@@ -357,7 +358,12 @@ const (
 		"if %[1]s == nil {\ncontinue\n}\n%[11]s := &%[12]s{}\n"
 	prefixFormat     = "%s := %s\n"
 	elseReturnFormat = "} else {\nreturn %s\n"
-	bitsCheckFormat  = "if %[1]s := %[2]s &^ %[3]s; %[1]s != 0 {\nreturn %[4]s\n}\n"
+	nestedOpenFormat = "%[1]s, %[2]s, %[3]s, %[4]s := %[5]s(%[6]s, %[7]s, %[8]s)\nif %[4]s != nil {\nreturn %[4]s\n}\n"
+	nestedRowsFormat = "%[1]s := make([]%[2]s, len(%[3]s))\n%[4]s := make([]%[5]s, len(%[3]s))\n" +
+		"for %[6]s, %[7]s := range %[3]s {\nif %[8]s := %[9]s(%[10]s, %[11]s, %[7]s, &%[1]s[%[6]s]); %[8]s != nil {\n" +
+		"return %[8]s\n}\n%[1]s[%[6]s].%[12]s, %[1]s[%[6]s].%[13]s = %[5]s(%[14]s[%[6]s]), %[15]s[%[6]s]\n" +
+		"%[4]s[%[6]s] = %[1]s[%[6]s].%[12]s\n}\n"
+	bitsCheckFormat = "if %[1]s := %[2]s &^ %[3]s; %[1]s != 0 {\nreturn %[4]s\n}\n"
 )
 
 // helperOrder is the order a file with decoders writes its helpers in, jsonRowID after them.

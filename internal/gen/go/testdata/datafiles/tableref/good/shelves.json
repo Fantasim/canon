@@ -1,0 +1,1 @@
+{"$schema": "gentableref.Shelf@0000000b", "rows": [{"$id": "s1", "slots": {"a": {"n": 1, "home": "s1"}, "b": {"n": 2, "home": "s2"}}}, {"$id": "s2", "slots": {}}]}

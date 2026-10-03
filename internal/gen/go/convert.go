@@ -49,6 +49,8 @@ func (g *gen) readValue(b *strings.Builder, l leaf, raw string, loc location) st
 		return g.decodeInto(b, l.t, raw, loc)
 	case types.List:
 		return g.readList(b, l, raw, loc)
+	case types.Table:
+		return g.readNested(b, l.t, raw, loc)
 	case types.TypeApp:
 		return g.readDependentValue(b, l, raw, loc)
 	default:
@@ -147,6 +149,9 @@ func (g *gen) parsed(b *strings.Builder, call string, loc location, what, value 
 // readRef reads a ref's key: a table id, a baked package's id enum, a keyed list's key (CODEGEN.md §5.3, §5.8).
 func (g *gen) readRef(b *strings.Builder, t ir.TypeRef, raw string, loc location) string {
 	key := g.keyType(t)
+	if isFieldRef(t.Ref) {
+		return g.readPlain(b, key, raw, loc)
+	}
 	if !isTableRef(t.Ref) {
 		if t.Key == nil {
 			return raw
@@ -280,6 +285,9 @@ func (g *gen) enumKeyToken(t ir.TypeRef, expr string) string {
 // refKeyToken is a ref key's wire token, mirroring keyType's cases (gotype.go, WIRE.md §5.8).
 func (g *gen) refKeyToken(t ir.TypeRef, expr string) string {
 	if t.Ref != nil && t.Ref.Coll == types.CollDefines {
+		return g.rt() + wireTokenCall + goString + lparen + expr + rparen + rparen
+	}
+	if isFieldRef(t.Ref) {
 		return g.rt() + wireTokenCall + goString + lparen + expr + rparen + rparen
 	}
 	if isTableRef(t.Ref) {

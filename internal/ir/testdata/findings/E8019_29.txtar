@@ -1,4 +1,4 @@
-EVALUATION.md §1, CODEGEN.md §4.2: a table-typed field is specified but neither generator writes it yet (TableField); a table value is its container, not a table field.
+EVALUATION.md §1, CODEGEN.md §4.2, §5.3: baked gen/go refuses a table field of the record of a public table value, whose id enum holds that table's keys (TableField); a table value is its container, not a table field.
 -- a/a.canon --
 package a
 

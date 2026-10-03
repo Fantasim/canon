@@ -21,6 +21,7 @@ type GoNamePlan struct {
 	data     *goData        // data mode's layout (CODEGEN.md §5.8, §5.11); nil in baked mode
 	pures    map[*ExportFn]*GoPure
 	pkgNames map[string]bool // the package-level names a translated body may name unqualified
+	nested   []*Record       // the records a table field of the package holds (CODEGEN.md §4.2)
 }
 
 // GoNameProblem is a name gen/go or gen/cpp cannot declare (CODEGEN.md §3.5, decision 182); both plans report it. Item is the IR node Origin names (a Type, *EnumMember, *Case, *Field, *ExportFn, *Param, *Const or *Value), nil for the package or an import.
@@ -87,6 +88,7 @@ func PlanGoNames(p *Package, e *Emit) *GoNamePlan {
 		}
 	}
 	pl.indexClasses()
+	pl.nested = nestedRows(p)
 	if e.Mode == ModeData {
 		pl.data = newGoData(pl)
 	}

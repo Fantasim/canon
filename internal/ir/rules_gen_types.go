@@ -11,13 +11,14 @@ type typeSite struct {
 	t                *TypeRef
 	span             source.Span
 	isConst, isValue bool
+	isField          bool
 }
 
 // typeSites are every type an emit of u declares: its fields, its export fns' parameters and results, the values es selects, its constants.
 func (s *stage) typeSites(u *unit, es *emitSite) []typeSite {
 	var out []typeSite
 	s.eachOwnField(u, func(_ string, f *Field) {
-		out = append(out, typeSite{t: &f.Type, span: s.itemSpan(f, source.Span{})})
+		out = append(out, typeSite{t: &f.Type, span: s.itemSpan(f, source.Span{}), isField: true})
 	})
 	for _, site := range s.ownFns(u) {
 		for _, p := range site.fn.Params {
@@ -74,10 +75,33 @@ func (s *stage) checkOptionalMapValues(u *unit, es *emitSite) {
 
 func optionalElem(t *TypeRef) bool { return t.Elem != nil && t.Elem.Kind == types.Optional }
 
-// checkTableFields is E8019 `TableField`: neither generator writes a table type but a table value's own container (CODEGEN.md §4.2, §5.9).
+// checkTableFields is E8019 `TableField`: gen/cpp and gen/ts write no table type but a table value's own container (CODEGEN.md §4.2, §5.9); gen/go writes a field of `table T` for a record of its own package, but not where baked Go already gives that record an id enum, whose members are the keys of a public table value, which a nested table's keys are not (§5.3).
 func (s *stage) checkTableFields(u *unit, es *emitSite) {
-	s.reportTypeSites(u, es, diag.KindTableField, func(t *TypeRef) bool { return t.Kind == types.Table },
-		func(site typeSite) bool { return site.isValue })
+	if es.e.Target != TargetGo {
+		s.reportTypeSites(u, es, diag.KindTableField, func(t *TypeRef) bool { return t.Kind == types.Table },
+			func(site typeSite) bool { return site.isValue })
+		return
+	}
+	enumIDs := es.e.Mode != ModeData && es.e.Mode != ModeTypes
+	tables := tableValueRecords(u.p)
+	unwritten := func(t *TypeRef) bool {
+		rec, ok := tableElem(*t)
+		return t.Kind == types.Table && (!ok || rec.Pkg != u.p.Name || enumIDs && tables[rec])
+	}
+	anyTable := func(t *TypeRef) bool { return t.Kind == types.Table }
+	for _, site := range s.typeSites(u, es) {
+		bad := anyTable
+		if site.isField {
+			bad = unwritten
+		}
+		held := typeHolds(site.t, bad)
+		if site.isValue {
+			held = typeHolds(site.t.Elem, bad) || typeHolds(site.t.Key, bad)
+		}
+		if held {
+			u.reportGenConstruct(es, site.span, diag.KindTableField)
+		}
+	}
 }
 
 // checkCaseFields is E8019 `CaseField` where a generator refuses a case used as a type (decision 219): gen/cpp stores none, gen/go has no type for one without fields and its data loader reads none.

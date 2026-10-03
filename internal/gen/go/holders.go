@@ -33,7 +33,7 @@ func (g *gen) typeWalks(t ir.TypeRef) bool {
 	switch {
 	case t.Kind == types.Record, t.Kind == types.Variant:
 		return g.names.NeedsWalk(t.Named)
-	case t.Kind == types.List && t.Elem != nil:
+	case (t.Kind == types.List || t.Kind == types.Table) && t.Elem != nil:
 		return g.typeWalks(*t.Elem)
 	}
 	return false

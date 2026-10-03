@@ -2,8 +2,8 @@ suite mutation
 name E7114 WIRE.md §5.7 (table key not an identifier)
 case 192
 seed 4294967489
-open gen
 born mismatch extra E8019
+left E8009/missing, W1640
 sig extra E8009/missing, E8019/mode, W1640
 packages pipeline
 want E7114 pipeline/data/II_POT_HEAL_L.json 12 17 check
