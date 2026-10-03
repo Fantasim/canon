@@ -120,7 +120,7 @@ func (c *checker) untypedForms(env *env, f *types.Field, j *syntax.Annotation) {
 	}
 }
 
-// holds reports that t contains the kind k outside any named type: directly, in T?, [T] or a map value (WIRE.md §4.1).
+// holds reports t contains k outside named types: in T?, [T], a map value, a dependent's arms (WIRE.md §4.1; DECISIONS 117).
 func holds(t types.Type, k types.Kind) bool {
 	switch x := t.Base().(type) {
 	case *types.OptionalType:
@@ -129,8 +129,25 @@ func holds(t types.Type, k types.Kind) bool {
 		return holds(x.Elem, k)
 	case *types.MapType:
 		return holds(x.Value, k)
+	case *types.DepMapType:
+		return holds(x.Value, k)
+	case *types.TypeAppType:
+		return k != types.Error && armsHold(x.Fn, k) // an arm in error is its declaration's finding, not the field's
 	}
 	return t.Base().Kind() == k
+}
+
+// armsHold reports a body or arm holding k, one in error a wildcard that does (DECISIONS 117; TYPES.md §1).
+func armsHold(fn *types.TypeFunc, k types.Kind) bool {
+	if fn.Body != nil {
+		return holds(fn.Body, k) || holds(fn.Body, types.Error)
+	}
+	if fn.Scrutinee == nil {
+		return true
+	}
+	return slices.ContainsFunc(fn.Arms, func(a *types.TypeArm) bool {
+		return holds(a.Result, k) || holds(a.Result, types.Error)
+	})
 }
 
 func unitOf(sym string) types.Unit {

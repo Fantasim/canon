@@ -180,8 +180,8 @@ at the annotation:
 | `path:` | 2 or more non-empty segments separated by `.`; no segment starts with `$` |
 | `inline` | the field's type is a non-optional variant (an alias of an optional does not count as a variant) |
 | `none:` | the field's type is optional; `X` is an integer (optionally negative), a float, a string, `true`, `false`, `{}` or `[]` |
-| `unit:` | the field's type contains `Duration` outside any named record, variant or enum (directly, or in `T?`, `[T]`, map values) |
-| `int` | the field's type contains `Bool` outside any named type |
+| `unit:` | the field's type contains `Duration` outside any named record, variant or enum (directly, or in `T?`, `[T]`, map values, a dependent type's arms or a dependent map's values: a dependent type is not a named type, DECISIONS 117) |
+| `int` | the field's type contains `Bool` outside any named type (a dependent type is not one, DECISIONS 117) |
 | `bits` | the field's type is `[E]` or `[E]?`, `E` has `@codes`, every code of `E` (retired included) is a power of two between 1 and 2^62 |
 | `pairs:` | the field's type is a non-optional plain list `[R]` (not keyed, not a table) whose length refinement has a finite upper bound; `R` is a record with exactly two fields, no input field and no non-translated `export fn`; each field of `R` is non-optional and has a scalar wire form (`Bool`, an integer type, `Float`, `Float32`, `String`, `Duration`, an enum, a `ref`, an asset, a literal union); each template contains `{i}` exactly once, the two templates differ, and no expanded key starts with `$` or collides with another expanded key (§5.14) |
 

@@ -1,0 +1,44 @@
+DECISIONS 117, WIRE.md §4.1: a dependent type is not a named type for `unit:` and `int`, so a field whose type is a dependent application (match arms or a plain body), its optional, a list or map of it, or a dependent map whose value holds one, takes `@json(unit:)` when an arm holds a Duration and `@json(int)` when an arm holds a Bool, as the encoder and the fingerprint read it.
+-- a/a.canon --
+package a
+
+local enum Mode { fixed, ranged, off }
+
+local record Span {
+  lo: Duration
+  hi: Duration
+}
+
+local record Item {
+  n: Int
+}
+
+local let items: table Item = {
+  one { n: 1 }
+}
+
+local type Waits(m: Mode) = match m {
+  fixed => Duration
+  ranged => [Duration]
+  off => Never
+}
+
+local type Flags(m: Mode) = match m {
+  fixed => Bool
+  _ => Int
+}
+
+local type Delay(m: Mode) = Duration
+
+local type Per(i: Item) = Duration
+
+local record Timer {
+  mode: Mode
+  waits: Waits(mode) @json(unit: s)
+  maybe: Waits(mode)? @json(unit: m)
+  many: [Waits(mode)] = [] @json(unit: h)
+  byName: {String: Waits(mode)} = {} @json(unit: d)
+  flag: Flags(mode) @json(int)
+  delay: Delay(mode) @json(unit: s)
+  per: {i in items: Per(i)} = {} @json(unit: s)
+}

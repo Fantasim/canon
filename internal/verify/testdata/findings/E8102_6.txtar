@@ -1,0 +1,40 @@
+WIRE.md §4.1, §5.1, §5.9, DECISIONS 117, 283: a field whose whole type is a dependent application takes `@json(unit:)` for the Durations its selected arm holds; a value that is not a whole number of that unit is E8102 at its own path, an element of a list arm at the element's.
+-- a/a.canon --
+/// A.
+package a
+
+/// Mode.
+enum Mode { fixed, ranged }
+
+/// Waits.
+type Waits(m: Mode) = match m {
+  fixed => Duration
+  ranged => [Duration]
+}
+
+/// Timer.
+record Timer {
+  /// Mode.
+  mode: Mode
+  /// Waits.
+  waits: Waits(mode) @json(unit: s)
+}
+
+/// Timers.
+let timers: [Timer] = [
+  { mode: fixed, waits: 1500ms },
+  { mode: ranged, waits: [2s, 2500ms] },
+  { mode: fixed, waits: 3s },
+]
+-- project.canon --
+project demo {
+  canon: "0.1"
+}
+-- findings.txt --
+error[E8102]  a/a.canon:23:25
+  timers[0].waits: 1s500ms has no wire form for waits: not a whole number of s
+
+error[E8102]  a/a.canon:24:31
+  timers[1].waits[1]: 2s500ms has no wire form for waits: not a whole number of s
+
+2 errors, 0 warnings in 1 package (…)

@@ -1,0 +1,69 @@
+WIRE.md §4.1, DECISIONS 117: a dependent type is no named type, but the records, variants and enums its arms hold still are: `unit:` on a dependent whose only Duration is inside a record arm (alone, or as a map value), `int` on one whose only Bool is inside a record, and `inline` on any dependent (never a variant) are E3316. TYPES.md §1: an arm or a scrutinee in error is a wildcard, so `unit:` on such a dependent is not judged again, and a dependent map whose value type is in error is a field in error (E2102 alone).
+-- a/a.canon --
+package a
+
+local enum Mode { fixed, off }
+
+local record Span {
+  lo: Duration
+  on: Bool
+}
+
+local type S(m: Mode) = match m {
+  fixed => Span
+  off => Int
+}
+
+local type T(m: Mode) = match m {
+  fixed => Duration
+  off => Bool
+}
+
+local type W(m: Mode) = match m {
+  fixed => Nope
+  off => Int
+}
+
+local type Bad(m: Mode) = match 3 {
+  _ => Int
+}
+
+local record Item {
+  k: Int
+}
+
+local let items: table Item = {}
+
+local record R {
+  mode: Mode
+  dm: {i in items: Nope} = {} @json(unit: s)
+  s: S(mode) @json(unit: s)
+  byName: {String: S(mode)} = {} @json(unit: s)
+  u: S(mode) @json(int)
+  t: T(mode) @json(inline)
+  w: W(mode) @json(unit: s)
+  b: Bad(mode) @json(unit: s)
+}
+-- findings.txt --
+error[E2102]  a/a.canon:21:12
+  unknown name Nope (did you mean Mode?)
+
+error[E3803]  a/a.canon:25:33
+  a type function must match on a path rooted at a parameter, of an enum or Bool type
+
+error[E2102]  a/a.canon:37:20
+  unknown name Nope (did you mean Mode?)
+
+error[E3316]  a/a.canon:38:26
+  @json(unit) does not apply to a.S(mode)
+
+error[E3316]  a/a.canon:39:46
+  @json(unit) does not apply to {String: a.S(mode)}
+
+error[E3316]  a/a.canon:40:20
+  @json(int) does not apply to a.S(mode)
+
+error[E3316]  a/a.canon:41:20
+  @json(inline) does not apply to a.T(mode)
+
+7 errors, 0 warnings in 1 package (…)

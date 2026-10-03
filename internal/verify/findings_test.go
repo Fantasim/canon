@@ -69,6 +69,7 @@ var cases = map[string]func(fx *fixture){
 	"E8102_3": builtCase,
 	"E8102_4": builtCase,
 	"E8102_5": builtCase,
+	"E8102_6": builtCase,
 }
 
 // IMPLEMENTATION-PLAN.md §7.2: each case prints the findings of verifying its values.
