@@ -9,6 +9,7 @@ import (
 	cppgen "github.com/fantasim/canonlang/internal/gen/cpp"
 	gogen "github.com/fantasim/canonlang/internal/gen/go"
 	jsongen "github.com/fantasim/canonlang/internal/gen/json"
+	tsgen "github.com/fantasim/canonlang/internal/gen/ts"
 	"github.com/fantasim/canonlang/internal/ir"
 )
 
@@ -101,7 +102,6 @@ const (
 	fmtLoadCause    = "%s (%s): %s:%d:%d"
 	fmtPackage      = "package %s: %w"
 	fmtEmit         = "package %s, emit %q: %w"
-	fmtNoGenerator  = "package %s, emit %s: %w"
 	fmtNoValue      = "package %s: %s has no value"
 	fmtUnplaced     = "package %s, emit %q: its out does not resolve"
 	fmtUnknownLimit = "a vector cut short by an unknown limit %d"
@@ -117,7 +117,7 @@ var (
 	// runtimeFiles are the runtime helper files, by their path in an emit's directory.
 	runtimeFiles = [...]string{"rt/rt.go", "canon_runtime.h", "canon_runtime_json.h"}
 	// generators are the code generators by target; a missing one is not written yet (view: viewmodel.go).
-	generators = [...]ir.Generator{ir.TargetGo: gogen.Generate, ir.TargetCpp: cppgen.Generate, ir.TargetJSON: jsongen.Generate, ir.TargetView: nil}
+	generators = [...]ir.Generator{ir.TargetGo: gogen.Generate, ir.TargetCpp: cppgen.Generate, ir.TargetTS: tsgen.Generate, ir.TargetJSON: jsongen.Generate, ir.TargetView: nil}
 	// limits maps the evaluator's limits onto conform's (ADR-0003).
 	limits = [...]conform.Limit{eval.NoLimit: conform.NoLimit, eval.StepLimit: conform.StepLimit, eval.DepthLimit: conform.DepthLimit}
 	// targetWords are the emit target words (CODEGEN.md §2.1).

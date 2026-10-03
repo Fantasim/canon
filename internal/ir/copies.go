@@ -62,10 +62,11 @@ func (s *stage) checkCopies(u *unit, es *emitSite) {
 	}
 	proj := s.in.Project
 	for _, imp := range u.p.Imports {
-		if countTarget(imp.Emits, es.e.Target) < severalCopies || copyFor(proj, imp.Emits, es.e) != nil {
+		first, used := u.importUse(imp.Name, es.e.Target)
+		if !used || countTarget(imp.Emits, es.e.Target) < severalCopies || copyFor(proj, imp.Emits, es.e) != nil {
 			continue
 		}
 		root := check.RootLabel(proj, check.OwningRoot(proj, es.e.Dir))
-		u.report(diag.E8004.AtNoCopy(es.outSpan, u.firstUse[imp.Name], imp.Name, targetWords[es.e.Target], root))
+		u.report(diag.E8004.AtNoCopy(es.outSpan, first, imp.Name, targetWords[es.e.Target], root))
 	}
 }

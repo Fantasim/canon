@@ -16,4 +16,7 @@
 @sovcommon/teamboard/teamboard.gen.go sovcommon/teamboard/teamboard.gen.go
 @sovcommon/ui/rt/rt.go sovcommon/ui/rt/rt.go
 @sovcommon/ui/ui.gen.go sovcommon/ui/ui.gen.go
+@web/roles.generated.ts web/roles.generated.ts
+@web/teamboard/generated.ts web/teamboard/generated.ts
+@web/ui.generated.ts web/ui.generated.ts
 teamboard/canon.lock canon.lock

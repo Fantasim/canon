@@ -5,19 +5,18 @@ import (
 	"context"
 	"fmt"
 	"maps"
-	"os"
 	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
+
+	"golang.org/x/tools/txtar"
 
 	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/conform"
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/eval"
 	"github.com/fantasim/canonlang/internal/ir"
-	"github.com/fantasim/canonlang/internal/project"
-	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/testkit/golden"
 	"github.com/fantasim/canonlang/internal/types"
@@ -47,61 +46,29 @@ func TestFindings(t *testing.T) {
 // vectors through eval, and prints each translated fn's vectors, then the findings.
 func stageE(t *testing.T, c golden.Case) string {
 	t.Helper()
-	ctx := context.Background()
-	fs := &source.FileSet{}
-	parse := diag.NewBag(fs, "")
-	proj := loadProject(t, fs, parse)
-	var files []*syntax.File
+	var files []txtar.File
 	for _, f := range c.Archive.Files {
-		if f.Name == findingsFile {
-			continue
+		if f.Name != findingsFile {
+			files = append(files, f)
 		}
-		src, err := fs.Add(f.Name, "/"+f.Name, f.Data)
-		if err != nil {
-			t.Fatal(err)
-		}
-		files = append(files, syntax.Parse(src, syntax.FileSource, parse))
 	}
-	bags := check.Bags{}
-	prog := check.Check(ctx, proj, files, bags, eval.NewFolder(bags, eval.Options{}))
-	ev := eval.New(prog, served{}, bags, eval.Options{})
-	pkgs := ir.Build(ctx, ir.Input{Program: prog, Project: proj, Bags: bags, Host: irHost{ev}, Fold: eval.NewFolder(bags, eval.Options{})})
-	if err := conform.Fill(ctx, prog, pkgs, conformer{prog: prog, ev: ev}, bags); err != nil {
-		t.Fatal(err)
-	}
+	w := buildWorld(t, files)
 	var out bytes.Buffer
-	for _, p := range pkgs {
+	for _, p := range w.pkgs {
 		for _, fn := range p.Fns {
 			printVectors(&out, fn)
 		}
 	}
-	all, sum := parse.Findings(), parse.Summary()
+	all, _ := w.findings(t)
+	sum := w.parse.Summary()
 	sum.Packages = 0
-	for _, name := range slices.Sorted(maps.Keys(bags)) {
-		all = append(all, bags[name].Findings()...)
-		sum = sum.Merge(bags[name].Summary())
+	for _, name := range slices.Sorted(maps.Keys(w.bags)) {
+		sum = sum.Merge(w.bags[name].Summary())
 	}
-	if err := diag.Render(&out, fs, all, diag.RenderOptions{Summary: sum, Golden: true}); err != nil {
+	if err := diag.Render(&out, w.fs, all, diag.RenderOptions{Summary: sum, Golden: true}); err != nil {
 		t.Fatal(err)
 	}
 	return out.String()
-}
-
-func loadProject(t *testing.T, fs *source.FileSet, bag *diag.Bag) *project.Project {
-	t.Helper()
-	data, err := os.ReadFile(filepath.Join(examplesDir, projectFile))
-	if err != nil {
-		t.Fatal(err)
-	}
-	src, err := fs.Add(projectFile, "/"+projectFile, data)
-	if err != nil {
-		t.Fatal(err)
-	}
-	proj, err := project.Load(src, bag)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return proj
 }
 
 // printVectors writes one line per vector: its arguments, then the Go/C++ and TS expectations.

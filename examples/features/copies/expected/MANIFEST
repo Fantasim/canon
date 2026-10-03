@@ -12,6 +12,8 @@
 @sovcommon/copies/go/base/rt/rt.go sovcommon/copies/go/base/rt/rt.go
 @sovcommon/copies/go/copies/copies.gen.go sovcommon/copies/go/copies/copies.gen.go
 @sovcommon/copies/go/copies/rt/rt.go sovcommon/copies/go/copies/rt/rt.go
+@sovcommon/copies/ts/base.ts sovcommon/copies/ts/base.ts
+@sovcommon/copies/ts/copies.ts sovcommon/copies/ts/copies.ts
 features/copies/out/cpp/base/base.gen.cpp copies/out/cpp/base/base.gen.cpp
 features/copies/out/cpp/base/base.gen.h copies/out/cpp/base/base.gen.h
 features/copies/out/cpp/base/canon_runtime.h copies/out/cpp/base/canon_runtime.h
@@ -26,3 +28,5 @@ features/copies/out/go/base/base.gen.go copies/out/go/base/base.gen.go
 features/copies/out/go/base/rt/rt.go copies/out/go/base/rt/rt.go
 features/copies/out/go/copies/copies.gen.go copies/out/go/copies/copies.gen.go
 features/copies/out/go/copies/rt/rt.go copies/out/go/copies/rt/rt.go
+features/copies/out/ts/base.ts copies/out/ts/base.ts
+features/copies/out/ts/copies.ts copies/out/ts/copies.ts

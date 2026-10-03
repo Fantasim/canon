@@ -7,7 +7,7 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// precompute evaluates every stored export fn of the assembled packages that have an emit other than view (EVALUATION.md §2.3): package fns once or per cell, methods per receiver reachable from the package's public values, in traversal order (§8.1), each receiver once.
+// precompute evaluates every stored export fn of the assembled packages that have an emit other than view (EVALUATION.md §2.3): package fns once or per cell, methods per receiver reachable from the package's public values, then for a ts data emit from its field defaults (DECISIONS 278), in traversal order (§8.1), each receiver once.
 func (s *stage) precompute() {
 	seen := map[*value.Record]bool{}
 	for _, u := range s.order {
@@ -22,7 +22,42 @@ func (s *stage) precompute() {
 		for _, v := range u.values {
 			walkInstances(v.v.V, seen, s.receiver)
 		}
+		s.precomputeDefaults(u, seen)
 	}
+}
+
+// precomputeDefaults walks the receivers of a ts data emit's field defaults, after the values (DECISIONS 278).
+func (s *stage) precomputeDefaults(u *unit, seen map[*value.Record]bool) {
+	if !tsData(u) {
+		return
+	}
+	for _, d := range ownDefaults(u.p) {
+		walkInstances(d, seen, s.receiver)
+	}
+}
+
+// tsData reports a ts emit in data mode: its readers write a constant field default as a literal, its records' stored results included (DECISIONS 278).
+func tsData(u *unit) bool {
+	for _, es := range u.emits {
+		if es.e.Target == TargetTS && es.e.Mode == ModeData {
+			return true
+		}
+	}
+	return false
+}
+
+// ownDefaults are the constant defaults of the package's record and case fields, in declaration order.
+func ownDefaults(p *Package) []value.Value {
+	var out []value.Value
+	for _, class := range tsClasses(p) {
+		fields, _ := classBody(class)
+		for _, f := range fields {
+			if f.Default != nil && !f.Computed {
+				out = append(out, f.Default)
+			}
+		}
+	}
+	return out
 }
 
 // hasDataEmit reports an emit other than view.

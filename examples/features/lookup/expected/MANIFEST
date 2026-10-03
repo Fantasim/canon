@@ -1,0 +1,3 @@
+features/lookup/out/go/lookup.gen.go lookup/out/go/lookup.gen.go
+features/lookup/out/go/rt/rt.go lookup/out/go/rt/rt.go
+features/lookup/out/lookup.generated.ts lookup/out/lookup.generated.ts

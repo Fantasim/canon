@@ -1,0 +1,55 @@
+CODEGEN.md §4.1, DECISIONS 279(d): E8101 covers every integer a TypeScript file writes, precomputed export fn results and finite-parameter lookup tables included; a fn result cannot carry @ts(bigint), so the finding (variant result) names the fn: a method's stored result and finite table at the value holding its receiver, a package fn's result and lookup table at the fn. A record inside a result keeps its fields' own names and flags.
+-- a/a.canon --
+package a
+
+/// A tone.
+enum Tone { soft, loud }
+
+/// A wrapper.
+record W {
+  /// Its number.
+  n: Int
+  /// A bigint number.
+  b: Int @ts(bigint)
+}
+
+/// A row.
+record K {
+  /// Its key.
+  k: Int
+  /// Per tone.
+  export fn per(self, t: Tone) -> Int { return 9_007_199_254_740_993 }
+  /// Precomputed.
+  export fn big(self) -> Int { return -9_007_199_254_740_995 }
+}
+
+/// The rows.
+let ks: [K] keyed by k = [ { k: 1 } ]
+
+/// A package fn's result.
+export fn top() -> [Int] { return [1, 9_007_199_254_740_997] }
+
+/// A wrapped result: its field names the fix.
+export fn wrapped() -> W { return { n: 9_007_199_254_740_999, b: 9_007_199_254_741_001 } }
+
+/// A lookup table.
+export fn loud(t: Tone) -> Int { return 9_007_199_254_741_003 }
+
+emit ts { out: "@features/a/a.ts" }
+-- findings.txt --
+error[E8101]  a/a.canon:25:5
+  -9007199254740995 does not fit a TypeScript number; K.big is precomputed for TypeScript and cannot be bigint
+
+error[E8101]  a/a.canon:25:5
+  9007199254740993 does not fit a TypeScript number; K.per is precomputed for TypeScript and cannot be bigint
+
+error[E8101]  a/a.canon:28:11
+  9007199254740997 does not fit a TypeScript number; top is precomputed for TypeScript and cannot be bigint
+
+error[E8101]  a/a.canon:31:11
+  9007199254740999 does not fit a TypeScript number; add @ts(bigint) to n
+
+error[E8101]  a/a.canon:34:11
+  9007199254741003 does not fit a TypeScript number; loud is precomputed for TypeScript and cannot be bigint
+
+5 errors, 0 warnings in 1 package (…)

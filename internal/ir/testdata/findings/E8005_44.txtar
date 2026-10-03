@@ -1,0 +1,27 @@
+CODEGEN.md §3.5, DECISIONS 278: two properties of one TypeScript interface, from two @ts(name:) overrides, and a value named like an enum's Members table, meet in their scope.
+-- a/a.canon --
+package a
+
+/// A tone.
+enum Tone { red }
+
+/// A thing.
+record Thing {
+  /// First.
+  a: Int @ts(name: "x")
+  /// Second.
+  b: Int @ts(name: "x")
+}
+
+/// A value named like the Members table of Tone.
+let ToneMembers: Int = 1
+
+emit ts { out: "@features/a/a.ts" }
+-- findings.txt --
+error[E8005]  a/a.canon:11:3
+  ts: x is generated for both a.Thing.a and a.Thing.b
+
+error[E8005]  a/a.canon:15:5
+  ts: ToneMembers is generated for both a.Tone and a.ToneMembers
+
+2 errors, 0 warnings in 1 package (…)

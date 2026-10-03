@@ -1,1 +1,3 @@
+features/ts/out/skills.generated.ts ts/out/skills.generated.ts
 features/ts/out/skills.json ts/out/skills.json
+features/ts/out/ts.conformance.test.ts ts/out/ts.conformance.test.ts

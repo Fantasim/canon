@@ -29,6 +29,12 @@ func init() {
 		(*stage).checkGoDecodedDependents, (*stage).checkRefUnions)
 	cppCode := append(slices.Clone(common), (*stage).checkCppDecoded, (*stage).checkCppDependents,
 		(*stage).checkForeignPairs, (*stage).checkClassCycles, (*stage).checkSelfReads, (*stage).checkRefUnions)
+	// ts takes the shared rules gen/ts needs (DECISIONS 278); it writes the other constructs: optional elements and map values, table fields, cases as types, record constants, a fieldless case's fns.
+	tsCode := []genRule{(*stage).checkNeverDependents, (*stage).checkDefineBranches, (*stage).checkVariantMembers, (*stage).checkTSForeignTables}
+	tsBaked := append(slices.Clone(tsCode), (*stage).checkTSLiterals)
+	genRules[TargetTS][ModeBaked], genRules[TargetTS][ModeEmbedded] = tsBaked, tsBaked
+	tsDecode := append(slices.Clone(tsCode), (*stage).checkTSDecoded)
+	genRules[TargetTS][ModeData], genRules[TargetTS][ModeTypes] = tsDecode, tsDecode
 	genRules[TargetCpp][ModeData] = cppCode
 	genRules[TargetCpp][ModeTypes] = append(slices.Clone(cppCode), (*stage).checkCppDefaults, (*stage).checkTypesInputs)
 }

@@ -1,0 +1,126 @@
+CODEGEN.md §2.8, §3.5, DECISIONS 278: every name gen/ts imports into a module is reserved in the TS name plan's module scope: imported types, an enum's Members, Codes and Index, a case type, a types-mode decoder, a table's id type and its Index (20 names; Names and a variant's Kind are reserved too, not reached here).
+-- base/base.canon --
+/// The vocabulary.
+package base
+
+/// A colour.
+enum Tone { red, blue }
+
+/// Elements, written as their code.
+enum Element @codes(UInt8) @json(codes) { FIRE = 1, WATER = 2 }
+
+/// Flags, written as one bitmask.
+enum Flag @codes(UInt8) { tradable = 1, soulbound = 4 }
+
+/// Roles, lowest first.
+enum Role ordered { member, admin }
+
+/// A badge.
+record Badge {
+  /// Its label.
+  label: String
+}
+
+/// The badges.
+let badges: table Badge = {
+  gold { label: "Gold" }
+  iron { label: "Iron" }
+}
+
+emit ts { out: "@features/shared/base.ts" }
+-- kinds/kinds.canon --
+/// Types read through public decoders.
+package kinds
+
+/// A pin.
+record Pin {
+  /// Where.
+  place: String
+}
+
+/// A shape.
+variant Shape @json(tag: "type") {
+  /// A circle.
+  circle {
+    /// Radius.
+    r: Int
+  }
+  /// Nothing.
+  dot
+}
+
+emit ts { out: "@features/shared/kinds.ts", mode: types }
+-- user/user.canon --
+/// Uses the vocabulary.
+package user
+
+import base { Tone, Element, Flag, Role, badges }
+import kinds { Pin, Shape }
+
+/// An award.
+record Award {
+  /// Its code.
+  code: String
+  /// A badge.
+  badge: ref badges
+  /// A tone.
+  tone: Tone
+  /// An element.
+  element: Element
+  /// Flags.
+  flags: [Flag] = [] @json(bits)
+  /// Weights by tone.
+  weights: {Tone: Int} = {}
+  /// A pin.
+  pin: Pin
+  /// A shape.
+  shape: Shape
+  /// By role.
+  export fn rank(self, r: Role) -> Int { return match r { member => 1, admin => 2 } }
+}
+
+/// The awards.
+let awards: [Award] keyed by code = [
+  { code: "a", badge: gold, tone: red, element: FIRE, pin: { place: "here" }, shape: dot },
+]
+
+emit ts { out: "@features/user/user.ts", mode: data }
+emit json { out: "@features/user/data/" }
+-- show/show.canon --
+/// A type over an imported case, no value.
+package show
+
+import kinds { Shape }
+
+/// A display.
+record Display {
+  /// Its name.
+  name: String
+  /// Its circle, when it is one.
+  circle: Shape.circle? = none
+}
+
+emit ts { out: "@features/show/show.ts" }
+-- lookups/lookups.canon --
+/// Lookups over imported vocabulary.
+package lookups
+
+import base { Role, badges }
+
+/// What a role may see.
+export fn visible(r: Role) -> Bool { return r >= admin }
+
+/// A badge's weight, a lookup over an imported table's ids.
+export fn weight(b: ref badges) -> Int { return if b == badges.gold { 2 } else { 1 } }
+
+emit ts { out: "@features/lookups/lookups.ts" }
+-- base.badges.json --
+{ "gold": { "label": "Gold" }, "iron": { "label": "Iron" } }
+-- user.awards.json --
+[{ "code": "a", "badge": "gold", "tone": "red", "element": "FIRE", "pin": { "place": "here" }, "shape": { "type": "dot" } }]
+-- lookups.visible.calls.json --
+{ "member": false, "admin": true }
+-- lookups.weight.calls.json --
+{ "gold": 2, "iron": 1 }
+-- user.rank.calls.json --
+{ "member": 1, "admin": 2 }

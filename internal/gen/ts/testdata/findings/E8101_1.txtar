@@ -1,0 +1,36 @@
+CODEGEN.md §4.1, §12: an Int past 2^53 − 1 in a value a ts emit writes is E8101 without @ts(bigint); the field with @ts(bigint) is fine, and a types-mode emit holds no value, so it has none.
+-- a/a.canon --
+/// A.
+package a
+
+/// A record.
+record R {
+  /// Too big for a number.
+  n: Int
+  /// Fine as a bigint.
+  big: Int = 0 @ts(bigint)
+}
+
+/// The value.
+let r: R = { n: 9_007_199_254_740_993, big: 9_007_199_254_740_993 }
+
+emit ts { out: "@features/a/a.ts" }
+-- b/b.canon --
+/// B.
+package b
+
+/// A record.
+record R {
+  /// Too big for a number, but a types-mode emit writes no value.
+  n: Int
+}
+
+/// The value.
+let r: R = { n: 9_007_199_254_740_993 }
+
+emit ts { out: "@features/b/b.ts", mode: types }
+-- findings.txt --
+error[E8101]  a/a.canon:13:5
+  9007199254740993 does not fit a TypeScript number; add @ts(bigint) to n
+
+1 error, 0 warnings in 2 packages (…)

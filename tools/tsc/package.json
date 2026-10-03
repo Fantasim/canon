@@ -1,0 +1,10 @@
+{
+  "name": "canon-tsc-toolchain",
+  "private": true,
+  "description": "TypeScript compilers and Node typings the generated-TypeScript tests run (CODEGEN.md §9, DECISIONS 277); tests and CI only.",
+  "dependencies": {
+    "@types/node": "20.19.0",
+    "typescript5": "npm:typescript@5.0.4",
+    "typescript-latest": "npm:typescript@7.0.2"
+  }
+}

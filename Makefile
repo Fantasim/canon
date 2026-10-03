@@ -26,7 +26,10 @@ GO_FILES     = $(shell find . -name '*.go' -not -path './examples/*/expected/*' 
 # CANON_REQUIRE_CXX turns a missing C++ compiler or nlohmann/json header (internal/testkit/cxx)
 # from a silent test skip into a failure, and is inherited by every prerequisite below: make
 # check must not pass green having skipped every C++ compile test for want of a toolchain.
+# CANON_REQUIRE_TS does the same for node and the TypeScript compilers (internal/testkit/tsc):
+# `npm ci --prefix tools/tsc` installs them (tests and CI only, DECISIONS 277).
 check: export CANON_REQUIRE_CXX=1
+check: export CANON_REQUIRE_TS=1
 check: fmt-check vet test stress-short goldens-vet goldens-check diag-check vm-check audit-self audit-check
 
 fmt-check:

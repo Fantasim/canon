@@ -2573,6 +2573,25 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      is refused (its `id` is that package's), and a `data` value of another package's record decodes
      through that package's `types`-mode decoder. Reason: T1 review, log-2026-10-02.
 
+279. **TypeScript general rules after T1 round 5 (CODEGEN.md §2.8, §4.1, §5.4; GRAMMAR.md §8
+     `@ts(bigint)`; ERRORS.md E8101).** Round 5's findings sat beside round 4's fixes, so four rules
+     replace shape-by-shape patching. (a) One decision says whether an integer position of a field is
+     `bigint`, and the type, the literal and every decoder (map keys included) take it: a ref position
+     takes its target key's form only (278); `@ts(bigint)` acts on the field's other integer positions
+     (the integer itself, list elements, map keys and values, optional contents); a field with
+     no such position refuses `@ts(bigint)` with the annotation-site finding (`E1118`, judged by the
+     checker). (b) A TypeScript file
+     imports every package its types reach (fields, cases, export fns, dependent branches, followed
+     through other packages), since its literals and decoders may write any of them, not only its
+     direct imports; the stage-E name plan reserves the same set, and such a package
+     without a `ts` emit is `E8004` as for a direct import; it enters `ir.Package.Imports` with its
+     `ts` emits only (IMPLEMENTATION-PLAN §4.5). (c) A row's `id`/`retired` are written
+     only where the value sits in a table, never because the record is a row type (a keyed-list
+     element of a row record has neither). (d) `E8101` covers every integer a TypeScript file writes:
+     values, consts, ref keys, precomputed export fn results and finite-parameter lookup tables; a fn
+     result cannot carry `@ts(bigint)`, so its finding (variant `result`) names the fn. A fn or value a mode already refuses (`types`
+     mode, E8013, E8014) gets no `E8101`: one finding per cause. Reason: T1
+     review round 5, log-2026-10-03.
 280. **`@files` names through dependent fields (GRAMMAR.md §8 `@files`; API.md N2; follows 277).**
      A `@files` path segment after a dependent field may name a field any of its branches declares
      (each branch's result type, as `edit` follows it); the checker records it for rename, ambiguous

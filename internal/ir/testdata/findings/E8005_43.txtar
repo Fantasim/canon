@@ -1,0 +1,13 @@
+CODEGEN.md §3.5, §8.2, DECISIONS 278: a value named like a TypeScript helper (`canonFreeze`) is E8005 from check, not a crash of the build.
+-- a/a.canon --
+package a
+
+/// A value named like a helper.
+let canonFreeze: Int = 1
+
+emit ts { out: "@features/a/a.ts" }
+-- findings.txt --
+error[E8005]  a/a.canon:4:5
+  ts: canonFreeze is generated for both the TypeScript helper block and a.canonFreeze
+
+1 error, 0 warnings in 1 package (…)

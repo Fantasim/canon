@@ -1,0 +1,22 @@
+CODEGEN.md §4.4, decision 180, DECISIONS 278: gen/ts has no type for a define record, so a ts emit in any mode refuses one in a type or a value it writes, as baked go does, from check, not a crash of the build.
+-- a/a.canon --
+package a
+
+/// A rule.
+record Rule {
+  /// Its define.
+  it: Define
+}
+
+/// Kinds.
+let kinds: [Define] keyed by value = [{ value: 3 }]
+
+emit ts { out: "@features/a/a.ts" }
+-- findings.txt --
+error[E8012]  a/a.canon:6:3
+  Rule.it cannot be emitted: a load.defines table or record has no representation in generated code
+
+error[E8012]  a/a.canon:10:5
+  kinds cannot be emitted: a load.defines table or record has no representation in generated code
+
+2 errors, 0 warnings in 1 package (…)

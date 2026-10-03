@@ -37,13 +37,18 @@ func (s *stage) checkGoDependentLiterals(u *unit, es *emitSite) {
 
 // bakedDependent reports a present dependent value of v, of type t, that baked gen/go does not write: one outside a field (a value's or a result's own, a map's), one of a field whose record does not hold its discriminant as goDiscRead reads it, or a non-string value of a literal union over one (a string is written as one).
 func bakedDependent(own string, t *TypeRef, v value.Value) bool {
+	return literalDependent(own, t, v, goDiscRead)
+}
+
+// literalDependent is bakedDependent for a generator whose literals read a discriminant as reads does.
+func literalDependent(own string, t *TypeRef, v value.Value, reads discReader) bool {
 	if decodedHolds(t, isApp) && written(v) {
 		return true
 	}
 	return literalHolds(t, v, func(t *TypeRef, v value.Value) bool {
 		switch x := v.(type) {
 		case *value.Record:
-			return unwrittenFields(own, t, x)
+			return unwrittenFields(own, t, x, reads)
 		case *value.Map:
 			return len(x.Keys) > 0 && (typeHolds(t.Key, isApp) || typeHolds(t.Elem, isApp))
 		case *value.Str, *value.None:
@@ -53,8 +58,8 @@ func bakedDependent(own string, t *TypeRef, v value.Value) bool {
 	})
 }
 
-// unwrittenFields reports a present value of a dependent field of the record value r, of type t, whose discriminant goDiscRead does not read from the record's fields.
-func unwrittenFields(own string, t *TypeRef, r *value.Record) bool {
+// unwrittenFields reports a present value of a dependent field of the record value r, of type t, whose discriminant reads does not read from the record's fields.
+func unwrittenFields(own string, t *TypeRef, r *value.Record, reads discReader) bool {
 	if !recordKinds[t.Kind] || t.Named == nil {
 		return false
 	}
@@ -65,7 +70,7 @@ func unwrittenFields(own string, t *TypeRef, r *value.Record) bool {
 		if app == nil || i < 0 || i >= len(r.Fields) || !written(r.Fields[i]) {
 			continue
 		}
-		if !goDiscRead(own, fields, app) {
+		if !reads(own, fields, app) {
 			return true
 		}
 	}

@@ -1,0 +1,144 @@
+// ---------------------------------------------------------------------------
+// canon runtime, TypeScript v1 (CODEGEN.md §8.2). Identical in every generated file.
+// ---------------------------------------------------------------------------
+
+/** An error the Canon evaluator would also report, with its code ("E4101"). */
+export class CanonEvalError extends Error {
+  readonly code: string;
+  constructor(code: string, message: string) {
+    super(code + ": " + message);
+    this.name = "CanonEvalError";
+    this.code = code;
+  }
+}
+
+function canonFail(code: string, message: string): never {
+  throw new CanonEvalError(code, message);
+}
+
+/** Every Int crossing a translated function is a safe integer; -0 becomes 0. */
+function canonInt(x: number): number {
+  if (!Number.isSafeInteger(x)) canonFail("E8303", "integer outside the TypeScript safe range");
+  return x === 0 ? 0 : x;
+}
+
+function canonAdd(a: number, b: number): number { return canonInt(a + b); }
+function canonSub(a: number, b: number): number { return canonInt(a - b); }
+function canonMul(a: number, b: number): number { return canonInt(a * b); }
+function canonDiv(a: number, b: number): number {
+  if (b === 0) canonFail("E4102", "integer division by zero");
+  return canonInt(Number(BigInt(a) / BigInt(b)));
+}
+function canonMod(a: number, b: number): number {
+  if (b === 0) canonFail("E4102", "integer division by zero in %");
+  return canonInt(Number(BigInt(a) % BigInt(b)));
+}
+function canonNeg(a: number): number { return canonInt(-a); }
+function canonAbs(a: number): number { return canonInt(Math.abs(a)); }
+function canonClamp(x: number, lo: number, hi: number): number {
+  if (lo > hi) canonFail("E4108", "clamp with lo > hi");
+  return x < lo ? lo : x > hi ? hi : x;
+}
+
+/** Any Float operation whose result is NaN or infinite is E4104. */
+function canonF(x: number): number {
+  if (!Number.isFinite(x)) canonFail("E4104", "float result is not finite");
+  return x;
+}
+function canonMinF(a: number, b: number): number {
+  if (a < b) return a;
+  if (b < a) return b;
+  return Object.is(a, -0) ? a : b;
+}
+function canonMaxF(a: number, b: number): number {
+  if (a > b) return a;
+  if (b > a) return b;
+  return Object.is(a, -0) ? b : a;
+}
+function canonClampF(x: number, lo: number, hi: number): number {
+  if (lo > hi) canonFail("E4108", "clamp with lo > hi");
+  return canonMinF(canonMaxF(x, lo), hi);
+}
+/** Int(f): truncates toward zero. */
+function canonToInt(f: number): number {
+  if (!(f >= -9223372036854775808 && f < 9223372036854775808)) canonFail("E4103", "float out of the Int range");
+  return canonInt(Math.trunc(f));
+}
+function canonFloor(f: number): number { return canonToInt(Math.floor(f)); }
+function canonCeil(f: number): number { return canonToInt(Math.ceil(f)); }
+/** Rounds half away from zero. */
+function canonRound(f: number): number { return canonToInt(Math.sign(f) * Math.round(Math.abs(f))); }
+function canonDivDuration(a: number, b: number): number {
+  if (b === 0) canonFail("E4102", "duration division by zero");
+  return canonF(a / b);
+}
+/** Range refinement of a parameter or a result: E3204. */
+function canonCheckRange(v: number, lo: number, hi: number): number {
+  if (v < lo || v > hi) canonFail("E3204", "value outside its refinement range");
+  return v;
+}
+/** Range of a sized integer type: E3201. */
+function canonCheckWidth(v: number, lo: number, hi: number): number {
+  if (v < lo || v > hi) canonFail("E3201", "value does not fit its sized integer type");
+  return v;
+}
+/** Stores a Float into a Float32 (nearest-even); overflow is E3202. */
+function canonF32(v: number): number {
+  const f = Math.fround(v);
+  if (!Number.isFinite(f)) canonFail("E3202", "value overflows Float32");
+  return f;
+}
+
+/** A read-only Map: set, delete and clear throw. */
+class CanonMap<K, V> extends Map<K, V> {
+  constructor(entries: ReadonlyArray<readonly [K, V]>) {
+    super();
+    for (const [k, v] of entries) super.set(k, v);
+    Object.freeze(this);
+  }
+  override set(_k: K, _v: V): this { throw new TypeError("canon: read-only map"); }
+  override delete(_k: K): boolean { throw new TypeError("canon: read-only map"); }
+  override clear(): void { throw new TypeError("canon: read-only map"); }
+}
+
+/** A table or keyed list: entries in source order, lookup by key. */
+export interface CanonTable<K, T> {
+  readonly length: number;
+  readonly all: ReadonlyArray<T>;
+  at(i: number): T;
+  find(key: K): T | null;
+}
+
+function canonTable<K, T>(rows: ReadonlyArray<T>, keyOf: (row: T) => K): CanonTable<K, T> {
+  const index = new Map<K, number>();
+  rows.forEach((row, i) => index.set(keyOf(row), i));
+  return Object.freeze({
+    length: rows.length,
+    all: rows,
+    at: (i: number): T => rows[i],
+    find: (key: K): T | null => {
+      const i = index.get(key);
+      return i === undefined ? null : rows[i];
+    },
+  });
+}
+
+/** Deep-freezes plain objects and arrays (CanonMaps are already read-only). */
+function canonFreeze<T>(x: T): T {
+  if (typeof x === "object" && x !== null && !Object.isFrozen(x)) {
+    Object.freeze(x);
+    for (const v of Object.values(x)) canonFreeze(v);
+  }
+  return x;
+}
+
+/** Checks the "$schema" of a data file against the fingerprint compiled in. */
+function canonEnvelope(json: unknown, schema: string, name: string): Record<string, unknown> {
+  const doc = json as Record<string, unknown> | null;
+  const got = doc !== null && typeof doc === "object" && typeof doc["$schema"] === "string" ? doc["$schema"] : "<none>";
+  if (got !== schema) {
+    throw new Error(name + ": built from schema " + got + ", this binary expects " + schema + ". Rebuild the data or deploy the matching binary");
+  }
+  return doc as Record<string, unknown>;
+}
+// ---------------------------------------------------------------------------

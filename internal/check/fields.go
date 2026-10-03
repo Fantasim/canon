@@ -71,9 +71,37 @@ func (c *checker) resolveField(tc *typeCtx, fo *object, wireCase string) {
 	f.Type = c.resolveType(tc, fd.Type)
 	fo.typ = f.Type
 	f.DependsOn = dependsOn(f.Type)
-	c.fieldAnnotations(tc.env, f, fd, wireCase, c.typeInError(fd.Type, f.Type))
+	typeErr := c.typeInError(fd.Type, f.Type)
+	c.fieldAnnotations(tc.env, f, fd, wireCase, typeErr)
+	c.tsBigint(tc.env, f, fd, typeErr)
 	c.fieldInput(tc.env, f, fd)
 	tc.scope[fo.name] = typeArgRoot{field: f, obj: fo}
+}
+
+// tsBigint is `@ts(bigint)`'s site: a field with an integer position outside a ref (holdsInt); on any other field it is E1118, never judged after a type error (GRAMMAR.md §8.3, DECISIONS 279(a)).
+func (c *checker) tsBigint(env *env, f *types.Field, fd *syntax.FieldDecl, typeErr bool) {
+	a := annotation(fd.Annotations, syntax.AnnTS)
+	if a == nil || typeErr || f.Type.Base().Kind() == types.Error {
+		return
+	}
+	if arg := flagArg(a, syntax.ArgBigint); arg != nil && !holdsInt(f.Type) {
+		c.report(env, diag.E1118.At(env.span(arg), syntax.AnnTS, diag.KindField))
+	}
+}
+
+// holdsInt reports an integer position of t outside a ref and a named type: t itself, an optional's content, a list's elements, a map's keys and values, a dependent map's values (DECISIONS 279(a)).
+func holdsInt(t types.Type) bool {
+	switch x := t.Base().(type) {
+	case *types.OptionalType:
+		return holdsInt(x.Elem)
+	case *types.ListType:
+		return holdsInt(x.Elem)
+	case *types.MapType:
+		return holdsInt(x.Key) || holdsInt(x.Value)
+	case *types.DepMapType:
+		return holdsInt(x.Value)
+	}
+	return t.Base().Kind() == types.Int
 }
 
 // dependsOn lists the earlier fields a field type's arguments read (TYPES.md §11).

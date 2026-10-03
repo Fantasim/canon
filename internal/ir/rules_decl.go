@@ -84,9 +84,9 @@ func (s *stage) checkOrderedCodes(u *unit) {
 	}
 }
 
-// checkRepresentable is E8012: no emitted type, value, constant or stored fn holds a Range, a function type, `_` or a Never outside an optional field (CODEGEN.md §4.4); a value counts only where a code emit writes it (emittedValues); a define record or a table of one is added for a type or field when the package has a baked go emit, and for a value when a baked go emit selects it, since baked go cannot represent one (decisions 180, 194: per emit), so check fails wherever build would (decision 37). Data and embedded modes refuse one through their values' fingerprints (checkFingerprinted).
+// checkRepresentable is E8012: no emitted type, value, constant or stored fn holds a Range, a function type, `_` or a Never outside an optional field (CODEGEN.md §4.4); a value counts only where a code emit writes it (emittedValues); a define record or a table of one is added for a type or field when the package has a baked go emit or a ts emit, and for a value when one of them selects it, since neither baked go nor gen/ts can represent one (decisions 180, 194: per emit; DECISIONS 278 for ts), so check fails wherever build would (decision 37). Data and embedded modes refuse one through their values' fingerprints (checkFingerprinted).
 func (s *stage) checkRepresentable(u *unit) {
-	defines := bakedFor(u, TargetGo)
+	defines := bakedFor(u, TargetGo) || hasTarget(u, TargetTS)
 	s.eachOwnField(u, func(owner string, f *Field) {
 		site := s.fieldSites[f]
 		if what := unrepresentable(site.tf.Type, true, defines); what != nil {
@@ -94,7 +94,7 @@ func (s *stage) checkRepresentable(u *unit) {
 		}
 	})
 	for _, v := range emittedValues(u) {
-		if what := unrepresentable(v.t, false, bakedGoSelects(u, v)); what != nil {
+		if what := unrepresentable(v.t, false, definesRefused(u, v)); what != nil {
 			u.report(unrepresentableFinding(v.span().span(), v.v.Name, what))
 		}
 	}

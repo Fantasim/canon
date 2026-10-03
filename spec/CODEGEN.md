@@ -305,6 +305,10 @@ on its kind-enum member (§5.5). Undocumented items get no comment (the build wa
 
 A generated type may use a type of an imported package (EMT-06). The imported package must have
 an emit for the same target, else `E8004`. An imported type is referenced, never re-emitted.
+A TypeScript file imports every package its types reach (fields, cases, export fns, dependent
+branches, followed through other packages), since its literals and decoders may write any of them,
+not only its direct imports; such a package needs a `ts` emit (`E8004`), and
+the stage-E name plan reserves the same imports (DECISIONS 279).
 
 - **Owning root and copies** (DECISIONS 229). An output's owning root is the declared root
   (GRAMMAR.md §7.1 `roots`) whose directory is the output's directory (a file's directory, for a
@@ -548,6 +552,12 @@ A refinement never changes the generated type (GEN-02): `Int(1..=100_000)` is `i
 sized types narrow. In TypeScript an `Int` value outside `Number.MAX_SAFE_INTEGER` in an emitted
 value is `E8101`, unless the field has `@ts(bigint)`. A `types`-mode emit holds no values, so it
 has no `E8101`.
+`@ts(bigint)` makes every integer position of its field `bigint` except a ref, which takes its
+target key's form ([§5.8](#58-references)); the type, the literal and every decoder, map keys
+included, follow that one decision. `E8101` covers every integer the file writes: values, consts,
+ref keys, precomputed export fn results and finite-parameter lookup tables; a fn result cannot
+carry `@ts(bigint)`, so its finding names the fn; a fn or value the mode already refuses (E8013,
+E8014) has no `E8101` (DECISIONS 279).
 
 ### 4.2 Composite types
 

@@ -1,0 +1,34 @@
+CODEGEN.md §5.13, DECISIONS 278: a ts data emit's E8019 judges only the classes its selected values reach, as gen/go's plan does: a dependent map in a record no selected value holds is no finding (gen/ts builds it: testdata/ts/reach.txtar); types mode judges every class (findings/E8019_59.txtar).
+-- a/a.canon --
+package a
+
+/// A status.
+record S {
+  /// Label.
+  label: String
+}
+
+/// The statuses.
+let statuses: table S = {
+  open { label: "Open" }
+}
+
+/// A rate.
+record Rate(s: S) {
+  /// Value.
+  value: Int
+}
+
+/// Rates, held by no emitted value.
+record Rates {
+  /// By status.
+  byStatus: {s in statuses: Rate(s)}
+}
+
+/// The rates, not emitted.
+let rates: Rates = { byStatus: { open: { value: 1 } } }
+
+emit json { out: "@features/a/data/", values: [statuses] }
+emit ts { out: "@features/a/a.ts", mode: data, values: [statuses] }
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

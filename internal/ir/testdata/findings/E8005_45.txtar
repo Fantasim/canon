@@ -1,0 +1,59 @@
+CODEGEN.md §2.8, §3.5, DECISIONS 278: the names a ts module may import from another package are in its scope: a record named like the Members table of an imported enum, and one named like the id type of an imported table, are E8005 from check, not a crash of the build.
+-- base/base.canon --
+package base
+
+/// A colour.
+enum Tone { red, blue }
+
+/// A badge.
+record Badge {
+  /// Its label.
+  label: String
+}
+
+/// The badges.
+let badges: table Badge = {
+  gold { label: "Gold" }
+}
+
+emit ts { out: "@features/shared/base.ts" }
+-- user/user.canon --
+package user
+
+import base { Tone, badges }
+
+/// An award.
+record Award {
+  /// Its code.
+  code: String
+  /// A tone.
+  tone: Tone
+  /// A badge.
+  badge: ref badges
+}
+
+/// Named like the Members table of base.Tone.
+record ToneMembers {
+  /// X.
+  x: Int
+}
+
+/// Named like the id type of base.badges.
+record BadgeId {
+  /// X.
+  x: Int
+}
+
+/// The awards.
+let awards: [Award] keyed by code = [{ code: "a", tone: red, badge: gold }]
+
+emit json { out: "@features/user/data/" }
+emit ts { out: "@features/user/user.ts", mode: data }
+-- findings.txt --
+error[E8005]  user/user.canon:16:8
+  ts: ToneMembers is generated for both base.Tone and user.ToneMembers
+
+error[E8005]  user/user.canon:22:8
+  ts: BadgeId is generated for both base.badges and user.BadgeId
+
+2 errors, 0 warnings in 2 packages (…)

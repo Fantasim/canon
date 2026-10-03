@@ -1,0 +1,30 @@
+CODEGEN.md §5.3, §5.4, DECISIONS 278: a table of another package's record has rows with `id` and `retired`, which that record's interface does not declare: ForeignDataRecord in a ts mode with readers (CrossPackageBakedValue in baked), from check, not a type error in the output.
+-- b/b.canon --
+package b
+
+/// A point.
+record Point {
+  /// Across.
+  x: Int
+}
+
+emit ts { out: "@features/b/b.ts", mode: types }
+-- a/a.canon --
+package a
+
+import b { Point }
+
+/// A holder.
+record H {
+  /// Its key.
+  k: String
+  /// Points by name.
+  slots: table Point = {}
+}
+
+emit ts { out: "@features/a/a.ts", mode: types }
+-- findings.txt --
+error[E8019]  a/a.canon:10:3
+  emit ts in types mode cannot generate a record or variant of another package read by a data loader
+
+1 error, 0 warnings in 2 packages (…)

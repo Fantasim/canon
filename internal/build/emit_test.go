@@ -9,11 +9,7 @@ import (
 	"testing"
 
 	"github.com/fantasim/canonlang/internal/build"
-	"github.com/fantasim/canonlang/internal/check"
-	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/ir"
-	"github.com/fantasim/canonlang/internal/project"
-	"github.com/fantasim/canonlang/internal/syntax"
 )
 
 const (
@@ -96,17 +92,8 @@ func TestTargets(t *testing.T) {
 		t.Errorf("every target: %v", paths)
 	}
 	fsys["p/a/a.canon"] = file(jsonSource + "\nlet w: Int = true\n\nemit ts { out: \"@out/a.ts\" }\n")
-	checked := false
-	checker := func(context.Context, *project.Project, []*syntax.File, map[string]*diag.Bag) *check.Program {
-		checked = true
-		return nil
-	}
-	p, err := build.Open(fsys, "/p", build.Options{Checker: checker})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := p.Build(context.Background(), build.BuildOptions{}); !errors.Is(err, build.ErrNoGenerator) || checked {
-		t.Errorf("ts: %v, analysed %t", err, checked)
+	if res = buildTree(t, fsys, build.BuildOptions{}); res.Summary.Errors == 0 || res.Outputs != nil {
+		t.Errorf("ts after an error: %d errors, %+v", res.Summary.Errors, res.Outputs)
 	}
 	res = buildTree(t, fsys, build.BuildOptions{Targets: []ir.Target{ir.TargetJSON}})
 	if res.Summary.Errors == 0 || res.Outputs != nil || res.Locks != nil {

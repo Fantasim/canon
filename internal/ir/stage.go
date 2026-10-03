@@ -80,7 +80,7 @@ type stage struct {
 }
 
 // unit is one checked package on its way to IR; firstUse is the first type of each imported
-// package its IR names, for E8004.
+// package its IR names, tsReach that of each package only its ts emit reaches, for E8004.
 type unit struct {
 	cp           *check.Package
 	p            *Package
@@ -91,6 +91,7 @@ type unit struct {
 	fns          []*fnSite
 	consts       []*constSite
 	firstUse     map[string]string
+	tsReach      map[string]string
 	cppNames     []cppShared   // the names its data-mode cpp header declares in namespaces other packages share
 	variantCalls []source.Span // translated calls of a variant-level export fn (E8019 VariantMethod)
 }

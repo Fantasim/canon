@@ -3,6 +3,7 @@ package ir
 import (
 	"regexp"
 	resyntax "regexp/syntax"
+	"strings"
 	"unicode/utf8"
 )
 
@@ -407,3 +408,39 @@ var patternEmpty = []struct {
 	op uint32
 	at PatternAt
 }{{uint32(resyntax.EmptyBeginText), PatternAtBegin}, {uint32(resyntax.EmptyEndText), PatternAtEnd}}
+
+// The names of a TypeScript module that are not the package's (CODEGEN.md §3.4, §8.2): reserved words, predefined type names, and the helper units the generator may write, runtime block and decoders.
+var (
+	tsReserved   = strings.Fields("await break case catch class const continue debugger default delete do else enum export extends false finally for function if import in instanceof new null return super switch this throw true try typeof var void while with yield implements interface let package private protected public static undefined NaN Infinity arguments eval")
+	tsPredefined = strings.Fields("string number boolean symbol bigint object any unknown never void")
+	tsHelpers    = strings.Fields("CanonEvalError canonFail canonInt canonAdd canonSub canonMul canonDiv canonMod canonNeg canonAbs canonClamp canonF canonMinF canonMaxF canonClampF canonToInt canonFloor canonCeil canonRound canonDivDuration canonCheckRange canonCheckWidth canonF32 CanonMap CanonTable canonTable canonFreeze canonEnvelope decOrder decTokenKey decToken decText decDecimal decSame decKeys decFail decGet decIsObject decObject decArray decAt decEmptyObject decEmptyArray decBool decBit decInt decBig decFloat decCompare decHalf decF32 decString decDuration decEnum decCode decBits decKeyed decForeign decList decTable decIntKey decBigKey decMap decPairs decParse")
+)
+
+// tsIdentPattern is a TypeScript identifier as generated code spells it: `$` starts a method's pure function.
+var tsIdentPattern = regexp.MustCompile(`^[A-Za-z_$][A-Za-z0-9_$]*$`)
+
+const (
+	tsHelperOrigin = "the TypeScript helper block"
+	tsModuleScope  = "module"
+	tsPureMark     = "$"
+	tsIDSuffix     = "Id"
+	tsKindSuffix   = "Kind"
+	tsBranchSuffix = "Branch"
+	tsDecodePrefix = "decode"
+	tsParsePrefix  = "parse"
+	tsReadPrefix   = "read"
+	tsSchemaSuffix = "Schema"
+	tsMembersName  = "Members"
+	tsNamesName    = "Names"
+	tsIndexName    = "Index"
+	tsCodesName    = "Codes"
+	tsIDProp       = "id"
+	tsRetiredProp  = "retired"
+	tsKindProp     = "kind"
+)
+
+// The states of a record value in gen/ts's literal walk (literalCycles).
+const (
+	cycleOpen = 1 + iota
+	cycleDone
+)

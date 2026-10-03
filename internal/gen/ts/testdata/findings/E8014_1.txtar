@@ -1,0 +1,22 @@
+CODEGEN.md §4.1, DECISIONS 279(d): a fn the mode already refuses gets no E8101, one finding per cause: in types mode a package fn's result and lookup table past Number.MAX_SAFE_INTEGER are E8014 (types mode has no data for them) alone. No E8101 is expected.
+-- a/a.canon --
+package a
+
+/// A tone.
+enum Tone { soft, loud }
+
+/// A precomputed result.
+export fn big() -> Int { return 9_007_199_254_740_993 }
+
+/// A lookup table.
+export fn per(t: Tone) -> Int { return 9_007_199_254_740_995 }
+
+emit ts { out: "@features/a/a.ts", mode: types }
+-- findings.txt --
+error[E8014]  a/a.canon:7:11
+  types mode cannot emit the precomputed function of big: there is no data to read it from
+
+error[E8014]  a/a.canon:10:11
+  types mode cannot emit the lookup function of per: there is no data to read it from
+
+2 errors, 0 warnings in 1 package (…)

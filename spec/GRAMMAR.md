@@ -1175,7 +1175,7 @@ mutually exclusive arguments is `E1119`. An unknown annotation name or an unknow
 | `@cpp(value: N)` | `int` | `VC` (case of a variant held by a legacy struct) | CODEGEN.md §7.8 |
 | `@cpp(unit: u)` | `symbol{ms, s, m, h, d}` | `FD` (`Duration` field mapped to a legacy member) | CODEGEN.md §7.8 |
 | `@cpp(name: "N")`, `@go(name: "N")`, `@ts(name: "N")` | `string` (a target identifier) | `TH`, `FD`, `EM`, `VC`, `MB`, `TL` (`let`, `const`, `type`, `fn`) | CODEGEN.md (CG-02) |
-| `@ts(bigint)` | flag | `FD` (integer field) | CODEGEN.md (SPEC §15.4) |
+| `@ts(bigint)` | flag | `FD` (a field with an integer position outside a ref: the integer, list elements, map keys and values, optional contents; DECISIONS 279) | CODEGEN.md (SPEC §15.4) |
 
 Combination rules checked here:
 

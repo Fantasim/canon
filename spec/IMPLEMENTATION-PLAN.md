@@ -456,7 +456,7 @@ type Package struct {
     Name     string          // "pipeline"
     Dir      string          // display path of the package directory
     Doc      string
-    Imports  []*PackageRef   // packages whose types or values are referenced, with their emits per target
+    Imports  []*PackageRef   // packages whose types or values are referenced, with their emits per target; one a ts emit reaches only through other packages' types carries its ts emits only (DECISIONS 279)
     Types    []Type          // every public type, in declaration order (files in path order)
     Consts   []*Const
     Values   []*Value        // public values selected by the emit's `values`

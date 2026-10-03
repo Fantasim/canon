@@ -1,0 +1,19 @@
+CODEGEN.md §3.4, §3.5, DECISIONS 278: a @ts(name:) override that is a TypeScript reserved word is E8011, and so is a predefined type name for a type.
+-- a/a.canon --
+package a
+
+/// A thing.
+record Thing @ts(name: "string") {
+  /// A field.
+  a: Int @ts(name: "delete")
+}
+
+emit ts { out: "@features/a/a.ts" }
+-- findings.txt --
+error[E8011]  a/a.canon:4:8
+  string is not a valid ts identifier for @ts(name:)
+
+error[E8011]  a/a.canon:6:3
+  delete is not a valid ts identifier for @ts(name:)
+
+2 errors, 0 warnings in 1 package (…)

@@ -16,9 +16,25 @@ func (s *stage) checkOverrideNames(u *unit) {
 		if ok, _ := cppValidIdent(site.cpp); cpp && site.cpp != "" && !ok {
 			u.report(diag.E8011.AtOverride(s.itemSpan(site.item, source.Span{}), site.cpp, check.TargetCpp))
 		}
-		if ts && site.tsName != "" && !identPattern.MatchString(site.tsName) {
+		if ts && site.tsName != "" && !tsValidOverride(site) {
 			u.report(diag.E8011.AtOverride(s.itemSpan(site.item, source.Span{}), site.tsName, check.TargetTS))
 		}
+	}
+}
+
+// tsValidOverride reports a @ts(name:) override TypeScript can declare: an identifier that is no reserved word, and for a type no predefined type name (CODEGEN.md §3.4, §3.5).
+func tsValidOverride(site nameSite) bool {
+	if !identPattern.MatchString(site.tsName) || slices.Contains(tsReserved, site.tsName) {
+		return false
+	}
+	_, isType := site.item.(Type)
+	return !isType || !slices.Contains(tsPredefined, site.tsName)
+}
+
+// checkTSNames reports the ts emit's names from the name plan gen/ts writes from (CODEGEN.md §3.5, DECISIONS 278): E8005 for two names of one scope, a helper's included.
+func (s *stage) checkTSNames(u *unit) {
+	if es := emitFor(u, TargetTS); es != nil {
+		reportNames(u, s.itemSpans(es), planTSNames(u.p, es.e).found(), check.TargetTS, map[any]bool{})
 	}
 }
 

@@ -2110,7 +2110,8 @@ var Registry = []Def{
 	{
 		Code: "E8101", Severity: Error, Package: "ir",
 		Variants: []Variant{
-			{Args: []Arg{{Name: "value", Type: ArgTypeValue}, {Name: "field", Type: ArgTypeName}}, Template: "{value} does not fit a TypeScript number; add @ts(bigint) to {field}"},
+			{Name: "field", Args: []Arg{{Name: "value", Type: ArgTypeValue}, {Name: "field", Type: ArgTypeName}}, Template: "{value} does not fit a TypeScript number; add @ts(bigint) to {field}"},
+			{Name: "result", Args: []Arg{{Name: "value", Type: ArgTypeValue}, {Name: "fn", Type: ArgTypeName}}, Template: "{value} does not fit a TypeScript number; {fn} is precomputed for TypeScript and cannot be bigint"},
 		},
 	},
 	{
@@ -2876,7 +2877,7 @@ func (codeE1117) At(span source.Span) *Builder {
 	return newBuilder(&Registry[28], 0, span)
 }
 
-// E1118: an annotation in a position it does not allow (GRAMMAR.md §8.1).
+// E1118: an annotation in a position it does not allow (the checker judges `@ts(bigint)`'s integer-position site, DECISIONS 279) (GRAMMAR.md §8.1).
 var E1118 codeE1118
 
 type codeE1118 struct{}
@@ -6518,9 +6519,14 @@ type codeE8101 struct{}
 // Def is the registry entry of E8101.
 func (codeE8101) Def() *Def { return &Registry[257] }
 
-// At reports: {value} does not fit a TypeScript number; add @ts(bigint) to {field}
-func (codeE8101) At(span source.Span, value ValueArg, field string) *Builder {
+// AtField reports: {value} does not fit a TypeScript number; add @ts(bigint) to {field}
+func (codeE8101) AtField(span source.Span, value ValueArg, field string) *Builder {
 	return newBuilder(&Registry[257], 0, span, value, field)
+}
+
+// AtResult reports: {value} does not fit a TypeScript number; {fn} is precomputed for TypeScript and cannot be bigint
+func (codeE8101) AtResult(span source.Span, value ValueArg, fn string) *Builder {
+	return newBuilder(&Registry[257], 1, span, value, fn)
 }
 
 // E8102: a value with no wire form for its field (not a whole unit, equals the `none` marker, repeated bits member) (WIRE.md §5.1).

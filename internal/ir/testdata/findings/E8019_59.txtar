@@ -1,0 +1,36 @@
+CODEGEN.md §5.13, DECISIONS 278: a ts types emit decodes every record, so a dependent map no value holds is still DependentType (in data mode only the selected values' classes are judged: gensupport/ts_data_unreachable.txtar).
+-- a/a.canon --
+package a
+
+/// A status.
+record S {
+  /// Label.
+  label: String
+}
+
+/// The statuses.
+let statuses: table S = {
+  open { label: "Open" }
+}
+
+/// A rate.
+record Rate(s: S) {
+  /// Value.
+  value: Int
+}
+
+/// Rates, held by no emitted value.
+record Rates {
+  /// By status.
+  byStatus: {s in statuses: Rate(s)}
+}
+
+/// The rates, not emitted.
+let rates: Rates = { byStatus: { open: { value: 1 } } }
+
+emit ts { out: "@features/a/a.ts", mode: types }
+-- findings.txt --
+error[E8019]  a/a.canon:23:3
+  emit ts in types mode cannot generate a dependent type
+
+1 error, 0 warnings in 1 package (…)

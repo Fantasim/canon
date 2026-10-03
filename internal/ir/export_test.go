@@ -18,3 +18,8 @@ func scopeNames(scopes []*nameScope) map[string]map[string]bool {
 	}
 	return out
 }
+
+// TSModuleNames are the names the TypeScript plan of p's ts emit e declared in its module scope.
+func TSModuleNames(p *Package, e *Emit) map[string]bool {
+	return scopeNames(planTSNames(p, e).scopes)[tsModuleScope]
+}

@@ -416,7 +416,8 @@ E8017 -: branch resource.vocab.items of resource.vocab.items has type Int: depen
 E8018 -: resource.vocab.items is decoded from JSON by resource.vocab.items, but package resource.vocab.items is emitted in baked mode
 E8019 -: emit resource.vocab.items in resource.vocab.items mode cannot generate a case used as a type
 E8020 -: constant resource.vocab.items is -0.0, which a Go constant cannot hold: make it a let
-E8101 -: "II_SYS_SYS_SCR_FARM3" does not fit a TypeScript number; add @ts(bigint) to resource.vocab.items
+E8101 field: "II_SYS_SYS_SCR_FARM3" does not fit a TypeScript number; add @ts(bigint) to resource.vocab.items
+E8101 result: "II_SYS_SYS_SCR_FARM3" does not fit a TypeScript number; resource.vocab.items is precomputed for TypeScript and cannot be bigint
 E8102 unit: "II_SYS_SYS_SCR_FARM3" has no wire form for resource.vocab.items: not a whole number of resource.vocab.items
 E8102 none: "II_SYS_SYS_SCR_FARM3" has no wire form for resource.vocab.items: it equals the none marker 0.9
 E8102 bits: "II_SYS_SYS_SCR_FARM3" has no wire form for resource.vocab.items: resource.vocab.items appears twice in a bits set

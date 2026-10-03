@@ -1,0 +1,44 @@
+CODEGEN.md §2.8, DECISIONS 279(b): a TypeScript file imports every package whose names it writes, followed through other packages' types: a's baked literal of b.Badge writes `new CanonMap<string, Tag>`, so c, which a never names, needs a ts emit (E8004 at a's ts emit, beside b's own), and a's go emit, which never writes c's names, does not.
+-- c/c.canon --
+package c
+
+/// A tag.
+record Tag {
+  /// Its text.
+  t: String
+}
+
+emit go { out: "@features/c/" }
+-- b/b.canon --
+package b
+
+import c { Tag }
+
+/// A badge.
+record Badge {
+  /// Its label.
+  label: String
+  /// Its tags.
+  tags: {String: Tag} = {}
+}
+
+emit ts { out: "@features/b/b.ts", mode: types }
+emit go { out: "@features/b/" }
+-- a/a.canon --
+package a
+
+import b { Badge }
+
+/// One badge.
+let one: Badge = { label: "o" }
+
+emit ts { out: "@features/a/a.ts" }
+emit go { out: "@features/a/" }
+-- findings.txt --
+error[E8004]  a/a.canon:8:6
+  c.Tag of package c is used by this ts emit, but c has no ts emit
+
+error[E8004]  b/b.canon:13:6
+  c.Tag of package c is used by this ts emit, but c has no ts emit
+
+2 errors, 0 warnings in 3 packages (…)

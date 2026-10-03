@@ -1,0 +1,32 @@
+CODEGEN.md §4.1, DECISIONS 278: E8101 covers a ref as it covers a field: a ref past Number.MAX_SAFE_INTEGER into a key field without @ts(bigint) is refused, one into a @ts(bigint) key field is a bigint and passes.
+-- a/a.canon --
+package a
+
+/// A row keyed by a plain Int.
+record R {
+  /// Its key.
+  n: Int
+  /// The next row.
+  next: ref rs? = none
+}
+
+/// A row keyed by a bigint.
+record B {
+  /// Its key.
+  n: Int @ts(bigint)
+  /// The next row.
+  next: ref bs? = none
+}
+
+/// Rows, keyed by a number.
+let rs: [R] keyed by n = [{ n: 1, next: 9_007_199_254_740_993 }]
+
+/// Rows, keyed by a bigint.
+let bs: [B] keyed by n = [{ n: 9_007_199_254_740_993, next: 9_007_199_254_740_993 }]
+
+emit ts { out: "@features/a/a.ts" }
+-- findings.txt --
+error[E8101]  a/a.canon:20:5
+  9007199254740993 does not fit a TypeScript number; add @ts(bigint) to n
+
+1 error, 0 warnings in 1 package (…)

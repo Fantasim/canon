@@ -26,13 +26,14 @@ type KeyField struct {
 
 // RefTarget is the collection a ref targets (CG-03); Value is "" for an enclosing field.
 type RefTarget struct {
-	Coll  types.CollKind
-	Pkg   string
-	Value string
-	Path  []string
-	Elem  Type
-	Keyed bool
-	Local bool
+	Coll   types.CollKind
+	Pkg    string
+	Value  string
+	Path   []string
+	Elem   Type
+	Keyed  bool
+	Local  bool
+	BigInt bool // the key field is @ts(bigint): TypeScript keys the ref as a bigint (DECISIONS 278)
 }
 
 // Source is where a type argument is read from (FINGERPRINT.md §4.4).

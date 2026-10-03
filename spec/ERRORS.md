@@ -353,7 +353,7 @@ func (codeE2103) AtSeveral(span source.Span, typ string, colls []string) *Builde
 
 ---
 
-The catalogue holds 301 codes: 280 errors, 18 warnings and 3 run-time codes, with 473 messages.
+The catalogue holds 301 codes: 280 errors, 18 warnings and 3 run-time codes, with 474 messages.
 
 ## E10xx, W10xx: Project file, doc comments and naming
 
@@ -430,7 +430,7 @@ Owner: GRAMMAR.md.
 | E1115 | error | syntax | GRAMMAR.md §2.7 | a regular expression outside a type refinement or `matches()` |
 | E1116 | error | syntax | GRAMMAR.md §12 | any other syntax error ("expected …, found …") |
 | E1117 | error | syntax | GRAMMAR.md §3.1 | two items on one line without a separator |
-| E1118 | error | syntax | GRAMMAR.md §8.1 | an annotation in a position it does not allow |
+| E1118 | error | syntax | GRAMMAR.md §8.1 | an annotation in a position it does not allow (the checker judges `@ts(bigint)`'s integer-position site, DECISIONS 279) |
 | E1119 | error | syntax | GRAMMAR.md §8.2 | an annotation argument of the wrong kind or value, missing, or exclusive with another |
 | E1120 | error | syntax | GRAMMAR.md §8.1 | the same annotation twice at one position |
 | E1121 | error | syntax | GRAMMAR.md §6.7 | a positional argument after a named one, or an argument given twice |
@@ -1204,7 +1204,8 @@ Owner: CODEGEN.md, WIRE.md.
 | E8018 | - | typ:Name, emit:Name, pkg:Name | `{typ} is decoded from JSON by {emit}, but package {pkg} is emitted in baked mode` |
 | E8019 | - | target:Name, mode:Name, what:Kind | `emit {target} in {mode} mode cannot generate {what}` |
 | E8020 | - | name:Name | `constant {name} is -0.0, which a Go constant cannot hold: make it a let` |
-| E8101 | - | value:Value, field:Name | `{value} does not fit a TypeScript number; add @ts(bigint) to {field}` |
+| E8101 | field | value:Value, field:Name | `{value} does not fit a TypeScript number; add @ts(bigint) to {field}` |
+| E8101 | result | value:Value, fn:Name | `{value} does not fit a TypeScript number; {fn} is precomputed for TypeScript and cannot be bigint` |
 | E8102 | unit | value:Value, field:Name, unit:Name | `{value} has no wire form for {field}: not a whole number of {unit}` |
 | E8102 | none | value:Value, field:Name, marker:Text | `{value} has no wire form for {field}: it equals the none marker {marker}` |
 | E8102 | bits | value:Value, field:Name, member:Name | `{value} has no wire form for {field}: {member} appears twice in a bits set` |

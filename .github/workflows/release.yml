@@ -28,6 +28,11 @@ jobs:
             tools/audit/go.sum
             tools/audit/toolchain/go.sum
       - run: sudo apt-get update && sudo apt-get install -y nlohmann-json3-dev libc++-dev libc++abi-dev
+      # make check requires the TypeScript toolchain (CANON_REQUIRE_TS), as in check.yml.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "node"
+      - run: npm ci --prefix tools/tsc --no-audit --no-fund
       - name: refuse a tag that is not a semver
         run: |
           [ "$(printf '%s\n' "$TAG" | wc -l)" -eq 1 ] || { echo "bad tag: not one line"; exit 1; }

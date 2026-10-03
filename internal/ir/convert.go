@@ -1,6 +1,7 @@
 package ir
 
 import (
+	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
 )
 
@@ -109,7 +110,7 @@ func (s *stage) collRef(c *types.Collection) TypeRef {
 	if c.KeyedBy != nil {
 		key = s.ref(c.KeyedBy.Type)
 	}
-	target := &RefTarget{Coll: c.Kind, Pkg: c.Pkg, Path: c.FieldPath, Keyed: c.KeyedBy != nil, Local: c.Local}
+	target := &RefTarget{Coll: c.Kind, Pkg: c.Pkg, Path: c.FieldPath, Keyed: c.KeyedBy != nil, Local: c.Local, BigInt: bigKey(c)}
 	if c.Kind != types.CollField {
 		target.Value = c.Name
 	}
@@ -153,4 +154,9 @@ func wirePath(fields []*types.Field) []string {
 		out = append(out, f.WirePath...)
 	}
 	return out
+}
+
+// bigKey reports a collection keyed by a @ts(bigint) field: a ref into it is a bigint in TypeScript (DECISIONS 278).
+func bigKey(c *types.Collection) bool {
+	return c != nil && c.KeyedBy != nil && hasFlag(annotation(c.KeyedBy.Annotations, syntax.AnnTS), syntax.ArgBigint)
 }

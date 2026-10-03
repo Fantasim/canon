@@ -1,0 +1,26 @@
+CODEGEN.md §5.9, §5.13, DECISIONS 278: a ts data value of another package's record decodes through that package's types-mode decoder; when its ts emit is in another mode there is none: ForeignDataRecord at the value, from check, not an undefined reader in the output.
+-- b/b.canon --
+package b
+
+/// A point.
+record Point {
+  /// Across.
+  x: Int
+}
+
+emit ts { out: "@features/b/b.ts", mode: data }
+-- a/a.canon --
+package a
+
+import b { Point }
+
+/// Points, keyed.
+let pts: [Point] keyed by x = [{ x: 1 }]
+
+emit json { out: "@features/a/data/" }
+emit ts { out: "@features/a/a.ts", mode: data }
+-- findings.txt --
+error[E8019]  a/a.canon:6:5
+  emit ts in data mode cannot generate a record or variant of another package read by a data loader
+
+1 error, 0 warnings in 2 packages (…)

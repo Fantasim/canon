@@ -1,0 +1,31 @@
+CODEGEN.md §5.5, DECISIONS 226, 278: gen/ts writes no variant-level export fn, so a ts emit in baked mode reports VariantMethod at it instead of dropping it silently.
+-- a/a.canon --
+package a
+
+/// A reward.
+variant Reward {
+  /// Some gold.
+  gold {
+    /// How much.
+    amount: Int
+  }
+  /// Nothing.
+  nothing
+
+  /// What it is worth.
+  export fn worth(self) -> Int {
+    return match self {
+      gold(g) => g.amount
+      nothing => 0
+    }
+  }
+
+  check worth() >= 0 else "negative"
+}
+
+emit ts { out: "@features/a/a.ts", mode: baked }
+-- findings.txt --
+error[E8019]  a/a.canon:14:13
+  emit ts in baked mode cannot generate a variant-level method a generator must write
+
+1 error, 0 warnings in 1 package (…)

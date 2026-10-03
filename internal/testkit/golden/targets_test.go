@@ -11,15 +11,15 @@ import (
 )
 
 // defaultTargets are the targets an example without its own row in exampleTargets is built for.
-var defaultTargets = []canon.Target{canon.TargetGo, canon.TargetJSON}
+var defaultTargets = []canon.Target{canon.TargetGo, canon.TargetTS, canon.TargetJSON}
 
-// exampleTargets overrides defaultTargets for the examples whose MANIFEST freezes more: the cpp
-// data emits of pipeline and features.dependent, and the emit view of pipeline, resource.farm
-// and resource.events (M3 acceptance 2). An example with a row must have expected/MANIFEST.
+// exampleTargets overrides defaultTargets; an example with a row must have expected/MANIFEST (embedded: no Go emit, gen/go has no embedded mode).
 var exampleTargets = map[string][]canon.Target{
 	"pipeline":           {canon.TargetGo, canon.TargetCpp, canon.TargetJSON, canon.TargetView},
 	"features.dependent": {canon.TargetGo, canon.TargetCpp, canon.TargetJSON},
-	"features.copies":    {canon.TargetGo, canon.TargetCpp, canon.TargetJSON}, // DECISIONS 229: TS has no generator yet
+	"features.copies":    {canon.TargetGo, canon.TargetCpp, canon.TargetTS, canon.TargetJSON},
+	"features.lookup":    {canon.TargetGo, canon.TargetTS},
+	"features.embedded":  {canon.TargetTS},
 	"resource.farm":      {canon.TargetGo, canon.TargetJSON, canon.TargetView},
 	"resource.events":    {canon.TargetGo, canon.TargetJSON, canon.TargetView},
 }

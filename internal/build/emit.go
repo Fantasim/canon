@@ -62,9 +62,6 @@ func (p *Project) Build(ctx context.Context, opt BuildOptions) (*BuildResult, er
 	if err != nil {
 		return nil, err
 	}
-	if err := r.refuseTargets(opt.Targets); err != nil {
-		return nil, err
-	}
 	if err := r.analyze(ctx); err != nil {
 		return nil, err
 	}
@@ -100,48 +97,6 @@ func (r *run) build(ctx context.Context, opt BuildOptions) (*BuildResult, error)
 		return nil, err
 	}
 	return out, nil
-}
-
-// refuseTargets refuses, before any analysis, an emit of the selection whose target has no
-// generator yet, naming it (DECISIONS 196).
-func (r *run) refuseTargets(targets []ir.Target) error {
-	for _, u := range r.selected {
-		for _, ed := range emitDecls(u) {
-			t, known := targetOf(ed.Target.Name)
-			if known && !written(t) && (len(targets) == 0 || slices.Contains(targets, t)) {
-				return fmt.Errorf(fmtNoGenerator, u.Name, ed.Target.Name, ErrNoGenerator)
-			}
-		}
-	}
-	return nil
-}
-
-// emitDecls is every emit declaration of a package, in file then source order.
-func emitDecls(u *project.Unit) []*syntax.EmitDecl {
-	var out []*syntax.EmitDecl
-	for _, f := range u.Files {
-		for _, d := range f.Decls {
-			if ed, ok := d.(*syntax.EmitDecl); ok && ed.Target != nil {
-				out = append(out, ed)
-			}
-		}
-	}
-	return out
-}
-
-// written reports a target the build writes: a generator's, or the view model (log-2026-09-28 item 4).
-func written(t ir.Target) bool {
-	return t == ir.TargetView || generators[t] != nil
-}
-
-// targetOf is the target an emit's word names.
-func targetOf(word string) (ir.Target, bool) {
-	for t := ir.TargetGo; int(t) < len(targetWords); t++ {
-		if targetWords[t] == word {
-			return t, true
-		}
-	}
-	return 0, false
 }
 
 // output is an Output with the location of the emit that writes it, for its findings.
@@ -208,9 +163,6 @@ func complete(p *ir.Package) error {
 }
 
 func generate(p *ir.Package, e *ir.Emit) ([]ir.File, error) {
-	if int(e.Target) >= len(generators) || generators[e.Target] == nil {
-		return nil, fmt.Errorf(fmtEmit, p.Name, e.Out, ErrNoGenerator)
-	}
 	files, err := generators[e.Target](p, e)
 	if err != nil {
 		return nil, fmt.Errorf(fmtEmit, p.Name, e.Out, err)

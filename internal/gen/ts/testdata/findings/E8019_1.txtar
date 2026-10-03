@@ -1,0 +1,72 @@
+CODEGEN.md §5.6, DECISIONS 278: a baked ts literal writes a dependent value in the branch its record's discriminant selects; a dependent value in a map, in a literal union whose value is no string, or read through a ref has none: DependentType at the value, from check, not a crash of the build.
+-- a/a.canon --
+package a
+
+/// A goal.
+enum Goal { kill, collect }
+
+/// A colour.
+enum Color { red, blue }
+
+/// A target.
+type Target(g: Goal) = match g {
+  kill => String
+  collect => Color
+}
+
+/// A goal holder.
+record G {
+  /// The goal.
+  goal: Goal
+}
+
+/// The goals.
+let gs: table G = {
+  k { goal: kill }
+}
+
+/// Targets in a map.
+record M {
+  /// The goal.
+  goal: Goal
+  /// Targets by name.
+  m: {String: Target(goal)}
+}
+
+/// A target in a literal union.
+record U {
+  /// The goal.
+  goal: Goal
+  /// A target or none.
+  u: Target(goal) | "none"
+}
+
+/// A target through a ref.
+record R {
+  /// The holder.
+  g: ref gs
+  /// The target.
+  t: Target(g.goal)
+}
+
+/// In a map.
+let inMap: M = { goal: kill, m: { "x": "wolf" } }
+
+/// In a union, a member.
+let inUnion: U = { goal: collect, u: red }
+
+/// Through a ref.
+let viaRef: R = { g: k, t: "wolf" }
+
+emit ts { out: "@features/a/a.ts" }
+-- findings.txt --
+error[E8019]  a/a.canon:51:5
+  emit ts in baked mode cannot generate a dependent type
+
+error[E8019]  a/a.canon:54:5
+  emit ts in baked mode cannot generate a dependent type
+
+error[E8019]  a/a.canon:57:5
+  emit ts in baked mode cannot generate a dependent type
+
+3 errors, 0 warnings in 1 package (…)

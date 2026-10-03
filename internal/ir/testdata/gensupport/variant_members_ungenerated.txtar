@@ -1,7 +1,7 @@
 Decision 37 with log-2026-09-24 "Revised", clean: a construct Kind applies in a generated mode
-only, so a variant-level export fn (TYPES.md §12.1, DECISIONS 226) draws no
-VariantMethod under a go emit in types mode or a ts emit, modes no generator writes yet (build
-refuses them loudly); the day one is generated, its rules take VariantMethod and this case fails.
+only, so a variant-level export fn (TYPES.md §12.1, DECISIONS 226) draws no VariantMethod under a
+go emit in types mode, which no generator writes yet; the day one is generated, its rules take
+VariantMethod and this case fails. A ts emit, generated, reports it: findings/E8019_61.txtar.
 -- a/a.canon --
 package a
 
@@ -27,6 +27,5 @@ variant Reward {
 }
 
 emit go { out: "@features/a", package: "a", mode: types }
-emit ts { out: "@web/a.ts" }
 -- findings.txt --
 0 errors, 0 warnings in 1 package (…)

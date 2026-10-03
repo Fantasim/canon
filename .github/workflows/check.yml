@@ -28,10 +28,43 @@ jobs:
       # make check requires the C++ toolchain (CANON_REQUIRE_CXX): g++ and clang++ are on the
       # runner, but neither nlohmann/json nor libc++ (clang++'s -stdlib=libc++ row) is.
       - run: sudo apt-get update && sudo apt-get install -y nlohmann-json3-dev libc++-dev libc++abi-dev
+      # make check also requires the TypeScript toolchain (CANON_REQUIRE_TS): Node, and TypeScript
+      # 5.0 and current, which tools/tsc installs for tests and CI only (DECISIONS 277).
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "node"
+      - run: npm ci --prefix tools/tsc --no-audit --no-fund
       - run: make check
       # The Makefile's test timeout: three C++ toolchain rows under -race outlast go test's 10m
       # default in internal/gen/cpp on a 2-core runner.
       - run: go test -race -timeout 30m ./...
+
+  # The generated TypeScript (CODEGEN.md §9, IMPLEMENTATION-PLAN.md §7.8): tsc --strict (5.0 and
+  # current, both from tools/tsc) and node --test, on Node 20 and the current release. A missing
+  # toolchain fails the job (CANON_REQUIRE_TS) instead of skipping the tests.
+  check-ts:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ["20", "node"]
+    env:
+      GOTOOLCHAIN: local
+      CANON_REQUIRE_TS: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+          cache-dependency-path: |
+            go.sum
+            tools/audit/go.sum
+            tools/audit/toolchain/go.sum
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - run: npm ci --prefix tools/tsc --no-audit --no-fund
+      - run: go test ./internal/gen/ts/... ./internal/testkit/tsc/...
 
   # Widened C++ platform coverage (CODEGEN.md §9, IMPLEMENTATION-PLAN.md §7.8's GCC/Clang/MSVC
   # floors): make check itself needs bash and systemd-run, Linux-only, so these two run go vet

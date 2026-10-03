@@ -1,0 +1,46 @@
+CODEGEN.md §4.1, DECISIONS 279(d): a fn the mode already refuses gets no E8101, one finding per cause: in data mode a package fn's result and lookup table past Number.MAX_SAFE_INTEGER are E8013 (data files hold no package fn) alone, and so is a method table keyed by a ref, whose stored cells a value holds. No E8101 is expected.
+-- a/a.canon --
+package a
+
+/// A tone.
+enum Tone { soft, loud }
+
+/// A precomputed result.
+export fn big() -> Int { return 9_007_199_254_740_993 }
+
+/// A lookup table.
+export fn per(t: Tone) -> Int { return 9_007_199_254_740_995 }
+
+/// A row.
+record K {
+  /// Its key.
+  k: Int
+  /// Per row.
+  export fn by(self, o: ref ts) -> Int { return 9_007_199_254_740_997 }
+}
+
+/// The rows.
+let ks: [K] keyed by k = [ { k: 1 } ]
+
+/// A tag.
+record T {
+  /// Its name.
+  n: String
+}
+
+/// The tags.
+let ts: table T = { a { n: "a" } }
+
+emit json { out: "@features/a/json/" }
+emit ts { out: "@features/a/a.ts", mode: data }
+-- findings.txt --
+error[E8013]  a/a.canon:7:11
+  big needs baked or embedded mode: data files cannot hold package functions
+
+error[E8013]  a/a.canon:10:11
+  per needs baked or embedded mode: data files cannot hold package functions
+
+error[E8013]  a/a.canon:17:13
+  K.by needs baked or embedded mode: data files cannot hold a method with a ref parameter
+
+3 errors, 0 warnings in 1 package (…)

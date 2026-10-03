@@ -1,0 +1,8 @@
+function canonCatch<T>(f: () => T): [T | undefined, string] {
+  try {
+    return [f(), ""];
+  } catch (e) {
+    if (e instanceof CanonEvalError) return [undefined, e.code];
+    throw e;
+  }
+}

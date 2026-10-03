@@ -1,0 +1,380 @@
+const decOrder = Symbol.for("canon.order");
+
+const decTokenKey = Symbol.for("canon.token");
+
+/** A number token with a fraction or an exponent, as parse reads it: its exact text, under a key every generated file shares. */
+function decToken(text: string): unknown {
+  return Object.freeze(Object.defineProperty({}, decTokenKey, { value: text }));
+}
+
+/** The exact decimal text of a number: a token parse kept, or a number or bigint. */
+function decText(raw: unknown): string | undefined {
+  if (typeof raw === "number" || typeof raw === "bigint") return String(raw);
+  const t = typeof raw === "object" && raw !== null ? Reflect.get(raw, decTokenKey) : undefined;
+  return typeof t === "string" ? t : undefined;
+}
+
+/** A decimal number as its sign, its significant digits (no leading or trailing zero, "" for zero) and the power of ten that scales them. */
+function decDecimal(text: string): { neg: boolean; digits: string; exp: bigint } | undefined {
+  const m = /^(-?)([0-9]+)(?:\.([0-9]+))?(?:[eE]([+-]?[0-9]+))?$/.exec(text);
+  if (m === null) return undefined;
+  const all = (m[2] + (m[3] ?? "")).replace(/^0+/, "");
+  const digits = all.replace(/0+$/, "");
+  if (digits === "") return { neg: false, digits, exp: 0n };
+  return { neg: m[1] === "-", digits, exp: BigInt(m[4] ?? "0") - BigInt((m[3] ?? "").length) + BigInt(all.length - digits.length) };
+}
+
+/** A number equal by exact value to a none marker's token (WIRE.md §5.4). */
+function decSame(raw: unknown, marker: string): boolean {
+  const a = decDecimal(decText(raw) ?? "");
+  const b = decDecimal(marker);
+  return a !== undefined && b !== undefined && a.neg === b.neg && a.digits === b.digits && a.exp === b.exp;
+}
+
+function decKeys(o: Record<string, unknown>): string[] {
+  const order = Reflect.get(o, decOrder) as string[] | undefined;
+  return order === undefined ? Object.keys(o) : order;
+}
+
+/** Throws the failure at path; the path and the message ride on the error too, under a key every generated file shares, so that another file's decoder can place them under its own path. */
+function decFail(path: string, message: string): never {
+  throw Object.assign(new Error((path === "" ? "/" : path) + ": " + message), { [Symbol.for("canon.failure")]: [path, message] });
+}
+
+function decGet(o: Record<string, unknown>, key: string): unknown {
+  return Object.prototype.hasOwnProperty.call(o, key) ? o[key] : undefined;
+}
+
+function decIsObject(raw: unknown): raw is Record<string, unknown> {
+  return typeof raw === "object" && raw !== null && !Array.isArray(raw) && !Reflect.has(raw, decTokenKey);
+}
+
+function decObject(raw: unknown, path: string): Record<string, unknown> {
+  if (!decIsObject(raw)) decFail(path, "expected an object");
+  return raw;
+}
+
+function decArray(raw: unknown, path: string): ReadonlyArray<unknown> {
+  if (!Array.isArray(raw)) decFail(path, "expected an array");
+  return raw;
+}
+
+function decAt(o: Record<string, unknown>, keys: ReadonlyArray<string>, path: string): unknown {
+  let cur = o;
+  for (let i = 0; i < keys.length - 1; i++) {
+    const next = decGet(cur, keys[i]);
+    if (next === undefined) return undefined;
+    cur = decObject(next, path + "/" + keys.slice(0, i + 1).join("/"));
+  }
+  return decGet(cur, keys[keys.length - 1]);
+}
+
+function decEmptyObject(raw: unknown): boolean {
+  return decIsObject(raw) && Object.keys(raw).length === 0;
+}
+
+function decEmptyArray(raw: unknown): boolean {
+  return Array.isArray(raw) && raw.length === 0;
+}
+
+function decBool(raw: unknown, path: string): boolean {
+  if (typeof raw !== "boolean") decFail(path, "expected a boolean");
+  return raw;
+}
+
+function decBit(raw: unknown, path: string): boolean {
+  if (raw !== 0 && raw !== 1) decFail(path, "expected 0 or 1");
+  return raw === 1;
+}
+
+function decInt(raw: unknown, path: string, lo: number, hi: number): number {
+  if (typeof raw === "bigint") decFail(path, "integer outside the TypeScript safe range");
+  if (typeof raw !== "number" || !Number.isInteger(raw)) decFail(path, "expected an integer");
+  if (!Number.isSafeInteger(raw)) decFail(path, "integer outside the TypeScript safe range");
+  if (raw < lo || raw > hi) decFail(path, "integer out of range");
+  return raw === 0 ? 0 : raw;
+}
+
+function decBig(raw: unknown, path: string, lo: bigint, hi: bigint): bigint {
+  if (typeof raw === "number" && Number.isInteger(raw) && !Number.isSafeInteger(raw)) decFail(path, "integer outside the TypeScript safe range");
+  const v = typeof raw === "bigint" ? raw : typeof raw === "number" && Number.isSafeInteger(raw) ? BigInt(raw) : decFail(path, "expected an integer");
+  if (v < lo || v > hi) decFail(path, "integer out of range");
+  return v;
+}
+
+function decFloat(raw: unknown, path: string): number {
+  const v = typeof raw === "number" ? raw : Number(decText(raw));
+  if (!Number.isFinite(v)) decFail(path, "expected a finite number");
+  return v === 0 ? 0 : v;
+}
+
+/** |x| against the float64 a > 0, both exact: -1, 0 or 1. */
+function decCompare(x: { digits: string; exp: bigint }, a: number): number {
+  const view = new DataView(new ArrayBuffer(8));
+  view.setFloat64(0, a);
+  const hi = view.getUint32(0);
+  const e = (hi >>> 20) & 0x7ff;
+  const m = ((BigInt(hi & 0xfffff) << 32n) | BigInt(view.getUint32(4))) + (e === 0 ? 0n : 1n << 52n);
+  const k = BigInt(e === 0 ? 1 : e) - 1075n;
+  let l = BigInt(x.digits === "" ? "0" : x.digits);
+  let r = m;
+  if (x.exp >= 0n) l *= 10n ** x.exp;
+  else r *= 10n ** -x.exp;
+  if (k >= 0n) r <<= k;
+  else l <<= -k;
+  return l === r ? 0 : l > r ? 1 : -1;
+}
+
+/** The float32 nearest the exact decimal of raw (WIRE.md §5.1). |d|, its float64, lies between |f| and the float32 next to it, 2^128 standing for Infinity; only when |d| is their midpoint can the decimal lie on the other side of it. */
+function decHalf(raw: unknown, d: number, f: number): number {
+  const top = 2 ** 128;
+  const af = Math.abs(f) === Infinity ? top : Math.abs(f);
+  const cell = new Float32Array([Math.abs(f)]);
+  new Uint32Array(cell.buffer)[0] += af < Math.abs(d) ? 1 : -1;
+  const ag = cell[0] === Infinity ? top : cell[0];
+  const x = decDecimal(decText(raw) ?? "");
+  if ((af + ag) / 2 !== Math.abs(d) || x === undefined) return f;
+  const c = decCompare(x, Math.abs(d));
+  if (c === 0) return f;
+  const pick = c > 0 ? Math.max(af, ag) : Math.min(af, ag);
+  return Math.sign(d) * (pick === top ? Infinity : pick);
+}
+
+function decF32(raw: unknown, path: string): number {
+  const d = decFloat(raw, path);
+  const f = Math.fround(d);
+  const v = f === d || typeof raw === "number" ? f : decHalf(raw, d, f);
+  if (!Number.isFinite(v)) decFail(path, "number overflows Float32");
+  return v;
+}
+
+function decString(raw: unknown, path: string): string {
+  if (typeof raw !== "string") decFail(path, "expected a string");
+  return raw;
+}
+
+function decDuration(raw: unknown, path: string, unit: number): number {
+  const d = decDecimal(decText(raw) ?? "");
+  if (d === undefined) return decFail(path, "expected a number");
+  if (d.digits === "") return 0;
+  // digits ends in no 0, and a unit holds at most 2^10 and 5^5: below 10^-64 no product is whole.
+  if (d.exp < -64n) decFail(path, "not a whole number of milliseconds");
+  if (d.exp > 20n) decFail(path, "duration out of range");
+  const num = BigInt(d.digits) * BigInt(unit) * 10n ** (d.exp > 0n ? d.exp : 0n);
+  const den = 10n ** (d.exp < 0n ? -d.exp : 0n);
+  if (num % den !== 0n) decFail(path, "not a whole number of milliseconds");
+  const ms = num / den;
+  if (ms > 9223372036854n) decFail(path, "duration out of range");
+  return Number(d.neg ? -ms : ms);
+}
+
+function decEnum<T extends string>(raw: unknown, path: string, members: ReadonlyArray<T>): T {
+  const m = members.find((x) => x === raw);
+  if (m === undefined) decFail(path, "unknown member");
+  return m;
+}
+
+function decCode<T extends string>(raw: unknown, path: string, members: ReadonlyArray<T>, codes: Readonly<Record<T, number>>): T {
+  const m = members.find((x) => codes[x] === raw);
+  if (m === undefined) decFail(path, "unknown code");
+  return m;
+}
+
+function decBits<T extends string>(raw: unknown, path: string, members: ReadonlyArray<T>, codes: Readonly<Record<T, number>>): T[] {
+  if (typeof raw !== "bigint" && (typeof raw !== "number" || !Number.isSafeInteger(raw))) decFail(path, "expected a non-negative integer");
+  let rest = BigInt(raw);
+  if (rest < 0n) decFail(path, "expected a non-negative integer");
+  const out: T[] = [];
+  for (const m of [...members].sort((a, b) => codes[a] - codes[b])) {
+    const bit = BigInt(codes[m]);
+    if ((rest & bit) !== 0n) {
+      out.push(m);
+      rest &= ~bit;
+    }
+  }
+  if (rest !== 0n) decFail(path, "unknown bits");
+  return out;
+}
+
+function decKeyed<K extends string, T>(raw: unknown, path: string, keys: ReadonlyArray<K>, wire: (k: K) => string, read: (x: unknown, p: string) => T): Record<K, T> {
+  const o = decObject(raw, path);
+  const out = {} as Record<K, T>;
+  for (const k of keys) out[k] = read(decGet(o, wire(k)), path + "/" + wire(k));
+  return out;
+}
+
+/** Reads raw with another file's public decoder; its failure keeps one JSON path, this one joined with the decoder's (CODEGEN.md §5.13). */
+function decForeign<T>(raw: unknown, path: string, read: (json: unknown) => T): T {
+  try {
+    return read(raw);
+  } catch (e) {
+    const failure = typeof e === "object" && e !== null ? Reflect.get(e, Symbol.for("canon.failure")) : undefined;
+    if (Array.isArray(failure)) return decFail(path + failure[0], failure[1]);
+    return decFail(path, e instanceof Error ? e.message : String(e));
+  }
+}
+
+function decList<T>(raw: unknown, path: string, read: (x: unknown, p: string) => T): T[] {
+  return decArray(raw, path).map((x, i) => read(x, path + "/" + i));
+}
+
+function decTable<T>(raw: unknown, path: string, read: (x: unknown, p: string, id: string) => T): T[] {
+  const o = decObject(raw, path);
+  return decKeys(o).map((k) => read(o[k], path + "/" + k, k));
+}
+
+function decIntKey(k: string, path: string): number {
+  const n = Number(k);
+  if (!/^-?(0|[1-9][0-9]*)$/.test(k) || !Number.isSafeInteger(n)) decFail(path, "expected a decimal integer key");
+  return n === 0 ? 0 : n;
+}
+
+function decBigKey(k: string, path: string, lo: bigint, hi: bigint): bigint {
+  if (!/^-?(0|[1-9][0-9]*)$/.test(k)) decFail(path, "expected a decimal integer key");
+  const v = BigInt(k);
+  if (v < lo || v > hi) decFail(path, "integer out of range");
+  return v;
+}
+
+function decMap<K, V>(raw: unknown, path: string, key: (k: string, p: string) => K, read: (x: unknown, p: string) => V): CanonMap<K, V> {
+  const o = decObject(raw, path);
+  return new CanonMap(decKeys(o).map((k): readonly [K, V] => [key(k, path + "/" + k), canonFreeze(read(o[k], path + "/" + k))]));
+}
+
+function decPairs<T>(o: Record<string, unknown>, path: string, ka: ReadonlyArray<string>, kb: ReadonlyArray<string>, read: (a: unknown, b: unknown, pa: string, pb: string) => T): T[] {
+  const out: T[] = [];
+  let empty = false;
+  for (let i = 0; i < ka.length; i++) {
+    const a = decGet(o, ka[i]);
+    const b = decGet(o, kb[i]);
+    if (a === undefined && b === undefined) {
+      empty = true;
+      continue;
+    }
+    if (a === undefined || b === undefined || a === null || b === null) decFail(path + "/" + ka[i], "a pair needs both keys");
+    if (empty) decFail(path + "/" + ka[i], "a filled slot after an empty one");
+    out.push(read(a, b, path + "/" + ka[i], path + "/" + kb[i]));
+  }
+  return out;
+}
+
+function decParse(text: string): unknown {
+  let i = text.charCodeAt(0) === 0xfeff ? 1 : 0;
+  const number = /-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?/y;
+  const escapes: Record<string, string> = { '"': '"', "\\": "\\", "/": "/", b: "\b", f: "\f", n: "\n", r: "\r", t: "\t" };
+  const fail = (message: string): never => decFail("offset " + i, message);
+  const ws = (): void => {
+    while (i < text.length && " \t\n\r".includes(text[i])) i++;
+  };
+  const hex4 = (): number => {
+    const h = text.slice(i, i + 4);
+    if (!/^[0-9a-fA-F]{4}$/.test(h)) fail("invalid \\u escape");
+    i += 4;
+    return parseInt(h, 16);
+  };
+  const unicode = (): string => {
+    const u = hex4();
+    if (u >= 0xdc00 && u <= 0xdfff) fail("unpaired surrogate");
+    if (u < 0xd800 || u > 0xdbff) return String.fromCharCode(u);
+    if (text.slice(i, i + 2) !== "\\u") fail("unpaired surrogate");
+    i += 2;
+    const lo = hex4();
+    if (lo < 0xdc00 || lo > 0xdfff) fail("unpaired surrogate");
+    return String.fromCharCode(u, lo);
+  };
+  const str = (): string => {
+    i++;
+    let out = "";
+    for (;;) {
+      if (i >= text.length) fail("unterminated string");
+      const c = text[i++];
+      if (c === '"') return out;
+      if (c < " ") fail("control character in a string");
+      if (c !== "\\") {
+        out += c;
+      } else if (text[i] === "u") {
+        i++;
+        out += unicode();
+      } else if (Object.prototype.hasOwnProperty.call(escapes, text[i])) {
+        out += escapes[text[i++]];
+      } else {
+        fail("invalid escape");
+      }
+    }
+  };
+  const num = (): unknown => {
+    number.lastIndex = i;
+    const m = number.exec(text);
+    if (m === null) return fail("invalid number");
+    i += m[0].length;
+    if (m[2] !== undefined || m[3] !== undefined) return decToken(m[0]);
+    const n = Number(m[0]);
+    return Number.isSafeInteger(n) ? n : BigInt(m[0]);
+  };
+  const word = (w: string, v: unknown): unknown => {
+    if (!text.startsWith(w, i)) fail("invalid value");
+    i += w.length;
+    return v;
+  };
+  const sep = (close: string): boolean => {
+    ws();
+    if (text[i] === ",") {
+      i++;
+      return true;
+    }
+    if (text[i] !== close) fail("expected , or " + close);
+    i++;
+    return false;
+  };
+  const obj = (depth: number): unknown => {
+    i++;
+    const o: Record<string, unknown> = {};
+    const order: string[] = [];
+    ws();
+    if (text[i] === "}") {
+      i++;
+    } else {
+      do {
+        ws();
+        if (text[i] !== '"') fail("expected a string key");
+        const k = str();
+        if (Object.prototype.hasOwnProperty.call(o, k)) fail("duplicate key " + k);
+        ws();
+        if (text[i++] !== ":") fail("expected :");
+        Object.defineProperty(o, k, { value: val(depth + 1), enumerable: true, writable: true, configurable: true });
+        order.push(k);
+      } while (sep("}"));
+    }
+    Object.defineProperty(o, decOrder, { value: order });
+    return o;
+  };
+  const arr = (depth: number): unknown => {
+    i++;
+    const a: unknown[] = [];
+    ws();
+    if (text[i] === "]") {
+      i++;
+      return a;
+    }
+    do {
+      a.push(val(depth + 1));
+    } while (sep("]"));
+    return a;
+  };
+  const val = (depth: number): unknown => {
+    if (depth > 512) fail("nesting deeper than 512");
+    ws();
+    const c = text[i];
+    if (c === "{") return obj(depth);
+    if (c === "[") return arr(depth);
+    if (c === '"') return str();
+    if (c === "t") return word("true", true);
+    if (c === "f") return word("false", false);
+    if (c === "n") return word("null", null);
+    return num();
+  };
+  const v = val(0);
+  ws();
+  if (i < text.length) fail("trailing content");
+  return v;
+}

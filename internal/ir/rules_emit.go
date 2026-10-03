@@ -33,6 +33,7 @@ func (s *stage) validate(u *unit) {
 		s.checkOverrideNames(u)
 		s.checkGoNames(u)
 		s.checkCppNames(u)
+		s.checkTSNames(u)
 		s.translateFns(u)
 	}
 	for _, es := range u.emits {
@@ -92,11 +93,11 @@ func emittedValues(u *unit) []*valueSite {
 
 func (v *valueSite) span() declSite { return declSite{file: v.obj.File(), node: v.decl.Name} }
 
-// checkImports is E8004 `noEmit`: a package whose types this code emit uses has an emit of its target (CODEGEN.md §2.8).
+// checkImports is E8004 `noEmit`: a package whose types this code emit uses has an emit of its target (CODEGEN.md §2.8), a ts emit's indirect ones included (DECISIONS 279(b)).
 func (s *stage) checkImports(u *unit, es *emitSite) {
 	for _, imp := range u.p.Imports {
-		if countTarget(imp.Emits, es.e.Target) == 0 {
-			u.report(diag.E8004.AtNoEmit(es.span(), u.firstUse[imp.Name], imp.Name, targetWords[es.e.Target]))
+		if first, used := u.importUse(imp.Name, es.e.Target); used && countTarget(imp.Emits, es.e.Target) == 0 {
+			u.report(diag.E8004.AtNoEmit(es.span(), first, imp.Name, targetWords[es.e.Target]))
 		}
 	}
 	if es.e.Target == TargetGo {
@@ -147,7 +148,7 @@ func (s *stage) checkDataFns(u *unit, _ *emitSite) {
 		case site.fn.Kind == FnTranslated:
 		case site.recv == nil:
 			u.report(diag.E8013.AtPackage(site.span(), site.label))
-		case site.fn.Kind == FnLookup && slices.ContainsFunc(site.fn.Params, func(p *Param) bool { return p.Type.Kind == types.Ref }):
+		case refKeyedLookup(site.fn):
 			u.report(diag.E8013.AtRefParam(site.span(), site.label))
 		}
 	}
@@ -202,6 +203,12 @@ func bakedGoSelects(u *unit, v *valueSite) bool {
 	return es != nil && es.e.Mode == ModeBaked && slices.Contains(selectedValues(u, es.e), v)
 }
 
+// definesRefused reports a value an emit selects that cannot represent a define record: a baked go emit's, or any ts emit's (decision 180, DECISIONS 278).
+func definesRefused(u *unit, v *valueSite) bool {
+	es := emitFor(u, TargetTS)
+	return bakedGoSelects(u, v) || es != nil && slices.Contains(selectedValues(u, es.e), v)
+}
+
 // bakedFor reports a package whose emit of target t is in baked mode.
 func bakedFor(u *unit, t Target) bool {
 	es := emitFor(u, t)
@@ -231,10 +238,10 @@ func (s *stage) checkWireForms(u *unit, es *emitSite) {
 	}
 }
 
-// checkFingerprinted is E8012 `define` for a data or embedded code emit: each value it selects carries its fingerprint, which a define record has none of (decisions 126, 194); a value a baked go emit selects, and so already refuses as a whole (checkRepresentable), is not reported twice.
+// checkFingerprinted is E8012 `define` for a data or embedded code emit: each value it selects carries its fingerprint, which a define record has none of (decisions 126, 194); a value a baked go emit or a ts emit selects, and so already refuses as a whole (checkRepresentable), is not reported twice.
 func (s *stage) checkFingerprinted(u *unit, es *emitSite) {
 	for _, v := range selectedValues(u, es.e) {
-		if bakedGoSelects(u, v) && unrepresentable(v.t, false, true) != nil {
+		if definesRefused(u, v) && unrepresentable(v.t, false, true) != nil {
 			continue
 		}
 		if wireFind(v.t, map[types.Type]bool{}, isDefineType) != nil {
@@ -268,4 +275,13 @@ func (s *stage) crossPackage() {
 			}
 		}
 	}
+}
+
+// importUse is the first type of package pkg an emit of target t uses, and whether it uses pkg: a package reached only through other packages' types is used by a ts emit alone (DECISIONS 279(b)).
+func (u *unit) importUse(pkg string, t Target) (string, bool) {
+	if first, ok := u.firstUse[pkg]; ok {
+		return first, true
+	}
+	first, ok := u.tsReach[pkg]
+	return first, ok && t == TargetTS
 }
