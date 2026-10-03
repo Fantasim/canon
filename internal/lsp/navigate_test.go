@@ -18,13 +18,14 @@ import (
 
 // CLI.md §3.8, §4, API.md R7, R8: references at an entry are canon refs' list, in its order.
 func TestReferencesMatchRefs(t *testing.T) {
-	// The fixture of testdata/references.txtar, its request sent before any pass published.
+	// The fixture of testdata/references.txtar, its request sent once the pass opened the project.
 	data, err := os.ReadFile(filepath.Join("testdata", "references.txtar"))
 	must(t, err)
 	s := newSession(t, txtar.Parse(data))
 	done := s.start()
 	must(t, s.initialize(nil))
 	must(t, s.open([]string{"proj/r/r.canon"}))
+	must(t, s.wait(nil))
 	req := `{"jsonrpc":"2.0","id":1,"method":"textDocument/references","params":{"textDocument":{"uri":"$URI/proj/r/r.canon"},"position":{"line":21,"character":2}}}`
 	must(t, s.sendLine([]string{req}))
 	got := s.locations(t, 1)

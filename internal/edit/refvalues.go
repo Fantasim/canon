@@ -18,17 +18,14 @@ type found struct {
 	computed bool
 }
 
-// refScan is one Refs call's walk of the lets: the roots an amendment targets, the name tokens
-// of each file read so far, the replaced values walked, and the references found.
+// refScan is one Refs call's walk of the lets, active and replaced values alike: the name
+// tokens of each file read so far, and the references found.
 type refScan struct {
-	s       *Snapshot
-	tg      *target
-	amended map[check.Object]bool
-	tokens  map[source.FileID]map[source.Span]bool
-	seen    map[value.Value]bool
-	visits  int
-	history func(path ...value.Value) []value.Value // the analysis's, which a test counts
-	found   []found
+	s      *Snapshot
+	tg     *target
+	w      *valueWalk
+	tokens map[source.FileID]map[source.Span]bool
+	found  []found
 }
 
 // valueRefs are the target's values and map keys in every let, active and replaced by
@@ -52,100 +49,25 @@ func (s *Snapshot) valueRefs(ctx context.Context, tg *target) ([]Ref, []source.S
 }
 
 func (s *Snapshot) newScan(tg *target) *refScan {
-	sc := &refScan{
-		s: s, tg: tg, amended: map[check.Object]bool{},
-		tokens: map[source.FileID]map[source.Span]bool{}, seen: map[value.Value]bool{}, history: s.a.History,
-	}
-	for _, pkg := range s.pkgs {
-		for _, blocks := range pkg.Layers { //canon:unordered builds a set
-			for _, b := range blocks {
-				sc.amended[s.info.NameUses[b.Target]] = true
-			}
-		}
-	}
+	sc := &refScan{s: s, tg: tg, tokens: map[source.FileID]map[source.Span]bool{}}
+	sc.w = s.newWalk(sc.noted(RefValue), true)
+	sc.w.onKey = sc.noted(RefKey)
+	sc.w.strict = tg.missing // a let that could hold the target but has no value fails the list
 	return sc
 }
 
 // lets walks the value of every let of every package.
 func (sc *refScan) lets(ctx context.Context) error {
-	for _, pkg := range sc.s.pkgs {
-		for _, obj := range pkg.Decls {
-			if err := ctx.Err(); err != nil {
-				return err
-			}
-			if err := sc.root(rootRef{pkg: pkg, obj: obj}); err != nil {
-				return err
-			}
+	return sc.w.run(ctx, sc.s)
+}
+
+// noted is the walk's visit: a value or map key that is the target is noted as kind.
+func (sc *refScan) noted(kind RefKind) visitFn {
+	return func(r rootRef, v, _ value.Value, segs []Seg) bool {
+		if sc.tg.isValue(v) {
+			sc.note(r, kind, v, segs)
 		}
-	}
-	return nil
-}
-
-// root walks a let's value; a let that could hold the target but has no value fails the whole
-// list, for a partial list never looks complete.
-func (sc *refScan) root(r rootRef) error {
-	if r.obj.Kind() != check.ObjLet {
-		return nil
-	}
-	v, err := sc.s.force(r)
-	if err != nil {
-		return sc.tg.missing(r, err)
-	}
-	sc.visit(walkAt{root: r, amended: sc.amended[r.obj]}, v, nil)
-	return nil
-}
-
-// walkAt is where a visit stands: its root, whether an amendment targets it, and whether the
-// value is one an amendment replaced.
-type walkAt struct {
-	root    rootRef
-	amended bool
-	old     bool
-}
-
-// visit checks v and its map keys, then its children; under an amended root, then the values
-// amendments replaced v with, each walked once, as History gives them.
-func (sc *refScan) visit(at walkAt, v value.Value, segs []Seg) {
-	if at.old {
-		if sc.seen[v] {
-			return
-		}
-		sc.seen[v] = true
-	}
-	sc.visits++
-	if sc.tg.isValue(v) {
-		sc.note(at.root, RefValue, v, segs)
-	}
-	if m, ok := v.(*value.Map); ok {
-		sc.keys(at.root, m, segs)
-	}
-	for _, c := range children(v) {
-		sc.visit(at, c.v, append(slices.Clip(segs), c.seg))
-	}
-	if at.amended {
-		sc.replaced(at, v, segs)
-	}
-}
-
-// replaced walks the values amendments replaced v with, at v's place.
-func (sc *refScan) replaced(at walkAt, v value.Value, segs []Seg) {
-	hist := sc.history(v)
-	if len(hist) <= 1 {
-		return
-	}
-	at.old = true
-	for _, old := range hist[1:] {
-		sc.visit(at, old, segs)
-	}
-}
-
-// keys checks a map's keys.
-func (sc *refScan) keys(root rootRef, m *value.Map, segs []Seg) {
-	kt, _, _ := mapTypes(m.T)
-	for _, k := range m.Keys {
-		if sc.tg.isValue(k) {
-			sc.note(root, RefKey, k, append(slices.Clip(segs), keySeg(k, kt)))
-		}
+		return false
 	}
 }
 

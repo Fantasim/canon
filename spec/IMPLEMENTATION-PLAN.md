@@ -1243,10 +1243,13 @@ Not part of v0.1 (DECISIONS 188).
 - **Features**, per CLI.md §4:
   - **hover:** canonical type text, doc comment, default, and for a let, const or table entry its
     canonical text truncated to 20 lines and 4,096 bytes, a cut ending with a `…` line.
-  - **definition:** declarations; from a `ref` value to the entry, including into JSON.
+  - **definition:** declarations; from a `ref` value to the entry, including into JSON and from a
+    position inside a JSON buffer; a ref stated once and evaluated per instance (a field default
+    in a field's collection) answers every instance's entry; a value a layer replaced is still
+    found, as `Refs` finds it (DECISIONS 285).
   - **references:** `Refs`: entries, keyed elements and enum members (API.md R7). References of
     Canon names come with `canon rename`'s name index (A2). With `includeDeclaration`, the entry's own location comes
-    first. References start from a ref key naming the target. In a `*.layer.canon` file, hover shows
+    first. References start from a ref key naming the target, or a ref in a JSON buffer. In a `*.layer.canon` file, hover shows
     the base value, labelled as such.
   - **formatting:** `Format`.
   - Completion, code actions and rename are not offered (DECISIONS 274). The rename of a Canon

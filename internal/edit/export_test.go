@@ -20,13 +20,13 @@ func RefHistory(ctx context.Context, s *Snapshot, r Resolved) (visits, handed in
 		return 0, 0, ErrBadOp
 	}
 	sc := s.newScan(tg)
-	inner := sc.history
-	sc.history = func(path ...value.Value) []value.Value {
+	inner := sc.w.history
+	sc.w.history = func(path ...value.Value) []value.Value {
 		handed += len(path)
 		return inner(path...)
 	}
 	err = sc.lets(ctx)
-	return sc.visits, handed, err
+	return sc.w.visits, handed, err
 }
 
 // Covered is whether a name at sp lies inside one of covers, sorted as Refs sorts them.
@@ -47,7 +47,7 @@ func RefVisits(ctx context.Context, s *Snapshot, r Resolved) (int, error) {
 	}
 	sc := s.newScan(tg)
 	err = sc.lets(ctx)
-	return sc.visits, err
+	return sc.w.visits, err
 }
 
 // The package's tests keep every write's steps (API.md M6); production Apply does not.

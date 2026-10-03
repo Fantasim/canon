@@ -1,10 +1,12 @@
 package lsp
 
 import (
+	"cmp"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 
 	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/edit"
@@ -22,18 +24,56 @@ func (s *server) definition(ctx context.Context, params json.RawMessage) (any, e
 	if sp == nil {
 		return nil, err
 	}
-	if path, at := sp.keyAt(); at != nil {
-		r, ok := sp.resolve(path)
-		if !ok || r.Target.Prov() == nil {
-			return nil, nil
-		}
-		return sp.found(r.Target.Prov().Span)
+	rs, inKey, err := sp.keyAt(ctx)
+	switch {
+	case err != nil:
+		return nil, err
+	case inKey:
+		return sp.foundAll(rs)
 	}
 	obj, _ := sp.object()
 	if obj == nil || obj.File() == nil || obj.Decl() == nil {
 		return nil, nil
 	}
 	return sp.found(declared(sp.info, obj))
+}
+
+// foundAll is the entries' locations: null for none, one location, else every one in order
+// (DECISIONS 285: a ref evaluated per instance names each instance's entry).
+func (sp *spot) foundAll(rs []edit.Resolved) (any, error) {
+	var spans []source.Span
+	for _, r := range rs {
+		if p := r.Target.Prov(); p != nil {
+			spans = append(spans, p.Span)
+		}
+	}
+	var locs []location
+	for _, at := range sp.ordered(spans) {
+		if loc, ok := sp.location(at); ok {
+			locs = append(locs, loc)
+		}
+	}
+	switch len(locs) {
+	case 0:
+		return nil, nil
+	case 1:
+		return locs[0], nil
+	}
+	return locs, nil
+}
+
+// ordered is spans sorted as API.md F2 orders locations (display path, then position), each once.
+func (sp *spot) ordered(spans []source.Span) []source.Span {
+	display := func(id source.FileID) string {
+		if f := sp.conv.set.File(id); f != nil {
+			return f.Path
+		}
+		return ""
+	}
+	slices.SortFunc(spans, func(a, b source.Span) int {
+		return cmp.Or(cmp.Compare(display(a.File), display(b.File)), cmp.Compare(a.Start, b.Start), cmp.Compare(a.End, b.End), cmp.Compare(a.File, b.File))
+	})
+	return slices.Compact(spans)
 }
 
 // found is a location's result: the location, or null for a span in no file.
@@ -79,22 +119,27 @@ func (s *server) references(ctx context.Context, params json.RawMessage) (any, e
 	if sp == nil {
 		return nil, err
 	}
-	r, ok := sp.refsTarget()
-	if !ok {
-		return nil, nil
+	targets, err := sp.refsTargets(ctx)
+	if len(targets) == 0 || err != nil {
+		return nil, err
 	}
-	refs, err := sp.snap.Refs(ctx, r)
-	if err != nil {
-		return nil, refsError(err)
+	var decls, spans []source.Span
+	for _, r := range targets {
+		refs, err := sp.snap.Refs(ctx, r)
+		if err != nil {
+			return nil, refsError(err)
+		}
+		if at, ok := sp.declaredAt(r); ok && p.Context.IncludeDeclaration {
+			decls = append(decls, at)
+		}
+		for _, ref := range refs {
+			spans = append(spans, ref.Span)
+		}
 	}
-	spans := make([]source.Span, 0, len(refs)+1)
-	if at, ok := sp.declaredAt(r); ok && p.Context.IncludeDeclaration {
-		spans = append(spans, at)
+	if len(targets) > 1 { // the union of every instance's references (DECISIONS 285)
+		decls, spans = sp.ordered(decls), sp.ordered(spans)
 	}
-	for _, ref := range refs {
-		spans = append(spans, ref.Span)
-	}
-	return sp.locations(spans)
+	return sp.locations(append(decls, spans...))
 }
 
 // locations are the spans' locations, in order; errNoFile names how many have no file.
@@ -136,17 +181,21 @@ func refsError(err error) error {
 	return fmt.Errorf(fmtWrap, errRefs, err)
 }
 
-// refsTarget is what Refs is asked about: the entry a ref's key names, else the entry or
+// refsTargets are what Refs is asked about: the entries a ref's key names, else the entry or
 // member the name at the position declares or names.
-func (sp *spot) refsTarget() (edit.Resolved, bool) {
-	if path, at := sp.keyAt(); at != nil {
-		return sp.resolve(path)
+func (sp *spot) refsTargets(ctx context.Context) ([]edit.Resolved, error) {
+	rs, inKey, err := sp.keyAt(ctx)
+	if inKey || err != nil {
+		return rs, err
 	}
 	obj, _ := sp.object()
 	if obj == nil || !refsKinds[obj.Kind()] {
-		return edit.Resolved{}, false
+		return nil, nil
 	}
-	return sp.valueOf(obj)
+	if v, ok := sp.valueOf(obj); ok {
+		return []edit.Resolved{v}, nil
+	}
+	return nil, nil
 }
 
 // refsKinds are the names whose values Refs lists the references of (R7).

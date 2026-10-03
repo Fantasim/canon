@@ -21,6 +21,8 @@ var (
 	errNotFormatted   = errors.New("lsp: not formatted")
 	errRefs           = errors.New("lsp: references")
 	errNoFile         = errors.New("in no file")
+	errCancelled      = errors.New("request cancelled")
+	errModified       = errors.New("content modified")
 )
 
 // errorCodes maps the protocol's failures to their codes; anything else is an internal error.
@@ -36,4 +38,6 @@ var errorCodes = [...]struct {
 	{errNotInitialized, codeNotInitialized},
 	{errNotFormatted, codeRequestFailed},
 	{errRefs, codeRequestFailed},
+	{errCancelled, codeCancelled},
+	{errModified, codeModified},
 }

@@ -1,0 +1,52 @@
+A ref stated once in a field default and evaluated per instance (IMPLEMENTATION-PLAN §8.4
+Features, DECISIONS 285; TYPES.md §10.2 level 1): `[b]` is q1's b for q1's steps and q2's b for
+q2's. Definition answers both entries, in order; references from it are the union of both
+entries' references, the entries first with includeDeclaration.
+-- proj/project.canon --
+project acme {
+  canon: "0.1"
+}
+-- proj/a/a.canon --
+/// A.
+package a
+
+/// A step.
+record Step {
+  /// The steps after it, by default b of its own quest.
+  next: [ref Step] = [b]
+}
+
+/// A quest.
+record Quest {
+  /// Its steps.
+  steps: table Step
+}
+
+/// Quests.
+let quests: table Quest = {
+  q1 { steps: { a {}, b { next: [] } } },
+  q2 { steps: { a {}, b { next: [] } } },
+}
+-- script --
+initialize
+send {"jsonrpc":"2.0","method":"initialized","params":{}}
+open proj/a/a.canon
+wait
+send {"jsonrpc":"2.0","id":1,"method":"textDocument/definition","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":6,"character":22}}}
+send {"jsonrpc":"2.0","id":2,"method":"textDocument/references","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":6,"character":22},"context":{"includeDeclaration":true}}}
+send {"jsonrpc":"2.0","id":3,"method":"shutdown"}
+send {"jsonrpc":"2.0","method":"exit"}
+-- transcript --
+> initialize
+< {"jsonrpc":"2.0","id":0,"result":{"capabilities":{"positionEncoding":"utf-16","textDocumentSync":{"openClose":true,"change":1},"hoverProvider":true,"definitionProvider":true,"referencesProvider":true,"documentFormattingProvider":true},"serverInfo":{"name":"canon"}}}
+> send {"jsonrpc":"2.0","method":"initialized","params":{}}
+> open proj/a/a.canon
+> wait
+> send {"jsonrpc":"2.0","id":1,"method":"textDocument/definition","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":6,"character":22}}}
+< {"jsonrpc":"2.0","id":1,"result":[{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":17,"character":22},"end":{"line":17,"character":36}}},{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":18,"character":22},"end":{"line":18,"character":36}}}]}
+> send {"jsonrpc":"2.0","id":2,"method":"textDocument/references","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":6,"character":22},"context":{"includeDeclaration":true}}}
+< {"jsonrpc":"2.0","id":2,"result":[{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":17,"character":22},"end":{"line":17,"character":36}}},{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":18,"character":22},"end":{"line":18,"character":36}}},{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":6,"character":22},"end":{"line":6,"character":23}}}]}
+> send {"jsonrpc":"2.0","id":3,"method":"shutdown"}
+< {"jsonrpc":"2.0","id":3,"result":null}
+> send {"jsonrpc":"2.0","method":"exit"}
+= <nil>

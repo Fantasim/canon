@@ -81,7 +81,7 @@ func (s *server) compute(ctx context.Context, w work) (map[string]map[string][]d
 	lists := map[string]map[string][]diagnostic{}
 	var errs []error
 	for _, p := range w.projects {
-		files, err := p.check(ctx)
+		files, err := p.checkSynced(ctx)
 		if err != nil {
 			errs = append(errs, err)
 			continue
@@ -124,6 +124,19 @@ func (s *server) begin(cancel context.CancelFunc) work {
 		w.loose = append(w.loose, lw)
 	}
 	return w
+}
+
+// buffers are a project's open documents and the generation they are of (DECISIONS 285).
+type buffers struct {
+	docs map[string][]byte
+	gen  uint64
+}
+
+// buffersOf is the buffers of the project at root, now.
+func (s *server) buffersOf(root string) buffers {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return buffers{docs: s.buffers(root), gen: s.gen}
 }
 
 // buffers is the text of every open document of the project at root; s.mu is held.

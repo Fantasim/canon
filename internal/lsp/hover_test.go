@@ -28,6 +28,7 @@ func TestHoverCap(t *testing.T) {
 	done := s.start()
 	must(t, s.initialize(nil))
 	must(t, s.open([]string{"proj/a/a.canon"}))
+	must(t, s.wait(nil)) // the pass opens the project (DECISIONS 285)
 	for id, line := range map[int]int{1: 4, 2: 7} {
 		req := fmt.Sprintf(`{"jsonrpc":"2.0","id":%d,"method":"textDocument/hover","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":%d,"character":4}}}`, id, line)
 		must(t, s.sendLine([]string{req}))

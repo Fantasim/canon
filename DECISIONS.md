@@ -2629,6 +2629,22 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      no value path (API.md F1) and sits at the literal, else the fn. Package `$fns` are checked
      whenever the package has a `json` emit, which writes them. A `none: {}` marker compares
      against what the encoder writes (`$` keys of stored fns only). Reason: W1, log-2026-10-03.
+285. **Language server queries over values (IMPLEMENTATION-PLAN §8.4; CLI.md §4; follows 274).**
+     Definition and references start from a position inside a JSON buffer as from a Canon one. A
+     ref stated once but evaluated per instance (a default of a field whose collection is per
+     instance, TYPES §10.2 level 1) answers every instance's entry, never one picked by walk order;
+     the value under a position is looked up among replaced (layered) values too, as `Refs` walks
+     them. Only a record in a table or keyed list is an entry. Requests never open a project: the
+     background pass opens and syncs it; a request reads the project once opened, syncing its
+     buffers under the request's ctx, and answers null before the first open, so the reading
+     goroutine never runs `build.Open` and a cancel is always read. Requests run off the reading
+     goroutine; each answers for the buffers as they were when it was read: if its document changed
+     since, it answers ContentModified (-32801); a sync never applies buffers older than those the
+     project already holds (a monotonic generation) (supersedes L1's "overlays
+     applied in a step that holds no ctx"). Known gap kept: API.md S11 (every method takes a ctx)
+     against §3.4's `SetOverlay`/`ClearOverlay` (frozen `api/canon.go`); internal callers use the
+     ctx-taking workspace writers. Reason: LX review, log-2026-10-03.
+
 286. **`E1107` sits at the string's opening quote (GRAMMAR.md §2.6).** An unterminated plain,
      multiline or raw string is `E1107` at its opening quote (the `r` of a raw string), wherever it
      breaks, after an interpolation included, where the implementation and the mutation oracle

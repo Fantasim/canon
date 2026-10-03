@@ -37,8 +37,10 @@ func (r *run) keyValue(e syntax.Expr, k value.Key) value.Value {
 	return &value.Str{V: k.S, T: types.StringType, P: p}
 }
 
-// literalKey is the key a string or integer literal checked against a ref names (TYPES.md §4.1).
-func (r *run) literalKey(e syntax.Expr) (value.Key, bool) {
+// LiteralKey is the key an integer, a raw string or a string without interpolation names where
+// the checker took it for a key, as evaluation reads it; false for any other expression.
+func LiteralKey(e syntax.Expr) (value.Key, bool) {
+	// TYPES.md §4.1
 	switch x := e.(type) {
 	case *syntax.IntLit:
 		return value.Key{I: x.Value.Int64(), IsInt: true}, x.Value.IsInt64()

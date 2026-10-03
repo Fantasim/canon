@@ -15,7 +15,13 @@ import (
 
 // SetOverlay replaces file's content in every read and in the revision, a writer (API.md §3.4).
 func (p *Project) SetOverlay(file string, content []byte) error {
-	return p.overlay(file, func(over map[string][]byte, abs string) bool {
+	return p.SetOverlayContext(context.Background(), file, content)
+}
+
+// SetOverlayContext is SetOverlay waiting for the write lock only until ctx is done, then
+// returning ctx.Err() (API.md S9, S11).
+func (p *Project) SetOverlayContext(ctx context.Context, file string, content []byte) error {
+	return p.overlay(ctx, file, func(over map[string][]byte, abs string) bool {
 		if old, ok := over[abs]; ok && slices.Equal(old, content) {
 			return false
 		}
@@ -26,7 +32,12 @@ func (p *Project) SetOverlay(file string, content []byte) error {
 
 // ClearOverlay removes file's overlay, if it has one (API.md §3.4). It is a writer (S9).
 func (p *Project) ClearOverlay(file string) error {
-	return p.overlay(file, func(over map[string][]byte, abs string) bool {
+	return p.ClearOverlayContext(context.Background(), file)
+}
+
+// ClearOverlayContext is ClearOverlay waiting for the write lock only until ctx is done (S11).
+func (p *Project) ClearOverlayContext(ctx context.Context, file string) error {
+	return p.overlay(ctx, file, func(over map[string][]byte, abs string) bool {
 		_, ok := over[abs]
 		delete(over, abs)
 		return ok
@@ -35,8 +46,8 @@ func (p *Project) ClearOverlay(file string) error {
 
 // overlay applies change to the overlays at file and publishes the snapshot it gives, where the
 // file and the directories above it are read again.
-func (p *Project) overlay(file string, change func(map[string][]byte, string) bool) error {
-	if err := p.lock(context.Background()); err != nil {
+func (p *Project) overlay(ctx context.Context, file string, change func(map[string][]byte, string) bool) error {
+	if err := p.lock(ctx); err != nil {
 		return err
 	}
 	defer p.unlock()

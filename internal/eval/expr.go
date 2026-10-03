@@ -73,7 +73,7 @@ func (r *run) node(e syntax.Expr, at *vpath) value.Value {
 		return nil
 	}
 	if r.ev.info.Keys[e] != nil {
-		if k, ok := r.literalKey(e); ok {
+		if k, ok := LiteralKey(e); ok {
 			return r.keyValue(e, k)
 		}
 	}

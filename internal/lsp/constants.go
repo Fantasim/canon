@@ -42,6 +42,7 @@ const (
 	methodDefinition  = "textDocument/definition"
 	methodReferences  = "textDocument/references"
 	methodFormatting  = "textDocument/formatting"
+	methodCancel      = "$/cancelRequest"
 )
 
 // JSON-RPC 2.0 and LSP error codes.
@@ -53,6 +54,8 @@ const (
 	codeInternalError  = -32603
 	codeNotInitialized = -32002
 	codeRequestFailed  = -32803
+	codeCancelled      = -32800
+	codeModified       = -32801
 )
 
 // LSP enumerations: TextDocumentSyncKind.Full, DiagnosticSeverity, MessageType.Error.
@@ -90,3 +93,7 @@ const (
 	baseValueLabel = "Base value (without layers):\n"
 	cutMark        = "…"
 )
+
+// readers are the requests that read a project: they run off the reading goroutine, so that a
+// wait for the project never holds the reading of a cancel (DECISIONS 285).
+var readers = map[string]bool{methodHover: true, methodDefinition: true, methodReferences: true}

@@ -1,0 +1,68 @@
+Definition and references through a record field's collection (IMPLEMENTATION-PLAN §8.4
+Features, CLI.md §3.8, §4; TYPES.md §10.2 level 1): `next: [ref Step]` names a step of its
+own quest, so `b` in q1 is q1's b and `a` in q2 is q2's a, never the other quest's. A key read
+statically from a let, `quests.q1.steps.b`, names q1's b as well; the references of q1's b are
+the ref and that read, never q2's b.
+-- proj/project.canon --
+project acme {
+  canon: "0.1"
+}
+-- proj/a/a.canon --
+/// A.
+package a
+
+/// A step.
+record Step {
+  /// The steps after it.
+  next: [ref Step] = []
+}
+
+/// A quest.
+record Quest {
+  /// Its steps.
+  steps: table Step
+}
+
+/// Quests; each ref names a step of its own quest.
+let quests: table Quest = {
+  q1 { steps: { a { next: [b] }, b {} } },
+  q2 { steps: { a {}, b { next: [a] } } },
+}
+
+/// The second step of q1.
+let second: Step = quests.q1.steps.b
+-- script --
+initialize
+send {"jsonrpc":"2.0","method":"initialized","params":{}}
+open proj/a/a.canon
+wait
+send {"jsonrpc":"2.0","id":1,"method":"textDocument/definition","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":17,"character":27}}}
+send {"jsonrpc":"2.0","id":2,"method":"textDocument/definition","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":18,"character":33}}}
+send {"jsonrpc":"2.0","id":3,"method":"textDocument/definition","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":22,"character":35}}}
+send {"jsonrpc":"2.0","id":4,"method":"textDocument/references","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":17,"character":27},"context":{"includeDeclaration":true}}}
+send {"jsonrpc":"2.0","id":5,"method":"textDocument/references","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":22,"character":35},"context":{"includeDeclaration":false}}}
+send {"jsonrpc":"2.0","id":6,"method":"textDocument/references","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":18,"character":33},"context":{"includeDeclaration":true}}}
+send {"jsonrpc":"2.0","id":7,"method":"shutdown"}
+send {"jsonrpc":"2.0","method":"exit"}
+-- transcript --
+> initialize
+< {"jsonrpc":"2.0","id":0,"result":{"capabilities":{"positionEncoding":"utf-16","textDocumentSync":{"openClose":true,"change":1},"hoverProvider":true,"definitionProvider":true,"referencesProvider":true,"documentFormattingProvider":true},"serverInfo":{"name":"canon"}}}
+> send {"jsonrpc":"2.0","method":"initialized","params":{}}
+> open proj/a/a.canon
+> wait
+> send {"jsonrpc":"2.0","id":1,"method":"textDocument/definition","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":17,"character":27}}}
+< {"jsonrpc":"2.0","id":1,"result":{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":17,"character":33},"end":{"line":17,"character":37}}}}
+> send {"jsonrpc":"2.0","id":2,"method":"textDocument/definition","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":18,"character":33}}}
+< {"jsonrpc":"2.0","id":2,"result":{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":18,"character":16},"end":{"line":18,"character":20}}}}
+> send {"jsonrpc":"2.0","id":3,"method":"textDocument/definition","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":22,"character":35}}}
+< {"jsonrpc":"2.0","id":3,"result":{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":17,"character":33},"end":{"line":17,"character":37}}}}
+> send {"jsonrpc":"2.0","id":4,"method":"textDocument/references","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":17,"character":27},"context":{"includeDeclaration":true}}}
+< {"jsonrpc":"2.0","id":4,"result":[{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":17,"character":33},"end":{"line":17,"character":37}}},{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":17,"character":27},"end":{"line":17,"character":28}}},{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":22,"character":35},"end":{"line":22,"character":36}}}]}
+> send {"jsonrpc":"2.0","id":5,"method":"textDocument/references","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":22,"character":35},"context":{"includeDeclaration":false}}}
+< {"jsonrpc":"2.0","id":5,"result":[{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":17,"character":27},"end":{"line":17,"character":28}}},{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":22,"character":35},"end":{"line":22,"character":36}}}]}
+> send {"jsonrpc":"2.0","id":6,"method":"textDocument/references","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":18,"character":33},"context":{"includeDeclaration":true}}}
+< {"jsonrpc":"2.0","id":6,"result":[{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":18,"character":16},"end":{"line":18,"character":20}}},{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":18,"character":33},"end":{"line":18,"character":34}}}]}
+> send {"jsonrpc":"2.0","id":7,"method":"shutdown"}
+< {"jsonrpc":"2.0","id":7,"result":null}
+> send {"jsonrpc":"2.0","method":"exit"}
+= <nil>

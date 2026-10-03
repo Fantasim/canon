@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"maps"
-	"slices"
 
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/project"
@@ -51,10 +49,11 @@ func (s *server) didOpen(params json.RawMessage) error {
 	s.mu.Lock()
 	s.docs[abs] = &document{uri: p.TextDocument.URI, text: []byte(p.TextDocument.Text), root: root}
 	if root != "" && s.projects[root] == nil {
-		s.projects[root] = newProject(root)
+		s.projects[root] = newProject(root, projectHooks{opening: s.cfg.opening, syncing: s.cfg.syncing}, func() buffers { return s.buffersOf(root) })
 	}
 	s.mu.Unlock()
-	return errors.Join(findErr, s.synced(abs, root))
+	s.synced(abs, root)
+	return findErr
 }
 
 // didChange replaces the buffer by its last change's text: IMPLEMENTATION-PLAN §8.4 Sync.
@@ -76,7 +75,8 @@ func (s *server) didChange(params json.RawMessage) error {
 	if doc == nil {
 		return nil
 	}
-	return s.synced(abs, doc.root)
+	s.synced(abs, doc.root)
+	return nil
 }
 
 // didClose drops the buffer: the file is read from the disk again, its findings still published.
@@ -96,42 +96,39 @@ func (s *server) didClose(params json.RawMessage) error {
 	if doc == nil {
 		return nil
 	}
-	return s.synced(abs, doc.root)
+	s.synced(abs, doc.root)
+	return nil
 }
 
 // didChangeWatched recomputes every project, a file changed on the disk; one that could not
 // open is tried again.
 func (s *server) didChangeWatched(json.RawMessage) error {
 	s.mu.Lock()
-	roots := slices.Sorted(maps.Keys(s.projects))
-	s.mu.Unlock()
-	var errs []error
-	for _, root := range roots {
-		errs = append(errs, s.synced(root, root))
+	defer s.mu.Unlock()
+	//canon:unordered marks a set
+	for root := range s.projects {
+		s.touch(root)
 	}
-	return errors.Join(errs...)
+	return nil
 }
 
-// synced brings the project at root up to its buffers, the running pass cancelled first so the
-// sync never waits for it, then marks what abs's change made stale: the project, or abs itself
-// outside one, and restarts the debounce.
-func (s *server) synced(abs, root string) error {
+// synced marks what abs's change made stale, the project at root or abs itself outside one, and
+// restarts the debounce; the project is brought up to its buffers by the next pass, or by a
+// request first.
+func (s *server) synced(abs, root string) {
+	// IMPLEMENTATION-PLAN §8.4 Sync
 	key := abs
-	var err error
 	if root != "" {
 		key = root
-		s.mu.Lock()
-		if s.cancel != nil {
-			s.cancel()
-		}
-		p, docs := s.projects[root], s.buffers(root)
-		s.mu.Unlock()
-		err = p.sync(docs)
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	s.gen++
+	s.versions[abs] = s.gen
+	if _, open := s.docs[abs]; !open {
+		delete(s.versions, abs) // a closed document's request still sees its version change
+	}
 	s.touch(key)
-	return err
 }
 
 // touch marks key dirty, cancels the pass running and restarts the debounce; s.mu is held.

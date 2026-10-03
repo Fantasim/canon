@@ -20,12 +20,16 @@ func Serve(ctx context.Context, in io.Reader, out io.Writer) error {
 	return serve(ctx, in, out, config{debounce: debounce})
 }
 
-// config is what tests vary: the debounce, a hook told after each pass published, and one
-// called as a pass starts computing.
+// config is what tests vary: the debounce, a hook told after each pass published, one called as
+// a pass starts computing, one as a project opens, one as the pass syncs a project, and one as a
+// background request starts.
 type config struct {
 	debounce  time.Duration
 	passed    func()
 	computing func(ctx context.Context)
+	opening   func()
+	syncing   func(ctx context.Context)
+	answering func()
 }
 
 // server is one session: the lifecycle on the reading goroutine, documents and projects behind
@@ -43,6 +47,11 @@ type server struct {
 	cancel   context.CancelFunc
 
 	published map[string]map[string][]diagnostic // the pass goroutine's: by file, by owner
+
+	running  map[string]*runningRequest // the requests running off the reading goroutine, by id; under mu
+	inflight sync.WaitGroup
+	gen      uint64            // the buffers' generation, bumped by every open, change and close; under mu
+	versions map[string]uint64 // each open document's generation at its last open or change; under mu
 }
 
 type (
@@ -71,6 +80,7 @@ func init() {
 		methodDidChange:   (*server).didChange,
 		methodDidClose:    (*server).didClose,
 		methodWatched:     (*server).didChangeWatched,
+		methodCancel:      (*server).cancelRequest,
 	}
 }
 
@@ -80,10 +90,11 @@ func serve(ctx context.Context, in io.Reader, out io.Writer, cfg config) error {
 	s := &server{
 		out: &writer{out: out}, cfg: cfg, kick: make(chan struct{}, 1), docs: map[string]*document{},
 		projects: map[string]*workspaceProject{}, dirty: map[string]bool{}, published: map[string]map[string][]diagnostic{},
+		running: map[string]*runningRequest{}, versions: map[string]uint64{},
 	}
 	passes := make(chan struct{})
 	safego.Go(func() error { return s.schedule(ctx) }, func(err error) { s.logged(err); close(passes) })
-	defer func() { cancel(); <-passes; s.close() }()
+	defer func() { cancel(); <-passes; s.inflight.Wait(); s.close() }()
 	frames := make(chan frame)
 	safego.Go(func() error { return readFrames(ctx, in, frames) }, func(err error) {
 		select {
@@ -153,12 +164,20 @@ func (s *server) dispatch(ctx context.Context, body []byte) (done bool, err erro
 	case m.JSONRPC != jsonrpcV2:
 		return false, s.respond(m.ID, nil, errInvalidRequest)
 	}
-	result, err := s.request(ctx, m)
+	h, err := s.handler(m)
+	switch {
+	case err != nil:
+		return false, s.respond(m.ID, nil, err)
+	case readers[m.Method]:
+		s.background(ctx, m, h)
+		return false, nil
+	}
+	result, err := h(s, ctx, m.Params)
 	return false, s.respond(m.ID, result, err)
 }
 
-// request runs a request's handler, once the lifecycle allows it (LSP 3.17 lifecycle).
-func (s *server) request(ctx context.Context, m message) (any, error) {
+// handler is a request's handler, once the lifecycle allows it (LSP 3.17 lifecycle).
+func (s *server) handler(m message) (requestHandler, error) {
 	switch {
 	case s.phase == phaseNew && m.Method != methodInitialize:
 		return nil, errNotInitialized
@@ -169,14 +188,14 @@ func (s *server) request(ctx context.Context, m message) (any, error) {
 	if !ok {
 		return nil, fmt.Errorf("%w: %s", errMethodNotFound, m.Method)
 	}
-	return h(s, ctx, m.Params)
+	return h, nil
 }
 
 // note runs a notification's handler while the server runs; one that fails is logged, an
 // unknown one ignored ($/ ones included, as the protocol allows).
 func (s *server) note(m message) {
 	h, ok := notes[m.Method]
-	if !ok || s.phase != phaseRunning || strings.HasPrefix(m.Method, reservedNote) {
+	if !ok || s.phase != phaseRunning || strings.HasPrefix(m.Method, reservedNote) && m.Method != methodCancel {
 		return
 	}
 	s.logged(h(s, m.Params))
