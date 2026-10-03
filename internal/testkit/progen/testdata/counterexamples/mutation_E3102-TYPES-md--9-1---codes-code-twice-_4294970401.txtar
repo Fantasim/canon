@@ -2,7 +2,6 @@ suite mutation
 name E3102 TYPES.md §9.1 (@codes code twice)
 case 3104
 seed 4294970401
-open load
 born mismatch extra E7111/member
 sig extra E7111/member
 packages features.codes

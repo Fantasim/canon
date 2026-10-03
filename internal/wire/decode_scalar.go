@@ -189,8 +189,26 @@ func (r *run) memberByCode(s site, text string, e *types.EnumType) value.Value {
 	if i := codeIndex(e, code); err == nil && i >= 0 {
 		return &value.Member{Enum: e, Index: i, P: s.prov()}
 	}
+	if !codesUnique(e) {
+		return nil
+	}
 	r.report(diag.E7111.AtMember(s.span, text, r.name(e.Pkg, e.Name)), s.node)
 	return nil
+}
+
+// codesUnique is false when two members hold one code, E3102 already: no second finding (TYPES.md §9.1).
+func codesUnique(e *types.EnumType) bool {
+	seen := map[int64]bool{}
+	for _, m := range e.Members {
+		if !m.HasCode {
+			continue
+		}
+		if seen[m.Code] {
+			return false
+		}
+		seen[m.Code] = true
+	}
+	return true
 }
 
 // memberHint is the wire value of the member named s, else the wire value nearest to s
@@ -249,7 +267,9 @@ func (r *run) bits(sel Selection, t types.Type, e *types.EnumType) value.Value {
 		}
 	}
 	if mask != 0 {
-		r.report(diag.E7111.AtBits(n.Span, mask, r.name(e.Pkg, e.Name)), n)
+		if codesUnique(e) {
+			r.report(diag.E7111.AtBits(n.Span, mask, r.name(e.Pkg, e.Name)), n)
+		}
 		return nil
 	}
 	return l

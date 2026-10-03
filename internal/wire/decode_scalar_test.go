@@ -19,6 +19,11 @@ var (
 		e.WireCodes, e.Members[2].Retired = true, true
 		return e
 	}()
+	dupCodes = func() *types.EnumType {
+		e := codes(enum("p", "Dup", "A", "B", "C"), 1, 1, 3)
+		e.WireCodes = true
+		return e
+	}()
 	flag   = codes(enum("fpdemo", "Flag", "tradable", "droppable", "soulbound"), 1, 2, 4)
 	side   = enumWires("fpdemo", "Side", "left", "left", "right", "RIGHT")
 	status = record("flow", "Status", field("label", types.StringType))
@@ -103,6 +108,8 @@ var scalarCases = []struct {
 	{"§5.3 codes", element, `1`, "FIRE"},
 	{"§5.3 codes retired", element, `3`, "WIND"},
 	{"§5.3 codes unknown", element, `4`, at(diag.E7111, "1:1", "")},
+	{"§9.1 broken codes add no second finding", dupCodes, `2`, ""},
+	{"§9.1 broken codes add no second finding in bits", withEnc(listOf(dupCodes), types.EncBits), `{"x": 8}`, ""},
 	{"§5.3 codes fraction", element, `1.0`, at(diag.E7103, "1:1", "")},
 	{"§5.3 codes kind", element, `"FIRE"`, at(diag.E7110, "1:1", "")},
 	{"§5.3 bits", withEnc(listOf(flag), types.EncBits), `{"x": 5}`, "R{x: [tradable, soulbound]}"},
