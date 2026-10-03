@@ -11,14 +11,8 @@ import (
 
 // span is n's bytes, its leading comments and the comment ending its last line included.
 func (t *canonTree) span(n syntax.Node) region {
-	first, last := t.f.Tokens[n.First()], t.f.Tokens[n.Last()]
-	r := region{lo: int(first.Start), hi: int(last.End), kind: regionGone}
-	for _, tr := range first.Leading {
-		if comment(tr) {
-			r.lo = int(tr.Start)
-			break
-		}
-	}
+	last := t.f.Tokens[n.Last()]
+	r := region{lo: t.lead(n.First()), hi: int(last.End), kind: regionGone}
 	for _, tr := range last.Trailing {
 		if comment(tr) {
 			r.hi = int(tr.End)

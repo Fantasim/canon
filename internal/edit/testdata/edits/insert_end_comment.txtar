@@ -1,0 +1,121 @@
+API.md M3, M6, FORMATTER.md §8.1, §13 step 4: a list whose last line is an own-line comment
+keeps it as the closing bracket's comment (the end of the list); AddEntry and Add append the new
+item on the line after the last item, before that comment and any blank line, every other byte
+kept. A list holding only a comment gets its first item before it (fuzz 881024e08ddc6c7d).
+-- options --
+pkgs: p
+-- edit.json --
+{"ops": [
+  {"op": "addEntry", "path": "statuses", "key": "closed", "source": "{ label: \"Closed\" }"},
+  {"op": "addEntry", "path": "weights", "key": "c", "source": "3"},
+  {"op": "addEntry", "path": "spare", "key": "first", "source": "{ label: \"First\" }"},
+  {"op": "add", "path": "tags", "source": "\"gamma\""}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// A status.
+record Status {
+  /// Its label.
+  label: String
+}
+
+/// Statuses.
+let statuses: table Status = {
+  open { label: "Open" } // the first one
+  // ... the other statuses of the tracker
+}
+
+/// Weights.
+let weights: {String: Int} = {
+  "a": 1
+  "b": 2
+
+  // more weights come from the tuning sheet
+  /* and the old one */
+}
+
+/// Spare statuses.
+let spare: table Status = {
+  // none yet
+}
+
+/// Tags.
+let tags: [String] = [
+  "alpha",
+  "beta",
+  // the rest are generated
+]
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "p/p.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "remove",
+      "path": "p:tags[2]"
+    },
+    {
+      "op": "remove",
+      "path": "p:spare.first"
+    },
+    {
+      "op": "remove",
+      "path": "p:weights[c]"
+    },
+    {
+      "op": "remove",
+      "path": "p:statuses.closed"
+    }
+  ],
+  "touched": [
+    "p"
+  ]
+}
+-- after/p/p.canon --
+package p
+
+/// A status.
+record Status {
+  /// Its label.
+  label: String
+}
+
+/// Statuses.
+let statuses: table Status = {
+  open { label: "Open" } // the first one
+  closed { label: "Closed" }
+  // ... the other statuses of the tracker
+}
+
+/// Weights.
+let weights: {String: Int} = {
+  "a": 1
+  "b": 2
+  "c": 3
+
+  // more weights come from the tuning sheet
+  /* and the old one */
+}
+
+/// Spare statuses.
+let spare: table Status = {
+  first { label: "First" }
+  // none yet
+}
+
+/// Tags.
+let tags: [String] = [
+  "alpha",
+  "beta",
+  "gamma",
+  // the rest are generated
+]

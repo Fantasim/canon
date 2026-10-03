@@ -1,0 +1,77 @@
+API.md W11, M3, M6, FORMATTER.md §13 step 4: a new amend block is appended after the layer
+file's last declaration and the comment ending its line, one blank line before it; the
+end-of-file comment and every other byte are kept.
+-- options --
+pkgs: p
+layers: dev
+editLayer: dev
+-- edit.json --
+{"ops": [
+  {"op": "addEntry", "path": "statuses", "key": "blocked", "source": "{ label: \"Blocked\" }"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// A status.
+record Status {
+  /// Its label.
+  label: String
+}
+
+/// Statuses.
+let statuses: table Status = {
+  open { label: "Open" }
+}
+
+/// A configuration.
+record Conf {
+  /// Weights.
+  weights: {String: Int} = {}
+}
+
+/// Configuration.
+let conf: Conf = { weights: { "a": 1 } }
+-- p/dev.layer.canon --
+package p
+layer dev
+
+amend conf {
+  weights: { "a": 1, "b": 2 }
+} // the tuning sheet's weights
+
+// the end of the dev layer
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "p/dev.layer.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "remove",
+      "path": "p:statuses.blocked"
+    }
+  ],
+  "touched": [
+    "p"
+  ]
+}
+-- after/p/dev.layer.canon --
+package p
+layer dev
+
+amend conf {
+  weights: { "a": 1, "b": 2 }
+} // the tuning sheet's weights
+
+amend statuses {
+  blocked: { label: "Blocked" }
+}
+
+// the end of the dev layer

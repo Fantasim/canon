@@ -177,12 +177,12 @@ func (t *canonTree) removeRegion(n syntax.Node) region {
 	return t.itemLines(t.owned(n))
 }
 
-// insertRegion is where an Insert writes: the end of the file for a declaration, the list
-// printed again, or the point between the lines of the items around the position.
+// insertRegion is where an Insert writes: after the file's last item for a declaration, the
+// list printed again, or the point between the lines of the items around the position.
 func (t *canonTree) insertRegion(c format.Change) region {
 	src := t.f.Src.Content
 	if c.List == syntax.NoTok {
-		return region{lo: len(src), hi: len(src), kind: regionItem}
+		return t.appendRegion()
 	}
 	list := t.around(c.List)
 	switch {
@@ -196,11 +196,40 @@ func (t *canonTree) insertRegion(c format.Change) region {
 	if c.At > 0 && c.At <= len(items) {
 		lo = endOfLine(src, t.owned(items[c.At-1]).hi)
 	}
-	hi := lineStart(src, int(t.f.Tokens[list.Last()].Start))
+	// FORMATTER.md §8.1, §13 step 4
+	hi := lineStart(src, t.lead(list.Last()))
 	if c.At < len(items) {
 		hi = lineStart(src, t.span(items[c.At]).lo)
 	}
 	return region{lo: lo, hi: max(lo, hi), kind: regionItem}
+}
+
+// appendRegion is where a new declaration goes: the line after the file's last declaration, or
+// its header, with the comment ending that line; end-of-file comments stay after it.
+func (t *canonTree) appendRegion() region {
+	// FORMATTER.md §13 step 4
+	at := len(t.f.Src.Content)
+	var last syntax.Node
+	for c := range syntax.Children(t.f) {
+		if c != nil && (last == nil || c.Last() > last.Last()) {
+			last = c
+		}
+	}
+	if last != nil {
+		at = endOfLine(t.f.Src.Content, t.owned(last).hi)
+	}
+	return region{lo: at, hi: at, kind: regionItem}
+}
+
+// lead is where token tok begins with its leading comments.
+func (t *canonTree) lead(tok syntax.Tok) int {
+	at := t.f.Tokens[tok]
+	for _, tr := range at.Leading {
+		if comment(tr) {
+			return int(tr.Start)
+		}
+	}
+	return int(at.Start)
 }
 
 // around is the smallest node holding token open.

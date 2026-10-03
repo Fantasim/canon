@@ -1,0 +1,63 @@
+API.md W11, M3, M6, FORMATTER.md §13 step 4: in a layer file holding no declaration, the new
+amend block goes after the header, one blank line before it; the comment after the header is
+kept below it.
+-- options --
+pkgs: p
+layers: dev
+editLayer: dev
+-- edit.json --
+{"ops": [
+  {"op": "addEntry", "path": "statuses", "key": "blocked", "source": "{ label: \"Blocked\" }"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// A status.
+record Status {
+  /// Its label.
+  label: String
+}
+
+/// Statuses.
+let statuses: table Status = {
+  open { label: "Open" }
+}
+
+/// Weights.
+let weights: {String: Int} = { "a": 1 }
+-- p/dev.layer.canon --
+package p
+layer dev
+
+// the dev layer amends nothing yet
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "p/dev.layer.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "remove",
+      "path": "p:statuses.blocked"
+    }
+  ],
+  "touched": [
+    "p"
+  ]
+}
+-- after/p/dev.layer.canon --
+package p
+layer dev
+
+amend statuses {
+  blocked: { label: "Blocked" }
+}
+
+// the dev layer amends nothing yet
