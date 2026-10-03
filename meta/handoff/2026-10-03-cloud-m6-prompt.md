@@ -40,10 +40,28 @@ ENVIRONMENT (differs from the local machine)
 - CI: every push to claude/m6-run-1 triggers .github/workflows/check.yml (Linux, macOS,
   Windows). Step 5 of the work order is: the final push's run green; record its run id.
 
-STOP CONDITION: T1, G3, the M6 append bug and the queued M5 gaps (G4, G5, the two wire bugs)
-reviewed PASS, landed on claude/m6-run-1, CI green. Stop earlier only on a unit boundary.
+SAVE CONSTANTLY (the session ends without warning when Louis's usage runs out)
+- Never hold more than ~20 minutes of work uncommitted. Unreviewed work is committed as
+  `WIP(<pkg>): <unit>, <what is done / what is next>` and pushed at once to its own branch
+  claude/wip-<unit>-N (a new N instead of a force-push). Reviewed units land on
+  claude/m6-run-1 as before; push it after every landed unit.
+- Ask builders to report at each milestone of their unit so you can commit their progress;
+  commit a builder's partial diff before resuming it after a review FAIL.
+- After every landed unit or decision, update meta/state.md (one line: what landed, what is in
+  flight and on which claude/wip-* branch) and push. A cut-off session must leave state.md
+  pointing at the exact branch and next step.
 
-BEFORE YOU STOP (always)
+ORDER OF WORK (Louis: keep going until usage runs out)
+1. The resume prompt's units 1-5: T1, G3, the M6 append bug, the queued M5 gaps (G5, the two
+   wire bugs, G4), then CI green on claude/m6-run-1 (record the run id).
+2. Then the known bugs and "Later items" in meta/decisions/log-2026-10-02.md and meta/state.md
+   (every known bug is fixed as found), each reviewed and landed the same way.
+3. Then meta/plan.md "After M5" -> Hardening: the M1.5 second wave (type-directed and
+   metamorphic progen suites) and its acceptance. Not telemetry (it needs a Source/ handoff),
+   not M6's legacy C++ part, not M7.
+Never start a unit you cannot save as you go; every boundary is a safe stopping point.
+
+REPORT (write it after step 1, then keep it current at every landed unit)
 - meta/state.md and meta/plan.md updated (SHAs on claude/m6-run-1).
 - A report meta/handoff/<date>-cloud-m6-run-1.md: landed (SHAs), CI run id and result, WIP with
   pushed branch and remaining list, decisions, NITs, not verified, stale branches.
