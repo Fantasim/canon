@@ -11,24 +11,29 @@ var stringKinds = [boolCount][boolCount][boolCount]TokenKind{
 	{{TokMLStringMid, TokMLStringTail}, {TokMLStringHead, TokMLString}},
 }
 
-// strScan is one piece of a string being read: where it started, whether a quote opened it,
-// and the multiline state (nil for a plain string).
+// strScan is one piece of a string being read: its start (the quote, else an interpolation's
+// "}"), whether a quote opened it, the multiline state (nil for a plain string) and the string's
+// opening quote, where an E1107 goes whatever piece breaks off.
 type strScan struct {
 	start int
 	first bool
 	ml    *mlString
+	quote int
 }
 
-// stringText reads string text from pos, the piece starting at start (its opening quote when
-// first, else the "}" closing an interpolation), up to the closing quote or the next "{".
-func (l *lexer) stringText(start int, first bool, ml *mlString) {
-	s := strScan{start: start, first: first, ml: ml}
+// openString is the first piece of the string whose opening quote is at start.
+func openString(start int, ml *mlString) strScan {
+	return strScan{start: start, first: true, ml: ml, quote: start}
+}
+
+// stringText reads string text from pos, the piece s, up to the closing quote or the next "{".
+func (l *lexer) stringText(s strScan) {
 	for l.pos < len(l.src) {
 		if done := stringByte[stringClass(l.src[l.pos])](l, &s); done {
 			return
 		}
 	}
-	diag.E1107.At(l.span(start, start+1)).Report(l.bag)
+	diag.E1107.At(l.span(s.quote, s.quote+1)).Report(l.bag)
 	l.endPiece(&s, true)
 }
 
@@ -82,7 +87,7 @@ func (l *lexer) strQuote(s *strScan) bool {
 
 func (l *lexer) strNewline(s *strScan) bool {
 	if s.ml == nil {
-		diag.E1107.At(l.span(s.start, l.pos)).Report(l.bag)
+		diag.E1107.At(l.span(s.quote, l.pos)).Report(l.bag)
 		l.endPiece(s, true)
 		return true
 	}
@@ -135,7 +140,7 @@ func (l *lexer) strOpen(s *strScan) bool {
 	}
 	l.pos++
 	l.endPiece(s, false)
-	l.frames = append(l.frames, interpFrame{ml: s.ml, first: len(l.toks), open: l.pos - 1})
+	l.frames = append(l.frames, interpFrame{ml: s.ml, quote: s.quote, first: len(l.toks), open: l.pos - 1})
 	return true
 }
 
@@ -170,7 +175,7 @@ func (l *lexer) rbrace() {
 		diag.E1112.AtEmpty(l.span(f.open, l.pos+1)).Report(l.bag)
 	}
 	l.pos++
-	l.stringText(l.pos-1, false, f.ml)
+	l.stringText(strScan{start: l.pos - 1, ml: f.ml, quote: f.quote})
 }
 
 // colon is ":": at depth 0 of an interpolation it starts a format spec (GRAMMAR.md §2.6).
@@ -202,7 +207,7 @@ func (l *lexer) interpNewline() {
 	l.frames = l.frames[:len(l.frames)-1]
 	diag.E1112.AtNewline(l.span(l.pos, l.pos+1)).Report(l.bag)
 	if f.ml != nil {
-		l.stringText(l.pos, false, f.ml)
+		l.stringText(strScan{start: l.pos, ml: f.ml, quote: f.quote})
 	}
 }
 

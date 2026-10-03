@@ -2,8 +2,8 @@ suite mutation
 name E1107 GRAMMAR.md §2.6 (unterminated string)
 case 17
 seed 4294967314
-open syntax
 born mismatch misplaced E1107
+left E2102/plain
 sig misplaced E1107, E2102/plain
 packages resource.vocab
 want E1107 resource/vocab/vocab.canon 1890 1891 check

@@ -11,10 +11,11 @@ import (
 )
 
 // interpFrame is an open interpolation: its bracket depth, the string it belongs to (ml is nil
-// for a plain string), its first token and its opening brace.
+// for a plain string) and that string's opening quote, its first token and its opening brace.
 type interpFrame struct {
 	depth int
 	ml    *mlString
+	quote int
 	first int
 	open  int
 }

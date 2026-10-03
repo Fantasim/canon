@@ -34,7 +34,7 @@ func (l *lexer) mlString(start int, raw bool) {
 		l.rawMLText(start, ml)
 		return
 	}
-	l.stringText(start, true, ml)
+	l.stringText(openString(start, ml))
 }
 
 // closeML checks the closing `"""` at pos, then the layout of every content line, and moves

@@ -2629,6 +2629,11 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      no value path (API.md F1) and sits at the literal, else the fn. Package `$fns` are checked
      whenever the package has a `json` emit, which writes them. A `none: {}` marker compares
      against what the encoder writes (`$` keys of stored fns only). Reason: W1, log-2026-10-03.
+286. **`E1107` sits at the string's opening quote (GRAMMAR.md §2.6).** An unterminated plain,
+     multiline or raw string is `E1107` at its opening quote (the `r` of a raw string), wherever it
+     breaks, after an interpolation included, where the implementation and the mutation oracle
+     already put it; §2.6's "at the end of the line" for raw strings is aligned. Reason: H1 (progen
+     counterexample), log-2026-10-03.
 
 ## Still open
 

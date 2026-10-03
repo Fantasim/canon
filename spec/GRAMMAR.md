@@ -174,7 +174,8 @@ the view model. For a value of `v` milliseconds:
 
 **Plain strings** `"…"`:
 
-- End at the next unescaped `"`. A newline or the end of the file before it is `E1107`.
+- End at the next unescaped `"`. A newline or the end of the file before it is `E1107`, located at
+  the string's opening quote, interpolations included (DECISIONS 286).
 - Escapes: `\n` `\t` `\r` `\\` `\"` `\{` `\}` and `\u{H…}` with 1 to 6 hex digits naming a Unicode
   scalar value (not U+D800–U+DFFF, at most U+10FFFF). Any other `\x` is `E1109`.
 - `{{` is a literal `{` and `}}` is a literal `}`. A single `}` in the text is `E1112`.
@@ -205,7 +206,8 @@ the view model. For a value of `v` milliseconds:
 ```
 
 **Raw strings** `r"…"`: `r` immediately followed by `"`. No escapes, no interpolation; `{`, `}` and
-`\` are literal. A raw string cannot contain `"` or a newline (`E1107` at the end of the line).
+`\` are literal. A raw string cannot contain `"` or a newline (`E1107` at its opening `r`, as for
+every string; DECISIONS 286).
 
 **Multiline strings** `"""` … `"""` (LEX-03, Swift rules):
 

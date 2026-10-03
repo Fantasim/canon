@@ -143,7 +143,7 @@ func (l *lexer) quote() {
 		return
 	}
 	l.pos++
-	l.stringText(l.pos-1, true, nil)
+	l.stringText(openString(l.pos-1, nil))
 }
 
 // hash is "#": a token directly after "[" in an amend path (GRAMMAR.md §5.7), E1106 elsewhere.

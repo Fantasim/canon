@@ -1,0 +1,26 @@
+GRAMMAR.md §2.6: a string that breaks off after an interpolation is E1107 at its opening quote.
+-- a/a.canon --
+package a
+
+let s = "x {n} y
+let t = 1
+-- a/b.canon --
+package a
+
+let u = "{n}
+-- a/c.canon --
+package a
+
+let v = """
+  a {n} b
+-- findings.txt --
+error[E1107]  a/a.canon:3:9
+  unterminated string
+
+error[E1107]  a/b.canon:3:9
+  unterminated string
+
+error[E1107]  a/c.canon:3:9
+  unterminated string
+
+3 errors, 0 warnings in 1 package (…)
