@@ -148,8 +148,10 @@ from IR fixtures" and M2's `embedded` example were accepted without these genera
   the deferred long fuzz/progen campaigns, each under its memory cap.
   Cloud run 1 (2026-10-03): 85 kept archives triaged, 83 closed (H1 `182eb81`, H2 `6303766`); the
   last two wait on gen/go table fields and cross-package decoders (unit GG). Suites 3-4 exist (A6);
-  the grammar suite gains layer, translation and project files (HW1). Still owed: the nightly
-  acceptance run (3 seeds, N=10000, 3 GB cap).
+  the grammar suite gains layer, translation and project files (HW1 `e4cef64`); the seed-1
+  nightly's 4 archives were operator defects (N1 `4c44b5f`). Acceptance run clean on 3 seeds at
+  N=10000 (cf5cf44, log-2026-10-03) under a 12 GB virtual cap (no systemd: the 3 GB MemoryMax cap
+  is unverified). One archive open (cpp table fields, unit GC). Long campaigns still deferred.
 - [ ] **Telemetry, first real use**: `examples/telemetry` dry run (5-10 real events), then the port
   through a handoff (`Source/` X-macros read Canon IDs/metadata; monitoring uses generated Go and
   build-time DDL). M6 and M7 follow.
