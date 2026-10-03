@@ -2670,6 +2670,12 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      needs no conversion. A nested table's loader reports the top-level table texts where a rule
      exists (key not an identifier, `$retired` not `true`), quoting keys as E7114 does; any text it
      must add is listed in §5.8 so C++ reports the same. Reason: GG review, log-2026-10-03.
+289. **Independent findings on one declaration (CODEGEN.md §5.10; CONFORMANCE.md §8; WIRE.md
+     §8.1).** E9002 (a lookup table past its cell limit) is a property of the fn whatever the emits;
+     E8014 (a package lookup fn in a `types` emit) is the mode's refusal: one fn can carry both,
+     since fixing either leaves the other. An emit already refused by E8150 (a file-mode out with
+     other than one value) defines no output, so it takes no part in E8152's collision check.
+     Reason: N1 (progen counterexamples), log-2026-10-03.
 
 ## Still open
 

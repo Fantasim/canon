@@ -1,9 +1,13 @@
 package progen_test
 
 import (
+	"bytes"
+	"context"
 	"slices"
 	"strings"
+	"sync"
 
+	canon "github.com/fantasim/canonlang/api"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/testkit/progen"
 )
@@ -92,7 +96,7 @@ func refToConst(tg target) []progen.Site {
 	return out
 }
 
-// retiredMemberUse retires an enum member of the file that its let values name exactly once.
+// retiredMemberUse retires a member its file's lets name once, its only use: each is E3506 (TYPES.md §8.1).
 func retiredMemberUse(tg target) []progen.Site {
 	uses := map[string][]*syntax.IdentExpr{}
 	for _, d := range nodes[*syntax.LetDecl](tg) {
@@ -114,10 +118,85 @@ func retiredMemberUse(tg target) []progen.Site {
 			}
 			ms, _ := span(tg, m)
 			s, end := span(tg, uses[m.Name.Name][0])
-			out = append(out, seq(1, insert(ms, "retired "), mark(tg, s, end)))
+			if onlyUse(tg, e.Name.Name+"."+m.Name.Name, s, end) {
+				out = append(out, seq(1, insert(ms, "retired "), mark(tg, s, end)))
+			}
 		}
 	}
 	return out
+}
+
+// onlyUse tells that the one value-level reference to tg's package's member inside that package (a
+// value, loaded data included, a map key or an amendment: API.md R7) spans bytes s..e of tg.
+func onlyUse(tg target, member string, s, e int) bool {
+	r := projectRefs(tg.project)
+	if r == nil {
+		return false
+	}
+	refs, err := r.Member(context.Background(), tg.pkg+":"+member)
+	if err != nil {
+		return false
+	}
+	own := slices.DeleteFunc(refs, func(r progen.Ref) bool { return r.Package != tg.pkg || !slices.Contains(valueRefs, r.Kind) })
+	return len(own) == 1 && own[0].Span == spanOf(tg, s, e)
+}
+
+// spanOf is bytes s..e of tg as the API writes a span (API.md §1.3).
+func spanOf(tg target, s, e int) canon.Span {
+	sl, sc := position(tg.src, s)
+	el, ec := position(tg.src, e)
+	return canon.Span{File: tg.path, Line: sl, Col: sc, EndLine: el, EndCol: ec}
+}
+
+func position(src []byte, at int) (line, col int) {
+	before := src[:at]
+	return bytes.Count(before, []byte("\n")) + 1, at - bytes.LastIndexByte(before, '\n')
+}
+
+// valueRefs are the reference kinds that hold the member in a value verify judges (E3506).
+var valueRefs = []canon.RefKind{canon.RefValue, canon.RefKey, canon.RefLayer}
+
+// openRefs are the reference queries open on the projects targets came from, the corpus and
+// shrunk candidates alike, so that a site follows its own project; trouble is the first error
+// opening one, which a case with no site reports.
+var openRefs = struct {
+	sync.Mutex
+	by      map[*progen.Project]*progen.Refs
+	trouble error
+}{by: map[*progen.Project]*progen.Refs{}}
+
+// projectRefs answers reference queries on p, opened once until refsKept projects are open,
+// when the whole cache is closed and emptied; nil when it cannot be opened.
+func projectRefs(p *progen.Project) *progen.Refs {
+	openRefs.Lock()
+	defer openRefs.Unlock()
+	if r, ok := openRefs.by[p]; ok {
+		return r
+	}
+	if len(openRefs.by) >= refsKept {
+		for q, r := range openRefs.by { //canon:unordered closes every cached query; no order reaches an output
+			if r != nil {
+				_ = r.Close()
+			}
+			delete(openRefs.by, q)
+		}
+	}
+	r, err := progen.OpenRefs(p, exampleRoots())
+	if err != nil && openRefs.trouble == nil {
+		openRefs.trouble = err
+	}
+	openRefs.by[p] = r
+	return r
+}
+
+// refsTrouble is the reason no reference query could be opened, for a case's failure message.
+func refsTrouble() string {
+	openRefs.Lock()
+	defer openRefs.Unlock()
+	if openRefs.trouble == nil {
+		return ""
+	}
+	return ": " + openRefs.trouble.Error()
 }
 
 // armed is a match (value or statement level) with its arms and their patterns.

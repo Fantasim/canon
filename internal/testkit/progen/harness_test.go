@@ -48,6 +48,7 @@ const (
 	modeBuild        = "build"
 	modeData         = "data"        // an emit mode (CODEGEN.md §2.1)
 	modeEmbedded     = "embedded"    // an emit mode (CODEGEN.md §2.1)
+	modeTypes        = "types"       // an emit mode (CODEGEN.md §2.1)
 	kindGoFail       = "gofail"      // the generated Go's temporary module failed to build or test
 	kindMissingJSON  = "missingjson" // a root's JSON output is missing
 	kindBadJSON      = "badjson"     // a root's JSON output does not parse
@@ -116,6 +117,8 @@ const (
 	rootsKey         = "roots" // GRAMMAR.md §7.1
 	fixtureResource  = "_fixtures/resource"
 	fixtureClient    = "_fixtures/client"
+	segHelp          = "help" // a translation key's help segment: a doc comment's text (I18N.md §3.3, `T.f.help`)
+	refsKept         = 4      // projects whose reference queries stay open: the corpus and a shrink's few at once
 )
 
 // exampleRoots redirects the examples' roots as examples/_fixtures/README.md says: the read
@@ -136,6 +139,7 @@ type target struct {
 	src       []byte
 	file      *syntax.File
 	all       *[]target
+	project   *progen.Project // the project holding the file, which reference queries read
 }
 
 // corpus is the examples project, its clean packages and their files.
@@ -206,7 +210,7 @@ func loadCorpus() (*corpus, error) {
 		}
 	}
 	for i := range c.targets {
-		c.targets[i].all = &c.targets
+		c.targets[i].all, c.targets[i].project = &c.targets, p
 	}
 	return c, nil
 }

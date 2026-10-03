@@ -71,7 +71,7 @@ func targetsOf(p *progen.Project, pkgs []string) []target {
 		out = append(out, tg)
 	}
 	for i := range out {
-		out[i].all = &out
+		out[i].all, out[i].project = &out, p
 	}
 	return out
 }

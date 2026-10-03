@@ -35,11 +35,11 @@ func emitOperators() []operator {
 		op(diag.E8011.Def().Code, "CODEGEN.md §3.5 (@go(name:) not an identifier)", badGoName),
 		op(diag.E8012.Def().Code, "CODEGEN.md §4.4 (Range field, no json emit)", goRecordField("zzSpan", ": Range = 0..1")),
 		op(diag.E8013.Def().Code, "CODEGEN.md §5.10 (package fn in data mode)", withMode("go", "data", "/// Weight.\nexport fn ", "zzWeight", "(heavy: Bool) -> Int { return if heavy { 2 } else { 1 } }")),
-		op(diag.E8014.Def().Code, "CODEGEN.md §5.13 (types mode, precomputed fn)", withMode("", "types", "/// An answer.\nexport fn ", "zzAnswer", "() -> Int { return 42 }")),
+		op(diag.E8014.Def().Code, "CODEGEN.md §5.13 (types mode, precomputed fn)", withMode("", modeTypes, "/// An answer.\nexport fn ", "zzAnswer", "() -> Int { return 42 }")),
 		op(diag.E8015.Def().Code, "CODEGEN.md §2.2 (data mode Int value)", withMode("go", "data", "/// A cap.\n@menu(items)\nlet ", "zzCap", ": Int = 3")),
 		op(diag.E8017.Def().Code, "CODEGEN.md §5.6 (list branch)", withEmit("go", "/// Kinds.\nenum ZzKind { one, many }\n\n/// Amounts.\ntype ", "ZzAmount", "(k: ZzKind) = match k { one => Int, many => [Int] }")),
 		op(diag.E8020.Def().Code, "CODEGEN.md §5.1 (Float constant of -0.0)", withEmit("go", "/// Zero, negative.\nconst ", "ZZ_NEG", " = -0.0")),
-		op(diag.E8101.Def().Code, "CODEGEN.md §4.1 (integer past the TS range)", withEmit("ts", "/// Big.\nlet ", "zzBig", ": Int = 9_007_199_254_740_993")),
+		op(diag.E8101.Def().Code, "CODEGEN.md §4.1 (integer past the TS range)", withoutTypes("ts", withEmit("ts", "/// Big.\nlet ", "zzBig", ": Int = 9_007_199_254_740_993"))),
 		op(diag.E8104.Def().Code, "CODEGEN.md §5.12 (TS emit with inputs)", tsWithInputs),
 		op(diag.E8150.Def().Code, "WIRE.md §8.1 (file out, two values)", jsonFileTwoValues),
 		e8151,
@@ -47,7 +47,7 @@ func emitOperators() []operator {
 		op(diag.E8153.Def().Code, "WIRE.md §8.1 (data value not in emit json)", dropJSONEmit),
 		op(diag.E8202.Def().Code, "CODEGEN.md §5.11 (@reload on baked)", reloadBaked),
 		op(diag.E9001.Def().Code, "CONFORMANCE.md §2.2 (var in a translated function)", withEmit("go", "/// Sums.\nexport fn zzBelow(n: Int) -> Int {\n  ", "var total = n", "\n  return total\n}")),
-		op(diag.E9002.Def().Code, "CONFORMANCE.md §8 (lookup table too big)", withEmit("go", wideEnum()+"\n\n/// Same.\nexport fn ", "zzSame", "(x: ZzWide, y: ZzWide) -> Bool { return x == y }")),
+		op(diag.E9002.Def().Code, "CONFORMANCE.md §8 (lookup table too big)", withoutTypes("", withEmit("go", wideEnum()+"\n\n/// Same.\nexport fn ", "zzSame", "(x: ZzWide, y: ZzWide) -> Bool { return x == y }"))),
 		op(diag.E9003.Def().Code, "CONFORMANCE.md §2.1 (optional parameter)", withEmit("go", "/// A bonus.\nexport fn zzBonus(", "level", ": Int?) -> Int { return level ?? 0 }")),
 		op(diag.E9004.Def().Code, "CONFORMANCE.md §2.1 (optional result)", withEmit("go", "/// Maybe.\nexport fn zzMaybe(n: Int) -> ", "Int?", " { return n }")),
 		op(diag.E9005.Def().Code, "CONFORMANCE.md §2.2 (Float in a template)", withEmit("go", "/// A label.\nexport fn zzLabel(x: Float) -> String { return \"x = {", "x", "}\" }")),
@@ -121,6 +121,20 @@ func withMode(kind, mode, before, focus, after string) func(target) []progen.Sit
 			}
 		}
 		return nil
+	}
+}
+
+// withoutTypes keeps f's sites where no kind emit ("" any) is types mode: no E8101, E8014 (CODEGEN.md §4.1, §5.10; DECISIONS 289).
+func withoutTypes(kind string, f func(target) []progen.Site) func(target) []progen.Site {
+	return func(tg target) []progen.Site {
+		for _, p := range peers(tg) {
+			for _, d := range emitsOf(p, kind) {
+				if optionText(p, d, "mode") == modeTypes {
+					return nil
+				}
+			}
+		}
+		return f(tg)
 	}
 }
 
@@ -364,8 +378,8 @@ func collidingOutputs(tg target) []progen.Site {
 	var out []progen.Site
 	for _, d := range emitsOf(tg, "json") {
 		f := option(d, "out")
-		if f == nil || option(d, "values") == nil || dataMode(tg) {
-			continue
+		if f == nil || option(d, "values") == nil || !strings.HasSuffix(optionText(tg, d, "out"), ".json") || dataMode(tg) {
+			continue // a directory-mode emit with a file out is E8150 unless it has one value (WIRE.md §8.1)
 		}
 		for _, w := range jsonWriters(tg) {
 			s, e := span(tg, f.Value)

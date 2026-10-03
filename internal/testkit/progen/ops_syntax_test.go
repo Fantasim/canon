@@ -400,12 +400,24 @@ func undocumentedField(tg target) []progen.Site {
 	}
 	var out []progen.Site
 	for _, f := range publicFields(tg) {
-		if f.Doc != nil {
+		if f.Doc != nil && !helpTranslated(tg, f.Name.Name) {
 			s, e := span(tg, f.Name)
 			out = append(out, site(mark(tg, s, e), replace(lineStart(tg, int(f.Doc.Start)), lineStart(tg, s), "")))
 		}
 	}
 	return out
+}
+
+// helpTranslated tells a translation key of tg's package ending `<name>.help`: the doc is its text (I18N.md F4).
+func helpTranslated(tg target, name string) bool {
+	for _, p := range peers(tg) {
+		for _, e := range nodes[*syntax.TranslationEntry](p) {
+			if parts := e.Key.Parts; len(parts) > 1 && parts[len(parts)-1].Name == segHelp && parts[len(parts)-2].Name == name {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // publicFields are the fields of tg's public records and of the cases of its public variants, in

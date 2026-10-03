@@ -88,7 +88,7 @@ func runOperator(t *testing.T, c *corpus, o operator, k int) {
 	seed := caseSeed(suiteMutation, k)
 	sites := o.placements(c)
 	if len(sites) == 0 {
-		fail(t, "%s (%s): no site in the examples", o.code, o.rule)
+		fail(t, "%s (%s): no site in the examples%s", o.code, o.rule, refsTrouble())
 		return
 	}
 	p := progen.Pick(progen.NewRand(seed), sites)
