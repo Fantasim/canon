@@ -159,7 +159,7 @@ func typeDeps(t ir.TypeRef, strong bool, out []dep) []dep {
 		return append(out, dep{to: t.Named, strong: strong})
 	case t.Elem == nil:
 		return out
-	case t.Kind == types.List, t.Kind == types.Map:
+	case t.Kind == types.List, t.Kind == types.Map, t.Kind == types.Table:
 		return typeDeps(*t.Elem, false, out)
 	case t.Kind == types.Optional:
 		return typeDeps(*t.Elem, strong, out)

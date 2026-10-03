@@ -75,9 +75,9 @@ func (s *stage) checkOptionalMapValues(u *unit, es *emitSite) {
 
 func optionalElem(t *TypeRef) bool { return t.Elem != nil && t.Elem.Kind == types.Optional }
 
-// checkTableFields is E8019 `TableField`: gen/cpp and gen/ts write no table type but a table value's own container (CODEGEN.md §4.2, §5.9); gen/go writes a field of `table T` for a record of its own package, but not where baked Go already gives that record an id enum, whose members are the keys of a public table value, which a nested table's keys are not (§5.3).
+// checkTableFields is E8019 `TableField`: gen/ts writes no table type but a table value's own container (CODEGEN.md §4.2, §5.9); gen/go and gen/cpp write a field of `table T` for a record of their own package, but not where a mode gives that record an id enum, whose members are the keys of a public table value, which a nested table's keys are not (§5.3).
 func (s *stage) checkTableFields(u *unit, es *emitSite) {
-	if es.e.Target != TargetGo {
+	if es.e.Target != TargetGo && es.e.Target != TargetCpp {
 		s.reportTypeSites(u, es, diag.KindTableField, func(t *TypeRef) bool { return t.Kind == types.Table },
 			func(site typeSite) bool { return site.isValue })
 		return

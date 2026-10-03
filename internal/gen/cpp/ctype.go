@@ -57,6 +57,8 @@ func (g *gen) storage(t ir.TypeRef) string {
 		return g.refStorage(t)
 	case types.Map:
 		return g.mapStorage(t)
+	case types.Table:
+		return g.tableStorage(t)
 	default:
 		g.refuseKind(t.Kind, g.at, typeRefused)
 		return cppInvalid

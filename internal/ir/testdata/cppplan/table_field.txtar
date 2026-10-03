@@ -1,0 +1,32 @@
+CODEGEN.md §4.2, §5.3; decision 37: a table field's rows have the id and retired getters and members of a table entry in the C++ name plan, and gen/cpp writes exactly them.
+-- a/a.canon --
+package a
+
+/// A slot.
+record Slot {
+  /// How many.
+  n: Int
+}
+
+/// A shelf.
+record Shelf {
+  /// Its slots.
+  slots: table Slot
+  /// Its spare slots.
+  spare: (table Slot)?
+}
+
+/// The shelf.
+let shelf: Shelf = { slots: { a { n: 1 } }, spare: { b { n: 2 } } }
+
+emit cpp { out: "@features/a", namespace: "a", mode: data }
+emit json { out: "out/" }
+-- a.shelf.json --
+{ "slots": { "a": { "n": 1 } }, "spare": { "b": { "n": 2 } } }
+-- plan.txt --
+AAccess: LoadShelf
+Shelf: GetSlots GetSpare Load slots_ spare_
+Slot: GetId GetN GetRetired id_ n_ retired_
+a: Shelf Slot kShelfSchema
+detail: AAccess Decode
+0 errors, 0 warnings in 1 package (…)

@@ -65,6 +65,17 @@ std::string DumpItems(const demo::shop::Items& rows) {
 
 std::string DumpConfig(const demo::shop::Config& c) { return "config:scale=" + OptFloat(c.GetScale(), 17); }
 
+// A nested table's rows in order, "id:n" and an "r" after a retired one.
+std::string DumpDrawers(const canon::KeyedList<std::string, demo::nest::Drawer>& rows) {
+    std::string out;
+    for (size_t i = 0; i < rows.Len(); ++i) {
+        const demo::nest::Drawer& r = rows.At(i);
+        if (i > 0) out += ',';
+        out += r.GetId() + ":" + std::to_string(r.GetN()) + (r.GetRetired() ? "r" : "");
+    }
+    return out;
+}
+
 // Every Float32 of demo.nest's Holder, as Bits: f32s, "a.b", path a.b, shape's circle r, $scale.
 std::string DumpHolder(const demo::nest::Holder& h) {
     std::string out = "f32s=";
@@ -73,6 +84,10 @@ std::string DumpHolder(const demo::nest::Holder& h) {
         out += Bits(h.GetF32S()[i]);
     }
     const demo::nest::ShapeCircle* circle = h.GetShape().AsCircle();
+    out += " drawers=" + DumpDrawers(h.GetDrawers()) + " spare=";
+    if (const auto* spare = h.GetSpare()) out += DumpDrawers(*spare);
+    else out += "none";
+    out += " fav=" + h.GetFavKey();
     return out + " a.b=" + Bits(h.GetDotted()) + " a/b=" + Bits(h.GetDeep()) +
            " shape.r=" + (circle != nullptr ? Bits(circle->GetR()) : std::string("none")) +
            " $scale=" + Bits(h.Scale(demo::nest::Size::small)) + "," + Bits(h.Scale(demo::nest::Size::medium));

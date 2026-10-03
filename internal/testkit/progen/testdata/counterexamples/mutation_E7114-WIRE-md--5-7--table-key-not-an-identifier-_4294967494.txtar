@@ -2,7 +2,6 @@ suite mutation
 name E7114 WIRE.md §5.7 (table key not an identifier)
 case 197
 seed 4294967494
-open gen
 born mismatch extra E8019/mode
 sig extra E8019/mode
 packages pipeline

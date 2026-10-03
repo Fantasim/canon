@@ -93,6 +93,8 @@ func (g *gen) literal(t ir.TypeRef, v value.Value) string {
 		return g.listLit(t, x)
 	case *value.Map:
 		return g.mapLit(t, x)
+	case *value.Table:
+		return g.tableLit(t, x)
 	case *value.Record:
 		g.malformed(fmt.Sprintf(valueFormat, v), g.at) // E8019 RecordConstant: only a constant writes a record literal
 		return cppInvalid

@@ -17,6 +17,7 @@ type CppNamePlan struct {
 	ns      *nameScope     // the namespace's own names that other packages' headers share (§3.5)
 	nsItems map[string]any // the item each namespace name was declared for
 	shared  []cppShared
+	nested  []*Record // the records a table field of the package holds (CODEGEN.md §4.2)
 }
 
 // cppShared is a name a header declares in the emit's namespace, or in its detail or conformance namespace, a name its sources declare in an anonymous namespace there, or a segment of the namespace itself, with what declared it.
@@ -37,6 +38,7 @@ func PlanCppNames(p *Package, e *Emit) *CppNamePlan {
 			pl.values = append(pl.values, v)
 		}
 	}
+	pl.nested = nestedRows(p)
 	pl.holdersOf()
 	pl.declareAll()
 	pl.shareSegments()
@@ -217,7 +219,7 @@ func cppClassesOf(t TypeRef, out []any) []any {
 	if (t.Kind == types.Record || t.Kind == types.Variant) && t.Named != nil {
 		return append(out, t.Named)
 	}
-	if t.Elem != nil && (t.Kind == types.List || t.Kind == types.Map || t.Kind == types.Optional) {
+	if t.Elem != nil && (t.Kind == types.List || t.Kind == types.Map || t.Kind == types.Optional || t.Kind == types.Table) {
 		return cppClassesOf(*t.Elem, out)
 	}
 	return out

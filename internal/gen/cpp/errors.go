@@ -106,8 +106,8 @@ const (
 
 // The kinds stage E refuses (E8019) where gen/cpp stores or decodes a type, or writes a constant: meeting one there is ErrMalformed.
 var (
-	typeRefused  = map[types.Kind]bool{types.Optional: true, types.Table: true, types.DepMap: true, types.Case: true}
-	constRefused = map[types.Kind]bool{types.Record: true, types.Variant: true, types.Case: true}
+	typeRefused  = map[types.Kind]bool{types.Optional: true, types.DepMap: true, types.Case: true}
+	constRefused = map[types.Kind]bool{types.Record: true, types.Variant: true, types.Case: true, types.Table: true}
 )
 
 // Strict loaders: calls of canon_runtime_json.h's detail helpers (CODEGEN.md §7.5).
@@ -132,4 +132,23 @@ const (
 	defineCallFormat   = jsonDetail + "Define(%s, %s, dec, %s, %s, %s);"
 	emplaceCall        = ".emplace()"
 	emplaceBackCall    = ".emplace_back()"
+)
+
+// Table fields (CODEGEN.md §4.2, §5.8; WIRE.md §5.7): a nested table is a canon::KeyedList of its rows by id, read from an object in file order.
+const (
+	tableEntriesFormat = "std::vector<" + jsonDetail + "TableEntry> tab%[1]d;"
+	tableReadFormat    = "if (" + jsonDetail + "Table(%[1]s, dec, tab%[2]d)) {"
+	tableRowsFormat    = "std::vector<%[1]s> tv%[2]d(tab%[2]d.size());"
+	tableKeysLine      = "std::vector<std::string> tk%d;"
+	tableLoopFormat    = "for (size_t ti%[1]d = 0; ti%[1]d < tab%[1]d.size(); ++ti%[1]d) {"
+	tableRowPush       = "dec.Push(*tab%[1]d[ti%[1]d].key);"
+	tableDecodeFormat  = "%[1]s(*tab%[2]d[ti%[2]d].row, dec, tv%[2]d[ti%[2]d]);"
+	tableIDFormat      = "tv%[1]d[ti%[1]d]." + idMember + " = *tab%[1]d[ti%[1]d].key;"
+	tableRetiredFormat = "tv%[1]d[ti%[1]d]." + retiredMember + " = tab%[1]d[ti%[1]d].retired;"
+	tableKeyPushFormat = "tk%[1]d.push_back(*tab%[1]d[ti%[1]d].key);"
+	tableFromFormat    = "%[1]s = canon::KeyedList<std::string, %[2]s>::FromRows(std::move(tv%[3]d), std::move(tk%[3]d));"
+	tableIDExprFormat  = "%s.At(%s)." + idMember
+	tableOrdersDecl    = "\n        canon::json::KeyOrders orders;"
+	tableOrdersArg     = ", orders"
+	tableFieldText     = "a table field of a record of another package, or of no record"
 )

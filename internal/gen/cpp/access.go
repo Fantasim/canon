@@ -51,7 +51,11 @@ func (g *gen) accessStruct() {
 func (g *gen) loader(v *ir.Value, resolve bool) {
 	cls := g.valueClass(v)
 	g.c.linef(1, loaderOpenFormat, g.pl.AccessLoader(v), cls)
-	g.c.printf(loaderPreludeText, g.pl.SchemaName(v))
+	orders, arg := "", ""
+	if g.readsNested() {
+		orders, arg = tableOrdersDecl, tableOrdersArg
+	}
+	g.c.printf(loaderPreludeText, g.pl.SchemaName(v), orders, arg)
 	if v.Type.Kind == types.Record {
 		g.c.printf(valueLoaderText, ir.CppDecode)
 		g.c.linef(1, closeBrace)

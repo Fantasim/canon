@@ -251,11 +251,21 @@ inline std::string DotToken(std::string s) {
 /// the parsed node it became: what `Decoder::AsFloat32` rounds such a number from.
 using Float32Tokens = std::map<const Json*, std::string>;
 
+/// The keys, in file order, of every object whose file order is not the byte order nlohmann's
+/// objects keep, by the parsed node it became: what `detail::Table` reads a nested table's
+/// entries in (WIRE.md §5.7). An object absent here is read in its own order.
+using KeyOrders = std::map<const Json*, std::vector<std::string>>;
+
 /// A SAX pass over a data file before it is parsed: the file is one object, no object holds a
 /// key twice (nlohmann would keep the last), and nothing nests deeper than kMaxNesting. It stops
 /// at the first finding and names its path ("rows[3].id: duplicate key").
 class StrictCheck {
 public:
+    StrictCheck() = default;
+    /// With `keepOrders`, the pass also records the key order of every object whose keys are not
+    /// in byte order (TakeOrders).
+    explicit StrictCheck(bool keepOrders) : keepOrders_(keepOrders) {}
+
     bool null() { return Value(); }
     bool boolean(bool) { return Value(); }
     bool number_integer(Json::number_integer_t) { return Value(); }
@@ -271,11 +281,18 @@ public:
     bool binary(Json::binary_t&) { return Value(); }
     bool start_object(size_t) { return Open(true); }
     bool start_array(size_t) { return Open(false); }
-    bool end_object() { return frames_.pop_back(), true; }
+    bool end_object() {
+        Frame& f = frames_.back();
+        if (keepOrders_ && !std::is_sorted(f.order.begin(), f.order.end())) {
+            orders_.emplace_back(Pointer(frames_.size() - 1), std::move(f.order));
+        }
+        return frames_.pop_back(), true;
+    }
     bool end_array() { return frames_.pop_back(), true; }
     bool key(Json::string_t& name) {
         Frame& f = frames_.back();
         f.key = name;
+        if (keepOrders_) f.order.push_back(name);
         if (f.keys.insert(name).second) return true;
         return Refuse("duplicate key");
     }
@@ -288,12 +305,16 @@ public:
     /// midpoint, in file order. Complete only when the pass succeeded; taken once.
     std::vector<std::pair<std::string, std::string>> TakeMidpoints() { return std::move(midpoints_); }
 
+    /// The (RFC 6901 pointer, keys in file order) of every object recorded, when asked for.
+    std::vector<std::pair<std::string, std::vector<std::string>>> TakeOrders() { return std::move(orders_); }
+
 private:
     struct Frame {
         bool object = false;
         size_t next = 0;           // an array's elements started so far
         std::string key;           // an object's last key
         std::set<std::string> keys;
+        std::vector<std::string> order;  // an object's keys in file order, when kept
     };
 
     bool Value() {
@@ -313,10 +334,12 @@ private:
         return true;
     }
 
-    /// The RFC 6901 pointer of the value at the current position ("/rows/0/a~1b").
-    std::string Pointer() const {
+    /// The RFC 6901 pointer of the value at the current position ("/rows/0/a~1b"), through the
+    /// first `depth` frames.
+    std::string Pointer(size_t depth) const {
         std::string p;
-        for (const Frame& f : frames_) {
+        for (size_t i = 0; i < depth; ++i) {
+            const Frame& f = frames_[i];
             p += '/';
             if (!f.object) {
                 p += std::to_string(f.next - 1);
@@ -349,9 +372,13 @@ private:
         return false;
     }
 
+    std::string Pointer() const { return Pointer(frames_.size()); }
+
+    bool keepOrders_ = false;
     std::vector<Frame> frames_;
     std::string error_;
     std::vector<std::pair<std::string, std::string>> midpoints_;
+    std::vector<std::pair<std::string, std::vector<std::string>>> orders_;
 };
 
 /// Parses a data file written by `canon build` and checks its "$schema" against the
@@ -360,8 +387,8 @@ private:
 /// exactly: one differing only in letter case is refused, as StrictCheck's findings are.
 /// `tokens` receives the Float32Tokens of `doc`, for a `Decoder` reading Float32 values.
 inline bool ParseDataFile(const std::string& name, const std::string& text, std::string_view schema,
-                          Json& doc, std::string& error, Float32Tokens& tokens) {
-    StrictCheck check;
+                          Json& doc, std::string& error, Float32Tokens& tokens, KeyOrders* orders) {
+    StrictCheck check(orders != nullptr);
     const bool strict = Json::sax_parse(text, &check);
     if (!check.Error().empty()) {
         error = name + ": " + check.Error();
@@ -394,7 +421,26 @@ inline bool ParseDataFile(const std::string& name, const std::string& text, std:
         const Json::json_pointer at(m.first);
         if (parsed.contains(at)) tokens.emplace(&parsed[at], std::move(m.second));
     }
+    if (orders != nullptr) {
+        orders->clear();
+        for (auto& o : check.TakeOrders()) {
+            const Json::json_pointer at(o.first);
+            if (parsed.contains(at)) orders->emplace(&parsed[at], std::move(o.second));
+        }
+    }
     return true;
+}
+
+/// ParseDataFile that also records, in `orders`, the file order of the objects whose keys are not
+/// in byte order: what a `Decoder` reading a nested table needs (WIRE.md §5.7).
+inline bool ParseDataFile(const std::string& name, const std::string& text, std::string_view schema,
+                          Json& doc, std::string& error, Float32Tokens& tokens, KeyOrders& orders) {
+    return ParseDataFile(name, text, schema, doc, error, tokens, &orders);
+}
+
+inline bool ParseDataFile(const std::string& name, const std::string& text, std::string_view schema,
+                          Json& doc, std::string& error, Float32Tokens& tokens) {
+    return ParseDataFile(name, text, schema, doc, error, tokens, nullptr);
 }
 
 /// ParseDataFile without the Float32Tokens (CODEGEN.md §7.5): a `Decoder` reading its `doc`
@@ -414,6 +460,12 @@ public:
     /// rounds a midpoint from them.
     Decoder(std::string name, const Float32Tokens& tokens) : name_(std::move(name)), tokens_(&tokens) {}
     Decoder(std::string name, const Float32Tokens&& tokens) = delete;
+    /// `orders`, ParseDataFile's for the document read, must outlive the decoder as well: a nested
+    /// table's entries are read in the order they have there (WIRE.md §5.7).
+    Decoder(std::string name, const Float32Tokens& tokens, const KeyOrders& orders)
+        : name_(std::move(name)), tokens_(&tokens), orders_(&orders) {}
+    Decoder(std::string name, const Float32Tokens&& tokens, const KeyOrders& orders) = delete;
+    Decoder(std::string name, const Float32Tokens& tokens, const KeyOrders&& orders) = delete;
 
     bool Ok() const noexcept { return error_.empty(); }
     const std::string& Error() const noexcept { return error_; }
@@ -593,6 +645,13 @@ public:
         return v != nullptr && AsEnum(*v, key, parse, out);
     }
 
+    /// The keys of object `v` in file order when they are on record (not in byte order), else nullptr.
+    const std::vector<std::string>* OrderOf(const Json& v) const {
+        if (orders_ == nullptr) return nullptr;
+        const auto it = orders_->find(&v);
+        return it == orders_->end() ? nullptr : &it->second;
+    }
+
 private:
     /// `v`'s token when it is on record (a Float32 rounding midpoint), else nullptr.
     const std::string* Token(const Json& v) const {
@@ -605,6 +664,7 @@ private:
     std::vector<std::string> path_;
     std::string error_;
     const Float32Tokens* tokens_ = nullptr;
+    const KeyOrders* orders_ = nullptr;
 };
 
 namespace detail {
@@ -658,6 +718,54 @@ inline void Row(const Json& row, Decoder& dec, std::string& id, bool& retired) {
     } else {
         dec.Fail(retiredKey, "expected true");
     }
+}
+
+/// A nested table's entry: its key, its row and whether the row carries `$retired` (WIRE.md §5.7).
+struct TableEntry {
+    const std::string* key;
+    const Json* row;
+    bool retired;
+};
+
+/// Whether `key` is a Canon identifier: a letter or `_` then letters, digits and `_`, and not `_`.
+inline bool IsIdentifier(const std::string& key) {
+    if (key.empty() || key == "_") return false;
+    for (size_t i = 0; i < key.size(); ++i) {
+        const char c = key[i];
+        const bool letter = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
+        if (!letter && (i == 0 || c < '0' || c > '9')) return false;
+    }
+    return true;
+}
+
+/// A nested table's entries, in file order (WIRE.md §5.7): `v` must be an object whose keys are
+/// identifiers; a row's `$retired`, when present, must be true. Fails at the first key, in file
+/// order, that is not.
+inline bool Table(const Json& v, Decoder& dec, std::vector<TableEntry>& out) {
+    if (!Object(v, dec)) return false;
+    const char* const retiredKey = "$retired";
+    std::vector<const std::string*> keys;
+    if (const std::vector<std::string>* order = dec.OrderOf(v)) {
+        for (const std::string& k : *order) keys.push_back(&k);
+    } else {
+        for (const auto& item : v.items()) keys.push_back(&item.key());
+    }
+    for (const std::string* key : keys) {
+        if (!IsIdentifier(*key)) {
+            return dec.Fail(std::string_view(), "\"" + *key + "\" is not a valid table key (an identifier)"), false;
+        }
+        const auto row = v.find(*key);
+        const auto retired = row->is_object() ? row->find(retiredKey) : row->end();
+        const bool marked = row->is_object() && retired != row->end();
+        if (marked && !(retired->is_boolean() && retired->get<bool>())) {
+            dec.Push(*key);
+            dec.Fail(retiredKey, "expected true");
+            dec.Pop();
+            return false;
+        }
+        out.push_back({key, &*row, marked});
+    }
+    return true;
 }
 
 /// The object at a path's intermediate key (WIRE.md §5.5.3): nullptr when absent; null or

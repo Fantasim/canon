@@ -30,7 +30,7 @@ func nestFloat32s(size ir.TypeRef) (*ir.Variant, []*ir.Field, *ir.ExportFn) {
 	return shape, fields, scale
 }
 
-// nestPackage is demo.nest: one record value ("value") with a keyed-list field per keyable() type (TYPES.md §9.1) but String: slots (enum), bins (@json(codes) enum), tickets (ref), items (Int, plus field b) and specials (Int via @json(path: "legacy.a")); then nestFloat32s.
+// nestPackage is demo.nest: one record value ("value") with a keyed-list field per keyable() type (TYPES.md §9.1) but String: slots (enum), bins (@json(codes) enum), tickets (ref), items (Int, plus field b) and specials (Int via @json(path: "legacy.a")); the table fields drawers and spare and fav, a ref into drawers (CODEGEN.md §4.2, §5.8); then nestFloat32s.
 func nestPackage() *ir.Package {
 	size := &ir.Enum{Pkg: nestPkg, Name: "Size", Members: []*ir.EnumMember{
 		{Name: "small", Wire: "small"}, {Name: "medium", Wire: "medium", Index: 1},
@@ -51,6 +51,11 @@ func nestPackage() *ir.Package {
 	ticket := &ir.Record{Pkg: nestPkg, Name: "Ticket", Fields: []*ir.Field{
 		{Name: "label", WirePath: []string{"label"}, Type: nestRefTo("widgets", widget)},
 	}}
+	drawer := &ir.Record{Pkg: nestPkg, Name: "Drawer", Fields: []*ir.Field{field("n", "n", "", tInt)}}
+	drawerElem := ir.TypeRef{Kind: types.Record, Named: drawer}
+	drawers := ir.TypeRef{Kind: types.Table, Elem: &drawerElem}
+	favKey := tString
+	fav := ir.TypeRef{Kind: types.Ref, Key: &favKey, Ref: &ir.RefTarget{Coll: types.CollField, Pkg: nestPkg, Path: []string{"drawers"}, Elem: drawer}}
 	slotElem, binElem := ir.TypeRef{Kind: types.Record, Named: slot}, ir.TypeRef{Kind: types.Record, Named: bin}
 	itemElem, ticketElem := ir.TypeRef{Kind: types.Record, Named: item}, ir.TypeRef{Kind: types.Record, Named: ticket}
 	specialElem := ir.TypeRef{Kind: types.Record, Named: special}
@@ -61,6 +66,10 @@ func nestPackage() *ir.Package {
 		{Name: "items", WirePath: []string{"items"}, Type: ir.TypeRef{Kind: types.List, Elem: &itemElem, KeyedBy: &ir.KeyField{Name: "a", WirePath: []string{"a"}}}},
 		{Name: "specials", WirePath: []string{"specials"}, Type: ir.TypeRef{Kind: types.List, Elem: &specialElem, KeyedBy: &ir.KeyField{Name: "legacyA", WirePath: []string{"legacy", "a"}}}},
 	}}
+	holder.Fields = append(holder.Fields,
+		&ir.Field{Name: "drawers", WirePath: []string{"drawers"}, Type: drawers},
+		&ir.Field{Name: "spare", WirePath: []string{"spare"}, Type: drawers, Optional: true},
+		&ir.Field{Name: "fav", WirePath: []string{"fav"}, Type: fav})
 	shape, floats, scale := nestFloat32s(tSize)
 	holder.Fields = append(holder.Fields, floats...)
 	holder.Methods = []*ir.ExportFn{scale}
@@ -68,7 +77,7 @@ func nestPackage() *ir.Package {
 	widgets := &ir.Value{Name: "widgets", Schema: "demo.nest.Widget@00000001", Type: ir.TypeRef{Kind: types.Table, Elem: &widgetElem}}
 	return &ir.Package{
 		Name: nestPkg, Dir: "demo/nest",
-		Types:  []ir.Type{size, grade, slot, bin, item, special, widget, ticket, shape, holder},
+		Types:  []ir.Type{size, grade, slot, bin, item, special, widget, ticket, drawer, shape, holder},
 		Values: []*ir.Value{value, widgets},
 		Emits: []*ir.Emit{
 			{Target: ir.TargetJSON, Out: "out/data/", Dir: "demo/nest/out/data"},

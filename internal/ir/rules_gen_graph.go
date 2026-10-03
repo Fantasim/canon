@@ -71,14 +71,14 @@ func (g *classGraph) deps(c any) []classDep {
 	return out
 }
 
-// classDeps adds the class t holds: through a list or a map weakly, through an optional as t is.
+// classDeps adds the class t holds: through a list, a map or a table field weakly, through an optional as t is.
 func classDeps(t TypeRef, strong bool, out []classDep) []classDep {
 	switch {
 	case t.Kind == types.Record, t.Kind == types.Variant:
 		return append(out, classDep{to: t.Named, strong: strong})
 	case t.Elem == nil:
 		return out
-	case t.Kind == types.List, t.Kind == types.Map:
+	case t.Kind == types.List, t.Kind == types.Map, t.Kind == types.Table:
 		return classDeps(*t.Elem, false, out)
 	case t.Kind == types.Optional:
 		return classDeps(*t.Elem, strong, out)

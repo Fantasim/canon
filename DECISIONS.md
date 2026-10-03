@@ -2677,6 +2677,13 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      other than one value) defines no output, so it takes no part in E8152's collision check.
      Reason: N1 (progen counterexamples), log-2026-10-03.
 
+290. **Table fields in C++ (CODEGEN.md §4.2, §5.13; WIRE.md §5.7).** C++ writes table fields in
+     `data` and `types` mode with Go's loader texts. The `data` loader keeps a nested table's file
+     order (the strict pre-scan records key order); the `types`-mode public `Decode` takes an
+     already-parsed `nlohmann::json`, so there a nested table's entries come in key byte order. The
+     public signature keeps `nlohmann::json` (an `ordered_json` overload is a later item). Reason:
+     GC, log-2026-10-03.
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.

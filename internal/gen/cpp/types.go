@@ -78,6 +78,8 @@ func (g *gen) defaultLit(t ir.TypeRef, v value.Value) string {
 		return cppInvalid
 	case t.Kind == types.List:
 		return g.storage(t) + g.literal(t, v)
+	case t.Kind == types.Table:
+		return g.literal(t, v)
 	}
 	return g.element(t, v)
 }

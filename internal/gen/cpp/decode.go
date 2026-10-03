@@ -275,6 +275,8 @@ func (g *gen) decodeValue(depth int, src, key string, l leaf) {
 			return
 		}
 		g.decodeList(depth, src, key, l)
+	case types.Table:
+		g.decodeNested(depth, src, key, l)
 	case types.Map:
 		g.malformed(mapFields, g.at) // E8019 MapField
 	default:

@@ -202,7 +202,7 @@ func (g *gen) holdsWalk(t ir.TypeRef) bool {
 	switch {
 	case t.Kind == types.Record, t.Kind == types.Variant:
 		return g.needsWalk(t.Named)
-	case t.Kind == types.List && t.Elem != nil:
+	case (t.Kind == types.List || t.Kind == types.Table) && t.Elem != nil:
 		return g.holdsWalk(*t.Elem)
 	default:
 		return false
@@ -217,6 +217,8 @@ func (g *gen) walkValue(depth int, t ir.TypeRef, optional bool, expr, key string
 		g.c.linef(depth, ifOpenFormat, expr)
 		g.walkValue(depth+1, t, false, fmt.Sprintf(derefFormat, expr), key)
 		g.c.linef(depth, closeBrace)
+	case t.Kind == types.Table:
+		g.walkTable(depth, t, expr, key)
 	case t.Kind == types.List:
 		n := fmt.Sprintf(indexVarFormat, depth)
 		elem, loop := fmt.Sprintf(indexFormat, expr, n), forFormat

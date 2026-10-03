@@ -1127,6 +1127,9 @@ static std::optional<EventConfig> EventConfig::Decode(const nlohmann::json& v, s
 export function decodeEventConfig(json: unknown): EventConfig;
 ```
 
+- The C++ decoder takes an already-parsed `nlohmann::json`, whose objects are ordered by key: a
+  nested table it decodes holds its entries in key byte order, not file order (the `data`-mode
+  loader, which reads the text, keeps file order; DECISIONS 290).
 - A decoder reads the JSON that the `load` reads at that position (after `at:`), with WIRE.md's
   decode rules for sources: absent means the default, `null` or the `@json(none:)` value means
   `none`, units, `path`, `pairs`, tags and `inline` are applied. Unknown keys are ignored (the file

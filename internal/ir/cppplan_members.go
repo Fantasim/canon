@@ -107,12 +107,12 @@ func (pl *CppNamePlan) declarePublicDecode(sc *nameScope, origin string, item an
 	}
 }
 
-// declareRecordOwn declares a record's static Load, the first non-@reload record value's, and a table entry's id and retired getters and members (CODEGEN.md §5.3, §5.9).
+// declareRecordOwn declares a record's static Load, the first non-@reload record value's, and the id and retired getters and members of a table entry, a row of a table value or of a table field (CODEGEN.md §4.2, §5.3, §5.9).
 func (pl *CppNamePlan) declareRecordOwn(sc *nameScope, rec *Record, origin string) {
 	if i := slices.IndexFunc(pl.values, func(v *Value) bool { return !v.Reload && v.Type.Kind == types.Record && v.Type.Named == rec }); i >= 0 {
 		pl.declare(sc, CppLoad, pl.valueOrigin(pl.values[i]), pl.values[i])
 	}
-	if slices.ContainsFunc(pl.values, func(v *Value) bool { return tableRecord(v) == rec }) {
+	if pl.NestedRow(rec) || slices.ContainsFunc(pl.values, func(v *Value) bool { return tableRecord(v) == rec }) {
 		for _, n := range cppEntryMembers {
 			pl.declare(sc, n, origin, rec)
 		}

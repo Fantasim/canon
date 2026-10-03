@@ -82,6 +82,8 @@ func holdsRecordValue(v value.Value) bool {
 		return true
 	case *value.List:
 		return slices.ContainsFunc(x.Elems, holdsRecordValue)
+	case *value.Table:
+		return len(x.Entries) > 0
 	case *value.Map:
 		return slices.ContainsFunc(x.Keys, holdsRecordValue) || slices.ContainsFunc(x.Vals, holdsRecordValue)
 	default:

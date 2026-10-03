@@ -133,6 +133,7 @@ func (g *gen) plan() {
 	g.indexFns()
 	g.boxes()
 	g.pairsParents()
+	g.nestedRows()
 	g.holdersOf()
 	g.sortClasses()
 	g.collectInputs()

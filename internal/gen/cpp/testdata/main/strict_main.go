@@ -33,6 +33,20 @@ func bits(f float32) string {
 	return fmt.Sprintf("%08x", math.Float32bits(f))
 }
 
+// dumpDrawers lists a nested table's rows in order, "id:n" and an "r" after a retired one, matching strict_main.cpp's DumpDrawers.
+func dumpDrawers(n int, at func(int) *nest.Drawer) string {
+	var out []string
+	for i := range n {
+		r := at(i)
+		retired := ""
+		if r.Retired() {
+			retired = "r"
+		}
+		out = append(out, string(r.ID())+":"+strconv.FormatInt(r.N(), 10)+retired)
+	}
+	return strings.Join(out, ",")
+}
+
 // dumpHolder lists every Float32 of demo.nest's Holder as bits, matching strict_main.cpp's
 // DumpHolder.
 func dumpHolder(h *nest.Holder) string {
@@ -44,7 +58,11 @@ func dumpHolder(h *nest.Holder) string {
 	if c, ok := h.Shape().AsCircle(); ok {
 		r = bits(c.R())
 	}
-	return "f32s=" + strings.Join(f32s, ",") + " a.b=" + bits(h.Dotted()) + " a/b=" + bits(h.Deep()) +
+	spare := "none"
+	if rows, ok := h.Spare(); ok {
+		spare = dumpDrawers(rows.Len(), rows.At)
+	}
+	return "f32s=" + strings.Join(f32s, ",") + " drawers=" + dumpDrawers(h.Drawers().Len(), h.Drawers().At) + " spare=" + spare + " fav=" + string(h.FavID()) + " a.b=" + bits(h.Dotted()) + " a/b=" + bits(h.Deep()) +
 		" shape.r=" + r + " $scale=" + bits(h.Scale(nest.SizeSmall)) + "," + bits(h.Scale(nest.SizeMedium))
 }
 
