@@ -283,7 +283,7 @@ func (r *run) verifyCodes() error {
 // stagesCD runs the instance checks, then the package checks (EVALUATION.md §8).
 func (r *run) stagesCD(ctx context.Context) error {
 	r.failed.prog = r.prog
-	runner := rules.NewShared(r.rix, memoChecks{checks{Evaluator: r.ev, failed: &r.failed}}, r.bags)
+	runner := rules.NewShared(r.rix, checks{Evaluator: r.ev, failed: &r.failed}, r.bags)
 	if r.memoized {
 		runner.UseMemo(r.alone()) // IMPLEMENTATION-PLAN §7.6 NFR-02
 	}

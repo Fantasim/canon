@@ -385,6 +385,7 @@ var E3501 codeE3501   // func (codeE3501) At(span source.Span, key ValueArg, col
 type Builder struct { /* a finding under construction: Path, Pointer, Related, Check, Layer, Stack, Report, Message */ }
 func (b *Builder) Detached() *Builder   // a copy holding every argument as the text it renders, so a memoized
                                         // finding keeps no value or type alive (addition, DECISIONS 250)
+func (f Finding) Restated(files Files, args ...any) Finding // f with its own template re-rendered from args (DECISIONS 281)
 type Finding struct {
     Code     Code
     Severity Severity

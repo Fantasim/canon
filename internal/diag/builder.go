@@ -100,6 +100,17 @@ func (b *Builder) Report(bag *Bag) {
 	bag.add(b.finding(bag.files, bag.pkg))
 }
 
+// Restated is f with its message rendered again from its own code and variant with args, every
+// other field f's: a named check's message in another language (DECISIONS 281).
+func (f Finding) Restated(files Files, args ...any) Finding {
+	if f.def == nil {
+		return f
+	}
+	v := f.def.Variants[f.variant]
+	f.Message = renderer{files: files}.template(v.Template, v.Args, args)
+	return f
+}
+
 // finding renders the builder into the finding a bag of package pkg holds.
 func (b *Builder) finding(files Files, pkg string) Finding {
 	r := renderer{files: files}
@@ -116,6 +127,8 @@ func (b *Builder) finding(files Files, pkg string) Finding {
 		Stack:      b.stack,
 		MoreFrames: b.stackCut + b.moreFrames,
 		Reads:      b.reads,
+		def:        b.def,
+		variant:    b.variant,
 	}
 	for _, rel := range b.related {
 		f.Related = append(f.Related, Related{Span: rel.span, Note: r.note(rel.note)})

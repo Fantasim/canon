@@ -2,23 +2,7 @@ package build
 
 import (
 	"github.com/fantasim/canonlang/internal/eval"
-	"github.com/fantasim/canonlang/internal/rules"
-	"github.com/fantasim/canonlang/internal/syntax"
-	"github.com/fantasim/canonlang/internal/value"
 )
-
-// memoChecks is checks serving the rules memo: a traced or replayed run is told with its
-// instance as Run tells its own (VIEWMODEL.md J15).
-type memoChecks struct {
-	checks
-}
-
-// Ran notes a failed run of d on self, which rules made through the memo.
-func (c memoChecks) Ran(d *syntax.CheckDecl, self value.Value, run rules.Run) {
-	if run.Failed {
-		c.failed.note(d, self, run.Message)
-	}
-}
 
 // alone is the values of r.order no other one of it can hold a part of. A value holds a part of
 // another only if its evaluation read it, directly or through values read, as the evaluator noted

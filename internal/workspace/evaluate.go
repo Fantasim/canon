@@ -189,7 +189,10 @@ func evaluate(ctx context.Context, e Eval) (*Evaluation, error) {
 	}
 	out := &Evaluation{State: res, Package: at.Package, Files: e.Analysis.Files()}
 	if bag := e.Analysis.Bag(at.Package); bag != nil {
-		out.Findings = below(bag.Findings(), edit.Path{Root: at.Root, Segs: at.Segs}.String())
+		found := below(bag.Findings(), edit.Path{Root: at.Root, Segs: at.Segs}.String())
+		if out.Findings, err = e.Analysis.Localized(ctx, found, e.Lang); err != nil { // DECISIONS 281
+			return nil, err
+		}
 	}
 	for _, pkg := range importing(e.Analysis.Units(), append([]string{at.Package}, e.Touched...)...) {
 		if bag := e.Analysis.Bag(pkg); bag != nil {

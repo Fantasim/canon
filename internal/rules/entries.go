@@ -93,7 +93,6 @@ func (t *traversal) replayEntry(e *value.Record, kept *entryKept) bool {
 	}
 	for _, f := range kept.failed {
 		run, self := runOf(kept.runs[f.run].Outcome()), instances[f.instance]
-		t.memo.ev.Ran(f.c, self, run)
 		t.report(f.c, run, self, f.at)
 	}
 	return true

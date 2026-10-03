@@ -84,7 +84,11 @@ func (r *run) build(ctx context.Context, opt BuildOptions) (*BuildResult, error)
 	if outputs, err = r.place(outputs, opt.Adopt); err != nil {
 		return nil, err
 	}
-	if out.Result = *r.result(); out.Summary.Errors > failed {
+	res := r.result()
+	if err := r.localized(ctx, res); err != nil {
+		return nil, err
+	}
+	if out.Result = *res; out.Summary.Errors > failed {
 		return out, nil
 	}
 	var locks []*lockOut

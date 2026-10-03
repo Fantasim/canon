@@ -18,24 +18,26 @@ type checkRuns struct {
 	decls map[source.Span]*syntax.CheckDecl // each check declaration by its span, built on first find
 }
 
-// failedRun is one failed run of a check: its instance (nil at package level) and message.
+// failedRun is one failed run of a check: its instance (nil at package level), the path its
+// finding carries, as rules wrote it ("" at package level), and message.
 type failedRun struct {
 	self    value.Value
+	path    string
 	message string
 }
 
-// note keeps a run of c on self whose message may be translated (I18N.md K8: a named one-line check).
-func (l *checkRuns) note(c *syntax.CheckDecl, self value.Value, message string) {
+// note keeps a run of c on self at path whose message may be translated (I18N.md K8: a named one-line check).
+func (l *checkRuns) note(c *syntax.CheckDecl, self value.Value, path, message string) {
 	if l == nil || c.Name == nil || c.Body != nil {
 		return
 	}
 	if l.runs == nil {
 		l.runs = map[*syntax.CheckDecl][]failedRun{}
 	}
-	l.runs[c] = append(l.runs[c], failedRun{self: self, message: message})
+	l.runs[c] = append(l.runs[c], failedRun{self: self, path: path, message: message})
 }
 
-// find is the check f relates and its first run with f's message whose instance sits where f does (EVALUATION.md §8.3).
+// find is the check f relates and its run with f's message on the instance f is about (API.md F1).
 func (l *checkRuns) find(f diag.Finding) (*syntax.CheckDecl, value.Value, bool) {
 	if l == nil || len(l.runs) == 0 || f.Check == "" {
 		return nil, nil, false
@@ -46,7 +48,7 @@ func (l *checkRuns) find(f diag.Finding) (*syntax.CheckDecl, value.Value, bool) 
 			continue
 		}
 		for _, run := range l.runs[c] {
-			if run.message == f.Message && (run.self == nil || siteOf(c, run.self) == f.Span) {
+			if run.message == f.Message && run.path == f.Path && (run.self == nil || siteOf(c, run.self) == f.Span) {
 				return c, run.self, true
 			}
 		}

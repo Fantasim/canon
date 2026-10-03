@@ -38,7 +38,11 @@ func (p *Project) Analyze(ctx context.Context, selectors []string) (*Analysis, e
 	if err := r.analyze(ctx); err != nil {
 		return nil, err
 	}
-	return r.analysis(), nil
+	a := r.analysis()
+	if err := r.localized(ctx, a.res); err != nil {
+		return nil, err
+	}
+	return a, nil
 }
 
 // analysis is the analyzed run frozen: its findings, settled values and manifest.
@@ -117,6 +121,14 @@ func (a *Analysis) Loaded(ctx context.Context, root eval.Root) (value.Value, boo
 		return nil, false
 	}
 	return v, ok
+}
+
+// Localized is a copy of findings, this analysis's, with each named check's message in lang, else the source's (DECISIONS 281).
+func (a *Analysis) Localized(ctx context.Context, findings []diag.Finding, lang string) ([]diag.Finding, error) {
+	out := slices.Clone(findings)
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	return out, a.r.translate(ctx, a.r.s.set, out, lang)
 }
 
 // Units are the packages of the snapshot Analyze read, every one, selected or not, read-only.

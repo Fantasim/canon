@@ -259,7 +259,7 @@ func (e *LoadError) Error() string {
 func (e *LoadError) Unwrap() error { return ErrLoad }
 
 // checks is the evaluator as rules.Evaluator: eval.CheckRun copied into rules.Run (DECISIONS
-// 186); stage C and D's runner keeps the failed runs a view model's J15 messages need.
+// 186); it keeps the false checks rules reports, which a view model's J15 messages need.
 type checks struct {
 	*eval.Evaluator
 	failed *checkRuns
@@ -267,14 +267,16 @@ type checks struct {
 
 func (c checks) Run(ctx context.Context, d *syntax.CheckDecl, self value.Value, path string) rules.Run {
 	x := c.Evaluator.Run(ctx, d, self, path)
-	if x.Failed {
-		c.failed.note(d, self, x.Message)
-	}
 	out := rules.Run{Aborted: x.Aborted, Failed: x.Failed, Message: x.Message}
 	for _, r := range x.Reports {
 		out.Reports = append(out.Reports, rules.Report{Warn: r.Warn, At: r.At, Message: r.Message})
 	}
 	return out
+}
+
+// Reported notes a false one-line check d of self whose finding carries path, fresh or replayed.
+func (c checks) Reported(d *syntax.CheckDecl, self value.Value, path string, run rules.Run) {
+	c.failed.note(d, self, path, run.Message)
 }
 
 // irHost is the evaluator as stage E's ir.Host; stage B has begun, so a first Force verifies.

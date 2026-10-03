@@ -2600,6 +2600,15 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      such name (`x` in `{id.x}`). Amend paths through a dependent field stay E1905 and are not
      indexed through branches until that amendment is ruled ("Still open"). Reason: G3 review,
      log-2026-10-03.
+281. **Named-check messages under `--lang` (I18N.md B5, K8; API.md F2, F7, §11).** A finding
+     of a named check is written in `Options.Lang` when its translation exists and renders (VIEWMODEL
+     §9.2), else in the source language; findings are then sorted by F2 on the written message. F7's
+     truncation, EVALUATION §14's duplicates and the summary counts are judged on the source-language
+     messages, so the finding set does not depend on the language. A translated message renders
+     with the finding's own instance (its F1 path), as the view model's `messages` do (J15). A translated finding is `diag.Finding.Restated`: its own
+     template re-rendered with new arguments, every other field kept (additive, under IMPLEMENTATION-PLAN
+     §4's review rule). A live `Evaluate` finding follows the request's `Lang`, else
+     `Options.Lang`, as its other text does (§11). Reason: G5, log-2026-10-03.
 
 ## Still open
 

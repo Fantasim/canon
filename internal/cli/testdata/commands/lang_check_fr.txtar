@@ -1,0 +1,45 @@
+CLI.md §2.3, I18N.md B5, K8: canon check --lang fr writes a named check's message from its French translation, with the same arguments; an unnamed check stays in the source language.
+-- args --
+check
+--lang
+fr
+-- project.canon --
+project acme {
+  canon: "0.1"
+  languages: [en, fr]
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A use.
+record Use {
+  /// How many.
+  count: Int
+
+  warn big: count < 10 else "count {count} is big"
+  warn count < 8 else "count {count} is over eight"
+}
+
+/// Uses.
+let uses: table Use = {
+  first { count: 20 }
+}
+-- a/a.fr.canon --
+package a
+translation fr
+
+Use.check.big "compte {count} trop grand"
+-- want --
+[exit 0]
+[stdout]
+warning[W5001]  a/a.canon:15:3
+  uses.first: compte 20 trop grand
+  expected by a/a.canon:9 (check big)
+
+warning[W5001]  a/a.canon:15:3
+  uses.first: count 20 is over eight
+  expected by a/a.canon:10 (check)
+
+0 errors, 2 warnings in 1 package (…)
+[stderr]

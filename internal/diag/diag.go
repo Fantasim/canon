@@ -17,6 +17,9 @@ type Finding struct {
 	Stack      []Frame
 	MoreFrames int // API.md F13
 	Reads      []string
+
+	def     *Def // the code and variant whose template made Message, for Restated
+	variant int
 }
 
 // Related is a location the value was checked against, with its rendered note (API.md F12).

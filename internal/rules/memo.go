@@ -47,7 +47,6 @@ type memoEvaluator interface {
 	Attached(token any, stage eval.Stage) any
 	RunTraced(ctx context.Context, c *syntax.CheckDecl, self value.Value, path string) (eval.CheckRun, *eval.CheckTrace)
 	ReplayChecks(ctx context.Context, runs []*eval.CheckTrace) bool
-	Ran(c *syntax.CheckDecl, self value.Value, run Run)
 }
 
 // memoUse is a runner's use of the memo: the evaluator keeping it, and which top-level values no

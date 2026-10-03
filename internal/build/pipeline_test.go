@@ -28,6 +28,12 @@ func openExamples(t *testing.T, out string) *build.Project {
 // openExamplesLayered is openExamples with layers active (EVALUATION.md §9.1).
 func openExamplesLayered(t *testing.T, out string, layers []string) *build.Project {
 	t.Helper()
+	return openExamplesWith(t, out, build.Options{Layers: layers})
+}
+
+// openExamplesWith is openExamples with opt, its roots redirected as openExamples's.
+func openExamplesWith(t *testing.T, out string, opt build.Options) *build.Project {
+	t.Helper()
 	dir, err := filepath.Abs(examplesDir)
 	if err != nil {
 		t.Fatal(err)
@@ -36,7 +42,8 @@ func openExamplesLayered(t *testing.T, out string, layers []string) *build.Proje
 	for _, name := range []string{"source", "services", "sovcommon", "web", "parity", "generated"} {
 		roots[name] = filepath.ToSlash(filepath.Join(out, name))
 	}
-	p, err := build.Open(project.OS(), filepath.ToSlash(dir), build.Options{Roots: roots, Layers: layers})
+	opt.Roots = roots
+	p, err := build.Open(project.OS(), filepath.ToSlash(dir), opt)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -112,7 +112,6 @@ func (t *traversal) run(c *syntax.CheckDecl, rec *value.Record, at *verify.Path)
 	}
 	x, trace := t.memo.ev.RunTraced(t.ctx, c, rec, path)
 	run := runOf(x)
-	t.memo.ev.Ran(c, rec, run)
 	kept := &t.rec.kept
 	switch {
 	case trace == nil:

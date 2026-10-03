@@ -339,7 +339,8 @@ type Truncation struct { Package string; Errors, Warnings int }   // counts NOT 
 ```
 
 - **F7.** At most `Options.MaxFindings` findings are kept per package; the first ones in F2 order
-  are kept. The counts in `Summary.Errors`/`Warnings` include the dropped ones;
+  are kept, chosen on the source-language messages so the kept set is the same under every
+  `Options.Lang` (DECISIONS 281). The counts in `Summary.Errors`/`Warnings` include the dropped ones;
   `Truncated` lists each package that dropped some, in package-name order.
 - **F8.** `Summary.Packages` is the number of packages checked.
 

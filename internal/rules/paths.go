@@ -3,6 +3,7 @@ package rules
 import (
 	"slices"
 
+	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
 	"github.com/fantasim/canonlang/internal/verify"
@@ -13,6 +14,12 @@ import (
 type retags interface {
 	RetagMark() int
 	RetaggedSince(mark int) []*value.Record
+}
+
+// teller is what an Evaluator told of each false one-line check also takes: the check, its
+// instance (nil at package level) and the path its finding carries (VIEWMODEL.md J15).
+type teller interface {
+	Reported(c *syntax.CheckDecl, self value.Value, path string, run Run)
 }
 
 // rootAt is a top-level value traversed and not yet indexed: its value, declared type, name, and

@@ -1,0 +1,41 @@
+CLI.md §2.4, API.md §4.2, I18N.md B5: with --format json, a named check's `message` is its French translation under --lang fr.
+-- args --
+check
+--format
+json
+--lang
+fr
+-- project.canon --
+project acme {
+  canon: "0.1"
+  languages: [en, fr]
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A use.
+record Use {
+  /// How many.
+  count: Int
+
+  warn big: count < 10 else "count {count} is big"
+  warn count < 8 else "count {count} is over eight"
+}
+
+/// Uses.
+let uses: table Use = {
+  first { count: 20 }
+}
+-- a/a.fr.canon --
+package a
+translation fr
+
+Use.check.big "compte {count} trop grand"
+-- want --
+[exit 0]
+[stdout]
+{"severity":"warning","code":"W5001","file":"a/a.canon","line":15,"col":3,"endLine":15,"endCol":22,"package":"a","path":"uses.first","message":"compte 20 trop grand","check":"big","related":[{"file":"a/a.canon","line":9,"col":3,"endLine":9,"endCol":51,"note":"check big"}],"reads":["count"]}
+{"severity":"warning","code":"W5001","file":"a/a.canon","line":15,"col":3,"endLine":15,"endCol":22,"package":"a","path":"uses.first","message":"count 20 is over eight","related":[{"file":"a/a.canon","line":10,"col":3,"endLine":10,"endCol":52,"note":"check"}],"reads":["count"]}
+{"summary":{"errors":0,"warnings":2,"packages":1,"ms":0}}
+[stderr]

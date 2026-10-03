@@ -32,6 +32,7 @@ func (r *Runner) Package(ctx context.Context, pkg *check.Package) error {
 		if run.Failed {
 			at := keyword(file, c)
 			r.decorate(oneLine(c, at, run.Message), file, c).Report(bag)
+			r.tell(c, nil, "", run)
 		}
 		r.blockReports(c, file, run.Reports, bag)
 	}
@@ -59,8 +60,16 @@ func (t *traversal) report(c *syntax.CheckDecl, run Run, rec *value.Record, at *
 			b.Reads(t.reads(c, rec))
 		}
 		site.Report(b, p, bag)
+		t.tell(c, rec, p.String(), run)
 	}
 	t.blockReports(c, file, run.Reports, bag)
+}
+
+// tell tells the evaluator of a false one-line check reported at path, when it listens.
+func (r *Runner) tell(c *syntax.CheckDecl, self value.Value, path string, run Run) {
+	if r.teller != nil {
+		r.teller.Reported(c, self, path, run)
+	}
 }
 
 // blockReports reports each fail and warn call at the provenance of its `at` value.
