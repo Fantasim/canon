@@ -1,7 +1,7 @@
 # State — Canon compiler
 
 Updated: 2026-10-04. Main (local, not pushed: CI down) holds cloud run 1 (`claude/m6-run-1`,
-verified locally) plus telemetry readiness. Calls [log-2026-10-04](decisions/log-2026-10-04.md),
+verified locally; [report](handoff/2026-10-03-cloud-m6-run-1.md)) plus telemetry readiness. Calls [log-2026-10-04](decisions/log-2026-10-04.md),
 DECISIONS 293-298. M5 accepted (CI run 36973712977).
 
 ## Current focus
@@ -18,8 +18,6 @@ Canon-native design (Louis, "elegance over legacy"). ADR-0014. Handoff to Source
 Louis question pending: [louis-calls Q1](handoff/2026-10-04-louis-calls.md) (what "retired" forbids).
 Not reviewed by a spec-reviewer (weekly limit hit): R4's three fixes and TE round 3 (orchestrator
 read the diffs; `make check` green). Re-review when the limit resets (2026-10-06).
-Cloud run 1 (2026-10-03) landed 20 units: M6 TypeScript (T1), M5 gaps, bugs, LX, hardening
-(report [handoff/2026-10-03-cloud-m6-run-1.md](handoff/2026-10-03-cloud-m6-run-1.md)).
 **Blocked:** CI (Actions billing, Louis), then push main.
 Later items: cross-package decoders §2.2 vs §2.8, `ordered_json`, kind constants, API S11 vs §3.4,
 go `types`/`embedded` and cpp `embedded` modes still refused at build (GM ruling). Long fuzz/progen
