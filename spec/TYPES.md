@@ -260,7 +260,7 @@ the `Icon` member, although `let columns` exists.
 
 ### 4.3 Qualified forms
 
-`Enum.member`, `Variant.case`, `pkg.Name`, `alias.Name`, `pkg.Enum.member` and `table.key`
+`Enum.member`, `Enum.members` (STDLIB.md §3, DECISIONS 299), `Variant.case`, `pkg.Name`, `alias.Name`, `pkg.Enum.member` and `table.key`
 (value position) are always accepted and never ambiguous.
 
 ---

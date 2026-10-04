@@ -152,6 +152,7 @@ Members are read without parentheses (TYPES.md §3.5). They cost nothing beyond 
 | | `.index` | `Int` | position from 0 in declaration order, retired members included |
 | | `.wire` | `String` | wire value (the name, or the `= "…"` string) |
 | | `.code` | `Int` | the code; only with `@codes` |
+| | `.retired` | `Bool` | whether the member is retired (DECISIONS 299) |
 | variant value | `.kind` | `Kind(V)` | its case (TYPES.md §8.3) |
 | table entry, `ref` into a table | `.id` | `String` | the key |
 | | `.retired` | `Bool` | whether the entry is retired |
@@ -160,6 +161,13 @@ Members are read without parentheses (TYPES.md §3.5). They cost nothing beyond 
 | | `.end` | `Int` | end, exclusive; `E4002` on an open range |
 
 A ref reads the members of its entry (implicit dereference).
+
+**Members of an enum type** (DECISIONS 299). `E.members`, where `E` names an enum (qualified
+forms included, TYPES.md §4.3), is the `[E]` of every member in declaration order, retired members
+included (`.retired` tells them apart). It is a constant and costs one step per member. Computing
+with a retired member read this way is allowed; a value that still holds one when it is stored is
+`E3506`, as a written retired member is. `members` is therefore a reserved member name on enums
+(`E2105`).
 
 ---
 

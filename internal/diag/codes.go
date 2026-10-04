@@ -1118,6 +1118,7 @@ var Registry = []Def{
 		Variants: []Variant{
 			{Name: "entry", Args: []Arg{{Name: "name", Type: ArgTypeName}}, Template: "{name} is reserved on table entries"},
 			{Name: "case", Args: []Arg{{Name: "name", Type: ArgTypeName}}, Template: "{name} is reserved on variant cases"},
+			{Name: "enum", Args: []Arg{{Name: "name", Type: ArgTypeName}}, Template: "{name} is reserved on enums: E.members lists them"},
 		},
 	},
 	{
@@ -2121,6 +2122,7 @@ var Registry = []Def{
 			{Name: "position", Template: "@text belongs on a public package-level export fn with no parameter that returns String"},
 			{Name: "file", Args: []Arg{{Name: "value", Type: ArgTypeText}}, Template: "invalid @text file name \"{value}\": not a portable file name (empty, . or .., a path separator, a reserved character or Windows device name, or a final dot or space)"},
 			{Name: "twice", Args: []Arg{{Name: "value", Type: ArgTypeText}, {Name: "other", Type: ArgTypeName}}, Template: "@text file \"{value}\" is also written by {other}"},
+			{Name: "called", Args: []Arg{{Name: "name", Type: ArgTypeName}}, Template: "{name} has @text: it is a file, not a function other declarations can call"},
 		},
 	},
 	{
@@ -4077,7 +4079,7 @@ func (codeE2104) At(span source.Span, record string, name string) *Builder {
 	return newBuilder(&Registry[106], 0, span, record, name)
 }
 
-// E2105: a reserved member name: `id`/`retired` on a table element, `kind` on a case (TYPES.md §3.6).
+// E2105: a reserved member name: `id`/`retired` on a table element, `kind` on a case, `members` on an enum (DECISIONS 299) (TYPES.md §3.6).
 var E2105 codeE2105
 
 type codeE2105 struct{}
@@ -4093,6 +4095,11 @@ func (codeE2105) AtEntry(span source.Span, name string) *Builder {
 // AtCase reports: {name} is reserved on variant cases
 func (codeE2105) AtCase(span source.Span, name string) *Builder {
 	return newBuilder(&Registry[107], 1, span, name)
+}
+
+// AtEnum reports: {name} is reserved on enums: E.members lists them
+func (codeE2105) AtEnum(span source.Span, name string) *Builder {
+	return newBuilder(&Registry[107], 2, span, name)
 }
 
 // E2106: a name declared twice in one namespace (TYPES.md §3.2).
@@ -6537,7 +6544,7 @@ func (codeE8020) At(span source.Span, name string) *Builder {
 	return newBuilder(&Registry[256], 0, span, name)
 }
 
-// E8021: a misplaced `@text`, an invalid `@text` file name, or two `@text` files of one package with one name (DECISIONS 294) (CODEGEN.md §2.9).
+// E8021: a misplaced `@text`, an invalid `@text` file name, two `@text` files of one package with one name, or a call to a `@text` fn (DECISIONS 294, 300) (CODEGEN.md §2.9).
 var E8021 codeE8021
 
 type codeE8021 struct{}
@@ -6558,6 +6565,11 @@ func (codeE8021) AtFile(span source.Span, value string) *Builder {
 // AtTwice reports: @text file "{value}" is also written by {other}
 func (codeE8021) AtTwice(span source.Span, value string, other string) *Builder {
 	return newBuilder(&Registry[257], 2, span, value, other)
+}
+
+// AtCalled reports: {name} has @text: it is a file, not a function other declarations can call
+func (codeE8021) AtCalled(span source.Span, name string) *Builder {
+	return newBuilder(&Registry[257], 3, span, name)
 }
 
 // E8101: an emitted integer outside the TypeScript safe range without `@ts(bigint)` (CODEGEN.md §4.1).

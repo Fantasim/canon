@@ -355,7 +355,7 @@ func (codeE2103) AtSeveral(span source.Span, typ string, colls []string) *Builde
 
 ---
 
-The catalogue holds 302 codes: 281 errors, 18 warnings and 3 run-time codes, with 479 messages.
+The catalogue holds 302 codes: 281 errors, 18 warnings and 3 run-time codes, with 481 messages.
 
 ## E10xx, W10xx: Project file, doc comments and naming
 
@@ -688,7 +688,7 @@ Owner: TYPES.md.
 | E2102 | error | check | TYPES.md §3.3 | unknown name |
 | E2103 | error | check | TYPES.md §10.2 | `ref T` finds no collection of `T`, or several |
 | E2104 | error | check | TYPES.md §3.6 | a field and a method with the same name |
-| E2105 | error | check | TYPES.md §3.6 | a reserved member name: `id`/`retired` on a table element, `kind` on a case |
+| E2105 | error | check | TYPES.md §3.6 | a reserved member name: `id`/`retired` on a table element, `kind` on a case, `members` on an enum (DECISIONS 299) |
 | E2106 | error | check | TYPES.md §3.2 | a name declared twice in one namespace |
 | E2107 | error | check | TYPES.md §3.4 | a name declared twice in one block |
 | E2108 | error | check | TYPES.md §3.4 | `self` outside a record, case or variant body |
@@ -712,6 +712,7 @@ Owner: TYPES.md.
 | E2104 | - | record:Name, name:Name | `{record} has a field and a method named {name}` |
 | E2105 | entry | name:Name | `{name} is reserved on table entries` |
 | E2105 | case | name:Name | `{name} is reserved on variant cases` |
+| E2105 | enum | name:Name | `{name} is reserved on enums: E.members lists them` |
 | E2106 | - | name:Name, first:Loc | `{name} is declared twice (first at {first})` |
 | E2107 | - | name:Name | `{name} is already declared in this block` |
 | E2108 | - | - | `self is only valid in a record, case or variant body` |
@@ -1148,7 +1149,7 @@ Owner: CODEGEN.md, WIRE.md.
 | E8018 | error | ir | CODEGEN.md §2.8 | a type decoded from JSON whose package is emitted in `baked` mode |
 | E8019 | error | ir | EVALUATION.md §1 | an emit whose generator cannot produce a construct valid Canon allows |
 | E8020 | error | ir | CODEGEN.md §5.1 | a Go constant of -0.0, which Go constants cannot hold |
-| E8021 | error | check | CODEGEN.md §2.9 | a misplaced `@text`, an invalid `@text` file name, or two `@text` files of one package with one name (DECISIONS 294) |
+| E8021 | error | check | CODEGEN.md §2.9 | a misplaced `@text`, an invalid `@text` file name, two `@text` files of one package with one name, or a call to a `@text` fn (DECISIONS 294, 300) |
 | E8101 | error | ir | CODEGEN.md §4.1 | an emitted integer outside the TypeScript safe range without `@ts(bigint)` |
 | E8102 | error | wire | WIRE.md §5.1 | a value with no wire form for its field (not a whole unit, equals the `none` marker, repeated bits member) |
 | E8103 | error | ir | CODEGEN.md §7.8.1 | a string or list longer than its fixed-size legacy C++ array |
@@ -1212,6 +1213,7 @@ Owner: CODEGEN.md, WIRE.md.
 | E8021 | position | - | `@text belongs on a public package-level export fn with no parameter that returns String` |
 | E8021 | file | value:Text | `invalid @text file name "{value}": not a portable file name (empty, . or .., a path separator, a reserved character or Windows device name, or a final dot or space)` |
 | E8021 | twice | value:Text, other:Name | `@text file "{value}" is also written by {other}` |
+| E8021 | called | name:Name | `{name} has @text: it is a file, not a function other declarations can call` |
 | E8101 | field | value:Value, field:Name | `{value} does not fit a TypeScript number; add @ts(bigint) to {field}` |
 | E8101 | result | value:Value, fn:Name | `{value} does not fit a TypeScript number; {fn} is precomputed for TypeScript and cannot be bigint` |
 | E8102 | unit | value:Value, field:Name, unit:Name | `{value} has no wire form for {field}: not a whole number of {unit}` |

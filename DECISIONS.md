@@ -2761,6 +2761,20 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      (log-2026-10-04): `resource.vocab`'s `Param` is the point of the example, and the generators
      were the gap.
 
+299. **Enum reflection: `E.members` and `.retired` (STDLIB.md §3; TYPES.md §4.3; ERRORS.md E2105).**
+     `E.members` is the constant `[E]` of an enum's members in declaration order, retired ones
+     included; an enum value has `.retired`. A retired member read this way may be computed with;
+     a stored value holding one is still `E3506`. `members` is reserved on enums (`E2105` `enum`).
+     Reason: telemetry's enums SQL, catalog and ledger coverage repeated every member list by hand
+     with nothing checking it (TE, log-2026-10-04).
+
+300. **`@text` fns are files, not API (CODEGEN.md §2.9; amends 294).** Code and JSON emits leave
+     `@text` fns out, and no other declaration may call one (`E8021` `called`). Reason: TE wrote a
+     26 KB catalog as a constexpr string into the C++ header and a Go function nobody calls.
+
+301. **`SQL` is a Go initialism (CODEGEN.md §3.2).** `CreateTableSQL`, not `CreateTableSql`.
+     Reason: TE; Go's own convention.
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.

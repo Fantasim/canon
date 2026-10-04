@@ -166,6 +166,7 @@ E2103 several: ref resource.vocab.items: several collections of resource.vocab.i
 E2104 -: resource.vocab.items has a field and a method named resource.vocab.items
 E2105 entry: resource.vocab.items is reserved on table entries
 E2105 case: resource.vocab.items is reserved on variant cases
+E2105 enum: resource.vocab.items is reserved on enums: E.members lists them
 E2106 -: resource.vocab.items is declared twice (first at @resource/Server/System/farm_config.json:1)
 E2107 -: resource.vocab.items is already declared in this block
 E2108 -: self is only valid in a record, case or variant body
@@ -421,6 +422,7 @@ E8020 -: constant resource.vocab.items is -0.0, which a Go constant cannot hold:
 E8021 position: @text belongs on a public package-level export fn with no parameter that returns String
 E8021 file: invalid @text file name "0.9": not a portable file name (empty, . or .., a path separator, a reserved character or Windows device name, or a final dot or space)
 E8021 twice: @text file "0.9" is also written by resource.vocab.items
+E8021 called: resource.vocab.items has @text: it is a file, not a function other declarations can call
 E8101 field: "II_SYS_SYS_SCR_FARM3" does not fit a TypeScript number; add @ts(bigint) to resource.vocab.items
 E8101 result: "II_SYS_SYS_SCR_FARM3" does not fit a TypeScript number; resource.vocab.items is precomputed for TypeScript and cannot be bigint
 E8102 unit: "II_SYS_SYS_SCR_FARM3" has no wire form for resource.vocab.items: not a whole number of resource.vocab.items
