@@ -198,7 +198,8 @@ So the table entry `units.count` is the entry, and `units.count(pred)` is the me
   holding a variant is fine: `e.kind.kind`.
 - Enum members, variant cases and table keys may be any identifier, including reserved words
   where GRAMMAR.md allows them. They never clash with declarations: they live in their type or
-  collection, not in the package namespace.
+  collection, not in the package namespace. One name is reserved per kind (`E2105`): `members` on
+  an enum (`E.members`, DECISIONS 299), as `id`/`retired` on table elements and `kind` on cases.
 
 ### 3.7 Public signatures
 
@@ -739,8 +740,8 @@ non-`ordered` enums, is `E3310`. Optionals are not orderable (`E3403`). Comparis
 
 - Members are written `Enum.m` or bare with an expected type (§4).
 - Members have built-in members: `.name: String` (Canon name), `.index: Int` (position from
-  0, retired members included), `.wire: String` (the wire value), and `.code: Int` with
-  `@codes` only (`E3003` otherwise).
+  0, retired members included), `.wire: String` (the wire value), `.retired: Bool`, and `.code: Int`
+  with `@codes` only (`E3003` otherwise). `E.members` lists them all (STDLIB.md §3, DECISIONS 299).
 - `ordered` makes the enum orderable (§7.5).
 - A retired member (`retired FIRE = 1`) still exists for `match` exhaustiveness (§12.6) and
   for generated code. Using it in a value, in Canon source or loaded data, is `E3506`, except
@@ -1237,7 +1238,7 @@ source of diagnostics (DECISIONS 27); this table says when each code fires.
 | E2102 | error | name found by no step of §3.3 |
 | E2103 | error | §10.2 |
 | E2104 | error | §3.6 |
-| E2105 | error | field or method `id`/`retired` on a table element, `kind` on a case |
+| E2105 | error | field or method `id`/`retired` on a table element, `kind` on a case, member `members` on an enum |
 | E2106 | error | duplicate declaration, field, member, case, method or parameter |
 | E2107 | error | redeclaration in one block |
 | E2108 | error | `self` outside a record, case or variant body |
