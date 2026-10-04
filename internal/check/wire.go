@@ -237,8 +237,8 @@ func (c *checker) jsonPairs(env *env, f *types.Field, j *syntax.Annotation) {
 
 // pairKeys are the two templates of `pairs:`, each with one slot and distinct (E3316, then ok is
 // false); not known when one holds a lexer error, whose text is made up (DECISIONS 215).
-func (c *checker) pairKeys(env *env, list *syntax.AnnotationList) (keys [pairCount]string, known, ok bool) {
-	if len(list.Items) != pairCount {
+func (c *checker) pairKeys(env *env, list *syntax.AnnotationList) (keys [pairArity]string, known, ok bool) {
+	if len(list.Items) != pairArity {
 		c.report(env, diag.E3316.AtPairsTemplate(env.span(list), ""))
 		return keys, false, false
 	}
@@ -270,7 +270,7 @@ func (c *checker) pairsElem(list types.Type) bool {
 	if reaches(rec, rec, map[*types.RecordType]bool{}) {
 		return true
 	}
-	if len(rec.Fields) != pairCount {
+	if len(rec.Fields) != pairArity {
 		return false
 	}
 	for _, f := range rec.Fields {
@@ -295,14 +295,10 @@ func scalarWire(t types.Type) bool {
 // translated reports an export fn with a non-finite parameter, which has no `$` key (WIRE.md §5.11).
 func (c *checker) translated(m *types.Method) bool {
 	return slices.ContainsFunc(m.Type.Params, func(p types.Type) bool {
-		switch x := p.Base().(type) {
-		case *types.RefType:
-			coll := c.coll(x)
-			return coll == nil || coll.KeyedBy != nil || coll.Local && coll.Kind == types.CollLet // DECISIONS 296
-		default:
-			k := p.Base().Kind()
-			return k != types.Bool && k != types.Enum
+		if r, ok := p.Base().(*types.RefType); ok {
+			c.coll(r) // the target resolves first (TYPES.md §10.2)
 		}
+		return types.Infinite(p)
 	})
 }
 

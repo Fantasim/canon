@@ -119,3 +119,12 @@ func (p *PairType) Kind() Kind { return Pair }
 func (p *PairType) Underlying() Type { return p }
 
 func (p *PairType) Base() Type { return p }
+
+// Infinite reports a function parameter type that has no finite key set: a ref into a keyed list or a `local let` table, or anything but Bool, an enum or a ref (CODEGEN.md §5.10, WIRE.md §5.11, DECISIONS 296).
+func Infinite(t Type) bool {
+	if r, ok := t.Base().(*RefType); ok {
+		return r.Target == nil || r.Target.KeyedBy != nil || r.Target.Local && r.Target.Kind == CollLet
+	}
+	k := t.Base().Kind()
+	return k != Bool && k != Enum
+}

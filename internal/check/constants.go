@@ -6,9 +6,6 @@ import (
 	"github.com/fantasim/canonlang/internal/types"
 )
 
-// NoneIndex is the index MatchInfo.Covers gives the `none` pattern (TYPES.md §12.6).
-const NoneIndex = -1
-
 // The object kinds; ObjParam is any parameter, lambdas' included, ObjLocal any other binder.
 const (
 	ObjConst ObjKind = iota
@@ -178,20 +175,17 @@ const (
 	visited
 )
 
-// noConstant is env.what outside a constant expression.
-const noConstant = diag.Kind(^uint8(0))
-
-// Limits and fixed numbers.
+// Limits and fixed numbers; NoneIndex is MatchInfo.Covers' `none` (TYPES.md §12.6), noConstant env.what outside a constant.
 const (
+	NoneIndex       = -1
+	noConstant      = diag.Kind(^uint8(0))
 	selfID          = 0
 	hintDistance    = 2
 	pairArity       = 2
-	pairCount       = 2
 	minPathSegments = 2
 	bits64          = 64
 	decimalBase     = 10
 	maxBit          = int64(1) << 62
-	underscoreByte  = '_'
 )
 
 // Punctuation and fixed words.
@@ -292,16 +286,14 @@ const (
 	repeatPattern    = `^\{(0|[1-9][0-9]*)(,(0|[1-9][0-9]*)?)?\}`
 )
 
-// backslash starts an escape in a regex.
-const backslash = '\\'
-
-// A portable file name's forbidden characters (CODEGEN.md §2.9), and a string literal's delimiters (GRAMMAR.md §2.6).
-const unportableChars, quoteMark, rawMark = `<>:"|?*`, `"`, "r"
-
-// The digits a pairs slot starts with: the least, and the least without a leading zero.
+// Portable-name characters (CODEGEN.md §2.9), literal delimiters (GRAMMAR.md §2.6), a regex escape, the digits a pairs slot starts with.
 const (
-	zeroDigit = '0'
-	oneDigit  = '1'
+	unportableChars = `<>:"|?*`
+	quoteMark       = `"`
+	rawMark         = "r"
+	backslash       = '\\'
+	zeroDigit       = '0'
+	oneDigit        = '1'
 )
 
 // pairSlot is the position variable of a `@json(pairs:)` template (WIRE.md §5.14).
@@ -343,8 +335,14 @@ var emitSpecs = map[string]emitSpec{
 
 // Load forms and options (WIRE.md §6.1).
 const (
-	loadName, loadForm, loadDefines, loadText, loadCSV = "load", "", "defines", syntax.WordText, "csv"
-	optionFormat, optionPartial, optionHeader          = "format", "partial", "header"
+	loadName      = "load"
+	loadForm      = ""
+	loadDefines   = "defines"
+	loadText      = syntax.WordText
+	loadCSV       = "csv"
+	optionFormat  = "format"
+	optionPartial = "partial"
+	optionHeader  = "header"
 )
 
 // Type parameter names of the built-in signatures.
@@ -480,7 +478,6 @@ const (
 	closeBrace     = "}"
 	newline        = "\n"
 	manyPaths      = 2 // E1903 needs to know only "more than one"
-	manyCandidates = 2 // an ambiguous occurrence names more than one field
 	maxLiteralText = 40
 
 	elidedLiteral sourceText = "{ … }"

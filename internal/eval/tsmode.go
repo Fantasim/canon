@@ -15,12 +15,7 @@ import (
 // runtimeInput reports a translated fn: a parameter not Bool, an enum or a ref to an unkeyed collection (SPEC §9.4).
 func runtimeInput(obj check.Object) bool {
 	ft, ok := obj.Type().(*types.FuncType)
-	return ok && slices.ContainsFunc(ft.Params, func(p types.Type) bool {
-		if rt, isRef := p.Base().(*types.RefType); isRef {
-			return rt.Target == nil || rt.Target.KeyedBy != nil || rt.Target.Local && rt.Target.Kind == types.CollLet // DECISIONS 296
-		}
-		return p.Base().Kind() != types.Bool && p.Base().Kind() != types.Enum
-	})
+	return ok && slices.ContainsFunc(ft.Params, types.Infinite)
 }
 
 // tsEntry checks every integer read from self, then every argument, is safe: E8303 (CONFORMANCE.md §2.3, §4).
