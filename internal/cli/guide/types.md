@@ -102,7 +102,8 @@ let weights: {Element: Int} = { FIRE: 2, WATER: 1 }
   scope by name and `self` is the value. A default may use constants, earlier fields and the stdlib.
   A `table` element may not declare `id` or `retired` (`E2105`): entries have `.id`, `.retired`.
 - Enum members: `Day.Mon`, or bare (`Mon`) where the type is expected; `.name`, `.index`,
-  `.wire`, and `.code` with `@codes`. A retired member stays for `match`; using it is `E3506`.
+  `.wire`, `.retired`, and `.code` with `@codes`; `E.members` lists them in declaration order
+  (retired ones included, `.retired` tells them apart; `members` is reserved on enums, `E2105`). A retired member stays for `match`; using it is `E3506`.
 - Variant literal: `gold { amount: 10 }`, `Reward.gold { ... }`; a case whose fields all have
   defaults may be bare (`item` needs `name`: `E3302`). `v.kind` is the case; `v is gold` tests
   it. Case fields are readable only on a narrowed value: `match`, `if v is gold { v.amount }`

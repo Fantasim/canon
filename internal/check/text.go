@@ -137,8 +137,15 @@ func writtenText(f *syntax.File, v syntax.Node) string {
 // textUse is E8021 `called` at a call to a `@text` fn, or its use as a value, but a test's call (CODEGEN.md §2.9).
 func (c *checker) textUse(env *env, at syntax.Node, o *object, call bool) {
 	d, isFn := o.decl.(*syntax.FnDecl)
-	if o.kind != ObjFn || !isFn || o == env.owner || annotation(prefixAnnotations(d), syntax.AnnText) == nil {
+	if o.kind != ObjFn || !isFn || o == env.owner {
 		return
+	}
+	ann := annotation(prefixAnnotations(d), syntax.AnnText)
+	if ann == nil {
+		return
+	}
+	if placed, known := c.textPlaced(textSite{env: c.fileEnv(c.pkgs[o.pkg], o.file, nil), decl: d, ann: ann}); !placed || !known {
+		return // a misplaced @text is E8021 position already, not a @text fn
 	}
 	if call && env.owner != nil && env.owner.kind == ObjTest {
 		return
