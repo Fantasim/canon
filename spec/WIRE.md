@@ -1110,7 +1110,7 @@ language <MAJOR.MINOR from project.canon>
 layer <name>                       one line per --layer, in the order given
 lang <code>                        the --lang value (source language if absent)
 command <check|build|test>
-target <go|cpp|ts|json|view>       one line per selected target, sorted; all when none selected
+target <go|cpp|ts|json|view|text>  one line per selected target, sorted; all when none selected
 package <qualified name>           one line per selected package, sorted
 root <name> <dir>                  one line per declared root, sorted by name
 file <sha256> <path>               every file read, sorted by path bytes

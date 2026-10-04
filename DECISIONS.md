@@ -2730,6 +2730,13 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      d.1.8); a JSON `$fns` extractor would live outside Canon and need an emitted value
      (log-2026-10-04).
 
+295. **`TargetText` in the API (API.md §13.1 B1b; WIRE.md §10).** `canon.Target` gains `TargetText`
+     (`"text"`), the target of DECISIONS 294: `BuildOptions.Targets` may select it, `Output.Target`
+     names it, and B1b's `Expected` lists it. Additive under IMPLEMENTATION-PLAN §4's review rule,
+     approved as its consumer review (as 270, 275). The build manifest's `target` lines may name
+     `text`. Reason: TX (a full build wrote text outputs with an empty `Output.Target`),
+     log-2026-10-04.
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.

@@ -1528,7 +1528,7 @@ func (p *Project) Build(ctx context.Context, o BuildOptions) (*BuildResult, erro
 
 type BuildOptions struct {
     Packages []string   // selectors (R1); none = all
-    Targets  []Target   // go cpp ts json view; none = all
+    Targets  []Target   // go cpp ts json view text; none = all
     Check    bool       // write nothing; report what would change (CLI --check)
     Adopt    []string   // outputs the build may take over without a marker (CLI --adopt, B2)
 }
@@ -1550,8 +1550,8 @@ type LockChange struct { Package string; File string; Lines []string }
   the error findings of an imported package are then reported with the selection's (beyond R2),
   so nothing is refused without its reason. A build with layers never writes `canon.lock`
   (LOCK.md §6.1).
-- **B1b.** A `Target` in `BuildOptions.Targets` that is not `go`, `cpp`, `ts`, `json` or `view` is
-  refused with `*ValueError` (wraps `ErrBadValue`; `Expected` is `go, cpp, ts, json or view`),
+- **B1b.** A `Target` in `BuildOptions.Targets` that is not `go`, `cpp`, `ts`, `json`, `view` or `text` is
+  refused with `*ValueError` (wraps `ErrBadValue`; `Expected` is `go, cpp, ts, json, view or text`),
   never dropped. A `Build` that writes holds the project's write lock (S9) and returns the
   revision read after its writes (S10), in `Check.Revision`.
 - **B2.** An output that exists without the generated-file marker is taken over only when it is
