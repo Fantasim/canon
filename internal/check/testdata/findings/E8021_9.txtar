@@ -1,0 +1,18 @@
+CODEGEN.md §2.9, DECISIONS 294: two @text files of one package whose names are equal ignoring letter case are E8021 twice, at the later one.
+-- a/a.canon --
+package a
+
+/// Doc.
+@text("A.sql")
+export fn upper() -> String { return "SELECT 1;" }
+
+/// Doc.
+@text("a.sql")
+export fn lower() -> String { return "SELECT 2;" }
+
+emit text { out: "@generated/sql" }
+-- findings.txt --
+error[E8021]  a/a.canon:8:7
+  @text file "a.sql" is also written by upper
+
+1 error, 0 warnings in 1 package (…)

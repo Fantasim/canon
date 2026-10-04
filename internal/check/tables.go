@@ -9,6 +9,9 @@ var cppNamespaces map[string]bool
 // cppKeywords are C++20's keywords and alternative tokens, which a namespace may not use.
 var cppKeywords map[string]bool
 
+// windowsDevices are the Windows device names, upper case, which no portable file name's stem may be (CODEGEN.md §2.9, DECISIONS 297).
+var windowsDevices map[string]bool
+
 func init() {
 	goKeywords = map[string]bool{
 		"break": true, "case": true, "chan": true, "const": true, "continue": true, "default": true,
@@ -18,6 +21,11 @@ func init() {
 		"var": true,
 	}
 	cppNamespaces = map[string]bool{"canon": true, "std": true, "nlohmann": true}
+	windowsDevices = map[string]bool{
+		"CON": true, "PRN": true, "AUX": true, "NUL": true,
+		"COM1": true, "COM2": true, "COM3": true, "COM4": true, "COM5": true, "COM6": true, "COM7": true, "COM8": true, "COM9": true,
+		"LPT1": true, "LPT2": true, "LPT3": true, "LPT4": true, "LPT5": true, "LPT6": true, "LPT7": true, "LPT8": true, "LPT9": true,
+	}
 	cppKeywords = map[string]bool{
 		"alignas": true, "alignof": true, "and": true, "and_eq": true, "asm": true, "auto": true,
 		"bitand": true, "bitor": true, "bool": true, "break": true, "case": true, "catch": true,

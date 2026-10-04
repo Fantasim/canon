@@ -18,7 +18,7 @@ var (
 	errBadColor       = errors.New("want --color auto, always or never")
 	errBadLock        = errors.New("want: canon lock check [packages...]")
 	errBadMax         = errors.New("want a count of 0 or more")
-	errBadTarget      = errors.New("want go, cpp, ts, json or view")
+	errBadTarget      = errors.New("want go, cpp, ts, json, view or text")
 	errBadName        = errors.New("not an identifier; give the project name with --name")
 	errBadPackage     = errors.New("each segment must be a lowerCamel identifier")
 	errExists         = errors.New("already exists")

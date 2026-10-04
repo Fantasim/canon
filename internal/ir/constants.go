@@ -14,6 +14,8 @@ const (
 	TargetTS
 	TargetJSON
 	TargetView
+	TargetText
+	targetCount // the number of targets, sizing the tables indexed by Target
 )
 
 // The modes of a code target; json and view emits have none.

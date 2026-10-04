@@ -75,6 +75,10 @@ var annCatalog = map[string]*annSpec{
 		{name: ArgUnit, named: true, kind: valSymbol, values: unitsLongestFirst[:], sites: siteField},
 		nameArg,
 	}},
+	// @text stands at any top-level declaration: check refuses it on anything but a public, parameterless export fn returning String (E8021, CODEGEN.md §2.9).
+	AnnText: {args: []argSpec{
+		{name: argFile, kind: valString, sites: siteTop, required: true},
+	}},
 	AnnGo: {args: []argSpec{nameArg}},
 	AnnTS: {args: []argSpec{nameArg, {name: ArgBigint, kind: valFlag, sites: siteField}}},
 }

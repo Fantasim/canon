@@ -29,18 +29,31 @@ func (r *run) place(outputs []*output, adopt []string) ([]*output, error) {
 			return nil, displayError(o.Path, err)
 		}
 		o.old, o.existed = old, true
-		switch {
-		case bytes.Equal(old, o.Content):
-			o.Status = StatusUnchanged
-		case marked(o.Output, old):
-			o.Status = StatusWritten
-		case adoptable(o.Path, adopt):
-			o.Status = StatusAdopted
-		default:
-			diag.E8001.At(o.at, o.Path).Report(r.bags[o.Package])
+		if err := r.judge(o, adopt); err != nil {
+			return nil, err
 		}
 	}
 	return outputs, nil
+}
+
+// judge sets an existing output's status: unchanged, canon's to overwrite, adopted, or E8001; ownership is read only when the content differs (CODEGEN.md §2.4, §2.9).
+func (r *run) judge(o *output, adopt []string) error {
+	if bytes.Equal(o.old, o.Content) {
+		o.Status = StatusUnchanged
+		return nil
+	}
+	owned, err := r.owned(o, o.old)
+	switch {
+	case err != nil:
+		return err
+	case owned:
+		o.Status = StatusWritten
+	case adoptable(o.Output, adopt):
+		o.Status = StatusAdopted
+	default:
+		diag.E8001.At(o.at, o.Path).Report(r.bags[o.Package])
+	}
+	return nil
 }
 
 // collisions reports two outputs on one file, letter case aside, but a runtime file (WIRE.md §8.1).
@@ -61,9 +74,9 @@ func (r *run) collisions(outputs []*output) []*output {
 	return kept
 }
 
-// adoptable reports an output the build may take over: a C++ header listed (CODEGEN.md §2.4).
-func adoptable(display string, adopt []string) bool {
-	return path.Ext(display) == headerExt && slices.Contains(adopt, display)
+// adoptable reports an output the build may take over: a C++ header or a file of a text emit, listed (CODEGEN.md §2.4, §2.9).
+func adoptable(o Output, adopt []string) bool {
+	return (path.Ext(o.Path) == headerExt || o.Target == ir.TargetText) && slices.Contains(adopt, o.Path)
 }
 
 // runtimeFile reports a runtime helper file, which several emits write alike (CODEGEN.md §2.3).
@@ -79,8 +92,13 @@ func marked(o Output, content []byte) bool {
 	case path.Ext(o.Abs) == ir.JSONExt:
 		return jsonMarked(content, schemaMarker)
 	}
+	return firstLineMatches(content, codeMarker)
+}
+
+// firstLineMatches reports content whose first line, a final `\r` aside, matches marker (CODEGEN.md §2.4, §2.9).
+func firstLineMatches(content []byte, marker *regexp.Regexp) bool {
 	line, _, _ := bytes.Cut(content, []byte(lineEnd))
-	return codeMarker.Match(bytes.TrimSuffix(line, []byte(carriageReturn)))
+	return marker.Match(bytes.TrimSuffix(line, []byte(carriageReturn)))
 }
 
 // jsonMarked reports a JSON object whose first member is a canon $schema (WIRE.md §8.4).

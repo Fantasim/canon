@@ -1,0 +1,13 @@
+CODEGEN.md §2.9, DECISIONS 294: an emit text in a package with no @text fn is E8009 textEmpty.
+-- a/a.canon --
+package a
+
+/// Doc.
+export fn v() -> String { return "SELECT 1;" }
+
+emit text { out: "@generated/sql" }
+-- findings.txt --
+error[E8009]  a/a.canon:6:6
+  emit text writes nothing: no export fn of this package has @text
+
+1 error, 0 warnings in 1 package (…)

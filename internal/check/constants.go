@@ -295,6 +295,9 @@ const (
 // backslash starts an escape in a regex.
 const backslash = '\\'
 
+// A portable file name's forbidden characters (CODEGEN.md §2.9), and a string literal's delimiters (GRAMMAR.md §2.6).
+const unportableChars, quoteMark, rawMark = `<>:"|?*`, `"`, "r"
+
 // The digits a pairs slot starts with: the least, and the least without a leading zero.
 const (
 	zeroDigit = '0'
@@ -314,6 +317,7 @@ const (
 	TargetTS     = "ts"
 	TargetJSON   = annotJSON
 	TargetView   = "view"
+	TargetText   = syntax.WordText
 	OptOut       = "out"
 	OptMode      = "mode"
 	OptPackage   = "package"
@@ -334,6 +338,7 @@ var emitSpecs = map[string]emitSpec{
 	TargetTS:   {options: []string{OptOut, OptMode, OptValues}, modes: codeModes},
 	TargetJSON: {options: []string{OptOut, OptValues}},
 	TargetView: {options: []string{OptOut}},
+	TargetText: {options: []string{OptOut}},
 }
 
 // Load forms and options (WIRE.md §6.1).

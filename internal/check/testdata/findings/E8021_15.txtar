@@ -1,0 +1,19 @@
+CODEGEN.md §2.9, DECISIONS 294 (TX rulings): a misplaced @text with an emit text is E8021 alone, with no E8009 textEmpty; two emit text report textEmpty once at most (here none) beside E8002.
+-- a/a.canon --
+package a
+
+/// Doc.
+@text("v.sql")
+fn v() -> String { return "x" }
+
+emit text { out: "@generated/sql" }
+
+emit text { out: "@generated/sql" }
+-- findings.txt --
+error[E8021]  a/a.canon:4:1
+  @text belongs on a public package-level export fn with no parameter that returns String
+
+error[E8002]  a/a.canon:9:6
+  package a has two emits for target text
+
+2 errors, 0 warnings in 1 package (…)

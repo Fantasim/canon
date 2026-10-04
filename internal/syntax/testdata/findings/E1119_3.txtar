@@ -1,0 +1,25 @@
+GRAMMAR.md §8.2, §8.3, DECISIONS 294: @text takes one constant string: none, an interpolation or another kind of value is E1119.
+-- a/a.canon --
+package a
+
+let name = "x"
+
+@text
+export fn a() -> String { return "a" }
+
+@text("{name}.sql")
+export fn b() -> String { return "b" }
+
+@text(3)
+export fn c() -> String { return "c" }
+-- findings.txt --
+error[E1119]  a/a.canon:5:1
+  @text: argument "file" is missing
+
+error[E1119]  a/a.canon:8:7
+  @text(file): expected a constant string
+
+error[E1119]  a/a.canon:11:7
+  @text(file): expected a constant string
+
+3 errors, 0 warnings in 1 package (…)

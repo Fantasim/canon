@@ -1,0 +1,24 @@
+CODEGEN.md §2.9, DECISIONS 294 (TX rulings): @text on a fn whose result is an alias or a refinement of String is accepted, as are portable names close to reserved ones.
+-- a/a.canon --
+package a
+
+/// SQL text.
+type Sql = String
+
+/// Doc.
+@text("a.sql")
+export fn a() -> Sql { return "x" }
+
+/// Doc.
+@text("console.txt")
+export fn b() -> String(1..) { return "x" }
+
+/// Doc.
+@text("COM10")
+export fn c() -> String { return "x" }
+
+/// Doc.
+@text(".hidden")
+export fn d() -> String { return "x" }
+
+emit text { out: "@generated/sql" }

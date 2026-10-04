@@ -36,7 +36,7 @@ func TestBuildUnknownTarget(t *testing.T) {
 	p := openTierProject(t, fsys)
 	_, err := p.Build(context.Background(), canon.BuildOptions{Targets: []canon.Target{"bogus"}})
 	var verr *canon.ValueError
-	if !errors.Is(err, canon.ErrBadValue) || !errors.As(err, &verr) || verr.Expected != "go, cpp, ts, json or view" || verr.Got != `"bogus"` {
+	if !errors.Is(err, canon.ErrBadValue) || !errors.As(err, &verr) || verr.Expected != "go, cpp, ts, json, view or text" || verr.Got != `"bogus"` {
 		t.Fatalf("Build: %v", err)
 	}
 	if _, ok := fsys.files["/law/out/a/tiers.json"]; ok {

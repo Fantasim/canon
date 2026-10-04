@@ -16,17 +16,29 @@ type emitSpec struct {
 }
 
 // checkEmits checks every `emit` of p against its target's schema, in phase 2: one emit per
-// target (E8002), known targets and options (E8003), valid values (E8009, E8150). Nothing in
-// an emit is an expression or is resolved in scope.
+// target (E8002), known targets and options (E8003), valid values (E8009, E8150), and p's
+// `@text` fns (E8021). Nothing in an emit is an expression or is resolved in scope.
 func (c *checker) checkEmits(p *pkgState) {
+	texts := c.checkTexts(p)
 	seen := map[string]bool{}
 	for _, f := range p.files {
 		for _, d := range f.Decls {
 			if e, ok := d.(*syntax.EmitDecl); ok {
-				c.checkEmit(c.fileEnv(p, f, nil), e, seen)
+				env := c.fileEnv(p, f, nil)
+				c.checkEmit(env, e, seen)
+				texts = c.emitTextEmpty(env, e, texts)
 			}
 		}
 	}
+}
+
+// emitTextEmpty is E8009 `textEmpty`, once, at an `emit text` of a package with no `@text` fn (CODEGEN.md §2.9); it reports whether no further one is due.
+func (c *checker) emitTextEmpty(env *env, e *syntax.EmitDecl, texts bool) bool {
+	if texts || e.Target == nil || e.Target.Name != TargetText {
+		return texts
+	}
+	c.report(env, diag.E8009.AtTextEmpty(env.span(e.Target)))
+	return true
 }
 
 func (c *checker) checkEmit(env *env, e *syntax.EmitDecl, seen map[string]bool) {

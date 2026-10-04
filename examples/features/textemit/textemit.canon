@@ -1,0 +1,34 @@
+/// `emit text` (CODEGEN.md §2.9): plain-text files computed at build time. Each public,
+/// parameterless export fn returning String with `@text("<file>")` is written to
+/// `<out>/<file>` byte for byte; `.canon-text` beside them names the files canon owns.
+package features.textemit
+
+/// The schema version a reader checks before it reads a row.
+const SCHEMA_VERSION = 3
+
+/// One column of the events table.
+record Column {
+  /// Its SQL name.
+  name: String(/^[a-z_]+$/)
+  /// Its SQL type.
+  sql: String(1..)
+}
+
+/// The columns, in table order.
+let columns: [Column] = [
+  { name: "id", sql: "BIGINT" },
+  { name: "kind", sql: "SMALLINT" },
+  { name: "at", sql: "TIMESTAMP" },
+]
+
+/// The table's DDL; it ends in a newline, as written.
+@text("events.sql")
+export fn eventsSql() -> String {
+  return "CREATE TABLE events (\n  {[c.name + " " + c.sql for c in columns].join(",\n  ")}\n);\n"
+}
+
+/// The version stamp, with no final newline: nothing is added to a text file.
+@text("VERSION")
+export fn version() -> String { return "{SCHEMA_VERSION}" }
+
+emit text { out: "out/sql" }

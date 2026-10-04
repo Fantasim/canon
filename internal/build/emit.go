@@ -142,7 +142,7 @@ func (r *run) emitOne(ctx context.Context, p *ir.Package, e *ir.Emit) ([]*output
 	if e.Target == ir.TargetView {
 		files, err = r.viewFiles(ctx, p, e)
 	} else if err = complete(p); err == nil {
-		files, err = generate(p, e)
+		files, err = r.generate(p, e)
 	}
 	if err != nil {
 		return nil, err
@@ -166,8 +166,13 @@ func complete(p *ir.Package) error {
 	return nil
 }
 
-func generate(p *ir.Package, e *ir.Emit) ([]ir.File, error) {
-	files, err := generators[e.Target](p, e)
+// generate runs e's generator: its target's, or textFiles for a text emit (CODEGEN.md §2.9).
+func (r *run) generate(p *ir.Package, e *ir.Emit) ([]ir.File, error) {
+	gen := generators[e.Target]
+	if e.Target == ir.TargetText {
+		gen = r.textFiles
+	}
+	files, err := gen(p, e)
 	if err != nil {
 		return nil, fmt.Errorf(fmtEmit, p.Name, e.Out, err)
 	}

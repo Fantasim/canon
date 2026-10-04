@@ -36,10 +36,12 @@ func TestCollisions(t *testing.T) {
 	}
 }
 
-// CODEGEN.md §2.4, WIRE.md §8.4, VIEWMODEL.md V1: adopting headers; the view marker.
+// CODEGEN.md §2.4, §2.9, WIRE.md §8.4, VIEWMODEL.md V1: adopting headers and text files; the view marker.
 func TestAdoptAndViewMarker(t *testing.T) {
-	adopt := []string{"@source/x.h", "@out/v.json"}
-	if !adoptable("@source/x.h", adopt) || adoptable("@out/v.json", adopt) || adoptable("@source/y.h", adopt) {
+	adopt := []string{"@source/x.h", "@out/v.json", "@out/sql/a.sql"}
+	header, json := Output{Path: "@source/x.h", Target: ir.TargetCpp}, Output{Path: "@out/v.json", Target: ir.TargetJSON}
+	other, text := Output{Path: "@source/y.h", Target: ir.TargetCpp}, Output{Path: "@out/sql/a.sql", Target: ir.TargetText}
+	if !adoptable(header, adopt) || adoptable(json, adopt) || adoptable(other, adopt) || !adoptable(text, adopt) {
 		t.Error("adoptable")
 	}
 	view := Output{Abs: "/o/a.view.json", Target: ir.TargetView}
@@ -77,6 +79,30 @@ func TestPlaceReadErrorNamesDisplayPath(t *testing.T) {
 	}
 	if msg := err.Error(); !strings.Contains(msg, "@out/v.json: open: ") || strings.Contains(msg, "/o/v.json") {
 		t.Errorf("place error = %q", msg)
+	}
+}
+
+// listingDenied reads every file but a `.canon-text`, whose read fails with a permission error.
+type listingDenied struct{ project.FS }
+
+func (listingDenied) ReadFile(name string) ([]byte, error) {
+	if strings.HasSuffix(name, "/"+textListing) {
+		return nil, &fs.PathError{Op: "open", Path: name, Err: fs.ErrPermission}
+	}
+	return []byte("-- old"), nil
+}
+
+// CODEGEN.md §2.9, DECISIONS 201: a .canon-text that exists but cannot be read is an I/O error naming its display path, never E8001.
+func TestPlaceListingReadError(t *testing.T) {
+	r := &run{p: &Project{fs: listingDenied{}}}
+	o := &output{Output: Output{Path: "@out/sql/a.sql", Abs: "/o/sql/a.sql", Package: "a", Target: ir.TargetText, Content: []byte("new")}}
+	_, err := r.place([]*output{o}, nil)
+	if !errors.Is(err, fs.ErrPermission) || !strings.Contains(err.Error(), "@out/sql/.canon-text") {
+		t.Fatalf("place: %v", err)
+	}
+	same := &output{Output: Output{Path: "@out/sql/a.sql", Abs: "/o/sql/a.sql", Package: "a", Target: ir.TargetText, Content: []byte("-- old")}}
+	if _, err := r.place([]*output{same}, nil); err != nil || same.Status != StatusUnchanged {
+		t.Errorf("an unchanged output read its listing: %v, status %d", err, same.Status)
 	}
 }
 

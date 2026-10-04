@@ -398,7 +398,7 @@ func TestBuildWithLayersWritesNoLock(t *testing.T) {
 	}
 }
 
-// API.md B1b: a Target that is not go, cpp, ts, json or view is refused with *ValueError, even
+// API.md B1b: a Target that is not go, cpp, ts, json, view or text is refused with *ValueError, even
 // beside valid ones, and the refusal writes nothing.
 func TestBuildRefusesUnknownTargetBesideValid(t *testing.T) {
 	fsys := newMemFS(map[string][]byte{"/law/project.canon": []byte(buildTestProject), "/law/a/a.canon": tierPackage("a")})

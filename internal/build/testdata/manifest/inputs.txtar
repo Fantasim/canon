@@ -82,6 +82,7 @@ command check
 target cpp
 target go
 target json
+target text
 target ts
 target view
 package items
@@ -130,6 +131,7 @@ command test
 target cpp
 target go
 target json
+target text
 target ts
 target view
 package items

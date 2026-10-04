@@ -14,7 +14,7 @@ import (
 type genRule func(*stage, *unit, *emitSite)
 
 // genRules are E8019 and E8020 per target and mode: only a mode a generator writes has any (decision 37; log-2026-09-24 "Revised").
-var genRules [TargetView + 1][ModeTypes + 1][]genRule
+var genRules [targetCount][ModeTypes + 1][]genRule
 
 func init() {
 	common := []genRule{

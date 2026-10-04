@@ -1,0 +1,21 @@
+CODEGEN.md §2.9, DECISIONS 297: a file name ending in a dot or a space is E8021 file.
+-- a/a.canon --
+package a
+
+/// Doc.
+@text("a.")
+export fn dot() -> String { return "x" }
+
+/// Doc.
+@text("a ")
+export fn space() -> String { return "x" }
+
+emit text { out: "@generated/sql" }
+-- findings.txt --
+error[E8021]  a/a.canon:4:7
+  invalid @text file name "a.": not a portable file name (empty, . or .., a path separator, a reserved character or Windows device name, or a final dot or space)
+
+error[E8021]  a/a.canon:8:7
+  invalid @text file name "a ": not a portable file name (empty, . or .., a path separator, a reserved character or Windows device name, or a final dot or space)
+
+2 errors, 0 warnings in 1 package (…)

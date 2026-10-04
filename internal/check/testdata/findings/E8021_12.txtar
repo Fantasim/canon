@@ -1,0 +1,63 @@
+CODEGEN.md §2.9, DECISIONS 297: a file name holding a control character or one of <>:"|?* is E8021 file.
+-- a/a.canon --
+package a
+
+/// Doc.
+@text("a\tb")
+export fn tab() -> String { return "x" }
+
+/// Doc.
+@text("a:b")
+export fn colon() -> String { return "x" }
+
+/// Doc.
+@text("a<b")
+export fn lt() -> String { return "x" }
+
+/// Doc.
+@text("a>b")
+export fn gt() -> String { return "x" }
+
+/// Doc.
+@text("a\"b")
+export fn quote() -> String { return "x" }
+
+/// Doc.
+@text("a|b")
+export fn bar() -> String { return "x" }
+
+/// Doc.
+@text("a?b")
+export fn ask() -> String { return "x" }
+
+/// Doc.
+@text("a*b")
+export fn star() -> String { return "x" }
+
+emit text { out: "@generated/sql" }
+-- findings.txt --
+error[E8021]  a/a.canon:4:7
+  invalid @text file name "a\tb": not a portable file name (empty, . or .., a path separator, a reserved character or Windows device name, or a final dot or space)
+
+error[E8021]  a/a.canon:8:7
+  invalid @text file name "a:b": not a portable file name (empty, . or .., a path separator, a reserved character or Windows device name, or a final dot or space)
+
+error[E8021]  a/a.canon:12:7
+  invalid @text file name "a<b": not a portable file name (empty, . or .., a path separator, a reserved character or Windows device name, or a final dot or space)
+
+error[E8021]  a/a.canon:16:7
+  invalid @text file name "a>b": not a portable file name (empty, . or .., a path separator, a reserved character or Windows device name, or a final dot or space)
+
+error[E8021]  a/a.canon:20:7
+  invalid @text file name "a\"b": not a portable file name (empty, . or .., a path separator, a reserved character or Windows device name, or a final dot or space)
+
+error[E8021]  a/a.canon:24:7
+  invalid @text file name "a|b": not a portable file name (empty, . or .., a path separator, a reserved character or Windows device name, or a final dot or space)
+
+error[E8021]  a/a.canon:28:7
+  invalid @text file name "a?b": not a portable file name (empty, . or .., a path separator, a reserved character or Windows device name, or a final dot or space)
+
+error[E8021]  a/a.canon:32:7
+  invalid @text file name "a*b": not a portable file name (empty, . or .., a path separator, a reserved character or Windows device name, or a final dot or space)
+
+8 errors, 0 warnings in 1 package (…)

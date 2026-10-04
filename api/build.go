@@ -136,7 +136,7 @@ func buildResultOf(r *build.BuildResult, d time.Duration) *BuildResult {
 
 // targetNames maps every ir.Target to the API's Target, table-driven both ways (SPEC §14).
 var targetNames = [...]Target{
-	ir.TargetGo: TargetGo, ir.TargetCpp: TargetCpp, ir.TargetTS: TargetTS, ir.TargetJSON: TargetJSON, ir.TargetView: TargetView,
+	ir.TargetGo: TargetGo, ir.TargetCpp: TargetCpp, ir.TargetTS: TargetTS, ir.TargetJSON: TargetJSON, ir.TargetView: TargetView, ir.TargetText: TargetText,
 }
 
 // irTargets is ts translated to ir.Target; an unknown value is *ValueError (rule V1, DECISIONS

@@ -140,6 +140,7 @@ const (
 	TargetTS   Target = "ts"
 	TargetJSON Target = "json"
 	TargetView Target = "view"
+	TargetText Target = "text"
 )
 
 // OutputStatus says what happened to an output file (API.md §13.1).
@@ -258,7 +259,7 @@ const (
 	fmtUnknown       = "%w: %s"
 	fmtMixed         = "%w: %s: %w"
 	fmtQuoted        = "%q"
-	expectedTargets  = "go, cpp, ts, json or view"
+	expectedTargets  = "go, cpp, ts, json, view or text"
 	expectedPattern  = "an RE2 regular expression"
 )
 

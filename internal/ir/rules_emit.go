@@ -8,7 +8,7 @@ import (
 )
 
 // emitRules are the per-emit rules of each target (CODEGEN.md §12, WIRE.md §8.1).
-var emitRules [TargetView + 1][]func(*stage, *unit, *emitSite)
+var emitRules [targetCount][]func(*stage, *unit, *emitSite)
 
 // modeRules are the rules of a code emit's mode (CODEGEN.md §2.2, §2.8).
 var modeRules [ModeTypes + 1][]func(*stage, *unit, *emitSite)

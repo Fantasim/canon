@@ -1,0 +1,14 @@
+CODEGEN.md §2.9, DECISIONS 294: an empty @text file name is E8021 file.
+-- a/a.canon --
+package a
+
+/// Doc.
+@text("")
+export fn v() -> String { return "SELECT 1;" }
+
+emit text { out: "@generated/sql" }
+-- findings.txt --
+error[E8021]  a/a.canon:4:7
+  invalid @text file name "": not a portable file name (empty, . or .., a path separator, a reserved character or Windows device name, or a final dot or space)
+
+1 error, 0 warnings in 1 package (…)

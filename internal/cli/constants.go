@@ -71,7 +71,7 @@ const (
 	usageQuiet       = "print errors only"
 	usageMaxWarnings = "exit with code 4 when there are more than `n` warnings"
 	usageName        = "project `name` (default: the directory's name)"
-	usageTarget      = "emit only this `target` (go, cpp, ts, json, view); repeatable"
+	usageTarget      = "emit only this `target` (go, cpp, ts, json, view, text); repeatable"
 	usageCheck       = "write nothing; exit 1 if any output or lock would change"
 	usageAdopt       = "take over the hand-written file at `path` (repeatable)"
 	usageLayer       = "apply the layer `name`; repeatable, applied in order"
@@ -111,7 +111,7 @@ flags:
 `
 
 // buildTargets are the target words --target accepts, in SPEC §14's canonical order.
-var buildTargets = [...]canon.Target{canon.TargetGo, canon.TargetCpp, canon.TargetTS, canon.TargetJSON, canon.TargetView}
+var buildTargets = [...]canon.Target{canon.TargetGo, canon.TargetCpp, canon.TargetTS, canon.TargetJSON, canon.TargetView, canon.TargetText}
 
 // Output of version (CLI.md §3.14, IMPLEMENTATION-PLAN.md §8.5).
 const (

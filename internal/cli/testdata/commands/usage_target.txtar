@@ -1,4 +1,4 @@
-CLI.md §3.4: --target accepts only go, cpp, ts, json or view.
+CLI.md §3.4: --target accepts only go, cpp, ts, json, view or text.
 -- args --
 build
 --target
@@ -7,7 +7,7 @@ foo
 [exit 2]
 [stdout]
 [stderr]
-canon: invalid value "foo" for flag -target: "foo": want go, cpp, ts, json or view
+canon: invalid value "foo" for flag -target: "foo": want go, cpp, ts, json, view or text
 usage: canon <command> [arguments] [flags]
 
 commands:
@@ -49,6 +49,6 @@ flags:
   -root name=dir
     	use name=dir for a declared root; repeatable
   -target target
-    	emit only this target (go, cpp, ts, json, view); repeatable
+    	emit only this target (go, cpp, ts, json, view, text); repeatable
   -watch
     	run again after every change, printing what changed

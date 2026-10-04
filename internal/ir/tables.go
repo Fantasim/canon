@@ -81,7 +81,7 @@ var fpEncNames = [...]string{types.EncPlain: fpNone, types.EncInt: fpEncInt, typ
 var (
 	targetWords = [...]string{
 		TargetGo: check.TargetGo, TargetCpp: check.TargetCpp, TargetTS: check.TargetTS,
-		TargetJSON: check.TargetJSON, TargetView: check.TargetView,
+		TargetJSON: check.TargetJSON, TargetView: check.TargetView, TargetText: check.TargetText,
 	}
 	modeWords = [...]string{
 		ModeNone: "", ModeBaked: check.ModeBaked, ModeEmbedded: check.ModeEmbedded,

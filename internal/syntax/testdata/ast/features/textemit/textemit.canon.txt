@@ -1,0 +1,122 @@
+File: File FileKind=source @1:1-35:1
+  Doc: DocComment "`emit text` (CODEGEN.md §2.9): plain-text files computed at build time. Each public,\nparameterless export fn returning String with `@text(\"<file>\")` is written to\n`<out>/<file>` byte for byte; `.canon-text` beside them names the files canon owns." @1:1-3:88
+  Package: QualifiedName features.textemit @4:9-4:26
+  Decls[0]: ConstDecl @7:1-7:25
+    Doc: DocComment "The schema version a reader checks before it reads a row." @6:1-6:62
+    Name: Ident SCHEMA_VERSION @7:7-7:21
+    Value: IntLit Value=3 @7:24-7:25
+  Decls[1]: RecordDecl @10:1-15:2
+    Doc: DocComment "One column of the events table." @9:1-9:36
+    Name: Ident Column @10:8-10:14
+    Body: RecordBody @10:15-15:2
+      Items[0]: FieldDecl @12:3-12:28
+        Doc: DocComment "Its SQL name." @11:3-11:20
+        Name: Ident name @12:3-12:7
+        Type: NamedType @12:9-12:28
+          Name: QualifiedName String @12:9-12:15
+          Args: TypeArgs @12:15-12:28
+            Args[0]: RegexLit Pattern="^[a-z_]+$" @12:16-12:27
+      Items[1]: FieldDecl @14:3-14:19
+        Doc: DocComment "Its SQL type." @13:3-13:20
+        Name: Ident sql @14:3-14:6
+        Type: NamedType @14:8-14:19
+          Name: QualifiedName String @14:8-14:14
+          Args: TypeArgs @14:14-14:19
+            Args[0]: RangeExpr Op=.. @14:15-14:18
+              Lo: IntLit Value=1 @14:15-14:16
+  Decls[2]: LetDecl @18:1-22:2
+    Doc: DocComment "The columns, in table order." @17:1-17:33
+    Name: Ident columns @18:5-18:12
+    Type: ListType @18:14-18:22
+      Elem: NamedType @18:15-18:21
+        Name: QualifiedName Column @18:15-18:21
+    Value: ListLit @18:25-22:2
+      Elems[0]: BraceLit @19:3-19:32
+        Items[0]: FieldItem @19:5-19:15
+          Name: Ident name @19:5-19:9
+          Value: StringLit @19:11-19:15
+            Parts[0]: text "id"
+        Items[1]: FieldItem @19:17-19:30
+          Name: Ident sql @19:17-19:20
+          Value: StringLit @19:22-19:30
+            Parts[0]: text "BIGINT"
+      Elems[1]: BraceLit @20:3-20:36
+        Items[0]: FieldItem @20:5-20:17
+          Name: Ident name @20:5-20:9
+          Value: StringLit @20:11-20:17
+            Parts[0]: text "kind"
+        Items[1]: FieldItem @20:19-20:34
+          Name: Ident sql @20:19-20:22
+          Value: StringLit @20:24-20:34
+            Parts[0]: text "SMALLINT"
+      Elems[2]: BraceLit @21:3-21:35
+        Items[0]: FieldItem @21:5-21:15
+          Name: Ident name @21:5-21:9
+          Value: StringLit @21:11-21:15
+            Parts[0]: text "at"
+        Items[1]: FieldItem @21:17-21:33
+          Name: Ident sql @21:17-21:20
+          Value: StringLit @21:22-21:33
+            Parts[0]: text "TIMESTAMP"
+  Decls[3]: FnDecl @25:1-28:2
+    Doc: DocComment "The table's DDL; it ends in a newline, as written." @24:1-24:55
+    Annotations[0]: Annotation @25:1-25:20
+      Name: Ident text @25:2-25:6
+      Args[0]: AnnotationArg @25:7-25:19
+        Value: StringLit @25:7-25:19
+          Parts[0]: text "events.sql"
+    Mods: Modifiers Export="export" @26:1-26:7
+    Name: Ident eventsSql @26:11-26:20
+    Result: NamedType @26:26-26:32
+      Name: QualifiedName String @26:26-26:32
+    Body: Block @26:33-28:2
+      Stmts[0]: ReturnStmt @27:3-27:98
+        Value: StringLit @27:10-27:98
+          Parts[0]: text "CREATE TABLE events (\n  "
+          Parts[1]: Interp @27:37-27:90
+            X: CallExpr @27:37-27:90
+              Fun: SelectorExpr @27:37-27:81
+                X: ListComp @27:37-27:76
+                  Elem: BinaryExpr Op=+ @27:38-27:58
+                    X: BinaryExpr Op=+ @27:38-27:50
+                      X: SelectorExpr @27:38-27:44
+                        X: IdentExpr c @27:38-27:39
+                        Name: Ident name @27:40-27:44
+                      Y: StringLit @27:47-27:50
+                        Parts[0]: text " "
+                    Y: SelectorExpr @27:53-27:58
+                      X: IdentExpr c @27:53-27:54
+                      Name: Ident sql @27:55-27:58
+                  Clauses[0]: CompClause Keyword=for @27:59-27:75
+                    Vars[0]: Ident c @27:63-27:64
+                    X: IdentExpr columns @27:68-27:75
+                Name: Ident join @27:77-27:81
+              Args[0]: Arg @27:82-27:89
+                Value: StringLit @27:82-27:89
+                  Parts[0]: text ",\n  "
+          Parts[2]: text "\n);\n"
+  Decls[4]: FnDecl @31:1-32:60
+    Doc: DocComment "The version stamp, with no final newline: nothing is added to a text file." @30:1-30:79
+    Annotations[0]: Annotation @31:1-31:17
+      Name: Ident text @31:2-31:6
+      Args[0]: AnnotationArg @31:7-31:16
+        Value: StringLit @31:7-31:16
+          Parts[0]: text "VERSION"
+    Mods: Modifiers Export="export" @32:1-32:7
+    Name: Ident version @32:11-32:18
+    Result: NamedType @32:24-32:30
+      Name: QualifiedName String @32:24-32:30
+    Body: Block @32:31-32:60
+      Stmts[0]: ReturnStmt @32:33-32:58
+        Value: StringLit @32:40-32:58
+          Parts[0]: Interp @32:42-32:56
+            X: IdentExpr SCHEMA_VERSION @32:42-32:56
+  Decls[5]: EmitDecl @34:1-34:29
+    Target: Ident text @34:6-34:10
+    Options: BraceLit @34:11-34:29
+      Items[0]: FieldItem @34:13-34:27
+        Name: Ident out @34:13-34:16
+        Value: StringLit @34:18-34:27
+          Parts[0]: text "out/sql"
+== findings
+0 errors, 0 warnings in 1 package (…)

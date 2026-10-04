@@ -1,0 +1,43 @@
+CODEGEN.md §2.9, DECISIONS 297: a Windows device name, with or without an extension and in any case, is E8021 file; a longer stem (console, COM10) is not one.
+-- a/a.canon --
+package a
+
+/// Doc.
+@text("nul.txt")
+export fn nul() -> String { return "x" }
+
+/// Doc.
+@text("Con")
+export fn con() -> String { return "x" }
+
+/// Doc.
+@text("LPT9.sql")
+export fn lpt() -> String { return "x" }
+
+/// Doc.
+@text("aux.tar.gz")
+export fn aux() -> String { return "x" }
+
+/// Doc.
+@text("console.txt")
+export fn console() -> String { return "x" }
+
+/// Doc.
+@text("COM10")
+export fn com10() -> String { return "x" }
+
+emit text { out: "@generated/sql" }
+-- findings.txt --
+error[E8021]  a/a.canon:4:7
+  invalid @text file name "nul.txt": not a portable file name (empty, . or .., a path separator, a reserved character or Windows device name, or a final dot or space)
+
+error[E8021]  a/a.canon:8:7
+  invalid @text file name "Con": not a portable file name (empty, . or .., a path separator, a reserved character or Windows device name, or a final dot or space)
+
+error[E8021]  a/a.canon:12:7
+  invalid @text file name "LPT9.sql": not a portable file name (empty, . or .., a path separator, a reserved character or Windows device name, or a final dot or space)
+
+error[E8021]  a/a.canon:16:7
+  invalid @text file name "aux.tar.gz": not a portable file name (empty, . or .., a path separator, a reserved character or Windows device name, or a final dot or space)
+
+4 errors, 0 warnings in 1 package (…)

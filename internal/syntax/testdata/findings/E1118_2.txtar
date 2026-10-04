@@ -1,0 +1,21 @@
+GRAMMAR.md §8.3, DECISIONS 294: @text stands only at a top-level declaration (TL); on a field, a method or a type header it is E1118.
+-- a/a.canon --
+package a
+
+record P @text("p.txt") {
+  a: Int @text("a.txt")
+
+  @text("f.txt")
+  export fn f(self) -> String { return "f" }
+}
+-- findings.txt --
+error[E1118]  a/a.canon:3:10
+  @text is not allowed on this type header
+
+error[E1118]  a/a.canon:4:10
+  @text is not allowed on this field
+
+error[E1118]  a/a.canon:6:3
+  @text is not allowed on this method or check
+
+3 errors, 0 warnings in 1 package (…)
