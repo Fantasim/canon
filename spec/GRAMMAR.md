@@ -589,7 +589,7 @@ widgetDecl      = "widget" IDENT "(" "value" ":" type [ "," "siblings" ":" type 
   `variant`, whose annotations go after the name (§5.4); a prefix annotation there is `E1118`.
 - `entry t.KEY` adds an entry to the table or keyed list `t` of the same package (AUDIT CLI-02 for
   keyed lists; `entryKey` is an `INT` only for keyed lists whose key field is an integer).
-- `emit` targets are words (`go`, `cpp`, `ts`, `json`, `view`); the options are a brace literal
+- `emit` targets are words (`go`, `cpp`, `ts`, `json`, `view`, `text`; DECISIONS 294); the options are a brace literal
   whose schema belongs to CODEGEN.md §2.1 / WIRE.md §8 (`package:` is a valid item name there,
   §4.3). Like `project.canon`, the options are a built-in schema: no option value is an
   expression or is resolved in scope (CODEGEN.md §2.1, "Typing of the options"). `out` is a string
@@ -1176,6 +1176,7 @@ mutually exclusive arguments is `E1119`. An unknown annotation name or an unknow
 | `@cpp(field: "m", type: "T")` | `string`, `string` | `FD` | CODEGEN.md §7.8 |
 | `@cpp(value: N)` | `int` | `VC` (case of a variant held by a legacy struct) | CODEGEN.md §7.8 |
 | `@cpp(unit: u)` | `symbol{ms, s, m, h, d}` | `FD` (`Duration` field mapped to a legacy member) | CODEGEN.md §7.8 |
+| `@text("file")` | positional `string` (a file name: not empty, `.` or `..`, no `/` or `\`) | `TL` (`fn`: public, package-level, no parameter, result `String`) | CODEGEN.md §2.9 (DECISIONS 294) |
 | `@cpp(name: "N")`, `@go(name: "N")`, `@ts(name: "N")` | `string` (a target identifier) | `TH`, `FD`, `EM`, `VC`, `MB`, `TL` (`let`, `const`, `type`, `fn`) | CODEGEN.md (CG-02) |
 | `@ts(bigint)` | flag | `FD` (a field with an integer position outside a ref: the integer, list elements, map keys and values, optional contents; DECISIONS 279) | CODEGEN.md (SPEC §15.4) |
 
