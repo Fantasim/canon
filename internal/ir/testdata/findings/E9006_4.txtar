@@ -1,0 +1,23 @@
+CODEGEN.md §5.10, DECISIONS 296: a ref into a `local let` table is not finite (§5.3 gives no id enum to a local table), so a fn taking one is translated, and a translated fn takes no ref.
+-- a/a.canon --
+package a
+
+/// A column.
+record Column {
+  /// Its title.
+  title: String
+}
+
+local let columns: table Column = {
+  todo { title: "To do" }
+}
+
+/// A column's title.
+export fn titleOf(c: ref columns) -> String { return "x" }
+
+emit cpp { out: "@features/a", namespace: "a", mode: baked }
+-- findings.txt --
+error[E9006]  a/a.canon:14:19
+  parameter c of titleOf has type ref a.columns: translated functions take Bool, integers, Float, String, Duration and enums
+
+1 error, 0 warnings in 1 package (…)

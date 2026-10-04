@@ -170,9 +170,10 @@ func Stored(sig *types.FuncType) bool {
 	return sig == nil || !slices.ContainsFunc(sig.Params, infinite)
 }
 
+// infinite reports a parameter that is not finite: a ref into a keyed list or a `local let` table has no id enum to index by (CODEGEN.md §5.10, DECISIONS 296).
 func infinite(t types.Type) bool {
 	if r, ok := t.Base().(*types.RefType); ok {
-		return r.Target == nil || r.Target.KeyedBy != nil
+		return r.Target == nil || r.Target.KeyedBy != nil || r.Target.Local && r.Target.Kind == types.CollLet
 	}
 	k := t.Base().Kind()
 	return k != types.Bool && k != types.Enum

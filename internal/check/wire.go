@@ -297,7 +297,8 @@ func (c *checker) translated(m *types.Method) bool {
 	return slices.ContainsFunc(m.Type.Params, func(p types.Type) bool {
 		switch x := p.Base().(type) {
 		case *types.RefType:
-			return c.coll(x).KeyedBy != nil
+			coll := c.coll(x)
+			return coll == nil || coll.KeyedBy != nil || coll.Local && coll.Kind == types.CollLet // DECISIONS 296
 		default:
 			k := p.Base().Kind()
 			return k != types.Bool && k != types.Enum
