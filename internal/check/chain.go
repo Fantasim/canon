@@ -239,13 +239,15 @@ func (c *checker) builtinMember(name, want string, t types.Type) (*Selection, ty
 	return &Selection{Kind: SelBuiltinMember, Obj: c.builtins[name]}, t
 }
 
-// enumBuiltin is `.name`, `.index`, `.wire`, and `.code` with `@codes` (TYPES.md §8.1).
+// enumBuiltin is `.name`, `.index`, `.wire`, `.retired`, and `.code` with `@codes` (TYPES.md §8.1, STDLIB.md §3).
 func (c *checker) enumBuiltin(e *types.EnumType, name string) (*Selection, types.Type) {
 	switch name {
 	case nameMember, wireMember:
 		return c.builtinMember(name, name, types.StringType)
 	case indexMember:
 		return c.builtinMember(name, name, types.IntType)
+	case retiredMember:
+		return c.builtinMember(name, name, types.BoolType)
 	case codeMember:
 		if e.Codes != nil {
 			return c.builtinMember(name, name, types.IntType)

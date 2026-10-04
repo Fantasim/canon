@@ -67,6 +67,7 @@ func (c *checker) conversion(env *env, bc *builtinCall, rows []row) types.Type {
 			if !satisfies(at, tv.cons) {
 				c.report(env, diag.E4503.AtPlain(env.span(arg), at))
 			}
+			bc.b.bind(tv, at) // the instantiated signature reaches Info, never T (STDLIB.md §1.1)
 			return c.finishBuiltin(bc, r)
 		}
 		if types.Identical(at, p) || (isIntLiteral(arg) && p.Kind() == types.Int) {

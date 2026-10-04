@@ -83,6 +83,7 @@ const (
 	memberWire    = "wire"
 	memberIndex   = "index"
 	memberStart   = "start"
+	memberMembers = "members" // E.members, on an enum type (DECISIONS 299)
 	keyMagic      = "key"
 )
 

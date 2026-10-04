@@ -26,9 +26,7 @@ func TestRecheckExamples(t *testing.T) {
 	}
 	w := newWorld(t, srcs)
 	_, s, _ := w.session()
-	for _, path := range slices.Sorted(maps.Keys(srcs)) {
-		s = w.step(s, step{path: path, ok: onlyEntries(w.files[path])})
-	}
+	s = stepEveryFile(w, s)
 	for _, st := range []step{
 		{axe, "cost: 300_000", "cost: 1", true},
 		{axe, "cost: 1", `cost: "x"`, true},
@@ -87,24 +85,72 @@ func TestCheckIgnoresFileIDs(t *testing.T) {
 	}
 }
 
-// onlyEntries is the test's own reading of a body-only candidate: a source file of `entry`
-// declarations writing no type.
-func onlyEntries(f *syntax.File) bool {
+// IMPLEMENTATION-PLAN §7.6 NFR-02: a file of annotated lets is a body-only candidate (package doc).
+func TestRecheckAnnotatedLets(t *testing.T) {
+	w := newWorld(t, map[string]string{
+		"p/p.canon":    "package p\n\nlocal record Row {\n  n: Int\n}\n",
+		"p/lets.canon": "package p\n\nlocal let rows: table Row = {\n  a { n: 1 }\n}\n\nlocal let limit: Int(0..) = 3\n",
+	})
+	_, s, _ := w.session()
+	s = stepEveryFile(w, s)
+	if !bodyOnly(w.files["p/lets.canon"]) {
+		t.Fatal("the oracle refuses a file of annotated lets")
+	}
+	for _, st := range []step{
+		{"p/lets.canon", "= 3", "= 4", true},
+		{"p/lets.canon", "n: 1", "n: 2", true},
+		{"p/lets.canon", "Int(0..)", "Int", false},
+	} {
+		s = w.step(s, st)
+	}
+}
+
+// stepEveryFile re-parses every file of w unchanged, in path order, Recheck accepting exactly
+// what bodyOnly does.
+func stepEveryFile(w *world, s *check.Session) *check.Session {
+	for _, path := range slices.Sorted(maps.Keys(w.src)) {
+		s = w.step(s, step{path: path, ok: bodyOnly(w.files[path])})
+	}
+	return s
+}
+
+// bodyOnly is the test's own reading of a body-only candidate: a source file of `entry`
+// declarations writing no type, and of annotated lets whose type holds no `where` and whose
+// value writes no type (only the value is compared).
+func bodyOnly(f *syntax.File) bool {
 	if f.FileKind != syntax.FileSource || f.Layer != nil || f.Lang != nil {
 		return false
 	}
-	typed := false
-	syntax.Inspect(f, func(n syntax.Node) bool {
-		_, isType := n.(syntax.Type)
-		typed = typed || isType
-		return true
-	})
 	for _, d := range f.Decls {
-		if _, ok := d.(*syntax.EntryDecl); !ok {
+		switch x := d.(type) {
+		case *syntax.EntryDecl:
+			if writesType(x, false) {
+				return false
+			}
+		case *syntax.LetDecl:
+			if x.Type == nil || writesType(x.Type, true) || writesType(x.Value, false) {
+				return false
+			}
+		default:
 			return false
 		}
 	}
-	return !typed
+	return true
+}
+
+// writesType reports a written type under n, or only a `where` predicate when wheres.
+func writesType(n syntax.Node, wheres bool) bool {
+	found := false
+	if n == nil {
+		return false
+	}
+	syntax.Inspect(n, func(m syntax.Node) bool {
+		_, isWhere := m.(*syntax.WhereType)
+		_, isType := m.(syntax.Type)
+		found = found || isWhere || (isType && !wheres)
+		return !found
+	})
+	return found
 }
 
 // IMPLEMENTATION-PLAN §7.6 NFR-02: old-program readers race Recheck; one of concurrent Rechecks goes through.

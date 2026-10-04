@@ -1,0 +1,24 @@
+STDLIB.md §3, DECISIONS 299, TYPES.md §8.1: E.members holds retired members, and computing with
+them is allowed (names, a filter, a String built from all of them are stored fine); a stored value
+that still holds a retired member is E3506, as a written one is.
+-- a/a.canon --
+/// A.
+package a
+
+/// E.
+enum E { a, retired b, c }
+
+/// All.
+let all: [E] = E.members
+
+/// Live.
+let live: [E] = E.members.filter(m => not m.retired)
+
+/// Names.
+let names: String = E.members.map(.name).join(",")
+-- findings.txt --
+error[E3506]  a/a.canon:8:16
+  all[1]: E.b is retired
+  expected by a/a.canon:5 (retired b)
+
+1 error, 0 warnings in 1 package (…)

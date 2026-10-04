@@ -1,0 +1,55 @@
+CODEGEN.md §2.9, DECISIONS 300: taking a @text fn as a value (bound, passed, qualified) is E8021 called, as is a call from a check; a test block may call it (no finding at the test).
+-- a/a.canon --
+package a
+
+/// Doc.
+@text("v.sql")
+export fn v() -> String { return "SELECT 1;" }
+
+/// Apply.
+local fn apply(f: fn() -> String) -> String { return f() }
+
+/// Bound.
+local fn bound() -> String {
+  let g = v
+  return apply(g) + apply(v)
+}
+
+check {
+  if v().isEmpty() {
+    fail(v(), "empty")
+  }
+}
+
+test "the file's text" {
+  expect v() == "SELECT 1;"
+}
+
+emit text { out: "@generated/sql" }
+-- b/b.canon --
+package b
+
+import a
+
+/// Apply.
+local fn apply(f: fn() -> String) -> String { return f() }
+
+/// Other.
+local fn other() -> String { return apply(a.v) }
+-- findings.txt --
+error[E8021]  a/a.canon:12:11
+  v has @text: it is a file, not a function other declarations can call
+
+error[E8021]  a/a.canon:13:27
+  v has @text: it is a file, not a function other declarations can call
+
+error[E8021]  a/a.canon:17:6
+  v has @text: it is a file, not a function other declarations can call
+
+error[E8021]  a/a.canon:18:10
+  v has @text: it is a file, not a function other declarations can call
+
+error[E8021]  b/b.canon:9:43
+  a.v has @text: it is a file, not a function other declarations can call
+
+5 errors, 0 warnings in 2 packages (…)

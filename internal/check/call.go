@@ -90,6 +90,7 @@ func (c *checker) callUser(env *env, x *syntax.CallExpr, o *object) types.Type {
 		kind = CalleeMethod
 	}
 	c.info.Calls[x] = &Callee{Kind: kind, Obj: o}
+	c.textUse(env, x.Fun, o, true)
 	c.userArgs(env, x, o.name, c.paramObjects(o), ft.Params)
 	return staticView(ft.Result)
 }

@@ -204,7 +204,7 @@ func ownerPkg(t types.Type) string {
 	}
 }
 
-// completeEnum fills an enum's members (TYPES.md §8.1).
+// completeEnum fills an enum's members (TYPES.md §8.1); `members` is reserved on enums (E2105, DECISIONS 299).
 func (c *checker) completeEnum(o *object, e *types.EnumType) {
 	if o.state != stateNone {
 		return
@@ -219,6 +219,9 @@ func (c *checker) completeEnum(o *object, e *types.EnumType) {
 		mo := c.newObject(ObjMember, m.Name.Name, env.pkg, m, env.file)
 		mo.typ, mo.member, mo.owner = e, mem, e
 		c.info.Defs[m.Name] = mo
+		if m.Name.Name == membersMember {
+			c.report(env, diag.E2105.AtEnum(env.span(m.Name), m.Name.Name))
+		}
 		if first, dup := seen[m.Name.Name]; dup {
 			c.report(env, diag.E2106.At(env.span(m.Name), m.Name.Name, declSpan(first)))
 			continue

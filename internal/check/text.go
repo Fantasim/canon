@@ -133,3 +133,15 @@ func writtenText(f *syntax.File, v syntax.Node) string {
 	}
 	return strings.TrimSuffix(strings.TrimPrefix(s, delim), delim)
 }
+
+// textUse is E8021 `called` at a call to a `@text` fn, or its use as a value, but a test's call (CODEGEN.md §2.9).
+func (c *checker) textUse(env *env, at syntax.Node, o *object, call bool) {
+	d, isFn := o.decl.(*syntax.FnDecl)
+	if o.kind != ObjFn || !isFn || o == env.owner || annotation(prefixAnnotations(d), syntax.AnnText) == nil {
+		return
+	}
+	if call && env.owner != nil && env.owner.kind == ObjTest {
+		return
+	}
+	c.report(env, diag.E8021.AtCalled(env.span(at), env.localName(o.pkg+dot+o.name, o.pkg)))
+}

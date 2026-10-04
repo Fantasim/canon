@@ -115,7 +115,25 @@ local fn same(r: (ref flags)?, e: Flag) -> Bool {
 // STDLIB.md §1.1: a type parameter of a built-in is bound per call and never reaches Info.
 func TestNoTypeParameterInInfo(t *testing.T) {
 	prog, _ := loadExamples(t).run(t)
-	info := prog.Info
+	for _, msg := range leakedTypes(prog.Info) {
+		t.Error(msg)
+	}
+}
+
+// STDLIB.md §1.1: String(x)'s callee records its signature bound to x's type (bug B1).
+func TestStringCalleeIsInstantiated(t *testing.T) {
+	prog, f := checkSource(t, "package a\n\n/// F.\nexport fn f(n: Int) -> String { return String(n) }\n")
+	for _, msg := range leakedTypes(prog.Info) {
+		t.Error(msg)
+	}
+	call := nodesOf[*syntax.CallExpr](f)[0]
+	if got, want := fmt.Sprint(prog.Info.Types[call.Fun]), "fn(Int) -> String"; got != want {
+		t.Errorf("Types[String] = %s, want %s", got, want)
+	}
+}
+
+// leakedTypes describes every type of info holding a checker-private type.
+func leakedTypes(info *check.Info) []string {
 	var all []types.Type
 	for _, typ := range info.Types {
 		all = append(all, typ)
@@ -133,11 +151,13 @@ func TestNoTypeParameterInInfo(t *testing.T) {
 		all = append(all, obj.Type())
 	}
 	seen := map[uintptr]bool{}
+	var out []string
 	for _, typ := range all {
 		if name := leaked(reflect.ValueOf(typ), seen); name != "" {
-			t.Errorf("%v holds a %s", typ, name)
+			out = append(out, fmt.Sprintf("%v holds a %s", typ, name))
 		}
 	}
+	return out
 }
 
 // leaked names the checker-private type found in v, or "".

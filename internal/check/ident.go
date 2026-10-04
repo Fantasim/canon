@@ -198,6 +198,7 @@ func (c *checker) use(env *env, e *syntax.IdentExpr, o *object) types.Type {
 	case ObjLet:
 		return c.narrowed(env, e, staticView(c.letType(o)))
 	case ObjFn:
+		c.textUse(env, e, o, false)
 		return o.typ
 	case ObjMethod:
 		c.report(env, diag.E3016.At(env.span(e), diag.KindMethod, o.name))

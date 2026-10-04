@@ -2,6 +2,7 @@ package eval
 
 import (
 	"github.com/fantasim/canonlang/internal/check"
+	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
@@ -74,6 +75,8 @@ func (r *run) objectValue(obj check.Object, at syntax.Expr) value.Value {
 		return r.caseValue(obj, at)
 	case check.ObjEntry:
 		return &value.Ref{T: r.typeOf(at), Key: value.Key{S: obj.Name()}, P: r.prov(at, value.ProvLiteral)}
+	case check.ObjBuiltin:
+		return r.enumMembers(obj, at)
 	default:
 	}
 	r.bug(at)
@@ -162,6 +165,28 @@ func (r *run) member(obj check.Object, at syntax.Expr) value.Value {
 	}
 	r.bug(at)
 	return nil
+}
+
+// enumMembers is `E.members`, retired members included, one step per member (STDLIB.md §3).
+func (r *run) enumMembers(obj check.Object, at syntax.Expr) value.Value {
+	l, isList := r.typeOf(at).Base().(*types.ListType)
+	if obj.Name() != memberMembers || !isList {
+		r.bug(at)
+		return nil
+	}
+	e, isEnum := l.Elem.Base().(*types.EnumType)
+	if !isEnum {
+		r.bug(at)
+		return nil
+	}
+	if !r.spend(len(e.Members), func() source.Span { return r.span(at) }) {
+		return nil
+	}
+	out := &value.List{T: l, Elems: make([]value.Value, len(e.Members)), P: r.prov(at, value.ProvLiteral)}
+	for i := range e.Members {
+		out.Elems[i] = &value.Member{Enum: e, Index: i, P: r.prov(at, value.ProvLiteral)}
+	}
+	return out
 }
 
 // caseValue is a case as a Kind(V) value, or a case written without fields (TYPES.md §8.2).

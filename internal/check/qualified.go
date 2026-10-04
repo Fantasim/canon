@@ -53,13 +53,17 @@ func (c *checker) qualifiedType(env *env, s *syntax.SelectorExpr) *object {
 	return m
 }
 
-// qualifiedValue is what a qualified form names; it has no Selection (IMPLEMENTATION-PLAN §4.7).
+// qualifiedValue is what a qualified form names, `E.members` included (STDLIB.md §3); it has no Selection.
 func (c *checker) qualifiedValue(env *env, s *syntax.SelectorExpr, q *object) types.Type {
 	if q.kind == ObjPackage {
 		return c.packageMember(env, s, q)
 	}
 	switch t := c.typeOfName(env, q, nil).(type) {
 	case *types.EnumType:
+		if s.Name.Name == membersMember {
+			c.info.NameUses[s.Name] = c.builtins[membersMember]
+			return &types.ListType{Elem: t}
+		}
 		if m := c.memberObject(t, s.Name.Name); m != nil {
 			c.info.NameUses[s.Name] = m
 			c.deprecatedUse(env, s.Name, m)
@@ -95,6 +99,7 @@ func (c *checker) packageMember(env *env, s *syntax.SelectorExpr, q *object) typ
 	case ObjLet:
 		return staticView(c.letType(m))
 	case ObjFn:
+		c.textUse(env, s, m, false)
 		return m.typ
 	default:
 	}

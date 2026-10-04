@@ -147,6 +147,8 @@ func memberField(m *types.Member, name string, p *value.Prov) value.Value {
 		return &value.Str{V: m.Wire, T: types.StringType, P: p}
 	case memberIndex:
 		return &value.Int{V: int64(m.Index), T: types.IntType, P: p}
+	case memberRetired:
+		return &value.Bool{V: m.Retired, P: p}
 	}
 	return &value.Int{V: m.Code, T: types.IntType, P: p}
 }

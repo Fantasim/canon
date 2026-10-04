@@ -1,0 +1,30 @@
+CODEGEN.md §2.9, DECISIONS 300: a @text fn is a file, not API: a call from another declaration, of its package or another, is E8021 called; the @text fn itself is fine.
+-- a/a.canon --
+package a
+
+/// Doc.
+@text("v.sql")
+export fn v() -> String { return "SELECT 1;" }
+
+/// Twice.
+export fn twice() -> String { return v() + v() }
+
+emit text { out: "@generated/sql" }
+-- b/b.canon --
+package b
+
+import a
+
+/// Other.
+export fn other() -> String { return a.v() }
+-- findings.txt --
+error[E8021]  a/a.canon:8:38
+  v has @text: it is a file, not a function other declarations can call
+
+error[E8021]  a/a.canon:8:44
+  v has @text: it is a file, not a function other declarations can call
+
+error[E8021]  b/b.canon:6:38
+  a.v has @text: it is a file, not a function other declarations can call
+
+3 errors, 0 warnings in 2 packages (…)

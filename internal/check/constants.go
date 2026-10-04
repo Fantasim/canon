@@ -242,6 +242,7 @@ const (
 	codeMember    = "code"
 	startMember   = "start"
 	endMember     = "end"
+	membersMember = "members" // E.members, on an enum type (DECISIONS 299)
 	defaultTag    = kindMember
 )
 
