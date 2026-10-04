@@ -98,7 +98,7 @@ var branchKinds = kindSet(types.Bool, types.Int, types.Float, types.String, type
 var recordKinds = kindSet(types.Record, types.Variant, types.Case)
 
 // goInitialisms is the closed initialism list of GoCap (CODEGEN.md §3.2).
-var goInitialisms = nameSet("id", "url", "api", "http", "json", "ui", "db", "ip", "hp", "mp", "ts")
+var goInitialisms = nameSet("id", "url", "api", "http", "json", "ui", "db", "ip", "hp", "mp", "ts", "sql")
 
 // goPredeclared are Go's predeclared identifiers (CODEGEN.md §3.4).
 var goPredeclared = nameSet("any", "append", "bool", "byte", "cap", "clear", "close",

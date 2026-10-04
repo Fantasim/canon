@@ -93,6 +93,10 @@ func (s *stage) assembleFn(u *unit, obj check.Object, d *syntax.FnDecl) {
 	}
 	site := s.exportFn(obj, d, sig)
 	u.fns = append(u.fns, site)
+	if annotation(d.Annotations, syntax.AnnText) != nil {
+		u.p.TextFns = append(u.p.TextFns, site.fn)
+		return
+	}
 	u.p.Fns = append(u.p.Fns, site.fn)
 }
 

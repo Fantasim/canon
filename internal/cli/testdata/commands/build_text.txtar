@@ -46,10 +46,6 @@ CREATE TABLE t (id INT);[file out/sql/_version.sql]
 SELECT 1;
 [file out/x.json]
 {
-  "$schema": "a.x@20c618f2",
-  "value": 1,
-  "$fns": {
-    "versionSql": "SELECT 1;\n",
-    "schemaSql": "CREATE TABLE t (id INT);"
-  }
+  "$schema": "a.x@f51a4c21",
+  "value": 1
 }

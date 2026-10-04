@@ -143,11 +143,11 @@ func TestTextEmitCopies(t *testing.T) {
 	}
 }
 
-// CODEGEN.md §2.9, WIRE.md §8.1: no emit text writes nothing; a file named .canon-text is E8152.
+// CODEGEN.md §2.9, DECISIONS 300, WIRE.md §8.1: no emit text writes nothing, and a ts emit leaves a @text fn out; a file named .canon-text is E8152.
 func TestTextEmitElsewhere(t *testing.T) {
 	fsys := textTree(textSource + "emit ts { out: \"@out/a.ts\" }\n")
 	res := buildTree(t, fsys, build.BuildOptions{})
-	if res.Summary.Errors != 0 || len(res.Outputs) != 1 || !strings.Contains(string(res.Outputs[0].Content), "schemaSql") {
+	if res.Summary.Errors != 0 || len(res.Outputs) != 1 || strings.Contains(string(res.Outputs[0].Content), "schemaSql") {
 		t.Errorf("no emit text: %v, %+v", codes(res.List), res.Outputs)
 	}
 	clash := strings.Replace(textEmit, "\"Schema.sql\"", "\".canon-text\"", 1)

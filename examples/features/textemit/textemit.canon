@@ -32,3 +32,7 @@ export fn eventsSql() -> String {
 export fn version() -> String { return "{SCHEMA_VERSION}" }
 
 emit text { out: "out/sql" }
+emit go { out: "out/go/textemit/" }
+emit cpp { out: "out/cpp/textemit.hpp" }
+emit ts { out: "out/ts/textemit.ts" }
+emit json { out: "out/textemit.json", values: [columns] }

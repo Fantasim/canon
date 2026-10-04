@@ -17,6 +17,7 @@ type Package struct {
 	Consts  []*Const
 	Values  []*Value
 	Fns     []*ExportFn
+	TextFns []*ExportFn
 	Defines []*DefineTable
 	Emits   []*Emit
 }

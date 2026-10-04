@@ -34,7 +34,7 @@ func TestWords(t *testing.T) {
 	}
 }
 
-// TestGoCamel is CODEGEN.md §3.2: Go camel case with the closed initialism list (II is none of them).
+// TestGoCamel is CODEGEN.md §3.2 and DECISIONS 301: Go camel case with the closed initialism list (II is none of them).
 func TestGoCamel(t *testing.T) {
 	cases := []struct{ in, upper, lower string }{
 		{"id", "ID", "id"},
@@ -45,6 +45,8 @@ func TestGoCamel(t *testing.T) {
 		{"none_", "None", "none"},
 		{"url_ts_db", "URLTSDB", "urlTSDB"},
 		{"hpMax", "HPMax", "hpMax"},
+		{"sql", "SQL", "sql"}, // DECISIONS 301
+		{"eventsSql", "EventsSQL", "eventsSQL"},
 		{"JSONPath", "JSONPath", "jsonPath"},
 		{"_", "", ""},
 	}

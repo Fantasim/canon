@@ -1,0 +1,8 @@
+{
+  "$schema": "features.textemit.Column@60c734ab",
+  "rows": [
+    {"name": "id", "sql": "BIGINT"},
+    {"name": "kind", "sql": "SMALLINT"},
+    {"name": "at", "sql": "TIMESTAMP"}
+  ]
+}

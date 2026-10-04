@@ -1,4 +1,4 @@
-File: File FileKind=source @1:1-35:1
+File: File FileKind=source @1:1-39:1
   Doc: DocComment "`emit text` (CODEGEN.md §2.9): plain-text files computed at build time. Each public,\nparameterless export fn returning String with `@text(\"<file>\")` is written to\n`<out>/<file>` byte for byte; `.canon-text` beside them names the files canon owns." @1:1-3:88
   Package: QualifiedName features.textemit @4:9-4:26
   Decls[0]: ConstDecl @7:1-7:25
@@ -118,5 +118,37 @@ File: File FileKind=source @1:1-35:1
         Name: Ident out @34:13-34:16
         Value: StringLit @34:18-34:27
           Parts[0]: text "out/sql"
+  Decls[6]: EmitDecl @35:1-35:36
+    Target: Ident go @35:6-35:8
+    Options: BraceLit @35:9-35:36
+      Items[0]: FieldItem @35:11-35:34
+        Name: Ident out @35:11-35:14
+        Value: StringLit @35:16-35:34
+          Parts[0]: text "out/go/textemit/"
+  Decls[7]: EmitDecl @36:1-36:41
+    Target: Ident cpp @36:6-36:9
+    Options: BraceLit @36:10-36:41
+      Items[0]: FieldItem @36:12-36:39
+        Name: Ident out @36:12-36:15
+        Value: StringLit @36:17-36:39
+          Parts[0]: text "out/cpp/textemit.hpp"
+  Decls[8]: EmitDecl @37:1-37:38
+    Target: Ident ts @37:6-37:8
+    Options: BraceLit @37:9-37:38
+      Items[0]: FieldItem @37:11-37:36
+        Name: Ident out @37:11-37:14
+        Value: StringLit @37:16-37:36
+          Parts[0]: text "out/ts/textemit.ts"
+  Decls[9]: EmitDecl @38:1-38:58
+    Target: Ident json @38:6-38:10
+    Options: BraceLit @38:11-38:58
+      Items[0]: FieldItem @38:13-38:37
+        Name: Ident out @38:13-38:16
+        Value: StringLit @38:18-38:37
+          Parts[0]: text "out/textemit.json"
+      Items[1]: FieldItem @38:39-38:56
+        Name: Ident values @38:39-38:45
+        Value: ListLit @38:47-38:56
+          Elems[0]: IdentExpr columns @38:48-38:55
 == findings
 0 errors, 0 warnings in 1 package (…)

@@ -8,7 +8,7 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// TextFiles are the `@text` files of an accepted cp, in source order, each its fn's String value verbatim (CODEGEN.md §2.9).
+// TextFiles are the `@text` files of an accepted cp (p.TextFns: kept out of p.Fns, DECISIONS 300), in source order, each its fn's String value verbatim (CODEGEN.md §2.9).
 func TextFiles(cp *check.Package, p *Package) ([]File, error) {
 	var out []File
 	for _, f := range sourceFiles(cp) {
@@ -46,7 +46,7 @@ func textName(a *syntax.Annotation) string {
 
 // textContent is the bytes of the precomputed String value of p's export fn name.
 func textContent(p *Package, name string) ([]byte, error) {
-	for _, fn := range p.Fns {
+	for _, fn := range p.TextFns {
 		if fn.Name != name {
 			continue
 		}
