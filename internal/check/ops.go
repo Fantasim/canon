@@ -234,12 +234,11 @@ func (c *checker) operand(env *env, e syntax.Expr, other types.Type) types.Type 
 	return c.synth(env, e)
 }
 
-// checkedOperand checks e against the other operand's type, without its optional: `x == c`
-// with x: Tone? resolves c against Tone.
+// checkedOperand checks e against the other operand's type: T? for a name, else T (TYPES.md §7.5).
 func (c *checker) checkedOperand(env *env, e syntax.Expr, other types.Type) types.Type {
-	want := other
-	if o, ok := other.Base().(*types.OptionalType); ok {
-		want = o.Elem
+	want := optElem(other)
+	if _, isName := inner(e).(*syntax.IdentExpr); isName {
+		want = &types.OptionalType{Elem: want}
 	}
 	t := c.exprNode(env, inner(e), want)
 	if t == nil {
