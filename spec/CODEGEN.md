@@ -843,9 +843,13 @@ variant EventKind @json(tag: "type") {
   name is `<Alias>Branch`, not `<Alias>Kind` as DEP-03 proposed: `ParamKind` is the natural name
   of the discriminating enum and already exists in `resource.vocab`.)
 - Each branch has an accessor. A `ref` branch exposes the key. A branch that is a ref into a
-  `load.defines` table is E8019 `DependentType` in every generator (no `As<Branch>Value` is
-  written; `monster` below stands for a ref into an ordinary collection). A branch whose type is
-  not a scalar, `String`, enum or `ref` is `E8017`.
+  `load.defines` table also has a **value accessor**, as a `ref D?` field has a value getter
+  ([§5.8](#58-refs)): Go `As<Branch>Value() (int64, bool)`, C++
+  `std::optional<int64_t> As<Branch>Value() const`; TypeScript holds the key only. Its define
+  table joins the emit's define tables of §5.8, loaders resolve the value when they read the key
+  (same load error), and baked emits write the value (DECISIONS 298; `monster` below stands for a
+  ref into an ordinary collection). A branch whose type is not a scalar, `String`, enum or `ref`
+  is `E8017`.
 
 ```go
 type ParamBranch uint8 // ParamBranchMonster, ParamBranchItem, ParamBranchElement, ParamBranchGameMode

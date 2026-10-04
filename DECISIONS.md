@@ -2752,6 +2752,15 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      on disk and leaves the listing. `--adopt` and `BuildOptions.Adopt` take a text file as well as
      a legacy header. Reason: TX review, log-2026-10-04.
 
+298. **Define-table branches of dependent types are written (CODEGEN.md §5.6, §5.8).** A dependent
+     type's branch that is a ref into a `load.defines` table gets the key accessor of every ref
+     branch plus `As<Branch>Value` (Go `(int64, bool)`, C++ `std::optional<int64_t>`; TS key only),
+     read through §5.8's per-emit define table, which now also covers the define tables such
+     branches ref. The E8019 `DependentType` refusal of these branches (CODEGEN §5.6, b6ec336, from
+     the gen/go review of log-2026-09-25) is lifted. Reason: Louis, elegance over legacy
+     (log-2026-10-04): `resource.vocab`'s `Param` is the point of the example, and the generators
+     were the gap.
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.
