@@ -1556,9 +1556,9 @@ type LockChange struct { Package string; File string; Lines []string }
   revision read after its writes (S10), in `Check.Revision`.
 - **B2.** An output that exists without the generated-file marker is taken over only when it is
   listed in `BuildOptions.Adopt` (CLI `canon build --adopt <path>`: the header of an
-  `access: both` struct, CODEGEN.md §7.8.3), or by `canon convert --adopt` (IMPLEMENTATION-PLAN.md
+  `access: both` struct, CODEGEN.md §7.8.3, or a file of an `emit text`, §2.9), or by `canon convert --adopt` (IMPLEMENTATION-PLAN.md
   §8.3). Its `Status` is then `adopted` (GEN-05). Any other unmarked output is `E8001`.
-  `BuildOptions.Adopt` takes only a C++ header: a JSON output without its `$schema` is `E8001`
+  `BuildOptions.Adopt` takes only those two kinds: a JSON output without its `$schema` is `E8001`
   even when listed.
 
 ### 13.2 Test and lock check

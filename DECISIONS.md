@@ -2744,6 +2744,14 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      in the emit keeps the `.gen.cpp` split. C++ `Get(id)` aborts on an id outside the enum, as
      lookups do. Reason: CB review, log-2026-10-04.
 
+297. **Text-target edges (CODEGEN.md §2.9; CLI.md §3.4; API.md B2).** A `@text` file name must be
+     portable: besides empty, `.`, `..`, `/` and `\`, a control character, one of `<>:"|?*`, a final
+     dot or space, or a Windows device name (`CON`, `nul.txt`, ignoring case) is `E8021` `file`,
+     since text outputs are committed and checked out on Windows. `@text` on a `record`, `enum` or
+     `variant` stays `E1118` (no prefix annotation there). A text file no longer written is left
+     on disk and leaves the listing. `--adopt` and `BuildOptions.Adopt` take a text file as well as
+     a legacy header. Reason: TX review, log-2026-10-04.
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.

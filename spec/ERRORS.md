@@ -1210,7 +1210,7 @@ Owner: CODEGEN.md, WIRE.md.
 | E8019 | json | what:Kind | `emit json cannot generate {what}` |
 | E8020 | - | name:Name | `constant {name} is -0.0, which a Go constant cannot hold: make it a let` |
 | E8021 | position | - | `@text belongs on a public package-level export fn with no parameter that returns String` |
-| E8021 | file | value:Text | `invalid @text file name "{value}": a file name is not empty, . or .. and has no path separator` |
+| E8021 | file | value:Text | `invalid @text file name "{value}": not a portable file name (empty, . or .., a path separator, a reserved character or Windows device name, or a final dot or space)` |
 | E8021 | twice | value:Text, other:Name | `@text file "{value}" is also written by {other}` |
 | E8101 | field | value:Value, field:Name | `{value} does not fit a TypeScript number; add @ts(bigint) to {field}` |
 | E8101 | result | value:Value, fn:Name | `{value} does not fit a TypeScript number; {fn} is precomputed for TypeScript and cannot be bigint` |

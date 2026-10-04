@@ -2119,7 +2119,7 @@ var Registry = []Def{
 		Code: "E8021", Severity: Error, Package: "check",
 		Variants: []Variant{
 			{Name: "position", Template: "@text belongs on a public package-level export fn with no parameter that returns String"},
-			{Name: "file", Args: []Arg{{Name: "value", Type: ArgTypeText}}, Template: "invalid @text file name \"{value}\": a file name is not empty, . or .. and has no path separator"},
+			{Name: "file", Args: []Arg{{Name: "value", Type: ArgTypeText}}, Template: "invalid @text file name \"{value}\": not a portable file name (empty, . or .., a path separator, a reserved character or Windows device name, or a final dot or space)"},
 			{Name: "twice", Args: []Arg{{Name: "value", Type: ArgTypeText}, {Name: "other", Type: ArgTypeName}}, Template: "@text file \"{value}\" is also written by {other}"},
 		},
 	},
@@ -6550,7 +6550,7 @@ func (codeE8021) AtPosition(span source.Span) *Builder {
 	return newBuilder(&Registry[257], 0, span)
 }
 
-// AtFile reports: invalid @text file name "{value}": a file name is not empty, . or .. and has no path separator
+// AtFile reports: invalid @text file name "{value}": not a portable file name (empty, . or .., a path separator, a reserved character or Windows device name, or a final dot or space)
 func (codeE8021) AtFile(span source.Span, value string) *Builder {
 	return newBuilder(&Registry[257], 1, span, value)
 }

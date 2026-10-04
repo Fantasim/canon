@@ -382,8 +382,11 @@ emit text { out: "@source/Tools/telemetry" }
   is written to `<out>/<file>`: the value's UTF-8 bytes, verbatim. Nothing is added: no marker,
   no final newline, no line-ending change.
 - `@text` on anything else (a `let`, a local or non-exported fn, a fn with a parameter or another
-  result type), a file name that is empty, `.`, `..` or holds `/` or `\`, and two `@text` fns of
-  one package whose file names are equal ignoring letter case, are `E8021`, found in phase 2.
+  result type), a file name that is not portable (empty, `.`, `..`, holding `/`, `\`, a control
+  character or one of `<>:"|?*`, ending in a dot or a space, or a Windows device name such as
+  `CON` or `nul.txt`, matched ignoring case), and two `@text` fns of one package whose file names
+  are equal ignoring letter case, are `E8021`, found in phase 2. On a `record`, `enum` or `variant`,
+  which take no prefix annotation, `@text` is GRAMMAR.md's `E1118` instead (DECISIONS 297).
   An `emit text` in a package with no `@text` fn is `E8009` `textEmpty`. A `@text` fn of a
   package with no `emit text` is written nowhere.
 - The fn stays an ordinary export fn: the package's go, cpp, ts and json emits hold it as §5.10
@@ -393,7 +396,9 @@ emit text { out: "@source/Tools/telemetry" }
   the files that copy wrote, sorted by byte value, one per line, ending in `\n`. A text file is
   overwritten only if it is absent or the `.canon-text` of its directory names it; otherwise the
   build fails with `E8001`, and `canon build --adopt <path>` takes it over (§2.4). `.canon-text`
-  is itself overwritten only if its first line is that marker.
+  is itself overwritten only if its first line is that marker. A file an earlier build wrote and
+  this one no longer writes is left on disk, and drops out of the new `.canon-text`; `canon` never
+  deletes outputs.
 - `canon build --check` compares the text files and `.canon-text` like every other output; two
   outputs with one path are `E8152` (WIRE.md §8.1).
 
