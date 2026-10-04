@@ -2775,6 +2775,12 @@ Choices made while Louis was away are listed here, each with its reason, so he c
 301. **`SQL` is a Go initialism (CODEGEN.md §3.2).** `CreateTableSQL`, not `CreateTableSql`.
      Reason: TE; Go's own convention.
 
+302. **A keyword after `.` ends an item like a name (GRAMMAR.md §3.1 rule 2; amends 211).** After `.`
+     or `?.` a reserved word is a name (GRAMMAR's member access), and line separation agrees:
+     `a: Leg.in` at the end of a line ends the item, so the formatter drops the separator comma as
+     it does after `Leg.x`. Reason: TE (B2), R2 found the formatter followed 211 to the letter and
+     the two forms looked different; the lexer and the formatter change together.
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.

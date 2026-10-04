@@ -318,7 +318,9 @@ one `NL` token if and only if all of the following hold:
    `{` they separate, even when that `{` is nested in `(` or `[`. Only the innermost bracket
    decides.
 2. **`P` can end an item.** `P` is not one of: `+ - * / % == != < <= > >= ?? = += -= *= /= => -> .
-   ?. , : | ( [ { ...` or the keywords `and or not in is else where as`.
+   ?. , : | ( [ { ...` or the keywords `and or not in is else where as`. A keyword directly after
+   `.` or `?.` is a name (§ member access), so it can end an item: `a: Leg.in` newline `b: 1` is two
+   items (DECISIONS 302).
 3. **`N` does not continue the previous line.** `N` is not one of: `. ?. ?? + * / % == != < <= > >=
    = += -= *= /= => -> |` or the keywords `and or in is else where`; and `N` is not an `@` that
    continues (rule 4).
