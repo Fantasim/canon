@@ -2769,7 +2769,8 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      with nothing checking it (TE, log-2026-10-04).
 
 300. **`@text` fns are files, not API (CODEGEN.md §2.9; amends 294).** Code and JSON emits leave
-     `@text` fns out, and no other declaration may call one (`E8021` `called`). Reason: TE wrote a
+     `@text` fns out, and no other declaration may call one or take it as a value (`E8021` `called`);
+     a `test` block may call it. Reason: TE wrote a
      26 KB catalog as a constexpr string into the C++ header and a Go function nobody calls.
 
 301. **`SQL` is a Go initialism (CODEGEN.md §3.2).** `CreateTableSQL`, not `CreateTableSql`.
