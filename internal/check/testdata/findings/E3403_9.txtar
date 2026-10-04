@@ -1,0 +1,45 @@
+DECISIONS 303, TYPES.md §4.1: a name in scope of type ref C? where a ref C of dynamic keys is expected is E3403, never the key spelled like it (return, list element, argument, contains, field); compared, or in `in` (x ⇐ T?), it is the name.
+-- a/a.canon --
+package a
+
+local record C {
+  name: String
+}
+
+local let cs: [C] keyed by name = [{ name: "a" }]
+
+local fn takes(c: ref cs) -> Bool {
+  return c.name != ""
+}
+
+local fn back(p: ref cs?) -> ref cs {
+  return p
+}
+
+local fn uses(p: ref cs?, s: ref cs) -> Bool {
+  let l: [ref cs] = [p]
+  return takes(p) or p in [s] or [s].contains(p) or l.len() == 1 or s == p or p == s
+}
+
+local record H {
+  cols: [C] keyed by name
+  pick: ref C? = none
+  held: ref C = pick
+}
+-- findings.txt --
+error[E3403]  a/a.canon:14:10
+  expected ref a.cs, found ref a.cs?: prove it is present (!= none, !, ??)
+
+error[E3403]  a/a.canon:18:22
+  expected ref a.cs, found ref a.cs?: prove it is present (!= none, !, ??)
+
+error[E3403]  a/a.canon:19:16
+  expected ref a.cs, found ref a.cs?: prove it is present (!= none, !, ??)
+
+error[E3403]  a/a.canon:19:47
+  expected ref a.cs, found ref a.cs?: prove it is present (!= none, !, ??)
+
+error[E3403]  a/a.canon:25:17
+  expected ref a.C, found ref a.C?: prove it is present (!= none, !, ??)
+
+5 errors, 0 warnings in 1 package (…)

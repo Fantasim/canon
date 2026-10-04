@@ -23,7 +23,7 @@ func (c *checker) ident(env *env, e *syntax.IdentExpr, want types.Type) types.Ty
 	if o == nil {
 		return c.unresolved(env, e, want)
 	}
-	if coll := c.dynamicKeys(want); coll != nil && !c.valueOf(o, want) {
+	if coll := c.dynamicKeys(want); coll != nil && !c.valueOf(o, want) && !c.optionalOf(o, want) {
 		c.info.Keys[e] = coll
 		return refTo(want)
 	}
@@ -67,6 +67,14 @@ func (c *checker) valueOf(o *object, want types.Type) bool {
 	default:
 		return false
 	}
+}
+
+// optionalOf reports that o is a value of the expected ref made optional: the name, E3403 where it is accepted (DECISIONS 303).
+func (c *checker) optionalOf(o *object, want types.Type) bool {
+	if _, opt := want.Base().(*types.OptionalType); opt {
+		return false
+	}
+	return c.valueOf(o, &types.OptionalType{Elem: refTo(want)})
 }
 
 // staticKeys are the keys of a collection known statically (TYPES.md §4.1).
