@@ -1,5 +1,5 @@
 {
-  "format": 1,
+  "format": 2,
   "contract": 2,
   "provenance": [
     {
@@ -35,7 +35,7 @@
       "enqueue": "generated",
       "hasInstanceId": true,
       "wireSize": 38,
-      "description": "An item minted into existence, typed by GrantKind; via_mail in v4, fact_id in v5",
+      "description": "An item minted into existence, typed by GrantKind",
       "columns": [
         {
           "name": "timestamp_ns",
@@ -295,7 +295,7 @@
     },
     {
       "id": 20,
-      "table": "mail_items_received",
+      "table": "mail_item_received",
       "retired": true
     },
     {

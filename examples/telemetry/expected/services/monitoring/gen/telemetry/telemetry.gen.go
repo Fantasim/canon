@@ -15,7 +15,7 @@ import (
 const ContractVersion int64 = 2
 
 // CatalogFormat: Version of the JSON catalogue's own shape (catalogJson).
-const CatalogFormat int64 = 1
+const CatalogFormat int64 = 2
 
 // EventType: The event type byte every row carries on the wire; the dispatch table is indexed by it.
 // Each member is named after its lake table, so one identifier names the event, its table
@@ -25,9 +25,10 @@ type EventType uint8
 const (
 	// EventTypeItemCreated: SendSystemItem and MailV2::SendMail grants: an item minted, typed by GrantKind.
 	EventTypeItemCreated EventType = 11
-	// EventTypeMailItemsReceived: The claim leg of a mail. Removed in format v5: redundant with the send leg.
+	// EventTypeMailItemReceived: EVENT_MAIL_ITEM_RECEIVED, the claim leg of a mail: in v4, removed in v5 (redundant with
+	// the send leg). Its table name is not recorded, so the member is named after the event.
 	// Retired.
-	EventTypeMailItemsReceived EventType = 20
+	EventTypeMailItemReceived EventType = 20
 	// EventTypeItemConsumed: An item used up by a player. Read-only history since item_removed(Consumed).
 	EventTypeItemConsumed EventType = 31
 	// EventTypePenyaDrops: Penya dropped by a killed monster.
@@ -50,8 +51,8 @@ func (self EventType) String() string {
 	switch self {
 	case EventTypeItemCreated:
 		return "item_created"
-	case EventTypeMailItemsReceived:
-		return "mail_items_received"
+	case EventTypeMailItemReceived:
+		return "mail_item_received"
 	case EventTypeItemConsumed:
 		return "item_consumed"
 	case EventTypePenyaDrops:
@@ -74,8 +75,8 @@ func (self EventType) Wire() string {
 	switch self {
 	case EventTypeItemCreated:
 		return "item_created"
-	case EventTypeMailItemsReceived:
-		return "mail_items_received"
+	case EventTypeMailItemReceived:
+		return "mail_item_received"
 	case EventTypeItemConsumed:
 		return "item_consumed"
 	case EventTypePenyaDrops:
@@ -98,8 +99,8 @@ func ParseEventType(wire string) (EventType, bool) {
 	switch wire {
 	case "item_created":
 		return EventTypeItemCreated, true
-	case "mail_items_received":
-		return EventTypeMailItemsReceived, true
+	case "mail_item_received":
+		return EventTypeMailItemReceived, true
 	case "item_consumed":
 		return EventTypeItemConsumed, true
 	case "penya_drops":
@@ -120,7 +121,7 @@ func ParseEventType(wire string) (EventType, bool) {
 
 func EventTypeMembers() iter.Seq[EventType] {
 	return func(yield func(EventType) bool) {
-		for _, m := range [...]EventType{EventTypeItemCreated, EventTypeMailItemsReceived, EventTypeItemConsumed, EventTypePenyaDrops, EventTypeTradePenya, EventTypeServerLifecycle, EventTypeFarmEvents, EventTypeSovereignEvents, EventTypeWorldBossSpawns} {
+		for _, m := range [...]EventType{EventTypeItemCreated, EventTypeMailItemReceived, EventTypeItemConsumed, EventTypePenyaDrops, EventTypeTradePenya, EventTypeServerLifecycle, EventTypeFarmEvents, EventTypeSovereignEvents, EventTypeWorldBossSpawns} {
 			if !yield(m) {
 				return
 			}
@@ -134,7 +135,7 @@ func EventTypeFromCode(code uint8) (EventType, bool) {
 	switch v := EventType(code); v {
 	case EventTypeItemCreated:
 		return v, true
-	case EventTypeMailItemsReceived:
+	case EventTypeMailItemReceived:
 		return v, true
 	case EventTypeItemConsumed:
 		return v, true
@@ -1981,7 +1982,7 @@ func buildTelemetry() *telemetryData {
 		EventTypeSovereignEvents,
 	}, []*Event{
 		{
-			description: "An item minted into existence, typed by GrantKind; via_mail in v4, fact_id in v5",
+			description: "An item minted into existence, typed by GrantKind",
 			version:     5,
 			since:       2,
 			tier:        TierWarm,
@@ -2710,7 +2711,7 @@ func IsRetired(e EventType) bool {
 	switch e {
 	case EventTypeItemCreated:
 		e_i = 0
-	case EventTypeMailItemsReceived:
+	case EventTypeMailItemReceived:
 		e_i = 1
 	case EventTypeItemConsumed:
 		e_i = 2
@@ -2738,7 +2739,7 @@ func VersionOf(e EventType) uint8 {
 	switch e {
 	case EventTypeItemCreated:
 		e_i = 0
-	case EventTypeMailItemsReceived:
+	case EventTypeMailItemReceived:
 		e_i = 1
 	case EventTypeItemConsumed:
 		e_i = 2
@@ -2776,7 +2777,7 @@ func TierOf(e EventType) Tier {
 	switch e {
 	case EventTypeItemCreated:
 		e_i = 0
-	case EventTypeMailItemsReceived:
+	case EventTypeMailItemReceived:
 		e_i = 1
 	case EventTypeItemConsumed:
 		e_i = 2
@@ -2798,7 +2799,7 @@ func TierOf(e EventType) Tier {
 
 var tableOfTable = [9]string{
 	"item_created",
-	"mail_items_received",
+	"mail_item_received",
 	"item_consumed",
 	"penya_drops",
 	"trade_penya",
@@ -2808,13 +2809,14 @@ var tableOfTable = [9]string{
 	"world_boss_spawns",
 }
 
-// TableOf: The lake table of `e`, retired types included (their tables stay readable).
+// TableOf: The lake table of `e`, retired types included (their tables stay readable); for tombstone
+// 20, whose table is not recorded, the event's name.
 func TableOf(e EventType) string {
 	e_i := -1
 	switch e {
 	case EventTypeItemCreated:
 		e_i = 0
-	case EventTypeMailItemsReceived:
+	case EventTypeMailItemReceived:
 		e_i = 1
 	case EventTypeItemConsumed:
 		e_i = 2
@@ -2836,13 +2838,13 @@ func TableOf(e EventType) string {
 
 var hasInstanceIDTable = [9]bool{true, false, true, false, false, false, false, false, false}
 
-// HasInstanceID: Whether `e`'s table has the item_instance_id column, right after the header.
+// HasInstanceID: Whether `e`'s current layout has the item_instance_id column.
 func HasInstanceID(e EventType) bool {
 	e_i := -1
 	switch e {
 	case EventTypeItemCreated:
 		e_i = 0
-	case EventTypeMailItemsReceived:
+	case EventTypeMailItemReceived:
 		e_i = 1
 	case EventTypeItemConsumed:
 		e_i = 2
@@ -2870,7 +2872,7 @@ func WireSize(e EventType) int64 {
 	switch e {
 	case EventTypeItemCreated:
 		e_i = 0
-	case EventTypeMailItemsReceived:
+	case EventTypeMailItemReceived:
 		e_i = 1
 	case EventTypeItemConsumed:
 		e_i = 2
@@ -2908,7 +2910,7 @@ func Emits(e EventType, p Producer) bool {
 	switch e {
 	case EventTypeItemCreated:
 		e_i = 0
-	case EventTypeMailItemsReceived:
+	case EventTypeMailItemReceived:
 		e_i = 1
 	case EventTypeItemConsumed:
 		e_i = 2
@@ -2963,7 +2965,7 @@ func CreateTableSQL(e EventType) string {
 	switch e {
 	case EventTypeItemCreated:
 		e_i = 0
-	case EventTypeMailItemsReceived:
+	case EventTypeMailItemReceived:
 		e_i = 1
 	case EventTypeItemConsumed:
 		e_i = 2

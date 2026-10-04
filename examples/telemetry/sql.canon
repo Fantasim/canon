@@ -18,8 +18,8 @@ export fn tablesSql() -> String {
 
 /// One enum view: value to label.
 fn enumView(v: Vocabulary) -> String {
-  let rows = ["    ({l.code}, '{l.name}')" for l in labels(v)].join(",\n")
-  return "-- {enumName(v)}\nCREATE OR REPLACE VIEW enum_{v} AS\nSELECT * FROM (VALUES\n{rows}\n) AS t(value, name);\n"
+  let rows = ["    ({l.code}, '{l.name}')" for l in enumOf(v).labels].join(",\n")
+  return "-- {enumOf(v).name}\nCREATE OR REPLACE VIEW enum_{v} AS\nSELECT * FROM (VALUES\n{rows}\n) AS t(value, name);\n"
 }
 
 /// The enum views every enum8 column resolves through, then the (table, column) to view
@@ -28,7 +28,7 @@ fn enumView(v: Vocabulary) -> String {
 export fn enumsSql() -> String {
   let views = [enumView(v) for v in usedVocabularies()].join("\n")
   let columnRows = [
-    "    ('{e}', '{c.name}', '{enumName(c.values)}', 'enum_{c.values}')"
+    "    ('{e}', '{c.name}', '{enumOf(c.values).name}', 'enum_{c.values}')"
     for e in liveEvents()
     for c in events[e].columns
     if c.values != none

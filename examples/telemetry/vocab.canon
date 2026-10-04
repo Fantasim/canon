@@ -141,19 +141,6 @@ type Member(v: Vocabulary) = match v {
   grant_kind => GrantKind
 }
 
-/// The Canon enum behind vocabulary `v`, as the lake's catalogue names it.
-fn enumName(v: Vocabulary) -> String {
-  return match v {
-    farm_event_kind => "FarmEventKind"
-    sovereign_event_kind => "SovereignEventKind"
-    sovereign_role => "SovereignRole"
-    sovereign_doctrine => "SovereignDoctrine"
-    sovereign_power => "SovereignPower"
-    lifecycle_kind => "LifecycleKind"
-    grant_kind => "GrantKind"
-  }
-}
-
 /// One member of a vocabulary, as the lake's enum view lists it.
 local record Label {
   /// The member's code: the byte on the wire.
@@ -164,27 +151,58 @@ local record Label {
   isRetired: Bool
 }
 
-/// The members of vocabulary `v`, retired ones included, in code order.
-fn labels(v: Vocabulary) -> [Label] {
-  let all = match v {
-    farm_event_kind =>
-      FarmEventKind.members.map(m => Label { code: m.code, name: m.name, isRetired: m.retired })
-    sovereign_event_kind => SovereignEventKind.members.map(
-      m => Label { code: m.code, name: m.name, isRetired: m.retired },
-    )
-    sovereign_role =>
-      SovereignRole.members.map(m => Label { code: m.code, name: m.name, isRetired: m.retired })
-    sovereign_doctrine =>
-      SovereignDoctrine.members.map(m => Label { code: m.code, name: m.name, isRetired: m.retired })
-    sovereign_power =>
-      SovereignPower.members.map(m => Label { code: m.code, name: m.name, isRetired: m.retired })
-    lifecycle_kind =>
-      LifecycleKind.members.map(m => Label { code: m.code, name: m.name, isRetired: m.retired })
-    grant_kind =>
-      GrantKind.members.map(m => Label { code: m.code, name: m.name, isRetired: m.retired })
+/// A vocabulary's enum, as the lake's catalogue names and lists it.
+local record EnumInfo {
+  /// The Canon enum's name.
+  name: String
+  /// Its members, retired ones included, in code order.
+  labels: [Label]
+}
+
+/// The enum behind vocabulary `v`.
+fn enumOf(v: Vocabulary) -> EnumInfo {
+  let e = match v {
+    farm_event_kind => EnumInfo {
+      name: "FarmEventKind"
+      labels:
+        FarmEventKind.members.map(m => Label { code: m.code, name: m.name, isRetired: m.retired })
+    }
+    sovereign_event_kind => EnumInfo {
+      name: "SovereignEventKind"
+      labels: SovereignEventKind.members.map(
+        m => Label { code: m.code, name: m.name, isRetired: m.retired },
+      )
+    }
+    sovereign_role => EnumInfo {
+      name: "SovereignRole"
+      labels:
+        SovereignRole.members.map(m => Label { code: m.code, name: m.name, isRetired: m.retired })
+    }
+    sovereign_doctrine => EnumInfo {
+      name: "SovereignDoctrine"
+      labels: SovereignDoctrine.members.map(
+        m => Label { code: m.code, name: m.name, isRetired: m.retired },
+      )
+    }
+    sovereign_power => EnumInfo {
+      name: "SovereignPower"
+      labels:
+        SovereignPower.members.map(m => Label { code: m.code, name: m.name, isRetired: m.retired })
+    }
+    lifecycle_kind => EnumInfo {
+      name: "LifecycleKind"
+      labels:
+        LifecycleKind.members.map(m => Label { code: m.code, name: m.name, isRetired: m.retired })
+    }
+    grant_kind => EnumInfo {
+      name: "GrantKind"
+      labels: GrantKind.members.map(m => Label { code: m.code, name: m.name, isRetired: m.retired })
+    }
   }
-  return all.sortBy(.code)
+  return { ...e, labels: e.labels.sortBy(.code) }
 }
 
 /// The live member names of vocabulary `v`.
-fn liveNames(v: Vocabulary) -> [String] { return [l.name for l in labels(v) if not l.isRetired] }
+fn liveNames(v: Vocabulary) -> [String] {
+  return [l.name for l in enumOf(v).labels if not l.isRetired]
+}

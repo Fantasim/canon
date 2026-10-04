@@ -24,7 +24,7 @@ static_assert(Telemetry::HasInstanceId(EventType::item_created), "item_created h
 static_assert(!Telemetry::HasInstanceId(EventType::farm_events), "farm_events has none");
 static_assert(Telemetry::Emits(EventType::server_lifecycle, Producer::LoginServer), "the spine is everywhere");
 static_assert(!Telemetry::Emits(EventType::sovereign_events, Producer::WorldServer), "CoreServer only");
-static_assert(Telemetry::IsRetired(EventType::mail_items_received), "20 is a tombstone");
+static_assert(Telemetry::IsRetired(EventType::mail_item_received), "20 is a tombstone");
 static_assert(Telemetry::TableOf(EventType::trade_penya) == "trade_penya", "the member names the table");
 static_assert(Telemetry::CreateTableSql(EventType::farm_events).substr(0, 39) ==
                   "CREATE TABLE IF NOT EXISTS farm_events ",
@@ -54,15 +54,17 @@ struct PenyaDropEvent {
 static_assert(sizeof(FarmEvent) == Telemetry::WireSize(FarmEvent::TYPE), "FarmEvent drifted from the catalogue");
 static_assert(sizeof(PenyaDropEvent) == Telemetry::WireSize(PenyaDropEvent::TYPE), "PenyaDropEvent drifted");
 
-// Metadata as template arguments: a ring slot parameterised by tier.
+// Metadata as template arguments: the ring's drop policy parameterised by tier (a tier is a
+// drop and WARN policy, never a ring size).
 template <Tier T>
-struct RingSlot {
-    static constexpr int kSlots = T == Tier::HOT ? 4096 : T == Tier::WARM ? 1024 : T == Tier::COOL ? 256 : 32;
+struct DropPolicy {
+    static constexpr bool kWarnOnce = T == Tier::HOT;
+    static constexpr bool kHasRing = T != Tier::READONLY;
 };
 template <class E>
-using SlotOf = RingSlot<Telemetry::TierOf(E::TYPE)>;
-static_assert(SlotOf<FarmEvent>::kSlots == 256, "COOL ring");
-static_assert(SlotOf<PenyaDropEvent>::kSlots == 4096, "HOT ring");
+using PolicyOf = DropPolicy<Telemetry::TierOf(E::TYPE)>;
+static_assert(!PolicyOf<FarmEvent>::kWarnOnce && PolicyOf<FarmEvent>::kHasRing, "COOL has a ring and is not HOT");
+static_assert(PolicyOf<PenyaDropEvent>::kWarnOnce, "HOT: drops expected, warned once");
 
 // And as an array bound and an if constexpr condition.
 static std::array<int, Telemetry::VersionOf(EventType::item_created)> perVersion{};

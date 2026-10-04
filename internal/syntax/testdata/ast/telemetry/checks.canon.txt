@@ -1,0 +1,169 @@
+File: File FileKind=source @1:1-38:1
+  Package: QualifiedName telemetry @1:9-1:18
+  Decls[0]: TestDecl @5:1-10:2
+    Name: StringLit @5:6-5:54
+      Parts[0]: text "a GrantKind with no ledger role fails coverage"
+    Body: Block @5:55-10:2
+      Stmts[0]: LetStmt @6:3-6:37
+        Name: Ident created @6:7-6:14
+        Value: IndexExpr @6:17-6:37
+          X: IdentExpr events @6:17-6:23
+          Index: IdentExpr item_created @6:24-6:36
+      Stmts[1]: ExpectStmt @7:3-7:24
+        X: IdentExpr created @7:10-7:17
+        Outcome: Ident passes @7:18-7:24
+      Stmts[2]: LetStmt @8:3-8:100
+        Name: Ident broken @8:7-8:13
+        Type: NamedType @8:15-8:20
+          Name: QualifiedName Event @8:15-8:20
+        Value: BraceLit @8:23-8:100
+          Items[0]: SpreadItem @8:25-8:35
+            X: IdentExpr created @8:28-8:35
+          Items[1]: FieldItem @8:37-8:98
+            Name: Ident ledger @8:37-8:43
+            Value: CallExpr @8:45-8:98
+              Fun: SelectorExpr @8:45-8:66
+                X: SelectorExpr @8:45-8:59
+                  X: IdentExpr created @8:45-8:52
+                  Name: Ident ledger @8:53-8:59
+                Name: Ident filter @8:60-8:66
+              Args[0]: Arg @8:67-8:97
+                Value: LambdaExpr @8:67-8:97
+                  Params[0]: Ident r @8:67-8:68
+                  Body: BinaryExpr Op=!= @8:72-8:97
+                    X: SelectorExpr @8:72-8:79
+                      X: IdentExpr r @8:72-8:73
+                      Name: Ident token @8:74-8:79
+                    Y: StringLit @8:83-8:97
+                      Parts[0]: text "farm_harvest"
+      Stmts[3]: ExpectStmt @9:3-9:77
+        X: IdentExpr broken @9:10-9:16
+        Outcome: Ident fails @9:17-9:22
+        Message: StringLit @9:23-9:77
+          Parts[0]: text "grant_kind FARM_HARVEST is covered by no ledger role"
+  Decls[1]: TestDecl @12:1-15:2
+    Name: StringLit @12:6-12:53
+      Parts[0]: text "a version bump with no layout change fails V3"
+    Body: Block @12:54-15:2
+      Stmts[0]: ExpectStmt @13:3-13:36
+        X: IndexExpr @13:10-13:29
+          X: IdentExpr events @13:10-13:16
+          Index: IdentExpr penya_drops @13:17-13:28
+        Outcome: Ident passes @13:30-13:36
+      Stmts[1]: ExpectStmt @14:3-14:84
+        X: BraceLit @14:10-14:48
+          Items[0]: SpreadItem @14:12-14:34
+            X: IndexExpr @14:15-14:34
+              X: IdentExpr events @14:15-14:21
+              Index: IdentExpr penya_drops @14:22-14:33
+          Items[1]: FieldItem @14:36-14:46
+            Name: Ident version @14:36-14:43
+            Value: IntLit Value=3 @14:45-14:46
+        Outcome: Ident fails @14:49-14:54
+        Message: StringLit @14:55-14:84
+          Parts[0]: text "version 3 changes no column"
+  Decls[2]: TestDecl @17:1-24:2
+    Name: StringLit @17:6-17:70
+      Parts[0]: text "a column retired at or before the first known version fails V2"
+    Body: Block @17:71-24:2
+      Stmts[0]: LetStmt @18:3-18:39
+        Name: Ident consumed @18:7-18:15
+        Value: IndexExpr @18:18-18:39
+          X: IdentExpr events @18:18-18:24
+          Index: IdentExpr item_consumed @18:25-18:38
+      Stmts[1]: ExpectStmt @19:3-23:59
+        X: BraceLit @19:10-23:4
+          Items[0]: SpreadItem @20:5-20:16
+            X: IdentExpr consumed @20:8-20:16
+          Items[1]: FieldItem @21:5-21:64
+            Name: Ident columns @21:5-21:12
+            Value: ListLit @21:14-21:64
+              Elems[0]: BraceLit @21:15-21:63
+                Items[0]: FieldItem @21:17-21:32
+                  Name: Ident name @21:17-21:21
+                  Value: StringLit @21:23-21:32
+                    Parts[0]: text "item_id"
+                Items[1]: FieldItem @21:34-21:47
+                  Name: Ident sql @21:34-21:37
+                  Value: IdentExpr UINTEGER @21:39-21:47
+                Items[2]: FieldItem @21:49-21:61
+                  Name: Ident retiredIn @21:49-21:58
+                  Value: IntLit Value=2 @21:60-21:61
+          Items[2]: FieldItem @22:5-22:15
+            Name: Ident ledger @22:5-22:11
+            Value: ListLit @22:13-22:15
+        Outcome: Ident fails @23:5-23:10
+        Message: StringLit @23:11-23:59
+          Parts[0]: text "item_id is retired in version 2, outside 3..=3"
+  Decls[3]: TestDecl @26:1-30:2
+    Name: StringLit @26:6-26:64
+      Parts[0]: text "a role reading a retired column without a bound fails V4"
+    Body: Block @26:65-30:2
+      Stmts[0]: LetStmt @27:3-27:33
+        Name: Ident farm @27:7-27:11
+        Value: IndexExpr @27:14-27:33
+          X: IdentExpr events @27:14-27:20
+          Index: IdentExpr farm_events @27:21-27:32
+      Stmts[1]: LetStmt @28:3-28:99
+        Name: Ident broken @28:7-28:13
+        Type: NamedType @28:15-28:20
+          Name: QualifiedName Event @28:15-28:20
+        Value: BraceLit @28:23-28:99
+          Items[0]: SpreadItem @28:25-28:32
+            X: IdentExpr farm @28:28-28:32
+          Items[1]: FieldItem @28:34-28:97
+            Name: Ident ledger @28:34-28:40
+            Value: CallExpr @28:42-28:97
+              Fun: SelectorExpr @28:42-28:57
+                X: SelectorExpr @28:42-28:53
+                  X: IdentExpr farm @28:42-28:46
+                  Name: Ident ledger @28:47-28:53
+                Name: Ident map @28:54-28:57
+              Args[0]: Arg @28:58-28:96
+                Value: LambdaExpr @28:58-28:96
+                  Params[0]: Ident r @28:58-28:59
+                  Body: TypedLit @28:63-28:96
+                    Type: QualifiedName Role @28:63-28:67
+                    Lit: BraceLit @28:68-28:96
+                      Items[0]: SpreadItem @28:70-28:74
+                        X: IdentExpr r @28:73-28:74
+                      Items[1]: FieldItem @28:76-28:94
+                        Name: Ident untilVersion @28:76-28:88
+                        Value: NoneLit @28:90-28:94
+      Stmts[2]: ExpectStmt @29:3-29:86
+        X: IdentExpr broken @29:10-29:16
+        Outcome: Ident fails @29:17-29:22
+        Message: StringLit @29:23-29:86
+          Parts[0]: text "the role reads cost, retired in 2: bound it with untilVersion"
+  Decls[4]: TestDecl @32:1-37:2
+    Name: StringLit @32:6-32:39
+      Parts[0]: text "the lookups agree with the data"
+    Body: Block @32:40-37:2
+      Stmts[0]: ExpectStmt @33:3-33:37
+        X: BinaryExpr Op=== @33:10-33:37
+          X: CallExpr @33:10-33:32
+            Fun: IdentExpr versionOf @33:10-33:19
+            Args[0]: Arg @33:20-33:31
+              Value: IdentExpr farm_events @33:20-33:31
+          Y: IntLit Value=2 @33:36-33:37
+      Stmts[1]: ExpectStmt @34:3-34:37
+        X: BinaryExpr Op=== @34:10-34:37
+          X: CallExpr @34:10-34:31
+            Fun: IdentExpr wireSize @34:10-34:18
+            Args[0]: Arg @34:19-34:30
+              Value: IdentExpr farm_events @34:19-34:30
+          Y: IntLit Value=37 @34:35-34:37
+      Stmts[2]: ExpectStmt @35:3-35:38
+        X: CallExpr @35:10-35:38
+          Fun: IdentExpr isRetired @35:10-35:19
+          Args[0]: Arg @35:20-35:37
+            Value: IdentExpr world_boss_spawns @35:20-35:37
+      Stmts[3]: ExpectStmt @36:3-36:44
+        X: BinaryExpr Op=== @36:10-36:44
+          X: CallExpr @36:10-36:39
+            Fun: IdentExpr versionOf @36:10-36:19
+            Args[0]: Arg @36:20-36:38
+              Value: IdentExpr mail_item_received @36:20-36:38
+          Y: IntLit Value=0 @36:43-36:44
+== findings
+0 errors, 0 warnings in 1 package (…)

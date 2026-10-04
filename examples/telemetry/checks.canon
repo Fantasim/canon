@@ -1,0 +1,37 @@
+package telemetry
+
+// The checks that guard the catalogue, pinned: each broken copy of a real table must fail.
+
+test "a GrantKind with no ledger role fails coverage" {
+  let created = events[item_created]
+  expect created passes
+  let broken: Event = { ...created, ledger: created.ledger.filter(r => r.token != "farm_harvest") }
+  expect broken fails "grant_kind FARM_HARVEST is covered by no ledger role"
+}
+
+test "a version bump with no layout change fails V3" {
+  expect events[penya_drops] passes
+  expect { ...events[penya_drops], version: 3 } fails "version 3 changes no column"
+}
+
+test "a column retired at or before the first known version fails V2" {
+  let consumed = events[item_consumed]
+  expect {
+    ...consumed
+    columns: [{ name: "item_id", sql: UINTEGER, retiredIn: 2 }]
+    ledger: []
+  } fails "item_id is retired in version 2, outside 3..=3"
+}
+
+test "a role reading a retired column without a bound fails V4" {
+  let farm = events[farm_events]
+  let broken: Event = { ...farm, ledger: farm.ledger.map(r => Role { ...r, untilVersion: none }) }
+  expect broken fails "the role reads cost, retired in 2: bound it with untilVersion"
+}
+
+test "the lookups agree with the data" {
+  expect versionOf(farm_events) == 2
+  expect wireSize(farm_events) == 37
+  expect isRetired(world_boss_spawns)
+  expect versionOf(mail_item_received) == 0
+}

@@ -19,7 +19,7 @@ namespace Telemetry {
 inline constexpr int64_t CONTRACT_VERSION = 2;
 
 /// Version of the JSON catalogue's own shape (catalogJson).
-inline constexpr int64_t CATALOG_FORMAT = 1;
+inline constexpr int64_t CATALOG_FORMAT = 2;
 
 /// The event type byte every row carries on the wire; the dispatch table is indexed by it.
 /// Each member is named after its lake table, so one identifier names the event, its table
@@ -27,9 +27,10 @@ inline constexpr int64_t CATALOG_FORMAT = 1;
 enum class EventType : uint8_t {
     /// SendSystemItem and MailV2::SendMail grants: an item minted, typed by GrantKind.
     item_created = 11,
-    /// The claim leg of a mail. Removed in format v5: redundant with the send leg.
+    /// EVENT_MAIL_ITEM_RECEIVED, the claim leg of a mail: in v4, removed in v5 (redundant with
+    /// the send leg). Its table name is not recorded, so the member is named after the event.
     /// Retired.
-    mail_items_received = 20,
+    mail_item_received = 20,
     /// An item used up by a player. Read-only history since item_removed(Consumed).
     item_consumed = 31,
     /// Penya dropped by a killed monster.
@@ -48,12 +49,12 @@ enum class EventType : uint8_t {
     world_boss_spawns = 156,
 };
 
-inline constexpr std::array<EventType, 9> kEventTypeMembers = {EventType::item_created, EventType::mail_items_received, EventType::item_consumed, EventType::penya_drops, EventType::trade_penya, EventType::server_lifecycle, EventType::farm_events, EventType::sovereign_events, EventType::world_boss_spawns};
+inline constexpr std::array<EventType, 9> kEventTypeMembers = {EventType::item_created, EventType::mail_item_received, EventType::item_consumed, EventType::penya_drops, EventType::trade_penya, EventType::server_lifecycle, EventType::farm_events, EventType::sovereign_events, EventType::world_boss_spawns};
 
 inline std::string_view ToName(EventType v) {
     switch (v) {
     case EventType::item_created: return "item_created";
-    case EventType::mail_items_received: return "mail_items_received";
+    case EventType::mail_item_received: return "mail_item_received";
     case EventType::item_consumed: return "item_consumed";
     case EventType::penya_drops: return "penya_drops";
     case EventType::trade_penya: return "trade_penya";
@@ -68,7 +69,7 @@ inline std::string_view ToName(EventType v) {
 inline std::string_view ToWire(EventType v) {
     switch (v) {
     case EventType::item_created: return "item_created";
-    case EventType::mail_items_received: return "mail_items_received";
+    case EventType::mail_item_received: return "mail_item_received";
     case EventType::item_consumed: return "item_consumed";
     case EventType::penya_drops: return "penya_drops";
     case EventType::trade_penya: return "trade_penya";
@@ -82,7 +83,7 @@ inline std::string_view ToWire(EventType v) {
 
 inline std::optional<EventType> EventTypeFromWire(std::string_view wire) {
     if (wire == "item_created") return EventType::item_created;
-    if (wire == "mail_items_received") return EventType::mail_items_received;
+    if (wire == "mail_item_received") return EventType::mail_item_received;
     if (wire == "item_consumed") return EventType::item_consumed;
     if (wire == "penya_drops") return EventType::penya_drops;
     if (wire == "trade_penya") return EventType::trade_penya;
@@ -96,7 +97,7 @@ inline std::optional<EventType> EventTypeFromWire(std::string_view wire) {
 inline std::optional<EventType> EventTypeFromCode(uint8_t code) {
     switch (code) {
     case 11: return EventType::item_created;
-    case 20: return EventType::mail_items_received;
+    case 20: return EventType::mail_item_received;
     case 31: return EventType::item_consumed;
     case 70: return EventType::penya_drops;
     case 71: return EventType::trade_penya;
@@ -1309,7 +1310,7 @@ inline constexpr bool IsRetired(EventType e) {
     size_t i0 = 0;
     switch (e) {
     case EventType::item_created: i0 = 0; break;
-    case EventType::mail_items_received: i0 = 1; break;
+    case EventType::mail_item_received: i0 = 1; break;
     case EventType::item_consumed: i0 = 2; break;
     case EventType::penya_drops: i0 = 3; break;
     case EventType::trade_penya: i0 = 4; break;
@@ -1331,7 +1332,7 @@ inline constexpr uint8_t VersionOf(EventType e) {
     size_t i0 = 0;
     switch (e) {
     case EventType::item_created: i0 = 0; break;
-    case EventType::mail_items_received: i0 = 1; break;
+    case EventType::mail_item_received: i0 = 1; break;
     case EventType::item_consumed: i0 = 2; break;
     case EventType::penya_drops: i0 = 3; break;
     case EventType::trade_penya: i0 = 4; break;
@@ -1363,7 +1364,7 @@ inline constexpr Tier TierOf(EventType e) {
     size_t i0 = 0;
     switch (e) {
     case EventType::item_created: i0 = 0; break;
-    case EventType::mail_items_received: i0 = 1; break;
+    case EventType::mail_item_received: i0 = 1; break;
     case EventType::item_consumed: i0 = 2; break;
     case EventType::penya_drops: i0 = 3; break;
     case EventType::trade_penya: i0 = 4; break;
@@ -1379,7 +1380,7 @@ inline constexpr Tier TierOf(EventType e) {
 namespace detail {
 inline constexpr std::array<std::string_view, 9> kTableOfCells = {
     "item_created",
-    "mail_items_received",
+    "mail_item_received",
     "item_consumed",
     "penya_drops",
     "trade_penya",
@@ -1390,12 +1391,13 @@ inline constexpr std::array<std::string_view, 9> kTableOfCells = {
 };
 }  // namespace detail
 
-/// The lake table of `e`, retired types included (their tables stay readable).
+/// The lake table of `e`, retired types included (their tables stay readable); for tombstone
+/// 20, whose table is not recorded, the event's name.
 inline constexpr std::string_view TableOf(EventType e) {
     size_t i0 = 0;
     switch (e) {
     case EventType::item_created: i0 = 0; break;
-    case EventType::mail_items_received: i0 = 1; break;
+    case EventType::mail_item_received: i0 = 1; break;
     case EventType::item_consumed: i0 = 2; break;
     case EventType::penya_drops: i0 = 3; break;
     case EventType::trade_penya: i0 = 4; break;
@@ -1412,12 +1414,12 @@ namespace detail {
 inline constexpr std::array<bool, 9> kHasInstanceIdCells = {true, false, true, false, false, false, false, false, false};
 }  // namespace detail
 
-/// Whether `e`'s table has the item_instance_id column, right after the header.
+/// Whether `e`'s current layout has the item_instance_id column.
 inline constexpr bool HasInstanceId(EventType e) {
     size_t i0 = 0;
     switch (e) {
     case EventType::item_created: i0 = 0; break;
-    case EventType::mail_items_received: i0 = 1; break;
+    case EventType::mail_item_received: i0 = 1; break;
     case EventType::item_consumed: i0 = 2; break;
     case EventType::penya_drops: i0 = 3; break;
     case EventType::trade_penya: i0 = 4; break;
@@ -1439,7 +1441,7 @@ inline constexpr int64_t WireSize(EventType e) {
     size_t i0 = 0;
     switch (e) {
     case EventType::item_created: i0 = 0; break;
-    case EventType::mail_items_received: i0 = 1; break;
+    case EventType::mail_item_received: i0 = 1; break;
     case EventType::item_consumed: i0 = 2; break;
     case EventType::penya_drops: i0 = 3; break;
     case EventType::trade_penya: i0 = 4; break;
@@ -1525,7 +1527,7 @@ inline constexpr bool Emits(EventType e, Producer p) {
     size_t i0 = 0;
     switch (e) {
     case EventType::item_created: i0 = 0; break;
-    case EventType::mail_items_received: i0 = 1; break;
+    case EventType::mail_item_received: i0 = 1; break;
     case EventType::item_consumed: i0 = 2; break;
     case EventType::penya_drops: i0 = 3; break;
     case EventType::trade_penya: i0 = 4; break;
@@ -1568,7 +1570,7 @@ inline constexpr std::string_view CreateTableSql(EventType e) {
     size_t i0 = 0;
     switch (e) {
     case EventType::item_created: i0 = 0; break;
-    case EventType::mail_items_received: i0 = 1; break;
+    case EventType::mail_item_received: i0 = 1; break;
     case EventType::item_consumed: i0 = 2; break;
     case EventType::penya_drops: i0 = 3; break;
     case EventType::trade_penya: i0 = 4; break;

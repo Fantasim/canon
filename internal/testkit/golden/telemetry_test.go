@@ -2,13 +2,35 @@ package golden
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
+
+	canon "github.com/fantasim/canonlang/api"
 )
+
+// telemetryTests is how many test blocks examples/telemetry/checks.canon holds.
+const telemetryTests = 5
+
+// SPEC §18: telemetry's test blocks pass, pinning coverage (L-0111) and the V2–V4 history checks on broken tables.
+func TestTelemetryCanonTests(t *testing.T) {
+	root, err := filepath.Abs(examplesDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, _, p := openExamples(t, root)
+	res, err := p.Test(context.Background(), canon.TestOptions{Packages: []string{"telemetry"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Failed != 0 || res.Passed != telemetryTests {
+		t.Errorf("canon test telemetry: %d passed, %d failed, want %d passed: %+v", res.Passed, res.Failed, telemetryTests, res.Tests)
+	}
+}
 
 // telemetryText is where examples/telemetry's `emit text` goldens live.
 var telemetryText = filepath.Join(examplesDir, "telemetry", "expected", "source", "Tools", "telemetry", "generated")
@@ -23,7 +45,7 @@ const farmEventsDDL = "CREATE TABLE IF NOT EXISTS farm_events (event_version UTI
 // in declaration order with its constexpr metadata, then farm_events' baked data and DDL.
 var telemetryDriverOut = strings.Join([]string{
 	"11 item_created v5 WARM size=38 retired=0",
-	"20 mail_items_received v0 READONLY size=0 retired=1",
+	"20 mail_item_received v0 READONLY size=0 retired=1",
 	"31 item_consumed v3 READONLY size=24 retired=0",
 	"70 penya_drops v2 HOT size=24 retired=0",
 	"71 trade_penya v2 COOL size=36 retired=0",
@@ -112,7 +134,28 @@ type telemetryCatalogEvent struct {
 		RetiredIn *int    `json:"retiredIn"`
 		Enum      *string `json:"enum"`
 	} `json:"columns"`
-	Ledger []map[string]json.RawMessage `json:"ledger"`
+	Ledger []telemetryCatalogRole `json:"ledger"`
+}
+
+type telemetryCatalogRole struct {
+	Kinds *struct {
+		Column string   `json:"column"`
+		Values []string `json:"values"`
+	} `json:"kinds"`
+	Currency     string  `json:"currency"`
+	Bucket       string  `json:"bucket"`
+	Sign         int     `json:"sign"`
+	Token        string  `json:"token"`
+	Leg          *string `json:"leg"`
+	Filter       *string `json:"filter"`
+	Amount       *string `json:"amount"`
+	Item         *string `json:"item"`
+	Player       string  `json:"player"`
+	Counterparty *string `json:"counterparty"`
+	Counted      bool    `json:"counted"`
+	DedupOf      *string `json:"dedupOf"`
+	UntilVersion *int    `json:"untilVersion"`
+	Note         string  `json:"note"`
 }
 
 // DECISIONS 299: catalog.json parses strictly into its documented shape and lists every event type in id order, tombstones flagged.
@@ -154,7 +197,7 @@ func TestTelemetryCatalogParses(t *testing.T) {
 	if !labelled {
 		t.Error("GrantKind 3 (retired) has lost its label")
 	}
-	if len(c.Provenance) != 5 || c.Format != 1 || len(c.Enums) == 0 {
+	if len(c.Provenance) != 5 || c.Format != 2 || len(c.Enums) == 0 {
 		t.Errorf("catalog: %d provenance columns, format %d, %d enums", len(c.Provenance), c.Format, len(c.Enums))
 	}
 }

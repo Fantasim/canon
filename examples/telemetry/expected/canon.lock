@@ -1,6 +1,6 @@
 # canon.lock v1
 enum   telemetry.EventType  11  item_created
-enum   telemetry.EventType  20  mail_items_received  retired
+enum   telemetry.EventType  20  mail_item_received  retired
 enum   telemetry.EventType  31  item_consumed
 enum   telemetry.EventType  70  penya_drops
 enum   telemetry.EventType  71  trade_penya

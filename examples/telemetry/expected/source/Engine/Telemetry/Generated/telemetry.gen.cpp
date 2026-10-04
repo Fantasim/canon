@@ -38,7 +38,7 @@ TelemetryAccess::Data TelemetryAccess::Build() {
     {
         std::vector<canon::FlatMap<EventType, Event>::Entry> r2(7);
         r2[0].first = EventType::item_created;
-        r2[0].second.description_ = "An item minted into existence, typed by GrantKind; via_mail in v4, fact_id in v5";
+        r2[0].second.description_ = "An item minted into existence, typed by GrantKind";
         r2[0].second.version_ = 5;
         r2[0].second.since_ = 2;
         r2[0].second.tier_ = Tier::WARM;

@@ -22,7 +22,7 @@ func TestLookups(t *testing.T) {
 		retired  bool
 	}{
 		{telemetry.EventTypeItemCreated, 11, 5, telemetry.TierWarm, 38, true, false},
-		{telemetry.EventTypeMailItemsReceived, 20, 0, telemetry.TierReadonly, 0, false, true},
+		{telemetry.EventTypeMailItemReceived, 20, 0, telemetry.TierReadonly, 0, false, true},
 		{telemetry.EventTypeItemConsumed, 31, 3, telemetry.TierReadonly, 24, true, false},
 		{telemetry.EventTypePenyaDrops, 70, 2, telemetry.TierHot, 24, false, false},
 		{telemetry.EventTypeTradePenya, 71, 2, telemetry.TierCool, 36, false, false},

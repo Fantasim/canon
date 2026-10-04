@@ -1,0 +1,92 @@
+1:0-7 "package" keyword.other.canon
+1:8-17 "telemetry" entity.name.namespace.canon
+3:0-91 "// The checks that guard the catalogue, pinned: each broken copy of a real table must fail." comment.line.double-slash.canon
+5:0-4 "test" keyword.other.canon
+5:5-53 "\"a GrantKind with no ledger role fails coverage\"" string.quoted.double.canon
+6:2-5 "let" storage.type.canon
+6:14-15 "=" keyword.operator.canon
+7:2-8 "expect" keyword.other.canon
+8:2-5 "let" storage.type.canon
+8:6-12 "broken" variable.other.property.canon
+8:12-13 ":" punctuation.separator.key.canon
+8:14-19 "Event" entity.name.type.canon
+8:20-21 "=" keyword.operator.canon
+8:24-27 "..." keyword.operator.canon
+8:36-42 "ledger" variable.other.property.canon
+8:42-43 ":" punctuation.separator.key.canon
+8:51-52 "." punctuation.accessor.canon
+8:52-58 "ledger" variable.other.property.canon
+8:58-59 "." punctuation.accessor.canon
+8:59-65 "filter" variable.other.property.canon
+8:68-70 "=>" keyword.operator.canon
+8:72-73 "." punctuation.accessor.canon
+8:73-78 "token" variable.other.property.canon
+8:79-81 "!=" keyword.operator.canon
+8:82-96 "\"farm_harvest\"" string.quoted.double.canon
+9:2-8 "expect" keyword.other.canon
+9:22-76 "\"grant_kind FARM_HARVEST is covered by no ledger role\"" string.quoted.double.canon
+12:0-4 "test" keyword.other.canon
+12:5-52 "\"a version bump with no layout change fails V3\"" string.quoted.double.canon
+13:2-8 "expect" keyword.other.canon
+14:2-8 "expect" keyword.other.canon
+14:11-14 "..." keyword.operator.canon
+14:35-42 "version" variable.other.property.canon
+14:42-43 ":" punctuation.separator.key.canon
+14:44-45 "3" constant.numeric.integer.canon
+14:54-83 "\"version 3 changes no column\"" string.quoted.double.canon
+17:0-4 "test" keyword.other.canon
+17:5-69 "\"a column retired at or before the first known version fails V2\"" string.quoted.double.canon
+18:2-5 "let" storage.type.canon
+18:15-16 "=" keyword.operator.canon
+19:2-8 "expect" keyword.other.canon
+20:4-7 "..." keyword.operator.canon
+21:4-11 "columns" variable.other.property.canon
+21:11-12 ":" punctuation.separator.key.canon
+21:16-20 "name" variable.other.property.canon
+21:20-21 ":" punctuation.separator.key.canon
+21:22-31 "\"item_id\"" string.quoted.double.canon
+21:33-36 "sql" variable.other.property.canon
+21:36-37 ":" punctuation.separator.key.canon
+21:38-46 "UINTEGER" constant.other.canon
+21:48-57 "retiredIn" variable.other.property.canon
+21:57-58 ":" punctuation.separator.key.canon
+21:59-60 "2" constant.numeric.integer.canon
+22:4-10 "ledger" variable.other.property.canon
+22:10-11 ":" punctuation.separator.key.canon
+23:10-58 "\"item_id is retired in version 2, outside 3..=3\"" string.quoted.double.canon
+26:0-4 "test" keyword.other.canon
+26:5-63 "\"a role reading a retired column without a bound fails V4\"" string.quoted.double.canon
+27:2-5 "let" storage.type.canon
+27:11-12 "=" keyword.operator.canon
+28:2-5 "let" storage.type.canon
+28:6-12 "broken" variable.other.property.canon
+28:12-13 ":" punctuation.separator.key.canon
+28:14-19 "Event" entity.name.type.canon
+28:20-21 "=" keyword.operator.canon
+28:24-27 "..." keyword.operator.canon
+28:33-39 "ledger" variable.other.property.canon
+28:39-40 ":" punctuation.separator.key.canon
+28:45-46 "." punctuation.accessor.canon
+28:46-52 "ledger" variable.other.property.canon
+28:52-53 "." punctuation.accessor.canon
+28:53-56 "map" variable.other.property.canon
+28:59-61 "=>" keyword.operator.canon
+28:62-66 "Role" entity.name.type.canon
+28:69-72 "..." keyword.operator.canon
+28:75-87 "untilVersion" variable.other.property.canon
+28:87-88 ":" punctuation.separator.key.canon
+28:89-93 "none" constant.language.canon
+29:2-8 "expect" keyword.other.canon
+29:22-85 "\"the role reads cost, retired in 2: bound it with untilVersion\"" string.quoted.double.canon
+32:0-4 "test" keyword.other.canon
+32:5-38 "\"the lookups agree with the data\"" string.quoted.double.canon
+33:2-8 "expect" keyword.other.canon
+33:32-34 "==" keyword.operator.canon
+33:35-36 "2" constant.numeric.integer.canon
+34:2-8 "expect" keyword.other.canon
+34:31-33 "==" keyword.operator.canon
+34:34-36 "37" constant.numeric.integer.canon
+35:2-8 "expect" keyword.other.canon
+36:2-8 "expect" keyword.other.canon
+36:39-41 "==" keyword.operator.canon
+36:42-43 "0" constant.numeric.integer.canon

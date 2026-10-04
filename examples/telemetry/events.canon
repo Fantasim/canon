@@ -7,7 +7,7 @@ package telemetry
 /// Every live event type's table, in id order.
 let events: {EventType: Event} = {
   item_created: {
-    description: "An item minted into existence, typed by GrantKind; via_mail in v4, fact_id in v5"
+    description: "An item minted into existence, typed by GrantKind"
     version: 5
     since: 2
     tier: WARM

@@ -12,10 +12,10 @@ File: File FileKind=source @1:1-309:1
       Items[0]: FieldItem @9:3-138:4
         Name: Ident item_created @9:3-9:15
         Value: BraceLit @9:17-138:4
-          Items[0]: FieldItem @10:5-10:100
+          Items[0]: FieldItem @10:5-10:69
             Name: Ident description @10:5-10:16
-            Value: StringLit @10:18-10:100
-              Parts[0]: text "An item minted into existence, typed by GrantKind; via_mail in v4, fact_id in v5"
+            Value: StringLit @10:18-10:69
+              Parts[0]: text "An item minted into existence, typed by GrantKind"
           Items[1]: FieldItem @11:5-11:15
             Name: Ident version @11:5-11:12
             Value: IntLit Value=5 @11:14-11:15

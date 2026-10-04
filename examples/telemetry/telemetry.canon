@@ -17,7 +17,7 @@ package telemetry
 const CONTRACT_VERSION = 2
 
 /// Version of the JSON catalogue's own shape (catalogJson).
-const CATALOG_FORMAT = 1
+const CATALOG_FORMAT = 2
 
 // ---------------------------------------------------------------------------
 // Event types
@@ -29,8 +29,9 @@ const CATALOG_FORMAT = 1
 enum EventType @codes(UInt8) {
   /// SendSystemItem and MailV2::SendMail grants: an item minted, typed by GrantKind.
   item_created = 11
-  /// The claim leg of a mail. Removed in format v5: redundant with the send leg.
-  retired mail_items_received = 20
+  /// EVENT_MAIL_ITEM_RECEIVED, the claim leg of a mail: in v4, removed in v5 (redundant with
+  /// the send leg). Its table name is not recorded, so the member is named after the event.
+  retired mail_item_received = 20
   /// An item used up by a player. Read-only history since item_removed(Consumed).
   item_consumed = 31
   /// Penya dropped by a killed monster.
@@ -142,6 +143,9 @@ let headerColumns: [Column] keyed by name = [
   { name: "player_id", sql: UINTEGER, kind: id },
 ]
 
+/// The header's player column: whose ledger a role lands on unless it says otherwise.
+fn playerColumn() -> String { return headerColumns.first(c => c.kind == id)!.name }
+
 /// A provenance column the ingester prepends to every table: who sent the row, in which
 /// batch, at which version. Never on the wire as a field.
 record ProvenanceColumn {
@@ -149,6 +153,9 @@ record ProvenanceColumn {
   name: Ident
   /// Its SQL type, never NULL.
   sql: SqlType
+
+  /// This column's piece of a CREATE TABLE.
+  fn ddl(self) -> String { return "{name} {sql} NOT NULL" }
 }
 
 /// The provenance prefix of every CREATE TABLE, in order.
@@ -276,10 +283,10 @@ record Event {
       if c.since != none and (c.since <= since or c.since > version) {
         fail(c.since, "{c.name} is added in version {c.since}, outside {since + 1}..={version}")
       }
-      if c.retiredIn != none and c.retiredIn > version {
+      if c.retiredIn != none and (c.retiredIn <= since or c.retiredIn > version) {
         fail(
           c.retiredIn,
-          "{c.name} is retired in version {c.retiredIn}, after the current {version}",
+          "{c.name} is retired in version {c.retiredIn}, outside {since + 1}..={version}",
         )
       }
       if c.name in headerColumns or c.kind == ts or c.kind == id {
@@ -378,10 +385,11 @@ export fn versionOf(e: EventType) -> UInt8 { return eventOf(e)?.version ?? 0 }
 /// The ring tier of `e`; a retired type is READONLY (nothing writes it).
 export fn tierOf(e: EventType) -> Tier { return eventOf(e)?.tier ?? READONLY }
 
-/// The lake table of `e`, retired types included (their tables stay readable).
+/// The lake table of `e`, retired types included (their tables stay readable); for tombstone
+/// 20, whose table is not recorded, the event's name.
 export fn tableOf(e: EventType) -> String { return e.name }
 
-/// Whether `e`'s table has the item_instance_id column, right after the header.
+/// Whether `e`'s current layout has the item_instance_id column.
 export fn hasInstanceId(e: EventType) -> Bool {
   let ev = eventOf(e)
   return ev != none and "item_instance_id" in ev.layout(ev.version).map(.name)
@@ -401,8 +409,7 @@ export fn emits(e: EventType, p: Producer) -> Bool { return p in (eventOf(e)?.pr
 export fn createTableSql(e: EventType) -> String {
   let ev = eventOf(e)
   if ev == none { return "" }
-  let cols = [p.name + " " + String(p.sql) + " NOT NULL" for p in provenanceColumns] +
-    ev.tableColumns().map(.ddl())
+  let cols = provenanceColumns.map(.ddl()) + ev.tableColumns().map(.ddl())
   return "CREATE TABLE IF NOT EXISTS {e.name} ({cols.join(", ")});"
 }
 

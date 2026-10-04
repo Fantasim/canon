@@ -1,9 +1,10 @@
 package telemetry
 
 // catalog.json: the whole catalogue as data, for tools that are not C++ or Go (the HTML
-// catalogue, the lake gates). Its shape, format 1:
+// catalogue, the lake gates). Format 2 is the Canon-native shape; format 1 was gen_catalog.py's,
+// which this file does not reproduce. Its shape:
 //
-//   { "format": 1, "contract": <int>,
+//   { "format": 2, "contract": <int>,
 //     "provenance": [ { "name", "type" } ],          the prefix of every table
 //     "events": [ {                                   every type, in id order
 //       "id", "table", "retired": false, "version", "since", "tier", "producers": [<name>], "enqueue",
@@ -60,7 +61,7 @@ fn columnJson(ev: Event, c: Column, depth: Int) -> String {
       jkv("nullable", "{c.nullable()}"),
       jkv("since", "{c.since ?? ev.since}"),
       jkv("retiredIn", jint(c.retiredIn)),
-      jkv("enum", if c.values != none { jstr(enumName(c.values)) } else { "null" }),
+      jkv("enum", if c.values != none { jstr(enumOf(c.values).name) } else { "null" }),
     ],
     depth,
   )
@@ -91,7 +92,7 @@ fn roleJson(r: Role, depth: Int) -> String {
       jkv("filter", jopt(r.filter)),
       jkv("amount", jopt(r.amount?.name)),
       jkv("item", jopt(r.item?.name)),
-      jkv("player", jstr(r.player?.name ?? "player_id")),
+      jkv("player", jstr(r.player?.name ?? playerColumn())),
       jkv("counterparty", jopt(r.counterparty?.name)),
       jkv("counted", "{r.counted}"),
       jkv("dedupOf", jopt(r.dedupOf)),
@@ -134,7 +135,7 @@ fn eventJson(e: EventType, depth: Int) -> String {
 fn enumJson(v: Vocabulary, depth: Int) -> String {
   return jobj(
     [
-      jkv("name", jstr(enumName(v))),
+      jkv("name", jstr(enumOf(v).name)),
       jkv("view", jstr("enum_{v}")),
       jkv(
         "values",
@@ -144,7 +145,7 @@ fn enumJson(v: Vocabulary, depth: Int) -> String {
               [jkv("code", "{l.code}"), jkv("name", jstr(l.name)), jkv("retired", "{l.isRetired}")],
               depth + 2,
             )
-            for l in labels(v)
+            for l in enumOf(v).labels
           ],
           depth + 1,
         ),
