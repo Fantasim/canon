@@ -844,7 +844,7 @@ variant EventKind @json(tag: "type") {
   of the discriminating enum and already exists in `resource.vocab`.)
 - Each branch has an accessor. A `ref` branch exposes the key. A branch that is a ref into a
   `load.defines` table also has a **value accessor**, as a `ref D?` field has a value getter
-  ([§5.8](#58-refs)): Go `As<Branch>Value() (int64, bool)`, C++
+  ([§5.8](#58-references)): Go `As<Branch>Value() (int64, bool)`, C++
   `std::optional<int64_t> As<Branch>Value() const`; TypeScript holds the key only. Its define
   table joins the emit's define tables of §5.8, loaders resolve the value when they read the key
   (same load error), and baked emits write the value (DECISIONS 298; `monster` below stands for a
@@ -933,8 +933,8 @@ table field ([§4.2](#42-composite-types), DECISIONS 288), and `String` for `loc
 The **define value getter** (`XxxValue()`, `GetXxxValue()`) returns the integer value of the
 define as `int64`/`int64_t`. Define values are compile-time facts of the runtime (the header is
 compiled into it), so every Go and C++ emit carries a baked, sorted `(name, value)` table holding
-every define of each define table a field of the emit's own classes refs (whether or not a value
-uses it), and loaders resolve the value right after reading the key. A key missing from
+every define of each define table a field of the emit's own classes, or a branch of its own
+dependent types ([§5.6](#56-dependent-types), DECISIONS 298), refs (whether or not a value uses it), and loaders resolve the value right after reading the key. A key missing from
 that table (data built with a newer header than the binary) is a load error.
 
 - **The table.** One per define table the emit's refs use, named from the table's `let`
