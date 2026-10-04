@@ -1,30 +1,31 @@
 # State — Canon compiler
 
-Updated: 2026-10-03 (cloud run 1). Integration branch **`claude/m6-run-1`** (stands in for main; not
-merged; report [handoff/2026-10-03-cloud-m6-run-1.md](handoff/2026-10-03-cloud-m6-run-1.md), calls
-[log-2026-10-03](decisions/log-2026-10-03.md), DECISIONS 279-292). M5 accepted (CI run 36973712977).
+Updated: 2026-10-04. Main (local, not pushed: CI down) holds cloud run 1 (`claude/m6-run-1`,
+verified locally) plus telemetry readiness. Calls [log-2026-10-04](decisions/log-2026-10-04.md),
+DECISIONS 293-298. M5 accepted (CI run 36973712977).
 
 ## Current focus
 
-Cloud run 1 landed 20 reviewed units, each green under local `make check`: M6 TypeScript target
-(T1 `b15485d`); M5 gaps G3 `1f571ee`, G4 `f0a3dfa`, G5 `31de12e`; bugs M6-append `06f35c0`, B1
-`916599f`, W1 `44bb9ce`, WB2 `2ed7c3d`, C1 `b8c1443`, CX `6f687d7`, L2 `e87e18b`; LSP later items LX
-`f5ffd7c`; workspace flake F1 `4106f77`; Hardening: H1 `182eb81`, H2 `6303766`, HW1 `e4cef64`, N1
-`4c44b5f`, Go/C++ table fields GG `9999f8a`, GC `b5c0d86`. No progen archive open; the M1.5
-acceptance run is clean on 3 seeds at N=10000 (only the 3 GB MemoryMax cap is unverified: no systemd).
-**Blocked:** CI. Every Actions job fails before a runner starts since ~05:10 UTC 2026-10-03 (likely
-the minutes/spending limit): Louis to check billing, then run CI on the branch head and merge.
-Next (needs a ruling or Louis): the later items in the run report (cross-package decoders §2.2 vs
-§2.8, `ordered_json` overload, generators writing kind constants, API S11 vs §3.4). Not started:
-M6's legacy C++ part, M7, telemetry. Long fuzz/progen campaigns stay deferred by Louis
-([log-2026-09-29](decisions/log-2026-09-29.md) "Platforms and fuzzing").
+**Telemetry readiness** (Louis: before M6's legacy C++, which waits; Source ADR L-0111 d.1.8).
+Landed, reviewed PASS, `make check` green: CB C++ `baked` mode with constexpr scalar lookups (293),
+baked edges (296: local-table refs not finite, `Get` aborts) and define-table branches of dependent
+types written in Go and C++ (298) (`6fcb139`, `43f1ff3`); TX the `text` target with `@text`, the
+`.canon-text` ownership file, `TargetText` in the API, portable names (294, 295, 297) (`8f8da42`).
+In flight: TE `examples/telemetry` (7 real events, Canon-native design, no gen_views.py quirks:
+Louis, "elegance over legacy"), integration cleanup. Then the Source handoff note.
+Cloud run 1 (2026-10-03) landed 20 units: M6 TypeScript (T1), M5 gaps, bugs, LX, hardening
+(report [handoff/2026-10-03-cloud-m6-run-1.md](handoff/2026-10-03-cloud-m6-run-1.md)).
+**Blocked:** CI (Actions billing, Louis), then push main.
+Later items: cross-package decoders §2.2 vs §2.8, `ordered_json`, kind constants, API S11 vs §3.4,
+go `types`/`embedded` and cpp `embedded` modes still refused at build (GM ruling). Long fuzz/progen
+campaigns stay deferred ([log-2026-09-29](decisions/log-2026-09-29.md)).
 Environment for a cloud session: `apt-get install libc++-18-dev libc++abi-18-dev`, `npm ci --prefix
 tools/tsc`; no systemd (run memory-capped targets by hand under `ulimit -v`).
 
 ## Milestones
 
 M0-M5 accepted; post-M4 done. M1.5 second wave and acceptance done in cloud run 1 (box unticked only
-for the unverified 3 GB cap). M6: TypeScript done, legacy C++ not started. M7 not started.
+for the unverified 3 GB cap). M6: TypeScript done, C++ baked done, legacy C++ not started (waits, Louis). M7 not started.
 
 ## What exists (committed)
 
