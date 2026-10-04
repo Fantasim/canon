@@ -240,8 +240,10 @@ table literal (possibly `{}`); the keys are those of the literal plus every `ent
 declaration. Every other collection (loaded, computed, keyed lists) has dynamic keys.
 
 For `ref C` with dynamic keys, steps 2 to 6 are tried first. If `n` resolves there to a value
-assignable to `ref C`, that value is used. Otherwise (no declaration, or one of another type)
-`n` becomes a **symbolic key** of `C`, checked at evaluation (`E3501`). `II_GEN_GOLD` in a `ref
+assignable to `ref C`, that value is used. If it resolves to a value of type `ref C?`, that is
+`E3403` (a `T?` where a `T` is expected, §6.3), never a key: an optional in scope does not silently
+turn into the key spelled like it (DECISIONS 303). Otherwise (no declaration, or one of another
+type) `n` becomes a **symbolic key** of `C`, checked at evaluation (`E3501`). `II_GEN_GOLD` in a `ref
 items` field is a symbolic key.
 
 A string literal or an integer literal checked against `ref C` is a key too, if it is a

@@ -2782,6 +2782,13 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      it does after `Leg.x`. Reason: TE (B2), R2 found the formatter followed 211 to the letter and
      the two forms looked different; the lexer and the formatter change together.
 
+303. **An optional name in scope is never a symbolic key (TYPES.md §4.1, §6.3, §7.5).** Where a
+     `ref C` with dynamic keys is expected and `n` resolves in scope to a `ref C?`, it is `E3403`,
+     not the key `"n"`; in a comparison the operands are compared up to optionality, so the name is
+     resolved against `ref C?` and used (B5). Reason: TE found `same == pick` silently comparing
+     with the key "pick" (a wrong answer, no finding); R4 found the same in arguments, `in` and
+     `contains`. log-2026-10-04.
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.
