@@ -2737,6 +2737,13 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      `text`. Reason: TX (a full build wrote text outputs with an empty `Output.Target`),
      log-2026-10-04.
 
+296. **C++ baked edges (CODEGEN.md §5.9, §5.10).** A `ref` into a `local let` table is not a finite
+     parameter (no id enum, §5.3), like a `ref` into a keyed list: a fn taking one is translated,
+     so `E9006`; before, it checked clean and every generator failed at build. Under DECISIONS 293
+     a string literal union result is a `String`, and a `ref` result into a table with no id enum
+     in the emit keeps the `.gen.cpp` split. C++ `Get(id)` aborts on an id outside the enum, as
+     lookups do. Reason: CB review, log-2026-10-04.
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.

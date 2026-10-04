@@ -989,6 +989,8 @@ export interface CanonTable<K, T> { readonly length: number; readonly all: Reado
 A `@stable` field `f` gets `FindBy` + UpperCamel(f). `Find` on a keyed list takes the key field's
 type (`string`/`std::string_view`, `int64`/`int64_t`). In Go, `FindBy<F>` reads a
 `map[<type>]int` index from the value to the entry's position, built once, never a scan.
+C++ `Get(id)` with an id outside the id enum calls `std::abort()`, as every lookup does
+(DECISIONS 296).
 
 **By mode**
 
@@ -1018,7 +1020,8 @@ parameters returning the value (Go `func Foo() T`, C++ `T Foo()`, TS `export fun
 In `data` mode, precomputed methods read their `$<fn>` key (WIR-09).
 
 **Lookup** (every parameter finite: `Bool`, enum, `ref` into a table) (CG-08). A `ref` into a keyed
-list is not finite (a keyed list has no id enum to index by): a function taking one is translated,
+list is not finite (a keyed list has no id enum to index by), nor is a `ref` into a `local let`
+table (§5.3 gives id enums to public tables only; DECISIONS 296): a function taking one is translated,
 and a translated function takes no `ref`, so it is `E9006` (CONFORMANCE.md §2.1):
 
 ```go
@@ -1059,7 +1062,10 @@ export function areasVisibleTo(role: Role): ReadonlyArray<AreaId>;
   std::array` in the domain order above, indexed by the parameters' ordinals (an enum's ordinal is
   its declaration position, never its code, computed by a `constexpr` function); `String` results are
   `std::string_view`, `Duration` results `std::chrono::milliseconds`. Every other export fn, any
-  optional, list or record result, and every `embedded` emit keep §7.1's split.
+  optional, list or record result, and every `embedded` emit keep §7.1's split. A string literal
+  union result counts as `String`; a `ref` result into a table that has no id enum in this emit
+  (an import without a `baked` or `embedded` C++ emit, whose key is a `String`, §5.8) keeps the
+  split (DECISIONS 296).
 
   ```cpp
   namespace detail {
