@@ -68,10 +68,10 @@ func (s *stage) refusedImport(u *unit) func(GoNameProblem) bool {
 	return func(pr GoNameProblem) bool { return pr.Kind == GoNotIdentifier && pr.Item == nil && refused[pr.Origin] }
 }
 
-// checkCppNames reports a data- or types-mode cpp emit's names from the name plan gen/cpp writes from (CODEGEN.md §3.5, decision 37): E8011 for a derived name C++ cannot declare, a keyword or a reserved namespace included (decision 202), E8005 for two names of one scope; the names its header shares with the other packages of its namespace wait for crossPackage. Other modes have no generator yet; overrides are checkOverrideNames'.
+// checkCppNames reports a baked, data- or types-mode cpp emit's names from the name plan gen/cpp writes from (CODEGEN.md §3.5, decision 37): E8011 for a derived name C++ cannot declare, a keyword or a reserved namespace included (decision 202), E8005 for two names of one scope; the names its header shares with the other packages of its namespace wait for crossPackage. Embedded has no generator yet; overrides are checkOverrideNames'.
 func (s *stage) checkCppNames(u *unit) {
 	es := emitFor(u, TargetCpp)
-	if es == nil || es.e.Mode != ModeData && es.e.Mode != ModeTypes {
+	if es == nil || !cppPlanned(es.e) {
 		return
 	}
 	pl := PlanCppNames(u.p, es.e)

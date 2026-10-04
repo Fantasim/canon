@@ -1,0 +1,15 @@
+struct %[1]s {
+    struct Data {
+%[2]s    };
+    static Data Build();
+    static const Data& Get() {
+        static const Data data = Build();
+        return data;
+    }
+};
+
+%[1]s::Data %[1]s::Build() {
+    Data d;
+%[3]s    return d;
+}
+

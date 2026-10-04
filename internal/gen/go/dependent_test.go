@@ -165,9 +165,9 @@ func dependentRefusals() map[string]dependentRefusal {
 			p.Types = p.Types[:len(p.Types)-1]
 			p.Imports = []*ir.PackageRef{{Name: "other", Emits: []*ir.Emit{{Target: ir.TargetGo, GoImport: "example.com/other", GoPackage: "other"}}}}
 		}, gogen.ErrDependentForeign, "demo.Thing"},
-		"a ref into a load.defines table's define value getter": {func(p *ir.Package) {
+		"a define branch whose table the IR does not hold (DECISIONS 298)": {func(p *ir.Package) {
 			d, _ := dependentField(p)
-			d.Branches[0].Type = ir.TypeRef{Kind: types.Ref, Ref: &ir.RefTarget{Coll: types.CollDefines, Pkg: "demo", Value: "defs"}}
+			d.Branches[0].Type = ir.TypeRef{Kind: types.Ref, Key: &strT, Ref: &ir.RefTarget{Coll: types.CollDefines, Pkg: "demo", Value: "defs"}}
 		}, gogen.ErrDependentValue, "demo.P"},
 		"a dependent type every arm of which is Never (log-2026-09-28)": {func(p *ir.Package) {
 			d, _ := dependentField(p)

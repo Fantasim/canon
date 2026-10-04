@@ -53,13 +53,13 @@ func (g *gen) storedGetter(sc *scope, c class, name string, fn *ir.ExportFn, dom
 	}
 	g.doc(1, doc)
 	body := fmt.Sprintf(returnFormat, acc.cell(m))
-	if optional && !byValue(t) {
+	if optional && !g.byValue(t) {
 		body = fmt.Sprintf(returnPtrFormat, acc.cell(m))
 	}
 	g.fail(sc.add(keyName, fn.Name))
 	g.fail(sc.add(m, fn.Name))
 	g.writeGetter(g.getterType(t, optional), keyName, acc, body)
-	storage, init := g.memberType(t, optional), memberInit(t, optional)
+	storage, init := g.memberType(t, optional), g.memberInit(t, optional)
 	if doms != nil {
 		storage, init = fmt.Sprintf(arrayFormat, storage, cellCount(doms)), initBraces
 	}
@@ -107,13 +107,13 @@ func (g *gen) lookupAccess(fn *ir.ExportFn, doms []domain) access {
 	}
 }
 
-// ordinalLines compute an argument's position in its domain: a Bool's value, an enum's
-// index, a @codes enum's member by a switch over its codes.
+// ordinalLines compute an argument's position in its domain: a Bool's value, an enum's or a
+// table id's index, a @codes enum's member by a switch over its codes.
 func (g *gen) ordinalLines(d domain, arg, ord string) []string {
 	switch {
-	case d.enum == nil:
+	case d.enum == nil && !d.id:
 		return []string{fmt.Sprintf(ordinalFormat, ord, arg)}
-	case d.enum.Codes == nil:
+	case d.id || d.enum.Codes == nil:
 		return []string{fmt.Sprintf(ordinalFormat, ord, arg), fmt.Sprintf(ordinalCheckFormat, ord, len(d.keys))}
 	}
 	lines := []string{fmt.Sprintf(ordinalVarDecl, ord), fmt.Sprintf(switchFormat, arg)}

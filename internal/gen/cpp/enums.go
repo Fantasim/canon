@@ -22,7 +22,7 @@ type enumMember struct {
 	retired                bool
 }
 
-// enums writes the declared enums, the kind enums of variants, then the branch enums of dependent types (CODEGEN.md §2.7, §5.2, §5.5, §5.6).
+// enums writes the declared enums, the kind enums of variants, the branch enums of dependent types, then a baked emit's id enums (CODEGEN.md §2.7, §5.2, §5.3, §5.5, §5.6).
 func (g *gen) enums() {
 	for _, t := range g.p.Types {
 		if e, ok := t.(*ir.Enum); ok {
@@ -39,6 +39,7 @@ func (g *gen) enums() {
 		}
 	}
 	g.branchEnums()
+	g.idEnums()
 }
 
 func (g *gen) declaredEnum(e *ir.Enum) enumSpec {

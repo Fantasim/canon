@@ -121,6 +121,7 @@ var (
 	cppConformanceOwn   = []string{"g_code", "Capture"}                      // CONFORMANCE.md §7.2
 	cppStoreMembers     = []string{storeCurrent, storeReload, "current_"}    // §5.11
 	cppEnumOverloads    = []string{CppToName, CppToWire}                     // §5.2
+	cppAccessMembers    = []string{cppDataStruct, cppBuild, GoGet}           // §7.3: a baked emit's access struct
 )
 
 // cppInputHelper is a set of §7.7 helpers with the input kinds that use it; nil kinds: always.

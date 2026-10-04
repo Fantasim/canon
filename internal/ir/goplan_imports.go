@@ -29,7 +29,7 @@ func (pl *GoNamePlan) importUse() *goImportUse {
 	}
 	for _, v := range pl.emitted {
 		u.ref(&v.Type)
-		u.std[goIter] = u.std[goIter] || isGoContainer(v)
+		u.std[goIter] = u.std[goIter] || IsContainer(v)
 		u.std[goSync] = pl.data == nil
 		if pl.data != nil && goRootClass(v) != nil {
 			u.mark(goDataImports...)

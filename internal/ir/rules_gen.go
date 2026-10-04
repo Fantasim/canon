@@ -20,7 +20,7 @@ func init() {
 	common := []genRule{
 		(*stage).checkFieldlessCaseFns, (*stage).checkOptionalElements,
 		(*stage).checkOptionalMapValues, (*stage).checkTableFields, (*stage).checkCaseFields, (*stage).checkRecordConstants, (*stage).checkKindConstants,
-		(*stage).checkNeverDependents, (*stage).checkDefineBranches, (*stage).checkVariantMembers,
+		(*stage).checkNeverDependents, (*stage).checkVariantMembers,
 	}
 	goCode := append(slices.Clone(common), (*stage).checkForeignTables, (*stage).checkConstLiterals, (*stage).checkNegativeZero)
 	genRules[TargetGo][ModeBaked] = append(slices.Clone(goCode), (*stage).checkBakedLiterals, (*stage).checkForeignTableLookups,
@@ -30,12 +30,15 @@ func init() {
 	cppCode := append(slices.Clone(common), (*stage).checkCppDecoded, (*stage).checkCppDependents,
 		(*stage).checkForeignPairs, (*stage).checkCppForeignRoots, (*stage).checkClassCycles, (*stage).checkSelfReads, (*stage).checkRefUnions)
 	// ts takes the shared rules gen/ts needs (DECISIONS 278); it writes the other constructs: optional elements and map values, table fields, cases as types, record constants, a fieldless case's fns.
-	tsCode := []genRule{(*stage).checkKindConstants, (*stage).checkNeverDependents, (*stage).checkDefineBranches, (*stage).checkVariantMembers, (*stage).checkTSForeignTables}
+	tsCode := []genRule{(*stage).checkKindConstants, (*stage).checkNeverDependents, (*stage).checkVariantMembers, (*stage).checkTSForeignTables}
 	tsBaked := append(slices.Clone(tsCode), (*stage).checkTSLiterals)
 	genRules[TargetTS][ModeBaked], genRules[TargetTS][ModeEmbedded] = tsBaked, tsBaked
 	tsDecode := append(slices.Clone(tsCode), (*stage).checkTSDecoded)
 	genRules[TargetTS][ModeData], genRules[TargetTS][ModeTypes] = tsDecode, tsDecode
 	genRules[TargetCpp][ModeData] = cppCode
+	// a baked cpp emit decodes nothing: it writes every value in detail::<P>Access::Build, as the friend of its own package's classes only (CODEGEN.md §5.9, §7.3).
+	genRules[TargetCpp][ModeBaked] = append(slices.Clone(common), (*stage).checkClassCycles, (*stage).checkSelfReads, (*stage).checkRefUnions,
+		(*stage).checkForeignTables, (*stage).checkBakedLiterals, (*stage).checkForeignTableLookups, (*stage).checkGoDependentLiterals, (*stage).checkDefineKeys)
 	genRules[TargetCpp][ModeTypes] = append(slices.Clone(cppCode), (*stage).checkCppDefaults, (*stage).checkTypesInputs)
 }
 

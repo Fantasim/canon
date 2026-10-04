@@ -1,0 +1,18 @@
+CODEGEN.md §5.6, §5.8, DECISIONS 298: a data-mode go emit writes a dependent type with a branch into a load.defines table, used or not, beside a field that refs the table.
+-- a/a.canon --
+package a
+
+local let kinds = load.defines("@features/a/kinds.h")
+
+/// A switch.
+type P(on: Bool) = match on { false => ref kinds, true => String }
+
+/// A rule.
+record Rule {
+  /// Its kind.
+  kind: ref kinds
+}
+
+emit go { out: "@features/a", package: "a", mode: data }
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

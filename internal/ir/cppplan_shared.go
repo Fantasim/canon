@@ -86,16 +86,21 @@ func reportShared(first, later cppHolder) {
 	}
 }
 
-// cppNamesOf are the shared names of u's data- or types-mode cpp emit: its plan's when u is selected (checkCppNames), else those of the plan of its declarations, values unevaluated.
+// cppNamesOf are the shared names of u's baked, data- or types-mode cpp emit: its plan's when u is selected (checkCppNames), else those of the plan of its declarations, values unevaluated.
 func (s *stage) cppNamesOf(u *unit) []cppShared {
 	es := emitFor(u, TargetCpp)
 	switch {
-	case es == nil || es.e.Mode != ModeData && es.e.Mode != ModeTypes:
+	case es == nil || !cppPlanned(es.e):
 		return nil
 	case u.selected:
 		return u.cppNames
 	}
 	return PlanCppNames(s.declaredOnly(u), es.e).shared
+}
+
+// cppPlanned reports a cpp emit in a mode gen/cpp writes, whose names the plan holds: baked, data or types (embedded is refused, CODEGEN.md §2.2).
+func cppPlanned(e *Emit) bool {
+	return e.Mode == ModeBaked || e.Mode == ModeData || e.Mode == ModeTypes
 }
 
 // declaredOnly is an unselected package's public IR as declared, broken declarations left out (decision 213), with no value evaluated: what its C++ names need.

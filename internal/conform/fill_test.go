@@ -166,10 +166,11 @@ func TestNoCodeEmit(t *testing.T) {
 }
 
 // boostedWorld is the potion world with a precomputed potency, written as body, and a translated
-// boosted that reads it: potency() + bonus.
+// boosted that reads it: potency() + bonus. It emits go, not cpp: gen/cpp reads no method of self (E8019 SelfReadNotAPath).
 func boostedWorld(t *testing.T, body string) (*world, *reference) {
 	t.Helper()
-	src := strings.Replace(potion, "  /// The damage", "  /// A heal-derived potency.\n  export fn potency(self) -> Int { return "+body+" }\n\n  /// Potency plus a bonus.\n  export fn boosted(self, bonus: Int(0..=10)) -> Int { return potency() + bonus }\n\n  /// The damage", 1)
+	src := strings.Replace(potion, `emit cpp { out: "@features/pipeline" }`, `emit go { out: "@features/pipeline" }`, 1)
+	src = strings.Replace(src, "  /// The damage", "  /// A heal-derived potency.\n  export fn potency(self) -> Int { return "+body+" }\n\n  /// Potency plus a bonus.\n  export fn boosted(self, bonus: Int(0..=10)) -> Int { return potency() + bonus }\n\n  /// The damage", 1)
 	w, ref := pipelineOf(t, src)
 	boosted, _ := w.fn(t, "pipeline", "Potion", "boosted")
 	if potency, _ := w.fn(t, "pipeline", "Potion", "potency"); potency.Kind != ir.FnPrecomputed || boosted.Kind != ir.FnTranslated {

@@ -1,0 +1,30 @@
+CB review 3, CODEGEN.md §4.2: a table field of a local record checks, builds and compiles in baked mode, its keys strings as in data mode.
+-- project.canon --
+project demo {
+  canon: "0.1"
+  roots {
+    gen: "gen"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A slot.
+record Slot {
+  /// Its n.
+  n: Int
+}
+
+/// A thing.
+record Thing {
+  /// Its slots.
+  slots: table Slot
+}
+
+/// The thing.
+let thing: Thing = { slots: { a { n: 1 }, retired b { n: 2 } } }
+
+emit cpp { out: "@gen/a", namespace: "a", mode: baked }
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

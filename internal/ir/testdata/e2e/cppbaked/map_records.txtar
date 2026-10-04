@@ -1,0 +1,38 @@
+CB review 1, CODEGEN.md §4.2: a baked value holding a map of records and of variants checks, builds and compiles.
+-- project.canon --
+project demo {
+  canon: "0.1"
+  roots {
+    gen: "gen"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A point.
+record Point {
+  /// Its n.
+  n: Int
+}
+
+/// A shape.
+variant Shape {
+  /// A dot.
+  dot {
+    /// Its size.
+    size: Int
+  }
+  /// Nothing.
+  blank
+}
+
+/// The points.
+let points: {String: Point} = {"a": {n: 1}, "b": {n: 2}}
+
+/// The shapes.
+let shapes: {String: Shape} = {"x": Shape.dot { size: 3 }, "y": Shape.blank}
+
+emit cpp { out: "@gen/a", namespace: "a", mode: baked }
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

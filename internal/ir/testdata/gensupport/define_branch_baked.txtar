@@ -1,0 +1,26 @@
+CODEGEN.md §5.6, §5.8, DECISIONS 298: a dependent type with a branch into a load.defines table is written by every generator (resource.vocab's Param): a baked cpp, a data go and a baked ts emit check clean.
+-- a/a.canon --
+package a
+
+local let monsters = load.defines("@resource/Server/Define/defineObj.h", prefix: "MI_")
+
+/// A kind of parameter.
+enum ParamKind { none_, monster }
+
+/// An event.
+record EventType {
+  /// Its parameter kind.
+  param: ParamKind = none_
+}
+
+/// A parameter of an event.
+type Param(e: EventType) = match e.param {
+  monster => ref monsters
+  none_ => Never
+}
+
+emit cpp { out: "@features/a", namespace: "a", mode: baked }
+emit go { out: "@features/a/go", package: "a", mode: data }
+emit ts { out: "@features/a/a.ts" }
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

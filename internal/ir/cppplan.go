@@ -225,7 +225,7 @@ func cppClassesOf(t TypeRef, out []any) []any {
 	return out
 }
 
-// Resolves reports a ref of class that gets a resolved getter: every holder of the class resolves it into its target container, the holder being that container or both being @reload; else it is a key only (CODEGEN.md §5.8, §5.11; log-2026-09-24 "ir name plans + support plan").
+// Resolves reports a ref of class that gets a resolved getter: in a baked emit, one into a container the emit selects; else every holder of the class resolves it into its target container, the holder being that container or both being @reload; else it is a key only (CODEGEN.md §5.8, §5.11; log-2026-09-24 "ir name plans + support plan").
 func (pl *CppNamePlan) Resolves(t TypeRef, class any) bool {
 	if t.Kind == types.List && t.Elem != nil {
 		t = *t.Elem
@@ -233,6 +233,9 @@ func (pl *CppNamePlan) Resolves(t TypeRef, class any) bool {
 	r := t.Ref
 	if t.Kind != types.Ref || r == nil || r.Coll != types.CollLet || r.Local || r.Value == "" || r.Pkg != pl.p.Name {
 		return false
+	}
+	if pl.baked() {
+		return pl.resolvesBaked(r)
 	}
 	i := slices.IndexFunc(pl.values, func(v *Value) bool { return v.Name == r.Value })
 	if i < 0 || pl.values[i].Type.Kind == types.Record {

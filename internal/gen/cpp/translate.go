@@ -271,9 +271,10 @@ func (t *tr) call(x *ir.Call, b *block) string {
 	return fmt.Sprintf(helperFormat, name, strings.Join(args, listSep))
 }
 
-// callFn calls a package-level translated fn; a method call is not emitted yet.
+// callFn calls a package-level translated fn, or a baked lookup converted to the pure type; a method call is not emitted yet.
 func (t *tr) callFn(x *ir.CallFn, b *block) string {
-	if x.Fn == nil || x.Fn.Kind != ir.FnTranslated || !slices.Contains(t.g.pkgFns, x.Fn) {
+	stored := x.Fn != nil && x.Fn.Kind == ir.FnLookup && t.g.baked() && slices.Contains(t.g.p.Fns, x.Fn)
+	if !stored && (x.Fn == nil || x.Fn.Kind != ir.FnTranslated || !slices.Contains(t.g.pkgFns, x.Fn)) {
 		// ir's CallFn holds package fns only, and a stored one is E8013 in data mode: unreachable.
 		t.g.malformed(methodCalls, t.g.at)
 		return cppInvalid
@@ -282,7 +283,18 @@ func (t *tr) callFn(x *ir.CallFn, b *block) string {
 	for i := range args {
 		args[i] = unparen(args[i])
 	}
-	return fmt.Sprintf(helperFormat, t.g.pl.FnName(x.Fn), strings.Join(args, listSep))
+	call := fmt.Sprintf(helperFormat, t.g.pl.FnName(x.Fn), strings.Join(args, listSep))
+	switch {
+	case !stored:
+		return call
+	case !t.g.pl.Constexpr(x.Fn):
+		return t.g.storedKey(x.Fn.Result, call)
+	case x.Fn.Result.Kind == types.String || x.Fn.Result.Kind == types.LitUnion:
+		return fmt.Sprintf(stringOfFormat, call)
+	case x.Fn.Result.Kind == types.Duration:
+		return call + countCall
+	}
+	return call
 }
 
 // ifExpr is a conditional; a String branch is a std::string, so no view outlives its string.

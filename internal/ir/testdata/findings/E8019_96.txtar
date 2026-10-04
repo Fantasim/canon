@@ -1,0 +1,27 @@
+CODEGEN.md §5.9, §7.3: a baked cpp emit fills every value inside detail::<P>Access::Build, the friend of its own package's classes only, so a value holding a record of another package is refused.
+-- b/b.canon --
+package b
+
+/// A point.
+record Point {
+  /// Across.
+  x: Int
+}
+
+emit cpp { out: "@features/b", namespace: "b", mode: baked }
+-- a/a.canon --
+package a
+
+import b { Point }
+
+/// The corner.
+let corner: Point = { x: 1 }
+
+emit cpp { out: "@features/a", namespace: "a", mode: baked }
+-- a.corner.json --
+{"x": 1}
+-- findings.txt --
+error[E8019]  a/a.canon:6:5
+  emit cpp in baked mode cannot generate a value of a record, variant or table of another package
+
+1 error, 0 warnings in 2 packages (…)

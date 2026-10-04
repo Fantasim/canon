@@ -4,12 +4,28 @@ import (
 	"slices"
 )
 
-// declareDetail declares detail's access struct with its loaders and resolvers, the decoders when a class is decoded, each dependent type's Decode<Alias>, each translated method's pure function <Class>_<fn> (CODEGEN.md §2.7 step 4, §3.3, §5.6, §7.6), and the input namespace (§7.7).
+// declareDetail declares detail's access struct with its loaders and resolvers (a baked emit's Data, Build, Get and constexpr cells), the decoders when a class is decoded, each dependent type's Decode<Alias>, each translated method's pure function <Class>_<fn> (CODEGEN.md §2.7 step 4, §3.3, §5.6, §7.6), and the input namespace (§7.7).
 func (pl *CppNamePlan) declareDetail() {
 	sc := pl.scope(cppDetail)
 	access := pl.AccessName()
 	pl.shareInner(sc, access, pl.p.Name, nil)
-	pl.declareAccess(access)
+	if pl.baked() {
+		pl.declareBakedDetail(sc, pl.accessScope(access))
+	} else {
+		pl.declareAccess(access)
+		pl.declareDecoders(sc)
+	}
+	for _, m := range pl.methods() {
+		pl.innerFrom(sc, m, meetsNever, func() string { return pl.PureName(pl.className(m.class), m.fn) })
+	}
+	for _, d := range ownDefineRefs(pl.p) {
+		pl.declareInner(sc, pl.DefinesName(d), d.Pkg+qnameSep+d.Value, d)
+	}
+	pl.declareInputSlots(sc)
+}
+
+// declareDecoders declares detail's Decode overloads when a class is decoded, and each dependent type's Decode<Alias> (CODEGEN.md §5.6, §7.2).
+func (pl *CppNamePlan) declareDecoders(sc *nameScope) {
 	if len(pl.classes()) > 0 {
 		pl.declareInner(sc, CppDecode, pl.p.Name, nil)
 		pl.shareAs(pl.e.Namespace+cppScope+cppDetail, CppDecode, pl.p.Name, nil, meetsOverload)
@@ -19,13 +35,6 @@ func (pl *CppNamePlan) declareDetail() {
 			pl.shareInner(sc, pl.Dependent(d).Decode, d.QName(), d)
 		}
 	}
-	for _, m := range pl.methods() {
-		pl.innerFrom(sc, m, meetsNever, func() string { return pl.PureName(pl.className(m.class), m.fn) })
-	}
-	for _, d := range ownDefineRefs(pl.p) {
-		pl.declareInner(sc, pl.DefinesName(d), d.Pkg+qnameSep+d.Value, d)
-	}
-	pl.declareInputSlots(sc)
 }
 
 // declareInner declares a name of detail or conformance, which inside that namespace hides the namespace's own name, which detail's decoders and conformance's vectors name: a namespace name equal to it collides (log-2026-09-24 "ir plans review", "Owed (C++ plan)").

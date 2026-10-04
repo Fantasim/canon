@@ -48,7 +48,7 @@ func (g *gen) holdersOf() {
 	}
 	for _, v := range g.values {
 		root := v.Type
-		if root.Kind != types.Record {
+		if root.Kind != types.Record && root.Elem != nil {
 			root = *root.Elem
 		}
 		seen := map[any]bool{}

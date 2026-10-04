@@ -1,0 +1,172 @@
+CODEGEN.md §3.3–§3.5, §5.3, §5.9, §5.10, §7.3; decision 37, decision 293: the C++ name plan of a baked cpp emit has no problem where gen/cpp generates, and holds exactly the id enums, accessors, Data members, constexpr cells and package fns its header and source declare.
+-- board/board.canon --
+/// A board.
+package board
+
+/// How loud a message is.
+enum Tone { quiet, loud, retired old }
+
+/// An element.
+enum Element @codes(UInt8) { FIRE = 1, WATER = 2, retired EARTH = 3 }
+
+/// A column of the board.
+record Column {
+  /// Its title.
+  title: String
+}
+
+/// A point.
+record Point {
+  /// Across.
+  x: Int
+  /// Down.
+  y: Int
+}
+
+/// What a status gives.
+variant Reward @json(tag: "kind") {
+  /// Coins.
+  coins {
+    /// How many.
+    amount: Int
+  }
+  /// Nothing.
+  nothing
+}
+
+/// One point of the lifecycle.
+record Status {
+  /// Its label.
+  label: String
+  /// Where it is shown.
+  column: ref columns
+  /// The statuses it may move to.
+  next: [ref statuses]
+  /// What it gives.
+  reward: Reward
+  /// Where it sits.
+  at: Point?
+  /// Its weight.
+  weight: Int = 1
+
+  /// Whether nothing follows it.
+  export fn final(self) -> Bool { return next.len() == 0 }
+
+  /// Its weight for a tone.
+  export fn rank(self, t: Tone) -> Int { return if t == Tone.loud { weight * 2 } else { weight } }
+}
+
+/// The columns.
+let columns: table Column = {
+  todo { title: "To do" }
+  done { title: "Done" }
+}
+
+/// The statuses.
+let statuses: table Status = {
+  open { label: "Open", column: todo, next: [taken], reward: coins { amount: 2 }, at: { x: 1, y: 2 } }
+  taken { label: "Taken", column: todo, next: [closed, open], reward: nothing }
+  closed { label: "Closed", column: done, next: [], reward: coins { amount: 5 }, weight: 3 }
+}
+
+/// Where a new post starts.
+let initialStatus: ref statuses = open
+
+/// The most posts.
+let limit: Int = 12
+
+/// The board's tags.
+let tags: [String] = ["a", "b"]
+
+/// The version an element was added in.
+export fn versionOf(e: Element) -> Int { return if e == Element.FIRE { 1 } else { 2 } }
+
+/// A tone's label.
+export fn labelOf(t: Tone) -> String { return if t == Tone.loud { "Loud" } else { "Quiet" } }
+
+/// Whether a status is open.
+export fn isOpen(s: ref statuses) -> Bool { return s == open }
+
+/// An element's tone.
+export fn toneOf(e: Element) -> Tone { return if e == Element.FIRE { Tone.loud } else { Tone.quiet } }
+
+/// A status's column.
+export fn columnOf(s: ref statuses) -> ref columns { return statuses[s].column }
+
+/// How long a flag waits.
+export fn delayOf(b: Bool) -> Duration { return if b { 2s } else { 500ms } }
+
+/// The statuses after one.
+export fn nextOf(s: ref statuses) -> [ref statuses] { return statuses[s].next }
+
+/// A tone's column, if any.
+export fn maybeColumn(t: Tone) -> ref columns? { return if t == Tone.loud { done } else { none } }
+
+/// The greeting.
+export fn greeting() -> String { return "hi" }
+
+/// Small primes.
+export fn primes() -> [Int] { return [2, 3, 5] }
+
+/// A doubled version.
+export fn doubled(e: Element, n: Int) -> Int { return versionOf(e) * n }
+
+emit cpp { out: "@features/board", namespace: "demo::board", mode: baked }
+-- board.columns.json --
+{ "todo": { "title": "To do" }, "done": { "title": "Done" } }
+-- board.statuses.json --
+{
+  "open": { "label": "Open", "column": "todo", "next": ["taken"], "weight": 1, "reward": { "kind": "coins", "amount": 2 }, "at": { "x": 1, "y": 2 } },
+  "taken": { "label": "Taken", "column": "todo", "next": ["closed", "open"], "weight": 1, "reward": { "kind": "nothing" } },
+  "closed": { "label": "Closed", "column": "done", "next": [], "reward": { "kind": "coins", "amount": 5 }, "weight": 3 }
+}
+-- board.initialStatus.json --
+"open"
+-- board.limit.json --
+12
+-- board.tags.json --
+["a", "b"]
+-- board.final.calls.json --
+{ "": false }
+-- board.rank.calls.json --
+{ "quiet": 1, "loud": 2, "old": 1 }
+-- board.versionOf.calls.json --
+{ "FIRE": 1, "WATER": 2, "EARTH": 2 }
+-- board.labelOf.calls.json --
+{ "quiet": "Quiet", "loud": "Loud", "old": "Quiet" }
+-- board.isOpen.calls.json --
+{ "open": true, "taken": false, "closed": false }
+-- board.toneOf.calls.json --
+{ "FIRE": "loud", "WATER": "quiet", "EARTH": "quiet" }
+-- board.columnOf.calls.json --
+{ "open": "todo", "taken": "todo", "closed": "done" }
+-- board.delayOf.calls.json --
+{ "false": 500, "true": 2000 }
+-- board.nextOf.calls.json --
+{ "open": ["taken"], "taken": ["closed", "open"], "closed": [] }
+-- board.maybeColumn.calls.json --
+{ "quiet": null, "loud": "done", "old": null }
+-- board.greeting.calls.json --
+{ "": "hi" }
+-- board.primes.calls.json --
+{ "": [2, 3, 5] }
+-- plan.txt --
+BoardAccess: Build Data Get
+Column: GetId GetRetired GetTitle id_ retired_ title_
+ColumnId: done todo
+Columns: All At Find Get Len rows_
+Data: columns initialStatus initialStatus_ref limit maybeColumn nextOf primes statuses tags
+DoubledVector: code e n want
+Element: EARTH FIRE WATER
+Point: GetX GetY x_ y_
+Reward: AsCoins GetKind value_
+RewardCoins: GetAmount amount_
+RewardKind: coins nothing
+Status: Final GetAt GetColumn GetColumnKey GetId GetLabel GetNext GetNextKeys GetRetired GetReward GetWeight Rank at_ column_ column_ref_ final_ id_ label_ next_ next_ref_ rank_ retired_ reward_ weight_
+StatusId: closed open taken
+Statuses: All At Find Get Len rows_
+Tone: loud old quiet
+conformance: Capture DoubledVector RunBoardConformance g_code kDoubled
+demo::board: Column ColumnId ColumnIdFromWire ColumnOf Columns DelayOf Doubled Element ElementFromCode ElementFromWire GetColumns GetInitialStatus GetInitialStatusKey GetLimit GetStatuses GetTags Greeting IsOpen LabelOf MaybeColumn NextOf Point Primes Reward RewardCoins RewardKind RewardKindFromWire Status StatusId StatusIdFromWire Statuses ToName ToWire Tone ToneFromWire ToneOf VersionOf kElementMembers kRewardKindMembers kToneMembers
+detail: BoardAccess kColumnOfCells kDelayOfCells kGreetingCells kIsOpenCells kLabelOfCells kToneOfCells kVersionOfCells
+0 errors, 0 warnings in 1 package (…)

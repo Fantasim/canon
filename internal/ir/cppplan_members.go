@@ -16,7 +16,7 @@ func (pl *CppNamePlan) declareMembers() {
 		pl.declareClass(c)
 	}
 	for _, v := range pl.values {
-		if v.Type.Kind != types.Record {
+		if IsContainer(v) {
 			pl.declareContainer(v)
 		}
 	}
@@ -109,7 +109,7 @@ func (pl *CppNamePlan) declarePublicDecode(sc *nameScope, origin string, item an
 
 // declareRecordOwn declares a record's static Load, the first non-@reload record value's, and the id and retired getters and members of a table entry, a row of a table value or of a table field (CODEGEN.md §4.2, §5.3, §5.9).
 func (pl *CppNamePlan) declareRecordOwn(sc *nameScope, rec *Record, origin string) {
-	if i := slices.IndexFunc(pl.values, func(v *Value) bool { return !v.Reload && v.Type.Kind == types.Record && v.Type.Named == rec }); i >= 0 {
+	if i := slices.IndexFunc(pl.values, func(v *Value) bool { return !v.Reload && v.Type.Kind == types.Record && v.Type.Named == rec }); i >= 0 && !pl.baked() {
 		pl.declare(sc, CppLoad, pl.valueOrigin(pl.values[i]), pl.values[i])
 	}
 	if pl.NestedRow(rec) || slices.ContainsFunc(pl.values, func(v *Value) bool { return tableRecord(v) == rec }) {
@@ -143,7 +143,10 @@ func (pl *CppNamePlan) declareContainer(v *Value) {
 	for _, n := range cppContainerMembers {
 		pl.declare(sc, n, origin, v)
 	}
-	if !v.Reload {
+	switch {
+	case pl.baked() && v.Type.Kind == types.Table:
+		pl.declare(sc, GoGet, origin, v)
+	case !pl.baked() && !v.Reload:
 		pl.declare(sc, CppLoad, origin, v)
 	}
 	rec := containerRecord(v)

@@ -1,0 +1,35 @@
+CB review 2, CODEGEN.md §5.8: a translated fn returning a table id checks, builds and compiles; its result and conformance vectors are the id enum.
+-- project.canon --
+project demo {
+  canon: "0.1"
+  roots {
+    gen: "gen"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A column.
+record Column {
+  /// Its title.
+  title: String
+}
+
+/// The columns.
+let columns: table Column = {
+  todo { title: "To do" }
+  done { title: "Done" }
+}
+
+/// The column for n.
+export fn pick(n: Int) -> ref columns { return if n > 0 { todo } else { done } }
+
+test "pick" {
+  expect pick(1) == todo
+  expect pick(0) == done
+}
+
+emit cpp { out: "@gen/a", namespace: "a", mode: baked }
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

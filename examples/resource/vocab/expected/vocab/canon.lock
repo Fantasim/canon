@@ -1,0 +1,71 @@
+# canon.lock v1
+enum   resource.vocab.Element  1  FIRE
+enum   resource.vocab.Element  2  WATER
+enum   resource.vocab.Element  3  ELECTRICITY
+enum   resource.vocab.Element  4  WIND
+enum   resource.vocab.Element  5  EARTH
+enum   resource.vocab.QuestStyle  1  daily
+enum   resource.vocab.QuestStyle  2  weekly
+enum   resource.vocab.QuestStyle  3  forever
+enum   resource.vocab.QuestStyle  4  season_pass
+enum   resource.vocab.QuestStyle  5  pvp
+enum   resource.vocab.QuestStyle  6  azure
+enum   resource.vocab.RewardType  1  activity_points
+enum   resource.vocab.RewardType  2  season_pass_exp
+enum   resource.vocab.Stage  100  Stage_1
+enum   resource.vocab.Stage  101  Stage_2
+enum   resource.vocab.Stage  102  Stage_3
+field  resource.vocab.eventTypes.code  0  COMBAT_KILL_MONSTER
+field  resource.vocab.eventTypes.code  1  COMBAT_KILL_GIANT
+field  resource.vocab.eventTypes.code  2  COMBAT_KILL_BOSS
+field  resource.vocab.eventTypes.code  3  COMBAT_KILL_WORLD_BOSS
+field  resource.vocab.eventTypes.code  5  COMBAT_KILL_BY_ELEMENT
+field  resource.vocab.eventTypes.code  10  COMBAT_DAMAGE_PVE
+field  resource.vocab.eventTypes.code  12  COMBAT_DAMAGE_PVP_EVENT
+field  resource.vocab.eventTypes.code  30  COMBAT_KILL_FFA
+field  resource.vocab.eventTypes.code  31  COMBAT_KILL_GUILD_SIEGE
+field  resource.vocab.eventTypes.code  32  COMBAT_KILL_TDM
+field  resource.vocab.eventTypes.code  50  COMBAT_GAME_MODE_START
+field  resource.vocab.eventTypes.code  1000  ECONOMY_DROP_PENYAS
+field  resource.vocab.eventTypes.code  1001  ECONOMY_DROP_ITEM
+field  resource.vocab.eventTypes.code  1031  ECONOMY_SPEND_VOTE_POINTS
+field  resource.vocab.eventTypes.code  1050  ECONOMY_CONSUME_ITEM
+field  resource.vocab.eventTypes.code  2030  PROGRESSION_COLLECT_MONSTER
+field  resource.vocab.eventTypes.code  2031  PROGRESSION_COLLECT_ITEM
+field  resource.vocab.eventTypes.code  2090  PROGRESSION_CARD_DRAWN
+field  resource.vocab.eventTypes.code  4000  CONTENT_COMPLETE_DUNGEON
+field  resource.vocab.eventTypes.code  4010  CONTENT_COMPLETE_ADVENTURE_QUEST
+field  resource.vocab.eventTypes.code  4050  CONTENT_WHEEL_OF_FORTUNE
+field  resource.vocab.eventTypes.code  4080  CONTENT_LOTTERY_BUY_TICKETS
+field  resource.vocab.eventTypes.code  5000  ITEMS_CRAFTED
+field  resource.vocab.eventTypes.code  5001  ITEMS_RECYCLED
+field  resource.vocab.eventTypes.code  5010  ITEMS_PERFORM_UPGRADE
+field  resource.vocab.eventTypes.code  8000  MISC_ACTIVE_PLAYTIME
+field  resource.vocab.eventTypes.code  8100  MISC_STATS_SNAPSHOT
+table  resource.vocab.eventTypes  COMBAT_DAMAGE_PVE
+table  resource.vocab.eventTypes  COMBAT_DAMAGE_PVP_EVENT
+table  resource.vocab.eventTypes  COMBAT_GAME_MODE_START
+table  resource.vocab.eventTypes  COMBAT_KILL_BOSS
+table  resource.vocab.eventTypes  COMBAT_KILL_BY_ELEMENT
+table  resource.vocab.eventTypes  COMBAT_KILL_FFA
+table  resource.vocab.eventTypes  COMBAT_KILL_GIANT
+table  resource.vocab.eventTypes  COMBAT_KILL_GUILD_SIEGE
+table  resource.vocab.eventTypes  COMBAT_KILL_MONSTER
+table  resource.vocab.eventTypes  COMBAT_KILL_TDM
+table  resource.vocab.eventTypes  COMBAT_KILL_WORLD_BOSS
+table  resource.vocab.eventTypes  CONTENT_COMPLETE_ADVENTURE_QUEST
+table  resource.vocab.eventTypes  CONTENT_COMPLETE_DUNGEON
+table  resource.vocab.eventTypes  CONTENT_LOTTERY_BUY_TICKETS
+table  resource.vocab.eventTypes  CONTENT_WHEEL_OF_FORTUNE
+table  resource.vocab.eventTypes  ECONOMY_CONSUME_ITEM
+table  resource.vocab.eventTypes  ECONOMY_DROP_ITEM
+table  resource.vocab.eventTypes  ECONOMY_DROP_PENYAS
+table  resource.vocab.eventTypes  ECONOMY_SPEND_VOTE_POINTS
+table  resource.vocab.eventTypes  ITEMS_CRAFTED
+table  resource.vocab.eventTypes  ITEMS_PERFORM_UPGRADE
+table  resource.vocab.eventTypes  ITEMS_RECYCLED
+table  resource.vocab.eventTypes  MISC_ACTIVE_PLAYTIME
+table  resource.vocab.eventTypes  MISC_STATS_SNAPSHOT
+table  resource.vocab.eventTypes  PROGRESSION_CARD_DRAWN
+table  resource.vocab.eventTypes  PROGRESSION_COLLECT_ITEM
+table  resource.vocab.eventTypes  PROGRESSION_COLLECT_MONSTER

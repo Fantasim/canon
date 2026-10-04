@@ -29,7 +29,7 @@ func DefinesOf(p *Package, r *RefTarget) *DefineTable {
 	return p.Defines[i]
 }
 
-// OwnDefines are the define tables the fields of p's own classes ref, in p.Defines' order: one table per emit each (CODEGEN.md §5.8).
+// OwnDefines are the define tables the fields of p's own classes and its dependent types' branches ref, in p.Defines' order: one table per emit each (CODEGEN.md §5.6, §5.8).
 func OwnDefines(p *Package) []*DefineTable {
 	refs := ownDefineRefs(p)
 	var out []*DefineTable
@@ -41,15 +41,32 @@ func OwnDefines(p *Package) []*DefineTable {
 	return out
 }
 
-// ownDefineRefs are the define tables the fields of p's own classes ref, by package and let, their values aside: what the name plans declare, whether or not stage E could read the tables.
+// ownDefineRefs are the define tables the fields of p's own classes and the branches of its own dependent types ref, by package and let, their values aside: what the name plans declare, whether or not stage E could read the tables (CODEGEN.md §5.6, §5.8; DECISIONS 298).
 func ownDefineRefs(p *Package) []*DefineTable {
 	var out []*DefineTable
+	for _, r := range defineTargets(p) {
+		if r != nil && !slices.ContainsFunc(out, func(d *DefineTable) bool { return d.Pkg == r.Pkg && d.Value == r.Value }) {
+			out = append(out, &DefineTable{Pkg: r.Pkg, Value: r.Value})
+		}
+	}
+	return out
+}
+
+// defineTargets are the define refs of p's own fields that are no input, then of its dependent types' branches, nil for any other.
+func defineTargets(p *Package) []*RefTarget {
+	var out []*RefTarget
 	for _, class := range packageClasses(p) {
 		fields, _ := classBody(class)
 		for _, f := range fields {
-			r := DefineTarget(f.Type)
-			if r != nil && f.Input == nil && !slices.ContainsFunc(out, func(d *DefineTable) bool { return d.Pkg == r.Pkg && d.Value == r.Value }) {
-				out = append(out, &DefineTable{Pkg: r.Pkg, Value: r.Value})
+			if f.Input == nil {
+				out = append(out, DefineTarget(f.Type))
+			}
+		}
+	}
+	for _, t := range p.Types {
+		if d, ok := t.(*Dependent); ok && d.Pkg == p.Name {
+			for _, b := range d.Branches {
+				out = append(out, DefineTarget(b.Type))
 			}
 		}
 	}

@@ -257,6 +257,7 @@ const (
 	defaultBreak          = "default: break;"
 	returnFalse           = "return false;"
 	emplaceMoveFormat     = "out." + ir.CppVariantMember + ".emplace<%d>(std::move(%s));"
+	branchDefineFormat    = "std::optional<int64_t> %s() const { return " + ir.CppVariantMember + ".index() == %d ? std::optional<int64_t>(%s) : std::nullopt; }"
 
 	// Runtime inputs (CODEGEN.md §5.12, §7.7; EVALUATION.md §11.3).
 	inputHelperDir       = "text/input"

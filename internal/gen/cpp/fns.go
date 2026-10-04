@@ -80,10 +80,19 @@ func (g *gen) pureFn(name string, fn *ir.ExportFn) {
 	for _, r := range fn.Reads {
 		t.used[verbatim(r.Name)] = true
 	}
-	for _, p := range fn.Params {
+	for i, r := range fn.Reads {
+		if !anyNode(fn.Body, refersTo(i, true)) {
+			g.h.linef(1, unusedFormat, verbatim(r.Name))
+		}
+	}
+	for i, p := range fn.Params {
 		t.used[verbatim(p.Name)] = true
-		for _, c := range g.entryChecks(p) {
+		checks := g.entryChecks(p)
+		for _, c := range checks {
 			g.h.linef(1, assignFormat, verbatim(p.Name), c)
+		}
+		if len(checks) == 0 && !anyNode(fn.Body, refersTo(i, false)) {
+			g.h.linef(1, unusedFormat, verbatim(p.Name)) // -Wunused-parameter under -Werror (CODEGEN.md §9)
 		}
 	}
 	collectLocals(fn.Body, t.used)
@@ -93,6 +102,20 @@ func (g *gen) pureFn(name string, fn *ir.ExportFn) {
 		g.h.lineAt(1, l)
 	}
 	g.h.line(closeBrace)
+}
+
+// refersTo matches a read of self (read) or a declared parameter at index i.
+func refersTo(i int, read bool) func(ir.PExpr) bool {
+	return func(n ir.PExpr) bool {
+		switch x := n.(type) {
+		case *ir.ReadRef:
+			return read && x.Index == i
+		case *ir.ParamRef:
+			return !read && x.Index == i
+		default:
+			return false
+		}
+	}
 }
 
 // collectLocals marks every `let` name of a body.

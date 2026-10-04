@@ -83,7 +83,7 @@ export fn loud(t: Tone) -> Bool { return t == Tone.loud }
 /// Calls a lookup.
 export fn volume(t: Tone, n: Int) -> Int { return if loud(t) { n } else { n / 2 } }
 
-emit cpp { out: "@features/pipeline" }
+emit go { out: "@features/pipeline" }
 -- bodies.txt --
 package pipeline dir=pipeline
 fn Potion.isStrong file=potion.canon order=0 kind=precomputed

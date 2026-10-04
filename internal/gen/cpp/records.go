@@ -45,9 +45,14 @@ func (g *gen) recordClass(c class) {
 		g.h.linef(1, loadDeclFormat, name)
 	}
 	if c.rec != nil && g.entries[c.rec] {
-		g.getter(sc, idGetter, getIDLine, idMember, idMemberDecl)
+		idLine, idDecl := getIDLine, idMemberDecl
+		if g.baked() && !g.pl.NestedRow(c.rec) {
+			id := g.pl.IDName(c.rec)
+			idLine, idDecl = fmt.Sprintf(getterFormat, id, idGetter, "", fmt.Sprintf(returnFormat, idMember)), fmt.Sprintf(memberFormat, id, idMember, initBraces)
+		}
+		g.getter(sc, idGetter, idLine, idMember, idDecl)
 		g.getter(sc, retiredGetter, getRetiredLine, retiredMember, retiredMemberDecl)
-		members = append(members, idMemberDecl, retiredMemberDecl)
+		members = append(members, idDecl, retiredMemberDecl)
 	}
 	for _, f := range fields {
 		members = append(members, g.fieldGetter(sc, c, f)...)
@@ -82,7 +87,9 @@ func (g *gen) private(name string, members bool, pairsParents ...string) {
 	g.h.line(privateLabel)
 	g.h.linef(1, friendAccessFormat, g.pl.AccessName())
 	for _, n := range append([]string{name}, pairsParents...) {
-		g.h.linef(1, friendDecodeFormat, n)
+		if !g.baked() {
+			g.h.linef(1, friendDecodeFormat, n)
+		}
 	}
 	if members {
 		g.h.blank()
@@ -128,12 +135,12 @@ func (g *gen) fieldGetter(sc *scope, c class, f *ir.Field) []string {
 	switch {
 	case g.boxed[f]:
 		body, storage = fmt.Sprintf(returnGetFormat, m), fmt.Sprintf(uniquePtrFormat, g.storage(f.Type))
-	case f.Optional && !byValue(f.Type):
+	case f.Optional && !g.byValue(f.Type):
 		body = fmt.Sprintf(returnPtrFormat, m)
 	}
 	g.doc(1, doc)
 	g.getter(sc, name, fmt.Sprintf(getterFormat, typ, name, "", body), m, f.Name)
-	members := append([]string{fmt.Sprintf(memberFormat, storage, m, memberInit(f.Type, f.Optional))}, refs...)
+	members := append([]string{fmt.Sprintf(memberFormat, storage, m, g.memberInit(f.Type, f.Optional))}, refs...)
 	return append(members, g.defineGetter(sc, f)...)
 }
 

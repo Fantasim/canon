@@ -47,7 +47,7 @@ func (g *gen) callsPackageFn() bool {
 
 func (g *gen) isPackageCall(n ir.PExpr) bool {
 	c, ok := n.(*ir.CallFn)
-	return ok && slices.Contains(g.pkgFns, c.Fn)
+	return ok && (slices.Contains(g.pkgFns, c.Fn) || g.baked() && slices.Contains(g.p.Fns, c.Fn))
 }
 
 // anyNode reports a node of the tree n for which pred holds.

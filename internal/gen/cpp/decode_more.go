@@ -51,7 +51,7 @@ func (g *gen) decodeList(depth int, src, key string, l leaf) {
 
 // elemInit value-initializes a scalar element; a class element is default-constructed.
 func elemInit(t ir.TypeRef) string {
-	if memberInit(t, false) != "" {
+	if scalarInit(t, false) != "" {
 		return initBraces
 	}
 	return ""

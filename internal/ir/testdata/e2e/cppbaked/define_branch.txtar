@@ -1,0 +1,40 @@
+DECISIONS 298, CODEGEN.md §5.6, §5.8: a dependent field whose branch refs a load.defines table checks, builds and compiles in a baked cpp emit, holding the define's key and value.
+-- project.canon --
+project demo {
+  canon: "0.1"
+  roots {
+    gen: "gen"
+  }
+}
+-- a/defs.h --
+#define MI_AIBATT1 7
+#define MI_BANG 9
+-- a/a.canon --
+/// A.
+package a
+
+local let monsters = load.defines("defs.h", prefix: "MI_")
+
+/// A kind of parameter.
+enum ParamKind { none_, monster }
+
+/// An event filter.
+record Filter {
+  /// Its parameter kind.
+  param: ParamKind
+  /// Its parameter.
+  value: Param(param)?
+}
+
+/// A parameter of a filter.
+type Param(k: ParamKind) = match k {
+  monster => ref monsters
+  none_ => Never
+}
+
+/// The filters.
+let filters: [Filter] = [{ param: monster, value: MI_BANG }, { param: none_ }]
+
+emit cpp { out: "@gen/a", namespace: "a", mode: baked }
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

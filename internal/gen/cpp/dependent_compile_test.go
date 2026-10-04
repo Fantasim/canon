@@ -11,13 +11,12 @@ import (
 // dependentCase is one data file of dependentPackage's Event and the driver's line for it.
 type dependentCase struct{ name, value, want string }
 
-// dependentCases: each branch, two branches of one storage type apart (emplace by index), an arm
-// of two members, a Never arm absent and written, a discriminant through a held record, a list.
+// dependentCases: each branch, a Never arm, a held discriminant, a list, a define key's value and a missing define.
 var dependentCases = []dependentCase{
 	{"ok1", `"active": false, "payload": "hello", "kind3": "a", "multi": "first", "et": {"param": "a"}, "deep": true, "many": ["x", "y"]`,
 		"payload=false:hello multi=0:a:first deep=a:true many= false:x false:y"},
-	{"ok2", `"active": true, "payload": "despawn", "kind3": "b", "multi": "second", "et": {"param": "c"}, "deep": 1.5, "many": ["spawn"]`,
-		"payload=true:despawn multi=1:b:second deep=b:1.500000 many= true:spawn"},
+	{"ok2", `"active": true, "payload": "despawn", "kind3": "b", "multi": "MI_B", "et": {"param": "c"}, "deep": 1.5, "many": ["spawn"]`,
+		"payload=true:despawn multi=1:b:MI_B=9 deep=b:1.500000 many= true:spawn"},
 	{"ok3", `"active": true, "payload": "spawn", "kind3": "c", "multi": 7, "et": {"param": "e"}, "deep": 2, "many": []`,
 		"payload=true:spawn multi=2:c:7 deep=b:2.000000 many="},
 	{"ok4", `"active": false, "payload": "", "kind3": "e", "multi": -3, "et": {"param": "d"}, "deep": 0.25, "many": []`,
@@ -28,6 +27,8 @@ var dependentCases = []dependentCase{
 		"error badenum.json: value.payload: unknown value nope"},
 	{"badint", `"active": true, "payload": "spawn", "kind3": "c", "multi": 99999999999, "et": {"param": "a"}, "deep": true, "many": []`,
 		"error badint.json: value.multi: expected an integer from -2147483648 to 2147483647"},
+	{"baddefine", `"active": true, "payload": "spawn", "kind3": "b", "multi": "MI_Z", "et": {"param": "a"}, "deep": true, "many": []`,
+		"error baddefine.json: value.multi: define MI_Z is not in this program's Monsters table"},
 	{"badbranch", `"active": true, "payload": "spawn", "kind3": "d", "multi": 5, "et": {"param": "a"}, "deep": true, "many": []`,
 		"error badbranch.json: value.multi: no branch for this value"},
 }

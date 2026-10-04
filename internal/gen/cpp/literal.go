@@ -121,8 +121,11 @@ func (g *gen) unionLit(t ir.TypeRef, v value.Value) string {
 	return cppInvalid
 }
 
-// refLit is a ref's key as its storage holds it: an enum key's member, by name, else the key itself (CODEGEN.md §5.8).
+// refLit is a ref's key as its storage holds it: a table id's or an enum key's member, by name, else the key itself (CODEGEN.md §5.3, §5.8).
 func (g *gen) refLit(t ir.TypeRef, k value.Key) string {
+	if id, ok := g.idEnum(t); ok {
+		return id + scopeSep + g.pl.IDMember(k.S)
+	}
 	if t.Key == nil {
 		return keyLit(k)
 	}
@@ -235,6 +238,9 @@ func (g *gen) constant(c *ir.Const) {
 
 // schemaConstants are k<V>Schema, one per emitted value, with T2 (CODEGEN.md §2.5, §3.3).
 func (g *gen) schemaConstants() {
+	if g.baked() {
+		return // a baked emit reads no file (decision 121)
+	}
 	for _, v := range g.values {
 		if v.Schema == "" {
 			g.fail(fmt.Errorf("%w: value %s without a schema", ErrMalformed, v.Name))

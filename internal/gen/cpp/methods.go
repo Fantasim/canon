@@ -12,7 +12,8 @@ import (
 // domain is one finite parameter's values in domain order: their wire keys and its size.
 type domain struct {
 	keys []string
-	enum *ir.Enum // nil for Bool
+	enum *ir.Enum // nil for Bool and a table id
+	id   bool     // a table id, its own ordinal (CODEGEN.md §5.3)
 }
 
 // domains lists each parameter's wire keys in domain order (CODEGEN.md §5.10, WIRE.md §5.11).
@@ -28,11 +29,26 @@ func (g *gen) domains(fn *ir.ExportFn) []domain {
 				d.keys = append(d.keys, enumKey(e, m))
 			}
 			out = append(out, d)
+		case g.tableDomain(p.Type) != nil:
+			out = append(out, domain{keys: g.tableDomain(p.Type), id: true})
 		default:
 			g.malformed(lookupParams, fn.Name) // E8013 refParam: a data-mode finite parameter is a Bool or an enum
 		}
 	}
 	return out
+}
+
+// tableDomain is a baked lookup's table-id parameter's domain, the table's keys in entry order; nil for any other (E8019 ForeignTableLookupParam refuses another package's).
+func (g *gen) tableDomain(t ir.TypeRef) []string {
+	if g.pl.IDTable(t) == nil || t.Ref.Pkg != g.p.Name {
+		return nil
+	}
+	for _, v := range g.p.Values {
+		if v.Name == t.Ref.Value && v.Type.Kind == types.Table {
+			return v.IDs
+		}
+	}
+	return nil
 }
 
 // enumKey is a member's wire key: its wire value, or its code with @json(codes) (WIRE.md §5.8).

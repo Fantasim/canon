@@ -9,6 +9,7 @@ import (
 	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
+	"github.com/fantasim/canonlang/internal/value"
 )
 
 // readCtx is where a path of self is read: as a value, left of `??`, or left of `is`.
@@ -115,6 +116,18 @@ func (t *translator) fieldRead(e syntax.Expr, names []string) *pendingRead {
 		return nil
 	}
 	return pr
+}
+
+// FieldValue is the value of field name in the record or case value r, false when its type has no such field: what a baked generator writes for the field (CODEGEN.md §5.9).
+func FieldValue(r *value.Record, name string) (value.Value, bool) {
+	if r == nil || r.T == nil {
+		return nil, false
+	}
+	i := slices.IndexFunc(ownFields(r.T), func(f *types.Field) bool { return f.Name == name })
+	if i < 0 || i >= len(r.Fields) {
+		return nil, false
+	}
+	return r.Fields[i], true
 }
 
 // ownFields are the fields of a record or case type, nil for any other.

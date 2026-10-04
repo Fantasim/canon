@@ -9,7 +9,7 @@ import (
 	"github.com/fantasim/canonlang/internal/types"
 )
 
-// checkDependent refuses a dependent type without a Bool or enum discriminant or whose member map disagrees with its branches, and one stage E refuses (E8019 DependentType): every arm Never, or a branch into a load.defines table (CODEGEN.md §4.4, §5.6, §5.8).
+// checkDependent refuses a dependent type without a Bool or enum discriminant or whose member map disagrees with its branches, and one stage E refuses (E8019 DependentType): every arm Never (CODEGEN.md §4.4, §5.6).
 func (g *gen) checkDependent(d *ir.Dependent) {
 	members, ok := discMembers(d)
 	switch {
@@ -19,8 +19,6 @@ func (g *gen) checkDependent(d *ir.Dependent) {
 		g.malformed(dependentBadArm, d.Name)
 	case len(d.Branches) == 0:
 		g.malformed(dependentNoBranch, d.Name)
-	case slices.ContainsFunc(d.Branches, func(b *ir.Branch) bool { return ir.DefinesRef(b.Type) }):
-		g.malformed(dependentDefines, d.Name)
 	}
 }
 
@@ -61,18 +59,26 @@ func (g *gen) dependentClass(d *ir.Dependent) {
 	alts := make([]string, len(d.Branches))
 	for i, b := range d.Branches {
 		alts[i] = g.storage(b.Type)
-		if byValue(b.Type) {
+		if g.byValue(b.Type) {
 			g.h.linef(1, branchValueFormat, alts[i], n.Branches[i].As, i, alts[i])
 		} else {
 			g.h.linef(1, asGetterFormat, alts[i], n.Branches[i].As, i)
+		}
+		if n.Branches[i].AsValue != "" {
+			g.h.linef(1, branchDefineFormat, n.Branches[i].AsValue, i, n.DefineValue)
 		}
 	}
 	g.h.blank()
 	g.h.line(privateLabel)
 	g.h.linef(1, friendAccessFormat, g.pl.AccessName())
-	g.h.linef(1, friendDependentFormat, n.Decode, g.global(*d.Disc), g.qualifiedOwn(d))
+	if !g.baked() {
+		g.h.linef(1, friendDependentFormat, n.Decode, g.global(*d.Disc), g.qualifiedOwn(d))
+	}
 	g.h.blank()
 	g.h.linef(1, variantMemberFormat, strings.Join(alts, listSep))
+	if n.DefineValue != "" {
+		g.h.linef(1, memberFormat, cppInt64, n.DefineValue, initZero)
+	}
 	g.h.line(closeClass)
 	g.h.blank()
 }
@@ -96,7 +102,7 @@ func (g *gen) dependentDecoder(d *ir.Dependent) {
 				mine = append(mine, labels[m])
 			}
 		}
-		g.dependentCase(mine, i, b)
+		g.dependentCase(mine, i, b, n.DefineValue)
 	}
 	g.c.linef(1, defaultBreak)
 	g.c.linef(1, closeBrace)
@@ -128,8 +134,8 @@ func (g *gen) discLabels(d *ir.Dependent) []string {
 	return labels
 }
 
-// dependentCase decodes the value as branch i's type into a local, then emplaces alternative i.
-func (g *gen) dependentCase(labels []string, i int, b *ir.Branch) {
+// dependentCase decodes the value as branch i's type into a local, a define key's value into defineValue (DECISIONS 298), then emplaces alternative i.
+func (g *gen) dependentCase(labels []string, i int, b *ir.Branch, defineValue string) {
 	if len(labels) == 0 {
 		return
 	}
@@ -141,6 +147,11 @@ func (g *gen) dependentCase(labels []string, i int, b *ir.Branch) {
 	tmp := fmt.Sprintf(tempFormat, depthTwo)
 	g.c.linef(depthTwo, localFormat, g.global(b.Type), tmp, elemInit(b.Type))
 	g.decodeValue(depthTwo, sourceVar, keyParam, leaf{t: b.Type, dst: tmp})
+	if d := ir.DefinesOf(g.p, ir.DefineTarget(b.Type)); d != nil {
+		g.c.linef(depthTwo, defineCallFormat, g.pl.DefinesName(d), quote(ir.DefineTableName(d)), keyParam, tmp, outPrefix+defineValue)
+	} else if ir.DefinesRef(b.Type) {
+		g.malformed(defineMissing, g.at)
+	}
 	g.c.linef(depthTwo, emplaceMoveFormat, i, tmp)
 	g.c.linef(depthTwo, returnOk)
 	g.c.linef(1, closeBrace)

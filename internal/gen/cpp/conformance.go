@@ -108,8 +108,11 @@ func vectorField(name string) string {
 	return verbatim(name)
 }
 
-// vectorType is a vector field's type: the pure type, a view for a String or a ref's string key.
+// vectorType is a vector field's type: the pure type, a view for a String or a ref's string key, a baked table id's enum (CODEGEN.md §5.8).
 func (g *gen) vectorType(t ir.TypeRef) string {
+	if id, ok := g.idEnum(t); ok {
+		return id
+	}
 	switch {
 	case t.Kind == types.String:
 		return cppStringView
@@ -158,6 +161,9 @@ func (g *gen) vectorValues(s vectorSet, v *ir.Vector) (in []string, want, code s
 		in = append(in, g.vectorLit(s.inputs[i].t, x))
 	}
 	want = zeroLit(s.fn.Result)
+	if _, id := g.idEnum(s.fn.Result); id {
+		want = initBraces
+	}
 	if v.Code == "" {
 		want = g.vectorLit(s.fn.Result, v.Want)
 	}
@@ -284,6 +290,9 @@ func (g *gen) printArg(t ir.TypeRef, optional bool, v string) (spec, arg string)
 	case types.Enum, types.Variant:
 		return specView, codeArgs(fmt.Sprintf(helperFormat, ir.CppToName, v))
 	case types.Ref:
+		if _, id := g.idEnum(t); id {
+			return specView, codeArgs(fmt.Sprintf(helperFormat, ir.CppToWire, v))
+		}
 		if t.Key != nil {
 			return g.printArg(*t.Key, false, v)
 		}

@@ -59,7 +59,7 @@ func (g *gen) inputSlots() {
 			g.h.printf(namespaceOpenFormat, class)
 			open = in.rec
 		}
-		g.h.linef(0, inlineSlotFormat, g.memberType(in.f.Type, in.f.Optional), slot, memberInit(in.f.Type, in.f.Optional))
+		g.h.linef(0, inlineSlotFormat, g.memberType(in.f.Type, in.f.Optional), slot, g.memberInit(in.f.Type, in.f.Optional))
 	}
 	g.h.printf(namespaceCloseFormat, g.pl.TypeName(open))
 	g.h.printf(namespaceCloseFormat, names.Namespace)
@@ -78,7 +78,7 @@ func (g *gen) inputGetter(sc *scope, rec *ir.Record, f *ir.Field) {
 	name := g.getterName(f)
 	slot := g.inputSlot(rec, f)
 	body := fmt.Sprintf(returnFormat, slot)
-	if f.Optional && !byValue(f.Type) {
+	if f.Optional && !g.byValue(f.Type) {
 		body = fmt.Sprintf(returnPtrFormat, slot)
 	}
 	code, message := ir.InputGetterFailure(g.p.Name + qnameSep + rec.Name + qnameSep + f.Name)

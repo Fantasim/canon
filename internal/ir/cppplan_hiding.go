@@ -92,7 +92,7 @@ func (pl *CppNamePlan) accessScope(access string) *nameScope {
 	sc.hidden = map[string]string{access: pl.p.Name}
 	for _, v := range pl.values {
 		pl.namedIn(&v.Type, sc.hidden)
-		if v.Type.Kind != types.Record {
+		if IsContainer(v) {
 			sc.hidden[pl.ContainerName(v)] = pl.valueOrigin(v)
 			pl.rowTypes(v, sc.hidden)
 		}

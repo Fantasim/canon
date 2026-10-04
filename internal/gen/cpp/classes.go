@@ -168,14 +168,15 @@ func typeDeps(t ir.TypeRef, strong bool, out []dep) []dep {
 	}
 }
 
-// indexFns lists the translated fns; stored methods are getters (CODEGEN.md §5.10, E8013).
+// indexFns lists the translated fns; stored methods are getters, stored package fns baked-only (CODEGEN.md §5.10, E8013).
 func (g *gen) indexFns() {
 	for _, fn := range g.p.Fns {
-		if fn.Kind != ir.FnTranslated {
+		switch {
+		case fn.Kind == ir.FnTranslated:
+			g.pkgFns = append(g.pkgFns, fn)
+		case !g.baked():
 			g.malformed(packageStoredFn, fn.Name) // E8013 package
-			continue
 		}
-		g.pkgFns = append(g.pkgFns, fn)
 	}
 	g.fieldlessMethods()
 	for _, c := range g.declared() {
@@ -216,18 +217,28 @@ func (g *gen) declareNames() {
 	for _, c := range g.p.Consts {
 		g.declare(g.pl.ConstName(c), c.Name)
 	}
-	for _, v := range g.values {
-		g.declare(g.pl.SchemaName(v), v.Name)
-		if v.Type.Kind != types.Record {
-			g.declare(g.pl.ContainerName(v), v.Name)
-		}
-	}
-	for _, fn := range g.pkgFns {
-		g.declare(g.pl.FnName(fn), fn.Name)
-	}
+	g.declareValueNames()
+	g.declareBakedNames()
 	if g.reloads() > 0 {
 		g.declare(g.pl.SnapshotName(), snapshotOrigin)
 		g.declare(g.pl.StoreName(), snapshotOrigin)
+	}
+}
+
+// declareValueNames declares each value's schema constant (none when baked) and container, and each package fn the emit writes.
+func (g *gen) declareValueNames() {
+	for _, v := range g.values {
+		if !g.baked() {
+			g.declare(g.pl.SchemaName(v), v.Name)
+		}
+		if ir.IsContainer(v) {
+			g.declare(g.pl.ContainerName(v), v.Name)
+		}
+	}
+	for _, fn := range g.p.Fns {
+		if fn.Kind == ir.FnTranslated || g.baked() {
+			g.declare(g.pl.FnName(fn), fn.Name)
+		}
 	}
 }
 
@@ -256,7 +267,7 @@ func (g *gen) forwards() {
 		names = append(names, g.className(c))
 	}
 	for _, v := range g.values {
-		if v.Type.Kind != types.Record {
+		if ir.IsContainer(v) {
 			names = append(names, g.pl.ContainerName(v))
 		}
 	}

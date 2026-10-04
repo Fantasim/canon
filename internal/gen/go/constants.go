@@ -71,7 +71,17 @@ return c, ok
 
 // Dependent-type templates (CODEGEN.md §5.6).
 const (
-	dependentAsFormat       = "func (self *%[1]s) %[2]s() (%[3]s, bool) {\nif self.%[4]s != %[5]s {\nvar zero %[3]s\nreturn zero, false\n}\nreturn self.%[6]s.(%[3]s), true\n}\n\n"
+	dependentAsFormat      = "func (self *%[1]s) %[2]s() (%[3]s, bool) {\nif self.%[4]s != %[5]s {\nvar zero %[3]s\nreturn zero, false\n}\nreturn self.%[6]s.(%[3]s), true\n}\n\n"
+	dependentAsValueFormat = "func (self *%[1]s) %[2]s() (int64, bool) {\nif self.%[3]s != %[4]s {\nreturn 0, false\n}\nreturn self.%[5]s, true\n}\n\n"
+	defineVariantFormat    = `type %[1]s struct {
+%[3]s %[2]s
+%[4]s any
+%[6]s int64
+}
+
+func (self *%[1]s) %[5]s() %[2]s { return self.%[3]s }
+
+`
 	dependentFuncOpenFormat = "func %[1]s(%[2]s, %[3]s string, %[4]s %[5]s, %[6]s %[7]s, %[8]s *%[9]s) error {\n"
 	dependentDecodeFormat   = "%[1]s := &%[2]s{}\nif %[3]s := %[4]s(%[5]s, %[6]s, %[7]s, %[8]s, %[1]s); %[3]s != nil {\nreturn %[3]s\n}\n"
 	localDisc               = "disc"

@@ -77,6 +77,7 @@ func (pl *CppNamePlan) RunConformanceName() string {
 // CppDependent are a dependent type's C++ names (CODEGEN.md §3.3, §5.6): its class, its branch enum TBranch, GetBranch, the class's std::variant, detail's Decode<Alias>, and each branch's names in arm order.
 type CppDependent struct {
 	Class, Branch, GetBranch, Value, Decode string
+	DefineValue                             string // the member holding a define branch's value, "" without one (DECISIONS 298)
 	Branches                                []CppBranch
 }
 
@@ -99,6 +100,7 @@ func (pl *CppNamePlan) Dependent(d *Dependent) CppDependent {
 		br := CppBranch{Enumerator: cppVerbatim(b.Name), As: cppAsPrefix + cppUpperCamel(b.Name)}
 		if DefinesRef(b.Type) {
 			br.AsValue = br.As + asValueSuffix
+			out.DefineValue = cppDefineValue
 		}
 		out.Branches = append(out.Branches, br)
 	}
@@ -176,6 +178,9 @@ func (pl *CppNamePlan) declareDependents() {
 			}
 		}
 		pl.declare(class, n.Value, origin, d)
+		if n.DefineValue != "" {
+			pl.declare(class, n.DefineValue, origin, d)
+		}
 	}
 }
 

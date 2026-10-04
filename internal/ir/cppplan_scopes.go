@@ -3,8 +3,6 @@ package ir
 import (
 	"slices"
 	"strings"
-
-	"github.com/fantasim/canonlang/internal/types"
 )
 
 // declareAll declares the namespace's names in gen/cpp's order (CODEGEN.md §2.7, §3.5): enums, classes with their kind enums, constants, values, package fns, snapshot and store; then each enum's and class's members, detail and conformance. LoadInputs and its helpers come first, so a clash is reported at the user's item.
@@ -16,8 +14,10 @@ func (pl *CppNamePlan) declareAll() {
 		pl.shareNS(pl.ConstName(c), c.Name, c)
 	}
 	for _, v := range pl.values {
-		pl.shareNS(pl.SchemaName(v), pl.valueOrigin(v), v)
-		if v.Type.Kind != types.Record {
+		if !pl.baked() {
+			pl.shareNS(pl.SchemaName(v), pl.valueOrigin(v), v)
+		}
+		if IsContainer(v) {
 			pl.shareNS(pl.ContainerName(v), pl.valueOrigin(v), v)
 		}
 	}
@@ -25,6 +25,9 @@ func (pl *CppNamePlan) declareAll() {
 		if fn.Kind == FnTranslated {
 			pl.shareNS(pl.FnName(fn), pl.fnOrigin(fn), fn)
 		}
+	}
+	if pl.baked() {
+		pl.declareBaked()
 	}
 	if pl.reloads() {
 		pl.shareNS(pl.SnapshotName(), pl.p.Name, nil)
@@ -43,11 +46,16 @@ func (pl *CppNamePlan) declareNamespaceTypes() {
 			pl.declareEnum(pl.TypeName(e), e.QName(), e, e.Codes != nil)
 		}
 	}
-	if slices.ContainsFunc(pl.p.Types, func(t Type) bool { _, isEnum := t.(*Enum); _, isVariant := t.(*Variant); return isEnum || isVariant }) {
-		for _, n := range cppEnumOverloads {
-			pl.declare(pl.ns, n, pl.p.Name, nil)
-			pl.shareAs(pl.e.Namespace, n, pl.p.Name, nil, meetsOverload)
+	overloads := cppEnumOverloads
+	if !slices.ContainsFunc(pl.p.Types, func(t Type) bool { _, isEnum := t.(*Enum); _, isVariant := t.(*Variant); return isEnum || isVariant }) {
+		overloads = nil
+		if pl.tablesOwnToWire() {
+			overloads = []string{CppToWire}
 		}
+	}
+	for _, n := range overloads {
+		pl.declare(pl.ns, n, pl.p.Name, nil)
+		pl.shareAs(pl.e.Namespace, n, pl.p.Name, nil, meetsOverload)
 	}
 	pl.declareDependents()
 	for _, c := range pl.classes() {

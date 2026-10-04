@@ -19,7 +19,7 @@ std::string Multi(const demo::Multi* m) {
     if (m == nullptr) return "none";
     const std::string branch = std::to_string(static_cast<int>(m->GetBranch()));
     if (const std::string* a = m->AsA()) return branch + ":a:" + *a;
-    if (const std::string* b = m->AsB()) return branch + ":b:" + *b;
+    if (const std::string* b = m->AsB()) return branch + ":b:" + *b + "=" + std::to_string(*m->AsBValue());
     if (const auto c = m->AsC()) return branch + ":c:" + std::to_string(*c);
     return "?";
 }
@@ -47,7 +47,7 @@ void Show(const std::string& dir, const char* name) {
 
 int main(int argc, char** argv) {
     if (argc != 2) return 100;
-    for (const char* name : {"ok1", "ok2", "ok3", "ok4", "neverwritten", "badenum", "badint", "badbranch"}) {
+    for (const char* name : {"ok1", "ok2", "ok3", "ok4", "neverwritten", "badenum", "badint", "baddefine", "badbranch"}) {
         Show(argv[1], name);
     }
     return 0;

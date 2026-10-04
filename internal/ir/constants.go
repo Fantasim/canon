@@ -439,3 +439,15 @@ const (
 	tsRetiredProp  = "retired"
 	tsKindProp     = "kind"
 )
+
+// The names a baked cpp emit adds (CODEGEN.md §5.3, §5.10, §7.3; decision 293).
+const (
+	cppIDSuffix    = "Id"
+	cppRefData     = "_ref"
+	cppCellsSuffix = "Cells"
+	cppDataStruct  = "Data"
+	cppBuild       = "Build"
+	// a dependent type's define value storage (DECISIONS 298): Go's carries an interior `_`, C++'s a final one, as every generated member.
+	goDefineStore  = "define_value"
+	cppDefineValue = "defineValue_"
+)

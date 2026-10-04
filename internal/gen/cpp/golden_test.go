@@ -24,6 +24,7 @@ var fixtures = []fixture{
 	{"pipeline", pipeline}, {"constructs", constructs}, {"imports-base", importBase}, {"imports-app", importApp},
 	{"dependent", dependentPackage}, {"inputs", inputsPackage}, {"types-time", typesTimeFixture}, {"types-events", typesEventsFixture},
 	{"tablefields", tablesPackage}, {"types-tablefields", tableTypesPackage},
+	{"baked", bakedPackage}, {"baked-dependent", bakedDependentPackage},
 }
 
 // generate runs the generator twice: the same bytes both times (CODEGEN.md §2.7, NFR-05).

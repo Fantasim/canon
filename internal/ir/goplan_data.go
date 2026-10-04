@@ -134,7 +134,7 @@ func (d *goData) resolvesTo(r *RefTarget, class any) *Value {
 		return nil
 	}
 	target := d.pl.byValue[r.Value]
-	if !isGoContainer(target) || !allResolve(d.holders[class], target) {
+	if !IsContainer(target) || !allResolve(d.holders[class], target) {
 		return nil
 	}
 	return target

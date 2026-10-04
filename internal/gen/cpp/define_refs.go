@@ -14,6 +14,9 @@ func (g *gen) defineTables() {
 			g.malformed(defineMissing, d.Pkg+qnameSep+d.Value)
 			continue
 		}
+		if g.baked() {
+			g.c.write(maybeUnused) // a baked emit writes the table and reads no key from it (CODEGEN.md §5.8)
+		}
 		g.c.printf(definesOpenFormat, len(d.Names), g.pl.DefinesName(d))
 		for i, n := range d.Names {
 			g.c.linef(1, defineEntryFormat, quote(n), intLit(d.Values[i]))
@@ -40,12 +43,12 @@ func (g *gen) defineGetter(sc *scope, f *ir.Field) []string {
 	}
 	t := defineValueType(f.Type)
 	body := fmt.Sprintf(returnFormat, member)
-	if f.Optional && !byValue(t) {
+	if f.Optional && !g.byValue(t) {
 		body = fmt.Sprintf(returnPtrFormat, member)
 	}
 	g.doc(1, f.Doc)
 	g.getter(sc, name, fmt.Sprintf(getterFormat, g.getterType(t, f.Optional), name, "", body), member, f.Name)
-	return []string{fmt.Sprintf(memberFormat, g.memberType(t, f.Optional), member, memberInit(t, f.Optional))}
+	return []string{fmt.Sprintf(memberFormat, g.memberType(t, f.Optional), member, g.memberInit(t, f.Optional))}
 }
 
 // defineLookup looks a define ref's keys up once read, key naming them in load errors (CODEGEN.md §5.8).

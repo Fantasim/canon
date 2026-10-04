@@ -1,0 +1,5 @@
+@generated/vocab.view.json generated/vocab.view.json
+@source/Generated/vocab/canon_runtime.h source/Generated/vocab/canon_runtime.h
+@source/Generated/vocab/vocab.gen.cpp source/Generated/vocab/vocab.gen.cpp
+@source/Generated/vocab/vocab.gen.h source/Generated/vocab/vocab.gen.h
+resource/vocab/canon.lock vocab/canon.lock

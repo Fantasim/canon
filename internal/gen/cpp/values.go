@@ -27,9 +27,18 @@ var (
 // detailDecls: package fn prototypes when a pure fn calls one (log-2026-09-24), then §2.7 step 4.
 func (g *gen) detailDecls() {
 	if g.callsPackageFn() {
-		for _, fn := range g.pkgFns {
+		for _, fn := range g.p.Fns {
 			leave := g.enter(fn.Name)
-			g.h.printf(protoFormat, g.pureSignature(g.pl.FnName(fn), fn))
+			switch {
+			case fn.Kind == ir.FnTranslated:
+				g.h.printf(protoFormat, g.pureSignature(g.pl.FnName(fn), fn))
+			case g.pl.Constexpr(fn):
+				r := g.fnProto(fn)
+				g.h.printf(declFormat, fmt.Sprintf(signatureFormat, r.typ, r.name, r.params))
+			default:
+				r := g.fnReader(fn)
+				g.h.printf(declFormat, fmt.Sprintf(signatureFormat, r.typ, r.name, r.params))
+			}
 			leave()
 		}
 		g.h.blank()
@@ -37,6 +46,9 @@ func (g *gen) detailDecls() {
 	g.h.line(detailOpen)
 	g.h.printf(accessDeclFormat, g.pl.AccessName())
 	for _, c := range g.declared() {
+		if g.baked() {
+			break // nothing is decoded (CODEGEN.md §2.2)
+		}
 		if c.dependent != nil {
 			g.dependentDecodeDecl(c.dependent)
 		} else {
@@ -58,12 +70,19 @@ func (g *gen) detailDecls() {
 	g.h.blank()
 }
 
-// packageFns are the package-level translated fns, public and pure at once (CODEGEN.md §5.10).
+// packageFns are the package-level export fns in declaration order: a translated one public and pure at once, a baked stored one constexpr in the header or declared here and defined in the source (CODEGEN.md §5.10, decision 293).
 func (g *gen) packageFns() {
-	for _, fn := range g.pkgFns {
+	for _, fn := range g.p.Fns {
 		leave := g.enter(fn.Name)
-		g.doc(0, fn.Doc)
-		g.pureFn(g.pl.FnName(fn), fn)
+		switch {
+		case fn.Kind == ir.FnTranslated:
+			g.doc(0, fn.Doc)
+			g.pureFn(g.pl.FnName(fn), fn)
+		case g.pl.Constexpr(fn):
+			g.constexprFn(fn)
+		default:
+			g.storedFnDecl(fn)
+		}
 		g.h.blank()
 		leave()
 	}
@@ -72,7 +91,7 @@ func (g *gen) packageFns() {
 // containers are the classes of table and keyed-list values (CODEGEN.md §5.9, T8).
 func (g *gen) containers() {
 	for _, v := range g.values {
-		if v.Type.Kind == types.Record {
+		if !ir.IsContainer(v) {
 			continue
 		}
 		leave := g.enter(v.Name)
@@ -137,13 +156,17 @@ func (g *gen) container(v *ir.Value) {
 	g.doc(0, v.Doc)
 	g.h.printf(classOpenFormat, s.name)
 	g.h.printf(moveOnlyText, s.name)
-	if !v.Reload {
+	if !v.Reload && !g.baked() {
 		g.fail(sc.add(ir.CppLoad, v.Name))
 		g.h.linef(1, loadDeclFormat, s.name)
 	}
 	g.h.linef(1, lenFormat)
 	g.h.linef(1, atFormat, s.elem)
 	g.h.linef(1, allFormat, s.elem)
+	if rec, ok := v.Type.Elem.Named.(*ir.Record); ok && g.baked() && v.Type.Kind == types.Table {
+		g.fail(sc.add(ir.GoGet, v.Name))
+		g.h.linef(1, getFormat, s.elem, g.pl.IDName(rec))
+	}
 	g.h.linef(1, findDocFormat, s.keyName)
 	g.h.linef(1, findFormat, s.elem, lookupType(s.key), verbatim(s.keyName))
 	for _, f := range s.stable {

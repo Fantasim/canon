@@ -123,6 +123,10 @@ func (g *gen) snapshotLoader(walks []class) {
 
 // outOfLine defines the members the header only declares, in class order (CODEGEN.md §2.7).
 func (g *gen) outOfLine() {
+	if g.baked() {
+		g.bakedDefinitions()
+		return
+	}
 	for _, c := range g.classes {
 		if v := g.loaders[c.rec]; c.rec != nil && v != nil {
 			g.c.printf(containerLoadText, g.typeName(c.rec), g.pl.AccessName(), g.pl.AccessLoader(v), ir.CppLoad)

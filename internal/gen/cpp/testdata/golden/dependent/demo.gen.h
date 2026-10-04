@@ -140,6 +140,7 @@ public:
     MultiBranch GetBranch() const { return static_cast<MultiBranch>(value_.index()); }
     const std::string* AsA() const { return std::get_if<0>(&value_); }
     const std::string* AsB() const { return std::get_if<1>(&value_); }
+    std::optional<int64_t> AsBValue() const { return value_.index() == 1 ? std::optional<int64_t>(defineValue_) : std::nullopt; }
     std::optional<int32_t> AsC() const { const auto* p = std::get_if<2>(&value_); return p ? std::optional<int32_t>(*p) : std::nullopt; }
 
 private:
@@ -147,6 +148,7 @@ private:
     friend bool detail::DecodeMulti(const nlohmann::json&, std::string_view, ::demo::Kind3, canon::json::Decoder&, ::demo::Multi&);
 
     std::variant<std::string, std::string, int32_t> value_;
+    int64_t defineValue_ = 0;
 };
 
 class EventType {

@@ -114,8 +114,11 @@ func (g *gen) listStorage(t ir.TypeRef) string {
 	return fmt.Sprintf(keyedListFormat, g.storage(key.Type), elem)
 }
 
-// refStorage is a ref's key (CODEGEN.md §5.8); a define ref's value has members of its own (define_refs.go).
+// refStorage is a ref's key, a table's id enum in a baked emit (CODEGEN.md §5.3, §5.8); a define ref's value has members of its own (define_refs.go).
 func (g *gen) refStorage(t ir.TypeRef) string {
+	if id, ok := g.idEnum(t); ok {
+		return id
+	}
 	if t.Key == nil {
 		g.fail(fmt.Errorf("%w: ref without a key type at %s", ErrMalformed, g.at))
 		return cppInvalid
@@ -123,25 +126,36 @@ func (g *gen) refStorage(t ir.TypeRef) string {
 	return g.storage(*t.Key)
 }
 
-// byValue reports a type whose getter returns a copy: scalars, enums, a ref to one (§5.4, §5.8).
-func byValue(t ir.TypeRef) bool {
+// byValue reports a type whose getter returns a copy: scalars, enums, a ref to one, a table id included (§5.4, §5.8).
+func (g *gen) byValue(t ir.TypeRef) bool {
 	switch t.Kind {
 	case types.Bool, types.Int, types.Float, types.Duration, types.Enum:
 		return true
 	case types.Ref:
-		return t.Key != nil && byValue(*t.Key)
+		_, id := g.idEnum(t)
+		return id || t.Key != nil && g.byValue(*t.Key)
 	default:
 		return false
 	}
+}
+
+// idEnum is the id enum keying a ref of a baked emit, qualified when imported (CODEGEN.md §5.3, §5.8).
+func (g *gen) idEnum(t ir.TypeRef) (string, bool) {
+	v := g.pl.IDTable(t)
+	if v == nil {
+		return "", false
+	}
+	rec, _ := v.Type.Elem.Named.(*ir.Record)
+	return g.qualifier(rec.Pkg) + g.pl.IDName(rec), true
 }
 
 // getterType is what a getter of t returns (CODEGEN.md §4.1–§4.3).
 func (g *gen) getterType(t ir.TypeRef, optional bool) string {
 	s := g.storage(t)
 	switch {
-	case byValue(t) && optional:
+	case g.byValue(t) && optional:
 		return fmt.Sprintf(optionalFormat, s)
-	case byValue(t):
+	case g.byValue(t):
 		return s
 	case optional:
 		return fmt.Sprintf(constPtrFormat, s)
@@ -158,7 +172,15 @@ func (g *gen) memberType(t ir.TypeRef, optional bool) string {
 }
 
 // memberInit initializes a scalar member (CODEGEN.md §7.2: members are initialized).
-func memberInit(t ir.TypeRef, optional bool) string {
+func (g *gen) memberInit(t ir.TypeRef, optional bool) string {
+	if _, id := g.idEnum(t); id && !optional {
+		return initBraces
+	}
+	return scalarInit(t, optional)
+}
+
+// scalarInit is memberInit for a type whose key, when a ref, is the IR's own.
+func scalarInit(t ir.TypeRef, optional bool) string {
 	switch {
 	case optional:
 		return ""
@@ -175,7 +197,7 @@ func memberInit(t ir.TypeRef, optional bool) string {
 	case t.Kind == types.Enum:
 		return initBraces
 	case t.Kind == types.Ref && t.Key != nil:
-		return memberInit(*t.Key, false)
+		return scalarInit(*t.Key, false)
 	}
 	return ""
 }

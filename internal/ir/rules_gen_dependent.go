@@ -18,7 +18,7 @@ func (s *stage) checkNeverDependents(u *unit, es *emitSite) {
 	}
 }
 
-// checkGoDependentLiterals is E8019 `DependentType` where baked Go cannot write a dependent value as a literal: a selected value holding one, and a stored fn's results once, at the fn (CODEGEN.md §5.6; gen/go assignDependent).
+// checkGoDependentLiterals is E8019 `DependentType` where baked Go or C++ cannot write a dependent value (both read its discriminant down DiscFields, of an own type): a selected value holding one, and a stored fn's results once, at the fn (CODEGEN.md §5.6; gen/go assignDependent).
 func (s *stage) checkGoDependentLiterals(u *unit, es *emitSite) {
 	own := u.p.Name
 	for _, v := range selectedValues(u, es.e) {
@@ -108,15 +108,6 @@ func (s *stage) checkGoDecodedDependents(u *unit, es *emitSite) {
 	for _, class := range packageClasses(u.p) {
 		if pl.Decoded(class) {
 			s.reportDecodedDependents(u, es, class, goDiscRead)
-		}
-	}
-}
-
-// checkDefineBranches is E8019 `DependentType` at a dependent type with a branch into a load.defines table, used or not: neither generator writes its As<Branch>Value (CODEGEN.md §5.6, §5.8; decision 222).
-func (s *stage) checkDefineBranches(u *unit, es *emitSite) {
-	for _, t := range u.p.Types {
-		if d, ok := t.(*Dependent); ok && slices.ContainsFunc(d.Branches, func(b *Branch) bool { return DefinesRef(b.Type) }) {
-			u.reportGenConstruct(es, s.decls[d].span(), diag.KindDependentType)
 		}
 	}
 }

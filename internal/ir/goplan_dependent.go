@@ -5,6 +5,7 @@ import "github.com/fantasim/canonlang/internal/types"
 // GoDependent are a dependent type's Go names (CODEGEN.md §3.3, §5.6): its struct, its branch enum TBranch, the struct's Branch method and storage, and each branch's names in arm order.
 type GoDependent struct {
 	Type, Branch, Method, BranchStore, ValueStore string
+	DefineStore                                   string // the field holding a define branch's value, "" without one (DECISIONS 298)
 	Branches                                      []GoBranch
 }
 
@@ -21,6 +22,7 @@ func (pl *GoNamePlan) Dependent(d *Dependent) GoDependent {
 		br := GoBranch{Member: out.Branch + goUpperCamel(b.Name), As: goAsPrefix + goUpperCamel(b.Name)}
 		if DefinesRef(b.Type) {
 			br.AsValue = br.As + asValueSuffix
+			out.DefineStore = goDefineStore
 		}
 		out.Branches = append(out.Branches, br)
 	}
@@ -50,6 +52,9 @@ func (pl *GoNamePlan) declareDependent(top *nameScope, d *Dependent) {
 	}
 	pl.declare(sc, n.BranchStore, origin, d)
 	pl.declare(sc, n.ValueStore, origin, d)
+	if n.DefineStore != "" {
+		pl.declare(sc, n.DefineStore, origin, d)
+	}
 }
 
 // heldDependents are the dependent types a decoded class's fields hold, through lists and optionals: a data loader decodes them with decode<T> (CODEGEN.md §5.6, §6.1).

@@ -40,6 +40,7 @@ type gen struct {
 	top          *scope
 	pkgFns       []*ir.ExportFn // package-level translated fns
 	methods      []*method      // translated methods, declaration order
+	bk           *bakedIndex    // a baked emit's entries and precomputed results (CODEGEN.md §5.9)
 	h, c         writer
 }
 
@@ -55,7 +56,7 @@ func Generate(p *ir.Package, e *ir.Emit) ([]ir.File, error) {
 	if p == nil || e == nil || e.Target != ir.TargetCpp {
 		return nil, ErrTarget
 	}
-	if e.Mode != ir.ModeData && e.Mode != ir.ModeTypes {
+	if e.Mode == ir.ModeNone || e.Mode == ir.ModeEmbedded {
 		return nil, fmt.Errorf("%w: mode %s of %s", ErrUnsupported, modeText(e.Mode), e.Out)
 	}
 	if e.Namespace == "" || p.Dir == "" || p.Name == "" {
@@ -132,7 +133,11 @@ func (g *gen) plan() {
 	}
 	g.indexFns()
 	g.boxes()
-	g.pairsParents()
+	if g.baked() {
+		g.indexBaked()
+	} else {
+		g.pairsParents()
+	}
 	g.nestedRows()
 	g.holdersOf()
 	g.sortClasses()
@@ -141,6 +146,9 @@ func (g *gen) plan() {
 	g.declareNames()
 }
 
+// baked reports a baked emit: values built into the program, nothing decoded (CODEGEN.md §2.2, §5.9).
+func (g *gen) baked() bool { return g.emit.Mode == ir.ModeBaked }
+
 // types reports a types-mode emit: read-only types and their public decoders, no value (CODEGEN.md §2.2, §5.13).
 func (g *gen) types() bool { return g.emit.Mode == ir.ModeTypes }
 
@@ -148,12 +156,11 @@ func (g *gen) types() bool { return g.emit.Mode == ir.ModeTypes }
 func (g *gen) files() []ir.File {
 	header := g.header()
 	source := g.source()
-	out := []ir.File{
-		{Path: runtimeFile, Content: []byte(runtimeText)},
-		{Path: runtimeJSONFile, Content: []byte(runtimeJSONText)},
-		{Path: g.last + genHeaderSuffix, Content: header},
-		{Path: g.last + genSourceSuffix, Content: source},
+	out := []ir.File{{Path: runtimeFile, Content: []byte(runtimeText)}}
+	if !g.baked() {
+		out = append(out, ir.File{Path: runtimeJSONFile, Content: []byte(runtimeJSONText)})
 	}
+	out = append(out, ir.File{Path: g.last + genHeaderSuffix, Content: header}, ir.File{Path: g.last + genSourceSuffix, Content: source})
 	if g.translated() {
 		out = append(out, ir.File{Path: g.last + conformanceSuffix, Content: g.conformance()})
 	}
@@ -171,7 +178,7 @@ func (g *gen) header() []byte {
 	g.h = writer{}
 	sections := []func(){
 		g.constants, g.schemaConstants, g.enums, g.enumConstants, g.forwards,
-		g.detailDecls, g.classDecls, g.containers, g.packageFns, g.snapshot, g.inputsDecl,
+		g.detailDecls, g.classDecls, g.containers, g.accessors, g.packageFns, g.snapshot, g.inputsDecl,
 		g.conformanceDecl,
 	}
 	for _, s := range sections {
@@ -189,7 +196,7 @@ func (g *gen) header() []byte {
 // headerGroups are <nlohmann/json_fwd.hpp> when the header declares a decoder, then the runtime.
 func headerGroups(g *gen) [][]string {
 	last := append([]string{includeRuntime}, g.importIncludes()...)
-	if len(g.classes) == 0 {
+	if len(g.classes) == 0 || g.baked() {
 		return [][]string{last}
 	}
 	return [][]string{{includeJSONFwd}, last}
@@ -199,8 +206,12 @@ func headerGroups(g *gen) [][]string {
 func (g *gen) source() []byte {
 	g.c = writer{}
 	g.defineTables()
-	g.decoders()
-	g.accessStruct()
+	if g.baked() {
+		g.bakedAccess()
+	} else {
+		g.decoders()
+		g.accessStruct()
+	}
 	body := g.c.String()
 	g.c = writer{}
 	g.c.line(detailOpen)
@@ -214,12 +225,16 @@ func (g *gen) source() []byte {
 	out.printf(markerFormat, g.p.Dir)
 	out.linef(0, includeQuotedFormat, g.last+genHeaderSuffix)
 	out.blank()
-	includes(&out, g.c.String(), [][]string{{includeRuntimeJSON}})
+	var groups [][]string
+	if !g.baked() {
+		groups = [][]string{{includeRuntimeJSON}}
+	}
+	includes(&out, g.c.String(), groups)
 	g.namespaceBody(&out, g.emit.Namespace, g.c.String())
 	return out.bytes()
 }
 
-// selectValues is the emit's values in declaration order; data mode takes tables, keyed lists and records (E8015).
+// selectValues is the emit's values in declaration order; data mode takes tables, keyed lists and records (E8015), baked mode any value.
 func (g *gen) selectValues() {
 	for _, v := range g.p.Values {
 		if g.emit.Values != nil && !slices.Contains(g.emit.Values, v.Name) {
@@ -232,6 +247,7 @@ func (g *gen) selectValues() {
 				g.entries[rec] = true
 			}
 		case v.Type.Kind == types.List && v.Type.KeyedBy != nil:
+		case g.baked():
 		case v.Type.Kind == types.Record:
 			g.recordLoader(v)
 		default:

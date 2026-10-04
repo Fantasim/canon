@@ -5,12 +5,13 @@ import (
 	"github.com/fantasim/canonlang/internal/types"
 )
 
-// dependentPackage is an Event of dependent fields: Payload over a Bool, an optional Multi (a and
-// b both String, c and e one arm, d Never), Deep (renamed Depth) over a held record's field, and
+// dependentPackage is an Event of dependent fields: Payload over a Bool, an optional Multi (a a
+// String, b a define key (DECISIONS 298), c and e one arm, d Never), Deep (renamed Depth) over a held record's field, and
 // a list of Payload.
 func dependentPackage() *ir.Package {
 	kind := enumOf("Kind", "spawn", "despawn")
 	kind3 := enumOf("Kind3", "a", "b", "c", "d", "e")
+	monsterRef := ir.TypeRef{Kind: types.Ref, Key: &tString, Ref: &ir.RefTarget{Coll: types.CollDefines, Pkg: "demo", Value: "monsters", Local: true}}
 	tKind3 := ir.TypeRef{Kind: types.Enum, Named: kind3}
 	eventType := &ir.Record{Pkg: "demo", Name: "EventType", Fields: []*ir.Field{field("param", "param", "", tKind3)}}
 	payload := &ir.Dependent{
@@ -19,7 +20,7 @@ func dependentPackage() *ir.Package {
 	}
 	multi := &ir.Dependent{
 		Pkg: "demo", Name: "Multi", Params: 1, Disc: &tKind3, ByMember: []int{0, 1, 2, ir.NoBranch, 2},
-		Branches: []*ir.Branch{{Name: "a", Members: []int{0}, Type: tString}, {Name: "b", Members: []int{1}, Type: tString}, {Name: "c", Members: []int{2, 4}, Type: tInt32}},
+		Branches: []*ir.Branch{{Name: "a", Members: []int{0}, Type: tString}, {Name: "b", Members: []int{1}, Type: monsterRef}, {Name: "c", Members: []int{2, 4}, Type: tInt32}},
 	}
 	deep := &ir.Dependent{
 		Pkg: "demo", Name: "Deep", Cpp: ir.NameOptions{Name: "Depth"}, Params: 1, DiscPath: []string{"param"}, Disc: &tKind3, ByMember: []int{0, 1, 1, 1, 1},
@@ -39,6 +40,7 @@ func dependentPackage() *ir.Package {
 	return &ir.Package{
 		Name: "demo", Dir: "demo", Types: []ir.Type{kind, kind3, payload, multi, eventType, deep, event},
 		Values: []*ir.Value{v}, Emits: []*ir.Emit{emit},
+		Defines: []*ir.DefineTable{{Pkg: "demo", Value: "monsters", Names: []string{"MI_A", "MI_B"}, Values: []int64{7, 9}}},
 	}
 }
 

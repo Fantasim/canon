@@ -1,0 +1,40 @@
+CB review 4, CODEGEN.md §5.10: a translated fn calling a lookup whose result is a ref into a keyed list (not constexpr) checks, builds and compiles: it calls the .gen.cpp function.
+-- project.canon --
+project demo {
+  canon: "0.1"
+  roots {
+    gen: "gen"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A tone.
+enum Tone { quiet, loud }
+
+/// A crew.
+record Crew {
+  /// Its name.
+  name: String
+  /// Its size.
+  size: Int
+}
+
+/// The crews.
+let crews: [Crew] keyed by name = [{ name: "ann", size: 2 }, { name: "bob", size: 5 }]
+
+/// A tone's crew.
+export fn crewOf(t: Tone) -> ref crews { return if t == Tone.loud { "bob" } else { "ann" } }
+
+/// A tone's crew, translated.
+export fn crewFor(t: Tone, n: Int) -> ref crews { return crewOf(t) }
+
+test "crewFor" {
+  expect crewFor(Tone.loud, 1).size == 5
+  expect crewFor(Tone.quiet, 0).size == 2
+}
+
+emit cpp { out: "@gen/a", namespace: "a", mode: baked }
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

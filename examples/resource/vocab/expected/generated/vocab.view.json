@@ -1,0 +1,1671 @@
+{
+  "$schema": "canon-vm/1",
+  "package": "resource.vocab",
+  "language": "0.1",
+  "requires": [
+    "studio"
+  ],
+  "types": {
+    "resource.vocab.Element": {
+      "kind": "enum",
+      "name": "Element",
+      "help": "resource.vocab:Element.help",
+      "codes": "UInt8",
+      "members": [
+        {
+          "name": "FIRE",
+          "wire": "FIRE",
+          "index": 0,
+          "code": 1,
+          "label": "resource.vocab:Element.FIRE",
+          "icon": "flame",
+          "tone": "danger"
+        },
+        {
+          "name": "WATER",
+          "wire": "WATER",
+          "index": 1,
+          "code": 2,
+          "label": "resource.vocab:Element.WATER",
+          "icon": "droplet",
+          "tone": "info"
+        },
+        {
+          "name": "ELECTRICITY",
+          "wire": "ELECTRICITY",
+          "index": 2,
+          "code": 3,
+          "label": "resource.vocab:Element.ELECTRICITY",
+          "icon": "zap",
+          "tone": "warning"
+        },
+        {
+          "name": "WIND",
+          "wire": "WIND",
+          "index": 3,
+          "code": 4,
+          "label": "resource.vocab:Element.WIND",
+          "icon": "wind",
+          "tone": "series_2"
+        },
+        {
+          "name": "EARTH",
+          "wire": "EARTH",
+          "index": 4,
+          "code": 5,
+          "label": "resource.vocab:Element.EARTH",
+          "icon": "mountain",
+          "tone": "series_3"
+        }
+      ]
+    },
+    "resource.vocab.EventType": {
+      "kind": "record",
+      "name": "EventType",
+      "help": "resource.vocab:EventType.help",
+      "fields": [
+        {
+          "name": "code",
+          "type": {
+            "kind": "int",
+            "bits": 16,
+            "signed": false,
+            "min": 0,
+            "max": 65535
+          },
+          "required": true,
+          "help": "resource.vocab:EventType.code.help",
+          "wire": {
+            "name": "code"
+          },
+          "stable": true
+        },
+        {
+          "name": "display",
+          "type": {
+            "kind": "string"
+          },
+          "required": true,
+          "help": "resource.vocab:EventType.display.help",
+          "wire": {
+            "name": "display"
+          }
+        },
+        {
+          "name": "param",
+          "type": {
+            "kind": "enum",
+            "ref": "resource.vocab.ParamKind"
+          },
+          "default": "none_",
+          "help": "resource.vocab:EventType.param.help",
+          "wire": {
+            "name": "param"
+          }
+        },
+        {
+          "name": "flag",
+          "type": {
+            "kind": "optional",
+            "of": {
+              "kind": "string"
+            }
+          },
+          "default": null,
+          "help": "resource.vocab:EventType.flag.help",
+          "wire": {
+            "name": "flag"
+          }
+        }
+      ]
+    },
+    "resource.vocab.Item": {
+      "kind": "record",
+      "name": "Item",
+      "help": "resource.vocab:Item.help",
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "string",
+            "pattern": "^II_[A-Za-z0-9_]+$"
+          },
+          "required": true,
+          "help": "resource.vocab:Item.id.help",
+          "wire": {
+            "name": "dwID"
+          }
+        },
+        {
+          "name": "nameKey",
+          "type": {
+            "kind": "string"
+          },
+          "default": "IDS_PROPITEM_TXT_030168",
+          "help": "resource.vocab:Item.nameKey.help",
+          "wire": {
+            "name": "szName"
+          }
+        },
+        {
+          "name": "kind",
+          "type": {
+            "kind": "enum",
+            "ref": "resource.vocab.ItemKind1"
+          },
+          "default": "IK1_ARMOR",
+          "help": "resource.vocab:Item.kind.help",
+          "wire": {
+            "name": "dwItemKind1"
+          }
+        },
+        {
+          "name": "job",
+          "type": {
+            "kind": "optional",
+            "of": {
+              "kind": "ref",
+              "collection": "resource.vocab:jobs",
+              "element": "$define",
+              "keyType": "string",
+              "count": 16,
+              "active": 16
+            }
+          },
+          "default": null,
+          "help": "resource.vocab:Item.job.help",
+          "wire": {
+            "name": "dwItemJob",
+            "none": "="
+          }
+        },
+        {
+          "name": "level",
+          "type": {
+            "kind": "optional",
+            "of": {
+              "kind": "int",
+              "bits": 64,
+              "signed": true,
+              "min": 0
+            }
+          },
+          "default": 1,
+          "help": "resource.vocab:Item.level.help",
+          "wire": {
+            "name": "dwItemLV",
+            "none": "="
+          }
+        },
+        {
+          "name": "stackMax",
+          "type": {
+            "kind": "int",
+            "bits": 64,
+            "signed": true,
+            "min": 1
+          },
+          "default": 1,
+          "help": "resource.vocab:Item.stackMax.help",
+          "wire": {
+            "name": "dwPackMax"
+          }
+        },
+        {
+          "name": "icon",
+          "type": {
+            "kind": "asset",
+            "root": "@resource/Icon/Item",
+            "ext": [
+              "dds",
+              "png"
+            ]
+          },
+          "required": true,
+          "help": "resource.vocab:Item.icon.help",
+          "wire": {
+            "name": "szIcon"
+          }
+        }
+      ]
+    },
+    "resource.vocab.ItemKind1": {
+      "kind": "enum",
+      "name": "ItemKind1",
+      "help": "resource.vocab:ItemKind1.help",
+      "members": [
+        {
+          "name": "IK1_GOLD",
+          "wire": "IK1_GOLD",
+          "index": 0,
+          "label": "resource.vocab:ItemKind1.IK1_GOLD"
+        },
+        {
+          "name": "IK1_WEAPON",
+          "wire": "IK1_WEAPON",
+          "index": 1,
+          "label": "resource.vocab:ItemKind1.IK1_WEAPON"
+        },
+        {
+          "name": "IK1_ARMOR",
+          "wire": "IK1_ARMOR",
+          "index": 2,
+          "label": "resource.vocab:ItemKind1.IK1_ARMOR"
+        },
+        {
+          "name": "IK1_GENERAL",
+          "wire": "IK1_GENERAL",
+          "index": 3,
+          "label": "resource.vocab:ItemKind1.IK1_GENERAL"
+        },
+        {
+          "name": "IK1_RIDE",
+          "wire": "IK1_RIDE",
+          "index": 4,
+          "label": "resource.vocab:ItemKind1.IK1_RIDE"
+        },
+        {
+          "name": "IK1_SYSTEM",
+          "wire": "IK1_SYSTEM",
+          "index": 5,
+          "label": "resource.vocab:ItemKind1.IK1_SYSTEM"
+        },
+        {
+          "name": "IK1_CHARGED",
+          "wire": "IK1_CHARGED",
+          "index": 6,
+          "label": "resource.vocab:ItemKind1.IK1_CHARGED"
+        },
+        {
+          "name": "IK1_HOUSING",
+          "wire": "IK1_HOUSING",
+          "index": 7,
+          "label": "resource.vocab:ItemKind1.IK1_HOUSING"
+        }
+      ]
+    },
+    "resource.vocab.Param": {
+      "kind": "typeFunction",
+      "name": "Param",
+      "params": [
+        {
+          "name": "e",
+          "type": {
+            "kind": "record",
+            "ref": "resource.vocab.EventType"
+          }
+        }
+      ],
+      "select": "param",
+      "branches": [
+        {
+          "match": [
+            "monster"
+          ],
+          "type": {
+            "kind": "ref",
+            "collection": "resource.vocab:monsters",
+            "element": "$define",
+            "keyType": "string",
+            "count": 6,
+            "active": 6
+          }
+        },
+        {
+          "match": [
+            "item"
+          ],
+          "type": {
+            "kind": "ref",
+            "collection": "resource.vocab:items",
+            "element": "resource.vocab.Item",
+            "keyType": "string",
+            "count": 16,
+            "active": 16
+          }
+        },
+        {
+          "match": [
+            "dungeon"
+          ],
+          "type": {
+            "kind": "ref",
+            "collection": "resource.vocab:worlds",
+            "element": "$define",
+            "keyType": "string",
+            "count": 6,
+            "active": 6
+          }
+        },
+        {
+          "match": [
+            "element"
+          ],
+          "type": {
+            "kind": "enum",
+            "ref": "resource.vocab.Element"
+          }
+        },
+        {
+          "match": [
+            "quest_style"
+          ],
+          "type": {
+            "kind": "enum",
+            "ref": "resource.vocab.QuestStyle"
+          }
+        },
+        {
+          "match": [
+            "upgrade_type"
+          ],
+          "type": {
+            "kind": "ref",
+            "collection": "resource.vocab:upgradeTypes",
+            "element": "$define",
+            "keyType": "string",
+            "count": 6,
+            "active": 6
+          }
+        },
+        {
+          "match": [
+            "game_mode"
+          ],
+          "type": {
+            "kind": "string"
+          }
+        },
+        {
+          "match": [
+            "none_",
+            "stat"
+          ],
+          "type": {
+            "kind": "never"
+          }
+        }
+      ],
+      "drivers": {
+        "resource.vocab:eventTypes": {
+          "COMBAT_DAMAGE_PVE": "monster",
+          "COMBAT_DAMAGE_PVP_EVENT": "none_",
+          "COMBAT_GAME_MODE_START": "game_mode",
+          "COMBAT_KILL_BOSS": "monster",
+          "COMBAT_KILL_BY_ELEMENT": "element",
+          "COMBAT_KILL_FFA": "none_",
+          "COMBAT_KILL_GIANT": "monster",
+          "COMBAT_KILL_GUILD_SIEGE": "none_",
+          "COMBAT_KILL_MONSTER": "monster",
+          "COMBAT_KILL_TDM": "none_",
+          "COMBAT_KILL_WORLD_BOSS": "monster",
+          "CONTENT_COMPLETE_ADVENTURE_QUEST": "quest_style",
+          "CONTENT_COMPLETE_DUNGEON": "dungeon",
+          "CONTENT_LOTTERY_BUY_TICKETS": "none_",
+          "CONTENT_WHEEL_OF_FORTUNE": "none_",
+          "ECONOMY_CONSUME_ITEM": "item",
+          "ECONOMY_DROP_ITEM": "item",
+          "ECONOMY_DROP_PENYAS": "monster",
+          "ECONOMY_SPEND_VOTE_POINTS": "none_",
+          "ITEMS_CRAFTED": "item",
+          "ITEMS_PERFORM_UPGRADE": "upgrade_type",
+          "ITEMS_RECYCLED": "item",
+          "MISC_ACTIVE_PLAYTIME": "none_",
+          "MISC_STATS_SNAPSHOT": "stat",
+          "PROGRESSION_CARD_DRAWN": "none_",
+          "PROGRESSION_COLLECT_ITEM": "item",
+          "PROGRESSION_COLLECT_MONSTER": "monster"
+        }
+      }
+    },
+    "resource.vocab.ParamKind": {
+      "kind": "enum",
+      "name": "ParamKind",
+      "help": "resource.vocab:ParamKind.help",
+      "members": [
+        {
+          "name": "none_",
+          "wire": "none_",
+          "index": 0,
+          "label": "resource.vocab:ParamKind.none_"
+        },
+        {
+          "name": "monster",
+          "wire": "monster",
+          "index": 1,
+          "label": "resource.vocab:ParamKind.monster"
+        },
+        {
+          "name": "item",
+          "wire": "item",
+          "index": 2,
+          "label": "resource.vocab:ParamKind.item"
+        },
+        {
+          "name": "dungeon",
+          "wire": "dungeon",
+          "index": 3,
+          "label": "resource.vocab:ParamKind.dungeon"
+        },
+        {
+          "name": "element",
+          "wire": "element",
+          "index": 4,
+          "label": "resource.vocab:ParamKind.element"
+        },
+        {
+          "name": "stat",
+          "wire": "stat",
+          "index": 5,
+          "label": "resource.vocab:ParamKind.stat"
+        },
+        {
+          "name": "upgrade_type",
+          "wire": "upgradeType",
+          "index": 6,
+          "label": "resource.vocab:ParamKind.upgrade_type"
+        },
+        {
+          "name": "game_mode",
+          "wire": "gameMode",
+          "index": 7,
+          "label": "resource.vocab:ParamKind.game_mode"
+        },
+        {
+          "name": "quest_style",
+          "wire": "questStyle",
+          "index": 8,
+          "label": "resource.vocab:ParamKind.quest_style"
+        }
+      ]
+    },
+    "resource.vocab.QuestStyle": {
+      "kind": "enum",
+      "name": "QuestStyle",
+      "help": "resource.vocab:QuestStyle.help",
+      "codes": "UInt8",
+      "members": [
+        {
+          "name": "daily",
+          "wire": "daily",
+          "index": 0,
+          "code": 1,
+          "label": "resource.vocab:QuestStyle.daily"
+        },
+        {
+          "name": "weekly",
+          "wire": "weekly",
+          "index": 1,
+          "code": 2,
+          "label": "resource.vocab:QuestStyle.weekly"
+        },
+        {
+          "name": "forever",
+          "wire": "forever",
+          "index": 2,
+          "code": 3,
+          "label": "resource.vocab:QuestStyle.forever"
+        },
+        {
+          "name": "season_pass",
+          "wire": "season_pass",
+          "index": 3,
+          "code": 4,
+          "label": "resource.vocab:QuestStyle.season_pass"
+        },
+        {
+          "name": "pvp",
+          "wire": "pvp",
+          "index": 4,
+          "code": 5,
+          "label": "resource.vocab:QuestStyle.pvp"
+        },
+        {
+          "name": "azure",
+          "wire": "azure",
+          "index": 5,
+          "code": 6,
+          "label": "resource.vocab:QuestStyle.azure"
+        }
+      ]
+    },
+    "resource.vocab.RewardType": {
+      "kind": "enum",
+      "name": "RewardType",
+      "help": "resource.vocab:RewardType.help",
+      "codes": "UInt8",
+      "members": [
+        {
+          "name": "activity_points",
+          "wire": "activity_points",
+          "index": 0,
+          "code": 1,
+          "label": "resource.vocab:RewardType.activity_points"
+        },
+        {
+          "name": "season_pass_exp",
+          "wire": "season_pass_exp",
+          "index": 1,
+          "code": 2,
+          "label": "resource.vocab:RewardType.season_pass_exp"
+        }
+      ]
+    },
+    "resource.vocab.Stage": {
+      "kind": "enum",
+      "name": "Stage",
+      "help": "resource.vocab:Stage.help",
+      "codes": "UInt16",
+      "members": [
+        {
+          "name": "Stage_1",
+          "wire": "Stage_1",
+          "index": 0,
+          "code": 100,
+          "label": "resource.vocab:Stage.Stage_1"
+        },
+        {
+          "name": "Stage_2",
+          "wire": "Stage_2",
+          "index": 1,
+          "code": 101,
+          "label": "resource.vocab:Stage.Stage_2"
+        },
+        {
+          "name": "Stage_3",
+          "wire": "Stage_3",
+          "index": 2,
+          "code": 102,
+          "label": "resource.vocab:Stage.Stage_3"
+        }
+      ]
+    }
+  },
+  "views": {
+    "resource.vocab.EventType": {
+      "kind": "record",
+      "declared": true,
+      "title": {
+        "template": "{display}"
+      },
+      "subtitle": {
+        "template": "{id}"
+      },
+      "menu": {
+        "menu": "system",
+        "icon": "gear"
+      },
+      "sections": [
+        {
+          "kind": "other",
+          "fields": [
+            "code",
+            "display",
+            "param",
+            "flag"
+          ]
+        },
+        {
+          "kind": "more"
+        },
+        {
+          "kind": "unused"
+        }
+      ],
+      "fields": {
+        "code": {
+          "label": "resource.vocab:EventType.code",
+          "help": "resource.vocab:EventType.code.help",
+          "control": {
+            "kind": "number",
+            "min": 0,
+            "max": 65535
+          }
+        },
+        "display": {
+          "label": "resource.vocab:EventType.display",
+          "help": "resource.vocab:EventType.display.help",
+          "control": {
+            "kind": "input"
+          }
+        },
+        "flag": {
+          "label": "resource.vocab:EventType.flag",
+          "help": "resource.vocab:EventType.flag.help",
+          "control": {
+            "kind": "input",
+            "optional": {
+              "unset": "clear"
+            }
+          }
+        },
+        "param": {
+          "label": "resource.vocab:EventType.param",
+          "help": "resource.vocab:EventType.param.help",
+          "control": {
+            "kind": "select",
+            "source": {
+              "enum": "resource.vocab.ParamKind"
+            }
+          }
+        }
+      }
+    },
+    "resource.vocab.Item": {
+      "kind": "record",
+      "declared": true,
+      "title": {
+        "template": "{name()}"
+      },
+      "subtitle": {
+        "template": "{id}"
+      },
+      "preview": {
+        "expr": "icon",
+        "root": "@resource/Icon/Item",
+        "ext": [
+          "dds",
+          "png"
+        ]
+      },
+      "menu": {
+        "menu": "items",
+        "icon": "gem"
+      },
+      "sections": [
+        {
+          "kind": "other",
+          "fields": [
+            "id",
+            "nameKey",
+            "kind",
+            "job",
+            "level",
+            "stackMax",
+            "icon"
+          ]
+        },
+        {
+          "kind": "more"
+        },
+        {
+          "kind": "unused"
+        }
+      ],
+      "fields": {
+        "icon": {
+          "label": "resource.vocab:Item.icon",
+          "help": "resource.vocab:Item.icon.help",
+          "control": {
+            "kind": "file",
+            "root": "@resource/Icon/Item",
+            "ext": [
+              "dds",
+              "png"
+            ]
+          }
+        },
+        "id": {
+          "label": "resource.vocab:Item.id",
+          "help": "resource.vocab:Item.id.help",
+          "control": {
+            "kind": "input",
+            "pattern": "^II_[A-Za-z0-9_]+$"
+          }
+        },
+        "job": {
+          "label": "resource.vocab:Item.job",
+          "help": "resource.vocab:Item.job.help",
+          "control": {
+            "kind": "search",
+            "source": {
+              "collection": "resource.vocab:jobs"
+            },
+            "optional": {
+              "unset": "clear"
+            }
+          }
+        },
+        "kind": {
+          "label": "resource.vocab:Item.kind",
+          "help": "resource.vocab:Item.kind.help",
+          "control": {
+            "kind": "select",
+            "source": {
+              "enum": "resource.vocab.ItemKind1"
+            }
+          }
+        },
+        "level": {
+          "label": "resource.vocab:Item.level",
+          "help": "resource.vocab:Item.level.help",
+          "control": {
+            "kind": "number",
+            "optional": {
+              "unset": "clear",
+              "threeState": true
+            },
+            "min": 0
+          }
+        },
+        "nameKey": {
+          "label": "resource.vocab:Item.nameKey",
+          "help": "resource.vocab:Item.nameKey.help",
+          "control": {
+            "kind": "input"
+          }
+        },
+        "stackMax": {
+          "label": "resource.vocab:Item.stackMax",
+          "help": "resource.vocab:Item.stackMax.help",
+          "control": {
+            "kind": "number",
+            "min": 1
+          }
+        }
+      }
+    }
+  },
+  "values": {
+    "resource.vocab:eventTypes": {
+      "name": "eventTypes",
+      "order": 1,
+      "type": {
+        "kind": "table",
+        "of": {
+          "kind": "record",
+          "ref": "resource.vocab.EventType"
+        },
+        "stable": true
+      },
+      "label": "resource.vocab:eventTypes",
+      "help": "resource.vocab:eventTypes.help",
+      "menu": {
+        "menu": "system",
+        "icon": "gear"
+      },
+      "control": {
+        "kind": "table",
+        "of": "resource.vocab.EventType",
+        "key": "$id",
+        "orderable": true,
+        "columns": [
+          {
+            "field": "$entry",
+            "mode": "entry"
+          },
+          {
+            "field": "code",
+            "width": 80,
+            "mode": "edit",
+            "cell": {
+              "kind": "number",
+              "min": 0,
+              "max": 65535
+            }
+          },
+          {
+            "field": "param",
+            "width": 130,
+            "mode": "edit",
+            "cell": {
+              "kind": "select",
+              "source": {
+                "enum": "resource.vocab.ParamKind"
+              }
+            }
+          },
+          {
+            "field": "flag",
+            "width": 180,
+            "mode": "edit",
+            "cell": {
+              "kind": "input",
+              "optional": {
+                "unset": "clear"
+              }
+            }
+          }
+        ],
+        "search": "resource.vocab:eventTypes"
+      },
+      "editable": "canon",
+      "sources": {
+        "files": [
+          "resource/vocab/vocab.canon"
+        ]
+      }
+    },
+    "resource.vocab:items": {
+      "name": "items",
+      "order": 0,
+      "type": {
+        "kind": "list",
+        "of": {
+          "kind": "record",
+          "ref": "resource.vocab.Item"
+        },
+        "keyedBy": "id"
+      },
+      "label": "resource.vocab:items",
+      "help": "resource.vocab:items.help",
+      "menu": {
+        "menu": "items",
+        "icon": "gem"
+      },
+      "control": {
+        "kind": "table",
+        "of": "resource.vocab.Item",
+        "key": "id",
+        "orderable": true,
+        "columns": [
+          {
+            "field": "$entry",
+            "mode": "entry"
+          },
+          {
+            "field": "kind",
+            "width": 120,
+            "mode": "edit",
+            "cell": {
+              "kind": "select",
+              "source": {
+                "enum": "resource.vocab.ItemKind1"
+              }
+            }
+          },
+          {
+            "field": "job",
+            "width": 140,
+            "mode": "edit",
+            "cell": {
+              "kind": "search",
+              "source": {
+                "collection": "resource.vocab:jobs"
+              },
+              "optional": {
+                "unset": "clear"
+              }
+            }
+          },
+          {
+            "field": "level",
+            "width": 70,
+            "mode": "edit",
+            "cell": {
+              "kind": "number",
+              "optional": {
+                "unset": "clear",
+                "threeState": true
+              },
+              "min": 0
+            }
+          },
+          {
+            "field": "stackMax",
+            "width": 90,
+            "mode": "edit",
+            "cell": {
+              "kind": "number",
+              "min": 1
+            }
+          }
+        ],
+        "filters": [
+          {
+            "field": "kind",
+            "kind": "choice",
+            "control": {
+              "kind": "select",
+              "source": {
+                "enum": "resource.vocab.ItemKind1"
+              }
+            }
+          },
+          {
+            "field": "job",
+            "kind": "choice",
+            "none": true,
+            "control": {
+              "kind": "search",
+              "source": {
+                "collection": "resource.vocab:jobs"
+              }
+            }
+          },
+          {
+            "field": "level",
+            "kind": "range",
+            "none": true,
+            "control": {
+              "kind": "range",
+              "element": {
+                "kind": "number",
+                "min": 0
+              }
+            }
+          }
+        ],
+        "search": "resource.vocab:items"
+      },
+      "editable": "json",
+      "sources": {
+        "files": [
+          "resource/vocab/vocab.canon",
+          "@resource/Server/Item/propItem.json"
+        ]
+      }
+    }
+  },
+  "usage": {
+    "resource.vocab.EventType": {
+      "shapes": {
+        "": {
+          "count": 27,
+          "fields": {
+            "code": 27,
+            "display": 27,
+            "flag": 1,
+            "param": 18
+          },
+          "main": [
+            "code",
+            "display",
+            "param"
+          ],
+          "more": [
+            "flag"
+          ]
+        }
+      }
+    },
+    "resource.vocab.Item": {
+      "shapes": {
+        "": {
+          "count": 16,
+          "fields": {
+            "icon": 16,
+            "id": 16,
+            "job": 6,
+            "kind": 15,
+            "level": 15,
+            "nameKey": 16,
+            "stackMax": 9
+          },
+          "main": [
+            "id",
+            "nameKey",
+            "icon",
+            "kind",
+            "level",
+            "stackMax",
+            "job"
+          ]
+        }
+      }
+    }
+  },
+  "search": {
+    "resource.vocab:eventTypes": {
+      "type": "resource.vocab.EventType",
+      "keyType": "string",
+      "count": 27,
+      "active": 27,
+      "rows": [
+        {
+          "key": "COMBAT_KILL_MONSTER",
+          "title": "Monster Kill",
+          "subtitle": "COMBAT_KILL_MONSTER",
+          "terms": [
+            "Monster Kill",
+            "COMBAT_KILL_MONSTER"
+          ]
+        },
+        {
+          "key": "COMBAT_KILL_GIANT",
+          "title": "Giant Kill",
+          "subtitle": "COMBAT_KILL_GIANT",
+          "terms": [
+            "Giant Kill",
+            "COMBAT_KILL_GIANT"
+          ]
+        },
+        {
+          "key": "COMBAT_KILL_BOSS",
+          "title": "Boss Kill",
+          "subtitle": "COMBAT_KILL_BOSS",
+          "terms": [
+            "Boss Kill",
+            "COMBAT_KILL_BOSS"
+          ]
+        },
+        {
+          "key": "COMBAT_KILL_WORLD_BOSS",
+          "title": "World Boss Kill",
+          "subtitle": "COMBAT_KILL_WORLD_BOSS",
+          "terms": [
+            "World Boss Kill",
+            "COMBAT_KILL_WORLD_BOSS"
+          ]
+        },
+        {
+          "key": "COMBAT_KILL_BY_ELEMENT",
+          "title": "Elemental Kill",
+          "subtitle": "COMBAT_KILL_BY_ELEMENT",
+          "terms": [
+            "Elemental Kill",
+            "COMBAT_KILL_BY_ELEMENT"
+          ]
+        },
+        {
+          "key": "COMBAT_DAMAGE_PVE",
+          "title": "PvE AA Damage",
+          "subtitle": "COMBAT_DAMAGE_PVE",
+          "terms": [
+            "PvE AA Damage",
+            "COMBAT_DAMAGE_PVE"
+          ]
+        },
+        {
+          "key": "COMBAT_DAMAGE_PVP_EVENT",
+          "title": "PvP Event Damage",
+          "subtitle": "COMBAT_DAMAGE_PVP_EVENT",
+          "terms": [
+            "PvP Event Damage",
+            "COMBAT_DAMAGE_PVP_EVENT"
+          ]
+        },
+        {
+          "key": "COMBAT_KILL_FFA",
+          "title": "FFA Kill",
+          "subtitle": "COMBAT_KILL_FFA",
+          "terms": [
+            "FFA Kill",
+            "COMBAT_KILL_FFA"
+          ]
+        },
+        {
+          "key": "COMBAT_KILL_GUILD_SIEGE",
+          "title": "Guild Siege Kill",
+          "subtitle": "COMBAT_KILL_GUILD_SIEGE",
+          "terms": [
+            "Guild Siege Kill",
+            "COMBAT_KILL_GUILD_SIEGE"
+          ]
+        },
+        {
+          "key": "COMBAT_KILL_TDM",
+          "title": "TDM Kill",
+          "subtitle": "COMBAT_KILL_TDM",
+          "terms": [
+            "TDM Kill",
+            "COMBAT_KILL_TDM"
+          ]
+        },
+        {
+          "key": "COMBAT_GAME_MODE_START",
+          "title": "Game Mode Start",
+          "subtitle": "COMBAT_GAME_MODE_START",
+          "terms": [
+            "Game Mode Start",
+            "COMBAT_GAME_MODE_START"
+          ]
+        },
+        {
+          "key": "ECONOMY_DROP_PENYAS",
+          "title": "Penya Drop",
+          "subtitle": "ECONOMY_DROP_PENYAS",
+          "terms": [
+            "Penya Drop",
+            "ECONOMY_DROP_PENYAS"
+          ]
+        },
+        {
+          "key": "ECONOMY_DROP_ITEM",
+          "title": "Item Drop",
+          "subtitle": "ECONOMY_DROP_ITEM",
+          "terms": [
+            "Item Drop",
+            "ECONOMY_DROP_ITEM"
+          ]
+        },
+        {
+          "key": "ECONOMY_SPEND_VOTE_POINTS",
+          "title": "Vote Points Spent",
+          "subtitle": "ECONOMY_SPEND_VOTE_POINTS",
+          "terms": [
+            "Vote Points Spent",
+            "ECONOMY_SPEND_VOTE_POINTS"
+          ]
+        },
+        {
+          "key": "ECONOMY_CONSUME_ITEM",
+          "title": "Item Consumed",
+          "subtitle": "ECONOMY_CONSUME_ITEM",
+          "terms": [
+            "Item Consumed",
+            "ECONOMY_CONSUME_ITEM"
+          ]
+        },
+        {
+          "key": "PROGRESSION_COLLECT_MONSTER",
+          "title": "Monster Collected",
+          "subtitle": "PROGRESSION_COLLECT_MONSTER",
+          "terms": [
+            "Monster Collected",
+            "PROGRESSION_COLLECT_MONSTER"
+          ]
+        },
+        {
+          "key": "PROGRESSION_COLLECT_ITEM",
+          "title": "Item Collected",
+          "subtitle": "PROGRESSION_COLLECT_ITEM",
+          "terms": [
+            "Item Collected",
+            "PROGRESSION_COLLECT_ITEM"
+          ]
+        },
+        {
+          "key": "PROGRESSION_CARD_DRAWN",
+          "title": "Cards Drawn",
+          "subtitle": "PROGRESSION_CARD_DRAWN",
+          "terms": [
+            "Cards Drawn",
+            "PROGRESSION_CARD_DRAWN"
+          ]
+        },
+        {
+          "key": "CONTENT_COMPLETE_DUNGEON",
+          "title": "Dungeon Clear",
+          "subtitle": "CONTENT_COMPLETE_DUNGEON",
+          "terms": [
+            "Dungeon Clear",
+            "CONTENT_COMPLETE_DUNGEON"
+          ]
+        },
+        {
+          "key": "CONTENT_COMPLETE_ADVENTURE_QUEST",
+          "title": "Adventure Quest",
+          "subtitle": "CONTENT_COMPLETE_ADVENTURE_QUEST",
+          "terms": [
+            "Adventure Quest",
+            "CONTENT_COMPLETE_ADVENTURE_QUEST"
+          ]
+        },
+        {
+          "key": "CONTENT_WHEEL_OF_FORTUNE",
+          "title": "Wheel of Fortune",
+          "subtitle": "CONTENT_WHEEL_OF_FORTUNE",
+          "terms": [
+            "Wheel of Fortune",
+            "CONTENT_WHEEL_OF_FORTUNE"
+          ]
+        },
+        {
+          "key": "CONTENT_LOTTERY_BUY_TICKETS",
+          "title": "Lottery Tickets",
+          "subtitle": "CONTENT_LOTTERY_BUY_TICKETS",
+          "terms": [
+            "Lottery Tickets",
+            "CONTENT_LOTTERY_BUY_TICKETS"
+          ]
+        },
+        {
+          "key": "ITEMS_CRAFTED",
+          "title": "Item Crafted",
+          "subtitle": "ITEMS_CRAFTED",
+          "terms": [
+            "Item Crafted",
+            "ITEMS_CRAFTED"
+          ]
+        },
+        {
+          "key": "ITEMS_RECYCLED",
+          "title": "Item Recycled",
+          "subtitle": "ITEMS_RECYCLED",
+          "terms": [
+            "Item Recycled",
+            "ITEMS_RECYCLED"
+          ]
+        },
+        {
+          "key": "ITEMS_PERFORM_UPGRADE",
+          "title": "Item Upgrade",
+          "subtitle": "ITEMS_PERFORM_UPGRADE",
+          "terms": [
+            "Item Upgrade",
+            "ITEMS_PERFORM_UPGRADE"
+          ]
+        },
+        {
+          "key": "MISC_ACTIVE_PLAYTIME",
+          "title": "Active Playtime",
+          "subtitle": "MISC_ACTIVE_PLAYTIME",
+          "terms": [
+            "Active Playtime",
+            "MISC_ACTIVE_PLAYTIME"
+          ]
+        },
+        {
+          "key": "MISC_STATS_SNAPSHOT",
+          "title": "Stats Snapshot",
+          "subtitle": "MISC_STATS_SNAPSHOT",
+          "terms": [
+            "Stats Snapshot",
+            "MISC_STATS_SNAPSHOT"
+          ]
+        }
+      ]
+    },
+    "resource.vocab:items": {
+      "type": "resource.vocab.Item",
+      "keyType": "string",
+      "count": 16,
+      "active": 16,
+      "preview": {
+        "root": "@resource/Icon/Item",
+        "ext": [
+          "dds",
+          "png"
+        ]
+      },
+      "rows": [
+        {
+          "key": "II_WEA_SWO_WOODEN",
+          "title": "Wooden Sword",
+          "subtitle": "II_WEA_SWO_WOODEN",
+          "terms": [
+            "Wooden Sword",
+            "II_WEA_SWO_WOODEN"
+          ],
+          "preview": "itm_WeaSwoWooden.dds"
+        },
+        {
+          "key": "II_GEN_MAT_ORICHALCUM01",
+          "title": "Sunstone",
+          "subtitle": "II_GEN_MAT_ORICHALCUM01",
+          "terms": [
+            "Sunstone",
+            "II_GEN_MAT_ORICHALCUM01"
+          ],
+          "preview": "Itm_GenMatOrichalcum01.dds"
+        },
+        {
+          "key": "II_GEN_MAT_MOONSTONE",
+          "title": "Moonstone",
+          "subtitle": "II_GEN_MAT_MOONSTONE",
+          "terms": [
+            "Moonstone",
+            "II_GEN_MAT_MOONSTONE"
+          ],
+          "preview": "Itm_GenMatMoonstone.dds"
+        },
+        {
+          "key": "II_GEN_FOO_INS_HOTDOG",
+          "title": "Hot Dog",
+          "subtitle": "II_GEN_FOO_INS_HOTDOG",
+          "terms": [
+            "Hot Dog",
+            "II_GEN_FOO_INS_HOTDOG"
+          ],
+          "preview": "itm_GenFooHotdog.dds"
+        },
+        {
+          "key": "II_GEN_MAT_ELE_VOLCANO3",
+          "title": "Volcano Card (3%)",
+          "subtitle": "II_GEN_MAT_ELE_VOLCANO3",
+          "terms": [
+            "Volcano Card (3%)",
+            "II_GEN_MAT_ELE_VOLCANO3"
+          ],
+          "preview": "Itm_GenMatEleFlame.dds"
+        },
+        {
+          "key": "II_WEA_SWO_TRITIUM",
+          "title": "Tritium Sword",
+          "subtitle": "II_WEA_SWO_TRITIUM",
+          "terms": [
+            "Tritium Sword",
+            "II_WEA_SWO_TRITIUM"
+          ],
+          "preview": "itm_WeaSwoPericuum.dds"
+        },
+        {
+          "key": "II_WEA_WAN_TRITIUM",
+          "title": "Tritium Wand",
+          "subtitle": "II_WEA_WAN_TRITIUM",
+          "terms": [
+            "Tritium Wand",
+            "II_WEA_WAN_TRITIUM"
+          ],
+          "preview": "itm_WeaWanPericuum.dds"
+        },
+        {
+          "key": "II_WEA_AXE_ANGEL",
+          "title": "Angel Axe",
+          "subtitle": "II_WEA_AXE_ANGEL",
+          "terms": [
+            "Angel Axe",
+            "II_WEA_AXE_ANGEL"
+          ],
+          "preview": "Itm_WeaAxeAngel.dds"
+        },
+        {
+          "key": "II_WEA_KNU_SUHO",
+          "title": "Guardian Knuckle",
+          "subtitle": "II_WEA_KNU_SUHO",
+          "terms": [
+            "Guardian Knuckle",
+            "II_WEA_KNU_SUHO"
+          ],
+          "preview": "itm_WeaKnuSuho.dds"
+        },
+        {
+          "key": "II_WEA_BOW_SUHO",
+          "title": "Guardian Bow",
+          "subtitle": "II_WEA_BOW_SUHO",
+          "terms": [
+            "Guardian Bow",
+            "II_WEA_BOW_SUHO"
+          ],
+          "preview": "Itm_WeaBowSuho.dds"
+        },
+        {
+          "key": "II_ARM_M_VAG_HELMET02",
+          "title": "Vagrant Helmet",
+          "subtitle": "II_ARM_M_VAG_HELMET02",
+          "terms": [
+            "Vagrant Helmet",
+            "II_ARM_M_VAG_HELMET02"
+          ],
+          "preview": "itm_ArmMVagHelmet02.dds"
+        },
+        {
+          "key": "II_SYS_SYS_SCR_PERIN",
+          "title": "Perin",
+          "subtitle": "II_SYS_SYS_SCR_PERIN",
+          "terms": [
+            "Perin",
+            "II_SYS_SYS_SCR_PERIN"
+          ],
+          "preview": "Itm_SysSysScrPerin.dds"
+        },
+        {
+          "key": "II_FARM_PRODUCTION_BLE",
+          "title": "Wheat",
+          "subtitle": "II_FARM_PRODUCTION_BLE",
+          "terms": [
+            "Wheat",
+            "II_FARM_PRODUCTION_BLE"
+          ],
+          "preview": "Itm_Wheat.dds"
+        },
+        {
+          "key": "II_FOURELEMENT05",
+          "title": "Relics of the Four Elements",
+          "subtitle": "II_FOURELEMENT05",
+          "terms": [
+            "Relics of the Four Elements",
+            "II_FOURELEMENT05"
+          ],
+          "preview": "itm_ancienne_relique_donjon.dds"
+        },
+        {
+          "key": "II_SYS_SYS_SCR_FAERY_EXP_5000",
+          "title": "Faery boost",
+          "subtitle": "II_SYS_SYS_SCR_FAERY_EXP_5000",
+          "terms": [
+            "Faery boost",
+            "II_SYS_SYS_SCR_FAERY_EXP_5000"
+          ],
+          "preview": "Itm_FaeryExperience.dds"
+        },
+        {
+          "key": "II_SYS_SYS_SCR_AP_50",
+          "title": "Activity Book 50",
+          "subtitle": "II_SYS_SYS_SCR_AP_50",
+          "terms": [
+            "Activity Book 50",
+            "II_SYS_SYS_SCR_AP_50"
+          ],
+          "preview": "Itm_ActivityPoints_50.dds"
+        }
+      ]
+    },
+    "resource.vocab:jobs": {
+      "type": "$define",
+      "keyType": "string",
+      "count": 16,
+      "active": 16,
+      "rows": [
+        {
+          "key": "JOB_VAGRANT"
+        },
+        {
+          "key": "JOB_MERCENARY"
+        },
+        {
+          "key": "JOB_ACROBAT"
+        },
+        {
+          "key": "JOB_ASSIST"
+        },
+        {
+          "key": "JOB_MAGICIAN"
+        },
+        {
+          "key": "JOB_PUPPETEER"
+        },
+        {
+          "key": "JOB_KNIGHT"
+        },
+        {
+          "key": "JOB_BLADE"
+        },
+        {
+          "key": "JOB_JESTER"
+        },
+        {
+          "key": "JOB_RANGER"
+        },
+        {
+          "key": "JOB_RINGMASTER"
+        },
+        {
+          "key": "JOB_BILLPOSTER"
+        },
+        {
+          "key": "JOB_PSYCHIKEEPER"
+        },
+        {
+          "key": "JOB_ELEMENTOR"
+        },
+        {
+          "key": "JOB_GATEKEEPER"
+        },
+        {
+          "key": "JOB_DOPPLER"
+        }
+      ]
+    },
+    "resource.vocab:monsters": {
+      "type": "$define",
+      "keyType": "string",
+      "count": 6,
+      "active": 6,
+      "rows": [
+        {
+          "key": "MI_AIBATT1"
+        },
+        {
+          "key": "MI_BANG1"
+        },
+        {
+          "key": "MI_MUSHPANG1"
+        },
+        {
+          "key": "MI_RUSTIACRASHGATE01"
+        },
+        {
+          "key": "MI_RUSTIACRASHGATE01_DPS"
+        },
+        {
+          "key": "MI_RUSTIACRASHGATE01_PVP"
+        }
+      ]
+    },
+    "resource.vocab:upgradeTypes": {
+      "type": "$define",
+      "keyType": "string",
+      "count": 6,
+      "active": 6,
+      "rows": [
+        {
+          "key": "Normal"
+        },
+        {
+          "key": "Ultimate"
+        },
+        {
+          "key": "Jewelry"
+        },
+        {
+          "key": "Piercing"
+        },
+        {
+          "key": "Element"
+        },
+        {
+          "key": "Rarity"
+        }
+      ]
+    },
+    "resource.vocab:worlds": {
+      "type": "$define",
+      "keyType": "string",
+      "count": 6,
+      "active": 6,
+      "rows": [
+        {
+          "key": "WI_WORLD_NONE"
+        },
+        {
+          "key": "WI_WORLD_MADRIGAL"
+        },
+        {
+          "key": "WI_WORLD_KEBARAS"
+        },
+        {
+          "key": "WI_WORLD_RARTESIA"
+        },
+        {
+          "key": "WI_DUNGEON_VOLCANE"
+        },
+        {
+          "key": "WI_DUNGEON_SECRET_0"
+        }
+      ]
+    }
+  },
+  "assets": {
+    "@resource/Icon/Item": {
+      "dir": "_fixtures/resource/Icon/Item"
+    }
+  },
+  "units": {},
+  "widgets": {},
+  "i18n": {
+    "source": "en",
+    "languages": {
+      "en": {
+        "texts": {
+          "Element.EARTH": "Earth",
+          "Element.ELECTRICITY": "Electricity",
+          "Element.FIRE": "Fire",
+          "Element.WATER": "Water",
+          "Element.WIND": "Wind",
+          "Element.help": "The five elements (Vocab/element.json). Codes are what the game stores and sends.",
+          "EventType.code": "Code",
+          "EventType.code.help": "Stored in the database: never renumbered, never reused (`@stable`).",
+          "EventType.display": "Display",
+          "EventType.display.help": "Name shown in tools and logs.",
+          "EventType.flag": "Flag",
+          "EventType.flag.help": "Compile flag the event only exists under.",
+          "EventType.help": "One thing the game counts (a kill, a drop, a craft...). Quests, achievements and\nheistia missions are built on these.",
+          "EventType.param": "Param",
+          "EventType.param.help": "What the event's filter parameter is: see `Param`.",
+          "Item.help": "An item as other files see it: what a picker shows and what `ref items` checks.\n\nOnly the fields pickers, filters and checks read (`partial` load). The full record,\nwith one variant case per kind, is game.items' Item; this one reads the 6,944 items\nthat are still in propItem.json. Defaults copy the file's own `defaults` block, which\nthe loader applies to every row that omits a key.",
+          "Item.icon": "Icon",
+          "Item.icon.help": "Shown as a thumbnail next to the item in lists and pickers.",
+          "Item.id": "Id",
+          "Item.id.help": "\"II_GEN_MAT_MOONSTONE\": what a `ref items` stores.",
+          "Item.job": "Job",
+          "Item.job.help": "The only job that may use the item. \"=\" on the wire means any job.",
+          "Item.kind": "Kind",
+          "Item.kind.help": "Main kind. A row without one is armour, as the `defaults` block says.",
+          "Item.level": "Level",
+          "Item.level.help": "Item level. Absent means 1; \"=\" means the item has no level.",
+          "Item.nameKey": "Name key",
+          "Item.nameKey.help": "Text key of the displayed name (\"IDS_PROPITEM_TXT_008066\"); see `name()`.",
+          "Item.stackMax": "Stack max",
+          "Item.stackMax.help": "How many fit in one inventory slot.",
+          "ItemKind1.IK1_ARMOR": "IK1_ARMOR",
+          "ItemKind1.IK1_CHARGED": "IK1_CHARGED",
+          "ItemKind1.IK1_GENERAL": "IK1_GENERAL",
+          "ItemKind1.IK1_GOLD": "IK1_GOLD",
+          "ItemKind1.IK1_HOUSING": "IK1_HOUSING",
+          "ItemKind1.IK1_RIDE": "IK1_RIDE",
+          "ItemKind1.IK1_SYSTEM": "IK1_SYSTEM",
+          "ItemKind1.IK1_WEAPON": "IK1_WEAPON",
+          "ItemKind1.help": "An item's main kind (dwItemKind1). Declared in defineItemkind.h's order, so `.index`\nequals the IK1_* value.",
+          "ParamKind.dungeon": "dungeon",
+          "ParamKind.element": "element",
+          "ParamKind.game_mode": "game_mode",
+          "ParamKind.help": "Which kind of parameter an event's filter takes (eventType.json's `param`; an entry\nwithout one takes none).",
+          "ParamKind.item": "item",
+          "ParamKind.monster": "monster",
+          "ParamKind.none_": "none_",
+          "ParamKind.quest_style": "quest_style",
+          "ParamKind.stat": "stat",
+          "ParamKind.upgrade_type": "upgrade_type",
+          "QuestStyle.azure": "azure",
+          "QuestStyle.daily": "daily",
+          "QuestStyle.forever": "forever",
+          "QuestStyle.help": "Adventure quest styles (Vocab/adventureQuest.json).",
+          "QuestStyle.pvp": "pvp",
+          "QuestStyle.season_pass": "season_pass",
+          "QuestStyle.weekly": "weekly",
+          "RewardType.activity_points": "activity_points",
+          "RewardType.help": "What an adventure quest style pays out.",
+          "RewardType.season_pass_exp": "season_pass_exp",
+          "Stage.Stage_1": "Stage_1",
+          "Stage.Stage_2": "Stage_2",
+          "Stage.Stage_3": "Stage_3",
+          "Stage.help": "Progression stages (Vocab/gameStage.json).",
+          "eventTypes": "Event types",
+          "eventTypes.help": "Every event type (Vocab/eventType.json).",
+          "items": "Items",
+          "items.help": "Every item, keyed by its define. `ref items` stores the define and checks it exists."
+        }
+      },
+      "fr": {
+        "files": [],
+        "missing": 67,
+        "texts": {}
+      }
+    }
+  },
+  "findings": [
+    {
+      "severity": "warning",
+      "code": "W1701",
+      "file": "resource/vocab/vocab.canon",
+      "line": 12,
+      "col": 1,
+      "endLine": 12,
+      "endCol": 23,
+      "package": "resource.vocab",
+      "message": "67 texts of package resource.vocab have no fr translation (canon i18n status resource.vocab --lang fr --list)"
+    }
+  ]
+}

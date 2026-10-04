@@ -22,6 +22,7 @@ var exampleTargets = map[string][]canon.Target{
 	"features.embedded":  {canon.TargetTS},
 	"resource.farm":      {canon.TargetGo, canon.TargetJSON, canon.TargetView},
 	"resource.events":    {canon.TargetGo, canon.TargetJSON, canon.TargetView},
+	"resource.vocab":     {canon.TargetCpp, canon.TargetView},
 }
 
 // targetsFor is exampleTargets[name], or defaultTargets without a row.

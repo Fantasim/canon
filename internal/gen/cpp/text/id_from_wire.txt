@@ -1,0 +1,17 @@
+std::optional<%[1]s> %[2]s(std::string_view key) {
+    static constexpr std::array<std::string_view, %[3]d> kKeys = %[4]s;
+    static constexpr std::array<%[1]s, %[3]d> kIds = %[5]s;
+    size_t lo = 0;
+    size_t hi = kKeys.size();
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2;
+        if (kKeys[mid] < key) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
+    }
+    if (lo < kKeys.size() && kKeys[lo] == key) return kIds[lo];
+    return std::nullopt;
+}
+

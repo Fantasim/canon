@@ -2,6 +2,7 @@ package gogen
 
 import (
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -19,7 +20,11 @@ func (g *gen) dependentType(d *ir.Dependent) {
 	}
 	n := g.names.Dependent(d)
 	g.body.WriteString(docFor(n.Type, d.Doc))
-	g.printf(variantFormat, n.Type, n.Branch, n.BranchStore, n.ValueStore, n.Method)
+	if n.DefineStore != "" {
+		g.printf(defineVariantFormat, n.Type, n.Branch, n.BranchStore, n.ValueStore, n.Method, n.DefineStore)
+	} else {
+		g.printf(variantFormat, n.Type, n.Branch, n.BranchStore, n.ValueStore, n.Method)
+	}
 	for i, b := range n.Branches {
 		g.dependentAccessor(n, b, d.Branches[i])
 	}
@@ -43,13 +48,22 @@ func (g *gen) writeBranchEnum(n ir.GoDependent) {
 	g.printf(closeParenFormat)
 }
 
-// dependentAccessor writes As<Branch>, zero unless the value holds it (CODEGEN.md §5.6, §5.8); stage E refuses a ref into a load.defines table (E8012).
+// dependentAccessor writes As<Branch>, zero unless the value holds it, and a define branch's As<Branch>Value (CODEGEN.md §5.6, §5.8; DECISIONS 298).
 func (g *gen) dependentAccessor(n ir.GoDependent, b ir.GoBranch, branch *ir.Branch) {
-	if b.AsValue != "" {
-		g.fail(newDetail(errDependentValue, g.at, dependentValueFormat, g.at))
-	}
 	t := g.goType(branch.Type)
 	g.printf(dependentAsFormat, n.Type, b.As, t, n.BranchStore, b.Member, n.ValueStore)
+	if b.AsValue != "" {
+		g.printf(dependentAsValueFormat, n.Type, b.AsValue, n.BranchStore, b.Member, n.DefineStore)
+	}
+}
+
+// branchDefines is the define table a define branch refs; one the IR does not hold is malformed.
+func (g *gen) branchDefines(t ir.TypeRef) *ir.DefineTable {
+	d := ir.DefinesOf(g.p, ir.DefineTarget(t))
+	if d == nil {
+		g.fail(newDetail(errDependentValue, g.at, dependentValueFormat, g.at))
+	}
+	return d
 }
 
 // decodeDependent writes decode<T> of a dependent type a decoded class holds: the untagged wire switches on the discriminant its caller already decoded, an enum or a Bool (CODEGEN.md §5.6, §6.1); a member no branch covers (a Never arm's) is refused with the same text gen/cpp writes (WIRE.md §5.9).
@@ -73,12 +87,28 @@ func (g *gen) decodeDependent(d *ir.Dependent) {
 		g.printf(caseFormat, strings.Join(cases, listSep))
 		var b strings.Builder
 		x := g.readValue(&b, leaf{t: br.Type}, lc.Raw, g.root())
+		if n.Branches[i].AsValue != "" {
+			g.readBranchDefine(&b, br.Type, x, n.DefineStore)
+		}
 		g.body.WriteString(b.String())
 		g.printf(assignPairFormat, lc.Out+dot+n.BranchStore, lc.Out+dot+n.ValueStore, n.Branches[i].Member, x)
 		g.body.WriteString(returnKw + nilLit + newline)
 	}
 	g.printf(unknownCaseFormat, g.errAt(g.root(), noBranchText, ""))
 	g.body.WriteString(closeBrace + newline)
+}
+
+// readBranchDefine looks a define branch's key up once read, into out's store, with the load error of a define field (CODEGEN.md §5.8; DECISIONS 298).
+func (g *gen) readBranchDefine(b *strings.Builder, t ir.TypeRef, key, store string) {
+	d := g.branchDefines(t)
+	if d == nil {
+		return
+	}
+	lc, v := g.lc, g.temp(tempValue)
+	prefix, k := g.splitLoc(g.root())
+	fmt.Fprintf(b, defineReadFormat, v, lc.Err, g.helper(helperDefine), lc.Name, prefix, k,
+		g.names.DefinesVar(d), strconv.Quote(ir.DefineTableName(d)), key)
+	fmt.Fprintf(b, assignFormat, lc.Out, store, v)
 }
 
 // discLabels are the Go type of d's discriminant and each member's case label, in member order: false and true for a Bool, the member constants for an enum; nil labels for neither.
@@ -206,7 +236,24 @@ func (g *gen) dependentExpr(t ir.TypeRef, v value.Value, d *ir.Dependent, br int
 	if untypedLit(bt) {
 		x = g.goType(bt) + lparen + x + rparen
 	}
-	return ampersand + compositeLit(g.goName(d), []pair{{n.BranchStore, n.Branches[br].Member}, {n.ValueStore, x}})
+	parts := []pair{{n.BranchStore, n.Branches[br].Member}, {n.ValueStore, x}}
+	if n.Branches[br].AsValue != "" {
+		parts = append(parts, pair{n.DefineStore, g.branchDefineValue(bt, v)})
+	}
+	return ampersand + compositeLit(g.goName(d), parts)
+}
+
+// branchDefineValue is a baked define branch's value, found at generation time (CODEGEN.md §5.8).
+func (g *gen) branchDefineValue(t ir.TypeRef, v value.Value) string {
+	d := g.branchDefines(t)
+	if d == nil {
+		return zeroLit
+	}
+	if i, ok := slices.BinarySearch(d.Names, as[value.Ref](g, v).Key.S); ok {
+		return strconv.FormatInt(d.Values[i], decimal)
+	}
+	g.fail(newDetail(errDependentValue, g.at, dependentValueFormat, g.at))
+	return zeroLit
 }
 
 // untypedLit reports a branch type whose literal is an untyped constant of another default type: an integer, a float, an integer key.

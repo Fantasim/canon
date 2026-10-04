@@ -58,11 +58,11 @@ func TestDependentAndInputRefusals(t *testing.T) {
 		{"a dependent type every arm of which is Never (log-2026-09-28)", "every arm of which is Never", func(p *ir.Package, _ *ir.Emit) {
 			p.Types = append(p.Types, allNever)
 		}, cppgen.ErrMalformed},
-		{"a dependent type with a branch into a load.defines table (§5.8)", "a branch into a load.defines table", func(p *ir.Package, _ *ir.Emit) {
+		// unreachable: stage E holds every define table a ref targets (CODEGEN.md §5.8, DECISIONS 298).
+		{"a define branch whose table the IR does not hold", "a ref into a load.defines table the package's IR does not hold", func(p *ir.Package, _ *ir.Emit) {
 			d := payloadOf()
 			d.Branches[1].Type = ir.TypeRef{Kind: types.Ref, Key: &tString, Ref: &ir.RefTarget{Coll: types.CollDefines, Pkg: "demo", Value: "defs"}}
 			p.Types = append(p.Types, d)
-			p.Defines = []*ir.DefineTable{{Pkg: "demo", Value: "defs"}}
 		}, cppgen.ErrMalformed},
 		{"a discriminant read through a ref (WIRE.md §5.9)", "whose discriminant is not read from earlier required fields", func(p *ir.Package, e *ir.Emit) {
 			thing(p).Fields = append(thing(p).Fields, refFlag)

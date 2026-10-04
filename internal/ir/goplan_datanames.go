@@ -55,7 +55,7 @@ func (pl *GoNamePlan) declareSchemas(top *nameScope) {
 func (pl *GoNamePlan) declareDataContainers(top *nameScope) {
 	for _, v := range pl.emitted {
 		rec := tableRecord(v)
-		if !isGoContainer(v) || v.Type.Kind == types.Table && rec == nil {
+		if !IsContainer(v) || v.Type.Kind == types.Table && rec == nil {
 			continue
 		}
 		name := pl.ContainerName(v)

@@ -6,15 +6,15 @@ import (
 	"github.com/fantasim/canonlang/internal/types"
 )
 
-// isGoContainer reports a value whose Go form is a container class: a table or a keyed list (CODEGEN.md §5.9).
-func isGoContainer(v *Value) bool {
+// IsContainer reports a value whose Go and C++ form is a container class: a table or a keyed list (CODEGEN.md §5.9).
+func IsContainer(v *Value) bool {
 	return v.Type.Kind == types.Table || v.Type.Kind == types.List && v.Type.KeyedBy != nil
 }
 
 // declareContainers declares the class of every emitted table and keyed list, its methods, and a table's FindBy<F> and their indexes (CODEGEN.md §5.9, decision 193); a value the emit leaves out has no container.
 func (pl *GoNamePlan) declareContainers(top *nameScope) {
 	for _, v := range pl.emitted {
-		if !isGoContainer(v) {
+		if !IsContainer(v) {
 			continue
 		}
 		rec := tableRecord(v)
@@ -53,7 +53,7 @@ func (pl *GoNamePlan) declareValues(top *nameScope) {
 		pl.problems = append(pl.problems, GoNameProblem{Kind: GoCollision, Scope: d.Build, Name: local, First: pl.imports[local], Origin: pl.p.Name})
 	}
 	for _, v := range pl.emitted {
-		if isGoContainer(v) {
+		if IsContainer(v) {
 			pl.declare(top, pl.AccessorName(v), v.Name, v)
 			continue
 		}
@@ -64,7 +64,7 @@ func (pl *GoNamePlan) declareValues(top *nameScope) {
 	}
 	data := pl.scope(d.Type)
 	for _, v := range pl.emitted {
-		if isGoContainer(v) {
+		if IsContainer(v) {
 			pl.declare(data, pl.ValueStore(v), v.Name, v)
 			continue
 		}

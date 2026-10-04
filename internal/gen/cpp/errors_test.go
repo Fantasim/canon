@@ -52,7 +52,6 @@ func refusals() []struct {
 		want error
 	}{
 		{"embedded mode", func(_ *ir.Package, e *ir.Emit) { e.Mode = ir.ModeEmbedded }, cppgen.ErrUnsupported},
-		{"baked mode", func(_ *ir.Package, e *ir.Emit) { e.Mode = ir.ModeBaked }, cppgen.ErrUnsupported},
 		{"a ref into a load.defines table the IR does not hold", withField(field("j", "j", "", ir.TypeRef{Kind: types.Ref, Key: &tString, Ref: &ir.RefTarget{Coll: types.CollDefines, Pkg: "demo", Value: "jobs"}})), cppgen.ErrMalformed},
 		// unreachable: check refuses it first (E3002, TYPES.md §13.2).
 		{"a non-string literal union", withField(field("u", "u", "", ir.TypeRef{Kind: types.LitUnion, Elem: &tInt})), cppgen.ErrMalformed},

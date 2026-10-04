@@ -70,7 +70,7 @@ const (
 	dependentDiscFormat     = "%s: a dependent value whose discriminant is not read from earlier required fields of its record (ir.DiscFields)"
 	dependentForeignFormat  = "%s: a dependent value of another package's type, whose decoder and fields are unexported there"
 	dependentNestedFormat   = "%s: a dependent value outside a field of its record and that field's list elements"
-	dependentValueFormat    = "%s: a ref into a load.defines table's define value, in a dependent type"
+	dependentValueFormat    = "%s: a define branch of a dependent type whose define table or key the IR does not hold"
 	dependentNoBranchFormat = "%s: a dependent type every arm of which is Never"
 	dependentNeverFormat    = "%s: a dependent value whose discriminant selects a Never arm"
 	dependentUnionFormat    = "%s: a literal union over a dependent type, in data mode"
