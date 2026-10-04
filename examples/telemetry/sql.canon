@@ -1,0 +1,47 @@
+package telemetry
+
+// The lake's SQL, written by `emit text` (DECISIONS 294). Each file is one build-time
+// string; nothing is parsed back out of C++.
+
+/// The vocabularies some column holds, in first-use order: the enum views the lake needs.
+fn usedVocabularies() -> [Vocabulary] {
+  return [c.values for e in liveEvents() for c in events[e].columns if c.values != none].unique()
+}
+
+/// Every table's CREATE TABLE, one per line, in id order. The ingester runs it at boot and
+/// compares it with the table it finds (the lake schema must match).
+@text("tables.sql")
+export fn tablesSql() -> String {
+  let header = "-- The lake tables of the telemetry catalogue, contract {CONTRACT_VERSION}.\n"
+  return header + [createTableSql(e) + "\n" for e in liveEvents()].join("")
+}
+
+/// One enum view: value to label.
+fn enumView(v: Vocabulary) -> String {
+  let rows = ["    ({l.code}, '{l.name}')" for l in labels(v)].join(",\n")
+  return "-- {enumName(v)}\nCREATE OR REPLACE VIEW enum_{v} AS\nSELECT * FROM (VALUES\n{rows}\n) AS t(value, name);\n"
+}
+
+/// The enum views every enum8 column resolves through, then the (table, column) to view
+/// map, then the event catalogue.
+@text("enums.sql")
+export fn enumsSql() -> String {
+  let views = [enumView(v) for v in usedVocabularies()].join("\n")
+  let columnRows = [
+    "    ('{e}', '{c.name}', '{enumName(c.values)}', 'enum_{c.values}')"
+    for e in liveEvents()
+    for c in events[e].columns
+    if c.values != none
+  ].join(",\n")
+  let catalogRows = [
+    "    ('{e}', {e.code}, '{tierOf(e)}', {hasInstanceId(e)}, {versionOf(e)})"
+    for e in liveEvents()
+  ].join(",\n")
+  return views +
+    "\n-- Which column of which table resolves through which view.\n" +
+    "CREATE OR REPLACE VIEW enum_columns AS\nSELECT * FROM (VALUES\n{columnRows}\n" +
+    ") AS t(source_table, column_name, enum_name, lookup_view);\n" +
+    "\n-- One row per live event type, in id order.\n" +
+    "CREATE OR REPLACE VIEW event_catalog_static AS\nSELECT * FROM (VALUES\n{catalogRows}\n" +
+    ") AS t(source_table, event_type, tier, has_instance_id, event_version);\n"
+}

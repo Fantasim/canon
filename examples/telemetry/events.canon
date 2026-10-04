@@ -1,0 +1,308 @@
+package telemetry
+
+// The event tables, in id order. Wire order is declaration order; a retired column stays
+// where it stood and gets `retiredIn`. The version history is each column's `since` and
+// `retiredIn`, checked by Event's V-checks (telemetry.canon).
+
+/// Every live event type's table, in id order.
+let events: {EventType: Event} = {
+  item_created: {
+    description: "An item minted into existence, typed by GrantKind; via_mail in v4, fact_id in v5"
+    version: 5
+    since: 2
+    tier: WARM
+    producers: [WorldServer, DatabaseServer]
+    ledgerKinds: grant_kind
+    columns: [
+      { name: "item_instance_id", sql: UBIGINT, since: 3 },
+      { name: "grant_kind", sql: UTINYINT, kind: enum8, values: grant_kind },
+      { name: "item_id", sql: UINTEGER },
+      { name: "quantity", sql: UINTEGER },
+      // 1 = delivered into game.mail, not a container.
+      { name: "via_mail", sql: UTINYINT, since: 4 },
+      { name: "fact_id", sql: UBIGINT, since: 5 },
+    ]
+    ledger: [
+      {
+        rows: some {
+          column: grant_kind
+          of: grant_kind
+          kinds: [BUYBACK_DELIVERY, BUFF_REWARD, EVENT_REWARD]
+        }
+        currency: item
+        bucket: mint
+        sign: 1
+        token: "system_grant"
+        counted: true
+        filter: "COALESCE(via_mail, 0) = 0"
+        amount: quantity
+        item: item_id
+        note:
+          "SendSystemItem: a direct inventory grant (mail only on overflow, counted at its claim)"
+      },
+      {
+        rows: some { column: grant_kind, of: grant_kind, kinds: [BOSS_REWARD_MAIL] }
+        currency: item
+        bucket: mint
+        sign: 1
+        token: "mail_grant"
+        counted: false
+        amount: quantity
+        item: item_id
+        note: "MAIL-BORNE: lands in game.mail, not in a container, until claimed"
+      },
+      {
+        rows: some { column: grant_kind, of: grant_kind, kinds: [MAIL_RETURN] }
+        currency: item
+        bucket: transfer
+        sign: 1
+        token: "mail_return"
+        leg: Leg.in
+        counted: false
+        amount: quantity
+        item: item_id
+        note:
+          "NOT A MINT: re-posts items that already exist; the claim inflow is mail_items_claimed"
+      },
+      {
+        rows: some { column: grant_kind, of: grant_kind, kinds: [PLAYER_MAIL] }
+        currency: item
+        bucket: transfer
+        sign: 1
+        token: "mail_out"
+        leg: Leg.in
+        counted: false
+        amount: quantity
+        item: item_id
+        note: "NOT A MINT: the counted leg is the sender's mail_items_sent row"
+      },
+      {
+        rows: some { column: grant_kind, of: grant_kind, kinds: [AUCTION_ESCROW_RECOVERY] }
+        currency: item
+        bucket: transfer
+        sign: 1
+        token: "auction_return"
+        leg: Leg.in
+        counted: false
+        amount: quantity
+        item: item_id
+        note: "MAIL-BORNE, NOT A MINT: an escrow re-mailed after a restart"
+      },
+      {
+        rows: some { column: grant_kind, of: grant_kind, kinds: [PERIN_OVERFLOW] }
+        currency: item
+        bucket: mint
+        sign: 1
+        token: "perin_overflow"
+        counted: true
+        filter: "COALESCE(via_mail, 0) = 0"
+        amount: quantity
+        item: item_id
+        note: "EmitPerinMinted (gold.cpp): perin minted straight into the inventory"
+      },
+      {
+        rows: some { column: grant_kind, of: grant_kind, kinds: [FARM_HARVEST] }
+        currency: item
+        bucket: mint
+        sign: 1
+        token: "farm_harvest"
+        counted: true
+        filter: "COALESCE(via_mail, 0) = 0"
+        amount: quantity
+        item: item_id
+        note: "FarmManager::ClaimModel: farm production granted to the inventory"
+      },
+      {
+        rows: some { column: grant_kind, of: grant_kind, kinds: [STARTER_ITEM] }
+        currency: item
+        bucket: mint
+        sign: 1
+        token: "starter_item"
+        counted: true
+        filter: "COALESCE(via_mail, 0) = 0"
+        amount: quantity
+        item: item_id
+        note: "CDbManager::CreatePlayer: one row per starting item, after the container saved"
+      },
+      {
+        rows: some { column: grant_kind, of: grant_kind, kinds: [UNKNOWN] }
+        currency: nothing
+        bucket: nothing
+        sign: 0
+        token: "unknown_grant"
+        counted: false
+        item: item_id
+        note: "NOT A LEDGER LEG: no caller passes GrantKind 0"
+      },
+    ]
+  }
+
+  item_consumed: {
+    description:
+      "An item consumed (used up) by a player; READONLY, item_removed(Consumed) replaces it"
+    version: 3
+    since: 2
+    tier: READONLY
+    columns: [
+      { name: "item_instance_id", sql: UBIGINT, since: 3 },
+      { name: "item_id", sql: UINTEGER },
+    ]
+    ledger: [
+      {
+        currency: item
+        bucket: sink
+        sign: -1
+        token: "consume"
+        counted: false
+        dedupOf: "consume"
+        item: item_id
+        note: "no quantity column; item_removed(Consumed) is the quantity-bearing sink"
+      },
+    ]
+  }
+
+  penya_drops: {
+    description: "Penya dropped by a killed monster, one row per party member on auto-loot"
+    version: 2
+    since: 2
+    tier: HOT
+    producers: [WorldServer]
+    columns: [{ name: "amount", sql: BIGINT }, { name: "mob_index", sql: UINTEGER }]
+    ledger: [
+      {
+        currency: gold
+        bucket: mint
+        sign: 1
+        token: "mob_drop"
+        counted: true
+        amount: amount
+        note: "CMover::PickupGoldCore on the kill's auto-loot (GameEventGeneral::OnPenyasDropped)"
+      },
+    ]
+  }
+
+  trade_penya: {
+    description: "Penya leg of a player-to-player trade"
+    version: 2
+    since: 2
+    tier: COOL
+    producers: [WorldServer]
+    columns: [
+      { name: "trade_id", sql: UBIGINT },
+      { name: "giver_player_id", sql: UINTEGER },
+      { name: "receiver_player_id", sql: UINTEGER },
+      { name: "amount", sql: BIGINT },
+    ]
+    ledger: [
+      {
+        currency: gold
+        bucket: transfer
+        sign: -1
+        token: "trade"
+        leg: out
+        counted: true
+        amount: amount
+        player: giver_player_id
+        counterparty: receiver_player_id
+        note: "GameEventGeneral::OnTradeGold from CVTInfo::TradeLastConfirm: one row per giver leg"
+      },
+      {
+        currency: gold
+        bucket: transfer
+        sign: 1
+        token: "trade"
+        leg: Leg.in
+        counted: true
+        amount: amount
+        player: receiver_player_id
+        counterparty: giver_player_id
+        note: "the receiving half of the same row"
+      },
+    ]
+  }
+
+  server_lifecycle: {
+    description: "Every producer's boot or clean-stop"
+    version: 1
+    tier: TINY
+    producers: [WorldServer, CoreServer, DatabaseServer, LoginServer]
+    enqueue: internal
+    columns: [{ name: "kind", sql: UTINYINT, kind: enum8, values: lifecycle_kind }]
+  }
+
+  farm_events: {
+    description: "One farm action; v2 drops cost for the gold_changes(Farm) row of the same fact_id"
+    version: 2
+    tier: COOL
+    producers: [WorldServer]
+    columns: [
+      { name: "kind", sql: UTINYINT, kind: enum8, values: farm_event_kind },
+      { name: "slot_index", sql: UINTEGER },
+      { name: "type_id", sql: UINTEGER },
+      { name: "item_count", sql: UINTEGER },
+      { name: "target_player_id", sql: UINTEGER },
+      // The requested price, a mirror of gold_changes(Farm), which carries the measured delta.
+      { name: "cost", sql: BIGINT, retiredIn: 2 },
+      { name: "fact_id", sql: UBIGINT, since: 2 },
+    ]
+    ledger: [
+      {
+        rows: some { column: kind, of: farm_event_kind, kinds: [Purchase, UnlockModel, VisitOther] }
+        currency: gold
+        bucket: sink
+        sign: -1
+        token: "farm"
+        counted: false
+        dedupOf: "farm"
+        filter: "cost <> 0"
+        amount: cost
+        untilVersion: 1
+        note: "MIRROR, never summed: the requested price; gold_changes(Farm) is the reconciling leg"
+      },
+    ]
+  }
+
+  sovereign_events: {
+    description: "A reign fact - role assigned, doctrine set, power triggered, or reward granted (per recipient)"
+    version: 1
+    tier: TINY
+    producers: [CoreServer]
+    ledgerKinds: kind
+    columns: [
+      { name: "kind", sql: UTINYINT, kind: enum8, values: sovereign_event_kind },
+      { name: "role", sql: UTINYINT, kind: enum8, values: sovereign_role },
+      { name: "doctrine", sql: UTINYINT, kind: enum8, values: sovereign_doctrine },
+      { name: "power", sql: UTINYINT, kind: enum8, values: sovereign_power },
+      { name: "task_id", sql: UINTEGER },
+      { name: "used", sql: UINTEGER },
+      { name: "max", sql: UINTEGER },
+      { name: "gold", sql: BIGINT },
+      { name: "item_count", sql: UINTEGER },
+    ]
+    ledger: [
+      {
+        rows: some { column: kind, of: sovereign_event_kind, kinds: [RewardGranted] }
+        currency: gold
+        bucket: mint
+        sign: 1
+        token: "sovereign_reward"
+        counted: false
+        dedupOf: "mail_claim"
+        filter: "gold <> 0"
+        amount: gold
+        note:
+          "MIRROR, never summed: the reward is mailed; the penya enters at gold_changes(MailClaim)"
+      },
+      {
+        currency: nothing
+        bucket: nothing
+        sign: 0
+        token: "sovereign"
+        counted: false
+        filter: "gold = 0"
+        note:
+          "NOT A LEDGER LEG: role assignments, the doctrine choice and power triggers move nothing"
+      },
+    ]
+  }
+}

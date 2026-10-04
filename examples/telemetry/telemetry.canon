@@ -1,0 +1,415 @@
+/// Sovereign's telemetry catalogue: every event type the game servers emit, the lake table
+/// that stores it, its columns and their version history, the ring tier and producers, and
+/// what its rows mean to the economy ledgers. Today this is spread over X-macros
+/// (TELEMETRY_META_*, TELEMETRY_FIELDS_*, TELEMETRY_LEDGER_*), hand-kept enum blocks, a
+/// schema lock that alone knows the history, and a Python generator that parses the C++.
+///
+/// Here it is one package (ADR L-0111 d.1). The C++ packer and the ring set read the
+/// per-event metadata at compile time (header-inline constexpr lookups, DECISIONS 293);
+/// monitoring reads the same facts from Go; the lake's DDL, its enum views and a JSON
+/// catalogue are build-time strings written by `emit text` (DECISIONS 294).
+///
+/// This dry run carries 7 of the 86 tables, the two tombstoned event ids, and a trimmed
+/// GrantKind (14 of its 62 members, the retired ones kept).
+package telemetry
+
+/// The catalogue contract version a reader checks before it trusts the shape below.
+const CONTRACT_VERSION = 2
+
+/// Version of the JSON catalogue's own shape (catalogJson).
+const CATALOG_FORMAT = 1
+
+// ---------------------------------------------------------------------------
+// Event types
+// ---------------------------------------------------------------------------
+
+/// The event type byte every row carries on the wire; the dispatch table is indexed by it.
+/// Each member is named after its lake table, so one identifier names the event, its table
+/// and its id. Ids are never reused: a removed event is `retired` and the lock keeps its id.
+enum EventType @codes(UInt8) {
+  /// SendSystemItem and MailV2::SendMail grants: an item minted, typed by GrantKind.
+  item_created = 11
+  /// The claim leg of a mail. Removed in format v5: redundant with the send leg.
+  retired mail_items_received = 20
+  /// An item used up by a player. Read-only history since item_removed(Consumed).
+  item_consumed = 31
+  /// Penya dropped by a killed monster.
+  penya_drops = 70
+  /// The penya leg of a player-to-player trade.
+  trade_penya = 71
+  /// Every producer's boot or clean stop.
+  server_lifecycle = 110
+  /// One farm action.
+  farm_events = 151
+  /// One fact of a reign.
+  sovereign_events = 152
+  /// World boss spawns. The WorldBoss system was removed on 2026-09-03; the lake table
+  /// stays readable, nothing writes it.
+  retired world_boss_spawns = 156
+}
+
+/// A ring's drop and WARN policy, carried per event. It does not size the ring.
+enum Tier @codes(UInt8) {
+  /// Hot path: drops are expected under load and warned once.
+  HOT = 0
+  WARM = 1
+  COOL = 2
+  /// A handful of rows per boot.
+  TINY = 3
+  /// No producer writes the table any more; the ingester keeps its table readable.
+  READONLY = 4
+}
+
+/// A process that owns telemetry rings. The code is the top byte of a producer_id.
+enum Producer @codes(UInt8) {
+  WorldServer = 1
+  CoreServer = 2
+  DatabaseServer = 3
+  LoginServer = 4
+  CacheServer = 5
+  DataIngester = 6
+  ItemTool = 7
+}
+
+/// How the client enqueues an event.
+enum Enqueue {
+  /// The client gets a generated Enqueue<Name> method.
+  generated
+  /// The client builds the row itself (the spine rows).
+  internal
+}
+
+// ---------------------------------------------------------------------------
+// Columns
+// ---------------------------------------------------------------------------
+
+/// A lake column type (DuckDB). The name is the SQL spelling.
+enum SqlType { UTINYINT, USMALLINT, UINTEGER, UBIGINT, TINYINT, SMALLINT, INTEGER, BIGINT, FLOAT }
+
+/// How a column travels on the wire and lands in the lake.
+enum FieldKind {
+  /// The mandatory timestamp_ns header column.
+  ts
+  /// The mandatory player_id header column.
+  id
+  /// A fixed-width integer or float, streamed as its own type.
+  scalar
+  /// A telemetry enum, exactly one byte on the wire.
+  enum8
+}
+
+/// A snake_case SQL identifier.
+type Ident = String(/^[a-z][a-z0-9_]*$/)
+
+/// Printable ASCII on one line: what the JSON catalogue and the SQL comments accept.
+type Text = String(/^[ -~]*$/)
+
+/// One column of an event table, in wire order.
+record Column {
+  /// The SQL column name, also the struct field name.
+  name: Ident
+  /// The lake type; its byte width is the wire width.
+  sql: SqlType
+  /// How the column is streamed.
+  kind: FieldKind = scalar
+  /// The telemetry enum an `enum8` column holds.
+  values: Vocabulary? = none
+  /// The version that added the column; none: present from the table's first known version.
+  since: Int(2..)? = none
+  /// The version that retired it. A retired column stays in the DDL (after the live ones),
+  /// is appended as NULL, and leaves the wire.
+  retiredIn: Int(2..)? = none
+
+  check (kind == enum8) == (values != none) at values
+    else "an enum8 column names its vocabulary, and only an enum8 column does"
+  check kind != enum8 or sql == UTINYINT at sql else "an enum8 column is a UTINYINT"
+  check since == none or retiredIn == none or since < retiredIn at retiredIn
+    else "{name} is retired in version {retiredIn}, not after it was added ({since})"
+
+  /// Whether the lake allows NULL here: everything but the header.
+  fn nullable(self) -> Bool { return kind != ts and kind != id }
+
+  /// This column's piece of a CREATE TABLE.
+  fn ddl(self) -> String { return "{name} {sql}" + (if nullable() { "" } else { " NOT NULL" }) }
+
+  /// Bytes on the wire.
+  fn width(self) -> Int { return sqlWidth(sql) }
+}
+
+/// The two header columns every table starts with; `since` is the table's first version.
+let headerColumns: [Column] keyed by name = [
+  { name: "timestamp_ns", sql: BIGINT, kind: ts },
+  { name: "player_id", sql: UINTEGER, kind: id },
+]
+
+/// A provenance column the ingester prepends to every table: who sent the row, in which
+/// batch, at which version. Never on the wire as a field.
+record ProvenanceColumn {
+  /// Its SQL name.
+  name: Ident
+  /// Its SQL type, never NULL.
+  sql: SqlType
+}
+
+/// The provenance prefix of every CREATE TABLE, in order.
+let provenanceColumns: [ProvenanceColumn] keyed by name = [
+  { name: "event_version", sql: UTINYINT },
+  { name: "producer_id", sql: UINTEGER },
+  { name: "boot_id", sql: BIGINT },
+  { name: "batch_seq", sql: BIGINT },
+  { name: "row_no", sql: USMALLINT },
+]
+
+/// Bytes of one value of `t` on the wire.
+fn sqlWidth(t: SqlType) -> Int {
+  return match t {
+    UTINYINT, TINYINT => 1
+    USMALLINT, SMALLINT => 2
+    UINTEGER, INTEGER, FLOAT => 4
+    UBIGINT, BIGINT => 8
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Ledger roles
+// ---------------------------------------------------------------------------
+
+/// What a ledger leg moves. gold, item, and the point tokens are reconciled against the
+/// database snapshot; `none` documents a table that moves nothing.
+enum Currency { gold, item, nothing = "none" }
+
+/// The direction of a leg, from the player's point of view.
+enum Bucket { mint, sink, transfer, nothing = "none" }
+
+/// Which side of a single-row transfer a leg reads.
+enum Leg { out, in }
+
+/// The rows of a table one ledger role covers.
+variant Rows {
+  /// Every row.
+  every
+  /// The rows whose `column` holds one of `kinds`, members of the column's vocabulary.
+  some {
+    /// The enum8 column that splits the rows.
+    column: ref Column
+    /// Its vocabulary, so the kinds are typed.
+    of: Vocabulary
+    /// The members covered.
+    kinds: [Member(of)](1..)
+  }
+}
+
+/// One ledger leg a table's rows contribute, or the statement that they move nothing.
+record Role {
+  /// The rows it covers.
+  rows: Rows = every
+  /// What moves.
+  currency: Currency
+  /// Mint, sink or transfer.
+  bucket: Bucket
+  /// +1 credit, -1 debit, 0: the amount is already signed (or there is none).
+  sign: Int(-1..=1)
+  /// The stable vocabulary the economy panel groups on.
+  token: Ident
+  /// The side a single-row transfer reads; none for a table with one row per side.
+  leg: Leg? = none
+  /// An extra predicate on the table's own columns (DuckDB SQL).
+  filter: Text? = none
+  /// The magnitude; none for a row that documents a path with no amount.
+  amount: ref Column? = none
+  /// For item legs: the column naming the item.
+  item: ref Column? = none
+  /// Whose ledger the leg lands on; none: the header's player_id.
+  player: ref Column? = none
+  /// The other side, if any.
+  counterparty: ref Column? = none
+  /// Summed into the reconciliation (true), or real telemetry that must not be summed.
+  counted: Bool
+  /// The token this row would double-count with.
+  dedupOf: Ident? = none
+  /// The last version whose rows this role reads; none: every version.
+  untilVersion: Int(1..)? = none
+  /// Why, citing a function, never a line number.
+  note: Text
+
+  check (currency == nothing) == (bucket == nothing) at bucket
+    else "a role moves no currency exactly when its bucket is none"
+  check not counted or currency != nothing at counted else "a counted role moves a currency"
+  check leg == none or bucket == transfer at leg else "only a transfer has a leg"
+}
+
+// ---------------------------------------------------------------------------
+// Events
+// ---------------------------------------------------------------------------
+
+/// One telemetry table: the rows of one event type.
+record Event {
+  /// What one row records.
+  description: Text
+  /// The current layout version: the wire version byte and the lake's event_version.
+  version: UInt8(1..)
+  /// The first version whose layout this catalogue knows. Tables older than the schema lock
+  /// start at 2, its floor; their earlier history is lost.
+  since: Int(1..) = 1
+  /// Ring policy.
+  tier: Tier
+  /// The processes that own a ring for it (none: read-only history).
+  producers: [Producer] = []
+  /// How the client enqueues it.
+  enqueue: Enqueue = generated
+  /// The body columns after the header, in wire order, retired ones where they stood.
+  columns: [Column] keyed by name
+  /// What its rows mean to the ledgers; empty: no ledger at all.
+  ledger: [Role] = []
+  /// The enum8 column the ledger is typed by. When set, every live member of its vocabulary
+  /// is covered by some role (L-0111), so a new kind cannot ship without a ledger decision.
+  ledgerKinds: ref Column? = none
+
+  check producers.isUnique() at producers else "a producer is listed twice"
+  check (producers.isEmpty()) == (tier == READONLY) at tier
+    else "a READONLY table has no producer, and only a READONLY table"
+  check since <= version at since
+    else "version {version} is older than the first known version {since}"
+  check {
+    for c in columns {
+      // V2: a column is added and retired at versions the table has reached.
+      if c.since != none and (c.since <= since or c.since > version) {
+        fail(c.since, "{c.name} is added in version {c.since}, outside {since + 1}..={version}")
+      }
+      if c.retiredIn != none and c.retiredIn > version {
+        fail(
+          c.retiredIn,
+          "{c.name} is retired in version {c.retiredIn}, after the current {version}",
+        )
+      }
+      if c.name in headerColumns or c.kind == ts or c.kind == id {
+        fail(c, "{c.name} is a header column: every table has it already")
+      }
+    }
+    // V3: every version after the first known one adds or retires a column.
+    for v in since + 1..version + 1 {
+      if not columns.any(c => c.since == v or c.retiredIn == v) {
+        fail(self, "version {v} changes no column: bump the version only with a layout change")
+      }
+    }
+    for r in ledger {
+      // V4: a role never reads a column past its retirement.
+      for col in [r.amount, r.item, r.player, r.counterparty] {
+        if col != none and col.retiredIn != none {
+          if r.untilVersion == none or r.untilVersion >= col.retiredIn {
+            fail(
+              r,
+              "the role reads {col.name}, retired in {col.retiredIn}: bound it with untilVersion",
+            )
+          }
+        }
+      }
+      match r.rows {
+        some(s) => {
+          if s.column.values != s.of {
+            fail(s.of, "{s.column.name} holds {s.column.values}, not {s.of}")
+          }
+        }
+        every => {}
+      }
+    }
+    // L-0111 coverage: a ledger typed by an enum covers every live member of it.
+    if ledgerKinds != none {
+      if ledgerKinds.values == none {
+        fail(ledgerKinds, "{ledgerKinds.name} is not an enum8 column")
+      } else {
+        var covered: [String] = []
+        for r in ledger {
+          match r.rows {
+            every => { covered += liveNames(ledgerKinds.values) }
+            some(s) => {
+              if ledgerKinds == s.column { covered += [String(k) for k in s.kinds] }
+            }
+          }
+        }
+        for n in liveNames(ledgerKinds.values) {
+          if not (n in covered) {
+            fail(ledgerKinds, "{ledgerKinds.name} {n} is covered by no ledger role")
+          }
+        }
+      }
+    }
+  }
+
+  /// The columns of `v`'s layout, in wire order.
+  fn layout(self, v: Int) -> [Column] {
+    return [
+      c
+      for c in columns
+      if (c.since ?? since) <= v and (c.retiredIn == none or c.retiredIn > v)
+    ]
+  }
+
+  /// The live columns, then the retired ones: the DDL's order.
+  fn tableColumns(self) -> [Column] {
+    return headerColumns.values() + layout(version) + [c for c in columns if c.retiredIn != none]
+  }
+}
+
+/// The table of event type `e`; none for a retired type, which has no table any more.
+fn eventOf(e: EventType) -> Event? { return events.get(e) }
+
+/// The live event types, in id order.
+fn liveEvents() -> [EventType] { return EventType.members.filter(e => not e.retired).sortBy(.code) }
+
+check {
+  for e in EventType.members {
+    if not e.retired and not (e in events) {
+      fail(events, "{e} is a live event type with no table: give it one or retire it")
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Per-event metadata: lookups over EventType, constexpr in C++ (DECISIONS 293)
+// ---------------------------------------------------------------------------
+
+/// Whether `e` is a tombstone: an id no producer may send again.
+export fn isRetired(e: EventType) -> Bool { return e.retired }
+
+/// The current layout version of `e` (the wire version byte); 0 for a retired type.
+export fn versionOf(e: EventType) -> UInt8 { return eventOf(e)?.version ?? 0 }
+
+/// The ring tier of `e`; a retired type is READONLY (nothing writes it).
+export fn tierOf(e: EventType) -> Tier { return eventOf(e)?.tier ?? READONLY }
+
+/// The lake table of `e`, retired types included (their tables stay readable).
+export fn tableOf(e: EventType) -> String { return e.name }
+
+/// Whether `e`'s table has the item_instance_id column, right after the header.
+export fn hasInstanceId(e: EventType) -> Bool {
+  let ev = eventOf(e)
+  return ev != none and "item_instance_id" in ev.layout(ev.version).map(.name)
+}
+
+/// The packed size of `e`'s current struct: header plus live body columns.
+export fn wireSize(e: EventType) -> Int {
+  let ev = eventOf(e)
+  if ev == none { return 0 }
+  return headerColumns.map(.width()).sum() + ev.layout(ev.version).map(.width()).sum()
+}
+
+/// Whether producer `p` owns a ring for `e`.
+export fn emits(e: EventType, p: Producer) -> Bool { return p in (eventOf(e)?.producers ?? []) }
+
+/// The CREATE TABLE of `e`'s current layout; empty for a retired type.
+export fn createTableSql(e: EventType) -> String {
+  let ev = eventOf(e)
+  if ev == none { return "" }
+  let cols = [p.name + " " + String(p.sql) + " NOT NULL" for p in provenanceColumns] +
+    ev.tableColumns().map(.ddl())
+  return "CREATE TABLE IF NOT EXISTS {e.name} ({cols.join(", ")});"
+}
+
+// ---------------------------------------------------------------------------
+// Outputs
+// ---------------------------------------------------------------------------
+
+emit cpp { out: "@source/Engine/Telemetry/Generated", namespace: "Telemetry", mode: baked }
+emit go { out: "@services/monitoring/gen/telemetry", mode: baked }
+emit text { out: "@source/Tools/telemetry/generated" }

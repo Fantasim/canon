@@ -1,0 +1,180 @@
+package telemetry
+
+// catalog.json: the whole catalogue as data, for tools that are not C++ or Go (the HTML
+// catalogue, the lake gates). Its shape, format 1:
+//
+//   { "format": 1, "contract": <int>,
+//     "provenance": [ { "name", "type" } ],          the prefix of every table
+//     "events": [ {                                   every type, in id order
+//       "id", "table", "retired": false, "version", "since", "tier", "producers": [<name>], "enqueue",
+//       "hasInstanceId", "wireSize", "description",
+//       "columns": [ { "name", "type", "kind", "nullable", "since", "retiredIn", "enum" } ],
+//       "ledger": [ { "kinds": null | { "column", "values": [<member>] }, "currency",
+//                     "bucket", "sign", "token", "leg", "filter", "amount", "item",
+//                     "player", "counterparty", "counted", "dedupOf", "untilVersion",
+//                     "note" } ] }
+//       | { "id", "table", "retired": true } ],       a tombstone: the id is never reused
+//     "enums": [ { "name", "view", "values": [ { "code", "name", "retired" } ] } ] }
+//
+// Columns are in wire order with the header first; a retired column stays where it stood
+// and has a `retiredIn`. Every string is printable ASCII (Text), so escaping `\` and `"`
+// is all JSON needs. Two-space indentation, keys in the order above, one final newline.
+
+/// `s` as a JSON string.
+fn jstr(s: String) -> String { return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"") + "\"" }
+
+/// An optional string as JSON.
+fn jopt(s: String?) -> String { return if s != none { jstr(s) } else { "null" } }
+
+/// An optional integer as JSON.
+fn jint(n: Int?) -> String { return if n != none { "{n}" } else { "null" } }
+
+/// Two spaces per nesting level.
+fn indent(depth: Int) -> String { return ["  " for i in 0..depth].join("") }
+
+/// A JSON object of `fields` ("\"key\": value") at nesting depth `depth`.
+fn jobj(fields: [String], depth: Int) -> String {
+  let pad = "\n" + indent(depth + 1)
+  return "\{" + pad + fields.join("," + pad) + "\n" + indent(depth) + "\}"
+}
+
+/// A JSON array of already-encoded `items` at nesting depth `depth`.
+fn jarr(items: [String], depth: Int) -> String {
+  if items.isEmpty() { return "[]" }
+  let pad = "\n" + indent(depth + 1)
+  return "[" + pad + items.join("," + pad) + "\n" + indent(depth) + "]"
+}
+
+/// A short array on one line.
+fn jline(items: [String]) -> String { return "[" + items.join(", ") + "]" }
+
+/// `"key": value`.
+fn jkv(key: String, value: String) -> String { return jstr(key) + ": " + value }
+
+fn columnJson(ev: Event, c: Column, depth: Int) -> String {
+  return jobj(
+    [
+      jkv("name", jstr(c.name)),
+      jkv("type", jstr(String(c.sql))),
+      jkv("kind", jstr(String(c.kind))),
+      jkv("nullable", "{c.nullable()}"),
+      jkv("since", "{c.since ?? ev.since}"),
+      jkv("retiredIn", jint(c.retiredIn)),
+      jkv("enum", if c.values != none { jstr(enumName(c.values)) } else { "null" }),
+    ],
+    depth,
+  )
+}
+
+fn rowsJson(r: Role, depth: Int) -> String {
+  return match r.rows {
+    every => "null"
+    some(s) => jobj(
+      [
+        jkv("column", jstr(s.column.name)),
+        jkv("values", jline([jstr(String(k)) for k in s.kinds])),
+      ],
+      depth,
+    )
+  }
+}
+
+fn roleJson(r: Role, depth: Int) -> String {
+  return jobj(
+    [
+      jkv("kinds", rowsJson(r, depth + 1)),
+      jkv("currency", jstr(r.currency.wire)),
+      jkv("bucket", jstr(r.bucket.wire)),
+      jkv("sign", "{r.sign}"),
+      jkv("token", jstr(r.token)),
+      jkv("leg", if r.leg != none { jstr(String(r.leg)) } else { "null" }),
+      jkv("filter", jopt(r.filter)),
+      jkv("amount", jopt(r.amount?.name)),
+      jkv("item", jopt(r.item?.name)),
+      jkv("player", jstr(r.player?.name ?? "player_id")),
+      jkv("counterparty", jopt(r.counterparty?.name)),
+      jkv("counted", "{r.counted}"),
+      jkv("dedupOf", jopt(r.dedupOf)),
+      jkv("untilVersion", jint(r.untilVersion)),
+      jkv("note", jstr(r.note)),
+    ],
+    depth,
+  )
+}
+
+fn eventJson(e: EventType, depth: Int) -> String {
+  let ev = eventOf(e)
+  if ev == none {
+    return jobj(
+      [jkv("id", "{e.code}"), jkv("table", jstr(tableOf(e))), jkv("retired", "true")],
+      depth,
+    )
+  }
+  let cols = headerColumns.values() + ev.columns
+  return jobj(
+    [
+      jkv("id", "{e.code}"),
+      jkv("table", jstr(tableOf(e))),
+      jkv("retired", "false"),
+      jkv("version", "{ev.version}"),
+      jkv("since", "{ev.since}"),
+      jkv("tier", jstr(String(ev.tier))),
+      jkv("producers", jline([jstr(String(p)) for p in ev.producers])),
+      jkv("enqueue", jstr(String(ev.enqueue))),
+      jkv("hasInstanceId", "{hasInstanceId(e)}"),
+      jkv("wireSize", "{wireSize(e)}"),
+      jkv("description", jstr(ev.description)),
+      jkv("columns", jarr([columnJson(ev, c, depth + 2) for c in cols], depth + 1)),
+      jkv("ledger", jarr([roleJson(r, depth + 2) for r in ev.ledger], depth + 1)),
+    ],
+    depth,
+  )
+}
+
+fn enumJson(v: Vocabulary, depth: Int) -> String {
+  return jobj(
+    [
+      jkv("name", jstr(enumName(v))),
+      jkv("view", jstr("enum_{v}")),
+      jkv(
+        "values",
+        jarr(
+          [
+            jobj(
+              [jkv("code", "{l.code}"), jkv("name", jstr(l.name)), jkv("retired", "{l.isRetired}")],
+              depth + 2,
+            )
+            for l in labels(v)
+          ],
+          depth + 1,
+        ),
+      ),
+    ],
+    depth,
+  )
+}
+
+/// The catalogue as JSON (shape above).
+@text("catalog.json")
+export fn catalogJson() -> String {
+  return jobj(
+    [
+      jkv("format", "{CATALOG_FORMAT}"),
+      jkv("contract", "{CONTRACT_VERSION}"),
+      jkv(
+        "provenance",
+        jarr(
+          [
+            jobj([jkv("name", jstr(p.name)), jkv("type", jstr(String(p.sql)))], 2)
+            for p in provenanceColumns
+          ],
+          1,
+        ),
+      ),
+      jkv("events", jarr([eventJson(e, 2) for e in EventType.members.sortBy(.code)], 1)),
+      jkv("enums", jarr([enumJson(v, 2) for v in usedVocabularies()], 1)),
+    ],
+    0,
+  ) +
+    "\n"
+}

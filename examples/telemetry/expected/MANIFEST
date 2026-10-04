@@ -1,0 +1,10 @@
+@services/monitoring/gen/telemetry/rt/rt.go services/monitoring/gen/telemetry/rt/rt.go
+@services/monitoring/gen/telemetry/telemetry.gen.go services/monitoring/gen/telemetry/telemetry.gen.go
+@source/Engine/Telemetry/Generated/canon_runtime.h source/Engine/Telemetry/Generated/canon_runtime.h
+@source/Engine/Telemetry/Generated/telemetry.gen.cpp source/Engine/Telemetry/Generated/telemetry.gen.cpp
+@source/Engine/Telemetry/Generated/telemetry.gen.h source/Engine/Telemetry/Generated/telemetry.gen.h
+@source/Tools/telemetry/generated/.canon-text source/Tools/telemetry/generated/.canon-text
+@source/Tools/telemetry/generated/catalog.json source/Tools/telemetry/generated/catalog.json
+@source/Tools/telemetry/generated/enums.sql source/Tools/telemetry/generated/enums.sql
+@source/Tools/telemetry/generated/tables.sql source/Tools/telemetry/generated/tables.sql
+telemetry/canon.lock canon.lock

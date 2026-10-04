@@ -1,0 +1,244 @@
+1:0-7 "package" keyword.other.canon
+1:8-17 "telemetry" entity.name.namespace.canon
+3:0-86 "// The lake's SQL, written by `emit text` (DECISIONS 294). Each file is one build-time" comment.line.double-slash.canon
+4:0-45 "// string; nothing is parsed back out of C++." comment.line.double-slash.canon
+6:0-90 "/// The vocabularies some column holds, in first-use order: the enum views the lake needs." comment.line.documentation.canon
+7:0-2 "fn" storage.type.function.canon
+7:3-19 "usedVocabularies" entity.name.function.canon
+7:22-24 "->" keyword.operator.canon
+7:26-36 "Vocabulary" entity.name.type.canon
+8:2-8 "return" keyword.control.canon
+8:11-12 "." punctuation.accessor.canon
+8:12-18 "values" variable.other.property.canon
+8:19-22 "for" keyword.control.canon
+8:25-27 "in" keyword.operator.word.canon
+8:41-44 "for" keyword.control.canon
+8:47-49 "in" keyword.operator.word.canon
+8:59-60 "." punctuation.accessor.canon
+8:60-67 "columns" variable.other.property.canon
+8:68-70 "if" keyword.control.canon
+8:72-73 "." punctuation.accessor.canon
+8:73-79 "values" variable.other.property.canon
+8:80-82 "!=" keyword.operator.canon
+8:83-87 "none" constant.language.canon
+8:88-89 "." punctuation.accessor.canon
+8:89-95 "unique" variable.other.property.canon
+11:0-91 "/// Every table's CREATE TABLE, one per line, in id order. The ingester runs it at boot and" comment.line.documentation.canon
+12:0-69 "/// compares it with the table it finds (the lake schema must match)." comment.line.documentation.canon
+13:0-1 "@" meta.annotation.canon punctuation.definition.annotation.canon
+13:1-5 "text" meta.annotation.canon entity.name.function.decorator.canon
+13:5-6 "(" meta.annotation.canon
+13:6-18 "\"tables.sql\"" meta.annotation.canon string.quoted.double.canon
+13:18-19 ")" meta.annotation.canon
+14:0-6 "export" storage.modifier.canon
+14:7-9 "fn" storage.type.function.canon
+14:10-19 "tablesSql" entity.name.function.canon
+14:22-24 "->" keyword.operator.canon
+14:25-31 "String" entity.name.type.canon
+15:2-5 "let" storage.type.canon
+15:13-14 "=" keyword.operator.canon
+15:15-72 "\"-- The lake tables of the telemetry catalogue, contract " string.quoted.double.canon
+15:72-73 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+15:73-89 "CONTRACT_VERSION" string.quoted.double.canon meta.interpolation.canon constant.other.canon
+15:89-90 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+15:90-91 "." string.quoted.double.canon
+15:91-93 "\\n" string.quoted.double.canon constant.character.escape.canon
+15:93-94 "\"" string.quoted.double.canon
+16:2-8 "return" keyword.control.canon
+16:16-17 "+" keyword.operator.canon
+16:37-38 "+" keyword.operator.canon
+16:39-40 "\"" string.quoted.double.canon
+16:40-42 "\\n" string.quoted.double.canon constant.character.escape.canon
+16:42-43 "\"" string.quoted.double.canon
+16:44-47 "for" keyword.control.canon
+16:50-52 "in" keyword.operator.word.canon
+16:66-67 "." punctuation.accessor.canon
+16:67-71 "join" variable.other.property.canon
+16:72-74 "\"\"" string.quoted.double.canon
+19:0-34 "/// One enum view: value to label." comment.line.documentation.canon
+20:0-2 "fn" storage.type.function.canon
+20:3-11 "enumView" entity.name.function.canon
+20:12-13 "v" variable.other.property.canon
+20:13-14 ":" punctuation.separator.key.canon
+20:15-25 "Vocabulary" entity.name.type.canon
+20:27-29 "->" keyword.operator.canon
+20:30-36 "String" entity.name.type.canon
+21:2-5 "let" storage.type.canon
+21:11-12 "=" keyword.operator.canon
+21:14-20 "\"    (" string.quoted.double.canon
+21:20-21 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+21:21-22 "l" string.quoted.double.canon meta.interpolation.canon
+21:22-23 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+21:23-27 "code" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+21:27-28 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+21:28-31 ", '" string.quoted.double.canon
+21:31-32 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+21:32-33 "l" string.quoted.double.canon meta.interpolation.canon
+21:33-34 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+21:34-38 "name" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+21:38-39 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+21:39-42 "')\"" string.quoted.double.canon
+21:43-46 "for" keyword.control.canon
+21:49-51 "in" keyword.operator.word.canon
+21:62-63 "." punctuation.accessor.canon
+21:63-67 "join" variable.other.property.canon
+21:68-70 "\"," string.quoted.double.canon
+21:70-72 "\\n" string.quoted.double.canon constant.character.escape.canon
+21:72-73 "\"" string.quoted.double.canon
+22:2-8 "return" keyword.control.canon
+22:9-13 "\"-- " string.quoted.double.canon
+22:13-14 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+22:14-25 "enumName(v)" string.quoted.double.canon meta.interpolation.canon
+22:25-26 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+22:26-28 "\\n" string.quoted.double.canon constant.character.escape.canon
+22:28-56 "CREATE OR REPLACE VIEW enum_" string.quoted.double.canon
+22:56-57 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+22:57-58 "v" string.quoted.double.canon meta.interpolation.canon
+22:58-59 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+22:59-62 " AS" string.quoted.double.canon
+22:62-64 "\\n" string.quoted.double.canon constant.character.escape.canon
+22:64-85 "SELECT * FROM (VALUES" string.quoted.double.canon
+22:85-87 "\\n" string.quoted.double.canon constant.character.escape.canon
+22:87-88 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+22:88-92 "rows" string.quoted.double.canon meta.interpolation.canon
+22:92-93 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+22:93-95 "\\n" string.quoted.double.canon constant.character.escape.canon
+22:95-115 ") AS t(value, name);" string.quoted.double.canon
+22:115-117 "\\n" string.quoted.double.canon constant.character.escape.canon
+22:117-118 "\"" string.quoted.double.canon
+25:0-88 "/// The enum views every enum8 column resolves through, then the (table, column) to view" comment.line.documentation.canon
+26:0-34 "/// map, then the event catalogue." comment.line.documentation.canon
+27:0-1 "@" meta.annotation.canon punctuation.definition.annotation.canon
+27:1-5 "text" meta.annotation.canon entity.name.function.decorator.canon
+27:5-6 "(" meta.annotation.canon
+27:6-17 "\"enums.sql\"" meta.annotation.canon string.quoted.double.canon
+27:17-18 ")" meta.annotation.canon
+28:0-6 "export" storage.modifier.canon
+28:7-9 "fn" storage.type.function.canon
+28:10-18 "enumsSql" entity.name.function.canon
+28:21-23 "->" keyword.operator.canon
+28:24-30 "String" entity.name.type.canon
+29:2-5 "let" storage.type.canon
+29:12-13 "=" keyword.operator.canon
+29:27-30 "for" keyword.control.canon
+29:33-35 "in" keyword.operator.word.canon
+29:55-56 "." punctuation.accessor.canon
+29:56-60 "join" variable.other.property.canon
+29:61-62 "\"" string.quoted.double.canon
+29:62-64 "\\n" string.quoted.double.canon constant.character.escape.canon
+29:64-65 "\"" string.quoted.double.canon
+30:2-5 "let" storage.type.canon
+30:17-18 "=" keyword.operator.canon
+31:4-11 "\"    ('" string.quoted.double.canon
+31:11-12 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+31:12-13 "e" string.quoted.double.canon meta.interpolation.canon
+31:13-14 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+31:14-18 "', '" string.quoted.double.canon
+31:18-19 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+31:19-20 "c" string.quoted.double.canon meta.interpolation.canon
+31:20-21 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+31:21-25 "name" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+31:25-26 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+31:26-30 "', '" string.quoted.double.canon
+31:30-31 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+31:31-41 "enumName(c" string.quoted.double.canon meta.interpolation.canon
+31:41-42 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+31:42-48 "values" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+31:48-49 ")" string.quoted.double.canon meta.interpolation.canon
+31:49-50 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+31:50-59 "', 'enum_" string.quoted.double.canon
+31:59-60 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+31:60-61 "c" string.quoted.double.canon meta.interpolation.canon
+31:61-62 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+31:62-68 "values" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+31:68-69 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+31:69-72 "')\"" string.quoted.double.canon
+32:4-7 "for" keyword.control.canon
+32:10-12 "in" keyword.operator.word.canon
+33:4-7 "for" keyword.control.canon
+33:10-12 "in" keyword.operator.word.canon
+33:22-23 "." punctuation.accessor.canon
+33:23-30 "columns" variable.other.property.canon
+34:4-6 "if" keyword.control.canon
+34:8-9 "." punctuation.accessor.canon
+34:9-15 "values" variable.other.property.canon
+34:16-18 "!=" keyword.operator.canon
+34:19-23 "none" constant.language.canon
+35:3-4 "." punctuation.accessor.canon
+35:4-8 "join" variable.other.property.canon
+35:9-11 "\"," string.quoted.double.canon
+35:11-13 "\\n" string.quoted.double.canon constant.character.escape.canon
+35:13-14 "\"" string.quoted.double.canon
+36:2-5 "let" storage.type.canon
+36:18-19 "=" keyword.operator.canon
+37:4-11 "\"    ('" string.quoted.double.canon
+37:11-12 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+37:12-13 "e" string.quoted.double.canon meta.interpolation.canon
+37:13-14 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+37:14-17 "', " string.quoted.double.canon
+37:17-18 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+37:18-19 "e" string.quoted.double.canon meta.interpolation.canon
+37:19-20 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+37:20-24 "code" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+37:24-25 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+37:25-28 ", '" string.quoted.double.canon
+37:28-29 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+37:29-38 "tierOf(e)" string.quoted.double.canon meta.interpolation.canon
+37:38-39 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+37:39-42 "', " string.quoted.double.canon
+37:42-43 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+37:43-59 "hasInstanceId(e)" string.quoted.double.canon meta.interpolation.canon
+37:59-60 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+37:60-62 ", " string.quoted.double.canon
+37:62-63 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+37:63-75 "versionOf(e)" string.quoted.double.canon meta.interpolation.canon
+37:75-76 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+37:76-78 ")\"" string.quoted.double.canon
+38:4-7 "for" keyword.control.canon
+38:10-12 "in" keyword.operator.word.canon
+39:3-4 "." punctuation.accessor.canon
+39:4-8 "join" variable.other.property.canon
+39:9-11 "\"," string.quoted.double.canon
+39:11-13 "\\n" string.quoted.double.canon constant.character.escape.canon
+39:13-14 "\"" string.quoted.double.canon
+40:2-8 "return" keyword.control.canon
+40:15-16 "+" keyword.operator.canon
+41:4-5 "\"" string.quoted.double.canon
+41:5-7 "\\n" string.quoted.double.canon constant.character.escape.canon
+41:7-66 "-- Which column of which table resolves through which view." string.quoted.double.canon
+41:66-68 "\\n" string.quoted.double.canon constant.character.escape.canon
+41:68-69 "\"" string.quoted.double.canon
+41:70-71 "+" keyword.operator.canon
+42:4-43 "\"CREATE OR REPLACE VIEW enum_columns AS" string.quoted.double.canon
+42:43-45 "\\n" string.quoted.double.canon constant.character.escape.canon
+42:45-66 "SELECT * FROM (VALUES" string.quoted.double.canon
+42:66-68 "\\n" string.quoted.double.canon constant.character.escape.canon
+42:68-69 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+42:69-79 "columnRows" string.quoted.double.canon meta.interpolation.canon
+42:79-80 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+42:80-82 "\\n" string.quoted.double.canon constant.character.escape.canon
+42:82-83 "\"" string.quoted.double.canon
+42:84-85 "+" keyword.operator.canon
+43:4-63 "\") AS t(source_table, column_name, enum_name, lookup_view);" string.quoted.double.canon
+43:63-65 "\\n" string.quoted.double.canon constant.character.escape.canon
+43:65-66 "\"" string.quoted.double.canon
+43:67-68 "+" keyword.operator.canon
+44:4-5 "\"" string.quoted.double.canon
+44:5-7 "\\n" string.quoted.double.canon constant.character.escape.canon
+44:7-51 "-- One row per live event type, in id order." string.quoted.double.canon
+44:51-53 "\\n" string.quoted.double.canon constant.character.escape.canon
+44:53-54 "\"" string.quoted.double.canon
+44:55-56 "+" keyword.operator.canon
+45:4-51 "\"CREATE OR REPLACE VIEW event_catalog_static AS" string.quoted.double.canon
+45:51-53 "\\n" string.quoted.double.canon constant.character.escape.canon
+45:53-74 "SELECT * FROM (VALUES" string.quoted.double.canon
+45:74-76 "\\n" string.quoted.double.canon constant.character.escape.canon
+45:76-77 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+45:77-88 "catalogRows" string.quoted.double.canon meta.interpolation.canon
+45:88-89 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+45:89-91 "\\n" string.quoted.double.canon constant.character.escape.canon
+45:91-92 "\"" string.quoted.double.canon
+45:93-94 "+" keyword.operator.canon
+46:4-76 "\") AS t(source_table, event_type, tier, has_instance_id, event_version);" string.quoted.double.canon
+46:76-78 "\\n" string.quoted.double.canon constant.character.escape.canon
+46:78-79 "\"" string.quoted.double.canon

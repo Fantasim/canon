@@ -1,0 +1,75 @@
+# canon.lock v1
+enum   telemetry.EventType  11  item_created
+enum   telemetry.EventType  20  mail_items_received  retired
+enum   telemetry.EventType  31  item_consumed
+enum   telemetry.EventType  70  penya_drops
+enum   telemetry.EventType  71  trade_penya
+enum   telemetry.EventType  110  server_lifecycle
+enum   telemetry.EventType  151  farm_events
+enum   telemetry.EventType  152  sovereign_events
+enum   telemetry.EventType  156  world_boss_spawns  retired
+enum   telemetry.FarmEventKind  1  Purchase
+enum   telemetry.FarmEventKind  2  ClaimBatch
+enum   telemetry.FarmEventKind  3  ClaimSlot
+enum   telemetry.FarmEventKind  4  LevelUp
+enum   telemetry.FarmEventKind  5  SetupModel
+enum   telemetry.FarmEventKind  6  RemoveModel
+enum   telemetry.FarmEventKind  7  UnlockModel
+enum   telemetry.FarmEventKind  8  EnterOwn
+enum   telemetry.FarmEventKind  9  VisitOther
+enum   telemetry.FarmEventKind  10  Leave
+enum   telemetry.GrantKind  0  UNKNOWN
+enum   telemetry.GrantKind  1  BUYBACK_DELIVERY
+enum   telemetry.GrantKind  2  BUFF_REWARD
+enum   telemetry.GrantKind  3  LEVEL_UP_GIFT  retired
+enum   telemetry.GrantKind  14  BOSS_REWARD_MAIL
+enum   telemetry.GrantKind  15  WORLD_BOSS_REWARD_MAIL  retired
+enum   telemetry.GrantKind  16  EVENT_REWARD
+enum   telemetry.GrantKind  22  MAIL_RETURN
+enum   telemetry.GrantKind  23  PERIN_OVERFLOW
+enum   telemetry.GrantKind  27  PLAYER_MAIL
+enum   telemetry.GrantKind  35  FARM_HARVEST
+enum   telemetry.GrantKind  47  STARTER_ITEM
+enum   telemetry.GrantKind  48  GUILD_DISBAND_BANK  retired
+enum   telemetry.GrantKind  59  AUCTION_ESCROW_RECOVERY
+enum   telemetry.LifecycleKind  1  Start
+enum   telemetry.LifecycleKind  2  Stop
+enum   telemetry.Producer  1  WorldServer
+enum   telemetry.Producer  2  CoreServer
+enum   telemetry.Producer  3  DatabaseServer
+enum   telemetry.Producer  4  LoginServer
+enum   telemetry.Producer  5  CacheServer
+enum   telemetry.Producer  6  DataIngester
+enum   telemetry.Producer  7  ItemTool
+enum   telemetry.SovereignDoctrine  0  None
+enum   telemetry.SovereignDoctrine  1  Mythic
+enum   telemetry.SovereignDoctrine  2  Military
+enum   telemetry.SovereignDoctrine  3  Merchant
+enum   telemetry.SovereignDoctrine  4  Progressive
+enum   telemetry.SovereignDoctrine  5  Chancellor
+enum   telemetry.SovereignDoctrine  6  Craftsmanship
+enum   telemetry.SovereignDoctrine  7  Familiar
+enum   telemetry.SovereignEventKind  1  RoleAssigned
+enum   telemetry.SovereignEventKind  2  DoctrineSet
+enum   telemetry.SovereignEventKind  3  PowerTriggered
+enum   telemetry.SovereignEventKind  4  RewardGranted
+enum   telemetry.SovereignPower  0  None
+enum   telemetry.SovereignPower  1  MinisterBuffPrimary
+enum   telemetry.SovereignPower  2  MinisterBuffSecondary
+enum   telemetry.SovereignPower  3  WorldBossSpawn  retired
+enum   telemetry.SovereignPower  4  HiddenBonds
+enum   telemetry.SovereignPower  5  Heistia
+enum   telemetry.SovereignPower  6  AzuriaAuction
+enum   telemetry.SovereignPower  7  MinisterBuffTertiary
+enum   telemetry.SovereignPower  8  CustomDrop
+enum   telemetry.SovereignRole  0  None
+enum   telemetry.SovereignRole  1  Sovereign
+enum   telemetry.SovereignRole  2  MinisterMilitary
+enum   telemetry.SovereignRole  3  MinisterEconomy
+enum   telemetry.SovereignRole  4  MinisterEnvironment
+enum   telemetry.SovereignRole  5  MinisterCraftsmanship
+enum   telemetry.Tier  0  HOT
+enum   telemetry.Tier  1  WARM
+enum   telemetry.Tier  2  COOL
+enum   telemetry.Tier  3  TINY
+enum   telemetry.Tier  4  READONLY

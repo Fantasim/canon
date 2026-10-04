@@ -1,0 +1,1152 @@
+File: File FileKind=source @1:1-309:1
+  Package: QualifiedName telemetry @1:9-1:18
+  Decls[0]: LetDecl @8:1-308:2
+    Doc: DocComment "Every live event type's table, in id order." @7:1-7:48
+    Name: Ident events @8:5-8:11
+    Type: MapType @8:13-8:31
+      Key: NamedType @8:14-8:23
+        Name: QualifiedName EventType @8:14-8:23
+      Value: NamedType @8:25-8:30
+        Name: QualifiedName Event @8:25-8:30
+    Value: BraceLit @8:34-308:2
+      Items[0]: FieldItem @9:3-138:4
+        Name: Ident item_created @9:3-9:15
+        Value: BraceLit @9:17-138:4
+          Items[0]: FieldItem @10:5-10:100
+            Name: Ident description @10:5-10:16
+            Value: StringLit @10:18-10:100
+              Parts[0]: text "An item minted into existence, typed by GrantKind; via_mail in v4, fact_id in v5"
+          Items[1]: FieldItem @11:5-11:15
+            Name: Ident version @11:5-11:12
+            Value: IntLit Value=5 @11:14-11:15
+          Items[2]: FieldItem @12:5-12:13
+            Name: Ident since @12:5-12:10
+            Value: IntLit Value=2 @12:12-12:13
+          Items[3]: FieldItem @13:5-13:15
+            Name: Ident tier @13:5-13:9
+            Value: IdentExpr WARM @13:11-13:15
+          Items[4]: FieldItem @14:5-14:45
+            Name: Ident producers @14:5-14:14
+            Value: ListLit @14:16-14:45
+              Elems[0]: IdentExpr WorldServer @14:17-14:28
+              Elems[1]: IdentExpr DatabaseServer @14:30-14:44
+          Items[5]: FieldItem @15:5-15:28
+            Name: Ident ledgerKinds @15:5-15:16
+            Value: IdentExpr grant_kind @15:18-15:28
+          Items[6]: FieldItem @16:5-24:6
+            Name: Ident columns @16:5-16:12
+            Value: ListLit @16:14-24:6
+              Elems[0]: BraceLit @17:7-17:59
+                Items[0]: FieldItem @17:9-17:33
+                  Name: Ident name @17:9-17:13
+                  Value: StringLit @17:15-17:33
+                    Parts[0]: text "item_instance_id"
+                Items[1]: FieldItem @17:35-17:47
+                  Name: Ident sql @17:35-17:38
+                  Value: IdentExpr UBIGINT @17:40-17:47
+                Items[2]: FieldItem @17:49-17:57
+                  Name: Ident since @17:49-17:54
+                  Value: IntLit Value=3 @17:56-17:57
+              Elems[1]: BraceLit @18:7-18:77
+                Items[0]: FieldItem @18:9-18:27
+                  Name: Ident name @18:9-18:13
+                  Value: StringLit @18:15-18:27
+                    Parts[0]: text "grant_kind"
+                Items[1]: FieldItem @18:29-18:42
+                  Name: Ident sql @18:29-18:32
+                  Value: IdentExpr UTINYINT @18:34-18:42
+                Items[2]: FieldItem @18:44-18:55
+                  Name: Ident kind @18:44-18:48
+                  Value: IdentExpr enum8 @18:50-18:55
+                Items[3]: FieldItem @18:57-18:75
+                  Name: Ident values @18:57-18:63
+                  Value: IdentExpr grant_kind @18:65-18:75
+              Elems[2]: BraceLit @19:7-19:41
+                Items[0]: FieldItem @19:9-19:24
+                  Name: Ident name @19:9-19:13
+                  Value: StringLit @19:15-19:24
+                    Parts[0]: text "item_id"
+                Items[1]: FieldItem @19:26-19:39
+                  Name: Ident sql @19:26-19:29
+                  Value: IdentExpr UINTEGER @19:31-19:39
+              Elems[3]: BraceLit @20:7-20:42
+                Items[0]: FieldItem @20:9-20:25
+                  Name: Ident name @20:9-20:13
+                  Value: StringLit @20:15-20:25
+                    Parts[0]: text "quantity"
+                Items[1]: FieldItem @20:27-20:40
+                  Name: Ident sql @20:27-20:30
+                  Value: IdentExpr UINTEGER @20:32-20:40
+              Elems[4]: BraceLit @22:7-22:52
+                Items[0]: FieldItem @22:9-22:25
+                  Name: Ident name @22:9-22:13
+                  Value: StringLit @22:15-22:25
+                    Parts[0]: text "via_mail"
+                Items[1]: FieldItem @22:27-22:40
+                  Name: Ident sql @22:27-22:30
+                  Value: IdentExpr UTINYINT @22:32-22:40
+                Items[2]: FieldItem @22:42-22:50
+                  Name: Ident since @22:42-22:47
+                  Value: IntLit Value=4 @22:49-22:50
+              Elems[5]: BraceLit @23:7-23:50
+                Items[0]: FieldItem @23:9-23:24
+                  Name: Ident name @23:9-23:13
+                  Value: StringLit @23:15-23:24
+                    Parts[0]: text "fact_id"
+                Items[1]: FieldItem @23:26-23:38
+                  Name: Ident sql @23:26-23:29
+                  Value: IdentExpr UBIGINT @23:31-23:38
+                Items[2]: FieldItem @23:40-23:48
+                  Name: Ident since @23:40-23:45
+                  Value: IntLit Value=5 @23:47-23:48
+          Items[7]: FieldItem @25:5-137:6
+            Name: Ident ledger @25:5-25:11
+            Value: ListLit @25:13-137:6
+              Elems[0]: BraceLit @26:7-42:8
+                Items[0]: FieldItem @27:9-31:10
+                  Name: Ident rows @27:9-27:13
+                  Value: TypedLit @27:15-31:10
+                    Type: QualifiedName some @27:15-27:19
+                    Lit: BraceLit @27:20-31:10
+                      Items[0]: FieldItem @28:11-28:29
+                        Name: Ident column @28:11-28:17
+                        Value: IdentExpr grant_kind @28:19-28:29
+                      Items[1]: FieldItem @29:11-29:25
+                        Name: Ident of @29:11-29:13
+                        Value: IdentExpr grant_kind @29:15-29:25
+                      Items[2]: FieldItem @30:11-30:63
+                        Name: Ident kinds @30:11-30:16
+                        Value: ListLit @30:18-30:63
+                          Elems[0]: IdentExpr BUYBACK_DELIVERY @30:19-30:35
+                          Elems[1]: IdentExpr BUFF_REWARD @30:37-30:48
+                          Elems[2]: IdentExpr EVENT_REWARD @30:50-30:62
+                Items[1]: FieldItem @32:9-32:23
+                  Name: Ident currency @32:9-32:17
+                  Value: IdentExpr item @32:19-32:23
+                Items[2]: FieldItem @33:9-33:21
+                  Name: Ident bucket @33:9-33:15
+                  Value: IdentExpr mint @33:17-33:21
+                Items[3]: FieldItem @34:9-34:16
+                  Name: Ident sign @34:9-34:13
+                  Value: IntLit Value=1 @34:15-34:16
+                Items[4]: FieldItem @35:9-35:30
+                  Name: Ident token @35:9-35:14
+                  Value: StringLit @35:16-35:30
+                    Parts[0]: text "system_grant"
+                Items[5]: FieldItem @36:9-36:22
+                  Name: Ident counted @36:9-36:16
+                  Value: BoolLit Value @36:18-36:22
+                Items[6]: FieldItem @37:9-37:44
+                  Name: Ident filter @37:9-37:15
+                  Value: StringLit @37:17-37:44
+                    Parts[0]: text "COALESCE(via_mail, 0) = 0"
+                Items[7]: FieldItem @38:9-38:25
+                  Name: Ident amount @38:9-38:15
+                  Value: IdentExpr quantity @38:17-38:25
+                Items[8]: FieldItem @39:9-39:22
+                  Name: Ident item @39:9-39:13
+                  Value: IdentExpr item_id @39:15-39:22
+                Items[9]: FieldItem @40:9-41:99
+                  Name: Ident note @40:9-40:13
+                  Value: StringLit @41:11-41:99
+                    Parts[0]: text "SendSystemItem: a direct inventory grant (mail only on overflow, counted at its claim)"
+              Elems[1]: BraceLit @43:7-53:8
+                Items[0]: FieldItem @44:9-44:85
+                  Name: Ident rows @44:9-44:13
+                  Value: TypedLit @44:15-44:85
+                    Type: QualifiedName some @44:15-44:19
+                    Lit: BraceLit @44:20-44:85
+                      Items[0]: FieldItem @44:22-44:40
+                        Name: Ident column @44:22-44:28
+                        Value: IdentExpr grant_kind @44:30-44:40
+                      Items[1]: FieldItem @44:42-44:56
+                        Name: Ident of @44:42-44:44
+                        Value: IdentExpr grant_kind @44:46-44:56
+                      Items[2]: FieldItem @44:58-44:83
+                        Name: Ident kinds @44:58-44:63
+                        Value: ListLit @44:65-44:83
+                          Elems[0]: IdentExpr BOSS_REWARD_MAIL @44:66-44:82
+                Items[1]: FieldItem @45:9-45:23
+                  Name: Ident currency @45:9-45:17
+                  Value: IdentExpr item @45:19-45:23
+                Items[2]: FieldItem @46:9-46:21
+                  Name: Ident bucket @46:9-46:15
+                  Value: IdentExpr mint @46:17-46:21
+                Items[3]: FieldItem @47:9-47:16
+                  Name: Ident sign @47:9-47:13
+                  Value: IntLit Value=1 @47:15-47:16
+                Items[4]: FieldItem @48:9-48:28
+                  Name: Ident token @48:9-48:14
+                  Value: StringLit @48:16-48:28
+                    Parts[0]: text "mail_grant"
+                Items[5]: FieldItem @49:9-49:23
+                  Name: Ident counted @49:9-49:16
+                  Value: BoolLit @49:18-49:23
+                Items[6]: FieldItem @50:9-50:25
+                  Name: Ident amount @50:9-50:15
+                  Value: IdentExpr quantity @50:17-50:25
+                Items[7]: FieldItem @51:9-51:22
+                  Name: Ident item @51:9-51:13
+                  Value: IdentExpr item_id @51:15-51:22
+                Items[8]: FieldItem @52:9-52:82
+                  Name: Ident note @52:9-52:13
+                  Value: StringLit @52:15-52:82
+                    Parts[0]: text "MAIL-BORNE: lands in game.mail, not in a container, until claimed"
+              Elems[2]: BraceLit @54:7-66:8
+                Items[0]: FieldItem @55:9-55:80
+                  Name: Ident rows @55:9-55:13
+                  Value: TypedLit @55:15-55:80
+                    Type: QualifiedName some @55:15-55:19
+                    Lit: BraceLit @55:20-55:80
+                      Items[0]: FieldItem @55:22-55:40
+                        Name: Ident column @55:22-55:28
+                        Value: IdentExpr grant_kind @55:30-55:40
+                      Items[1]: FieldItem @55:42-55:56
+                        Name: Ident of @55:42-55:44
+                        Value: IdentExpr grant_kind @55:46-55:56
+                      Items[2]: FieldItem @55:58-55:78
+                        Name: Ident kinds @55:58-55:63
+                        Value: ListLit @55:65-55:78
+                          Elems[0]: IdentExpr MAIL_RETURN @55:66-55:77
+                Items[1]: FieldItem @56:9-56:23
+                  Name: Ident currency @56:9-56:17
+                  Value: IdentExpr item @56:19-56:23
+                Items[2]: FieldItem @57:9-57:25
+                  Name: Ident bucket @57:9-57:15
+                  Value: IdentExpr transfer @57:17-57:25
+                Items[3]: FieldItem @58:9-58:16
+                  Name: Ident sign @58:9-58:13
+                  Value: IntLit Value=1 @58:15-58:16
+                Items[4]: FieldItem @59:9-59:29
+                  Name: Ident token @59:9-59:14
+                  Value: StringLit @59:16-59:29
+                    Parts[0]: text "mail_return"
+                Items[5]: FieldItem @60:9-60:20
+                  Name: Ident leg @60:9-60:12
+                  Value: SelectorExpr @60:14-60:20
+                    X: IdentExpr Leg @60:14-60:17
+                    Name: Ident in @60:18-60:20
+                Items[6]: FieldItem @61:9-61:23
+                  Name: Ident counted @61:9-61:16
+                  Value: BoolLit @61:18-61:23
+                Items[7]: FieldItem @62:9-62:25
+                  Name: Ident amount @62:9-62:15
+                  Value: IdentExpr quantity @62:17-62:25
+                Items[8]: FieldItem @63:9-63:22
+                  Name: Ident item @63:9-63:13
+                  Value: IdentExpr item_id @63:15-63:22
+                Items[9]: FieldItem @64:9-65:98
+                  Name: Ident note @64:9-64:13
+                  Value: StringLit @65:11-65:98
+                    Parts[0]: text "NOT A MINT: re-posts items that already exist; the claim inflow is mail_items_claimed"
+              Elems[3]: BraceLit @67:7-78:8
+                Items[0]: FieldItem @68:9-68:80
+                  Name: Ident rows @68:9-68:13
+                  Value: TypedLit @68:15-68:80
+                    Type: QualifiedName some @68:15-68:19
+                    Lit: BraceLit @68:20-68:80
+                      Items[0]: FieldItem @68:22-68:40
+                        Name: Ident column @68:22-68:28
+                        Value: IdentExpr grant_kind @68:30-68:40
+                      Items[1]: FieldItem @68:42-68:56
+                        Name: Ident of @68:42-68:44
+                        Value: IdentExpr grant_kind @68:46-68:56
+                      Items[2]: FieldItem @68:58-68:78
+                        Name: Ident kinds @68:58-68:63
+                        Value: ListLit @68:65-68:78
+                          Elems[0]: IdentExpr PLAYER_MAIL @68:66-68:77
+                Items[1]: FieldItem @69:9-69:23
+                  Name: Ident currency @69:9-69:17
+                  Value: IdentExpr item @69:19-69:23
+                Items[2]: FieldItem @70:9-70:25
+                  Name: Ident bucket @70:9-70:15
+                  Value: IdentExpr transfer @70:17-70:25
+                Items[3]: FieldItem @71:9-71:16
+                  Name: Ident sign @71:9-71:13
+                  Value: IntLit Value=1 @71:15-71:16
+                Items[4]: FieldItem @72:9-72:26
+                  Name: Ident token @72:9-72:14
+                  Value: StringLit @72:16-72:26
+                    Parts[0]: text "mail_out"
+                Items[5]: FieldItem @73:9-73:20
+                  Name: Ident leg @73:9-73:12
+                  Value: SelectorExpr @73:14-73:20
+                    X: IdentExpr Leg @73:14-73:17
+                    Name: Ident in @73:18-73:20
+                Items[6]: FieldItem @74:9-74:23
+                  Name: Ident counted @74:9-74:16
+                  Value: BoolLit @74:18-74:23
+                Items[7]: FieldItem @75:9-75:25
+                  Name: Ident amount @75:9-75:15
+                  Value: IdentExpr quantity @75:17-75:25
+                Items[8]: FieldItem @76:9-76:22
+                  Name: Ident item @76:9-76:13
+                  Value: IdentExpr item_id @76:15-76:22
+                Items[9]: FieldItem @77:9-77:80
+                  Name: Ident note @77:9-77:13
+                  Value: StringLit @77:15-77:80
+                    Parts[0]: text "NOT A MINT: the counted leg is the sender's mail_items_sent row"
+              Elems[4]: BraceLit @79:7-90:8
+                Items[0]: FieldItem @80:9-80:92
+                  Name: Ident rows @80:9-80:13
+                  Value: TypedLit @80:15-80:92
+                    Type: QualifiedName some @80:15-80:19
+                    Lit: BraceLit @80:20-80:92
+                      Items[0]: FieldItem @80:22-80:40
+                        Name: Ident column @80:22-80:28
+                        Value: IdentExpr grant_kind @80:30-80:40
+                      Items[1]: FieldItem @80:42-80:56
+                        Name: Ident of @80:42-80:44
+                        Value: IdentExpr grant_kind @80:46-80:56
+                      Items[2]: FieldItem @80:58-80:90
+                        Name: Ident kinds @80:58-80:63
+                        Value: ListLit @80:65-80:90
+                          Elems[0]: IdentExpr AUCTION_ESCROW_RECOVERY @80:66-80:89
+                Items[1]: FieldItem @81:9-81:23
+                  Name: Ident currency @81:9-81:17
+                  Value: IdentExpr item @81:19-81:23
+                Items[2]: FieldItem @82:9-82:25
+                  Name: Ident bucket @82:9-82:15
+                  Value: IdentExpr transfer @82:17-82:25
+                Items[3]: FieldItem @83:9-83:16
+                  Name: Ident sign @83:9-83:13
+                  Value: IntLit Value=1 @83:15-83:16
+                Items[4]: FieldItem @84:9-84:32
+                  Name: Ident token @84:9-84:14
+                  Value: StringLit @84:16-84:32
+                    Parts[0]: text "auction_return"
+                Items[5]: FieldItem @85:9-85:20
+                  Name: Ident leg @85:9-85:12
+                  Value: SelectorExpr @85:14-85:20
+                    X: IdentExpr Leg @85:14-85:17
+                    Name: Ident in @85:18-85:20
+                Items[6]: FieldItem @86:9-86:23
+                  Name: Ident counted @86:9-86:16
+                  Value: BoolLit @86:18-86:23
+                Items[7]: FieldItem @87:9-87:25
+                  Name: Ident amount @87:9-87:15
+                  Value: IdentExpr quantity @87:17-87:25
+                Items[8]: FieldItem @88:9-88:22
+                  Name: Ident item @88:9-88:13
+                  Value: IdentExpr item_id @88:15-88:22
+                Items[9]: FieldItem @89:9-89:76
+                  Name: Ident note @89:9-89:13
+                  Value: StringLit @89:15-89:76
+                    Parts[0]: text "MAIL-BORNE, NOT A MINT: an escrow re-mailed after a restart"
+              Elems[5]: BraceLit @91:7-102:8
+                Items[0]: FieldItem @92:9-92:83
+                  Name: Ident rows @92:9-92:13
+                  Value: TypedLit @92:15-92:83
+                    Type: QualifiedName some @92:15-92:19
+                    Lit: BraceLit @92:20-92:83
+                      Items[0]: FieldItem @92:22-92:40
+                        Name: Ident column @92:22-92:28
+                        Value: IdentExpr grant_kind @92:30-92:40
+                      Items[1]: FieldItem @92:42-92:56
+                        Name: Ident of @92:42-92:44
+                        Value: IdentExpr grant_kind @92:46-92:56
+                      Items[2]: FieldItem @92:58-92:81
+                        Name: Ident kinds @92:58-92:63
+                        Value: ListLit @92:65-92:81
+                          Elems[0]: IdentExpr PERIN_OVERFLOW @92:66-92:80
+                Items[1]: FieldItem @93:9-93:23
+                  Name: Ident currency @93:9-93:17
+                  Value: IdentExpr item @93:19-93:23
+                Items[2]: FieldItem @94:9-94:21
+                  Name: Ident bucket @94:9-94:15
+                  Value: IdentExpr mint @94:17-94:21
+                Items[3]: FieldItem @95:9-95:16
+                  Name: Ident sign @95:9-95:13
+                  Value: IntLit Value=1 @95:15-95:16
+                Items[4]: FieldItem @96:9-96:32
+                  Name: Ident token @96:9-96:14
+                  Value: StringLit @96:16-96:32
+                    Parts[0]: text "perin_overflow"
+                Items[5]: FieldItem @97:9-97:22
+                  Name: Ident counted @97:9-97:16
+                  Value: BoolLit Value @97:18-97:22
+                Items[6]: FieldItem @98:9-98:44
+                  Name: Ident filter @98:9-98:15
+                  Value: StringLit @98:17-98:44
+                    Parts[0]: text "COALESCE(via_mail, 0) = 0"
+                Items[7]: FieldItem @99:9-99:25
+                  Name: Ident amount @99:9-99:15
+                  Value: IdentExpr quantity @99:17-99:25
+                Items[8]: FieldItem @100:9-100:22
+                  Name: Ident item @100:9-100:13
+                  Value: IdentExpr item_id @100:15-100:22
+                Items[9]: FieldItem @101:9-101:85
+                  Name: Ident note @101:9-101:13
+                  Value: StringLit @101:15-101:85
+                    Parts[0]: text "EmitPerinMinted (gold.cpp): perin minted straight into the inventory"
+              Elems[6]: BraceLit @103:7-114:8
+                Items[0]: FieldItem @104:9-104:81
+                  Name: Ident rows @104:9-104:13
+                  Value: TypedLit @104:15-104:81
+                    Type: QualifiedName some @104:15-104:19
+                    Lit: BraceLit @104:20-104:81
+                      Items[0]: FieldItem @104:22-104:40
+                        Name: Ident column @104:22-104:28
+                        Value: IdentExpr grant_kind @104:30-104:40
+                      Items[1]: FieldItem @104:42-104:56
+                        Name: Ident of @104:42-104:44
+                        Value: IdentExpr grant_kind @104:46-104:56
+                      Items[2]: FieldItem @104:58-104:79
+                        Name: Ident kinds @104:58-104:63
+                        Value: ListLit @104:65-104:79
+                          Elems[0]: IdentExpr FARM_HARVEST @104:66-104:78
+                Items[1]: FieldItem @105:9-105:23
+                  Name: Ident currency @105:9-105:17
+                  Value: IdentExpr item @105:19-105:23
+                Items[2]: FieldItem @106:9-106:21
+                  Name: Ident bucket @106:9-106:15
+                  Value: IdentExpr mint @106:17-106:21
+                Items[3]: FieldItem @107:9-107:16
+                  Name: Ident sign @107:9-107:13
+                  Value: IntLit Value=1 @107:15-107:16
+                Items[4]: FieldItem @108:9-108:30
+                  Name: Ident token @108:9-108:14
+                  Value: StringLit @108:16-108:30
+                    Parts[0]: text "farm_harvest"
+                Items[5]: FieldItem @109:9-109:22
+                  Name: Ident counted @109:9-109:16
+                  Value: BoolLit Value @109:18-109:22
+                Items[6]: FieldItem @110:9-110:44
+                  Name: Ident filter @110:9-110:15
+                  Value: StringLit @110:17-110:44
+                    Parts[0]: text "COALESCE(via_mail, 0) = 0"
+                Items[7]: FieldItem @111:9-111:25
+                  Name: Ident amount @111:9-111:15
+                  Value: IdentExpr quantity @111:17-111:25
+                Items[8]: FieldItem @112:9-112:22
+                  Name: Ident item @112:9-112:13
+                  Value: IdentExpr item_id @112:15-112:22
+                Items[9]: FieldItem @113:9-113:82
+                  Name: Ident note @113:9-113:13
+                  Value: StringLit @113:15-113:82
+                    Parts[0]: text "FarmManager::ClaimModel: farm production granted to the inventory"
+              Elems[7]: BraceLit @115:7-126:8
+                Items[0]: FieldItem @116:9-116:81
+                  Name: Ident rows @116:9-116:13
+                  Value: TypedLit @116:15-116:81
+                    Type: QualifiedName some @116:15-116:19
+                    Lit: BraceLit @116:20-116:81
+                      Items[0]: FieldItem @116:22-116:40
+                        Name: Ident column @116:22-116:28
+                        Value: IdentExpr grant_kind @116:30-116:40
+                      Items[1]: FieldItem @116:42-116:56
+                        Name: Ident of @116:42-116:44
+                        Value: IdentExpr grant_kind @116:46-116:56
+                      Items[2]: FieldItem @116:58-116:79
+                        Name: Ident kinds @116:58-116:63
+                        Value: ListLit @116:65-116:79
+                          Elems[0]: IdentExpr STARTER_ITEM @116:66-116:78
+                Items[1]: FieldItem @117:9-117:23
+                  Name: Ident currency @117:9-117:17
+                  Value: IdentExpr item @117:19-117:23
+                Items[2]: FieldItem @118:9-118:21
+                  Name: Ident bucket @118:9-118:15
+                  Value: IdentExpr mint @118:17-118:21
+                Items[3]: FieldItem @119:9-119:16
+                  Name: Ident sign @119:9-119:13
+                  Value: IntLit Value=1 @119:15-119:16
+                Items[4]: FieldItem @120:9-120:30
+                  Name: Ident token @120:9-120:14
+                  Value: StringLit @120:16-120:30
+                    Parts[0]: text "starter_item"
+                Items[5]: FieldItem @121:9-121:22
+                  Name: Ident counted @121:9-121:16
+                  Value: BoolLit Value @121:18-121:22
+                Items[6]: FieldItem @122:9-122:44
+                  Name: Ident filter @122:9-122:15
+                  Value: StringLit @122:17-122:44
+                    Parts[0]: text "COALESCE(via_mail, 0) = 0"
+                Items[7]: FieldItem @123:9-123:25
+                  Name: Ident amount @123:9-123:15
+                  Value: IdentExpr quantity @123:17-123:25
+                Items[8]: FieldItem @124:9-124:22
+                  Name: Ident item @124:9-124:13
+                  Value: IdentExpr item_id @124:15-124:22
+                Items[9]: FieldItem @125:9-125:95
+                  Name: Ident note @125:9-125:13
+                  Value: StringLit @125:15-125:95
+                    Parts[0]: text "CDbManager::CreatePlayer: one row per starting item, after the container saved"
+              Elems[8]: BraceLit @127:7-136:8
+                Items[0]: FieldItem @128:9-128:76
+                  Name: Ident rows @128:9-128:13
+                  Value: TypedLit @128:15-128:76
+                    Type: QualifiedName some @128:15-128:19
+                    Lit: BraceLit @128:20-128:76
+                      Items[0]: FieldItem @128:22-128:40
+                        Name: Ident column @128:22-128:28
+                        Value: IdentExpr grant_kind @128:30-128:40
+                      Items[1]: FieldItem @128:42-128:56
+                        Name: Ident of @128:42-128:44
+                        Value: IdentExpr grant_kind @128:46-128:56
+                      Items[2]: FieldItem @128:58-128:74
+                        Name: Ident kinds @128:58-128:63
+                        Value: ListLit @128:65-128:74
+                          Elems[0]: IdentExpr UNKNOWN @128:66-128:73
+                Items[1]: FieldItem @129:9-129:26
+                  Name: Ident currency @129:9-129:17
+                  Value: IdentExpr nothing @129:19-129:26
+                Items[2]: FieldItem @130:9-130:24
+                  Name: Ident bucket @130:9-130:15
+                  Value: IdentExpr nothing @130:17-130:24
+                Items[3]: FieldItem @131:9-131:16
+                  Name: Ident sign @131:9-131:13
+                  Value: IntLit Value=0 @131:15-131:16
+                Items[4]: FieldItem @132:9-132:31
+                  Name: Ident token @132:9-132:14
+                  Value: StringLit @132:16-132:31
+                    Parts[0]: text "unknown_grant"
+                Items[5]: FieldItem @133:9-133:23
+                  Name: Ident counted @133:9-133:16
+                  Value: BoolLit @133:18-133:23
+                Items[6]: FieldItem @134:9-134:22
+                  Name: Ident item @134:9-134:13
+                  Value: IdentExpr item_id @134:15-134:22
+                Items[7]: FieldItem @135:9-135:63
+                  Name: Ident note @135:9-135:13
+                  Value: StringLit @135:15-135:63
+                    Parts[0]: text "NOT A LEDGER LEG: no caller passes GrantKind 0"
+      Items[1]: FieldItem @140:3-162:4
+        Name: Ident item_consumed @140:3-140:16
+        Value: BraceLit @140:18-162:4
+          Items[0]: FieldItem @141:5-142:93
+            Name: Ident description @141:5-141:16
+            Value: StringLit @142:7-142:93
+              Parts[0]: text "An item consumed (used up) by a player; READONLY, item_removed(Consumed) replaces it"
+          Items[1]: FieldItem @143:5-143:15
+            Name: Ident version @143:5-143:12
+            Value: IntLit Value=3 @143:14-143:15
+          Items[2]: FieldItem @144:5-144:13
+            Name: Ident since @144:5-144:10
+            Value: IntLit Value=2 @144:12-144:13
+          Items[3]: FieldItem @145:5-145:19
+            Name: Ident tier @145:5-145:9
+            Value: IdentExpr READONLY @145:11-145:19
+          Items[4]: FieldItem @146:5-149:6
+            Name: Ident columns @146:5-146:12
+            Value: ListLit @146:14-149:6
+              Elems[0]: BraceLit @147:7-147:59
+                Items[0]: FieldItem @147:9-147:33
+                  Name: Ident name @147:9-147:13
+                  Value: StringLit @147:15-147:33
+                    Parts[0]: text "item_instance_id"
+                Items[1]: FieldItem @147:35-147:47
+                  Name: Ident sql @147:35-147:38
+                  Value: IdentExpr UBIGINT @147:40-147:47
+                Items[2]: FieldItem @147:49-147:57
+                  Name: Ident since @147:49-147:54
+                  Value: IntLit Value=3 @147:56-147:57
+              Elems[1]: BraceLit @148:7-148:41
+                Items[0]: FieldItem @148:9-148:24
+                  Name: Ident name @148:9-148:13
+                  Value: StringLit @148:15-148:24
+                    Parts[0]: text "item_id"
+                Items[1]: FieldItem @148:26-148:39
+                  Name: Ident sql @148:26-148:29
+                  Value: IdentExpr UINTEGER @148:31-148:39
+          Items[5]: FieldItem @150:5-161:6
+            Name: Ident ledger @150:5-150:11
+            Value: ListLit @150:13-161:6
+              Elems[0]: BraceLit @151:7-160:8
+                Items[0]: FieldItem @152:9-152:23
+                  Name: Ident currency @152:9-152:17
+                  Value: IdentExpr item @152:19-152:23
+                Items[1]: FieldItem @153:9-153:21
+                  Name: Ident bucket @153:9-153:15
+                  Value: IdentExpr sink @153:17-153:21
+                Items[2]: FieldItem @154:9-154:17
+                  Name: Ident sign @154:9-154:13
+                  Value: IntLit Value=-1 @154:15-154:17
+                Items[3]: FieldItem @155:9-155:25
+                  Name: Ident token @155:9-155:14
+                  Value: StringLit @155:16-155:25
+                    Parts[0]: text "consume"
+                Items[4]: FieldItem @156:9-156:23
+                  Name: Ident counted @156:9-156:16
+                  Value: BoolLit @156:18-156:23
+                Items[5]: FieldItem @157:9-157:27
+                  Name: Ident dedupOf @157:9-157:16
+                  Value: StringLit @157:18-157:27
+                    Parts[0]: text "consume"
+                Items[6]: FieldItem @158:9-158:22
+                  Name: Ident item @158:9-158:13
+                  Value: IdentExpr item_id @158:15-158:22
+                Items[7]: FieldItem @159:9-159:88
+                  Name: Ident note @159:9-159:13
+                  Value: StringLit @159:15-159:88
+                    Parts[0]: text "no quantity column; item_removed(Consumed) is the quantity-bearing sink"
+      Items[2]: FieldItem @164:3-182:4
+        Name: Ident penya_drops @164:3-164:14
+        Value: BraceLit @164:16-182:4
+          Items[0]: FieldItem @165:5-165:92
+            Name: Ident description @165:5-165:16
+            Value: StringLit @165:18-165:92
+              Parts[0]: text "Penya dropped by a killed monster, one row per party member on auto-loot"
+          Items[1]: FieldItem @166:5-166:15
+            Name: Ident version @166:5-166:12
+            Value: IntLit Value=2 @166:14-166:15
+          Items[2]: FieldItem @167:5-167:13
+            Name: Ident since @167:5-167:10
+            Value: IntLit Value=2 @167:12-167:13
+          Items[3]: FieldItem @168:5-168:14
+            Name: Ident tier @168:5-168:9
+            Value: IdentExpr HOT @168:11-168:14
+          Items[4]: FieldItem @169:5-169:29
+            Name: Ident producers @169:5-169:14
+            Value: ListLit @169:16-169:29
+              Elems[0]: IdentExpr WorldServer @169:17-169:28
+          Items[5]: FieldItem @170:5-170:85
+            Name: Ident columns @170:5-170:12
+            Value: ListLit @170:14-170:85
+              Elems[0]: BraceLit @170:15-170:46
+                Items[0]: FieldItem @170:17-170:31
+                  Name: Ident name @170:17-170:21
+                  Value: StringLit @170:23-170:31
+                    Parts[0]: text "amount"
+                Items[1]: FieldItem @170:33-170:44
+                  Name: Ident sql @170:33-170:36
+                  Value: IdentExpr BIGINT @170:38-170:44
+              Elems[1]: BraceLit @170:48-170:84
+                Items[0]: FieldItem @170:50-170:67
+                  Name: Ident name @170:50-170:54
+                  Value: StringLit @170:56-170:67
+                    Parts[0]: text "mob_index"
+                Items[1]: FieldItem @170:69-170:82
+                  Name: Ident sql @170:69-170:72
+                  Value: IdentExpr UINTEGER @170:74-170:82
+          Items[6]: FieldItem @171:5-181:6
+            Name: Ident ledger @171:5-171:11
+            Value: ListLit @171:13-181:6
+              Elems[0]: BraceLit @172:7-180:8
+                Items[0]: FieldItem @173:9-173:23
+                  Name: Ident currency @173:9-173:17
+                  Value: IdentExpr gold @173:19-173:23
+                Items[1]: FieldItem @174:9-174:21
+                  Name: Ident bucket @174:9-174:15
+                  Value: IdentExpr mint @174:17-174:21
+                Items[2]: FieldItem @175:9-175:16
+                  Name: Ident sign @175:9-175:13
+                  Value: IntLit Value=1 @175:15-175:16
+                Items[3]: FieldItem @176:9-176:26
+                  Name: Ident token @176:9-176:14
+                  Value: StringLit @176:16-176:26
+                    Parts[0]: text "mob_drop"
+                Items[4]: FieldItem @177:9-177:22
+                  Name: Ident counted @177:9-177:16
+                  Value: BoolLit Value @177:18-177:22
+                Items[5]: FieldItem @178:9-178:23
+                  Name: Ident amount @178:9-178:15
+                  Value: IdentExpr amount @178:17-178:23
+                Items[6]: FieldItem @179:9-179:99
+                  Name: Ident note @179:9-179:13
+                  Value: StringLit @179:15-179:99
+                    Parts[0]: text "CMover::PickupGoldCore on the kill's auto-loot (GameEventGeneral::OnPenyasDropped)"
+      Items[3]: FieldItem @184:3-222:4
+        Name: Ident trade_penya @184:3-184:14
+        Value: BraceLit @184:16-222:4
+          Items[0]: FieldItem @185:5-185:57
+            Name: Ident description @185:5-185:16
+            Value: StringLit @185:18-185:57
+              Parts[0]: text "Penya leg of a player-to-player trade"
+          Items[1]: FieldItem @186:5-186:15
+            Name: Ident version @186:5-186:12
+            Value: IntLit Value=2 @186:14-186:15
+          Items[2]: FieldItem @187:5-187:13
+            Name: Ident since @187:5-187:10
+            Value: IntLit Value=2 @187:12-187:13
+          Items[3]: FieldItem @188:5-188:15
+            Name: Ident tier @188:5-188:9
+            Value: IdentExpr COOL @188:11-188:15
+          Items[4]: FieldItem @189:5-189:29
+            Name: Ident producers @189:5-189:14
+            Value: ListLit @189:16-189:29
+              Elems[0]: IdentExpr WorldServer @189:17-189:28
+          Items[5]: FieldItem @190:5-195:6
+            Name: Ident columns @190:5-190:12
+            Value: ListLit @190:14-195:6
+              Elems[0]: BraceLit @191:7-191:41
+                Items[0]: FieldItem @191:9-191:25
+                  Name: Ident name @191:9-191:13
+                  Value: StringLit @191:15-191:25
+                    Parts[0]: text "trade_id"
+                Items[1]: FieldItem @191:27-191:39
+                  Name: Ident sql @191:27-191:30
+                  Value: IdentExpr UBIGINT @191:32-191:39
+              Elems[1]: BraceLit @192:7-192:49
+                Items[0]: FieldItem @192:9-192:32
+                  Name: Ident name @192:9-192:13
+                  Value: StringLit @192:15-192:32
+                    Parts[0]: text "giver_player_id"
+                Items[1]: FieldItem @192:34-192:47
+                  Name: Ident sql @192:34-192:37
+                  Value: IdentExpr UINTEGER @192:39-192:47
+              Elems[2]: BraceLit @193:7-193:52
+                Items[0]: FieldItem @193:9-193:35
+                  Name: Ident name @193:9-193:13
+                  Value: StringLit @193:15-193:35
+                    Parts[0]: text "receiver_player_id"
+                Items[1]: FieldItem @193:37-193:50
+                  Name: Ident sql @193:37-193:40
+                  Value: IdentExpr UINTEGER @193:42-193:50
+              Elems[3]: BraceLit @194:7-194:38
+                Items[0]: FieldItem @194:9-194:23
+                  Name: Ident name @194:9-194:13
+                  Value: StringLit @194:15-194:23
+                    Parts[0]: text "amount"
+                Items[1]: FieldItem @194:25-194:36
+                  Name: Ident sql @194:25-194:28
+                  Value: IdentExpr BIGINT @194:30-194:36
+          Items[6]: FieldItem @196:5-221:6
+            Name: Ident ledger @196:5-196:11
+            Value: ListLit @196:13-221:6
+              Elems[0]: BraceLit @197:7-208:8
+                Items[0]: FieldItem @198:9-198:23
+                  Name: Ident currency @198:9-198:17
+                  Value: IdentExpr gold @198:19-198:23
+                Items[1]: FieldItem @199:9-199:25
+                  Name: Ident bucket @199:9-199:15
+                  Value: IdentExpr transfer @199:17-199:25
+                Items[2]: FieldItem @200:9-200:17
+                  Name: Ident sign @200:9-200:13
+                  Value: IntLit Value=-1 @200:15-200:17
+                Items[3]: FieldItem @201:9-201:23
+                  Name: Ident token @201:9-201:14
+                  Value: StringLit @201:16-201:23
+                    Parts[0]: text "trade"
+                Items[4]: FieldItem @202:9-202:17
+                  Name: Ident leg @202:9-202:12
+                  Value: IdentExpr out @202:14-202:17
+                Items[5]: FieldItem @203:9-203:22
+                  Name: Ident counted @203:9-203:16
+                  Value: BoolLit Value @203:18-203:22
+                Items[6]: FieldItem @204:9-204:23
+                  Name: Ident amount @204:9-204:15
+                  Value: IdentExpr amount @204:17-204:23
+                Items[7]: FieldItem @205:9-205:32
+                  Name: Ident player @205:9-205:15
+                  Value: IdentExpr giver_player_id @205:17-205:32
+                Items[8]: FieldItem @206:9-206:41
+                  Name: Ident counterparty @206:9-206:21
+                  Value: IdentExpr receiver_player_id @206:23-206:41
+                Items[9]: FieldItem @207:9-207:100
+                  Name: Ident note @207:9-207:13
+                  Value: StringLit @207:15-207:100
+                    Parts[0]: text "GameEventGeneral::OnTradeGold from CVTInfo::TradeLastConfirm: one row per giver leg"
+              Elems[1]: BraceLit @209:7-220:8
+                Items[0]: FieldItem @210:9-210:23
+                  Name: Ident currency @210:9-210:17
+                  Value: IdentExpr gold @210:19-210:23
+                Items[1]: FieldItem @211:9-211:25
+                  Name: Ident bucket @211:9-211:15
+                  Value: IdentExpr transfer @211:17-211:25
+                Items[2]: FieldItem @212:9-212:16
+                  Name: Ident sign @212:9-212:13
+                  Value: IntLit Value=1 @212:15-212:16
+                Items[3]: FieldItem @213:9-213:23
+                  Name: Ident token @213:9-213:14
+                  Value: StringLit @213:16-213:23
+                    Parts[0]: text "trade"
+                Items[4]: FieldItem @214:9-214:20
+                  Name: Ident leg @214:9-214:12
+                  Value: SelectorExpr @214:14-214:20
+                    X: IdentExpr Leg @214:14-214:17
+                    Name: Ident in @214:18-214:20
+                Items[5]: FieldItem @215:9-215:22
+                  Name: Ident counted @215:9-215:16
+                  Value: BoolLit Value @215:18-215:22
+                Items[6]: FieldItem @216:9-216:23
+                  Name: Ident amount @216:9-216:15
+                  Value: IdentExpr amount @216:17-216:23
+                Items[7]: FieldItem @217:9-217:35
+                  Name: Ident player @217:9-217:15
+                  Value: IdentExpr receiver_player_id @217:17-217:35
+                Items[8]: FieldItem @218:9-218:38
+                  Name: Ident counterparty @218:9-218:21
+                  Value: IdentExpr giver_player_id @218:23-218:38
+                Items[9]: FieldItem @219:9-219:51
+                  Name: Ident note @219:9-219:13
+                  Value: StringLit @219:15-219:51
+                    Parts[0]: text "the receiving half of the same row"
+      Items[4]: FieldItem @224:3-231:4
+        Name: Ident server_lifecycle @224:3-224:19
+        Value: BraceLit @224:21-231:4
+          Items[0]: FieldItem @225:5-225:55
+            Name: Ident description @225:5-225:16
+            Value: StringLit @225:18-225:55
+              Parts[0]: text "Every producer's boot or clean-stop"
+          Items[1]: FieldItem @226:5-226:15
+            Name: Ident version @226:5-226:12
+            Value: IntLit Value=1 @226:14-226:15
+          Items[2]: FieldItem @227:5-227:15
+            Name: Ident tier @227:5-227:9
+            Value: IdentExpr TINY @227:11-227:15
+          Items[3]: FieldItem @228:5-228:70
+            Name: Ident producers @228:5-228:14
+            Value: ListLit @228:16-228:70
+              Elems[0]: IdentExpr WorldServer @228:17-228:28
+              Elems[1]: IdentExpr CoreServer @228:30-228:40
+              Elems[2]: IdentExpr DatabaseServer @228:42-228:56
+              Elems[3]: IdentExpr LoginServer @228:58-228:69
+          Items[4]: FieldItem @229:5-229:22
+            Name: Ident enqueue @229:5-229:12
+            Value: IdentExpr internal @229:14-229:22
+          Items[5]: FieldItem @230:5-230:84
+            Name: Ident columns @230:5-230:12
+            Value: ListLit @230:14-230:84
+              Elems[0]: BraceLit @230:15-230:83
+                Items[0]: FieldItem @230:17-230:29
+                  Name: Ident name @230:17-230:21
+                  Value: StringLit @230:23-230:29
+                    Parts[0]: text "kind"
+                Items[1]: FieldItem @230:31-230:44
+                  Name: Ident sql @230:31-230:34
+                  Value: IdentExpr UTINYINT @230:36-230:44
+                Items[2]: FieldItem @230:46-230:57
+                  Name: Ident kind @230:46-230:50
+                  Value: IdentExpr enum8 @230:52-230:57
+                Items[3]: FieldItem @230:59-230:81
+                  Name: Ident values @230:59-230:65
+                  Value: IdentExpr lifecycle_kind @230:67-230:81
+      Items[5]: FieldItem @233:3-263:4
+        Name: Ident farm_events @233:3-233:14
+        Value: BraceLit @233:16-263:4
+          Items[0]: FieldItem @234:5-234:101
+            Name: Ident description @234:5-234:16
+            Value: StringLit @234:18-234:101
+              Parts[0]: text "One farm action; v2 drops cost for the gold_changes(Farm) row of the same fact_id"
+          Items[1]: FieldItem @235:5-235:15
+            Name: Ident version @235:5-235:12
+            Value: IntLit Value=2 @235:14-235:15
+          Items[2]: FieldItem @236:5-236:15
+            Name: Ident tier @236:5-236:9
+            Value: IdentExpr COOL @236:11-236:15
+          Items[3]: FieldItem @237:5-237:29
+            Name: Ident producers @237:5-237:14
+            Value: ListLit @237:16-237:29
+              Elems[0]: IdentExpr WorldServer @237:17-237:28
+          Items[4]: FieldItem @238:5-247:6
+            Name: Ident columns @238:5-238:12
+            Value: ListLit @238:14-247:6
+              Elems[0]: BraceLit @239:7-239:76
+                Items[0]: FieldItem @239:9-239:21
+                  Name: Ident name @239:9-239:13
+                  Value: StringLit @239:15-239:21
+                    Parts[0]: text "kind"
+                Items[1]: FieldItem @239:23-239:36
+                  Name: Ident sql @239:23-239:26
+                  Value: IdentExpr UTINYINT @239:28-239:36
+                Items[2]: FieldItem @239:38-239:49
+                  Name: Ident kind @239:38-239:42
+                  Value: IdentExpr enum8 @239:44-239:49
+                Items[3]: FieldItem @239:51-239:74
+                  Name: Ident values @239:51-239:57
+                  Value: IdentExpr farm_event_kind @239:59-239:74
+              Elems[1]: BraceLit @240:7-240:44
+                Items[0]: FieldItem @240:9-240:27
+                  Name: Ident name @240:9-240:13
+                  Value: StringLit @240:15-240:27
+                    Parts[0]: text "slot_index"
+                Items[1]: FieldItem @240:29-240:42
+                  Name: Ident sql @240:29-240:32
+                  Value: IdentExpr UINTEGER @240:34-240:42
+              Elems[2]: BraceLit @241:7-241:41
+                Items[0]: FieldItem @241:9-241:24
+                  Name: Ident name @241:9-241:13
+                  Value: StringLit @241:15-241:24
+                    Parts[0]: text "type_id"
+                Items[1]: FieldItem @241:26-241:39
+                  Name: Ident sql @241:26-241:29
+                  Value: IdentExpr UINTEGER @241:31-241:39
+              Elems[3]: BraceLit @242:7-242:44
+                Items[0]: FieldItem @242:9-242:27
+                  Name: Ident name @242:9-242:13
+                  Value: StringLit @242:15-242:27
+                    Parts[0]: text "item_count"
+                Items[1]: FieldItem @242:29-242:42
+                  Name: Ident sql @242:29-242:32
+                  Value: IdentExpr UINTEGER @242:34-242:42
+              Elems[4]: BraceLit @243:7-243:50
+                Items[0]: FieldItem @243:9-243:33
+                  Name: Ident name @243:9-243:13
+                  Value: StringLit @243:15-243:33
+                    Parts[0]: text "target_player_id"
+                Items[1]: FieldItem @243:35-243:48
+                  Name: Ident sql @243:35-243:38
+                  Value: IdentExpr UINTEGER @243:40-243:48
+              Elems[5]: BraceLit @245:7-245:50
+                Items[0]: FieldItem @245:9-245:21
+                  Name: Ident name @245:9-245:13
+                  Value: StringLit @245:15-245:21
+                    Parts[0]: text "cost"
+                Items[1]: FieldItem @245:23-245:34
+                  Name: Ident sql @245:23-245:26
+                  Value: IdentExpr BIGINT @245:28-245:34
+                Items[2]: FieldItem @245:36-245:48
+                  Name: Ident retiredIn @245:36-245:45
+                  Value: IntLit Value=2 @245:47-245:48
+              Elems[6]: BraceLit @246:7-246:50
+                Items[0]: FieldItem @246:9-246:24
+                  Name: Ident name @246:9-246:13
+                  Value: StringLit @246:15-246:24
+                    Parts[0]: text "fact_id"
+                Items[1]: FieldItem @246:26-246:38
+                  Name: Ident sql @246:26-246:29
+                  Value: IdentExpr UBIGINT @246:31-246:38
+                Items[2]: FieldItem @246:40-246:48
+                  Name: Ident since @246:40-246:45
+                  Value: IntLit Value=2 @246:47-246:48
+          Items[5]: FieldItem @248:5-262:6
+            Name: Ident ledger @248:5-248:11
+            Value: ListLit @248:13-262:6
+              Elems[0]: BraceLit @249:7-261:8
+                Items[0]: FieldItem @250:9-250:101
+                  Name: Ident rows @250:9-250:13
+                  Value: TypedLit @250:15-250:101
+                    Type: QualifiedName some @250:15-250:19
+                    Lit: BraceLit @250:20-250:101
+                      Items[0]: FieldItem @250:22-250:34
+                        Name: Ident column @250:22-250:28
+                        Value: IdentExpr kind @250:30-250:34
+                      Items[1]: FieldItem @250:36-250:55
+                        Name: Ident of @250:36-250:38
+                        Value: IdentExpr farm_event_kind @250:40-250:55
+                      Items[2]: FieldItem @250:57-250:99
+                        Name: Ident kinds @250:57-250:62
+                        Value: ListLit @250:64-250:99
+                          Elems[0]: IdentExpr Purchase @250:65-250:73
+                          Elems[1]: IdentExpr UnlockModel @250:75-250:86
+                          Elems[2]: IdentExpr VisitOther @250:88-250:98
+                Items[1]: FieldItem @251:9-251:23
+                  Name: Ident currency @251:9-251:17
+                  Value: IdentExpr gold @251:19-251:23
+                Items[2]: FieldItem @252:9-252:21
+                  Name: Ident bucket @252:9-252:15
+                  Value: IdentExpr sink @252:17-252:21
+                Items[3]: FieldItem @253:9-253:17
+                  Name: Ident sign @253:9-253:13
+                  Value: IntLit Value=-1 @253:15-253:17
+                Items[4]: FieldItem @254:9-254:22
+                  Name: Ident token @254:9-254:14
+                  Value: StringLit @254:16-254:22
+                    Parts[0]: text "farm"
+                Items[5]: FieldItem @255:9-255:23
+                  Name: Ident counted @255:9-255:16
+                  Value: BoolLit @255:18-255:23
+                Items[6]: FieldItem @256:9-256:24
+                  Name: Ident dedupOf @256:9-256:16
+                  Value: StringLit @256:18-256:24
+                    Parts[0]: text "farm"
+                Items[7]: FieldItem @257:9-257:28
+                  Name: Ident filter @257:9-257:15
+                  Value: StringLit @257:17-257:28
+                    Parts[0]: text "cost <> 0"
+                Items[8]: FieldItem @258:9-258:21
+                  Name: Ident amount @258:9-258:15
+                  Value: IdentExpr cost @258:17-258:21
+                Items[9]: FieldItem @259:9-259:24
+                  Name: Ident untilVersion @259:9-259:21
+                  Value: IntLit Value=1 @259:23-259:24
+                Items[10]: FieldItem @260:9-260:101
+                  Name: Ident note @260:9-260:13
+                  Value: StringLit @260:15-260:101
+                    Parts[0]: text "MIRROR, never summed: the requested price; gold_changes(Farm) is the reconciling leg"
+      Items[6]: FieldItem @265:3-307:4
+        Name: Ident sovereign_events @265:3-265:19
+        Value: BraceLit @265:21-307:4
+          Items[0]: FieldItem @266:5-266:114
+            Name: Ident description @266:5-266:16
+            Value: StringLit @266:18-266:114
+              Parts[0]: text "A reign fact - role assigned, doctrine set, power triggered, or reward granted (per recipient)"
+          Items[1]: FieldItem @267:5-267:15
+            Name: Ident version @267:5-267:12
+            Value: IntLit Value=1 @267:14-267:15
+          Items[2]: FieldItem @268:5-268:15
+            Name: Ident tier @268:5-268:9
+            Value: IdentExpr TINY @268:11-268:15
+          Items[3]: FieldItem @269:5-269:28
+            Name: Ident producers @269:5-269:14
+            Value: ListLit @269:16-269:28
+              Elems[0]: IdentExpr CoreServer @269:17-269:27
+          Items[4]: FieldItem @270:5-270:22
+            Name: Ident ledgerKinds @270:5-270:16
+            Value: IdentExpr kind @270:18-270:22
+          Items[5]: FieldItem @271:5-281:6
+            Name: Ident columns @271:5-271:12
+            Value: ListLit @271:14-281:6
+              Elems[0]: BraceLit @272:7-272:81
+                Items[0]: FieldItem @272:9-272:21
+                  Name: Ident name @272:9-272:13
+                  Value: StringLit @272:15-272:21
+                    Parts[0]: text "kind"
+                Items[1]: FieldItem @272:23-272:36
+                  Name: Ident sql @272:23-272:26
+                  Value: IdentExpr UTINYINT @272:28-272:36
+                Items[2]: FieldItem @272:38-272:49
+                  Name: Ident kind @272:38-272:42
+                  Value: IdentExpr enum8 @272:44-272:49
+                Items[3]: FieldItem @272:51-272:79
+                  Name: Ident values @272:51-272:57
+                  Value: IdentExpr sovereign_event_kind @272:59-272:79
+              Elems[1]: BraceLit @273:7-273:75
+                Items[0]: FieldItem @273:9-273:21
+                  Name: Ident name @273:9-273:13
+                  Value: StringLit @273:15-273:21
+                    Parts[0]: text "role"
+                Items[1]: FieldItem @273:23-273:36
+                  Name: Ident sql @273:23-273:26
+                  Value: IdentExpr UTINYINT @273:28-273:36
+                Items[2]: FieldItem @273:38-273:49
+                  Name: Ident kind @273:38-273:42
+                  Value: IdentExpr enum8 @273:44-273:49
+                Items[3]: FieldItem @273:51-273:73
+                  Name: Ident values @273:51-273:57
+                  Value: IdentExpr sovereign_role @273:59-273:73
+              Elems[2]: BraceLit @274:7-274:83
+                Items[0]: FieldItem @274:9-274:25
+                  Name: Ident name @274:9-274:13
+                  Value: StringLit @274:15-274:25
+                    Parts[0]: text "doctrine"
+                Items[1]: FieldItem @274:27-274:40
+                  Name: Ident sql @274:27-274:30
+                  Value: IdentExpr UTINYINT @274:32-274:40
+                Items[2]: FieldItem @274:42-274:53
+                  Name: Ident kind @274:42-274:46
+                  Value: IdentExpr enum8 @274:48-274:53
+                Items[3]: FieldItem @274:55-274:81
+                  Name: Ident values @274:55-274:61
+                  Value: IdentExpr sovereign_doctrine @274:63-274:81
+              Elems[3]: BraceLit @275:7-275:77
+                Items[0]: FieldItem @275:9-275:22
+                  Name: Ident name @275:9-275:13
+                  Value: StringLit @275:15-275:22
+                    Parts[0]: text "power"
+                Items[1]: FieldItem @275:24-275:37
+                  Name: Ident sql @275:24-275:27
+                  Value: IdentExpr UTINYINT @275:29-275:37
+                Items[2]: FieldItem @275:39-275:50
+                  Name: Ident kind @275:39-275:43
+                  Value: IdentExpr enum8 @275:45-275:50
+                Items[3]: FieldItem @275:52-275:75
+                  Name: Ident values @275:52-275:58
+                  Value: IdentExpr sovereign_power @275:60-275:75
+              Elems[4]: BraceLit @276:7-276:41
+                Items[0]: FieldItem @276:9-276:24
+                  Name: Ident name @276:9-276:13
+                  Value: StringLit @276:15-276:24
+                    Parts[0]: text "task_id"
+                Items[1]: FieldItem @276:26-276:39
+                  Name: Ident sql @276:26-276:29
+                  Value: IdentExpr UINTEGER @276:31-276:39
+              Elems[5]: BraceLit @277:7-277:38
+                Items[0]: FieldItem @277:9-277:21
+                  Name: Ident name @277:9-277:13
+                  Value: StringLit @277:15-277:21
+                    Parts[0]: text "used"
+                Items[1]: FieldItem @277:23-277:36
+                  Name: Ident sql @277:23-277:26
+                  Value: IdentExpr UINTEGER @277:28-277:36
+              Elems[6]: BraceLit @278:7-278:37
+                Items[0]: FieldItem @278:9-278:20
+                  Name: Ident name @278:9-278:13
+                  Value: StringLit @278:15-278:20
+                    Parts[0]: text "max"
+                Items[1]: FieldItem @278:22-278:35
+                  Name: Ident sql @278:22-278:25
+                  Value: IdentExpr UINTEGER @278:27-278:35
+              Elems[7]: BraceLit @279:7-279:36
+                Items[0]: FieldItem @279:9-279:21
+                  Name: Ident name @279:9-279:13
+                  Value: StringLit @279:15-279:21
+                    Parts[0]: text "gold"
+                Items[1]: FieldItem @279:23-279:34
+                  Name: Ident sql @279:23-279:26
+                  Value: IdentExpr BIGINT @279:28-279:34
+              Elems[8]: BraceLit @280:7-280:44
+                Items[0]: FieldItem @280:9-280:27
+                  Name: Ident name @280:9-280:13
+                  Value: StringLit @280:15-280:27
+                    Parts[0]: text "item_count"
+                Items[1]: FieldItem @280:29-280:42
+                  Name: Ident sql @280:29-280:32
+                  Value: IdentExpr UINTEGER @280:34-280:42
+          Items[6]: FieldItem @282:5-306:6
+            Name: Ident ledger @282:5-282:11
+            Value: ListLit @282:13-306:6
+              Elems[0]: BraceLit @283:7-295:8
+                Items[0]: FieldItem @284:9-284:86
+                  Name: Ident rows @284:9-284:13
+                  Value: TypedLit @284:15-284:86
+                    Type: QualifiedName some @284:15-284:19
+                    Lit: BraceLit @284:20-284:86
+                      Items[0]: FieldItem @284:22-284:34
+                        Name: Ident column @284:22-284:28
+                        Value: IdentExpr kind @284:30-284:34
+                      Items[1]: FieldItem @284:36-284:60
+                        Name: Ident of @284:36-284:38
+                        Value: IdentExpr sovereign_event_kind @284:40-284:60
+                      Items[2]: FieldItem @284:62-284:84
+                        Name: Ident kinds @284:62-284:67
+                        Value: ListLit @284:69-284:84
+                          Elems[0]: IdentExpr RewardGranted @284:70-284:83
+                Items[1]: FieldItem @285:9-285:23
+                  Name: Ident currency @285:9-285:17
+                  Value: IdentExpr gold @285:19-285:23
+                Items[2]: FieldItem @286:9-286:21
+                  Name: Ident bucket @286:9-286:15
+                  Value: IdentExpr mint @286:17-286:21
+                Items[3]: FieldItem @287:9-287:16
+                  Name: Ident sign @287:9-287:13
+                  Value: IntLit Value=1 @287:15-287:16
+                Items[4]: FieldItem @288:9-288:34
+                  Name: Ident token @288:9-288:14
+                  Value: StringLit @288:16-288:34
+                    Parts[0]: text "sovereign_reward"
+                Items[5]: FieldItem @289:9-289:23
+                  Name: Ident counted @289:9-289:16
+                  Value: BoolLit @289:18-289:23
+                Items[6]: FieldItem @290:9-290:30
+                  Name: Ident dedupOf @290:9-290:16
+                  Value: StringLit @290:18-290:30
+                    Parts[0]: text "mail_claim"
+                Items[7]: FieldItem @291:9-291:28
+                  Name: Ident filter @291:9-291:15
+                  Value: StringLit @291:17-291:28
+                    Parts[0]: text "gold <> 0"
+                Items[8]: FieldItem @292:9-292:21
+                  Name: Ident amount @292:9-292:15
+                  Value: IdentExpr gold @292:17-292:21
+                Items[9]: FieldItem @293:9-294:100
+                  Name: Ident note @293:9-293:13
+                  Value: StringLit @294:11-294:100
+                    Parts[0]: text "MIRROR, never summed: the reward is mailed; the penya enters at gold_changes(MailClaim)"
+              Elems[1]: BraceLit @296:7-305:8
+                Items[0]: FieldItem @297:9-297:26
+                  Name: Ident currency @297:9-297:17
+                  Value: IdentExpr nothing @297:19-297:26
+                Items[1]: FieldItem @298:9-298:24
+                  Name: Ident bucket @298:9-298:15
+                  Value: IdentExpr nothing @298:17-298:24
+                Items[2]: FieldItem @299:9-299:16
+                  Name: Ident sign @299:9-299:13
+                  Value: IntLit Value=0 @299:15-299:16
+                Items[3]: FieldItem @300:9-300:27
+                  Name: Ident token @300:9-300:14
+                  Value: StringLit @300:16-300:27
+                    Parts[0]: text "sovereign"
+                Items[4]: FieldItem @301:9-301:23
+                  Name: Ident counted @301:9-301:16
+                  Value: BoolLit @301:18-301:23
+                Items[5]: FieldItem @302:9-302:27
+                  Name: Ident filter @302:9-302:15
+                  Value: StringLit @302:17-302:27
+                    Parts[0]: text "gold = 0"
+                Items[6]: FieldItem @303:9-304:100
+                  Name: Ident note @303:9-303:13
+                  Value: StringLit @304:11-304:100
+                    Parts[0]: text "NOT A LEDGER LEG: role assignments, the doctrine choice and power triggers move nothing"
+== findings
+0 errors, 0 warnings in 1 package (…)

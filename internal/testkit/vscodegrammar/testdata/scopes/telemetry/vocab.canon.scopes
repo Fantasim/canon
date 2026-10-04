@@ -1,0 +1,485 @@
+1:0-7 "package" keyword.other.canon
+1:8-17 "telemetry" entity.name.namespace.canon
+3:0-89 "// The telemetry enums: one byte on the wire, written into Parquet and read by monitoring" comment.line.double-slash.canon
+4:0-91 "// panels, so their codes are a contract (`@codes`, kept by the lock) and a value no longer" comment.line.double-slash.canon
+5:0-88 "// emitted is `retired`, never deleted or reused. Member names are the labels the lake's" comment.line.double-slash.canon
+6:0-19 "// enum views show." comment.line.double-slash.canon
+8:0-93 "/// What happened in a farm. All ten kinds are WorldServer hooks with one FarmManager caller." comment.line.documentation.canon
+9:0-4 "enum" storage.type.canon
+9:5-18 "FarmEventKind" entity.name.type.canon
+9:19-20 "@" meta.annotation.canon punctuation.definition.annotation.canon
+9:20-25 "codes" meta.annotation.canon entity.name.function.decorator.canon
+9:25-32 "(UInt8)" meta.annotation.canon
+10:0-72 "  /// FarmManager::PurchaseFarm. cost (v1) is the config purchase price." comment.line.documentation.canon
+11:2-10 "Purchase" entity.name.type.canon
+11:11-12 "=" keyword.operator.canon
+11:13-14 "1" constant.numeric.integer.canon
+12:0-87 "  /// FarmManager::ClaimItems, the claim-everything button. item_count = total granted." comment.line.documentation.canon
+13:2-12 "ClaimBatch" entity.name.type.canon
+13:13-14 "=" keyword.operator.canon
+13:15-16 "2" constant.numeric.integer.canon
+14:0-75 "  /// FarmManager::ClaimSlot, one slot. item_count = the caller's nGranted." comment.line.documentation.canon
+15:2-11 "ClaimSlot" entity.name.type.canon
+15:12-13 "=" keyword.operator.canon
+15:14-15 "3" constant.numeric.integer.canon
+16:0-63 "  /// FarmManager::LevelUpModel. Paid in items, never in penya." comment.line.documentation.canon
+17:2-9 "LevelUp" entity.name.type.canon
+17:10-11 "=" keyword.operator.canon
+17:12-13 "4" constant.numeric.integer.canon
+18:0-30 "  /// FarmManager::SetupModel." comment.line.documentation.canon
+19:2-12 "SetupModel" entity.name.type.canon
+19:13-14 "=" keyword.operator.canon
+19:15-16 "5" constant.numeric.integer.canon
+20:0-31 "  /// FarmManager::RemoveModel." comment.line.documentation.canon
+21:2-13 "RemoveModel" entity.name.type.canon
+21:14-15 "=" keyword.operator.canon
+21:16-17 "6" constant.numeric.integer.canon
+22:0-80 "  /// FarmManager::UnlockModel. type_id = the model type; slot_index is carried." comment.line.documentation.canon
+23:2-13 "UnlockModel" entity.name.type.canon
+23:14-15 "=" keyword.operator.canon
+23:16-17 "7" constant.numeric.integer.canon
+24:0-29 "  /// FarmManager::EnterFarm." comment.line.documentation.canon
+25:2-10 "EnterOwn" entity.name.type.canon
+25:11-12 "=" keyword.operator.canon
+25:13-14 "8" constant.numeric.integer.canon
+26:0-60 "  /// FarmManager::VisitFarm. target_player_id = whose farm." comment.line.documentation.canon
+27:2-12 "VisitOther" entity.name.type.canon
+27:13-14 "=" keyword.operator.canon
+27:15-16 "9" constant.numeric.integer.canon
+28:0-29 "  /// FarmManager::LeaveFarm." comment.line.documentation.canon
+29:2-7 "Leave" entity.name.type.canon
+29:8-9 "=" keyword.operator.canon
+29:10-12 "10" constant.numeric.integer.canon
+32:0-60 "/// One fact of a reign, CoreServer only (SovereignManager)." comment.line.documentation.canon
+33:0-4 "enum" storage.type.canon
+33:5-23 "SovereignEventKind" entity.name.type.canon
+33:24-25 "@" meta.annotation.canon punctuation.definition.annotation.canon
+33:25-30 "codes" meta.annotation.canon entity.name.function.decorator.canon
+33:30-37 "(UInt8)" meta.annotation.canon
+34:0-64 "  /// RunElection: one row per assignee, never one per election." comment.line.documentation.canon
+35:2-14 "RoleAssigned" entity.name.type.canon
+35:15-16 "=" keyword.operator.canon
+35:17-18 "1" constant.numeric.integer.canon
+36:0-44 "  /// HandleSetDoctrine, past every refusal." comment.line.documentation.canon
+37:2-13 "DoctrineSet" entity.name.type.canon
+37:14-15 "=" keyword.operator.canon
+37:16-17 "2" constant.numeric.integer.canon
+38:0-83 "  /// The confirmed leg of a power; used/max are the post-increment quota counters." comment.line.documentation.canon
+39:2-16 "PowerTriggered" entity.name.type.canon
+39:17-18 "=" keyword.operator.canon
+39:19-20 "3" constant.numeric.integer.canon
+40:0-88 "  /// SendElectionRewardMails, one row per recipient, only when the reward is not empty." comment.line.documentation.canon
+41:2-15 "RewardGranted" entity.name.type.canon
+41:16-17 "=" keyword.operator.canon
+41:18-19 "4" constant.numeric.integer.canon
+44:0-83 "/// Which seat. A mirror of Sovereign::SovereignRole, mapped by an explicit switch." comment.line.documentation.canon
+45:0-4 "enum" storage.type.canon
+45:5-18 "SovereignRole" entity.name.type.canon
+45:19-20 "@" meta.annotation.canon punctuation.definition.annotation.canon
+45:20-25 "codes" meta.annotation.canon entity.name.function.decorator.canon
+45:25-32 "(UInt8)" meta.annotation.canon
+46:0-34 "  /// The row is not about a seat." comment.line.documentation.canon
+47:2-6 "None" entity.name.type.canon
+47:7-8 "=" keyword.operator.canon
+47:9-10 "0" constant.numeric.integer.canon
+48:2-11 "Sovereign" entity.name.type.canon
+48:12-13 "=" keyword.operator.canon
+48:14-15 "1" constant.numeric.integer.canon
+49:2-18 "MinisterMilitary" entity.name.type.canon
+49:19-20 "=" keyword.operator.canon
+49:21-22 "2" constant.numeric.integer.canon
+50:2-17 "MinisterEconomy" entity.name.type.canon
+50:18-19 "=" keyword.operator.canon
+50:20-21 "3" constant.numeric.integer.canon
+51:2-21 "MinisterEnvironment" entity.name.type.canon
+51:22-23 "=" keyword.operator.canon
+51:24-25 "4" constant.numeric.integer.canon
+52:2-23 "MinisterCraftsmanship" entity.name.type.canon
+52:24-25 "=" keyword.operator.canon
+52:26-27 "5" constant.numeric.integer.canon
+55:0-77 "/// Which doctrine the sovereign picked. A mirror of Sovereign::DoctrineType." comment.line.documentation.canon
+56:0-4 "enum" storage.type.canon
+56:5-22 "SovereignDoctrine" entity.name.type.canon
+56:23-24 "@" meta.annotation.canon punctuation.definition.annotation.canon
+56:24-29 "codes" meta.annotation.canon entity.name.function.decorator.canon
+56:29-36 "(UInt8)" meta.annotation.canon
+57:0-59 "  /// No doctrine on this row (every kind but DoctrineSet)." comment.line.documentation.canon
+58:2-6 "None" entity.name.type.canon
+58:7-8 "=" keyword.operator.canon
+58:9-10 "0" constant.numeric.integer.canon
+59:2-8 "Mythic" entity.name.type.canon
+59:9-10 "=" keyword.operator.canon
+59:11-12 "1" constant.numeric.integer.canon
+60:2-10 "Military" entity.name.type.canon
+60:11-12 "=" keyword.operator.canon
+60:13-14 "2" constant.numeric.integer.canon
+61:2-10 "Merchant" entity.name.type.canon
+61:11-12 "=" keyword.operator.canon
+61:13-14 "3" constant.numeric.integer.canon
+62:2-13 "Progressive" entity.name.type.canon
+62:14-15 "=" keyword.operator.canon
+62:16-17 "4" constant.numeric.integer.canon
+63:2-12 "Chancellor" entity.name.type.canon
+63:13-14 "=" keyword.operator.canon
+63:15-16 "5" constant.numeric.integer.canon
+64:2-15 "Craftsmanship" entity.name.type.canon
+64:16-17 "=" keyword.operator.canon
+64:18-19 "6" constant.numeric.integer.canon
+65:2-10 "Familiar" entity.name.type.canon
+65:11-12 "=" keyword.operator.canon
+65:13-14 "7" constant.numeric.integer.canon
+68:0-88 "/// Which power was used. Not a 1:1 mirror of Sovereign::SovereignPowerKind: it adds the" comment.line.documentation.canon
+69:0-41 "/// minister buff slots, separate quotas." comment.line.documentation.canon
+70:0-4 "enum" storage.type.canon
+70:5-19 "SovereignPower" entity.name.type.canon
+70:20-21 "@" meta.annotation.canon punctuation.definition.annotation.canon
+70:21-26 "codes" meta.annotation.canon entity.name.function.decorator.canon
+70:26-33 "(UInt8)" meta.annotation.canon
+71:0-27 "  /// No power on this row." comment.line.documentation.canon
+72:2-6 "None" entity.name.type.canon
+72:7-8 "=" keyword.operator.canon
+72:9-10 "0" constant.numeric.integer.canon
+73:2-21 "MinisterBuffPrimary" entity.name.type.canon
+73:22-23 "=" keyword.operator.canon
+73:24-25 "1" constant.numeric.integer.canon
+74:2-23 "MinisterBuffSecondary" entity.name.type.canon
+74:24-25 "=" keyword.operator.canon
+74:26-27 "2" constant.numeric.integer.canon
+75:0-82 "  /// The world boss spawn power, removed with the WorldBoss system on 2026-09-03." comment.line.documentation.canon
+76:2-9 "retired" storage.modifier.canon
+76:10-24 "WorldBossSpawn" entity.name.type.canon
+76:25-26 "=" keyword.operator.canon
+76:27-28 "3" constant.numeric.integer.canon
+77:2-13 "HiddenBonds" entity.name.type.canon
+77:14-15 "=" keyword.operator.canon
+77:16-17 "4" constant.numeric.integer.canon
+78:0-44 "  /// task_id = the scheduled Heistia index." comment.line.documentation.canon
+79:2-9 "Heistia" entity.name.type.canon
+79:10-11 "=" keyword.operator.canon
+79:12-13 "5" constant.numeric.integer.canon
+80:2-15 "AzuriaAuction" entity.name.type.canon
+80:16-17 "=" keyword.operator.canon
+80:18-19 "6" constant.numeric.integer.canon
+81:2-22 "MinisterBuffTertiary" entity.name.type.canon
+81:23-24 "=" keyword.operator.canon
+81:25-26 "7" constant.numeric.integer.canon
+82:2-12 "CustomDrop" entity.name.type.canon
+82:13-14 "=" keyword.operator.canon
+82:15-16 "8" constant.numeric.integer.canon
+85:0-89 "/// A producer's boot or clean stop. A Start with no Stop before a later boot is a crash." comment.line.documentation.canon
+86:0-4 "enum" storage.type.canon
+86:5-18 "LifecycleKind" entity.name.type.canon
+86:19-20 "@" meta.annotation.canon punctuation.definition.annotation.canon
+86:20-25 "codes" meta.annotation.canon entity.name.function.decorator.canon
+86:25-32 "(UInt8)" meta.annotation.canon
+86:35-40 "Start" entity.name.type.canon
+86:41-42 "=" keyword.operator.canon
+86:43-44 "1" constant.numeric.integer.canon
+86:46-50 "Stop" entity.name.type.canon
+86:51-52 "=" keyword.operator.canon
+86:53-54 "2" constant.numeric.integer.canon
+88:0-81 "/// Why an item was minted: one value per SendSystemItem / SendMail caller family" comment.line.documentation.canon
+89:0-24 "/// (trimmed: 14 of 62)." comment.line.documentation.canon
+90:0-4 "enum" storage.type.canon
+90:5-14 "GrantKind" entity.name.type.canon
+90:15-16 "@" meta.annotation.canon punctuation.definition.annotation.canon
+90:16-21 "codes" meta.annotation.canon entity.name.function.decorator.canon
+90:21-28 "(UInt8)" meta.annotation.canon
+91:0-88 "  /// No kind reached the row; never an item_created row, the untyped byte of mail rows." comment.line.documentation.canon
+92:2-9 "UNKNOWN" constant.other.canon
+92:10-11 "=" keyword.operator.canon
+92:12-13 "0" constant.numeric.integer.canon
+93:0-46 "  /// CDPCoreClient::OnReceiveBuyBackResponse." comment.line.documentation.canon
+94:2-18 "BUYBACK_DELIVERY" constant.other.canon
+94:19-20 "=" keyword.operator.canon
+94:21-22 "1" constant.numeric.integer.canon
+95:0-29 "  /// IBuffItemBase::Release." comment.line.documentation.canon
+96:2-13 "BUFF_REWARD" constant.other.canon
+96:14-15 "=" keyword.operator.canon
+96:16-17 "2" constant.numeric.integer.canon
+97:0-74 "  /// The CEventLua level-up gift, removed; historical rows keep the code." comment.line.documentation.canon
+98:2-9 "retired" storage.modifier.canon
+98:10-23 "LEVEL_UP_GIFT" constant.other.canon
+98:24-25 "=" keyword.operator.canon
+98:26-27 "3" constant.numeric.integer.canon
+99:0-68 "  /// GameEventGeneral::OnBossKilled (server-dungeon raid currency)." comment.line.documentation.canon
+100:2-18 "BOSS_REWARD_MAIL" constant.other.canon
+100:19-20 "=" keyword.operator.canon
+100:21-23 "14" constant.numeric.integer.canon
+101:0-73 "  /// OnWorldBossKilled, removed with the WorldBoss system on 2026-09-03." comment.line.documentation.canon
+102:2-9 "retired" storage.modifier.canon
+102:10-32 "WORLD_BOSS_REWARD_MAIL" constant.other.canon
+102:33-34 "=" keyword.operator.canon
+102:35-37 "15" constant.numeric.integer.canon
+103:0-79 "  /// Rainbow race, secret room, Heistia, PvP event rewards; mailed remainders." comment.line.documentation.canon
+104:2-14 "EVENT_REWARD" constant.other.canon
+104:15-16 "=" keyword.operator.canon
+104:17-19 "16" constant.numeric.integer.canon
+105:0-86 "  /// Not a mint: a returned, unclaimed or would-not-fit mail re-posts existing items." comment.line.documentation.canon
+106:2-13 "MAIL_RETURN" constant.other.canon
+106:14-15 "=" keyword.operator.canon
+106:16-18 "22" constant.numeric.integer.canon
+107:0-61 "  /// MoneyState::HandleMoneyIn's split-on-credit perin mint." comment.line.documentation.canon
+108:2-16 "PERIN_OVERFLOW" constant.other.canon
+108:17-18 "=" keyword.operator.canon
+108:19-21 "23" constant.numeric.integer.canon
+109:0-75 "  /// Not a mint: a player-to-player mail's items, seen from the mail side." comment.line.documentation.canon
+110:2-13 "PLAYER_MAIL" constant.other.canon
+110:14-15 "=" keyword.operator.canon
+110:16-18 "27" constant.numeric.integer.canon
+111:0-72 "  /// FarmManager::ClaimModel, farm production granted to the inventory." comment.line.documentation.canon
+112:2-14 "FARM_HARVEST" constant.other.canon
+112:15-16 "=" keyword.operator.canon
+112:17-19 "35" constant.numeric.integer.canon
+113:0-67 "  /// CDbManager::CreatePlayer: the starting items, DatabaseServer." comment.line.documentation.canon
+114:2-14 "STARTER_ITEM" constant.other.canon
+114:15-16 "=" keyword.operator.canon
+114:17-19 "47" constant.numeric.integer.canon
+115:0-81 "  /// The guild disband payout mail, removed; historical mail rows keep the code." comment.line.documentation.canon
+116:2-9 "retired" storage.modifier.canon
+116:10-28 "GUILD_DISBAND_BANK" constant.other.canon
+116:29-30 "=" keyword.operator.canon
+116:31-33 "48" constant.numeric.integer.canon
+117:0-84 "  /// An Azuria escrow re-mailed after a restart: a possible duplicate of a release." comment.line.documentation.canon
+118:2-25 "AUCTION_ESCROW_RECOVERY" constant.other.canon
+118:26-27 "=" keyword.operator.canon
+118:28-30 "59" constant.numeric.integer.canon
+121:0-84 "/// The telemetry enums a column can hold. The member name is the lake's lookup view" comment.line.documentation.canon
+122:0-20 "/// (`enum_<name>`)." comment.line.documentation.canon
+123:0-4 "enum" storage.type.canon
+123:5-15 "Vocabulary" entity.name.type.canon
+133:0-83 "/// A member of vocabulary `v`: what a ledger role splitting on a `v` column names." comment.line.documentation.canon
+134:0-4 "type" storage.type.canon
+134:5-11 "Member" entity.name.type.canon
+134:12-13 "v" variable.other.property.canon
+134:13-14 ":" punctuation.separator.key.canon
+134:15-25 "Vocabulary" entity.name.type.canon
+134:27-28 "=" keyword.operator.canon
+134:29-34 "match" keyword.control.canon
+135:18-20 "=>" keyword.operator.canon
+135:21-34 "FarmEventKind" entity.name.type.canon
+136:23-25 "=>" keyword.operator.canon
+136:26-44 "SovereignEventKind" entity.name.type.canon
+137:17-19 "=>" keyword.operator.canon
+137:20-33 "SovereignRole" entity.name.type.canon
+138:21-23 "=>" keyword.operator.canon
+138:24-41 "SovereignDoctrine" entity.name.type.canon
+139:18-20 "=>" keyword.operator.canon
+139:21-35 "SovereignPower" entity.name.type.canon
+140:17-19 "=>" keyword.operator.canon
+140:20-33 "LifecycleKind" entity.name.type.canon
+141:13-15 "=>" keyword.operator.canon
+141:16-25 "GrantKind" entity.name.type.canon
+144:0-75 "/// The Canon enum behind vocabulary `v`, as the lake's catalogue names it." comment.line.documentation.canon
+145:0-2 "fn" storage.type.function.canon
+145:3-11 "enumName" entity.name.function.canon
+145:12-13 "v" variable.other.property.canon
+145:13-14 ":" punctuation.separator.key.canon
+145:15-25 "Vocabulary" entity.name.type.canon
+145:27-29 "->" keyword.operator.canon
+145:30-36 "String" entity.name.type.canon
+146:2-8 "return" keyword.control.canon
+146:9-14 "match" keyword.control.canon
+147:20-22 "=>" keyword.operator.canon
+147:23-38 "\"FarmEventKind\"" string.quoted.double.canon
+148:25-27 "=>" keyword.operator.canon
+148:28-48 "\"SovereignEventKind\"" string.quoted.double.canon
+149:19-21 "=>" keyword.operator.canon
+149:22-37 "\"SovereignRole\"" string.quoted.double.canon
+150:23-25 "=>" keyword.operator.canon
+150:26-45 "\"SovereignDoctrine\"" string.quoted.double.canon
+151:20-22 "=>" keyword.operator.canon
+151:23-39 "\"SovereignPower\"" string.quoted.double.canon
+152:19-21 "=>" keyword.operator.canon
+152:22-37 "\"LifecycleKind\"" string.quoted.double.canon
+153:15-17 "=>" keyword.operator.canon
+153:18-29 "\"GrantKind\"" string.quoted.double.canon
+157:0-65 "/// One member of a vocabulary, as the lake's enum view lists it." comment.line.documentation.canon
+158:0-5 "local" storage.modifier.canon
+158:6-12 "record" storage.type.canon
+158:13-18 "Label" entity.name.type.canon
+159:0-46 "  /// The member's code: the byte on the wire." comment.line.documentation.canon
+160:2-6 "code" variable.other.property.canon
+160:6-7 ":" punctuation.separator.key.canon
+160:8-11 "Int" entity.name.type.canon
+161:0-47 "  /// The member's name: the label panels show." comment.line.documentation.canon
+162:2-6 "name" variable.other.property.canon
+162:6-7 ":" punctuation.separator.key.canon
+162:8-14 "String" entity.name.type.canon
+163:0-68 "  /// No producer writes it any more; old rows still carry the code." comment.line.documentation.canon
+164:2-11 "isRetired" variable.other.property.canon
+164:11-12 ":" punctuation.separator.key.canon
+164:13-17 "Bool" entity.name.type.canon
+167:0-72 "/// The members of vocabulary `v`, retired ones included, in code order." comment.line.documentation.canon
+168:0-2 "fn" storage.type.function.canon
+168:3-9 "labels" entity.name.function.canon
+168:10-11 "v" variable.other.property.canon
+168:11-12 ":" punctuation.separator.key.canon
+168:13-23 "Vocabulary" entity.name.type.canon
+168:25-27 "->" keyword.operator.canon
+168:29-34 "Label" entity.name.type.canon
+169:2-5 "let" storage.type.canon
+169:10-11 "=" keyword.operator.canon
+169:12-17 "match" keyword.control.canon
+170:20-22 "=>" keyword.operator.canon
+171:6-19 "FarmEventKind" entity.name.type.canon
+171:19-20 "." punctuation.accessor.canon
+171:20-27 "members" variable.other.property.canon
+171:27-28 "." punctuation.accessor.canon
+171:28-31 "map" variable.other.property.canon
+171:34-36 "=>" keyword.operator.canon
+171:37-42 "Label" entity.name.type.canon
+171:45-49 "code" variable.other.property.canon
+171:49-50 ":" punctuation.separator.key.canon
+171:52-53 "." punctuation.accessor.canon
+171:53-57 "code" variable.other.property.canon
+171:59-63 "name" variable.other.property.canon
+171:63-64 ":" punctuation.separator.key.canon
+171:66-67 "." punctuation.accessor.canon
+171:67-71 "name" variable.other.property.canon
+171:73-82 "isRetired" variable.other.property.canon
+171:82-83 ":" punctuation.separator.key.canon
+171:85-86 "." punctuation.accessor.canon
+171:86-93 "retired" variable.other.property.canon
+172:25-27 "=>" keyword.operator.canon
+172:28-46 "SovereignEventKind" entity.name.type.canon
+172:46-47 "." punctuation.accessor.canon
+172:47-54 "members" variable.other.property.canon
+172:54-55 "." punctuation.accessor.canon
+172:55-58 "map" variable.other.property.canon
+173:8-10 "=>" keyword.operator.canon
+173:11-16 "Label" entity.name.type.canon
+173:19-23 "code" variable.other.property.canon
+173:23-24 ":" punctuation.separator.key.canon
+173:26-27 "." punctuation.accessor.canon
+173:27-31 "code" variable.other.property.canon
+173:33-37 "name" variable.other.property.canon
+173:37-38 ":" punctuation.separator.key.canon
+173:40-41 "." punctuation.accessor.canon
+173:41-45 "name" variable.other.property.canon
+173:47-56 "isRetired" variable.other.property.canon
+173:56-57 ":" punctuation.separator.key.canon
+173:59-60 "." punctuation.accessor.canon
+173:60-67 "retired" variable.other.property.canon
+175:19-21 "=>" keyword.operator.canon
+176:6-19 "SovereignRole" entity.name.type.canon
+176:19-20 "." punctuation.accessor.canon
+176:20-27 "members" variable.other.property.canon
+176:27-28 "." punctuation.accessor.canon
+176:28-31 "map" variable.other.property.canon
+176:34-36 "=>" keyword.operator.canon
+176:37-42 "Label" entity.name.type.canon
+176:45-49 "code" variable.other.property.canon
+176:49-50 ":" punctuation.separator.key.canon
+176:52-53 "." punctuation.accessor.canon
+176:53-57 "code" variable.other.property.canon
+176:59-63 "name" variable.other.property.canon
+176:63-64 ":" punctuation.separator.key.canon
+176:66-67 "." punctuation.accessor.canon
+176:67-71 "name" variable.other.property.canon
+176:73-82 "isRetired" variable.other.property.canon
+176:82-83 ":" punctuation.separator.key.canon
+176:85-86 "." punctuation.accessor.canon
+176:86-93 "retired" variable.other.property.canon
+177:23-25 "=>" keyword.operator.canon
+178:6-23 "SovereignDoctrine" entity.name.type.canon
+178:23-24 "." punctuation.accessor.canon
+178:24-31 "members" variable.other.property.canon
+178:31-32 "." punctuation.accessor.canon
+178:32-35 "map" variable.other.property.canon
+178:38-40 "=>" keyword.operator.canon
+178:41-46 "Label" entity.name.type.canon
+178:49-53 "code" variable.other.property.canon
+178:53-54 ":" punctuation.separator.key.canon
+178:56-57 "." punctuation.accessor.canon
+178:57-61 "code" variable.other.property.canon
+178:63-67 "name" variable.other.property.canon
+178:67-68 ":" punctuation.separator.key.canon
+178:70-71 "." punctuation.accessor.canon
+178:71-75 "name" variable.other.property.canon
+178:77-86 "isRetired" variable.other.property.canon
+178:86-87 ":" punctuation.separator.key.canon
+178:89-90 "." punctuation.accessor.canon
+178:90-97 "retired" variable.other.property.canon
+179:20-22 "=>" keyword.operator.canon
+180:6-20 "SovereignPower" entity.name.type.canon
+180:20-21 "." punctuation.accessor.canon
+180:21-28 "members" variable.other.property.canon
+180:28-29 "." punctuation.accessor.canon
+180:29-32 "map" variable.other.property.canon
+180:35-37 "=>" keyword.operator.canon
+180:38-43 "Label" entity.name.type.canon
+180:46-50 "code" variable.other.property.canon
+180:50-51 ":" punctuation.separator.key.canon
+180:53-54 "." punctuation.accessor.canon
+180:54-58 "code" variable.other.property.canon
+180:60-64 "name" variable.other.property.canon
+180:64-65 ":" punctuation.separator.key.canon
+180:67-68 "." punctuation.accessor.canon
+180:68-72 "name" variable.other.property.canon
+180:74-83 "isRetired" variable.other.property.canon
+180:83-84 ":" punctuation.separator.key.canon
+180:86-87 "." punctuation.accessor.canon
+180:87-94 "retired" variable.other.property.canon
+181:19-21 "=>" keyword.operator.canon
+182:6-19 "LifecycleKind" entity.name.type.canon
+182:19-20 "." punctuation.accessor.canon
+182:20-27 "members" variable.other.property.canon
+182:27-28 "." punctuation.accessor.canon
+182:28-31 "map" variable.other.property.canon
+182:34-36 "=>" keyword.operator.canon
+182:37-42 "Label" entity.name.type.canon
+182:45-49 "code" variable.other.property.canon
+182:49-50 ":" punctuation.separator.key.canon
+182:52-53 "." punctuation.accessor.canon
+182:53-57 "code" variable.other.property.canon
+182:59-63 "name" variable.other.property.canon
+182:63-64 ":" punctuation.separator.key.canon
+182:66-67 "." punctuation.accessor.canon
+182:67-71 "name" variable.other.property.canon
+182:73-82 "isRetired" variable.other.property.canon
+182:82-83 ":" punctuation.separator.key.canon
+182:85-86 "." punctuation.accessor.canon
+182:86-93 "retired" variable.other.property.canon
+183:15-17 "=>" keyword.operator.canon
+184:6-15 "GrantKind" entity.name.type.canon
+184:15-16 "." punctuation.accessor.canon
+184:16-23 "members" variable.other.property.canon
+184:23-24 "." punctuation.accessor.canon
+184:24-27 "map" variable.other.property.canon
+184:30-32 "=>" keyword.operator.canon
+184:33-38 "Label" entity.name.type.canon
+184:41-45 "code" variable.other.property.canon
+184:45-46 ":" punctuation.separator.key.canon
+184:48-49 "." punctuation.accessor.canon
+184:49-53 "code" variable.other.property.canon
+184:55-59 "name" variable.other.property.canon
+184:59-60 ":" punctuation.separator.key.canon
+184:62-63 "." punctuation.accessor.canon
+184:63-67 "name" variable.other.property.canon
+184:69-78 "isRetired" variable.other.property.canon
+184:78-79 ":" punctuation.separator.key.canon
+184:81-82 "." punctuation.accessor.canon
+184:82-89 "retired" variable.other.property.canon
+186:2-8 "return" keyword.control.canon
+186:12-13 "." punctuation.accessor.canon
+186:13-19 "sortBy" variable.other.property.canon
+186:20-21 "." punctuation.accessor.canon
+186:21-25 "code" variable.other.property.canon
+189:0-44 "/// The live member names of vocabulary `v`." comment.line.documentation.canon
+190:0-2 "fn" storage.type.function.canon
+190:3-12 "liveNames" entity.name.function.canon
+190:13-14 "v" variable.other.property.canon
+190:14-15 ":" punctuation.separator.key.canon
+190:16-26 "Vocabulary" entity.name.type.canon
+190:28-30 "->" keyword.operator.canon
+190:32-38 "String" entity.name.type.canon
+190:42-48 "return" keyword.control.canon
+190:51-52 "." punctuation.accessor.canon
+190:52-56 "name" variable.other.property.canon
+190:57-60 "for" keyword.control.canon
+190:63-65 "in" keyword.operator.word.canon
+190:76-78 "if" keyword.control.canon
+190:79-82 "not" keyword.operator.word.canon
+190:84-85 "." punctuation.accessor.canon
+190:85-94 "isRetired" variable.other.property.canon

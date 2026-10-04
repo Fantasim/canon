@@ -1,0 +1,1175 @@
+{
+  "format": 1,
+  "contract": 2,
+  "provenance": [
+    {
+      "name": "event_version",
+      "type": "UTINYINT"
+    },
+    {
+      "name": "producer_id",
+      "type": "UINTEGER"
+    },
+    {
+      "name": "boot_id",
+      "type": "BIGINT"
+    },
+    {
+      "name": "batch_seq",
+      "type": "BIGINT"
+    },
+    {
+      "name": "row_no",
+      "type": "USMALLINT"
+    }
+  ],
+  "events": [
+    {
+      "id": 11,
+      "table": "item_created",
+      "retired": false,
+      "version": 5,
+      "since": 2,
+      "tier": "WARM",
+      "producers": ["WorldServer", "DatabaseServer"],
+      "enqueue": "generated",
+      "hasInstanceId": true,
+      "wireSize": 38,
+      "description": "An item minted into existence, typed by GrantKind; via_mail in v4, fact_id in v5",
+      "columns": [
+        {
+          "name": "timestamp_ns",
+          "type": "BIGINT",
+          "kind": "ts",
+          "nullable": false,
+          "since": 2,
+          "retiredIn": null,
+          "enum": null
+        },
+        {
+          "name": "player_id",
+          "type": "UINTEGER",
+          "kind": "id",
+          "nullable": false,
+          "since": 2,
+          "retiredIn": null,
+          "enum": null
+        },
+        {
+          "name": "item_instance_id",
+          "type": "UBIGINT",
+          "kind": "scalar",
+          "nullable": true,
+          "since": 3,
+          "retiredIn": null,
+          "enum": null
+        },
+        {
+          "name": "grant_kind",
+          "type": "UTINYINT",
+          "kind": "enum8",
+          "nullable": true,
+          "since": 2,
+          "retiredIn": null,
+          "enum": "GrantKind"
+        },
+        {
+          "name": "item_id",
+          "type": "UINTEGER",
+          "kind": "scalar",
+          "nullable": true,
+          "since": 2,
+          "retiredIn": null,
+          "enum": null
+        },
+        {
+          "name": "quantity",
+          "type": "UINTEGER",
+          "kind": "scalar",
+          "nullable": true,
+          "since": 2,
+          "retiredIn": null,
+          "enum": null
+        },
+        {
+          "name": "via_mail",
+          "type": "UTINYINT",
+          "kind": "scalar",
+          "nullable": true,
+          "since": 4,
+          "retiredIn": null,
+          "enum": null
+        },
+        {
+          "name": "fact_id",
+          "type": "UBIGINT",
+          "kind": "scalar",
+          "nullable": true,
+          "since": 5,
+          "retiredIn": null,
+          "enum": null
+        }
+      ],
+      "ledger": [
+        {
+          "kinds": {
+            "column": "grant_kind",
+            "values": ["BUYBACK_DELIVERY", "BUFF_REWARD", "EVENT_REWARD"]
+          },
+          "currency": "item",
+          "bucket": "mint",
+          "sign": 1,
+          "token": "system_grant",
+          "leg": null,
+          "filter": "COALESCE(via_mail, 0) = 0",
+          "amount": "quantity",
+          "item": "item_id",
+          "player": "player_id",
+          "counterparty": null,
+          "counted": true,
+          "dedupOf": null,
+          "untilVersion": null,
+          "note": "SendSystemItem: a direct inventory grant (mail only on overflow, counted at its claim)"
+        },
+        {
+          "kinds": {
+            "column": "grant_kind",
+            "values": ["BOSS_REWARD_MAIL"]
+          },
+          "currency": "item",
+          "bucket": "mint",
+          "sign": 1,
+          "token": "mail_grant",
+          "leg": null,
+          "filter": null,
+          "amount": "quantity",
+          "item": "item_id",
+          "player": "player_id",
+          "counterparty": null,
+          "counted": false,
+          "dedupOf": null,
+          "untilVersion": null,
+          "note": "MAIL-BORNE: lands in game.mail, not in a container, until claimed"
+        },
+        {
+          "kinds": {
+            "column": "grant_kind",
+            "values": ["MAIL_RETURN"]
+          },
+          "currency": "item",
+          "bucket": "transfer",
+          "sign": 1,
+          "token": "mail_return",
+          "leg": "in",
+          "filter": null,
+          "amount": "quantity",
+          "item": "item_id",
+          "player": "player_id",
+          "counterparty": null,
+          "counted": false,
+          "dedupOf": null,
+          "untilVersion": null,
+          "note": "NOT A MINT: re-posts items that already exist; the claim inflow is mail_items_claimed"
+        },
+        {
+          "kinds": {
+            "column": "grant_kind",
+            "values": ["PLAYER_MAIL"]
+          },
+          "currency": "item",
+          "bucket": "transfer",
+          "sign": 1,
+          "token": "mail_out",
+          "leg": "in",
+          "filter": null,
+          "amount": "quantity",
+          "item": "item_id",
+          "player": "player_id",
+          "counterparty": null,
+          "counted": false,
+          "dedupOf": null,
+          "untilVersion": null,
+          "note": "NOT A MINT: the counted leg is the sender's mail_items_sent row"
+        },
+        {
+          "kinds": {
+            "column": "grant_kind",
+            "values": ["AUCTION_ESCROW_RECOVERY"]
+          },
+          "currency": "item",
+          "bucket": "transfer",
+          "sign": 1,
+          "token": "auction_return",
+          "leg": "in",
+          "filter": null,
+          "amount": "quantity",
+          "item": "item_id",
+          "player": "player_id",
+          "counterparty": null,
+          "counted": false,
+          "dedupOf": null,
+          "untilVersion": null,
+          "note": "MAIL-BORNE, NOT A MINT: an escrow re-mailed after a restart"
+        },
+        {
+          "kinds": {
+            "column": "grant_kind",
+            "values": ["PERIN_OVERFLOW"]
+          },
+          "currency": "item",
+          "bucket": "mint",
+          "sign": 1,
+          "token": "perin_overflow",
+          "leg": null,
+          "filter": "COALESCE(via_mail, 0) = 0",
+          "amount": "quantity",
+          "item": "item_id",
+          "player": "player_id",
+          "counterparty": null,
+          "counted": true,
+          "dedupOf": null,
+          "untilVersion": null,
+          "note": "EmitPerinMinted (gold.cpp): perin minted straight into the inventory"
+        },
+        {
+          "kinds": {
+            "column": "grant_kind",
+            "values": ["FARM_HARVEST"]
+          },
+          "currency": "item",
+          "bucket": "mint",
+          "sign": 1,
+          "token": "farm_harvest",
+          "leg": null,
+          "filter": "COALESCE(via_mail, 0) = 0",
+          "amount": "quantity",
+          "item": "item_id",
+          "player": "player_id",
+          "counterparty": null,
+          "counted": true,
+          "dedupOf": null,
+          "untilVersion": null,
+          "note": "FarmManager::ClaimModel: farm production granted to the inventory"
+        },
+        {
+          "kinds": {
+            "column": "grant_kind",
+            "values": ["STARTER_ITEM"]
+          },
+          "currency": "item",
+          "bucket": "mint",
+          "sign": 1,
+          "token": "starter_item",
+          "leg": null,
+          "filter": "COALESCE(via_mail, 0) = 0",
+          "amount": "quantity",
+          "item": "item_id",
+          "player": "player_id",
+          "counterparty": null,
+          "counted": true,
+          "dedupOf": null,
+          "untilVersion": null,
+          "note": "CDbManager::CreatePlayer: one row per starting item, after the container saved"
+        },
+        {
+          "kinds": {
+            "column": "grant_kind",
+            "values": ["UNKNOWN"]
+          },
+          "currency": "none",
+          "bucket": "none",
+          "sign": 0,
+          "token": "unknown_grant",
+          "leg": null,
+          "filter": null,
+          "amount": null,
+          "item": "item_id",
+          "player": "player_id",
+          "counterparty": null,
+          "counted": false,
+          "dedupOf": null,
+          "untilVersion": null,
+          "note": "NOT A LEDGER LEG: no caller passes GrantKind 0"
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "table": "mail_items_received",
+      "retired": true
+    },
+    {
+      "id": 31,
+      "table": "item_consumed",
+      "retired": false,
+      "version": 3,
+      "since": 2,
+      "tier": "READONLY",
+      "producers": [],
+      "enqueue": "generated",
+      "hasInstanceId": true,
+      "wireSize": 24,
+      "description": "An item consumed (used up) by a player; READONLY, item_removed(Consumed) replaces it",
+      "columns": [
+        {
+          "name": "timestamp_ns",
+          "type": "BIGINT",
+          "kind": "ts",
+          "nullable": false,
+          "since": 2,
+          "retiredIn": null,
+          "enum": null
+        },
+        {
+          "name": "player_id",
+          "type": "UINTEGER",
+          "kind": "id",
+          "nullable": false,
+          "since": 2,
+          "retiredIn": null,
+          "enum": null
+        },
+        {
+          "name": "item_instance_id",
+          "type": "UBIGINT",
+          "kind": "scalar",
+          "nullable": true,
+          "since": 3,
+          "retiredIn": null,
+          "enum": null
+        },
+        {
+          "name": "item_id",
+          "type": "UINTEGER",
+          "kind": "scalar",
+          "nullable": true,
+          "since": 2,
+          "retiredIn": null,
+          "enum": null
+        }
+      ],
+      "ledger": [
+        {
+          "kinds": null,
+          "currency": "item",
+          "bucket": "sink",
+          "sign": -1,
+          "token": "consume",
+          "leg": null,
+          "filter": null,
+          "amount": null,
+          "item": "item_id",
+          "player": "player_id",
+          "counterparty": null,
+          "counted": false,
+          "dedupOf": "consume",
+          "untilVersion": null,
+          "note": "no quantity column; item_removed(Consumed) is the quantity-bearing sink"
+        }
+      ]
+    },
+    {
+      "id": 70,
+      "table": "penya_drops",
+      "retired": false,
+      "version": 2,
+      "since": 2,
+      "tier": "HOT",
+      "producers": ["WorldServer"],
+      "enqueue": "generated",
+      "hasInstanceId": false,
+      "wireSize": 24,
+      "description": "Penya dropped by a killed monster, one row per party member on auto-loot",
+      "columns": [
+        {
+          "name": "timestamp_ns",
+          "type": "BIGINT",
+          "kind": "ts",
+          "nullable": false,
+          "since": 2,
+          "retiredIn": null,
+          "enum": null
+        },
+        {
+          "name": "player_id",
+          "type": "UINTEGER",
+          "kind": "id",
+          "nullable": false,
+          "since": 2,
+          "retiredIn": null,
+          "enum": null
+        },
+        {
+          "name": "amount",
+          "type": "BIGINT",
+          "kind": "scalar",
+          "nullable": true,
+          "since": 2,
+          "retiredIn": null,
+          "enum": null
+        },
+        {
+          "name": "mob_index",
+          "type": "UINTEGER",
+          "kind": "scalar",
+          "nullable": true,
+          "since": 2,
+          "retiredIn": null,
+          "enum": null
+        }
+      ],
+      "ledger": [
+        {
+          "kinds": null,
+          "currency": "gold",
+          "bucket": "mint",
+          "sign": 1,
+          "token": "mob_drop",
+          "leg": null,
+          "filter": null,
+          "amount": "amount",
+          "item": null,
+          "player": "player_id",
+          "counterparty": null,
+          "counted": true,
+          "dedupOf": null,
+          "untilVersion": null,
+          "note": "CMover::PickupGoldCore on the kill's auto-loot (GameEventGeneral::OnPenyasDropped)"
+        }
+      ]
+    },
+    {
+      "id": 71,
+      "table": "trade_penya",
+      "retired": false,
+      "version": 2,
+      "since": 2,
+      "tier": "COOL",
+      "producers": ["WorldServer"],
+      "enqueue": "generated",
+      "hasInstanceId": false,
+      "wireSize": 36,
+      "description": "Penya leg of a player-to-player trade",
+      "columns": [
+        {
+          "name": "timestamp_ns",
+          "type": "BIGINT",
+          "kind": "ts",
+          "nullable": false,
+          "since": 2,
+          "retiredIn": null,
+          "enum": null
+        },
+        {
+          "name": "player_id",
+          "type": "UINTEGER",
+          "kind": "id",
+          "nullable": false,
+          "since": 2,
+          "retiredIn": null,
+          "enum": null
+        },
+        {
+          "name": "trade_id",
+          "type": "UBIGINT",
+          "kind": "scalar",
+          "nullable": true,
+          "since": 2,
+          "retiredIn": null,
+          "enum": null
+        },
+        {
+          "name": "giver_player_id",
+          "type": "UINTEGER",
+          "kind": "scalar",
+          "nullable": true,
+          "since": 2,
+          "retiredIn": null,
+          "enum": null
+        },
+        {
+          "name": "receiver_player_id",
+          "type": "UINTEGER",
+          "kind": "scalar",
+          "nullable": true,
+          "since": 2,
+          "retiredIn": null,
+          "enum": null
+        },
+        {
+          "name": "amount",
+          "type": "BIGINT",
+          "kind": "scalar",
+          "nullable": true,
+          "since": 2,
+          "retiredIn": null,
+          "enum": null
+        }
+      ],
+      "ledger": [
+        {
+          "kinds": null,
+          "currency": "gold",
+          "bucket": "transfer",
+          "sign": -1,
+          "token": "trade",
+          "leg": "out",
+          "filter": null,
+          "amount": "amount",
+          "item": null,
+          "player": "giver_player_id",
+          "counterparty": "receiver_player_id",
+          "counted": true,
+          "dedupOf": null,
+          "untilVersion": null,
+          "note": "GameEventGeneral::OnTradeGold from CVTInfo::TradeLastConfirm: one row per giver leg"
+        },
+        {
+          "kinds": null,
+          "currency": "gold",
+          "bucket": "transfer",
+          "sign": 1,
+          "token": "trade",
+          "leg": "in",
+          "filter": null,
+          "amount": "amount",
+          "item": null,
+          "player": "receiver_player_id",
+          "counterparty": "giver_player_id",
+          "counted": true,
+          "dedupOf": null,
+          "untilVersion": null,
+          "note": "the receiving half of the same row"
+        }
+      ]
+    },
+    {
+      "id": 110,
+      "table": "server_lifecycle",
+      "retired": false,
+      "version": 1,
+      "since": 1,
+      "tier": "TINY",
+      "producers": ["WorldServer", "CoreServer", "DatabaseServer", "LoginServer"],
+      "enqueue": "internal",
+      "hasInstanceId": false,
+      "wireSize": 13,
+      "description": "Every producer's boot or clean-stop",
+      "columns": [
+        {
+          "name": "timestamp_ns",
+          "type": "BIGINT",
+          "kind": "ts",
+          "nullable": false,
+          "since": 1,
+          "retiredIn": null,
+          "enum": null
+        },
+        {
+          "name": "player_id",
+          "type": "UINTEGER",
+          "kind": "id",
+          "nullable": false,
+          "since": 1,
+          "retiredIn": null,
+          "enum": null
+        },
+        {
+          "name": "kind",
+          "type": "UTINYINT",
+          "kind": "enum8",
+          "nullable": true,
+          "since": 1,
+          "retiredIn": null,
+          "enum": "LifecycleKind"
+        }
+      ],
+      "ledger": []
+    },
+    {
+      "id": 151,
+      "table": "farm_events",
+      "retired": false,
+      "version": 2,
+      "since": 1,
+      "tier": "COOL",
+      "producers": ["WorldServer"],
+      "enqueue": "generated",
+      "hasInstanceId": false,
+      "wireSize": 37,
+      "description": "One farm action; v2 drops cost for the gold_changes(Farm) row of the same fact_id",
+      "columns": [
+        {
+          "name": "timestamp_ns",
+          "type": "BIGINT",
+          "kind": "ts",
+          "nullable": false,
+          "since": 1,
+          "retiredIn": null,
+          "enum": null
+        },
+        {
+          "name": "player_id",
+          "type": "UINTEGER",
+          "kind": "id",
+          "nullable": false,
+          "since": 1,
+          "retiredIn": null,
+          "enum": null
+        },
+        {
+          "name": "kind",
+          "type": "UTINYINT",
+          "kind": "enum8",
+          "nullable": true,
+          "since": 1,
+          "retiredIn": null,
+          "enum": "FarmEventKind"
+        },
+        {
+          "name": "slot_index",
+          "type": "UINTEGER",
+          "kind": "scalar",
+          "nullable": true,
+          "since": 1,
+          "retiredIn": null,
+          "enum": null
+        },
+        {
+          "name": "type_id",
+          "type": "UINTEGER",
+          "kind": "scalar",
+          "nullable": true,
+          "since": 1,
+          "retiredIn": null,
+          "enum": null
+        },
+        {
+          "name": "item_count",
+          "type": "UINTEGER",
+          "kind": "scalar",
+          "nullable": true,
+          "since": 1,
+          "retiredIn": null,
+          "enum": null
+        },
+        {
+          "name": "target_player_id",
+          "type": "UINTEGER",
+          "kind": "scalar",
+          "nullable": true,
+          "since": 1,
+          "retiredIn": null,
+          "enum": null
+        },
+        {
+          "name": "cost",
+          "type": "BIGINT",
+          "kind": "scalar",
+          "nullable": true,
+          "since": 1,
+          "retiredIn": 2,
+          "enum": null
+        },
+        {
+          "name": "fact_id",
+          "type": "UBIGINT",
+          "kind": "scalar",
+          "nullable": true,
+          "since": 2,
+          "retiredIn": null,
+          "enum": null
+        }
+      ],
+      "ledger": [
+        {
+          "kinds": {
+            "column": "kind",
+            "values": ["Purchase", "UnlockModel", "VisitOther"]
+          },
+          "currency": "gold",
+          "bucket": "sink",
+          "sign": -1,
+          "token": "farm",
+          "leg": null,
+          "filter": "cost <> 0",
+          "amount": "cost",
+          "item": null,
+          "player": "player_id",
+          "counterparty": null,
+          "counted": false,
+          "dedupOf": "farm",
+          "untilVersion": 1,
+          "note": "MIRROR, never summed: the requested price; gold_changes(Farm) is the reconciling leg"
+        }
+      ]
+    },
+    {
+      "id": 152,
+      "table": "sovereign_events",
+      "retired": false,
+      "version": 1,
+      "since": 1,
+      "tier": "TINY",
+      "producers": ["CoreServer"],
+      "enqueue": "generated",
+      "hasInstanceId": false,
+      "wireSize": 40,
+      "description": "A reign fact - role assigned, doctrine set, power triggered, or reward granted (per recipient)",
+      "columns": [
+        {
+          "name": "timestamp_ns",
+          "type": "BIGINT",
+          "kind": "ts",
+          "nullable": false,
+          "since": 1,
+          "retiredIn": null,
+          "enum": null
+        },
+        {
+          "name": "player_id",
+          "type": "UINTEGER",
+          "kind": "id",
+          "nullable": false,
+          "since": 1,
+          "retiredIn": null,
+          "enum": null
+        },
+        {
+          "name": "kind",
+          "type": "UTINYINT",
+          "kind": "enum8",
+          "nullable": true,
+          "since": 1,
+          "retiredIn": null,
+          "enum": "SovereignEventKind"
+        },
+        {
+          "name": "role",
+          "type": "UTINYINT",
+          "kind": "enum8",
+          "nullable": true,
+          "since": 1,
+          "retiredIn": null,
+          "enum": "SovereignRole"
+        },
+        {
+          "name": "doctrine",
+          "type": "UTINYINT",
+          "kind": "enum8",
+          "nullable": true,
+          "since": 1,
+          "retiredIn": null,
+          "enum": "SovereignDoctrine"
+        },
+        {
+          "name": "power",
+          "type": "UTINYINT",
+          "kind": "enum8",
+          "nullable": true,
+          "since": 1,
+          "retiredIn": null,
+          "enum": "SovereignPower"
+        },
+        {
+          "name": "task_id",
+          "type": "UINTEGER",
+          "kind": "scalar",
+          "nullable": true,
+          "since": 1,
+          "retiredIn": null,
+          "enum": null
+        },
+        {
+          "name": "used",
+          "type": "UINTEGER",
+          "kind": "scalar",
+          "nullable": true,
+          "since": 1,
+          "retiredIn": null,
+          "enum": null
+        },
+        {
+          "name": "max",
+          "type": "UINTEGER",
+          "kind": "scalar",
+          "nullable": true,
+          "since": 1,
+          "retiredIn": null,
+          "enum": null
+        },
+        {
+          "name": "gold",
+          "type": "BIGINT",
+          "kind": "scalar",
+          "nullable": true,
+          "since": 1,
+          "retiredIn": null,
+          "enum": null
+        },
+        {
+          "name": "item_count",
+          "type": "UINTEGER",
+          "kind": "scalar",
+          "nullable": true,
+          "since": 1,
+          "retiredIn": null,
+          "enum": null
+        }
+      ],
+      "ledger": [
+        {
+          "kinds": {
+            "column": "kind",
+            "values": ["RewardGranted"]
+          },
+          "currency": "gold",
+          "bucket": "mint",
+          "sign": 1,
+          "token": "sovereign_reward",
+          "leg": null,
+          "filter": "gold <> 0",
+          "amount": "gold",
+          "item": null,
+          "player": "player_id",
+          "counterparty": null,
+          "counted": false,
+          "dedupOf": "mail_claim",
+          "untilVersion": null,
+          "note": "MIRROR, never summed: the reward is mailed; the penya enters at gold_changes(MailClaim)"
+        },
+        {
+          "kinds": null,
+          "currency": "none",
+          "bucket": "none",
+          "sign": 0,
+          "token": "sovereign",
+          "leg": null,
+          "filter": "gold = 0",
+          "amount": null,
+          "item": null,
+          "player": "player_id",
+          "counterparty": null,
+          "counted": false,
+          "dedupOf": null,
+          "untilVersion": null,
+          "note": "NOT A LEDGER LEG: role assignments, the doctrine choice and power triggers move nothing"
+        }
+      ]
+    },
+    {
+      "id": 156,
+      "table": "world_boss_spawns",
+      "retired": true
+    }
+  ],
+  "enums": [
+    {
+      "name": "GrantKind",
+      "view": "enum_grant_kind",
+      "values": [
+        {
+          "code": 0,
+          "name": "UNKNOWN",
+          "retired": false
+        },
+        {
+          "code": 1,
+          "name": "BUYBACK_DELIVERY",
+          "retired": false
+        },
+        {
+          "code": 2,
+          "name": "BUFF_REWARD",
+          "retired": false
+        },
+        {
+          "code": 3,
+          "name": "LEVEL_UP_GIFT",
+          "retired": true
+        },
+        {
+          "code": 14,
+          "name": "BOSS_REWARD_MAIL",
+          "retired": false
+        },
+        {
+          "code": 15,
+          "name": "WORLD_BOSS_REWARD_MAIL",
+          "retired": true
+        },
+        {
+          "code": 16,
+          "name": "EVENT_REWARD",
+          "retired": false
+        },
+        {
+          "code": 22,
+          "name": "MAIL_RETURN",
+          "retired": false
+        },
+        {
+          "code": 23,
+          "name": "PERIN_OVERFLOW",
+          "retired": false
+        },
+        {
+          "code": 27,
+          "name": "PLAYER_MAIL",
+          "retired": false
+        },
+        {
+          "code": 35,
+          "name": "FARM_HARVEST",
+          "retired": false
+        },
+        {
+          "code": 47,
+          "name": "STARTER_ITEM",
+          "retired": false
+        },
+        {
+          "code": 48,
+          "name": "GUILD_DISBAND_BANK",
+          "retired": true
+        },
+        {
+          "code": 59,
+          "name": "AUCTION_ESCROW_RECOVERY",
+          "retired": false
+        }
+      ]
+    },
+    {
+      "name": "LifecycleKind",
+      "view": "enum_lifecycle_kind",
+      "values": [
+        {
+          "code": 1,
+          "name": "Start",
+          "retired": false
+        },
+        {
+          "code": 2,
+          "name": "Stop",
+          "retired": false
+        }
+      ]
+    },
+    {
+      "name": "FarmEventKind",
+      "view": "enum_farm_event_kind",
+      "values": [
+        {
+          "code": 1,
+          "name": "Purchase",
+          "retired": false
+        },
+        {
+          "code": 2,
+          "name": "ClaimBatch",
+          "retired": false
+        },
+        {
+          "code": 3,
+          "name": "ClaimSlot",
+          "retired": false
+        },
+        {
+          "code": 4,
+          "name": "LevelUp",
+          "retired": false
+        },
+        {
+          "code": 5,
+          "name": "SetupModel",
+          "retired": false
+        },
+        {
+          "code": 6,
+          "name": "RemoveModel",
+          "retired": false
+        },
+        {
+          "code": 7,
+          "name": "UnlockModel",
+          "retired": false
+        },
+        {
+          "code": 8,
+          "name": "EnterOwn",
+          "retired": false
+        },
+        {
+          "code": 9,
+          "name": "VisitOther",
+          "retired": false
+        },
+        {
+          "code": 10,
+          "name": "Leave",
+          "retired": false
+        }
+      ]
+    },
+    {
+      "name": "SovereignEventKind",
+      "view": "enum_sovereign_event_kind",
+      "values": [
+        {
+          "code": 1,
+          "name": "RoleAssigned",
+          "retired": false
+        },
+        {
+          "code": 2,
+          "name": "DoctrineSet",
+          "retired": false
+        },
+        {
+          "code": 3,
+          "name": "PowerTriggered",
+          "retired": false
+        },
+        {
+          "code": 4,
+          "name": "RewardGranted",
+          "retired": false
+        }
+      ]
+    },
+    {
+      "name": "SovereignRole",
+      "view": "enum_sovereign_role",
+      "values": [
+        {
+          "code": 0,
+          "name": "None",
+          "retired": false
+        },
+        {
+          "code": 1,
+          "name": "Sovereign",
+          "retired": false
+        },
+        {
+          "code": 2,
+          "name": "MinisterMilitary",
+          "retired": false
+        },
+        {
+          "code": 3,
+          "name": "MinisterEconomy",
+          "retired": false
+        },
+        {
+          "code": 4,
+          "name": "MinisterEnvironment",
+          "retired": false
+        },
+        {
+          "code": 5,
+          "name": "MinisterCraftsmanship",
+          "retired": false
+        }
+      ]
+    },
+    {
+      "name": "SovereignDoctrine",
+      "view": "enum_sovereign_doctrine",
+      "values": [
+        {
+          "code": 0,
+          "name": "None",
+          "retired": false
+        },
+        {
+          "code": 1,
+          "name": "Mythic",
+          "retired": false
+        },
+        {
+          "code": 2,
+          "name": "Military",
+          "retired": false
+        },
+        {
+          "code": 3,
+          "name": "Merchant",
+          "retired": false
+        },
+        {
+          "code": 4,
+          "name": "Progressive",
+          "retired": false
+        },
+        {
+          "code": 5,
+          "name": "Chancellor",
+          "retired": false
+        },
+        {
+          "code": 6,
+          "name": "Craftsmanship",
+          "retired": false
+        },
+        {
+          "code": 7,
+          "name": "Familiar",
+          "retired": false
+        }
+      ]
+    },
+    {
+      "name": "SovereignPower",
+      "view": "enum_sovereign_power",
+      "values": [
+        {
+          "code": 0,
+          "name": "None",
+          "retired": false
+        },
+        {
+          "code": 1,
+          "name": "MinisterBuffPrimary",
+          "retired": false
+        },
+        {
+          "code": 2,
+          "name": "MinisterBuffSecondary",
+          "retired": false
+        },
+        {
+          "code": 3,
+          "name": "WorldBossSpawn",
+          "retired": true
+        },
+        {
+          "code": 4,
+          "name": "HiddenBonds",
+          "retired": false
+        },
+        {
+          "code": 5,
+          "name": "Heistia",
+          "retired": false
+        },
+        {
+          "code": 6,
+          "name": "AzuriaAuction",
+          "retired": false
+        },
+        {
+          "code": 7,
+          "name": "MinisterBuffTertiary",
+          "retired": false
+        },
+        {
+          "code": 8,
+          "name": "CustomDrop",
+          "retired": false
+        }
+      ]
+    }
+  ]
+}

@@ -39,7 +39,7 @@ func typesOperators() []operator {
 		op(diag.E3023.Def().Code, "TYPES.md §7.4 (range on Bool)", rangeOnBool),
 		op(diag.E3025.Def().Code, "TYPES.md §13.3 (Float bound in a Range)", fnStatementFocus("let zzR: Range = ", "1.5..3", "")),
 		op(diag.E3101.Def().Code, "TYPES.md §9.3 (duplicate table key)", duplicateTableEntry),
-		op(diag.E3102.Def().Code, "TYPES.md §9.1 (@codes code twice)", codeTwice),
+		{code: diag.E3102.Def().Code, rule: "TYPES.md §9.1 (@codes code twice)", also: []diag.Code{diag.E6002.Def().Code}, sites: codeTwice},
 		op(diag.E3103.Def().Code, "TYPES.md §9.3 (entry of a non-table)", entryOfNonTable),
 		op(diag.E3201.Def().Code, "TYPES.md §7.2 (code outside its @codes type)", codeOutOfRange),
 		op(diag.E3204.Def().Code, "TYPES.md §7.4 (default below its range)", defaultBelowRange),

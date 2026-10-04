@@ -24,6 +24,7 @@ var exampleTargets = map[string][]canon.Target{
 	"resource.farm":      {canon.TargetGo, canon.TargetJSON, canon.TargetView},
 	"resource.events":    {canon.TargetGo, canon.TargetJSON, canon.TargetView},
 	"resource.vocab":     {canon.TargetCpp, canon.TargetView},
+	"telemetry":          {canon.TargetGo, canon.TargetCpp, canon.TargetText},
 }
 
 // targetsFor is exampleTargets[name], or defaultTargets without a row.

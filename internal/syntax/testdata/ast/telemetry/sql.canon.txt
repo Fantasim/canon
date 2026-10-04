@@ -1,0 +1,272 @@
+File: File FileKind=source @1:1-48:1
+  Package: QualifiedName telemetry @1:9-1:18
+  Decls[0]: FnDecl @7:1-9:2
+    Doc: DocComment "The vocabularies some column holds, in first-use order: the enum views the lake needs." @6:1-6:91
+    Name: Ident usedVocabularies @7:4-7:20
+    Result: ListType @7:26-7:38
+      Elem: NamedType @7:27-7:37
+        Name: QualifiedName Vocabulary @7:27-7:37
+    Body: Block @7:39-9:2
+      Stmts[0]: ReturnStmt @8:3-8:98
+        Value: CallExpr @8:10-8:98
+          Fun: SelectorExpr @8:10-8:96
+            X: ListComp @8:10-8:89
+              Elem: SelectorExpr @8:11-8:19
+                X: IdentExpr c @8:11-8:12
+                Name: Ident values @8:13-8:19
+              Clauses[0]: CompClause Keyword=for @8:20-8:41
+                Vars[0]: Ident e @8:24-8:25
+                X: CallExpr @8:29-8:41
+                  Fun: IdentExpr liveEvents @8:29-8:39
+              Clauses[1]: CompClause Keyword=for @8:42-8:68
+                Vars[0]: Ident c @8:46-8:47
+                X: SelectorExpr @8:51-8:68
+                  X: IndexExpr @8:51-8:60
+                    X: IdentExpr events @8:51-8:57
+                    Index: IdentExpr e @8:58-8:59
+                  Name: Ident columns @8:61-8:68
+              Clauses[2]: CompClause Keyword=if @8:69-8:88
+                X: BinaryExpr Op=!= @8:72-8:88
+                  X: SelectorExpr @8:72-8:80
+                    X: IdentExpr c @8:72-8:73
+                    Name: Ident values @8:74-8:80
+                  Y: NoneLit @8:84-8:88
+            Name: Ident unique @8:90-8:96
+  Decls[1]: FnDecl @13:1-17:2
+    Doc: DocComment "Every table's CREATE TABLE, one per line, in id order. The ingester runs it at boot and\ncompares it with the table it finds (the lake schema must match)." @11:1-12:70
+    Annotations[0]: Annotation @13:1-13:20
+      Name: Ident text @13:2-13:6
+      Args[0]: AnnotationArg @13:7-13:19
+        Value: StringLit @13:7-13:19
+          Parts[0]: text "tables.sql"
+    Mods: Modifiers Export="export" @14:1-14:7
+    Name: Ident tablesSql @14:11-14:20
+    Result: NamedType @14:26-14:32
+      Name: QualifiedName String @14:26-14:32
+    Body: Block @14:33-17:2
+      Stmts[0]: LetStmt @15:3-15:95
+        Name: Ident header @15:7-15:13
+        Value: StringLit @15:16-15:95
+          Parts[0]: text "-- The lake tables of the telemetry catalogue, contract "
+          Parts[1]: Interp @15:74-15:90
+            X: IdentExpr CONTRACT_VERSION @15:74-15:90
+          Parts[2]: text ".\n"
+      Stmts[1]: ReturnStmt @16:3-16:76
+        Value: BinaryExpr Op=+ @16:10-16:76
+          X: IdentExpr header @16:10-16:16
+          Y: CallExpr @16:19-16:76
+            Fun: SelectorExpr @16:19-16:72
+              X: ListComp @16:19-16:67
+                Elem: BinaryExpr Op=+ @16:20-16:44
+                  X: CallExpr @16:20-16:37
+                    Fun: IdentExpr createTableSql @16:20-16:34
+                    Args[0]: Arg @16:35-16:36
+                      Value: IdentExpr e @16:35-16:36
+                  Y: StringLit @16:40-16:44
+                    Parts[0]: text "\n"
+                Clauses[0]: CompClause Keyword=for @16:45-16:66
+                  Vars[0]: Ident e @16:49-16:50
+                  X: CallExpr @16:54-16:66
+                    Fun: IdentExpr liveEvents @16:54-16:64
+              Name: Ident join @16:68-16:72
+            Args[0]: Arg @16:73-16:75
+              Value: StringLit @16:73-16:75
+  Decls[2]: FnDecl @20:1-23:2
+    Doc: DocComment "One enum view: value to label." @19:1-19:35
+    Name: Ident enumView @20:4-20:12
+    Params[0]: Param @20:13-20:26
+      Name: Ident v @20:13-20:14
+      Type: NamedType @20:16-20:26
+        Name: QualifiedName Vocabulary @20:16-20:26
+    Result: NamedType @20:31-20:37
+      Name: QualifiedName String @20:31-20:37
+    Body: Block @20:38-23:2
+      Stmts[0]: LetStmt @21:3-21:75
+        Name: Ident rows @21:7-21:11
+        Value: CallExpr @21:14-21:75
+          Fun: SelectorExpr @21:14-21:68
+            X: ListComp @21:14-21:63
+              Elem: StringLit @21:15-21:43
+                Parts[0]: text "    ("
+                Parts[1]: Interp @21:22-21:28
+                  X: SelectorExpr @21:22-21:28
+                    X: IdentExpr l @21:22-21:23
+                    Name: Ident code @21:24-21:28
+                Parts[2]: text ", '"
+                Parts[3]: Interp @21:33-21:39
+                  X: SelectorExpr @21:33-21:39
+                    X: IdentExpr l @21:33-21:34
+                    Name: Ident name @21:35-21:39
+                Parts[4]: text "')"
+              Clauses[0]: CompClause Keyword=for @21:44-21:62
+                Vars[0]: Ident l @21:48-21:49
+                X: CallExpr @21:53-21:62
+                  Fun: IdentExpr labels @21:53-21:59
+                  Args[0]: Arg @21:60-21:61
+                    Value: IdentExpr v @21:60-21:61
+            Name: Ident join @21:64-21:68
+          Args[0]: Arg @21:69-21:74
+            Value: StringLit @21:69-21:74
+              Parts[0]: text ",\n"
+      Stmts[1]: ReturnStmt @22:3-22:119
+        Value: StringLit @22:10-22:119
+          Parts[0]: text "-- "
+          Parts[1]: Interp @22:15-22:26
+            X: CallExpr @22:15-22:26
+              Fun: IdentExpr enumName @22:15-22:23
+              Args[0]: Arg @22:24-22:25
+                Value: IdentExpr v @22:24-22:25
+          Parts[2]: text "\nCREATE OR REPLACE VIEW enum_"
+          Parts[3]: Interp @22:58-22:59
+            X: IdentExpr v @22:58-22:59
+          Parts[4]: text " AS\nSELECT * FROM (VALUES\n"
+          Parts[5]: Interp @22:89-22:93
+            X: IdentExpr rows @22:89-22:93
+          Parts[6]: text "\n) AS t(value, name);\n"
+  Decls[3]: FnDecl @27:1-47:2
+    Doc: DocComment "The enum views every enum8 column resolves through, then the (table, column) to view\nmap, then the event catalogue." @25:1-26:35
+    Annotations[0]: Annotation @27:1-27:19
+      Name: Ident text @27:2-27:6
+      Args[0]: AnnotationArg @27:7-27:18
+        Value: StringLit @27:7-27:18
+          Parts[0]: text "enums.sql"
+    Mods: Modifiers Export="export" @28:1-28:7
+    Name: Ident enumsSql @28:11-28:19
+    Result: NamedType @28:25-28:31
+      Name: QualifiedName String @28:25-28:31
+    Body: Block @28:32-47:2
+      Stmts[0]: LetStmt @29:3-29:67
+        Name: Ident views @29:7-29:12
+        Value: CallExpr @29:15-29:67
+          Fun: SelectorExpr @29:15-29:61
+            X: ListComp @29:15-29:56
+              Elem: CallExpr @29:16-29:27
+                Fun: IdentExpr enumView @29:16-29:24
+                Args[0]: Arg @29:25-29:26
+                  Value: IdentExpr v @29:25-29:26
+              Clauses[0]: CompClause Keyword=for @29:28-29:55
+                Vars[0]: Ident v @29:32-29:33
+                X: CallExpr @29:37-29:55
+                  Fun: IdentExpr usedVocabularies @29:37-29:53
+            Name: Ident join @29:57-29:61
+          Args[0]: Arg @29:62-29:66
+            Value: StringLit @29:62-29:66
+              Parts[0]: text "\n"
+      Stmts[1]: LetStmt @30:3-35:16
+        Name: Ident columnRows @30:7-30:17
+        Value: CallExpr @30:20-35:16
+          Fun: SelectorExpr @30:20-35:9
+            X: ListComp @30:20-35:4
+              Elem: StringLit @31:5-31:73
+                Parts[0]: text "    ('"
+                Parts[1]: Interp @31:13-31:14
+                  X: IdentExpr e @31:13-31:14
+                Parts[2]: text "', '"
+                Parts[3]: Interp @31:20-31:26
+                  X: SelectorExpr @31:20-31:26
+                    X: IdentExpr c @31:20-31:21
+                    Name: Ident name @31:22-31:26
+                Parts[4]: text "', '"
+                Parts[5]: Interp @31:32-31:50
+                  X: CallExpr @31:32-31:50
+                    Fun: IdentExpr enumName @31:32-31:40
+                    Args[0]: Arg @31:41-31:49
+                      Value: SelectorExpr @31:41-31:49
+                        X: IdentExpr c @31:41-31:42
+                        Name: Ident values @31:43-31:49
+                Parts[6]: text "', 'enum_"
+                Parts[7]: Interp @31:61-31:69
+                  X: SelectorExpr @31:61-31:69
+                    X: IdentExpr c @31:61-31:62
+                    Name: Ident values @31:63-31:69
+                Parts[8]: text "')"
+              Clauses[0]: CompClause Keyword=for @32:5-32:26
+                Vars[0]: Ident e @32:9-32:10
+                X: CallExpr @32:14-32:26
+                  Fun: IdentExpr liveEvents @32:14-32:24
+              Clauses[1]: CompClause Keyword=for @33:5-33:31
+                Vars[0]: Ident c @33:9-33:10
+                X: SelectorExpr @33:14-33:31
+                  X: IndexExpr @33:14-33:23
+                    X: IdentExpr events @33:14-33:20
+                    Index: IdentExpr e @33:21-33:22
+                  Name: Ident columns @33:24-33:31
+              Clauses[2]: CompClause Keyword=if @34:5-34:24
+                X: BinaryExpr Op=!= @34:8-34:24
+                  X: SelectorExpr @34:8-34:16
+                    X: IdentExpr c @34:8-34:9
+                    Name: Ident values @34:10-34:16
+                  Y: NoneLit @34:20-34:24
+            Name: Ident join @35:5-35:9
+          Args[0]: Arg @35:10-35:15
+            Value: StringLit @35:10-35:15
+              Parts[0]: text ",\n"
+      Stmts[2]: LetStmt @36:3-39:16
+        Name: Ident catalogRows @36:7-36:18
+        Value: CallExpr @36:21-39:16
+          Fun: SelectorExpr @36:21-39:9
+            X: ListComp @36:21-39:4
+              Elem: StringLit @37:5-37:79
+                Parts[0]: text "    ('"
+                Parts[1]: Interp @37:13-37:14
+                  X: IdentExpr e @37:13-37:14
+                Parts[2]: text "', "
+                Parts[3]: Interp @37:19-37:25
+                  X: SelectorExpr @37:19-37:25
+                    X: IdentExpr e @37:19-37:20
+                    Name: Ident code @37:21-37:25
+                Parts[4]: text ", '"
+                Parts[5]: Interp @37:30-37:39
+                  X: CallExpr @37:30-37:39
+                    Fun: IdentExpr tierOf @37:30-37:36
+                    Args[0]: Arg @37:37-37:38
+                      Value: IdentExpr e @37:37-37:38
+                Parts[6]: text "', "
+                Parts[7]: Interp @37:44-37:60
+                  X: CallExpr @37:44-37:60
+                    Fun: IdentExpr hasInstanceId @37:44-37:57
+                    Args[0]: Arg @37:58-37:59
+                      Value: IdentExpr e @37:58-37:59
+                Parts[8]: text ", "
+                Parts[9]: Interp @37:64-37:76
+                  X: CallExpr @37:64-37:76
+                    Fun: IdentExpr versionOf @37:64-37:73
+                    Args[0]: Arg @37:74-37:75
+                      Value: IdentExpr e @37:74-37:75
+                Parts[10]: text ")"
+              Clauses[0]: CompClause Keyword=for @38:5-38:26
+                Vars[0]: Ident e @38:9-38:10
+                X: CallExpr @38:14-38:26
+                  Fun: IdentExpr liveEvents @38:14-38:24
+            Name: Ident join @39:5-39:9
+          Args[0]: Arg @39:10-39:15
+            Value: StringLit @39:10-39:15
+              Parts[0]: text ",\n"
+      Stmts[3]: ReturnStmt @40:3-46:80
+        Value: BinaryExpr Op=+ @40:10-46:80
+          X: BinaryExpr Op=+ @40:10-45:93
+            X: BinaryExpr Op=+ @40:10-44:55
+              X: BinaryExpr Op=+ @40:10-43:67
+                X: BinaryExpr Op=+ @40:10-42:84
+                  X: BinaryExpr Op=+ @40:10-41:70
+                    X: IdentExpr views @40:10-40:15
+                    Y: StringLit @41:5-41:70
+                      Parts[0]: text "\n-- Which column of which table resolves through which view.\n"
+                  Y: StringLit @42:5-42:84
+                    Parts[0]: text "CREATE OR REPLACE VIEW enum_columns AS\nSELECT * FROM (VALUES\n"
+                    Parts[1]: Interp @42:70-42:80
+                      X: IdentExpr columnRows @42:70-42:80
+                    Parts[2]: text "\n"
+                Y: StringLit @43:5-43:67
+                  Parts[0]: text ") AS t(source_table, column_name, enum_name, lookup_view);\n"
+              Y: StringLit @44:5-44:55
+                Parts[0]: text "\n-- One row per live event type, in id order.\n"
+            Y: StringLit @45:5-45:93
+              Parts[0]: text "CREATE OR REPLACE VIEW event_catalog_static AS\nSELECT * FROM (VALUES\n"
+              Parts[1]: Interp @45:78-45:89
+                X: IdentExpr catalogRows @45:78-45:89
+              Parts[2]: text "\n"
+          Y: StringLit @46:5-46:80
+            Parts[0]: text ") AS t(source_table, event_type, tier, has_instance_id, event_version);\n"
+== findings
+0 errors, 0 warnings in 1 package (…)

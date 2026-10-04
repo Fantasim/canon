@@ -1,0 +1,190 @@
+package telemetry
+
+// The telemetry enums: one byte on the wire, written into Parquet and read by monitoring
+// panels, so their codes are a contract (`@codes`, kept by the lock) and a value no longer
+// emitted is `retired`, never deleted or reused. Member names are the labels the lake's
+// enum views show.
+
+/// What happened in a farm. All ten kinds are WorldServer hooks with one FarmManager caller.
+enum FarmEventKind @codes(UInt8) {
+  /// FarmManager::PurchaseFarm. cost (v1) is the config purchase price.
+  Purchase = 1
+  /// FarmManager::ClaimItems, the claim-everything button. item_count = total granted.
+  ClaimBatch = 2
+  /// FarmManager::ClaimSlot, one slot. item_count = the caller's nGranted.
+  ClaimSlot = 3
+  /// FarmManager::LevelUpModel. Paid in items, never in penya.
+  LevelUp = 4
+  /// FarmManager::SetupModel.
+  SetupModel = 5
+  /// FarmManager::RemoveModel.
+  RemoveModel = 6
+  /// FarmManager::UnlockModel. type_id = the model type; slot_index is carried.
+  UnlockModel = 7
+  /// FarmManager::EnterFarm.
+  EnterOwn = 8
+  /// FarmManager::VisitFarm. target_player_id = whose farm.
+  VisitOther = 9
+  /// FarmManager::LeaveFarm.
+  Leave = 10
+}
+
+/// One fact of a reign, CoreServer only (SovereignManager).
+enum SovereignEventKind @codes(UInt8) {
+  /// RunElection: one row per assignee, never one per election.
+  RoleAssigned = 1
+  /// HandleSetDoctrine, past every refusal.
+  DoctrineSet = 2
+  /// The confirmed leg of a power; used/max are the post-increment quota counters.
+  PowerTriggered = 3
+  /// SendElectionRewardMails, one row per recipient, only when the reward is not empty.
+  RewardGranted = 4
+}
+
+/// Which seat. A mirror of Sovereign::SovereignRole, mapped by an explicit switch.
+enum SovereignRole @codes(UInt8) {
+  /// The row is not about a seat.
+  None = 0
+  Sovereign = 1
+  MinisterMilitary = 2
+  MinisterEconomy = 3
+  MinisterEnvironment = 4
+  MinisterCraftsmanship = 5
+}
+
+/// Which doctrine the sovereign picked. A mirror of Sovereign::DoctrineType.
+enum SovereignDoctrine @codes(UInt8) {
+  /// No doctrine on this row (every kind but DoctrineSet).
+  None = 0
+  Mythic = 1
+  Military = 2
+  Merchant = 3
+  Progressive = 4
+  Chancellor = 5
+  Craftsmanship = 6
+  Familiar = 7
+}
+
+/// Which power was used. Not a 1:1 mirror of Sovereign::SovereignPowerKind: it adds the
+/// minister buff slots, separate quotas.
+enum SovereignPower @codes(UInt8) {
+  /// No power on this row.
+  None = 0
+  MinisterBuffPrimary = 1
+  MinisterBuffSecondary = 2
+  /// The world boss spawn power, removed with the WorldBoss system on 2026-09-03.
+  retired WorldBossSpawn = 3
+  HiddenBonds = 4
+  /// task_id = the scheduled Heistia index.
+  Heistia = 5
+  AzuriaAuction = 6
+  MinisterBuffTertiary = 7
+  CustomDrop = 8
+}
+
+/// A producer's boot or clean stop. A Start with no Stop before a later boot is a crash.
+enum LifecycleKind @codes(UInt8) { Start = 1, Stop = 2 }
+
+/// Why an item was minted: one value per SendSystemItem / SendMail caller family
+/// (trimmed: 14 of 62).
+enum GrantKind @codes(UInt8) {
+  /// No kind reached the row; never an item_created row, the untyped byte of mail rows.
+  UNKNOWN = 0
+  /// CDPCoreClient::OnReceiveBuyBackResponse.
+  BUYBACK_DELIVERY = 1
+  /// IBuffItemBase::Release.
+  BUFF_REWARD = 2
+  /// The CEventLua level-up gift, removed; historical rows keep the code.
+  retired LEVEL_UP_GIFT = 3
+  /// GameEventGeneral::OnBossKilled (server-dungeon raid currency).
+  BOSS_REWARD_MAIL = 14
+  /// OnWorldBossKilled, removed with the WorldBoss system on 2026-09-03.
+  retired WORLD_BOSS_REWARD_MAIL = 15
+  /// Rainbow race, secret room, Heistia, PvP event rewards; mailed remainders.
+  EVENT_REWARD = 16
+  /// Not a mint: a returned, unclaimed or would-not-fit mail re-posts existing items.
+  MAIL_RETURN = 22
+  /// MoneyState::HandleMoneyIn's split-on-credit perin mint.
+  PERIN_OVERFLOW = 23
+  /// Not a mint: a player-to-player mail's items, seen from the mail side.
+  PLAYER_MAIL = 27
+  /// FarmManager::ClaimModel, farm production granted to the inventory.
+  FARM_HARVEST = 35
+  /// CDbManager::CreatePlayer: the starting items, DatabaseServer.
+  STARTER_ITEM = 47
+  /// The guild disband payout mail, removed; historical mail rows keep the code.
+  retired GUILD_DISBAND_BANK = 48
+  /// An Azuria escrow re-mailed after a restart: a possible duplicate of a release.
+  AUCTION_ESCROW_RECOVERY = 59
+}
+
+/// The telemetry enums a column can hold. The member name is the lake's lookup view
+/// (`enum_<name>`).
+enum Vocabulary {
+  farm_event_kind
+  sovereign_event_kind
+  sovereign_role
+  sovereign_doctrine
+  sovereign_power
+  lifecycle_kind
+  grant_kind
+}
+
+/// A member of vocabulary `v`: what a ledger role splitting on a `v` column names.
+type Member(v: Vocabulary) = match v {
+  farm_event_kind => FarmEventKind
+  sovereign_event_kind => SovereignEventKind
+  sovereign_role => SovereignRole
+  sovereign_doctrine => SovereignDoctrine
+  sovereign_power => SovereignPower
+  lifecycle_kind => LifecycleKind
+  grant_kind => GrantKind
+}
+
+/// The Canon enum behind vocabulary `v`, as the lake's catalogue names it.
+fn enumName(v: Vocabulary) -> String {
+  return match v {
+    farm_event_kind => "FarmEventKind"
+    sovereign_event_kind => "SovereignEventKind"
+    sovereign_role => "SovereignRole"
+    sovereign_doctrine => "SovereignDoctrine"
+    sovereign_power => "SovereignPower"
+    lifecycle_kind => "LifecycleKind"
+    grant_kind => "GrantKind"
+  }
+}
+
+/// One member of a vocabulary, as the lake's enum view lists it.
+local record Label {
+  /// The member's code: the byte on the wire.
+  code: Int
+  /// The member's name: the label panels show.
+  name: String
+  /// No producer writes it any more; old rows still carry the code.
+  isRetired: Bool
+}
+
+/// The members of vocabulary `v`, retired ones included, in code order.
+fn labels(v: Vocabulary) -> [Label] {
+  let all = match v {
+    farm_event_kind =>
+      FarmEventKind.members.map(m => Label { code: m.code, name: m.name, isRetired: m.retired })
+    sovereign_event_kind => SovereignEventKind.members.map(
+      m => Label { code: m.code, name: m.name, isRetired: m.retired },
+    )
+    sovereign_role =>
+      SovereignRole.members.map(m => Label { code: m.code, name: m.name, isRetired: m.retired })
+    sovereign_doctrine =>
+      SovereignDoctrine.members.map(m => Label { code: m.code, name: m.name, isRetired: m.retired })
+    sovereign_power =>
+      SovereignPower.members.map(m => Label { code: m.code, name: m.name, isRetired: m.retired })
+    lifecycle_kind =>
+      LifecycleKind.members.map(m => Label { code: m.code, name: m.name, isRetired: m.retired })
+    grant_kind =>
+      GrantKind.members.map(m => Label { code: m.code, name: m.name, isRetired: m.retired })
+  }
+  return all.sortBy(.code)
+}
+
+/// The live member names of vocabulary `v`.
+fn liveNames(v: Vocabulary) -> [String] { return [l.name for l in labels(v) if not l.isRetired] }
