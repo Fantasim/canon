@@ -32,8 +32,10 @@ Read it in this repository (`telemetry.canon`, `vocab.canon`, `events.canon`, `s
 
 - **EventType**: `enum EventType @codes(UInt8)`, one member per event named after its lake table, so
   one name is the event id, the table name and the C++/Go enumerator. Tombstones are retired members
-  (`retired mail_items_received = 20`, `retired world_boss_spawns = 156`); `canon.lock` pins every
-  code.
+  (`retired mail_item_received = 20`, `retired world_boss_spawns = 156`); `canon.lock` pins every
+  code. **Assumption**: tombstone 20's lake table name is unknown (Source only has
+  `EVENT_MAIL_ITEM_RECEIVED` in a comment); the member is named after the event, so Source should
+  confirm it before the port, since the lock pins the name.
 - **Vocabularies**: Tier, Producer, Enqueue, SqlType, FieldKind, Currency, Bucket, Leg are enums; the
   telemetry enums (FarmEventKind, SovereignEvent*, LifecycleKind, GrantKind) are `@codes`, member
   descriptions are doc comments (they reach C++ and Go), removed values are retired members. A
@@ -80,11 +82,13 @@ strict per version, the lake reads by name). Not checkable across builds yet (se
   event_type, tier, has_instance_id, event_version)` with plain integers (no `CAST AS SMALLINT`),
   no `event_type_name` or `columns` (now in catalog.json): the hand-written `event_catalog` macro
   needs adapting.
-- **catalog.json**: a new documented format 1 (2-space indent, documented key order; no
+- **catalog.json**: format **2**, the Canon-native shape (format 1 stays gen_catalog.py's, so a
+  format-1 reader refuses it; 2-space indent, documented key order; no
   schema_hash, views hashes or generated_by); every event type in id order, tombstones as
   `{id, table, retired: true}` (replaces `retired_event_ids`); live events carry since, enqueue,
   wireSize, columns (header first, retiredIn in place), ledger roles; enums `{name, view, values:
-  [{code, name, retired}]}`.
+  [{code, name, retired}]}`. Its strings are hand-escaped in Canon (safe for the printable-ASCII
+  text the package allows); a JSON encoder for `@text` bodies is a logged Canon later item.
 - **Not produced**: `_timeline_union.sql`, `_ledger_map.sql`, `schema.lock.json`, the producer_kinds
   listing (Source decides whether to derive them from Canon or drop them).
 - **C++**: `Telemetry::EventType` is an `enum class` with table-name members, not `EVENT_X`;
@@ -102,6 +106,14 @@ strict per version, the lake reads by name). Not checkable across builds yet (se
   `canon` version to a commit after CI is green again.
 - Canon does not yet check version history across builds (nested keyed lists have no lock facts):
   a language change if wanted.
+
+## Canon fixes found by this dry run (all landed)
+
+`String(x)` leaked a type parameter into the checker's Info; a keyword-named member (`Leg.in`) kept a
+stray formatter comma (DECISIONS 302); a binder on an unknown match case cascaded; `ref == ref?`
+compared with a symbolic key and gave a wrong answer, and an optional name in scope became a key in
+argument, list, `contains` and field positions (now `E3403`, DECISIONS 303). Language additions it
+led to: `E.members`/`.retired` (299), `@text` fns as files (300), `SQL` initialism (301).
 
 ## How to consume
 

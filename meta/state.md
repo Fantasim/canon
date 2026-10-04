@@ -6,13 +6,18 @@ DECISIONS 293-298. M5 accepted (CI run 36973712977).
 
 ## Current focus
 
-**Telemetry readiness** (Louis: before M6's legacy C++, which waits; Source ADR L-0111 d.1.8).
-Landed, reviewed PASS, `make check` green: CB C++ `baked` mode with constexpr scalar lookups (293),
-baked edges (296: local-table refs not finite, `Get` aborts) and define-table branches of dependent
-types written in Go and C++ (298) (`6fcb139`, `43f1ff3`); TX the `text` target with `@text`, the
-`.canon-text` ownership file, `TargetText` in the API, portable names (294, 295, 297) (`8f8da42`).
-In flight: TE `examples/telemetry` (7 real events, Canon-native design, no gen_views.py quirks:
-Louis, "elegance over legacy"), integration cleanup. Then the Source handoff note.
+**Telemetry readiness: done** (Louis: before M6's legacy C++, which waits; Source ADR L-0111
+d.1.8). Landed, each green under `make check`: C++ `baked` + constexpr lookups + define-branch
+values (293, 296, 298; `6fcb139`, `43f1ff3`); the `text` target (294, 295, 297, 300; `8f8da42`,
+`67e777f`); enum reflection `E.members`/`.retired` (299, `ffae68b`); `SQL` initialism (301); fixes
+found by the dry run: keyword-after-dot items (302, `7616293`), `String(x)` Info leak, unknown-case
+binder cascade, `ref == ref?` wrong answer, optional names never symbolic keys (303, `f96d2fa`,
+`ca285e0`, `03fa330`); `examples/telemetry` (`9d53590`, `3b3c3a0`), the first real use: 7 events,
+Canon-native design (Louis, "elegance over legacy"). ADR-0014. Handoff to Source:
+[handoff/2026-10-04-telemetry-canon-ready.md](handoff/2026-10-04-telemetry-canon-ready.md).
+Louis question pending: [louis-calls Q1](handoff/2026-10-04-louis-calls.md) (what "retired" forbids).
+Not reviewed by a spec-reviewer (weekly limit hit): R4's three fixes and TE round 3 (orchestrator
+read the diffs; `make check` green). Re-review when the limit resets (2026-10-06).
 Cloud run 1 (2026-10-03) landed 20 units: M6 TypeScript (T1), M5 gaps, bugs, LX, hardening
 (report [handoff/2026-10-03-cloud-m6-run-1.md](handoff/2026-10-03-cloud-m6-run-1.md)).
 **Blocked:** CI (Actions billing, Louis), then push main.

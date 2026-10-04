@@ -30,3 +30,6 @@ the narration.
 | [0009](0009-check-info-broken-views.md) | `check.Info.BrokenViews`: which views hold an error |
 | [0010](0010-edit-journal-recovery.md) | The edit journal: crash recovery and its threat model |
 | [0011](0011-incremental-memo.md) | The incremental memo: one store, epochs, lineages |
+| [0012](0012-formatter-region-settle.md) | Rewrite settles one section; the layout verdict is kept per tree |
+| [0013](0013-rename-whole-file-layout.md) | A name rename splices tokens and lays the whole file out |
+| [0014](0014-cpp-baked-and-text-files.md) | C++ baked data, constexpr lookups and text-file ownership |
