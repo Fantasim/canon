@@ -1,0 +1,23 @@
+TYPES.md §12.6, §1: a binding on an unknown case has the error type, so its uses report nothing more.
+-- a/a.canon --
+package a
+
+local variant V {
+  a {
+    n: Int
+  }
+  b
+}
+
+local fn f(v: V) -> Int {
+  return match v {
+    a(x) => x.n
+    b => 0
+    zz(y) => y.n
+  }
+}
+-- findings.txt --
+error[E3603]  a/a.canon:14:5
+  zz(y) is not a case of a.V
+
+1 error, 0 warnings in 1 package (…)

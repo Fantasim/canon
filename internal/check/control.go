@@ -47,6 +47,7 @@ func (c *checker) armEnv(env *env, x syntax.Expr, ps []*syntax.Pattern, o *objec
 		ae = ae.withFacts(facts{key: {root: root}})
 	}
 	if o == nil || o.kind != ObjCase {
+		c.errorBinders(ae, ps)
 		return ae
 	}
 	if stable {
@@ -56,6 +57,22 @@ func (c *checker) armEnv(env *env, x syntax.Expr, ps []*syntax.Pattern, o *objec
 		c.declare(ae, b, c.newLocal(ae, ObjLocal, b, ps[0], o.typ))
 	}
 	return ae
+}
+
+// errorBinders gives the binders of an arm that binds no case the error type, silent on use (TYPES.md §1).
+func (c *checker) errorBinders(ae *env, ps []*syntax.Pattern) {
+	for _, p := range ps {
+		b := p.Binder
+		if b == nil {
+			continue
+		}
+		o := c.newLocal(ae, ObjLocal, b, p, types.ErrorType)
+		if _, dup := ae.scope.names[b.Name]; dup {
+			c.info.Defs[b] = o
+			continue
+		}
+		c.declare(ae, b, o)
+	}
 }
 
 // hasNoneArm reports a `none` pattern among the arms' patterns.

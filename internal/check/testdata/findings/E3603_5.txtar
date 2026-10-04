@@ -1,0 +1,49 @@
+TYPES.md §12.6, §1: a binding E3603 refuses (on an enum member, in an arm of several patterns, in a statement match) has the error type; its uses report nothing more.
+-- a/a.canon --
+package a
+
+local enum E { p, q }
+
+local variant V {
+  one {
+    n: Int = 0
+  }
+  two
+}
+
+local fn f(e: E) -> Int {
+  return match e {
+    p(x) => x.n
+    q => 0
+  }
+}
+
+local fn g(v: V) -> Int {
+  return match v {
+    one(x), two(x) => x.n
+  }
+}
+
+local fn h(v: V) -> Int {
+  var r = 0
+  match v {
+    one(x) => { r = x.n }
+    two => { r = 1 }
+    nope(z) => { r = z.n }
+  }
+  return r
+}
+-- findings.txt --
+error[E3603]  a/a.canon:14:5
+  p(x) is not a member of a.E
+
+error[E3603]  a/a.canon:21:9
+  one(x) is not a case of a.V
+
+error[E3603]  a/a.canon:21:17
+  two(x) is not a case of a.V
+
+error[E3603]  a/a.canon:30:5
+  nope(z) is not a case of a.V
+
+4 errors, 0 warnings in 1 package (…)
