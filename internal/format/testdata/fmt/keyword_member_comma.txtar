@@ -1,0 +1,32 @@
+GRAMMAR.md §3.1 rule 2 and DECISIONS 302: a keyword right after "." is a name and can end an
+item, so `Leg.in` keeps no comma, as `Leg.x` does (DECISIONS 211's keyword rule is for bare words).
+-- in.canon --
+package p
+
+enum Leg { out, in, x }
+let v = [
+  {
+    a: Leg.x, b: 1
+    c: 2
+  },
+  {
+    a: Leg.in, b: 1
+    c: 2
+  },
+]
+-- want --
+package p
+
+enum Leg { out, in, x }
+let v = [
+  {
+    a: Leg.x
+    b: 1
+    c: 2
+  },
+  {
+    a: Leg.in
+    b: 1
+    c: 2
+  },
+]

@@ -42,7 +42,7 @@ func (s *separator) separates(i int) bool {
 	if len(s.stack) > 0 && s.stack[len(s.stack)-1] != TokLBrace {
 		return false
 	}
-	if cannotEnd[s.toks[i-1].Kind] {
+	if cannotEnd[s.toks[i-1].Kind] && !nameAfterDot(s.toks, i-1) {
 		return false
 	}
 	if s.toks[i].Kind == TokAt {
@@ -52,6 +52,11 @@ func (s *separator) separates(i int) bool {
 		return startsDecl(s.toks, s.runEnd)
 	}
 	return !continuesLine[s.toks[i].Kind]
+}
+
+// nameAfterDot reports a keyword at i directly after "." or "?.": a member name (DECISIONS 302).
+func nameAfterDot(toks []Token, i int) bool {
+	return i > 0 && isWord(toks[i].Kind) && (toks[i-1].Kind == TokDot || toks[i-1].Kind == TokOptDot)
 }
 
 // skipAnnotations is the index after the run of annotations at i: "@" WORD ["(" … ")"].

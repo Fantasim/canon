@@ -44,6 +44,8 @@ func TestTokenStream(t *testing.T) {
 		{"§3.3 else continues", "check a\n  else \"m\"\nlet b = 1", `BOF check IDENT else STRING NL let IDENT = INT EOF`},
 		{"§3.3 . continues", "let a = b\n  .c()\nlet d = 1", `BOF let IDENT = IDENT . IDENT ( ) NL let IDENT = INT EOF`},
 		{"§3.1 rule 1: [ inside {, { inside [", "x = [\n  {\n    a: 1\n    b: 2\n  }\n  for c in d\n]", `BOF IDENT = [ { IDENT : INT NL IDENT : INT NL } for IDENT in IDENT ] EOF`},
+		{"§3.1 rule 2 DECISIONS 302: keyword after . ends an item", "x = {\n  a: L.in\n  b: 1\n}", `BOF IDENT = { IDENT : IDENT . in NL IDENT : INT NL } EOF`},
+		{"§3.1 rule 2 DECISIONS 302: x.in unchanged on one line", "x = {\n  a: y.in z\n}", `BOF IDENT = { IDENT : IDENT . in IDENT NL } EOF`},
 		{"§3.1 rule 4: own-line annotation continues", "a: Int = none\n  @deprecated(\"x\")\nb: Int", `BOF IDENT : IDENT = none @ IDENT ( STRING ) NL IDENT : IDENT EOF`},
 		{"§3.1 rule 4: prefix annotation", "x = 1\n@reload\n\nlet y = 2", `BOF IDENT = INT NL @ IDENT NL let IDENT = INT EOF`},
 		{"§3.1 rule 2: an operator ends no line", "a = b +\n  c\nd = 1", `BOF IDENT = IDENT + IDENT NL IDENT = INT EOF`},

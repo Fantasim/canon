@@ -114,10 +114,19 @@ func (b *builder) final(g *batch) []slot {
 		}
 		if p < len(g.removed) && !g.removed[p] {
 			n := g.l.items[p]
-			out = append(out, slot{at: p, item: p, from: -1, first: b.f.Tokens[n.First()].Kind, last: b.f.Tokens[n.Last()].Kind})
+			out = append(out, slot{at: p, item: p, from: -1, first: b.f.Tokens[n.First()].Kind, last: b.endKind(n)})
 		}
 	}
 	return out
+}
+
+// endKind is the kind ending n; a word after "." or "?." is a name (DECISIONS 302).
+func (b *builder) endKind(n syntax.Node) syntax.TokenKind {
+	last := n.Last()
+	if last > 0 && (b.f.Tokens[last-1].Kind == syntax.TokDot || b.f.Tokens[last-1].Kind == syntax.TokOptDot) && n.First() < last {
+		return syntax.TokIdent
+	}
+	return b.f.Tokens[last].Kind
 }
 
 // arriving is the slot of e at position p: a new text, read by the lexer, or a moved item.
@@ -128,7 +137,7 @@ func (b *builder) arriving(g *batch, p int, e arrival) slot {
 		return s
 	}
 	n := g.l.items[e.from]
-	s.first, s.last = b.f.Tokens[n.First()].Kind, b.f.Tokens[n.Last()].Kind
+	s.first, s.last = b.f.Tokens[n.First()].Kind, b.endKind(n)
 	return s
 }
 

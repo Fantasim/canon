@@ -54,5 +54,14 @@ func edges(t string) (first, last syntax.TokenKind) {
 	if len(kinds) == 0 {
 		return syntax.TokInvalid, syntax.TokInvalid
 	}
-	return kinds[0], kinds[len(kinds)-1]
+	return kinds[0], namedKind(kinds)
+}
+
+// namedKind is the kind ending kinds; a word after "." is a name (DECISIONS 302).
+func namedKind(kinds []syntax.TokenKind) syntax.TokenKind {
+	n := len(kinds) - 1
+	if n > 0 && (kinds[n-1] == syntax.TokDot || kinds[n-1] == syntax.TokOptDot) {
+		return syntax.TokIdent
+	}
+	return kinds[n]
 }

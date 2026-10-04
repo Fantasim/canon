@@ -22,7 +22,7 @@ func entries[N syntax.Node](b *builder, ns []N) []entry {
 	out := make([]entry, len(ns))
 	for i, n := range ns {
 		joins := joinsLine[b.f.Tokens[n.First()].Kind]
-		endJoin := cannotEndItem[b.f.Tokens[n.Last()].Kind]
+		endJoin := cannotEndItem[b.endKind(n)]
 		out[i] = entry{n: n, gap: b.gap(n.First()), joins: joins, endJoin: endJoin, kept: b.keeps(n.Last())}
 		if !b.skips(n) {
 			out[i].d, out[i].trail = b.parts(n, true)
