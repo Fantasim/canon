@@ -232,7 +232,7 @@ Exit: 0, 1, 2, 3, 4.
 ### 3.4 `canon build`
 
 ```
-canon build [packages…] [--layer …] [--target go|cpp|ts|json|view]… [--check] [--watch]
+canon build [packages…] [--layer …] [--target go|cpp|ts|json|view|text]… [--check] [--watch]
             [--adopt <path>]…
 ```
 
@@ -266,7 +266,7 @@ studio can show them; code, data and the lock are not. A build with `--layer` ne
   layered build.
 - **Report.** After the findings and the summary line (§2.4), the text report prints one line
   `adopting <path>` per adopted output, then lists the outputs the build changed (with `--check`:
-  would change), grouped by target in the order `go`, `cpp`, `ts`, `json`, `view`: a line
+  would change), grouped by target in the order `go`, `cpp`, `ts`, `json`, `view`, `text` (DECISIONS 294): a line
   `<target>:`, then one line per output, indented two spaces, in byte order; an adopted output is
   listed in its group too. Unchanged outputs are not listed. A `canon.lock` is listed, under
   `lock:`, only when it gains lines. Under `--check` every listed output and lock is prefixed

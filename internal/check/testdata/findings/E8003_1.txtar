@@ -5,6 +5,6 @@ package a
 emit rust { out: "@sovcommon/a" }
 -- findings.txt --
 error[E8003]  a/a.canon:3:6
-  unknown emit target rust: expected go, cpp, ts, json or view
+  unknown emit target rust: expected go, cpp, ts, json, view or text
 
 1 error, 0 warnings in 1 package (…)
