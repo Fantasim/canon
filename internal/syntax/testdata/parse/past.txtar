@@ -1,0 +1,306 @@
+GRAMMAR.md §4.2, §5.9 pastType, TYPES.md §8.4, DECISIONS 304 (log-2026-10-05 "304 implementation rulings"): `past` followed on its line by a token that can start a type, other than `(`, `{`, `from` and `keyed`, is a pastType, held as the Past token of the primary type after it: a name (`past X(args)` keeps its typeArgs, `past V?` is `(past V)?`), `ref`, a list (its typeArgs and `keyed by` outside), a table, a stable table, a function type, an asset, a type-level match, a string literal and `_`, so that check can judge them (E3024). Anywhere else `past` is an identifier: a type named `past` (alone, qualified `past.K`, before `?`, `|`, `)`, `,`, `{` of a fn body, `from env`, `keyed by` or a line break), a type function named `past` (`past(1..)`), the name after `past past`, a field, a let, a parameter and an expression named `past`. `past {K: V}` is the type `past` and a stray brace, `past keyed by id` a keyed name (E1137) and `[past` before a line break a name (d.canon). A second `past` is a name, so `past past X` leaves X stray (e.canon).
+-- a/a.canon --
+package a
+
+record Role {
+    kinds: [past GrantKind]
+    sold: [past ref items]
+    last: past V?
+    oldest: past GrantKind where it != GrantKind.a
+    pair: {past GrantKind: past ref items}
+    either: past A | B
+    refined: past a.Code(1..)
+    past: past
+    plain: past?
+    named: past.Kind
+    twice: past past
+    paren: (past GrantKind)
+    fun: fn(past GrantKind) -> past ref items
+    alone: past
+    next: Int
+    secret: input past from env "X"
+}
+
+type Old = past GrantKind
+type Alias = past | past.Kind
+type Fn = past(1..)
+let past: past = past + 1
+fn f(past: past, k: past) -> (past) { return past }
+fn g() -> past { return 1 }
+-- b/b.canon --
+package b
+
+type L = past [Int]
+type K = past [Event](..=3) keyed by id
+type T = past table T
+type S = past stable table T
+type F = past fn(Int) -> Int
+type A = past asset("@resource/Icon")
+type X = past match n { a => Int, _ => String }
+type Q = past "lit" | "other"
+type U = past _
+-- d/d.canon --
+package d
+
+type M = past {String: Int}
+type B = past keyed by id
+type N = [past
+    GrantKind]
+-- e/e.canon --
+package e
+
+type P = past past X
+-- ast --
+== a/a.canon
+File: File FileKind=source @1:1-28:1
+  Package: QualifiedName a @1:9-1:10
+  Decls[0]: RecordDecl @3:1-20:2
+    Name: Ident Role @3:8-3:12
+    Body: RecordBody @3:13-20:2
+      Items[0]: FieldDecl @4:5-4:28
+        Name: Ident kinds @4:5-4:10
+        Type: ListType @4:12-4:28
+          Elem: NamedType Past="past" @4:13-4:27
+            Name: QualifiedName GrantKind @4:18-4:27
+      Items[1]: FieldDecl @5:5-5:27
+        Name: Ident sold @5:5-5:9
+        Type: ListType @5:11-5:27
+          Elem: RefType Past="past" @5:12-5:26
+            Name: QualifiedName items @5:21-5:26
+      Items[2]: FieldDecl @6:5-6:18
+        Name: Ident last @6:5-6:9
+        Type: OptionalType @6:11-6:18
+          Elem: NamedType Past="past" @6:11-6:17
+            Name: QualifiedName V @6:16-6:17
+      Items[3]: FieldDecl @7:5-7:51
+        Name: Ident oldest @7:5-7:11
+        Type: WhereType @7:13-7:51
+          Base: NamedType Past="past" @7:13-7:27
+            Name: QualifiedName GrantKind @7:18-7:27
+          Pred: BinaryExpr Op=!= @7:34-7:51
+            X: IdentExpr it @7:34-7:36
+            Y: SelectorExpr @7:40-7:51
+              X: IdentExpr GrantKind @7:40-7:49
+              Name: Ident a @7:50-7:51
+      Items[4]: FieldDecl @8:5-8:43
+        Name: Ident pair @8:5-8:9
+        Type: MapType @8:11-8:43
+          Key: NamedType Past="past" @8:12-8:26
+            Name: QualifiedName GrantKind @8:17-8:26
+          Value: RefType Past="past" @8:28-8:42
+            Name: QualifiedName items @8:37-8:42
+      Items[5]: FieldDecl @9:5-9:23
+        Name: Ident either @9:5-9:11
+        Type: UnionType @9:13-9:23
+          Alts[0]: NamedType Past="past" @9:13-9:19
+            Name: QualifiedName A @9:18-9:19
+          Alts[1]: NamedType @9:22-9:23
+            Name: QualifiedName B @9:22-9:23
+      Items[6]: FieldDecl @10:5-10:30
+        Name: Ident refined @10:5-10:12
+        Type: NamedType Past="past" @10:14-10:30
+          Name: QualifiedName a.Code @10:19-10:25
+          Args: TypeArgs @10:25-10:30
+            Args[0]: RangeExpr Op=.. @10:26-10:29
+              Lo: IntLit Value=1 @10:26-10:27
+      Items[7]: FieldDecl @11:5-11:15
+        Name: Ident past @11:5-11:9
+        Type: NamedType @11:11-11:15
+          Name: QualifiedName past @11:11-11:15
+      Items[8]: FieldDecl @12:5-12:17
+        Name: Ident plain @12:5-12:10
+        Type: OptionalType @12:12-12:17
+          Elem: NamedType @12:12-12:16
+            Name: QualifiedName past @12:12-12:16
+      Items[9]: FieldDecl @13:5-13:21
+        Name: Ident named @13:5-13:10
+        Type: NamedType @13:12-13:21
+          Name: QualifiedName past.Kind @13:12-13:21
+      Items[10]: FieldDecl @14:5-14:21
+        Name: Ident twice @14:5-14:10
+        Type: NamedType Past="past" @14:12-14:21
+          Name: QualifiedName past @14:17-14:21
+      Items[11]: FieldDecl @15:5-15:28
+        Name: Ident paren @15:5-15:10
+        Type: ParenType @15:12-15:28
+          Type: NamedType Past="past" @15:13-15:27
+            Name: QualifiedName GrantKind @15:18-15:27
+      Items[12]: FieldDecl @16:5-16:46
+        Name: Ident fun @16:5-16:8
+        Type: FnType @16:10-16:46
+          Params[0]: NamedType Past="past" @16:13-16:27
+            Name: QualifiedName GrantKind @16:18-16:27
+          Result: RefType Past="past" @16:32-16:46
+            Name: QualifiedName items @16:41-16:46
+      Items[13]: FieldDecl @17:5-17:16
+        Name: Ident alone @17:5-17:10
+        Type: NamedType @17:12-17:16
+          Name: QualifiedName past @17:12-17:16
+      Items[14]: FieldDecl @18:5-18:14
+        Name: Ident next @18:5-18:9
+        Type: NamedType @18:11-18:14
+          Name: QualifiedName Int @18:11-18:14
+      Items[15]: FieldDecl Input="input" @19:5-19:36
+        Name: Ident secret @19:5-19:11
+        Type: NamedType @19:19-19:23
+          Name: QualifiedName past @19:19-19:23
+        Env: StringLit @19:33-19:36
+          Parts[0]: text "X"
+  Decls[1]: TypeDecl @22:1-22:26
+    Name: Ident Old @22:6-22:9
+    Type: NamedType Past="past" @22:12-22:26
+      Name: QualifiedName GrantKind @22:17-22:26
+  Decls[2]: TypeDecl @23:1-23:30
+    Name: Ident Alias @23:6-23:11
+    Type: UnionType @23:14-23:30
+      Alts[0]: NamedType @23:14-23:18
+        Name: QualifiedName past @23:14-23:18
+      Alts[1]: NamedType @23:21-23:30
+        Name: QualifiedName past.Kind @23:21-23:30
+  Decls[3]: TypeDecl @24:1-24:20
+    Name: Ident Fn @24:6-24:8
+    Type: NamedType @24:11-24:20
+      Name: QualifiedName past @24:11-24:15
+      Args: TypeArgs @24:15-24:20
+        Args[0]: RangeExpr Op=.. @24:16-24:19
+          Lo: IntLit Value=1 @24:16-24:17
+  Decls[4]: LetDecl @25:1-25:26
+    Name: Ident past @25:5-25:9
+    Type: NamedType @25:11-25:15
+      Name: QualifiedName past @25:11-25:15
+    Value: BinaryExpr Op=+ @25:18-25:26
+      X: IdentExpr past @25:18-25:22
+      Y: IntLit Value=1 @25:25-25:26
+  Decls[5]: FnDecl @26:1-26:52
+    Name: Ident f @26:4-26:5
+    Params[0]: Param @26:6-26:16
+      Name: Ident past @26:6-26:10
+      Type: NamedType @26:12-26:16
+        Name: QualifiedName past @26:12-26:16
+    Params[1]: Param @26:18-26:25
+      Name: Ident k @26:18-26:19
+      Type: NamedType @26:21-26:25
+        Name: QualifiedName past @26:21-26:25
+    Result: ParenType @26:30-26:36
+      Type: NamedType @26:31-26:35
+        Name: QualifiedName past @26:31-26:35
+    Body: Block @26:37-26:52
+      Stmts[0]: ReturnStmt @26:39-26:50
+        Value: IdentExpr past @26:46-26:50
+  Decls[6]: FnDecl @27:1-27:28
+    Name: Ident g @27:4-27:5
+    Result: NamedType @27:11-27:15
+      Name: QualifiedName past @27:11-27:15
+    Body: Block @27:16-27:28
+      Stmts[0]: ReturnStmt @27:18-27:26
+        Value: IntLit Value=1 @27:25-27:26
+== findings
+0 errors, 0 warnings in 1 package (…)
+== b/b.canon
+File: File FileKind=source @1:1-12:1
+  Package: QualifiedName b @1:9-1:10
+  Decls[0]: TypeDecl @3:1-3:20
+    Name: Ident L @3:6-3:7
+    Type: ListType Past="past" @3:10-3:20
+      Elem: NamedType @3:16-3:19
+        Name: QualifiedName Int @3:16-3:19
+  Decls[1]: TypeDecl @4:1-4:40
+    Name: Ident K @4:6-4:7
+    Type: KeyedType @4:10-4:40
+      List: ListType Past="past" @4:10-4:28
+        Elem: NamedType @4:16-4:21
+          Name: QualifiedName Event @4:16-4:21
+        Args: TypeArgs @4:22-4:28
+          Args[0]: RangeExpr Op=..= @4:23-4:27
+            Hi: IntLit Value=3 @4:26-4:27
+      Key: Ident id @4:38-4:40
+  Decls[2]: TypeDecl @5:1-5:22
+    Name: Ident T @5:6-5:7
+    Type: TableType Past="past" @5:10-5:22
+      Name: QualifiedName T @5:21-5:22
+  Decls[3]: TypeDecl @6:1-6:29
+    Name: Ident S @6:6-6:7
+    Type: TableType Past="past" Stable="stable" @6:10-6:29
+      Name: QualifiedName T @6:28-6:29
+  Decls[4]: TypeDecl @7:1-7:29
+    Name: Ident F @7:6-7:7
+    Type: FnType Past="past" @7:10-7:29
+      Params[0]: NamedType @7:18-7:21
+        Name: QualifiedName Int @7:18-7:21
+      Result: NamedType @7:26-7:29
+        Name: QualifiedName Int @7:26-7:29
+  Decls[5]: TypeDecl @8:1-8:38
+    Name: Ident A @8:6-8:7
+    Type: AssetType Past="past" @8:10-8:38
+      Dir: StringLit @8:21-8:37
+        Parts[0]: text "@resource/Icon"
+  Decls[6]: TypeDecl @9:1-9:48
+    Name: Ident X @9:6-9:7
+    Type: MatchType Past="past" @9:10-9:48
+      Scrutinee: IdentExpr n @9:21-9:22
+      Arms[0]: TypeArm @9:25-9:33
+        Patterns[0]: Pattern @9:25-9:26
+          Name: QualifiedName a @9:25-9:26
+        Type: NamedType @9:30-9:33
+          Name: QualifiedName Int @9:30-9:33
+      Arms[1]: TypeArm @9:35-9:46
+        Patterns[0]: Pattern Keyword=_ @9:35-9:36
+        Type: NamedType @9:40-9:46
+          Name: QualifiedName String @9:40-9:46
+  Decls[7]: TypeDecl @10:1-10:30
+    Name: Ident Q @10:6-10:7
+    Type: UnionType @10:10-10:30
+      Alts[0]: LiteralType Past="past" @10:10-10:20
+        Value: StringLit @10:15-10:20
+          Parts[0]: text "lit"
+      Alts[1]: LiteralType @10:23-10:30
+        Value: StringLit @10:23-10:30
+          Parts[0]: text "other"
+  Decls[8]: TypeDecl @11:1-11:16
+    Name: Ident U @11:6-11:7
+    Type: AnyType Past="past" @11:10-11:16
+== findings
+0 errors, 0 warnings in 1 package (…)
+== d/d.canon
+File: File FileKind=source @1:1-7:1
+  Package: QualifiedName d @1:9-1:10
+  Decls[0]: TypeDecl @3:1-3:14
+    Name: Ident M @3:6-3:7
+    Type: NamedType @3:10-3:14
+      Name: QualifiedName past @3:10-3:14
+  Decls[1]: TypeDecl @4:1-4:26
+    Name: Ident B @4:6-4:7
+    Type: KeyedType @4:10-4:26
+      List: NamedType @4:10-4:14
+        Name: QualifiedName past @4:10-4:14
+      Key: Ident id @4:24-4:26
+  Decls[2]: TypeDecl @5:1-5:15
+    Name: Ident N @5:6-5:7
+    Type: BadType @5:10-5:15
+== findings
+error[E1116]  d/d.canon:3:15
+  expected NL; found {
+
+error[E1137]  d/d.canon:4:15
+  "keyed by" applies to a list type
+
+error[E1116]  d/d.canon:6:5
+  expected "]"; found GrantKind
+
+3 errors, 0 warnings in 1 package (…)
+== e/e.canon
+File: File FileKind=source @1:1-4:1
+  Package: QualifiedName e @1:9-1:10
+  Decls[0]: TypeDecl @3:1-3:19
+    Name: Ident P @3:6-3:7
+    Type: NamedType Past="past" @3:10-3:19
+      Name: QualifiedName past @3:15-3:19
+  Decls[1]: BadDecl @3:20-3:21
+== findings
+error[E1116]  e/e.canon:3:20
+  expected topDecl; found X
+
+error[E1117]  e/e.canon:3:20
+  missing separator: put "," or a new line between items
+
+2 errors, 0 warnings in 1 package (…)

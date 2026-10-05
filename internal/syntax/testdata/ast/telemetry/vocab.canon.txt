@@ -1,4 +1,4 @@
-File: File FileKind=source @1:1-209:1
+File: File FileKind=source @1:1-173:1
   Package: QualifiedName telemetry @1:9-1:18
   Decls[0]: EnumDecl @9:1-30:2
     Doc: DocComment "What happened in a farm. All ten kinds are WorldServer hooks with one FarmManager caller." @8:1-8:94
@@ -321,11 +321,16 @@ File: File FileKind=source @1:1-209:1
         Name: Ident name @149:3-149:7
         Type: NamedType @149:9-149:15
           Name: QualifiedName String @149:9-149:15
-      Items[2]: FieldDecl @151:3-151:18
+      Items[2]: FieldDecl @151:3-151:35
         Doc: DocComment "No producer writes it any more; old rows still carry the code." @150:3-150:69
         Name: Ident isRetired @151:3-151:12
         Type: NamedType @151:14-151:18
           Name: QualifiedName Bool @151:14-151:18
+        Annotations[0]: Annotation @151:19-151:35
+          Name: Ident json @151:20-151:24
+          Args[0]: AnnotationArg @151:25-151:34
+            Value: StringLit @151:25-151:34
+              Parts[0]: text "retired"
   Decls[10]: RecordDecl @155:1-160:2
     Doc: DocComment "A vocabulary's enum, as the lake's catalogue names and lists it." @154:1-154:69
     Mods: Modifiers Local="local" @155:1-155:6
@@ -342,7 +347,7 @@ File: File FileKind=source @1:1-209:1
         Type: ListType @159:11-159:18
           Elem: NamedType @159:12-159:17
             Name: QualifiedName Label @159:12-159:17
-  Decls[11]: FnDecl @163:1-203:2
+  Decls[11]: FnDecl @163:1-167:2
     Doc: DocComment "The enum behind vocabulary `v`." @162:1-162:36
     Name: Ident enumOf @163:4-163:10
     Params[0]: Param @163:11-163:24
@@ -351,328 +356,87 @@ File: File FileKind=source @1:1-209:1
         Name: QualifiedName Vocabulary @163:14-163:24
     Result: NamedType @163:29-163:37
       Name: QualifiedName EnumInfo @163:29-163:37
-    Body: Block @163:38-203:2
-      Stmts[0]: LetStmt @164:3-201:4
-        Name: Ident e @164:7-164:8
-        Value: MatchExpr @164:11-201:4
-          Scrutinee: IdentExpr v @164:17-164:18
-          Arms[0]: MatchArm @165:5-169:6
-            Patterns[0]: Pattern @165:5-165:20
-              Name: QualifiedName farm_event_kind @165:5-165:20
-            Body: TypedLit @165:24-169:6
-              Type: QualifiedName EnumInfo @165:24-165:32
-              Lit: BraceLit @165:33-169:6
-                Items[0]: FieldItem @166:7-166:28
-                  Name: Ident name @166:7-166:11
-                  Value: StringLit @166:13-166:28
-                    Parts[0]: text "FarmEventKind"
-                Items[1]: FieldItem @167:7-168:99
-                  Name: Ident labels @167:7-167:13
-                  Value: CallExpr @168:9-168:99
-                    Fun: SelectorExpr @168:9-168:34
-                      X: SelectorExpr @168:9-168:30
-                        X: IdentExpr FarmEventKind @168:9-168:22
-                        Name: Ident members @168:23-168:30
-                      Name: Ident map @168:31-168:34
-                    Args[0]: Arg @168:35-168:98
-                      Value: LambdaExpr @168:35-168:98
-                        Params[0]: Ident m @168:35-168:36
-                        Body: TypedLit @168:40-168:98
-                          Type: QualifiedName Label @168:40-168:45
-                          Lit: BraceLit @168:46-168:98
-                            Items[0]: FieldItem @168:48-168:60
-                              Name: Ident code @168:48-168:52
-                              Value: SelectorExpr @168:54-168:60
-                                X: IdentExpr m @168:54-168:55
-                                Name: Ident code @168:56-168:60
-                            Items[1]: FieldItem @168:62-168:74
-                              Name: Ident name @168:62-168:66
-                              Value: SelectorExpr @168:68-168:74
-                                X: IdentExpr m @168:68-168:69
-                                Name: Ident name @168:70-168:74
-                            Items[2]: FieldItem @168:76-168:96
-                              Name: Ident isRetired @168:76-168:85
-                              Value: SelectorExpr @168:87-168:96
-                                X: IdentExpr m @168:87-168:88
-                                Name: Ident retired @168:89-168:96
-          Arms[1]: MatchArm @170:5-175:6
-            Patterns[0]: Pattern @170:5-170:25
-              Name: QualifiedName sovereign_event_kind @170:5-170:25
-            Body: TypedLit @170:29-175:6
-              Type: QualifiedName EnumInfo @170:29-170:37
-              Lit: BraceLit @170:38-175:6
-                Items[0]: FieldItem @171:7-171:33
-                  Name: Ident name @171:7-171:11
-                  Value: StringLit @171:13-171:33
-                    Parts[0]: text "SovereignEventKind"
-                Items[1]: FieldItem @172:7-174:8
-                  Name: Ident labels @172:7-172:13
-                  Value: CallExpr @172:15-174:8
-                    Fun: SelectorExpr @172:15-172:45
-                      X: SelectorExpr @172:15-172:41
-                        X: IdentExpr SovereignEventKind @172:15-172:33
-                        Name: Ident members @172:34-172:41
-                      Name: Ident map @172:42-172:45
-                    Args[0]: Arg @173:9-173:72
-                      Value: LambdaExpr @173:9-173:72
-                        Params[0]: Ident m @173:9-173:10
-                        Body: TypedLit @173:14-173:72
-                          Type: QualifiedName Label @173:14-173:19
-                          Lit: BraceLit @173:20-173:72
-                            Items[0]: FieldItem @173:22-173:34
-                              Name: Ident code @173:22-173:26
-                              Value: SelectorExpr @173:28-173:34
-                                X: IdentExpr m @173:28-173:29
-                                Name: Ident code @173:30-173:34
-                            Items[1]: FieldItem @173:36-173:48
-                              Name: Ident name @173:36-173:40
-                              Value: SelectorExpr @173:42-173:48
-                                X: IdentExpr m @173:42-173:43
-                                Name: Ident name @173:44-173:48
-                            Items[2]: FieldItem @173:50-173:70
-                              Name: Ident isRetired @173:50-173:59
-                              Value: SelectorExpr @173:61-173:70
-                                X: IdentExpr m @173:61-173:62
-                                Name: Ident retired @173:63-173:70
-          Arms[2]: MatchArm @176:5-180:6
-            Patterns[0]: Pattern @176:5-176:19
-              Name: QualifiedName sovereign_role @176:5-176:19
-            Body: TypedLit @176:23-180:6
-              Type: QualifiedName EnumInfo @176:23-176:31
-              Lit: BraceLit @176:32-180:6
-                Items[0]: FieldItem @177:7-177:28
-                  Name: Ident name @177:7-177:11
-                  Value: StringLit @177:13-177:28
-                    Parts[0]: text "SovereignRole"
-                Items[1]: FieldItem @178:7-179:99
-                  Name: Ident labels @178:7-178:13
-                  Value: CallExpr @179:9-179:99
-                    Fun: SelectorExpr @179:9-179:34
-                      X: SelectorExpr @179:9-179:30
-                        X: IdentExpr SovereignRole @179:9-179:22
-                        Name: Ident members @179:23-179:30
-                      Name: Ident map @179:31-179:34
-                    Args[0]: Arg @179:35-179:98
-                      Value: LambdaExpr @179:35-179:98
-                        Params[0]: Ident m @179:35-179:36
-                        Body: TypedLit @179:40-179:98
-                          Type: QualifiedName Label @179:40-179:45
-                          Lit: BraceLit @179:46-179:98
-                            Items[0]: FieldItem @179:48-179:60
-                              Name: Ident code @179:48-179:52
-                              Value: SelectorExpr @179:54-179:60
-                                X: IdentExpr m @179:54-179:55
-                                Name: Ident code @179:56-179:60
-                            Items[1]: FieldItem @179:62-179:74
-                              Name: Ident name @179:62-179:66
-                              Value: SelectorExpr @179:68-179:74
-                                X: IdentExpr m @179:68-179:69
-                                Name: Ident name @179:70-179:74
-                            Items[2]: FieldItem @179:76-179:96
-                              Name: Ident isRetired @179:76-179:85
-                              Value: SelectorExpr @179:87-179:96
-                                X: IdentExpr m @179:87-179:88
-                                Name: Ident retired @179:89-179:96
-          Arms[3]: MatchArm @181:5-186:6
-            Patterns[0]: Pattern @181:5-181:23
-              Name: QualifiedName sovereign_doctrine @181:5-181:23
-            Body: TypedLit @181:27-186:6
-              Type: QualifiedName EnumInfo @181:27-181:35
-              Lit: BraceLit @181:36-186:6
-                Items[0]: FieldItem @182:7-182:32
-                  Name: Ident name @182:7-182:11
-                  Value: StringLit @182:13-182:32
-                    Parts[0]: text "SovereignDoctrine"
-                Items[1]: FieldItem @183:7-185:8
-                  Name: Ident labels @183:7-183:13
-                  Value: CallExpr @183:15-185:8
-                    Fun: SelectorExpr @183:15-183:44
-                      X: SelectorExpr @183:15-183:40
-                        X: IdentExpr SovereignDoctrine @183:15-183:32
-                        Name: Ident members @183:33-183:40
-                      Name: Ident map @183:41-183:44
-                    Args[0]: Arg @184:9-184:72
-                      Value: LambdaExpr @184:9-184:72
-                        Params[0]: Ident m @184:9-184:10
-                        Body: TypedLit @184:14-184:72
-                          Type: QualifiedName Label @184:14-184:19
-                          Lit: BraceLit @184:20-184:72
-                            Items[0]: FieldItem @184:22-184:34
-                              Name: Ident code @184:22-184:26
-                              Value: SelectorExpr @184:28-184:34
-                                X: IdentExpr m @184:28-184:29
-                                Name: Ident code @184:30-184:34
-                            Items[1]: FieldItem @184:36-184:48
-                              Name: Ident name @184:36-184:40
-                              Value: SelectorExpr @184:42-184:48
-                                X: IdentExpr m @184:42-184:43
-                                Name: Ident name @184:44-184:48
-                            Items[2]: FieldItem @184:50-184:70
-                              Name: Ident isRetired @184:50-184:59
-                              Value: SelectorExpr @184:61-184:70
-                                X: IdentExpr m @184:61-184:62
-                                Name: Ident retired @184:63-184:70
-          Arms[4]: MatchArm @187:5-191:6
-            Patterns[0]: Pattern @187:5-187:20
-              Name: QualifiedName sovereign_power @187:5-187:20
-            Body: TypedLit @187:24-191:6
-              Type: QualifiedName EnumInfo @187:24-187:32
-              Lit: BraceLit @187:33-191:6
-                Items[0]: FieldItem @188:7-188:29
-                  Name: Ident name @188:7-188:11
-                  Value: StringLit @188:13-188:29
-                    Parts[0]: text "SovereignPower"
-                Items[1]: FieldItem @189:7-190:100
-                  Name: Ident labels @189:7-189:13
-                  Value: CallExpr @190:9-190:100
-                    Fun: SelectorExpr @190:9-190:35
-                      X: SelectorExpr @190:9-190:31
-                        X: IdentExpr SovereignPower @190:9-190:23
-                        Name: Ident members @190:24-190:31
-                      Name: Ident map @190:32-190:35
-                    Args[0]: Arg @190:36-190:99
-                      Value: LambdaExpr @190:36-190:99
-                        Params[0]: Ident m @190:36-190:37
-                        Body: TypedLit @190:41-190:99
-                          Type: QualifiedName Label @190:41-190:46
-                          Lit: BraceLit @190:47-190:99
-                            Items[0]: FieldItem @190:49-190:61
-                              Name: Ident code @190:49-190:53
-                              Value: SelectorExpr @190:55-190:61
-                                X: IdentExpr m @190:55-190:56
-                                Name: Ident code @190:57-190:61
-                            Items[1]: FieldItem @190:63-190:75
-                              Name: Ident name @190:63-190:67
-                              Value: SelectorExpr @190:69-190:75
-                                X: IdentExpr m @190:69-190:70
-                                Name: Ident name @190:71-190:75
-                            Items[2]: FieldItem @190:77-190:97
-                              Name: Ident isRetired @190:77-190:86
-                              Value: SelectorExpr @190:88-190:97
-                                X: IdentExpr m @190:88-190:89
-                                Name: Ident retired @190:90-190:97
-          Arms[5]: MatchArm @192:5-196:6
-            Patterns[0]: Pattern @192:5-192:19
-              Name: QualifiedName lifecycle_kind @192:5-192:19
-            Body: TypedLit @192:23-196:6
-              Type: QualifiedName EnumInfo @192:23-192:31
-              Lit: BraceLit @192:32-196:6
-                Items[0]: FieldItem @193:7-193:28
-                  Name: Ident name @193:7-193:11
-                  Value: StringLit @193:13-193:28
-                    Parts[0]: text "LifecycleKind"
-                Items[1]: FieldItem @194:7-195:99
-                  Name: Ident labels @194:7-194:13
-                  Value: CallExpr @195:9-195:99
-                    Fun: SelectorExpr @195:9-195:34
-                      X: SelectorExpr @195:9-195:30
-                        X: IdentExpr LifecycleKind @195:9-195:22
-                        Name: Ident members @195:23-195:30
-                      Name: Ident map @195:31-195:34
-                    Args[0]: Arg @195:35-195:98
-                      Value: LambdaExpr @195:35-195:98
-                        Params[0]: Ident m @195:35-195:36
-                        Body: TypedLit @195:40-195:98
-                          Type: QualifiedName Label @195:40-195:45
-                          Lit: BraceLit @195:46-195:98
-                            Items[0]: FieldItem @195:48-195:60
-                              Name: Ident code @195:48-195:52
-                              Value: SelectorExpr @195:54-195:60
-                                X: IdentExpr m @195:54-195:55
-                                Name: Ident code @195:56-195:60
-                            Items[1]: FieldItem @195:62-195:74
-                              Name: Ident name @195:62-195:66
-                              Value: SelectorExpr @195:68-195:74
-                                X: IdentExpr m @195:68-195:69
-                                Name: Ident name @195:70-195:74
-                            Items[2]: FieldItem @195:76-195:96
-                              Name: Ident isRetired @195:76-195:85
-                              Value: SelectorExpr @195:87-195:96
-                                X: IdentExpr m @195:87-195:88
-                                Name: Ident retired @195:89-195:96
-          Arms[6]: MatchArm @197:5-200:6
-            Patterns[0]: Pattern @197:5-197:15
-              Name: QualifiedName grant_kind @197:5-197:15
-            Body: TypedLit @197:19-200:6
-              Type: QualifiedName EnumInfo @197:19-197:27
-              Lit: BraceLit @197:28-200:6
-                Items[0]: FieldItem @198:7-198:24
-                  Name: Ident name @198:7-198:11
-                  Value: StringLit @198:13-198:24
-                    Parts[0]: text "GrantKind"
-                Items[1]: FieldItem @199:7-199:101
-                  Name: Ident labels @199:7-199:13
-                  Value: CallExpr @199:15-199:101
-                    Fun: SelectorExpr @199:15-199:36
-                      X: SelectorExpr @199:15-199:32
-                        X: IdentExpr GrantKind @199:15-199:24
-                        Name: Ident members @199:25-199:32
-                      Name: Ident map @199:33-199:36
-                    Args[0]: Arg @199:37-199:100
-                      Value: LambdaExpr @199:37-199:100
-                        Params[0]: Ident m @199:37-199:38
-                        Body: TypedLit @199:42-199:100
-                          Type: QualifiedName Label @199:42-199:47
-                          Lit: BraceLit @199:48-199:100
-                            Items[0]: FieldItem @199:50-199:62
-                              Name: Ident code @199:50-199:54
-                              Value: SelectorExpr @199:56-199:62
-                                X: IdentExpr m @199:56-199:57
-                                Name: Ident code @199:58-199:62
-                            Items[1]: FieldItem @199:64-199:76
-                              Name: Ident name @199:64-199:68
-                              Value: SelectorExpr @199:70-199:76
-                                X: IdentExpr m @199:70-199:71
-                                Name: Ident name @199:72-199:76
-                            Items[2]: FieldItem @199:78-199:98
-                              Name: Ident isRetired @199:78-199:87
-                              Value: SelectorExpr @199:89-199:98
-                                X: IdentExpr m @199:89-199:90
-                                Name: Ident retired @199:91-199:98
-      Stmts[1]: ReturnStmt @202:3-202:50
-        Value: BraceLit @202:10-202:50
-          Items[0]: SpreadItem @202:12-202:16
-            X: IdentExpr e @202:15-202:16
-          Items[1]: FieldItem @202:18-202:48
-            Name: Ident labels @202:18-202:24
-            Value: CallExpr @202:26-202:48
-              Fun: SelectorExpr @202:26-202:41
-                X: SelectorExpr @202:26-202:34
-                  X: IdentExpr e @202:26-202:27
-                  Name: Ident labels @202:28-202:34
-                Name: Ident sortBy @202:35-202:41
-              Args[0]: Arg @202:42-202:47
-                Value: ShorthandLambda @202:42-202:47
-                  Body: SelectorExpr @202:42-202:47
-                    Name: Ident code @202:43-202:47
-  Decls[12]: FnDecl @206:1-208:2
-    Doc: DocComment "The live member names of vocabulary `v`." @205:1-205:45
-    Name: Ident liveNames @206:4-206:13
-    Params[0]: Param @206:14-206:27
-      Name: Ident v @206:14-206:15
-      Type: NamedType @206:17-206:27
-        Name: QualifiedName Vocabulary @206:17-206:27
-    Result: ListType @206:32-206:40
-      Elem: NamedType @206:33-206:39
-        Name: QualifiedName String @206:33-206:39
-    Body: Block @206:41-208:2
-      Stmts[0]: ReturnStmt @207:3-207:63
-        Value: ListComp @207:10-207:63
-          Elem: SelectorExpr @207:11-207:17
-            X: IdentExpr l @207:11-207:12
-            Name: Ident name @207:13-207:17
-          Clauses[0]: CompClause Keyword=for @207:18-207:43
-            Vars[0]: Ident l @207:22-207:23
-            X: SelectorExpr @207:27-207:43
-              X: CallExpr @207:27-207:36
-                Fun: IdentExpr enumOf @207:27-207:33
-                Args[0]: Arg @207:34-207:35
-                  Value: IdentExpr v @207:34-207:35
-              Name: Ident labels @207:37-207:43
-          Clauses[1]: CompClause Keyword=if @207:44-207:62
-            X: UnaryExpr Op=not @207:47-207:62
-              X: SelectorExpr @207:51-207:62
-                X: IdentExpr l @207:51-207:52
-                Name: Ident isRetired @207:53-207:62
+    Body: Block @163:38-167:2
+      Stmts[0]: LetStmt @164:3-165:91
+        Name: Ident labels @164:7-164:13
+        Value: CallExpr @165:5-165:91
+          Fun: SelectorExpr @165:5-165:26
+            X: SelectorExpr @165:5-165:22
+              X: CallExpr @165:5-165:14
+                Fun: IdentExpr Member @165:5-165:11
+                Args[0]: Arg @165:12-165:13
+                  Value: IdentExpr v @165:12-165:13
+              Name: Ident members @165:15-165:22
+            Name: Ident map @165:23-165:26
+          Args[0]: Arg @165:27-165:90
+            Value: LambdaExpr @165:27-165:90
+              Params[0]: Ident m @165:27-165:28
+              Body: TypedLit @165:32-165:90
+                Type: QualifiedName Label @165:32-165:37
+                Lit: BraceLit @165:38-165:90
+                  Items[0]: FieldItem @165:40-165:52
+                    Name: Ident code @165:40-165:44
+                    Value: SelectorExpr @165:46-165:52
+                      X: IdentExpr m @165:46-165:47
+                      Name: Ident code @165:48-165:52
+                  Items[1]: FieldItem @165:54-165:66
+                    Name: Ident name @165:54-165:58
+                    Value: SelectorExpr @165:60-165:66
+                      X: IdentExpr m @165:60-165:61
+                      Name: Ident name @165:62-165:66
+                  Items[2]: FieldItem @165:68-165:88
+                    Name: Ident isRetired @165:68-165:77
+                    Value: SelectorExpr @165:79-165:88
+                      X: IdentExpr m @165:79-165:80
+                      Name: Ident retired @165:81-165:88
+      Stmts[1]: ReturnStmt @166:3-166:68
+        Value: BraceLit @166:10-166:68
+          Items[0]: FieldItem @166:12-166:36
+            Name: Ident name @166:12-166:16
+            Value: SelectorExpr @166:18-166:36
+              X: CallExpr @166:18-166:27
+                Fun: IdentExpr Member @166:18-166:24
+                Args[0]: Arg @166:25-166:26
+                  Value: IdentExpr v @166:25-166:26
+              Name: Ident typeName @166:28-166:36
+          Items[1]: FieldItem @166:38-166:66
+            Name: Ident labels @166:38-166:44
+            Value: CallExpr @166:46-166:66
+              Fun: SelectorExpr @166:46-166:59
+                X: IdentExpr labels @166:46-166:52
+                Name: Ident sortBy @166:53-166:59
+              Args[0]: Arg @166:60-166:65
+                Value: ShorthandLambda @166:60-166:65
+                  Body: SelectorExpr @166:60-166:65
+                    Name: Ident code @166:61-166:65
+  Decls[12]: FnDecl @170:1-172:2
+    Doc: DocComment "The live member names of vocabulary `v`." @169:1-169:45
+    Name: Ident liveNames @170:4-170:13
+    Params[0]: Param @170:14-170:27
+      Name: Ident v @170:14-170:15
+      Type: NamedType @170:17-170:27
+        Name: QualifiedName Vocabulary @170:17-170:27
+    Result: ListType @170:32-170:40
+      Elem: NamedType @170:33-170:39
+        Name: QualifiedName String @170:33-170:39
+    Body: Block @170:41-172:2
+      Stmts[0]: ReturnStmt @171:3-171:63
+        Value: ListComp @171:10-171:63
+          Elem: SelectorExpr @171:11-171:17
+            X: IdentExpr l @171:11-171:12
+            Name: Ident name @171:13-171:17
+          Clauses[0]: CompClause Keyword=for @171:18-171:43
+            Vars[0]: Ident l @171:22-171:23
+            X: SelectorExpr @171:27-171:43
+              X: CallExpr @171:27-171:36
+                Fun: IdentExpr enumOf @171:27-171:33
+                Args[0]: Arg @171:34-171:35
+                  Value: IdentExpr v @171:34-171:35
+              Name: Ident labels @171:37-171:43
+          Clauses[1]: CompClause Keyword=if @171:44-171:62
+            X: UnaryExpr Op=not @171:47-171:62
+              X: SelectorExpr @171:51-171:62
+                X: IdentExpr l @171:51-171:52
+                Name: Ident isRetired @171:53-171:62
 == findings
 0 errors, 0 warnings in 1 package (…)

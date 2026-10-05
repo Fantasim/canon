@@ -1,5 +1,5 @@
-File: File FileKind=source @1:1-423:1
-  Doc: DocComment "Sovereign's telemetry catalogue: every event type the game servers emit, the lake table\nthat stores it, its columns and their version history, the ring tier and producers, and\nwhat its rows mean to the economy ledgers. Today this is spread over X-macros\n(TELEMETRY_META_*, TELEMETRY_FIELDS_*, TELEMETRY_LEDGER_*), hand-kept enum blocks, a\nschema lock that alone knows the history, and a Python generator that parses the C++.\n\nHere it is one package (ADR L-0111 d.1). The C++ packer and the ring set read the\nper-event metadata at compile time (header-inline constexpr lookups, DECISIONS 293);\nmonitoring reads the same facts from Go; the lake's DDL, its enum views and a JSON\ncatalogue are build-time strings written by `emit text` (DECISIONS 294).\n\nThis dry run carries 7 of the 86 tables, the two tombstoned event ids, and a trimmed\nGrantKind (14 of its 62 members, the retired ones kept)." @1:1-13:61
+File: File FileKind=source @1:1-421:1
+  Doc: DocComment "Sovereign's telemetry catalogue: every event type the game servers emit, the lake table\nthat stores it, its columns and their version history, the ring tier and producers, and\nwhat its rows mean to the economy ledgers. Today this is spread over X-macros\n(TELEMETRY_META_*, TELEMETRY_FIELDS_*, TELEMETRY_LEDGER_*), hand-kept enum blocks, a\nschema lock that alone knows the history, and a Python generator that parses the C++.\n\nHere it is one package (ADR L-0111 d.1). The C++ packer and the ring set read the\nper-event metadata at compile time (header-inline constexpr lookups, DECISIONS 293);\nmonitoring reads the same facts from Go; the lake's DDL and its enum views are build-time\nstrings, and the JSON catalogue a typed value, written by `emit text` (DECISIONS 294, 308).\n\nThis dry run carries 7 of the 86 tables, the two tombstoned event ids, and a trimmed\nGrantKind (14 of its 62 members, the retired ones kept)." @1:1-13:61
   Package: QualifiedName telemetry @14:9-14:18
   Decls[0]: ConstDecl @17:1-17:27
     Doc: DocComment "The catalogue contract version a reader checks before it trusts the shape below." @16:1-16:85
@@ -8,7 +8,7 @@ File: File FileKind=source @1:1-423:1
   Decls[1]: ConstDecl @20:1-20:25
     Doc: DocComment "Version of the JSON catalogue's own shape (catalogJson)." @19:1-19:61
     Name: Ident CATALOG_FORMAT @20:7-20:21
-    Value: IntLit Value=2 @20:24-20:25
+    Value: IntLit Value=3 @20:24-20:25
   Decls[2]: EnumDecl @29:1-50:2
     Doc: DocComment "The event type byte every row carries on the wire; the dispatch table is indexed by it.\nEach member is named after its lake table, so one identifier names the event, its table\nand its id. Ids are never reused: a removed event is `retired` and the lock keeps its id." @26:1-28:94
     Name: Ident EventType @29:6-29:15
@@ -159,1448 +159,1441 @@ File: File FileKind=source @1:1-423:1
       Name: QualifiedName String @103:14-103:20
       Args: TypeArgs @103:20-103:41
         Args[0]: RegexLit Pattern="^[a-z][a-z0-9_]*$" @103:21-103:40
-  Decls[9]: TypeDecl @106:1-106:31
-    Doc: DocComment "Printable ASCII on one line: what the JSON catalogue and the SQL comments accept." @105:1-105:86
-    Name: Ident Text @106:6-106:10
-    Type: NamedType @106:13-106:31
-      Name: QualifiedName String @106:13-106:19
-      Args: TypeArgs @106:19-106:31
-        Args[0]: RegexLit Pattern="^[ -~]*$" @106:20-106:30
-  Decls[10]: RecordDecl @109:1-138:2
-    Doc: DocComment "One column of an event table, in wire order." @108:1-108:49
-    Name: Ident Column @109:8-109:14
-    Body: RecordBody @109:15-138:2
-      Items[0]: FieldDecl @111:3-111:14
-        Doc: DocComment "The SQL column name, also the struct field name." @110:3-110:55
-        Name: Ident name @111:3-111:7
-        Type: NamedType @111:9-111:14
-          Name: QualifiedName Ident @111:9-111:14
-      Items[1]: FieldDecl @113:3-113:15
-        Doc: DocComment "The lake type; its byte width is the wire width." @112:3-112:55
-        Name: Ident sql @113:3-113:6
-        Type: NamedType @113:8-113:15
-          Name: QualifiedName SqlType @113:8-113:15
-      Items[2]: FieldDecl @115:3-115:27
-        Doc: DocComment "How the column is streamed." @114:3-114:34
-        Name: Ident kind @115:3-115:7
-        Type: NamedType @115:9-115:18
-          Name: QualifiedName FieldKind @115:9-115:18
-        Default: IdentExpr scalar @115:21-115:27
-      Items[3]: FieldDecl @117:3-117:29
-        Doc: DocComment "The telemetry enum an `enum8` column holds." @116:3-116:50
-        Name: Ident values @117:3-117:9
-        Type: OptionalType @117:11-117:22
-          Elem: NamedType @117:11-117:21
-            Name: QualifiedName Vocabulary @117:11-117:21
-        Default: NoneLit @117:25-117:29
-      Items[4]: FieldDecl @119:3-119:26
-        Doc: DocComment "The version that added the column; none: present from the table's first known version." @118:3-118:93
-        Name: Ident since @119:3-119:8
-        Type: OptionalType @119:10-119:19
-          Elem: NamedType @119:10-119:18
-            Name: QualifiedName Int @119:10-119:13
-            Args: TypeArgs @119:13-119:18
-              Args[0]: RangeExpr Op=.. @119:14-119:17
-                Lo: IntLit Value=2 @119:14-119:15
-        Default: NoneLit @119:22-119:26
-      Items[5]: FieldDecl @122:3-122:30
-        Doc: DocComment "The version that retired it. A retired column stays in the DDL (after the live ones),\nis appended as NULL, and leaves the wire." @120:3-121:48
-        Name: Ident retiredIn @122:3-122:12
-        Type: OptionalType @122:14-122:23
-          Elem: NamedType @122:14-122:22
-            Name: QualifiedName Int @122:14-122:17
-            Args: TypeArgs @122:17-122:22
-              Args[0]: RangeExpr Op=.. @122:18-122:21
-                Lo: IntLit Value=2 @122:18-122:19
-        Default: NoneLit @122:26-122:30
-      Items[6]: CheckDecl Keyword=check @124:3-125:79
-        Cond: BinaryExpr Op=== @124:9-124:44
-          X: ParenExpr @124:9-124:24
-            X: BinaryExpr Op=== @124:10-124:23
-              X: IdentExpr kind @124:10-124:14
-              Y: IdentExpr enum8 @124:18-124:23
-          Y: ParenExpr @124:28-124:44
-            X: BinaryExpr Op=!= @124:29-124:43
-              X: IdentExpr values @124:29-124:35
-              Y: NoneLit @124:39-124:43
-        At: Ident values @124:48-124:54
-        Message: StringLit @125:10-125:79
+  Decls[9]: RecordDecl @106:1-135:2
+    Doc: DocComment "One column of an event table, in wire order." @105:1-105:49
+    Name: Ident Column @106:8-106:14
+    Body: RecordBody @106:15-135:2
+      Items[0]: FieldDecl @108:3-108:14
+        Doc: DocComment "The SQL column name, also the struct field name." @107:3-107:55
+        Name: Ident name @108:3-108:7
+        Type: NamedType @108:9-108:14
+          Name: QualifiedName Ident @108:9-108:14
+      Items[1]: FieldDecl @110:3-110:15
+        Doc: DocComment "The lake type; its byte width is the wire width." @109:3-109:55
+        Name: Ident sql @110:3-110:6
+        Type: NamedType @110:8-110:15
+          Name: QualifiedName SqlType @110:8-110:15
+      Items[2]: FieldDecl @112:3-112:27
+        Doc: DocComment "How the column is streamed." @111:3-111:34
+        Name: Ident kind @112:3-112:7
+        Type: NamedType @112:9-112:18
+          Name: QualifiedName FieldKind @112:9-112:18
+        Default: IdentExpr scalar @112:21-112:27
+      Items[3]: FieldDecl @114:3-114:29
+        Doc: DocComment "The telemetry enum an `enum8` column holds." @113:3-113:50
+        Name: Ident values @114:3-114:9
+        Type: OptionalType @114:11-114:22
+          Elem: NamedType @114:11-114:21
+            Name: QualifiedName Vocabulary @114:11-114:21
+        Default: NoneLit @114:25-114:29
+      Items[4]: FieldDecl @116:3-116:26
+        Doc: DocComment "The version that added the column; none: present from the table's first known version." @115:3-115:93
+        Name: Ident since @116:3-116:8
+        Type: OptionalType @116:10-116:19
+          Elem: NamedType @116:10-116:18
+            Name: QualifiedName Int @116:10-116:13
+            Args: TypeArgs @116:13-116:18
+              Args[0]: RangeExpr Op=.. @116:14-116:17
+                Lo: IntLit Value=2 @116:14-116:15
+        Default: NoneLit @116:22-116:26
+      Items[5]: FieldDecl @119:3-119:30
+        Doc: DocComment "The version that retired it. A retired column stays in the DDL (after the live ones),\nis appended as NULL, and leaves the wire." @117:3-118:48
+        Name: Ident retiredIn @119:3-119:12
+        Type: OptionalType @119:14-119:23
+          Elem: NamedType @119:14-119:22
+            Name: QualifiedName Int @119:14-119:17
+            Args: TypeArgs @119:17-119:22
+              Args[0]: RangeExpr Op=.. @119:18-119:21
+                Lo: IntLit Value=2 @119:18-119:19
+        Default: NoneLit @119:26-119:30
+      Items[6]: CheckDecl Keyword=check @121:3-122:79
+        Cond: BinaryExpr Op=== @121:9-121:44
+          X: ParenExpr @121:9-121:24
+            X: BinaryExpr Op=== @121:10-121:23
+              X: IdentExpr kind @121:10-121:14
+              Y: IdentExpr enum8 @121:18-121:23
+          Y: ParenExpr @121:28-121:44
+            X: BinaryExpr Op=!= @121:29-121:43
+              X: IdentExpr values @121:29-121:35
+              Y: NoneLit @121:39-121:43
+        At: Ident values @121:48-121:54
+        Message: StringLit @122:10-122:79
           Parts[0]: text "an enum8 column names its vocabulary, and only an enum8 column does"
-      Items[7]: CheckDecl Keyword=check @126:3-126:85
-        Cond: BinaryExpr Op=or @126:9-126:41
-          X: BinaryExpr Op=!= @126:9-126:22
-            X: IdentExpr kind @126:9-126:13
-            Y: IdentExpr enum8 @126:17-126:22
-          Y: BinaryExpr Op=== @126:26-126:41
-            X: IdentExpr sql @126:26-126:29
-            Y: IdentExpr UTINYINT @126:33-126:41
-        At: Ident sql @126:45-126:48
-        Message: StringLit @126:54-126:85
+      Items[7]: CheckDecl Keyword=check @123:3-123:85
+        Cond: BinaryExpr Op=or @123:9-123:41
+          X: BinaryExpr Op=!= @123:9-123:22
+            X: IdentExpr kind @123:9-123:13
+            Y: IdentExpr enum8 @123:17-123:22
+          Y: BinaryExpr Op=== @123:26-123:41
+            X: IdentExpr sql @123:26-123:29
+            Y: IdentExpr UTINYINT @123:33-123:41
+        At: Ident sql @123:45-123:48
+        Message: StringLit @123:54-123:85
           Parts[0]: text "an enum8 column is a UTINYINT"
-      Items[8]: CheckDecl Keyword=check @127:3-128:86
-        Cond: BinaryExpr Op=or @127:9-127:64
-          X: BinaryExpr Op=or @127:9-127:43
-            X: BinaryExpr Op=== @127:9-127:22
-              X: IdentExpr since @127:9-127:14
-              Y: NoneLit @127:18-127:22
-            Y: BinaryExpr Op=== @127:26-127:43
-              X: IdentExpr retiredIn @127:26-127:35
-              Y: NoneLit @127:39-127:43
-          Y: BinaryExpr Op=< @127:47-127:64
-            X: IdentExpr since @127:47-127:52
-            Y: IdentExpr retiredIn @127:55-127:64
-        At: Ident retiredIn @127:68-127:77
-        Message: StringLit @128:10-128:86
-          Parts[0]: Interp @128:12-128:16
-            X: IdentExpr name @128:12-128:16
+      Items[8]: CheckDecl Keyword=check @124:3-125:86
+        Cond: BinaryExpr Op=or @124:9-124:64
+          X: BinaryExpr Op=or @124:9-124:43
+            X: BinaryExpr Op=== @124:9-124:22
+              X: IdentExpr since @124:9-124:14
+              Y: NoneLit @124:18-124:22
+            Y: BinaryExpr Op=== @124:26-124:43
+              X: IdentExpr retiredIn @124:26-124:35
+              Y: NoneLit @124:39-124:43
+          Y: BinaryExpr Op=< @124:47-124:64
+            X: IdentExpr since @124:47-124:52
+            Y: IdentExpr retiredIn @124:55-124:64
+        At: Ident retiredIn @124:68-124:77
+        Message: StringLit @125:10-125:86
+          Parts[0]: Interp @125:12-125:16
+            X: IdentExpr name @125:12-125:16
           Parts[1]: text " is retired in version "
-          Parts[2]: Interp @128:41-128:50
-            X: IdentExpr retiredIn @128:41-128:50
+          Parts[2]: Interp @125:41-125:50
+            X: IdentExpr retiredIn @125:41-125:50
           Parts[3]: text ", not after it was added ("
-          Parts[4]: Interp @128:78-128:83
-            X: IdentExpr since @128:78-128:83
+          Parts[4]: Interp @125:78-125:83
+            X: IdentExpr since @125:78-125:83
           Parts[5]: text ")"
-      Items[9]: FnDecl Self="self" @131:3-131:65
-        Doc: DocComment "Whether the lake allows NULL here: everything but the header." @130:3-130:68
-        Name: Ident nullable @131:6-131:14
-        Result: NamedType @131:24-131:28
-          Name: QualifiedName Bool @131:24-131:28
-        Body: Block @131:29-131:65
-          Stmts[0]: ReturnStmt @131:31-131:63
-            Value: BinaryExpr Op=and @131:38-131:63
-              X: BinaryExpr Op=!= @131:38-131:48
-                X: IdentExpr kind @131:38-131:42
-                Y: IdentExpr ts @131:46-131:48
-              Y: BinaryExpr Op=!= @131:53-131:63
-                X: IdentExpr kind @131:53-131:57
-                Y: IdentExpr id @131:61-131:63
-      Items[10]: FnDecl Self="self" @134:3-134:97
-        Doc: DocComment "This column's piece of a CREATE TABLE." @133:3-133:45
-        Name: Ident ddl @134:6-134:9
-        Result: NamedType @134:19-134:25
-          Name: QualifiedName String @134:19-134:25
-        Body: Block @134:26-134:97
-          Stmts[0]: ReturnStmt @134:28-134:95
-            Value: BinaryExpr Op=+ @134:35-134:95
-              X: StringLit @134:35-134:49
-                Parts[0]: Interp @134:37-134:41
-                  X: IdentExpr name @134:37-134:41
+      Items[9]: FnDecl Self="self" @128:3-128:65
+        Doc: DocComment "Whether the lake allows NULL here: everything but the header." @127:3-127:68
+        Name: Ident nullable @128:6-128:14
+        Result: NamedType @128:24-128:28
+          Name: QualifiedName Bool @128:24-128:28
+        Body: Block @128:29-128:65
+          Stmts[0]: ReturnStmt @128:31-128:63
+            Value: BinaryExpr Op=and @128:38-128:63
+              X: BinaryExpr Op=!= @128:38-128:48
+                X: IdentExpr kind @128:38-128:42
+                Y: IdentExpr ts @128:46-128:48
+              Y: BinaryExpr Op=!= @128:53-128:63
+                X: IdentExpr kind @128:53-128:57
+                Y: IdentExpr id @128:61-128:63
+      Items[10]: FnDecl Self="self" @131:3-131:97
+        Doc: DocComment "This column's piece of a CREATE TABLE." @130:3-130:45
+        Name: Ident ddl @131:6-131:9
+        Result: NamedType @131:19-131:25
+          Name: QualifiedName String @131:19-131:25
+        Body: Block @131:26-131:97
+          Stmts[0]: ReturnStmt @131:28-131:95
+            Value: BinaryExpr Op=+ @131:35-131:95
+              X: StringLit @131:35-131:49
+                Parts[0]: Interp @131:37-131:41
+                  X: IdentExpr name @131:37-131:41
                 Parts[1]: text " "
-                Parts[2]: Interp @134:44-134:47
-                  X: IdentExpr sql @134:44-134:47
-              Y: ParenExpr @134:52-134:95
-                X: IfExpr @134:53-134:94
-                  Cond: CallExpr @134:56-134:66
-                    Fun: IdentExpr nullable @134:56-134:64
-                  Then: ExprBody @134:67-134:73
-                    X: StringLit @134:69-134:71
-                  Else: ExprBody @134:79-134:94
-                    X: StringLit @134:81-134:92
+                Parts[2]: Interp @131:44-131:47
+                  X: IdentExpr sql @131:44-131:47
+              Y: ParenExpr @131:52-131:95
+                X: IfExpr @131:53-131:94
+                  Cond: CallExpr @131:56-131:66
+                    Fun: IdentExpr nullable @131:56-131:64
+                  Then: ExprBody @131:67-131:73
+                    X: StringLit @131:69-131:71
+                  Else: ExprBody @131:79-131:94
+                    X: StringLit @131:81-131:92
                       Parts[0]: text " NOT NULL"
-      Items[11]: FnDecl Self="self" @137:3-137:49
-        Doc: DocComment "Bytes on the wire." @136:3-136:25
-        Name: Ident width @137:6-137:11
-        Result: NamedType @137:21-137:24
-          Name: QualifiedName Int @137:21-137:24
-        Body: Block @137:25-137:49
-          Stmts[0]: ReturnStmt @137:27-137:47
-            Value: CallExpr @137:34-137:47
-              Fun: IdentExpr sqlWidth @137:34-137:42
-              Args[0]: Arg @137:43-137:46
-                Value: IdentExpr sql @137:43-137:46
-  Decls[11]: LetDecl @141:1-144:2
-    Doc: DocComment "The two header columns every table starts with; `since` is the table's first version." @140:1-140:90
-    Name: Ident headerColumns @141:5-141:18
-    Type: KeyedType @141:20-141:42
-      List: ListType @141:20-141:28
-        Elem: NamedType @141:21-141:27
-          Name: QualifiedName Column @141:21-141:27
-      Key: Ident name @141:38-141:42
-    Value: ListLit @141:45-144:2
-      Elems[0]: BraceLit @142:3-142:50
-        Items[0]: FieldItem @142:5-142:25
-          Name: Ident name @142:5-142:9
-          Value: StringLit @142:11-142:25
+      Items[11]: FnDecl Self="self" @134:3-134:49
+        Doc: DocComment "Bytes on the wire." @133:3-133:25
+        Name: Ident width @134:6-134:11
+        Result: NamedType @134:21-134:24
+          Name: QualifiedName Int @134:21-134:24
+        Body: Block @134:25-134:49
+          Stmts[0]: ReturnStmt @134:27-134:47
+            Value: CallExpr @134:34-134:47
+              Fun: IdentExpr sqlWidth @134:34-134:42
+              Args[0]: Arg @134:43-134:46
+                Value: IdentExpr sql @134:43-134:46
+  Decls[10]: LetDecl @138:1-141:2
+    Doc: DocComment "The two header columns every table starts with; `since` is the table's first version." @137:1-137:90
+    Name: Ident headerColumns @138:5-138:18
+    Type: KeyedType @138:20-138:42
+      List: ListType @138:20-138:28
+        Elem: NamedType @138:21-138:27
+          Name: QualifiedName Column @138:21-138:27
+      Key: Ident name @138:38-138:42
+    Value: ListLit @138:45-141:2
+      Elems[0]: BraceLit @139:3-139:50
+        Items[0]: FieldItem @139:5-139:25
+          Name: Ident name @139:5-139:9
+          Value: StringLit @139:11-139:25
             Parts[0]: text "timestamp_ns"
-        Items[1]: FieldItem @142:27-142:38
-          Name: Ident sql @142:27-142:30
-          Value: IdentExpr BIGINT @142:32-142:38
-        Items[2]: FieldItem @142:40-142:48
-          Name: Ident kind @142:40-142:44
-          Value: IdentExpr ts @142:46-142:48
-      Elems[1]: BraceLit @143:3-143:49
-        Items[0]: FieldItem @143:5-143:22
-          Name: Ident name @143:5-143:9
-          Value: StringLit @143:11-143:22
+        Items[1]: FieldItem @139:27-139:38
+          Name: Ident sql @139:27-139:30
+          Value: IdentExpr BIGINT @139:32-139:38
+        Items[2]: FieldItem @139:40-139:48
+          Name: Ident kind @139:40-139:44
+          Value: IdentExpr ts @139:46-139:48
+      Elems[1]: BraceLit @140:3-140:49
+        Items[0]: FieldItem @140:5-140:22
+          Name: Ident name @140:5-140:9
+          Value: StringLit @140:11-140:22
             Parts[0]: text "player_id"
-        Items[1]: FieldItem @143:24-143:37
-          Name: Ident sql @143:24-143:27
-          Value: IdentExpr UINTEGER @143:29-143:37
-        Items[2]: FieldItem @143:39-143:47
-          Name: Ident kind @143:39-143:43
-          Value: IdentExpr id @143:45-143:47
-  Decls[12]: FnDecl @147:1-147:84
-    Doc: DocComment "The header's player column: whose ledger a role lands on unless it says otherwise." @146:1-146:87
-    Name: Ident playerColumn @147:4-147:16
-    Result: NamedType @147:22-147:28
-      Name: QualifiedName String @147:22-147:28
-    Body: Block @147:29-147:84
-      Stmts[0]: ReturnStmt @147:31-147:82
-        Value: SelectorExpr @147:38-147:82
-          X: ForceExpr @147:38-147:77
-            X: CallExpr @147:38-147:76
-              Fun: SelectorExpr @147:38-147:57
-                X: IdentExpr headerColumns @147:38-147:51
-                Name: Ident first @147:52-147:57
-              Args[0]: Arg @147:58-147:75
-                Value: LambdaExpr @147:58-147:75
-                  Params[0]: Ident c @147:58-147:59
-                  Body: BinaryExpr Op=== @147:63-147:75
-                    X: SelectorExpr @147:63-147:69
-                      X: IdentExpr c @147:63-147:64
-                      Name: Ident kind @147:65-147:69
-                    Y: IdentExpr id @147:73-147:75
-          Name: Ident name @147:78-147:82
-  Decls[13]: RecordDecl @151:1-159:2
-    Doc: DocComment "A provenance column the ingester prepends to every table: who sent the row, in which\nbatch, at which version. Never on the wire as a field." @149:1-150:59
-    Name: Ident ProvenanceColumn @151:8-151:24
-    Body: RecordBody @151:25-159:2
-      Items[0]: FieldDecl @153:3-153:14
-        Doc: DocComment "Its SQL name." @152:3-152:20
-        Name: Ident name @153:3-153:7
-        Type: NamedType @153:9-153:14
-          Name: QualifiedName Ident @153:9-153:14
-      Items[1]: FieldDecl @155:3-155:15
-        Doc: DocComment "Its SQL type, never NULL." @154:3-154:32
-        Name: Ident sql @155:3-155:6
-        Type: NamedType @155:8-155:15
-          Name: QualifiedName SqlType @155:8-155:15
-      Items[2]: FnDecl Self="self" @158:3-158:60
-        Doc: DocComment "This column's piece of a CREATE TABLE." @157:3-157:45
-        Name: Ident ddl @158:6-158:9
-        Result: NamedType @158:19-158:25
-          Name: QualifiedName String @158:19-158:25
-        Body: Block @158:26-158:60
-          Stmts[0]: ReturnStmt @158:28-158:58
-            Value: StringLit @158:35-158:58
-              Parts[0]: Interp @158:37-158:41
-                X: IdentExpr name @158:37-158:41
+        Items[1]: FieldItem @140:24-140:37
+          Name: Ident sql @140:24-140:27
+          Value: IdentExpr UINTEGER @140:29-140:37
+        Items[2]: FieldItem @140:39-140:47
+          Name: Ident kind @140:39-140:43
+          Value: IdentExpr id @140:45-140:47
+  Decls[11]: FnDecl @144:1-144:84
+    Doc: DocComment "The header's player column: whose ledger a role lands on unless it says otherwise." @143:1-143:87
+    Name: Ident playerColumn @144:4-144:16
+    Result: NamedType @144:22-144:28
+      Name: QualifiedName String @144:22-144:28
+    Body: Block @144:29-144:84
+      Stmts[0]: ReturnStmt @144:31-144:82
+        Value: SelectorExpr @144:38-144:82
+          X: ForceExpr @144:38-144:77
+            X: CallExpr @144:38-144:76
+              Fun: SelectorExpr @144:38-144:57
+                X: IdentExpr headerColumns @144:38-144:51
+                Name: Ident first @144:52-144:57
+              Args[0]: Arg @144:58-144:75
+                Value: LambdaExpr @144:58-144:75
+                  Params[0]: Ident c @144:58-144:59
+                  Body: BinaryExpr Op=== @144:63-144:75
+                    X: SelectorExpr @144:63-144:69
+                      X: IdentExpr c @144:63-144:64
+                      Name: Ident kind @144:65-144:69
+                    Y: IdentExpr id @144:73-144:75
+          Name: Ident name @144:78-144:82
+  Decls[12]: RecordDecl @148:1-156:2
+    Doc: DocComment "A provenance column the ingester prepends to every table: who sent the row, in which\nbatch, at which version. Never on the wire as a field." @146:1-147:59
+    Name: Ident ProvenanceColumn @148:8-148:24
+    Body: RecordBody @148:25-156:2
+      Items[0]: FieldDecl @150:3-150:14
+        Doc: DocComment "Its SQL name." @149:3-149:20
+        Name: Ident name @150:3-150:7
+        Type: NamedType @150:9-150:14
+          Name: QualifiedName Ident @150:9-150:14
+      Items[1]: FieldDecl @152:3-152:15
+        Doc: DocComment "Its SQL type, never NULL." @151:3-151:32
+        Name: Ident sql @152:3-152:6
+        Type: NamedType @152:8-152:15
+          Name: QualifiedName SqlType @152:8-152:15
+      Items[2]: FnDecl Self="self" @155:3-155:60
+        Doc: DocComment "This column's piece of a CREATE TABLE." @154:3-154:45
+        Name: Ident ddl @155:6-155:9
+        Result: NamedType @155:19-155:25
+          Name: QualifiedName String @155:19-155:25
+        Body: Block @155:26-155:60
+          Stmts[0]: ReturnStmt @155:28-155:58
+            Value: StringLit @155:35-155:58
+              Parts[0]: Interp @155:37-155:41
+                X: IdentExpr name @155:37-155:41
               Parts[1]: text " "
-              Parts[2]: Interp @158:44-158:47
-                X: IdentExpr sql @158:44-158:47
+              Parts[2]: Interp @155:44-155:47
+                X: IdentExpr sql @155:44-155:47
               Parts[3]: text " NOT NULL"
-  Decls[14]: LetDecl @162:1-168:2
-    Doc: DocComment "The provenance prefix of every CREATE TABLE, in order." @161:1-161:59
-    Name: Ident provenanceColumns @162:5-162:22
-    Type: KeyedType @162:24-162:56
-      List: ListType @162:24-162:42
-        Elem: NamedType @162:25-162:41
-          Name: QualifiedName ProvenanceColumn @162:25-162:41
-      Key: Ident name @162:52-162:56
-    Value: ListLit @162:59-168:2
-      Elems[0]: BraceLit @163:3-163:43
-        Items[0]: FieldItem @163:5-163:26
-          Name: Ident name @163:5-163:9
-          Value: StringLit @163:11-163:26
+  Decls[13]: LetDecl @159:1-165:2
+    Doc: DocComment "The provenance prefix of every CREATE TABLE, in order." @158:1-158:59
+    Name: Ident provenanceColumns @159:5-159:22
+    Type: KeyedType @159:24-159:56
+      List: ListType @159:24-159:42
+        Elem: NamedType @159:25-159:41
+          Name: QualifiedName ProvenanceColumn @159:25-159:41
+      Key: Ident name @159:52-159:56
+    Value: ListLit @159:59-165:2
+      Elems[0]: BraceLit @160:3-160:43
+        Items[0]: FieldItem @160:5-160:26
+          Name: Ident name @160:5-160:9
+          Value: StringLit @160:11-160:26
             Parts[0]: text "event_version"
-        Items[1]: FieldItem @163:28-163:41
-          Name: Ident sql @163:28-163:31
-          Value: IdentExpr UTINYINT @163:33-163:41
-      Elems[1]: BraceLit @164:3-164:41
-        Items[0]: FieldItem @164:5-164:24
-          Name: Ident name @164:5-164:9
-          Value: StringLit @164:11-164:24
+        Items[1]: FieldItem @160:28-160:41
+          Name: Ident sql @160:28-160:31
+          Value: IdentExpr UTINYINT @160:33-160:41
+      Elems[1]: BraceLit @161:3-161:41
+        Items[0]: FieldItem @161:5-161:24
+          Name: Ident name @161:5-161:9
+          Value: StringLit @161:11-161:24
             Parts[0]: text "producer_id"
-        Items[1]: FieldItem @164:26-164:39
-          Name: Ident sql @164:26-164:29
-          Value: IdentExpr UINTEGER @164:31-164:39
-      Elems[2]: BraceLit @165:3-165:35
-        Items[0]: FieldItem @165:5-165:20
-          Name: Ident name @165:5-165:9
-          Value: StringLit @165:11-165:20
+        Items[1]: FieldItem @161:26-161:39
+          Name: Ident sql @161:26-161:29
+          Value: IdentExpr UINTEGER @161:31-161:39
+      Elems[2]: BraceLit @162:3-162:35
+        Items[0]: FieldItem @162:5-162:20
+          Name: Ident name @162:5-162:9
+          Value: StringLit @162:11-162:20
             Parts[0]: text "boot_id"
-        Items[1]: FieldItem @165:22-165:33
-          Name: Ident sql @165:22-165:25
-          Value: IdentExpr BIGINT @165:27-165:33
-      Elems[3]: BraceLit @166:3-166:37
-        Items[0]: FieldItem @166:5-166:22
-          Name: Ident name @166:5-166:9
-          Value: StringLit @166:11-166:22
+        Items[1]: FieldItem @162:22-162:33
+          Name: Ident sql @162:22-162:25
+          Value: IdentExpr BIGINT @162:27-162:33
+      Elems[3]: BraceLit @163:3-163:37
+        Items[0]: FieldItem @163:5-163:22
+          Name: Ident name @163:5-163:9
+          Value: StringLit @163:11-163:22
             Parts[0]: text "batch_seq"
-        Items[1]: FieldItem @166:24-166:35
-          Name: Ident sql @166:24-166:27
-          Value: IdentExpr BIGINT @166:29-166:35
-      Elems[4]: BraceLit @167:3-167:37
-        Items[0]: FieldItem @167:5-167:19
-          Name: Ident name @167:5-167:9
-          Value: StringLit @167:11-167:19
+        Items[1]: FieldItem @163:24-163:35
+          Name: Ident sql @163:24-163:27
+          Value: IdentExpr BIGINT @163:29-163:35
+      Elems[4]: BraceLit @164:3-164:37
+        Items[0]: FieldItem @164:5-164:19
+          Name: Ident name @164:5-164:9
+          Value: StringLit @164:11-164:19
             Parts[0]: text "row_no"
-        Items[1]: FieldItem @167:21-167:35
-          Name: Ident sql @167:21-167:24
-          Value: IdentExpr USMALLINT @167:26-167:35
-  Decls[15]: FnDecl @171:1-178:2
-    Doc: DocComment "Bytes of one value of `t` on the wire." @170:1-170:43
-    Name: Ident sqlWidth @171:4-171:12
-    Params[0]: Param @171:13-171:23
-      Name: Ident t @171:13-171:14
-      Type: NamedType @171:16-171:23
-        Name: QualifiedName SqlType @171:16-171:23
-    Result: NamedType @171:28-171:31
-      Name: QualifiedName Int @171:28-171:31
-    Body: Block @171:32-178:2
-      Stmts[0]: ReturnStmt @172:3-177:4
-        Value: MatchExpr @172:10-177:4
-          Scrutinee: IdentExpr t @172:16-172:17
-          Arms[0]: MatchArm @173:5-173:27
-            Patterns[0]: Pattern @173:5-173:13
-              Name: QualifiedName UTINYINT @173:5-173:13
-            Patterns[1]: Pattern @173:15-173:22
-              Name: QualifiedName TINYINT @173:15-173:22
-            Body: IntLit Value=1 @173:26-173:27
-          Arms[1]: MatchArm @174:5-174:29
-            Patterns[0]: Pattern @174:5-174:14
-              Name: QualifiedName USMALLINT @174:5-174:14
-            Patterns[1]: Pattern @174:16-174:24
-              Name: QualifiedName SMALLINT @174:16-174:24
-            Body: IntLit Value=2 @174:28-174:29
-          Arms[2]: MatchArm @175:5-175:34
-            Patterns[0]: Pattern @175:5-175:13
-              Name: QualifiedName UINTEGER @175:5-175:13
-            Patterns[1]: Pattern @175:15-175:22
-              Name: QualifiedName INTEGER @175:15-175:22
-            Patterns[2]: Pattern @175:24-175:29
-              Name: QualifiedName FLOAT @175:24-175:29
-            Body: IntLit Value=4 @175:33-175:34
-          Arms[3]: MatchArm @176:5-176:25
-            Patterns[0]: Pattern @176:5-176:12
-              Name: QualifiedName UBIGINT @176:5-176:12
-            Patterns[1]: Pattern @176:14-176:20
-              Name: QualifiedName BIGINT @176:14-176:20
-            Body: IntLit Value=8 @176:24-176:25
-  Decls[16]: EnumDecl @186:1-186:47
-    Doc: DocComment "What a ledger leg moves. gold, item, and the point tokens are reconciled against the\ndatabase snapshot; `none` documents a table that moves nothing." @184:1-185:68
-    Name: Ident Currency @186:6-186:14
-    Members[0]: EnumMember @186:17-186:21
-      Name: Ident gold @186:17-186:21
-    Members[1]: EnumMember @186:23-186:27
-      Name: Ident item @186:23-186:27
-    Members[2]: EnumMember @186:29-186:45
-      Name: Ident nothing @186:29-186:36
-      Value: StringLit @186:39-186:45
+        Items[1]: FieldItem @164:21-164:35
+          Name: Ident sql @164:21-164:24
+          Value: IdentExpr USMALLINT @164:26-164:35
+  Decls[14]: FnDecl @168:1-175:2
+    Doc: DocComment "Bytes of one value of `t` on the wire." @167:1-167:43
+    Name: Ident sqlWidth @168:4-168:12
+    Params[0]: Param @168:13-168:23
+      Name: Ident t @168:13-168:14
+      Type: NamedType @168:16-168:23
+        Name: QualifiedName SqlType @168:16-168:23
+    Result: NamedType @168:28-168:31
+      Name: QualifiedName Int @168:28-168:31
+    Body: Block @168:32-175:2
+      Stmts[0]: ReturnStmt @169:3-174:4
+        Value: MatchExpr @169:10-174:4
+          Scrutinee: IdentExpr t @169:16-169:17
+          Arms[0]: MatchArm @170:5-170:27
+            Patterns[0]: Pattern @170:5-170:13
+              Name: QualifiedName UTINYINT @170:5-170:13
+            Patterns[1]: Pattern @170:15-170:22
+              Name: QualifiedName TINYINT @170:15-170:22
+            Body: IntLit Value=1 @170:26-170:27
+          Arms[1]: MatchArm @171:5-171:29
+            Patterns[0]: Pattern @171:5-171:14
+              Name: QualifiedName USMALLINT @171:5-171:14
+            Patterns[1]: Pattern @171:16-171:24
+              Name: QualifiedName SMALLINT @171:16-171:24
+            Body: IntLit Value=2 @171:28-171:29
+          Arms[2]: MatchArm @172:5-172:34
+            Patterns[0]: Pattern @172:5-172:13
+              Name: QualifiedName UINTEGER @172:5-172:13
+            Patterns[1]: Pattern @172:15-172:22
+              Name: QualifiedName INTEGER @172:15-172:22
+            Patterns[2]: Pattern @172:24-172:29
+              Name: QualifiedName FLOAT @172:24-172:29
+            Body: IntLit Value=4 @172:33-172:34
+          Arms[3]: MatchArm @173:5-173:25
+            Patterns[0]: Pattern @173:5-173:12
+              Name: QualifiedName UBIGINT @173:5-173:12
+            Patterns[1]: Pattern @173:14-173:20
+              Name: QualifiedName BIGINT @173:14-173:20
+            Body: IntLit Value=8 @173:24-173:25
+  Decls[15]: EnumDecl @183:1-183:47
+    Doc: DocComment "What a ledger leg moves. gold, item, and the point tokens are reconciled against the\ndatabase snapshot; `none` documents a table that moves nothing." @181:1-182:68
+    Name: Ident Currency @183:6-183:14
+    Members[0]: EnumMember @183:17-183:21
+      Name: Ident gold @183:17-183:21
+    Members[1]: EnumMember @183:23-183:27
+      Name: Ident item @183:23-183:27
+    Members[2]: EnumMember @183:29-183:45
+      Name: Ident nothing @183:29-183:36
+      Value: StringLit @183:39-183:45
         Parts[0]: text "none"
-  Decls[17]: EnumDecl @189:1-189:55
-    Doc: DocComment "The direction of a leg, from the player's point of view." @188:1-188:61
-    Name: Ident Bucket @189:6-189:12
-    Members[0]: EnumMember @189:15-189:19
-      Name: Ident mint @189:15-189:19
-    Members[1]: EnumMember @189:21-189:25
-      Name: Ident sink @189:21-189:25
-    Members[2]: EnumMember @189:27-189:35
-      Name: Ident transfer @189:27-189:35
-    Members[3]: EnumMember @189:37-189:53
-      Name: Ident nothing @189:37-189:44
-      Value: StringLit @189:47-189:53
+  Decls[16]: EnumDecl @186:1-186:55
+    Doc: DocComment "The direction of a leg, from the player's point of view." @185:1-185:61
+    Name: Ident Bucket @186:6-186:12
+    Members[0]: EnumMember @186:15-186:19
+      Name: Ident mint @186:15-186:19
+    Members[1]: EnumMember @186:21-186:25
+      Name: Ident sink @186:21-186:25
+    Members[2]: EnumMember @186:27-186:35
+      Name: Ident transfer @186:27-186:35
+    Members[3]: EnumMember @186:37-186:53
+      Name: Ident nothing @186:37-186:44
+      Value: StringLit @186:47-186:53
         Parts[0]: text "none"
-  Decls[18]: EnumDecl @192:1-192:21
-    Doc: DocComment "Which side of a single-row transfer a leg reads." @191:1-191:53
-    Name: Ident Leg @192:6-192:9
-    Members[0]: EnumMember @192:12-192:15
-      Name: Ident out @192:12-192:15
-    Members[1]: EnumMember @192:17-192:19
-      Name: Ident in @192:17-192:19
-  Decls[19]: VariantDecl @195:1-207:2
-    Doc: DocComment "The rows of a table one ledger role covers." @194:1-194:48
-    Name: Ident Rows @195:9-195:13
-    Items[0]: VariantCase @197:3-197:8
-      Doc: DocComment "Every row." @196:3-196:17
-      Name: Ident every @197:3-197:8
-    Items[1]: VariantCase @199:3-206:4
-      Doc: DocComment "The rows whose `column` holds one of `kinds`, members of the column's vocabulary." @198:3-198:88
-      Name: Ident some @199:3-199:7
-      Body: RecordBody @199:8-206:4
-        Items[0]: FieldDecl @201:5-201:23
-          Doc: DocComment "The enum8 column that splits the rows." @200:5-200:47
-          Name: Ident column @201:5-201:11
-          Type: RefType @201:13-201:23
-            Name: QualifiedName Column @201:17-201:23
-        Items[1]: FieldDecl @203:5-203:19
-          Doc: DocComment "Its vocabulary, so the kinds are typed." @202:5-202:48
-          Name: Ident of @203:5-203:7
-          Type: NamedType @203:9-203:19
-            Name: QualifiedName Vocabulary @203:9-203:19
-        Items[2]: FieldDecl @205:5-205:29
-          Doc: DocComment "The members covered." @204:5-204:29
-          Name: Ident kinds @205:5-205:10
-          Type: ListType @205:12-205:29
-            Elem: NamedType @205:13-205:23
-              Name: QualifiedName Member @205:13-205:19
-              Args: TypeArgs @205:19-205:23
-                Args[0]: IdentExpr of @205:20-205:22
-            Args: TypeArgs @205:24-205:29
-              Args[0]: RangeExpr Op=.. @205:25-205:28
-                Lo: IntLit Value=1 @205:25-205:26
-  Decls[20]: RecordDecl @210:1-246:2
-    Doc: DocComment "One ledger leg a table's rows contribute, or the statement that they move nothing." @209:1-209:87
-    Name: Ident Role @210:8-210:12
-    Body: RecordBody @210:13-246:2
-      Items[0]: FieldDecl @212:3-212:21
-        Doc: DocComment "The rows it covers." @211:3-211:26
-        Name: Ident rows @212:3-212:7
-        Type: NamedType @212:9-212:13
-          Name: QualifiedName Rows @212:9-212:13
-        Default: IdentExpr every @212:16-212:21
-      Items[1]: FieldDecl @214:3-214:21
-        Doc: DocComment "What moves." @213:3-213:18
-        Name: Ident currency @214:3-214:11
-        Type: NamedType @214:13-214:21
-          Name: QualifiedName Currency @214:13-214:21
-      Items[2]: FieldDecl @216:3-216:17
-        Doc: DocComment "Mint, sink or transfer." @215:3-215:30
-        Name: Ident bucket @216:3-216:9
-        Type: NamedType @216:11-216:17
-          Name: QualifiedName Bucket @216:11-216:17
-      Items[3]: FieldDecl @218:3-218:20
-        Doc: DocComment "+1 credit, -1 debit, 0: the amount is already signed (or there is none)." @217:3-217:79
-        Name: Ident sign @218:3-218:7
-        Type: NamedType @218:9-218:20
-          Name: QualifiedName Int @218:9-218:12
-          Args: TypeArgs @218:12-218:20
-            Args[0]: RangeExpr Op=..= @218:13-218:19
-              Lo: IntLit Value=-1 @218:13-218:15
-              Hi: IntLit Value=1 @218:18-218:19
-      Items[4]: FieldDecl @220:3-220:15
-        Doc: DocComment "The stable vocabulary the economy panel groups on." @219:3-219:57
-        Name: Ident token @220:3-220:8
-        Type: NamedType @220:10-220:15
-          Name: QualifiedName Ident @220:10-220:15
-      Items[5]: FieldDecl @222:3-222:19
-        Doc: DocComment "The side a single-row transfer reads; none for a table with one row per side." @221:3-221:84
-        Name: Ident leg @222:3-222:6
-        Type: OptionalType @222:8-222:12
-          Elem: NamedType @222:8-222:11
-            Name: QualifiedName Leg @222:8-222:11
-        Default: NoneLit @222:15-222:19
-      Items[6]: FieldDecl @224:3-224:23
-        Doc: DocComment "An extra predicate on the table's own columns (DuckDB SQL)." @223:3-223:66
-        Name: Ident filter @224:3-224:9
-        Type: OptionalType @224:11-224:16
-          Elem: NamedType @224:11-224:15
-            Name: QualifiedName Text @224:11-224:15
-        Default: NoneLit @224:19-224:23
-      Items[7]: FieldDecl @226:3-226:29
-        Doc: DocComment "The magnitude; none for a row that documents a path with no amount." @225:3-225:74
-        Name: Ident amount @226:3-226:9
-        Type: OptionalType @226:11-226:22
-          Elem: RefType @226:11-226:21
-            Name: QualifiedName Column @226:15-226:21
-        Default: NoneLit @226:25-226:29
-      Items[8]: FieldDecl @228:3-228:27
-        Doc: DocComment "For item legs: the column naming the item." @227:3-227:49
-        Name: Ident item @228:3-228:7
-        Type: OptionalType @228:9-228:20
-          Elem: RefType @228:9-228:19
-            Name: QualifiedName Column @228:13-228:19
-        Default: NoneLit @228:23-228:27
-      Items[9]: FieldDecl @230:3-230:29
-        Doc: DocComment "Whose ledger the leg lands on; none: the header's player_id." @229:3-229:67
-        Name: Ident player @230:3-230:9
-        Type: OptionalType @230:11-230:22
-          Elem: RefType @230:11-230:21
-            Name: QualifiedName Column @230:15-230:21
-        Default: NoneLit @230:25-230:29
-      Items[10]: FieldDecl @232:3-232:35
-        Doc: DocComment "The other side, if any." @231:3-231:30
-        Name: Ident counterparty @232:3-232:15
-        Type: OptionalType @232:17-232:28
-          Elem: RefType @232:17-232:27
-            Name: QualifiedName Column @232:21-232:27
-        Default: NoneLit @232:31-232:35
-      Items[11]: FieldDecl @234:3-234:16
-        Doc: DocComment "Summed into the reconciliation (true), or real telemetry that must not be summed." @233:3-233:88
-        Name: Ident counted @234:3-234:10
-        Type: NamedType @234:12-234:16
-          Name: QualifiedName Bool @234:12-234:16
-      Items[12]: FieldDecl @236:3-236:25
-        Doc: DocComment "The token this row would double-count with." @235:3-235:50
-        Name: Ident dedupOf @236:3-236:10
-        Type: OptionalType @236:12-236:18
-          Elem: NamedType @236:12-236:17
-            Name: QualifiedName Ident @236:12-236:17
-        Default: NoneLit @236:21-236:25
-      Items[13]: FieldDecl @238:3-238:33
-        Doc: DocComment "The last version whose rows this role reads; none: every version." @237:3-237:72
-        Name: Ident untilVersion @238:3-238:15
-        Type: OptionalType @238:17-238:26
-          Elem: NamedType @238:17-238:25
-            Name: QualifiedName Int @238:17-238:20
-            Args: TypeArgs @238:20-238:25
-              Args[0]: RangeExpr Op=.. @238:21-238:24
-                Lo: IntLit Value=1 @238:21-238:22
-        Default: NoneLit @238:29-238:33
-      Items[14]: FieldDecl @240:3-240:13
-        Doc: DocComment "Why, citing a function, never a line number." @239:3-239:51
-        Name: Ident note @240:3-240:7
-        Type: NamedType @240:9-240:13
-          Name: QualifiedName Text @240:9-240:13
-      Items[15]: CheckDecl Keyword=check @242:3-243:68
-        Cond: BinaryExpr Op=== @242:9-242:53
-          X: ParenExpr @242:9-242:30
-            X: BinaryExpr Op=== @242:10-242:29
-              X: IdentExpr currency @242:10-242:18
-              Y: IdentExpr nothing @242:22-242:29
-          Y: ParenExpr @242:34-242:53
-            X: BinaryExpr Op=== @242:35-242:52
-              X: IdentExpr bucket @242:35-242:41
-              Y: IdentExpr nothing @242:45-242:52
-        At: Ident bucket @242:57-242:63
-        Message: StringLit @243:10-243:68
+  Decls[17]: EnumDecl @189:1-189:21
+    Doc: DocComment "Which side of a single-row transfer a leg reads." @188:1-188:53
+    Name: Ident Leg @189:6-189:9
+    Members[0]: EnumMember @189:12-189:15
+      Name: Ident out @189:12-189:15
+    Members[1]: EnumMember @189:17-189:19
+      Name: Ident in @189:17-189:19
+  Decls[18]: VariantDecl @192:1-205:2
+    Doc: DocComment "The rows of a table one ledger role covers." @191:1-191:48
+    Name: Ident Rows @192:9-192:13
+    Items[0]: VariantCase @194:3-194:8
+      Doc: DocComment "Every row." @193:3-193:17
+      Name: Ident every @194:3-194:8
+    Items[1]: VariantCase @196:3-204:4
+      Doc: DocComment "The rows whose `column` holds one of `kinds`, members of the column's vocabulary." @195:3-195:88
+      Name: Ident some @196:3-196:7
+      Body: RecordBody @196:8-204:4
+        Items[0]: FieldDecl @198:5-198:23
+          Doc: DocComment "The enum8 column that splits the rows." @197:5-197:47
+          Name: Ident column @198:5-198:11
+          Type: RefType @198:13-198:23
+            Name: QualifiedName Column @198:17-198:23
+        Items[1]: FieldDecl @200:5-200:19
+          Doc: DocComment "Its vocabulary, so the kinds are typed." @199:5-199:48
+          Name: Ident of @200:5-200:7
+          Type: NamedType @200:9-200:19
+            Name: QualifiedName Vocabulary @200:9-200:19
+        Items[2]: FieldDecl @203:5-203:34
+          Doc: DocComment "The members covered." @202:5-202:29
+          Name: Ident kinds @203:5-203:10
+          Type: ListType @203:12-203:34
+            Elem: NamedType Past="past" @203:13-203:28
+              Name: QualifiedName Member @203:18-203:24
+              Args: TypeArgs @203:24-203:28
+                Args[0]: IdentExpr of @203:25-203:27
+            Args: TypeArgs @203:29-203:34
+              Args[0]: RangeExpr Op=.. @203:30-203:33
+                Lo: IntLit Value=1 @203:30-203:31
+  Decls[19]: RecordDecl @208:1-244:2
+    Doc: DocComment "One ledger leg a table's rows contribute, or the statement that they move nothing." @207:1-207:87
+    Name: Ident Role @208:8-208:12
+    Body: RecordBody @208:13-244:2
+      Items[0]: FieldDecl @210:3-210:21
+        Doc: DocComment "The rows it covers." @209:3-209:26
+        Name: Ident rows @210:3-210:7
+        Type: NamedType @210:9-210:13
+          Name: QualifiedName Rows @210:9-210:13
+        Default: IdentExpr every @210:16-210:21
+      Items[1]: FieldDecl @212:3-212:21
+        Doc: DocComment "What moves." @211:3-211:18
+        Name: Ident currency @212:3-212:11
+        Type: NamedType @212:13-212:21
+          Name: QualifiedName Currency @212:13-212:21
+      Items[2]: FieldDecl @214:3-214:17
+        Doc: DocComment "Mint, sink or transfer." @213:3-213:30
+        Name: Ident bucket @214:3-214:9
+        Type: NamedType @214:11-214:17
+          Name: QualifiedName Bucket @214:11-214:17
+      Items[3]: FieldDecl @216:3-216:20
+        Doc: DocComment "+1 credit, -1 debit, 0: the amount is already signed (or there is none)." @215:3-215:79
+        Name: Ident sign @216:3-216:7
+        Type: NamedType @216:9-216:20
+          Name: QualifiedName Int @216:9-216:12
+          Args: TypeArgs @216:12-216:20
+            Args[0]: RangeExpr Op=..= @216:13-216:19
+              Lo: IntLit Value=-1 @216:13-216:15
+              Hi: IntLit Value=1 @216:18-216:19
+      Items[4]: FieldDecl @218:3-218:15
+        Doc: DocComment "The stable vocabulary the economy panel groups on." @217:3-217:57
+        Name: Ident token @218:3-218:8
+        Type: NamedType @218:10-218:15
+          Name: QualifiedName Ident @218:10-218:15
+      Items[5]: FieldDecl @220:3-220:19
+        Doc: DocComment "The side a single-row transfer reads; none for a table with one row per side." @219:3-219:84
+        Name: Ident leg @220:3-220:6
+        Type: OptionalType @220:8-220:12
+          Elem: NamedType @220:8-220:11
+            Name: QualifiedName Leg @220:8-220:11
+        Default: NoneLit @220:15-220:19
+      Items[6]: FieldDecl @222:3-222:25
+        Doc: DocComment "An extra predicate on the table's own columns (DuckDB SQL)." @221:3-221:66
+        Name: Ident filter @222:3-222:9
+        Type: OptionalType @222:11-222:18
+          Elem: NamedType @222:11-222:17
+            Name: QualifiedName String @222:11-222:17
+        Default: NoneLit @222:21-222:25
+      Items[7]: FieldDecl @224:3-224:29
+        Doc: DocComment "The magnitude; none for a row that documents a path with no amount." @223:3-223:74
+        Name: Ident amount @224:3-224:9
+        Type: OptionalType @224:11-224:22
+          Elem: RefType @224:11-224:21
+            Name: QualifiedName Column @224:15-224:21
+        Default: NoneLit @224:25-224:29
+      Items[8]: FieldDecl @226:3-226:27
+        Doc: DocComment "For item legs: the column naming the item." @225:3-225:49
+        Name: Ident item @226:3-226:7
+        Type: OptionalType @226:9-226:20
+          Elem: RefType @226:9-226:19
+            Name: QualifiedName Column @226:13-226:19
+        Default: NoneLit @226:23-226:27
+      Items[9]: FieldDecl @228:3-228:29
+        Doc: DocComment "Whose ledger the leg lands on; none: the header's player_id." @227:3-227:67
+        Name: Ident player @228:3-228:9
+        Type: OptionalType @228:11-228:22
+          Elem: RefType @228:11-228:21
+            Name: QualifiedName Column @228:15-228:21
+        Default: NoneLit @228:25-228:29
+      Items[10]: FieldDecl @230:3-230:35
+        Doc: DocComment "The other side, if any." @229:3-229:30
+        Name: Ident counterparty @230:3-230:15
+        Type: OptionalType @230:17-230:28
+          Elem: RefType @230:17-230:27
+            Name: QualifiedName Column @230:21-230:27
+        Default: NoneLit @230:31-230:35
+      Items[11]: FieldDecl @232:3-232:16
+        Doc: DocComment "Summed into the reconciliation (true), or real telemetry that must not be summed." @231:3-231:88
+        Name: Ident counted @232:3-232:10
+        Type: NamedType @232:12-232:16
+          Name: QualifiedName Bool @232:12-232:16
+      Items[12]: FieldDecl @234:3-234:25
+        Doc: DocComment "The token this row would double-count with." @233:3-233:50
+        Name: Ident dedupOf @234:3-234:10
+        Type: OptionalType @234:12-234:18
+          Elem: NamedType @234:12-234:17
+            Name: QualifiedName Ident @234:12-234:17
+        Default: NoneLit @234:21-234:25
+      Items[13]: FieldDecl @236:3-236:33
+        Doc: DocComment "The last version whose rows this role reads; none: every version." @235:3-235:72
+        Name: Ident untilVersion @236:3-236:15
+        Type: OptionalType @236:17-236:26
+          Elem: NamedType @236:17-236:25
+            Name: QualifiedName Int @236:17-236:20
+            Args: TypeArgs @236:20-236:25
+              Args[0]: RangeExpr Op=.. @236:21-236:24
+                Lo: IntLit Value=1 @236:21-236:22
+        Default: NoneLit @236:29-236:33
+      Items[14]: FieldDecl @238:3-238:15
+        Doc: DocComment "Why, citing a function, never a line number." @237:3-237:51
+        Name: Ident note @238:3-238:7
+        Type: NamedType @238:9-238:15
+          Name: QualifiedName String @238:9-238:15
+      Items[15]: CheckDecl Keyword=check @240:3-241:68
+        Cond: BinaryExpr Op=== @240:9-240:53
+          X: ParenExpr @240:9-240:30
+            X: BinaryExpr Op=== @240:10-240:29
+              X: IdentExpr currency @240:10-240:18
+              Y: IdentExpr nothing @240:22-240:29
+          Y: ParenExpr @240:34-240:53
+            X: BinaryExpr Op=== @240:35-240:52
+              X: IdentExpr bucket @240:35-240:41
+              Y: IdentExpr nothing @240:45-240:52
+        At: Ident bucket @240:57-240:63
+        Message: StringLit @241:10-241:68
           Parts[0]: text "a role moves no currency exactly when its bucket is none"
-      Items[16]: CheckDecl Keyword=check @244:3-244:93
-        Cond: BinaryExpr Op=or @244:9-244:43
-          X: UnaryExpr Op=not @244:9-244:20
-            X: IdentExpr counted @244:13-244:20
-          Y: BinaryExpr Op=!= @244:24-244:43
-            X: IdentExpr currency @244:24-244:32
-            Y: IdentExpr nothing @244:36-244:43
-        At: Ident counted @244:47-244:54
-        Message: StringLit @244:60-244:93
+      Items[16]: CheckDecl Keyword=check @242:3-242:93
+        Cond: BinaryExpr Op=or @242:9-242:43
+          X: UnaryExpr Op=not @242:9-242:20
+            X: IdentExpr counted @242:13-242:20
+          Y: BinaryExpr Op=!= @242:24-242:43
+            X: IdentExpr currency @242:24-242:32
+            Y: IdentExpr nothing @242:36-242:43
+        At: Ident counted @242:47-242:54
+        Message: StringLit @242:60-242:93
           Parts[0]: text "a counted role moves a currency"
-      Items[17]: CheckDecl Keyword=check @245:3-245:82
-        Cond: BinaryExpr Op=or @245:9-245:42
-          X: BinaryExpr Op=== @245:9-245:20
-            X: IdentExpr leg @245:9-245:12
-            Y: NoneLit @245:16-245:20
-          Y: BinaryExpr Op=== @245:24-245:42
-            X: IdentExpr bucket @245:24-245:30
-            Y: IdentExpr transfer @245:34-245:42
-        At: Ident leg @245:46-245:49
-        Message: StringLit @245:55-245:82
+      Items[17]: CheckDecl Keyword=check @243:3-243:82
+        Cond: BinaryExpr Op=or @243:9-243:42
+          X: BinaryExpr Op=== @243:9-243:20
+            X: IdentExpr leg @243:9-243:12
+            Y: NoneLit @243:16-243:20
+          Y: BinaryExpr Op=== @243:24-243:42
+            X: IdentExpr bucket @243:24-243:30
+            Y: IdentExpr transfer @243:34-243:42
+        At: Ident leg @243:46-243:49
+        Message: StringLit @243:55-243:82
           Parts[0]: text "only a transfer has a leg"
-  Decls[21]: RecordDecl @253:1-359:2
-    Doc: DocComment "One telemetry table: the rows of one event type." @252:1-252:53
-    Name: Ident Event @253:8-253:13
-    Body: RecordBody @253:14-359:2
-      Items[0]: FieldDecl @255:3-255:20
-        Doc: DocComment "What one row records." @254:3-254:28
-        Name: Ident description @255:3-255:14
-        Type: NamedType @255:16-255:20
-          Name: QualifiedName Text @255:16-255:20
-      Items[1]: FieldDecl @257:3-257:22
-        Doc: DocComment "The current layout version: the wire version byte and the lake's event_version." @256:3-256:86
-        Name: Ident version @257:3-257:10
-        Type: NamedType @257:12-257:22
-          Name: QualifiedName UInt8 @257:12-257:17
-          Args: TypeArgs @257:17-257:22
-            Args[0]: RangeExpr Op=.. @257:18-257:21
-              Lo: IntLit Value=1 @257:18-257:19
-      Items[2]: FieldDecl @260:3-260:22
-        Doc: DocComment "The first version whose layout this catalogue knows. Tables older than the schema lock\nstart at 2, its floor; their earlier history is lost." @258:3-259:60
-        Name: Ident since @260:3-260:8
-        Type: NamedType @260:10-260:18
-          Name: QualifiedName Int @260:10-260:13
-          Args: TypeArgs @260:13-260:18
-            Args[0]: RangeExpr Op=.. @260:14-260:17
-              Lo: IntLit Value=1 @260:14-260:15
-        Default: IntLit Value=1 @260:21-260:22
-      Items[3]: FieldDecl @262:3-262:13
-        Doc: DocComment "Ring policy." @261:3-261:19
-        Name: Ident tier @262:3-262:7
-        Type: NamedType @262:9-262:13
-          Name: QualifiedName Tier @262:9-262:13
-      Items[4]: FieldDecl @264:3-264:29
-        Doc: DocComment "The processes that own a ring for it (none: read-only history)." @263:3-263:70
-        Name: Ident producers @264:3-264:12
-        Type: ListType @264:14-264:24
-          Elem: NamedType @264:15-264:23
-            Name: QualifiedName Producer @264:15-264:23
-        Default: ListLit @264:27-264:29
-      Items[5]: FieldDecl @266:3-266:31
-        Doc: DocComment "How the client enqueues it." @265:3-265:34
-        Name: Ident enqueue @266:3-266:10
-        Type: NamedType @266:12-266:19
-          Name: QualifiedName Enqueue @266:12-266:19
-        Default: IdentExpr generated @266:22-266:31
-      Items[6]: FieldDecl @268:3-268:34
-        Doc: DocComment "The body columns after the header, in wire order, retired ones where they stood." @267:3-267:87
-        Name: Ident columns @268:3-268:10
-        Type: KeyedType @268:12-268:34
-          List: ListType @268:12-268:20
-            Elem: NamedType @268:13-268:19
-              Name: QualifiedName Column @268:13-268:19
-          Key: Ident name @268:30-268:34
-      Items[7]: FieldDecl @270:3-270:22
-        Doc: DocComment "What its rows mean to the ledgers; empty: no ledger at all." @269:3-269:66
-        Name: Ident ledger @270:3-270:9
-        Type: ListType @270:11-270:17
-          Elem: NamedType @270:12-270:16
-            Name: QualifiedName Role @270:12-270:16
-        Default: ListLit @270:20-270:22
-      Items[8]: FieldDecl @273:3-273:34
-        Doc: DocComment "The enum8 column the ledger is typed by. When set, every live member of its vocabulary\nis covered by some role (L-0111), so a new kind cannot ship without a ledger decision." @271:3-272:93
-        Name: Ident ledgerKinds @273:3-273:14
-        Type: OptionalType @273:16-273:27
-          Elem: RefType @273:16-273:26
-            Name: QualifiedName Column @273:20-273:26
-        Default: NoneLit @273:30-273:34
-      Items[9]: CheckDecl Keyword=check @275:3-275:76
-        Cond: CallExpr @275:9-275:29
-          Fun: SelectorExpr @275:9-275:27
-            X: IdentExpr producers @275:9-275:18
-            Name: Ident isUnique @275:19-275:27
-        At: Ident producers @275:33-275:42
-        Message: StringLit @275:48-275:76
+  Decls[20]: RecordDecl @251:1-357:2
+    Doc: DocComment "One telemetry table: the rows of one event type." @250:1-250:53
+    Name: Ident Event @251:8-251:13
+    Body: RecordBody @251:14-357:2
+      Items[0]: FieldDecl @253:3-253:22
+        Doc: DocComment "What one row records." @252:3-252:28
+        Name: Ident description @253:3-253:14
+        Type: NamedType @253:16-253:22
+          Name: QualifiedName String @253:16-253:22
+      Items[1]: FieldDecl @255:3-255:22
+        Doc: DocComment "The current layout version: the wire version byte and the lake's event_version." @254:3-254:86
+        Name: Ident version @255:3-255:10
+        Type: NamedType @255:12-255:22
+          Name: QualifiedName UInt8 @255:12-255:17
+          Args: TypeArgs @255:17-255:22
+            Args[0]: RangeExpr Op=.. @255:18-255:21
+              Lo: IntLit Value=1 @255:18-255:19
+      Items[2]: FieldDecl @258:3-258:22
+        Doc: DocComment "The first version whose layout this catalogue knows. Tables older than the schema lock\nstart at 2, its floor; their earlier history is lost." @256:3-257:60
+        Name: Ident since @258:3-258:8
+        Type: NamedType @258:10-258:18
+          Name: QualifiedName Int @258:10-258:13
+          Args: TypeArgs @258:13-258:18
+            Args[0]: RangeExpr Op=.. @258:14-258:17
+              Lo: IntLit Value=1 @258:14-258:15
+        Default: IntLit Value=1 @258:21-258:22
+      Items[3]: FieldDecl @260:3-260:13
+        Doc: DocComment "Ring policy." @259:3-259:19
+        Name: Ident tier @260:3-260:7
+        Type: NamedType @260:9-260:13
+          Name: QualifiedName Tier @260:9-260:13
+      Items[4]: FieldDecl @262:3-262:29
+        Doc: DocComment "The processes that own a ring for it (none: read-only history)." @261:3-261:70
+        Name: Ident producers @262:3-262:12
+        Type: ListType @262:14-262:24
+          Elem: NamedType @262:15-262:23
+            Name: QualifiedName Producer @262:15-262:23
+        Default: ListLit @262:27-262:29
+      Items[5]: FieldDecl @264:3-264:31
+        Doc: DocComment "How the client enqueues it." @263:3-263:34
+        Name: Ident enqueue @264:3-264:10
+        Type: NamedType @264:12-264:19
+          Name: QualifiedName Enqueue @264:12-264:19
+        Default: IdentExpr generated @264:22-264:31
+      Items[6]: FieldDecl @266:3-266:34
+        Doc: DocComment "The body columns after the header, in wire order, retired ones where they stood." @265:3-265:87
+        Name: Ident columns @266:3-266:10
+        Type: KeyedType @266:12-266:34
+          List: ListType @266:12-266:20
+            Elem: NamedType @266:13-266:19
+              Name: QualifiedName Column @266:13-266:19
+          Key: Ident name @266:30-266:34
+      Items[7]: FieldDecl @268:3-268:22
+        Doc: DocComment "What its rows mean to the ledgers; empty: no ledger at all." @267:3-267:66
+        Name: Ident ledger @268:3-268:9
+        Type: ListType @268:11-268:17
+          Elem: NamedType @268:12-268:16
+            Name: QualifiedName Role @268:12-268:16
+        Default: ListLit @268:20-268:22
+      Items[8]: FieldDecl @271:3-271:34
+        Doc: DocComment "The enum8 column the ledger is typed by. When set, every live member of its vocabulary\nis covered by some role (L-0111), so a new kind cannot ship without a ledger decision." @269:3-270:93
+        Name: Ident ledgerKinds @271:3-271:14
+        Type: OptionalType @271:16-271:27
+          Elem: RefType @271:16-271:26
+            Name: QualifiedName Column @271:20-271:26
+        Default: NoneLit @271:30-271:34
+      Items[9]: CheckDecl Keyword=check @273:3-273:76
+        Cond: CallExpr @273:9-273:29
+          Fun: SelectorExpr @273:9-273:27
+            X: IdentExpr producers @273:9-273:18
+            Name: Ident isUnique @273:19-273:27
+        At: Ident producers @273:33-273:42
+        Message: StringLit @273:48-273:76
           Parts[0]: text "a producer is listed twice"
-      Items[10]: CheckDecl Keyword=check @276:3-277:71
-        Cond: BinaryExpr Op=== @276:9-276:52
-          X: ParenExpr @276:9-276:30
-            X: CallExpr @276:10-276:29
-              Fun: SelectorExpr @276:10-276:27
-                X: IdentExpr producers @276:10-276:19
-                Name: Ident isEmpty @276:20-276:27
-          Y: ParenExpr @276:34-276:52
-            X: BinaryExpr Op=== @276:35-276:51
-              X: IdentExpr tier @276:35-276:39
-              Y: IdentExpr READONLY @276:43-276:51
-        At: Ident tier @276:56-276:60
-        Message: StringLit @277:10-277:71
+      Items[10]: CheckDecl Keyword=check @274:3-275:71
+        Cond: BinaryExpr Op=== @274:9-274:52
+          X: ParenExpr @274:9-274:30
+            X: CallExpr @274:10-274:29
+              Fun: SelectorExpr @274:10-274:27
+                X: IdentExpr producers @274:10-274:19
+                Name: Ident isEmpty @274:20-274:27
+          Y: ParenExpr @274:34-274:52
+            X: BinaryExpr Op=== @274:35-274:51
+              X: IdentExpr tier @274:35-274:39
+              Y: IdentExpr READONLY @274:43-274:51
+        At: Ident tier @274:56-274:60
+        Message: StringLit @275:10-275:71
           Parts[0]: text "a READONLY table has no producer, and only a READONLY table"
-      Items[11]: CheckDecl Keyword=check @278:3-279:75
-        Cond: BinaryExpr Op=<= @278:9-278:25
-          X: IdentExpr since @278:9-278:14
-          Y: IdentExpr version @278:18-278:25
-        At: Ident since @278:29-278:34
-        Message: StringLit @279:10-279:75
+      Items[11]: CheckDecl Keyword=check @276:3-277:75
+        Cond: BinaryExpr Op=<= @276:9-276:25
+          X: IdentExpr since @276:9-276:14
+          Y: IdentExpr version @276:18-276:25
+        At: Ident since @276:29-276:34
+        Message: StringLit @277:10-277:75
           Parts[0]: text "version "
-          Parts[1]: Interp @279:20-279:27
-            X: IdentExpr version @279:20-279:27
+          Parts[1]: Interp @277:20-277:27
+            X: IdentExpr version @277:20-277:27
           Parts[2]: text " is older than the first known version "
-          Parts[3]: Interp @279:68-279:73
-            X: IdentExpr since @279:68-279:73
-      Items[12]: CheckDecl Keyword=check @280:3-344:4
-        Body: Block @280:9-344:4
-          Stmts[0]: ForStmt @281:5-295:6
-            Vars[0]: Ident c @281:9-281:10
-            Iter: IdentExpr columns @281:14-281:21
-            Body: Block @281:22-295:6
-              Stmts[0]: IfStmt @283:7-285:8
-                Cond: BinaryExpr Op=and @283:10-283:69
-                  X: BinaryExpr Op=!= @283:10-283:25
-                    X: SelectorExpr @283:10-283:17
-                      X: IdentExpr c @283:10-283:11
-                      Name: Ident since @283:12-283:17
-                    Y: NoneLit @283:21-283:25
-                  Y: ParenExpr @283:30-283:69
-                    X: BinaryExpr Op=or @283:31-283:68
-                      X: BinaryExpr Op=<= @283:31-283:47
-                        X: SelectorExpr @283:31-283:38
-                          X: IdentExpr c @283:31-283:32
-                          Name: Ident since @283:33-283:38
-                        Y: IdentExpr since @283:42-283:47
-                      Y: BinaryExpr Op=> @283:51-283:68
-                        X: SelectorExpr @283:51-283:58
-                          X: IdentExpr c @283:51-283:52
-                          Name: Ident since @283:53-283:58
-                        Y: IdentExpr version @283:61-283:68
-                Then: Block @283:70-285:8
-                  Stmts[0]: ExprStmt @284:9-284:97
-                    X: CallExpr @284:9-284:97
-                      Fun: IdentExpr fail @284:9-284:13
-                      Args[0]: Arg @284:14-284:21
-                        Value: SelectorExpr @284:14-284:21
-                          X: IdentExpr c @284:14-284:15
-                          Name: Ident since @284:16-284:21
-                      Args[1]: Arg @284:23-284:96
-                        Value: StringLit @284:23-284:96
-                          Parts[0]: Interp @284:25-284:31
-                            X: SelectorExpr @284:25-284:31
-                              X: IdentExpr c @284:25-284:26
-                              Name: Ident name @284:27-284:31
+          Parts[3]: Interp @277:68-277:73
+            X: IdentExpr since @277:68-277:73
+      Items[12]: CheckDecl Keyword=check @278:3-342:4
+        Body: Block @278:9-342:4
+          Stmts[0]: ForStmt @279:5-293:6
+            Vars[0]: Ident c @279:9-279:10
+            Iter: IdentExpr columns @279:14-279:21
+            Body: Block @279:22-293:6
+              Stmts[0]: IfStmt @281:7-283:8
+                Cond: BinaryExpr Op=and @281:10-281:69
+                  X: BinaryExpr Op=!= @281:10-281:25
+                    X: SelectorExpr @281:10-281:17
+                      X: IdentExpr c @281:10-281:11
+                      Name: Ident since @281:12-281:17
+                    Y: NoneLit @281:21-281:25
+                  Y: ParenExpr @281:30-281:69
+                    X: BinaryExpr Op=or @281:31-281:68
+                      X: BinaryExpr Op=<= @281:31-281:47
+                        X: SelectorExpr @281:31-281:38
+                          X: IdentExpr c @281:31-281:32
+                          Name: Ident since @281:33-281:38
+                        Y: IdentExpr since @281:42-281:47
+                      Y: BinaryExpr Op=> @281:51-281:68
+                        X: SelectorExpr @281:51-281:58
+                          X: IdentExpr c @281:51-281:52
+                          Name: Ident since @281:53-281:58
+                        Y: IdentExpr version @281:61-281:68
+                Then: Block @281:70-283:8
+                  Stmts[0]: ExprStmt @282:9-282:97
+                    X: CallExpr @282:9-282:97
+                      Fun: IdentExpr fail @282:9-282:13
+                      Args[0]: Arg @282:14-282:21
+                        Value: SelectorExpr @282:14-282:21
+                          X: IdentExpr c @282:14-282:15
+                          Name: Ident since @282:16-282:21
+                      Args[1]: Arg @282:23-282:96
+                        Value: StringLit @282:23-282:96
+                          Parts[0]: Interp @282:25-282:31
+                            X: SelectorExpr @282:25-282:31
+                              X: IdentExpr c @282:25-282:26
+                              Name: Ident name @282:27-282:31
                           Parts[1]: text " is added in version "
-                          Parts[2]: Interp @284:54-284:61
-                            X: SelectorExpr @284:54-284:61
-                              X: IdentExpr c @284:54-284:55
-                              Name: Ident since @284:56-284:61
+                          Parts[2]: Interp @282:54-282:61
+                            X: SelectorExpr @282:54-282:61
+                              X: IdentExpr c @282:54-282:55
+                              Name: Ident since @282:56-282:61
                           Parts[3]: text ", outside "
-                          Parts[4]: Interp @284:73-284:82
-                            X: BinaryExpr Op=+ @284:73-284:82
-                              X: IdentExpr since @284:73-284:78
-                              Y: IntLit Value=1 @284:81-284:82
+                          Parts[4]: Interp @282:73-282:82
+                            X: BinaryExpr Op=+ @282:73-282:82
+                              X: IdentExpr since @282:73-282:78
+                              Y: IntLit Value=1 @282:81-282:82
                           Parts[5]: text "..="
-                          Parts[6]: Interp @284:87-284:94
-                            X: IdentExpr version @284:87-284:94
-              Stmts[1]: IfStmt @286:7-291:8
-                Cond: BinaryExpr Op=and @286:10-286:81
-                  X: BinaryExpr Op=!= @286:10-286:29
-                    X: SelectorExpr @286:10-286:21
-                      X: IdentExpr c @286:10-286:11
-                      Name: Ident retiredIn @286:12-286:21
-                    Y: NoneLit @286:25-286:29
-                  Y: ParenExpr @286:34-286:81
-                    X: BinaryExpr Op=or @286:35-286:80
-                      X: BinaryExpr Op=<= @286:35-286:55
-                        X: SelectorExpr @286:35-286:46
-                          X: IdentExpr c @286:35-286:36
-                          Name: Ident retiredIn @286:37-286:46
-                        Y: IdentExpr since @286:50-286:55
-                      Y: BinaryExpr Op=> @286:59-286:80
-                        X: SelectorExpr @286:59-286:70
-                          X: IdentExpr c @286:59-286:60
-                          Name: Ident retiredIn @286:61-286:70
-                        Y: IdentExpr version @286:73-286:80
-                Then: Block @286:82-291:8
-                  Stmts[0]: ExprStmt @287:9-290:10
-                    X: CallExpr @287:9-290:10
-                      Fun: IdentExpr fail @287:9-287:13
-                      Args[0]: Arg @288:11-288:22
-                        Value: SelectorExpr @288:11-288:22
-                          X: IdentExpr c @288:11-288:12
-                          Name: Ident retiredIn @288:13-288:22
-                      Args[1]: Arg @289:11-289:90
-                        Value: StringLit @289:11-289:90
-                          Parts[0]: Interp @289:13-289:19
-                            X: SelectorExpr @289:13-289:19
-                              X: IdentExpr c @289:13-289:14
-                              Name: Ident name @289:15-289:19
+                          Parts[6]: Interp @282:87-282:94
+                            X: IdentExpr version @282:87-282:94
+              Stmts[1]: IfStmt @284:7-289:8
+                Cond: BinaryExpr Op=and @284:10-284:81
+                  X: BinaryExpr Op=!= @284:10-284:29
+                    X: SelectorExpr @284:10-284:21
+                      X: IdentExpr c @284:10-284:11
+                      Name: Ident retiredIn @284:12-284:21
+                    Y: NoneLit @284:25-284:29
+                  Y: ParenExpr @284:34-284:81
+                    X: BinaryExpr Op=or @284:35-284:80
+                      X: BinaryExpr Op=<= @284:35-284:55
+                        X: SelectorExpr @284:35-284:46
+                          X: IdentExpr c @284:35-284:36
+                          Name: Ident retiredIn @284:37-284:46
+                        Y: IdentExpr since @284:50-284:55
+                      Y: BinaryExpr Op=> @284:59-284:80
+                        X: SelectorExpr @284:59-284:70
+                          X: IdentExpr c @284:59-284:60
+                          Name: Ident retiredIn @284:61-284:70
+                        Y: IdentExpr version @284:73-284:80
+                Then: Block @284:82-289:8
+                  Stmts[0]: ExprStmt @285:9-288:10
+                    X: CallExpr @285:9-288:10
+                      Fun: IdentExpr fail @285:9-285:13
+                      Args[0]: Arg @286:11-286:22
+                        Value: SelectorExpr @286:11-286:22
+                          X: IdentExpr c @286:11-286:12
+                          Name: Ident retiredIn @286:13-286:22
+                      Args[1]: Arg @287:11-287:90
+                        Value: StringLit @287:11-287:90
+                          Parts[0]: Interp @287:13-287:19
+                            X: SelectorExpr @287:13-287:19
+                              X: IdentExpr c @287:13-287:14
+                              Name: Ident name @287:15-287:19
                           Parts[1]: text " is retired in version "
-                          Parts[2]: Interp @289:44-289:55
-                            X: SelectorExpr @289:44-289:55
-                              X: IdentExpr c @289:44-289:45
-                              Name: Ident retiredIn @289:46-289:55
+                          Parts[2]: Interp @287:44-287:55
+                            X: SelectorExpr @287:44-287:55
+                              X: IdentExpr c @287:44-287:45
+                              Name: Ident retiredIn @287:46-287:55
                           Parts[3]: text ", outside "
-                          Parts[4]: Interp @289:67-289:76
-                            X: BinaryExpr Op=+ @289:67-289:76
-                              X: IdentExpr since @289:67-289:72
-                              Y: IntLit Value=1 @289:75-289:76
+                          Parts[4]: Interp @287:67-287:76
+                            X: BinaryExpr Op=+ @287:67-287:76
+                              X: IdentExpr since @287:67-287:72
+                              Y: IntLit Value=1 @287:75-287:76
                           Parts[5]: text "..="
-                          Parts[6]: Interp @289:81-289:88
-                            X: IdentExpr version @289:81-289:88
-              Stmts[2]: IfStmt @292:7-294:8
-                Cond: BinaryExpr Op=or @292:10-292:65
-                  X: BinaryExpr Op=or @292:10-292:49
-                    X: BinaryExpr Op=in @292:10-292:33
-                      X: SelectorExpr @292:10-292:16
-                        X: IdentExpr c @292:10-292:11
-                        Name: Ident name @292:12-292:16
-                      Y: IdentExpr headerColumns @292:20-292:33
-                    Y: BinaryExpr Op=== @292:37-292:49
-                      X: SelectorExpr @292:37-292:43
-                        X: IdentExpr c @292:37-292:38
-                        Name: Ident kind @292:39-292:43
-                      Y: IdentExpr ts @292:47-292:49
-                  Y: BinaryExpr Op=== @292:53-292:65
-                    X: SelectorExpr @292:53-292:59
-                      X: IdentExpr c @292:53-292:54
-                      Name: Ident kind @292:55-292:59
-                    Y: IdentExpr id @292:63-292:65
-                Then: Block @292:66-294:8
-                  Stmts[0]: ExprStmt @293:9-293:75
-                    X: CallExpr @293:9-293:75
-                      Fun: IdentExpr fail @293:9-293:13
-                      Args[0]: Arg @293:14-293:15
-                        Value: IdentExpr c @293:14-293:15
-                      Args[1]: Arg @293:17-293:74
-                        Value: StringLit @293:17-293:74
-                          Parts[0]: Interp @293:19-293:25
-                            X: SelectorExpr @293:19-293:25
-                              X: IdentExpr c @293:19-293:20
-                              Name: Ident name @293:21-293:25
+                          Parts[6]: Interp @287:81-287:88
+                            X: IdentExpr version @287:81-287:88
+              Stmts[2]: IfStmt @290:7-292:8
+                Cond: BinaryExpr Op=or @290:10-290:65
+                  X: BinaryExpr Op=or @290:10-290:49
+                    X: BinaryExpr Op=in @290:10-290:33
+                      X: SelectorExpr @290:10-290:16
+                        X: IdentExpr c @290:10-290:11
+                        Name: Ident name @290:12-290:16
+                      Y: IdentExpr headerColumns @290:20-290:33
+                    Y: BinaryExpr Op=== @290:37-290:49
+                      X: SelectorExpr @290:37-290:43
+                        X: IdentExpr c @290:37-290:38
+                        Name: Ident kind @290:39-290:43
+                      Y: IdentExpr ts @290:47-290:49
+                  Y: BinaryExpr Op=== @290:53-290:65
+                    X: SelectorExpr @290:53-290:59
+                      X: IdentExpr c @290:53-290:54
+                      Name: Ident kind @290:55-290:59
+                    Y: IdentExpr id @290:63-290:65
+                Then: Block @290:66-292:8
+                  Stmts[0]: ExprStmt @291:9-291:75
+                    X: CallExpr @291:9-291:75
+                      Fun: IdentExpr fail @291:9-291:13
+                      Args[0]: Arg @291:14-291:15
+                        Value: IdentExpr c @291:14-291:15
+                      Args[1]: Arg @291:17-291:74
+                        Value: StringLit @291:17-291:74
+                          Parts[0]: Interp @291:19-291:25
+                            X: SelectorExpr @291:19-291:25
+                              X: IdentExpr c @291:19-291:20
+                              Name: Ident name @291:21-291:25
                           Parts[1]: text " is a header column: every table has it already"
-          Stmts[1]: ForStmt @297:5-301:6
-            Vars[0]: Ident v @297:9-297:10
-            Iter: RangeExpr Op=.. @297:14-297:36
-              Lo: BinaryExpr Op=+ @297:14-297:23
-                X: IdentExpr since @297:14-297:19
-                Y: IntLit Value=1 @297:22-297:23
-              Hi: BinaryExpr Op=+ @297:25-297:36
-                X: IdentExpr version @297:25-297:32
-                Y: IntLit Value=1 @297:35-297:36
-            Body: Block @297:37-301:6
-              Stmts[0]: IfStmt @298:7-300:8
-                Cond: UnaryExpr Op=not @298:10-298:64
-                  X: CallExpr @298:14-298:64
-                    Fun: SelectorExpr @298:14-298:25
-                      X: IdentExpr columns @298:14-298:21
-                      Name: Ident any @298:22-298:25
-                    Args[0]: Arg @298:26-298:63
-                      Value: LambdaExpr @298:26-298:63
-                        Params[0]: Ident c @298:26-298:27
-                        Body: BinaryExpr Op=or @298:31-298:63
-                          X: BinaryExpr Op=== @298:31-298:43
-                            X: SelectorExpr @298:31-298:38
-                              X: IdentExpr c @298:31-298:32
-                              Name: Ident since @298:33-298:38
-                            Y: IdentExpr v @298:42-298:43
-                          Y: BinaryExpr Op=== @298:47-298:63
-                            X: SelectorExpr @298:47-298:58
-                              X: IdentExpr c @298:47-298:48
-                              Name: Ident retiredIn @298:49-298:58
-                            Y: IdentExpr v @298:62-298:63
-                Then: Block @298:65-300:8
-                  Stmts[0]: ExprStmt @299:9-299:96
-                    X: CallExpr @299:9-299:96
-                      Fun: IdentExpr fail @299:9-299:13
-                      Args[0]: Arg @299:14-299:18
-                        Value: SelfExpr @299:14-299:18
-                      Args[1]: Arg @299:20-299:95
-                        Value: StringLit @299:20-299:95
+          Stmts[1]: ForStmt @295:5-299:6
+            Vars[0]: Ident v @295:9-295:10
+            Iter: RangeExpr Op=.. @295:14-295:36
+              Lo: BinaryExpr Op=+ @295:14-295:23
+                X: IdentExpr since @295:14-295:19
+                Y: IntLit Value=1 @295:22-295:23
+              Hi: BinaryExpr Op=+ @295:25-295:36
+                X: IdentExpr version @295:25-295:32
+                Y: IntLit Value=1 @295:35-295:36
+            Body: Block @295:37-299:6
+              Stmts[0]: IfStmt @296:7-298:8
+                Cond: UnaryExpr Op=not @296:10-296:64
+                  X: CallExpr @296:14-296:64
+                    Fun: SelectorExpr @296:14-296:25
+                      X: IdentExpr columns @296:14-296:21
+                      Name: Ident any @296:22-296:25
+                    Args[0]: Arg @296:26-296:63
+                      Value: LambdaExpr @296:26-296:63
+                        Params[0]: Ident c @296:26-296:27
+                        Body: BinaryExpr Op=or @296:31-296:63
+                          X: BinaryExpr Op=== @296:31-296:43
+                            X: SelectorExpr @296:31-296:38
+                              X: IdentExpr c @296:31-296:32
+                              Name: Ident since @296:33-296:38
+                            Y: IdentExpr v @296:42-296:43
+                          Y: BinaryExpr Op=== @296:47-296:63
+                            X: SelectorExpr @296:47-296:58
+                              X: IdentExpr c @296:47-296:48
+                              Name: Ident retiredIn @296:49-296:58
+                            Y: IdentExpr v @296:62-296:63
+                Then: Block @296:65-298:8
+                  Stmts[0]: ExprStmt @297:9-297:96
+                    X: CallExpr @297:9-297:96
+                      Fun: IdentExpr fail @297:9-297:13
+                      Args[0]: Arg @297:14-297:18
+                        Value: SelfExpr @297:14-297:18
+                      Args[1]: Arg @297:20-297:95
+                        Value: StringLit @297:20-297:95
                           Parts[0]: text "version "
-                          Parts[1]: Interp @299:30-299:31
-                            X: IdentExpr v @299:30-299:31
+                          Parts[1]: Interp @297:30-297:31
+                            X: IdentExpr v @297:30-297:31
                           Parts[2]: text " changes no column: bump the version only with a layout change"
-          Stmts[2]: ForStmt @302:5-322:6
-            Vars[0]: Ident r @302:9-302:10
-            Iter: IdentExpr ledger @302:14-302:20
-            Body: Block @302:21-322:6
-              Stmts[0]: ForStmt @304:7-313:8
-                Vars[0]: Ident col @304:11-304:14
-                Iter: ListLit @304:18-304:62
-                  Elems[0]: SelectorExpr @304:19-304:27
-                    X: IdentExpr r @304:19-304:20
-                    Name: Ident amount @304:21-304:27
-                  Elems[1]: SelectorExpr @304:29-304:35
-                    X: IdentExpr r @304:29-304:30
-                    Name: Ident item @304:31-304:35
-                  Elems[2]: SelectorExpr @304:37-304:45
-                    X: IdentExpr r @304:37-304:38
-                    Name: Ident player @304:39-304:45
-                  Elems[3]: SelectorExpr @304:47-304:61
-                    X: IdentExpr r @304:47-304:48
-                    Name: Ident counterparty @304:49-304:61
-                Body: Block @304:63-313:8
-                  Stmts[0]: IfStmt @305:9-312:10
-                    Cond: BinaryExpr Op=and @305:12-305:49
-                      X: BinaryExpr Op=!= @305:12-305:23
-                        X: IdentExpr col @305:12-305:15
-                        Y: NoneLit @305:19-305:23
-                      Y: BinaryExpr Op=!= @305:28-305:49
-                        X: SelectorExpr @305:28-305:41
-                          X: IdentExpr col @305:28-305:31
-                          Name: Ident retiredIn @305:32-305:41
-                        Y: NoneLit @305:45-305:49
-                    Then: Block @305:50-312:10
-                      Stmts[0]: IfStmt @306:11-311:12
-                        Cond: BinaryExpr Op=or @306:14-306:71
-                          X: BinaryExpr Op=== @306:14-306:36
-                            X: SelectorExpr @306:14-306:28
-                              X: IdentExpr r @306:14-306:15
-                              Name: Ident untilVersion @306:16-306:28
-                            Y: NoneLit @306:32-306:36
-                          Y: BinaryExpr Op=>= @306:40-306:71
-                            X: SelectorExpr @306:40-306:54
-                              X: IdentExpr r @306:40-306:41
-                              Name: Ident untilVersion @306:42-306:54
-                            Y: SelectorExpr @306:58-306:71
-                              X: IdentExpr col @306:58-306:61
-                              Name: Ident retiredIn @306:62-306:71
-                        Then: Block @306:72-311:12
-                          Stmts[0]: ExprStmt @307:13-310:14
-                            X: CallExpr @307:13-310:14
-                              Fun: IdentExpr fail @307:13-307:17
-                              Args[0]: Arg @308:15-308:16
-                                Value: IdentExpr r @308:15-308:16
-                              Args[1]: Arg @309:15-309:98
-                                Value: StringLit @309:15-309:98
+          Stmts[2]: ForStmt @300:5-320:6
+            Vars[0]: Ident r @300:9-300:10
+            Iter: IdentExpr ledger @300:14-300:20
+            Body: Block @300:21-320:6
+              Stmts[0]: ForStmt @302:7-311:8
+                Vars[0]: Ident col @302:11-302:14
+                Iter: ListLit @302:18-302:62
+                  Elems[0]: SelectorExpr @302:19-302:27
+                    X: IdentExpr r @302:19-302:20
+                    Name: Ident amount @302:21-302:27
+                  Elems[1]: SelectorExpr @302:29-302:35
+                    X: IdentExpr r @302:29-302:30
+                    Name: Ident item @302:31-302:35
+                  Elems[2]: SelectorExpr @302:37-302:45
+                    X: IdentExpr r @302:37-302:38
+                    Name: Ident player @302:39-302:45
+                  Elems[3]: SelectorExpr @302:47-302:61
+                    X: IdentExpr r @302:47-302:48
+                    Name: Ident counterparty @302:49-302:61
+                Body: Block @302:63-311:8
+                  Stmts[0]: IfStmt @303:9-310:10
+                    Cond: BinaryExpr Op=and @303:12-303:49
+                      X: BinaryExpr Op=!= @303:12-303:23
+                        X: IdentExpr col @303:12-303:15
+                        Y: NoneLit @303:19-303:23
+                      Y: BinaryExpr Op=!= @303:28-303:49
+                        X: SelectorExpr @303:28-303:41
+                          X: IdentExpr col @303:28-303:31
+                          Name: Ident retiredIn @303:32-303:41
+                        Y: NoneLit @303:45-303:49
+                    Then: Block @303:50-310:10
+                      Stmts[0]: IfStmt @304:11-309:12
+                        Cond: BinaryExpr Op=or @304:14-304:71
+                          X: BinaryExpr Op=== @304:14-304:36
+                            X: SelectorExpr @304:14-304:28
+                              X: IdentExpr r @304:14-304:15
+                              Name: Ident untilVersion @304:16-304:28
+                            Y: NoneLit @304:32-304:36
+                          Y: BinaryExpr Op=>= @304:40-304:71
+                            X: SelectorExpr @304:40-304:54
+                              X: IdentExpr r @304:40-304:41
+                              Name: Ident untilVersion @304:42-304:54
+                            Y: SelectorExpr @304:58-304:71
+                              X: IdentExpr col @304:58-304:61
+                              Name: Ident retiredIn @304:62-304:71
+                        Then: Block @304:72-309:12
+                          Stmts[0]: ExprStmt @305:13-308:14
+                            X: CallExpr @305:13-308:14
+                              Fun: IdentExpr fail @305:13-305:17
+                              Args[0]: Arg @306:15-306:16
+                                Value: IdentExpr r @306:15-306:16
+                              Args[1]: Arg @307:15-307:98
+                                Value: StringLit @307:15-307:98
                                   Parts[0]: text "the role reads "
-                                  Parts[1]: Interp @309:32-309:40
-                                    X: SelectorExpr @309:32-309:40
-                                      X: IdentExpr col @309:32-309:35
-                                      Name: Ident name @309:36-309:40
+                                  Parts[1]: Interp @307:32-307:40
+                                    X: SelectorExpr @307:32-307:40
+                                      X: IdentExpr col @307:32-307:35
+                                      Name: Ident name @307:36-307:40
                                   Parts[2]: text ", retired in "
-                                  Parts[3]: Interp @309:55-309:68
-                                    X: SelectorExpr @309:55-309:68
-                                      X: IdentExpr col @309:55-309:58
-                                      Name: Ident retiredIn @309:59-309:68
+                                  Parts[3]: Interp @307:55-307:68
+                                    X: SelectorExpr @307:55-307:68
+                                      X: IdentExpr col @307:55-307:58
+                                      Name: Ident retiredIn @307:59-307:68
                                   Parts[4]: text ": bound it with untilVersion"
-              Stmts[1]: MatchStmt @314:7-321:8
-                Scrutinee: SelectorExpr @314:13-314:19
-                  X: IdentExpr r @314:13-314:14
-                  Name: Ident rows @314:15-314:19
-                Arms[0]: StmtArm @315:9-319:10
-                  Patterns[0]: Pattern @315:9-315:16
-                    Name: QualifiedName some @315:9-315:13
-                    Binder: Ident s @315:14-315:15
-                  Block: Block @315:20-319:10
-                    Stmts[0]: IfStmt @316:11-318:12
-                      Cond: BinaryExpr Op=!= @316:14-316:37
-                        X: SelectorExpr @316:14-316:29
-                          X: SelectorExpr @316:14-316:22
-                            X: IdentExpr s @316:14-316:15
-                            Name: Ident column @316:16-316:22
-                          Name: Ident values @316:23-316:29
-                        Y: SelectorExpr @316:33-316:37
-                          X: IdentExpr s @316:33-316:34
-                          Name: Ident of @316:35-316:37
-                      Then: Block @316:38-318:12
-                        Stmts[0]: ExprStmt @317:13-317:78
-                          X: CallExpr @317:13-317:78
-                            Fun: IdentExpr fail @317:13-317:17
-                            Args[0]: Arg @317:18-317:22
-                              Value: SelectorExpr @317:18-317:22
-                                X: IdentExpr s @317:18-317:19
-                                Name: Ident of @317:20-317:22
-                            Args[1]: Arg @317:24-317:77
-                              Value: StringLit @317:24-317:77
-                                Parts[0]: Interp @317:26-317:39
-                                  X: SelectorExpr @317:26-317:39
-                                    X: SelectorExpr @317:26-317:34
-                                      X: IdentExpr s @317:26-317:27
-                                      Name: Ident column @317:28-317:34
-                                    Name: Ident name @317:35-317:39
+              Stmts[1]: MatchStmt @312:7-319:8
+                Scrutinee: SelectorExpr @312:13-312:19
+                  X: IdentExpr r @312:13-312:14
+                  Name: Ident rows @312:15-312:19
+                Arms[0]: StmtArm @313:9-317:10
+                  Patterns[0]: Pattern @313:9-313:16
+                    Name: QualifiedName some @313:9-313:13
+                    Binder: Ident s @313:14-313:15
+                  Block: Block @313:20-317:10
+                    Stmts[0]: IfStmt @314:11-316:12
+                      Cond: BinaryExpr Op=!= @314:14-314:37
+                        X: SelectorExpr @314:14-314:29
+                          X: SelectorExpr @314:14-314:22
+                            X: IdentExpr s @314:14-314:15
+                            Name: Ident column @314:16-314:22
+                          Name: Ident values @314:23-314:29
+                        Y: SelectorExpr @314:33-314:37
+                          X: IdentExpr s @314:33-314:34
+                          Name: Ident of @314:35-314:37
+                      Then: Block @314:38-316:12
+                        Stmts[0]: ExprStmt @315:13-315:78
+                          X: CallExpr @315:13-315:78
+                            Fun: IdentExpr fail @315:13-315:17
+                            Args[0]: Arg @315:18-315:22
+                              Value: SelectorExpr @315:18-315:22
+                                X: IdentExpr s @315:18-315:19
+                                Name: Ident of @315:20-315:22
+                            Args[1]: Arg @315:24-315:77
+                              Value: StringLit @315:24-315:77
+                                Parts[0]: Interp @315:26-315:39
+                                  X: SelectorExpr @315:26-315:39
+                                    X: SelectorExpr @315:26-315:34
+                                      X: IdentExpr s @315:26-315:27
+                                      Name: Ident column @315:28-315:34
+                                    Name: Ident name @315:35-315:39
                                 Parts[1]: text " holds "
-                                Parts[2]: Interp @317:48-317:63
-                                  X: SelectorExpr @317:48-317:63
-                                    X: SelectorExpr @317:48-317:56
-                                      X: IdentExpr s @317:48-317:49
-                                      Name: Ident column @317:50-317:56
-                                    Name: Ident values @317:57-317:63
+                                Parts[2]: Interp @315:48-315:63
+                                  X: SelectorExpr @315:48-315:63
+                                    X: SelectorExpr @315:48-315:56
+                                      X: IdentExpr s @315:48-315:49
+                                      Name: Ident column @315:50-315:56
+                                    Name: Ident values @315:57-315:63
                                 Parts[3]: text ", not "
-                                Parts[4]: Interp @317:71-317:75
-                                  X: SelectorExpr @317:71-317:75
-                                    X: IdentExpr s @317:71-317:72
-                                    Name: Ident of @317:73-317:75
-                Arms[1]: StmtArm @320:9-320:20
-                  Patterns[0]: Pattern @320:9-320:14
-                    Name: QualifiedName every @320:9-320:14
-                  Block: Block @320:18-320:20
-          Stmts[3]: IfStmt @324:5-343:6
-            Cond: BinaryExpr Op=!= @324:8-324:27
-              X: IdentExpr ledgerKinds @324:8-324:19
-              Y: NoneLit @324:23-324:27
-            Then: Block @324:28-343:6
-              Stmts[0]: IfStmt @325:7-342:8
-                Cond: BinaryExpr Op=== @325:10-325:36
-                  X: SelectorExpr @325:10-325:28
-                    X: IdentExpr ledgerKinds @325:10-325:21
-                    Name: Ident values @325:22-325:28
-                  Y: NoneLit @325:32-325:36
-                Then: Block @325:37-327:8
-                  Stmts[0]: ExprStmt @326:9-326:71
-                    X: CallExpr @326:9-326:71
-                      Fun: IdentExpr fail @326:9-326:13
-                      Args[0]: Arg @326:14-326:25
-                        Value: IdentExpr ledgerKinds @326:14-326:25
-                      Args[1]: Arg @326:27-326:70
-                        Value: StringLit @326:27-326:70
-                          Parts[0]: Interp @326:29-326:45
-                            X: SelectorExpr @326:29-326:45
-                              X: IdentExpr ledgerKinds @326:29-326:40
-                              Name: Ident name @326:41-326:45
+                                Parts[4]: Interp @315:71-315:75
+                                  X: SelectorExpr @315:71-315:75
+                                    X: IdentExpr s @315:71-315:72
+                                    Name: Ident of @315:73-315:75
+                Arms[1]: StmtArm @318:9-318:20
+                  Patterns[0]: Pattern @318:9-318:14
+                    Name: QualifiedName every @318:9-318:14
+                  Block: Block @318:18-318:20
+          Stmts[3]: IfStmt @322:5-341:6
+            Cond: BinaryExpr Op=!= @322:8-322:27
+              X: IdentExpr ledgerKinds @322:8-322:19
+              Y: NoneLit @322:23-322:27
+            Then: Block @322:28-341:6
+              Stmts[0]: IfStmt @323:7-340:8
+                Cond: BinaryExpr Op=== @323:10-323:36
+                  X: SelectorExpr @323:10-323:28
+                    X: IdentExpr ledgerKinds @323:10-323:21
+                    Name: Ident values @323:22-323:28
+                  Y: NoneLit @323:32-323:36
+                Then: Block @323:37-325:8
+                  Stmts[0]: ExprStmt @324:9-324:71
+                    X: CallExpr @324:9-324:71
+                      Fun: IdentExpr fail @324:9-324:13
+                      Args[0]: Arg @324:14-324:25
+                        Value: IdentExpr ledgerKinds @324:14-324:25
+                      Args[1]: Arg @324:27-324:70
+                        Value: StringLit @324:27-324:70
+                          Parts[0]: Interp @324:29-324:45
+                            X: SelectorExpr @324:29-324:45
+                              X: IdentExpr ledgerKinds @324:29-324:40
+                              Name: Ident name @324:41-324:45
                           Parts[1]: text " is not an enum8 column"
-                Else: Block @327:14-342:8
-                  Stmts[0]: VarStmt @328:9-328:35
-                    Name: Ident covered @328:13-328:20
-                    Type: ListType @328:22-328:30
-                      Elem: NamedType @328:23-328:29
-                        Name: QualifiedName String @328:23-328:29
-                    Value: ListLit @328:33-328:35
-                  Stmts[1]: ForStmt @329:9-336:10
-                    Vars[0]: Ident r @329:13-329:14
-                    Iter: IdentExpr ledger @329:18-329:24
-                    Body: Block @329:25-336:10
-                      Stmts[0]: MatchStmt @330:11-335:12
-                        Scrutinee: SelectorExpr @330:17-330:23
-                          X: IdentExpr r @330:17-330:18
-                          Name: Ident rows @330:19-330:23
-                        Arms[0]: StmtArm @331:13-331:66
-                          Patterns[0]: Pattern @331:13-331:18
-                            Name: QualifiedName every @331:13-331:18
-                          Block: Block @331:22-331:66
-                            Stmts[0]: AssignStmt Op=+= @331:24-331:64
-                              Target: IdentExpr covered @331:24-331:31
-                              Value: CallExpr @331:35-331:64
-                                Fun: IdentExpr liveNames @331:35-331:44
-                                Args[0]: Arg @331:45-331:63
-                                  Value: SelectorExpr @331:45-331:63
-                                    X: IdentExpr ledgerKinds @331:45-331:56
-                                    Name: Ident values @331:57-331:63
-                        Arms[1]: StmtArm @332:13-334:14
-                          Patterns[0]: Pattern @332:13-332:20
-                            Name: QualifiedName some @332:13-332:17
-                            Binder: Ident s @332:18-332:19
-                          Block: Block @332:24-334:14
-                            Stmts[0]: IfStmt @333:15-333:85
-                              Cond: BinaryExpr Op=== @333:18-333:41
-                                X: IdentExpr ledgerKinds @333:18-333:29
-                                Y: SelectorExpr @333:33-333:41
-                                  X: IdentExpr s @333:33-333:34
-                                  Name: Ident column @333:35-333:41
-                              Then: Block @333:42-333:85
-                                Stmts[0]: AssignStmt Op=+= @333:44-333:83
-                                  Target: IdentExpr covered @333:44-333:51
-                                  Value: ListComp @333:55-333:83
-                                    Elem: CallExpr @333:56-333:65
-                                      Fun: IdentExpr String @333:56-333:62
-                                      Args[0]: Arg @333:63-333:64
-                                        Value: IdentExpr k @333:63-333:64
-                                    Clauses[0]: CompClause Keyword=for @333:66-333:82
-                                      Vars[0]: Ident k @333:70-333:71
-                                      X: SelectorExpr @333:75-333:82
-                                        X: IdentExpr s @333:75-333:76
-                                        Name: Ident kinds @333:77-333:82
-                  Stmts[2]: ForStmt @337:9-341:10
-                    Vars[0]: Ident n @337:13-337:14
-                    Iter: CallExpr @337:18-337:47
-                      Fun: IdentExpr liveNames @337:18-337:27
-                      Args[0]: Arg @337:28-337:46
-                        Value: SelectorExpr @337:28-337:46
-                          X: IdentExpr ledgerKinds @337:28-337:39
-                          Name: Ident values @337:40-337:46
-                    Body: Block @337:48-341:10
-                      Stmts[0]: IfStmt @338:11-340:12
-                        Cond: UnaryExpr Op=not @338:14-338:32
-                          X: ParenExpr @338:18-338:32
-                            X: BinaryExpr Op=in @338:19-338:31
-                              X: IdentExpr n @338:19-338:20
-                              Y: IdentExpr covered @338:24-338:31
-                        Then: Block @338:33-340:12
-                          Stmts[0]: ExprStmt @339:13-339:85
-                            X: CallExpr @339:13-339:85
-                              Fun: IdentExpr fail @339:13-339:17
-                              Args[0]: Arg @339:18-339:29
-                                Value: IdentExpr ledgerKinds @339:18-339:29
-                              Args[1]: Arg @339:31-339:84
-                                Value: StringLit @339:31-339:84
-                                  Parts[0]: Interp @339:33-339:49
-                                    X: SelectorExpr @339:33-339:49
-                                      X: IdentExpr ledgerKinds @339:33-339:44
-                                      Name: Ident name @339:45-339:49
+                Else: Block @325:14-340:8
+                  Stmts[0]: VarStmt @326:9-326:35
+                    Name: Ident covered @326:13-326:20
+                    Type: ListType @326:22-326:30
+                      Elem: NamedType @326:23-326:29
+                        Name: QualifiedName String @326:23-326:29
+                    Value: ListLit @326:33-326:35
+                  Stmts[1]: ForStmt @327:9-334:10
+                    Vars[0]: Ident r @327:13-327:14
+                    Iter: IdentExpr ledger @327:18-327:24
+                    Body: Block @327:25-334:10
+                      Stmts[0]: MatchStmt @328:11-333:12
+                        Scrutinee: SelectorExpr @328:17-328:23
+                          X: IdentExpr r @328:17-328:18
+                          Name: Ident rows @328:19-328:23
+                        Arms[0]: StmtArm @329:13-329:66
+                          Patterns[0]: Pattern @329:13-329:18
+                            Name: QualifiedName every @329:13-329:18
+                          Block: Block @329:22-329:66
+                            Stmts[0]: AssignStmt Op=+= @329:24-329:64
+                              Target: IdentExpr covered @329:24-329:31
+                              Value: CallExpr @329:35-329:64
+                                Fun: IdentExpr liveNames @329:35-329:44
+                                Args[0]: Arg @329:45-329:63
+                                  Value: SelectorExpr @329:45-329:63
+                                    X: IdentExpr ledgerKinds @329:45-329:56
+                                    Name: Ident values @329:57-329:63
+                        Arms[1]: StmtArm @330:13-332:14
+                          Patterns[0]: Pattern @330:13-330:20
+                            Name: QualifiedName some @330:13-330:17
+                            Binder: Ident s @330:18-330:19
+                          Block: Block @330:24-332:14
+                            Stmts[0]: IfStmt @331:15-331:85
+                              Cond: BinaryExpr Op=== @331:18-331:41
+                                X: IdentExpr ledgerKinds @331:18-331:29
+                                Y: SelectorExpr @331:33-331:41
+                                  X: IdentExpr s @331:33-331:34
+                                  Name: Ident column @331:35-331:41
+                              Then: Block @331:42-331:85
+                                Stmts[0]: AssignStmt Op=+= @331:44-331:83
+                                  Target: IdentExpr covered @331:44-331:51
+                                  Value: ListComp @331:55-331:83
+                                    Elem: CallExpr @331:56-331:65
+                                      Fun: IdentExpr String @331:56-331:62
+                                      Args[0]: Arg @331:63-331:64
+                                        Value: IdentExpr k @331:63-331:64
+                                    Clauses[0]: CompClause Keyword=for @331:66-331:82
+                                      Vars[0]: Ident k @331:70-331:71
+                                      X: SelectorExpr @331:75-331:82
+                                        X: IdentExpr s @331:75-331:76
+                                        Name: Ident kinds @331:77-331:82
+                  Stmts[2]: ForStmt @335:9-339:10
+                    Vars[0]: Ident n @335:13-335:14
+                    Iter: CallExpr @335:18-335:47
+                      Fun: IdentExpr liveNames @335:18-335:27
+                      Args[0]: Arg @335:28-335:46
+                        Value: SelectorExpr @335:28-335:46
+                          X: IdentExpr ledgerKinds @335:28-335:39
+                          Name: Ident values @335:40-335:46
+                    Body: Block @335:48-339:10
+                      Stmts[0]: IfStmt @336:11-338:12
+                        Cond: UnaryExpr Op=not @336:14-336:32
+                          X: ParenExpr @336:18-336:32
+                            X: BinaryExpr Op=in @336:19-336:31
+                              X: IdentExpr n @336:19-336:20
+                              Y: IdentExpr covered @336:24-336:31
+                        Then: Block @336:33-338:12
+                          Stmts[0]: ExprStmt @337:13-337:85
+                            X: CallExpr @337:13-337:85
+                              Fun: IdentExpr fail @337:13-337:17
+                              Args[0]: Arg @337:18-337:29
+                                Value: IdentExpr ledgerKinds @337:18-337:29
+                              Args[1]: Arg @337:31-337:84
+                                Value: StringLit @337:31-337:84
+                                  Parts[0]: Interp @337:33-337:49
+                                    X: SelectorExpr @337:33-337:49
+                                      X: IdentExpr ledgerKinds @337:33-337:44
+                                      Name: Ident name @337:45-337:49
                                   Parts[1]: text " "
-                                  Parts[2]: Interp @339:52-339:53
-                                    X: IdentExpr n @339:52-339:53
+                                  Parts[2]: Interp @337:52-337:53
+                                    X: IdentExpr n @337:52-337:53
                                   Parts[3]: text " is covered by no ledger role"
-      Items[13]: FnDecl Self="self" @347:3-353:4
-        Doc: DocComment "The columns of `v`'s layout, in wire order." @346:3-346:50
-        Name: Ident layout @347:6-347:12
-        Params[0]: Param @347:19-347:25
-          Name: Ident v @347:19-347:20
-          Type: NamedType @347:22-347:25
-            Name: QualifiedName Int @347:22-347:25
-        Result: ListType @347:30-347:38
-          Elem: NamedType @347:31-347:37
-            Name: QualifiedName Column @347:31-347:37
-        Body: Block @347:39-353:4
-          Stmts[0]: ReturnStmt @348:5-352:6
-            Value: ListComp @348:12-352:6
-              Elem: IdentExpr c @349:7-349:8
-              Clauses[0]: CompClause Keyword=for @350:7-350:23
-                Vars[0]: Ident c @350:11-350:12
-                X: IdentExpr columns @350:16-350:23
-              Clauses[1]: CompClause Keyword=if @351:7-351:78
-                X: BinaryExpr Op=and @351:10-351:78
-                  X: BinaryExpr Op=<= @351:10-351:33
-                    X: ParenExpr @351:10-351:28
-                      X: BinaryExpr Op=?? @351:11-351:27
-                        X: SelectorExpr @351:11-351:18
-                          X: IdentExpr c @351:11-351:12
-                          Name: Ident since @351:13-351:18
-                        Y: IdentExpr since @351:22-351:27
-                    Y: IdentExpr v @351:32-351:33
-                  Y: ParenExpr @351:38-351:78
-                    X: BinaryExpr Op=or @351:39-351:77
-                      X: BinaryExpr Op=== @351:39-351:58
-                        X: SelectorExpr @351:39-351:50
-                          X: IdentExpr c @351:39-351:40
-                          Name: Ident retiredIn @351:41-351:50
-                        Y: NoneLit @351:54-351:58
-                      Y: BinaryExpr Op=> @351:62-351:77
-                        X: SelectorExpr @351:62-351:73
-                          X: IdentExpr c @351:62-351:63
-                          Name: Ident retiredIn @351:64-351:73
-                        Y: IdentExpr v @351:76-351:77
-      Items[14]: FnDecl Self="self" @356:3-358:4
-        Doc: DocComment "The live columns, then the retired ones: the DDL's order." @355:3-355:64
-        Name: Ident tableColumns @356:6-356:18
-        Result: ListType @356:28-356:36
-          Elem: NamedType @356:29-356:35
-            Name: QualifiedName Column @356:29-356:35
-        Body: Block @356:37-358:4
-          Stmts[0]: ReturnStmt @357:5-357:98
-            Value: BinaryExpr Op=+ @357:12-357:98
-              X: BinaryExpr Op=+ @357:12-357:52
-                X: CallExpr @357:12-357:34
-                  Fun: SelectorExpr @357:12-357:32
-                    X: IdentExpr headerColumns @357:12-357:25
-                    Name: Ident values @357:26-357:32
-                Y: CallExpr @357:37-357:52
-                  Fun: IdentExpr layout @357:37-357:43
-                  Args[0]: Arg @357:44-357:51
-                    Value: IdentExpr version @357:44-357:51
-              Y: ListComp @357:55-357:98
-                Elem: IdentExpr c @357:56-357:57
-                Clauses[0]: CompClause Keyword=for @357:58-357:74
-                  Vars[0]: Ident c @357:62-357:63
-                  X: IdentExpr columns @357:67-357:74
-                Clauses[1]: CompClause Keyword=if @357:75-357:97
-                  X: BinaryExpr Op=!= @357:78-357:97
-                    X: SelectorExpr @357:78-357:89
-                      X: IdentExpr c @357:78-357:79
-                      Name: Ident retiredIn @357:80-357:89
-                    Y: NoneLit @357:93-357:97
-  Decls[22]: FnDecl @362:1-362:60
-    Doc: DocComment "The table of event type `e`; none for a retired type, which has no table any more." @361:1-361:87
-    Name: Ident eventOf @362:4-362:11
-    Params[0]: Param @362:12-362:24
-      Name: Ident e @362:12-362:13
-      Type: NamedType @362:15-362:24
-        Name: QualifiedName EventType @362:15-362:24
-    Result: OptionalType @362:29-362:35
-      Elem: NamedType @362:29-362:34
-        Name: QualifiedName Event @362:29-362:34
-    Body: Block @362:36-362:60
-      Stmts[0]: ReturnStmt @362:38-362:58
-        Value: CallExpr @362:45-362:58
-          Fun: SelectorExpr @362:45-362:55
-            X: IdentExpr events @362:45-362:51
-            Name: Ident get @362:52-362:55
-          Args[0]: Arg @362:56-362:57
-            Value: IdentExpr e @362:56-362:57
-  Decls[23]: FnDecl @365:1-365:101
-    Doc: DocComment "The live event types, in id order." @364:1-364:39
-    Name: Ident liveEvents @365:4-365:14
-    Result: ListType @365:20-365:31
-      Elem: NamedType @365:21-365:30
-        Name: QualifiedName EventType @365:21-365:30
-    Body: Block @365:32-365:101
-      Stmts[0]: ReturnStmt @365:34-365:99
-        Value: CallExpr @365:41-365:99
-          Fun: SelectorExpr @365:41-365:92
-            X: CallExpr @365:41-365:85
-              Fun: SelectorExpr @365:41-365:65
-                X: SelectorExpr @365:41-365:58
-                  X: IdentExpr EventType @365:41-365:50
-                  Name: Ident members @365:51-365:58
-                Name: Ident filter @365:59-365:65
-              Args[0]: Arg @365:66-365:84
-                Value: LambdaExpr @365:66-365:84
-                  Params[0]: Ident e @365:66-365:67
-                  Body: UnaryExpr Op=not @365:71-365:84
-                    X: SelectorExpr @365:75-365:84
-                      X: IdentExpr e @365:75-365:76
-                      Name: Ident retired @365:77-365:84
-            Name: Ident sortBy @365:86-365:92
-          Args[0]: Arg @365:93-365:98
-            Value: ShorthandLambda @365:93-365:98
-              Body: SelectorExpr @365:93-365:98
-                Name: Ident code @365:94-365:98
-  Decls[24]: CheckDecl Keyword=check @367:1-373:2
-    Body: Block @367:7-373:2
-      Stmts[0]: ForStmt @368:3-372:4
-        Vars[0]: Ident e @368:7-368:8
-        Iter: SelectorExpr @368:12-368:29
-          X: IdentExpr EventType @368:12-368:21
-          Name: Ident members @368:22-368:29
-        Body: Block @368:30-372:4
-          Stmts[0]: IfStmt @369:5-371:6
-            Cond: BinaryExpr Op=and @369:8-369:43
-              X: UnaryExpr Op=not @369:8-369:21
-                X: SelectorExpr @369:12-369:21
-                  X: IdentExpr e @369:12-369:13
-                  Name: Ident retired @369:14-369:21
-              Y: UnaryExpr Op=not @369:26-369:43
-                X: ParenExpr @369:30-369:43
-                  X: BinaryExpr Op=in @369:31-369:42
-                    X: IdentExpr e @369:31-369:32
-                    Y: IdentExpr events @369:36-369:42
-            Then: Block @369:44-371:6
-              Stmts[0]: ExprStmt @370:7-370:87
-                X: CallExpr @370:7-370:87
-                  Fun: IdentExpr fail @370:7-370:11
-                  Args[0]: Arg @370:12-370:18
-                    Value: IdentExpr events @370:12-370:18
-                  Args[1]: Arg @370:20-370:86
-                    Value: StringLit @370:20-370:86
-                      Parts[0]: Interp @370:22-370:23
-                        X: IdentExpr e @370:22-370:23
+      Items[13]: FnDecl Self="self" @345:3-351:4
+        Doc: DocComment "The columns of `v`'s layout, in wire order." @344:3-344:50
+        Name: Ident layout @345:6-345:12
+        Params[0]: Param @345:19-345:25
+          Name: Ident v @345:19-345:20
+          Type: NamedType @345:22-345:25
+            Name: QualifiedName Int @345:22-345:25
+        Result: ListType @345:30-345:38
+          Elem: NamedType @345:31-345:37
+            Name: QualifiedName Column @345:31-345:37
+        Body: Block @345:39-351:4
+          Stmts[0]: ReturnStmt @346:5-350:6
+            Value: ListComp @346:12-350:6
+              Elem: IdentExpr c @347:7-347:8
+              Clauses[0]: CompClause Keyword=for @348:7-348:23
+                Vars[0]: Ident c @348:11-348:12
+                X: IdentExpr columns @348:16-348:23
+              Clauses[1]: CompClause Keyword=if @349:7-349:78
+                X: BinaryExpr Op=and @349:10-349:78
+                  X: BinaryExpr Op=<= @349:10-349:33
+                    X: ParenExpr @349:10-349:28
+                      X: BinaryExpr Op=?? @349:11-349:27
+                        X: SelectorExpr @349:11-349:18
+                          X: IdentExpr c @349:11-349:12
+                          Name: Ident since @349:13-349:18
+                        Y: IdentExpr since @349:22-349:27
+                    Y: IdentExpr v @349:32-349:33
+                  Y: ParenExpr @349:38-349:78
+                    X: BinaryExpr Op=or @349:39-349:77
+                      X: BinaryExpr Op=== @349:39-349:58
+                        X: SelectorExpr @349:39-349:50
+                          X: IdentExpr c @349:39-349:40
+                          Name: Ident retiredIn @349:41-349:50
+                        Y: NoneLit @349:54-349:58
+                      Y: BinaryExpr Op=> @349:62-349:77
+                        X: SelectorExpr @349:62-349:73
+                          X: IdentExpr c @349:62-349:63
+                          Name: Ident retiredIn @349:64-349:73
+                        Y: IdentExpr v @349:76-349:77
+      Items[14]: FnDecl Self="self" @354:3-356:4
+        Doc: DocComment "The live columns, then the retired ones: the DDL's order." @353:3-353:64
+        Name: Ident tableColumns @354:6-354:18
+        Result: ListType @354:28-354:36
+          Elem: NamedType @354:29-354:35
+            Name: QualifiedName Column @354:29-354:35
+        Body: Block @354:37-356:4
+          Stmts[0]: ReturnStmt @355:5-355:98
+            Value: BinaryExpr Op=+ @355:12-355:98
+              X: BinaryExpr Op=+ @355:12-355:52
+                X: CallExpr @355:12-355:34
+                  Fun: SelectorExpr @355:12-355:32
+                    X: IdentExpr headerColumns @355:12-355:25
+                    Name: Ident values @355:26-355:32
+                Y: CallExpr @355:37-355:52
+                  Fun: IdentExpr layout @355:37-355:43
+                  Args[0]: Arg @355:44-355:51
+                    Value: IdentExpr version @355:44-355:51
+              Y: ListComp @355:55-355:98
+                Elem: IdentExpr c @355:56-355:57
+                Clauses[0]: CompClause Keyword=for @355:58-355:74
+                  Vars[0]: Ident c @355:62-355:63
+                  X: IdentExpr columns @355:67-355:74
+                Clauses[1]: CompClause Keyword=if @355:75-355:97
+                  X: BinaryExpr Op=!= @355:78-355:97
+                    X: SelectorExpr @355:78-355:89
+                      X: IdentExpr c @355:78-355:79
+                      Name: Ident retiredIn @355:80-355:89
+                    Y: NoneLit @355:93-355:97
+  Decls[21]: FnDecl @360:1-360:60
+    Doc: DocComment "The table of event type `e`; none for a retired type, which has no table any more." @359:1-359:87
+    Name: Ident eventOf @360:4-360:11
+    Params[0]: Param @360:12-360:24
+      Name: Ident e @360:12-360:13
+      Type: NamedType @360:15-360:24
+        Name: QualifiedName EventType @360:15-360:24
+    Result: OptionalType @360:29-360:35
+      Elem: NamedType @360:29-360:34
+        Name: QualifiedName Event @360:29-360:34
+    Body: Block @360:36-360:60
+      Stmts[0]: ReturnStmt @360:38-360:58
+        Value: CallExpr @360:45-360:58
+          Fun: SelectorExpr @360:45-360:55
+            X: IdentExpr events @360:45-360:51
+            Name: Ident get @360:52-360:55
+          Args[0]: Arg @360:56-360:57
+            Value: IdentExpr e @360:56-360:57
+  Decls[22]: FnDecl @363:1-363:101
+    Doc: DocComment "The live event types, in id order." @362:1-362:39
+    Name: Ident liveEvents @363:4-363:14
+    Result: ListType @363:20-363:31
+      Elem: NamedType @363:21-363:30
+        Name: QualifiedName EventType @363:21-363:30
+    Body: Block @363:32-363:101
+      Stmts[0]: ReturnStmt @363:34-363:99
+        Value: CallExpr @363:41-363:99
+          Fun: SelectorExpr @363:41-363:92
+            X: CallExpr @363:41-363:85
+              Fun: SelectorExpr @363:41-363:65
+                X: SelectorExpr @363:41-363:58
+                  X: IdentExpr EventType @363:41-363:50
+                  Name: Ident members @363:51-363:58
+                Name: Ident filter @363:59-363:65
+              Args[0]: Arg @363:66-363:84
+                Value: LambdaExpr @363:66-363:84
+                  Params[0]: Ident e @363:66-363:67
+                  Body: UnaryExpr Op=not @363:71-363:84
+                    X: SelectorExpr @363:75-363:84
+                      X: IdentExpr e @363:75-363:76
+                      Name: Ident retired @363:77-363:84
+            Name: Ident sortBy @363:86-363:92
+          Args[0]: Arg @363:93-363:98
+            Value: ShorthandLambda @363:93-363:98
+              Body: SelectorExpr @363:93-363:98
+                Name: Ident code @363:94-363:98
+  Decls[23]: CheckDecl Keyword=check @365:1-371:2
+    Body: Block @365:7-371:2
+      Stmts[0]: ForStmt @366:3-370:4
+        Vars[0]: Ident e @366:7-366:8
+        Iter: SelectorExpr @366:12-366:29
+          X: IdentExpr EventType @366:12-366:21
+          Name: Ident members @366:22-366:29
+        Body: Block @366:30-370:4
+          Stmts[0]: IfStmt @367:5-369:6
+            Cond: BinaryExpr Op=and @367:8-367:43
+              X: UnaryExpr Op=not @367:8-367:21
+                X: SelectorExpr @367:12-367:21
+                  X: IdentExpr e @367:12-367:13
+                  Name: Ident retired @367:14-367:21
+              Y: UnaryExpr Op=not @367:26-367:43
+                X: ParenExpr @367:30-367:43
+                  X: BinaryExpr Op=in @367:31-367:42
+                    X: IdentExpr e @367:31-367:32
+                    Y: IdentExpr events @367:36-367:42
+            Then: Block @367:44-369:6
+              Stmts[0]: ExprStmt @368:7-368:87
+                X: CallExpr @368:7-368:87
+                  Fun: IdentExpr fail @368:7-368:11
+                  Args[0]: Arg @368:12-368:18
+                    Value: IdentExpr events @368:12-368:18
+                  Args[1]: Arg @368:20-368:86
+                    Value: StringLit @368:20-368:86
+                      Parts[0]: Interp @368:22-368:23
+                        X: IdentExpr e @368:22-368:23
                       Parts[1]: text " is a live event type with no table: give it one or retire it"
-  Decls[25]: FnDecl @380:1-380:63
-    Doc: DocComment "Whether `e` is a tombstone: an id no producer may send again." @379:1-379:66
-    Mods: Modifiers Export="export" @380:1-380:7
-    Name: Ident isRetired @380:11-380:20
-    Params[0]: Param @380:21-380:33
-      Name: Ident e @380:21-380:22
-      Type: NamedType @380:24-380:33
-        Name: QualifiedName EventType @380:24-380:33
-    Result: NamedType @380:38-380:42
-      Name: QualifiedName Bool @380:38-380:42
-    Body: Block @380:43-380:63
-      Stmts[0]: ReturnStmt @380:45-380:61
-        Value: SelectorExpr @380:52-380:61
-          X: IdentExpr e @380:52-380:53
-          Name: Ident retired @380:54-380:61
-  Decls[26]: FnDecl @383:1-383:79
-    Doc: DocComment "The current layout version of `e` (the wire version byte); 0 for a retired type." @382:1-382:85
-    Mods: Modifiers Export="export" @383:1-383:7
-    Name: Ident versionOf @383:11-383:20
-    Params[0]: Param @383:21-383:33
-      Name: Ident e @383:21-383:22
-      Type: NamedType @383:24-383:33
-        Name: QualifiedName EventType @383:24-383:33
-    Result: NamedType @383:38-383:43
-      Name: QualifiedName UInt8 @383:38-383:43
-    Body: Block @383:44-383:79
-      Stmts[0]: ReturnStmt @383:46-383:77
-        Value: BinaryExpr Op=?? @383:53-383:77
-          X: SelectorExpr Optional @383:53-383:72
-            X: CallExpr @383:53-383:63
-              Fun: IdentExpr eventOf @383:53-383:60
-              Args[0]: Arg @383:61-383:62
-                Value: IdentExpr e @383:61-383:62
-            Name: Ident version @383:65-383:72
-          Y: IntLit Value=0 @383:76-383:77
-  Decls[27]: FnDecl @386:1-386:79
-    Doc: DocComment "The ring tier of `e`; a retired type is READONLY (nothing writes it)." @385:1-385:74
-    Mods: Modifiers Export="export" @386:1-386:7
-    Name: Ident tierOf @386:11-386:17
-    Params[0]: Param @386:18-386:30
-      Name: Ident e @386:18-386:19
-      Type: NamedType @386:21-386:30
-        Name: QualifiedName EventType @386:21-386:30
-    Result: NamedType @386:35-386:39
-      Name: QualifiedName Tier @386:35-386:39
-    Body: Block @386:40-386:79
-      Stmts[0]: ReturnStmt @386:42-386:77
-        Value: BinaryExpr Op=?? @386:49-386:77
-          X: SelectorExpr Optional @386:49-386:65
-            X: CallExpr @386:49-386:59
-              Fun: IdentExpr eventOf @386:49-386:56
-              Args[0]: Arg @386:57-386:58
-                Value: IdentExpr e @386:57-386:58
-            Name: Ident tier @386:61-386:65
-          Y: IdentExpr READONLY @386:69-386:77
-  Decls[28]: FnDecl @390:1-390:60
-    Doc: DocComment "The lake table of `e`, retired types included (their tables stay readable); for tombstone\n20, whose table is not recorded, the event's name." @388:1-389:55
-    Mods: Modifiers Export="export" @390:1-390:7
-    Name: Ident tableOf @390:11-390:18
-    Params[0]: Param @390:19-390:31
-      Name: Ident e @390:19-390:20
-      Type: NamedType @390:22-390:31
-        Name: QualifiedName EventType @390:22-390:31
-    Result: NamedType @390:36-390:42
-      Name: QualifiedName String @390:36-390:42
-    Body: Block @390:43-390:60
-      Stmts[0]: ReturnStmt @390:45-390:58
-        Value: SelectorExpr @390:52-390:58
-          X: IdentExpr e @390:52-390:53
-          Name: Ident name @390:54-390:58
-  Decls[29]: FnDecl @393:1-396:2
-    Doc: DocComment "Whether `e`'s current layout has the item_instance_id column." @392:1-392:66
-    Mods: Modifiers Export="export" @393:1-393:7
-    Name: Ident hasInstanceId @393:11-393:24
-    Params[0]: Param @393:25-393:37
-      Name: Ident e @393:25-393:26
-      Type: NamedType @393:28-393:37
-        Name: QualifiedName EventType @393:28-393:37
-    Result: NamedType @393:42-393:46
-      Name: QualifiedName Bool @393:42-393:46
-    Body: Block @393:47-396:2
-      Stmts[0]: LetStmt @394:3-394:22
-        Name: Ident ev @394:7-394:9
-        Value: CallExpr @394:12-394:22
-          Fun: IdentExpr eventOf @394:12-394:19
-          Args[0]: Arg @394:20-394:21
-            Value: IdentExpr e @394:20-394:21
-      Stmts[1]: ReturnStmt @395:3-395:79
-        Value: BinaryExpr Op=and @395:10-395:79
-          X: BinaryExpr Op=!= @395:10-395:20
-            X: IdentExpr ev @395:10-395:12
-            Y: NoneLit @395:16-395:20
-          Y: BinaryExpr Op=in @395:25-395:79
-            X: StringLit @395:25-395:43
+  Decls[24]: FnDecl @378:1-378:63
+    Doc: DocComment "Whether `e` is a tombstone: an id no producer may send again." @377:1-377:66
+    Mods: Modifiers Export="export" @378:1-378:7
+    Name: Ident isRetired @378:11-378:20
+    Params[0]: Param @378:21-378:33
+      Name: Ident e @378:21-378:22
+      Type: NamedType @378:24-378:33
+        Name: QualifiedName EventType @378:24-378:33
+    Result: NamedType @378:38-378:42
+      Name: QualifiedName Bool @378:38-378:42
+    Body: Block @378:43-378:63
+      Stmts[0]: ReturnStmt @378:45-378:61
+        Value: SelectorExpr @378:52-378:61
+          X: IdentExpr e @378:52-378:53
+          Name: Ident retired @378:54-378:61
+  Decls[25]: FnDecl @381:1-381:79
+    Doc: DocComment "The current layout version of `e` (the wire version byte); 0 for a retired type." @380:1-380:85
+    Mods: Modifiers Export="export" @381:1-381:7
+    Name: Ident versionOf @381:11-381:20
+    Params[0]: Param @381:21-381:33
+      Name: Ident e @381:21-381:22
+      Type: NamedType @381:24-381:33
+        Name: QualifiedName EventType @381:24-381:33
+    Result: NamedType @381:38-381:43
+      Name: QualifiedName UInt8 @381:38-381:43
+    Body: Block @381:44-381:79
+      Stmts[0]: ReturnStmt @381:46-381:77
+        Value: BinaryExpr Op=?? @381:53-381:77
+          X: SelectorExpr Optional @381:53-381:72
+            X: CallExpr @381:53-381:63
+              Fun: IdentExpr eventOf @381:53-381:60
+              Args[0]: Arg @381:61-381:62
+                Value: IdentExpr e @381:61-381:62
+            Name: Ident version @381:65-381:72
+          Y: IntLit Value=0 @381:76-381:77
+  Decls[26]: FnDecl @384:1-384:79
+    Doc: DocComment "The ring tier of `e`; a retired type is READONLY (nothing writes it)." @383:1-383:74
+    Mods: Modifiers Export="export" @384:1-384:7
+    Name: Ident tierOf @384:11-384:17
+    Params[0]: Param @384:18-384:30
+      Name: Ident e @384:18-384:19
+      Type: NamedType @384:21-384:30
+        Name: QualifiedName EventType @384:21-384:30
+    Result: NamedType @384:35-384:39
+      Name: QualifiedName Tier @384:35-384:39
+    Body: Block @384:40-384:79
+      Stmts[0]: ReturnStmt @384:42-384:77
+        Value: BinaryExpr Op=?? @384:49-384:77
+          X: SelectorExpr Optional @384:49-384:65
+            X: CallExpr @384:49-384:59
+              Fun: IdentExpr eventOf @384:49-384:56
+              Args[0]: Arg @384:57-384:58
+                Value: IdentExpr e @384:57-384:58
+            Name: Ident tier @384:61-384:65
+          Y: IdentExpr READONLY @384:69-384:77
+  Decls[27]: FnDecl @388:1-388:60
+    Doc: DocComment "The lake table of `e`, retired types included (their tables stay readable); for tombstone\n20, whose table is not recorded, the event's name." @386:1-387:55
+    Mods: Modifiers Export="export" @388:1-388:7
+    Name: Ident tableOf @388:11-388:18
+    Params[0]: Param @388:19-388:31
+      Name: Ident e @388:19-388:20
+      Type: NamedType @388:22-388:31
+        Name: QualifiedName EventType @388:22-388:31
+    Result: NamedType @388:36-388:42
+      Name: QualifiedName String @388:36-388:42
+    Body: Block @388:43-388:60
+      Stmts[0]: ReturnStmt @388:45-388:58
+        Value: SelectorExpr @388:52-388:58
+          X: IdentExpr e @388:52-388:53
+          Name: Ident name @388:54-388:58
+  Decls[28]: FnDecl @391:1-394:2
+    Doc: DocComment "Whether `e`'s current layout has the item_instance_id column." @390:1-390:66
+    Mods: Modifiers Export="export" @391:1-391:7
+    Name: Ident hasInstanceId @391:11-391:24
+    Params[0]: Param @391:25-391:37
+      Name: Ident e @391:25-391:26
+      Type: NamedType @391:28-391:37
+        Name: QualifiedName EventType @391:28-391:37
+    Result: NamedType @391:42-391:46
+      Name: QualifiedName Bool @391:42-391:46
+    Body: Block @391:47-394:2
+      Stmts[0]: LetStmt @392:3-392:22
+        Name: Ident ev @392:7-392:9
+        Value: CallExpr @392:12-392:22
+          Fun: IdentExpr eventOf @392:12-392:19
+          Args[0]: Arg @392:20-392:21
+            Value: IdentExpr e @392:20-392:21
+      Stmts[1]: ReturnStmt @393:3-393:79
+        Value: BinaryExpr Op=and @393:10-393:79
+          X: BinaryExpr Op=!= @393:10-393:20
+            X: IdentExpr ev @393:10-393:12
+            Y: NoneLit @393:16-393:20
+          Y: BinaryExpr Op=in @393:25-393:79
+            X: StringLit @393:25-393:43
               Parts[0]: text "item_instance_id"
-            Y: CallExpr @395:47-395:79
-              Fun: SelectorExpr @395:47-395:72
-                X: CallExpr @395:47-395:68
-                  Fun: SelectorExpr @395:47-395:56
-                    X: IdentExpr ev @395:47-395:49
-                    Name: Ident layout @395:50-395:56
-                  Args[0]: Arg @395:57-395:67
-                    Value: SelectorExpr @395:57-395:67
-                      X: IdentExpr ev @395:57-395:59
-                      Name: Ident version @395:60-395:67
-                Name: Ident map @395:69-395:72
-              Args[0]: Arg @395:73-395:78
-                Value: ShorthandLambda @395:73-395:78
-                  Body: SelectorExpr @395:73-395:78
-                    Name: Ident name @395:74-395:78
-  Decls[30]: FnDecl @399:1-403:2
-    Doc: DocComment "The packed size of `e`'s current struct: header plus live body columns." @398:1-398:76
-    Mods: Modifiers Export="export" @399:1-399:7
-    Name: Ident wireSize @399:11-399:19
-    Params[0]: Param @399:20-399:32
-      Name: Ident e @399:20-399:21
-      Type: NamedType @399:23-399:32
-        Name: QualifiedName EventType @399:23-399:32
-    Result: NamedType @399:37-399:40
-      Name: QualifiedName Int @399:37-399:40
-    Body: Block @399:41-403:2
-      Stmts[0]: LetStmt @400:3-400:22
-        Name: Ident ev @400:7-400:9
-        Value: CallExpr @400:12-400:22
-          Fun: IdentExpr eventOf @400:12-400:19
-          Args[0]: Arg @400:20-400:21
-            Value: IdentExpr e @400:20-400:21
-      Stmts[1]: IfStmt @401:3-401:29
-        Cond: BinaryExpr Op=== @401:6-401:16
-          X: IdentExpr ev @401:6-401:8
-          Y: NoneLit @401:12-401:16
-        Then: Block @401:17-401:29
-          Stmts[0]: ReturnStmt @401:19-401:27
-            Value: IntLit Value=0 @401:26-401:27
-      Stmts[2]: ReturnStmt @402:3-402:87
-        Value: BinaryExpr Op=+ @402:10-402:87
-          X: CallExpr @402:10-402:43
-            Fun: SelectorExpr @402:10-402:41
-              X: CallExpr @402:10-402:37
-                Fun: SelectorExpr @402:10-402:27
-                  X: IdentExpr headerColumns @402:10-402:23
-                  Name: Ident map @402:24-402:27
-                Args[0]: Arg @402:28-402:36
-                  Value: ShorthandLambda @402:28-402:36
-                    Body: CallExpr @402:28-402:36
-                      Fun: SelectorExpr @402:28-402:34
-                        Name: Ident width @402:29-402:34
-              Name: Ident sum @402:38-402:41
-          Y: CallExpr @402:46-402:87
-            Fun: SelectorExpr @402:46-402:85
-              X: CallExpr @402:46-402:81
-                Fun: SelectorExpr @402:46-402:71
-                  X: CallExpr @402:46-402:67
-                    Fun: SelectorExpr @402:46-402:55
-                      X: IdentExpr ev @402:46-402:48
-                      Name: Ident layout @402:49-402:55
-                    Args[0]: Arg @402:56-402:66
-                      Value: SelectorExpr @402:56-402:66
-                        X: IdentExpr ev @402:56-402:58
-                        Name: Ident version @402:59-402:66
-                  Name: Ident map @402:68-402:71
-                Args[0]: Arg @402:72-402:80
-                  Value: ShorthandLambda @402:72-402:80
-                    Body: CallExpr @402:72-402:80
-                      Fun: SelectorExpr @402:72-402:78
-                        Name: Ident width @402:73-402:78
-              Name: Ident sum @402:82-402:85
-  Decls[31]: FnDecl @406:1-406:97
-    Doc: DocComment "Whether producer `p` owns a ring for `e`." @405:1-405:46
-    Mods: Modifiers Export="export" @406:1-406:7
-    Name: Ident emits @406:11-406:16
-    Params[0]: Param @406:17-406:29
-      Name: Ident e @406:17-406:18
-      Type: NamedType @406:20-406:29
-        Name: QualifiedName EventType @406:20-406:29
-    Params[1]: Param @406:31-406:42
-      Name: Ident p @406:31-406:32
-      Type: NamedType @406:34-406:42
-        Name: QualifiedName Producer @406:34-406:42
-    Result: NamedType @406:47-406:51
-      Name: QualifiedName Bool @406:47-406:51
-    Body: Block @406:52-406:97
-      Stmts[0]: ReturnStmt @406:54-406:95
-        Value: BinaryExpr Op=in @406:61-406:95
-          X: IdentExpr p @406:61-406:62
-          Y: ParenExpr @406:66-406:95
-            X: BinaryExpr Op=?? @406:67-406:94
-              X: SelectorExpr Optional @406:67-406:88
-                X: CallExpr @406:67-406:77
-                  Fun: IdentExpr eventOf @406:67-406:74
-                  Args[0]: Arg @406:75-406:76
-                    Value: IdentExpr e @406:75-406:76
-                Name: Ident producers @406:79-406:88
-              Y: ListLit @406:92-406:94
-  Decls[32]: FnDecl @409:1-414:2
-    Doc: DocComment "The CREATE TABLE of `e`'s current layout; empty for a retired type." @408:1-408:72
-    Mods: Modifiers Export="export" @409:1-409:7
-    Name: Ident createTableSql @409:11-409:25
-    Params[0]: Param @409:26-409:38
-      Name: Ident e @409:26-409:27
-      Type: NamedType @409:29-409:38
-        Name: QualifiedName EventType @409:29-409:38
-    Result: NamedType @409:43-409:49
-      Name: QualifiedName String @409:43-409:49
-    Body: Block @409:50-414:2
-      Stmts[0]: LetStmt @410:3-410:22
-        Name: Ident ev @410:7-410:9
-        Value: CallExpr @410:12-410:22
-          Fun: IdentExpr eventOf @410:12-410:19
-          Args[0]: Arg @410:20-410:21
-            Value: IdentExpr e @410:20-410:21
-      Stmts[1]: IfStmt @411:3-411:30
-        Cond: BinaryExpr Op=== @411:6-411:16
-          X: IdentExpr ev @411:6-411:8
-          Y: NoneLit @411:12-411:16
-        Then: Block @411:17-411:30
-          Stmts[0]: ReturnStmt @411:19-411:28
-            Value: StringLit @411:26-411:28
-      Stmts[2]: LetStmt @412:3-412:75
-        Name: Ident cols @412:7-412:11
-        Value: BinaryExpr Op=+ @412:14-412:75
-          X: CallExpr @412:14-412:43
-            Fun: SelectorExpr @412:14-412:35
-              X: IdentExpr provenanceColumns @412:14-412:31
-              Name: Ident map @412:32-412:35
-            Args[0]: Arg @412:36-412:42
-              Value: ShorthandLambda @412:36-412:42
-                Body: CallExpr @412:36-412:42
-                  Fun: SelectorExpr @412:36-412:40
-                    Name: Ident ddl @412:37-412:40
-          Y: CallExpr @412:46-412:75
-            Fun: SelectorExpr @412:46-412:67
-              X: CallExpr @412:46-412:63
-                Fun: SelectorExpr @412:46-412:61
-                  X: IdentExpr ev @412:46-412:48
-                  Name: Ident tableColumns @412:49-412:61
-              Name: Ident map @412:64-412:67
-            Args[0]: Arg @412:68-412:74
-              Value: ShorthandLambda @412:68-412:74
-                Body: CallExpr @412:68-412:74
-                  Fun: SelectorExpr @412:68-412:72
-                    Name: Ident ddl @412:69-412:72
-      Stmts[3]: ReturnStmt @413:3-413:68
-        Value: StringLit @413:10-413:68
+            Y: CallExpr @393:47-393:79
+              Fun: SelectorExpr @393:47-393:72
+                X: CallExpr @393:47-393:68
+                  Fun: SelectorExpr @393:47-393:56
+                    X: IdentExpr ev @393:47-393:49
+                    Name: Ident layout @393:50-393:56
+                  Args[0]: Arg @393:57-393:67
+                    Value: SelectorExpr @393:57-393:67
+                      X: IdentExpr ev @393:57-393:59
+                      Name: Ident version @393:60-393:67
+                Name: Ident map @393:69-393:72
+              Args[0]: Arg @393:73-393:78
+                Value: ShorthandLambda @393:73-393:78
+                  Body: SelectorExpr @393:73-393:78
+                    Name: Ident name @393:74-393:78
+  Decls[29]: FnDecl @397:1-401:2
+    Doc: DocComment "The packed size of `e`'s current struct: header plus live body columns." @396:1-396:76
+    Mods: Modifiers Export="export" @397:1-397:7
+    Name: Ident wireSize @397:11-397:19
+    Params[0]: Param @397:20-397:32
+      Name: Ident e @397:20-397:21
+      Type: NamedType @397:23-397:32
+        Name: QualifiedName EventType @397:23-397:32
+    Result: NamedType @397:37-397:40
+      Name: QualifiedName Int @397:37-397:40
+    Body: Block @397:41-401:2
+      Stmts[0]: LetStmt @398:3-398:22
+        Name: Ident ev @398:7-398:9
+        Value: CallExpr @398:12-398:22
+          Fun: IdentExpr eventOf @398:12-398:19
+          Args[0]: Arg @398:20-398:21
+            Value: IdentExpr e @398:20-398:21
+      Stmts[1]: IfStmt @399:3-399:29
+        Cond: BinaryExpr Op=== @399:6-399:16
+          X: IdentExpr ev @399:6-399:8
+          Y: NoneLit @399:12-399:16
+        Then: Block @399:17-399:29
+          Stmts[0]: ReturnStmt @399:19-399:27
+            Value: IntLit Value=0 @399:26-399:27
+      Stmts[2]: ReturnStmt @400:3-400:87
+        Value: BinaryExpr Op=+ @400:10-400:87
+          X: CallExpr @400:10-400:43
+            Fun: SelectorExpr @400:10-400:41
+              X: CallExpr @400:10-400:37
+                Fun: SelectorExpr @400:10-400:27
+                  X: IdentExpr headerColumns @400:10-400:23
+                  Name: Ident map @400:24-400:27
+                Args[0]: Arg @400:28-400:36
+                  Value: ShorthandLambda @400:28-400:36
+                    Body: CallExpr @400:28-400:36
+                      Fun: SelectorExpr @400:28-400:34
+                        Name: Ident width @400:29-400:34
+              Name: Ident sum @400:38-400:41
+          Y: CallExpr @400:46-400:87
+            Fun: SelectorExpr @400:46-400:85
+              X: CallExpr @400:46-400:81
+                Fun: SelectorExpr @400:46-400:71
+                  X: CallExpr @400:46-400:67
+                    Fun: SelectorExpr @400:46-400:55
+                      X: IdentExpr ev @400:46-400:48
+                      Name: Ident layout @400:49-400:55
+                    Args[0]: Arg @400:56-400:66
+                      Value: SelectorExpr @400:56-400:66
+                        X: IdentExpr ev @400:56-400:58
+                        Name: Ident version @400:59-400:66
+                  Name: Ident map @400:68-400:71
+                Args[0]: Arg @400:72-400:80
+                  Value: ShorthandLambda @400:72-400:80
+                    Body: CallExpr @400:72-400:80
+                      Fun: SelectorExpr @400:72-400:78
+                        Name: Ident width @400:73-400:78
+              Name: Ident sum @400:82-400:85
+  Decls[30]: FnDecl @404:1-404:97
+    Doc: DocComment "Whether producer `p` owns a ring for `e`." @403:1-403:46
+    Mods: Modifiers Export="export" @404:1-404:7
+    Name: Ident emits @404:11-404:16
+    Params[0]: Param @404:17-404:29
+      Name: Ident e @404:17-404:18
+      Type: NamedType @404:20-404:29
+        Name: QualifiedName EventType @404:20-404:29
+    Params[1]: Param @404:31-404:42
+      Name: Ident p @404:31-404:32
+      Type: NamedType @404:34-404:42
+        Name: QualifiedName Producer @404:34-404:42
+    Result: NamedType @404:47-404:51
+      Name: QualifiedName Bool @404:47-404:51
+    Body: Block @404:52-404:97
+      Stmts[0]: ReturnStmt @404:54-404:95
+        Value: BinaryExpr Op=in @404:61-404:95
+          X: IdentExpr p @404:61-404:62
+          Y: ParenExpr @404:66-404:95
+            X: BinaryExpr Op=?? @404:67-404:94
+              X: SelectorExpr Optional @404:67-404:88
+                X: CallExpr @404:67-404:77
+                  Fun: IdentExpr eventOf @404:67-404:74
+                  Args[0]: Arg @404:75-404:76
+                    Value: IdentExpr e @404:75-404:76
+                Name: Ident producers @404:79-404:88
+              Y: ListLit @404:92-404:94
+  Decls[31]: FnDecl @407:1-412:2
+    Doc: DocComment "The CREATE TABLE of `e`'s current layout; empty for a retired type." @406:1-406:72
+    Mods: Modifiers Export="export" @407:1-407:7
+    Name: Ident createTableSql @407:11-407:25
+    Params[0]: Param @407:26-407:38
+      Name: Ident e @407:26-407:27
+      Type: NamedType @407:29-407:38
+        Name: QualifiedName EventType @407:29-407:38
+    Result: NamedType @407:43-407:49
+      Name: QualifiedName String @407:43-407:49
+    Body: Block @407:50-412:2
+      Stmts[0]: LetStmt @408:3-408:22
+        Name: Ident ev @408:7-408:9
+        Value: CallExpr @408:12-408:22
+          Fun: IdentExpr eventOf @408:12-408:19
+          Args[0]: Arg @408:20-408:21
+            Value: IdentExpr e @408:20-408:21
+      Stmts[1]: IfStmt @409:3-409:30
+        Cond: BinaryExpr Op=== @409:6-409:16
+          X: IdentExpr ev @409:6-409:8
+          Y: NoneLit @409:12-409:16
+        Then: Block @409:17-409:30
+          Stmts[0]: ReturnStmt @409:19-409:28
+            Value: StringLit @409:26-409:28
+      Stmts[2]: LetStmt @410:3-410:75
+        Name: Ident cols @410:7-410:11
+        Value: BinaryExpr Op=+ @410:14-410:75
+          X: CallExpr @410:14-410:43
+            Fun: SelectorExpr @410:14-410:35
+              X: IdentExpr provenanceColumns @410:14-410:31
+              Name: Ident map @410:32-410:35
+            Args[0]: Arg @410:36-410:42
+              Value: ShorthandLambda @410:36-410:42
+                Body: CallExpr @410:36-410:42
+                  Fun: SelectorExpr @410:36-410:40
+                    Name: Ident ddl @410:37-410:40
+          Y: CallExpr @410:46-410:75
+            Fun: SelectorExpr @410:46-410:67
+              X: CallExpr @410:46-410:63
+                Fun: SelectorExpr @410:46-410:61
+                  X: IdentExpr ev @410:46-410:48
+                  Name: Ident tableColumns @410:49-410:61
+              Name: Ident map @410:64-410:67
+            Args[0]: Arg @410:68-410:74
+              Value: ShorthandLambda @410:68-410:74
+                Body: CallExpr @410:68-410:74
+                  Fun: SelectorExpr @410:68-410:72
+                    Name: Ident ddl @410:69-410:72
+      Stmts[3]: ReturnStmt @411:3-411:68
+        Value: StringLit @411:10-411:68
           Parts[0]: text "CREATE TABLE IF NOT EXISTS "
-          Parts[1]: Interp @413:39-413:45
-            X: SelectorExpr @413:39-413:45
-              X: IdentExpr e @413:39-413:40
-              Name: Ident name @413:41-413:45
+          Parts[1]: Interp @411:39-411:45
+            X: SelectorExpr @411:39-411:45
+              X: IdentExpr e @411:39-411:40
+              Name: Ident name @411:41-411:45
           Parts[2]: text " ("
-          Parts[3]: Interp @413:49-413:64
-            X: CallExpr @413:49-413:64
-              Fun: SelectorExpr @413:49-413:58
-                X: IdentExpr cols @413:49-413:53
-                Name: Ident join @413:54-413:58
-              Args[0]: Arg @413:59-413:63
-                Value: StringLit @413:59-413:63
+          Parts[3]: Interp @411:49-411:64
+            X: CallExpr @411:49-411:64
+              Fun: SelectorExpr @411:49-411:58
+                X: IdentExpr cols @411:49-411:53
+                Name: Ident join @411:54-411:58
+              Args[0]: Arg @411:59-411:63
+                Value: StringLit @411:59-411:63
                   Parts[0]: text ", "
           Parts[4]: text ");"
-  Decls[33]: EmitDecl @420:1-420:92
-    Target: Ident cpp @420:6-420:9
-    Options: BraceLit @420:10-420:92
-      Items[0]: FieldItem @420:12-420:53
-        Name: Ident out @420:12-420:15
-        Value: StringLit @420:17-420:53
+  Decls[32]: EmitDecl @418:1-418:92
+    Target: Ident cpp @418:6-418:9
+    Options: BraceLit @418:10-418:92
+      Items[0]: FieldItem @418:12-418:53
+        Name: Ident out @418:12-418:15
+        Value: StringLit @418:17-418:53
           Parts[0]: text "@source/Engine/Telemetry/Generated"
-      Items[1]: FieldItem @420:55-420:77
-        Name: Ident namespace @420:55-420:64
-        Value: StringLit @420:66-420:77
+      Items[1]: FieldItem @418:55-418:77
+        Name: Ident namespace @418:55-418:64
+        Value: StringLit @418:66-418:77
           Parts[0]: text "Telemetry"
-      Items[2]: FieldItem @420:79-420:90
-        Name: Ident mode @420:79-420:83
-        Value: IdentExpr baked @420:85-420:90
-  Decls[34]: EmitDecl @421:1-421:67
-    Target: Ident go @421:6-421:8
-    Options: BraceLit @421:9-421:67
-      Items[0]: FieldItem @421:11-421:52
-        Name: Ident out @421:11-421:14
-        Value: StringLit @421:16-421:52
+      Items[2]: FieldItem @418:79-418:90
+        Name: Ident mode @418:79-418:83
+        Value: IdentExpr baked @418:85-418:90
+  Decls[33]: EmitDecl @419:1-419:67
+    Target: Ident go @419:6-419:8
+    Options: BraceLit @419:9-419:67
+      Items[0]: FieldItem @419:11-419:52
+        Name: Ident out @419:11-419:14
+        Value: StringLit @419:16-419:52
           Parts[0]: text "@services/monitoring/gen/telemetry"
-      Items[1]: FieldItem @421:54-421:65
-        Name: Ident mode @421:54-421:58
-        Value: IdentExpr baked @421:60-421:65
-  Decls[35]: EmitDecl @422:1-422:55
-    Target: Ident text @422:6-422:10
-    Options: BraceLit @422:11-422:55
-      Items[0]: FieldItem @422:13-422:53
-        Name: Ident out @422:13-422:16
-        Value: StringLit @422:18-422:53
+      Items[1]: FieldItem @419:54-419:65
+        Name: Ident mode @419:54-419:58
+        Value: IdentExpr baked @419:60-419:65
+  Decls[34]: EmitDecl @420:1-420:55
+    Target: Ident text @420:6-420:10
+    Options: BraceLit @420:11-420:55
+      Items[0]: FieldItem @420:13-420:53
+        Name: Ident out @420:13-420:16
+        Value: StringLit @420:18-420:53
           Parts[0]: text "@source/Tools/telemetry/generated"
 == findings
 0 errors, 0 warnings in 1 package (…)

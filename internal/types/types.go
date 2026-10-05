@@ -66,13 +66,14 @@ func (b builtin) Underlying() Type { return b }
 func (b builtin) Base() Type { return b }
 
 // Refined is Of with refinements; it never changes static identity, so its Kind is Of's.
-// A Refined holds one written refinement; a refined named type nests them (TYP-04).
+// A Refined holds one written refinement or a `past`; a refined named type nests them (TYP-04).
 type Refined struct {
 	Of      Type
 	Range   *Bound // a value range, or the length of a string, list or map
 	Pattern *regexp.Regexp
 	Where   *Predicate
 	Asset   *AssetSpec // TYPES.md §13.4
+	Past    bool
 }
 
 func (r *Refined) Kind() Kind { return r.Of.Kind() }

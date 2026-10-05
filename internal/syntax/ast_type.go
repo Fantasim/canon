@@ -1,8 +1,9 @@
 package syntax
 
-// NamedType is "Name[(args)]"; refinement or application is decided by check (GRAMMAR.md §6.6).
+// NamedType is "[past] Name[(args)]", Past NoTok when absent; check reads args (GRAMMAR.md §6.6).
 type NamedType struct {
 	Bounds
+	Past Tok
 	Name *QualifiedName
 	Args *TypeArgs
 }
@@ -27,6 +28,7 @@ func (n *TypeArgs) children(yield func(Node) bool) bool { return visit(yield, n.
 // ListType is "[T][(args)]".
 type ListType struct {
 	Bounds
+	Past Tok
 	Elem Type
 	Args *TypeArgs
 }
@@ -86,6 +88,7 @@ func (n *DepMapType) children(yield func(Node) bool) bool {
 // TableType is "[stable] table Name"; Stable is NoTok when absent.
 type TableType struct {
 	Bounds
+	Past   Tok
 	Stable Tok
 	Name   *QualifiedName
 }
@@ -95,9 +98,10 @@ func (*TableType) typeNode()      {}
 
 func (n *TableType) children(yield func(Node) bool) bool { return visit(yield, n.Name) }
 
-// RefType is "ref name".
+// RefType is "[past] ref name"; Past is NoTok when absent (GRAMMAR.md §5.9 pastType).
 type RefType struct {
 	Bounds
+	Past Tok
 	Name *QualifiedName
 }
 
@@ -145,6 +149,7 @@ func (n *UnionType) children(yield func(Node) bool) bool { return visit(yield, n
 // LiteralType is a string literal written as a type alternative.
 type LiteralType struct {
 	Bounds
+	Past  Tok
 	Value StrLit
 }
 
@@ -156,6 +161,7 @@ func (n *LiteralType) children(yield func(Node) bool) bool { return visit(yield,
 // MatchType is "match header { arms }" in type position.
 type MatchType struct {
 	Bounds
+	Past      Tok
 	Scrutinee Expr
 	Braces    Delims
 	Arms      []*TypeArm
@@ -184,6 +190,7 @@ func (n *TypeArm) children(yield func(Node) bool) bool {
 // AssetType is `asset("dir"[, ext: [names]])`.
 type AssetType struct {
 	Bounds
+	Past     Tok
 	Parens   Delims
 	Dir      StrLit
 	Brackets Delims
@@ -200,6 +207,7 @@ func (n *AssetType) children(yield func(Node) bool) bool {
 // AnyType is "_" in type position.
 type AnyType struct {
 	Bounds
+	Past Tok
 }
 
 func (*AnyType) Kind() NodeKind                { return KindAnyType }
@@ -209,6 +217,7 @@ func (*AnyType) children(func(Node) bool) bool { return true }
 // FnType is "fn(T, …) -> R".
 type FnType struct {
 	Bounds
+	Past   Tok
 	Parens Delims
 	Params []Type
 	Result Type

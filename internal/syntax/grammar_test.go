@@ -58,6 +58,11 @@ var (
 		syntax.KindAssetType, syntax.KindMatchType, syntax.KindLiteralType, syntax.KindAnyType,
 		syntax.KindParenType,
 	}
+	// pastTypes hold a pastType as their Past token: every primType but "(", "{" and keyed lists.
+	pastTypes = []syntax.NodeKind{
+		syntax.KindNamedType, syntax.KindListType, syntax.KindTableType, syntax.KindRefType, syntax.KindFnType,
+		syntax.KindAssetType, syntax.KindMatchType, syntax.KindLiteralType, syntax.KindAnyType,
+	}
 	types    = append([]syntax.NodeKind{syntax.KindUnionType, syntax.KindOptionalType, syntax.KindWhereType}, primTypes...)
 	literals = []syntax.NodeKind{
 		syntax.KindIntLit, syntax.KindFloatLit, syntax.KindDurationLit, syntax.KindStringLit,
@@ -118,7 +123,7 @@ var productions = map[string][]syntax.NodeKind{
 	"primType": primTypes, "namedType": {syntax.KindNamedType}, "typeArgs": {syntax.KindTypeArgs},
 	"typeArg": exprs, "listType": {syntax.KindListType, syntax.KindKeyedType}, "mapType": {syntax.KindMapType},
 	"depMapType": {syntax.KindDepMapType}, "tableType": {syntax.KindTableType}, "refType": {syntax.KindRefType},
-	"fnType": {syntax.KindFnType}, "assetType": {syntax.KindAssetType},
+	"pastType": pastTypes, "fnType": {syntax.KindFnType}, "assetType": {syntax.KindAssetType},
 	"extName": append([]syntax.NodeKind{syntax.KindIdent}, strs...), "matchType": {syntax.KindMatchType},
 	"typeArm": {syntax.KindTypeArm}, "block": {syntax.KindBlock}, "statement": stmts,
 	"letStmt": {syntax.KindLetStmt}, "varStmt": {syntax.KindVarStmt}, "ifStmt": {syntax.KindIfStmt},

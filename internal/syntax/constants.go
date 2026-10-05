@@ -390,6 +390,7 @@ const (
 	WordTitle, WordSubtitle, WordSingular, WordPlural, wordMenu        = "title", "subtitle", "singular", "plural", "menu"
 	wordIcon, wordPreview, wordSearch, wordFilters, wordColumns        = "icon", "preview", "search", "filters", "columns"
 	WordGroup, WordShow, WordField, matchesName, failName, pairIndex   = "group", "show", "field", "matches", "fail", "i"
+	wordPast                                                           = "past"
 	maxNesting                                                         = 1000
 )
 
@@ -466,3 +467,6 @@ var (
 	codeTypes   = []string{"Int8", "Int16", "Int32", "Int", "UInt8", "UInt16", "UInt32", "UInt64"}
 	accessModes = []string{"fields", "both", "getters"}
 )
+
+// pastNames are the words before which `past` stays a name: `input past from`, `past keyed by` (GRAMMAR.md §4.2).
+var pastNames = []string{wordFrom, wordKeyed}

@@ -10,6 +10,9 @@ func (r *Refined) String() string {
 		return assetText(r.Asset)
 	}
 	s := r.Of.String()
+	if r.Past {
+		s = textPast + s
+	}
 	if args := refineArgs(r); args != "" {
 		if l, ok := r.Of.(*ListType); ok && l.KeyedBy != nil {
 			s = textOpenList + l.Elem.String() + textCloseList + textOpen + args + textClose + textKeyedBy + l.KeyedBy.Name

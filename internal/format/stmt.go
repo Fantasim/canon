@@ -112,7 +112,7 @@ func (b *builder) matchExpr(n *syntax.MatchExpr) *doc {
 }
 
 func (b *builder) matchType(n *syntax.MatchType) *doc {
-	return b.matchList(n.First(), n.Scrutinee, n.Braces, entries(b, n.Arms))
+	return b.matchList(b.first(n), n.Scrutinee, n.Braces, entries(b, n.Arms))
 }
 
 // arm is "patterns => body" by rule A (§7.2).

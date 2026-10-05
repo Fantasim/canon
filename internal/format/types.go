@@ -8,6 +8,22 @@ func (b *builder) namedType(n *syntax.NamedType) *doc {
 	return cat(b.node(n.Name), b.typeArgs(n.Args))
 }
 
+// past is the `past` of a pastType and its space, nil when absent (GRAMMAR.md §5.9).
+func (b *builder) past(t syntax.Tok) *doc {
+	if t == syntax.NoTok {
+		return nil
+	}
+	return cat(b.tok(t), spaceDoc)
+}
+
+// first is the first token of type n after its `past`.
+func (b *builder) first(n syntax.Node) syntax.Tok {
+	if p := syntax.PastOf(n); p != syntax.NoTok {
+		return b.after(p)
+	}
+	return n.First()
+}
+
 func (b *builder) typeArgs(n *syntax.TypeArgs) *doc {
 	if n == nil {
 		return nil
@@ -21,7 +37,7 @@ func (b *builder) typeArgList(n *syntax.TypeArgs) *doc {
 
 func (b *builder) listType(n *syntax.ListType) *doc {
 	closeTok := b.after(n.Elem.Last())
-	return cat(b.tok(n.First()), b.node(n.Elem), b.closing(closeTok, true), b.closer(closeTok), b.typeArgs(n.Args))
+	return cat(b.tok(b.first(n)), b.node(n.Elem), b.closing(closeTok, true), b.closer(closeTok), b.typeArgs(n.Args))
 }
 
 func (b *builder) keyedType(n *syntax.KeyedType) *doc {
@@ -50,7 +66,7 @@ func (b *builder) tableType(n *syntax.TableType) *doc {
 }
 
 func (b *builder) refType(n *syntax.RefType) *doc {
-	return cat(b.tok(n.First()), spaceDoc, b.node(n.Name))
+	return cat(b.tok(b.before(n.Name.First())), spaceDoc, b.node(n.Name))
 }
 
 // optionalType is "T?"; "T??" is two optional types over one token (E3401 is the checker's).
@@ -90,12 +106,12 @@ func (b *builder) assetType(n *syntax.AssetType) *doc {
 		ds = append(ds, trail)
 	}
 	ds = append(ds, b.closing(n.Parens.Close, true))
-	return flat(cat(b.tok(n.First()), b.tok(n.Parens.Open), indent(ds...), b.closer(n.Parens.Close)))
+	return flat(cat(b.tok(b.first(n)), b.tok(n.Parens.Open), indent(ds...), b.closer(n.Parens.Close)))
 }
 
 func (b *builder) fnType(n *syntax.FnType) *doc {
 	arrow := b.after(n.Parens.Close)
-	return cat(b.tok(n.First()), b.flatList(n.Parens.Open, n.Parens.Close, partsOf(b, n.Params)), spaceDoc, b.tok(arrow),
+	return cat(b.tok(b.first(n)), b.flatList(n.Parens.Open, n.Parens.Close, partsOf(b, n.Params)), spaceDoc, b.tok(arrow),
 		spaceDoc, b.node(n.Result))
 }
 

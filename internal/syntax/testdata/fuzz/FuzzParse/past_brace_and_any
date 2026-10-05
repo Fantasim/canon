@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("fn g() -> past {\n  return {past: past}\n}\nlet a: past _")

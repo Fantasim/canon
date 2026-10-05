@@ -158,6 +158,7 @@ const (
 	textTable      = "table "
 	textStable     = "stable "
 	textRef        = "ref "
+	textPast       = "past "
 	textUnion      = " | "
 	textArrow      = ") -> "
 	textFn         = "fn("
@@ -196,3 +197,6 @@ var formatWords = [...]struct{ symbol, ext string }{
 	FormatCSV:  {"csv", ".csv"},
 	FormatText: {"text", ".txt"},
 }
+
+// pastKinds are the base kinds `past` applies to, Error being already reported (TYPES.md §8.4).
+var pastKinds = map[Kind]bool{Enum: true, Variant: true, Ref: true, Error: true}

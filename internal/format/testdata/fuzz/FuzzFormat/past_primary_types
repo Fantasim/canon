@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("type A = past /* c */ [K](..=3) keyed by id\ntype B = past /* d */ _\ntype C = past fn(past K) -> past [past _]\nfn h() -> past { return 1 }\n")

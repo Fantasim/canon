@@ -1,0 +1,59 @@
+GRAMMAR.md §5.9 pastType, TYPES.md §8.4, DECISIONS 304: `past` prints before any primary type with one space, comments kept; a type (before a fn body, `from env` or a line break), type function, field or let named `past` prints as written.
+-- in.canon --
+package p
+
+record Role {
+    kinds:[past   GrantKind]
+    sold: [ past  ref   items ]
+    last: past V ?
+    pair: {past GrantKind:past ref items}
+    either: past A|B
+    noted: past /* retired kept */ GrantKind
+    past: past
+    twice: past   past
+    secret: input  past from env "X"
+}
+
+type Old =   past GrantKind
+type L = past  [ Int ]
+type K = past [Event]( ..=3 )  keyed by id
+type T = past   stable   table T
+type F = past fn( Int )->Int
+type A = past asset( "@resource/Icon" )
+type X = past match n { a => Int, _ => String }
+type Q = past "lit"|"other"
+type U = past   _
+type Fn = past( 1.. )
+let past: past = past + 1
+fn f(k: past GrantKind) -> past ref items { return x }
+fn g() -> (past) { return past }
+fn h() -> past   { return 1 }
+-- want --
+package p
+
+record Role {
+  kinds: [past GrantKind]
+  sold: [past ref items]
+  last: past V?
+  pair: {past GrantKind: past ref items}
+  either: past A | B
+  noted: past /* retired kept */ GrantKind
+  past: past
+  twice: past past
+  secret: input past from env "X"
+}
+
+type Old = past GrantKind
+type L = past [Int]
+type K = past [Event](..=3) keyed by id
+type T = past stable table T
+type F = past fn(Int) -> Int
+type A = past asset("@resource/Icon")
+type X = past match n { a => Int, _ => String }
+type Q = past "lit" | "other"
+type U = past _
+type Fn = past(1..)
+let past: past = past + 1
+fn f(k: past GrantKind) -> past ref items { return x }
+fn g() -> (past) { return past }
+fn h() -> past { return 1 }

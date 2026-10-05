@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("type A = past stable table T\ntype B = past \"x\" | past match n { _ => past }\ntype C = past(")

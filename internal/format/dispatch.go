@@ -18,14 +18,23 @@ func leafOf(b *builder, n syntax.Node) *doc { return b.leaf(n) }
 func init() {
 	for _, k := range []syntax.NodeKind{
 		syntax.KindIdent, syntax.KindIdentExpr, syntax.KindIntLit, syntax.KindFloatLit, syntax.KindRegexLit,
-		syntax.KindBoolLit, syntax.KindNoneLit, syntax.KindSelfExpr, syntax.KindAnyType, syntax.KindBreakStmt,
-		syntax.KindContinueStmt,
+		syntax.KindBoolLit, syntax.KindNoneLit, syntax.KindSelfExpr, syntax.KindBreakStmt, syntax.KindContinueStmt,
 	} {
 		buildTable[k] = leafOf
 	}
 	initDecls()
 	initExprs()
 	initViews()
+	for k, f := range buildTable {
+		if f != nil {
+			buildTable[k] = withPast(f)
+		}
+	}
+}
+
+// withPast prints the `past` of a pastType, then the node by f; PastOf is NoTok off types (GRAMMAR.md §5.9).
+func withPast(f func(*builder, syntax.Node) *doc) func(*builder, syntax.Node) *doc {
+	return func(b *builder, n syntax.Node) *doc { return cat(b.past(syntax.PastOf(n)), f(b, n)) }
 }
 
 func initDecls() {
@@ -87,6 +96,7 @@ func initExprs() {
 	t[syntax.KindMatchType], t[syntax.KindTypeArm] = on((*builder).matchType), on((*builder).typeArm)
 	t[syntax.KindAssetType], t[syntax.KindFnType] = on((*builder).assetType), on((*builder).fnType)
 	t[syntax.KindParenType] = on((*builder).parenType)
+	t[syntax.KindAnyType] = on(func(b *builder, n *syntax.AnyType) *doc { return b.tok(n.Last()) })
 }
 
 func initViews() {

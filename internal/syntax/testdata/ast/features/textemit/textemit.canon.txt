@@ -1,4 +1,4 @@
-File: File FileKind=source @1:1-39:1
+File: File FileKind=source @1:1-102:1
   Doc: DocComment "`emit text` (CODEGEN.md §2.9): plain-text files computed at build time. Each public,\nparameterless export fn returning String with `@text(\"<file>\")` is written to\n`<out>/<file>` byte for byte; `.canon-text` beside them names the files canon owns." @1:1-3:88
   Package: QualifiedName features.textemit @4:9-4:26
   Decls[0]: ConstDecl @7:1-7:25
@@ -111,44 +111,230 @@ File: File FileKind=source @1:1-39:1
         Value: StringLit @32:40-32:58
           Parts[0]: Interp @32:42-32:56
             X: IdentExpr SCHEMA_VERSION @32:42-32:56
-  Decls[5]: EmitDecl @34:1-34:29
-    Target: Ident text @34:6-34:10
-    Options: BraceLit @34:11-34:29
-      Items[0]: FieldItem @34:13-34:27
-        Name: Ident out @34:13-34:16
-        Value: StringLit @34:18-34:27
+  Decls[5]: RecordDecl @35:1-43:2
+    Doc: DocComment "A section of the JSON document (a `local` type may be named by a `@text` result)." @34:1-34:86
+    Mods: Modifiers Local="local" @35:1-35:6
+    Name: Ident Section @35:14-35:21
+    Body: RecordBody @35:22-43:2
+      Items[0]: FieldDecl @37:3-37:18
+        Doc: DocComment "Its heading." @36:3-36:19
+        Name: Ident heading @37:3-37:10
+        Type: NamedType @37:12-37:18
+          Name: QualifiedName String @37:12-37:18
+      Items[1]: FieldDecl @39:3-39:14
+        Doc: DocComment "Its weight." @38:3-38:18
+        Name: Ident weight @39:3-39:9
+        Type: NamedType @39:11-39:14
+          Name: QualifiedName Int @39:11-39:14
+      Items[2]: FnDecl Self="self" @42:3-42:59
+        Doc: DocComment "Whether it weighs more than 1: a stored fn, which a data file writes as `$heavy`, a text file never." @41:3-41:107
+        Mods: Modifiers Export="export" @42:3-42:9
+        Name: Ident heavy @42:13-42:18
+        Result: NamedType @42:28-42:32
+          Name: QualifiedName Bool @42:28-42:32
+        Body: Block @42:33-42:59
+          Stmts[0]: ReturnStmt @42:35-42:57
+            Value: BinaryExpr Op=> @42:42-42:57
+              X: SelectorExpr @42:42-42:53
+                X: SelfExpr @42:42-42:46
+                Name: Ident weight @42:47-42:53
+              Y: IntLit Value=1 @42:56-42:57
+  Decls[6]: RecordDecl @47:1-53:2
+    Doc: DocComment "A record whose stored fn would divide by zero for the value `doc` holds: a `@text` result's\nstored fns are never evaluated (DECISIONS 308), so there is no error and no `$inv` key." @45:1-46:92
+    Mods: Modifiers Local="local" @47:1-47:6
+    Name: Ident Probe @47:14-47:19
+    Body: RecordBody @47:20-53:2
+      Items[0]: FieldDecl @49:3-49:9
+        Doc: DocComment "A divisor." @48:3-48:17
+        Name: Ident n @49:3-49:4
+        Type: NamedType @49:6-49:9
+          Name: QualifiedName Int @49:6-49:9
+      Items[1]: FnDecl Self="self" @52:3-52:52
+        Doc: DocComment "Ten per n." @51:3-51:17
+        Mods: Modifiers Export="export" @52:3-52:9
+        Name: Ident inv @52:13-52:16
+        Result: NamedType @52:26-52:29
+          Name: QualifiedName Int @52:26-52:29
+        Body: Block @52:30-52:52
+          Stmts[0]: ReturnStmt @52:32-52:50
+            Value: BinaryExpr Op=/ @52:39-52:50
+              X: IntLit Value=10 @52:39-52:41
+              Y: SelectorExpr @52:44-52:50
+                X: SelfExpr @52:44-52:48
+                Name: Ident n @52:49-52:50
+  Decls[7]: VariantDecl @56:1-61:2
+    Doc: DocComment "What a note says." @55:1-55:22
+    Mods: Modifiers Local="local" @56:1-56:6
+    Name: Ident Note @56:15-56:19
+    Items[0]: VariantCase @58:3-58:24
+      Doc: DocComment "A line of text." @57:3-57:22
+      Name: Ident line @58:3-58:7
+      Body: RecordBody @58:8-58:24
+        Items[0]: FieldDecl @58:10-58:22
+          Name: Ident text @58:10-58:14
+          Type: NamedType @58:16-58:22
+            Name: QualifiedName String @58:16-58:22
+    Items[1]: VariantCase @60:3-60:40
+      Doc: DocComment "A reference to another section." @59:3-59:38
+      Name: Ident see @60:3-60:6
+      Body: RecordBody @60:7-60:40
+        Items[0]: FieldDecl @60:9-60:23
+          Name: Ident target @60:9-60:15
+          Type: NamedType @60:17-60:23
+            Name: QualifiedName String @60:17-60:23
+        Items[1]: FieldDecl @60:25-60:38
+          Name: Ident page @60:25-60:29
+          Type: NamedType @60:31-60:34
+            Name: QualifiedName Int @60:31-60:34
+          Default: IntLit Value=1 @60:37-60:38
+  Decls[8]: RecordDecl @66:1-79:2
+    Doc: DocComment "The JSON document: a `@text` fn whose result is not a String is written as JSON\n(WIRE.md §8.5): raw UTF-8, integer map keys in decimal, `none` as `null`, a variant with its\ntag first, a nested table as an object keyed by entry id with the retired one flagged." @63:1-65:91
+    Mods: Modifiers Local="local" @66:1-66:6
+    Name: Ident Doc @66:14-66:17
+    Body: RecordBody @66:18-79:2
+      Items[0]: FieldDecl @68:3-68:16
+        Doc: DocComment "A title with an accent and an emoji." @67:3-67:43
+        Name: Ident title @68:3-68:8
+        Type: NamedType @68:10-68:16
+          Name: QualifiedName String @68:10-68:16
+      Items[1]: FieldDecl @70:3-70:23
+        Doc: DocComment "Section names by number." @69:3-69:31
+        Name: Ident names @70:3-70:8
+        Type: MapType @70:10-70:23
+          Key: NamedType @70:11-70:14
+            Name: QualifiedName Int @70:11-70:14
+          Value: NamedType @70:16-70:22
+            Name: QualifiedName String @70:16-70:22
+      Items[2]: FieldDecl @72:3-72:20
+        Doc: DocComment "An optional subtitle, absent." @71:3-71:36
+        Name: Ident subtitle @72:3-72:11
+        Type: OptionalType @72:13-72:20
+          Elem: NamedType @72:13-72:19
+            Name: QualifiedName String @72:13-72:19
+      Items[3]: FieldDecl @74:3-74:13
+        Doc: DocComment "A note." @73:3-73:14
+        Name: Ident note @74:3-74:7
+        Type: NamedType @74:9-74:13
+          Name: QualifiedName Note @74:9-74:13
+      Items[4]: FieldDecl @76:3-76:15
+        Doc: DocComment "A probe." @75:3-75:15
+        Name: Ident probe @76:3-76:8
+        Type: NamedType @76:10-76:15
+          Name: QualifiedName Probe @76:10-76:15
+      Items[5]: FieldDecl @78:3-78:26
+        Doc: DocComment "The sections, one of them retired." @77:3-77:41
+        Name: Ident sections @78:3-78:11
+        Type: TableType @78:13-78:26
+          Name: QualifiedName Section @78:19-78:26
+  Decls[9]: FnDecl @82:1-95:2
+    Doc: DocComment "The document, written to `doc.json`." @81:1-81:41
+    Annotations[0]: Annotation @82:1-82:18
+      Name: Ident text @82:2-82:6
+      Args[0]: AnnotationArg @82:7-82:17
+        Value: StringLit @82:7-82:17
+          Parts[0]: text "doc.json"
+    Mods: Modifiers Export="export" @83:1-83:7
+    Name: Ident doc @83:11-83:14
+    Result: NamedType @83:20-83:23
+      Name: QualifiedName Doc @83:20-83:23
+    Body: Block @83:24-95:2
+      Stmts[0]: ReturnStmt @84:3-94:4
+        Value: BraceLit @84:10-94:4
+          Items[0]: FieldItem @85:5-85:24
+            Name: Ident title @85:5-85:10
+            Value: StringLit @85:12-85:24
+              Parts[0]: text "Café 🎉"
+          Items[1]: FieldItem @86:5-86:38
+            Name: Ident names @86:5-86:10
+            Value: BraceLit @86:12-86:38
+              Items[0]: MapItem @86:14-86:25
+                Key: IntLit Value=10 @86:14-86:16
+                Value: StringLit @86:18-86:25
+                  Parts[0]: text "intro"
+              Items[1]: MapItem @86:27-86:36
+                Key: IntLit Value=2 @86:27-86:28
+                Value: StringLit @86:30-86:36
+                  Parts[0]: text "body"
+          Items[2]: FieldItem @87:5-87:19
+            Name: Ident subtitle @87:5-87:13
+            Value: NoneLit @87:15-87:19
+          Items[3]: FieldItem @88:5-88:33
+            Name: Ident note @88:5-88:9
+            Value: TypedLit @88:11-88:33
+              Type: QualifiedName see @88:11-88:14
+              Lit: BraceLit @88:15-88:33
+                Items[0]: FieldItem @88:17-88:31
+                  Name: Ident target @88:17-88:23
+                  Value: StringLit @88:25-88:31
+                    Parts[0]: text "body"
+          Items[4]: FieldItem @89:5-89:20
+            Name: Ident probe @89:5-89:10
+            Value: BraceLit @89:12-89:20
+              Items[0]: FieldItem @89:14-89:18
+                Name: Ident n @89:14-89:15
+                Value: IntLit Value=0 @89:17-89:18
+          Items[5]: FieldItem @90:5-93:6
+            Name: Ident sections @90:5-90:13
+            Value: BraceLit @90:15-93:6
+              Items[0]: EntryItem @91:7-91:44
+                Key: Ident intro @91:7-91:12
+                Value: BraceLit @91:13-91:44
+                  Items[0]: FieldItem @91:15-91:31
+                    Name: Ident heading @91:15-91:22
+                    Value: StringLit @91:24-91:31
+                      Parts[0]: text "Intro"
+                  Items[1]: FieldItem @91:33-91:42
+                    Name: Ident weight @91:33-91:39
+                    Value: IntLit Value=1 @91:41-91:42
+              Items[1]: EntryItem @92:7-92:48
+                Mods: Modifiers Retired="retired" @92:7-92:14
+                Key: Ident old @92:15-92:18
+                Value: BraceLit @92:19-92:48
+                  Items[0]: FieldItem @92:21-92:35
+                    Name: Ident heading @92:21-92:28
+                    Value: StringLit @92:30-92:35
+                      Parts[0]: text "Old"
+                  Items[1]: FieldItem @92:37-92:46
+                    Name: Ident weight @92:37-92:43
+                    Value: IntLit Value=2 @92:45-92:46
+  Decls[10]: EmitDecl @97:1-97:29
+    Target: Ident text @97:6-97:10
+    Options: BraceLit @97:11-97:29
+      Items[0]: FieldItem @97:13-97:27
+        Name: Ident out @97:13-97:16
+        Value: StringLit @97:18-97:27
           Parts[0]: text "out/sql"
-  Decls[6]: EmitDecl @35:1-35:36
-    Target: Ident go @35:6-35:8
-    Options: BraceLit @35:9-35:36
-      Items[0]: FieldItem @35:11-35:34
-        Name: Ident out @35:11-35:14
-        Value: StringLit @35:16-35:34
+  Decls[11]: EmitDecl @98:1-98:36
+    Target: Ident go @98:6-98:8
+    Options: BraceLit @98:9-98:36
+      Items[0]: FieldItem @98:11-98:34
+        Name: Ident out @98:11-98:14
+        Value: StringLit @98:16-98:34
           Parts[0]: text "out/go/textemit/"
-  Decls[7]: EmitDecl @36:1-36:41
-    Target: Ident cpp @36:6-36:9
-    Options: BraceLit @36:10-36:41
-      Items[0]: FieldItem @36:12-36:39
-        Name: Ident out @36:12-36:15
-        Value: StringLit @36:17-36:39
+  Decls[12]: EmitDecl @99:1-99:41
+    Target: Ident cpp @99:6-99:9
+    Options: BraceLit @99:10-99:41
+      Items[0]: FieldItem @99:12-99:39
+        Name: Ident out @99:12-99:15
+        Value: StringLit @99:17-99:39
           Parts[0]: text "out/cpp/textemit.hpp"
-  Decls[8]: EmitDecl @37:1-37:38
-    Target: Ident ts @37:6-37:8
-    Options: BraceLit @37:9-37:38
-      Items[0]: FieldItem @37:11-37:36
-        Name: Ident out @37:11-37:14
-        Value: StringLit @37:16-37:36
+  Decls[13]: EmitDecl @100:1-100:38
+    Target: Ident ts @100:6-100:8
+    Options: BraceLit @100:9-100:38
+      Items[0]: FieldItem @100:11-100:36
+        Name: Ident out @100:11-100:14
+        Value: StringLit @100:16-100:36
           Parts[0]: text "out/ts/textemit.ts"
-  Decls[9]: EmitDecl @38:1-38:58
-    Target: Ident json @38:6-38:10
-    Options: BraceLit @38:11-38:58
-      Items[0]: FieldItem @38:13-38:37
-        Name: Ident out @38:13-38:16
-        Value: StringLit @38:18-38:37
+  Decls[14]: EmitDecl @101:1-101:58
+    Target: Ident json @101:6-101:10
+    Options: BraceLit @101:11-101:58
+      Items[0]: FieldItem @101:13-101:37
+        Name: Ident out @101:13-101:16
+        Value: StringLit @101:18-101:37
           Parts[0]: text "out/textemit.json"
-      Items[1]: FieldItem @38:39-38:56
-        Name: Ident values @38:39-38:45
-        Value: ListLit @38:47-38:56
-          Elems[0]: IdentExpr columns @38:48-38:55
+      Items[1]: FieldItem @101:39-101:56
+        Name: Ident values @101:39-101:45
+        Value: ListLit @101:47-101:56
+          Elems[0]: IdentExpr columns @101:48-101:55
 == findings
 0 errors, 0 warnings in 1 package (…)

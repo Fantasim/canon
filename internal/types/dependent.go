@@ -63,6 +63,18 @@ func (f *TypeFunc) Arm(member int) *TypeArm {
 	return nil
 }
 
+// Branches are the types fn computes: its body, or each arm's result in arm order (TYPES.md §11.2).
+func Branches(fn *TypeFunc) []Type {
+	if fn.Body != nil {
+		return []Type{fn.Body}
+	}
+	out := make([]Type, len(fn.Arms))
+	for i, a := range fn.Arms {
+		out[i] = a.Result
+	}
+	return out
+}
+
 // Scrutinee is the path a type-level match reads, of enum or Bool Type: a parameter, fields.
 type Scrutinee struct {
 	Param *Param

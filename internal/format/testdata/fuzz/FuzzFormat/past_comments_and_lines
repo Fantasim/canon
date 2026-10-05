@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("record R {\n  a: past /* c */ ref items?\n  b: past\n  c: [past\n  K]\n}\n")

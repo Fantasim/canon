@@ -1,12 +1,19 @@
 package syntax
 
-import "github.com/fantasim/canonlang/internal/diag"
+import (
+	"slices"
+
+	"github.com/fantasim/canonlang/internal/diag"
+)
 
 // typeTable dispatches a primType on its first token (GRAMMAR.md §5.9, DECISIONS 26).
 var typeTable [TokenKindCount]func(*parser) Type
 
+// pastTable is typeTable after a contextual `past`: no "(" or "{", a second `past` a name (GRAMMAR.md §4.2).
+var pastTable [TokenKindCount]func(*parser) Type
+
 func init() {
-	typeTable[TokIdent], typeTable[TokLBrack], typeTable[TokLBrace] = (*parser).namedType, (*parser).listType, (*parser).mapType
+	typeTable[TokIdent], typeTable[TokLBrack], typeTable[TokLBrace] = (*parser).identType, (*parser).listType, (*parser).mapType
 	typeTable[KwStable], typeTable[KwTable], typeTable[KwRef] = (*parser).tableType, (*parser).tableType, (*parser).refType
 	typeTable[KwFn], typeTable[KwAsset], typeTable[KwMatch] = (*parser).fnType, (*parser).assetType, (*parser).matchType
 	typeTable[TokUnderscore], typeTable[TokLParen] = (*parser).anyType, (*parser).parenType
@@ -15,6 +22,8 @@ func init() {
 			typeTable[k] = (*parser).literalType
 		}
 	}
+	pastTable = typeTable
+	pastTable[TokIdent], pastTable[TokLParen], pastTable[TokLBrace] = (*parser).namedType, nil, nil
 }
 
 // typ is unionType = optType { "|" optType } (GRAMMAR.md §5.9).
@@ -143,6 +152,31 @@ func (p *parser) loneRegex(args []Expr) {
 	if r != nil && (len(args) != 1 || args[0] != Expr(r)) {
 		diag.E1115.At(p.nodeSpan(r)).Report(p.bag)
 	}
+}
+
+// identType is a namedType, or a pastType when `past` is a keyword (GRAMMAR.md §4.2).
+func (p *parser) identType() Type {
+	if !p.pastKeyword() {
+		return p.namedType()
+	}
+	start := p.next()
+	t := pastTable[p.kind()](p)
+	if pt, ok := t.(pastable); ok {
+		*pt.pastSlot() = start
+		t.(bounded).reset(p.from(start))
+		return t
+	}
+	t.(bounded).reset(p.badBounds(start))
+	return t
+}
+
+// pastKeyword reports `past` followed on its line by a type start in pastTable, not a pastName.
+func (p *parser) pastKeyword() bool {
+	next := p.pos + 1
+	if !p.atWord(wordPast) || pastTable[p.peek(1)] == nil || !p.sameLine(p.pos, next) {
+		return false
+	}
+	return !slices.ContainsFunc(pastNames, func(w string) bool { return p.wordAt(next, w) })
 }
 
 func (p *parser) namedType() Type {
