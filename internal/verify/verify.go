@@ -82,11 +82,12 @@ func NewShared(ix *Index, ev Evaluator, bags map[string]*diag.Bag, assets Assets
 	}
 }
 
-// Result is the outcome of verifying one top-level value.
+// Result is the outcome of verifying one value.
 type Result struct {
-	Valid    bool      // no finding marked a part of it invalid
-	Poisoned bool      // a `where` predicate raised a hard error: the caller poisons the root (§7.1)
-	Unbound  []Unbound // level-1 refs no instance bound, in walk order: the caller reports E3505
+	Valid    bool        // no finding marked a part of it invalid
+	Poisoned bool        // a `where` predicate raised a hard error: the caller poisons the root (§7.1)
+	Unbound  []Unbound   // level-1 refs no instance bound, in walk order: the caller reports E3505
+	Value    value.Value // converted (TYPES.md §11.6)
 }
 
 // Unbound is a level-1 ref left unbound (EVALUATION.md §3.4), marked invalid; eval reports it.
@@ -97,23 +98,32 @@ type Unbound struct {
 
 // Check verifies a top-level value against its declared type and hands its converted value back (EVALUATION.md §5, §4.1).
 func (v *Verifier) Check(ctx context.Context, root eval.Root, val value.Value) (Result, error) {
-	bag := v.bags[root.Pkg]
-	if bag == nil {
-		return Result{}, fmt.Errorf(fmtNoBag, ErrNoBag, root.Pkg)
-	}
-	w := &walker{Verifier: v, ctx: ctx, bag: bag, pkg: root.Pkg, root: root, res: Result{Valid: true}, branches: map[branchKey]branchOut{}}
-	if v.deps != nil {
-		w.stage = v.deps.Verifying(ctx, root, bag)
-	}
 	t, ok := v.declared[root]
 	if !ok {
 		t = val.Type()
 	}
-	nv := w.walk(val, t, Root(root.Name), scope{})
+	return v.check(ctx, root, val, t, nil)
+}
+
+// check verifies val against t, its steps charged to root; res is CheckAs's, nil for a top-level value.
+func (v *Verifier) check(ctx context.Context, root eval.Root, val value.Value, t types.Type, res *result) (Result, error) {
+	bag := v.bags[root.Pkg]
+	if bag == nil {
+		return Result{}, fmt.Errorf(fmtNoBag, ErrNoBag, root.Pkg)
+	}
+	w := &walker{Verifier: v, ctx: ctx, bag: bag, pkg: root.Pkg, root: root, res: Result{Valid: true}, branches: map[branchKey]branchOut{}, result: res}
+	if v.deps != nil {
+		w.stage = v.deps.Verifying(ctx, root, bag)
+		if res != nil {
+			w.stage.Under(res.frame) // what the evaluator reports of a precomputed result
+		}
+	}
+	nv := w.walk(val, t, w.rootPath(), scope{})
 	if w.err != nil {
 		return w.res, w.err
 	}
-	if nv != val && !w.res.Poisoned && w.stage != nil {
+	w.res.Value = nv
+	if nv != val && !w.res.Poisoned && w.stage != nil && res == nil {
 		w.stage.Replace(nv)
 	}
 	return w.res, nil
@@ -136,6 +146,7 @@ type walker struct {
 
 	branches   map[branchKey]branchOut
 	cachedOnly bool
+	result     *result // a precomputed result's walk, nil for any other (precomputed.go)
 }
 
 // scope is where a value sits: its table entry, the env its type arguments read, its field, a past slot.
@@ -151,6 +162,9 @@ type scope struct {
 
 // flag reports a soft finding at s and marks v invalid (EVALUATION.md §7.1).
 func (w *walker) flag(s Site, b *diag.Builder, v value.Value, at *Path) {
+	if w.foundElsewhere(v) {
+		return
+	}
 	w.report(s, b, at)
 	w.invalid(v)
 }
@@ -158,6 +172,9 @@ func (w *walker) flag(s Site, b *diag.Builder, v value.Value, at *Path) {
 func (w *walker) invalid(v value.Value) {
 	w.ev.MarkInvalid(v)
 	w.res.Valid = false
+	if w.result != nil {
+		w.result.own[v] = true
+	}
 	if w.rec != nil {
 		w.rec.marked = append(w.rec.marked, v)
 	}

@@ -193,7 +193,7 @@ func (w *walker) stored(v, nv value.Value, t types.Type, at *Path, sc scope) val
 	if eval.IsContainer(nv) {
 		nv = w.retyped(nv, t)
 		n := len(w.stage.Emitted())
-		ok := w.stage.Refine(nv, t, w.src.types[sc.dep.app].decl, at.String())
+		ok := w.stage.Refine(nv, t, w.src.types[sc.dep.app].decl, w.evalPath(at))
 		if w.keepSince(n, at.String()); !ok {
 			w.res.Poisoned, w.res.Valid = true, false
 			return v
@@ -204,7 +204,7 @@ func (w *walker) stored(v, nv value.Value, t types.Type, at *Path, sc scope) val
 		return nv
 	}
 	n := len(w.stage.Emitted())
-	s, ok := w.stage.Store(nv, t, w.src.types[sc.dep.app].decl, at.String())
+	s, ok := w.stage.Store(nv, t, w.src.types[sc.dep.app].decl, w.evalPath(at))
 	w.keepSince(n, at.String())
 	if !ok {
 		w.res.Poisoned, w.res.Valid = true, false

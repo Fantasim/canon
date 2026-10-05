@@ -26,13 +26,13 @@ record Box {
   /// Parent.
   parent: Int? @json(none: -1)
   /// Element.
-  element: Element? = none @json(none: 1.0)
+  element: Element? @json(none: 1.0)
   /// Flags.
-  flags: [Flag]? = none @json(bits, none: 0)
+  flags: [Flag]? @json(bits, none: 0)
   /// Empty.
-  empty: Empty? = none @json(none: {})
+  empty: Empty? @json(none: {})
   /// Stored.
-  stored: Stored? = none @json(none: {})
+  stored: Stored? @json(none: {})
 }
 
 /// Box.

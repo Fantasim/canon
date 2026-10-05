@@ -11,7 +11,7 @@ import (
 // entryAt verifies e, an entry or element at p of the table or list at at, through the memo when
 // the table or list is a top-level value.
 func (w *walker) entryAt(at *Path, e *value.Record, t types.Type, p *Path, sc scope) value.Value {
-	if at == nil || at.parent != nil {
+	if at == nil || at.parent != nil || w.result != nil {
 		return w.walk(e, t, p, sc)
 	}
 	return w.entry(e, t, p, sc)

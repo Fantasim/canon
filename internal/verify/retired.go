@@ -67,7 +67,7 @@ func (w *walker) judgeUse(u retiredUse) {
 	}
 	s := SiteOf(u.v)
 	b := w.retiredFinding(u, s.Span, u.entry)
-	s.reportAt(b, u.path, w.bag)
+	w.reportAt(s, b, u.path)
 	w.noteFound(b)
 	w.invalid(u.v) // the value, wherever else it is held (EVALUATION.md §7.3)
 	w.keepScoped(b, u.path)

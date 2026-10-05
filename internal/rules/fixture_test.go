@@ -104,12 +104,15 @@ func newFixture(t *testing.T, name string, data []byte) *fixture {
 		Packages: []*check.Package{{Path: pkg, Files: []*syntax.File{file}}},
 		Info: &check.Info{
 			Uses: map[*syntax.IdentExpr]check.Object{}, Selections: map[*syntax.SelectorExpr]*check.Selection{},
-			TypeExprs: map[syntax.Type]types.Type{}, Broken: map[check.Object]bool{},
+			TypeExprs: map[syntax.Type]types.Type{}, Types: map[syntax.Expr]types.Type{}, Broken: map[check.Object]bool{},
 		},
 	}
 	for _, d := range file.Decls {
 		if c, ok := d.(*syntax.CheckDecl); ok {
 			fx.prog.Packages[0].Decls = append(fx.prog.Packages[0].Decls, &object{kind: check.ObjCheck, decl: c, file: file})
+		}
+		if td, ok := d.(*syntax.TestDecl); ok {
+			fx.prog.Packages[0].Decls = append(fx.prog.Packages[0].Decls, &object{kind: check.ObjTest, decl: td, file: file})
 		}
 	}
 	return fx
@@ -188,6 +191,21 @@ func (fx *fixture) written(text string, t types.Type) types.Type {
 	return t
 }
 
+// subject records the static type of the expect subject written as text (Info.Types).
+func (fx *fixture) subject(text string, t types.Type) {
+	fx.t.Helper()
+	found := false
+	syntax.Inspect(fx.file, func(n syntax.Node) bool {
+		if x, ok := n.(*syntax.ExpectStmt); ok && fx.text(x.X) == text {
+			fx.prog.Info.Types[x.X], found = t, true
+		}
+		return true
+	})
+	if !found {
+		fx.t.Fatalf("no expect subject %q", text)
+	}
+}
+
 // let adds a top-level value to stages B and C, in declaration order.
 func (fx *fixture) let(name string, v value.Value) {
 	root := eval.Root{Pkg: pkg, Name: name}
@@ -217,7 +235,7 @@ func (fx *fixture) runWith(ev rules.Evaluator) {
 	bags := map[string]*diag.Bag{pkg: fx.bag}
 	v, r := verify.New(fx.ev, fx.prog, bags, nil), rules.New(ev, fx.prog, bags)
 	ctx := context.Background()
-	errs := []error{r.Names(fx.prog.Packages[0])}
+	errs := []error{r.Names(fx.prog.Packages[0]), r.Tests(fx.prog.Packages[0])}
 	for i, root := range fx.roots {
 		_, err := v.Check(ctx, root, fx.vals[i])
 		errs = append(errs, err)

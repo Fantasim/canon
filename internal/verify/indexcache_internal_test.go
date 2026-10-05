@@ -36,7 +36,7 @@ variant Shape {
 record Tile {
   label: String(1..)
   tags: [String] = []
-  icon: asset("icons", ext: [png])? = none
+  icon: asset("icons", ext: [png])?
 }
 
 let tiles: [Tile] = [{ label: "one" }]

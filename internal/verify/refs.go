@@ -26,8 +26,7 @@ func (w *walker) ref(r *value.Ref, t types.Type, sc scope, at *Path) {
 		w.invalid(r)
 		return
 	case unbound:
-		w.res.Unbound = append(w.res.Unbound, Unbound{Ref: r, Path: at.String()})
-		w.invalid(r)
+		w.unbound(r, at)
 		return
 	case reached:
 	}

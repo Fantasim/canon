@@ -37,6 +37,7 @@ type recorder struct {
 	scoped  []reported
 	uses    []retiredUse
 	unbound int
+	unfound bool // an invalidity found lists no finding of: another walk's, or an unbound ref reported at once
 }
 
 // memoScope is what the scope's judgements read: the enclosing entry E3502 names, and whether a retired one encloses (LOCK.md §4.3).
@@ -49,7 +50,7 @@ func memoScope(sc scope) string {
 
 // report reports a finding at s and keeps it for each instance being verified around it.
 func (w *walker) report(s Site, b *diag.Builder, at *Path) {
-	s.Report(b, at, w.bag)
+	w.reportAt(s, b, at.String())
 	w.noteFound(b)
 	w.keep(b, at.String())
 }
@@ -97,7 +98,7 @@ func (w *walker) remembered(r *value.Record, t types.Type, at *Path, sc scope) v
 		return nv
 	}
 	here := at.String()
-	m := &memo{rec: cp, invalid: invalid && len(rec.found) > 0, bag: w.bag, prefix: here, found: rec.found, uses: rec.uses}
+	m := &memo{rec: cp, invalid: invalid && (len(rec.found) > 0 || rec.unfound), bag: w.bag, prefix: here, found: rec.found, uses: rec.uses}
 	m.scoped = map[string]*scopedFound{memoScope(sc): {prefix: here, found: rec.scoped, bag: w.bag}}
 	m.unbound = append(m.unbound, w.res.Unbound[rec.unbound:]...)
 	w.stage.Remember(r, cp, m)
@@ -112,7 +113,7 @@ func (w *walker) replay(m *memo, at *Path, sc scope) value.Value {
 	for _, r := range w.recording {
 		r.uses = append(r.uses, uses...)
 	}
-	if m.bag == w.bag {
+	if !w.reportsAgain(m.bag) {
 		w.kept(m.found, m.prefix, here, w.keep)
 	} else {
 		w.replayed(m.found, m.prefix, here, w.keep)
@@ -137,7 +138,7 @@ func (w *walker) scopedIn(m *memo, uses []retiredUse, here string, sc scope) {
 		}
 		w.recording = w.recording[:len(w.recording)-1]
 		m.scoped[key] = &scopedFound{prefix: here, found: rec.scoped, bag: w.bag}
-	case s.bag == w.bag:
+	case !w.reportsAgain(s.bag):
 		w.res.Valid = w.res.Valid && len(s.found) == 0
 		w.kept(s.found, s.prefix, here, w.keepScoped)
 	default:

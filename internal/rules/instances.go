@@ -33,7 +33,8 @@ type traversal struct {
 	bag    *diag.Bag
 	root   string
 	rootOf eval.Root
-	alone  bool // no other top-level value traversed holds a part of this one (memo.go)
+	alone  bool        // no other top-level value traversed holds a part of this one (memo.go)
+	under  *diag.Frame // a precomputed result's frame: its findings have no value path (precomputed.go)
 	segs   []seg
 	rec    *entryRec
 }
@@ -107,6 +108,9 @@ func (t *traversal) runChecks(rec *value.Record) {
 // run runs c on rec, traced for the memo while an entry is recorded.
 func (t *traversal) run(c *syntax.CheckDecl, rec *value.Record, at *verify.Path) Run {
 	path := at.String()
+	if t.under != nil {
+		return t.runUnder(c, rec)
+	}
 	if t.rec == nil {
 		return t.ev.Run(t.ctx, c, rec, path)
 	}

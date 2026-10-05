@@ -34,7 +34,7 @@ func (r *Runner) Package(ctx context.Context, pkg *check.Package) error {
 			r.decorate(oneLine(c, at, run.Message), file, c).Report(bag)
 			r.tell(c, nil, "", run)
 		}
-		r.blockReports(c, file, run.Reports, bag)
+		r.blockReports(c, file, run.Reports, bag, nil)
 	}
 	return nil
 }
@@ -47,22 +47,39 @@ func (t *traversal) report(c *syntax.CheckDecl, run Run, rec *value.Record, at *
 	bag, file := t.bag, t.files[c]
 	if run.Failed {
 		v, onField := Placed(c, rec)
-		p := at
-		if p == nil {
-			p = t.here()
-		}
-		if onField {
-			p = p.Field(c.At.Name)
-		}
 		site := verify.SiteOf(v)
 		b := t.decorate(oneLine(c, site.Span, run.Message), file, c)
 		if c.At == nil {
 			b.Reads(t.reads(c, rec))
 		}
-		site.Report(b, p, bag)
-		t.tell(c, rec, p.String(), run)
+		if t.under != nil { // a precomputed result's: no path, its frame (DECISIONS 324)
+			site.ReportUnder(b, *t.under, bag, t.hider())
+			t.tell(c, rec, "", run)
+		} else {
+			p := t.placed(at, onField, c)
+			site.Report(b, p, bag)
+			t.tell(c, rec, p.String(), run)
+		}
 	}
-	t.blockReports(c, file, run.Reports, bag)
+	t.blockReports(c, file, run.Reports, bag, t.under)
+}
+
+// hider is the evaluator, when it tells which frames a stack cut.
+func (r *Runner) hider() verify.Hider {
+	h, _ := r.ev.(verify.Hider)
+	return h
+}
+
+// placed is the path of a false check's finding: at, else the value visited, then its `at` field.
+func (t *traversal) placed(at *verify.Path, onField bool, c *syntax.CheckDecl) *verify.Path {
+	p := at
+	if p == nil {
+		p = t.here()
+	}
+	if onField {
+		p = p.Field(c.At.Name)
+	}
+	return p
 }
 
 // tell tells the evaluator of a false one-line check reported at path, when it listens.
@@ -72,8 +89,8 @@ func (r *Runner) tell(c *syntax.CheckDecl, self value.Value, path string, run Ru
 	}
 }
 
-// blockReports reports each fail and warn call at the provenance of its `at` value.
-func (r *Runner) blockReports(c *syntax.CheckDecl, file *syntax.File, reports []Report, bag *diag.Bag) {
+// blockReports reports each fail and warn call at the provenance of its `at` value, under a precomputed result's frame if any.
+func (r *Runner) blockReports(c *syntax.CheckDecl, file *syntax.File, reports []Report, bag *diag.Bag, under *diag.Frame) {
 	for _, rep := range reports {
 		var site verify.Site
 		if rep.At != nil {
@@ -82,6 +99,10 @@ func (r *Runner) blockReports(c *syntax.CheckDecl, file *syntax.File, reports []
 		b := diag.E5002.At(site.Span, rep.Message)
 		if rep.Warn {
 			b = diag.W5002.At(site.Span, rep.Message)
+		}
+		if under != nil {
+			site.ReportUnder(r.decorate(b, file, c), *under, bag, r.hider())
+			continue
 		}
 		site.Report(r.decorate(b, file, c), r.pathOf(rep.At), bag)
 	}

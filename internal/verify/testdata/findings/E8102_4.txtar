@@ -1,4 +1,4 @@
-WIRE.md §5.1, §5.11, decision 283: `canon check` runs stage E, which reports E8102 for a precomputed export fn result a JSON emit writes (a method's `$` key, a package fn under `$fns`), at the value in the fn body; a stored record a method hands back was verified in stage B (its own E8102 there) and is not reported again.
+WIRE.md §5.1, §5.11, decision 283: `canon check` runs stage E, which reports E8102 for a precomputed export fn result a JSON emit writes (a method's `$` key, a package fn under `$fns`), at the value in the fn body, under its frame, by the verification of the result (DECISIONS 324); a stored record a method hands back was verified in stage B (its own E8102 there) and is not reported again.
 -- a/a.canon --
 /// A.
 package a
@@ -41,9 +41,11 @@ project demo {
 -- findings.txt --
 error[E8102]  a/a.canon:16:51
   1s500ms has no wire form for wait: not a whole number of s
+  in Box.inner() (a/a.canon:16)
 
 error[E8102]  a/a.canon:26:45
   2s500ms has no wire form for wait: not a whole number of s
+  in later() (a/a.canon:26)
 
 error[E8102]  a/a.canon:29:32
   box.kept.wait: 3s500ms has no wire form for wait: not a whole number of s

@@ -98,7 +98,7 @@ func (s size) within(b *types.Bound) bool {
 // where re-runs the predicate; a hard error aborts the root (EVALUATION.md §7.1).
 func (w *walker) where(v value.Value, r *types.Refined, src written, at *Path) {
 	w.voidRec()
-	holds, ok := w.ev.Where(w.ctx, r.Where, v, at.String())
+	holds, ok := w.predicate(r.Where, v, at)
 	switch {
 	case !ok:
 		w.res.Poisoned, w.res.Valid = true, false

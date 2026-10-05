@@ -11,7 +11,7 @@ import (
 // walk verifies v against its declared type t, never through refs, converting its dependent values (EVALUATION.md §5).
 func (w *walker) walk(v value.Value, t types.Type, at *Path, sc scope) value.Value {
 	switch {
-	case v == nil || w.stopped():
+	case v == nil || w.stopped() || w.foundElsewhere(v):
 		return v
 	case sc.dep != nil:
 		return w.judge(v, t, at, sc) // a part of a list, map or pair a dependent type computed

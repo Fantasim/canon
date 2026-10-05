@@ -1,0 +1,68 @@
+EVALUATION.md §10.3: an identifier after fails or warns that is no code must name a check declared
+on a type reachable from the subject's static type (E5004), at the identifier. Package checks never
+run for a subject (§10.2), so naming one is E5004. Variant-level checks apply to a case value (§8.1).
+-- teamboard/expects.canon --
+package teamboard
+
+record Slot {
+  size: Int
+
+  check fits: size < 10 else "too big"
+}
+
+record Deck {
+  slots: [Slot]
+}
+
+variant Reward {
+  check shared: 1 == 1 else "shared"
+
+  sq {
+    side: Int
+
+    check sqOk: side < 10 else "wide"
+  }
+  circle
+}
+
+record Holder {
+  b: Int
+}
+
+check global: 1 == 1 else "x"
+
+test "names" {
+  expect deck fails fits
+  expect slot fails fits
+  expect slot fails global
+  expect slot fails missing
+  expect deck warns missing
+  expect slot fails E3204
+  expect shape fails sqOk
+  expect sq fails shared
+  expect sq fails sqOk
+  expect circle fails shared
+  expect circle fails sqOk
+  expect maybe fails fits
+  expect byName fails fits
+  expect holder fails fits
+  expect holder warns fits
+  expect holder warns nothing
+}
+-- findings.txt --
+error[E5004]  teamboard/expects.canon:33:21
+  no check named global applies to teamboard.Slot
+
+error[E5004]  teamboard/expects.canon:34:21
+  no check named missing applies to teamboard.Slot
+
+error[E5004]  teamboard/expects.canon:35:21
+  no check named missing applies to teamboard.Deck
+
+error[E5004]  teamboard/expects.canon:41:23
+  no check named sqOk applies to teamboard.Reward.circle
+
+error[E5004]  teamboard/expects.canon:46:23
+  no check named nothing applies to teamboard.Holder
+
+5 errors, 0 warnings in 1 package (…)

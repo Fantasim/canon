@@ -10,7 +10,7 @@ record Box {
   /// Steps.
   steps: [Duration] = [] @json(unit: s)
   /// Maybe.
-  maybe: Duration? = none @json(unit: s)
+  maybe: Duration? @json(unit: s)
   /// By name.
   byName: {String: Duration} = {} @json(unit: s)
   /// Nested.

@@ -25,6 +25,8 @@ var cases = map[string]func(fx *fixture){
 	"E5001_2": variantLevelCase,
 	"E5003_2": variantNamesCase,
 	"E5001_3": literalKeyCase,
+	"E5004_1": expectNamesCase,
+	"E5005_1": testNamesCase,
 }
 
 // IMPLEMENTATION-PLAN.md §7.2: each case prints the findings of stages C and D over its values.
@@ -210,4 +212,28 @@ func literalKeyCase(fx *fixture) {
 	fx.ev.scripts[fits] = fails("the slot is too big")
 	m := &value.Map{T: &types.MapType{Key: keyType, Value: slot}, Keys: []value.Value{noneKey, otherKey}, Vals: []value.Value{noneSlot, otherSlot}, P: fx.lit("{", "let slots")}
 	fx.let("slots", m)
+}
+
+// testNamesCase is EVALUATION.md §10.1: the second test of a name is E5005, at its name.
+func testNamesCase(*fixture) {}
+
+// expectNamesCase is EVALUATION.md §10.3: E5004 for a name no reachable type declares.
+func expectNamesCase(fx *fixture) {
+	slot := record("Slot", field("size", types.IntType))
+	slot.Checks = append(slot.Checks, fx.check("check fits"))
+	deck := record("Deck", field("slots", &types.ListType{Elem: slot}))
+	fx.typeName(slot)
+	fx.typeName(deck)
+	shape, cs := rewardVariant(fx, map[string][]*types.Field{"sq": {field("side", types.IntType)}}, "sq", "circle")
+	cs["sq"].Checks = []*syntax.CheckDecl{fx.check("check sqOk")}
+	box := &types.TypeFunc{Pkg: pkg, Name: "Box", Scrutinee: &types.Scrutinee{}, Arms: []*types.TypeArm{{Wildcard: true, Result: slot}}}
+	holder := record("Holder", field("b", &types.TypeAppType{Fn: box}))
+	fx.typeName(holder)
+	subjects := map[string]types.Type{
+		"deck": deck, "slot": slot, "shape": shape, "sq": cs["sq"], "circle": cs["circle"],
+		"maybe": &types.OptionalType{Elem: slot}, "byName": &types.MapType{Key: types.StringType, Value: slot}, "holder": holder,
+	}
+	for text, t := range subjects { //canon:unordered each subject is recorded independently
+		fx.subject(text, t)
+	}
 }
