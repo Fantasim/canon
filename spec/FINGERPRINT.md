@@ -297,7 +297,7 @@ type @0 record params=0
 
 `let statuses: stable table Status` in `examples/teamboard/taxonomy.canon`. `Tone` comes from
 `sovcommon.ui` and is covered by its wire values (`series-1`…); `next` is `[ref Status]`, a list of
-string keys; `by: Actor? = none`. The package functions (`canTransition`…) are not in this file's
+string keys; `by: Actor?`. The package functions (`canTransition`…) are not in this file's
 `$fns` (they go to the first emitted value).
 
 ```
@@ -404,7 +404,7 @@ type @7 enum wire=string codes=-
 ### Vector 4: Heistia (dependent type, `none` marker)
 
 `let heistia: HeistiaConfig` in `examples/resource/heistia/heistia.canon`. `filterParam:
-Param(eventType)? = none @json(none: "")`: the branch is chosen by the `param` of the entry that the
+Param(eventType)? @json(none: "")`: the branch is chosen by the `param` of the entry that the
 earlier field `eventType` refers to; arms follow `ParamKind` in declaration order.
 
 ```

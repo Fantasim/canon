@@ -58,6 +58,10 @@ in [§12](#12-diagnostics).
 - The **public API** is everything a runtime may name: exported Go identifiers except those of
   generated `wire*`/`decode*`/`load*` helpers, C++ declarations outside namespaces named `detail`,
   TypeScript exports. It is normative.
+- The **make hooks** ([§5.14](#514-make-hooks)) are exported because the generated code of other
+  packages calls them, but they are not public API: like `T{}` (DECISIONS 4), they build a value
+  without any check, and runtimes must not call them. Their names and parameters are reference
+  layout (DECISIONS 323).
 - Private members, `detail` namespaces, unexported Go identifiers and non-exported TS helpers are
   the **reference layout**. Runtimes must not use them. The goldens ([§10](#10-goldens)) fix the
   reference layout byte for byte; once GEN-01 freezes them, the compiler's output must match
@@ -85,7 +89,8 @@ in [§12](#12-diagnostics).
   have, a `package` that is not a Go identifier or is a Go keyword, a `namespace` that is not
   `ident{::ident}` or uses a C++ keyword, a `namespace` with a segment `canon`, `std` or
   `nlohmann` (reserved: the runtime's and the libraries' namespaces), a `ts` `out` not ending in
-  `.ts`, a `values` item that is not a public top-level `let` of the package or is listed twice.
+  `.ts`, a `values` item that is not a public top-level `let` of the package or is listed twice,
+  an empty `values` list (`E8009` `valuesEmpty`).
   `out` is required for every target (`E8009` `missing` without it).
 - **Copies** (DECISIONS 229). For `go`, `cpp`, `ts`, `json` and `text`, `out` is a string or a non-empty
   list of strings; `view` takes one string. Each entry is a **copy** of the emit, written at that
@@ -113,10 +118,10 @@ in [§12](#12-diagnostics).
   stage E (EVALUATION.md §1), which builds the IR of every emit and validates it without writing:
   `canon check` reports them exactly as `canon build` does (CLI.md §3.3). `E8001` needs the output
   file system and is reported in phase 8 (emit) only, like WIRE.md's `E8152`.
-- `values` (default: every public value) selects the values emitted; an explicit `values: []` is
-  the default too, every public value in declaration order. Every emit always contains
-  **every public type, enum, constant and export fn** of the package, used or not (EMT-07).
-  Imported types are referenced, never re-emitted.
+- `values` (default: every public value, in declaration order) selects the values emitted. An
+  explicit `values: []` is refused (`E8009` `valuesEmpty`): omit `values` to mean every value
+  (DECISIONS 319). Every emit always contains **every public type, enum, constant and export
+  fn** of the package, used or not (EMT-07). Imported types are referenced, never re-emitted.
 - TypeScript `embedded` produces exactly the `baked` output (a bundle has no separate file).
 
 ### 2.2 What each mode contains
@@ -129,6 +134,7 @@ in [§12](#12-diagnostics).
 | `Load<V>` / `<V>::Load` | — | — | non-`@reload` values | — |
 | snapshot and store ([§5.11](#511-reloadable-values-snapshot-and-store)) | `E8202` | `E8202` | `@reload` values | `E8202` |
 | public decoders ([§5.13](#513-types-mode-decoders)) | — | — | — | yes |
+| make hooks ([§5.14](#514-make-hooks)), Go and C++ | yes | yes | yes | yes |
 | precomputed getters | yes | yes | yes (from `$` keys) | `E8014` |
 | package-level export fns without runtime input | yes | yes | `E8013` | `E8014` |
 | methods with finite parameters | yes | yes | enum and `Bool` parameters only (`E8013`) | `E8014` |
@@ -138,6 +144,17 @@ in [§12](#12-diagnostics).
 
 In `data` and `embedded` mode, an emitted value must be a table, a keyed list or a record
 (`E8015`); wrap anything else in a record.
+
+Three modes are not built in v0.1 (DECISIONS 320): Go `embedded` and `types`, and C++ `embedded`.
+An emit in one is `E8019` `unbuilt` at stage E, naming the mode to use instead: `baked` for both
+(a `types` package may hold values that a `data` file cannot, `E8015`, so only `baked` always
+holds). Every other construct a generator cannot write is
+`E8019` with its kind and its way out (ERRORS.md §1.4, DECISIONS 305).
+
+Every mode holds values of another package's records, variants, dependent types and tables, as
+values and inside fields, whatever that package's mode: the holding package builds them itself,
+through the owner's make hooks ([§2.8](#28-cross-package-references), DECISIONS 323). A
+package's public decoders are `types`-mode API only; no other package calls them.
 
 ### 2.3 Files
 
@@ -217,7 +234,8 @@ substituted names never re-wrap it. Placeholders: `<pkg>` the Canon package, `<P
 UpperCamel last segment (`Pipeline`), `<gopkg>` the Go package name, `<last>` the output file
 stem, `<dir>/<file>` the Canon source of a function, `<Type>.<fn>` its Canon name, `<goFn>` the Go
 name of the pure function, `<Const>` the Go schema constant, `<file>` a data file name, `<files>`
-the data files of a snapshot joined by `, `, `<key>` the key field's Canon name. They are
+the data files of a snapshot joined by `, `, `<key>` the key field's Canon name, `<Name>` the Go
+name the comment documents, `<Held>` a row's record as Go writes it (`board.Status`). They are
 normative: a golden that holds other prose is wrong.
 
 | Id | Target | Where | Text |
@@ -241,6 +259,9 @@ normative: a golden that holds other prose is wrong.
 | T10 | C++ | conformance entry point, in the header | `/// Defined in <last>_conformance.gen.cpp: runs every conformance vector of the` / `/// package and returns the number of failures (0 when the translation agrees).` |
 | T11 | C++ | conformance file | on the captured code, `// first evaluation error of the current call, empty if none`; on a vector's code member, `` // expected error code; empty when `want` is expected `` |
 | T11 | Go | conformance file | on `canonCatch`, `// canonCatch runs f and returns its result, or the code of the *rt.EvalError it` / `// panicked with. Any other panic is re-raised.`; on a vector's code field, `// expected error code; empty when want is expected` |
+| T12 | Go | make hook, entry hook, row hook ([§5.14](#514-make-hooks)) | `// <Name> is for generated code.` |
+| T13 | Go | row type ([§5.9](#59-values-containers-and-accessors)) | `// <Name> is a row holding a <Held>.` |
+| T14 | Go | row methods | on `ID`, `// ID is the row's key.`; on `Retired`, `// Retired reports whether the row is retired.`; on `Record`, `// Record is the row's <Held>.`; a forwarding getter carries the doc of the getter it forwards (§2.6) |
 
 The runtime helper files (`rt.go`, `canon_runtime.h`, `canon_runtime_json.h`, the TypeScript
 helper block) are fixed texts, reproduced in §6.3, §7.4, §7.5 and §8.2; their comments are part
@@ -272,18 +293,28 @@ on its kind-enum member (§5.5). Undocumented items get no comment (the build wa
   it never closes a cycle (a result type reaching its receiver is E8019, DECISIONS 284).
 - Within a file, the order of sections is fixed: constants, enums (declaration order, then kind
   enums of variants, branch enums of dependent types, id enums of tables), records and variants,
-  containers, value accessors, export fns, snapshot and store, inputs, decoders (those of
-  classes in declaration order, then those of dependent types a decoded class holds).
+  rows of other packages' records ([§5.9](#59-values-containers-and-accessors)), make hooks
+  ([§5.14](#514-make-hooks)), containers, value accessors, export fns, snapshot and store,
+  inputs, decoders (those of classes in declaration order, then those of dependent types a
+  decoded class holds, then the readers of other packages' classes, [§2.8](#28-cross-package-references),
+  in the order the IR's foreign uses list them, then in the order first needed).
 - **C++ declares before use**, so a header refines that order: (1) constants, then the schema
   constants (T2); (2) enums, as above; (3) a forward declaration `class <T>;` of every class of
-  the header, in declaration order; (4) `namespace detail {`: `struct <P>Access;`, the decoder
-  declarations (one per class decoded from JSON, declaration order), then the pure translated
-  functions (T3, declaration order), `}  // namespace detail`; (5) the classes: records and
-  variants (topologically sorted, above), containers, value accessors, package-level export fns,
-  snapshot and store, inputs; (6) `namespace conformance {` with the entry point declaration
+  the header, in declaration order; (4) `namespace detail {`: `struct <P>Access;`, `struct
+  <P>Make;`, the decoder declarations (one per class of the package decoded from JSON,
+  declaration order), then the pure translated functions (T3, declaration order), `}  //
+  namespace detail`; (5) the classes: records, variants and rows of other packages' records
+  (topologically sorted, above), then `namespace detail {` with the definition of `<P>Make`
+  ([§5.14](#514-make-hooks)) `}  // namespace detail`, containers, value accessors, the free
+  `Load<V>` of values of other packages' records ([§5.9](#59-values-containers-and-accessors)),
+  the inline definitions of the hooks that fill resolved refs (declared in `<P>Make`, defined
+  here since they read the value accessors), package-level export fns, snapshot and store, inputs; (6) `namespace conformance {` with the entry point declaration
   (T10), when the package has translated functions. The `.gen.cpp` holds, inside `namespace
   detail`, the decoder definitions then the `<P>Access` definition, then the out-of-line member
-  definitions in class order.
+  definitions in class order. The readers of other packages' classes (§2.8) are in the `.gen.cpp`
+  only, in an unnamed namespace inside `namespace detail` (internal linkage): declared before the
+  decoder definitions, which call them, and defined between the decoder definitions and the
+  `<P>Access` definition.
 - **C++ includes**, in three groups separated by one blank line, each sorted bytewise:
   - a `.gen.cpp` or `_conformance.gen.cpp` first includes its own header `"<last>.gen.h"`, alone
     in its group;
@@ -309,10 +340,13 @@ on its kind-enum member (§5.5). Undocumented items get no comment (the build wa
 
 A generated type may use a type of an imported package (EMT-06). The imported package must have
 an emit for the same target, else `E8004`. An imported type is referenced, never re-emitted.
-A TypeScript file imports every package its types reach (fields, cases, export fns, dependent
-branches, followed through other packages), since its literals and decoders may write any of them,
-not only its direct imports; such a package needs a `ts` emit (`E8004`), and
-the stage-E name plan reserves the same imports (DECISIONS 279).
+Every package an emit's types reach (fields, cases, export fns, dependent branches, followed
+through other packages) is an import of that emit, not only its direct imports, since its readers
+and literals may build a value of any of them (DECISIONS 279 for `ts`, 323 for `go` and `cpp`):
+such a package needs an emit for the same target (`E8004`), enters `ir.Package.Imports` with its
+emits for that target (IMPLEMENTATION-PLAN.md §4.5), and has its import reserved by the stage-E
+name plan. A Go or TypeScript file imports, and a C++ header includes, only those it names (Go
+and `noUnusedLocals` refuse an unused import).
 
 - **Owning root and copies** (DECISIONS 229). An output's owning root is the declared root
   (GRAMMAR.md §7.1 `roots`) whose directory is the output's directory (a file's directory, for a
@@ -350,19 +384,63 @@ go_module {
   `@sovcommon/teamboard` → `gitlab.com/sovereign15/sovcommon/teamboard` (the `sovcommon` root is a
   closer ancestor than `services`); the pipeline's `out/go/` → `example.com/potions`;
   `features/embedded/out/go/` → `example.com/features/embedded/out/go`. A Go emit under no mapped
-  root is `E8007`. The `rt` package of `D` is imported as `<import path of D>/rt`. Imports are
-  grouped as Go does: standard library, blank line, others; each group sorted.
+  root is `E8007`. The `rt` package of `D` is imported as `<import path of D>/rt`. A file that
+  passes another package's `rt` types to that package's make hooks ([§5.14](#514-make-hooks)), or
+  whose rows forward getters returning them ([§5.9](#59-values-containers-and-accessors)), also
+  imports that package's `rt`, under the name `<gopkg>rt` (`potionsrt`), `<gopkg>` that
+  package's Go package name; the name plan reserves it, as every name the file imports (§3.4, §3.5;
+  DECISIONS 323). Imports are grouped as Go does: standard library, blank line, others; each
+  group sorted.
 - **C++.** A header of another package is included by its path relative to the including file's
   directory (`#include "../vocab/vocab.gen.h"`). Every output directory includes its own
   `canon_runtime.h` as `#include "canon_runtime.h"`. A name of an imported package is written
   fully qualified from the global namespace (`::sov::vocab::Element`), so no class or namespace
   of the including package can hijack it (log-2026-09-25).
 - **TS.** Imports are relative paths from the importing file to the imported file, with `.ts`
-  replaced by `.js`, always starting with `./` or `../`. Types are imported with `import type`.
-- **Decoders across packages.** If a record or variant of package P is held by value inside a type
-  that a `data`, `embedded` or `types` emit of package Q decodes from JSON, P's emit for that
-  target must be in `data`, `embedded` or `types` mode too, so that it provides decoders
-  (`E8018`). `sovcommon.time` (only constants and types) is therefore emitted with `mode: types`.
+  replaced by `.js`, always starting with `./` or `../`. Each imported package is imported once,
+  as a namespace: `import type * as game_core from "../core/core.js"`, or `import * as` when the
+  file uses a value of it (a `CanonMap`, an `<E>Index` table); the alias is the package path's
+  segments joined by `_`, escaped like other TS names when it is a reserved word (`new` → `new_`,
+  §3.4). Every name of another package is written qualified through it
+  (`game_core.LevelRange`, `sovcommon_roles.RoleIndex`), like Go and C++, so imported names never
+  enter the file's own scope; the alias is reserved by the name plan (§3.5, DECISIONS 323).
+- **Values of other packages** (DECISIONS 323). A value of a record, variant, dependent type or
+  table of package P that package Q holds (a value of Q, inside a field of Q's types, or inside
+  such a value of P) is built by Q's own generated code, whatever P's mode:
+  - **Readers.** Where a Go or C++ emit of Q reads such a value from JSON (a loader or a decoder
+    of Q), Q writes its own reader for each class of P it reads: Go `decode_<gopkg>_<T>`
+    (unexported, `<gopkg>` P's Go package name); C++ `Read_<Seg1>_<Seg2>…_<T>`, named from P's whole Canon
+    package path in UpperCamel segments (`game.core` gives `Read_Game_Core_LevelRange`), in an
+    unnamed namespace inside Q's `detail` namespace, in the `.gen.cpp` only (§2.7): internal
+    linkage, so two packages sharing a namespace never meet at link time; TypeScript `read_<alias>_<T>` (`read_game_core_LevelRange`), `<alias>` P's namespace-import alias, a private helper like the `dec…` ones, Q's own readers keeping `read<T>`
+    (§8.1). The name plan reserves these names (§3.5). The reader reads P's wire with Q's rules
+    and texts, exactly as Q's loaders and decoders read Q's own classes, then builds the value
+    with P's make hook ([§5.14](#514-make-hooks)). A record of P that is a table element (of a
+    `table` field of P, or of a table of Q) accepts `$id` and `$retired` wherever it is read,
+    exactly as Q's own decoders accept them for Q's table records: one rule for own and foreign
+    records. A position-exact rule, for both alike, is owed after v0.1 (WIRE.md §5.7). A TypeScript `data` or `types` emit of Q reads it the same way and builds
+    an object literal.
+  - **Literals.** A Go or C++ `baked` emit of Q writes such a value as a call of P's make hook
+    (for the pipeline's `Potion`: `potions.Make_Potion(…)`, `::sov::gen::detail::PipelineMake::Potion(…)`); a TypeScript
+    `baked` or `embedded` emit writes an object literal. A translated function body (§5.10) of Q
+    that writes a record literal of P builds it the same way, through P's hook.
+  - **Refs.** A ref inside such a value reaches P's hook as its key. When P's emit for the target
+    is `baked` or `embedded`, the hook fills every resolved getter (§5.8) from P's own data, and a
+    reader of Q first refuses any ref inside a class of P whose key names no entry of its target table (P's, or a third package's whose ids it knows), in every
+    position (a field, a lookup method's cell, a map key or value, a nested list, a pairs
+    element), with the loader text `no entry <key>` at its pointer. When P's emit is `data` or `types`, the hook takes keys only: a
+    record of P whose resolved getter P's data loader fills inside its own values (§5.8's first
+    row) cannot be built by Q, and a Go or C++ emit of Q that reads or writes one is `E8019`
+    `ForeignResolvedRef`, whose message names the way out: emit P in `baked` mode for that
+    target, or keep the record inside P's value. TypeScript refs are keys in every mode;
+    a TypeScript reader checks a key against the target's id set when the generator knows it (a
+    `baked` or `embedded` owner's id union, through its `<E>Index`) and fails with `no entry <key>`,
+    as Go and C++ readers do.
+  - **Tables.** A table of P's record held by Q has rows of Q's own row type and Q's own id type
+    ([§5.9](#59-values-containers-and-accessors)).
+
+  Q never calls P's public decoders (§5.13), which are `types`-mode API only. `sovcommon.time`
+  (only constants and types) can therefore be emitted in any mode.
 
 ### 2.9 Text files
 
@@ -476,17 +554,23 @@ export fn, `P` = UpperCamel(last segment of the package) in each target's casing
 | constant | UpperCamel(name) (`FarmMaxModels`) | name verbatim (`FARM_MAX_MODELS`) | name verbatim |
 | container of value `v` | UpperCamel(v) (`Potions`) | UpperCamel(v) | — (a `CanonTable`) |
 | value accessor (`baked`, `embedded`) | `Get` + UpperCamel(v) (`GetStatuses()`) | `Get` + UpperCamel(v) | `const v` |
-| value loader (`data`) | `Load` + UpperCamel(v) (`LoadPotions`) | static `<Container>::Load` | `decode` + UpperCamel(v) |
+| value loader (`data`) | `Load` + UpperCamel(v) (`LoadPotions`) | static `<Container>::Load`; for a record of another package, the free `Load` + UpperCamel(v) ([§5.9](#59-values-containers-and-accessors)) | `decode` + UpperCamel(v) |
+| row of another package's record ([§5.9](#59-values-containers-and-accessors)) | `<Element>Row` (`StatusRow`), the record in an unexported field `record`, its getters forwarded, plus `ID()`, `Retired()`, `Record()` | `<Element>Row` | — (`CanonRow<T, K>`, [§8.2](#82-helper-block)) |
+| make hook of a record, case, branch ([§5.14](#514-make-hooks)) | `Make_` + T (`Make_Status`); `Make_` + T + `_` + Case (`Make_EventKind_SpawnMonster`); case type: `MakeCase_` + T + `_` + Case (`MakeCase_EventKind_SpawnMonster`); `Make_` + T + `_` + Branch (`Make_Param_Monster`); row type: `Make_` + `<Element>Row` (`Make_StatusRow`); table entry: `MakeEntry_` + T (`MakeEntry_Status`) | members of `detail::PMake`: T; T + `_` + Case; `Case_` + T + `_` + Case; T + `_` + Branch; `<Element>Row`; `Entry_` + T | — |
+| reader of another package's class ([§2.8](#28-cross-package-references)) | `decode_` + gopkg + `_` + T (`decode_board_Status`) | `detail::Read_` + each segment of the owner's package path, UpperCamel, joined by `_` + `_` + T (`Read_Game_Core_LevelRange`), `.gen.cpp` only | `read_` + alias + `_` + T (`read_game_core_LevelRange`), private; Q's own classes: `read` + T |
 | schema constant | UpperCamel(v) + `Schema` | `k` + UpperCamel(v) + `Schema` | v + `Schema` |
 | snapshot, store | `PSnapshot`, `PStore`, `var Store` | `PSnapshot`, `PStore` | — |
 | conformance entry point | `Test` + T + UpperCamel(fn) + `Conformance` | `conformance::Run` + P + `Conformance` | `test("<T>.<fn> conformance")` |
 | internal access struct | — | `detail::PAccess` | — |
+| make-hook struct | — | `detail::PMake` | — |
+| import of another package | its Go package name; `<gopkg>rt` for its `rt` (§2.8) | — (qualified `::ns::` names) | namespace alias: package path segments joined by `_` (`sovcommon_roles`), escaped (§3.4) |
 
 Parameters and locals keep their Canon names in every target (escaped, [§3.4](#34-escaping)).
 
 ### 3.4 Escaping
 
-A generated name that is reserved in its position gets a `_` suffix:
+A generated name that is reserved in its position gets a `_` suffix (a TypeScript parameter or
+local a `$` suffix, below):
 
 - **Go** lowercase positions (unexported fields, parameters, locals): Go keywords, predeclared
   identifiers (`any append bool byte cap clear close comparable complex complex64 complex128
@@ -507,8 +591,13 @@ A generated name that is reserved in its position gets a `_` suffix:
   class const continue debugger default delete do else enum export extends false finally for
   function if import in instanceof new null return super switch this throw true try typeof var
   void while with yield`, and the strict-mode `implements interface let package private
-  protected public static`), `undefined`, `NaN`, `Infinity`, `arguments`, `eval`. Properties are
-  never escaped. A `@ts(name:)` override that is one of these words is `E8011` (§3.5). A TS type
+  protected public static`), `undefined`, `NaN`, `Infinity`, `arguments`, `eval`; parameters and
+  locals also escape a namespace import alias the file reserves (every package it reaches, §2.8), as Go's do an import.
+  A top-level binding is escaped with `_` (`new_`); a parameter or local with a `$` suffix
+  (`default$`, `p$`), a form no Canon name takes, so an escaped parameter never meets another
+  (with `_`, a parameter `p` escaped beside a parameter `p_` repeated `p_`). Properties are never escaped. Names the generator makes in a function scope (decoder lambda and
+  reader parameters: `$p`, `$raw`, `$path`) carry a `$` prefix, a form no Canon name, and so no
+  import alias, takes. A `@ts(name:)` override that is one of these words is `E8011` (§3.5). A TS type
   name also may not be a predefined type name (`string number boolean symbol bigint object any
   unknown never void`): such an override is `E8011`.
 
@@ -528,8 +617,8 @@ A `@go(name:)` override renames exactly what the Go name plan derives from it:
   `<Element>ID` and its members, `Parse<E>`, `<E>Members`, `<E>FromCode` and the branch enum
   `TBranch`;
 - a case's: its case type is the override, and the override replaces UpperCamel(c) in its
-  `As<Case>` accessor and in its kind-enum member (`@go(name: "Spawn")` gives `Spawn`, `AsSpawn`,
-  `EventKindKindSpawn`);
+  `As<Case>` accessor, in its kind-enum member and in its make hook (`@go(name: "Spawn")` gives
+  `Spawn`, `AsSpawn`, `EventKindKindSpawn`, `Make_EventKind_Spawn`);
 - a field's: its key getter (`@go(name: "Group")` gives `GroupID()`) and its `FindBy<F>`;
 - a method's or value's: the key getter of a ref result;
 - storage names, each lowerCamel of the effective name (the override when there is one), escaped
@@ -561,8 +650,9 @@ collides with the record; a Go method colliding with a generated one (`ID`, `Ret
 Every name a generator writes is in these scopes, fixed names included: the names of dependent types
 (class or struct, branch enum and its members, `As<Branch>`, `As<Branch>Value`,
 `GetBranch`/`Branch`, Go's `branch`/`value` storage and `decode<T>`, C++'s `Decode<Alias>`),
-`LoadInputs`, the per-package input namespace, input slots and flags (§5.12, §7.7) and the §7.7
-input helpers a package uses (`EnvText`, `IsDecDigit`, `AllDigits`, `DurationDigits`,
+`LoadInputs`, the per-package input namespace, input slots and flags (§5.12, §7.7), the make hooks
+and `detail::<P>Make` (§5.14), the rows of other packages' records (§5.9), the readers of other
+packages' classes (§2.8) and the §7.7 input helpers a package uses (`EnvText`, `IsDecDigit`, `AllDigits`, `DurationDigits`,
 `Parse<Kind>Literal`, `MatchPattern`). C++ adds the scopes name lookup crosses (C++17 [basic.scope.class],
 [basic.scope.declarative]): a class member equal to a namespace-scope type that the class body names
 (`Tone Tone() const;` changes the meaning of `Tone`), overrides included; a parameter, or a member
@@ -574,7 +664,15 @@ and a package emitted into `sov::gen`); and a name one package's namespace decla
 package emitted into the same namespace also declares (two packages with runtime inputs in one
 namespace both declare `LoadInputs`; their §7.7 helpers, local to each `.gen.cpp`, never meet each
 other but meet every other name of the namespace). Each is `E8005`: at the user's declaration when
-it meets a fixed name, at the later package's `emit` when two packages meet.
+it meets a fixed name, at the later package's `emit` when two packages meet. Two make hooks of two
+user declarations that are equal are `E8005` at the later declaration in source order (§5.14).
+A TypeScript import alias (§2.8), escaped as a top-level binding (§3.4), equal to a name the file
+declares is `E8005` at the user's declaration. Two packages a TypeScript emit reaches whose aliases
+are equal (`a.b_c` and `a_b.c`) are `E8005` at the emit. Two packages a Go emit reaches (§2.8) that give it the same reader name (`decode_<gopkg>_<T>`)
+or `<gopkg>rt` alias are `E8005` at this package's import of the later one; the way out is a
+distinct `package` option on one of their emits (DECISIONS 323). C++ readers are named from the
+whole package path and have internal linkage (§2.7), and `<P>Make` is always written qualified,
+so they never meet.
 
 `W8006` warns when a generated C++ identifier is a macro name that common platform headers define:
 `min max near far IN OUT OPTIONAL ERROR DELETE TRUE FALSE VOID CONST interface small TEXT
@@ -627,11 +725,15 @@ E8014) has no `E8101` (DECISIONS 279).
 | `[T]` (scalar or enum) | `rt.List[T]` | `const std::vector<T>&` | `ReadonlyArray<T>` |
 | `[R]` (record or variant) | `rt.List[*R]` | `const std::vector<R>&` | `ReadonlyArray<R>` |
 | `[T] keyed by f` | `rt.KeyedList[K, R]` | `const canon::KeyedList<K, R>&` | `ReadonlyArray<R>` |
-| `table T` (as a field) | `rt.KeyedList[<id type>, T]` | `const canon::KeyedList<<id type>, T>&` | `ReadonlyArray<T>` |
+| `table T` (as a field) | `rt.KeyedList[<id type>, T]` | `const canon::KeyedList<<id type>, T>&` | `ReadonlyArray<CanonRow<T, <id type>>>` |
 | `{K: V}` | `rt.Map[K, E]` | `const canon::FlatMap<K, V>&` | `ReadonlyMap<K, V>` |
 | `{e in t: R(e)}` | `rt.Map[<key of t>, *R]` | `const canon::FlatMap<<key of t>, R>&` | `ReadonlyMap<<key of t>, R>` |
 | `{D(e): V}` (dependent key) | `rt.Map[string, E]` | `const canon::FlatMap<std::string, V>&` | `ReadonlyMap<string, V>` |
 | `ref T` | [§5.8](#58-references) | [§5.8](#58-references) | the key |
+
+For a `table T` field whose `T` belongs to another package, `T` in the row above is this package's
+row type `<Element>Row`, which holds the record and forwards its getters
+([§5.9](#59-values-containers-and-accessors)), and `<id type>` this package's (DECISIONS 323).
 
 Lists of lists nest: `[[Reward]]` is `rt.List[rt.List[*Reward]]`, `const
 std::vector<std::vector<Reward>>&`, `ReadonlyArray<ReadonlyArray<Reward>>`.
@@ -641,7 +743,8 @@ target: `stats: [StatBonus](..=6) @json(pairs: …)` is `Stats() rt.List[*StatBo
 `const std::vector<StatBonus>& GetStats() const`, `readonly stats: ReadonlyArray<StatBonus>`.
 Only loaders and decoders know the slot keys: they read slot 0 to `N − 1` and stop at the first
 empty one (WIRE.md's rules, which `canon build` already enforced). A `pairs` field cannot map onto
-a legacy struct in this version (`E8109`, [§7.8](#78-legacy-structs)).
+a legacy struct in this version (`E8109`, [§7.8](#78-legacy-structs)). A pairs element record has no stored
+export fns (`E3316`, WIRE.md §4.1), so another package's pairs record needs no refusal of its own.
 
 ### 4.3 Optional values
 
@@ -760,7 +863,9 @@ The keys of a public `table` value (EMT-04):
 
 Keyed lists have no id type: their key is the key field, with the field's own type. Retired
 entries keep their id (LCK-05) and are flagged by the **retired getter** of their record: Go
-`Retired() bool`, C++ `bool GetRetired() const`, TS `readonly retired: boolean` (LOCK.md §7).
+`Retired() bool`, C++ `bool GetRetired() const`, TS `retired` (LOCK.md §7; optional on the
+interface, present on every row, [§5.4](#54-records)). A table of another package's record carries
+the id and retired getters on this package's row type ([§5.9](#59-values-containers-and-accessors)).
 Keyed lists have no retirement, so their elements have no retired getter.
 
 ### 5.4 Records
@@ -794,18 +899,21 @@ private:
 
 ```ts
 export interface Status {
-  readonly id: StatusId;          // table entries only
-  readonly retired: boolean;      // table entries only
+  readonly id?: StatusId;         // present on table rows (CanonRow, §8.2)
+  readonly retired?: boolean;     // present on table rows
   readonly label: string;
   readonly next: ReadonlyArray<StatusId>;
   readonly by: Actor | null;
 }
 ```
 
-In TypeScript, a record that is a table row and also a plain value elsewhere (a field, a list
-element, a `let`) declares `id` and `retired` optional (`readonly id?: StatusId`); they are present
-on table entries and absent elsewhere, and a decoder reads `$id` only in table position
-(DECISIONS 278).
+In TypeScript, a record that is a row of a table of its package declares `id` and `retired`
+optional (`readonly id?: StatusId`, `readonly retired?: boolean`), whether or not it is also a plain
+value elsewhere (a field, a list element, a `let`); they are present on table entries and absent
+elsewhere, and a decoder reads `$id` only in table position (DECISIONS 278). A table container
+types its rows `CanonRow<T, K>` ([§8.2](#82-helper-block)), on which both are present and `id` has
+the table's own id type, so a table of another package's record is typed the same way (DECISIONS
+323).
 
 - Every field has exactly one getter (two for refs, [§5.8](#58-references)); there are no
   setters and no public members (DECISIONS 4).
@@ -814,8 +922,10 @@ on table entries and absent elsewhere, and a decoder reads `$id` only in table p
 - **C++ default constructors are public** (implicitly declared). A default-constructed value holds
   zeros and defaults and can never be modified, so it cannot forge configuration; making them
   private would forbid holding generated classes by value in other generated classes. Every class
-  befriends `detail::<P>Access`, the struct (defined only in `<last>.gen.cpp`) that builds values,
-  and, in JSON modes, its `detail::Decode` overload ([§7.2](#72-classes)). Go has the same
+  befriends `detail::<P>Access`, the struct (defined only in `<last>.gen.cpp`) that builds values;
+  every class with a hook also befriends `detail::<P>Make` ([§5.14](#514-make-hooks)); and, in
+  JSON modes, its
+  `detail::Decode` overload ([§7.2](#72-classes)). Go has the same
   limitation (GO-03): `potions.Potion{}` compiles and is empty.
 - Precomputed export fns (no parameter besides `self`) are getters named after the fn, in field
   order after the fields: Go `IsStrong() bool`, C++ `bool IsStrong() const`, TS `readonly
@@ -904,11 +1014,13 @@ value, none a `ref` or optional; a `Bool` discriminant's cases are `false` and `
 dependent values shares its field's discriminant. A discriminant member no branch covers (a `Never` arm, WIRE.md §5.9) refuses
 the value with the loader text `no branch for this value` at its pointer, in every loader. Baked Go writes a dependent value (a field's, or
 its list's elements) as `&T{branch, value}` in the branch the record's own fields select, the value
-typed as `As<Branch>` returns it. What a generator does not write is E8019 `DependentType` at
-stage E: a discriminant read through a `ref` or a record parameter, an optional discriminant
-(TYPES.md §11.1, DECISIONS 307), a dependent value in a map or in a literal union a loader reads,
-another package's dependent type in a Go loader or baked Go literal, and a dependent type every
-arm of which is `Never`.
+typed as `As<Branch>` returns it. What a generator does not write is E8019 at stage E:
+`DependentType` for a discriminant read through a `ref` or a record parameter, or an optional
+discriminant (TYPES.md §11.1, DECISIONS 307; owed for v0.2, DECISIONS 320);
+`DependentOutsideField` for a dependent value in a map or in a literal union a loader reads, or
+outside a record field; `NeverDependent` for a dependent type every arm of which is `Never`; and,
+in a C++ `types` decoder, `DependentDefault` for a default holding a dependent value. Another package's dependent type is read or
+written through its make hooks, as any value of another package ([§2.8](#28-cross-package-references), DECISIONS 323).
 
 - The Go struct stores `branch` and `value` (unexported); the Go branch enum has no `String`,
   `Wire` or `Parse<…>` (it is never on the wire). A Go data-mode loader writes `decode<T>`
@@ -948,8 +1060,9 @@ table field ([§4.2](#42-composite-types), DECISIONS 288), and `String` for `loc
 The **define value getter** (`XxxValue()`, `GetXxxValue()`) returns the integer value of the
 define as `int64`/`int64_t`. Define values are compile-time facts of the runtime (the header is
 compiled into it), so every Go and C++ emit carries a baked, sorted `(name, value)` table holding
-every define of each define table a field of the emit's own classes, or a branch of its own
-dependent types ([§5.6](#56-dependent-types), DECISIONS 298), refs (whether or not a value uses it), and loaders resolve the value right after reading the key. A key missing from
+every define of each define table a field of the emit's own classes, a field or dependent branch of
+another package's class the emit reads or writes ([§2.8](#28-cross-package-references), DECISIONS 323), or a branch of
+its own dependent types ([§5.6](#56-dependent-types), DECISIONS 298), refs (whether or not a value uses it), and loaders resolve the value right after reading the key. A key missing from
 that table (data built with a newer header than the binary) is a load error.
 
 - **The table.** One per define table the emit's refs use, named from the table's `let`
@@ -980,11 +1093,8 @@ that table (data built with a newer header than the binary) is a load error.
 For each emitted value `v` of type `X`, the **container** is:
 
 - a table or keyed list: a generated class `UpperCamel(v)` (`Potions`, `Statuses`);
-- a record or variant: the type itself (CG-04); in a `data` emit of Go or C++, a value whose
-  record (or whose rows' record) belongs to another package has no container here and is `E8019`
-  ForeignDataRecord (DECISIONS 291). It and `E8019` CrossPackageBakedValue (a value of a record,
-  variant or table of another package) stay until the one step before v0.1 that also settles §2.2
-  vs §2.8 (DECISIONS 312);
+- a record or variant: the type itself (CG-04), whether it belongs to this package or to another
+  one ([§2.8](#28-cross-package-references), DECISIONS 323);
 - anything else (`baked` only, [§2.2](#22-what-each-mode-contains)): no container; the accessor
   returns what a field getter of type `X` returns.
 
@@ -1010,7 +1120,12 @@ const Status* FindByCode(uint16_t code) const;           // per @stable field, i
 
 ```ts
 export interface CanonTable<K, T> { readonly length: number; readonly all: ReadonlyArray<T>; at(i: number): T; find(key: K): T | null; }
+export type CanonRow<T, K> = Omit<T, "id" | "retired"> & { readonly id: K; readonly retired: boolean };
 ```
+
+Every TypeScript table holds `CanonRow<T, K>`, `K` its id type: a container is
+`CanonTable<K, CanonRow<T, K>>`, a `table` field `ReadonlyArray<CanonRow<T, K>>` (§4.2), own or
+foreign record alike; a keyed list's container is `CanonTable<K, T>` ([§8.2](#82-helper-block)).
 
 A `@stable` field `f` gets `FindBy` + UpperCamel(f). `Find` on a keyed list takes the key field's
 type (`string`/`std::string_view`, `int64`/`int64_t`). In Go, `FindBy<F>` reads a
@@ -1022,9 +1137,59 @@ C++ `Get(id)` with an id outside the id enum calls `std::abort()`, as every look
 
 | Mode | Go | C++ | TS |
 |---|---|---|---|
-| `baked` | `func GetStatuses() *Statuses`, `func GetDeck() *Deck`, `func GetAssigneeMinRole() roles.Role` | `const Statuses& GetStatuses();` `const Deck& GetDeck();` `sovcommon::roles::Role GetAssigneeMinRole();` | `export const statuses: CanonTable<StatusId, Status>`, `export const deck: Deck`, `export const assigneeMinRole: Role` |
+| `baked` | `func GetStatuses() *Statuses`, `func GetDeck() *Deck`, `func GetAssigneeMinRole() roles.Role` | `const Statuses& GetStatuses();` `const Deck& GetDeck();` `sovcommon::roles::Role GetAssigneeMinRole();` | `export const statuses: CanonTable<StatusId, CanonRow<Status, StatusId>>`, `export const deck: Deck`, `export const assigneeMinRole: sovcommon_roles.Role` |
 | `embedded` | same accessors; the data is `//go:embed <v>.json`, decoded on first use | same accessors; the data file is a `static const unsigned char[]` in `.gen.cpp`, decoded on first use | as `baked` |
-| `data` | `func LoadPotions(path string) (*Potions, error)` | `static std::shared_ptr<const Potions> Potions::Load(const std::string& path, std::string& error);` | `export function decodePotions(json: unknown): CanonTable<string, Potion>` |
+| `data` | `func LoadPotions(path string) (*Potions, error)` | `static std::shared_ptr<const Potions> Potions::Load(const std::string& path, std::string& error);` | `export function decodePotions(json: unknown): CanonTable<PotionId, CanonRow<Potion, PotionId>>` |
+
+**Values and rows of another package's record** (DECISIONS 323). A value whose record or variant
+belongs to another package P has P's type as its container; its accessors and loaders are this
+package's, as for any value (`func LoadDeck(path string) (*cards.Deck, error)`). In C++, where a
+static member cannot be added to P's class, its `data` loader is the free function `std::shared_ptr<const
+::sov::cards::Deck> LoadDeck(const std::string& path, std::string& error);` of this package's
+namespace. A table whose row record `<Element>` belongs to P, as a value or as a `table` field, holds
+rows of this package's own **row type** `<Element>Row`, keyed by this package's id type (§5.3,
+§3.3):
+
+```go
+type StatusRow struct {
+	record  board.Status // the record of package board, unexported
+	id      StatusID
+	retired bool
+}
+func (self *StatusRow) ID() StatusID
+func (self *StatusRow) Retired() bool
+func (self *StatusRow) Record() *board.Status // the held record, read-only like every record
+func (self *StatusRow) Label() string { return self.record.Label() } // one forwarding getter per method of board.Status
+```
+
+```cpp
+class StatusRow : public ::sov::board::Status {
+public:
+    StatusId GetId() const { return id_; }
+    bool GetRetired() const { return retired_; }
+private:
+    friend struct detail::TrackerAccess;   // the holding package, tracker
+    StatusId id_{};
+    bool retired_ = false;
+};
+```
+
+The container's `At`, `All`, `Find`, `Get` and `FindBy<F>` return the row type, through which every
+getter of the record is reached. A Go row holds the record in an unexported field, never embedded
+(an embedded field would be exported and assignable through the `*<Element>Row` a container
+returns, against DECISIONS 4), and forwards each method of the record's type: one generated method
+of the same name and signature per getter, key getter, value getter, precomputed or lookup method
+and translated method, calling the record's; `Record()` returns the held record itself, for code
+that takes `*<pkg>.<T>` (a record exposes only getters, so this keeps DECISIONS 4). A C++ row derives publicly from the record's class,
+whose storage is private and whose getters are `const`, so it stays read-only. The row's
+`ID`/`Retired` (`GetId`/`GetRetired`) replace the record's own when it has them (a row record of P,
+§5.4), which then hold the zero id and `false`. A forwarded Go method named `ID`, `Retired` or
+`Record` that is not the row's own is `E8005` (§3.5); in C++, a public getter the row inherits that
+is named `GetId` or `GetRetired` and is not the record's own id and retired pair (a field `id` of
+a record that is no row of P) is `E8005` too, since the row's getter would hide it. In TypeScript,
+a record held as a row (`CanonRow`) with a property `id` or `retired` (a field or a stored export
+fn's property) that is not its row pair is `E8005`, as `CanonRow` would replace it. In TypeScript a row is `CanonRow<T, K>` with this
+package's `K`. Keyed lists have no row type: their elements are P's type itself.
 
 - `baked` data (CPP-08, GO-04): C++ builds every value of the package once, inside one
   function-local `static const` object of `detail::<P>Access` in `.gen.cpp` (thread-safe, no
@@ -1036,11 +1201,12 @@ C++ `Get(id)` with an id outside the id enum calls `std::abort()`, as every look
 - `embedded`: a decode failure is a build defect. It is signalled with `E8301` (C++
   `canon::OnEvalError`, Go panic with `*rt.EvalError`).
 - `data`: loaders read one file, check `$schema`, fill every field and never validate (SPEC
-  §14.5). Refs inside the file are resolved at load. Go and C++ loaders read map fields, keys as
+  §14.5). Refs inside the file are resolved at load. A class of another package is read by this
+  package's own reader and built through its owner's make hook (§2.8). Go and C++ loaders read map fields, keys as
   WIRE.md §5.8 (String, integer, enum, ref, literal union), in file order, a ref key checked where a
   ref value is (§5.8), with the same error texts in both (DECISIONS 312). A dependent key or value in a
-  map is `E8019` `DependentType` until the generator step 312 names; a C++ `types`-mode decoder
-  still refuses maps (§5.13: its JSON keeps no key order). `@reload` values have no public per-value
+  map is `E8019` `DependentOutsideField` (§5.6); a C++ `types`-mode decoder still refuses maps
+  (`E8019` `MapField`; §5.13: its JSON keeps no key order). `@reload` values have no public per-value
   loader: they load through their snapshot ([§5.11](#511-reloadable-values-snapshot-and-store)).
 
 ### 5.10 Exported functions
@@ -1052,7 +1218,11 @@ In `data` mode, precomputed methods read their `$<fn>` key (WIR-09).
 **Lookup** (every parameter finite: `Bool`, enum, `ref` into a table) (CG-08). A `ref` into a keyed
 list is not finite (a keyed list has no id enum to index by), nor is a `ref` into a `local let`
 table (§5.3 gives id enums to public tables only; DECISIONS 296): a function taking one is translated,
-and a translated function takes no `ref`, so it is `E9006` (CONFORMANCE.md §2.1):
+and a translated function takes no `ref`, so it is `E9006` (CONFORMANCE.md §2.1). A `ref` into a
+table of another package is indexed by that package's id enum, which exists only when its emit for
+the same target is `baked` or `embedded` (§5.3); otherwise the lookup is `E8019`
+`ForeignTableLookupParam`, whose message names the way out: emit that package in `baked` mode for
+the target, or take an enum parameter (DECISIONS 323):
 
 ```go
 func CanTransition(from StatusID, to StatusID) bool
@@ -1068,7 +1238,7 @@ const std::vector<const Area*>& AreasVisibleTo(sovcommon::roles::Role role);
 
 ```ts
 export function canTransition(from: StatusId, to: StatusId): boolean;
-export function areasVisibleTo(role: Role): ReadonlyArray<AreaId>;
+export function areasVisibleTo(role: sovcommon_roles.Role): ReadonlyArray<AreaId>;
 ```
 
 - **Domain order.** Each parameter's domain is enumerated in a fixed order: enum members in
@@ -1076,15 +1246,19 @@ export function areasVisibleTo(role: Role): ReadonlyArray<AreaId>;
   included; `Bool` as `false` then `true`. The result table is dense, indexed by these ordinals,
   row-major in parameter order (the first parameter varies slowest). EVALUATION.md §2.3 (stage E)
   computes the cells in exactly this order, and WIRE.md §5.11 writes `$` keys and `$fns` in it.
-  More than 65 536 cells is `E9002`; an optional parameter is `E9003`.
+  A parameter with no instances (a table without entries) has an empty domain: the result table
+  has no cell, and a hook takes its cells as an empty array (§5.14); a TypeScript reader writes a
+  domain as a literal array of its keys, so an empty one is `[]` and type-checks. More than 65 536 cells is
+  `E9002`; an optional parameter is `E9003`.
 - Results are returned like field getters of the return type; list results are read-only views.
 - A method with finite parameters stores one small table per entry. In `data` mode it is read
   from `"$<fn>": {<wire of arg>: result}` (WIR-09); only enum and `Bool` parameters are
   supported there (`E8013`). In TypeScript it is a property named after the fn holding that same
-  nested object, frozen: `area.canPost["maintainer"]` (`Readonly<Record<Role, boolean>>`; a `Bool`
+  nested object, frozen: `area.canPost["maintainer"]` (`Readonly<Record<sovcommon_roles.Role, boolean>>`; a `Bool`
   argument is keyed `"true"`/`"false"`).
-- Package-level export fns (precomputed or lookup) need `baked` or `embedded` mode: `E8013` in
-  `data`, `E8014` in `types`.
+- Package-level export fns (precomputed or lookup) need `baked` mode (TypeScript: `baked` or
+  `embedded`, which is `baked`): `E8013` in `data`, its message naming, once per package, a mode that builds
+  in every target the package emits (DECISIONS 320), `E8014` in `types`.
 - **C++ `constexpr` lookups** (DECISIONS 293). In a C++ `baked` emit, a package-level precomputed
   or lookup fn whose result is a constexpr scalar (an integer type, `Float`, `Bool`, `String`,
   `Duration`, an enum, or a non-optional `ref` into a table, i.e. its id) is defined in the header
@@ -1095,7 +1269,8 @@ export function areasVisibleTo(role: Role): ReadonlyArray<AreaId>;
   optional, list or record result, and every `embedded` emit keep §7.1's split. A string literal
   union result counts as `String`; a `ref` result into a table that has no id enum in this emit
   (an import without a `baked` or `embedded` C++ emit, whose key is a `String`, §5.8) keeps the
-  split (DECISIONS 296).
+  split (DECISIONS 296). Over an empty domain (above) the function keeps a form every compiler of
+  §9 accepts as `constexpr`.
 
   ```cpp
   namespace detail {
@@ -1235,7 +1410,83 @@ export function decodeEventConfig(json: unknown): EventConfig;
 - Defaults must be constant; a computed default (one that reads other fields, or the instance through
   its type's arguments, DECISIONS 282) in a type emitted in `types` mode is `E8014`, as
   are precomputed export fns and finite-parameter methods (there is no precomputed data to read).
+  A `types` emit that reads a record of another package with a precomputed export fn is `E8014`
+  too, as for its own: its reader has no data for the hook's stored result (§2.8, §5.14).
 - Refs are keys; table ids are strings.
+- Public decoders are API for runtimes only: another package's generated code never calls them,
+  it reads this package's classes with its own readers ([§2.8](#28-cross-package-references)).
+
+### 5.14 Make hooks
+
+Every `go` and `cpp` emit, in every mode, writes a **make hook** for each public record, variant
+case and dependent-type branch of its package, used or not (DECISIONS 323). A hook builds a value
+from its parts, without JSON and without any check; it is how the generated code of another
+package builds this package's values ([§2.8](#28-cross-package-references)). Hooks are for
+generated code, not public API ([§1.3](#13-stability)), like a default-constructed value
+(DECISIONS 4). TypeScript writes no hook: an object literal is the value.
+
+| Builds | Go | C++: static member of `detail::<P>Make` |
+|---|---|---|
+| record `T` | `func Make_<T>(…) <T>` | `static T T(…)` |
+| variant `V`, case `c` | `func Make_<V>_<Case>(…) <V>` | `static V V_<Case>(…)` |
+| case type of a case `c` with fields | `func MakeCase_<V>_<Case>(…) <V><Case>` | `static <V><Case> Case_<V>_<Case>(…)` |
+| dependent type `D`, branch `b` | `func Make_<D>_<Branch>(v) <D>` | `static D D_<Branch>(v)` |
+| entry of one of the package's tables, record `T` (a table value's or a `table` field's element) | `func MakeEntry_<T>(record <T>, id <T>ID, retired bool) <T>` | `static T Entry_<T>(T record, <T>Id id, bool retired)` |
+| row type `<Element>Row` the package declares ([§5.9](#59-values-containers-and-accessors)) | `func Make_<Element>Row(record <pkg>.<T>, id <Element>ID, retired bool) <Element>Row` | `static <Element>Row <Element>Row(<T> record, <Element>Id id, bool retired)` |
+
+- **Names.** `<T>`, `<V>` and `<D>` are the type's generated name in the target, its override
+  included (§3.5); `<Case>` is the name its `As<Case>` uses (§5.5), `<Branch>` the name its
+  `As<Branch>` uses (§5.6). Every case has a hook; every case with fields also has a **case-type hook**, which builds the case type alone (§5.5),
+  so that a field typed as another package's case is built, not refused; `Make_<V>_<Case>` may
+  call it. Every branch that is not `Never` has a hook. Every record that is the element of one
+  of the package's tables (a table value or a `table` field) also has an **entry hook**, and every
+  row type the package declares a hook, so that another package can build a record of this
+  package that holds a table of either (Rows, below). The interior `_` keeps hook names apart
+  from the UpperCamel names of §3.3; the name plan reserves them, written or not (Refs, below). A
+  hook name equal to another generated name or override (`@go(name: "Make_Status")`) is `E8005`
+  at the user's declaration whose name or override meets the hook's; two hooks of two user
+  declarations that are equal (a type `A_B` beside a case `B` of a variant `A`) are `E8005` at the
+  later declaration in source order (§3.5). `detail::<P>Make` is written, and its name reserved, even when it has no member.
+- **Go parameters** are the getters' types, in getter order (§4, §5.4), never the id and retired
+  flag of a row (Rows, below): each field gives its getter's
+  type, two parameters, the value then its presence, for a getter that returns `(X, bool)`; a ref
+  gives its key getter's type, and a ref into a define table also its value getter's (§5.8); a
+  resolved getter gives no parameter (below); an input field, which is not stored (§5.12), gives
+  none. Then each stored export fn gives its result: a precomputed fn its getter's type, a method
+  with finite parameters its cells, in §5.10's domain order, as its storage holds them, a cell
+  holding a resolved ref passed as its key and resolved by the hook (Refs, below); an optional
+  result's cells as a values array `[N]X` and a presence array `[N]bool`, as an optional field
+  passes value then presence, never the unexported pair struct its storage may use. A variant
+  case and its case-type hook take parameters as a record does, fields then stored results; a
+  case without fields and without stored results takes none (Go stores no result of a case
+  without fields: `E8019` `FieldlessCaseExportFn`). A branch takes the value its
+  `As<Branch>` returns, and a branch into a define table also its `As<Branch>Value`'s. A list, map
+  or keyed list is of the owner's `rt` types ([§6.3](#63-the-rt-package)), which a caller in
+  another package imports as `<gopkg>rt` ([§2.8](#28-cross-package-references)). Parameters are named
+  as the storage they fill ([§6.1](#61-files-and-package)). A hook returns the value, not a
+  pointer.
+- **C++ parameters** are the class's reference-layout storage members, in member order, each
+  passed by value and moved into place (fields then stored results, for records and cases alike),
+  except a resolved ref's pointer, which the hook fills, and a row's `id_` and `retired_`.
+  `detail::<P>Make` is a struct of static inline member functions, defined in the header after the
+  records and variants (§2.7) and befriended by every class that has a hook (§7.2). Its members are
+  named after the types they build, so every type it names is written fully qualified from the
+  global namespace (`::sov::gen::Potion`), and §3.5's rule on a class member equal to a type the
+  class body names does not apply to it.
+- **Refs.** In a `baked` or `embedded` emit, a hook fills each resolved getter of the value it
+  builds (§5.8) from the package's own data, looking the key up as `Get` or `Find` does. In a
+  `data` or `types` emit, a record with a ref its `data` loader resolves inside its own values has
+  no hook written (its name stays reserved); another package's use of it, directly or through a
+  record that reaches it, is `E8019` `ForeignResolvedRef`, whose message names the way out (§2.8).
+  Its entry hook is still written: only a use stage E refuses could call it.
+- **Rows.** Only entry and row hooks take `id` and `retired`; a record's never does: a package fills its own rows' id and retired flag
+  itself (`detail::<P>Access`, its loaders), and another package holds this package's records in
+  its own row type ([§5.9](#59-values-containers-and-accessors)), so it never builds this
+  package's rows. A record built by `Make_<T>` keeps the zero id and `false` in the id and retired
+  getters it has as a row record of this package; the holder's row carries the row's. Where
+  another package builds a record of this package holding one of this package's tables (a `table`
+  field of its own records), it builds each entry with `Make_<T>`, then sets its id and retired
+  flag with `MakeEntry_<T>` (C++ `Entry_<T>`), so no entry keeps a zero id.
 
 ---
 
@@ -1876,10 +2127,15 @@ func InputError(name, reason string) error {
   optional records use `std::optional<T>`, or `std::unique_ptr<T>` when `T` contains the
   enclosing class; variants use `std::variant` of the case classes; keyed lists
   `canon::KeyedList`.
-- Every class declares `friend struct detail::<P>Access;`. In `data`, `embedded` and `types`
-  mode, each public record and variant also has
+- Every class declares `friend struct detail::<P>Access;`. Every class that has a hook (§5.14:
+  records, cases, variants, dependent types, rows) also declares `friend struct detail::<P>Make;`;
+  containers, the snapshot and the store do not. In `data`, `embedded` and `types` mode, each public record and
+  variant also has
   `bool detail::Decode(const nlohmann::json& v, canon::json::Decoder& dec, T& out);`, declared in
-  the header and befriended by `T`, which other packages' decoders call (§2.8).
+  the header and befriended by `T`; another package never calls it: it reads `T` with its own
+  reader and builds it through `<P>Make` (§2.8, DECISIONS 323).
+- A row of another package's record (§5.9) is a class of the holding package, derived publicly
+  from that record's class, with its own `id_` and `retired_`.
 - In `types` mode, the public `static std::optional<T> T::Decode(const nlohmann::json&,
   std::string& error)` wraps it.
 
@@ -2565,7 +2821,10 @@ The pipeline golden ([§10](#10-goldens)) is the reference for `data` mode: `det
 record reads each field with the `Decoder` shortcuts in field declaration order, then the `$`
 keys; `detail::<P>Access::Load<V>` reads the file, checks `$schema`, decodes `rows` (or `value`)
 with `Push("rows[<i>]")` around each row, and builds the container; the snapshot's `Load` calls
-one loader per `@reload` value with `dir + "/" + <file name>`.
+one loader per `@reload` value with `dir + "/" + <file name>`. A value of another package's record
+loads through the free `Load<V>` of §5.9, which `detail::<P>Access` defines in the same way; a
+class of another package is read by this package's own reader (§2.8), which ends in a call of its
+owner's `detail::<Owner>Make` (§5.14).
 
 ### 7.7 Runtime inputs
 
@@ -2875,6 +3134,12 @@ applies).
 - Records are `interface`s with `readonly` properties; values are deep-frozen object literals
   (`canonFreeze`); maps are `CanonMap` (writes throw at runtime); tables and keyed lists are
   `CanonTable` values. `readonly` makes writes fail at compile time, freezing at run time (TS-01).
+- Every table holds `CanonRow<T, K>`: a container is `CanonTable<K, CanonRow<T, K>>`, a `table`
+  field `ReadonlyArray<CanonRow<T, K>>`, whether its row record `T` is the package's own or another
+  package's: a row record's interface declares `id?` and `retired?`
+  (§5.4), and `CanonRow` makes both present, `id` of the table's own id type `K` (DECISIONS 323).
+  A value of another package's type is an object literal of that package's interface, read by this
+  file's own decoder helpers in `data` and `types` mode ([§2.8](#28-cross-package-references)).
 - The file uses only erasable syntax (no `enum`, no `namespace`, no parameter properties), so it
   also runs under Node's type stripping.
 - `data` mode exports, per value, `parse<V>(text: string)` and `decode<V>(json: unknown)`, and
@@ -2893,7 +3158,8 @@ applies).
 
 The file contains the helpers below that it uses, in this order and with this exact text, and no
 others (so that `noUnusedLocals` passes). `CanonEvalError` and `CanonTable` are always present
-and exported.
+and exported; `CanonRow` is exported, and present when the file uses it (a table container or a `table`
+field, `types` mode included; DECISIONS 323).
 
 ```ts
 // ---------------------------------------------------------------------------
@@ -3007,6 +3273,9 @@ export interface CanonTable<K, T> {
   find(key: K): T | null;
 }
 
+/** A row of a table: its record, with this table's id and retired flag present. */
+export type CanonRow<T, K> = Omit<T, "id" | "retired"> & { readonly id: K; readonly retired: boolean };
+
 function canonTable<K, T>(rows: ReadonlyArray<T>, keyOf: (row: T) => K): CanonTable<K, T> {
   const index = new Map<K, number>();
   rows.forEach((row, i) => index.set(keyOf(row), i));
@@ -3046,16 +3315,16 @@ function canonEnvelope(json: unknown, schema: string, name: string): Record<stri
 
 ```ts
 // GENERATED by canon from teamboard/. DO NOT EDIT.
-import type { Icon, Tone } from "../ui.generated.js";
-import type { Role } from "../roles.generated.js";
+import type * as sovcommon_roles from "../roles.generated.js";
+import type * as sovcommon_ui from "../ui.generated.js";
 
 export type StatusId = "open" | "taken" | "fixed" | "verified" | "wont_do" | "duplicate";
 
 /** One point of the post lifecycle. */
 export interface Status {
-  readonly id: StatusId;
-  readonly retired: boolean;
-  readonly tone: Tone;
+  readonly id?: StatusId;
+  readonly retired?: boolean;
+  readonly tone: sovcommon_ui.Tone;
   readonly label: string;
   /** A terminal status closes the post. It can still be reopened through `next`. */
   readonly terminal: boolean;
@@ -3068,10 +3337,10 @@ export interface Status {
   readonly by: Actor | null;
 }
 
-export const statuses: CanonTable<StatusId, Status> = canonTable(canonFreeze<ReadonlyArray<Status>>([
+export const statuses: CanonTable<StatusId, CanonRow<Status, StatusId>> = canonTable(canonFreeze<ReadonlyArray<CanonRow<Status, StatusId>>>([
   { id: "open", retired: false, tone: "warning", label: "Open", terminal: false, next: ["taken", "wont_do", "duplicate"], requires: [], optional: [], by: null },
   // …
-]), (e) => e.id);
+]), ($e) => $e.id);
 
 /** sovcommon's CanTransition. */
 export function canTransition(from: StatusId, to: StatusId): boolean {
@@ -3145,7 +3414,7 @@ applied every item; each rule now lives in its owning document:
 | `-0.0` before `+0.0` in `min`, `max`, `clamp` | STDLIB.md §2.2 |
 | the pipeline fingerprint `pipeline.Potion@f750790e` | WIRE.md §8.3, FINGERPRINT.md §7, the goldens (§10) |
 | a root and a `go_module` entry for every Go emit | `examples/project.canon` |
-| `emit cpp { mode: types }` for `sovcommon.time` (`E8004`, `E8018`) | `examples/sovcommon/time/time.canon` |
+| an `emit cpp` for `sovcommon.time`, in any mode (`E8004`; DECISIONS 323 removed `E8018`) | `examples/sovcommon/time/time.canon` |
 
 ---
 
@@ -3172,7 +3441,6 @@ source of diagnostics (DECISIONS 27); this table says when each code fires.
 | E8014 | error | precomputed or finite export fn, or computed default, in `types` mode |
 | E8015 | error | other value types in `data`/`embedded` |
 | E8017 | error | §5.6 |
-| E8018 | error | §2.8 decoders across packages |
 | E8021 | error | misplaced `@text`, invalid file name, one name twice (§2.9) |
 | E8101 | error | emitted Int outside ±(2⁵³−1) (SPEC §15.4) |
 | E8103 | error | string or list longer than a fixed-size C++ array |

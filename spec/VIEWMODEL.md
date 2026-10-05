@@ -1021,7 +1021,8 @@ predicate, when it has one (VM-02).
   `fields` (always present, declaration order); `methods`? (parameterless methods named by a view:
   `[{name, returns}]`).
 - **Field**: `name`; `type`; `required`? (no default, not optional, not an input); `default`? (J10, or
-  `{"computed": true}` when the default is not constant, TYP-15); `help`?; `deprecated`? (text
+  `{"computed": true}` when the default is not constant, TYP-15; absent for an optional field whose
+  default is `none`, written or not, DECISIONS 319); `help`?; `deprecated`? (text
   reference; `{"text": ""}` for a `@deprecated` without a reason); `wire` (always present: `name`, and when set `path`, `unit`, `none` (the JSON value),
   `inline`, `int`, `bits`, `pairs`); `stable`?; `input`? (`{"env": "VAR"}`). For a
   `@json(pairs:)` field, `pairs` is `{"keys": [k, v], "slots": N}` (the two templates as written,
@@ -1322,7 +1323,7 @@ What the golden `examples/pipeline/expected/potion.view.json` shows, rule by rul
 
 ### 15.2 A dependent field (heistia)
 
-`Task.filterParam: Param(eventType)? = none` resolves to:
+`Task.filterParam: Param(eventType)?` resolves to:
 
 ```json
 "filterParam": {

@@ -50,8 +50,8 @@ Every expression is checked in one of two modes:
 When check mode reaches an expression that has no special rule, it synthesizes `T` and requires
 `T ≤ E` (else `E3002`).
 
-A bare identifier whose expected type is `ref C` (or contains such a branch) and which is not
-resolved statically is recorded as a **symbolic key**. Its existence is checked at evaluation
+A bare identifier whose expected type is `ref C` (or contains such a branch) and which resolves
+to no name (§4.1) is recorded as a **symbolic key**. Its existence is checked at evaluation
 (`E3501`, §9.4). The ambiguity test of §4.2 uses declared names only, never loaded keys.
 
 A declaration with a static error is **broken**. So is every declaration whose body names a
@@ -241,12 +241,15 @@ The keys of `C` are **known statically** when `C` is a top-level `let` whose ini
 table literal (possibly `{}`); the keys are those of the literal plus every `entry C.k`
 declaration. Every other collection (loaded, computed, keyed lists) has dynamic keys.
 
-For `ref C` with dynamic keys, steps 2 to 6 are tried first. If `n` resolves there to a value
-assignable to `ref C`, that value is used. If it resolves to a value of type `ref C?`, that is
-`E3403` (a `T?` where a `T` is expected, §6.3), never a key: an optional in scope does not silently
-turn into the key spelled like it (DECISIONS 303). Otherwise (no declaration, or one of another
-type) `n` becomes a **symbolic key** of `C`, checked at evaluation (`E3501`). `II_GEN_GOLD` in a `ref
-items` field is a symbolic key.
+For `ref C` with dynamic keys, steps 2 to 6 are tried first. A name that resolves there is that
+name, whatever its type, and never a key (DECISIONS 318, amending 303): a value assignable to
+`ref C` is used; a value of type `ref C?` is `E3403` (a `T?` where a `T` is expected, §6.5); a
+value of any other type, or a name that is not a value (a type, a built-in, a widget, a package), is
+`E3027`, whose message says to write the key as a string (`"n"`). The same holds wherever a key is
+expected: a key argument of `hasKey`, `get`, `find` and `xs[k]` (STDLIB.md §5, DECISIONS 318). Only
+a name that resolves nowhere becomes a **symbolic key** of `C`, checked at evaluation (`E3501`).
+`II_GEN_GOLD` in a `ref items` field is a symbolic key. For a dependent field (§11.4) the rule applies when some branch takes
+dynamic keys; when every ref branch has static keys, a bare name stays one of those keys.
 
 A string literal or an integer literal checked against `ref C` is a key too, if it is a
 literal of the key's type: a table key is written as an identifier or a string; a keyed-list
@@ -311,7 +314,7 @@ synthesize.
 | `a ?? b` | `a ⇐ E?`, `b ⇐ E`; without `E`: `a` synthesizes `T?`, then `b ⇐ T` |
 | `a == b`, `!=`, `<`, `<=`, `>`, `>=` | one operand is synthesized, the other is checked against its type (§7.5) |
 | arithmetic `a op b` | as for comparisons; the operator table (§7.1) then gives the result |
-| `x in xs` | `xs` synthesizes; `x ⇐` its element type (list, `Range`) or key type (map). On a keyed list or table, `x` is synthesized and may be an element or a key (STDLIB.md §5); a bare identifier not in scope is a key |
+| `x in xs` | `xs` synthesizes; `x ⇐` its element type (list, keyed list, table, `Range`; a `ref T` is also an element of a keyed list or table) or key type (map). A key of a keyed list or table is `E3026`, whose message names `hasKey` (STDLIB.md §5, DECISIONS 317) |
 | `x is c` | `c` is a case of the variant type of `x` (§8.3) |
 | `if` / `while` condition, `and`/`or`/`not` operands, `check`/`warn` condition, `where` predicate, comprehension `if`, `expect` comparison | `Bool` |
 | index `xs[i]` | `Int` (list), `Range` (slice), the key type (keyed list, table: `String` or `ref`), `K` (map) |
@@ -1251,6 +1254,9 @@ EVALUATION.md §11 gives the declaration rules and their codes (`E19xx`). For ty
 - A field default (TYP-15) may use constants, **earlier** fields of the same record, record
   parameters, and built-in functions; anything else (a package `let`, a user function, a later
   field) is `E3010`.
+- An optional field's default is `none`: a field `x: T?` without a default holds `none` when no
+  value is given. Writing `x: T? = none` is `W3001` (one form per meaning), and `canon fmt` removes
+  the `= none` (FORMATTER.md §10; DECISIONS 319).
 
 ---
 
@@ -1389,6 +1395,9 @@ source of diagnostics (DECISIONS 27); this table says when each code fires.
 | E3804 | error | §4.3, §11.4 |
 | E3805 | error | §11.1 |
 | E3806 | error | §4.3, §11.1 |
+| W3001 | warning | §15 |
+| E3026 | error | §5.1 (STDLIB.md §5) |
+| E3027 | error | §4.1 |
 | W3301 | warning | §16 |
 | W3401 | warning | §6.5 |
 | W3601 | warning | §12.6 |

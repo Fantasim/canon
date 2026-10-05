@@ -422,7 +422,7 @@ Inside `[`, line breaks are ignored; inside the nested `{`, they separate `job: 
 `level: level` (GRM-02).
 
 ```
-maxModels: Int? = none
+maxModels: Int?
   @deprecated("never read by LoadFromFile")
 ```
 
@@ -641,7 +641,7 @@ enum Element @codes(UInt8) { FIRE = 1, WATER = 2, ELECTRICITY = 3, WIND = 4, EAR
 variant EventKind @json(tag: "type") {
   spawn_item {
     itemId: ref items
-    groundLifetime: Duration(1m..=1d)? = none @json("groundLifetimeSec", unit: s)
+    groundLifetime: Duration(1m..=1d)? @json("groundLifetimeSec", unit: s)
   }
   nothing
 }

@@ -279,7 +279,7 @@ Encode `false` → `0`, `true` → `1`. Decode: only the integer tokens `0` and 
   `@json(none: X)` marker. `none` inside a list or map value (`[T?]`, `{K: V?}`) is always `null`.
 - **Decode** of a record field:
 
-  | JSON | Field `T?` without default, or `T? = none` | Field `T? = d` (non-`none` default) | Field `T = d` | Field `T` (required) |
+  | JSON | Field `T?` without default (`none`) | Field `T? = d` (non-`none` default) | Field `T = d` | Field `T` (required) |
   |---|---|---|---|---|
   | key absent | `none` | `d` | `d` | `E3302` |
   | `null` | `none` | `none` | `E3315` | `E3315` |
@@ -408,6 +408,9 @@ JSON source produces no finding (TYPES.md decides whether a Canon literal settin
 
 Retired entries are written everywhere (LOCK.md §7): in top-level rows and in nested tables. Keyed
 lists and plain lists have no retirement.
+Generated loaders and decoders accept `$id` and `$retired` in any object of a record that is a
+table element, not only in table position, for their own package's records and other packages'
+alike; a position-exact check is owed after v0.1 (log-2026-10-06, "gen/go re-verify FAIL").
 
 `load.dir` builds a list, keyed list or table from one file per element (§6.5).
 
@@ -858,7 +861,8 @@ emit json { out: "<path>", values: [v1, v2, …] }
   copy, written by the rules below as if it were `out` (CODEGEN.md §2.1, DECISIONS 229); its
   entries are all in file mode or all in directory mode (`E8009` `outForm`, DECISIONS 269).
 - `values` lists public top-level `let`s of the package. Default: every public `let`, in
-  declaration order (files in path byte order, then source order).
+  declaration order (files in path byte order, then source order). An empty list is `E8009`
+  `valuesEmpty`: omit `values` to mean every value (CODEGEN.md §2.1, DECISIONS 319).
 - **File mode**: `out` ends in `.json` (case-sensitive). `values`, explicit or default, must then
   have exactly one element [`E8150`]; the file is `out`. For a list of files, `E8150` is reported
   once per list (DECISIONS 270).
@@ -1036,11 +1040,11 @@ record Skill @json(case: snake) {
   id: String @json("dwID")
   reqMp: Int = 0 @json(path: "legacy.reqMp")
   reqFp: Int = 0 @json(path: "legacy.reqFp")
-  element: Element? = none @json(none: 0)
+  element: Element? @json(none: 0)
   flags: [Flag] where it.isUnique() = [] @json(bits)
   twoHanded: Bool = false @json("bTwoHanded", int)
   side: Side | "both" = "both"
-  castTime: Duration? = none @json(unit: s)
+  castTime: Duration? @json(unit: s)
   weights: {Element: Float} = {}
   export fn isFree(self) -> Bool { return reqMp == 0 and reqFp == 0 }
 }

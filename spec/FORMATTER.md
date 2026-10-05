@@ -22,7 +22,7 @@ DECISIONS 18 applies throughout: **the formatter never aligns columns.**
   its blank lines, and one bit per brace list: whether the list was written on one line (§6.1).
 - **Meaning is preserved.** Parsing the output gives the same AST as parsing the input, except for
   the changes listed in §10 (duration spelling, separators, import order, doc comment spacing,
-  project map sugar). No token is added, removed or reordered otherwise.
+  project map sugar, a redundant `= none`). No token is added, removed or reordered otherwise.
 - **Comments are preserved**, each one kept next to the token it was attached to (§8).
 - **Idempotence.** `fmt(fmt(x)) == fmt(x)` byte for byte, for every `x` that parses.
 - **Every file in `examples/` is a fixed point** (§15).
@@ -341,7 +341,7 @@ check columns.active().first()!.statuses.len() == 1
 farm.canon, a field whose annotation does not fit:
 
 ```
-  maxModels: Int? = none
+  maxModels: Int?
     @deprecated("never read by LoadFromFile: the real cap is FARM_MAX_MODELS = 100. Kept as is; changing it changes nothing in game.")
 ```
 
@@ -551,6 +551,7 @@ Global.farmPurchasePrice "Prix d'achat de la ferme"
 | parentheses | never added or removed |
 | doc comment | `///text` → `/// text` |
 | project map value | `key: { … }` → `key { … }` |
+| optional field default | `x: T? = none` → `x: T?`: the `= none` is removed when the field's written type ends in `?` (TYPES.md §15, `W3001`; DECISIONS 319); a comment on `= none` follows the field, an own-line one on the next line |
 
 The formatter also removes a leading BOM, converts `\r\n` to `\n`, and replaces indentation tabs by
 the canonical spaces.

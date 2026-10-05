@@ -397,6 +397,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     Their edits are `DryRun` and their builds `Check`, so running them never writes. Reason:
     `go test` lists only Examples with an output comment in the test main, so a compile-only
     Example is no root for `deadcode -test` and leaves every stub `dead-unreachable`.
+    [amended by 111]
 
 68. **`api/canon.go` keeps its name and holds what IMPLEMENTATION-PLAN §12.4 calls
     `project.go`** (options, FS, Project, open and close, packages, revisions, overlays). Reason:
@@ -523,6 +524,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     define tables its refs target, sorted by name (CODEGEN §5.8). `ir.File` and `ir.Generator`
     fix §4.5's generator signature. Reason: every fingerprint input and every construct of
     CODEGEN §5 is carried, typed, without map order reaching an output.
+    [amended by 282]
 
 81. **`diag` (M0.4) resolves spans through a `diag.Files` interface, not `*source.FileSet`**:
     `Path(id)`, `Position(id, pos)` and `Content(id)`; a file whose `Path` is `""` is no location
@@ -545,6 +547,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     names them in `Truncated`; `Summary.Merge` adds counts and sorts `Truncated` by package.
     There is no exported `Sort`: `Render` sorts a copy of what it is given (F2 across packages).
     Reason: no result depends on when `Truncate` or a late `Report` happened.
+    [amended by 105]
 
 84. **Text-form details API.md §4.4 leaves open**: every line is trimmed of trailing spaces (F9's
     "No line ends with a space" read as a rule of the whole form, so an empty line of a
@@ -581,6 +584,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     (`edit` cannot import `api`). `Step`, `Resolved` and `Resolve` wait for M4: they need
     `types.Type`, `value.Value` and a snapshot. Reason: an exact round trip is the strictest
     reading of "as parsed" and what §7.7's fuzz target checks.
+    [amended by 107]
 
 88. **Reading `canon.lock` (LOCK.md §2.4) tolerates exactly what it lists**: `Parse(id, data,
     pkg, bag)` reports `E6005` per bad line and returns `(file, ok)`. A blank line is empty or
@@ -720,6 +724,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
 
 104. **Constant folding during checking spends the step budget.** It is one counter per invocation
     (EVALUATION §12). Folding is evaluation, so it is charged the same way; nothing is free.
+    [amended by 244]
 
 105. **Findings are sorted in a total order; the duplicate kept is the least (M0 review MF-4).**
     `Bag.Findings()` and `diag.Write`/`Render` sort by the F2 key, then by every other field
@@ -731,6 +736,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     says so. A test reports duplicates in 64 shuffled orders from 1 to 8 goroutines and asserts
     identical findings, text and JSON. Reason: NFR-05 (Workers=1 and Workers=8 identical), and a
     "first" that scheduling decides is no rule.
+    [amended by 245]
 
 106. **API findings are written by `diag`, through a resolved form (M0 review MF-5).** `diag`
     gains `Located` (a finding with every span resolved to a `source.Location`), `Locate(files,
@@ -847,6 +853,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     E8102 and E3317 are reported by the verification pass `wire` owns, with their txtar tests,
     once values come from sources. Float text reuses `types.FloatText` (DECISIONS 78), so there is
     no `wire/float.go` (§12.4). Reason: the IR's values are verified; one encoder, two callers.
+    [amended by 283]
 
 116. **A top-level value is written as `rows` when its declared type is a list, keyed list or
     table, and as `value` otherwise, `[T]?` included** (`null` or the array). WIRE §8.2 says "when
@@ -899,6 +906,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     built from it once through `sync.OnceValue`; any other is a plain variable. A precomputed
     package fn is the one-cell case (`answerTable`). An optional result that nil cannot mark is a
     `{v, ok}` cell. Reason: the strict option, and one code path for methods and package fns.
+    [amended by 183]
 
 123. **Literals keep their Go type and value exactly.** A Duration is always `N * time.Millisecond`
     (`0 * time.Millisecond` too, so `const NoWait` is a `time.Duration`, not an untyped 0); a Float
@@ -906,6 +914,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     constant is refused (`ErrUnsupported`), since no Go constant holds it. A list literal longer
     than 80 bytes puts one item per line (the reference layout). An import is named only when its
     package name differs from its path's last element; two imports of one name are a collision.
+    [amended by 181]
 
 124. **What baked `gen/go` does not emit yet is refused, never skipped** (`ErrUnsupported`):
     translated fns and their conformance test (M2, CONFORMANCE.md), dependent types (their values
@@ -915,6 +924,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     without fields (it has no type to hold them), and a lookup parameter ref into another
     package's table. Modes other than `baked` are M2's. The id enum of a table exists for every
     public table value; its container, accessor and resolved refs only when the emit selects it.
+     [amended by 320, 323]
 
 125. **`internal/gen/go/runtime/rt.go.txt` holds CODEGEN §6.3 verbatim, as IMPLEMENTATION-PLAN
     §12.4 places it, although the audit then reports its eight codes as untested.** The text
@@ -1064,6 +1074,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     `help` included (CLI.md lists no help), is `canon: <error>` and the usage, exit 2. `--layer`,
     `--color`, `--lang` and `--watch` are not defined yet (exit 2): layers are applied from M3,
     and `E1901` lands with `--layer`. Reason: a new dependency is Louis's call.
+    [amended by 322]
 
 140. **Where findings belong before checking.** A file's parse findings go to the bag of the package
     its `package` line names. A file without a package line joins no package (it is in no unit,
@@ -1119,6 +1130,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     wrapped and exits 2, although API.md R3 does not list it and CLI.md §2.5 has no I/O exit code
     (departs from both, Louis-call 6); `ErrInternal` exits 3 with the report line, an interrupt
     130. Reason: correct before incremental (NFR-01 memoization is M4's workspace).
+    [amended by 196]
 
 144. **`init`, `new` and `version` outputs.** `canon init` names the project after its directory
     unless `--name` (an `IDENT`, else exit 2), writes `project acme {` / `canon: "0.1"` / `roots {}`
@@ -1236,6 +1248,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     iterating a non-iterable is `E3002` against `[_]`; indexing a type with no index is `E3007`
     with operator `[]`; `x op= e` with `e` optional is `E3402`; calling an optional function
     value is `E3402`. Reason: one reading per construct, the strictest code that fits.
+    [amended by 319]
 
 155. **Literals are checked against refinements statically, with verify's codes.** A scalar literal,
     a constant string and a list literal's length checked against a refined type report `E3201`,
@@ -1260,6 +1273,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     `W1002` to the selected packages (every example is documented). `W1003` is "on declarations of
     the selected packages only" (§9.2), and `check.Check` does not know the selection: it is not
     reported in M1 (gap for Louis: a selection for `Check`, or `W1003` in `build`).
+    [amended by 322]
 
 160. **Layers without imports.** `E1909` is reported when another loaded package declares the
     amended name (a layer file has no imports), a built-in name is `E1902`; `E1908`'s path starts
@@ -1284,6 +1298,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     variants such as `eof` and `depth` would read better (`JSON syntax error: ""` at the end).
     Spans are in the content `source.FileSet` normalized (`\r\n` read as `\n`), so a raw
     `\r\n` inside a string is reported as `"\n"` at the LF.
+    [amended by 208]
 
 163. **`jsonsrc` returns `E7105`'s cases; `load` reports them.** ERRORS.md gives `E7105` to `load`,
     so `jsonsrc.Parse` returns an `*EncodingError` (span, and the unpaired surrogate or 0) and
@@ -1340,6 +1355,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     of their own. The colon of `key: { … }` in `project.canon` is kept when a comment follows it.
     Reason: the strictest reading that keeps the tree, every comment in order at its token, and
     idempotence (fuzzed, and tested by injecting a comment at every position of every example).
+    [amended by 260]
 
 169. **Layout details FORMATTER §6–§7 leave open.** Hugging applies to a lone positional argument
     with no comment on its parentheses or at its edges. A postfix chain is its primary expression,
@@ -1369,6 +1385,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     non-idempotent input. Gap for Louis: §7.1's parenthesis could read "a group met in rest that
     holds a brace list counts in the mode of the command holding it; any other counts as FLAT
     unless it contains a hardline".
+    [amended by 212]
 
 171. **Expression details the part-B review settled (TYPES §5–§12).** Parentheses are
     transparent: checked once, a parenthesis's `Types` is its content's, `Conv` sits on the
@@ -1422,6 +1439,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     results. Files,
     globs, `at:` (`E7106`), CSV syntax (`E7113`), encodings (`E7105`) and `W7107` stay in `load`.
     Reason: one mapping, the file forms around it in the package that owns them (§3).
+    [amended by 220]
 
 174. **What decoding reports, and where.** Every finding carries the value's RFC 6901 pointer (a
     key's finding: its member value's) and no value path, which a keyed-list element's key,
@@ -1503,6 +1521,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     gives that case no Go type. An optional `Never?` field is omitted (§4.4); a plain `Never`
     reaches the generator only if stage E missed its `E8012`, and is refused. Messages name kinds
     (`Never`, `ref`), never their numbers.
+     [amended by 222, 320, 323]
 
 181. **A Float32 -0.0 is `float32(math.Copysign(0, -1))` (amends 123).** `math.Copysign` is a
     `float64`, which a `float32` field, element or value does not accept; the conversion keeps
@@ -1545,6 +1564,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     broken `entry` declaration poisons its let without a finding; retired members (`E3506`) and
     assets are left to stage B, which knows the retired-entry scope. Reason: one deterministic
     count, and no finding that another one already implies.
+    [amended by 199]
 186. **The evaluator's surfaces beyond IMPLEMENTATION-PLAN §4.8 (DECISIONS 148, Louis-call 7).**
     `eval` may not import `rules` or `verify` (§3), so `Evaluator.Run` returns `eval.CheckRun`
     (rules.Run's fields) and `Evaluator.Test(ctx, test, Builder)` takes a `Builder` (verify + the
@@ -1557,6 +1577,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     English no code or variant carries (gap). A broken test does not run (`TestRun.Broken`); a
     hard error outside an expect subject stops it and is reported. Reason: the frozen contract
     kept, every new surface one adapter away from its consumer.
+    [amended by 197]
 187. **Const cycles and layers (DECISIONS 172, EVALUATION §3.2, §9.3).** A broken const, when
     forced or met by a fold, has its initializer uses followed to a cycle through itself, which
     is reported from its first const in (file path, position) order at the use closing it, so
@@ -1646,6 +1667,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     because its encoded `$` keys need them (WIRE §5.11, 128), beyond §2.3's own-package wording.
     `E8101` skips TS `types` mode (it emits no values); its other cases land with M6. Reason: no
     finding that `build` could meet and `check` could not, and no error hidden behind another.
+    [amended by 222, 319]
 
 195. **The evaluator's resource bounds and details the eval review settled (EVALUATION §3.3,
     §12; STDLIB §4.2).** `E4402`'s 10 000 frames count every live user frame of the invocation,
@@ -1663,6 +1685,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     nested deeper than the host stack allows, and shared values whose tree is exponential
     (`l = [l, l]`) under the free verification walk, are bounded only by these walks being
     iterative and charged: a code or value-size limit needs ERRORS.md and value.go (Louis-call).
+    [amended by 210]
 
 196. **What `build` does where the spec is silent (the build review).** An error in any loaded
     package, selected or imported, blocks code, data and lock; the imported package's error
@@ -1695,6 +1718,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     evaluator runs (`in`, `contains`, `indexOf`, map and set lookups) charge one step per
     composite pair visited through `value.EqualUpTo` (amends TYPES §7.5 and §12.1's one node), so
     comparing wide shared values runs into `E4401`; the pair memo starts past a named threshold.
+    [amended by 199, 210]
 
 198. **A fieldless case's doc goes on its kind member (CODEGEN §2.6, §5.2; the gen/go review).**
     A case's doc sits on its Go type; a case with no fields has no type, so its doc goes on the
@@ -1814,6 +1838,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      which stay apart everywhere (§8.1: formatting never moves or merges a doc comment). Reason: an
      enum member named `in` reparsed as a continuation (E1116) or could not end a line (E1117);
      two `///` blocks merged (progen and fuzzing, overnight run).
+     [amended by 302]
 
 212. **`fits` measures a group as the printer prints it (amends 170).** A group met while measuring
      is broken if it holds a hard line break, or its own written-broken bit is set, **and its holder
@@ -1832,6 +1857,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      the name built on the type's default name is valid; otherwise the item keeps its own E8011. The default Go `package` (the last
      element of `out`) is validated like a written one: not a Go identifier, or a keyword, is E8009
      `package` at the emit. Reason: A3 ir review (overnight run).
+     [amended by 215]
 
 214. **Every syntax error breaks the declaration holding it; misplaced constructs are still
      checked.** TYPES.md §1 (a declaration with a static error is broken) holds for lexer and parser
@@ -1863,6 +1889,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      whatever follows it (stable under sorting, so idempotent); it moves with the name before it,
      and the formatter's same-comments invariant pairs its comments with that name. Reason: FuzzFormat found
      `record A{A:A\n///\n,A:A}` changing W1001 (overnight run).
+     [amended by 260]
 
 217. **E2001 is judged once, by `build`, on the whole project's package clauses.** A directory's
      packages are a property of the layout, which only phase 1 (every file parsed) sees whole:
@@ -2038,6 +2065,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      token; bits and pairs lists are rewritten whole at the parent, changed members only. Reason:
      log-2026-09-29 M4 U4b round 3, U1b-r, B3, B3-r2, Cleanup-A, Cleanup-A-r, B7-r3, B11, B11-r,
      B11-r2, B11-r3, B11-r4.
+     [amended by 259]
 
 236. **Operation values: what is a `ValueError` (API.md §8.2, §8.8, E25).** Invalid UTF-8 is
      `ErrBadValue`. For `FromJSON`, a wire value of the wrong shape or type (and invalid JSON,
@@ -2068,6 +2096,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      symbol is carried as `FromJSON`. A `load.dir` entry is renamed by its stem. Reason:
      log-2026-09-29 M4 "E1 vs E21 order", U4b, U4b-r, U4b round 3, U5b, B3, B3-r, B3-r2, B7, B7-r,
      B7-r2, B7-r3, B7-r4, B10, B10-r2, B11, B11-r.
+     [amended by 257]
 
 238. **What `Refs` lists (API.md R7).** A ref or member value is stated when its provenance is a key
      or name token, else computed (EVALUATION §13 left it open): a computed value is a `value` ref
@@ -2183,6 +2212,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      mode; a `project.canon` with a syntax error writes nothing and exits 1; a symbolic link is
      never replaced; `-q` keeps the list and the diffs. Reason: log-2026-09-29 M4 "`--json-sources`
      vs evaluates nothing", U2 small calls, U2-r, U2b, U2b-r, B11-r3, B11-r4.
+     [amended by 259]
 
 248. **`--watch` cycles (IMPLEMENTATION-PLAN §8.1; CLI.md §3.3).** A failed re-check is a cycle that
      shows only its own findings as added; the state after it is the last good findings plus the
@@ -2218,6 +2248,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      the on-disk cache stays inert in M4. Incremental equals cold in everything observable. Reason:
      log-2026-09-29 M4 "EditResult has no JSON form", "`Options.Cache` and `Options.Workers`",
      U11-r, U7a, U7a-r, B3, U7b, U7b-r, U7b-r2, U7b-r3.
+     [amended by 261]
 
 252. **What an edit affects: read sets by real path (API.md E17, E18, S5, V13).** A package owns
      every file of its read set (S3, S5). The read set names each file by its real path, resolved
@@ -2290,6 +2321,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      completes it). An op after a JSON record an earlier op left undecodable stays refused
      (`ErrNoValue`, E1). Reason: log-2026-09-29 M4 U-E22, U-E22-r (the driver-first reordering U-E22
      tried is withdrawn), "M4.1 inputs", "Sync 2 review: the Undo verification gate".
+     [amended by 273]
 
 258. **M9 judges a file in its role, on its raw bytes (API.md M9; FORMATTER.md §13).** M9's fixed
      point is the one `canon fmt` gives for the file's role (GRAMMAR §5.2): a file other than
@@ -2617,6 +2649,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      treats the field as having no default (`E8014`). An internal error of the evaluator always
      names its place, the value evaluated and the function that met it. Reason: B1 (sweep ICE),
      log-2026-10-03.
+     [amended by 323]
 
 283. **E8102 is a verification finding, export fn results included (WIRE.md §5.1, §5.3, §5.4;
      IMPLEMENTATION-PLAN §3).** A value with no wire form for its field (not a whole number of its
@@ -2638,6 +2671,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      results (`json`, and `go`, `cpp`, `ts` in the modes that carry them), judged on types, never a
      build crash or an endless precompute. `E8019` gains a `json` variant, an `emit json` having no
      mode. Reason: WB2 and the wire self-cycle bug, log-2026-10-03.
+     [amended by 324]
 
 285. **Language server queries over values (IMPLEMENTATION-PLAN §8.4; CLI.md §4; follows 274).**
      Definition and references start from a position inside a JSON buffer as from a Canon one. A
@@ -2690,6 +2724,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      only the owning package's emit writes, and §2.8's cross-package decoders cover fields only.
      Lifting it is the later item with §2.2 vs §2.8 (log-2026-10-03 "GG rulings"). Reason: CX (a
      C++ value that checked clean and did not compile), log-2026-10-03.
+     [amended by 320, 323]
 
 292. **Kind and Pair constants; record field cycles (CODEGEN.md §4.4; ERRORS.md §1.4).** A constant
      of type `Pair` (`[1, 2].enumerate()`, `zip`) has no representation in generated code: `E8012`,
@@ -2729,6 +2764,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      `.sql` files and `catalog.json` format 1, computed by build-time export fns (ADR L-0111 d.1.3,
      d.1.8); a JSON `$fns` extractor would live outside Canon and need an emitted value
      (log-2026-10-04).
+     [amended by 300, 308]
 
 295. **`TargetText` in the API (API.md §13.1 B1b; WIRE.md §10).** `canon.Target` gains `TargetText`
      (`"text"`), the target of DECISIONS 294: `BuildOptions.Targets` may select it, `Output.Target`
@@ -2788,6 +2824,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      resolved against `ref C?` and used (B5). Reason: TE found `same == pick` silently comparing
      with the key "pick" (a wrong answer, no finding); R4 found the same in arguments, `in` and
      `contains`. log-2026-10-04.
+     [amended by 318]
 
 ## 2026-10-05 — Louis: describing history, and every ban has a way out
 
@@ -2889,6 +2926,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      in turn. The `key` reason of §7.2 no longer refuses a rename. Undo is the inverse rename.
      Reason: Emberfall #3: such an entry could never be renamed; no decision chose the refusal,
      and §7.2's own row says keys change only with Rename.
+     [amended by 316]
 
 311. **A translated fn checks each parameter in turn (CONFORMANCE.md §2.3, §4).** Each parameter
      is checked for representability (`E8303`, `E4104`), then its sized type, then its range,
@@ -2908,6 +2946,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      a discriminant read through a ref or optional (307's cases). `E8018` stays: a baked emit has
      no decoders by design (§2.2). Reason: Emberfall had to reshape its data model around them,
      against "elegance over legacy".
+     [amended by 320, 323]
 
 313. **API additions from Emberfall (API.md §5.5, §11, S8; additive under IMPLEMENTATION-PLAN §4's
      review rule).** `func (p *Project) Info(ctx context.Context) (ProjectInfo, error)` with
@@ -2929,6 +2968,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      (`ref ms` in `[S] keyed by m` was judged as an element and never matched); the fix found
      `[S] keyed by m`, `m: ref pool`, `pool: table S`, where a `ref pool` is both, and only the key
      reading can ever be true (log-2026-10-05).
+     [amended by 317]
 
 315. **A let path names a field's collection instance (TYPES.md §6.3, §10.2, §10.3; EVALUATION.md
      §4.2).** `ref v.f….g` (a path through record fields of a top-level let) targets the
@@ -2944,6 +2984,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      Level-1 refs and other instances' collections are unchanged. Reason: `let e: ref z.spawns =
      z.spawns.at(0)` was `E3503` and `ref z.spawns` never equalled its entry, because one
      collection had two names (found while fixing Emberfall #1; log-2026-10-05).
+     [amended by 316]
 
 316. **Ref keys: refs and cycles (TYPES.md §9.1; API.md §5.3, E11; ERRORS.md E3012; amends 310,
      315).** A key token typed `ref C` in a path (a layer's `amend y { ts[wolf].k: 3 }`) is a ref of
@@ -2953,6 +2994,77 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      keyed by refs to each other) has no base key type: `E3012`. Reason: the 310 review found a
      layer path silently left stale, refs through record-field lists not found, and a self-keyed
      list overflowing the stack in edit's path resolution (log-2026-10-05).
+
+## 2026-10-06 — Louis: the design audit and v0.1.0 (meta/handoff/2026-10-06-design-audit.md)
+
+317. **`in` takes elements; keys use `hasKey` (STDLIB.md §5; amends 314).** `x in xs`,
+     `xs.contains(x)` and `xs.indexOf(x)` take an element only (a type assignable to `T`, or
+     `ref T`). A key is tested with `xs.hasKey(k)` (or `xs.get(k) != none`). A key on the left of
+     `in` is a type finding whose hint names `hasKey`. Reason: 314 ranked three readings of one
+     operator; one meaning per operator (Louis, audit).
+
+318. **A name in scope is never a symbolic key (TYPES.md §4.1; amends 303).** When `n` resolves in
+     scope (lookup steps 2-6), it is that name, whatever its type; a wrong type is a type finding
+     whose hint says to write the key as a string (`"n"`). Only an unresolved name is a key.
+     Reason: `fn f(pick: String) -> ref rows { return pick }` silently returned the entry named
+     "pick" (audit); 303 had fixed the optional case only.
+
+319. **One form per meaning (TYPES.md §5, §15; CODEGEN.md §2.2).** An optional field's default is
+     `none`: writing `x: T? = none` is a warning and `canon fmt` removes the `= none`. An explicit
+     `values: []` in an emit is refused: omit `values` to mean every value. Reason: both spellings
+     were mixed across the examples (154, 194).
+
+320. **v0.1.0: shared records across packages, and honest refusals (CODEGEN.md §2.2, §2.8, §5;
+     ERRORS.md E8019, E8013; amends 124, 180, 291, 312).** A record, variant or table of another
+     package can be used in values and in data in every target and mode (lifts ForeignDataRecord,
+     CrossPackageBakedValue and the other foreign refusals; settles §2.2 vs §2.8). Every remaining
+     generator limit is refused by `check` (stage E), never first by `build`: Go `embedded`, Go
+     `types` and C++ `embedded` modes, legacy C++ structs (M6), and a dependent value decided
+     through a ref or an optional in baked emits and loaders. Each such message names its way out
+     (DECISIONS 305); `E8013` no longer points at a mode that fails. Owed for v0.2: those modes and
+     the ref-driven dependent values. Reason: Louis, audit: Canon accepted programs its generators
+     refused; the cross-package case forced copied types (Emberfall), the rest have no user yet.
+     [amended by 323]
+
+321. **Louis's calls on the audit.** Entry-level isolation of a poisoned table (309) comes after
+     v0.1; the source-only edit path stays until then. `past` (304) is frozen as built: no
+     extension without a real use. Input defaults and reusable input records (E1907, E1903) wait
+     for the first service that uses Canon.
+
+322. **Hygiene before v0.1.0.** A DECISIONS item that a later one replaces carries "superseded by N"
+     or "amended by N"; every catalogued code is reported somewhere, or listed in ERRORS.md as reserved with its owner
+     (`E8103`, `E8106`-`E8109`: legacy C++ structs, M6; `E8301`: the embedded mode, v0.2; `E4201`:
+     an internal safety net); `E5004`, `E5005`, `W8006` are reported now, and `W1003` in `build`,
+     which knows the selected packages (the open choice of DECISIONS 159);
+     `canon help` and `-h` print the usage and exit 0.
+
+323. **Shared records across packages: make hooks (CODEGEN.md §2.2, §2.8, §5.9, §8; ERRORS.md E8018,
+     E8019; IMPLEMENTATION-PLAN §4.5; amends 124, 180, 279, 291, 320).** Every go and cpp emit, in
+     every mode, writes JSON-free make hooks for each public record, case, variant and dependent
+     type (Go `Make_<T>`, `Make_<V>_<Case>`, `Make_<D>_<Branch>`; C++ `detail::<P>Make`), with the
+     getters' types as parameters; they are for generated code, not an API contract (like `T{}`,
+     DECISIONS 4). A reader or literal in package Q builds another package's value itself through
+     them (TS: an object literal), whatever that package's mode: §2.8's cross-package decoders and
+     E8018 are removed; a package's public decoders (§5.13) stay `types`-mode API only. A table of
+     another package's record has rows of the holding package's own type `<Element>Row` (Go: the
+     record embedded; C++: a base class) with `id` and `retired`; its id type is the holding
+     package's. In C++ a value of another package's record loads through the free `Load<V>` of the
+     holding namespace. In TS a row record's interface declares `id?` and `retired?`, and containers
+     are typed with a `CanonRow<T, K>` helper. A package Q reaches only through another package's
+     types needs its go and cpp emits in Q's imports, as TS already does (279). What stays E8019:
+     `ForeignResolvedRef` (a foreign record whose ref the owner's data loader resolves inside its own
+     value) and `ForeignTableLookupParam` without an id enum, each message naming its way out.
+     Louis accepted the make hooks and the TS `id?` change (2026-10-06).
+
+324. **Precomputed results are verified (EVALUATION.md §2.3, §5; amends 284).** Every result a
+     stage-E precomputation stores (a parameterless method per receiver, each finite cell, a
+     parameterless function) is verified and instance-checked like an `expect` subject (§10.2)
+     before it reaches the IR: symbolic names resolve against the computed branch (TYPES §11.6),
+     refs exist and are not retired, record checks hold. Findings sit at the value, with the
+     `while computing f(…)` frame; an invalid or poisoned result is a missing cell, which blocks
+     the emit. Reason: found by the 2026-10-06 fix wave: `bonus: loud` in an `export fn` result
+     reached gen as a raw symbol, and a dangling ref, a failing check and a retired member were
+     emitted silently; a silent wrong answer.
 
 ## Still open
 

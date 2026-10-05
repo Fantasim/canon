@@ -287,6 +287,7 @@ the same collection is also accepted.
 | `xs[k: KT]`, `xs.k` | entry with key `k` (`.k` only for identifier keys) | `E4002` if missing | 0 |
 | `get(k: KT) -> T?` | entry with key `k` | | 1 |
 | `find(k: KT) -> T?` | same as `get` | | 1 |
+| `hasKey(k: KT) -> Bool` | an entry with key `k` exists (same as `get(k) != none`) | | 1 |
 | `at(i: Int) -> T` | entry at position `i`; negative counts from the end | `E4002` if out of range | 1 |
 | `keys() -> [ref T]` | the keys, in order | | n |
 | `values() -> [T]` | the entries, in order | | n |
@@ -294,13 +295,10 @@ the same collection is also accepted.
 
 `get` on a keyed collection takes a **key**, while `get` on a plain list takes a position.
 
-Membership: `x in xs` and `xs.contains(x)` accept either an element (`T` or `ref T`: true when
-an element equals it, entries by identity) or a key (`KT`: true when the key exists). The static
-type of `x` decides, an exact type first: `KT` is a key; else a type assignable to `T` or `ref T`
-is an element; else a
-type that converts to `KT` (an entry of `KT`'s target) is a key, and a value that is not an entry is
-not found (`false`, no finding). `indexOf` follows the same rule. A bare identifier that does not
-resolve in scope is a key (TYPES.md §4.1; DECISIONS 314).
+Membership takes an element only (DECISIONS 317): `x in xs`, `xs.contains(x)` and
+`xs.indexOf(x)` take a value of a type assignable to `T`, or a `ref T` (true when an element
+equals it, entries by identity). A key is tested with `xs.hasKey(k)` (or `xs.get(k) != none`).
+A key where an element is expected is `E3026`, whose message names `hasKey`. A key is a value of the key type `KT`, or a `ref T` into this same collection; a ref into another collection is `E3002`. A value that is not an entry of the key's target has no key: `hasKey` answers `false` and `get` `none`, with no finding (DECISIONS 317).
 
 ---
 

@@ -118,8 +118,14 @@ A method of an imported type is also precomputed on the receivers this package h
 their encoded `$` keys need it (WIRE.md §5.11). Every receiver and every cell is evaluated, and
 each failure is reported: nothing stops at the first. An evaluation error there is a finding at
 the failing expression. Its outermost stack frame names
-the fn and its inputs: `while computing canTransition(open, taken)`. `canon check` runs stage E
-too, so `check` and `build` report the same findings.
+the fn and its inputs: `while computing canTransition(open, taken)`. Each stored result is then
+verified (§5) and instance-checked (§8.1) like an `expect` subject (§10.2), its findings at the
+value with no value path (a temporary, §13) and always under the same frame, added when the
+value's own stack lacks it (a stored field or a default passed along) and shown as the
+outermost frame even past the cap, the count of hidden frames staying exact; the verification is
+charged to the precomputation's root (§12.2); an invalid or poisoned result is a missing cell or receiver, which
+blocks the emit (§7.1; DECISIONS 324). `canon check` runs stage E too, so `check` and `build`
+report the same findings.
 
 Translated functions (runtime inputs) are evaluated only to compute conformance vectors
 (CONFORMANCE.md). Those evaluations never consume the project budget, and an evaluation error
@@ -252,7 +258,7 @@ Verification findings are soft. The offending sub-value is marked invalid. Type 
 evaluated here cost steps (§12); an evaluation error inside one is a hard error charged to the
 value being verified.
 
-`expect` subjects are verified the same way (§10.2).
+`expect` subjects (§10.2) and precomputed results (§2.3, DECISIONS 324) are verified the same way.
 
 ---
 

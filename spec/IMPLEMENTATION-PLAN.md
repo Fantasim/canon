@@ -458,7 +458,7 @@ type Package struct {
     Name     string          // "pipeline"
     Dir      string          // display path of the package directory
     Doc      string
-    Imports  []*PackageRef   // packages whose types or values are referenced, with their emits per target; one a ts emit reaches only through other packages' types carries its ts emits only (DECISIONS 279)
+    Imports  []*PackageRef   // packages whose types or values are referenced, with their emits per target; one an emit of this package reaches only through other packages' types carries its emits for every target an emit of this package reaches it with (DECISIONS 279, 323)
     Types    []Type          // every public type, in declaration order (files in path order)
     Consts   []*Const
     Values   []*Value        // public values selected by the emit's `values`
@@ -511,6 +511,7 @@ type ExportFn struct {
     Kind    FnKind           // Precomputed | Lookup | Translated (SPEC §9.4)
     Results []value.Value    // Precomputed: one per receiver value, in value order
     Table   *LookupTable     // Lookup: dense, in CODEGEN.md §5.10 domain order (CG-08)
+    Domains [][]value.Value  // Lookup: each parameter's domain in §5.10 order, receivers or not (DECISIONS 323, §4 review rule)
     Body    PExpr            // Translated: portable-subset expression tree, typed
     Vectors []Vector         // Translated: from internal/conform
 }

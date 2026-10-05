@@ -46,6 +46,7 @@ the network.
 | `canon rename <name> <new>` | rename a Canon name everywhere it is used |
 | `canon version` | compiler and language versions |
 | `canon guide [topic]` | the agent guide: the language and the workflow, for an AI agent |
+| `canon help` | the usage, then `more: canon guide`; also `-h`, `--help`, `canon <command> -h` (exit 0, DECISIONS 322) |
 
 ---
 
@@ -142,7 +143,7 @@ is given with it in §3.
 
 | Code | Meaning |
 |---|---|
-| 0 | success |
+| 0 | success; also `canon help`, `-h` and `--help`, which print the usage to stdout (DECISIONS 322) |
 | 1 | at least one error finding, or `--check` found something out of date |
 | 2 | usage error: bad flag, unknown package, missing `project.canon`, a `--layer` name that matches no layer file (`E1901`) |
 | 3 | internal compiler error (a bug in `canon`; the message says how to report it) |

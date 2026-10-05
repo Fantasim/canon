@@ -552,7 +552,7 @@ record Window {
   day: Weekday
   startUtc: TimeOfDay
   endUtc: TimeOfDay
-  note: String? = none
+  note: String?
 
   check startUtc != endUtc else "zero-length window"
 
@@ -563,7 +563,8 @@ record Window {
 
 - A field is `name: Type`, optionally `= default`, optionally followed by annotations.
 - A field is **required** unless it has a default or an optional type. An optional field without
-  a default defaults to `none`.
+  a default defaults to `none`; writing `= none` is a warning (`W3001`), and `canon fmt` removes it
+  (DECISIONS 319).
 - A default may use constants, earlier fields of the same record and the standard library; not
   package values or user functions.
 - Records are **closed**: an unknown field in a literal or a loaded file is an error (`E3301`),
@@ -581,7 +582,7 @@ record Window {
 
 ```
 record HourlyTarget(e: EventType) {
-  ratesBySpecific: {Param(e) | "default": {Stage: Int(0..)}}? = none
+  ratesBySpecific: {Param(e) | "default": {Stage: Int(0..)}}?
 }
 ```
 
@@ -750,7 +751,7 @@ type Param(e: EventType) = match e.param {
 
 record Task {
   eventType: ref eventTypes
-  filterParam: Param(eventType)? = none // a field type may use earlier fields
+  filterParam: Param(eventType)? // a field type may use earlier fields
 }
 
 record QuestConfig {
@@ -880,7 +881,9 @@ status keys.
 - **Keys not yet known.** When the expected type is `ref C` and the identifier matches no
   declared name, it is recorded as a symbolic key and checked once `C` is evaluated (`E3501` if
   absent). This is how keys of loaded collections (`load.defines`, `load.dir`) are written. The
-  ambiguity test uses declared names only, never loaded keys.
+  ambiguity test uses declared names only, never loaded keys. A name in scope (a local, a
+  parameter, a field, a package, imported or built-in name) is never a key, whatever its type:
+  one of the wrong type is an error; write the key as a string (`"n"`) (DECISIONS 318).
 
 ### 6.3 Equality and ordering
 
@@ -939,7 +942,9 @@ A `?.` that meets `none` skips the rest of its postfix chain (§5.6).
 
 ### 7.3 Comparison and membership
 
-- `a in xs` tests membership in a list, the keys of a map or table, or a range.
+- `a in xs` tests membership among the elements of a list, keyed list or table, the keys of a map,
+  or a range. A key of a keyed list or table is tested with `xs.hasKey(k)`: on the left of `in` it
+  is an error (DECISIONS 317).
 - `v is case` tests a variant's case. The right side is a case name (possibly qualified), resolved
   against the variant of the left side, not an expression.
 - Comparisons do not chain: `a < b < c` is an error; write `a < b and b < c`.
@@ -1415,7 +1420,7 @@ emit view { out: "@web/studio/generated/items.view.json" }
 | Option | Targets | Meaning |
 |---|---|---|
 | `out` | all | go, cpp: a directory; ts: a file ending in `.ts`; json: a file when it ends in `.json`, else a directory (§14.3); view: a file. Except for view, a list of such paths writes one copy per entry (§14.6) |
-| `values` | go, cpp, ts, json | which public values to emit; default: all public values |
+| `values` | go, cpp, ts, json | which public values to emit; default (option omitted): all public values; an empty list is `E8009` |
 | `mode` | go, cpp, ts | `baked` (default), `embedded`, `data` or `types` (§14.2) |
 | `package` | go | Go package name (default: the last element of `out`, which every entry of a list must share, else `E8009`) |
 | `namespace` | cpp | C++ namespace (default: the package path with `.` replaced by `::`) |
@@ -1525,8 +1530,8 @@ runtime can trust the data because it can only receive data this exact schema ha
 Generated code for a package uses the generated code of the packages it imports; an imported type
 is referenced, never re-emitted.
 
-- If a package's output uses a type of another package, that package must emit the same target
-  (`E8004`).
+- If a package's output uses a type of another package, directly or through the types of other
+  packages, that package must emit the same target (`E8004`).
 - **Copies** (DECISIONS 229, 269). An emit whose `out` is a list writes one copy per entry, each
   with the same mode and options; two entries may not share an owning root (the closest declared
   root, or the project for an output under none) (`E8009`). A copy owned by root R uses an imported
@@ -1538,9 +1543,13 @@ is referenced, never re-emitted.
 - C++ includes the imported package's header by its path relative to the including file's
   directory (`#include "../vocab/vocab.gen.h"`).
 - TypeScript uses relative imports computed from the `out` paths, with `.js` specifiers.
-- A record or variant of package P held inside a type that another package decodes from JSON
-  needs P's emit for that target in `data`, `embedded` or `types` mode, which provides decoders
-  (`E8018`).
+- A record, variant or table of package P can be used in the values and data of another package
+  Q in every target and mode, whatever P's mode: Q reads P's wire with its own readers and writes
+  P's values itself, through the **make hooks** every Go and C++ emit of P writes (TypeScript: object
+  literals); a table of P's record held by Q has rows of Q's own row type and Q's id type
+  (DECISIONS 323). Two cases stay refused (`E8019`), each naming its way out: a record of P whose
+  ref P's data loader resolves inside P's own value, and a lookup function taking a ref into a
+  table of P when P's emit has no id enum for it.
 
 Details: [spec/CODEGEN.md](spec/CODEGEN.md).
 
@@ -1554,7 +1563,9 @@ runtime helper files are in [spec/CODEGEN.md](spec/CODEGEN.md), which wins on de
 ### 15.1 Common rules
 
 - **Read-only, always.** Every field of a generated type is private and has a getter. There are no
-  setters. Only generated loaders and decoders fill values.
+  setters. Only generated loaders, decoders and make hooks fill values; a make hook
+  (`Make_<T>`, C++ `detail::<P>Make`) exists for the generated code of other packages, not for
+  runtimes (spec/CODEGEN.md §5.14).
 - **Files.** Per emit, and per copy of a list `out` (§14.6): Go `<out>/<gopkg>.gen.go` and the
   helper package `<out>/rt/rt.go`; C++ `<last>.gen.h`, `<last>.gen.cpp` and the runtime headers
   `canon_runtime.h` (always) and `canon_runtime_json.h` (`embedded`, `data` and `types` modes), plus
@@ -1662,7 +1673,7 @@ UpperCamel, without `Get`: `IsStrong()`, `HealFor(missingHp)`.
 **Classes.** Members are private (`heal_`), and there are no setters. Default constructors are
 public: a default-constructed value holds zeros and defaults and can never be modified, and
 generated classes hold each other by value. Values are built by `detail::<P>Access`, defined only
-in `<last>.gen.cpp`.
+in `<last>.gen.cpp`, and, from other packages, by the make hooks of `detail::<P>Make`.
 
 **Lookups never allocate.** Containers keep a sorted index: `Find(std::string_view key) -> const
 T*` is a binary search over `std::string_view`s, and `FindByCode(…)` likewise. `At(i)`, `Len()` and
@@ -1673,7 +1684,9 @@ add `Get(<Element>Id) -> const T&`.
 and `embedded` modes emit `const <V>& Get<V>()`, whose data is a function-local `static const`
 (no static initialization order problem). `data` mode emits
 `static std::shared_ptr<const <V>> <V>::Load(const std::string& path, std::string& error)`; the
-shared pointer to const is a whole snapshot, so a runtime can reload by swapping the pointer.
+shared pointer to const is a whole snapshot, so a runtime can reload by swapping the pointer. A
+value of another package's record has the free `Load<V>(path, error)` of the emit's namespace
+instead.
 `types` mode emits `static std::optional<T> T::Decode(const nlohmann::json& json, std::string&
 error)` for each public record and variant.
 
@@ -1747,7 +1760,8 @@ Worked `ItemProp` example: [spec/CODEGEN.md](spec/CODEGEN.md) §7.8.
   unions discriminate on `branch`. Refs are key strings, resolved with the container's
   `find(key)`. An optional is `T | null`.
 - Tables and keyed lists are `CanonTable` values (`statuses.find(key)`, `at(i)`, `length`, `all`);
-  in `baked` and `embedded` modes their key types are literal unions.
+  in `baked` and `embedded` modes their key types are literal unions. A table's rows are
+  `CanonRow<T, K>`: a row record's interface declares `id?` and `retired?`, present on every row.
 - `Int` is `number`. A value outside `Number.MAX_SAFE_INTEGER` in an emitted value is `E8101`,
   unless the field is annotated `@ts(bigint)` (the only way to get a `bigint`, also for `UInt64`).
   Translated functions check integer inputs with `Number.isSafeInteger` and throw
@@ -1976,7 +1990,7 @@ record Item {
   nameKey: String
   icon: ItemIcon // §16.5
   level: Int(1..=150)
-  job: ref jobs? = none
+  job: ref jobs?
   kind: ItemKind @json(inline)
 
   fn name(self) -> String { return names.get(nameKey) ?? nameKey }
@@ -2517,9 +2531,10 @@ identity). Methods that return a list return a plain list.
 predicates take `(k, v)`.
 
 **Tables and keyed lists** add key access to the list methods: `xs[k]` and `xs.k` (the entry with
-key `k`, `E4002` if missing), `get(k) -> T?` and `find(k) -> T?` (by key), `at(i) -> T` (by
+key `k`, `E4002` if missing), `get(k) -> T?` and `find(k) -> T?` (by key), `hasKey(k) -> Bool`, `at(i) -> T` (by
 position, negative from the end), `keys() -> [ref T]`, `values() -> [T]`, and, on tables,
-`active()` (the entries not retired, as a `[T]`). `x in xs` accepts an entry or a key.
+`active()` (the entries not retired, as a `[T]`). `x in xs`, `contains(x)` and `indexOf(x)` take
+an element (an entry or a `ref T`), never a key: a key is tested with `hasKey(k)`.
 
 **Ranges:** `r.start`, `r.end`, `r.len()` (`max(end − start, 0)`), `r.isEmpty()`,
 `r.contains(x)` (same as `x in r`); `.end` and `.len()` of an open range are `E4002`.

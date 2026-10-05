@@ -21,8 +21,12 @@ other file declares a code or holds message text.
   is static and belongs to `check`.
 - **Text and JSON forms** of a finding: API.md §4.2 (JSON) and §4.4 (text: header, `expected by`
   lines, summary).
+- **Reserved codes** are catalogued but not reported yet, each with its owner (DECISIONS 322):
+  `E8103`, `E8106`-`E8109`, `E8201` (legacy C++ structs, M6; `LegacyStruct` refuses them first, DECISIONS 320), `E8301` (the embedded mode, v0.2), `E4201`
+  (an internal safety net, EVALUATION.md §4.5).
 - **Retired numbers** are never reused: `E1624` and `E1625` (the view `row` item, removed by
-  DECISIONS 21), `E8016` (merged into `E8153`). `E3014` and `E3319` were referenced once but never
+  DECISIONS 21), `E8016` (merged into `E8153`), `E8018` (decoders across packages, removed by
+  DECISIONS 323: a package reads another package's classes with its own readers). `E3014` and `E3319` were referenced once but never
   defined; their cases are `E6003` and `E3316`.
 
 ---
@@ -100,8 +104,10 @@ wording is a variant, and a closed set of words is a `Kind`.
 | Kind | Word | Used by |
 |---|---|---|
 | `Array` | an array | `E7110` |
+| `BakedMode` | baked | `E8013` |
+| `BakedOrEmbeddedMode` | baked or embedded | `E8013` |
 | `Boolean` | true or false | `E7110` |
-| `Builtin` | built-in | `E3016` |
+| `Builtin` | built-in | `E3016`, `E3027` |
 | `Case` | case | `E1133`, `E1613`, `E1627`, `E3003`, `E3603`, `E6002` |
 | `CaseField` | a case used as a type | `E8019` |
 | `Check` | check | `E1133` |
@@ -110,20 +116,20 @@ wording is a variant, and a closed set of words is a `Kind`.
 | `Const` | const | `W1003`, `E1125`, `E1133` |
 | `ConstValue` | const value | `E3015` |
 | `ConstantString` | a constant string | `E1119`, `E8009` |
-| `CrossPackageBakedValue` | a value of a record, variant or table of another package | `E8019` |
 | `DefineKey` | a lookup parameter that refs a load.defines table | `E8019` |
 | `DefineTable` | define table | `E1627` |
-| `DependentType` | a dependent type | `E8019` |
+| `DependentDefault` | a default holding a dependent value, read by a decoder | `E8019` |
+| `DependentOutsideField` | a dependent value outside a record field (in a map, a literal union, or a value or result of its own) | `E8019` |
+| `DependentType` | a dependent value decided through a ref, an optional or a record parameter | `E8019` |
 | `Emit` | emit | `E1133` |
 | `Entry` | entry | `E1133`, `E6002` |
-| `Enum` | enum | `W1002`, `W1003`, `E1125`, `E1133`, `E1627`, `E6001` |
+| `Enum` | enum | `W1002`, `W1003`, `E1125`, `E1133`, `E1627`, `E3027`, `E6001` |
 | `EnumMember` | enum member | `E1118` |
 | `Field` | field | `W1002`, `W1003`, `E1118`, `E1125`, `E1133`, `E1613`, `E2101`, `E3003`, `E3320`, `E6001` |
 | `FieldlessCaseExportFn` | an export fn of a case without fields | `E8019` |
-| `ForeignDataRecord` | a record or variant of another package read by a data loader | `E8019` |
-| `ForeignPairsField` | a pairs field of a record of another package | `E8019` |
-| `ForeignTableLookupParam` | a lookup whose parameter is a ref into a table of another package | `E8019` |
-| `Function` | function | `W1002`, `W1003`, `E1125`, `E1133` |
+| `ForeignResolvedRef` | a record of another package whose loader resolves one of its refs | `E8019` |
+| `ForeignTableLookupParam` | a lookup whose parameter is a ref into another package's table without an id enum | `E8019` |
+| `Function` | function | `W1002`, `W1003`, `E1125`, `E1133`, `E3027` |
 | `GlobBrace` | an unclosed, empty or nested brace | `E7005` |
 | `GlobBracket` | an unclosed bracket | `E7005` |
 | `GlobDoubleStar` | a double star that is not a whole segment | `E7005` |
@@ -134,6 +140,7 @@ wording is a variant, and a closed set of words is a `Kind`.
 | `InputField` | an `input` field | `E8019` |
 | `Integer` | an integer | `E1119`, `E7110` |
 | `Layer` | layer | `E1125` |
+| `LegacyStruct` | a legacy C++ struct (@cpp(struct:)) | `E8019` |
 | `Let` | let | `W1003`, `E1125`, `E1133` |
 | `Literal` | a literal value | `E1119` |
 | `Local` | local | `W1003`, `E1125`, `E2101` |
@@ -145,15 +152,17 @@ wording is a variant, and a closed set of words is a `Kind`.
 | `Member` | member | `E1133`, `E1613`, `E3003`, `E3603`, `E6002` |
 | `MemberValue` | member value | `E3015` |
 | `Menu` | menu | `E1610` |
-| `Method` | method | `W1003`, `E1125`, `E1613`, `E3003`, `E3016` |
+| `Method` | method | `W1003`, `E1125`, `E1613`, `E3003`, `E3016`, `E3027` |
 | `MethodOrCheck` | method or check | `E1118` |
 | `ModeName` | a mode name | `E8009` |
+| `NeverDependent` | a dependent type every branch of which is Never | `E8019` |
 | `Null` | null | `E7110` |
 | `Number` | a number | `E7110` |
 | `Object` | an object | `E7110` |
 | `OptionalElementList` | a list of optional elements | `E8019` |
 | `OptionalMapValue` | a map with optional values | `E8019` |
 | `OutPaths` | a constant string or a list of constant strings | `E8009` |
+| `Package` | package | `E3027` |
 | `PackageSegment` | package segment | `W1003`, `E1125` |
 | `Parameter` | parameter | `W1003`, `E1125`, `E2101` |
 | `ParameterDefault` | parameter default | `E3015` |
@@ -166,9 +175,10 @@ wording is a variant, and a closed set of words is a `Kind`.
 | `ReadPermission` | permission denied | `E7004` |
 | `ReadTooLarge` | too large | `E7004` |
 | `ReadUnreadable` | unreadable | `E7004` |
-| `Record` | record | `W1002`, `W1003`, `E1125`, `E1133`, `E3320` |
+| `Record` | record | `W1002`, `W1003`, `E1125`, `E1133`, `E3027`, `E3320` |
 | `RecordConstant` | a constant of a record or variant type | `E8019` |
 | `RecordCycleThroughMethod` | a by-value cycle of records through a stored method result | `E8019` |
+| `RecordDefault` | a field default holding a record or variant | `E8019` |
 | `RecordFieldCycle` | a cycle of records through their fields | `E8019` |
 | `RecursiveVariantCase` | a variant that recurses through a case | `E8019` |
 | `RefUnion` | a literal union over a ref | `E8019` |
@@ -185,7 +195,7 @@ wording is a variant, and a closed set of words is a `Kind`.
 | `Test` | test | `E1133` |
 | `Tone` | tone | `E1610` |
 | `TopLevelDeclaration` | top-level declaration | `E1118` |
-| `TypeAlias` | type alias | `W1002`, `W1003`, `E1125`, `E1133` |
+| `TypeAlias` | type alias | `W1002`, `W1003`, `E1125`, `E1133`, `E3027` |
 | `TypeHeader` | type header | `E1118` |
 | `TypeParameter` | type parameter | `W1003`, `E1125` |
 | `Unit` | unit | `E1610` |
@@ -193,12 +203,38 @@ wording is a variant, and a closed set of words is a `Kind`.
 | `UpperSnake` | UPPER_SNAKE | `W1003` |
 | `ValueNames` | a list of value names | `E8009` |
 | `Variable` | variable | `W1003`, `E1125` |
-| `Variant` | variant | `W1002`, `W1003`, `E1125`, `E1133`, `E1627` |
+| `Variant` | variant | `W1002`, `W1003`, `E1125`, `E1133`, `E1627`, `E3027` |
 | `VariantCase` | variant case | `E1118` |
 | `VariantKindConstant` | a constant of a variant's kind | `E8019` |
 | `VariantMethod` | a variant-level method a generator must write | `E8019` |
 | `View` | view | `E1133` |
-| `Widget` | widget | `W1003`, `E1125`, `E1133`, `E1610` |
+| `WayCaseField` | type it as the variant and test the case with is | `E8019` |
+| `WayDefineKey` | take an enum parameter instead | `E8019` |
+| `WayDependentDefault` | drop the default, or make the field optional | `E8019` |
+| `WayDependentOutsideField` | hold the value in a record field beside its discriminant | `E8019` |
+| `WayDependentType` | not before v0.2: decide it by an enum field of the same record meanwhile | `E8019` |
+| `WayFieldlessCaseExportFn` | give the case a field | `E8019` |
+| `WayForeignResolvedRef` | emit the owning package in baked mode, or keep the record inside the owner's value | `E8019` |
+| `WayForeignTableLookupParam` | emit the table's package in baked mode, or take an enum parameter | `E8019` |
+| `WayInlineFoldedKey` | rename one of the two keys | `E8019` |
+| `WayInputField` | emit the package in baked or data mode | `E8019` |
+| `WayLegacyStruct` | not before M6: use the generated class meanwhile | `E8019` |
+| `WayMapField` | hold the entries in a keyed list | `E8019` |
+| `WayNeverDependent` | give it a branch that is not Never, or remove it | `E8019` |
+| `WayOptionalElementList` | wrap each element in a record with an optional field | `E8019` |
+| `WayOptionalMapValue` | leave absent entries out of the map | `E8019` |
+| `WayRecordConstant` | make it a let | `E8019` |
+| `WayRecordCycleThroughMethod` | return a ref to the record instead | `E8019` |
+| `WayRecordDefault` | drop the default and write the value in each entry | `E8019` |
+| `WayRecordFieldCycle` | make one field of the cycle optional or a ref | `E8019` |
+| `WayRecursiveVariantCase` | hold the recursion through an optional field or a ref | `E8019` |
+| `WayRefUnion` | use an optional ref instead | `E8019` |
+| `WayResolvedLookupResult` | not before v0.2: emit the package in baked mode meanwhile | `E8019` |
+| `WaySelfReadNotAPath` | read self through paths of fields (self.a.b) | `E8019` |
+| `WayTableField` | hold it in a keyed list | `E8019` |
+| `WayVariantKindConstant` | test the case with is where the kind is needed | `E8019` |
+| `WayVariantMethod` | move the method onto each case | `E8019` |
+| `Widget` | widget | `W1003`, `E1125`, `E1133`, `E1610`, `E3027` |
 
 A constructor is given only a Kind whose row lists its code; the per-code tests cover each
 listed pair.
@@ -355,7 +391,7 @@ func (codeE2103) AtSeveral(span source.Span, typ string, colls []string) *Builde
 
 ---
 
-The catalogue holds 303 codes: 282 errors, 18 warnings and 3 run-time codes, with 484 messages.
+The catalogue holds 305 codes: 283 errors, 19 warnings and 3 run-time codes, with 492 messages.
 
 ## E10xx, W10xx: Project file, doc comments and naming
 
@@ -368,7 +404,7 @@ Owner: GRAMMAR.md.
 | E1002 | error | project | GRAMMAR.md §7.1 | unknown key in `project.canon` |
 | W1002 | warning | check | GRAMMAR.md §9.1 | a public type, field or `export fn` has no doc comment |
 | E1003 | error | project | GRAMMAR.md §7.1 | no `project.canon` in the directory or its parents (exit 2) |
-| W1003 | warning | check | GRAMMAR.md §9.2 | a declared name breaks its naming convention |
+| W1003 | warning | build | GRAMMAR.md §9.2 | a declared name breaks its naming convention |
 | E1004 | error | project | GRAMMAR.md §7.1 | `project.canon` does not declare `canon` |
 | E1005 | error | project | GRAMMAR.md §7.1 | a project key or root name given twice |
 | E1006 | error | project | GRAMMAR.md §7.1 | a project value of the wrong kind or out of range |
@@ -728,6 +764,7 @@ Owner: TYPES.md, WIRE.md.
 | Code | Severity | Package | Owner | Meaning |
 |---|---|---|---|---|
 | E3001 | error | check | TYPES.md §15 | a public top-level `let` without a type annotation |
+| W3001 | warning | check | TYPES.md §15 | an optional field written with `= none`, which is already its default (DECISIONS 319) |
 | E3002 | error | check | TYPES.md §6.2 | a value of one type where another is expected |
 | E3003 | error | check | TYPES.md §3.5 | unknown field, method or member (including a case field on an un-narrowed variant) |
 | E3004 | error | check | TYPES.md §12.2 | too many, missing or unknown arguments in a call |
@@ -750,6 +787,8 @@ Owner: TYPES.md, WIRE.md.
 | E3023 | error | check | TYPES.md §7.4 | a refinement not valid on its type, or an empty range |
 | E3024 | error | check | TYPES.md §8.4 | `past` on a type that is not an enum, a variant or a `ref` |
 | E3025 | error | check | TYPES.md §13.3 | a `Range` value without `Int` bounds or without a start |
+| E3026 | error | check | STDLIB.md §5 | a key where `in`, `contains` or `indexOf` expects an element (DECISIONS 317) |
+| E3027 | error | check | TYPES.md §4.1 | a name in scope that is not a value of the key type where a key is expected (DECISIONS 318) |
 | E3101 | error | check | TYPES.md §9.3 | duplicate table key |
 | E3102 | error | verify | TYPES.md §9.1 | a key, `@codes` code or `@stable` value used twice |
 | E3103 | error | check | TYPES.md §9.3 | `entry t.k` where `t` is not a table or keyed list of the package or not initialized by a table or list literal, or `retired entry` on a keyed list |
@@ -812,6 +851,7 @@ Owner: TYPES.md, WIRE.md.
 | Code | Variant | Args | Template |
 |---|---|---|---|
 | E3001 | - | name:Name | `public value {name} needs a type annotation` |
+| W3001 | - | field:Name | `{field} is optional: none is already its default; remove = none` |
 | E3002 | - | expected:Type, found:Type | `expected {expected}, found {found}` |
 | E3003 | - | typ:Type, kind:Kind, name:Name | `{typ} has no {kind} {name}` |
 | E3004 | many | fn:Name | `too many arguments in call to {fn}` |
@@ -841,6 +881,10 @@ Owner: TYPES.md, WIRE.md.
 | E3023 | empty | refinement:Expr | `range {refinement} is empty` |
 | E3024 | - | typ:Type | `past applies to an enum, a variant or a ref, not {typ} (for a list, write [past E])` |
 | E3025 | - | - | `a Range value must have Int bounds and a start` |
+| E3026 | written | key:Expr, coll:Expr | `{key} is a key of {coll}, not an element: test it with {coll}.hasKey({key})` |
+| E3026 | implicit | key:Expr | `{key} is a key, not an element: test it with hasKey({key})` |
+| E3027 | value | name:Name, expected:Type, found:Type | `{name} has type {found}, not {expected}; to name the key {name}, write "{name}"` |
+| E3027 | notValue | name:Name, kind:Kind | `{name} is not a value ({kind}); to name the key {name}, write "{name}"` |
 | E3101 | - | key:Name, table:Name, first:Loc | `duplicate key {key} in {table} (first at {first})` |
 | E3102 | key | key:Value, first:Loc | `key {key} is used twice (first at {first})` |
 | E3102 | code | code:Int, first:Loc | `code {code} is used twice (first at {first})` |
@@ -1138,20 +1182,19 @@ Owner: CODEGEN.md, WIRE.md.
 | E8002 | error | check | CODEGEN.md §2.1 | two emits of one target in one package |
 | E8003 | error | check | CODEGEN.md §2.1 | unknown emit target or emit option |
 | E8004 | error | ir | CODEGEN.md §2.8 | a type of a package that has no emit for the same target, or no copy this copy can use |
-| E8005 | error | ir | CODEGEN.md §3.5 | two generated names collide in one scope |
+| E8005 | error | ir | CODEGEN.md §3.5 | two generated names collide in one scope (two packages a Go emit reaches included) |
 | W8006 | warning | ir | CODEGEN.md §3.5 | a generated C++ name is a common platform macro |
 | E8007 | error | ir | CODEGEN.md §2.8 | a Go output under no root mapped by `go_module` |
 | E8008 | error | ir | CODEGEN.md §2.3 | two Go emits write into one directory |
-| E8009 | error | check | CODEGEN.md §2.1, §2.8 | invalid emit option value (mode, package, namespace, out, values), option of the wrong kind, or an invalid `out` list (empty, two entries sharing an owning root, different last elements without `package`, JSON files mixed with directories) |
+| E8009 | error | check | CODEGEN.md §2.1, §2.8 | invalid emit option value (mode, package, namespace, out, values, an empty `values`), option of the wrong kind, or an invalid `out` list (empty, two entries sharing an owning root, different last elements without `package`, JSON files mixed with directories) |
 | E8010 | error | ir | CODEGEN.md §5.2 | an `ordered` enum whose codes do not increase |
 | E8011 | error | ir | CODEGEN.md §3.5 | an override or a derived name that is not a usable identifier in the target |
 | E8012 | error | ir | CODEGEN.md §4.4 | an emitted type or value with no representation in generated code |
-| E8013 | error | ir | CODEGEN.md §5.10 | an export fn that `data` mode cannot hold |
-| E8014 | error | ir | CODEGEN.md §5.13 | something `types` mode cannot emit (precomputed data, computed default) |
+| E8013 | error | ir | CODEGEN.md §5.10 | an export fn that `data` mode cannot hold; the message names the mode that builds it |
+| E8014 | error | ir | CODEGEN.md §5.13 | something `types` mode cannot emit (precomputed data, computed default), on the emit's own records or on another package's records it reads |
 | E8015 | error | ir | CODEGEN.md §2.2 | a `data`/`embedded` value that is not a table, keyed list or record |
 | E8017 | error | ir | CODEGEN.md §5.6 | a dependent-type branch that is not a scalar, String, enum or ref |
-| E8018 | error | ir | CODEGEN.md §2.8 | a type decoded from JSON whose package is emitted in `baked` mode |
-| E8019 | error | ir | EVALUATION.md §1 | an emit whose generator cannot produce a construct valid Canon allows |
+| E8019 | error | ir | EVALUATION.md §1 | an emit whose generator cannot produce a construct valid Canon allows, or a mode not built yet (DECISIONS 320); the message names the way out (DECISIONS 305) |
 | E8020 | error | ir | CODEGEN.md §5.1 | a Go constant of -0.0, which Go constants cannot hold |
 | E8021 | error | check | CODEGEN.md §2.9 | a misplaced `@text` (a `String?` result included), an invalid `@text` file name, two `@text` files of one package with one name, or a call to a `@text` fn (DECISIONS 294, 300) |
 | E8101 | error | ir | CODEGEN.md §4.1 | an emitted integer outside the TypeScript safe range without `@ts(bigint)` |
@@ -1180,7 +1223,9 @@ Owner: CODEGEN.md, WIRE.md.
 | E8003 | option | option:Name, target:Name | `unknown option {option} for emit {target}` |
 | E8004 | noEmit | typ:Name, pkg:Name, target:Name | `{typ} of package {pkg} is used by this {target} emit, but {pkg} has no {target} emit` |
 | E8004 | noCopy | typ:Name, pkg:Name, target:Name, root:Name | `{typ} of package {pkg} is used by this {target} copy under root {root}, but {pkg} has several {target} copies and none under {root}` |
-| E8005 | - | target:Name, name:Name, a:Name, b:Name | `{target}: {name} is generated for both {a} and {b}` |
+| E8005 | both | target:Name, name:Name, a:Name, b:Name | `{target}: {name} is generated for both {a} and {b}` |
+| E8005 | reached | target:Name, name:Name, a:Name, b:Name | `{target}: {name} is generated for both {a} and {b}; give one of their emits a distinct package option` |
+| E8005 | idType | target:Name, name:Name, a:Name, b:Name | `{target}: {name} is generated for both {a} and {b}; hold one of them in a keyed list` |
 | W8006 | - | name:Name, item:Name | `C++ name {name} (from {item}) is a macro in common platform headers` |
 | E8007 | - | out:Path | `Go output {out} is under no root listed in go_module: map its root in project.canon go_module` |
 | E8008 | - | dir:Path, a:Name, b:Name | `Go directory {dir} is written by two emits ({a}, {b})` |
@@ -1194,6 +1239,7 @@ Owner: CODEGEN.md, WIRE.md.
 | E8009 | missing | option:Name, target:Name | `emit {target} is missing {option}` |
 | E8009 | reservedNamespace | value:Text | `invalid namespace "{value}" for emit cpp: canon, std and nlohmann are reserved` |
 | E8009 | outEmpty | target:Name | `out of emit {target} is an empty list: give at least one path` |
+| E8009 | valuesEmpty | target:Name | `values of emit {target} is an empty list: omit values to emit every public value` |
 | E8009 | outRoot | a:Path, b:Path, root:Name, target:Name | `{a} and {b} in out of emit {target} share the root {root}: each copy needs a root of its own` |
 | E8009 | outPackage | - | `entries of out of emit go end in different names: give package` |
 | E8009 | outForm | - | `entries of out of emit json mix .json files and directories: use one form for all` |
@@ -1205,14 +1251,14 @@ Owner: CODEGEN.md, WIRE.md.
 | E8011 | reserved | name:Text, origin:Name | `{name}, the C++ name derived for {origin}, is a keyword or a reserved name` |
 | E8012 | type | typ:Name, what:Type | `{typ} cannot be emitted: {what} has no representation in generated code` |
 | E8012 | define | typ:Name | `{typ} cannot be emitted: a load.defines table or record has no representation in generated code` |
-| E8013 | package | fn:Name | `{fn} needs baked or embedded mode: data files cannot hold package functions` |
-| E8013 | refParam | fn:Name | `{fn} needs baked or embedded mode: data files cannot hold a method with a ref parameter` |
+| E8013 | package | fn:Name, modes:Kind | `{fn} needs {modes} mode: data files cannot hold package functions` |
+| E8013 | refParam | fn:Name, modes:Kind | `{fn} needs {modes} mode: data files cannot hold a method with a ref parameter` |
 | E8014 | - | what:Kind, typ:Name | `types mode cannot emit the {what} of {typ}: there is no data to read it from` |
 | E8015 | - | value:Name, typ:Type | `{value} has type {typ}: data and embedded modes emit tables, keyed lists and records` |
 | E8017 | - | branch:Name, alias:Name, typ:Type | `branch {branch} of {alias} has type {typ}: dependent types may only have scalar, String, enum or ref branches` |
-| E8018 | - | typ:Name, emit:Name, pkg:Name | `{typ} is decoded from JSON by {emit}, but package {pkg} is emitted in baked mode` |
-| E8019 | mode | target:Name, mode:Name, what:Kind | `emit {target} in {mode} mode cannot generate {what}` |
-| E8019 | json | what:Kind | `emit json cannot generate {what}` |
+| E8019 | mode | target:Name, mode:Name, what:Kind, way:Kind | `emit {target} in {mode} mode cannot generate {what}; {way}` |
+| E8019 | json | what:Kind, way:Kind | `emit json cannot generate {what}; {way}` |
+| E8019 | unbuilt | target:Name, mode:Name, alt:Name | `emit {target} cannot use {mode} mode yet; use {alt} mode` |
 | E8020 | - | name:Name | `constant {name} is -0.0, which a Go constant cannot hold: make it a let` |
 | E8021 | position | - | `@text belongs on a public package-level export fn with no parameter, returning String or a value with a wire form` |
 | E8021 | file | value:Text | `invalid @text file name "{value}": not a portable file name (empty, . or .., a path separator, a reserved character or Windows device name, or a final dot or space)` |
