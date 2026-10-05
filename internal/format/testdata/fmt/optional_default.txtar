@@ -1,0 +1,52 @@
+FORMATTER.md §10 and DECISIONS 319: `x: T? = none` becomes `x: T?` in a record or a case; the
+comments of the dropped tokens stay, a trailing one at the end of the field. A fn parameter, an
+alias to an optional and a non-optional field are left as written.
+-- in.canon --
+package p
+
+record R {
+  a: Int? = none
+  b: [Int]? = none // why none
+  c: input String? from env "C" = none @since(2)
+  d: Int = 0
+  e: Int? = 1
+  f: Int? = // before
+    none
+  g: Int? = /* mid */ none
+  // own line
+  h: Int?   =   none
+}
+variant V {
+  a { x: Int? = none }
+  b
+}
+type Opt = Int?
+record S {
+  a: Opt = none
+  b: Int = none
+}
+fn f(x: Int? = none) -> Int { return 1 }
+-- want --
+package p
+
+record R {
+  a: Int?
+  b: [Int]? // why none
+  c: input String? from env "C" @since(2)
+  d: Int = 0
+  e: Int? = 1
+  f: Int? // before
+  g: Int? /* mid */
+  // own line
+  h: Int?
+}
+variant V {
+  a { x: Int? }
+  b
+}
+type Opt = Int?
+record S {
+  a: Opt = none
+  b: Int = none
+}
+fn f(x: Int? = none) -> Int { return 1 }

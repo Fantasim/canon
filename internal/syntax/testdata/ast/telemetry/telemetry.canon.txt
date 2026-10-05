@@ -179,14 +179,13 @@ File: File FileKind=source @1:1-435:1
         Type: NamedType @112:9-112:18
           Name: QualifiedName FieldKind @112:9-112:18
         Default: IdentExpr scalar @112:21-112:27
-      Items[3]: FieldDecl @114:3-114:29
+      Items[3]: FieldDecl @114:3-114:22
         Doc: DocComment "The telemetry enum an `enum8` column holds." @113:3-113:50
         Name: Ident values @114:3-114:9
         Type: OptionalType @114:11-114:22
           Elem: NamedType @114:11-114:21
             Name: QualifiedName Vocabulary @114:11-114:21
-        Default: NoneLit @114:25-114:29
-      Items[4]: FieldDecl @116:3-116:26
+      Items[4]: FieldDecl @116:3-116:19
         Doc: DocComment "The version that added the column; none: present from the table's first known version." @115:3-115:93
         Name: Ident since @116:3-116:8
         Type: OptionalType @116:10-116:19
@@ -195,8 +194,7 @@ File: File FileKind=source @1:1-435:1
             Args: TypeArgs @116:13-116:18
               Args[0]: RangeExpr Op=.. @116:14-116:17
                 Lo: IntLit Value=2 @116:14-116:15
-        Default: NoneLit @116:22-116:26
-      Items[5]: FieldDecl @119:3-119:30
+      Items[5]: FieldDecl @119:3-119:23
         Doc: DocComment "The version that retired it. A retired column stays in the DDL (after the live ones),\nis appended as NULL, and leaves the wire." @117:3-118:48
         Name: Ident retiredIn @119:3-119:12
         Type: OptionalType @119:14-119:23
@@ -205,7 +203,6 @@ File: File FileKind=source @1:1-435:1
             Args: TypeArgs @119:17-119:22
               Args[0]: RangeExpr Op=.. @119:18-119:21
                 Lo: IntLit Value=2 @119:18-119:19
-        Default: NoneLit @119:26-119:30
       Items[6]: CheckDecl Keyword=check @121:3-122:79
         Cond: BinaryExpr Op=== @121:9-121:44
           X: ParenExpr @121:9-121:24
@@ -561,61 +558,54 @@ File: File FileKind=source @1:1-435:1
         Name: Ident token @216:3-216:8
         Type: NamedType @216:10-216:15
           Name: QualifiedName Ident @216:10-216:15
-      Items[5]: FieldDecl @218:3-218:19
+      Items[5]: FieldDecl @218:3-218:12
         Doc: DocComment "The side a single-row transfer reads; none for a table with one row per side." @217:3-217:84
         Name: Ident leg @218:3-218:6
         Type: OptionalType @218:8-218:12
           Elem: NamedType @218:8-218:11
             Name: QualifiedName Leg @218:8-218:11
-        Default: NoneLit @218:15-218:19
-      Items[6]: FieldDecl @220:3-220:25
+      Items[6]: FieldDecl @220:3-220:18
         Doc: DocComment "An extra predicate on the table's own columns (DuckDB SQL)." @219:3-219:66
         Name: Ident filter @220:3-220:9
         Type: OptionalType @220:11-220:18
           Elem: NamedType @220:11-220:17
             Name: QualifiedName String @220:11-220:17
-        Default: NoneLit @220:21-220:25
-      Items[7]: FieldDecl @222:3-222:29
+      Items[7]: FieldDecl @222:3-222:22
         Doc: DocComment "The magnitude; none for a row that documents a path with no amount." @221:3-221:74
         Name: Ident amount @222:3-222:9
         Type: OptionalType @222:11-222:22
           Elem: RefType @222:11-222:21
             Name: QualifiedName Column @222:15-222:21
-        Default: NoneLit @222:25-222:29
-      Items[8]: FieldDecl @224:3-224:27
+      Items[8]: FieldDecl @224:3-224:20
         Doc: DocComment "For item legs: the column naming the item." @223:3-223:49
         Name: Ident item @224:3-224:7
         Type: OptionalType @224:9-224:20
           Elem: RefType @224:9-224:19
             Name: QualifiedName Column @224:13-224:19
-        Default: NoneLit @224:23-224:27
-      Items[9]: FieldDecl @226:3-226:29
+      Items[9]: FieldDecl @226:3-226:22
         Doc: DocComment "Whose ledger the leg lands on; none: the header's player_id." @225:3-225:67
         Name: Ident player @226:3-226:9
         Type: OptionalType @226:11-226:22
           Elem: RefType @226:11-226:21
             Name: QualifiedName Column @226:15-226:21
-        Default: NoneLit @226:25-226:29
-      Items[10]: FieldDecl @228:3-228:35
+      Items[10]: FieldDecl @228:3-228:28
         Doc: DocComment "The other side, if any." @227:3-227:30
         Name: Ident counterparty @228:3-228:15
         Type: OptionalType @228:17-228:28
           Elem: RefType @228:17-228:27
             Name: QualifiedName Column @228:21-228:27
-        Default: NoneLit @228:31-228:35
       Items[11]: FieldDecl @230:3-230:16
         Doc: DocComment "Summed into the reconciliation (true), or real telemetry that must not be summed." @229:3-229:88
         Name: Ident counted @230:3-230:10
         Type: NamedType @230:12-230:16
           Name: QualifiedName Bool @230:12-230:16
-      Items[12]: FieldDecl @232:3-232:25
+      Items[12]: FieldDecl @232:3-232:18
         Doc: DocComment "The token this row would double-count with." @231:3-231:50
         Name: Ident dedupOf @232:3-232:10
         Type: OptionalType @232:12-232:18
           Elem: NamedType @232:12-232:17
             Name: QualifiedName Ident @232:12-232:17
-        Default: NoneLit @232:21-232:25
-      Items[13]: FieldDecl @234:3-234:33
+      Items[13]: FieldDecl @234:3-234:26
         Doc: DocComment "The last version whose rows this role reads; none: every version." @233:3-233:72
         Name: Ident untilVersion @234:3-234:15
         Type: OptionalType @234:17-234:26
@@ -624,7 +614,6 @@ File: File FileKind=source @1:1-435:1
             Args: TypeArgs @234:20-234:25
               Args[0]: RangeExpr Op=.. @234:21-234:24
                 Lo: IntLit Value=1 @234:21-234:22
-        Default: NoneLit @234:29-234:33
       Items[14]: FieldDecl @236:3-236:15
         Doc: DocComment "Why, citing a function, never a line number." @235:3-235:51
         Name: Ident note @236:3-236:7
@@ -723,13 +712,12 @@ File: File FileKind=source @1:1-435:1
           Elem: NamedType @266:12-266:16
             Name: QualifiedName Role @266:12-266:16
         Default: ListLit @266:20-266:22
-      Items[8]: FieldDecl @269:3-269:34
+      Items[8]: FieldDecl @269:3-269:27
         Doc: DocComment "The enum8 column the ledger is typed by. When set, every live member of its vocabulary\nis covered by some role (L-0111), so a new kind cannot ship without a ledger decision." @267:3-268:93
         Name: Ident ledgerKinds @269:3-269:14
         Type: OptionalType @269:16-269:27
           Elem: RefType @269:16-269:26
             Name: QualifiedName Column @269:20-269:26
-        Default: NoneLit @269:30-269:34
       Items[9]: CheckDecl Keyword=check @271:3-271:76
         Cond: CallExpr @271:9-271:29
           Fun: SelectorExpr @271:9-271:27
@@ -863,24 +851,27 @@ File: File FileKind=source @1:1-435:1
                           Parts[6]: Interp @285:81-285:88
                             X: IdentExpr version @285:81-285:88
               Stmts[2]: IfStmt @288:7-290:8
-                Cond: BinaryExpr Op=or @288:10-288:65
-                  X: BinaryExpr Op=or @288:10-288:49
-                    X: BinaryExpr Op=in @288:10-288:33
-                      X: SelectorExpr @288:10-288:16
-                        X: IdentExpr c @288:10-288:11
-                        Name: Ident name @288:12-288:16
-                      Y: IdentExpr headerColumns @288:20-288:33
-                    Y: BinaryExpr Op=== @288:37-288:49
-                      X: SelectorExpr @288:37-288:43
-                        X: IdentExpr c @288:37-288:38
-                        Name: Ident kind @288:39-288:43
-                      Y: IdentExpr ts @288:47-288:49
-                  Y: BinaryExpr Op=== @288:53-288:65
-                    X: SelectorExpr @288:53-288:59
-                      X: IdentExpr c @288:53-288:54
-                      Name: Ident kind @288:55-288:59
-                    Y: IdentExpr id @288:63-288:65
-                Then: Block @288:66-290:8
+                Cond: BinaryExpr Op=or @288:10-288:70
+                  X: BinaryExpr Op=or @288:10-288:54
+                    X: CallExpr @288:10-288:38
+                      Fun: SelectorExpr @288:10-288:30
+                        X: IdentExpr headerColumns @288:10-288:23
+                        Name: Ident hasKey @288:24-288:30
+                      Args[0]: Arg @288:31-288:37
+                        Value: SelectorExpr @288:31-288:37
+                          X: IdentExpr c @288:31-288:32
+                          Name: Ident name @288:33-288:37
+                    Y: BinaryExpr Op=== @288:42-288:54
+                      X: SelectorExpr @288:42-288:48
+                        X: IdentExpr c @288:42-288:43
+                        Name: Ident kind @288:44-288:48
+                      Y: IdentExpr ts @288:52-288:54
+                  Y: BinaryExpr Op=== @288:58-288:70
+                    X: SelectorExpr @288:58-288:64
+                      X: IdentExpr c @288:58-288:59
+                      Name: Ident kind @288:60-288:64
+                    Y: IdentExpr id @288:68-288:70
+                Then: Block @288:71-290:8
                   Stmts[0]: ExprStmt @289:9-289:75
                     X: CallExpr @289:9-289:75
                       Fun: IdentExpr fail @289:9-289:13

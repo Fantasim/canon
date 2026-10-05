@@ -146,7 +146,6 @@ File: File FileKind=source @1:1-127:1
         Type: OptionalType @56:14-56:18
           Elem: NamedType @56:14-56:17
             Name: QualifiedName Int @56:14-56:17
-        Default: NoneLit @56:21-56:25
         Annotations[0]: Annotation @57:5-57:135
           Name: Ident deprecated @57:6-57:16
           Args[0]: AnnotationArg @57:17-57:134
@@ -172,19 +171,18 @@ File: File FileKind=source @1:1-127:1
           Args: TypeArgs @72:20-72:25
             Args[0]: RangeExpr Op=.. @72:21-72:24
               Lo: IntLit Value=1 @72:21-72:22
-      Items[2]: FieldDecl @74:3-74:66
+      Items[2]: FieldDecl @74:3-74:59
         Doc: DocComment "The item produced; `none` on a decorative level." @73:3-73:55
         Name: Ident productionItem @74:3-74:17
         Type: OptionalType @74:19-74:29
           Elem: RefType @74:19-74:28
             Name: QualifiedName items @74:23-74:28
-        Default: NoneLit @74:32-74:36
-        Annotations[0]: Annotation @74:37-74:66
-          Name: Ident json @74:38-74:42
-          Args[0]: AnnotationArg @74:43-74:65
-            Value: StringLit @74:43-74:65
+        Annotations[0]: Annotation @74:30-74:59
+          Name: Ident json @74:31-74:35
+          Args[0]: AnnotationArg @74:36-74:58
+            Value: StringLit @74:36-74:58
               Parts[0]: text "productionItemDefine"
-      Items[3]: FieldDecl @76:3-76:38
+      Items[3]: FieldDecl @76:3-76:31
         Doc: DocComment "Items produced per hour; `none` on a decorative level." @75:3-75:61
         Name: Ident productionPerHour @76:3-76:20
         Type: OptionalType @76:22-76:31
@@ -193,8 +191,7 @@ File: File FileKind=source @1:1-127:1
             Args: TypeArgs @76:25-76:30
               Args[0]: RangeExpr Op=.. @76:26-76:29
                 Lo: IntLit Value=0 @76:26-76:27
-        Default: NoneLit @76:34-76:38
-      Items[4]: FieldDecl @78:3-78:31
+      Items[4]: FieldDecl @78:3-78:24
         Doc: DocComment "Items the level holds before production stops; `none` on a decorative level." @77:3-77:83
         Name: Ident maxStorage @78:3-78:13
         Type: OptionalType @78:15-78:24
@@ -203,7 +200,6 @@ File: File FileKind=source @1:1-127:1
             Args: TypeArgs @78:18-78:23
               Args[0]: RangeExpr Op=.. @78:19-78:22
                 Lo: IntLit Value=0 @78:19-78:20
-        Default: NoneLit @78:27-78:31
       Items[5]: FieldDecl @80:3-80:24
         Doc: DocComment "Bonuses granted while a model of this level is planted." @79:3-79:62
         Name: Ident bonuses @80:3-80:10
@@ -258,17 +254,16 @@ File: File FileKind=source @1:1-127:1
         Name: Ident typeName @94:3-94:11
         Type: NamedType @94:13-94:19
           Name: QualifiedName String @94:13-94:19
-      Items[2]: FieldDecl @96:3-96:54
+      Items[2]: FieldDecl @96:3-96:47
         Doc: DocComment "Text shown to players as the model's name." @95:3-95:49
         Name: Ident nameText @96:3-96:11
         Type: OptionalType @96:13-96:23
           Elem: RefType @96:13-96:22
             Name: QualifiedName texts @96:17-96:22
-        Default: NoneLit @96:26-96:30
-        Annotations[0]: Annotation @96:31-96:54
-          Name: Ident json @96:32-96:36
-          Args[0]: AnnotationArg @96:37-96:53
-            Value: StringLit @96:37-96:53
+        Annotations[0]: Annotation @96:24-96:47
+          Name: Ident json @96:25-96:29
+          Args[0]: AnnotationArg @96:30-96:46
+            Value: StringLit @96:30-96:46
               Parts[0]: text "nameTextDefine"
       Items[3]: FieldDecl @98:3-98:25
         Doc: DocComment "Paid to unlock the model." @97:3-97:32

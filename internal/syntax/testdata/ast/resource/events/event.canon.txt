@@ -106,7 +106,7 @@ File: File FileKind=source @1:1-196:1
           Name: Ident spawnRegion @52:5-52:16
           Type: NamedType @52:18-52:22
             Name: QualifiedName Rect @52:18-52:22
-        Items[2]: FieldDecl @54:5-54:84
+        Items[2]: FieldDecl @54:5-54:77
           Doc: DocComment "How long a spawned monster lives; `none` means until killed." @53:5-53:69
           Name: Ident monsterLifetime @54:5-54:20
           Type: OptionalType @54:22-54:40
@@ -116,15 +116,14 @@ File: File FileKind=source @1:1-196:1
                 Args[0]: RangeExpr Op=..= @54:31-54:38
                   Lo: DurationLit Millis=1000 @54:31-54:33
                   Hi: DurationLit Millis=86400000 @54:36-54:38
-          Default: NoneLit @54:43-54:47
-          Annotations[0]: Annotation @54:48-54:84
-            Name: Ident json @54:49-54:53
-            Args[0]: AnnotationArg @54:54-54:74
-              Value: StringLit @54:54-54:74
+          Annotations[0]: Annotation @54:41-54:77
+            Name: Ident json @54:42-54:46
+            Args[0]: AnnotationArg @54:47-54:67
+              Value: StringLit @54:47-54:67
                 Parts[0]: text "monsterLifetimeSec"
-            Args[1]: AnnotationArg @54:76-54:83
-              Name: Ident unit @54:76-54:80
-              Value: QualifiedName s @54:82-54:83
+            Args[1]: AnnotationArg @54:69-54:76
+              Name: Ident unit @54:69-54:73
+              Value: QualifiedName s @54:75-54:76
     Items[1]: VariantCase @57:3-69:4
       Doc: DocComment "Drops items on the ground in a region until enough are picked up." @56:3-56:72
       Name: Ident spawn_item @57:3-57:13
@@ -147,7 +146,7 @@ File: File FileKind=source @1:1-196:1
           Name: Ident spawnRegion @63:5-63:16
           Type: NamedType @63:18-63:22
             Name: QualifiedName Rect @63:18-63:22
-        Items[3]: FieldDecl @65:5-65:82
+        Items[3]: FieldDecl @65:5-65:75
           Doc: DocComment "How long a dropped item stays; `none` means the game's default." @64:5-64:72
           Name: Ident groundLifetime @65:5-65:19
           Type: OptionalType @65:21-65:39
@@ -157,15 +156,14 @@ File: File FileKind=source @1:1-196:1
                 Args[0]: RangeExpr Op=..= @65:30-65:37
                   Lo: DurationLit Millis=60000 @65:30-65:32
                   Hi: DurationLit Millis=86400000 @65:35-65:37
-          Default: NoneLit @65:42-65:46
-          Annotations[0]: Annotation @65:47-65:82
-            Name: Ident json @65:48-65:52
-            Args[0]: AnnotationArg @65:53-65:72
-              Value: StringLit @65:53-65:72
+          Annotations[0]: Annotation @65:40-65:75
+            Name: Ident json @65:41-65:45
+            Args[0]: AnnotationArg @65:46-65:65
+              Value: StringLit @65:46-65:65
                 Parts[0]: text "groundLifetimeSec"
-            Args[1]: AnnotationArg @65:74-65:81
-              Name: Ident unit @65:74-65:78
-              Value: QualifiedName s @65:80-65:81
+            Args[1]: AnnotationArg @65:67-65:74
+              Name: Ident unit @65:67-65:71
+              Value: QualifiedName s @65:73-65:74
         Items[4]: CheckDecl Keyword=check @67:5-68:85
           Name: Ident itemcount_le_packmax @67:11-67:31
           Cond: BinaryExpr Op=<= @67:33-67:64

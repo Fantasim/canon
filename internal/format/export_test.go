@@ -19,6 +19,9 @@ func RewriteWhole(f *syntax.File, kind syntax.FileKind, changes []Change) ([]byt
 	return rewriteWith(b, kind, changes, canonical, false)
 }
 
+// RedundantNone is redundantNone: a field `x: T? = none`, whose `= none` §10 removes.
+func RedundantNone(n *syntax.FieldDecl) bool { return redundantNone(n) }
+
 // SectionsAlone checks every section of f, a fixed point, that prints alone: printed alone it is
 // its own bytes. It returns how many it checked and the offsets of those that are not.
 func SectionsAlone(f *syntax.File) (int, []int) {

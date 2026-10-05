@@ -47,21 +47,7 @@ File: File FileKind=source @1:1-23:1
       Args[0]: Arg @19:47-19:68
         Value: StringLit @19:47-19:68
           Parts[0]: text "data/countries.json"
-  Decls[2]: EmitDecl @21:1-21:65
-    Target: Ident go @21:6-21:8
-    Options: BraceLit @21:9-21:65
-      Items[0]: FieldItem @21:11-21:25
-        Name: Ident out @21:11-21:14
-        Value: StringLit @21:16-21:25
-          Parts[0]: text "out/go/"
-      Items[1]: FieldItem @21:27-21:47
-        Name: Ident package @21:27-21:34
-        Value: StringLit @21:36-21:47
-          Parts[0]: text "countries"
-      Items[2]: FieldItem @21:49-21:63
-        Name: Ident mode @21:49-21:53
-        Value: IdentExpr embedded @21:55-21:63
-  Decls[3]: EmitDecl @22:1-22:62
+  Decls[2]: EmitDecl @22:1-22:62
     Target: Ident ts @22:6-22:8
     Options: BraceLit @22:9-22:62
       Items[0]: FieldItem @22:11-22:44

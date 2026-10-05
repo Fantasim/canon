@@ -94,13 +94,12 @@ File: File FileKind=source @1:1-112:1
         Type: NamedType @35:11-35:17
           Name: QualifiedName Reward @35:11-35:17
         Default: IdentExpr nothing @35:20-35:27
-      Items[4]: FieldDecl @37:3-37:23
+      Items[4]: FieldDecl @37:3-37:16
         Doc: DocComment "A free-text remark, or none." @36:3-36:35
         Name: Ident note @37:3-37:7
         Type: OptionalType @37:9-37:16
           Elem: NamedType @37:9-37:15
             Name: QualifiedName String @37:9-37:15
-        Default: NoneLit @37:19-37:23
       Items[5]: FieldDecl @39:3-39:30
         Doc: DocComment "Weights by element, a map." @38:3-38:33
         Name: Ident weights @39:3-39:10
@@ -120,13 +119,12 @@ File: File FileKind=source @1:1-112:1
           Name: Ident ts @41:20-41:22
           Args[0]: AnnotationArg @41:23-41:29
             Value: QualifiedName bigint @41:23-41:29
-      Items[7]: FieldDecl @43:3-43:27
+      Items[7]: FieldDecl @43:3-43:20
         Doc: DocComment "The skill this one upgrades into, a ref." @42:3-42:47
         Name: Ident next @43:3-43:7
         Type: OptionalType @43:9-43:20
           Elem: RefType @43:9-43:19
             Name: QualifiedName skills @43:13-43:19
-        Default: NoneLit @43:23-43:27
   Decls[3]: LetDecl @47:1-58:2
     Doc: DocComment "Every skill, a keyed list." @46:1-46:31
     Name: Ident skills @47:5-47:11

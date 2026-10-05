@@ -74,12 +74,29 @@ func codes(bag *diag.Bag) []diag.Code {
 
 // normalize sorts the imports and imported names, the one reordering §9.1 makes.
 func normalize(f *syntax.File) {
+	syntax.Inspect(f, func(n syntax.Node) bool {
+		if fd, ok := n.(*syntax.FieldDecl); ok && format.RedundantNone(fd) {
+			unanchor(f, fd.Default.First()) // §10, DECISIONS 319: the `none` and the `=` are no token to keep
+			fd.Default = nil
+		}
+		return true
+	})
 	slices.SortStableFunc(f.Imports, func(x, y *syntax.Import) int {
 		return cmp.Or(strings.Compare(dotted(x.Path), dotted(y.Path)), strings.Compare(alias(x), alias(y)))
 	})
 	for _, imp := range f.Imports {
 		slices.SortStableFunc(imp.Names, func(x, y *syntax.Ident) int { return strings.Compare(x.Name, y.Name) })
 	}
+}
+
+// unanchor makes the token none and the `=` before it separators, which comments never anchor to.
+func unanchor(f *syntax.File, none syntax.Tok) {
+	f.Tokens[none].Kind = syntax.TokNL
+	eq := none - 1
+	for f.Tokens[eq].Kind == syntax.TokNL {
+		eq--
+	}
+	f.Tokens[eq].Kind = syntax.TokNL
 }
 
 func dotted(q *syntax.QualifiedName) string {

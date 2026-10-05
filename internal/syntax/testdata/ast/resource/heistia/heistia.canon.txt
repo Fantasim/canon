@@ -17,7 +17,7 @@ File: File FileKind=source @1:1-104:1
         Name: Ident eventType @17:3-17:12
         Type: RefType @17:14-17:28
           Name: QualifiedName eventTypes @17:18-17:28
-      Items[1]: FieldDecl @20:3-20:56
+      Items[1]: FieldDecl @20:3-20:49
         Doc: DocComment "Only this monster, item, dungeon... counts. `none` counts everything.\nIts type depends on `eventType`: see resource.vocab's Param." @18:3-19:67
         Name: Ident filterParam @20:3-20:14
         Type: OptionalType @20:16-20:33
@@ -25,12 +25,11 @@ File: File FileKind=source @1:1-104:1
             Name: QualifiedName Param @20:16-20:21
             Args: TypeArgs @20:21-20:32
               Args[0]: IdentExpr eventType @20:22-20:31
-        Default: NoneLit @20:36-20:40
-        Annotations[0]: Annotation @20:41-20:56
-          Name: Ident json @20:42-20:46
-          Args[0]: AnnotationArg @20:47-20:55
-            Name: Ident none @20:47-20:51
-            Value: StringLit @20:53-20:55
+        Annotations[0]: Annotation @20:34-20:49
+          Name: Ident json @20:35-20:39
+          Args[0]: AnnotationArg @20:40-20:48
+            Name: Ident none @20:40-20:44
+            Value: StringLit @20:46-20:48
       Items[2]: FieldDecl @22:3-22:28
         Doc: DocComment "How many each player must reach." @21:3-21:39
         Name: Ident targetPerPlayer @22:3-22:18

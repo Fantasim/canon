@@ -1,0 +1,179 @@
+File: File FileKind=source @1:1-76:1
+  Doc: DocComment "The vocabulary the shared example's world builds on: statuses, level bands, rewards and\neffects, emitted once in baked mode for Go, C++ and TypeScript." @1:1-2:68
+  Package: QualifiedName features.shared.core @3:9-3:29
+  Decls[0]: RecordDecl @6:1-9:2
+    Doc: DocComment "A status a zone can be in." @5:1-5:31
+    Name: Ident Status @6:8-6:14
+    Body: RecordBody @6:15-9:2
+      Items[0]: FieldDecl @8:3-8:16
+        Doc: DocComment "Its label." @7:3-7:17
+        Name: Ident label @8:3-8:8
+        Type: NamedType @8:10-8:16
+          Name: QualifiedName String @8:10-8:16
+  Decls[1]: LetDecl @12:1-16:2
+    Doc: DocComment "Every status." @11:1-11:18
+    Name: Ident statuses @12:5-12:13
+    Type: TableType @12:15-12:27
+      Name: QualifiedName Status @12:21-12:27
+    Value: BraceLit @12:30-16:2
+      Items[0]: EntryItem @13:3-13:25
+        Key: Ident open @13:3-13:7
+        Value: BraceLit @13:8-13:25
+          Items[0]: FieldItem @13:10-13:23
+            Name: Ident label @13:10-13:15
+            Value: StringLit @13:17-13:23
+              Parts[0]: text "Open"
+      Items[1]: EntryItem @14:3-14:29
+        Key: Ident closed @14:3-14:9
+        Value: BraceLit @14:10-14:29
+          Items[0]: FieldItem @14:12-14:27
+            Name: Ident label @14:12-14:17
+            Value: StringLit @14:19-14:27
+              Parts[0]: text "Closed"
+      Items[2]: EntryItem @15:3-15:33
+        Mods: Modifiers Retired="retired" @15:3-15:10
+        Key: Ident shut @15:11-15:15
+        Value: BraceLit @15:16-15:33
+          Items[0]: FieldItem @15:18-15:31
+            Name: Ident label @15:18-15:23
+            Value: StringLit @15:25-15:31
+              Parts[0]: text "Shut"
+  Decls[2]: EnumDecl @19:1-19:24
+    Doc: DocComment "What a bonus aims at." @18:1-18:26
+    Name: Ident Aim @19:6-19:9
+    Members[0]: EnumMember @19:12-19:16
+      Name: Ident gold @19:12-19:16
+    Members[1]: EnumMember @19:18-19:22
+      Name: Ident mood @19:18-19:22
+  Decls[3]: EnumDecl @22:1-22:25
+    Doc: DocComment "A mood." @21:1-21:12
+    Name: Ident Mood @22:6-22:10
+    Members[0]: EnumMember @22:13-22:17
+      Name: Ident calm @22:13-22:17
+    Members[1]: EnumMember @22:19-22:23
+      Name: Ident grim @22:19-22:23
+  Decls[4]: RecordDecl @25:1-34:2
+    Doc: DocComment "A band of levels." @24:1-24:22
+    Name: Ident LevelRange @25:8-25:18
+    Body: RecordBody @25:19-34:2
+      Items[0]: FieldDecl @27:3-27:11
+        Doc: DocComment "Lowest level." @26:3-26:20
+        Name: Ident min @27:3-27:6
+        Type: NamedType @27:8-27:11
+          Name: QualifiedName Int @27:8-27:11
+      Items[1]: FieldDecl @29:3-29:11
+        Doc: DocComment "Highest level." @28:3-28:21
+        Name: Ident max @29:3-29:6
+        Type: NamedType @29:8-29:11
+          Name: QualifiedName Int @29:8-29:11
+      Items[2]: FieldDecl @31:3-31:23
+        Doc: DocComment "The band's status." @30:3-30:25
+        Name: Ident status @31:3-31:9
+        Type: RefType @31:11-31:23
+          Name: QualifiedName statuses @31:15-31:23
+      Items[3]: FnDecl Self="self" @33:3-33:62
+        Doc: DocComment "Its width, computed once." @32:3-32:32
+        Mods: Modifiers Export="export" @33:3-33:9
+        Name: Ident width @33:13-33:18
+        Result: NamedType @33:28-33:31
+          Name: QualifiedName Int @33:28-33:31
+        Body: Block @33:32-33:62
+          Stmts[0]: ReturnStmt @33:34-33:60
+            Value: BinaryExpr Op=- @33:41-33:60
+              X: SelectorExpr @33:41-33:49
+                X: SelfExpr @33:41-33:45
+                Name: Ident max @33:46-33:49
+              Y: SelectorExpr @33:52-33:60
+                X: SelfExpr @33:52-33:56
+                Name: Ident min @33:57-33:60
+  Decls[5]: VariantDecl @37:1-45:2
+    Doc: DocComment "A reward." @36:1-36:14
+    Name: Ident Reward @37:9-37:15
+    Items[0]: VariantCase @39:3-42:4
+      Doc: DocComment "Some coins." @38:3-38:18
+      Name: Ident coins @39:3-39:8
+      Body: RecordBody @39:9-42:4
+        Items[0]: FieldDecl @41:5-41:16
+          Doc: DocComment "How many." @40:5-40:18
+          Name: Ident amount @41:5-41:11
+          Type: NamedType @41:13-41:16
+            Name: QualifiedName Int @41:13-41:16
+    Items[1]: VariantCase @44:3-44:10
+      Doc: DocComment "Nothing." @43:3-43:15
+      Name: Ident nothing @44:3-44:10
+  Decls[6]: TypeDecl @48:1-51:2
+    Doc: DocComment "A bonus, by what it aims at." @47:1-47:33
+    Name: Ident Bonus @48:6-48:11
+    Params[0]: Param @48:12-48:18
+      Name: Ident a @48:12-48:13
+      Type: NamedType @48:15-48:18
+        Name: QualifiedName Aim @48:15-48:18
+    Type: MatchType @48:22-51:2
+      Scrutinee: IdentExpr a @48:28-48:29
+      Arms[0]: TypeArm @49:3-49:14
+        Patterns[0]: Pattern @49:3-49:7
+          Name: QualifiedName gold @49:3-49:7
+        Type: NamedType @49:11-49:14
+          Name: QualifiedName Int @49:11-49:14
+      Arms[1]: TypeArm @50:3-50:15
+        Patterns[0]: Pattern @50:3-50:7
+          Name: QualifiedName mood @50:3-50:7
+        Type: NamedType @50:11-50:15
+          Name: QualifiedName Mood @50:11-50:15
+  Decls[7]: RecordDecl @54:1-59:2
+    Doc: DocComment "An effect: its bonus's type follows its aim." @53:1-53:49
+    Name: Ident Effect @54:8-54:14
+    Body: RecordBody @54:15-59:2
+      Items[0]: FieldDecl @56:3-56:11
+        Doc: DocComment "What it aims at." @55:3-55:23
+        Name: Ident aim @56:3-56:6
+        Type: NamedType @56:8-56:11
+          Name: QualifiedName Aim @56:8-56:11
+      Items[1]: FieldDecl @58:3-58:20
+        Doc: DocComment "Its bonus." @57:3-57:17
+        Name: Ident bonus @58:3-58:8
+        Type: NamedType @58:10-58:20
+          Name: QualifiedName Bonus @58:10-58:15
+          Args: TypeArgs @58:15-58:20
+            Args[0]: IdentExpr aim @58:16-58:19
+  Decls[8]: RecordDecl @62:1-65:2
+    Doc: DocComment "A marker on a map." @61:1-61:23
+    Name: Ident Marker @62:8-62:14
+    Body: RecordBody @62:15-65:2
+      Items[0]: FieldDecl @64:3-64:15
+        Doc: DocComment "Its code." @63:3-63:16
+        Name: Ident code @64:3-64:7
+        Type: NamedType @64:9-64:15
+          Name: QualifiedName String @64:9-64:15
+  Decls[9]: RecordDecl @68:1-71:2
+    Doc: DocComment "A shelf of markers: a table the core's own record holds." @67:1-67:61
+    Name: Ident Shelf @68:8-68:13
+    Body: RecordBody @68:14-71:2
+      Items[0]: FieldDecl @70:3-70:22
+        Doc: DocComment "Its slots." @69:3-69:17
+        Name: Ident slots @70:3-70:8
+        Type: TableType @70:10-70:22
+          Name: QualifiedName Marker @70:16-70:22
+  Decls[10]: EmitDecl @73:1-73:35
+    Target: Ident go @73:6-73:8
+    Options: BraceLit @73:9-73:35
+      Items[0]: FieldItem @73:11-73:33
+        Name: Ident out @73:11-73:14
+        Value: StringLit @73:16-73:33
+          Parts[0]: text "../out/go/core/"
+  Decls[11]: EmitDecl @74:1-74:37
+    Target: Ident cpp @74:6-74:9
+    Options: BraceLit @74:10-74:37
+      Items[0]: FieldItem @74:12-74:35
+        Name: Ident out @74:12-74:15
+        Value: StringLit @74:17-74:35
+          Parts[0]: text "../out/cpp/core/"
+  Decls[12]: EmitDecl @75:1-75:37
+    Target: Ident ts @75:6-75:8
+    Options: BraceLit @75:9-75:37
+      Items[0]: FieldItem @75:11-75:35
+        Name: Ident out @75:11-75:14
+        Value: StringLit @75:16-75:35
+          Parts[0]: text "../out/ts/core.ts"
+== findings
+0 errors, 0 warnings in 1 package (…)

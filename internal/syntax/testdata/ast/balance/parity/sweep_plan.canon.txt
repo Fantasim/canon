@@ -62,28 +62,25 @@ File: File FileKind=source @1:1-290:1
         Name: Ident tier @25:3-25:7
         Type: NamedType @25:9-25:15
           Name: QualifiedName String @25:9-25:15
-      Items[3]: FieldDecl @26:3-26:25
+      Items[3]: FieldDecl @26:3-26:18
         Name: Ident weapon @26:3-26:9
         Type: OptionalType @26:11-26:18
           Elem: NamedType @26:11-26:17
             Name: QualifiedName String @26:11-26:17
-        Default: NoneLit @26:21-26:25
-      Items[4]: FieldDecl @27:3-27:25
+      Items[4]: FieldDecl @27:3-27:18
         Name: Ident handed @27:3-27:9
         Type: OptionalType @27:11-27:18
           Elem: NamedType @27:11-27:17
             Name: QualifiedName String @27:11-27:17
-        Default: NoneLit @27:21-27:25
       Items[5]: FieldDecl @28:3-28:17
         Name: Ident target @28:3-28:9
         Type: NamedType @28:11-28:17
           Name: QualifiedName String @28:11-28:17
-      Items[6]: FieldDecl @29:3-29:27
+      Items[6]: FieldDecl @29:3-29:20
         Name: Ident unlockLevel @29:3-29:14
         Type: OptionalType @29:16-29:20
           Elem: NamedType @29:16-29:19
             Name: QualifiedName Int @29:16-29:19
-        Default: NoneLit @29:23-29:27
       Items[7]: FieldDecl @30:3-30:45
         Name: Ident reqMp @30:3-30:8
         Type: NamedType @30:10-30:13
@@ -179,25 +176,24 @@ File: File FileKind=source @1:1-290:1
             Name: Ident none @42:42-42:46
             Value: StringLit @42:48-42:51
               Parts[0]: text "="
-  Decls[6]: RecordDecl @46:1-46:74
+  Decls[6]: RecordDecl @46:1-46:67
     Doc: DocComment "A row of etc.json's `jobs`." @45:1-45:32
     Mods: Modifiers Local="local" @46:1-46:6
     Name: Ident EtcJob @46:14-46:20
-    Body: RecordBody @46:21-46:74
+    Body: RecordBody @46:21-46:67
       Items[0]: FieldDecl @46:23-46:33
         Name: Ident id @46:23-46:25
         Type: NamedType @46:27-46:33
           Name: QualifiedName String @46:27-46:33
-      Items[1]: FieldDecl @46:35-46:58
+      Items[1]: FieldDecl @46:35-46:51
         Name: Ident jobBase @46:35-46:42
         Type: OptionalType @46:44-46:51
           Elem: NamedType @46:44-46:50
             Name: QualifiedName String @46:44-46:50
-        Default: NoneLit @46:54-46:58
-      Items[2]: FieldDecl @46:60-46:72
-        Name: Ident name @46:60-46:64
-        Type: NamedType @46:66-46:72
-          Name: QualifiedName String @46:66-46:72
+      Items[2]: FieldDecl @46:53-46:65
+        Name: Ident name @46:53-46:57
+        Type: NamedType @46:59-46:65
+          Name: QualifiedName String @46:59-46:65
   Decls[7]: LetDecl @48:1-49:74
     Mods: Modifiers Local="local" @48:1-48:6
     Name: Ident skills @48:11-48:17

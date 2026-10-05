@@ -1,0 +1,237 @@
+File: File FileKind=source @1:1-60:1
+  Doc: DocComment "Shared records (CODEGEN §2.8, §5.9, §5.14; DECISIONS 320, 323): a package holds another\npackage's records, variants, dependent types and tables in its own values and fields, in\nevery target and mode, without copying their types. features.shared.core is baked; the world\nbelow is baked in Go and TypeScript, read from data in C++. Each builds core's values itself,\nthrough core's make hooks in Go and C++ and object literals in TypeScript, and holds core's\nrecords in tables of its own row type, keyed by its own ids." @1:1-6:65
+  Package: QualifiedName features.shared @7:9-7:24
+  Imports[0]: Import @9:1-9:82
+    Path: QualifiedName features.shared.core @9:8-9:28
+    Names[0]: Ident Effect @9:31-9:37
+    Names[1]: Ident LevelRange @9:39-9:49
+    Names[2]: Ident Marker @9:51-9:57
+    Names[3]: Ident Reward @9:59-9:65
+    Names[4]: Ident Shelf @9:67-9:72
+    Names[5]: Ident Status @9:74-9:80
+  Decls[0]: RecordDecl @12:1-21:2
+    Doc: DocComment "A zone of the world." @11:1-11:25
+    Name: Ident Zone @12:8-12:12
+    Body: RecordBody @12:13-21:2
+      Items[0]: FieldDecl @14:3-14:21
+        Doc: DocComment "Its level band." @13:3-13:22
+        Name: Ident levels @14:3-14:9
+        Type: NamedType @14:11-14:21
+          Name: QualifiedName LevelRange @14:11-14:21
+      Items[1]: FieldDecl @16:3-16:17
+        Doc: DocComment "What clearing it gives." @15:3-15:30
+        Name: Ident reward @16:3-16:9
+        Type: NamedType @16:11-16:17
+          Name: QualifiedName Reward @16:11-16:17
+      Items[2]: FieldDecl @18:3-18:17
+        Doc: DocComment "Its effect." @17:3-17:18
+        Name: Ident effect @18:3-18:9
+        Type: NamedType @18:11-18:17
+          Name: QualifiedName Effect @18:11-18:17
+      Items[3]: FieldDecl @20:3-20:24
+        Doc: DocComment "Its markers: rows of core's Marker, keyed by this package's ids." @19:3-19:71
+        Name: Ident markers @20:3-20:10
+        Type: TableType @20:12-20:24
+          Name: QualifiedName Marker @20:18-20:24
+  Decls[1]: LetDecl @24:1-37:2
+    Doc: DocComment "Every zone." @23:1-23:16
+    Name: Ident zones @24:5-24:10
+    Type: TableType @24:12-24:22
+      Name: QualifiedName Zone @24:18-24:22
+    Value: BraceLit @24:25-37:2
+      Items[0]: EntryItem @25:3-30:4
+        Key: Ident forest @25:3-25:9
+        Value: BraceLit @25:10-30:4
+          Items[0]: FieldItem @26:5-26:45
+            Name: Ident levels @26:5-26:11
+            Value: BraceLit @26:13-26:45
+              Items[0]: FieldItem @26:15-26:21
+                Name: Ident min @26:15-26:18
+                Value: IntLit Value=1 @26:20-26:21
+              Items[1]: FieldItem @26:23-26:29
+                Name: Ident max @26:23-26:26
+                Value: IntLit Value=5 @26:28-26:29
+              Items[2]: FieldItem @26:31-26:43
+                Name: Ident status @26:31-26:37
+                Value: IdentExpr open @26:39-26:43
+          Items[1]: FieldItem @27:5-27:32
+            Name: Ident reward @27:5-27:11
+            Value: TypedLit @27:13-27:32
+              Type: QualifiedName coins @27:13-27:18
+              Lit: BraceLit @27:19-27:32
+                Items[0]: FieldItem @27:21-27:30
+                  Name: Ident amount @27:21-27:27
+                  Value: IntLit Value=3 @27:29-27:30
+          Items[2]: FieldItem @28:5-28:36
+            Name: Ident effect @28:5-28:11
+            Value: BraceLit @28:13-28:36
+              Items[0]: FieldItem @28:15-28:24
+                Name: Ident aim @28:15-28:18
+                Value: IdentExpr gold @28:20-28:24
+              Items[1]: FieldItem @28:26-28:34
+                Name: Ident bonus @28:26-28:31
+                Value: IntLit Value=2 @28:33-28:34
+          Items[3]: FieldItem @29:5-29:64
+            Name: Ident markers @29:5-29:12
+            Value: BraceLit @29:14-29:64
+              Items[0]: EntryItem @29:16-29:34
+                Key: Ident gate @29:16-29:20
+                Value: BraceLit @29:21-29:34
+                  Items[0]: FieldItem @29:23-29:32
+                    Name: Ident code @29:23-29:27
+                    Value: StringLit @29:29-29:32
+                      Parts[0]: text "g"
+              Items[1]: EntryItem @29:36-29:62
+                Mods: Modifiers Retired="retired" @29:36-29:43
+                Key: Ident well @29:44-29:48
+                Value: BraceLit @29:49-29:62
+                  Items[0]: FieldItem @29:51-29:60
+                    Name: Ident code @29:51-29:55
+                    Value: StringLit @29:57-29:60
+                      Parts[0]: text "w"
+      Items[1]: EntryItem @31:3-36:4
+        Key: Ident marsh @31:3-31:8
+        Value: BraceLit @31:9-36:4
+          Items[0]: FieldItem @32:5-32:47
+            Name: Ident levels @32:5-32:11
+            Value: BraceLit @32:13-32:47
+              Items[0]: FieldItem @32:15-32:21
+                Name: Ident min @32:15-32:18
+                Value: IntLit Value=4 @32:20-32:21
+              Items[1]: FieldItem @32:23-32:29
+                Name: Ident max @32:23-32:26
+                Value: IntLit Value=9 @32:28-32:29
+              Items[2]: FieldItem @32:31-32:45
+                Name: Ident status @32:31-32:37
+                Value: IdentExpr closed @32:39-32:45
+          Items[1]: FieldItem @33:5-33:20
+            Name: Ident reward @33:5-33:11
+            Value: IdentExpr nothing @33:13-33:20
+          Items[2]: FieldItem @34:5-34:39
+            Name: Ident effect @34:5-34:11
+            Value: BraceLit @34:13-34:39
+              Items[0]: FieldItem @34:15-34:24
+                Name: Ident aim @34:15-34:18
+                Value: IdentExpr mood @34:20-34:24
+              Items[1]: FieldItem @34:26-34:37
+                Name: Ident bonus @34:26-34:31
+                Value: IdentExpr grim @34:33-34:37
+          Items[3]: FieldItem @35:5-35:16
+            Name: Ident markers @35:5-35:12
+            Value: BraceLit @35:14-35:16
+  Decls[2]: LetDecl @40:1-43:2
+    Doc: DocComment "Level bands: core's LevelRange as this package's table." @39:1-39:60
+    Name: Ident bands @40:5-40:10
+    Type: TableType @40:12-40:28
+      Name: QualifiedName LevelRange @40:18-40:28
+    Value: BraceLit @40:31-43:2
+      Items[0]: EntryItem @41:3-41:39
+        Key: Ident low @41:3-41:6
+        Value: BraceLit @41:7-41:39
+          Items[0]: FieldItem @41:9-41:15
+            Name: Ident min @41:9-41:12
+            Value: IntLit Value=1 @41:14-41:15
+          Items[1]: FieldItem @41:17-41:23
+            Name: Ident max @41:17-41:20
+            Value: IntLit Value=5 @41:22-41:23
+          Items[2]: FieldItem @41:25-41:37
+            Name: Ident status @41:25-41:31
+            Value: IdentExpr open @41:33-41:37
+      Items[1]: EntryItem @42:3-42:47
+        Mods: Modifiers Retired="retired" @42:3-42:10
+        Key: Ident old @42:11-42:14
+        Value: BraceLit @42:15-42:47
+          Items[0]: FieldItem @42:17-42:23
+            Name: Ident min @42:17-42:20
+            Value: IntLit Value=0 @42:22-42:23
+          Items[1]: FieldItem @42:25-42:31
+            Name: Ident max @42:25-42:28
+            Value: IntLit Value=1 @42:30-42:31
+          Items[2]: FieldItem @42:33-42:45
+            Name: Ident status @42:33-42:39
+            Value: IdentExpr shut @42:41-42:45
+  Decls[3]: LetDecl @46:1-48:2
+    Doc: DocComment "Moods of the world: core's Status, keyed by this package's own StatusID beside core's." @45:1-45:91
+    Name: Ident moods @46:5-46:10
+    Type: TableType @46:12-46:24
+      Name: QualifiedName Status @46:18-46:24
+    Value: BraceLit @46:27-48:2
+      Items[0]: EntryItem @47:3-47:25
+        Key: Ident calm @47:3-47:7
+        Value: BraceLit @47:8-47:25
+          Items[0]: FieldItem @47:10-47:23
+            Name: Ident label @47:10-47:15
+            Value: StringLit @47:17-47:23
+              Parts[0]: text "Calm"
+  Decls[4]: LetDecl @51:1-51:57
+    Doc: DocComment "The starting band: a plain value of core's record." @50:1-50:55
+    Name: Ident start @51:5-51:10
+    Type: NamedType @51:12-51:22
+      Name: QualifiedName LevelRange @51:12-51:22
+    Value: BraceLit @51:25-51:57
+      Items[0]: FieldItem @51:27-51:33
+        Name: Ident min @51:27-51:30
+        Value: IntLit Value=1 @51:32-51:33
+      Items[1]: FieldItem @51:35-51:41
+        Name: Ident max @51:35-51:38
+        Value: IntLit Value=2 @51:40-51:41
+      Items[2]: FieldItem @51:43-51:55
+        Name: Ident status @51:43-51:49
+        Value: IdentExpr open @51:51-51:55
+  Decls[5]: LetDecl @54:1-54:52
+    Doc: DocComment "A shelf: core's record holding a table of core's own Marker." @53:1-53:65
+    Name: Ident shelf @54:5-54:10
+    Type: NamedType @54:12-54:17
+      Name: QualifiedName Shelf @54:12-54:17
+    Value: BraceLit @54:20-54:52
+      Items[0]: FieldItem @54:22-54:50
+        Name: Ident slots @54:22-54:27
+        Value: BraceLit @54:29-54:50
+          Items[0]: EntryItem @54:31-54:48
+            Key: Ident top @54:31-54:34
+            Value: BraceLit @54:35-54:48
+              Items[0]: FieldItem @54:37-54:46
+                Name: Ident code @54:37-54:41
+                Value: StringLit @54:43-54:46
+                  Parts[0]: text "t"
+  Decls[6]: EmitDecl @56:1-56:34
+    Target: Ident go @56:6-56:8
+    Options: BraceLit @56:9-56:34
+      Items[0]: FieldItem @56:11-56:32
+        Name: Ident out @56:11-56:14
+        Value: StringLit @56:16-56:32
+          Parts[0]: text "out/go/shared/"
+  Decls[7]: EmitDecl @57:1-57:48
+    Target: Ident cpp @57:6-57:9
+    Options: BraceLit @57:10-57:48
+      Items[0]: FieldItem @57:12-57:34
+        Name: Ident out @57:12-57:15
+        Value: StringLit @57:17-57:34
+          Parts[0]: text "out/cpp/shared/"
+      Items[1]: FieldItem @57:36-57:46
+        Name: Ident mode @57:36-57:40
+        Value: IdentExpr data @57:42-57:46
+  Decls[8]: EmitDecl @58:1-58:36
+    Target: Ident ts @58:6-58:8
+    Options: BraceLit @58:9-58:36
+      Items[0]: FieldItem @58:11-58:34
+        Name: Ident out @58:11-58:14
+        Value: StringLit @58:16-58:34
+          Parts[0]: text "out/ts/shared.ts"
+  Decls[9]: EmitDecl @59:1-59:76
+    Target: Ident json @59:6-59:10
+    Options: BraceLit @59:11-59:76
+      Items[0]: FieldItem @59:13-59:29
+        Name: Ident out @59:13-59:16
+        Value: StringLit @59:18-59:29
+          Parts[0]: text "out/data/"
+      Items[1]: FieldItem @59:31-59:74
+        Name: Ident values @59:31-59:37
+        Value: ListLit @59:39-59:74
+          Elems[0]: IdentExpr zones @59:40-59:45
+          Elems[1]: IdentExpr bands @59:47-59:52
+          Elems[2]: IdentExpr moods @59:54-59:59
+          Elems[3]: IdentExpr start @59:61-59:66
+          Elems[4]: IdentExpr shelf @59:68-59:73
+== findings
+0 errors, 0 warnings in 1 package (…)

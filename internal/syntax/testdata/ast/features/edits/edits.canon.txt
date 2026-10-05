@@ -272,21 +272,20 @@ File: File FileKind=source @1:1-89:1
           Args[0]: AnnotationArg @82:31-82:41
             Value: StringLit @82:31-82:41
               Parts[0]: text "szRegion"
-      Items[4]: FieldDecl @84:3-84:49
+      Items[4]: FieldDecl @84:3-84:42
         Doc: DocComment "A welcome message; an empty string in the file means none." @83:3-83:65
         Name: Ident motd @84:3-84:7
         Type: OptionalType @84:9-84:16
           Elem: NamedType @84:9-84:15
             Name: QualifiedName String @84:9-84:15
-        Default: NoneLit @84:19-84:23
-        Annotations[0]: Annotation @84:24-84:49
-          Name: Ident json @84:25-84:29
-          Args[0]: AnnotationArg @84:30-84:38
-            Value: StringLit @84:30-84:38
+        Annotations[0]: Annotation @84:17-84:42
+          Name: Ident json @84:18-84:22
+          Args[0]: AnnotationArg @84:23-84:31
+            Value: StringLit @84:23-84:31
               Parts[0]: text "szMotd"
-          Args[1]: AnnotationArg @84:40-84:48
-            Name: Ident none @84:40-84:44
-            Value: StringLit @84:46-84:48
+          Args[1]: AnnotationArg @84:33-84:41
+            Name: Ident none @84:33-84:37
+            Value: StringLit @84:39-84:41
   Decls[10]: LetDecl @88:1-88:46
     Doc: DocComment "The capacities." @87:1-87:20
     Name: Ident limits @88:5-88:11

@@ -13,7 +13,7 @@ record Farm {
 package p
 
 record Farm {
-  maxModels: Int? = none
+  maxModels: Int?
     @deprecated("never read by LoadFromFile: the real cap is FARM_MAX_MODELS = 100. Kept as is; changing it changes nothing in game.")
   other: Int = 1
     @json("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")

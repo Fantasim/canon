@@ -39,13 +39,12 @@ File: File FileKind=source @1:1-43:1
             Args[0]: RangeExpr Op=..= @16:15-16:28
               Lo: IntLit Value=1 @16:15-16:16
               Hi: IntLit Value=1000000 @16:19-16:28
-      Items[2]: FieldDecl @18:3-18:31
+      Items[2]: FieldDecl @18:3-18:24
         Doc: DocComment "The tier a re-roll moves the ticket to, if any." @17:3-17:54
         Name: Ident upgradesTo @18:3-18:13
         Type: OptionalType @18:15-18:24
           Elem: RefType @18:15-18:23
             Name: QualifiedName Tier @18:19-18:23
-        Default: NoneLit @18:27-18:31
   Decls[2]: LetDecl @22:1-29:2
     Doc: DocComment "Every tier, in display order." @21:1-21:34
     Name: Ident tiers @22:5-22:10

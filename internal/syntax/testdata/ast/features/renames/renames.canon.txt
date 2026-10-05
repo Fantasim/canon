@@ -81,13 +81,12 @@ File: File FileKind=source @1:1-129:1
         Name: Ident reward @42:3-42:9
         Type: NamedType @42:11-42:16
           Name: QualifiedName Prize @42:11-42:16
-      Items[4]: FieldDecl @44:3-44:29
+      Items[4]: FieldDecl @44:3-44:22
         Doc: DocComment "The quest that follows it." @43:3-43:33
         Name: Ident next @44:3-44:7
         Type: OptionalType @44:9-44:22
           Elem: RefType @44:9-44:21
             Name: QualifiedName missions @44:13-44:21
-        Default: NoneLit @44:25-44:29
       Items[5]: FnDecl Self="self" @47:3-47:57
         Doc: DocComment "What a list shows: the name and the level." @46:3-46:49
         Name: Ident label @47:6-47:11

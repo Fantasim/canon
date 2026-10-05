@@ -36,6 +36,7 @@ func newBuilder(f *syntax.File) *builder {
 			drop[e.Colon] = drop[e.Colon] || sugared(e) && !keep
 		}
 	}
+	dropRedundantNones(f, drop)
 	b := &builder{
 		f: f, notes: attach(f, drop), glued: map[*syntax.FieldDecl]bool{}, drop: drop,
 		heldLead: make([]bool, len(f.Tokens)), heldTrail: make([]bool, len(f.Tokens)),

@@ -27,13 +27,12 @@ File: File FileKind=source @1:1-60:1
           Name: QualifiedName Path @17:15-17:19
         Default: StringLit @17:22-17:36
           Parts[0]: text "../../Client"
-      Items[2]: FieldDecl @19:3-19:24
+      Items[2]: FieldDecl @19:3-19:17
         Doc: DocComment "The .dds icons; `none` probes <client>/Data/UI/Icon, then <client>/Icon." @18:3-18:79
         Name: Ident iconDir @19:3-19:10
         Type: OptionalType @19:12-19:17
           Elem: NamedType @19:12-19:16
             Name: QualifiedName Path @19:12-19:16
-        Default: NoneLit @19:20-19:24
       Items[3]: FieldDecl @21:3-21:28
         Doc: DocComment "Thumbnails and indexes. Never inside Resource." @20:3-20:53
         Name: Ident cacheDir @21:3-21:11

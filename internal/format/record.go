@@ -46,7 +46,7 @@ func (b *builder) fieldDecl(n *syntax.FieldDecl) *doc {
 		env := b.before(n.Env.First())
 		ds = append(ds, spaceDoc, b.tok(b.before(env)), spaceDoc, b.tok(env), spaceDoc, b.node(n.Env))
 	}
-	if n.Default != nil {
+	if n.Default != nil && !redundantNone(n) {
 		ds = append(ds, b.assign(b.before(n.Default.First()), n.Default))
 	}
 	sep := lineDoc

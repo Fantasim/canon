@@ -88,25 +88,23 @@ File: File FileKind=source @1:1-430:1
           Args: TypeArgs @52:16-52:21
             Args[0]: RangeExpr Op=.. @52:17-52:20
               Lo: IntLit Value=1 @52:17-52:18
-      Items[3]: FieldDecl @54:3-54:23
+      Items[3]: FieldDecl @54:3-54:16
         Doc: DocComment "Shown under the label." @53:3-53:29
         Name: Ident hint @54:3-54:7
         Type: OptionalType @54:9-54:16
           Elem: NamedType @54:9-54:15
             Name: QualifiedName String @54:9-54:15
-        Default: NoneLit @54:19-54:23
       Items[4]: FieldDecl @56:3-56:15
         Doc: DocComment "Who may set the flag." @55:3-55:28
         Name: Ident setBy @56:3-56:8
         Type: NamedType @56:10-56:15
           Name: QualifiedName Actor @56:10-56:15
-      Items[5]: FieldDecl @58:3-58:28
+      Items[5]: FieldDecl @58:3-58:21
         Doc: DocComment "Who may see that the flag was set; `none` means whoever can see the post." @57:3-57:80
         Name: Ident viewMinRole @58:3-58:14
         Type: OptionalType @58:16-58:21
           Elem: NamedType @58:16-58:20
             Name: QualifiedName Role @58:16-58:20
-        Default: NoneLit @58:24-58:28
   Decls[6]: RecordDecl @62:1-81:2
     Doc: DocComment "One point of the post lifecycle." @61:1-61:37
     Name: Ident Status @62:8-62:14
@@ -149,13 +147,12 @@ File: File FileKind=source @1:1-430:1
           Elem: NamedType @74:14-74:23
             Name: QualifiedName PostField @74:14-74:23
         Default: ListLit @74:27-74:29
-      Items[6]: FieldDecl @76:3-76:20
+      Items[6]: FieldDecl @76:3-76:13
         Doc: DocComment "Who, besides a triager, may make the transition into this status." @75:3-75:72
         Name: Ident by @76:3-76:5
         Type: OptionalType @76:7-76:13
           Elem: NamedType @76:7-76:12
             Name: QualifiedName Actor @76:7-76:12
-        Default: NoneLit @76:16-76:20
       Items[7]: CheckDecl Keyword=check @78:3-78:60
         Cond: CallExpr @78:9-78:24
           Fun: SelectorExpr @78:9-78:22
@@ -247,13 +244,12 @@ File: File FileKind=source @1:1-430:1
           Args: TypeArgs @108:16-108:21
             Args[0]: RangeExpr Op=.. @108:17-108:20
               Lo: IntLit Value=1 @108:17-108:18
-      Items[4]: FieldDecl @110:3-110:23
+      Items[4]: FieldDecl @110:3-110:16
         Doc: DocComment "Shown under the label." @109:3-109:29
         Name: Ident hint @110:3-110:7
         Type: OptionalType @110:9-110:16
           Elem: NamedType @110:9-110:15
             Name: QualifiedName String @110:9-110:15
-        Default: NoneLit @110:19-110:23
       Items[5]: FieldDecl @112:3-112:16
         Doc: DocComment "Gates posting AND viewing." @111:3-111:33
         Name: Ident minRole @112:3-112:10

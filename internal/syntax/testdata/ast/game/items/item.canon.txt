@@ -256,21 +256,20 @@ File: File FileKind=source @1:1-227:1
           Args[0]: AnnotationArg @121:62-121:70
             Value: StringLit @121:62-121:70
               Parts[0]: text "szName"
-      Items[2]: FieldDecl @123:3-123:62
+      Items[2]: FieldDecl @123:3-123:55
         Doc: DocComment "Text key of the description." @122:3-122:35
         Name: Ident descriptionKey @123:3-123:17
         Type: OptionalType @123:19-123:26
           Elem: NamedType @123:19-123:25
             Name: QualifiedName String @123:19-123:25
-        Default: NoneLit @123:29-123:33
-        Annotations[0]: Annotation @123:34-123:62
-          Name: Ident json @123:35-123:39
-          Args[0]: AnnotationArg @123:40-123:51
-            Value: StringLit @123:40-123:51
+        Annotations[0]: Annotation @123:27-123:55
+          Name: Ident json @123:28-123:32
+          Args[0]: AnnotationArg @123:33-123:44
+            Value: StringLit @123:33-123:44
               Parts[0]: text "szCommand"
-          Args[1]: AnnotationArg @123:53-123:61
-            Name: Ident none @123:53-123:57
-            Value: StringLit @123:59-123:61
+          Args[1]: AnnotationArg @123:46-123:54
+            Name: Ident none @123:46-123:50
+            Value: StringLit @123:52-123:54
       Items[3]: FieldDecl @125:3-125:33
         Doc: DocComment "Thumbnail in inventories, shops and the studio." @124:3-124:54
         Name: Ident icon @125:3-125:7
@@ -314,7 +313,7 @@ File: File FileKind=source @1:1-227:1
             Name: Ident none @129:42-129:46
             Value: StringLit @129:48-129:51
               Parts[0]: text "="
-      Items[6]: FieldDecl @131:3-131:58
+      Items[6]: FieldDecl @131:3-131:51
         Doc: DocComment "Rarity: the colour of the name." @130:3-130:38
         Name: Ident rarity @131:3-131:9
         Type: OptionalType @131:11-131:20
@@ -323,15 +322,14 @@ File: File FileKind=source @1:1-227:1
             Args: TypeArgs @131:14-131:19
               Args[0]: RangeExpr Op=.. @131:15-131:18
                 Lo: IntLit Value=0 @131:15-131:16
-        Default: NoneLit @131:23-131:27
-        Annotations[0]: Annotation @131:28-131:58
-          Name: Ident json @131:29-131:33
-          Args[0]: AnnotationArg @131:34-131:46
-            Value: StringLit @131:34-131:46
+        Annotations[0]: Annotation @131:21-131:51
+          Name: Ident json @131:22-131:26
+          Args[0]: AnnotationArg @131:27-131:39
+            Value: StringLit @131:27-131:39
               Parts[0]: text "dwItemRare"
-          Args[1]: AnnotationArg @131:48-131:57
-            Name: Ident none @131:48-131:52
-            Value: StringLit @131:54-131:57
+          Args[1]: AnnotationArg @131:41-131:50
+            Name: Ident none @131:41-131:45
+            Value: StringLit @131:47-131:50
               Parts[0]: text "="
       Items[7]: FieldDecl @133:3-133:44
         Doc: DocComment "How many fit in one inventory slot." @132:3-132:42
@@ -360,21 +358,20 @@ File: File FileKind=source @1:1-227:1
               Parts[0]: text "bPartsFile"
           Args[1]: AnnotationArg @135:46-135:49
             Value: QualifiedName int @135:46-135:49
-      Items[9]: FieldDecl @137:3-137:64
+      Items[9]: FieldDecl @137:3-137:57
         Doc: DocComment "Sound played when the item drops." @136:3-136:40
         Name: Ident dropSound @137:3-137:12
         Type: OptionalType @137:14-137:25
           Elem: RefType @137:14-137:24
             Name: QualifiedName sounds @137:18-137:24
-        Default: NoneLit @137:28-137:32
-        Annotations[0]: Annotation @137:33-137:64
-          Name: Ident json @137:34-137:38
-          Args[0]: AnnotationArg @137:39-137:52
-            Value: StringLit @137:39-137:52
+        Annotations[0]: Annotation @137:26-137:57
+          Name: Ident json @137:27-137:31
+          Args[0]: AnnotationArg @137:32-137:45
+            Value: StringLit @137:32-137:45
               Parts[0]: text "dwSubDefine"
-          Args[1]: AnnotationArg @137:54-137:63
-            Name: Ident none @137:54-137:58
-            Value: StringLit @137:60-137:63
+          Args[1]: AnnotationArg @137:47-137:56
+            Name: Ident none @137:47-137:51
+            Value: StringLit @137:53-137:56
               Parts[0]: text "="
       Items[10]: FieldDecl @139:3-139:31
         Doc: DocComment "What the item is. Its tag and fields sit directly in the item's object." @138:3-138:78
@@ -433,21 +430,20 @@ File: File FileKind=source @1:1-227:1
             Args[0]: AnnotationArg @153:30-153:43
               Value: StringLit @153:30-153:43
                 Parts[0]: text "dwItemKind3"
-        Items[2]: FieldDecl @155:5-155:56
+        Items[2]: FieldDecl @155:5-155:49
           Doc: DocComment "The only job that may equip it; `none` means any job." @154:5-154:62
           Name: Ident job @155:5-155:8
           Type: OptionalType @155:10-155:19
             Elem: RefType @155:10-155:18
               Name: QualifiedName jobs @155:14-155:18
-          Default: NoneLit @155:22-155:26
-          Annotations[0]: Annotation @155:27-155:56
-            Name: Ident json @155:28-155:32
-            Args[0]: AnnotationArg @155:33-155:44
-              Value: StringLit @155:33-155:44
+          Annotations[0]: Annotation @155:20-155:49
+            Name: Ident json @155:21-155:25
+            Args[0]: AnnotationArg @155:26-155:37
+              Value: StringLit @155:26-155:37
                 Parts[0]: text "dwItemJob"
-            Args[1]: AnnotationArg @155:46-155:55
-              Name: Ident none @155:46-155:50
-              Value: StringLit @155:52-155:55
+            Args[1]: AnnotationArg @155:39-155:48
+              Name: Ident none @155:39-155:43
+              Value: StringLit @155:45-155:48
                 Parts[0]: text "="
         Items[3]: FieldDecl @157:5-157:55
           Doc: DocComment "Level required to equip it." @156:5-156:36
@@ -584,21 +580,20 @@ File: File FileKind=source @1:1-227:1
                 Parts[0]: text "dwFlag"
             Args[1]: AnnotationArg @176:44-176:48
               Value: QualifiedName bits @176:44-176:48
-        Items[13]: FieldDecl @178:5-178:69
+        Items[13]: FieldDecl @178:5-178:62
           Doc: DocComment "Sound of a hit." @177:5-177:24
           Name: Ident attackSound @178:5-178:16
           Type: OptionalType @178:18-178:29
             Elem: RefType @178:18-178:28
               Name: QualifiedName sounds @178:22-178:28
-          Default: NoneLit @178:32-178:36
-          Annotations[0]: Annotation @178:37-178:69
-            Name: Ident json @178:38-178:42
-            Args[0]: AnnotationArg @178:43-178:57
-              Value: StringLit @178:43-178:57
+          Annotations[0]: Annotation @178:30-178:62
+            Name: Ident json @178:31-178:35
+            Args[0]: AnnotationArg @178:36-178:50
+              Value: StringLit @178:36-178:50
                 Parts[0]: text "dwSndAttack1"
-            Args[1]: AnnotationArg @178:59-178:68
-              Name: Ident none @178:59-178:63
-              Value: StringLit @178:65-178:68
+            Args[1]: AnnotationArg @178:52-178:61
+              Name: Ident none @178:52-178:56
+              Value: StringLit @178:58-178:61
                 Parts[0]: text "="
         Items[14]: CheckDecl Keyword=check @180:5-180:97
           Cond: BinaryExpr Op=<= @180:11-180:33
@@ -659,21 +654,20 @@ File: File FileKind=source @1:1-227:1
             Args[0]: AnnotationArg @199:39-199:50
               Value: StringLit @199:39-199:50
                 Parts[0]: text "eItemType"
-        Items[2]: FieldDecl @201:5-201:71
+        Items[2]: FieldDecl @201:5-201:64
           Doc: DocComment "The stat an upgrade card raises." @200:5-200:41
           Name: Ident referStat @201:5-201:14
           Type: OptionalType @201:16-201:31
             Elem: RefType @201:16-201:30
               Name: QualifiedName attributes @201:20-201:30
-          Default: NoneLit @201:34-201:38
-          Annotations[0]: Annotation @201:39-201:71
-            Name: Ident json @201:40-201:44
-            Args[0]: AnnotationArg @201:45-201:59
-              Value: StringLit @201:45-201:59
+          Annotations[0]: Annotation @201:32-201:64
+            Name: Ident json @201:33-201:37
+            Args[0]: AnnotationArg @201:38-201:52
+              Value: StringLit @201:38-201:52
                 Parts[0]: text "dwReferStat2"
-            Args[1]: AnnotationArg @201:61-201:70
-              Name: Ident none @201:61-201:65
-              Value: StringLit @201:67-201:70
+            Args[1]: AnnotationArg @201:54-201:63
+              Name: Ident none @201:54-201:58
+              Value: StringLit @201:60-201:63
                 Parts[0]: text "="
     Items[1]: VariantCase @204:3-211:4
       Doc: DocComment "Food, eaten from the inventory: 243 items." @203:3-203:49
@@ -712,21 +706,20 @@ File: File FileKind=source @1:1-227:1
                   Parts[0]: text "nAdjParamVal"
                   Parts[1]: Interp @208:84-208:85
                     X: IdentExpr i @208:84-208:85
-        Items[2]: FieldDecl @210:5-210:63
+        Items[2]: FieldDecl @210:5-210:56
           Doc: DocComment "Wait before the next one can be eaten." @209:5-209:47
           Name: Ident cooldown @210:5-210:13
           Type: OptionalType @210:15-210:24
             Elem: NamedType @210:15-210:23
               Name: QualifiedName Duration @210:15-210:23
-          Default: NoneLit @210:27-210:31
-          Annotations[0]: Annotation @210:32-210:63
-            Name: Ident json @210:33-210:37
-            Args[0]: AnnotationArg @210:38-210:52
-              Value: StringLit @210:38-210:52
+          Annotations[0]: Annotation @210:25-210:56
+            Name: Ident json @210:26-210:30
+            Args[0]: AnnotationArg @210:31-210:45
+              Value: StringLit @210:31-210:45
                 Parts[0]: text "dwSkillReady"
-            Args[1]: AnnotationArg @210:54-210:62
-              Name: Ident unit @210:54-210:58
-              Value: QualifiedName ms @210:60-210:62
+            Args[1]: AnnotationArg @210:47-210:55
+              Name: Ident unit @210:47-210:51
+              Value: QualifiedName ms @210:53-210:55
   Decls[17]: LetDecl @219:1-220:34
     Doc: DocComment "Every converted item, keyed by its define. Item ids are stored in inventories, so\nthe table is stable: an item is retired, never removed or renamed. Each entry lives\nin its own file; a new one goes to entries/<kind>/<id>.canon." @216:1-218:66
     Annotations[0]: Annotation @219:1-219:36

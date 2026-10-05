@@ -60,20 +60,18 @@ File: File FileKind=source @1:1-224:1
         Name: Ident case @38:21-38:25
         Value: QualifiedName snake @38:27-38:32
     Body: RecordBody @38:34-47:2
-      Items[0]: FieldDecl @40:3-40:24
+      Items[0]: FieldDecl @40:3-40:17
         Doc: DocComment "The loader clamps it to >= 0." @39:3-39:36
         Name: Ident minLevel @40:3-40:11
         Type: OptionalType @40:13-40:17
           Elem: NamedType @40:13-40:16
             Name: QualifiedName Int @40:13-40:16
-        Default: NoneLit @40:20-40:24
-      Items[1]: FieldDecl @42:3-42:33
+      Items[1]: FieldDecl @42:3-42:26
         Doc: DocComment "The loader clamps it to [1, 100]." @41:3-41:40
         Name: Ident maxQuestsPerStyle @42:3-42:20
         Type: OptionalType @42:22-42:26
           Elem: NamedType @42:22-42:25
             Name: QualifiedName Int @42:22-42:25
-        Default: NoneLit @42:29-42:33
       Items[2]: FieldDecl @44:3-44:86
         Doc: DocComment "Wait before a completed quest can be rerolled." @43:3-43:53
         Name: Ident completionRerollCooldown @44:3-44:27
@@ -131,21 +129,20 @@ File: File FileKind=source @1:1-224:1
         Name: Ident case @62:20-62:24
         Value: QualifiedName snake @62:26-62:31
     Body: RecordBody @62:33-80:2
-      Items[0]: FieldDecl @64:3-64:65
+      Items[0]: FieldDecl @64:3-64:58
         Doc: DocComment "Absent for azure." @63:3-63:24
         Name: Ident rerollTime @64:3-64:13
         Type: OptionalType @64:15-64:24
           Elem: NamedType @64:15-64:23
             Name: QualifiedName Duration @64:15-64:23
-        Default: NoneLit @64:27-64:31
-        Annotations[0]: Annotation @64:32-64:65
-          Name: Ident json @64:33-64:37
-          Args[0]: AnnotationArg @64:38-64:55
-            Value: StringLit @64:38-64:55
+        Annotations[0]: Annotation @64:25-64:58
+          Name: Ident json @64:26-64:30
+          Args[0]: AnnotationArg @64:31-64:48
+            Value: StringLit @64:31-64:48
               Parts[0]: text "reroll_time_sec"
-          Args[1]: AnnotationArg @64:57-64:64
-            Name: Ident unit @64:57-64:61
-            Value: QualifiedName s @64:63-64:64
+          Args[1]: AnnotationArg @64:50-64:57
+            Name: Ident unit @64:50-64:54
+            Value: QualifiedName s @64:56-64:57
       Items[1]: FieldDecl @66:3-66:57
         Doc: DocComment "Time a quest of this style is sized for." @65:3-65:47
         Name: Ident targetTime @66:3-66:13
@@ -191,18 +188,17 @@ File: File FileKind=source @1:1-224:1
             Args: TypeArgs @72:36-72:41
               Args[0]: RangeExpr Op=.. @72:37-72:40
                 Lo: IntLit Value=0 @72:37-72:38
-      Items[5]: FieldDecl @74:3-74:43
+      Items[5]: FieldDecl @74:3-74:36
         Doc: DocComment "What completing a quest pays; `{}` on the wire means nothing." @73:3-73:68
         Name: Ident rewards @74:3-74:10
         Type: OptionalType @74:12-74:20
           Elem: NamedType @74:12-74:19
             Name: QualifiedName Rewards @74:12-74:19
-        Default: NoneLit @74:23-74:27
-        Annotations[0]: Annotation @74:28-74:43
-          Name: Ident json @74:29-74:33
-          Args[0]: AnnotationArg @74:34-74:42
-            Name: Ident none @74:34-74:38
-            Value: BraceLit @74:40-74:42
+        Annotations[0]: Annotation @74:21-74:36
+          Name: Ident json @74:22-74:26
+          Args[0]: AnnotationArg @74:27-74:35
+            Name: Ident none @74:27-74:31
+            Value: BraceLit @74:33-74:35
       Items[6]: CheckDecl Keyword=check @76:3-77:72
         Cond: BinaryExpr Op=== @76:9-76:37
           X: CallExpr @76:9-76:30
@@ -302,7 +298,7 @@ File: File FileKind=source @1:1-224:1
         Name: Ident case @103:41-103:45
         Value: QualifiedName snake @103:47-103:52
     Body: RecordBody @103:54-112:2
-      Items[0]: FieldDecl @105:3-105:35
+      Items[0]: FieldDecl @105:3-105:28
         Doc: DocComment "One rate for the whole event..." @104:3-104:38
         Name: Ident rates @105:3-105:8
         Type: OptionalType @105:10-105:28
@@ -314,8 +310,7 @@ File: File FileKind=source @1:1-224:1
               Args: TypeArgs @105:21-105:26
                 Args[0]: RangeExpr Op=.. @105:22-105:25
                   Lo: IntLit Value=0 @105:22-105:23
-        Default: NoneLit @105:31-105:35
-      Items[1]: FieldDecl @107:3-107:63
+      Items[1]: FieldDecl @107:3-107:56
         Doc: DocComment "...or one per item / monster / dungeon, depending on `e`." @106:3-106:64
         Name: Ident ratesBySpecific @107:3-107:18
         Type: OptionalType @107:20-107:56
@@ -332,8 +327,7 @@ File: File FileKind=source @1:1-224:1
                 Args: TypeArgs @107:48-107:53
                   Args[0]: RangeExpr Op=.. @107:49-107:52
                     Lo: IntLit Value=0 @107:49-107:50
-        Default: NoneLit @107:59-107:63
-      Items[2]: FieldDecl @109:3-109:57
+      Items[2]: FieldDecl @109:3-109:50
         Doc: DocComment "A daily cap per item / monster / dungeon." @108:3-108:48
         Name: Ident dailyMaxBySpecific @109:3-109:21
         Type: OptionalType @109:23-109:50
@@ -347,7 +341,6 @@ File: File FileKind=source @1:1-224:1
               Args: TypeArgs @109:43-109:48
                 Args[0]: RangeExpr Op=.. @109:44-109:47
                   Lo: IntLit Value=0 @109:44-109:45
-        Default: NoneLit @109:53-109:57
       Items[3]: FieldDecl @111:3-111:28
         Doc: DocComment "The rate is a daily count, not an hourly rate." @110:3-110:53
         Name: Ident isDailyFlat @111:3-111:14
@@ -418,13 +411,12 @@ File: File FileKind=source @1:1-224:1
         Name: Ident condition @140:3-140:12
         Type: NamedType @140:14-140:23
           Name: QualifiedName Condition @140:14-140:23
-      Items[1]: FieldDecl @142:3-142:24
+      Items[1]: FieldDecl @142:3-142:17
         Doc: DocComment "Order among the amplifiers of one event; unique when set." @141:3-141:64
         Name: Ident priority @142:3-142:11
         Type: OptionalType @142:13-142:17
           Elem: NamedType @142:13-142:16
             Name: QualifiedName Int @142:13-142:16
-        Default: NoneLit @142:20-142:24
       Items[2]: FieldDecl @144:3-144:21
         Doc: DocComment "Lowest measure that gets the bonus." @143:3-143:42
         Name: Ident minValue @144:3-144:11

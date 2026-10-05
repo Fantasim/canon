@@ -263,21 +263,20 @@ File: File FileKind=source @1:1-211:1
           Args[0]: AnnotationArg @87:37-87:50
             Value: StringLit @87:37-87:50
               Parts[0]: text "dwItemKind1"
-      Items[3]: FieldDecl @89:3-89:54
+      Items[3]: FieldDecl @89:3-89:47
         Doc: DocComment "The only job that may use the item. \"=\" on the wire means any job." @88:3-88:73
         Name: Ident job @89:3-89:6
         Type: OptionalType @89:8-89:17
           Elem: RefType @89:8-89:16
             Name: QualifiedName jobs @89:12-89:16
-        Default: NoneLit @89:20-89:24
-        Annotations[0]: Annotation @89:25-89:54
-          Name: Ident json @89:26-89:30
-          Args[0]: AnnotationArg @89:31-89:42
-            Value: StringLit @89:31-89:42
+        Annotations[0]: Annotation @89:18-89:47
+          Name: Ident json @89:19-89:23
+          Args[0]: AnnotationArg @89:24-89:35
+            Value: StringLit @89:24-89:35
               Parts[0]: text "dwItemJob"
-          Args[1]: AnnotationArg @89:44-89:53
-            Name: Ident none @89:44-89:48
-            Value: StringLit @89:50-89:53
+          Args[1]: AnnotationArg @89:37-89:46
+            Name: Ident none @89:37-89:41
+            Value: StringLit @89:43-89:46
               Parts[0]: text "="
       Items[4]: FieldDecl @91:3-91:52
         Doc: DocComment "Item level. Absent means 1; \"=\" means the item has no level." @90:3-90:67
@@ -446,13 +445,12 @@ File: File FileKind=source @1:1-211:1
         Type: NamedType @144:10-144:19
           Name: QualifiedName ParamKind @144:10-144:19
         Default: IdentExpr none_ @144:22-144:27
-      Items[3]: FieldDecl @146:3-146:23
+      Items[3]: FieldDecl @146:3-146:16
         Doc: DocComment "Compile flag the event only exists under." @145:3-145:48
         Name: Ident flag @146:3-146:7
         Type: OptionalType @146:9-146:16
           Elem: NamedType @146:9-146:15
             Name: QualifiedName String @146:9-146:15
-        Default: NoneLit @146:19-146:23
   Decls[17]: TypeDecl @150:1-159:2
     Doc: DocComment "What a filter parameter may be for event `e`. The type depends on the value." @149:1-149:81
     Name: Ident Param @150:6-150:11
