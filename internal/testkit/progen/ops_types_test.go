@@ -153,10 +153,24 @@ func unknownMember(tg target) []progen.Site {
 // variadic are the built-ins that take any number of arguments (STDLIB.md §2.2).
 var variadic = map[string]bool{"min": true, "max": true}
 
+// typeFunctions names the peers' type functions: TYPES.md §4.3, decision 306.
+func typeFunctions(tg target) map[string]bool {
+	out := map[string]bool{}
+	for _, p := range peers(tg) {
+		for _, d := range nodes[*syntax.TypeDecl](p) {
+			if len(d.Params) > 0 && d.Name != nil {
+				out[d.Name.Name] = true
+			}
+		}
+	}
+	return out
+}
+
 func extraArgument(tg target) []progen.Site {
+	typeFns := typeFunctions(tg)
 	return sitesOf(tg, func(c *syntax.CallExpr) bool {
 		fn, isName := c.Fun.(*syntax.IdentExpr)
-		return isSource(tg) && len(c.Args) > 0 && c.Args[len(c.Args)-1].Name == nil && !(isName && variadic[fn.Name])
+		return isSource(tg) && len(c.Args) > 0 && c.Args[len(c.Args)-1].Name == nil && !(isName && (variadic[fn.Name] || typeFns[fn.Name]))
 	},
 		func(c *syntax.CallExpr) progen.Site {
 			s, _ := span(tg, c)
