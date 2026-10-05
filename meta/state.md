@@ -15,7 +15,7 @@ binder cascade, `ref == ref?` wrong answer, optional names never symbolic keys (
 `ca285e0`, `03fa330`); `examples/telemetry` (`9d53590`, `3b3c3a0`), the first real use: 7 events,
 Canon-native design (Louis, "elegance over legacy"). ADR-0014. Handoff to Source:
 [handoff/2026-10-04-telemetry-canon-ready.md](handoff/2026-10-04-telemetry-canon-ready.md).
-Louis question pending: [louis-calls Q1](handoff/2026-10-04-louis-calls.md) (what "retired" forbids).
+Louis Q1 answered: retired members are nameable only in `past E` slots ([ADR-0015](decisions/0015-past-types-name-retired-members.md)); not implemented.
 Not reviewed by a spec-reviewer (weekly limit hit): R4's three fixes and TE round 3 (orchestrator
 read the diffs; `make check` green). Re-review when the limit resets (2026-10-06).
 **Blocked:** CI (Actions billing, Louis), then push main.

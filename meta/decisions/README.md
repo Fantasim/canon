@@ -33,3 +33,4 @@ the narration.
 | [0012](0012-formatter-region-settle.md) | Rewrite settles one section; the layout verdict is kept per tree |
 | [0013](0013-rename-whole-file-layout.md) | A name rename splices tokens and lays the whole file out |
 | [0014](0014-cpp-baked-and-text-files.md) | C++ baked data, constexpr lookups and text-file ownership |
+| [0015](0015-past-types-name-retired-members.md) | `past E`: a type whose slots may name retired members |

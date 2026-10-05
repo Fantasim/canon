@@ -3,7 +3,10 @@
 Technical calls made today are in [log-2026-10-04](../decisions/log-2026-10-04.md) (DECISIONS
 293-301). One question is philosophy, so it is yours.
 
-## Q1. What does "retired" forbid?
+## Q1. What does "retired" forbid? — answered 2026-10-05
+
+**Answer:** (b), placed on the type: a slot typed `past E` may hold retired members; plain `E`
+still refuses them. See [ADR-0015](../decisions/0015-past-types-name-retired-members.md).
 
 Today a retired enum member (or variant case) may not appear in any stored value (`E3506`): it
 exists only so its code is never reused. Telemetry shows a case where history is the data itself:
