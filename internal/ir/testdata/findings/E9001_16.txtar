@@ -1,0 +1,45 @@
+CONFORMANCE.md §2.2, DECISIONS 306: `F(a…).members` in a translated fn is outside the portable subset; check records no Callee for `F(a…)`, and the form is refused, not dropped silently.
+-- a/a.canon --
+package a
+
+/// Kind.
+enum K { a, b }
+
+/// Other.
+enum E { x, y }
+
+/// Event.
+record Ev {
+  /// Its kind.
+  k: K
+}
+
+/// Events.
+let evs: table Ev = {
+  one { k: a }
+}
+
+/// The enum of an event.
+type F(e: Ev) = match e.k {
+  a => E
+  _ => K
+}
+
+/// Row.
+record Row {
+  /// Event.
+  ev: ref evs
+
+  /// Count.
+  export fn count(self, k: Int) -> Int {
+    let m = F(self.ev).members
+    return k
+  }
+}
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+error[E9001]  a/a.canon:33:13
+  F(self.ev).members is not allowed in translated function Row.count: it is outside the portable subset
+
+1 error, 0 warnings in 1 package (…)

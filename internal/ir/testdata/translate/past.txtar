@@ -1,0 +1,27 @@
+CONFORMANCE.md §2.2, TYPES.md §8.4 (DECISIONS 304): a translated fn may declare a local `let x: past K = …`; `past K` is `K` statically and emits as `K`, so the let translates with no store check and no finding.
+-- a/a.canon --
+package a
+
+/// Kinds.
+enum K {
+  a
+  b
+}
+
+/// Whether a kind is the first one.
+export fn isFirst(n: Int) -> Bool {
+  let k: past K = if n > 0 { a } else { b }
+  return k == a
+}
+
+emit go { out: "@features/a", package: "a" }
+-- bodies.txt --
+package a dir=a
+fn isFirst file=a.canon order=0 kind=translated
+  body {:Bool
+    let k = (if:a.K (>:Bool param0:Int 0:Int)
+      then a:a.K
+      else b:a.K)
+    return (==:Bool k:a.K a:a.K)
+  }
+0 errors, 0 warnings in 1 package (…)

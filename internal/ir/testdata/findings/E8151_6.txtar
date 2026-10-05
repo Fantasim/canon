@@ -1,0 +1,32 @@
+WIRE.md §5.9, §8.1, DECISIONS 308: the same through `emit json`: a value whose record has a dependent field with a Range branch is E8151, not a fingerprint failure.
+-- a/a.canon --
+package a
+
+/// A kind.
+enum K { a, b }
+
+/// The field's type.
+type F(k: K) = match k {
+  a => Int
+  _ => Range
+}
+
+/// A row.
+record R {
+  /// Its kind.
+  k: K
+  /// Its value.
+  v: F(k)
+}
+
+/// The row.
+let x: R = { k: a, v: 1 }
+
+emit json { out: "out/" }
+-- a.x.json --
+{ "k": "a", "v": 1 }
+-- findings.txt --
+error[E8151]  a/a.canon:21:5
+  value x of type a.R has no wire form
+
+1 error, 0 warnings in 1 package (…)

@@ -1,0 +1,28 @@
+WIRE.md §5.1, §8.5, CODEGEN.md §2.9, DECISIONS 283, 308: the stage-E walk covers a `@text` result written as JSON: a Duration finer than its field's `@json(unit:)`, deep in a list, is E8102 and names the field.
+-- a/a.canon --
+package a
+
+/// Inner.
+record Inner {
+  /// Wait.
+  wait: Duration @json(unit: s)
+}
+
+/// Outer.
+record Outer {
+  /// Items.
+  items: [Inner]
+}
+
+/// The file.
+@text("outer.json")
+export fn outer() -> Outer { return { items: [{ wait: 2s }, { wait: 1500ms }] } }
+
+emit text { out: "out/" }
+-- a.outer.calls.json --
+{ "": { "items": [{ "wait": 2 }, { "wait": 1.5 }] } }
+-- findings.txt --
+error[E8102]  a.outer.calls.json:1:44
+  1s500ms has no wire form for wait: not a whole number of s
+
+1 error, 0 warnings in 1 package (…)

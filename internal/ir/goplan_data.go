@@ -108,12 +108,12 @@ func goHeldBy(key any, pairs bool) []any {
 	return out
 }
 
-// goClassesOf adds the record or variant t is, or its element's, through lists and optionals.
+// goClassesOf adds the record or variant t is, or its element's, through lists, optionals and map values.
 func goClassesOf(t TypeRef, out []any) []any {
 	if (t.Kind == types.Record || t.Kind == types.Variant) && t.Named != nil {
 		return append(out, t.Named)
 	}
-	if t.Elem != nil && t.Kind != types.Map {
+	if t.Elem != nil {
 		return goClassesOf(*t.Elem, out)
 	}
 	return out
@@ -164,8 +164,11 @@ func (d *goData) reaches(key any, seen map[any]bool) bool {
 	return false
 }
 
-// resolvesOwn reports a record or case whose own field or precomputed method holds a resolved ref.
+// resolvesOwn reports a record or case whose own field or precomputed method holds a resolved ref, or a map with ref keys the loader checks.
 func (d *goData) resolvesOwn(key any) bool {
+	if d.checksKeys(key) {
+		return true
+	}
 	fields, fns := classBody(key)
 	for _, f := range fields {
 		if (!f.Optional || f.Type.Kind != types.Never) && d.pl.Slot(f).Resolved {

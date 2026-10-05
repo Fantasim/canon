@@ -14,17 +14,25 @@ func (s *stage) precompute() {
 		if !u.selected || !hasDataEmit(u) {
 			continue
 		}
-		for _, site := range u.fns {
-			if site.fn.Kind != FnTranslated && s.computable(site) {
-				site.fn.Value, site.fn.Table, _ = s.results(site, nil)
-				pc.walk(site.fn.Value)
-				pc.walk(site.fn.Table)
-			}
-		}
+		s.precomputeFns(pc, u)
 		for _, v := range u.values {
 			pc.walk(v.v.V)
 		}
 		pc.precomputeDefaults(u)
+	}
+}
+
+// precomputeFns computes u's package fns; a `@text` result's stored fns are never written, so never evaluated (DECISIONS 308).
+func (s *stage) precomputeFns(pc *precomputer, u *unit) {
+	for _, site := range u.fns {
+		if site.fn.Kind == FnTranslated || !s.computable(site) {
+			continue
+		}
+		site.fn.Value, site.fn.Table, _ = s.results(site, nil)
+		if !site.text {
+			pc.walk(site.fn.Value)
+			pc.walk(site.fn.Table)
+		}
 	}
 }
 

@@ -18,9 +18,8 @@ var ErrFingerprint = errors.New("ir: type has no canon-fp v1 form")
 // ErrPattern is a pattern CompilePattern has no automaton for: one outside EVALUATION.md §11.3's portable subset, which check refuses first (E1904).
 var ErrPattern = errors.New("ir: pattern outside the portable subset")
 
-// fmtPatternParse and fmtPatternInst say why a pattern has no automaton; fmtNoText names a @text fn left without a value.
+// fmtPatternParse and fmtPatternInst say why a pattern has no automaton.
 const (
 	fmtPatternParse = "%w: %w"
 	fmtPatternInst  = "%w: instruction %v has no automaton state"
-	fmtNoText       = "%w: package %s: @text fn %s has no String value"
 )

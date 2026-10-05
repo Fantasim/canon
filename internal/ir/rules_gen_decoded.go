@@ -39,11 +39,23 @@ func readFieldSites(f *Field, span source.Span) []typeSite {
 	return out
 }
 
-// checkDecodedType is E8019 `MapField` for a type a loader reads: no loader reads an ordered map. A literal union without a string wire form is check's E3002 (log-2026-09-24 "W1 gate lift review").
+// checkDecodedType is E8019 `MapField` for a map a loader cannot read: gen/go's and gen/cpp's data loaders read maps, keys as WIRE.md §5.8 in file order (CODEGEN.md §5.9, DECISIONS 312); a map that holds a dependent key or value is DependentType's.
 func (s *stage) checkDecodedType(u *unit, es *emitSite, site typeSite) {
-	if decodedHolds(site.t, isMap) {
+	if typeHolds(site.t, unreadMap(es.e)) {
 		u.reportGenConstruct(es, site.span, diag.KindMapField)
 	}
+}
+
+// unreadMap accepts a map e's loader cannot read: any in a types-mode decoder (nlohmann::json keeps no key order, CODEGEN.md §5.13), or in a data-mode loader one whose key is none WIRE.md §5.8 gives a wire key; a dependent key or value is DependentType's (unreadDependent).
+func unreadMap(e *Emit) func(*TypeRef) bool {
+	return func(t *TypeRef) bool {
+		return isMap(t) && (e.Mode != ModeData || t.Kind == types.Map && !readableKey(t.Key) && !isApp(t.Key))
+	}
+}
+
+// readableKey is a map key a data loader reads: its wire key is the text WIRE.md §5.8 gives, a String, an integer, an enum, a ref or a literal union.
+func readableKey(k *TypeRef) bool {
+	return k != nil && (k.Kind == types.String || k.Kind == types.Int || k.Kind == types.Enum || k.Kind == types.Ref || k.Kind == types.LitUnion)
 }
 
 // isMap is a map type, a dependent map included (CODEGEN.md §4.2).
@@ -60,6 +72,34 @@ func decodedHolds(t *TypeRef, bad func(*TypeRef) bool) bool {
 		}
 	}
 	return false
+}
+
+// readHolds reports what a loader reads of t, t itself or its elements through lists, optionals and map values, that bad accepts; a record or variant is its own decoder's.
+func readHolds(t *TypeRef, bad func(*TypeRef) bool) bool {
+	for ; t != nil; t = t.Elem {
+		if bad(t) {
+			return true
+		}
+		if t.Kind != types.List && t.Kind != types.Optional && t.Kind != types.Map {
+			return false
+		}
+	}
+	return false
+}
+
+// NumericMapKey reports a map key written as a canonical decimal integer (`0|-?[1-9][0-9]*`, WIRE.md §5.1, §5.8): an integer, an enum with @json(codes), a ref keyed by one; both data loaders read such a key by that rule.
+func NumericMapKey(t TypeRef) bool {
+	switch t.Kind {
+	case types.Int:
+		return true
+	case types.Enum:
+		e, ok := t.Named.(*Enum)
+		return ok && e.JSONCodes && e.Codes != nil
+	case types.Ref:
+		return t.Key != nil && NumericMapKey(*t.Key)
+	default:
+		return false
+	}
 }
 
 // StringWire reports a type written as a JSON string (WIRE.md §5.8): String, an enum without @json(codes), a ref keyed by one, a dependent type whose branches all are.

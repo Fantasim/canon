@@ -63,9 +63,9 @@ func (s *stage) checkOptionalElements(u *unit, es *emitSite) {
 	}, nil)
 }
 
-// checkOptionalMapValues is E8019 `OptionalMapValue`: neither generator has a type for a map of optional values (CODEGEN.md §4.2); a map a data loader reads is MapField alone.
+// checkOptionalMapValues is E8019 `OptionalMapValue`: neither generator has a type for a map of optional values (CODEGEN.md §4.2); a map a loader cannot read is MapField alone.
 func (s *stage) checkOptionalMapValues(u *unit, es *emitSite) {
-	read := s.readSpans(u, es, isMap)
+	read := s.readSpans(u, es, unreadMap(es.e))
 	for _, site := range s.typeSites(u, es) {
 		if !read[site.span] && typeHolds(site.t, func(t *TypeRef) bool { return isMap(t) && optionalElem(t) }) {
 			u.reportGenConstruct(es, site.span, diag.KindOptionalMapValue)
@@ -136,7 +136,7 @@ func (s *stage) readSpans(u *unit, es *emitSite, bad func(*TypeRef) bool) map[so
 		}
 		fields, fns := classBody(class)
 		for _, site := range s.decodedSites(fields, readFns(es.e, fns)) {
-			out[site.span] = out[site.span] || decodedHolds(site.t, bad)
+			out[site.span] = out[site.span] || typeHolds(site.t, bad)
 		}
 	}
 	return out

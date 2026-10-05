@@ -1,0 +1,25 @@
+CONFORMANCE.md §2.2, DECISIONS 306: `E.members` in a translated fn is outside the portable subset.
+-- a/a.canon --
+package a
+
+/// Kind.
+enum K { a, b }
+
+/// Row.
+record Row {
+  /// N.
+  n: Int
+
+  /// Count.
+  export fn count(self, k: Int) -> Int {
+    let m = K.members
+    return k
+  }
+}
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+error[E9001]  a/a.canon:13:13
+  K.members is not allowed in translated function Row.count: it is outside the portable subset
+
+1 error, 0 warnings in 1 package (…)

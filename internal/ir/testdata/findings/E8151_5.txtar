@@ -1,0 +1,33 @@
+WIRE.md §5.9, §8.5, DECISIONS 308: a `@text` result record with a dependent field is judged through every branch of its type function: one branch is a Range, so E8151 at stage E, never a failure when the file is written.
+-- a/a.canon --
+package a
+
+/// A kind.
+enum K { a, b }
+
+/// The field's type.
+type F(k: K) = match k {
+  a => Int
+  _ => Range
+}
+
+/// A row.
+record R {
+  /// Its kind.
+  k: K
+  /// Its value.
+  v: F(k)
+}
+
+/// The file.
+@text("r.json")
+export fn r() -> R { return { k: a, v: 1 } }
+
+emit text { out: "out/" }
+-- a.r.calls.json --
+{ "": { "k": "a", "v": 1 } }
+-- findings.txt --
+error[E8151]  a/a.canon:22:11
+  value r of type a.R has no wire form
+
+1 error, 0 warnings in 1 package (…)

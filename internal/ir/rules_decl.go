@@ -10,7 +10,12 @@ func (site *fnSite) span() source.Span { return site.obj.File().Span(site.decl.N
 
 // ownFns are the export fns u declares: its package fns, then its public types' methods.
 func (s *stage) ownFns(u *unit) []*fnSite {
-	out := append([]*fnSite(nil), u.fns...)
+	var out []*fnSite
+	for _, site := range u.fns {
+		if !site.text { // a `@text` fn is a file, not API (CODEGEN.md §2.9, DECISIONS 300)
+			out = append(out, site)
+		}
+	}
 	add := func(fns []*ExportFn) {
 		for _, fn := range fns {
 			if site := s.fnObjs[fn]; site != nil {
@@ -194,13 +199,17 @@ func wireFind(t types.Type, seen map[types.Type]bool, bad func(types.Type) bool)
 	return nil
 }
 
-// wireParts are the types a type's wire form holds: a record's or case's fields but inputs, an applied record's record, a variant's cases, a composite's parts.
+// wireParts are the types a type's wire form holds: a record's or case's fields but inputs, an applied record's record, every branch of a type function's application, a variant's cases, a composite's parts.
 func wireParts(b types.Type) []types.Type {
 	switch x := b.(type) {
 	case *types.RecordType:
 		return fieldTypes(nil, x.Fields)
 	case *types.AppliedRecord:
 		return []types.Type{x.Rec}
+	case *types.TypeAppType:
+		return types.Branches(x.Fn)
+	case *types.DepUnionType:
+		return types.Branches(x.Fn)
 	case *types.CaseType:
 		return fieldTypes(nil, x.Fields)
 	case *types.VariantType:
@@ -223,10 +232,10 @@ func fieldTypes(out []types.Type, fields []*types.Field) []types.Type {
 	return out
 }
 
-// noWire is a type with no wire form or no fingerprint: a Range, a function type, a define record or a table of one (WIRE.md §5.9; canon-fp has no Define form, decisions 126, 194).
+// noWire is a type with no wire form or no fingerprint: a Range, a function type, a Pair, a variant kind, a define record or a table of one (WIRE.md §5.9; canon-fp has no Define form, decisions 126, 194, 308).
 func noWire(b types.Type) bool {
 	k := b.Kind()
-	return k == types.Range || k == types.Func || isDefineType(b)
+	return k == types.Range || k == types.Func || k == types.Pair || k == types.VariantKind || isDefineType(b)
 }
 
 // checkBranches is E8017: a dependent type's branches are scalars, String, enums or refs (CODEGEN.md §5.6).

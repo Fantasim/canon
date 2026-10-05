@@ -132,10 +132,10 @@ func (t *translator) typedLet(x *syntax.LetStmt) {
 	}
 }
 
-// storeChecks reports a type whose store checks the value: a sized integer, Float32, a Duration, or any refinement.
+// storeChecks reports a type whose store checks the value: a sized integer, Float32, a Duration, or any written refinement; a `past` alone checks nothing (TYPES.md §8.4).
 func storeChecks(ty types.Type) bool {
-	if _, refined := ty.Underlying().(*types.Refined); refined {
-		return true
+	if r, refined := ty.Underlying().(*types.Refined); refined {
+		return r.Range != nil || r.Pattern != nil || r.Where != nil || r.Asset != nil || storeChecks(r.Of)
 	}
 	b, ok := ty.Base().(types.Basic)
 	if !ok {

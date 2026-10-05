@@ -348,6 +348,8 @@ const (
 	goStoreSuffix      = "Store" // also the store variable
 	goJSONRowID        = "jsonRowID"
 	goJSONTable        = "jsonTable"
+	goJSONMap          = "jsonMap"
+	goJSONKeyPath      = "jsonKeyPath"
 	goScopeLocals      = "locals"
 	goScopeConformance = "conformance imports"
 	goInt64Bits        = 64
@@ -452,4 +454,10 @@ const (
 	// a dependent type's define value storage (DECISIONS 298): Go's carries an interior `_`, C++'s a final one, as every generated member.
 	goDefineStore  = "define_value"
 	cppDefineValue = "defineValue_"
+)
+
+// ErrInternal messages of a `@text` fn left without a value, or whose value has no JSON form (DECISIONS 308).
+const (
+	fmtNoText   = "%w: package %s: @text fn %s has no value of its result type"
+	fmtTextWire = "%w: package %s: @text fn %s: %w"
 )

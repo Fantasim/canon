@@ -24,7 +24,7 @@ func (s *stage) checkSafeInts(u *unit, es *emitSite) {
 		return // a package fn is E8013's in data mode and E8014's in types mode: one finding per cause
 	}
 	for _, site := range u.fns {
-		if site.fn.Kind != FnTranslated {
+		if site.fn.Kind != FnTranslated && !site.text {
 			c.span = site.span()
 			c.results(site.fn, site.fn.Value, site.fn.Table)
 		}

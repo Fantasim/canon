@@ -18,6 +18,7 @@ type fnSite struct {
 	label string     // the fn in messages: `canTransition`, `Potion.healFor`
 	pkg   string     // the declaring package
 	recv  types.Type // the record or case of a method; nil for a package fn
+	text  bool       // a `@text` fn: a file, not API (CODEGEN.md §2.9)
 }
 
 // methods are the export methods of a record or case body but the broken ones (decisions 209, 213), in declaration order; owner is the record or case as messages name it (`Potion`, `Reward.item`).

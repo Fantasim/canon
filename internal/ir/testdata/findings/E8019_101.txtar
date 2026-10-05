@@ -1,0 +1,40 @@
+EVALUATION.md §1, CODEGEN.md §4.2, §5.6, DECISIONS 312: a dependent map of optional values in a data loader's class is both DependentType (the loader cannot bind its parameter) and OptionalMapValue (no generator types it); each is reported once at the field.
+-- a/a.canon --
+package a
+
+/// A status.
+record S {
+  /// Label.
+  label: String
+}
+
+/// The statuses.
+let statuses: table S = {
+  open { label: "Open" }
+}
+
+/// A rate.
+record Rate(s: S) {
+  /// Value.
+  value: Int
+}
+
+/// Rates.
+record Rates {
+  /// By status.
+  byStatus: {s in statuses: Rate(s)?}
+}
+
+/// The rates.
+let rates: Rates = { byStatus: { open: { value: 1 } } }
+
+emit go { out: "@features/a", package: "a", mode: data }
+emit json { out: "out/" }
+-- findings.txt --
+error[E8019]  a/a.canon:23:3
+  emit go in data mode cannot generate a dependent type
+
+error[E8019]  a/a.canon:23:3
+  emit go in data mode cannot generate a map with optional values
+
+2 errors, 0 warnings in 1 package (…)

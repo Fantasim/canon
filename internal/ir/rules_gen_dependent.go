@@ -126,31 +126,31 @@ type discReader func(own string, fields []*Field, app *TypeRef) bool
 func (s *stage) reportDecodedDependents(u *unit, es *emitSite, class any, reads discReader) {
 	fields, fns := classBody(class)
 	for _, f := range fields {
-		if f.Input == nil && (!f.Optional || f.Type.Kind != types.Never) && !readsField(u.p.Name, fields, f, reads) {
+		if f.Input == nil && (!f.Optional || f.Type.Kind != types.Never) && !readsField(u.p.Name, es.e, fields, f, reads) {
 			u.reportGenConstruct(es, s.itemSpan(f, source.Span{}), diag.KindDependentType)
 		}
 	}
 	for _, fn := range readFns(es.e, fns) {
-		if fn.Kind != FnTranslated && unreadDependent(&fn.Result) {
+		if fn.Kind != FnTranslated && unreadDependent(es.e, &fn.Result) {
 			u.reportGenConstruct(es, s.itemSpan(fn, source.Span{}), diag.KindDependentType)
 		}
 	}
 }
 
 // readsField reports that the loader reads field f of fields: no dependent type in it, or one application it holds, itself or through lists, whose discriminant it reads; a pairs field's slots are read without one.
-func readsField(own string, fields []*Field, f *Field, reads discReader) bool {
+func readsField(own string, e *Emit, fields []*Field, f *Field, reads discReader) bool {
 	if f.Pairs != nil {
-		return !slices.ContainsFunc(readFieldSites(f, source.Span{}), func(site typeSite) bool { return unreadDependent(site.t) })
+		return !slices.ContainsFunc(readFieldSites(f, source.Span{}), func(site typeSite) bool { return unreadDependent(e, site.t) })
 	}
 	if app := HeldApp(f.Type); app != nil {
 		return reads(own, fields, app)
 	}
-	return !unreadDependent(&f.Type)
+	return !unreadDependent(e, &f.Type)
 }
 
-// unreadDependent reports a dependent type in t, a literal union's base included, that is not in a map (MapField's).
-func unreadDependent(t *TypeRef) bool {
-	return !decodedHolds(t, isMap) && typeHolds(t, isApp)
+// unreadDependent reports a dependent type in t, a literal union's base included, or a dependent map: a map's key or value is DependentType's (CODEGEN.md §5.9, DECISIONS 312), except where the mode's decoder refuses every map (MapField's).
+func unreadDependent(e *Emit, t *TypeRef) bool {
+	return (e.Mode == ModeData || !decodedHolds(t, isMap)) && typeHolds(t, func(x *TypeRef) bool { return isApp(x) || x.Kind == types.DepMap })
 }
 
 // goDiscRead reports that gen/go reads app's discriminant: DiscFields finds it, of an own dependent type (its decoder is unexported, so another package's is refused).

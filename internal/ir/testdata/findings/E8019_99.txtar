@@ -1,11 +1,11 @@
-EVALUATION.md §1, CODEGEN.md §4.2, §5.13 (gen/cpp decodeValue: nlohmann::json does not keep a map's key order), DECISIONS 312: a types-mode decoder reads every class and refuses a map field (MapField); the data loader reads one.
+EVALUATION.md §1, CODEGEN.md §4.2, §5.13, DECISIONS 312: in types mode a map of optional values is MapField alone (the decoder refuses every map), not also OptionalMapValue.
 -- a/a.canon --
 package a
 
 /// A table of weights.
 record Weights {
   /// By name.
-  byName: {String: Int}
+  byName: {String: Int?}
 }
 
 emit cpp { out: "@features/ac", namespace: "a", mode: types }

@@ -62,7 +62,7 @@ func (s *stage) checkCppDefaults(u *unit, es *emitSite) {
 			case f.Input != nil || !written(f.Default):
 			case holdsRecordValue(f.Default):
 				u.reportGenConstruct(es, s.itemSpan(f, source.Span{}), diag.KindRecordConstant)
-			case typeHolds(&f.Type, isApp) && readsField(u.p.Name, fields, f, cppDiscRead):
+			case typeHolds(&f.Type, isApp) && readsField(u.p.Name, es.e, fields, f, cppDiscRead):
 				u.reportGenConstruct(es, s.itemSpan(f, source.Span{}), diag.KindDependentType)
 			}
 		}

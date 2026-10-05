@@ -1,36 +1,24 @@
-EVALUATION.md §1, CODEGEN.md §7.6: gen/cpp's loader reads every class of the package and refuses a map (nlohmann::json keeps no key order), held by a value or not, a field or a stored result.
+EVALUATION.md §1, CODEGEN.md §5.13, §7.6, DECISIONS 312: gen/cpp's types-mode decoder reads every class of the package and refuses a map (nlohmann::json keeps no key order), held by a value or not, a literal-union key or a nested map included; its data loader reads one.
 -- a/a.canon --
 package a
+
+/// A kind.
+enum Kind { a, b }
 
 /// A row.
 record Row {
   /// The cells.
-  cells: {String: Int}
-
-  /// Its totals.
-  export fn totals(self) -> {String: Int} { return cells }
+  cells: {Kind | "all": Int}
+  /// The rows of cells.
+  deep: [{String: {Int: String}}] = []
 }
 
-/// A holder.
-record H {
-  /// A count.
-  n: Int
-}
-
-/// The holders.
-let hs: table H = {
-  one { n: 1 }
-}
-
-emit cpp { out: "@features/a", namespace: "a", mode: data }
-emit json { out: "out/" }
--- a.hs.json --
-{"one": {"n": 1}}
+emit cpp { out: "@features/a", namespace: "a", mode: types }
 -- findings.txt --
-error[E8019]  a/a.canon:6:3
-  emit cpp in data mode cannot generate a map
+error[E8019]  a/a.canon:9:3
+  emit cpp in types mode cannot generate a map
 
-error[E8019]  a/a.canon:9:13
-  emit cpp in data mode cannot generate a map
+error[E8019]  a/a.canon:11:3
+  emit cpp in types mode cannot generate a map
 
 2 errors, 0 warnings in 1 package (…)

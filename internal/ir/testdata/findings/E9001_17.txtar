@@ -1,0 +1,42 @@
+CONFORMANCE.md §2.2, DECISIONS 306: `F(a…).typeName` in a translated fn is outside the portable subset.
+-- a/a.canon --
+package a
+
+/// Kind.
+enum K { a, b }
+
+/// Other.
+enum E { x, y }
+
+/// Event.
+record Ev {
+  /// Its kind.
+  k: K
+}
+
+/// Events.
+let evs: table Ev = {
+  one { k: a }
+}
+
+/// The enum of an event.
+type F(e: Ev) = match e.k {
+  a => E
+  _ => K
+}
+
+/// Row.
+record Row {
+  /// Event.
+  ev: ref evs
+
+  /// Name.
+  export fn label(self, k: Int) -> String { return F(self.ev).typeName }
+}
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+error[E9001]  a/a.canon:32:52
+  F(self.ev).typeName is not allowed in translated function Row.label: it is outside the portable subset
+
+1 error, 0 warnings in 1 package (…)

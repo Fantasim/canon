@@ -1,0 +1,60 @@
+EVALUATION.md §1, CODEGEN.md §5.6, §5.9, DECISIONS 312: a dependent value in a map, and a dependent map, read by a data loader is DependentType (not MapField), for both generators.
+-- a/a.canon --
+package a
+
+/// A goal.
+enum Goal { kill, collect }
+
+/// A target.
+type Target(g: Goal) = match g {
+  kill => String
+  collect => Int
+}
+
+/// A status.
+record S {
+  /// Label.
+  label: String
+}
+
+/// The statuses.
+let statuses: table S = {
+  open { label: "Open" }
+}
+
+/// A rate.
+record Rate(s: S) {
+  /// Value.
+  value: Int
+}
+
+/// An objective.
+record O {
+  /// The goal.
+  goal: Goal
+  /// Targets by name.
+  m: {String: Target(goal)}
+  /// Rates by status.
+  byStatus: {s in statuses: Rate(s)}
+}
+
+/// The objective.
+let o: O = { goal: kill, m: { "x": "wolf" }, byStatus: { open: { value: 1 } } }
+
+emit go { out: "@features/a", package: "a", mode: data }
+emit cpp { out: "@features/ac", namespace: "a", mode: data }
+emit json { out: "out/" }
+-- findings.txt --
+error[E8019]  a/a.canon:34:3
+  emit cpp in data mode cannot generate a dependent type
+
+error[E8019]  a/a.canon:34:3
+  emit go in data mode cannot generate a dependent type
+
+error[E8019]  a/a.canon:36:3
+  emit cpp in data mode cannot generate a dependent type
+
+error[E8019]  a/a.canon:36:3
+  emit go in data mode cannot generate a dependent type
+
+4 errors, 0 warnings in 1 package (…)

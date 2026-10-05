@@ -1,0 +1,22 @@
+CONFORMANCE.md §2.2, DECISIONS 306: `E.typeName` in a translated fn is outside the portable subset.
+-- a/a.canon --
+package a
+
+/// Kind.
+enum K { a, b }
+
+/// Row.
+record Row {
+  /// N.
+  n: Int
+
+  /// Name.
+  export fn label(self, k: Int) -> String { return K.typeName }
+}
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+error[E9001]  a/a.canon:12:52
+  K.typeName is not allowed in translated function Row.label: it is outside the portable subset
+
+1 error, 0 warnings in 1 package (…)

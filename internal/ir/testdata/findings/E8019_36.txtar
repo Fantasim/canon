@@ -1,4 +1,4 @@
-EVALUATION.md §1, log-2026-09-24 "E8019 closing calls": in data mode a map of optional values a loader reads is MapField alone; one it does not read (Loose, held by no value) is OptionalMapValue.
+EVALUATION.md §1, CODEGEN.md §4.2, DECISIONS 312: neither generator has a type for a map of optional values, so it is OptionalMapValue wherever it is, read by a data loader or not (a map a loader cannot read is MapField alone, E8019_99).
 -- a/a.canon --
 package a
 
@@ -25,7 +25,7 @@ emit json { out: "out/" }
 {"one": {"cells": {"a": 1}}}
 -- findings.txt --
 error[E8019]  a/a.canon:6:3
-  emit go in data mode cannot generate a map
+  emit go in data mode cannot generate a map with optional values
 
 error[E8019]  a/a.canon:12:3
   emit go in data mode cannot generate a map with optional values

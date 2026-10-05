@@ -22,6 +22,9 @@ func (s *stage) checkFnResultForms(u *unit, es *emitSite) {
 		walkInstances(v.v.V, rf.stored, func(r *value.Record) { recvs = append(recvs, r) })
 	}
 	for _, site := range u.fns {
+		if site.text {
+			continue
+		}
 		rf.results(site, site.fn.Value, site.fn.Table)
 	}
 	done := map[*ExportFn]bool{}
