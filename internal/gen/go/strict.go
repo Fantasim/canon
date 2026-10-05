@@ -23,6 +23,10 @@ func (g *gen) helpers() {
 	for _, name := range helperOrder {
 		g.exec(name, view)
 	}
+	if g.names.HasMaps() {
+		g.exec(helperKeyPath, view)
+		g.exec(helperMap, view)
+	}
 	if len(ir.OwnDefines(g.p)) > 0 {
 		g.exec(helperDefine, view)
 	}

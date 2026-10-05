@@ -19,6 +19,9 @@ func (g *gen) keyLoc(key string) location { return g.root().key(key) }
 // key appends a literal key.
 func (l location) key(k string) location { return location{l.format + escapeVerbs(k), l.args} }
 
+// heldAt is the location the string local v holds.
+func heldAt(v string) location { return location{format: verbString, args: []string{v}} }
+
 // root is the current path itself.
 func (g *gen) root() location { return location{format: verbString, args: []string{g.lc.Path}} }
 

@@ -35,6 +35,8 @@ type gen struct {
 	inputErrs string          // LoadInputs' escaped local of failures (CODEGEN.md §5.12)
 	taken     map[string]bool // the Go names of the imported Canon packages, which locals avoid
 	temps     int             // the last numbered local of the function being written
+	walkClass any             // the class whose resolver is being written
+	walkSnap  bool            // that resolver finds entries in the snapshot, else its holder
 	pures     []*pure         // the translated fns written, which the conformance file tests
 	pkgNames  map[string]bool // package-level names a translated fn's locals avoid, built once
 }

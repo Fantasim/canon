@@ -768,6 +768,40 @@ inline bool Table(const Json& v, Decoder& dec, std::vector<TableEntry>& out) {
     return true;
 }
 
+/// The path of member `key` of the object at `parent`: an empty key adds nothing, as PathOf's.
+inline std::string KeyPath(std::string_view parent, std::string_view key) {
+    if (key.empty()) return std::string(parent);
+    return std::string(parent) + "." + std::string(key);
+}
+
+/// A map's member: its key and its value.
+struct MapEntry {
+    const std::string* key;
+    const Json* value;
+};
+
+/// A map's members, in file order (WIRE.md §5.8): `v` must be an object.
+inline bool Members(const Json& v, Decoder& dec, std::vector<MapEntry>& out) {
+    if (!Object(v, dec)) return false;
+    if (const std::vector<std::string>* order = dec.OrderOf(v)) {
+        for (const std::string& k : *order) out.push_back({&k, &*v.find(k)});
+    } else {
+        for (const auto& item : v.items()) out.push_back({&item.key(), &item.value()});
+    }
+    return true;
+}
+
+/// An integer map key (WIRE.md §5.8): exactly `0|-?[1-9][0-9]*` (`-0` is no canonical integer),
+/// else fails; the number is then read, and range-checked, as a value of the key's type is.
+inline bool IntKey(const std::string& key, Decoder& dec, Json& out) {
+    const size_t at = !key.empty() && key[0] == '-' ? 1 : 0;
+    bool ok = at < key.size() && (key == "0" || key[at] != '0');
+    for (size_t i = at; ok && i < key.size(); ++i) ok = key[i] >= '0' && key[i] <= '9';
+    if (!ok) return dec.Fail(key, "expected a canonical decimal integer key"), false;
+    out = Json::parse(key, nullptr, false);
+    return true;
+}
+
 /// The object at a path's intermediate key (WIRE.md §5.5.3): nullptr when absent; null or
 /// another kind fails.
 inline const Json* Step(const Json& obj, Decoder& dec, const char* key) {

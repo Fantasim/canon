@@ -34,9 +34,11 @@ func (g *gen) readValue(b *strings.Builder, l leaf, raw string, loc location) st
 		return g.readSized(b, l.t, raw, loc)
 	case types.Float:
 		return g.readPlain(b, g.goType(l.t), raw, loc)
-	case types.String, types.LitUnion:
-		g.stringWire(l.t)
+	case types.String:
 		return g.readPlain(b, goString, raw, loc)
+	case types.LitUnion:
+		g.stringWire(l.t)
+		return g.readUnion(b, l.t, raw, loc)
 	case types.Duration:
 		limit := durationMaxMs / l.unit.Millis()
 		return g.durationFrom(g.readInt(b, raw, loc, -limit, limit), l.unit)
@@ -51,6 +53,8 @@ func (g *gen) readValue(b *strings.Builder, l leaf, raw string, loc location) st
 		return g.readList(b, l, raw, loc)
 	case types.Table:
 		return g.readNested(b, l.t, raw, loc)
+	case types.Map:
+		return g.readMap(b, l, raw, loc)
 	case types.TypeApp:
 		return g.readDependentValue(b, l, raw, loc)
 	default:
@@ -143,6 +147,27 @@ func (g *gen) readEnum(b *strings.Builder, t ir.TypeRef, raw string, loc locatio
 func (g *gen) parsed(b *strings.Builder, call string, loc location, what, value string) string {
 	v, ok := g.temp(tempValue), g.temp(tempOK)
 	fmt.Fprintf(b, parsedFormat, v, ok, call, g.errAt(loc, what, value))
+	return v
+}
+
+// readUnion reads a literal union's string; one over an enum must be a literal or a member's wire value, else unknown (WIRE.md §5.9, CODEGEN.md §5.13).
+func (g *gen) readUnion(b *strings.Builder, t ir.TypeRef, raw string, loc location) string {
+	v := g.readPlain(b, goString, raw, loc)
+	if t.Elem == nil {
+		return v
+	}
+	e, ok := t.Elem.Named.(*ir.Enum)
+	if !ok {
+		return v
+	}
+	conds := make([]string, 0, len(t.Literals)+len(e.Members))
+	for _, w := range t.Literals {
+		conds = append(conds, v+differs+strconv.Quote(w))
+	}
+	for _, m := range e.Members {
+		conds = append(conds, v+differs+strconv.Quote(m.Wire))
+	}
+	fmt.Fprintf(b, unionCheckFormat, strings.Join(conds, andSep), g.errAt(loc, unknownValueText, v))
 	return v
 }
 

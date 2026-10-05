@@ -23,7 +23,7 @@ type fixture struct {
 var fixtures = []fixture{
 	{"pipeline", pipeline}, {"constructs", constructs}, {"imports-base", importBase}, {"imports-app", importApp},
 	{"dependent", dependentPackage}, {"inputs", inputsPackage}, {"types-time", typesTimeFixture}, {"types-events", typesEventsFixture},
-	{"tablefields", tablesPackage}, {"types-tablefields", tableTypesPackage},
+	{"tablefields", tablesPackage}, {"types-tablefields", tableTypesPackage}, {"mapfields", mapsPackage},
 	{"baked", bakedPackage}, {"baked-dependent", bakedDependentPackage},
 }
 

@@ -34,6 +34,8 @@ type gen struct {
 	foreignEnums []*ir.Enum               // imported enums the code names, in first-use order
 	holders      map[any][]*ir.Value      // per class, the emitted values holding it
 	slots        map[any][]resolved       // per class, the refs resolved at load
+	walking      class                    // the class whose Resolve is being written (its map keys are checked)
+	walkSnap     bool                     // that Resolve finds entries in the snapshot, else its holder
 	classes      []class                  // records, cases, variants, dependent types, topologically sorted (§2.7)
 	inputs       []inputField             // input fields, declaration order (§5.12)
 	inputNames   ir.CppInputs             // LoadInputs, the slots' namespace and flag, the helpers (§7.7)

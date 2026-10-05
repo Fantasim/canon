@@ -157,6 +157,28 @@ const (
 	tableFieldText     = "a table field of a record of another package, or of no record"
 )
 
+// Map fields (CODEGEN.md §5.9, WIRE.md §5.8; DECISIONS 312): a canon::FlatMap read from an object in file order.
+const (
+	mapMembersFormat = "std::vector<" + jsonDetail + "MapEntry> mm%d;"
+	mapReadFormat    = "if (" + jsonDetail + "Members(%[1]s, dec, mm%[2]d)) {"
+	mapEntriesFormat = "std::vector<canon::FlatMap<%[1]s, %[2]s>::Entry> me%[3]d;"
+	mapLoopFormat    = "for (size_t mi%[1]d = 0; mi%[1]d < mm%[1]d.size(); ++mi%[1]d) {"
+	mapKeyExpr       = "*mm%[1]d[mi%[1]d].key"
+	mapValueExpr     = "(*mm%[1]d[mi%[1]d].value)"
+	mapTextKeyFormat = "const nlohmann::json mj%[1]d(" + mapKeyExpr + ");"
+	mapIntKeyFormat  = "nlohmann::json mj%[1]d;"
+	mapIntCheckFmt   = "if (!" + jsonDetail + "IntKey(" + mapKeyExpr + ", dec, mj%[1]d)) continue;"
+	mapJSONKeyFormat = "mj%d"
+	mapElemFormat    = "const_cast<%s&>(%s.At(%s).second)"
+	mapEntryFormat   = "%s.At(%s)"
+	mapPathFormat    = jsonDetail + "KeyPath(%s, %s)"
+	mapKeyCheckFmt   = "if (%s%s) == nullptr) return dec.Fail(%s, \"no entry \" + %s), false;"
+	mapKeyLocal      = "mk%d"
+	mapValueLocal    = "mv%d"
+	mapEmplaceFormat = "me%[1]d.emplace_back(std::move(mk%[1]d), std::move(mv%[1]d));"
+	mapFromFormat    = "%[1]s = canon::FlatMap<%[2]s, %[3]s>::FromEntries(std::move(me%[4]d));"
+)
+
 // A baked emit's id enums, data, accessors and constexpr lookups (CODEGEN.md §5.3, §5.9, §5.10, §7.3; decision 293).
 const (
 	dataPrefix            = "d."

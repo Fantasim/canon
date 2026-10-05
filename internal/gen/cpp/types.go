@@ -112,7 +112,7 @@ func (g *gen) decodeDuration(depth int, src, key string, l leaf) {
 	g.c.linef(depth, decCallFormat, asDuration, src, key, g.shortcutExtra(l), l.dst)
 }
 
-// unionMembership refuses in types mode a union's text that is no literal nor enum wire (CODEGEN.md §5.13).
+// unionMembership refuses a union's text that is no literal nor enum wire (CODEGEN.md §5.13).
 func (g *gen) unionMembership(depth int, key, dst string, t ir.TypeRef) {
 	e := g.unionEnum(t)
 	if e == nil {
@@ -128,9 +128,9 @@ func (g *gen) unionMembership(depth int, key, dst string, t ir.TypeRef) {
 	g.c.linef(depth, unionCheckFormat, strings.Join(conds, andSep), key, dst)
 }
 
-// unionEnum is the enum arm of a union whose membership types mode checks, so which no read shortcut takes; nil otherwise.
+// unionEnum is the enum arm of a union whose membership a loader checks, so which no read shortcut takes; nil otherwise.
 func (g *gen) unionEnum(t ir.TypeRef) *ir.Enum {
-	if !g.types() || t.Kind != types.LitUnion || t.Elem == nil {
+	if t.Kind != types.LitUnion || t.Elem == nil {
 		return nil
 	}
 	e, _ := t.Elem.Named.(*ir.Enum)

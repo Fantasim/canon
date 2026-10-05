@@ -400,3 +400,70 @@ func jsonTable({{.L.Name}}, {{.L.Path}} string, {{.L.Raw}} {{.JSON}}.RawMessage)
 }
 
 {{end}}
+{{define "jsonKeyPath"}}// jsonKeyPath is the path of the member key of the object at path (which ends in a dot): an empty
+// key adds nothing to it, as the C++ loader's path does.
+func jsonKeyPath({{.L.Path}}, {{.L.Key}} string) string {
+	if {{.L.Key}} == "" {
+		return {{.Strings}}.TrimSuffix({{.L.Path}}, ".")
+	}
+	return {{.L.Path}} + {{.L.Key}}
+}
+
+{{end}}
+{{define "jsonMap"}}// jsonMap reads the map at path: an object whose members, in file order (the file reader has
+// refused a repeated key), are returned as their keys, each key as the JSON value its type
+// reads (a string, or with the flag a canonical decimal integer `0|-?[1-9][0-9]*`, WIRE.md §5.8,
+// which a range check then reads), and values.
+func jsonMap({{.L.Name}}, {{.L.Path}} string, {{.L.Raw}} {{.JSON}}.RawMessage, {{.L.HasK}} bool) ([]string, []{{.JSON}}.RawMessage, []{{.JSON}}.RawMessage, error) {
+	if _, {{.L.Err}} := jsonObject({{.L.Name}}, {{.L.Path}}, {{.L.Raw}}); {{.L.Err}} != nil {
+		return nil, nil, nil, {{.L.Err}}
+	}
+	{{.L.Obj}} := {{.JSON}}.NewDecoder({{.Strings}}.NewReader(string({{.L.Raw}})))
+	if _, {{.L.Err}} := {{.L.Obj}}.Token(); {{.L.Err}} != nil {
+		return nil, nil, nil, {{.FMT}}.Errorf("%s: %s: expected an object", {{.L.Name}}, {{.Strings}}.TrimSuffix({{.L.Path}}, "."))
+	}
+	var {{.L.Keys}} []string
+	var {{.L.Values}}, {{.L.Rows}} []{{.JSON}}.RawMessage
+	for {{.L.Obj}}.More() {
+		{{.L.K}}, {{.L.Err}} := {{.L.Obj}}.Token()
+		if {{.L.Err}} != nil {
+			return nil, nil, nil, {{.FMT}}.Errorf("%s: %s: expected an object", {{.L.Name}}, {{.Strings}}.TrimSuffix({{.L.Path}}, "."))
+		}
+		{{.L.Key}}, _ := {{.L.K}}.(string)
+		{{.L.V}} := {{.Strings}}.TrimPrefix({{.L.Key}}, "-")
+		{{.L.OK}} := {{.L.V}} != "" && ({{.L.Key}} == "0" || {{.L.V}}[0] != '0')
+		for _, {{.L.C}} := range {{.L.V}} {
+			{{.L.OK}} = {{.L.OK}} && {{.L.C}} >= '0' && {{.L.C}} <= '9'
+		}
+		if {{.L.HasK}} && !{{.L.OK}} {
+			return nil, nil, nil, {{.FMT}}.Errorf("%s: %s: expected a canonical decimal integer key", {{.L.Name}}, jsonKeyPath({{.L.Path}}, {{.L.Key}}))
+		}
+		{{.L.Kr}} := {{.JSON}}.RawMessage({{.L.Key}})
+		if !{{.L.HasK}} {
+			{{.L.Kr}}, _ = {{.JSON}}.Marshal({{.L.Key}})
+		}
+		var {{.L.R}} {{.JSON}}.RawMessage
+		if {{.L.Err}} := {{.L.Obj}}.Decode(&{{.L.R}}); {{.L.Err}} != nil {
+			return nil, nil, nil, {{.FMT}}.Errorf("%s: %s: expected a value", {{.L.Name}}, jsonKeyPath({{.L.Path}}, {{.L.Key}}))
+		}
+		{{.L.Keys}}, {{.L.Values}}, {{.L.Rows}} = append({{.L.Keys}}, {{.L.Key}}), append({{.L.Values}}, {{.L.Kr}}), append({{.L.Rows}}, {{.L.R}})
+	}
+	return {{.L.Keys}}, {{.L.Values}}, {{.L.Rows}}, nil
+}
+
+{{end}}
+{{define "mapRead"}}{{.Keys}}, {{.KRaws}}, {{.Vals}}, {{.Err}} := jsonMap({{.Name}}, {{.Loc}}, {{.Raw}}, {{.Numeric}})
+if {{.Err}} != nil {
+return {{.Err}}
+}
+{{.KS}} := make([]{{.KT}}, len({{.Keys}}))
+{{.VS}} := make([]{{.VT}}, len({{.Keys}}))
+for {{.I}} := range {{.Keys}} {
+{{.KP}} := jsonKeyPath({{.Loc}}, {{.Keys}}[{{.I}}])
+{{.KCode}}{{.VCode}}{{.KS}}[{{.I}}], {{.VS}}[{{.I}}] = {{.KX}}, {{.VX}}
+}
+{{end}}
+{{define "mapWalk"}}for {{.Key}}{{.Value}} := range {{.Map}}.All() {
+{{.KP}} := jsonKeyPath({{.Loc}}, {{.Text}})
+{{.Check}}{{.Body}}}
+{{end}}

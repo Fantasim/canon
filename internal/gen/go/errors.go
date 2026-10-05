@@ -64,6 +64,16 @@ var (
 	errDependentUnion    = fmt.Errorf("%w", ErrMalformed)
 )
 
+// Map fields (CODEGEN.md §5.9, WIRE.md §5.8; DECISIONS 312): the key-path helper, its local, and the check that a ref key names an entry.
+const (
+	helperKeyPath    = "jsonKeyPath"
+	tempPath         = "kp"
+	differs          = " != "
+	andSep           = " && "
+	unionCheckFormat = "if %s {\nreturn %s\n}\n"
+	keyCheckFormat   = "if _, %[1]s := %[2]s(%[3]s); !%[1]s {\nreturn %[4]s\n}\n"
+)
+
 // Dependent types (CODEGEN.md §5.6): what stage E refuses first (E8019 DependentType; E8012 for a define ref), so meeting one is ErrMalformed, each its own text (decision 194).
 const (
 	dependentNoDiscFormat   = "%s: a dependent type without its Bool or enum discriminant"

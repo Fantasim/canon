@@ -70,8 +70,8 @@ func refusals() []struct {
 		{"a dependent type without its discriminant", func(p *ir.Package, _ *ir.Emit) { p.Types = append(p.Types, &ir.Dependent{Pkg: "demo", Name: "D"}) }, cppgen.ErrMalformed},
 		// unreachable: stage E refuses it first (E8019 OptionalElementList).
 		{"a list of optionals", withField(field("o", "o", "", listOf(optInt))), cppgen.ErrMalformed},
-		// unreachable: stage E refuses it first (E8019 MapField).
-		{"a map field", withField(field("m", "m", "", ir.TypeRef{Kind: types.Map, Key: &tString, Elem: &tInt})), cppgen.ErrMalformed},
+		// unreachable: stage E refuses it first (E8019 DependentType: a dependent map binds its parameter per key, DECISIONS 312).
+		{"a dependent map field", withField(field("m", "m", "", ir.TypeRef{Kind: types.DepMap, Key: &tString, Elem: &tInt})), cppgen.ErrMalformed},
 		// unreachable: stage E refuses it first (check's E3316).
 		{"an optional inline field", func(p *ir.Package, _ *ir.Emit) { optionalInline(p) }, cppgen.ErrMalformed},
 		// unreachable: stage E refuses it first (E8013 refParam (a finite parameter is a Bool, an enum or a ref)).

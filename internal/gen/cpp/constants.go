@@ -334,6 +334,7 @@ const (
 	parenFormat      = "(%s)"
 	stringOfFormat   = "std::string(%s)"
 	toStringFormat   = "std::to_string(%s)"
+	castKeyFormat    = "std::to_string(static_cast<int64_t>(%s))"
 	negInt           = "canon::NegInt"
 	negFloat         = "canon::NegFloat"
 	divDuration      = "canon::DivDuration"

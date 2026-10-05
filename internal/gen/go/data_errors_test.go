@@ -57,8 +57,8 @@ func dataRefusals() map[string]func(*ir.Package) {
 		"a data value that is a plain list": func(p *ir.Package) {
 			p.Values = append(p.Values, &ir.Value{Name: "l", Schema: "s", Type: listT(intT)})
 		},
-		"a map field": func(p *ir.Package) {
-			addField(p, wired("m", "m", "", ir.TypeRef{Kind: types.Map, Key: &strT, Elem: &intT}))
+		"a dependent map field": func(p *ir.Package) {
+			addField(p, wired("m", "m", "", ir.TypeRef{Kind: types.DepMap, Key: &strT, Elem: &intT})) // E8019 DependentType: a parameter bound per key (DECISIONS 312)
 		},
 		"a list of optionals": func(p *ir.Package) {
 			addField(p, wired("o", "o", "", listT(optT(intT))))
@@ -67,6 +67,12 @@ func dataRefusals() map[string]func(*ir.Package) {
 			other := &ir.Record{Pkg: "other", Name: "O"}
 			p.Imports = []*ir.PackageRef{{Name: "other", Emits: []*ir.Emit{goData("other", "other")}}}
 			addField(p, wired("o", "o", "", typed(other, types.Record)))
+		},
+		"a map of another package's records": func(p *ir.Package) {
+			other := &ir.Record{Pkg: "other", Name: "O"}
+			p.Imports = []*ir.PackageRef{{Name: "other", Emits: []*ir.Emit{goData("other", "other")}}}
+			elem := typed(other, types.Record)
+			addField(p, wired("o", "o", "", ir.TypeRef{Kind: types.Map, Key: &strT, Elem: &elem})) // E8019 ForeignDataRecord (E8019_97)
 		},
 		"a non-string literal union": func(p *ir.Package) {
 			addField(p, wired("u", "u", "", ir.TypeRef{Kind: types.LitUnion, Elem: &intT, Literals: []string{"none"}}))
@@ -109,8 +115,8 @@ func TestDataRefusals(t *testing.T) {
 var dataUnreachable = map[string]bool{
 	"a package-level stored fn": true, "a lookup over a table's ref": true, "a data value that is a plain list": true,
 	"an optional inline variant": true, "an inline variant key equal to a parent key but for letter case": true,
-	"a list of optionals": true, "a lookup whose record result holds a resolved ref": true, "a map field": true,
-	"a record of another package": true, "a table-typed field": true, "a non-string literal union": true,
+	"a list of optionals": true, "a lookup whose record result holds a resolved ref": true, "a dependent map field": true,
+	"a record of another package": true, "a map of another package's records": true, "a table-typed field": true, "a non-string literal union": true,
 	"a union over a string-keyed ref": true,
 }
 

@@ -60,7 +60,7 @@ func walkTypeRef(t ir.TypeRef, visit func(ir.TypeRef)) {
 	}
 }
 
-// readsNested reports a package one of whose loaders can read a nested table, in a class of its own, in the type of one of its values, or in a package it imports: its loaders then keep each object's file order (WIRE.md §5.7).
+// readsNested reports a package one of whose loaders can read a nested table, in a class of its own, in the type of one of its values, or in a package it imports: or a map, its loaders then keep each object's file order (WIRE.md §5.7, §5.8).
 func (g *gen) readsNested() bool {
 	seen := map[any]bool{}
 	var holds func(t ir.TypeRef) bool
@@ -69,7 +69,7 @@ func (g *gen) readsNested() bool {
 		found := false
 		walkTypeRef(t, func(x ir.TypeRef) {
 			switch {
-			case x.Kind == types.Table:
+			case x.Kind == types.Table, x.Kind == types.Map:
 				found = true
 			case x.Named == nil || seen[x.Named]:
 			default:

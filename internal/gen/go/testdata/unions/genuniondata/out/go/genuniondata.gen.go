@@ -292,6 +292,9 @@ func decodeItem(name, path string, raw json.RawMessage, out *Item) error {
 	if err := jsonRead(name, path, "status", r1, &v2); err != nil {
 		return err
 	}
+	if v2 != "unknown" && v2 != "open" && v2 != "closed" {
+		return fmt.Errorf("%s: %sstatus: unknown value %s", name, path, v2)
+	}
 	out.status = v2
 	return nil
 }

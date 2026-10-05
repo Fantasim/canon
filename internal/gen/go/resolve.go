@@ -60,6 +60,7 @@ func (g *gen) resolveVariant(v *ir.Variant) {
 func (g *gen) resolveBody(b *body) {
 	defer g.enter(b.owner)()
 	snapshot := g.resolveOpen(b.key, b.goName)
+	g.walkClass, g.walkSnap = b.key, snapshot
 	var out strings.Builder
 	for _, s := range b.slots {
 		if s.Resolved {
@@ -70,7 +71,7 @@ func (g *gen) resolveBody(b *body) {
 		case s.Ref != nil:
 		case s.src != nil && s.src.Pairs != nil:
 			g.walkPairs(&out, s, snapshot)
-		case g.typeWalks(s.T):
+		case g.valueWalks(s.T):
 			g.walkSlot(&out, s)
 		}
 	}
@@ -80,6 +81,8 @@ func (g *gen) resolveBody(b *body) {
 		}
 		if g.typeWalks(f.res.T) {
 			g.fail(newDetail(ErrMalformed, f.origin, lookupRefFormat, f.origin)) // E8019 ResolvedLookupResult
+		} else if g.valueWalks(f.res.T) {
+			g.walkCells(&out, f)
 		}
 	}
 	g.body.WriteString(out.String())
@@ -149,6 +152,25 @@ func (g *gen) resolveCells(b *strings.Builder, f *finiteMethod, target *ir.Value
 	b.WriteString(strings.Repeat(closeBrace, len(f.dims)))
 }
 
+// walkCells checks the ref keys of the maps each cell of a lookup's table holds, a failure named by its domain keys (WIRE.md §5.8, CODEGEN.md §5.8, §5.10).
+func (g *gen) walkCells(b *strings.Builder, f *finiteMethod) {
+	dst, loc := g.lc.Out+dot+f.store, g.keyLoc(dollar+f.fn.Name)
+	for _, p := range f.fn.Params {
+		i, k := g.temp(tempIndex), g.temp(tempKey)
+		fmt.Fprintf(b, domainLoopFormat, i, k, strings.Join(g.domainKeys(p.Type), listSep))
+		dst, loc = dst+lbracket+i+rbracket, loc.dot().arg(k)
+	}
+	if f.pair {
+		fmt.Fprintf(b, ifOpenFormat, dst+pairOK)
+		dst += pairValue
+	}
+	g.walkValue(b, f.res.T, dst, loc, false)
+	if f.pair {
+		b.WriteString(closeBrace)
+	}
+	b.WriteString(strings.Repeat(closeBrace, len(f.dims)))
+}
+
 // resolveRef points dst at the entries its keys name; a key naming no entry fails the load
 // with the row, the field and the key (log-2026-09-24, gen/cpp round 3).
 func (g *gen) resolveRef(b *strings.Builder, c refCell, find string, loc location) {
@@ -190,6 +212,10 @@ func (g *gen) walkValue(b *strings.Builder, t ir.TypeRef, expr string, loc locat
 	}
 	if t.Kind == types.Table {
 		g.walkTable(b, t, expr, loc)
+		return
+	}
+	if t.Kind == types.Map {
+		g.walkMap(b, t, expr, loc)
 		return
 	}
 	prefix := g.locExpr(loc.dot())

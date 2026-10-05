@@ -28,7 +28,7 @@ func (g *gen) reachesSlot(key any, seen map[any]bool) bool {
 		return false
 	}
 	seen[key] = true
-	if len(g.slots[key]) > 0 {
+	if len(g.slots[key]) > 0 || g.checksKeys(c) {
 		return true
 	}
 	for _, to := range heldClasses(c) {
@@ -107,16 +107,14 @@ func (g *gen) resolveCases(v *ir.Variant) {
 
 // resolveBody sets each resolved slot, then walks each field holding a class to resolve.
 func (g *gen) resolveBody(c class, snapshot bool) {
+	g.walking, g.walkSnap = c, snapshot
 	for _, r := range g.slots[c.key()] {
-		find := findPrefix
-		if snapshot {
-			m, err := g.member(r.target.Name)
-			g.fail(err)
-			find = ctxPrefix + m + rowsFind
-		}
-		g.resolveSlot(r, find)
+		g.resolveSlot(r, g.findFor(r.target))
 	}
-	fields, _ := c.shape()
+	fields, fns := c.shape()
+	for _, fn := range fns {
+		g.walkResult(c, fn)
+	}
 	for _, f := range fields {
 		m, err := g.member(f.Name)
 		g.fail(err)
@@ -129,6 +127,39 @@ func (g *gen) resolveBody(c class, snapshot bool) {
 		}
 		g.walkValue(depthTwo, f.Type, f.Optional, xPrefix+m, key)
 	}
+}
+
+// walkResult checks the ref keys of the maps a stored fn's result holds (CODEGEN.md §5.8, DECISIONS 312), on its `$name` path, or each cell of a lookup's table on its domain keys' path.
+func (g *gen) walkResult(c class, fn *ir.ExportFn) {
+	if fn.Kind == ir.FnTranslated || !g.keyChecked(fn.Result, c) {
+		return
+	}
+	m, err := g.member(fn.Name)
+	g.fail(err)
+	t, optional := resultType(fn.Result)
+	if fn.Kind != ir.FnLookup {
+		g.walkValue(depthTwo, t, optional, xPrefix+m, quote(dollar+fn.Name))
+		return
+	}
+	doms := g.domains(fn)
+	paths := cellPaths(fn.Name, doms)
+	for i, p := range paths {
+		paths[i] = quote(p)
+	}
+	g.c.linef(depthTwo, countForFormat, cellLoopVar, cellLoopVar, cellCount(doms), cellLoopVar)
+	g.c.linef(depthTwo+1, cellsArrayFormat, strings.Join(paths, listSep))
+	g.walkValue(depthTwo+1, t, optional, fmt.Sprintf(indexFormat, xPrefix+m, cellLoopVar), cellsKey)
+	g.c.linef(depthTwo, closeBrace)
+}
+
+// findFor is the call opening a lookup of the key in target's rows: in the snapshot or in the holder's own container.
+func (g *gen) findFor(target *ir.Value) string {
+	if !g.walkSnap {
+		return findPrefix
+	}
+	m, err := g.member(target.Name)
+	g.fail(err)
+	return ctxPrefix + m + rowsFind
 }
 
 // wireName is the key path a load error names for a field: its wire path, else its name.
@@ -188,8 +219,10 @@ func (g *gen) resolveList(depth int, keys, refs, find string, r resolved) {
 // keyText is the format turning a key of type t into the text of a load error.
 func (g *gen) keyText(t *ir.TypeRef) string {
 	switch {
-	case t == nil || t.Kind == types.String:
+	case t == nil || t.Kind == types.String || t.Kind == types.LitUnion:
 		return stringOfFormat
+	case ir.NumericMapKey(*t) && t.Kind == types.Enum:
+		return fmt.Sprintf(castKeyFormat, keyPlaceholder)
 	case t.Kind == types.Enum:
 		return fmt.Sprintf(stringOfFormat, fmt.Sprintf(helperFormat, ir.CppToWire, keyPlaceholder))
 	default:
@@ -202,7 +235,9 @@ func (g *gen) holdsWalk(t ir.TypeRef) bool {
 	switch {
 	case t.Kind == types.Record, t.Kind == types.Variant:
 		return g.needsWalk(t.Named)
-	case (t.Kind == types.List || t.Kind == types.Table) && t.Elem != nil:
+	case t.Kind == types.Map && g.keyTarget(t, g.walking) != nil:
+		return true
+	case (t.Kind == types.List || t.Kind == types.Table || t.Kind == types.Map) && t.Elem != nil:
 		return g.holdsWalk(*t.Elem)
 	default:
 		return false
@@ -219,6 +254,8 @@ func (g *gen) walkValue(depth int, t ir.TypeRef, optional bool, expr, key string
 		g.c.linef(depth, closeBrace)
 	case t.Kind == types.Table:
 		g.walkTable(depth, t, expr, key)
+	case t.Kind == types.Map:
+		g.walkMap(depth, t, expr, key)
 	case t.Kind == types.List:
 		n := fmt.Sprintf(indexVarFormat, depth)
 		elem, loop := fmt.Sprintf(indexFormat, expr, n), forFormat
