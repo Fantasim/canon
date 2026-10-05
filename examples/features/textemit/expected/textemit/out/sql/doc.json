@@ -1,0 +1,27 @@
+{
+  "title": "Café 🎉",
+  "names": {
+    "10": "intro",
+    "2": "body"
+  },
+  "subtitle": null,
+  "note": {
+    "kind": "see",
+    "target": "body",
+    "page": 1
+  },
+  "probe": {
+    "n": 0
+  },
+  "sections": {
+    "intro": {
+      "heading": "Intro",
+      "weight": 1
+    },
+    "old": {
+      "$retired": true,
+      "heading": "Old",
+      "weight": 2
+    }
+  }
+}

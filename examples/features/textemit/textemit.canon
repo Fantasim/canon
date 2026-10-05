@@ -31,6 +31,69 @@ export fn eventsSql() -> String {
 @text("VERSION")
 export fn version() -> String { return "{SCHEMA_VERSION}" }
 
+/// A section of the JSON document (a `local` type may be named by a `@text` result).
+local record Section {
+  /// Its heading.
+  heading: String
+  /// Its weight.
+  weight: Int
+
+  /// Whether it weighs more than 1: a stored fn, which a data file writes as `$heavy`, a text file never.
+  export fn heavy(self) -> Bool { return self.weight > 1 }
+}
+
+/// A record whose stored fn would divide by zero for the value `doc` holds: a `@text` result's
+/// stored fns are never evaluated (DECISIONS 308), so there is no error and no `$inv` key.
+local record Probe {
+  /// A divisor.
+  n: Int
+
+  /// Ten per n.
+  export fn inv(self) -> Int { return 10 / self.n }
+}
+
+/// What a note says.
+local variant Note {
+  /// A line of text.
+  line { text: String }
+  /// A reference to another section.
+  see { target: String, page: Int = 1 }
+}
+
+/// The JSON document: a `@text` fn whose result is not a String is written as JSON
+/// (WIRE.md §8.5): raw UTF-8, integer map keys in decimal, `none` as `null`, a variant with its
+/// tag first, a nested table as an object keyed by entry id with the retired one flagged.
+local record Doc {
+  /// A title with an accent and an emoji.
+  title: String
+  /// Section names by number.
+  names: {Int: String}
+  /// An optional subtitle, absent.
+  subtitle: String?
+  /// A note.
+  note: Note
+  /// A probe.
+  probe: Probe
+  /// The sections, one of them retired.
+  sections: table Section
+}
+
+/// The document, written to `doc.json`.
+@text("doc.json")
+export fn doc() -> Doc {
+  return {
+    title: "Café 🎉"
+    names: { 10: "intro", 2: "body" }
+    subtitle: none
+    note: see { target: "body" }
+    probe: { n: 0 }
+    sections: {
+      intro { heading: "Intro", weight: 1 }
+      retired old { heading: "Old", weight: 2 }
+    }
+  }
+}
+
 emit text { out: "out/sql" }
 emit go { out: "out/go/textemit/" }
 emit cpp { out: "out/cpp/textemit.hpp" }

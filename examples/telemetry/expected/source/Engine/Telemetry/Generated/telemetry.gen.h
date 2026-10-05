@@ -19,7 +19,7 @@ namespace Telemetry {
 inline constexpr int64_t CONTRACT_VERSION = 2;
 
 /// Version of the JSON catalogue's own shape (catalogJson).
-inline constexpr int64_t CATALOG_FORMAT = 2;
+inline constexpr int64_t CATALOG_FORMAT = 3;
 
 /// The event type byte every row carries on the wire; the dispatch table is indexed by it.
 /// Each member is named after its lake table, so one identifier names the event, its table

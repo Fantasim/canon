@@ -1,181 +1,218 @@
 package telemetry
 
 // catalog.json: the whole catalogue as data, for tools that are not C++ or Go (the HTML
-// catalogue, the lake gates). Format 2 is the Canon-native shape; format 1 was gen_catalog.py's,
-// which this file does not reproduce. Its shape:
-//
-//   { "format": 2, "contract": <int>,
-//     "provenance": [ { "name", "type" } ],          the prefix of every table
-//     "events": [ {                                   every type, in id order
-//       "id", "table", "retired": false, "version", "since", "tier", "producers": [<name>], "enqueue",
-//       "hasInstanceId", "wireSize", "description",
-//       "columns": [ { "name", "type", "kind", "nullable", "since", "retiredIn", "enum" } ],
-//       "ledger": [ { "kinds": null | { "column", "values": [<member>] }, "currency",
-//                     "bucket", "sign", "token", "leg", "filter", "amount", "item",
-//                     "player", "counterparty", "counted", "dedupOf", "untilVersion",
-//                     "note" } ] }
-//       | { "id", "table", "retired": true } ],       a tombstone: the id is never reused
-//     "enums": [ { "name", "view", "values": [ { "code", "name", "retired" } ] } ] }
-//
-// Columns are in wire order with the header first; a retired column stays where it stood
-// and has a `retiredIn`. Every string is printable ASCII (Text), so escaping `\` and `"`
-// is all JSON needs. Two-space indentation, keys in the order above, one final newline.
+// catalogue, the lake gates). The records below are its shape; Canon writes them as JSON
+// (WIRE.md §8.5: two-space indentation, one member or element per line, keys in field order,
+// `none` as null, one final newline). Format 3: an event is tagged by its "state", "live" or
+// "retired" (a tombstone, whose id is never reused). Format 1 was gen_catalog.py's.
 
-/// `s` as a JSON string.
-fn jstr(s: String) -> String { return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"") + "\"" }
-
-/// An optional string as JSON.
-fn jopt(s: String?) -> String { return if s != none { jstr(s) } else { "null" } }
-
-/// An optional integer as JSON.
-fn jint(n: Int?) -> String { return if n != none { "{n}" } else { "null" } }
-
-/// Two spaces per nesting level.
-fn indent(depth: Int) -> String { return ["  " for i in 0..depth].join("") }
-
-/// A JSON object of `fields` ("\"key\": value") at nesting depth `depth`.
-fn jobj(fields: [String], depth: Int) -> String {
-  let pad = "\n" + indent(depth + 1)
-  return "\{" + pad + fields.join("," + pad) + "\n" + indent(depth) + "\}"
+/// The catalogue document.
+local record CatalogDoc {
+  /// CATALOG_FORMAT: the version of this shape.
+  format: Int
+  /// CONTRACT_VERSION.
+  contract: Int
+  /// The provenance prefix of every table, in order.
+  provenance: [CatalogProvenance]
+  /// Every event type, in id order, tombstones included.
+  events: [CatalogEvent]
+  /// The enum views the lake needs, in first-use order.
+  enums: [CatalogEnum]
 }
 
-/// A JSON array of already-encoded `items` at nesting depth `depth`.
-fn jarr(items: [String], depth: Int) -> String {
-  if items.isEmpty() { return "[]" }
-  let pad = "\n" + indent(depth + 1)
-  return "[" + pad + items.join("," + pad) + "\n" + indent(depth) + "]"
+/// A provenance column.
+local record CatalogProvenance {
+  /// Its SQL name.
+  name: String
+  /// Its SQL type.
+  sqlType: SqlType @json("type")
 }
 
-/// A short array on one line.
-fn jline(items: [String]) -> String { return "[" + items.join(", ") + "]" }
-
-/// `"key": value`.
-fn jkv(key: String, value: String) -> String { return jstr(key) + ": " + value }
-
-fn columnJson(ev: Event, c: Column, depth: Int) -> String {
-  return jobj(
-    [
-      jkv("name", jstr(c.name)),
-      jkv("type", jstr(String(c.sql))),
-      jkv("kind", jstr(String(c.kind))),
-      jkv("nullable", "{c.nullable()}"),
-      jkv("since", "{c.since ?? ev.since}"),
-      jkv("retiredIn", jint(c.retiredIn)),
-      jkv("enum", if c.values != none { jstr(enumOf(c.values).name) } else { "null" }),
-    ],
-    depth,
-  )
+/// One event type.
+local variant CatalogEvent @json(tag: "state") {
+  /// A live event type and its table.
+  live {
+    /// The event type byte.
+    id: Int
+    /// The lake table.
+    tableName: String @json("table")
+    /// The current layout version.
+    version: Int
+    /// The first version whose layout the catalogue knows.
+    since: Int
+    /// Ring policy.
+    tier: Tier
+    /// The processes that own a ring for it.
+    producers: [Producer]
+    /// How the client enqueues it.
+    enqueue: Enqueue
+    /// Whether the current layout has item_instance_id.
+    hasInstanceId: Bool
+    /// The packed size of the current struct.
+    wireSize: Int
+    /// What one row records.
+    description: String
+    /// Every column in wire order, header first, retired ones where they stood.
+    columns: [CatalogColumn]
+    /// Its ledger roles.
+    ledger: [CatalogRole]
+  }
+  // `retired` here is the case's name (its wire tag), not the retired modifier.
+  /// A tombstone: the id is never reused.
+  retired {
+    /// The event type byte.
+    id: Int
+    /// The lake table, or the event's name when the table is not recorded.
+    tableName: String @json("table")
+  }
 }
 
-fn rowsJson(r: Role, depth: Int) -> String {
+/// One column of an event table.
+local record CatalogColumn {
+  /// Its SQL name.
+  name: String
+  /// Its SQL type.
+  sqlType: SqlType @json("type")
+  /// How it is streamed.
+  fieldKind: FieldKind @json("kind")
+  /// Whether the lake allows NULL.
+  nullable: Bool
+  /// The version that added it.
+  since: Int
+  /// The version that retired it.
+  retiredIn: Int?
+  /// The Canon enum an enum8 column holds.
+  enumName: String? @json("enum")
+}
+
+/// One ledger role.
+local record CatalogRole {
+  /// The rows it covers; none: every row.
+  kinds: CatalogKinds?
+  /// What moves.
+  currency: Currency
+  /// Mint, sink, transfer or none.
+  bucket: Bucket
+  /// +1, -1 or 0.
+  sign: Int
+  /// The economy panel's vocabulary.
+  token: String
+  /// The side a single-row transfer reads.
+  leg: Leg?
+  /// An extra predicate (DuckDB SQL).
+  filter: String?
+  /// The magnitude column.
+  amount: String?
+  /// The column naming the item.
+  item: String?
+  /// The column whose ledger the leg lands on.
+  player: String
+  /// The other side's column.
+  counterparty: String?
+  /// Whether it is summed into the reconciliation.
+  counted: Bool
+  /// The token this row would double-count with.
+  dedupOf: String?
+  /// The last version whose rows it reads.
+  untilVersion: Int?
+  /// Why.
+  note: String
+}
+
+/// The rows a role covers: the members of `column` it names.
+local record CatalogKinds {
+  /// The enum8 column that splits the rows.
+  column: String
+  /// The member names.
+  values: [String]
+}
+
+/// One enum view.
+local record CatalogEnum {
+  /// The Canon enum's name.
+  name: String
+  /// The lake's lookup view.
+  viewName: String @json("view")
+  /// Its members, retired ones included, in code order.
+  values: [Label]
+}
+
+/// Column `c` of event `ev`, as the catalogue lists it.
+fn columnDoc(ev: Event, c: Column) -> CatalogColumn {
+  return {
+    name: c.name
+    sqlType: c.sql
+    fieldKind: c.kind
+    nullable: c.nullable()
+    since: c.since ?? ev.since
+    retiredIn: c.retiredIn
+    enumName: if c.values != none { enumOf(c.values).name } else { none }
+  }
+}
+
+/// The rows role `r` covers; none: every row.
+fn kindsDoc(r: Role) -> CatalogKinds? {
   return match r.rows {
-    every => "null"
-    some(s) => jobj(
-      [
-        jkv("column", jstr(s.column.name)),
-        jkv("values", jline([jstr(String(k)) for k in s.kinds])),
-      ],
-      depth,
-    )
+    every => none
+    some(s) => CatalogKinds { column: s.column.name, values: [String(k) for k in s.kinds] }
   }
 }
 
-fn roleJson(r: Role, depth: Int) -> String {
-  return jobj(
-    [
-      jkv("kinds", rowsJson(r, depth + 1)),
-      jkv("currency", jstr(r.currency.wire)),
-      jkv("bucket", jstr(r.bucket.wire)),
-      jkv("sign", "{r.sign}"),
-      jkv("token", jstr(r.token)),
-      jkv("leg", if r.leg != none { jstr(String(r.leg)) } else { "null" }),
-      jkv("filter", jopt(r.filter)),
-      jkv("amount", jopt(r.amount?.name)),
-      jkv("item", jopt(r.item?.name)),
-      jkv("player", jstr(r.player?.name ?? playerColumn())),
-      jkv("counterparty", jopt(r.counterparty?.name)),
-      jkv("counted", "{r.counted}"),
-      jkv("dedupOf", jopt(r.dedupOf)),
-      jkv("untilVersion", jint(r.untilVersion)),
-      jkv("note", jstr(r.note)),
-    ],
-    depth,
-  )
+/// Ledger role `r`, as the catalogue lists it.
+fn roleDoc(r: Role) -> CatalogRole {
+  return {
+    kinds: kindsDoc(r)
+    currency: r.currency
+    bucket: r.bucket
+    sign: r.sign
+    token: r.token
+    leg: r.leg
+    filter: r.filter
+    amount: r.amount?.name
+    item: r.item?.name
+    player: r.player?.name ?? playerColumn()
+    counterparty: r.counterparty?.name
+    counted: r.counted
+    dedupOf: r.dedupOf
+    untilVersion: r.untilVersion
+    note: r.note
+  }
 }
 
-fn eventJson(e: EventType, depth: Int) -> String {
+/// Event type `e`: its live table, or its tombstone.
+fn eventDoc(e: EventType) -> CatalogEvent {
   let ev = eventOf(e)
-  if ev == none {
-    return jobj(
-      [jkv("id", "{e.code}"), jkv("table", jstr(tableOf(e))), jkv("retired", "true")],
-      depth,
-    )
+  if ev == none { return CatalogEvent.retired { id: e.code, tableName: tableOf(e) } }
+  return CatalogEvent.live {
+    id: e.code
+    tableName: tableOf(e)
+    version: ev.version
+    since: ev.since
+    tier: ev.tier
+    producers: ev.producers
+    enqueue: ev.enqueue
+    hasInstanceId: hasInstanceId(e)
+    wireSize: wireSize(e)
+    description: ev.description
+    columns: [columnDoc(ev, c) for c in headerColumns.values() + ev.columns]
+    ledger: [roleDoc(r) for r in ev.ledger]
   }
-  let cols = headerColumns.values() + ev.columns
-  return jobj(
-    [
-      jkv("id", "{e.code}"),
-      jkv("table", jstr(tableOf(e))),
-      jkv("retired", "false"),
-      jkv("version", "{ev.version}"),
-      jkv("since", "{ev.since}"),
-      jkv("tier", jstr(String(ev.tier))),
-      jkv("producers", jline([jstr(String(p)) for p in ev.producers])),
-      jkv("enqueue", jstr(String(ev.enqueue))),
-      jkv("hasInstanceId", "{hasInstanceId(e)}"),
-      jkv("wireSize", "{wireSize(e)}"),
-      jkv("description", jstr(ev.description)),
-      jkv("columns", jarr([columnJson(ev, c, depth + 2) for c in cols], depth + 1)),
-      jkv("ledger", jarr([roleJson(r, depth + 2) for r in ev.ledger], depth + 1)),
-    ],
-    depth,
-  )
 }
 
-fn enumJson(v: Vocabulary, depth: Int) -> String {
-  return jobj(
-    [
-      jkv("name", jstr(enumOf(v).name)),
-      jkv("view", jstr("enum_{v}")),
-      jkv(
-        "values",
-        jarr(
-          [
-            jobj(
-              [jkv("code", "{l.code}"), jkv("name", jstr(l.name)), jkv("retired", "{l.isRetired}")],
-              depth + 2,
-            )
-            for l in enumOf(v).labels
-          ],
-          depth + 1,
-        ),
-      ),
-    ],
-    depth,
-  )
+/// The enum view of vocabulary `v`.
+fn enumDoc(v: Vocabulary) -> CatalogEnum {
+  let info = enumOf(v)
+  return { name: info.name, viewName: "enum_{v}", values: info.labels }
 }
 
-/// The catalogue as JSON (shape above).
+/// The catalogue, written as JSON.
 @text("catalog.json")
-export fn catalogJson() -> String {
-  return jobj(
-    [
-      jkv("format", "{CATALOG_FORMAT}"),
-      jkv("contract", "{CONTRACT_VERSION}"),
-      jkv(
-        "provenance",
-        jarr(
-          [
-            jobj([jkv("name", jstr(p.name)), jkv("type", jstr(String(p.sql)))], 2)
-            for p in provenanceColumns
-          ],
-          1,
-        ),
-      ),
-      jkv("events", jarr([eventJson(e, 2) for e in EventType.members.sortBy(.code)], 1)),
-      jkv("enums", jarr([enumJson(v, 2) for v in usedVocabularies()], 1)),
-    ],
-    0,
-  ) +
-    "\n"
+export fn catalogJson() -> CatalogDoc {
+  return {
+    format: CATALOG_FORMAT
+    contract: CONTRACT_VERSION
+    provenance: [{ name: p.name, sqlType: p.sql } for p in provenanceColumns]
+    events: [eventDoc(e) for e in EventType.members.sortBy(.code)]
+    enums: [enumDoc(v) for v in usedVocabularies()]
+  }
 }

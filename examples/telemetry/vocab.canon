@@ -148,7 +148,7 @@ local record Label {
   /// The member's name: the label panels show.
   name: String
   /// No producer writes it any more; old rows still carry the code.
-  isRetired: Bool
+  isRetired: Bool @json("retired")
 }
 
 /// A vocabulary's enum, as the lake's catalogue names and lists it.
@@ -161,45 +161,9 @@ local record EnumInfo {
 
 /// The enum behind vocabulary `v`.
 fn enumOf(v: Vocabulary) -> EnumInfo {
-  let e = match v {
-    farm_event_kind => EnumInfo {
-      name: "FarmEventKind"
-      labels:
-        FarmEventKind.members.map(m => Label { code: m.code, name: m.name, isRetired: m.retired })
-    }
-    sovereign_event_kind => EnumInfo {
-      name: "SovereignEventKind"
-      labels: SovereignEventKind.members.map(
-        m => Label { code: m.code, name: m.name, isRetired: m.retired },
-      )
-    }
-    sovereign_role => EnumInfo {
-      name: "SovereignRole"
-      labels:
-        SovereignRole.members.map(m => Label { code: m.code, name: m.name, isRetired: m.retired })
-    }
-    sovereign_doctrine => EnumInfo {
-      name: "SovereignDoctrine"
-      labels: SovereignDoctrine.members.map(
-        m => Label { code: m.code, name: m.name, isRetired: m.retired },
-      )
-    }
-    sovereign_power => EnumInfo {
-      name: "SovereignPower"
-      labels:
-        SovereignPower.members.map(m => Label { code: m.code, name: m.name, isRetired: m.retired })
-    }
-    lifecycle_kind => EnumInfo {
-      name: "LifecycleKind"
-      labels:
-        LifecycleKind.members.map(m => Label { code: m.code, name: m.name, isRetired: m.retired })
-    }
-    grant_kind => EnumInfo {
-      name: "GrantKind"
-      labels: GrantKind.members.map(m => Label { code: m.code, name: m.name, isRetired: m.retired })
-    }
-  }
-  return { ...e, labels: e.labels.sortBy(.code) }
+  let labels =
+    Member(v).members.map(m => Label { code: m.code, name: m.name, isRetired: m.retired })
+  return { name: Member(v).typeName, labels: labels.sortBy(.code) }
 }
 
 /// The live member names of vocabulary `v`.

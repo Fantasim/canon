@@ -15,7 +15,7 @@ import (
 const ContractVersion int64 = 2
 
 // CatalogFormat: Version of the JSON catalogue's own shape (catalogJson).
-const CatalogFormat int64 = 2
+const CatalogFormat int64 = 3
 
 // EventType: The event type byte every row carries on the wire; the dispatch table is indexed by it.
 // Each member is named after its lake table, so one identifier names the event, its table

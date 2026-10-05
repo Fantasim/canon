@@ -6,8 +6,8 @@
 ///
 /// Here it is one package (ADR L-0111 d.1). The C++ packer and the ring set read the
 /// per-event metadata at compile time (header-inline constexpr lookups, DECISIONS 293);
-/// monitoring reads the same facts from Go; the lake's DDL, its enum views and a JSON
-/// catalogue are build-time strings written by `emit text` (DECISIONS 294).
+/// monitoring reads the same facts from Go; the lake's DDL and its enum views are build-time
+/// strings, and the JSON catalogue a typed value, written by `emit text` (DECISIONS 294, 308).
 ///
 /// This dry run carries 7 of the 86 tables, the two tombstoned event ids, and a trimmed
 /// GrantKind (14 of its 62 members, the retired ones kept).
@@ -17,7 +17,7 @@ package telemetry
 const CONTRACT_VERSION = 2
 
 /// Version of the JSON catalogue's own shape (catalogJson).
-const CATALOG_FORMAT = 2
+const CATALOG_FORMAT = 3
 
 // ---------------------------------------------------------------------------
 // Event types
@@ -101,9 +101,6 @@ enum FieldKind {
 
 /// A snake_case SQL identifier.
 type Ident = String(/^[a-z][a-z0-9_]*$/)
-
-/// Printable ASCII on one line: what the JSON catalogue and the SQL comments accept.
-type Text = String(/^[ -~]*$/)
 
 /// One column of an event table, in wire order.
 record Column {
@@ -201,8 +198,9 @@ variant Rows {
     column: ref Column
     /// Its vocabulary, so the kinds are typed.
     of: Vocabulary
+    // `past` (DECISIONS 304): a retired member still classifies the rows written before.
     /// The members covered.
-    kinds: [Member(of)](1..)
+    kinds: [past Member(of)](1..)
   }
 }
 
@@ -221,7 +219,7 @@ record Role {
   /// The side a single-row transfer reads; none for a table with one row per side.
   leg: Leg? = none
   /// An extra predicate on the table's own columns (DuckDB SQL).
-  filter: Text? = none
+  filter: String? = none
   /// The magnitude; none for a row that documents a path with no amount.
   amount: ref Column? = none
   /// For item legs: the column naming the item.
@@ -237,7 +235,7 @@ record Role {
   /// The last version whose rows this role reads; none: every version.
   untilVersion: Int(1..)? = none
   /// Why, citing a function, never a line number.
-  note: Text
+  note: String
 
   check (currency == nothing) == (bucket == nothing) at bucket
     else "a role moves no currency exactly when its bucket is none"
@@ -252,7 +250,7 @@ record Role {
 /// One telemetry table: the rows of one event type.
 record Event {
   /// What one row records.
-  description: Text
+  description: String
   /// The current layout version: the wire version byte and the lake's event_version.
   version: UInt8(1..)
   /// The first version whose layout this catalogue knows. Tables older than the schema lock

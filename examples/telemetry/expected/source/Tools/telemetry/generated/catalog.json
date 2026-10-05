@@ -1,5 +1,5 @@
 {
-  "format": 2,
+  "format": 3,
   "contract": 2,
   "provenance": [
     {
@@ -25,13 +25,16 @@
   ],
   "events": [
     {
+      "state": "live",
       "id": 11,
       "table": "item_created",
-      "retired": false,
       "version": 5,
       "since": 2,
       "tier": "WARM",
-      "producers": ["WorldServer", "DatabaseServer"],
+      "producers": [
+        "WorldServer",
+        "DatabaseServer"
+      ],
       "enqueue": "generated",
       "hasInstanceId": true,
       "wireSize": 38,
@@ -114,7 +117,11 @@
         {
           "kinds": {
             "column": "grant_kind",
-            "values": ["BUYBACK_DELIVERY", "BUFF_REWARD", "EVENT_REWARD"]
+            "values": [
+              "BUYBACK_DELIVERY",
+              "BUFF_REWARD",
+              "EVENT_REWARD"
+            ]
           },
           "currency": "item",
           "bucket": "mint",
@@ -134,7 +141,9 @@
         {
           "kinds": {
             "column": "grant_kind",
-            "values": ["BOSS_REWARD_MAIL"]
+            "values": [
+              "BOSS_REWARD_MAIL"
+            ]
           },
           "currency": "item",
           "bucket": "mint",
@@ -154,7 +163,9 @@
         {
           "kinds": {
             "column": "grant_kind",
-            "values": ["MAIL_RETURN"]
+            "values": [
+              "MAIL_RETURN"
+            ]
           },
           "currency": "item",
           "bucket": "transfer",
@@ -174,7 +185,9 @@
         {
           "kinds": {
             "column": "grant_kind",
-            "values": ["PLAYER_MAIL"]
+            "values": [
+              "PLAYER_MAIL"
+            ]
           },
           "currency": "item",
           "bucket": "transfer",
@@ -194,7 +207,9 @@
         {
           "kinds": {
             "column": "grant_kind",
-            "values": ["AUCTION_ESCROW_RECOVERY"]
+            "values": [
+              "AUCTION_ESCROW_RECOVERY"
+            ]
           },
           "currency": "item",
           "bucket": "transfer",
@@ -214,7 +229,9 @@
         {
           "kinds": {
             "column": "grant_kind",
-            "values": ["PERIN_OVERFLOW"]
+            "values": [
+              "PERIN_OVERFLOW"
+            ]
           },
           "currency": "item",
           "bucket": "mint",
@@ -234,7 +251,9 @@
         {
           "kinds": {
             "column": "grant_kind",
-            "values": ["FARM_HARVEST"]
+            "values": [
+              "FARM_HARVEST"
+            ]
           },
           "currency": "item",
           "bucket": "mint",
@@ -254,7 +273,9 @@
         {
           "kinds": {
             "column": "grant_kind",
-            "values": ["STARTER_ITEM"]
+            "values": [
+              "STARTER_ITEM"
+            ]
           },
           "currency": "item",
           "bucket": "mint",
@@ -274,7 +295,9 @@
         {
           "kinds": {
             "column": "grant_kind",
-            "values": ["UNKNOWN"]
+            "values": [
+              "UNKNOWN"
+            ]
           },
           "currency": "none",
           "bucket": "none",
@@ -294,14 +317,14 @@
       ]
     },
     {
+      "state": "retired",
       "id": 20,
-      "table": "mail_item_received",
-      "retired": true
+      "table": "mail_item_received"
     },
     {
+      "state": "live",
       "id": 31,
       "table": "item_consumed",
-      "retired": false,
       "version": 3,
       "since": 2,
       "tier": "READONLY",
@@ -369,13 +392,15 @@
       ]
     },
     {
+      "state": "live",
       "id": 70,
       "table": "penya_drops",
-      "retired": false,
       "version": 2,
       "since": 2,
       "tier": "HOT",
-      "producers": ["WorldServer"],
+      "producers": [
+        "WorldServer"
+      ],
       "enqueue": "generated",
       "hasInstanceId": false,
       "wireSize": 24,
@@ -439,13 +464,15 @@
       ]
     },
     {
+      "state": "live",
       "id": 71,
       "table": "trade_penya",
-      "retired": false,
       "version": 2,
       "since": 2,
       "tier": "COOL",
-      "producers": ["WorldServer"],
+      "producers": [
+        "WorldServer"
+      ],
       "enqueue": "generated",
       "hasInstanceId": false,
       "wireSize": 36,
@@ -544,13 +571,18 @@
       ]
     },
     {
+      "state": "live",
       "id": 110,
       "table": "server_lifecycle",
-      "retired": false,
       "version": 1,
       "since": 1,
       "tier": "TINY",
-      "producers": ["WorldServer", "CoreServer", "DatabaseServer", "LoginServer"],
+      "producers": [
+        "WorldServer",
+        "CoreServer",
+        "DatabaseServer",
+        "LoginServer"
+      ],
       "enqueue": "internal",
       "hasInstanceId": false,
       "wireSize": 13,
@@ -587,13 +619,15 @@
       "ledger": []
     },
     {
+      "state": "live",
       "id": 151,
       "table": "farm_events",
-      "retired": false,
       "version": 2,
       "since": 1,
       "tier": "COOL",
-      "producers": ["WorldServer"],
+      "producers": [
+        "WorldServer"
+      ],
       "enqueue": "generated",
       "hasInstanceId": false,
       "wireSize": 37,
@@ -685,7 +719,11 @@
         {
           "kinds": {
             "column": "kind",
-            "values": ["Purchase", "UnlockModel", "VisitOther"]
+            "values": [
+              "Purchase",
+              "UnlockModel",
+              "VisitOther"
+            ]
           },
           "currency": "gold",
           "bucket": "sink",
@@ -705,13 +743,15 @@
       ]
     },
     {
+      "state": "live",
       "id": 152,
       "table": "sovereign_events",
-      "retired": false,
       "version": 1,
       "since": 1,
       "tier": "TINY",
-      "producers": ["CoreServer"],
+      "producers": [
+        "CoreServer"
+      ],
       "enqueue": "generated",
       "hasInstanceId": false,
       "wireSize": 40,
@@ -821,7 +861,9 @@
         {
           "kinds": {
             "column": "kind",
-            "values": ["RewardGranted"]
+            "values": [
+              "RewardGranted"
+            ]
           },
           "currency": "gold",
           "bucket": "mint",
@@ -858,9 +900,9 @@
       ]
     },
     {
+      "state": "retired",
       "id": 156,
-      "table": "world_boss_spawns",
-      "retired": true
+      "table": "world_boss_spawns"
     }
   ],
   "enums": [

@@ -16,9 +16,12 @@ export fn tablesSql() -> String {
   return header + [createTableSql(e) + "\n" for e in liveEvents()].join("")
 }
 
+/// `s` as a SQL string literal (ANSI quoting: a quote is doubled).
+fn sqlStr(s: String) -> String { return "'" + s.replace("'", "''") + "'" }
+
 /// One enum view: value to label.
 fn enumView(v: Vocabulary) -> String {
-  let rows = ["    ({l.code}, '{l.name}')" for l in enumOf(v).labels].join(",\n")
+  let rows = ["    ({l.code}, {sqlStr(l.name)})" for l in enumOf(v).labels].join(",\n")
   return "-- {enumOf(v).name}\nCREATE OR REPLACE VIEW enum_{v} AS\nSELECT * FROM (VALUES\n{rows}\n) AS t(value, name);\n"
 }
 
@@ -28,13 +31,13 @@ fn enumView(v: Vocabulary) -> String {
 export fn enumsSql() -> String {
   let views = [enumView(v) for v in usedVocabularies()].join("\n")
   let columnRows = [
-    "    ('{e}', '{c.name}', '{enumOf(c.values).name}', 'enum_{c.values}')"
+    "    ({sqlStr(String(e))}, {sqlStr(c.name)}, {sqlStr(enumOf(c.values).name)}, {sqlStr("enum_{c.values}")})"
     for e in liveEvents()
     for c in events[e].columns
     if c.values != none
   ].join(",\n")
   let catalogRows = [
-    "    ('{e}', {e.code}, '{tierOf(e)}', {hasInstanceId(e)}, {versionOf(e)})"
+    "    ({sqlStr(String(e))}, {e.code}, {sqlStr(String(tierOf(e)))}, {hasInstanceId(e)}, {versionOf(e)})"
     for e in liveEvents()
   ].join(",\n")
   return views +
