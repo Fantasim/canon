@@ -6,6 +6,7 @@ import (
 
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/project"
+	"github.com/fantasim/canonlang/internal/source"
 )
 
 // GRAMMAR.md §7.1, NFR-03: this compiler reads 0.1 only; another minor or major is refused.
@@ -55,5 +56,20 @@ func TestLayoutRootDirs(t *testing.T) {
 	}
 	if got := layout.RootDirs(); !slices.Equal(got, []string{"/elsewhere/x", "/proj/y"}) {
 		t.Errorf("RootDirs() = %v", got)
+	}
+}
+
+// GRAMMAR.md §7, §9.1: Load keeps the declaration's doc comment text, "" for none.
+func TestLoadDoc(t *testing.T) {
+	for text, want := range map[string]string{
+		"/// The law.\n/// Two lines.\nproject a {\n  canon: \"0.1\"\n}\n": "The law.\nTwo lines.",
+		"project a {\n  canon: \"0.1\"\n}\n":                               "",
+	} {
+		set := &source.FileSet{}
+		src, _ := set.Add(project.FileName, "/p/project.canon", []byte(text))
+		p, err := project.Load(src, diag.NewBag(set, ""))
+		if err != nil || p.Doc != want {
+			t.Errorf("Load(%q) doc %q, %v, want %q", text, p.Doc, err, want)
+		}
 	}
 }

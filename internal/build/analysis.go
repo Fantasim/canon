@@ -24,6 +24,7 @@ type Analysis struct {
 	viewErr error                     // what ViewEvaluator's evaluations failed with, but a template's own failure
 	causes  *eval.Evaluator           // a memoized run's causes, logged on first use (cause.go)
 	inputs  inputs                    // what Analyze's run read, which Manifest lists
+	source  []diag.Finding            // Result's findings as Analyze first sorted them, in the source language
 	listed  []byte                    // the manifest, made on first use
 	numbers numberIndex               // the typed number readings of each JSON source, made on first use
 }
@@ -39,6 +40,7 @@ func (p *Project) Analyze(ctx context.Context, selectors []string) (*Analysis, e
 		return nil, err
 	}
 	a := r.analysis()
+	a.source = slices.Clone(a.res.List)
 	if err := r.localized(ctx, a.res); err != nil {
 		return nil, err
 	}
@@ -129,6 +131,11 @@ func (a *Analysis) Localized(ctx context.Context, findings []diag.Finding, lang 
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	return out, a.r.translate(ctx, a.r.s.set, out, lang)
+}
+
+// ResultIn is Result's findings with the named checks' messages in lang, whatever Options.Lang put in Result (API.md R3a, DECISIONS 281, 313).
+func (a *Analysis) ResultIn(ctx context.Context, lang string) ([]diag.Finding, error) {
+	return a.Localized(ctx, a.source, lang)
 }
 
 // Units are the packages of the snapshot Analyze read, every one, selected or not, read-only.

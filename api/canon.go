@@ -132,6 +132,31 @@ type PackageInfo struct {
 	Layers  []string
 }
 
+// ProjectInfo describes the project (API.md §5.5, DECISIONS 313).
+type ProjectInfo struct {
+	Name string
+	Doc  string // the project doc comment's text (GRAMMAR.md §2.2), in the source language
+}
+
+// Info is the project's name and doc, a shared read that fails as Packages does (API.md §5.5, S8).
+func (p *Project) Info(ctx context.Context) (info ProjectInfo, err error) {
+	defer recoverInternal(&err)
+	s, err := p.read(ctx)
+	if err != nil {
+		return ProjectInfo{}, err
+	}
+	proj, err := share(ctx, s, workspace.Key(workspace.OpInfo, nil), func(context.Context) (*project.Project, error) {
+		return s.Build().Info()
+	})
+	if err != nil {
+		return ProjectInfo{}, err
+	}
+	if _, err := p.revision(ctx, s); err != nil {
+		return ProjectInfo{}, err
+	}
+	return ProjectInfo{Name: proj.Name, Doc: proj.Doc}, nil
+}
+
 // Packages lists every package of the project, sorted by name.
 func (p *Project) Packages(ctx context.Context) (infos []PackageInfo, err error) {
 	defer recoverInternal(&err)

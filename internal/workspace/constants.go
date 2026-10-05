@@ -50,6 +50,7 @@ const (
 const (
 	OpAnalyze   Op = "analyze"
 	OpPackages  Op = "packages"
+	OpInfo      Op = "info"
 	OpViewModel Op = "viewmodel"
 	OpTest      Op = "test"
 	OpBuild     Op = "build"

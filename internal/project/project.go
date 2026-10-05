@@ -11,6 +11,7 @@ import (
 // Project is a checked project.canon (GRAMMAR.md §7.1); Roots and GoModules are in name order.
 type Project struct {
 	Name      string
+	Doc       string // the declaration's doc comment text, "" for none (GRAMMAR.md §2.2, §9.1)
 	Canon     Version
 	Roots     []Root
 	Languages []string // the first is the source language (SPEC §17)

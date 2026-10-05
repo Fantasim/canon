@@ -22,6 +22,9 @@ func Load(src *source.File, bag *diag.Bag) (*Project, error) {
 	}
 	d := f.Project
 	s := &schema{f: f, bag: bag, p: New(d.Name.Name, Version{}), seen: map[string]bool{}, named: map[string]bool{}}
+	if d.Doc != nil {
+		s.p.Doc = d.Doc.Text
+	}
 	for _, e := range d.Items { // GRAMMAR.md §7.1
 		s.entry(e)
 	}

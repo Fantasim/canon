@@ -2,6 +2,7 @@ package canon
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -165,19 +166,39 @@ func (r *CheckResult) HasErrors() bool {
 	return r != nil && r.Summary.Errors > 0
 }
 
-// Check runs build phases 1-7 on the selected packages and returns their findings (rules R1-R3).
-func (p *Project) Check(ctx context.Context, packages ...string) (res *CheckResult, err error) {
+// Check runs build phases 1-7 on the selected packages and returns their findings (rules R1-R3):
+// CheckWith with no Lang (R3a).
+func (p *Project) Check(ctx context.Context, packages ...string) (*CheckResult, error) {
+	return p.CheckWith(ctx, CheckRequest{Packages: packages})
+}
+
+// CheckRequest asks for a Check with a language of its own (API.md R3a, DECISIONS 313).
+type CheckRequest struct {
+	Packages []string
+	Lang     string // "" is Options.Lang
+}
+
+// CheckWith is Check with the messages of named checks in r.Lang, else Options.Lang: only the
+// messages are rendered again, from the kept analysis, the finding set and the counts unchanged
+// (rule R3a, F7, DECISIONS 281); the result does not echo the language.
+func (p *Project) CheckWith(ctx context.Context, r CheckRequest) (res *CheckResult, err error) {
 	defer recoverInternal(&err)
 	start := time.Now()
 	s, err := p.read(ctx)
 	if err != nil {
 		return nil, err
 	}
-	a, err := analyze(ctx, s, packages)
+	a, err := analyze(ctx, s, r.Packages)
 	if err != nil {
 		return nil, err
 	}
-	res = checkResultOf(*a.Result(), time.Since(start))
+	found := *a.Result()
+	if lang := cmp.Or(r.Lang, p.lang); lang != p.lang {
+		if found.List, err = a.ResultIn(ctx, lang); err != nil {
+			return nil, apiError(err)
+		}
+	}
+	res = checkResultOf(found, time.Since(start))
 	if res.Revision, err = p.revision(ctx, s); err != nil {
 		return nil, err
 	}

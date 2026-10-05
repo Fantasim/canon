@@ -23,9 +23,7 @@ func (p *Project) viewModel(ctx context.Context, pkg string) (*ViewModel, error)
 	if !project.IsPackageName(pkg) { // API.md §5.4: a package name, not a selector
 		return nil, fmt.Errorf(fmtUnknown, ErrUnknownPackage, pkg)
 	}
-	data, err := share(ctx, s, workspace.Key(workspace.OpViewModel, []string{pkg}), func(ctx context.Context) ([]byte, error) {
-		return viewModelData(ctx, s, pkg)
-	})
+	data, err := keptViewModel(ctx, s, pkg)
 	if err != nil {
 		return nil, err
 	}
@@ -34,6 +32,21 @@ func (p *Project) viewModel(ctx context.Context, pkg string) (*ViewModel, error)
 		return nil, err
 	}
 	return &ViewModel{Package: pkg, Revision: rev, data: slices.Clone(data)}, nil
+}
+
+// keptViewModel is pkg's model bytes kept on s (S8, DECISIONS 313), else computed once for
+// identical concurrent calls and kept: a new snapshot keeps none.
+func keptViewModel(ctx context.Context, s *workspace.Snapshot, pkg string) ([]byte, error) {
+	if data, ok := s.KeptView(pkg); ok {
+		return data, nil
+	}
+	return share(ctx, s, workspace.Key(workspace.OpViewModel, []string{pkg}), func(ctx context.Context) ([]byte, error) {
+		data, err := viewModelData(ctx, s, pkg)
+		if err == nil {
+			s.KeepView(pkg, data)
+		}
+		return data, err
+	})
 }
 
 // viewModelData is pkg's model written by gen/view on snapshot s.

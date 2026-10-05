@@ -361,3 +361,29 @@ func TestLangLockBytes(t *testing.T) {
 		t.Errorf("messages %q, %q", srcMsg, frMsg)
 	}
 }
+
+// API.md R3a, DECISIONS 281, 313: under Options.Lang fr, ResultIn the source language
+// returns the source list, as under no language; in fr, the translated one.
+func TestLocalizedSourceUnderOptionsLang(t *testing.T) {
+	fsys := mapFS{"p/project.canon": file(langProject), "p/a/a.canon": file(langA), "p/a/a.fr.canon": file(langFr)}
+	p, err := build.Open(fsys, "/p", build.Options{Lang: "fr"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := context.Background()
+	a, err := p.Analyze(ctx, []string{"a"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	src, err := a.ResultIn(ctx, "en")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := langCheck(t, ""); !reflect.DeepEqual(src, want) {
+		t.Errorf("source Localized %+v, want %+v", src, want)
+	}
+	fr, err := a.ResultIn(ctx, "fr")
+	if err != nil || !reflect.DeepEqual(fr, a.Result().List) {
+		t.Errorf("fr Localized %+v, want %+v, %v", fr, a.Result().List, err)
+	}
+}

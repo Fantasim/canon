@@ -67,6 +67,16 @@ func (p *Project) Packages(ctx context.Context) (*Units, error) {
 	return &Units{Units: s.units, Revision: s.revision()}, nil
 }
 
+// Info is project.canon read and checked, as every call reads it (API.md §5.5): the failures Packages reports for it.
+func (p *Project) Info() (*project.Project, error) {
+	s := &snapshot{p: p, set: &source.FileSet{}, bags: map[string]*diag.Bag{}}
+	s.own = diag.NewBag(s.set, "")
+	if err := p.readOwn(s); err != nil {
+		return nil, err
+	}
+	return s.proj, nil
+}
+
 // Revision is the revision of what is on disk now (API.md S1, S3), whether project.canon
 // checks or not; a file, or the listing of the file set, that cannot be read is marked so. The
 // canon.lock of every package directory counts, whatever a call selects.

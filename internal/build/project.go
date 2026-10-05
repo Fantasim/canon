@@ -79,11 +79,7 @@ func (p *Project) open() (*snapshot, error) {
 		s.set = s.gen.set
 	}
 	s.own = diag.NewBag(s.set, "")
-	if err := p.readProject(s); err != nil {
-		var oe *OpenError
-		if errors.As(err, &oe) {
-			oe.Findings = collect(s.set, s.own)
-		}
+	if err := p.readOwn(s); err != nil {
 		return nil, err
 	}
 	names, err := project.Scan(p.fs, p.dir)
@@ -92,6 +88,16 @@ func (p *Project) open() (*snapshot, error) {
 	}
 	s.names = names
 	return s, nil
+}
+
+// readOwn is readProject with the project's own findings on an *OpenError it returns.
+func (p *Project) readOwn(s *snapshot) error {
+	err := p.readProject(s)
+	var oe *OpenError
+	if errors.As(err, &oe) {
+		oe.Findings = collect(s.set, s.own)
+	}
+	return err
 }
 
 // readProject reads project.canon into s; a finding that stops the call is an *OpenError.

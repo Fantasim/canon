@@ -8,15 +8,14 @@ import (
 	"github.com/fantasim/canonlang/internal/project"
 )
 
-// kept is what a snapshot keeps of what was computed on it, which never changes (S8): every
-// package's analysis, the latest analysis of a selection and its key, the packages its sources
-// declare, and the selection whose analysis gives every package's values (Covered).
+// kept is what a snapshot keeps of what was computed on it, which never changes (S8, DECISIONS 313).
 type kept struct {
-	all     *build.Analysis
-	one     *build.Analysis
-	oneKey  string
-	units   []*project.Unit
-	covered string
+	all     *build.Analysis   // every package's analysis
+	one     *build.Analysis   // the latest analysis of a selection
+	oneKey  string            // its key
+	units   []*project.Unit   // the packages its sources declare
+	covered string            // the selection whose analysis gives every package's values (Covered)
+	views   map[string][]byte // each package's view model bytes (S8, DECISIONS 313)
 }
 
 // Analyze is the analysis of the packages selectors name on s, shared by identical concurrent
@@ -145,4 +144,23 @@ func importing(units []*project.Unit, pkgs ...string) []string {
 	}
 	slices.Sort(out)
 	return slices.Compact(out)
+}
+
+// KeptView is the view model bytes s keeps for pkg, shared and read-only (API.md S8, DECISIONS 313).
+func (s *Snapshot) KeptView(pkg string) ([]byte, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	data, ok := s.kept.views[pkg]
+	return data, ok
+}
+
+// KeepView keeps pkg's view model bytes on s: a new snapshot starts with none, so an edit
+// invalidates them (API.md S8, DECISIONS 313).
+func (s *Snapshot) KeepView(pkg string, data []byte) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.kept.views == nil {
+		s.kept.views = map[string][]byte{}
+	}
+	s.kept.views[pkg] = data
 }
