@@ -1,0 +1,38 @@
+TYPES.md §15, DECISIONS 319: an optional field's default is already none; `= none` on a field whose type is optional, written or through an alias, a record's or a case's, is W3001 at the default. Another default, no default and a parameter default are not, nor an optional whose type holds the error type (TYPES.md §1: its own finding stands alone).
+-- a/a.canon --
+package a
+
+local type MaybeInt = Int?
+
+local record R {
+  a: Int? = none
+  b: MaybeInt = none
+  c: Int? = 3
+  d: Int?
+  e: Nope? = none
+}
+
+local variant V {
+  c {
+    x: String? = none
+  }
+  d
+}
+
+local fn f(x: Int? = none) -> Int {
+  return x ?? 0
+}
+-- findings.txt --
+warning[W3001]  a/a.canon:6:13
+  a is optional: none is already its default; remove = none
+
+warning[W3001]  a/a.canon:7:17
+  b is optional: none is already its default; remove = none
+
+error[E2102]  a/a.canon:10:6
+  unknown name Nope
+
+warning[W3001]  a/a.canon:15:18
+  x is optional: none is already its default; remove = none
+
+1 error, 3 warnings in 1 package (…)

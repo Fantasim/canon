@@ -27,7 +27,7 @@ local let evs: table Ev = {
 
 local record R {
   ev: Ev
-  maybe: Ev? = none
+  maybe: Ev?
   item: Item
   byRef: ref evs
   wrong: P(item)

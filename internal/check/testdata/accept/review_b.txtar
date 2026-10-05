@@ -1,4 +1,4 @@
-TYPES.md §4.1, §5.1, §6.6, §11.4: bare keys in membership, narrowed calls and op=, facts on either side, `??` against its expected type, a brace literal for a dependent value.
+TYPES.md §4.1, §5.1, §6.6, §11.4: bare keys in hasKey and get (STDLIB.md §5, DECISIONS 317), narrowed calls and op=, facts on either side, `??` against its expected type, a brace literal for a dependent value.
 -- a/a.canon --
 package a
 
@@ -12,7 +12,7 @@ local let flags: table Flag = {
 }
 
 local fn keys() -> Bool {
-  return blocking in flags and flags.contains(sensitive) and flags.indexOf(blocking) != none
+  return flags.hasKey(blocking) and flags.hasKey(sensitive) and flags.get(blocking) != none
 }
 
 local fn call(g: (fn(Int) -> Int)?) -> Int {

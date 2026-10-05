@@ -15,7 +15,7 @@ local type C(e: Ev) = match e.k {
 
 local record Box {
   ev: Ev
-  inner: Fine(ev)? = none
+  inner: Fine(ev)?
 }
 
 local type Fine(e: Ev) = match e.k {

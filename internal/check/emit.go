@@ -214,6 +214,10 @@ func (c *checker) emitValues(env *env, fi *syntax.FieldItem, target string) int 
 		c.report(env, diag.E8009.AtKind(env.span(fi.Value), fi.Name.Name, target, diag.KindValueNames))
 		return -1
 	}
+	if len(list.Elems) == 0 { // omit values to mean every value (CODEGEN.md §2.1, DECISIONS 319)
+		c.report(env, diag.E8009.AtValuesEmpty(env.span(fi.Value), target))
+		return -1
+	}
 	seen := map[string]bool{}
 	for _, x := range list.Elems {
 		id, isName := x.(*syntax.IdentExpr)

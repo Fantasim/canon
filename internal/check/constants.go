@@ -146,9 +146,7 @@ const (
 )
 
 // The flags of an env: modeJoin types a branch a join may still type (TYPES.md §6.4).
-const (
-	modeJoin mode = 1 << iota
-)
+const modeJoin mode = 1
 
 // What a type position allows: a function type, `_`, `stable table`.
 const (
@@ -410,6 +408,7 @@ const (
 	methodMaxBy      = "maxBy"
 	methodGet        = "get"
 	methodFind       = "find"
+	methodHasKey     = "hasKey"
 	methodAt         = "at"
 	methodKeys       = "keys"
 	methodValues     = "values"

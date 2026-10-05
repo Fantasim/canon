@@ -10,7 +10,7 @@ local record Sub {
 
 local record Ev {
   k: K
-  sub: Sub? = none
+  sub: Sub?
 }
 
 local type P(e: Sub) = match e.k {

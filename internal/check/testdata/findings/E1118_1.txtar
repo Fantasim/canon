@@ -4,7 +4,7 @@ package a
 
 local record K {
   n: Int @ts(bigint)
-  o: Int? = none @ts(bigint)
+  o: Int? @ts(bigint)
   l: [UInt64] = [] @ts(bigint)
   k: {Int: String} = {} @ts(bigint)
   v: {ref ks: Int} = {} @ts(bigint)
@@ -17,7 +17,7 @@ local record H {
   rs: [ref ks] = [] @ts(bigint)
   s: String = "" @ts(bigint)
   m: {ref ks: String} = {} @ts(bigint)
-  inner: K? = none @ts(bigint, name: "inside")
+  inner: K? @ts(bigint, name: "inside")
 }
 -- findings.txt --
 error[E1118]  a/a.canon:14:17
@@ -32,7 +32,7 @@ error[E1118]  a/a.canon:16:22
 error[E1118]  a/a.canon:17:32
   @ts is not allowed on this field
 
-error[E1118]  a/a.canon:18:24
+error[E1118]  a/a.canon:18:17
   @ts is not allowed on this field
 
 5 errors, 0 warnings in 1 package (…)

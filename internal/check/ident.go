@@ -23,11 +23,62 @@ func (c *checker) ident(env *env, e *syntax.IdentExpr, want types.Type) types.Ty
 	if o == nil {
 		return c.unresolved(env, e, want)
 	}
-	if coll := c.dynamicKeys(want); coll != nil && !c.valueOf(o, want) && !c.optionalOf(o, want) {
-		c.info.Keys[e] = coll
-		return refTo(want)
+	if c.dynamicKeys(want) != nil && !c.valueOf(o, want) && !c.optionalOf(o, want) {
+		return c.notAKey(env, e, o, want)
 	}
 	return c.use(env, e, o)
+}
+
+// notAKey is E3027: a name in scope is never a symbolic key (TYPES.md §4.1, DECISIONS 318).
+func (c *checker) notAKey(env *env, e *syntax.IdentExpr, o *object, want types.Type) types.Type {
+	if !isValue(o.kind) {
+		c.info.Uses[e] = o
+		c.dependsOn(env, o)
+		c.notValueKey(env, e, o)
+		return types.ErrorType
+	}
+	if found := c.use(env, e, o); found.Kind() != types.Error {
+		c.report(env, diag.E3027.AtValue(env.span(e), e.Name, want, found))
+	}
+	return types.ErrorType
+}
+
+// isValue reports an object a name in value position reads (TYPES.md §3.3).
+func isValue(k ObjKind) bool {
+	switch k {
+	case ObjLocal, ObjParam, ObjField, ObjConst, ObjLet:
+		return true
+	default:
+		return false
+	}
+}
+
+// The kind E3027 `notValue` names per object kind; a type name's is its declaration's (TYPES.md §4.1).
+var notValueKinds = map[ObjKind]diag.Kind{
+	ObjPackage: diag.KindPackage, ObjBuiltin: diag.KindBuiltin, ObjFn: diag.KindFunction,
+	ObjMethod: diag.KindMethod, ObjWidget: diag.KindWidget,
+}
+
+// notValueKey is E3027 `notValue` for a name in scope that is not a value, named by its kind.
+func (c *checker) notValueKey(env *env, n syntax.Node, o *object) {
+	c.report(env, diag.E3027.AtNotValue(env.span(n), o.name, notValueKind(o)))
+}
+
+// notValueKind is the kind of a name that is not a value: its declaration's, a built-in's, a package's.
+func notValueKind(o *object) diag.Kind {
+	if k, ok := notValueKinds[o.kind]; ok {
+		return k
+	}
+	switch o.decl.(type) {
+	case *syntax.RecordDecl:
+		return diag.KindRecord
+	case *syntax.EnumDecl:
+		return diag.KindEnum
+	case *syntax.VariantDecl:
+		return diag.KindVariant
+	default:
+		return diag.KindTypeAlias
+	}
 }
 
 // unresolved is a name no scope has: a dynamic key (§4.1, §11.4), silent against an error type (TYPES.md §1).

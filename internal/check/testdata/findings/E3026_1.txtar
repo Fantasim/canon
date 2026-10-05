@@ -1,0 +1,73 @@
+STDLIB.md §5, TYPES.md §5.1 (`x in xs`), DECISIONS 317: `in`, contains and indexOf on a keyed list or a table take an element only; a key there (a literal or value of the key type, a bare name no scope has, a static entry name) is E3026, whose message names hasKey. A value of neither type stays E3002. A bare name no scope has on a collection with no name of its own (a parameter) is E3026 alone, never E2102 too; on an implicit receiver (`.contains(k)`) E3026 takes its implicit form.
+-- a/a.canon --
+package a
+
+local record Row {
+  id: Int
+  name: String
+}
+
+local let rows: [Row] keyed by id = [{ id: 1, name: "one" }]
+
+local record Flag {
+  label: String
+}
+
+local let flags: table Flag = {
+  blocking { label: "b" }
+}
+
+local fn listKeys(n: Int) -> Bool {
+  return 1 in rows or n in rows or rows.contains(n) or rows.indexOf(1) != none
+}
+
+local fn tableKeys(s: String) -> Bool {
+  return blocking in flags or s in flags or flags.contains("blocking") or flags.indexOf(sensitive) != none
+}
+
+local fn neither(b: Bool) -> Bool {
+  return b in rows
+}
+
+local fn onParameter(xs: [Flag] keyed by label) -> Bool {
+  return wolf in xs
+}
+
+local fn implicit(ls: [[Row] keyed by id]) -> [[Row] keyed by id] {
+  return ls.filter(.contains(1))
+}
+-- findings.txt --
+error[E3026]  a/a.canon:19:10
+  1 is a key of rows, not an element: test it with rows.hasKey(1)
+
+error[E3026]  a/a.canon:19:23
+  n is a key of rows, not an element: test it with rows.hasKey(n)
+
+error[E3026]  a/a.canon:19:50
+  n is a key of rows, not an element: test it with rows.hasKey(n)
+
+error[E3026]  a/a.canon:19:69
+  1 is a key of rows, not an element: test it with rows.hasKey(1)
+
+error[E3026]  a/a.canon:23:10
+  blocking is a key of flags, not an element: test it with flags.hasKey(blocking)
+
+error[E3026]  a/a.canon:23:31
+  s is a key of flags, not an element: test it with flags.hasKey(s)
+
+error[E3026]  a/a.canon:23:60
+  "blocking" is a key of flags, not an element: test it with flags.hasKey("blocking")
+
+error[E3026]  a/a.canon:23:89
+  sensitive is a key of flags, not an element: test it with flags.hasKey(sensitive)
+
+error[E3002]  a/a.canon:27:10
+  expected a.Row, found Bool
+
+error[E3026]  a/a.canon:31:10
+  wolf is a key of xs, not an element: test it with xs.hasKey(wolf)
+
+error[E3026]  a/a.canon:35:30
+  1 is a key, not an element: test it with hasKey(1)
+
+11 errors, 0 warnings in 1 package (…)

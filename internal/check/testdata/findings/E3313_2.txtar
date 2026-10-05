@@ -19,7 +19,7 @@ local record R {
   k: input K from env "MODE"
   mode: Mode = {}
   p: P(k) = true
-  q: P(mode.k)? = none
+  q: P(mode.k)?
   m: {SK(k): Int} = {}
 }
 

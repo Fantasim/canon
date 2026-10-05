@@ -1,0 +1,13 @@
+CODEGEN.md §2.1, DECISIONS 319: an explicit empty `values` is refused (`valuesEmpty`): omit values to mean every public value.
+-- a/a.canon --
+package a
+
+/// The answer.
+let answer: Int = 42
+
+emit go { out: "@sovcommon/a", values: [] }
+-- findings.txt --
+error[E8009]  a/a.canon:6:40
+  values of emit go is an empty list: omit values to emit every public value
+
+1 error, 0 warnings in 1 package (…)

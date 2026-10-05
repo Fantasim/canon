@@ -26,7 +26,7 @@ local record Holder {
   prize: Prize
   pg: Prize.gold
   pos: Pos?
-  next: ref holders? = none
+  next: ref holders?
 }
 
 @files("h/{rarity}/{prize}/{prize.count}/{prize.amount}/{prize.at.x}/{pg.count}/{pos.x}/{next}/{name}/{id}.canon")

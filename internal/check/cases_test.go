@@ -191,8 +191,8 @@ func leaked(v reflect.Value, seen map[uintptr]bool) string {
 	return ""
 }
 
-// TYPES.md §5.1, STDLIB.md §5: a bare name in `in`, contains and indexOf is a key of the collection.
-func TestBareKeysInMembership(t *testing.T) {
+// STDLIB.md §5, DECISIONS 317: a bare name given to hasKey or get is a key; hasKey is a built-in call.
+func TestBareKeysInHasKey(t *testing.T) {
 	prog, f := checkSource(t, `package a
 
 local record Flag {
@@ -206,9 +206,16 @@ local let flags: table Flag = {
 }
 
 local fn keys() -> Bool {
-  return blocking in flags and flags.contains(sensitive) and flags.indexOf(muted) != none
+  return flags.hasKey(blocking) and flags.hasKey(sensitive) and flags.get(muted) != none
 }
 `)
+	for _, x := range nodesOf[*syntax.CallExpr](f) {
+		cl := prog.Info.Calls[x]
+		if sel, ok := x.Fun.(*syntax.SelectorExpr); ok && sel.Name.Name == "hasKey" &&
+			(cl == nil || cl.Kind != check.CalleeBuiltin || cl.Builtin != "hasKey" || cl.Overload != 0) {
+			t.Errorf("Calls[hasKey] = %+v, want the built-in hasKey, overload 0", cl)
+		}
+	}
 	want := map[string]bool{"blocking": true, "sensitive": true, "muted": true}
 	for _, id := range nodesOf[*syntax.IdentExpr](f) {
 		if !want[id.Name] {

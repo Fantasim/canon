@@ -41,7 +41,7 @@ local record L(e: Ev) {
 local record R {
   ev: Ev
   p: P(ev) = sym
-  o: P(ev)? = none
+  o: P(ev)?
   ps: [P(ev)] = []
   keys: {SK(ev): Int} = { "default": 1, key: 2 }
   byItem: {i in items: P(ev)} = {}

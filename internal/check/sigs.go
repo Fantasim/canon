@@ -53,7 +53,9 @@ func (c *checker) resolveLetAnnotation(o *object) {
 		return
 	}
 	o.state = stateResolving
-	t := c.resolveType(&typeCtx{env: c.declEnv(o), pos: posStable}, d.Type)
+	env := c.declEnv(o)
+	env.sig = true
+	t := c.resolveType(&typeCtx{env: env, pos: posStable}, d.Type)
 	o.typ, o.state = t, stateDone
 	if _, isTable := o.typ.Base().(*types.TableType); !isTable {
 		o.keys = nil

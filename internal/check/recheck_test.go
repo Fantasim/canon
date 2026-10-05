@@ -157,6 +157,17 @@ func TestRecheckEqualsCold(t *testing.T) {
 			{"f/rows.canon", `name: "x"`, `name: "y"`, true},
 			{"f/rows.canon", `name: "y"`, `name: 7`, true},
 		}},
+		{"a top-level check reading a let whose record has a broken check", brokenCheck, []step{
+			{"b/lets.canon", "", "", true},
+			{"b/lets.canon", "n: 1", "n: 2", true},
+		}},
+		{"a let whose annotation holds a ref resolved after it", brokenRefSig, []step{
+			{"b/lets.canon", "= []", "= [ ]", true},
+			{"b/lets.canon", "= [ ]", "= []", true},
+		}},
+		{"a let whose annotation is broken is refused", brokenAnnotation, []step{
+			{"b/lets.canon", "", "", false},
+		}},
 		{"duplicate keys across files", dups, []step{
 			{"dup/a.canon", "n: 1", "n: 11\n\n\n", true},
 			{"dup/b.canon", "n: 2", "n: 22", true},
@@ -200,6 +211,26 @@ func (w *world) step(s *check.Session, st step) *check.Session {
 var brokenLater = map[string]string{
 	"p/p.canon": "package p\n\nlocal enum E { a, b }\n\n/// L.\nconst L = [E.a]\n\nlocal record R {\n  v: Int(0..=L.len() / 0)\n}\n\nlocal record Row {\n  n: Int\n}\n\nlocal let rows: table Row = {}\n",
 	"p/x.canon": "package p\n\nentry rows.x { n: 1 }\n",
+}
+
+// brokenCheck is a record whose own check is broken, a let of it in another file, and a
+// top-level check reading that let.
+var brokenCheck = map[string]string{
+	"b/b.canon":    "package b\n\nlocal record R {\n  n: Int\n\n  check n in 3 else \"x\"\n}\n\ncheck {\n  for k, r in rs {\n    if r.n < 0 {\n      fail(r, \"{k}\")\n    }\n  }\n}\n",
+	"b/lets.canon": "package b\n\nlocal let rs: {String: R} = {\n  \"a\": { n: 1 }\n}\n",
+}
+
+// brokenRefSig is a let whose annotation is a ref into a table of a record broken by its check:
+// the ref resolves after the annotation, its dependency is still the signature's.
+var brokenRefSig = map[string]string{
+	"b/b.canon":    "package b\n\nlocal record R {\n  n: Int\n\n  check n in 3 else \"x\"\n}\n\nlocal let rs: table R = {\n  a { n: 1 }\n}\n\ncheck {\n  if picks.len() > 1 {\n    fail(picks, \"x\")\n  }\n}\n",
+	"b/lets.canon": "package b\n\nlocal let picks: [ref rs] = []\n",
+}
+
+// brokenAnnotation is a let whose annotation names no type, and a top-level check reading it.
+var brokenAnnotation = map[string]string{
+	"b/b.canon":    "package b\n\ncheck {\n  if bad.len() > 1 {\n    fail(bad, \"x\")\n  }\n}\n",
+	"b/lets.canon": "package b\n\nlocal let bad: [Nope] = []\n",
 }
 
 // filesTpl is a `@files` let with an unknown name, checked again on a body edit (DECISIONS 277).

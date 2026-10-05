@@ -147,28 +147,13 @@ func (c *checker) keyedMethod(env *env, bc *builtinCall, rows []row) (types.Type
 	elem := bc.b.vars[tT]
 	switch bc.name {
 	case methodContains, methodIndexOf:
-		c.memberOrKey(env, arg, bc.x.Fun.(*syntax.SelectorExpr).X, elem, key)
-	case methodGet, methodFind:
-		c.keyArg(env, arg, elem, key, bc.x)
+		c.element(env, arg, bc.x.Fun.(*syntax.SelectorExpr).X, elem, key)
+	case methodGet, methodFind, methodHasKey:
+		c.keyValue(env, arg, bc.x.Fun.(*syntax.SelectorExpr).X, key)
 	default:
 		return nil, false
 	}
 	return c.finishBuiltin(bc, rows[0]), true
-}
-
-// keyArg types the key given to get or find: the key type or a ref into the collection.
-func (c *checker) keyArg(env *env, arg syntax.Expr, elem, key types.Type, x *syntax.CallExpr) {
-	if c.bareKey(env, arg, x.Fun.(*syntax.SelectorExpr).X, key) {
-		return
-	}
-	t := c.synth(env, arg)
-	if t.Kind() == types.Error || c.assignable(t, key) {
-		return
-	}
-	if r, isRef := t.Base().(*types.RefType); isRef && types.Identical(c.coll(r).Elem, elem) {
-		return
-	}
-	c.report(env, diag.E3002.At(env.span(arg), key, t))
 }
 
 // matches is `s.matches(re)`: re must be a regex literal (STDLIB.md §7, §8).

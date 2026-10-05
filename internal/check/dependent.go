@@ -267,6 +267,9 @@ func (c *checker) dependentIdent(env *env, e *syntax.IdentExpr, want types.Type,
 	if o := c.dependentName(env, e, e.Name, fn); o != nil {
 		return c.use(env, e, o)
 	}
+	if o := c.scopedKey(env, e.Name, fn); o != nil {
+		return c.notAKey(env, e, o, want)
+	}
 	c.info.Symbols[e] = true
 	if u, isUnion := unwrap(want).(*types.LitUnionType); isUnion {
 		return u
@@ -289,6 +292,18 @@ func (c *checker) dependentName(env *env, n syntax.Node, name string, fn *types.
 		return o
 	}
 	return nil
+}
+
+// scopedKey is what a name in scope names where a branch of fn takes dynamic keys (TYPES.md §4.1, §11.4).
+func (c *checker) scopedKey(env *env, name string, fn *types.TypeFunc) *object {
+	o := c.lookup(env, name)
+	if o == nil || c.offered(fn, name, func(*object, types.Type) bool { return true }) {
+		return nil
+	}
+	if !slices.ContainsFunc(branches(fn), func(b types.Type) bool { return c.dynamicKeys(b) != nil }) {
+		return nil
+	}
+	return o
 }
 
 // offered reports a branch of fn offering name statically (a member, case or static key) for

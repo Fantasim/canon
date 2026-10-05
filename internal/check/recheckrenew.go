@@ -123,10 +123,12 @@ func (c *checker) recheckDecls(pl *recheckPlan, renew map[*object]*object) {
 
 // renewState renews the checker's maps by object.
 func (c *checker) renewState(r *renewer) {
+	kept := c.signatureDeps(r)
 	c.deps = renewKeys(c.deps, r)
 	for _, ds := range c.deps { //canon:unordered each list is renewed in place
 		renewSlice(ds, r)
 	}
+	maps.Copy(c.deps, kept)
 	c.initDone = renewKeys(c.initDone, r)
 	c.listKeys = renewKeys(c.listKeys, r)
 	c.cycled = renewKeys(c.cycled, r)
@@ -269,6 +271,22 @@ func (j *journal) renew(r *renewer, pl *recheckPlan) {
 			fc.e = n
 		}
 	}
+}
+
+// signatureDeps are a let checked again's annotation dependencies, under its new object (NFR-02).
+func (c *checker) signatureDeps(r *renewer) map[*object][]*object {
+	kept := map[*object][]*object{}
+	sig := make(map[*object][]*object, len(c.sigDeps))
+	for o, ds := range c.sigDeps { //canon:unordered a map rebuilt
+		ds = slices.Clone(ds)
+		renewSlice(ds, r)
+		sig[r.of(o)] = ds
+		if r.pl.redo[o] {
+			kept[r.of(o)] = slices.Clone(ds)
+		}
+	}
+	c.sigDeps = sig
+	return kept
 }
 
 // renewKeys is m keyed by each object's renewal, less the objects checked again.

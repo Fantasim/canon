@@ -1,0 +1,48 @@
+STDLIB.md §5, DECISIONS 317: a key (hasKey, get, find, `xs[k]`) is a value of the key type, or a ref T into this same collection; a ref into another collection of the same element type is E3002, never compared by its key text.
+-- a/a.canon --
+package a
+
+local record M {
+  hp: Int
+}
+
+local let ms: table M = {
+  wolf { hp: 1 }
+}
+
+local let others: table M = {
+  wolf { hp: 2 }
+}
+
+local record S {
+  name: String
+}
+
+local record Z {
+  spawns: [S] keyed by name
+}
+
+local let z: Z = { spawns: [{ name: "a" }] }
+
+local let y: Z = { spawns: [{ name: "a" }] }
+
+local fn keys(o: ref others, w: ref y.spawns) -> Bool {
+  return ms.hasKey(o) or ms.get(o) != none or ms.find(o) != none or ms[o].hp > 0 or z.spawns.hasKey(w)
+}
+-- findings.txt --
+error[E3002]  a/a.canon:28:20
+  expected String, found ref a.others
+
+error[E3002]  a/a.canon:28:33
+  expected String, found ref a.others
+
+error[E3002]  a/a.canon:28:55
+  expected String, found ref a.others
+
+error[E3002]  a/a.canon:28:72
+  expected String, found ref a.others
+
+error[E3002]  a/a.canon:28:101
+  expected String, found ref a.y.spawns
+
+5 errors, 0 warnings in 1 package (…)

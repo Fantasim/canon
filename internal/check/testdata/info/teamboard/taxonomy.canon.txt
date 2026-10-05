@@ -49,7 +49,6 @@
 54:9 OptionalType type String?
 54:9 NamedType type String
 54:9 Ident String names Builtin String: String
-54:19 NoneLit : none
 56:3 Ident setBy def Field teamboard.setBy: teamboard.Actor
 56:10 NamedType type teamboard.Actor
 56:10 Ident Actor names TypeName teamboard.Actor: teamboard.Actor
@@ -57,7 +56,6 @@
 58:16 OptionalType type sovcommon.roles.Role?
 58:16 NamedType type sovcommon.roles.Role
 58:16 Ident Role names TypeName sovcommon.roles.Role: sovcommon.roles.Role
-58:24 NoneLit : none
 62:8 Ident Status def TypeName teamboard.Status: teamboard.Status
 64:3 Ident tone def Field teamboard.tone: sovcommon.ui.Tone
 64:9 NamedType type sovcommon.ui.Tone
@@ -88,7 +86,6 @@
 76:7 OptionalType type teamboard.Actor?
 76:7 NamedType type teamboard.Actor
 76:7 Ident Actor names TypeName teamboard.Actor: teamboard.Actor
-76:16 NoneLit : none
 78:9 CallExpr : Bool
 78:9 CallExpr call Builtin <nil> isUnique#0 [ref teamboard.statuses]
 78:9 SelectorExpr : fn() -> Bool
@@ -161,7 +158,6 @@
 110:9 OptionalType type String?
 110:9 NamedType type String
 110:9 Ident String names Builtin String: String
-110:19 NoneLit : none
 112:3 Ident minRole def Field teamboard.minRole: sovcommon.roles.Role
 112:12 NamedType type sovcommon.roles.Role
 112:12 Ident Role names TypeName sovcommon.roles.Role: sovcommon.roles.Role

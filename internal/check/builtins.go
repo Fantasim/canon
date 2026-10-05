@@ -125,6 +125,7 @@ var listMethods = []bsig{
 var keyedMethods = []bsig{
 	{name: methodGet, params: []bparam{bp(paramK, keyT)}, result: opt(tT)},
 	{name: methodFind, params: []bparam{bp(paramK, keyT)}, result: opt(tT)},
+	{name: methodHasKey, params: []bparam{bp(paramK, keyT)}, result: types.BoolType},
 	{name: methodAt, params: []bparam{bp(paramI, types.IntType)}, result: tT},
 	{name: methodKeys, result: listT(refT)},
 	{name: methodValues, result: listT(tT)},

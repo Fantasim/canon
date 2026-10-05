@@ -23,7 +23,7 @@ local fn uses(p: ref cs?, s: ref cs) -> Bool {
 
 local record H {
   cols: [C] keyed by name
-  pick: ref C? = none
+  pick: ref C?
   held: ref C = pick
 }
 -- findings.txt --

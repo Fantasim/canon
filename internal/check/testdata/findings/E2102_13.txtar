@@ -9,7 +9,7 @@ local record Pos {
 local record Row {
   name: String
   pos: Pos?
-  next: ref rows? = none
+  next: ref rows?
 }
 
 @files("{pos.zz}/{name.zz}/{next.name}/{pos.x}/{id}.canon")

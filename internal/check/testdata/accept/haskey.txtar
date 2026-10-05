@@ -1,0 +1,63 @@
+STDLIB.md §5, TYPES.md §5.1 (`x in xs`), DECISIONS 317: hasKey(k: KT) -> Bool on a table and a keyed list takes a key (a bare name no scope has, a literal or value of the key type, a ref into the collection); `in`, contains and indexOf take an element (a value of T, an optional one, a ref T). A keyed list keyed by a ref whose target holds its element type (DECISIONS 314's `ref pool`) takes that ref as an element. TYPES.md §4.1, DECISIONS 318: a name no scope has is still a symbolic key. A key ref is a ref into the receiver's own collection: a let's, a let path's (DECISIONS 315), a record field's by name or through self (TYPES.md §10.2 level 1); the same in `xs[k]`.
+-- a/a.canon --
+package a
+
+local record Row {
+  id: Int
+  name: String
+}
+
+local let rows: [Row] keyed by id = [{ id: 1, name: "one" }]
+
+local let named: [Row] keyed by name = [{ id: 1, name: "one" }]
+
+local record Flag {
+  label: String
+}
+
+local let flags: table Flag = {
+  blocking { label: "b" }
+}
+
+local record S {
+  m: ref pool
+  n: Int
+}
+
+local let pool: table S = {}
+
+local let picked: [S] keyed by m = []
+
+local fn keys(n: Int, s: String, r: ref rows, f: ref flags) -> Bool {
+  return rows.hasKey(1) and rows.hasKey(n) and rows.hasKey(r) and flags.hasKey(blocking) and flags.hasKey(s) and flags.hasKey("x") and flags.hasKey(f)
+}
+
+local fn elements(row: Row, maybe: Row?, r: ref rows, f: ref flags, flag: Flag) -> Bool {
+  return row in rows and maybe in rows and r in rows and rows.contains(r) and rows.indexOf(row) != none and f in flags and flag in flags and flags.contains(f)
+}
+
+local fn refElement(p: ref pool) -> Bool {
+  return p in picked and picked.contains(p) and picked.hasKey(p)
+}
+
+local record Sp {
+  name: String
+}
+
+local record Zz {
+  spawns: [Sp] keyed by name
+  pick: ref Sp?
+
+  check pick == none or spawns.hasKey(pick) or self.spawns.get(pick) != none else "x"
+}
+
+local let zz: Zz = { spawns: [{ name: "a" }] }
+
+local fn letPath(k: ref zz.spawns, r: ref rows) -> Bool {
+  return zz.spawns.hasKey(k) and zz.spawns.find(k) != none and zz.spawns[k].name != "" and rows[r].id > 0
+}
+
+local fn symbolic() -> Bool {
+  let r: ref named = one
+  return named.hasKey(two) and r in named
+}

@@ -235,6 +235,14 @@ func (c *checker) fieldDefaults(o *object, body *recordCtx) {
 		env := c.bodyEnv(c.pkgs[o.pkg], fo.file, o, body)
 		env.fields = fo.field.Index
 		c.expr(env.storing(fo), d.Default, fo.field.Type)
+		c.noneDefault(env, d, fo.field)
+	}
+}
+
+// noneDefault is W3001: an optional field's default is already none, unless its type is in error (TYPES.md §15, §1).
+func (c *checker) noneDefault(env *env, d *syntax.FieldDecl, f *types.Field) {
+	if _, isNone := d.Default.(*syntax.NoneLit); isNone && f.Type.Base().Kind() == types.Optional && !holdsError(f.Type) {
+		c.warn(env, diag.W3001.At(env.span(d.Default), f.Name))
 	}
 }
 

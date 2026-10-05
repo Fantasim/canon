@@ -15,21 +15,21 @@ local let items: [Item] keyed by id = []
 /// A model.
 local record Model {
   /// Its name text.
-  nameText: ref texts?? = none
+  nameText: ref texts??
   /// Its item.
-  item: ref items?? = none
+  item: ref items??
   /// Its texts.
-  more: [ref texts]?? = none
+  more: [ref texts]??
   /// Nothing.
-  nope: ref nothing?? = none
+  nope: ref nothing??
   /// A count.
-  n: Int?? = none
+  n: Int??
 }
 
 /// A tree node, ref to its own kind (level 1: Tree.nodes).
 local record Node {
   /// Its parent.
-  parent: ref Node?? = none
+  parent: ref Node??
 }
 
 /// A tree of nodes.

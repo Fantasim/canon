@@ -1,0 +1,153 @@
+TYPES.md §4.1, DECISIONS 318: a name that resolves in scope (steps 2 to 6) where a key is expected is that name, never a symbolic key: a value of another type is E3027 `value`; a name that is not a value (a record, an enum, a variant, a type alias, a built-in, a function, a method, a package, a widget) is E3027 `notValue`, naming its kind. This holds wherever a ref with dynamic keys is expected, for a dependent field with a ref branch (TYPES.md §11.4), a map key `n:` (§5.2), and every key position: hasKey, get, find, `xs[k]` (STDLIB.md §5).
+-- a/a.canon --
+package a
+
+import b
+
+local record Row {
+  name: String
+
+  fn label() -> String {
+    return name
+  }
+
+  check rows.hasKey(label) else "x"
+}
+
+local let rows: [Row] keyed by name = [{ name: "a" }]
+
+local fn f(pick: String) -> ref rows {
+  return pick
+}
+
+local fn aType() -> ref rows {
+  return Row
+}
+
+local fn builtinType() -> ref rows {
+  return Int
+}
+
+local fn builtinFn() -> ref rows {
+  return max
+}
+
+local fn userFn() -> ref rows {
+  return f
+}
+
+local fn aPackage() -> ref rows {
+  return b
+}
+
+local enum K {
+  row
+  num
+}
+
+local variant V {
+  one
+}
+
+local type Alias = Int
+
+local fn others() -> Bool {
+  let r: ref rows = K
+  let s: ref rows = V
+  return r == s or rows.hasKey(Alias)
+}
+
+local fn keyPositions(n: Int) -> Bool {
+  return rows.hasKey(n) or rows.get(Row) != none or rows.find(f) != none or rows[max].name != ""
+}
+
+local record Ev {
+  k: K
+}
+
+local type P(e: Ev) = match e.k {
+  row => ref rows
+  num => Int
+}
+
+local record D {
+  ev: Ev
+  p: P(ev)
+}
+
+local let ds: [D] = [{ ev: { k: row }, p: Row }]
+
+local let counts: {ref rows: Int} = { max: 1 }
+-- b/b.canon --
+package b
+
+/// One.
+let one: Int = 1
+-- studio/studio.canon --
+package studio
+
+local record Item {
+  name: String
+}
+
+local let items: [Item] keyed by name = []
+
+/// A widget.
+widget w(value: Int)
+
+local fn widgetKey() -> Bool {
+  return items.hasKey(w)
+}
+-- findings.txt --
+error[E3027]  a/a.canon:12:21
+  label is not a value (method); to name the key label, write "label"
+
+error[E3027]  a/a.canon:18:10
+  pick has type String, not ref a.rows; to name the key pick, write "pick"
+
+error[E3027]  a/a.canon:22:10
+  Row is not a value (record); to name the key Row, write "Row"
+
+error[E3027]  a/a.canon:26:10
+  Int is not a value (built-in); to name the key Int, write "Int"
+
+error[E3027]  a/a.canon:30:10
+  max is not a value (built-in); to name the key max, write "max"
+
+error[E3027]  a/a.canon:34:10
+  f is not a value (function); to name the key f, write "f"
+
+error[E3027]  a/a.canon:38:10
+  b is not a value (package); to name the key b, write "b"
+
+error[E3027]  a/a.canon:53:21
+  K is not a value (enum); to name the key K, write "K"
+
+error[E3027]  a/a.canon:54:21
+  V is not a value (variant); to name the key V, write "V"
+
+error[E3027]  a/a.canon:55:32
+  Alias is not a value (type alias); to name the key Alias, write "Alias"
+
+error[E3027]  a/a.canon:59:22
+  n has type Int, not String; to name the key n, write "n"
+
+error[E3027]  a/a.canon:59:37
+  Row is not a value (record); to name the key Row, write "Row"
+
+error[E3027]  a/a.canon:59:63
+  f is not a value (function); to name the key f, write "f"
+
+error[E3027]  a/a.canon:59:82
+  max is not a value (built-in); to name the key max, write "max"
+
+error[E3027]  a/a.canon:76:43
+  Row is not a value (record); to name the key Row, write "Row"
+
+error[E3027]  a/a.canon:78:39
+  max is not a value (built-in); to name the key max, write "max"
+
+error[E3027]  studio/studio.canon:13:23
+  w is not a value (widget); to name the key w, write "w"
+
+17 errors, 0 warnings in 3 packages (…)

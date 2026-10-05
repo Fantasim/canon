@@ -79,7 +79,7 @@ local type G(e: Holder) = match e.ev.k {
 local record Holder {
   ev: Ev
   prev: ref holders
-  g: G(prev)? = none
+  g: G(prev)?
 }
 
 local let holders: table Holder = {}
@@ -96,10 +96,10 @@ local record R {
   ev: Ev
   flag: Flag(ev)
   p: P(ev)
-  o: P(ev)? = none
+  o: P(ev)?
   ps: [P(ev)] = []
   limits: Limits(ev)
-  box: Box(ev)? = none
+  box: Box(ev)?
   byItem: {i in items: P(ev)} = {}
   counts: {i in items: Int} = {}
 
@@ -132,7 +132,7 @@ local fn same(r: R) -> Bool {
 }
 
 local fn kept(r: R) -> R {
-  return { ev: r.ev, flag: r.flag, p: r.p, ps: [r.p], limits: r.limits }
+  return { ev: r.ev, flag: r.flag, p: r.p, o: none, ps: [r.p], limits: r.limits }
 }
 
 local let rs: [R] = [

@@ -43,21 +43,67 @@ func (c *checker) identKey(env *env, n *syntax.Ident, key types.Type) {
 		return
 	}
 	if fn := depFunc(unwrapUnion(key)); fn != nil {
-		if o := c.dependentName(env, n, n.Name, fn); o != nil {
+		o := c.dependentName(env, n, n.Name, fn)
+		if o == nil {
+			o = c.scopedKey(env, n.Name, fn)
+			c.keyInScope(env, n, o, key)
+		}
+		if o != nil {
 			c.info.NameUses[n] = o
 			c.dependsOn(env, o)
 		}
 		return
 	}
-	if o := c.lookup(env, n.Name); o != nil && c.valueOf(o, key) {
+	o := c.lookup(env, n.Name)
+	if o != nil && c.valueOf(o, key) {
 		c.info.NameUses[n] = o
 		c.dependsOn(env, o)
 		return
 	}
-	if c.dynamicKeys(key) != nil {
+	if c.dynamicKeys(key) == nil {
+		c.unknownName(env, n, n.Name)
 		return
 	}
-	c.unknownName(env, n, n.Name)
+	if o != nil {
+		c.info.NameUses[n] = o
+		c.dependsOn(env, o)
+		c.keyInScope(env, n, o, key)
+	}
+}
+
+// keyInScope is E3027 (E3403 for an optional ref) for a map key `n:` naming something in scope (TYPES.md §4.1).
+func (c *checker) keyInScope(env *env, n *syntax.Ident, o *object, key types.Type) {
+	if o == nil {
+		return
+	}
+	if !isValue(o.kind) {
+		c.notValueKey(env, n, o)
+		return
+	}
+	found, silent := c.scopedType(o)
+	switch {
+	case silent:
+	case c.optionalOf(o, key):
+		c.report(env, diag.E3403.At(env.span(n), key, found))
+	default:
+		c.report(env, diag.E3027.AtValue(env.span(n), n.Name, key, found))
+	}
+}
+
+// scopedType is the type of the value o names; silent for a value already in error (TYPES.md §1).
+func (c *checker) scopedType(o *object) (types.Type, bool) {
+	t := o.typ
+	switch o.kind {
+	case ObjLet:
+		t = c.letType(o)
+	case ObjConst:
+		t = c.constType(o)
+	default:
+	}
+	if t == nil || t.Kind() == types.Error {
+		return nil, true
+	}
+	return staticView(t), false
 }
 
 // duplicateKeys is E3322 for a key written twice as a constant or an identifier (TYPES.md §5.2).

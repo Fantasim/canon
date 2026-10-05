@@ -25,7 +25,7 @@ local type MaybeValues = Values?
 
 local record Column {
   values: ref vocabs?
-  inline: Values? = none
+  inline: Values?
 }
 
 local let columns: table Column = {
@@ -36,7 +36,7 @@ local type Of(c: Column) = Member(c.values)
 
 local record Role {
   column: ref columns
-  maybe: MaybeValues = none
+  maybe: MaybeValues
   of: Member(column.values)
   kinds: [past Member(column.values)] = []
   inline: Member(column.inline)?

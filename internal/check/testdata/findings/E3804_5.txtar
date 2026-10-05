@@ -16,7 +16,7 @@ local type P(e: Ev) = match e.k {
 local record R {
   ev: Ev
   p: P(ev)
-  o: P(ev)? = none
+  o: P(ev)?
   ps: [P(ev)] = []
 }
 

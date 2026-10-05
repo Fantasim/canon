@@ -76,10 +76,10 @@ func (c *checker) lookupIndex(env *env, x *syntax.IndexExpr, t types.Type) types
 		if b.KeyedBy == nil {
 			return c.positional(env, x, b)
 		}
-		c.keyIndex(env, x, b.Elem, b.KeyedBy.Type)
+		c.keyValue(env, x.Index, x.X, b.KeyedBy.Type)
 		return b.Elem
 	case *types.TableType:
-		c.keyIndex(env, x, b.Elem, types.StringType)
+		c.keyValue(env, x.Index, x.X, types.StringType)
 		return b.Elem
 	case *types.MapType:
 		c.expr(env, x.Index, b.Key)
@@ -107,20 +107,61 @@ func (c *checker) positional(env *env, x *syntax.IndexExpr, l *types.ListType) t
 	return types.ErrorType
 }
 
-// keyIndex types the key of a keyed lookup: the key type, or a ref into the collection (STDLIB.md §5).
-func (c *checker) keyIndex(env *env, x *syntax.IndexExpr, elem, key types.Type) {
-	i := x.Index
-	if c.bareKey(env, i, x.X, key) {
+// keyValue types a key (`xs[k]`, get, find, hasKey): KT, or a ref into recv's own collection (STDLIB.md §5).
+func (c *checker) keyValue(env *env, k, recv syntax.Expr, key types.Type) {
+	if c.bareKey(env, k, recv, key) || c.notValueName(env, k) {
 		return
 	}
-	it := c.synth(env, i)
-	if it.Kind() == types.Error || c.assignable(it, key) {
+	t := c.synth(env, k)
+	if t.Kind() == types.Error || c.assignable(t, key) || c.refOf(t, recv) {
 		return
 	}
-	if r, isRef := it.Base().(*types.RefType); isRef && types.Identical(c.coll(r).Elem, elem) {
+	if id, isName := k.(*syntax.IdentExpr); isName && t.Base().Kind() != types.Ref { // TYPES.md §4.1; a ref is STDLIB.md §5's E3002
+		c.report(env, diag.E3027.AtValue(env.span(k), id.Name, key, t))
 		return
 	}
-	c.report(env, diag.E3002.At(env.span(i), key, it))
+	c.report(env, diag.E3002.At(env.span(k), key, t))
+}
+
+// notValueName is E3027 `notValue` for a key written as a name in scope that is not a value (TYPES.md §4.1).
+func (c *checker) notValueName(env *env, k syntax.Expr) bool {
+	id, isName := k.(*syntax.IdentExpr)
+	if !isName {
+		return false
+	}
+	o := c.lookup(env, id.Name)
+	if o == nil || isValue(o.kind) {
+		return false
+	}
+	c.info.Uses[id] = o
+	c.dependsOn(env, o)
+	c.notValueKey(env, id, o)
+	return true
+}
+
+// refOf reports a ref into the collection recv holds: a let's or a let path's, or a record field's.
+func (c *checker) refOf(t types.Type, recv syntax.Expr) bool {
+	r, isRef := t.Base().(*types.RefType)
+	if !isRef || recv == nil {
+		return false
+	}
+	coll := c.keyedReceiver(recv)
+	if id, isName := recv.(*syntax.IdentExpr); coll == nil && isName {
+		coll = c.fieldReadColl(id)
+	}
+	return coll != nil && c.coll(r) == coll
+}
+
+// fieldReadColl is the collection a field named in its record body holds (TYPES.md §10.2 level 1).
+func (c *checker) fieldReadColl(id *syntax.IdentExpr) *types.Collection {
+	o, ok := c.info.Uses[id].(*object)
+	if !ok || o.kind != ObjField {
+		return nil
+	}
+	if owner, isRecord := o.owner.(*types.RecordType); isRecord {
+		return c.fieldCollection(owner, o.field)
+	}
+	return nil
 }
 
 // bareKey types an unscoped name in a key position: a member, a key of recv's collection, else a value (TYPES.md §5.1).

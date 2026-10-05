@@ -88,6 +88,7 @@ type checker struct {
 	targetless map[*types.Collection]bool        // the targets of refs that resolved to nothing
 	colls      map[collKey]*types.Collection
 	deps       map[*object][]*object
+	sigDeps    map[*object][]*object              // per annotated let, the deps its annotation recorded, a Recheck keeps them
 	tableOf    map[*types.RecordType]bool         // records used as the element of a table (TYPES.md §3.6)
 	stableOf   map[*types.RecordType]bool         // records used as the element of a stable table
 	stableLost map[*pkgState]bool                 // packages with a stable table whose element is in error
@@ -151,6 +152,7 @@ func newChecker(ctx context.Context, proj *project.Project, bags Bags, fold Fold
 		cycled:     map[*object]bool{},
 		colls:      map[collKey]*types.Collection{},
 		deps:       map[*object][]*object{},
+		sigDeps:    map[*object][]*object{},
 		tableOf:    map[*types.RecordType]bool{},
 		stableOf:   map[*types.RecordType]bool{},
 		stableLost: map[*pkgState]bool{},
@@ -271,6 +273,9 @@ func (c *checker) dependsOn(env *env, o *object) {
 		return
 	}
 	c.deps[env.owner] = append(c.deps[env.owner], o)
+	if env.sig {
+		c.sigDeps[env.owner] = append(c.sigDeps[env.owner], o)
+	}
 }
 
 // topLevel reports the objects Broken may hold: declarations with a body of their own.

@@ -18,7 +18,7 @@ local type P(e: Ev) = match e.k {
 }
 
 local record R {
-  maybe: Ev? = none
+  maybe: Ev?
   held: H(maybe)
   typed: P(maybe)
 }

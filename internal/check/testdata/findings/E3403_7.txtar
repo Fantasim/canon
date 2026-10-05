@@ -22,7 +22,7 @@ local type O(e: Ev) = match e.k {
 local record R {
   ev: Ev
   p: P(ev) = none
-  maybe: P(ev)? = none
+  maybe: P(ev)?
   opt: O(ev) = none
 }
 -- findings.txt --

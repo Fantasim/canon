@@ -1,4 +1,4 @@
-TYPES.md §9: keyed lists, tables, maps and their methods; `.a` on a keyed-list field of any record value is a key (Info.Keys).
+TYPES.md §9: keyed lists, tables, maps and their methods; `.a` on a keyed-list field of any record value is a key (Info.Keys); hasKey takes a key, `in`, contains and indexOf an element (STDLIB.md §5, DECISIONS 317).
 -- a/a.canon --
 package a
 
@@ -39,7 +39,7 @@ local fn lookup() -> Int {
 }
 
 local fn hasOne() -> Bool {
-  return 1 in rows and rows.contains(1)
+  return rows.hasKey(1) and rows.at(0) in rows and rows.contains(rows.at(0)) and rows.indexOf(rows.at(0)) != none
 }
 
 local fn positions() -> [Int] {
