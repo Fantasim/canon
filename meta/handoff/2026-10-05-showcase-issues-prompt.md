@@ -15,13 +15,22 @@ meta/handoff/2026-10-05-design-review.md: check `git status`, and do not touch o
 
 Read-only for you: everything outside this repository.
 
+**Caution: not all of these are bugs.** A re-check against the spec (2026-10-05) found several
+that are deliberate design. Do not "fix" design: for each item, first decide whether it is a bug,
+a spec gap, or intended. The re-check's verdict is given next to each item below.
+
 Its findings, each with a minimal repro and the workaround used, are in
 /home/louis/dev/canon-showcase/COMPILER-ISSUES.md. Read the whole file first. Every repro there
 must become a failing test in this repo before any fix (CLAUDE.md core task 2).
 
 ## Wave 1: bugs, one go-dev per owning package, parallel where packages differ
 
-1. **#4: an incomplete new entry poisons its table (highest).**
+1. **#4: an incomplete new entry poisons its table (highest). Verdict: spec gap plus one bug.**
+   - EVALUATION.md §7.1/§7.2 make a whole top-level value the root, and a table is one value,
+     so poisoning the whole table follows the letter of the spec.
+   - That contradicts VIEWMODEL D3/T3's add-then-complete flow, so this is a ruling: entry-level
+     isolation, or a different studio flow.
+   - The empty Undo in a stable table contradicts API.md E23 outright: that part is a bug.
    - Symptom: after `addEntry` with `allowErrors` misses a required field, `Value` of every entry
      in the table fails with `ErrNoValue`, and `Remove` of the new entry fails too.
    - In a `stable table`, the edit's `Undo` is empty, although API.md E23 gives a Remove/Retire
@@ -32,12 +41,17 @@ must become a failing test in this repo before any fix (CLAUDE.md core task 2).
      both Remove and Undo work.
    - Owner: `eval` and/or `edit`/`api`. Tier: opus (semantics and undo).
 2. **#3: `Rename` refuses an entry used as a keyed-list key** (`[S] keyed by m`, `m: ref ms`).
+   - **Verdict: follows the letter of the spec; this is a spec gap, not a bug.** API.md §7.2 gives
+     a keyed-list key field the reason `key`, and E12 refuses a rename when a reference is not
+     editable.
+   - Rewriting that key would re-key `z.spawns[wolf]`, which cascades to every ref and path into
+     `z.spawns`. That may be a deliberate safety line. Rule on it before implementing a cascade.
    - Symptom: `ErrNotEditable` with reason `key` at `z.spawns[wolf].m`.
    - API.md E11/E12 and §8.4: the key reference is what the rename rewrites. The element keeps
      its place and changes its key.
    - Check what happens to the keyed-list path segment and to the lock.
    - Owner: `edit`. Tier: opus.
-3. **#1: `ref in keyedList` is false although the key exists.**
+3. **#1: `ref in keyedList` is false although the key exists. Verdict: a real bug.**
    - STDLIB.md §5 (Membership): the static type of the operand decides element or key.
    - `.get(r)` works and `String` keys work.
    - Owner: `check` (static choice) and/or `eval`. Tier: opus.
@@ -55,6 +69,12 @@ Each bug fix must have:
   in state.md as before).
 
 ## Wave 2: rulings, then implementation
+
+Re-check verdict:
+- E8019 is by definition "a generator cannot produce a construct valid Canon allows": an
+  acknowledged gap (DECISIONS 291 calls lifting it a later item), not design.
+- E8013 and E8015 are mode design (data files hold data, not functions; data mode loads tables,
+  keyed lists and records). Keep both unless there is a strong case.
 
 The generators force the data model to change shape; this cuts against "elegance over legacy".
 The showcase hit four restrictions:
@@ -86,17 +106,15 @@ The editor worked around these. Decide each one, then implement or log a refusal
 - `ViewModel` is recomputed on every call (about 20 ms per package). Decide whether to share or
   cache it per revision (S8 already shares identical concurrent calls).
 - `Watch` reports writes made through another `Project` on the same directory as `external`.
-  Decide whether that is intended (W rules); if it is, document it.
+  This is by design: each `Project` is its own client (API.md W rules). Nothing to do.
 
 **DX**
 - `canon version` prints `0.1.0 (unknown)` under `go install`. Use `debug.ReadBuildInfo` for the
   VCS revision.
-- Running a generated TS conformance test needs its `.js` imports rewritten. Either document the
-  intended runner, or emit something that runs as is.
-- The generated Go output has no `go.mod`, so `go test` on it needs a hand-written one. Decide
-  whether `emit go` should offer one.
-- A view's `preview` asset must already exist. The showcase needed placeholder SVGs. Decide
-  whether this is right (a finding versus a placeholder).
+- Not issues, by design; nothing to do:
+  - `.js` import specifiers in generated TS are the standard ESM/NodeNext convention.
+  - Generated Go has no `go.mod` because it lands in the user's module.
+  - A view's `preview` asset must exist, which is the checked-reference guarantee.
 
 ## Report
 
