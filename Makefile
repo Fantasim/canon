@@ -290,3 +290,15 @@ tag:
 	@[ -z "$$(git status --porcelain)" ] || { echo "tag: the working tree is not clean"; exit 1; }
 	git tag -a "$$VERSION" -m "canon $$VERSION"
 	@echo "tagged $$VERSION; publish the release with: git push origin $$VERSION"
+
+# Installs the canon binary into $(go env GOPATH)/bin and the VS Code extension (highlighting and
+# `canon lsp`), pointing it at that binary. The extension is packaged from a copy under /var/tmp so
+# no node_modules lands in the tree. Re-run after pulling compiler changes.
+VSCODE_STAGE := /var/tmp/canon-vscode
+.PHONY: install
+install:
+	GOTOOLCHAIN=local go install ./cmd/canon
+	rm -rf $(VSCODE_STAGE) && cp -r editors/vscode $(VSCODE_STAGE)
+	cd $(VSCODE_STAGE) && npm install --silent && npx vsce package --allow-missing-repository --skip-license -o canon.vsix
+	code --install-extension $(VSCODE_STAGE)/canon.vsix --force
+	@echo "installed: $$(go env GOPATH)/bin/canon; in VS Code set canon.server.path to it unless that directory is on PATH, then reload the window"
