@@ -72,20 +72,26 @@ func seqLast(h Host, c *Call) (value.Value, bool) {
 
 // seqContains tests an element, or a key of a keyed collection (STDLIB.md §5).
 func seqContains(h Host, c *Call) (value.Value, bool) {
-	i, ok := position(h, c.Recv, c.arg(0))
+	i, ok := position(h, c)
 	return c.boolv(i >= 0), ok
 }
 
-// position is the index of the first element equal to x, or of the entry of key x; each
-// element visited costs one step.
-func position(h Host, recv, x value.Value) (int, bool) {
-	byKey := isKey(recv, x)
-	k, _ := KeyOf(x)
+// position is the index of the first element equal to argument 0, or of the entry of that
+// key, as its static type decides (MemberKey); each element visited costs one step.
+func position(h Host, c *Call) (int, bool) {
+	recv, x := c.Recv, c.arg(0)
+	k, how, ok := MemberKey(h, recv, x, c.argType(0))
+	switch {
+	case !ok:
+		return 0, false
+	case how == OperandMissing:
+		return -1, true
+	}
 	for i, e := range Elems(recv) {
 		if !h.Charge(1) {
 			return 0, false
 		}
-		if byKey {
+		if how == OperandKey {
 			if ek, _ := KeyOf(e); ek == k {
 				return i, true
 			}
@@ -102,20 +108,8 @@ func position(h Host, recv, x value.Value) (int, bool) {
 	return -1, true
 }
 
-// isKey reports x used as a key of a keyed receiver.
-func isKey(recv, x value.Value) bool {
-	if familyOf(recv) != famKeyed {
-		return false
-	}
-	switch x.(type) {
-	case *value.Record, *value.Ref:
-		return false
-	}
-	return true
-}
-
 func seqIndexOf(h Host, c *Call) (value.Value, bool) {
-	i, ok := position(h, c.Recv, c.arg(0))
+	i, ok := position(h, c)
 	return c.orNone(c.intv(int64(i)), i >= 0), ok
 }
 

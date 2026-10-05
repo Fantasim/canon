@@ -135,7 +135,7 @@ func archived(t *testing.T, path string) (*memoed, *txtar.Archive) {
 // IMPLEMENTATION-PLAN §7.6 (NFR-02), EVALUATION.md §12.2 (EVL-03): every program, twice with a memo, as cold.
 func TestMemoReplaysEveryProgram(t *testing.T) {
 	twice(t, "examples", checkOnce(t, fromExamples(t), eval.Options{}))
-	for _, dir := range []string{"memo", "findings", "layers", "prov", "dependent", "static", "tests"} {
+	for _, dir := range []string{"memo", "findings", "layers", "prov", "dependent", "static", "tests", "membership", "typefn"} {
 		paths, err := filepath.Glob(filepath.Join("testdata", dir, "*.txtar"))
 		if err != nil {
 			t.Fatal(err)

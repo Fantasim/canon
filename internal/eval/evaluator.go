@@ -49,6 +49,7 @@ type Evaluator struct {
 	frees      map[syntax.Node][]check.Object
 	colls      map[collKey]*types.Collection
 	fieldColls map[*types.Field]*types.Collection
+	pathFields map[*types.Collection]*types.Collection
 	ownedBy    map[*types.RecordType]map[*types.Collection]bool
 	refTypes   map[refHold]bool // types whose values may hold a ref (prune.go)
 	clean      map[cleanKey]bool
@@ -133,6 +134,7 @@ func newEvaluator(bags check.Bags, opt Options) *Evaluator {
 		frees:   map[syntax.Node][]check.Object{},
 
 		fieldColls: map[*types.Field]*types.Collection{},
+		pathFields: map[*types.Collection]*types.Collection{},
 		ownedBy:    map[*types.RecordType]map[*types.Collection]bool{},
 		refTypes:   map[refHold]bool{},
 		clean:      map[cleanKey]bool{},

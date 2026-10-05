@@ -1,0 +1,38 @@
+EVALUATION.md §4.2, DECISIONS 315: deciding whether an entry belongs to a let path reads the let;
+a default of z's own record converting into `ref z.spawns` while z is evaluated is a cycle.
+-- a/a.canon --
+/// A.
+package a
+
+/// M.
+record M {
+  /// Hp.
+  hp: Int
+}
+
+/// Ms.
+let ms: table M = { wolf { hp: 1 } }
+
+/// S.
+record S {
+  /// M.
+  m: ref ms
+  /// N.
+  n: Int
+}
+
+/// Z.
+record Z {
+  /// Spawns.
+  spawns: [S] keyed by m
+  /// Top.
+  top: ref z.spawns = spawns.at(0)
+}
+
+/// Z.
+let z: Z = { spawns: [{ m: wolf, n: 2 }] }
+-- findings.txt --
+error[E4301]  a/a.canon:26:23
+  z: cycle between values: z -> z
+
+1 error, 0 warnings in 1 package (…)

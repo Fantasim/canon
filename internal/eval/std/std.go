@@ -22,6 +22,8 @@ type Host interface {
 	Site() source.Span
 	// Entry is the entry of key k of a table or keyed list.
 	Entry(coll value.Value, k value.Key) (*value.Record, bool)
+	// Belongs reports en an entry of c, of the instance a let path names (TYPES.md §10.3); false ok: aborted.
+	Belongs(en *value.Record, c *types.Collection) (yes, ok bool)
 	Regexp(pattern string) *regexp.Regexp
 	// Equal is value equality, a step per composite pair visited (DECISIONS 197).
 	Equal(a, b value.Value) (equal, ok bool)
@@ -33,12 +35,13 @@ type Host interface {
 
 // Call is one call of a built-in: its name, the row of its signature table that matched
 // (check.Callee.Overload), its receiver (nil for a free function), its arguments in parameter
-// order, its static result type and the provenance of what it computes.
+// order with their static types, its static result type and the provenance of what it computes.
 type Call struct {
 	Name     string
 	Overload int
 	Recv     value.Value
 	Args     []value.Value
+	ArgTypes []types.Type
 	Result   types.Type
 	Prov     *value.Prov
 }

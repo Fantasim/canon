@@ -41,6 +41,71 @@ func keyedGet(h Host, c *Call) (value.Value, bool) {
 	return c.orNone(e, ok), h.Charge(1)
 }
 
+// Operand is how a table or keyed list takes a membership operand (STDLIB.md §5).
+type Operand uint8
+
+// MemberKey is x, typed xt, as recv's element or key; false ok: the root aborted (DECISIONS 314, 315).
+func MemberKey(h Host, recv, x value.Value, xt types.Type) (k value.Key, how Operand, ok bool) {
+	elem, kt := keyedTypes(recv)
+	if elem == nil {
+		return value.Key{}, operandElement, true
+	}
+	t := xt.Base()
+	if o, isOpt := t.(*types.OptionalType); isOpt {
+		t = o.Elem.Base()
+	}
+	if types.Identical(t, kt) {
+		return keyOrMissing(KeyOf(x))
+	}
+	if r, isRef := t.(*types.RefType); isRef && r.Target != nil {
+		t = r.Target.Elem
+	}
+	if types.Assignable(t, elem) {
+		return value.Key{}, operandElement, true
+	}
+	return convertedKey(h, x, kt)
+}
+
+// keyOrMissing is a key, or OperandMissing when there is none.
+func keyOrMissing(k value.Key, has bool) (value.Key, Operand, bool) {
+	if !has {
+		return value.Key{}, OperandMissing, true
+	}
+	return k, OperandKey, true
+}
+
+// convertedKey is the key of x converted to kt: a record must be an entry of kt's target (DECISIONS 315).
+func convertedKey(h Host, x value.Value, kt types.Type) (value.Key, Operand, bool) {
+	rec, isRec := x.(*value.Record)
+	if !isRec {
+		return keyOrMissing(KeyOf(x))
+	}
+	r, isRef := kt.Base().(*types.RefType)
+	if !isRef || rec.Ident == nil {
+		return value.Key{}, OperandMissing, true
+	}
+	yes, ok := h.Belongs(rec, r.Target)
+	if !ok {
+		return value.Key{}, OperandMissing, false
+	}
+	return keyOrMissing(rec.Ident.Key, yes)
+}
+
+// keyedTypes are the element and key types of a table or keyed list, nil for another value.
+func keyedTypes(v value.Value) (elem, key types.Type) {
+	switch x := v.(type) {
+	case *value.Table:
+		if t, ok := x.T.Base().(*types.TableType); ok {
+			return t.Elem, types.StringType
+		}
+	case *value.List:
+		if t, ok := x.T.Base().(*types.ListType); ok && t.KeyedBy != nil {
+			return t.Elem, t.KeyedBy.Type
+		}
+	}
+	return nil, nil
+}
+
 // keyedAt is the entry at position i, negative from the end; E4002 out of range.
 func keyedAt(h Host, c *Call) (value.Value, bool) {
 	xs := Elems(c.Recv)
@@ -67,11 +132,19 @@ func keyedKeys(h Host, c *Call) (value.Value, bool) {
 	ok := each(h, xs, func(i int, x value.Value) {
 		r := &value.Ref{T: rt, P: c.Prov}
 		if e, isRec := x.(*value.Record); isRec && e.Ident != nil {
-			r.Key, r.Owner = e.Ident.Key, e.Ident.Owner
+			r.Key, r.Owner = e.Ident.Key, fieldOwner(rt, e.Ident.Owner)
 		}
 		out[i] = r
 	})
 	return c.list(out), ok
+}
+
+// fieldOwner is owner for a ref into a field's collection; a let-path ref holds no instance (DECISIONS 315).
+func fieldOwner(rt types.Type, owner *value.Record) *value.Record {
+	if r, ok := rt.Base().(*types.RefType); ok && r.Target != nil && r.Target.Kind == types.CollField {
+		return owner
+	}
+	return nil
 }
 
 // refTypeOf is the element type of keys(): the checker's ref when it bound one, else a ref

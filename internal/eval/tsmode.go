@@ -18,18 +18,14 @@ func runtimeInput(obj check.Object) bool {
 	return ok && slices.ContainsFunc(ft.Params, types.Infinite)
 }
 
-// tsEntry checks every integer read from self, then every argument, is safe: E8303 (CONFORMANCE.md §2.3, §4).
-func (r *run) tsEntry(fr *frame, d *syntax.FnDecl, args []value.Value) bool {
+// tsEntry checks every integer read from self is safe, E8303; the arguments follow in storeArgs (CONFORMANCE.md §2.3).
+func (r *run) tsEntry(fr *frame, d *syntax.FnDecl) bool {
 	saved := r.fr
 	r.fr = fr
 	r.ev.depth++
 	ok := r.tsReads(d)
 	r.fr = saved
 	r.ev.depth--
-	if ok && slices.ContainsFunc(args, unsafeInt) {
-		r.tsFail()
-		return false
-	}
 	return ok
 }
 

@@ -41,7 +41,7 @@ func (s *StageB) Charge(n int, at source.Span) bool {
 func (s *StageB) Store(v value.Value, t types.Type, rel source.Span, path string) (value.Value, bool) {
 	r, at := s.r, rootPath(path)
 	if rt, isRef := unwrapOptional(t).Base().(*types.RefType); isRef {
-		v = r.entryToRef(v, rt, at)
+		v = r.entryToRef(v, rt, at, nil)
 	} else {
 		v = r.coerce(v, t, nil)
 	}

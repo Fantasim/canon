@@ -1,0 +1,51 @@
+STDLIB.md §5, DECISIONS 314: an element is an operand whose static type is assignable to T, a
+type-function application computing T included; it is found by equality. (A `match`-bodied
+application is a `DepUnion`, which the checker refuses as an operand: E3002.)
+-- a/a.canon --
+package a
+
+record M {
+  hp: Int
+}
+
+let ms: table M = {
+  wolf { hp: 1 }
+}
+
+record S {
+  m: ref ms
+  n: Int
+}
+
+record Z {
+  spawns: [S] keyed by m
+}
+
+let z: Z = { spawns: [{ m: wolf, n: 2 }] }
+
+record Ev {
+  on: Bool
+}
+
+let evs: table Ev = {
+  yes { on: true }
+  no { on: false }
+}
+
+type Spawn(e: Ev) = S
+
+record H {
+  ev: ref evs
+  s: Spawn(ev)
+}
+
+let same: H = { ev: yes, s: { m: wolf, n: 2 } }
+
+let other: H = { ev: no, s: { m: wolf, n: 3 } }
+
+test "a type function computing T is an element" {
+  expect same.s in z.spawns
+  expect not (other.s in z.spawns)
+  expect z.spawns.contains(same.s)
+  expect z.spawns.indexOf(same.s) == 0
+}

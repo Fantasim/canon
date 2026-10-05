@@ -59,6 +59,10 @@ func (w *eqWalk) push(a, b value.Value, plain bool) {
 	if a, b = w.resolved(a, b); w.over {
 		return
 	}
+	if yes, met := w.letPathMeets(a, b); met {
+		w.unequal = !w.over && !yes
+		return
+	}
 	if !walked(a, b, plain) {
 		eq, done, n := value.EqualUpTo(a, b, w.r.remaining())
 		w.unequal = w.count(n) && done && !eq
@@ -242,4 +246,30 @@ func (w *eqWalk) convert(x, like value.Value) value.Value {
 		ref.T, ref.Owner = lr.T, lr.Owner
 	}
 	return v
+}
+
+// letPathMeets is a let-path ref against an entry: same key, same instance (TYPES.md §10.3).
+func (w *eqWalk) letPathMeets(a, b value.Value) (equal, met bool) {
+	ref, id := letPathRef(a), fieldIdentity(b)
+	if ref == nil || id == nil {
+		ref, id = letPathRef(b), fieldIdentity(a)
+	}
+	if ref == nil || id == nil {
+		return false, false
+	}
+	if ref.Owner != nil { // a let-path ref carries no instance, however it was made
+		w.r.bug(nil)
+		w.over = true
+		return false, true
+	}
+	if !w.count(1) { // one step per pair, keys equal or not (EVALUATION.md §12)
+		return false, true
+	}
+	if ref.Key != id.Key {
+		return false, true
+	}
+	rt, _ := ref.T.Base().(*types.RefType)
+	yes, ok := w.r.inColl(id, rt.Target, nil, w.at())
+	w.over = w.over || !ok
+	return yes, true
 }

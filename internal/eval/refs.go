@@ -59,9 +59,6 @@ func (r *run) refFail(b *diag.Builder, ref *value.Ref, at syntax.Node) {
 
 // collValue is the collection a ref's target names, forced at at, E3505 at loc (EVALUATION.md §3.4).
 func (r *run) collValue(ref *value.Ref, c *types.Collection, at, loc syntax.Node) value.Value {
-	if c.Kind != types.CollField && r.nonConstant() { // a key dereference in a fold reads a let (DECISIONS 210)
-		return nil
-	}
 	var base value.Value
 	if c.Kind == types.CollField {
 		if ref.Owner == nil {
@@ -69,37 +66,20 @@ func (r *run) collValue(ref *value.Ref, c *types.Collection, at, loc syntax.Node
 			return nil
 		}
 		base = r.mv.latest(ref.Owner) // a fresh instance's entries name it until its let settles
-	} else {
-		st := r.ev.rootState(Root{Pkg: c.Pkg, Name: c.Name})
-		if st == nil {
-			r.bug(at)
-			return nil
-		}
-		v, ok := r.forceRead(st, at)
-		if !ok {
-			r.readPoisoned(c.Pkg, c.Name, at)
-			return nil
-		}
-		base = v
+	} else if base = r.letRoot(c, at, source.Span{}); base == nil { // a key dereference in a fold reads a let (DECISIONS 210)
+		return nil
 	}
-	for _, name := range c.FieldPath {
-		rec, ok := base.(*value.Record)
-		i := -1
-		if ok {
-			i = fieldIndex(rec.T, name)
-		}
-		if i < 0 {
-			r.bug(at)
-			return nil
-		}
-		if rec.Fields[i] == nil { // its instance is still being decoded (EVALUATION.md §3.2)
-			name := r.collName(c)
-			r.refFail(diag.E4301.At(r.refSpan(ref, loc), []string{name, name}), ref, loc)
-			return nil
-		}
-		base = rec.Fields[i]
+	v, decoded := walkFields(base, c.FieldPath)
+	switch {
+	case !decoded: // its instance is still being decoded (EVALUATION.md §3.2)
+		name := r.collName(c)
+		r.refFail(diag.E4301.At(r.refSpan(ref, loc), []string{name, name}), ref, loc)
+		return nil
+	case v == nil:
+		r.bug(at)
+		return nil
 	}
-	return base
+	return v
 }
 
 // collName names a collection in E3501: qualified when it is another package's.

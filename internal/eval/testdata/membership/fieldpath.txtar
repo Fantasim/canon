@@ -1,0 +1,141 @@
+TYPES.md §10.2, §10.3, EVALUATION.md §4.2, DECISIONS 315: `ref z.spawns` names the collection
+field `spawns` holds in z's instance. An entry of it converts to the ref (no E3503) and equals a
+ref with its key, built by conversion, by key, by keys() or loaded (`==`, `in`, `contains`,
+`indexOf`, hashing in `unique`, `union` and map keys); another instance's entry does not. Nested
+paths, an alias let, a key field typed a let path and level-1 refs work alike.
+-- a/a.canon --
+package a
+
+record M {
+  hp: Int
+}
+
+let ms: table M = {
+  wolf { hp: 1 }
+  bear { hp: 2 }
+}
+
+record S {
+  m: ref ms
+  n: Int
+}
+
+record Inner {
+  spawns: [S] keyed by m
+}
+
+record Z {
+  spawns: [S] keyed by m
+  inner: Inner
+}
+
+let z: Z = {
+  spawns: [{ m: wolf, n: 2 }, { m: bear, n: 4 }]
+  inner: { spawns: [{ m: wolf, n: 7 }] }
+}
+
+let y: Z = { spawns: [{ m: wolf, n: 2 }], inner: { spawns: [] } }
+
+let w: Z = z
+
+let first: ref z.spawns = z.spawns.at(0)
+
+let nested: ref z.inner.spawns = z.inner.spawns.at(0)
+
+let aliased: ref w.spawns = z.spawns.at(0)
+
+record T2 {
+  r: ref z.spawns
+  n: Int
+}
+
+let ts: [T2] keyed by r = [{ r: wolf, n: 1 }]
+
+let loaded: [T2] = load("@resource/t2.json")
+
+let counts: {ref z.spawns: Int} = { wolf: 1 }
+
+record Z2 {
+  spawns: [S] keyed by m
+  best: ref S
+}
+
+let z2: Z2 = { spawns: [{ m: wolf, n: 1 }], best: wolf }
+
+test "a converted entry" {
+  let e: ref z.spawns = z.spawns.at(0)
+  expect e in z.spawns
+  expect first in z.spawns
+  expect e == first
+  expect e.n == 2
+  expect z.spawns.contains(e)
+  expect z.spawns.indexOf(first) == 0
+}
+
+test "a ref by key" {
+  let k: ref z.spawns = wolf
+  let b: ref z.spawns = bear
+  expect k.n == 2
+  expect k == first
+  expect k == z.spawns.at(0)
+  expect z.spawns.at(0) == k
+  expect k != z.spawns.at(1)
+  expect k in z.spawns
+  expect z.spawns.contains(k)
+  expect z.spawns.indexOf(k) == 0
+  expect z.spawns.indexOf(b) == 1
+  expect z.spawns.keys()[0] == k
+  expect z.spawns.keys()[1] != k
+}
+
+test "another instance's entry" {
+  let k: ref z.spawns = wolf
+  expect not (k in y.spawns)
+  expect not y.spawns.contains(k)
+  expect y.spawns.indexOf(k) == none
+  expect k != y.spawns.at(0)
+}
+
+test "hashing agrees" {
+  let k: ref z.spawns = wolf
+  let pair: [ref z.spawns] = [k, z.spawns.at(0)]
+  expect pair.unique().len() == 1
+  expect [k].union([first]).len() == 1
+  expect counts[k] == 1
+  expect counts[first] == 1
+  expect counts.contains(z.spawns.at(0))
+}
+
+test "a nested let path" {
+  let kn: ref z.inner.spawns = wolf
+  expect nested in z.inner.spawns
+  expect nested.n == 7
+  expect kn == z.inner.spawns.at(0)
+  expect not (kn in z.spawns)
+}
+
+test "an alias names the same instance" {
+  expect aliased in w.spawns
+  expect aliased in z.spawns
+  expect aliased.n == 2
+}
+
+test "a key field typed a let path" {
+  expect z.spawns.at(0) in ts
+  expect first in ts
+  expect not (y.spawns.at(0) in ts)
+  expect ts.contains(z.spawns.at(0))
+}
+
+test "a loaded ref" {
+  expect loaded[0].r == first
+  expect loaded[0].r == z.spawns.at(0)
+  expect loaded[0].r in z.spawns
+}
+
+test "a level-1 ref" {
+  expect z2.best == z2.spawns.at(0)
+  expect z2.best in z2.spawns
+}
+-- resource/t2.json --
+[{"r": "wolf", "n": 3}]

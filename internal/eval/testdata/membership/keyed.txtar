@@ -1,0 +1,140 @@
+STDLIB.md §5 "Membership", DECISIONS 314: on a table or keyed list, `x in xs`, `xs.contains(x)`
+and `xs.indexOf(x)` decide by the static type of `x`, an exact type first: `KT` is a key; else
+`T` (by equality) or `ref T` (by identity) is an element; else a type converting to `KT` (an
+entry of `KT`'s target) is a key, and a value that is not such an entry is not found (`false`,
+no finding). Every expect below passes.
+-- a/a.canon --
+package a
+
+record M {
+  hp: Int
+}
+
+let ms: table M = {
+  wolf { hp: 1 }
+  bear { hp: 2 }
+}
+
+let others: table M = {
+  wolf { hp: 1 }
+}
+
+record S {
+  m: ref ms
+  n: Int
+}
+
+record Z {
+  spawns: [S] keyed by m
+}
+
+let z: Z = { spawns: [{ m: wolf, n: 2 }] }
+
+let ss: [S] keyed by m = [{ m: wolf, n: 2 }]
+
+record Q {
+  name: String
+  v: Int
+}
+
+let qs: [Q] keyed by name = [{ name: "a", v: 1 }]
+
+record P {
+  m: ref pool
+  n: Int
+}
+
+let pool: table P = {
+  a { m: a, n: 1 }
+  b { m: a, n: 2 }
+}
+
+let ks: [P] keyed by m = [{ m: a, n: 3 }]
+
+test "a ref of the key type is a key" {
+  let r: ref ms = ms.wolf
+  let b: ref ms = ms.bear
+  expect r in z.spawns
+  expect not (b in z.spawns)
+  expect z.spawns.contains(r)
+  expect not z.spawns.contains(b)
+  expect z.spawns.indexOf(r) == 0
+  expect z.spawns.indexOf(b) == none
+  expect r in ss
+  expect z.spawns.get(r) != none
+}
+
+test "a bare key is a key" {
+  expect wolf in z.spawns
+  expect not (bear in z.spawns)
+  expect z.spawns.contains(wolf)
+}
+
+test "an entry converting to the key type is a key" {
+  expect ms.wolf in z.spawns
+  expect not (ms.bear in z.spawns)
+  expect z.spawns.contains(ms.wolf)
+  expect z.spawns.indexOf(ms.wolf) == 0
+}
+
+test "a value of T's type that is not an entry of the key's target is not found" {
+  let m: M = { hp: 1 }
+  expect not (m in z.spawns)
+  expect not z.spawns.contains(m)
+  expect z.spawns.indexOf(m) == none
+  expect not (others.wolf in z.spawns)
+  expect not z.spawns.contains(others.wolf)
+}
+
+test "the key type first: a ref of the key type, into a collection of T, is a key" {
+  let r: ref pool = pool.a
+  let q: ref pool = pool.b
+  expect r in ks
+  expect not (q in ks)
+  expect ks.contains(r)
+  expect ks.indexOf(r) == 0
+  expect not (pool.a in ks)
+}
+
+test "the key type first: a T is still an element, by equality" {
+  let same: P = { m: pool.a, n: 3 }
+  let other: P = { m: pool.a, n: 1 }
+  expect same in ks
+  expect not (other in ks)
+  expect ks.contains(same)
+  expect not ks.contains(other)
+}
+
+test "an element is found by equality" {
+  let s: S = { m: ms.wolf, n: 2 }
+  let t: S = { m: ms.wolf, n: 3 }
+  expect s in z.spawns
+  expect not (t in z.spawns)
+  expect z.spawns.at(0) in z.spawns
+  expect z.spawns.contains(s)
+}
+
+test "a ref to the element type is an element, by identity" {
+  let f: ref ss = ss.at(0)
+  expect f in ss
+  expect not (f in z.spawns)
+  expect not z.spawns.contains(f)
+}
+
+test "a table takes an entry, a ref into it, or a String key" {
+  let w: ref ms = ms.wolf
+  let o: ref others = others.wolf
+  expect w in ms
+  expect ms.wolf in ms
+  expect "wolf" in ms
+  expect not ("fox" in ms)
+  expect not (o in ms)
+  expect ms.contains(w)
+}
+
+test "a String key of a keyed list" {
+  expect "a" in qs
+  expect not ("b" in qs)
+  expect qs.contains("a")
+  expect qs.indexOf("a") == 0
+}

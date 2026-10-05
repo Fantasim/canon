@@ -1,0 +1,53 @@
+EVALUATION.md §4.2, DECISIONS 315: `contains` on a list keyed by a `ref z.spawns` field, given an
+entry, decides whether it belongs to z's instance: inside z's own evaluation that read is a cycle,
+reported at the call.
+-- a/a.canon --
+/// A.
+package a
+
+/// M.
+record M {
+  /// Hp.
+  hp: Int
+}
+
+/// Ms.
+let ms: table M = { wolf { hp: 1 } }
+
+/// S.
+record S {
+  /// M.
+  m: ref ms
+  /// N.
+  n: Int
+}
+
+/// Z.
+record Z {
+  /// Spawns.
+  spawns: [S] keyed by m
+  /// Has.
+  has: Bool
+}
+
+/// T2.
+record T2 {
+  /// R.
+  r: ref z.spawns
+  /// N.
+  n: Int
+}
+
+/// Ts.
+let ts: [T2] keyed by r = [{ r: wolf, n: 1 }]
+
+/// Y.
+let y: Z = { spawns: [{ m: wolf, n: 2 }], has: false }
+
+/// Z.
+let z: Z = { spawns: [{ m: wolf, n: 2 }], has: ts.contains(y.spawns.at(0)) }
+-- findings.txt --
+error[E4301]  a/a.canon:44:48
+  z.has: cycle between values: z -> z
+
+1 error, 0 warnings in 1 package (…)

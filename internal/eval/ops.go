@@ -60,7 +60,17 @@ func evalBinary(r *run, e syntax.Expr, _ *vpath) value.Value {
 	if r.cmp != nil && r.cmp.at == e {
 		r.cmp.left, r.cmp.right = a, b
 	}
+	if x.Op == syntax.KwIn {
+		return r.inOp(x, a, b)
+	}
 	return r.binop(x.Op, a, b, e, r.typeOf(e))
+}
+
+// inOp is `x in xs`, an element or a key as the static type of x decides (STDLIB.md §5).
+func (r *run) inOp(x *syntax.BinaryExpr, a, b value.Value) value.Value {
+	r.site = r.span(x)
+	in, ok := r.memberOf(a, b, r.typeOf(x.X))
+	return r.boolOr(in, ok, r.prov(x, value.ProvComputed))
 }
 
 func (r *run) logic(x *syntax.BinaryExpr) value.Value {
@@ -88,11 +98,6 @@ func (r *run) binop(op syntax.TokenKind, a, b value.Value, n syntax.Node, t type
 	}
 	if res, ok := order(op, a, b); ok {
 		return &value.Bool{V: res, P: p}
-	}
-	if op == syntax.KwIn {
-		r.site = r.span(n)
-		in, ok := r.memberOf(a, b)
-		return r.boolOr(in, ok, p)
 	}
 	if size, ok := concatLen(op, a, b); ok {
 		if !r.spend(size, func() source.Span { return r.span(n) }) {
@@ -178,8 +183,8 @@ func concat(a, b value.Value, t types.Type, p *value.Prov) value.Value {
 	return nil
 }
 
-// memberOf is `x in xs`, each equality charged at r.site (TYPES.md §6.5, DECISIONS 197).
-func (r *run) memberOf(x, coll value.Value) (bool, bool) {
+// memberOf is `x in xs`, x typed xt, equalities charged at r.site (TYPES.md §6.5, DECISIONS 197).
+func (r *run) memberOf(x, coll value.Value, xt types.Type) (bool, bool) {
 	if isNone(x) {
 		return false, true
 	}
@@ -193,8 +198,12 @@ func (r *run) memberOf(x, coll value.Value) (bool, bool) {
 	case *value.List:
 		x = r.valueAs(x, elemOf(c.T))
 	}
-	if keyedColl(coll) && !isEntryOrRef(x) {
-		k, _ := std.KeyOf(x)
+	switch k, how, ok := std.MemberKey(r.host(), coll, x, xt); {
+	case !ok:
+		return false, false
+	case how == std.OperandMissing:
+		return false, true
+	case how == std.OperandKey:
 		_, found := r.ev.entry(coll, k)
 		return found, true
 	}
@@ -204,15 +213,6 @@ func (r *run) memberOf(x, coll value.Value) (bool, bool) {
 		}
 	}
 	return false, true
-}
-
-// isEntryOrRef reports a record or a ref, which `in` finds by equality, not by key.
-func isEntryOrRef(x value.Value) bool {
-	switch x.(type) {
-	case *value.Record, *value.Ref:
-		return true
-	}
-	return false
 }
 
 func keyedColl(v value.Value) bool {

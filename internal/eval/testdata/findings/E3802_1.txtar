@@ -1,0 +1,67 @@
+TYPES.md §11.6, DECISIONS 307: an argument reading none makes `F(…)` compute Never without its
+body. A record literal given to an optional field so typed is still classified (the record its
+arms apply reads the none argument, with no internal error) and is refused: only none fits.
+-- a/a.canon --
+/// A.
+package a
+
+/// Vocabularies.
+enum Vocabulary { grant, shop }
+
+/// Grant kinds.
+enum GrantKind { DAILY, WEEKLY }
+
+/// Shop kinds.
+enum ShopKind { BUY, SELL }
+
+/// The members of a vocabulary.
+type Member(v: Vocabulary) = match v {
+  grant => GrantKind
+  shop => ShopKind
+}
+
+/// A detail of a vocabulary.
+record Detail(v: Vocabulary) {
+  /// First.
+  first: Member(v)
+}
+
+/// The detail of a vocabulary.
+type Info(v: Vocabulary) = match v {
+  grant => Detail(v)
+  shop => Detail(v)
+}
+
+/// A column.
+record Column {
+  /// Name.
+  name: String
+  /// Its vocabulary, if any.
+  values: Vocabulary?
+}
+
+/// Columns.
+let columns: table Column = {
+  kind { name: "kind", values: grant }
+  amount { name: "amount" }
+}
+
+/// A role.
+record Role {
+  /// Column.
+  column: ref columns
+  /// Info.
+  info: Info(column.values)?
+}
+
+/// Roles.
+let roles: [Role] = [
+  { column: kind, info: { first: WEEKLY } },
+  { column: amount, info: { first: WEEKLY } },
+]
+-- findings.txt --
+error[E3802]  a/a.canon:56:27
+  roles[1].info: value does not match Info(column.values) = Never
+  expected by a/a.canon:50 (Info(column.values))
+
+1 error, 0 warnings in 1 package (…)

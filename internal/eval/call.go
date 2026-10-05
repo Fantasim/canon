@@ -133,13 +133,8 @@ func (r *run) invokeFn(c fnCall) value.Value {
 		return nil
 	}
 	fr := r.calleeFrame(c)
-	if fr.ts && !r.tsEntry(fr, d, c.args) {
+	if fr.ts && !r.tsEntry(fr, d) || !r.storeArgs(fr, d, ft, c.args) {
 		return nil
-	}
-	for i, p := range d.Params {
-		if c.args[i] != nil {
-			c.args[i] = r.store(c.args[i], ft.Params[i], declSite(fr.file, p.Name, p.Type), nil)
-		}
 	}
 	r.ev.record(c)
 	saved, dep := r.fr, r.dep
@@ -159,6 +154,21 @@ func (r *run) invokeFn(c fnCall) value.Value {
 		return r.tsRead(v) // CONFORMANCE.md §2.2: a precomputed or lookup result is read like a field
 	}
 	return v
+}
+
+// storeArgs takes each argument in turn: safe in TS mode, then its sized type and range (DECISIONS 311).
+func (r *run) storeArgs(fr *frame, d *syntax.FnDecl, ft *types.FuncType, args []value.Value) bool {
+	for i, p := range d.Params {
+		if args[i] == nil {
+			continue
+		}
+		if fr.ts && unsafeInt(args[i]) {
+			r.tsFail()
+			return false
+		}
+		args[i] = r.store(args[i], ft.Params[i], declSite(fr.file, p.Name, p.Type), nil)
+	}
+	return true
 }
 
 // calleeFrame is a call's frame, TS-mode code when the caller's is and fn is translated (CONFORMANCE.md §4).
@@ -287,6 +297,7 @@ func (r *run) callBuiltin(x *syntax.CallExpr, callee *check.Callee) value.Value 
 // runs it at the call's site.
 func (r *run) runStd(fn func(std.Host, *std.Call) (value.Value, bool), x *syntax.CallExpr, callee *check.Callee, recv value.Value) value.Value {
 	var args []value.Value
+	var argTypes []types.Type
 	for i, a := range x.Args {
 		j := i
 		if a.Name != nil {
@@ -298,13 +309,13 @@ func (r *run) runStd(fn func(std.Host, *std.Call) (value.Value, bool), x *syntax
 			return nil
 		}
 		for len(args) <= j {
-			args = append(args, nil)
+			args, argTypes = append(args, nil), append(argTypes, nil)
 		}
-		args[j] = v
+		args[j], argTypes[j] = v, r.typeOf(a.Value)
 	}
 	r.site = r.span(x)
 	c := &std.Call{
-		Name: callee.Builtin, Overload: callee.Overload, Recv: recv, Args: args,
+		Name: callee.Builtin, Overload: callee.Overload, Recv: recv, Args: args, ArgTypes: argTypes,
 		Result: r.typeOf(x), Prov: r.prov(x, value.ProvComputed),
 	}
 	return r.std(fn(r.host(), c))

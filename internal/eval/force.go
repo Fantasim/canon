@@ -5,6 +5,7 @@ import (
 
 	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/diag"
+	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/value"
 )
@@ -95,6 +96,11 @@ func (e *Evaluator) cycle(st *rootState, reader *run, at syntax.Node) {
 	if reader == nil || at == nil {
 		return
 	}
+	e.cycleAt(st, reader, reader.span(at))
+}
+
+// cycleAt is E4301 at sp, a read closing a cycle between values (EVALUATION.md §3.2).
+func (e *Evaluator) cycleAt(st *rootState, reader *run, sp source.Span) {
 	if st.obj.Kind() == check.ObjConst {
 		e.constCycle(st.obj)
 		reader.stop()
@@ -111,5 +117,5 @@ func (e *Evaluator) cycle(st *rootState, reader *run, at syntax.Node) {
 		names = append(names, reader.qualified(s.root.Pkg, s.root.Name))
 	}
 	names = append(names, reader.qualified(st.root.Pkg, st.root.Name))
-	reader.fail(diag.E4301.At(reader.span(at), names))
+	reader.fail(diag.E4301.At(sp, names))
 }

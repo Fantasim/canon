@@ -76,15 +76,16 @@ const (
 
 // The built-in members of STDLIB.md §3.
 const (
-	memberID      = "id"
-	memberRetired = "retired"
-	memberKind    = "kind"
-	memberName    = "name"
-	memberWire    = "wire"
-	memberIndex   = "index"
-	memberStart   = "start"
-	memberMembers = "members" // E.members, on an enum type (DECISIONS 299)
-	keyMagic      = "key"
+	memberID       = "id"
+	memberRetired  = "retired"
+	memberKind     = "kind"
+	memberName     = "name"
+	memberWire     = "wire"
+	memberIndex    = "index"
+	memberStart    = "start"
+	memberMembers  = "members" // E.members, on an enum type (DECISIONS 299)
+	memberTypeName = "typeName"
+	keyMagic       = "key"
 )
 
 // Numbers: the parts of a float literal, two names bound to a pair, the size from which a

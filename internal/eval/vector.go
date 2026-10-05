@@ -65,7 +65,7 @@ func (e *Evaluator) vectorEvaluator(steps int64) *Evaluator {
 	if e.host != nil {
 		v.host = &vectorHost{parent: e.host, ev: v}
 	}
-	v.regexps, v.frees, v.colls, v.fieldColls = e.regexps, e.frees, e.interned(), e.fieldColls
+	v.regexps, v.frees, v.colls, v.fieldColls, v.pathFields = e.regexps, e.frees, e.interned(), e.fieldColls, e.pathFields
 	v.ownedBy, v.sites, v.selfReads = e.ownedBy, e.sites, e.selfReads
 	v.parent, v.vec, v.verifying = e, &vectorState{}, true
 	return v

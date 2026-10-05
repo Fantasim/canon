@@ -1,0 +1,64 @@
+TYPES.md §10.3, EVALUATION.md §9.3, DECISIONS 315: an amended let is a new instance; a let path
+names the amended one, whose entries its refs equal and convert to, whether the amendment wrote
+the collection field or another field.
+-- layers --
+dev
+-- a/a.canon --
+package a
+
+record M {
+  hp: Int
+}
+
+let ms: table M = {
+  wolf { hp: 1 }
+  bear { hp: 2 }
+}
+
+record S {
+  m: ref ms
+  n: Int
+}
+
+record Z {
+  spawns: [S] keyed by m
+  label: String = "z"
+}
+
+let z: Z = { spawns: [{ m: wolf, n: 2 }] }
+
+let q: Z = { spawns: [{ m: wolf, n: 2 }] }
+
+let first: ref z.spawns = z.spawns.at(0)
+
+let qfirst: ref q.spawns = q.spawns.at(0)
+
+test "the amended collection field" {
+  let k: ref z.spawns = wolf
+  let b: ref z.spawns = bear
+  expect first in z.spawns
+  expect k in z.spawns
+  expect b in z.spawns
+  expect z.spawns.indexOf(b) == 1
+  expect first.n == 2
+}
+
+test "another field amended" {
+  let k: ref q.spawns = wolf
+  let b: ref q.spawns = bear
+  expect q.label == "dev"
+  expect qfirst in q.spawns
+  expect k in q.spawns
+  expect not (b in q.spawns)
+}
+-- a/dev.canon --
+package a
+layer dev
+
+amend z {
+  spawns: [{ m: wolf, n: 2 }, { m: bear, n: 5 }]
+}
+
+amend q {
+  label: "dev"
+}

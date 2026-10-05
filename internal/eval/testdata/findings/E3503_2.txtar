@@ -1,0 +1,42 @@
+TYPES.md §10.3, DECISIONS 315: an entry of another instance's field, converted to a ref through a
+let path, is not an entry of that instance's collection.
+-- a/a.canon --
+/// A.
+package a
+
+/// M.
+record M {
+  /// Hp.
+  hp: Int
+}
+
+/// Ms.
+let ms: table M = { wolf { hp: 1 } }
+
+/// S.
+record S {
+  /// M.
+  m: ref ms
+  /// N.
+  n: Int
+}
+
+/// Z.
+record Z {
+  /// Spawns.
+  spawns: [S] keyed by m
+}
+
+/// Z.
+let z: Z = { spawns: [{ m: wolf, n: 2 }] }
+
+/// Y.
+let y: Z = { spawns: [{ m: wolf, n: 2 }] }
+
+/// Bad.
+let bad: ref z.spawns = y.spawns.at(0)
+-- findings.txt --
+error[E3503]  a/a.canon:31:23
+  bad: this a.S is not an entry of z.spawns
+
+1 error, 0 warnings in 1 package (…)

@@ -1,0 +1,96 @@
+STDLIB.md §3, TYPES.md §4.3, §11.4, §11.6, DECISIONS 306: `E.typeName`; `F(a…).members` and
+`F(a…).typeName` select the arm as DEP-02 (named members, `_`, a Bool scrutinee, a plain body,
+`pkg.F`); a dependent value's enum members `.name`, `.index`, `.wire`, `.retired`, `.code`.
+-- b/b.canon --
+package b
+
+enum Shape @codes(UInt8) { round = 1, square = 2, retired oval = 3 }
+
+enum Tone @codes(UInt8) { warm = 10, cold = 11 }
+
+enum Pick { shape, tone, both }
+
+type Of(p: Pick) = match p {
+  shape => Shape
+  _ => Tone
+}
+
+type Plain(p: Pick) = Tone
+-- a/a.canon --
+package a
+
+import b
+
+enum Size { small, large = "L" }
+
+record Ev {
+  pick: b.Pick
+  big: Bool
+}
+
+let evs: table Ev = {
+  one { pick: shape, big: true }
+  two { pick: both, big: false }
+}
+
+type ByBig(e: Ev) = match e.big {
+  true => Size
+  false => b.Shape
+}
+
+record Row {
+  ev: ref evs
+  v: b.Of(ev.pick)
+}
+
+let rows: [Row] = [{ ev: one, v: square }, { ev: two, v: cold }]
+
+const NAME = Size.typeName.len()
+
+const COUNT = b.Of(b.Pick.tone).members.len()
+
+record Lim {
+  x: Int(0..=NAME)
+  y: Int(0..=COUNT)
+}
+
+let lim: Lim = { x: 4, y: 2 }
+
+test "folded in a refinement bound" {
+  expect NAME == 4
+  expect COUNT == 2
+  expect lim.x == 4
+}
+
+test "E.typeName" {
+  expect Size.typeName == "Size"
+  expect b.Shape.typeName == "Shape"
+}
+
+test "F(a).members and F(a).typeName select the arm" {
+  expect b.Of(b.Pick.shape).typeName == "Shape"
+  expect b.Of(b.Pick.tone).typeName == "Tone"
+  expect b.Of(b.Pick.both).typeName == "Tone"
+  expect b.Of(b.Pick.shape).members.map(m => m.name) == ["round", "square", "oval"]
+  expect b.Of(b.Pick.tone).members.map(m => m.name) == ["warm", "cold"]
+  expect b.Of(b.Pick.shape).members.len() == 3
+  expect b.Plain(b.Pick.shape).typeName == "Tone"
+  expect b.Plain(b.Pick.shape).members.len() == 2
+}
+
+test "a ref argument and a Bool scrutinee path" {
+  expect ByBig(evs.one).typeName == "Size"
+  expect ByBig(evs.two).typeName == "Shape"
+  expect ByBig(evs.one).members.map(m => m.wire) == ["small", "L"]
+}
+
+test "a dependent value's enum members" {
+  expect rows[0].v.name == "square"
+  expect rows[0].v.index == 1
+  expect rows[0].v.wire == "square"
+  expect rows[0].v.retired == false
+  expect rows[0].v.code == 2
+  expect rows[1].v.name == "cold"
+  expect rows[1].v.code == 11
+  expect b.Of(b.Pick.shape).members.map(m => m.retired) == [false, false, true]
+}

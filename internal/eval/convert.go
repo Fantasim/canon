@@ -26,7 +26,7 @@ func (r *run) convert(v value.Value, c *check.Conversion, e syntax.Expr, at *vpa
 	case check.ConvDeref:
 		return r.deref(v, e)
 	case check.ConvEntryToRef:
-		return r.entryToRef(v, c.To, at)
+		return r.entryToRef(v, c.To, at, e)
 	case check.ConvIntLitToFloat:
 		if i, ok := v.(*value.Int); ok {
 			return r.ev.carry(v, &value.Float{V: float64(i.V), T: types.FloatType, P: i.P})
@@ -40,19 +40,31 @@ func (r *run) convert(v value.Value, c *check.Conversion, e syntax.Expr, at *vpa
 	return v
 }
 
-// entryToRef is `T ≤ ref T`; anything but an entry of the target is E3503 (TYPES.md §6.2).
-func (r *run) entryToRef(v value.Value, to types.Type, at *vpath) value.Value {
+// entryToRef is `T ≤ ref T`, read at n; anything but an entry of the target is E3503 (TYPES.md §6.2, §10.3).
+func (r *run) entryToRef(v value.Value, to types.Type, at *vpath, n syntax.Node) value.Value {
 	rt, isRef := to.Base().(*types.RefType)
 	rec, isRec := v.(*value.Record)
 	if !isRef || !isRec {
 		return v
 	}
-	if rec.Ident == nil || rec.Ident.Coll != rt.Target {
+	in := rec.Ident != nil
+	if in {
+		yes, ok := r.inColl(rec.Ident, rt.Target, n, located(v, r.span(n)))
+		if !ok {
+			return nil
+		}
+		in = yes
+	}
+	if !in {
 		b := diag.E3503.At(located(v, source.Span{}), rec.T, r.collName(rt.Target))
 		r.soft(b, rec, at)
 		return rec
 	}
-	return r.ev.mark(rec, &value.Ref{T: to, Key: rec.Ident.Key, Owner: rec.Ident.Owner, P: rec.P})
+	var owner *value.Record
+	if rt.Target.Kind == types.CollField { // a let path names an instance, holding none (DECISIONS 315)
+		owner = rec.Ident.Owner
+	}
+	return r.ev.mark(rec, &value.Ref{T: to, Key: rec.Ident.Key, Owner: owner, P: rec.P})
 }
 
 // convertElements converts each element of a list, each key and value of a map, or the two
@@ -141,7 +153,7 @@ func (r *run) coerce(v value.Value, t types.Type, at syntax.Node) value.Value {
 	switch b := unwrapOptional(t).Base().(type) {
 	case *types.RefType:
 		if _, isRec := v.(*value.Record); isRec {
-			return r.entryToRef(v, b, nil)
+			return r.entryToRef(v, b, nil, at)
 		}
 	case *types.RecordType, *types.CaseType, *types.AppliedRecord:
 		if _, isRef := v.(*value.Ref); isRef {

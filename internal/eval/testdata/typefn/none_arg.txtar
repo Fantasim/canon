@@ -1,0 +1,53 @@
+TYPES.md §11.1, §11.6, DECISIONS 307: an optional argument that reads none makes `F(…)` compute
+Never without evaluating its body; an optional dependent field then holds none, and evaluation
+reads it, and the arguments of records applied inside the function's arms, without an error.
+-- a/a.canon --
+package a
+
+enum Vocabulary { grant, shop }
+
+enum GrantKind { DAILY, WEEKLY }
+
+enum ShopKind { BUY, SELL }
+
+type Member(v: Vocabulary) = match v {
+  grant => GrantKind
+  shop => ShopKind
+}
+
+record Detail(v: Vocabulary) {
+  first: Member(v)
+}
+
+type Info(v: Vocabulary) = match v {
+  grant => Detail(v)
+  shop => Detail(v)
+}
+
+record Column {
+  name: String
+  values: Vocabulary?
+}
+
+let columns: table Column = {
+  kind { name: "kind", values: grant }
+  amount { name: "amount" }
+}
+
+record Role {
+  column: ref columns
+  k: Member(column.values)?
+  info: Info(column.values)?
+}
+
+let roles: [Role] = [
+  { column: kind, k: DAILY, info: { first: WEEKLY } },
+  { column: amount },
+]
+
+test "none computes Never: the optional fields hold none" {
+  expect roles[0].k != none
+  expect roles[1].k == none
+  expect roles[1].info == none
+  expect roles[0].info != none
+}
