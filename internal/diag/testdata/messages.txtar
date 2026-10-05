@@ -204,6 +204,10 @@ E3023 invalid: refinement a b is not valid on Int
 E3023 empty: range a b is empty
 E3024 -: past applies to an enum, a variant or a ref, not Int (for a list, write [past E])
 E3025 -: a Range value must have Int bounds and a start
+E3026 written: a b is a key of a b, not an element: test it with a b.hasKey(a b)
+E3026 implicit: a b is a key, not an element: test it with hasKey(a b)
+E3027 value: resource.vocab.items has type Int, not Int; to name the key resource.vocab.items, write "resource.vocab.items"
+E3027 notValue: resource.vocab.items is not a value (built-in); to name the key resource.vocab.items, write "resource.vocab.items"
 E3101 -: duplicate key resource.vocab.items in resource.vocab.items (first at @resource/Server/System/farm_config.json:1)
 E3102 key: key "II_SYS_SYS_SCR_FARM3" is used twice (first at @resource/Server/System/farm_config.json:1)
 E3102 code: code -42 is used twice (first at @resource/Server/System/farm_config.json:1)
@@ -389,7 +393,9 @@ E8003 target: unknown emit target resource.vocab.items: expected go, cpp, ts, js
 E8003 option: unknown option resource.vocab.items for emit resource.vocab.items
 E8004 noEmit: resource.vocab.items of package resource.vocab.items is used by this resource.vocab.items emit, but resource.vocab.items has no resource.vocab.items emit
 E8004 noCopy: resource.vocab.items of package resource.vocab.items is used by this resource.vocab.items copy under root resource.vocab.items, but resource.vocab.items has several resource.vocab.items copies and none under resource.vocab.items
-E8005 -: resource.vocab.items: resource.vocab.items is generated for both resource.vocab.items and resource.vocab.items
+E8005 both: resource.vocab.items: resource.vocab.items is generated for both resource.vocab.items and resource.vocab.items
+E8005 reached: resource.vocab.items: resource.vocab.items is generated for both resource.vocab.items and resource.vocab.items; give one of their emits a distinct package option
+E8005 idType: resource.vocab.items: resource.vocab.items is generated for both resource.vocab.items and resource.vocab.items; hold one of them in a keyed list
 E8007 -: Go output @resource/Server/Item/propItem.json is under no root listed in go_module: map its root in project.canon go_module
 E8008 -: Go directory @resource/Server/Item/propItem.json is written by two emits (resource.vocab.items, resource.vocab.items)
 E8009 mode: invalid mode resource.vocab.items for emit resource.vocab.items: expected one of go, cpp
@@ -402,6 +408,7 @@ E8009 kind: option resource.vocab.items of emit resource.vocab.items must be a c
 E8009 missing: emit resource.vocab.items is missing resource.vocab.items
 E8009 reservedNamespace: invalid namespace "0.9" for emit cpp: canon, std and nlohmann are reserved
 E8009 outEmpty: out of emit resource.vocab.items is an empty list: give at least one path
+E8009 valuesEmpty: values of emit resource.vocab.items is an empty list: omit values to emit every public value
 E8009 outRoot: @resource/Server/Item/propItem.json and @resource/Server/Item/propItem.json in out of emit resource.vocab.items share the root resource.vocab.items: each copy needs a root of its own
 E8009 outPackage: entries of out of emit go end in different names: give package
 E8009 outForm: entries of out of emit json mix .json files and directories: use one form for all
@@ -413,14 +420,14 @@ E8011 derived: 0.9, the resource.vocab.items name derived for resource.vocab.ite
 E8011 reserved: 0.9, the C++ name derived for resource.vocab.items, is a keyword or a reserved name
 E8012 type: resource.vocab.items cannot be emitted: Int has no representation in generated code
 E8012 define: resource.vocab.items cannot be emitted: a load.defines table or record has no representation in generated code
-E8013 package: resource.vocab.items needs baked or embedded mode: data files cannot hold package functions
-E8013 refParam: resource.vocab.items needs baked or embedded mode: data files cannot hold a method with a ref parameter
+E8013 package: resource.vocab.items needs baked mode: data files cannot hold package functions
+E8013 refParam: resource.vocab.items needs baked mode: data files cannot hold a method with a ref parameter
 E8014 -: types mode cannot emit the computed default of resource.vocab.items: there is no data to read it from
 E8015 -: resource.vocab.items has type Int: data and embedded modes emit tables, keyed lists and records
 E8017 -: branch resource.vocab.items of resource.vocab.items has type Int: dependent types may only have scalar, String, enum or ref branches
-E8018 -: resource.vocab.items is decoded from JSON by resource.vocab.items, but package resource.vocab.items is emitted in baked mode
-E8019 mode: emit resource.vocab.items in resource.vocab.items mode cannot generate a case used as a type
-E8019 json: emit json cannot generate a case used as a type
+E8019 mode: emit resource.vocab.items in resource.vocab.items mode cannot generate a case used as a type; a case used as a type
+E8019 json: emit json cannot generate a case used as a type; a case used as a type
+E8019 unbuilt: emit resource.vocab.items cannot use resource.vocab.items mode yet; use resource.vocab.items mode
 E8020 -: constant resource.vocab.items is -0.0, which a Go constant cannot hold: make it a let
 E8021 position: @text belongs on a public package-level export fn with no parameter, returning String or a value with a wire form
 E8021 file: invalid @text file name "0.9": not a portable file name (empty, . or .., a path separator, a reserved character or Windows device name, or a final dot or space)
@@ -471,6 +478,7 @@ W1641 -: required field resource.vocab.items is hidden: new values cannot be com
 W1642 -: deprecated field resource.vocab.items is named in group resource.vocab.items; it is shown under "Unused fields"
 W1701 one: 1 text of package resource.vocab.items has no resource.vocab.items translation (canon i18n status resource.vocab.items --lang resource.vocab.items --list)
 W1701 many: -42 texts of package resource.vocab.items have no resource.vocab.items translation (canon i18n status resource.vocab.items --lang resource.vocab.items --list)
+W3001 -: resource.vocab.items is optional: none is already its default; remove = none
 W3301 plain: resource.vocab.items is deprecated
 W3301 reason: resource.vocab.items is deprecated: 0.9
 W3401 -: a b is never none: resource.vocab.items has no effect
