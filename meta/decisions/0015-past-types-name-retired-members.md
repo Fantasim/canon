@@ -44,6 +44,10 @@ member, or move the description out of Canon and lose its typing.
 
 ## Consequences
 
+Refs have the same gap: a live entry referencing a retired one is `E3502` (TYPES §10.3). The
+design review ([2026-10-05](../handoff/2026-10-05-design-review.md) item 1) proposes
+`past ref T` in the same unit; it is decided together with DECISIONS 304.
+
 Telemetry's ledger types `kinds` as `[past GrantKind]` and restores the roles for codes 3 and 48.
 Retirement stays meaningful: a retired member can come back only through a slot that says it is
 about the past, and a reviewer sees that in the type. The rejected option, retired members
