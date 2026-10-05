@@ -50,7 +50,7 @@ record Tally {
   /// Counts by pick.
   byPick: {AnyPick(goal): Int} = {}
   /// Its amount.
-  amount: Amount(goal)? = none
+  amount: Amount(goal)?
 }
 
 /// Loaded.

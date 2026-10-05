@@ -41,7 +41,7 @@ record Status {
   /// Inputs a transition into this status may collect.
   optional: [PostField] = []
   /// Who, besides a triager, may make the transition.
-  by: Actor? = none
+  by: Actor?
 }
 
 /// The post lifecycle.
@@ -111,7 +111,7 @@ record Status {
   /// Inputs a transition into this status may collect.
   optional: [PostField] = []
   /// Who, besides a triager, may make the transition.
-  by: Actor? = none
+  by: Actor?
 }
 
 /// The post lifecycle.

@@ -24,7 +24,7 @@ record Conf {
   /// A limit.
   limit: Int = 1
   /// A hint.
-  hint: String? = none
+  hint: String?
   /// A name.
   name: String = ""
 }

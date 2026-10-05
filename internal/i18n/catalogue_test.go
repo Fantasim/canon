@@ -215,7 +215,7 @@ func TestCatalogueFieldNoneAndStep(t *testing.T) {
 /// A thing.
 record Thing {
   /// Its level.
-  level: Int? = none
+  level: Int?
 }
 
 view Thing {
@@ -384,7 +384,7 @@ enum Kind { active, retired legacy }
 /// A thing.
 record Thing {
   /// Its cap.
-  cap: Int? = none
+  cap: Int?
     @deprecated("no longer read")
 }
 `}, "k9")

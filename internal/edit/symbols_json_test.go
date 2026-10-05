@@ -49,7 +49,7 @@ type Aim(d: GoalDef) = match d.goal {
 /// An aim per definition.
 record Per(d: GoalDef) {
   /// Its aim.
-  aim: Aim(d)? = none
+  aim: Aim(d)?
 }
 
 /// An objective.
@@ -57,7 +57,7 @@ record Obj {
   /// Its goal definition.
   def: ref goalDefs
   /// What it aims at.
-  target: Aim(def)? = none
+  target: Aim(def)?
   /// Other aims.
   alts: [Aim(def)] = []
   /// Named aims.
@@ -79,7 +79,7 @@ record Tag {
   /// Its goal.
   goal: Goal = paint
   /// What it picks.
-  pick: Pick(goal)? = none
+  pick: Pick(goal)?
   /// Counts by pick.
   byPick: {Pick(goal): Int} = {}
 }
@@ -89,7 +89,7 @@ record CountTag {
   /// Its goal.
   goal: Goal = count
   /// What it picks.
-  pick: Pick(goal)? = none
+  pick: Pick(goal)?
 }
 
 /// A move, written inline in its step.
@@ -99,7 +99,7 @@ variant Act {
     /// Its goal definition.
     def: ref goalDefs
     /// What it aims at.
-    target: Aim(def)? = none
+    target: Aim(def)?
   }
   /// Staying.
   stay {

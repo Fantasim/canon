@@ -19,7 +19,7 @@ record Potion {
   /// Hit points restored.
   heal: Int @json("nHeal")
   /// The potion it upgrades, if any.
-  parent: String? = none @json("dwParent", none: "")
+  parent: String? @json("dwParent", none: "")
 }
 
 /// One potion.

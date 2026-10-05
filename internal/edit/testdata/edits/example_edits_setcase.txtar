@@ -127,7 +127,7 @@ record Limits {
   /// Where the server runs.
   region: String = "eu" @json("szRegion")
   /// A welcome message; an empty string in the file means none.
-  motd: String? = none @json("szMotd", none: "")
+  motd: String? @json("szMotd", none: "")
 }
 
 /// The capacities.

@@ -81,7 +81,7 @@ record ByParam(d: GoalDef) {
   /// Its goal, from the parameter.
   goal: Goal = d.goal
   /// What it picks.
-  pick: Pick(goal)? = none
+  pick: Pick(goal)?
 }
 
 /// The root.

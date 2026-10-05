@@ -38,7 +38,7 @@ record Tag {
   /// Its marks.
   marks: [Mark] = [] @json(bits)
   /// Its pick, none written as a dash.
-  pick: Pick(goal)? = none @json(none: "-")
+  pick: Pick(goal)? @json(none: "-")
 }
 
 /// The root.

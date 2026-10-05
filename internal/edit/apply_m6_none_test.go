@@ -11,7 +11,7 @@ import (
 var noneP = mapFS{
 	"law/project.canon": file(projectCanon),
 	"law/p/p.canon": file("package p\n\n/// R.\nrecord R {\n  /// C.\n  count: Int\n  /// H.\n  hint: String? = \"x\"\n" +
-		"  /// T.\n  tags: [Int]? = none\n}\n\n/// Rows.\nlet rows: table R = {\n  a {\n    count: 1\n    hint: \"set\"\n  }\n" +
+		"  /// T.\n  tags: [Int]?\n}\n\n/// Rows.\nlet rows: table R = {\n  a {\n    count: 1\n    hint: \"set\"\n  }\n" +
 		"  b {\n    count: 2\n    tags: [\n      1,\n      2,\n      3,\n    ]\n  }\n  c { count: 3, tags: [1, 2] }\n}\n"),
 }
 

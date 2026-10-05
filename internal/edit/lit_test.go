@@ -78,7 +78,7 @@ record Cell {
   /// A colour.
   c: Color = red
   /// Maybe a number.
-  o: Int? = none
+  o: Int?
   /// A part.
   p: ref parts = a
   /// A row.

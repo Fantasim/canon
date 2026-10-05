@@ -28,7 +28,7 @@ record Row {
   /// Terminal.
   terminal: Bool = false
   /// Who.
-  by: Actor? = none
+  by: Actor?
   /// A hint.
   hint: String? = "none yet"
   /// A limit: one more than the count by default.
@@ -92,7 +92,7 @@ record Row {
   /// Terminal.
   terminal: Bool = false
   /// Who.
-  by: Actor? = none
+  by: Actor?
   /// A hint.
   hint: String? = "none yet"
   /// A limit: one more than the count by default.
