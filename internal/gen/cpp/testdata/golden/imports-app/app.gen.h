@@ -9,6 +9,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 #include <nlohmann/json_fwd.hpp>
@@ -28,6 +29,7 @@ class Orders;
 
 namespace detail {
 struct AppAccess;
+struct AppMake;
 bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, demo& out);
 bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Order& out);
 }  // namespace detail
@@ -38,6 +40,7 @@ public:
 
 private:
     friend struct detail::AppAccess;
+    friend struct detail::AppMake;
     friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, demo&);
 
     int64_t n_ = 0;
@@ -61,6 +64,7 @@ public:
 
 private:
     friend struct detail::AppAccess;
+    friend struct detail::AppMake;
     friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, Order&);
 
     std::string id_;
@@ -72,6 +76,29 @@ private:
     std::optional<::demo::base::Shade> shade_;
     std::array<int64_t, 3> hue_{};
 };
+
+namespace detail {
+struct AppMake {
+    static ::demo::app::demo demo(int64_t n_) {
+        ::demo::app::demo out;
+        out.n_ = std::move(n_);
+        return out;
+    }
+
+    static ::demo::app::Order Order(std::string id_, ::demo::base::Color color_, ::demo::base::Pt at_, std::vector<::demo::base::Pt> trail_, ::demo::base::Paint paint_, std::optional<::demo::base::Pt> alt_, std::optional<::demo::base::Shade> shade_, std::array<int64_t, 3> hue_) {
+        ::demo::app::Order out;
+        out.id_ = std::move(id_);
+        out.color_ = std::move(color_);
+        out.at_ = std::move(at_);
+        out.trail_ = std::move(trail_);
+        out.paint_ = std::move(paint_);
+        out.alt_ = std::move(alt_);
+        out.shade_ = std::move(shade_);
+        out.hue_ = std::move(hue_);
+        return out;
+    }
+};
+}  // namespace detail
 
 class Orders {
 public:

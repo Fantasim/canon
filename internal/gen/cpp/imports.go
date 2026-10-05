@@ -41,15 +41,17 @@ func (g *gen) named(t ir.Type) (pkg, name string) {
 // qualifier is `::<namespace>::` of an imported package's cpp emit, from the global namespace so that no name of the including namespace hijacks it (log-2026-09-25 "imported qualifiers can be hijacked"), "" for this package; it
 // records the header the generated header then includes.
 func (g *gen) qualifier(pkg string) string {
+	if pkg == g.p.Name && g.qualify {
+		return g.own()
+	}
 	if pkg == g.p.Name {
 		return ""
 	}
-	i := slices.IndexFunc(g.p.Imports, func(r *ir.PackageRef) bool { return r.Name == pkg })
-	if i < 0 {
+	if !slices.ContainsFunc(g.p.Imports, func(r *ir.PackageRef) bool { return r.Name == pkg }) {
 		g.fail(fmt.Errorf("%w: %s uses package %s, which is not imported", ErrMalformed, g.at, pkg))
 		return ""
 	}
-	e := cppEmitOf(g.p.Imports[i].Emits)
+	e := g.importEmit(pkg)
 	if e == nil || e.Namespace == "" {
 		g.fail(fmt.Errorf("%w: package %s has no cpp emit", ErrMalformed, pkg))
 		return ""
@@ -57,6 +59,15 @@ func (g *gen) qualifier(pkg string) string {
 	segs := strings.Split(pkg, qnameSep)
 	g.imported[path.Join(relPath(g.emit.Dir, e.Dir), segs[len(segs)-1]+genHeaderSuffix)] = true
 	return scopeSep + e.Namespace + scopeSep
+}
+
+// importEmit is the cpp emit of imported package pkg, nil without one.
+func (g *gen) importEmit(pkg string) *ir.Emit {
+	i := slices.IndexFunc(g.p.Imports, func(r *ir.PackageRef) bool { return r.Name == pkg })
+	if i < 0 {
+		return nil
+	}
+	return cppEmitOf(g.p.Imports[i].Emits)
 }
 
 func cppEmitOf(emits []*ir.Emit) *ir.Emit {
@@ -92,11 +103,12 @@ func (g *gen) importIncludes() []string {
 	return out
 }
 
-// decodeFunc is the decoder of a record or variant: its package's detail::Decode (§2.8, §7.2).
+// decodeFunc is the decoder of a record or variant: detail::Decode, or this package's reader of another package's class (CODEGEN.md §2.8, §7.2).
 func (g *gen) decodeFunc(t ir.TypeRef) string {
 	pkg, _ := g.named(t.Named)
 	if pkg == g.p.Name {
 		return ir.CppDecode
 	}
-	return g.qualifier(pkg) + detailPrefix + ir.CppDecode
+	g.qualifier(pkg) // its header is included
+	return g.pl.ReaderName(t.Named)
 }

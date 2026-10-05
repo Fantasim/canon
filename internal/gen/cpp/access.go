@@ -24,6 +24,8 @@ var (
 	snapshotLoadDefText string
 	//go:embed text/reload_def.txt
 	reloadDefText string
+	//go:embed text/foreign_load.txt
+	foreignLoadText string
 )
 
 // accessStruct is detail::<P>Access: one loader per value, then the snapshot's (§7.6).
@@ -57,26 +59,23 @@ func (g *gen) loader(v *ir.Value, resolve bool) {
 	}
 	g.c.printf(loaderPreludeText, g.pl.SchemaName(v), orders, arg)
 	if v.Type.Kind == types.Record {
-		g.c.printf(valueLoaderText, ir.CppDecode)
+		g.c.printf(valueLoaderText, g.decodeFunc(v.Type))
 		g.c.linef(1, closeBrace)
 		return
 	}
 	s := g.containerSpec(v)
+	rec, _ := v.Type.Elem.Named.(*ir.Record)
 	key := idMember
-	if v.Type.KeyedBy != nil {
-		m, err := g.member(s.keyName)
-		g.fail(err)
-		key = m
+	if kf := g.keyFieldOf(v); kf != nil && rec != nil {
+		key = g.entryField(rec, kf)
 	}
 	g.c.printf(rowsOpenText, s.elem, s.key)
-	if rec, ok := v.Type.Elem.Named.(*ir.Record); ok && g.entries[rec] {
+	if rec != nil && g.entries[rec] && v.Type.Kind == types.Table {
 		g.c.write(entryReadText)
 	}
-	g.c.printf(rowDecodeText, ir.CppDecode, key)
+	g.c.printf(rowDecodeText, g.decodeFunc(*v.Type.Elem), key)
 	for _, f := range s.stable {
-		m, err := g.member(f.Name)
-		g.fail(err)
-		g.c.linef(depthThree, stableKeyFormat, g.pl.FindBy(f).Keys, m)
+		g.c.linef(depthThree, stableKeyFormat, g.pl.FindBy(f).Keys, g.entryField(rec, f))
 	}
 	g.c.linef(depthTwo, closeBrace)
 	if s.wireKey == "" {
@@ -135,6 +134,11 @@ func (g *gen) outOfLine() {
 	for _, v := range g.values {
 		if !v.Reload && v.Type.Kind != types.Record {
 			g.c.printf(containerLoadText, g.pl.ContainerName(v), g.pl.AccessName(), g.pl.AccessLoader(v), ir.CppLoad)
+		}
+	}
+	for _, v := range g.values {
+		if name := g.pl.ForeignLoader(v); name != "" {
+			g.c.printf(foreignLoadText, g.valueClass(v), name, g.pl.AccessName(), g.pl.AccessLoader(v))
 		}
 	}
 	if g.reloads() > 0 {

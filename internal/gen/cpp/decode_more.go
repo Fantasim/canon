@@ -100,13 +100,11 @@ func (g *gen) decodeTable(fn *ir.ExportFn, l leaf) {
 	obj := fmt.Sprintf(tableVarFormat, 0)
 	g.c.linef(1, objectOpenFormat, obj, sourceVar, quote(dollar+fn.Name))
 	g.c.linef(depthTwo, pushFormat, quote(dollar+fn.Name))
-	for i, d := range doms {
-		quoted := make([]string, len(d.keys))
-		for k, key := range d.keys {
-			quoted[k] = quote(key)
-		}
-		g.c.linef(depthTwo, keysArrayFormat, fmt.Sprintf(wireKeysFormat, i), strings.Join(quoted, listSep))
+	if cells(doms) == 0 { // an empty domain: no cell to read, no zero-size key array (CODEGEN.md §5.10)
+		g.emptyTable(obj, doms[0].keys)
+		return
 	}
+	g.tableKeys(doms)
 	g.checkKeys(depthTwo, fmt.Sprintf(derefFormat, obj), doms[0].keys, false)
 	index, depth := "", depthTwo
 	for i, d := range doms {
@@ -133,6 +131,28 @@ func (g *gen) decodeTable(fn *ir.ExportFn, l leaf) {
 		depth -= depthTwo
 	}
 	g.c.linef(depth, closeBrace)
+	g.c.linef(depthTwo, popLine)
+	g.c.linef(1, closeBrace)
+}
+
+// tableKeys write each domain's wire keys, w<i>, a lookup's nested objects' keys (WIRE.md §5.11).
+func (g *gen) tableKeys(doms []domain) {
+	for i, d := range doms {
+		quoted := make([]string, len(d.keys))
+		for k, key := range d.keys {
+			quoted[k] = quote(key)
+		}
+		g.c.linef(depthTwo, keysArrayFormat, fmt.Sprintf(wireKeysFormat, i), strings.Join(quoted, listSep))
+	}
+}
+
+// emptyTable closes a lookup's `$<fn>` object that holds no cell, its first keys checked when it has some.
+func (g *gen) emptyTable(obj string, keys []string) {
+	if len(keys) > 0 {
+		g.checkKeys(depthTwo, fmt.Sprintf(derefFormat, obj), keys, false)
+	} else {
+		g.c.linef(depthTwo, unusedFormat, obj)
+	}
 	g.c.linef(depthTwo, popLine)
 	g.c.linef(1, closeBrace)
 }

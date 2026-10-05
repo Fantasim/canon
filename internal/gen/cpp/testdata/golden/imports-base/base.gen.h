@@ -6,6 +6,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <variant>
 
 #include <nlohmann/json_fwd.hpp>
@@ -88,6 +89,7 @@ class Shade;
 
 namespace detail {
 struct BaseAccess;
+struct BaseMake;
 bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Pt& out);
 bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Paint& out);
 bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, PaintSolid& out);
@@ -100,6 +102,7 @@ public:
 
 private:
     friend struct detail::BaseAccess;
+    friend struct detail::BaseMake;
     friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, Pt&);
 
     int32_t x_ = 0;
@@ -111,6 +114,7 @@ public:
 
 private:
     friend struct detail::BaseAccess;
+    friend struct detail::BaseMake;
     friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, PaintSolid&);
 
     Color tint_{};
@@ -123,6 +127,7 @@ public:
 
 private:
     friend struct detail::BaseAccess;
+    friend struct detail::BaseMake;
     friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, Paint&);
 
     std::variant<PaintSolid, std::monostate> value_;
@@ -136,9 +141,50 @@ public:
 
 private:
     friend struct detail::BaseAccess;
+    friend struct detail::BaseMake;
     friend bool detail::DecodeShade(const nlohmann::json&, std::string_view, ::demo::base::Color, canon::json::Decoder&, ::demo::base::Shade&);
 
     std::variant<std::string, int32_t> value_;
 };
+
+namespace detail {
+struct BaseMake {
+    static ::demo::base::Pt Pt(int32_t x_) {
+        ::demo::base::Pt out;
+        out.x_ = std::move(x_);
+        return out;
+    }
+
+    static ::demo::base::Paint Paint_Solid(::demo::base::Color tint_) {
+        ::demo::base::Paint out;
+        out.value_.emplace<0>(Case_Paint_Solid(std::move(tint_)));
+        return out;
+    }
+
+    static ::demo::base::PaintSolid Case_Paint_Solid(::demo::base::Color tint_) {
+        ::demo::base::PaintSolid out;
+        out.tint_ = std::move(tint_);
+        return out;
+    }
+
+    static ::demo::base::Paint Paint_Clear() {
+        ::demo::base::Paint out;
+        out.value_.emplace<1>();
+        return out;
+    }
+
+    static ::demo::base::Shade Shade_Red(std::string value_) {
+        ::demo::base::Shade out;
+        out.value_.emplace<0>(std::move(value_));
+        return out;
+    }
+
+    static ::demo::base::Shade Shade_Green(int32_t value_) {
+        ::demo::base::Shade out;
+        out.value_.emplace<1>(std::move(value_));
+        return out;
+    }
+};
+}  // namespace detail
 
 }  // namespace demo::base

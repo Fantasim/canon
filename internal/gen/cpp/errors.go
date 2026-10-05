@@ -11,8 +11,6 @@ import (
 var (
 	// ErrTarget is an emit whose target is not cpp.
 	ErrTarget = errors.New("cppgen: not a cpp emit")
-	// ErrUnsupported is a mode or construct this generator does not emit yet.
-	ErrUnsupported = errors.New("cppgen: not supported")
 	// ErrMalformed is an IR that stage E should not have produced.
 	ErrMalformed = errors.New("cppgen: malformed IR")
 	// errName is a generated name C++ cannot declare: stage E reports it first, so reaching it is malformed IR.
@@ -21,7 +19,7 @@ var (
 	errNameCollision = fmt.Errorf("%w: generated name collision", ErrMalformed)
 )
 
-// What this generator refuses (ErrUnsupported, decision 124) or finds malformed (ErrMalformed).
+// What this generator finds malformed (ErrMalformed): stage E refuses every construct it does not write first (DECISIONS 320).
 const (
 	nilItem            = "a nil item"
 	noElem             = "a list, optional or table without its element type"
@@ -54,7 +52,6 @@ const (
 	lookupParams       = "a finite parameter that is not an enum or a Bool"
 	unknownReads       = "a read of self that is not a path of fields"
 	mapFields          = "a map field (nlohmann::json does not keep the key order)"
-	foreignPairs       = "a pairs field of a record from another package"
 	inlineFoldKeys     = "an inline variant key equal to another key of its parent but for letter case"
 	bakedReload        = "a @reload value in baked mode"
 	bakedEntryKey      = "a container entry whose key is not its id, or a ref to no entry"
@@ -106,12 +103,6 @@ const (
 	isMemberFormat        = "*%s == %s"
 	orSep                 = " || "
 	notValFormat          = "!%s"
-)
-
-// The kinds stage E refuses (E8019) where gen/cpp stores or decodes a type, or writes a constant: meeting one there is ErrMalformed.
-var (
-	typeRefused  = map[types.Kind]bool{types.Optional: true, types.DepMap: true, types.Case: true}
-	constRefused = map[types.Kind]bool{types.Record: true, types.Variant: true, types.Case: true, types.Table: true}
 )
 
 // Strict loaders: calls of canon_runtime_json.h's detail helpers (CODEGEN.md §7.5).
@@ -211,4 +202,38 @@ const (
 	getFormat             = "const %s& Get(%s id) const { const size_t i = static_cast<size_t>(id); if (i >= rows_.Len()) std::abort(); return rows_.At(i); }"
 	// maxInline is the widest initializer written on one line; a longer one puts one item per line.
 	maxInline = 80
+)
+
+// Make hooks, rows and readers of other packages' classes (CODEGEN.md §2.8, §5.9, §5.14; DECISIONS 323).
+const (
+	staticPrefix      = "static "
+	pushValueFormat   = "%s.push_back(%s);"
+	bakedLocalFormat  = "b%d_" // a baked literal's locals of another package's class, one prefix per block depth
+	inlinePrefix      = "inline "
+	declFormatLine    = "%s;"
+	funcOpenLine      = "%s {"
+	makeCallFormat    = "%s::%s(%s)"
+	emplaceHookFormat = "out." + ir.CppVariantMember + ".emplace<%d>(%s(%s));"
+	hookGetFormat     = "&%s().Get(%s)"
+	hookFindFormat    = "%s().Find(%s)"
+	hookEachFormat    = "for (const auto& k : %s) %s.push_back(%s);"
+	hookIfFormat      = "if (%s) %s = %s;"
+	hookKeyVar        = "k"
+	rowOpenFormat     = "class %s : public %s {\n" + publicLabel + "\n"
+	baseOfFormat      = "static_cast<%s&>(%s)"
+	rowRecordParam    = "record"
+	rowRetiredParam   = "retired"
+
+	tableRowFormat         = "tv%[1]d[ti%[1]d]"
+	tableKeyFormat         = "*tab%[1]d[ti%[1]d].key"
+	tableRetiredExprFormat = "tab%[1]d[ti%[1]d].retired"
+	foreignLoadDeclFormat  = "std::shared_ptr<const %s> %s(const std::string& path, std::string& error);"
+	readerDeclFormat       = "bool %s(const nlohmann::json& v, canon::json::Decoder& dec, %s& out);\n"
+	readerOpenFormat       = "bool %s(const nlohmann::json& v, canon::json::Decoder& dec, %s& out) {\n"
+	notOkReturnLine        = "if (!dec.Ok()) return false;"
+	findCallPrefix         = "().Find("
+	unwrittenHook          = "another package's class whose owner writes no make hook (its loader resolves a ref)"
+	entryKeyVarFormat      = "k%d"
+	entryIDOpenFormat      = "if (std::string %[1]s; dec.AsString(%[2]s, %[3]s, %[1]s)) {"
+	entryIDParseFormat     = "if (const auto entry = %[1]s(%[2]s)) %[3]s = *entry; else dec.Fail(%[4]s, \"no entry \" + %[2]s);"
 )

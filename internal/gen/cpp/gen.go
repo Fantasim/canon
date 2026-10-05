@@ -40,9 +40,13 @@ type gen struct {
 	inputs       []inputField             // input fields, declaration order (§5.12)
 	inputNames   ir.CppInputs             // LoadInputs, the slots' namespace and flag, the helpers (§7.7)
 	top          *scope
-	pkgFns       []*ir.ExportFn // package-level translated fns
-	methods      []*method      // translated methods, declaration order
-	bk           *bakedIndex    // a baked emit's entries and precomputed results (CODEGEN.md §5.9)
+	pkgFns       []*ir.ExportFn          // package-level translated fns
+	methods      []*method               // translated methods, declaration order
+	bk           *bakedIndex             // a baked emit's entries and precomputed results (CODEGEN.md §5.9)
+	dst          string                  // what a decoder fills a member through: out., or "" in a reader's locals (CODEGEN.md §2.8)
+	view         string                  // the package whose class layout storage describes; "" for this one (§5.14)
+	qualify      bool                    // this package's names written from the global namespace, as detail::<P>Make does (§5.14)
+	rowFriends   map[*ir.Record][]string // per row of another package's record, the classes whose decoders fill it (§5.9)
 	h, c         writer
 }
 
@@ -59,7 +63,8 @@ func Generate(p *ir.Package, e *ir.Emit) ([]ir.File, error) {
 		return nil, ErrTarget
 	}
 	if e.Mode == ir.ModeNone || e.Mode == ir.ModeEmbedded {
-		return nil, fmt.Errorf("%w: mode %s of %s", ErrUnsupported, modeText(e.Mode), e.Out)
+		// stage E refuses both first: embedded is E8019 `unbuilt` (DECISIONS 320), none is check's E8009.
+		return nil, fmt.Errorf("%w: mode %s of %s", ErrMalformed, modeText(e.Mode), e.Out)
 	}
 	if e.Namespace == "" || p.Dir == "" || p.Name == "" {
 		return nil, fmt.Errorf("%w: cpp emit %s without a namespace or a package directory", ErrMalformed, e.Out)
@@ -83,7 +88,7 @@ func newGen(p *ir.Package, e *ir.Emit) *gen {
 		p: p, emit: e, at: p.Name, last: last,
 		entries: map[*ir.Record]bool{}, loaders: map[*ir.Record]*ir.Value{}, imported: map[string]bool{},
 		pairsFriends: map[*ir.Record][]string{}, holders: map[any][]*ir.Value{}, slots: map[any][]resolved{},
-		top: newScope(e.Namespace),
+		rowFriends: map[*ir.Record][]string{}, top: newScope(e.Namespace), dst: outPrefix,
 	}
 }
 
@@ -94,17 +99,9 @@ func (g *gen) fail(err error) {
 	}
 }
 
-func (g *gen) unsupported(what, where string) {
-	g.fail(fmt.Errorf("%w: %s (%s)", ErrUnsupported, what, where))
-}
-
-// refuseKind is unsupported for a kind, but malformed for one stage E already refuses at this position (E8019).
-func (g *gen) refuseKind(k types.Kind, where string, refused map[types.Kind]bool) {
-	if refused[k] {
-		g.malformed(kindText(k), where)
-		return
-	}
-	g.unsupported(kindText(k), where)
+// refuseKind is a kind gen/cpp has no form for at this position: stage E refuses every one first (E8019 for an optional element, a dependent map, a case or a record constant; E8012 for Never, a Range, a function, a pair and a define record; a variant's Kind cannot be written, TYPES.md §2), so meeting one is malformed IR (DECISIONS 320).
+func (g *gen) refuseKind(k types.Kind, where string) {
+	g.malformed(kindText(k), where)
 }
 
 // declare adds a name of the emit's namespace.
@@ -180,7 +177,8 @@ func (g *gen) header() []byte {
 	g.h = writer{}
 	sections := []func(){
 		g.constants, g.schemaConstants, g.enums, g.enumConstants, g.forwards,
-		g.detailDecls, g.classDecls, g.containers, g.accessors, g.packageFns, g.snapshot, g.inputsDecl,
+		g.detailDecls, g.classDecls, g.makeStructDef, g.containers, g.accessors, g.foreignLoaderDecls, g.lateHooks,
+		g.packageFns, g.snapshot, g.inputsDecl,
 		g.conformanceDecl,
 	}
 	for _, s := range sections {
@@ -211,7 +209,9 @@ func (g *gen) source() []byte {
 	if g.baked() {
 		g.bakedAccess()
 	} else {
+		g.readerDecls()
 		g.decoders()
+		g.readers()
 		g.accessStruct()
 	}
 	body := g.c.String()
@@ -267,7 +267,7 @@ func (g *gen) recordLoader(v *ir.Value) {
 		g.fail(fmt.Errorf("%w: record value %s without its record", ErrMalformed, v.Name))
 		return
 	}
-	if _, seen := g.loaders[rec]; !seen && !v.Reload {
+	if _, seen := g.loaders[rec]; !seen && !v.Reload && rec.Pkg == g.p.Name { // another package's: the free Load<V> (§5.9)
 		g.loaders[rec] = v
 	}
 }

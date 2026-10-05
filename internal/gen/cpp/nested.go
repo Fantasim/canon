@@ -9,20 +9,20 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// nestedRecord is the record of this package a table field holds: stage E refuses any other (E8019 TableField, CODEGEN.md §4.2, §5.3).
+// nestedRecord is the record a table field holds, its holder's own or another package's, whose rows are then the holder's row class (CODEGEN.md §4.2, §5.9).
 func (g *gen) nestedRecord(t ir.TypeRef) *ir.Record {
 	if t.Elem != nil {
-		if rec, ok := t.Elem.Named.(*ir.Record); ok && rec.Pkg == g.p.Name {
+		if rec, ok := t.Elem.Named.(*ir.Record); ok {
 			return rec
 		}
 	}
-	g.malformed(tableFieldText, g.at) // E8019 TableField
+	g.malformed(tableFieldText, g.at)
 	return &ir.Record{}
 }
 
 // tableStorage is a table field's storage, a canon::KeyedList of its rows by id, a string in every mode this generator writes (CODEGEN.md §4.2, §5.3).
 func (g *gen) tableStorage(t ir.TypeRef) string {
-	return fmt.Sprintf(keyedListFormat, cppString, g.typeName(g.nestedRecord(t)))
+	return fmt.Sprintf(keyedListFormat, cppString, g.rowClass(g.nestedRecord(t)))
 }
 
 // nestedRows marks the records a table field holds as entries (an id and a retired flag) and befriends the classes decoding them, which set both (CODEGEN.md §4.2, §5.3).
@@ -33,6 +33,9 @@ func (g *gen) nestedRows() {
 			walkTypeRef(f.Type, func(t ir.TypeRef) { g.markRow(c, t) })
 		}
 	}
+	for _, t := range g.pl.Foreign().Tables {
+		g.entries[t.Record] = true // a row of another package's table: its reader checks $id and $retired (WIRE.md §5.7)
+	}
 }
 
 // markRow marks the row record of t when it is a table field of class c.
@@ -41,6 +44,13 @@ func (g *gen) markRow(c class, t ir.TypeRef) {
 		return
 	}
 	rec, ok := t.Elem.Named.(*ir.Record)
+	if ok && rec.Pkg != g.p.Name {
+		g.entries[rec] = true // its reader checks $id and $retired (WIRE.md §5.7)
+		if friend := g.className(c); !slices.Contains(g.rowFriends[rec], friend) {
+			g.rowFriends[rec] = append(g.rowFriends[rec], friend)
+		}
+		return
+	}
 	if !ok || !g.pl.NestedRow(rec) {
 		return
 	}
@@ -114,7 +124,7 @@ func namedHolds(named ir.Type, fieldsHold func([]*ir.Field) bool) bool {
 // decodeNested reads a nested table: an object keyed by entry id, each row decoded as its record, with its key as its id and its `$retired` its retired flag (WIRE.md §5.7).
 func (g *gen) decodeNested(depth int, src, key string, l leaf) {
 	rec := g.nestedRecord(l.t)
-	elem, d := g.typeName(rec), depth
+	elem, d := g.rowClass(rec), depth
 	g.c.linef(depth, pushFormat, key)
 	g.c.linef(depth, tableEntriesFormat, d)
 	g.c.linef(depth, tableReadFormat, src, d)
@@ -124,8 +134,15 @@ func (g *gen) decodeNested(depth int, src, key string, l leaf) {
 	g.c.linef(depth+depthTwo, tableRowPush, d)
 	g.c.linef(depth+depthTwo, tableDecodeFormat, g.decodeFunc(*l.t.Elem), d)
 	g.c.linef(depth+depthTwo, popLine)
-	g.c.linef(depth+depthTwo, tableIDFormat, d)
-	g.c.linef(depth+depthTwo, tableRetiredFormat, d)
+	if owner := g.owner(); owner != g.p.Name { // another package's table: its rows through their holder's hook (§5.14)
+		row := fmt.Sprintf(tableRowFormat, d)
+		base := fmt.Sprintf(moveFormat, g.rowBase(row, rec))
+		args := []string{base, fmt.Sprintf(tableKeyFormat, d), fmt.Sprintf(tableRetiredExprFormat, d)}
+		g.c.linef(depth+depthTwo, assignFormat, row, g.makeCall(owner, g.tableHook(owner, rec), args))
+	} else {
+		g.c.linef(depth+depthTwo, tableIDFormat, d)
+		g.c.linef(depth+depthTwo, tableRetiredFormat, d)
+	}
 	g.c.linef(depth+depthTwo, tableKeyPushFormat, d)
 	g.c.linef(depth+1, closeBrace)
 	g.c.linef(depth+1, tableFromFormat, l.dst, elem, d)

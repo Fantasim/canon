@@ -7,6 +7,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -92,6 +93,7 @@ class Picks;
 
 namespace detail {
 struct EventsAccess;
+struct EventsMake;
 bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Rect& out);
 bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, EventKind& out);
 bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, EventKindSpawnMonster& out);
@@ -114,6 +116,7 @@ public:
 
 private:
     friend struct detail::EventsAccess;
+    friend struct detail::EventsMake;
     friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, Rect&);
 
     double left_ = 0.0;
@@ -131,6 +134,7 @@ public:
 
 private:
     friend struct detail::EventsAccess;
+    friend struct detail::EventsMake;
     friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, EventKindSpawnMonster&);
 
     std::string monsterId_;
@@ -148,6 +152,7 @@ public:
 
 private:
     friend struct detail::EventsAccess;
+    friend struct detail::EventsMake;
     friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, EventKindSpawnItem&);
 
     std::string itemId_;
@@ -165,6 +170,7 @@ public:
 
 private:
     friend struct detail::EventsAccess;
+    friend struct detail::EventsMake;
     friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, EventKindMonsterDropInject&);
 
     std::string itemId_;
@@ -183,6 +189,7 @@ public:
 
 private:
     friend struct detail::EventsAccess;
+    friend struct detail::EventsMake;
     friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, EventKind&);
 
     std::variant<EventKindSpawnMonster, EventKindSpawnItem, EventKindMonsterDropInject> value_;
@@ -200,6 +207,7 @@ public:
 
 private:
     friend struct detail::EventsAccess;
+    friend struct detail::EventsMake;
     friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, Event&);
 
     std::string id_;
@@ -218,6 +226,7 @@ public:
 
 private:
     friend struct detail::EventsAccess;
+    friend struct detail::EventsMake;
     friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, EventConfig&);
 
     int64_t version_ = 0;
@@ -235,6 +244,7 @@ public:
 
 private:
     friend struct detail::EventsAccess;
+    friend struct detail::EventsMake;
     friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, Extras&);
 
     int64_t reqMp_ = 0;
@@ -252,6 +262,7 @@ public:
 
 private:
     friend struct detail::EventsAccess;
+    friend struct detail::EventsMake;
     friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, Slot&);
     friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, Picks&);
 
@@ -267,10 +278,111 @@ public:
 
 private:
     friend struct detail::EventsAccess;
+    friend struct detail::EventsMake;
     friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, Picks&);
 
     std::string a_;
     std::vector<Slot> slots_;
 };
+
+namespace detail {
+struct EventsMake {
+    static ::NMEvent::gen::Rect Rect(double left_, double top_, double right_, double bottom_) {
+        ::NMEvent::gen::Rect out;
+        out.left_ = std::move(left_);
+        out.top_ = std::move(top_);
+        out.right_ = std::move(right_);
+        out.bottom_ = std::move(bottom_);
+        return out;
+    }
+
+    static ::NMEvent::gen::EventKind EventKind_SpawnMonster(std::string monsterId_, int64_t monsterIdValue_, ::NMEvent::gen::Rect spawnRegion_, std::optional<std::chrono::milliseconds> monsterLifetime_) {
+        ::NMEvent::gen::EventKind out;
+        out.value_.emplace<0>(Case_EventKind_SpawnMonster(std::move(monsterId_), std::move(monsterIdValue_), std::move(spawnRegion_), std::move(monsterLifetime_)));
+        return out;
+    }
+
+    static ::NMEvent::gen::EventKindSpawnMonster Case_EventKind_SpawnMonster(std::string monsterId_, int64_t monsterIdValue_, ::NMEvent::gen::Rect spawnRegion_, std::optional<std::chrono::milliseconds> monsterLifetime_) {
+        ::NMEvent::gen::EventKindSpawnMonster out;
+        out.monsterId_ = std::move(monsterId_);
+        out.monsterIdValue_ = std::move(monsterIdValue_);
+        out.spawnRegion_ = std::move(spawnRegion_);
+        out.monsterLifetime_ = std::move(monsterLifetime_);
+        return out;
+    }
+
+    static ::NMEvent::gen::EventKind EventKind_SpawnItem(std::string itemId_, std::vector<int64_t> itemCount_, ::NMEvent::gen::Rect spawnRegion_, std::optional<std::chrono::milliseconds> groundLifetime_) {
+        ::NMEvent::gen::EventKind out;
+        out.value_.emplace<1>(Case_EventKind_SpawnItem(std::move(itemId_), std::move(itemCount_), std::move(spawnRegion_), std::move(groundLifetime_)));
+        return out;
+    }
+
+    static ::NMEvent::gen::EventKindSpawnItem Case_EventKind_SpawnItem(std::string itemId_, std::vector<int64_t> itemCount_, ::NMEvent::gen::Rect spawnRegion_, std::optional<std::chrono::milliseconds> groundLifetime_) {
+        ::NMEvent::gen::EventKindSpawnItem out;
+        out.itemId_ = std::move(itemId_);
+        out.itemCount_ = std::move(itemCount_);
+        out.spawnRegion_ = std::move(spawnRegion_);
+        out.groundLifetime_ = std::move(groundLifetime_);
+        return out;
+    }
+
+    static ::NMEvent::gen::EventKind EventKind_MonsterDropInject(std::string itemId_, std::vector<int64_t> itemCount_, int64_t levelMin_, int64_t levelMax_) {
+        ::NMEvent::gen::EventKind out;
+        out.value_.emplace<2>(Case_EventKind_MonsterDropInject(std::move(itemId_), std::move(itemCount_), std::move(levelMin_), std::move(levelMax_)));
+        return out;
+    }
+
+    static ::NMEvent::gen::EventKindMonsterDropInject Case_EventKind_MonsterDropInject(std::string itemId_, std::vector<int64_t> itemCount_, int64_t levelMin_, int64_t levelMax_) {
+        ::NMEvent::gen::EventKindMonsterDropInject out;
+        out.itemId_ = std::move(itemId_);
+        out.itemCount_ = std::move(itemCount_);
+        out.levelMin_ = std::move(levelMin_);
+        out.levelMax_ = std::move(levelMax_);
+        return out;
+    }
+
+    static ::NMEvent::gen::Event Event(std::string id_, uint32_t worldId_, int64_t targetCount_, ::NMEvent::gen::EventKind kind_, std::vector<::sov::time::Window> schedule_, ::NMEvent::gen::RollMode rollMode_) {
+        ::NMEvent::gen::Event out;
+        out.id_ = std::move(id_);
+        out.worldId_ = std::move(worldId_);
+        out.targetCount_ = std::move(targetCount_);
+        out.kind_ = std::move(kind_);
+        out.schedule_ = std::move(schedule_);
+        out.rollMode_ = std::move(rollMode_);
+        return out;
+    }
+
+    static ::NMEvent::gen::EventConfig EventConfig(int64_t version_, canon::KeyedList<std::string, ::NMEvent::gen::Event> events_) {
+        ::NMEvent::gen::EventConfig out;
+        out.version_ = std::move(version_);
+        out.events_ = std::move(events_);
+        return out;
+    }
+
+    static ::NMEvent::gen::Extras Extras(int64_t reqMp_, std::optional<std::string> label_, std::string mode_, std::chrono::milliseconds delay_, float ratio_) {
+        ::NMEvent::gen::Extras out;
+        out.reqMp_ = std::move(reqMp_);
+        out.label_ = std::move(label_);
+        out.mode_ = std::move(mode_);
+        out.delay_ = std::move(delay_);
+        out.ratio_ = std::move(ratio_);
+        return out;
+    }
+
+    static ::NMEvent::gen::Slot Slot(int64_t n_, std::string mode_) {
+        ::NMEvent::gen::Slot out;
+        out.n_ = std::move(n_);
+        out.mode_ = std::move(mode_);
+        return out;
+    }
+
+    static ::NMEvent::gen::Picks Picks(std::string a_, std::vector<::NMEvent::gen::Slot> slots_) {
+        ::NMEvent::gen::Picks out;
+        out.a_ = std::move(a_);
+        out.slots_ = std::move(slots_);
+        return out;
+    }
+};
+}  // namespace detail
 
 }  // namespace NMEvent::gen

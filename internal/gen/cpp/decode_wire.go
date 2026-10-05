@@ -16,11 +16,8 @@ func (g *gen) pairsParents() {
 	for _, c := range g.declared() {
 		fields, _ := c.shape()
 		for _, f := range fields {
-			rec := pairsElem(f)
-			if rec != nil && rec.Pkg == g.p.Name {
+			if rec := pairsElem(f); rec != nil && rec.Pkg == g.p.Name {
 				g.pairsFriends[rec] = append(g.pairsFriends[rec], g.className(c))
-			} else if rec != nil {
-				g.malformed(foreignPairs, f.Name) // E8019 ForeignPairsField
 			}
 		}
 	}
@@ -53,18 +50,41 @@ func (g *gen) decodePairs(f *ir.Field, dst string) {
 	g.c.linef(depthTwo, emptyFlagLine)
 	g.c.linef(depthTwo, slotLoopFormat, f.Pairs.Slots)
 	g.c.linef(depthThree, slotCheckFormat, sourceVar, fmt.Sprintf(wireKeysFormat, 0), fmt.Sprintf(wireKeysFormat, 1))
-	elem := g.storage(*f.Type.Elem)
-	g.c.linef(depthThree, localFormat, elem, slotElem, "")
+	if rec.Pkg != g.p.Name {
+		g.foreignSlot(rec, dst)
+	} else {
+		g.c.linef(depthThree, localFormat, g.storage(*f.Type.Elem), slotElem, "")
+		g.slotFields(rec, slotElem+memberAccess)
+		g.c.linef(depthThree, pushBackFormat, dst, slotElem)
+	}
+	g.c.linef(depthTwo, closeBrace)
+	g.c.linef(1, closeBrace)
+}
+
+// slotFields read a slot's two fields into recv's members, each at its slot key, and return those keys (WIRE.md §5.14).
+func (g *gen) slotFields(rec *ir.Record, recv string) map[*ir.Field]string {
+	keys := map[*ir.Field]string{}
 	for k, ef := range rec.Fields {
 		m, err := g.member(ef.Name)
 		g.fail(err)
 		key := fmt.Sprintf(indexFormat, fmt.Sprintf(wireKeysFormat, k), slotVar)
-		g.decodeKey(depthThree, sourceVar, key, leaf{t: ef.Type, unit: ef.Unit, enc: ef.Enc, dst: slotElem + memberAccess + m})
-		g.defineLookup(depthThree, ef, slotElem+memberAccess, key)
+		keys[ef] = key
+		g.decodeKey(depthThree, sourceVar, key, leaf{t: ef.Type, unit: ef.Unit, enc: ef.Enc, dst: recv + m})
+		g.defineLookup(depthThree, ef, recv, key)
 	}
-	g.c.linef(depthThree, pushBackFormat, dst, slotElem)
-	g.c.linef(depthTwo, closeBrace)
-	g.c.linef(1, closeBrace)
+	return keys
+}
+
+// foreignSlot reads a slot of another package's record into locals, refuses a key naming no entry, then builds it through its owner's hook (CODEGEN.md §2.8, §5.14).
+func (g *gen) foreignSlot(rec *ir.Record, dst string) {
+	prev := g.view
+	g.view = rec.Pkg
+	defer func() { g.view = prev }()
+	h := g.written(g.pl.RecordHook(rec))
+	g.hookLocals(depthThree, h.Members, slotPrefix)
+	keys := g.slotFields(rec, slotPrefix)
+	g.foreignEntryChecks(entrySite{depth: depthThree, pkg: rec.Pkg, prefix: slotPrefix, wires: keys}, h.Members)
+	g.c.linef(depthThree, pushValueFormat, dst, g.makeCall(rec.Pkg, h.Name, movedLocals(h.Members, slotPrefix)))
 }
 
 // slotKey is a template with its `{i}` replaced by slot i in decimal (WIRE.md §5.14).

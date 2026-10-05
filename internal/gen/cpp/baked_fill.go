@@ -2,7 +2,6 @@ package cppgen
 
 import (
 	"fmt"
-	"slices"
 	"strconv"
 	"strings"
 
@@ -65,7 +64,7 @@ func (g *gen) fillValue(a at, lhs string, t ir.TypeRef, optional bool, v value.V
 	case t.Kind == types.TypeApp:
 		g.malformed(dependentElsewhere, g.at) // E8019 DependentType
 	default:
-		g.refuseKind(t.Kind, g.at, typeRefused)
+		g.refuseKind(t.Kind, g.at)
 	}
 }
 
@@ -91,12 +90,17 @@ func (g *gen) literalOf(t ir.TypeRef, v value.Value) string {
 	return g.element(t, v)
 }
 
-// fillOwnRecord writes a record value of this package, whose members only its own access struct reaches (E8019 CrossPackageBakedValue).
+// fillOwnRecord writes a record value: this package's member by member, another package's through its owner's make hook (CODEGEN.md §2.8, §5.14).
 func (g *gen) fillOwnRecord(a at, lhs string, t ir.TypeRef, v value.Value) {
 	rec, ok := t.Named.(*ir.Record)
 	r, isRecord := v.(*value.Record)
-	if !ok || !isRecord || rec.Pkg != g.p.Name {
+	if !ok || !isRecord {
 		g.malformed(fmt.Sprintf(valueFormat, v), g.at)
+		return
+	}
+	if rec.Pkg != g.p.Name {
+		h := g.written(g.pl.RecordHook(rec))
+		g.fillForeign(a, lhs, class{rec: rec}, r, foreignHook{rec.Pkg, h.Name, h.Members})
 		return
 	}
 	g.fillRecord(a, lhs, class{rec: rec}, r)
@@ -237,11 +241,15 @@ func (g *gen) fillVariant(a at, lhs string, t ir.TypeRef, v value.Value) {
 	if isRecord && r.T != nil {
 		ct, _ = r.T.Base().(*types.CaseType)
 	}
-	if !ok || ct == nil || ct.Index < 0 || ct.Index >= len(vt.Cases) || vt.Pkg != g.p.Name {
+	if !ok || ct == nil || ct.Index < 0 || ct.Index >= len(vt.Cases) {
 		g.malformed(fmt.Sprintf(valueFormat, v), g.at)
 		return
 	}
 	cs := vt.Cases[ct.Index]
+	if vt.Pkg != g.p.Name {
+		g.fillForeignCase(a, lhs, vt, cs, r)
+		return
+	}
 	if len(cs.Fields) == 0 {
 		a.line(emplaceCaseFormat, lhs, ct.Index)
 		return
@@ -304,7 +312,7 @@ func (g *gen) fillTable(a at, lhs string, t ir.TypeRef, v value.Value) {
 		return
 	}
 	rec := g.nestedRecord(t)
-	elem := g.typeName(rec)
+	elem := g.rowClass(rec)
 	keys := make([]string, len(tab.Entries))
 	for i, r := range tab.Entries {
 		if r.Ident == nil {
@@ -318,6 +326,16 @@ func (g *gen) fillTable(a at, lhs string, t ir.TypeRef, v value.Value) {
 		local := rowVar(a.depth + 1)
 		a.line(openBrace)
 		a.in().line(rowAliasFormat, local, fmt.Sprintf(keyedElemFormat, elem, lhs, strconv.Itoa(i)))
+		if owner := g.owner(); owner != g.p.Name {
+			g.fillHeldRow(a.in(), local, rec, r, keys[i])
+			a.line(closeBrace)
+			continue
+		}
+		if rec.Pkg != g.p.Name {
+			g.fillRow(a.in(), local, rec, r, keys[i])
+			a.line(closeBrace)
+			continue
+		}
 		a.in().line(assignFormat, local+memberAccess+idMember, keys[i])
 		if r.Ident.Retired {
 			a.in().line(assignFormat, local+memberAccess+retiredMember, strconv.FormatBool(true))
@@ -344,109 +362,6 @@ func (g *gen) keyedRows(a at, lhs string, t ir.TypeRef, l *value.List) {
 	}
 	elem := g.storage(*t.Elem)
 	a.line(keyedRowsFormat, lhs, g.storage(kf.Type), elem, elem, len(l.Elems), strings.Join(keys, listSep))
-}
-
-// fillDependent writes a dependent value, or each element of a list of them, into the branch the record's own discriminant selects (CODEGEN.md §5.6).
-func (g *gen) fillDependent(a at, key string, fields []*ir.Field, f *ir.Field, r *value.Record) {
-	v := g.fieldOf(r, f.Name)
-	d, br := g.bakedBranch(fields, *ir.HeldApp(f.Type), r)
-	if d == nil {
-		return
-	}
-	bt := d.Branches[br].Type
-	target := key
-	if f.Optional {
-		a.line(emplaceStmtFormat, key)
-		target = fmt.Sprintf(derefFormat, key)
-	}
-	one := func(lhs string, e value.Value) {
-		a.line(emplaceBranchFormat, lhs, br, g.element(bt, e))
-		if ir.DefinesRef(bt) {
-			a.line(assignFormat, lhs+memberAccess+g.pl.Dependent(d).DefineValue, g.defineLit(bt, e))
-		}
-	}
-	l, isList := v.(*value.List)
-	if !isList {
-		one(target, v)
-		return
-	}
-	a.line(resizeFormat, target, len(l.Elems))
-	for i, e := range l.Elems {
-		one(fmt.Sprintf(indexFormat, target, strconv.Itoa(i)), e)
-	}
-}
-
-// defineLit is the value of the define a key e of ref type t names, from the package's define table (CODEGEN.md §5.8).
-func (g *gen) defineLit(t ir.TypeRef, e value.Value) string {
-	d := ir.DefinesOf(g.p, ir.DefineTarget(t))
-	r, isRef := e.(*value.Ref)
-	i := -1
-	if d != nil && isRef {
-		i = slices.Index(d.Names, r.Key.S)
-	}
-	if i < 0 || i >= len(d.Values) {
-		g.malformed(defineMissing, g.at)
-		return cppInvalid
-	}
-	return intLit(d.Values[i])
-}
-
-// bakedBranch is the dependent type app applies and the branch r's discriminant selects, read down ir.DiscFields' path; nil where stage E refuses (E8019 DependentType, E3801).
-func (g *gen) bakedBranch(fields []*ir.Field, app ir.TypeRef, r *value.Record) (*ir.Dependent, int) {
-	d, ok := app.Named.(*ir.Dependent)
-	path := ir.DiscFields(fields, app)
-	if !ok || path == nil {
-		g.malformed(dependentBadPath, g.at)
-		return nil, 0
-	}
-	disc := value.Value(r)
-	for _, f := range path {
-		rec, isRecord := disc.(*value.Record)
-		if !isRecord {
-			g.malformed(dependentBadPath, g.at)
-			return nil, 0
-		}
-		disc = g.fieldOf(rec, f.Name)
-	}
-	m := -1
-	switch x := disc.(type) {
-	case *value.Member:
-		m = x.Index
-	case *value.Bool:
-		m = boolOrdinal(x.V)
-	}
-	if m < 0 || m >= len(d.ByMember) || d.ByMember[m] < 0 || d.ByMember[m] >= len(d.Branches) {
-		g.malformed(dependentNoBranch, g.at)
-		return nil, 0
-	}
-	return d, d.ByMember[m]
-}
-
-// boolOrdinal is a Bool's position in its domain: false, then true (CODEGEN.md §5.6, §5.10).
-func boolOrdinal(b bool) int {
-	if b {
-		return 1
-	}
-	return 0
-}
-
-// fillDefine writes a define ref's values beside its keys, from the package's define table (CODEGEN.md §5.8).
-func (g *gen) fillDefine(a at, lhs string, f *ir.Field, v value.Value) {
-	_, member, ok := g.pl.DefineValue(f)
-	if !ok {
-		return
-	}
-	lookup := func(e value.Value) string { return g.defineLit(f.Type, e) }
-	l, isList := v.(*value.List)
-	if !isList {
-		a.line(assignFormat, lhs+memberAccess+member, lookup(v))
-		return
-	}
-	items := make([]string, len(l.Elems))
-	for i, e := range l.Elems {
-		items[i] = lookup(e)
-	}
-	a.line(assignFormat, lhs+memberAccess+member, g.storage(defineValueType(f.Type))+openBrace+strings.Join(items, listSep)+closeBrace)
 }
 
 // fnCellMembers is a stored package fn's member of Data: its result, or a lookup's cells, a resolved ref's entries instead of its keys (CODEGEN.md §5.10: a package fn has no key getter).

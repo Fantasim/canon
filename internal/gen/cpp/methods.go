@@ -7,6 +7,7 @@ import (
 
 	"github.com/fantasim/canonlang/internal/ir"
 	"github.com/fantasim/canonlang/internal/types"
+	"github.com/fantasim/canonlang/internal/value"
 )
 
 // domain is one finite parameter's values in domain order: their wire keys and its size.
@@ -19,7 +20,8 @@ type domain struct {
 // domains lists each parameter's wire keys in domain order (CODEGEN.md §5.10, WIRE.md §5.11).
 func (g *gen) domains(fn *ir.ExportFn) []domain {
 	out := make([]domain, 0, len(fn.Params))
-	for _, p := range fn.Params {
+	for i, p := range fn.Params {
+		ids, isID := g.tableDomain(fn, i)
 		switch e, _ := p.Type.Named.(*ir.Enum); {
 		case p.Type.Kind == types.Bool:
 			out = append(out, domain{keys: []string{strconv.FormatBool(false), strconv.FormatBool(true)}})
@@ -29,8 +31,8 @@ func (g *gen) domains(fn *ir.ExportFn) []domain {
 				d.keys = append(d.keys, enumKey(e, m))
 			}
 			out = append(out, d)
-		case g.tableDomain(p.Type) != nil:
-			out = append(out, domain{keys: g.tableDomain(p.Type), id: true})
+		case isID:
+			out = append(out, domain{keys: ids, id: true})
 		default:
 			g.malformed(lookupParams, fn.Name) // E8013 refParam: a data-mode finite parameter is a Bool or an enum
 		}
@@ -38,17 +40,31 @@ func (g *gen) domains(fn *ir.ExportFn) []domain {
 	return out
 }
 
-// tableDomain is a baked lookup's table-id parameter's domain, the table's keys in entry order; nil for any other (E8019 ForeignTableLookupParam refuses another package's).
-func (g *gen) tableDomain(t ir.TypeRef) []string {
-	if g.pl.IDTable(t) == nil || t.Ref.Pkg != g.p.Name {
-		return nil
+// tableDomain is parameter i's domain when it is a table id with an id enum, the table's keys in entry order: this package's table's ids, another package's from the lookup's Domains, which stage E enumerates whatever receivers exist (CODEGEN.md §5.10). False for any other parameter.
+func (g *gen) tableDomain(fn *ir.ExportFn, i int) ([]string, bool) {
+	t := fn.Params[i].Type
+	if _, id := g.idEnum(t); !id {
+		return nil, false
 	}
-	for _, v := range g.p.Values {
-		if v.Name == t.Ref.Value && v.Type.Kind == types.Table {
-			return v.IDs
+	if t.Ref.Pkg == g.p.Name {
+		for _, v := range g.p.Values {
+			if v.Name == t.Ref.Value && v.Type.Kind == types.Table {
+				return v.IDs, true
+			}
+		}
+		return nil, false
+	}
+	if i >= len(fn.Domains) { // stage E enumerates every lookup's domains, receivers or not (log-2026-10-06 "U5 review FAIL" 2)
+		g.malformed(lookupParams, fn.Name)
+		return nil, false
+	}
+	var keys []string
+	for _, k := range fn.Domains[i] {
+		if r, ok := k.(*value.Ref); ok {
+			keys = append(keys, r.Key.S)
 		}
 	}
-	return nil
+	return keys, true
 }
 
 // enumKey is a member's wire key: its wire value, or its code with @json(codes) (WIRE.md §5.8).

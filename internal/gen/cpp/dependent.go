@@ -71,6 +71,7 @@ func (g *gen) dependentClass(d *ir.Dependent) {
 	g.h.blank()
 	g.h.line(privateLabel)
 	g.h.linef(1, friendAccessFormat, g.pl.AccessName())
+	g.h.linef(1, friendAccessFormat, g.pl.MakeStruct(g.p.Name))
 	if !g.baked() {
 		g.h.linef(1, friendDependentFormat, n.Decode, g.global(*d.Disc), g.qualifiedOwn(d))
 	}
@@ -90,19 +91,19 @@ func (g *gen) dependentDecodeDecl(d *ir.Dependent) {
 }
 
 // dependentDecoder is Decode<Alias>: the discriminant, read first by the holder, picks the branch through a switch generated from the match; a member whose arm is Never takes no value (CODEGEN.md §5.6; WIRE.md §5.9).
-func (g *gen) dependentDecoder(d *ir.Dependent) {
+func (g *gen) dependentDecoder(d *ir.Dependent, name string) {
 	n := g.pl.Dependent(d)
-	g.c.printf(dependentOpenFormat, n.Decode, g.global(*d.Disc), g.qualifiedOwn(d))
+	g.c.printf(dependentOpenFormat, name, g.global(*d.Disc), g.qualifiedOwn(d))
 	g.c.linef(1, switchFormat, g.switchArg(d))
 	labels := g.discLabels(d)
-	for i, b := range d.Branches {
+	for i := range d.Branches {
 		var mine []string
 		for m, arm := range d.ByMember {
 			if arm == i {
 				mine = append(mine, labels[m])
 			}
 		}
-		g.dependentCase(mine, i, b, n.DefineValue)
+		g.dependentCase(mine, i, d, n.DefineValue)
 	}
 	g.c.linef(1, defaultBreak)
 	g.c.linef(1, closeBrace)
@@ -134,25 +135,41 @@ func (g *gen) discLabels(d *ir.Dependent) []string {
 	return labels
 }
 
-// dependentCase decodes the value as branch i's type into a local, a define key's value into defineValue (DECISIONS 298), then emplaces alternative i.
-func (g *gen) dependentCase(labels []string, i int, b *ir.Branch, defineValue string) {
+// dependentCase decodes the value as branch i's type into a local, a define key's value into defineValue (DECISIONS 298), then emplaces alternative i; a reader of another package's dependent type builds it through the branch's make hook (CODEGEN.md §2.8, §5.14).
+func (g *gen) dependentCase(labels []string, i int, dep *ir.Dependent, defineValue string) {
 	if len(labels) == 0 {
 		return
 	}
+	b := dep.Branches[i]
 	last := len(labels) - 1
 	for _, l := range labels[:last] {
 		g.c.linef(1, caseLabelFormat, l)
 	}
 	g.c.linef(1, caseOpenFormat, labels[last])
-	tmp := fmt.Sprintf(tempFormat, depthTwo)
-	g.c.linef(depthTwo, localFormat, g.global(b.Type), tmp, elemInit(b.Type))
+	tmp, init := fmt.Sprintf(tempFormat, depthTwo), elemInit(b.Type)
+	if _, id := g.idEnum(b.Type); id {
+		init = initBraces
+	}
+	g.c.linef(depthTwo, localFormat, g.global(b.Type), tmp, init)
 	g.decodeValue(depthTwo, sourceVar, keyParam, leaf{t: b.Type, dst: tmp})
+	reader := dep.Pkg != g.p.Name
+	args := []string{fmt.Sprintf(moveFormat, tmp)}
 	if d := ir.DefinesOf(g.p, ir.DefineTarget(b.Type)); d != nil {
-		g.c.linef(depthTwo, defineCallFormat, g.pl.DefinesName(d), quote(ir.DefineTableName(d)), keyParam, tmp, outPrefix+defineValue)
+		dst := outPrefix + defineValue
+		if reader {
+			dst = defineValue
+			g.c.linef(depthTwo, memberFormat, cppInt64, dst, initZero)
+			args = append(args, dst)
+		}
+		g.c.linef(depthTwo, defineCallFormat, g.pl.DefinesName(d), quote(ir.DefineTableName(d)), keyParam, tmp, dst)
 	} else if ir.DefinesRef(b.Type) {
 		g.malformed(defineMissing, g.at)
 	}
-	g.c.linef(depthTwo, emplaceMoveFormat, i, tmp)
+	if reader {
+		g.c.linef(depthTwo, assignFormat, outVar, g.makeCall(dep.Pkg, g.pl.MakeBranchName(dep, b), args))
+	} else {
+		g.c.linef(depthTwo, emplaceMoveFormat, i, tmp)
+	}
 	g.c.linef(depthTwo, returnOk)
 	g.c.linef(1, closeBrace)
 }
@@ -169,7 +186,7 @@ func (g *gen) global(t ir.TypeRef) string {
 	return g.storage(t)
 }
 
-// decodeDependent calls the dependent type's Decode<Alias>, its package's (CODEGEN.md §2.8, §5.6); a dependent value outside a field or its list's elements is refused at stage E (E8019 DependentType).
+// decodeDependent calls the dependent type's Decode<Alias>, or this package's reader of another package's (CODEGEN.md §2.8, §5.6); a dependent value outside a field or its list's elements is refused at stage E (E8019 DependentType).
 func (g *gen) decodeDependent(depth int, src, key string, l leaf) {
 	d, ok := l.t.Named.(*ir.Dependent)
 	if !ok || l.disc == "" {
@@ -178,7 +195,8 @@ func (g *gen) decodeDependent(depth int, src, key string, l leaf) {
 	}
 	call := g.pl.Dependent(d).Decode
 	if d.Pkg != g.p.Name {
-		call = g.qualifier(d.Pkg) + detailPrefix + call
+		g.qualifier(d.Pkg) // its header is included
+		call = g.pl.ReaderName(d)
 	}
 	g.c.linef(depth, dependentCallFormat, call, src, key, l.disc, l.dst)
 }
@@ -191,6 +209,11 @@ func (g *gen) discExpr(fields []*ir.Field, app ir.TypeRef) string {
 		return ""
 	}
 	calls := []string{outVar}
+	if g.dst == "" { // a reader's local holds the first field (CODEGEN.md §2.8)
+		m, err := g.member(path[0].Name)
+		g.fail(err)
+		calls, path = []string{m}, path[1:]
+	}
 	for _, f := range path {
 		calls = append(calls, g.getterName(f)+callSuffix)
 	}

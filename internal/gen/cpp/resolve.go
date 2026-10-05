@@ -119,6 +119,3 @@ type resolved struct {
 func (g *gen) noteSlot(c class, s slot, target *ir.Value) {
 	g.slots[c.key()] = append(g.slots[c.key()], resolved{s, target})
 }
-
-// valueElem is the class of a table's or keyed list's entries.
-func (g *gen) valueElem(v *ir.Value) string { return g.storage(*v.Type.Elem) }

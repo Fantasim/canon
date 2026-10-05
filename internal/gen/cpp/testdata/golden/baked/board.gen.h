@@ -9,6 +9,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -186,6 +187,7 @@ inline ColumnId PickColumn(int64_t n);
 
 namespace detail {
 struct BoardAccess;
+struct BoardMake;
 }  // namespace detail
 
 /// A column of the board.
@@ -198,6 +200,7 @@ public:
 
 private:
     friend struct detail::BoardAccess;
+    friend struct detail::BoardMake;
 
     ColumnId id_{};
     bool retired_ = false;
@@ -211,6 +214,7 @@ public:
 
 private:
     friend struct detail::BoardAccess;
+    friend struct detail::BoardMake;
 
     int64_t x_ = 0;
     int64_t y_ = 0;
@@ -223,6 +227,7 @@ public:
 
 private:
     friend struct detail::BoardAccess;
+    friend struct detail::BoardMake;
 
     int64_t amount_ = 0;
 };
@@ -235,6 +240,7 @@ public:
 
 private:
     friend struct detail::BoardAccess;
+    friend struct detail::BoardMake;
 
     std::variant<RewardCoins, std::monostate> value_;
 };
@@ -279,6 +285,7 @@ public:
 
 private:
     friend struct detail::BoardAccess;
+    friend struct detail::BoardMake;
 
     StatusId id_{};
     bool retired_ = false;
@@ -304,6 +311,7 @@ public:
 
 private:
     friend struct detail::BoardAccess;
+    friend struct detail::BoardMake;
 
     std::string id_;
     bool retired_ = false;
@@ -316,6 +324,7 @@ public:
 
 private:
     friend struct detail::BoardAccess;
+    friend struct detail::BoardMake;
 
     canon::KeyedList<std::string, Slot> slots_;
 };
@@ -327,10 +336,91 @@ public:
 
 private:
     friend struct detail::BoardAccess;
+    friend struct detail::BoardMake;
 
     std::string name_;
     int64_t size_ = 0;
 };
+
+namespace detail {
+struct BoardMake {
+    static ::demo::board::Column Column(std::string title_) {
+        ::demo::board::Column out;
+        out.title_ = std::move(title_);
+        return out;
+    }
+
+    static ::demo::board::Point Point(int64_t x_, int64_t y_) {
+        ::demo::board::Point out;
+        out.x_ = std::move(x_);
+        out.y_ = std::move(y_);
+        return out;
+    }
+
+    static ::demo::board::Reward Reward_Coins(int64_t amount_) {
+        ::demo::board::Reward out;
+        out.value_.emplace<0>(Case_Reward_Coins(std::move(amount_)));
+        return out;
+    }
+
+    static ::demo::board::RewardCoins Case_Reward_Coins(int64_t amount_) {
+        ::demo::board::RewardCoins out;
+        out.amount_ = std::move(amount_);
+        return out;
+    }
+
+    static ::demo::board::Reward Reward_Nothing() {
+        ::demo::board::Reward out;
+        out.value_.emplace<1>();
+        return out;
+    }
+
+    static ::demo::board::Status Status(std::string label_, ::demo::board::ColumnId column_, std::vector<::demo::board::StatusId> next_, ::demo::board::Reward reward_, std::optional<::demo::board::Point> at_, int64_t weight_, bool final_, std::array<int64_t, 3> rank_, std::array<::demo::board::ColumnId, 3> columnFor_);
+
+    static ::demo::board::Slot Slot(int64_t n_) {
+        ::demo::board::Slot out;
+        out.n_ = std::move(n_);
+        return out;
+    }
+
+    static ::demo::board::Shelf Shelf(canon::KeyedList<std::string, ::demo::board::Slot> slots_) {
+        ::demo::board::Shelf out;
+        out.slots_ = std::move(slots_);
+        return out;
+    }
+
+    static ::demo::board::Crew Crew(std::string name_, int64_t size_) {
+        ::demo::board::Crew out;
+        out.name_ = std::move(name_);
+        out.size_ = std::move(size_);
+        return out;
+    }
+
+    static ::demo::board::Column Entry_Column(::demo::board::Column record, ::demo::board::ColumnId id, bool retired) {
+        ::demo::board::Column out;
+        out = std::move(record);
+        out.id_ = std::move(id);
+        out.retired_ = retired;
+        return out;
+    }
+
+    static ::demo::board::Status Entry_Status(::demo::board::Status record, ::demo::board::StatusId id, bool retired) {
+        ::demo::board::Status out;
+        out = std::move(record);
+        out.id_ = std::move(id);
+        out.retired_ = retired;
+        return out;
+    }
+
+    static ::demo::board::Slot Entry_Slot(::demo::board::Slot record, std::string id, bool retired) {
+        ::demo::board::Slot out;
+        out = std::move(record);
+        out.id_ = std::move(id);
+        out.retired_ = retired;
+        return out;
+    }
+};
+}  // namespace detail
 
 /// The columns.
 class Columns {
@@ -412,6 +502,29 @@ const Reward& GetPrize();
 const canon::FlatMap<std::string, Point>& GetPoints();
 const Shelf& GetShelf();
 const Crews& GetCrews();
+
+namespace detail {
+
+inline ::demo::board::Status BoardMake::Status(std::string label_, ::demo::board::ColumnId column_, std::vector<::demo::board::StatusId> next_, ::demo::board::Reward reward_, std::optional<::demo::board::Point> at_, int64_t weight_, bool final_, std::array<int64_t, 3> rank_, std::array<::demo::board::ColumnId, 3> columnFor_) {
+    ::demo::board::Status out;
+    out.label_ = std::move(label_);
+    out.column_ = std::move(column_);
+    out.next_ = std::move(next_);
+    out.reward_ = std::move(reward_);
+    out.at_ = std::move(at_);
+    out.weight_ = std::move(weight_);
+    out.final_ = std::move(final_);
+    out.rank_ = std::move(rank_);
+    out.columnFor_ = std::move(columnFor_);
+    out.column_ref_ = &::demo::board::GetColumns().Get(out.column_);
+    for (const auto& k : out.next_) out.next_ref_.push_back(&::demo::board::GetStatuses().Get(k));
+    for (size_t c = 0; c < 3; ++c) {
+        out.columnFor_ref_[c] = &::demo::board::GetColumns().Get(out.columnFor_[c]);
+    }
+    return out;
+}
+
+}  // namespace detail
 
 namespace detail {
 inline constexpr std::array<int64_t, 3> kVersionOfCells = {1, 2, 2};

@@ -7,6 +7,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -114,6 +115,7 @@ class Event;
 
 namespace detail {
 struct DemoAccess;
+struct DemoMake;
 bool DecodePayload(const nlohmann::json& v, std::string_view key, bool disc, canon::json::Decoder& dec, ::demo::Payload& out);
 bool DecodeMulti(const nlohmann::json& v, std::string_view key, ::demo::Kind3 disc, canon::json::Decoder& dec, ::demo::Multi& out);
 bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, EventType& out);
@@ -130,6 +132,7 @@ public:
 
 private:
     friend struct detail::DemoAccess;
+    friend struct detail::DemoMake;
     friend bool detail::DecodePayload(const nlohmann::json&, std::string_view, bool, canon::json::Decoder&, ::demo::Payload&);
 
     std::variant<std::string, Kind> value_;
@@ -145,6 +148,7 @@ public:
 
 private:
     friend struct detail::DemoAccess;
+    friend struct detail::DemoMake;
     friend bool detail::DecodeMulti(const nlohmann::json&, std::string_view, ::demo::Kind3, canon::json::Decoder&, ::demo::Multi&);
 
     std::variant<std::string, std::string, int32_t> value_;
@@ -157,6 +161,7 @@ public:
 
 private:
     friend struct detail::DemoAccess;
+    friend struct detail::DemoMake;
     friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, EventType&);
 
     Kind3 param_{};
@@ -170,6 +175,7 @@ public:
 
 private:
     friend struct detail::DemoAccess;
+    friend struct detail::DemoMake;
     friend bool detail::DecodeDepth(const nlohmann::json&, std::string_view, ::demo::Kind3, canon::json::Decoder&, ::demo::Depth&);
 
     std::variant<bool, double> value_;
@@ -188,6 +194,7 @@ public:
 
 private:
     friend struct detail::DemoAccess;
+    friend struct detail::DemoMake;
     friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, Event&);
 
     bool active_ = false;
@@ -198,5 +205,70 @@ private:
     Depth deep_;
     std::vector<Payload> many_;
 };
+
+namespace detail {
+struct DemoMake {
+    static ::demo::Payload Payload_False(std::string value_) {
+        ::demo::Payload out;
+        out.value_.emplace<0>(std::move(value_));
+        return out;
+    }
+
+    static ::demo::Payload Payload_True(::demo::Kind value_) {
+        ::demo::Payload out;
+        out.value_.emplace<1>(std::move(value_));
+        return out;
+    }
+
+    static ::demo::Multi Multi_A(std::string value_) {
+        ::demo::Multi out;
+        out.value_.emplace<0>(std::move(value_));
+        return out;
+    }
+
+    static ::demo::Multi Multi_B(std::string value_, int64_t defineValue_) {
+        ::demo::Multi out;
+        out.value_.emplace<1>(std::move(value_));
+        out.defineValue_ = defineValue_;
+        return out;
+    }
+
+    static ::demo::Multi Multi_C(int32_t value_) {
+        ::demo::Multi out;
+        out.value_.emplace<2>(std::move(value_));
+        return out;
+    }
+
+    static ::demo::EventType EventType(::demo::Kind3 param_) {
+        ::demo::EventType out;
+        out.param_ = std::move(param_);
+        return out;
+    }
+
+    static ::demo::Depth Depth_A(bool value_) {
+        ::demo::Depth out;
+        out.value_.emplace<0>(std::move(value_));
+        return out;
+    }
+
+    static ::demo::Depth Depth_B(double value_) {
+        ::demo::Depth out;
+        out.value_.emplace<1>(std::move(value_));
+        return out;
+    }
+
+    static ::demo::Event Event(bool active_, ::demo::Payload payload_, ::demo::Kind3 kind3_, std::optional<::demo::Multi> multi_, ::demo::EventType et_, ::demo::Depth deep_, std::vector<::demo::Payload> many_) {
+        ::demo::Event out;
+        out.active_ = std::move(active_);
+        out.payload_ = std::move(payload_);
+        out.kind3_ = std::move(kind3_);
+        out.multi_ = std::move(multi_);
+        out.et_ = std::move(et_);
+        out.deep_ = std::move(deep_);
+        out.many_ = std::move(many_);
+        return out;
+    }
+};
+}  // namespace detail
 
 }  // namespace demo

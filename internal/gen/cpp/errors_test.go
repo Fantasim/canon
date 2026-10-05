@@ -51,11 +51,11 @@ func refusals() []struct {
 		edit func(*ir.Package, *ir.Emit)
 		want error
 	}{
-		{"embedded mode", func(_ *ir.Package, e *ir.Emit) { e.Mode = ir.ModeEmbedded }, cppgen.ErrUnsupported},
+		{"embedded mode, unbuilt (DECISIONS 320)", func(_ *ir.Package, e *ir.Emit) { e.Mode = ir.ModeEmbedded }, cppgen.ErrMalformed},
 		{"a ref into a load.defines table the IR does not hold", withField(field("j", "j", "", ir.TypeRef{Kind: types.Ref, Key: &tString, Ref: &ir.RefTarget{Coll: types.CollDefines, Pkg: "demo", Value: "jobs"}})), cppgen.ErrMalformed},
 		// unreachable: check refuses it first (E3002, TYPES.md §13.2).
 		{"a non-string literal union", withField(field("u", "u", "", ir.TypeRef{Kind: types.LitUnion, Elem: &tInt})), cppgen.ErrMalformed},
-		{"a legacy struct", func(p *ir.Package, _ *ir.Emit) { thing(p).Cpp.Struct = "ItemProp" }, cppgen.ErrUnsupported},
+		{"a legacy struct, refused first (DECISIONS 320)", func(p *ir.Package, _ *ir.Emit) { thing(p).Cpp.Struct = "ItemProp" }, cppgen.ErrMalformed},
 		{"a json emit", func(_ *ir.Package, e *ir.Emit) { e.Target = ir.TargetJSON }, cppgen.ErrTarget},
 		{"no namespace (§2.1)", func(_ *ir.Package, e *ir.Emit) { e.Namespace = "" }, cppgen.ErrMalformed},
 		{"a list without its element", withField(field("l", "l", "", ir.TypeRef{Kind: types.List})), cppgen.ErrMalformed},
@@ -81,7 +81,6 @@ func refusals() []struct {
 		// unreachable: stage E refuses it first (ir's CallFn (package fns only) and E8013).
 		{"a call to another method", func(p *ir.Package, _ *ir.Emit) { methodCall(p) }, cppgen.ErrMalformed},
 		// unreachable: stage E refuses it first (E8019 ForeignPairsField).
-		{"a pairs record of another package", func(p *ir.Package, _ *ir.Emit) { foreignPairs(p) }, cppgen.ErrMalformed},
 		// unreachable: stage E refuses it first (E8019 InlineFoldedKey).
 		{"an inline case key equal to a parent key but for case", func(p *ir.Package, _ *ir.Emit) { inlineFold(p, "k", "A") }, cppgen.ErrMalformed},
 		// unreachable: stage E refuses it first (E8019 InlineFoldedKey).
@@ -129,6 +128,16 @@ func TestRefusals(t *testing.T) {
 				t.Errorf("Generate: %v, want %v", err, c.want)
 			}
 		})
+	}
+}
+
+// TestUnwrittenHookRefused is log-2026-10-06 "U1 review" 3: a hook its owner does not write is ErrMalformed, never called. Unreachable through Generate: ir plans another package's hooks as written, stage E refusing the use first (E8019 ForeignResolvedRef).
+func TestUnwrittenHookRefused(t *testing.T) {
+	if err := cppgen.WrittenGuard(ir.CppHook{Name: "Thing"}); !errors.Is(err, cppgen.ErrMalformed) {
+		t.Errorf("unwritten: %v, want %v", err, cppgen.ErrMalformed)
+	}
+	if err := cppgen.WrittenGuard(ir.CppHook{Name: "Thing", Written: true}); err != nil {
+		t.Errorf("written: %v", err)
 	}
 }
 
@@ -220,13 +229,6 @@ func severalHolders(p *ir.Package, leftReload, rightReload bool) {
 	key := tInt
 	r := ir.TypeRef{Kind: types.Ref, Key: &key, Ref: &ir.RefTarget{Coll: types.CollLet, Pkg: "demo", Value: "left", Elem: thing(p), Keyed: true}}
 	thing(p).Fields = append(thing(p).Fields, field("peer", "peer", "", r))
-}
-
-func foreignPairs(p *ir.Package) {
-	pair := &ir.Record{Pkg: "other", Name: "Pair", Fields: []*ir.Field{field("k", "k", "", tInt), field("v", "v", "", tInt)}}
-	f := &ir.Field{Name: "ps", Type: listOf(ir.TypeRef{Kind: types.Record, Named: pair}), Pairs: &types.Pairs{Keys: [2]string{"k{i}", "v{i}"}, Slots: 2}}
-	thing(p).Fields = append(thing(p).Fields, f)
-	p.Imports = []*ir.PackageRef{{Name: "other", Emits: []*ir.Emit{{Target: ir.TargetCpp, Dir: "other/out", Namespace: "other"}}}}
 }
 
 func stableCollision(p *ir.Package) {

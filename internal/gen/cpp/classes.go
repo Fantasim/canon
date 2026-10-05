@@ -13,7 +13,11 @@ type class struct {
 	variant   *ir.Variant
 	cs        *ir.Case      // with variant: a case class
 	dependent *ir.Dependent // a dependent type's class (CODEGEN.md §5.6)
+	row       *ir.Record    // this package's row class of another package's record (CODEGEN.md §5.9)
 }
+
+// rowKey keys a row class apart from the record it derives from.
+type rowKey struct{ rec *ir.Record }
 
 // key identifies a class across the sort: the record, the case, the dependent type, or the variant.
 func (c class) key() any {
@@ -24,6 +28,8 @@ func (c class) key() any {
 		return c.cs
 	case c.dependent != nil:
 		return c.dependent
+	case c.row != nil:
+		return rowKey{c.row}
 	}
 	return c.variant
 }
@@ -48,6 +54,8 @@ func (g *gen) className(c class) string {
 		return g.caseName(c.variant, c.cs)
 	case c.dependent != nil:
 		return g.typeName(c.dependent)
+	case c.row != nil:
+		return g.pl.RowName(c.row)
 	}
 	return g.typeName(c.variant)
 }
@@ -61,6 +69,8 @@ func (c class) canonName() string {
 		return c.variant.Name + qnameSep + c.cs.Name
 	case c.dependent != nil:
 		return c.dependent.Name
+	case c.row != nil:
+		return c.row.QName()
 	}
 	return c.variant.Name
 }
@@ -92,9 +102,12 @@ func variantClasses(v *ir.Variant) []class {
 	return out
 }
 
-// sortClasses puts a class before the first class holding it by value, depth first (CODEGEN.md §2.7).
+// sortClasses puts a class before the first class holding it by value, depth first (CODEGEN.md §2.7); a class held only through a list, a map or a boxed optional that itself holds by value a class still being visited is left for later, forward-declared, so an optional or a ref breaks a cycle whatever the declaration order (log-2026-10-06 "U5 review FAIL").
 func (g *gen) sortClasses() {
 	all := g.declared()
+	for _, row := range g.pl.Rows() {
+		all = append(all, class{row: row.Record})
+	}
 	byKey := map[any]class{}
 	for _, c := range all {
 		byKey[c.key()] = c
@@ -109,7 +122,8 @@ func (g *gen) sortClasses() {
 			case !ok, state[d.to] == visited:
 			case state[d.to] == visiting && d.strong:
 				g.malformed(recursiveTypes, c.canonName()) // E8019 RecursiveVariantCase, RecordFieldCycle
-			case state[d.to] != visiting:
+			case state[d.to] == visiting, !d.strong && g.holdsVisiting(d.to, state, byKey, map[any]bool{}):
+			default:
 				visit(target)
 			}
 		}
@@ -121,6 +135,24 @@ func (g *gen) sortClasses() {
 			visit(c)
 		}
 	}
+}
+
+// holdsVisiting reports that the class of key is one still being visited, or holds one by value, itself or through the classes it holds by value.
+func (g *gen) holdsVisiting(key any, state map[any]int, byKey map[any]class, seen map[any]bool) bool {
+	if state[key] == visiting {
+		return true
+	}
+	c, ok := byKey[key]
+	if !ok || state[key] == visited || seen[key] {
+		return false
+	}
+	seen[key] = true
+	for _, d := range g.deps(c) {
+		if d.strong && g.holdsVisiting(d.to, state, byKey, seen) {
+			return true
+		}
+	}
+	return false
 }
 
 // dep is a class another one holds: strong when held directly, weak through a list.
@@ -159,7 +191,12 @@ func typeDeps(t ir.TypeRef, strong bool, out []dep) []dep {
 		return append(out, dep{to: t.Named, strong: strong})
 	case t.Elem == nil:
 		return out
-	case t.Kind == types.List, t.Kind == types.Map, t.Kind == types.Table:
+	case t.Kind == types.Table:
+		if rec, ok := t.Elem.Named.(*ir.Record); ok {
+			out = append(out, dep{to: rowKey{rec}})
+		}
+		return typeDeps(*t.Elem, false, out)
+	case t.Kind == types.List, t.Kind == types.Map:
 		return typeDeps(*t.Elem, false, out)
 	case t.Kind == types.Optional:
 		return typeDeps(*t.Elem, strong, out)
@@ -214,6 +251,9 @@ func (g *gen) declareNames() {
 			g.declareEnum(g.kindName(c.variant), c.variant.Name)
 		}
 	}
+	for _, row := range g.pl.Rows() {
+		g.declare(g.pl.RowName(row.Record), row.Origin)
+	}
 	for _, c := range g.p.Consts {
 		g.declare(g.pl.ConstName(c), c.Name)
 	}
@@ -265,6 +305,9 @@ func (g *gen) forwards() {
 	var names []string
 	for _, c := range g.declared() {
 		names = append(names, g.className(c))
+	}
+	for _, row := range g.pl.Rows() {
+		names = append(names, g.pl.RowName(row.Record))
 	}
 	for _, v := range g.values {
 		if ir.IsContainer(v) {

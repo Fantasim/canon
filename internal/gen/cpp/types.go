@@ -45,7 +45,7 @@ func (g *gen) publicDecoders() {
 		return
 	}
 	for _, c := range g.classes {
-		if c.cs == nil && c.dependent == nil {
+		if c.cs == nil && c.dependent == nil && c.row == nil {
 			name := g.className(c)
 			g.c.printf(publicDecodeText, name, ir.CppDecode, quote(name), quote(dollar))
 		}

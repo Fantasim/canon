@@ -6,6 +6,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
 
 #include <nlohmann/json_fwd.hpp>
 
@@ -67,6 +68,7 @@ class Window;
 
 namespace detail {
 struct TimeAccess;
+struct TimeMake;
 bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, TimeOfDay& out);
 bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Window& out);
 }  // namespace detail
@@ -79,6 +81,7 @@ public:
 
 private:
     friend struct detail::TimeAccess;
+    friend struct detail::TimeMake;
     friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, TimeOfDay&);
 
     int64_t hour_ = 0;
@@ -94,11 +97,31 @@ public:
 
 private:
     friend struct detail::TimeAccess;
+    friend struct detail::TimeMake;
     friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, Window&);
 
     Weekday day_{};
     TimeOfDay startUtc_;
     TimeOfDay endUtc_;
 };
+
+namespace detail {
+struct TimeMake {
+    static ::sov::time::TimeOfDay TimeOfDay(int64_t hour_, int64_t minute_) {
+        ::sov::time::TimeOfDay out;
+        out.hour_ = std::move(hour_);
+        out.minute_ = std::move(minute_);
+        return out;
+    }
+
+    static ::sov::time::Window Window(::sov::time::Weekday day_, ::sov::time::TimeOfDay startUtc_, ::sov::time::TimeOfDay endUtc_) {
+        ::sov::time::Window out;
+        out.day_ = std::move(day_);
+        out.startUtc_ = std::move(startUtc_);
+        out.endUtc_ = std::move(endUtc_);
+        return out;
+    }
+};
+}  // namespace detail
 
 }  // namespace sov::time

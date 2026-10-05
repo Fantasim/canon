@@ -22,6 +22,11 @@ constexpr std::array<std::pair<std::string_view, int64_t>, 2> kMonstersDefines =
     {"MI_BANG1", 44},
 }};
 
+namespace {
+[[maybe_unused]] bool Read_Sovcommon_Time_Window(const nlohmann::json& v, canon::json::Decoder& dec, ::sov::time::Window& out);
+[[maybe_unused]] bool Read_Sovcommon_Time_TimeOfDay(const nlohmann::json& v, canon::json::Decoder& dec, ::sov::time::TimeOfDay& out);
+}  // namespace
+
 bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Rect& out) {
     if (!canon::json::detail::Object(v, dec)) return false;
     dec.Float(v, "left", out.left_);
@@ -144,7 +149,7 @@ bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Event& out) {
             for (size_t i2 = 0; i2 < (*x1).size(); ++i2) {
                 ::sov::time::Window e2;
                 dec.Push("schedule[" + std::to_string(i2) + "]");
-                ::sov::time::detail::Decode((*x1)[i2], dec, e2);
+                Read_Sovcommon_Time_Window((*x1)[i2], dec, e2);
                 dec.Pop();
                 out.schedule_.push_back(std::move(e2));
             }
@@ -253,6 +258,42 @@ bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Picks& out) {
     }
     return dec.Ok();
 }
+
+namespace {
+
+bool Read_Sovcommon_Time_Window(const nlohmann::json& v, canon::json::Decoder& dec, ::sov::time::Window& out) {
+    if (!canon::json::detail::Object(v, dec)) return false;
+    ::sov::time::Weekday day_{};
+    ::sov::time::TimeOfDay startUtc_;
+    ::sov::time::TimeOfDay endUtc_;
+    dec.Enum(v, "day", &::sov::time::WeekdayFromWire, day_);
+    if (const nlohmann::json* x1 = dec.Required(v, "startUtc")) {
+        dec.Push("startUtc");
+        Read_Sovcommon_Time_TimeOfDay((*x1), dec, startUtc_);
+        dec.Pop();
+    }
+    if (const nlohmann::json* x1 = dec.Required(v, "endUtc")) {
+        dec.Push("endUtc");
+        Read_Sovcommon_Time_TimeOfDay((*x1), dec, endUtc_);
+        dec.Pop();
+    }
+    if (!dec.Ok()) return false;
+    out = ::sov::time::detail::TimeMake::Window(std::move(day_), std::move(startUtc_), std::move(endUtc_));
+    return true;
+}
+
+bool Read_Sovcommon_Time_TimeOfDay(const nlohmann::json& v, canon::json::Decoder& dec, ::sov::time::TimeOfDay& out) {
+    if (!canon::json::detail::Object(v, dec)) return false;
+    int64_t hour_ = 0;
+    int64_t minute_ = 0;
+    dec.Int(v, "hour", hour_);
+    dec.Int(v, "minute", minute_);
+    if (!dec.Ok()) return false;
+    out = ::sov::time::detail::TimeMake::TimeOfDay(std::move(hour_), std::move(minute_));
+    return true;
+}
+
+}  // namespace
 
 struct EventsAccess {
 };

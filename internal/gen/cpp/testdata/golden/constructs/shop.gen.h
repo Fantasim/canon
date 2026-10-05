@@ -10,6 +10,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -318,6 +319,7 @@ inline int64_t IncTwice(int64_t x);
 
 namespace detail {
 struct ShopAccess;
+struct ShopMake;
 bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Point& out);
 bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Reward& out);
 bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, RewardItem& out);
@@ -385,6 +387,7 @@ public:
 
 private:
     friend struct detail::ShopAccess;
+    friend struct detail::ShopMake;
     friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, Point&);
 
     int16_t x_ = 0;
@@ -401,6 +404,7 @@ public:
 
 private:
     friend struct detail::ShopAccess;
+    friend struct detail::ShopMake;
     friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, RewardItem&);
 
     std::string itemId_;
@@ -413,6 +417,7 @@ public:
 
 private:
     friend struct detail::ShopAccess;
+    friend struct detail::ShopMake;
     friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, Coins&);
 
     uint64_t amount_ = 0;
@@ -427,6 +432,7 @@ public:
 
 private:
     friend struct detail::ShopAccess;
+    friend struct detail::ShopMake;
     friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, Reward&);
 
     std::variant<RewardItem, Coins, std::monostate> value_;
@@ -521,6 +527,7 @@ public:
 
 private:
     friend struct detail::ShopAccess;
+    friend struct detail::ShopMake;
     friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, Item&);
 
     std::string id_;
@@ -562,6 +569,7 @@ public:
 
 private:
     friend struct detail::ShopAccess;
+    friend struct detail::ShopMake;
     friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, Bonus&);
     friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, Shelf&);
 
@@ -585,6 +593,7 @@ public:
 
 private:
     friend struct detail::ShopAccess;
+    friend struct detail::ShopMake;
     friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, Shelf&);
 
     std::string id_;
@@ -606,6 +615,7 @@ public:
 
 private:
     friend struct detail::ShopAccess;
+    friend struct detail::ShopMake;
     friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, BadgeStar&);
 
     std::string of_;
@@ -619,6 +629,7 @@ public:
 
 private:
     friend struct detail::ShopAccess;
+    friend struct detail::ShopMake;
     friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, Badge&);
 
     std::variant<BadgeStar, std::monostate> value_;
@@ -638,6 +649,7 @@ public:
 
 private:
     friend struct detail::ShopAccess;
+    friend struct detail::ShopMake;
     friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, Node&);
 
     std::string label_;
@@ -668,6 +680,7 @@ public:
 
 private:
     friend struct detail::ShopAccess;
+    friend struct detail::ShopMake;
     friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, Config&);
 
     std::string motd_;
@@ -683,6 +696,69 @@ private:
     std::optional<std::vector<std::string>> alts_;
     std::optional<std::vector<const Item*>> alts_ref_;
 };
+
+namespace detail {
+struct ShopMake {
+    static ::demo::shop::Point Point(int16_t x_, int16_t y_) {
+        ::demo::shop::Point out;
+        out.x_ = std::move(x_);
+        out.y_ = std::move(y_);
+        return out;
+    }
+
+    static ::demo::shop::Reward Reward_Item(std::string itemId_, int32_t count_) {
+        ::demo::shop::Reward out;
+        out.value_.emplace<0>(Case_Reward_Item(std::move(itemId_), std::move(count_)));
+        return out;
+    }
+
+    static ::demo::shop::RewardItem Case_Reward_Item(std::string itemId_, int32_t count_) {
+        ::demo::shop::RewardItem out;
+        out.itemId_ = std::move(itemId_);
+        out.count_ = std::move(count_);
+        return out;
+    }
+
+    static ::demo::shop::Reward Reward_Coins(uint64_t amount_) {
+        ::demo::shop::Reward out;
+        out.value_.emplace<1>(Case_Reward_Coins(std::move(amount_)));
+        return out;
+    }
+
+    static ::demo::shop::Coins Case_Reward_Coins(uint64_t amount_) {
+        ::demo::shop::Coins out;
+        out.amount_ = std::move(amount_);
+        return out;
+    }
+
+    static ::demo::shop::Reward Reward_Nothing() {
+        ::demo::shop::Reward out;
+        out.value_.emplace<2>();
+        return out;
+    }
+
+    static ::demo::shop::Bonus Bonus(::demo::shop::Tone stat_, int64_t amount_) {
+        ::demo::shop::Bonus out;
+        out.stat_ = std::move(stat_);
+        out.amount_ = std::move(amount_);
+        return out;
+    }
+
+    static ::demo::shop::Badge Badge_Plain() {
+        ::demo::shop::Badge out;
+        out.value_.emplace<1>();
+        return out;
+    }
+
+    static ::demo::shop::Item Entry_Item(::demo::shop::Item record, std::string id, bool retired) {
+        ::demo::shop::Item out;
+        out = std::move(record);
+        out.id_ = std::move(id);
+        out.retired_ = retired;
+        return out;
+    }
+};
+}  // namespace detail
 
 /// Everything on sale.
 class Items {

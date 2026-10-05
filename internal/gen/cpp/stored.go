@@ -113,6 +113,8 @@ func (g *gen) ordinalLines(d domain, arg, ord string) []string {
 	switch {
 	case d.enum == nil && !d.id:
 		return []string{fmt.Sprintf(ordinalFormat, ord, arg)}
+	case len(d.keys) == 0: // an empty domain holds no argument; the abort stays conditional, so a constexpr lookup stays valid (CODEGEN.md §5.10)
+		return []string{fmt.Sprintf(ordinalFormat, ord, arg), fmt.Sprintf(emptyCheckFormat, ord)}
 	case d.id || d.enum.Codes == nil:
 		return []string{fmt.Sprintf(ordinalFormat, ord, arg), fmt.Sprintf(ordinalCheckFormat, ord, len(d.keys))}
 	}

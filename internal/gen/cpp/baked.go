@@ -85,6 +85,9 @@ func (g *gen) entryIndex(v *ir.Value) map[value.Key]int {
 
 // instanceOf is fn's precomputed result for the receiver r.
 func (g *gen) instanceOf(fn *ir.ExportFn, r *value.Record) *ir.Instance {
+	if _, indexed := g.bk.instances[fn]; !indexed { // a method of another package's class (CODEGEN.md §5.14)
+		g.indexInstances(fn)
+	}
 	if in := g.bk.instances[fn][r]; in != nil {
 		return in
 	}
@@ -230,8 +233,12 @@ func (g *gen) fillData(w *writer, v *ir.Value) {
 	}
 	for i, r := range g.rows(v) {
 		w.linef(1, openBrace)
-		w.linef(depthTwo, rowRefFormat, rowVar(depthTwo), g.typeName(rec), data, i)
-		g.fillRecord(at{w, depthTwo}, rowVar(depthTwo), class{rec: rec}, r)
+		w.linef(depthTwo, rowRefFormat, rowVar(depthTwo), g.rowClass(rec), data, i)
+		if rec.Pkg != g.p.Name {
+			g.fillRow(at{w, depthTwo}, rowVar(depthTwo), rec, r, g.rowIDLit(rec, r))
+		} else {
+			g.fillRecord(at{w, depthTwo}, rowVar(depthTwo), class{rec: rec}, r)
+		}
 		w.linef(1, closeBrace)
 	}
 }

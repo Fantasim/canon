@@ -9,6 +9,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 #include <nlohmann/json_fwd.hpp>
@@ -125,6 +126,7 @@ class Boards;
 
 namespace detail {
 struct MapsAccess;
+struct MapsMake;
 bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Slot& out);
 bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Board& out);
 }  // namespace detail
@@ -140,6 +142,7 @@ public:
 
 private:
     friend struct detail::MapsAccess;
+    friend struct detail::MapsMake;
     friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, Slot&);
 
     int64_t n_ = 0;
@@ -200,6 +203,7 @@ public:
 
 private:
     friend struct detail::MapsAccess;
+    friend struct detail::MapsMake;
     friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, Board&);
 
     std::string id_;
@@ -224,6 +228,42 @@ private:
     canon::FlatMap<std::string, int64_t> byBoardTotals_;
     std::array<canon::FlatMap<std::string, int64_t>, 2> perTone_{};
 };
+
+namespace detail {
+struct MapsMake {
+    static ::demo::maps::Board Board(canon::FlatMap<::demo::maps::Element, int64_t> power_, canon::FlatMap<std::string, std::string> names_, canon::FlatMap<int64_t, std::string> levels_, canon::FlatMap<std::string, std::vector<int64_t>> groups_, canon::FlatMap<std::string, ::demo::maps::Slot> slots_, std::optional<canon::FlatMap<std::string, int64_t>> extra_, canon::FlatMap<::demo::maps::Rank, int64_t> ranks_, canon::FlatMap<std::string, int64_t> tones_, canon::FlatMap<std::string, ::demo::maps::Slot> byLit_, canon::FlatMap<std::string, std::string> moods_, canon::FlatMap<int8_t, std::string> small_, canon::FlatMap<std::string, int64_t> byBoard_, canon::FlatMap<int64_t, std::string> byNode_, canon::FlatMap<std::string, canon::FlatMap<int64_t, std::string>> deep_, canon::FlatMap<::demo::maps::Rank, ::demo::maps::Slot> rankSlots_, canon::FlatMap<::demo::maps::Element, ::demo::maps::Slot> elemSlots_, canon::FlatMap<std::string, int64_t> totals_, canon::FlatMap<std::string, int64_t> byBoardTotals_, std::array<canon::FlatMap<std::string, int64_t>, 2> perTone_) {
+        ::demo::maps::Board out;
+        out.power_ = std::move(power_);
+        out.names_ = std::move(names_);
+        out.levels_ = std::move(levels_);
+        out.groups_ = std::move(groups_);
+        out.slots_ = std::move(slots_);
+        out.extra_ = std::move(extra_);
+        out.ranks_ = std::move(ranks_);
+        out.tones_ = std::move(tones_);
+        out.byLit_ = std::move(byLit_);
+        out.moods_ = std::move(moods_);
+        out.small_ = std::move(small_);
+        out.byBoard_ = std::move(byBoard_);
+        out.byNode_ = std::move(byNode_);
+        out.deep_ = std::move(deep_);
+        out.rankSlots_ = std::move(rankSlots_);
+        out.elemSlots_ = std::move(elemSlots_);
+        out.totals_ = std::move(totals_);
+        out.byBoardTotals_ = std::move(byBoardTotals_);
+        out.perTone_ = std::move(perTone_);
+        return out;
+    }
+
+    static ::demo::maps::Board Entry_Board(::demo::maps::Board record, std::string id, bool retired) {
+        ::demo::maps::Board out;
+        out = std::move(record);
+        out.id_ = std::move(id);
+        out.retired_ = retired;
+        return out;
+    }
+};
+}  // namespace detail
 
 /// The boards.
 class Boards {

@@ -1,0 +1,1 @@
+{"$schema": "game.core.LevelRange@00000002", "rows": [{"$id": "low", "min": 1, "max": 3, "labels": [], "tone": "soft", "status": "open", "$width": 2}, {"$id": "high", "$retired": true, "min": 4, "max": 8, "labels": [], "tone": "loud", "status": "closed", "$width": 4}]}

@@ -28,7 +28,7 @@ func (g *gen) decoders() {
 	for _, c := range g.declared() {
 		leave := g.enter(c.canonName())
 		if c.dependent != nil {
-			g.dependentDecoder(c.dependent)
+			g.dependentDecoder(c.dependent, g.pl.Dependent(c.dependent).Decode)
 			leave()
 			continue
 		}
@@ -54,13 +54,18 @@ func (g *gen) decodeRecord(c class) {
 	if !anyFieldDecodes(fields) && !hasStored(fns) {
 		g.c.linef(1, unusedFormat, outVar)
 	}
+	g.decodeBody(fields, fns)
+}
+
+// decodeBody reads each field at its wire path, then each stored fn's `$` key, into what g.dst names.
+func (g *gen) decodeBody(fields []*ir.Field, fns []*ir.ExportFn) {
 	for _, f := range fields {
 		g.decodeField(f, fields)
 	}
 	for _, fn := range fns {
 		m, err := g.member(fn.Name)
 		t, optional := resultType(fn.Result)
-		l := leaf{t: t, optional: optional, dst: outPrefix + m}
+		l := leaf{t: t, optional: optional, dst: g.dst + m}
 		switch fn.Kind {
 		case ir.FnPrecomputed:
 			g.fail(err)
@@ -103,20 +108,20 @@ func (g *gen) decodeField(f *ir.Field, fields []*ir.Field) {
 	g.fail(err)
 	switch {
 	case f.Pairs != nil:
-		g.decodePairs(f, outPrefix+m)
+		g.decodePairs(f, g.dst+m)
 		return
 	case f.Inline && (f.Type.Kind != types.Variant || f.Optional):
 		g.malformed(inlineFields, f.Name) // check's E3316 refuses it
 		return
 	case f.Inline:
-		g.c.linef(1, decodeCallFormat, g.decodeFunc(f.Type), sourceVar, outPrefix+m)
+		g.c.linef(1, decodeCallFormat, g.decodeFunc(f.Type), sourceVar, g.dst+m)
 		return
 	case len(f.WirePath) == 0:
 		g.fail(fmt.Errorf("%w: field %s without a wire path", ErrMalformed, f.Name))
 		return
 	}
 	obj, depth := g.openPath(f, fields)
-	l := leaf{t: f.Type, optional: f.Optional, none: f.NoneWire, unit: f.Unit, enc: f.Enc, dst: outPrefix + m, def: g.fieldDefault(f)}
+	l := leaf{t: f.Type, optional: f.Optional, none: f.NoneWire, unit: f.Unit, enc: f.Enc, dst: g.dst + m, def: g.fieldDefault(f)}
 	if g.boxed[f] {
 		l.box = g.storage(f.Type)
 	}
@@ -125,7 +130,7 @@ func (g *gen) decodeField(f *ir.Field, fields []*ir.Field) {
 	}
 	g.decodeKey(depth, obj, quote(f.WirePath[len(f.WirePath)-1]), l)
 	g.closePath(f, depth, l)
-	g.defineLookup(1, f, outPrefix, quote(wireName(f)))
+	g.defineLookup(1, f, g.dst, quote(wireName(f)))
 }
 
 // openPath opens a path's intermediate objects, each on the decoder's path, and returns the innermost; a data loader also checks its keys (WIRE.md §5.5.3).
@@ -264,6 +269,10 @@ func (g *gen) decodeValue(depth int, src, key string, l leaf) {
 	case types.Enum:
 		g.c.linef(depth, decCallFormat, asEnum, src, key, g.shortcutExtra(l), l.dst)
 	case types.Ref:
+		if id, ok := g.foreignKey(l.t); ok {
+			g.decodeEntryID(depth, src, key, id, l.dst)
+			return
+		}
 		g.decodeValue(depth, src, key, leaf{t: *l.t.Key, dst: l.dst})
 	case types.Record, types.Variant:
 		g.decodeObject(depth, src, key, l)
@@ -280,7 +289,7 @@ func (g *gen) decodeValue(depth int, src, key string, l leaf) {
 	case types.Map:
 		g.decodeMap(depth, src, key, l)
 	default:
-		g.refuseKind(l.t.Kind, g.at, typeRefused)
+		g.refuseKind(l.t.Kind, g.at)
 	}
 }
 

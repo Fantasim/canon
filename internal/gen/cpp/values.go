@@ -45,6 +45,7 @@ func (g *gen) detailDecls() {
 	}
 	g.h.line(detailOpen)
 	g.h.printf(accessDeclFormat, g.pl.AccessName())
+	g.h.printf(accessDeclFormat, g.pl.MakeStruct(g.p.Name))
 	for _, c := range g.declared() {
 		if g.baked() {
 			break // nothing is decoded (CODEGEN.md §2.2)
@@ -112,7 +113,7 @@ func (g *gen) containerSpec(v *ir.Value) containerSpec {
 		g.fail(fmt.Errorf("%w: value %s of no record", ErrMalformed, v.Name))
 		return containerSpec{}
 	}
-	s := containerSpec{name: g.pl.ContainerName(v), elem: g.typeName(rec), key: cppString, keyName: idKeyName}
+	s := containerSpec{name: g.pl.ContainerName(v), elem: g.valueElem(v), key: cppString, keyName: idKeyName}
 	if v.Type.KeyedBy != nil {
 		kf := g.keyField(v.Type)
 		if kf == nil {
@@ -265,5 +266,19 @@ func (g *gen) valueClass(v *ir.Value) string {
 func (g *gen) conformanceDecl() {
 	if g.translated() {
 		g.h.printf(conformanceDeclText, g.last, g.pl.RunConformanceName())
+	}
+}
+
+// foreignLoaderDecls declare the free Load<V> of each data-mode value of another package's record, whose class cannot take a static member of this package (CODEGEN.md §5.9, §7.6).
+func (g *gen) foreignLoaderDecls() {
+	wrote := false
+	for _, v := range g.values {
+		if name := g.pl.ForeignLoader(v); name != "" {
+			g.h.linef(0, foreignLoadDeclFormat, g.valueClass(v), name)
+			wrote = true
+		}
+	}
+	if wrote {
+		g.h.blank()
 	}
 }

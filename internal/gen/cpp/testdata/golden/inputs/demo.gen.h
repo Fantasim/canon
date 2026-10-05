@@ -94,6 +94,7 @@ class Config;
 
 namespace detail {
 struct DemoAccess;
+struct DemoMake;
 bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Config& out);
 inline bool DemoInputsLoaded = false;
 namespace DemoInputs {
@@ -131,8 +132,18 @@ public:
 
 private:
     friend struct detail::DemoAccess;
+    friend struct detail::DemoMake;
     friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, Config&);
 };
+
+namespace detail {
+struct DemoMake {
+    static ::demo::Config Config() {
+        ::demo::Config out;
+        return out;
+    }
+};
+}  // namespace detail
 
 bool LoadInputs(std::string& error);
 

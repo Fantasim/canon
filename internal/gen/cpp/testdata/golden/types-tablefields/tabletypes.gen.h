@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <utility>
 
 #include <nlohmann/json_fwd.hpp>
 
@@ -16,6 +17,7 @@ class Shelf;
 
 namespace detail {
 struct TabletypesAccess;
+struct TabletypesMake;
 bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Slot& out);
 bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Shelf& out);
 }  // namespace detail
@@ -29,6 +31,7 @@ public:
 
 private:
     friend struct detail::TabletypesAccess;
+    friend struct detail::TabletypesMake;
     friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, Slot&);
     friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, Shelf&);
 
@@ -47,6 +50,7 @@ public:
 
 private:
     friend struct detail::TabletypesAccess;
+    friend struct detail::TabletypesMake;
     friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, Shelf&);
 
     std::string title_;
@@ -54,5 +58,32 @@ private:
     canon::KeyedList<std::string, Slot> extra_;
     std::optional<canon::KeyedList<std::string, Slot>> spare_;
 };
+
+namespace detail {
+struct TabletypesMake {
+    static ::demo::tabletypes::Slot Slot(int64_t n_) {
+        ::demo::tabletypes::Slot out;
+        out.n_ = std::move(n_);
+        return out;
+    }
+
+    static ::demo::tabletypes::Shelf Shelf(std::string title_, canon::KeyedList<std::string, ::demo::tabletypes::Slot> slots_, canon::KeyedList<std::string, ::demo::tabletypes::Slot> extra_, std::optional<canon::KeyedList<std::string, ::demo::tabletypes::Slot>> spare_) {
+        ::demo::tabletypes::Shelf out;
+        out.title_ = std::move(title_);
+        out.slots_ = std::move(slots_);
+        out.extra_ = std::move(extra_);
+        out.spare_ = std::move(spare_);
+        return out;
+    }
+
+    static ::demo::tabletypes::Slot Entry_Slot(::demo::tabletypes::Slot record, std::string id, bool retired) {
+        ::demo::tabletypes::Slot out;
+        out = std::move(record);
+        out.id_ = std::move(id);
+        out.retired_ = retired;
+        return out;
+    }
+};
+}  // namespace detail
 
 }  // namespace demo::tabletypes

@@ -2,8 +2,10 @@
 #include "app.gen.h"
 
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -12,6 +14,13 @@
 namespace demo::app {
 
 namespace detail {
+
+namespace {
+[[maybe_unused]] bool Read_Demo_Base_Pt(const nlohmann::json& v, canon::json::Decoder& dec, ::demo::base::Pt& out);
+[[maybe_unused]] bool Read_Demo_Base_Paint(const nlohmann::json& v, canon::json::Decoder& dec, ::demo::base::Paint& out);
+[[maybe_unused]] bool Read_Demo_Base_PaintSolid(const nlohmann::json& v, canon::json::Decoder& dec, ::demo::base::PaintSolid& out);
+[[maybe_unused]] bool Read_Demo_Base_Shade(const nlohmann::json& v, std::string_view key, ::demo::base::Color disc, canon::json::Decoder& dec, ::demo::base::Shade& out);
+}  // namespace
 
 bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, demo& out) {
     if (!canon::json::detail::Keys(v, dec, {"n"})) return false;
@@ -25,7 +34,7 @@ bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Order& out) {
     dec.Enum(v, "color", &::demo::base::ColorFromWire, out.color_);
     if (const nlohmann::json* x1 = dec.Required(v, "at")) {
         dec.Push("at");
-        ::demo::base::detail::Decode((*x1), dec, out.at_);
+        Read_Demo_Base_Pt((*x1), dec, out.at_);
         dec.Pop();
     }
     if (const nlohmann::json* x1 = dec.Required(v, "trail")) {
@@ -35,22 +44,22 @@ bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Order& out) {
             for (size_t i2 = 0; i2 < (*x1).size(); ++i2) {
                 ::demo::base::Pt e2;
                 dec.Push("trail[" + std::to_string(i2) + "]");
-                ::demo::base::detail::Decode((*x1)[i2], dec, e2);
+                Read_Demo_Base_Pt((*x1)[i2], dec, e2);
                 dec.Pop();
                 out.trail_.push_back(std::move(e2));
             }
         }
     }
-    ::demo::base::detail::Decode(v, dec, out.paint_);
+    Read_Demo_Base_Paint(v, dec, out.paint_);
     if (const nlohmann::json* x1 = dec.Optional(v, "alt")) {
         auto& o1 = out.alt_.emplace();
         dec.Push("alt");
-        ::demo::base::detail::Decode((*x1), dec, o1);
+        Read_Demo_Base_Pt((*x1), dec, o1);
         dec.Pop();
     }
     if (const nlohmann::json* x1 = dec.Optional(v, "shade")) {
         auto& o1 = out.shade_.emplace();
-        ::demo::base::detail::DecodeShade((*x1), "shade", out.GetColor(), dec, o1);
+        Read_Demo_Base_Shade((*x1), "shade", out.GetColor(), dec, o1);
     }
     if (const nlohmann::json* f0 = dec.Object(v, "$hue")) {
         dec.Push("$hue");
@@ -65,6 +74,71 @@ bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Order& out) {
     }
     return dec.Ok();
 }
+
+namespace {
+
+bool Read_Demo_Base_Pt(const nlohmann::json& v, canon::json::Decoder& dec, ::demo::base::Pt& out) {
+    if (!canon::json::detail::Keys(v, dec, {"x"})) return false;
+    int32_t x_ = 0;
+    if (const nlohmann::json* x1 = dec.Required(v, "x")) {
+        int64_t n = 0;
+        if (dec.AsIntIn((*x1), "x", -2147483648, 2147483647, n)) x_ = static_cast<int32_t>(n);
+    }
+    if (!dec.Ok()) return false;
+    out = ::demo::base::detail::BaseMake::Pt(std::move(x_));
+    return true;
+}
+
+bool Read_Demo_Base_Paint(const nlohmann::json& v, canon::json::Decoder& dec, ::demo::base::Paint& out) {
+    if (!canon::json::detail::Keys(v, dec, {"kind"})) return false;
+    std::string tag;
+    if (!dec.String(v, "kind", tag)) return false;
+    if (tag == "solid") {
+        if (!canon::json::detail::Keys(v, dec, {"kind", "tint"})) return false;
+        ::demo::base::Color tint_{};
+        dec.Enum(v, "tint", &::demo::base::ColorFromWire, tint_);
+        if (!dec.Ok()) return false;
+        out = ::demo::base::detail::BaseMake::Paint_Solid(std::move(tint_));
+        return true;
+    } else if (tag == "clear") {
+        out = ::demo::base::detail::BaseMake::Paint_Clear();
+    } else {
+        dec.Fail("kind", "unknown case " + tag);
+    }
+    return dec.Ok();
+}
+
+bool Read_Demo_Base_PaintSolid(const nlohmann::json& v, canon::json::Decoder& dec, ::demo::base::PaintSolid& out) {
+    if (!canon::json::detail::Keys(v, dec, {"kind", "tint"})) return false;
+    ::demo::base::Color tint_{};
+    dec.Enum(v, "tint", &::demo::base::ColorFromWire, tint_);
+    if (!dec.Ok()) return false;
+    out = ::demo::base::detail::BaseMake::Case_Paint_Solid(std::move(tint_));
+    return true;
+}
+
+bool Read_Demo_Base_Shade(const nlohmann::json& v, std::string_view key, ::demo::base::Color disc, canon::json::Decoder& dec, ::demo::base::Shade& out) {
+    switch (disc) {
+    case ::demo::base::Color::red: {
+        std::string t2;
+        dec.AsString(v, key, t2);
+        out = ::demo::base::detail::BaseMake::Shade_Red(std::move(t2));
+        return dec.Ok();
+    }
+    case ::demo::base::Color::green: {
+        int32_t t2{};
+        int64_t n = 0;
+        if (dec.AsIntIn(v, key, -2147483648, 2147483647, n)) t2 = static_cast<int32_t>(n);
+        out = ::demo::base::detail::BaseMake::Shade_Green(std::move(t2));
+        return dec.Ok();
+    }
+    default: break;
+    }
+    dec.Fail(key, "no branch for this value");
+    return false;
+}
+
+}  // namespace
 
 struct AppAccess {
     static bool LoadOrders(const std::string& path, Orders& out, std::string& error) {

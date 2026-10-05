@@ -7,6 +7,7 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 #include <nlohmann/json_fwd.hpp>
@@ -26,6 +27,7 @@ class PipelineStore;
 
 namespace detail {
 struct PipelineAccess;
+struct PipelineMake;
 bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Potion& out);
 
 // Translated from pipeline/potion.canon (Potion.healFor). The method and the
@@ -60,6 +62,7 @@ public:
 
 private:
     friend struct detail::PipelineAccess;
+    friend struct detail::PipelineMake;
     friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, Potion&);
 
     std::string id_;
@@ -69,6 +72,21 @@ private:
     int64_t stack_ = 0;
     bool isStrong_ = false;
 };
+
+namespace detail {
+struct PipelineMake {
+    static ::sov::gen::Potion Potion(std::string id_, std::string name_, int64_t heal_, std::chrono::milliseconds cooldown_, int64_t stack_, bool isStrong_) {
+        ::sov::gen::Potion out;
+        out.id_ = std::move(id_);
+        out.name_ = std::move(name_);
+        out.heal_ = std::move(heal_);
+        out.cooldown_ = std::move(cooldown_);
+        out.stack_ = std::move(stack_);
+        out.isStrong_ = std::move(isStrong_);
+        return out;
+    }
+};
+}  // namespace detail
 
 /// One JSON file per potion, as today. Each file is one entry; findings point into it.
 /// Reloadable: tuned live during balance sessions, and runtimes keep potion ids, never

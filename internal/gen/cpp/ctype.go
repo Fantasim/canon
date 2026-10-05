@@ -60,7 +60,7 @@ func (g *gen) storage(t ir.TypeRef) string {
 	case types.Table:
 		return g.tableStorage(t)
 	default:
-		g.refuseKind(t.Kind, g.at, typeRefused)
+		g.refuseKind(t.Kind, g.at)
 		return cppInvalid
 	}
 }
@@ -139,14 +139,45 @@ func (g *gen) byValue(t ir.TypeRef) bool {
 	}
 }
 
-// idEnum is the id enum keying a ref of a baked emit, qualified when imported (CODEGEN.md §5.3, §5.8).
+// idEnum is the id enum keying a ref of a baked emit, the table value's package's, qualified when imported (CODEGEN.md §5.3, §5.8); in another package's class, as its owner lays it out (§5.14).
 func (g *gen) idEnum(t ir.TypeRef) (string, bool) {
+	if g.view != "" && g.view != g.p.Name {
+		return g.viewIDEnum(t)
+	}
 	v := g.pl.IDTable(t)
 	if v == nil {
 		return "", false
 	}
 	rec, _ := v.Type.Elem.Named.(*ir.Record)
-	return g.qualifier(rec.Pkg) + g.pl.IDName(rec), true
+	return g.qualifier(t.Ref.Pkg) + g.pl.IDName(rec), true
+}
+
+// viewIDEnum is idEnum as package g.view's emit plans it, as ir's IDTable does: g.view's emit is baked, and the table's package is g.view or one whose cpp emit is baked or embedded (CODEGEN.md §5.3; gen/cpp writes no embedded emit, DECISIONS 320).
+func (g *gen) viewIDEnum(t ir.TypeRef) (string, bool) {
+	r := t.Ref
+	if t.Kind != types.Ref || r == nil || r.Coll != types.CollLet || r.Local || r.Keyed || !g.viewBaked() || !g.enumIDs(r.Pkg) {
+		return "", false
+	}
+	rec, ok := r.Elem.(*ir.Record)
+	if !ok {
+		return "", false
+	}
+	return g.qualifier(r.Pkg) + g.pl.IDName(rec), true
+}
+
+// viewBaked reports that g.view's cpp emit is baked: ir's IDTable keys its own refs by id enums then only.
+func (g *gen) viewBaked() bool {
+	e := g.importEmit(g.view)
+	return e != nil && e.Mode == ir.ModeBaked
+}
+
+// enumIDs reports a package whose cpp emit keys its tables by id enums: this one when baked, an import whose emit is baked or embedded (CODEGEN.md §2.2).
+func (g *gen) enumIDs(pkg string) bool {
+	if pkg == g.p.Name {
+		return g.baked()
+	}
+	e := g.importEmit(pkg)
+	return e != nil && (e.Mode == ir.ModeBaked || e.Mode == ir.ModeEmbedded)
 }
 
 // getterType is what a getter of t returns (CODEGEN.md §4.1–§4.3).

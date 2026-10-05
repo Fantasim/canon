@@ -397,6 +397,7 @@ const (
 	ordinalVarDecl     = "size_t %s = 0;"
 	ordinalCaseFormat  = "case %s: %s = %d; break;"
 	abortDefault       = "default: std::abort();"
+	emptyCheckFormat   = "if (static_cast<int64_t>(%s) >= 0) std::abort();" // not an unsigned >= 0: -Wtype-limits
 	getterOpenFormat   = "%s %s(%s) const {"
 	initNull           = " = nullptr"
 	derefReturnFormat  = "return *%s;"
@@ -419,6 +420,7 @@ const (
 	slotLetter         = "i"
 	slotVar            = "s"
 	slotElem           = "e"
+	slotPrefix         = "e_" // a pairs slot's locals of another package's record, apart from its reader's
 	slotLoopFormat     = "for (size_t s = 0; s < %d; ++s) {"
 	bitsOpenFormat     = "if (" + jsonDetail + "Bits(%s, dec, %s, %s, n)) {"
 	bitsArrayFormat    = "constexpr %s bits[] = {%s};"

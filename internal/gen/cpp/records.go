@@ -15,6 +15,8 @@ func (g *gen) classDecls() {
 		switch {
 		case c.dependent != nil:
 			g.dependentClass(c.dependent)
+		case c.row != nil:
+			g.rowClassDecl(c.row)
 		case c.variant != nil && c.cs == nil:
 			g.variantClass(c.variant)
 		default:
@@ -72,10 +74,10 @@ func (g *gen) recordClass(c class) {
 	g.h.blank()
 }
 
-// legacy refuses a record mapped onto a hand-written struct: CODEGEN.md §7.8 is M6's.
+// legacy refuses a record mapped onto a hand-written struct: CODEGEN.md §7.8 is M6's, and stage E refuses it first (E8019 LegacyStruct, DECISIONS 320).
 func (g *gen) legacy(r *ir.Record) {
 	if r.Cpp.Struct != "" || r.Cpp.Access != ir.AccessNone {
-		g.unsupported(legacyStructs, r.Name)
+		g.malformed(legacyStructs, r.Name)
 	}
 }
 
@@ -86,6 +88,7 @@ func (g *gen) private(name string, members bool, pairsParents ...string) {
 	}
 	g.h.line(privateLabel)
 	g.h.linef(1, friendAccessFormat, g.pl.AccessName())
+	g.h.linef(1, friendAccessFormat, g.pl.MakeStruct(g.p.Name))
 	for _, n := range append([]string{name}, pairsParents...) {
 		if !g.baked() {
 			g.h.linef(1, friendDecodeFormat, n)

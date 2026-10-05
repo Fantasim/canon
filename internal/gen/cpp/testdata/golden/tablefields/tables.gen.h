@@ -7,6 +7,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 #include <nlohmann/json_fwd.hpp>
@@ -25,6 +26,7 @@ class Shelves;
 
 namespace detail {
 struct TablesAccess;
+struct TablesMake;
 bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Slot& out);
 bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Shelf& out);
 }  // namespace detail
@@ -42,6 +44,7 @@ public:
 
 private:
     friend struct detail::TablesAccess;
+    friend struct detail::TablesMake;
     friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, Slot&);
     friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, Shelf&);
 
@@ -64,6 +67,7 @@ public:
 
 private:
     friend struct detail::TablesAccess;
+    friend struct detail::TablesMake;
     friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, Shelf&);
 
     std::string id_;
@@ -71,6 +75,33 @@ private:
     canon::KeyedList<std::string, Slot> slots_;
     std::optional<canon::KeyedList<std::string, Slot>> spare_;
 };
+
+namespace detail {
+struct TablesMake {
+    static ::demo::tables::Shelf Shelf(canon::KeyedList<std::string, ::demo::tables::Slot> slots_, std::optional<canon::KeyedList<std::string, ::demo::tables::Slot>> spare_) {
+        ::demo::tables::Shelf out;
+        out.slots_ = std::move(slots_);
+        out.spare_ = std::move(spare_);
+        return out;
+    }
+
+    static ::demo::tables::Slot Entry_Slot(::demo::tables::Slot record, std::string id, bool retired) {
+        ::demo::tables::Slot out;
+        out = std::move(record);
+        out.id_ = std::move(id);
+        out.retired_ = retired;
+        return out;
+    }
+
+    static ::demo::tables::Shelf Entry_Shelf(::demo::tables::Shelf record, std::string id, bool retired) {
+        ::demo::tables::Shelf out;
+        out = std::move(record);
+        out.id_ = std::move(id);
+        out.retired_ = retired;
+        return out;
+    }
+};
+}  // namespace detail
 
 /// The shelves.
 class Shelves {
