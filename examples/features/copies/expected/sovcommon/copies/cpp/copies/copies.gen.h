@@ -5,6 +5,7 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 #include <nlohmann/json_fwd.hpp>
@@ -23,6 +24,7 @@ class Badges;
 
 namespace detail {
 struct CopiesAccess;
+struct CopiesMake;
 bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Badge& out);
 }  // namespace detail
 
@@ -36,12 +38,31 @@ public:
 
 private:
     friend struct detail::CopiesAccess;
+    friend struct detail::CopiesMake;
     friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, Badge&);
 
     std::string id_;
     bool retired_ = false;
     ::features::copies::base::Tone tone_{};
 };
+
+namespace detail {
+struct CopiesMake {
+    static ::features::copies::Badge Badge(::features::copies::base::Tone tone_) {
+        ::features::copies::Badge out;
+        out.tone_ = std::move(tone_);
+        return out;
+    }
+
+    static ::features::copies::Badge Entry_Badge(::features::copies::Badge record, std::string id, bool retired) {
+        ::features::copies::Badge out;
+        out = std::move(record);
+        out.id_ = std::move(id);
+        out.retired_ = retired;
+        return out;
+    }
+};
+}  // namespace detail
 
 /// Every badge.
 class Badges {

@@ -111,12 +111,12 @@ record Column {
   /// How the column is streamed.
   kind: FieldKind = scalar
   /// The telemetry enum an `enum8` column holds.
-  values: Vocabulary? = none
+  values: Vocabulary?
   /// The version that added the column; none: present from the table's first known version.
-  since: Int(2..)? = none
+  since: Int(2..)?
   /// The version that retired it. A retired column stays in the DDL (after the live ones),
   /// is appended as NULL, and leaves the wire.
-  retiredIn: Int(2..)? = none
+  retiredIn: Int(2..)?
 
   check (kind == enum8) == (values != none) at values
     else "an enum8 column names its vocabulary, and only an enum8 column does"
@@ -215,23 +215,23 @@ record Role {
   /// The stable vocabulary the economy panel groups on.
   token: Ident
   /// The side a single-row transfer reads; none for a table with one row per side.
-  leg: Leg? = none
+  leg: Leg?
   /// An extra predicate on the table's own columns (DuckDB SQL).
-  filter: String? = none
+  filter: String?
   /// The magnitude; none for a row that documents a path with no amount.
-  amount: ref Column? = none
+  amount: ref Column?
   /// For item legs: the column naming the item.
-  item: ref Column? = none
+  item: ref Column?
   /// Whose ledger the leg lands on; none: the header's player_id.
-  player: ref Column? = none
+  player: ref Column?
   /// The other side, if any.
-  counterparty: ref Column? = none
+  counterparty: ref Column?
   /// Summed into the reconciliation (true), or real telemetry that must not be summed.
   counted: Bool
   /// The token this row would double-count with.
-  dedupOf: Ident? = none
+  dedupOf: Ident?
   /// The last version whose rows this role reads; none: every version.
-  untilVersion: Int(1..)? = none
+  untilVersion: Int(1..)?
   /// Why, citing a function, never a line number.
   note: String
 
@@ -266,7 +266,7 @@ record Event {
   ledger: [Role] = []
   /// The enum8 column the ledger is typed by. When set, every live member of its vocabulary
   /// is covered by some role (L-0111), so a new kind cannot ship without a ledger decision.
-  ledgerKinds: ref Column? = none
+  ledgerKinds: ref Column?
 
   check producers.isUnique() at producers else "a producer is listed twice"
   check (producers.isEmpty()) == (tier == READONLY) at tier
@@ -285,7 +285,7 @@ record Event {
           "{c.name} is retired in version {c.retiredIn}, outside {since + 1}..={version}",
         )
       }
-      if c.name in headerColumns or c.kind == ts or c.kind == id {
+      if headerColumns.hasKey(c.name) or c.kind == ts or c.kind == id {
         fail(c, "{c.name} is a header column: every table has it already")
       }
     }

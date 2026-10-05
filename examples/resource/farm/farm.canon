@@ -53,7 +53,7 @@ record Global {
   productionTick: Duration(1s..) = 1h @json("productionTickIntervalSec", unit: s)
 
   /// A cap on planted models that nothing enforces.
-  maxModels: Int? = none
+  maxModels: Int?
     @deprecated("never read by LoadFromFile: the real cap is FARM_MAX_MODELS = 100. Kept as is; changing it changes nothing in game.")
 }
 
@@ -71,11 +71,11 @@ record Level {
   /// warning in C++; it is resolved again at runtime.
   modelName: String(1..)
   /// The item produced; `none` on a decorative level.
-  productionItem: ref items? = none @json("productionItemDefine")
+  productionItem: ref items? @json("productionItemDefine")
   /// Items produced per hour; `none` on a decorative level.
-  productionPerHour: Int(0..)? = none
+  productionPerHour: Int(0..)?
   /// Items the level holds before production stops; `none` on a decorative level.
-  maxStorage: Int(0..)? = none
+  maxStorage: Int(0..)?
   /// Bonuses granted while a model of this level is planted.
   bonuses: [Bonus] = []
   /// Items consumed to move TO the next level.
@@ -93,7 +93,7 @@ record ModelType {
   /// Logging label. The name shown to players is `nameText`.
   typeName: String
   /// Text shown to players as the model's name.
-  nameText: ref texts? = none @json("nameTextDefine")
+  nameText: ref texts? @json("nameTextDefine")
   /// Paid to unlock the model.
   unlockPrice: Penya = 0
   /// Paid in addition to the gold. Only read when it is an array.

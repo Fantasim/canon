@@ -51,11 +51,11 @@ record Flag {
   /// What the reporter ticks, as a sentence.
   label: String(1..)
   /// Shown under the label.
-  hint: String? = none
+  hint: String?
   /// Who may set the flag.
   setBy: Actor
   /// Who may see that the flag was set; `none` means whoever can see the post.
-  viewMinRole: Role? = none
+  viewMinRole: Role?
 }
 
 /// One point of the post lifecycle.
@@ -73,7 +73,7 @@ record Status {
   /// Inputs a transition INTO this status may collect.
   optional: [PostField] = []
   /// Who, besides a triager, may make the transition into this status.
-  by: Actor? = none
+  by: Actor?
 
   check next.isUnique() else "a transition is listed twice"
   check not next.contains(self) else "a status cannot transition to itself"
@@ -107,7 +107,7 @@ record Area {
   /// Name of the area.
   label: String(1..)
   /// Shown under the label.
-  hint: String? = none
+  hint: String?
   /// Gates posting AND viewing.
   minRole: Role
   /// Technical areas a triager typically moves a post into. Orders the move menu only.

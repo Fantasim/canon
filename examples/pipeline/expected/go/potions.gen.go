@@ -59,6 +59,18 @@ func potionHealFor(heal int64, missingHp int64) int64 {
 	return min(heal, max(missingHp, 0))
 }
 
+// Make_Potion is for generated code.
+func Make_Potion(id string, name string, heal int64, cooldown time.Duration, stack int64, isStrong bool) Potion {
+	return Potion{
+		id:       id,
+		name:     name,
+		heal:     heal,
+		cooldown: cooldown,
+		stack:    stack,
+		isStrong: isStrong,
+	}
+}
+
 // Potions: One JSON file per potion, as today. Each file is one entry; findings point into it.
 // Reloadable: tuned live during balance sessions, and runtimes keep potion ids, never
 // Potion pointers, across ticks.

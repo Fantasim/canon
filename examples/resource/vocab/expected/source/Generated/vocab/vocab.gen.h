@@ -8,6 +8,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -403,6 +404,7 @@ class EventTypes;
 
 namespace detail {
 struct VocabAccess;
+struct VocabMake;
 }  // namespace detail
 
 /// An item as other files see it: what a picker shows and what `ref items` checks.
@@ -432,6 +434,7 @@ public:
 
 private:
     friend struct detail::VocabAccess;
+    friend struct detail::VocabMake;
 
     std::string id_;
     std::string nameKey_;
@@ -460,6 +463,7 @@ public:
 
 private:
     friend struct detail::VocabAccess;
+    friend struct detail::VocabMake;
 
     EventTypeId id_{};
     bool retired_ = false;
@@ -486,10 +490,90 @@ public:
 
 private:
     friend struct detail::VocabAccess;
+    friend struct detail::VocabMake;
 
     std::variant<std::string, std::string, std::string, Element, QuestStyle, std::string, std::string> value_;
     int64_t defineValue_ = 0;
 };
+
+namespace detail {
+struct VocabMake {
+    static ::sov::vocab::Item Item(std::string id_, std::string nameKey_, ::sov::vocab::ItemKind1 kind_, std::optional<std::string> job_, std::optional<int64_t> jobValue_, std::optional<int64_t> level_, int64_t stackMax_, std::string icon_) {
+        ::sov::vocab::Item out;
+        out.id_ = std::move(id_);
+        out.nameKey_ = std::move(nameKey_);
+        out.kind_ = std::move(kind_);
+        out.job_ = std::move(job_);
+        out.jobValue_ = std::move(jobValue_);
+        out.level_ = std::move(level_);
+        out.stackMax_ = std::move(stackMax_);
+        out.icon_ = std::move(icon_);
+        return out;
+    }
+
+    static ::sov::vocab::EventType EventType(uint16_t code_, std::string display_, ::sov::vocab::ParamKind param_, std::optional<std::string> flag_) {
+        ::sov::vocab::EventType out;
+        out.code_ = std::move(code_);
+        out.display_ = std::move(display_);
+        out.param_ = std::move(param_);
+        out.flag_ = std::move(flag_);
+        return out;
+    }
+
+    static ::sov::vocab::Param Param_Monster(std::string value_, int64_t defineValue_) {
+        ::sov::vocab::Param out;
+        out.value_.emplace<0>(std::move(value_));
+        out.defineValue_ = defineValue_;
+        return out;
+    }
+
+    static ::sov::vocab::Param Param_Item(std::string value_) {
+        ::sov::vocab::Param out;
+        out.value_.emplace<1>(std::move(value_));
+        return out;
+    }
+
+    static ::sov::vocab::Param Param_Dungeon(std::string value_, int64_t defineValue_) {
+        ::sov::vocab::Param out;
+        out.value_.emplace<2>(std::move(value_));
+        out.defineValue_ = defineValue_;
+        return out;
+    }
+
+    static ::sov::vocab::Param Param_Element(::sov::vocab::Element value_) {
+        ::sov::vocab::Param out;
+        out.value_.emplace<3>(std::move(value_));
+        return out;
+    }
+
+    static ::sov::vocab::Param Param_QuestStyle(::sov::vocab::QuestStyle value_) {
+        ::sov::vocab::Param out;
+        out.value_.emplace<4>(std::move(value_));
+        return out;
+    }
+
+    static ::sov::vocab::Param Param_UpgradeType(std::string value_, int64_t defineValue_) {
+        ::sov::vocab::Param out;
+        out.value_.emplace<5>(std::move(value_));
+        out.defineValue_ = defineValue_;
+        return out;
+    }
+
+    static ::sov::vocab::Param Param_GameMode(std::string value_) {
+        ::sov::vocab::Param out;
+        out.value_.emplace<6>(std::move(value_));
+        return out;
+    }
+
+    static ::sov::vocab::EventType Entry_EventType(::sov::vocab::EventType record, ::sov::vocab::EventTypeId id, bool retired) {
+        ::sov::vocab::EventType out;
+        out = std::move(record);
+        out.id_ = std::move(id);
+        out.retired_ = retired;
+        return out;
+    }
+};
+}  // namespace detail
 
 /// Every event type (Vocab/eventType.json).
 class EventTypes {

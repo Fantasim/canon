@@ -16,7 +16,7 @@ record Paths {
   /// The Client checkout (icons and themes).
   clientRoot: Path = "../../Client"
   /// The .dds icons; `none` probes <client>/Data/UI/Icon, then <client>/Icon.
-  iconDir: Path? = none
+  iconDir: Path?
   /// Thumbnails and indexes. Never inside Resource.
   cacheDir: Path = ".cache"
 }

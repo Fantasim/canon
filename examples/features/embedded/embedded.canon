@@ -18,5 +18,5 @@ record Country {
 /// Every country, keyed by code.
 let countries: [Country] keyed by code = load("data/countries.json")
 
-emit go { out: "out/go/", package: "countries", mode: embedded }
+// No Go emit: Go embedded mode is owed for v0.2 (DECISIONS 320); `canon check` refuses it (E8019).
 emit ts { out: "out/countries.generated.ts", mode: embedded }

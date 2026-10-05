@@ -1,0 +1,10 @@
+{
+  "$schema": "features.shared.core.Shelf@fadf87b0",
+  "value": {
+    "slots": {
+      "top": {
+        "code": "t"
+      }
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "$schema": "features.shared.core.LevelRange@ddda2e94",
+  "value": {
+    "min": 1,
+    "max": 2,
+    "status": "open",
+    "$width": 1
+  }
+}

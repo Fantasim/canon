@@ -8,6 +8,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -1066,6 +1067,7 @@ class ProvenanceColumns;
 
 namespace detail {
 struct TelemetryAccess;
+struct TelemetryMake;
 }  // namespace detail
 
 /// One column of an event table, in wire order.
@@ -1087,6 +1089,7 @@ public:
 
 private:
     friend struct detail::TelemetryAccess;
+    friend struct detail::TelemetryMake;
 
     std::string name_;
     SqlType sql_{};
@@ -1107,6 +1110,7 @@ public:
 
 private:
     friend struct detail::TelemetryAccess;
+    friend struct detail::TelemetryMake;
 
     std::string name_;
     SqlType sql_{};
@@ -1126,6 +1130,7 @@ public:
 
 private:
     friend struct detail::TelemetryAccess;
+    friend struct detail::TelemetryMake;
 
     std::variant<FarmEventKind, SovereignEventKind, SovereignRole, SovereignDoctrine, SovereignPower, LifecycleKind, GrantKind> value_;
 };
@@ -1140,6 +1145,7 @@ public:
 
 private:
     friend struct detail::TelemetryAccess;
+    friend struct detail::TelemetryMake;
 
     Vocabulary of_{};
     std::vector<Member> kinds_;
@@ -1153,6 +1159,7 @@ public:
 
 private:
     friend struct detail::TelemetryAccess;
+    friend struct detail::TelemetryMake;
 
     std::variant<std::monostate, RowsSome> value_;
 };
@@ -1193,6 +1200,7 @@ public:
 
 private:
     friend struct detail::TelemetryAccess;
+    friend struct detail::TelemetryMake;
 
     Rows rows_;
     Currency currency_{};
@@ -1237,6 +1245,7 @@ public:
 
 private:
     friend struct detail::TelemetryAccess;
+    friend struct detail::TelemetryMake;
 
     std::string description_;
     uint8_t version_ = 0;
@@ -1248,6 +1257,123 @@ private:
     std::vector<Role> ledger_;
     std::optional<std::string> ledgerKinds_;
 };
+
+namespace detail {
+struct TelemetryMake {
+    static ::Telemetry::Column Column(std::string name_, ::Telemetry::SqlType sql_, ::Telemetry::FieldKind kind_, std::optional<::Telemetry::Vocabulary> values_, std::optional<int64_t> since_, std::optional<int64_t> retiredIn_) {
+        ::Telemetry::Column out;
+        out.name_ = std::move(name_);
+        out.sql_ = std::move(sql_);
+        out.kind_ = std::move(kind_);
+        out.values_ = std::move(values_);
+        out.since_ = std::move(since_);
+        out.retiredIn_ = std::move(retiredIn_);
+        return out;
+    }
+
+    static ::Telemetry::ProvenanceColumn ProvenanceColumn(std::string name_, ::Telemetry::SqlType sql_) {
+        ::Telemetry::ProvenanceColumn out;
+        out.name_ = std::move(name_);
+        out.sql_ = std::move(sql_);
+        return out;
+    }
+
+    static ::Telemetry::Rows Rows_Every() {
+        ::Telemetry::Rows out;
+        out.value_.emplace<0>();
+        return out;
+    }
+
+    static ::Telemetry::Rows Rows_Some(::Telemetry::Vocabulary of_, std::vector<::Telemetry::Member> kinds_) {
+        ::Telemetry::Rows out;
+        out.value_.emplace<1>(Case_Rows_Some(std::move(of_), std::move(kinds_)));
+        return out;
+    }
+
+    static ::Telemetry::RowsSome Case_Rows_Some(::Telemetry::Vocabulary of_, std::vector<::Telemetry::Member> kinds_) {
+        ::Telemetry::RowsSome out;
+        out.of_ = std::move(of_);
+        out.kinds_ = std::move(kinds_);
+        return out;
+    }
+
+    static ::Telemetry::Role Role(::Telemetry::Rows rows_, ::Telemetry::Currency currency_, ::Telemetry::Bucket bucket_, int64_t sign_, std::string token_, std::optional<::Telemetry::Leg> leg_, std::optional<std::string> filter_, std::optional<std::string> amount_, std::optional<std::string> item_, std::optional<std::string> player_, std::optional<std::string> counterparty_, bool counted_, std::optional<std::string> dedupOf_, std::optional<int64_t> untilVersion_, std::string note_) {
+        ::Telemetry::Role out;
+        out.rows_ = std::move(rows_);
+        out.currency_ = std::move(currency_);
+        out.bucket_ = std::move(bucket_);
+        out.sign_ = std::move(sign_);
+        out.token_ = std::move(token_);
+        out.leg_ = std::move(leg_);
+        out.filter_ = std::move(filter_);
+        out.amount_ = std::move(amount_);
+        out.item_ = std::move(item_);
+        out.player_ = std::move(player_);
+        out.counterparty_ = std::move(counterparty_);
+        out.counted_ = std::move(counted_);
+        out.dedupOf_ = std::move(dedupOf_);
+        out.untilVersion_ = std::move(untilVersion_);
+        out.note_ = std::move(note_);
+        return out;
+    }
+
+    static ::Telemetry::Event Event(std::string description_, uint8_t version_, int64_t since_, ::Telemetry::Tier tier_, std::vector<::Telemetry::Producer> producers_, ::Telemetry::Enqueue enqueue_, canon::KeyedList<std::string, ::Telemetry::Column> columns_, std::vector<::Telemetry::Role> ledger_, std::optional<std::string> ledgerKinds_) {
+        ::Telemetry::Event out;
+        out.description_ = std::move(description_);
+        out.version_ = std::move(version_);
+        out.since_ = std::move(since_);
+        out.tier_ = std::move(tier_);
+        out.producers_ = std::move(producers_);
+        out.enqueue_ = std::move(enqueue_);
+        out.columns_ = std::move(columns_);
+        out.ledger_ = std::move(ledger_);
+        out.ledgerKinds_ = std::move(ledgerKinds_);
+        return out;
+    }
+
+    static ::Telemetry::Member Member_FarmEventKind(::Telemetry::FarmEventKind value_) {
+        ::Telemetry::Member out;
+        out.value_.emplace<0>(std::move(value_));
+        return out;
+    }
+
+    static ::Telemetry::Member Member_SovereignEventKind(::Telemetry::SovereignEventKind value_) {
+        ::Telemetry::Member out;
+        out.value_.emplace<1>(std::move(value_));
+        return out;
+    }
+
+    static ::Telemetry::Member Member_SovereignRole(::Telemetry::SovereignRole value_) {
+        ::Telemetry::Member out;
+        out.value_.emplace<2>(std::move(value_));
+        return out;
+    }
+
+    static ::Telemetry::Member Member_SovereignDoctrine(::Telemetry::SovereignDoctrine value_) {
+        ::Telemetry::Member out;
+        out.value_.emplace<3>(std::move(value_));
+        return out;
+    }
+
+    static ::Telemetry::Member Member_SovereignPower(::Telemetry::SovereignPower value_) {
+        ::Telemetry::Member out;
+        out.value_.emplace<4>(std::move(value_));
+        return out;
+    }
+
+    static ::Telemetry::Member Member_LifecycleKind(::Telemetry::LifecycleKind value_) {
+        ::Telemetry::Member out;
+        out.value_.emplace<5>(std::move(value_));
+        return out;
+    }
+
+    static ::Telemetry::Member Member_GrantKind(::Telemetry::GrantKind value_) {
+        ::Telemetry::Member out;
+        out.value_.emplace<6>(std::move(value_));
+        return out;
+    }
+};
+}  // namespace detail
 
 /// The two header columns every table starts with; `since` is the table's first version.
 class HeaderColumns {

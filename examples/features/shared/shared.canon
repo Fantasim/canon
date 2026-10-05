@@ -1,0 +1,59 @@
+/// Shared records (CODEGEN §2.8, §5.9, §5.14; DECISIONS 320, 323): a package holds another
+/// package's records, variants, dependent types and tables in its own values and fields, in
+/// every target and mode, without copying their types. features.shared.core is baked; the world
+/// below is baked in Go and TypeScript, read from data in C++. Each builds core's values itself,
+/// through core's make hooks in Go and C++ and object literals in TypeScript, and holds core's
+/// records in tables of its own row type, keyed by its own ids.
+package features.shared
+
+import features.shared.core { Effect, LevelRange, Marker, Reward, Shelf, Status }
+
+/// A zone of the world.
+record Zone {
+  /// Its level band.
+  levels: LevelRange
+  /// What clearing it gives.
+  reward: Reward
+  /// Its effect.
+  effect: Effect
+  /// Its markers: rows of core's Marker, keyed by this package's ids.
+  markers: table Marker
+}
+
+/// Every zone.
+let zones: table Zone = {
+  forest {
+    levels: { min: 1, max: 5, status: open }
+    reward: coins { amount: 3 }
+    effect: { aim: gold, bonus: 2 }
+    markers: { gate { code: "g" }, retired well { code: "w" } }
+  }
+  marsh {
+    levels: { min: 4, max: 9, status: closed }
+    reward: nothing
+    effect: { aim: mood, bonus: grim }
+    markers: {}
+  }
+}
+
+/// Level bands: core's LevelRange as this package's table.
+let bands: table LevelRange = {
+  low { min: 1, max: 5, status: open }
+  retired old { min: 0, max: 1, status: shut }
+}
+
+/// Moods of the world: core's Status, keyed by this package's own StatusID beside core's.
+let moods: table Status = {
+  calm { label: "Calm" }
+}
+
+/// The starting band: a plain value of core's record.
+let start: LevelRange = { min: 1, max: 2, status: open }
+
+/// A shelf: core's record holding a table of core's own Marker.
+let shelf: Shelf = { slots: { top { code: "t" } } }
+
+emit go { out: "out/go/shared/" }
+emit cpp { out: "out/cpp/shared/", mode: data }
+emit ts { out: "out/ts/shared.ts" }
+emit json { out: "out/data/", values: [zones, bands, moods, start, shelf] }

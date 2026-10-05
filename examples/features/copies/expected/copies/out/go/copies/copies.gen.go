@@ -34,6 +34,19 @@ func (self *Badge) Retired() bool { return self.retired }
 // Tone: Its colour.
 func (self *Badge) Tone() base.Tone { return self.tone }
 
+// Make_Badge is for generated code.
+func Make_Badge(tone base.Tone) Badge {
+	return Badge{
+		tone: tone,
+	}
+}
+
+// MakeEntry_Badge is for generated code.
+func MakeEntry_Badge(record Badge, id BadgeID, retired bool) Badge {
+	record.id, record.retired = id, retired
+	return record
+}
+
 // Badges: Every badge.
 type Badges struct {
 	rows rt.KeyedList[BadgeID, Badge]

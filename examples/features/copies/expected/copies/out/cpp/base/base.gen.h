@@ -44,6 +44,12 @@ inline std::optional<Tone> ToneFromWire(std::string_view wire) {
 
 namespace detail {
 struct BaseAccess;
+struct BaseMake;
+}  // namespace detail
+
+namespace detail {
+struct BaseMake {
+};
 }  // namespace detail
 
 }  // namespace features::copies::base

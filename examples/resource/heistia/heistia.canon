@@ -17,7 +17,7 @@ record Task {
   eventType: ref eventTypes
   /// Only this monster, item, dungeon... counts. `none` counts everything.
   /// Its type depends on `eventType`: see resource.vocab's Param.
-  filterParam: Param(eventType)? = none @json(none: "")
+  filterParam: Param(eventType)? @json(none: "")
   /// How many each player must reach.
   targetPerPlayer: Int(1..)
   /// Time limit of the mission.

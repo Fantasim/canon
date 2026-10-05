@@ -8,6 +8,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -78,6 +79,7 @@ class Objectives;
 
 namespace detail {
 struct DependentAccess;
+struct DependentMake;
 bool DecodeTarget(const nlohmann::json& v, std::string_view key, ::features::dependent::Goal disc, canon::json::Decoder& dec, ::features::dependent::Target& out);
 bool DecodeReward(const nlohmann::json& v, std::string_view key, bool disc, canon::json::Decoder& dec, ::features::dependent::Reward& out);
 bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Place& out);
@@ -95,6 +97,7 @@ public:
 
 private:
     friend struct detail::DependentAccess;
+    friend struct detail::DependentMake;
     friend bool detail::DecodeTarget(const nlohmann::json&, std::string_view, ::features::dependent::Goal, canon::json::Decoder&, ::features::dependent::Target&);
 
     std::variant<std::string, int64_t, int64_t> value_;
@@ -109,6 +112,7 @@ public:
 
 private:
     friend struct detail::DependentAccess;
+    friend struct detail::DependentMake;
     friend bool detail::DecodeReward(const nlohmann::json&, std::string_view, bool, canon::json::Decoder&, ::features::dependent::Reward&);
 
     std::variant<int64_t, std::string> value_;
@@ -122,6 +126,7 @@ public:
 
 private:
     friend struct detail::DependentAccess;
+    friend struct detail::DependentMake;
     friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, Place&);
 
     bool items_ = false;
@@ -147,6 +152,7 @@ public:
 
 private:
     friend struct detail::DependentAccess;
+    friend struct detail::DependentMake;
     friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, Objective&);
 
     std::string id_;
@@ -158,6 +164,65 @@ private:
     Place place_;
     Reward bonus_;
 };
+
+namespace detail {
+struct DependentMake {
+    static ::features::dependent::Target Target_Kill(std::string value_) {
+        ::features::dependent::Target out;
+        out.value_.emplace<0>(std::move(value_));
+        return out;
+    }
+
+    static ::features::dependent::Target Target_Collect(int64_t value_) {
+        ::features::dependent::Target out;
+        out.value_.emplace<1>(std::move(value_));
+        return out;
+    }
+
+    static ::features::dependent::Target Target_ReachLevel(int64_t value_) {
+        ::features::dependent::Target out;
+        out.value_.emplace<2>(std::move(value_));
+        return out;
+    }
+
+    static ::features::dependent::Reward Reward_False(int64_t value_) {
+        ::features::dependent::Reward out;
+        out.value_.emplace<0>(std::move(value_));
+        return out;
+    }
+
+    static ::features::dependent::Reward Reward_True(std::string value_) {
+        ::features::dependent::Reward out;
+        out.value_.emplace<1>(std::move(value_));
+        return out;
+    }
+
+    static ::features::dependent::Place Place(bool items_) {
+        ::features::dependent::Place out;
+        out.items_ = std::move(items_);
+        return out;
+    }
+
+    static ::features::dependent::Objective Objective(::features::dependent::Goal goal_, std::optional<::features::dependent::Target> target_, bool itemRewards_, std::vector<::features::dependent::Reward> rewards_, ::features::dependent::Place place_, ::features::dependent::Reward bonus_) {
+        ::features::dependent::Objective out;
+        out.goal_ = std::move(goal_);
+        out.target_ = std::move(target_);
+        out.itemRewards_ = std::move(itemRewards_);
+        out.rewards_ = std::move(rewards_);
+        out.place_ = std::move(place_);
+        out.bonus_ = std::move(bonus_);
+        return out;
+    }
+
+    static ::features::dependent::Objective Entry_Objective(::features::dependent::Objective record, std::string id, bool retired) {
+        ::features::dependent::Objective out;
+        out = std::move(record);
+        out.id_ = std::move(id);
+        out.retired_ = retired;
+        return out;
+    }
+};
+}  // namespace detail
 
 /// The daily objectives.
 class Objectives {

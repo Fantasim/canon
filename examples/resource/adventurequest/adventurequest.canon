@@ -37,9 +37,9 @@ record LevelDiff {
 /// Settings shared by every style.
 record Global @json(case: snake) {
   /// The loader clamps it to >= 0.
-  minLevel: Int? = none
+  minLevel: Int?
   /// The loader clamps it to [1, 100].
-  maxQuestsPerStyle: Int? = none
+  maxQuestsPerStyle: Int?
   /// Wait before a completed quest can be rerolled.
   completionRerollCooldown: Duration @json("completion_reroll_cooldown_sec", unit: s)
   /// Level gaps between players and targeted monsters.
@@ -61,7 +61,7 @@ record Rewards {
 /// Timers, draw weights and rewards of one quest style.
 record Style @json(case: snake) {
   /// Absent for azure.
-  rerollTime: Duration? = none @json("reroll_time_sec", unit: s)
+  rerollTime: Duration? @json("reroll_time_sec", unit: s)
   /// Time a quest of this style is sized for.
   targetTime: Duration @json("target_time_sec", unit: s)
   /// Days a quest of this style stays open.
@@ -71,7 +71,7 @@ record Style @json(case: snake) {
   /// Chance, in percent, that a task is about each event.
   taskWeights: {ref eventTypes: Int(0..)}
   /// What completing a quest pays; `{}` on the wire means nothing.
-  rewards: Rewards? = none @json(none: {})
+  rewards: Rewards? @json(none: {})
 
   check taskSlotWeights.sum() == 100
     else "task_slot_weights add up to {taskSlotWeights.sum()}, not 100"
@@ -102,11 +102,11 @@ type SpecificKey(e: EventType) = Param(e) | "default"
 /// Hourly production of event `e`, per stage.
 record HourlyTarget(e: EventType) @json(case: snake) {
   /// One rate for the whole event...
-  rates: {Stage: Int(0..)}? = none
+  rates: {Stage: Int(0..)}?
   /// ...or one per item / monster / dungeon, depending on `e`.
-  ratesBySpecific: {SpecificKey(e): {Stage: Int(0..)}}? = none
+  ratesBySpecific: {SpecificKey(e): {Stage: Int(0..)}}?
   /// A daily cap per item / monster / dungeon.
-  dailyMaxBySpecific: {SpecificKey(e): Int(0..)}? = none
+  dailyMaxBySpecific: {SpecificKey(e): Int(0..)}?
   /// The rate is a daily count, not an hourly rate.
   isDailyFlat: Bool = false
 }
@@ -139,7 +139,7 @@ record Amplifier @json(case: snake) {
   /// What is measured.
   condition: Condition
   /// Order among the amplifiers of one event; unique when set.
-  priority: Int? = none
+  priority: Int?
   /// Lowest measure that gets the bonus.
   minValue: Int(0..)
   /// Highest measure that gets the bonus.

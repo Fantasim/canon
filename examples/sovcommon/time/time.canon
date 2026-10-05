@@ -53,8 +53,8 @@ fn overlaps(a: Window, b: Window) -> Bool {
   return occupancy(a).any(x => occupancy(b).any(y => x.start < y.end and y.start < x.end))
 }
 
-// Packages that use Window in their own C++ or view model need these types emitted once,
-// here (AUDIT EMT-06, VM-03): they refer to them, never copy them.
+// `mode: types` emits the C++ types only, with no data. Packages that use Window in their
+// own C++ or view model include these types from here once: they refer to them, never copy them.
 emit cpp { out: "@source/Generated/time", namespace: "sov::time", mode: types }
 emit view { out: "@generated/time.view.json" }
 

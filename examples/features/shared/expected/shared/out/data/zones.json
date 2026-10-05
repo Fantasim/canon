@@ -1,0 +1,7 @@
+{
+  "$schema": "features.shared.Zone@07bc93ba",
+  "rows": [
+    {"$id": "forest", "levels": {"min": 1, "max": 5, "status": "open", "$width": 4}, "reward": {"kind": "coins", "amount": 3}, "effect": {"aim": "gold", "bonus": 2}, "markers": {"gate": {"code": "g"}, "well": {"$retired": true, "code": "w"}}},
+    {"$id": "marsh", "levels": {"min": 4, "max": 9, "status": "closed", "$width": 5}, "reward": {"kind": "nothing"}, "effect": {"aim": "mood", "bonus": "grim"}, "markers": {}}
+  ]
+}

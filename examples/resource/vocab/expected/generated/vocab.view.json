@@ -111,7 +111,6 @@
               "kind": "string"
             }
           },
-          "default": null,
           "help": "resource.vocab:EventType.flag.help",
           "wire": {
             "name": "flag"
@@ -172,7 +171,6 @@
               "active": 16
             }
           },
-          "default": null,
           "help": "resource.vocab:Item.job.help",
           "wire": {
             "name": "dwItemJob",

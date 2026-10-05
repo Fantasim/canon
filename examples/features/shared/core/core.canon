@@ -1,0 +1,75 @@
+/// The vocabulary the shared example's world builds on: statuses, level bands, rewards and
+/// effects, emitted once in baked mode for Go, C++ and TypeScript.
+package features.shared.core
+
+/// A status a zone can be in.
+record Status {
+  /// Its label.
+  label: String
+}
+
+/// Every status.
+let statuses: table Status = {
+  open { label: "Open" }
+  closed { label: "Closed" }
+  retired shut { label: "Shut" }
+}
+
+/// What a bonus aims at.
+enum Aim { gold, mood }
+
+/// A mood.
+enum Mood { calm, grim }
+
+/// A band of levels.
+record LevelRange {
+  /// Lowest level.
+  min: Int
+  /// Highest level.
+  max: Int
+  /// The band's status.
+  status: ref statuses
+  /// Its width, computed once.
+  export fn width(self) -> Int { return self.max - self.min }
+}
+
+/// A reward.
+variant Reward {
+  /// Some coins.
+  coins {
+    /// How many.
+    amount: Int
+  }
+  /// Nothing.
+  nothing
+}
+
+/// A bonus, by what it aims at.
+type Bonus(a: Aim) = match a {
+  gold => Int
+  mood => Mood
+}
+
+/// An effect: its bonus's type follows its aim.
+record Effect {
+  /// What it aims at.
+  aim: Aim
+  /// Its bonus.
+  bonus: Bonus(aim)
+}
+
+/// A marker on a map.
+record Marker {
+  /// Its code.
+  code: String
+}
+
+/// A shelf of markers: a table the core's own record holds.
+record Shelf {
+  /// Its slots.
+  slots: table Marker
+}
+
+emit go { out: "../out/go/core/" }
+emit cpp { out: "../out/cpp/core/" }
+emit ts { out: "../out/ts/core.ts" }

@@ -1922,6 +1922,154 @@ func (self *Member) AsGrantKind() (GrantKind, bool) {
 	return self.value.(GrantKind), true
 }
 
+// Make_Column is for generated code.
+func Make_Column(name string, sql SqlType, kind FieldKind, values Vocabulary, values_ok bool, since int64, since_ok bool, retiredIn int64, retiredIn_ok bool) Column {
+	return Column{
+		name:         name,
+		sql:          sql,
+		kind:         kind,
+		values:       values,
+		values_ok:    values_ok,
+		since:        since,
+		since_ok:     since_ok,
+		retiredIn:    retiredIn,
+		retiredIn_ok: retiredIn_ok,
+	}
+}
+
+// Make_ProvenanceColumn is for generated code.
+func Make_ProvenanceColumn(name string, sql SqlType) ProvenanceColumn {
+	return ProvenanceColumn{
+		name: name,
+		sql:  sql,
+	}
+}
+
+// Make_Rows_Every is for generated code.
+func Make_Rows_Every() Rows {
+	return Rows{
+		kind: RowsKindEvery,
+	}
+}
+
+// Make_Rows_Some is for generated code.
+func Make_Rows_Some(of Vocabulary, kinds rt.List[*Member]) Rows {
+	self := MakeCase_Rows_Some(of, kinds)
+	return Rows{
+		kind:  RowsKindSome,
+		value: &self,
+	}
+}
+
+// MakeCase_Rows_Some is for generated code.
+func MakeCase_Rows_Some(of Vocabulary, kinds rt.List[*Member]) RowsSome {
+	return RowsSome{
+		of:    of,
+		kinds: kinds,
+	}
+}
+
+// Make_Role is for generated code.
+func Make_Role(rows *Rows, currency Currency, bucket Bucket, sign int64, token string, leg Leg, leg_ok bool, filter string, filter_ok bool, amount_id string, amount_ok bool, item_id string, item_ok bool, player_id string, player_ok bool, counterparty_id string, counterparty_ok bool, counted bool, dedupOf string, dedupOf_ok bool, untilVersion int64, untilVersion_ok bool, note string) Role {
+	return Role{
+		rows:            rows,
+		currency:        currency,
+		bucket:          bucket,
+		sign:            sign,
+		token:           token,
+		leg:             leg,
+		leg_ok:          leg_ok,
+		filter:          filter,
+		filter_ok:       filter_ok,
+		amount_id:       amount_id,
+		amount_ok:       amount_ok,
+		item_id:         item_id,
+		item_ok:         item_ok,
+		player_id:       player_id,
+		player_ok:       player_ok,
+		counterparty_id: counterparty_id,
+		counterparty_ok: counterparty_ok,
+		counted:         counted,
+		dedupOf:         dedupOf,
+		dedupOf_ok:      dedupOf_ok,
+		untilVersion:    untilVersion,
+		untilVersion_ok: untilVersion_ok,
+		note:            note,
+	}
+}
+
+// Make_Event is for generated code.
+func Make_Event(description string, version uint8, since int64, tier Tier, producers rt.List[Producer], enqueue Enqueue, columns rt.KeyedList[string, Column], ledger rt.List[*Role], ledgerKinds_id string, ledgerKinds_ok bool) Event {
+	return Event{
+		description:    description,
+		version:        version,
+		since:          since,
+		tier:           tier,
+		producers:      producers,
+		enqueue:        enqueue,
+		columns:        columns,
+		ledger:         ledger,
+		ledgerKinds_id: ledgerKinds_id,
+		ledgerKinds_ok: ledgerKinds_ok,
+	}
+}
+
+// Make_Member_FarmEventKind is for generated code.
+func Make_Member_FarmEventKind(value FarmEventKind) Member {
+	return Member{
+		branch: MemberBranchFarmEventKind,
+		value:  value,
+	}
+}
+
+// Make_Member_SovereignEventKind is for generated code.
+func Make_Member_SovereignEventKind(value SovereignEventKind) Member {
+	return Member{
+		branch: MemberBranchSovereignEventKind,
+		value:  value,
+	}
+}
+
+// Make_Member_SovereignRole is for generated code.
+func Make_Member_SovereignRole(value SovereignRole) Member {
+	return Member{
+		branch: MemberBranchSovereignRole,
+		value:  value,
+	}
+}
+
+// Make_Member_SovereignDoctrine is for generated code.
+func Make_Member_SovereignDoctrine(value SovereignDoctrine) Member {
+	return Member{
+		branch: MemberBranchSovereignDoctrine,
+		value:  value,
+	}
+}
+
+// Make_Member_SovereignPower is for generated code.
+func Make_Member_SovereignPower(value SovereignPower) Member {
+	return Member{
+		branch: MemberBranchSovereignPower,
+		value:  value,
+	}
+}
+
+// Make_Member_LifecycleKind is for generated code.
+func Make_Member_LifecycleKind(value LifecycleKind) Member {
+	return Member{
+		branch: MemberBranchLifecycleKind,
+		value:  value,
+	}
+}
+
+// Make_Member_GrantKind is for generated code.
+func Make_Member_GrantKind(value GrantKind) Member {
+	return Member{
+		branch: MemberBranchGrantKind,
+		value:  value,
+	}
+}
+
 // HeaderColumns: The two header columns every table starts with; `since` is the table's first version.
 type HeaderColumns struct {
 	rows rt.KeyedList[string, Column]

@@ -1,1 +1,4 @@
-0 errors, 0 warnings in 1 package (…)
+error[E8019]  features/legacycpp/legacycpp.canon:28:8
+  emit cpp in data mode cannot generate a legacy C++ struct (@cpp(struct:)); not before M6: use the generated class meanwhile
+
+1 error, 0 warnings in 1 package (…)

@@ -15,7 +15,7 @@ record Tier {
   /// Chance out of 1 000 000.
   chance: Int(1..=1_000_000)
   /// The tier a re-roll moves the ticket to, if any.
-  upgradesTo: ref Tier? = none
+  upgradesTo: ref Tier?
 }
 
 /// Every tier, in display order.

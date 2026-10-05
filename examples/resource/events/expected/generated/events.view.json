@@ -187,7 +187,6 @@
                   "max": 86400000
                 }
               },
-              "default": null,
               "help": "resource.events:EventKind.spawn_monster.monsterLifetime.help",
               "wire": {
                 "name": "monsterLifetimeSec",
@@ -262,7 +261,6 @@
                   "max": 86400000
                 }
               },
-              "default": null,
               "help": "resource.events:EventKind.spawn_item.groundLifetime.help",
               "wire": {
                 "name": "groundLifetimeSec",

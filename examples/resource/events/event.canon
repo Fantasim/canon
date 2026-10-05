@@ -51,7 +51,7 @@ variant EventKind @json(tag: "type") {
     /// Where the monsters appear.
     spawnRegion: Rect
     /// How long a spawned monster lives; `none` means until killed.
-    monsterLifetime: Duration(1s..=1d)? = none @json("monsterLifetimeSec", unit: s)
+    monsterLifetime: Duration(1s..=1d)? @json("monsterLifetimeSec", unit: s)
   }
   /// Drops items on the ground in a region until enough are picked up.
   spawn_item {
@@ -62,7 +62,7 @@ variant EventKind @json(tag: "type") {
     /// Where the items appear.
     spawnRegion: Rect
     /// How long a dropped item stays; `none` means the game's default.
-    groundLifetime: Duration(1m..=1d)? = none @json("groundLifetimeSec", unit: s)
+    groundLifetime: Duration(1m..=1d)? @json("groundLifetimeSec", unit: s)
 
     check itemcount_le_packmax: itemCount[1] <= itemId.stackMax
       else "{itemCount[1]} {itemId.id} per drop, but a slot holds {itemId.stackMax}"

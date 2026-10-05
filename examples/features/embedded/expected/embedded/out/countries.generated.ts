@@ -64,4 +64,4 @@ export const countries: CanonTable<string, Country> = canonTable(canonFreeze<Rea
   { code: "DE", name: "Germany", vat: 19, cards: true },
   { code: "BE", name: "Belgium", vat: 21, cards: true },
   { code: "CH", name: "Switzerland", vat: 8.1, cards: false },
-]), (e) => e.code);
+]), ($e) => $e.code);

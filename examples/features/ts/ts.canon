@@ -34,13 +34,13 @@ record Skill @ts(name: "SkillEntry") {
   /// What learning it gives back.
   reward: Reward = nothing
   /// A free-text remark, or none.
-  note: String? = none
+  note: String?
   /// Weights by element, a map.
   weights: {String: Int} = {}
   /// Past 2^53, so it needs `@ts(bigint)` (E8101 without it).
   serial: Int = 0 @ts(bigint)
   /// The skill this one upgrades into, a ref.
-  next: ref skills? = none
+  next: ref skills?
 }
 
 /// Every skill, a keyed list.

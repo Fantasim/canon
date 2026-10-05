@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "canon_runtime.h"
@@ -16,6 +17,7 @@ class Column;
 
 namespace detail {
 struct TextemitAccess;
+struct TextemitMake;
 }  // namespace detail
 
 /// One column of the events table.
@@ -28,10 +30,22 @@ public:
 
 private:
     friend struct detail::TextemitAccess;
+    friend struct detail::TextemitMake;
 
     std::string name_;
     std::string sql_;
 };
+
+namespace detail {
+struct TextemitMake {
+    static ::features::textemit::Column Column(std::string name_, std::string sql_) {
+        ::features::textemit::Column out;
+        out.name_ = std::move(name_);
+        out.sql_ = std::move(sql_);
+        return out;
+    }
+};
+}  // namespace detail
 
 /// The columns, in table order.
 const std::vector<Column>& GetColumns();

@@ -219,6 +219,71 @@ func (self *Objective) Place() *Place { return self.place }
 // Bonus: The reward for finding the place, chosen by the place.
 func (self *Objective) Bonus() *Reward { return self.bonus }
 
+// Make_Target_Kill is for generated code.
+func Make_Target_Kill(value string) Target {
+	return Target{
+		branch: TargetBranchKill,
+		value:  value,
+	}
+}
+
+// Make_Target_Collect is for generated code.
+func Make_Target_Collect(value int64) Target {
+	return Target{
+		branch: TargetBranchCollect,
+		value:  value,
+	}
+}
+
+// Make_Target_ReachLevel is for generated code.
+func Make_Target_ReachLevel(value int64) Target {
+	return Target{
+		branch: TargetBranchReachLevel,
+		value:  value,
+	}
+}
+
+// Make_Reward_False is for generated code.
+func Make_Reward_False(value int64) Reward {
+	return Reward{
+		branch: RewardBranchFalse,
+		value:  value,
+	}
+}
+
+// Make_Reward_True is for generated code.
+func Make_Reward_True(value string) Reward {
+	return Reward{
+		branch: RewardBranchTrue,
+		value:  value,
+	}
+}
+
+// Make_Place is for generated code.
+func Make_Place(items bool) Place {
+	return Place{
+		items: items,
+	}
+}
+
+// Make_Objective is for generated code.
+func Make_Objective(goal Goal, target *Target, itemRewards bool, rewards rt.List[*Reward], place *Place, bonus *Reward) Objective {
+	return Objective{
+		goal:        goal,
+		target:      target,
+		itemRewards: itemRewards,
+		rewards:     rewards,
+		place:       place,
+		bonus:       bonus,
+	}
+}
+
+// MakeEntry_Objective is for generated code.
+func MakeEntry_Objective(record Objective, id ObjectiveID, retired bool) Objective {
+	record.id, record.retired = id, retired
+	return record
+}
+
 // Objectives: The daily objectives.
 type Objectives struct {
 	rows []Objective

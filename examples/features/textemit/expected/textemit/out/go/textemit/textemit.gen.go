@@ -24,6 +24,14 @@ func (self *Column) Name() string { return self.name }
 // SQL: Its SQL type.
 func (self *Column) SQL() string { return self.sql }
 
+// Make_Column is for generated code.
+func Make_Column(name string, sql string) Column {
+	return Column{
+		name: name,
+		sql:  sql,
+	}
+}
+
 type textemitData struct {
 	columns rt.List[*Column]
 }

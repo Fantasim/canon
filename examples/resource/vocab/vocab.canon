@@ -86,7 +86,7 @@ record Item {
   /// Main kind. A row without one is armour, as the `defaults` block says.
   kind: ItemKind1 = IK1_ARMOR @json("dwItemKind1")
   /// The only job that may use the item. "=" on the wire means any job.
-  job: ref jobs? = none @json("dwItemJob", none: "=")
+  job: ref jobs? @json("dwItemJob", none: "=")
   /// Item level. Absent means 1; "=" means the item has no level.
   level: Int(0..)? = 1 @json("dwItemLV", none: "=")
   /// How many fit in one inventory slot.
@@ -143,7 +143,7 @@ record EventType {
   /// What the event's filter parameter is: see `Param`.
   param: ParamKind = none_
   /// Compile flag the event only exists under.
-  flag: String? = none
+  flag: String?
 }
 
 /// What a filter parameter may be for event `e`. The type depends on the value.

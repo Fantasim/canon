@@ -120,7 +120,7 @@ record Item {
   /// Text key of the displayed name; see `name()`.
   nameKey: String(/^IDS_/) = "IDS_PROPITEM_TXT_030168" @json("szName")
   /// Text key of the description.
-  descriptionKey: String? = none @json("szCommand", none: "")
+  descriptionKey: String? @json("szCommand", none: "")
   /// Thumbnail in inventories, shops and the studio.
   icon: ItemIcon @json("szIcon")
   /// Price in shops.
@@ -128,13 +128,13 @@ record Item {
   /// Item level. Absent means 1; "=" means the item has none.
   level: Int(0..)? = 1 @json("dwItemLV", none: "=")
   /// Rarity: the colour of the name.
-  rarity: Int(0..)? = none @json("dwItemRare", none: "=")
+  rarity: Int(0..)? @json("dwItemRare", none: "=")
   /// How many fit in one inventory slot.
   stackMax: Int(1..) = 1 @json("dwPackMax")
   /// The model is a parts file (worn) rather than a whole object. 0/1 on the wire.
   partsFile: Bool = true @json("bPartsFile", int)
   /// Sound played when the item drops.
-  dropSound: ref sounds? = none @json("dwSubDefine", none: "=")
+  dropSound: ref sounds? @json("dwSubDefine", none: "=")
   /// What the item is. Its tag and fields sit directly in the item's object.
   kind: ItemKind @json(inline)
 
@@ -152,7 +152,7 @@ variant ItemKind @json(tag: "dwItemKind1") {
     /// Weapon type: which skills and animations it takes.
     kind3: WeaponKind3 @json("dwItemKind3")
     /// The only job that may equip it; `none` means any job.
-    job: ref jobs? = none @json("dwItemJob", none: "=")
+    job: ref jobs? @json("dwItemJob", none: "=")
     /// Level required to equip it.
     requiredLevel: Int(1..) = 1 @json("dwLimitLevel1")
     /// One hand or two.
@@ -175,7 +175,7 @@ variant ItemKind @json(tag: "dwItemKind1") {
     /// Property flags; a bitmask on the wire.
     flags: [ItemFlag] = [] @json("dwFlag", bits)
     /// Sound of a hit.
-    attackSound: ref sounds? = none @json("dwSndAttack1", none: "=")
+    attackSound: ref sounds? @json("dwSndAttack1", none: "=")
 
     check attackMin <= attackMax else "attackMin ({attackMin}) is above attackMax ({attackMax})"
   }
@@ -198,7 +198,7 @@ variant GeneralKind @json(tag: "dwItemKind2") {
     /// Element of an elemental stone; NONE for the others.
     element: ItemElement = NONE @json("eItemType")
     /// The stat an upgrade card raises.
-    referStat: ref attributes? = none @json("dwReferStat2", none: "=")
+    referStat: ref attributes? @json("dwReferStat2", none: "=")
   }
   /// Food, eaten from the inventory: 243 items.
   IK2_FOOD {
@@ -207,7 +207,7 @@ variant GeneralKind @json(tag: "dwItemKind2") {
     /// What eating it restores.
     restores: [StatBonus](..=6) = [] @json(pairs: ["dwDestParam{i}", "nAdjParamVal{i}"])
     /// Wait before the next one can be eaten.
-    cooldown: Duration? = none @json("dwSkillReady", unit: ms)
+    cooldown: Duration? @json("dwSkillReady", unit: ms)
   }
   // Trimmed: IK2_GEM, IK2_JEWELRY, IK2_GENERAL, IK2_POTION, IK2_REFRESHER, IK2_TOOLS,
   // and IK2_WEAPON_DIRECT (a single general item: worth a look before tightening).

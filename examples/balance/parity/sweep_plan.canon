@@ -23,10 +23,10 @@ local record SkillRow {
   define: ref skillH
   jobIndex: String
   tier: String
-  weapon: String? = none // dwLinkKind, an IK3_* kind or family
-  handed: String? = none
+  weapon: String? // dwLinkKind, an IK3_* kind or family
+  handed: String?
   target: String
-  unlockLevel: Int? = none // absent on common skills
+  unlockLevel: Int? // absent on common skills
   reqMp: Int = 0 @json(path: "legacy.reqMp")
 }
 
@@ -43,7 +43,7 @@ local record Weapon {
 }
 
 /// A row of etc.json's `jobs`.
-local record EtcJob { id: String, jobBase: String? = none, name: String }
+local record EtcJob { id: String, jobBase: String?, name: String }
 
 local let skills: [SkillRow] =
   load("@resource/Server/Skill/skills.json", at: "skills", partial: true)

@@ -41,7 +41,7 @@ record Mission {
   /// What it gives.
   reward: Prize
   /// The quest that follows it.
-  next: ref missions? = none
+  next: ref missions?
 
   /// What a list shows: the name and the level.
   fn label(self) -> String { return "{name} ({level})" }
